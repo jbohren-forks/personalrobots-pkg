@@ -1,7 +1,6 @@
 <launch> 
    <include file="$(find pr2_defs)/pr2_planning_environment.launch" />
    <node pkg="robot_self_filter" type="self_filter" respawn="true" output="screen">
-     <remap from="robot_description" to="robotdesc/pr2" />
      <remap from="cloud_in" to="tilt_scan_cloud" />
      <remap from="cloud_out" to="tilt_scan_cloud_filtered" />
    </node>

@@ -1,14 +1,14 @@
 XACRO = `rospack find xacro`/xacro.py
 URDF2GAZEBO = `rospack find gazebo_plugin`/bin/urdf2file
-MODEL_DIR = `pwd`
+MODEL_FILE = `rospack find examples_gazebo`
 
 ROBOT = table
 
 $(ROBOT).model: $(ROBOT).xml
 	$(XACRO) $^ > $^.expanded
-	$(URDF2GAZEBO) $^.expanded $(MODEL_DIR)/$@
+	$(URDF2GAZEBO) $^.expanded $(MODEL_FILE)/$@
 
 clean:
-	$(RM) $(ROBOT).xml.expanded $(MODEL_DIR)/$(ROBOT).model
+	$(RM) $(ROBOT).xml.expanded $(MODEL_FILE)/$(ROBOT).model
 	$(RM) core.* Ogre.log
 

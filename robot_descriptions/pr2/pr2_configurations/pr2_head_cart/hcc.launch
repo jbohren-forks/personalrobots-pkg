@@ -3,9 +3,9 @@
   <include file="$(find pr2_head_cart)/hcc.machine" />
 
   <!-- Description and etherCAT --> 
-  <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/hcc.xacro.xml'" />
+  <param name="robot_description" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/hcc.xacro.xml'" />
 
-  <node machine="realtime_root" pkg="pr2_etherCAT" type="pr2_etherCAT" args="-i eth0 -x robotdesc/pr2" />
+  <node machine="realtime_root" pkg="pr2_etherCAT" type="pr2_etherCAT" args="-i eth0 -x robot_description" />
 
   <!-- Calibration -->
   <node pkg="mechanism_bringup" type="calibrate.py" 

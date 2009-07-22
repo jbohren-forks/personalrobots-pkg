@@ -1,5 +1,5 @@
 <package>
-  <description>Gazebo world and model files for pr2.</description>
+  <description>Gazebo world and model files for wg.</description>
   <author>John Hsu, Ioan Sucan</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>

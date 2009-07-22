@@ -26,7 +26,7 @@
       </controller:ros_time>
 
       <controller:gazebo_mechanism_control name="gazebo_mechanism_control_door" plugin="libgazebo_mechanism_control.so">
-        <robotParam>robotdesc/pr2</robotParam>
+        <robotParam>door_description</robotParam>
         <mechanismTopic>mechanism_state/pr2</mechanismTopic>
         <alwaysOn>true</alwaysOn>
         <updateRate>1000.0</updateRate>

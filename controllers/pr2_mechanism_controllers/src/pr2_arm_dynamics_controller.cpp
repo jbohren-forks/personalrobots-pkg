@@ -38,6 +38,8 @@
 #include "realtime_tools/realtime_publisher.h"
 #include "std_msgs/String.h"
 
+#include "ros/node_handle.h"
+
 // Math utils
 #include <angles/angles.h>
 
@@ -343,8 +345,15 @@ bool PR2ArmDynamicsControllerNode::initXml(mechanism::RobotState * robot, TiXmlE
     std::string pr2Contents;
     std::string pr2_uncompensated;
 
-    node->getParam("robotdesc/pr2_uncompensated", pr2_uncompensated);
-    node->getParam("robotdesc/pr2", pr2Contents);
+    // hack: create a node handle to do a searchParam for robot_description
+    //       to do this properly, switch to node handles api
+    ros::NodeHandle node_handle;
+    std::string pr2_uncompensated_urdf_param_name;
+    node_handle.searchParam("robot_description_uncompensated",pr2_uncompensated_urdf_param_name);
+    node->getParam(pr2_uncompensated_urdf_param_name, pr2_uncompensated);
+    std::string pr2_urdf_param_name;
+    node_handle.searchParam("robot_description",pr2_urdf_param_name);
+    node->getParam(pr2_urdf_param_name, pr2Contents);
 
     c_->pr2_kin_.loadString(pr2Contents.c_str());
     c_->pr2_kin_uncompensated_.loadString(pr2_uncompensated.c_str());

@@ -1,5 +1,4 @@
 <launch>
-  <include file="$(find gazebo)/launch/empty_world.launch" />
 
   <!-- Robot state publisher -->
   <node pkg="robot_state_publisher" type="state_publisher" name="robot_state_publisher">
@@ -8,10 +7,10 @@
   </node>
 
   <!-- send pr2_r_arm.xml to param server -->
-  <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/r_arm.xacro.xml'" />
+  <param name="robot_description" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/r_arm.xacro.xml'" />
 
-  <!-- push robotdesc/pr2 to factory and spawn robot in gazebo -->
-  <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/pr2" respawn="false" output="screen"/>
+  <!-- push robot_description to factory and spawn robot in gazebo -->
+  <node pkg="gazebo_plugin" type="urdf2factory" args="robot_description" respawn="false" output="screen"/>
 
   <!-- start arm controller -->
   <!--
@@ -37,8 +36,8 @@
   -->
   <!--include file="$(find arm_gazebo)/tests/debug_plot.launch"/-->
 
-  <param name="robotdesc/table" command="$(find xacro)/xacro.py '$(find examples_gazebo)/table_defs/table_defs.xml'" />
-  <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/table 0 0 0.01 0 0 0 table_model" respawn="false" output="screen" />
+  <param name="table_description" command="$(find xacro)/xacro.py '$(find examples_gazebo)/table_defs/table_defs.xml'" />
+  <node pkg="gazebo_plugin" type="urdf2factory" args="table_description 0 0 0.01 0 0 0 table_model" respawn="false" output="screen" />
 
   <include file="$(find pr2_gazebo)/coffee_cup.launch" />
 </launch>

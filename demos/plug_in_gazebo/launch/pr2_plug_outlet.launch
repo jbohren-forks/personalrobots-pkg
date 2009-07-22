@@ -3,15 +3,15 @@
   <include file="$(find gazebo)/launch/empty_world.launch"/>
 
   <!-- send pr2.xml to param server -->
-  <!-- push robotdesc/pr2 to factory and spawn robot in gazebo -->
-  <param ns="pr2" name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/prf.xacro.xml'" />
-  <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/pr2" respawn="false" output="screen" />
+  <!-- push urdfs to factory and spawn robot in gazebo -->
+  <param ns="pr2" name="robot_description" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/prf.xacro.xml'" />
+  <node pkg="gazebo_plugin" type="urdf2factory" args="robot_description" respawn="false" output="screen" />
 
-  <param name="robotdesc/plug" command="$(find xacro)/xacro.py '$(find plug_in_gazebo)/robots/plug_only.xacro.xml'" />
-  <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/plug 0 0 0 0 0 0 plug" respawn="false" output="screen" />
+  <param name="plug_description" command="$(find xacro)/xacro.py '$(find plug_in_gazebo)/robots/plug_only.xacro.xml'" />
+  <node pkg="gazebo_plugin" type="urdf2factory" args="plug_description 0 0 0 0 0 0 plug" respawn="false" output="screen" />
 
-  <param name="robotdesc/outlet" command="$(find xacro)/xacro.py '$(find plug_in_gazebo)/robots/outlet_only.xacro.xml'" />
-  <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/outlet 0 0 0 0 0 0 outlet" respawn="false" output="screen" />
+  <param name="outlet_description" command="$(find xacro)/xacro.py '$(find plug_in_gazebo)/robots/outlet_only.xacro.xml'" />
+  <node pkg="gazebo_plugin" type="urdf2factory" args="outlet_description 0 0 0 0 0 0 outlet" respawn="false" output="screen" />
 
 
   <!--node pkg="pr2_mechanism_controllers" type="tuckarm.py" args="l" output="screen" /-->

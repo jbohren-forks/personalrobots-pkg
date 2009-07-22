@@ -68,7 +68,7 @@ $ self_filter [standard ROS params]
 \par Example
 
 \verbatim
-$ self_filter robot_description:=robotdesc/pr2 cloud_in:=tilt_cloud cloud_out:=tilt_cloud_filtered
+$ self_filter cloud_in:=tilt_cloud cloud_out:=tilt_cloud_filtered
 \endverbatim
 
 
@@ -108,7 +108,7 @@ $ test_filter [standard ROS params]
 \par Example
 
 \verbatim
-$ test_filter robot_description:=robotdesc/pr2
+$ test_filter
 \endverbatim
 
 \subsubsection parameters ROS parameters

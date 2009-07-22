@@ -1,16 +1,12 @@
 <launch>
-  <!-- start gazebo -->
-  <node pkg="gazebo" type="gazebo" args="$(find gazebo_robot_description)/gazebo_worlds/empty.world" respawn="false" output="screen">
-    <env name="LD_LIBRARY_PATH" value="$(find gazebo_plugin)/lib:$(find gazebo)/gazebo/lib:$(find Cg)/Cg/lib:$(optenv LD_LIBRARY_PATH)" />
-    <env name="GAZEBO_RESOURCE_PATH" value="$(find gazebo_robot_description):$(find gazebo)/gazebo/share/gazebo" />
-    <env name="OGRE_RESOURCE_PATH" value="$(find ogre)/ogre/lib/OGRE" />
-  </node>
+  <!-- start up empty world -->
+  <include file="$(find gazebo)/launch/empty_world.launch"/>
 
   <!-- send plug_only.xml to param server and spawn robot-->
-  <param name="robotdesc/plug" command="$(find xacro)/xacro.py '$(find plug_in_gazebo)/robots/plug_only.xacro.xml'" />
-  <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/plug 0 0 0 0 0 0 plug" respawn="false" output="screen" />
+  <param name="plug_description" command="$(find xacro)/xacro.py '$(find plug_in_gazebo)/robots/plug_only.xacro.xml'" />
+  <node pkg="gazebo_plugin" type="urdf2factory" args="plug_description 0 0 0 0 0 0 plug" respawn="false" output="screen" />
 
-  <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find plug_in_gazebo)/robots/outlet_only.xacro.xml'" />
-  <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/pr2" respawn="false" output="screen" />
+  <param name="outlet_description" command="$(find xacro)/xacro.py '$(find plug_in_gazebo)/robots/outlet_only.xacro.xml'" />
+  <node pkg="gazebo_plugin" type="urdf2factory" args="outlet_description" respawn="false" output="screen" />
 </launch>
 

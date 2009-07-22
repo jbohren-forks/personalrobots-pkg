@@ -1,15 +1,15 @@
 <launch>
 
   <!-- Calibrated Robot -->
-  <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/prf.xacro.xml'" />
+  <param name="robot_description" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/prf.xacro.xml'" />
 
   <!-- Uncalibrated Robot -->
-  <!-- param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/pr2.xacro.xml'" / -->
+  <!-- param name="robot_description" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/pr2.xacro.xml'" / -->
 
   <include file="$(find pr2_alpha)/prf.machine" />
 
 <!-- pr2_etherCAT -->
-  <node machine="realtime_root" pkg="pr2_etherCAT" type="pr2_etherCAT" args="-i eth0 -x robotdesc/pr2"/>
+  <node machine="realtime_root" pkg="pr2_etherCAT" type="pr2_etherCAT" args="-i eth0 -x robot_description"/>
 
 <!-- PR2 Calibration -->
   <node pkg="mechanism_bringup" type="calibrate_pr2.py"

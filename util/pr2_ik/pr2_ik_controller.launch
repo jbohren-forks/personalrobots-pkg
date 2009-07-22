@@ -3,7 +3,7 @@
       <param name="tip_name" value="r_wrist_roll_link" />     
       <param name="root_name" value="torso_lift_link" />  
       <param name="free_angle" value="0" type="int"/>        
-      <param name="urdf_xml" value="/robotdesc/pr2"/>   
+      <param name="urdf_xml" value="/robot_description"/>   
      
       <param name="free_angle_constraint" value="false"/>        
       <param name="free_angle_constraint_min" value="-0.5"/>        

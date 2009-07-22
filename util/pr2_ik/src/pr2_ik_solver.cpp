@@ -34,6 +34,8 @@
 #include <Eigen/Array>
 #include <pr2_ik/pr2_ik_solver.h>
 
+#include "ros/node_handle.h"
+
 using namespace Eigen;
 using namespace pr2_ik;
 
@@ -41,15 +43,19 @@ PR2IKSolver::PR2IKSolver():ChainIkSolverPos()
 {
   active_ = false;
   int free_angle;
-  std::string urdf_xml;
-  ros::Node::instance()->param("~urdf_xml", urdf_xml,std::string("/robotdesc/pr2"));
+  std::string urdf_xml,full_urdf_xml;
+  ros::Node::instance()->param("~urdf_xml", urdf_xml,std::string("robot_description"));
+
+  ros::NodeHandle node_handle;
+  node_handle.searchParam(urdf_xml,full_urdf_xml);
+
   ros::Node::instance()->param("~free_angle",free_angle,2);
   // Load robot description
   TiXmlDocument xml;
   ROS_DEBUG("Reading xml file from parameter server\n");
   assert(ros::Node::instance());
   std::string result;
-  if (ros::Node::instance()->getParam(urdf_xml, result))
+  if (ros::Node::instance()->getParam(full_urdf_xml, result))
     xml.Parse(result.c_str());
   else
   {

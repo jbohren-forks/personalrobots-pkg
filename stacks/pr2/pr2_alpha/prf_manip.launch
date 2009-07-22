@@ -1,12 +1,12 @@
 <launch>
-  <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/pr2.xacro.xml'" />
+  <param name="robot_description" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/pr2.xacro.xml'" />
 
   <machine name="realtime_root" user="root" address="prf1" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" default="never"/>   
 
   <include file="prf.machine" />
 
 <!-- pr2_etherCAT -->
-<!--   <node machine="realtime_root" pkg="pr2_etherCAT" type="pr2_etherCAT" args="-i rteth0 -x /robotdesc/pr2"/> -->
+<!--   <node machine="realtime_root" pkg="pr2_etherCAT" type="pr2_etherCAT" args="-i rteth0 -x /robot_description"/> -->
 
 <!-- PR2 Calibration -->
   <include file="$(find pr2_alpha)/calibrate.launch" />

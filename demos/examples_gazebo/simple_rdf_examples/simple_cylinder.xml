@@ -2,7 +2,7 @@
   <link name="my_cylinder">
     <parent name="world" />
     <!-- initial pose of my_cylinder in the parent frame coordiantes -->
-    <origin xyz="0 0 2" rpy="0 1.57 0" />
+    <origin xyz="0 0 2" rpy="0 1.57 0.5" />
     <joint name="my_cylinder_joint" type="revolute" >
       <!-- axis is in the parent link frame coordintates -->
       <axis xyz="0 1 0" />

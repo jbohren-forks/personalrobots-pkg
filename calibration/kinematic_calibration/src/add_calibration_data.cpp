@@ -35,6 +35,7 @@
 #include <utility>
 
 #include "ros/node.h"
+#include "ros/node_handle.h"
 #include "mechanism_model/robot.h"
 #include "tinyxml/tinyxml.h"
 #include "hardware_interface/hardware_interface.h"
@@ -64,16 +65,23 @@ public:
     printf("Getting robot description from param server...") ;
     fflush(stdout) ;
     string robot_desc ;
+
+    // hack: create a node handle to do a searchParam for robot_description
+    //       to do this properly, switch to node handles api
+    ros::NodeHandle node_handle;
+    std::string pr2_urdf_param_name;
+    node_handle.searchParam("robot_description",pr2_urdf_param_name);
+
     bool success ;
-    success = node_->getParam("robotdesc/pr2", robot_desc) ;
+    success = node_->getParam(pr2_urdf_param_name, robot_desc) ;
     if (!success)
     {
-      printf("ERROR: Could not access robot_desc/pr2 from param server\n") ;
+      printf("ERROR: Could not access robot_description from param server\n") ;
     }
     else
       printf("Success!\n") ;
 
-    printf("Parsing robotdesc/pr2...") ;
+    printf("Parsing robot_description...") ;
     fflush(stdout) ;
     TiXmlDocument doc ;
     doc.Parse(robot_desc.c_str()) ;

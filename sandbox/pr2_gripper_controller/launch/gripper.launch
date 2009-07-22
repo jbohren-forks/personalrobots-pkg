@@ -1,6 +1,6 @@
 <launch>
 
-  <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find pr2_gripper_controller)/launch/gripper.xml'" />
+  <param name="robot_description" command="$(find xacro)/xacro.py '$(find pr2_gripper_controller)/launch/gripper.xml'" />
 
   <!-- Loads realtime machine and PR2_etherCAT -->
   <include file="$(find pr2_gripper_controller)/launch/init.machine" />

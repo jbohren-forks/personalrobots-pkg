@@ -8,6 +8,6 @@
   <url>http://pr.willowgarage.com/wiki/test_gazebo_plugin</url>
   <depend package="gazebo_plugin"/>
   <depend package="examples_gazebo" />
-  <depend package="gazebo_robot_description" />
+  <depend package="gazebo_worlds" />
   <depend package="robot_msgs" />
 </package>

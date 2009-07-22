@@ -427,7 +427,7 @@
       <controller:gazebo_mechanism_control name="door_mechanism_control" plugin="libgazebo_mechanism_control.so">
         <alwaysOn>true</alwaysOn>
         <updateRate>1000.0</updateRate>
-        <robotParam>robotdesc/doorbot</robotParam>
+        <robotParam>door_description</robotParam>
         <interface:audio name="gazebo_mechanism_control_dummy_iface" />
       </controller:gazebo_mechanism_control>
       -->

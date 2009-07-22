@@ -92,6 +92,7 @@ private:
   std::string chain_root_;                              /**< Root name of the kinematic chain */
   std::string chain_tip_;                               /**< Tip name of the kinematic chain */
   std::string robot_param_;                             /**< Name on the parameter server where the robot description is stored */
+  std::string full_robot_param_;                        /**< Fully qualified name on the parameter server where the robot description is stored */
   std::string bag_file_;                                /**< Bag file to load trajectory data from */
   bool use_bag_file_;                                   /**< Should I load data from a bag file or listen to mechanism_state? */
 

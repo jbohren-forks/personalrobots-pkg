@@ -58,7 +58,7 @@ GazeboMechanismControl::GazeboMechanismControl(Entity *parent)
     gzthrow("GazeboMechanismControl controller requires a Model as its parent");
 
   Param::Begin(&this->parameters);
-  this->robotParamP = new ParamT<std::string>("robotParam", "robotdesc/pr2", 0);
+  this->robotParamP = new ParamT<std::string>("robotParam", "robot_description", 0);
   Param::End();
 
   if (getenv("CHECK_SPEEDUP"))
@@ -70,7 +70,7 @@ GazeboMechanismControl::GazeboMechanismControl(Entity *parent)
   int argc = 0;
   char** argv = NULL;
   ros::init(argc,argv,"gazebo");
-  this->rosnode_ = new ros::NodeHandle();
+  this->rosnode_ = new ros::NodeHandle("mechanism_control");
 
   this->mc_ = new MechanismControl(&hw_);
 }
@@ -235,27 +235,29 @@ void GazeboMechanismControl::FiniChild()
 void GazeboMechanismControl::ReadPr2Xml(XMLConfigNode *node)
 {
 
-  std::string tmp_param_string;
-  this->rosnode_->getParam(this->robotParam,tmp_param_string);
+  std::string urdf_param_name;
+  this->rosnode_->searchParam(this->robotParam,urdf_param_name);
+  std::string urdf_string;
+  this->rosnode_->getParam(urdf_param_name,urdf_string);
 
 
-  // wait for robotdesc/pr2 on param server
-  while(tmp_param_string.empty())
+  // wait for robot_description on param server
+  while(urdf_string.empty())
   {
     ROS_WARN("gazebo mechanism control plugin is waiting for %s in param server.  run merge/roslaunch send.xml or similar.", this->robotParam.c_str());
-    this->rosnode_->getParam(this->robotParam,tmp_param_string);
+    this->rosnode_->getParam(this->robotParam,urdf_string);
     usleep(100000);
   }
 
   ROS_INFO("gazebo mechanism control got pr2.xml from param server, parsing it...");
-  //std::cout << tmp_param_string << std::endl;
+  //std::cout << urdf_string << std::endl;
 
   // initialize TiXmlDocument doc with a string
   TiXmlDocument doc;
-  if (!doc.Parse(tmp_param_string.c_str()))
+  if (!doc.Parse(urdf_string.c_str()))
   {
     ROS_ERROR("Could not load the gazebo mechanism_control plugin's configuration file: %s\n",
-            tmp_param_string.c_str());
+            urdf_string.c_str());
     abort();
   }
   urdf::normalizeXml(doc.RootElement());

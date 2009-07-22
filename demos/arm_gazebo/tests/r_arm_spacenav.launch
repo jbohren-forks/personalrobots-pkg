@@ -8,17 +8,17 @@
   </node>
 
   <!-- send pr2_r_arm.xml to param server -->
-  <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/r_arm.xacro.xml'" />
+  <param name="robot_description" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/r_arm.xacro.xml'" />
 
-  <!-- push robotdesc/pr2 to factory and spawn robot in gazebo -->
-  <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/pr2" respawn="false" output="screen"/>
+  <!-- push robot_description to factory and spawn robot in gazebo -->
+  <node pkg="gazebo_plugin" type="urdf2factory" args="robot_description" respawn="false" output="screen"/>
 
   <!-- start arm controller -->
   <!-- tried to revive, copied into arm_gazebo from arm_life_test, but controller breaks. -->
   <include file="$(find arm_gazebo)/teleop_arm.launch"/>
   <node pkg="spacenav_node" type="spacenav_node" args="" respawn="false" output="screen" />
 
-  <param name="robotdesc/table" command="$(find xacro)/xacro.py '$(find examples_gazebo)/table_defs/table_defs.xml'" />
-  <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/table" respawn="false" output="screen" />
+  <param name="table_description" command="$(find xacro)/xacro.py '$(find examples_gazebo)/table_defs/table_defs.xml'" />
+  <node pkg="gazebo_plugin" type="urdf2factory" args="table_description" respawn="false" output="screen" />
 </launch>
 

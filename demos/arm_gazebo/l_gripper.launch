@@ -1,14 +1,10 @@
 <launch>
-  <!--
-    Run a PR2 left arm in simulation
-  -->
-  <include file="$(find gazebo)/launch/empty_world.launch" />
 
   <!-- send pr2_l_arm.xml to param server -->
-  <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/l_gripper.xacro.xml'" />
+  <param name="robot_description" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/l_gripper.xacro.xml'" />
 
-  <!-- push robotdesc/pr2 to factory and spawn robot in gazebo -->
-  <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/pr2" respawn="false" output="screen"/>
+  <!-- push robot_description to factory and spawn robot in gazebo -->
+  <node pkg="gazebo_plugin" type="urdf2factory" args="robot_description" respawn="false" output="screen"/>
 
   <!-- start arm controller -->
   <!--

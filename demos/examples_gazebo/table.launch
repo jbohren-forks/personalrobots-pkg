@@ -1,11 +1,8 @@
 <launch>
-  <include file="$(find gazebo)/launch/empty_world.launch" />
-
   <!-- send table.xml to param server -->
-  <param name="robotdesc/table" command="$(find xacro)/xacro.py '$(find examples_gazebo)/table_defs/table.xml'" />
+  <param name="table_description" command="$(find xacro)/xacro.py '$(find examples_gazebo)/table_defs/table.xml'" />
 
-  <!-- push robotdesc/table to factory and spawn robot in gazebo -->
-  <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/table" respawn="false" output="screen" /> <!-- load default arm controller -->
-
+  <!-- push table_description to factory and spawn robot in gazebo -->
+  <node pkg="gazebo_plugin" type="urdf2factory" args="table_description" respawn="false" output="screen" /> <!-- load default arm controller -->
 </launch>
 

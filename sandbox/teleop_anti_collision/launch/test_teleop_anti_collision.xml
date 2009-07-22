@@ -2,15 +2,18 @@
 
 <launch>
 
+  <!-- start up gazebo -->
+  <include file="$(find gazebo)/launch/simple_office.launch"/>
+
   <!-- start up robot -->
-  <include file="$(find pr2_gazebo)/pr2_simple_office.launch"/>
+  <include file="$(find pr2_gazebo)/pr2.launch"/>
   
   <!-- Joystick -->
   <param name="joy/deadzone" value="5000"/>
   <node machine="four" pkg="joy" type="joy"  respawn="true"/>
 
   <!-- load map -->
-  <node pkg="map_server" type="map_server" args="$(find gazebo_robot_description)/Media/materials/textures/map_blank.png 0.1" respawn="true" machine="three" />
+  <node pkg="map_server" type="map_server" args="$(find gazebo_worlds)/Media/materials/textures/map_blank.png 0.1" respawn="true" machine="three" />
   <!--node pkg="slam_gmapping" type="slam_gmapping" respawn="false" /-->
 
   <!-- nav-stack -->

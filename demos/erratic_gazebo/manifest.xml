@@ -5,7 +5,7 @@
   <review status="na" notes=""/>
   <url>http://pr.willowgarage.com/wiki/Simulator</url>
   <depend package="gazebo_plugin"/>
-  <depend package="gazebo_robot_description"/>
+  <depend package="gazebo_worlds"/>
   <depend package="erratic_defs"/>
   <depend package="robot_mechanism_controllers"/>
 

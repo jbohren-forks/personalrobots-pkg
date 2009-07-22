@@ -38,6 +38,7 @@
 #include <angles/angles.h>
 #include <std_msgs/String.h>
 #include "ros/node.h"
+#include "ros/node_handle.h"
 
 #define NUM_TRANSFORMS 2
 #define EPS 1e-5
@@ -167,16 +168,22 @@ void BaseControllerPos::init(std::vector<JointControlParam> jcp, mechanism::Robo
    robot_desc::URDF::Link *link;
    std::string joint_name;
 
+   // hack: create a node handle to do a searchParam for robot_description
+   //       to do this properly, switch to node handles api
+   ros::NodeHandle node_handle;
+   std::string pr2_urdf_param;
+   node_handle.searchParam("robot_description",pr2_urdf_param);
+
    std::string xml_content;
-   (ros::g_node)->getParam("robotdesc/pr2",xml_content);
+   (ros::g_node)->getParam(pr2_urdf_param,xml_content);
 
    robot_state_ = robot_state;
 
-   // wait for robotdesc/pr2 on param server
+   // wait for robot_description on param server
    while(!urdf_model_.loadString(xml_content.c_str()))
    {
-      ROS_INFO("WARNING: base controller is waiting for robotdesc/pr2 in param server.  run roslaunch send.xml or similar.");
-      (ros::g_node)->getParam("robotdesc/pr2",xml_content);
+      ROS_INFO("WARNING: base controller is waiting for robot_description in param server.  run roslaunch send.xml or similar.");
+      (ros::g_node)->getParam("robot_description",xml_content);
       usleep(100000);
    }
 

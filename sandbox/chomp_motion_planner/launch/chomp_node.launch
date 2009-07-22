@@ -1,7 +1,7 @@
 
 <launch> 
-	<rosparam ns="/robotdesc/pr2_planning" command="load" file="$(find pr2_defs)/planning/planning.yaml" />
-	<node pkg="chomp_motion_planner" name="chomp_motion_planner" type="chomp_planner_node" args="robot_description:=robotdesc/pr2 collision_map:=collision_map_occ" respawn="true" output="screen" clear_params="true">
+	<rosparam ns="/robot_description_planning" command="load" file="$(find pr2_defs)/planning/planning.yaml" />
+	<node pkg="chomp_motion_planner" name="chomp_motion_planner" type="chomp_planner_node" args="collision_map:=collision_map_occ" respawn="true" output="screen" clear_params="true">
 		<param name="collision_clearance" value="0.07"/>
 
 		<param name="collision_links/r_gripper_l_finger_link/link_radius" value="0.02"/>

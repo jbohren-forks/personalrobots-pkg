@@ -58,10 +58,11 @@ int main(int argc, char** argv)
 
   // build robot model
   Tree tree;
-  string param_name;
-  node.param("~/robot_desc_param", param_name, string("/robotdesc/pr2"));
+  string param_name, full_param_name;
+  node.param("~/robot_desc_param", param_name, string("robot_description"));
+  node.searchParam(param_name,full_param_name);
   string robot_desc;
-  node.param(param_name, robot_desc, string());
+  node.param(full_param_name, robot_desc, string());
   if (!treeFromString(robot_desc, tree)){
     ROS_ERROR("Failed to construct robot model from xml string");
     return -1;

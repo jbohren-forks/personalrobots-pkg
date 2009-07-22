@@ -7,7 +7,7 @@
     <!-- Common parameter settings /-->
     <param name="/trex/ping_frequency" value="1"/>
 
-    <node pkg="map_server" type="map_server" args="$(find gazebo_robot_description)/world/Media/materials/textures/map_blank.png 0.1" respawn="false" />
+    <node pkg="map_server" type="map_server" args="$(find gazebo_worlds)/Media/materials/textures/map_blank.png 0.1" respawn="false" />
 
     <node pkg="fake_localization" type="fake_localization" respawn="false" output="screen" />
 
@@ -15,7 +15,7 @@
     <node pkg="highlevel_controllers" type="recharge_controller" args="" respawn="false" />
 
     <!--
-    <node pkg="kinematic_planning" type="kinematic_planning" args="robotdesc/pr2"/>
+    <node pkg="kinematic_planning" type="kinematic_planning" args="robot_description"/>
     <include file="$(find world_3d_map)/run.xml"/>
     <node pkg="highlevel_controllers" type="move_arm" args="right" respawn="false"/>
     <node pkg="highlevel_controllers" type="move_arm" args="left" respawn="false" />

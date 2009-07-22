@@ -1,9 +1,6 @@
 <launch>
-  <include file="$(find gazebo)/launch/empty_world.launch" />
-
   <!-- send simple_sphere.xml to param server -->
   <param name="simple_sphere" command="$(find xacro)/xacro.py '$(find examples_gazebo)/simple_rdf_examples/simple_sphere.xml'" />
   <node pkg="gazebo_plugin" type="urdf2factory" args="simple_sphere" respawn="false" output="screen" />
-
 </launch>
 

@@ -9,10 +9,10 @@
   </node>
 
   <!-- send single_link.xml to param server -->
-  <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/pr2.xacro.xml'" />
+  <param name="robot_description" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/pr2.xacro.xml'" />
 
-  <!-- push robotdesc/pr2 to factory and spawn robot in gazebo -->
-  <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/pr2" respawn="false" output="screen" /> <!-- load default arm controller -->
+  <!-- push robot_description to factory and spawn robot in gazebo -->
+  <node pkg="gazebo_plugin" type="urdf2factory" args="robot_description" respawn="false" output="screen" /> <!-- load default arm controller -->
 
   <!-- load controllers -->
   <param name="base_controller/odom_publish_rate" value="10" />

@@ -35,6 +35,7 @@
 #include <stdio.h>
 
 #include "ros/node.h"
+#include "ros/node_handle.h"
 #include "boost/thread/mutex.hpp"
 #include "mechanism_msgs/MechanismState.h"
 #include "mocap_msgs/MocapSnapshot.h"
@@ -137,7 +138,14 @@ public:
         {
           robot_kinematics::RobotKinematics robot_kinematics ;
           string robot_desc ;
-          param("robotdesc/pr2", robot_desc, string("")) ;
+
+          // hack: create a node handle to do a searchParam for robot_description
+          //       to do this properly, switch to node handles api
+          ros::NodeHandle node_handle;
+          std::string pr2_urdf_param_name;
+          node_handle.searchParam("robot_description",pr2_urdf_param_name);
+
+          param(pr2_urdf_param_name, robot_desc, string("")) ;
           printf("RobotDesc.length() = %u\n", (unsigned int)robot_desc.length()) ;
 
           robot_kinematics.loadString(robot_desc.c_str()) ;

@@ -27,7 +27,7 @@
     <param name="use_voxel3d_grid" value="true" />
 
     <!-- planning monitor -->
-    <remap from="robot_description" to="robotdesc/pr2" />
+    <remap from="robot_description" to="robot_description" />
     <remap from="collision_map" to="collision_map_occ" />
     <remap from="collision_map_update" to="collision_map_occ_update" />
 

@@ -70,7 +70,9 @@ bool DynamicsEstimationNode::init()
   node_handle_.param("~max_samples", max_samples_, 1000000);
   node_handle_.param("~chain_root", chain_root_, std::string("torso_lift_link"));
   node_handle_.param("~chain_tip", chain_tip_, std::string("r_gripper_tool_frame"));
-  node_handle_.param("~robot", robot_param_, std::string("robotdesc/pr2"));
+  ///@todo: use node_handle_.searchParam() to search for robot param
+  node_handle_.param("~robot", robot_param_, std::string("robot_description"));
+  node_handle_.searchParam(robot_param_,full_robot_param_);
 
   if (node_handle_.getParam("~bag_file", bag_file_))
   {
@@ -79,10 +81,10 @@ bool DynamicsEstimationNode::init()
 
   // get robot information
   std::string robot_desc;
-  success = node_handle_.getParam(robot_param_, robot_desc);
+  success = node_handle_.getParam(full_robot_param_, robot_desc);
   if (!success)
   {
-    ROS_ERROR("ERROR: Could not access %s from param server", robot_param_.c_str());
+    ROS_ERROR("ERROR: Could not access %s from param server", full_robot_param_.c_str());
     return false;
   }
 

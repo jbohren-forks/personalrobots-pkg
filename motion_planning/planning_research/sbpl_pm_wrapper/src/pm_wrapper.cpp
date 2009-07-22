@@ -41,7 +41,9 @@ using namespace sbpl_arm_planner_node;
 pm_wrapper::pm_wrapper()
 {
   node_.param<std::string>("~planning_frame_id", frame_, "base_link");
-  node_.param<std::string>("~robot_description", robot_description_,"robotdesc/pr2");
+  std::string pr2_urdf_param;
+  node_.searchParam("robot_description",pr2_urdf_param);
+  node_.param<std::string>(pr2_urdf_param, robot_description_,"robot_description");
   node_.param<std::string>("~arm", arm_name_,"right_arm");
 };
 

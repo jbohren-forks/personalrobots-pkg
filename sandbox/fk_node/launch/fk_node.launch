@@ -2,7 +2,6 @@
 
   <include file="$(find pr2_defs)/pr2_description.launch" />
 
-  <remap from="robot_description" to="robotdesc/pr2"/>
   <node pkg="fk_node" type="fk_node"/>
 
 

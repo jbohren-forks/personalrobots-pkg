@@ -4,7 +4,7 @@ setenv OGRE_TOP `rospack find ogre`/ogre
 setenv CG_TOP `rospack find Cg`/Cg
 setenv BOOST_TOP `rosboost-cfg --root`
 setenv SIM_PLUGIN `rospack find gazebo_plugin`
-setenv PR2MEDIA `rospack find gazebo_robot_description`
+setenv PR2MEDIA `rospack find pr2_ogre`:`rospack find gazebo_worlds`
 setenv GAZMEDIA `rospack find gazebo`/gazebo/share/gazebo
 
 setenv LD_LIBRARY_PATH $SIM_PLUGIN/lib:$GAZ_TOP/lib:$CG_TOP/lib:$BOOST_TOP/lib:$LD_LIBRARY_PATH

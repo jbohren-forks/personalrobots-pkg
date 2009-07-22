@@ -1,6 +1,6 @@
 <launch>
   <node name="dynamics_estimation" pkg="dynamics_estimation" type="dynamics_estimation" output="screen">
-    <param name="robot" value="robotdesc/pr2" />
+    <param name="robot" value="robot_description" />
     <param name="urdf_filename" value="$(find rbd_trajectory_generator)/pr2_desc.xml" />
     <param name="max_samples" value="13000" />
     <param name="chain_root" value="torso_lift_link" />

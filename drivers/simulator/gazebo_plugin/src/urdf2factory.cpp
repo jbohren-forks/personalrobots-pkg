@@ -51,9 +51,9 @@ using namespace urdf2gazebo;
 
 void usage(const char *progname)
 {
-    printf("\nUsage: %s xml_param_name [initial x y z roll pitch yaw gazebo_model_name]\n", progname);
-    printf("  For example: urdf2factory robot_descriptions 0 0 1 0 0 90 pr3_model\n\n");
-    printf("  Note: gazebo_model_name defaults to name of the robot descriptions parameter.\n\n");
+    printf("\nUsage: %s urdf_param_name [initial x y z roll pitch yaw gazebo_model_name]\n", progname);
+    printf("  For example: urdf2factory robot_description 0 0 1 0 0 90 pr3_model\n\n");
+    printf("  Note: gazebo_model_name defaults to the robot description parameter.\n\n");
 }
 
 int main(int argc, char **argv)
@@ -108,6 +108,7 @@ int main(int argc, char **argv)
     {
       try
       {
+        ROS_INFO("urdf2factory waiting for gazebo factory, usually launched by 'roslaunch `rospack find gazebo`/launch/empty_world.launch'");
         client->ConnectWait(serverId, GZ_CLIENT_ID_USER_FIRST);
         connected_to_server = true;
       }
@@ -133,23 +134,24 @@ int main(int argc, char **argv)
       return -1;
     }
 
-
-    std::string xml_param_name = std::string(argv[1]);
-
     // Load parameter server string for pr2 robot description
     ros::init(argc,argv,"urdf2factory",ros::init_options::AnonymousName);
     ros::NodeHandle rosnode;
     ROS_INFO("-------------------- starting node for pr2 param server factory \n");
+
+    std::string urdf_param_name = std::string(argv[1]);
+    std::string full_urdf_param_name;
+    rosnode.searchParam(urdf_param_name,full_urdf_param_name);
     std::string xml_content;
-    rosnode.getParam(xml_param_name.c_str(),xml_content);
-    ROS_DEBUG("%s content\n%s\n", xml_param_name.c_str(), xml_content.c_str());
+    rosnode.getParam(full_urdf_param_name.c_str(),xml_content);
+    ROS_DEBUG("%s content\n%s\n", full_urdf_param_name.c_str(), xml_content.c_str());
 
     // Parse URDF from param server
     bool enforce_limits = true;
     robot_desc::URDF wgxml;
     if (!wgxml.loadString(xml_content.c_str()))
     {
-        ROS_ERROR("Unable to load robot model from param server robotdesc/pr2\n");  
+        ROS_ERROR("Unable to load robot model from param server robot_description\n");  
         exit(2);
     }
 

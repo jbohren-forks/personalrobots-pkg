@@ -4,7 +4,7 @@
     <param name="use_sim_time" type="boolean" value="true" />
     <include file="$(find pr2_gazebo)/pr2_simple_trajectory.launch"/>
 
-    <node pkg="map_server" type="map_server" args="$(find gazebo_robot_description)/world/Media/materials/textures/map3.png 0.1" respawn="true" />
+    <node pkg="map_server" type="map_server" args="$(find gazebo_worlds)/Media/materials/textures/map3.png 0.1" respawn="true" />
 
     <param name="robot_pose_ekf/freq" value="30.0"/>
     <param name="robot_pose_ekf/sensor_timeout" value="1.0"/>
@@ -52,8 +52,7 @@
 
     <!--<node pkg="mechanism_control" type="spawner.py" args="$(find arm_gazebo)/r_arm_trajectory_controller.xml" output="screen"/>-->
 
-    <node pkg="kinematic_planning" type="kinematic_planning" args="robotdesc/pr2" respawn="true">
-      <remap from="robot_description" to="robotdesc/pr2"/>
+    <node pkg="kinematic_planning" type="kinematic_planning" args="robot_description" respawn="true">
       <remap from="collision_map" to="collision_map_buffer"/>
     </node>
 
@@ -63,13 +62,11 @@
     <node name="right_arm_controller" pkg="highlevel_controllers" type="move_arm2" args="right" respawn="false">
       <param name="controller_frequency" value="50.0"/>
       <param name="planner_frequency" value="5.0"/>
-      <remap from="robot_description" to="robotdesc/pr2"/>
     </node>
 
     <node name="left_arm_controller" pkg="highlevel_controllers" type="move_arm2" args="left" respawn="false" >
       <param name="controller_frequency" value="50.0"/>
       <param name="planner_frequency" value="5.0"/>
-      <remap from="robot_description" to="robotdesc/pr2"/>
     </node>
 
     <node pkg="highlevel_controllers" type="move_end_effector" args="right" respawn="false"/>

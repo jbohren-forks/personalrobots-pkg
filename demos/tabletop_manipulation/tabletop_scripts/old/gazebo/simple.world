@@ -86,7 +86,7 @@
     <xyz>2.28  -0.21  0</xyz>
     <rpy>0.0 0.0 0.0 </rpy>
     <include embedded="true">
-      <!--xi:include href="../gazebo_objects/desk6.model" /--> <!-- block legs -->
+      <!--xi:include href="../objects/desk6.model" /--> <!-- block legs -->
       <xi:include href="desk4.model" /> <!-- skinny pole legs -->
     </include>
   </model:physical>

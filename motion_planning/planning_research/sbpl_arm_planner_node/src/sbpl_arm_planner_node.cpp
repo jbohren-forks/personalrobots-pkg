@@ -64,7 +64,11 @@ bool SBPLArmPlannerNode::init()
 
   // robot parameters
   node_.param<std::string>("~arm_name", arm_name_, "right_arm");
-  node_.param<std::string>("robotdesc/pr2", pr2_desc_, "robotdesc/pr2"); //set smarter default
+
+  std::string pr2_urdf_param;
+  node_.searchParam("robot_description",pr2_urdf_param);
+  node_.param<std::string>(pr2_urdf_param, pr2_desc_, "robot_description"); //set smarter default
+
   node_.param ("~num_joints", num_joints_, 7);
   node_.param ("~torso_arm_offset_x", torso_arm_offset_x_, 0.0);
   node_.param ("~torso_arm_offset_y", torso_arm_offset_y_, 0.0);

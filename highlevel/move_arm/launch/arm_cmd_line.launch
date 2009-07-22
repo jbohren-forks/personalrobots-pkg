@@ -1,6 +1,6 @@
 <launch>
   <node pkg="move_arm" type="arm_cmd_line" output="screen" args="right">    
-    <remap from="robot_description" to="robotdesc/pr2" />
+    <remap from="robot_description" to="robot_description" />
     <remap from="arm_ik" to="pr2_ik_right_arm/ik_service" />
   </node>
 </launch>

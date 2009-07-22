@@ -159,7 +159,7 @@ private:
    */
   double wall_start, sim_start;
 
-  /// \brief set topic name of robotdesc parameter
+  /// \brief set topic name of robot description parameter
   ParamT<std::string> *robotParamP;
   std::string robotParam;
 

@@ -4,13 +4,13 @@
 
     <include file="$(find pr2_prototype1_gazebo)/pr2_prototype1_simple.launch"/>
 
-    <node pkg="map_server" type="map_server" args="$(find gazebo_robot_description)/world/Media/materials/textures/map3.png 0.1" respawn="false" />
+    <node pkg="map_server" type="map_server" args="$(find gazebo_worlds)/Media/materials/textures/map3.png 0.1" respawn="false" />
 
     <node pkg="fake_localization" type="fake_localization" respawn="false" output="screen" />
 
     <include file="$(find world_3d_map)/run.xml"/>
 
-    <node pkg="kinematic_planning" type="kinematic_planning" args="robotdesc/pr2"/>
+    <node pkg="kinematic_planning" type="kinematic_planning" args="robot_description"/>
 
     <node pkg="highlevel_controllers" type="move_base_sbpl" args="" respawn="false" />
 
