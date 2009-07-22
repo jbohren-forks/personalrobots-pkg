@@ -1,3 +1,2 @@
-Header header
-GoalID goal_id
+ActionHeader header
 robot_msgs/PoseStamped goal

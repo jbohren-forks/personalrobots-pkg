@@ -41,231 +41,149 @@
 #include <boost/thread.hpp>
 #include <boost/shared_ptr.hpp>
 #include <action_tools/Preempt.h>
-#include <action_tools/GoalStatus.h>
-#include <action_tools/EnclosureDeleter.h>
+#include <action_tools/ActionHeader.h>
+#include <action_tools/StatusList.h>
+#include <list>
 
 namespace action_tools {
-  enum ActionServerState {
-    IDLE,
-    RUNNING
-  };
-
-  template <class ActionGoal, class Goal, class ActionResult, class Result>
+  template <class Goal, class Result, class Feedback>
   class ActionServer {
-    public:
-      //we need to create a GoalHandle class for this ActionServer
-      class GoalHandle{
+    private:
+      //class for storing the status of each goal the server is working on
+      class GoalStatus {
         public:
-          GoalHandle(){}
+          GoalStatus(const boost::shared_ptr<const Goal>& goal)
+            : goal_(goal) {
+              //do something with the ActionHeader
+          }
 
-          GoalHandle(const boost::shared_ptr<const ActionGoal>& action_goal, ActionServer<ActionGoal, Goal, ActionResult, Result>* action_server)
-            : action_goal_(action_goal), action_server_(action_server){}
+          boost::shared_ptr<const Goal> goal_;
+          boost::weak_ptr<void> handle_tracker_;
+          ActionHeader status_;
+      };
 
-          boost::shared_ptr<const Goal> getGoal(){
-            //if we have a goal that is non-null
-            if(action_goal_){
-              //create the deleter for our goal subtype
-              EnclosureDeleter<const ActionGoal> d(action_goal_);
-              return boost::shared_ptr<const Goal>(&(action_goal_->goal), d);
+      //class to help with tracking status objects
+      class HandleTrackerDeleter {
+        public:
+          HandleTrackerDeleter(ActionServer<Goal, Result, Feedback>* as, 
+              std::list<GoalStatus>::iterator status_it)
+            : as_(as), status_it_(status_it) {}
+
+          void operator()(void* ptr){
+            if(as_){
+              boost::mutex::scoped_lock(as_->status_lock_);
+              as_->status_list_.erase(status_it_);
             }
-            return boost::shared_ptr<const Goal>();
           }
 
         private:
-          boost::shared_ptr<const ActionGoal> action_goal_;
-          const ActionServer<ActionGoal, Goal, ActionResult, Result>* action_server_;
-          friend class ActionServer<ActionGoal, Goal, ActionResult, Result>;
+          ActionServer<Goal, Result, Feedback>* as_;
+          std::list<GoalStatus>::iterator status_it_;
       };
 
-      ActionServer(ros::NodeHandle n, std::string name, double status_frequency)
-        : node_(n, name), new_goal_(false), preempt_request_(false) {
-          status_pub_ = node_.advertise<action_tools::GoalStatus>("status", 1);
-          result_pub_ = node_.advertise<ActionResult>("result", 1);
+    public:
+      //we need to create a GoalHandle class for this ActionServer
+      class GoalHandle {
+        public:
+          GoalHandle(){}
 
-          goal_sub_ = node_.subscribe<ActionGoal>("goal", 1,
+          GoalHandle(std::list<GoalStatus>::iterator status_it,
+              ActionServer<Goal, Result, Feedback>* as)
+            : status_it_(status_it), goal_(*status_it.goal_),
+              as_(as), handle_tracker_(*status_it.handle_tracker_.lock()){}
+
+          void setActive(){
+            *status_it_.status_.status = *status_it_.status_.ACTIVE;
+            as_->publishStatus();
+          }
+
+          void setRejected(){
+            *status_it_.status_.status = *status_it_.status_.REJECTED;
+            as_->publishStatus();
+          }
+
+          void setAborted(){
+            *status_it_.status_.status = *status_it_.status_.ABORTED;
+            as_->publishStatus();
+          }
+
+          void setPreempted(){
+            *status_it_.status_.status = *status_it_.status_.PREEMPTED;
+            as_->publishStatus();
+          }
+
+          void setSucceeded(){
+            *status_it_.status_.status = *status_it_.status_.SUCCEEDED;
+            as_->publishStatus();
+          }
+
+          boost::shared_ptr<const Goal> getGoal(){
+            return action_goal_;
+          }
+
+        private:
+          std::list<GoalStatus>::iterator status_it_;
+          boost::shared_ptr<const Goal> goal_;
+          const ActionServer<Goal, Result, Feedback>* as_;
+          boost::shared_ptr<void> handle_tracker_;
+          friend class ActionServer<Goal, Result, Feedback>;
+      };
+
+      ActionServer(ros::NodeHandle n, std::string name, 
+          boost::function<void (const GoalHandle&)> goal_cb, 
+          boost::function<void (const GoalHandle&)> preempt_cb, double status_frequency)
+        : node_(n, name), goal_callback_(goal_cb), preempt_callback_(preempt_cb) {
+          status_pub_ = node_.advertise<action_tools::StatusList>("status", 1);
+          result_pub_ = node_.advertise<Result>("result", 1);
+          feedback_pub_ = node.advertise<Feedback>("feedback", 1);
+
+          goal_sub_ = node_.subscribe<Goal>("goal", 1,
               boost::bind(&ActionServer::goalCallback, this, _1));
-
-          preempt_sub_ = node_.subscribe<action_tools::Preempt>("preempt", 1,
-              boost::bind(&ActionServer::preemptCallback, this, _1));
 
           status_timer_ = node_.createTimer(ros::Duration(1.0 / status_frequency),
               boost::bind(&ActionServer::publishStatus, this, _1));
 
-          //initialize our goals to take advantage of the fact that the default constructor
-          //for ros::Time gives a value of 0
-          current_goal_ = boost::shared_ptr<const ActionGoal>(new ActionGoal());
-          next_goal_ = boost::shared_ptr<const ActionGoal>(new ActionGoal());
-
-          state_ = IDLE;
-      }
-
-      bool isNewGoalAvailable(){
-        return new_goal_;
       }
 
       void sendResult(const Result& result){
-        ActionResult r;
-        r.header.stamp = ros::Time::now();
-
-        lock_.lock();
-        r.goal_id = current_goal_->goal_id;
-        lock_.unlock();
-
-        r.result = result;
-        result_pub_.publish(r);
-      }
-
-      GoalHandle acceptNextGoal(){
         boost::mutex::scoped_lock(lock_);
-
-        //check if we need to send a preempted message for the goal that we're currently pursuing
-        if(isActive() && current_goal_->goal_id.id != next_goal_->goal_id.id){
-          status_.status = status_.PREEMPTED;
-          publishStatus();
-        }
-
-        //accept the next goal
-        current_goal_ = next_goal_;
-        new_goal_ = false;
-
-        //generate the goal handle to return
-        GoalHandle ret(current_goal_, this);
-
-        status_.goal_id = current_goal_->goal_id;
-        status_.status = status_.ACTIVE;
-        state_ = RUNNING;
-        publishStatus();
-
-        return ret;
+        result_pub_.publish(result);
       }
 
-      bool isPreempted(){
-        return preempt_request_;
-      }
-
-      bool isActive(){
-        return state_ == RUNNING;
-      }
-
-      void succeeded(const Result& result){
-        boost::mutex::scoped_lock(lock_);
-        sendResult(result);
-        succeeded();
-      }
-
-      void succeeded(){
-        boost::mutex::scoped_lock(lock_);
-        if(state_ == IDLE){
-          ROS_WARN("Trying to succeed on a goal that is already in a terminal state... doing nothing");
-          return;
-        }
-        status_.status = status_.SUCCEEDED;
-        state_ = IDLE;
-        publishStatus();
-      }
-
-      void aborted(const Result& result){
-        boost::mutex::scoped_lock(lock_);
-        sendResult(result);
-        aborted();
-      }
-
-      void aborted(){
-        boost::mutex::scoped_lock(lock_);
-        if(state_ == IDLE){
-          ROS_WARN("Trying to abort on a goal that is already in a terminal state... doing nothing");
-          return;
-        }
-        status_.status = status_.ABORTED;
-        state_ = IDLE;
-        publishStatus();
-      }
-
-      void preempted(const Result& result){
-        boost::mutex::scoped_lock(lock_);
-        sendResult(result);
-        preempted();
-      }
-
-      void preempted(){
-        boost::mutex::scoped_lock(lock_);
-        if(state_ == IDLE){
-          ROS_WARN("Trying to preempt on a goal that is already in a terminal state... doing nothing");
-          return;
-        }
-        status_.status = status_.PREEMPTED;
-        state_ = IDLE;
-        publishStatus();
-      }
-
-      void registerGoalCallback(boost::function<void ()> cb){
-        boost::mutex::scoped_lock(goal_cb_lock_);
+      void registerGoalCallback(boost::function<void (GoalHandle)> cb){
         goal_callback_ = cb;
       }
 
-      void registerPreemptCallback(boost::function<void ()> cb){
-        boost::mutex::scoped_lock(preempt_cb_lock_);
+      void registerPreemptCallback(boost::function<void (GoalHandle)> cb){
         preempt_callback_ = cb;
       }
 
     private:
-      void goalCallback(const boost::shared_ptr<const ActionGoal>& goal){
-        ROS_DEBUG("The action server is in the ROS goal callback");
+      void goalCallback(const boost::shared_ptr<const Goal>& goal){
         boost::mutex::scoped_lock(lock_);
-        //check that the timestamp is past that of the current goal, the next goal, and past that of the last preempt
-        if(goal->header.stamp > current_goal_->header.stamp
-            && goal->header.stamp > next_goal_->header.stamp
-            && goal->header.stamp > last_preempt_.header.stamp){
-          next_goal_ = goal;
-          new_goal_ = true;
+        ROS_DEBUG("The action server is in the ROS goal callback");
 
-          //if next_goal has not been accepted already... its going to get bumped, but we need to let the client know we're preempting
-          if(next_goal_->goal_id.id != current_goal_->goal_id.id){
-            GoalStatus status;
-            status.status = status.PREEMPTED;
-            publishGoalStatus(*next_goal_, status);
-          }
+        //first, we'll check if its a goal callback
+        if(goal->header.status.status == goal->header.status.GOAL_REQUEST){
+          //first, we need to create a GoalStatus associated with this goal and push it onto our list
+          std::list<GoalStatus>::iterator it = status_list_.insert(GoalStatus(goal), status_list_.end());
 
-          //if the user has defined a goal callback, we'll call it now
-          if(goal_callback_)
-            goal_callback_();
+          //we need to create a handle tracker for the incoming goal and update the GoalStatus
+          HandleTrackerDeleter d(this, it);
+          boost::shared_ptr<void> handle_tracker(NULL, d);
+          *it.handle_tracker_ = handle_tracker;
+
+          //now, we need to create a goal handle and call the user's callback
+          goal_callback_(GoalHandle(it, this));
+
+        }
+        else if(goal->header.status.status == goal->header.status.PREEMPT_REQUEST){
+          //we need to handle a preempt for the user
         }
         else{
-          //the goal requested has already been preempted, so we're not going to execute it
-          GoalStatus status;
-          status.status = status.PREEMPTED;
-          publishGoalStatus(*goal, status);
+          //someone sent a goal with an unsupported status... we'll probably reject it by default.. and throw an error
         }
-      }
 
-      void preemptCallback(const boost::shared_ptr<const action_tools::Preempt>& preempt){
-        boost::mutex::scoped_lock(lock_);
-        ROS_DEBUG("In Preempt Callback");
-
-        //check that the timestamp is past that of the current goal and the last preempt
-        if(preempt->header.stamp >= current_goal_->header.stamp
-            && preempt->header.stamp > last_preempt_.header.stamp){
-          ROS_DEBUG("Setting preempt_request bit to TRUE");
-          preempt_request_ = true;
-          last_preempt_ = *preempt;
-
-          //if the preempt also applies to the next goal, then we need to preempt it too
-          //makes sure that the current and next goals are different
-          //also makes sure to set new_goal_ to false if it had been set to true
-          if(preempt->header.stamp >= next_goal_->header.stamp
-              && next_goal_->goal_id.id != current_goal_->goal_id.id){
-            GoalStatus status;
-            status.status = status.PREEMPTED;
-            publishGoalStatus(*next_goal_, status);
-
-            if(new_goal_)
-              new_goal_ = false;
-          }
-
-          //if the user has registered a preempt callback, we'll call it now
-          if(preempt_callback_)
-            preempt_callback_();
-        }
       }
 
       void publishStatus(const ros::TimerEvent& e){
@@ -274,35 +192,23 @@ namespace action_tools {
       }
 
       void publishStatus(){
+        boost::mutex::scoped_lock(lock_);
         status_pub_.publish(status_);
-      }
-
-      void publishGoalStatus(const ActionGoal& goal, GoalStatus& status){
-        //make sure that the status is published with the correct id and stamp 
-        status.header.stamp = ros::Time::now();  
-        status.goal_id = goal.goal_id;
-        status_pub_.publish(status);
       }
 
       ros::NodeHandle node_;
 
-      ros::Subscriber goal_sub_, preempt_sub_;
-      ros::Publisher status_pub_, result_pub_;
-
-      ActionServerState state_;
-      boost::shared_ptr<const ActionGoal> current_goal_;
-      boost::shared_ptr<const ActionGoal> next_goal_;
-      action_tools::GoalStatus status_;
-      action_tools::Preempt last_preempt_;
-
-      bool new_goal_, preempt_request_;
+      ros::Subscriber goal_sub_;
+      ros::Publisher status_pub_, result_pub_, feedback_pub_;
 
       boost::recursive_mutex lock_;
 
       ros::Timer status_timer_;
 
-      boost::function<void ()> goal_callback_;
-      boost::function<void ()> preempt_callback_;
+      std::list<ActionHeader> status_list_;
+
+      boost::function<void (GoalHandle)> goal_callback_;
+      boost::function<void (GoalHandle)> preempt_callback_;
 
 
   };

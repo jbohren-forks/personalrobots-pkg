@@ -40,77 +40,25 @@
 #include <robot_msgs/PoseStamped.h>
 #include <action_tools/MoveBaseGoal.h>
 #include <action_tools/MoveBaseResult.h>
+#include <action_tools/MoveBaseFeedback.h>
 
-typedef action_tools::ActionServer<action_tools::MoveBaseGoal, robot_msgs::PoseStamped,
-        action_tools::MoveBaseResult, robot_msgs::PoseStamped> MoveBaseActionServer;
+typedef action_tools::ActionServer<action_tools::MoveBaseGoal,
+        action_tools::MoveBaseResult, action_tools::MoveBaseFeedback> MoveBaseActionServer;
 
 typedef MoveBaseActionServer::GoalHandle GoalHandle;
 
-void goalCB(){
+void goalCB(GoalHandle goal){
   ROS_INFO("In goal callback");
 }
 
-void preemptCB(){
+void preemptCB(GoalHandle goal){
   ROS_INFO("In preempt callback");
-}
-
-void updateLoop(double freq){
-  ros::NodeHandle n;
-  MoveBaseActionServer as(n, "move_base", 0.5);
-
-  GoalHandle goal_handle;
-
-  ros::Publisher pub = n.advertise<robot_msgs::PoseStamped>("~current_goal", 1);
-
-  as.registerGoalCallback(boost::bind(&goalCB));
-
-  as.registerPreemptCallback(boost::bind(&preemptCB));
-
-  ros::Rate r(freq);
-  while(n.ok()){
-    r.sleep();
-    if(as.isActive()){
-      if(!as.isPreempted()){
-        if(as.isNewGoalAvailable()){
-          ROS_INFO("This action has received a new goal");
-          goal_handle = as.acceptNextGoal();
-        }
-
-        boost::shared_ptr<const robot_msgs::PoseStamped> goal = goal_handle.getGoal();
-
-        if(goal->pose.position.x > 100.0){
-          ROS_INFO("This action aborted");
-          as.aborted();
-          continue;
-        }
-
-        if(goal->pose.position.y > 100.0){
-          ROS_INFO("This action succeeded");
-          as.succeeded();
-          continue;
-        }
-
-        pub.publish(*goal);
-      }
-      else {
-        ROS_INFO("This action has been preempted");
-        as.preempted();
-      }
-    }
-    else if(as.isNewGoalAvailable()){
-      ROS_INFO("This action has received a new goal");
-      goal_handle = as.acceptNextGoal();
-    }
-  }
 }
 
 int main(int argc, char** argv){
   ros::init(argc, argv, "test_action");
 
-  boost::thread* update_thread = new boost::thread(boost::bind(&updateLoop, 10.0));
+  MoveBaseActionServer as(n, "move_base", boost::bind(&goalCB), boost::bind(&preemptCB), 0.5);
 
   ros::spin();
-
-  update_thread->join();
-  delete update_thread;
 }

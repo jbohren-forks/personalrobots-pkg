@@ -1,9 +1,9 @@
-Header header
-GoalID goal_id
 uint8 status
-uint8 IDLE      = 0
-uint8 ACTIVE    = 1
-uint8 PREEMPTED = 2
-uint8 SUCCEEDED = 3
-uint8 ABORTED   = 4
-uint8 REJECTED  = 5
+uint8 GOAL_REQUEST    = 0
+uint8 PREEMPT_REQUEST = 1
+uint8 PENDING         = 2
+uint8 ACTIVE          = 3
+uint8 PREEMPTED       = 4
+uint8 SUCCEEDED       = 5
+uint8 ABORTED         = 6
+uint8 REJECTED        = 7
