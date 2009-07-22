@@ -1,6 +1,5 @@
+ActionHeader action_header
 uint8 status
-uint8 GOAL_REQUEST    = 0
-uint8 PREEMPT_REQUEST = 1
 uint8 PENDING         = 2
 uint8 ACTIVE          = 3
 uint8 PREEMPTED       = 4

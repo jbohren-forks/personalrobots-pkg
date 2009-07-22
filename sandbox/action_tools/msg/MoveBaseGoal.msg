@@ -1,2 +1,1 @@
-ActionHeader action_header
-robot_msgs/PoseStamped goal
+robot_msgs/PoseStamped target_pose

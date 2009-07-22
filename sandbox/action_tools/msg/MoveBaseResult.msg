@@ -1,2 +1,1 @@
-ActionHeader action_header
-robot_msgs/PoseStamped result
+robot_msgs/PoseStamped final_pose
