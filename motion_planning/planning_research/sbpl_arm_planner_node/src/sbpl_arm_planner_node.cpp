@@ -60,7 +60,6 @@ bool SBPLArmPlannerNode::init()
   node_.param ("~forward_search", forward_search_, true);
   node_.param ("~use_dijkstra_heuristic", dijkstra_heuristic_, true);
   node_.param<std::string>("~planner_type", planner_type_, "cartesian"); //"cartesian" or "joint_space"
-  planning_frame_ =  "torso_lift_link";
   node_.param<std::string>("~planning_frame", planning_frame_, std::string("torso_lift_link"));
 
   // robot parameters
@@ -853,6 +852,8 @@ bool SBPLArmPlannerNode::planToPosition(motion_planning_srvs::MotionPlan::Reques
 				else
 					res.path.header.frame_id = planning_frame_;
 			
+				ROS_INFO("path is in %s",res.path.header.frame_id.c_str());
+
 				res.path.set_times_size(res.path.get_states_size());
 				res.path.times[0] = 0;
 				for(i = 1; i < res.path.get_states_size(); i++)
@@ -932,6 +933,7 @@ bool SBPLArmPlannerNode::plan(motion_planning_msgs::KinematicPath &arm_path)
   bool b_ret(false);
   unsigned int i;
   double angles_r[num_joints_], error_m, error_r,yaw,pitch,roll;
+	std::vector<std::vector <double> > path(2, std::vector<double> (num_joints_));
   vector<int> solution_state_ids_v;
   std::vector<double> final_waypoint;
   clock_t start_time = clock();
@@ -962,117 +964,158 @@ bool SBPLArmPlannerNode::plan(motion_planning_msgs::KinematicPath &arm_path)
       sbpl_arm_env_.StateID2Angles(solution_state_ids_v[i], angles_r);
       for (unsigned int p = 0; p < (unsigned int) num_joints_; p++)
       {
-	arm_path.states[i].vals[p] = angles_r[p];
+				arm_path.states[i].vals[p] = angles_r[p];
       }
       ROS_INFO("state %d: %.3f %.3f %.3f %.3f %.3f %.3f %.3f",
 	       i,arm_path.states[i].vals[0],arm_path.states[i].vals[1],arm_path.states[i].vals[2],arm_path.states[i].vals[3],
 	       arm_path.states[i].vals[4],arm_path.states[i].vals[5],arm_path.states[i].vals[6]);
 
       sbpl_arm_env_.ComputeEndEffectorPos(angles_r, xyz_m, rpy_r);
-      ROS_INFO("        xyz: %.3f %.3f %.3f   rpy: %.3f %.3f %.3f",
-		xyz_m[0],xyz_m[1],xyz_m[2],rpy_r[0],rpy_r[1],rpy_r[2]);
+      ROS_INFO("        xyz: %.3f %.3f %.3f   rpy: %.3f %.3f %.3f", xyz_m[0],xyz_m[1],xyz_m[2],rpy_r[0],rpy_r[1],rpy_r[2]);
     }
 
     if(bCartesianPlanner_)
     {
       for(unsigned int j = 0; j < goal_pose_constraint_.size(); ++j)
       {
-	tf::poseMsgToTF(goal_pose_constraint_[j].pose.pose, tf_pose);
-	btMatrix3x3 mat = tf_pose.getBasis();
-	mat.getEulerZYX(yaw,pitch,roll);
-  
-	error_m = sqrt((xyz_m[0]-goal_pose_constraint_[j].pose.pose.position.x)*(xyz_m[0]-goal_pose_constraint_[j].pose.pose.position.x) +
-	    (xyz_m[1]-goal_pose_constraint_[j].pose.pose.position.y)*(xyz_m[1]-goal_pose_constraint_[j].pose.pose.position.y) +
-	    (xyz_m[2]-goal_pose_constraint_[j].pose.pose.position.z)*(xyz_m[2]-goal_pose_constraint_[j].pose.pose.position.z));
-  
-	error_r = sqrt((rpy_r[0] - yaw)*(rpy_r[0] -yaw) + (rpy_r[1] - pitch)*(rpy_r[1] - pitch) + (rpy_r[2] - roll)*(rpy_r[2] - roll));
-  
-	ROS_INFO("error: %.4f m, %.4f rad (%.4f deg)\n\n", error_m, error_r, (error_r*180.0)/PI_CONST);
+				tf::poseMsgToTF(goal_pose_constraint_[j].pose.pose, tf_pose);
+				btMatrix3x3 mat = tf_pose.getBasis();
+				mat.getEulerZYX(yaw,pitch,roll);
+			
+				error_m = sqrt((xyz_m[0]-goal_pose_constraint_[j].pose.pose.position.x)*(xyz_m[0]-goal_pose_constraint_[j].pose.pose.position.x) +
+						(xyz_m[1]-goal_pose_constraint_[j].pose.pose.position.y)*(xyz_m[1]-goal_pose_constraint_[j].pose.pose.position.y) +
+						(xyz_m[2]-goal_pose_constraint_[j].pose.pose.position.z)*(xyz_m[2]-goal_pose_constraint_[j].pose.pose.position.z));
+			
+				error_r = sqrt((rpy_r[0] - yaw)*(rpy_r[0] -yaw) + (rpy_r[1] - pitch)*(rpy_r[1] - pitch) + (rpy_r[2] - roll)*(rpy_r[2] - roll));
+			
+				ROS_INFO("error: %.4f m, %.4f rad (%.4f deg)\n\n", error_m, error_r, (error_r*180.0)/PI_CONST);
       }
     }
 
+		
     if(bCartesianPlanner_)
     {
       std::vector<double> jnt_pos(num_joints_,0);
-
       for(int j=0; j<num_joints_; ++j)
-	jnt_pos[j] = arm_path.states[arm_path.get_states_size()-1].vals[j];
+				jnt_pos[j] = arm_path.states[arm_path.get_states_size()-1].vals[j];
 
-      if(!computeIK(goal_pose_constraint_[0].pose,jnt_pos,final_waypoint))
-	return false;
-
-      for(int j=0; j<num_joints_; ++j)
-	angles_r[j] = final_waypoint[j];
-
-      if(!sbpl_arm_env_.isValidJointConfiguration(angles_r))
+			bool invalid_ik = true;
+			unsigned int ik_attempts = 0;
+      while(invalid_ik && ik_attempts < 5)
       {
-	ROS_INFO("IK solution is invalid.");
-	return false;
+				invalid_ik = !computeIK(goal_pose_constraint_[0].pose,jnt_pos,final_waypoint);
+				
+				if(invalid_ik)
+				  ROS_INFO("IK solution is invalid.trying again...");
+				else
+				{
+					for(int b=0; b < num_joints_; ++b)
+					{
+						path[0][b] = arm_path.states[arm_path.get_states_size()-1].vals[b];
+						path[1][b] = angles_r[b];
+					}
+
+					if(!interpolatePathToGoal(path, 0.1))
+						ROS_INFO("ik solution %i: a joint configuration on the way to the final waypoint is in collision", ik_attempts);
+					else
+						invalid_ik = false;
+				}
+				++ik_attempts;
       }
+
+			if(invalid_ik)
+			{
+				ROS_INFO("IK was unable to come up with a valid joint configuration. The path is approximate.");
+			}
+			else
+			{
+				for(int j=0; j<num_joints_; ++j)
+					angles_r[j] = final_waypoint[j];
+				
+				// append final waypoint to path
+				arm_path.set_states_size(arm_path.get_states_size()+1);
+				arm_path.states[arm_path.get_states_size()-1].set_vals_size(num_joints_);
+				for(int j = 0; j < num_joints_; j++)
+				{
+					arm_path.states[arm_path.get_states_size()-1].vals[j] = final_waypoint[j];
+					angles_r[j] = arm_path.states[arm_path.get_states_size()-1].vals[j];
+				}
+				
+				i = arm_path.get_states_size() - 1;
+				ROS_INFO("IK Solution:");
+				ROS_INFO("state %d: %.3f %.3f %.3f %.3f %.3f %.3f %.3f",
+								 i,arm_path.states[i].vals[0],arm_path.states[i].vals[1],arm_path.states[i].vals[2],arm_path.states[i].vals[3],
+        				 arm_path.states[i].vals[4],arm_path.states[i].vals[5],arm_path.states[i].vals[6]);
+				ROS_INFO("    diff: %.3f %.3f %.3f %.3f %.3f %.3f %.3f",
+									angles::shortest_angular_distance(arm_path.states[i].vals[0], arm_path.states[i-1].vals[0]),
+									angles::shortest_angular_distance(arm_path.states[i].vals[1], arm_path.states[i-1].vals[1]),
+									angles::shortest_angular_distance(arm_path.states[i].vals[2], arm_path.states[i-1].vals[2]),
+									angles::shortest_angular_distance(arm_path.states[i].vals[3], arm_path.states[i-1].vals[3]),
+									angles::shortest_angular_distance(arm_path.states[i].vals[4], arm_path.states[i-1].vals[4]),
+									angles::shortest_angular_distance(arm_path.states[i].vals[5], arm_path.states[i-1].vals[5]),
+									angles::shortest_angular_distance(arm_path.states[i].vals[6], arm_path.states[i-1].vals[6]));
+
+				for(int j = 0; j < num_joints_; j++)
+					angles_r[j] = arm_path.states[i].vals[j];
+
+				sbpl_arm_env_.ComputeEndEffectorPos(angles_r, xyz_m, rpy_r);
+				ROS_INFO("        xyz: %.3f %.3f %.3f   rpy: %.3f %.3f %.3f",
+								 xyz_m[0],xyz_m[1],xyz_m[2],rpy_r[0],rpy_r[1],rpy_r[2]);
+			}
+			for(unsigned int j = 0; j < goal_pose_constraint_.size(); ++j)
+			{
+				tf::poseMsgToTF(goal_pose_constraint_[j].pose.pose, tf_pose);
+				btMatrix3x3 mat = tf_pose.getBasis();
+				mat.getEulerZYX(yaw,pitch,roll);
+				
+				error_m = sqrt((xyz_m[0]-goal_pose_constraint_[j].pose.pose.position.x)*(xyz_m[0]-goal_pose_constraint_[j].pose.pose.position.x) +
+						(xyz_m[1]-goal_pose_constraint_[j].pose.pose.position.y)*(xyz_m[1]-goal_pose_constraint_[j].pose.pose.position.y) +
+						(xyz_m[2]-goal_pose_constraint_[j].pose.pose.position.z)*(xyz_m[2]-goal_pose_constraint_[j].pose.pose.position.z));
+				
+				error_r = sqrt((rpy_r[0] - yaw)*(rpy_r[0] -yaw) + (rpy_r[1] - pitch)*(rpy_r[1] - pitch) + (rpy_r[2] - roll)*(rpy_r[2] - roll));
+				
+				ROS_INFO("error: %.4fm, %.4f rad (%.4f deg)\n\n", error_m, error_r, (error_r*180.0)/PI_CONST);
+			}
     }
-    else
+    else //joint space planner
     {
       if(goal_joint_constraint_.empty())
       {
-	ROS_INFO("goal joint constraint is empty");
+				ROS_INFO("goal joint constraint is empty");
         return false;
       }
       final_waypoint.resize(num_joints_,0);
       for(int j=0; j<num_joints_; ++j)
-	final_waypoint[j] = goal_joint_constraint_[j].value[0];
-    }
+				final_waypoint[j] = goal_joint_constraint_[j].value[0];
+    
+			// append actual goal to path
+			arm_path.set_states_size(arm_path.get_states_size()+1);
+			arm_path.states[arm_path.get_states_size()-1].set_vals_size(num_joints_);
+			for(int j = 0; j < num_joints_; j++)
+			{
+				arm_path.states[arm_path.get_states_size()-1].vals[j] = final_waypoint[j];
+				angles_r[j] = arm_path.states[arm_path.get_states_size()-1].vals[j];
+			}
 
-//     finishPath(arm_path, goal_pose_constraint_[0]);
+			for(int j = 0; j < num_joints_; j++)
+				angles_r[j] = arm_path.states[i].vals[j];
+	
+			sbpl_arm_env_.ComputeEndEffectorPos(angles_r, xyz_m, rpy_r);
+			ROS_INFO("        xyz: %.3f %.3f %.3f   rpy: %.3f %.3f %.3f",
+				xyz_m[0],xyz_m[1],xyz_m[2],rpy_r[0],rpy_r[1],rpy_r[2]);
+			
+			for(int b=0; b < num_joints_; ++b)
+			{
+				path[0][b] = arm_path.states[arm_path.get_states_size()-2].vals[b];
+				path[1][b] = arm_path.states[arm_path.get_states_size()-1].vals[b];
+			}
 
-    arm_path.set_states_size(arm_path.get_states_size()+1);
-    arm_path.states[arm_path.get_states_size()-1].set_vals_size(num_joints_);
-
-    for(int j = 0; j < num_joints_; j++)
-    {
-      arm_path.states[arm_path.get_states_size()-1].vals[j] = final_waypoint[j];
-      angles_r[j] = arm_path.states[arm_path.get_states_size()-1].vals[j];
-    }
-
-    i = arm_path.get_states_size() - 1;
-    ROS_INFO("IK Solution:");
-    ROS_INFO("state %d: %.3f %.3f %.3f %.3f %.3f %.3f %.3f",
-	     i,arm_path.states[i].vals[0],arm_path.states[i].vals[1],arm_path.states[i].vals[2],arm_path.states[i].vals[3],
-              arm_path.states[i].vals[4],arm_path.states[i].vals[5],arm_path.states[i].vals[6]);
-    ROS_INFO("    diff: %.3f %.3f %.3f %.3f %.3f %.3f %.3f",
-	        angles::shortest_angular_distance(arm_path.states[i].vals[0], arm_path.states[i-1].vals[0]),
-		angles::shortest_angular_distance(arm_path.states[i].vals[1], arm_path.states[i-1].vals[1]),
-		angles::shortest_angular_distance(arm_path.states[i].vals[2], arm_path.states[i-1].vals[2]),
-		angles::shortest_angular_distance(arm_path.states[i].vals[3], arm_path.states[i-1].vals[3]),
-		angles::shortest_angular_distance(arm_path.states[i].vals[4], arm_path.states[i-1].vals[4]),
-		angles::shortest_angular_distance(arm_path.states[i].vals[5], arm_path.states[i-1].vals[5]),
-		angles::shortest_angular_distance(arm_path.states[i].vals[6], arm_path.states[i-1].vals[6]));
-
-
-    for(int j = 0; j < num_joints_; j++)
-      angles_r[j] = arm_path.states[i].vals[j];
-
-    sbpl_arm_env_.ComputeEndEffectorPos(angles_r, xyz_m, rpy_r);
-    ROS_INFO("        xyz: %.3f %.3f %.3f   rpy: %.3f %.3f %.3f",
-	     xyz_m[0],xyz_m[1],xyz_m[2],rpy_r[0],rpy_r[1],rpy_r[2]);
-
-
-    if(bCartesianPlanner_)
-    {
-      for(unsigned int j = 0; j < goal_pose_constraint_.size(); ++j)
-      {
-	tf::poseMsgToTF(goal_pose_constraint_[j].pose.pose, tf_pose);
-	btMatrix3x3 mat = tf_pose.getBasis();
-	mat.getEulerZYX(yaw,pitch,roll);
-  
-	error_m = sqrt((xyz_m[0]-goal_pose_constraint_[j].pose.pose.position.x)*(xyz_m[0]-goal_pose_constraint_[j].pose.pose.position.x) +
-		      (xyz_m[1]-goal_pose_constraint_[j].pose.pose.position.y)*(xyz_m[1]-goal_pose_constraint_[j].pose.pose.position.y) +
-		      (xyz_m[2]-goal_pose_constraint_[j].pose.pose.position.z)*(xyz_m[2]-goal_pose_constraint_[j].pose.pose.position.z));
-  
-	error_r = sqrt((rpy_r[0] - yaw)*(rpy_r[0] -yaw) + (rpy_r[1] - pitch)*(rpy_r[1] - pitch) + (rpy_r[2] - roll)*(rpy_r[2] - roll));
-  
-	ROS_INFO("error: %.4fm, %.4f rad (%.4f deg)\n\n", error_m, error_r, (error_r*180.0)/PI_CONST);
-      }
-    }
+			if(!interpolatePathToGoal(path, 0.1))
+			{
+				ROS_INFO("a joint configuration on the way to the final waypoint is in collision");
+				return false;
+			}
+		}
 
     //print out current state
 //     std::vector <double> joint_angles;
@@ -1353,7 +1396,114 @@ bool SBPLArmPlannerNode::initChain(std::string robot_description)
   return true;
 }
 
+bool SBPLArmPlannerNode::interpolatePathToGoal(std::vector<std::vector<double> > &path, double inc)
+{
+	unsigned int i = 0, completed_joints = 0, pind = path.size() - 2;
+	double diff, angles[num_joints_];
+	std::vector<double> waypoint(path[pind].size(), 0);
+	while(path[pind].size() != completed_joints)
+	{
+		ROS_DEBUG("%i: %.3f %.3f %.3f %.3f %.3f %.3f %.3f",pind,path[pind][0],path[pind][1],path[pind][2],path[pind][3],path[pind][4],path[pind][5],path[pind][6]);
+		completed_joints = 0;
+		for(i = 0; i < path[pind].size(); ++i)
+		{
+			if(path[pind][i] == path.back()[i])
+			{
+				waypoint[i] = path[pind][i];
+				++completed_joints;
+			}
+			else
+			{
+				diff = path.back()[i] - path[pind][i];
+				if(diff < 0) // the current goal is higher than the goal angle
+				{
+					if(min(fabs(diff), inc) == inc)
+						waypoint[i]= path[pind][i] - inc;
+					else
+						waypoint[i]= path[pind][i] + diff;
+				}
+				else //the current angle is lower than the goal angle
+				{
+					if(min(fabs(diff), inc) == inc)
+						waypoint[i]= path[pind][i] + inc;
+					else
+						waypoint[i]= path[pind][i] + diff;
+				}
+			}
+		}
+		++pind;
+		
+		for(int j = 0; j < num_joints_; ++j)
+			angles[j] = path[pind][j];
+		
+		if(!sbpl_arm_env_.isValidJointConfiguration(angles))
+		{
+			ROS_INFO("invalid configuration: %.3f %.3f %.3f %.3f %.3f %.3f %.3f",angles[0],angles[1],angles[2],angles[3],angles[4],angles[5],angles[6]);
+			return false;
+		}
 
+		path.insert(path.begin()+pind, waypoint);
+	}
+
+	return true;
+}
+
+/*
+void SBPLArmPlannerNode::printPath(motion_planning_msgs::KinematicPath &arm_path)
+{
+	//output the path to the console with a bunch of debugging text
+	ROS_INFO("Path:");
+
+	double xyz_m[3], rpy_r[3], angles_r[num_joints_];
+	for(i = 0; i < arm_path.get_states_size(); i++)
+	{
+		sbpl_arm_env_.StateID2Angles(solution_state_ids_v[i], angles_r);
+		for (unsigned int p = 0; p < (unsigned int) num_joints_; p++)
+		{
+			arm_path.states[i].vals[p] = angles_r[p];
+		}
+		ROS_INFO("state %d: %.3f %.3f %.3f %.3f %.3f %.3f %.3f",
+						 i,arm_path.states[i].vals[0],arm_path.states[i].vals[1],arm_path.states[i].vals[2],arm_path.states[i].vals[3],
+			 arm_path.states[i].vals[4],arm_path.states[i].vals[5],arm_path.states[i].vals[6]);
+
+		sbpl_arm_env_.ComputeEndEffectorPos(angles_r, xyz_m, rpy_r);
+		ROS_INFO("        xyz: %.3f %.3f %.3f   rpy: %.3f %.3f %.3f", xyz_m[0],xyz_m[1],xyz_m[2],rpy_r[0],rpy_r[1],rpy_r[2]);
+	}
+	if(bCartesianPlanner_)
+	{
+		for(unsigned int j = 0; j < goal_pose_constraint_.size(); ++j)
+		{
+			tf::poseMsgToTF(goal_pose_constraint_[j].pose.pose, tf_pose);
+			btMatrix3x3 mat = tf_pose.getBasis();
+			mat.getEulerZYX(yaw,pitch,roll);
+			
+			error_m = sqrt((xyz_m[0]-goal_pose_constraint_[j].pose.pose.position.x)*(xyz_m[0]-goal_pose_constraint_[j].pose.pose.position.x) +
+					(xyz_m[1]-goal_pose_constraint_[j].pose.pose.position.y)*(xyz_m[1]-goal_pose_constraint_[j].pose.pose.position.y) +
+					(xyz_m[2]-goal_pose_constraint_[j].pose.pose.position.z)*(xyz_m[2]-goal_pose_constraint_[j].pose.pose.position.z));
+			
+			error_r = sqrt((rpy_r[0] - yaw)*(rpy_r[0] -yaw) + (rpy_r[1] - pitch)*(rpy_r[1] - pitch) + (rpy_r[2] - roll)*(rpy_r[2] - roll));
+			
+			ROS_INFO("error: %.4f m, %.4f rad (%.4f deg)\n\n", error_m, error_r, (error_r*180.0)/PI_CONST);
+		}
+		
+		for(unsigned int j = 0; j < goal_pose_constraint_.size(); ++j)
+		{
+			tf::poseMsgToTF(goal_pose_constraint_[j].pose.pose, tf_pose);
+			btMatrix3x3 mat = tf_pose.getBasis();
+			mat.getEulerZYX(yaw,pitch,roll);
+				
+			error_m = sqrt((xyz_m[0]-goal_pose_constraint_[j].pose.pose.position.x)*(xyz_m[0]-goal_pose_constraint_[j].pose.pose.position.x) +
+					(xyz_m[1]-goal_pose_constraint_[j].pose.pose.position.y)*(xyz_m[1]-goal_pose_constraint_[j].pose.pose.position.y) +
+					(xyz_m[2]-goal_pose_constraint_[j].pose.pose.position.z)*(xyz_m[2]-goal_pose_constraint_[j].pose.pose.position.z));
+				
+			error_r = sqrt((rpy_r[0] - yaw)*(rpy_r[0] -yaw) + (rpy_r[1] - pitch)*(rpy_r[1] - pitch) + (rpy_r[2] - roll)*(rpy_r[2] - roll));
+				
+			ROS_INFO("error: %.4fm, %.4f rad (%.4f deg)\n\n", error_m, error_r, (error_r*180.0)/PI_CONST);
+		}
+	}
+}
+*/
+		
 int main(int argc, char *argv[])
 {
   ros::init(argc, argv, "plan_path_node");

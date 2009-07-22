@@ -259,6 +259,7 @@ class SBPLArmPlannerNode
 
       bool initChain(std::string robot_description);
 
+			bool interpolatePathToGoal(std::vector<std::vector<double> > &path, double inc);
   };
 }
 
