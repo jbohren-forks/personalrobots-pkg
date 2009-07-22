@@ -86,8 +86,8 @@ int main(int argc, char **argv)
 
     goalA.goal_constraints.pose_constraint[0].orientation_importance = 0.1;
     goalA.goal_constraints.pose_constraint[0].type =
-	motion_planning_msgs::PoseConstraint::POSITION_XYZ + 
-	motion_planning_msgs::PoseConstraint::ORIENTATION_RPY;
+	motion_planning_msgs::PoseConstraint::POSITION_X + motion_planning_msgs::PoseConstraint::POSITION_Y + motion_planning_msgs::PoseConstraint::POSITION_Z + 
+	motion_planning_msgs::PoseConstraint::ORIENTATION_R + motion_planning_msgs::PoseConstraint::ORIENTATION_P + motion_planning_msgs::PoseConstraint::ORIENTATION_Y;
     
     
     std::vector<std::string> names(7);

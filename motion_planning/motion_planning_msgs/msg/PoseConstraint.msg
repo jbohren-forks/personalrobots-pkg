@@ -5,24 +5,16 @@
 # Constants that represent possible values for type. A position and an 
 # orientation constant can be combined (by adding).
 
-int32 POSITION_XYZ=1 #  only x,y,z of position is considered
-int32 POSITION_XY=2  #  only x,y of position is considered
-int32 POSITION_XZ=3  #  only x,z of position is considered
-int32 POSITION_YZ=4  #  only y,z of position is considered
-int32 POSITION_X=5   #  only x of position is considered
-int32 POSITION_Y=6   #  only y of position is considered
-int32 POSITION_Z=7   #  only z of position is considered
+int32 POSITION_X=1   #  only x of position is considered
+int32 POSITION_Y=2   #  only y of position is considered
+int32 POSITION_Z=4   #  only z of position is considered
 
 # the next values can be combined with one of the above, so they are offset by
 # 256, so we can use bit operations on them
 
-int32 ORIENTATION_RPY=256  # only roll, pitch, yaw of orientation is considered 
-int32 ORIENTATION_RY=512   # only roll, yaw of orientation is considered 
-int32 ORIENTATION_RP=768   # only roll, yaw of orientation is considered 
-int32 ORIENTATION_PY=1024   # only roll, yaw of orientation is considered 
-int32 ORIENTATION_R=1280    # only roll, yaw of orientation is considered 
-int32 ORIENTATION_P=1536    # only roll, yaw of orientation is considered 
-int32 ORIENTATION_Y=1792    # only roll, yaw of orientation is considered 
+int32 ORIENTATION_R=8     # only roll, yaw of orientation is considered 
+int32 ORIENTATION_P=16    # only roll, yaw of orientation is considered 
+int32 ORIENTATION_Y=32    # only roll, yaw of orientation is considered 
 
 int32 type
 

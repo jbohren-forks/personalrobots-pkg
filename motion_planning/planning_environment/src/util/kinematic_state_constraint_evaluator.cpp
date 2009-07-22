@@ -151,156 +151,62 @@ void planning_environment::PoseConstraintEvaluator::evaluate(double *distPos, do
     {	
 	if (distPos)
 	{
-	    if (m_pc.type & 0xFF)
-	    {		    
+	    *distPos = 0.0;
+	    
+	    if (m_pc.type & (motion_planning_msgs::PoseConstraint::POSITION_X | motion_planning_msgs::PoseConstraint::POSITION_Y | motion_planning_msgs::PoseConstraint::POSITION_Z))
+	    {
 		const btVector3 &bodyPos = m_link->globalTrans.getOrigin();
-		double dx, dy, dz;			
-		switch (m_pc.type & 0xFF)
+		if (m_pc.type & motion_planning_msgs::PoseConstraint::POSITION_X)
 		{
-		case motion_planning_msgs::PoseConstraint::POSITION_XYZ:
-		    dx = bodyPos.getX() - m_x;
-		    dy = bodyPos.getY() - m_y;
-		    dz = bodyPos.getZ() - m_z;
-		    *distPos = 0.0;
+		    double dx = bodyPos.getX() - m_x;
 		    if (dx > m_pc.position_tolerance_above.x || -m_pc.position_tolerance_below.x > dx)
 			*distPos += dx * dx;
+		}
+		if (m_pc.type & motion_planning_msgs::PoseConstraint::POSITION_Y)
+		{
+		    double dy = bodyPos.getX() - m_y;
 		    if (dy > m_pc.position_tolerance_above.y || -m_pc.position_tolerance_below.y > dy)
 			*distPos += dy * dy;
+		}
+		if (m_pc.type & motion_planning_msgs::PoseConstraint::POSITION_Z)
+		{
+		    double dz = bodyPos.getZ() - m_z;
 		    if (dz > m_pc.position_tolerance_above.z || -m_pc.position_tolerance_below.z > dz)
 			*distPos += dz * dz;
-		    break;
-		case motion_planning_msgs::PoseConstraint::POSITION_XY:
-		    dx = bodyPos.getX() - m_x;
-		    dy = bodyPos.getY() - m_y;
-		    *distPos = 0.0;
-		    if (dx > m_pc.position_tolerance_above.x || -m_pc.position_tolerance_below.x > dx)
-			*distPos += dx * dx;
-		    if (dy > m_pc.position_tolerance_above.y || -m_pc.position_tolerance_below.y > dy)
-			*distPos += dy * dy;
-		    break;
-		case motion_planning_msgs::PoseConstraint::POSITION_XZ:
-		    dx = bodyPos.getX() - m_x;
-		    dz = bodyPos.getZ() - m_z;
-		    *distPos = 0.0;
-		    if (dx > m_pc.position_tolerance_above.x || -m_pc.position_tolerance_below.x > dx)
-			*distPos += dx * dx;
-		    if (dz > m_pc.position_tolerance_above.z || -m_pc.position_tolerance_below.z > dz)
-			*distPos += dz * dz;
-		    break;
-		case motion_planning_msgs::PoseConstraint::POSITION_YZ:
-		    dy = bodyPos.getY() - m_y;
-		    dz = bodyPos.getZ() - m_z;
-		    *distPos = 0.0;
-		    if (dy > m_pc.position_tolerance_above.y || -m_pc.position_tolerance_below.y > dy)
-			*distPos += dy * dy;
-		    if (dz > m_pc.position_tolerance_above.z || -m_pc.position_tolerance_below.z > dz)
-			*distPos += dz * dz;
-		    break;
-		case motion_planning_msgs::PoseConstraint::POSITION_X:
-		    dx = bodyPos.getX() - m_x;
-		    if (dx > m_pc.position_tolerance_above.x || -m_pc.position_tolerance_below.x > dx)
-			*distPos = dx * dx;
-		    else
-			*distPos = 0.0;
-		    break;
-		case motion_planning_msgs::PoseConstraint::POSITION_Y:
-		    dy = bodyPos.getY() - m_y;
-		    if (dy > m_pc.position_tolerance_above.y || -m_pc.position_tolerance_below.y > dy)
-			*distPos = dy * dy;
-		    else
-			*distPos = 0.0;
-		    break;
-		case motion_planning_msgs::PoseConstraint::POSITION_Z:
-		    dz = bodyPos.getZ() - m_z;
-		    if (dz > m_pc.position_tolerance_above.z || -m_pc.position_tolerance_below.z > dz)
-			*distPos = dz * dz;
-		    else
-			*distPos = 0.0;
-		    break;
-		default:
-		    *distPos = 0.0;
 		}
 	    }
-	    else
-		*distPos = 0.0;
 	}
+	
+	
 	
 	if (distAng)
 	{
-	    if (m_pc.type & (~0xFF))
+	    *distAng = 0.0;
+
+	    if (m_pc.type & (motion_planning_msgs::PoseConstraint::ORIENTATION_R | motion_planning_msgs::PoseConstraint::ORIENTATION_P | motion_planning_msgs::PoseConstraint::ORIENTATION_Y))
 	    {
-		double dx, dy, dz;
 		btScalar yaw, pitch, roll;
-		m_link->globalTrans.getBasis().getEulerYPR(yaw, pitch, roll);			
-		switch (m_pc.type & (~0xFF))
+		m_link->globalTrans.getBasis().getEulerYPR(yaw, pitch, roll);
+
+		if (m_pc.type & motion_planning_msgs::PoseConstraint::ORIENTATION_R)
 		{
-		case motion_planning_msgs::PoseConstraint::ORIENTATION_RPY:
-		    dx = angles::shortest_angular_distance(roll, m_roll);
-		    dy = angles::shortest_angular_distance(pitch, m_pitch);
-		    dz = angles::shortest_angular_distance(yaw, m_yaw);
-		    *distAng = 0.0;
+		    double dx = angles::shortest_angular_distance(roll, m_roll);
 		    if (dx > m_pc.orientation_tolerance_above.x || -m_pc.orientation_tolerance_below.x > dx)
-			*distAng += fabs(dx);
+			*distAng += fabs(dx); 
+		}
+		if (m_pc.type & motion_planning_msgs::PoseConstraint::ORIENTATION_P)
+		{
+		    double dy = angles::shortest_angular_distance(pitch, m_pitch);
 		    if (dy > m_pc.orientation_tolerance_above.y || -m_pc.orientation_tolerance_below.y > dy)
 			*distAng += fabs(dy);
+		}
+		if (m_pc.type & motion_planning_msgs::PoseConstraint::ORIENTATION_Y)
+		{
+		    double dz = angles::shortest_angular_distance(yaw, m_yaw);
 		    if (dz > m_pc.orientation_tolerance_above.z || -m_pc.orientation_tolerance_below.z > dz)
 			*distAng += fabs(dz);
-		    break;
-		case motion_planning_msgs::PoseConstraint::ORIENTATION_RP:
-		    dx = angles::shortest_angular_distance(roll, m_roll);
-		    dy = angles::shortest_angular_distance(pitch, m_pitch);
-		    *distAng = 0.0;
-		    if (dx > m_pc.orientation_tolerance_above.x || -m_pc.orientation_tolerance_below.x > dx)
-			*distAng += fabs(dx);
-		    if (dy > m_pc.orientation_tolerance_above.y || -m_pc.orientation_tolerance_below.y > dy)
-			*distAng += fabs(dy);
-		    break;
-		case motion_planning_msgs::PoseConstraint::ORIENTATION_RY:
-		    dx = angles::shortest_angular_distance(roll, m_roll);
-		    dz = angles::shortest_angular_distance(yaw, m_yaw);
-		    *distAng = 0.0;
-		    if (dx > m_pc.orientation_tolerance_above.x || -m_pc.orientation_tolerance_below.x > dx)
-			*distAng += fabs(dx);
-		    if (dz > m_pc.orientation_tolerance_above.z || -m_pc.orientation_tolerance_below.z > dz)
-			*distAng += fabs(dz);
-		    break;
-		case motion_planning_msgs::PoseConstraint::ORIENTATION_PY:
-		    dy = angles::shortest_angular_distance(pitch, m_pitch);
-		    dz = angles::shortest_angular_distance(yaw, m_yaw);
-		    *distAng = 0.0;
-		    if (dy > m_pc.orientation_tolerance_above.y || -m_pc.orientation_tolerance_below.y > dy)
-			*distAng += fabs(dy);
-		    if (dz > m_pc.orientation_tolerance_above.z || -m_pc.orientation_tolerance_below.z > dz)
-			*distAng += fabs(dz);
-		    break;
-		case motion_planning_msgs::PoseConstraint::ORIENTATION_R:
-		    dx = angles::shortest_angular_distance(roll, m_roll);
-		    if (dx > m_pc.orientation_tolerance_above.x || -m_pc.orientation_tolerance_below.x > dx)
-			*distAng = fabs(dx);
-		    else
-			*distAng = 0.0;
-		    break;
-		case motion_planning_msgs::PoseConstraint::ORIENTATION_P:
-		    dy = angles::shortest_angular_distance(pitch, m_pitch);
-		    if (dy > m_pc.orientation_tolerance_above.y || -m_pc.orientation_tolerance_below.y > dy)
-			*distAng = fabs(dy);
-		    else
-			*distAng = 0.0;
-		    break;
-		case motion_planning_msgs::PoseConstraint::ORIENTATION_Y:
-		    dz = angles::shortest_angular_distance(yaw, m_yaw);
-		    if (dz > m_pc.orientation_tolerance_above.z || -m_pc.orientation_tolerance_below.z > dz)
-			*distAng = fabs(dz);
-		    else
-			*distAng = 0.0;
-		    break;
-		default:
-		    *distAng = 0.0;
-		    break;
-		}    
+		}
 	    }
-	    else
-		*distAng = 0.0;
 	}
     }
     else
@@ -330,127 +236,48 @@ void planning_environment::PoseConstraintEvaluator::print(std::ostream &out) con
     if (m_link)
     {
 	out << "Pose constraint on link '" << m_pc.link_name << "'" << std::endl;
-	
-	if (m_pc.type & 0xFF)
+
+	if (m_pc.type & motion_planning_msgs::PoseConstraint::POSITION_X)
 	{
-	    out << "  Desired position: ";
-	    switch (m_pc.type & 0xFF)
-	    {
-	    case motion_planning_msgs::PoseConstraint::POSITION_XYZ:
-		out << "x = " << m_x << " ";
-		out << "y = " << m_y << " ";
-		out << "z = " << m_z << " ";
-
-		out << " with tolerance: above [" << m_pc.position_tolerance_above.x << ", "
-		    << m_pc.position_tolerance_above.y << ", " << m_pc.position_tolerance_above.z << "], below ["
-		    << m_pc.position_tolerance_below.x << ", " << m_pc.position_tolerance_below.y << ", "
-		    << m_pc.position_tolerance_below.z << "]" << std::endl;
-		
-		break;
-	    case motion_planning_msgs::PoseConstraint::POSITION_XY:
-		out << "x = " << m_x << " ";
-		out << "y = " << m_y << " ";
-
-		out << " with tolerance: above [" << m_pc.position_tolerance_above.x << ", "
-		    << m_pc.position_tolerance_above.y << "], below ["
-		    << m_pc.position_tolerance_below.x << ", " << m_pc.position_tolerance_below.y << "]" << std::endl;
-		break;
-	    case motion_planning_msgs::PoseConstraint::POSITION_XZ:
-		out << "x = " << m_x << " ";
-		out << "z = " << m_z << " ";
-		out << " with tolerance: above [" << m_pc.position_tolerance_above.x << ", "
-		    << m_pc.position_tolerance_above.z << "], below ["
-		    << m_pc.position_tolerance_below.x << ", " << m_pc.position_tolerance_below.z << "]" << std::endl;
-		break;
-	    case motion_planning_msgs::PoseConstraint::POSITION_YZ:
-		out << "y = " << m_y << " ";
-		out << "z = " << m_z << " ";
-		out << " with tolerance: above [" << m_pc.position_tolerance_above.y << ", "
-		    << m_pc.position_tolerance_above.z << "], below ["
-		    << m_pc.position_tolerance_below.y << ", " << m_pc.position_tolerance_below.z << "]" << std::endl;
-		break;
-	    case motion_planning_msgs::PoseConstraint::POSITION_X:
-		out << "x = " << m_x << " ";
-		out << " with tolerance: above [" << m_pc.position_tolerance_above.x << "], below ["
-		    << m_pc.position_tolerance_below.x << "]" << std::endl;
-		break;
-	    case motion_planning_msgs::PoseConstraint::POSITION_Y:
-		out << "y = " << m_y << " ";
-		out << " with tolerance: above [" << m_pc.position_tolerance_above.y << "], below ["
-		    << m_pc.position_tolerance_below.y << "]" << std::endl;
-		break;
-	    case motion_planning_msgs::PoseConstraint::POSITION_Z:
-		out << "z = " << m_z << " ";
-		out << " with tolerance: above [" << m_pc.position_tolerance_above.z << "], below ["
-		    << m_pc.position_tolerance_below.z << "]" << std::endl;
-		break;
-	    default:
-		break;
-	    }
+	    out << "x = " << m_x << " ";
+	    out << " with tolerance: above " << m_pc.position_tolerance_above.x << ", below "
+		<< m_pc.position_tolerance_below.x << std::endl;
+	}	    
+	if (m_pc.type & motion_planning_msgs::PoseConstraint::POSITION_Y)
+	{
+	    out << "y = " << m_y << " ";
+	    out << " with tolerance: above " << m_pc.position_tolerance_above.y << ", below "
+		<< m_pc.position_tolerance_below.y << std::endl;
+	}	
+	if (m_pc.type & motion_planning_msgs::PoseConstraint::POSITION_Z)
+	{
+	    out << "z = " << m_z << " ";
+	    out << " with tolerance: above " << m_pc.position_tolerance_above.z << ", below "
+		<< m_pc.position_tolerance_below.z  << std::endl;
 	}
 	
-	
-	if (m_pc.type & (~0xFF))
+	if (m_pc.type & motion_planning_msgs::PoseConstraint::ORIENTATION_R)
 	{
-	    out << "  Desired orientation: ";
-	    switch (m_pc.type & (~0xFF))
-	    {
-	    case motion_planning_msgs::PoseConstraint::ORIENTATION_RPY:
-		out << "roll = " << m_roll << " ";
-		out << "pitch = " << m_pitch << " ";
-		out << "yaw = " << m_yaw << " ";
-
-		out << " with tolerance: above [" << m_pc.position_tolerance_above.x << ", "
-		    << m_pc.position_tolerance_above.y << ", " << m_pc.position_tolerance_above.z << "], below ["
-		    << m_pc.position_tolerance_below.x << ", " << m_pc.position_tolerance_below.y << ", "
-		    << m_pc.position_tolerance_below.z << "]" << std::endl;
-		break;
-	    case motion_planning_msgs::PoseConstraint::ORIENTATION_RP:
-		out << "roll = " << m_roll << " ";
-		out << "pitch = " << m_pitch << " ";
-		
-		out << " with tolerance: above [" << m_pc.position_tolerance_above.x << ", "
-		    << m_pc.position_tolerance_above.y << "], below ["
-		    << m_pc.position_tolerance_below.x << ", " << m_pc.position_tolerance_below.y << "]" << std::endl;
-		break;
-	    case motion_planning_msgs::PoseConstraint::ORIENTATION_RY:
-		out << "roll = " << m_roll << " ";
-		out << "yaw = " << m_yaw << " ";
-
-		out << " with tolerance: above [" << m_pc.position_tolerance_above.x << ", "
-		    << m_pc.position_tolerance_above.z << "], below ["
-		    << m_pc.position_tolerance_below.x << ", " << m_pc.position_tolerance_below.z << "]" << std::endl;
-		break;
-	    case motion_planning_msgs::PoseConstraint::ORIENTATION_PY:
-		out << "pitch = " << m_pitch << " ";
-		out << "yaw = " << m_yaw << " ";
-
-		out << " with tolerance: above [" << m_pc.position_tolerance_above.y << ", "
-		    << m_pc.position_tolerance_above.z << "], below ["
-		    << m_pc.position_tolerance_below.y << ", " << m_pc.position_tolerance_below.z << "]" << std::endl;
-		break;
-	    case motion_planning_msgs::PoseConstraint::ORIENTATION_R:
-		out << "roll = " << m_roll << " ";
-		out << " with tolerance: above [" << m_pc.position_tolerance_above.x << "], below ["
-		    << m_pc.position_tolerance_below.x << "]" << std::endl;
-		break;
-	    case motion_planning_msgs::PoseConstraint::ORIENTATION_P:
-		out << "pitch = " << m_pitch << " ";
-		out << " with tolerance: above [" << m_pc.position_tolerance_above.y << "], below ["
-		    << m_pc.position_tolerance_below.y << "]" << std::endl;
-		break;
-	    case motion_planning_msgs::PoseConstraint::ORIENTATION_Y:
-		out << "yaw = " << m_yaw << " ";
-		out << " with tolerance: above [" << m_pc.position_tolerance_above.z << "], below ["
-		    << m_pc.position_tolerance_below.z << "]" << std::endl;
-		break;
-	    default:
-		break;
-	    }    
+	    out << "roll = " << m_roll << " ";
+	    out << " with tolerance: above " << m_pc.position_tolerance_above.x << ", below "
+		<< m_pc.position_tolerance_below.x << std::endl;
+	}
+	
+	if (m_pc.type & motion_planning_msgs::PoseConstraint::ORIENTATION_P)
+	{
+	    out << "pitch = " << m_pitch << " ";
+	    out << " with tolerance: above " << m_pc.position_tolerance_above.y << ", below "
+		<< m_pc.position_tolerance_below.y << std::endl;
+	}
+	if (m_pc.type & motion_planning_msgs::PoseConstraint::ORIENTATION_Y)
+	{
+	    out << "yaw = " << m_yaw << " ";
+	    out << " with tolerance: above " << m_pc.position_tolerance_above.z << ", below "
+		<< m_pc.position_tolerance_below.z << std::endl;
 	    
-	    if (m_pc.type & 0xFF)
-		out << "Orientation importance is " << m_pc.orientation_importance;
 	}
+	if (m_pc.type & (motion_planning_msgs::PoseConstraint::ORIENTATION_R | motion_planning_msgs::PoseConstraint::ORIENTATION_P | motion_planning_msgs::PoseConstraint::ORIENTATION_Y))
+	    out << "Orientation importance is " << m_pc.orientation_importance;
     }
     else
 	out << "No constraint" << std::endl;

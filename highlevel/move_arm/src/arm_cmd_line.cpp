@@ -149,7 +149,8 @@ void setupGoal(const std::vector<std::string> &names, pr2_robot_actions::MoveArm
 void setupGoalEEf(const std::string &link, double x, double y, double z, pr2_robot_actions::MoveArmGoal &goal)
 {
     goal.goal_constraints.pose_constraint.resize(1);
-    goal.goal_constraints.pose_constraint[0].type = motion_planning_msgs::PoseConstraint::POSITION_XYZ + motion_planning_msgs::PoseConstraint::ORIENTATION_RPY;
+    goal.goal_constraints.pose_constraint[0].type = motion_planning_msgs::PoseConstraint::POSITION_X + motion_planning_msgs::PoseConstraint::POSITION_Y + motion_planning_msgs::PoseConstraint::POSITION_Z + 
+	+ motion_planning_msgs::PoseConstraint::ORIENTATION_R + motion_planning_msgs::PoseConstraint::ORIENTATION_P + motion_planning_msgs::PoseConstraint::ORIENTATION_Y;
     goal.goal_constraints.pose_constraint[0].link_name = link;
     goal.goal_constraints.pose_constraint[0].pose.header.stamp = ros::Time::now();
     goal.goal_constraints.pose_constraint[0].pose.header.frame_id = "/base_link";

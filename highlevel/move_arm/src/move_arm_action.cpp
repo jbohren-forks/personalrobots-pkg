@@ -544,8 +544,9 @@ namespace move_arm
 	// change pose constraints to joint constraints, if possible and so desired
 	if (req.goal_constraints.joint_constraint.empty() &&         // we have no joint constraints on the goal,
 	    req.goal_constraints.pose_constraint.size() == 1 &&      // we have a single pose constraint on the goal
-	    req.goal_constraints.pose_constraint[0].type == motion_planning_msgs::PoseConstraint::POSITION_XYZ +
-	    motion_planning_msgs::PoseConstraint::ORIENTATION_RPY)  // that is active on all 6 DOFs
+	    req.goal_constraints.pose_constraint[0].type == 
+	    motion_planning_msgs::PoseConstraint::POSITION_X + motion_planning_msgs::PoseConstraint::POSITION_Y + motion_planning_msgs::PoseConstraint::POSITION_Z +
+	    motion_planning_msgs::PoseConstraint::ORIENTATION_R + motion_planning_msgs::PoseConstraint::ORIENTATION_P + motion_planning_msgs::PoseConstraint::ORIENTATION_Y)  // that is active on all 6 DOFs
 	{
 	    planning_models::KinematicModel::Link *link = planningMonitor_->getKinematicModel()->getLink(req.goal_constraints.pose_constraint[0].link_name);
 	    if (link && link->before && link->before->name == arm_joint_names_.back())
