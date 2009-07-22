@@ -122,6 +122,8 @@ bool ForwardKinematicsNode::computeForwardKinematics(ForwardKinematics::Request&
     resp.link_poses.push_back(pose);
   }
 
+  resp.in_collision = monitor_.isStateCollisionFree(state.get()) ? 0 : 1;
+
   return true;
 }
 
