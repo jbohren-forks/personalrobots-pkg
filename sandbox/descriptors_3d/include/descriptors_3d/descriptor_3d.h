@@ -69,33 +69,21 @@ class Descriptor3D
     {
     }
 
-    virtual ~Descriptor3D()
-    {
-    }
+    virtual ~Descriptor3D() = 0;
 
-    static unsigned int computeAndConcatFeatures(const robot_msgs::PointCloud& pt_cloud,
-                                                 cloud_kdtree::KdTree& pt_cloud_kdtree,
-                                                 const cv::Vector<robot_msgs::Point32*>& interest_pts,
-                                                 vector<Descriptor3D*>& descriptors_3d,
-                                                 vector<float*>& concatenated_features,
-                                                 set<unsigned int>& failed_indices);
-
-    static unsigned int computeAndConcatFeatures(const robot_msgs::PointCloud& pt_cloud,
-                                                 cloud_kdtree::KdTree& pt_cloud_kdtree,
-                                                 const cv::Vector<vector<int>*>& interest_region_indices,
-                                                 vector<Descriptor3D*>& descriptors_3d,
-                                                 vector<float*>& concatenated_features,
-                                                 set<unsigned int>& failed_indices);
-
+    // ===================================================================
+    /*! \name Virtual methods */
+    // ===================================================================
+    //@{
     // --------------------------------------------------------------
     /*!
      * \brief Computes feature values for each specified interest point
      *
-     * See the inherited class for the type of features computed
+     * See the inherited class constructor for the type of features computed
      *
      * \param data Point cloud of the data
      * \param data_kdtree K-D tree representation of data
-     * \param interest_pts List of points to compute features for
+     * \param interest_pts List of interest points to compute features for
      * \param results Vector to hold computed vector of features for each interest point.
      *                If the features could not be computed for an interest point i, then
      *                results[i].size() = 0
@@ -110,7 +98,7 @@ class Descriptor3D
     /*!
      * \brief Computes feature values for each interest region of points
      *
-     * See the inherited class for the type of features computed
+     * See the inherited class constructor for the type of features computed
      *
      * \param data Point cloud of the data
      * \param data_kdtree K-D tree representation of data
@@ -124,6 +112,7 @@ class Descriptor3D
                          cloud_kdtree::KdTree& data_kdtree,
                          const cv::Vector<vector<int>*>& interest_region_indices,
                          cv::Vector<cv::Vector<float> >& results) = 0;
+    //@}
 
     // --------------------------------------------------------------
     /*!
@@ -137,16 +126,86 @@ class Descriptor3D
       return result_size_;
     }
 
+    // ===================================================================
+    /*! \name Utility methods */
+    // ===================================================================
+    //@{
+    // --------------------------------------------------------------
+    /*!
+     * \brief Utility function to compute multiple descriptor feature around
+     *        interest points and concatenate the results into a single vector
+     *
+     * \param data See Descriptor3D::compute
+     * \param data_kdtree See Descriptor3D::compute
+     * \param interest_pts See Descriptor3D::compute
+     * \param descriptors_3d List of various feature descriptors to compute on each interest point
+     * \param concatenated_features List containing the concatenated features from the descriptors if
+     *                              they were ALL successful for the interest point.  If one descriptor
+     *                              failed for interest point i, then concatenated_features[i] == NULL
+     * \param failed_indices The set of indices in concatenated_features that are NULL
+     *
+     * \warning It is up to the user to free the concatenated features
+     *
+     * \return The total number of concatenated feature values
+     */
+    // --------------------------------------------------------------
+    static unsigned int computeAndConcatFeatures(const robot_msgs::PointCloud& data,
+                                                 cloud_kdtree::KdTree& data_kdtree,
+                                                 const cv::Vector<robot_msgs::Point32*>& interest_pts,
+                                                 vector<Descriptor3D*>& descriptors_3d,
+                                                 vector<float*>& concatenated_features,
+                                                 set<unsigned int>& failed_indices);
+
+    // --------------------------------------------------------------
+    /*!
+     * \brief Utility function to compute multiple descriptor feature around
+     *        interest regions and concatenate the results into a single vector
+     *
+     * \param data See Descriptor3D::compute
+     * \param data_kdtree See Descriptor3D::compute
+     * \param interest_region_indices See Descriptor3D::compute
+     * \param descriptors_3d List of various feature descriptors to compute on each interest point
+     * \param concatenated_features List containing the concatenated features from the descriptors if
+     *                              they were ALL successful for the interest region.  If one descriptor
+     *                              failed for interest region i, then concatenated_features[i] == NULL
+     * \param failed_indices The set of indices in concatenated_features that are NULL
+     *
+     * \warning It is up to the user to free the concatenated features
+     *
+     * \return The total number of concatenated feature values
+     */
+    // --------------------------------------------------------------
+    static unsigned int computeAndConcatFeatures(const robot_msgs::PointCloud& data,
+                                                 cloud_kdtree::KdTree& data_kdtree,
+                                                 const cv::Vector<vector<int>*>& interest_region_indices,
+                                                 vector<Descriptor3D*>& descriptors_3d,
+                                                 vector<float*>& concatenated_features,
+                                                 set<unsigned int>& failed_indices);
+    //@}
+
   protected:
+    /*! \brief The number of feature values the descriptors computes on success */
     unsigned int result_size_;
 
   private:
-    static unsigned int
-    concatenateFeatures(const vector<cv::Vector<cv::Vector<float> > >& all_descriptor_results,
-                        const unsigned int nbr_samples,
-                        const unsigned int nbr_concatenated_vals,
-                        vector<float*>& concatenated_features,
-                        set<unsigned int>& failed_indices);
+    // --------------------------------------------------------------
+    /*!
+     * \brief Concatenates the resulting feature descriptor values
+     *
+     * \param all_descriptor_results The results for each descriptor
+     * \param nbr_samples The number of interest points/regions
+     * \param nbr_concatenated_vals The total length of all concatenated features from
+     *                              each descriptor
+     * \param concatenated_features The concatenated features.  NULL indicates could not
+     *                              successfully compute descriptor for sample
+     * \param failed_indices The indices in concatenated_features that are NULL
+     */
+    // --------------------------------------------------------------
+    static void concatenateFeatures(const vector<cv::Vector<cv::Vector<float> > >& all_descriptor_results,
+                                    const unsigned int nbr_samples,
+                                    const unsigned int nbr_concatenated_vals,
+                                    vector<float*>& concatenated_features,
+                                    set<unsigned int>& failed_indices);
 };
 
 #endif

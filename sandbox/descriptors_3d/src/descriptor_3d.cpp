@@ -36,14 +36,18 @@
 
 using namespace std;
 
+Descriptor3D::~Descriptor3D()
+{
+}
+
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-unsigned int Descriptor3D::concatenateFeatures(const vector<cv::Vector<cv::Vector<float> > >& all_descriptor_results,
-                                               const unsigned int nbr_samples,
-                                               const unsigned int nbr_concatenated_vals,
-                                               vector<float*>& concatenated_features,
-                                               set<unsigned int>& failed_indices)
+void Descriptor3D::concatenateFeatures(const vector<cv::Vector<cv::Vector<float> > >& all_descriptor_results,
+                                       const unsigned int nbr_samples,
+                                       const unsigned int nbr_concatenated_vals,
+                                       vector<float*>& concatenated_features,
+                                       set<unsigned int>& failed_indices)
 {
   failed_indices.clear();
   concatenated_features.assign(nbr_samples, NULL);
@@ -97,7 +101,6 @@ unsigned int Descriptor3D::concatenateFeatures(const vector<cv::Vector<cv::Vecto
       concatenated_features[i] = curr_concat_feats;
     }
     // Otherwise features not successful, so note them
-
     else
     {
       ROS_WARN("skipping concatenation of sample %u", i);
@@ -105,14 +108,14 @@ unsigned int Descriptor3D::concatenateFeatures(const vector<cv::Vector<cv::Vecto
     }
   }
 
-  return nbr_concatenated_vals;
+  return;
 }
 
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-unsigned int Descriptor3D::computeAndConcatFeatures(const robot_msgs::PointCloud& pt_cloud,
-                                                    cloud_kdtree::KdTree& pt_cloud_kdtree,
+unsigned int Descriptor3D::computeAndConcatFeatures(const robot_msgs::PointCloud& data,
+                                                    cloud_kdtree::KdTree& data_kdtree,
                                                     const cv::Vector<robot_msgs::Point32*>& interest_pts,
                                                     vector<Descriptor3D*>& descriptors_3d,
                                                     vector<float*>& concatenated_features,
@@ -133,20 +136,21 @@ unsigned int Descriptor3D::computeAndConcatFeatures(const robot_msgs::PointCloud
       return 0;
     }
 
-    descriptors_3d[i]->compute(pt_cloud, pt_cloud_kdtree, interest_pts, all_descriptor_results[i]);
+    descriptors_3d[i]->compute(data, data_kdtree, interest_pts, all_descriptor_results[i]);
     nbr_concatenated_vals += (descriptors_3d[i])->getResultSize();
     ROS_INFO("Descriptor will have this many features: %u", descriptors_3d[i]->getResultSize());
   }
 
-  return concatenateFeatures(all_descriptor_results, interest_pts.size(), nbr_concatenated_vals,
+  concatenateFeatures(all_descriptor_results, interest_pts.size(), nbr_concatenated_vals,
       concatenated_features, failed_indices);
+  return nbr_concatenated_vals;
 }
 
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-unsigned int Descriptor3D::computeAndConcatFeatures(const robot_msgs::PointCloud& pt_cloud,
-                                                    cloud_kdtree::KdTree& pt_cloud_kdtree,
+unsigned int Descriptor3D::computeAndConcatFeatures(const robot_msgs::PointCloud& data,
+                                                    cloud_kdtree::KdTree& data_kdtree,
                                                     const cv::Vector<vector<int>*>& interest_region_indices,
                                                     vector<Descriptor3D*>& descriptors_3d,
                                                     vector<float*>& concatenated_features,
@@ -167,12 +171,13 @@ unsigned int Descriptor3D::computeAndConcatFeatures(const robot_msgs::PointCloud
       return 0;
     }
 
-    descriptors_3d[i]->compute(pt_cloud, pt_cloud_kdtree, interest_region_indices, all_descriptor_results[i]);
+    descriptors_3d[i]->compute(data, data_kdtree, interest_region_indices, all_descriptor_results[i]);
     nbr_concatenated_vals += (descriptors_3d[i])->getResultSize();
     ROS_INFO("Descriptor will have this many features: %u", descriptors_3d[i]->getResultSize());
   }
 
-  return concatenateFeatures(all_descriptor_results, interest_region_indices.size(), nbr_concatenated_vals,
+  concatenateFeatures(all_descriptor_results, interest_region_indices.size(), nbr_concatenated_vals,
       concatenated_features, failed_indices);
+  return nbr_concatenated_vals;
 }
 
