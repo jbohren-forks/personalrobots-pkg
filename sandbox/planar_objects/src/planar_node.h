@@ -46,6 +46,10 @@ public:
   ros::Subscriber dinfo_sub_;
   sensor_msgs::DisparityInfoConstPtr dinfo_;
 
+  ros::Time currentTime;
+  ros::Time lastTime;
+  ros::Duration lastDuration;
+
   // MESSAGES - OUTGOING
   ros::Publisher cloud_planes_pub_;
   ros::Publisher cloud_outliers_pub_;

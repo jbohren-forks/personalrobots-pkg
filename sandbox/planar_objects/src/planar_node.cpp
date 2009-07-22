@@ -4,7 +4,7 @@
  *  Created on: Jul 7, 2009
  *      Author: sturm
  */
-
+#include "assert.h"
 #include "planar_node.h"
 #include "find_planes.h"
 #include "vis_utils.h"
@@ -13,10 +13,12 @@
 #include "opencv/cxcore.h"
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
+#include "vis_utils.h"
 
 using namespace ros;
 using namespace std;
 using namespace robot_msgs;
+using namespace vis_utils;
 
 // Constructor
 PlanarNode::PlanarNode() :
@@ -24,7 +26,14 @@ PlanarNode::PlanarNode() :
 {
   cvNamedWindow("disparity", CV_WINDOW_AUTOSIZE);
   cvNamedWindow("plane", CV_WINDOW_AUTOSIZE);
-
+  cvNamedWindow("Canny", CV_WINDOW_AUTOSIZE);
+  cvNamedWindow("Hough", CV_WINDOW_AUTOSIZE);
+  cvNamedWindow("Dist", CV_WINDOW_AUTOSIZE);
+  cvMoveWindow("disparity",1900,0);
+  cvMoveWindow("plane",1900,600);
+  cvMoveWindow("Canny",1200,0);
+  cvMoveWindow("Hough",1200,600);
+  cvMoveWindow("Dist",1900,900);
   nh_.param("~n_planes_max", n_planes_max_, 4);
   nh_.param("~point_plane_distance", point_plane_distance_, 0.015);
 
@@ -37,6 +46,10 @@ PlanarNode::PlanarNode() :
   cloud_planes_pub_ = nh_.advertise<PointCloud> ("~planes", 1);
   cloud_outliers_pub_ = nh_.advertise<PointCloud> ("~outliers", 1);
   visualization_pub_ = nh_.advertise<visualization_msgs::Marker> ("visualization_marker", 1);
+
+  currentTime = Time::now();
+  lastTime = Time::now();
+  lastDuration = Duration::Duration(0);
 }
 
 void PlanarNode::cloudCallback(const robot_msgs::PointCloud::ConstPtr& point_cloud)
@@ -62,11 +75,23 @@ void PlanarNode::dispCallback(const sensor_msgs::Image::ConstPtr& disp_img)
   }
 }
 
+double inner_prod(std::vector<double> vec1,std::vector<double> vec2) {
+  double sum=0;
+  for(size_t i=0;i<3;i++) {
+    sum += vec1[i]*vec2[i];
+  }
+  return(sum);
+}
+
 void PlanarNode::syncCallback()
 {
   ROS_INFO("PlanarNode::syncCallback(), %d points in cloud",cloud_->get_pts_size());
 
-
+  currentTime = Time::now();
+  if(lastTime + lastDuration*1.5 > currentTime) {
+    ROS_INFO("skipping frame..");
+    return;
+  }
 
   vector<PointCloud> plane_cloud;
   vector<vector<double> > plane_coeff;
@@ -74,12 +99,100 @@ void PlanarNode::syncCallback()
   PointCloud outside;
 
   find_planes::findPlanes(*cloud_, n_planes_max_, point_plane_distance_, plane_indices, plane_cloud, plane_coeff,outside);
-  vis_utils::visualizePlanes(*cloud_,plane_indices,plane_cloud,plane_coeff,outside,cloud_planes_pub_,visualization_pub_);
+
+  int n=plane_coeff.size();
+  int backplane = 0; // assume that the largest plane belongs to the background
+  int frontplane = 1;
+  double ip3=inner_prod(plane_coeff[backplane],plane_coeff[backplane]);
+  ROS_INFO("backplane %d, ip %f", backplane, ip3);
+
+  for(int i=0;i<n;i++) {
+    ROS_INFO ("plane %d: %d inliers: [%g, %g, %g, %g]", i, plane_indices[i].size(),
+              plane_coeff[i][0], plane_coeff[i][1], plane_coeff[i][2], plane_coeff[i][3]);
+//    ROS_INFO("i=%d, prod=%f",i,inner_prod(plane_coeff[backplane],plane_coeff[i]));
+  }
+
+  double ip=inner_prod(plane_coeff[backplane],plane_coeff[frontplane]);
+  int i=frontplane+1;
+  ROS_INFO("backplane %d, frontplane %d, ip %f", backplane, frontplane,ip);
+  while(i<n) {
+    double ip2 = inner_prod(plane_coeff[backplane],plane_coeff[i]);
+    if(ip2 > ip && plane_coeff[backplane][3] > plane_coeff[i][3]) {
+      frontplane = i;
+      ip = ip2;
+    }
+    ROS_INFO("backplane %d, frontplane %d, ip %f, i %d, ip2 %f", backplane, frontplane,ip,i,ip2);
+    i++;
+  }
+  ROS_INFO("backplane %d, frontplane %d", backplane, frontplane);
+
+  std::vector<float> plane_color;
+  plane_color.resize(n);
+  for(int i=0;i<n;i++) {
+    plane_color[i] = HSV_to_RGBf(0.7,0,0.3);
+  }
+  plane_color[backplane] = HSV_to_RGBf(0.3,0.3,1);
+  plane_color[frontplane] = HSV_to_RGBf(0.,0.3,1);
+
+  vis_utils::visualizePlanes(*cloud_,plane_indices,plane_cloud,plane_coeff,plane_color,outside,cloud_planes_pub_,visualization_pub_);
 
   IplImage* planeImage = cvCreateImage(cvGetSize(dbridge_.toIpl()), IPL_DEPTH_8U, 1);
-  find_planes::createPlaneImage(*cloud_, plane_indices[1], plane_coeff[1], planeImage);
+  find_planes::createPlaneImage(*cloud_, plane_indices[frontplane], plane_coeff[frontplane], planeImage);
+
+  // Reduce the image by 2
+//  IplImage* out = cvCreateImage( cvSize(planeImage->width/2,planeImage->height/2), planeImage->depth, planeImage->nChannels );
+  IplImage* out = cvCreateImage( cvGetSize(planeImage), planeImage->depth, planeImage->nChannels );
+//  cvPyrDown( planeImage, out );
+  cvSmooth( planeImage, out, CV_GAUSSIAN, 1, 1 );
+
+  IplImage* dst = cvCreateImage( cvGetSize(out), 8, 1 );
+  IplImage* color_dst = cvCreateImage( cvGetSize(out), 8, 3 );
+  CvMemStorage* storage = cvCreateMemStorage(0);
+  CvSeq* lines = 0;
+
+  cvCanny( out, dst, 50, 200, 3 );
+
+  IplImage* dist = cvCreateImage( cvGetSize(out), 8, 1 );
+  uchar *data;
+
+  cvCvtColor( dst, color_dst, CV_GRAY2BGR );
+  lines = cvHoughLines2( dst, storage, CV_HOUGH_PROBABILISTIC, 1, CV_PI/180, 5, 30, 30 );
+  for(int i = 0; i < lines->total; i++ )
+  {
+      CvPoint* line = (CvPoint*)cvGetSeqElem(lines,i);
+      cvLine( color_dst, line[0], line[1], CV_RGB(255,0,0), 3, 8 );
+  }
+  data      = (uchar *)dst->imageData;
+  for(int i=0;i<dst->height;i++) for(int j=0;j<dst->width;j++) for(int k=0;k<dst->nChannels;k++)
+    data[i*dst->widthStep+j*dst->nChannels+k]=255-data[i*dst->widthStep+j*dst->nChannels+k];
+
+  cvDistTransform(dst, dist, CV_DIST_L1,3);
+
+
+
+  char outFileName[50];
+  sprintf (outFileName, "/tmp/plane-%.5d.png", cloud_->header.seq);
+  printf("'%s'\n",outFileName);
+  if(!cvSaveImage(outFileName,planeImage)) printf("Could not save: %s\n",outFileName);
+  sprintf (outFileName, "/tmp/canny-%.5d.png", cloud_->header.seq);
+  if(!cvSaveImage(outFileName,dst)) printf("Could not save: %s\n",outFileName);
+  sprintf (outFileName, "/tmp/hough-%.5d.png", cloud_->header.seq);
+  if(!cvSaveImage(outFileName,color_dst)) printf("Could not save: %s\n",outFileName);
+
   cvShowImage("plane", planeImage);
+  cvShowImage( "Canny", dst );
+  cvShowImage( "Hough", color_dst );
+  cvShowImage( "Dist", dist );
+
+  cvReleaseImage(&dst);
+  cvReleaseImage(&color_dst);
   cvReleaseImage(&planeImage);
+
+
+  lastDuration = Time::now() - currentTime;
+  lastTime = currentTime;
+
+  ROS_INFO("processing took %g s",lastDuration.toSec());
 }
 
 bool PlanarNode::spin()

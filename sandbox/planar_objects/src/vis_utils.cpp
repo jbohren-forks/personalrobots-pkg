@@ -72,6 +72,7 @@ void vis_utils::visualizePlanes(const robot_msgs::PointCloud& cloud,
                                   std::vector<std::vector<int> >& plane_indices,
                                   std::vector<robot_msgs::PointCloud>& plane_cloud,
                                   std::vector<std::vector<double> >& plane_coeff,
+                                  std::vector<float>& plane_color,
                                   robot_msgs::PointCloud& outside,
                                   ros::Publisher& cloud_planes_pub,ros::Publisher& visualization_pub)
 {
@@ -92,7 +93,10 @@ void vis_utils::visualizePlanes(const robot_msgs::PointCloud& cloud,
     }
 
     for(size_t i=0;i<plane_indices.size();i++) {
-      rgb=HSV_to_RGB( i/(float)plane_indices.size(),0.3,1);
+      if(i<plane_color.size())
+        rgb = *(int*)&plane_color[i];
+      else
+        rgb=HSV_to_RGB( i/(float)plane_indices.size(),0.3,1);
       for(size_t j=0;j<plane_indices[i].size();j++) {
         colored_cloud.chan[rgb_chann].vals[plane_indices[i][j]] =
             mix_color(0.7,
@@ -104,7 +108,7 @@ void vis_utils::visualizePlanes(const robot_msgs::PointCloud& cloud,
       Polygon3D polygon;
       cloud_geometry::areas::convexHull2D(cloud, plane_indices[i], plane_coeff[i],
                       polygon);
-      visualizePolygon(cloud, polygon,rgb,i,visualization_pub);
+//      visualizePolygon(cloud, polygon,rgb,i,visualization_pub);
 
 
 
@@ -113,6 +117,7 @@ void vis_utils::visualizePlanes(const robot_msgs::PointCloud& cloud,
 
   cloud_planes_pub.publish(colored_cloud);
 }
+
 
 void vis_utils::visualizePolygon(const robot_msgs::PointCloud& cloud,robot_msgs::Polygon3D &polygon, int rgb, int id, ros::Publisher& visualization_pub ) {
   visualization_msgs::Marker marker;

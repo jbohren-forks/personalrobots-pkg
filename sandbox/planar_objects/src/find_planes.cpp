@@ -36,7 +36,6 @@ bool find_planes::fitSACPlanes(PointCloud *points, vector<int> &indices, vector<
       vector<double> model_coeff;
       sac->computeCoefficients(model_coeff); // Compute the model coefficients
       sac->refineCoefficients(model_coeff); // Refine them using least-squares
-      coeff.push_back(model_coeff);
 
       // Get the list of inliers
       vector<int> model_inliers;
@@ -45,9 +44,10 @@ bool find_planes::fitSACPlanes(PointCloud *points, vector<int> &indices, vector<
 
       // Flip the plane normal towards the viewpoint
       cloud_geometry::angles::flipNormalTowardsViewpoint(model_coeff, points->pts.at(model_inliers[0]), viewpoint_cloud);
+      coeff.push_back(model_coeff);
 
-      ROS_INFO ("Found a planar model supported by %d inliers: [%g, %g, %g, %g]", (int)model_inliers.size (),
-          model_coeff[0], model_coeff[1], model_coeff[2], model_coeff[3]);
+//      ROS_INFO ("Found a planar model supported by %d inliers: [%g, %g, %g, %g]", (int)model_inliers.size (),
+//          model_coeff[0], model_coeff[1], model_coeff[2], model_coeff[3]);
 
       // Remove the current inliers from the global list of points
       nr_points_left = sac->removeInliers();
@@ -169,4 +169,22 @@ void find_planes::createPlaneImage(const robot_msgs::PointCloud& cloud, std::vec
                                    std::vector<double> &plane_coeff, IplImage *planeImage)
 {
 
+  int x_chann=-1;
+  int y_chann=-1;
+  for(size_t i=0;i<cloud.chan.size();i++) {
+    if(cloud.chan[i].name=="x") x_chann=i;
+    if(cloud.chan[i].name=="y") y_chann=i;
+  }
+  if(x_chann<0 || y_chann<0) {
+      ROS_ERROR("point cloud contains no x/y channels!!!");
+      return;
+  }
+
+  for (size_t i = 0; i < inliers.size(); i++)
+  {
+    int x = cloud.chan[x_chann].vals[ inliers[i] ];
+    int y = cloud.chan[y_chann].vals[ inliers[i] ];
+//    ROS_INFO("%d, %d ",x,y);
+    ((uchar *)(planeImage->imageData + y*planeImage->widthStep))[x] = 128;
+  }
 }
