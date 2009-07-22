@@ -166,7 +166,7 @@ void Voxel3d::updateWorld(const robot_msgs::PointCloud &cloud)
         }
       }
     }
-    ROS_INFO("Publishing a markers: %d obstacles, %d inflated",
+    ROS_DEBUG("Publishing a markers: %d obstacles, %d inflated",
               obs_marker.points.size(), inf_marker.points.size());
     pub_viz_.publish(obs_marker);
     pub_viz_.publish(inf_marker);
@@ -203,7 +203,7 @@ void Voxel3d::updateWorld(const robot_msgs::PointCloud &cloud)
         }
       }
     }
-    ROS_INFO("Publishing a marker array with %d elements", msg.markers.size());
+    ROS_DEBUG("Publishing a marker array with %d elements", msg.markers.size());
     pub_viz_.publish(msg);
 #endif
   }
@@ -212,7 +212,7 @@ void Voxel3d::updateWorld(const robot_msgs::PointCloud &cloud)
 void Voxel3d::updateWorld(const mapping_msgs::CollisionMap &collision_map)
 {
   int x, y, z;
-  ROS_INFO("Warning: Updating the voxel3d from a collisionMap only supports 1cm cells for now");
+  ROS_DEBUG("Warning: Updating the voxel3d from a collisionMap only supports 1cm cells for now");
 
   for (size_t i = 0; i < collision_map.boxes.size(); ++i)
   {
@@ -285,7 +285,7 @@ void Voxel3d::updateWorld(const mapping_msgs::CollisionMap &collision_map)
 	}
       }
     }
-    ROS_INFO("Publishing a markers: %d obstacles, %d inflated",
+    ROS_DEBUG("Publishing a markers: %d obstacles, %d inflated",
 	     obs_marker.points.size(), inf_marker.points.size());
     pub_viz_.publish(obs_marker);
     pub_viz_.publish(inf_marker);
@@ -322,7 +322,7 @@ void Voxel3d::updateWorld(const mapping_msgs::CollisionMap &collision_map)
 	}
       }
     }
-    ROS_INFO("Publishing a marker array with %d elements", msg.markers.size());
+    ROS_DEBUG("Publishing a marker array with %d elements", msg.markers.size());
     pub_viz_.publish(msg);
 #endif
   }
@@ -467,7 +467,7 @@ void Voxel3d::updateVisualizations()
 	}
       }
     }
-    ROS_INFO("Publishing a markers: %d obstacles, %d inflated",
+    ROS_DEBUG("Publishing a markers: %d obstacles, %d inflated",
 	     obs_marker.points.size(), inf_marker.points.size());
     pub_viz_.publish(obs_marker);
     pub_viz_.publish(inf_marker);
@@ -524,14 +524,14 @@ void Voxel3d::toDistanceFieldMsg(voxel3d::DistanceField& msg)
 
   // count the number of non-free voxels in a first pass, to avoid memory reallocations
   unsigned int num_voxels = 0;
-  ROS_INFO("Number of total voxels is %d", data_.size());
+  ROS_DEBUG("Number of total voxels is %d", data_.size());
   for (unsigned int i=0; i<data_.size(); ++i)
   {
     if (data_[i] < Voxel3d::CLEAR)
       ++num_voxels;
   }
 
-  ROS_INFO("Number of non-free voxels is %d", num_voxels);
+  ROS_DEBUG("Number of non-free voxels is %d", num_voxels);
 
   // allocate the memory and assign the voxels:
   msg.voxels.clear();
