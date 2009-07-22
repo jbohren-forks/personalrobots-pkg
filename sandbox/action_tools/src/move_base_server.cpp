@@ -58,7 +58,9 @@ void preemptCB(GoalHandle goal){
 int main(int argc, char** argv){
   ros::init(argc, argv, "test_action");
 
-  MoveBaseActionServer as(n, "move_base", boost::bind(&goalCB), boost::bind(&preemptCB), 0.5);
+  ros::NodeHandle n;
+
+  MoveBaseActionServer as(n, "move_base", boost::bind(&goalCB, _1), boost::bind(&preemptCB, _1), 0.5);
 
   ros::spin();
 }

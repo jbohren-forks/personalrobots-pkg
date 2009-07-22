@@ -43,19 +43,20 @@
 #include <action_tools/Preempt.h>
 #include <action_tools/ActionHeader.h>
 #include <action_tools/StatusList.h>
-#include <list>
+
+#include <list> 
 
 namespace action_tools {
   template <class Goal, class Result, class Feedback>
   class ActionServer {
-    private:
+    public:
       //class for storing the status of each goal the server is working on
-      class GoalStatus {
+      class StatusTracker {
         public:
-          GoalStatus(const boost::shared_ptr<const Goal>& goal)
+          StatusTracker(const boost::shared_ptr<const Goal>& goal)
             : goal_(goal) {
               //do something with the ActionHeader
-          }
+            }
 
           boost::shared_ptr<const Goal> goal_;
           boost::weak_ptr<void> handle_tracker_;
@@ -66,19 +67,21 @@ namespace action_tools {
       class HandleTrackerDeleter {
         public:
           HandleTrackerDeleter(ActionServer<Goal, Result, Feedback>* as, 
-              std::list<GoalStatus>::iterator status_it)
+              typename std::list<StatusTracker>::iterator status_it)
             : as_(as), status_it_(status_it) {}
 
           void operator()(void* ptr){
             if(as_){
-              boost::mutex::scoped_lock(as_->status_lock_);
+              //make sure to lock while we erase status for this goal from the list
+              as_->lock_.lock();
               as_->status_list_.erase(status_it_);
+              as_->lock_.unlock();
             }
           }
 
         private:
           ActionServer<Goal, Result, Feedback>* as_;
-          std::list<GoalStatus>::iterator status_it_;
+          typename std::list<StatusTracker>::iterator status_it_;
       };
 
     public:
@@ -87,42 +90,42 @@ namespace action_tools {
         public:
           GoalHandle(){}
 
-          GoalHandle(std::list<GoalStatus>::iterator status_it,
+          GoalHandle(typename std::list<StatusTracker>::iterator status_it,
               ActionServer<Goal, Result, Feedback>* as)
-            : status_it_(status_it), goal_(*status_it.goal_),
-              as_(as), handle_tracker_(*status_it.handle_tracker_.lock()){}
+            : status_it_(status_it), goal_((*status_it).goal_),
+              as_(as), handle_tracker_((*status_it).handle_tracker_.lock()){}
 
           void setActive(){
-            *status_it_.status_.status = *status_it_.status_.ACTIVE;
+            (*status_it_).status_.status = (*status_it_).status_.ACTIVE;
             as_->publishStatus();
           }
 
           void setRejected(){
-            *status_it_.status_.status = *status_it_.status_.REJECTED;
+            (*status_it_).status_.status = (*status_it_).status_.REJECTED;
             as_->publishStatus();
           }
 
           void setAborted(){
-            *status_it_.status_.status = *status_it_.status_.ABORTED;
+            (*status_it_).status_.status = (*status_it_).status_.ABORTED;
             as_->publishStatus();
           }
 
           void setPreempted(){
-            *status_it_.status_.status = *status_it_.status_.PREEMPTED;
+            (*status_it_).status_.status = (*status_it_).status_.PREEMPTED;
             as_->publishStatus();
           }
 
           void setSucceeded(){
-            *status_it_.status_.status = *status_it_.status_.SUCCEEDED;
+            (*status_it_).status_.status = (*status_it_).status_.SUCCEEDED;
             as_->publishStatus();
           }
 
           boost::shared_ptr<const Goal> getGoal(){
-            return action_goal_;
+            return goal_;
           }
 
         private:
-          std::list<GoalStatus>::iterator status_it_;
+          typename std::list<StatusTracker>::iterator status_it_;
           boost::shared_ptr<const Goal> goal_;
           const ActionServer<Goal, Result, Feedback>* as_;
           boost::shared_ptr<void> handle_tracker_;
@@ -135,7 +138,7 @@ namespace action_tools {
         : node_(n, name), goal_callback_(goal_cb), preempt_callback_(preempt_cb) {
           status_pub_ = node_.advertise<action_tools::StatusList>("status", 1);
           result_pub_ = node_.advertise<Result>("result", 1);
-          feedback_pub_ = node.advertise<Feedback>("feedback", 1);
+          feedback_pub_ = node_.advertise<Feedback>("feedback", 1);
 
           goal_sub_ = node_.subscribe<Goal>("goal", 1,
               boost::bind(&ActionServer::goalCallback, this, _1));
@@ -164,20 +167,20 @@ namespace action_tools {
         ROS_DEBUG("The action server is in the ROS goal callback");
 
         //first, we'll check if its a goal callback
-        if(goal->header.status.status == goal->header.status.GOAL_REQUEST){
-          //first, we need to create a GoalStatus associated with this goal and push it onto our list
-          std::list<GoalStatus>::iterator it = status_list_.insert(GoalStatus(goal), status_list_.end());
+        if(goal->action_header.status.status == goal->action_header.status.GOAL_REQUEST){
+          //first, we need to create a StatusTracker associated with this goal and push it onto our list
+          typename std::list<StatusTracker>::iterator it = status_list_.insert(status_list_.end(), StatusTracker(goal));
 
-          //we need to create a handle tracker for the incoming goal and update the GoalStatus
+          //we need to create a handle tracker for the incoming goal and update the StatusTracker
           HandleTrackerDeleter d(this, it);
-          boost::shared_ptr<void> handle_tracker(NULL, d);
-          *it.handle_tracker_ = handle_tracker;
+          boost::shared_ptr<void> handle_tracker((void *)NULL, d);
+          (*it).handle_tracker_ = handle_tracker;
 
           //now, we need to create a goal handle and call the user's callback
           goal_callback_(GoalHandle(it, this));
 
         }
-        else if(goal->header.status.status == goal->header.status.PREEMPT_REQUEST){
+        else if(goal->action_header.status.status == goal->action_header.status.PREEMPT_REQUEST){
           //we need to handle a preempt for the user
         }
         else{
@@ -193,7 +196,7 @@ namespace action_tools {
 
       void publishStatus(){
         boost::mutex::scoped_lock(lock_);
-        status_pub_.publish(status_);
+        //status_pub_.publish(status_);
       }
 
       ros::NodeHandle node_;
@@ -205,7 +208,7 @@ namespace action_tools {
 
       ros::Timer status_timer_;
 
-      std::list<ActionHeader> status_list_;
+      std::list<StatusTracker> status_list_;
 
       boost::function<void (GoalHandle)> goal_callback_;
       boost::function<void (GoalHandle)> preempt_callback_;
