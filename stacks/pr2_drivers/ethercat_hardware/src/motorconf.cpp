@@ -106,13 +106,15 @@ void init(char *interface)
 
     if (sh->get_product_code() == WG05::PRODUCT_CODE)
     {
-      WG05 *dev = new WG05(sh, startAddress);
+      WG05 *dev = new WG05();
+      dev->configure(startAddress, sh);
       devices.push_back(dev);
     }
     else if (sh->get_product_code() == WG06::PRODUCT_CODE)
     {
-      WG06 *dev = new WG06(sh, startAddress);
+      WG06 *dev = new WG06();
       dev->use_ros_ = false;
+      dev->configure(startAddress, sh);
       devices.push_back(dev);
     }
     else

@@ -47,18 +47,18 @@
 #include <diagnostic_msgs/DiagnosticMessage.h>
 
 #include <loki/Factory.h>
-#include <loki/Sequence.h>
 
 using namespace std;
 
 class EthercatDevice
 {
 public:
-  EthercatDevice(EtherCAT_SlaveHandler *sh, bool has_actuator = false, int command_size = 0, int status_size = 0) :
-    sh_(sh), has_actuator_(has_actuator), command_size_(command_size), status_size_(status_size) {}
+  EthercatDevice(bool has_actuator = false, int command_size = 0, int status_size = 0) :
+    has_actuator_(has_actuator), command_size_(command_size), status_size_(status_size) {}
 
   virtual ~EthercatDevice() {}
 
+  virtual EthercatDevice *configure(int &startAddress, EtherCAT_SlaveHandler *sh) = 0;
   virtual int initialize(Actuator *, bool allow_unprogrammed=0, bool motor_model=0) = 0;
   virtual void initXml(TiXmlElement *) {}
 
@@ -71,20 +71,20 @@ public:
 
   virtual void diagnostics(diagnostic_msgs::DiagnosticStatus &d, unsigned char *) = 0;
 
-  EtherCAT_SlaveHandler *sh_;
   bool has_actuator_;
   unsigned int command_size_;
   unsigned int status_size_;
+  EtherCAT_SlaveHandler *sh_;
 };
 
 
 typedef Loki::SingletonHolder
 <
-  Loki::Factory< EthercatDevice, EC_UDINT, Loki::Seq<EtherCAT_SlaveHandler *, int&> >,
+  Loki::Factory< EthercatDevice, EC_UDINT >,
   Loki::CreateUsingNew,
   Loki::LongevityLifetime::DieAsSmallObjectChild
 > DeviceFactory;
 
-template< class T> T* deviceCreator(EtherCAT_SlaveHandler *sh, int &addr) {return new T(sh, addr);}
+template< class T> T* deviceCreator() {return new T;}
 
 #endif /* ETHERCAT_DEVICE_H */
