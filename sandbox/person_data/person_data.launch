@@ -1,0 +1,7 @@
+<launch>
+
+<include file="$(find person_data)/data_collector_record.launch" />
+<include file="$(find person_data)/truly_passive.launch" />
+<include file="$(find pr2_alpha)/teleop_joystick.launch" />
+
+</launch>

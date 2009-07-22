@@ -1,0 +1,22 @@
+<launch>
+  <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
+
+
+  <node pkg="rosrecord" type="rosrecord" machine="four" args="-f /bags/person_data/wide_stereo_ /wide_stereo/raw_stereo_muxed"/>
+  <node pkg="rosrecord" type="rosrecord" machine="four" args="-f /bags/person_data/narrow_stereo_ /narrow_stereo/raw_stereo_muxed"/>
+  
+<node pkg="rosrecord" type="rosrecord" machine="two" args="-f /bags/person_data/tf_ /tf_message_muxed"/>
+
+
+  <node pkg="rosrecord" type="rosrecord" machine="two" args="-f /bags/person_data/tf_ /tf_message_muxed"/>
+
+  <node pkg="rosrecord" type="rosrecord" machine="two" args="-f /bags/person_data/mech_state /mechanism_state_muxed"/>
+
+  <node pkg="rosrecord" type="rosrecord" machine="two" args="-f /bags/person_data/laser_ /base_scan_muxed /tilt_scan_muxed /laser_tilt_controller/laser_scanner_signal_muxed "/>
+
+  <node pkg="rosrecord" type="rosrecord" machine="two" args="-f /bags/person_data/state_ /odom_muxed "/>
+
+  <node pkg="rosrecord" type="rosrecord" machine="two" args="-f /bags/person_data/actionstate /wait_k_messages_action/feedback_muxed  /move_head2/wait_k_messages_action/feedback_muxed /move_head/wait_k_messages_action/feedback_muxed /head_controller/set_command_array_muxed "/>
+
+
+</launch>
