@@ -180,16 +180,9 @@ public:
 	ROS_INFO("Thread %d: %f collision tests per second (with self collision checking)", tid, (double)K/(ros::WallTime::now() - tm).toSec());
 	delete em;
     }
-    
-    void testThreads(void)
-    {
-	if (!cm_->loadedModels())
-	    return;
-	
-	collision_space::EnvironmentModel *em = cm_->getODECollisionModel().get();
-	em->setSelfCollision(true);
-	em->updateRobotModel();
 
+    void collisionSetupThread(collision_space::EnvironmentModel *em)
+    {
 	const int n = 10000;
 	double *data = new double[n * 4];
 	
@@ -213,7 +206,19 @@ public:
 	ROS_INFO("Added %d points", n);
 	
 	delete[] data;
-
+    }
+    
+    void testThreads(void)
+    {
+	if (!cm_->loadedModels())
+	    return;
+	
+	collision_space::EnvironmentModel *em = cm_->getODECollisionModel().get();
+	em->setSelfCollision(true);
+	em->updateRobotModel();
+	
+	boost::thread t(boost::bind(&CollisionTestSpeed::collisionSetupThread, this, em));
+	t.join();
 	
 	int nt = 2;
 	std::vector<boost::thread*> th(nt);

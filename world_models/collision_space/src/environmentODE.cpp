@@ -35,11 +35,51 @@
 /** \author Ioan Sucan */
 
 #include "collision_space/environmentODE.h"
+#include <boost/thread.hpp>
 #include <cassert>
 #include <cstdio>
 #include <cmath>
 #include <algorithm>
 #include <map>
+
+static int          ODEInitCount = 0;
+static boost::mutex ODEInitCountLock;
+
+static std::map<boost::thread::id, int> ODEThreadMap;
+static boost::mutex                     ODEThreadMapLock;
+
+collision_space::EnvironmentModelODE::EnvironmentModelODE(void) : EnvironmentModel()
+{
+    ODEInitCountLock.lock();
+    if (ODEInitCount == 0)
+	dInitODE2(0);
+    ODEInitCount++;
+    ODEInitCountLock.unlock();
+    
+    checkThreadInit();
+}
+
+collision_space::EnvironmentModelODE::~EnvironmentModelODE(void)
+{
+    freeMemory();
+    ODEInitCountLock.lock();
+    ODEInitCount--;
+    if (ODEInitCount == 0)
+	dCloseODE();
+    ODEInitCountLock.unlock();
+}
+
+void collision_space::EnvironmentModelODE::checkThreadInit(void) const
+{
+    boost::thread::id id = boost::this_thread::get_id();
+    ODEThreadMapLock.lock();
+    if (ODEThreadMap.find(id) == ODEThreadMap.end())
+    {
+	ODEThreadMap[id] = 1;
+	dAllocateODEDataForThread(dAllocateMaskAll);
+    }
+    ODEThreadMapLock.unlock();
+}
 
 void collision_space::EnvironmentModelODE::freeMemory(void)
 { 
@@ -440,6 +480,7 @@ bool collision_space::EnvironmentModelODE::getCollisionContacts(std::vector<Cont
     cdata.contacts = &contacts;
     cdata.max_contacts = max_count;
     contacts.clear();
+    checkThreadInit();
     testCollision(&cdata);
     return cdata.collides;
 }
@@ -448,6 +489,7 @@ bool collision_space::EnvironmentModelODE::isCollision(void)
 {
     CollisionData cdata;
     cdata.selfCollisionTest = &m_selfCollisionTest;
+    checkThreadInit();
     testCollision(&cdata);
     return cdata.collides;
 }
@@ -456,6 +498,7 @@ bool collision_space::EnvironmentModelODE::isSelfCollision(void)
 {
     CollisionData cdata;
     cdata.selfCollisionTest = &m_selfCollisionTest;
+    checkThreadInit();
     testSelfCollision(&cdata);
     return cdata.collides;
 }

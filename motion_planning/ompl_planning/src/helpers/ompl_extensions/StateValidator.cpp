@@ -134,15 +134,20 @@ bool ompl_planning::StateValidityPredicate::check(const ompl::base::State *s, co
 
 void ompl_planning::StateValidityPredicate::clearClones(void)
 {
-    boost::thread::id id = boost::this_thread::get_id();
-    Clone keep = clones_[id];
+    std::map<boost::thread::id, Clone>::iterator keep = clones_.end();
     for (std::map<boost::thread::id, Clone>::iterator it = clones_.begin() ; it != clones_.end() ; ++it)
     {
-	if (it->first == id)
+	if (it->second.em == model_->collisionSpace)
+	{
+	    keep = it;
 	    continue;
+	}
 	delete it->second.em;  // .km is owned & deleted by .em
 	delete it->second.kce;
     }
+    assert(keep != clones_.end());
+    boost::thread::id id = keep->first;
+    Clone              c = keep->second;
     clones_.clear();
-    clones_[id] = keep;
+    clones_[id] = c;
 }

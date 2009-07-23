@@ -52,17 +52,8 @@ namespace collision_space
 	
     public:
 		
-        EnvironmentModelODE(void) : EnvironmentModel()
-	{
-	    dInitODE2(0);
-	    dAllocateODEDataForThread(dAllocateMaskAll);
-	}
-	
-	virtual ~EnvironmentModelODE(void)
-	{
-	    freeMemory();
-	    dCloseODE();
-	}
+        EnvironmentModelODE(void);
+	virtual ~EnvironmentModelODE(void);
 
 	/** \brief Get the list of contacts (collisions) */
 	virtual bool getCollisionContacts(std::vector<Contact> &contacts, unsigned int max_count = 1);
@@ -105,7 +96,7 @@ namespace collision_space
 	/** \brief Enable/Disable collision checking for specific links. Return the previous value of the state (1 or 0) if succesful; -1 otherwise */
 	virtual int setCollisionCheck(const std::string &link, bool state);
 
-	/** \brief Clone the environment. If this clone is to be used for collision checking in another thread, the call to clone() MUST be made from that thread.  */
+	/** \brief Clone the environment */
 	virtual EnvironmentModel* clone(void) const;
 
     protected:
@@ -325,6 +316,9 @@ namespace collision_space
 	void    createODERobotModel(void);	
 	dGeomID createODEGeom(dSpaceID space, ODEStorage &storage, const shapes::Shape *shape, double scale, double padding);
 	void    updateGeom(dGeomID geom, const btTransform &pose) const;	
+
+	/** \brief Check if thread-specific routines have been called */
+	void    checkThreadInit(void) const;	
 	void    freeMemory(void);	
 	
 	ModelInfo                                   m_modelGeom;

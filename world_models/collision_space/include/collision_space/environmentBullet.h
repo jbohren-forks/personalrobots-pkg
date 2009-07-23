@@ -106,7 +106,7 @@ namespace collision_space
 	/** \brief Enable/Disable collision checking for specific links. Return the previous value of the state (1 or 0) if succesful; -1 otherwise */
 	virtual int setCollisionCheck(const std::string &link, bool state);
 
-	/** \brief Clone the environment. If this clone is to be used for collision checking in another thread, the call to clone() MUST be made from that thread.  */
+	/** \brief Clone the environment */
 	virtual EnvironmentModel* clone(void) const;
 	
     protected:
