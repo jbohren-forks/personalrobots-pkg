@@ -37,9 +37,11 @@
 #ifndef MPGLUE_SETUP_HPP
 #define MPGLUE_SETUP_HPP
 
+#include <mpglue/footprint.h>
 #include <boost/shared_ptr.hpp>
 #include <string>
 #include <vector>
+#include <stdexcept>
 
 namespace mpglue {
   
@@ -157,6 +159,58 @@ namespace mpglue {
     double robot_nominal_forward_speed;
     double robot_nominal_rotation_speed;
   };
+  
+  
+  class CostmapPlanner;
+  class CostmapAccessor;
+  class IndexTransform;
+  class SBPLEnvironment;
+  
+  
+  CostmapPlanner *
+  createNavFnPlanner(requestspec const & request,
+		     boost::shared_ptr<CostmapAccessor const> costmap,
+		     boost::shared_ptr<IndexTransform const> indexTransform,
+		     /** set to null if you do not want progress output */
+		     std::ostream * verbose_os)
+  throw(std::runtime_error);
+  
+  
+  CostmapPlanner *
+  createEstarPlanner(requestspec const & request,
+		     boost::shared_ptr<CostmapAccessor const> costmap,
+		     boost::shared_ptr<IndexTransform const> indexTransform,
+		     /** set to null if you do not want progress output */
+		     std::ostream * verbose_os)
+  throw(std::runtime_error);
+  
+  
+  SBPLEnvironment *
+  createSBPLEnvironment(requestspec const & request,
+			boost::shared_ptr<CostmapAccessor const> costmap,
+			boost::shared_ptr<IndexTransform const> indexTransform,
+			footprint_t const & footprint,
+			/** a bit of a hack to allow door planners to
+			    say they want to search forwards (others
+			    usually dont). */
+			bool & default_fwd_search,
+			/** only for door planner... should be refactored into something cleaner */
+			doorspec * optional_door,
+			/** set to null if you do not want progress output */
+			std::ostream * verbose_os)
+  throw(std::runtime_error);
+  
+  
+  CostmapPlanner *
+  createCostmapPlanner(requestspec const & request,
+		       boost::shared_ptr<CostmapAccessor const> costmap,
+		       boost::shared_ptr<IndexTransform const> indexTransform,
+		       footprint_t const & footprint,
+		       /** only for door planner... should be refactored into something cleaner */
+		       doorspec * optional_door,
+		       /** set to null if you do not want progress output */
+		       std::ostream * verbose_os)
+  throw(std::runtime_error);
   
 }
 
