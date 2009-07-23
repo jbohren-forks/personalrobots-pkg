@@ -1,5 +1,5 @@
-#ifndef __SUBMODULAR_ENERGY_MIN_H__
-#define __SUBMODULAR_ENERGY_MIN_H__
+#ifndef __BGL_SUBMODULAR_ENERGY_MIN_H__
+#define __BGL_SUBMODULAR_ENERGY_MIN_H__
 /*********************************************************************
  * Software License Agreement (BSD License)
  *
@@ -53,7 +53,7 @@ using namespace std;
 /** 
  * \brief Minimizes a submodular energy function with binary variables
  *
- * Minimization is done using the Graph Boost Library
+ * Minimization is done using the Graph Boost Library (BGL)
  *
  * This implementation is based on a class originally written by Vladimir Kolmogorov,
  * implementing the graph structure as described in:

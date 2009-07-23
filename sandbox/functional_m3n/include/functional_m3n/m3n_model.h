@@ -48,7 +48,7 @@
 
 #include <ros/ros.h>
 
-#include <functional_m3n/submodular_energy_min.h>
+#include <functional_m3n/inference_tools/bgl_submodular_energy_min.h>
 #include <functional_m3n/random_field.h>
 #include <functional_m3n/m3n_params.h>
 #include <functional_m3n/regressors/regressor_includes.h>

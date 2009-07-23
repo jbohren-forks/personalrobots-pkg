@@ -32,7 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include <functional_m3n/submodular_energy_min.h>
+#include <functional_m3n/inference_tools/bgl_submodular_energy_min.h>
 
 using namespace boost;
 using namespace std;
