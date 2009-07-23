@@ -28,7 +28,7 @@ groups:
       l_wrist_flex_link
       l_wrist_roll_link
     planner_configs:
-      RRTkConfig2 SBLkConfig2 KPIECEkConfig1 KPIECEkConfig2l LBKPIECEkConfig2l
+      RRTkConfig2 pRRTkConfig1 SBLkConfig2 KPIECEkConfig1 KPIECEkConfig2l LBKPIECEkConfig2l
 
   right_arm:
     links:
@@ -42,7 +42,7 @@ groups:
       r_wrist_flex_link
       r_wrist_roll_link
     planner_configs:
-      RRTkConfig2 SBLkConfig2 KPIECEkConfig1 KPIECEkConfig2l LBKPIECEkConfig2l
+      RRTkConfig2 pRRTkConfig1 SBLkConfig2 KPIECEkConfig1 KPIECEkConfig2l LBKPIECEkConfig2l
       
   arms:
     links:
@@ -73,7 +73,7 @@ groups:
 
 planner_configs:
   
-  pRRTConfig1:
+  pRRTkConfig1:
     type: kinematic::pRRT
     range: 0.75
     thread_count: 2

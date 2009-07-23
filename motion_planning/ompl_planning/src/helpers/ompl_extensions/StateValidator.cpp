@@ -36,6 +36,15 @@
 
 #include "ompl_planning/extensions/StateValidator.h"
 
+void ompl_planning::StateValidityPredicate::setupModel(ModelBase *model)
+{
+    model_ = model;
+    boost::thread::id id = boost::this_thread::get_id();
+    clones_[id].em  = model_->collisionSpace;
+    clones_[id].km  = model_->kmodel;
+    clones_[id].kce = &kce_;
+}
+
 bool ompl_planning::StateValidityPredicate::operator()(const ompl::base::State *s) const
 {
     // for dynamic state spaces, we may get outside bounds
@@ -44,31 +53,23 @@ bool ompl_planning::StateValidityPredicate::operator()(const ompl::base::State *
 	if (!dsi_->satisfiesBounds(s))
 	    return false;
     }
+
+    boost::thread::id id = boost::this_thread::get_id();
     
     lock_.lock();
-    int p = position_++;
-    
-    // if this is a new thread, we create an additional clone
-    if (p == (int)clones_.size())
+    if (clones_.find(id) == clones_.end())
     {
-	ROS_DEBUG("Cloning collision environment (index %d)", p);
-	clones_.resize(p + 1);
-	clones_[p].em = clones_[0].em->clone();
-	clones_[p].km = clones_[p].em->getRobotModel().get();
-	clones_[p].kce = new planning_environment::KinematicConstraintEvaluatorSet();
-	useConstraints(clones_[p].kce, clones_[p].km);
+	ROS_DEBUG("Cloning collision environment");
+	Clone &add = clones_[id];
+	add.em = model_->collisionSpace->clone();
+	add.km = add.em->getRobotModel().get();
+	add.kce = new planning_environment::KinematicConstraintEvaluatorSet();
+	useConstraints(add.kce, add.km);
     }
-    
+    const Clone c = clones_[id];
     lock_.unlock();
     
-    const Clone &c = clones_[p];
-    bool res = check(s, c.em, c.km, c.kce);
-    
-    lock_.lock();
-    --position_;
-    lock_.unlock();
-    
-    return res;
+    return check(s, c.em, c.km, c.kce);
 }
 
 void ompl_planning::StateValidityPredicate::setConstraints(const motion_planning_msgs::KinematicConstraints &kc)
@@ -108,7 +109,6 @@ void ompl_planning::StateValidityPredicate::clear(void)
 {
     clearConstraints();
     clearClones();
-    position_ = 0;
 }
 
 void ompl_planning::StateValidityPredicate::printSettings(std::ostream &out) const
@@ -132,21 +132,17 @@ bool ompl_planning::StateValidityPredicate::check(const ompl::base::State *s, co
     return valid;
 }
 
-void ompl_planning::StateValidityPredicate::setupModel(void)
-{
-    clones_.resize(1);
-    clones_[0].km = model_->kmodel;
-    clones_[0].em = model_->collisionSpace;
-    clones_[0].kce = &kce_;
-    position_ = 0;
-}
-
 void ompl_planning::StateValidityPredicate::clearClones(void)
 {
-    for (unsigned int i = 1 ; i < clones_.size() ; ++i)
+    boost::thread::id id = boost::this_thread::get_id();
+    Clone keep = clones_[id];
+    for (std::map<boost::thread::id, Clone>::iterator it = clones_.begin() ; it != clones_.end() ; ++it)
     {
-	delete clones_[i].em; // .km is owned & deleted by .em
-	delete clones_[i].kce;		
+	if (it->first == id)
+	    continue;
+	delete it->second.em;  // .km is owned & deleted by .em
+	delete it->second.kce;
     }
-    clones_.resize(1);
+    clones_.clear();
+    clones_[id] = keep;
 }
