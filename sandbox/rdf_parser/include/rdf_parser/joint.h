@@ -34,122 +34,90 @@
 
 /* Author: Wim Meeussen */
 
-#ifndef RDF_PARSER_LINK_H
-#define RDF_PARSER_LINK_H
+#ifndef RDF_PARSER_JOINT_H
+#define RDF_PARSER_JOINT_H
 
 #include <string>
 #include <vector>
 #include <tinyxml/tinyxml.h>
 
-#include <rdf_parser/joint.h>
+#include <rdf_parser/pose.h>
 
 using namespace std;
 
 namespace rdf_parser{
 
-class Robot
+class Joint
 {
 public:
-  Robot();
-  ~Robot();
+  Joint(
+    const std::string &name,
+    TiXmlElement* xml_ = NULL,
+    type = UNKNOWN,
+    axis[0] = axis[1] = axis[2] = 0,
+    anchor[0] = anchor[1] = anchor[2] = 0
+    );
 
-  Link* getLink(std::string name);
-  Joint* getJoint(std::string name);
-  Link* getRootLink();
-
-  /// do we need this?
-  std::vector<Link*> getAllLinks();
-  std::vector<Joint*> getAllJoint();
-
-  /// \brief fails if not a tree
-  bool initXml(TiXmlElement* xml);
-
-private:
-  std::vector<Link*> links_;
-  std::vector<Joint*> joints_;
-  std::vector<Map*> maps_;
-
-  /// \brief internal construction functions
-  //bool addLink(...);
-  //bool addJoint(...);
-};
-
-class Link
-{
-public:
-
-  bool initXml(TiXmlElement* xml);
-
-
-  /// returns the name of the link
-  const std::string& getName() const;
-
-  /// returns the parent link. The root link does not have a parent
-  Link* getParent();
-
-  /// returns children of the link
-  std::vector<Link*> getChildren();
-
-  /// returns joint attaching link to parent
-  Joint* getParentJoint();
-
-  std::vector<Joint*> joint_;
-
-  class Inertial
-  {
-  public:
-    virtual ~Inertial(void) {};
-    bool initXml(TiXmlElement* xml);
-  private:
-    std::vector<TiXmlElement*> maps_;
-    Pose origin_;
-    double mass;
-    double ixx,ixy,ixz,iyy,iyz,izz;
-  };
-
-  class Visual
-  {
-  public:
-    virtual ~Visual(void) {};
-    bool initXml(TiXmlElement* xml);
-  private:
-    std::vector<TiXmlElement*> maps_;
-    Pose origin_;
-    class Geometry
-    {
-    public:
-       virtual ~Geometry() {};
-       bool initXml(TiXmlElement* xml);
-    } geometry_;
-  };
-
-  class Collision
-  {
-  public:
-    virtual ~Collision(void) {};
-    bool initXml(TiXmlElement* xml);
-  private:
-    std::vector<TiXmlElement*> maps_;
-    Pose origin_;
-    class Geometry
-    {
-    public:
-       virtual ~Geometry() {};
-       bool initXml(TiXmlElement* xml);
-    } geometry_;
-  };
-
-
-private:
-  void addChild(Link* child);
-
+  TiXmlElement* xml_;
   std::string name_;
+
+  enum
+  {
+    UNKNOWN, REVOLUTE, PRISMATIC, FLOATING, PLANAR, FIXED
+  } type;
+
+  /// \brief     TYPE        AXIS
+  /// ------------------------------------------------------
+  ///            REVOLUTE    rotation axis
+  ///            PRISMATIC   translation axis
+  ///            FLOATING    N/A
+  ///            PLANAR      plane normal axis
+  ///            FIXED       N/A
+  Vector3 axis_;
+
+  Link* parent_link_;
+  Pose  parent_pose_;
+
+  Link* child_link_;
+  Pose  child_pose_;
+
+  class JointProperties
+  {
+    JointProperties(
+      damping = 0,
+      friction = 0
+      );
+    double damping;
+    double friction;
+    virtual ~JointProperties(void) {};
+  } joint_properties;
+
+  class JointLimit
+  {
+  public:
+    JointLimit(
+      min = 0,
+      max = 0
+      effort = 0,
+      velocity = 0,
+      );
+    double min;
+    double max;
+    double effort;
+    double velocity;
+
+    virtual ~JointLimit(void) {};
+
+  } joint_limit;
+
+  /// \brief A list of maps
   std::vector<TiXmlElement*> maps_;
 
+
+  
+private:
+
 };
-
-
-
 
 }
 
