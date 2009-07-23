@@ -8,10 +8,11 @@ GraphServer::GraphServer(const ros::NodeHandle& node_handle)
   db_.reset(new Database("database"));
 
   query_service_ = nh_.advertiseService("/graph_server/query", &GraphServer::queryDatabase, this);
+  register_service_ = nh_.advertiseService("/graph_server/register_data_topic",
+                                           &GraphServer::registerDataTopic, this);
 }
 
-bool GraphServer::queryDatabase(lifelong_mapping::Query::Request &req,
-                                lifelong_mapping::Query::Response &rsp)
+bool GraphServer::queryDatabase(Query::Request &req, Query::Response &rsp)
 {
   rsp.matches.reserve(req.topics.size());
   BOOST_FOREACH(const TopicInfo& topic_info, req.topics) {
@@ -33,6 +34,28 @@ bool GraphServer::queryDatabase(lifelong_mapping::Query::Request &req,
   }
   
   return true;
+}
+
+bool GraphServer::registerDataTopic(RegisterDataTopic::Request &req,
+                                    RegisterDataTopic::Response &rsp)
+{
+  ROS_INFO("Received request to register topic %s", req.topic.c_str());
+  
+  // See if we're already subscribed to the topic
+  BOOST_FOREACH(const ros::Subscriber& sub, data_subs_)
+    if (sub.getTopic() == req.topic)
+      return true;
+
+  ROS_INFO("Adding subscriber for %s", req.topic.c_str());
+  data_subs_.push_back( nh_.subscribe<DatabaseItem>(req.topic, 1,
+                                                    boost::bind(&GraphServer::dataCallback,
+                                                                this, _1, req.topic)) );
+  return true;
+}
+
+void GraphServer::dataCallback(const DatabaseItemConstPtr& msg, const std::string& topic)
+{
+  ROS_INFO("Got data message on topic %s", topic.c_str());
 }
 
 } //namespace lifelong_mapping
