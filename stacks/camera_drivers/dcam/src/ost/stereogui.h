@@ -65,6 +65,7 @@ extern void do_video_cb(Fl_Light_Button*, void*);
 extern void video_dev_cb(Fl_Choice*, void*);
 extern void do_color_cb(Fl_Light_Button*, void*);
 extern void do_stoc_cb(Fl_Light_Button*, void*);
+extern void mode_cb(Fl_Counter*, void*);
 #include <FL/Fl_Slider.H>
 extern void do_exposure_cb(Fl_Slider*, void*);
 extern void do_gain_cb(Fl_Slider*, void*);
