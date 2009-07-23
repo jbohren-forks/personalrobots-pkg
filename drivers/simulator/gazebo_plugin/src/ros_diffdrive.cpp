@@ -34,8 +34,6 @@
 
 #include <boost/bind.hpp>
 
-gazebo::PositionIface *posIface = NULL;
-
 class DiffDrive {
 public:
   gazebo::PositionIface *posIface;
@@ -44,25 +42,25 @@ public:
   ros::Publisher   pub_;
   
   void cmdVelCallBack(const robot_msgs::PoseDot::ConstPtr& cmd_msg) {
-        std::cout << " pos " << posIface
+        std::cout << " pos " << this->posIface
                   <<    " x " << cmd_msg->vel.vx
                   <<    " y " << cmd_msg->vel.vy
                   <<    " z " << cmd_msg->ang_vel.vz
                   << std::endl;
         
-    if (posIface) {
-      posIface->Lock(1);
-      posIface->data->cmdVelocity.pos.x = cmd_msg->vel.vx;
-      posIface->data->cmdVelocity.pos.y = cmd_msg->vel.vy;
-      posIface->data->cmdVelocity.yaw = cmd_msg->ang_vel.vz;
-      posIface->Unlock();
+    if (this->posIface) {
+      this->posIface->Lock(1);
+      this->posIface->data->cmdVelocity.pos.x = cmd_msg->vel.vx;
+      this->posIface->data->cmdVelocity.pos.y = cmd_msg->vel.vy;
+      this->posIface->data->cmdVelocity.yaw = cmd_msg->ang_vel.vz;
+      this->posIface->Unlock();
     }
   }
 
   DiffDrive() {
     gazebo::Client *client = new gazebo::Client();
     gazebo::SimulationIface *simIface = new gazebo::SimulationIface();
-    posIface = new gazebo::PositionIface();
+    this->posIface = new gazebo::PositionIface();
   
     int serverId = 0;
     
@@ -84,32 +82,37 @@ public:
     
     /// Open the Position interface
     try {
-      posIface->Open(client, "robot_description::position_iface_0");
+      this->posIface->Open(client, "robot_description::position_iface_0");
     } catch (std::string e) {
       std::cout << "Gazebo error: Unable to connect to the position interface\n" << e << "\n";
       return;
     }
     
     // Enable the motor
-    posIface->Lock(1);
-    posIface->data->cmdEnableMotors = 1;
-    posIface->Unlock();
+    this->posIface->Lock(1);
+    this->posIface->data->cmdEnableMotors = 1;
+    this->posIface->Unlock();
 
     this->rnh_ = new ros::NodeHandle();
-    this->sub_ = rnh_->subscribe<robot_msgs::PoseDot>("/cmd_vel", 100, boost::bind(&DiffDrive::cmdVelCallBack,this,_1));
+    //this->sub_ = rnh_->subscribe<robot_msgs::PoseDot>("/cmd_vel", 100, boost::bind(&DiffDrive::cmdVelCallBack,this,_1));
+    this->sub_ = rnh_->subscribe<robot_msgs::PoseDot>("/cmd_vel", 100, &DiffDrive::cmdVelCallBack,this);
     this->pub_ = rnh_->advertise<deprecated_msgs::RobotBase2DOdom>("/odom", 1);
    
+    // spawn 2 threads by default, ///@todo: make this a parameter
+    ros::MultiThreadedSpinner s(2);
+    boost::thread spinner_thread( boost::bind( &ros::spin, s ) );
+
     deprecated_msgs::RobotBase2DOdom odom;
     tf::TransformBroadcaster tfb;
 
     ros::Duration d; d.fromSec(0.01);
     
     while(rnh_->ok()) { 
-      if (posIface) {
-        posIface->Lock(1);
+      if (this->posIface) {
+        this->posIface->Lock(1);
         
-        btQuaternion qt; qt.setEulerZYX(posIface->data->pose.yaw, posIface->data->pose.pitch, posIface->data->pose.roll);
-        btVector3 vt(posIface->data->pose.pos.x, posIface->data->pose.pos.y, posIface->data->pose.pos.z);
+        btQuaternion qt; qt.setEulerZYX(this->posIface->data->pose.yaw, this->posIface->data->pose.pitch, this->posIface->data->pose.roll);
+        btVector3 vt(this->posIface->data->pose.pos.x, this->posIface->data->pose.pos.y, this->posIface->data->pose.pos.z);
 
         tf::Transform latest_tf(qt, vt);
 
@@ -122,12 +125,12 @@ public:
         tfb.sendTransform(tmp_tf_stamped);
         
 
-        odom.pos.x = posIface->data->pose.pos.x;
-        odom.pos.y = posIface->data->pose.pos.y;
-        odom.pos.th = posIface->data->pose.yaw;
-        odom.vel.x = posIface->data->velocity.pos.x;
-        odom.vel.y = posIface->data->velocity.pos.y;
-        odom.vel.th = posIface->data->velocity.yaw;
+        odom.pos.x = this->posIface->data->pose.pos.x;
+        odom.pos.y = this->posIface->data->pose.pos.y;
+        odom.pos.th = this->posIface->data->pose.yaw;
+        odom.vel.x = this->posIface->data->velocity.pos.x;
+        odom.vel.y = this->posIface->data->velocity.pos.y;
+        odom.vel.th = this->posIface->data->velocity.yaw;
         odom.stall = 0;
         
         odom.header.frame_id = "odom"; 
@@ -136,7 +139,7 @@ public:
         
         this->pub_.publish(odom); 
 
-        posIface->Unlock();
+        this->posIface->Unlock();
       }
       d.sleep();
     }
@@ -151,10 +154,6 @@ public:
 
 int main(int argc, char** argv) {
   ros::init(argc,argv,"ros_diffdrive");
-
-  // spawn 2 threads by default, ///@todo: make this a parameter
-  ros::MultiThreadedSpinner s(1);
-  boost::thread spinner_thread( boost::bind( &ros::spin, s ) );
 
   DiffDrive d;
   return 0;
