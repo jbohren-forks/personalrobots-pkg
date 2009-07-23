@@ -409,14 +409,53 @@ void detect_outlets_one_way(IplImage* test_image, const outlet_template_t& outle
 	float x_scale_ranges[] = { 0.7, 1.1 };
 	float y_scale_ranges[] = { 0.7, 1.1 };
 	float* ranges[] ={ x_ranges, y_ranges, angle1_ranges, x_scale_ranges, y_scale_ranges, angle2_ranges};
+
 	CvSparseMat* hist = buildHoughHist(hole_candidates, descriptors->GetTrainFeatures(),hist_size,ranges);
-	//CvMatND* hist = buildHoughHistSparse(hole_candidates, descriptors->GetTrainFeatures(),hist_size,ranges);
 	float** values = new float*[1];// = getMaxHistValues(hist,hist_size);
 	int count = 1;
-	getMaxHistValues(hist,hist_size,ranges,values,count);
-	//getMaxSparseHistValues(hist,hist_size,ranges,values,count);
+	int votes = 0;
+	votes = getMaxHistValues(hist,hist_size,ranges,values,count);
+#if defined(_VERBOSE)
+		printf("Votes: %d\n",votes);
+#endif
 	cvReleaseSparseMat(&hist);
-	//releaseHistMat(&hist,hist_size);
+
+//// Second GHT
+//	x_size = test_image->width/11;
+//	y_size = test_image->height/11;
+//	int hist_size2[] = {x_size, y_size, angle1_size, x_scale_size, y_scale_size, angle2_size};
+//	hist = buildHoughHist(hole_candidates, descriptors->GetTrainFeatures(),hist_size2,ranges);
+//	float** values2 = new float*[1];// = getMaxHistValues(hist,hist_size);
+//	int count2 = 1;
+//	int votes2 = 0;
+//	votes2 = getMaxHistValues(hist,hist_size2,ranges,values2,count2);
+//#if defined(_VERBOSE)
+//		printf("Votes2: %d\n",votes2);
+//#endif
+//	cvReleaseSparseMat(&hist);
+//
+//	if (votes2 > votes)
+//	{
+//		for (int i=0;i<count;i++)
+//			delete[] values[i];
+//		delete[] values;
+//		values = new float*[count2];
+//		for (int i=0;i<count2;i++)
+//		{
+//			values[i] = new float[6];
+//			for (int j=0;j<6;j++)
+//			{
+//				values[i][j] = values2[i][j];
+//			}
+//		}
+//		count = count2;
+//		votes = votes2;
+//	}
+//	for (int i=0;i<count2;i++)
+//		delete[] values2[i];
+//	delete[] values2;
+//
+//// End
     
 	vector<feature_t> hole_features;
 	vector<feature_t> hole_features_corrected;

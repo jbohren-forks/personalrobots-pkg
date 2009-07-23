@@ -97,6 +97,8 @@ CvSparseMat* buildHoughHist(vector<feature_t>& input, const vector<feature_t>& t
 	hist = cvCreateOutletSparseMat(6,hist_size,CV_32FC1);
 	int* idx = new int[6];
 
+	float blur_coeff = 0.17f;
+
 	for (int n = 0; n < (int)input.size();n++)
 	{
 		for (int feature_id = 0; feature_id < (int)train_features.size(); feature_id++)
@@ -126,8 +128,7 @@ CvSparseMat* buildHoughHist(vector<feature_t>& input, const vector<feature_t>& t
 								idx[3] = (ranges[3][1] != ranges[3][0]) ?(int)((x_scale - ranges[3][0])/(ranges[3][1]-ranges[3][0]) * hist_size[3]) : 0;
 								idx[4] = (ranges[4][1] != ranges[4][0]) ?(int)((y_scale - ranges[4][0])/(ranges[4][1]-ranges[4][0]) * hist_size[4]) : 0;
 								idx[5] = (ranges[5][1] != ranges[5][0]) ?(int)((angle2 - ranges[5][0])/(ranges[5][1]-ranges[5][0]) * hist_size[5]) : 0;
-//if (center->x > 150 && center->x<200 && center->y>200 && center->y<240)
-//								int k=0;
+
 								bool isOK = true;
 								for (int i=0;i<2; i++)
 								{
@@ -145,6 +146,44 @@ CvSparseMat* buildHoughHist(vector<feature_t>& input, const vector<feature_t>& t
 								
 								if (isOK)
 								{
+
+									float value = cvGetRealND(hist,idx);
+									cvSetRealND(hist,idx,++value);
+
+									// Fast blur
+									int idx2[6];
+									for (int i=0;i<6;i++)
+										idx2[i]=idx[i];
+
+									int move_x = 0;
+									int move_y = 0;
+
+
+									if (((idx0 - idx[0]) < blur_coeff)&&(idx[0] > 0))
+										move_x=-1;
+									else
+										if (((-idx0 + idx[0]+1) < blur_coeff)&&(idx[0] <(hist_size[0]-1)))
+											move_x=1;
+									if (((idx1 - idx[1]) < blur_coeff)&&(idx[1] > 0))
+										move_y=-1;
+									else
+										if (((-idx1 + idx[1]+1) < blur_coeff)&&(idx[1] < (hist_size[1]-1)))
+											move_y=1;
+
+									idx2[0] = idx[0]+move_x;
+									idx2[1] = idx[1]+move_y;
+
+									if ((move_x != 0) || (move_y !=0))
+									{
+										float value2 = cvGetRealND(hist,idx2);
+										//if (value2 > value)
+											cvSetRealND(hist,idx2,++value2);
+										//else 
+										//	cvSetRealND(hist,idx,++value);
+									}
+
+									//End
+
 									//Bins Blur (x & y)
 									//int idx2[6];
 									//for (int i=0;i<6;i++)
@@ -162,8 +201,7 @@ CvSparseMat* buildHoughHist(vector<feature_t>& input, const vector<feature_t>& t
 									//	}
 									//End
 
-									float value = cvGetRealND(hist,idx);
-									cvSetRealND(hist,idx,++value);
+
 								}
 
 
@@ -406,7 +444,7 @@ void getMaxHistValues(const CvSparseMat* hist, int* hist_size, float** ranges, f
 
 }
 //---------
-void getMaxHistValues(const CvSparseMat* hist, int* hist_size, float** ranges, float** &maxs, int& count)
+int getMaxHistValues(const CvSparseMat* hist, int* hist_size, float** ranges, float** &maxs, int& count)
 {
 	//IplImage* img = cvCreateImage(cvSize(640,480),8,3); 
 	count = 0;
@@ -452,7 +490,7 @@ void getMaxHistValues(const CvSparseMat* hist, int* hist_size, float** ranges, f
 			MIN_VOTES = val;
 	}
 	//cvSaveImage("d:\\1.bmp",img);
-	printf("Votes: %f\n",MIN_VOTES);
+
 	node = cvInitSparseMatIterator( hist, &mat_iterator );
 
 	for( ; node != 0; node = cvGetNextSparseNode( &mat_iterator ))
@@ -498,6 +536,9 @@ void getMaxHistValues(const CvSparseMat* hist, int* hist_size, float** ranges, f
 		maxs = NULL;
 		count = 0;
 	}
+
+	int res = (int)MIN_VOTES;
+	return res;
 
 }
 //---------
@@ -1265,8 +1306,11 @@ void calcExactLocation(vector<feature_t>& features,const vector<feature_t>& trai
 	if (((int)train_features.size()) == ((int)src_outlet.size()))
 	{
 		vector<CvPoint> train_points;
+		train_points.clear();
+
 		//vector<CvPoint> src_outlet_points;
 		vector<CvPoint> features_points;
+		features_points.clear();
 		int* indexes = new int[(int)train_features.size()];
 		float max_diff_coeff = 2.0f;
 
@@ -1352,7 +1396,7 @@ void calcExactLocation(vector<feature_t>& features,const vector<feature_t>& trai
 		{
 			CvMat* homography = cvCreateMat(2, 3, CV_32FC1);
 			FindAffineTransform(train_points, features_points, homography);
-			reprojectionError =	CalcAffineReprojectionError(train_points, features_points, homography) + 100000*(int)train_points.size();
+			reprojectionError =	CalcAffineReprojectionError(train_points, features_points, homography) + 1000000 - 10000*(int)train_points.size();
 			dst_outlet.clear();
 			MapFeaturesAffine(train_features, dst_outlet, homography);
 
