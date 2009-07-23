@@ -1,0 +1,17 @@
+<package>
+  <description brief="daisy">
+
+     daisy
+
+  </description>
+  <author>Alex Teichman</author>
+  <license>GPL</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/daisy</url>
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -ldaisy -Wl,-rpath,${prefix}/lib" />
+  </export>
+
+</package>
+
+
