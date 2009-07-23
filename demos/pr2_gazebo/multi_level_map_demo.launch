@@ -1,20 +1,9 @@
 <launch>
-  <!-- send urdf to param server -->
-  <param name="robot_description" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/prototype1.xacro.xml'" />
+  <!-- start up empty world -->
+  <include file="$(find gazebo)/launch/balcony_world.launch"/>
 
-  <!-- push robot_description to factory and spawn robot in gazebo -->
-  <node pkg="gazebo_plugin" type="urdf2factory" args="robot_description 5 5 0 0 0 0" respawn="false" output="screen" />
-
-  <!-- Joystick uncomment if you have joystick
-  <param name="joy/deadzone" value="5000"/>
-  <node machine="four" pkg="joy" type="joy"  respawn="true"/>
-  -->
-
-  <!-- Robot state publisher -->
-  <node pkg="robot_state_publisher" type="state_publisher" name="robot_state_publisher">
-    <param name="publish_frequency" type="double" value="50.0" />
-    <param name="tf_prefix" type="string" value="" />
-  </node>
+  <!-- start prototype1 robot (pr2 - arms) -->
+  <include file="$(find pr2_gazebo)/prototype1.launch"/>
 
   <!-- startup base controller -->
   <param name="base_controller/odom_publish_rate" value="10" />
