@@ -22,7 +22,6 @@
   <depend package="point_cloud_mapping" />
   <depend package="descriptors_3d" />
 
-
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lfm3n" />
   </export>
