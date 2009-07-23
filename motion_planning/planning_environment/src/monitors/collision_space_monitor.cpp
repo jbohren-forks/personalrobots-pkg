@@ -286,7 +286,9 @@ bool planning_environment::CollisionSpaceMonitor::attachObject(const mapping_msg
     onAfterAttachBody_ = backup;
     if (result)
     {
+	kmodel_->lock();	    
 	collisionSpace_->updateAttachedBodies();
+	kmodel_->unlock();	    
 	ROS_INFO("Attached bodies have been updated");
     }
     collisionSpace_->unlock();
