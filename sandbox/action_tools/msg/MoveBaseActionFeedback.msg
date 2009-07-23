@@ -1,3 +1,5 @@
 Header header
-ActionHeader action_header
+
+GoalStatus status
+
 MoveBaseFeedback feedback

@@ -1,4 +1,4 @@
-ActionHeader action_header
+GoalID goal_id
 uint8 status
 uint8 PENDING         = 0
 uint8 ACTIVE          = 1

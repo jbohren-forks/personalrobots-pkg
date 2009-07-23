@@ -1,4 +1,5 @@
 Header header
-ActionHeader action_header
+
+GoalStatus status
 
 MoveBaseResult result
