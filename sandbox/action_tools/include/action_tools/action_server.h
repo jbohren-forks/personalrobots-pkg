@@ -40,8 +40,7 @@
 #include <ros/ros.h>
 #include <boost/thread.hpp>
 #include <boost/shared_ptr.hpp>
-#include <action_tools/Preempt.h>
-#include <action_tools/ActionHeader.h>
+#include <action_tools/GoalID.h>
 #include <action_tools/GoalStatusArray.h>
 #include <action_tools/GoalStatus.h>
 #include <action_tools/EnclosureDeleter.h>
@@ -57,16 +56,16 @@ namespace action_tools {
         public:
           StatusTracker(const boost::shared_ptr<const ActionGoal>& goal)
             : goal_(goal) {
-              //set the goal id and the stamp from the action header
-              status_.action_header = goal_->action_header;
+              //set the goal_id from the message
+              status_.goal_id = goal_->goal_id;
 
               //initialize the status of the goal to pending
               status_.status = GoalStatus::PENDING;
 
               //if the goal id is zero, then we need to make up an id/timestamp for the goal
-              if(status_.action_header.goal_id.id == ros::Time()){
-                status_.action_header.goal_id.id = ros::Time::now();
-                status_.action_header.stamp = ros::Time::now();
+              if(status_.goal_id.id == ros::Time()){
+                status_.goal_id.id = ros::Time::now();
+                status_.goal_id.stamp = ros::Time::now();
               }
             }
 
@@ -112,24 +111,24 @@ namespace action_tools {
             as_->publishStatus();
           }
 
-          void setRejected(){
+          void setRejected(const Result& result = Result()){
             (*status_it_).status_.status = GoalStatus::REJECTED;
-            as_->publishStatus();
+            as_->publishResult((*status_it_).status_, result);
           }
 
-          void setAborted(){
+          void setAborted(const Result& result = Result()){
             (*status_it_).status_.status = GoalStatus::ABORTED;
-            as_->publishStatus();
+            as_->publishResult((*status_it_).status_, result);
           }
 
-          void setPreempted(){
+          void setPreempted(const Result& result = Result()){
             (*status_it_).status_.status = GoalStatus::PREEMPTED;
-            as_->publishStatus();
+            as_->publishResult((*status_it_).status_, result);
           }
 
-          void setSucceeded(){
+          void setSucceeded(const Result& result = Result()){
             (*status_it_).status_.status = GoalStatus::SUCCEEDED;
-            as_->publishStatus();
+            as_->publishResult((*status_it_).status_, result);
           }
 
           boost::shared_ptr<const Goal> getGoal(){
@@ -143,11 +142,7 @@ namespace action_tools {
           }
 
           GoalID getGoalId(){
-            return (*status_it_).status_.action_header.goal_id;
-          }
-
-          ros::Time getStamp(){
-            return (*status_it_).status_.action_header.stamp;
+            return (*status_it_).status_.goal_id;
           }
 
         private:
@@ -174,9 +169,13 @@ namespace action_tools {
 
       }
 
-      void sendResult(const Result& result){
+      void publishResult(const GoalStatus& status, const Result& result){
         boost::mutex::scoped_lock(lock_);
-        result_pub_.publish(result);
+        //we'll create a shared_ptr to pass to ROS to limit copying
+        boost::shared_ptr<ActionResult> ar(new ActionResult);
+        ar->status = status;
+        ar->result = result;
+        result_pub_.publish(ar);
       }
 
       void registerGoalCallback(boost::function<void (GoalHandle)> cb){
@@ -210,8 +209,8 @@ namespace action_tools {
         else if(goal->request_type == ActionGoal::PREEMPT_REQUEST){
           for(typename std::list<StatusTracker>::iterator it = status_list_.begin(); it != status_list_.end(); ++it){
             //check if the goal id is zero or if it is equal to the goal id of the iterator
-            if(goal->action_header.goal_id.id == ros::Time::now() 
-                || goal->action_header.goal_id.id == (*it).status_.action_header.goal_id.id){
+            if(goal->goal_id.id == ros::Time::now() 
+                || goal->goal_id.id == (*it).status_.goal_id.id){
               //call the user's preempt callback on the relevant goal
               preempt_callback_(GoalHandle(it, this));
             }
