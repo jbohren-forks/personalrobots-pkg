@@ -27,12 +27,16 @@ args.append("-p ara:xythetalat:%s/data/pr2.mprim -c sfl:25" % (pkgdir[1]))
 args.append("-p ara:xythetadoor:%s/data/pr2.mprim -c sfl:25 -w xml:%s/data/test-single-door.xml" % (pkgdir[1], pkgdir[1]))
 
 log = open("runtests.log", 'w')
+print >>log, '=================================================='
+log.flush()
+
 failures = []
 for iarg in xrange(len(args)):
     callargs = [mpbench] + args[iarg].split() + ['-G']
     callstr = string.join(callargs, ' ')
     print        'running: %s' % callstr
     print >>log, 'running: %s' % callstr
+    log.flush()
     retcode = subprocess.call(callargs, stderr=subprocess.STDOUT)
     if 0 != retcode:
         print        "FAILED (%d): %s" % (retcode, callstr)
@@ -41,6 +45,9 @@ for iarg in xrange(len(args)):
     else:
         print        "passed: %s" % callstr
         print >>log, "passed: %s" % callstr
+    print >>log, '--------------------------------------------------'
+    log.flush()
+log.close()
 
 print "--------------------------------------------------"
 if 0 == len(failures):

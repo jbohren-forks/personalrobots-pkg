@@ -555,6 +555,231 @@ namespace mpbench {
   }
   
   
+  static mpglue::CostmapPlanner *
+  createNavFnPlanner(mpglue::requestspec const & request,
+		     boost::shared_ptr<mpglue::CostmapAccessor const> costmap,
+		     boost::shared_ptr<mpglue::IndexTransform const> indexTransform,
+		     /** set to null if you do not want progress output */
+		     std::ostream * verbose_os)
+    throw(std::runtime_error)
+  {
+    string int_str("int");
+    sfl::token_to(request.planner_tok, 1, int_str);
+    bool interpolate_path(true);
+    if ("dsc" == int_str)
+      interpolate_path = false;
+    else if ("int" != int_str)
+      throw runtime_error("createNavFnPlanner(): invalid interpolate_path \"" + int_str
+			  + "\", must be \"int\" or \"dsc\"");
+    
+    if (verbose_os)
+      *verbose_os << "createNavFnPlanner(): interpolate_path = "
+		  << sfl::to_string(interpolate_path) << "\n" << flush;
+    
+    return new mpglue::NavFnPlanner(costmap, indexTransform, interpolate_path);
+  }
+
+
+  static mpglue::CostmapPlanner *
+  createEstarPlanner(mpglue::requestspec const & request,
+		     boost::shared_ptr<mpglue::CostmapAccessor const> costmap,
+		     boost::shared_ptr<mpglue::IndexTransform const> indexTransform,
+		     /** set to null if you do not want progress output */
+		     std::ostream * verbose_os)
+    throw(std::runtime_error)
+  {
+#ifndef MPBENCH_HAVE_ESTAR
+    throw runtime_error("createEstarPlanner(): no support for EStar planner\n"
+			"  to enable it, install EStar,"
+			" set the ROS_ESTAR_DIR environment variable,"
+			" and recompile mpglue and mpbench");
+#else // MPBENCH_HAVE_ESTAR
+    if (verbose_os)
+      *verbose_os << "createEstarPlanner()\n" << flush;
+    return new mpglue::EstarPlanner(costmap, indexTransform, &cerr);
+#endif // MPBENCH_HAVE_ESTAR
+  }
+  
+  
+  static mpglue::SBPLEnvironment *
+  createSBPLEnvironment(mpglue::requestspec const & request,
+			boost::shared_ptr<mpglue::CostmapAccessor const> costmap,
+			boost::shared_ptr<mpglue::IndexTransform const> indexTransform,
+			mpglue::footprint_t const & footprint,
+			/** a bit of a hack to allow door planners to
+			    say they want to search forwards (others
+			    usually dont). */
+			bool & default_fwd_search,
+			/** only for door planner... should be refactored into something cleaner */
+			mpglue::doorspec * optional_door,
+			/** set to null if you do not want progress output */
+			std::ostream * verbose_os)
+    throw(std::runtime_error)
+  {
+    default_fwd_search = false;
+    string envstr("2d");
+    sfl::token_to(request.planner_tok, 1, envstr);
+    
+    if ("2d" == envstr) {
+      if (verbose_os)
+	*verbose_os << "createSBPLEnvironment(): 8-connected 2D\n" << flush;
+      return mpglue::SBPLEnvironment::create2D(costmap, indexTransform, false);
+    }
+    
+    if ("2d16" == envstr) {
+      if (verbose_os)
+	*verbose_os << "createSBPLEnvironment(): 16-connected 2D\n" << flush;
+      return mpglue::SBPLEnvironment::create2D(costmap, indexTransform, true);
+    }
+    
+    double const
+      timetoturn45degsinplace_secs(45.0 * M_PI / 180.0 / request.robot_nominal_rotation_speed);
+    if (verbose_os)
+      *verbose_os << "createSBPLEnvironment(): timetoturn45degsinplace_secs = "
+		  << timetoturn45degsinplace_secs << "\n" << flush;
+    
+    if ("3dkin" == envstr) {
+      if (verbose_os)
+	*verbose_os << "createSBPLEnvironment(): 3DKIN\n" << flush;
+      return mpglue::SBPLEnvironment::create3DKIN(costmap,
+						  indexTransform,
+						  footprint,
+						  request.robot_nominal_forward_speed,
+						  timetoturn45degsinplace_secs,
+						  verbose_os);
+    }
+    
+    string mprim_filename("data/pr2.mprim");
+    sfl::token_to(request.planner_tok, 2, mprim_filename);
+    if (verbose_os)
+      *verbose_os << "createSBPLEnvironment(): motion primitive file: "
+		  << mprim_filename << "\n" << flush;	
+    
+    if ("xythetalat" == envstr) {
+      if (verbose_os)
+	*verbose_os << "createSBPLEnvironment(): XYTHETALAT\n" << flush;
+      return mpglue::SBPLEnvironment::createXYThetaLattice(costmap,
+							   indexTransform,
+							   footprint,
+							   request.robot_nominal_forward_speed,
+							   timetoturn45degsinplace_secs,
+							   mprim_filename,
+							   verbose_os);
+    }
+    
+    if ("xythetadoor" == envstr) {
+      if (verbose_os)
+	*verbose_os << "createSBPLEnvironment(): XYTHETADOOR\n" << flush;
+      if ( ! optional_door)
+	throw runtime_error("createSBPLEnvironment(): XYTHETADOOR environment requires... a door!");
+      
+      door_msgs::Door doormsg;
+      doormsg.frame_p1.x = optional_door->px; // hinge
+      doormsg.frame_p1.y = optional_door->py;
+      doormsg.frame_p2.x = optional_door->px + optional_door->width * cos(optional_door->th_shut); // other end
+      doormsg.frame_p2.y = optional_door->py + optional_door->width * sin(optional_door->th_shut);
+      doormsg.handle.x = optional_door->px + optional_door->dhandle * cos(optional_door->th_shut); // handle
+      doormsg.handle.y = optional_door->py + optional_door->dhandle * sin(optional_door->th_shut);
+      doormsg.hinge = 0;
+      if (sfl::mod2pi(optional_door->th_open - optional_door->th_shut) > 0)
+	doormsg.rot_dir = 1;
+      else
+	doormsg.rot_dir = -1;
+      // XXXX to do: make this configurable (but where?)
+      doormsg.header.frame_id = "map";
+      
+      default_fwd_search = true;
+      return mpglue::SBPLEnvironment::createXYThetaDoor(costmap,
+							indexTransform,
+							footprint,
+							request.robot_nominal_forward_speed,
+							timetoturn45degsinplace_secs,
+							mprim_filename,
+							verbose_os,
+							doormsg);
+    }
+    
+    throw runtime_error("createSBPLEnvironment(): invalid environment token \""
+			+ envstr + "\", must be 2d, 2d16, 3dkin, xythetalat, or xythetadoor");
+    return 0;
+  }
+  
+  
+  static mpglue::CostmapPlanner *
+  createCostmapPlanner(mpglue::requestspec const & request,
+		       boost::shared_ptr<mpglue::CostmapAccessor const> costmap,
+		       boost::shared_ptr<mpglue::IndexTransform const> indexTransform,
+		       mpglue::footprint_t const & footprint,
+		       /** only for door planner... should be refactored into something cleaner */
+		       mpglue::doorspec * optional_door,
+		       /** set to null if you do not want progress output */
+		       std::ostream * verbose_os)
+    throw(std::runtime_error)
+  {
+    if (request.planner_tok.empty())
+      throw runtime_error("createCostmapPlanner(): no planner tokens in request");
+    string const planner_name(mpglue::canonicalPlannerName(request.planner_tok[0]));
+    
+    if ("NavFn" == planner_name)
+      return createNavFnPlanner(request, costmap, indexTransform, verbose_os);
+    
+    if ("EStar" == planner_name)
+      return createEstarPlanner(request, costmap, indexTransform, verbose_os);
+    
+    // all others must be SBPL
+    bool default_forwardsearch(false);
+    shared_ptr<mpglue::SBPLEnvironment>
+      sbpl_environment(createSBPLEnvironment(request, costmap, indexTransform, footprint,
+					     default_forwardsearch, optional_door, verbose_os));
+    if ( ! sbpl_environment)
+      throw runtime_error("createCostmapPlanner(): failed to create SBPLEnvironment from \""
+			  + request.planner_spec + "\"");
+    
+    string dirstr;
+    if (default_forwardsearch)
+      dirstr = "fwd";
+    else
+      dirstr = "bwd";
+    if (verbose_os)
+      *verbose_os << "createCostmapPlanner(): default search direction: forward\n" << flush;
+    
+    // token index 2 is "custom", read for lattice planner elsewhere
+    sfl::token_to(request.planner_tok, 3, dirstr);
+    
+    // yes yes , it's a bit stupid to handle the default flag through
+    // a string... have to find out a cleaner way for integrating the
+    // door planner cerational pattern, which is a bit tricky because
+    // it was a hack "back when"
+    bool forwardsearch;
+    if ("fwd" == dirstr)
+      forwardsearch = true;
+    else if ("bwd" == dirstr)
+      forwardsearch = false;
+    else
+      throw runtime_error("createCostmapPlanner(): invalid search direction \"" + dirstr
+			  + "\", should be fwd or bwd");
+    if (verbose_os)
+      *verbose_os << "createCostmapPlanner(): effective search direction: forward\n" << flush;
+    
+    shared_ptr<SBPLPlanner> sbpl_planner;
+    if ("ARAStar" == planner_name) {
+      if (verbose_os)
+	*verbose_os << "createCostmapPlanner(): ARAPlanner\n" << flush;	
+      sbpl_planner.reset(new ARAPlanner(sbpl_environment->getDSI(), forwardsearch));
+    }
+    else if ("ADStar" == planner_name) {
+      if (verbose_os)
+	*verbose_os << "createCostmapPlanner(): ADPlanner\n" << flush;	
+      sbpl_planner.reset(new ADPlanner(sbpl_environment->getDSI(), forwardsearch));
+    }
+    else
+      throw runtime_error("createCostmapPlanner(): invalid planner name \"" + planner_name
+			  + "\"");
+    
+    return new mpglue::SBPLPlannerWrap(sbpl_environment, sbpl_planner);
+  }
+  
+  
   boost::shared_ptr<mpglue::CostmapPlanner> Setup::
   getPlanner(size_t task_id) throw(std::exception)
   {
@@ -572,207 +797,17 @@ namespace mpbench {
       *verbose_os_ << "mpbench::Setup::getPlanner(): allocating planner for task " << task_id
 		   << " with spec " << opt_.planner_spec << "\n";
     
-    if (opt_.planner_tok.empty())
-      throw runtime_error("mpbench::Setup::create(): no planner tokens");
-    string const planner_name(mpglue::canonicalPlannerName(opt_.planner_tok[0]));
+    shared_ptr<episode::taskspec> spec(tasklist_[task_id]);
+    if ( ! spec)
+      throw runtime_error("BUG??? in mpbench::Setup::getPlanner(" + to_string(task_id)
+			  + "): no task spec for that ID");
     boost::shared_ptr<World> world(getWorld());
-    
-    if ("NavFn" == planner_name) {
-      if (verbose_os_)
-	*verbose_os_ << "  creating NavFnPlanner\n" << flush;
-      string int_str("int");
-      sfl::token_to(opt_.planner_tok, 1, int_str);
-      bool interpolate_path(true);
-      if ("dsc" == int_str)
-	interpolate_path = false;
-      else if ("int" != int_str)
-	throw runtime_error("mpbench::Setup::getPlanner(" + to_string(task_id)
-			    + "): invalid interpolate_path \"" + int_str
-			    + "\", must be \"int\" or \"dsc\"");
-      planner.reset(new mpglue::NavFnPlanner(world->getCostmap(task_id),
-					     world->getIndexTransform(),
-					     interpolate_path));
-    } // end NavFn
-    
-    else if ("EStar" == planner_name) {
-#ifndef MPBENCH_HAVE_ESTAR
-      throw runtime_error("mpbench::Setup::getPlanner(" + to_string(task_id)
-			  + "): no support for EStar planner; to enable it, install EStar,"
-			  " set the ROS_ESTAR_DIR environment variable,"
-			  " and recompile mpglue and mpbench");
-#else // MPBENCH_HAVE_ESTAR
-      if (verbose_os_)
-	*verbose_os_ << "  creating EstarPlanner\n" << flush;
-      //  string int_str("int");
-      //  sfl::token_to(opt_.planner_tok, 1, int_str);
-      //  bool interpolate_path(true);
-      //  if ("dsc" == int_str)
-      // 	interpolate_path = false;
-      //  else if ("int" != int_str)
-      //throw runtime_error("mpbench::Setup::create(): invalid environment interpolate_path \""
-      //		    + int_str + "\", must be \"int\" or \"dsc\"");
-      planner.reset(new mpglue::EstarPlanner(world->getCostmap(task_id),
-					     world->getIndexTransform(),
-					     &cerr));
-#endif // MPBENCH_HAVE_ESTAR
-    } // end EStar
-    
-    else { // all others must be SBPL
-      if (verbose_os_)
-	*verbose_os_ << "  creating SBPLPlanner subtype\n" << flush;
-      
-      // reasonably quick hack for Sachin... black magic, grrr
-      bool door_planner_hack(false);
-      
-      // The remaining possibilities are (currently) all derived from
-      // SBPL and thus all need an SBPLEnvironment instance, so we
-      // create that first.
-      string envstr("2d");
-      sfl::token_to(opt_.planner_tok, 1, envstr);
-      shared_ptr<mpglue::SBPLEnvironment> sbpl_environment;
-      if ("2d" == envstr) {
-	if (verbose_os_)
-	  *verbose_os_ << "  creating 8-connected 2D Environment\n" << flush;
-	sbpl_environment.reset(mpglue::SBPLEnvironment::create2D(world->getCostmap(task_id),
-								 world->getIndexTransform(),
-								 false));
-      }
-      else if ("2d16" == envstr) {
-	if (verbose_os_)
-	  *verbose_os_ << "  creating 16-connected 2D Environment\n" << flush;
-	sbpl_environment.reset(mpglue::SBPLEnvironment::create2D(world->getCostmap(task_id),
-								 world->getIndexTransform(),
-								 true));
-      }
-      else if ("3dkin" == envstr) {
-	if (verbose_os_)
-	  *verbose_os_ << "  creating 3DKIN Environment\n" << flush;
-	double const
-	  timetoturn45degsinplace_secs(45.0 * M_PI / 180.0 / opt_.robot_nominal_rotation_speed);
-	sbpl_environment.
-	  reset(mpglue::SBPLEnvironment::create3DKIN(world->getCostmap(task_id),
-						     world->getIndexTransform(),
-						     getFootprint(),
-						     opt_.robot_nominal_forward_speed,
-						     timetoturn45degsinplace_secs,
-						     verbose_os_));
-      }
-      else if ("xythetalat" == envstr) {
-	if (verbose_os_)
-	  *verbose_os_ << "  creating XYTHETALAT Environment\n" << flush;
-	double const
-	  timetoturn45degsinplace_secs(45.0 * M_PI / 180.0 / opt_.robot_nominal_rotation_speed);
-	string mprim_filename("data/pr2.mprim");
-	sfl::token_to(opt_.planner_tok, 2, mprim_filename);
-	if (verbose_os_)
-	  *verbose_os_ << "  motion primitive file: " << mprim_filename << "\n" << flush;	
-	sbpl_environment.
-	  reset(mpglue::SBPLEnvironment::createXYThetaLattice(world->getCostmap(task_id),
-							      world->getIndexTransform(),
-							      getFootprint(),
-							      opt_.robot_nominal_forward_speed,
-							      timetoturn45degsinplace_secs,
-							      mprim_filename,
-							      verbose_os_));
-      }
-      else if ("xythetadoor" == envstr) {
-	if (verbose_os_)
-	  *verbose_os_ << "  creating XYTHETADOOR Environment\n" << flush;
-	double const
-	  timetoturn45degsinplace_secs(45.0 * M_PI / 180.0 / opt_.robot_nominal_rotation_speed);
-	string mprim_filename("data/pr2.mprim");
-	sfl::token_to(opt_.planner_tok, 2, mprim_filename);
-	if (verbose_os_)
-	  *verbose_os_ << "  motion primitive file: " << mprim_filename << "\n" << flush;
-        
-	shared_ptr<episode::taskspec> spec(tasklist_[task_id]);
-	if ( ! spec)
-	  throw runtime_error("BUG??? in mpbench::Setup::getPlanner(" + to_string(task_id)
-			      + "): no task spec for that ID");
-	if ( ! spec->door)
-	  throw runtime_error("mpbench::Setup::getPlanner(" + to_string(task_id)
-			      + "): door planner requires a door for this task");
-
-        door_msgs::Door doormsg;
-        doormsg.frame_p1.x = spec->door->px; // hinge
-        doormsg.frame_p1.y = spec->door->py;
-        doormsg.frame_p2.x = spec->door->px + spec->door->width * cos(spec->door->th_shut); // other end
-        doormsg.frame_p2.y = spec->door->py + spec->door->width * sin(spec->door->th_shut);
-        doormsg.handle.x = spec->door->px + spec->door->dhandle * cos(spec->door->th_shut); // handle
-        doormsg.handle.y = spec->door->py + spec->door->dhandle * sin(spec->door->th_shut);
-        doormsg.hinge = 0;
-        if (sfl::mod2pi(spec->door->th_open - spec->door->th_shut) > 0)
-          doormsg.rot_dir = 1;
-        else
-          doormsg.rot_dir = -1;
-        doormsg.header.frame_id = "map";
-        
-	sbpl_environment.
-	  reset(mpglue::SBPLEnvironment::createXYThetaDoor(world->getCostmap(task_id),
-							   world->getIndexTransform(),
-							   getFootprint(),
-							   opt_.robot_nominal_forward_speed,
-							   timetoturn45degsinplace_secs,
-							   mprim_filename,
-							   verbose_os_, doormsg));
-	door_planner_hack = true;
-	if (tasklist_.size() <= task_id)
-	  throw runtime_error("mpbench::Setup::getPlanner(" + to_string(task_id)
-			      + "): only " + to_string(tasklist_.size()) + " tasks in the list");
-      }
-      else
-	throw runtime_error("mpbench::Setup::getPlanner(" + to_string(task_id)
-			    + "): invalid environment token \""
-			    + envstr + "\", must be \"2d\", \"2d16\" or \"3dkin\" (maybe more are OK in the code)");
-      
-      if ( ! sbpl_environment)
-	throw runtime_error("mpbench::Setup::getPlanner(" + to_string(task_id)
-			    + "): failed to create SBPLEnvironment from \""
-			    + envstr + "\"");
-      
-      // token index 2 is "custom", read for lattice planner elsewhere
-      
-      string dirstr("bwd");
-      sfl::token_to(opt_.planner_tok, 3, dirstr);
-      bool forwardsearch(false);
-      if ("fwd" == dirstr) {
-	if (verbose_os_)
-	  *verbose_os_ << "  search direction: forward\n" << flush;
-	forwardsearch = true;
-      }
-      else if ("bwd" == dirstr) {
-	if (verbose_os_)
-	  *verbose_os_ << "  search direction: backward\n" << flush;
-      }
-      else
-	throw runtime_error("mpbench::Setup::getPlanner(" + to_string(task_id)
-			    + "): invalid search direction \"" + dirstr
-			    + "\", should be \"fwd\" or \"bwd\"");
-      
-      if (door_planner_hack) {
-	if (verbose_os_)
-	  *verbose_os_ << "  door_planner_hack: search direction must always be forward\n" << flush;
-	forwardsearch = true;
-      }
-      
-      shared_ptr<SBPLPlanner> sbpl_planner;
-      if ("ARAStar" == planner_name) {
-	if (verbose_os_)
-	  *verbose_os_ << "  creating ARAPlanner\n" << flush;	
-	sbpl_planner.reset(new ARAPlanner(sbpl_environment->getDSI(), forwardsearch));
-      }
-      else if ("ADStar" == planner_name) {
-	if (verbose_os_)
-	  *verbose_os_ << "  creating ADPlanner\n" << flush;	
-	sbpl_planner.reset(new ADPlanner(sbpl_environment->getDSI(), forwardsearch));
-      }
-      else
-	throw runtime_error("mpbench::Setup::getPlanner(" + to_string(task_id)
-			    + "): invalid planner name \"" + planner_name
-			    + "\"");
-      
-      planner.reset(new mpglue::SBPLPlannerWrap(sbpl_environment, sbpl_planner));
-    }
+    planner.reset(createCostmapPlanner(opt_,
+				       world->getCostmap(task_id),
+				       world->getIndexTransform(),
+				       getFootprint(),
+				       spec->door.get(),
+				       verbose_os_));
     
     if ( ! planner)
       throw runtime_error("mpbench::Setup::getPlanner(" + to_string(task_id)
