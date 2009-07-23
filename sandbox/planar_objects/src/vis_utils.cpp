@@ -108,7 +108,7 @@ void vis_utils::visualizePlanes(const robot_msgs::PointCloud& cloud,
       Polygon3D polygon;
       cloud_geometry::areas::convexHull2D(cloud, plane_indices[i], plane_coeff[i],
                       polygon);
-//      visualizePolygon(cloud, polygon,rgb,i,visualization_pub);
+      visualizePolygon(cloud, polygon,rgb,i,visualization_pub);
 
 
 

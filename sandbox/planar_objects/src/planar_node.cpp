@@ -15,6 +15,7 @@
 #include "opencv/highgui.h"
 #include "vis_utils.h"
 
+
 using namespace ros;
 using namespace std;
 using namespace robot_msgs;
@@ -52,6 +53,9 @@ PlanarNode::PlanarNode() :
   disp_sub_ = nh_.subscribe("stereo/disparity", 1, sync_.synchronize(&PlanarNode::dispCallback, this) );
   dinfo_sub_ = nh_.subscribe("stereo/disparity_info", 1, sync_.synchronize(&PlanarNode::dinfoCallback, this) );
   limage_sub_ = nh_.subscribe("stereo/left/image_rect", 1, sync_.synchronize(&PlanarNode::limageCallback, this) );
+  rimage_sub_ = nh_.subscribe("stereo/right/image_rect", 1, sync_.synchronize(&PlanarNode::rimageCallback, this) );
+  linfo_sub_ = nh_.subscribe("stereo/left/cam_info", 1, sync_.synchronize(&PlanarNode::linfoCallback, this) );
+  rinfo_sub_ = nh_.subscribe("stereo/right/cam_info", 1, sync_.synchronize(&PlanarNode::rinfoCallback, this) );
 
   // advertise topics
   cloud_planes_pub_ = nh_.advertise<PointCloud> ("~planes", 1);
@@ -70,6 +74,14 @@ void PlanarNode::cloudCallback(const robot_msgs::PointCloud::ConstPtr& point_clo
 
 void PlanarNode::dinfoCallback(const sensor_msgs::DisparityInfo::ConstPtr& dinfo) {
   dinfo_ = dinfo;
+}
+
+void PlanarNode::linfoCallback(const sensor_msgs::CamInfo::ConstPtr& linfo) {
+  linfo_ = linfo;
+}
+
+void PlanarNode::rinfoCallback(const sensor_msgs::CamInfo::ConstPtr& rinfo) {
+  rinfo_ = rinfo;
 }
 
 void PlanarNode::dispCallback(const sensor_msgs::Image::ConstPtr& disp_img)
@@ -92,9 +104,20 @@ void PlanarNode::limageCallback(const sensor_msgs::Image::ConstPtr& left_img)
 
   if (lbridge_.fromImage(*limage_))
   {
-    // Disparity has to be scaled to be be nicely displayable
     IplImage* disp = cvCreateImage(cvGetSize(lbridge_.toIpl()), IPL_DEPTH_8U, 1);
     cvShowImage("left", lbridge_.toIpl());
+    cvReleaseImage(&disp);
+  }
+}
+
+void PlanarNode::rimageCallback(const sensor_msgs::Image::ConstPtr& right_img)
+{
+  rimage_ = right_img;
+
+  if (rbridge_.fromImage(*rimage_))
+  {
+    IplImage* disp = cvCreateImage(cvGetSize(rbridge_.toIpl()), IPL_DEPTH_8U, 1);
+    cvShowImage("right", rbridge_.toIpl());
     cvReleaseImage(&disp);
   }
 }
@@ -107,6 +130,45 @@ double inner_prod(std::vector<double> vec1,std::vector<double> vec2) {
   return(sum);
 }
 
+void PlanarNode::buildRP() {
+  double offx = 0;
+
+  // reprojection matrix
+  double Tx = rinfo_->P[0] /  rinfo_->P[3];
+  // first column
+  RP[0] = 1.0;
+  RP[4] = RP[8] = RP[12] = 0.0;
+
+  // second column
+  RP[5] = 1.0;
+  RP[1] = RP[9] = RP[13] = 0.0;
+
+  // third column
+  RP[2] = RP[6] = RP[10] = 0.0;
+  RP[14] = -Tx;
+
+  // fourth column
+  RP[3] = -linfo_->P[2];        // cx
+  RP[7] = -linfo_->P[6];        // cy
+  RP[11] = linfo_->P[0];        // fx, fy
+  RP[15] = (linfo_->P[2] - rinfo_->P[2] - (double)offx) / Tx;
+
+}
+
+btVector3
+PlanarNode::calcPt(int x, int y, std::vector<double>& coeff)
+{
+  double cx = RP[3];
+  double cy = RP[7];
+  double f  = RP[11];
+
+  double ax = (double)x + cx;
+  double ay = (double)y + cy;
+  double aw = -coeff[3]/(ax*coeff[0]+ay*coeff[1]+f*coeff[2]);
+
+  return(btVector3(ax*aw,ay*aw,f*aw));
+}
+
 void PlanarNode::syncCallback()
 {
   ROS_INFO("PlanarNode::syncCallback(), %d points in cloud",cloud_->get_pts_size());
@@ -116,6 +178,8 @@ void PlanarNode::syncCallback()
     ROS_INFO("skipping frame..");
     return;
   }
+
+  buildRP();
 
   vector<PointCloud> plane_cloud;
   vector<vector<double> > plane_coeff;
@@ -197,23 +261,141 @@ void PlanarNode::syncCallback()
 
   // dilate filtered canny edge image..
   IplImage* pixCannyFilteredAndDilated = cvCreateImage(cvGetSize(dbridge_.toIpl()), IPL_DEPTH_8U, 1);
-  cvDilate(pixCannyFiltered,pixCannyFilteredAndDilated,NULL,2);
+  cvDilate(pixCannyFiltered,pixCannyFilteredAndDilated,NULL,1);
   cvShowImage( "canny-filtered-dilated", pixCannyFilteredAndDilated );
 
   // find edges via hough transform
   IplImage* pixHough = cvCreateImage(cvGetSize(dbridge_.toIpl()), IPL_DEPTH_8U, 3);
   cvCvtColor( lbridge_.toIpl(), pixHough, CV_GRAY2BGR );
 
+  // visualize edges in 2D
   CvMemStorage* storage = cvCreateMemStorage(0);
   CvSeq* lines = 0;
   lines = cvHoughLines2( pixCannyFilteredAndDilated, storage, CV_HOUGH_PROBABILISTIC, 1, CV_PI/180, 5, 30, 15 );
+
   for(int i = 0; i < lines->total; i++ )
   {
       CvPoint* line = (CvPoint*)cvGetSeqElem(lines,i);
       cvLine( pixHough, line[0], line[1], CV_RGB(rand()%255,rand()%255,rand()%255), 1, 8 );
   }
-////  cvClearMemStorage(storage);
-////  cvReleaseMemStorage(&storage);
+
+  // visualize edges in 3D
+  visualization_msgs::Marker marker;
+  marker.header.frame_id = cloud_->header.frame_id;
+  marker.header.stamp = ros::Time((uint64_t)0ULL);
+  marker.ns = "edges";
+  marker.id = 1;
+  marker.type = visualization_msgs::Marker::LINE_LIST;
+  marker.action = visualization_msgs::Marker::ADD;
+  marker.pose.orientation.w = 1.0;
+  marker.scale.x = 0.002;
+  marker.color.a = 1.0;
+  marker.color.r = 1.0;
+  marker.color.g = 0.0;
+  marker.color.b = 0.0;
+
+  marker.set_points_size(lines->total*2);
+  for(int i = 0; i < lines->total; i++ )
+  {
+      CvPoint* line = (CvPoint*)cvGetSeqElem(lines,i);
+      for(int j=0;j<2;j++) {
+        btVector3 point = calcPt(line[j].x,line[j].y,plane_coeff[frontplane]);
+
+        marker.points[i*2+j].x = point.x();
+        marker.points[i*2+j].y = point.y();
+        marker.points[i*2+j].z = point.z();
+      }
+  }
+  visualization_pub_.publish(  marker );
+
+  // compute 3d lines
+  std::vector< std::pair<btVector3,btVector3> > lines3d;
+  std::vector< btVector3 > linesVec;
+  lines3d.resize(lines->total);
+  linesVec.resize(lines->total);
+  for(int i = 0; i < lines->total; i++ ) {
+    CvPoint* line = (CvPoint*)cvGetSeqElem(lines,i);
+    lines3d[i].first = calcPt(line[0].x,line[0].y,plane_coeff[frontplane]);
+    lines3d[i].second = calcPt(line[1].x,line[1].y,plane_coeff[frontplane]);
+    linesVec[i] = lines3d[i].second - lines3d[i].first;
+  }
+
+  // compute corner candidates
+  std::vector< std::pair<tf::Transform,double> > corner;
+  btVector3 vecPlane(plane_coeff[frontplane][0],plane_coeff[frontplane][1],plane_coeff[frontplane][2]);
+  for(size_t i = 0; i < lines3d.size(); i++ ) {
+    for(size_t j = i+1; j < lines3d.size(); j++ ) {
+      CvPoint* line1 = (CvPoint*)cvGetSeqElem(lines,i);
+      CvPoint* line2 = (CvPoint*)cvGetSeqElem(lines,j);
+      double x1 = line1[0].x;
+      double x2 = line1[1].x;
+      double x3 = line2[0].x;
+      double x4 = line2[1].x;
+
+      double y1 = line1[0].y;
+      double y2 = line1[1].y;
+      double y3 = line2[0].y;
+      double y4 = line2[1].y;
+
+      // check whether parallel
+      if( ( y4 - y3 )*(x2-x1) == (x4-x3 )*(y2-y1) ) continue;
+
+      // compute intersection point
+      double ua =( (x4-x3)*(y1-y3) - (y4 - y3)*(x1 - x3) ) / ( ( y4 - y3 )*(x2-x1) - (x4-x3 )*(y2-y1) );
+      double corner_x = x1 + ua*(x2-x1);
+      double corner_y = y1 + ua*(y2-y1);
+
+      btVector3 position = calcPt(corner_x,corner_y,plane_coeff[frontplane]);
+
+//      // ratio line distance/length
+//      double length1 = DIST(x2-x1,y2-y1);
+//      double length2 = DIST(x4-x3,y4-y3);
+//      double dist1 = MIN( DIST(x1-x,y1-y),DIST(x2-x,y2-y) );
+//      double dist2 = MIN( DIST(x3-x,y3-y),DIST(x4-x,y4-y) );
+//      // not implemented
+
+      btVector3& vec1 = linesVec[i];
+      btVector3& vec2 = linesVec[j];
+
+      // compute angle
+      double angle = vec1.angle(vec2);
+      cout << "vec1="<<vec1.x()<<" "<<vec1.y()<<" "<<vec1.z()<< endl;
+      cout << "vec2="<<vec2.x()<<" "<<vec2.y()<<" "<<vec2.z()<< endl;
+      cout <<"angle between vec1 and vec2: "<<(angle/M_PI*180.0)<<endl;
+
+      // angle between 90deg +- 22.5deg?
+      if( fabs(angle - M_PI_2) > M_PI/8 ) continue;
+
+      // correct error in vec1 and vec2 to achieve 90deg
+      btVector3 vec1corr = vec1.rotate( vecPlane, +(angle - M_PI_2) );
+      btVector3 vec2corr = vec2.rotate( vecPlane, -(angle - M_PI_2) );
+      cout <<"angle between vec1corr and vec2corr: "<<(vec1corr.angle(vec2corr)/M_PI*180.0)<<endl;
+
+      // orientation
+      btQuaternion orientation;
+      btMatrix3x3 rotation;
+      rotation[0] = vec1corr;        // x
+      rotation[1] = vec2corr;        // y
+      rotation[2] = vecPlane;        // z
+      rotation = rotation.transpose();
+      rotation.getRotation(orientation);
+
+      tf::Transform tf_pose(orientation, position);
+      corner.push_back( std::pair<tf::Transform,double>(tf_pose,angle));
+    }
+  }
+
+  cout << "corner candidates: "<<corner.size()<<endl;
+  for(size_t i=0;i<corner.size();i++) {
+    // show frames
+    char buf[50];
+    sprintf(buf,"x%d",i);
+    tf::Stamped<tf::Pose> table_pose_frame(corner[i].first, cloud_->header.stamp, buf, cloud_->header.frame_id);
+    broadcaster_.sendTransform(table_pose_frame);
+  }
+
+  cvClearMemStorage(storage);
+  cvReleaseMemStorage(&storage);
   cvShowImage("hough",pixHough);
 
   cvReleaseImage(&pixOccupied);
