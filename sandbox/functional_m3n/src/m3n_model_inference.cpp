@@ -179,6 +179,10 @@ int M3NModel::inferPrivate(const RandomField& random_field,
   const map<unsigned int, RandomField::Node*>& nodes = random_field.getNodesRandomFieldIDs();
   const vector<map<unsigned int, RandomField::Clique*> >& clique_sets = random_field.getCliqueSets();
 
+  // Estimate the max number of nodes and edges in the graph for alpha-expansion
+  int est_nbr_energy_nodes = nodes.size() + (clique_sets.size() * 3);
+  int est_nbr_energy_edges = est_nbr_energy_nodes * 5;
+
   // -------------------------------------------
   // Verify clique interaction parameters agree
   const unsigned int nbr_clique_sets = clique_sets.size();
@@ -227,7 +231,7 @@ int M3NModel::inferPrivate(const RandomField& random_field,
 
       // -------------------------------------------
       // Create new energy function
-      SubmodularEnergyMin energy_func;
+      SubmodularEnergyMin energy_func(est_nbr_energy_nodes, est_nbr_energy_edges);
       map<unsigned int, SubmodularEnergyMin::EnergyVar> energy_vars;
 
       // -------------------------------------------
@@ -281,8 +285,8 @@ int M3NModel::inferPrivate(const RandomField& random_field,
             // add Pn Potts
             else
             {
-              ret_val = addCliqueEnergyPotts(*curr_clique, cs_idx, energy_func, energy_vars,
-                  inferred_labels, alpha_label);
+              ret_val = addCliqueEnergyPotts(*curr_clique, cs_idx, energy_func, energy_vars, inferred_labels,
+                  alpha_label);
             }
           }
         }
