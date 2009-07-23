@@ -395,19 +395,19 @@ void detect_outlets_one_way(IplImage* test_image, const outlet_template_t& outle
     //}
     //	cvSaveImage("d:/1.jpg",image2);
 #if defined(_GHT) // Test histogram calculating
-	int x_size = test_image->width/5;
-	int y_size = test_image->height/5;
-	int x_scale_size = 15;
-	int y_scale_size = 15;
-	int angle1_size = 10;
-	int angle2_size = 10;
+	int x_size = test_image->width/10;
+	int y_size = test_image->height/10;
+	int x_scale_size = 7;
+	int y_scale_size = 7;
+	int angle1_size = 7;
+	int angle2_size = 7;
 	int hist_size[] = {x_size, y_size, angle1_size, x_scale_size, y_scale_size, angle2_size};
 	float x_ranges[] ={ 0, test_image->width }; 
 	float y_ranges[] = { 0, test_image->height };
 	float angle1_ranges[] = { -CV_PI/4, CV_PI/4 };
 	float angle2_ranges[] = { -CV_PI/4, CV_PI/4 };
-	float x_scale_ranges[] = { 0.6, 1.2 };
-	float y_scale_ranges[] = { 0.6, 1.2 };
+	float x_scale_ranges[] = { 0.7, 1.1 };
+	float y_scale_ranges[] = { 0.7, 1.1 };
 	float* ranges[] ={ x_ranges, y_ranges, angle1_ranges, x_scale_ranges, y_scale_ranges, angle2_ranges};
 	CvSparseMat* hist = buildHoughHist(hole_candidates, descriptors->GetTrainFeatures(),hist_size,ranges);
 	//CvMatND* hist = buildHoughHistSparse(hole_candidates, descriptors->GetTrainFeatures(),hist_size,ranges);
@@ -421,7 +421,9 @@ void detect_outlets_one_way(IplImage* test_image, const outlet_template_t& outle
 	vector<feature_t> hole_features;
 	vector<feature_t> hole_features_corrected;
 	vector<feature_t> res_features;
-    
+  
+	float accuracy = sqrt((float)((descriptors->GetTrainFeatures()[1].center.x - descriptors->GetTrainFeatures()[0].center.x)*(descriptors->GetTrainFeatures()[1].center.x - descriptors->GetTrainFeatures()[0].center.x)+
+			(descriptors->GetTrainFeatures()[1].center.y - descriptors->GetTrainFeatures()[0].center.y)*(descriptors->GetTrainFeatures()[1].center.y - descriptors->GetTrainFeatures()[0].center.y)));
 	float error = 1e38;
 	int index = -1;
 	for (int j=0;j<count;j++)
@@ -429,6 +431,7 @@ void detect_outlets_one_way(IplImage* test_image, const outlet_template_t& outle
 		float currError;
 		hole_features.clear();
 		calcOutletPosition(descriptors->GetTrainFeatures(), values[j],hole_features);
+#if defined(_VERBOSE)
 		for(int i = 0; i < (int)hole_features.size(); i++)
 		{
 			CvScalar pointColor = hole_features[i].part_id == 0 ? cvScalar(0,255,50) : cvScalar(255,0,50);	
@@ -436,7 +439,10 @@ void detect_outlets_one_way(IplImage* test_image, const outlet_template_t& outle
 			cvLine(image2, cvPoint(hole_features[i].center.x, hole_features[i].center.y+7), cvPoint(hole_features[i].center.x, hole_features[i].center.y-7),pointColor,2); 
             
 		}
-		calcExactLocation(hole_candidates,descriptors->GetTrainFeatures(),hole_features,hole_features_corrected,currError,image->width/x_size*2+1);
+#endif
+
+		//accuracy = 21;
+		calcExactLocation(hole_candidates,descriptors->GetTrainFeatures(),hole_features,hole_features_corrected,currError,accuracy);
 		//calcExactLocation_(hole_candidates,descriptors->GetTrainFeatures(),hole_features,hole_features_corrected,currError,image->width/x_size+1);
 		if (currError < error)
 		{
@@ -453,6 +459,8 @@ void detect_outlets_one_way(IplImage* test_image, const outlet_template_t& outle
 	{
 		holes.clear();
 		outlet_t outlet;
+
+#if defined(_VERBOSE)
 		for(int i = 0; i < (int)res_features.size(); i++)
 		{
 			
@@ -460,6 +468,7 @@ void detect_outlets_one_way(IplImage* test_image, const outlet_template_t& outle
 			cvLine(image1, cvPoint(res_features[i].center.x+7, res_features[i].center.y), cvPoint(res_features[i].center.x-7, res_features[i].center.y),pointColor,2); 
 			cvLine(image1, cvPoint(res_features[i].center.x, res_features[i].center.y+7), cvPoint(res_features[i].center.x, res_features[i].center.y-7),pointColor,2); 
 		}
+#endif
 
 		for (int i=0;i<(int)res_features.size()/3;i++)
 		{

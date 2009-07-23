@@ -94,58 +94,40 @@ CvSparseMat* buildHoughHist(vector<feature_t>& input, const vector<feature_t>& t
 {
 	CvSparseMat* hist;
 
-
-	/*float x_ranges[] = { 0, imageSize.width }; 
-	float y_ranges[] = { 0, imageSize.height };
-	float angle1_ranges[] = { -CV_PI/2, CV_PI/2 };
-	float angle2_ranges[] = { -CV_PI/2, CV_PI/2 };
-	float x_scale_ranges[] = { 0.8, 1.2 };
-	float y_scale_ranges[] = { 0.8, 1.2 };
-	float* ranges[] ={ x_ranges, y_ranges, angle1_ranges, x_scale_ranges, y_scale_ranges, angle2_ranges};*/
-	//hist = cvCreateHist( 6, hist_size, CV_HIST_SPARSE, ranges, 1);
 	hist = cvCreateOutletSparseMat(6,hist_size,CV_32FC1);
 	int* idx = new int[6];
-	//bool wasPower = false;
-	//bool wasGround = false;
+
 	for (int n = 0; n < (int)input.size();n++)
 	{
-		for (int feature_id = 0; /*!(wasPower && wasGround)*/feature_id < (int)train_features.size(); feature_id++)
+		for (int feature_id = 0; feature_id < (int)train_features.size(); feature_id++)
 		{
 			if (input[n].part_id != train_features[feature_id].part_id)
 				continue;
-			//else
-			//{
-			//	if (input[n].part_id == 0)
-			//		wasGround = true;
-			//	else
-			//		if (input[n].part_id == 1)
-			//			wasPower = true;
-			//}
-			for (float angle1 = ranges[2][0]; angle1 <= ranges[2][1]; angle1 += ((ranges[2][1]-ranges[2][0] > 0) ? (ranges[2][1]-ranges[2][0])/hist_size[2] : 1))
+
+			for (float angle1 = ranges[2][0]+(ranges[2][1]-ranges[2][0])/(hist_size[2]*2); angle1 <= ranges[2][1]; angle1 += ((ranges[2][1]-ranges[2][0] > 0) ? (ranges[2][1]-ranges[2][0])/hist_size[2] : 1))
 			{
-				for (float x_scale = ranges[3][0]; x_scale <= ranges[3][1]; x_scale += ((ranges[3][1]-ranges[3][0] > 0) ? (ranges[3][1]-ranges[3][0])/hist_size[3] : 1))
+				for (float x_scale = ranges[3][0]+(ranges[3][1]-ranges[3][0])/(hist_size[3]*2); x_scale <= ranges[3][1]; x_scale += ((ranges[3][1]-ranges[3][0] > 0) ? (ranges[3][1]-ranges[3][0])/hist_size[3] : 1))
 				{
-					for (float y_scale = ranges[4][0]; y_scale <= ranges[4][1]; y_scale += ((ranges[4][1]-ranges[4][0] > 0) ? (ranges[4][1]-ranges[4][0])/hist_size[4] : 1))
+					for (float y_scale = ranges[4][0]+(ranges[4][1]-ranges[4][0])/(hist_size[4]*2); y_scale <= ranges[4][1]; y_scale += ((ranges[4][1]-ranges[4][0] > 0) ? (ranges[4][1]-ranges[4][0])/hist_size[4] : 1))
 					{
-						for (float angle2 = ranges[5][0]; angle2 <= ranges[5][1]; angle2 += ((ranges[5][1]-ranges[5][0] > 0) ? (ranges[5][1]-ranges[5][0])/hist_size[5] : 1))
+						for (float angle2 = ranges[5][0]+(ranges[5][1]-ranges[5][0])/(hist_size[5]*2); angle2 <= ranges[5][1]; angle2 += ((ranges[5][1]-ranges[5][0] > 0) ? (ranges[5][1]-ranges[5][0])/hist_size[5] : 1))
 						{
 
 							CvPoint* center = getOutletCenter(input[n],train_features,feature_id,angle1,x_scale,y_scale,angle2);
+
 							if (center && (center->x >= ranges[0][0]) && (center->x < ranges[0][1]) && (center->y >= ranges[1][0]) && (center->y < ranges[1][1]))
 							{
 								//Incrementing histogram
-
 								idx[0] = (int)((center->x - ranges[0][0])/(ranges[0][1]-ranges[0][0]) * hist_size[0]);
 								idx[1] = (int)((center->y - ranges[1][0])/(ranges[1][1]-ranges[1][0]) * hist_size[1]);
 								idx[2] = (ranges[2][1] != ranges[2][0]) ? (int)((angle1 - ranges[2][0])/(ranges[2][1]-ranges[2][0]) * hist_size[2]) : 0;
 								idx[3] = (ranges[3][1] != ranges[3][0]) ?(int)((x_scale - ranges[3][0])/(ranges[3][1]-ranges[3][0]) * hist_size[3]) : 0;
 								idx[4] = (ranges[4][1] != ranges[4][0]) ?(int)((y_scale - ranges[4][0])/(ranges[4][1]-ranges[4][0]) * hist_size[4]) : 0;
 								idx[5] = (ranges[5][1] != ranges[5][0]) ?(int)((angle2 - ranges[5][0])/(ranges[5][1]-ranges[5][0]) * hist_size[5]) : 0;
-								//Comment
-								//					int idx2[6];
-								//Endof							
+//if (center->x > 150 && center->x<200 && center->y>200 && center->y<240)
+//								int k=0;
 								bool isOK = true;
-								for (int i=0;i<6; i++)
+								for (int i=0;i<2; i++)
 								{
 									if (idx[i] >= hist_size[i])
 									{
@@ -158,29 +140,28 @@ CvSparseMat* buildHoughHist(vector<feature_t>& input, const vector<feature_t>& t
 										isOK = false;
 									}
 								}
-								//Cooment
-								//for (int ind=0;ind<243;ind++)
-								//{
-								//	bool isOK = true;
-								//	for (int i=0;i< 6; i++)
-								//	{
-								//		idx2[i] = idx[i] + (ind % (int)(pow(3.0f,i))) - 1;
-								//		if ((idx2[i] >= hist_size[i])||(idx2[i] < 0))
-								//		{
-								//			isOK = false;
-								//			break;
-								//		}
-								//	}
-								//	if (!isOK)
-								//		continue;
-								//	float* value = cvGetHistValue_nD(hist,idx2);
-								//	*value+=1;
-								//}
-								//Endof
+								
 								if (isOK)
 								{
-									float value = cvGetRealND(hist,idx);
-									cvSetRealND(hist,idx,++value);
+									//Bins Blur (x & y)
+									//int idx2[6];
+									//for (int i=0;i<6;i++)
+									//	idx2[i]=idx[i];
+									//for (int x = -1;x<=1;x++)
+									//	for (int y= -1;y<=1;y++)
+									//	{
+									//		if (((idx[0]+x) >=0)&&((idx[1]+y) >=0)&&((idx[0]+x) < hist_size[0])&&((idx[1]+y) < hist_size[1]))
+									//		{
+									//			idx2[0] = idx[0]+x;
+									//			idx2[1] = idx[1]+y;
+									//			float value = cvGetRealND(hist,idx2);
+									//			cvSetRealND(hist,idx2,++value);
+									//		}
+									//	}
+									//End
+
+									//float value = cvGetRealND(hist,idx);
+									//cvSetRealND(hist,idx,++value);
 								}
 
 
@@ -243,13 +224,13 @@ CvMatND* buildHoughHistSparse(vector<feature_t>& input, const vector<feature_t>&
 						if (input[n].part_id != train_features[feature_id].part_id)
 							continue;
 
-						for (float angle1 = ranges[2][0]; angle1 <= ranges[2][1]; angle1 += ((ranges[2][1]-ranges[2][0] > 0) ? (ranges[2][1]-ranges[2][0])/hist_size[2] : 1))
+						for (float angle1 = ranges[2][0]+(ranges[2][1]-ranges[2][0])/(hist_size[2]*2); angle1 <= ranges[2][1]; angle1 += ((ranges[2][1]-ranges[2][0] > 0) ? (ranges[2][1]-ranges[2][0])/hist_size[2] : 1))
 						{
-							for (float x_scale = ranges[3][0]; x_scale <= ranges[3][1]; x_scale += ((ranges[3][1]-ranges[3][0] > 0) ? (ranges[3][1]-ranges[3][0])/hist_size[3] : 1))
+							for (float x_scale = ranges[3][0]+(ranges[3][1]-ranges[3][0])/(hist_size[3]*2); x_scale <= ranges[3][1]; x_scale += ((ranges[3][1]-ranges[3][0] > 0) ? (ranges[3][1]-ranges[3][0])/hist_size[3] : 1))
 							{
-								for (float y_scale = ranges[4][0]; y_scale <= ranges[4][1]; y_scale += ((ranges[4][1]-ranges[4][0] > 0) ? (ranges[4][1]-ranges[4][0])/hist_size[4] : 1))
+								for (float y_scale = ranges[4][0]+(ranges[4][1]-ranges[4][0])/(hist_size[4]*2); y_scale <= ranges[4][1]; y_scale += ((ranges[4][1]-ranges[4][0] > 0) ? (ranges[4][1]-ranges[4][0])/hist_size[4] : 1))
 								{
-									for (float angle2 = ranges[5][0]; angle2 <= ranges[5][1]; angle2 += ((ranges[5][1]-ranges[5][0] > 0) ? (ranges[5][1]-ranges[5][0])/hist_size[5] : 1))
+									for (float angle2 = ranges[5][0]+(ranges[5][1]-ranges[5][0])/(hist_size[5]*2); angle2 <= ranges[5][1]; angle2 += ((ranges[5][1]-ranges[5][0] > 0) ? (ranges[5][1]-ranges[5][0])/hist_size[5] : 1))
 									{
 
 										CvPoint* center = getOutletCenter(input[n],train_features,feature_id,angle1,x_scale,y_scale,angle2);
@@ -265,7 +246,7 @@ CvMatND* buildHoughHistSparse(vector<feature_t>& input, const vector<feature_t>&
 											idx[5] = (ranges[5][1] != ranges[5][0]) ?(int)((angle2 - ranges[5][0])/(ranges[5][1]-ranges[5][0]) * hist_size[5]) : 0;
 
 											bool isOK = true;
-											for (int i=0;i<6; i++)
+											for (int i=0;i<2; i++)
 											{
 												if (idx[i] >= hist_size[i])
 												{
@@ -469,7 +450,7 @@ void getMaxHistValues(const CvSparseMat* hist, int* hist_size, float** ranges, f
 			MIN_VOTES = val;
 	}
 	//cvSaveImage("d:\\1.bmp",img);
-	//printf("Votes: %f\n",MIN_VOTES);
+	printf("Votes: %f\n",MIN_VOTES);
 	node = cvInitSparseMatIterator( hist, &mat_iterator );
 
 	for( ; node != 0; node = cvGetNextSparseNode( &mat_iterator ))
@@ -1285,6 +1266,7 @@ void calcExactLocation(vector<feature_t>& features,const vector<feature_t>& trai
 		//vector<CvPoint> src_outlet_points;
 		vector<CvPoint> features_points;
 		int* indexes = new int[(int)train_features.size()];
+		float max_diff_coeff = 2.0f;
 
 		for (int i=0;i<(int)train_features.size();i++)
 		{
@@ -1298,22 +1280,62 @@ void calcExactLocation(vector<feature_t>& features,const vector<feature_t>& trai
 		{
 			int min_index = -1;
 			float min_distance = 1e30;
+			float last_min_distance;
 			for (int j=0;j<(int)features.size();j++)
 			{
 				if (features[j].part_id == src_outlet[i].part_id)
 				{
 					float distance = (features[j].center.x - src_outlet[i].center.x)*(features[j].center.x - src_outlet[i].center.x)+
 						(features[j].center.y - src_outlet[i].center.y)*(features[j].center.y - src_outlet[i].center.y);
-					if ((distance < min_distance) && (distance < accuracy*accuracy))
+					if ((distance < min_distance)/* && (distance < accuracy*accuracy)*/)
 					{
+						last_min_distance = min_distance;
 						min_distance = distance;
 						min_index = j;
-					}		
+					}	
+					else
+					{
+						if (distance < last_min_distance)
+						{
+							last_min_distance = distance;
+						}
+					}
 				}
 
 			}
-			indexes[i] = min_index;
+			if (min_distance < accuracy*accuracy)
+				indexes[i] = min_index;
+			else
+				min_index = -1;
+			if (min_index > -1)
+			{
+				if ((min_distance > 0) && (last_min_distance/min_distance <= max_diff_coeff))
+				{
+					indexes[i] = -1;
+					//printf("---->Unable to choose feature\n");
+				}
+			}
 		}
+
+		// Removing the same indexes
+		for (int i=0;i< (int)(src_outlet.size());i++)
+		{
+			if (indexes[i] >=0)
+			{
+				bool wasRepeat = false;
+				for (int j=i+1;j< (int)(src_outlet.size());j++)			
+				{
+					if (indexes[i]==indexes[j])
+					{
+						indexes[j] = -1;
+						wasRepeat = true;
+					}
+				}
+				if (wasRepeat)
+					indexes[i] = -1;
+			}
+		}
+		//-
 
 		for (int i=0;i< (int)(src_outlet.size());i++)
 		{
@@ -1324,37 +1346,54 @@ void calcExactLocation(vector<feature_t>& features,const vector<feature_t>& trai
 			}
 		}
 
-		if (((int)train_points.size() > 3) && ((int)train_points.size() > ((int)train_features.size()/2)))
+		if (((int)train_points.size() > 3) /*&& ((int)train_points.size() > ((int)train_features.size()/2))*/)
 		{
 			CvMat* homography = cvCreateMat(2, 3, CV_32FC1);
 			FindAffineTransform(train_points, features_points, homography);
-			reprojectionError =	CalcAffineReprojectionError(train_points, features_points, homography);
+			reprojectionError =	CalcAffineReprojectionError(train_points, features_points, homography) + 100000*(int)train_points.size();
 			dst_outlet.clear();
 			MapFeaturesAffine(train_features, dst_outlet, homography);
 
 			for (int i=0;i< (int)(dst_outlet.size());i++)
 			{
 
-				//Temp
+					// The second attraction
+					//Temp
 				int min_index = -1;
 				float min_distance = 1e38;
+				float last_min_distance;
 				for (int j=0;j<(int)features.size();j++)
-				{
-					if (features[j].part_id == src_outlet[i].part_id)
+				{				
+					if (features[j].part_id == dst_outlet[i].part_id)
 					{
-						float distance = (features[j].center.x - src_outlet[i].center.x)*(features[j].center.x - src_outlet[i].center.x)+
-							(features[j].center.y - src_outlet[i].center.y)*(features[j].center.y - src_outlet[i].center.y);
-						if ((distance < min_distance) && (distance < accuracy*accuracy/4))
+						float distance = (features[j].center.x - dst_outlet[i].center.x)*(features[j].center.x - dst_outlet[i].center.x)+
+							(features[j].center.y - dst_outlet[i].center.y)*(features[j].center.y - dst_outlet[i].center.y);
+						if (distance < min_distance)
 						{
-							min_distance = distance;
-							min_index = j;
-						}		
+							last_min_distance = distance;
+							//setting min distance to power holes distance / 3
+							float acc = (float)((train_features[1].center.x - train_features[0].center.x)*(train_features[1].center.x - train_features[0].center.x)+
+											(train_features[1].center.y - train_features[0].center.y)*(train_features[1].center.y - train_features[0].center.y))/9;
+							if (distance < acc)
+							{
+								min_distance = distance;
+								min_index = j;
+							}
+						}	
+						else
+						{
+							if (distance < last_min_distance)
+							{
+								last_min_distance = distance;
+							}
+						}
 					}
 				}
 				if (min_index >= 0)
 				{
-					dst_outlet[i] = features[min_index];
-					//dst_outlet[i].part_id = src_outlet[i].part_id;
+					if (((min_distance > 0) && (last_min_distance/min_distance <= max_diff_coeff))||(min_distance == 0))
+						dst_outlet[i] = features[min_index];
+					
 				}
 				else
 
@@ -1366,7 +1405,19 @@ void calcExactLocation(vector<feature_t>& features,const vector<feature_t>& trai
 					}
 			}			
 
-			reprojectionError =	CalcAffineReprojectionError(train_points, features_points, homography);
+
+			//// Other calculation of reproj. error
+			//train_points.clear();
+			//features_points.clear();
+			//for (int i=0;i< (int)(src_outlet.size());i++)
+			//{
+
+			//	train_points.push_back(train_features[i].center);
+			//	features_points.push_back(dst_outlet[i].center);
+
+			//}
+			//reprojectionError =	CalcAffineReprojectionError(train_points, features_points, homography)/* + 1000*(int)train_points.size()*/;
+			//// end
 
 			cvReleaseMat(&homography);
 		}
