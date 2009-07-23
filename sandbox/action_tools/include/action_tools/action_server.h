@@ -50,7 +50,7 @@
 namespace action_tools {
   template <class ActionGoal, class Goal, class ActionResult, class Result, class ActionFeedback, class Feedback>
   class ActionServer {
-    public:
+    private:
       //class for storing the status of each goal the server is working on
       class StatusTracker {
         public:
