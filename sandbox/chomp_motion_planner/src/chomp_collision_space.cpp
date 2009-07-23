@@ -81,7 +81,7 @@ bool ChompCollisionSpace::init()
   node_handle_.param("~collision_space/origin_x", origin_x, 0.1);
   node_handle_.param("~collision_space/origin_y", origin_y, -1.5);
   node_handle_.param("~collision_space/origin_z", origin_z, -2.0);
-  node_handle_.param("~collision_space/resolution", resolution, -0.1);
+  node_handle_.param("~collision_space/resolution", resolution, 0.02);
 
   size_x_int = int(size_x/resolution);
   size_y_int = int(size_y/resolution);

@@ -157,7 +157,7 @@ void ChompOptimizer::optimize()
     }
 
     // make a random jump if the trajectory is in collision:
-    if (!is_collision_free_)
+    if (!is_collision_free_ && parameters_->getAddRandomness())
     {
       performForwardKinematics();
       double original_cost = getTrajectoryCost();
