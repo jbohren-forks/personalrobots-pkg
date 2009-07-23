@@ -1,7 +1,7 @@
 # change the next flag to 'no' if drawstuff is not to be built
 WITH_DRAWSTUFF = yes
 
-CFG_OPTIONS = --with-arch=nocona --enable-release --disable-asserts --with-pic #--enable-double-precision
+CFG_OPTIONS = --with-arch=nocona --enable-ou --enable-release --disable-asserts --with-pic #--enable-double-precision
 SVN_REVISION = -r 1684
 
 SVN_PATCH = opende_patch.diff
