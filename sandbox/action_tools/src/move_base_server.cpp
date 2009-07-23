@@ -39,9 +39,6 @@
 #include <boost/thread.hpp>
 #include <robot_msgs/PoseStamped.h>
 #include <action_tools/MoveBaseAction.h>
-#include <action_tools/MoveBaseGoal.h>
-#include <action_tools/MoveBaseResult.h>
-#include <action_tools/MoveBaseFeedback.h>
 
 typedef action_tools::ActionServer<action_tools::MoveBaseActionGoal, action_tools::MoveBaseGoal,
         action_tools::MoveBaseActionResult, action_tools::MoveBaseResult,
