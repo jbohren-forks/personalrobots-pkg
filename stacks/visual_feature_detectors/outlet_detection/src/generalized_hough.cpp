@@ -118,8 +118,10 @@ CvSparseMat* buildHoughHist(vector<feature_t>& input, const vector<feature_t>& t
 							if (center && (center->x >= ranges[0][0]) && (center->x < ranges[0][1]) && (center->y >= ranges[1][0]) && (center->y < ranges[1][1]))
 							{
 								//Incrementing histogram
-								idx[0] = (int)((center->x - ranges[0][0])/(ranges[0][1]-ranges[0][0]) * hist_size[0]);
-								idx[1] = (int)((center->y - ranges[1][0])/(ranges[1][1]-ranges[1][0]) * hist_size[1]);
+								float idx0 = ((center->x - ranges[0][0])/(ranges[0][1]-ranges[0][0]) * hist_size[0]);
+								float idx1 = ((center->y - ranges[1][0])/(ranges[1][1]-ranges[1][0]) * hist_size[1]);
+								idx[0] = (int)idx0;
+								idx[1] = (int)idx1;
 								idx[2] = (ranges[2][1] != ranges[2][0]) ? (int)((angle1 - ranges[2][0])/(ranges[2][1]-ranges[2][0]) * hist_size[2]) : 0;
 								idx[3] = (ranges[3][1] != ranges[3][0]) ?(int)((x_scale - ranges[3][0])/(ranges[3][1]-ranges[3][0]) * hist_size[3]) : 0;
 								idx[4] = (ranges[4][1] != ranges[4][0]) ?(int)((y_scale - ranges[4][0])/(ranges[4][1]-ranges[4][0]) * hist_size[4]) : 0;
@@ -160,8 +162,8 @@ CvSparseMat* buildHoughHist(vector<feature_t>& input, const vector<feature_t>& t
 									//	}
 									//End
 
-									//float value = cvGetRealND(hist,idx);
-									//cvSetRealND(hist,idx,++value);
+									float value = cvGetRealND(hist,idx);
+									cvSetRealND(hist,idx,++value);
 								}
 
 
