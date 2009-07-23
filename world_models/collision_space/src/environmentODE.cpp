@@ -52,7 +52,10 @@ collision_space::EnvironmentModelODE::EnvironmentModelODE(void) : EnvironmentMod
 {
     ODEInitCountLock.lock();
     if (ODEInitCount == 0)
+    {
+	m_msg.inform("Initializing ODE");
 	dInitODE2(0);
+    }
     ODEInitCount++;
     ODEInitCountLock.unlock();
     
@@ -65,7 +68,10 @@ collision_space::EnvironmentModelODE::~EnvironmentModelODE(void)
     ODEInitCountLock.lock();
     ODEInitCount--;
     if (ODEInitCount == 0)
+    {
+	m_msg.inform("Closing ODE");
 	dCloseODE();
+    }
     ODEInitCountLock.unlock();
 }
 
@@ -76,6 +82,7 @@ void collision_space::EnvironmentModelODE::checkThreadInit(void) const
     if (ODEThreadMap.find(id) == ODEThreadMap.end())
     {
 	ODEThreadMap[id] = 1;
+	m_msg.inform("Initializing new thread (%d total)", (int)ODEThreadMap.size());
 	dAllocateODEDataForThread(dAllocateMaskAll);
     }
     ODEThreadMapLock.unlock();
