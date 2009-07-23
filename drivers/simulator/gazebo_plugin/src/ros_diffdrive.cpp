@@ -27,25 +27,34 @@
 
 #include <gazebo/gazebo.h>
 #include <gazebo/GazeboError.hh>
-#include <ros/node.h>
+#include <ros/ros.h>
 #include "tf/transform_broadcaster.h"
 #include <robot_msgs/PoseDot.h>
 #include <deprecated_msgs/RobotBase2DOdom.h>
 
+#include <boost/bind.hpp>
+
 gazebo::PositionIface *posIface = NULL;
-robot_msgs::PoseDot cmd_msg;
 
 class DiffDrive {
 public:
   gazebo::PositionIface *posIface;
-  robot_msgs::PoseDot cmd_msg;
+  ros::NodeHandle* rnh_;
+  ros::Subscriber  sub_;
+  ros::Publisher   pub_;
   
-  void cmdVelCallBack() {
+  void cmdVelCallBack(const robot_msgs::PoseDot::ConstPtr& cmd_msg) {
+        std::cout << " pos " << posIface
+                  <<    " x " << cmd_msg->vel.vx
+                  <<    " y " << cmd_msg->vel.vy
+                  <<    " z " << cmd_msg->ang_vel.vz
+                  << std::endl;
+        
     if (posIface) {
       posIface->Lock(1);
-      posIface->data->cmdVelocity.pos.x = cmd_msg.vel.vx;
-      posIface->data->cmdVelocity.pos.y = cmd_msg.vel.vy;
-      posIface->data->cmdVelocity.yaw = cmd_msg.ang_vel.vz;
+      posIface->data->cmdVelocity.pos.x = cmd_msg->vel.vx;
+      posIface->data->cmdVelocity.pos.y = cmd_msg->vel.vy;
+      posIface->data->cmdVelocity.yaw = cmd_msg->ang_vel.vz;
       posIface->Unlock();
     }
   }
@@ -71,11 +80,11 @@ public:
     } catch (gazebo::GazeboError e) {
       std::cout << "Gazebo error: Unable to connect to the sim interface\n" << e << "\n";
       return;
-  }
+    }
     
     /// Open the Position interface
     try {
-      posIface->Open(client, "position_iface_0");
+      posIface->Open(client, "robot_description::position_iface_0");
     } catch (std::string e) {
       std::cout << "Gazebo error: Unable to connect to the position interface\n" << e << "\n";
       return;
@@ -85,54 +94,55 @@ public:
     posIface->Lock(1);
     posIface->data->cmdEnableMotors = 1;
     posIface->Unlock();
-    
-    ros::Node n("gazebo_diffdrive");
-    ros::Node::instance()->subscribe("/cmd_vel", cmd_msg, &DiffDrive::cmdVelCallBack, this, 10);
-    ros::Node::instance()->advertise<deprecated_msgs::RobotBase2DOdom>("odom", 1);
+
+    this->rnh_ = new ros::NodeHandle();
+    this->sub_ = rnh_->subscribe<robot_msgs::PoseDot>("/cmd_vel", 100, boost::bind(&DiffDrive::cmdVelCallBack,this,_1));
+    this->pub_ = rnh_->advertise<deprecated_msgs::RobotBase2DOdom>("/odom", 1);
    
     deprecated_msgs::RobotBase2DOdom odom;
     tf::TransformBroadcaster tfb;
 
     ros::Duration d; d.fromSec(0.01);
     
-    while(n.ok()) { 
+    while(rnh_->ok()) { 
       if (posIface) {
-	posIface->Lock(1);
-	
-	btQuaternion qt; qt.setEulerZYX(posIface->data->pose.yaw, posIface->data->pose.pitch, posIface->data->pose.roll);
-	btVector3 vt(posIface->data->pose.pos.x, posIface->data->pose.pos.y, posIface->data->pose.pos.z);
+        posIface->Lock(1);
+        
+        btQuaternion qt; qt.setEulerZYX(posIface->data->pose.yaw, posIface->data->pose.pitch, posIface->data->pose.roll);
+        btVector3 vt(posIface->data->pose.pos.x, posIface->data->pose.pos.y, posIface->data->pose.pos.z);
 
-	tf::Transform latest_tf(qt, vt);
+        tf::Transform latest_tf(qt, vt);
 
-	// We want to send a transform that is good up until a
-	// tolerance time so that odom can be used
-	ros::Time transform_expiration = ros::Time::now();
-	tf::Stamped<tf::Transform> tmp_tf_stamped(latest_tf.inverse(),
-						  transform_expiration,
-						  "base_link", "odom");
-	tfb.sendTransform(tmp_tf_stamped);
-	
+        // We want to send a transform that is good up until a
+        // tolerance time so that odom can be used
+        ros::Time transform_expiration = ros::Time::now();
+        tf::Stamped<tf::Transform> tmp_tf_stamped(latest_tf.inverse(),
+                                                  transform_expiration,
+                                                  "base_link", "odom");
+        tfb.sendTransform(tmp_tf_stamped);
+        
 
-	
-	odom.pos.x = posIface->data->pose.pos.x;
-	odom.pos.y = posIface->data->pose.pos.y;
-	odom.pos.th = posIface->data->pose.yaw;
-	odom.vel.x = posIface->data->velocity.pos.x;
-	odom.vel.y = posIface->data->velocity.pos.y;
-	odom.vel.th = posIface->data->velocity.yaw;
-	odom.stall = 0;
-	
-	odom.header.frame_id = "odom"; 
-	
-	odom.header.stamp = transform_expiration;
-	 
-	ros::Node::instance()->publish("odom", odom); 
+        odom.pos.x = posIface->data->pose.pos.x;
+        odom.pos.y = posIface->data->pose.pos.y;
+        odom.pos.th = posIface->data->pose.yaw;
+        odom.vel.x = posIface->data->velocity.pos.x;
+        odom.vel.y = posIface->data->velocity.pos.y;
+        odom.vel.th = posIface->data->velocity.yaw;
+        odom.stall = 0;
+        
+        odom.header.frame_id = "odom"; 
+        
+        odom.header.stamp = transform_expiration;
+        
+        this->pub_.publish(odom); 
 
-
-	posIface->Unlock();
+        posIface->Unlock();
       }
       d.sleep();
     }
+  }
+  ~DiffDrive() {
+    delete this->rnh_;
   }
 };
 
@@ -140,7 +150,12 @@ public:
 
 
 int main(int argc, char** argv) {
-  ros::init(argc, argv);
+  ros::init(argc,argv,"ros_diffdrive");
+
+  // spawn 2 threads by default, ///@todo: make this a parameter
+  ros::MultiThreadedSpinner s(1);
+  boost::thread spinner_thread( boost::bind( &ros::spin, s ) );
+
   DiffDrive d;
   return 0;
 }
