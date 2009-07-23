@@ -25,17 +25,3 @@ Index: server/physics/Geom.cc
      this->SetCategoryBits(GZ_ALL_COLLIDE);
      this->SetCollideBits(GZ_ALL_COLLIDE);
    }
-Index: server/physics/ode/ODEPhysics.cc
-===================================================================
---- server/physics/ode/ODEPhysics.cc	(revision 8081)
-+++ server/physics/ode/ODEPhysics.cc	(working copy)
-@@ -56,7 +56,8 @@
-     : PhysicsEngine()
- {
-   // Collision detection init
--  dInitODE();
-+  dInitODE2(0);
-+  dAllocateODEDataForThread(dAllocateMaskAll);
- 
-   this->worldId = dWorldCreate();
- 
