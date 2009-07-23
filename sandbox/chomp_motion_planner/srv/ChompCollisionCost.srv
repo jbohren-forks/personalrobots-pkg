@@ -13,4 +13,4 @@ float64[] costs
 # Each element of this array is a num_joints x 1 array that represents the
 # joint velocity that will move the link down the gradient of the distance
 # field (away from collisions)
-VelocityArray[] gradient
+JointVelocityArray[] gradient
