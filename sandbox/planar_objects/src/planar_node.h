@@ -43,6 +43,10 @@ public:
   sensor_msgs::ImageConstPtr dimage_;
   sensor_msgs::CvBridge dbridge_;
 
+  ros::Subscriber limage_sub_;
+  sensor_msgs::ImageConstPtr limage_;
+  sensor_msgs::CvBridge lbridge_;
+
   ros::Subscriber dinfo_sub_;
   sensor_msgs::DisparityInfoConstPtr dinfo_;
 
@@ -64,6 +68,7 @@ public:
   void cloudCallback(const robot_msgs::PointCloud::ConstPtr& point_cloud);
   void dispCallback(const sensor_msgs::Image::ConstPtr& disp_img);
   void dinfoCallback(const sensor_msgs::DisparityInfo::ConstPtr& disp_img);
+  void limageCallback(const sensor_msgs::Image::ConstPtr& left_img);
   void syncCallback();
 
   // Main loop

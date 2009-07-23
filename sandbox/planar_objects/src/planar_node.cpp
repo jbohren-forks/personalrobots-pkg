@@ -20,20 +20,30 @@ using namespace std;
 using namespace robot_msgs;
 using namespace vis_utils;
 
+#define CVWINDOW(a) cvNamedWindow(a,CV_WINDOW_AUTOSIZE); cvMoveWindow(a,(cvWindows /3 )* 500,(cvWindows%3)*500); cvWindows++;
+
 // Constructor
 PlanarNode::PlanarNode() :
   sync_(&PlanarNode::syncCallback, this)
 {
-  cvNamedWindow("disparity", CV_WINDOW_AUTOSIZE);
-  cvNamedWindow("plane", CV_WINDOW_AUTOSIZE);
-  cvNamedWindow("Canny", CV_WINDOW_AUTOSIZE);
-  cvNamedWindow("Hough", CV_WINDOW_AUTOSIZE);
-  cvNamedWindow("Dist", CV_WINDOW_AUTOSIZE);
-  cvMoveWindow("disparity",1900,0);
-  cvMoveWindow("plane",1900,600);
-  cvMoveWindow("Canny",1200,0);
-  cvMoveWindow("Hough",1200,600);
-  cvMoveWindow("Dist",1900,900);
+  int cvWindows=0;
+  CVWINDOW("left");
+//  CVWINDOW("right");
+  CVWINDOW("disparity");
+
+  CVWINDOW("occupied");
+  CVWINDOW("free");
+  CVWINDOW("unknown");
+
+
+  CVWINDOW("canny");
+  CVWINDOW("free-dilated");
+  CVWINDOW("canny-filtered");
+
+  CVWINDOW("canny-filtered-dilated");
+  CVWINDOW("hough");
+
+
   nh_.param("~n_planes_max", n_planes_max_, 4);
   nh_.param("~point_plane_distance", point_plane_distance_, 0.015);
 
@@ -41,6 +51,7 @@ PlanarNode::PlanarNode() :
   cloud_sub_ = nh_.subscribe("stereo/cloud", 1, sync_.synchronize(&PlanarNode::cloudCallback, this));
   disp_sub_ = nh_.subscribe("stereo/disparity", 1, sync_.synchronize(&PlanarNode::dispCallback, this) );
   dinfo_sub_ = nh_.subscribe("stereo/disparity_info", 1, sync_.synchronize(&PlanarNode::dinfoCallback, this) );
+  limage_sub_ = nh_.subscribe("stereo/left/image_rect", 1, sync_.synchronize(&PlanarNode::limageCallback, this) );
 
   // advertise topics
   cloud_planes_pub_ = nh_.advertise<PointCloud> ("~planes", 1);
@@ -71,6 +82,19 @@ void PlanarNode::dispCallback(const sensor_msgs::Image::ConstPtr& disp_img)
     IplImage* disp = cvCreateImage(cvGetSize(dbridge_.toIpl()), IPL_DEPTH_8U, 1);
     cvCvtScale(dbridge_.toIpl(), disp, 4.0/dinfo_->dpp);
     cvShowImage("disparity", disp);
+    cvReleaseImage(&disp);
+  }
+}
+
+void PlanarNode::limageCallback(const sensor_msgs::Image::ConstPtr& left_img)
+{
+  limage_ = left_img;
+
+  if (lbridge_.fromImage(*limage_))
+  {
+    // Disparity has to be scaled to be be nicely displayable
+    IplImage* disp = cvCreateImage(cvGetSize(lbridge_.toIpl()), IPL_DEPTH_8U, 1);
+    cvShowImage("left", lbridge_.toIpl());
     cvReleaseImage(&disp);
   }
 }
@@ -136,58 +160,70 @@ void PlanarNode::syncCallback()
 
   vis_utils::visualizePlanes(*cloud_,plane_indices,plane_cloud,plane_coeff,plane_color,outside,cloud_planes_pub_,visualization_pub_);
 
-  IplImage* planeImage = cvCreateImage(cvGetSize(dbridge_.toIpl()), IPL_DEPTH_8U, 1);
-  find_planes::createPlaneImage(*cloud_, plane_indices[frontplane], plane_coeff[frontplane], planeImage);
+  // occupied pixels in plane
+  IplImage* pixOccupied = cvCreateImage(cvGetSize(dbridge_.toIpl()), IPL_DEPTH_8U, 1);
 
-  // Reduce the image by 2
-//  IplImage* out = cvCreateImage( cvSize(planeImage->width/2,planeImage->height/2), planeImage->depth, planeImage->nChannels );
-  IplImage* out = cvCreateImage( cvGetSize(planeImage), planeImage->depth, planeImage->nChannels );
-//  cvPyrDown( planeImage, out );
-  cvSmooth( planeImage, out, CV_GAUSSIAN, 1, 1 );
+  // free pixels in plane (because something sensed behind plane)
+  IplImage* pixFree = cvCreateImage(cvGetSize(dbridge_.toIpl()), IPL_DEPTH_8U, 1);
 
-  IplImage* dst = cvCreateImage( cvGetSize(out), 8, 1 );
-  IplImage* color_dst = cvCreateImage( cvGetSize(out), 8, 3 );
+  // unknown/undefined pixels in plane
+  IplImage* pixUnknown = cvCreateImage(cvGetSize(dbridge_.toIpl()), IPL_DEPTH_8U, 1);
+
+  find_planes::createPlaneImage(*cloud_, plane_indices[frontplane], plane_coeff[frontplane],
+                                pixOccupied,pixFree,pixUnknown);
+
+  cvShowImage( "occupied", pixOccupied );
+  cvShowImage( "free", pixFree );
+  cvShowImage( "unknown", pixUnknown );
+
+//  IplImage* pixMerged = cvCreateImage(cvGetSize(dbridge_.toIpl()), IPL_DEPTH_8U, 3);
+//  cvMerge(pixOccupied,pixFree,pixUnknown,NULL,pixMerged);
+//  cvShowImage( "merged", pixMerged);
+
+  // canny edge image of occupied pixels
+  IplImage* pixCanny = cvCreateImage(cvGetSize(dbridge_.toIpl()), IPL_DEPTH_8U, 1);
+  cvCanny( pixOccupied, pixCanny, 50, 200, 3 );
+  cvShowImage( "canny", pixCanny );
+
+  // dilate (increase) free pixels
+  IplImage* pixFreeDilated = cvCreateImage(cvGetSize(dbridge_.toIpl()), IPL_DEPTH_8U, 1);
+  cvDilate(pixFree,pixFreeDilated,NULL,10);
+  cvShowImage( "free-dilated", pixFreeDilated );
+
+  // only keep edges that lie substantially close to free pixels
+  IplImage* pixCannyFiltered = cvCreateImage(cvGetSize(dbridge_.toIpl()), IPL_DEPTH_8U, 1);
+  cvAnd(pixCanny,pixFreeDilated,pixCannyFiltered);
+  cvShowImage( "canny-filtered", pixCannyFiltered );
+
+  // dilate filtered canny edge image..
+  IplImage* pixCannyFilteredAndDilated = cvCreateImage(cvGetSize(dbridge_.toIpl()), IPL_DEPTH_8U, 1);
+  cvDilate(pixCannyFiltered,pixCannyFilteredAndDilated,NULL,2);
+  cvShowImage( "canny-filtered-dilated", pixCannyFilteredAndDilated );
+
+  // find edges via hough transform
+  IplImage* pixHough = cvCreateImage(cvGetSize(dbridge_.toIpl()), IPL_DEPTH_8U, 3);
+  cvCvtColor( lbridge_.toIpl(), pixHough, CV_GRAY2BGR );
+
   CvMemStorage* storage = cvCreateMemStorage(0);
   CvSeq* lines = 0;
-
-  cvCanny( out, dst, 50, 200, 3 );
-
-  IplImage* dist = cvCreateImage( cvGetSize(out), 8, 1 );
-  uchar *data;
-
-  cvCvtColor( dst, color_dst, CV_GRAY2BGR );
-  lines = cvHoughLines2( dst, storage, CV_HOUGH_PROBABILISTIC, 1, CV_PI/180, 5, 30, 30 );
+  lines = cvHoughLines2( pixCannyFilteredAndDilated, storage, CV_HOUGH_PROBABILISTIC, 1, CV_PI/180, 5, 30, 15 );
   for(int i = 0; i < lines->total; i++ )
   {
       CvPoint* line = (CvPoint*)cvGetSeqElem(lines,i);
-      cvLine( color_dst, line[0], line[1], CV_RGB(255,0,0), 3, 8 );
+      cvLine( pixHough, line[0], line[1], CV_RGB(rand()%255,rand()%255,rand()%255), 1, 8 );
   }
-  data      = (uchar *)dst->imageData;
-  for(int i=0;i<dst->height;i++) for(int j=0;j<dst->width;j++) for(int k=0;k<dst->nChannels;k++)
-    data[i*dst->widthStep+j*dst->nChannels+k]=255-data[i*dst->widthStep+j*dst->nChannels+k];
+////  cvClearMemStorage(storage);
+////  cvReleaseMemStorage(&storage);
+  cvShowImage("hough",pixHough);
 
-  cvDistTransform(dst, dist, CV_DIST_L1,3);
-
-
-
-  char outFileName[50];
-  sprintf (outFileName, "/tmp/plane-%.5d.png", cloud_->header.seq);
-  printf("'%s'\n",outFileName);
-  if(!cvSaveImage(outFileName,planeImage)) printf("Could not save: %s\n",outFileName);
-  sprintf (outFileName, "/tmp/canny-%.5d.png", cloud_->header.seq);
-  if(!cvSaveImage(outFileName,dst)) printf("Could not save: %s\n",outFileName);
-  sprintf (outFileName, "/tmp/hough-%.5d.png", cloud_->header.seq);
-  if(!cvSaveImage(outFileName,color_dst)) printf("Could not save: %s\n",outFileName);
-
-  cvShowImage("plane", planeImage);
-  cvShowImage( "Canny", dst );
-  cvShowImage( "Hough", color_dst );
-  cvShowImage( "Dist", dist );
-
-  cvReleaseImage(&dst);
-  cvReleaseImage(&color_dst);
-  cvReleaseImage(&planeImage);
-
+  cvReleaseImage(&pixOccupied);
+  cvReleaseImage(&pixFree);
+  cvReleaseImage(&pixUnknown);
+  cvReleaseImage(&pixCanny);
+  cvReleaseImage(&pixFreeDilated);
+  cvReleaseImage(&pixCannyFiltered);
+  cvReleaseImage(&pixCannyFilteredAndDilated);
+  cvReleaseImage(&pixHough);
 
   lastDuration = Time::now() - currentTime;
   lastTime = currentTime;
@@ -218,3 +254,103 @@ int main(int argc, char **argv)
 
   return 0;
 }
+
+
+/*
+ *
+
+
+  // the depth image
+  IplImage* imgInPlane = cvCreateImage( cvGetSize(planeImage), planeImage->depth, planeImage->nChannels );
+
+
+  // Reduce the image by 2
+//  IplImage* out = cvCreateImage( cvSize(planeImage->width/2,planeImage->height/2), planeImage->depth, planeImage->nChannels );
+  IplImage* out = cvCreateImage( cvGetSize(planeImage), planeImage->depth, planeImage->nChannels );
+//  cvPyrDown( planeImage, out );
+
+//  cvShowImage("plane2", planeImage);
+//  int rows=3;
+//  int columns=3;
+//  IplConvKernel* structuringElement; // open/close structuring element
+//
+//  structuringElement = cvCreateStructuringElementEx(rows, columns,
+//                cvFloor(rows / 2), cvFloor(columns / 2), CV_SHAPE_RECT, NULL);
+//
+//  int iterations=10;
+//
+//  cvMorphologyEx(planeImage, planeImage, NULL, structuringElement,
+//                                                                                        CV_MOP_OPEN, iterations);
+//
+////  cvMorphologyEx(planeImage, planeImage, NULL, structuringElement,
+////                                                                                        CV_MOP_CLOSE, iterations);
+//
+//  cvReleaseStructuringElement(&structuringElement);
+
+  cvSmooth( planeImage, out, CV_GAUSSIAN, 1, 1 );
+
+  IplImage* dst = cvCreateImage( cvGetSize(out), 8, 1 );
+  IplImage* color_dst = cvCreateImage( cvGetSize(out), 8, 3 );
+  CvMemStorage* storage = cvCreateMemStorage(0);
+  CvSeq* lines = 0;
+
+  cvCanny( out, dst, 50, 200, 3 );
+  cvDilate(dst,dst);
+
+  IplImage* dist = cvCreateImage( cvGetSize(out), 8, 1 );
+  uchar *data;
+
+  cvCvtColor( dst, color_dst, CV_GRAY2BGR );
+  lines = cvHoughLines2( dst, storage, CV_HOUGH_PROBABILISTIC, 1, CV_PI/180, 5, 30, 15 );
+  for(int i = 0; i < lines->total; i++ )
+  {
+      CvPoint* line = (CvPoint*)cvGetSeqElem(lines,i);
+      cvLine( color_dst, line[0], line[1], CV_RGB(255,0,0), 3, 8 );
+  }
+  data      = (uchar *)dst->imageData;
+  for(int i=0;i<dst->height;i++) for(int j=0;j<dst->width;j++) for(int k=0;k<dst->nChannels;k++)
+    data[i*dst->widthStep+j*dst->nChannels+k]=255-data[i*dst->widthStep+j*dst->nChannels+k];
+
+  cvDistTransform(dst, dist, CV_DIST_L1,3);
+
+  for(int i = 0; i < lines->total; i++ )
+  {
+      CvPoint* line = (CvPoint*)cvGetSeqElem(lines,i);
+
+      CvLineIterator iterator;
+      int max_buffer = cvInitLineIterator(dist,line[0],line[1],&iterator,8,0);
+      double d_sum=0;
+      double d_max=0;
+      for(int j=0;j<max_buffer;j++) {
+        d_sum += iterator.ptr[0];
+        d_max = MAX(d_max,iterator.ptr[0]);
+        CV_NEXT_LINE_POINT(iterator);
+      }
+      cvLine( color_dst, line[0], line[1], CV_RGB(255-MIN(255,d_max*20),0,0), 3, 8 );
+
+      cout << "line" << i <<" has d_sum="<<d_sum <<" d_max="<<d_max<<" and max_buffer="<<max_buffer<< endl;
+
+  }
+
+//
+//
+//  char outFileName[50];
+//  sprintf (outFileName, "/tmp/plane-%.5d.png", cloud_->header.seq);
+//  printf("'%s'\n",outFileName);
+//  if(!cvSaveImage(outFileName,planeImage)) printf("Could not save: %s\n",outFileName);
+//  sprintf (outFileName, "/tmp/canny-%.5d.png", cloud_->header.seq);
+//  if(!cvSaveImage(outFileName,dst)) printf("Could not save: %s\n",outFileName);
+//  sprintf (outFileName, "/tmp/hough-%.5d.png", cloud_->header.seq);
+//  if(!cvSaveImage(outFileName,color_dst)) printf("Could not save: %s\n",outFileName);
+
+  cvShowImage("plane", planeImage);
+  cvShowImage( "Canny", dst );
+  cvShowImage( "Hough", color_dst );
+  cvShowImage( "Dist", dist );
+
+  cvReleaseImage(&dst);
+  cvReleaseImage(&color_dst);
+  cvReleaseImage(&planeImage);
+
+
+ */

@@ -166,7 +166,8 @@ void find_planes::findPlanes(const PointCloud& cloud, int n_planes_max, double s
 }
 
 void find_planes::createPlaneImage(const robot_msgs::PointCloud& cloud, std::vector<int> &inliers,
-                                   std::vector<double> &plane_coeff, IplImage *planeImage)
+                                   std::vector<double> &plane_coeff,
+                                   IplImage *pixOccupied,IplImage *pixFree,IplImage *pixUnknown)
 {
 
   int x_chann=-1;
@@ -180,11 +181,32 @@ void find_planes::createPlaneImage(const robot_msgs::PointCloud& cloud, std::vec
       return;
   }
 
+//  cvSetZero(pixOccupied);
+//  cvSetZero(pixFree);
+  cvSet(pixUnknown,cvRealScalar(255) );
+
+  for (size_t i = 0; i < cloud.get_pts_size(); i++)
+  {
+    int x = cloud.chan[x_chann].vals[ i ];
+    int y = cloud.chan[y_chann].vals[ i ];
+
+    bool behindPlane = ( plane_coeff[0]*cloud.pts[i].x + plane_coeff[1]*cloud.pts[i].y + plane_coeff[2]*cloud.pts[i].z + plane_coeff[3] <0);
+
+    // if this point is behind our plane --> pixFree = 255 and pixUndefined = 0
+    if( behindPlane ) {
+      ((uchar *)(pixFree->imageData + y*pixFree->widthStep))[x] = 255;
+      ((uchar *)(pixUnknown->imageData + y*pixUnknown->widthStep))[x] = 0;
+    } else {
+    }
+  }
+
   for (size_t i = 0; i < inliers.size(); i++)
   {
     int x = cloud.chan[x_chann].vals[ inliers[i] ];
     int y = cloud.chan[y_chann].vals[ inliers[i] ];
 //    ROS_INFO("%d, %d ",x,y);
-    ((uchar *)(planeImage->imageData + y*planeImage->widthStep))[x] = 128;
+    ((uchar *)(pixOccupied->imageData + y*pixOccupied->widthStep))[x] = 255;
+    ((uchar *)(pixFree->imageData + y*pixFree->widthStep))[x] = 0;
+    ((uchar *)(pixUnknown->imageData + y*pixUnknown->widthStep))[x] = 0;
   }
 }
