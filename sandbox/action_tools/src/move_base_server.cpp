@@ -50,11 +50,11 @@ typedef action_tools::ActionServer<action_tools::MoveBaseActionGoal, action_tool
 typedef MoveBaseActionServer::GoalHandle GoalHandle;
 
 void goalCB(GoalHandle goal){
-  ROS_INFO("In goal callback");
+  ROS_INFO("In goal callback, got a goal with id: %.2f", goal.getGoalID().id.toSec());
 }
 
 void preemptCB(GoalHandle goal){
-  ROS_INFO("In preempt callback");
+  ROS_INFO("In preempt callback, got a goal with id: %.2f", goal.getGoalID().id.toSec());
 }
 
 int main(int argc, char** argv){
@@ -62,7 +62,7 @@ int main(int argc, char** argv){
 
   ros::NodeHandle n;
 
-  MoveBaseActionServer as(n, "move_base", boost::bind(&goalCB, _1), boost::bind(&preemptCB, _1), 0.5);
+  MoveBaseActionServer as(n, "move_base", boost::bind(&goalCB, _1), boost::bind(&preemptCB, _1));
 
   ros::spin();
 }

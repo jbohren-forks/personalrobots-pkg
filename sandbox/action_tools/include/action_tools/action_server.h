@@ -131,6 +131,10 @@ namespace action_tools {
             as_->publishResult((*status_it_).status_, result);
           }
 
+          void publishFeedback(const Feedback& feedback){
+            as_->publishFeedback((*status_it_).status_, feedback);
+          }
+
           boost::shared_ptr<const Goal> getGoal(){
             //if we have a goal that is non-null
             if(goal_){
@@ -141,7 +145,7 @@ namespace action_tools {
             return boost::shared_ptr<const Goal>();
           }
 
-          GoalID getGoalId(){
+          GoalID getGoalID(){
             return (*status_it_).status_.goal_id;
           }
 
@@ -155,7 +159,7 @@ namespace action_tools {
 
       ActionServer(ros::NodeHandle n, std::string name, 
           boost::function<void (const GoalHandle&)> goal_cb, 
-          boost::function<void (const GoalHandle&)> preempt_cb, double status_frequency)
+          boost::function<void (const GoalHandle&)> preempt_cb)
         : node_(n, name), goal_callback_(goal_cb), preempt_callback_(preempt_cb) {
           status_pub_ = node_.advertise<action_tools::GoalStatusArray>("status", 1);
           result_pub_ = node_.advertise<ActionResult>("result", 1);
@@ -163,6 +167,10 @@ namespace action_tools {
 
           goal_sub_ = node_.subscribe<ActionGoal>("goal", 1,
               boost::bind(&ActionServer::goalCallback, this, _1));
+
+          //read the frequency with which to publish status from the parameter server
+          double status_frequency;
+          node_.param("status_frequency", status_frequency, 5.0);
 
           status_timer_ = node_.createTimer(ros::Duration(1.0 / status_frequency),
               boost::bind(&ActionServer::publishStatus, this, _1));
@@ -176,6 +184,15 @@ namespace action_tools {
         ar->status = status;
         ar->result = result;
         result_pub_.publish(ar);
+      }
+
+      void publishResult(const GoalStatus& status, const Feedback& feedback){
+        boost::mutex::scoped_lock(lock_);
+        //we'll create a shared_ptr to pass to ROS to limit copying
+        boost::shared_ptr<ActionFeedback> af(new ActionFeedback);
+        af->status = status;
+        af->feedback = feedback;
+        feedback_pub_.publish(af);
       }
 
       void registerGoalCallback(boost::function<void (GoalHandle)> cb){
