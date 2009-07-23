@@ -5,7 +5,7 @@
 
   </description>
   <author>Alex Teichman</author>
-  <license>BSD</license>
+  <license>GPL</license>
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/stanleyi</url>
   <depend package="dorylus"/>

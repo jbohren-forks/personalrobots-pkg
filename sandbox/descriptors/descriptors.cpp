@@ -211,7 +211,6 @@ void ImageDescriptor::commonDebug(Keypoint kp, IplImage* vis) {
     cvReleaseImage(&vis);
 }
 
-
 /****************************************************************************
 *************  ImageDescriptor::SurfWrapper
 ****************************************************************************/

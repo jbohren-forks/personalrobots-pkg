@@ -15,6 +15,7 @@
 #include <errno.h>
 #include <sys/stat.h>
 
+
 typedef cv::Vector< cv::Vector<float> > vvf;
 #define CVSHOW(name, img) cvNamedWindow(name); cvShowImage(name, img)
   
@@ -109,8 +110,9 @@ class ImageDescriptor {
 };
 
 
+
 /***************************************************************************
-***********  SURF (Not yet implemented.)
+***********  SURF
 ****************************************************************************/
 
 class SurfWrapper : public ImageDescriptor {
