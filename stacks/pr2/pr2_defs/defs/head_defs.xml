@@ -439,7 +439,7 @@
       <axis xyz="0 0 1" />
       <limit min="-2.92" max="2.92"
              effort="2.645"
-             velocity="100" k_velocity="1.5"
+             velocity="6" k_velocity="1.5"
              safety_length_min="0.15" safety_length_max="0.15" k_position="100" />
       <calibration reference_position="${-2.79+cal_head_pan_flag}" values="0 0" />
       <joint_properties damping="1.0" />
@@ -708,7 +708,7 @@
       <axis xyz="0 0 1" />
       <limit min="-2.92" max="2.92"
              effort="2.645"
-             velocity="100" k_velocity="1.5"
+             velocity="6" k_velocity="1.5"
              safety_length_min="0.15" safety_length_max="0.15" k_position="100" />
       <calibration reference_position="${0.0+cal_head_pan_flag_alpha2}" values="0 0" />
       <joint_properties damping="1.0" />
@@ -760,7 +760,7 @@
 
     <joint name="${name}_joint" type="revolute">
       <axis xyz="0 1 0" />
-      <limit min="-0.52" max="1.42" effort="12"
+      <limit min="-0.45" max="1.37" effort="12"
              velocity="5" k_velocity="100"
              safety_length_min="0.02" safety_length_max="0.02" k_position="100" />
       <calibration reference_position="${0.0+cal_head_tilt_flag}" values="0 0" />
@@ -811,7 +811,7 @@
   <!-- Motor must be configured with 148877 motor -->
     <joint name="${name}_joint" type="revolute">
       <axis xyz="0 1 0" />
-      <limit min="-0.53" max="1.45" effort="12.0"
+      <limit min="-0.45" max="1.37" effort="12.0"
              velocity="5" k_velocity="10"
              safety_length_min="0.02" safety_length_max="0.02" k_position="100" />
       <calibration reference_position="${0.0+cal_head_tilt_flag_alpha2}" values="0 0" />
@@ -860,7 +860,7 @@
  <macro name="pr2_head_tilt_alpha2b" params="name parent *origin">
     <joint name="${name}_joint" type="revolute">
       <axis xyz="0 1 0" />
-      <limit min="-0.53" max="1.45" effort="12.0"
+      <limit min="-0.45" max="1.37" effort="12.0"
              velocity="5" k_velocity="10"
              safety_length_min="0.02" safety_length_max="0.02" k_position="100" />
       <calibration reference_position="${0.0+cal_head_tilt_flag_alpha2}" values="0 0" />
