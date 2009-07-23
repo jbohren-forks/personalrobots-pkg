@@ -37,6 +37,7 @@
 #include <ros/ros.h>
 #include <planning_environment/monitors/collision_space_monitor.h>
 #include <visualization_msgs/Marker.h>
+#include <boost/thread.hpp>
 
 class CollisionTestSpeed
 {
@@ -58,6 +59,7 @@ public:
     {
 	if (!cm_->loadedModels())
 	    return;	
+
 	collision_space::EnvironmentModel *em = cm_->getODECollisionModel().get();
 	em->setSelfCollision(false);
 	
@@ -163,6 +165,67 @@ public:
 	delete[] data;
     }
 
+    void collisionThread(int tid, collision_space::EnvironmentModel *emx)
+    {
+	collision_space::EnvironmentModel *em = emx->clone();
+	ROS_INFO("Thread %d using instance %p", tid, em);
+	
+	const unsigned int K = 10000;
+	
+	sleep(1);
+	
+	ros::WallTime tm = ros::WallTime::now();
+	for (unsigned int i = 0 ; i < K ; ++i)
+	    em->isCollision();
+	ROS_INFO("Thread %d: %f collision tests per second (with self collision checking)", tid, (double)K/(ros::WallTime::now() - tm).toSec());
+	delete em;
+    }
+    
+    void testThreads(void)
+    {
+	if (!cm_->loadedModels())
+	    return;
+	
+	collision_space::EnvironmentModel *em = cm_->getODECollisionModel().get();
+	em->setSelfCollision(true);
+	em->updateRobotModel();
+
+	const int n = 10000;
+	double *data = new double[n * 4];
+	
+	for (int i = 0 ; i < n ; ++i)
+	{
+	    int i4 = i * 4;
+	    do 
+	    {
+		data[i4 + 0] = uniform(1.5);
+		data[i4 + 1] = uniform(1.5);
+		data[i4 + 2] = uniform(1.5);
+		data[i4 + 3] = 0.02;
+		em->clearObstacles();
+		em->addPointCloudSpheres("points", 1, data + i4);
+	    }
+	    while(em->isCollision());
+	}
+	
+	em->clearObstacles();
+	em->addPointCloudSpheres("points", n, data);
+	ROS_INFO("Added %d points", n);
+	
+	delete[] data;
+
+	
+	int nt = 2;
+	std::vector<boost::thread*> th(nt);
+	for (int i = 0 ; i < nt ; ++i)
+	    th[i] = new boost::thread(boost::bind(&CollisionTestSpeed::collisionThread, this, i, em));
+	for (int i = 0 ; i < nt ; ++i)
+	{
+	    th[i]->join();
+	    delete th[i];
+	}
+    }
+    
 protected:
 
     void sendPoint(double x, double y, double z)
@@ -210,12 +273,14 @@ protected:
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "CollisionTestSpeed");
-
+    
     CollisionTestSpeed cts;
     
     cts.testPointCloud();
-    cts.testCollision();
+    cts.testCollision();    
+    cts.testThreads();
     
+    ROS_INFO("Done");
     ros::spin();
     
     return 0;
