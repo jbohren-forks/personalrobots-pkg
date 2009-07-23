@@ -159,7 +159,8 @@ void usage(ostream & os)
      << "   -x  <fname> set custom base filename\n"
      << "   -L  <layoutID> quick (temporary?) way of switching layouts\n"
      << "   -X          dump filename base to stdout (use as last option)\n"
-     << "   -W          run in website generation mode\n";
+     << "   -W          run in website generation mode\n"
+     << "   -G          disable graphical output\n";
   SetupOptions::help(os, "help on setup options:", "  ");
 }
 
@@ -316,6 +317,10 @@ void parse_options(int argc, char ** argv)
 	
       case 'W':
 	websiteMode = true;
+	break;
+	
+      case 'G':
+	enableGfx = false;
 	break;
 	
       default:

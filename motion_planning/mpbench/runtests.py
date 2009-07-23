@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 # there's got to be a better way...
-import commands, subprocess, sys
+import commands, subprocess, sys, string
 pkgdir = commands.getstatusoutput("rospack find mpbench")
 if 0 != pkgdir[0]:
     print "could not rospack find mpbench"
@@ -26,19 +26,21 @@ args.append("-p ara:xythetadoor:%s/data/pr2.mprim -c ros:25 -w xml:%s/data/test-
 args.append("-p ara:xythetalat:%s/data/pr2.mprim -c sfl:25" % (pkgdir[1]))
 args.append("-p ara:xythetadoor:%s/data/pr2.mprim -c sfl:25 -w xml:%s/data/test-single-door.xml" % (pkgdir[1], pkgdir[1]))
 
+log = open("runtests.log", 'w')
 failures = []
 for iarg in xrange(len(args)):
-    conslogname = "test%03d.txt" % iarg
-    conslog = open(conslogname, 'w')
-    callargs = [mpbench] + args[iarg].split() + ['-W']
-    print callargs
-    retcode = subprocess.call(callargs, stdout=conslog, stderr=subprocess.STDOUT)
-    status = "%3d: %s (args: %s)" % (iarg, conslogname, args[iarg])
+    callargs = [mpbench] + args[iarg].split() + ['-G']
+    callstr = string.join(callargs, ' ')
+    print        'running: %s' % callstr
+    print >>log, 'running: %s' % callstr
+    retcode = subprocess.call(callargs, stderr=subprocess.STDOUT)
     if 0 != retcode:
-        print "FAILED %s" % status
-        failures.append("FAILED %s" % status)
+        print        "FAILED (%d): %s" % (retcode, callstr)
+        print >>log, "FAILED (%d): %s" % (retcode, callstr)
+        failures.append("FAILED (%d): %s" % (retcode, callstr))
     else:
-        print "passed %s" % status
+        print        "passed: %s" % callstr
+        print >>log, "passed: %s" % callstr
 
 print "--------------------------------------------------"
 if 0 == len(failures):
@@ -47,4 +49,3 @@ else:
     print "summary of failures:"
     for failure in failures:
         print failure
-
