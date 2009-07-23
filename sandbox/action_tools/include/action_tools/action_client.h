@@ -35,6 +35,8 @@
 #ifndef ACTION_TOOLS_ROBUST_MULTI_GOAL_ACTION_CLIENT_H_
 #define ACTION_TOOLS_ROBUST_MULTI_GOAL_ACTION_CLIENT_H_
 
+#include <list>
+
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
 #include "action_tools/one_shot_timer.h"
@@ -46,16 +48,14 @@
 namespace action_tools
 {
 
-template<class Goal, class Feedback, class Result>
+template<class ActionGoal, class Goal, class ActionResult, class Result, class ActionFeedback, class Feedback>
 class ActionClient
 {
 public:
-  class GoalHandle
-  {
+  // Need forward declaration for typedefs
+  class GoalHandle;
 
-  };
-
-  typedef ActionClient<Goal, Feedback, Result> ActionClientT;
+  typedef ActionClient<ActionGoal, Goal, ActionResult, Result, ActionFeedback, Feedback> ActionClientT;
   typedef boost::shared_ptr<const Goal> GoalConstPtr;
   typedef boost::shared_ptr<const Feedback> FeedbackConstPtr;
   typedef boost::shared_ptr<const Result> ResultConstPtr;
@@ -67,22 +67,62 @@ public:
     enum GoalState  { PENDING, ACTIVE, PREEMPTED, SUCCEEDED, ABORTED, LOST } ;
   };
 
-  class GoalStatus
+  // Keeps track of the communication status of a single requested goal
+  class GoalManager
   {
     public:
-      GoalStatus(const ros::Time& stamp, const GoalID& id)
+      GoalManager(const ros::Time& stamp, const GoalID& id)
       {
         comm_state_ = IDLE;
-
       }
       void update(const GoalStatus& status_msg);
 
     private:
       enum CommState {IDLE, WAITING_FOR_ACK, PURSUING_GOAL, WAITING_FOR_PREEMPTED, WAITING_FOR_TERMINAL_STATE, WAITING_FOR_RESULT, LOST};
+
+      boost::mutex mutex_;
+      typename GoalStates::GoalState goal_state_;
       CommState comm_state_;
       ros::Time stamp;
-
       boost::weak_ptr<void> handle_tracker_;
+  };
+
+  // Used to clean up the GoalManager list in the ActionClient, once there are no more goal handles pointing to the status
+  class HandleTrackerDeleter
+  {
+    public:
+      HandleTrackerDeleter(ActionClientT* ac, typename std::list<GoalManager>::iterator it) : it_(it), ac_(ac)
+      {  }
+
+      void operator() (void* ptr)
+      {
+        boost::mutex::scoped_lock(ac_->manager_list_mutex_);
+        ac_->status_trackers_.erase(it_);
+      }
+
+    private:
+      typename std::list<GoalManager>::iterator it_;
+      ActionClientT* ac_;
+  };
+
+  // Object provided to user to make queries against a specific goal
+  class GoalHandle
+  {
+    public:
+      GoalHandle(typename std::list<GoalManager>::iterator it)//, ActionClientT* ac)
+       : status_it_(it), handle_tracker_((*status_it_).handle_tracker_.lock()) //, ac_(ac)
+      {  }
+
+      typename GoalStates::GoalState getState()
+      {
+        boost::mutex::scoped_lock(status_it_->mutex_);
+        return status_it_->goal_state_;
+      }
+
+    private:
+      typename std::list<GoalManager>::iterator status_it_;
+      boost::shared_ptr<void> handle_tracker_;
+      // ActionClientT* ac_;
   };
 
   ActionClient(const std::string& name) : n_(name)
@@ -104,9 +144,17 @@ public:
 
   GoalHandle sendGoal(const Goal& goal, CompletionCallback cb)
   {
-    goal_status = GoalStatus(goal->action_header.goal_id);
-  }
+    // Add a goal manager to our list of managers
+    typename std::list<GoalManager>::iterator it = manager_list_.insert(GoalManager(goal->action_header.goal_id), manager_list_.end());
 
+    // Create a custom deallocater to eventually destroy the GoalManager, once
+    //   we no longer have any GoalHandles in scope
+    HandleTrackerDeleter d(this, it);
+    boost::shared_ptr<void> handle_tracker((void*) NULL, d);
+    (*it).handle_tracker_ = handle_tracker;
+
+    GoalHandle gh = GoalHandle(it);//, this);
+  }
 
 private:
   ros::NodeHandle n_;
@@ -114,6 +162,9 @@ private:
   ros::Subscriber feedback_sub_;
   ros::Publisher  goal_pub_;
   ros::Subscriber status_sub_;
+
+  boost::mutex manager_list_mutex_;
+  std::list<GoalManager> manager_list_;
 
   // *************** Implementation ***************
 
