@@ -319,9 +319,14 @@ class EnvironmentROBARM3D: public DiscreteSpaceInformation
 {
   public:
 
+		std::vector<int> expanded_states;
+		bool save_expanded_states;
+
     boost::shared_ptr<Voxel3d> voxel_grid;
     boost::shared_ptr<Voxel3d> lowres_voxel_grid;
 
+		
+		
     EnvironmentROBARM3D();
     ~EnvironmentROBARM3D(){};
 
@@ -407,6 +412,8 @@ class EnvironmentROBARM3D: public DiscreteSpaceInformation
 
     void copyVoxelGrid(const boost::shared_ptr<Voxel3d> &voxel_grid, unsigned char *** Grid3D);
 
+		std::vector<int> debugExpandedStates();
+
   private:
 
     /** member data */
@@ -432,12 +439,12 @@ class EnvironmentROBARM3D: public DiscreteSpaceInformation
 
     /** coordinate frame/angle functions */
     void DiscretizeAngles();
-    void Cell2ContXYZ(int x, int y, int z, double *pX, double *pY, double *pZ);
-    void Cell2ContXYZ(int x, int y, int z, double *pX, double *pY, double *pZ, double gridcell_m);
-    void ComputeContAngles(const short unsigned int coord[NUMOFLINKS], double angle[NUMOFLINKS]);
-    void ComputeCoord(const double angle[], short unsigned int coord[NUMOFLINKS]);
-    void ContXYZ2Cell(double x, double y, double z, short unsigned int* pX, short unsigned int *pY, short unsigned int *pZ);
-    void ContXYZ2Cell(double* xyz, double gridcellwidth, int dims_c[3], short unsigned int *pXYZ);
+    inline void Cell2ContXYZ(int x, int y, int z, double *pX, double *pY, double *pZ);
+		inline void Cell2ContXYZ(int x, int y, int z, double *pX, double *pY, double *pZ, double gridcell_m);
+		inline void ComputeContAngles(const short unsigned int coord[NUMOFLINKS], double angle[NUMOFLINKS]);
+		inline void ComputeCoord(const double angle[], short unsigned int coord[NUMOFLINKS]);
+		inline void ContXYZ2Cell(double x, double y, double z, short unsigned int* pX, short unsigned int *pY, short unsigned int *pZ);
+		inline void ContXYZ2Cell(double* xyz, double gridcellwidth, int dims_c[3], short unsigned int *pXYZ);
     void HighResGrid2LowResGrid(short unsigned int * XYZ_hr, short unsigned int * XYZ_lr);
 
     /** collision checking */
@@ -536,6 +543,75 @@ inline bool EnvironmentROBARM3D::isValidCell(const short unsigned int xyz[], con
 		return false;
 
 	return true;
+}
+
+//angles are counterclockwise from 0 to 360 in radians, 0 is the center of bin 0, ...
+inline void EnvironmentROBARM3D::ComputeContAngles(const short unsigned int coord[], double angle[])
+{
+	for(int i = 0; i < EnvROBARMCfg.num_joints; i++)
+		angle[i] = coord[i]*EnvROBARMCfg.angledelta[i];
+}
+
+inline void EnvironmentROBARM3D::ComputeCoord(const double angle[], short unsigned int coord[])
+{
+	double pos_angle;
+
+	for(int i = 0; i < EnvROBARMCfg.num_joints; i++)
+	{
+			//NOTE: Added 3/1/09
+		pos_angle = angle[i];
+		if(pos_angle < 0.0)
+			pos_angle += 2*M_PI;
+
+		coord[i] = (int)((pos_angle + EnvROBARMCfg.angledelta[i]*0.5)/EnvROBARMCfg.angledelta[i]);
+
+		if(coord[i] == EnvROBARMCfg.anglevals[i])
+			coord[i] = 0;
+	}
+}
+
+// convert a cell in the occupancy grid to point in real world 
+inline void EnvironmentROBARM3D::Cell2ContXYZ(int x, int y, int z, double *pX, double *pY, double *pZ)
+{
+	*pX = x * EnvROBARMCfg.GridCellWidth + EnvROBARMCfg.origin_m[0];
+	*pY = y * EnvROBARMCfg.GridCellWidth + EnvROBARMCfg.origin_m[1];
+	*pZ = z * EnvROBARMCfg.GridCellWidth + EnvROBARMCfg.origin_m[2];
+}
+
+// convert a cell in the occupancy grid to point in real world
+inline void EnvironmentROBARM3D::Cell2ContXYZ(int x, int y, int z, double *pX, double *pY, double *pZ, double gridcell_m)
+{
+	*pX = x * gridcell_m + EnvROBARMCfg.origin_m[0];
+	*pY = y * gridcell_m + EnvROBARMCfg.origin_m[1];
+	*pZ = z * gridcell_m + EnvROBARMCfg.origin_m[2];
+}
+
+// convert a point in real world to a cell in occupancy grid 
+inline void EnvironmentROBARM3D::ContXYZ2Cell(double x, double y, double z, short unsigned int *pX, short unsigned int *pY, short unsigned int *pZ)
+{
+	*pX = (int)((x - EnvROBARMCfg.origin_m[0]) / EnvROBARMCfg.GridCellWidth);
+	if(*pX >= EnvROBARMCfg.EnvWidth_c) *pX = EnvROBARMCfg.EnvWidth_c-1;
+
+	*pY = (int)((y - EnvROBARMCfg.origin_m[1]) / EnvROBARMCfg.GridCellWidth);
+	if(*pX >= EnvROBARMCfg.EnvWidth_c) *pX = EnvROBARMCfg.EnvWidth_c-1;
+
+	*pZ = (int)((z - EnvROBARMCfg.origin_m[2]) / EnvROBARMCfg.GridCellWidth);
+	if(*pZ >= EnvROBARMCfg.EnvDepth_c) *pZ = EnvROBARMCfg.EnvDepth_c-1;
+}
+
+inline void EnvironmentROBARM3D::ContXYZ2Cell(double* xyz, double gridcellwidth, int dims_c[3], short unsigned int *pXYZ)
+{
+	pXYZ[0] = (int)((xyz[0] - EnvROBARMCfg.origin_m[0]) / gridcellwidth);
+	if(pXYZ[0] >= dims_c[0])
+		pXYZ[0] = dims_c[0]-1;
+
+	pXYZ[1] = (int)((xyz[1] - EnvROBARMCfg.origin_m[1]) / gridcellwidth);
+	if(pXYZ[1] >= dims_c[1])
+		pXYZ[1] = dims_c[1]-1;
+
+	pXYZ[2] = (int)((xyz[2] - EnvROBARMCfg.origin_m[2]) / gridcellwidth);
+	if(pXYZ[2] >= dims_c[2]) 
+		pXYZ[2] = dims_c[2]-1;
 }
 
 #endif
