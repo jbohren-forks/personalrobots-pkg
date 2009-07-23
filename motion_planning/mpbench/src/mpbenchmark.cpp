@@ -139,10 +139,15 @@ void cleanup()
 {
   if (dbgos)
     *dbgos << "byebye!\n" << flush;
-  else
+  if (logos != dbgos) {
+    cerr << "DBG deleting logos\n";
     delete logos;
+  }
+  cerr << "DBG resetting setup\n";
   setup.reset();
+  cerr << "DBG resetting results\n";
   result_collection.reset();
+  cerr << "DBG cleanup done\n";
 }
 
 

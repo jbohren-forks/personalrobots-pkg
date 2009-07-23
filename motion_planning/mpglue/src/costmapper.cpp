@@ -40,6 +40,8 @@ using namespace mpglue;
 using namespace boost;
 using namespace std;
 
+#define HUNT_SEGFAULT_AT_EXIT
+
 namespace {
   
   class sflCostmapper: public mpglue::Costmapper {
@@ -53,6 +55,20 @@ namespace {
     sflCostmapper(shared_ptr<sfl::Mapper2d> m2d,
 		  int possibly_circumscribed_cost)
       : m2d_(m2d), possibly_circumscribed_cost_(possibly_circumscribed_cost) {}
+
+#ifdef HUNT_SEGFAULT_AT_EXIT
+    ~sflCostmapper() {
+      cerr << "DBG ~mpglue::sflCostmapper() resetting index transform\n";
+      idxt_.reset();
+      cerr << "DBG ~mpglue::sflCostmapper() resetting costmap accessor\n";
+      cma_.reset();
+      cerr << "DBG ~mpglue::sflCostmapper() resetting read-travmap\n";
+      rdt_.reset();
+      cerr << "DBG ~mpglue::sflCostmapper() resetting mapper2d\n";
+      m2d_.reset();
+      cerr << "DBG ~mpglue::sflCostmapper() DONE\n";
+    }
+#endif // HUNT_SEGFAULT_AT_EXIT
     
     virtual boost::shared_ptr<mpglue::CostmapAccessor const> getAccessor() const
     {
@@ -126,6 +142,20 @@ namespace {
 	getter_(new cm2dgetter(cm.get())),
 	cma_(mpglue::createCostmapAccessor(getter_.get())),
 	idxt_(mpglue::createIndexTransform(getter_.get())) {}
+
+#ifdef HUNT_SEGFAULT_AT_EXIT
+    ~cm2dCostmapper() {
+      cerr << "DBG ~mpglue::cm2dCostmapper() resetting IndexTransform\n";
+      idxt_.reset();
+      cerr << "DBG ~mpglue::cm2dCostmapper() resetting CostmapAccessor\n";
+      cma_.reset();
+      cerr << "DBG ~mpglue::cm2dCostmapper() resetting getter\n";
+      getter_.reset();
+      cerr << "DBG ~mpglue::cm2dCostmapper() resetting Costmap2D\n";
+      cm_.reset();
+      cerr << "DBG ~mpglue::cm2dCostmapper() DONE\n";
+    }
+#endif // HUNT_SEGFAULT_AT_EXIT
     
     virtual boost::shared_ptr<CostmapAccessor const> getAccessor() const
     { return cma_; }
