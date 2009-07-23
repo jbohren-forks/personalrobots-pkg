@@ -54,6 +54,7 @@
 #include <functional_m3n/regressors/regressor_includes.h>
 #include <functional_m3n/logging/m3n_logging.h>
 
+using namespace bgl_energy;
 using namespace std;
 
 // --------------------------------------------------------------

@@ -62,6 +62,8 @@ using namespace std;
  *  IEEE Transactions on Pattern Analysis and Machine Intelligence, 2004
  */
 // --------------------------------------------------------------
+namespace bgl_energy
+{
 class SubmodularEnergyMin
 {
   public:
@@ -277,5 +279,5 @@ class SubmodularEnergyMin
 
     double const_offset_;
 };
-
+}
 #endif
