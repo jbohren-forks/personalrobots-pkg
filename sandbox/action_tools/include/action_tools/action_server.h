@@ -108,8 +108,13 @@ namespace action_tools {
 
           void setActive(){
             if(goal_){
-              (*status_it_).status_.status = GoalStatus::ACTIVE;
-              as_->publishStatus();
+              if((*status_it_).status_.status == GoalStatus::PENDING){
+                (*status_it_).status_.status = GoalStatus::ACTIVE;
+                as_->publishStatus();
+              }
+              else
+                ROS_ERROR("To transition to a rejected state, the goal must be in a pending state, it is currently in state: %d", 
+                    (*status_it_).status_.status);
             }
             else
               ROS_ERROR("Attempt to set status on an uninitialized GoalHandle");
@@ -117,8 +122,13 @@ namespace action_tools {
 
           void setRejected(const Result& result = Result()){
             if(goal_){
-              (*status_it_).status_.status = GoalStatus::REJECTED;
-              as_->publishResult((*status_it_).status_, result);
+              if((*status_it_).status_.status == GoalStatus::PENDING){
+                (*status_it_).status_.status = GoalStatus::REJECTED;
+                as_->publishResult((*status_it_).status_, result);
+              }
+              else
+                ROS_ERROR("To transition to a rejected state, the goal must be in a pending state, it is currently in state: %d", 
+                    (*status_it_).status_.status);
             }
             else
               ROS_ERROR("Attempt to set status on an uninitialized GoalHandle");
@@ -126,8 +136,14 @@ namespace action_tools {
 
           void setAborted(const Result& result = Result()){
             if(goal_){
-              (*status_it_).status_.status = GoalStatus::ABORTED;
-              as_->publishResult((*status_it_).status_, result);
+              unsigned int status = (*status_it_).status_.status;
+              if(status == GoalStatus::PENDING || status == GoalStatus::ACTIVE){
+                (*status_it_).status_.status = GoalStatus::ABORTED;
+                as_->publishResult((*status_it_).status_, result);
+              }
+              else
+                ROS_ERROR("To transition to an aborted state, the goal must be in a pending or active state, it is currently in state: %d", 
+                    status);
             }
             else
               ROS_ERROR("Attempt to set status on an uninitialized GoalHandle");
@@ -135,17 +151,29 @@ namespace action_tools {
 
           void setPreempted(const Result& result = Result()){
             if(goal_){
-              (*status_it_).status_.status = GoalStatus::PREEMPTED;
-              as_->publishResult((*status_it_).status_, result);
+              unsigned int status = (*status_it_).status_.status;
+              if(status == GoalStatus::PENDING || status == GoalStatus::ACTIVE){
+                (*status_it_).status_.status = GoalStatus::PREEMPTED;
+                as_->publishResult((*status_it_).status_, result);
+              }
+              else
+                ROS_ERROR("To transition to a preempted state, the goal must be in a pending or active state, it is currently in state: %d", 
+                    status);
             }
             else
               ROS_ERROR("Attempt to set status on an uninitialized GoalHandle");
           }
 
           void setSucceeded(const Result& result = Result()){
-            if(goal_) {
-              (*status_it_).status_.status = GoalStatus::SUCCEEDED;
-              as_->publishResult((*status_it_).status_, result);
+            if(goal_){
+              unsigned int status = (*status_it_).status_.status;
+              if(status == GoalStatus::PENDING || status == GoalStatus::ACTIVE){
+                (*status_it_).status_.status = GoalStatus::SUCCEEDED;
+                as_->publishResult((*status_it_).status_, result);
+              }
+              else
+                ROS_ERROR("To transition to a succeeded state, the goal must be in a pending or active state, it is currently in state: %d", 
+                    status);
             }
             else
               ROS_ERROR("Attempt to set status on an uninitialized GoalHandle");
