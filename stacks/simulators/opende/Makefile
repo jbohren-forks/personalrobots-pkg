@@ -1,7 +1,7 @@
 # change the next flag to 'no' if drawstuff is not to be built
 WITH_DRAWSTUFF = yes
 
-CFG_OPTIONS = --with-arch=nocona --enable-release --disable-asserts --with-pic #--enable-double-precision
+CFG_OPTIONS = --with-arch=nocona --enable-ou --enable-release --disable-asserts --with-pic #--enable-double-precision
 SVN_REVISION = -r 1684
 
 SVN_PATCH = opende_patch.diff
@@ -28,8 +28,20 @@ INTEL_C_FLAGS_OMP =  CXXFLAGS='-march=core2 -msse3 -ip  -no-prec-div -openmp -pa
 INTEL_LD_FLAGS     =  LDFLAGS='-Wl,-rpath,/opt/intel/cc/10.1.008/lib,-rpath,$(ROOT)/lib -L/opt/intel/cc/10.1.008/lib -L$(ROOT)/lib -lguide -lcxaguard -limf -lsvml -lirc -lpthread -lintlc'
 INTEL_LD_FLAGS_OMP =  LDFLAGS='-Wl,-rpath,/opt/intel/cc/10.1.008/lib,-rpath,$(ROOT)/lib -L/opt/intel/cc/10.1.008/lib -L$(ROOT)/lib -lguide -lcxaguard -limf -lsvml -lirc -lpthread -lintlc -lompstub -liomp5 -lomp_db'
 
-GCC_FLAGS     = CXXFLAGS='-DNDEBUG -O3 -fPIC -I$(ROOT)/include' CFLAGS='-DNDEBUG -O3 -fPIC -I$(ROOT)/include -I$(ROOT)/usr/include' LDFLAGS='-L$(ROOT)/lib'
-#GCC_FLAGS     = CXXFLAGS='-DNDEBUG -msse -fopenmp -O3 -fPIC -I$(ROOT)/include' CFLAGS='-DNDEBUG -msse -fopenmp -O3 -fPIC -I$(ROOT)/include -I$(ROOT)/usr/include' LDFLAGS='-L$(ROOT)/lib -lgomp'
+
+#boost setup in ros
+BOOST_CFLAGS = $(shell rosboost-cfg --cflags)
+BOOST_LFLAGS = $(shell rosboost-cfg --lflags signals,thread)
+
+#GCC_FLAGS     = CXXFLAGS='-ggdb -fPIC -I$(ROOT)/include $(BOOST_CFLAGS)' \
+                CFLAGS='-ggdb -fPIC -I$(ROOT)/include -I$(ROOT)/usr/include $(BOOST_CFLAGS)' \
+                LDFLAGS='-L$(ROOT)/lib $(BOOST_LFLAGS)'
+GCC_FLAGS     = CXXFLAGS='-DNDEBUG -O3 -fPIC -I$(ROOT)/include $(BOOST_CFLAGS)' \
+                CFLAGS='-DNDEBUG -O3 -fPIC -I$(ROOT)/include -I$(ROOT)/usr/include $(BOOST_CFLAGS)' \
+                LDFLAGS='-L$(ROOT)/lib $(BOOST_LFLAGS)'
+#GCC_FLAGS     = CXXFLAGS='-DNDEBUG -msse -fopenmp -O3 -fPIC -I$(ROOT)/include' \
+                 CFLAGS='-DNDEBUG -msse -fopenmp -O3 -fPIC -I$(ROOT)/include -I$(ROOT)/usr/include' \
+                 LDFLAGS='-L$(ROOT)/lib -lgomp'
 
 #CONFIGURE_FLAGS = $(CFG_OPTIONS) $(INTEL_OPTIONS) $(INTEL_C_FLAGS) $(INTEL_LD_FLAGS)
 CONFIGURE_FLAGS = $(CFG_OPTIONS) $(GCC_FLAGS)
