@@ -29,14 +29,14 @@ void IA3N_INFO(const char * msg)
 
 void startRecording()
 {
-	FILE * result = popen("bash `rospack find person_data`/startRecording.sh","r");
+	FILE * result = popen("bash `rospack find person_data`/startRecordingDummy.sh","r");
 	fclose(result);
 	recording = true;
 }
 
 void stopRecording()
 {
-	FILE * result = popen("bash `rospack find person_data`/stopRecording.sh","r");
+	FILE * result = popen("bash `rospack find person_data`/stopRecordingDummy.sh","r");
 	fclose(result);
 	recording = false;
 }

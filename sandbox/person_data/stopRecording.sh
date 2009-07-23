@@ -1,1 +1,1 @@
-roslaunch stopRecording.launch
+roslaunch `rospack find person_data`/stopRecording.launch

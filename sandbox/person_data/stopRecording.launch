@@ -1,10 +1,11 @@
 <launch>
-<node pkg="topic_tools" type="switch_mux" args="/wide_stereo/raw_stereo_muxed /dummy" machine="four"/>
-<node pkg="topic_tools" type="switch_mux" args="/narrow_stereo/raw_stereo_muxed /dummy" machine="four"/>
-<node pkg="topic_tools" type="switch_mux" args="/tf_message_muxed /dummy" machine="two"/>
-<node pkg="topic_tools" type="switch_mux" machine="two" args="/mechanism_state_muxed /dummy"/>
-<node pkg="topic_tools" type="switch_mux" machine="two" args="/base_scan_muxed  /dummy"/>
-<node pkg="topic_tools" type="switch_mux" machine="two" args="/tilt_scan_muxed /dummy"/>
-<node pkg="topic_tools" type="switch_mux" machine="two" args="/laser_tilt_controller/laser_scanner_signal_muxed /dummy"/> 
-<node pkg="topic_tools" type="switch_mux" machine="two" args="/odom_muxed /dummy">
+<include file="$(find pr2_alpha)/$(env ROBOT).machine" />
+<node pkg="topic_tools" type="switch_mux" args="/wide_stereo/raw_stereo_muxed __none" machine="four"/>
+<node pkg="topic_tools" type="switch_mux" args="/narrow_stereo/raw_stereo_muxed __none" machine="four"/>
+<node pkg="topic_tools" type="switch_mux" args="/tf_message_muxed __none" machine="two"/>
+<node pkg="topic_tools" type="switch_mux" machine="two" args="/mechanism_state_muxed __none"/>
+<node pkg="topic_tools" type="switch_mux" machine="two" args="/base_scan_muxed  __none"/>
+<node pkg="topic_tools" type="switch_mux" machine="two" args="/tilt_scan_muxed __none"/>
+<node pkg="topic_tools" type="switch_mux" machine="two" args="/laser_tilt_controller/laser_scanner_signal_muxed __none"/> 
+<node pkg="topic_tools" type="switch_mux" machine="two" args="/odom_muxed __none"/>
 </launch>

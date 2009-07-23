@@ -1,0 +1,3 @@
+<launch>
+<node pkg="person_data" type="headhack" output="screen"/>
+</launch>

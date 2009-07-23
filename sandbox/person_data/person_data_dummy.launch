@@ -1,0 +1,11 @@
+<launch>
+<!-- dummy version of person_data.launch for offline testing -->
+<node pkg="person_data" type="joylistener_dummy" output="screen"/>
+
+<!-- for some reason putting joylistener after the other launch files broke it,
+and putting headhack after them makes roslaunch not find it! -->
+
+<node pkg="person_data" type="named" args="/person_dummy_data"/>
+<include file="$(find person_data)/data_collector_record_dummy.launch"  />
+
+</launch>

@@ -1,0 +1,4 @@
+<launch>
+	<node pkg="topic_tools" type="mux" args="/person_dummy_data_muxed /person_dummy_data"/>
+	<node pkg="rosrecord" type="rosrecord" args="-f /tmp/person_data_dummy /person_dummy_data_muxed"/>
+</launch>
