@@ -107,32 +107,56 @@ namespace action_tools {
               as_(as), handle_tracker_((*status_it).handle_tracker_.lock()){}
 
           void setActive(){
-            (*status_it_).status_.status = GoalStatus::ACTIVE;
-            as_->publishStatus();
+            if(goal_){
+              (*status_it_).status_.status = GoalStatus::ACTIVE;
+              as_->publishStatus();
+            }
+            else
+              ROS_ERROR("Attempt to set status on an uninitialized GoalHandle");
           }
 
           void setRejected(const Result& result = Result()){
-            (*status_it_).status_.status = GoalStatus::REJECTED;
-            as_->publishResult((*status_it_).status_, result);
+            if(goal_){
+              (*status_it_).status_.status = GoalStatus::REJECTED;
+              as_->publishResult((*status_it_).status_, result);
+            }
+            else
+              ROS_ERROR("Attempt to set status on an uninitialized GoalHandle");
           }
 
           void setAborted(const Result& result = Result()){
-            (*status_it_).status_.status = GoalStatus::ABORTED;
-            as_->publishResult((*status_it_).status_, result);
+            if(goal_){
+              (*status_it_).status_.status = GoalStatus::ABORTED;
+              as_->publishResult((*status_it_).status_, result);
+            }
+            else
+              ROS_ERROR("Attempt to set status on an uninitialized GoalHandle");
           }
 
           void setPreempted(const Result& result = Result()){
-            (*status_it_).status_.status = GoalStatus::PREEMPTED;
-            as_->publishResult((*status_it_).status_, result);
+            if(goal_){
+              (*status_it_).status_.status = GoalStatus::PREEMPTED;
+              as_->publishResult((*status_it_).status_, result);
+            }
+            else
+              ROS_ERROR("Attempt to set status on an uninitialized GoalHandle");
           }
 
           void setSucceeded(const Result& result = Result()){
-            (*status_it_).status_.status = GoalStatus::SUCCEEDED;
-            as_->publishResult((*status_it_).status_, result);
+            if(goal_) {
+              (*status_it_).status_.status = GoalStatus::SUCCEEDED;
+              as_->publishResult((*status_it_).status_, result);
+            }
+            else
+              ROS_ERROR("Attempt to set status on an uninitialized GoalHandle");
           }
 
           void publishFeedback(const Feedback& feedback){
-            as_->publishFeedback((*status_it_).status_, feedback);
+            if(goal_) {
+              as_->publishFeedback((*status_it_).status_, feedback);
+            }
+            else
+              ROS_ERROR("Attempt to publish feedback on an uninitialized GoalHandle");
           }
 
           boost::shared_ptr<const Goal> getGoal(){
@@ -146,8 +170,22 @@ namespace action_tools {
           }
 
           GoalID getGoalID(){
-            return (*status_it_).status_.goal_id;
+            if(goal_)
+              return (*status_it_).status_.goal_id;
+            else{
+              ROS_ERROR("Attempt to get a goal id on an uninitialized GoalHandle");
+              return GoalID();
+            }
           }
+
+          GoalStatus getGoalStatus(){
+            if(goal_)
+              return (*status_it_).status_;
+            else{
+              ROS_ERROR("Attempt to get goal status on an uninitialized GoalHandle");
+              return GoalStatus();
+            }
+          } 
 
         private:
           typename std::list<StatusTracker>::iterator status_it_;
@@ -186,7 +224,7 @@ namespace action_tools {
         result_pub_.publish(ar);
       }
 
-      void publishResult(const GoalStatus& status, const Feedback& feedback){
+      void publishFeedback(const GoalStatus& status, const Feedback& feedback){
         boost::mutex::scoped_lock(lock_);
         //we'll create a shared_ptr to pass to ROS to limit copying
         boost::shared_ptr<ActionFeedback> af(new ActionFeedback);
