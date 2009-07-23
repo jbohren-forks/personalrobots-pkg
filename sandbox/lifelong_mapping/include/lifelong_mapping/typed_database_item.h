@@ -58,14 +58,11 @@ public:
   inline static std::string __s_getDataType()
   {
     return DatabaseItem::__s_getDataType();
-    //return DataMessage::__s_getDataType() + "WithNodeId";
   }
 
   inline static std::string __s_getMD5Sum()
   {
-    // @todo: what should really happen here?
     return DatabaseItem::__s_getMD5Sum();
-    //return DataMessage::__s_getMD5Sum();
   }
 
   inline static std::string __s_getMessageDefinition()
@@ -115,7 +112,7 @@ template <typename M>
 class DatabaseItemFactoryT : public DatabaseItemFactory
 {  
 public:
-  // NB: We wrap a reference to M to avoid potentially expensive copying.
+  // We wrap a reference to M to avoid potentially expensive copying.
   typedef TypedDatabaseItem<M&> ItemType;
   
   virtual ros::MessageConstPtr create(const ros::Message& data, uint32_t node_id)

@@ -17,7 +17,7 @@ public:
 
   // Graph updates
   uint32_t addFreeNode();
-  // FIXME: need covariance parameter
+  // @todo: need covariance parameter
   void addConstraint(uint32_t parent, uint32_t child, const tf::Transform& t);
 
   void optimize(); // #iterations? timeout?

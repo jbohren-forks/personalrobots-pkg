@@ -1,0 +1,3 @@
+uint32 parent_node
+uint32 child_node
+lifelong_mapping/TransformWithCovariance constraint

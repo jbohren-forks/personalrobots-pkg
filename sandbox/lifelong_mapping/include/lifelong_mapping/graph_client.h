@@ -4,6 +4,7 @@
 #include <ros/ros.h>
 #include <boost/foreach.hpp>
 
+#include "lifelong_mapping/Constraint.h"
 #include "lifelong_mapping/Query.h"
 #include "lifelong_mapping/RegisterDataTopic.h"
 #include "lifelong_mapping/database_query.h"
@@ -18,14 +19,15 @@ public:
   GraphClient(const ros::NodeHandle& node_handle);
 
   template <typename M>
-  bool select(DbQuery<M> &query);
+  bool select(DbQuery<M> &query) const;
 
   // @todo: other advertise versions?
   template <typename M>
   DatabasePublisher advertiseData(const std::string& topic, uint32_t queue_size);
 
-  // @todo: uint32_t addNode();
-  // @todo: constraint broadcaster? addConstraint()?
+  uint32_t addNode();
+
+  ros::Publisher advertiseConstraint(uint32_t queue_size);
   
 private:
   ros::NodeHandle nh_;
@@ -33,7 +35,7 @@ private:
 };
 
 
-template <typename M> bool GraphClient::select(DbQuery<M> &query)
+template <typename M> bool GraphClient::select(DbQuery<M> &query) const
 {
   query.records.clear();
   

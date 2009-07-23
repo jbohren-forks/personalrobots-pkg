@@ -10,6 +10,10 @@ GraphServer::GraphServer(const ros::NodeHandle& node_handle)
   query_service_ = nh_.advertiseService("/graph_server/query", &GraphServer::queryDatabase, this);
   register_service_ = nh_.advertiseService("/graph_server/register_data_topic",
                                            &GraphServer::registerDataTopic, this);
+  constraint_sub_ = nh_.subscribe<Constraint>("/graph_server/constraint", 1,
+                                              &GraphServer::constraintCallback, this);
+
+  // @todo: optimize graph in background thread?
 }
 
 bool GraphServer::queryDatabase(Query::Request &req, Query::Response &rsp)
@@ -39,14 +43,11 @@ bool GraphServer::queryDatabase(Query::Request &req, Query::Response &rsp)
 bool GraphServer::registerDataTopic(RegisterDataTopic::Request &req,
                                     RegisterDataTopic::Response &rsp)
 {
-  ROS_INFO("Received request to register topic %s", req.topic.c_str());
-  
   // See if we're already subscribed to the topic
   BOOST_FOREACH(const ros::Subscriber& sub, data_subs_)
     if (sub.getTopic() == req.topic)
       return true;
 
-  ROS_INFO("Adding subscriber for %s", req.topic.c_str());
   data_subs_.push_back( nh_.subscribe<DatabaseItem>(req.topic, 1,
                                                     boost::bind(&GraphServer::dataCallback,
                                                                 this, _1, req.topic)) );
@@ -56,6 +57,17 @@ bool GraphServer::registerDataTopic(RegisterDataTopic::Request &req,
 void GraphServer::dataCallback(const DatabaseItemConstPtr& msg, const std::string& topic)
 {
   ROS_INFO("Got data message on topic %s", topic.c_str());
+  // @todo: iron out details here. Special treatment for RawMessage? Store datatype, MD5?
+  db_->insert(msg->data, topic, msg->node_id);
+}
+
+void GraphServer::constraintCallback(const ConstraintConstPtr& msg)
+{
+  ROS_INFO("Got constraint message");
+  // @todo: use covariance
+  tf::Transform transform;
+  tf::transformMsgToTF(msg->constraint.transform, transform);
+  graph_.addConstraint(msg->parent_node, msg->child_node, transform);
 }
 
 } //namespace lifelong_mapping

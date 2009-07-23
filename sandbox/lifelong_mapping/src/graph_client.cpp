@@ -7,4 +7,9 @@ GraphClient::GraphClient(const ros::NodeHandle& node_handle)
 {
 }
 
+ros::Publisher GraphClient::advertiseConstraint(uint32_t queue_size)
+{
+  return nh_.advertise<Constraint>("/graph_server/constraint", queue_size);
+}
+
 } //namespace lifelong_mapping
