@@ -183,7 +183,7 @@ namespace collision_space
 	/** \brief Check the state of verbosity */
 	bool getVerbose(void) const;
 	
-	/** \brief Clone the environment */
+	/** \brief Clone the environment. If this clone is to be used for collision checking in another thread, the call to clone() MUST be made from that thread. */
 	virtual EnvironmentModel* clone(void) const = 0;
 	
     protected:
