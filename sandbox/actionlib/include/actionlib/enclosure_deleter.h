@@ -34,32 +34,37 @@
 *
 * Author: Eitan Marder-Eppstein
 *********************************************************************/
-#include <ros/ros.h>
-#include <action_tools/action_server.h>
-#include <boost/thread.hpp>
-#include <robot_msgs/PoseStamped.h>
-#include <action_tools/MoveBaseAction.h>
 
-typedef action_tools::ActionServer<action_tools::MoveBaseActionGoal, action_tools::MoveBaseGoal,
-        action_tools::MoveBaseActionResult, action_tools::MoveBaseResult,
-        action_tools::MoveBaseActionFeedback, action_tools::MoveBaseFeedback> MoveBaseActionServer;
+#include <boost/shared_ptr.hpp>
 
-typedef MoveBaseActionServer::GoalHandle GoalHandle;
+#ifndef ACTIONLIB_ENCLOSURE_DELETER_H_
+#define ACTIONLIB_ENCLOSURE_DELETER_H_
 
-void goalCB(GoalHandle goal){
-  ROS_INFO("In goal callback, got a goal with id: %.2f", goal.getGoalID().id.toSec());
+namespace actionlib
+{
+
+/*
+ * This allows the creation of a shared pointer to a section
+ * of an already reference counted structure. For example,
+ * if in the following picture Enclosure is reference counted with
+ * a boost::shared_ptr and you want to return a boost::shared_ptr
+ * to the Member that is referenced counted along with Enclosure objects
+ *
+ * Enclosure ---------------  <--- Already reference counted
+ * -----Member <------- A member of enclosure objects, eg. Enclosure.Member
+ */
+template <class Enclosure> class EnclosureDeleter {
+  public:
+    EnclosureDeleter(const boost::shared_ptr<Enclosure>& enc_ptr) : enc_ptr_(enc_ptr){}
+
+    template<class Member> void operator()(Member* member_ptr){
+      enc_ptr_.reset();
+    }
+
+  private:
+    boost::shared_ptr<Enclosure> enc_ptr_;
+};
+
 }
 
-void preemptCB(GoalHandle goal){
-  ROS_INFO("In preempt callback, got a goal with id: %.2f", goal.getGoalID().id.toSec());
-}
-
-int main(int argc, char** argv){
-  ros::init(argc, argv, "test_action");
-
-  ros::NodeHandle n;
-
-  MoveBaseActionServer as(n, "move_base", boost::bind(&goalCB, _1), boost::bind(&preemptCB, _1));
-
-  ros::spin();
-}
+#endif

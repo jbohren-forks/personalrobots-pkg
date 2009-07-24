@@ -1,5 +1,4 @@
 /*********************************************************************
-*
 * Software License Agreement (BSD License)
 *
 *  Copyright (c) 2008, Willow Garage, Inc.
@@ -15,7 +14,7 @@
 *     copyright notice, this list of conditions and the following
 *     disclaimer in the documentation and/or other materials provided
 *     with the distribution.
-*   * Neither the name of Willow Garage, Inc. nor the names of its
+*   * Neither the name of the Willow Garage nor the names of its
 *     contributors may be used to endorse or promote products derived
 *     from this software without specific prior written permission.
 *
@@ -31,38 +30,45 @@
 *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
-*
-* Author: Eitan Marder-Eppstein
 *********************************************************************/
 
-#include <boost/shared_ptr.hpp>
+#ifndef ACTION_LIB_GOAL_ID_GENERATOR_H_
+#define ACTION_LIB_GOAL_ID_GENERATOR_H_
 
-#ifndef ACTION_TOOLS_ENCLOSURE_DELETER_H_
-#define ACTION_TOOLS_ENCLOSURE_DELETER_H_
+#include <string>
+#include "ros/time.h"
+#include "actionlib/GoalID.h"
 
-namespace action_tools
+namespace actionlib
 {
 
-/*
- * This allows the creation of a shared pointer to a section
- * of an already reference counted structure. For example,
- * if in the following picture Enclosure is reference counted with
- * a boost::shared_ptr and you want to return a boost::shared_ptr
- * to the Member that is referenced counted along with Enclosure objects
- *
- * Enclosure ---------------  <--- Already reference counted
- * -----Member <------- A member of enclosure objects, eg. Enclosure.Member
- */
-template <class Enclosure> class EnclosureDeleter {
-  public:
-    EnclosureDeleter(const boost::shared_ptr<Enclosure>& enc_ptr) : enc_ptr_(enc_ptr){}
+class GoalIDGenerator
+{
+public:
+  /**
+   * \param name Name of the action we're generating GoalIDs for
+   */
+  GoalIDGenerator(const std::string name) : name_(name)
+  {
 
-    template<class Member> void operator()(Member* member_ptr){
-      enc_ptr_.reset();
-    }
+  }
 
-  private:
-    boost::shared_ptr<Enclosure> enc_ptr_;
+  /**
+   * \brief Generates a unique ID
+   * \return A unique GoalID for this action
+   */
+  GoalID generateID()
+  {
+    GoalID id;
+    id.id = ros::Time::now();
+    id.stamp = id.id;
+    return id;
+  }
+
+
+private:
+  std::string name_ ;
+
 };
 
 }

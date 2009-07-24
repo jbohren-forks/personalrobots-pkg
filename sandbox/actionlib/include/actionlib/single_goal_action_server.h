@@ -34,13 +34,13 @@
 *
 * Author: Eitan Marder-Eppstein
 *********************************************************************/
-#ifndef ACTION_TOOLS_SINGLE_GOAL_ACTION_SERVER_H_
-#define ACTION_TOOLS_SINGLE_GOAL_ACTION_SERVER_H_
+#ifndef ACTIONLIB_SINGLE_GOAL_ACTION_SERVER_H_
+#define ACTIONLIB_SINGLE_GOAL_ACTION_SERVER_H_
 
 #include <ros/ros.h>
-#include <action_tools/action_server.h> 
+#include <actionlib/action_server.h>
 
-namespace action_tools {
+namespace actionlib {
   /** @class SingleGoalActionServer @brief The SingleGoalActionServer
    * implements a singe goal policy on top of the ActionServer class. The
    * specification of the policy is as follows: only one goal can have an
@@ -59,17 +59,17 @@ namespace action_tools {
 
       /**
        * @brief  Constructor for a SingleGoalActionServer
-       * @param n A NodeHandle to create a namespace under 
+       * @param n A NodeHandle to create a namespace under
        * @param name A name for the action server
        */
       SingleGoalActionServer(ros::NodeHandle n, std::string name)
         : new_goal_(false), preempt_request_(false), new_goal_preempt_request_(false) {
 
           //create the action server
-          as_ = boost::shared_ptr<ActionServer>(new ActionServer(n, name, 
+          as_ = boost::shared_ptr<ActionServer>(new ActionServer(n, name,
                 boost::bind(&SingleGoalActionServer::goalCallback, this, _1),
                 boost::bind(&SingleGoalActionServer::preemptCallback, this, _1)));
-          
+
       }
 
       /**
@@ -92,8 +92,8 @@ namespace action_tools {
         }
 
         //check if we need to send a preempted message for the goal that we're currently pursuing
-        if(isActive() 
-            && current_goal_.getGoal() 
+        if(isActive()
+            && current_goal_.getGoal()
             && current_goal_ != next_goal_){
           current_goal_.setPreempted();
         }
@@ -170,7 +170,7 @@ namespace action_tools {
 
       /**
        * @brief  Allows users to register a callback to be invoked when a new goal is available
-       * @param cb The callback to be invoked 
+       * @param cb The callback to be invoked
        */
       void registerGoalCallback(boost::function<void ()> cb){
         goal_callback_ = cb;
@@ -178,7 +178,7 @@ namespace action_tools {
 
       /**
        * @brief  Allows users to register a callback to be invoked when a new preempt request is available
-       * @param cb The callback to be invoked 
+       * @param cb The callback to be invoked
        */
       void registerPreemptCallback(boost::function<void ()> cb){
         preempt_callback_ = cb;

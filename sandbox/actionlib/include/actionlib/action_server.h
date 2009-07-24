@@ -34,20 +34,20 @@
 *
 * Author: Eitan Marder-Eppstein
 *********************************************************************/
-#ifndef ACTION_TOOLS_ACTION_SERVER
-#define ACTION_TOOLS_ACTION_SERVER
+#ifndef ACTION_LIB_ACTION_SERVER
+#define ACTION_LIB_ACTION_SERVER
 
 #include <ros/ros.h>
 #include <boost/thread.hpp>
 #include <boost/shared_ptr.hpp>
-#include <action_tools/GoalID.h>
-#include <action_tools/GoalStatusArray.h>
-#include <action_tools/GoalStatus.h>
-#include <action_tools/EnclosureDeleter.h>
+#include <actionlib/GoalID.h>
+#include <actionlib/GoalStatusArray.h>
+#include <actionlib/GoalStatus.h>
+#include <actionlib/enclosure_deleter.h>
 
-#include <list> 
+#include <list>
 
-namespace action_tools {
+namespace actionlib {
   /**
    * @class ActionServer
    * @brief The ActionServer is a helpful tool for managing goal requests to a
@@ -97,7 +97,7 @@ namespace action_tools {
       //class to help with tracking status objects
       class HandleTrackerDeleter {
         public:
-          HandleTrackerDeleter(ActionServer<ActionGoal, Goal, ActionResult, Result, ActionFeedback, Feedback>* as, 
+          HandleTrackerDeleter(ActionServer<ActionGoal, Goal, ActionResult, Result, ActionFeedback, Feedback>* as,
               typename std::list<StatusTracker>::iterator status_it)
             : as_(as), status_it_(status_it) {}
 
@@ -133,14 +133,14 @@ namespace action_tools {
            * @brief  Set the status of the goal associated with the GoalHandle to active
            */
           void setActive(){
-            ROS_DEBUG("Going active on goal, id: %.2f, stamp: %.2f", getGoalID().id.toSec(), getGoalID().stamp.toSec()); 
+            ROS_DEBUG("Going active on goal, id: %.2f, stamp: %.2f", getGoalID().id.toSec(), getGoalID().stamp.toSec());
             if(goal_){
               if((*status_it_).status_.status == GoalStatus::PENDING){
                 (*status_it_).status_.status = GoalStatus::ACTIVE;
                 as_->publishStatus();
               }
               else
-                ROS_ERROR("To transition to an active state, the goal must be in a pending state, it is currently in state: %d", 
+                ROS_ERROR("To transition to an active state, the goal must be in a pending state, it is currently in state: %d",
                     (*status_it_).status_.status);
             }
             else
@@ -152,14 +152,14 @@ namespace action_tools {
            * @param  result Optionally, the user can pass in a result to be sent to any clients of the goal
            */
           void setRejected(const Result& result = Result()){
-            ROS_DEBUG("Setting status to rejected on goal, id: %.2f, stamp: %.2f", getGoalID().id.toSec(), getGoalID().stamp.toSec()); 
+            ROS_DEBUG("Setting status to rejected on goal, id: %.2f, stamp: %.2f", getGoalID().id.toSec(), getGoalID().stamp.toSec());
             if(goal_){
               if((*status_it_).status_.status == GoalStatus::PENDING){
                 (*status_it_).status_.status = GoalStatus::REJECTED;
                 as_->publishResult((*status_it_).status_, result);
               }
               else
-                ROS_ERROR("To transition to a rejected state, the goal must be in a pending state, it is currently in state: %d", 
+                ROS_ERROR("To transition to a rejected state, the goal must be in a pending state, it is currently in state: %d",
                     (*status_it_).status_.status);
             }
             else
@@ -171,7 +171,7 @@ namespace action_tools {
            * @param  result Optionally, the user can pass in a result to be sent to any clients of the goal
            */
           void setAborted(const Result& result = Result()){
-            ROS_DEBUG("Setting status to aborted on goal, id: %.2f, stamp: %.2f", getGoalID().id.toSec(), getGoalID().stamp.toSec()); 
+            ROS_DEBUG("Setting status to aborted on goal, id: %.2f, stamp: %.2f", getGoalID().id.toSec(), getGoalID().stamp.toSec());
             if(goal_){
               unsigned int status = (*status_it_).status_.status;
               if(status == GoalStatus::PENDING || status == GoalStatus::ACTIVE){
@@ -179,7 +179,7 @@ namespace action_tools {
                 as_->publishResult((*status_it_).status_, result);
               }
               else
-                ROS_ERROR("To transition to an aborted state, the goal must be in a pending or active state, it is currently in state: %d", 
+                ROS_ERROR("To transition to an aborted state, the goal must be in a pending or active state, it is currently in state: %d",
                     status);
             }
             else
@@ -191,7 +191,7 @@ namespace action_tools {
            * @param  result Optionally, the user can pass in a result to be sent to any clients of the goal
            */
           void setPreempted(const Result& result = Result()){
-            ROS_DEBUG("Setting status to preempted on goal, id: %.2f, stamp: %.2f", getGoalID().id.toSec(), getGoalID().stamp.toSec()); 
+            ROS_DEBUG("Setting status to preempted on goal, id: %.2f, stamp: %.2f", getGoalID().id.toSec(), getGoalID().stamp.toSec());
             if(goal_){
               unsigned int status = (*status_it_).status_.status;
               if(status == GoalStatus::PENDING || status == GoalStatus::ACTIVE){
@@ -199,7 +199,7 @@ namespace action_tools {
                 as_->publishResult((*status_it_).status_, result);
               }
               else
-                ROS_ERROR("To transition to a preempted state, the goal must be in a pending or active state, it is currently in state: %d", 
+                ROS_ERROR("To transition to a preempted state, the goal must be in a pending or active state, it is currently in state: %d",
                     status);
             }
             else
@@ -211,7 +211,7 @@ namespace action_tools {
            * @param  result Optionally, the user can pass in a result to be sent to any clients of the goal
            */
           void setSucceeded(const Result& result = Result()){
-            ROS_DEBUG("Setting status to succeeded on goal, id: %.2f, stamp: %.2f", getGoalID().id.toSec(), getGoalID().stamp.toSec()); 
+            ROS_DEBUG("Setting status to succeeded on goal, id: %.2f, stamp: %.2f", getGoalID().id.toSec(), getGoalID().stamp.toSec());
             if(goal_){
               unsigned int status = (*status_it_).status_.status;
               if(status == GoalStatus::PENDING || status == GoalStatus::ACTIVE){
@@ -219,7 +219,7 @@ namespace action_tools {
                 as_->publishResult((*status_it_).status_, result);
               }
               else
-                ROS_ERROR("To transition to a succeeded state, the goal must be in a pending or active state, it is currently in state: %d", 
+                ROS_ERROR("To transition to a succeeded state, the goal must be in a pending or active state, it is currently in state: %d",
                     status);
             }
             else
@@ -228,16 +228,16 @@ namespace action_tools {
 
           /**
            * @brief  Send feedback to any clients of the goal associated with this GoalHandle
-           * @param feedback The feedback to send to the client 
+           * @param feedback The feedback to send to the client
            */
           void publishFeedback(const Feedback& feedback){
-            ROS_DEBUG("Publishing feedback for goal, id: %.2f, stamp: %.2f", getGoalID().id.toSec(), getGoalID().stamp.toSec()); 
+            ROS_DEBUG("Publishing feedback for goal, id: %.2f, stamp: %.2f", getGoalID().id.toSec(), getGoalID().stamp.toSec());
             if(goal_) {
               unsigned int status = (*status_it_).status_.status;
               if(status == GoalStatus::ACTIVE || status == GoalStatus::PENDING)
                 as_->publishFeedback((*status_it_).status_, feedback);
               else
-                ROS_ERROR("To send feedback, the goal must be in a pending or active state, it is currently in state: %d", 
+                ROS_ERROR("To send feedback, the goal must be in a pending or active state, it is currently in state: %d",
                     status);
             }
             else
@@ -282,11 +282,11 @@ namespace action_tools {
               ROS_ERROR("Attempt to get goal status on an uninitialized GoalHandle");
               return GoalStatus();
             }
-          } 
+          }
 
           /**
            * @brief  Equals operator for GoalHandles
-           * @param other The GoalHandle to compare to 
+           * @param other The GoalHandle to compare to
            * @return True if the GoalHandles refer to the same goal, false otherwise
            */
           bool operator==(const GoalHandle& other){
@@ -299,7 +299,7 @@ namespace action_tools {
 
           /**
            * @brief  != operator for GoalHandles
-           * @param other The GoalHandle to compare to 
+           * @param other The GoalHandle to compare to
            * @return True if the GoalHandles refer to different goals, false otherwise
            */
           bool operator!=(const GoalHandle& other){
@@ -332,13 +332,13 @@ namespace action_tools {
        * @param  name The name of the action
        * @param  goal_cb A goal callback to be called when the ActionServer receives a new goal over the wire
        * @param  preempt_cb A preempt callback to be called when the ActionServer receives a new preempt over the wire
-       * @return 
+       * @return
        */
-      ActionServer(ros::NodeHandle n, std::string name, 
-          boost::function<void (GoalHandle)> goal_cb = boost::function<void (GoalHandle)>(), 
+      ActionServer(ros::NodeHandle n, std::string name,
+          boost::function<void (GoalHandle)> goal_cb = boost::function<void (GoalHandle)>(),
           boost::function<void (GoalHandle)> preempt_cb = boost::function<void (GoalHandle)>())
         : node_(n, name), goal_callback_(goal_cb), preempt_callback_(preempt_cb) {
-          status_pub_ = node_.advertise<action_tools::GoalStatusArray>("status", 1);
+          status_pub_ = node_.advertise<actionlib::GoalStatusArray>("status", 1);
           result_pub_ = node_.advertise<ActionResult>("result", 1);
           feedback_pub_ = node_.advertise<ActionFeedback>("feedback", 1);
 
@@ -373,7 +373,7 @@ namespace action_tools {
     private:
       /**
        * @brief  Publishes a result for a given goal
-       * @param status The status of the goal with which the result is associated 
+       * @param status The status of the goal with which the result is associated
        * @param result The result to publish
        */
       void publishResult(const GoalStatus& status, const Result& result){
@@ -387,7 +387,7 @@ namespace action_tools {
 
       /**
        * @brief  Publishes feedback for a given goal
-       * @param status The status of the goal with which the feedback is associated 
+       * @param status The status of the goal with which the feedback is associated
        * @param feedback The feedback to publish
        */
       void publishFeedback(const GoalStatus& status, const Feedback& feedback){
@@ -426,7 +426,7 @@ namespace action_tools {
           else{
             //now, we need to create a goal handle and call the user's callback
             goal_callback_(GoalHandle(it, this));
-          } 
+          }
         }
         //we need to handle a preempt for the user
         else if(goal->request_type == ActionGoal::PREEMPT_REQUEST){
@@ -435,7 +435,7 @@ namespace action_tools {
             //check if the goal id is zero or if it is equal to the goal id of the iterator
             if(
                 (goal->goal_id.id == ros::Time() && goal->goal_id.stamp == ros::Time()) //id and stamp 0 --> preempt everything
-                || goal->goal_id.id == (*it).status_.goal_id.id //ids match... preempt that goal 
+                || goal->goal_id.id == (*it).status_.goal_id.id //ids match... preempt that goal
                 || (goal->goal_id.stamp != ros::Time() && (*it).status_.goal_id.stamp <= goal->goal_id.stamp) //stamp != 0 --> preempt everything before stamp
                 ){
               //call the user's preempt callback on the relevant goal

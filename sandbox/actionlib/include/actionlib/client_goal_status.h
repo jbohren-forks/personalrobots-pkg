@@ -32,14 +32,14 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#ifndef ACTION_TOOLS_CLIENT_GOAL_STATUS_H_
-#define ACTION_TOOLS_CLIENT_GOAL_STATUS_H_
+#ifndef ACTIONLIB_CLIENT_GOAL_STATUS_H_
+#define ACTIONLIB_CLIENT_GOAL_STATUS_H_
 
 #include <string>
 
-#include "action_tools/GoalStatus.h"
+#include "actionlib/GoalStatus.h"
 
-namespace action_tools
+namespace actionlib
 {
 
 /**

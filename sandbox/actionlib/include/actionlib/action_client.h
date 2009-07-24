@@ -32,8 +32,8 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#ifndef ACTION_TOOLS_ACTION_CLIENT_H_
-#define ACTION_TOOLS_ACTION_CLIENT_H_
+#ifndef ACTIONLIB_ACTION_CLIENT_H_
+#define ACTIONLIB_ACTION_CLIENT_H_
 
 #include <list>
 
@@ -41,17 +41,17 @@
 #include <boost/interprocess/sync/scoped_lock.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
-#include "action_tools/one_shot_timer.h"
-#include "action_tools/goal_id_generator.h"
-#include "action_tools/client_goal_status.h"
-#include "action_tools/one_shot_timer.h"
-#include "action_tools/EnclosureDeleter.h"
+#include "actionlib/one_shot_timer.h"
+#include "actionlib/goal_id_generator.h"
+#include "actionlib/client_goal_status.h"
+#include "actionlib/one_shot_timer.h"
+#include "actionlib/enclosure_deleter.h"
 
 // Messages
-//#include "action_tools/ActionHeader.h"
-#include "action_tools/GoalStatusArray.h"
+//#include "actionlib/ActionHeader.h"
+#include "actionlib/GoalStatusArray.h"
 
-namespace action_tools
+namespace actionlib
 {
 
 //! \todo figure out why I get compile errors trying to use boost::mutex::scoped_lock()
@@ -853,4 +853,4 @@ void ActionClientPrefix::GoalManager::finishWaitingForResult()
 #undef ActionClientTemplate
 #undef ActionClientPrefix
 
-#endif // ACTION_TOOLS_ACTION_CLIENT_H_
+#endif // ACTIONLIB_ACTION_CLIENT_H_

@@ -1,4 +1,5 @@
 /*********************************************************************
+*
 * Software License Agreement (BSD License)
 *
 *  Copyright (c) 2008, Willow Garage, Inc.
@@ -14,7 +15,7 @@
 *     copyright notice, this list of conditions and the following
 *     disclaimer in the documentation and/or other materials provided
 *     with the distribution.
-*   * Neither the name of the Willow Garage nor the names of its
+*   * Neither the name of Willow Garage, Inc. nor the names of its
 *     contributors may be used to endorse or promote products derived
 *     from this software without specific prior written permission.
 *
@@ -30,47 +31,35 @@
 *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
+*
+* Author: Eitan Marder-Eppstein
 *********************************************************************/
+#include <ros/ros.h>
+#include <actionlib/action_server.h>
+#include <boost/thread.hpp>
+#include <robot_msgs/PoseStamped.h>
+#include <actionlib/MoveBaseAction.h>
 
-#ifndef ACTION_TOOLS_GOAL_ID_GENERATOR_H_
-#define ACTION_TOOLS_GOAL_ID_GENERATOR_H_
+typedef actionlib::ActionServer<actionlib::MoveBaseActionGoal, actionlib::MoveBaseGoal,
+        actionlib::MoveBaseActionResult, actionlib::MoveBaseResult,
+        actionlib::MoveBaseActionFeedback, actionlib::MoveBaseFeedback> MoveBaseActionServer;
 
-#include <string>
-#include "ros/time.h"
-#include "action_tools/GoalID.h"
+typedef MoveBaseActionServer::GoalHandle GoalHandle;
 
-namespace action_tools
-{
-
-class GoalIDGenerator
-{
-public:
-  /**
-   * \param name Name of the action we're generating GoalIDs for
-   */
-  GoalIDGenerator(const std::string name) : name_(name)
-  {
-
-  }
-
-  /**
-   * \brief Generates a unique ID
-   * \return A unique GoalID for this action
-   */
-  GoalID generateID()
-  {
-    GoalID id;
-    id.id = ros::Time::now();
-    id.stamp = id.id;
-    return id;
-  }
-
-
-private:
-  std::string name_ ;
-
-};
-
+void goalCB(GoalHandle goal){
+  ROS_INFO("In goal callback, got a goal with id: %.2f", goal.getGoalID().id.toSec());
 }
 
-#endif
+void preemptCB(GoalHandle goal){
+  ROS_INFO("In preempt callback, got a goal with id: %.2f", goal.getGoalID().id.toSec());
+}
+
+int main(int argc, char** argv){
+  ros::init(argc, argv, "test_action");
+
+  ros::NodeHandle n;
+
+  MoveBaseActionServer as(n, "move_base", boost::bind(&goalCB, _1), boost::bind(&preemptCB, _1));
+
+  ros::spin();
+}
