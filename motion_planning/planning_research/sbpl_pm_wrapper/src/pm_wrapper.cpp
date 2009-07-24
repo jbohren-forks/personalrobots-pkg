@@ -57,7 +57,7 @@ pm_wrapper::~pm_wrapper()
 bool pm_wrapper::initPlanningMonitor(const std::vector<std::string> &links, tf::TransformListener * tfl)
 {
   collision_check_links_ = links;
-  collision_model_ = new planning_environment::CollisionModels(robot_description_, collision_check_links_);
+	collision_model_ = new planning_environment::CollisionModels("robot_description"/*robot_description_*/, collision_check_links_);
   planning_monitor_ = new planning_environment::PlanningMonitor(collision_model_, tfl);
 
   groupID_ = planning_monitor_->getKinematicModel()->getGroupID(arm_name_);

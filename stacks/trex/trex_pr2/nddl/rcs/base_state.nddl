@@ -1,0 +1,22 @@
+#include "ros.nddl"
+
+/**
+ * BaseState will capture position and orientation.
+ */
+class BaseState extends ROSStateVariable {
+  predicate Holds{
+    float time_stamp;
+    string frame_id;
+    float x;
+    float y;
+    float z;
+    float qx;
+    float qy;
+    float qz;
+    float qw;
+  }
+
+  BaseState(Mode _mode){
+    super(_mode, "Holds", true);
+  }
+};

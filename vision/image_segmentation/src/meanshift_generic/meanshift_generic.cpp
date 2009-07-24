@@ -76,28 +76,24 @@ double dist(double *A, double *B, int n)
 }
 
 /*********************************************************************
- * data				- p x n column matrix of data points
- * p					- dimension of data points
- * n					- number of data points
- * radius			- radius of search windo
- * rate				- gradient descent proportionality factor
- * maxIter			- max allowed number of iterations
- * blur				- specifies algorithm mode
- * labels			- labels for each cluster
- * means				- output (final clusters)
+ * data       - p x n column matrix of data points
+ * p          - dimension of data points
+ * n          - number of data points
+ * radius     - radius of search window
+ * rate       - gradient descent proportionality factor
+ * maxIter    - max allowed number of iterations
+ * labels     - labels for each cluster
+ * means      - output (final clusters)
  *********************************************************************/
-
 void clustering::meanshiftGeneric(double *data,
                                   int p,
                                   int n,
                                   double radius,
                                   double rate,
                                   int maxIter,
-                                  bool blur,
                                   double *labels,
                                   double *means)
 {
-  // use blur = false
   // ------- kd tree ---------
   ANNpointArray ann_data;
   ann_data = annAllocPts(n, p);
@@ -125,6 +121,7 @@ void clustering::meanshiftGeneric(double *data,
   int nLabels = 1; /* Needed in the assignment of cluster labels */
 
   /* initialization */
+  bool blur = false; // using kdtree to find neighboring points
   meansCur = (double*) malloc(sizeof(double) * p * n);
   meansNxt = (double*) malloc(sizeof(double) * p * n);
   mean = (double*) malloc(sizeof(double) * p);

@@ -1,3 +1,6 @@
+#include "rcs/rcs.nddl"
+#include "world_model/topological_map.nddl"
+
 /**
  * This file specifies the interface for actions in the plugs domain
  */

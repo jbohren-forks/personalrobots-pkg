@@ -1,11 +1,9 @@
-#include "TREX.nddl"
 #include "constraints.nddl"
 
 // Tier 1 interface points - external api
-#include "ros.nddl"
 #include "rcs/nav/exports.nddl"
 #include "rcs/safety/exports.nddl"
-#include "nav/exports.nddl"
+#include "common/move_behavior.nddl"
 
 // Tier 2 interface points - other domains
 #include "safety/exports.nddl"

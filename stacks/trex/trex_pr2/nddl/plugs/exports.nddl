@@ -1,3 +1,5 @@
+#include "TREX.nddl"
+
 /**
  * Encapsulates the task of unplugging the robot.
  */

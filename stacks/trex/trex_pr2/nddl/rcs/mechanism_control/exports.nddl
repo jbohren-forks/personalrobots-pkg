@@ -1,3 +1,5 @@
+#include "rcs/rcs.nddl"
+
 /**
  * This file declares the exports for interacting with robot resources such as sensors
  * and mechanism controllers

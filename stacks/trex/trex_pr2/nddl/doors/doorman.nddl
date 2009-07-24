@@ -3,6 +3,7 @@
  */
 #include "world_model/topological_map.nddl"
 #include "doors/door_controller.nddl"
+#include "rcs/base_state.nddl"
 
 // Use base state to obtain current pose for computing travel direction
 BaseState base_state = new BaseState(External);

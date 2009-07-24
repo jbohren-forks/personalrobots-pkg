@@ -1,12 +1,9 @@
 cmake_minimum_required(VERSION 2.4.6)
-include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
-
 set(ROS_BUILD_TYPE Release)
-
+include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 rospack(sbpl_arm_planner)
+
 rospack_add_boost_directories()
-
-
 include_directories(${PROJECT_SOURCE_DIR}/code)
 
 # Build executables in the bin directory
@@ -14,8 +11,8 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
 
 rospack_add_library(sbpl_arm_planner
-		              src/discrete_space_information/robarm3d/environment_robarm3d.cpp
-		              src/utils/utils.cpp
+											src/discrete_space_information/robarm3d/environment_robarm3d.cpp
+											src/utils/utils.cpp
                    )
 
 rospack_add_executable(planPath src/plan_path.cpp

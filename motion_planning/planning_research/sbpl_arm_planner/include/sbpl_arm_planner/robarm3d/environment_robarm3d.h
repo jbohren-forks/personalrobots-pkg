@@ -96,6 +96,7 @@ typedef struct GOAL_POSITION
 /** struct that contains the necessary joint space goal description */
 typedef struct GOAL_CONFIGURATION
 {
+	short unsigned int xyz[3];
   std::vector <double> pos;
   std::vector <double> tolerance_above;
   std::vector <double> tolerance_below;

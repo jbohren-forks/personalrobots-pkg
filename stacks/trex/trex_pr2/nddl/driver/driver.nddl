@@ -1,5 +1,5 @@
-#include "nav/imports.nddl"
-#include "nav/exports.nddl"
+#include "common/nav.nddl"
+#include "common/move_behavior.nddl"
 
 
 float MOVE_BASE_DURATION_BOUND = 600.0;
