@@ -55,26 +55,6 @@ static const double DIFF_RULES[3][DIFF_RULE_LENGTH] = {
     {0, 1/12.0, -17/12.0, 46/12.0, -46/12.0, 17/12.0, -1/12.0}
 };
 
-/**
- * \brief Takes in an std::vector of joint value messages, and writes them out into the KDL joint array.
- *
- * The template typename T needs to be an std::vector of some message which has an std::string "joint_name"
- * and a double array/vector "value".
- *
- * Names to KDL joint index mappings are performed using the given ChompRobotModel.
- */
-template<typename T>
-void jointMsgToArray(T& msg_vector, Eigen::MatrixXd::RowXpr joint_array, ChompRobotModel& robot_model)
-{
-  for (typename T::iterator it=msg_vector.begin(); it!=msg_vector.end(); it++)
-  {
-    std::string name = it->joint_name;
-    int kdl_number = robot_model.urdfNameToKdlNumber(name);
-    if (kdl_number>=0)
-      joint_array(kdl_number) = it->value[0];   //@TODO we assume a single joint value per joint now
-  }
-}
-
 inline void debugJointArray(KDL::JntArray& joint_array)
 {
   for (unsigned int i=0; i<joint_array.rows(); i++)
@@ -104,7 +84,6 @@ void kdlVecToEigenVec(std::vector<KDLType>& kdl_v, std::vector<Eigen::Map<EigenT
     eigen_v.push_back(Eigen::Map<EigenType>(kdl_v[i].data, rows, cols));
   }
 }
-
 
 template<typename KDLType, typename EigenType>
 void kdlVecVecToEigenVecVec(std::vector<std::vector<KDLType> >& kdl_vv, std::vector<std::vector<Eigen::Map<EigenType> > > & eigen_vv, int rows, int cols)

@@ -35,6 +35,7 @@
 /** \author Mrinal Kalakrishnan */
 
 #include <chomp_motion_planner/chomp_cost_server.h>
+#include <kdl/jntarray.hpp>
 
 namespace chomp
 {
@@ -67,7 +68,42 @@ bool ChompCostServer::init(bool advertise_service)
 
 bool ChompCostServer::getChompCollisionCost(chomp_motion_planner::GetChompCollisionCost::Request& request, chomp_motion_planner::GetChompCollisionCost::Response& response)
 {
-  //chomp_robot_model_.
+  KDL::JntArray joint_array(chomp_robot_model_.getNumKDLJoints());
+  chomp_robot_model_.jointMsgToArray(request.state, joint_array);
+
+  std::vector<KDL::Vector> joint_axis;
+  std::vector<KDL::Vector> joint_pos;
+  std::vector<KDL::Frame> segment_frames;
+  chomp_robot_model_.getForwardKinematicsSolver()->JntToCart(joint_array, joint_pos, joint_axis, segment_frames);
+
+  int num_links = request.links.size();
+  response.costs.resize(num_links);
+  response.gradient.resize(num_links);
+
+  std::vector<ChompCollisionPoint> points;
+  KDL::Vector position;
+  Eigen::Vector3d potential_gradient;
+  Eigen::Vector3d position_eigen;
+  double potential;
+
+  // for each link, get its collision points and accumulate the cost:
+  for (unsigned int l=0; l<request.links.size(); ++l)
+  {
+    response.costs[l] = 0.0;
+    chomp_robot_model_.getLinkCollisionPoints(request.links[l], points);
+    for (unsigned int i=0; i<points.size(); i++)
+    {
+      points[i].getTransformedPosition(segment_frames, position);
+
+      position_eigen = Eigen::Map<Eigen::Vector3d>(position.data);
+
+      //bool colliding =
+      chomp_collision_space_.getCollisionPointPotentialGradient(points[i],
+          position_eigen, potential, potential_gradient);
+      response.costs[l] += potential * points[i].getVolume();
+    }
+  }
+
   return true;
 }
 

@@ -156,6 +156,30 @@ public:
 
   const std::string& getReferenceFrame() const;
 
+  /**
+   * \brief Takes in an std::vector of joint value messages, and writes them out into the KDL joint array.
+   *
+   * The template typename T needs to be an std::vector of some message which has an std::string "joint_name"
+   * and a double array/vector "value".
+   *
+   * Names to KDL joint index mappings are performed using the given ChompRobotModel.
+   */
+  template<typename T>
+  void jointMsgToArray(T& msg_vector, Eigen::MatrixXd::RowXpr joint_array);
+
+  /**
+   * \brief Takes in an std::vector of joint value messages, and writes them out into the KDL joint array.
+   *
+   * The template typename T needs to be an std::vector of some message which has an std::string "joint_name"
+   * and a double array/vector "value".
+   *
+   * Names to KDL joint index mappings are performed using the given ChompRobotModel.
+   */
+  template<typename T>
+  void jointMsgToArray(T& msg_vector, KDL::JntArray& joint_array);
+
+  void getLinkCollisionPoints(std::string link_name, std::vector<ChompCollisionPoint>& points);
+
 private:
   ros::NodeHandle node_handle_;                                 /**< ROS Node handle */
   planning_environment::RobotModels *robot_models_;             /**< Robot model */
@@ -241,6 +265,38 @@ void ChompRobotModel::ChompPlanningGroup::getRandomState(Eigen::MatrixBase<Deriv
       max = M_PI/2.0;
     }
     state_vec(i) = ((((double)rand())/RAND_MAX) * (max-min)) + min;
+  }
+}
+
+/**
+ * \brief Takes in an std::vector of joint value messages, and writes them out into the KDL joint array.
+ *
+ * The template typename T needs to be an std::vector of some message which has an std::string "joint_name"
+ * and a double array/vector "value".
+ *
+ * Names to KDL joint index mappings are performed using the given ChompRobotModel.
+ */
+template<typename T>
+void ChompRobotModel::jointMsgToArray(T& msg_vector, Eigen::MatrixXd::RowXpr joint_array)
+{
+  for (typename T::iterator it=msg_vector.begin(); it!=msg_vector.end(); it++)
+  {
+    std::string name = it->joint_name;
+    int kdl_number = urdfNameToKdlNumber(name);
+    if (kdl_number>=0)
+      joint_array(kdl_number) = it->value[0];   //@TODO we assume a single joint value per joint now
+  }
+}
+
+template<typename T>
+void ChompRobotModel::jointMsgToArray(T& msg_vector, KDL::JntArray& joint_array)
+{
+  for (typename T::iterator it=msg_vector.begin(); it!=msg_vector.end(); it++)
+  {
+    std::string name = it->joint_name;
+    int kdl_number = urdfNameToKdlNumber(name);
+    if (kdl_number>=0)
+      joint_array(kdl_number) = it->value[0];   //@TODO we assume a single joint value per joint now
   }
 }
 

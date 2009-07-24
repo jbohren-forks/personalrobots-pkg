@@ -61,6 +61,8 @@ public:
   int getSegmentNumber() const;
   const KDL::Vector& getPosition() const;
 
+  void getTransformedPosition(std::vector<KDL::Frame>& segment_frames, KDL::Vector& position) const;
+
   template<typename Derived>
   void getJacobian(std::vector<Eigen::Map<Eigen::Vector3d> >& joint_pos, std::vector<Eigen::Map<Eigen::Vector3d> >& joint_axis,
       Eigen::Map<Eigen::Vector3d>& collision_point_pos, Eigen::MatrixBase<Derived>& jacobian) const;
@@ -126,6 +128,11 @@ void ChompCollisionPoint::getJacobian(std::vector<Eigen::Map<Eigen::Vector3d> >&
       jacobian.col(joint) = joint_axis[joint].cross(collision_point_pos - joint_pos[joint]);
     }
   }
+}
+
+inline void ChompCollisionPoint::getTransformedPosition(std::vector<KDL::Frame>& segment_frames, KDL::Vector& position) const
+{
+  position = segment_frames[segment_number_] * position_;
 }
 
 } // namespace chomp

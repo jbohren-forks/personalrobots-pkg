@@ -323,4 +323,13 @@ void ChompRobotModel::ChompPlanningGroup::addCollisionPoint(ChompCollisionPoint&
 
 }
 
+void ChompRobotModel::getLinkCollisionPoints(std::string link_name, std::vector<ChompCollisionPoint>& points)
+{
+  std::map<std::string, std::vector<ChompCollisionPoint> >::iterator it = link_collision_points_.find(link_name);
+  if (it==link_collision_points_.end())
+    return;
+
+  points = it->second;
+}
+
 } // namespace chomp

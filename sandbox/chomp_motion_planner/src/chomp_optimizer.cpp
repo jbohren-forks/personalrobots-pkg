@@ -152,7 +152,7 @@ void ChompOptimizer::optimize()
     updateFullTrajectory();
     if (collision_free_iteration_ >= parameters_->getMaxIterationsAfterCollisionFree())
     {
-      ROS_INFO("Terminated after %d iterations", iteration_+1);
+      iteration_++;
       break;
     }
 
@@ -181,6 +181,7 @@ void ChompOptimizer::optimize()
     }
 
   }
+  ROS_INFO("Terminated after %d iterations", iteration_);
   ROS_INFO("Optimization core finished in %f sec", (ros::WallTime::now() - start_time).toSec());
 
   collision_space_->unlock();
@@ -403,8 +404,9 @@ void ChompOptimizer::performForwardKinematics()
     // calculate the position of every collision point:
     for (int j=0; j<num_collision_points_; j++)
     {
-      int segment_number = planning_group_->collision_points_[j].getSegmentNumber();
-      collision_point_pos_[i][j] = segment_frames_[i][segment_number] * planning_group_->collision_points_[j].getPosition();
+      planning_group_->collision_points_[j].getTransformedPosition(segment_frames_[i], collision_point_pos_[i][j]);
+      //int segment_number = planning_group_->collision_points_[j].getSegmentNumber();
+      //collision_point_pos_[i][j] = segment_frames_[i][segment_number] * planning_group_->collision_points_[j].getPosition();
 
       bool colliding = collision_space_->getCollisionPointPotentialGradient(planning_group_->collision_points_[j],
           collision_point_pos_eigen_[i][j],
