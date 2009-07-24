@@ -1,5 +1,5 @@
---- makefile.old	2009-07-23 11:21:11.000000000 -0700
-+++ makefile	2009-07-23 11:21:17.000000000 -0700
+--- makefile	2009-07-13 05:23:32.000000000 -0700
++++ makefile.new	2009-07-23 18:29:11.000000000 -0700
 @@ -25,7 +25,7 @@
  specialize := false
  platform := native
@@ -9,3 +9,12 @@
  
  ################################################################################
  ################# - MAKEFILE STATIC VARIABLES - ################################
+@@ -163,7 +163,7 @@
+ .PHONY  : slib
+ slib   : $(objects)
+ 	g++ -shared -Wl,-soname,$(libsoname) -o $(librealname)  $^
+-	ldconfig -v -n $(libdir)
++	/sbin/ldconfig -v -n $(libdir)
+ 	ln -s $(libsoname) $(libdir)/$(libname).so
+ 
+ .PHONY  : library
