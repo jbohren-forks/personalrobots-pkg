@@ -27,13 +27,15 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-// TREX base class declaration and definitions
-#include "state_estimator/imports.nddl"
+// Includes for actions we care about from different domains
+#include "rcs/nav/exports.nddl"
+#include "rcs/plugs/exports.nddl"
+#include "rcs/doors/exports.nddl"
+#include "rcs/state_estimator/exports.nddl"
 
-// Internal Timelines
+// Internal Timelines for state variables we are estimating. Ideally we are observing these directly and not making estimates based ona actions
 ArmsTucked arms_tucked = new ArmsTucked(Internal);
 TiltLaserReady tilt_laser_ready = new TiltLaserReady(Internal);
-
 
 // Actions causing arms to be tucked.
 SafetyTuckArms safety_tuck_arms = new SafetyTuckArms(External);
@@ -48,3 +50,34 @@ CheckPath check_path = new CheckPath(External);
 
 // Action causing tilt laser to be set
 SetLaserTilt set_laser_tilt = new SetLaserTilt(External);
+
+/**
+ * Actions update rules impacting arms_tucked
+ */
+SafetyTuckArms::Inactive{
+  if(status == SUCCESS){
+    starts_during(ArmsTucked.True);
+  }
+}
+TouchDoor::Inactive{
+  starts_during(ArmsTucked.False);
+}
+GraspHandle::Inactive{
+  starts_during(ArmsTucked.False);
+}
+PlugsUntuckArms::Inactive{
+  starts_during(ArmsTucked.False);
+}
+
+/**
+ * Actions Impacts to SetLaserTilt due to set_laser_tilt and MoveBase.
+ */
+SetLaserTilt::Inactive{
+  if(status == SUCCESS){
+    starts_during(TiltLaserReady.True);
+  }
+}
+
+MoveBase::Inactive{
+  starts_during(TiltLaserReady.False);
+}

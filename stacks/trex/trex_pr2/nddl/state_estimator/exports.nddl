@@ -1,5 +1,8 @@
 #include "mechanism_control/exports.nddl"
-#include "state_estimator/imports.nddl"
+#include "rcs/nav/exports.nddl"
+#include "rcs/plugs/exports.nddl"
+#include "rcs/doors/exports.nddl"
+#include "rcs/state_estimator/exports.nddl"
 
 float SAFETY_TUCK_ARMS_DURATION_BOUND = 60.0;
 
