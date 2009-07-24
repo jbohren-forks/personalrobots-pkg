@@ -93,9 +93,9 @@ bool Pr2BaseController::init(mechanism::RobotState *robot, const ros::NodeHandle
   node_.param<double> ("max_vel/vx", max_vel_.vel.vx, .5);
   node_.param<double> ("max_vel/vy", max_vel_.vel.vy, .5);
   node_.param<double> ("max_vel/omegaz", max_vel_.ang_vel.vz, 10.0); //0.5
-  node_.param<double> ("max_accel/ax", max_accel_.acc.ax, .2);
-  node_.param<double> ("max_accel/ay", max_accel_.acc.ay, .2);
-  node_.param<double> ("max_accel/alphaz", max_accel_.ang_acc.az, 10.0); //0.2
+  node_.param<double> ("max_accel/ax", max_accel_.linear.x, .2);
+  node_.param<double> ("max_accel/ay", max_accel_.linear.y, .2);
+  node_.param<double> ("max_accel/alphaz", max_accel_.linear.z, 10.0); //0.2
   node_.param<double> ("caster_speed_threshold", caster_speed_threshold_, 0.2);
   node_.param<double> ("caster_position_error_threshold", caster_position_error_threshold_, 0.05);
   node_.param<double> ("wheel_speed_threshold", wheel_speed_threshold_, 0.2);
@@ -175,38 +175,38 @@ void Pr2BaseController::setCommand(robot_msgs::PoseDot cmd_vel)
   new_cmd_available_ = true;
 }
 
-robot_msgs::PoseDot Pr2BaseController::interpolateCommand(robot_msgs::PoseDot start, robot_msgs::PoseDot end, robot_msgs::PoseDDot max_rate, double dT)
+robot_msgs::PoseDot Pr2BaseController::interpolateCommand(robot_msgs::PoseDot start, robot_msgs::PoseDot end, geometry_msgs::Twist max_rate, double dT)
 {
   robot_msgs::PoseDot result;
-  robot_msgs::PoseDDot alpha;
+  geometry_msgs::Twist alpha;
   double delta(0), max_delta(0);
 
   delta = end.vel.vx - start.vel.vx;
-  max_delta = max_rate.acc.ax * dT;
+  max_delta = max_rate.linear.x * dT;
   if(fabs(delta) <= max_delta || max_delta < eps_)
-    alpha.acc.ax = 1;
+    alpha.linear.x = 1;
   else
-    alpha.acc.ax = max_delta / fabs(delta);
+    alpha.linear.x = max_delta / fabs(delta);
 
   delta = end.vel.vy - start.vel.vy;
-  max_delta = max_rate.acc.ay * dT;
+  max_delta = max_rate.linear.y * dT;
   if(fabs(delta) <= max_delta || max_delta < eps_)
-    alpha.acc.ay = 1;
+    alpha.linear.y = 1;
   else
-    alpha.acc.ay = max_delta / fabs(delta);
+    alpha.linear.y = max_delta / fabs(delta);
 
   delta = end.ang_vel.vz - start.ang_vel.vz;
-  max_delta = max_rate.ang_acc.az * dT;
+  max_delta = max_rate.angular.z * dT;
   if(fabs(delta) <= max_delta || max_delta < eps_)
-    alpha.ang_acc.az = 1;
+    alpha.angular.z = 1;
   else
-    alpha.ang_acc.az = max_delta / fabs(delta);
+    alpha.angular.z = max_delta / fabs(delta);
 
-  double alpha_min = alpha.acc.ax;
-  if(alpha.acc.ay < alpha_min)
-    alpha_min = alpha.acc.ay;
-  if(alpha.ang_acc.az < alpha_min)
-    alpha_min = alpha.ang_acc.az;
+  double alpha_min = alpha.linear.x;
+  if(alpha.linear.y < alpha_min)
+    alpha_min = alpha.linear.y;
+  if(alpha.angular.z < alpha_min)
+    alpha_min = alpha.angular.z;
 
   result.vel.vx = start.vel.vx + alpha_min * (end.vel.vx - start.vel.vx);
   result.vel.vy = start.vel.vy + alpha_min * (end.vel.vy - start.vel.vy);
