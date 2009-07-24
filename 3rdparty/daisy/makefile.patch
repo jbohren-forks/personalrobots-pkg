@@ -1,5 +1,5 @@
---- makefile.old	2009-07-23 18:54:53.000000000 -0700
-+++ makefile.new	2009-07-23 18:55:08.000000000 -0700
+--- makefile.old	2009-07-23 20:14:53.000000000 -0700
++++ makefile	2009-07-23 20:22:24.000000000 -0700
 @@ -25,7 +25,7 @@
  specialize := false
  platform := native
@@ -9,12 +9,14 @@
  
  ################################################################################
  ################# - MAKEFILE STATIC VARIABLES - ################################
-@@ -163,7 +163,7 @@
+@@ -162,9 +162,7 @@
+ 
  .PHONY  : slib
  slib   : $(objects)
- 	g++ -shared -Wl,-soname,$(libsoname) -o $(librealname)  $^
+-	g++ -shared -Wl,-soname,$(libsoname) -o $(librealname)  $^
 -	ldconfig -v -n $(libdir)
-+#	ldconfig -v -n $(libdir)
- 	ln -s $(libsoname) $(libdir)/$(libname).so
+-	ln -s $(libsoname) $(libdir)/$(libname).so
++	g++ -shared -Wl,-soname,$(libsoname) -o lib/libdaisy.so  $^
  
  .PHONY  : library
+ library : $(libtarget) tags
