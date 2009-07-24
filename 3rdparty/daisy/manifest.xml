@@ -9,7 +9,7 @@
   <review status="unreviewed" notes=""/>
   <url>http://cvlab.epfl.ch/~tola/daisy.html</url>
   <export>
-    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -ldaisy -Wl,-rpath,${prefix}/lib" />
+    <cpp cflags="-I${prefix}/build/daisy-1.7.0/include/" lflags="-L${prefix}/build/daisy-1.7.0/lib/ -ldaisy -Wl,-rpath,${prefix}/build/daisy-1.7.0/lib/" />
   </export>
 
 </package>

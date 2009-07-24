@@ -23,6 +23,9 @@ Daisy::Daisy(double rad, int rad_q_no, int th_q_no, int hist_th_q_no) :
   dai.set_parameters(rad_, rad_q_no_, th_q_no_, hist_th_q_no_);
   dai.set_normalization(NRM_FULL);
   dai.initialize_single_descriptor_mode();
+  int ws = dai.compute_workspace_memory();
+  float* workspace = new float[ ws ];
+  dai.set_workspace_memory( workspace, ws);
 
   result_size_ = dai.descriptor_size();
 }
@@ -33,23 +36,23 @@ Daisy::~Daisy() {
 
 void Daisy::compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf& results) {
   // -- Stupid way to pass img to daisy.
+  char filename[] = "temp.pgm";
   IplImage* gray = cvCreateImage(cvGetSize(img), IPL_DEPTH_8U, 1);
   cvCvtColor(img, gray, CV_BGR2GRAY);
-  cvSaveImage("temp.png", gray);
+  cvSaveImage(filename, gray);
   uchar* im = NULL;
-  load_gray_image("temp.png", im, img->height, img->width);
+  load_gray_image(filename, im, img->height, img->width);
   dai.set_image(im, img->height, img->width);
 
 
   results.clear();
   results.resize(points.size());
-  int orientation = 0;
   int nValid = 0;
   for(size_t i=0; i<points.size(); ++i) {
     // -- Get the descriptor.
     float* thor = new float[result_size_];
     memset(thor, 0, sizeof(float)*result_size_);
-    dai.get_descriptor(points[i].pt.y, points[i].pt.x, orientation, thor);
+    dai.get_descriptor((int)points[i].pt.y, (int)points[i].pt.x, thor);
 
     // -- Check if it's all zeros.
     bool valid = false;
