@@ -63,6 +63,7 @@ if [ "$1" = "test" ] ; then
 else
   if [ "$ROS_TREX_DEBUG" = "1" ] ; then
       run_jam "libTREX_g" " " 1
+      jam nddl-runner
   fi
   run_jam "libTREX_o" "-sVARIANTS=OPTIMIZED -sLIBRARIES=SHARED" 2
 fi
