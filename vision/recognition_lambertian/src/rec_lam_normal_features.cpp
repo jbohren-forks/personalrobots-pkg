@@ -107,7 +107,7 @@ typedef struct _triangle_offsets
 }
 triangle_offsets;
 
-typedef cv::Vec_<float, 16> Mat4x4f;
+typedef cv::Vec<float, 16> Mat4x4f;
 
 static inline cv::Vec4f transform4x4(const Mat4x4f& M, const cv::Vec4f& v)
 {
