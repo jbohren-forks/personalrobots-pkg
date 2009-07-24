@@ -2,15 +2,63 @@
 \mainpage
 \htmlinclude manifest.html
 
-\b action_tools is ... 
+The \b action_tools package is meant to assist ROS users in writing nodes
+that accomplish specific tasks. Examples of this include: moving the base
+to a target location, taking a laser scan with parameters that are passed
+in and returning the resulting point cloud, detecting the handle of a door,
+etc. To accomplish these tasks, we introduce the notion of a goal that can
+be sent to an action server by an action client. In the case of moving the
+base, the goal would contain a PoseStamped message that contains information
+about where the robot should move to in the world. Each goal sent to an action
+server has an associated status.
 
-<!-- 
-In addition to providing an overview of your package,
-this is the section where the specification and design/architecture 
-should be detailed. While the original specification may be done on the
-wiki, it should be transferred here once your package starts to take shape.
-You can then link to this documentation page from the Wiki. 
--->
+
+\section protocol Communication Protocol
+The 'action protocol' uses 6 custom messages and 1 predefined message per action. If we wanted to create an action called FooBar, we would generate the following messages
+- FooActionGoal
+- FooActionResult
+- FooActionFeedback
+- FooGoal
+- FooResult
+- FooFeedback
+
+We need to add a lot more description here
+
+The values for the status of a goal are as follows: 
+- \b PENDING - The goal has yet to be processed by the action server
+- \b ACTIVE - The goal is currently being processed by the action server
+- \b SUCCEEDED - The goal was achieved successfully by the action server
+- \b ABORTED - The goal was aborted by the action server
+- \b PREEMPTED - The goal was preempted by either another goal, or a preempt message being sent to the action server
+- \b LOST - The goal was sent by the ActionClient, but disappeared due to some communication error 
+
+\section ActionClientAPI ActionClient Code API
+The ActionClient provides a simple interface to dispatch goal requests to an
+ActionServer, while monitoring the progress of each specific goal. In the
+simplest Goals can be sent from an action client with just a few lines of code.
+In this example, we are interface with the \b MoveBase ActionServer
+\verbatim
+  typedef ActionClient<MoveActionGoal, MoveBaseGoal,
+                       MoveBaseActionResult, MoveBaseResult,
+                       MoveBaseActionFeedback, MoveBaseFeedback> MoveBaseClient;
+
+  MoveBaseClient ac("move_base");
+  MoveBaseGoal goal;
+  goal.target_pose.x = 1.0;
+  goal.target_pose.y = 2.0;
+  MoveBaseClient::GoalHandle gh = ac.sendGoal(goal);
+
+  while(gh.getStatus() == ClientGoalStatus::PENDING ||
+        gh.getStatus() == ClientGoalStatus::ACTIVE)
+  {
+    sleep(.1);
+  }
+
+\endverbatim
+
+
+\section ActionServerAPI ActionServer Code API
+
 
 
 \section codeapi Code API
