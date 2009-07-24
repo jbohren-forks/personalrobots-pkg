@@ -48,4 +48,46 @@ ChompCostServer::~ChompCostServer()
 {
 }
 
+bool ChompCostServer::init(bool advertise_service)
+{
+  // build the robot model
+  if (!chomp_robot_model_.init())
+    return false;
+
+  // initialize the collision space
+  if (!chomp_collision_space_.init())
+    return false;
+
+  // advertise the cost service
+  if (advertise_service)
+    get_chomp_collision_cost_server_ = node_.advertiseService("get_chomp_collision_cost", &ChompCostServer::getChompCollisionCost, this);
+
+  return true;
+}
+
+bool ChompCostServer::getChompCollisionCost(chomp_motion_planner::GetChompCollisionCost::Request& request, chomp_motion_planner::GetChompCollisionCost::Response& response)
+{
+  //chomp_robot_model_.
+  return true;
+}
+
+int ChompCostServer::run()
+{
+  ros::spin();
+  return 0;
+}
+
+} // namespace chomp
+
+using namespace chomp;
+
+int main(int argc, char** argv)
+{
+  ros::init(argc, argv, "chomp_cost_server");
+  ChompCostServer chomp_cost_server;
+
+  if (chomp_cost_server.init(true))
+    return chomp_cost_server.run();
+  else
+    return 1;
 }

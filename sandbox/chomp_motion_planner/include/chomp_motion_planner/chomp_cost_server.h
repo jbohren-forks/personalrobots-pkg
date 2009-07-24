@@ -37,14 +37,35 @@
 #ifndef CHOMP_COST_SERVER_H_
 #define CHOMP_COST_SERVER_H_
 
+#include <ros/ros.h>
+#include <chomp_motion_planner/GetChompCollisionCost.h>
+#include <chomp_motion_planner/chomp_robot_model.h>
+#include <chomp_motion_planner/chomp_collision_space.h>
+
 namespace chomp
 {
 
+/**
+ * This node advertises a service that can respond to queries about collision cost
+ * for a given robot configuration.
+ */
 class ChompCostServer
 {
 public:
   ChompCostServer();
   virtual ~ChompCostServer();
+
+  bool init(bool advertise_service);
+  int run();
+  bool getChompCollisionCost(chomp_motion_planner::GetChompCollisionCost::Request& request, chomp_motion_planner::GetChompCollisionCost::Response& response);
+
+private:
+
+  ros::NodeHandle node_;
+  ros::ServiceServer get_chomp_collision_cost_server_;
+
+  ChompRobotModel chomp_robot_model_;
+  ChompCollisionSpace chomp_collision_space_;
 };
 
 }

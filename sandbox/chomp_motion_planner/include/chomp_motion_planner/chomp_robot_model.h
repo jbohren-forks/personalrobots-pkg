@@ -87,10 +87,11 @@ public:
    */
   struct ChompPlanningGroup
   {
+    std::string name_;                                          /**< Name of the planning group */
     int num_joints_;                                            /**< Number of joints used in planning */
     std::vector<ChompJoint> chomp_joints_;                      /**< Joints used in planning */
-    int num_links_;                                             /**< Number of links used for collision checking */
-    std::vector<std::string> link_names_;                       /**< Links used for collision checking */
+    std::vector<std::string> link_names_;                       /**< Links used in planning */
+    std::vector<std::string> collision_link_names_;             /**< Links used in collision checking */
     std::vector<ChompCollisionPoint> collision_points_;         /**< Ordered list of collision checking points (from root to tip) */
 
     /**
@@ -98,6 +99,13 @@ public:
      */
     template <typename Derived>
     void getRandomState(Eigen::MatrixBase<Derived>& state_vec) const;
+
+    /**
+     * Adds the collision point to this planning group, if any of the joints in this group can
+     * control the collision point in some way. Also converts the ChompCollisionPoint::parent_joints
+     * vector into group joint indexes
+     */
+    void addCollisionPoint(ChompCollisionPoint& collision_point, ChompRobotModel& robot_model);
   };
 
   ChompRobotModel();
@@ -162,8 +170,9 @@ private:
   KDL::TreeFkSolverJointPosAxis *fk_solver_;                    /**< Forward kinematics solver for the tree */
   double collision_clearance_default_;                          /**< Default clearance for all collision links */
   std::string reference_frame_;                                 /**< Reference frame for all kinematics operations */
+  std::map<std::string, std::vector<ChompCollisionPoint> > link_collision_points_;    /**< Collision points associated with every link */
 
-  void addCollisionPointsFromLinkRadius(ChompPlanningGroup& group, std::string link_name, double radius, double clearance);
+  void addCollisionPointsFromLinkRadius(std::string link_name, double radius, double clearance);
 };
 
 /////////////////////////////// inline functions follow ///////////////////////////////////

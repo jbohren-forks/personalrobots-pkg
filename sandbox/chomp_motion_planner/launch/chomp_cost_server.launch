@@ -1,7 +1,6 @@
-
 <launch> 
 	<rosparam ns="/robot_description_planning" command="load" file="$(find pr2_defs)/planning/planning.yaml" />
-	<node pkg="chomp_motion_planner" name="chomp_motion_planner" type="chomp_planner_node" args="collision_map:=collision_map_occ" respawn="true" output="screen" clear_params="true">
+	<node pkg="chomp_motion_planner" name="chomp_cost_server" type="chomp_cost_server" args="collision_map:=collision_map_occ" respawn="true" output="screen" clear_params="true">
 		<param name="collision_clearance" value="0.07"/>
 
 		<param name="collision_links/r_gripper_l_finger_link/link_radius" value="0.02"/>
@@ -16,7 +15,6 @@
 		<param name="collision_links/r_forearm_link/link_clearance" value="0.085"/>
 		<param name="collision_links/r_upper_arm_link/link_clearance" value="0.07"/>
 		
-		<param name="animate_path" value="true"/>
 		<param name="reference_frame" value="base_link"/>
 	
 		<param name="collision_space/size_x" value="2.0" />
@@ -27,19 +25,5 @@
 		<param name="collision_space/origin_z" value="-2.0" />
 		<param name="collision_space/resolution" value="0.02" />
 		
-		<param name="trajectory_duration" value="3.0"/>
-		<param name="trajectory_discretization" value="0.02"/>
-		<param name="learning_rate" value="100000.0" />
-		<param name="max_iterations" value="500" />
-		<param name="max_iterations_after_collision_free" value="100" />
-		<param name="smoothness_cost_weight" value="0.0005"/>
-		<param name="obstacle_cost_weight" value="1.0" />
-		<param name="joint_update_limit" value="0.01" />
-
-		<param name="smoothness_cost_velocity" value="0.01" />
-		<param name="smoothness_cost_acceleration" value="1.0" />
-		<param name="smoothness_cost_jerk" value="0.000001" />
-
-		<param name="add_randomness" value="true" />
 	</node>
 </launch>

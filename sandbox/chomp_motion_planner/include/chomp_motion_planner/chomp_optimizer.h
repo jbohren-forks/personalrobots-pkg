@@ -128,10 +128,6 @@ private:
   double getCollisionCost();
   void perturbTrajectory();
 
-  template<typename Derived, typename DerivedOther>
-  bool getCollisionPointPotentialGradient(const ChompCollisionPoint& collision_point, const Eigen::MatrixBase<Derived>& collision_point_pos,
-      double& potential, Eigen::MatrixBase<DerivedOther>& gradient) const;
-
 };
 
 }

@@ -43,6 +43,8 @@
 #include <tf/transform_listener.h>
 #include <ros/ros.h>
 #include <boost/thread/mutex.hpp>
+#include <chomp_motion_planner/chomp_collision_point.h>
+#include <Eigen/Core>
 
 namespace chomp
 {
@@ -78,6 +80,10 @@ public:
   double getDistanceGradient(double x, double y, double z,
       double& gradient_x, double& gradient_y, double& gradient_z) const;
 
+  template<typename Derived, typename DerivedOther>
+  bool getCollisionPointPotentialGradient(const ChompCollisionPoint& collision_point, const Eigen::MatrixBase<Derived>& collision_point_pos,
+      double& potential, Eigen::MatrixBase<DerivedOther>& gradient) const;
+
 private:
   Voxel3d* voxel3d_;
   tf::TransformListener tf_;
@@ -104,6 +110,39 @@ inline double ChompCollisionSpace::getDistanceGradient(double x, double y, doubl
     double& gradient_x, double& gradient_y, double& gradient_z) const
 {
   return voxel3d_->getDistanceGradient(x, y, z, gradient_x, gradient_y, gradient_z);
+}
+
+template<typename Derived, typename DerivedOther>
+bool ChompCollisionSpace::getCollisionPointPotentialGradient(const ChompCollisionPoint& collision_point, const Eigen::MatrixBase<Derived>& collision_point_pos,
+    double& potential, Eigen::MatrixBase<DerivedOther>& gradient) const
+{
+  Eigen::Vector3d field_gradient;
+  double field_distance = getDistanceGradient(
+      collision_point_pos(0), collision_point_pos(1), collision_point_pos(2),
+      field_gradient(0), field_gradient(1), field_gradient(2));
+
+  double d = field_distance - collision_point.getRadius();
+
+  // three cases below:
+  if (d >= collision_point.getClearance())
+  {
+    potential = 0.0;
+    gradient.setZero();
+  }
+  else if (d >= 0.0)
+  {
+    double diff = (d - collision_point.getClearance());
+    double gradient_magnitude = diff * collision_point.getInvClearance(); // (diff / clearance)
+    potential = 0.5*gradient_magnitude*diff;
+    gradient = gradient_magnitude * field_gradient;
+  }
+  else // if d < 0.0
+  {
+    gradient = field_gradient;
+    potential = -d + 0.5 * collision_point.getClearance();
+  }
+
+  return (field_distance <= collision_point.getRadius()); // true if point is in collision
 }
 
 } // namespace chomp

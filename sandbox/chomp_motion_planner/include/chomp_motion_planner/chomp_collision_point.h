@@ -48,8 +48,9 @@ namespace chomp
 class ChompCollisionPoint
 {
 public:
-  ChompCollisionPoint(std::vector<int>& parent_joints, double radius, double clearance,
-      int segment_number, KDL::Vector& position);
+  ChompCollisionPoint(const std::vector<int>& parent_joints, double radius, double clearance,
+      int segment_number, const KDL::Vector& position);
+  ChompCollisionPoint(const ChompCollisionPoint &point, const std::vector<int>& parent_joints);
   virtual ~ChompCollisionPoint();
 
   bool isParentJoint(int joint) const;

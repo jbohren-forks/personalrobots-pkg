@@ -117,7 +117,6 @@ void kdlVecVecToEigenVecVec(std::vector<std::vector<KDLType> >& kdl_vv, std::vec
   }
 }
 
-
 } //namespace chomp
 
 #endif /* CHOMP_UTILS_H_ */
