@@ -23,7 +23,7 @@ includes: trex plasma planworks
 	@if [ ! -d include ]; then echo "Try to make" ; fi
 
 # GET plasma
-PLASMA_REVISION=5501
+PLASMA_REVISION=5502
 plasma:
 	@if [ -n "`svn info PLASMA | grep 'http://europa-pso.googlecode.com/svn/PLASMA/trunk'`" ]; then echo "Your PLASMA is not of the correct branch. Reclocating and updating" ; cd PLASMA && svn switch http://europa-pso.googlecode.com/svn/PLASMA/branches/willow-trex && $(SVN_CMDLINE) up -r $(PLASMA_REVISION) ; cd ../ && ./copyIncludes.sh ; fi ;
 	@if [ -n "`svn info PLASMA | grep 'https://europa-pso.googlecode.com/svn/PLASMA/trunk'`" ]; then echo "Your PLASMA is not of the correct branch. Reclocating and updating" ; cd PLASMA && svn switch https://europa-pso.googlecode.com/svn/PLASMA/branches/willow-trex && $(SVN_CMDLINE) up -r $(PLASMA_REVISION) ; cd ../ && ./copyIncludes.sh ; fi ;
@@ -43,7 +43,7 @@ planworks:
 	@if [ ! -n "`svn info PlanWorks | grep 'Revision: $(PLANWORKS_REVISION)'`" ]; then cd PlanWorks && $(SVN_CMDLINE) up -r $(PLANWORKS_REVISION) ; cd ../ && ./copyIncludes.sh ; fi;
 
 # Get TREX
-TREX_REVISION=160
+TREX_REVISION=161
 trex: plasma
 	@if [ ! -d TREX ]; then $(SVN_CMDLINE) co -r $(TREX_REVISION) http://trex-autonomy.googlecode.com/svn/trunk TREX; ./copyIncludes.sh ; fi ;
 	@if [ ! -n "`svn info TREX | grep 'Revision: $(TREX_REVISION)'`" ]; then cd TREX && $(SVN_CMDLINE) up -r $(TREX_REVISION); cd ../ && ./copyIncludes.sh ; fi;
