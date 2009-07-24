@@ -1,2 +1,0 @@
-#!/bin/bash
-svn co https://europa-pso.googlecode.com/svn/PLASMA/branches/willow-trex PLASMA_WILLOW
