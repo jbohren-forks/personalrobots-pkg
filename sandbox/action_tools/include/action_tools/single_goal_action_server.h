@@ -41,11 +41,27 @@
 #include <action_tools/action_server.h> 
 
 namespace action_tools {
+  /** @class SingleGoalActionServer @brief The SingleGoalActionServer
+   * implements a singe goal policy on top of the ActionServer class. The
+   * specification of the policy is as follows: only one goal can have an
+   * active status at a time, new goals preempt previous goals based on the
+   * stamp in their GoalID field (later goals preempt earlier ones), an
+   * explicit preempt goal preempts all goals with timestamps that are less
+   * than or equal to the stamp associated with the preempt, accepting a new
+   * goal implies successful preemption of any old goal and the status of the
+   * old goal will be change automatically to reflect this.
+   */
   template <class ActionGoal, class Goal, class ActionResult, class Result, class ActionFeedback, class Feedback>
   class SingleGoalActionServer {
     public:
       typedef ActionServer<ActionGoal, Goal, ActionResult, Result, ActionFeedback, Feedback> ActionServer;
       typedef typename ActionServer::GoalHandle GoalHandle;
+
+      /**
+       * @brief  Constructor for a SingleGoalActionServer
+       * @param n A NodeHandle to create a namespace under 
+       * @param name A name for the action server
+       */
       SingleGoalActionServer(ros::NodeHandle n, std::string name)
         : new_goal_(false), preempt_request_(false) {
 
@@ -56,6 +72,10 @@ namespace action_tools {
           
       }
 
+      /**
+       * @brief  Accepts a new goal when one is available
+       * @return A shared_ptr to the new goal, the status of this goal is set to active upon acceptance, and the status of any previously active goal is set to preempted
+       */
       boost::shared_ptr<const Goal> acceptNewGoal(){
         boost::mutex::scoped_lock(lock_);
 
@@ -88,48 +108,80 @@ namespace action_tools {
         return current_goal_.getGoal();
       }
 
+      /**
+       * @brief  Allows  polling implementations to query about the availability of a new goal
+       * @return True if a new goal is available, false otherwise
+       */
       bool isNewGoalAvailable(){
         return new_goal_;
       }
 
 
+      /**
+       * @brief  Allows  polling implementations to query about preempt requests
+       * @return True if a preempt is requested, false otherwise
+       */
       bool isPreemptRequested(){
         return preempt_request_;
       }
 
+      /**
+       * @brief  Allows  polling implementations to query about the status of the current goal
+       * @return True if a goal is active, false otherwise
+       */
       bool isActive(){
         if(!current_goal_.getGoal())
           return false;
         return current_goal_.getGoalStatus().status == GoalStatus::ACTIVE;
       }
 
+      /**
+       * @brief  Sets the status of the active goal to succeeded
+       * @param  result An optional result to send back to any clients of the goal
+       */
       void setSucceeded(const Result& result = Result()){
         boost::mutex::scoped_lock(lock_);
         current_goal_.setSucceeded(result);
       }
 
+      /**
+       * @brief  Sets the status of the active goal to aborted
+       * @param  result An optional result to send back to any clients of the goal
+       */
       void setAborted(const Result& result = Result()){
         boost::mutex::scoped_lock(lock_);
         current_goal_.setAborted(result);
       }
 
+      /**
+       * @brief  Sets the status of the active goal to preempted
+       * @param  result An optional result to send back to any clients of the goal
+       */
       void setPreempted(const Result& result = Result()){
         boost::mutex::scoped_lock(lock_);
         current_goal_.setPreempted(result);
       }
 
+      /**
+       * @brief  Allows users to register a callback to be invoked when a new goal is available
+       * @param cb The callback to be invoked 
+       */
       void registerGoalCallback(boost::function<void ()> cb){
         goal_callback_ = cb;
       }
 
+      /**
+       * @brief  Allows users to register a callback to be invoked when a new preempt request is available
+       * @param cb The callback to be invoked 
+       */
       void registerPreemptCallback(boost::function<void ()> cb){
         preempt_callback_ = cb;
       }
 
     private:
-      void goalCB(GoalHandle goal){
-        ROS_INFO("In goal callback, got a goal with id: %.2f", goal.getGoalID().id.toSec());
-      }
+      /**
+       * @brief  Callback for when the ActionServer receives a new goal and passes it on
+       */
       void goalCallback(GoalHandle goal){
         boost::mutex::scoped_lock(lock_);
         ROS_DEBUG("A new goal has been recieved by the single goal action server");
@@ -157,6 +209,9 @@ namespace action_tools {
         }
       }
 
+      /**
+       * @brief  Callback for when the ActionServer receives a new preempt and passes it on
+       */
       void preemptCallback(GoalHandle preempt){
         boost::mutex::scoped_lock(lock_);
         ROS_DEBUG("In Preempt Callback");
