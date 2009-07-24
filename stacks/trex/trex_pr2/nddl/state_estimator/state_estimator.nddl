@@ -28,8 +28,7 @@
  */
 
 // TREX base class declaration and definitions
-#include "TREX.nddl"
-#include "safety/imports.nddl"
+#include "state_estimator/imports.nddl"
 
 // Internal Timelines
 ArmsTucked arms_tucked = new ArmsTucked(Internal);
