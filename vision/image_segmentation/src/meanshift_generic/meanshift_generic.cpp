@@ -1,7 +1,7 @@
 /*********************************************************************
- * meanShift1.c
+ * meanshift_generic.cpp
  *
- * See meanShift.m. Adapted from code by: Sameer Agarwal.
+ * Adapted from code by: Piotr Dollar and Sameer Agarwal.
  *
  * Piotr's Image&Video Toolbox      Version NEW
  * Copyright 2009 Piotr Dollar.  [pdollar-at-caltech.edu]
@@ -88,14 +88,14 @@ double dist(double *A, double *B, int n)
  *********************************************************************/
 
 void clustering::meanshiftGeneric(double *data,
-                          int p,
-                          int n,
-                          double radius,
-                          double rate,
-                          int maxIter,
-                          bool blur,
-                          double *labels,
-                          double *means)
+                                  int p,
+                                  int n,
+                                  double radius,
+                                  double rate,
+                                  int maxIter,
+                                  bool blur,
+                                  double *labels,
+                                  double *means)
 {
   // use blur = false
   // ------- kd tree ---------
@@ -110,7 +110,6 @@ void clustering::meanshiftGeneric(double *data,
   }
   int bucket_size = std::min(30, n); // default bucket size value
   ANNkd_tree ann_kd_tree(ann_data, n, p, bucket_size);
-
   // ------- kd tree ---------
 
   double radius2; /* radius^2 */
