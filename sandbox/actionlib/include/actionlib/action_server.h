@@ -43,6 +43,7 @@
 #include <actionlib/GoalID.h>
 #include <actionlib/GoalStatusArray.h>
 #include <actionlib/GoalStatus.h>
+#include <actionlib/RequestType.h>
 #include <actionlib/enclosure_deleter.h>
 
 #include <list>
@@ -76,9 +77,13 @@ namespace actionlib {
               //initialize the status of the goal to pending
               status_.status = GoalStatus::PENDING;
 
-              //if the goal id is zero, then we need to make up an id/timestamp for the goal
+              //if the goal id is zero, then we need to make up an id for the goal
               if(status_.goal_id.id == ros::Time()){
                 status_.goal_id.id = ros::Time::now();
+              }
+
+              //if the timestamp of the goal is zero, then we'll set it to now()
+              if(status_.goal_id.stamp == ros::Time()){
                 status_.goal_id.stamp = ros::Time::now();
               }
             }
@@ -407,7 +412,7 @@ namespace actionlib {
         ROS_DEBUG("The action server is in the ROS goal callback");
 
         //first, we'll check if its a goal callback
-        if(goal->request_type == ActionGoal::GOAL_REQUEST){
+        if(goal->request_type.type == RequestType::GOAL_REQUEST){
           ROS_DEBUG("The action server has received a new goal request");
           //first, we need to create a StatusTracker associated with this goal and push it onto our list
           typename std::list<StatusTracker>::iterator it = status_list_.insert(status_list_.end(), StatusTracker(goal));
@@ -429,7 +434,7 @@ namespace actionlib {
           }
         }
         //we need to handle a preempt for the user
-        else if(goal->request_type == ActionGoal::PREEMPT_REQUEST){
+        else if(goal->request_type.type == RequestType::PREEMPT_REQUEST){
           ROS_DEBUG("The action server has received a new preempt request");
           for(typename std::list<StatusTracker>::iterator it = status_list_.begin(); it != status_list_.end(); ++it){
             //check if the goal id is zero or if it is equal to the goal id of the iterator

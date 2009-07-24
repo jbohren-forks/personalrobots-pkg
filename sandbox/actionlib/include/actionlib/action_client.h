@@ -50,6 +50,7 @@
 // Messages
 //#include "actionlib/ActionHeader.h"
 #include "actionlib/GoalStatusArray.h"
+#include "actionlib/RequestType.h"
 
 namespace actionlib
 {
@@ -307,7 +308,7 @@ public:
   void preempt(ros::Time preempt_time = ros::Time(0,0))
   {
     ActionGoal preempt_msg;
-    preempt_msg.request_type = ActionGoal::PREEMPT_REQUEST;
+    preempt_msg.request_type.type = RequestType::PREEMPT_REQUEST;
     preempt_msg.goal_id = GoalID();
     preempt_msg.goal_id.stamp = preempt_time;
 
@@ -415,7 +416,7 @@ ActionClientPrefix::GoalManager::GoalManager(const GoalID& goal_id, const Goal& 
 
   boost::shared_ptr<ActionGoal> action_goal(new ActionGoal);
   action_goal->goal_id = goal_id;
-  action_goal->request_type = ActionGoal::GOAL_REQUEST;
+  action_goal->request_type.type = RequestType::GOAL_REQUEST;
   action_goal->goal = goal;
   ac_->goal_pub_.publish(action_goal);
 }
@@ -424,7 +425,7 @@ ActionClientTemplate
 void ActionClientPrefix::GoalManager::preemptGoal(const ros::Time& preempt_time)
 {
   ActionGoal preempt_msg;
-  preempt_msg.request_type = ActionGoal::PREEMPT_REQUEST;
+  preempt_msg.request_type.type = RequestType::PREEMPT_REQUEST;
   preempt_msg.goal_id = goal_id_;
   preempt_msg.goal_id.stamp = preempt_time;
 
