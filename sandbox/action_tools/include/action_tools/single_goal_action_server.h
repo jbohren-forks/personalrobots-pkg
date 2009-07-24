@@ -216,6 +216,8 @@ namespace action_tools {
         boost::mutex::scoped_lock(lock_);
         ROS_DEBUG("In Preempt Callback");
 
+        //TODO: Have a timestamp of zero preempt everything
+
         //check that the timestamp is past that of the current goal and the last preempt
         if((!current_goal_.getGoal() || preempt.getGoalID().stamp >= current_goal_.getGoalID().stamp)
             && (!last_preempt_.getGoal() || preempt.getGoalID().stamp > last_preempt_.getGoalID().stamp)){
