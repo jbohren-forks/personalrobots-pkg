@@ -226,9 +226,13 @@ namespace action_tools {
            * @param feedback The feedback to send to the client 
            */
           void publishFeedback(const Feedback& feedback){
-            //TODO: Don't allow publishing when the goal is in a terminal state
             if(goal_) {
-              as_->publishFeedback((*status_it_).status_, feedback);
+              unsigned int status = (*status_it_).status_.status;
+              if(status == GoalStatus::ACTIVE || status == GoalStatus::PENDING)
+                as_->publishFeedback((*status_it_).status_, feedback);
+              else
+                ROS_ERROR("To send feedback, the goal must be in a pending or active state, it is currently in state: %d", 
+                    status);
             }
             else
               ROS_ERROR("Attempt to publish feedback on an uninitialized GoalHandle");
@@ -280,9 +284,24 @@ namespace action_tools {
            * @return True if the GoalHandles refer to the same goal, false otherwise
            */
           bool operator==(const GoalHandle& other){
+            if(!goal_ || !other.goal_)
+              return false;
             GoalID my_id = getGoalID();
             GoalID their_id = other.getGoalID();
             return my_id.id == their_id.id;
+          }
+
+          /**
+           * @brief  != operator for GoalHandles
+           * @param other The GoalHandle to compare to 
+           * @return True if the GoalHandles refer to different goals, false otherwise
+           */
+          bool operator!=(const GoalHandle& other){
+            if(!goal_ || !other.goal_)
+              return true;
+            GoalID my_id = getGoalID();
+            GoalID their_id = other.getGoalID();
+            return my_id.id != their_id.id;
           }
 
         private:
@@ -391,9 +410,16 @@ namespace action_tools {
           boost::shared_ptr<void> handle_tracker((void *)NULL, d);
           (*it).handle_tracker_ = handle_tracker;
 
-          //now, we need to create a goal handle and call the user's callback
-          goal_callback_(GoalHandle(it, this));
-
+          //check if this goal has already been preempted
+          if(goal->goal_id.stamp != ros::Time() && goal->goal_id.stamp <= last_preempt_){
+            //if it has... just create a GoalHandle for it and setPreempted
+            GoalHandle gh(it, this);
+            gh.setPreempted();
+          }
+          else{
+            //now, we need to create a goal handle and call the user's callback
+            goal_callback_(GoalHandle(it, this));
+          } 
         }
         //we need to handle a preempt for the user
         else if(goal->request_type == ActionGoal::PREEMPT_REQUEST){
@@ -408,6 +434,10 @@ namespace action_tools {
               preempt_callback_(GoalHandle(it, this));
             }
           }
+
+          //make sure to set last_preempt_ based on the stamp associated with this preempt
+          if(goal->goal_id.stamp > last_preempt_)
+            last_preempt_ = goal->goal_id.stamp;
         }
         else{
           //someone sent a goal with an unsupported status... we'll throw an error
@@ -455,6 +485,8 @@ namespace action_tools {
 
       boost::function<void (GoalHandle)> goal_callback_;
       boost::function<void (GoalHandle)> preempt_callback_;
+
+      ros::Time last_preempt_;
 
 
   };

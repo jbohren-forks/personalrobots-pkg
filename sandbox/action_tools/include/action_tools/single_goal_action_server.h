@@ -63,7 +63,7 @@ namespace action_tools {
        * @param name A name for the action server
        */
       SingleGoalActionServer(ros::NodeHandle n, std::string name)
-        : new_goal_(false), preempt_request_(false) {
+        : new_goal_(false), preempt_request_(false), new_goal_preempt_request_(false) {
 
           //create the action server
           as_ = boost::shared_ptr<ActionServer>(new ActionServer(n, name, 
@@ -73,8 +73,15 @@ namespace action_tools {
       }
 
       /**
-       * @brief  Accepts a new goal when one is available
-       * @return A shared_ptr to the new goal, the status of this goal is set to active upon acceptance, and the status of any previously active goal is set to preempted
+       * @brief  Accepts a new goal when one is available The status of this
+       * goal is set to active upon acceptance, and the status of any
+       * previously active goal is set to preempted. Preempts received for the
+       * new goal between checking if isNewGoalAvailable or invokation of a
+       * goal callback and the acceptNewGoal call will not trigger a preempt
+       * callback.  This means, isPreemptReqauested should be called after
+       * accepting the goal even for callback-based implementations to make
+       * sure the new goal does not have a pending preempt request.
+       * @return A shared_ptr to the new goal.
        */
       boost::shared_ptr<const Goal> acceptNewGoal(){
         boost::mutex::scoped_lock(lock_);
@@ -87,7 +94,7 @@ namespace action_tools {
         //check if we need to send a preempted message for the goal that we're currently pursuing
         if(isActive() 
             && current_goal_.getGoal() 
-            && current_goal_.getGoalID().id != next_goal_.getGoalID().id){
+            && current_goal_ != next_goal_){
           current_goal_.setPreempted();
         }
 
@@ -95,12 +102,9 @@ namespace action_tools {
         current_goal_ = next_goal_;
         new_goal_ = false;
 
-        //also check if there is a preempt hanging around that no longer applies
-        if(preempt_request_
-            && last_preempt_.getGoal()
-            && next_goal_.getGoalID().stamp > last_preempt_.getGoalID().stamp){
-          preempt_request_ = false;
-        }
+        //set preempt to request to equal the preempt state of the new goal
+        preempt_request_ = new_goal_preempt_request_;
+        new_goal_preempt_request_ = false;
 
         //set the status of the current goal to be active
         current_goal_.setActive();
@@ -186,25 +190,25 @@ namespace action_tools {
         boost::mutex::scoped_lock(lock_);
         ROS_DEBUG("A new goal has been recieved by the single goal action server");
 
-        //check that the timestamp is past that of the current goal, the next goal, and past that of the last preempt
+        //check that the timestamp is past that of the current goal and the next goal
         if((!current_goal_.getGoal() || goal.getGoalID().stamp > current_goal_.getGoalID().stamp)
-            && (!next_goal_.getGoal() || goal.getGoalID().stamp > next_goal_.getGoalID().stamp)
-            && (!last_preempt_.getGoal() || goal.getGoalID().stamp > last_preempt_.getGoalID().stamp)){
+            && (!next_goal_.getGoal() || goal.getGoalID().stamp > next_goal_.getGoalID().stamp)){
 
           //if next_goal has not been accepted already... its going to get bumped, but we need to let the client know we're preempting
-          if(next_goal_.getGoal() && (!current_goal_.getGoal() || next_goal_.getGoalID().id != current_goal_.getGoalID().id)){
+          if(next_goal_.getGoal() && (!current_goal_.getGoal() || next_goal_ != current_goal_)){
             next_goal_.setPreempted();
           }
 
           next_goal_ = goal;
           new_goal_ = true;
+          new_goal_preempt_request_ = false;
 
           //if the user has defined a goal callback, we'll call it now
           if(goal_callback_)
             goal_callback_();
         }
         else{
-          //the goal requested has already been preempted, so we're not going to execute it
+          //the goal requested has already been preempted by a different goal, so we're not going to execute it
           goal.setPreempted();
         }
       }
@@ -216,38 +220,26 @@ namespace action_tools {
         boost::mutex::scoped_lock(lock_);
         ROS_DEBUG("In Preempt Callback");
 
-        //TODO: Have a timestamp of zero preempt everything
-
-        //check that the timestamp is past that of the current goal and the last preempt
-        if((!current_goal_.getGoal() || preempt.getGoalID().stamp >= current_goal_.getGoalID().stamp)
-            && (!last_preempt_.getGoal() || preempt.getGoalID().stamp > last_preempt_.getGoalID().stamp)){
+        //if the preempt is for the current goal, then we'll set the preemptRequest flag and call the user's preempt callback
+        if(preempt == current_goal_){
           ROS_DEBUG("Setting preempt_request bit to TRUE");
           preempt_request_ = true;
-          last_preempt_ = preempt;
-
-          //if the preempt also applies to the next goal, then we need to preempt it too
-          //makes sure that the current and next goals are different
-          //also makes sure to set new_goal_ to false if it had been set to true
-          if(next_goal_.getGoal() 
-              && preempt.getGoalID().stamp >= next_goal_.getGoalID().stamp
-              && (!current_goal_.getGoal() || next_goal_.getGoalID().id != current_goal_.getGoalID().id)){
-            next_goal_.setPreempted();
-
-            if(new_goal_)
-              new_goal_ = false;
-          }
 
           //if the user has registered a preempt callback, we'll call it now
           if(preempt_callback_)
             preempt_callback_();
         }
+        //if the preempt applies to the next goal, we'll set the preempt bit for that
+        else if(preempt == next_goal_){
+          new_goal_preempt_request_ = true;
+        }
       }
 
       boost::shared_ptr<ActionServer> as_;
 
-      GoalHandle current_goal_, next_goal_, last_preempt_;
+      GoalHandle current_goal_, next_goal_;
 
-      bool new_goal_, preempt_request_;
+      bool new_goal_, preempt_request_, new_goal_preempt_request_;
 
       boost::recursive_mutex lock_;
 
