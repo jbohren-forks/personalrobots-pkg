@@ -44,11 +44,23 @@ namespace action_tools
 
 /**
  * \brief Thin wrapper around an enum in order to help interpret the client-side status of a goal request
- */
+ * The possible states are defined the ClientGoalStatus::StateEnum. They are also defined in StateEnum.
+ * we can also get there from \link ClientGoalStatus::StateEnum here \endlink
+ **/
 class ClientGoalStatus
 {
 public:
-  enum StateEnum  { PENDING, ACTIVE, PREEMPTED, SUCCEEDED, ABORTED, REJECTED, LOST } ;
+   //! \brief Defines the various states the Goal can be in, as perceived by the client
+  enum StateEnum
+  {
+    PENDING,    //!< The goal has yet to be processed by the action server
+    ACTIVE,     //!< The goal is currently being processed by the action server
+    PREEMPTED,  //!< The goal was preempted by either another goal, or a preempt message being sent to the action server
+    SUCCEEDED,  //!< The goal was achieved successfully by the action server
+    ABORTED,    //!< The goal was aborted by the action server
+    REJECTED,   //!< The ActionServer refused to start processing the goal, possibly because a goal is infeasible
+    LOST        //!< The goal was sent by the ActionClient, but disappeared due to some communication error
+  } ;
 
   ClientGoalStatus(StateEnum state)
   {
@@ -64,6 +76,17 @@ public:
   ClientGoalStatus(const GoalStatus& goal_status)
   {
     fromGoalStatus(goal_status);
+  }
+
+  /**
+   * \brief Check if the goal is in a terminal state
+   * \return TRUE if in PREEMPTED, SUCCEDED, ABORTED, REJECTED, or LOST
+   */
+  inline bool isDone() const
+  {
+    if (state_ == PENDING || state_ == ACTIVE)
+      return false;
+    return true;
   }
 
   /**
