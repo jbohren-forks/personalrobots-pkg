@@ -44,19 +44,19 @@ bool JointProperties::initXml(TiXmlElement* config)
 {
   // Get joint damping
   const char* damping_str = config->Attribute("damping");
-  if (damping_str)
+  if (damping_str == NULL)
     std::cout << "joint_properties: no damping\n" << std::endl;
   else
     this->damping_ = atof(damping_str);
 
   // Get joint friction
   const char* friction_str = config->Attribute("friction");
-  if (friction_str)
+  if (friction_str == NULL)
     std::cout << "joint_properties: no friction\n" << std::endl;
   else
     this->friction_ = atof(friction_str);
 
-  if (damping_str || friction_str)
+  if (damping_str == NULL || friction_str == NULL)
     return true;
   else
     return false;
@@ -114,7 +114,7 @@ bool Joint::initXml(TiXmlElement* config)
   this->name_ = name;
 
   // Get Joint type
-  std::string type_str = config->Attribute("type");
+  const char* type_str = config->Attribute("type");
   if (type_str == "planar")
     type_ = PLANAR;
   else if (type_str == "floating")
