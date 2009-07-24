@@ -42,6 +42,9 @@
 namespace action_tools
 {
 
+/**
+ * \brief Thin wrapper around an enum in order to help interpret the client-side status of a goal request
+ */
 class ClientGoalStatus
 {
 public:
@@ -52,27 +55,48 @@ public:
     state_ = state;
   }
 
+  /**
+   * \brief Build a ClientGoalStatus from a GoalStatus.
+   * Note that the only GoalStatuses that can be converted into a
+   * ClientGoalStatus are {PREEMPTED, SUCCEEDED, ABORTED, REJECTED}
+   * \param goal_status The GoalStatus msg that we want to convert
+   */
   ClientGoalStatus(const GoalStatus& goal_status)
   {
     fromGoalStatus(goal_status);
   }
 
+  /**
+   * \brief Copy the raw enum into the object
+   */
   inline const StateEnum& operator=(const StateEnum& state)
   {
     state_ = state;
     return state;
   }
 
+  /**
+   * \brief Straightforward enum equality check
+   */
   inline bool operator==(const ClientGoalStatus& rhs)
   {
     return state_ == rhs.state_;
   }
 
+  /**
+   * \brief Straightforward enum inequality check
+   */
   inline bool operator!=(const ClientGoalStatus& rhs)
   {
     return !(state_ == rhs.state_);
   }
 
+  /**
+   * \brief Store a GoalStatus in a ClientGoalStatus
+   * Note that the only GoalStatuses that can be converted into a
+   * ClientGoalStatus are {PREEMPTED, SUCCEEDED, ABORTED, REJECTED}
+   * \param goal_status The GoalStatus msg that we want to convert
+   */
   void fromGoalStatus(const GoalStatus& goal_status)
   {
     switch(goal_status.status)
@@ -91,6 +115,10 @@ public:
     }
   }
 
+  /**
+   * \brief Stringify the enum
+   * \return String that has the name of the enum
+   */
   std::string toString() const
   {
     switch(state_)
