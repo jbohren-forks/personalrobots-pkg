@@ -8,7 +8,7 @@
  * Please email me if you find bugs, or have suggestions or questions!
  * Licensed under the Lesser GPL [see external/lgpl.txt]
  *********************************************************************/
-#include <image_segmentation/meanshift.h>
+#include <image_segmentation/meanshift_generic.h>
 
 /*********************************************************************
  * Calculates mean of all the points in data that lie on a sphere of
@@ -87,7 +87,7 @@ double dist(double *A, double *B, int n)
  * means				- output (final clusters)
  *********************************************************************/
 
-void meanshift::meanShift(double *data,
+void clustering::meanshiftGeneric(double *data,
                           int p,
                           int n,
                           double radius,
