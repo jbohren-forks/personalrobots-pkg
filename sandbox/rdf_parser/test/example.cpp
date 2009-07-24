@@ -34,7 +34,7 @@
 
 /* Author: Wim Meeussen */
 
-#include "rdf_parser/rdf_parser.h"
+#include "rdf_parser/rdf.h"
 #include <iostream>
 
 using namespace std;
@@ -55,24 +55,32 @@ int main(int argc, char** argv)
     return -1;
   }
 
-  RdfParser robot;
+  RDF robot;
   if (!robot.initXml(robot_xml)){
     cerr << "Parsing the xml failed" << endl;
     return -1;
   }
 
   // get info from parser
-  Link* root=NULL;
-  if (!robot.getRoot(root)) return -1;
-  cout << "root " << root->getName() << " has " << root->getNrOfChildren() << " children" << endl;
+  Link* root_link=robot.getRoot();
+  if (!root_link) return -1;
+  cout << "root " << root_link->getName() << " has " << root_link->getChildren().size() << " children" << endl;
 
-  Link* child=NULL;
-  if (!root->getChild(0, child)) return -1;
-  cout << "child " << child->getName() << " has " << child->getNrOfChildren() << " children" << endl;
-  for (unsigned int i=0; i<child->getNrOfChildren(); i++){
-    Link* grandchild=NULL;
-    if (!child->getChild(i, grandchild)) return -1;
-    cout << i << ": " << grandchild->getName() << endl;
+  // test first child
+  std::vector<Link*> children = root_link->getChildren();
+  Link* first_child = *children.begin();
+  if (!first_child) return -1;
+  cout << "first child " << first_child->getName() << " has " << children.size() << " children" << endl;
+
+  // go through all children, test grandchild
+  int count = 0;
+  for (std::vector<Link*>::iterator c = root_link->getChildren().begin(); c != root_link->getChildren().end(); c++)
+  {
+    // first grandchild
+    std::vector<Link*> grandchildren = (*c)->getChildren();
+    Link* grandchild = *grandchildren.begin();
+    if (grandchild)
+      cout << count++ << " : " << (*c)->getName() << " : " << grandchild->getName() << endl;
   }
   return 0;
 }

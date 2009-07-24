@@ -36,7 +36,7 @@
 
 #include <string>
 #include <gtest/gtest.h>
-#include "rdf_parser/rdf_parser.h"
+#include "rdf_parser/rdf.h"
 
 using namespace rdf_parser;
 
@@ -46,7 +46,7 @@ char** g_argv;
 class TestParser : public testing::Test
 {
 public:
-  RdfParser parser;
+  RDF parser;
 
 protected:
   /// constructor
