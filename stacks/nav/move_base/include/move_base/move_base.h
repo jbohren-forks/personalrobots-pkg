@@ -38,7 +38,7 @@
 #define NAV_MOVE_BASE_ACTION_H_
 #include <ros/ros.h>
 
-#include <action_tools/single_goal_action_server.h>
+#include <actionlib/single_goal_action_server.h>
 #include <move_base/MoveBaseAction.h>
 
 #include <nav_robot_actions/base_local_planner.h>
@@ -54,7 +54,7 @@
 
 namespace move_base {
   //typedefs to help us out with the action server so that we don't hace to type so much
-  typedef action_tools::SingleGoalActionServer<MoveBaseActionGoal, MoveBaseGoal,
+  typedef actionlib::SingleGoalActionServer<MoveBaseActionGoal, MoveBaseGoal,
           MoveBaseActionResult, MoveBaseResult, 
           MoveBaseActionFeedback, MoveBaseFeedback> MoveBaseActionServer;
 
@@ -76,7 +76,7 @@ namespace move_base {
 
   /**
    * @class MoveBase
-   * @brief A class that uses the action_tools::ActionServer interface that moves the robot base to a goal location.
+   * @brief A class that uses the actionlib::ActionServer interface that moves the robot base to a goal location.
    */
   class MoveBase {
     public:

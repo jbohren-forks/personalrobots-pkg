@@ -1,5 +1,5 @@
 Header header
 
-action_tools/GoalStatus status
+actionlib/GoalStatus status
 
 MoveBaseFeedback feedback
