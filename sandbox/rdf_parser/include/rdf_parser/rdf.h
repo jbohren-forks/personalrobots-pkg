@@ -47,35 +47,36 @@ using namespace std;
 
 namespace rdf_parser{
 
-class RdfParser
+/// RDF is a class containing DOMified robot description file
+/// Everyone using RDF should take data from the DOM rather than parsing it themselves
+class RDF
 {
 public:
-  RdfParser(){};
+  RDF();
 
   bool initXml(TiXmlElement *xml);
-  Link* getRoot();
+  Link* getRoot() {return this->root_link_;};
 
 private:
-  bool checkRotInertia(TiXmlElement *rot_inertia_xml);
-  bool checkInertia(TiXmlElement *inertia_xml);
-  bool checkJoint(TiXmlElement *joint_xml, std::string& joint_name);
-  bool checkCollision(TiXmlElement *collision_xml);
-  bool checkGeometry(TiXmlElement *geometry_xml);
   bool getLink(TiXmlElement *link_xml, Link& link);
   void addChildren(Link* p);
-  bool findElements(const std::string& element_type, 
-                    TiXmlElement* robot_xml, 
-                    std::map<std::string, TiXmlElement*>& elements, 
-                    boost::function<bool (RdfParser*, TiXmlElement*, std::string&)> checkfunction);
 
-
+  /// Every Robot Description File can be described as a
+  ///   list of Links and Joints
+  /// The connection between links(nodes) and joints(edges)
+  ///   should define a tree (i.e. 1 parent link, 0+ children links)
+  /// RDF currently do not support 
   std::map<std::string, Link*> links_;
   std::map<std::string, Joint*> joints_;
 
-  std::string root_name_;
+  /// RDF is restricted to a tree for now, which means there exists one root link
+  ///  typically, root link is the world(inertial).  Where world is a special link
+  /// or is the root_link_ the link attached to the world by PLANAR/FLOATING joint?
+  ///  hmm...
+  Link* root_link_;
 
-  /// keep a map of link names and their parent names
-  map<string, string> link_parent;
+  /// for convenience keep a map of link names and their parent names
+  map<string, string> link_parent_;
 
 };
 

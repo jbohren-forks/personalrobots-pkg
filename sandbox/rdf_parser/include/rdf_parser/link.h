@@ -51,8 +51,6 @@ namespace rdf_parser{
 class Geometry
 {
 public:
-  virtual ~Geometry() {}
-
   virtual bool initXml(TiXmlElement *) = 0;
 
   enum {SPHERE, BOX, CYLINDER, MESH} type_;
@@ -97,7 +95,6 @@ public:
 class Inertial
 {
 public:
-  virtual ~Inertial(void) {};
   bool initXml(TiXmlElement* config);
 private:
   std::vector<TiXmlElement*> maps_;
@@ -110,7 +107,6 @@ class Visual
 {
 public:
   Visual(void) {};
-  virtual ~Visual(void) {};
   bool initXml(TiXmlElement* config);
 private:
   std::vector<TiXmlElement*> maps_;
@@ -122,7 +118,6 @@ private:
 class Collision
 {
 public:
-  virtual ~Collision(void) {};
   bool initXml(TiXmlElement* config);
 private:
   std::vector<TiXmlElement*> maps_;

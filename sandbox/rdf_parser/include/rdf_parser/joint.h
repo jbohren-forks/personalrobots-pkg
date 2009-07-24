@@ -40,6 +40,7 @@
 #include <string>
 #include <vector>
 #include <tinyxml/tinyxml.h>
+#include <boost/scoped_ptr.hpp>
 
 #include <rdf_parser/pose.h>
 
@@ -49,10 +50,47 @@ namespace rdf_parser{
 
 class Link;
 
+class JointProperties
+{
+public:
+  JointProperties()
+  {
+    damping_ = 0;
+    friction_ = 0;
+  };
+  virtual ~JointProperties(void) {};
+  bool initXml(TiXmlElement* config);
+  double damping_;
+  double friction_;
+};
+
+class JointLimits
+{
+public:
+  JointLimits()
+  {
+    min_ = 0;
+    max_ = 0;
+    effort_ = 0;
+    velocity_ = 0;
+  };
+  virtual ~JointLimits(void) {};
+  bool initXml(TiXmlElement* config);
+  double min_;
+  double max_;
+  double effort_;
+  double velocity_;
+
+};
+
 class Joint
 {
 public:
+  virtual ~Joint(void) {};
   bool initXml(TiXmlElement* xml);
+
+  /// returns the name of the joint
+  const std::string& getName() const;
 
   Link* getParentLink() {return this->parent_link_;};
   Link* getChildLink() {return this->child_link_;};
@@ -63,7 +101,7 @@ private:
 
   enum
   {
-    UNKNOWN, REVOLUTE, PRISMATIC, FLOATING, PLANAR, FIXED
+    REVOLUTE, PRISMATIC, FLOATING, PLANAR, FIXED
   } type_;
 
   /// \brief     type_       meaning of axis_
@@ -81,36 +119,11 @@ private:
   Link* child_link_;
   Pose  child_pose_;
 
-  class JointProperties
-  {
-    JointProperties()
-    {
-      damping = 0;
-      friction = 0;
-    };
-    double damping;
-    double friction;
-    virtual ~JointProperties(void) {};
-  } joint_properties;
+  /// Joint Properties
+  boost::scoped_ptr<JointProperties> joint_properties_;
 
-  class JointLimit
-  {
-  public:
-    JointLimit()
-    {
-      min = 0;
-      max = 0;
-      effort = 0;
-      velocity = 0;
-    };
-    double min;
-    double max;
-    double effort;
-    double velocity;
-
-    virtual ~JointLimit(void) {};
-
-  } joint_limit;
+  /// Joint Limits
+  boost::scoped_ptr<JointLimits> joint_limits_;
 
   /// \brief A list of maps
   std::vector<TiXmlElement*> maps_;

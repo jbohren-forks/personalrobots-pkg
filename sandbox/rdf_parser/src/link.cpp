@@ -85,26 +85,38 @@ bool Inertial::initXml(TiXmlElement *config)
     return false;
   }
 
-  if (!c->Attribute("mass"))
+  TiXmlElement *mass_xml = config->FirstChildElement("mass");
+  if (!mass_xml)
   {
-    std::cerr << "Cylinder shape must have mass attributes" << std::endl;
+    std::cerr << "Inertial element must have mass element" << std::endl;
     return false;
   }
-  if (!c->Attribute("ixx") || !c->Attribute("ixy") || !c->Attribute("ixz") ||
-      !c->Attribute("iyy") || !c->Attribute("iyz") ||
-      !c->Attribute("izz") )
+  if (!mass_xml->Attribute("value"))
   {
-    std::cerr << "Cylinder shape must have ixx,ixy,ixz,iyy,iyz,izz attributes" << std::endl;
+    std::cerr << "Inertial: mass element must have value attributes" << std::endl;
     return false;
   }
+  mass_ = atof(mass_xml->Attribute("value"));
 
-  mass_ = atof(c->Attribute("mass"));
-  ixx_ = atof(c->Attribute("ixx"));
-  ixy_ = atof(c->Attribute("ixy"));
-  ixz_ = atof(c->Attribute("ixz"));
-  iyy_ = atof(c->Attribute("iyy"));
-  iyz_ = atof(c->Attribute("iyz"));
-  izz_ = atof(c->Attribute("izz"));
+  TiXmlElement *inertia_xml = config->FirstChildElement("inertia");
+  if (!inertia_xml)
+  {
+    std::cerr << "Inertial element must have inertia element" << std::endl;
+    return false;
+  }
+  if (!(inertia_xml->Attribute("ixx") && inertia_xml->Attribute("ixy") && inertia_xml->Attribute("ixz") &&
+        inertia_xml->Attribute("iyy") && inertia_xml->Attribute("iyz") &&
+        inertia_xml->Attribute("izz")))
+  {
+    std::cerr << "Inertial: inertia element must have ixx,ixy,ixz,iyy,iyz,izz attributes" << std::endl;
+    return false;
+  }
+  ixx_  = atof(inertia_xml->Attribute("ixx"));
+  ixy_  = atof(inertia_xml->Attribute("ixy"));
+  ixz_  = atof(inertia_xml->Attribute("ixz"));
+  iyy_  = atof(inertia_xml->Attribute("iyy"));
+  iyz_  = atof(inertia_xml->Attribute("iyz"));
+  izz_  = atof(inertia_xml->Attribute("izz"));
 
   // Maps
   for (TiXmlElement* map_xml = config->FirstChildElement("map"); map_xml; map_xml = map_xml->NextSiblingElement("map"))
