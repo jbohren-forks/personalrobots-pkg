@@ -284,8 +284,8 @@ Frame CartesianTrajectoryController::getPose()
 }
 
 
-bool CartesianTrajectoryController::moveTo(robot_srvs::MoveToPose::Request &req,
-					   robot_srvs::MoveToPose::Response &resp)
+bool CartesianTrajectoryController::moveTo(deprecated_srvs::MoveToPose::Request &req,
+					   deprecated_srvs::MoveToPose::Response &resp)
 {
   ROS_INFO("in cartesian traj move_to service");
   if (!moveTo(req.pose, req.tolerance, 0.0)){

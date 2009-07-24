@@ -46,7 +46,7 @@
 #include <std_srvs/Empty.h>
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
-#include <robot_srvs/MoveToPose.h>
+#include <deprecated_srvs/MoveToPose.h>
 #include <kdl/frames.hpp>
 #include <robot_actions/action.h>
 #include <boost/thread/mutex.hpp>
@@ -78,8 +78,8 @@ private:
 
   std_srvs::Empty::Request  req_empty;
   std_srvs::Empty::Response res_empty;
-  robot_srvs::MoveToPose::Request  req_moveto;
-  robot_srvs::MoveToPose::Response res_moveto;
+  deprecated_srvs::MoveToPose::Request  req_moveto;
+  deprecated_srvs::MoveToPose::Response res_moveto;
 };
 
 }

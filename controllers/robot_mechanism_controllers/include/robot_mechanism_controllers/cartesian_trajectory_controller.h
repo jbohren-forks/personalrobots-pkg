@@ -45,7 +45,7 @@
 #include <robot_msgs/PoseStamped.h>
 #include <mechanism_model/controller.h>
 #include <robot_mechanism_controllers/cartesian_pose_controller.h>
-#include <robot_srvs/MoveToPose.h>
+#include <deprecated_srvs/MoveToPose.h>
 #include <std_srvs/Empty.h>
 #include <boost/scoped_ptr.hpp>
 
@@ -73,7 +73,7 @@ private:
   void command(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr& pose_msg);
 
   // service calls
-  bool moveTo(robot_srvs::MoveToPose::Request &req, robot_srvs::MoveToPose::Response &resp);
+  bool moveTo(deprecated_srvs::MoveToPose::Request &req, deprecated_srvs::MoveToPose::Response &resp);
   bool preempt(std_srvs::Empty::Request &req, std_srvs::Empty::Response &resp);
 
   ros::Node* node_;
