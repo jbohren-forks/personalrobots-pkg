@@ -86,7 +86,7 @@ int main()
 
   time_t start,end;
   time(&start);
-  clustering::meanshiftGeneric(data, d, n, bandwidth, rate, max_iter, false, labels, means);
+  clustering::meanshiftGeneric(data, d, n, bandwidth, rate, max_iter, labels, means);
   time(&end);
   cout << "clustering took this long: " << difftime (end,start) << endl;
 

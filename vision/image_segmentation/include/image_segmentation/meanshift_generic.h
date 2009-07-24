@@ -35,21 +35,47 @@
 
 #include <stdlib.h>
 #include <math.h>
-#include <string>
+#include <string.h>
 #include <iostream>
 #include <vector>
 
 #include <ANN/ANN.h>
 
+// --------------------------------------------------------------
+/*!
+ * \brief The namespace for clustering algorithms
+ */
+// --------------------------------------------------------------
 namespace clustering
 {
+  // --------------------------------------------------------------
+  /*!
+   * \brief Performs mean-shift clustering on data in arbitrary feature space
+   *
+   * Mean-shift algorithm described in:
+   * [1] K. Fukunaga, L. D. Hostetler, "The Estimation of the Gradient of a
+   * Density Function, with Applications in Pattern Recognition", IEEE T-IT 1975
+   * [2] D. Comaniciu, P. Meer, "Mean Shift: A Robust Approach Toward Feature
+   * Space Analysis", IEEE T-PAMI 2002
+   *
+   * \param data    p x n column matrix of data points
+   * \param p       dimension of data points
+   * \param n       number of data points
+   * \param radius  radius of search window
+   * \param rate    gradient descent proportionality factor
+   * \param maxIter max allowed number of iterations
+   * \param labels  labels for each cluster
+   * \param means   output (final clusters)
+   *
+   * \return 0 on success, otherwise negative value on error
+   */
+  // --------------------------------------------------------------
   void meanshiftGeneric(double *data,
                         int p,
                         int n,
                         double radius,
                         double rate,
                         int maxIter,
-                        bool blur,
                         double *labels,
                         double *means);
 }
