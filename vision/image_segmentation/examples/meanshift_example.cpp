@@ -77,8 +77,8 @@ int main()
   int n = loadPointCloud("pt_cloud_260.xyz_label_conf", &data);
   int d = 3;
 
-  double labels[n];
-  double* means = (double*) malloc(d * n * sizeof(double));
+  //double labels[n];
+  vector<double> labels;
 
   double bandwidth = 0.37;
   int max_iter = 2;
@@ -86,14 +86,13 @@ int main()
 
   time_t start,end;
   time(&start);
-  clustering::meanshiftGeneric(data, d, n, bandwidth, rate, max_iter, labels, means);
+  clustering::meanshiftGeneric(data, d, n, bandwidth, rate, max_iter, labels);
   time(&end);
   cout << "clustering took this long: " << difftime (end,start) << endl;
 
-/*
+
   for (int i = 0 ; i < n ; i++)
   {
     cout << data[i*3 + 0] << " " << data[i*3 + 1] << " " << data[i*3 + 2] << " "<< labels[i] << endl;
   }
-*/
 }
