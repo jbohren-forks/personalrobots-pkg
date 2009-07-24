@@ -56,16 +56,9 @@ public:
   Link* getRoot();
 
 private:
-  bool getAtribute(TiXmlElement *xml, const string& name, string& attr);
-  bool checkNumber(const char& c);
-  bool checkNumber(const std::string& s);
-  bool checkVector(TiXmlElement *vector_xml, const string& field);
-  bool checkValue(TiXmlElement *value_xml, const string& field);
-  bool checkFrame(TiXmlElement *frame_xml);
   bool checkRotInertia(TiXmlElement *rot_inertia_xml);
   bool checkInertia(TiXmlElement *inertia_xml);
   bool checkJoint(TiXmlElement *joint_xml, std::string& joint_name);
-  bool checkOrigin(TiXmlElement *origin_xml);
   bool checkCollision(TiXmlElement *collision_xml);
   bool checkGeometry(TiXmlElement *geometry_xml);
   bool getLink(TiXmlElement *link_xml, Link& link);

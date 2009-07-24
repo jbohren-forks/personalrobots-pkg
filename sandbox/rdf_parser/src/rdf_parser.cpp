@@ -37,6 +37,7 @@
 #include <boost/algorithm/string.hpp>
 #include <vector>
 #include "rdf_parser/rdf_parser.h"
+#include "rdf_parser/rdf_tools.h"
 
 using namespace std;
 
@@ -82,19 +83,18 @@ bool RdfParser::initXml(TiXmlElement *robot_xml)
 
     // get link name
     string link_name;
-    if (!getAtribute(link_xml, "name", link_name))
+    if (!getAttribute(link_xml, "name", link_name))
     {cerr << "Link does not have name" << endl; return false;}
     if (link_parent.find(link_name) != link_parent.end())
     {cerr << "Link " << link_name << " is specified twice" << endl; return false;}
 
     // get link parent
     string parent_name;
-    if (!getAtribute(link_xml->FirstChildElement("parent"), "name", parent_name))
+    if (!getAttribute(link_xml->FirstChildElement("parent"), "name", parent_name))
     {cerr << "Link " << link_name << " does not have parent" << endl; return false;}
     link_parent[link_name] = parent_name;
 
     // get link origin
-    if (!checkOrigin(link_xml->FirstChildElement("origin")))
     {cerr << "Link " << link_name << " has invalid origin" << endl; return false;}
     link_origin[link_name] = link_xml->FirstChildElement("origin");
 
@@ -128,7 +128,7 @@ bool RdfParser::initXml(TiXmlElement *robot_xml)
 
     // get link joint
     string joint_name;
-    if (!getAtribute(link_xml->FirstChildElement("joint"), "name", joint_name))
+    if (!getAttribute(link_xml->FirstChildElement("joint"), "name", joint_name))
     {cerr << "Link " << link_name << " does not specify joint name" << endl; return false;}
     if (joints.find(joint_name) == joints.end())
     {cerr << "Link " << link_name << " specifies joint " << joint_name << " but this joint was not defined or had invalid syntax" << endl; return false;}
@@ -186,16 +186,13 @@ bool RdfParser::getLink(TiXmlElement *link_xml, Link& link)
   if (!link_xml) return false;
   // get link name
   string link_name;
-  if (!getAtribute(link_xml, "name", link_name)) 
+  if (!getAttribute(link_xml, "name", link_name)) 
   {cerr << "Link does not have name" << endl; return false;}
 
-  // get mandetory frame
-  if (!checkFrame(link_xml->FirstChildElement("origin"))) 
-  {cerr << "Link does not have origin" << endl; return false;}
 
   // get mandetory joint 
   string joint_name;
-  if (!getAtribute(link_xml->FirstChildElement("joint"), "name", joint_name)) 
+  if (!getAttribute(link_xml->FirstChildElement("joint"), "name", joint_name)) 
   {cerr << "Link does not specify joint name" << endl; return false;}
 
   // get optional inertia
@@ -209,100 +206,10 @@ bool RdfParser::getLink(TiXmlElement *link_xml, Link& link)
 
 
 
-bool RdfParser::checkNumber(const char& c)
-{
-  return (c=='1' || c=='2' ||c=='3' ||c=='4' ||c=='5' ||c=='6' ||c=='7' ||c=='8' ||c=='9' ||c=='0' ||c=='.' ||c=='-' ||c==' ');
-}
-
-bool RdfParser::checkNumber(const std::string& s)
-{
-  for (unsigned int i=0; i<s.size(); i++)
-    if (!checkNumber(s[i])) return false;
-  return true;
-}
 
 
-bool RdfParser::getAtribute(TiXmlElement *xml, const string& name, string& attr)
-{
-  if (!xml) return false;
-  const char *attr_char = xml->Attribute(name.c_str());
-  if (!attr_char) return false;
-  attr = string(attr_char);
-  return true;
-}
-
-bool RdfParser::checkVector(TiXmlElement *vector_xml, const string& field)
-{
-  if (!vector_xml) return false;
-  string vector_str;
-  if (!getAtribute(vector_xml, field, vector_str))
-    return false;
-
-  std::vector<std::string> pieces;
-  boost::split( pieces, vector_str, boost::is_any_of(" "));
-  unsigned int pos=0;
-  for (unsigned int i = 0; i < pieces.size(); ++i){
-    if (pieces[i] != ""){
-      if (pos < 3){
-        if (!checkNumber(pieces[i]))
-        {cerr << "This is not a valid number: '" << pieces[i] << "'" << endl; return false;}
-      }
-      pos++;
-    }
-  }
-
-  if (pos != 3) {
-    cerr << "Vector did not contain 3 pieces:" << endl; 
-    pos = 1;
-    for (unsigned int i = 0; i < pieces.size(); ++i){
-      if (pieces[i] != ""){
-        cerr << "  " << pos << ": '" << pieces[i] << "'" << endl;
-        pos++;
-      }
-    }
-    return false;
-  }
-
-  return true;
-}
-
-bool RdfParser::checkValue(TiXmlElement *value_xml, const string& field)
-{
-  if (!value_xml) return false;
-  string value_str;
-  if (!getAtribute(value_xml, field, value_str)) return false;
-
-  if (!checkNumber(value_str))
-  {cerr << "This is not a valid number: '" << value_str << "'" << endl; return false;}
-
-  return true;
-}
 
 
-bool RdfParser::checkOrigin(TiXmlElement *origin_xml)
-{
-  if (!origin_xml) return false;
-
-  if (!checkVector(origin_xml, "xyz"))
-  {cerr << "Origin does not have xyz" << endl; return false;}
-  if (!checkVector(origin_xml, "rpy"))
-  {cerr << "Origin does not have rpy" << endl; return false;}
-
-  return true;
-}
-
-
-bool RdfParser::checkFrame(TiXmlElement *frame_xml)
-{
-  if (!frame_xml) return false;
-
-  if (!checkVector(frame_xml, "xyz")) 
-  {cerr << "Frame does not have xyz" << endl; return false;}
-  if (!checkVector(frame_xml, "rpy")) 
-  {cerr << "Frame does not have rpy" << endl; return false;}
-
-  return true;
-}
 
 
 bool RdfParser::checkRotInertia(TiXmlElement *rot_inertia_xml)
@@ -338,12 +245,12 @@ bool RdfParser::checkJoint(TiXmlElement *joint_xml, string& joint_name)
 {
   if (!joint_xml) return false;
   // get joint name
-  if (!getAtribute(joint_xml, "name", joint_name)) 
+  if (!getAttribute(joint_xml, "name", joint_name)) 
   {cerr << "Joint does not have name" << endl; joint_name ="name not found"; return false;}
 
   // get joint type
   string joint_type;
-  if (!getAtribute(joint_xml, "type", joint_type)) return false;
+  if (!getAttribute(joint_xml, "type", joint_type)) return false;
 
   if (joint_type == "revolute"){
     // mandatory axis

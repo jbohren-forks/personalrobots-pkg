@@ -40,19 +40,103 @@
 #include <string>
 #include <vector>
 #include <tinyxml/tinyxml.h>
+#include <boost/scoped_ptr.hpp>
 
 #include <rdf_parser/joint.h>
-#include <rdf_parser/geometry.h>
 
 using namespace std;
 
 namespace rdf_parser{
 
+class Geometry
+{
+public:
+  virtual ~Geometry() {}
+
+  virtual bool initXml(TiXmlElement *) = 0;
+
+  enum {SPHERE, BOX, CYLINDER, MESH} type_;
+
+  std::vector<TiXmlElement*> maps_;
+};
+
+class Sphere : public Geometry
+{
+public:
+  Sphere() { type_ = SPHERE; }
+  bool initXml(TiXmlElement *);
+  double radius_;
+};
+
+class Box : public Geometry
+{
+public:
+  Box() { type_ = BOX; }
+  bool initXml(TiXmlElement *);
+  Vector3 dim_;
+};
+
+class Cylinder : public Geometry
+{
+public:
+  Cylinder() { type_ = CYLINDER; }
+  bool initXml(TiXmlElement *);
+  double length_;
+  double radius_;
+};
+
+class Mesh : public Geometry
+{
+public:
+  Mesh() { type_ = MESH; }
+  bool initXml(TiXmlElement *);
+  std::string filename_;
+  Vector3 scale_;
+};
+
+class Inertial
+{
+public:
+  virtual ~Inertial(void) {};
+  bool initXml(TiXmlElement* config);
+private:
+  std::vector<TiXmlElement*> maps_;
+  Pose origin_;
+  double mass_;
+  double ixx_,ixy_,ixz_,iyy_,iyz_,izz_;
+};
+
+class Visual
+{
+public:
+  Visual(void) {};
+  virtual ~Visual(void) {};
+  bool initXml(TiXmlElement* config);
+private:
+  std::vector<TiXmlElement*> maps_;
+  Pose origin_;
+  boost::scoped_ptr<Geometry> geometry_;
+
+};
+
+class Collision
+{
+public:
+  virtual ~Collision(void) {};
+  bool initXml(TiXmlElement* config);
+private:
+  std::vector<TiXmlElement*> maps_;
+  Pose origin_;
+  boost::scoped_ptr<Geometry> geometry_;
+
+};
+
+
 class Link
 {
 public:
 
-  bool initXml(TiXmlElement* xml);
+  bool initXml(TiXmlElement* config);
 
   /// returns the name of the link
   const std::string& getName() const;
@@ -69,54 +153,32 @@ public:
   /// returns joints attaching link to children
   std::vector<Joint*> getChildrenJoint();
 
-  class Inertial
-  {
-  public:
-    virtual ~Inertial(void) {};
-    bool initXml(TiXmlElement* xml);
-  private:
-    std::vector<TiXmlElement*> maps_;
-    Pose origin_;
-    double mass_;
-    double ixx_,ixy_,ixz_,iyy_,iyz_,izz_;
-  };
+  /// inertial element
+  boost::scoped_ptr<Inertial> inertial_;
 
-  class Visual
-  {
-  public:
-    virtual ~Visual(void) {};
-    bool initXml(TiXmlElement* xml);
-  private:
-    std::vector<TiXmlElement*> maps_;
-    Pose origin_;
-    Geometry geometry_;
+  /// visual element
+  boost::scoped_ptr<Visual> visual_;
 
-  };
-
-  class Collision
-  {
-  public:
-    virtual ~Collision(void) {};
-    bool initXml(TiXmlElement* xml);
-  private:
-    std::vector<TiXmlElement*> maps_;
-    Pose origin_;
-    Geometry geometry_;
-
-  };
-
+  /// collision element
+  boost::scoped_ptr<Collision> collision_;
 
 private:
   std::string name_;
-  std::vector<TiXmlElement*> maps_;
+  std::string joint_name_;
+
+  // store parent and origin, these are to be moved to joint
+  std::string parent_name_;
+  TiXmlElement* origin_xml_;
 
   Link* parent_;
   std::vector<Link*> children_;
 
-  std::vector<Joint*> joints_;
-
   Joint* parent_joint_;
-  std::vector<Joint*> children_joint_;
+
+  std::vector<TiXmlElement*> maps_;
+
+protected:
+  void addChild(Link* child);
 
 };
 

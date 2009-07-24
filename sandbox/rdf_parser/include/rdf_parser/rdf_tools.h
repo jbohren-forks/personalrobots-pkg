@@ -34,25 +34,88 @@
 
 /* Author: Wim Meeussen */
 
-#ifndef RDF_PARSER_VECTOR3_H
-#define RDF_PARSER_VECTOR3_H
+#ifndef RDF_TOOLS_H
+#define RDF_TOOLS_H
 
 #include <string>
-#include <vector>
+#include <map>
+#include <tinyxml/tinyxml.h>
+#include <boost/function.hpp>
 
 using namespace std;
 
 namespace rdf_parser{
 
-class Vector3
+bool getAttribute(TiXmlElement *xml, const string& name, string& attr)
 {
-public:
-  Vector3() {x=0;y=0;z=0;};
-  double x;
-  double y;
-  double z;
-private:
+  if (!xml) return false;
+  const char *attr_char = xml->Attribute(name.c_str());
+  if (!attr_char) return false;
+  attr = string(attr_char);
+  return true;
+}
+
+
+bool checkNumber(const char& c)
+{
+  return (c=='1' || c=='2' ||c=='3' ||c=='4' ||c=='5' ||c=='6' ||c=='7' ||c=='8' ||c=='9' ||c=='0' ||c=='.' ||c=='-' ||c==' ');
 };
+
+bool checkNumber(const std::string& s)
+{
+  for (unsigned int i=0; i<s.size(); i++)
+    if (!checkNumber(s[i])) return false;
+  return true;
+};
+
+
+
+bool checkValue(TiXmlElement *value_xml, const string& field)
+{
+  if (!value_xml) return false;
+  string value_str;
+  if (!getAttribute(value_xml, field, value_str)) return false;
+
+  if (!checkNumber(value_str))
+  {cerr << "This is not a valid number: '" << value_str << "'" << endl; return false;}
+
+  return true;
+};
+
+bool checkVector(TiXmlElement *vector_xml, const string& field)
+{
+  if (!vector_xml) return false;
+  string vector_str;
+  if (!getAtribute(vector_xml, field, vector_str))
+    return false;
+
+  std::vector<std::string> pieces;
+  boost::split( pieces, vector_str, boost::is_any_of(" "));
+  unsigned int pos=0;
+  for (unsigned int i = 0; i < pieces.size(); ++i){
+    if (pieces[i] != ""){
+      if (pos < 3){
+        if (!checkNumber(pieces[i]))
+        {cerr << "This is not a valid number: '" << pieces[i] << "'" << endl; return false;}
+      }
+      pos++;
+    }
+  }
+
+  if (pos != 3) {
+    cerr << "Vector did not contain 3 pieces:" << endl; 
+    pos = 1;
+    for (unsigned int i = 0; i < pieces.size(); ++i){
+      if (pieces[i] != ""){
+        cerr << "  " << pos << ": '" << pieces[i] << "'" << endl;
+        pos++;
+      }
+    }
+    return false;
+  }
+
+  return true;
+}
 
 }
 
