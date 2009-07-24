@@ -351,7 +351,7 @@ void PR2IK::computeIKEfficient(const Eigen::Matrix4f &g_in, const double &t1_in)
 #ifdef DEBUG
     std::cout << "t4 " << t4 << std::endl;
 #endif
-    if(isnan(t4))
+    if(std::isnan(t4))
       continue;
 
     if(!checkJointLimits(t4,3))
@@ -567,7 +567,7 @@ void PR2IK::computeIKEfficientTheta3(const Eigen::Matrix4f &g_in, const double &
 #ifdef DEBUG
      std::cout << "t4 " << t4 << std::endl;
 #endif
-    if(isnan(t4))
+    if(std::isnan(t4))
       continue;
     at = cos(t3)*sin(t4)*(ap_[1]-ap_[3]);
     bt = (ap_[0]-ap_[1]+(ap_[1]-ap_[3])*cos(t4));

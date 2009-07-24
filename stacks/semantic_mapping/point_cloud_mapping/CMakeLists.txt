@@ -17,6 +17,7 @@ rospack_add_openmp_flags (bin/normal_estimation_node)
 
 rospack_add_library (normal_estimation_in_proc src/normal_estimation_in_proc.cpp)
 rospack_add_openmp_flags (normal_estimation_in_proc)
+target_link_libraries(normal_estimation_in_proc cloud_geometry)
 
 rospack_add_executable (bin/planar_fit_node src/planar_fit.cpp)
 target_link_libraries (bin/planar_fit_node cloud_geometry cloud_kdtree sample_consensus)
