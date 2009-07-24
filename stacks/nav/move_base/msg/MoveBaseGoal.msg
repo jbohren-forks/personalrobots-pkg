@@ -1,3 +1,1 @@
-Header header
-action_tools/GoalID goal_id
-robot_msgs/PoseStamped goal
+robot_msgs/PoseStamped target_pose

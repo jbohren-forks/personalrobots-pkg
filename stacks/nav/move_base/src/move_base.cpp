@@ -42,8 +42,7 @@ namespace move_base {
 
   MoveBase::MoveBase(std::string name, tf::TransformListener& tf) :
     tf_(tf),
-    as_(ros::NodeHandle(), "move_base", 1.0),
-    ac_("move_base"),
+    as_(ros::NodeHandle(), name),
     tc_(NULL), planner_costmap_ros_(NULL), controller_costmap_ros_(NULL), 
     planner_(NULL){
 
@@ -60,7 +59,10 @@ namespace move_base {
     //for comanding the base
     vel_pub_ = ros_node_.advertise<robot_msgs::PoseDot>("cmd_vel", 1);
     vis_pub_ = ros_node_.advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
-    position_pub_ = ros_node_.advertise<robot_msgs::PoseStamped>("~feedback", 1);
+    position_pub_ = ros_node_.advertise<robot_msgs::PoseStamped>("~current_position", 1);
+
+    ros::NodeHandle action_node(ros_node_, name);
+    action_goal_pub_ = action_node.advertise<MoveBaseActionGoal>("goal", 1);
 
     //we'll provide a mechanism for some people to send goals as PoseStamped messages over a topic
     //they won't get any useful information back about its status, but this is useful for tools
@@ -126,8 +128,11 @@ namespace move_base {
   }
 
   void MoveBase::goalCB(const robot_msgs::PoseStamped::ConstPtr& goal){
-    ROS_DEBUG("In ROS goal callback, sending a goal to the action using the client");
-    ac_.execute(*goal);
+    ROS_DEBUG("In ROS goal callback, wrapping the PoseStamped in the action message and re-sending to the server.");
+    MoveBaseActionGoal action_goal;
+    action_goal.goal.target_pose = *goal;
+
+    action_goal_pub_.publish(action_goal);
   }
 
   void MoveBase::clearCostmapWindows(double size_x, double size_y){
@@ -361,11 +366,10 @@ namespace move_base {
     std::vector<robot_msgs::PoseStamped> global_plan;
     while(ros_node_.ok()){
       if(as_.isActive()){
-        if(!as_.isPreempted()){
+        if(!as_.isPreemptRequested()){
           if(as_.isNewGoalAvailable()){
             //if we're active and a new goal is available, we'll accept it, but we won't shut anything down
-            GoalHandle gh = as_.acceptNextGoal();
-            goal = *gh.getGoal();
+            goal = (*as_.acceptNewGoal()).target_pose;
 
             //we'll make sure that we reset our state for the next execution cycle
             clearing_state_ = CONSERVATIVE_RESET;
@@ -398,13 +402,12 @@ namespace move_base {
           resetState();
 
           //notify the ActionServer that we've successfully preemted
-          as_.preempted();
+          as_.setPreempted();
         }
       }
       else if(as_.isNewGoalAvailable()){
         //if we're inactive and a new goal is available, we'll accept it
-        GoalHandle gh = as_.acceptNextGoal();
-        goal = *gh.getGoal();
+        goal = (*as_.acceptNewGoal()).target_pose;
 
         //if we shutdown our costmaps when we're deactivated... we need to start them back up now
         if(shutdown_costmaps_){
@@ -461,7 +464,7 @@ namespace move_base {
             //ABORT and SHUTDOWN COSTMAPS
             ROS_ERROR("Failed to pass global plan to the controller, aborting.");
             resetState();
-            as_.aborted();
+            as_.setAborted();
             return;
           }
           ROS_DEBUG("Generated a plan from the base_global_planner");
@@ -494,7 +497,7 @@ namespace move_base {
         if(tc_->goalReached()){
           ROS_DEBUG("Goal reached!");
           resetState();
-          as_.succeeded();
+          as_.setSucceeded();
           return;
         } 
 
@@ -510,7 +513,7 @@ namespace move_base {
           if(ros::Time::now() > attempt_end){
             ROS_ERROR("Aborting because of failure to find a valid control for %.2f seconds", controller_patience_);
             resetState();
-            as_.aborted();
+            as_.setAborted();
             return;
           } 
 
@@ -581,19 +584,19 @@ namespace move_base {
           case ABORT:
             ROS_ERROR("Aborting because a valid plan could not be found. Even after attempting to reset costmaps and rotating in place");
             resetState();
-            as_.aborted();
+            as_.setAborted();
             return;
           default:
             ROS_ERROR("This case should never be reached, something is wrong, aborting");
             resetState();
-            as_.aborted();
+            as_.setAborted();
             return;
         }
         break;
       default:
         ROS_ERROR("This case should never be reached, something is wrong, aborting");
         resetState();
-        as_.aborted();
+        as_.setAborted();
         return;
     }
 
