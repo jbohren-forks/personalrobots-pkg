@@ -23,27 +23,6 @@ typedef cv::Vector< cv::Vector<float> > vvf;
 ***********  Misc. useful classes.
 ****************************************************************************/
 
-/**
- * @class Keypoint
- * @brief Temporary class representing image keypoint.  This should be in opencv soon.
- */
-class Keypoint
-{
- public:    
- Keypoint() : pt(0,0), size(-1), angle(-1), response(0) {}
-  
- Keypoint(cv::Point2f _pt, float _size=-1, float _angle=-1, float _response=0)
-   : pt(_pt), size(_size), angle(_angle), response(_response) {}
-
- Keypoint(float x, float y, float _size=-1, float _angle=-1, float _response=0)
-   : pt(x, y), size(_size), angle(_angle), response(_response) {}
-
-  cv::Point2f pt;
-  float size;
-  float angle;
-  float response;
-};
-
 
 /**
  * @class Histogram
@@ -89,7 +68,7 @@ class ImageDescriptor {
   //! Returns result_size_.
   unsigned int getSize();
   //! Vectorized feature computation call.
-  virtual void compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf& results) {};
+  virtual void compute(IplImage* img, const cv::Vector<cv::Keypoint>& points, vvf& results) {};
 
  protected:
   //! Name of the descriptor.  Should be unique for any parameter setting.
@@ -104,7 +83,7 @@ class ImageDescriptor {
   //! Clean up any data specific to computation on a particular image.
   virtual void clearImageCache() {}
   //! Show the input image and a red + at the point at which the descriptor is being computed.
-  void commonDebug(Keypoint kp, IplImage* vis = NULL);
+  void commonDebug(cv::Keypoint kp, IplImage* vis = NULL);
   //! Sets the img_ pointer and clears the image cache.
   virtual void setImage(IplImage* img);
 };
@@ -122,7 +101,7 @@ class SurfWrapper : public ImageDescriptor {
 
   SurfWrapper(bool extended = true, int size = 100);
   ~SurfWrapper();
-  void compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf& results);
+  void compute(IplImage* img, const cv::Vector<cv::Keypoint>& points, vvf& results);
 };
 
 /***************************************************************************
@@ -139,7 +118,7 @@ class HogWrapper : public ImageDescriptor {
   HogWrapper(cv::Size winSize, cv::Size blockSize, cv::Size blockStride, cv::Size cellSize,
 	     int nbins, int derivAperture=1, double winSigma=-1,
 	     int histogramNormType=0, double L2HysThreshold=0.2, bool gammaCorrection=false); //0=L2Hys
-  void compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf& results);
+  void compute(IplImage* img, const cv::Vector<cv::Keypoint>& points, vvf& results);
   
  protected:
   cv::HOGDescriptor hog_;
@@ -170,8 +149,8 @@ class IntegralImageDescriptor : public ImageDescriptor {
  protected:
   IntegralImageDescriptor* ii_provider_;
 
-  bool integrateRect(float* result, int row_offset, int col_offset, int half_height, int half_width, const Keypoint& kp, float* area = NULL);
-  bool integrateRect(float* result, const Keypoint& kp, const CvRect& rect);
+  bool integrateRect(float* result, int row_offset, int col_offset, int half_height, int half_width, const cv::Keypoint& kp, float* area = NULL);
+  bool integrateRect(float* result, const cv::Keypoint& kp, const CvRect& rect);
   void integrate();
   virtual void clearImageCache();
 };
@@ -183,8 +162,8 @@ class IntegralImageDescriptor : public ImageDescriptor {
 class HaarDescriptor : public IntegralImageDescriptor {
  public:
   HaarDescriptor(cv::Vector<CvRect> rects, cv::Vector<int> weights, IntegralImageDescriptor* ii_provider = NULL);
-  //! Scale of the window is determined by Keypoint.
-  void compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf& results);
+  //! Scale of the window is determined by cv::Keypoint.
+  void compute(IplImage* img, const cv::Vector<cv::Keypoint>& points, vvf& results);
 
  protected:
   cv::Vector<CvRect> rects_;
@@ -201,8 +180,8 @@ vector<ImageDescriptor*> setupDefaultHaarDescriptors();
 class IntegralImageTexture : public IntegralImageDescriptor {
  public:
   IntegralImageTexture(int scale = 1, IntegralImageDescriptor* ii_provider = NULL);
-  void compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf& results);
-  void compute(IplImage* img, const Keypoint& point, cv::Vector<float>& result);
+  void compute(IplImage* img, const cv::Vector<cv::Keypoint>& points, vvf& results);
+  void compute(IplImage* img, const cv::Keypoint& point, cv::Vector<float>& result);
 
  protected:
   int scale_;
@@ -255,7 +234,7 @@ class ContourFragmentDescriptor : public ImageDescriptor {
   ContourFragmentDescriptor(int cf_id, string dir);
   //! Uses another ContourFragmentDescriptor object to get its data.  
   ContourFragmentDescriptor(int cf_id, ContourFragmentDescriptor* chamfer_provider);
-  void compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf& results);
+  void compute(IplImage* img, const cv::Vector<cv::Keypoint>& points, vvf& results);
 
  private:
   int cf_id_;
@@ -310,7 +289,7 @@ class SuperpixelColorHistogram : public SuperpixelStatistic {
 
   SuperpixelColorHistogram(int seed_spacing, float scale, int nBins, std::string type, SuperpixelStatistic* seg_provider=NULL, SuperpixelColorHistogram* hsv_provider_=NULL);
   ~SuperpixelColorHistogram();
-  void compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf& results);
+  void compute(IplImage* img, const cv::Vector<cv::Keypoint>& points, vvf& results);
 
  protected:
   int nBins_;
@@ -322,7 +301,7 @@ class SuperpixelColorHistogram : public SuperpixelStatistic {
 
   void computeHistogram(int label);
   void computeHistogramCV(int label); 
-  void compute(IplImage* img, const Keypoint& point, cv::Vector<float>& result);
+  void compute(IplImage* img, const cv::Keypoint& point, cv::Vector<float>& result);
   void clearImageCache();
 };
 
@@ -365,7 +344,7 @@ int getdir (string dir, vector<string> &files);
 
 /*   IntensityPatch(int raw_size, float scale, bool whiten); */
 /*   bool compute(Eigen::MatrixXf** result); */
-/*   void compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf& results); */
+/*   void compute(IplImage* img, const cv::Vector<cv::Keypoint>& points, vvf& results); */
 /*   void clearImageCache() {} */
 /* }; */
 

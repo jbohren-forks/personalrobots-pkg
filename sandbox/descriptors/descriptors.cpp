@@ -355,14 +355,13 @@ HogWrapper::HogWrapper(Size winSize, Size blockSize, Size blockStride, Size cell
 			int nbins, int derivAperture, double winSigma,
 			int histogramNormType, double L2HysThreshold, bool gammaCorrection) : 
   ImageDescriptor(), 
-  hog_(winSize, blockSize, blockStride, nbins, derivAperture, winSigma, histogramNormType, L2HysThreshold, gammaCorrection)
+  hog_(winSize, blockSize, blockStride, cellSize, nbins, derivAperture, winSigma, histogramNormType, L2HysThreshold, gammaCorrection)
 {
   char buf[400];
   sprintf(buf, "Hog_winSize%dx%d_blockSize%dx%d_blockStride%dx%d_cellSize%dx%d_nBins%d_derivAperture%d_winSigma%g_histNormType%d_L2HysThreshold%g_gammaCorrection%d", 
 	  winSize.width, winSize.height, blockSize.width, blockSize.height, blockStride.width, blockStride.height, cellSize.width, cellSize.height,
 	  nbins, derivAperture, winSigma, histogramNormType, L2HysThreshold, gammaCorrection);
   name_.assign(buf);
-  hog_.cellSize = cellSize;
   result_size_ = hog_.getDescriptorSize();
 }
 
