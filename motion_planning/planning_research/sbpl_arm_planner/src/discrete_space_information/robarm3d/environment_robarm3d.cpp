@@ -326,6 +326,8 @@ void EnvironmentROBARM3D::ComputeHeuristicValues()
 
     int hsize;
 
+		printf("low resolution collision checking is %senabled.\n",EnvROBARMCfg.lowres_collision_checking ? "" : "not ");
+
     if(EnvROBARMCfg.lowres_collision_checking)
         hsize = XYZTO3DIND(EnvROBARMCfg.LowResEnvWidth_c-1, EnvROBARMCfg.LowResEnvHeight_c-1,EnvROBARMCfg.LowResEnvDepth_c-1)+1;
     else
@@ -357,7 +359,7 @@ void EnvironmentROBARM3D::Search3DwithQueue(State3D*** statespace, int* HeurGrid
     short unsigned int height = EnvROBARMCfg.EnvHeight_c;
     short unsigned int depth = EnvROBARMCfg.EnvDepth_c;
 		int radius = EnvROBARMCfg.link_radius[0] / EnvROBARMCfg.GridCellWidth;
-		
+
     //use low resolution grid if enabled
     if(EnvROBARMCfg.lowres_collision_checking)
     {
@@ -373,8 +375,7 @@ void EnvironmentROBARM3D::Search3DwithQueue(State3D*** statespace, int* HeurGrid
     //create a queue
     queue<State3D*> Queue;
 
-//     int b = 0;
-    //initialize to infinity all 
+    //initialize to infinity all
     for (x = 0; x < width; x++)
     {
 			for (y = 0; y < height; y++)
@@ -383,7 +384,6 @@ void EnvironmentROBARM3D::Search3DwithQueue(State3D*** statespace, int* HeurGrid
 				{
 					HeurGrid[XYZTO3DIND(x,y,z)] = INFINITECOST;
 					ReInitializeState3D(&statespace[x][y][z]);
-// 					b++;
 				}
 			}
     }
@@ -402,6 +402,8 @@ void EnvironmentROBARM3D::Search3DwithQueue(State3D*** statespace, int* HeurGrid
         Queue.push(&statespace[Goals[i].xyz_lr[0]][Goals[i].xyz_lr[1]][Goals[i].xyz_lr[2]]);
       }
     }
+
+// 		clock_t looptime = clock();
 
     //expand all of the states
     while((int)Queue.size() > 0)
@@ -431,10 +433,10 @@ void EnvironmentROBARM3D::Search3DwithQueue(State3D*** statespace, int* HeurGrid
 				//make sure it is inside the map and has no obstacle
 				if(0 > newx || newx >= width || 0 > newy || newy >= height || 0 > newz || newz >= depth)
 					continue;
-	
+
 				if(!isValidCell(newx,newy,newz,radius,Grid3D, vGrid))
 					continue;
-	
+
 				if(statespace[newx][newy][newz].iterationclosed == 0)
 				{
 					//insert into the stack
@@ -456,6 +458,8 @@ void EnvironmentROBARM3D::Search3DwithQueue(State3D*** statespace, int* HeurGrid
             }
         }
     }
+		
+// 		printf("the main dijkstra loop took %.4f seconds.\n", double(clock()-looptime) / CLOCKS_PER_SEC);
 }
 
 
@@ -694,9 +698,9 @@ EnvironmentROBARM3D::EnvironmentROBARM3D()
     EnvROBARMCfg.PlanInJointSpace = false;
 
     //hard coded temporarily (meters)
-    EnvROBARMCfg.arm_length = 1.2;
+    EnvROBARMCfg.arm_length = 1.3;
+    EnvROBARMCfg.link_radius.push_back(.075);
     EnvROBARMCfg.link_radius.push_back(.06);
-    EnvROBARMCfg.link_radius.push_back(.05);
     EnvROBARMCfg.link_radius.push_back(.05);
 
     EnvROBARMCfg.exact_gripper_collision_checking = false;
@@ -2594,6 +2598,11 @@ bool EnvironmentROBARM3D::SetGoalConfiguration(const std::vector <std::vector<do
 				continue;
       }
     }
+
+		// store end effector position at goal (for collision checking)
+		EnvROBARMCfg.JointSpaceGoals[i].xyz[0] = endeff[0];
+		EnvROBARMCfg.JointSpaceGoals[i].xyz[1] = endeff[1];
+		EnvROBARMCfg.JointSpaceGoals[i].xyz[2] = endeff[2];
 
     //get coords
     if(EnvROBARMCfg.JointSpaceGoals[i].pos[k] < 0)
@@ -4644,7 +4653,6 @@ int EnvironmentROBARM3D::IsValidLineSegment(const short unsigned int xyz0[], con
 
 int EnvironmentROBARM3D::IsValidCoord(short unsigned int coord[NUMOFLINKS], short unsigned int endeff_pos[3], short unsigned int wrist_pos[3], short unsigned int elbow_pos[3], double orientation[3][3])
 {
-//   printf("entering isValidCoord\n");
   int grid_dims[3] = {EnvROBARMCfg.EnvWidth_c, EnvROBARMCfg.EnvHeight_c, EnvROBARMCfg.EnvDepth_c};
   short unsigned int endeff[3] = {endeff_pos[0],endeff_pos[1],endeff_pos[2]};
   short unsigned int wrist[3] = {wrist_pos[0],wrist_pos[1],wrist_pos[2]};
@@ -4689,7 +4697,7 @@ int EnvironmentROBARM3D::IsValidCoord(short unsigned int coord[NUMOFLINKS], shor
 				// normalize angle
 				if(angles[i] >= M_PI)
 					angles[i] += -2.0*M_PI;
-			
+
 				if(angles[i] > EnvROBARMCfg.joints[i].positive_limit || angles[i] < EnvROBARMCfg.joints[i].negative_limit)
 				{
 				#if DEBUG_VALID_COORD
@@ -4762,9 +4770,9 @@ int EnvironmentROBARM3D::IsValidCoord(short unsigned int coord[NUMOFLINKS], shor
 			retvalue = 0;
 		}
 	}
-	
+
 	pTestedCells = NULL;
-			
+
 	if(!IsValidLineSegment(elbow,wrist, EnvROBARMCfg.forearm_radius, pTestedCells, Grid3D, vGrid))
 	{
 		if(pTestedCells == NULL)
@@ -4784,7 +4792,7 @@ int EnvironmentROBARM3D::IsValidCoord(short unsigned int coord[NUMOFLINKS], shor
 	}
 
 	pTestedCells = NULL;
-			
+
 	if(!IsValidLineSegment(wrist,endeff, EnvROBARMCfg.forearm_radius, pTestedCells, Grid3D, vGrid))
 	{
 		if(pTestedCells == NULL)
@@ -4822,7 +4830,7 @@ int EnvironmentROBARM3D::IsValidCoord(short unsigned int coord[NUMOFLINKS], shor
   else
   {
     int num = 0;
-		if(GetDistToClosestGoal(endeff_pos, &num) <= .35/EnvROBARMCfg.GridCellWidth)
+		if(GetDistToClosestGoal(endeff_pos, &num) <= .3/EnvROBARMCfg.GridCellWidth)
     { 
 //       printf("planning monitor: distance of endeff(%u %u %u) to goal #%i is %i\n", endeff_pos[0],endeff_pos[1],endeff_pos[2], num, GetDistToClosestGoal(endeff_pos, &num));
       // printf("checking %.3f %.3f %.3f %.3f %.3f %.3f %.3f\n",angles[0],angles[1],angles[2],angles[3],angles[4],angles[5],angles[6]);
