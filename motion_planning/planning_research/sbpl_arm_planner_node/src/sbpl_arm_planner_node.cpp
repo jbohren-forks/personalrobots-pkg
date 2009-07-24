@@ -59,6 +59,7 @@ bool SBPLArmPlannerNode::init()
   node_.param ("~allocated_time", allocated_time_, 20.0);
   node_.param ("~forward_search", forward_search_, true);
   node_.param ("~use_dijkstra_heuristic", dijkstra_heuristic_, true);
+	node_.param ("~print_out_path", print_path_, false);
   node_.param<std::string>("~planner_type", planner_type_, "cartesian"); //"cartesian" or "joint_space"
   node_.param<std::string>("~planning_frame", planning_frame_, std::string("torso_lift_link"));
 
@@ -67,7 +68,7 @@ bool SBPLArmPlannerNode::init()
 
   std::string pr2_urdf_param;
   node_.searchParam("robot_description",pr2_urdf_param);
-  node_.param<std::string>(pr2_urdf_param, pr2_desc_, "robot_description"); //set smarter default
+	node_.param<std::string>(pr2_urdf_param, pr2_desc_, "robot_description");
 
   node_.param ("~num_joints", num_joints_, 7);
   node_.param ("~torso_arm_offset_x", torso_arm_offset_x_, 0.0);
@@ -130,9 +131,7 @@ bool SBPLArmPlannerNode::init()
   planner_ = new ARAPlanner(&sbpl_arm_env_, forward_search_);
   if(!initializePlannerAndEnvironment())
     return false;
-
-
-
+	
   //initialize the planning monitor
   initializePM();
 
@@ -196,13 +195,6 @@ bool SBPLArmPlannerNode::initializePlannerAndEnvironment()
     return false;
   }
 
-  // set environment parameters
-  sbpl_arm_env_.SetEnvParameter("useDijkstraHeuristic", dijkstra_heuristic_);
-  sbpl_arm_env_.SetEnvParameter("useFastCollisionChecking", lowres_cc_);
-  sbpl_arm_env_.SetEnvParameter("exactGripperCollisionChecking", enable_pm_);
-  sbpl_arm_env_.SetEnvParameter("useVoxel3dForOccupancyGrid", use_voxel3d_grid_);
-  sbpl_arm_env_.SetEnvParameter("useMultiResolutionMotionPrimitives", use_multires_primitives_);
-
   if(!sbpl_arm_env_.InitEnvFromFilePtr(env_config_fp_, planner_config_fp_, pr2_desc_))
   {
     ROS_ERROR("ERROR: InitEnvFromFilePtr failed\n");
@@ -224,6 +216,7 @@ bool SBPLArmPlannerNode::initializePlannerAndEnvironment()
   sbpl_arm_env_.SetEnvParameter("exactGripperCollisionChecking", enable_pm_);
   sbpl_arm_env_.SetEnvParameter("useVoxel3dForOccupancyGrid", use_voxel3d_grid_);
   sbpl_arm_env_.SetEnvParameter("useMultiResolutionMotionPrimitives", use_multires_primitives_);
+	sbpl_arm_env_.SetEnvParameter("saveExpandedStateIDs", true);
 
   //set epsilon
   planner_->set_initialsolution_eps(sbpl_arm_env_.GetEpsilon());
@@ -320,25 +313,32 @@ void SBPLArmPlannerNode::collisionMapCallback(const mapping_msgs::CollisionMapCo
 
     if(mCopyingVoxel_.try_lock())
     {
-      //for now add base laser as a cubic obstacle
-      for(double y = -.02; y < .02; y = y + .01)
+			double x,y,z;
+      // add base laser as a cubic obstacle (temporary)
+      for(y = -.04; y < .04; y=y+.01)
       {
-				for(double x = 0.32; x < 0.35; x = x + .01)
+				for(x = 0.29; x < 0.37; x=x+.01)
 				{
-					env_grid_->putWorldObstacle(x,y,-0.45);
-					if(lowres_cc_)
-						env_grid_->putWorldObstacle(x,y,-0.45);
+					for(z = -0.52; z < -.46; z=z+.01)
+					{
+						env_grid_->putWorldObstacle(x,y,z);
+						if(lowres_cc_)
+							env_grid_->putWorldObstacle(x,y,z);
+					}
 				}
       }
 
-      //for now add robot base as a cubic obstacle
-      for(double y = -.3; y < .3; y = y + .02)
+      // add robot base as a cubic obstacle (temporary)
+      for(y = -.36; y < .36; y=y+.02)
       {
-				for(double x = 0.18; x < 0.38; x = x + .02)
+				for(x = 0.18; x < 0.42; x=x+.02)
 				{
-					env_grid_->putWorldObstacle(x,y,-0.5);
-					if(lowres_cc_)
-						env_grid_->putWorldObstacle(x,y,-0.5);
+					for(z = -0.6; z < -0.5; z=z+0.1)
+					{
+						env_grid_->putWorldObstacle(x,y,z);
+						if(lowres_cc_)
+							env_grid_->putWorldObstacle(x,y,z);
+					}
 				}
       }
 
@@ -516,14 +516,14 @@ bool SBPLArmPlannerNode::setGoalPosition(const std::vector<motion_planning_msgs:
 {
   double roll,pitch,yaw;
   tf::Pose tf_pose;
-  vector <int> sbpl_type(1,0);
-  vector <vector <double> > sbpl_goal(goals.size());
-  vector <vector <double> > sbpl_tolerance(goals.size());
+	std::vector <int> sbpl_type(1,0);
+	std::vector <std::vector <double> > sbpl_goal(goals.size(), std::vector<double> (6,0));
+	std::vector <std::vector <double> > sbpl_tolerance(goals.size(), std::vector<double> (12,0));
 
   for(unsigned int i = 0; i < goals.size(); i++)
   {
-    sbpl_goal[i].resize(6,0);
-    sbpl_tolerance[i].resize(2,0);
+//     sbpl_goal[i].resize(6,0);
+//     sbpl_tolerance[i].resize(2,0);
 
     sbpl_goal[i][0] = goals[i].pose.pose.position.x;
     sbpl_goal[i][1] = goals[i].pose.pose.position.y;
@@ -724,7 +724,6 @@ bool SBPLArmPlannerNode::planToState(motion_planning_srvs::MotionPlan::Request &
 	  res.path.names[i] = joint_names_[i];
 
 	res.path.start_state = req.start_state;
-	res.unsafe = 0;
 	res.approximate = 0;
 	res.distance = 0;
 
@@ -841,34 +840,36 @@ bool SBPLArmPlannerNode::planToPosition(motion_planning_srvs::MotionPlan::Reques
       ROS_INFO("[planToPosition] successfully sent goal constraints");
       if(plan(arm_path))
       {
+				if(print_path_)
+					printPath(arm_path);
+
 				ROS_INFO("Planning took %lf seconds",(clock() - starttime) / (double)CLOCKS_PER_SEC);
 				bPlanning_ = false;
 				mPlanning_.unlock();
 				pm_->unlockPM();
 				ROS_INFO("[planToPosition] Planning successful.");
-					
+
 				res.path = arm_path;
 				res.path.model_id = req.params.model_id;
 				res.path.header.stamp = ros::Time::now();
-			
+
 				if(!req.start_state[0].header.frame_id.empty())
 					res.path.header.frame_id = req.start_state[0].header.frame_id;
 				else
 					res.path.header.frame_id = planning_frame_;
-			
+
 				ROS_INFO("path is in %s",res.path.header.frame_id.c_str());
 
 				res.path.set_times_size(res.path.get_states_size());
 				res.path.times[0] = 0;
 				for(i = 1; i < res.path.get_states_size(); i++)
 					res.path.times[i] = res.path.times[i-1] + 0.001;
-			
+
 				res.path.set_names_size(num_joints_);
 				for(i = 0; i < (unsigned int)num_joints_; i++)
 					res.path.names[i] = joint_names_[i];
-			
+
 				res.path.start_state = req.start_state;
-				res.unsafe = 0;
 				res.approximate = 0;
 				res.distance = 0;
 
@@ -936,7 +937,7 @@ bool SBPLArmPlannerNode::plan(motion_planning_msgs::KinematicPath &arm_path)
   ROS_INFO("[plan] requesting plan from planner...");
   bool b_ret(false);
   unsigned int i;
-  double angles_r[num_joints_], error_m, error_r,yaw,pitch,roll;
+  double angles_r[num_joints_], error_m, error_r, yaw, pitch, roll, xyz_m[3], rpy_r[3];
 	std::vector<std::vector <double> > path(2, std::vector<double> (num_joints_));
   vector<int> solution_state_ids_v;
   std::vector<double> final_waypoint;
@@ -950,53 +951,27 @@ bool SBPLArmPlannerNode::plan(motion_planning_msgs::KinematicPath &arm_path)
   b_ret = planner_->replan(allocated_time_, &solution_state_ids_v);
 
   ROS_INFO("[plan] retrieving of the plan completed in %.4f seconds", double(clock()-start_time) / CLOCKS_PER_SEC);
-  ROS_INFO("[plan] size of solution = %d", solution_state_ids_v.size());
+  ROS_DEBUG("[plan] size of solution = %d", solution_state_ids_v.size());
+
+	ROS_DEBUG("displaying expanded states....");
+	displayExpandedStates();
 
   // if a path is returned, then pack it into msg form
   if(b_ret)
   {
+		ROS_INFO("*** a path was planned ***");
+
     arm_path.set_states_size(solution_state_ids_v.size());
     for(i = 0; i < solution_state_ids_v.size(); i++)
       arm_path.states[i].set_vals_size(num_joints_);
 
-    //output the path to the console with a bunch of debugging text
-    ROS_INFO("Path:");
-
-    double xyz_m[3], rpy_r[3];
     for(i = 0; i < arm_path.get_states_size(); i++)
     {
       sbpl_arm_env_.StateID2Angles(solution_state_ids_v[i], angles_r);
-      for (unsigned int p = 0; p < (unsigned int) num_joints_; p++)
-      {
+      for (unsigned int p = 0; p < (unsigned int) num_joints_; ++p)
 				arm_path.states[i].vals[p] = angles_r[p];
-      }
-      ROS_INFO("state %d: %.3f %.3f %.3f %.3f %.3f %.3f %.3f",
-	       i,arm_path.states[i].vals[0],arm_path.states[i].vals[1],arm_path.states[i].vals[2],arm_path.states[i].vals[3],
-	       arm_path.states[i].vals[4],arm_path.states[i].vals[5],arm_path.states[i].vals[6]);
-
-      sbpl_arm_env_.ComputeEndEffectorPos(angles_r, xyz_m, rpy_r);
-      ROS_INFO("        xyz: %.3f %.3f %.3f   rpy: %.3f %.3f %.3f", xyz_m[0],xyz_m[1],xyz_m[2],rpy_r[0],rpy_r[1],rpy_r[2]);
     }
 
-    if(bCartesianPlanner_)
-    {
-      for(unsigned int j = 0; j < goal_pose_constraint_.size(); ++j)
-      {
-				tf::poseMsgToTF(goal_pose_constraint_[j].pose.pose, tf_pose);
-				btMatrix3x3 mat = tf_pose.getBasis();
-				mat.getEulerZYX(yaw,pitch,roll);
-			
-				error_m = sqrt((xyz_m[0]-goal_pose_constraint_[j].pose.pose.position.x)*(xyz_m[0]-goal_pose_constraint_[j].pose.pose.position.x) +
-						(xyz_m[1]-goal_pose_constraint_[j].pose.pose.position.y)*(xyz_m[1]-goal_pose_constraint_[j].pose.pose.position.y) +
-						(xyz_m[2]-goal_pose_constraint_[j].pose.pose.position.z)*(xyz_m[2]-goal_pose_constraint_[j].pose.pose.position.z));
-			
-				error_r = sqrt((rpy_r[0] - yaw)*(rpy_r[0] -yaw) + (rpy_r[1] - pitch)*(rpy_r[1] - pitch) + (rpy_r[2] - roll)*(rpy_r[2] - roll));
-			
-				ROS_INFO("error: %.4f m, %.4f rad (%.4f deg)\n\n", error_m, error_r, (error_r*180.0)/PI_CONST);
-      }
-    }
-
-		
     if(bCartesianPlanner_)
     {
       std::vector<double> jnt_pos(num_joints_,0);
@@ -1007,16 +982,28 @@ bool SBPLArmPlannerNode::plan(motion_planning_msgs::KinematicPath &arm_path)
 			unsigned int ik_attempts = 0;
       while(invalid_ik && ik_attempts < 5)
       {
-				invalid_ik = !computeIK(goal_pose_constraint_[0].pose,jnt_pos,final_waypoint);
-				
+				if(computeIK(goal_pose_constraint_[0].pose,jnt_pos,final_waypoint))
+				{
+					for(int b = 0; b < num_joints_; ++b)
+						angles_r[b] = final_waypoint[b];
+
+					if(sbpl_arm_env_.isValidJointConfiguration(angles_r))
+					{
+						invalid_ik = false;
+						ROS_INFO("IK solution is free of collision");
+					}
+					else
+						ROS_INFO("Computed an IK solution but it was in collision");
+				}
+
 				if(invalid_ik)
 				  ROS_INFO("IK solution is invalid.trying again...");
 				else
 				{
-					for(int b=0; b < num_joints_; ++b)
+					for(int b = 0; b < num_joints_; ++b)
 					{
 						path[0][b] = arm_path.states[arm_path.get_states_size()-1].vals[b];
-						path[1][b] = angles_r[b];
+						path[1][b] = final_waypoint[b];
 					}
 
 					if(!interpolatePathToGoal(path, 0.1))
@@ -1028,14 +1015,9 @@ bool SBPLArmPlannerNode::plan(motion_planning_msgs::KinematicPath &arm_path)
       }
 
 			if(invalid_ik)
-			{
 				ROS_INFO("IK was unable to come up with a valid joint configuration. The path is approximate.");
-			}
 			else
 			{
-				for(int j=0; j<num_joints_; ++j)
-					angles_r[j] = final_waypoint[j];
-				
 				// append final waypoint to path
 				arm_path.set_states_size(arm_path.get_states_size()+1);
 				arm_path.states[arm_path.get_states_size()-1].set_vals_size(num_joints_);
@@ -1044,7 +1026,7 @@ bool SBPLArmPlannerNode::plan(motion_planning_msgs::KinematicPath &arm_path)
 					arm_path.states[arm_path.get_states_size()-1].vals[j] = final_waypoint[j];
 					angles_r[j] = arm_path.states[arm_path.get_states_size()-1].vals[j];
 				}
-				
+
 				i = arm_path.get_states_size() - 1;
 				ROS_INFO("IK Solution:");
 				ROS_INFO("state %d: %.3f %.3f %.3f %.3f %.3f %.3f %.3f",
@@ -1071,13 +1053,13 @@ bool SBPLArmPlannerNode::plan(motion_planning_msgs::KinematicPath &arm_path)
 				tf::poseMsgToTF(goal_pose_constraint_[j].pose.pose, tf_pose);
 				btMatrix3x3 mat = tf_pose.getBasis();
 				mat.getEulerZYX(yaw,pitch,roll);
-				
+
 				error_m = sqrt((xyz_m[0]-goal_pose_constraint_[j].pose.pose.position.x)*(xyz_m[0]-goal_pose_constraint_[j].pose.pose.position.x) +
 						(xyz_m[1]-goal_pose_constraint_[j].pose.pose.position.y)*(xyz_m[1]-goal_pose_constraint_[j].pose.pose.position.y) +
 						(xyz_m[2]-goal_pose_constraint_[j].pose.pose.position.z)*(xyz_m[2]-goal_pose_constraint_[j].pose.pose.position.z));
-				
+
 				error_r = sqrt((rpy_r[0] - yaw)*(rpy_r[0] -yaw) + (rpy_r[1] - pitch)*(rpy_r[1] - pitch) + (rpy_r[2] - roll)*(rpy_r[2] - roll));
-				
+
 				ROS_INFO("error: %.4fm, %.4f rad (%.4f deg)\n\n", error_m, error_r, (error_r*180.0)/PI_CONST);
 			}
     }
@@ -1091,7 +1073,7 @@ bool SBPLArmPlannerNode::plan(motion_planning_msgs::KinematicPath &arm_path)
       final_waypoint.resize(num_joints_,0);
       for(int j=0; j<num_joints_; ++j)
 				final_waypoint[j] = goal_joint_constraint_[j].value[0];
-    
+
 			// append actual goal to path
 			arm_path.set_states_size(arm_path.get_states_size()+1);
 			arm_path.states[arm_path.get_states_size()-1].set_vals_size(num_joints_);
@@ -1103,11 +1085,11 @@ bool SBPLArmPlannerNode::plan(motion_planning_msgs::KinematicPath &arm_path)
 
 			for(int j = 0; j < num_joints_; j++)
 				angles_r[j] = arm_path.states[i].vals[j];
-	
-			sbpl_arm_env_.ComputeEndEffectorPos(angles_r, xyz_m, rpy_r);
-			ROS_INFO("        xyz: %.3f %.3f %.3f   rpy: %.3f %.3f %.3f",
-				xyz_m[0],xyz_m[1],xyz_m[2],rpy_r[0],rpy_r[1],rpy_r[2]);
-			
+
+// 			sbpl_arm_env_.ComputeEndEffectorPos(angles_r, xyz_m, rpy_r);
+// 			ROS_INFO("        xyz: %.3f %.3f %.3f   rpy: %.3f %.3f %.3f",
+// 				xyz_m[0],xyz_m[1],xyz_m[2],rpy_r[0],rpy_r[1],rpy_r[2]);
+
 			for(int b=0; b < num_joints_; ++b)
 			{
 				path[0][b] = arm_path.states[arm_path.get_states_size()-2].vals[b];
@@ -1120,19 +1102,6 @@ bool SBPLArmPlannerNode::plan(motion_planning_msgs::KinematicPath &arm_path)
 				return false;
 			}
 		}
-
-    //print out current state
-//     std::vector <double> joint_angles;
-//     getCurrentJointAngles(joint_names_, &joint_angles);
-//     ROS_INFO("\n\nCurrent: %.3f %.3f %.3f %.3f %.3f %.3f %.3f",
-// 	     joint_angles.at(0), joint_angles.at(1), joint_angles.at(2), joint_angles.at(3), joint_angles.at(4), joint_angles.at(5),joint_angles.at(6));
-// 
-//     for(unsigned int a = 0; a < joint_angles.size(); a++)
-//       angles_r[a] = joint_angles.at(a);
-// 
-//     sbpl_arm_env_.ComputeEndEffectorPos(angles_r, xyz_m, rpy_r);
-//     ROS_INFO("        xyz: %.3f %.3f %.3f   rpy: %.3f %.3f %.3f",
-// 	     xyz_m[0],xyz_m[1],xyz_m[2],rpy_r[0],rpy_r[1],rpy_r[2]);
   }
 
   return b_ret;
@@ -1352,10 +1321,7 @@ bool SBPLArmPlannerNode::computeIK(const robot_msgs::PoseStamped &pose_stamped_m
   for(int j = 0 ; j < num_joints_; ++j)
     request.data.positions.push_back(jnt_pos[j]);
 
-//   for(int j = 0; j < num_joints_; ++j)
-//     ROS_INFO("%s: %f",joint_names_[j].c_str(), jnt_pos[j]);
-
-  ros::ServiceClient client = node_.serviceClient<manipulation_srvs::IKService>("pr2_ik_right_arm/ik_service", true);
+	ros::ServiceClient client = node_.serviceClient<manipulation_srvs::IKService>("pr2_ik_right_arm/ik_service", true);
 
   if(client.call(request, response))
   {
@@ -1452,20 +1418,57 @@ bool SBPLArmPlannerNode::interpolatePathToGoal(std::vector<std::vector<double> >
 	return true;
 }
 
-/*
-void SBPLArmPlannerNode::printPath(motion_planning_msgs::KinematicPath &arm_path)
+void SBPLArmPlannerNode::displayExpandedStates()
 {
-	//output the path to the console with a bunch of debugging text
-	ROS_INFO("Path:");
+  std::vector<int> states;
+	int last = 0;
+	double angles[num_joints_], xyz_m[3], rpy_r[3];
+	visualization_msgs::Marker obs_marker;
 
-	double xyz_m[3], rpy_r[3], angles_r[num_joints_];
-	for(i = 0; i < arm_path.get_states_size(); i++)
+	//get expanded state IDs
+	states = sbpl_arm_env_.debugExpandedStates();
+
+	std::string frame_id = "torso_lift_link";	
+	obs_marker.header.frame_id = planning_frame_;
+	obs_marker.header.stamp = ros::Time::now();
+	obs_marker.ns = "sbpl_arm_planner";
+	obs_marker.id = 0;
+	obs_marker.type = visualization_msgs::Marker::CUBE_LIST;
+	obs_marker.action = 0;
+	obs_marker.scale.x = env_resolution_;
+	obs_marker.scale.y = env_resolution_;
+	obs_marker.scale.z = env_resolution_;
+	obs_marker.color.r = 0.0;
+	obs_marker.color.g = 1.0;
+	obs_marker.color.b = 0.5;
+	obs_marker.color.a = 0.5;
+	obs_marker.lifetime = ros::Duration(50.0);
+
+	obs_marker.points.reserve(50000);
+	for (unsigned int k = 0; k < states.size(); ++k) 
 	{
-		sbpl_arm_env_.StateID2Angles(solution_state_ids_v[i], angles_r);
-		for (unsigned int p = 0; p < (unsigned int) num_joints_; p++)
-		{
-			arm_path.states[i].vals[p] = angles_r[p];
-		}
+    sbpl_arm_env_.StateID2Angles(states[k], angles);
+		sbpl_arm_env_.ComputeEndEffectorPos(angles, xyz_m, rpy_r);
+		
+		last = obs_marker.points.size();
+		obs_marker.points.resize(last + 1);		
+		obs_marker.points[last].x = xyz_m[0];
+		obs_marker.points[last].y = xyz_m[1];
+		obs_marker.points[last].z = xyz_m[2];
+	}
+
+	ROS_DEBUG("Published markers for %d expanded nodes",obs_marker.points.size());
+	marker_publisher_.publish(obs_marker);
+}
+
+void SBPLArmPlannerNode::printPath(const motion_planning_msgs::KinematicPath &arm_path)
+{
+	double xyz_m[3], rpy_r[3], angles_r[num_joints_];
+	tf::Pose tf_pose;
+
+	ROS_INFO("Path:");
+	for(unsigned int i = 0; i < arm_path.get_states_size(); i++)
+	{
 		ROS_INFO("state %d: %.3f %.3f %.3f %.3f %.3f %.3f %.3f",
 						 i,arm_path.states[i].vals[0],arm_path.states[i].vals[1],arm_path.states[i].vals[2],arm_path.states[i].vals[3],
 			 arm_path.states[i].vals[4],arm_path.states[i].vals[5],arm_path.states[i].vals[6]);
@@ -1473,41 +1476,29 @@ void SBPLArmPlannerNode::printPath(motion_planning_msgs::KinematicPath &arm_path
 		sbpl_arm_env_.ComputeEndEffectorPos(angles_r, xyz_m, rpy_r);
 		ROS_INFO("        xyz: %.3f %.3f %.3f   rpy: %.3f %.3f %.3f", xyz_m[0],xyz_m[1],xyz_m[2],rpy_r[0],rpy_r[1],rpy_r[2]);
 	}
+
+	// prints out the error between the final waypoint of the path and the goal pose
 	if(bCartesianPlanner_)
 	{
+		double error_m, error_r, roll, pitch, yaw;
 		for(unsigned int j = 0; j < goal_pose_constraint_.size(); ++j)
 		{
 			tf::poseMsgToTF(goal_pose_constraint_[j].pose.pose, tf_pose);
 			btMatrix3x3 mat = tf_pose.getBasis();
 			mat.getEulerZYX(yaw,pitch,roll);
-			
+
 			error_m = sqrt((xyz_m[0]-goal_pose_constraint_[j].pose.pose.position.x)*(xyz_m[0]-goal_pose_constraint_[j].pose.pose.position.x) +
 					(xyz_m[1]-goal_pose_constraint_[j].pose.pose.position.y)*(xyz_m[1]-goal_pose_constraint_[j].pose.pose.position.y) +
 					(xyz_m[2]-goal_pose_constraint_[j].pose.pose.position.z)*(xyz_m[2]-goal_pose_constraint_[j].pose.pose.position.z));
-			
+
 			error_r = sqrt((rpy_r[0] - yaw)*(rpy_r[0] -yaw) + (rpy_r[1] - pitch)*(rpy_r[1] - pitch) + (rpy_r[2] - roll)*(rpy_r[2] - roll));
-			
+
 			ROS_INFO("error: %.4f m, %.4f rad (%.4f deg)\n\n", error_m, error_r, (error_r*180.0)/PI_CONST);
-		}
-		
-		for(unsigned int j = 0; j < goal_pose_constraint_.size(); ++j)
-		{
-			tf::poseMsgToTF(goal_pose_constraint_[j].pose.pose, tf_pose);
-			btMatrix3x3 mat = tf_pose.getBasis();
-			mat.getEulerZYX(yaw,pitch,roll);
-				
-			error_m = sqrt((xyz_m[0]-goal_pose_constraint_[j].pose.pose.position.x)*(xyz_m[0]-goal_pose_constraint_[j].pose.pose.position.x) +
-					(xyz_m[1]-goal_pose_constraint_[j].pose.pose.position.y)*(xyz_m[1]-goal_pose_constraint_[j].pose.pose.position.y) +
-					(xyz_m[2]-goal_pose_constraint_[j].pose.pose.position.z)*(xyz_m[2]-goal_pose_constraint_[j].pose.pose.position.z));
-				
-			error_r = sqrt((rpy_r[0] - yaw)*(rpy_r[0] -yaw) + (rpy_r[1] - pitch)*(rpy_r[1] - pitch) + (rpy_r[2] - roll)*(rpy_r[2] - roll));
-				
-			ROS_INFO("error: %.4fm, %.4f rad (%.4f deg)\n\n", error_m, error_r, (error_r*180.0)/PI_CONST);
 		}
 	}
 }
-*/
-		
+
+
 int main(int argc, char *argv[])
 {
   ros::init(argc, argv, "plan_path_node");

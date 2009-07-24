@@ -48,13 +48,12 @@
 #include <robot_msgs/Pose.h>
 #include <manipulation_msgs/JointTraj.h>
 #include <mapping_msgs/CollisionMap.h>
-#include <manipulation_msgs/JointTrajPoint.h>
+// #include <manipulation_msgs/JointTrajPoint.h>
 #include <motion_planning_msgs/KinematicPath.h>
 #include <motion_planning_msgs/KinematicState.h>
 #include <motion_planning_msgs/PoseConstraint.h>
 #include <mechanism_msgs/MechanismState.h>
 #include <visualization_msgs/Marker.h>
-#include <visualization_msgs/MarkerArray.h>
 
 /** sbpl planner include files **/
 #include <sbpl_arm_planner/headers.h>
@@ -73,14 +72,11 @@
 #include <kdl/chainjnttojacsolver.hpp>
 #include <robot_msgs/Wrench.h>
 #include <motion_planning_srvs/MotionPlan.h>
-#include <manipulation_msgs/IKRequest.h>
 #include <manipulation_srvs/IKService.h>
-#include <manipulation_srvs/IKQuery.h>
+
 
 namespace sbpl_arm_planner_node
 {
-#define VERBOSE 1
-#define MAX_RUNTIME 60.0
 
 class SBPLArmPlannerNode
   {
@@ -152,6 +148,8 @@ class SBPLArmPlannerNode
 
       bool bCartesianPlanner_;
 
+			bool print_path_;
+
       int num_joints_;
 
       std::string collision_map_topic_;
@@ -218,8 +216,7 @@ class SBPLArmPlannerNode
 
       visualization_msgs::Marker goal_marker_;
 
-      visualization_msgs::MarkerArray goal_marker_array_;
-
+//       visualization_msgs::MarkerArray goal_marker_array_;
 
       bool initializePlannerAndEnvironment();
 
@@ -260,6 +257,10 @@ class SBPLArmPlannerNode
       bool initChain(std::string robot_description);
 
 			bool interpolatePathToGoal(std::vector<std::vector<double> > &path, double inc);
+
+			void displayExpandedStates();
+
+			void printPath(const motion_planning_msgs::KinematicPath &arm_path);
   };
 }
 

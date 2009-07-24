@@ -12,7 +12,7 @@
     <param name="search_mode" value="true" />
     <param name="num_joints" value="7" />
     <param name="planner_type" value="cartesian" />
-    <param name="use_dijkstra_heuristic" value="false" />
+    <param name="use_dijkstra_heuristic" value="true" />
 
     <param name="torso_arm_offset_x" value="0.0" />
     <param name="torso_arm_offset_y" value="-0.188" />
@@ -32,7 +32,7 @@
     <remap from="collision_map_update" to="collision_map_occ_update" />
 
     <param name="arm" type="string" value="right_arm" />
-    <param name="planning_frame_id" type="string" value="base_link" />
+    <param name="planning_frame_id" type="string" value="torso_lift_link" />
     <param name="refresh_interval_collision_map" type="double" value="5.0" />
     <param name="refresh_interval_kinematic_state" type="double" value="1.0" />
     <param name="bounding_planes" type="string" value="0 0 1 -0.01" />
