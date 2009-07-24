@@ -1,0 +1,3 @@
+MoveBaseActionGoal goal
+MoveBaseActionResult result
+MoveBaseActionFeedback feedback
