@@ -22,6 +22,7 @@ genmsg()
 gensrv()
 
 rospack_add_library(experimental_controllers
+  src/joint_trajectory_controller2.cpp
   src/plug_controller.cpp
 )
 target_link_libraries(experimental_controllers ltdl)
