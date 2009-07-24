@@ -50,23 +50,23 @@ namespace rdf_parser{
 class Joint
 {
 public:
-  Joint(
-    const std::string &name,
-    TiXmlElement* xml_ = NULL,
-    type = UNKNOWN,
-    axis[0] = axis[1] = axis[2] = 0,
-    anchor[0] = anchor[1] = anchor[2] = 0
-    );
+  bool initXml(TiXmlElement* xml);
 
+  Link* getParentLink() {return this->parent_link_;};
+  Link* getChildLink() {return this->child_link_;};
+  Joint* getParentJoint() {return this->parent_joint_;};
+  Joint* getChildJoint() {return this->child_joint_;};
+
+private:
   TiXmlElement* xml_;
   std::string name_;
 
   enum
   {
     UNKNOWN, REVOLUTE, PRISMATIC, FLOATING, PLANAR, FIXED
-  } type;
+  } type_;
 
-  /// \brief     TYPE        AXIS
+  /// \brief     type_       meaning of axis_
   /// ------------------------------------------------------
   ///            REVOLUTE    rotation axis
   ///            PRISMATIC   translation axis
@@ -83,10 +83,11 @@ public:
 
   class JointProperties
   {
-    JointProperties(
+    JointProperties()
+    {
       damping = 0,
       friction = 0
-      );
+    };
     double damping;
     double friction;
     virtual ~JointProperties(void) {};
@@ -95,12 +96,13 @@ public:
   class JointLimit
   {
   public:
-    JointLimit(
+    JointLimit()
+    {
       min = 0,
       max = 0
       effort = 0,
       velocity = 0,
-      );
+    };
     double min;
     double max;
     double effort;
@@ -112,10 +114,6 @@ public:
 
   /// \brief A list of maps
   std::vector<TiXmlElement*> maps_;
-
-
-  
-private:
 
 };
 

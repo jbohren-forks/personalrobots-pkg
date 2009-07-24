@@ -32,90 +32,55 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-/* Author: Wim Meeussen */
+/* Author: John Hsu */
 
-#ifndef RDF_PARSER_LINK_H
-#define RDF_PARSER_LINK_H
+#ifndef RDF_PARSER_URDF_H
+#define RDF_PARSER_URDF_H
 
 #include <string>
 #include <vector>
 #include <tinyxml/tinyxml.h>
 
+#include <rdf_parser/link.h>
 #include <rdf_parser/joint.h>
 
 using namespace std;
 
 namespace rdf_parser{
 
-class Link
+class URDF
 {
 public:
+  URDF();
+  ~URDF();
 
+  /// \brief fails if not a tree,
+  ///        must define a root link element
   bool initXml(TiXmlElement* xml);
 
-
-  /// returns the name of the link
   const std::string& getName() const;
+  Link* getLink(std::string name);
+  Joint* getJoint(std::string name);
+  Link* getRootLink();
 
-  /// returns the parent link. The root link does not have a parent
-  Link* getParent();
-
-  /// returns children of the link
-  std::vector<Link*> getChildren();
-
-  /// returns joint attaching link to parent
-  Joint* getParentJoint();
-
-  /// returns joints attaching link to children
-  std::vector<Joint*> getChildrenJoint();
-
-  class Inertial
-  {
-  public:
-    virtual ~Inertial(void) {};
-    bool initXml(TiXmlElement* xml);
-  private:
-    std::vector<TiXmlElement*> maps_;
-    Pose origin_;
-    double mass_;
-    double ixx_,ixy_,ixz_,iyy_,iyz_,izz_;
-  };
-
-  class Visual
-  {
-  public:
-    virtual ~Visual(void) {};
-    bool initXml(TiXmlElement* xml);
-  private:
-    std::vector<TiXmlElement*> maps_;
-    Pose origin_;
-    Geometry geometry_;
-
-  };
-
-  class Collision
-  {
-  public:
-    virtual ~Collision(void) {};
-    bool initXml(TiXmlElement* xml);
-  private:
-    std::vector<TiXmlElement*> maps_;
-    Pose origin_;
-    Geometry geometry_;
-
-  };
-
+  /// return all objects
+  std::vector<Link*> getLinks() {return this->links_;};
+  std::vector<Joint*> getJoints() {return this->joints_;};
+  std::vector<TiXmlElement*> getMaps() {return this->maps_;};
 
 private:
-  void addChild(Link* child);
-
   std::string name_;
   std::vector<TiXmlElement*> maps_;
 
-  std::vector<Joint*> joint_;
+  std::vector<Link*> links_;
+  std::vector<Joint*> joints_;
+  std::vector<TiXmlElement*> maps_;
 
-  Link* parent_;
-  std::vector<Link*> children_;
+  Link* root_link_;
+
+  /// \brief internal construction functions
+  //bool addLink(...);
+  //bool addJoint(...);
 
 };
 

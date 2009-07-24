@@ -32,95 +32,87 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-/* Author: Wim Meeussen */
+/* Author: John Hsu */
+/* this class should switch to using bullet or equiv linear math library */
 
-#ifndef RDF_PARSER_LINK_H
-#define RDF_PARSER_LINK_H
+#ifndef RDF_PARSER_ROTATION_H
+#define RDF_PARSER_ROTATION_H
 
 #include <string>
 #include <vector>
-#include <tinyxml/tinyxml.h>
-
-#include <rdf_parser/joint.h>
 
 using namespace std;
 
 namespace rdf_parser{
 
-class Link
+class Rotation
 {
 public:
+  Rotation() {w_=1.0;x_=0;y_=0;z_=0;}; // init to identity
 
-  bool initXml(TiXmlElement* xml);
-
-
-  /// returns the name of the link
-  const std::string& getName() const;
-
-  /// returns the parent link. The root link does not have a parent
-  Link* getParent();
-
-  /// returns children of the link
-  std::vector<Link*> getChildren();
-
-  /// returns joint attaching link to parent
-  Joint* getParentJoint();
-
-  /// returns joints attaching link to children
-  std::vector<Joint*> getChildrenJoint();
-
-  class Inertial
+  getQuaternion(double &w,double &x,double &y,double &z)
   {
-  public:
-    virtual ~Inertial(void) {};
-    bool initXml(TiXmlElement* xml);
-  private:
-    std::vector<TiXmlElement*> maps_;
-    Pose origin_;
-    double mass_;
-    double ixx_,ixy_,ixz_,iyy_,iyz_,izz_;
+    w = this->w_;
+    x = this->x_;
+    y = this->y_;
+    z = this->z_;
   };
-
-  class Visual
+  getRPY(double &roll,double &pitch,double &yaw)
   {
-  public:
-    virtual ~Visual(void) {};
-    bool initXml(TiXmlElement* xml);
-  private:
-    std::vector<TiXmlElement*> maps_;
-    Pose origin_;
-    Geometry geometry_;
+    double sqw;
+    double sqx;
+    double sqy;
+    double sqz;
+
+    sqw = this->w_ * this->w_;
+    sqx = this->x_ * this->x_;
+    sqy = this->y_ * this->y_;
+    sqz = this->z_ * this->z_;
+
+    roll  = atan2(2 * (this->y_*this->z_ + this->w_*this->x_), sqw - sqx - sqy + sqz);
+    pitch = asin(-2 * (this->x_*this->z_ - this->w_ * this->y_));
+    yaw   = atan2(2 * (this->x_*this->y_ + this->w_*this->z_), sqw + sqx - sqy - sqz);
 
   };
-
-  class Collision
+  setFromQuaternion(double w,double x,double y,double z)
   {
-  public:
-    virtual ~Collision(void) {};
-    bool initXml(TiXmlElement* xml);
-  private:
-    std::vector<TiXmlElement*> maps_;
-    Pose origin_;
-    Geometry geometry_;
-
+    this->w_ = w;
+    this->x_ = x;
+    this->y_ = y;
+    this->z_ = z;
+    this->normalize();
   };
+  void setFromRPY(double r, double p, double y)
+  {
+    double phi, the, psi;
 
+    phi = r / 2.0;
+    the = p / 2.0;
+    psi = y / 2.0;
+
+    q_.w = cos(phi) * cos(the) * cos(psi) + sin(phi) * sin(the) * sin(psi);
+    q_.x = sin(phi) * cos(the) * cos(psi) - cos(phi) * sin(the) * sin(psi);
+    q_.y = cos(phi) * sin(the) * cos(psi) + sin(phi) * cos(the) * sin(psi);
+    q_.z = cos(phi) * cos(the) * sin(psi) - sin(phi) * sin(the) * cos(psi);
+
+    this->normalize();
+  };
 
 private:
-  void addChild(Link* child);
+  double w_,x_,y_,z_;
 
-  std::string name_;
-  std::vector<TiXmlElement*> maps_;
-
-  std::vector<Joint*> joint_;
-
-  Link* parent_;
-  std::vector<Link*> children_;
-
+  normalize()
+  {
+    double s = sqrt(this->w_ * this->w_ +
+                    this->x_ * this->x_ +
+                    this->y_ * this->y_ +
+                    this->z_ * this->z_);
+    this->w_ /= s;
+    this->x_ /= s;
+    this->y_ /= s;
+    this->z_ /= s;
+  };
 };
-
-
-
 
 }
 

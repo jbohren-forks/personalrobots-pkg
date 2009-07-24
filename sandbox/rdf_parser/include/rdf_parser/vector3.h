@@ -34,93 +34,25 @@
 
 /* Author: Wim Meeussen */
 
-#ifndef RDF_PARSER_LINK_H
-#define RDF_PARSER_LINK_H
+#ifndef RDF_PARSER_VECTOR3_H
+#define RDF_PARSER_VECTOR3_H
 
 #include <string>
 #include <vector>
-#include <tinyxml/tinyxml.h>
-
-#include <rdf_parser/joint.h>
 
 using namespace std;
 
 namespace rdf_parser{
 
-class Link
+class Vector3
 {
 public:
-
-  bool initXml(TiXmlElement* xml);
-
-
-  /// returns the name of the link
-  const std::string& getName() const;
-
-  /// returns the parent link. The root link does not have a parent
-  Link* getParent();
-
-  /// returns children of the link
-  std::vector<Link*> getChildren();
-
-  /// returns joint attaching link to parent
-  Joint* getParentJoint();
-
-  /// returns joints attaching link to children
-  std::vector<Joint*> getChildrenJoint();
-
-  class Inertial
-  {
-  public:
-    virtual ~Inertial(void) {};
-    bool initXml(TiXmlElement* xml);
-  private:
-    std::vector<TiXmlElement*> maps_;
-    Pose origin_;
-    double mass_;
-    double ixx_,ixy_,ixz_,iyy_,iyz_,izz_;
-  };
-
-  class Visual
-  {
-  public:
-    virtual ~Visual(void) {};
-    bool initXml(TiXmlElement* xml);
-  private:
-    std::vector<TiXmlElement*> maps_;
-    Pose origin_;
-    Geometry geometry_;
-
-  };
-
-  class Collision
-  {
-  public:
-    virtual ~Collision(void) {};
-    bool initXml(TiXmlElement* xml);
-  private:
-    std::vector<TiXmlElement*> maps_;
-    Pose origin_;
-    Geometry geometry_;
-
-  };
-
-
+  Vector3() {x=0;y=0;z=0;};
+  double x;
+  double y;
+  double z;
 private:
-  void addChild(Link* child);
-
-  std::string name_;
-  std::vector<TiXmlElement*> maps_;
-
-  std::vector<Joint*> joint_;
-
-  Link* parent_;
-  std::vector<Link*> children_;
-
 };
-
-
-
 
 }
 

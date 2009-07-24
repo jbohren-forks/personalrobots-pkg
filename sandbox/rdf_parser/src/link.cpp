@@ -42,43 +42,19 @@ using namespace std;
 
 namespace rdf_parser{
 
-Link::Link(const std::string &name, 
-           Link* parent, 
-           TiXmlElement *joint, 
-           TiXmlElement *origin,
-           TiXmlElement *visual,
-           TiXmlElement *collision,
-           TiXmlElement *geometry,
-           TiXmlElement *inertia)
-  :  joint_(joint),
-     origin_(origin),
-     visual_(visual),
-     collision_(collision),
-     geometry_(geometry),
-     inertia_(inertia),
-     name_(name),
-     parent_(parent)
-{
-  if (parent_ != NULL)
-    parent_->addChild(this);
-}
-
-const std::string& 
-Link::getName() const
+const std::string& Link::getName() const
 {
   return name_;
 }
 
-void 
-Link::addChild(Link* child)
+void Link::addChild(Link* child)
 {
   children_.push_back(child);
   cout << "added child " << child->getName() << " to " << getName() << endl;
 }
 
 
-bool
-Link::getParent(Link*& link) const
+bool Link::getParent(Link*& link) const
 {
   if (parent_ != NULL){
     link = parent_;
@@ -88,15 +64,13 @@ Link::getParent(Link*& link) const
 }
 
 
-unsigned int 
-Link::getNrOfChildren() const
+unsigned int Link::getNrOfChildren() const
 {
   return children_.size();
 }
 
 
-bool 
-Link::getChild(unsigned int nr, Link*& link) const
+bool Link::getChild(unsigned int nr, Link*& link) const
 {
   if ((int)nr >=0 && nr <getNrOfChildren()){
     link = children_[nr];

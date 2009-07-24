@@ -32,96 +32,41 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-/* Author: Wim Meeussen */
+/* Author: John Hsu */
 
-#ifndef RDF_PARSER_LINK_H
-#define RDF_PARSER_LINK_H
 
-#include <string>
-#include <vector>
-#include <tinyxml/tinyxml.h>
-
-#include <rdf_parser/joint.h>
+#include "rdf_parser/urdf.h"
 
 using namespace std;
 
+
 namespace rdf_parser{
 
-class Link
+const std::string& URDF::getName() const
 {
-public:
+  return name_;
+}
 
-  bool initXml(TiXmlElement* xml);
+bool URDF::initXml(TiXmlElement* xml)
+{
+  return true;
+}
 
+Link* URDF::getLink(std::string name)
+{
+  return links_.begin();
+}
 
-  /// returns the name of the link
-  const std::string& getName() const;
+Joint* URDF::getJoint(std::string name)
+{
 
-  /// returns the parent link. The root link does not have a parent
-  Link* getParent();
+  return joints_.begin();
+}
 
-  /// returns children of the link
-  std::vector<Link*> getChildren();
-
-  /// returns joint attaching link to parent
-  Joint* getParentJoint();
-
-  /// returns joints attaching link to children
-  std::vector<Joint*> getChildrenJoint();
-
-  class Inertial
-  {
-  public:
-    virtual ~Inertial(void) {};
-    bool initXml(TiXmlElement* xml);
-  private:
-    std::vector<TiXmlElement*> maps_;
-    Pose origin_;
-    double mass_;
-    double ixx_,ixy_,ixz_,iyy_,iyz_,izz_;
-  };
-
-  class Visual
-  {
-  public:
-    virtual ~Visual(void) {};
-    bool initXml(TiXmlElement* xml);
-  private:
-    std::vector<TiXmlElement*> maps_;
-    Pose origin_;
-    Geometry geometry_;
-
-  };
-
-  class Collision
-  {
-  public:
-    virtual ~Collision(void) {};
-    bool initXml(TiXmlElement* xml);
-  private:
-    std::vector<TiXmlElement*> maps_;
-    Pose origin_;
-    Geometry geometry_;
-
-  };
-
-
-private:
-  void addChild(Link* child);
-
-  std::string name_;
-  std::vector<TiXmlElement*> maps_;
-
-  std::vector<Joint*> joint_;
-
-  Link* parent_;
-  std::vector<Link*> children_;
-
-};
-
-
-
+Link* URDF::getRootLink()
+{
+  return links_.begin();
+}
 
 }
 
-#endif

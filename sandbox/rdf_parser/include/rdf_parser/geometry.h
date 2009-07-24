@@ -32,94 +32,56 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-/* Author: Wim Meeussen */
+/* Author: John Hsu */
 
-#ifndef RDF_PARSER_LINK_H
-#define RDF_PARSER_LINK_H
+#ifndef RDF_PARSER_GEOMETRY_H
+#define RDF_PARSER_GEOMETRY_H
 
 #include <string>
 #include <vector>
-#include <tinyxml/tinyxml.h>
 
-#include <rdf_parser/joint.h>
+#include <rdf_parser/vector3.h>
 
 using namespace std;
 
 namespace rdf_parser{
 
-class Link
+class Geometry
 {
 public:
-
-  bool initXml(TiXmlElement* xml);
-
-
-  /// returns the name of the link
-  const std::string& getName() const;
-
-  /// returns the parent link. The root link does not have a parent
-  Link* getParent();
-
-  /// returns children of the link
-  std::vector<Link*> getChildren();
-
-  /// returns joint attaching link to parent
-  Joint* getParentJoint();
-
-  /// returns joints attaching link to children
-  std::vector<Joint*> getChildrenJoint();
-
-  class Inertial
-  {
-  public:
-    virtual ~Inertial(void) {};
-    bool initXml(TiXmlElement* xml);
-  private:
-    std::vector<TiXmlElement*> maps_;
-    Pose origin_;
-    double mass_;
-    double ixx_,ixy_,ixz_,iyy_,iyz_,izz_;
-  };
-
-  class Visual
-  {
-  public:
-    virtual ~Visual(void) {};
-    bool initXml(TiXmlElement* xml);
-  private:
-    std::vector<TiXmlElement*> maps_;
-    Pose origin_;
-    Geometry geometry_;
-
-  };
-
-  class Collision
-  {
-  public:
-    virtual ~Collision(void) {};
-    bool initXml(TiXmlElement* xml);
-  private:
-    std::vector<TiXmlElement*> maps_;
-    Pose origin_;
-    Geometry geometry_;
-
-  };
-
+   virtual ~Geometry() {};
+   bool initXml(TiXmlElement* xml);
 
 private:
-  void addChild(Link* child);
+   enum
+   {
+     NONE, MESH, BOX, CYLINDER, SPHERE
+   } type_;
 
-  std::string name_;
-  std::vector<TiXmlElement*> maps_;
+   class Mesh
+   {
+     std::string filename_;
+     Vector3 size_;
+     Vector3 scale_;
+   } mesh_;
 
-  std::vector<Joint*> joint_;
+   class Box
+   {
+     Vector3 size_;
+     Vector3 scale_;
+   } box_;
 
-  Link* parent_;
-  std::vector<Link*> children_;
+   class Cylinder
+   {
+     double radius;
+     double length;
+   } cylinder_;
 
+   class Sphere
+   {
+     double radius;
+   } sphere_;
 };
-
-
 
 
 }
