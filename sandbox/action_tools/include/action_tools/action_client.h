@@ -113,7 +113,7 @@ public:
           case PURSUING_GOAL:
             return "PURSUING_GOAL";
           case WAITING_FOR_PREEMPTED:
-            return "PREEMPTED";
+            return "WAITING_FOR_PREEMPTED";
           case WAITING_FOR_RESULT:
             return "WAITING_FOR_RESULT";
           case DONE:
@@ -216,6 +216,12 @@ public:
       {
         ScopedLock(ac_->manager_list_mutex_);
         return (*status_it_)->getResult();
+      }
+
+      void preemptGoal() const
+      {
+        ScopedLock(ac_->manager_list_mutex_);
+        (*status_it_)->preemptGoal();
       }
 
     private:
@@ -600,7 +606,6 @@ void ActionClientPrefix::GoalManager::updateResult(const ActionResultConstPtr& r
 {
   // {WAITING_FOR_ACK, PENDING, PURSUING_GOAL, WAITING_FOR_PREEMPTED, WAITING_FOR_RESULT, DONE};
 
-  ROS_DEBUG("Got a result");
   ScopedLock(ac_->manager_list_mutex_);
 
   // Check if this result is for our goal
