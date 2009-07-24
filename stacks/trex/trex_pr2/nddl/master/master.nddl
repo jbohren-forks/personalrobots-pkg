@@ -33,8 +33,6 @@
 #include "plugs/exports.nddl"
 #include "rcs/base_state.nddl"
 
-//#include "rcs/nav/exports.nddl"
-//#include "rcs/plugs/exports.nddl"
 // Priority for goals
 typedef int [0 5] PRIORITY;
 
