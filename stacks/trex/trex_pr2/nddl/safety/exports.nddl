@@ -22,7 +22,7 @@ SetLaserTilt set_laser_tilt = new SetLaserTilt(External);
 ArmsTucked::True{
   met_by(safety_tuck_arms.Active p);
   eq(p.status, SUCCESS);
-  leq(p.max_duration, SAFETY_TUCK_ARMS_DURATION_BOUND);
+  leq(p.duration, SAFETY_TUCK_ARMS_DURATION_BOUND);
 }
 
 TiltLaserReady::True{

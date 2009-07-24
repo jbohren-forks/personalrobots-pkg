@@ -37,11 +37,14 @@ class StateMachine extends AgentTimeline {
 };
 
 /**
- * Specialize to mark all ROS Actions
+ * Specialize to mark all ROS Actions. A max_duration parameter is used
+ * to allow actions to be preempted in the ros adapter.
  */
 class ROSAction extends Behavior {
 
-  predicate Active{}
+  predicate Active{
+    int max_duration; // In seconds
+  }
 
   predicate Inactive {}
 
@@ -53,5 +56,5 @@ class ROSAction extends Behavior {
 ROSAction::Active{
   int time_since_dispatch;
   addEq(dispatch_time, time_since_dispatch, start);
-  leq(time_since_dispatch, 100);
+  leq(time_since_dispatch, 100); // Magic number to break the plan if 100 ticks passes between dispatch and starting
 }

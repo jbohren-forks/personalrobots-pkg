@@ -1,5 +1,5 @@
 #include "world_model/topological_map.nddl"
-#include "rcs/exports.nddl"
+#include "ros.nddl"
 #include "rcs/nav/exports.nddl"
 #include "rcs/plugs/exports.nddl"
 #include "rcs/doors/exports.nddl"

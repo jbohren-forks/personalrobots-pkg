@@ -1,7 +1,7 @@
 
 #include "TREX.nddl"
 #include "world_model/topological_map.nddl"
-#include "rcs/exports.nddl"
+#include "ros.nddl"
 #include "rcs/nav/exports.nddl"
 #include "nav/exports.nddl"
 
@@ -93,7 +93,6 @@ NavController::Holds{
 	// This is desirable since the precise approach is based on calcuations
 	// that deal with position of approach and location of the socket or
 	// door and these are encoded internally in the domains.
-
 	contains_start(MoveBehavior.Active cmd);
 	concurrent(cmd.end, end);
 	eq(cmd.frame_id, nav_active.frame_id);
@@ -101,7 +100,6 @@ NavController::Holds{
 	// Determine the next map point to go for. It will either be the outlet
 	// or it will be a doorway en-route to the outlet. This function calls a
 	// topological planner.
-
 	bool thru_doorway;
 	map_get_next_move(cmd.x, cmd.y, cmd.z, cmd.qx,
 			  cmd.qy, cmd.qz, cmd.qw,
@@ -116,11 +114,11 @@ NavController::Holds{
 
 	if(thru_doorway == true){
 	  eq(cmd.object, doorman);
-	  eq(cmd.max_duration, DOORMAN_DURATION_BOUND);
+	  leq(cmd.duration, DOORMAN_DURATION_BOUND);
 	}
 	else{
 	  eq(cmd.object, driver);
-	  eq(cmd.max_duration, DRIVER_DURATION_BOUND);
+	  leq(cmd.duration, DRIVER_DURATION_BOUND);
 	}
       }
     }

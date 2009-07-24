@@ -59,7 +59,7 @@ DriverController::Holds{
       contained_by(driver.Active d);	
       contains_start(move_base.Active cmd_move);
       concurrent(cmd_move.end, end);
-      leq(cmd_move.max_duration, MOVE_BASE_DURATION_BOUND);
+      leq(cmd_move.duration, MOVE_BASE_DURATION_BOUND);
       eq_pose_msg(cmd_move.object, d.object);
     }
   }
