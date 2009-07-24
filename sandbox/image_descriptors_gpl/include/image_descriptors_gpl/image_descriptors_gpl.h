@@ -1,3 +1,6 @@
+#ifndef IMAGE_DESCRIPTORS_GPL_H
+#define IMAGE_DESCRIPTORS_GPL_H
+
 #include <daisy/daisy.h>
 #include <descriptors.h>
 
@@ -22,3 +25,4 @@ class Daisy : public ImageDescriptor {
   daisy dai;
 };
 
+#endif

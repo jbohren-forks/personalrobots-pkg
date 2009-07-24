@@ -1,3 +1,6 @@
+#ifndef DESCRIPTORS_H
+#define DESCRIPTORS_H
+ 
 #include <iostream>
 #include "opencv/cxcore.h"
 #include "opencv/cv.h"
@@ -365,3 +368,5 @@ int getdir (string dir, vector<string> &files);
 /*   void clearPointCache() {} */
 /*   void clearImageCache() {} */
 /* }; */
+
+#endif
