@@ -97,7 +97,8 @@ public:
       //! \brief Builds the goal manager and then sends the goal over the wire
       GoalManager(const GoalID& goal_id, const Goal& goal, CompletionCallback cb, ActionClientT* ac, const ros::Duration& runtime_timeout);
       void preemptGoal();
-
+      ClientGoalStatus getStatus();
+      ResultConstPtr getResult();
 
     private:
       enum CommState {WAITING_FOR_ACK, PENDING, PURSUING_GOAL, WAITING_FOR_PREEMPTED, WAITING_FOR_RESULT, DONE};
@@ -200,20 +201,27 @@ public:
   class GoalHandle
   {
     private:
-      GoalHandle(typename std::list<GoalManagerPtr>::iterator it)
-       : status_it_(it), handle_tracker_((*it)->handle_tracker_.lock())
+      GoalHandle(typename std::list<GoalManagerPtr>::iterator it, ActionClientT* ac)
+       : status_it_(it), handle_tracker_((*it)->handle_tracker_.lock()), ac_(ac)
       {  }
     public:
 
-      ClientGoalStatus getStatus()
+      ClientGoalStatus getStatus() const
       {
-        boost::mutex::scoped_lock(status_it_->mutex_);
-        return (*status_it_)->getClientGoalState_();
+        ScopedLock(ac_->manager_list_mutex_);
+        return (*status_it_)->getStatus();
+      }
+
+      ResultConstPtr getResult() const
+      {
+        ScopedLock(ac_->manager_list_mutex_);
+        return (*status_it_)->getResult();
       }
 
     private:
       typename std::list<GoalManagerPtr>::iterator status_it_;
       boost::shared_ptr<void> handle_tracker_;
+      ActionClientT* ac_;
 
       friend class ActionClient;
   };
@@ -230,6 +238,23 @@ public:
 
   void initClient()
   {
+    // Load timeout parameters
+    double waiting_for_ack_timeout_secs;
+    n_.param("WaitingForAckTimeout", waiting_for_ack_timeout_secs, 0.0);
+    waiting_for_ack_timeout_.fromSec(waiting_for_ack_timeout_secs);
+    ROS_INFO("WaitingForAckTimeout: [%.2fs]", waiting_for_ack_timeout_.toSec());
+
+    double waiting_for_preempted_timeout_secs;
+    n_.param("WaitingForPreemptedTimeout", waiting_for_preempted_timeout_secs, 0.0);
+    waiting_for_preempted_timeout_.fromSec(waiting_for_preempted_timeout_secs);
+    ROS_INFO("WaitingForPreemptedTimeout: [%.2fs]", waiting_for_preempted_timeout_.toSec());
+
+    double waiting_for_result_timeout_secs;
+    n_.param("WaitingForResultTimeout", waiting_for_result_timeout_secs, 0.0);
+    waiting_for_result_timeout_.fromSec(waiting_for_result_timeout_secs);
+    ROS_INFO("WaitingForResultTimeout: [%.2fs]", waiting_for_result_timeout_.toSec());
+
+    // Start publishers and subscribers
     goal_pub_ = n_.advertise<ActionGoal>("goal", 1);
     status_sub_   = n_.subscribe("status",   1, &ActionClientT::statusCb, this);
     feedback_sub_ = n_.subscribe("feedback", 1, &ActionClientT::feedbackCb, this);
@@ -258,7 +283,7 @@ public:
     boost::shared_ptr<void> handle_tracker((void*) NULL, d);
     (*it)->handle_tracker_ = handle_tracker;
 
-    GoalHandle gh = GoalHandle(it);//, this);
+    GoalHandle gh = GoalHandle(it, this);
 
     return gh;
   }
@@ -278,7 +303,6 @@ private:
 
   // Timer durations
   ros::Duration waiting_for_ack_timeout_;       // Maximum time we're willing to stay in WAITING_FOR_ACK
-  ros::Duration runtime_timeout_;               // Maximum time we're willing to stay in {PURSUING_GOAL} before Preempting
   ros::Duration waiting_for_preempted_timeout_; // Maximum time we're willing to stay in WAITING_FOR_PREEMPTED until we release the goal as TIMED_OUT
   ros::Duration waiting_for_result_timeout_;    // Maximum time we're willing to stay in WAITING_FOR_RESULT until we release the goal as TIMED_OUT
 
@@ -337,12 +361,12 @@ ActionClientPrefix::GoalManager::GoalManager(const GoalID& goal_id, const Goal& 
    runtime_timeout_(runtime_timeout),
    cb_(cb)
 {
-  setCommState(WAITING_FOR_ACK);
-
   waiting_for_ack_timer_.registerOneShotCb(      boost::bind(&ActionClientPrefix::GoalManager::waitingForAckTimeoutCallback, this, _1));
   runtime_timer_.registerOneShotCb(              boost::bind(&ActionClientPrefix::GoalManager::runtimeTimeoutCallback, this, _1));
   waiting_for_preempted_timer_.registerOneShotCb(boost::bind(&ActionClientPrefix::GoalManager::waitingForPreemptedTimeoutCallback, this, _1));
   waiting_for_result_timer_.registerOneShotCb(   boost::bind(&ActionClientPrefix::GoalManager::waitingForResultTimeoutCallback, this, _1));
+
+  startWaitingForAck();
 
   boost::shared_ptr<ActionGoal> action_goal(new ActionGoal);
   action_goal->goal_id = goal_id;
@@ -362,7 +386,7 @@ void ActionClientPrefix::GoalManager::preemptGoal()
   {
     case WAITING_FOR_ACK:       finishWaitingForAck(); break;
     case PENDING:               finishPending(); break;
-    case PURSUING_GOAL:         ROS_DEBUG("in preempt goal"); finishPursuingGoal(); break;
+    case PURSUING_GOAL:         finishPursuingGoal(); break;
     case WAITING_FOR_PREEMPTED: break;
     case WAITING_FOR_RESULT:    finishWaitingForResult(); break;
     case DONE:                  break;
@@ -502,9 +526,9 @@ void ActionClientPrefix::GoalManager::updateStatus(const GoalStatusArrayConstPtr
         switch (goal_status->status)
         {
           case GoalStatus::PENDING :
-            ROS_ERROR("Invalid transition from WAITING_FOR_RESULT to PENDING"); break;
+            break;
           case GoalStatus::ACTIVE :
-            ROS_ERROR("Invalid transition from WAITING_FOR_RESULT to ACTIVE"); break;
+            break;
           case GoalStatus::PREEMPTED :
             if (client_goal_status_ != ClientGoalStatus::PREEMPTED)
               ROS_ERROR("Got GoalStatus [PREEMPTED], but we're in ClientGoalState [%s]", client_goal_status_.toString().c_str());
@@ -536,9 +560,9 @@ void ActionClientPrefix::GoalManager::updateStatus(const GoalStatusArrayConstPtr
         switch (goal_status->status)
         {
           case GoalStatus::PENDING :
-            ROS_ERROR("Invalid transition from WAITING_FOR_RESULT to PENDING"); break;
+            break;
           case GoalStatus::ACTIVE :
-            ROS_ERROR("Invalid transition from WAITING_FOR_RESULT to ACTIVE"); break;
+            break;
           case GoalStatus::PREEMPTED :
             if (client_goal_status_ != ClientGoalStatus::PREEMPTED)
               ROS_ERROR("Got GoalStatus [PREEMPTED], but we're in ClientGoalStatus [%s]", client_goal_status_.toString().c_str());
@@ -618,7 +642,11 @@ void ActionClientPrefix::GoalManager::updateResult(const ActionResultConstPtr& r
       }
       break;
     case DONE:
-      ROS_ERROR("Got a Result when this goal is already DONE"); break;
+      if (client_goal_status_ == ClientGoalStatus::LOST)
+        ROS_WARN("Got a result for a Goal after we thought it was lost");
+      else
+        ROS_ERROR("Got a second Result for this goal");
+      break;
     default:
       ROS_ERROR("BUG: Unknown CommState. comm_state_=%u", comm_state_); break;
   }
@@ -639,6 +667,36 @@ void ActionClientPrefix::GoalManager::setClientGoalStatus(const ClientGoalStatus
 }
 
 ActionClientTemplate
+ClientGoalStatus ActionClientPrefix::GoalManager::getStatus()
+{
+  switch (comm_state_)
+  {
+    case WAITING_FOR_ACK:
+      return ClientGoalStatus(ClientGoalStatus::PENDING);
+    case PENDING:
+      return ClientGoalStatus(ClientGoalStatus::PENDING);
+    case PURSUING_GOAL:
+      return ClientGoalStatus(ClientGoalStatus::ACTIVE);
+    case WAITING_FOR_PREEMPTED:
+      return ClientGoalStatus(ClientGoalStatus::ACTIVE);
+    case WAITING_FOR_RESULT:
+      return ClientGoalStatus(ClientGoalStatus::ACTIVE);
+    case DONE:
+      return client_goal_status_;
+    default:
+      ROS_ERROR("BUG - Unknown comm state");
+      break;
+  }
+  return ClientGoalStatus(ClientGoalStatus::LOST);
+}
+
+ActionClientTemplate
+boost::shared_ptr<const Result> ActionClientPrefix::GoalManager::getResult()
+{
+  return result_;
+}
+
+ActionClientTemplate
 void ActionClientPrefix::GoalManager::setCommState(const CommState& next_state)
 {
   ROS_DEBUG("Transitioning CommState from %s to %s", commStateToString(comm_state_).c_str(), commStateToString(next_state).c_str());
@@ -651,7 +709,8 @@ void ActionClientPrefix::GoalManager::startWaitingForAck()
   if (ac_->waiting_for_ack_timeout_ != ros::Duration(0,0))
   {
     ROS_DEBUG("Starting [%.2fs] timer for the WaitForAck timeout", ac_->waiting_for_ack_timeout_.toSec());
-    waiting_for_ack_timer_ = ac_->n_.createTimer(ac_->wait_for_ack_timeout_, waiting_for_ack_timer_.getCb());
+
+    waiting_for_ack_timer_ = ac_->n_.createTimer(ac_->waiting_for_ack_timeout_, waiting_for_ack_timer_.getCb());
   }
   else
     ROS_DEBUG("Infinite WaitForAck timeout");
@@ -662,8 +721,10 @@ void ActionClientPrefix::GoalManager::startWaitingForAck()
 ActionClientTemplate
 void ActionClientPrefix::GoalManager::waitingForAckTimeoutCallback(const ros::TimerEvent& e)
 {
-  ROS_DEBUG("WaitingForAckTimer Timed out");
-  processLost();
+  ROS_DEBUG("WaitingForAckTimer Timout Callback");
+  ScopedLock(ac_->manager_list_mutex_);
+  if (comm_state_ == WAITING_FOR_ACK)
+    processLost();
 }
 
 ActionClientTemplate
@@ -704,6 +765,7 @@ void ActionClientPrefix::GoalManager::startPursuingGoal()
 ActionClientTemplate
 void ActionClientPrefix::GoalManager::runtimeTimeoutCallback(const ros::TimerEvent& e)
 {
+  ScopedLock(ac_->manager_list_mutex_);
   preemptGoal();
 }
 
@@ -721,6 +783,7 @@ void ActionClientPrefix::GoalManager::startWaitingForPreempted()
   {
     ROS_DEBUG("Starting [%.2fs] timer for the WaitingForPreempted timeout", ac_->waiting_for_preempted_timeout_.toSec());
     waiting_for_preempted_timer_ = ac_->n_.createTimer(ac_->waiting_for_preempted_timeout_, waiting_for_preempted_timer_.getCb());
+    ROS_DEBUG("Done creating the timer");
   }
   else
     ROS_DEBUG("Infinite WaitingForPreempted timeout");
@@ -785,8 +848,12 @@ void ActionClientPrefix::GoalManager::startDone(const ActionResultConstPtr& acti
 
   setCommState(DONE);
 
+
   if (cb_)
-    cb_(GoalHandle(it_));
+  {
+    GoalHandle gh(it_, ac_);
+    cb_(gh);
+  }
 }
 
 ActionClientTemplate
