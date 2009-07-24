@@ -47,6 +47,8 @@ using namespace std;
 
 namespace rdf_parser{
 
+class Link;
+
 class Joint
 {
 public:
@@ -54,8 +56,6 @@ public:
 
   Link* getParentLink() {return this->parent_link_;};
   Link* getChildLink() {return this->child_link_;};
-  Joint* getParentJoint() {return this->parent_joint_;};
-  Joint* getChildJoint() {return this->child_joint_;};
 
 private:
   TiXmlElement* xml_;
@@ -85,8 +85,8 @@ private:
   {
     JointProperties()
     {
-      damping = 0,
-      friction = 0
+      damping = 0;
+      friction = 0;
     };
     double damping;
     double friction;
@@ -98,10 +98,10 @@ private:
   public:
     JointLimit()
     {
-      min = 0,
-      max = 0
-      effort = 0,
-      velocity = 0,
+      min = 0;
+      max = 0;
+      effort = 0;
+      velocity = 0;
     };
     double min;
     double max;

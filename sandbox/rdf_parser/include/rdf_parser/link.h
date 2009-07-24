@@ -42,6 +42,7 @@
 #include <tinyxml/tinyxml.h>
 
 #include <rdf_parser/joint.h>
+#include <rdf_parser/geometry.h>
 
 using namespace std;
 
@@ -52,7 +53,6 @@ class Link
 public:
 
   bool initXml(TiXmlElement* xml);
-
 
   /// returns the name of the link
   const std::string& getName() const;
@@ -107,15 +107,16 @@ public:
 
 
 private:
-  void addChild(Link* child);
-
   std::string name_;
   std::vector<TiXmlElement*> maps_;
 
-  std::vector<Joint*> joint_;
-
   Link* parent_;
   std::vector<Link*> children_;
+
+  std::vector<Joint*> joints_;
+
+  Joint* parent_joint_;
+  std::vector<Joint*> children_joint_;
 
 };
 

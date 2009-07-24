@@ -42,42 +42,50 @@ using namespace std;
 
 namespace rdf_parser{
 
+
+bool Link::initXml(TiXmlElement* xml)
+{
+
+  return true;
+}
+
+
 const std::string& Link::getName() const
 {
   return name_;
 }
 
+Link* Link::getParent()
+{
+  if (parent_ != NULL)
+    return parent_;
+}
+
+std::vector<Link*> Link::getChildren()
+{
+  if (this->children_.empty())
+    return this->children_;
+}
+
+Joint* Link::getParentJoint()
+{
+  if (this->parent_joint_ != NULL)
+    return this->parent_joint_;
+}
+
+std::vector<Joint*> Link::getChildrenJoint()
+{
+  if (this->children_joint_.empty())
+    return this->children_joint_;
+}
+
 void Link::addChild(Link* child)
 {
-  children_.push_back(child);
+  this->children_.push_back(child);
   cout << "added child " << child->getName() << " to " << getName() << endl;
 }
 
 
-bool Link::getParent(Link*& link) const
-{
-  if (parent_ != NULL){
-    link = parent_;
-    return true;
-  }
-  return false;
-}
-
-
-unsigned int Link::getNrOfChildren() const
-{
-  return children_.size();
-}
-
-
-bool Link::getChild(unsigned int nr, Link*& link) const
-{
-  if ((int)nr >=0 && nr <getNrOfChildren()){
-    link = children_[nr];
-    return true;
-  }
-  return false;
-}
 
 }
 

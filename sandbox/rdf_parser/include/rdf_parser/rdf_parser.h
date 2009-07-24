@@ -53,7 +53,7 @@ public:
   RdfParser(){};
 
   bool initXml(TiXmlElement *xml);
-  bool getRoot(Link*& root);
+  Link* getRoot();
 
 private:
   bool getAtribute(TiXmlElement *xml, const string& name, string& attr);
@@ -77,6 +77,8 @@ private:
 
 
   std::map<std::string, Link*> links_;
+  std::map<std::string, Joint*> joints_;
+
   std::string root_name_;
 
   map<string, string> link_parent;

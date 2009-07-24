@@ -35,7 +35,6 @@
 /* Author: John Hsu */
 
 #include <rdf_parser/joint.h>
-#include <rdf_parser/link.h>
 
 using namespace std;
 

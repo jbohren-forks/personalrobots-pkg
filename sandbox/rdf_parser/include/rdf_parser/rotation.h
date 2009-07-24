@@ -40,6 +40,7 @@
 
 #include <string>
 #include <vector>
+#include <math.h>
 
 using namespace std;
 
@@ -50,14 +51,14 @@ class Rotation
 public:
   Rotation() {w_=1.0;x_=0;y_=0;z_=0;}; // init to identity
 
-  getQuaternion(double &w,double &x,double &y,double &z)
+  void getQuaternion(double &w,double &x,double &y,double &z)
   {
     w = this->w_;
     x = this->x_;
     y = this->y_;
     z = this->z_;
   };
-  getRPY(double &roll,double &pitch,double &yaw)
+  void getRPY(double &roll,double &pitch,double &yaw)
   {
     double sqw;
     double sqx;
@@ -74,7 +75,7 @@ public:
     yaw   = atan2(2 * (this->x_*this->y_ + this->w_*this->z_), sqw + sqx - sqy - sqz);
 
   };
-  setFromQuaternion(double w,double x,double y,double z)
+  void setFromQuaternion(double w,double x,double y,double z)
   {
     this->w_ = w;
     this->x_ = x;
@@ -82,18 +83,18 @@ public:
     this->z_ = z;
     this->normalize();
   };
-  void setFromRPY(double r, double p, double y)
+  void setFromRPY(double roll, double pitch, double yaw)
   {
     double phi, the, psi;
 
-    phi = r / 2.0;
-    the = p / 2.0;
-    psi = y / 2.0;
+    phi = roll / 2.0;
+    the = pitch / 2.0;
+    psi = yaw / 2.0;
 
-    q_.w = cos(phi) * cos(the) * cos(psi) + sin(phi) * sin(the) * sin(psi);
-    q_.x = sin(phi) * cos(the) * cos(psi) - cos(phi) * sin(the) * sin(psi);
-    q_.y = cos(phi) * sin(the) * cos(psi) + sin(phi) * cos(the) * sin(psi);
-    q_.z = cos(phi) * cos(the) * sin(psi) - sin(phi) * sin(the) * cos(psi);
+    this->w_ = cos(phi) * cos(the) * cos(psi) + sin(phi) * sin(the) * sin(psi);
+    this->x_ = sin(phi) * cos(the) * cos(psi) - cos(phi) * sin(the) * sin(psi);
+    this->y_ = cos(phi) * sin(the) * cos(psi) + sin(phi) * cos(the) * sin(psi);
+    this->z_ = cos(phi) * cos(the) * sin(psi) - sin(phi) * sin(the) * cos(psi);
 
     this->normalize();
   };
@@ -101,7 +102,7 @@ public:
 private:
   double w_,x_,y_,z_;
 
-  normalize()
+  void normalize()
   {
     double s = sqrt(this->w_ * this->w_ +
                     this->x_ * this->x_ +

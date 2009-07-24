@@ -43,14 +43,13 @@ using namespace std;
 namespace rdf_parser{
 
 
-bool RdfParser::getRoot(Link*& root_link)
+Link* RdfParser::getRoot()
 {
   map<string, Link*>::iterator root_it = links_.find(root_name_);
   if (root_it != links_.end()){
-    root_link = root_it->second;
-    return true;
+    return root_it->second;
   }
-  return false;
+  return NULL;
 }
 
 
@@ -147,8 +146,8 @@ bool RdfParser::initXml(TiXmlElement *robot_xml)
 
   // Start building tree
   links_.clear();
-  links_.insert(make_pair(root_name_, new Link(root_name_)));
-  addChildren(links_.find(root_name_)->second);
+  //links_.insert(make_pair(root_name_, new Link(root_name_)));
+  //addChildren(links_.find(root_name_)->second);
 
   return true;
 }
