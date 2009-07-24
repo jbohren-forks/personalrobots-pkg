@@ -37,10 +37,10 @@
 
 #include <boost/shared_ptr.hpp>
 
-#ifndef ACTION_TOOLS_ENCLOSURE_DELETER_H_
-#define ACTION_TOOLS_ENCLOSURE_DELETER_H_
+#ifndef ACTIONLIB_ENCLOSURE_DELETER_H_
+#define ACTIONLIB_ENCLOSURE_DELETER_H_
 
-namespace action_tools
+namespace actionlib
 {
 
 /*

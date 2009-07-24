@@ -38,10 +38,8 @@
 #define NAV_MOVE_BASE_ACTION_H_
 #include <ros/ros.h>
 
-#include <action_tools/action_server.h>
-#include <action_tools/action_client.h>
-#include <move_base/MoveBaseGoal.h>
-#include <move_base/MoveBaseResult.h>
+#include <actionlib/single_goal_action_server.h>
+#include <move_base/MoveBaseAction.h>
 
 #include <nav_robot_actions/base_local_planner.h>
 #include <nav_robot_actions/base_global_planner.h>
@@ -56,13 +54,9 @@
 
 namespace move_base {
   //typedefs to help us out with the action server so that we don't hace to type so much
-  typedef action_tools::ActionServer<MoveBaseGoal, robot_msgs::PoseStamped,
-          MoveBaseResult, robot_msgs::PoseStamped> MoveBaseActionServer;
-
-  typedef action_tools::ActionClient<MoveBaseGoal, robot_msgs::PoseStamped,
-          MoveBaseResult, robot_msgs::PoseStamped> MoveBaseActionClient;
-
-  typedef MoveBaseActionServer::GoalHandle GoalHandle;
+  typedef actionlib::SingleGoalActionServer<MoveBaseActionGoal, MoveBaseGoal,
+          MoveBaseActionResult, MoveBaseResult, 
+          MoveBaseActionFeedback, MoveBaseFeedback> MoveBaseActionServer;
 
   enum MoveBaseState {
     PLANNING,
@@ -82,7 +76,7 @@ namespace move_base {
 
   /**
    * @class MoveBase
-   * @brief A class that uses the action_tools::ActionServer interface that moves the robot base to a goal location.
+   * @brief A class that uses the actionlib::ActionServer interface that moves the robot base to a goal location.
    */
   class MoveBase {
     public:
@@ -170,7 +164,6 @@ namespace move_base {
       tf::TransformListener& tf_;
 
       MoveBaseActionServer as_;
-      MoveBaseActionClient ac_;
 
       nav_robot_actions::BaseLocalPlanner* tc_;
       costmap_2d::Costmap2DROS* planner_costmap_ros_, *controller_costmap_ros_;
@@ -182,7 +175,7 @@ namespace move_base {
       double controller_frequency_, inscribed_radius_, circumscribed_radius_;
       double planner_patience_, controller_patience_;
       double conservative_reset_dist_, clearing_radius_;
-      ros::Publisher vis_pub_, vel_pub_, position_pub_;
+      ros::Publisher vis_pub_, vel_pub_, position_pub_, action_goal_pub_;
       ros::Subscriber goal_sub_;
       ros::ServiceServer make_plan_srv_;
       bool shutdown_costmaps_;

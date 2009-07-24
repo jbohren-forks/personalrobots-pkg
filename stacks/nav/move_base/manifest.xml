@@ -14,7 +14,7 @@
  <depend package="visualization_msgs"/>
  <depend package="deprecated_msgs"/>
  <depend package="robot_actions"/>
- <depend package="action_tools"/>
+ <depend package="actionlib"/>
  <depend package="nav_robot_actions"/>
  <depend package="costmap_2d"/>
  <depend package="tf"/>
