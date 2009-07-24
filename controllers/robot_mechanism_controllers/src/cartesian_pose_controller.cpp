@@ -130,7 +130,7 @@ bool CartesianPoseController::init(mechanism::RobotState *robot_state, const ros
                                                                        boost::bind(&CartesianPoseController::command, this, _1),
                                                                        node_.getNamespace() + "/command", root_name_, 10));
   // realtime publisher for control state
-  state_error_publisher_.reset(new realtime_tools::RealtimePublisher<robot_msgs::Twist>(node_, "state/error", 1));
+  state_error_publisher_.reset(new realtime_tools::RealtimePublisher<geometry_msgs::Twist>(node_, "state/error", 1));
   state_pose_publisher_.reset(new realtime_tools::RealtimePublisher<robot_msgs::PoseStamped>(node_, "state/pose", 1));
 
   return true;
@@ -175,12 +175,12 @@ void CartesianPoseController::update()
   if (++loop_count_ % 100 == 0){
     if (state_error_publisher_){
       if (state_error_publisher_->trylock()){
-        state_error_publisher_->msg_.vel.x = twist_error_.vel(0);
-        state_error_publisher_->msg_.vel.y = twist_error_.vel(1);
-        state_error_publisher_->msg_.vel.z = twist_error_.vel(2);
-        state_error_publisher_->msg_.rot.x = twist_error_.rot(0);
-	state_error_publisher_->msg_.rot.y = twist_error_.rot(1);
-        state_error_publisher_->msg_.rot.z = twist_error_.rot(2);
+        state_error_publisher_->msg_.linear.x = twist_error_.vel(0);
+        state_error_publisher_->msg_.linear.y = twist_error_.vel(1);
+        state_error_publisher_->msg_.linear.z = twist_error_.vel(2);
+        state_error_publisher_->msg_.angular.x = twist_error_.rot(0);
+	state_error_publisher_->msg_.angular.y = twist_error_.rot(1);
+        state_error_publisher_->msg_.angular.z = twist_error_.rot(2);
         state_error_publisher_->unlockAndPublish();
       }
     }

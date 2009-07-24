@@ -139,7 +139,7 @@ bool CartesianTwistController::init(mechanism::RobotState *robot_state, const ro
   }
 
   // subscribe to twist commands
-  sub_command_ = node_.subscribe<robot_msgs::Twist>
+  sub_command_ = node_.subscribe<geometry_msgs::Twist>
     ("command", 1, &CartesianTwistController::command, this);
 
   return true;
@@ -194,15 +194,15 @@ void CartesianTwistController::update()
 }
 
 
-void CartesianTwistController::command(const robot_msgs::TwistConstPtr& twist_msg)
+void CartesianTwistController::command(const geometry_msgs::TwistConstPtr& twist_msg)
 {
   // convert to twist command
-  twist_desi_.vel(0) = twist_msg->vel.x;
-  twist_desi_.vel(1) = twist_msg->vel.y;
-  twist_desi_.vel(2) = twist_msg->vel.z;
-  twist_desi_.rot(0) = twist_msg->rot.x;
-  twist_desi_.rot(1) = twist_msg->rot.y;
-  twist_desi_.rot(2) = twist_msg->rot.z;
+  twist_desi_.vel(0) = twist_msg->linear.x;
+  twist_desi_.vel(1) = twist_msg->linear.y;
+  twist_desi_.vel(2) = twist_msg->linear.z;
+  twist_desi_.rot(0) = twist_msg->angular.x;
+  twist_desi_.rot(1) = twist_msg->angular.y;
+  twist_desi_.rot(2) = twist_msg->angular.z;
 }
 
 } // namespace

@@ -42,7 +42,7 @@
 #include <kdl/chainfksolver.hpp>
 #include <kdl/chainiksolver.hpp>
 #include <ros/node.h>
-#include <robot_msgs/Twist.h>
+#include <geometry_msgs/Twist.h>
 #include <mechanism_model/controller.h>
 #include <mechanism_model/chain.h>
 #include <tf/transform_datatypes.h>
@@ -90,7 +90,7 @@ namespace controller {
 
     JointInverseDynamicsController* id_controller_;
 
-    robot_msgs::Twist twist_msg_;
+    geometry_msgs::Twist twist_msg_;
   };
 
 } // namespace

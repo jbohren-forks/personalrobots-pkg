@@ -62,7 +62,7 @@ public:
 
   bool starting();
   void update();
-  bool moveTo(const robot_msgs::PoseStamped& pose, const robot_msgs::Twist& tolerance=robot_msgs::Twist(), double duration=0);
+  bool moveTo(const robot_msgs::PoseStamped& pose, const geometry_msgs::Twist& tolerance=geometry_msgs::Twist(), double duration=0);
 
 
 private:

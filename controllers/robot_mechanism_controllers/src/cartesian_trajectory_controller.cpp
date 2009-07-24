@@ -140,7 +140,7 @@ bool CartesianTrajectoryController::initXml(mechanism::RobotState *robot_state, 
 
 
 
-bool CartesianTrajectoryController::moveTo(const robot_msgs::PoseStamped& pose, const robot_msgs::Twist& tolerance, double duration)
+bool CartesianTrajectoryController::moveTo(const robot_msgs::PoseStamped& pose, const geometry_msgs::Twist& tolerance, double duration)
 {
   // don't do anything when still moving
   if (is_moving_) return false;
@@ -176,12 +176,12 @@ bool CartesianTrajectoryController::moveTo(const robot_msgs::PoseStamped& pose, 
     motion_profile_[i].SetProfileDuration( 0, twist_move(i), max_duration_ );
 
   // set tolerance
-  tolerance_.vel(0) = tolerance.vel.x;
-  tolerance_.vel(1) = tolerance.vel.y;
-  tolerance_.vel(2) = tolerance.vel.z;
-  tolerance_.rot(0) = tolerance.rot.x;
-  tolerance_.rot(1) = tolerance.rot.y;
-  tolerance_.rot(2) = tolerance.rot.z;
+  tolerance_.vel(0) = tolerance.linear.x;
+  tolerance_.vel(1) = tolerance.linear.y;
+  tolerance_.vel(2) = tolerance.linear.z;
+  tolerance_.rot(0) = tolerance.angular.x;
+  tolerance_.rot(1) = tolerance.angular.y;
+  tolerance_.rot(2) = tolerance.angular.z;
 
   time_passed_ = 0;
 

@@ -203,12 +203,12 @@ namespace controller {
   void CartesianTwistControllerIk::command()
   {
     // convert to twist command
-    twist_desi_.vel(0) = twist_msg_.vel.x;
-    twist_desi_.vel(1) = twist_msg_.vel.y;
-    twist_desi_.vel(2) = twist_msg_.vel.z;
-    twist_desi_.rot(0) = twist_msg_.rot.x;
-    twist_desi_.rot(1) = twist_msg_.rot.y;
-    twist_desi_.rot(2) = twist_msg_.rot.z;
+    twist_desi_.vel(0) = twist_msg_.linear.x;
+    twist_desi_.vel(1) = twist_msg_.linear.y;
+    twist_desi_.vel(2) = twist_msg_.linear.z;
+    twist_desi_.rot(0) = twist_msg_.angular.x;
+    twist_desi_.rot(1) = twist_msg_.angular.y;
+    twist_desi_.rot(2) = twist_msg_.angular.z;
   }
 
 

@@ -39,7 +39,7 @@
 #include <kdl/chainfksolver.hpp>
 #include <kdl/frames.hpp>
 #include <ros/node.h>
-#include <robot_msgs/Twist.h>
+#include <geometry_msgs/Twist.h>
 #include <mechanism_model/controller.h>
 #include <tf/transform_datatypes.h>
 #include <robot_mechanism_controllers/cartesian_wrench_controller.h>
@@ -69,7 +69,7 @@ private:
 
   ros::NodeHandle node_;
   ros::Subscriber sub_command_;
-  void command(const robot_msgs::TwistConstPtr& twist_msg);
+  void command(const geometry_msgs::TwistConstPtr& twist_msg);
   double last_time_, ff_trans_, ff_rot_;
 
   // pid controllers
@@ -87,7 +87,7 @@ private:
   // wrench controller
   CartesianWrenchController* wrench_controller_;
 
-  robot_msgs::Twist twist_msg_;
+  geometry_msgs::Twist twist_msg_;
 };
 
 } // namespace
