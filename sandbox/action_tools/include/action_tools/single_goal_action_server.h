@@ -98,6 +98,8 @@ namespace action_tools {
           current_goal_.setPreempted();
         }
 
+        ROS_DEBUG("Accepting a new goal");
+
         //accept the next goal
         current_goal_ = next_goal_;
         new_goal_ = false;
@@ -218,11 +220,11 @@ namespace action_tools {
        */
       void preemptCallback(GoalHandle preempt){
         boost::mutex::scoped_lock(lock_);
-        ROS_DEBUG("In Preempt Callback");
+        ROS_DEBUG("A preempt has been received by the SingleGoalActionServer");
 
         //if the preempt is for the current goal, then we'll set the preemptRequest flag and call the user's preempt callback
         if(preempt == current_goal_){
-          ROS_DEBUG("Setting preempt_request bit to TRUE");
+          ROS_DEBUG("Setting preempt_request bit for the current goal to TRUE and invoking callback");
           preempt_request_ = true;
 
           //if the user has registered a preempt callback, we'll call it now
@@ -231,6 +233,7 @@ namespace action_tools {
         }
         //if the preempt applies to the next goal, we'll set the preempt bit for that
         else if(preempt == next_goal_){
+          ROS_DEBUG("Setting preempt request bit for the next goal to TRUE");
           new_goal_preempt_request_ = true;
         }
       }
