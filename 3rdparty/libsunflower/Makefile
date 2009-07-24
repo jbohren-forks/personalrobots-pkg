@@ -19,7 +19,7 @@
 all: installed
 
 TARBALL_VERSION=   r910
-SVN_REVISION=    -r 971
+SVN_REVISION=    -r 1053
 
 TARBALL=     build/libsunflower-$(TARBALL_VERSION).tar.gz
 TARBALL_URL= http://pr.willowgarage.com/downloads/libsunflower-$(TARBALL_VERSION).tar.gz
