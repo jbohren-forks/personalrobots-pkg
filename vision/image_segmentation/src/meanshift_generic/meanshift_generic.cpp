@@ -12,43 +12,17 @@
 
 /*********************************************************************
  * Calculates mean of all the points in data that lie on a sphere of
- * radius^2==radius2 centered on [1xp] vector x. data is [nxp]. mean
+ * radius centered on [1xp] vector query_ptr. data is [nxp]. mean
  * contains [1xp] result and return is number of points used for calc.
  *********************************************************************/
-int meanVec(double *x, double *data, int p, int n, double radius2, double *mean)
-{
-  int i, j;
-  double dist;
-  int cnt = 0, m = 0;
-  for (j = 0; j < p ; j++)
-    mean[j] = 0;
-  for (i = 0; i < n ; i++)
-  {
-    dist = 0.0;
-    for (j = 0; j < p ; j++)
-    {
-      dist += (x[j] - data[cnt]) * (x[j] - data[cnt]);
-      cnt++;
-    }
-    if (dist < radius2)
-    {
-      cnt -= p;
-      m++;
-      for (j = 0; j < p ; j++)
-        mean[j] += data[cnt++];
-    }
-  }
-  if (m) for (j = 0; j < p ; j++)
-    mean[j] /= m;
-  return m;
-}
-
+// This implementation uses ANN to find neighboring points
 int meanVec(ANNkd_tree& ann_kd_tree, ANNpointArray& data, double* query_ptr, double radius, double* mean)
 {
   // p = dimension
   int p = ann_kd_tree.theDim();
   memset(mean, 0, sizeof(double) * p);
 
+  // setup query point for ANN
   ANNpoint query = annAllocPt(p);
   for (int i = 0 ; i < p ; i++)
   {
@@ -64,7 +38,8 @@ int meanVec(ANNkd_tree& ann_kd_tree, ANNpointArray& data, double* query_ptr, dou
   // calculate mean of points in radius
   if (neighbors_in_radius != 0)
   {
-    //ann_kd_tree.annkFRSearch(query, radius, neighbors_in_radius, &k_indices[0], &k_distances[0], epsilon);
+    // retrieve the neighboring points within radius
+    // (TODO: better way?  this follows Radu's use with ANN)
     ann_kd_tree.annkFRSearch(query, radius, neighbors_in_radius, k_indices, k_distances, epsilon);
 
     // accumulate sum
