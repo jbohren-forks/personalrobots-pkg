@@ -29,12 +29,12 @@
 
 #include "TREX.nddl"
 #include "world_model/topological_map.nddl"
-#include "ros.nddl"
-#include "rcs/nav/exports.nddl"
-#include "rcs/plugs/exports.nddl"
-#include "nav/exports.nddl"
+#include "navigator/exports.nddl"
 #include "plugs/exports.nddl"
+#include "rcs/base_state.nddl"
 
+//#include "rcs/nav/exports.nddl"
+//#include "rcs/plugs/exports.nddl"
 // Priority for goals
 typedef int [0 5] PRIORITY;
 

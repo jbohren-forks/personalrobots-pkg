@@ -4,7 +4,7 @@
 
 float SAFETY_TUCK_ARMS_DURATION_BOUND = 60.0;
 
-// Internal Timelines
+// Safety State Variables Timelines
 ArmsTucked arms_tucked = new ArmsTucked(External);
 TiltLaserReady tilt_laser_ready = new TiltLaserReady(External);
 

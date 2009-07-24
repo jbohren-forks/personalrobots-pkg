@@ -35,12 +35,15 @@
 #include "rcs/doors/exports.nddl"
 
 /**
- * If an active token is dispatched, we start it immediately. Also, we just make behaviors execute quickly and
- * flawlessly.
+ * @brief This is a general utility for stopping actions
  */
-Behavior::Active{
-  addEq(dispatch_time, 1, start);
-  eq(duration, 1);
-  meets(Inactive s);
-  eq(s.status, SUCCESS);
-}
+class StopAction extends  ROSAction {
+
+  predicate Active {
+    string action_name;
+  }
+
+  predicate Inactive {}
+
+  StopAction(Mode _mode){ super(_mode);}
+};

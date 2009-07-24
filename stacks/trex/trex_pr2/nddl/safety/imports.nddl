@@ -1,5 +1,3 @@
-#include "world_model/topological_map.nddl"
-#include "ros.nddl"
 #include "rcs/nav/exports.nddl"
 #include "rcs/plugs/exports.nddl"
 #include "rcs/doors/exports.nddl"
@@ -11,6 +9,7 @@ SafetyTuckArms::Inactive{
     starts_during(ArmsTucked.True);
   }
 }
+
 TouchDoor::Inactive{
   starts_during(ArmsTucked.False);
 }
@@ -31,6 +30,7 @@ SetLaserTilt::Inactive{
     starts_during(TiltLaserReady.True);
   }
 }
+
 MoveBase::Inactive{
   starts_during(TiltLaserReady.False);
 }

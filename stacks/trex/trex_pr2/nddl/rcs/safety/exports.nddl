@@ -1,3 +1,5 @@
+#include "rcs/rcs.nddl"
+
 /**
  * This file defines actions and state variables
  * @author Conor McGann

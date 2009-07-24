@@ -1,9 +1,9 @@
 
 #include "TREX.nddl"
 #include "world_model/topological_map.nddl"
-#include "ros.nddl"
-#include "rcs/nav/exports.nddl"
-#include "nav/exports.nddl"
+#include "rcs/base_state.nddl"
+#include "common/move_behavior.nddl"
+#include "navigator/exports.nddl"
 
 float DOORMAN_DURATION_BOUND = 600.0;
 float DRIVER_DURATION_BOUND = 600.0;

@@ -1,3 +1,5 @@
+#include "rcs/rcs.nddl"
+
 /**
  * This file defines the classes that are specific to the integration with the high level controllers
  * and state variables of the door domain.
@@ -21,20 +23,6 @@ typedef int [0 3] LatchState;
 int LATCH_STATE_LOCKED = 1;
 int LATCH_STATE_LATCHED = 2;
 int LATCH_STATE_UNLATCHED = 3;
-
-/**
- * @brief This is a general utility for tucking arms.
- */
-class StopAction extends  ROSAction {
-
-  predicate Active {
-    string action_name;
-  }
-
-  predicate Inactive {}
-
-  StopAction(Mode _mode){ super(_mode);}
-};
 
 class DoorManipulationBehavior extends ROSAction {
   bool update_controller; // If true, will force an update on successful termination

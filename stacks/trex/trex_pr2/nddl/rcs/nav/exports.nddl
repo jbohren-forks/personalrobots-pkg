@@ -1,4 +1,4 @@
-
+#include "rcs/rcs.nddl"
 /**
  * This file defines actions and state variables utilized in navigation. It will include
  * @author Conor McGann
@@ -8,27 +8,6 @@ float BASE_POSITION_ERROR = 1.0;
 float ANGLE_ERROR = 0.2;
 
 typedef float [0.0 1.0] UNIT_FLOAT;
-
-/**
- * BaseState will capture position and orientation.
- */
-class BaseState extends ROSStateVariable {
-  predicate Holds{
-    float time_stamp;
-    string frame_id;
-    float x;
-    float y;
-    float z;
-    float qx;
-    float qy;
-    float qz;
-    float qw;
-  }
-
-  BaseState(Mode _mode){
-    super(_mode, "Holds", true);
-  }
-};
 
 /**
  * @brief Common base class for navigation behaviors which will impose similar requirements

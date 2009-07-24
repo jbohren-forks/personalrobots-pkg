@@ -1,7 +1,6 @@
-#include "nav/imports.nddl"
 #include "rcs/doors/exports.nddl"
-
-/** External Functions to be integrated **/
+#include "common/move_behavior.nddl"
+#include "common/nav.nddl"
 
 /**
  * @brief Obtain the base pose at a given distance normal to the door frame. The token object has all the parameters
