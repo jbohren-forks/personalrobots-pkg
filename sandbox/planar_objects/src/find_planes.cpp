@@ -36,7 +36,6 @@ bool find_planes::fitSACPlanes(PointCloud *points, vector<int> &indices, vector<
       vector<double> model_coeff;
       sac->computeCoefficients(model_coeff); // Compute the model coefficients
       sac->refineCoefficients(model_coeff); // Refine them using least-squares
-      coeff.push_back(model_coeff);
 
       // Get the list of inliers
       vector<int> model_inliers;
@@ -45,9 +44,10 @@ bool find_planes::fitSACPlanes(PointCloud *points, vector<int> &indices, vector<
 
       // Flip the plane normal towards the viewpoint
       cloud_geometry::angles::flipNormalTowardsViewpoint(model_coeff, points->pts.at(model_inliers[0]), viewpoint_cloud);
+      coeff.push_back(model_coeff);
 
-      ROS_INFO ("Found a planar model supported by %d inliers: [%g, %g, %g, %g]", (int)model_inliers.size (),
-          model_coeff[0], model_coeff[1], model_coeff[2], model_coeff[3]);
+//      ROS_INFO ("Found a planar model supported by %d inliers: [%g, %g, %g, %g]", (int)model_inliers.size (),
+//          model_coeff[0], model_coeff[1], model_coeff[2], model_coeff[3]);
 
       // Remove the current inliers from the global list of points
       nr_points_left = sac->removeInliers();
@@ -166,7 +166,47 @@ void find_planes::findPlanes(const PointCloud& cloud, int n_planes_max, double s
 }
 
 void find_planes::createPlaneImage(const robot_msgs::PointCloud& cloud, std::vector<int> &inliers,
-                                   std::vector<double> &plane_coeff, IplImage *planeImage)
+                                   std::vector<double> &plane_coeff,
+                                   IplImage *pixOccupied,IplImage *pixFree,IplImage *pixUnknown)
 {
 
+  int x_chann=-1;
+  int y_chann=-1;
+  for(size_t i=0;i<cloud.chan.size();i++) {
+    if(cloud.chan[i].name=="x") x_chann=i;
+    if(cloud.chan[i].name=="y") y_chann=i;
+  }
+  if(x_chann<0 || y_chann<0) {
+      ROS_ERROR("point cloud contains no x/y channels!!!");
+      return;
+  }
+
+//  cvSetZero(pixOccupied);
+//  cvSetZero(pixFree);
+  cvSet(pixUnknown,cvRealScalar(255) );
+
+  for (size_t i = 0; i < cloud.get_pts_size(); i++)
+  {
+    int x = cloud.chan[x_chann].vals[ i ];
+    int y = cloud.chan[y_chann].vals[ i ];
+
+    bool behindPlane = ( plane_coeff[0]*cloud.pts[i].x + plane_coeff[1]*cloud.pts[i].y + plane_coeff[2]*cloud.pts[i].z + plane_coeff[3] <0);
+
+    // if this point is behind our plane --> pixFree = 255 and pixUndefined = 0
+    if( behindPlane ) {
+      ((uchar *)(pixFree->imageData + y*pixFree->widthStep))[x] = 255;
+      ((uchar *)(pixUnknown->imageData + y*pixUnknown->widthStep))[x] = 0;
+    } else {
+    }
+  }
+
+  for (size_t i = 0; i < inliers.size(); i++)
+  {
+    int x = cloud.chan[x_chann].vals[ inliers[i] ];
+    int y = cloud.chan[y_chann].vals[ inliers[i] ];
+//    ROS_INFO("%d, %d ",x,y);
+    ((uchar *)(pixOccupied->imageData + y*pixOccupied->widthStep))[x] = 255;
+    ((uchar *)(pixFree->imageData + y*pixFree->widthStep))[x] = 0;
+    ((uchar *)(pixUnknown->imageData + y*pixUnknown->widthStep))[x] = 0;
+  }
 }

@@ -10,6 +10,5 @@
   <depend package="std_msgs" />  
   <depend package="rostest" />  
 
-  <sysdepend os="ubuntu" version="8.04-hardy" package="python-mechanize"/>
   <rosdep name="python-mechanize"/>
 </package>

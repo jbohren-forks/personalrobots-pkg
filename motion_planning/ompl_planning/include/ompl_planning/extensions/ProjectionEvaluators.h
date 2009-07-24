@@ -51,6 +51,8 @@ namespace ompl_planning
 	{
 	    model_ = model;
 	    link_  = model_->kmodel->getLink(linkName);
+	    if (link_ == NULL)
+		ROS_ERROR("Unknown link: '%s'", linkName.c_str());
 	}
 	
 	/** Return the dimension of the projection defined by this evaluator */

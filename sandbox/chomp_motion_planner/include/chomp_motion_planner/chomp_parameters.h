@@ -61,6 +61,7 @@ public:
   double getSmoothnessCostVelocity() const;
   double getSmoothnessCostAcceleration() const;
   double getSmoothnessCostJerk() const;
+  bool getAddRandomness() const;
 
 private:
   double planning_time_limit_;
@@ -73,6 +74,7 @@ private:
   double smoothness_cost_velocity_;
   double smoothness_cost_acceleration_;
   double smoothness_cost_jerk_;
+  bool add_randomness_;
 
 };
 
@@ -116,6 +118,11 @@ inline double ChompParameters::getLearningRate() const
 inline bool ChompParameters::getAnimatePath() const
 {
   return animate_path_;
+}
+
+inline bool ChompParameters::getAddRandomness() const
+{
+  return add_randomness_;
 }
 
 inline double ChompParameters::getSmoothnessCostVelocity() const

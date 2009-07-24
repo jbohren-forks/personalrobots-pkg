@@ -92,6 +92,20 @@ namespace mpbench {
   }
   
   
+  World::
+  ~World()
+  {
+#define HUNT_SEGFAULT_AT_EXIT
+#ifdef HUNT_SEGFAULT_AT_EXIT
+    cerr << "DBG ~mpbench::World() clearing cost mappers\n";
+    costmapper_.clear();
+    cerr << "DBG ~mpbench::World() clearing obstacle deltas\n";
+    update_.clear();
+    cerr << "DBG ~mpbench::World() DONE\n";
+#endif // HUNT_SEGFAULT_AT_EXIT
+  }
+
+
   boost::shared_ptr<mpglue::ObstacleDelta> World::
   getObstdelta(size_t episode_id) const
   {

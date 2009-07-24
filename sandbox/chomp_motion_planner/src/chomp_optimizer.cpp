@@ -152,12 +152,12 @@ void ChompOptimizer::optimize()
     updateFullTrajectory();
     if (collision_free_iteration_ >= parameters_->getMaxIterationsAfterCollisionFree())
     {
-      ROS_INFO("Terminated after %d iterations", iteration_+1);
+      iteration_++;
       break;
     }
 
     // make a random jump if the trajectory is in collision:
-    if (!is_collision_free_)
+    if (!is_collision_free_ && parameters_->getAddRandomness())
     {
       performForwardKinematics();
       double original_cost = getTrajectoryCost();
@@ -181,6 +181,7 @@ void ChompOptimizer::optimize()
     }
 
   }
+  ROS_INFO("Terminated after %d iterations", iteration_);
   ROS_INFO("Optimization core finished in %f sec", (ros::WallTime::now() - start_time).toSec());
 
   collision_space_->unlock();
@@ -403,10 +404,11 @@ void ChompOptimizer::performForwardKinematics()
     // calculate the position of every collision point:
     for (int j=0; j<num_collision_points_; j++)
     {
-      int segment_number = planning_group_->collision_points_[j].getSegmentNumber();
-      collision_point_pos_[i][j] = segment_frames_[i][segment_number] * planning_group_->collision_points_[j].getPosition();
+      planning_group_->collision_points_[j].getTransformedPosition(segment_frames_[i], collision_point_pos_[i][j]);
+      //int segment_number = planning_group_->collision_points_[j].getSegmentNumber();
+      //collision_point_pos_[i][j] = segment_frames_[i][segment_number] * planning_group_->collision_points_[j].getPosition();
 
-      bool colliding = getCollisionPointPotentialGradient(planning_group_->collision_points_[j],
+      bool colliding = collision_space_->getCollisionPointPotentialGradient(planning_group_->collision_points_[j],
           collision_point_pos_eigen_[i][j],
           collision_point_potential_[i][j],
           collision_point_potential_gradient_[i][j]);
@@ -502,39 +504,6 @@ void ChompOptimizer::perturbTrajectory()
     group_trajectory_.getFreeJointTrajectoryBlock(i) +=
         joint_costs_[i].getQuadraticCostInverse().col(mp_free_vars_index) * random_state_(i);
   }
-}
-
-template<typename Derived, typename DerivedOther>
-bool ChompOptimizer::getCollisionPointPotentialGradient(const ChompCollisionPoint& collision_point, const Eigen::MatrixBase<Derived>& collision_point_pos,
-    double& potential, Eigen::MatrixBase<DerivedOther>& gradient) const
-{
-  Vector3d field_gradient;
-  double field_distance = collision_space_->getDistanceGradient(
-      collision_point_pos(0), collision_point_pos(1), collision_point_pos(2),
-      field_gradient(0), field_gradient(1), field_gradient(2));
-
-  double d = field_distance - collision_point.getRadius();
-
-  // three cases below:
-  if (d >= collision_point.getClearance())
-  {
-    potential = 0.0;
-    gradient.setZero();
-  }
-  else if (d >= 0.0)
-  {
-    double diff = (d - collision_point.getClearance());
-    double gradient_magnitude = diff * collision_point.getInvClearance(); // (diff / clearance)
-    potential = 0.5*gradient_magnitude*diff;
-    gradient = gradient_magnitude * field_gradient;
-  }
-  else // if d < 0.0
-  {
-    gradient = field_gradient;
-    potential = -d + 0.5 * collision_point.getClearance();
-  }
-
-  return (field_distance <= collision_point.getRadius()); // true if point is in collision
 }
 
 void ChompOptimizer::animatePath()

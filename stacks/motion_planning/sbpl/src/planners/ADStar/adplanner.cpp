@@ -73,7 +73,7 @@ ADPlanner::~ADPlanner()
 
     //delete the statespace
     DeleteSearchStateSpace(pSearchStateSpace_);
-
+    delete pSearchStateSpace_;
 
 }
 
@@ -777,7 +777,7 @@ void ADPlanner::DeleteSearchStateSpace(ADSearchStateSpace_t* pSearchStateSpace)
 	{
 		CMDPSTATE* state = pSearchStateSpace->searchMDP.StateArray[i];
 		DeleteSearchStateData((ADState*)state->PlannerSpecificData);
-		delete (ADState*)state->PlannerSpecificData;
+		free(state->PlannerSpecificData); // allocated with malloc() on line 199 of revision 19485
 		state->PlannerSpecificData = NULL;
 	}
 	pSearchStateSpace->searchMDP.Delete();

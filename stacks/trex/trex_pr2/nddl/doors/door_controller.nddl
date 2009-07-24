@@ -194,7 +194,7 @@ class DoorController extends StateMachine {
 };
 
 
-MoveBehavior doorman = new MoveBehavior(Internal, true);
+MoveBehavior doorman = new MoveBehavior(Internal);
 DoorController door_controller = new DoorController();
 DoorState door_state = new DoorState();
 GripperFree gripper_free = new GripperFree();

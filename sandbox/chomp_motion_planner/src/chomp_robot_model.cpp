@@ -128,10 +128,11 @@ bool ChompRobotModel::init()
   for (std::map< std::string, std::vector<std::string> >::iterator it = groups.begin(); it != groups.end() ; ++it)
   {
     ChompPlanningGroup group;
-    group.num_links_ = it->second.size();
+    group.name_ = it->first;
+    int num_links = it->second.size();
     group.num_joints_ = 0;
-    group.link_names_.resize(group.num_links_);
-    for (int i=0; i<group.num_links_; i++)
+    group.link_names_.resize(num_links);
+    for (int i=0; i<num_links; i++)
     {
       std::string link_name = it->second[i];
       group.link_names_[i] = link_name;
@@ -172,23 +173,36 @@ bool ChompRobotModel::init()
 
     }
 
-    // iterate over all collision checking links to add collision points
-    for (vector<string>::const_iterator link_it=robot_models_->getCollisionCheckLinks().begin();
-        link_it!=robot_models_->getCollisionCheckLinks().end(); ++link_it)
+    planning_groups_.insert(make_pair(it->first, group));
+  }
+
+  // iterate over all collision checking links to add collision points
+  for (vector<string>::const_iterator link_it=robot_models_->getCollisionCheckLinks().begin();
+      link_it!=robot_models_->getCollisionCheckLinks().end(); ++link_it)
+  {
+    // get the "radius" of this link from the param server, if any:
+    double link_radius;
+    std::string link_name = *link_it;
+    std::string link_param_root = "~collision_links/"+link_name+"/";
+    if (node_handle_.getParam(link_param_root+"link_radius", link_radius))
     {
-      // get the "radius" of this link from the param server, if any:
-      double link_radius;
-      std::string link_name = *link_it;
-      std::string link_param_root = "~collision_links/"+link_name+"/";
-      if (node_handle_.getParam(link_param_root+"link_radius", link_radius))
+      double clearance;
+      node_handle_.param(link_param_root+"link_clearance", clearance, collision_clearance_default_);
+      addCollisionPointsFromLinkRadius(link_name, link_radius, clearance);
+    }
+  }
+
+  // put all collision points into all groups:
+  for (std::map<std::string, ChompPlanningGroup>::iterator group_it=planning_groups_.begin(); group_it!=planning_groups_.end(); ++group_it)
+  {
+    for (std::map<std::string, std::vector<ChompCollisionPoint> >::iterator link_it=link_collision_points_.begin(); link_it!=link_collision_points_.end(); ++link_it)
+    {
+      for (std::vector<ChompCollisionPoint>::iterator point_it=link_it->second.begin(); point_it!=link_it->second.end(); ++point_it)
       {
-        double clearance;
-        node_handle_.param(link_param_root+"link_clearance", clearance, collision_clearance_default_);
-        addCollisionPointsFromLinkRadius(group, link_name, link_radius, clearance);
+        group_it->second.addCollisionPoint(*point_it, *this);
       }
     }
-
-    planning_groups_.insert(make_pair(it->first, group));
+    ROS_INFO("Group %s has %d collision points", group_it->second.name_.c_str(), group_it->second.collision_points_.size());
   }
 
   // test it:
@@ -215,10 +229,18 @@ bool ChompRobotModel::init()
   return true;
 }
 
-void ChompRobotModel::addCollisionPointsFromLinkRadius(ChompPlanningGroup& group, std::string link_name, double radius, double clearance)
+void ChompRobotModel::addCollisionPointsFromLinkRadius(std::string link_name, double radius, double clearance)
 {
+  // check if the link already exists in the map, if not, add it:
+  if (link_collision_points_.find(link_name) == link_collision_points_.end())
+  {
+    link_collision_points_.insert(make_pair(link_name, std::vector<ChompCollisionPoint>()));
+  }
+
+  std::vector<ChompCollisionPoint>& collision_points_vector = link_collision_points_.find(link_name)->second;
+
   // first, identify the joints that contribute to this link
-  std::vector<int> active_joints(group.num_joints_, 0);
+  std::vector<int> active_joints;
   KDL::SegmentMap::const_iterator segment_iter = kdl_tree_.getSegment(link_name);
 
   // go up the tree until we find the root:
@@ -227,7 +249,11 @@ void ChompRobotModel::addCollisionPointsFromLinkRadius(ChompPlanningGroup& group
     KDL::Joint::JointType joint_type =  segment_iter->second.segment.getJoint().getType();
     if (joint_type != KDL::Joint::None)
     {
-      // find the CHOMP joint index, if any:
+      int joint_num = segment_iter->second.q_nr;
+      if ((int)active_joints.size() < (joint_num+1))
+        active_joints.resize(joint_num+1, 0);
+      active_joints[joint_num] = 1;
+/*      // find the CHOMP joint index, if any:
       for (int i=0; i<group.num_joints_; i++)
       {
         if (group.chomp_joints_[i].joint_name_ == segment_joint_mapping_[segment_iter->first])
@@ -236,7 +262,7 @@ void ChompRobotModel::addCollisionPointsFromLinkRadius(ChompPlanningGroup& group
 //          printf("Found %s as parent of %s\n", group.chomp_joints_[i].joint_name_.c_str(),
 //              link_name.c_str());
         }
-      }
+      }*/
     }
     segment_iter = segment_iter->second.parent;
   }
@@ -266,8 +292,7 @@ void ChompRobotModel::addCollisionPointsFromLinkRadius(ChompPlanningGroup& group
       if (!first_child && i==0)
         continue;
       point_pos = joint_origin * (double)(i/(num_points-1.0));
-      group.collision_points_.push_back(ChompCollisionPoint(active_joints, radius, clearance, segment_number, point_pos));
-      //printf("Added %f %f %f in %s frame\n", point_pos.x(), point_pos.y(), point_pos.z(), link_name.c_str());
+      collision_points_vector.push_back(ChompCollisionPoint(active_joints, radius, clearance, segment_number, point_pos));
     }
 
     first_child = 0;
@@ -275,5 +300,36 @@ void ChompRobotModel::addCollisionPointsFromLinkRadius(ChompPlanningGroup& group
 
 }
 
+void ChompRobotModel::ChompPlanningGroup::addCollisionPoint(ChompCollisionPoint& collision_point, ChompRobotModel& robot_model)
+{
+  // create the new parent joints indexing vector:
+  std::vector<int> parent_joints(num_joints_, 0);
+
+  // check if this collision point is controlled by any joints which belong to the group
+  bool add_this_point=false;
+  for (int i=0; i<num_joints_; i++)
+  {
+    if (collision_point.isParentJoint(chomp_joints_[i].kdl_joint_index_))
+    {
+      add_this_point = true;
+      parent_joints[i] = 1;
+    }
+  }
+
+  if (!add_this_point)
+    return;
+
+  collision_points_.push_back(ChompCollisionPoint(collision_point, parent_joints));
+
+}
+
+void ChompRobotModel::getLinkCollisionPoints(std::string link_name, std::vector<ChompCollisionPoint>& points)
+{
+  std::map<std::string, std::vector<ChompCollisionPoint> >::iterator it = link_collision_points_.find(link_name);
+  if (it==link_collision_points_.end())
+    return;
+
+  points = it->second;
+}
 
 } // namespace chomp

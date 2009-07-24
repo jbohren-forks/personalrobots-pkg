@@ -2505,6 +2505,15 @@ do_gamma_cb(Fl_Light_Button *w, void *x)
 }
 
 
+void
+mode_cb(Fl_Counter *w, void *x)
+{
+  int mode = (int)w->value();
+  if (dev)
+    dev->setProcMode((videre_proc_mode_t)mode);
+  isRefresh = true;
+}
+
 
 // parsing file names
 

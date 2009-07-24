@@ -1,0 +1,22 @@
+<package>
+  <description brief="image_descriptors_gpl">
+
+     image_descriptors_gpl
+
+  </description>
+  <author>Alex Teichman</author>
+  <license>GPL</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/image_descriptors_gpl</url>
+  <depend package="opencv_latest"/>
+  <depend package="daisy"/>
+  <depend package="descriptors"/>
+
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -limage_descriptors_gpl -Wl,-rpath,${prefix}/lib" />
+  </export>
+
+
+</package>
+
+

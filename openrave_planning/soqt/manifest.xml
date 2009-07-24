@@ -10,30 +10,7 @@
     <!-- use soqt-config instead of exporting the flags! -->
     <doxymaker external="http://developer.nvidia.com/page/documentation.html"/>
   </export> 
-  <sysdepend os="ubuntu" version="7.04-feisty" package="libqt4-core"/>
-  <sysdepend os="ubuntu" version="7.10-gutsy" package="libqt4-core=4.3.2-0ubuntu3"/>
-  <sysdepend os="ubuntu" version="8.04-hardy" package="libqt4-core"/>
-  <sysdepend os="ubuntu" version="7.04-feisty" package="libcoin40-dev"/>
-  <sysdepend os="ubuntu" version="7.10-gutsy" package="libcoin40-dev"/>
-  <sysdepend os="ubuntu" version="8.04-hardy" package="libcoin40-dev"/>
-  <sysdepend os="ubuntu" version="7.04-feisty" package="qt4-dev-tools"/>
-  <sysdepend os="ubuntu" version="7.10-gutsy" package="qt4-dev-tools"/>
-  <sysdepend os="ubuntu" version="8.04-hardy" package="qt4-dev-tools"/>
-  <sysdepend os="ubuntu" version="7.04-feisty" package="libqt4-dev"/>
-  <sysdepend os="ubuntu" version="7.10-gutsy" package="libqt4-dev"/>
-  <sysdepend os="ubuntu" version="8.04-hardy" package="libqt4-dev"/>
-  <sysdepend os="ubuntu" version="7.04-feisty" package="wget"/>
-  <sysdepend os="ubuntu" version="8.04-hardy" package="wget"/>
-  <sysdepend os="ubuntu" version="7.04-feisty" package="autoconf"/>
-  <sysdepend os="ubuntu" version="8.04-hardy" package="autoconf"/>
 
-  <sysdepend os="ubuntu" version="8.10-intrepid" package="libqt4-core"/>
-  <sysdepend os="ubuntu" version="8.10-intrepid" package="libcoin40-dev"/>
-  <sysdepend os="ubuntu" version="8.10-intrepid" package="qt4-dev-tools"/>
-  <sysdepend os="ubuntu" version="8.10-intrepid" package="libqt4-dev"/>
-  <sysdepend os="ubuntu" version="8.10-intrepid" package="wget"/>
-  <sysdepend os="ubuntu" version="8.10-intrepid" package="autoconf"/>
-  <sysdepend os="ubuntu" version="8.10-intrepid" package="libqt4-opengl-dev"/>
 
   <rosdep name="qt4"/>
   <rosdep name="coin"/>

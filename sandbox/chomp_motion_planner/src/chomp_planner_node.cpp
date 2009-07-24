@@ -68,9 +68,6 @@ bool ChompPlannerNode::init()
   if (!chomp_robot_model_.init())
     return false;
 
-  // advertise the planning service
-  plan_kinematic_path_service_ = node_handle_.advertiseService("plan_kinematic_path", &ChompPlannerNode::planKinematicPath, this);
-
   // load chomp parameters:
   chomp_parameters_.initFromNodeHandle();
 
@@ -80,6 +77,9 @@ bool ChompPlannerNode::init()
 
   // initialize the visualization publisher:
   vis_marker_array_publisher_ = node_handle_.advertise<visualization_msgs::MarkerArray>( "visualization_marker_array", 0 );
+
+  // advertise the planning service
+  plan_kinematic_path_service_ = node_handle_.advertiseService("plan_kinematic_path", &ChompPlannerNode::planKinematicPath, this);
 
   ROS_INFO("Initalized CHOMP planning service...");
 
@@ -112,13 +112,13 @@ bool ChompPlannerNode::planKinematicPath(motion_planning_srvs::MotionPlan::Reque
   ChompTrajectory trajectory(&chomp_robot_model_, trajectory_duration_, trajectory_discretization_);
 
   // set the start state:
-  jointMsgToArray(req.start_state, trajectory.getTrajectoryPoint(0), chomp_robot_model_);
+  chomp_robot_model_.jointMsgToArray(req.start_state, trajectory.getTrajectoryPoint(0));
 
   // set the goal state equal to start state, and override the joints specified in the goal
   // joint constraints
   int goal_index = trajectory.getNumPoints()-1;
   trajectory.getTrajectoryPoint(goal_index) = trajectory.getTrajectoryPoint(0);
-  jointMsgToArray(req.goal_constraints.joint_constraint, trajectory.getTrajectoryPoint(goal_index), chomp_robot_model_);
+  chomp_robot_model_.jointMsgToArray(req.goal_constraints.joint_constraint, trajectory.getTrajectoryPoint(goal_index));
 
   // fix the goal to move the shortest angular distance for wrap-around joints:
   for (int i=0; i<group->num_joints_; i++)

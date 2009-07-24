@@ -20,10 +20,6 @@
     <cpp cflags="-I${prefix}/include -I${prefix}/msg/cpp -I${prefix}/srv/cpp `rosboost-cfg --cflags`" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -ltf `rosboost-cfg --lflags thread`"/>
     <roswtf plugin="tf.tfwtf" />
   </export>
-  <sysdepend os="ubuntu" version="8.04-hardy" package="python-numpy"/>
-  <sysdepend os="ubuntu" version="7.10-gutsy" package="python-numpy"/>
-  <sysdepend os="ubuntu" version="8.04-hardy" package="graphviz"/>
-  <sysdepend os="ubuntu" version="7.10-gutsy" package="graphviz"/>
   <rosdep name="python-numpy"/>
   <rosdep name="graphviz"/>
 </package>

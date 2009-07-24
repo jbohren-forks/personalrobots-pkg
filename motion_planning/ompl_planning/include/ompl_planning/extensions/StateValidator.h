@@ -44,6 +44,7 @@
 #include "ompl_planning/ModelBase.h"
 #include "ompl_planning/extensions/SpaceInformation.h"
 
+#include <boost/thread.hpp>
 #include <iostream>
 
 namespace ompl_planning
@@ -56,16 +57,14 @@ namespace ompl_planning
 	{
 	    ksi_ = si;
 	    dsi_ = NULL;
-	    model_ = model;
-	    setupModel();
+	    setupModel(model);
 	}
 	
         StateValidityPredicate(SpaceInformationDynamicModel *si, ModelBase *model) : ompl::base::StateValidityChecker()
 	{
 	    dsi_ = si;
 	    ksi_ = NULL;
-	    model_ = model;
-	    setupModel();
+	    setupModel(model);
 	}
 
 	virtual ~StateValidityPredicate(void)
@@ -81,13 +80,13 @@ namespace ompl_planning
 	
     protected:
 	
+	void setupModel(ModelBase *model);
 	bool check(const ompl::base::State *s, collision_space::EnvironmentModel *em, planning_models::KinematicModel *km,
 		   planning_environment::KinematicConstraintEvaluatorSet *kce) const;
 	void useConstraints(planning_environment::KinematicConstraintEvaluatorSet *kce, planning_models::KinematicModel *km) const;
-	void setupModel(void);
 	void clearClones(void);
 	
-
+	
 	ModelBase                                             *model_;
 	
 	// one of the next two will be instantiated
@@ -105,10 +104,8 @@ namespace ompl_planning
 	    planning_environment::KinematicConstraintEvaluatorSet *kce;
 	};
 	
-	mutable std::vector<Clone>                             clones_;
-	mutable int                                            position_;
+	mutable std::map<boost::thread::id, Clone>             clones_;
 	mutable boost::mutex                                   lock_;
-	
 	
     };
     

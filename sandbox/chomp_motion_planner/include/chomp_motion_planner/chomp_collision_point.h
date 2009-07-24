@@ -48,8 +48,9 @@ namespace chomp
 class ChompCollisionPoint
 {
 public:
-  ChompCollisionPoint(std::vector<int>& parent_joints, double radius, double clearance,
-      int segment_number, KDL::Vector& position);
+  ChompCollisionPoint(const std::vector<int>& parent_joints, double radius, double clearance,
+      int segment_number, const KDL::Vector& position);
+  ChompCollisionPoint(const ChompCollisionPoint &point, const std::vector<int>& parent_joints);
   virtual ~ChompCollisionPoint();
 
   bool isParentJoint(int joint) const;
@@ -59,6 +60,8 @@ public:
   double getInvClearance() const;
   int getSegmentNumber() const;
   const KDL::Vector& getPosition() const;
+
+  void getTransformedPosition(std::vector<KDL::Frame>& segment_frames, KDL::Vector& position) const;
 
   template<typename Derived>
   void getJacobian(std::vector<Eigen::Map<Eigen::Vector3d> >& joint_pos, std::vector<Eigen::Map<Eigen::Vector3d> >& joint_axis,
@@ -125,6 +128,11 @@ void ChompCollisionPoint::getJacobian(std::vector<Eigen::Map<Eigen::Vector3d> >&
       jacobian.col(joint) = joint_axis[joint].cross(collision_point_pos - joint_pos[joint]);
     }
   }
+}
+
+inline void ChompCollisionPoint::getTransformedPosition(std::vector<KDL::Frame>& segment_frames, KDL::Vector& position) const
+{
+  position = segment_frames[segment_number_] * position_;
 }
 
 } // namespace chomp

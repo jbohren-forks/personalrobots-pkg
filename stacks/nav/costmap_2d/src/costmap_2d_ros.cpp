@@ -275,7 +275,7 @@ namespace costmap_2d {
     XmlRpc::XmlRpcValue footprint_list;
     if(node.getParam("~footprint", footprint_list)){
       //make sure we have a list of lists
-      ROS_ASSERT_MSG(footprint_list.getType() == XmlRpcValue::TypeArray && footprint_list.size() > 2, 
+      ROS_ASSERT_MSG(footprint_list.getType() == XmlRpc::XmlRpcValue::TypeArray && footprint_list.size() > 2, 
           "The footprint must be specified as list of lists on the parameter server eg: [[x1, y1], [x2, y2], ..., [xn, yn]]");
       for(int i = 0; i < footprint_list.size(); ++i){
         //make sure we have a list of lists of size 2

@@ -232,13 +232,9 @@ namespace TREX {
      * @brief If a goal has a max duration set then we use it to mark a timer which can be checked in synchronization to see if an action should be preempted.
      */
     void setDurationBound(const TokenId& goal){
-      // See TREX.nddl for definition
-      static const unsigned int  MAX_DURATION_INDEX(1);
-      static const LabelStr MAX_DURATION_LABEL("max_duration");
-
       // Get the max_duration bound and update accordingly
-      ConstrainedVariableId max_duration = goal->parameters()[MAX_DURATION_INDEX];
-      ROS_ASSERT(max_duration.isValid() && max_duration->getName() == MAX_DURATION_LABEL);
+      ConstrainedVariableId max_duration = goal->getVariable("max_duration", false);
+      assertTrue(max_duration.isValid(), goal->toLongString());
 
       _max_duration.fromSec(std::max(max_duration->getUpperBound(), 0.0));
 

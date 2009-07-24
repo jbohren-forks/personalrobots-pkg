@@ -1,4 +1,7 @@
 <launch>
+  <!-- load empty world -->
+  <include file="$(find gazebo)/launch/empty_world.launch"/>
+
   <!-- send single_link.xml to param server -->
   <include file="$(find arm_gazebo)/l_arm.launch" />
 

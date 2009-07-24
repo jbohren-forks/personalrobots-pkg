@@ -1,6 +1,7 @@
 <launch>
   <master auto="start"/>
   <node pkg="trex_pr2" type="stub_ros_container" respawn="false" />
+  <node pkg="trex_ros" type="actions" respawn="false" />
   <param name="/trex/input_file" value="sim.master.cfg"/>
   <param name="/trex/path" value="$(find trex_pr2)/cfg:$(find trex_ros)/cfg"/>
   <param name="/trex/time_limit" value="10000"/>

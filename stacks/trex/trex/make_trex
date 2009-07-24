@@ -9,19 +9,7 @@ fi
 cd `rospack find trex`
 
 # PLASMA_HOME is required to build the PLASMA NDDL.jar
-if [ "$ROS_TREX_PLASMA_WILLOW" = "1" ] ; then
-    echo "Using willow PLASMA..."
-    if [ -a PLASMA_WILLOW ] ; then
-	echo "PLASMA Willow exists."
-	svn up PLASMA_WILLOW
-    else
-	echo "Download plasma willow"
-	./checkout_willow_plasma
-    fi
-    source `rospack find trex`/devConfigPlasmaWillow
-else
-    source `rospack find trex`/devConfig
-fi
+source `rospack find trex`/devConfig
 
 cd `rospack find trex`/TREX
 
@@ -54,15 +42,21 @@ function run_jam {
 
 
 if [ "$1" = "test" ] ; then
+  cd `rospack find trex`/PLASMA/src/PLASMA
+  jam run-checkin-tests
+  if [ $? -ne 0 ] ; then
+    echo "PLASMA tests failed."
+    exit 1
+  fi
   cd `rospack find trex`/TREX/agent/test
   jam agent-module-tests
   if [ $? -ne 0 ] ; then
-    echo "Test file creation failed."
+    echo "TREX test file creation failed."
     exit 1
   fi
   jam run-agent-module-tests
   if [ $? -ne 0 ] ; then
-    echo "Tests failed."
+    echo "TREX tests failed."
     exit 1
   fi
 

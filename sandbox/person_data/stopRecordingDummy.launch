@@ -1,0 +1,3 @@
+<launch>
+<node pkg="topic_tools" type="switch_mux" args="/person_dummy_data_muxed __none"/>
+</launch>

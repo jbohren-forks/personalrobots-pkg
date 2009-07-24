@@ -26,6 +26,7 @@ void visualizePlanes(const robot_msgs::PointCloud& cloud,
                      std::vector<std::vector<int> >& plane_indices,
                      std::vector<robot_msgs::PointCloud>& plane_cloud,
                      std::vector<std::vector<double> >& plane_coeff,
+                     std::vector<float>& plane_color,
                      robot_msgs::PointCloud& outside,
                      ros::Publisher& cloud_planes_pub,ros::Publisher& visualization_pub_);
 

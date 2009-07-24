@@ -1,0 +1,41 @@
+<package>
+  <description brief="experimental_controllers">
+     Controllers that are still under development
+  </description>
+  <author>Stuart Glaser</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/experimental_controllers</url>
+
+  <depend package="kdl_parser"/>
+  <depend package="rospy"/>
+  <depend package="mechanism_model" />
+  <depend package="mechanism_control" />
+  <depend package="control_toolbox" />
+  <depend package="tinyxml" />
+  <depend package="misc_utils" />
+  <depend package="realtime_tools" />
+  <depend package="roscpp" />
+  <depend package="std_msgs" />
+  <depend package="robot_srvs" />
+  <depend package="robot_msgs" />
+  <depend package="manipulation_msgs" />
+  <depend package="visualization_msgs" />
+  <depend package="tf" />
+  <depend package="tf_conversions" />
+  <depend package="kdl" />
+  <depend package="angles" />
+  <depend package="joy" />
+  <depend package="eigen" />
+  <depend package="filters" />
+
+  <export>
+    <cpp cflags="-I${prefix}/include -I${prefix}/msg/cpp -I${prefix}/srv/cpp"
+	 lflags="-Wl,-rpath,${prefix}/lib/ -L${prefix}/lib -lexperimental_controllers" />
+  </export>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="libltdl3-dev"/>
+  <rosdep name="libtool"/>
+
+</package>
+
+

@@ -37,15 +37,8 @@
 #include "setup.h"
 #include "parse.h"
 #include "world.h"
-#include <mpglue/navfn_planner.h>
-#include <mpglue/sbpl_environment.h>
-#include <mpglue/sbpl_planner.h>
-#include <mpglue/estar_planner.h>
 #include <costmap_2d/cost_values.h>
-#include <sbpl/headers.h>
-#include <sfl/util/numeric.hpp>
 #include <sfl/util/strutil.hpp>
-#include <door_msgs/Door.h>
 
 #ifdef MPBENCH_HAVE_NETPGM
 extern "C" {
@@ -344,6 +337,18 @@ namespace mpbench {
   Setup::
   ~Setup()
   {
+#define HUNT_SEGFAULT_AT_EXIT
+#ifdef HUNT_SEGFAULT_AT_EXIT
+    cerr << "DBG ~mpbench::Setup() clearing planners\n";
+    planner_.clear();
+    cerr << "DBG ~mpbench::Setup() resetting footprint\n";
+    footprint_.reset();
+    cerr << "DBG ~mpbench::Setup() resetting world\n";
+    world_.reset();
+    cerr << "DBG ~mpbench::Setup() clearing tasklist\n";
+    tasklist_.clear();
+    cerr << "DBG ~mpbench::Setup() DONE\n";
+#endif // HUNT_SEGFAULT_AT_EXIT
   }
   
   
@@ -469,7 +474,14 @@ namespace mpbench {
   {
     if ( ! title.empty())
       os << title << "\n";
-    os << prefix << "world spec:                   " << world_spec << "\n";
+    os << prefix << "world spec:                   " << world_spec << "\n"
+       << prefix << "costmap spec:                 " << costmap_spec << "\n"
+       << prefix << "costmap_name:                 " << costmap_name << "\n"
+       << prefix << "costmap_resolution:           " << costmap_resolution << "\n"
+       << prefix << "costmap_inscribed_radius:     " << costmap_inscribed_radius << "\n"
+       << prefix << "costmap_circumscribed_radius: " << costmap_circumscribed_radius << "\n"
+       << prefix << "costmap_inflation_radius:     " << costmap_inflation_radius << "\n"
+       << prefix << "costmap_obstacle_cost:        " << costmap_obstacle_cost << "\n";
     mpglue::requestspec::dump(os, "", prefix);
   }
   
@@ -565,207 +577,17 @@ namespace mpbench {
       *verbose_os_ << "mpbench::Setup::getPlanner(): allocating planner for task " << task_id
 		   << " with spec " << opt_.planner_spec << "\n";
     
-    if (opt_.planner_tok.empty())
-      throw runtime_error("mpbench::Setup::create(): no planner tokens");
-    string const planner_name(mpglue::canonicalPlannerName(opt_.planner_tok[0]));
+    shared_ptr<episode::taskspec> spec(tasklist_[task_id]);
+    if ( ! spec)
+      throw runtime_error("BUG??? in mpbench::Setup::getPlanner(" + to_string(task_id)
+			  + "): no task spec for that ID");
     boost::shared_ptr<World> world(getWorld());
-    
-    if ("NavFn" == planner_name) {
-      if (verbose_os_)
-	*verbose_os_ << "  creating NavFnPlanner\n" << flush;
-      string int_str("int");
-      sfl::token_to(opt_.planner_tok, 1, int_str);
-      bool interpolate_path(true);
-      if ("dsc" == int_str)
-	interpolate_path = false;
-      else if ("int" != int_str)
-	throw runtime_error("mpbench::Setup::getPlanner(" + to_string(task_id)
-			    + "): invalid interpolate_path \"" + int_str
-			    + "\", must be \"int\" or \"dsc\"");
-      planner.reset(new mpglue::NavFnPlanner(world->getCostmap(task_id),
-					     world->getIndexTransform(),
-					     interpolate_path));
-    } // end NavFn
-    
-    else if ("EStar" == planner_name) {
-#ifndef MPBENCH_HAVE_ESTAR
-      throw runtime_error("mpbench::Setup::getPlanner(" + to_string(task_id)
-			  + "): no support for EStar planner; to enable it, install EStar,"
-			  " set the ROS_ESTAR_DIR environment variable,"
-			  " and recompile mpglue and mpbench");
-#else // MPBENCH_HAVE_ESTAR
-      if (verbose_os_)
-	*verbose_os_ << "  creating EstarPlanner\n" << flush;
-      //  string int_str("int");
-      //  sfl::token_to(opt_.planner_tok, 1, int_str);
-      //  bool interpolate_path(true);
-      //  if ("dsc" == int_str)
-      // 	interpolate_path = false;
-      //  else if ("int" != int_str)
-      //throw runtime_error("mpbench::Setup::create(): invalid environment interpolate_path \""
-      //		    + int_str + "\", must be \"int\" or \"dsc\"");
-      planner.reset(new mpglue::EstarPlanner(world->getCostmap(task_id),
-					     world->getIndexTransform(),
-					     &cerr));
-#endif // MPBENCH_HAVE_ESTAR
-    } // end EStar
-    
-    else { // all others must be SBPL
-      if (verbose_os_)
-	*verbose_os_ << "  creating SBPLPlanner subtype\n" << flush;
-      
-      // reasonably quick hack for Sachin... black magic, grrr
-      bool door_planner_hack(false);
-      
-      // The remaining possibilities are (currently) all derived from
-      // SBPL and thus all need an SBPLEnvironment instance, so we
-      // create that first.
-      string envstr("2d");
-      sfl::token_to(opt_.planner_tok, 1, envstr);
-      shared_ptr<mpglue::SBPLEnvironment> sbpl_environment;
-      if ("2d" == envstr) {
-	if (verbose_os_)
-	  *verbose_os_ << "  creating 8-connected 2D Environment\n" << flush;
-	sbpl_environment.reset(mpglue::SBPLEnvironment::create2D(world->getCostmap(task_id),
-								 world->getIndexTransform(),
-								 false));
-      }
-      else if ("2d16" == envstr) {
-	if (verbose_os_)
-	  *verbose_os_ << "  creating 16-connected 2D Environment\n" << flush;
-	sbpl_environment.reset(mpglue::SBPLEnvironment::create2D(world->getCostmap(task_id),
-								 world->getIndexTransform(),
-								 true));
-      }
-      else if ("3dkin" == envstr) {
-	if (verbose_os_)
-	  *verbose_os_ << "  creating 3DKIN Environment\n" << flush;
-	double const
-	  timetoturn45degsinplace_secs(45.0 * M_PI / 180.0 / opt_.robot_nominal_rotation_speed);
-	sbpl_environment.
-	  reset(mpglue::SBPLEnvironment::create3DKIN(world->getCostmap(task_id),
-						     world->getIndexTransform(),
-						     getFootprint(),
-						     opt_.robot_nominal_forward_speed,
-						     timetoturn45degsinplace_secs,
-						     verbose_os_));
-      }
-      else if ("xythetalat" == envstr) {
-	if (verbose_os_)
-	  *verbose_os_ << "  creating XYTHETALAT Environment\n" << flush;
-	double const
-	  timetoturn45degsinplace_secs(45.0 * M_PI / 180.0 / opt_.robot_nominal_rotation_speed);
-	string mprim_filename("data/pr2.mprim");
-	sfl::token_to(opt_.planner_tok, 2, mprim_filename);
-	if (verbose_os_)
-	  *verbose_os_ << "  motion primitive file: " << mprim_filename << "\n" << flush;	
-	sbpl_environment.
-	  reset(mpglue::SBPLEnvironment::createXYThetaLattice(world->getCostmap(task_id),
-							      world->getIndexTransform(),
-							      getFootprint(),
-							      opt_.robot_nominal_forward_speed,
-							      timetoturn45degsinplace_secs,
-							      mprim_filename,
-							      verbose_os_));
-      }
-      else if ("xythetadoor" == envstr) {
-	if (verbose_os_)
-	  *verbose_os_ << "  creating XYTHETADOOR Environment\n" << flush;
-	double const
-	  timetoturn45degsinplace_secs(45.0 * M_PI / 180.0 / opt_.robot_nominal_rotation_speed);
-	string mprim_filename("data/pr2.mprim");
-	sfl::token_to(opt_.planner_tok, 2, mprim_filename);
-	if (verbose_os_)
-	  *verbose_os_ << "  motion primitive file: " << mprim_filename << "\n" << flush;
-        
-	shared_ptr<episode::taskspec> spec(tasklist_[task_id]);
-	if ( ! spec)
-	  throw runtime_error("BUG??? in mpbench::Setup::getPlanner(" + to_string(task_id)
-			      + "): no task spec for that ID");
-	if ( ! spec->door)
-	  throw runtime_error("mpbench::Setup::getPlanner(" + to_string(task_id)
-			      + "): door planner requires a door for this task");
-
-        door_msgs::Door doormsg;
-        doormsg.frame_p1.x = spec->door->px; // hinge
-        doormsg.frame_p1.y = spec->door->py;
-        doormsg.frame_p2.x = spec->door->px + spec->door->width * cos(spec->door->th_shut); // other end
-        doormsg.frame_p2.y = spec->door->py + spec->door->width * sin(spec->door->th_shut);
-        doormsg.handle.x = spec->door->px + spec->door->dhandle * cos(spec->door->th_shut); // handle
-        doormsg.handle.y = spec->door->py + spec->door->dhandle * sin(spec->door->th_shut);
-        doormsg.hinge = 0;
-        if (sfl::mod2pi(spec->door->th_open - spec->door->th_shut) > 0)
-          doormsg.rot_dir = 1;
-        else
-          doormsg.rot_dir = -1;
-        doormsg.header.frame_id = "map";
-        
-	sbpl_environment.
-	  reset(mpglue::SBPLEnvironment::createXYThetaDoor(world->getCostmap(task_id),
-							   world->getIndexTransform(),
-							   getFootprint(),
-							   opt_.robot_nominal_forward_speed,
-							   timetoturn45degsinplace_secs,
-							   mprim_filename,
-							   verbose_os_, doormsg));
-	door_planner_hack = true;
-	if (tasklist_.size() <= task_id)
-	  throw runtime_error("mpbench::Setup::getPlanner(" + to_string(task_id)
-			      + "): only " + to_string(tasklist_.size()) + " tasks in the list");
-      }
-      else
-	throw runtime_error("mpbench::Setup::getPlanner(" + to_string(task_id)
-			    + "): invalid environment token \""
-			    + envstr + "\", must be \"2d\", \"2d16\" or \"3dkin\" (maybe more are OK in the code)");
-      
-      if ( ! sbpl_environment)
-	throw runtime_error("mpbench::Setup::getPlanner(" + to_string(task_id)
-			    + "): failed to create SBPLEnvironment from \""
-			    + envstr + "\"");
-      
-      // token index 2 is "custom", read for lattice planner elsewhere
-      
-      string dirstr("bwd");
-      sfl::token_to(opt_.planner_tok, 3, dirstr);
-      bool forwardsearch(false);
-      if ("fwd" == dirstr) {
-	if (verbose_os_)
-	  *verbose_os_ << "  search direction: forward\n" << flush;
-	forwardsearch = true;
-      }
-      else if ("bwd" == dirstr) {
-	if (verbose_os_)
-	  *verbose_os_ << "  search direction: backward\n" << flush;
-      }
-      else
-	throw runtime_error("mpbench::Setup::getPlanner(" + to_string(task_id)
-			    + "): invalid search direction \"" + dirstr
-			    + "\", should be \"fwd\" or \"bwd\"");
-      
-      if (door_planner_hack) {
-	if (verbose_os_)
-	  *verbose_os_ << "  door_planner_hack: search direction must always be forward\n" << flush;
-	forwardsearch = true;
-      }
-      
-      shared_ptr<SBPLPlanner> sbpl_planner;
-      if ("ARAStar" == planner_name) {
-	if (verbose_os_)
-	  *verbose_os_ << "  creating ARAPlanner\n" << flush;	
-	sbpl_planner.reset(new ARAPlanner(sbpl_environment->getDSI(), forwardsearch));
-      }
-      else if ("ADStar" == planner_name) {
-	if (verbose_os_)
-	  *verbose_os_ << "  creating ADPlanner\n" << flush;	
-	sbpl_planner.reset(new ADPlanner(sbpl_environment->getDSI(), forwardsearch));
-      }
-      else
-	throw runtime_error("mpbench::Setup::getPlanner(" + to_string(task_id)
-			    + "): invalid planner name \"" + planner_name
-			    + "\"");
-      
-      planner.reset(new mpglue::SBPLPlannerWrap(sbpl_environment, sbpl_planner));
-    }
+    planner.reset(createCostmapPlanner(opt_,
+				       world->getCostmap(task_id),
+				       world->getIndexTransform(),
+				       getFootprint(),
+				       spec->door.get(),
+				       verbose_os_));
     
     if ( ! planner)
       throw runtime_error("mpbench::Setup::getPlanner(" + to_string(task_id)
@@ -780,11 +602,30 @@ namespace mpbench {
   SetupOptions(std::string const & _world_spec,
 	       std::string const & planner_spec,
 	       std::string const & robot_spec,
-	       std::string const & costmap_spec)
-    : mpglue::requestspec(planner_spec, robot_spec, costmap_spec),
-      world_spec(_world_spec)
+	       std::string const & _costmap_spec)
+    : mpglue::requestspec(planner_spec, robot_spec),
+      world_spec(_world_spec),
+      costmap_spec(_costmap_spec),
+      costmap_name("sfl"),
+      costmap_resolution(0.05),
+      costmap_inscribed_radius(0.325),
+      costmap_circumscribed_radius(0.46),
+      costmap_inflation_radius(0.55),
+      costmap_obstacle_cost(costmap_2d::INSCRIBED_INFLATED_OBSTACLE)
   {
     sfl::tokenize(world_spec, ':', world_tok);
+    sfl::tokenize(costmap_spec, ':', costmap_tok);
+    
+    sfl::token_to(costmap_tok, 0, costmap_name);
+    if (sfl::token_to(costmap_tok, 1, costmap_resolution))
+      costmap_resolution *= 1e-3;
+    if (sfl::token_to(costmap_tok, 2, costmap_inscribed_radius))
+      costmap_inscribed_radius *= 1e-3;
+    if (sfl::token_to(costmap_tok, 3, costmap_circumscribed_radius))
+      costmap_circumscribed_radius *= 1e-3;
+    if (sfl::token_to(costmap_tok, 4, costmap_inflation_radius))
+      costmap_inflation_radius *= 1e-3;
+    sfl::token_to(costmap_tok, 5, costmap_obstacle_cost);
   }
 
 
@@ -801,7 +642,11 @@ namespace mpbench {
        << prefix << "        obst_gray is the gray level at which obstacles get inserted\n"
        << prefix << "            default is 64, use negative numbers to invert the scale\n"
        << prefix << "        xml_filename is optional, but needed to define tasks etc\n"
-       << prefix << "  xml : xml_filename\n";
+       << prefix << "  xml : xml_filename\n"
+       << prefix << "\navailable costmap specs:\n"
+       << prefix << "  sfl | ros [: resolution [: inscribed [: circumscribed [: inflation ]]]]\n"
+       << prefix << "        all lengths and radii in millimeters\n"
+       << prefix << "        defaults: resol. 50mm, inscr. 325mm, circ. 460mm, infl. 550mm\n";
     mpglue::requestspec::help(os, "", prefix);
   }
   

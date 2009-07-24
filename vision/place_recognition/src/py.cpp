@@ -134,7 +134,7 @@ static FeatureMatrix extract_float_features(PyObject *self, PyObject *pim,
     // Find keypoints
 
     std::vector<Keypoint> pts;
-    StarDetector detector(cvSize(640, 480), 5, 10.0);
+    ::StarDetector detector(cvSize(640, 480), 5, 10.0);
     detector.DetectPoints(left.Ipl(), std::back_inserter(pts));
     printf("[Star detector gave %d points, dimension %d]\n", (int)(pts.size()), dimension);
     //std::vector<Keypoint> pts = fastKeypoints(left.Ipl(), 20, 9);
@@ -194,7 +194,7 @@ static sig_data_t* extract_features(PyObject *self, PyObject *pim,
 
     // Find keypoints
     std::vector<Keypoint> pts;
-    StarDetector detector(cvSize(640, 480), 5, 10.0);
+    ::StarDetector detector(cvSize(640, 480), 5, 10.0);
     detector.DetectPoints(left.Ipl(), std::back_inserter(pts));
     printf("[Star detector gave %d points, dimension %d]\n", (int)(pts.size()), dimension);
     //std::vector<Keypoint> pts = fastKeypoints(left.Ipl(), 20, 9);

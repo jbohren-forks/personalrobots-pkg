@@ -1,0 +1,13 @@
+<launch>
+  <!-- start up empty world -->
+  <include file="$(find gazebo)/launch/balcony_world.launch"/>
+
+  <!-- start prototype1 robot (pr2 - arms) -->
+  <include file="$(find pr2_gazebo)/prototype1.launch"/>
+
+  <!-- startup base controller -->
+  <param name="base_controller/odom_publish_rate" value="10" />
+  <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/base_controller.xml" output="screen"/>
+  <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/gazebo_head_torso_lift_controller.xml" output="screen"/>
+</launch>
+

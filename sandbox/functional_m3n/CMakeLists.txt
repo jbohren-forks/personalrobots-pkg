@@ -11,9 +11,12 @@ rospack_add_boost_directories()
 rospack_add_executable (bin/create_pt_cloud examples/create_pt_cloud.cpp)
 target_link_libraries (bin/create_pt_cloud fm3n)
 
+#rospack_add_link_flags(bin/create_pt_cloud "-lprofiler")
+
 # ---[ Functional Max-Margin Markov Network library
 rospack_add_library (fm3n
-			src/submodular_energy_min.cpp
+                        src/inference_tools/vk_submodular_energy_min.cpp
+			src/inference_tools/bgl_submodular_energy_min.cpp
 			src/random_field.cpp
 			src/m3n_model.cpp
 			src/m3n_model_inference.cpp

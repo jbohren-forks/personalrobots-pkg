@@ -1,0 +1,2 @@
+#!/bin/bash
+svn co http://europa-pso.googlecode.com/svn/PLASMA/trunk PLASMA_NORMAL

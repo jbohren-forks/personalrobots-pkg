@@ -18,20 +18,8 @@
   </export>
 
   <!-- <depend package="sdl_image"/> -->
-  <sysdepend os="ubuntu" version="7.04-feisty" package="libsdl-image1.2-dev"/>
-  <sysdepend os="ubuntu" version="8.04-hardy" package="libsdl-image1.2-dev"/>
-  <sysdepend os="ubuntu" version="9.04-jaunty" package="libsdl-image1.2-dev"/>
 
-  <sysdepend os="ubuntu" version="7.04-feisty" package="python-imaging"/>
-  <sysdepend os="ubuntu" version="8.04-hardy" package="python-imaging"/>
-  <sysdepend os="ubuntu" version="9.04-jaunty" package="python-imaging"/>
 
-  <sysdepend package="python-yaml" os="ubuntu" version="7.04-feisty"/>
-  <sysdepend package="python-yaml" os="ubuntu" version="7.10-gutsy"/>
-  <sysdepend package="python-yaml" os="ubuntu" version="8.04-hardy"/>
-  <sysdepend package="python-yaml" os="ubuntu" version="9.04-jaunty"/>
-  <sysdepend package="py25-yaml" os="macports" />
-  <sysdepend package="PyYAML" os="centos" version="5.2"/>
 
   <rosdep name="sdl-image"/>
   <rosdep name="python-imaging"/>

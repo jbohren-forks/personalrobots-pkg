@@ -1,12 +1,9 @@
 <launch>
-  <!-- pr2 -->
-  <param name="robot_description" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/pr2.xacro.xml'" />
-  <node pkg="gazebo_plugin" type="urdf2factory" args="robot_description -0.5 0 0 0 0 0" respawn="false" output="screen" />
-  <!-- Robot state publisher -->
-  <node pkg="robot_state_publisher" type="state_publisher" name="robot_state_publisher">
-    <param name="publish_frequency" type="double" value="50.0" />
-    <param name="tf_prefix" type="string" value="" />
-  </node>
+  <!-- start up empty world -->
+  <include file="$(find gazebo)/launch/empty_world.launch"/>
+
+  <!-- start pr2 robot -->
+  <include file="$(find pr2_gazebo)/pr2.launch"/>
 
   <!-- table -->
   <param name="desk3" textfile="$(find gazebo_worlds)/objects/desk3.model" />

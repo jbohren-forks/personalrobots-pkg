@@ -48,7 +48,7 @@
 #include <std_msgs/Float64.h>
 
 // Srvs 
-#include <robot_srvs/MoveToPose.h>
+#include <deprecated_srvs/MoveToPose.h>
 
 // Robot Action Stuff
 #include <robot_actions/action.h>
@@ -82,8 +82,8 @@ private:
   plugs_msgs::PlugStow plug_stow_;
  
   
-  robot_srvs::MoveToPose::Request req_pose_;
-  robot_srvs::MoveToPose::Response res_pose_;
+  deprecated_srvs::MoveToPose::Request req_pose_;
+  deprecated_srvs::MoveToPose::Response res_pose_;
   
   robot_mechanism_controllers::JointControllerState controller_state_msg_;
   

@@ -7,7 +7,6 @@ float SAFETY_TUCK_ARMS_DURATION_BOUND = 60.0;
 // Internal Timelines
 ArmsTucked arms_tucked = new ArmsTucked(External);
 TiltLaserReady tilt_laser_ready = new TiltLaserReady(External);
-DetectPlugOnBase detect_plug_on_base = new DetectPlugOnBase(External);
 
 // Mechamisms of interest
 TiltLaserMechanism laser_tilt_mechanism = new TiltLaserMechanism(External);
@@ -23,7 +22,7 @@ SetLaserTilt set_laser_tilt = new SetLaserTilt(External);
 ArmsTucked::True{
   met_by(safety_tuck_arms.Active p);
   eq(p.status, SUCCESS);
-  leq(p.max_duration, SAFETY_TUCK_ARMS_DURATION_BOUND);
+  leq(p.duration, SAFETY_TUCK_ARMS_DURATION_BOUND);
 }
 
 TiltLaserReady::True{

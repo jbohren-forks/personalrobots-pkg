@@ -1,0 +1,17 @@
+<package>
+  <description brief="Dense image descriptor">
+
+    Daisy is a dense image descriptor package from Vincent Lepetit's lab.  See the url for more info.
+
+  </description>
+  <author>Engin Tola</author>
+  <license>GPL</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://cvlab.epfl.ch/~tola/daisy.html</url>
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -ldaisy -Wl,-rpath,${prefix}/lib" />
+  </export>
+
+</package>
+
+

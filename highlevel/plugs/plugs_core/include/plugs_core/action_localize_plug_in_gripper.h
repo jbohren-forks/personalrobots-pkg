@@ -47,7 +47,7 @@
 #include <std_msgs/Float64.h>
 
 // Srvs 
-#include <robot_srvs/MoveToPose.h>
+#include <deprecated_srvs/MoveToPose.h>
 #include "robot_srvs/SetPoseStamped.h"
 //TF
 #include <tf/tf.h>
@@ -96,8 +96,8 @@ private:
   tf::Stamped<tf::Pose> plug_pose_;
  
   
-  robot_srvs::MoveToPose::Request req_pose_;
-  robot_srvs::MoveToPose::Response res_pose_;
+  deprecated_srvs::MoveToPose::Request req_pose_;
+  deprecated_srvs::MoveToPose::Response res_pose_;
    
 };
 

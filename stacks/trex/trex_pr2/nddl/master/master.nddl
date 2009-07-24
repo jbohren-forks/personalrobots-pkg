@@ -29,7 +29,7 @@
 
 #include "TREX.nddl"
 #include "world_model/topological_map.nddl"
-#include "rcs/exports.nddl"
+#include "ros.nddl"
 #include "rcs/nav/exports.nddl"
 #include "rcs/plugs/exports.nddl"
 #include "nav/exports.nddl"
@@ -37,11 +37,6 @@
 
 // Priority for goals
 typedef int [0 5] PRIORITY;
-
-// Time Bounds For top level components
-float RECHARGER_DURATION_BOUND = 600.0;
-float DOORMAN_DURATION_BOUND = 600.0;
-float DRIVER_DURATION_BOUND = 600.0;
 
 class M2Goals extends Behavior {
   predicate Active{
@@ -68,185 +63,48 @@ class M2Goals extends Behavior {
   }
 };
 
-class M2Controller extends AgentTimeline {
-  predicate Holds {
-    bool active;
-    bool recharge_required;
-    bool recharged;
-    bool finished;
-    float x;
-    float y;
-  }
-
-  M2Controller(){
-    super(Internal, "Holds");
-  }
-};
-
-// Internal Timeines
+// Internal Timelines
 M2Goals m2_goals = new M2Goals();
-M2Controller m2_controller = new M2Controller();
 
-// External timelines
-MoveBehavior driver = new MoveBehavior(External, false);
-MoveBehavior doorman = new MoveBehavior(External, true);
+// External timelines. base state used  so the goals can be reasonable ordered based on current position.
+Navigator navigator = new Navigator(External);
 Recharger recharger = new Recharger(External);
 BaseState base_state = new BaseState(External);
 
 M2Goals::Active{
+  // Will require navigation to the location
+  contains(navigator.Active cmd_nav);
+  eq_pose_msg(cmd_nav.object, object);
 
-  if(start){
-    starts(m2_controller.Holds mc);
-    starts_during(base_state.Holds bs);
-    eq(mc.active, true);
-    eq(mc.recharged, false);
-    eq(mc.finished, false);	
-    eq(mc.x, bs.x);
-    eq(mc.y, bs.y);
-
+  meets(Inactive s);
+  if(cmd_nav.status == SUCCESS){
     if(outlet_id == NO_KEY){
-      eq(mc.recharge_required, false);
+      ends cmd_nav;
+      eq(s.status, SUCCESS);
     }
-    else {
-      eq(mc.recharge_required, true);
+    else{
+      ends(recharger.Active cmd_recharge);
+      cmd_nav before cmd_recharge;
+      eq(s.status, cmd_recharge.status);
     }
+  }
+  else {
+    ends cmd_nav;
+    eq(s.status, cmd_nav.status);
   }
 }
 
 /**
- * If a goal aborts then we should regenerate it for later
+ * If a goal does not succeed then we should regenerate it for later. This is were it would be nice to be able
+ * to say - if(status != SUCCESS){}
  */
 M2Goals::Inactive{
-  if(status == ABORTED){
+  if(status == SUCCESS){}
+  else {
     met_by(Active p);
     before (Active g);
     eq(g.outlet_id, p.outlet_id);
     eq_pose_msg(g.object, p.object);
-  }
-}
-
-/**
- * The loop for master level control. It uses the doorman, driver and recharger. 
- */
-M2Controller::Holds{
-  if(active == false){
-    equals(m2_goals.Inactive);
-  }
-
-  // Default based on predecessors
-  met_by(Holds p);
-  defaultOnCommit(active, p.active);
-  defaultOnCommit(recharge_required, p.recharge_required);
-  defaultOnCommit(recharged, p.recharged);
-  defaultOnCommit(finished, p.finished);
-  defaultOnCommit(x, p.x);
-  defaultOnCommit(y, p.y);
-
-  if(active == true){
-    meets(Holds s);
-    contained_by(m2_goals.Active m2_active);
-
-    // Are we at the goal?
-    float distance;
-    calcDistance(distance, x, y, m2_active.x, m2_active.y);
-    bool at_goal;
-    testLEQ(at_goal, distance, 0.2);
-
-    if(finished == true){
-      meets(m2_goals.Inactive m2_inactive);
-      eq(s.active, false);
-      eq(duration, 1);
-
-      if(recharge_required == true){
-	if(recharged == true){
-	  eq(m2_inactive.status, SUCCESS);
-	}
-	else {
-	  eq(m2_inactive.status, ABORTED);
-	}
-      }
-      else {
-	if(at_goal == true){
-	  eq(m2_inactive.status, SUCCESS);
-	}
-	else {
-	  eq(m2_inactive.status, ABORTED);
-	}
-      }
-    }
-    else {
-
-      if(at_goal == true){
-	if(recharge_required == true){ 
-	  contains_start(recharger.Active cmd);
-	  concurrent(cmd.end, end);
-	  eq(cmd.max_duration, RECHARGER_DURATION_BOUND);
-	  eq(cmd.outlet_id, m2_active.outlet_id);
-	}
-	else {
-	  meets(m2_goals.Inactive m2_inactive);
-	  eq(m2_inactive.status, SUCCESS);
-	  eq(s.active, false);
-	  eq(duration, 1);
-	}
-      }
-      else{
-	// Take the next step towards the goal. This will either navigate to the goal, or navigate to the
-	// next connector along the way. It would be ideal to be able to specify for the nav stack that
-	// we do not care about orientation, and that we want to get as close as possible to the goal, but the criteria
-	// for success is based on a given error bound. Thus we could get close if possible, but permit a successful termination
-	// when we cannot get any closer but are within that bound. This is desirable since the precise approach is based
-	// on calculations that deal with position of approach and location of the socket or door and these are encoded internally
-	// in the domains
-	contains_start(MoveBehavior.Active cmd);
-	concurrent(cmd.end, end);
-	eq(cmd.frame_id, m2_active.frame_id);
-
-	// Determine the next map point to go for. It will either be the outlet
-	// or it will be a doorway en-route to the outlet. This function calls a topological planner.
-	bool thru_doorway;
-	map_get_next_move(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, thru_doorway, x, y, 
-			  m2_active.x, m2_active.y, m2_active.z, m2_active.qx, m2_active.qy, m2_active.qz, m2_active.qw);
-
-	map_get_nearest_connector(cmd.start_connector, x, y, m2_active.x, m2_active.y);
-
-	if(thru_doorway == true){
-	  // take no more than 10 minutes trying to get thru a doorway
-	  eq(cmd.object, doorman);
-	  eq(cmd.max_duration, DOORMAN_DURATION_BOUND);
-	}
-	else{
-	  eq(cmd.object, driver);
-	  eq(cmd.max_duration, DRIVER_DURATION_BOUND);
-	}
-      }
-    }
-  }
-}
-
-/**
- * The update does not change control states unless it is aborted. Instead, it updates with the new position data
- */
-MoveBehavior::Inactive{
-  starts(m2_controller.Holds mc);
-  if(status == SUCCESS){
-    eq(mc.x, x);
-    eq(mc.y, y);
-  }
-  else {
-    eq(mc.finished, true);
-  }
-}
-
-Recharger::Inactive{
-  starts(m2_controller.Holds mc);
-  if(status == SUCCESS){
-    eq(mc.finished, true);
-    eq(mc.recharged, true);
-  }
-  else {
-    eq(mc.finished, true);
-    eq(mc.recharged, false);
   }
 }
 

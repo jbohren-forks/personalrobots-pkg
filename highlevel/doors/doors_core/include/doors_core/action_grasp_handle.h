@@ -46,7 +46,7 @@
 #include <std_srvs/Empty.h>
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
-#include <robot_srvs/MoveToPose.h>
+#include <deprecated_srvs/MoveToPose.h>
 #include <kdl/frames.hpp>
 #include <robot_actions/action.h>
 
@@ -66,8 +66,8 @@ private:
 
   tf::TransformListener& tf_; 
 
-  robot_srvs::MoveToPose::Request  req_moveto;
-  robot_srvs::MoveToPose::Response res_moveto;
+  deprecated_srvs::MoveToPose::Request  req_moveto;
+  deprecated_srvs::MoveToPose::Response res_moveto;
 };
 
 }

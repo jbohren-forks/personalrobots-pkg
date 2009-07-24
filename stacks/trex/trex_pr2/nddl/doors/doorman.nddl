@@ -21,12 +21,6 @@ MoveBehavior::Inactive {
 MoveBehavior::Active {
   starts(door_controller.CheckingDoorway dc);
 
-  // Compute the deadline in ticks
-  float elapsedTicks;
-  mulEq(elapsedTicks, TICK_DURATION, max_duration);
-  float deadline;
-  addEq(start, elapsedTicks, deadline);
-
   // Initialize door message from the topological map
   MAP_KEY doorway_id;
   neq(doorway_id, NO_KEY);

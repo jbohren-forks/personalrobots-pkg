@@ -32,11 +32,12 @@
   </pr2_torso>
 
   <!-- Alpha 2.0b head installed 4/24/09 -->
-  <pr2_head_alpha2b name="head" parent="torso_lift_link">
+  <!-- Tilt motor replaced with A2 motor 7/22 -->
+  <pr2_head_alpha2 name="head" parent="torso_lift_link">
     <!--origin xyz="-0.01 0 0.3815" rpy="0 0 0" /-->
     <origin xyz="${cal_head_x - 0.01}    ${cal_head_y}     ${0.3915+cal_head_z}"
             rpy="${cal_head_roll} ${cal_head_pitch} ${cal_head_yaw}" />
-  </pr2_head_alpha2b>
+  </pr2_head_alpha2>
 
   <!-- Alpha 2.0 laser tilt installed 4/3/09 -->
   <pr2_tilting_laser_alpha2 name="laser_tilt" parent="torso_lift_link">

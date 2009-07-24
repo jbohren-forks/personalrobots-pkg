@@ -266,7 +266,7 @@ Index: ode/src/quickstep.cpp
    // accumulator. I and invI are a vertical stack of 3x4 matrices, one per body.
    dReal *invI = context->AllocateArray<dReal> (3*4*nb);
  
-+#define DEBUG_MASS
++#undef DEBUG_MASS
 +#ifdef DEBUG_MASS
 +  dReal *tmpI = context->AllocateArray<dReal> (3*4*nb);
 +  dReal *tmpM = context->AllocateArray<dReal> (1*4*nb);
@@ -645,3 +645,49 @@ Index: ode/src/util.h
  #include "objects.h"
  
  
+Index: ode/src/util.cpp
+===================================================================
+--- ode/src/util.cpp	(revision 1684)
++++ ode/src/util.cpp	(working copy)
+@@ -24,6 +24,8 @@
+ #include "objects.h"
+ #include "joints/joint.h"
+ #include "util.h"
++#include <boost/thread.hpp>
++#include <boost/bind.hpp>
+ 
+ static void InternalFreeWorldProcessContext (dxWorldProcessContext *context);
+ 
+@@ -534,6 +536,10 @@
+   dxBody *const *bodystart = body;
+   dxJoint *const *jointstart = joint;
+ 
++  std::cout << "number of islands: " << islandcount << std::endl;
++  boost::thread* island_threads[islandcount];
++
++  int thread_count = 0;
+   int const *const sizesend = islandsizes + islandcount * sizeelements;
+   for (int const *sizescurr = islandsizes; sizescurr != sizesend; sizescurr += sizeelements) {
+     int bcount = sizescurr[0];
+@@ -541,12 +547,20 @@
+ 
+     BEGIN_STATE_SAVE(context, stepperstate) {
+       // now do something with body and joint lists
+-      stepper (context,world,bodystart,bcount,jointstart,jcount,stepsize);
++      //stepper (context,world,bodystart,bcount,jointstart,jcount,stepsize);
++      std::cout << "spawning island: " << thread_count << std::endl;
++      island_threads[thread_count] = new boost::thread( boost::bind( stepper, context,world,bodystart,bcount,jointstart,jcount,stepsize)  );
+     } END_STATE_SAVE(context, stepperstate);
+ 
+     bodystart += bcount;
+     jointstart += jcount;
++
++    thread_count++;
+   }
++  for (int j = 0 ; j < thread_count ; j++)
++    island_threads[j]->join();
++  for (int j = 0 ; j < thread_count ; j++)
++    delete island_threads[j];
+ 
+   context->CleanupContext();
+   dIASSERT(context->IsStructureValid());

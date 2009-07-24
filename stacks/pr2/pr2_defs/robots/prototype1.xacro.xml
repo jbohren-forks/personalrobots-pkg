@@ -27,6 +27,13 @@
             rpy="${cal_head_roll} ${cal_head_pitch} ${cal_head_yaw}" />
   </pr2_head>
 
+  <!-- Camera package: double stereo, prosilica -->
+  <pr2_head_sensor_package name="sensor_mount" hd_name="high_def" 
+			   stereo_name="double_stereo" 
+			   parent="head_plate_frame">
+    <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
+  </pr2_head_sensor_package>
+
   <pr2_tilting_laser name="laser_tilt" parent="torso_lift_link">
     <origin xyz="0.1 0 0.235" rpy="0 0 0" />
   </pr2_tilting_laser>

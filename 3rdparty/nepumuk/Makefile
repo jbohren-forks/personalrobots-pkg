@@ -1,6 +1,6 @@
 all: installed
 
-SVN_REVISION=    -r 968
+SVN_REVISION=    -r 1053
 BUILD_DIR=   $(PWD)/build
 INST_DIR=    $(PWD)/local
 SVN_DIR=     $(PWD)/build/nepumuk-svn

@@ -48,12 +48,13 @@
 
 #include <ros/ros.h>
 
-#include <functional_m3n/submodular_energy_min.h>
+#include <functional_m3n/inference_tools/vk_submodular_energy_min.h>
 #include <functional_m3n/random_field.h>
 #include <functional_m3n/m3n_params.h>
 #include <functional_m3n/regressors/regressor_includes.h>
 #include <functional_m3n/logging/m3n_logging.h>
 
+using namespace vk_energy; // corresponds to submodular energy minimzer
 using namespace std;
 
 // --------------------------------------------------------------

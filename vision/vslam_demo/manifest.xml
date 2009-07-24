@@ -13,7 +13,6 @@
   <depend package="dcam"/>
   <depend package="tf"/>
 
-  <sysdepend os="ubuntu" version="8.04-hardy" package="python-opengl"/>
   <rosdep name="python-opengl"/>
 </package>
 

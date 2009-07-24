@@ -15,6 +15,7 @@ from robot_mechanism_controllers.srv import *
 from pr2_mechanism_controllers.srv import *
 from std_msgs.msg import *
 from robot_srvs.srv import *
+from deprecated_srvs.srv import *
 
 import sys
 from time import sleep

@@ -139,10 +139,15 @@ void cleanup()
 {
   if (dbgos)
     *dbgos << "byebye!\n" << flush;
-  else
+  if (logos != dbgos) {
+    cerr << "DBG deleting logos\n";
     delete logos;
+  }
+  cerr << "DBG resetting setup\n";
   setup.reset();
+  cerr << "DBG resetting results\n";
   result_collection.reset();
+  cerr << "DBG cleanup done\n";
 }
 
 
@@ -159,7 +164,8 @@ void usage(ostream & os)
      << "   -x  <fname> set custom base filename\n"
      << "   -L  <layoutID> quick (temporary?) way of switching layouts\n"
      << "   -X          dump filename base to stdout (use as last option)\n"
-     << "   -W          run in website generation mode\n";
+     << "   -W          run in website generation mode\n"
+     << "   -G          disable graphical output\n";
   SetupOptions::help(os, "help on setup options:", "  ");
 }
 
@@ -316,6 +322,10 @@ void parse_options(int argc, char ** argv)
 	
       case 'W':
 	websiteMode = true;
+	break;
+	
+      case 'G':
+	enableGfx = false;
 	break;
 	
       default:

@@ -1,0 +1,24 @@
+--- makefile.old	2009-07-23 22:19:38.000000000 -0700
++++ makefile	2009-07-23 23:03:29.000000000 -0700
+@@ -25,7 +25,7 @@
+ specialize := false
+ platform := native
+ #........................................
+-sources := src/daisy.cpp src/main.cpp src/image_io_bmp.cpp src/image_io_png.cpp src/image_io_pnm.cpp src/image_io_jpeg.cpp src/image_manipulation.cpp src/progress_bar.cpp src/interaction.cpp src/general.cpp src/corecv.cpp
++sources := src/daisy.cpp src/image_io_bmp.cpp src/image_io_png.cpp src/image_io_pnm.cpp src/image_io_jpeg.cpp src/image_manipulation.cpp src/progress_bar.cpp src/interaction.cpp src/general.cpp src/corecv.cpp
+ 
+ ################################################################################
+ ################# - MAKEFILE STATIC VARIABLES - ################################
+@@ -163,9 +163,11 @@
+ .PHONY  : slib
+ slib   : $(objects)
+ 	g++ -shared -Wl,-soname,$(libsoname) -o $(librealname)  $^
+-	ldconfig -v -n $(libdir)
++#	ldconfig -v -n $(libdir)
++	ln -s $(libname).so.$(version) $(libdir)/$(libsoname)
+ 	ln -s $(libsoname) $(libdir)/$(libname).so
+ 
++
+ .PHONY  : library
+ library : $(libtarget) tags
+ 	@echo

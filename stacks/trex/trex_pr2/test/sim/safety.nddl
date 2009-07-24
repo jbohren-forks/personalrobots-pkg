@@ -1,7 +1,6 @@
 #include "rcs/safety/exports.nddl"
 
 SafetyTuckArms safety_tuck_arms = new SafetyTuckArms(Internal);
-DetectPlugOnBase detect_plug_on_base = new DetectPlugOnBase(Internal);
 
 
 SafetyTuckArms::Active {
@@ -10,8 +9,3 @@ SafetyTuckArms::Active {
   eq(s.status, SUCCESS);
 }
 
-DetectPlugOnBase::Active {
-  eq(duration, 1);
-  meets(Inactive s);
-  eq(s.status, SUCCESS);
-}

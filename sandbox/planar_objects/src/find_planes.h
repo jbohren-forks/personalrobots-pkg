@@ -38,7 +38,7 @@ void findPlanes(const robot_msgs::PointCloud& cloud, int n_planes_max, double sa
                 std::vector<std::vector<double> >& plane_coeff, robot_msgs::PointCloud& outside);
 
 void createPlaneImage(const robot_msgs::PointCloud& cloud, std::vector<int> &inliers, std::vector<double> &plane_coeff,
-                      IplImage *planeImage);
+                      IplImage *pixOccupied,IplImage *pixFree,IplImage *pixUnknown );
 
 }
 

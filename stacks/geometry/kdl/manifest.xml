@@ -14,9 +14,6 @@ in a way that can be managed by the ROS dependency system.
   <doxymaker external="http://www.orocos.org/kdl" />
   <python path="${prefix}/kdl/lib/python/site-packages"  />
 </export>
-<sysdepend os="ubuntu" version="7.04-feisty" package="subversion"/>
-<sysdepend os="ubuntu" version="8.04-hardy" package="subversion"/>
-<sysdepend os="ubuntu" version="8.04-hardy" package="libcppunit-dev" />
 <depend package="eigen"/>
 <rosdep name="cppunit"/>
 <versioncontrol type="svn" url="http://svn.mech.kuleuven.be/repos/orocos/trunk/kdl"/>

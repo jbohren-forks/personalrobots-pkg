@@ -42,7 +42,7 @@
 #include <manipulation_msgs/TaskFrameFormalism.h>
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
-#include <robot_srvs/MoveToPose.h>
+#include <deprecated_srvs/MoveToPose.h>
 #include <kdl/frames.hpp>
 #include <robot_actions/action.h>
 #include <boost/thread/mutex.hpp>

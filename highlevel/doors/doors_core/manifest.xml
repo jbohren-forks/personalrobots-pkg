@@ -18,6 +18,7 @@
   <depend package="visualization_msgs"/>
 
   <depend package="robot_srvs" />
+  <depend package="deprecated_srvs" />
   <depend package="nav_srvs" />
 
   <depend package="robot_actions" />

@@ -9,10 +9,10 @@
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/lifelong_mapping</url>
   <depend package="roscpp"/>
+  <depend package="tf"/>
+  <depend package="robot_msgs"/>
   <depend package="toro"/>
-  <depend package="place_recognition"/>
-  <depend package="visual_odometry"/>
-
-  <sysdepend os="ubuntu" version="8.04-hardy" package="libdb4.6++-dev"/>
+  <!--depend package="place_recognition"/>
+  <depend package="visual_odometry"/-->
 
 </package>

@@ -10,7 +10,6 @@
   <depend package="rospy"/>
   <depend package="diagnostic_msgs"/>
   <depend package="robot_msgs"/>
-  <sysdepend os="ubuntu" version="8.04-hardy" package="apcupsd"/>
    <rosdep name="apcupsd"/>
 </package>
 

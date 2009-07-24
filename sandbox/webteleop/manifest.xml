@@ -1,0 +1,19 @@
+<package>
+  <description brief="webteleop">
+     webteleop
+  </description>
+  <author>Nate Koenig</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/webteleop</url>
+  <depend package="rospy"/>
+  <depend package="rosjson"/>
+  <depend package="std_msgs"/>
+  <depend package="robot_msgs"/>
+  <depend package="robot_srvs"/>
+  <depend package="nav_srvs"/>
+  <depend package="nav_msgs"/>
+
+</package>
+
+

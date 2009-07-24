@@ -37,9 +37,11 @@
 #ifndef MPGLUE_SETUP_HPP
 #define MPGLUE_SETUP_HPP
 
+#include <mpglue/footprint.h>
 #include <boost/shared_ptr.hpp>
 #include <string>
 #include <vector>
+#include <stdexcept>
 
 namespace mpglue {
   
@@ -119,12 +121,11 @@ namespace mpglue {
   
   
   /**
-     All parameters required for initializing a planning request from .
+     All parameters required for initializing a planning request.
   */
   struct requestspec {    
     requestspec(std::string const & planner_spec,
-		std::string const & robot_spec,
-		std::string const & costmap_spec);
+		std::string const & robot_spec);
     
     static void help(/** The stream to write the help to. */
 		     std::ostream & os,
@@ -148,25 +149,68 @@ namespace mpglue {
     
     std::string const planner_spec;
     std::string const robot_spec;
-    std::string const costmap_spec;
     
     tokenlist_t planner_tok;
     tokenlist_t robot_tok;
-    tokenlist_t costmap_tok;
     
     std::string robot_name;
     double robot_inscribed_radius;
     double robot_circumscribed_radius;
     double robot_nominal_forward_speed;
     double robot_nominal_rotation_speed;
-    
-    std::string costmap_name;
-    double costmap_resolution;	         /**< cell size [m] (square cells) */
-    double costmap_inscribed_radius;     /**< radius [m] of CSpace "lethal" inflation */
-    double costmap_circumscribed_radius; /**< radius [m] of "non-lethal" inflation */
-    double costmap_inflation_radius;     /**< distance [m] of freespace cells from obstacles */
-    int costmap_obstacle_cost;
   };
+  
+  
+  class CostmapPlanner;
+  class CostmapAccessor;
+  class IndexTransform;
+  class SBPLEnvironment;
+  
+  
+  CostmapPlanner *
+  createNavFnPlanner(requestspec const & request,
+		     boost::shared_ptr<CostmapAccessor const> costmap,
+		     boost::shared_ptr<IndexTransform const> indexTransform,
+		     /** set to null if you do not want progress output */
+		     std::ostream * verbose_os)
+  throw(std::runtime_error);
+  
+  
+  CostmapPlanner *
+  createEstarPlanner(requestspec const & request,
+		     boost::shared_ptr<CostmapAccessor const> costmap,
+		     boost::shared_ptr<IndexTransform const> indexTransform,
+		     /** set to null if you do not want progress output */
+		     std::ostream * verbose_os)
+  throw(std::runtime_error);
+  
+  
+  SBPLEnvironment *
+  createSBPLEnvironment(requestspec const & request,
+			boost::shared_ptr<CostmapAccessor const> costmap,
+			boost::shared_ptr<IndexTransform const> indexTransform,
+			footprint_t const & footprint,
+			/** a bit of a hack to allow door planners to
+			    say they want to search forwards (others
+			    usually dont). */
+			bool & default_fwd_search,
+			/** only for door planner... should be refactored into something cleaner */
+			doorspec * optional_door,
+			/** set to null if you do not want progress output */
+			std::ostream * verbose_os)
+  throw(std::runtime_error);
+  
+  
+  CostmapPlanner *
+  createCostmapPlanner(requestspec const & request,
+		       boost::shared_ptr<CostmapAccessor const> costmap,
+		       boost::shared_ptr<IndexTransform const> indexTransform,
+		       footprint_t const & footprint,
+		       /** only for door planner... should be refactored into something cleaner */
+		       doorspec * optional_door,
+		       /** set to null if you do not want progress output */
+		       std::ostream * verbose_os)
+  throw(std::runtime_error);
   
 }
 

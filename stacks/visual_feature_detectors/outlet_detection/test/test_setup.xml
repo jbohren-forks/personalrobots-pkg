@@ -3,7 +3,7 @@
 
 <!-- Stereo image processing -->
 <group ns="stereo">
-    <node pkg="stereo_image_proc" type="stereoproc" respawn="false">
+    <node pkg="stereo_image_proc" type="stereoproc" name="stereoproc" respawn="false">
         <param name="do_colorize" type="bool" value="True"/>
         <param name="do_rectify" type="bool" value="True"/>
         <param name="do_stereo" type="bool" value="True"/>

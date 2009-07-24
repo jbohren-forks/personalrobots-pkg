@@ -36,9 +36,9 @@
 <param name="head_button" value="6" type="int" />
 
 <param name="deadman_button" value="4" type="int"/>
-<node pkg="teleop_pr2" type="teleop_pr2" output="screen">
-<remap from="cmd_vel" to="pr2_base_controller/cmd_vel"/>
-</node>
+<node pkg="teleop_pr2" type="teleop_pr2" output="screen"/>
+
+
   </group>
 
 

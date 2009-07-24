@@ -9,15 +9,6 @@ The Bullet Physics Engine
 <review status="3rdparty" notes=""/>
 <url>http://code.google.com/p/bullet/</url>
 <depend package="rostest"/>
-<sysdepend os="ubuntu" version="9.04-jaunty" package="libXext-dev"/>
-<sysdepend os="ubuntu" version="8.04-hardy" package="libXext-dev"/>
-<sysdepend os="ubuntu" version="7.10-gutsy" package="libXext-dev"/>
-<sysdepend os="ubuntu" version="9.04-jaunty" package="libglut3-dev"/>
-<sysdepend os="ubuntu" version="8.04-hardy" package="libglut3-dev"/>
-<sysdepend os="ubuntu" version="7.10-gutsy" package="libglut3-dev"/>
-<sysdepend os="ubuntu" version="9.04-jaunty" package="swig"/>
-<sysdepend os="ubuntu" version="8.04-hardy" package="swig"/>
-<sysdepend os="ubuntu" version="7.10-gutsy" package="swig"/>
 <rosdep name="libxext"/>
 <rosdep name="glut"/>
 <rosdep name="swig"/>

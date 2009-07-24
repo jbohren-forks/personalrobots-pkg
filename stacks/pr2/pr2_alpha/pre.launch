@@ -41,12 +41,15 @@
   </node>
 
 <!-- imu -->
+<!--
+
   <param name="imu/time_offset" value="-0.040" />
   <param name="imu/port"  type="string" value="/dev/ttyUSB0" />
   <param name="imu/autostart" type="bool" value="true" />
   <param name="imu/frameid"  type="string" value="imu" />
   <param name="imu/autocalibrate" type="bool" value="true" />
   <node machine="realtime" pkg="imu_node" type="imu_node" output="screen"/>
+-->
 
 <!-- Videre Stereo cam 
   <include file="$(find pr2_alpha)/stereo.launch" />
@@ -64,12 +67,12 @@
 -->
 
   <!-- Disk usage monitoring script Warns to console if disk full -->
-  <node pkg="pr2_computer_monitor" type="hd_monitor.py" args="$(optenv HOME /home) /dev/sda" machine="realtime_root"/>
-  <node pkg="pr2_computer_monitor" type="hd_monitor.py" args="$(optenv HOME /home) /dev/sda /dev/sdb" machine="two_root"/> 
+  <node pkg="pr2_computer_monitor" type="hd_monitor.py" args="$(optenv HOME /home)" machine="realtime"/>
+  <node pkg="pr2_computer_monitor" type="hd_monitor.py" args="$(optenv HOME /home)" machine="two"/> 
 
   <!-- Monitor CPU temp, usage -->
-  <node pkg="pr2_computer_monitor" type="cpu_monitor.py" machine="realtime_root" />
-  <node pkg="pr2_computer_monitor" type="cpu_monitor.py" machine="two_root" />
+  <node pkg="pr2_computer_monitor" type="cpu_monitor.py" machine="realtime" />
+  <node pkg="pr2_computer_monitor" type="cpu_monitor.py" machine="two" />
 
 </launch>
 

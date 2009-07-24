@@ -20,7 +20,8 @@ void releaseHistMat(CvMatND** hist, int* hist_size);
 ////Returns all maximums with >= MIN_VOTES
 void getMaxHistValues(const CvSparseMat* hist, int* hist_size, float** ranges, float**& maxs, int& count, int MIN_VOTES);
 ////Returns all maximums (count number)
-void getMaxHistValues(const CvSparseMat* hist, int* hist_size, float** ranges, float**& maxs, int& count);
+// Return value: max votes
+int getMaxHistValues(const CvSparseMat* hist, int* hist_size, float** ranges, float**& maxs, int& count);
 
 // Calculates maximums of histogram. 
 //Returns all maximums with >= MIN_VOTES

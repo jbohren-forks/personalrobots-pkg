@@ -16,9 +16,6 @@
   <doxymaker external="http://www.orocos.org/ocl" />
 </export>
 <depend package="rtt" />
-<sysdepend os="ubuntu" version="7.04-feisty" package="libreadline-dev"/>
-<sysdepend os="ubuntu" version="7.10-gutsy" package="libreadline-dev"/>
-<sysdepend os="ubuntu" version="8.04-hardy" package="libreadline-dev"/>
 <rosdep name="libreadline"/>
 <versioncontrol type="svn" url="http://svn.mech.kuleuven.be/repos/orocos/trunk/ocl"/>
 </package>

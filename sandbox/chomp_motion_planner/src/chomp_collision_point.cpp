@@ -41,17 +41,28 @@
 namespace chomp
 {
 
-ChompCollisionPoint::ChompCollisionPoint(std::vector<int>& parent_joints, double radius, double clearance,
-    int segment_number, KDL::Vector& position):
+ChompCollisionPoint::ChompCollisionPoint(const std::vector<int>& parent_joints, double radius, double clearance,
+    int segment_number, const KDL::Vector& position):
       parent_joints_(parent_joints),
       radius_(radius),
-      volume_((4.0/3.0)*M_PI*radius*radius*radius),
+      volume_((4.0/3.0)*M_PI*radius_*radius_*radius_),
       clearance_(clearance),
       inv_clearance_(1.0/clearance_),
       segment_number_(segment_number),
       position_(position)
 {
 
+}
+
+ChompCollisionPoint::ChompCollisionPoint(const ChompCollisionPoint &point, const std::vector<int>& parent_joints):
+  parent_joints_(parent_joints),
+  radius_(point.radius_),
+  volume_((4.0/3.0)*M_PI*radius_*radius_*radius_),
+  clearance_(point.clearance_),
+  inv_clearance_(1.0/clearance_),
+  segment_number_(point.segment_number_),
+  position_(point.position_)
+{
 }
 
 ChompCollisionPoint::~ChompCollisionPoint()

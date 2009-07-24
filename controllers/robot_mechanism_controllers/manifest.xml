@@ -15,6 +15,7 @@
   <depend package="roscpp" />
   <depend package="std_msgs" />
   <depend package="robot_srvs" />
+  <depend package="deprecated_srvs" />
   <depend package="robot_msgs" />
   <depend package="manipulation_msgs" />
   <depend package="visualization_msgs" />
@@ -31,6 +32,5 @@
     <cpp cflags="-I${prefix}/include -I${prefix}/msg/cpp -I${prefix}/srv/cpp"
 	 lflags="-Wl,-rpath,${prefix}/lib/ -L${prefix}/lib -lrobot_mechanism_controllers" />
   </export>
-  <sysdepend os="ubuntu" version="8.04-hardy" package="libltdl3-dev"/>
   <rosdep name="libtool"/>
 </package>

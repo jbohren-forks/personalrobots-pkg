@@ -53,6 +53,7 @@ namespace mpbench {
   {
   public:
     World(SetupOptions const & options, std::ostream * verbose_os, std::ostream * debug_os);
+    ~World();
     
     /**
        Draw an obstacle line into the mpglue::ObstacleDelta associated

@@ -52,16 +52,8 @@ namespace collision_space
 	
     public:
 		
-        EnvironmentModelODE(void) : EnvironmentModel()
-	{
-	    dInitODE2(0);
-	}
-	
-	virtual ~EnvironmentModelODE(void)
-	{
-	    freeMemory();
-	    dCloseODE();
-	}
+        EnvironmentModelODE(void);
+	virtual ~EnvironmentModelODE(void);
 
 	/** \brief Get the list of contacts (collisions) */
 	virtual bool getCollisionContacts(std::vector<Contact> &contacts, unsigned int max_count = 1);
@@ -324,6 +316,9 @@ namespace collision_space
 	void    createODERobotModel(void);	
 	dGeomID createODEGeom(dSpaceID space, ODEStorage &storage, const shapes::Shape *shape, double scale, double padding);
 	void    updateGeom(dGeomID geom, const btTransform &pose) const;	
+
+	/** \brief Check if thread-specific routines have been called */
+	void    checkThreadInit(void) const;	
 	void    freeMemory(void);	
 	
 	ModelInfo                                   m_modelGeom;

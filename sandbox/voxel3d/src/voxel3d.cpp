@@ -38,7 +38,9 @@
 //#endif
 
 #include <cmath>
-#include <malloc.h>
+#if ! defined(__APPLE__)
+  #include <malloc.h>
+#endif
 #include <string.h> // for memset(3)
 
 #include "visualization_msgs/MarkerArray.h"
@@ -61,7 +63,11 @@ Voxel3d::Voxel3d(int size1, int size2, int size3, double resolution, const tf::V
 
   // Constructs the kernel
   //kernel_.resize(16*17*17);
+#if defined(__APPLE__)
+  kernel_ = (unsigned char*)malloc(16*17*17);
+#else
   kernel_ = (unsigned char*)memalign(16, 16*17*17);
+#endif
   for (int k = 0; k < 17; ++k) {
     for (int j = 0; j < 17; ++j) {
       for (int i = 0; i < 16; ++i) {

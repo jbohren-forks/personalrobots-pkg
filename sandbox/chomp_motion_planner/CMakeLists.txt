@@ -18,9 +18,9 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 #uncomment if you have defined messages
-#genmsg()
+genmsg()
 #uncomment if you have defined services
-#gensrv()
+gensrv()
 
 #common commands for building c++ executables and libraries
 #rospack_add_library(${PROJECT_NAME} src/example.cpp)
@@ -34,7 +34,7 @@ add_definitions(-msse -msse2)
 add_definitions(-DEIGEN_NO_DEBUG)
 add_definitions(-DNDEBUG)
 
-rospack_add_executable(chomp_planner_node
+rospack_add_library(chomp
 	src/chomp_collision_point.cpp
 	src/chomp_collision_space.cpp
 	src/chomp_cost.cpp
@@ -44,4 +44,14 @@ rospack_add_executable(chomp_planner_node
 	src/chomp_robot_model.cpp
 	src/chomp_trajectory.cpp
 	src/treefksolverjointposaxis.cpp
+)	
+
+rospack_add_executable(chomp_planner_node
+	src/chomp_planner_node.cpp
 )
+target_link_libraries(chomp_planner_node chomp)
+
+rospack_add_executable(chomp_cost_server
+	src/chomp_cost_server.cpp
+)
+target_link_libraries(chomp_cost_server chomp)

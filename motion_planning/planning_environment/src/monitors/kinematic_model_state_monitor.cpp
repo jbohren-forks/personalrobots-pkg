@@ -195,6 +195,8 @@ void planning_environment::KinematicModelStateMonitor::mechanismStateCallback(co
 bool planning_environment::KinematicModelStateMonitor::attachObject(const mapping_msgs::AttachedObjectConstPtr &attachedObject)
 {
     bool result = false;
+    kmodel_->lock();
+    
     planning_models::KinematicModel::Link *link = kmodel_->getLink(attachedObject->link_name);
     
     if (attachedObject->objects.size() != attachedObject->poses.size())
@@ -243,6 +245,8 @@ bool planning_environment::KinematicModelStateMonitor::attachObject(const mappin
 	}
 	else
 	    ROS_WARN("Unable to attach object to link '%s'", attachedObject->link_name.c_str());
+
+    kmodel_->unlock();
 
     if (result && (onAfterAttachBody_ != NULL))
 	onAfterAttachBody_(link, attachedObject); 

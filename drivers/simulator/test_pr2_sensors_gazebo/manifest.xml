@@ -14,5 +14,4 @@
   <depend package="laser_scan" />
   <depend package="sensor_msgs" />
   <depend package="stereo_image_proc" />
-  <sysdepend os="ubuntu" version="7.04-feisty" package="xvfb"/>
 </package>

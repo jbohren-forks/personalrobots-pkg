@@ -1,3 +1,4 @@
+
 // Constants for acceptable errors in pose
 float XY_ERROR = 0.5;
 float THETA_ERROR = 0.1;
@@ -10,14 +11,7 @@ float POSE_ERROR = 0.1;
  * will be used to indicate the type of concrete class to use.
  */
 
-enum NavigationMode {
-  Driver,
-  DoorMan
-};
-
 class MoveBehavior extends Behavior {
-  bool for_doorways;
-
   predicate Inactive{
     string frame_id;
     float time_stamp;
@@ -44,9 +38,46 @@ class MoveBehavior extends Behavior {
     MAP_KEY start_connector;
   }
 
-  MoveBehavior(Mode _mode, bool _for_doorways){
+  MoveBehavior(Mode _mode){
     super(_mode);
-    for_doorways = _for_doorways;
+  }
+};
+
+class Navigator extends Behavior {
+  predicate Inactive{}
+
+  predicate Active{
+    string frame_id;
+    float time_stamp;
+    float x;
+    float y;
+    float z;
+    float qx;
+    float qy;
+    float qz;
+    float qw;
+
+    // Constraint must be defined here to allow x and y values to be accessible for planning.
+    defaultOnCommit(frame_id, "map");
+  }
+
+  predicate Inactive{
+    string frame_id;
+    float time_stamp;
+    float x;
+    float y;
+    float z;
+    float qx;
+    float qy;
+    float qz;
+    float qw;
+
+    // Constraint must be defined here to allow x and y values to be accessible for planning.
+    defaultOnCommit(frame_id, "map");
+  }
+
+  Navigator(Mode _mode){
+    super(_mode);
   }
 };
 
@@ -56,3 +87,11 @@ MoveBehavior::Inactive{
     eq_pose_msg(object, p.object);
   }
 }
+
+Navigator::Inactive{
+  if(status == SUCCESS){
+    met_by(Active p);
+    eq_pose_msg(object, p.object);
+  }
+}
+

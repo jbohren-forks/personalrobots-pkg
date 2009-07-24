@@ -800,7 +800,7 @@ class stereogui {open
       }
     }
     Fl_Window cal_window {
-      label Calibration open
+      label Calibration
       xywh {591 314 305 340} type Single visible
     } {
       Fl_Group {} {open
@@ -883,7 +883,7 @@ class stereogui {open
           xywh {225 285 30 20} labelsize 11 align 1 maximum 100 step 1 value 6 textsize 11
         }
       }
-      Fl_Group {} {open selected
+      Fl_Group {} {open
         xywh {0 15 300 320}
       } {
         Fl_Button calibrate_button {
@@ -940,9 +940,9 @@ class stereogui {open
     }
     Fl_Window stereo_window {
       label Stereo
-      xywh {461 857 340 295} type Single hide
+      xywh {770 1138 340 295} type Single visible
     } {
-      Fl_Group {} {
+      Fl_Group {} {open
         xywh {15 155 285 120}
       } {
         Fl_Box {} {
@@ -1047,8 +1047,8 @@ class stereogui {open
       }
     }
     Fl_Window video_window {
-      label Video
-      xywh {457 623 425 205} type Single hide
+      label Video open
+      xywh {457 623 425 205} type Single visible
     } {
       Fl_Group {} {open
         xywh {20 85 285 170}
@@ -1124,9 +1124,14 @@ class stereogui {open
           callback do_stoc_cb
           xywh {160 70 45 25} labelsize 11
         }
+        Fl_Counter {} {
+          label Mode
+          callback mode_cb selected
+          xywh {195 160 55 20} type Simple labelsize 11 align 4 minimum 0 maximum 7 step 1 value 1
+        }
       }
       Fl_Group {} {open
-        xywh {190 40 215 185}
+        xywh {175 40 230 185}
       } {
         Fl_Slider exposure_val {
           label Exposure
@@ -1161,7 +1166,7 @@ class stereogui {open
         Fl_Light_Button gamma_button {
           label Gamma
           callback do_gamma_cb
-          xywh {190 135 55 25} value 1 labelsize 11
+          xywh {175 125 70 25} value 1 labelsize 11
         }
       }
     }

@@ -1,9 +1,9 @@
 
 <launch> 
 	<!-- send parameters for collision checking for PR2; this includes parameters for the self filter -->
-	<rosparam command="load" ns="robotdesc/pr2_collision" file="$(find 3dnav_pr2)/params/collision/collision_checks_both_arms.yaml" />
+	<rosparam command="load" ns="robot_description_collision" file="$(find 3dnav_pr2)/params/collision/collision_checks_both_arms.yaml" />
 
 	<!-- send parameters needed for motion planning -->
-	<rosparam command="load" ns="robotdesc/pr2_planning" file="$(find 3dnav_pr2)/params/planning/planning.yaml" />
+	<rosparam command="load" ns="robot_description_planning" file="$(find 3dnav_pr2)/params/planning/planning.yaml" />
 
 </launch>
