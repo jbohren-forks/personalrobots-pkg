@@ -64,14 +64,22 @@ bool RdfParser::initXml(TiXmlElement *robot_xml)
 
   // construct the links
   link_parent.clear();
-  link_origin.clear();
-  link_visual.clear();
-  link_geometry.clear();
-  link_collision.clear();
-  link_inertia.clear();
-  link_joint.clear();
+
+  //link_origin.clear();
+  //link_visual.clear();
+  //link_geometry.clear();
+  //link_collision.clear();
+  //link_inertia.clear();
+  //link_joint.clear();
+
+
   TiXmlElement *link_xml = NULL;
   for (link_xml = robot_xml->FirstChildElement("link"); link_xml; link_xml = link_xml->NextSiblingElement("link")){
+
+    // add a new link
+    Link* link = new Link();
+    link->initXml(link_xml);
+
     // get link name
     string link_name;
     if (!getAtribute(link_xml, "name", link_name))
@@ -146,8 +154,9 @@ bool RdfParser::initXml(TiXmlElement *robot_xml)
 
   // Start building tree
   links_.clear();
-  //links_.insert(make_pair(root_name_, new Link(root_name_)));
-  //addChildren(links_.find(root_name_)->second);
+  joints_.clear();
+  links_.insert(make_pair(root_name_, new Link(root_name_)));
+  addChildren(links_.find(root_name_)->second);
 
   return true;
 }

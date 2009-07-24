@@ -81,14 +81,8 @@ private:
 
   std::string root_name_;
 
+  /// keep a map of link names and their parent names
   map<string, string> link_parent;
-  map<string, TiXmlElement*> link_origin;
-  map<string, TiXmlElement*> link_joint;
-  map<string, TiXmlElement*> link_visual;
-  map<string, TiXmlElement*> link_collision;
-  map<string, TiXmlElement*> link_geometry;
-  map<string, TiXmlElement*> link_inertia;
-
 
 };
 
