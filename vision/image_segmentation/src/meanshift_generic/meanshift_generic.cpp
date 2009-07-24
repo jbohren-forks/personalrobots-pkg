@@ -83,7 +83,6 @@ double dist(double *A, double *B, int n)
  * rate       - gradient descent proportionality factor
  * maxIter    - max allowed number of iterations
  * labels     - labels for each cluster
- * means      - output (final clusters)
  *********************************************************************/
 void clustering::meanshiftGeneric(double *data,
                                   int p,
@@ -91,8 +90,7 @@ void clustering::meanshiftGeneric(double *data,
                                   double radius,
                                   double rate,
                                   int maxIter,
-                                  double *labels,
-                                  double *means)
+                                  std::vector<double>& labels)
 {
   // ------- kd tree ---------
   ANNpointArray ann_data;
@@ -169,10 +167,11 @@ void clustering::meanshiftGeneric(double *data,
   }
 
   /* Consolidate: assign all points that are within radius2 to same cluster. */
+  labels.assign(n, 0);
   for (i = 0; i < n ; i++)
   {
     consolidated[i] = 0;
-    labels[i] = 0;
+    //labels[i] = 0;
   }
   for (i = 0; i < n ; i++)
     if (!consolidated[i])
@@ -189,7 +188,7 @@ void clustering::meanshiftGeneric(double *data,
       nLabels++;
     }
   nLabels--;
-  memcpy(means, meansCur, p * n * sizeof(double));
+  //memcpy(means, meansCur, p * n * sizeof(double));
 
   /* free memory */
   free(meansNxt);

@@ -55,8 +55,19 @@ namespace clustering
    * Mean-shift algorithm described in:
    * [1] K. Fukunaga, L. D. Hostetler, "The Estimation of the Gradient of a
    * Density Function, with Applications in Pattern Recognition", IEEE T-IT 1975
-   * [2] D. Comaniciu, P. Meer, "Mean Shift: A Robust Approach Toward Feature
+   * [2] Y. Cheng, "Mean-shift, mode seeking, and clustering", IEEE T-PAMI 1995
+   * [3] D. Comaniciu, P. Meer, "Mean Shift: A Robust Approach Toward Feature
    * Space Analysis", IEEE T-PAMI 2002
+   *
+   * The radius or bandwidth is tied to the 'width' of the distribution and is
+   * data dependent.  Note that the data should be normalized first so that
+   * all the dimensions have the same bandwidth.  The rate determines how
+   * large the gradient decent steps are.  The smaller the rate, the more
+   * iterations are needed for convergence, but the more likely minima are not
+   * overshot.  A reasonable value for the rate is .2.  Low value of the rate
+   * may require an increase in maxIter.  Increase maxIter until convergence
+   * occurs regularly for a given data set (versus the algorithm being cut off
+   * at maxIter).
    *
    * \param data    p x n column matrix of data points
    * \param p       dimension of data points
@@ -64,8 +75,7 @@ namespace clustering
    * \param radius  radius of search window
    * \param rate    gradient descent proportionality factor
    * \param maxIter max allowed number of iterations
-   * \param labels  labels for each cluster
-   * \param means   output (final clusters)
+   * \param labels  vector of length n with cluster label for each point
    *
    * \return 0 on success, otherwise negative value on error
    */
@@ -76,8 +86,7 @@ namespace clustering
                         double radius,
                         double rate,
                         int maxIter,
-                        double *labels,
-                        double *means);
+                        std::vector<double>& labels);
 }
 
 #endif
