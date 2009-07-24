@@ -23,11 +23,11 @@ includes: trex plasma planworks
 	@if [ ! -d include ]; then echo "Try to make" ; fi
 
 # GET plasma
-PLASMA_REVISION=5502
+PLASMA_REVISION=5508
 plasma:
 	@if [ -n "`svn info PLASMA | grep 'http://europa-pso.googlecode.com/svn/PLASMA/trunk'`" ]; then echo "Your PLASMA is not of the correct branch. Reclocating and updating" ; cd PLASMA && svn switch http://europa-pso.googlecode.com/svn/PLASMA/branches/willow-trex && $(SVN_CMDLINE) up -r $(PLASMA_REVISION) ; cd ../ && ./copyIncludes.sh ; fi ;
 	@if [ -n "`svn info PLASMA | grep 'https://europa-pso.googlecode.com/svn/PLASMA/trunk'`" ]; then echo "Your PLASMA is not of the correct branch. Reclocating and updating" ; cd PLASMA && svn switch https://europa-pso.googlecode.com/svn/PLASMA/branches/willow-trex && $(SVN_CMDLINE) up -r $(PLASMA_REVISION) ; cd ../ && ./copyIncludes.sh ; fi ;
-	@if [ ! -d PLASMA ]; then $(SVN_CMDLINE) co -r $(PLASMA_REVISION) http://europa-pso.googlecode.com/svn/PLASMA/trunk PLASMA; ./copyIncludes.sh ; fi ;
+	@if [ ! -d PLASMA ]; then $(SVN_CMDLINE) co -r $(PLASMA_REVISION) http://europa-pso.googlecode.com/svn/PLASMA/branches/willow-trex PLASMA; ./copyIncludes.sh ; fi ;
 	@if [ ! -n "`svn info PLASMA | grep 'Revision: $(PLASMA_REVISION)'`" ]; then cd PLASMA && $(SVN_CMDLINE) up -r $(PLASMA_REVISION) ; cd ../ && ./copyIncludes.sh ; fi;
 
 #install the patch
