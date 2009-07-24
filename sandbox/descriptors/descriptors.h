@@ -15,6 +15,10 @@
 #include <errno.h>
 #include <sys/stat.h>
 
+namespace cv
+{
+    typedef KeyPoint Keypoint;
+}
 
 typedef cv::Vector< cv::Vector<float> > vvf;
 #define CVSHOW(name, img) cvNamedWindow(name); cvShowImage(name, img)
