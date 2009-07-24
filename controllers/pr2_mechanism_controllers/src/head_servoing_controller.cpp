@@ -210,12 +210,12 @@ bool HeadServoingControllerNode::initXml(mechanism::RobotState * robot, TiXmlEle
   if(!c_->initXml(robot, config))
     return false;
   //suscriptions
-  node_->subscribe(service_prefix_ + "/set_command_array", joint_cmds_, &HeadServoingControllerNode::setJointCmd, this,1);
-  guard_set_command_array_.set(service_prefix_ + "/set_command_array");
-  node_->subscribe(service_prefix_ + "/head_track_point", head_track_point_, &HeadServoingControllerNode::headTrackPoint, this, 1);
-  guard_head_track_point_.set(service_prefix_ + "/head_track_point");
-  node_->subscribe(service_prefix_ + "/frame_track_point", frame_track_point_, &HeadServoingControllerNode::frameTrackPoint, this, 1);
-  guard_frame_track_point_.set(service_prefix_ + "/frame_track_point");
+  node_->subscribe(service_prefix_ + "/command", joint_cmds_, &HeadServoingControllerNode::setJointCmd, this,1);
+  guard_set_command_array_.set(service_prefix_ + "/command");
+  node_->subscribe(service_prefix_ + "/point_head", head_track_point_, &HeadServoingControllerNode::headTrackPoint, this, 1);
+  guard_head_track_point_.set(service_prefix_ + "/point_head");
+  node_->subscribe(service_prefix_ + "/point_frame_on_head", frame_track_point_, &HeadServoingControllerNode::frameTrackPoint, this, 1);
+  guard_frame_track_point_.set(service_prefix_ + "/point_frame_on_head");
   //services
   node_->advertiseService(service_prefix_ + "/get_command_array", &HeadServoingControllerNode::getJointCmd, this);
   guard_get_command_array_.set(service_prefix_ + "/get_command_array");
@@ -246,7 +246,7 @@ void HeadServoingControllerNode::headTrackPoint()
   point.setX(head_track_point_.point.x);
   point.setY(head_track_point_.point.y);
   point.setZ(head_track_point_.point.z);
-  point.stamp_ = head_track_point_.header.stamp;
+  point.stamp_ = ros::Time();
   point.frame_id_ = head_track_point_.header.frame_id;
 
   tf::Stamped<tf::Point> pan_point;
