@@ -1,0 +1,47 @@
+#include "TREX.nddl"
+
+class Navigator extends Behavior {
+  predicate Inactive{}
+
+  predicate Active{
+    string frame_id;
+    float time_stamp;
+    float x;
+    float y;
+    float z;
+    float qx;
+    float qy;
+    float qz;
+    float qw;
+
+    // Constraint must be defined here to allow x and y values to be accessible for planning.
+    defaultOnCommit(frame_id, "map");
+  }
+
+  predicate Inactive{
+    string frame_id;
+    float time_stamp;
+    float x;
+    float y;
+    float z;
+    float qx;
+    float qy;
+    float qz;
+    float qw;
+
+    // Constraint must be defined here to allow x and y values to be accessible for planning.
+    defaultOnCommit(frame_id, "map");
+  }
+
+  Navigator(Mode _mode){
+    super(_mode);
+  }
+};
+
+
+Navigator::Inactive{
+  if(status == SUCCESS){
+    met_by(Active p);
+    eq_pose_msg(object, p.object);
+  }
+}
