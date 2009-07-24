@@ -187,7 +187,7 @@ namespace action_tools {
               ROS_ERROR("Attempt to publish feedback on an uninitialized GoalHandle");
           }
 
-          boost::shared_ptr<const Goal> getGoal(){
+          boost::shared_ptr<const Goal> getGoal() const{
             //if we have a goal that is non-null
             if(goal_){
               //create the deleter for our goal subtype
@@ -197,7 +197,7 @@ namespace action_tools {
             return boost::shared_ptr<const Goal>();
           }
 
-          GoalID getGoalID(){
+          GoalID getGoalID() const{
             if(goal_)
               return (*status_it_).status_.goal_id;
             else{
@@ -206,7 +206,7 @@ namespace action_tools {
             }
           }
 
-          GoalStatus getGoalStatus(){
+          GoalStatus getGoalStatus() const{
             if(goal_)
               return (*status_it_).status_;
             else{
@@ -218,14 +218,14 @@ namespace action_tools {
         private:
           typename std::list<StatusTracker>::iterator status_it_;
           boost::shared_ptr<const ActionGoal> goal_;
-          const ActionServer<ActionGoal, Goal, ActionResult, Result, ActionFeedback, Feedback>* as_;
+          ActionServer<ActionGoal, Goal, ActionResult, Result, ActionFeedback, Feedback>* as_;
           boost::shared_ptr<void> handle_tracker_;
           friend class ActionServer<ActionGoal, Goal, ActionResult, Result, ActionFeedback, Feedback>;
       };
 
       ActionServer(ros::NodeHandle n, std::string name, 
-          boost::function<void (const GoalHandle&)> goal_cb, 
-          boost::function<void (const GoalHandle&)> preempt_cb)
+          boost::function<void (GoalHandle)> goal_cb = boost::function<void (GoalHandle)>(), 
+          boost::function<void (GoalHandle)> preempt_cb = boost::function<void (GoalHandle)>())
         : node_(n, name), goal_callback_(goal_cb), preempt_callback_(preempt_cb) {
           status_pub_ = node_.advertise<action_tools::GoalStatusArray>("status", 1);
           result_pub_ = node_.advertise<ActionResult>("result", 1);
