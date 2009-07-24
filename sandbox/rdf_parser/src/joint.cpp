@@ -66,33 +66,33 @@ bool JointLimits::initXml(TiXmlElement* config)
 {
   // Get min joint limit
   const char* min_str = config->Attribute("min");
-  if (min_str)
+  if (min_str == NULL)
     std::cout << "joint limit: no min\n" << std::endl;
   else
     this->min_ = atof(min_str);
 
   // Get min joint limit
   const char* max_str = config->Attribute("max");
-  if (max_str)
+  if (max_str == NULL)
     std::cout << "joint limit: no max\n" << std::endl;
   else
     this->max_ = atof(max_str);
 
   // Get min joint limit
   const char* effort_str = config->Attribute("effort");
-  if (effort_str)
+  if (effort_str == NULL)
     std::cout << "joint limit: no effort\n" << std::endl;
   else
     this->effort_ = atof(effort_str);
 
   // Get min joint limit
   const char* velocity_str = config->Attribute("velocity");
-  if (velocity_str)
+  if (velocity_str == NULL)
     std::cout << "joint limit: no velocity\n" << std::endl;
   else
     this->velocity_ = atof(velocity_str);
 
-  if (min_str || max_str || effort_str || velocity_str)
+  if (min_str == NULL || max_str == NULL || effort_str == NULL || velocity_str == NULL)
     return true;
   else
     return false;
@@ -137,7 +137,7 @@ bool Joint::initXml(TiXmlElement* config)
     // axis
     TiXmlElement *axis_xml = config->FirstChildElement("axis");
     if (axis_xml)
-    if (this->axis_.init(axis_xml->Attribute("xyz")))
+    if (!this->axis_.init(axis_xml->Attribute("xyz")))
     {
       if (this->type_ == PLANAR)
         std::cout << "PLANAR Joint " << this->name_

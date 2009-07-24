@@ -79,7 +79,7 @@ bool Inertial::initXml(TiXmlElement *config)
 {
   // Origin
   TiXmlElement *o = config->FirstChildElement("origin");
-  if (this->origin_.initXml(o))
+  if (!this->origin_.initXml(o))
   {
     std::cerr << "Inertial has a malformed origin tag" << std::endl;
     return false;
@@ -129,7 +129,7 @@ bool Visual::initXml(TiXmlElement *config)
 {
   // Origin
   TiXmlElement *o = config->FirstChildElement("origin");
-  if (this->origin_.initXml(o))
+  if (!this->origin_.initXml(o))
   {
     std::cerr << "Visual has a malformed origin tag" << std::endl;
     return false;
@@ -155,7 +155,7 @@ bool Collision::initXml(TiXmlElement* config)
 {
   // Origin
   TiXmlElement *o = config->FirstChildElement("origin");
-  if (this->origin_.initXml(o))
+  if (!this->origin_.initXml(o))
   {
     std::cerr << "Collision has a malformed origin tag" << std::endl;
     return false;

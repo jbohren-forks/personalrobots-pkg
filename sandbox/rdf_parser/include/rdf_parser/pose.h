@@ -168,9 +168,24 @@ public:
   bool initXml(TiXmlElement* xml)
   {
     if (!xml)
+    {
+      std::cout << "parsing pose: xml empty" << std::endl;
       return false;
+    }
     else
-      return (this->pos_.init(xml->Attribute("xyz")) && this->rot_.init(xml->Attribute("rpy")));
+    {
+      if (!this->pos_.init(xml->Attribute("xyz")))
+      {
+        std::cout << "parsing pose: no xyz" << std::endl;
+        return false;
+      }
+      if (!this->rot_.init(xml->Attribute("rpy")))
+      {
+        std::cout << "parsing pose: no rpy" << std::endl;
+        return false;
+      }
+      return true;
+    }
   };
   Vector3  pos_;
   Rotation rot_;

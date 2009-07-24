@@ -73,7 +73,7 @@ bool RDF::initXml(TiXmlElement *robot_xml)
     if (joint->initXml(joint_xml))
     {
       joints_.insert(make_pair(joint->getName(),joint));
-      std::cout << "successfully added a new joint (" << joint->getName() << std::endl;
+      std::cout << "successfully added a new joint (" << joint->getName() << ")" << std::endl;
     }
     else
     {
@@ -83,13 +83,13 @@ bool RDF::initXml(TiXmlElement *robot_xml)
   }
   // Get Joint elements defined inside Link elements
   for (TiXmlElement* link_xml = robot_xml->FirstChildElement("link"); link_xml; link_xml = link_xml->NextSiblingElement("link"))
-    for (TiXmlElement* joint_xml = robot_xml->FirstChildElement("joint"); joint_xml; joint_xml = joint_xml->NextSiblingElement("joint"))
+    for (TiXmlElement* joint_xml = link_xml->FirstChildElement("joint"); joint_xml; joint_xml = joint_xml->NextSiblingElement("joint"))
     {
       Joint* joint = new Joint();
       if (joint->initXml(joint_xml))
       {
         joints_.insert(make_pair(joint->getName(),joint));
-        std::cout << "successfully added a new joint (" << joint->getName() << std::endl;
+        std::cout << "successfully added a new joint (" << joint->getName() << ")" << std::endl;
       }
       else
       {
@@ -102,15 +102,16 @@ bool RDF::initXml(TiXmlElement *robot_xml)
   // Get all links
   for (TiXmlElement* link_xml = robot_xml->FirstChildElement("link"); link_xml; link_xml = link_xml->NextSiblingElement("link"))
   {
+    std::cout << "new link " << std::endl;
     Link* link = new Link();
     if (link->initXml(link_xml))
     {
       links_.insert(make_pair(link->getName(),link));
-      std::cout << "successfully added a new link (" << link->getName() << std::endl;
+      std::cout << "successfully added a new link (" << link->getName() << ")" << std::endl;
     }
     else
     {
-      std::cout << "link xml is not initXml()-able, might be a name reference" << std::endl;
+      std::cout << "link xml is not initialized correctly" << std::endl;
       delete link;
     }
   }
