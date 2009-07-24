@@ -154,7 +154,9 @@ void JointTrajectoryController2::update()
         traj.segments[seg].a[i] +
         traj.segments[seg].b[i] * t +
         traj.segments[seg].c[i] * pow(t, 2) +
-        traj.segments[seg].d[i] * pow(t, 3);
+        traj.segments[seg].d[i] * pow(t, 3) +
+        traj.segments[seg].e[i] * pow(t, 4) +
+        traj.segments[seg].f[i] * pow(t, 5);
       qd[i] = 0;
       qdd[i] = 0;
     }
@@ -168,14 +170,20 @@ void JointTrajectoryController2::update()
         traj.segments[seg].a[i] +
         traj.segments[seg].b[i] * t +
         traj.segments[seg].c[i] * pow(t, 2) +
-        traj.segments[seg].d[i] * pow(t, 3);
+        traj.segments[seg].d[i] * pow(t, 3) +
+        traj.segments[seg].e[i] * pow(t, 4) +
+        traj.segments[seg].f[i] * pow(t, 5);
       qd[i] =
         traj.segments[seg].b[i] +
         2 * traj.segments[seg].c[i] * t +
-        3 * traj.segments[seg].d[i] * pow(t, 2);
+        3 * traj.segments[seg].d[i] * pow(t, 2) +
+        4 * traj.segments[seg].e[i] * pow(t, 3) +
+        5 * traj.segments[seg].f[i] * pow(t, 4);
       qdd[i] =
         2 * traj.segments[seg].c[i] +
-        6 * traj.segments[seg].d[i] * t;
+        6 * traj.segments[seg].d[i] * t +
+        12 * traj.segments[seg].e[i] * pow(t, 2) +
+        20 * traj.segments[seg].f[i] * pow(t, 3);
     }
   }
 
@@ -251,6 +259,22 @@ void JointTrajectoryController2::commandCB(const manipulation_msgs::SplineTrajCo
   {
     new_traj.start_times.push_back(start_time);
     new_traj.segments.push_back(msg->segments[i]);
+
+    // Makes sure the trajectory is quintic
+    int n = new_traj.segments.size() - 1;
+    if (new_traj.segments[n].a.size() != joints_.size())
+      new_traj.segments[n].a.resize(joints_.size(), 0.0);
+    if (new_traj.segments[n].b.size() != joints_.size())
+      new_traj.segments[n].b.resize(joints_.size(), 0.0);
+    if (new_traj.segments[n].c.size() != joints_.size())
+      new_traj.segments[n].c.resize(joints_.size(), 0.0);
+    if (new_traj.segments[n].d.size() != joints_.size())
+      new_traj.segments[n].d.resize(joints_.size(), 0.0);
+    if (new_traj.segments[n].e.size() != joints_.size())
+      new_traj.segments[n].e.resize(joints_.size(), 0.0);
+    if (new_traj.segments[n].f.size() != joints_.size())
+      new_traj.segments[n].f.resize(joints_.size(), 0.0);
+
     start_time += msg->segments[i].duration.toSec();
   }
 
