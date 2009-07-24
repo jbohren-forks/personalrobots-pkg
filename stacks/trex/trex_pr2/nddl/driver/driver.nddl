@@ -1,0 +1,78 @@
+#include "common/nav.nddl"
+#include "common/move_behavior.nddl"
+
+
+float MOVE_BASE_DURATION_BOUND = 600.0;
+
+class DriverController extends AgentTimeline{
+  predicate Holds{
+    bool active;
+    bool at_goal;
+    bool finished;
+  }
+
+  DriverController(){
+    super(Internal, "Holds");
+  }
+};
+
+MoveBehavior driver = new MoveBehavior(Internal);
+DriverController driver_controller = new DriverController();
+MoveBase move_base = new MoveBase(External);
+
+// Initialize
+fact(driver_controller.Holds nc_initial_value);
+nc_initial_value.active = false;
+
+MoveBehavior::Active{
+  starts(DriverController.Holds nc);
+  eq(nc.active, true);
+  eq(nc.finished, false);
+}
+
+DriverController::Holds{
+  if(active == false){
+    defaultOnCommit(at_goal, false);
+    defaultOnCommit(finished, false);
+  }
+
+  met_by(Holds p);
+  defaultOnCommit(active, p.active);
+  defaultOnCommit(at_goal, p.at_goal);
+  defaultOnCommit(finished, p.finished);
+
+  if(active == true){
+    if(finished == true){
+      meets(driver.Inactive dr_inactive);
+      eq(duration, 1);
+      meets(Holds s);
+      eq(s.active, false);
+
+      if(at_goal == true){
+	eq(dr_inactive.status, SUCCESS);
+      }
+      else{
+	eq(dr_inactive.status, ABORTED);
+      }
+    }
+    else {
+      contained_by(driver.Active d);	
+      contains_start(move_base.Active cmd_move);
+      concurrent(cmd_move.end, end);
+      leq(cmd_move.duration, MOVE_BASE_DURATION_BOUND);
+      eq_pose_msg(cmd_move.object, d.object);
+    }
+  }
+  else {
+    contained_by(driver.Inactive);
+  }
+}
+
+MoveBase::Inactive{
+  starts(driver_controller.Holds nc);
+
+  if(status == SUCCESS){
+    eq(nc.finished, true);
+    eq(nc.at_goal, true);
+  }
+}
