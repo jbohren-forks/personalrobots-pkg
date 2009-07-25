@@ -178,9 +178,9 @@ bool RDF::initXml(TiXmlElement *robot_xml)
       // add links to child Link element for Joint elements
       link->second->setParentJoint(parent_joint->second);
     }
-      
 
     // add links to parent Link element for Joint elements
+    // since we're using old URDF format, set origins for Joint elements using origin_xml_ in links
 
   }
       
@@ -227,11 +227,10 @@ void RDF::addChildren(Link* p)
   }
 }
 
-bool RDF::getLink(const std::string& name, Link*& link)
+Link* RDF::getLink(const std::string& name)
 {
-  link = NULL;
   if (this->links_.find(name) == this->links_.end())
-    return false;
+    return NULL;
 
   link = this->links_.find(name)->second;
   return true;
