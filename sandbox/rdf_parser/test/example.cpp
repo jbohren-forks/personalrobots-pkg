@@ -62,25 +62,42 @@ int main(int argc, char** argv)
   }
 
   // get info from parser
+  std::cout << "---------- Finished Loading from URDF XML, Now Checking RDF structure ------------" << std::endl;
+  // get root link
   Link* root_link=robot.getRoot();
+  cout << "root " << root_link->getName() << " has " << root_link->getChildren()->size() << " children" << endl << endl;
   if (!root_link) return -1;
-  cout << "root " << root_link->getName() << " has " << root_link->getChildren().size() << " children" << endl;
+
 
   // test first child
-  std::vector<Link*> children = root_link->getChildren();
-  Link* first_child = *children.begin();
+  std::vector<Link*>* children = root_link->getChildren();
+  Link* first_child = *children->begin();
   if (!first_child) return -1;
-  cout << "first child " << first_child->getName() << " has " << children.size() << " children" << endl;
+  cout << "first child is: " << first_child->getName() << std::endl;
+  // test children of first child
+  std::cout << "first child has " << first_child->getChildren()->size() << " children" << endl << endl;
 
-  // go through all children, test grandchild
+
+  // go through all children, print grandchildren
+  cout << "root link: " << root_link->getName() << endl;
   int count = 0;
-  for (std::vector<Link*>::iterator c = root_link->getChildren().begin(); c != root_link->getChildren().end(); c++)
+  for (std::vector<Link*>::iterator child = children->begin(); child != children->end(); child++)
   {
-    // first grandchild
-    std::vector<Link*> grandchildren = (*c)->getChildren();
-    Link* grandchild = *grandchildren.begin();
-    if (grandchild)
-      cout << count++ << " : " << (*c)->getName() << " : " << grandchild->getName() << endl;
+    if (*child)
+    {
+      cout << "  child(" << count++ << "):  " << (*child)->getName() << endl;
+      // first grandchild
+      std::vector<Link*>* grandchildren = (*child)->getChildren();
+      int count2 = 0;
+      for (std::vector<Link*>::iterator grandchild = grandchildren->begin(); grandchild != grandchildren->end(); grandchild++)
+        if (*grandchild)
+          cout << "    grandchild(" << count2++ << "): " << (*grandchild)->getName() << endl;
+    }
+    else
+    {
+      cout << "root link: " << root_link->getName() << " has a null child!" << *child << std::endl;
+      return -1;
+    }
   }
   return 0;
 }

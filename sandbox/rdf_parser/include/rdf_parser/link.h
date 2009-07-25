@@ -146,10 +146,10 @@ public:
   const std::string& getParentJointName();
 
   /// returns children of the link
-  std::vector<Link*> getChildren();
+  std::vector<Link*>* getChildren();
 
   /// returns joints attaching link to children
-  std::vector<Joint*> getChildrenJoint();
+  std::vector<Joint*>* getChildrenJoint();
 
   /// inertial element
   boost::scoped_ptr<Inertial> inertial_;

@@ -238,6 +238,10 @@ bool Mesh::initXml(TiXmlElement *c)
 
 bool Link::initXml(TiXmlElement* config)
 {
+  this->children_.clear();
+  this->child_joints_.clear();
+  this->maps_.clear();
+
   const char *name = config->Attribute("name");
   if (!name)
   {
@@ -326,14 +330,14 @@ Link* Link::getParent()
   return parent_;
 }
 
-std::vector<Link*> Link::getChildren()
+std::vector<Link*>* Link::getChildren()
 {
-  return this->children_;
+  return &this->children_;
 }
 
-std::vector<Joint*> Link::getChildrenJoint()
+std::vector<Joint*>* Link::getChildrenJoint()
 {
-  return this->child_joints_;
+  return &this->child_joints_;
 }
 
 void Link::setParent(Link* parent)

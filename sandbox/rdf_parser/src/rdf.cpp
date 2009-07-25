@@ -54,7 +54,7 @@ RDF::RDF()
 
 bool RDF::initXml(TiXmlElement *robot_xml)
 {
-  cout << "Parsing robot xml" << endl;
+  cout << "INFO: Parsing robot xml" << endl;
   if (!robot_xml) return false;
 
 
@@ -81,11 +81,11 @@ bool RDF::initXml(TiXmlElement *robot_xml)
     if (joint->initXml(joint_xml))
     {
       joints_.insert(make_pair(joint->getName(),joint));
-      std::cout << "successfully added a new joint (" << joint->getName() << ")" << std::endl;
+      std::cout << "INFO: successfully added a new joint (" << joint->getName() << ")" << std::endl;
     }
     else
     {
-      std::cerr << "Joint element is a malformed xml" << std::endl;
+      std::cerr << "ERROR: Joint element is a malformed xml" << std::endl;
       delete joint;
     }
   }
@@ -97,18 +97,18 @@ bool RDF::initXml(TiXmlElement *robot_xml)
       if (joint->initXml(joint_xml))
       {
         joints_.insert(make_pair(joint->getName(),joint));
-        std::cout << "successfully added a new joint (" << joint->getName() << ")" << std::endl;
+        std::cout << "INFO: successfully added a new joint (" << joint->getName() << ")" << std::endl;
       }
       else
       {
         if (this->joints_.find(joint->getName()) == this->joints_.end())
         {
           const char* link_name = link_xml->Attribute("name");
-          std::cerr << "Joint: " << joint->getName() << " is not defined anywhere, only referenced by name by Link: " << link_name << std::endl;
+          std::cerr << "ERROR: Joint: " << joint->getName() << " is not defined anywhere, only referenced by name by Link: " << link_name << std::endl;
         }
         else
         {
-          std::cout << "Joint: " << joint->getName() << " is already loaded." << std::endl;
+          std::cout << "INFO: Joint: " << joint->getName() << " is already loaded." << std::endl;
         }
         delete joint;
       }
@@ -124,11 +124,11 @@ bool RDF::initXml(TiXmlElement *robot_xml)
     if (link->initXml(link_xml))
     {
       links_.insert(make_pair(link->getName(),link));
-      std::cout << "successfully added a new link (" << link->getName() << ")" << std::endl;
+      std::cout << "INFO: successfully added a new link (" << link->getName() << ")" << std::endl;
     }
     else
     {
-      std::cout << "link xml is not initialized correctly" << std::endl;
+      std::cout << "INFO: link xml is not initialized correctly" << std::endl;
       delete link;
     }
   }
@@ -139,14 +139,14 @@ bool RDF::initXml(TiXmlElement *robot_xml)
   for (std::map<std::string,Link*>::iterator link = this->links_.begin();link != this->links_.end(); link++)
   {
     std::string parent_name = link->second->getParentName();
-    std::cout << "build tree: " << link->first << " is a child of " << parent_name << std::endl;
+    std::cout << "INFO: build tree: " << link->first << " is a child of " << parent_name << std::endl;
 
     // add parent link in Link element
     Link* parent_link;
     if (!this->getLink(parent_name,parent_link))
     {
       if (parent_name == "world")
-        std::cout << "parent link: " << parent_name << " is a special case." << std::endl;
+        std::cout << "INFO: parent link: " << parent_name << " is a special case." << std::endl;
       else
       {
         std::cerr << "ERROR: parent link: " << parent_name << " is not found!" << std::endl;
@@ -163,13 +163,14 @@ bool RDF::initXml(TiXmlElement *robot_xml)
 
       // add child link in parent Link element
       parent_link->addChild(link->second);
+      //std::cout << "INFO: now Link: " << parent_link->getName() << " has " << parent_link->getChildren()->size() << " children" << std::endl;
 
     }
 
     std::map<std::string,Joint*>::iterator parent_joint = this->joints_.find(link->second->getParentJointName());
     if (parent_joint == this->joints_.end())
     {
-      std::cerr << "link: " << link->first << " parent joint: " << link->second->getParentJointName()<< " not found in joint list" << std::endl;
+      std::cerr << "ERROR: link: " << link->first << " parent joint: " << link->second->getParentJointName()<< " not found in joint list" << std::endl;
       return false;
     }
     else
@@ -191,10 +192,10 @@ bool RDF::initXml(TiXmlElement *robot_xml)
     {
       if (root_name)
       {
-        std::cout << "child: " << p->first << " parent: " << p->second << " root: " << *root_name << std::endl;
+        std::cout << "INFO: child: " << p->first << " parent: " << p->second << " root: " << *root_name << std::endl;
         if (*root_name != p->second)
         {
-          cerr << "Two root links found: " << *root_name << " and " << p->second << endl;
+          cerr << "ERROR: Two root links found: " << *root_name << " and " << p->second << endl;
           return false;
         }
       }
@@ -203,8 +204,9 @@ bool RDF::initXml(TiXmlElement *robot_xml)
     }
   }
   if (root_name == NULL)
-  {cerr << "No root link found. The robot xml contains a graph instead of a tree." << endl; return false;}
-  cout << *root_name << " is root link " << endl;
+  {cerr << "ERROR: No root link found. The robot xml contains a graph instead of a tree." << endl; return false;}
+  cout << "INFO: Link: " << *root_name << " is the root Link " << endl;
+  getLink(*root_name,this->root_link_); // set root link
 
   // Get Maps
   for (TiXmlElement* map_xml = robot_xml->FirstChildElement("map"); map_xml; map_xml = map_xml->NextSiblingElement("map"))
