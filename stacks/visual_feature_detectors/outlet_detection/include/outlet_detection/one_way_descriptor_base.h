@@ -87,6 +87,10 @@ class CvOneWayDescriptorBase
         // - filename: output filename
         void SavePCADescriptors(const char* filename);
         
+    protected:
+        void BuildDescriptors(IplImage* train_image, const vector<feature_t>& features, 
+                         const char* feature_label, CvOneWayDescriptor* descriptors, int* part_id = 0, float scale = 1.0f);
+        
         
         
     protected:
@@ -104,6 +108,8 @@ class CvOneWayDescriptorBase
         
         CvAffinePose* m_poses; // array of poses
         CvMat** m_transforms; // array of affine transformations corresponding to poses
+        
+        int* m_part_id; // contains part id for each of object descriptors
     };
 
 void readTrainingBase(const char* config_filename, char* outlet_filename, 

@@ -98,12 +98,6 @@ inline CvRect double_rect(CvRect small_rect)
 				  small_rect.width*2, small_rect.height*2);
 }
 
-inline CvRect resize_rect(CvRect rect, float alpha)
-{
-	return cvRect(rect.x + int(0.5*(1 - alpha)*rect.width), rect.y + int(0.5*(1 - alpha)*rect.height), 
-				  int(rect.width*alpha), int(rect.height*alpha));
-}
-
 inline int is_point_inside_rect(CvRect rect, CvPoint point)
 {
 	if(point.x >= rect.x && point.y >= rect.y && 
