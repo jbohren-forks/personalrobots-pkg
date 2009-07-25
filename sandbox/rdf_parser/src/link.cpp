@@ -331,11 +331,6 @@ std::vector<Link*> Link::getChildren()
   return this->children_;
 }
 
-Joint* Link::getParentJoint()
-{
-  return this->parent_joint_;
-}
-
 std::vector<Joint*> Link::getChildrenJoint()
 {
   return this->child_joints_;

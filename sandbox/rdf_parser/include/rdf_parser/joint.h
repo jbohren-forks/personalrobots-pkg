@@ -116,9 +116,14 @@ private:
   Vector3 axis_;
 
   Link* parent_link_;
+  /// parent_pose_
+  ///   transform from Parent Link to Joint Frame for Parent
   Pose  parent_pose_;
 
   Link* child_link_;
+
+  /// child_pose_
+  ///   transform from Parent Link to Joint Frame for Parent
   Pose  child_pose_;
 
   /// Joint Properties
@@ -133,7 +138,9 @@ private:
 public:
   // Joint element has one parent and one child Link
   void setParentLink(Link* parent) {this->parent_link_ = parent;};
+  void setParentPose(Pose pose) {this->parent_pose_ = pose;};
   void setChildLink(Link* child) {this->child_link_ = child;};
+  void setChildPose(Pose pose) {this->child_pose_ = pose;};
 };
 
 }

@@ -148,9 +148,6 @@ public:
   /// returns children of the link
   std::vector<Link*> getChildren();
 
-  /// returns joint attaching link to parent
-  Joint* getParentJoint();
-
   /// returns joints attaching link to children
   std::vector<Joint*> getChildrenJoint();
 
@@ -163,18 +160,27 @@ public:
   /// collision element
   boost::scoped_ptr<Collision> collision_;
 
+  /// Parent Joint element
+  ///   explicitly stating "parent" because we want directional-ness for tree structure
+  ///   every link can have one parent
+  Joint* parent_joint_;
+
 private:
   std::string name_;
 
   Link* parent_;
   std::vector<Link*> children_;
 
-  Joint* parent_joint_;
   std::vector<Joint*> child_joints_;
 
   std::vector<TiXmlElement*> maps_;
 
-  // store parent Link/Joint and origin, these are to be moved to joint
+  // FOR CURRENT URDF --> NEW DOM COMPATIBILITY
+  // store parent Link, Joint and origin as raw string/TiXmlElement
+  // the relationship goes like this for the current urdf definition -> DOM:
+  //   * origin_xml_ defines the parent_joint_pose == the pose transform from parent_link to parent_joint
+  //   * assumes transform from current_link to current_joint IS Identity
+  //   * joint angle IS the pose difference between parent_joint_pose and current_joint_pose
   std::string parent_joint_name_;
   std::string parent_name_;
   TiXmlElement* origin_xml_;
