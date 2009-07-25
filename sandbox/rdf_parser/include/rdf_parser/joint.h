@@ -62,6 +62,7 @@ public:
   bool initXml(TiXmlElement* config);
   double damping_;
   double friction_;
+  std::vector<TiXmlElement*> maps_;
 };
 
 class JointLimits
@@ -80,6 +81,7 @@ public:
   double max_;
   double effort_;
   double velocity_;
+  std::vector<TiXmlElement*> maps_;
 
 };
 

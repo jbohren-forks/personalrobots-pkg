@@ -57,6 +57,7 @@ public:
   bool initXml(TiXmlElement *xml);
   Link* getRoot() {return this->root_link_;};
 
+  std::vector<TiXmlElement*> maps_;
 private:
   bool getLink(TiXmlElement *link_xml, Link& link);
   void addChildren(Link* p);

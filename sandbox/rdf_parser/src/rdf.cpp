@@ -37,7 +37,6 @@
 #include <boost/algorithm/string.hpp>
 #include <vector>
 #include "rdf_parser/rdf.h"
-#include "rdf_parser/rdf_tools.h"
 
 using namespace std;
 
@@ -62,7 +61,7 @@ bool RDF::initXml(TiXmlElement *robot_xml)
   /// parsing strategy:
   ///   1.  get all Joint elements, store in map<name,Joint*>
   ///   2.  get all Link elements, store in map<name,Link*>
-  ///   3.  call perspective initXml() to create Link elements and Joint elements
+  ///   3.  build tree - fill in pointers for parents, children, etc
 
   /// Because old URDF allows us to define Joint elements inside/outside of Link elements, we have to do this
   /// @todo: give deprecation warning and phase out defining Joint elements inside Link elements
@@ -102,7 +101,6 @@ bool RDF::initXml(TiXmlElement *robot_xml)
   // Get all links
   for (TiXmlElement* link_xml = robot_xml->FirstChildElement("link"); link_xml; link_xml = link_xml->NextSiblingElement("link"))
   {
-    std::cout << "new link " << std::endl;
     Link* link = new Link();
     if (link->initXml(link_xml))
     {
@@ -136,6 +134,12 @@ bool RDF::initXml(TiXmlElement *robot_xml)
 
   // Start building tree
   //addChildren(links_.find(root_name)->second);
+
+
+
+  // Get Maps
+  for (TiXmlElement* map_xml = robot_xml->FirstChildElement("map"); map_xml; map_xml = map_xml->NextSiblingElement("map"))
+    this->maps_.push_back(map_xml);
 
   return true;
 }

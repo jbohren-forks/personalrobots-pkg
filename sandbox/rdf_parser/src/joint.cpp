@@ -56,6 +56,10 @@ bool JointProperties::initXml(TiXmlElement* config)
   else
     this->friction_ = atof(friction_str);
 
+  // Maps
+  for (TiXmlElement* map_xml = config->FirstChildElement("map"); map_xml; map_xml = map_xml->NextSiblingElement("map"))
+    this->maps_.push_back(map_xml);
+
   if (damping_str == NULL || friction_str == NULL)
     return true;
   else
@@ -92,6 +96,10 @@ bool JointLimits::initXml(TiXmlElement* config)
   else
     this->velocity_ = atof(velocity_str);
 
+  // Maps
+  for (TiXmlElement* map_xml = config->FirstChildElement("map"); map_xml; map_xml = map_xml->NextSiblingElement("map"))
+    this->maps_.push_back(map_xml);
+
   if (min_str == NULL || max_str == NULL || effort_str == NULL || velocity_str == NULL)
     return true;
   else
@@ -114,7 +122,14 @@ bool Joint::initXml(TiXmlElement* config)
   this->name_ = name;
 
   // Get Joint type
-  const char* type_str = config->Attribute("type");
+  const char* type = config->Attribute("type");
+  if (!type)
+  {
+    std::cerr << "joint " << name_
+              << " has no type" << std::endl;
+    return false;
+  }
+  std::string type_str = type;
   if (type_str == "planar")
     type_ = PLANAR;
   else if (type_str == "floating")
@@ -153,7 +168,7 @@ bool Joint::initXml(TiXmlElement* config)
     }
   }
 
-  /// Get limit
+  // Get limit
   TiXmlElement *limit_xml = config->FirstChildElement("limit");
   if (limit_xml)
   {
@@ -166,7 +181,7 @@ bool Joint::initXml(TiXmlElement* config)
     }
   }
 
-  /// Get properties
+  // Get properties
   TiXmlElement *prop_xml = config->FirstChildElement("joint_properties");
   if (prop_xml)
   {
@@ -178,6 +193,11 @@ bool Joint::initXml(TiXmlElement* config)
       joint_properties_.reset();
     }
   }
+
+  // Get Maps
+  for (TiXmlElement* map_xml = config->FirstChildElement("map"); map_xml; map_xml = map_xml->NextSiblingElement("map"))
+    this->maps_.push_back(map_xml);
+
   return true;
 }
 
