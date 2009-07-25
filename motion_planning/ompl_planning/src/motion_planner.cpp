@@ -190,9 +190,7 @@ public:
 	{
 	    Model *model = new Model();
 	    model->planningMonitor = planningMonitor_;
-	    model->collisionSpace = planningMonitor_->getEnvironmentModel();
-	    model->kmodel = planningMonitor_->getKinematicModel();
-	    model->groupID = model->kmodel->getGroupID(it->first);
+	    model->groupID = planningMonitor_->getKinematicModel()->getGroupID(it->first);
 	    model->groupName = it->first;
 
 	    model->createMotionPlanningInstances(collisionModels_->getGroupPlannersConfig(model->groupName));

@@ -83,7 +83,7 @@ namespace ompl_planning
 	    for (unsigned int i = 0 ; i < pc.size() ; ++i)
 	    {
 		planning_environment::PoseConstraintEvaluator *pce = new planning_environment::PoseConstraintEvaluator();
-		pce->use(model_->kmodel, pc[i]);
+		pce->use(model_->planningMonitor->getKinematicModel(), pc[i]);
 		pce_.push_back(pce);
 		threshold = ompl::STATE_EPSILON;
 	    }
@@ -102,7 +102,6 @@ namespace ompl_planning
     protected:
 	
 	double evaluateGoalAux(const ompl::base::State *state, std::vector<bool> *decision) const;
-	void update(const ompl::base::State *state) const;
 	
 	mutable ModelBase                                           *model_;
 	std::vector<planning_environment::PoseConstraintEvaluator*>  pce_;

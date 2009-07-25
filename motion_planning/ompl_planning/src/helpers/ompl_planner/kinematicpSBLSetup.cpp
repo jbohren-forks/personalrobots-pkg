@@ -34,60 +34,53 @@
 
 /** \author Ioan Sucan */
 
-#ifndef OMPL_PLANNING_EXTENSIONS_STATE_VALIDATOR_
-#define OMPL_PLANNING_EXTENSIONS_STATE_VALIDATOR_
+#include "ompl_planning/planners/kinematicpSBLSetup.h"
 
-#include <ompl/base/StateValidityChecker.h>
-#include <collision_space/environment.h>
-
-#include "ompl_planning/ModelBase.h"
-#include "ompl_planning/extensions/SpaceInformation.h"
-
-#include <iostream>
-
-namespace ompl_planning
+ompl_planning::kinematicpSBLSetup::kinematicpSBLSetup(ModelBase *m) : PlannerSetup(m)
 {
-    
-    class StateValidityPredicate : public ompl::base::StateValidityChecker
+    name = "kinematic::pSBL";
+    priority = 12;
+}
+
+ompl_planning::kinematicpSBLSetup::~kinematicpSBLSetup(void)
+{
+    if (dynamic_cast<ompl::kinematic::pSBL*>(mp))
     {
-    public:
-        StateValidityPredicate(SpaceInformationKinematicModel *si, ModelBase *model) : ompl::base::StateValidityChecker()
-	{
-	    ksi_ = si;
-	    dsi_ = NULL;
-	    model_ = model;
-	}
-	
-        StateValidityPredicate(SpaceInformationDynamicModel *si, ModelBase *model) : ompl::base::StateValidityChecker()
-	{
-	    dsi_ = si;
-	    ksi_ = NULL;
-	    model_ = model;
-	}
+	ompl::base::ProjectionEvaluator *pe = dynamic_cast<ompl::kinematic::pSBL*>(mp)->getProjectionEvaluator();
+	if (pe)
+	    delete pe;
+    }
+}
 
-	virtual ~StateValidityPredicate(void)
-	{
-	}
-	
-	virtual bool operator()(const ompl::base::State *s) const;
-	void setConstraints(const motion_planning_msgs::KinematicConstraints &kc);
-	void clearConstraints(void);
-	void printSettings(std::ostream &out) const;
-	
-    protected:
-	
-	bool check(const ompl::base::State *s, collision_space::EnvironmentModel *em, planning_models::KinematicModel *km,
-		   const planning_environment::KinematicConstraintEvaluatorSet *kce) const;
-	
-	ModelBase                                             *model_;
-	
-	// one of the next two will be instantiated
-	SpaceInformationKinematicModel                        *ksi_;
-	SpaceInformationDynamicModel                          *dsi_;
-	
-    };
+bool ompl_planning::kinematicpSBLSetup::setup(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
+{
+    preSetup(options);
     
-} // ompl_planning
+    ompl::kinematic::pSBL *sbl = new ompl::kinematic::pSBL(dynamic_cast<ompl::kinematic::SpaceInformationKinematic*>(si));
+    mp                         = sbl;	
+    
+    if (options->hasParam("range"))
+    {
+	sbl->setRange(options->getParamDouble("range", sbl->getRange()));
+	ROS_DEBUG("Range is set to %g", sbl->getRange());
+    }
 
-#endif
+    if (options->hasParam("thread_count"))
+    {
+	sbl->setThreadCount(options->getParamInt("thread_count", sbl->getThreadCount()));
+	ROS_DEBUG("Thread count is set to %u", sbl->getThreadCount());
+    }
+
+    sbl->setProjectionEvaluator(getProjectionEvaluator(options));
     
+    if (sbl->getProjectionEvaluator() == NULL)
+    {
+	ROS_WARN("Adding %s failed: need to set both 'projection' and 'celldim' for %s", name.c_str(), model->groupName.c_str());
+	return false;
+    }
+    else
+    {
+	postSetup(options);
+	return true;
+    }
+}

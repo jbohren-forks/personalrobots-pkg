@@ -34,59 +34,24 @@
 
 /** \author Ioan Sucan */
 
-#ifndef OMPL_PLANNING_EXTENSIONS_STATE_VALIDATOR_
-#define OMPL_PLANNING_EXTENSIONS_STATE_VALIDATOR_
+#ifndef OMPL_PLANNING_PLANNERS_KINEMATIC_pSBL_SETUP_
+#define OMPL_PLANNING_PLANNERS_KINEMATIC_pSBL_SETUP_
 
-#include <ompl/base/StateValidityChecker.h>
-#include <collision_space/environment.h>
-
-#include "ompl_planning/ModelBase.h"
-#include "ompl_planning/extensions/SpaceInformation.h"
-
-#include <iostream>
+#include "ompl_planning/planners/PlannerSetup.h"
+#include <ompl/extension/kinematic/extension/sbl/pSBL.h>
 
 namespace ompl_planning
 {
     
-    class StateValidityPredicate : public ompl::base::StateValidityChecker
+    class kinematicpSBLSetup : public PlannerSetup
     {
     public:
-        StateValidityPredicate(SpaceInformationKinematicModel *si, ModelBase *model) : ompl::base::StateValidityChecker()
-	{
-	    ksi_ = si;
-	    dsi_ = NULL;
-	    model_ = model;
-	}
 	
-        StateValidityPredicate(SpaceInformationDynamicModel *si, ModelBase *model) : ompl::base::StateValidityChecker()
-	{
-	    dsi_ = si;
-	    ksi_ = NULL;
-	    model_ = model;
-	}
-
-	virtual ~StateValidityPredicate(void)
-	{
-	}
-	
-	virtual bool operator()(const ompl::base::State *s) const;
-	void setConstraints(const motion_planning_msgs::KinematicConstraints &kc);
-	void clearConstraints(void);
-	void printSettings(std::ostream &out) const;
-	
-    protected:
-	
-	bool check(const ompl::base::State *s, collision_space::EnvironmentModel *em, planning_models::KinematicModel *km,
-		   const planning_environment::KinematicConstraintEvaluatorSet *kce) const;
-	
-	ModelBase                                             *model_;
-	
-	// one of the next two will be instantiated
-	SpaceInformationKinematicModel                        *ksi_;
-	SpaceInformationDynamicModel                          *dsi_;
-	
+        kinematicpSBLSetup(ModelBase *m);
+	virtual ~kinematicpSBLSetup(void);
+	virtual bool setup(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);	
     };
-    
+
 } // ompl_planning
 
 #endif

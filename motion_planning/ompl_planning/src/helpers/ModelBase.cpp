@@ -34,60 +34,62 @@
 
 /** \author Ioan Sucan */
 
-#ifndef OMPL_PLANNING_EXTENSIONS_STATE_VALIDATOR_
-#define OMPL_PLANNING_EXTENSIONS_STATE_VALIDATOR_
-
-#include <ompl/base/StateValidityChecker.h>
-#include <collision_space/environment.h>
-
 #include "ompl_planning/ModelBase.h"
-#include "ompl_planning/extensions/SpaceInformation.h"
-
-#include <iostream>
+#include <boost/thread.hpp>
+#include <map>
 
 namespace ompl_planning
 {
+    static std::map<boost::thread::id, EnvironmentDescription*> ENVS;
+    static boost::mutex                                         lockENVS;    
+}
+
+ompl_planning::EnvironmentDescription* ompl_planning::ModelBase::getEnvironmentDescription(void) const
+{
+    boost::thread::id id = boost::this_thread::get_id();
+    EnvironmentDescription *result = NULL;
     
-    class StateValidityPredicate : public ompl::base::StateValidityChecker
+    lockENVS.lock();    
+    std::map<boost::thread::id, EnvironmentDescription*>::iterator it = ENVS.find(id);
+    if (it == ENVS.end())
     {
-    public:
-        StateValidityPredicate(SpaceInformationKinematicModel *si, ModelBase *model) : ompl::base::StateValidityChecker()
+	if (ENVS.empty())
 	{
-	    ksi_ = si;
-	    dsi_ = NULL;
-	    model_ = model;
+	    result = new EnvironmentDescription();
+	    result->collisionSpace = planningMonitor->getEnvironmentModel();
+	    result->kmodel = result->collisionSpace->getRobotModel().get();
+	    result->constraintEvaluator = &constraintEvaluator;
 	}
-	
-        StateValidityPredicate(SpaceInformationDynamicModel *si, ModelBase *model) : ompl::base::StateValidityChecker()
+	else
 	{
-	    dsi_ = si;
-	    ksi_ = NULL;
-	    model_ = model;
+	    result = new EnvironmentDescription();
+	    result->collisionSpace = planningMonitor->getEnvironmentModel()->clone();
+	    result->kmodel = result->collisionSpace->getRobotModel().get();
+	    planning_environment::KinematicConstraintEvaluatorSet *kce = new planning_environment::KinematicConstraintEvaluatorSet();
+	    kce->add(result->kmodel, constraintEvaluator.getPoseConstraints());
+	    kce->add(result->kmodel, constraintEvaluator.getJointConstraints());
+	    result->constraintEvaluator = kce;
 	}
+	ENVS[id] = result;
+    }
+    else
+	result = it->second;
+    lockENVS.unlock();
+    return result;
+}
 
-	virtual ~StateValidityPredicate(void)
+void ompl_planning::ModelBase::clearEnvironmentDescriptions(void) const
+{    
+    lockENVS.lock();    
+    for (std::map<boost::thread::id, EnvironmentDescription*>::iterator it = ENVS.begin() ; it != ENVS.end() ; ++it)
+    {
+	if (it->second->collisionSpace != planningMonitor->getEnvironmentModel())
 	{
+	    delete it->second->collisionSpace;
+	    delete it->second->constraintEvaluator;
 	}
-	
-	virtual bool operator()(const ompl::base::State *s) const;
-	void setConstraints(const motion_planning_msgs::KinematicConstraints &kc);
-	void clearConstraints(void);
-	void printSettings(std::ostream &out) const;
-	
-    protected:
-	
-	bool check(const ompl::base::State *s, collision_space::EnvironmentModel *em, planning_models::KinematicModel *km,
-		   const planning_environment::KinematicConstraintEvaluatorSet *kce) const;
-	
-	ModelBase                                             *model_;
-	
-	// one of the next two will be instantiated
-	SpaceInformationKinematicModel                        *ksi_;
-	SpaceInformationDynamicModel                          *dsi_;
-	
-    };
-    
-} // ompl_planning
-
-#endif
-    
+	delete it->second;
+    }
+    ENVS.clear();
+    lockENVS.unlock();
+}

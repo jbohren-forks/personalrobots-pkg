@@ -50,8 +50,8 @@ namespace ompl_planning
         LinkPositionProjectionEvaluator(ModelBase *model, const std::string &linkName) : ompl::base::ProjectionEvaluator()
 	{
 	    model_ = model;
-	    link_  = model_->kmodel->getLink(linkName);
-	    if (link_ == NULL)
+	    linkName_ = linkName;
+	    if (model_->planningMonitor->getKinematicModel()->getLink(linkName) == NULL)
 		ROS_ERROR("Unknown link: '%s'", linkName.c_str());
 	}
 	
@@ -64,8 +64,9 @@ namespace ompl_planning
 	/** Compute the projection as an array of double values */
 	virtual void operator()(const ompl::base::State *state, double *projection) const
 	{  
-	    model_->kmodel->computeTransformsGroup(state->values, model_->groupID);
-	    const btVector3 &origin = link_->globalTrans.getOrigin();
+	    EnvironmentDescription *ed = model_->getEnvironmentDescription();
+	    ed->kmodel->computeTransformsGroup(state->values, model_->groupID);
+	    const btVector3 &origin = ed->kmodel->getLink(linkName_)->globalTrans.getOrigin();
 	    projection[0] = origin.x();
 	    projection[1] = origin.y();
 	    projection[2] = origin.z();
@@ -73,8 +74,8 @@ namespace ompl_planning
 	
     protected:
 	
-	ModelBase                             *model_;
-	planning_models::KinematicModel::Link *link_;
+	ModelBase   *model_;
+	std::string  linkName_;
 	
     };
     
