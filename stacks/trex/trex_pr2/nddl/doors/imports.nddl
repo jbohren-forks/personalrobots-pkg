@@ -19,7 +19,6 @@ float DOORWAY_CLEARANCE_RANGE = 0.4;
 
 // Additional actions for the doro domain
 StopAction stop_action = new StopAction(External);
-ReleaseHandle release_handle = new ReleaseHandle(External);
 OpenDoor open_door = new OpenDoor(External);
 GraspHandle grasp_handle = new GraspHandle(External);
 UnlatchHandle unlatch_handle = new UnlatchHandle(External);
@@ -74,11 +73,6 @@ PushDoor::Active{
 MoveBaseDoor::Active{
   contained_by(head_mechanism.use_head_controller);
   contained_by(laser_tilt_mechanism.use_laser_tilt_controller);
-}
-
-ReleaseHandle::Active{
-  contained_by(right_arm_mechanism.use_constraint_composite_cartesian_trajectory_controller);
-  contained_by(right_gripper_mechanism.use_effort_controller);
 }
 
 

@@ -36,6 +36,7 @@
 // Internal Timelines for state variables we are estimating. Ideally we are observing these directly and not making estimates based ona actions
 ArmsTucked arms_tucked = new ArmsTucked(Internal);
 TiltLaserReady tilt_laser_ready = new TiltLaserReady(Internal);
+GripperFree gripper_free = new GripperFree(Internal);
 
 // Actions causing arms to be tucked.
 SafetyTuckArms safety_tuck_arms = new SafetyTuckArms(External);
@@ -50,6 +51,11 @@ CheckPath check_path = new CheckPath(External);
 
 // Action causing tilt laser to be set
 SetLaserTilt set_laser_tilt = new SetLaserTilt(External);
+
+// Additional actions impacting gripper.
+ReleaseHandle release_handle = new ReleaseHandle(External);
+OpenDoor open_door = new OpenDoor(External);
+UnlatchHandle unlatch_handle = new UnlatchHandle(External);
 
 /**
  * Actions update rules impacting arms_tucked
@@ -80,4 +86,22 @@ SetLaserTilt::Inactive{
 
 MoveBase::Inactive{
   starts_during(TiltLaserReady.False);
+}
+
+/**
+ * Action Impacts to gripper state
+ */
+ReleaseHandle::Inactive{
+  if(status == SUCCESS){
+    starts_during(gripper_free.True);
+  }
+}
+UnlatchHandle::Active{
+  contained_by(gripper_free.False);
+}
+OpenDoor::Active{
+  contained_by(gripper_free.False);
+}
+GraspHandle::Active{
+  starts_during(gripper_free.False);
 }

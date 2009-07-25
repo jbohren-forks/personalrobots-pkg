@@ -32,7 +32,6 @@
 
 // Exports from sub-systems
 #include "ros.nddl"
-#include "rcs/doors/exports.nddl"
 
 /**
  * @brief This is a general utility for stopping actions

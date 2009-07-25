@@ -153,20 +153,6 @@ class UnlatchHandle extends DoorManipulationBehavior {
 };
 
 /**
- * Behavior to extract the gripper from a grasp on the handle
- */
-class ReleaseHandle extends DoorManipulationBehavior {
-
-  // Redeclare because of bug in parser
-  predicate Active{}
-  predicate Inactive{}
-
-  ReleaseHandle(Mode _mode){
-    super(_mode);
-  }
-};
-
-/**
  * DetectDoor is activated to search for the door. It will assume it is in a suitable observation position facing the door
  */
 class DetectDoor extends DoorManipulationBehavior {

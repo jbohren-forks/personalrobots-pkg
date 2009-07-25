@@ -18,6 +18,20 @@ class SafetyTuckArms extends  ROSAction {
 }
 
 /**
+ * Behavior to extract the gripper from a grasp on the handle
+ */
+class ReleaseHandle extends ROSAction {
+
+  // Redeclare because of bug in parser
+  predicate Active{}
+  predicate Inactive{}
+
+  ReleaseHandle(Mode _mode){
+    super(_mode);
+  }
+};
+
+/**
  * Will set the laser tilt to a standard configuration. Eventually we will
  * add parameters for this.
  */
@@ -50,4 +64,13 @@ class TiltLaserReady extends AgentTimeline {
   TiltLaserReady(Mode _mode){
     super(_mode, "False");
   }
+};
+
+/**
+ * @brief An internal variable for tracking if the gripper is free or not
+ */
+class GripperFree extends AgentTimeline{
+  predicate True{}
+  predicate False{}
+  GripperFree(Mode _mode){ super(_mode, "True"); }
 };
