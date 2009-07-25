@@ -288,6 +288,8 @@ void planning_environment::KinematicConstraintEvaluatorSet::clear(void)
     for (unsigned int i = 0 ; i < m_kce.size() ; ++i)
 	delete m_kce[i];
     m_kce.clear();	
+    m_jc.clear();
+    m_pc.clear();
 }
 	
 bool planning_environment::KinematicConstraintEvaluatorSet::add(const planning_models::KinematicModel *kmodel, const std::vector<motion_planning_msgs::JointConstraint> &jc)
@@ -298,18 +300,20 @@ bool planning_environment::KinematicConstraintEvaluatorSet::add(const planning_m
 	JointConstraintEvaluator *ev = new JointConstraintEvaluator();
 	result = result && ev->use(kmodel, jc[i]);
 	m_kce.push_back(ev);
+	m_jc.push_back(jc[i]);
     }
     return result;
 }
 
-bool planning_environment::KinematicConstraintEvaluatorSet::add(const planning_models::KinematicModel *kmodel, const std::vector<motion_planning_msgs::PoseConstraint> &kc)
+bool planning_environment::KinematicConstraintEvaluatorSet::add(const planning_models::KinematicModel *kmodel, const std::vector<motion_planning_msgs::PoseConstraint> &pc)
 {
     bool result = true;
-    for (unsigned int i = 0 ; i < kc.size() ; ++i)
+    for (unsigned int i = 0 ; i < pc.size() ; ++i)
     {
 	PoseConstraintEvaluator *ev = new PoseConstraintEvaluator();
-	result = result && ev->use(kmodel, kc[i]);
+	result = result && ev->use(kmodel, pc[i]);
 	m_kce.push_back(ev);
+	m_pc.push_back(pc[i]);
     }
     return result;
 }

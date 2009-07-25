@@ -175,7 +175,7 @@ namespace planning_environment
 	bool add(const planning_models::KinematicModel *kmodel, const std::vector<motion_planning_msgs::JointConstraint> &jc);
 
 	/** \brief Add a set of pose constraints */
-	bool add(const planning_models::KinematicModel *kmodel, const std::vector<motion_planning_msgs::PoseConstraint> &kc);
+	bool add(const planning_models::KinematicModel *kmodel, const std::vector<motion_planning_msgs::PoseConstraint> &pc);
 	
 	/** \brief Decide whether the set of constraints is satisfied  */
 	bool decide(const double *params, int groupID) const;
@@ -185,11 +185,25 @@ namespace planning_environment
 
 	/** \brief Print the constraint data */
 	void print(std::ostream &out = std::cout) const;
+	
+	/** \brief Get the active joint constraints */
+	const std::vector<motion_planning_msgs::PoseConstraint>& getPoseConstraints(void) const
+	{
+	    return m_pc;
+	}
 
+	/** \brief Get the active pose constraints */
+	const std::vector<motion_planning_msgs::JointConstraint>& getJointConstraints(void) const
+	{
+	    return m_jc;
+	}
+	
     protected:
 	
-	std::vector<KinematicConstraintEvaluator*> m_kce;
-    
+	std::vector<KinematicConstraintEvaluator*>         m_kce;
+	std::vector<motion_planning_msgs::JointConstraint> m_jc;
+	std::vector<motion_planning_msgs::PoseConstraint>  m_pc;
+	
     };
 } // planning_environment
 

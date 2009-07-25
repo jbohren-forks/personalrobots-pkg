@@ -142,7 +142,7 @@ void planning_environment::CollisionSpaceMonitor::updateCollisionSpace(const map
     
     int n = collisionMap->get_boxes_size();
     
-    ROS_DEBUG("Received %d points (collision map)", n);
+    ROS_DEBUG("Received collision map with %d points that is %f seconds old", n, (ros::Time::now() - collisionMap->header.stamp).toSec());
     
     if (onBeforeMapUpdate_ != NULL)
 	onBeforeMapUpdate_(collisionMap, clear);
