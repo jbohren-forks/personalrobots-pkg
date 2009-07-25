@@ -45,14 +45,14 @@ bool JointProperties::initXml(TiXmlElement* config)
   // Get joint damping
   const char* damping_str = config->Attribute("damping");
   if (damping_str == NULL)
-    std::cout << "joint_properties: no damping\n" << std::endl;
+    std::cout << "joint_properties: no damping" << std::endl;
   else
     this->damping_ = atof(damping_str);
 
   // Get joint friction
   const char* friction_str = config->Attribute("friction");
   if (friction_str == NULL)
-    std::cout << "joint_properties: no friction\n" << std::endl;
+    std::cout << "joint_properties: no friction" << std::endl;
   else
     this->friction_ = atof(friction_str);
 
@@ -71,28 +71,28 @@ bool JointLimits::initXml(TiXmlElement* config)
   // Get min joint limit
   const char* min_str = config->Attribute("min");
   if (min_str == NULL)
-    std::cout << "joint limit: no min\n" << std::endl;
+    std::cout << "joint limit: no min" << std::endl;
   else
     this->min_ = atof(min_str);
 
   // Get min joint limit
   const char* max_str = config->Attribute("max");
   if (max_str == NULL)
-    std::cout << "joint limit: no max\n" << std::endl;
+    std::cout << "joint limit: no max" << std::endl;
   else
     this->max_ = atof(max_str);
 
   // Get min joint limit
   const char* effort_str = config->Attribute("effort");
   if (effort_str == NULL)
-    std::cout << "joint limit: no effort\n" << std::endl;
+    std::cout << "joint limit: no effort" << std::endl;
   else
     this->effort_ = atof(effort_str);
 
   // Get min joint limit
   const char* velocity_str = config->Attribute("velocity");
   if (velocity_str == NULL)
-    std::cout << "joint limit: no velocity\n" << std::endl;
+    std::cout << "joint limit: no velocity" << std::endl;
   else
     this->velocity_ = atof(velocity_str);
 
@@ -116,7 +116,7 @@ bool Joint::initXml(TiXmlElement* config)
   const char *name = config->Attribute("name");
   if (!name)
   {
-    std::cerr << "unnamed joint found\n" << std::endl;
+    std::cerr << "unnamed joint found" << std::endl;
     return false;
   }
   this->name_ = name;
@@ -126,7 +126,7 @@ bool Joint::initXml(TiXmlElement* config)
   if (!type)
   {
     std::cerr << "joint " << name_
-              << " has no type" << std::endl;
+              << " has no type, check to see if it's a reference." << std::endl;
     return false;
   }
   std::string type_str = type;

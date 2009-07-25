@@ -59,7 +59,7 @@ public:
 
   std::vector<TiXmlElement*> maps_;
 private:
-  bool getLink(TiXmlElement *link_xml, Link& link);
+  bool getLink(const std::string& name, Link*& link);
   void addChildren(Link* p);
 
   /// Every Robot Description File can be described as a

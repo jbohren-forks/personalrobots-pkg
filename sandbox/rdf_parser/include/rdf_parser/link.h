@@ -139,6 +139,12 @@ public:
   /// returns the parent link. The root link does not have a parent
   Link* getParent();
 
+  /// returns the parent link name
+  const std::string& getParentName() {return parent_name_;};
+
+  /// returns the parent joint name
+  const std::string& getParentJointName();
+
   /// returns children of the link
   std::vector<Link*> getChildren();
 
@@ -159,22 +165,26 @@ public:
 
 private:
   std::string name_;
-  std::string joint_name_;
-
-  // store parent and origin, these are to be moved to joint
-  std::string parent_name_;
-  TiXmlElement* origin_xml_;
 
   Link* parent_;
   std::vector<Link*> children_;
 
   Joint* parent_joint_;
+  std::vector<Joint*> child_joints_;
 
   std::vector<TiXmlElement*> maps_;
 
-protected:
+  // store parent Link/Joint and origin, these are to be moved to joint
+  std::string parent_joint_name_;
+  std::string parent_name_;
+  TiXmlElement* origin_xml_;
+
+public:
+  void setParent(Link* parent);
   void addChild(Link* child);
 
+  void setParentJoint(Joint* parent);
+  void addChildJoint(Joint* child);
 };
 
 

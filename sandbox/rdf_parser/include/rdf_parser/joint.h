@@ -130,6 +130,10 @@ private:
   /// \brief A list of maps
   std::vector<TiXmlElement*> maps_;
 
+public:
+  // Joint element has one parent and one child Link
+  void setParentLink(Link* parent) {this->parent_link_ = parent;};
+  void setChildLink(Link* child) {this->child_link_ = child;};
 };
 
 }

@@ -246,18 +246,19 @@ bool Link::initXml(TiXmlElement* config)
   }
   name_ = std::string(name);
 
-  // Joint
+  // set parent Joint name
   TiXmlElement *j = config->FirstChildElement("joint");
-  const char *joint_name = j ? j->Attribute("name") : NULL;
-  if (!joint_name)
+  const char *parent_joint_name = j ? j->Attribute("name") : NULL;
+  if (!parent_joint_name)
   {
     // in proposed new URDF links are to have no joints, but the other way around
-    std::cerr << "Link \"" << name_ << "\" could not find the joint named \"" << joint_name << "\"" << std::endl;
+    std::cerr << "Link \"" << name_ << "\" could not find the joint named \"" << parent_joint_name << "\"" << std::endl;
     return false;
   }
-  joint_name_ = std::string(joint_name);
+  parent_joint_name_ = std::string(parent_joint_name);
 
-  // Parent
+  // Parent - this is to be moved to Joint
+  //   fill in parent_name_ and parent_
   TiXmlElement *p = config->FirstChildElement("parent");
   const char *parent_name = p ? p->Attribute("name") : NULL;
   if (!parent_name)
@@ -268,7 +269,8 @@ bool Link::initXml(TiXmlElement* config)
   }
   parent_name_ = std::string(parent_name);
 
-  // Origin
+  // Origin - this is to be moved to Joint
+  //   fill in origin_xml_
   origin_xml_ = config->FirstChildElement("origin");
   if (!origin_xml_)
   {
@@ -329,10 +331,38 @@ Joint* Link::getParentJoint()
   return this->parent_joint_;
 }
 
+std::vector<Joint*> Link::getChildrenJoint()
+{
+  return this->child_joints_;
+}
+
+void Link::setParent(Link* parent)
+{
+  this->parent_ = parent;
+  cout << "set parent " << parent->getName() << " for " << getName() << endl;
+}
+
 void Link::addChild(Link* child)
 {
   this->children_.push_back(child);
   cout << "added child " << child->getName() << " to " << getName() << endl;
+}
+
+const std::string& Link::getParentJointName()
+{
+  return this->parent_joint_name_;
+}
+
+void Link::setParentJoint(Joint* parent)
+{
+  this->parent_joint_ = parent;
+  cout << "set parent Joint " << parent->getName() << " for " << getName() << endl;
+}
+
+void Link::addChildJoint(Joint* child)
+{
+  this->child_joints_.push_back(child);
+  cout << "added child Joint " << child->getName() << " to " << getName() << endl;
 }
 
 

@@ -61,7 +61,21 @@ bool RDF::initXml(TiXmlElement *robot_xml)
   /// parsing strategy:
   ///   1.  get all Joint elements, store in map<name,Joint*>
   ///   2.  get all Link elements, store in map<name,Link*>
+  ///         while reading Link element, fill in connectivity information in
+  ///         Joints and parent Links
   ///   3.  build tree - fill in pointers for parents, children, etc
+  ///
+  ///
+  /// When we switch to the new RDF structure, we'll have to change the steps to below:
+  ///   1.  get all Link elements, store in map<nam,Link*>
+  ///   2.  get all Joint elements, store in map<nam,Joint*> AND
+  ///         fill in parent/child information in Joint::initXml() for both Joint and Link elements.
+  ///   3.  done
+  ///
+  /// Until then, we need the first parsing strategy.
+  ///
+
+
 
   /// Because old URDF allows us to define Joint elements inside/outside of Link elements, we have to do this
   /// @todo: give deprecation warning and phase out defining Joint elements inside Link elements
@@ -92,13 +106,20 @@ bool RDF::initXml(TiXmlElement *robot_xml)
       }
       else
       {
-        std::cerr << "Joint element is either malformed or is referenced inside of Link element but undefined elsewhere." << std::endl;
+        if (this->joints_.find(joint->getName()) == this->joints_.end())
+        {
+          const char* link_name = link_xml->Attribute("name");
+          std::cerr << "Joint: " << joint->getName() << " is not defined anywhere, only referenced by name by Link: " << link_name << std::endl;
+        }
+        else
+        {
+          std::cout << "Joint: " << joint->getName() << " is already loaded." << std::endl;
+        }
         delete joint;
       }
     }
 
-
-  // Get all links
+  // Get all Link elements, fill in connectivity information, i.e. Joints and links(ptrs) between Link elements
   for (TiXmlElement* link_xml = robot_xml->FirstChildElement("link"); link_xml; link_xml = link_xml->NextSiblingElement("link"))
   {
     Link* link = new Link();
@@ -114,28 +135,78 @@ bool RDF::initXml(TiXmlElement *robot_xml)
     }
   }
 
-  // find the root link
-  std::string root_name = std::string("not found");
-  for (map<string, string>::const_iterator p=link_parent_.begin(); p!=link_parent_.end(); p++){
-    if (link_parent_.find(p->second) == link_parent_.end()){
-      if (root_name != "not found")
-      {
-        cerr << "Two root links found: " << root_name << " and " << p->second << endl;
-        return false;
-      }
-      else
-        root_name = p->second;
-    }
-  }
-  if (root_name == "not found")
-  {cerr << "No root link found. The robot xml contains a graph instead of a tree." << endl; return false;}
-  cout << root_name << " is root link " << endl;
-
 
   // Start building tree
-  //addChildren(links_.find(root_name)->second);
+  // find link/parent mapping
+  for (std::map<std::string,Link*>::iterator link = this->links_.begin();link != this->links_.end(); link++)
+  {
+    std::string parent_name = link->second->getParentName();
+    std::cout << "build tree: " << link->first << " is a child of " << parent_name << std::endl;
 
+    // add parent link in Link element
+    Link* parent_link;
+    if (!this->getLink(parent_name,parent_link))
+    {
+      if (parent_name == "world")
+        std::cout << "parent link: " << parent_name << " is a special case." << std::endl;
+      else
+      {
+        std::cerr << "parent link: " << parent_name << " is not found!" << std::endl;
+        return false;
+      }
+    }
+    else
+    {
+      // fill in child/parent map
+      this->link_parent_[link->second->getName()] = parent_name;
 
+      // set parent_ link
+      link->second->setParent( parent_link);
+
+      // add child link in parent Link element
+      parent_link->addChild(link->second);
+
+    }
+
+    std::map<std::string,Joint*>::iterator parent_joint = this->joints_.find(link->second->getParentJointName());
+    if (parent_joint == this->joints_.end())
+    {
+      std::cerr << "link: " << link->first << " parent joint: " << link->second->getParentJointName()<< " not found in joint list" << std::endl;
+      return false;
+    }
+    else
+    {
+      // add links to child Link element for Joint elements
+      link->second->setParentJoint(parent_joint->second);
+    }
+      
+
+    // add links to parent Link element for Joint elements
+
+  }
+      
+  // find the root link
+  std::string* root_name = NULL;
+  for (map<string, string>::const_iterator p=link_parent_.begin(); p!=link_parent_.end(); p++)
+  {
+    if (link_parent_.find(p->second) == link_parent_.end())
+    {
+      if (root_name)
+      {
+        std::cout << "child: " << p->first << " parent: " << p->second << " root: " << *root_name << std::endl;
+        if (*root_name != p->second)
+        {
+          cerr << "Two root links found: " << *root_name << " and " << p->second << endl;
+          return false;
+        }
+      }
+      else
+        root_name = &(std::string)(p->second);
+    }
+  }
+  if (root_name == NULL)
+  {cerr << "No root link found. The robot xml contains a graph instead of a tree." << endl; return false;}
+  cout << *root_name << " is root link " << endl;
 
   // Get Maps
   for (TiXmlElement* map_xml = robot_xml->FirstChildElement("map"); map_xml; map_xml = map_xml->NextSiblingElement("map"))
@@ -147,13 +218,24 @@ bool RDF::initXml(TiXmlElement *robot_xml)
 void RDF::addChildren(Link* p)
 {
   // find links that have parent 'p'
-  for (map<string, string>::const_iterator c=link_parent_.begin(); c!=link_parent_.end(); c++){
-    if (c->second == p->getName()){
+  for (map<string, string>::const_iterator c=link_parent_.begin(); c!=link_parent_.end(); c++)
+  {
+    if (c->second == p->getName())
+    {
       //addChildren(links_.find(c->first)->second);
     }
   }
 }
 
+bool RDF::getLink(const std::string& name, Link*& link)
+{
+  link = NULL;
+  if (this->links_.find(name) == this->links_.end())
+    return false;
+
+  link = this->links_.find(name)->second;
+  return true;
+}
 
 }
 
