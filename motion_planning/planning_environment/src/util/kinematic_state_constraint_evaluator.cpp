@@ -61,6 +61,15 @@ bool planning_environment::JointConstraintEvaluator::use(const planning_models::
     return true;
 }
 
+void planning_environment::JointConstraintEvaluator::use(const planning_models::KinematicModel *kmodel)
+{
+    if (m_joint)
+    {   
+	m_kmodel = kmodel;
+	m_joint  = kmodel->getJoint(m_jc.joint_name);
+    }
+}
+
 bool planning_environment::JointConstraintEvaluator::decide(const double *params, const int groupID) const
 {
     const double *val = params + (groupID >= 0 ? m_kmodel->getJointIndexInGroup(m_joint->name, groupID) : m_kmodel->getJointIndex(m_joint->name));
@@ -130,6 +139,12 @@ bool planning_environment::PoseConstraintEvaluator::use(const planning_models::K
     m_z = pose.getOrigin().z();
     
     return true;
+}
+
+void planning_environment::PoseConstraintEvaluator::use(const planning_models::KinematicModel *kmodel)
+{
+    if (m_link)
+	m_link = kmodel->getLink(m_pc.link_name);
 }
 
 void planning_environment::PoseConstraintEvaluator::clear(void)
@@ -329,6 +344,12 @@ bool planning_environment::KinematicConstraintEvaluatorSet::decide(const double 
 bool planning_environment::KinematicConstraintEvaluatorSet::decide(const double *params) const
 {
     return decide(params, -1);
+}
+
+void planning_environment::KinematicConstraintEvaluatorSet::use(const planning_models::KinematicModel *kmodel)
+{
+    for (unsigned int i = 0 ; i < m_kce.size() ; ++i)
+	m_kce[i]->use(kmodel);
 }
 
 void planning_environment::KinematicConstraintEvaluatorSet::print(std::ostream &out) const
