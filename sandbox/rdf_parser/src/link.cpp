@@ -50,7 +50,7 @@ Geometry *parseGeometry(TiXmlElement *g)
   TiXmlElement *shape = g->FirstChildElement();
   if (!shape)
   {
-    std::cerr << "Geometry tag contains no shape" << std::endl;
+    std::cerr << "ERROR: Geometry tag contains no child element." << std::endl;
     return NULL;
   }
 
@@ -65,7 +65,7 @@ Geometry *parseGeometry(TiXmlElement *g)
     geom.reset(new Mesh);
   else
   {
-    std::cerr << "Unknown geometry type: " << type_name.c_str() << std::endl;
+    std::cerr << "ERROR: Unknown geometry type: " << type_name << std::endl;
     return NULL;
   }
 
@@ -81,19 +81,19 @@ bool Inertial::initXml(TiXmlElement *config)
   TiXmlElement *o = config->FirstChildElement("origin");
   if (!this->origin_.initXml(o))
   {
-    std::cerr << "Inertial has a malformed origin tag" << std::endl;
+    std::cerr << "ERROR: Inertial has a malformed origin tag" << std::endl;
     return false;
   }
 
   TiXmlElement *mass_xml = config->FirstChildElement("mass");
   if (!mass_xml)
   {
-    std::cerr << "Inertial element must have mass element" << std::endl;
+    std::cerr << "ERROR: Inertial element must have mass element" << std::endl;
     return false;
   }
   if (!mass_xml->Attribute("value"))
   {
-    std::cerr << "Inertial: mass element must have value attributes" << std::endl;
+    std::cerr << "ERROR: Inertial: mass element must have value attributes" << std::endl;
     return false;
   }
   mass_ = atof(mass_xml->Attribute("value"));
@@ -101,14 +101,14 @@ bool Inertial::initXml(TiXmlElement *config)
   TiXmlElement *inertia_xml = config->FirstChildElement("inertia");
   if (!inertia_xml)
   {
-    std::cerr << "Inertial element must have inertia element" << std::endl;
+    std::cerr << "ERROR: Inertial element must have inertia element" << std::endl;
     return false;
   }
   if (!(inertia_xml->Attribute("ixx") && inertia_xml->Attribute("ixy") && inertia_xml->Attribute("ixz") &&
         inertia_xml->Attribute("iyy") && inertia_xml->Attribute("iyz") &&
         inertia_xml->Attribute("izz")))
   {
-    std::cerr << "Inertial: inertia element must have ixx,ixy,ixz,iyy,iyz,izz attributes" << std::endl;
+    std::cerr << "ERROR: Inertial: inertia element must have ixx,ixy,ixz,iyy,iyz,izz attributes" << std::endl;
     return false;
   }
   ixx_  = atof(inertia_xml->Attribute("ixx"));
@@ -131,7 +131,7 @@ bool Visual::initXml(TiXmlElement *config)
   TiXmlElement *o = config->FirstChildElement("origin");
   if (!this->origin_.initXml(o))
   {
-    std::cerr << "Visual has a malformed origin tag" << std::endl;
+    std::cerr << "ERROR: Visual has a malformed origin tag" << std::endl;
     return false;
   }
 
@@ -140,7 +140,7 @@ bool Visual::initXml(TiXmlElement *config)
   geometry_.reset(parseGeometry(geom));
   if (!geometry_)
   {
-    std::cerr << "Malformed geometry for Visual element" << std::endl;
+    std::cerr << "ERROR: Malformed geometry for Visual element" << std::endl;
     return false;
   }
 
@@ -157,7 +157,7 @@ bool Collision::initXml(TiXmlElement* config)
   TiXmlElement *o = config->FirstChildElement("origin");
   if (!this->origin_.initXml(o))
   {
-    std::cerr << "Collision has a malformed origin tag" << std::endl;
+    std::cerr << "ERROR: Collision has a malformed origin tag" << std::endl;
     return false;
   }
 
@@ -166,7 +166,7 @@ bool Collision::initXml(TiXmlElement* config)
   geometry_.reset(parseGeometry(geom));
   if (!geometry_)
   {
-    std::cerr << "Malformed geometry for Collision element" << std::endl;
+    std::cerr << "ERROR: Malformed geometry for Collision element" << std::endl;
     return false;
   }
 
@@ -181,7 +181,7 @@ bool Sphere::initXml(TiXmlElement *c)
 {
   if (!c->Attribute("radius"))
   {
-    std::cerr << "Sphere shape must have a radius attribute" << std::endl;
+    std::cerr << "ERROR: Sphere shape must have a radius attribute" << std::endl;
     return false;
   }
 
@@ -193,7 +193,7 @@ bool Box::initXml(TiXmlElement *c)
 {
   if (!dim_.init(c->Attribute("size")))
   {
-    std::cerr << "Box shape has no size attribute" << std::endl;
+    std::cerr << "ERROR: Box shape has no size attribute" << std::endl;
     return false;
   }
   return true;
@@ -204,7 +204,7 @@ bool Cylinder::initXml(TiXmlElement *c)
   if (!c->Attribute("length") ||
       !c->Attribute("radius"))
   {
-    std::cerr << "Cylinder shape must have both length and radius attributes" << std::endl;
+    std::cerr << "ERROR: Cylinder shape must have both length and radius attributes" << std::endl;
     return false;
   }
 
@@ -217,7 +217,7 @@ bool Mesh::initXml(TiXmlElement *c)
 {
   if (!c->Attribute("filename"))
   {
-    std::cerr << "Mesh must contain a filename attribute" << std::endl;
+    std::cerr << "ERROR: Mesh must contain a filename attribute" << std::endl;
     return false;
   }
 
@@ -227,7 +227,7 @@ bool Mesh::initXml(TiXmlElement *c)
   {
     if (!this->scale_.init(c->Attribute("scale")))
     {
-      std::cerr << "Mesh scale was specified, but could not be parsed" << std::endl;
+      std::cerr << "ERROR: Mesh scale was specified, but could not be parsed" << std::endl;
       return false;
     }
   }
@@ -241,7 +241,7 @@ bool Link::initXml(TiXmlElement* config)
   const char *name = config->Attribute("name");
   if (!name)
   {
-    std::cerr << "No name given for the link." << std::endl;
+    std::cerr << "ERROR: No name given for the link." << std::endl;
     return false;
   }
   name_ = std::string(name);
@@ -252,7 +252,8 @@ bool Link::initXml(TiXmlElement* config)
   if (!parent_joint_name)
   {
     // in proposed new URDF links are to have no joints, but the other way around
-    std::cerr << "Link \"" << name_ << "\" could not find the joint named \"" << parent_joint_name << "\"" << std::endl;
+    std::cerr << "ERROR: Invalid parent joint name: " << parent_joint_name << " for Link:"
+              << this->name_ << std::endl;
     return false;
   }
   parent_joint_name_ = std::string(parent_joint_name);
@@ -264,7 +265,8 @@ bool Link::initXml(TiXmlElement* config)
   if (!parent_name)
   {
     // in proposed new URDF, parent is specified in joint, joints connect to parent and child links
-    std::cerr << "No parent name given for link \"" << name_.c_str() << "\"" << std::endl;
+    std::cerr << "ERROR: No parent name given for Link:"
+              << this->name_ << std::endl;
     return false;
   }
   parent_name_ = std::string(parent_name);
@@ -275,7 +277,8 @@ bool Link::initXml(TiXmlElement* config)
   if (!origin_xml_)
   {
     // in proposed new URDF, origin is specified in joint, for both parent and child
-    std::cerr << "The origin tag for link \"" << name_.c_str() << "\" is missing" << std::endl;
+    std::cerr << "ERROR: No origin tag for Link:"
+              << this->name_ << std::endl;
     return false;
   }
 
@@ -286,7 +289,8 @@ bool Link::initXml(TiXmlElement* config)
     visual_.reset(new Visual);
     if (!visual_->initXml(v))
     {
-      std::cerr << "Could not parse visual element for link \"" << name_.c_str() << "\"" << std::endl;
+      std::cerr << "ERROR: Could not parse visual element for Link:"
+                << this->name_ << std::endl;
       visual_.reset();
     }
   }
@@ -298,7 +302,8 @@ bool Link::initXml(TiXmlElement* config)
     collision_.reset(new Collision);
     if (!collision_->initXml(col))
     {
-      std::cerr << "Could not parse collision element for link \"" << name_.c_str() << "\"" << std::endl;
+      std::cerr << "ERROR: Could not parse collision element for Link:"
+                << this->name_ << std::endl;
       collision_.reset();
     }
   }
@@ -339,13 +344,13 @@ std::vector<Joint*> Link::getChildrenJoint()
 void Link::setParent(Link* parent)
 {
   this->parent_ = parent;
-  cout << "set parent " << parent->getName() << " for " << getName() << endl;
+  cout << "INFO: set parent Link: " << parent->getName() << " for Link: " << getName() << endl;
 }
 
 void Link::addChild(Link* child)
 {
   this->children_.push_back(child);
-  cout << "added child " << child->getName() << " to " << getName() << endl;
+  cout << "INFO: added child Link: " << child->getName() << " to Link: " << getName() << endl;
 }
 
 const std::string& Link::getParentJointName()
@@ -356,13 +361,13 @@ const std::string& Link::getParentJointName()
 void Link::setParentJoint(Joint* parent)
 {
   this->parent_joint_ = parent;
-  cout << "set parent Joint " << parent->getName() << " for " << getName() << endl;
+  cout << "INFO: set parent Joint " << parent->getName() << " for Link: " << getName() << endl;
 }
 
 void Link::addChildJoint(Joint* child)
 {
   this->child_joints_.push_back(child);
-  cout << "added child Joint " << child->getName() << " to " << getName() << endl;
+  cout << "INFO: added child Joint " << child->getName() << " to Link: " << getName() << endl;
 }
 
 

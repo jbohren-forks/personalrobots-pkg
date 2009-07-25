@@ -58,11 +58,9 @@ bool RDF::initXml(TiXmlElement *robot_xml)
   if (!robot_xml) return false;
 
 
-  /// parsing strategy:
+  /// current parsing strategy:
   ///   1.  get all Joint elements, store in map<name,Joint*>
   ///   2.  get all Link elements, store in map<name,Link*>
-  ///         while reading Link element, fill in connectivity information in
-  ///         Joints and parent Links
   ///   3.  build tree - fill in pointers for parents, children, etc
   ///
   ///
@@ -70,9 +68,6 @@ bool RDF::initXml(TiXmlElement *robot_xml)
   ///   1.  get all Link elements, store in map<nam,Link*>
   ///   2.  get all Joint elements, store in map<nam,Joint*> AND
   ///         fill in parent/child information in Joint::initXml() for both Joint and Link elements.
-  ///   3.  done
-  ///
-  /// Until then, we need the first parsing strategy.
   ///
 
 
@@ -119,7 +114,10 @@ bool RDF::initXml(TiXmlElement *robot_xml)
       }
     }
 
-  // Get all Link elements, fill in connectivity information, i.e. Joints and links(ptrs) between Link elements
+  // Get all Link elements, connectivity information stored as
+  //   parent link name
+  //   parent joint name
+  //   parent link origin
   for (TiXmlElement* link_xml = robot_xml->FirstChildElement("link"); link_xml; link_xml = link_xml->NextSiblingElement("link"))
   {
     Link* link = new Link();
@@ -151,7 +149,7 @@ bool RDF::initXml(TiXmlElement *robot_xml)
         std::cout << "parent link: " << parent_name << " is a special case." << std::endl;
       else
       {
-        std::cerr << "parent link: " << parent_name << " is not found!" << std::endl;
+        std::cerr << "ERROR: parent link: " << parent_name << " is not found!" << std::endl;
         return false;
       }
     }
