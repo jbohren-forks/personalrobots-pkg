@@ -500,7 +500,7 @@
           <elem key="material" value="PR2/White" />
         </map>
         <geometry name="${side}_gripper_float_visual">
-          <mesh scale="0.001 0.001 0.001" />
+          <box size="0.001 0.001 0.001" />
         </geometry>
       </visual>
       <collision>
@@ -584,7 +584,7 @@
           <elem key="material" value="PR2/Grey" />
         </map>
         <geometry name="${side}_gripper_tool_visual">
-          <mesh scale="0.0 0.0 0.0" />
+          <box size="0.0 0.0 0.0" />
         </geometry>
       </visual>
       <collision>
@@ -731,7 +731,7 @@
           <elem key="material" value="PR2/Red" />
         </map>
         <geometry name="${side}_gripper_float_visual">
-          <mesh scale="0.1 0.1 0.1" />
+          <box size="0.1 0.1 0.1" />
         </geometry>
       </visual>
       <collision>
@@ -804,7 +804,7 @@
           <elem key="material" value="PR2/Grey" />
         </map>
         <geometry name="${side}_gripper_tool_visual">
-          <mesh scale="0.0 0.0 0.0" />
+          <box size="0.0 0.0 0.0" />
         </geometry>
       </visual>
       <collision>

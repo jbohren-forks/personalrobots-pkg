@@ -23,7 +23,7 @@
         <elem key="material" value="PR2/Blue" />
       </map>
       <geometry name="${name}_visual">
-        <mesh scale="0.01 0.01 0.01" />
+        <box size="0.01 0.01 0.01" />
       </geometry>
     </visual>
 
@@ -56,7 +56,7 @@
         <elem key="material" value="PR2/Blue" />
       </map>
       <geometry name="${name}_optical_visual">
-        <mesh scale="0.01 0.01 0.01" />
+        <box size="0.01 0.01 0.01" />
       </geometry>
     </visual>
 

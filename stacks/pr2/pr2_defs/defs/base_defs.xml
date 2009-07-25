@@ -349,7 +349,7 @@
           <elem key="material" value="PR2/Red" />
         </map>
         <geometry name="base_laser_visual">
-          <mesh scale="${base_laser_size_x} ${base_laser_size_y} ${base_laser_size_z}"/>
+          <box size="${base_laser_size_x} ${base_laser_size_y} ${base_laser_size_z}"/>
         </geometry>
       </visual>
 
@@ -504,7 +504,7 @@
           <elem key="material" value="PR2/Red" />
         </map>
         <geometry name="base_laser_visual">
-          <mesh scale="${base_laser_size_x} ${base_laser_size_y} ${base_laser_size_z}"/>
+          <box size="${base_laser_size_x} ${base_laser_size_y} ${base_laser_size_z}"/>
         </geometry>
       </visual>
 
@@ -565,7 +565,7 @@
           <elem key="material" value="PR2/Red" />
         </map>
         <geometry name="plug_magnet_visual">
-          <mesh scale="0.001 0.001 0.001"/>
+          <box size="0.001 0.001 0.001"/>
         </geometry>
       </visual>
 
