@@ -8,4 +8,5 @@ pwd
 cd $START
 pwd 
 rosrun trex nddl-reader_g_rt $1
-echo
+
+

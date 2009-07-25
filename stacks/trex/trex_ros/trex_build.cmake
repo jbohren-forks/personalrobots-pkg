@@ -13,6 +13,7 @@ macro(create_nddl_config)
 	       " <binding nddl=\"Timeline\" cpp=\"Timeline\"/>\n"
   	       " <include path=\"${_nddl_file_path}\"/>\n"
 	       "</configuration>\n")
+    file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/test_file_list.txt )
 endmacro(create_nddl_config)
 
 # Set _TREX_LINK_LIBS to be the result of using rospack and splice the ends with "ender"
@@ -143,3 +144,15 @@ macro(create_trex_executables fast debug)
   # true
   set_target_properties(${fast} PROPERTIES EXCLUDE_FROM_ALL false)
 endmacro(create_trex_executables)
+
+
+# Adds a new test
+macro(add_nddl_test file)
+  file(APPEND ${CMAKE_CURRENT_SOURCE_DIR}/test_file_list.txt "${file}\n")
+endmacro(add_nddl_test)
+
+# Creates a big trex test
+macro(create_trex_nddl_test_case)
+  find_ros_package(trex_ros)
+  rospack_add_gtest(test/trex_nddl_test ${trex_ros_PACKAGE_PATH}/src/nddl_compile_tests.cpp)
+endmacro(create_trex_nddl_test_case)
