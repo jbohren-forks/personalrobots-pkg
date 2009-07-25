@@ -60,10 +60,13 @@ bool JointProperties::initXml(TiXmlElement* config)
   for (TiXmlElement* map_xml = config->FirstChildElement("map"); map_xml; map_xml = map_xml->NextSiblingElement("map"))
     this->maps_.push_back(map_xml);
 
-  if (damping_str == NULL || friction_str == NULL)
-    return true;
-  else
+  if (damping_str == NULL && friction_str == NULL)
+  {
+    std::cerr << "ERROR: joint_properties element specified with no damping and no friction" << std::endl;
     return false;
+  }
+  else
+    return true;
 }
 
 bool JointLimits::initXml(TiXmlElement* config)
@@ -100,10 +103,13 @@ bool JointLimits::initXml(TiXmlElement* config)
   for (TiXmlElement* map_xml = config->FirstChildElement("map"); map_xml; map_xml = map_xml->NextSiblingElement("map"))
     this->maps_.push_back(map_xml);
 
-  if (min_str == NULL || max_str == NULL || effort_str == NULL || velocity_str == NULL)
-    return true;
-  else
+  if (min_str == NULL && max_str == NULL && effort_str == NULL && velocity_str == NULL)
+  {
+    std::cerr << "ERROR: joint limit element specified with no readable attributes" << std::endl;
     return false;
+  }
+  else
+    return true;
 }
 
 const std::string& Joint::getName() const
@@ -125,7 +131,7 @@ bool Joint::initXml(TiXmlElement* config)
   const char* type = config->Attribute("type");
   if (!type)
   {
-    std::cerr << "WARN: joint " << name_
+    std::cout << "WARN: joint " << name_
               << " has no type, check to see if it's a reference." << std::endl;
     return false;
   }
