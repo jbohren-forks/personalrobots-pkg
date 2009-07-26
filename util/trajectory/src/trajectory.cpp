@@ -36,7 +36,7 @@
 #define MAX_ALLOWABLE_TIME 1.0e8
 #define EPS_TRAJECTORY 1.0e-8
 
-#define MAX_NUM_POINTS 500
+#define MAX_NUM_POINTS 1000
 #define MAX_COEFF_SIZE 5
 
 using namespace trajectory;
