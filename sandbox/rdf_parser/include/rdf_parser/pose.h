@@ -49,6 +49,7 @@ namespace rdf_parser{
 class Vector3
 {
 public:
+  Vector3() {this->x_=this->y_=this->z_=0.0;};
   bool init(const std::string &vector_str)
   {
     std::vector<std::string> pieces;
@@ -68,15 +69,15 @@ public:
       return false;
     }
 
-    x = xyz[0];
-    y = xyz[1];
-    z = xyz[2];
+    this->x_ = xyz[0];
+    this->y_ = xyz[1];
+    this->z_ = xyz[2];
 
     return true;
   };
-  double x;
-  double y;
-  double z;
+  double x_;
+  double y_;
+  double z_;
 private:
 
 };
@@ -84,6 +85,7 @@ private:
 class Rotation
 {
 public:
+  Rotation() {this->w_=1.0;this->x_=this->y_=this->z_=0.0;};
   bool init(const std::string &rotation_str)
   {
     Vector3 rpy;
@@ -92,7 +94,7 @@ public:
       return false;
     else
     {
-      this->setFromRPY(rpy.x,rpy.y,rpy.z);
+      this->setFromRPY(rpy.x_,rpy.y_,rpy.z_);
       return true;
     }
       
@@ -165,6 +167,7 @@ private:
 class Pose
 {
 public:
+  Pose() {};
   bool initXml(TiXmlElement* xml)
   {
     if (!xml)

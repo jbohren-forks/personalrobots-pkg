@@ -141,7 +141,6 @@ bool RDF::initXml(TiXmlElement *robot_xml)
     std::string parent_name = link->second->getParentName();
     std::cout << "INFO: build tree: " << link->first << " is a child of " << parent_name << std::endl;
 
-    // add parent link in Link element
     Link* parent_link = this->getLink(parent_name);
     if (!parent_link)
     {
@@ -155,32 +154,49 @@ bool RDF::initXml(TiXmlElement *robot_xml)
     }
     else
     {
-      // fill in child/parent map
+      // fill in child/parent string map
       this->link_parent_[link->second->getName()] = parent_name;
 
-      // set parent_ link
+      // set parent_ link for child Link element
       link->second->setParent( parent_link);
 
       // add child link in parent Link element
       parent_link->addChild(link->second);
       //std::cout << "INFO: now Link: " << parent_link->getName() << " has " << parent_link->getChildren()->size() << " children" << std::endl;
 
-    }
 
-    std::map<std::string,Joint*>::iterator parent_joint = this->joints_.find(link->second->getParentJointName());
-    if (parent_joint == this->joints_.end())
-    {
-      std::cerr << "ERROR: link: " << link->first << " parent joint: " << link->second->getParentJointName()<< " not found in joint list" << std::endl;
-      return false;
-    }
-    else
-    {
-      // add links to child Link element for Joint elements
-      link->second->setParentJoint(parent_joint->second);
-    }
+      //--------------------------------------------
+      // setup parent Joint element for Link element
+      //--------------------------------------------
+      std::map<std::string,Joint*>::iterator parent_joint = this->joints_.find(link->second->getParentJointName());
+      if (parent_joint == this->joints_.end())
+      {
+        std::cerr << "ERROR: link: " << link->first << " parent joint: " << link->second->getParentJointName()<< " not found in joint list" << std::endl;
+        return false;
+      }
+      else
+      {
+        // set parent Joint for Link element
+        link->second->setParentJoint(parent_joint->second);
 
-    // add links to parent Link element for Joint elements
-    // since we're using old URDF format, set origins for Joint elements using origin_xml_ in links
+
+        //-------------------------------------------------------
+        // setup connectivity information for parent Link element
+        //-------------------------------------------------------
+        // add links to parent Link element for Joint elements
+        parent_joint->second->setParentLink(parent_link);
+
+        // set transform from parent Link to parent Joint frame for Link element
+        Pose parent_pose;
+        parent_pose.initXml(link->second->origin_xml_);
+        parent_joint->second->setParentPose(parent_pose);
+
+        // since we're using old URDF format, set origins for Joint elements using origin_xml_ in links
+        parent_joint->second->setChildLink(link->second);
+
+        parent_joint->second->setChildPose(Pose());
+      }
+    }
 
   }
       

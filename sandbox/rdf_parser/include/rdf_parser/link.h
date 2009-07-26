@@ -183,6 +183,7 @@ private:
   //   * joint angle IS the pose difference between parent_joint_pose and current_joint_pose
   std::string parent_joint_name_;
   std::string parent_name_;
+public:
   TiXmlElement* origin_xml_;
 
 public:

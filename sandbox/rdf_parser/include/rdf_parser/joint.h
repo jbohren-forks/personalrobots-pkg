@@ -115,15 +115,18 @@ private:
   ///            FIXED       N/A
   Vector3 axis_;
 
+  /// parent Link element
   Link* parent_link_;
+
   /// parent_pose_
-  ///   transform from Parent Link to Joint Frame for Parent
+  ///   transform from parent Link to Joint frame in parent
   Pose  parent_pose_;
 
+  /// child Link element
   Link* child_link_;
 
   /// child_pose_
-  ///   transform from Parent Link to Joint Frame for Parent
+  ///   transform from child Link to Joint frame in parent
   Pose  child_pose_;
 
   /// Joint Properties
