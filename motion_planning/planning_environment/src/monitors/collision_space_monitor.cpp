@@ -254,6 +254,7 @@ void planning_environment::CollisionSpaceMonitor::objectInMapCallback(const mapp
 		btTransform pose;
 		tf::poseMsgToTF(pso.pose, pose);
 		collisionSpace_->lock();
+		collisionSpace_->clearObstacles(objectInMap->id);
 		collisionSpace_->addObject(objectInMap->id, shape, pose);
 		collisionSpace_->unlock();
 		ROS_INFO("Added object '%s' to collision space", objectInMap->id.c_str());
