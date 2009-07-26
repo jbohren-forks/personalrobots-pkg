@@ -391,6 +391,9 @@ namespace move_arm
     
     void MoveArm::contactFound(collision_space::EnvironmentModel::Contact &contact)
     {
+	if (!planningMonitor_->getEnvironmentModel()->getVerbose())
+	    return;
+	
 	static int count = 0;
 	visualization_msgs::Marker mk;
 	mk.header.stamp = planningMonitor_->lastMapUpdate();
@@ -555,8 +558,10 @@ namespace move_arm
 	    {
 		// we can do ik can turn the pose constraint into a joint one
 		ROS_INFO("Converting pose constraint to joint constraint using IK...");
+
+		planningMonitor_->getEnvironmentModel()->setVerbose(false);
 		ros::ServiceClient client = node_handle_.serviceClient<manipulation_srvs::IKService>(ARM_IK_NAME, true);
-		for (int t = 0 ; t < 5 ; ++t)
+		for (int t = 0 ; t < 20 ; ++t)
 		{
 		    robot_msgs::PoseStamped tpose = req.goal_constraints.pose_constraint[0].pose;
 		    if (t > 0)
@@ -569,7 +574,7 @@ namespace move_arm
 							      tpose.pose.position.z + req.goal_constraints.pose_constraint[0].position_tolerance_above.z);
 		    }
 		    std::vector<double> solution;
-		    if (computeIK(client, tpose, 2, solution))
+		    if (computeIK(client, tpose, 5, solution))
 		    {
 			unsigned int n = 0;
 			for (unsigned int i = 0 ; i < arm_joint_names_.size() ; ++i)
@@ -592,6 +597,7 @@ namespace move_arm
 			result = true;
 		    }
 		}
+		planningMonitor_->getEnvironmentModel()->setVerbose(true);
 		if (!result)
 		    ROS_WARN("Unable to compute IK");
 	    }
