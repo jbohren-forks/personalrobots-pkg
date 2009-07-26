@@ -473,7 +473,9 @@ private:
 	int n = possiblyOccluded.size();
 	std::vector<CollisionPoint> pts(n);
 	std::copy(possiblyOccluded.begin(), possiblyOccluded.end(), pts.begin());
-		
+	
+	ROS_DEBUG("Raytracing %d cells", n);
+	
 #pragma omp parallel for schedule(dynamic)
 	for (int i = 0 ; i < n ; ++i)
 	{

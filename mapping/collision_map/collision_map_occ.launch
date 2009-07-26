@@ -3,7 +3,7 @@
     <remap from="cloud_in" to="full_cloud_annotated" />
     <remap from="cloud_incremental_in" to="tilt_scan_cloud_annotated" />
 
-    <param name="publish_occlusion" type="bool" value="true" />
+    <param name="publish_occlusion" type="bool" value="false" />
     <param name="mark_self_occlusion" type="bool" value="false" />
 
     <!-- tell the collision map there may be an annotation channel telling which points are on the robot -->
