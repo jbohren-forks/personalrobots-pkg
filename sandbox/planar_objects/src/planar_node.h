@@ -29,6 +29,24 @@
 #include <tf/transform_listener.h>
 #include <tf/transform_broadcaster.h>
 
+class CornerCandidate
+{
+public:
+  tf::Transform tf;
+
+  double x;
+  double y;
+
+  double angle;
+  double dist1;
+  double dist2;
+
+  double w;
+  double h;
+
+  double computeDistance(IplImage* distImage);
+};
+
 class PlanarNode
 {
 public:
@@ -99,6 +117,14 @@ public:
 
   // Main loop
   bool spin();
+
+  void findFrontAndBackPlane(int& frontplane, int& backplane, std::vector<std::vector<int> >& indices, std::vector<std::vector<double> >& plane_coeff);
+  void findCornerCandidates(std::vector<std::vector<int> >& indices, std::vector<std::vector<double> >& plane_coeff, int frontplane,std::vector< CornerCandidate > &corner);
+  void visualizeFrontAndBackPlane(int frontplane, int backplane, const robot_msgs::PointCloud& cloud,
+                                    std::vector<std::vector<int> >& plane_indices,
+                                    std::vector<robot_msgs::PointCloud>& plane_cloud,
+                                    std::vector<std::vector<double> >& plane_coeff,
+                                    robot_msgs::PointCloud& outside);
 };
 
 int main(int argc, char** argv);

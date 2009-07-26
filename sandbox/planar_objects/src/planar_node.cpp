@@ -22,6 +22,7 @@ using namespace robot_msgs;
 using namespace vis_utils;
 
 #define CVWINDOW(a) cvNamedWindow(a,CV_WINDOW_AUTOSIZE); cvMoveWindow(a,(cvWindows /3 )* 500,(cvWindows%3)*500); cvWindows++;
+#define SQR(a) ((a)*(a))
 
 // Constructor
 PlanarNode::PlanarNode() :
@@ -169,6 +170,11 @@ PlanarNode::calcPt(int x, int y, std::vector<double>& coeff)
   return(btVector3(ax*aw,ay*aw,f*aw));
 }
 
+bool sortCornersByAngle(const CornerCandidate& d1, const CornerCandidate& d2)
+{
+  return fabs(d1.angle- M_PI_2) < fabs(d2.angle- M_PI_2);
+}
+
 void PlanarNode::syncCallback()
 {
   ROS_INFO("PlanarNode::syncCallback(), %d points in cloud",cloud_->get_pts_size());
@@ -188,9 +194,48 @@ void PlanarNode::syncCallback()
 
   find_planes::findPlanes(*cloud_, n_planes_max_, point_plane_distance_, plane_indices, plane_cloud, plane_coeff,outside);
 
-  int n=plane_coeff.size();
   int backplane = 0; // assume that the largest plane belongs to the background
   int frontplane = 1;
+  findFrontAndBackPlane(frontplane,backplane,plane_indices,plane_coeff);
+
+  visualizeFrontAndBackPlane(frontplane,backplane,*cloud_,plane_indices,plane_cloud,plane_coeff,outside);
+
+  std::vector< CornerCandidate > corner;
+  findCornerCandidates(plane_indices,plane_coeff,frontplane, corner);
+
+
+  lastDuration = Time::now() - currentTime;
+  lastTime = currentTime;
+
+  ROS_INFO("processing took %g s",lastDuration.toSec());
+}
+
+bool PlanarNode::spin()
+{
+  while (nh_.ok())
+  {
+    int key = cvWaitKey(100) & 0x00FF;
+    if (key == 27) //ESC
+      break;
+
+    ros::spinOnce();
+  }
+
+  return true;
+}
+
+int main(int argc, char **argv)
+{
+  ros::init(argc, argv, "planar_node");
+
+  PlanarNode node;
+  node.spin();
+
+  return 0;
+}
+
+void PlanarNode::findFrontAndBackPlane(int& frontplane, int& backplane, std::vector<std::vector<int> >& plane_indices, vector<vector<double> >& plane_coeff) {
+  int n=plane_coeff.size();
   double ip3=inner_prod(plane_coeff[backplane],plane_coeff[backplane]);
   ROS_INFO("backplane %d, ip %f", backplane, ip3);
 
@@ -213,19 +258,14 @@ void PlanarNode::syncCallback()
     i++;
   }
   ROS_INFO("backplane %d, frontplane %d", backplane, frontplane);
+}
 
-  std::vector<float> plane_color;
-  plane_color.resize(n);
-  for(int i=0;i<n;i++) {
-    plane_color[i] = HSV_to_RGBf(0.7,0,0.3);
-  }
-  plane_color[backplane] = HSV_to_RGBf(0.3,0.3,1);
-  plane_color[frontplane] = HSV_to_RGBf(0.,0.3,1);
-
-  vis_utils::visualizePlanes(*cloud_,plane_indices,plane_cloud,plane_coeff,plane_color,outside,cloud_planes_pub_,visualization_pub_);
-
+void PlanarNode::findCornerCandidates(std::vector<std::vector<int> >& plane_indices, vector<vector<double> >& plane_coeff, int frontplane,std::vector< CornerCandidate > &corner) {
   // occupied pixels in plane
   IplImage* pixOccupied = cvCreateImage(cvGetSize(dbridge_.toIpl()), IPL_DEPTH_8U, 1);
+
+  // occupied pixels in plane, distance transform
+  IplImage* pixOccupiedDist = cvCreateImage(cvGetSize(dbridge_.toIpl()), IPL_DEPTH_8U, 1);
 
   // free pixels in plane (because something sensed behind plane)
   IplImage* pixFree = cvCreateImage(cvGetSize(dbridge_.toIpl()), IPL_DEPTH_8U, 1);
@@ -236,7 +276,10 @@ void PlanarNode::syncCallback()
   find_planes::createPlaneImage(*cloud_, plane_indices[frontplane], plane_coeff[frontplane],
                                 pixOccupied,pixFree,pixUnknown);
 
+  cvDistTransform(pixOccupied, pixOccupiedDist,CV_DIST_L1);
+
   cvShowImage( "occupied", pixOccupied );
+  cvShowImage( "occupied-dist", pixOccupiedDist );
   cvShowImage( "free", pixFree );
   cvShowImage( "unknown", pixUnknown );
 
@@ -321,8 +364,8 @@ void PlanarNode::syncCallback()
   }
 
   // compute corner candidates
-  std::vector< std::pair<tf::Transform,double> > corner;
   btVector3 vecPlane(plane_coeff[frontplane][0],plane_coeff[frontplane][1],plane_coeff[frontplane][2]);
+  CornerCandidate candidate;
   for(size_t i = 0; i < lines3d.size(); i++ ) {
     for(size_t j = i+1; j < lines3d.size(); j++ ) {
       CvPoint* line1 = (CvPoint*)cvGetSeqElem(lines,i);
@@ -342,62 +385,145 @@ void PlanarNode::syncCallback()
 
       // compute intersection point
       double ua =( (x4-x3)*(y1-y3) - (y4 - y3)*(x1 - x3) ) / ( ( y4 - y3 )*(x2-x1) - (x4-x3 )*(y2-y1) );
-      double corner_x = x1 + ua*(x2-x1);
-      double corner_y = y1 + ua*(y2-y1);
+      double ub =( (x2-x1)*(y1-y3) - (y2 - y1)*(x1 - x3) ) / ( ( y4 - y3 )*(x2-x1) - (x4-x3 )*(y2-y1) );
+      candidate.x = x1 + ua*(x2-x1);
+      candidate.y = y1 + ua*(y2-y1);
+      candidate.w = 10;
+      candidate.h = 10;
 
-      btVector3 position = calcPt(corner_x,corner_y,plane_coeff[frontplane]);
+      btVector3 position = calcPt(candidate.x,candidate.y,plane_coeff[frontplane]);
 
-//      // ratio line distance/length
-//      double length1 = DIST(x2-x1,y2-y1);
-//      double length2 = DIST(x4-x3,y4-y3);
-//      double dist1 = MIN( DIST(x1-x,y1-y),DIST(x2-x,y2-y) );
-//      double dist2 = MIN( DIST(x3-x,y3-y),DIST(x4-x,y4-y) );
-//      // not implemented
+      // ratio line distance/length
+      candidate.dist1 = ua>1.0?ua-1.0:(ua<0.0?-ua:0.0);
+      candidate.dist2 = ub>1.0?ua-1.0:(ub<0.0?-ub:0.0);
 
-      btVector3& vec1 = linesVec[i];
-      btVector3& vec2 = linesVec[j];
+      double dist_threshold = 1;      // intersection point not further away as length of line segment
+
+      if(ua > 1.0 + dist_threshold ) continue;
+      if(ub > 1.0 + dist_threshold ) continue;
+      if(ua < 0.0 - dist_threshold ) continue;
+      if(ub < 0.0 - dist_threshold ) continue;
+
+      btVector3& vec1 = (lines3d[i].first.distance(position)>lines3d[i].second.distance(position) ? lines3d[i].first - position : lines3d[i].second - position).normalize();
+      btVector3& vec2 = (lines3d[j].first.distance(position)>lines3d[j].second.distance(position) ? lines3d[j].first - position : lines3d[j].second - position).normalize();
 
       // compute angle
-      double angle = vec1.angle(vec2);
-      cout << "vec1="<<vec1.x()<<" "<<vec1.y()<<" "<<vec1.z()<< endl;
-      cout << "vec2="<<vec2.x()<<" "<<vec2.y()<<" "<<vec2.z()<< endl;
-      cout <<"angle between vec1 and vec2: "<<(angle/M_PI*180.0)<<endl;
+      candidate.angle = vec1.angle(vec2);
+//      cout << "vec1="<<vec1.x()<<" "<<vec1.y()<<" "<<vec1.z()<< endl;
+//      cout << "vec2="<<vec2.x()<<" "<<vec2.y()<<" "<<vec2.z()<< endl;
+//      cout <<"angle between vec1 and vec2: "<<(angle/M_PI*180.0)<<endl;
 
       // angle between 90deg +- 22.5deg?
-      if( fabs(angle - M_PI_2) > M_PI/8 ) continue;
+      if( fabs(candidate.angle - M_PI_2) > M_PI/8 ) continue;
 
       // correct error in vec1 and vec2 to achieve 90deg
-      btVector3 vec1corr = vec1.rotate( vecPlane, +(angle - M_PI_2) );
-      btVector3 vec2corr = vec2.rotate( vecPlane, -(angle - M_PI_2) );
-      cout <<"angle between vec1corr and vec2corr: "<<(vec1corr.angle(vec2corr)/M_PI*180.0)<<endl;
+      double s = vecPlane.dot(vec1.cross(vec2))>0?1:-1;
+      if(s<0) {
+        btVector3 vTemp = vec2;
+        vec2 = vec1;
+        vec1 = vTemp;
+      }
+      btVector3 vec1corr = vec1.rotate( vecPlane, 1*(candidate.angle - M_PI_2)/2 );
+      btVector3 vec2corr = vec2.rotate( vecPlane, -1*(candidate.angle - M_PI_2)/2 );
+//      cout <<"angle between vec1corr and vec2corr: "<<(vec1corr.angle(vec2corr)/M_PI*180.0)<<" s="<<s<<endl;
 
       // orientation
       btQuaternion orientation;
       btMatrix3x3 rotation;
-      rotation[0] = vec1corr;        // x
-      rotation[1] = vec2corr;        // y
+      rotation[0] = vec1corr.rotate( vecPlane, 0 );        // x
+      rotation[1] = vec2corr.rotate( vecPlane, 0 );        // y
       rotation[2] = vecPlane;        // z
       rotation = rotation.transpose();
       rotation.getRotation(orientation);
+      candidate.tf = tf::Transform(orientation, position);
 
-      tf::Transform tf_pose(orientation, position);
-      corner.push_back( std::pair<tf::Transform,double>(tf_pose,angle));
+      corner.push_back( candidate );
+    }
+  }
+  cout << "corner candidates: "<<(corner.size())<<endl;
+  if(corner.size()>500) return;
+
+  // sort by angle
+  std::sort(corner.begin(), corner.end(), sortCornersByAngle);
+//  for(size_t i=0;i<MIN(1,corner.size());i++) {
+//    cout << "angle: "<<(corner[i].second/M_PI*180.0)<<endl;
+//    // show frames
+//    char buf[50];
+//    sprintf(buf,"x%d",i);
+//    tf::Stamped<tf::Pose> table_pose_frame(corner[i].first, cloud_->header.stamp, buf, cloud_->header.frame_id);
+//    broadcaster_.sendTransform(table_pose_frame);
+//  }
+
+  // group within distance
+  double group_dist = 20; //pixel
+  std::vector< std::vector<CornerCandidate > > grouped_corners;
+  for(size_t i=0;i<corner.size();i++) {
+    std::vector<CornerCandidate > vec;
+    vec.push_back(corner[i]);
+    grouped_corners.push_back(vec);
+  }
+  bool changed = true;
+  while(changed ) {
+    changed  = false;
+    for(size_t i=0;i<grouped_corners.size();i++) {
+      for(size_t j=i+1;j<grouped_corners.size();j++) {
+        // check whether these two groups are close enough --> merge groups and break loop
+        for(size_t a=0;a<grouped_corners[i].size();a++) {
+          for(size_t b=0;b<grouped_corners[j].size();b++) {
+//            cout << grouped_corners[i][a].x<<";"<<grouped_corners[i][a].y<<"   "<<grouped_corners[j][b].x <<";"<<grouped_corners[j][b].y << endl;
+            if( SQR(grouped_corners[i][a].x - grouped_corners[j][b].x) + SQR(grouped_corners[i][a].y - grouped_corners[j][b].y) < SQR(group_dist) ) {
+              // merge groups
+//              cout << "merging.." << endl;
+              grouped_corners[i].insert(grouped_corners[i].end(),grouped_corners[j].begin(),grouped_corners[j].end());
+              grouped_corners.erase(grouped_corners.begin() + j);
+              changed  = true;
+              j--;
+              break;
+            }
+          }
+          if(changed ) break;
+        }
+      }
     }
   }
 
-  cout << "corner candidates: "<<corner.size()<<endl;
-  for(size_t i=0;i<corner.size();i++) {
-    // show frames
+  // filter groups with low support
+  size_t min_support = 1;
+  changed = true;
+  while(changed) {
+    changed = false;
+    for(size_t i=0;i<grouped_corners.size();i++) {
+      if(grouped_corners[i].size() < min_support) {
+        grouped_corners.erase(grouped_corners.begin() + i);
+        changed = true;
+        break;
+      }
+    }
+  }
+
+
+
+  cout << "corner groups: "<<(grouped_corners.size())<<endl;
+  for(size_t i=0;i<MIN(4,grouped_corners.size());i++) {
     char buf[50];
     sprintf(buf,"x%d",i);
-    tf::Stamped<tf::Pose> table_pose_frame(corner[i].first, cloud_->header.stamp, buf, cloud_->header.frame_id);
-    broadcaster_.sendTransform(table_pose_frame);
+    broadcaster_.sendTransform(grouped_corners[i][0].tf,ros::Time::now(),buf,"/stereo");
   }
 
   cvClearMemStorage(storage);
   cvReleaseMemStorage(&storage);
   cvShowImage("hough",pixHough);
 
+//  cvSaveImage("/tmp/pixOccupied.png",pixOccupied);
+//  cvSaveImage("/tmp/pixFree.png",pixFree);
+//  cvSaveImage("/tmp/pixUnknown.png",pixUnknown);
+//  cvSaveImage("/tmp/pixCanny.png",pixCanny);
+//  cvSaveImage("/tmp/pixFreeDilated.png",pixFreeDilated);
+//  cvSaveImage("/tmp/pixCannyFiltered.png",pixCannyFiltered);
+//  cvSaveImage("/tmp/pixCannyFilteredAndDilated.png",pixCannyFilteredAndDilated);
+//  cvSaveImage("/tmp/pixHough.png",pixOccupied);
+
+  cvReleaseImage(&pixOccupiedDist);
   cvReleaseImage(&pixOccupied);
   cvReleaseImage(&pixFree);
   cvReleaseImage(&pixUnknown);
@@ -406,133 +532,24 @@ void PlanarNode::syncCallback()
   cvReleaseImage(&pixCannyFiltered);
   cvReleaseImage(&pixCannyFilteredAndDilated);
   cvReleaseImage(&pixHough);
-
-  lastDuration = Time::now() - currentTime;
-  lastTime = currentTime;
-
-  ROS_INFO("processing took %g s",lastDuration.toSec());
 }
 
-bool PlanarNode::spin()
-{
-  while (nh_.ok())
-  {
-    int key = cvWaitKey(100) & 0x00FF;
-    if (key == 27) //ESC
-      break;
-
-    ros::spinOnce();
+void PlanarNode::visualizeFrontAndBackPlane(int frontplane, int backplane, const robot_msgs::PointCloud& cloud,
+                                  std::vector<std::vector<int> >& plane_indices,
+                                  std::vector<robot_msgs::PointCloud>& plane_cloud,
+                                  std::vector<std::vector<double> >& plane_coeff,
+                                  robot_msgs::PointCloud& outside) {
+  std::vector<float> plane_color;
+  plane_color.resize(plane_coeff.size());
+  for(size_t i=0;i<plane_coeff.size();i++) {
+    plane_color[i] = HSV_to_RGBf(0.7,0,0.3);
   }
-
-  return true;
+  plane_color[backplane] = HSV_to_RGBf(0.3,0.3,1);
+  plane_color[frontplane] = HSV_to_RGBf(0.,0.3,1);
+  vis_utils::visualizePlanes(*cloud_,plane_indices,plane_cloud,plane_coeff,plane_color,outside,cloud_planes_pub_,visualization_pub_);
 }
 
-int main(int argc, char **argv)
-{
-  ros::init(argc, argv, "planar_node");
-
-  PlanarNode node;
-  node.spin();
-
+double CornerCandidate::computeDistance(IplImage* distImage) {
   return 0;
 }
 
-
-/*
- *
-
-
-  // the depth image
-  IplImage* imgInPlane = cvCreateImage( cvGetSize(planeImage), planeImage->depth, planeImage->nChannels );
-
-
-  // Reduce the image by 2
-//  IplImage* out = cvCreateImage( cvSize(planeImage->width/2,planeImage->height/2), planeImage->depth, planeImage->nChannels );
-  IplImage* out = cvCreateImage( cvGetSize(planeImage), planeImage->depth, planeImage->nChannels );
-//  cvPyrDown( planeImage, out );
-
-//  cvShowImage("plane2", planeImage);
-//  int rows=3;
-//  int columns=3;
-//  IplConvKernel* structuringElement; // open/close structuring element
-//
-//  structuringElement = cvCreateStructuringElementEx(rows, columns,
-//                cvFloor(rows / 2), cvFloor(columns / 2), CV_SHAPE_RECT, NULL);
-//
-//  int iterations=10;
-//
-//  cvMorphologyEx(planeImage, planeImage, NULL, structuringElement,
-//                                                                                        CV_MOP_OPEN, iterations);
-//
-////  cvMorphologyEx(planeImage, planeImage, NULL, structuringElement,
-////                                                                                        CV_MOP_CLOSE, iterations);
-//
-//  cvReleaseStructuringElement(&structuringElement);
-
-  cvSmooth( planeImage, out, CV_GAUSSIAN, 1, 1 );
-
-  IplImage* dst = cvCreateImage( cvGetSize(out), 8, 1 );
-  IplImage* color_dst = cvCreateImage( cvGetSize(out), 8, 3 );
-  CvMemStorage* storage = cvCreateMemStorage(0);
-  CvSeq* lines = 0;
-
-  cvCanny( out, dst, 50, 200, 3 );
-  cvDilate(dst,dst);
-
-  IplImage* dist = cvCreateImage( cvGetSize(out), 8, 1 );
-  uchar *data;
-
-  cvCvtColor( dst, color_dst, CV_GRAY2BGR );
-  lines = cvHoughLines2( dst, storage, CV_HOUGH_PROBABILISTIC, 1, CV_PI/180, 5, 30, 15 );
-  for(int i = 0; i < lines->total; i++ )
-  {
-      CvPoint* line = (CvPoint*)cvGetSeqElem(lines,i);
-      cvLine( color_dst, line[0], line[1], CV_RGB(255,0,0), 3, 8 );
-  }
-  data      = (uchar *)dst->imageData;
-  for(int i=0;i<dst->height;i++) for(int j=0;j<dst->width;j++) for(int k=0;k<dst->nChannels;k++)
-    data[i*dst->widthStep+j*dst->nChannels+k]=255-data[i*dst->widthStep+j*dst->nChannels+k];
-
-  cvDistTransform(dst, dist, CV_DIST_L1,3);
-
-  for(int i = 0; i < lines->total; i++ )
-  {
-      CvPoint* line = (CvPoint*)cvGetSeqElem(lines,i);
-
-      CvLineIterator iterator;
-      int max_buffer = cvInitLineIterator(dist,line[0],line[1],&iterator,8,0);
-      double d_sum=0;
-      double d_max=0;
-      for(int j=0;j<max_buffer;j++) {
-        d_sum += iterator.ptr[0];
-        d_max = MAX(d_max,iterator.ptr[0]);
-        CV_NEXT_LINE_POINT(iterator);
-      }
-      cvLine( color_dst, line[0], line[1], CV_RGB(255-MIN(255,d_max*20),0,0), 3, 8 );
-
-      cout << "line" << i <<" has d_sum="<<d_sum <<" d_max="<<d_max<<" and max_buffer="<<max_buffer<< endl;
-
-  }
-
-//
-//
-//  char outFileName[50];
-//  sprintf (outFileName, "/tmp/plane-%.5d.png", cloud_->header.seq);
-//  printf("'%s'\n",outFileName);
-//  if(!cvSaveImage(outFileName,planeImage)) printf("Could not save: %s\n",outFileName);
-//  sprintf (outFileName, "/tmp/canny-%.5d.png", cloud_->header.seq);
-//  if(!cvSaveImage(outFileName,dst)) printf("Could not save: %s\n",outFileName);
-//  sprintf (outFileName, "/tmp/hough-%.5d.png", cloud_->header.seq);
-//  if(!cvSaveImage(outFileName,color_dst)) printf("Could not save: %s\n",outFileName);
-
-  cvShowImage("plane", planeImage);
-  cvShowImage( "Canny", dst );
-  cvShowImage( "Hough", color_dst );
-  cvShowImage( "Dist", dist );
-
-  cvReleaseImage(&dst);
-  cvReleaseImage(&color_dst);
-  cvReleaseImage(&planeImage);
-
-
- */
