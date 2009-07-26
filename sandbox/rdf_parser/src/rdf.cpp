@@ -142,8 +142,8 @@ bool RDF::initXml(TiXmlElement *robot_xml)
     std::cout << "INFO: build tree: " << link->first << " is a child of " << parent_name << std::endl;
 
     // add parent link in Link element
-    Link* parent_link;
-    if (!this->getLink(parent_name,parent_link))
+    Link* parent_link = this->getLink(parent_name);
+    if (!parent_link)
     {
       if (parent_name == "world")
         std::cout << "INFO: parent link: " << parent_name << " is a special case." << std::endl;
@@ -206,7 +206,7 @@ bool RDF::initXml(TiXmlElement *robot_xml)
   if (root_name == NULL)
   {cerr << "ERROR: No root link found. The robot xml contains a graph instead of a tree." << endl; return false;}
   cout << "INFO: Link: " << *root_name << " is the root Link " << endl;
-  getLink(*root_name,this->root_link_); // set root link
+  this->root_link_ = getLink(*root_name); // set root link
 
   // Get Maps
   for (TiXmlElement* map_xml = robot_xml->FirstChildElement("map"); map_xml; map_xml = map_xml->NextSiblingElement("map"))
@@ -231,9 +231,8 @@ Link* RDF::getLink(const std::string& name)
 {
   if (this->links_.find(name) == this->links_.end())
     return NULL;
-
-  link = this->links_.find(name)->second;
-  return true;
+  else
+    return this->links_.find(name)->second;
 }
 
 }
