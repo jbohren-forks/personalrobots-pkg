@@ -1,0 +1,13 @@
+When building move_base with gcc 4.3.2 (and presumably greater versions):
+
+[ 97%] Building CXX object CMakeFiles/bin/move_base_new.dir/src/move_base.o
+In file included from /home/rosbuild/hudson/workspace/personalrobots-update-64/personalrobots/stacks/nav/move_base/include/move_base/move_base.h:41,
+                 from /home/rosbuild/hudson/workspace/personalrobots-update-64/personalrobots/stacks/nav/move_base/src/move_base.cpp:37:
+/home/rosbuild/hudson/workspace/personalrobots-update-64/ros/../personalrobots/sandbox/actionlib/include/actionlib/single_goal_action_server.h:57: error: declaration of 'typedef class actionlib::ActionServer<ActionGoal, Goal, ActionResult, Result, ActionFeedback, Feedback> actionlib::SingleGoalActionServer<ActionGoal, Goal, ActionResult, Result, ActionFeedback, Feedback>::ActionServer'
+/home/rosbuild/hudson/workspace/personalrobots-update-64/ros/../personalrobots/sandbox/actionlib/include/actionlib/action_server.h:63: error: changes meaning of 'ActionServer' from 'class actionlib::ActionServer<ActionGoal, Goal, ActionResult, Result, ActionFeedback, Feedback>'
+/home/rosbuild/hudson/workspace/personalrobots-update-64/personalrobots/stacks/nav/move_base/src/move_base.cpp: In function 'int main(int, char**)':
+/home/rosbuild/hudson/workspace/personalrobots-update-64/personalrobots/stacks/nav/move_base/src/move_base.cpp:631: warning: 'const std::string& ros::NodeHandle::getName() const' is deprecated (declared at /home/rosbuild/hudson/workspace/personalrobots-update-64/ros/core/roscpp/include/ros/node_handle.h:1041)
+make[3]: *** [CMakeFiles/bin/move_base_new.dir/src/move_base.o] Error 1
+
+
+
