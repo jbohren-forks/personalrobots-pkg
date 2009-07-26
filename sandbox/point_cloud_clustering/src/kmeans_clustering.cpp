@@ -1,7 +1,7 @@
 /*********************************************************************
  * Software License Agreement (BSD License)
  *
- *  Copyright (c) 2009, Daniel Munoz
+ *  Copyright (c) 2009, Willow Garage
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -32,31 +32,13 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include <robot_msgs/PointCloud.h>
+#include <point_cloud_clustering/kmeans_clustering.h>
 
-#include <opencv/cxcore.h>
-#include <opencv/cv.h>
-#include <opencv/cvaux.hpp>
-
-#include <set>
-#include <map>
-#include <vector>
-
-using namespace std;
-
-typedef struct kmeans_params
-{
-    double factor;
-    double accuracy;
-    int max_iter;
-    vector<unsigned int> channel_indices;
-} kmeans_params_t;
-
-int pcKMeans(const robot_msgs::PointCloud& pt_cloud,
-             const set<unsigned int>& ignore_indices,
-             const kmeans_params_t& kmeans_params,
-             map<unsigned int, vector<float> >& cluster_xyz_centroids,
-             map<unsigned int, vector<int> >& cluster_pt_indices)
+int point_cloud_clustering::pcKMeans(const robot_msgs::PointCloud& pt_cloud,
+                                     const set<unsigned int>& ignore_indices,
+                                     const kmeans_params_t& kmeans_params,
+                                     map<unsigned int, vector<float> >& cluster_xyz_centroids,
+                                     map<unsigned int, vector<int> >& cluster_pt_indices)
 
 {
   double kmeans_factor = kmeans_params.factor;
