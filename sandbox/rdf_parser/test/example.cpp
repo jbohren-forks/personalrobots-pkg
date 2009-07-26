@@ -44,20 +44,20 @@ using namespace rdf_parser;
 int main(int argc, char** argv)
 {
   if (argc < 2){
-    cerr << "Expect xml file to parse" << endl;
+    cerr << "Expect xml file to parse" << std::endl;
     return -1;
   }
   TiXmlDocument rdf_xml;
   rdf_xml.LoadFile(argv[1]);
   TiXmlElement *robot_xml = rdf_xml.FirstChildElement("robot");
   if (!robot_xml){
-    cerr << "Could not parse the xml" << endl;
+    cerr << "Could not parse the xml" << std::endl;
     return -1;
   }
 
   RDF robot;
   if (!robot.initXml(robot_xml)){
-    cerr << "Parsing the xml failed" << endl;
+    cerr << "Parsing the xml failed" << std::endl;
     return -1;
   }
 
@@ -65,37 +65,33 @@ int main(int argc, char** argv)
   std::cout << "---------- Finished Loading from URDF XML, Now Checking RDF structure ------------" << std::endl;
   // get root link
   Link* root_link=robot.getRoot();
-  cout << "root " << root_link->getName() << " has " << root_link->getChildren()->size() << " children" << endl << endl;
+  std::cout << "root " << root_link->getName() << " has " << root_link->getChildren()->size() << " children" << std::endl;
+  std::cout << "root " << root_link->getName() << " has parent joint: " << root_link->getParentJointName() << std::endl << std::endl;
   if (!root_link) return -1;
 
 
-  // test first child
-  std::vector<Link*>* children = root_link->getChildren();
-  Link* first_child = *children->begin();
-  if (!first_child) return -1;
-  cout << "first child is: " << first_child->getName() << std::endl;
-  // test children of first child
-  std::cout << "first child has " << first_child->getChildren()->size() << " children" << endl << endl;
-
-
-  // go through all children, print grandchildren
-  cout << "root link: " << root_link->getName() << endl;
+  // go through children, print grandchildren
   int count = 0;
-  for (std::vector<Link*>::iterator child = children->begin(); child != children->end(); child++)
+  std::cout << "root link: " << root_link->getName() << std::endl;
+  for (std::vector<Link*>::iterator child = root_link->getChildren()->begin(); child != root_link->getChildren()->end(); child++)
   {
     if (*child)
     {
-      cout << "  child(" << count++ << "):  " << (*child)->getName() << endl;
+      std::cout << "  child(" << count++ << "):  " << (*child)->getName()
+                << " with parent joint: " << (*child)->parent_joint_->getName()
+                << std::endl;
       // first grandchild
       std::vector<Link*>* grandchildren = (*child)->getChildren();
       int count2 = 0;
       for (std::vector<Link*>::iterator grandchild = grandchildren->begin(); grandchild != grandchildren->end(); grandchild++)
         if (*grandchild)
-          cout << "    grandchild(" << count2++ << "): " << (*grandchild)->getName() << endl;
+          std::cout << "    grandchild(" << count2++ << "): " << (*grandchild)->getName()
+                    << " with parent joint: " << (*grandchild)->parent_joint_->getName()
+                    << std::endl;
     }
     else
     {
-      cout << "root link: " << root_link->getName() << " has a null child!" << *child << std::endl;
+      std::cout << "root link: " << root_link->getName() << " has a null child!" << *child << std::endl;
       return -1;
     }
   }
