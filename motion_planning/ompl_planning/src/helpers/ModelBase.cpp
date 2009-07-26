@@ -62,6 +62,7 @@ ompl_planning::EnvironmentDescription* ompl_planning::ModelBase::getEnvironmentD
 	}
 	else
 	{
+	    ROS_DEBUG("Cloning collision environment (%d total)", (int)ENVS.size() + 1);
 	    result = new EnvironmentDescription();
 	    result->collisionSpace = planningMonitor->getEnvironmentModel()->clone();
 	    result->kmodel = result->collisionSpace->getRobotModel().get();
