@@ -32,15 +32,18 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
+#include <stdlib.h>
+
+#include <set>
+#include <map>
+#include <vector>
+
 #include <robot_msgs/PointCloud.h>
 
 #include <opencv/cxcore.h>
 #include <opencv/cv.h>
 #include <opencv/cvaux.hpp>
 
-#include <set>
-#include <map>
-#include <vector>
 
 using namespace std;
 
