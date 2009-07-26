@@ -415,9 +415,9 @@ bool ompl_planning::RequestHandler::callPlanner(PlannerSetup *psetup, int times,
 			psetup->smoother->smoothMax(path);
 			double tsmooth = (ros::WallTime::now() - startTime).toSec();
 			ROS_DEBUG("          Smoother spent %g seconds (%g seconds in total)", tsmooth, tsmooth + tsolve);
-			dynamic_cast<SpaceInformationKinematicModel*>(psetup->si)->interpolatePath(path, 0.1);
+			dynamic_cast<SpaceInformationKinematicModel*>(psetup->si)->interpolatePath(path, 0.3);
 		    }
-		}		
+		}
 		
 		if (sol.path == NULL || sol.difference > goal->getDifference() || 
 		    (sol.path && sol.difference == goal->getDifference() && sol.path->length() > goal->getSolutionPath()->length()))
