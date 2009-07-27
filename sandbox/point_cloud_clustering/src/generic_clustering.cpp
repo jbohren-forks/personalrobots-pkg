@@ -37,11 +37,51 @@
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-void point_cloud_clustering::GenericClustering::computeClusterCentroids(const robot_msgs::PointCloud& pt_cloud,
-                                                                        const map<unsigned int, vector<int> >& clusters,
-                                                                        map<unsigned int, vector<float> >& cluster_centroids)
+int point_cloud_clustering::GenericClustering::computeClusterCentroids(const robot_msgs::PointCloud& pt_cloud,
+                                                                       const map<unsigned int, vector<int> >& clusters,
+                                                                       map<unsigned int, vector<float> >& cluster_centroids)
 {
+  cluster_centroids.clear();
 
+  unsigned int total_nbr_pts = pt_cloud.pts.size();
+
+  map<unsigned int, vector<int> >::const_iterator iter_clusters;
+  for (iter_clusters = clusters.begin(); iter_clusters != clusters.end() ; iter_clusters++)
+  {
+    // retrieve point indices of current cluster
+    const vector<int>& curr_pt_indices = iter_clusters->second;
+
+    // accumulate sum coordinates for each point in cluster
+    vector<float> curr_centroid(3, 0.0);
+    unsigned int curr_nbr_pts = curr_pt_indices.size();
+    for (unsigned int i = 0 ; curr_nbr_pts ; i++)
+    {
+      // Verify index does not exceed boundary
+      unsigned int curr_pt_idx = curr_pt_indices[i];
+      if (curr_pt_idx >= total_nbr_pts)
+      {
+        ROS_ERROR("Invalid indices to compute cluster centroid");
+        return -1;
+      }
+
+      curr_centroid[0] += pt_cloud.pts[curr_pt_idx].x;
+      curr_centroid[1] += pt_cloud.pts[curr_pt_idx].y;
+      curr_centroid[2] += pt_cloud.pts[curr_pt_idx].z;
+    }
+
+    // normalize by number of points
+    curr_nbr_pts = std::max(curr_nbr_pts, 1);
+    for (unsigned int i = 0 ; i < 3 ; i++)
+    {
+      curr_centroid[i] /= static_cast<float> (curr_nbr_pts);
+    }
+
+    // insert into results
+    unsigned int curr_cluster_label = iter_clusters->first;
+    cluster_centroids.insert(pair<unsigned int, vector<float> > (curr_cluster_label, curr_centroid));
+  }
+
+  return 0;
 }
 
 // --------------------------------------------------------------

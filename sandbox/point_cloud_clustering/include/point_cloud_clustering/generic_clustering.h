@@ -68,6 +68,7 @@ namespace point_cloud_clustering
                           const set<unsigned int>& indices_to_cluster,
                           map<unsigned int, vector<int> >& created_clusters,
                           map<unsigned int, vector<float> >* cluster_centroids = NULL) = 0;
+
     protected:
       bool parameters_defined_;
       unsigned int starting_label_;
