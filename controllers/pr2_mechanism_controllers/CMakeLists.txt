@@ -14,7 +14,6 @@ rospack_add_boost_directories()
 rospack_add_library( pr2_mechanism_controllers
   src/base_controller.cpp
   src/base_controller_pos.cpp
-  src/base_position_controller.cpp
   src/laser_scanner_controller.cpp
   src/laser_scanner_traj_controller.cpp 
   src/head_position_controller.cpp
