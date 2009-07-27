@@ -1,7 +1,7 @@
 /*********************************************************************
  * meanshift_clustering.cpp
  *
- * Adapted from code by: Piotr Dollara nd Sameer Agarwal.
+ * Adapted from code by: Piotr Dollar and Sameer Agarwal.
  *
  * Piotr's Image&Video Toolbox      Version NEW
  * Copyright 2009 Piotr Dollar.  [pdollar-at-caltech.edu]
