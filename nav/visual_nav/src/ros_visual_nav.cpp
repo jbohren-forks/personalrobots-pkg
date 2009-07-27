@@ -417,7 +417,7 @@ void RosVisualNavigator::baseScanCallback(const Notifier::MessagePtr& message)
   if (!(scan_counter_++%scan_period_)) {
     try {
       robot_msgs::PointCloud point_cloud;
-      projector_.transformLaserScanToPointCloud ("vslam", point_cloud, *message, tf_listener_);
+      projector_.transformLaserScanToPointCloud (vslam_frame_, point_cloud, *message, tf_listener_);
 
       vector<Point32> point_vec;
       point_cloud.get_pts_vec(point_vec);
@@ -496,7 +496,7 @@ struct DrawEdges
 {
   DrawEdges (RoadmapPtr roadmap, uint* num_active_markers) : roadmap(roadmap)
   {
-    marker.header.frame_id="vslam";
+    marker.header.frame_id = vslam_frame_;
     marker.ns = "visual_nav";
     marker.id = (*num_active_markers)++;
     marker.type=Marker::LINE_LIST;
@@ -562,6 +562,7 @@ void RosVisualNavigator::deleteOldMarkers ()
   for (uint i=0; i<num_active_markers_; ++i) {
     Marker marker;
     marker.ns = "visual_nav";
+    marker.header.frame_id = vslam_frame_;
     marker.id=i;
     marker.action=Marker::DELETE;
     node_.publish("visualization_marker", marker);
@@ -631,7 +632,7 @@ void RosVisualNavigator::publishVisualization ()
 void RosVisualNavigator::publishNodeMarker (const Pose& pose, const uint r, const uint g, const uint b)
 {
   Marker marker;
-  marker.header.frame_id="vslam";
+  marker.header.frame_id=vslam_frame_;
   marker.header.stamp = Time::now();
   marker.ns="visual_nav";
   marker.id=num_active_markers_++;
