@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import cStringIO
 import time
 import Image, ImageDraw
 import os
@@ -17,14 +18,22 @@ import roslib; roslib.load_manifest('webteleop')
 import roslib.scriptutil
 import rospy
 import rosjson
+from tf import *
+import bullet
 
+from tf.msg import tfMessage
 from nav_srvs.srv import *
 from nav_msgs.msg import *
 from std_msgs.msg import *
 from robot_msgs.msg import *
 
+tfclient = ''
 CALLER_ID = '/webteleop'
 index = 0
+
+msgClasses = { '/initialpose' : robot_msgs.msg.PoseWithCovariance,
+               '/move_base/activate' : robot_msgs.msg.PoseStamped
+             }
 
 ################################################################################
 # Convert an image message to a json message
@@ -64,6 +73,10 @@ def img2json(msg, topic_type):
 
 class WebException(Exception): pass
 
+
+
+################################################################################
+# Ros Web Topic Factory
 class RWTFactory(object):
   def __init__(self):
     self.map = {}
@@ -80,8 +93,31 @@ class RWTFactory(object):
     return t
 #*******************************************************************************
 
-factory = RWTFactory()
 
+################################################################################
+# Ros Web TF Factory
+class RWTFFactory(object):
+  def __init__(self):
+    self.map = {}
+    self.lock = threading.Lock()
+
+  def get(self, tfname):
+    try:
+      self.lock.acquire()
+      if tfname in self.map:
+        return self.map[tfname]
+      self.map[tfname] = t = ROSWebTF(tfname)
+    finally:
+      self.lock.release()
+    return t
+#*******************************************************************************
+
+factory = RWTFactory()
+tffactory = RWTFFactory()
+
+
+################################################################################
+# Ros Web Topic
 class ROSWebTopic(object):
   def __init__(self, topic):
     self.topic = topic
@@ -114,12 +150,14 @@ class ROSWebTopic(object):
         if t == self.topic:
           break;
 
-      msg_class = roslib.scriptutil.get_message_class(self.topic_type)
 
       if self.pubsub == "subscriber":
+        msg_class = roslib.scriptutil.get_message_class(self.topic_type)
         self.sub = rospy.Subscriber(self.topic, msg_class, self.topic_callback)
+      elif msgClasses.has_key(self.topic):
+        self.pub = rospy.Publisher(self.topic, msgClasses[self.topic] )
       else:
-        self.pub = rospy.Publisher(self.topic, msg_class)
+        rospy.signal_shutdown("Unknown msg class for topic[%s]" % self.topic)
 
       self.initialized = True
     except WebException:
@@ -158,7 +196,6 @@ class ROSWebTopic(object):
       self.cond.acquire()
 
       if not self.initialized:
-
         return
 
       self.pub.publish(msg)
@@ -183,6 +220,25 @@ class ROSWebTopic(object):
 
       if self.topic_type == "sensor_msgs/CompressedImage" or self.topic_type == "sensor_msgs/Image": 
         msg = img2json(self.last_message, self.topic_type)
+
+      elif self.topic_type == "visualization_msgs/Polyline":
+        frameId = self.last_message.header.frame_id
+        msg = '{ "points" : ['
+        for i in range( len(self.last_message.points) ):
+          point = robot_msgs.msg.PointStamped()
+          point.header.stamp = self.last_message.header.stamp
+          point.header.frame_id = frameId
+          point.point.x = self.last_message.points[i].x
+          point.point.y = self.last_message.points[i].y
+          point.point.z = self.last_message.points[i].z
+
+          point = tfclient.transformPoint("/map", point)
+          msg += '{"x": "%f",' % point.point.x
+          msg += '"y": "%f",' % point.point.y
+          msg += '"z": "%f"},' % point.point.z
+
+        msg += ']}'
+
       else:
         msg = rosjson.ros_message_to_json(self.last_message)
 
@@ -194,7 +250,124 @@ class ROSWebTopic(object):
 #*******************************************************************************
 
 
-    
+
+
+################################################################################
+# Ros Web TF
+class ROSWebTF():
+  def __init__(self, _tfname):
+    #self.tl = TransformListener()
+    #dur = roslib.rostime.Duration.from_seconds(1.0)
+    #self.tl.setExtrapolationLimit(dur)
+    self.tfname = _tfname
+
+  def getData(self):
+    msg = ''
+    try:
+      if tfclient.frameExists(self.tfname) and tfclient.frameExists("/map") :
+        t = tfclient.getLatestCommonTime("/map", self.tfname )
+        position, orientation = tfclient.lookupTransform("/map", self.tfname, t)
+
+        msg = {'position' : 
+               {'x': position[0], 'y' : position[1], 'z':position[2]}, 
+               'orientation' : 
+                 {'x' : orientation[0], 'y': orientation[1], 
+                  'z' : orientation[2], 'w': orientation[3]
+                 }
+              }
+
+    except Exception, e:
+      print "Exception: %s" % e
+
+    return msg
+#*******************************************************************************
+
+## Utility for connecting to a service and retrieving the TCPROS
+## headers. Services currently do not declare their type with the
+## master, so instead we probe the service for its headers.
+## @param service_name str: name of service
+## @param service_uri str: ROSRPC URI of service
+## @return dict: map of header fields
+## @throws ROSServiceIOException
+def get_service_class(service_name):
+  master = roslib.scriptutil.get_master()
+  code, msg, service_uri = master.lookupService(CALLER_ID, service_name)
+
+  dest_addr, dest_port = rospy.parse_rosrpc_uri(service_uri)
+  s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+  try:
+      try:
+          # connect to service and probe it to get the headers
+          s.settimeout(5.0)
+          s.connect((dest_addr, dest_port))
+          header = { 'probe':'1', 'md5sum':'*',
+                     'callerid':'/rosservice', 'service':service_name}
+          roslib.network.write_ros_handshake_header(s, header)
+          return roslib.network.read_ros_handshake_header(s, cStringIO.StringIO(), 2048).get('type', None)
+      except socket.error:
+          raise ROSServiceIOException("Unable to communicate with service [%s], address [%s]"%(service_name, service_uri))
+  finally:
+      if s is not None:
+          s.close()
+
+def GetMapAsJPEG(service_proxy, qdict):
+  data = ''
+  try:
+    #staticMap = rospy.ServiceProxy(topic, service_class)
+    #staticMap = rospy.ServiceProxy('/static_map', StaticMap)
+    map = service_proxy()
+
+    mapW = map.map.info.width
+    mapH = map.map.info.height
+    data = map.map.data
+  except rospy.ServiceException, e:
+    print "Service call exception: %s" % e
+
+  originX = 0
+  originY = 0
+  destW = mapW
+  destH = mapH
+
+  if qdict.has_key("x"):
+    originX = int(qdict["x"][0])
+  if qdict.has_key("y"):
+    originY = int(qdict["y"][0])
+  if qdict.has_key("w"):
+    destW = int(qdict["w"][0])
+  if qdict.has_key("h"):
+    destH = int(qdict["h"][0])
+
+  img = Image.new("L", (destW,destH), "#FFFFFF")
+  draw = ImageDraw.Draw(img)
+
+  y =  0
+  for mapy in range(originY, originY+ destH):
+    x = 0
+    for mapx in range(originX, originX + destW):
+      if (ord(data[mapy*mapW+mapx]) < 100):
+        draw.point( (x,destH-y-1), fill=(255))
+      else:
+        draw.point((x,destH-y-1), fill=(0))
+      x += 1
+    y += 1
+
+  buf= StringIO.StringIO()
+  img.save(buf, format= 'JPEG')
+  jpeg = buf.getvalue()
+
+  jpeg = base64.b64encode(jpeg)
+
+  msg = '{'
+  msg += ' "width"  : "%d",' % destW
+  msg += ' "height" : "%d",' % destH
+  msg += ' "data" : "data:image/jpeg;base64,' + jpeg + '"'
+  msg += '}'
+
+  return msg
+
+
+################################################################################
+# HTTP request handler
 class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
   def __init__(self, *args):
     BaseHTTPServer.BaseHTTPRequestHandler.__init__(self, *args)
@@ -232,6 +405,8 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
     cmd = path_parts[2].lower()
     topic = '/'+"/".join( path_parts[p] for p in range(3, len(path_parts) ) )
 
+    print "CMD[%s] Topic[%s]" % (cmd, topic)
+
     if cmd == "subscribe":
       print "Subscribe[%s]\n" % topic
 
@@ -248,6 +423,7 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
       self.send_header( "Content-type", "text/html" )
       self.end_headers()
       self.wfile.write("subscribed")
+
     elif cmd == "announce":
       print "Announce[%s]\n" % topic
 
@@ -260,14 +436,31 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.send_response(404)
         return
 
-      # Wait one second. This makes ros happy. Should be removed when
-      # latching topics (ROS 0.7??) is implemented
-      time.sleep(1)
-
       self.send_response(200)
       self.send_header( "Content-type", "text/html" )
       self.end_headers()
       self.wfile.write("announced")
+
+    elif cmd == "tfsub":
+      print "TF Subscribe[%s]" % topic
+      tfmsg = tffactory.get(topic)
+
+      self.send_response(200)
+      self.send_header( "Content-type", "text/html" )
+      self.end_headers()
+      self.wfile.write("subscribed to tf")
+
+    elif cmd == "tfget":
+      print "TF GET[%s]" % topic
+      tfmsg = tffactory.get(topic)
+
+      msg = tfmsg.getData()
+
+      self.send_response(200)
+      self.send_header( "Content-type", "application/json" )
+      self.send_header( "Content-length", str(len(msg)) )
+      self.end_headers()
+      self.wfile.write(msg)
 
     elif cmd == "unsubscribe":
       print "Unsubscribe[%s]" % topic
@@ -280,8 +473,8 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
       self.wfile.write("unsubscribed")
 
     elif cmd == "get":
-      rwt = factory.get(topic)
 
+      rwt = factory.get(topic)
       msg = rwt.getData()
 
       print "Get[%s]" % topic
@@ -290,97 +483,67 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
       self.send_header( "Content-length", str(len(msg)) )
       self.end_headers()
       self.wfile.write(msg)
+
     elif cmd == "pub":
       rwt = factory.get(topic)
       print "Pub[%s]" % topic
 
-      if topic == "/move_base/activate":
-        msg = robot_msgs.msg.PoseStamped()
+      if msgClasses.has_key(topic):
+        msg = msgClasses[topic]()
       else:
-        msg = robot_msgs.msg.PoseWithCovariance()
+        print "Unknow msg class[%s]" % topic
+
+      if topic == "/move_base/activate":
+        msg.header.frame_id = "/map"
+      else:
+        msg.covariance[6*0+0] = 0.5 * 0.5;
+        msg.covariance[6*1+1] = 0.5 * 0.5;
+        msg.covariance[6*3+3] = 3.14/12.0 * 3.14/12.0;
 
       msg.header.stamp = rospy.get_rostime()
-      msg.header.frame_id = "/map"
 
       if qdict.has_key('x'):
         msg.pose.position.x = float(qdict['x'][0])
       else:
         msg.pose.position.x = 0.0
-
       if qdict.has_key('y'):
         msg.pose.position.y = float(qdict['y'][0])
       else:
         msg.pose.position.y = 0.0
-
       if qdict.has_key('z'):
         msg.pose.position.z = float(qdict['z'][0])
       else:
         msg.pose.position.z = 0.0
 
+      if qdict.has_key('t'):
+        q = bullet.Quaternion(float(qdict['t'][0]),0,0)
+        msg.pose.orientation.x = float(q.x())
+        msg.pose.orientation.y = float(q.y())
+        msg.pose.orientation.z = float(q.z())
+        msg.pose.orientation.w = float(q.w())
+      else:
+        msg.pose.orientation.x = 0.0
+        msg.pose.orientation.y = 0.0
+        msg.pose.orientation.z = 0.0
+        msg.pose.orientation.w = 1.0
 
-      msg.pose.orientation.x = 0;
-      msg.pose.orientation.y = 0;
-      msg.pose.orientation.z = 0;
-      msg.pose.orientation.w = 1;
-
-      print msg
       rwt.publish(msg)
 
     elif cmd == "service":
       print "Service[%s]" % topic
 
-      rospy.wait_for_service('/static_map')
+      service_type = get_service_class(topic)
+      service_class = roslib.scriptutil.get_service_class(service_type)
 
-      try:
-        staticMap = rospy.ServiceProxy('/static_map', StaticMap)
-        map = staticMap()
-      except rospy.ServiceException, e:
-        print "Service call exception: %s" % e
+      rospy.wait_for_service(topic)
+      service_proxy = rospy.ServiceProxy(topic, service_class)
 
-      mapW = map.map.info.width
-      mapH = map.map.info.height
-      data = map.map.data
+      msg = ''
 
-      originX = 0
-      originY = 0
-      destW = mapW
-      destH = mapH
-
-      if qdict.has_key("x"):
-        originX = int(qdict["x"][0])
-      if qdict.has_key("y"):
-        originY = int(qdict["y"][0])
-      if qdict.has_key("w"):
-        destW = int(qdict["w"][0])
-      if qdict.has_key("h"):
-        destH = int(qdict["h"][0])
-
-      img = Image.new("L", (destW,destH), "#FFFFFF")
-      draw = ImageDraw.Draw(img)
-
-      y =  0
-      for mapy in range(originY, originY+ destH):
-        x = 0
-        for mapx in range(originX, originX + destW):
-          if (ord(data[mapy*mapW+mapx]) < 100):
-            draw.point( (x,destH-y-1), fill=(255))
-          else:
-            draw.point((x,destH-y-1), fill=(0))
-          x += 1
-        y += 1
-
-
-      buf= StringIO.StringIO()
-      img.save(buf, format= 'JPEG')
-      jpeg = buf.getvalue()
-
-      jpeg = base64.b64encode(jpeg)
-
-      msg = '{'
-      msg += ' "width"  : "%d",' % destW
-      msg += ' "height" : "%d",' % destH
-      msg += ' "data" : "data:image/jpeg;base64,' + jpeg + '"'
-      msg += '}'
+      if topic == '/static_map':
+        msg = GetMapAsJPEG(service_proxy, qdict)
+      else:
+        print "Unable to handle service[%s]" % topic
 
       self.send_response(200)
       self.send_header( "Content-type", "application/json" )
@@ -389,8 +552,6 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
       self.wfile.write(msg)
 
     elif cmd == "topics":
-      print "Get topics"
-
       m = roslib.scriptutil.get_master()
       code, _, topics = m.getPublishedTopics(CALLER_ID, '/')
       msg = '{"topics": ['
@@ -414,9 +575,6 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
     (scm, netloc, path, params, query, fragment) = urlparse.urlparse( 
       self.path, 'http')
 
-    print "do_GET"
-    print "[%s] [%s] [%s] [%s] [%s] [%s]" % (scm, netloc, path, params, query, fragment)
-
     # Query dictionary
     qdict = cgi.parse_qs(query)
 
@@ -435,11 +593,10 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
       soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
       try:
         if self._connect_to(netloc, soc):
-          print "Send:"
-          print "%s %s %s\r\n" % (
-            self.command,
-            urlparse.urlunparse(('', '', path, params, query, '')),
-            self.request_version)
+          #print "%s %s %s\r\n" % (
+          #  self.command,
+          #  urlparse.urlunparse(('', '', path, params, query, '')),
+          #  self.request_version)
           soc.send("%s %s %s\r\n" % (
             self.command,
             urlparse.urlunparse(('', '', path, params, query, '')),
@@ -474,18 +631,6 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
             out = soc
           data = i.recv(8192)
           if data:
-            #dataIndex = data.find("Date: ")
-            #index = data.find("GMT")
-            #if dataIndex > 0 and index > 0:
-            #  time = data[dataIndex+6:index+3]
-            #  part = data[:index+3]
-            #  part += '\n\rLast-modified: %s' % time
-            #  part += data[index+4:]
-            #  print "Part[%s]" % part
-            #  #print "Data[%s]" %data
-            #  out.send(part)
-            #else:
-            print data
             out.send(data)
             
             count = 0
@@ -511,7 +656,8 @@ class MasterMonitor:
       except:
         import traceback
         return
-      time.sleep(1)
+      time.sleep(.1)
+
 
 class MyHTTPServer(threading.Thread, SocketServer.ThreadingMixIn, 
                    BaseHTTPServer.HTTPServer):
@@ -523,19 +669,23 @@ class MyHTTPServer(threading.Thread, SocketServer.ThreadingMixIn,
     while 1:
       self.handle_request()
 
+
+
 ################################################################################
 # Main
 if __name__ == '__main__':
 
   print 'starting web server'
 
-  #httpServer = BaseHTTPServer.HTTPServer( ('', 8080), Handler)
   httpServer = MyHTTPServer( ('', 8080), Handler)
   httpServer.setDaemon(True)
   httpServer.start()
 
   try:
     rospy.init_node('webteleop', disable_signals=True)
+    time.sleep(1)
+    tfclient = TransformListener()
+
     mm = MasterMonitor()
     mm.run()
   finally:
