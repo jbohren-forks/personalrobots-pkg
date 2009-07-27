@@ -99,6 +99,8 @@ dcam::init()
       printf("[dcam] Reset bus\n");
       dc1394_reset_bus(camera);
 
+      usleep(500000);
+
       printf("[dcam] Initializing camera, turning off ISO\n");
       dc1394_video_set_transmission(camera, DC1394_OFF);
 
