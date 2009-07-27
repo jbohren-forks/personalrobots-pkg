@@ -1,5 +1,5 @@
-#ifndef __GENERIC_CLUSTERING_H__
-#define __GENERIC_CLUSTERING_H__
+#ifndef __PCC_GENERIC_H__
+#define __PCC_GENERIC_H__
 /*********************************************************************
  * Software License Agreement (BSD License)
  *
@@ -38,37 +38,36 @@
 #include <map>
 #include <vector>
 
+#include <ros/ros.h>
+
 #include <robot_msgs/PointCloud.h>
 
 #include <point_cloud_mapping/kdtree/kdtree.h>
 
 using namespace std;
 
-class GenericClustering
+namespace point_cloud_clustering
 {
-  public:
-    GenericClustering()
-    {
-      parameters_defined_ = false;
-    }
+  class GenericClustering
+  {
+    public:
+      GenericClustering()
+      {
+        parameters_defined_ = false;
+      }
 
-    virtual ~GenericClustering()
-    {
-    }
+      virtual ~GenericClustering()
+      {
+      }
 
-    // not used currently
-    inline void useChannelIndices(set<unsigned int>& channel_indices)
-    {
-      channel_indices_ = channel_indices;
-    }
-
-    virtual int cluster(const robot_msgs::PointCloud& pt_cloud,
-                        cloud_kdtree::KdTree& pt_cloud_kdtree,
-                        const set<unsigned int>& indices_to_cluster,
-                        map<unsigned int, vector<int> >& created_clusters) = 0;
-  protected:
-    bool parameters_defined_;
-    set<unsigned int> channel_indices_;
-};
+      virtual int cluster(const robot_msgs::PointCloud& pt_cloud,
+                          cloud_kdtree::KdTree& pt_cloud_kdtree,
+                          const set<unsigned int>& indices_to_cluster,
+                          map<unsigned int, vector<int> >& created_clusters,
+                          map<unsigned int, vector<float> >* cluster_centroids = NULL) = 0;
+    protected:
+      bool parameters_defined_;
+  };
+}
 
 #endif

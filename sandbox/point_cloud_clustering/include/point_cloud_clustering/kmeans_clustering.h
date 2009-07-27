@@ -1,3 +1,5 @@
+#ifndef __PCC_KMEANS_H__
+#define __PCC_KMEANS_H__
 /*********************************************************************
  * Software License Agreement (BSD License)
  *
@@ -71,14 +73,18 @@ namespace point_cloud_clustering
       {
       }
 
-      void setParameters();
+      int setParameters(const double k_factor, const double accuracy, const int max_iter);
 
       virtual int cluster(const robot_msgs::PointCloud& pt_cloud,
                           cloud_kdtree::KdTree& pt_cloud_kdtree,
                           const set<unsigned int>& indices_to_cluster,
-                          map<unsigned int, vector<int> >& created_clusters)
-      {
-        return 0;
-      }
+                          map<unsigned int, vector<int> >& created_clusters,
+                          map<unsigned int, vector<float> >* cluster_centroids = NULL);
+
+    private:
+      double k_factor_;
+      double accuracy_;
+      int max_iter_;
   };
 }
+#endif
