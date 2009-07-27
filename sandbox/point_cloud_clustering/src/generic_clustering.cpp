@@ -1,5 +1,3 @@
-#ifndef __PCC_GENERIC_H__
-#define __PCC_GENERIC_H__
 /*********************************************************************
  * Software License Agreement (BSD License)
  *
@@ -34,44 +32,30 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include <set>
-#include <map>
-#include <vector>
+#include <point_cloud_clustering/generic_clustering.h>
 
-#include <ros/ros.h>
-
-#include <robot_msgs/PointCloud.h>
-
-#include <point_cloud_mapping/kdtree/kdtree.h>
-
-using namespace std;
-
-namespace point_cloud_clustering
+// --------------------------------------------------------------
+/* See function definition */
+// --------------------------------------------------------------
+void point_cloud_clustering::GenericClustering::computeClusterCentroids(const robot_msgs::PointCloud& pt_cloud,
+                                                                        const map<unsigned int, vector<int> >& clusters,
+                                                                        map<unsigned int, vector<float> >& cluster_centroids)
 {
-  class GenericClustering
-  {
-    public:
-      static void computeClusterCentroids(const robot_msgs::PointCloud& pt_cloud, const map<unsigned int,
-          vector<int> >& clusters, map<unsigned int, vector<float> >& cluster_centroids);
 
-      GenericClustering();
-
-      virtual ~GenericClustering() = 0;
-
-      inline void setStartingClusterLabel(unsigned int starting_label)
-      {
-        starting_label_ = starting_label;
-      }
-
-      virtual int cluster(const robot_msgs::PointCloud& pt_cloud,
-                          cloud_kdtree::KdTree& pt_cloud_kdtree,
-                          const set<unsigned int>& indices_to_cluster,
-                          map<unsigned int, vector<int> >& created_clusters,
-                          map<unsigned int, vector<float> >* cluster_centroids = NULL) = 0;
-    protected:
-      bool parameters_defined_;
-      unsigned int starting_label_;
-  };
 }
 
-#endif
+// --------------------------------------------------------------
+/* See function definition */
+// --------------------------------------------------------------
+point_cloud_clustering::GenericClustering::GenericClustering()
+{
+  parameters_defined_ = false;
+  starting_label_ = 0;
+}
+
+// --------------------------------------------------------------
+/* See function definition */
+// --------------------------------------------------------------
+point_cloud_clustering::GenericClustering::~GenericClustering()
+{
+}
