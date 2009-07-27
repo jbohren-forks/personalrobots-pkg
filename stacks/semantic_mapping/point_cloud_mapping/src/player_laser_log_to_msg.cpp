@@ -135,7 +135,7 @@ class PlayerLogToMsg
 
         tdif = fabs (ti - tj);                    // Just in case time decides to go backwards :)
 
-        msg_scan_.header.stamp = Time::now ();
+        msg_scan_.header.stamp = Time (ti);
 
         // index = st.at (4)
         int type    = atoi (st.at (5).c_str ());
