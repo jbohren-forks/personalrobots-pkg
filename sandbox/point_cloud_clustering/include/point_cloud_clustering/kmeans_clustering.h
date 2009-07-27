@@ -61,7 +61,7 @@ namespace point_cloud_clustering
       {
       }
 
-      int setParameters(const double k_factor, const double accuracy, const int max_iter);
+      int setParameters(double k_factor, double accuracy, int max_iter);
 
       virtual int cluster(const robot_msgs::PointCloud& pt_cloud,
                           cloud_kdtree::KdTree& pt_cloud_kdtree,

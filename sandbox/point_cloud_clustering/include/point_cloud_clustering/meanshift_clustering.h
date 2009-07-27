@@ -1,3 +1,5 @@
+#ifndef __PCC_MEANSHIFT_H__
+#define __PCC_MEANSHIFT_H__
 /*********************************************************************
  * Software License Agreement (BSD License)
  *
@@ -33,8 +35,6 @@
  *********************************************************************/
 
 #include <stdlib.h>
-#include <math.h>
-#include <string.h>
 
 #include <set>
 #include <map>
@@ -44,14 +44,31 @@
 
 #include <point_cloud_mapping/kdtree/kdtree.h>
 
+#include <point_cloud_clustering/generic_clustering.h>
+
 using namespace std;
 
 namespace point_cloud_clustering
 {
-  void pcMeanshift(const robot_msgs::PointCloud& pt_cloud,
-                   cloud_kdtree::KdTree& pt_cloud_kdtree,
-                   double radius,
-                   double rate,
-                   int maxIter,
-                   map<unsigned int, vector<int> >& cluster_pt_indices);
+  class MeanShift: public GenericClustering
+  {
+    public:
+      MeanShift()
+      {
+      }
+
+      int setParameters(double bandwidth, double rate, unsigned int max_iter);
+
+      virtual int cluster(const robot_msgs::PointCloud& pt_cloud,
+                          cloud_kdtree::KdTree& pt_cloud_kdtree,
+                          const set<unsigned int>& indices_to_cluster,
+                          map<unsigned int, vector<int> >& created_clusters,
+                          map<unsigned int, vector<float> >* cluster_centroids = NULL);
+
+    private:
+      double bandwidth_;
+      double rate_;
+      unsigned int max_iter_;
+  };
 }
+#endif

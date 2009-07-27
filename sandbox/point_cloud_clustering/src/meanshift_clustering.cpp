@@ -12,14 +12,11 @@
 
 /*********************************************************************
  * Calculates mean of all the points in data that lie on a sphere of
- * radius^2==radius2 centered on [1xp] vector x. data is [nxp]. mean
+ * radius centered on [1xp] vector query_ptr. mean
  * contains [1xp] result and return is number of points used for calc.
  *********************************************************************/
-int meanVec(const robot_msgs::PointCloud& pt_cloud,
-            cloud_kdtree::KdTree& pt_cloud_kdtree,
-            const double* query_ptr,
-            const double radius,
-            double* mean)
+int meanVec(const robot_msgs::PointCloud& pt_cloud, cloud_kdtree::KdTree& pt_cloud_kdtree, const set<
+    unsigned int>& indices_to_cluster, const double* query_ptr, const double radius, double* mean)
 {
   mean[0] = 0.0;
   mean[1] = 0.0;
@@ -32,22 +29,31 @@ int meanVec(const robot_msgs::PointCloud& pt_cloud,
 
   vector<int> neighbor_indices;
   vector<float> neighbor_distances;
-  if (pt_cloud_kdtree.radiusSearch(query_pt, radius, neighbor_indices, neighbor_distances))
+
+  pt_cloud_kdtree.radiusSearch(query_pt, radius, neighbor_indices, neighbor_distances);
+  unsigned int nbr_neighbors = neighbor_indices.size();
+  unsigned int nbr_valid = nbr_neighbors;
+  for (unsigned int i = 0 ; i < nbr_neighbors ; i++)
   {
-    unsigned int nbr_neighbors = neighbor_indices.size();
-    for (unsigned int i = 0 ; i < nbr_neighbors ; i++)
+    if (indices_to_cluster.count(neighbor_indices[i]) == 0)
     {
-      mean[0] += static_cast<double> (pt_cloud.pts[neighbor_indices[i]].x);
-      mean[1] += static_cast<double> (pt_cloud.pts[neighbor_indices[i]].y);
-      mean[2] += static_cast<double> (pt_cloud.pts[neighbor_indices[i]].z);
+      nbr_valid--;
+      continue;
     }
 
+    mean[0] += static_cast<double> (pt_cloud.pts[neighbor_indices[i]].x);
+    mean[1] += static_cast<double> (pt_cloud.pts[neighbor_indices[i]].y);
+    mean[2] += static_cast<double> (pt_cloud.pts[neighbor_indices[i]].z);
+  }
+
+  if (nbr_valid > 0)
+  {
     mean[0] /= static_cast<double> (nbr_neighbors);
     mean[1] /= static_cast<double> (nbr_neighbors);
     mean[2] /= static_cast<double> (nbr_neighbors);
   }
 
-  return neighbor_indices.size();
+  return nbr_valid;
 }
 
 /* Squared euclidean distance between two vectors. */
@@ -71,19 +77,14 @@ double dist(double *A, double *B, int n)
  * labels      - labels for each cluster
  * means       - output (final clusters)
  *********************************************************************/
-void point_cloud_clustering::pcMeanshift(const robot_msgs::PointCloud& pt_cloud,
-                                         cloud_kdtree::KdTree& pt_cloud_kdtree,
-                                         double radius,
-                                         double rate,
-                                         int maxIter,
-                                         map<unsigned int, vector<int> >& cluster_pt_indices)
+int point_cloud_clustering::MeanShift::cluster(const robot_msgs::PointCloud& pt_cloud,
+                                               cloud_kdtree::KdTree& pt_cloud_kdtree,
+                                               const set<unsigned int>& indices_to_cluster,
+                                               map<unsigned int, vector<int> >& created_clusters,
+                                               map<unsigned int, vector<float> >* cluster_centroids)
 {
-  cluster_pt_indices.clear();
-  int p = 3;
-  int n = pt_cloud.pts.size();
-
-  double radius2; /* radius^2 */
-  int iter; /* number of iterations */
+  double bandwidth2; /* bandwidth_^2 */
+  unsigned int iter; /* number of iterations */
   double *mean; /* mean vector */
   int i, j, o, m; /* looping and temporary variables */
   int delta = 1; /* indicator if change occurred between iterations */
@@ -93,6 +94,31 @@ void point_cloud_clustering::pcMeanshift(const robot_msgs::PointCloud& pt_cloud,
   int *consolidated; /* Needed in the assignment of cluster labels */
   int nLabels = 1; /* Needed in the assignment of cluster labels */
 
+  int p = 3; // xyz dimension
+  int n = indices_to_cluster.size();
+  if (n == 0)
+  {
+    return -1;
+  }
+
+  double data1[p * n];
+  unsigned int sample_idx = 0;
+  set<unsigned int>::const_iterator iter_indices_to_cluster;
+  for (iter_indices_to_cluster = indices_to_cluster.begin(); iter_indices_to_cluster
+      != indices_to_cluster.end() ; iter_indices_to_cluster++)
+  {
+    unsigned int curr_pt_index = *iter_indices_to_cluster;
+    if (curr_pt_index > pt_cloud.pts.size())
+    {
+      return -1;
+    }
+    data1[sample_idx * 3 + 0] = pt_cloud.pts[curr_pt_index].x;
+    data1[sample_idx * 3 + 1] = pt_cloud.pts[curr_pt_index].y;
+    data1[sample_idx * 3 + 2] = pt_cloud.pts[curr_pt_index].z;
+
+    sample_idx++;
+  }
+
   /* initialization */
   meansCur = (double*) malloc(sizeof(double) * p * n);
   meansNxt = (double*) malloc(sizeof(double) * p * n);
@@ -101,36 +127,28 @@ void point_cloud_clustering::pcMeanshift(const robot_msgs::PointCloud& pt_cloud,
   deltas = (int*) malloc(sizeof(int) * n);
   for (i = 0; i < n ; i++)
     deltas[i] = 1;
-  radius2 = radius * radius;
-
-  double data1[p * n];
-  for (int i = 0 ; i < n ; i++)
-  {
-    data1[i * p + 0] = pt_cloud.pts[i].x;
-    data1[i * p + 1] = pt_cloud.pts[i].y;
-    data1[i * p + 2] = pt_cloud.pts[i].z;
-  }
+  bandwidth2 = bandwidth_ * bandwidth_;
 
   meansCur = (double*) memcpy(meansCur, data1, p * n * sizeof(double));
 
   /* main loop */
-  for (iter = 0; iter < maxIter ; iter++)
+  for (iter = 0; iter < max_iter_ ; iter++)
   {
     delta = 0;
     for (i = 0; i < n ; i++)
     {
       if (i % 1000 == 0)
-        ROS_INFO("i %d",i);
+      ROS_INFO("i %d",i);
       if (deltas[i])
       {
         /* shift meansNxt in direction of mean (if m>0) */
         o = i * p;
         //m = meanVec(meansCur + o, data1, p, n, radius2, mean);
-        m = meanVec(pt_cloud, pt_cloud_kdtree, meansCur + o, radius, mean);
+        m = meanVec(pt_cloud, pt_cloud_kdtree, indices_to_cluster, meansCur + o, bandwidth_, mean);
         if (m)
         {
           for (j = 0; j < p ; j++)
-            meansNxt[o + j] = (1 - rate) * meansCur[o + j] + rate * mean[j];
+            meansNxt[o + j] = (1 - rate_) * meansCur[o + j] + rate_ * mean[j];
           if (dist(meansNxt + o, meansCur + o, p) > 0.001) delta = 1;
           else
             deltas[i] = 0;
@@ -148,6 +166,7 @@ void point_cloud_clustering::pcMeanshift(const robot_msgs::PointCloud& pt_cloud,
   }
 
   /* Consolidate: assign all points that are within radius2 to same cluster. */
+  created_clusters.clear();
   for (i = 0; i < n ; i++)
   {
     consolidated[i] = 0;
@@ -156,19 +175,28 @@ void point_cloud_clustering::pcMeanshift(const robot_msgs::PointCloud& pt_cloud,
   for (i = 0; i < n ; i++)
     if (!consolidated[i])
     {
-      cluster_pt_indices[nLabels] = vector<int> ();
-      for (j = 0; j < n ; j++)
+      created_clusters[nLabels] = vector<int> ();
+
+      j = 0;
+      for (iter_indices_to_cluster = indices_to_cluster.begin(); iter_indices_to_cluster
+          != indices_to_cluster.end() ; iter_indices_to_cluster++)
+      {
         if (!consolidated[j])
         {
-          if (dist(meansCur + i * p, meansCur + j * p, p) < radius2)
+          if (dist(meansCur + i * p, meansCur + j * p, p) < bandwidth2)
           {
-            cluster_pt_indices[nLabels].push_back(j);
+            created_clusters[nLabels].push_back(*iter_indices_to_cluster);
             //labels[j] = nLabels;
             consolidated[j] = 1;
           }
         }
+
+        j++;
+      }
+
       nLabels++;
     }
+
   nLabels--;
 
   /* free memory */
@@ -177,4 +205,5 @@ void point_cloud_clustering::pcMeanshift(const robot_msgs::PointCloud& pt_cloud,
   free(mean);
   free(consolidated);
   free(deltas);
+  return 0;
 }

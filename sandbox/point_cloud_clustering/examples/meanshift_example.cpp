@@ -97,8 +97,8 @@ int main()
   map<unsigned int, vector<int> > cluster_pt_indices;
   time_t start, end;
   time(&start);
-  point_cloud_clustering::pcMeanshift(pt_cloud, pt_cloud_kdtree, bandwidth, rate, max_iter,
-      cluster_pt_indices);
+  //point_cloud_clustering::pcMeanshift(pt_cloud, pt_cloud_kdtree, bandwidth, rate, max_iter,
+   //   cluster_pt_indices);
   time(&end);
   cout << "clustering took this long: " << difftime(end, start) << endl;
 
