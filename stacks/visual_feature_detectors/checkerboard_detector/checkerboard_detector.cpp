@@ -284,6 +284,7 @@ public:
         }
         
         _objdetmsg.set_objects_vec(vobjects);
+        _objdetmsg.header.stamp = _imagemsg.header.stamp;
         if( frame_id.size() > 0 )
             _objdetmsg.header.frame_id = frame_id;
         else

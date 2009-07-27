@@ -28,7 +28,7 @@
 #include "mocapsystem.h"
 #include "objecttransformsystem.h"
 #include "collisionmapsystem.h"
-#include "rosrobotcontroller.h"
+//#include "rosrobotcontroller.h"
 #include "rosplanningproblem.h"
 
 // declaring variables with stdcall can be a little complex
@@ -53,10 +53,10 @@ extern "C" {
 InterfaceBase* DECL_STDCALL(ORCreate, (PluginType type, wchar_t* name, EnvironmentBase* penv))
 {
     switch(type) {
-    case PT_Controller:
-        if( wcsicmp(name, L"ROSRobot") == 0 )
-            return new ROSRobotController(penv);
-        break;
+//    case PT_Controller:
+//        if( wcsicmp(name, L"ROSRobot") == 0 )
+//            return new ROSRobotController(penv);
+//        break;
     case PT_ProblemInstance:
         if( wcsicmp(name, L"ROSPlanning") == 0 )
             return new ROSPlanningProblem(penv);
@@ -84,7 +84,7 @@ bool DECL_STDCALL(GetPluginAttributes, (PLUGININFO* pinfo, int size))
         return false;
     }
 
-    pinfo->controllers.push_back(L"ROSRobot");
+    //pinfo->controllers.push_back(L"ROSRobot");
     pinfo->problems.push_back(L"ROSPlanning");
     pinfo->sensorsystems.push_back(L"ROSMocap");
     pinfo->sensorsystems.push_back(L"ObjectTransform");
