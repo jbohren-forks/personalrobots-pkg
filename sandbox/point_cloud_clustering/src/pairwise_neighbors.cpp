@@ -92,7 +92,7 @@ int point_cloud_clustering::PairwiseNeighbors::cluster(const robot_msgs::PointCl
       return -1;
     }
 
-    // create adj list entry if necessary
+    // Create adj list entry if necessary
     if (adj_list.count(curr_idx) == 0)
     {
       adj_list[curr_idx] = set<unsigned int> ();

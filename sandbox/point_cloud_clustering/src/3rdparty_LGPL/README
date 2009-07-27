@@ -1,5 +1,0 @@
-Implementation of mean-shift clustering from Piotr Dollar's Image & 
-Video Toolbox for Matlab (http://vision.ucsd.edu/~pdollar/toolbox/doc/).
-The license is LGPL.
-
-meanShift1.c - original implementation (unused)
