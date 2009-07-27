@@ -10,6 +10,7 @@ Only the Linear Math library has been implemented.
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/bullet_python</url>
   <depend package="bullet"/>
+  <rosdep name="swig"/>
 
 </package>
 
