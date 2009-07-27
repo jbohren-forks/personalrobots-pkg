@@ -39,6 +39,6 @@ rospack_add_executable(bin/stub_ros_container src/stub_ros_container.cpp)
 rospack_add_executable(test/ros_reactor_test test/ros_reactor_test.cpp)
 
 #Add a compile test (NOTE: if this is not working comment out the next two lines.
-add_nddl_test(nddl/master/master.nddl)
-create_trex_nddl_test_case()
+#add_nddl_test(nddl/master/master.nddl)
+#create_trex_nddl_test_case()
 
