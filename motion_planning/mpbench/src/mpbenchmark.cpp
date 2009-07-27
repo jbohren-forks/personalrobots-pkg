@@ -137,17 +137,19 @@ int main(int argc, char ** argv)
 
 void cleanup()
 {
-  if (dbgos)
-    *dbgos << "byebye!\n" << flush;
   if (logos != dbgos) {
-    cerr << "DBG deleting logos\n";
+    if (dbgos)
+      *dbgos << "deleting logos\n";
     delete logos;
   }
-  cerr << "DBG resetting setup\n";
+  if (dbgos)
+    *dbgos << "resetting setup\n";
   setup.reset();
-  cerr << "DBG resetting results\n";
+  if (dbgos)
+    *dbgos << "resetting results\n";
   result_collection.reset();
-  cerr << "DBG cleanup done\n";
+  if (dbgos)
+    *dbgos << "cleanup done\n";
 }
 
 
