@@ -38,12 +38,13 @@
 #include <map>
 #include <vector>
 
+#include <point_cloud_clustering/generic_clustering.h>
+
 #include <robot_msgs/PointCloud.h>
 
 #include <opencv/cxcore.h>
 #include <opencv/cv.h>
 #include <opencv/cvaux.hpp>
-
 
 using namespace std;
 
@@ -62,4 +63,22 @@ namespace point_cloud_clustering
                const kmeans_params_t& kmeans_params,
                map<unsigned int, vector<float> >& cluster_xyz_centroids,
                map<unsigned int, vector<int> >& cluster_pt_indices);
+
+  class KMeans: public GenericClustering
+  {
+    public:
+      KMeans()
+      {
+      }
+
+      void setParameters();
+
+      virtual int cluster(const robot_msgs::PointCloud& pt_cloud,
+                          cloud_kdtree::KdTree& pt_cloud_kdtree,
+                          const set<unsigned int>& indices_to_cluster,
+                          map<unsigned int, vector<int> >& created_clusters)
+      {
+        return 0;
+      }
+  };
 }

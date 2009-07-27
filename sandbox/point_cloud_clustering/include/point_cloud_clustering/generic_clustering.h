@@ -1,3 +1,5 @@
+#ifndef __GENERIC_CLUSTERING_H__
+#define __GENERIC_CLUSTERING_H__
 /*********************************************************************
  * Software License Agreement (BSD License)
  *
@@ -31,3 +33,42 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
+
+#include <set>
+#include <map>
+#include <vector>
+
+#include <robot_msgs/PointCloud.h>
+
+#include <point_cloud_mapping/kdtree/kdtree.h>
+
+using namespace std;
+
+class GenericClustering
+{
+  public:
+    GenericClustering()
+    {
+      parameters_defined_ = false;
+    }
+
+    virtual ~GenericClustering()
+    {
+    }
+
+    // not used currently
+    inline void useChannelIndices(set<unsigned int>& channel_indices)
+    {
+      channel_indices_ = channel_indices;
+    }
+
+    virtual int cluster(const robot_msgs::PointCloud& pt_cloud,
+                        cloud_kdtree::KdTree& pt_cloud_kdtree,
+                        const set<unsigned int>& indices_to_cluster,
+                        map<unsigned int, vector<int> >& created_clusters) = 0;
+  protected:
+    bool parameters_defined_;
+    set<unsigned int> channel_indices_;
+};
+
+#endif
