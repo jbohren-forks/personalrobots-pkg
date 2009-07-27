@@ -1,7 +1,7 @@
 <package>
   <description brief="point_cloud_clustering">
 
-     point_cloud_clustering
+     Package for creating clusters/groupings from 3-D point clouds.
 
   </description>
   <author>Daniel Munoz/ dmunoz@willowgarage.com</author>

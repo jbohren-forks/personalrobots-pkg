@@ -40,11 +40,15 @@
 #include <map>
 #include <vector>
 
-#include <point_cloud_clustering/generic_clustering.h>
-
 #include <opencv/cxcore.h>
 #include <opencv/cv.h>
 #include <opencv/cvaux.hpp>
+
+#include <robot_msgs/PointCloud.h>
+
+#include <point_cloud_mapping/kdtree/kdtree.h>
+
+#include <point_cloud_clustering/generic_clustering.h>
 
 using namespace std;
 
