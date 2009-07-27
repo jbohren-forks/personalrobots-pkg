@@ -25,7 +25,6 @@ rospack_add_library( pr2_mechanism_controllers
   src/wrist_calibration_controller.cpp
   src/gripper_calibration_controller.cpp
   src/arm_trajectory_controller.cpp
-  src/whole_body_trajectory_controller.cpp
   src/joint_trajectory_controller.cpp
   src/base_kinematics.cpp
   #src/pr2_gripper_controller.cpp
