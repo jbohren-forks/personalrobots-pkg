@@ -56,18 +56,18 @@ target_link_libraries(python_${PROJECT_NAME} LinearMath ${PYTHON_LIBRARIES})
 #                      PROPERTIES OUTPUT_NAME _${PROJECT_NAME}
 #                      PREFIX "")
 ### overriding above to make things easier to type
-set(LIBRARY_NAME bullet)
+set(BULLET_PYTHON_LIBRARY_NAME bullet)
 set_target_properties(python_${PROJECT_NAME}
-                      PROPERTIES OUTPUT_NAME _${LIBRARY_NAME}
+                      PROPERTIES OUTPUT_NAME _${BULLET_PYTHON_LIBRARY_NAME}
                       PREFIX "")
 
 # If on Darwin, create a symlink _foo.so -> _foo.dylib, because the
 # MacPorts version of Python won't find _foo.dylib for 'import _foo'
 include(CMakeDetermineSystem)
 if(CMAKE_SYSTEM_NAME MATCHES "Darwin")
-  add_custom_command(OUTPUT ${LIBRARY_OUTPUT_PATH}/_${LIBRARY_NAME}.so
-                     COMMAND cmake -E create_symlink  ${LIBRARY_OUTPUT_PATH}/_${LIBRARY_NAME}.dylib ${LIBRARY_OUTPUT_PATH}/_${LIBRARY_NAME}.so
+  add_custom_command(OUTPUT ${LIBRARY_OUTPUT_PATH}/_${BULLET_PYTHON_LIBRARY_NAME}.so
+                     COMMAND cmake -E create_symlink  ${LIBRARY_OUTPUT_PATH}/_${BULLET_PYTHON_LIBRARY_NAME}.dylib ${LIBRARY_OUTPUT_PATH}/_${BULLET_PYTHON_LIBRARY_NAME}.so
                      DEPENDS python_${PROJECT_NAME})
   add_custom_target(symlink_darwin_lib ALL
-                    DEPENDS ${LIBRARY_OUTPUT_PATH}/_${LIBRARY_NAME}.so)
+                    DEPENDS ${LIBRARY_OUTPUT_PATH}/_${BULLET_PYTHON_LIBRARY_NAME}.so)
 endif(CMAKE_SYSTEM_NAME MATCHES "Darwin")
