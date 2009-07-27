@@ -95,7 +95,7 @@ namespace mpbench {
   World::
   ~World()
   {
-#define HUNT_SEGFAULT_AT_EXIT
+#undef HUNT_SEGFAULT_AT_EXIT
 #ifdef HUNT_SEGFAULT_AT_EXIT
     cerr << "DBG ~mpbench::World() clearing cost mappers\n";
     costmapper_.clear();

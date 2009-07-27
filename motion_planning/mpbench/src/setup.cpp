@@ -337,7 +337,7 @@ namespace mpbench {
   Setup::
   ~Setup()
   {
-#define HUNT_SEGFAULT_AT_EXIT
+#undef HUNT_SEGFAULT_AT_EXIT
 #ifdef HUNT_SEGFAULT_AT_EXIT
     cerr << "DBG ~mpbench::Setup() clearing planners\n";
     planner_.clear();
