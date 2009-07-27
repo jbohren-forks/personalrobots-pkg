@@ -1,0 +1,16 @@
+<package>
+  <description brief="Python Binding for Bullet Physics Library (only Linear Math)">
+
+    This package provides SWIGed bindings for the Bullet Physics Library.  \
+Only the Linear Math library has been implemented.  
+
+  </description>
+  <author>Tully Foote</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/bullet_python</url>
+  <depend package="bullet"/>
+
+</package>
+
+
