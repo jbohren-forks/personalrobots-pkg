@@ -1,6 +1,11 @@
 <launch>
-<param name="base_controller/autostart" value="true"/>
-<node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/base_controller.xml" output="screen"/>
+<param name="pr2_base_controller/autostart" value="true"/>
+
+<rosparam file="$(find pr2_default_controllers)/pr2_base_controller.yaml" command="load" ns="pr2_base_controller" />
+<rosparam file="$(find pr2_default_controllers)/pr2_odometry.yaml" command="load" ns="pr2_odometry" />
+
+<node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/pr2_base_controller.xml" output="screen"/>
+<node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/pr2_base_odometry.xml" output="screen"/>
 
 <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/torso_lift_vel_controller.xml" output="screen" />
 
