@@ -40,6 +40,29 @@
 using namespace std;
 using namespace rdf_parser;
 
+void printTree(Link* link,int level = 0)
+{
+  level+=2;
+  int count = 0;
+  for (std::vector<Link*>::iterator child = link->getChildren()->begin(); child != link->getChildren()->end(); child++)
+  {
+    if (*child)
+    {
+      for(int j=0;j<level;j++) std::cout << " ";
+      std::cout << "child(" << count++ << "):  " << (*child)->getName()
+                << " with parent joint: " << (*child)->parent_joint_->getName()
+                << std::endl;
+      // first grandchild
+      printTree(*child,level);
+    }
+    else
+    {
+      std::cout << "root link: " << link->getName() << " has a null child!" << *child << std::endl;
+    }
+  }
+
+}
+
 
 int main(int argc, char** argv)
 {
@@ -71,30 +94,8 @@ int main(int argc, char** argv)
 
 
   // go through children, print grandchildren
-  int count = 0;
   std::cout << "root link: " << root_link->getName() << std::endl;
-  for (std::vector<Link*>::iterator child = root_link->getChildren()->begin(); child != root_link->getChildren()->end(); child++)
-  {
-    if (*child)
-    {
-      std::cout << "  child(" << count++ << "):  " << (*child)->getName()
-                << " with parent joint: " << (*child)->parent_joint_->getName()
-                << std::endl;
-      // first grandchild
-      std::vector<Link*>* grandchildren = (*child)->getChildren();
-      int count2 = 0;
-      for (std::vector<Link*>::iterator grandchild = grandchildren->begin(); grandchild != grandchildren->end(); grandchild++)
-        if (*grandchild)
-          std::cout << "    grandchild(" << count2++ << "): " << (*grandchild)->getName()
-                    << " with parent joint: " << (*grandchild)->parent_joint_->getName()
-                    << std::endl;
-    }
-    else
-    {
-      std::cout << "root link: " << root_link->getName() << " has a null child!" << *child << std::endl;
-      return -1;
-    }
-  }
+  printTree(root_link);
   return 0;
 }
 
