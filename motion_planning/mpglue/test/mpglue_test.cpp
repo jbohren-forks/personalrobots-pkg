@@ -227,6 +227,46 @@ TEST (costmapper, addition)
 }
 
 
+TEST (costmapper, removal)
+{
+  mpglue::index_collection_t added_obstacle_indices;
+  mpglue::index_collection_t removed_obstacle_indices;
+  added_obstacle_indices.insert(mpglue::index_pair(2, 3));
+  removed_obstacle_indices.insert(mpglue::index_pair(2, 3));
+  FactoryList fl;
+  for (FactoryList::iterator ii(fl.begin()); ii != fl.end(); ++ii) {
+    Factory * factory(*ii);
+    ASSERT_TRUE (factory) << "NULL factory";
+    shared_ptr<mpglue::Costmapper> cm(factory->createCostmapper());
+    EXPECT_TRUE (cm) << "factory \"" << factory->name << "\" failed";
+    if ( ! cm)
+      continue;
+    size_t const add_count(cm->updateObstacles(&added_obstacle_indices, 0, &cerr));
+    EXPECT_GT (add_count, size_t(0));
+    size_t const rem_count(cm->updateObstacles(0, &removed_obstacle_indices, &cerr));
+    EXPECT_GT (rem_count, size_t(0));
+  }
+}
+
+
+TEST (costmapper, empty_removal)
+{
+  mpglue::index_collection_t removed_obstacle_indices;
+  removed_obstacle_indices.insert(mpglue::index_pair(2, 3));
+  FactoryList fl;
+  for (FactoryList::iterator ii(fl.begin()); ii != fl.end(); ++ii) {
+    Factory * factory(*ii);
+    ASSERT_TRUE (factory) << "NULL factory";
+    shared_ptr<mpglue::Costmapper> cm(factory->createCostmapper());
+    EXPECT_TRUE (cm) << "factory \"" << factory->name << "\" failed";
+    if ( ! cm)
+      continue;
+    size_t const count(cm->updateObstacles(0, &removed_obstacle_indices, &cerr));
+    EXPECT_EQ (count, size_t(0));
+  }
+}
+
+
 int main(int argc, char ** argv)
 {
   testing::InitGoogleTest(&argc, argv);
