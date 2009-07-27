@@ -60,6 +60,8 @@ namespace point_cloud_clustering
       {
       }
 
+      inline void setStartingClusterLabel();
+
       virtual int cluster(const robot_msgs::PointCloud& pt_cloud,
                           cloud_kdtree::KdTree& pt_cloud_kdtree,
                           const set<unsigned int>& indices_to_cluster,
