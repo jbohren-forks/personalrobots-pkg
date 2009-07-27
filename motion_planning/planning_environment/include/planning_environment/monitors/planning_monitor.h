@@ -96,9 +96,21 @@ namespace planning_environment
 	/** \brief Set the kinematic constraints the monitor should use when checking a path */
 	void setPathConstraints(const motion_planning_msgs::KinematicConstraints &kc);
 
+	/** \brief Get the kinematic constraints the monitor uses when checking a path */
+	const motion_planning_msgs::KinematicConstraints& getPathConstraints(void) const
+	{
+	    return kcPath_;
+	}
+	
 	/** \brief Set the kinematic constraints the monitor should use when checking a path's last state (the goal) */
 	void setGoalConstraints(const motion_planning_msgs::KinematicConstraints &kc);
 	
+	/** \brief Get the kinematic constraints the monitor uses when checking a path's last state (the goal) */
+	const motion_planning_msgs::KinematicConstraints& getGoalConstraints(void) const
+	{
+	    return kcGoal_;
+	}
+
 	/** \brief Clear previously set constraints */
 	void clearConstraints(void);
 	
