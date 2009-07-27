@@ -58,7 +58,6 @@ JointTrajectoryController::JointTrajectoryController() : Controller(), node_(ros
   next_free_index_ = 0;
   current_trajectory_index_ = 0;
   trajectory_preempted_ = false;
-  base_controller_node_ = NULL;
 }
 
 
@@ -201,16 +200,6 @@ bool JointTrajectoryController::loadXmlFile(mechanism::RobotState * robot, TiXml
 
       addJoint(jpc->getJointName());
     }
-    else if(static_cast<std::string>(elt->Attribute("type")) == std::string("BasePIDController"))
-    {
-      addRobotBaseJoint(elt);
-    }
-    else if(static_cast<std::string>(elt->Attribute("type")) == std::string("BaseControllerNode"))
-    {        
-      ROS_INFO("Creating base controller node");
-      base_controller_node_ = new BaseControllerNode();
-      base_controller_node_->initXml(robot,elt);
-    }
     else
     {
       ROS_ERROR("Unrecognized joint controller type: %s",(static_cast<std::string>(elt->Attribute("type"))).c_str());
@@ -317,53 +306,6 @@ void JointTrajectoryController::addJoint(const std::string &name)
   num_joints_++;
 }
 
-void JointTrajectoryController::addRobotBaseJoint(TiXmlElement *elt)
-{
-  TiXmlElement *pj = elt->FirstChildElement("joint");
-  if(pj)
-  {
-    std::string joint_name = static_cast<std::string>(pj->Attribute("name"));
-    double velocity_limit = atof(pj->Attribute("limit"));
-
-    if(static_cast<std::string>(pj->Attribute("type")) == std::string("ROTARY_CONTINUOUS"))
-    {
-      ROS_INFO("Adding joint %s with type: ROTARY_CONTINUOUS and velocity limit: %f",joint_name.c_str(),velocity_limit);
-      joint_type_.push_back(mechanism::JOINT_CONTINUOUS);
-      base_theta_index_ = num_joints_;
-    }
-    else if(static_cast<std::string>(pj->Attribute("type")) == std::string("PRISMATIC_CONTINUOUS"))
-    {
-      ROS_INFO("Adding joint %s with type: PRISMATIC_CONTINUOUS and velocity limit: %f",joint_name.c_str(),velocity_limit);
-      joint_type_.push_back(mechanism::JOINT_PRISMATIC);
-    }
-    else
-    {
-      ROS_ERROR("Unknown type %s for base joint %s",(static_cast<std::string>(pj->Attribute("type"))).c_str(),joint_name.c_str());
-    }
-
-    TiXmlElement *p = pj->FirstChildElement("pid");
-    control_toolbox::Pid pid;
-    if (p)
-      pid.initXml(p);
-    else
-    {
-      ROS_ERROR("BasePIDController's config did not specify the default pid parameters.\n");
-    }
-    base_pid_controller_.push_back(pid);
-      
-
-    joint_name_.push_back(joint_name);        
-    joint_velocity_limits_.push_back(velocity_limit*velocity_scaling_factor_);
-
-    current_joint_position_.push_back(0.0);
-    current_joint_velocity_.push_back(0.0);
-    joint_position_errors_.push_back(0.0);
-    joint_velocity_errors_.push_back(0.0);
-
-    base_joint_index_.push_back(num_joints_);
-    num_joints_++;
-  }
-}
 
 bool JointTrajectoryController::setTrajectoryCmd(const std::vector<trajectory::Trajectory::TPoint>& joint_trajectory)
 {
@@ -437,10 +379,6 @@ bool JointTrajectoryController::checkWatchDog(double current_time)
 void JointTrajectoryController::stopMotion()
 {
   setTrajectoryCmdToCurrentValues();
-  if(base_controller_node_)
-  {
-    base_controller_node_->setCommand(0.0,0.0,0.0);
-  }
 }
 
 void JointTrajectoryController::resetTrajectoryTimes()
@@ -580,45 +518,6 @@ void JointTrajectoryController::update(void)
   last_time_ = current_time_;
 }
 
-void JointTrajectoryController::updateBaseCommand(double time)
-{
-  double cmd[3] = {0.0,0.0,0.0};
-  double theta  = 0.0;
-
-  if(base_pid_controller_.size() < 3)
-    return;
-
-  for(unsigned int i=0; i< base_pid_controller_.size(); i++)
-  {
-    int joint_index = base_joint_index_[i];
-    double error(0.0), error_dot(0.0);
-    if(joint_type_[joint_index] == mechanism::JOINT_CONTINUOUS)
-    {
-      error = angles::shortest_angular_distance(joint_cmd_[joint_index], current_joint_position_[joint_index]);
-    }
-    else //prismatic
-    {
-      error = current_joint_position_[joint_index] - joint_cmd_[joint_index];
-    }
-    error_dot = current_joint_velocity_[joint_index] - joint_cmd_dot_[joint_index];      
-    cmd[i] = base_pid_controller_[i].updatePid(error, time - last_time_);
-    cmd[i] += joint_cmd_dot_[joint_index];
-    if(joint_index == base_theta_index_)
-    {
-      theta = current_joint_position_[joint_index];
-    }
-//    ROS_INFO("Joint cmd: %d %f %f %f",i,error,error_dot,cmd[i]);
-  }
-
-  //Transform the cmd back into the base frame
-  double vx = cmd[0]*cos(theta) + cmd[1]*sin(theta);
-  double vy = -cmd[0]*sin(theta) + cmd[1]*cos(theta);
-  double vw = cmd[2];
-
-  base_controller_node_->setCommand(vx,vy,vw);
-
-}
-
 bool JointTrajectoryController::reachedGoalPosition(std::vector<double> joint_cmd)
 {
   bool return_val = true;
@@ -649,20 +548,9 @@ void JointTrajectoryController::updateJointControllers(void)
     joint_pv_controllers_[i]->setCommand(joint_cmd_[i],joint_cmd_dot_[i]);
   }
 
-  if(base_controller_node_)
-    {
-  // Set the commands for the base
-  updateBaseCommand(current_time_);
-    }
-
   // Call update on all the controllers
   for(unsigned int i=0;i<joint_pv_controllers_.size();++i)
     joint_pv_controllers_[i]->update();  
-
-  if(base_controller_node_)
-    {
-  base_controller_node_->update();
-    }
 }
 
 void JointTrajectoryController::updateJointValues()
@@ -675,15 +563,6 @@ void JointTrajectoryController::updateJointValues()
     current_joint_velocity_[i] = joint_pv_controllers_[i]->joint_state_->velocity_;
   }
 
-  if(base_controller_node_)
-    {
-      base_controller_node_->getOdometry(q[0], q[1], q[2], qdot[0], qdot[1], qdot[2]) ;
-      for(unsigned int i=0;i< base_pid_controller_.size();++i){
-	int joint_index = base_joint_index_[i];
-	current_joint_position_[joint_index] = q[i];
-	current_joint_velocity_[joint_index] = qdot[i];
-      }
-    }
 }
 
 void JointTrajectoryController::updateTrajectoryQueue(int id, int finish_status)
@@ -1054,19 +933,6 @@ void JointTrajectoryController::publishDiagnostics()
       values.push_back(v);
     }
 
-    for(unsigned int i=0; i < base_pid_controller_.size(); i++)
-    {
-      int joint_index = base_joint_index_[i];
-      v.label = joint_name_[joint_index] + "/Position/Actual";
-      v.value = current_joint_position_[joint_index];
-      values.push_back(v);
-      v.label = joint_name_[joint_index] + "/Position/Command";
-      v.value = joint_cmd_[joint_index];
-      values.push_back(v);
-      v.label = joint_name_[joint_index] + "/Position/Error (Command-Actual)";
-      v.value = joint_cmd_[joint_index] - current_joint_position_[joint_index];
-      values.push_back(v);
-    }
     v.label = "Trajectory id";
     v.value = current_trajectory_id_;
     values.push_back(v);
