@@ -80,8 +80,7 @@ double dist(double *A, double *B, int n)
 int point_cloud_clustering::MeanShift::cluster(const robot_msgs::PointCloud& pt_cloud,
                                                cloud_kdtree::KdTree& pt_cloud_kdtree,
                                                const set<unsigned int>& indices_to_cluster,
-                                               map<unsigned int, vector<int> >& created_clusters,
-                                               map<unsigned int, vector<float> >* cluster_centroids)
+                                               map<unsigned int, vector<int> >& created_clusters)
 {
   double bandwidth2; /* bandwidth_^2 */
   unsigned int iter; /* number of iterations */

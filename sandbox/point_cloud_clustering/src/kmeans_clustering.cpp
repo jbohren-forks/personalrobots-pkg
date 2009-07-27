@@ -70,8 +70,7 @@ int point_cloud_clustering::KMeans::setParameters(double k_factor, double accura
 int point_cloud_clustering::KMeans::cluster(const robot_msgs::PointCloud& pt_cloud,
                                             cloud_kdtree::KdTree& pt_cloud_kdtree,
                                             const set<unsigned int>& indices_to_cluster,
-                                            map<unsigned int, vector<int> >& created_clusters,
-                                            map<unsigned int, vector<float> >* cluster_centroids)
+                                            map<unsigned int, vector<int> >& created_clusters)
 {
   if (parameters_defined_ == false)
   {
@@ -140,41 +139,12 @@ int point_cloud_clustering::KMeans::cluster(const robot_msgs::PointCloud& pt_clo
     if (created_clusters.count(curr_cluster_label) == 0)
     {
       created_clusters[curr_cluster_label] = vector<int> ();
-      if (cluster_centroids != NULL)
-      {
-        (*cluster_centroids)[curr_cluster_label] = vector<float> (3, 0.0);
-      }
     }
 
     // Associate point index with the cluster
     created_clusters[curr_cluster_label].push_back(static_cast<int> (curr_pt_cloud_idx));
 
-    // Record centroid information, if necessary
-    if (cluster_centroids != NULL)
-    {
-      // accumulate total xyz coordinates in cluster
-      (*cluster_centroids)[curr_cluster_label][0] += pt_cloud.pts[curr_pt_cloud_idx].x;
-      (*cluster_centroids)[curr_cluster_label][1] += pt_cloud.pts[curr_pt_cloud_idx].y;
-      (*cluster_centroids)[curr_cluster_label][2] += pt_cloud.pts[curr_pt_cloud_idx].z;
-    }
-
     curr_sample_idx++;
-  }
-
-  // ----------------------------------------------------------
-  // Finalize xyz centroid, if necessary
-  if (cluster_centroids != NULL)
-  {
-    map<unsigned int, vector<float> >::iterator iter_cluster_centroids;
-    for (iter_cluster_centroids = cluster_centroids->begin(); iter_cluster_centroids
-        != cluster_centroids->end() ; iter_cluster_centroids++)
-    {
-      float curr_cluster_nbr_pts =
-          static_cast<float> (created_clusters[iter_cluster_centroids->first].size());
-      iter_cluster_centroids->second[0] /= curr_cluster_nbr_pts;
-      iter_cluster_centroids->second[1] /= curr_cluster_nbr_pts;
-      iter_cluster_centroids->second[2] /= curr_cluster_nbr_pts;
-    }
   }
 
   // ----------------------------------------------------------

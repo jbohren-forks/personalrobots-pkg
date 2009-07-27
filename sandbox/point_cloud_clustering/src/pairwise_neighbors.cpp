@@ -66,8 +66,7 @@ int point_cloud_clustering::PairwiseNeighbors::setParameters(double radius, unsi
 int point_cloud_clustering::PairwiseNeighbors::cluster(const robot_msgs::PointCloud& pt_cloud,
                                                        cloud_kdtree::KdTree& pt_cloud_kdtree,
                                                        const set<unsigned int>& indices_to_cluster,
-                                                       map<unsigned int, vector<int> >& created_clusters,
-                                                       map<unsigned int, vector<float> >* cluster_centroids)
+                                                       map<unsigned int, vector<int> >& created_clusters)
 {
   if (parameters_defined_ == false)
   {
@@ -164,7 +163,6 @@ int point_cloud_clustering::PairwiseNeighbors::cluster(const robot_msgs::PointCl
         created_clusters[cluster_id][1] = static_cast<int> (curr_source);
       }
       cluster_id++;
-
     }
   }
 
