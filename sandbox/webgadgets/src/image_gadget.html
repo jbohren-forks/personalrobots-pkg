@@ -1,0 +1,78 @@
+<html>
+  <head>
+    <link rel='stylesheet' type='text/css' href='style.css'/>
+    <script type="text/javascript" src="3rdparty/prototype.js"></script>
+    <script type="text/javascript" src="ros.js"></script>
+    <script type="text/javascript" src="image_gadget.js"></script>
+    <script type="text/javascript">
+      var gadget = null;
+      var topics = null;
+
+      function start()
+      {
+        select = document.getElementById('topicselect');
+        topic = select.options[select.selectedIndex].text;
+
+        if (gadget == null)
+        {
+          gadget = new ROSImageWidget(topic,document.body);
+        }
+        else
+        {
+          gadget.stop();
+          gadget.initialize(topic, document.body);
+        }
+        gadget.start();
+      }
+
+      function stop()
+      {
+        if (gadget)
+        {
+          gadget.stop();
+        }
+      }
+
+      function initcb(myself, pump)
+      {
+        topics = eval( '(' + pump.response + ')' );
+        myselect = document.getElementById('topicselect');
+
+
+        myselect.add(new Option("----",""), null);
+        for (i = 0; i < topics.topics.length; i+=1)
+        {
+          if (topics.topics[i].type == "sensor_msgs/CompressedImage" ||
+              topics.topics[i].type == "sensor_msgs/Image")
+          {
+            var optNew = new Option(topics.topics[i].name, topics.topics[i].type);
+            myselect.add(optNew, null);
+          }
+        }
+      }
+
+      function init()
+      {
+        pump = new MessagePump();
+        pump.sendAJAX("/ros/topics",null, initcb);
+
+      }
+
+      window.onload = init;
+    </script>
+  </head>
+
+  <body class='gadget'>
+    <div id='header'>
+      <span>
+        <b style='float:left;' id='mytitle'>Image</b>
+        <input type='button' value='Subscribe' style='float:right;margin-top:2px' onclick='javascript:start();'>
+        <select id='topicselect' style='float:right; margin-top:2px;'>
+        </select>
+        <label for='topicselect'
+          style='float:right;margin-right:5px'>Topic:</label>
+      </span>
+    </div>
+    <div id='content'></div>
+  </body>
+</html>
