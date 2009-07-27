@@ -269,7 +269,7 @@ void HeadServoingControllerNode::headTrackPoint()
   tf::Stamped<tf::Point> tilt_point;
 
   try{
-    TF.transformPoint("head_tilt_link",point,tilt_point);
+    TF.transformPoint("head_pan_link",point,tilt_point);
   }
   catch(tf::TransformException& ex){
     ROS_WARN("Transform Exception %s", ex.what());
@@ -336,7 +336,7 @@ void HeadServoingControllerNode::frameTrackPoint()
 
   tf::Stamped<tf::Point> tilt_point;
   try{
-    TF.transformPoint("head_tilt_link",point,tilt_point);
+    TF.transformPoint("head_pan_link",point,tilt_point);
   }
   catch(tf::TransformException& ex){
     ROS_WARN("Transform Exception %s", ex.what());
