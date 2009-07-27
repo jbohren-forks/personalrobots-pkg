@@ -79,6 +79,16 @@ bool Inertial::initXml(TiXmlElement *config)
 {
   // Origin
   TiXmlElement *o = config->FirstChildElement("origin");
+  if (!o)
+  {
+    std::cout << "WARN: origin tag not present for inertial element, checking old URDF format com: " << std::endl;
+    o = config->FirstChildElement("com");
+    if (!o)
+    {
+      std::cerr << "ERROR: Inertial missing origin or com tag" << std::endl;
+      return false;
+    }
+  }
   if (!this->origin_.initXml(o))
   {
     std::cerr << "ERROR: Inertial has a malformed origin tag" << std::endl;
@@ -191,9 +201,14 @@ bool Sphere::initXml(TiXmlElement *c)
 
 bool Box::initXml(TiXmlElement *c)
 {
-  if (!dim_.init(c->Attribute("size")))
+  if (!c->Attribute("size"))
   {
     std::cerr << "ERROR: Box shape has no size attribute" << std::endl;
+    return false;
+  }
+  if (!dim_.init(c->Attribute("size")))
+  {
+    std::cerr << "ERROR: Box shape has malformed size attribute" << std::endl;
     return false;
   }
   return true;
@@ -284,6 +299,19 @@ bool Link::initXml(TiXmlElement* config)
     std::cerr << "ERROR: No origin tag for Link:"
               << this->name_ << std::endl;
     return false;
+  }
+
+  // Inertial
+  TiXmlElement *i = config->FirstChildElement("inertial");
+  if (i)
+  {
+    inertial_.reset(new Inertial);
+    if (!inertial_->initXml(i))
+    {
+      std::cerr << "ERROR: Could not parse inertial element for Link:"
+                << this->name_ << std::endl;
+      inertial_.reset();
+    }
   }
 
   // Visual

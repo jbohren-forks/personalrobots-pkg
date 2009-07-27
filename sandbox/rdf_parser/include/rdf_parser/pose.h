@@ -177,16 +177,32 @@ public:
     }
     else
     {
-      if (!this->pos_.init(xml->Attribute("xyz")))
+      const char* xyz_str = xml->Attribute("xyz");
+      if (xyz_str == NULL)
       {
-        std::cout << "parsing pose: no xyz" << std::endl;
-        return false;
+        std::cout << "INFO: parsing pose: no xyz, using default values." << std::endl;
+        return true;
       }
-      if (!this->rot_.init(xml->Attribute("rpy")))
+      else
+        if (!this->pos_.init(xyz_str))
+        {
+          std::cerr << "ERROR: malformed xyz" << std::endl;
+          return false;
+        }
+
+      const char* rpy_str = xml->Attribute("rpy");
+      if (rpy_str == NULL)
       {
-        std::cout << "parsing pose: no rpy" << std::endl;
-        return false;
+        std::cout << "INFO: parsing pose: no rpy, using default values." << std::endl;
+        return true;
       }
+      else
+        if (!this->rot_.init(rpy_str))
+        {
+          std::cerr << "ERROR: malformed rpy" << std::endl;
+          return false;
+        }
+
       return true;
     }
   };

@@ -158,18 +158,23 @@ bool Joint::initXml(TiXmlElement* config)
     // axis
     TiXmlElement *axis_xml = config->FirstChildElement("axis");
     if (axis_xml)
-    if (!this->axis_.init(axis_xml->Attribute("xyz")))
     {
-      if (this->type_ == PLANAR)
-        std::cout << "INFO: PLANAR Joint " << this->name_
-                  << " will require an axis tag in the future"
-                  << " which indicates the surface normal of the plane."
-                  << std::endl;
-      else
+      if (!axis_xml->Attribute("xyz"))
+        std::cout << "WARN: no xyz attribute for axis element for Joint link: "
+                  << this->name_ << ", using default values" << std::endl;
+      else if (!this->axis_.init(axis_xml->Attribute("xyz")))
       {
-        std::cerr << "ERROR: Could not parse axis element for joint:"
-                  << this->name_ << std::endl;
-        return false;
+        if (this->type_ == PLANAR)
+          std::cout << "INFO: PLANAR Joint " << this->name_
+                    << " will require an axis tag in the future"
+                    << " which indicates the surface normal of the plane."
+                    << std::endl;
+        else
+        {
+          std::cerr << "ERROR: Malformed axis element for joint:"
+                    << this->name_ << std::endl;
+          return false;
+        }
       }
     }
   }

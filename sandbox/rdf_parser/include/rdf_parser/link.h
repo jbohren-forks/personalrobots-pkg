@@ -96,6 +96,7 @@ class Inertial
 {
 public:
   bool initXml(TiXmlElement* config);
+  double getMass() {return this->mass_;};///make variables public instead?
 private:
   std::vector<TiXmlElement*> maps_;
   Pose origin_;

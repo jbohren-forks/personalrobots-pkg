@@ -51,6 +51,7 @@ void printTree(Link* link,int level = 0)
       for(int j=0;j<level;j++) std::cout << " "; //indent
       std::cout << "child(" << count++ << "):  " << (*child)->getName()
                 << " with parent joint: " << (*child)->parent_joint_->getName()
+                << " with mass: " << (*child)->inertial_->getMass()
                 << std::endl;
       // first grandchild
       printTree(*child,level);
