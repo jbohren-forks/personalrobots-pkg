@@ -39,18 +39,17 @@
 using namespace std;
 using namespace boost;
 
-static double const bbx0_(-1);
-static double const bby0_(-1);
-static double const bbx1_(1);
-static double const bby1_(1);
-static double const costmap_resolution(0.1);
-static double const costmap_inscribed_radius(0.15);
-static double const costmap_circumscribed_radius(0.25);
-static double const costmap_inflation_radius(0.35);
-
 
 static shared_ptr<costmap_2d::Costmap2D> createCostmap2D()
 {
+  static double const bbx0_(-1);
+  static double const bby0_(-1);
+  static double const bbx1_(1);
+  static double const bby1_(1);
+  static double const costmap_resolution(0.1);
+  static double const costmap_inscribed_radius(0.15);
+  static double const costmap_circumscribed_radius(0.25);
+  static double const costmap_inflation_radius(0.35);
   double const origin_x(bbx0_);
   double const origin_y(bby0_);
   unsigned int const
@@ -82,19 +81,74 @@ static shared_ptr<costmap_2d::Costmap2D> createCostmap2D()
 }
 
 
-static shared_ptr<mpglue::Costmapper> createCostmapper(shared_ptr<costmap_2d::Costmap2D> cm2d)
-{
-  shared_ptr<mpglue::Costmapper> cm(mpglue::createCostmapper(cm2d));
-  return cm;
-}
-
-
 TEST (costmapper, creation)
 {
-  shared_ptr<costmap_2d::Costmap2D> cm2d(createCostmap2D());
-  ASSERT_TRUE (cm2d);
-  shared_ptr<mpglue::Costmapper> cm(createCostmapper(cm2d));
-  ASSERT_TRUE (cm);
+  static double const origin_x(-2);
+  static double const origin_y(3);
+  static double const resolution(0.05);
+  static double const inscribed_radius(0.2);
+  static double const circumscribed_radius(0.25);
+  static double const inflation_radius(0.3);
+  static mpglue::index_t const ix_end(100);
+  static mpglue::index_t const iy_end(75);
+  {
+    mpglue::costmapper_params const pp(origin_x,
+				       origin_y,
+				       resolution,
+				       inscribed_radius,
+				       circumscribed_radius,
+				       inflation_radius,
+				       ix_end,
+				       iy_end);
+    shared_ptr<mpglue::Costmapper> cm(createCostmapper(&pp));
+    EXPECT_TRUE (cm) << "mpglue::createCostmap2D(mpglue::costmapper_params const &) failed";
+  }
+  {
+    static double const origin_th(-0.032);
+    static mpglue::index_t const ix_begin(-10);
+    static mpglue::index_t const iy_begin(32);
+    static int const obstacle_cost(87);
+    shared_ptr<mpglue::Costmapper>
+      cm(createCostmapper(mpglue::sfl_costmapper_params(origin_x,
+							origin_y,
+							origin_th,
+							resolution,
+							inscribed_radius,
+							circumscribed_radius,
+							inflation_radius,
+							ix_begin,
+							iy_begin,
+							ix_end,
+							iy_end,
+							obstacle_cost)));
+    EXPECT_TRUE (cm) << "mpglue::createCostmap2D(mpglue::sfl_costmapper_params const &) failed";
+  }
+  {
+    static double const obstacle_range(7);
+    static double const max_obstacle_height(3.2);
+    static double const raytrace_range(5.7);
+    static double const weight(4.9);
+    shared_ptr<mpglue::Costmapper>
+      cm(createCostmapper(mpglue::cm2d_costmapper_params(origin_x,
+							 origin_y,
+							 resolution,
+							 inscribed_radius,
+							 circumscribed_radius,
+							 inflation_radius,
+							 ix_end,
+							 iy_end,
+							 obstacle_range,
+							 max_obstacle_height,
+							 raytrace_range,
+							 weight)));
+    EXPECT_TRUE (cm) << "mpglue::createCostmap2D(mpglue::cm2d_costmapper_params const &) failed";
+  }
+  {
+    shared_ptr<costmap_2d::Costmap2D> cm2d(createCostmap2D());
+    EXPECT_TRUE (cm2d) << "in-test createCostmap2D() failed";
+    shared_ptr<mpglue::Costmapper> cm(mpglue::createCostmapper(cm2d));
+    EXPECT_TRUE (cm) << "mpglue::createCostmapper() failed on in-test createCostmap2D()";
+  }
 }
 
 
@@ -102,13 +156,13 @@ TEST (costmapper, addition)
 {
   shared_ptr<costmap_2d::Costmap2D> cm2d(createCostmap2D());
   ASSERT_TRUE (cm2d);
-  shared_ptr<mpglue::Costmapper> cm(createCostmapper(cm2d));
+  shared_ptr<mpglue::Costmapper> cm(mpglue::createCostmapper(cm2d));
   ASSERT_TRUE (cm);
   mpglue::index_collection_t added_obstacle_indices;
   added_obstacle_indices.insert(mpglue::index_pair(2, 3));
-  EXPECT_EQ (added_obstacle_indices.size(), 1);
+  EXPECT_EQ (added_obstacle_indices.size(), size_t(1));
   size_t const count(cm->updateObstacles(&added_obstacle_indices, 0, &cerr));
-  EXPECT_GT (count, 0);
+  EXPECT_GT (count, size_t(0));
 }
 
 

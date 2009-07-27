@@ -156,7 +156,7 @@ namespace mpglue {
      wrapped by mpglue::Costmapper.
   */
   struct sfl_costmapper_params: public costmapper_params {
-    sfl_costmapper_params(costmapper_params const & base);
+    explicit sfl_costmapper_params(costmapper_params const & base);
     
 
     sfl_costmapper_params(costmapper_params const & base,
@@ -189,9 +189,22 @@ namespace mpglue {
      when wrapped by mpglue::Costmapper.
   */
   struct cm2d_costmapper_params: public costmapper_params {
-    cm2d_costmapper_params(costmapper_params const & base);
+    explicit cm2d_costmapper_params(costmapper_params const & base);
     
     cm2d_costmapper_params(costmapper_params const & base,
+			   double obstacle_range,
+			   double max_obstacle_height,
+			   double raytrace_range,
+			   double weight);
+
+    cm2d_costmapper_params(double origin_x,
+			   double origin_y,
+			   double resolution,
+			   double inscribed_radius,
+			   double circumscribed_radius,
+			   double inflation_radius,
+			   index_t ix_end,
+			   index_t iy_end,
 			   double obstacle_range,
 			   double max_obstacle_height,
 			   double raytrace_range,

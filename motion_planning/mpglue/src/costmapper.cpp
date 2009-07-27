@@ -406,6 +406,35 @@ namespace mpglue {
   }
   
   
+  cm2d_costmapper_params::
+  cm2d_costmapper_params(double origin_x,
+			 double origin_y,
+			 double resolution,
+			 double inscribed_radius,
+			 double circumscribed_radius,
+			 double inflation_radius,
+			 index_t ix_end,
+			 index_t iy_end,
+			 double _obstacle_range,
+			 double _max_obstacle_height,
+			 double _raytrace_range,
+			 double _weight)
+    : costmapper_params(origin_x,
+			origin_y,
+			resolution,
+			inscribed_radius,
+			circumscribed_radius,
+			inflation_radius,
+			ix_end,
+			iy_end),
+      obstacle_range(_obstacle_range),
+      max_obstacle_height(_max_obstacle_height),
+      raytrace_range(_raytrace_range),
+      weight(_weight)
+  {
+  }
+  
+  
   shared_ptr<Costmapper> createCostmapper(shared_ptr<sfl::Mapper2d> m2d,
 					  int possibly_circumscribed_cost)
   {
