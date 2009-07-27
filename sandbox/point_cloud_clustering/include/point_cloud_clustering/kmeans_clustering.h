@@ -42,8 +42,6 @@
 
 #include <point_cloud_clustering/generic_clustering.h>
 
-#include <robot_msgs/PointCloud.h>
-
 #include <opencv/cxcore.h>
 #include <opencv/cv.h>
 #include <opencv/cvaux.hpp>
@@ -52,20 +50,6 @@ using namespace std;
 
 namespace point_cloud_clustering
 {
-  typedef struct kmeans_params
-  {
-      double factor;
-      double accuracy;
-      int max_iter;
-      vector<unsigned int> channel_indices;
-  } kmeans_params_t;
-
-  int pcKMeans(const robot_msgs::PointCloud& pt_cloud,
-               const set<unsigned int>& ignore_indices,
-               const kmeans_params_t& kmeans_params,
-               map<unsigned int, vector<float> >& cluster_xyz_centroids,
-               map<unsigned int, vector<int> >& cluster_pt_indices);
-
   class KMeans: public GenericClustering
   {
     public:

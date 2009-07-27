@@ -34,20 +34,26 @@
 
 #include <point_cloud_clustering/kmeans_clustering.h>
 
+// --------------------------------------------------------------
+/* See function definition */
+// --------------------------------------------------------------
 int point_cloud_clustering::KMeans::setParameters(double k_factor, double accuracy, int max_iter)
 {
   if (k_factor < 0.0 || k_factor > 1.0)
   {
+    ROS_ERROR("Invalid kmeans factor");
     return -1;
   }
 
   if (accuracy < 0.0 || accuracy > 1.0)
   {
+    ROS_ERROR("Invalid kmeans accuracy");
     return -1;
   }
 
   if (max_iter < 1)
   {
+    ROS_ERROR("Invalid kmeans max iteration");
     return -1;
   }
 
@@ -58,6 +64,9 @@ int point_cloud_clustering::KMeans::setParameters(double k_factor, double accura
   return 0;
 }
 
+// --------------------------------------------------------------
+/* See function definition */
+// --------------------------------------------------------------
 int point_cloud_clustering::KMeans::cluster(const robot_msgs::PointCloud& pt_cloud,
                                             cloud_kdtree::KdTree& pt_cloud_kdtree,
                                             const set<unsigned int>& indices_to_cluster,
@@ -139,6 +148,8 @@ int point_cloud_clustering::KMeans::cluster(const robot_msgs::PointCloud& pt_clo
 
     // Associate point index with the cluster
     created_clusters[curr_cluster_label].push_back(static_cast<int> (curr_pt_cloud_idx));
+
+    // Record centroid information, if necessary
     if (cluster_centroids != NULL)
     {
       // accumulate total xyz coordinates in cluster
