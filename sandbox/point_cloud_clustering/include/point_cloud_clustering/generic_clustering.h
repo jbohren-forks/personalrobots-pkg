@@ -51,7 +51,7 @@ namespace point_cloud_clustering
   class GenericClustering
   {
     public:
-      static void computeClusterCentroids(const robot_msgs::PointCloud& pt_cloud, const map<unsigned int,
+      static int computeClusterCentroids(const robot_msgs::PointCloud& pt_cloud, const map<unsigned int,
           vector<int> >& clusters, map<unsigned int, vector<float> >& cluster_centroids);
 
       GenericClustering();

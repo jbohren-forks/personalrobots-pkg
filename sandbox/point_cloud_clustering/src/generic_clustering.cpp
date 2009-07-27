@@ -70,7 +70,7 @@ int point_cloud_clustering::GenericClustering::computeClusterCentroids(const rob
     }
 
     // normalize by number of points
-    curr_nbr_pts = std::max(curr_nbr_pts, 1);
+    curr_nbr_pts = std::max(curr_nbr_pts, static_cast<unsigned int>(1));
     for (unsigned int i = 0 ; i < 3 ; i++)
     {
       curr_centroid[i] /= static_cast<float> (curr_nbr_pts);
