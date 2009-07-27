@@ -48,7 +48,7 @@ void printTree(Link* link,int level = 0)
   {
     if (*child)
     {
-      for(int j=0;j<level;j++) std::cout << " ";
+      for(int j=0;j<level;j++) std::cout << " "; //indent
       std::cout << "child(" << count++ << "):  " << (*child)->getName()
                 << " with parent joint: " << (*child)->parent_joint_->getName()
                 << std::endl;
@@ -57,6 +57,7 @@ void printTree(Link* link,int level = 0)
     }
     else
     {
+      for(int j=0;j<level;j++) std::cout << " "; //indent
       std::cout << "root link: " << link->getName() << " has a null child!" << *child << std::endl;
     }
   }
@@ -74,13 +75,13 @@ int main(int argc, char** argv)
   rdf_xml.LoadFile(argv[1]);
   TiXmlElement *robot_xml = rdf_xml.FirstChildElement("robot");
   if (!robot_xml){
-    cerr << "Could not parse the xml" << std::endl;
+    cerr << "ERROR: Could not load the xml into TiXmlElement" << std::endl;
     return -1;
   }
 
   RDF robot;
   if (!robot.initXml(robot_xml)){
-    cerr << "Parsing the xml failed" << std::endl;
+    cerr << "ERROR: RDF Parsing the xml failed" << std::endl;
     return -1;
   }
 
@@ -88,13 +89,13 @@ int main(int argc, char** argv)
   std::cout << "---------- Finished Loading from URDF XML, Now Checking RDF structure ------------" << std::endl;
   // get root link
   Link* root_link=robot.getRoot();
-  std::cout << "root " << root_link->getName() << " has " << root_link->getChildren()->size() << " children" << std::endl;
-  std::cout << "root " << root_link->getName() << " has parent joint: " << root_link->getParentJointName() << std::endl << std::endl;
+  std::cout << "root Link: " << root_link->getName() << " has " << root_link->getChildren()->size() << " children" << std::endl;
+  std::cout << "root Link: " << root_link->getName() << " has parent joint: " << root_link->getParentJointName() << std::endl;
+  std::cout << "root Link: " << root_link->getName() << " has parent Link: " << root_link->getParentName() << std::endl << std::endl;
   if (!root_link) return -1;
 
 
-  // go through children, print grandchildren
-  std::cout << "root link: " << root_link->getName() << std::endl;
+  // print entire tree
   printTree(root_link);
   return 0;
 }

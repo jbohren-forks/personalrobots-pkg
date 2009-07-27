@@ -188,7 +188,7 @@ bool RDF::initXml(TiXmlElement *robot_xml)
 
         // set transform from parent Link to parent Joint frame for Link element
         Pose parent_pose;
-        parent_pose.initXml(link->second->origin_xml_);
+        parent_pose.initXml(link->second->getOriginXml());
         parent_joint->second->setParentPose(parent_pose);
 
         // since we're using old URDF format, set origins for Joint elements using origin_xml_ in links

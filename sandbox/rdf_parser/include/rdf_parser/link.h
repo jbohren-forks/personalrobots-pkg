@@ -142,6 +142,9 @@ public:
   /// returns the parent link name
   const std::string& getParentName() {return parent_name_;};
 
+  /// returns the origin xml for parent link -> parent joint transform
+  TiXmlElement* getOriginXml() {return origin_xml_;};
+
   /// returns the parent joint name
   const std::string& getParentJointName();
 
@@ -183,7 +186,6 @@ private:
   //   * joint angle IS the pose difference between parent_joint_pose and current_joint_pose
   std::string parent_joint_name_;
   std::string parent_name_;
-public:
   TiXmlElement* origin_xml_;
 
 public:
