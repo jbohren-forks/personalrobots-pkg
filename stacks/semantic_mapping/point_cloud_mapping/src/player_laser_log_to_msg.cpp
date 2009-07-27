@@ -168,12 +168,14 @@ class PlayerLogToMsg
         ROS_DEBUG ("Publishing data (%d points) on topic %s in frame %s. Angle min/max/resulution: %f/%f/%f, Range min/max: %f/%f",
                    (int)msg_scan_.ranges.size (), nh_.resolveName (msg_topic_).c_str (), msg_scan_.header.frame_id.c_str (),
                    msg_scan_.angle_min, msg_scan_.angle_max, msg_scan_.angle_increment, msg_scan_.range_min, msg_scan_.range_max);
-        msg_scan_.header.stamp = Time::now ();
         scan_pub_.publish (msg_scan_);
 
         // Sleep for a certain number of seconds (tdif)
-        Duration tictoc (tdif, 0);
-        tictoc.sleep ();
+        if (tj != 0)
+        {
+          Duration tictoc (tdif);
+          tictoc.sleep ();
+        }
 
         spinOnce ();
         tj = ti;
