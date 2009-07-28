@@ -129,8 +129,8 @@ void RosSimIface::UpdateObjectPose(const geometry_msgs::PoseWithRatesStampedCons
   this->lock.lock();
 
   Model* model = gazebo::World::Instance()->GetModelByName(this->modelName);
-  Vector3 pos(poseMsg->pos.position.x,poseMsg->pos.position.y,poseMsg->pos.position.z);
-  Quatern rot(poseMsg->pos.orientation.w,poseMsg->pos.orientation.x,poseMsg->pos.orientation.y,poseMsg->pos.orientation.z);
+  Vector3 pos(poseMsg->pose_with_rates.pose.position.x,poseMsg->pose_with_rates.pose.position.y,poseMsg->pose_with_rates.pose.position.z);
+  Quatern rot(poseMsg->pose_with_rates.pose.orientation.w,poseMsg->pose_with_rates.pose.orientation.x,poseMsg->pose_with_rates.pose.orientation.y,poseMsg->pose_with_rates.pose.orientation.z);
   Pose3d modelPose(pos,rot);
   model->SetPose(modelPose);
 
