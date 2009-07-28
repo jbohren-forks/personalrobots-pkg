@@ -66,6 +66,7 @@ import vslam.msg
 class RoadmapServer:
     def __init__(self, args):
         rospy.init_node('roadmap_server')
+        self.optimization_distance = int(args[1])
         self.tf = TransformListener()
         stereo_cam = camera.Camera((389.0, 389.0, 89.23 * 1e-3, 323.42, 323.42, 274.95))
         self.skel = Skeleton(stereo_cam)
@@ -105,7 +106,7 @@ class RoadmapServer:
         uTG = TG.to_undirected()
         print "uTG", uTG.nodes(), uTG.edges()
         close = set([here])
-        for i in range(10):
+        for i in range(self.optimization_distance):
             close |= set(nx.node_boundary(uTG, close))
         print "close", close
 
