@@ -11,9 +11,9 @@ gensrv()
 rospack_add_boost_directories()
 
 # Outlet detection library
-rospack_add_library(outlet src/affine_transform.cpp src/chamfer_match.cpp src/constellation.cpp src/features.cpp src/learning.cpp src/one_way_descriptor.cpp src/one_way_descriptor_base.cpp src/one_way_outlets.cpp src/outlet_detector.cpp src/outlet_model.cpp src/outlet_tuple.cpp src/pca_features.cpp src/planar.cpp src/tracker_base.cpp src/outlet_tracker.cpp src/generalized_hough.cpp)
-add_definitions(-D_OUTLET_HR -D_TUNING -D_USE_OUTLET_TUPLE)
-#add_definitions(-D_VERBOSE)
+rospack_add_library(outlet src/affine_transform.cpp src/chamfer_match.cpp src/constellation.cpp src/features.cpp src/learning.cpp src/one_way_descriptor.cpp src/one_way_descriptor_base.cpp src/one_way_outlets.cpp src/outlet_detector.cpp src/outlet_model.cpp src/outlet_tuple.cpp src/pca_features.cpp src/planar.cpp src/tracker_base.cpp src/outlet_tracker.cpp src/generalized_hough.cpp src/outlet_detector_test.cpp)
+add_definitions(-D_OUTLET_HR -D_TUNING -D_USE_OUTLET_TUPLE -D_GHT)
+add_definitions(-D_VERBOSE)
 rospack_link_boost(outlet thread)
 
 # Stand-alone outlet detection executables
@@ -23,6 +23,14 @@ rospack_add_executable(outlet_sample src/sample.cpp)
 target_link_libraries(outlet_sample outlet)
 rospack_add_executable(outlet_measure src/CalculateRealCoordinates.cpp src/OutletsMeasurement.cpp)
 target_link_libraries(outlet_measure outlet)
+
+#outlet detection config generator
+rospack_add_executable(confgen src/generator.cpp)
+target_link_libraries(confgen outlet)
+
+#outlet detection test
+rospack_add_executable(detection_test src/detection_test.cpp)
+target_link_libraries(detection_test outlet)
 
 # Fine outlet detection node
 rospack_add_executable(outlet_node src/outlet_node.cpp)
