@@ -405,11 +405,11 @@ namespace mpglue {
 			  " EnvironmentNAVXYTHETALAT::SetEnvParameter(\"cost_inscribed\", "
 			  + sfl::to_string(cm->getInscribedCost()) + ") failed");
     }
-    if ( ! env->SetEnvParameter("cost_possibly_circumscribed", cm->getPossiblyCircumcribedCost())) {
+    if ( ! env->SetEnvParameter("cost_possibly_circumscribed", cm->getPossiblyCircumscribedCost())) {
       delete env;
       throw runtime_error("mpglue::SBPLEnvironment::createXYThetaLattice():"
 			  " EnvironmentNAVXYTHETALAT::SetEnvParameter(\"cost_possibly_circumscribed\", "
-			  + sfl::to_string(cm->getPossiblyCircumcribedCost()) + ") failed");
+			  + sfl::to_string(cm->getPossiblyCircumscribedCost()) + ") failed");
     }
     
     int const obst_cost_thresh(cm->getLethalCost());
@@ -494,11 +494,11 @@ namespace mpglue {
 			  " EnvironmentNAVXYTHETADOOR::SetEnvParameter(\"cost_inscribed\", "
 			  + sfl::to_string(cm->getInscribedCost()) + ") failed");
     }
-    if ( ! env->SetEnvParameter("cost_possibly_circumscribed", cm->getPossiblyCircumcribedCost())) {
+    if ( ! env->SetEnvParameter("cost_possibly_circumscribed", cm->getPossiblyCircumscribedCost())) {
       delete env;
       throw runtime_error("mpglue::SBPLEnvironment::createXYThetaDoor():"
 			  " EnvironmentNAVXYTHETADOOR::SetEnvParameter(\"cost_possibly_circumscribed\", "
-			  + sfl::to_string(cm->getPossiblyCircumcribedCost()) + ") failed");
+			  + sfl::to_string(cm->getPossiblyCircumscribedCost()) + ") failed");
     }
     
     int const obst_cost_thresh(cm->getLethalCost());
