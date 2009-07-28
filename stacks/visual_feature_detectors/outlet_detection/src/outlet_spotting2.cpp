@@ -79,7 +79,8 @@
 #include "topic_synchronizer2/topic_synchronizer.h"
 
 using namespace std;
-using namespace robot_msgs;
+using namespace sensor_msgs; 
+using namespace geometry_msgs;
 
 
 #define CV_PIXEL(type,img,x,y) (((type*)(img->imageData+y*img->widthStep))+x*img->nChannels)

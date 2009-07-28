@@ -58,7 +58,8 @@
 #include <tf/transform_datatypes.h>
 
 using namespace std;
-using namespace robot_msgs;
+using namespace sensor_msgs;
+using namespace geometry_msgs;
 
 PointCloud pointCloudVicinity(PointCloud laser_cloud, PointStamped ps_cloud, double distance, Point32& closest)
 {
