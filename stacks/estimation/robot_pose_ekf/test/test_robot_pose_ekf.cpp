@@ -42,7 +42,6 @@
 
 
 using namespace ros;
-using namespace robot_msgs;
 
 
 static const double time_end     = 1230660828.0;
@@ -57,8 +56,8 @@ char** g_argv;
 class TestEKF : public testing::Test
 {
 public:
-  PoseWithCovariance ekf_msg_, ekf_begin_;
-  PoseWithRatesStamped odom_msg_;
+  geometry_msgs::PoseWithCovariance ekf_msg_, ekf_begin_;
+  geometry_msgs::PoseWithRatesStamped odom_msg_;
   double ekf_counter_, odom_counter_;
   Time ekf_time_begin_, odom_time_begin_;
   Node* node_;

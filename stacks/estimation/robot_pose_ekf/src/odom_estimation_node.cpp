@@ -201,7 +201,7 @@ namespace estimation
     boost::mutex::scoped_lock lock(imu_mutex_);
     imu_stamp_ = imu->header.stamp;
     imu_time_  = Time::now();
-    poseMsgToTF(imu->pos, imu_meas_);
+    poseMsgToTF(imu->pose_with_rates.pose, imu_meas_);
     my_filter_.addMeasurement(Stamped<Transform>(imu_meas_, imu_stamp_, "imu", "base_footprint"));
     
     // activate imu

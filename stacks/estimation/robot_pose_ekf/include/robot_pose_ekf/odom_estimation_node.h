@@ -46,7 +46,7 @@
 
 // messages
 #include "deprecated_msgs/RobotBase2DOdom.h"
-#include "geometry_msgs/PoseDot.h"
+#include "robot_msgs/PoseDot.h"
 #include "geometry_msgs/PoseWithRatesStamped.h"
 #include "geometry_msgs/PoseStamped.h"
 #include "robot_msgs/VOPose.h"
@@ -97,7 +97,7 @@ namespace estimation
 
 typedef boost::shared_ptr<deprecated_msgs::RobotBase2DOdom const> OdomConstPtr;
 typedef boost::shared_ptr<geometry_msgs::PoseWithRatesStamped const> ImuConstPtr;
-typedef boost::shared_ptr<geometry_msgs::PoseDot const> VelConstPtr;
+typedef boost::shared_ptr<robot_msgs::PoseDot const> VelConstPtr;
 
 class OdomEstimationNode
 {
