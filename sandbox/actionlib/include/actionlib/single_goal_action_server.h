@@ -39,6 +39,7 @@
 
 #include <ros/ros.h>
 #include <actionlib/action_server.h>
+#include <actionlib/action_definition.h>
 
 namespace actionlib {
   /** @class SingleGoalActionServer @brief The SingleGoalActionServer
@@ -51,11 +52,10 @@ namespace actionlib {
    * goal implies successful preemption of any old goal and the status of the
    * old goal will be change automatically to reflect this.
    */
-  template <class ActionGoal, class Goal, class ActionResult, class Result, class ActionFeedback, class Feedback>
-  class SingleGoalActionServer {
+  template <class ActionSpec>
+  class SingleGoalActionServer : public ActionDefinition<ActionSpec> {
     public:
-      typedef ActionServer<ActionGoal, Goal, ActionResult, Result, ActionFeedback, Feedback> TypedActionServer;
-      typedef typename TypedActionServer::GoalHandle GoalHandle;
+      typedef typename ActionServer<ActionSpec>::GoalHandle GoalHandle;
 
       /**
        * @brief  Constructor for a SingleGoalActionServer
@@ -66,7 +66,7 @@ namespace actionlib {
         : new_goal_(false), preempt_request_(false), new_goal_preempt_request_(false) {
 
           //create the action server
-          as_ = boost::shared_ptr<TypedActionServer>(new TypedActionServer(n, name,
+          as_ = boost::shared_ptr<ActionServer<ActionSpec> >(new ActionServer<ActionSpec>(n, name,
                 boost::bind(&SingleGoalActionServer::goalCallback, this, _1),
                 boost::bind(&SingleGoalActionServer::preemptCallback, this, _1)));
 
@@ -238,7 +238,7 @@ namespace actionlib {
         }
       }
 
-      boost::shared_ptr<TypedActionServer> as_;
+      boost::shared_ptr<ActionServer<ActionSpec> > as_;
 
       GoalHandle current_goal_, next_goal_;
 

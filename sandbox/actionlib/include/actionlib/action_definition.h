@@ -42,18 +42,18 @@ namespace action_tools {
    * @brief A class templated on an ActionSpec that defines typedefs for
    * ActionGoal/Goal, ActionResult/Result, and ActionFeedback/Feedback
    */
-  template class<ActionSpec>
+  template <class ActionSpec>
   class ActionDefinition {
     public:
       //create the typdefs that will allow us refer to the goal, result, and feedback
-      typedef ActionSpec::action_goal_type_ ActionGoal;
-      typedef ActionGoal::_goal_type Goal;
+      typedef typename ActionSpec::action_goal_type_ ActionGoal;
+      typedef typename ActionGoal::_goal_type Goal;
 
-      typedef ActionSpec::action_result_type_ ActionResult;
-      typedef ActionResult::_result_type Goal;
+      typedef typename ActionSpec::action_result_type_ ActionResult;
+      typedef typename ActionResult::_result_type Result;
 
-      typedef ActionSpec::action_feedback_type_ ActionFeedback;
-      typedef ActionFeedback::_feedback_type Goal;
+      typedef typename ActionSpec::action_feedback_type_ ActionFeedback;
+      typedef typename ActionFeedback::_feedback_type Feedback;
   };
 };
 #endif

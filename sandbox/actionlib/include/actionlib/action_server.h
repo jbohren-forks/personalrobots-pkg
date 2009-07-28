@@ -45,6 +45,7 @@
 #include <actionlib/GoalStatus.h>
 #include <actionlib/RequestType.h>
 #include <actionlib/enclosure_deleter.h>
+#include <actionlib/action_definition.h>
 
 #include <list>
 

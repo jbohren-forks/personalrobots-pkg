@@ -41,9 +41,7 @@
 #include <robot_msgs/PoseStamped.h>
 #include <actionlib/MoveBaseAction.h>
 
-typedef actionlib::ActionServer<actionlib::MoveBaseActionGoal, actionlib::MoveBaseGoal,
-        actionlib::MoveBaseActionResult, actionlib::MoveBaseResult,
-        actionlib::MoveBaseActionFeedback, actionlib::MoveBaseFeedback> MoveBaseActionServer;
+typedef actionlib::ActionServer<actionlib::MoveBaseAction> MoveBaseActionServer;
 
 typedef MoveBaseActionServer::GoalHandle GoalHandle;
 
