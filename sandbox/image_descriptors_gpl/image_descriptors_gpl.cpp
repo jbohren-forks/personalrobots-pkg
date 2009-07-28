@@ -9,50 +9,68 @@ using namespace cv;
 ****************************************************************************/
 
 
-Daisy::Daisy(double rad, int rad_q_no, int th_q_no, int hist_th_q_no) :
+Daisy::Daisy(double rad, int rad_q_no, int th_q_no, int hist_th_q_no, Daisy* im_provider) :
   ImageDescriptor(),
   rad_(rad),
   rad_q_no_(rad_q_no),
   th_q_no_(th_q_no),
-  hist_th_q_no_(hist_th_q_no)
+  hist_th_q_no_(hist_th_q_no),
+  dai_(),
+  im_(NULL),
+  im_provider_(im_provider)
 {
   char buf[200];
   sprintf(buf, "DAISY_rad%g_radq%d_thq%d_histq%d", rad_, rad_q_no_, th_q_no_, hist_th_q_no_);
   name_.assign(buf);
 
-  dai.set_parameters(rad_, rad_q_no_, th_q_no_, hist_th_q_no_);
-  dai.set_normalization(NRM_FULL);
-  dai.initialize_single_descriptor_mode();
-  int ws = dai.compute_workspace_memory();
-  float* workspace = new float[ ws ];
-  dai.set_workspace_memory( workspace, ws);
+  dai_.verbose(0);
+  dai_.set_parameters(rad_, rad_q_no_, th_q_no_, hist_th_q_no_);
 
-  result_size_ = dai.descriptor_size();
+  result_size_ = dai_.descriptor_size();
 }
 
 Daisy::~Daisy() {
 
 }
 
+void Daisy::clearImageCache() {
+  dai_.reset();
+
+  // -- im_ is deleted by load_gray_image().
+  //   if(!im_provider_ && im_) 
+  //     delete[] im_;
+}
+
 void Daisy::compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf& results) {
+  setImage(img);
+
   // -- Stupid way to pass img to daisy.
-  char filename[] = "temp.pgm";
-  IplImage* gray = cvCreateImage(cvGetSize(img), IPL_DEPTH_8U, 1);
-  cvCvtColor(img, gray, CV_BGR2GRAY);
-  cvSaveImage(filename, gray);
-  uchar* im = NULL;
-  load_gray_image(filename, im, img->height, img->width);
-  dai.set_image(im, img->height, img->width);
+  if(im_provider_) {
+    im_ = im_provider_->im_;
+  }
+  else {
+    char filename[] = "temp.pgm";
+    IplImage* gray = cvCreateImage(cvGetSize(img), IPL_DEPTH_8U, 1);
+    cvCvtColor(img, gray, CV_BGR2GRAY);
+    cvSaveImage(filename, gray);
+    load_gray_image(filename, im_, img->height, img->width);
+  }
+  dai_.verbose(0);
+  dai_.set_image(im_, img->height, img->width);
+  dai_.set_parameters(rad_, rad_q_no_, th_q_no_, hist_th_q_no_);
+  dai_.initialize_single_descriptor_mode();
 
 
   results.clear();
   results.resize(points.size());
   int nValid = 0;
+  START_TIMER();
   for(size_t i=0; i<points.size(); ++i) {
     // -- Get the descriptor.
+    assert((int)result_size_ == dai_.descriptor_size());
     float* thor = new float[result_size_];
     memset(thor, 0, sizeof(float)*result_size_);
-    dai.get_descriptor((int)points[i].pt.y, (int)points[i].pt.x, thor);
+    dai_.get_descriptor((int)points[i].pt.y, (int)points[i].pt.x, 0, thor);
 
     // -- Check if it's all zeros.
     bool valid = false;
@@ -73,6 +91,7 @@ void Daisy::compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf& resu
     results[i] = Vector<float>(thor, result_size_, false); //Don't copy the data.
     nValid++;
   }
+  STOP_TIMER();
 
   if(debug_) {
     cout << "Debugging " << name_ << endl;
