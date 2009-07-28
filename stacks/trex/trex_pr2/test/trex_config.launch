@@ -1,7 +1,15 @@
 <launch>
+  <!-- Automatically start roscore /-->
   <master auto="start"/>
+
+  <!-- TREX Parameters /-->
   <param name="/trex/update_rate" value="10"/>
   <param name="/trex/path" value="$(find trex_pr2)/cfg:$(find trex_ros)/cfg"/>
   <param name="/trex/log_dir" value="$(find trex_pr2)/logs"/>
   <param name="/trex/play_back" value="0"/>
+  <param name="/trex/time_limit" value="0"/>
+
+  <!-- Nodes required for any functioning /-->
+  <node pkg="trex_pr2" type="stub_ros_container" respawn="true" />
+  <node pkg="trex_ros" type="actions" respawn="true" />
 </launch>
