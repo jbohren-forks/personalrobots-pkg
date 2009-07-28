@@ -24,6 +24,3 @@ target_link_libraries(check_flash forearmcam)
 
 rospack_add_executable(read_all_flash read_all_flash.cpp)
 target_link_libraries(read_all_flash forearmcam)
-
-rospack_add_executable(focus focus.cpp)
-target_link_libraries(focus forearmcam)

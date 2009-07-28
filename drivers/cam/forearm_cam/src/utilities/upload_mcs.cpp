@@ -229,7 +229,13 @@ int write_flash(char *if_name, char *ip_address, int sn)
     ROS_FATAL("Could not communicate with camera after configuring IP. Is ARP set? Is %s accessible from %s?", ip_address, if_name);
     return -1;
   }
-
+  
+  ROS_INFO("******************************************************************");
+  ROS_INFO("Firmware file parsed successfully. Will start writing to flash in 5 seconds.");
+  ROS_INFO("Hit CTRL+C to abort now.");
+  ROS_INFO("******************************************************************");
+  sleep(5);
+  
   ROS_INFO("Writing to flash. DO NOT ABORT OR TURN OFF CAMERA!!");
   
   unsigned char buff[FLASH_PAGE_SIZE];
@@ -296,18 +302,32 @@ int write_flash(char *if_name, char *ip_address, int sn)
 
     int addr = page * FLASH_PAGE_SIZE;
 
-    if (pr2FlashRead(camera, page, (uint8_t *) buff) != 0) {
-      ROS_FATAL("Flash read error on page %i.", page);
-      ROS_FATAL("If you reset the camera it will probably not come up.");
-      ROS_FATAL("Try reflashing NOW, to possibly avoid a hard JTAG reflash.");
-      return -2;
-    }
+    for (int i = 0; ; i++)
+    {
+      if (i > 20) {
+        ROS_FATAL("Flash read/compare error on page %i.", page);
+        ROS_FATAL("If you reset the camera it will probably not come up.");
+        ROS_FATAL("Try reflashing NOW, to possibly avoid a hard JTAG reflash.");
+        return -2;
+      }
+      
+      if (pr2FlashRead(camera, page, (uint8_t *) buff) != 0)
+      {
+        printf("r");
+        fflush(stdout);
+        sleep(1);
+        continue;
+      }
+      
+      if (memcmp(buff, firmware + addr, FLASH_PAGE_SIZE)) 
+      {
+        printf("c");
+        fflush(stdout);
+        sleep(1);
+        continue;
+      }
 
-    if (memcmp(buff, firmware + addr, FLASH_PAGE_SIZE)) {
-      ROS_FATAL("Flash compare error on page %i.", page);
-      ROS_FATAL("If you reset the camera it will probably not come up.");
-      ROS_FATAL("Try reflashing NOW, to possibly avoid a hard JTAG reflash.");
-      return -2;
+      break;
     }
   }
   fprintf(stderr, "\n");
@@ -327,12 +347,6 @@ int main(int argc, char **argv)
   if (read_mcs(argv[1]))
     return -1;
 
-  ROS_INFO("******************************************************************");
-  ROS_INFO("Firmware file parsed successfully. Will start writing to flash in 5 seconds.");
-  ROS_INFO("Hit CTRL+C to abort now.");
-  ROS_INFO("******************************************************************");
-  sleep(5);
-  
   char* if_name = argv[2];
   char* ip_address = argv[3];
   int sn = atoi(argv[4]);

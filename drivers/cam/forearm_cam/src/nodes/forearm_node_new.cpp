@@ -38,6 +38,8 @@
 // TODO: Check that partial EOF missing frames get caught.
 // @todo Do the triggering based on a stream of incoming timestamps.
 
+#include <forearm_cam/ForearmCamReconfigurator.h>
+
 #include <ros/node.h>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/CamInfo.h>
@@ -358,7 +360,7 @@ public:
         
     node_handle_.param("~trigger_controller", trig_controller_, std::string());
     node_handle_.param("~trigger_rate", trig_rate_, imager_freq_ - 1.);
-    node_handle_.getParam("~serial_number", serial_number_, -2);
+    node_handle_.param("~serial_number", serial_number_, -2);
     node_handle_.param("~trigger_phase", trig_phase_, 0.);
     
     desired_freq_ = ext_trigger_ ? trig_rate_ : imager_freq_;
