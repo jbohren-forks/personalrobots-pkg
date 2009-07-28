@@ -72,7 +72,7 @@ class NormalEstimation
   public:
 
     // ROS messages
-    PointCloud cloud_down_, cloud_normals_;
+    sensor_msgs::PointCloud cloud_down_, cloud_normals_;
 
     tf::TransformListener tf_;
 
@@ -86,7 +86,7 @@ class NormalEstimation
     int k_;
     // additional downsampling parameters
     int downsample_;
-    Point leaf_width_;
+    geometry_msgs::Point leaf_width_;
     double cut_distance_;
 
     vector<cloud_geometry::Leaf> leaves_;
@@ -127,7 +127,7 @@ class NormalEstimation
         ROS_WARN ("Trying to subscribe to %s, but the topic doesn't exist!", cloud_topic.c_str ());
 
       cloud_sub_ = nh_.subscribe (cloud_topic, 1, &NormalEstimation::cloud_cb, this);
-      cloud_norm_pub_ = nh_.advertise<PointCloud> ("cloud_normals", 1);
+      cloud_norm_pub_ = nh_.advertise<sensor_msgs::PointCloud> ("cloud_normals", 1);
 
 #ifdef DEBUG
       cloud_normals_.chan.resize (1);
@@ -172,10 +172,10 @@ class NormalEstimation
       * \param tf a pointer to a TransformListener object
       */
     void
-      getCloudViewPoint (const string &cloud_frame, PointStamped &viewpoint_cloud, tf::TransformListener &tf)
+      getCloudViewPoint (const string &cloud_frame, geometry_msgs::PointStamped &viewpoint_cloud, tf::TransformListener &tf)
     {
       // Figure out the viewpoint value in the point cloud frame
-      PointStamped viewpoint_laser;
+      geometry_msgs::PointStamped viewpoint_laser;
       viewpoint_laser.header.frame_id = "laser_tilt_mount_link";
       // Set the viewpoint in the laser coordinate system to 0, 0, 0
       viewpoint_laser.point.x = viewpoint_laser.point.y = viewpoint_laser.point.z = 0.0;
@@ -199,7 +199,7 @@ class NormalEstimation
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Callback
     void
-      cloud_cb (const PointCloudConstPtr& cloud)
+    cloud_cb (const sensor_msgs::PointCloudConstPtr& cloud)
     {
       updateParametersFromServer ();
 
@@ -212,7 +212,7 @@ class NormalEstimation
       }
 
       // Figure out the viewpoint value in the cloud_frame frame
-      PointStamped viewpoint_cloud;
+      geometry_msgs::PointStamped viewpoint_cloud;
       getCloudViewPoint (cloud->header.frame_id, viewpoint_cloud, tf_);
 
       ros::Time ts = ros::Time::now ();

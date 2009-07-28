@@ -61,7 +61,7 @@ class CloudDownsampler
   public:
 
     // ROS messages
-    PointCloud cloud_down_, cloud_in_;
+    sensor_msgs::PointCloud cloud_down_, cloud_in_;
 
     vector<cloud_geometry::Leaf> leaves_;
 
@@ -69,7 +69,7 @@ class CloudDownsampler
     ros::Publisher cloud_down_pub_;
 
     // Parameters
-    Point leaf_width_;
+    geometry_msgs::Point leaf_width_;
     double cut_distance_;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -94,7 +94,7 @@ class CloudDownsampler
       }
 
       cloud_sub_ = nh_.subscribe (cloud_topic, 1, &CloudDownsampler::cloud_cb, this);
-      cloud_down_pub_ = nh_.advertise<PointCloud> ("cloud_downsampled", 1);
+      cloud_down_pub_ = nh_.advertise<sensor_msgs::PointCloud> ("cloud_downsampled", 1);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -103,12 +103,12 @@ class CloudDownsampler
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Callback
     void
-      cloud_cb (const PointCloudConstPtr& cloud)
+    cloud_cb (const sensor_msgs::PointCloudConstPtr& cloud)
     {
       ROS_INFO ("Received %d data points.", (int)cloud->pts.size ());
       if (cloud->pts.size () == 0)
         return;
-      PointCloudConstPtr cloud_in = cloud;
+      sensor_msgs::PointCloudConstPtr cloud_in = cloud;
 
       ros::Time ts = ros::Time::now ();
 

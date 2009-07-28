@@ -44,7 +44,6 @@
 
 using namespace std;
 using namespace cloud_io;
-using namespace robot_msgs;
 
 /* ---[ */
 int
@@ -56,7 +55,7 @@ int
     return (-1);
   }
 
-  PointCloud msg_cloud;
+  sensor_msgs::PointCloud msg_cloud;
   int res = loadPCDFile (argv[1], msg_cloud);
   if (res == -1)
   {

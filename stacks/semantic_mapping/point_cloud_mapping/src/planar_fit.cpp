@@ -81,7 +81,7 @@ class PlanarFit
   public:
 
     // ROS messages
-    PointCloud cloud_, cloud_down_, cloud_plane_, cloud_outliers_;
+    sensor_msgs::PointCloud cloud_, cloud_down_, cloud_plane_, cloud_outliers_;
     
 
     tf::TransformListener tf_;
@@ -96,7 +96,7 @@ class PlanarFit
 
     // Additional downsampling parameters
     int downsample_;
-    Point leaf_width_;
+    geometry_msgs::Point leaf_width_;
 
     vector<cloud_geometry::Leaf> leaves_;
 
@@ -159,9 +159,9 @@ class PlanarFit
         ROS_WARN ("Trying to subscribe to %s, but the topic doesn't exist!", node_.resolveName (cloud_topic).c_str ());
 
       node_.subscribe (cloud_topic, cloud_, &PlanarFit::cloud_cb, this, 1);
-      node_.advertise<PointCloud> ("~normals", 1);
-      node_.advertise<PointCloud> ("~plane", 1);
-      node_.advertise<PointCloud> ("~outliers", 1);
+      node_.advertise<sensor_msgs::PointCloud> ("~normals", 1);
+      node_.advertise<sensor_msgs::PointCloud> ("~plane", 1);
+      node_.advertise<sensor_msgs::PointCloud> ("~outliers", 1);
 
       // A channel to visualize the normals as cute little lines 
       //node_.advertise<PolyLine> ("~normal_lines", 1);
@@ -178,10 +178,10 @@ class PlanarFit
       * \param tf a pointer to a TransformListener object
       */
     void
-      getCloudViewPoint (const string &cloud_frame, PointStamped &viewpoint_cloud, tf::TransformListener &tf)
+      getCloudViewPoint (const string &cloud_frame, geometry_msgs::PointStamped &viewpoint_cloud, tf::TransformListener &tf)
     {
       // Figure out the viewpoint value in the point cloud frame
-      PointStamped viewpoint_laser;
+      geometry_msgs::PointStamped viewpoint_laser;
       viewpoint_laser.header.frame_id = "laser_tilt_mount_link";
       // Set the viewpoint in the laser coordinate system to 0, 0, 0
       viewpoint_laser.point.x = viewpoint_laser.point.y = viewpoint_laser.point.z = 0.0;
@@ -253,7 +253,7 @@ class PlanarFit
 
       ros::Time ts = ros::Time::now ();
       // Figure out the viewpoint value in the cloud_frame frame
-      PointStamped viewpoint_cloud;
+      geometry_msgs::PointStamped viewpoint_cloud;
       getCloudViewPoint (cloud_.header.frame_id, viewpoint_cloud, tf_);
 
       // ---------------------------------------------------------------------------------------------------------------
@@ -383,8 +383,8 @@ class PlanarFit
       * \param min_pts the minimum number of points allowed as inliers for a plane model
       */
     bool
-      fitSACPlane (PointCloud *points, vector<int> &inliers, vector<double> &coeff,
-                   const geometry_msgs::PointStamped &viewpoint_cloud, double dist_thresh)
+    fitSACPlane (sensor_msgs::PointCloud *points, vector<int> &inliers, vector<double> &coeff,
+                 const geometry_msgs::PointStamped &viewpoint_cloud, double dist_thresh)
     {
       // Create and initialize the SAC model
       sample_consensus::SACModelPlane *model = new sample_consensus::SACModelPlane ();
@@ -436,8 +436,8 @@ class PlanarFit
       * \param min_pts the minimum number of points allowed as inliers for a plane model
       */
     bool
-      fitSACPlane (PointCloud *points, vector<int> &indices, vector<int> &inliers, vector<double> &coeff,
-                   const geometry_msgs::PointStamped &viewpoint_cloud, double dist_thresh)
+    fitSACPlane (sensor_msgs::PointCloud *points, vector<int> &indices, vector<int> &inliers, vector<double> &coeff,
+                 const geometry_msgs::PointStamped &viewpoint_cloud, double dist_thresh)
     {
       // Create and initialize the SAC model
       sample_consensus::SACModelPlane *model = new sample_consensus::SACModelPlane ();
@@ -489,7 +489,7 @@ class PlanarFit
       * \param width the width of the normal lines
       */
     void
-      publishNormalLines (PointCloud &points, int nx_idx, int ny_idx, int nz_idx, double length, double width)
+    publishNormalLines (sensor_msgs::PointCloud &points, int nx_idx, int ny_idx, int nz_idx, double length, double width)
     {
       visualization_msgs::Marker marker;
       marker.header.frame_id = "base_link";

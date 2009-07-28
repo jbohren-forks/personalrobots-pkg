@@ -109,10 +109,10 @@ NormalEstimationInProc::updateParametersFromServer ()
  * \param tf a pointer to a TransformListener object
  */
 void
-NormalEstimationInProc::getCloudViewPoint (const string &cloud_frame, PointStamped &viewpoint_cloud, tf::TransformListener &tf)
+NormalEstimationInProc::getCloudViewPoint (const string &cloud_frame, geometry_msgs::PointStamped &viewpoint_cloud, tf::TransformListener &tf)
 {
   // Figure out the viewpoint value in the point cloud frame
-  PointStamped viewpoint_laser;
+  geometry_msgs::PointStamped viewpoint_laser;
   viewpoint_laser.header.frame_id = "laser_tilt_mount_link";
   // Set the viewpoint in the laser coordinate system to 0, 0, 0
   viewpoint_laser.point.x = viewpoint_laser.point.y = viewpoint_laser.point.z = 0.0;
@@ -135,7 +135,7 @@ NormalEstimationInProc::getCloudViewPoint (const string &cloud_frame, PointStamp
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Callback
-void NormalEstimationInProc::process_cloud (const PointCloud& cloud_, PointCloud& cloud_normals_)
+void NormalEstimationInProc::process_cloud (const sensor_msgs::PointCloud& cloud_, sensor_msgs::PointCloud& cloud_normals_)
 {
   updateParametersFromServer ();
   
@@ -148,7 +148,7 @@ void NormalEstimationInProc::process_cloud (const PointCloud& cloud_, PointCloud
   }
   
   // Figure out the viewpoint value in the cloud_frame frame
-  PointStamped viewpoint_cloud;
+  geometry_msgs::PointStamped viewpoint_cloud;
   getCloudViewPoint (cloud_.header.frame_id, viewpoint_cloud, tf_);
   
   ros::Time ts = ros::Time::now ();
