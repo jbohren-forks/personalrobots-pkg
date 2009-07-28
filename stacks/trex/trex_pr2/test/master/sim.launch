@@ -1,6 +1,4 @@
 <launch>
-  <!-- Input File -->
   <param name="/trex/input_file" value="sim.master.cfg"/>
-
-  <include file="$(find trex_pr2)/test/trex_config.launch" />
+  <include file="$(find trex_pr2)/test/sim.launch" />
 </launch>
