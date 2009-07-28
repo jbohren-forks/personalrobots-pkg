@@ -7,7 +7,7 @@
   <author>Juergen Sturm</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
-  <url>http://pr.willowgarage.com/wiki/planar_objects</url>
+  <url>http://www.informatik.uni-freiburg.de/~sturm/projectposeestimationfrompointclouds.html</url>
 
 
   <depend package="point_cloud_mapping" />

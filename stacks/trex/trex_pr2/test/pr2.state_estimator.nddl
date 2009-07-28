@@ -1,0 +1,6 @@
+#include "state_estimator/state_estimator.nddl"
+
+close();
+
+fact(arms_tucked.False);
+fact(tilt_laser_ready.False);

@@ -3,9 +3,14 @@
   <include file="$(find pr2_alpha)/pre.machine" />
   <include file="$(find pr2_alpha)/pre_ethercat_reset.launch" />
 
-<!-- Joystick -->
-  <param name="joy/deadzone" value="5000"/>
-  <node machine="two" pkg="joy" type="joy"  respawn="true"/>
+
+<!-- PS3 joystick for A2 servers on PRE -->
+<!-- Watts Commenting out until joystick driver works all the way, and python dev selector is tested 
+  <node machine="two" pkg="joy" type="ps3_joy" name="joy" respawn="true" >
+  <param name="deadzone" value="0.10" />
+  <param name="dev" value="/dev/input/js1" />
+  </node>
+-->
 
 <!-- Power Board Control Node -->
   <node machine="two" pkg="pr2_power_board" type="power_node"  respawn="true"/>

@@ -53,6 +53,7 @@ CvOneWayDescriptorBase::CvOneWayDescriptorBase(CvSize patch_size, int pose_count
     m_pose_count = pose_count;
     m_poses = 0;
     m_transforms = 0;
+    m_part_id = 0;
     
     char pca_config_filename[1024];
     sprintf(pca_config_filename, "%s/%s", train_path, pca_config);
@@ -112,6 +113,7 @@ CvOneWayDescriptorBase::~CvOneWayDescriptorBase()
     
     
     delete []m_descriptors;
+    delete m_part_id;
     
     if(!m_transforms)
     {
@@ -150,42 +152,12 @@ void CvOneWayDescriptorBase::InitializePoseTransforms()
     InitializeTransformsFromPoses();
 }
 
-void CvOneWayDescriptorBase::LoadTrainingFeatures(const char* train_image_filename, const char* train_image_filename1)
+void CvOneWayDescriptorBase::BuildDescriptors(IplImage* train_image, const vector<feature_t>& features, 
+                                              const char* feature_label, CvOneWayDescriptor* descriptors, int* part_id, float scale)
 {
-    //#if !defined(_ORANGE_OUTLET)
-    //    IplImage* train_image = cvLoadImage(train_image_filename, CV_LOAD_IMAGE_GRAYSCALE);
-    //    IplImage* train_image1 = cvLoadImage(train_image_filename1, CV_LOAD_IMAGE_GRAYSCALE);
-    //#else
-    IplImage* train_image = loadImageRed(train_image_filename);
-    IplImage* train_image1 = loadImageRed(train_image_filename1);
-    //#endif // _ORANGE_OUTLET
-   
-    vector<feature_t> outlet_features;
-    GetHoleFeatures(train_image, outlet_features);
-    //    FilterFeatures(features, min_scale, max_scale);
-    
-    //    SelectNeighborFeatures(outlet_features, train_features);
-    
-    vector<feature_t> non_outlet_features;
-    GetHoleFeatures(train_image1, non_outlet_features);
-    const int max_background_feature_count = 100;
-    if((int)non_outlet_features.size() > max_background_feature_count)
+    for(int i = 0; i < (int)features.size(); i++)
     {
-        non_outlet_features.resize(max_background_feature_count);
-    }
-    
-    int train_feature_count = outlet_features.size() + non_outlet_features.size();
-    printf("Found %d train points...\n", train_feature_count);
-    
-    m_train_feature_count = train_feature_count;
-    m_descriptors = new CvOneWayDescriptor[m_train_feature_count];
-    
-    //    IplImage* train_image_features = cvCloneImage(train_image);
-    //    DrawFeatures(train_image_features, outlet_features);
-    
-    for(int i = 0; i < (int)outlet_features.size(); i++)
-    {
-        CvPoint center = outlet_features[i].center;
+        CvPoint center = features[i].center;
         
         CvRect roi = cvRect(center.x - m_patch_size.width/2, center.y - m_patch_size.height/2, m_patch_size.width, m_patch_size.height);
         cvSetImageROI(train_image, roi);
@@ -198,53 +170,71 @@ void CvOneWayDescriptorBase::LoadTrainingFeatures(const char* train_image_filena
         //        m_descriptors[i].SetTransforms(m_poses, m_transforms);
         if(!m_pca_hr_eigenvectors)
         {
-            m_descriptors[i].Initialize(m_pose_count, train_image, train_image_filename);
+            descriptors[i].Initialize(m_pose_count, train_image, feature_label);
         }
         else
         {
-            m_descriptors[i].InitializeFast(m_pose_count, train_image, train_image_filename, 
+            descriptors[i].InitializeFast(m_pose_count, train_image, feature_label, 
                                             m_pca_hr_avg, m_pca_hr_eigenvectors, m_pca_descriptors);
         }
         
-        m_descriptors[i].InitializePCACoeffs(m_pca_avg, m_pca_eigenvectors);
+        descriptors[i].InitializePCACoeffs(m_pca_avg, m_pca_eigenvectors);
+        
+        if(part_id)
+        {
+            // remember descriptor part id
+            CvPoint center_scaled = cvPoint(round(center.x*scale), round(center.y*scale));
+            part_id[i] = MatchPointToPart(center_scaled);
+        }
     }
     cvResetImageROI(train_image);
-    m_object_feature_count = outlet_features.size();
+}
+
+void CvOneWayDescriptorBase::LoadTrainingFeatures(const char* train_image_filename_object, const char* train_image_filename_background)
+{
+    IplImage* train_image_object = loadImageRed(train_image_filename_object);
+    IplImage* train_image_background = loadImageRed(train_image_filename_background);
+   
+    vector<feature_t> object_features;
+    GetHoleFeatures(train_image_object, object_features);
     
-    for(int i = 0; i < (int)non_outlet_features.size(); i++)
+    vector<feature_t> background_features;
+    GetHoleFeatures(train_image_background, background_features);
+    const int max_background_feature_count = 100;
+    if((int)background_features.size() > max_background_feature_count)
     {
-        CvPoint center = non_outlet_features[i].center;
-        
-        CvRect roi = cvRect(center.x - m_patch_size.width/2, center.y - m_patch_size.height/2, m_patch_size.width, m_patch_size.height);
-        cvSetImageROI(train_image1, roi);
-        roi = cvGetImageROI(train_image1);
-        if(roi.width != m_patch_size.width || roi.height != m_patch_size.height)
-        {
-            continue;
-        }
-        
-        if(!m_pca_hr_eigenvectors)
-        {
-            m_descriptors[outlet_features.size() + i].Initialize(m_pose_count, train_image1, train_image_filename1);
-        }
-        else
-        {
-            m_descriptors[outlet_features.size() + i].InitializeFast(m_pose_count, train_image1, train_image_filename1,
-                                                                     m_pca_hr_avg, m_pca_hr_eigenvectors, m_pca_descriptors);
-        }
-        
-        m_descriptors[outlet_features.size() + i].InitializePCACoeffs(m_pca_avg, m_pca_eigenvectors);
-        
-        printf("Completed %d out of %d\n", i, (int)non_outlet_features.size());
-    }   
+        background_features.resize(max_background_feature_count);
+    }
     
-    cvReleaseImage(&train_image);
-    cvReleaseImage(&train_image1);
+    int train_feature_count = object_features.size() + background_features.size();
+    printf("Found %d train points...\n", train_feature_count);
+    
+    m_object_feature_count = object_features.size();
+    m_train_feature_count = train_feature_count;
+
+    m_descriptors = new CvOneWayDescriptor[m_train_feature_count];
+    m_part_id = new int[m_object_feature_count];
+
+    BuildDescriptors(train_image_object, object_features, train_image_filename_object, m_descriptors, m_part_id);    
+    BuildDescriptors(train_image_background, background_features, train_image_filename_background, m_descriptors + m_object_feature_count);
+    
+    cvReleaseImage(&train_image_object);
+    cvReleaseImage(&train_image_background);
 }
 
 void CvOneWayDescriptorBase::FindDescriptor(IplImage* patch, int& desc_idx, int& pose_idx, float& distance) const
 {
+#if 0
     ::FindOneWayDescriptor(m_train_feature_count, m_descriptors, patch, desc_idx, pose_idx, distance, m_pca_avg, m_pca_eigenvectors);
+#else
+    const float scale_min = 0.8f;
+    const float scale_max = 1.2f;
+    const float scale_step = 1.1f;
+    float scale = 1.0f;
+    ::FindOneWayDescriptorEx(m_train_feature_count, m_descriptors, patch, 
+                             scale_min, scale_max, scale_step, desc_idx, pose_idx, distance, scale, 
+                             m_pca_avg, m_pca_eigenvectors);
+#endif
 }
 
 int CvOneWayDescriptorBase::IsDescriptorObject(int desc_idx) const
@@ -270,7 +260,8 @@ int CvOneWayDescriptorBase::MatchPointToPart(CvPoint pt) const
 
 int CvOneWayDescriptorBase::GetDescriptorPart(int desc_idx) const
 {
-    return MatchPointToPart(GetDescriptor(desc_idx)->GetCenter());
+//    return MatchPointToPart(GetDescriptor(desc_idx)->GetCenter());
+    return m_part_id[desc_idx];
 }
 
 void CvOneWayDescriptorBase::CreatePCADescriptors()

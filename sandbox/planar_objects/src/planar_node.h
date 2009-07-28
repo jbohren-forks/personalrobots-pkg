@@ -29,6 +29,24 @@
 #include <tf/transform_listener.h>
 #include <tf/transform_broadcaster.h>
 
+class CornerCandidate
+{
+public:
+  btTransform tf;
+
+  double x;
+  double y;
+
+  double angle;
+  double dist1;
+  double dist2;
+
+  double w;
+  double h;
+
+  double computeDistance(IplImage* distImage);
+};
+
 class PlanarNode
 {
 public:
@@ -73,13 +91,12 @@ public:
   ros::Time lastTime;
   ros::Duration lastDuration;
 
-
   // MESSAGES - OUTGOING
   ros::Publisher cloud_planes_pub_;
   ros::Publisher cloud_outliers_pub_;
   ros::Publisher visualization_pub_;
-//  sensor_msgs::Image pimage_;
-//  sensor_msgs::CvBridge pbridge;
+  //  sensor_msgs::Image pimage_;
+  //  sensor_msgs::CvBridge pbridge;
 
   // Constructor
   PlanarNode();
@@ -99,6 +116,17 @@ public:
 
   // Main loop
   bool spin();
+
+  void findFrontAndBackPlane(int& frontplane, int& backplane, std::vector<std::vector<int> >& indices, std::vector<
+      std::vector<double> >& plane_coeff);
+  void findCornerCandidates(IplImage* pixOccupied, IplImage *pixFree, IplImage* pixUnknown,
+      std::vector<double> & plane_coeff, std::vector<      CornerCandidate> &corner);
+  void visualizeLines(std::vector<std::pair<btVector3, btVector3> > lines,int id=1,double r=1.0,double b=1.0,double g=1.0);
+  std::vector<CornerCandidate> filterCorners(std::vector<CornerCandidate> &corner,double group_dist = 20);
+  void visualizeCorners(std::vector<CornerCandidate> &corner);
+  void visualizeFrontAndBackPlane(int frontplane, int backplane, const robot_msgs::PointCloud& cloud, std::vector<
+      std::vector<int> >& plane_indices, std::vector<robot_msgs::PointCloud>& plane_cloud, std::vector<std::vector<
+      double> >& plane_coeff, robot_msgs::PointCloud& outside,bool showConvexHull=false);
 };
 
 int main(int argc, char** argv);

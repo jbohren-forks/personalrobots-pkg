@@ -163,7 +163,7 @@ void HeadServoingController::update(void)
   for(unsigned int i=0; i < num_joints_;++i)
   {
     angles::shortest_angular_distance_with_limits(joint_velocity_controllers_[i]->joint_state_->position_,set_pts_[i], joint_velocity_controllers_[i]->joint_state_->joint_->joint_limit_min_, joint_velocity_controllers_[i]->joint_state_->joint_->joint_limit_max_, error);
-    error=((gain_*error)<max_velocity_)?error:max_velocity_;
+    error=(fabs(gain_*error)<max_velocity_)?error:error/fabs(error)*max_velocity_;
     joint_velocity_controllers_[i]->setCommand(error);
   }
 
@@ -252,7 +252,7 @@ void HeadServoingControllerNode::headTrackPoint()
   tf::Stamped<tf::Point> pan_point;
 
   try{
-    TF.transformPoint("head_pan_link",point, pan_point);
+    TF.transformPoint("base_link",point, pan_point);
   }
   catch(tf::TransformException& ex){
     ROS_WARN("Transform Exception %s", ex.what());
@@ -260,8 +260,7 @@ void HeadServoingControllerNode::headTrackPoint()
   }
   int id = c_->getJointControllerByName("head_pan_joint");
   assert(id>=0);
-  double meas_pan_angle = c_->joint_velocity_controllers_[id]->joint_state_->position_;
-  double head_pan_angle= meas_pan_angle + atan2(pan_point.y(), pan_point.x());
+  double head_pan_angle= atan2(pan_point.y(), pan_point.x());
 
   names.push_back("head_pan_joint");
   pos.push_back(head_pan_angle);
@@ -269,7 +268,7 @@ void HeadServoingControllerNode::headTrackPoint()
   tf::Stamped<tf::Point> tilt_point;
 
   try{
-    TF.transformPoint("head_tilt_link",point,tilt_point);
+    TF.transformPoint("head_pan_link",point,tilt_point);
   }
   catch(tf::TransformException& ex){
     ROS_WARN("Transform Exception %s", ex.what());
@@ -278,8 +277,8 @@ void HeadServoingControllerNode::headTrackPoint()
 
   id = c_->getJointControllerByName("head_tilt_joint");
   assert(id>=0);
-  double meas_tilt_angle= c_->joint_velocity_controllers_[id]->joint_state_->position_;
-  double head_tilt_angle= meas_tilt_angle + atan2(-tilt_point.z(), tilt_point.x());
+ 
+  double head_tilt_angle= atan2(-tilt_point.z(), sqrt(tilt_point.x()*tilt_point.x() + tilt_point.y()*tilt_point.y()));
 
   names.push_back("head_tilt_joint");
   pos.push_back(head_tilt_angle);
@@ -336,21 +335,19 @@ void HeadServoingControllerNode::frameTrackPoint()
 
   tf::Stamped<tf::Point> tilt_point;
   try{
-    TF.transformPoint("head_tilt_link",point,tilt_point);
+    TF.transformPoint("head_pan_link",point,tilt_point);
   }
   catch(tf::TransformException& ex){
     ROS_WARN("Transform Exception %s", ex.what());
     return;
   }
 
-
   id = c_->getJointControllerByName("head_tilt_joint");
   assert(id>=0);
   radius = pow(tilt_point.x(),2)+pow(tilt_point.y(),2);
   x_intercept = sqrt(radius-pow(frame.getOrigin().z(),2));
-  delta_theta = atan2(-tilt_point.z(), tilt_point.x())-atan2(frame.getOrigin().z(),x_intercept);
-  double meas_tilt_angle= c_->joint_velocity_controllers_[id]->joint_state_->position_;
-  double head_tilt_angle= meas_tilt_angle + delta_theta;
+  delta_theta = atan2(-tilt_point.z(), sqrt(tilt_point.x()*tilt_point.x() + tilt_point.y()*tilt_point.y()))-atan2(frame.getOrigin().z(),x_intercept);
+  double head_tilt_angle= delta_theta;
 
   names.push_back("head_tilt_joint");
   pos.push_back(head_tilt_angle);

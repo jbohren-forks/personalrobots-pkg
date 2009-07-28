@@ -1,7 +1,7 @@
 <package>
   <description>ROS nodes for image segmentation.</description>
   <author>Caroline Pantofaru</author>
-  <license>BSD and GPL and LGPL</license>
+  <license>BSD and GPL</license>
   <review status="unreviewed" notes=""/>
   <depend package="roscpp" />
   <depend package="color_calib" />
@@ -9,7 +9,4 @@
   <depend package="ANN" />
   <url>http://pr.willowgarage.com/wiki/ImageSegmentation</url>
 
-  <export>
-    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lmeanshift_generic" />
-  </export>
 </package>

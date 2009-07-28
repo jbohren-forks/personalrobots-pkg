@@ -1,0 +1,59 @@
+#include "mechanism_control/exports.nddl"
+#include "rcs/nav/exports.nddl"
+#include "rcs/plugs/exports.nddl"
+#include "rcs/doors/exports.nddl"
+#include "rcs/state_estimator/exports.nddl"
+
+float SAFETY_TUCK_ARMS_DURATION_BOUND = 60.0;
+float RELEASE_HANDLE_DURATION_BOUND = 30.0;
+
+// Safety State Variables Timelines
+ArmsTucked arms_tucked = new ArmsTucked(External);
+TiltLaserReady tilt_laser_ready = new TiltLaserReady(External);
+GripperFree gripper_free = new GripperFree(External);
+
+// Mechamisms of interest
+TiltLaserMechanism laser_tilt_mechanism = new TiltLaserMechanism(External);
+RightArmMechanism right_arm_mechanism = new RightArmMechanism(External);
+RightGripperMechanism right_gripper_mechanism = new RightGripperMechanism(External);
+
+// Action timeline to plan for
+SafetyTuckArms safety_tuck_arms = new SafetyTuckArms(External);
+
+// Action causing tilt laser to be set
+SetLaserTilt set_laser_tilt = new SetLaserTilt(External);
+
+// Action causing gripper to free
+ReleaseHandle release_handle = new ReleaseHandle(External);
+
+ArmsTucked::True{
+  met_by(safety_tuck_arms.Active p);
+  eq(p.status, SUCCESS);
+  leq(p.duration, SAFETY_TUCK_ARMS_DURATION_BOUND);
+}
+
+TiltLaserReady::True{
+  met_by(set_laser_tilt.Active p);
+  eq(p.status, SUCCESS);
+}
+
+GripperFree::True{
+  met_by(release_handle.Active cmd);
+  eq(cmd.status, SUCCESS);
+  leq(cmd.max_duration, RELEASE_HANDLE_DURATION_BOUND);
+}
+
+SafetyTuckArms::Active{
+  contained_by(right_arm_mechanism.use_joint_trajectory_controller);
+  contained_by(right_gripper_mechanism.use_effort_controller);
+  contained_by(gripper_free.True);
+}
+
+SetLaserTilt::Active{
+  contained_by(laser_tilt_mechanism.use_laser_tilt_controller);
+}
+
+ReleaseHandle::Active{
+  contained_by(right_arm_mechanism.use_constraint_composite_cartesian_trajectory_controller);
+  contained_by(right_gripper_mechanism.use_effort_controller);
+}

@@ -196,7 +196,7 @@ Pose VisualNavRoadmap::RoadmapImpl::pathExitPoint (PathPtr p, double r) const
     }
     Path::reverse_iterator pos = find_if(p->rbegin()+1, p->rend(), bind(&VisualNavRoadmap::RoadmapImpl::distanceLessThan, this, start_pose, _1, r));
     ROS_ASSERT_MSG (pos!=p->rend(), "Unexpectedly couldn't find any points on path within radius %f", r);
-    return graph_[idVertex(*(--pos))].pose;
+    return graph_[idVertex(*pos)].pose;
   }
 }
 

@@ -54,8 +54,8 @@ namespace actionlib {
   template <class ActionGoal, class Goal, class ActionResult, class Result, class ActionFeedback, class Feedback>
   class SingleGoalActionServer {
     public:
-      typedef ActionServer<ActionGoal, Goal, ActionResult, Result, ActionFeedback, Feedback> ActionServer;
-      typedef typename ActionServer::GoalHandle GoalHandle;
+      typedef ActionServer<ActionGoal, Goal, ActionResult, Result, ActionFeedback, Feedback> TypedActionServer;
+      typedef typename TypedActionServer::GoalHandle GoalHandle;
 
       /**
        * @brief  Constructor for a SingleGoalActionServer
@@ -66,7 +66,7 @@ namespace actionlib {
         : new_goal_(false), preempt_request_(false), new_goal_preempt_request_(false) {
 
           //create the action server
-          as_ = boost::shared_ptr<ActionServer>(new ActionServer(n, name,
+          as_ = boost::shared_ptr<TypedActionServer>(new TypedActionServer(n, name,
                 boost::bind(&SingleGoalActionServer::goalCallback, this, _1),
                 boost::bind(&SingleGoalActionServer::preemptCallback, this, _1)));
 
@@ -238,7 +238,7 @@ namespace actionlib {
         }
       }
 
-      boost::shared_ptr<ActionServer> as_;
+      boost::shared_ptr<TypedActionServer> as_;
 
       GoalHandle current_goal_, next_goal_;
 

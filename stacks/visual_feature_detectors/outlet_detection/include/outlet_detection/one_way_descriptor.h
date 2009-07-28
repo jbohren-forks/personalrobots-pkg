@@ -21,6 +21,23 @@ using namespace std;
 static int pca_dim = 100;
 static int pca_dim_small = 100;
 
+inline int round(float value)
+{
+    if(value > 0)
+    {
+        return int(value + 0.5f);
+    }
+    else
+    {
+        return int(value - 0.5f);
+    }
+}
+
+inline CvRect resize_rect(CvRect rect, float alpha)
+{
+	return cvRect(rect.x + round(0.5*(1 - alpha)*rect.width), rect.y + round(0.5*(1 - alpha)*rect.height), 
+				  round(rect.width*alpha), round(rect.height*alpha));
+}
 
 /*
 inline CvRect fit_rect_roi(CvRect rect, CvRect roi)
@@ -162,7 +179,7 @@ public:
     // - avg: PCA average vector
     // - eigenvectors: PCA eigenvectors, one per row
     // - pca_coeffs: output PCA coefficients
-    void ProjectPCASample(IplImage* patch, CvMat* avg, CvMat* eigenvectors, CvMat* pca_coeffs);
+    void ProjectPCASample(IplImage* patch, CvMat* avg, CvMat* eigenvectors, CvMat* pca_coeffs) const;
     
     // InitializePCACoeffs: projects all warped patches into PCA space
     // - avg: PCA average vector
@@ -173,7 +190,7 @@ public:
     // - patch: input image patch
     // - pose_idx: the output index of the closest pose
     // - distance: the distance to the closest pose (L2 distance)
-    void EstimatePose(IplImage* patch, int& pose_idx, float& distance);
+    void EstimatePose(IplImage* patch, int& pose_idx, float& distance) const;
     
     // EstimatePosePCA: finds the closest match between an input patch and a set of patches with different poses. 
     // The distance between patches is computed in PCA space
@@ -182,8 +199,21 @@ public:
     // - distance: distance to the closest pose (L2 distance in PCA space)
     // - avg: PCA average vector. If 0, matching without PCA is used
     // - eigenvectors: PCA eigenvectors, one per row
-    void EstimatePosePCA(IplImage* patch, int& pose_idx, float& distance, CvMat* avg, CvMat* eigenvalues);
+    void EstimatePosePCA(IplImage* patch, int& pose_idx, float& distance, CvMat* avg, CvMat* eigenvalues) const;
 
+    // GetPatchSize: returns the size of each image patch after warping (2 times smaller than the input patch) 
+    CvSize GetPatchSize() const
+    {
+        return m_patch_size;
+    }
+    
+    // GetInputPatchSize: returns the required size of the patch that the descriptor is built from 
+    // (2 time larger than the patch after warping)
+    CvSize GetInputPatchSize() const
+    {
+        return cvSize(m_patch_size.width*2, m_patch_size.height*2);
+    }
+    
     // GetPatch: returns a patch corresponding to specified pose index
     // - index: pose index
     // - return value: the patch corresponding to specified pose index
@@ -217,6 +247,7 @@ public:
 
 protected:
     int m_pose_count; // the number of poses
+    CvSize m_patch_size; // size of each image
     IplImage** m_samples; // an array of length m_pose_count containing the patch in different poses 
     CvMat** m_pca_coeffs; // an array of length m_pose_count containing pca decomposition of the patch in different poses
     CvAffinePose* m_affine_poses; // an array of poses
@@ -226,7 +257,13 @@ protected:
     CvPoint m_center; // the coordinates of the feature (the center of the input image ROI)
 };
 
-void FindOneWayDescriptor(int desc_count, CvOneWayDescriptor* descriptors, IplImage* patch, int& desc_idx, int& pose_idx, float& distance, 
+void FindOneWayDescriptor(int desc_count, const CvOneWayDescriptor* descriptors, IplImage* patch, int& desc_idx, int& pose_idx, float& distance, 
                           CvMat* avg = 0, CvMat* eigenvalues = 0);
+
+void FindOneWayDescriptorEx(int desc_count, const CvOneWayDescriptor* descriptors, IplImage* patch, 
+                            float scale_min, float scale_max, float scale_step,
+                            int& desc_idx, int& pose_idx, float& distance, float& scale, 
+                            CvMat* avg, CvMat* eigenvectors);
+
 
 #endif //_ONE_WAY_DESCRIPTOR

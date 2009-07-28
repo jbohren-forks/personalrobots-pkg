@@ -60,7 +60,7 @@
         <elem key="material" value="Gazebo/Blue" />
       </map>
       <geometry name="base_visual">
-        <mesh scale="0.22 0.29 0.14" />
+        <box size="0.22 0.29 0.14" />
       </geometry>
     </visual>
 
@@ -92,7 +92,7 @@
         <elem key="material" value="Gazebo/Blue" />
       </map>
       <geometry name="base_top_visual">
-        <mesh scale="${base_size_x} ${base_size_y} 0.01" />
+        <box size="${base_size_x} ${base_size_y} 0.01" />
       </geometry>
     </visual>
     
@@ -133,7 +133,7 @@
           <elem key="material" value="Gazebo/Black" />
         </map>
         <geometry name="${parent}_${suffix}_wheel_visual">
-          <mesh scale="${wheel_radius*2} ${wheel_radius*2} ${wheel_length}" />
+          <cylinder radius="${wheel_radius}" length="${wheel_length}" />
         </geometry>
 	
       </visual>
@@ -175,7 +175,7 @@
         <elem key="material" value="Gazebo/Black" />
       </map>
       <geometry name="base_caster_box_visual">
-        <mesh scale="0.09 0.02 0.10" />
+        <box size="0.09 0.02 0.10" />
       </geometry>
     </visual>
     
@@ -215,7 +215,7 @@
         <elem key="material" value="Gazebo/Grey" />
       </map>
       <geometry name="base_caster_support_visual">
-        <mesh scale="0.03 0.02 0.06" />
+        <box size="0.03 0.02 0.06" />
       </geometry>
     </visual>
     
@@ -261,7 +261,7 @@
         <elem key="material" value="Gazebo/Black" />
       </map>
       <geometry name="caster_wheel_visual">
-        <mesh scale="0.06 0.06 0.01" />
+        <cylinder radius="0.03" length="0.01" />
       </geometry>
       
     </visual>
@@ -315,14 +315,14 @@
         <elem key="material" value="Gazebo/PioneerBody"/>
       </map>
       <geometry name="base_laser_visual">
-        <mesh scale=".1 .1 .05"/>
+        <cylinder radius=".05" length=".05"/>
       </geometry>
     </visual>
     
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0.0"/>
       <geometry name="base_laser_collision">
-        <cylinder size=".1 .1 .05"/>
+        <cylinder radius=".05" length=".05"/>
       </geometry>
     </collision>
     

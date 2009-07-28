@@ -1,9 +1,0 @@
-<launch>
-  <!--<include file="$(find 2dnav_gazebo)/pr2-wg-amcl.launch"/>-->
-  <include file="$(find 2dnav_gazebo)/pr2-simple-fake_localization.launch"/>-->
-
-
-  <node pkg="image_publisher" type="encoder">
-    <remap from="image" to="/stereo/left_image"/>
-  </node>
-</launch>

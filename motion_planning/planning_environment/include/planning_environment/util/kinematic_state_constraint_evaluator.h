@@ -62,6 +62,9 @@ namespace planning_environment
 
 	/** \brief This function assumes the constraint has been transformed into the proper frame, if such a transform is needed */
 	virtual bool use(const planning_models::KinematicModel *kmodel, const ros::Message *kc) = 0;
+	
+	/** \brief This function updates the kinematic model used by the constraint */
+	virtual void use(const planning_models::KinematicModel *kmodel) = 0;
 
 	/** \brief Decide whether the constraint is satisfied. The kinematic model is assumed to be at the state we want to decide. */
 	virtual bool decide(const double *params, const int groupID) const = 0;
@@ -84,12 +87,15 @@ namespace planning_environment
 	    m_joint = NULL;
 	    m_kmodel = NULL;
 	}
-
+	
 	/** \brief This function assumes the constraint has been transformed into the proper frame, if such a transform is needed */
 	virtual bool use(const planning_models::KinematicModel *kmodel, const ros::Message *kc);
 
 	/** \brief This function assumes the constraint has been transformed into the proper frame, if such a transform is needed */
 	bool use(const planning_models::KinematicModel *kmodel, const motion_planning_msgs::JointConstraint &jc);
+
+	/** \brief This function updates the kinematic model used by the constraint */
+	virtual void use(const planning_models::KinematicModel *kmodel);
 
 	/** \brief Decide whether the constraint is satisfied. The kinematic model is assumed to be at the state we want to decide. */
 	virtual bool decide(const double *params, const int groupID) const;
@@ -126,6 +132,9 @@ namespace planning_environment
 
 	/** \brief This function assumes the constraint has been transformed into the proper frame, if such a transform is needed */
 	bool use(const planning_models::KinematicModel *kmodel, const motion_planning_msgs::PoseConstraint &pc);
+
+	/** \brief This function updates the kinematic model used by the constraint */
+	virtual void use(const planning_models::KinematicModel *kmodel);
 
 	/** \brief Clear the stored constraint */
 	virtual void clear(void);
@@ -175,8 +184,11 @@ namespace planning_environment
 	bool add(const planning_models::KinematicModel *kmodel, const std::vector<motion_planning_msgs::JointConstraint> &jc);
 
 	/** \brief Add a set of pose constraints */
-	bool add(const planning_models::KinematicModel *kmodel, const std::vector<motion_planning_msgs::PoseConstraint> &kc);
+	bool add(const planning_models::KinematicModel *kmodel, const std::vector<motion_planning_msgs::PoseConstraint> &pc);
 	
+	/** \brief Update the kinematic model to be used for the constraints */
+	void use(const planning_models::KinematicModel *kmodel);
+
 	/** \brief Decide whether the set of constraints is satisfied  */
 	bool decide(const double *params, int groupID) const;
 
@@ -185,11 +197,25 @@ namespace planning_environment
 
 	/** \brief Print the constraint data */
 	void print(std::ostream &out = std::cout) const;
+	
+	/** \brief Get the active joint constraints */
+	const std::vector<motion_planning_msgs::PoseConstraint>& getPoseConstraints(void) const
+	{
+	    return m_pc;
+	}
 
+	/** \brief Get the active pose constraints */
+	const std::vector<motion_planning_msgs::JointConstraint>& getJointConstraints(void) const
+	{
+	    return m_jc;
+	}
+	
     protected:
 	
-	std::vector<KinematicConstraintEvaluator*> m_kce;
-    
+	std::vector<KinematicConstraintEvaluator*>         m_kce;
+	std::vector<motion_planning_msgs::JointConstraint> m_jc;
+	std::vector<motion_planning_msgs::PoseConstraint>  m_pc;
+	
     };
 } // planning_environment
 

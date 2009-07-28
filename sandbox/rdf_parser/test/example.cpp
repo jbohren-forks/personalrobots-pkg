@@ -34,46 +34,70 @@
 
 /* Author: Wim Meeussen */
 
-#include "rdf_parser/rdf_parser.h"
+#include "rdf_parser/rdf.h"
 #include <iostream>
 
 using namespace std;
 using namespace rdf_parser;
 
+void printTree(Link* link,int level = 0)
+{
+  level+=2;
+  int count = 0;
+  for (std::vector<Link*>::iterator child = link->getChildren()->begin(); child != link->getChildren()->end(); child++)
+  {
+    if (*child)
+    {
+      for(int j=0;j<level;j++) std::cout << " "; //indent
+      std::cout << "child(" << count++ << "):  " << (*child)->getName()
+                << " with parent joint: " << (*child)->parent_joint_->getName()
+                << " with mass: " << (*child)->inertial_->getMass()
+                << std::endl;
+      // first grandchild
+      printTree(*child,level);
+    }
+    else
+    {
+      for(int j=0;j<level;j++) std::cout << " "; //indent
+      std::cout << "root link: " << link->getName() << " has a null child!" << *child << std::endl;
+    }
+  }
+
+}
+
 
 int main(int argc, char** argv)
 {
   if (argc < 2){
-    cerr << "Expect xml file to parse" << endl;
+    cerr << "Expect xml file to parse" << std::endl;
     return -1;
   }
   TiXmlDocument rdf_xml;
   rdf_xml.LoadFile(argv[1]);
   TiXmlElement *robot_xml = rdf_xml.FirstChildElement("robot");
   if (!robot_xml){
-    cerr << "Could not parse the xml" << endl;
+    cerr << "ERROR: Could not load the xml into TiXmlElement" << std::endl;
     return -1;
   }
 
-  RdfParser robot;
+  RDF robot;
   if (!robot.initXml(robot_xml)){
-    cerr << "Parsing the xml failed" << endl;
+    cerr << "ERROR: RDF Parsing the xml failed" << std::endl;
     return -1;
   }
 
   // get info from parser
-  Link* root=NULL;
-  if (!robot.getRoot(root)) return -1;
-  cout << "root " << root->getName() << " has " << root->getNrOfChildren() << " children" << endl;
+  std::cout << "---------- Finished Loading from URDF XML, Now Checking RDF structure ------------" << std::endl;
+  // get root link
+  Link* root_link=robot.getRoot();
+  std::cout << "root Link: " << root_link->getName() << " has " << root_link->getChildren()->size() << " children" << std::endl;
+  std::cout << "root Link: " << root_link->getName() << " has parent joint: " << root_link->getParentJointName() << std::endl;
+  std::cout << "root Link: " << root_link->getName() << " has parent Link: " << root_link->getParentName() << std::endl << std::endl;
+  if (!root_link) return -1;
 
-  Link* child=NULL;
-  if (!root->getChild(0, child)) return -1;
-  cout << "child " << child->getName() << " has " << child->getNrOfChildren() << " children" << endl;
-  for (unsigned int i=0; i<child->getNrOfChildren(); i++){
-    Link* grandchild=NULL;
-    if (!child->getChild(i, grandchild)) return -1;
-    cout << i << ": " << grandchild->getName() << endl;
-  }
+
+  // print entire tree
+  printTree(root_link);
   return 0;
 }
 

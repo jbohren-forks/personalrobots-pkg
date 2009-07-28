@@ -69,7 +69,7 @@ public:
 
 	// configure the self mask and the message notifier
 	std::vector<std::string> frames;
-	sf_.getLinkFrames(frames);
+	sf_.getLinkNames(frames);
 	if (std::find(frames.begin(), frames.end(), robotFrame_) == frames.end())
 	    frames.push_back(robotFrame_);
 	mnCloud_->setTargetFrame(frames);
@@ -251,6 +251,8 @@ private:
     {
 	if (!mapProcessing_.try_lock())
 	    return;
+
+	ROS_DEBUG("Got pointcloud update that is %f seconds old", (ros::Time::now() - cloud->header.stamp).toSec());
 	
 	std::vector<int> mask;
 	robot_msgs::PointCloud out;
@@ -287,6 +289,8 @@ private:
     
     void cloudCallback(const robot_msgs::PointCloudConstPtr &cloud)
     {
+	ROS_DEBUG("Got pointcloud that is %f seconds old", (ros::Time::now() - cloud->header.stamp).toSec());
+	
 	mapProcessing_.lock();
 	
 	std::vector<int> mask;
@@ -469,7 +473,9 @@ private:
 	int n = possiblyOccluded.size();
 	std::vector<CollisionPoint> pts(n);
 	std::copy(possiblyOccluded.begin(), possiblyOccluded.end(), pts.begin());
-		
+	
+	ROS_DEBUG("Raytracing %d cells", n);
+	
 #pragma omp parallel for schedule(dynamic)
 	for (int i = 0 ; i < n ; ++i)
 	{

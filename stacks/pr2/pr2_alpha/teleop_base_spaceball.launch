@@ -1,6 +1,9 @@
 <launch>
-<param name="base_controller/odom_publish_rate" value="30.0"/>
-<node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/base_controller.xml" output="screen"/>
+ <rosparam file="$(find pr2_default_controllers)/pr2_base_controller.yaml" command="load" ns="pr2_base_controller" />
+ <rosparam file="$(find pr2_default_controllers)/pr2_odometry.yaml" command="load" ns="pr2_odometry" />
+<node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/pr2_base_controller.xml" output="screen"/>
+<node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/pr2_base_odometry.xml" output="screen"/>
+
 
   <group name="wg">
 <param name="axis_vx" value="0" type="int"/>

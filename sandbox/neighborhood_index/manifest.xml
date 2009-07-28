@@ -1,0 +1,19 @@
+<package>
+  <description brief="neighborhood_index">
+
+     neighborhood_index
+     Datastructure which supports indexing of points and efficient lookup of neighboorhoods around them.
+
+  </description>
+  <author>Marius Muja and Ethan Dreyfuss</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/neighborhood_index</url>
+  <depend package="robot_msgs"/>
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib"/>
+  </export>
+
+</package>
+
+

@@ -75,7 +75,7 @@
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${name}_visual">
-          <mesh scale="0.001 0.001 0.001" />
+          <box size="0.001 0.001 0.001" />
         </geometry>
       </visual>
 
@@ -156,7 +156,7 @@
           <elem key="material" value="PR2/Blue" />
         </map>
         <geometry name="${name}_sensor_visual">
-          <mesh scale="0.01 0.01 0.01" />
+          <box size="0.01 0.01 0.01" />
         </geometry>
       </visual>
 
@@ -205,7 +205,7 @@
           <elem key="material" value="PR2/Blue" />
         </map>
         <geometry name="${name}_double_stereo_visual">
-          <mesh scale="0.01 0.01 0.01" />
+          <box size="0.01 0.01 0.01" />
         </geometry>
       </visual>
 
@@ -250,7 +250,7 @@
           <elem key="material" value="PR2/Blue" />
         </map>
         <geometry name="${name}_visual">
-          <mesh scale="${stereo_size_x} ${stereo_size_y} ${stereo_size_z}" />
+          <box size="${stereo_size_x} ${stereo_size_y} ${stereo_size_z}" />
         </geometry>
       </visual>
 
@@ -285,7 +285,7 @@
           <elem key="material" value="PR2/Blue" />
         </map>
         <geometry name="${name}_optical_fixed_visual">
-          <mesh scale="0.01 0.01 0.01" />
+          <box size="0.01 0.01 0.01" />
         </geometry>
       </visual>
 
@@ -318,7 +318,7 @@
           <elem key="material" value="PR2/Blue" />
         </map>
         <geometry name="${name}_l_stereo_camera_visual">
-          <mesh scale="0.01 0.01 0.01" />
+          <box size="0.01 0.01 0.01" />
         </geometry>
       </visual>
 
@@ -371,7 +371,7 @@
           <elem key="material" value="PR2/Blue" />
         </map>
         <geometry name="${name}_r_stereo_camera_visual">
-          <mesh scale="0.01 0.01 0.01" />
+          <box size="0.01 0.01 0.01" />
         </geometry>
       </visual>
 
@@ -570,7 +570,7 @@
           <elem key="material" value="PR2/Blue" />
         </map>
         <geometry name="${name}_plate_frame_visual">
-          <mesh scale="0.01 0.01 0.01" />
+          <box size="0.01 0.01 0.01" />
         </geometry>
       </visual>
 
@@ -656,7 +656,7 @@
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${name}_visual">
-          <mesh scale="0.001 0.001 0.001" />
+          <box size="0.001 0.001 0.001" />
         </geometry>
       </visual>
 
@@ -938,7 +938,7 @@
           <elem key="material" value="PR2/Blue" />
         </map>
         <geometry name="${name}_plate_frame_visual">
-          <mesh scale="0.01 0.01 0.01" />
+          <box size="0.01 0.01 0.01" />
         </geometry>
       </visual>
 
@@ -988,7 +988,7 @@
           <elem key="material" value="PR2/Blue" />
         </map>
         <geometry name="${name}_plate_frame_visual">
-          <mesh scale="0.01 0.01 0.01" />
+          <box size="0.01 0.01 0.01" />
         </geometry>
       </visual>
 
@@ -1033,7 +1033,7 @@
           <elem key="material" value="PR2/Blue" />
         </map>
         <geometry name="${name}_plate_frame_visual">
-          <mesh scale="0.01 0.01 0.01" />
+          <box size="0.01 0.01 0.01" />
         </geometry>
       </visual>
 

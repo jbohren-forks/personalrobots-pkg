@@ -52,7 +52,7 @@ namespace {
     virtual mpglue::cost_t getInscribedCost() const
     { return costmap_2d::INSCRIBED_INFLATED_OBSTACLE; }
     
-    virtual mpglue::cost_t getPossiblyCircumcribedCost() const
+    virtual mpglue::cost_t getPossiblyCircumscribedCost() const
     { return (*get_costmap_)()->getCircumscribedCost(); }
     
     virtual ssize_t getXBegin() const { return 0; }
@@ -81,7 +81,7 @@ namespace {
       return out_of_bounds_reply;
     }
     
-    virtual bool isPossiblyCircumcribed(ssize_t index_x, ssize_t index_y,
+    virtual bool isPossiblyCircumscribed(ssize_t index_x, ssize_t index_y,
 					bool out_of_bounds_reply) const {
       costmap_2d::Costmap2D const * cm((*get_costmap_)());
       if (isValidIndex(index_x, index_y))
@@ -185,7 +185,7 @@ namespace {
     
     virtual mpglue::cost_t getLethalCost() const { return wobstCost_; }
     virtual mpglue::cost_t getInscribedCost() const { return cobstCost_; }
-    virtual mpglue::cost_t getPossiblyCircumcribedCost() const { return possibly_circumscribed_cost_; }
+    virtual mpglue::cost_t getPossiblyCircumscribedCost() const { return possibly_circumscribed_cost_; }
     
     virtual ssize_t getXBegin() const { return rdt_->GetXBegin(); }
     virtual ssize_t getXEnd() const { return rdt_->GetXEnd(); }
@@ -209,7 +209,7 @@ namespace {
       return out_of_bounds_reply;
     }
     
-    virtual bool isPossiblyCircumcribed(ssize_t index_x, ssize_t index_y,
+    virtual bool isPossiblyCircumscribed(ssize_t index_x, ssize_t index_y,
 					bool out_of_bounds_reply) const {
       int value;
       if (rdt_->GetValue(index_x, index_y, value))
@@ -243,7 +243,7 @@ namespace {
     
     virtual mpglue::cost_t getLethalCost() const { return wobstCost_; }
     virtual mpglue::cost_t getInscribedCost() const { return cobstCost_; }
-    virtual mpglue::cost_t getPossiblyCircumcribedCost() const { return possibly_circumscribed_cost_; }
+    virtual mpglue::cost_t getPossiblyCircumscribedCost() const { return possibly_circumscribed_cost_; }
     
     virtual ssize_t getXBegin() const { return travmap_->grid.xbegin(); }
     virtual ssize_t getXEnd() const { return travmap_->grid.xend(); }
@@ -267,7 +267,7 @@ namespace {
       return out_of_bounds_reply;
     }
     
-    virtual bool isPossiblyCircumcribed(ssize_t index_x, ssize_t index_y,
+    virtual bool isPossiblyCircumscribed(ssize_t index_x, ssize_t index_y,
 					bool out_of_bounds_reply) const {
       int value;
       if (travmap_->GetValue(index_x, index_y, value))
@@ -363,7 +363,7 @@ namespace mpglue {
     cost_t cost;
     if ( ! getCost(index_x, index_y, &cost))
       return out_of_bounds_reply;
-    return cost <= getLethalCost();
+    return cost >= getLethalCost();
   }
   
   
@@ -374,18 +374,18 @@ namespace mpglue {
     cost_t cost;
     if ( ! getCost(index_x, index_y, &cost))
       return out_of_bounds_reply;
-    return cost <= getInscribedCost();
+    return cost >= getInscribedCost();
   }
   
   
   bool CostmapAccessor::
-  isPossiblyCircumcribed(index_t index_x, index_t index_y,
+  isPossiblyCircumscribed(index_t index_x, index_t index_y,
 			 bool out_of_bounds_reply) const
   {
     cost_t cost;
     if ( ! getCost(index_x, index_y, &cost))
       return out_of_bounds_reply;
-    return cost <= getPossiblyCircumcribedCost();
+    return cost >= getPossiblyCircumscribedCost();
   }
   
   
@@ -425,7 +425,7 @@ namespace mpglue {
 	ttinscr += ih->second;
 	os << "inscr. ";
       }
-      else if (getPossiblyCircumcribedCost() <= ih->first) {
+      else if (getPossiblyCircumscribedCost() <= ih->first) {
 	ttcirc += ih->second;
 	os << "circ.  ";
       }
