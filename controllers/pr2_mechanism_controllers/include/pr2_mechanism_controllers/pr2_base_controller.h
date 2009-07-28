@@ -287,6 +287,16 @@ namespace controller
       double cmd_vel_rot_eps_;
 
       /*!
+       * \brief Time interval between state publishing
+       */
+      double state_publish_time_;
+
+      /*!
+       * \brief Time interval between state publishing
+       */
+      double last_publish_time_;
+
+      /*!
        * \brief minimum tranlational velocity value allowable
        */
       double cmd_vel_trans_eps_;
@@ -295,6 +305,12 @@ namespace controller
        * \brief The name of the topic on which commands are sent to the base controller (default is "cmd_vel")
        */
       std::string cmd_topic_;
+
+      /*!
+       * \brief Publish the state
+       */
+      void publishState(double current_time);
+
   };
 
 }
