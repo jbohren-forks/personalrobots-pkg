@@ -127,19 +127,21 @@ namespace navfn {
 
     getCostmap(costmap_);
 
-    //get a handle to the global namespace
-    ros::NodeHandle global_handle;
+    ros::NodeHandle n;
+
+    std::string tf_prefix;
+    n.param("~tf_prefix", tf_prefix, std::string());
 
     //until tf can handle transforming things that are way in the past... we'll require the goal to be in our global frame
-    if(global_handle.mapName(goal.header.frame_id) != global_handle.mapName(global_frame_)){
+    if(tf::remap(tf_prefix, goal.header.frame_id) != tf::remap(tf_prefix, global_frame_)){
       ROS_ERROR("The goal pose passed to this planner must be in the %s frame.  It is instead in the %s frame.", 
-                global_handle.mapName(global_frame_).c_str(), global_handle.mapName(goal.header.frame_id).c_str());
+                tf::remap(tf_prefix, global_frame_).c_str(), tf::remap(tf_prefix, goal.header.frame_id).c_str());
       return false;
     }
 
-    if(global_handle.mapName(start.header.frame_id) != global_handle.mapName(global_frame_)){
+    if(tf::remap(tf_prefix, start.header.frame_id) != tf::remap(tf_prefix, global_frame_)){
       ROS_ERROR("The start pose passed to this planner must be in the %s frame.  It is instead in the %s frame.", 
-                global_handle.mapName(global_frame_).c_str(), global_handle.mapName(start.header.frame_id).c_str());
+                tf::remap(tf_prefix, global_frame_).c_str(), tf::remap(tf_prefix, start.header.frame_id).c_str());
       return false;
     }
 
