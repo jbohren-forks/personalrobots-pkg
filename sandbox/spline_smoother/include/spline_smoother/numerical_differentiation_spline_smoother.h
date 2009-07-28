@@ -48,10 +48,7 @@ public:
   NumericalDifferentiationSplineSmoother();
   virtual ~NumericalDifferentiationSplineSmoother();
 
-  virtual bool smooth(const std::vector<double>& positions,
-      std::vector<double>& velocities,
-      std::vector<double>& accelerations,
-      const std::vector<double>& times) const;
+  virtual bool smooth(const WaypointTrajectory& trajectory_in, WaypointTrajectory& trajectory_out) const;
 };
 
 }
