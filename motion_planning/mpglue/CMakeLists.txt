@@ -51,6 +51,5 @@ target_link_libraries (mpglue ${MPGLUE_LIBS})
 rospack_add_gtest (test/mpglue_test test/mpglue_test.cpp)
 target_link_libraries (test/mpglue_test mpglue)
 
-set (EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
-rospack_add_executable (costmap_planner_node src/costmap_planner_node.cpp)
-target_link_libraries (costmap_planner_node mpglue)
+rospack_add_executable (bin/costmap_planner_node src/costmap_planner_node.cpp)
+target_link_libraries (bin/costmap_planner_node mpglue)
