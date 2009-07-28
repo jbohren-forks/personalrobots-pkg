@@ -40,10 +40,18 @@
 namespace robot_self_filter
 {
 
-/** \brief Computing a mask for a pointcloud that states which points are inside the robot
- *
- */
+    /** \brief The possible values of a mask computed for a point */
+    enum
+    {
+	INSIDE = 0,
+	SHADOW = -1,
+	OUTSIDE = 1
+    };
+    
 
+    /** \brief Computing a mask for a pointcloud that states which points are inside the robot
+     *
+     */
     class SelfMask
     {	
     protected:
@@ -90,17 +98,25 @@ namespace robot_self_filter
 	    freeMemory();
 	}
 	
-	/** \brief Compute the mask for a given pointcloud. If a mask element is true, the point
-	    is outside the robot
+	/** \brief Compute the mask for a given pointcloud. If a mask element is 1, the point
+	    is outside the robot. The point is outside if the mask element is 0.
 	 */
-	void mask(const sensor_msgs::PointCloud& data_in, std::vector<int> &mask);
+	void maskContainment(const robot_msgs::PointCloud& data_in, std::vector<int> &mask);
+
+	/** \brief Compute the mask for a given pointcloud. If a mask
+	    element is 1, the point is outside the robot. If it is -1,
+	    the point is on a ray behind the robot and should not have
+	    been seen. If the mask element is 0, the point is inside
+	    the robot.
+	 */
+	void maskIntersection(const sensor_msgs::PointCloud& data_in, const std::string &sensor_frame, std::vector<int> &mask);
 	
 	/** \brief Assume subsequent calls to getMask() will be in the frame passed to this function */
-	void assumeFrame(const roslib::Header& header);
+	void assumeFrame(const roslib::Header& header, const std::string &sensor_frame = std::string());
 	
 	/** \brief Get the mask value for an individual point. No
 	    setup is performed, assumeFrame() should be called before use */
-	int  getMask(double x, double y, double z) const;
+	int  getMaskContainment(double x, double y, double z) const;
 	
 	/** \brief Get the set of frames that correspond to the links */
 	void getLinkNames(std::vector<std::string> &frames) const;
@@ -123,11 +139,16 @@ namespace robot_self_filter
 	void computeBoundingSpheres(void);
 	
 	/** \brief Perform the actual mask computation. */
-	void maskAux(const sensor_msgs::PointCloud& data_in, std::vector<int> &mask);
+	void maskAuxContainment(const sensor_msgs::PointCloud& data_in, std::vector<int> &mask);
+
+	/** \brief Perform the actual mask computation. */
+	void maskAuxIntersection(const sensor_msgs::PointCloud& data_in, const std::string &sensor_frame, std::vector<int> &mask);
 	
 	planning_environment::RobotModels   rm_;
 	tf::TransformListener              &tf_;
 	ros::NodeHandle                     nh_;
+	
+	btVector3                           sensor_pos_;
 	
 	std::vector<SeeLink>                bodies_;
 	std::vector<double>                 bspheresRadius2_;

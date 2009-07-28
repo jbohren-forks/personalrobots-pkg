@@ -39,6 +39,8 @@
 #include <ros/ros.h>
 #include <robot_actions/action_client.h>
 #include <mapping_msgs/ObjectInMap.h>
+#include <mapping_msgs/AttachedObject.h>
+
 #include <pr2_robot_actions/MoveArmGoal.h>
 #include <pr2_robot_actions/MoveArmState.h>
 
@@ -83,7 +85,8 @@ int main(int argc, char **argv)
 
     boost::thread th(&spinThread);
     
-    ros::Publisher pub = nh.advertise<mapping_msgs::ObjectInMap>("object_in_map", 1);
+    ros::Publisher pubObj = nh.advertise<mapping_msgs::ObjectInMap>("object_in_map", 1);
+    ros::Publisher pubAttach = nh.advertise<mapping_msgs::AttachedObject>("attach_map", 1);
     
     /*
     mapping_msgs::ObjectInMap o1;
@@ -147,6 +150,30 @@ int main(int argc, char **argv)
 	if (res.objects.size() > 0)
 	{
 	    recognition_lambertian::TableTopObject obj = res.objects[0];
+	    
+	    double dx = 0.055;
+	    double dy = 0.02;
+	    double dz = -0.04;
+	    
+	    obj.object_pose.pose.position.x += dx;
+	    obj.object_pose.pose.position.y += dy;
+	    obj.object_pose.pose.position.z += dz;
+	    obj.object_pose.pose.orientation.x = 0;
+	    obj.object_pose.pose.orientation.y = 0;
+	    obj.object_pose.pose.orientation.z = 0;
+	    obj.object_pose.pose.orientation.w = 1;
+
+
+	    obj.grasp_pose.pose.position.x += dx;
+	    obj.grasp_pose.pose.position.y += dy;
+	    obj.grasp_pose.pose.position.z += dz;
+	    obj.grasp_pose.pose.orientation.x = 0;
+	    obj.grasp_pose.pose.orientation.y = 0;
+	    obj.grasp_pose.pose.orientation.z = 0;
+	    obj.grasp_pose.pose.orientation.w = 1;
+
+
+
 	    obj.grasp_pose.pose.position.x -= 0.16;
 	    
 	    ROS_INFO("pose of object: %f %f %f", obj.object_pose.pose.position.x, obj.object_pose.pose.position.y, obj.object_pose.pose.position.z);
@@ -158,7 +185,7 @@ int main(int argc, char **argv)
 	    o1.action = mapping_msgs::ObjectInMap::ADD;
 	    o1.object = obj.object;
 	    o1.pose = obj.object_pose.pose;
-	    pub.publish(o1);
+	    pubObj.publish(o1);
 	    
 	    
 	    
@@ -192,8 +219,19 @@ int main(int argc, char **argv)
 	    
 	    sendPoint(vmPub, obj.grasp_pose.header, obj.grasp_pose.pose.position.x, obj.grasp_pose.pose.position.y, obj.grasp_pose.pose.position.z);
 	    
-	    //	    if (move_arm.execute(goal, feedback, ros::Duration(60.0)) != robot_actions::SUCCESS)
-	    //		ROS_ERROR("failed achieving goal");
+	    /*
+	    if (move_arm.execute(goal, feedback, ros::Duration(60.0)) != robot_actions::SUCCESS)
+		ROS_ERROR("failed achieving goal");
+	    else
+	    {
+		mapping_msgs::AttachedObject ao;
+		ao.header = obj.object_pose.header;
+		ao.link_name = "r_wrist_roll_link";
+		ao.objects.push_back(obj.object);
+		ao.poses.push_back(obj.object_pose.pose);
+		pubAttach.publish(ao);
+	    }
+	    */
 	}
     }
     else

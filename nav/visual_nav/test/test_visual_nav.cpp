@@ -89,17 +89,16 @@ TEST(VisualNav, BasicAPI)
   PathPtr path1 = r.pathToGoal(0,5);
   int expected_path[4] = {0, 2, 1, 5};
   EXPECT_TRUE(*path1==Path(expected_path, expected_path+4));
-  EXPECT_EQ(r.pathExitPoint(path1, .1), Pose(4,3,0));
-  EXPECT_EQ(r.pathExitPoint(path1, 2.5), Pose(4,3,0));
-  EXPECT_EQ(r.pathExitPoint(path1, 3.0), Pose(2,6,0));
-  EXPECT_EQ(r.pathExitPoint(path1, 4.7), Pose(2,6,0));
+  EXPECT_EQ(r.pathExitPoint(path1, .1), Pose(2,1.2,0));
+  EXPECT_EQ(r.pathExitPoint(path1, 4.7), Pose(4,3,0));
+  EXPECT_EQ(r.pathExitPoint(path1, 4.9), Pose(2,6,0));
 
   r.addEdge(0,4,1.64);
   PathPtr path2 = r.pathToGoal(0,5);
   int expected_path2[4] = {0, 4, 1, 5};
   EXPECT_TRUE(*path2==Path(expected_path2, expected_path2+4));
-  EXPECT_EQ(r.pathExitPoint(path2, 1.0), Pose(1,2.5));
-  EXPECT_EQ(r.pathExitPoint(path2, 2.0), Pose(2,6));
+  EXPECT_EQ(r.pathExitPoint(path2, 1.7), Pose(1,2.5));
+  EXPECT_EQ(r.pathExitPoint(path2, 4.9), Pose(2,6));
 
   PointSet scan1, scan2;
   scan1.insert(Point2D(1,2));
@@ -129,8 +128,8 @@ TEST(VisualNav, ReadFromFile)
   PathPtr path2 = r->pathToGoal(0,5);
   int expected_path2[4] = {0, 4, 1, 5};
   EXPECT_TRUE(*path2==Path(expected_path2, expected_path2+4));
-  EXPECT_EQ(r->pathExitPoint(path2, 1.0), Pose(1,2.5));
-  EXPECT_EQ(r->pathExitPoint(path2, 2.0), Pose(2,6));
+  EXPECT_EQ(r->pathExitPoint(path2, 1.7), Pose(1,2.5));
+  EXPECT_EQ(r->pathExitPoint(path2, 4.9), Pose(2,6));
 }
 
 

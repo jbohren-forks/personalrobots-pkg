@@ -54,7 +54,7 @@
 #include <linux/sysctl.h>
 #include <iostream>
 #include <fstream>
-
+#include <forearm_cam/BoardConfig.h>
 #include <boost/tokenizer.hpp>
 #include <boost/format.hpp>
 
@@ -213,7 +213,8 @@ private:
   diagnostic_updater::DiagnosedPublisher<sensor_msgs::Image> cam_pub_;
   ros::Publisher cam_info_pub_;
   ros::ServiceClient trig_service_;
-  
+  ros::ServiceServer conf_service_;
+
   boost::mutex diagnostics_lock_;
 
   unsigned char mac_[6];
@@ -358,7 +359,7 @@ public:
         
     node_handle_.param("~trigger_controller", trig_controller_, std::string());
     node_handle_.param("~trigger_rate", trig_rate_, imager_freq_ - 1.);
-    node_handle_.getParam("~serial_number", serial_number_, -2);
+    node_handle_.param("~serial_number", serial_number_, -2);
     node_handle_.param("~trigger_phase", trig_phase_, 0.);
     
     desired_freq_ = ext_trigger_ ? trig_rate_ : imager_freq_;
@@ -674,6 +675,8 @@ public:
     if (calibrated_)
       cam_info_pub_ = node_handle_.advertise<sensor_msgs::CamInfo>("~cam_info", 1);
     
+    conf_service_ = node_handle_.advertiseService("~board_config", &ForearmNode::boardConfig, this);
+    
     open_ = true;;
   }
 
@@ -681,6 +684,7 @@ public:
   {
     ROS_DEBUG("close()");
     stop();
+    conf_service_ = ros::ServiceServer();
     open_ = false;
   }
 
@@ -747,8 +751,8 @@ private:
     }
     frameTimeFilter_.reset_filter();
     ROS_INFO("Camera running.");
-    
-    // Receive video
+  
+      // Receive video
     pr2VidReceive(camera_->ifName, port, height_, width_, &ForearmNode::frameHandler, this);
     
     // Stop Triggering
@@ -1082,6 +1086,29 @@ stop_video:
 #endif
   }
 
+  bool boardConfig(forearm_cam::BoardConfig::Request &req, forearm_cam::BoardConfig::Response &rsp)
+  {
+    MACAddress mac;
+    if (req.mac.size() != 6)
+    {
+      ROS_ERROR("board_config called with %i bytes in MAC. Should be 6.", req.mac.size());
+      rsp.success = 0;
+      return 1;
+    }
+    for (int i = 0; i < 6; i++)
+      mac[i] = req.mac[i];
+    ROS_INFO("board_config called s/n #%i, and MAC %02x:%02x:%02x:%02x:%02x:%02x.", req.serial, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+    stop();
+    rsp.success = !pr2ConfigureBoard(camera_, req.serial, &mac);
+
+    if (rsp.success)
+      ROS_INFO("board_config succeeded.");
+    else
+      ROS_INFO("board_config failed.");
+
+    return 1;
+  }
+  
   void pretest()
   {
     was_running_pretest_ = started_video_;

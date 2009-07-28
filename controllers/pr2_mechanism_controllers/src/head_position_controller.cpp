@@ -173,7 +173,7 @@ void HeadPositionController::pointHead(const tf::MessageNotifier<geometry_msgs::
 {
   std::string pan_parent;
   tf_.getParent( pan_link_name_, ros::Time(), pan_parent);
-
+ 
   // convert message to transform
   Stamped<Point> pan_point;
   pointStampedMsgToTF(*point_msg, pan_point);
@@ -186,8 +186,9 @@ void HeadPositionController::pointHead(const tf::MessageNotifier<geometry_msgs::
   Stamped<Point> tilt_point;
   pointStampedMsgToTF(*point_msg, tilt_point);
   tf_.transformPoint(pan_link_name_, tilt_point, tilt_point);
-
-  tilt_out_ = atan2(-tilt_point.z(), tilt_point.x());
+  
+  tilt_out_ = atan2(-tilt_point.z(), sqrt(tilt_point.x()*tilt_point.x() + tilt_point.y()*tilt_point.y()));
+ 
 
 }
 
@@ -218,16 +219,14 @@ void HeadPositionController::pointFrameOnHead(const tf::MessageNotifier<geometry
   // convert message to transform
   Stamped<Point> tilt_point;
   pointStampedMsgToTF(*point_msg, tilt_point);
-  tf_.transformPoint(tilt_link_name_, tilt_point, tilt_point);
+  tf_.transformPoint(pan_link_name_, tilt_point, tilt_point);
   
   radius = pow(tilt_point.x(),2)+pow(tilt_point.y(),2);
   x_intercept = sqrt(fabs(radius-pow(frame.getOrigin().z(),2)));
-  delta_theta = atan2(-tilt_point.z(), tilt_point.x())-atan2(frame.getOrigin().z(),x_intercept);
-  tilt_out_ = head_tilt_controller_->joint_state_->position_ + delta_theta;
+  delta_theta = atan2(-tilt_point.z(), sqrt(tilt_point.x()*tilt_point.x() + tilt_point.y()*tilt_point.y()))-atan2(frame.getOrigin().z(),x_intercept);
+  tilt_out_ = delta_theta;
 
 }
-
-
 
 }//namespace
 

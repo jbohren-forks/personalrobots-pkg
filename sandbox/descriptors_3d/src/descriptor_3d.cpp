@@ -116,7 +116,7 @@ void Descriptor3D::concatenateFeatures(const vector<cv::Vector<cv::Vector<float>
 // --------------------------------------------------------------
 unsigned int Descriptor3D::computeAndConcatFeatures(const sensor_msgs::PointCloud& data,
                                                     cloud_kdtree::KdTree& data_kdtree,
-                                                    const cv::Vector<geometry_msgs::Point32*>& interest_pts,
+                                                    const cv::Vector<const geometry_msgs::Point32*>& interest_pts,
                                                     vector<Descriptor3D*>& descriptors_3d,
                                                     vector<float*>& concatenated_features,
                                                     set<unsigned int>& failed_indices)
@@ -151,7 +151,7 @@ unsigned int Descriptor3D::computeAndConcatFeatures(const sensor_msgs::PointClou
 // --------------------------------------------------------------
 unsigned int Descriptor3D::computeAndConcatFeatures(const sensor_msgs::PointCloud& data,
                                                     cloud_kdtree::KdTree& data_kdtree,
-                                                    const cv::Vector<vector<int>*>& interest_region_indices,
+                                                    const cv::Vector<const vector<int>*>& interest_region_indices,
                                                     vector<Descriptor3D*>& descriptors_3d,
                                                     vector<float*>& concatenated_features,
                                                     set<unsigned int>& failed_indices)

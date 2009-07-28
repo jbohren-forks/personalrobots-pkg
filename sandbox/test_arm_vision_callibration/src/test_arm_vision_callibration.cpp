@@ -87,8 +87,8 @@ private:
 	robot_msgs::PointCloud outMin;
 	std::vector<int> maskMax;
 	std::vector<int> maskMin;
-	sfMax_->mask(close, maskMax);
-	sfMin_->mask(close, maskMin);
+	sfMax_->maskContainment(close, maskMax);
+	sfMin_->maskContainment(close, maskMin);
 	fillResult(close, maskMax, outMax);
 	fillResult(close, maskMin, outMin);
 	pointCloudPublisherMax_.publish(outMax);
@@ -121,7 +121,7 @@ private:
 	
 	for (unsigned int i = 0 ; i < np ; ++i)
 	{
-	    if (keep[i])
+	    if (keep[i] == robot_self_filter::OUTSIDE)
 	    {
 		data_out.pts.push_back(data_in.pts[i]);
 		for (unsigned int j = 0 ; j < data_out.chan.size() ; ++j)

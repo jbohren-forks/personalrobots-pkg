@@ -83,7 +83,7 @@ void Orientation::useNormalOrientation(double ref_x, double ref_y, double ref_z)
 // --------------------------------------------------------------
 void Orientation::compute(const sensor_msgs::PointCloud& data,
                           cloud_kdtree::KdTree& data_kdtree,
-                          const cv::Vector<geometry_msgs::Point32*>& interest_pts,
+                          const cv::Vector<const geometry_msgs::Point32*>& interest_pts,
                           cv::Vector<cv::Vector<float> >& results)
 {
   results.resize(interest_pts.size());
@@ -104,7 +104,7 @@ void Orientation::compute(const sensor_msgs::PointCloud& data,
 // --------------------------------------------------------------
 void Orientation::compute(const sensor_msgs::PointCloud& data,
                           cloud_kdtree::KdTree& data_kdtree,
-                          const cv::Vector<vector<int>*>& interest_region_indices,
+                          const cv::Vector<const vector<int>*>& interest_region_indices,
                           cv::Vector<cv::Vector<float> >& results)
 {
   results.resize(interest_region_indices.size());

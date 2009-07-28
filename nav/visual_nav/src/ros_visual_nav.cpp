@@ -54,7 +54,6 @@
 #include <geometry_msgs/PointStamped.h>
 #include <laser_scan/laser_scan.h>
 #include <ros/ros.h>
-#include <ros/node.h>
 #include <tf/transform_listener.h>
 #include <tf/transform_broadcaster.h>
 #include <tf/message_notifier.h>
@@ -76,7 +75,6 @@ using geometry_msgs::Point32;
 using ros::Duration;
 using vslam::Roadmap;
 using visualization_msgs::Polyline;
-using ros::Node;
 using vslam::Edge;
 using std::map;
 using visual_nav::VisualNavGoal;
@@ -93,14 +91,13 @@ namespace visual_nav
 using visualization_msgs::Marker; // the message class name
 using ros::Time;
 using std::string;
-using ros::Node;
 
 typedef map<int, NodeId> IdMap;
 typedef shared_ptr<PointSet> PointsPtr;
 typedef MessageNotifier<sensor_msgs::LaserScan> Notifier;
 typedef shared_ptr<Notifier> NotifierPtr;
 typedef map<string, NodeId> NodeNameMap;
-
+typedef shared_ptr<VisualNavRoadmap> RoadmapPtr;
 
 
 /************************************************************
@@ -118,10 +115,9 @@ public:
   void run();
 
   // Callbacks
-  void roadmapCallback();
-  void goalCallback();
-  void nameCallback();
-  void poseCallback();
+  void roadmapCallback (const vslam::Roadmap::ConstPtr& message);
+  void nameCallback(const std_msgs::String::ConstPtr& message);
+  void goalCallback(const VisualNavGoal::ConstPtr& message);
   void baseScanCallback(const Notifier::MessagePtr& msg);
 
 private:
@@ -193,8 +189,7 @@ private:
    * Fields
    ******************************/
 
-  // Node object
-  Node node_;
+  ros::NodeHandle node_;
 
   // Listens to transforms
   tf::TransformListener tf_listener_;
@@ -205,17 +200,8 @@ private:
   // For now just have a single mutex
   mutex node_mutex_;
 
-  // Roadmap, and roadmap message used to populate it
-  // Requires lock to access
+  // Roadmap
   RoadmapPtr roadmap_;
-  Roadmap roadmap_message_;
-
-  // Goal messages
-  VisualNavGoal goal_message_;
-
-  // Name messages
-  String node_name_message_;
-  
 
   // Has at least one map message been received?
   bool map_received_;
@@ -256,15 +242,21 @@ private:
   // How often to save scans
   uint scan_counter_, scan_period_;
 
-  // Message notifier to ensure that we only deal with scans when we can transform them
-  NotifierPtr base_scan_notifier_;
-
   // How close we need to be to declare success on goal
   double goal_distance_threshold_;
 
   // Maps names to node ids
   NodeNameMap node_name_map_;
 
+  
+  // Message notifier to ensure that we only deal with scans when we can transform them
+  NotifierPtr base_scan_notifier_;
+
+  // Subscriptions
+  ros::Subscriber roadmap_subscriber_, goal_subscriber_, name_subscriber_;
+
+  // Publications
+  ros::Publisher move_base_publisher_, visualization_publisher_, laser_publisher_;
 
 };
 
@@ -275,22 +267,22 @@ private:
  ************************************************************/
 
 RosVisualNavigator::RosVisualNavigator (double exit_point_radius, uint scan_period) :
-  node_("visual_navigator"), tf_listener_(node_), map_received_(false),
-  exit_point_radius_(exit_point_radius), have_goal_(false),
+  map_received_(false), exit_point_radius_(exit_point_radius), have_goal_(false),
   num_active_markers_(0), scan_counter_(1), scan_period_(scan_period)
 {
-  node_.subscribe("roadmap", roadmap_message_, &RosVisualNavigator::roadmapCallback, this, 1);
-  node_.subscribe("visual_nav_goal", goal_message_, &RosVisualNavigator::goalCallback, this, 1);
-  node_.subscribe("name_node", node_name_message_, &RosVisualNavigator::nameCallback, this, 1);
   node_.param("~vslam_frame", vslam_frame_, string("base_link"));
-  base_scan_notifier_ = NotifierPtr(new Notifier(&tf_listener_, ros::Node::instance(),  bind(&RosVisualNavigator::baseScanCallback, this, _1), "base_scan", vslam_frame_, 50));
-  node_.advertise<PoseStamped>("/move_base/activate", 1);
-  node_.advertise<Marker>( "visualization_marker", 0 );
-  node_.advertise<Polyline> ("vslam_laser", 1);
   node_.param("~goal_distance_threshold", goal_distance_threshold_, .5);
 
-  ROS_INFO_STREAM ("Started RosVisualNavigator with exit_point_radius=" << exit_point_radius_ << ", goal_id=" << goal_id_) ;
+  roadmap_subscriber_ = node_.subscribe("roadmap", 1, &RosVisualNavigator::roadmapCallback, this);
+  goal_subscriber_ = node_.subscribe("visual_nav_goal", 1, &RosVisualNavigator::goalCallback, this);
+  name_subscriber_ = node_.subscribe("name_node", 1, &RosVisualNavigator::nameCallback, this);
+  base_scan_notifier_ = NotifierPtr(new Notifier(tf_listener_, bind(&RosVisualNavigator::baseScanCallback, this, _1), "base_scan", vslam_frame_, 50));
 
+  move_base_publisher_ = node_.advertise<PoseStamped>("/move_base/activate", 1);
+  visualization_publisher_ = node_.advertise<Marker>( "visualization_marker", 0 );
+  laser_publisher_ = node_.advertise<Polyline> ("vslam_laser", 1);
+
+  ROS_INFO_STREAM ("Started RosVisualNavigator with exit_point_radius=" << exit_point_radius_ << ", goal_id=" << goal_id_) ;
 }
 
 
@@ -337,21 +329,21 @@ void RosVisualNavigator::run ()
  * callbacks
  ************************************************************/
 
-void RosVisualNavigator::roadmapCallback ()
+void RosVisualNavigator::roadmapCallback (const vslam::Roadmap::ConstPtr& message)
 {
   vector<vslam::Node> nodes;
   vector<Edge> edges;
 
   mutex::scoped_lock l(node_mutex_);
 
-  roadmap_message_.get_nodes_vec(nodes);
-  roadmap_message_.get_edges_vec(edges);
+  message->get_nodes_vec(nodes);
+  message->get_edges_vec(edges);
 
   roadmap_ = RoadmapPtr(new VisualNavRoadmap);
-  roadmap_timestamp_ = roadmap_message_.header.stamp;
+  roadmap_timestamp_ = message->header.stamp;
 
-  if (roadmap_message_.header.frame_id != vslam_frame_) {
-    ROS_FATAL_STREAM ("Received a roadmap message with frame id " << roadmap_message_.header.frame_id << 
+  if (message->header.frame_id != vslam_frame_) {
+    ROS_FATAL_STREAM ("Received a roadmap message with frame id " << message->header.frame_id << 
                       " but expected vslam frame is " << vslam_frame_);
     exit(0);
   }
@@ -360,7 +352,7 @@ void RosVisualNavigator::roadmapCallback ()
   for_each (edges.begin(), edges.end(), AddEdgeToRoadmap(this));
 
   // We're treating loc>=0 as denoting an actual map and loc<0 as initial empty map
-  int localization=roadmap_message_.localization;
+  int localization=message->localization;
   if (localization<0) {
     ROS_DEBUG_NAMED ("node", "Treating localization %d as denoting empty roadmap", localization);
     ROS_ASSERT (!map_received_);
@@ -373,21 +365,21 @@ void RosVisualNavigator::roadmapCallback ()
 
 
 
-void RosVisualNavigator::goalCallback()
+void RosVisualNavigator::goalCallback(const VisualNavGoal::ConstPtr& message)
 {
   have_goal_ = false;
-  if (goal_message_.named_goal.length() > 0) {
-    const NodeNameMap::const_iterator pos = node_name_map_.find(goal_message_.named_goal);
+  if (message->named_goal.length() > 0) {
+    const NodeNameMap::const_iterator pos = node_name_map_.find(message->named_goal);
     if (pos==node_name_map_.end()) {
-      ROS_ERROR_STREAM ("Received unknown named goal " << goal_message_.named_goal);
+      ROS_ERROR_STREAM ("Received unknown named goal " << message->named_goal);
     }
     else {
       goal_id_ = getInternalId(pos->second);
       have_goal_ = true;
     }
   }
-  else if (goal_message_.goal>=0) {
-    goal_id_ = getInternalId(goal_message_.goal);
+  else if (message->goal>=0) {
+    goal_id_ = getInternalId(message->goal);
     have_goal_=true;
   }
 
@@ -399,9 +391,9 @@ void RosVisualNavigator::goalCallback()
 
 
 
-void RosVisualNavigator::nameCallback()
+void RosVisualNavigator::nameCallback(const std_msgs::String::ConstPtr& message)
 {
-  node_name_map_[node_name_message_.data] = start_id_;
+  node_name_map_[message->data] = start_id_;
 }
 
 
@@ -469,7 +461,7 @@ void RosVisualNavigator::publishExitPoint ()
     tf::quaternionTFToMsg(tf::Quaternion(exit_point_.theta, 0, 0), goal.pose.orientation);
     goal.header.frame_id = vslam_frame_;
 
-    node_.publish("/move_base/activate", goal);
+    move_base_publisher_.publish(goal);
     
     ROS_DEBUG_STREAM_NAMED("nav", "Publishing exit point " << goal.pose.position.x << ", " 
                            << goal.pose.position.y << ", " << acos(goal.pose.orientation.w/2)
@@ -494,9 +486,9 @@ void RosVisualNavigator::publishExitPoint ()
 
 struct DrawEdges
 {
-  DrawEdges (RoadmapPtr roadmap, uint* num_active_markers) : roadmap(roadmap)
+  DrawEdges (RoadmapPtr roadmap, uint* num_active_markers, const string& vslam_frame, const ros::Publisher& visualization_publisher) : roadmap(roadmap), pub(visualization_publisher)
   {
-    marker.header.frame_id = vslam_frame_;
+    marker.header.frame_id = vslam_frame;
     marker.ns = "visual_nav";
     marker.id = (*num_active_markers)++;
     marker.type=Marker::LINE_LIST;
@@ -536,7 +528,7 @@ struct DrawEdges
     if (marker.get_points_size() > 0) {
       ROS_DEBUG_STREAM_NAMED ("rviz", "Publishing graph with " << marker.get_points_size() << " edges and " << roadmap->numNodes() << " nodes");
       marker.header.stamp = Time::now();
-      Node::instance()->publish("visualization_marker", marker);
+      pub.publish(marker);
     }
     else {
       ROS_DEBUG_STREAM_NAMED ("rviz", "Not yet publishing roadmap visualization.  Num nodes is " << roadmap->numNodes());
@@ -544,6 +536,7 @@ struct DrawEdges
   }
 
   RoadmapPtr roadmap;
+  ros::Publisher pub;
   Marker marker;
 };
 
@@ -565,7 +558,7 @@ void RosVisualNavigator::deleteOldMarkers ()
     marker.header.frame_id = vslam_frame_;
     marker.id=i;
     marker.action=Marker::DELETE;
-    node_.publish("visualization_marker", marker);
+    visualization_publisher_.publish(marker);
   }
 
   ROS_DEBUG_STREAM_NAMED ("rviz", "Deleted " << num_active_markers_ << " old markers upon node destruction");
@@ -590,7 +583,7 @@ void RosVisualNavigator::publishVisualization ()
 
   // First, use a linelist marker to draw the skeleton
   NodeVector nodes = roadmap_->nodes();
-  for_each(nodes.begin(), nodes.end(), DrawEdges(roadmap_, &num_active_markers_)).publish();
+  for_each(nodes.begin(), nodes.end(), DrawEdges(roadmap_, &num_active_markers_, vslam_frame_, visualization_publisher_)).publish();
 
 
   // Publish a marker for current position
@@ -621,7 +614,7 @@ void RosVisualNavigator::publishVisualization ()
   ROS_DEBUG_STREAM_COND_NAMED (points.size()>0, "scans", "First scan point in vslam frame is " << *(points.begin())
                                << " and transformed version is " << scans.points[0].x << ", " << scans.points[0].y << ", " << scans.points[0].z);
   ROS_DEBUG_STREAM_NAMED ("rviz", "Publishing scans with " << scans.get_points_size() << " points");
-  node_.publish("vslam_laser", scans);
+  laser_publisher_.publish( scans);
 
   ROS_DEBUG_STREAM_NAMED ("rviz", "Finished publishing roadmap with " << roadmap_->numNodes() << " nodes");
 }
@@ -654,7 +647,7 @@ void RosVisualNavigator::publishNodeMarker (const Pose& pose, const uint r, cons
   marker.scale.x=1;
   marker.scale.y=.4;
   marker.scale.z=.2;
-  node_.publish("visualization_marker", marker);
+  visualization_publisher_.publish(marker);
   ROS_DEBUG_STREAM_NAMED ("rviz", "Just published node marker " << marker.id << " with timestamp " << marker.header.stamp << " with vslam pose " << pose);
 }
 
@@ -691,12 +684,9 @@ int main(int argc, char** argv)
     return 1;
   }
 
-  ros::init (argc, argv);
-
+  ros::init (argc, argv, "visual_nav");
   RosVisualNavigator nav(radius, scan_period);
-
   nav.run();
-
 }
 
 

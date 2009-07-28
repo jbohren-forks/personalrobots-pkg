@@ -163,12 +163,12 @@ void setupGoalEEf(const std::string &link, double x, double y, double z, pr2_rob
     goal.goal_constraints.pose_constraint[0].pose.pose.orientation.z = 0.0;
     goal.goal_constraints.pose_constraint[0].pose.pose.orientation.w = 1.0;
     
-    goal.goal_constraints.pose_constraint[0].position_tolerance_above.x = 0.003;
+    goal.goal_constraints.pose_constraint[0].position_tolerance_above.x = 0.002;
     goal.goal_constraints.pose_constraint[0].position_tolerance_above.y = 0.003;
-    goal.goal_constraints.pose_constraint[0].position_tolerance_above.z = 0.003;
-    goal.goal_constraints.pose_constraint[0].position_tolerance_below.x = 0.003;
+    goal.goal_constraints.pose_constraint[0].position_tolerance_above.z = 0.008;
+    goal.goal_constraints.pose_constraint[0].position_tolerance_below.x = 0.002;
     goal.goal_constraints.pose_constraint[0].position_tolerance_below.y = 0.003;
-    goal.goal_constraints.pose_constraint[0].position_tolerance_below.z = 0.003;
+    goal.goal_constraints.pose_constraint[0].position_tolerance_below.z = 0.008;
     
     goal.goal_constraints.pose_constraint[0].orientation_tolerance_above.x = 0.005;
     goal.goal_constraints.pose_constraint[0].orientation_tolerance_above.y = 0.005;

@@ -14,7 +14,7 @@
        xmlns:physics="http://playerstage.sourceforge.net/gazebo/xmlschema/#physics">
 
   <!-- joint blocks -->
-  <joint name="base_block_joint" type="floating" /> 
+  <joint name="base_block_joint" type="fixed" /> 
 
   <!-- joint blocks -->
   <joint name="link1_joint" type="revolute" >
@@ -40,7 +40,7 @@
   <!-- link blocks -->
   <link name="base_block">
     <parent name="world" />
-    <origin xyz="0 0 0.002 " rpy="0 0 0" />
+    <origin xyz="0 0 0" rpy="0 0 0" />
     <joint name="base_block_joint" />
     <inertial>
       <mass value="1000" />
@@ -53,13 +53,13 @@
         <elem key="material">Gazebo/GrassFloor</elem>
       </map>
       <geometry name="base_block_visual_geom">
-        <mesh scale="0.1 0.1 0.01" />
+        <box scale="0.001 0.001 0.001" />
       </geometry>
     </visual> 
     <collision>
       <origin xyz="0 0 0" rpy="0.0 0.0 0.0" />
       <geometry name="base_block_collision_geom">
-        <box size="20 20 0.01" />
+        <box scale="0.001 0.001 0.001" />
       </geometry>
     </collision>
   </link>

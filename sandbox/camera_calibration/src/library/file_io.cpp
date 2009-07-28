@@ -34,7 +34,7 @@ bool writeIntrinsicsIni(const std::string& file_name, const std::string& camera_
     return false;
   boost::shared_ptr<FILE> guard(file, fclose);
 
-  fprintf(file, "# %s camera intrinsics\n\n", camera_name.c_str());
+  fprintf(file, "# Camera intrinsics\n\n");
   /** @todo: time? */
   fprintf(file, "[image]\n\n");
   fprintf(file, "width\n%d\n\n", width);

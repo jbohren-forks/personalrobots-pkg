@@ -33,5 +33,5 @@ rospack_add_library(${PROJECT_NAME}
 #target_link_libraries(${PROJECT_NAME} another_library)
 #rospack_add_boost_directories()
 #rospack_link_boost(${PROJECT_NAME} thread)
-#rospack_add_executable(example examples/example.cpp)
-#target_link_libraries(example ${PROJECT_NAME})
+rospack_add_executable(interest_point_example examples/interest_point_example.cpp)
+target_link_libraries(interest_point_example ${PROJECT_NAME})

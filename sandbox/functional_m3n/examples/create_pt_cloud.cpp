@@ -74,8 +74,8 @@ void initCS0Params()
   // ---------------
   // kmeans parameters for constructing cliques
   cs0_kmeans_params.factor = 0.003;
-  cs0_kmeans_params.accuracy = 1.0;
-  cs0_kmeans_params.max_iter = 10;
+  cs0_kmeans_params.accuracy = 0.9;
+  cs0_kmeans_params.max_iter = 100;
   cs0_kmeans_params.channel_indices.clear();
 
   // ---------------
@@ -403,6 +403,9 @@ int kmeansPtCloud(const sensor_msgs::PointCloud& pt_cloud,
   cvReleaseMat(&cluster_labels);
   free(feature_matrix);
 
+  ROS_INFO("KMEANS: request %d clusters, and returned %d", nbr_clusters, cluster_pt_indices.size());
+
+
   return 0;
 }
 
@@ -422,7 +425,7 @@ void createNodes(RandomField& rf,
 
   // ----------------------------------------------
   // Create interests points over the whole point cloud
-  cv::Vector<geometry_msgs::Point32*> interest_pts(nbr_pts, NULL);
+  cv::Vector<const geometry_msgs::Point32*> interest_pts(nbr_pts, NULL);
   for (unsigned int i = 0 ; i < nbr_pts ; i++)
   {
     interest_pts[(size_t) i] = &(pt_cloud.pts[i]);
@@ -466,7 +469,7 @@ unsigned int createClusterFeatures(const sensor_msgs::PointCloud& pt_cloud,
 
   // ----------------------------------------------
   // Create interests regions from the clustering
-  cv::Vector<vector<int>*> interest_region_indices(nbr_clusters, NULL);
+  cv::Vector<const vector<int>*> interest_region_indices(nbr_clusters, NULL);
   size_t cluster_idx = 0;
   for (map<unsigned int, vector<int> >::iterator iter_cluster_indices = cluster_indices.begin() ; iter_cluster_indices
       != cluster_indices.end() ; iter_cluster_indices++)
@@ -582,7 +585,7 @@ void constructRandomField(string pt_cloud_filename, RandomField& rf)
         cluster_pt_indices);
     ROS_INFO("   -- done --");
 
-    //save_clusters(cluster_pt_indices, pt_cloud);
+    save_clusters(cluster_pt_indices, pt_cloud);
 
     // Create features over clusters
     ROS_INFO("   -- Creating features... --");

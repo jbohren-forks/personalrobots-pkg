@@ -85,6 +85,39 @@ TEST(SpherePointContainment, ComplexOutside)
     EXPECT_FALSE(contains);
 }
 
+TEST(SphereRayIntersection, SimpleRay1)
+{
+    shapes::Sphere shape(1.0);
+    bodies::Body* sphere = new bodies::Sphere(&shape);
+    sphere->setScale(1.05);
+
+    btVector3 ray_o(5, 0, 0);
+    btVector3 ray_d(-1, 0, 0);
+    std::vector<btVector3> p;
+    bool intersect = sphere->intersectsRay(ray_o, ray_d, &p);
+    
+    delete sphere;
+    EXPECT_TRUE(intersect);
+    EXPECT_EQ(2, (int)p.size());
+    EXPECT_NEAR(p[0].x(), 1.05, 1e-12);
+    EXPECT_NEAR(p[1].x(), -1.05, 1e-12);
+}
+
+TEST(SphereRayIntersection, SimpleRay2)
+{
+    shapes::Sphere shape(1.0);
+    bodies::Body* sphere = new bodies::Sphere(&shape);
+    sphere->setScale(1.05);
+
+    btVector3 ray_o(5, 0, 0);
+    btVector3 ray_d(1, 0, 0);
+    std::vector<btVector3> p;
+    bool intersect = sphere->intersectsRay(ray_o, ray_d, &p);
+    
+    delete sphere;
+    EXPECT_FALSE(intersect);
+    EXPECT_EQ(0, (int)p.size());
+}
 
 TEST(BoxPointContainment, SimpleInside)
 {    
@@ -141,6 +174,26 @@ TEST(BoxPointContainment, ComplexOutside)
     delete box;
     EXPECT_FALSE(contains);
 }
+
+TEST(BoxRayIntersection, SimpleRay1)
+{
+    shapes::Box shape(1.0, 1.0, 3.0);
+    bodies::Body* box = new bodies::Box(&shape);
+    box->setScale(0.95);
+    
+    btVector3 ray_o(10, 0.449, 0);
+    btVector3 ray_d(-1, 0, 0);
+    std::vector<btVector3> p;
+    
+    bool intersect = box->intersectsRay(ray_o, ray_d, &p);
+    
+    for (unsigned int i = 0; i < p.size() ; ++i)
+	printf("intersection at %f, %f, %f\n", p[i].x(), p[i].y(), p[i].z());
+    
+    delete box;
+    EXPECT_TRUE(intersect);
+}
+
 
 TEST(CylinderPointContainment, SimpleInside)
 {

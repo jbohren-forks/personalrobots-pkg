@@ -54,6 +54,8 @@ PinholeCameraModel PinholeCameraModel::withRoi(int x, int y, int width, int heig
   PinholeCameraModel roi_model;
   std::copy(K, K+9, roi_model.K);
   std::copy(D, D+5, roi_model.D);
+  roi_model.image_width_ = width;
+  roi_model.image_height_ = height;
 
   // Move principal point
   roi_model.cx() -= x;
@@ -124,6 +126,9 @@ void PinholeCameraModel::fillCamInfo(sensor_msgs::CamInfo &info) const
   std::copy(K, K+9, &info.K[0]);
   std::copy(D, D+5, &info.D[0]);
   /** @todo: set R, P? */
+
+  info.height = image_height_;
+  info.width = image_width_;
 }
 
 void PinholeCameraModel::initUndistortMap()

@@ -1,0 +1,10 @@
+<stack name="camera_drivers" version="0.1">
+  <description brief="drivers for supported cameras">
+    This stack includes drivers for supported cameras, tools to discover and 
+    configure the camera, and basic launch files to view camera images.
+  </description>
+  <author>Maintained by Blaise Gassend</author>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/camera_drivers</url>
+  <depend stack="ros" version="0.7"/>
+</stack>

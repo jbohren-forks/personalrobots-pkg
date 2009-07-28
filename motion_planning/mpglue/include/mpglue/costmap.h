@@ -67,7 +67,7 @@ namespace mpglue {
     
     virtual cost_t getLethalCost() const = 0;
     virtual cost_t getInscribedCost() const = 0;
-    virtual cost_t getPossiblyCircumcribedCost() const = 0;
+    virtual cost_t getPossiblyCircumscribedCost() const = 0;
     
     virtual index_t getXBegin() const = 0;
     virtual index_t getXEnd() const = 0;
@@ -94,10 +94,10 @@ namespace mpglue {
 			     bool out_of_bounds_reply) const;
     
     /** Default implementation uses getCost() and
-	getPossiblyCircumcribedCost(). Subclasses can override this
+	getPossiblyCircumscribedCost(). Subclasses can override this
 	with a more efficient method. */
-    virtual bool isPossiblyCircumcribed(index_t index_x, index_t index_y,
-					bool out_of_bounds_reply) const;
+    virtual bool isPossiblyCircumscribed(index_t index_x, index_t index_y,
+					 bool out_of_bounds_reply) const;
     
     /** Default implementation uses getCost() and assumes freespace is
 	represented by zero cost values. Subclasses can override this
@@ -253,7 +253,7 @@ namespace mpglue {
   
   /**
      The recommended way of using the costmap_2d package is to
-     instantiate a costmap_2d::Costmap2DROS and the, whenever you need
+     instantiate a costmap_2d::Costmap2DROS and then, whenever you need
      access to the actual data, create a copy of the underlying
      costmap_2d::Costmap2D object by calling
      costmap_2d::Costmap2DROS::getCostMapCopy(). There is (currently)
@@ -304,6 +304,75 @@ namespace mpglue {
   IndexTransform * createIndexTransform(mpglue::costmap_2d_getter * get_costmap);
   
   IndexTransform * createIndexTransform(sfl::GridFrame const * gf);
+  
+  
+  /**
+     Wraps a "raw" array-of-some-type into a
+     CostmapAccessor-interface. The user is entirely responsible for
+     managing the raw memory, and for keeping that in synch with the
+     RawCostmapAccessor.
+     
+     \note All fields are public to allow you to manage the raw memory
+     if required, without keeping a separate pointer around.
+  */
+  template<typename raw_cost_type,
+	   typename raw_cost_pointer_type = raw_cost_type const *,
+	   typename raw_index_type = index_t>
+  class RawCostmapAccessor
+    : public CostmapAccessor {
+  public:
+    typedef raw_cost_type raw_cost_t;
+    typedef raw_cost_pointer_type raw_cost_pointer_t;
+    typedef raw_index_type raw_index_t;
+    
+    RawCostmapAccessor(raw_cost_pointer_t _raw,
+		       raw_index_t _ncells_x,
+		       raw_index_t _ncells_y,
+		       raw_index_t _lethal_cost,
+		       raw_index_t _inscribed_cost,
+		       raw_index_t _circumscribed_cost)
+      : raw(_raw),
+	ncells_x(_ncells_x),
+	ncells_y(_ncells_y),
+	lethal_cost(_lethal_cost),
+	inscribed_cost(_inscribed_cost),
+	circumscribed_cost(_circumscribed_cost)
+    {}
+    
+    virtual cost_t getLethalCost() const { return lethal_cost; }
+    virtual cost_t getInscribedCost() const { return inscribed_cost; }
+    virtual cost_t getPossiblyCircumscribedCost() const { return circumscribed_cost; }
+    
+    virtual index_t getXBegin() const { return 0; }
+    virtual index_t getXEnd() const { return ncells_x; }
+    virtual index_t getYBegin() const { return 0; }
+    virtual index_t getYEnd() const { return ncells_y; }
+    
+    virtual bool isValidIndex(index_t index_x, index_t index_y) const
+    { return checkIndex(index_x, index_y); }
+    
+    virtual bool getCost(index_t index_x, index_t index_y, cost_t * cost) const {
+      if (checkIndex(index_x, index_y)) {
+	*cost = raw[indexToRaw(index_x, index_y)];
+	return true;
+      }
+      return false;
+    }
+    
+    template<typename other_index_t>
+    raw_index_t indexToRaw(other_index_t ix, other_index_t iy) const
+    { return ix + ncells_x * iy; }
+    
+    template<typename other_index_t>
+    bool checkIndex(other_index_t ix, other_index_t iy) const
+    { return (ix >= 0) && (ix < ncells_x) && (iy >= 0) && (iy < ncells_y); }
+    
+    raw_cost_pointer_t raw;
+    raw_index_t ncells_x, ncells_y;
+    raw_cost_t lethal_cost;
+    raw_cost_t inscribed_cost;
+    raw_cost_t circumscribed_cost;
+  };
   
 }
 

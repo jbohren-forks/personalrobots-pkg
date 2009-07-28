@@ -183,7 +183,7 @@ class SpinImage: public SpectralAnalysis
     // --------------------------------------------------------------
     virtual void compute(const sensor_msgs::PointCloud& data,
                          cloud_kdtree::KdTree& data_kdtree,
-                         const cv::Vector<geometry_msgs::Point32*>& interest_pts,
+                         const cv::Vector<const geometry_msgs::Point32*>& interest_pts,
                          cv::Vector<cv::Vector<float> >& results);
 
     // --------------------------------------------------------------
@@ -198,7 +198,7 @@ class SpinImage: public SpectralAnalysis
     // --------------------------------------------------------------
     virtual void compute(const sensor_msgs::PointCloud& data,
                          cloud_kdtree::KdTree& data_kdtree,
-                         const cv::Vector<vector<int>*>& interest_region_indices,
+                         const cv::Vector<const vector<int>*>& interest_region_indices,
                          cv::Vector<cv::Vector<float> >& results);
 
   private:

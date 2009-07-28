@@ -267,6 +267,68 @@ TEST (costmapper, empty_removal)
 }
 
 
+TEST (costmap, raw_accessor)
+{
+  static size_t const xsize(12);
+  static size_t const ysize(43);
+  typedef mpglue::RawCostmapAccessor<int, int*, int> raw_costmap_t;
+  raw_costmap_t rcm(0, xsize, ysize, 17, 12, 4);
+  rcm.raw = new int[xsize * ysize];
+  {
+    int cost(0);
+    for (size_t ix(0); ix < xsize; ++ix)
+      for (size_t iy(0); iy < ysize; ++iy) {
+	int const raw_idx(rcm.indexToRaw(ix, iy));
+	ASSERT_GE (raw_idx, 0) << "negative rcm.indexToRaw()";
+	ASSERT_LT (raw_idx, xsize * ysize) << "rcm.indexToRaw() too big";
+	rcm.raw[raw_idx] = cost;
+	++cost;
+	if (cost > 42)
+	  cost = 0;
+      }
+  }
+  {
+    mpglue::cost_t check(0);
+    mpglue::CostmapAccessor const * cma(&rcm);
+    ASSERT_EQ (cma->getXBegin(), 0);
+    ASSERT_EQ (cma->getXEnd(), rcm.ncells_x);
+    ASSERT_EQ (cma->getYBegin(), 0);
+    ASSERT_EQ (cma->getYEnd(), rcm.ncells_y);
+    for (mpglue::index_t ix(cma->getXBegin()); ix < cma->getXEnd(); ++ix) {
+      EXPECT_FALSE (cma->isValidIndex(ix, -1));
+      EXPECT_FALSE (cma->isValidIndex(ix, rcm.ncells_y));
+      for (mpglue::index_t iy(cma->getYBegin()); iy < cma->getYEnd(); ++iy) {
+	mpglue::cost_t cost;
+	ASSERT_TRUE (cma->getCost(ix, iy, &cost));
+	EXPECT_EQ (cost, check);
+	++check;
+	if (check > 42)
+	  check = 0;
+	if (cost >= rcm.lethal_cost)
+	  EXPECT_TRUE (cma->isLethal(ix, iy, false))
+	    << "[" << ix << "][" << iy << "] should be lethal";
+	else
+	  EXPECT_FALSE (cma->isLethal(ix, iy, true))
+	    << "[" << ix << "][" << iy << "] should not be lethal";
+	if (cost >= rcm.inscribed_cost)
+	  EXPECT_TRUE (cma->isInscribed(ix, iy, false))
+	    << "[" << ix << "][" << iy << "] should be inscribed";
+	else
+	  EXPECT_FALSE (cma->isInscribed(ix, iy, true))
+	    << "[" << ix << "][" << iy << "] should not be inscribed";
+	if (cost >= rcm.circumscribed_cost)
+	  EXPECT_TRUE (cma->isPossiblyCircumscribed(ix, iy, false))
+	    << "[" << ix << "][" << iy << "] should be circumscribed";
+	else
+	  EXPECT_FALSE (cma->isPossiblyCircumscribed(ix, iy, true))
+	    << "[" << ix << "][" << iy << "] should not be circumscribed";
+      }
+    }
+  }
+  delete rcm.raw;
+}
+
+
 int main(int argc, char ** argv)
 {
   testing::InitGoogleTest(&argc, argv);

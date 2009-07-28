@@ -59,6 +59,8 @@ Pr2BaseController::Pr2BaseController()
 
   state_publisher_ = NULL;
 
+  last_publish_time_ = 0.0;
+
   pthread_mutex_init(&pr2_base_controller_lock_, NULL);
 }
 
@@ -70,11 +72,20 @@ Pr2BaseController::~Pr2BaseController()
     state_publisher_->stop();
     delete state_publisher_;
   }
+  for(int i = 0; i < base_kin_.num_casters_; i++)
+  {
+    delete caster_controller_[i];
+  }
+  for(int j = 0; j < base_kin_.num_wheels_; j++)
+  {
+    delete wheel_controller_[j];
+  }
 }
 
 bool Pr2BaseController::init(mechanism::RobotState *robot, const ros::NodeHandle &n)
 {
-  base_kin_.init(robot,n);
+  if(!base_kin_.init(robot,n))
+    return false;
   node_ = n;
   if(state_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
     delete state_publisher_;
@@ -108,6 +119,8 @@ bool Pr2BaseController::init(mechanism::RobotState *robot, const ros::NodeHandle
   node_.param<double> ("eps", eps_, 1e-5);
   node_.param<double> ("cmd_vel_trans_eps", cmd_vel_trans_eps_, 1e-5);
   node_.param<double> ("cmd_vel_rot_eps", cmd_vel_rot_eps_, 1e-5);
+  node_.param<double> ("state_publish_time", state_publish_time_, 0.5);
+
   node_.param<std::string> ("cmd_topic", cmd_topic_, "/cmd_vel");
   cmd_sub_ = node_.subscribe<robot_msgs::PoseDot>(cmd_topic_, 1, &Pr2BaseController::CmdBaseVelReceived, this);
 
@@ -117,9 +130,15 @@ bool Pr2BaseController::init(mechanism::RobotState *robot, const ros::NodeHandle
   {
     control_toolbox::Pid p_i_d;
     state_publisher_->msg_.joint_name[i] = base_kin_.caster_[i].joint_name_;
-    p_i_d.init(ros::NodeHandle(node_, base_kin_.caster_[i].joint_name_));
+    if(!p_i_d.init(ros::NodeHandle(node_, base_kin_.caster_[i].joint_name_)))
+    {
+      ROS_ERROR("Could not initialize pid for %s",base_kin_.caster_[i].joint_name_.c_str());
+    }
     caster_controller_[i] = new JointVelocityController();
-    caster_controller_[i]->init(base_kin_.robot_state_, base_kin_.caster_[i].joint_name_, p_i_d);
+    if(!caster_controller_[i]->init(base_kin_.robot_state_, base_kin_.caster_[i].joint_name_, p_i_d))
+    {
+      ROS_ERROR("Could not initialize pid for %s",base_kin_.caster_[i].joint_name_.c_str());
+    }
   }
   //wheels
   wheel_controller_.resize(base_kin_.num_wheels_);
@@ -127,9 +146,15 @@ bool Pr2BaseController::init(mechanism::RobotState *robot, const ros::NodeHandle
   {
     control_toolbox::Pid p_i_d;
     state_publisher_->msg_.joint_name[j + base_kin_.num_casters_] = base_kin_.wheel_[j].joint_name_;
-    p_i_d.init(ros::NodeHandle(node_,base_kin_.wheel_[j].joint_name_));
-    wheel_controller_[j] = new JointVelocityController();
-    wheel_controller_[j]->init(base_kin_.robot_state_, base_kin_.wheel_[j].joint_name_, p_i_d);
+    if(!p_i_d.init(ros::NodeHandle(node_,base_kin_.wheel_[j].joint_name_)))
+    {       
+      ROS_ERROR("Could not initialize pid for %s",base_kin_.wheel_[j].joint_name_.c_str());
+    }
+   wheel_controller_[j] = new JointVelocityController();
+   if(!wheel_controller_[j]->init(base_kin_.robot_state_, base_kin_.wheel_[j].joint_name_, p_i_d))
+   {
+      ROS_ERROR("Could not initialize joint velocity controller for %s",base_kin_.wheel_[j].joint_name_.c_str());
+   }
   }
   ROS_INFO("PR2 base controller initialized");
   return true;
@@ -229,6 +254,14 @@ bool Pr2BaseController::starting()
 {
   last_time_ = base_kin_.robot_state_->hw_->current_time_;
   cmd_received_timestamp_ = base_kin_.robot_state_->hw_->current_time_;
+  for(int i = 0; i < base_kin_.num_casters_; i++)
+  {
+    caster_controller_[i]->starting();
+  }
+  for(int j = 0; j < base_kin_.num_wheels_; j++)
+  {
+    wheel_controller_[j]->starting();
+  }
   return true;
 }
 
@@ -275,8 +308,19 @@ void Pr2BaseController::update()
 
   computeStall();
 
+  publishState(current_time);
+
   last_time_ = current_time;
 
+}
+
+void Pr2BaseController::publishState(double time)
+{
+
+  if(time - last_publish_time_  < state_publish_time_)
+  {
+    return;
+  }
   if(state_publisher_->trylock())
   {
     state_publisher_->msg_.command_vx = cmd_vel_.vel.vx;
@@ -302,6 +346,7 @@ void Pr2BaseController::update()
     }
 
     state_publisher_->unlockAndPublish();
+    last_publish_time_ = time;
   }
 }
 

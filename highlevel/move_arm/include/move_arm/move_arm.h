@@ -101,6 +101,7 @@ namespace move_arm
 	bool getControlJointNames(std::vector<std::string> &joint_names);
 	void contactFound(collision_space::EnvironmentModel::Contact &contact);
 	void printPath(const motion_planning_msgs::KinematicPath &path);
+	bool fixState(planning_models::StateParams &sp, bool atGoal);
 	bool fillStartState(std::vector<motion_planning_msgs::KinematicJoint> &start);	
 	void fillTrajectoryPath(const motion_planning_msgs::KinematicPath &path, manipulation_msgs::JointTraj &traj);
 	bool alterRequestUsingIK(motion_planning_srvs::MotionPlan::Request &req);
