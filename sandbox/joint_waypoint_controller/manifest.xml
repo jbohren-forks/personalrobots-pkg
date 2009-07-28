@@ -12,5 +12,7 @@ real controller.
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/joint_waypoint_controller</url>
 
+	<depend package="spline_smoother" />
+
 </package>
 

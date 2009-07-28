@@ -1,0 +1,2 @@
+string joint_name
+spline_smoother/WaypointTrajectory trajectory
