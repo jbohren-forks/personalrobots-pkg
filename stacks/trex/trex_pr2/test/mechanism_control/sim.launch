@@ -1,0 +1,4 @@
+<launch>
+  <param name="/trex/input_file" value="sim.mechanism_control.cfg"/>
+  <include file="$(find trex_pr2)/test/sim.launch" />
+</launch>
