@@ -14,6 +14,7 @@ daisy: $(SOURCE_DIR)/unpacked
 ifeq ($(wildcard $(SOURCE_DIR)/lib/libdaisy.so),) 
 	cd $(SOURCE_DIR) && make -f makefile slib
 endif
+	cd $(SOURCE_DIR) && make -f makefile dox
 
 clean: 
 	-rm -rf $(SOURCE_DIR)
