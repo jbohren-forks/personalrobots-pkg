@@ -32,16 +32,16 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include <point_cloud_clustering/generic_clustering.h>
+#include <point_cloud_clustering/point_cloud_clustering.h>
 
 using namespace std;
 
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-int point_cloud_clustering::GenericClustering::computeClusterCentroids(const robot_msgs::PointCloud& pt_cloud,
-                                                                       const map<unsigned int, vector<int> >& clusters,
-                                                                       map<unsigned int, vector<float> >& cluster_centroids)
+int point_cloud_clustering::PointCloudClustering::computeClusterCentroids(const robot_msgs::PointCloud& pt_cloud,
+                                                                          const map<unsigned int, vector<int> >& clusters,
+                                                                          map<unsigned int, vector<float> >& cluster_centroids)
 {
   cluster_centroids.clear();
 
@@ -89,7 +89,7 @@ int point_cloud_clustering::GenericClustering::computeClusterCentroids(const rob
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-point_cloud_clustering::GenericClustering::GenericClustering()
+point_cloud_clustering::PointCloudClustering::PointCloudClustering()
 {
   parameters_defined_ = false;
   starting_label_ = 0;
@@ -98,18 +98,18 @@ point_cloud_clustering::GenericClustering::GenericClustering()
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-point_cloud_clustering::GenericClustering::~GenericClustering()
+point_cloud_clustering::PointCloudClustering::~PointCloudClustering()
 {
 }
 
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-unsigned int point_cloud_clustering::GenericClustering::findRadiusNeighbors(cloud_kdtree::KdTree& pt_cloud_kdtree,
-                                                                            unsigned int index,
-                                                                            double radius,
-                                                                            const std::set<unsigned int>& indices_to_cluster,
-                                                                            std::list<unsigned int>& neighbor_indices)
+unsigned int point_cloud_clustering::PointCloudClustering::findRadiusNeighbors(cloud_kdtree::KdTree& pt_cloud_kdtree,
+                                                                               unsigned int index,
+                                                                               double radius,
+                                                                               const std::set<unsigned int>& indices_to_cluster,
+                                                                               std::list<unsigned int>& neighbor_indices)
 {
   vector<int> k_indices;
   vector<float> k_distances;

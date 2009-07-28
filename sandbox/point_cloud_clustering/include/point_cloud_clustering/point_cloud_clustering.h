@@ -1,5 +1,5 @@
-#ifndef __PCC_GENERIC_H__
-#define __PCC_GENERIC_H__
+#ifndef __PCC_H__
+#define __PCC_H__
 /*********************************************************************
  * Software License Agreement (BSD License)
  *
@@ -46,15 +46,15 @@
 
 namespace point_cloud_clustering
 {
-  class GenericClustering
+  class PointCloudClustering
   {
     public:
       static int computeClusterCentroids(const robot_msgs::PointCloud& pt_cloud, const std::map<unsigned int,
           std::vector<int> >& clusters, std::map<unsigned int, std::vector<float> >& cluster_centroids);
 
-      GenericClustering();
+      PointCloudClustering();
 
-      virtual ~GenericClustering() = 0;
+      virtual ~PointCloudClustering() = 0;
 
       inline void setStartingClusterLabel(unsigned int starting_label)
       {
