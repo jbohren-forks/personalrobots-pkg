@@ -1,4 +1,4 @@
-var ROSImageWidget = Class.create({
+var ROSImageGadget = Class.create({
   initialize: function(topic, parentElem)
   {
     if (this.run)
