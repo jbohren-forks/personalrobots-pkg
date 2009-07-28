@@ -1,0 +1,44 @@
+<launch>
+
+ <rosparam file="$(find pr2_default_controllers)/pr2_base_controller.yaml" command="load" ns="pr2_base_controller" />
+ <rosparam file="$(find pr2_default_controllers)/pr2_odometry.yaml" command="load" ns="pr2_odometry" />
+<node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/pr2_base_controller.xml" output="screen"/>
+<node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/pr2_base_odometry.xml" output="screen"/>
+
+<node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/torso_lift_vel_controller.xml" output="screen" />
+
+<include file="$(find pr2_default_controllers)/head_position_controller.launch" />
+
+
+<!-- The robot pose EKF is launched with the base controller-->
+<include file="$(find robot_pose_ekf)/robot_pose_ekf.launch" />
+
+  <group name="ps3_teleop">
+<param name="axis_vx" value="3" type="int"/>
+<param name="axis_vy" value="2" type="int"/>
+<param name="axis_vw" value="0" type="int"/>
+<param name="axis_pan" value="0" type="int"/>
+<param name="axis_tilt" value="3" type="int"/>
+
+<param name="max_vw" value="0.8" />
+<param name="max_vx" value="0.5" />
+<param name="max_vy" value="0.5" />
+<param name="max_vw_run" value="1.4" />
+<param name="max_vx_run" value="1.0" />
+<param name="max_vy_run" value="1.0" />
+<param name="tilt_step" value="0.1" />
+<param name="pan_step" value="0.1" />
+
+<!-- Buttons have changed for PS3 controller mapping -->
+<param name="run_button" value="7" type="int" />
+<param name="torso_dn_button" value="1" type="int" />
+<param name="torso_up_button" value="2" type="int" />
+<param name="head_button" value="4" type="int" />
+<param name="deadman_button" value="6" type="int"/>
+
+<node pkg="teleop_pr2" type="teleop_pr2" output="screen"/>
+  </group>
+
+
+</launch>
+
