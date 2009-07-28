@@ -81,9 +81,9 @@ int discover(const std::string &if_name, bool verbose, bool report_rp_filter)
     uint8_t *ip = (uint8_t *) &camera->ip;
     char pcb_rev = 0x0A + (0x0000000F & camera->hw_version);
     int hdl_rev = 0x00000FFF & (camera->hw_version>>4);
-    printf("Found camera with S/N #%u, MAC: %02x:%02x:%02x:%02x:%02x:%02x, iface: %s IP: %i.%i.%i.%i, PCB rev %X : HDL rev %3X : FW rev %3X\n", 
+    printf("Found camera with S/N #%u, MAC: %02x:%02x:%02x:%02x:%02x:%02x, iface: %s IP: %i.%i.%i.%i, PCB rev %X : HDL rev %3X : FW rev %3X, name: %s\n", 
         camera->serial, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5], if_name.c_str(), ip[0], ip[1], ip[2], ip[3], 
-        pcb_rev, hdl_rev, camera->fw_version);
+        pcb_rev, hdl_rev, camera->fw_version, camera->cam_name);
   }
 
   return 0;

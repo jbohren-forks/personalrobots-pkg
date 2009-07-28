@@ -280,6 +280,8 @@ typedef struct {
 	struct list_head list;
 
   char hwinfo[PR2_CAMINFO_LEN];
+
+  char cam_name[CAMERA_NAME_LEN];
 } IpCamList;
 
 int pr2CamListInit( IpCamList *ipCamList );

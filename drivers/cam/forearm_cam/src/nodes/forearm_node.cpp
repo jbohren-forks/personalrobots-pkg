@@ -225,6 +225,7 @@ private:
   int serial_number_;
   std::string hwinfo_;
   std::string mode_name_;
+  std::string camera_name_;
   controller::trigger_configuration trig_req_;
   robot_mechanism_controllers::SetWaveform::Response trig_rsp_;
   
@@ -542,10 +543,11 @@ public:
         return;
       }
     }
-    ROS_INFO("Configured camera, S/N #%u, IP address %s",
-             camera_->serial, ip_address_.c_str());
+    ROS_INFO("Configured camera, S/N #%u, IP address %s, name %s",
+             camera_->serial, ip_address_.c_str(), camera_->cam_name);
       
     serial_number_ = camera_->serial;
+    camera_name_ = camera_->cam_name;
     hwinfo_ = camera_->hwinfo;
     memcpy(mac_, camera_->mac, sizeof(mac_));
 
@@ -813,6 +815,7 @@ stop_video:
     stat.adds("Interface", if_name_);
     stat.adds("Camera IP", ip_address_);
     stat.adds("Camera Serial #", serial_number_);
+    stat.adds("Camera Name #", camera_name_);
     stat.adds("Camera Hardware", hwinfo_);
     stat.addsf("Camera MAC", "%02X:%02X:%02X:%02X:%02X:%02X", mac_[0], mac_[1], mac_[2], mac_[3], mac_[4], mac_[5]);
     stat.adds("Image mode", mode_name_);

@@ -138,12 +138,22 @@ int pr2Discover(const char *ifName, IpCamList *ipCamList, const char *ipAddress,
       struct sockaddr_in fromaddr;
       fromaddr.sin_family = AF_INET;
       socklen_t fromlen = sizeof(fromaddr);
+      ssize_t packet_len;
 
-			if( recvfrom( s, &aPkt, sizeof(PacketAnnounce), 0, (struct sockaddr *) &fromaddr, &fromlen)  == -1 ) {
+			packet_len = recvfrom( s, &aPkt, sizeof(PacketAnnounce), 0, (struct sockaddr *) &fromaddr, &fromlen);
+      if(packet_len == -1 ) {
 				perror("wgDiscover unable to receive from socket");
         close(s);
 				return -1;
 			}
+
+      if (packet_len != sizeof(PacketAnnounce))
+      {
+        if (packet_len != sizeof(PacketAnnounce) - sizeof(aPkt.camera_name))
+          continue; // Not a valid packet
+        else // Old discover packet
+          bzero(aPkt.camera_name, sizeof(aPkt.camera_name));
+      }
 
 			// Create a new list entry and initialize it
 			IpCamList *tmpListItem;
@@ -160,7 +170,9 @@ int pr2Discover(const char *ifName, IpCamList *ipCamList, const char *ipAddress,
       tmpListItem->ip = fromaddr.sin_addr.s_addr;
 			tmpListItem->serial = ntohl(aPkt.ser_no);
 			memcpy(&tmpListItem->mac, aPkt.mac, sizeof(aPkt.mac));
-			strncpy(tmpListItem->ifName, ifName, sizeof(tmpListItem->ifName));
+      memcpy(tmpListItem->cam_name, aPkt.camera_name, sizeof(aPkt.camera_name));
+      aPkt.camera_name[sizeof(aPkt.camera_name) - 1] = 0;
+      strncpy(tmpListItem->ifName, ifName, sizeof(tmpListItem->ifName));
 			tmpListItem->status = CamStatusDiscovered;
 			char pcb_rev = 0x0A + (0x0000000F & ntohl(aPkt.hw_version));
 			int hdl_rev = 0x00000FFF & (ntohl(aPkt.hw_version)>>4);
@@ -388,6 +400,44 @@ int pr2StopVid( const IpCamList *camInfo ) {
 err_out:
   close(s);
   return -1;
+}
+
+/**
+ * Instructs one camera to reconfigure its FPGA.
+ *
+ * @param camInfo Describes the camera that should reconfigure its FPGA.
+ * @return 	Returns 0 for success
+ * 			Returns -1 for system errors
+ */
+int pr2ReconfigureFPGA( IpCamList *camInfo ) {
+	PacketReconfigureFPGA gPkt;
+
+	// Initialize the packet
+	gPkt.hdr.magic_no = htonl(WG_MAGIC_NO);
+	gPkt.hdr.type = htonl(PKTT_RECONFIG_FPGA);
+	strncpy(gPkt.hdr.hrt, "ReconfigureFPGA", sizeof(gPkt.hdr.hrt));
+
+	/* Create a new socket bound to a local ephemeral port, and get our local connection
+	 * info so we can request a reply back to the same socket.
+	 */
+	int s = wgCmdSocketCreate(camInfo->ifName, &gPkt.hdr.reply_to);
+	if( s == -1 ) {
+		return -1;
+	}
+
+	if(	wgSendUDP(s, &camInfo->ip, &gPkt, sizeof(gPkt)) == -1 ) {
+	  close(s);
+    return -1;
+	}
+
+	close(s);
+
+	// Camera is no longer configured after a reset
+	camInfo->status = CamStatusDiscovered;
+
+	// There is no reply to a reset packet
+
+	return 0;
 }
 
 /**
