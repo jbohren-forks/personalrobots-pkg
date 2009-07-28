@@ -662,9 +662,9 @@ bool bodies::ConvexMesh::intersectsRay(const btVector3& origin, const btVector3&
 		const int v3 = m_triangles[i3 + 2];
 
 		// this is not the best way to do scaling ....
-		const btVector3 a = m_vertices[v1] * (m_scale + m_vertDists[v1] > ZERO ? m_padding / m_vertDists[v1] : 0.0);
-		const btVector3 b = m_vertices[v2] * (m_scale + m_vertDists[v2] > ZERO ? m_padding / m_vertDists[v2] : 0.0);
-		const btVector3 c = m_vertices[v3] * (m_scale + m_vertDists[v3] > ZERO ? m_padding / m_vertDists[v3] : 0.0);
+		const btVector3 a = m_vertices[v1] * (m_scale + (m_vertDists[v1] > ZERO ? m_padding / m_vertDists[v1] : 0.0));
+		const btVector3 b = m_vertices[v2] * (m_scale + (m_vertDists[v2] > ZERO ? m_padding / m_vertDists[v2] : 0.0));
+		const btVector3 c = m_vertices[v3] * (m_scale + (m_vertDists[v3] > ZERO ? m_padding / m_vertDists[v3] : 0.0));
 		
 		btVector3 cb(c - b);
 		btVector3 ab(a - b);
