@@ -6,8 +6,13 @@
   <include file="$(find pr2_gazebo)/pr2.launch"/>
 
   <!-- load controllers -->
-  <param name="base_controller/odom_publish_rate" value="10" />
-  <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/base_controller.xml" output="screen"/>
+
+ <rosparam file="$(find pr2_default_controllers)/pr2_base_controller.yaml" command="load" ns="pr2_base_controller" />
+ <rosparam file="$(find pr2_default_controllers)/pr2_odometry.yaml" command="load" ns="pr2_odometry" />
+ <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/pr2_base_controller.xml" output="screen"/>
+ <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/pr2_base_odometry.xml" output="screen"/>
+
+
   <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/gazebo_head_torso_lift_controller.xml" output="screen"/>
   <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_experimental_controllers)/laser_tilt/laser_tilt_controller.xml" />
   <node pkg="pr2_mechanism_controllers" type="send_laser_traj_cmd_ms2.py" args="laser_tilt_controller" />
