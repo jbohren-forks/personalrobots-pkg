@@ -23,7 +23,7 @@ includes: trex plasma planworks
 	@if [ ! -d include ]; then echo "Try to make" ; fi
 
 # GET plasma
-PLASMA_REVISION=5516
+PLASMA_REVISION=5517
 plasma:
 	@if [ -n "`svn info PLASMA | grep 'http://europa-pso.googlecode.com/svn/PLASMA/trunk'`" ]; then echo "Your PLASMA is not of the correct branch. Reclocating and updating" ; cd PLASMA && svn switch http://europa-pso.googlecode.com/svn/PLASMA/branches/willow-trex && $(SVN_CMDLINE) up -r $(PLASMA_REVISION) ; cd ../ && ./copyIncludes.sh ; fi ;
 	@if [ -n "`svn info PLASMA | grep 'https://europa-pso.googlecode.com/svn/PLASMA/trunk'`" ]; then echo "Your PLASMA is not of the correct branch. Reclocating and updating" ; cd PLASMA && svn switch https://europa-pso.googlecode.com/svn/PLASMA/branches/willow-trex && $(SVN_CMDLINE) up -r $(PLASMA_REVISION) ; cd ../ && ./copyIncludes.sh ; fi ;
