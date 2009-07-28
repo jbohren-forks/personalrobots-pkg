@@ -56,6 +56,25 @@ void createPointCloud(robot_msgs::PointCloud& data);
 // --------------------------------------------------------------
 int main()
 {
+  // ----------------------------------------------
+  // Read point cloud data and create Kd-tree that represents points.
+  // We will compute features for all points in the point cloud.
+  robot_msgs::PointCloud data;
+  createPointCloud(data);
+  cloud_kdtree::KdTreeANN data_kdtree(data);
+  cv::Vector<const robot_msgs::Point32*> interest_pts(data.pts.size());
+  for (unsigned int i = 0 ; i < data.pts.size() ; i++)
+  {
+    interest_pts[i] = &(data.pts[i]);
+  }
+
+  // ----------------------------------------------
+  // Examines the eigenvalues for a local neighborhood scatter matrix
+  // to give features that represent the local shape (how flat, how linear,
+  // how scattered) of the neighborhood.  Note SpectralShape inherits from
+  // SpectralAnalysis, meaning it computes normal/eigenvector information that
+  // can be shared with other descriptors (to avoid duplicate computation)
+  // using the useSpectralInformation() method.
   SpectralShape spectral_shape;
   spectral_shape.setSpectralRadius(5.0);
 
@@ -90,13 +109,17 @@ int main()
   // The feature is simply the z coordinate for each interest point
   Position position;
 
-  // Computes the bounding box
+  // Computes the bounding box in the principle component space
+  // of all points within radius 5.0.  That is, feature values
+  // are the lengths of the box along the 3 component directions.
+  // (Set 2nd argument to true to compute bounding box in given
+  // point cloud).
   BoundingBox bounding_box(true, false);
   bounding_box.useSpectralInformation(&spectral_shape);
   bounding_box.setBoundingBoxRadius(5.0);
 
   // ----------------------------------------------
-  //
+  // Put all descriptors into a vector
   vector<Descriptor3D*> descriptors_3d;
   descriptors_3d.push_back(&spectral_shape);
   descriptors_3d.push_back(&spin_image1);
@@ -104,18 +127,6 @@ int main()
   descriptors_3d.push_back(&orientation);
   descriptors_3d.push_back(&position);
   descriptors_3d.push_back(&bounding_box);
-
-  // ----------------------------------------------
-  // Read point cloud data and create Kd-tree that represents points.
-  // We will compute features for all points in the point cloud.
-  robot_msgs::PointCloud data;
-  createPointCloud(data);
-  cloud_kdtree::KdTreeANN data_kdtree(data);
-  cv::Vector<const robot_msgs::Point32*> interest_pts(data.pts.size());
-  for (unsigned int i = 0 ; i < data.pts.size() ; i++)
-  {
-    interest_pts[i] = &(data.pts[i]);
-  }
 
   // ----------------------------------------------
   // Iterate over each descriptor and compute features for each point in the point cloud.
@@ -129,6 +140,7 @@ int main()
     descriptors_3d[i]->compute(data, data_kdtree, interest_pts, all_descriptor_results[i]);
   }
 
+  // ----------------------------------------------
   // Print out the bounding box dimension features for the first point 0
   cv::Vector<float>& pt0_bbox_features = all_descriptor_results[5][0];
   cout << "Bounding box features:";
