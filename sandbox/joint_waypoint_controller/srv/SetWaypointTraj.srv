@@ -1,5 +1,0 @@
-# A list of joint waypoint trajectories, one for each joint:
-JointWaypointTrajectory[] trajectories
-
-----
-int32 trajectory_id
