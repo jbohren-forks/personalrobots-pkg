@@ -16,6 +16,7 @@ in a way that can be managed by the ROS dependency system.
 </export>
 <depend package="eigen"/>
 <rosdep name="cppunit"/>
+<rosdep name="python-sip4"/>
 <versioncontrol type="svn" url="http://svn.mech.kuleuven.be/repos/orocos/trunk/kdl"/>
 </package>
 
