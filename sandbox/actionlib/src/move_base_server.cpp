@@ -49,15 +49,15 @@ std::vector<GoalHandle> goals;
 
 void goalCB(GoalHandle goal){
   ROS_INFO("In goal callback, got a goal with id: %.2f", goal.getGoalID().id.toSec());
-  goal.setActive();
+  goal.setAccepted();
   goals.push_back(goal);
 }
 
-void preemptCB(GoalHandle goal){
-  ROS_INFO("In preempt callback, got a goal with id: %.2f", goal.getGoalID().id.toSec());
+void cancelCB(GoalHandle goal){
+  ROS_INFO("In cancel callback, got a goal with id: %.2f", goal.getGoalID().id.toSec());
   for(unsigned int i = 0; i < goals.size(); ++i){
     if(goals[i] == goal)
-      goals[i].setPreempted();
+      goals[i].setCanceled();
   }
 }
 
@@ -66,7 +66,7 @@ int main(int argc, char** argv){
 
   ros::NodeHandle n;
 
-  MoveBaseActionServer as(n, "move_base", boost::bind(&goalCB, _1), boost::bind(&preemptCB, _1));
+  MoveBaseActionServer as(n, "move_base", boost::bind(&goalCB, _1), boost::bind(&cancelCB, _1));
 
   ros::spin();
 }
