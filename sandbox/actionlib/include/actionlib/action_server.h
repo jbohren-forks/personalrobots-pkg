@@ -59,8 +59,8 @@ namespace actionlib {
    * sends status for each goal over the wire until the last GoalHandle
    * associated with a goal request is destroyed.
    */
-  template <class ActionGoal, class Goal, class ActionResult, class Result, class ActionFeedback, class Feedback>
-  class ActionServer {
+  template <class ActionSpec>
+  class ActionServer : public ActionDefinition<ActionSpec> {
     private:
       /**
        * @class StatusTracker
@@ -102,7 +102,7 @@ namespace actionlib {
       //class to help with tracking status objects
       class HandleTrackerDeleter {
         public:
-          HandleTrackerDeleter(ActionServer<ActionGoal, Goal, ActionResult, Result, ActionFeedback, Feedback>* as,
+          HandleTrackerDeleter(ActionServer<ActionSpec>* as,
               typename std::list<StatusTracker>::iterator status_it)
             : as_(as), status_it_(status_it) {}
 
@@ -116,7 +116,7 @@ namespace actionlib {
           }
 
         private:
-          ActionServer<ActionGoal, Goal, ActionResult, Result, ActionFeedback, Feedback>* as_;
+          ActionServer<ActionSpec>* as_;
           typename std::list<StatusTracker>::iterator status_it_;
       };
 
@@ -320,15 +320,15 @@ namespace actionlib {
            * @brief  A private constructor used by the ActionServer to initialize a GoalHandle
            */
           GoalHandle(typename std::list<StatusTracker>::iterator status_it,
-              ActionServer<ActionGoal, Goal, ActionResult, Result, ActionFeedback, Feedback>* as)
+              ActionServer<ActionSpec>* as)
             : status_it_(status_it), goal_((*status_it).goal_),
               as_(as), handle_tracker_((*status_it).handle_tracker_.lock()){}
 
           typename std::list<StatusTracker>::iterator status_it_;
           boost::shared_ptr<const ActionGoal> goal_;
-          ActionServer<ActionGoal, Goal, ActionResult, Result, ActionFeedback, Feedback>* as_;
+          ActionServer<ActionSpec>* as_;
           boost::shared_ptr<void> handle_tracker_;
-          friend class ActionServer<ActionGoal, Goal, ActionResult, Result, ActionFeedback, Feedback>;
+          friend class ActionServer<ActionSpec>;
       };
 
       /**

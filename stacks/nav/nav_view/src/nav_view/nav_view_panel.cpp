@@ -32,7 +32,7 @@
 #include "ogre_tools/wx_ogre_render_window.h"
 
 #include "nav_srvs/StaticMap.h"
-#include "nav_msgs/ParticleCloud.h"
+#include "nav_msgs/PoseArray.h"
 
 #include <tf/transform_listener.h>
 
@@ -96,7 +96,7 @@ NavViewPanel::NavViewPanel( wxWindow* parent )
 
   nh_.param("/global_frame_id", global_frame_id_, std::string("/map"));
 
-  particle_cloud_sub_ = nh_.subscribe("particlecloud", 1, &NavViewPanel::incomingParticleCloud, this);
+  particle_cloud_sub_ = nh_.subscribe("particlecloud", 1, &NavViewPanel::incomingPoseArray, this);
 
   gui_path_sub_.subscribe(nh_, "gui_path", 2);
   local_path_sub_.subscribe(nh_, "local_path", 2);
@@ -474,7 +474,7 @@ void NavViewPanel::createObjectFromPolyLine( Ogre::ManualObject*& object, const 
   queueRender();
 }
 
-void NavViewPanel::incomingParticleCloud(const nav_msgs::ParticleCloud::ConstPtr& msg)
+void NavViewPanel::incomingPoseArray(const nav_msgs::PoseArray::ConstPtr& msg)
 {
   if ( !cloud_object_ )
   {
@@ -489,14 +489,14 @@ void NavViewPanel::incomingParticleCloud(const nav_msgs::ParticleCloud::ConstPtr
   cloud_object_->clear();
 
   Ogre::ColourValue color( 1.0f, 0.0f, 0.0f, 1.0f );
-  int num_particles = msg->particles.size();
+  int num_particles = msg->poses.size();
   cloud_object_->estimateVertexCount( num_particles * 8 );
   cloud_object_->begin( "BaseWhiteNoLighting", Ogre::RenderOperation::OT_LINE_LIST );
   for( int i=0; i < num_particles; ++i)
   {
-    Ogre::Vector3 pos( msg->particles[i].position.x, msg->particles[i].position.y, msg->particles[i].position.z );
+    Ogre::Vector3 pos( msg->poses[i].position.x, msg->poses[i].position.y, msg->poses[i].position.z );
     tf::Quaternion orientation;
-    tf::quaternionMsgToTF(msg->particles[i].orientation, orientation);
+    tf::quaternionMsgToTF(msg->poses[i].orientation, orientation);
     double yaw, pitch, roll;
     btMatrix3x3(orientation).getEulerZYX(yaw, pitch, roll);
     Ogre::Quaternion orient( Ogre::Quaternion( Ogre::Radian( yaw ), Ogre::Vector3::UNIT_Z ) );
