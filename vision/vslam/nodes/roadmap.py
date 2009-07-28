@@ -156,8 +156,8 @@ class RoadmapServer:
         pg.recomputeAllTransformations()
         print self.tf.getFrameStrings()
         target_frame = "base_link"
-        t = self.tf.getLatestCommonTime("double_stereo_wide_optical_frame", target_frame)
-        trans,rot = self.tf.lookupTransform(target_frame, "double_stereo_wide_optical_frame", t)
+        t = self.tf.getLatestCommonTime("wide_stereo_optical_frame", target_frame)
+        trans,rot = self.tf.lookupTransform(target_frame, "wide_stereo_optical_frame", t)
         xp = Pose()
         xp.fromlist(self.tf.fromTranslationRotation(trans,rot))
 
@@ -219,15 +219,15 @@ class RoadmapServer:
         if self.skel.add(self.vo.keyframe):
           print "====>", self.vo.keyframe.id, self.frame_timestamps[self.vo.keyframe.id]
           #print self.tf.getFrameStrings()
-          #assert self.tf.frameExists("double_stereo_wide_optical_frame")
+          #assert self.tf.frameExists("wide_stereo_optical_frame")
           #assert self.tf.frameExists("odom_combined")
           N = sorted(self.skel.nodes)
           for a,b in zip(N, N[1:]):
             if (a,b) in self.skel.edges:
               t0 = self.frame_timestamps[a]
               t1 = self.frame_timestamps[b]
-              if self.tf.canTransformFull("double_stereo_wide_optical_frame", t0, "double_stereo_wide_optical_frame", t1, "odom_combined"):
-                t,r = self.tf.lookupTransformFull("double_stereo_wide_optical_frame", t0, "double_stereo_wide_optical_frame", t1, "odom_combined")
+              if self.tf.canTransformFull("wide_stereo_optical_frame", t0, "wide_stereo_optical_frame", t1, "odom_combined"):
+                t,r = self.tf.lookupTransformFull("wide_stereo_optical_frame", t0, "wide_stereo_optical_frame", t1, "odom_combined")
                 relpose = Pose()
                 relpose.fromlist(self.tf.fromTranslationRotation(t,r))
                 self.wheel_odom_edges.add((a, b, relpose, 1.0))
