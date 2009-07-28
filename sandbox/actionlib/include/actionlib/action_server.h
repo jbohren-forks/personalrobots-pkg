@@ -346,6 +346,30 @@ namespace actionlib {
             : status_it_(status_it), goal_((*status_it).goal_),
               as_(as), handle_tracker_((*status_it).handle_tracker_.lock()){}
 
+          /**
+           * @brief  A private method to set status to PENDING or RECALLING
+           * @return True if the cancel request should be passed on to the user, false otherwise
+           */
+          bool cancelRequested(){
+            ROS_DEBUG("Transisitoning to a cancel requested state on goal id: %.2f, stamp: %.2f", getGoalID().id.toSec(), getGoalID().stamp.toSec());
+            if(goal_){
+              unsigned int status = (*status_it_).status_.status;
+              if(status == GoalStatus::PENDING){
+                (*status_it_).status_.status = GoalStatus::RECALLING;
+                as_->publishStatus();
+                return true;
+              }
+
+              if(status == GoalStatus::ACTIVE){
+                (*status_it_).status_.status = GoalStatus::PREEMPTING;
+                as_->publishStatus();
+                return true;
+              }
+
+            }
+            return false;
+          }
+
           typename std::list<StatusTracker>::iterator status_it_;
           boost::shared_ptr<const ActionGoal> goal_;
           ActionServer<ActionSpec>* as_;
@@ -448,8 +472,13 @@ namespace actionlib {
             if(goal_id->id == (*it).status_.goal_id.id)
               goal_id_found = true;
 
-            //call the user's cancel callback on the relevant goal
-            cancel_callback_(GoalHandle(it, this));
+            //set the status of the goal to PREEMPTING or RECALLING as approriate
+            //and check if the request should be passed on to the user
+            GoalHandle gh(it, this);
+            if(gh.cancelRequested()){
+              //call the user's cancel callback on the relevant goal
+              cancel_callback_(gh);
+            }
           }
 
           //if the requested goal_id was not found, and it is non-zero, then we need to store the cancel request
