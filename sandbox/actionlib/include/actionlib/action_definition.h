@@ -36,25 +36,15 @@
 *********************************************************************/
 #ifndef ACTION_DEFINITION_H_
 #define ACTION_DEFINITION_H_
-namespace action_tools {
-  /**
-   * @class ActionDefinition
-   * @brief A class templated on an ActionSpec that defines typedefs for
-   * ActionGoal/Goal, ActionResult/Result, and ActionFeedback/Feedback
-   */
-  template <class ActionSpec>
-  class ActionDefinition {
-    public:
-      //create the typdefs that will allow us refer to the goal, result, and feedback
-      typedef typename ActionSpec::action_goal_type_ ActionGoal;
-      typedef typename ActionGoal::_goal_type Goal;
-
-      typedef typename ActionSpec::action_result_type_ ActionResult;
-      typedef typename ActionResult::_result_type Result;
-
-      typedef typename ActionSpec::action_feedback_type_ ActionFeedback;
-      typedef typename ActionFeedback::_feedback_type Feedback;
-  };
+//A macro that will generate helpful typedefs for action client, server, and policy implementers 
+namespace actionlib {
+#define ACTION_DEFINITION(ActionSpec) \
+  typedef typename ActionSpec::_action_goal_type ActionGoal; \
+  typedef typename ActionGoal::_goal_type Goal; \
+  typedef typename ActionSpec::_action_result_type ActionResult; \
+  typedef typename ActionResult::_result_type Result; \
+  typedef typename ActionSpec::_action_feedback_type ActionFeedback; \
+  typedef typename ActionFeedback::_feedback_type Feedback;
 };
 #endif
 

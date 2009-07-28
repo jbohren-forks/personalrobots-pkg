@@ -53,8 +53,11 @@ namespace actionlib {
    * old goal will be change automatically to reflect this.
    */
   template <class ActionSpec>
-  class SingleGoalActionServer : public ActionDefinition<ActionSpec> {
+  class SingleGoalActionServer {
     public:
+      //generates typedefs that we'll use to make our lives easier
+      ACTION_DEFINITION(ActionSpec);
+
       typedef typename ActionServer<ActionSpec>::GoalHandle GoalHandle;
 
       /**

@@ -61,8 +61,11 @@ namespace actionlib {
    * associated with a goal request is destroyed.
    */
   template <class ActionSpec>
-  class ActionServer : public ActionDefinition<ActionSpec> {
+  class ActionServer {
     private:
+      //generates typedefs that we'll use to make our lives easier
+      ACTION_DEFINITION(ActionSpec);
+
       /**
        * @class StatusTracker
        * @brief A class for storing the status of each goal the action server
