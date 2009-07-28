@@ -399,7 +399,7 @@ namespace move_arm
 	visualization_msgs::Marker mk;
 	mk.header.stamp = planningMonitor_->lastMapUpdate();
 	mk.header.frame_id = planningMonitor_->getFrameId();
-	mk.ns = node_handle_.getName();
+	mk.ns = ros::this_node::getName();
 	mk.id = count++;
 	mk.type = visualization_msgs::Marker::SPHERE;
 	mk.action = visualization_msgs::Marker::ADD;
@@ -566,7 +566,7 @@ namespace move_arm
 		
 		planningMonitor_->getEnvironmentModel()->setVerbose(false);
 		ros::ServiceClient client = node_handle_.serviceClient<manipulation_srvs::IKService>(ARM_IK_NAME, true);
-		for (int t = 0 ; t < 20 ; ++t)
+		for (int t = 0 ; t < 2 ; ++t)
 		{
 		    robot_msgs::PoseStamped tpose = req.goal_constraints.pose_constraint[0].pose;
 		    if (t > 0)

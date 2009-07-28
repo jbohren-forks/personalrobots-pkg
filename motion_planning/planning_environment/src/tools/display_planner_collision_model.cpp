@@ -93,7 +93,7 @@ protected:
     void objectInMapUpdate(const mapping_msgs::ObjectInMapConstPtr &objectInMap)
     {
 	visualization_msgs::Marker mk;
-	mk.ns = nh_.getName() + "_" + objectInMap->id;
+	mk.ns = ros::this_node::getName() + "_" + objectInMap->id;
 	mk.id = 0;
 	mk.header = objectInMap->header;
 	
@@ -122,7 +122,7 @@ protected:
 	{
 	    const robot_msgs::Point32 &point = collisionMap->boxes[i].center;
 	    const robot_msgs::Point32 &extents = collisionMap->boxes[i].extents;
-	    sendPoint(i, nh_.getName(), point.x, point.y, point.z,
+	    sendPoint(i, ros::this_node::getName(), point.x, point.y, point.z,
 		      std::max(std::max(extents.x, extents.y), extents.z) * 0.867 + collisionSpaceMonitor_->getPointCloudPadd(),
 		      collisionMap->header);
 	}
@@ -136,7 +136,7 @@ protected:
 	for (unsigned int i = 0 ; i < link->attachedBodies.size() ; ++i)
         {
 	    visualization_msgs::Marker mk;
-	    mk.ns = nh_.getName() + "_attached_" + link->name;
+	    mk.ns = ros::this_node::getName() + "_attached_" + link->name;
 	    mk.id = i;
 	    mk.header = header;
 	    
