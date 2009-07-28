@@ -284,20 +284,20 @@ public:
         ROS_WARN("Gathering data took %f ms. Nominal is 10ms.", 1000 * (endtime - starttime));
       prevtime = starttime;
 
-      reading.acc.acc.ax = accel[0];
-      reading.acc.acc.ay = accel[1];
-      reading.acc.acc.az = accel[2];
+      reading.pose_with_rates.acceleration.linear.x = accel[0];
+      reading.pose_with_rates.acceleration.linear.y = accel[1];
+      reading.pose_with_rates.acceleration.linear.z = accel[2];
  
-      reading.vel.ang_vel.vx = angrate[0];
-      reading.vel.ang_vel.vy = angrate[1];
-      reading.vel.ang_vel.vz = angrate[2];
+      reading.pose_with_rates.velocity.angular.x = angrate[0];
+      reading.pose_with_rates.velocity.angular.y = angrate[1];
+      reading.pose_with_rates.velocity.angular.z = angrate[2];
       
       btTransform pose(btMatrix3x3(orientation[0], orientation[1], orientation[2],
                                    orientation[3], orientation[4], orientation[5],
                                    orientation[6], orientation[7], orientation[8]), 
                        btVector3(0,0,0));
 
-      tf::poseTFToMsg(pose, reading.pos);
+      tf::poseTFToMsg(pose, reading.pose_with_rates.pose);
       
       
       reading.header.stamp = ros::Time::now().fromNSec(time);
