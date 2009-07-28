@@ -1703,3 +1703,126 @@ void calcExactLocation_(vector<feature_t>& features,const vector<feature_t>& tra
 		reprojectionError = 1e38;
 	}
 }
+
+void generilizedHoughTransform(vector<feature_t>& hole_candidates, const vector<feature_t>& train_features, int* hist_size, float** ranges,vector<outlet_t>& holes, IplImage* ghtImage, IplImage* resImage)
+{
+	CvSparseMat* hist = buildHoughHist(hole_candidates,train_features,hist_size,ranges);
+	float** values = new float*[1];// = getMaxHistValues(hist,hist_size);
+	int count = 1;
+	int votes = 0;
+	votes = getMaxHistValues(hist,hist_size,ranges,values,count);
+#if defined(_VERBOSE)
+		printf("Votes: %d\n",votes);
+#endif
+	cvReleaseSparseMat(&hist);
+
+//// Second GHT
+//	x_size = test_image->width/11;
+//	y_size = test_image->height/11;
+//	int hist_size2[] = {x_size, y_size, angle1_size, x_scale_size, y_scale_size, angle2_size};
+//	hist = buildHoughHist(hole_candidates,train_features,hist_size2,ranges);
+//	float** values2 = new float*[1];// = getMaxHistValues(hist,hist_size);
+//	int count2 = 1;
+//	int votes2 = 0;
+//	votes2 = getMaxHistValues(hist,hist_size2,ranges,values2,count2);
+//#if defined(_VERBOSE)
+//		printf("Votes2: %d\n",votes2);
+//#endif
+//	cvReleaseSparseMat(&hist);
+//
+//	if (votes2 > votes)
+//	{
+//		for (int i=0;i<count;i++)
+//			delete[] values[i];
+//		delete[] values;
+//		values = new float*[count2];
+//		for (int i=0;i<count2;i++)
+//		{
+//			values[i] = new float[6];
+//			for (int j=0;j<6;j++)
+//			{
+//				values[i][j] = values2[i][j];
+//			}
+//		}
+//		count = count2;
+//		votes = votes2;
+//	}
+//	for (int i=0;i<count2;i++)
+//		delete[] values2[i];
+//	delete[] values2;
+//
+//// End
+    
+	vector<feature_t> hole_features;
+	vector<feature_t> hole_features_corrected;
+	vector<feature_t> res_features;
+  
+	float accuracy = sqrt((float)((train_features[1].center.x -train_features[0].center.x)*(train_features[1].center.x -train_features[0].center.x)+
+			(train_features[1].center.y -train_features[0].center.y)*(train_features[1].center.y -train_features[0].center.y)));
+	float error = 1e38;
+	int index = -1;
+	for (int j=0;j<count;j++)
+	{
+		float currError;
+		hole_features.clear();
+		calcOutletPosition(train_features, values[j],hole_features);
+if (ghtImage)
+{
+		for(int i = 0; i < (int)hole_features.size(); i++)
+		{
+			CvScalar pointColor = hole_features[i].part_id == 0 ? cvScalar(0,255,50) : cvScalar(255,0,50);	
+			cvLine(ghtImage, cvPoint(hole_features[i].center.x+7, hole_features[i].center.y), cvPoint(hole_features[i].center.x-7, hole_features[i].center.y),pointColor,2); 
+			cvLine(ghtImage, cvPoint(hole_features[i].center.x, hole_features[i].center.y+7), cvPoint(hole_features[i].center.x, hole_features[i].center.y-7),pointColor,2); 
+            
+		}
+}
+
+
+		//accuracy = 21;
+		calcExactLocation(hole_candidates,train_features,hole_features,hole_features_corrected,currError,accuracy);
+		//calcExactLocation_(hole_candidates,train_features,hole_features,hole_features_corrected,currError,image->width/x_size+1);
+		if (currError < error)
+		{
+			index = j;
+			error = currError;
+			res_features.clear();
+			for (int i =0; i< (int)hole_features_corrected.size(); i++)
+				res_features.push_back(hole_features_corrected[i]);
+		}
+        
+	}
+
+	   // int outlet_holes_count = 3;
+	if ((int)(res_features.size()) > 0)
+	{
+		holes.clear();
+		outlet_t outlet;
+
+
+
+		for (int i=0;i<(int)res_features.size()/3;i++)
+		{
+			outlet.hole1 = res_features[2*i].center;
+			outlet.hole2 = res_features[2*i+1].center;
+			outlet.ground_hole = res_features[2*(int)res_features.size()/3+i].center;
+			holes.push_back(outlet);
+		}
+
+if (resImage)
+{
+		for(int i = 0; i < (int)res_features.size(); i++)
+		{
+			
+			CvScalar pointColor = res_features[i].part_id == 0 ? cvScalar(0,255,50) : cvScalar(255,0,50);	
+			cvLine(resImage, cvPoint(res_features[i].center.x+7, res_features[i].center.y), cvPoint(res_features[i].center.x-7, res_features[i].center.y),pointColor,2); 
+			cvLine(resImage, cvPoint(res_features[i].center.x, res_features[i].center.y+7), cvPoint(res_features[i].center.x, res_features[i].center.y-7),pointColor,2); 
+		}
+}
+
+	}
+    
+	
+	for (int i=0;i<count;i++)
+		delete[] values[i];
+	delete[] values;
+}

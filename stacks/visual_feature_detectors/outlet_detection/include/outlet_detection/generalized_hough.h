@@ -5,8 +5,10 @@
 
 #include <cv.h>
 #include <highgui.h>
+#include <vector>
 #include "outlet_detection/features.h"
 #include "outlet_detection/affine_transform.h"
+#include "outlet_detection/outlet_model.h"
 
 // Builds 6-dimension histogram [center x, center y, rotation angle1, x scale, y scale, rotation angle 2]
 CvSparseMat* buildHoughHist(vector<feature_t>& input, const vector<feature_t>& train_features, int* hist_size, float** ranges);
@@ -60,5 +62,9 @@ void calcExactLocation4(vector<feature_t>& features, vector<feature_t>& outlet);
 //		   reprojectionError - reprojection error for affine transform
 void calcExactLocation(vector<feature_t>& features,const vector<feature_t>& train_features, vector<feature_t>& src_outlet, vector<feature_t>& dst_outlet, float& reprojectionError, int accuracy = 10);
 void calcExactLocation_(vector<feature_t>& features,const vector<feature_t>& train_features, vector<feature_t>& src_outlet, vector<feature_t>& dst_outlet, float& reprojectionError, int accuracy = 10);
+
+// Main function for GeneralizedHough transform
+// Output: holes
+void generilizedHoughTransform(vector<feature_t>& hole_candidates, const vector<feature_t>& train_features, int* hist_size, float** ranges, vector<outlet_t>& holes, IplImage* ghtImage = NULL, IplImage* resImage = NULL);
 
 #endif
