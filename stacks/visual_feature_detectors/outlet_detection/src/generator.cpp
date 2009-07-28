@@ -15,7 +15,7 @@ Created by: Alexey Latyshev
 
 const int MOUSE_ACCURACY = 3;
 const float ORANGE_CONTRAST = 1.3;
-const float ORANGE_CONTRAST = 1.5;
+const float WHITE_CONTRAST = 1.5;
 
 
 
@@ -500,7 +500,7 @@ int main(int argc,char** argv)
 	sprintf(filename,"%s/%s",pca_dir_path, pca_descriptors_filename);
 	fprintf(f,"pca descriptors: \"%s\"\n",filename);
 	fprintf(f,"patch width: %d\npatch height: %d\npose count: %d\n",patch_width,patch_height,pose_count);
-	fprintf(f,"outlet color: %s\nhole contrast: %f\n", color==1 ? "orange" : "white",color==1 ? ORANGE_CONTRACT : WHITE_CONTRAST);
+	fprintf(f,"outlet color: %s\nhole contrast: %f\n", color==1 ? "orange" : "white",color==1 ? ORANGE_CONTRAST : WHITE_CONTRAST);
 
 
 	fclose(f);
