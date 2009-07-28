@@ -34,6 +34,7 @@
     <remap from="cloud_in" to="tilt_scan_cloud_without_known_objects" />
     <remap from="cloud_out" to="tilt_scan_cloud_annotated" />
     <param name="annotate" type="string" value="on_self" />
+    <param name="sensor_frame" type="string" value="laser_tilt_mount_link" />
   </node>
   
   <!-- assemble pointcloud into a full world view -->
