@@ -260,7 +260,7 @@
     <map name="object_1_collision" flag="gazebo">
       <elem key="selfCollide">true</elem>
       <elem key="turnGravityOff">false</elem>
-      <elem key="dampingFactor">0.05</elem>
+      <elem key="dampingFactor">0.01</elem>
     </map>
   </link>
   <link name="object_1_base_link">
@@ -298,7 +298,7 @@
     <map name="object_1_base_collision" flag="gazebo">
       <elem key="selfCollide">true</elem>
       <elem key="turnGravityOff">false</elem>
-      <elem key="dampingFactor">0.1</elem>
+      <elem key="dampingFactor">0.01</elem>
     </map>
   </link>
 </robot>
