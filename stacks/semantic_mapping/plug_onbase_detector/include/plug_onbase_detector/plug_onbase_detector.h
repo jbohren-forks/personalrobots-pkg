@@ -99,11 +99,11 @@ class PlugOnBaseDetector
   public:
 
     // ROS messages
-    PointCloud cloud_, cloud_tr_;
-    PointCloud cloud_annotated_;
+    sensor_msgs::PointCloud cloud_, cloud_tr_;
+    sensor_msgs::PointCloud cloud_annotated_;
     plugs_msgs::PlugStow p_stow_;
 
-    PointStamped viewpoint_cloud_;
+    geometry_msgs::PointStamped viewpoint_cloud_;
     tf::TransformListener tf_;
 
     int publish_debug_;
@@ -151,7 +151,7 @@ class PlugOnBaseDetector
       // We want to publish an annotated point cloud for debugging purposes
       if (publish_debug_)
       {
-        node_.advertise<PointCloud> ("~plug_stow_cloud_debug", 1);
+        node_.advertise<sensor_msgs::PointCloud> ("~plug_stow_cloud_debug", 1);
 
         cloud_annotated_.chan.resize (1);
         cloud_annotated_.chan[0].name = "rgb";
@@ -260,7 +260,7 @@ class PlugOnBaseDetector
       {
         // Assume the largest one is the one we're interested in for now
         // NOTE: This is not the final version of the code ! We're still doing tests !
-        Point32 minP, maxP;
+        geometry_msgs::Point32 minP, maxP;
         cloud_geometry::statistics::getMinMax (cloud_, object_clusters[0], minP, maxP);
         p_stow_.stowed = true;
         p_stow_.plug_centroid.x =  ( maxP.x + minP.x ) / 2.0;
@@ -322,7 +322,7 @@ class PlugOnBaseDetector
       * \param min_pts_per_cluster minimum number of points that a cluster may contain (default = 1)
       */
     void
-      findClusters (const PointCloud &points, const vector<int> &indices, double tolerance, vector<vector<int> > &clusters,
+      findClusters (const sensor_msgs::PointCloud &points, const vector<int> &indices, double tolerance, vector<vector<int> > &clusters,
                     unsigned int min_pts_per_cluster = 1)
     {
       // Create a tree for these points
@@ -392,7 +392,7 @@ class PlugOnBaseDetector
       * \param min_pts the minimum number of points allowed as inliers for a plane model
       */
     int
-      fitSACPlane (PointCloud &points, vector<int> indices, vector<int> &inliers, vector<double> &coeff,
+      fitSACPlane (sensor_msgs::PointCloud &points, vector<int> indices, vector<int> &inliers, vector<double> &coeff,
                    const geometry_msgs::PointStamped &viewpoint_cloud, double dist_thresh, int min_pts)
     {
       if ((int)indices.size () < min_pts)
@@ -445,10 +445,10 @@ class PlugOnBaseDetector
       * \param tf a pointer to a TransformListener object
       */
     void
-      getCloudViewPoint (string cloud_frame, PointStamped &viewpoint_cloud, tf::TransformListener *tf)
+    getCloudViewPoint (string cloud_frame, geometry_msgs::PointStamped &viewpoint_cloud, tf::TransformListener *tf)
     {
       // Figure out the viewpoint value in the point cloud frame
-      PointStamped viewpoint_laser;
+      geometry_msgs::PointStamped viewpoint_laser;
       viewpoint_laser.header.frame_id = "laser_tilt_mount_link";
       // Set the viewpoint in the laser coordinate system to 0, 0, 0
       viewpoint_laser.point.x = viewpoint_laser.point.y = viewpoint_laser.point.z = 0.0;
