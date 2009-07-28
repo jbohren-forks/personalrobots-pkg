@@ -1,1 +1,1 @@
-robot_msgs/Pose[] particles
+geometry_msgs/Pose[] particles
