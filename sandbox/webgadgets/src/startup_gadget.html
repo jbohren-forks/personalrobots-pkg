@@ -1,0 +1,53 @@
+<html>
+  <head>
+    <link rel='stylesheet' type='text/css' href='style.css'/>
+    <script type="text/javascript" src="3rdparty/prototype.js"></script>
+    <script type="text/javascript" src="ros.js"></script>
+    <script type="text/javascript" src="startup_gadget.js"></script>
+    <script type="text/javascript">
+      function start()
+      {
+        if (gadget == null)
+        {
+          gadget = new ROSStartupGadget(document.body);
+        }
+        else
+        {
+          gadget.stop();
+          gadget.initialize(document.body);
+        }
+
+        //gadget.start();
+
+	button = document.getElementById('startbutton');
+        button.value = 'Stop';
+      }
+
+      function stop()
+      {
+        if (gadget)
+        {
+          //gadget.stop();
+	  document.getElementById('startbutton').value = "Start";
+        }
+      }
+
+      function init()
+      {
+      }
+
+      window.onload = init;
+    </script>
+  </head>
+
+  <body class='gadget'>
+    <div id='header'>
+      <span>
+        <b style='float:left;' id='mytitle'>Startup</b>
+        <input type='button' id='startbutton' value='Start' style='float:right;margin-top:2px;' onclick='javascript:start();'>
+        </select>
+      </span>
+    </div>
+    <div id='content'></div>
+  </body>
+</html>

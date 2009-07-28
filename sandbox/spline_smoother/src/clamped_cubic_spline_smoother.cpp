@@ -48,31 +48,25 @@ ClampedCubicSplineSmoother::~ClampedCubicSplineSmoother()
 {
 }
 
-bool ClampedCubicSplineSmoother::smooth(const std::vector<double>& positions,
-    std::vector<double>& velocities,
-    std::vector<double>& accelerations,
-    const std::vector<double>& times) const
+bool ClampedCubicSplineSmoother::smooth(const WaypointTrajectory& trajectory_in, WaypointTrajectory& trajectory_out) const
 {
-  int length = positions.size();
+  int length = trajectory_in.waypoints.size();
 
   if (length<3)
     return true;
 
-  velocities.resize(length);
-  accelerations.resize(length);
+  trajectory_out = trajectory_in;
 
   if (length <= MAX_TRIDIAGONAL_SOLVER_ELEMENTS)
   {
-    smoothSegment(positions, velocities, accelerations, times);
+    smoothSegment(trajectory_out.waypoints);
   }
   else
   {
-    num_diff_spline_smoother_.smooth(positions, velocities, accelerations, times);
+    if (!num_diff_spline_smoother_.smooth(trajectory_in, trajectory_out))
+      return false;
 
-    std::vector<double> p(MAX_TRIDIAGONAL_SOLVER_ELEMENTS);
-    std::vector<double> v(MAX_TRIDIAGONAL_SOLVER_ELEMENTS);
-    std::vector<double> a(MAX_TRIDIAGONAL_SOLVER_ELEMENTS);
-    std::vector<double> t(MAX_TRIDIAGONAL_SOLVER_ELEMENTS);
+    std::vector<Waypoint> waypoints(MAX_TRIDIAGONAL_SOLVER_ELEMENTS);
 
     // smooth smaller segments of it:
     for (int start=0; start<=length - MAX_TRIDIAGONAL_SOLVER_ELEMENTS; start++)
@@ -80,32 +74,27 @@ bool ClampedCubicSplineSmoother::smooth(const std::vector<double>& positions,
       // fill the vectors up using the main vectors:
       for (int i=0; i<MAX_TRIDIAGONAL_SOLVER_ELEMENTS; i++)
       {
-        p[i] = positions[start+i];
-        v[i] = velocities[start+i];
-        a[i] = accelerations[start+i];
-        t[i] = times[start+i];
+        waypoints[i] = trajectory_out.waypoints[start+i];
       }
       // solve it:
-      smoothSegment(p, v, a, t);
+      if (!smoothSegment(waypoints))
+        return false;
       // copy the first filled in velocity back:
-      velocities[start+1] = v[1];
+      trajectory_out.waypoints[start+1].velocity = waypoints[1].velocity;
     }
   }
+
   return true;
 }
 
-bool ClampedCubicSplineSmoother::smoothSegment(const std::vector<double>& positions,
-    std::vector<double>& velocities,
-    std::vector<double>& accelerations,
-    const std::vector<double>& times) const
+bool ClampedCubicSplineSmoother::smoothSegment(std::vector<Waypoint>& wpts) const
 {
-  std::vector<double> intervals;
-  int length = positions.size();
-  velocities.resize(length);
-  accelerations.resize(length);
+  int length = wpts.size();
+  std::vector<double> intervals(length-1);
 
   // generate time intervals:
-  differentiate(times, intervals);
+  for (int i=0; i<length-1; i++)
+    intervals[i] = wpts[i+1].time - wpts[i].time;
 
   // fill up a tridiagonal matrix:
   std::vector<double> a(length-2);
@@ -123,15 +112,15 @@ bool ClampedCubicSplineSmoother::smoothSegment(const std::vector<double>& positi
       a[i+1] = intervals[i+2];
     b[i] = 2.0*(intervals[i] + intervals[i+1]);
     d[i] = (3.0/(intervals[i]*intervals[i+1]))*
-        ((intervals[i]*intervals[i])*(positions[i+2]-positions[i+1]) +
-            (intervals[i+1]*intervals[i+1])*(positions[i+1]-positions[i]));
+        ((intervals[i]*intervals[i])*(wpts[i+2].position-wpts[i+1].position) +
+            (intervals[i+1]*intervals[i+1])*(wpts[i+1].position-wpts[i].position));
   }
-  d[0] -= velocities[0]*intervals[1];
-  d[length-3] -= velocities[length-1]*intervals[length-3];
+  d[0] -= wpts[0].velocity*intervals[1];
+  d[length-3] -= wpts[length-1].velocity*intervals[length-3];
 
   tridiagonalSolve(a, b, c, d, x);
   for (int i=0; i<length-2; i++)
-    velocities[i+1] = x[i];
+    wpts[i+1].velocity = x[i];
 
   return true;
 }

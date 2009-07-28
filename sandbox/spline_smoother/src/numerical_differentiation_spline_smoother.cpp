@@ -47,29 +47,33 @@ NumericalDifferentiationSplineSmoother::~NumericalDifferentiationSplineSmoother(
 {
 }
 
-bool NumericalDifferentiationSplineSmoother::smooth(const std::vector<double>& positions,
-    std::vector<double>& velocities,
-    std::vector<double>& accelerations,
-    const std::vector<double>& times) const
+bool NumericalDifferentiationSplineSmoother::smooth(const WaypointTrajectory& trajectory_in, WaypointTrajectory& trajectory_out) const
 {
-  // keep the first and last velocities intact
+  bool success = true;
+  int size = trajectory_in.waypoints.size();
+  trajectory_out = trajectory_in;
 
-  int size = positions.size();
-  velocities.resize(size);
-  accelerations.resize(size);
+  // keep the first and last velocities intact
 
   for (int i=1; i<size-1; i++)
   {
-    velocities[i] = (0.5*(positions[i+1] - positions[i]))/(times[i+1] - times[i]);
-    velocities[i] += (0.5*(positions[i] - positions[i-1]))/(times[i] - times[i-1]);
+    double dt1 = trajectory_in.waypoints[i].time - trajectory_in.waypoints[i-1].time;
+    double dt2 = trajectory_in.waypoints[i+1].time - trajectory_in.waypoints[i].time;
+    double dx1 = trajectory_in.waypoints[i].position - trajectory_in.waypoints[i-1].position;
+    double dx2 = trajectory_in.waypoints[i+1].position - trajectory_in.waypoints[i].position;
+    double dt = dt1+dt2;
+
+    double v1 = dx1/dt1;
+    double v2 = dx2/dt2;
+
+    trajectory_out.waypoints[i].velocity = v1*(dt1/dt) + v2*(dt2/dt);
   }
 
   // all accelerations are 0 for now:
   for (int i=0; i<size; i++)
-    accelerations[i] = 0.0;
+    trajectory_out.waypoints[i].acceleration = 0.0;
 
-  return true;
+  return success;
 }
-
 
 }

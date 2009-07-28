@@ -38,12 +38,15 @@
 #define SPLINE_SMOOTHER_H_
 
 #include <vector>
+#include <spline_smoother/WaypointTrajectory.h>
 
 namespace spline_smoother
 {
 
 /**
- * Abstract base class for spline smoothing
+ * \brief Abstract base class for spline smoothing.
+ *
+ * To implement a smoother, just override the virtual "smooth" method
  */
 class SplineSmoother
 {
@@ -56,10 +59,7 @@ public:
    *
    * \return true if successful, false if not
    */
-  virtual bool smooth(const std::vector<double>& positions,
-      std::vector<double>& velocities,
-      std::vector<double>& accelerations,
-      const std::vector<double>& times) const = 0;
+  virtual bool smooth(const WaypointTrajectory& trajectory_in, WaypointTrajectory& trajectory_out) const = 0;
 };
 
 }

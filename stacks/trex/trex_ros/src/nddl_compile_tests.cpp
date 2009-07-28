@@ -32,7 +32,7 @@ TEST(executive_trex, compile_nddl_files) {
 
   for (unsigned int i = 0; i < files.size(); i++) {
     ROS_INFO("Run %s", files[i].c_str());
-    unsigned int ret = system(std::string("rosrun trex nddl_tester " + files[i]).c_str());
+    unsigned int ret = system(std::string("rosrun trex nddl_tester " + files[i] + " 2> " + files[i] + ".testresult.txt").c_str());
     ROS_INFO("Finished %s", files[i].c_str()); 
     ASSERT_EQ(0, ret);
   }

@@ -46,23 +46,24 @@ TEST(TestClampedCubicSplineSmoother, TestZeroPositionsSmall)
 {
   int length = ClampedCubicSplineSmoother::MAX_TRIDIAGONAL_SOLVER_ELEMENTS - 2;
 
-  std::vector<double> positions(length);
-  std::vector<double> times(length);
-  std::vector<double> velocities(length);
-  std::vector<double> accelerations(length);
+  WaypointTrajectory wpt;
+  WaypointTrajectory wpt_out;
+  wpt.waypoints.resize(length);
   for (int i=0; i<length; i++)
   {
-    positions[i] = 0.0;
-    times[i] = i;
+    wpt.waypoints[i].position = 0.0;
+    wpt.waypoints[i].velocity = 0.0;
+    wpt.waypoints[i].acceleration = 0.0;
+    wpt.waypoints[i].time = i;
   }
 
   ClampedCubicSplineSmoother ccss;
-  ccss.smooth(positions, velocities, accelerations, times);
+  ccss.smooth(wpt, wpt_out);
 
   // verify that velocities are 0:
   for (int i=0; i<length; i++)
   {
-    EXPECT_NEAR(velocities[i], 0.0, 1e-8);
+    EXPECT_NEAR(wpt_out.waypoints[i].velocity, 0.0, 1e-8);
   }
 }
 
@@ -70,24 +71,24 @@ TEST(TestClampedCubicSplineSmoother, TestZeroPositionsLarge)
 {
   int length = ClampedCubicSplineSmoother::MAX_TRIDIAGONAL_SOLVER_ELEMENTS*10;
 
-  std::vector<double> positions(length);
-  std::vector<double> times(length);
-  std::vector<double> velocities(length);
-  std::vector<double> accelerations(length);
+  WaypointTrajectory wpt;
+  WaypointTrajectory wpt_out;
+  wpt.waypoints.resize(length);
   for (int i=0; i<length; i++)
   {
-    positions[i] = 0.0;
-    times[i] = i;
+    wpt.waypoints[i].position = 0.0;
+    wpt.waypoints[i].velocity = 0.0;
+    wpt.waypoints[i].acceleration = 0.0;
+    wpt.waypoints[i].time = i;
   }
 
   ClampedCubicSplineSmoother ccss;
-  ccss.smooth(positions, velocities, accelerations, times);
+  ccss.smooth(wpt, wpt_out);
 
   // verify that velocities are 0:
   for (int i=0; i<length; i++)
   {
-    //printf("%d = %f\n", i, velocities[i]);
-    EXPECT_NEAR(velocities[i], 0.0, 1e-8);
+    EXPECT_NEAR(wpt_out.waypoints[i].velocity, 0.0, 1e-8);
   }
 }
 
@@ -95,24 +96,23 @@ TEST(TestClampedCubicSplineSmoother, TestStraightLineLarge)
 {
   int length = ClampedCubicSplineSmoother::MAX_TRIDIAGONAL_SOLVER_ELEMENTS*10;
 
-  std::vector<double> positions(length);
-  std::vector<double> times(length);
-  std::vector<double> velocities(length);
-  std::vector<double> accelerations(length);
+  WaypointTrajectory wpt;
+  WaypointTrajectory wpt_out;
+  wpt.waypoints.resize(length);
   for (int i=0; i<length; i++)
   {
-    positions[i] = i;
-    times[i] = i;
-    velocities[i] = 1.0;
+    wpt.waypoints[i].position = i;
+    wpt.waypoints[i].velocity = 1.0;
+    wpt.waypoints[i].acceleration = 0.0;
+    wpt.waypoints[i].time = i;
   }
 
   ClampedCubicSplineSmoother ccss;
-  ccss.smooth(positions, velocities, accelerations, times);
+  ccss.smooth(wpt, wpt_out);
 
   // verify that velocities are still 1:
   for (int i=0; i<length; i++)
   {
-    //printf("%d = %f\n", i, velocities[i]);
-    EXPECT_NEAR(velocities[i], 1.0, 1e-8);
+    EXPECT_NEAR(wpt.waypoints[i].velocity, 1.0, 1e-8);
   }
 }

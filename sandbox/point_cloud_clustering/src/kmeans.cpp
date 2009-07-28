@@ -32,7 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include <point_cloud_clustering/kmeans_clustering.h>
+#include <point_cloud_clustering/kmeans.h>
 
 // --------------------------------------------------------------
 /* See function definition */
@@ -90,18 +90,16 @@ int point_cloud_clustering::KMeans::cluster(const robot_msgs::PointCloud& pt_clo
   // Create matrix for clustering
   // create n-by-d matrix where n are the number of samples and d is the cluster dimension
   // and save the min and max extremas for each dimension
-  float* feature_matrix = static_cast<float*> (malloc(nbr_cluster_samples * cluster_feature_dim
-      * sizeof(float)));
-  set<unsigned int>::const_iterator iter_indices_to_cluster;
+  float feature_matrix[nbr_cluster_samples * cluster_feature_dim];
   unsigned int curr_sample_idx = 0;
-  for (iter_indices_to_cluster = indices_to_cluster.begin(); iter_indices_to_cluster
+  for (set<unsigned int>::const_iterator iter_indices_to_cluster = indices_to_cluster.begin() ; iter_indices_to_cluster
       != indices_to_cluster.end() ; iter_indices_to_cluster++)
   {
+    // Verify the index to cluster is contained in the point cloud
     unsigned int curr_idx = *iter_indices_to_cluster;
     if (curr_idx >= nbr_total_pts)
     {
       ROS_ERROR("Invalid index to cluster: %u", curr_idx);
-      free(feature_matrix);
       return -1;
     }
 
@@ -129,9 +127,10 @@ int point_cloud_clustering::KMeans::cluster(const robot_msgs::PointCloud& pt_clo
   // Associate each point with its cluster label
   created_clusters.clear();
   curr_sample_idx = 0;
-  for (iter_indices_to_cluster = indices_to_cluster.begin(); iter_indices_to_cluster
+  for (set<unsigned int>::const_iterator iter_indices_to_cluster = indices_to_cluster.begin() ; iter_indices_to_cluster
       != indices_to_cluster.end() ; iter_indices_to_cluster++)
   {
+    // retrieve the current point index and its cluster label
     unsigned int curr_pt_cloud_idx = *iter_indices_to_cluster;
     unsigned int curr_cluster_label = static_cast<unsigned int> (cluster_labels->data.i[curr_sample_idx]);
 
@@ -141,7 +140,7 @@ int point_cloud_clustering::KMeans::cluster(const robot_msgs::PointCloud& pt_clo
       created_clusters[curr_cluster_label] = vector<int> ();
     }
 
-    // Associate point index with the cluster
+    // Associate point index with the cluster label
     created_clusters[curr_cluster_label].push_back(static_cast<int> (curr_pt_cloud_idx));
 
     curr_sample_idx++;
@@ -150,7 +149,5 @@ int point_cloud_clustering::KMeans::cluster(const robot_msgs::PointCloud& pt_clo
   // ----------------------------------------------------------
   // Cleanup
   cvReleaseMat(&cluster_labels);
-  free(feature_matrix);
-
   return 0;
 }

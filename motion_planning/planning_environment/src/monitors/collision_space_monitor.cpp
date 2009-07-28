@@ -53,6 +53,7 @@ namespace planning_environment
 
 void planning_environment::CollisionSpaceMonitor::setupCSM(void)
 {
+    envMonitorStarted_ = false;
     onBeforeMapUpdate_ = NULL;
     onAfterMapUpdate_  = NULL;
     onObjectInMapUpdate_ = NULL;
@@ -64,29 +65,15 @@ void planning_environment::CollisionSpaceMonitor::setupCSM(void)
     haveMap_ = false;
 
     collisionSpace_ = cm_->getODECollisionModel().get();
-    
-    // a list of static planes bounding the environment
-    std::string planes;
-    nh_.param<std::string>("~bounding_planes", planes, std::string());
     nh_.param<double>("~pointcloud_padd", pointcloud_padd_, 0.01);
+    
+    startEnvironmentMonitor();
+}
 
-    std::stringstream ss(planes);
-    std::vector<double> planeValues;
-    if (!planes.empty())
-	while (ss.good() && !ss.eof())
-	{
-	    double value;
-	    ss >> value;
-	    planeValues.push_back(value);
-	}
-    if (planeValues.size() % 4 != 0)
-	ROS_WARN("~bounding_planes must be a list of 4-tuples (a b c d) that define planes ax+by+cz+d=0");
-    else
-	for (unsigned int i = 0 ; i < planeValues.size() / 4 ; ++i)
-	{
-	    collisionSpace_->addPlane("bounds", planeValues[i * 4], planeValues[i * 4 + 1], planeValues[i * 4 + 2], planeValues[i * 4 + 3]);
-	    ROS_INFO("Added static plane %fx + %fy + %fz + %f = 0", planeValues[i * 4], planeValues[i * 4 + 1], planeValues[i * 4 + 2], planeValues[i * 4 + 3]);
-	}
+void planning_environment::CollisionSpaceMonitor::startEnvironmentMonitor(void)
+{
+    if (envMonitorStarted_)
+	return;
     
     collisionMapNotifier_ = new tf::MessageNotifier<mapping_msgs::CollisionMap>(*tf_, boost::bind(&CollisionSpaceMonitor::collisionMapCallback, this, _1), "collision_map", getFrameId(), 1);
     ROS_DEBUG("Listening to collision_map using message notifier with target frame %s", collisionMapNotifier_->getTargetFramesString().c_str());
@@ -96,6 +83,27 @@ void planning_environment::CollisionSpaceMonitor::setupCSM(void)
 
     objectInMapNotifier_ = new tf::MessageNotifier<mapping_msgs::ObjectInMap>(*tf_, boost::bind(&CollisionSpaceMonitor::objectInMapCallback, this, _1), "object_in_map", getFrameId(), 1024);
     ROS_DEBUG("Listening to object_in_map using message notifier with target frame %s", collisionMapUpdateNotifier_->getTargetFramesString().c_str());
+
+    envMonitorStarted_ = true;
+}
+
+void planning_environment::CollisionSpaceMonitor::stopEnvironmentMonitor(void)
+{
+    if (!envMonitorStarted_)
+	return;
+    
+    delete collisionMapUpdateNotifier_;
+    collisionMapUpdateNotifier_ = NULL;
+    
+    delete collisionMapNotifier_;
+    collisionMapNotifier_ = NULL;
+    
+    delete objectInMapNotifier_;
+    objectInMapNotifier_ = NULL;
+
+    ROS_DEBUG("Environment state is no longer being monitored");
+
+    envMonitorStarted_ = false;
 }
 
 bool planning_environment::CollisionSpaceMonitor::isMapUpdated(double sec) const

@@ -1,0 +1,64 @@
+#!/usr/bin/env python
+
+import roslib; roslib.load_manifest('trex_ros')
+import rospy
+
+from ros import roslaunch
+
+import sys, os
+import time, threading
+
+def set_params():
+  while True:
+    time.sleep(0.1)
+    try:
+      # Try to initialize ros node
+      rospy.init_node('trex_launcher',anonymous=True,disable_signals=True)
+      print("Trying to connect to master.")
+      break
+    except:
+      print("Could not connect to master.")
+
+  # Set the TREX start directory parameter
+  rospy.set_param('trex/start_dir',start_dir)
+
+# Read the first argument (the search path start) and the second argument (the
+# launchfile basename). 
+argv = sys.argv
+
+# Check arguments
+if(len(argv) < 3):
+  print("usage: launch start_dir launch_file [roslaunch args]")
+  exit(-1)
+
+# Process arguments
+start_dir = argv[1]
+launch_base = os.path.splitext(argv[2])[0] + ".launch"
+roslaunch_args = argv[3:]
+
+# Generate target start path
+cwd = os.getcwd()
+start_dir = os.path.join(cwd,start_dir)
+
+# Traverse up the inheritance directory strcuture until the launchfile
+# "basename.launch" is found.
+launch_dir = start_dir
+
+while True:
+  # Look for the launchfile in the current start_dir
+  launch_file = os.path.join(launch_dir,launch_base)
+  if(os.path.isfile(launch_file)):
+    roslaunch_args.append(launch_file)
+    break
+    
+  # Pop off the tail directory for the next level search
+  (launch_dir, tail) = os.path.split(launch_dir)
+  if tail == '': break
+
+# Create a thread to set parameters once roslaunch brings up a master
+param_setter = threading.Thread(target=set_params)
+param_setter.start()
+
+# Call roslaunch main with the appended launchfile
+roslaunch_args.insert(0,'roslaunch')
+roslaunch.main(roslaunch_args)

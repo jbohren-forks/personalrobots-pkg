@@ -1,13 +1,13 @@
 <package>
-  <description brief="test_arm_vision_callibration">
+  <description brief="test_arm_vision_calibration">
 
-     test_arm_vision_callibration
+     test_arm_vision_calibration
 
   </description>
   <author>Ioan Sucan</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
-  <url>http://pr.willowgarage.com/wiki/test_arm_vision_callibration</url>
+  <url>http://pr.willowgarage.com/wiki/test_arm_vision_calibration</url>
 
   <depend package="roscpp"/>
   <depend package="tf"/>

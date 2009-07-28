@@ -32,7 +32,7 @@ int main(int argc, char ** argv)
 	while (n.ok())
 	{
 		std::stringstream ss;
-		ss << "Hello there! This is message [" << count << "]";
+		ss << "Hello there! This is message [" << count << "] from "<<nodename<<" on "<<topic;
 		std_msgs::String msg;
 		msg.data = ss.str();
 		chatter_pub.publish(msg);

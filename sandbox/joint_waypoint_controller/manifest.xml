@@ -1,0 +1,18 @@
+<package>
+  <description brief="joint_waypoint_controller">
+
+This "controller" is a node that accepts a set of position waypoints per joint,
+smooths them using a set of filters that fill in velocities and accelerations
+for cubic/quintic splines, and then forwards these spline trajectories to the
+real controller.
+
+  </description>
+  <author>Mrinal Kalakrishnan / kalakris@willowgarage.com </author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/joint_waypoint_controller</url>
+
+	<depend package="spline_smoother" />
+
+</package>
+

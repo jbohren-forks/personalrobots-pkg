@@ -79,6 +79,7 @@ int pr2Configure( IpCamList *camInfo, const char *ipAddress, unsigned wait_us);
 int pr2StartVid( const IpCamList *camInfo, const uint8_t mac[6], const char *ipAddress, unsigned short port );
 int pr2StopVid( const IpCamList *camInfo );
 int pr2Reset( IpCamList *camInfo );
+int pr2ReconfigureFPGA( IpCamList *camInfo );
 int pr2GetTimer( const IpCamList *camInfo, uint64_t *time_us );
 int pr2FlashRead( const IpCamList *camInfo, uint32_t address, uint8_t *pageDataOut );
 int pr2FlashWrite( const IpCamList *camInfo, uint32_t address, const uint8_t *pageDataIn );

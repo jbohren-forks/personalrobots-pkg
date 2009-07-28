@@ -12,6 +12,9 @@ based criteria.
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/spline_smoother</url>
 
+  <depend package="roscpp" />
+  <depend package="filters" />
+
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lspline_smoother"/>
   </export>

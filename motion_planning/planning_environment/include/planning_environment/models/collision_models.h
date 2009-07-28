@@ -96,11 +96,13 @@ namespace planning_environment
 	    return bullet_collision_model_;
 	}
 
+	/** \brief Get the scaling to be used for the robot parts when inserted in the collision space */
 	double getScale(void)
 	{
 	    return scale_;
 	}
 	
+	/** \brief Get the padding to be used for the robot parts when inserted in the collision space */
 	double getPadding(void)
 	{
 	    return padd_;
@@ -117,6 +119,7 @@ namespace planning_environment
 
 	double                                               scale_;
 	double                                               padd_;
+	std::vector<double>                                  boundingPlanes_;
     };
     
 	
