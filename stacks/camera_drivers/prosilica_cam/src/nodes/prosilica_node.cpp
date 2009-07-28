@@ -639,6 +639,9 @@ private:
         model_.withRoi(frame->RegionX, frame->RegionY, frame->Width, frame->Height);
       roi_model.undistort(raw, rect);
       roi_model.fillCamInfo(cam_info);
+      // @todo: trackers expect CamInfo to contain full resolution dimensions, but this feels wrong
+      cam_info.width = model_.width();
+      cam_info.height = model_.height();
     }
 
     return true;
