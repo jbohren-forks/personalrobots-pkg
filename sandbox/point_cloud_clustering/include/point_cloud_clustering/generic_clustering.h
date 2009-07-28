@@ -44,15 +44,13 @@
 
 #include <point_cloud_mapping/kdtree/kdtree.h>
 
-using namespace std;
-
 namespace point_cloud_clustering
 {
   class GenericClustering
   {
     public:
-      static int computeClusterCentroids(const robot_msgs::PointCloud& pt_cloud, const map<unsigned int,
-          vector<int> >& clusters, map<unsigned int, vector<float> >& cluster_centroids);
+      static int computeClusterCentroids(const robot_msgs::PointCloud& pt_cloud, const std::map<unsigned int,
+          std::vector<int> >& clusters, std::map<unsigned int, std::vector<float> >& cluster_centroids);
 
       GenericClustering();
 
@@ -65,10 +63,16 @@ namespace point_cloud_clustering
 
       virtual int cluster(const robot_msgs::PointCloud& pt_cloud,
                           cloud_kdtree::KdTree& pt_cloud_kdtree,
-                          const set<unsigned int>& indices_to_cluster,
-                          map<unsigned int, vector<int> >& created_clusters) = 0;
+                          const std::set<unsigned int>& indices_to_cluster,
+                          std::map<unsigned int, std::vector<int> >& created_clusters) = 0;
 
     protected:
+      unsigned int findRadiusNeighbors(cloud_kdtree::KdTree& pt_cloud_kdtree,
+                                       unsigned int index,
+                                       double radius,
+                                       const std::set<unsigned int>& indices_to_cluster,
+                                       std::list<unsigned int>& neighbor_indices);
+
       bool parameters_defined_;
       unsigned int starting_label_;
   };

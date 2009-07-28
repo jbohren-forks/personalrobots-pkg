@@ -34,6 +34,8 @@
 
 #include <point_cloud_clustering/generic_clustering.h>
 
+using namespace std;
+
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
@@ -70,7 +72,7 @@ int point_cloud_clustering::GenericClustering::computeClusterCentroids(const rob
     }
 
     // normalize by number of points
-    curr_nbr_pts = std::max(curr_nbr_pts, static_cast<unsigned int>(1));
+    curr_nbr_pts = std::max(curr_nbr_pts, static_cast<unsigned int> (1));
     for (unsigned int i = 0 ; i < 3 ; i++)
     {
       curr_centroid[i] /= static_cast<float> (curr_nbr_pts);
@@ -98,4 +100,31 @@ point_cloud_clustering::GenericClustering::GenericClustering()
 // --------------------------------------------------------------
 point_cloud_clustering::GenericClustering::~GenericClustering()
 {
+}
+
+// --------------------------------------------------------------
+/* See function definition */
+// --------------------------------------------------------------
+unsigned int point_cloud_clustering::GenericClustering::findRadiusNeighbors(cloud_kdtree::KdTree& pt_cloud_kdtree,
+                                                                            unsigned int index,
+                                                                            double radius,
+                                                                            const std::set<unsigned int>& indices_to_cluster,
+                                                                            std::list<unsigned int>& neighbor_indices)
+{
+  vector<int> k_indices;
+  vector<float> k_distances;
+  pt_cloud_kdtree.radiusSearch(static_cast<int>(index), radius, k_indices, k_distances);
+
+  unsigned int nbr_k_neighbors = k_indices.size();
+  unsigned int nbr_valid_neighbors = 0;
+  for (unsigned int i = 0 ; i < nbr_k_neighbors ; i++)
+  {
+    unsigned int neighbor_idx = static_cast<unsigned int> (k_indices[i]);
+    if (indices_to_cluster.count(neighbor_idx) != 0)
+    {
+      neighbor_indices.push_back(neighbor_idx);
+      nbr_valid_neighbors++;
+    }
+  }
+  return nbr_valid_neighbors;
 }
