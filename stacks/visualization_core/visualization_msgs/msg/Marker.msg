@@ -17,10 +17,10 @@ string ns                            # Namespace to place this object in... used
 int32 id 		                         # object ID useful in conjunction with the namespace for manipulating and deleting the object later
 int32 type 		                       # Type of object
 int32 action 	                       # 0 add/modify an object, 1 (deprecated), 2 deletes an object
-robot_msgs/Pose pose                 # Pose of the object
-robot_msgs/Vector3 scale             # Scale of the object 1,1,1 means default (usually 1 meter square)
+geometry_msgs/Pose pose                 # Pose of the object
+geometry_msgs/Vector3 scale             # Scale of the object 1,1,1 means default (usually 1 meter square)
 std_msgs/ColorRGBA color             # Color [0.0-1.0]
 duration lifetime                    # How long the object should last before being automatically deleted.  0 means forever
 
 #Only used if the type specified has some use for them (eg. LINE_STRIP)
-robot_msgs/Point[] points
+geometry_msgs/Point[] points
