@@ -184,7 +184,7 @@ void PointCloudSelectionHandler::createProperties(const Picked& obj, PropertyMan
 
       for (int channel = 0; channel < (int)message->chan.size(); ++channel)
       {
-        robot_msgs::ChannelFloat32& c = message->chan[channel];
+        sensor_msgs::ChannelFloat32& c = message->chan[channel];
         const std::string& name = c.name;
 
         std::stringstream ss;
@@ -607,13 +607,13 @@ void PointCloudBase::update(float wall_dt, float ros_dt)
 
       typedef std::set<int32_t> S_int32;
       S_int32 valid_chans;
-      typedef std::vector<robot_msgs::ChannelFloat32> V_Chan;
+      typedef std::vector<sensor_msgs::ChannelFloat32> V_Chan;
       V_Chan::iterator chan_it = cloud->chan.begin();
       V_Chan::iterator chan_end = cloud->chan.end();
       uint32_t index = 0;
       for ( ; chan_it != chan_end; ++chan_it, ++index )
       {
-        robot_msgs::ChannelFloat32& chan = *chan_it;
+        sensor_msgs::ChannelFloat32& chan = *chan_it;
         if (chan.name == "intensity" || chan.name == "intensities")
         {
           valid_chans.insert(Intensity);
@@ -742,7 +742,7 @@ void PointCloudBase::transformCloud(const CloudInfoPtr& info, V_Point& points)
     ROS_ERROR( "Error transforming point cloud '%s' from frame '%s' to frame '%s'\n", name_.c_str(), frame_id.c_str(), fixed_frame_.c_str() );
   }
 
-  typedef std::vector<robot_msgs::ChannelFloat32> V_Chan;
+  typedef std::vector<sensor_msgs::ChannelFloat32> V_Chan;
   typedef std::vector<bool> V_bool;
 
   V_bool valid_channels(cloud->chan.size());
@@ -757,7 +757,7 @@ void PointCloudBase::transformCloud(const CloudInfoPtr& info, V_Point& points)
 
   for ( ; chan_it != chan_end; ++chan_it, ++index )
   {
-    robot_msgs::ChannelFloat32& chan = *chan_it;
+    sensor_msgs::ChannelFloat32& chan = *chan_it;
     uint32_t val_count = chan.vals.size();
     bool channel_size_correct = val_count == point_count;
     ROS_ERROR_COND(!channel_size_correct, "Point cloud '%s' has channel with fewer values than points (%d values, %d points)", name_.c_str(), val_count, point_count);
@@ -875,7 +875,7 @@ void PointCloudBase::transformCloud(const CloudInfoPtr& info, V_Point& points)
       continue;
     }
 
-    robot_msgs::ChannelFloat32& chan = *chan_it;
+    sensor_msgs::ChannelFloat32& chan = *chan_it;
 
     if ( chan.name == "intensity" || chan.name == "intensities" || chan.name == "curvatures" || chan.name == "curvature" )
     {
