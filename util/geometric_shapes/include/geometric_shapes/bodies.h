@@ -60,8 +60,9 @@ namespace bodies
 	double    radius;
     };
     
-    /** \brief A body is a shape + its pose. Point inclusion can be
-	tested, volumes and bounding spheres can be computed.*/
+    /** \brief A body is a shape + its pose. Point inclusion, ray
+	intersection can be tested, volumes and bounding spheres can
+	be computed.*/
     class Body
     {
     public:

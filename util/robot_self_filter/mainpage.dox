@@ -11,6 +11,8 @@ on the robot)
 The set of robot links the robot can see, and the padding and scaling
 for those links can be set using the collision YAML files described in
 <a href="../../planning_models/html">planning_environment</a>.
+The functionality provided by this node is built around the 
+<a href="../../geometric_shapes/html">geometric_shapes</a> package.
 
 \section rosapi ROS API
 

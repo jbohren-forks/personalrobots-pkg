@@ -102,8 +102,8 @@ namespace bodies
 {
     static const double ZERO = 1e-9;
     
-    /* Compute the square of the distance between a ray and a point */
-    /* Note: this requires 'dir' to be normalized */
+    /** \brief Compute the square of the distance between a ray and a point 
+	Note: this requires 'dir' to be normalized */
     static inline double distanceSQR(const btVector3& p, const btVector3& origin, const btVector3& dir)
     {
 	btVector3 a = p - origin;
@@ -616,25 +616,28 @@ double bodies::ConvexMesh::computeVolume(void) const
 
 namespace bodies
 {   
-
-    // temp structure for intersection points (used for ordering them)
-    struct intersc
-    {
-	intersc(const btVector3 &_pt, const double _tm) : pt(_pt), time(_tm) {}
-	
-	btVector3 pt;
-	double    time;
-    };
     
-    struct interscOrder
+    namespace detail
     {
-	bool operator()(const intersc &a, const intersc &b) const
+	
+	// temp structure for intersection points (used for ordering them)
+	struct intersc
 	{
-	    return a.time < b.time;
-	}
+	    intersc(const btVector3 &_pt, const double _tm) : pt(_pt), time(_tm) {}
+	    
+	    btVector3 pt;
+	    double    time;
+	};
 	
-    };
-    
+	struct interscOrder
+	{
+	    bool operator()(const intersc &a, const intersc &b) const
+	    {
+		return a.time < b.time;
+	    }
+	    
+	};
+    }
 }
 
 bool bodies::ConvexMesh::intersectsRay(const btVector3& origin, const btVector3& dir, std::vector<btVector3> *intersections)
@@ -645,7 +648,7 @@ bool bodies::ConvexMesh::intersectsRay(const btVector3& origin, const btVector3&
     btVector3 orig(m_iPose * origin);
     btVector3 dr(m_iPose.getBasis() * dir);
     
-    std::vector<intersc> ipts;
+    std::vector<detail::intersc> ipts;
     
     bool result = false;
     
@@ -699,7 +702,7 @@ bool bodies::ConvexMesh::intersectsRay(const btVector3& origin, const btVector3&
 		result = true;
 		if (intersections)
 		{
-		    intersc ip(P, t);
+		    detail::intersc ip(P, t);
 		    ipts.push_back(ip);
 		}
 		else
@@ -710,7 +713,7 @@ bool bodies::ConvexMesh::intersectsRay(const btVector3& origin, const btVector3&
 
     if (intersections)
     {
-	std::sort(ipts.begin(), ipts.end(), interscOrder());
+	std::sort(ipts.begin(), ipts.end(), detail::interscOrder());
 	for (unsigned int i = 0 ; i < ipts.size() ; ++i)
 	    intersections->push_back(ipts[i].pt);
     }
