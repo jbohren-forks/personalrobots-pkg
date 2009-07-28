@@ -127,7 +127,7 @@ namespace rdf_parser{
 ///       <!-- joint properties -->
 ///       <axis xyz="0 1 0"/>  <!--in the joint frame-->
 ///       <joint_properties damping="1" friction="0"/>
-///       <limit hard_min="0" hard_max="0" soft_min="0" soft_max="1" effort="1000" velocity="1"/>
+///       <limit hard_min="0.9" hard_max="2.1" soft_min="1.0" soft_max="2.0" effort="1000" velocity="1"/>
 ///
 ///       <parent name="P"/>  <!-- in old URDF, this is in <link> not in <joint> -->
 ///         <!-- <origin> is the transform from parent Link to this Joint in parent Link frame -->
