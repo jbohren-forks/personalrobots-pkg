@@ -76,6 +76,18 @@ namespace planning_environment
 		delete collisionMapUpdateNotifier_;
 	}
 
+	/** \brief Start the environment monitor. By default, the monitor is started after creation */
+	void startEnvironmentMonitor(void);
+	
+	/** \brief Stop the environment monitor. */
+	void stopEnvironmentMonitor(void);
+	
+	/** \brief Check if the environment monitor is currently started */
+	bool isEnvironmentMonitorStarted(void) const
+	{
+	    return envMonitorStarted_;
+	}	
+
 	/** \brief Return the instance of the environment model maintained */
 	collision_space::EnvironmentModel* getEnvironmentModel(void) const
 	{
@@ -143,6 +155,8 @@ namespace planning_environment
 	collision_space::EnvironmentModel                              *collisionSpace_;
 	boost::mutex                                                    mapUpdateLock_;
 	double                                                          pointcloud_padd_;
+	
+	bool                                                            envMonitorStarted_;
 	
 	bool                                                            haveMap_;
 	ros::Time                                                       lastMapUpdate_;	
