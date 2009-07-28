@@ -154,13 +154,13 @@ private:
   }
 public:
   void update(const tf::MessageNotifier<geometry_msgs::PoseWithRatesStamped>::MessagePtr & message){
-    tf::Transform txi(tf::Quaternion(message->pos.orientation.x,
-				     message->pos.orientation.y, 
-				     message->pos.orientation.z, 
-				     message->pos.orientation.w),
-		      tf::Point(message->pos.position.x,
-				message->pos.position.y,
-                                0.0*message->pos.position.z )); // zero height for base_footprint
+    tf::Transform txi(tf::Quaternion(message->pose_with_rates.pose.orientation.x,
+				     message->pose_with_rates.pose.orientation.y, 
+				     message->pose_with_rates.pose.orientation.z, 
+				     message->pose_with_rates.pose.orientation.w),
+		      tf::Point(message->pose_with_rates.pose.position.x,
+				message->pose_with_rates.pose.position.y,
+                                0.0*message->pose_with_rates.pose.position.z )); // zero height for base_footprint
 
     double x = txi.getOrigin().x();
     double y = txi.getOrigin().y();
