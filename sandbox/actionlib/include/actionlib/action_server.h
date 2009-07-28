@@ -395,6 +395,9 @@ namespace actionlib {
           goal_sub_ = node_.subscribe<ActionGoal>("goal", 1,
               boost::bind(&ActionServer::goalCallback, this, _1));
 
+          cancel_sub_ = node_.subscribe<GoalID>("cancel", 1,
+              boost::bind(&ActionServer::cancelCallback, this, _1));
+
           //read the frequency with which to publish status from the parameter server
           double status_frequency, status_list_timeout;
           node_.param("status_frequency", status_frequency, 5.0);
@@ -484,9 +487,9 @@ namespace actionlib {
           //if the requested goal_id was not found, and it is non-zero, then we need to store the cancel request
           if(goal_id->id != ros::Time() && !goal_id_found){
             typename std::list<StatusTracker>::iterator it = status_list_.insert(status_list_.end(), 
-                StatusTracker(goal_id, GoalStatus::RECALLING));
+                StatusTracker(*goal_id, GoalStatus::RECALLING));
             //start the timer for how long the status will live in the list without a goal handle to it
-            (*it).handle_destruction_time = ros::Time::now();
+            (*it).handle_destruction_time_ = ros::Time::now();
           }
         }
 
@@ -583,7 +586,7 @@ namespace actionlib {
 
       ros::NodeHandle node_;
 
-      ros::Subscriber goal_sub_;
+      ros::Subscriber goal_sub_, cancel_sub_;
       ros::Publisher status_pub_, result_pub_, feedback_pub_;
 
       boost::recursive_mutex lock_;
