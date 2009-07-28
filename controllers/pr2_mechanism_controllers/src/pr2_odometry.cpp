@@ -153,7 +153,7 @@ void Pr2Odometry::updateOdometry()
   odometer_angle_ += fabs(odom_delta_th);
 }
 
-void Pr2Odometry::getOdometry(geometry_msgs::Point &odom, geometry_msgs::PoseDot &odom_vel)
+void Pr2Odometry::getOdometry(geometry_msgs::Point &odom, robot_msgs::PoseDot &odom_vel)
 {
   odom = odom_;
   odom_vel = odom_vel_;
@@ -209,8 +209,8 @@ void Pr2Odometry::getOdometry(double &x, double &y, double &yaw, double &vx, dou
 void Pr2Odometry::computeBaseVelocity()
 {
   double steer_angle, wheel_speed, costh, sinth;
-  geometry_msgs::PoseDot caster_local_velocity;
-  geometry_msgs::PoseDot wheel_local_velocity;
+  robot_msgs::PoseDot caster_local_velocity;
+  robot_msgs::PoseDot wheel_local_velocity;
   geometry_msgs::Point wheel_position;
   for(int i = 0; i < base_kin_.num_wheels_; i++)
   {
@@ -243,8 +243,8 @@ void Pr2Odometry::computeBaseVelocity()
 double Pr2Odometry::getCorrectedWheelSpeed(int index)
 {
   double wheel_speed;
-  geometry_msgs::PoseDot caster_local_vel;
-  geometry_msgs::PoseDot wheel_local_vel;
+  robot_msgs::PoseDot caster_local_vel;
+  robot_msgs::PoseDot wheel_local_vel;
   caster_local_vel.ang_vel.vz = base_kin_.wheel_[index].parent_->joint_->velocity_;
   wheel_local_vel = base_kin_.pointVel2D(base_kin_.wheel_[index].offset_, caster_local_vel);
   wheel_speed = base_kin_.wheel_[index].joint_->velocity_ - wheel_local_vel.vel.vx / (base_kin_.wheel_radius_ * base_kin_.wheel_[index].wheel_radius_scaler_);

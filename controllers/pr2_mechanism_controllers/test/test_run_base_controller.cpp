@@ -35,7 +35,7 @@
 #include <pr2_mechanism_controllers/Pose3D.h>
 #include <ros/node.h>
 #include <geometry_msgs/PoseWithRatesStamped.h>
-#include <geometry_msgs/PoseDot.h>
+#include <robot_msgs/PoseDot.h>
 #include <deprecated_msgs/RobotBase2DOdom.h>
 #include <geometry_msgs/Quaternion.h>
 
@@ -131,7 +131,7 @@ int main( int argc, char** argv )
 
 
   /*********** Start moving the robot ************/
-  geometry_msgs::PoseDot cmd;
+  robot_msgs::PoseDot cmd;
   cmd.vel.vx = 0;
   cmd.vel.vy = 0;
   cmd.vel.vz = 0;
@@ -157,7 +157,7 @@ int main( int argc, char** argv )
      run_time = atof(argv[4]);
      run_time_set = true;
   }
-  node->advertise<geometry_msgs::PoseDot>("cmd_vel",1);
+  node->advertise<robot_msgs::PoseDot>("cmd_vel",1);
   sleep(1);
   node->publish("cmd_vel",cmd);
   sleep(1);

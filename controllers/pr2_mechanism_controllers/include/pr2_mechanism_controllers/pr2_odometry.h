@@ -138,7 +138,7 @@ namespace controller
     * @param odom Point into which the odometry position is placed (z is theta)
     * @param odom_vel into which the odometry velocity is placed
     */
-    void getOdometry(geometry_msgs::Point &odom, geometry_msgs::PoseDot &odom_vel);
+    void getOdometry(geometry_msgs::Point &odom, robot_msgs::PoseDot &odom_vel);
 
     /*!
     * \brief Computes the base velocity from the caster positions and wheel speeds
@@ -189,7 +189,7 @@ namespace controller
     /*!
     * \brief PoseDot that remembers the current translational velocities (vel.vx, vel.vy) and angular position (ang_vel.vz)
     */
-    geometry_msgs::PoseDot odom_vel_;
+    robot_msgs::PoseDot odom_vel_;
 
     /*!
     * \brief The type of weighting used in findWeightMatrix

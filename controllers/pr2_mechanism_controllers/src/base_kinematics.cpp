@@ -188,9 +188,9 @@ void BaseKinematics::computeWheelPositions()
 
 }
 
-geometry_msgs::PoseDot BaseKinematics::pointVel2D(const geometry_msgs::Point& pos, const geometry_msgs::PoseDot& vel)
+robot_msgs::PoseDot BaseKinematics::pointVel2D(const geometry_msgs::Point& pos, const robot_msgs::PoseDot& vel)
 {
-  geometry_msgs::PoseDot result;
+  robot_msgs::PoseDot result;
   result.vel.vx = vel.vel.vx - pos.y * vel.ang_vel.vz;
   result.vel.vy = vel.vel.vy + pos.x * vel.ang_vel.vz;
   result.vel.vz = 0;
