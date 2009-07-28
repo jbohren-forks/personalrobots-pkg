@@ -1,3 +1,3 @@
 Header header
 byte stowed 
-robot_msgs/Point plug_centroid
+geometry_msgs/Point plug_centroid
