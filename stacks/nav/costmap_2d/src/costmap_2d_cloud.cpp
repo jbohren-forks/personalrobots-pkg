@@ -118,7 +118,7 @@ void voxelCallback(const ros::Publisher& pub_marked, const ros::Publisher& pub_u
     cloud.header.frame_id = frame_id;
     cloud.header.stamp = stamp;
 
-    robot_msgs::ChannelFloat32& chan = cloud.chan[0];
+    sensor_msgs::ChannelFloat32& chan = cloud.chan[0];
     for (uint32_t i = 0; i < num_marked; ++i)
     {
       geometry_msgs::Point32& p = cloud.pts[i];
@@ -150,7 +150,7 @@ void voxelCallback(const ros::Publisher& pub_marked, const ros::Publisher& pub_u
     cloud.header.frame_id = frame_id;
     cloud.header.stamp = stamp;
 
-    robot_msgs::ChannelFloat32& chan = cloud.chan[0];
+    sensor_msgs::ChannelFloat32& chan = cloud.chan[0];
     for (uint32_t i = 0; i < num_unknown; ++i)
     {
       geometry_msgs::Point32& p = cloud.pts[i];

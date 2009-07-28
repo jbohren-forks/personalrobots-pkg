@@ -37,7 +37,6 @@
 #include <costmap_2d/costmap_2d.h>
 
 using namespace std;
-using namespace robot_msgs;
 
 namespace costmap_2d{
   Costmap2D::Costmap2D(unsigned int cells_size_x, unsigned int cells_size_y, 
@@ -363,7 +362,7 @@ namespace costmap_2d{
     for(vector<Observation>::const_iterator it = observations.begin(); it != observations.end(); ++it){
       const Observation& obs = *it;
 
-      const PointCloud& cloud =obs.cloud_;
+      const sensor_msgs::PointCloud& cloud =obs.cloud_;
 
       for(unsigned int i = 0; i < cloud.pts.size(); ++i){
         //if the obstacle is too high or too far away from the robot we won't add it
@@ -431,7 +430,7 @@ namespace costmap_2d{
 
     double ox = clearing_observation.origin_.x;
     double oy = clearing_observation.origin_.y;
-    PointCloud cloud = clearing_observation.cloud_;
+    sensor_msgs::PointCloud cloud = clearing_observation.cloud_;
 
     //get the map coordinates of the origin of the sensor 
     unsigned int x0, y0;

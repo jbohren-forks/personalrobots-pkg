@@ -37,7 +37,6 @@
 #include <costmap_2d/voxel_costmap_2d.h>
 
 using namespace std;
-using namespace robot_msgs;
 
 namespace costmap_2d{
   VoxelCostmap2D::VoxelCostmap2D(unsigned int cells_size_x, unsigned int cells_size_y, unsigned int cells_size_z,
@@ -136,7 +135,7 @@ namespace costmap_2d{
     for(vector<Observation>::const_iterator it = observations.begin(); it != observations.end(); ++it){
       const Observation& obs = *it;
 
-      const PointCloud& cloud =obs.cloud_;
+      const sensor_msgs::PointCloud& cloud =obs.cloud_;
 
       for(unsigned int i = 0; i < cloud.pts.size(); ++i){
         //if the obstacle is too high or too far away from the robot we won't add it
@@ -349,14 +348,14 @@ namespace costmap_2d{
     grid.resolutions.z = z_resolution_;
   }
 
-  void VoxelCostmap2D::getPoints(PointCloud& cloud){
+  void VoxelCostmap2D::getPoints(sensor_msgs::PointCloud& cloud){
     for(unsigned int i = 0; i < voxel_grid_.sizeX(); ++i){
       for(unsigned int j = 0; j < voxel_grid_.sizeY(); ++j){
         for(unsigned int k = 0; k < voxel_grid_.sizeZ(); ++k){
           if(voxel_grid_.getVoxel(i, j, k) == voxel_grid::MARKED){
             double wx, wy, wz;
             mapToWorld3D(i, j, k, wx, wy, wz);
-            Point32 pt;
+            geometry_msgs::Point32 pt;
             pt.x = wx;
             pt.y = wy;
             pt.z = wz;
