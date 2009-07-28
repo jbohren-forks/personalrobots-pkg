@@ -54,9 +54,9 @@ max_accel:
 state_publish_time: 0.25
 
 max_vel: 
- vx: 0.5
- vy: 0.5 
- omegaz: 10.0
+ vx: 1.0
+ vy: 1.0 
+ omegaz: 2.0
 
 cmd_topic:
  /cmd_vel
