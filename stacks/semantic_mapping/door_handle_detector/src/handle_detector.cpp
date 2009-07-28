@@ -73,8 +73,8 @@ HandleDetector::HandleDetector (ros::Node* anode) : node_ (anode), tf_ (*anode)
   node_->advertise<visualization_msgs::Marker> ("visualization_marker", 100);
 
   node_->advertise<PolygonalMap> ("~handle_polygon", 1);
-  node_->advertise<PointCloud> ("~handle_regions", 1);
-  node_->advertise<PointCloud> ("~door_outliers", 1);
+  node_->advertise<sensor_msgs::PointCloud> ("~handle_regions", 1);
+  node_->advertise<sensor_msgs::PointCloud> ("~door_outliers", 1);
 
 
   global_marker_id_ = 1;
@@ -84,7 +84,7 @@ HandleDetector::HandleDetector (ros::Node* anode) : node_ (anode), tf_ (*anode)
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-bool HandleDetector::detectHandle (const door_msgs::Door& door, PointCloud pointcloud,
+bool HandleDetector::detectHandle (const door_msgs::Door& door, sensor_msgs::PointCloud pointcloud,
                                    std::vector<door_msgs::Door>& result) const
 {
   ROS_INFO ("HandleDetector: Start detecting handle in a point cloud of size %i", (int)pointcloud.pts.size ());
@@ -114,20 +114,20 @@ bool HandleDetector::detectHandle (const door_msgs::Door& door, PointCloud point
 
 
   vector<int> tmp_indices;    // Used as a temporary indices array
-  Point32 tmp_p;              // Used as a temporary point
+  geometry_msgs::Point32 tmp_p;              // Used as a temporary point
 
   // Get the cloud viewpoint in the parameter frame
   geometry_msgs::PointStamped viewpoint_cloud;
   getCloudViewPoint (parameter_frame_, viewpoint_cloud, &tf_);
 
   // Get the rough planar coefficients
-  Point32 pt;
+  geometry_msgs::Point32 pt;
   pt.x = (door_tr.door_p2.x + door_tr.door_p1.x) / 2.0;
   pt.y = (door_tr.door_p2.y + door_tr.door_p1.y) / 2.0;
   pt.z = (door_tr.door_p2.z + door_tr.door_p1.z) / 2.0 + door_tr.height / 2.0;
   vector<double> coeff (4);
   KDL::Vector door_normal = getDoorNormal(door_tr);
-  Point32 door_normal_pnt;
+  geometry_msgs::Point32 door_normal_pnt;
   door_normal_pnt.x = door_normal(0);
   door_normal_pnt.y = door_normal(1);
   door_normal_pnt.z = door_normal(2);
@@ -232,7 +232,7 @@ bool HandleDetector::detectHandle (const door_msgs::Door& door, PointCloud point
 
 
   // Output the point regions
-  PointCloud cloud_regions;
+  sensor_msgs::PointCloud cloud_regions;
   cloud_regions.chan.resize (1); cloud_regions.chan[0].name = "intensities";
 
   cloud_regions.header = pointcloud.header;
@@ -304,9 +304,9 @@ bool HandleDetector::detectHandle (const door_msgs::Door& door, PointCloud point
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void HandleDetector::refineHandleCandidatesWithDoorOutliers (vector<int> &handle_indices, vector<int> &outliers,
                                                              const Polygon3D &polygon,
-                                                             const vector<double> &coeff, const Point32 &door_axis,
+                                                             const vector<double> &coeff, const geometry_msgs::Point32 &door_axis,
                                                              const Door& door_prior,
-                                                             PointCloud& pointcloud) const
+                                                             sensor_msgs::PointCloud& pointcloud) const
 {
   // Split the remaining candidates into into clusters and remove solitary points (< euclidean_cluster_min_pts_)
   vector<vector<int> > clusters;
@@ -338,7 +338,7 @@ void HandleDetector::refineHandleCandidatesWithDoorOutliers (vector<int> &handle
     // Grow the current cluster using the door outliers
     growCurrentCluster (pointcloud, outliers, clusters[i], inliers[i], 2 * euclidean_cluster_distance_tolerance_);
 
-    PointCloud tmp_cloud;
+    sensor_msgs::PointCloud tmp_cloud;
     cloud_geometry::projections::pointsToPlane  (pointcloud, inliers[i], tmp_cloud, coeff);
     // Fit the best horizontal line through each cluster
     fitSACOrientedLine (tmp_cloud, sac_distance_threshold_ * 2, door_axis, euclidean_cluster_angle_tolerance_, line_inliers[i]);
@@ -425,7 +425,7 @@ void HandleDetector::refineHandleCandidatesWithDoorOutliers (vector<int> &handle
 void  HandleDetector::getHandleCandidates (const vector<int> &indices, const vector<double> &coeff,
                                            const Polygon3D &polygon, const Polygon3D &polygon_tr,
                                            Eigen::Matrix4d transformation, vector<int> &handle_indices,
-                                           PointCloud& pointcloud, PointStamped& viewpoint_cloud) const
+                                           sensor_msgs::PointCloud& pointcloud, geometry_msgs::PointStamped& viewpoint_cloud) const
 {
   // Check the points in bounds for extra geometric constraints
   handle_indices.resize (indices.size ());
@@ -437,9 +437,9 @@ void  HandleDetector::getHandleCandidates (const vector<int> &indices, const vec
   viewpoint_pt_line[2] = viewpoint_cloud.point.z;
 
   // Remove outliers around the door margin
-  Point32 tmp_p;              // Used as a temporary point
+  geometry_msgs::Point32 tmp_p;              // Used as a temporary point
   int nr_p = 0;
-  Point32 pt;
+  geometry_msgs::Point32 pt;
   for (unsigned int i = 0; i < indices.size (); i++)
   {
     // Transform the point onto X-Y for faster checking inside the polygonal bounds
@@ -468,7 +468,7 @@ void  HandleDetector::getHandleCandidates (const vector<int> &indices, const vec
     viewpoint_pt_line[5] /= n_norm;
 
     // Check for the actual intersection
-    Point32 viewpoint_door_intersection;
+    geometry_msgs::Point32 viewpoint_door_intersection;
     if (!cloud_geometry::intersections::lineWithPlaneIntersection (coeff, viewpoint_pt_line, viewpoint_door_intersection))
     {
       ROS_WARN ("Line and plane are parallel (no intersections found between the line and the plane).");
@@ -492,10 +492,10 @@ void  HandleDetector::getHandleCandidates (const vector<int> &indices, const vec
 void HandleDetector::getDoorOutliers (const vector<int> &indices, const vector<int> &inliers,
                                       const vector<double> &coeff, const Polygon3D &polygon,
                                       const Polygon3D &polygon_tr, Eigen::Matrix4d transformation,
-                                      vector<int> &outliers, PointCloud& pointcloud) const
+                                      vector<int> &outliers, sensor_msgs::PointCloud& pointcloud) const
 {
   vector<int> tmp_indices;    // Used as a temporary indices array
-  Point32 tmp_p;              // Used as a temporary point
+  geometry_msgs::Point32 tmp_p;              // Used as a temporary point
   set_difference (indices.begin (), indices.end (), inliers.begin (), inliers.end (),
                   inserter (outliers, outliers.begin ()));
 
@@ -506,7 +506,7 @@ void HandleDetector::getDoorOutliers (const vector<int> &indices, const vector<i
   viewpoint_pt_line[1] = viewpoint_cloud.point.y;
   viewpoint_pt_line[2] = viewpoint_cloud.point.z;
 #endif
-  Point32 pt;
+  geometry_msgs::Point32 pt;
   tmp_indices.resize (outliers.size ());
   int nr_p = 0;
   for (unsigned int i = 0; i < outliers.size (); i++)

@@ -73,7 +73,7 @@ class Cropper
       cloud_out.header = cloud_transformed.header;
       for(unsigned int j=0;j<cloud_transformed.chan.size();j++)
       {
-        robot_msgs::ChannelFloat32 c;
+        sensor_msgs::ChannelFloat32 c;
         c.name = cloud_transformed.chan[j].name;
         cloud_out.chan.push_back(c);
       }

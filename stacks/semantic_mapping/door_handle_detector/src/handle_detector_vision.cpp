@@ -72,7 +72,6 @@
 #include <boost/thread.hpp>
 
 using namespace std;
-using namespace robot_msgs;
 
 
 template <typename T>
@@ -382,7 +381,7 @@ private:
 	};
 
 
-	void pointCloudStatistics(const PointCloud& pc, Stats& x_stats, Stats& y_stats, Stats& z_stats)
+  void pointCloudStatistics(const sensor_msgs::PointCloud& pc, Stats& x_stats, Stats& y_stats, Stats& z_stats)
 	{
 		uint32_t size = pc.get_pts_size();
 		if (size==0) {
@@ -435,7 +434,7 @@ private:
      * @param rect Region in disparity image
      * @return Filtered point cloud
      */
-	sensor_msgs::PointCloud filterPointCloud(const PointCloud pc, const CvRect& rect)
+	sensor_msgs::PointCloud filterPointCloud(const sensor_msgs::PointCloud pc, const CvRect& rect)
 	{
 		sensor_msgs::PointCloud result;
 		result.header.frame_id = pc.header.frame_id;
@@ -779,7 +778,7 @@ private:
     	bbox.height = (int) sizes[max_ind].second;
 
 
-    	PointCloud outlet_cloud = filterPointCloud(*cloud_, bbox);
+    	sensor_msgs::PointCloud outlet_cloud = filterPointCloud(*cloud_, bbox);
 
     	Stats xstats;
     	Stats ystats;

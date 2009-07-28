@@ -59,8 +59,8 @@ void
   indices.resize (points.pts.size ());
 
   // Transform the X-Y bounds from the door request service into the cloud TF frame
-  tf::Stamped<Point32> frame_p1 (door.frame_p1, points.header.stamp, door_frame);
-  tf::Stamped<Point32> frame_p2 (door.frame_p2, points.header.stamp, door_frame);
+  tf::Stamped<geometry_msgs::Point32> frame_p1 (door.frame_p1, points.header.stamp, door_frame);
+  tf::Stamped<geometry_msgs::Point32> frame_p2 (door.frame_p2, points.header.stamp, door_frame);
   transformPoint (tf, cloud_frame, frame_p1, frame_p1);
   transformPoint (tf, cloud_frame, frame_p2, frame_p2);
 
@@ -68,7 +68,7 @@ void
             cloud_frame.c_str (), frame_p1.x, frame_p1.y, frame_p1.z, frame_p2.x, frame_p2.y, frame_p2.z);
 
   // Obtain the bounding box information in the reference frame of the laser scan
-  Point32 min_bbox, max_bbox;
+  geometry_msgs::Point32 min_bbox, max_bbox;
 
   if (frame_multiplier == -1)
   {
@@ -211,7 +211,7 @@ bool
   * \param multiplier multiply the ||p1-p2|| distance by this number to wrap all possible situations in X-Y
   */
 void
-  get3DBounds (Point32 *p1, Point32 *p2, Point32 &min_b, Point32 &max_b,
+  get3DBounds (geometry_msgs::Point32 *p1, geometry_msgs::Point32 *p2, geometry_msgs::Point32 &min_b, geometry_msgs::Point32 &max_b,
                double min_z_bounds, double max_z_bounds, int multiplier)
 {
   // Get the door_frame distance in the X-Y plane
@@ -252,10 +252,10 @@ void
   * \param tf a pointer to a TransformListener object
   */
 void
-  getCloudViewPoint (const string cloud_frame, PointStamped &viewpoint_cloud, const tf::TransformListener *tf)
+  getCloudViewPoint (const string cloud_frame, geometry_msgs::PointStamped &viewpoint_cloud, const tf::TransformListener *tf)
 {
   // Figure out the viewpoint value in the point cloud frame
-  PointStamped viewpoint_laser;
+  geometry_msgs::PointStamped viewpoint_laser;
   viewpoint_laser.header.frame_id = "laser_tilt_mount_link";
   // Set the viewpoint in the laser coordinate system to 0, 0, 0
   viewpoint_laser.point.x = viewpoint_laser.point.y = viewpoint_laser.point.z = 0.0;
@@ -283,7 +283,7 @@ void
   * \param inliers the resultant inliers
   */
 void
-  selectBestDistributionStatistics (const PointCloud &points, const vector<int> &indices, int d_idx, vector<int> &inliers)
+selectBestDistributionStatistics (const sensor_msgs::PointCloud &points, const vector<int> &indices, int d_idx, vector<int> &inliers)
 {
   double mean, stddev;
   // Compute the mean and standard deviation of the distribution
@@ -338,7 +338,7 @@ void
   * \param inliers the resultant inliers
   */
 void
-  selectBestDualDistributionStatistics (const PointCloud &points, const vector<int> &indices, int d_idx_1, int d_idx_2,
+  selectBestDualDistributionStatistics (const sensor_msgs::PointCloud &points, const vector<int> &indices, int d_idx_1, int d_idx_2,
                                         vector<int> &inliers)
 {
   vector<int> inliers_1, inliers_2;
@@ -418,11 +418,11 @@ void
   * \param eps_angle a maximum allowed angular threshold
   */
 bool
-  checkIfClusterPerpendicular (const PointCloud &points, const vector<int> &indices, PointStamped *viewpoint,
+  checkIfClusterPerpendicular (const sensor_msgs::PointCloud &points, const vector<int> &indices, geometry_msgs::PointStamped *viewpoint,
                                vector<double> *coeff, double eps_angle)
 {
   // Compute the centroid of the cluster
-  Point32 centroid;
+  geometry_msgs::Point32 centroid;
   cloud_geometry::nearest::computeCentroid (points, indices, centroid);
 
   // Create a line direction from the viewpoint to the centroid
@@ -434,7 +434,7 @@ bool
   Eigen::Vector4d plane_parameters;
   double curvature;
   cloud_geometry::nearest::computePointNormal (points, indices, plane_parameters, curvature);
-  Point32 normal;
+  geometry_msgs::Point32 normal;
   normal.x = plane_parameters (0);
   normal.y = plane_parameters (1);
   normal.z = plane_parameters (2);
@@ -464,7 +464,7 @@ bool
   * \param min_pts_per_cluster minimum number of points that a cluster may contain (default = 1)
   */
 void
-  findClusters (const PointCloud &points, const vector<int> &indices, double tolerance, vector<vector<int> > &clusters,
+  findClusters (const sensor_msgs::PointCloud &points, const vector<int> &indices, double tolerance, vector<vector<int> > &clusters,
                 int nx_idx, int ny_idx, int nz_idx,
                 double eps_angle, unsigned int min_pts_per_cluster)
 {
@@ -563,7 +563,7 @@ void
   * \param min_pts the minimum number of points allowed as inliers for a plane model
   */
 bool
-  fitSACPlane (PointCloud &points, vector<int> indices, vector<int> &inliers, vector<double> &coeff,
+  fitSACPlane (sensor_msgs::PointCloud &points, vector<int> indices, vector<int> &inliers, vector<double> &coeff,
                const geometry_msgs::PointStamped &viewpoint_cloud, double dist_thresh, int min_pts)
 {
   if ((int)indices.size () < min_pts)
@@ -625,7 +625,7 @@ bool
   * \param viewpoint_cloud a pointer to the viewpoint where the cloud was acquired from (used for normal flip)
   */
 void
-  estimatePointNormals (const PointCloud &points, const vector<int> &point_indices, PointCloud &points_down, int k, const PointStamped &viewpoint_cloud)
+estimatePointNormals (const sensor_msgs::PointCloud &points, const vector<int> &point_indices, sensor_msgs::PointCloud &points_down, int k, const geometry_msgs::PointStamped &viewpoint_cloud)
 {
   // Reserve space for 4 channels: nx, ny, nz, curvature
   points_down.chan.resize (4);
@@ -679,7 +679,7 @@ void
   * \param viewpoint_cloud a pointer to the viewpoint where the cloud was acquired from (used for normal flip)
   */
 void
-  estimatePointNormals (PointCloud &points, const vector<int> &point_indices, int k, const PointStamped &viewpoint_cloud)
+  estimatePointNormals (sensor_msgs::PointCloud &points, const vector<int> &point_indices, int k, const geometry_msgs::PointStamped &viewpoint_cloud)
 {
   int old_channel_size = points.chan.size ();
   // Reserve space for 4 channels: nx, ny, nz, curvature
@@ -736,7 +736,7 @@ void
   * \param viewpoint_cloud a pointer to the viewpoint where the cloud was acquired from (used for normal flip)
   */
 void
-  estimatePointNormals (const PointCloud &points, PointCloud &points_down, int k, const PointStamped &viewpoint_cloud)
+  estimatePointNormals (const sensor_msgs::PointCloud &points, sensor_msgs::PointCloud &points_down, int k, const geometry_msgs::PointStamped &viewpoint_cloud)
 {
   int nr_points = points_down.pts.size ();
   // Reserve space for 4 channels: nx, ny, nz, curvature
