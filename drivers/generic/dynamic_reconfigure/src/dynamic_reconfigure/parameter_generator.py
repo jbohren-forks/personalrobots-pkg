@@ -42,54 +42,68 @@ import roslib; roslib.load_manifest("dynamic_reconfigure")
 import roslib.packages
 from string import Template
 import os
+import inspect
+import string 
 
 class ParameterGenerator:
     minval = {
-            'float32' : '-1./0.',
-            'float64' : '-1./0.',
-            'uint8' : '0',
-            'uint16' : '0',
-            'uint32' : '0',
-            'uint64' : '0',
-            'int8' : '1LL << 7',
-            'int16' : '1LL << 15',
-            'int32' : '1LL << 31',
-            'int64' : '1LL << 63',
-            'time' : 'ros::Time(0, 0)',
-            'duration' : 'ros::Duration(1LL << 31, 1LL << 31)',
-            'string' : '""',
+            'int' : 'INT_MIN',
+            'double' : '-1./0.',
+            'str' : '',
+            'bool' : False,
+#            'float32' : '-1./0.',
+#            'float64' : '-1./0.',
+#            'uint8' : '0',
+#            'uint16' : '0',
+#            'uint32' : '0',
+#            'uint64' : '0',
+#            'int8' : '1LL << 7',
+#            'int16' : '1LL << 15',
+#            'int32' : '1LL << 31',
+#            'int64' : '1LL << 63',
+#            'time' : 'ros::Time(0, 0)',
+#            'duration' : 'ros::Duration(1LL << 31, 1LL << 31)',
+#            'string' : '',
             }
             
     maxval = {
-            'float32' : '1./0.',
-            'float64' : '1./0.',
-            'uint8' : '-1LL',
-            'uint16' : '-1LL',
-            'uint32' : '-1LL',
-            'uint64' : '-1LL',
-            'int8' : '~(1LL << 7)',
-            'int16' : '~(1LL << 15)',
-            'int32' : '~(1LL << 31)',
-            'int64' : '~(1LL << 63)',
-            'time' : 'ros::Time(-1LL, -1LL)',
-            'duration' : 'ros::Duration(~(1LL << 31), ~(1LL << 31))',
-            'string' : '""',
+            'int' : 'INT_MAX',
+            'double' : '1./0.',
+            'str' : '',
+            'bool' : True,
+#            'float32' : '1./0.',
+#            'float64' : '1./0.',
+#            'uint8' : '-1LL',
+#            'uint16' : '-1LL',
+#            'uint32' : '-1LL',
+#            'uint64' : '-1LL',
+#            'int8' : '~(1LL << 7)',
+#            'int16' : '~(1LL << 15)',
+#            'int32' : '~(1LL << 31)',
+#            'int64' : '~(1LL << 63)',
+#            'time' : 'ros::Time(-1LL, -1LL)',
+#            'duration' : 'ros::Duration(~(1LL << 31), ~(1LL << 31))',
+#            'string' : '',
             }
     
     defval = {
-            'float32' : '0',
-            'float64' : '0',
-            'uint8' : '0',
-            'uint16' : '0',
-            'uint32' : '0',
-            'uint64' : '0',
-            'int8' : '0',
-            'int16' : '0',
-            'int32' : '0',
-            'int64' : '0',
-            'time' : 'ros::Time(0, 0)',
-            'duration' : 'ros::Duration(0, 0)',
-            'string' : '""',
+            'int' : 0,
+            'double' : 0,
+            'str' : '',
+            'bool' : False,
+#            'float32' : '0',
+#            'float64' : '0',
+#            'uint8' : '0',
+#            'uint16' : '0',
+#            'uint32' : '0',
+#            'uint64' : '0',
+#            'int8' : '0',
+#            'int16' : '0',
+#            'int32' : '0',
+#            'int64' : '0',
+#            'time' : '0',
+#            'duration' : '0',
+#            'string' : '',
             }
             
     def __init__(self, pkgname, name):
@@ -98,6 +112,7 @@ class ParameterGenerator:
         self.pkgpath = roslib.packages.get_pkg_dir(pkgname)
         self.dynconfpath = roslib.packages.get_pkg_dir("dynamic_reconfigure")
         self.name = name
+        self.msgname = name+"Config"
 
     def add(self, name, type, level, description, default = None, min = None, max = None):
         if min == None:
@@ -114,6 +129,8 @@ class ParameterGenerator:
             'description' : description,
             'min' : min,
             'max' : max,
+            'srcline' : inspect.currentframe().f_back.f_lineno,
+            'srcfile' : inspect.getsourcefile(inspect.currentframe().f_back.f_code),
             })
 
     def mkdirabs(self, path):
@@ -133,6 +150,8 @@ class ParameterGenerator:
         self.mkdirabs(path)
 
     def generate(self):
+        print Template("Generating reconfiguration files for $name in $pkgname").\
+                substitute(name=self.name, pkgname = self.pkgname)
         self.generateconfigmanipulator()
         self.generatemsg()
         self.generatesetsrv()
@@ -141,7 +160,7 @@ class ParameterGenerator:
 
     def generatedoc(self):
         self.mkdir("dox")
-        f = open(os.path.join(self.pkgpath, "dox", self.name+".dox"), 'w')
+        f = open(os.path.join(self.pkgpath, "dox", self.msgname+".dox"), 'w')
         print >> f, "/**"
         print >> f, "\\subsection parameters ROS parameters"
         print >> f
@@ -155,55 +174,77 @@ class ParameterGenerator:
 
     def crepr(self, param, val):
         type = param["type"]
-        if type == 'string':
-            return '"'+param[val]+'"'
+        if type == 'str':
+            return '"'+val+'"'
         if 'uint' in type:
-            return str(param[val])+'ULL'
+            return str(val)+'ULL'
         if 'int' in type:
-            return str(param[val])+'LL'
+            return str(val)+'LL'
         if 'time' in type:
-            return 'ros::Time('+str(param[val])+')'
+            return 'ros::Time('+str(val)+')'
         if 'duration' in type:
-            return 'ros::Duration('+str(param[val])+')'
+            return 'ros::Duration('+str(val)+')'
         if  'float' in types:
-            return str(param[val])
+            return str(val)
+#        if type == 'string':
+#            return '"'+val+'"'
+#        if 'uint' in type:
+#            return str(val)+'ULL'
+#        if 'int' in type:
+#            return str(val)+'LL'
+#        if 'time' in type:
+#            return 'ros::Time('+str(val)+')'
+#        if 'duration' in type:
+#            return 'ros::Duration('+str(val)+')'
+#        if  'float' in types:
+#            return str(val)
 
-    def joinlines(self, lines):
-        return ''.join(['      '+line+'\n' for line in lines])
-
-
+    def appendline(self, list, text, param, value = None):
+        if value == None:
+            val = ""
+        else:
+            val = self.crepr(param, param[value])
+        list.append(Template('#line $srcline "$srcfile"\n      '+text).substitute(param, v=val))
+    
     def generateconfigmanipulator(self):
-        # Read the configuration manipulator template.
-        f = open(os.path.join(self.dynconfpath, "templates", "configmanipulator.h"))
-        configmanipulator = f.read()
+        # Read the configuration manipulator template and insert line numbers and file name into template.
+        templatefile = os.path.join(self.dynconfpath, "templates", "ConfigReconfigurator.h")
+        templatelines = []
+        templatefilesafe = templatefile.replace('aa', 'bb') # line directive does backslash expansion.
+        curline = 1
+        f = open(templatefile)
+        for line in f:
+            curline = curline + 1
+            templatelines.append(Template(line).safe_substitute(linenum=curline,filename=templatefilesafe))
         f.close()
+        template = ''.join(templatelines)
         
         # Write the configuration manipulator.
         self.mkdir(os.path.join("cfg", "cpp", self.pkgname))
-        f = open(os.path.join(self.pkgpath, "cfg", "cpp", self.pkgname, self.name+"Manipulator.h"), 'w')
+        f = open(os.path.join(self.pkgpath, "cfg", "cpp", self.pkgname, self.name+"Reconfigurator.h"), 'w')
         readparam = []
         writeparam = []
         changelvl = []
         defminmax = []
         for param in self.parameters:
-            defminmax.append(Template("min.$name = $min").substitute(param, min=self.crepr(param, "min")))
-            defminmax.append(Template("max.$name = $max").substitute(param, min=self.crepr(param, "max")))
-            defminmax.append(Template("defaults.$name = $max").substitute(param, min=self.crepr(param, "default")))
-            changelvl.append(Template("if (config1.$name != config2.$name) changelvl |= $level;").substitute(param))
-            writeparam.append(Template("nh.setParam(\"~$name\", config.$name)").substitute(param))
-            readparam.append(Template("nh.getParam(\"~$name\", config.$name)").substitute(param))
-        defminmax = self.joinlines(defminmax)
-        changelvl = self.joinlines(changelvl)
-        writeparam = self.joinlines(writeparam)
-        readparam = self.joinlines(readparam)
-        f.write(Template(configmanipulator).substitute(uname=self.name.upper(), name = self.name, 
+            self.appendline(defminmax, "min.$name = $v;", param, "min")
+            self.appendline(defminmax, "max.$name = $v;", param, "max")
+            self.appendline(defminmax, "defaults.$name = $v;", param, "default")
+            self.appendline(changelvl, "if (config1.$name != config2.$name) changelvl |= $level;", param)
+            self.appendline(writeparam, "nh.setParam(\"~$name\", config.$name);", param)
+            self.appendline(readparam, "nh.getParam(\"~$name\", config.$name);", param)
+        defminmax = string.join(defminmax, '\n')
+        changelvl = string.join(changelvl, '\n')
+        writeparam = string.join(writeparam, '\n')
+        readparam = string.join(readparam, '\n')
+        f.write(Template(template).substitute(uname=self.name.upper(), name = self.name, 
             pkgname = self.pkgname, readparam = readparam, writeparam = writeparam, 
             changelvl = changelvl, defminmax = defminmax))
         f.close()
 
     def generatemsg(self):
         self.mkdir("msg")
-        f = open(os.path.join(self.pkgpath, "msg", self.name+".msg"), 'w')
+        f = open(os.path.join(self.pkgpath, "msg", self.msgname+".msg"), 'w')
         print >> f, "# This is an autogerenated file. Please do not edit."
         for param in self.parameters:
             print >> f, Template("$type $name # $description").substitute(param)
@@ -211,20 +252,20 @@ class ParameterGenerator:
 
     def generategetsrv(self):
         self.mkdir("srv")
-        f = open(os.path.join(self.pkgpath, "srv", "Get"+self.name+".srv"), 'w')
+        f = open(os.path.join(self.pkgpath, "srv", "Get"+self.msgname+".srv"), 'w')
         print >> f, "# This is an autogerenated file. Please do not edit."
         print >> f, "---" 
-        print >> f, self.name, "config", "# Current configuration of node."
-        print >> f, self.name, "defaults", "# Minimum values where appropriate."
-        print >> f, self.name, "min", "# Minimum values where appropriate."
-        print >> f, self.name, "max", "# Maximum values where appropriate."
+        print >> f, self.msgname, "config", "# Current configuration of node."
+        print >> f, self.msgname, "defaults", "# Minimum values where appropriate."
+        print >> f, self.msgname, "min", "# Minimum values where appropriate."
+        print >> f, self.msgname, "max", "# Maximum values where appropriate."
         f.close()
 
     def generatesetsrv(self):
         self.mkdir("srv")
-        f = open(os.path.join(self.pkgpath, "srv", "Set"+self.name+".srv"), 'w')
+        f = open(os.path.join(self.pkgpath, "srv", "Set"+self.msgname+".srv"), 'w')
         print >> f, "# This is an autogerenated file. Please do not edit."
-        print >> f, self.name, "config", "# Requested node configuration."
+        print >> f, self.msgname, "config", "# Requested node configuration."
         print >> f, "---"        
-        print >> f, self.name, "config", "# What the node's configuration was actually set to."
+        print >> f, self.msgname, "config", "# What the node's configuration was actually set to."
         f.close()
