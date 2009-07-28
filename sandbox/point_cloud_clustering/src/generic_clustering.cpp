@@ -113,8 +113,9 @@ unsigned int point_cloud_clustering::GenericClustering::findRadiusNeighbors(clou
 {
   vector<int> k_indices;
   vector<float> k_distances;
-  pt_cloud_kdtree.radiusSearch(static_cast<int>(index), radius, k_indices, k_distances);
+  pt_cloud_kdtree.radiusSearch(static_cast<int> (index), radius, k_indices, k_distances);
 
+  // check if each neighbor is a valid index to cluster
   unsigned int nbr_k_neighbors = k_indices.size();
   unsigned int nbr_valid_neighbors = 0;
   for (unsigned int i = 0 ; i < nbr_k_neighbors ; i++)
