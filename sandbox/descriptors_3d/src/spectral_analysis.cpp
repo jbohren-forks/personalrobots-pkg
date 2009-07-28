@@ -111,7 +111,7 @@ int SpectralAnalysis::setSpectralRadius(double support_radius)
 // --------------------------------------------------------------
 int SpectralAnalysis::analyzeInterestPoints(const robot_msgs::PointCloud& data,
                                             cloud_kdtree::KdTree& data_kdtree,
-                                            const cv::Vector<robot_msgs::Point32*>& interest_pts)
+                                            const cv::Vector<const robot_msgs::Point32*>& interest_pts)
 {
   // ----------------------------------------
   // Ensure some regions are provided
@@ -172,7 +172,7 @@ int SpectralAnalysis::analyzeInterestPoints(const robot_msgs::PointCloud& data,
 // --------------------------------------------------------------
 int SpectralAnalysis::analyzeInterestRegions(const robot_msgs::PointCloud& data,
                                              cloud_kdtree::KdTree& data_kdtree,
-                                             const cv::Vector<vector<int>*>& interest_region_indices)
+                                             const cv::Vector<const vector<int>*>& interest_region_indices)
 {
   // ----------------------------------------
   // Ensure some regions are provided
