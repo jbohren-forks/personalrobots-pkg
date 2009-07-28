@@ -638,6 +638,8 @@ namespace bodies
 
 bool bodies::ConvexMesh::intersectsRay(const btVector3& origin, const btVector3& dir, std::vector<btVector3> *intersections)
 {
+    if (distanceSQR(m_center, origin, dir) > m_radiusB * m_radiusB) return false;
+    
     // transform the ray into the coordinate frame of the mesh
     btVector3 orig(m_iPose * origin);
     btVector3 dr(m_iPose.getBasis() * dir);
