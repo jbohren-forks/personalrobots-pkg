@@ -9,3 +9,6 @@ uint8 REJECTED        = 5
 uint8 PREEMPTING      = 6
 uint8 RECALLING       = 7
 uint8 RECALLED        = 8
+
+#Allow for the user to associate a string with GoalStatus for debugging
+string text  
