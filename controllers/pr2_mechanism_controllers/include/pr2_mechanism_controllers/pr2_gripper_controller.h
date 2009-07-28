@@ -43,6 +43,7 @@
 #include <pr2_msgs/GripperControllerState.h>
 #include <ethercat_hardware/PressureState.h>
 #include <realtime_tools/realtime_publisher.h>
+#include <manipulation_srvs/GraspClosedLoop.h>
 
 namespace controller
 {
@@ -59,6 +60,8 @@ namespace controller
        * @param config Tiny xml element pointing to this controller
        * @return Successful init
        */
+      bool init(mechanism::RobotState *robot, const ros::NodeHandle &node);
+
       bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
       /*!
@@ -75,7 +78,7 @@ namespace controller
 
       double stepMove(double step_size);
 
-      double grasp();
+      double grasp(bool closed_loop);
 
     private:
       std::string name_;
@@ -84,19 +87,29 @@ namespace controller
 
       double default_speed_;
 
-      void command_callback();
+      ros::Subscriber cmd_sub_;
 
-      void pressure_state_callback();
+      ros::Subscriber pressure_sub_;
+
+      ros::NodeHandle node_;
+
+      ros::ServiceServer grasp_service_;
+
+      void command_callback(const pr2_mechanism_controllers::GripperControllerCmdConstPtr& grasp_cmd);
+
+      void pressure_state_callback(const ethercat_hardware::PressureStateConstPtr& pressure_state);
+
+      bool grasp_cl_srv(manipulation_srvs::GraspClosedLoop::Request &req, manipulation_srvs::GraspClosedLoop::Response &res);
 
       pr2_mechanism_controllers::GripperControllerCmd grasp_cmd_desired_;
 
       pr2_mechanism_controllers::GripperControllerCmd grasp_cmd_;
 
-      pr2_mechanism_controllers::GripperControllerCmd grasp_cmd;
+      //pr2_mechanism_controllers::GripperControllerCmd grasp_cmd;
 
-      //ethercat_hardware::PressureState pressure_state_;  //TODO::Do I need to copy this one to make it thread safe?
+      ethercat_hardware::PressureState pressure_state_;
 
-      ethercat_hardware::PressureState pressure_state;
+      //ethercat_hardware::PressureState pressure_state;
 
       /*!
        * \brief mutex lock for setting and getting commands
@@ -209,6 +222,8 @@ namespace controller
       int fingertip_sensor_second_peak1[15];
       int fingertip_sensor_second_steady0[15];
       int fingertip_sensor_second_steady1[15];
+      int fingertip_sensor_sides_start0[7];
+      int fingertip_sensor_sides_start1[7];
 
       double position_first_contact;
       double position_second_contact;
@@ -223,6 +238,15 @@ namespace controller
       double spring_const;
 
       int contact_threshold_;
+
+      int contact_threshold_individual_;
+
+      bool service_flag_;
+
+      bool service_success_;
+
+      manipulation_srvs::GraspClosedLoop::Request* service_request_;
+      manipulation_srvs::GraspClosedLoop::Response* service_response_;
   };
 }
 
