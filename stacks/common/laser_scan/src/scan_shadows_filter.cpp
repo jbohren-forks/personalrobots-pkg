@@ -50,7 +50,6 @@
 #include "laser_scan/point_cloud_footprint_filter.h"
 #include "filters/filter_chain.h"
 
-using namespace robot_msgs;
 
 /** @b ScanShadowsFilter is a simple node that filters shadow points in a laser scan line and publishes the results in a cloud.
  */
@@ -95,7 +94,7 @@ class ScanShadowsFilter
           boost::bind(&ScanShadowsFilter::scanCallback, this, _1), scan_topic_, "base_link", 50);
       notifier_->setTolerance(ros::Duration(0.03));
 
-      ros::Node::instance()->advertise<PointCloud> (cloud_topic_, 10);
+      ros::Node::instance()->advertise<sensor_msgs::PointCloud> (cloud_topic_, 10);
 
       std::string filter_xml;
       ros::Node::instance()->param("~filters", filter_xml, std::string("<filters><!--Filter Parameter Not Set--></filters>"));
@@ -148,7 +147,7 @@ class ScanShadowsFilter
      * \param cloud_out the output PointCloud message
      */
     void
-      constructCompleteLaserScanCloud (int c_idx, PointCloud cloud_in, PointCloud &cloud_out)
+      constructCompleteLaserScanCloud (int c_idx, sensor_msgs::PointCloud cloud_in, sensor_msgs::PointCloud &cloud_out)
     {
       // Use the index to revert to a full laser scan cloud (inefficient locally, but efficient globally)
       int idx = 0;
@@ -184,7 +183,7 @@ class ScanShadowsFilter
      * \param cloud_out the output PointCloud message
      */
     void
-      filterShadowPoints (PointCloud cloud_in, PointCloud &cloud_out)
+      filterShadowPoints (sensor_msgs::PointCloud cloud_in, sensor_msgs::PointCloud &cloud_out)
     {
       // For each point in the current line scan
       int n_pts_filtered = 0;
@@ -229,7 +228,7 @@ class ScanShadowsFilter
     {
       sensor_msgs::LaserScan& scan_msg = *msg_in;
       // Project laser into point cloud
-      PointCloud scan_cloud;
+      sensor_msgs::PointCloud scan_cloud;
       int n_scan = scan_msg.ranges.size ();      // Save the number of measurements
 
       //\TODO CLEAN UP HACK 
@@ -277,13 +276,13 @@ class ScanShadowsFilter
       /// ]--
 
       // Prepare the storage for the temporary array ([] and resize are faster than push_back)
-      PointCloud scan_full_cloud (scan_cloud);
+      sensor_msgs::PointCloud scan_full_cloud (scan_cloud);
       scan_full_cloud.pts.resize (n_scan);
       for (unsigned int d = 0; d < scan_cloud.get_chan_size (); d++)
         scan_full_cloud.chan[d].vals.resize (n_scan);
 
       // Prepare data storage for the output array ([] and resize are faster than push_back)
-      PointCloud filtered_cloud (scan_cloud);
+      sensor_msgs::PointCloud filtered_cloud (scan_cloud);
       filtered_cloud.pts.resize (n_scan);
       for (unsigned int d = 0; d < scan_cloud.get_chan_size (); d++)
         filtered_cloud.chan[d].vals.resize  (n_scan);
@@ -294,7 +293,7 @@ class ScanShadowsFilter
       // Filter points
       filterShadowPoints (scan_full_cloud, filtered_cloud);
 
-      PointCloud clear_footprint_cloud;
+      sensor_msgs::PointCloud clear_footprint_cloud;
       filter_chain_.update (filtered_cloud, clear_footprint_cloud);
 
       // Set timestamp/frameid and publish
