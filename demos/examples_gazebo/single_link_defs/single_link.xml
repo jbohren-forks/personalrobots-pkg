@@ -21,7 +21,7 @@
     <calibration values="1.5 -1 " />
   </joint>
   
-  <joint name="base_block_joint" type="planar"> 
+  <joint name="base_block_joint" type="fixed"> 
   </joint>
 
   <!-- link blocks -->
@@ -40,13 +40,13 @@
         <elem key="material">Gazebo/GrassFloor</elem>
       </map>
       <geometry name="base_block_visual_geom">
-        <mesh scale="20 20 0.005" />
+        <box scale="0.001 0.001 0.001" />
       </geometry>
     </visual> 
     <collision>
       <origin xyz="0 0 0" rpy="0.0 0.0 0.0" />
       <geometry name="base_block_collision_geom">
-        <box size="20 20 0.005" />
+        <box scale="0.001 0.001 0.001" />
       </geometry>
     </collision>
   </link>

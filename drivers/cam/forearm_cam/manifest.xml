@@ -9,10 +9,14 @@
   <depend package="robot_msgs" />
   <depend package="sensor_msgs" />
   <depend package="diagnostic_updater" />
-  <depend package="opencv_latest" />
-  <depend package="stereo_image_proc" />
+  <!--depend package="opencv_latest" /-->
+  <!--depend package="stereo_image_proc" /-->
   <depend package="self_test" />
-  <depend package="image_view" />
+  <!--depend package="image_view" /-->
   <depend package="robot_mechanism_controllers" />
   <depend package="dynamic_reconfigure" />
+  <depend package="dynamic_reconfigure" />
+  <export>
+    <cpp cflags="-I${prefix}/msg/include:${prefix}/srv/include"/>
+  </export>
 </package>

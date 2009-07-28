@@ -78,7 +78,7 @@ public:
     virtual bool update(const robot_msgs::PointCloud& data_in, robot_msgs::PointCloud& data_out)
     {
 	std::vector<bool> keep(data_in.pts.size());	
-	sm_.mask(data_in, keep);
+	sm_.maskContainment(data_in, keep);
 	fillResult(data_in, keep, data_out);
 	return true;
     }

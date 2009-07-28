@@ -271,9 +271,9 @@ TEST (costmap, raw_accessor)
 {
   static size_t const xsize(12);
   static size_t const ysize(43);
-  int buf[xsize * ysize];
-  typedef mpglue::RawCostmapAccessor<int> raw_costmap_t;
-  raw_costmap_t rcm(buf, xsize, ysize, 17, 12, 4);
+  typedef mpglue::RawCostmapAccessor<int, int*, int> raw_costmap_t;
+  raw_costmap_t rcm(0, xsize, ysize, 17, 12, 4);
+  rcm.raw = new int[xsize * ysize];
   {
     int cost(0);
     for (size_t ix(0); ix < xsize; ++ix)
@@ -281,7 +281,7 @@ TEST (costmap, raw_accessor)
 	int const raw_idx(rcm.indexToRaw(ix, iy));
 	ASSERT_GE (raw_idx, 0) << "negative rcm.indexToRaw()";
 	ASSERT_LT (raw_idx, xsize * ysize) << "rcm.indexToRaw() too big";
-	buf[raw_idx] = cost;
+	rcm.raw[raw_idx] = cost;
 	++cost;
 	if (cost > 42)
 	  cost = 0;
@@ -325,6 +325,7 @@ TEST (costmap, raw_accessor)
       }
     }
   }
+  delete rcm.raw;
 }
 
 

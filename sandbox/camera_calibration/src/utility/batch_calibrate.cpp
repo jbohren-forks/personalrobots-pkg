@@ -3,12 +3,14 @@
 
 using namespace camera_calibration;
 
+static const char wnd_name[] = "Calibration";
+
 int main(int argc, char** argv)
 {
   /** @todo: full-blown Boost.ProgramOptions interface */
   int board_width = 6;
   int board_height = 9;
-  float square_size = 1.0;//0.0225;
+  float square_size = 0.0225;
   int image_width = 0, image_height = 0;
 
   CheckerboardDetector detector(board_width, board_height, square_size);
@@ -17,9 +19,9 @@ int main(int argc, char** argv)
   std::vector<CvPoint2D32f> corners(detector.corners());
   
   Calibrater cal;
-  //cal.setFlags(CV_CALIB_FIX_PRINCIPAL_POINT);
+  cal.setFlags(CV_CALIB_FIX_PRINCIPAL_POINT);
 
-  cvNamedWindow("foo");
+  cvNamedWindow(wnd_name, 0);
   
   for (int i = 1; i < argc; ++i) {
     cv::WImageBuffer1_b image( cvLoadImage(argv[i], CV_LOAD_IMAGE_GRAYSCALE) );
@@ -39,7 +41,7 @@ int main(int argc, char** argv)
     cvCvtColor(image.Ipl(), display.Ipl(), CV_GRAY2BGR);
     cvDrawChessboardCorners(display.Ipl(), cvSize(board_width, board_height),
                             &corners[0], ncorners, success);
-    cvShowImage("foo", display.Ipl());
+    cvShowImage(wnd_name, display.Ipl());
     cvWaitKey(20);
   }
 

@@ -78,7 +78,9 @@ public:
 	mk.color.r = 1.0;
 	mk.color.g = 0.04;
 	mk.color.b = 0.04;
-
+	
+	mk.lifetime = ros::Duration(10);
+	
 	vmPub_.publish(mk);
     }
 
@@ -96,9 +98,9 @@ public:
 	in.chan[0].vals.resize(N);
 	for (unsigned int i = 0 ; i < N ; ++i)
 	{
-	    in.pts[i].x = uniform(1);
-	    in.pts[i].y = uniform(1);
-	    in.pts[i].z = uniform(1);
+	    in.pts[i].x = uniform(1.5);
+	    in.pts[i].y = uniform(1.5);
+	    in.pts[i].z = uniform(1.5);
 	    in.chan[0].vals[i] = (double)i/(double)N;
 	}
 	
@@ -110,21 +112,20 @@ public:
 	
 	ros::WallTime tm = ros::WallTime::now();
 	std::vector<int> mask;
-	sf_->mask(in, mask);
+	sf_->maskIntersection(in, "laser_tilt_mount_link", mask);
 	printf("%f points per second\n", (double)N/(ros::WallTime::now() - tm).toSec());
 	
 	sf_->assumeFrame(in.header);	
 	int k = 0;
 	for (unsigned int i = 0 ; i < mask.size() ; ++i)
 	{
-	    bool v = sf_->getMask(in.pts[i].x, in.pts[i].y, in.pts[i].z);
-	    if (v != mask[i]) 
-		ROS_ERROR("Mask does not match");	    
-	    if (mask[i]) continue;
+	    //	    bool v = sf_->getMaskContainment(in.pts[i].x, in.pts[i].y, in.pts[i].z);
+	    //	    if (v != mask[i]) 
+	    //		ROS_ERROR("Mask does not match");	    
+	    if (mask[i] != robot_self_filter::SHADOW) continue;
 	    sendPoint(in.pts[i].x, in.pts[i].y, in.pts[i].z);
 	    k++;
 	}
-	printf("%d points inside\n", k);
 	
 	ros::spin();	
     }
@@ -144,7 +145,6 @@ protected:
     int                               id_;
 };
 
-    
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "test_self_filter");

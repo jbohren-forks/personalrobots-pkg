@@ -51,6 +51,8 @@ max_accel:
  ay: 2.0 
  alphaz: 2.0
 
+state_publish_time: 0.25
+
 max_vel: 
  vx: 0.5
  vy: 0.5 

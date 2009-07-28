@@ -32,7 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include <point_cloud_clustering/kmeans_clustering.h>
+#include <point_cloud_clustering/kmeans.h>
 
 // --------------------------------------------------------------
 /* See function definition */

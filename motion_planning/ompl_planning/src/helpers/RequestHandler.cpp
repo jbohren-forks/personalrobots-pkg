@@ -476,7 +476,7 @@ void ompl_planning::RequestHandler::display(PlannerSetup *psetup)
     visualization_msgs::Marker mk;        
     mk.header.stamp = psetup->model->planningMonitor->lastMechanismStateUpdate();
     mk.header.frame_id = psetup->model->planningMonitor->getFrameId();
-    mk.ns = nh_.getName();
+    mk.ns = ros::this_node::getName();
     mk.id = 1;    
     mk.type = visualization_msgs::Marker::POINTS;
     mk.action = visualization_msgs::Marker::ADD;

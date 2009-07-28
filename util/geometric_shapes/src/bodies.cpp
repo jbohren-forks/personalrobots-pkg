@@ -36,6 +36,7 @@
 
 #include "geometric_shapes/bodies.h"
 #include <LinearMath/btConvexHull.h>
+#include <algorithm>
 #include <iostream>
 #include <cmath>
 
@@ -97,6 +98,20 @@ void bodies::mergeBoundingSpheres(const std::vector<BoundingSphere> &spheres, Bo
     }
 }
 
+namespace bodies
+{
+    static const double ZERO = 1e-9;
+    
+    /* Compute the square of the distance between a ray and a point */
+    /* Note: this requires 'dir' to be normalized */
+    static inline double distanceSQR(const btVector3& p, const btVector3& origin, const btVector3& dir)
+    {
+	btVector3 a = p - origin;
+	double d = dir.dot(a);
+	return a.length2() - d * d;
+    }
+}
+
 bool bodies::Sphere::containsPoint(const btVector3 &p) const 
 {
     return (m_center - p).length2() < m_radius2;
@@ -123,6 +138,57 @@ void bodies::Sphere::computeBoundingSphere(BoundingSphere &sphere) const
 {
     sphere.center = m_center;
     sphere.radius = m_radiusU;
+}
+
+bool bodies::Sphere::intersectsRay(const btVector3& origin, const btVector3& dir, std::vector<btVector3> *intersections)
+{
+    if (distanceSQR(m_center, origin, dir) > m_radius2) return false;
+    bool result = false;
+    
+    btVector3 cp = origin - m_center;
+    double dpcpv = cp.dot(dir);
+    
+    btVector3 w = cp - dpcpv * dir;
+    btVector3 Q = m_center + w;
+    double x = m_radius2 - w.length2();
+    
+    if (fabs(x) < ZERO)
+    { 
+	w = Q - origin;
+	double dpQv = w.dot(dir);
+	if (dpQv > ZERO)
+	{
+	    if (intersections)
+		intersections->push_back(Q);
+	    result = true;
+	}
+    } else 
+	if (x > 0.0)
+	{    
+	    x = sqrt(x);
+	    w = dir * x;
+	    btVector3 A = Q - w;
+	    btVector3 B = Q + w;
+	    w = A - origin;
+	    double dpAv = w.dot(dir);
+	    w = B - origin;
+	    double dpBv = w.dot(dir);
+	    
+	    if (dpAv > ZERO)
+	    {	
+		if (intersections)
+		    intersections->push_back(A);
+		result = true;
+	    }
+	    
+	    if (dpBv > ZERO)
+	    {
+		if (intersections)
+		    intersections->push_back(B);
+		result = true;
+	    }
+	}
+    return result;
 }
 
 bool bodies::Cylinder::containsPoint(const btVector3 &p) const 
@@ -157,12 +223,16 @@ void bodies::Cylinder::updateInternalData(void)
     m_radius2 = m_radiusU * m_radiusU;
     m_length2 = m_scale * m_length / 2.0 + m_padding;
     m_center = m_pose.getOrigin();
-    m_radiusB = std::max(m_radiusU, m_length2);
+    m_radiusB = sqrt(m_length2 * m_length2 + m_radius2);
     
     const btMatrix3x3& basis = m_pose.getBasis();
     m_normalB1 = basis.getColumn(0);
     m_normalB2 = basis.getColumn(1);
     m_normalH  = basis.getColumn(2);
+    
+    btVector3 tmp = (m_normalB1 + m_normalB2) * m_radiusU;    
+    m_corner1 = m_center - tmp - m_normalH * m_length2;
+    m_corner2 = m_center + tmp + m_normalH * m_length2;
 }
 
 double bodies::Cylinder::computeVolume(void) const
@@ -174,6 +244,85 @@ void bodies::Cylinder::computeBoundingSphere(BoundingSphere &sphere) const
 {
     sphere.center = m_center;
     sphere.radius = m_radiusB;
+}
+
+bool bodies::Cylinder::intersectsRay(const btVector3& origin, const btVector3& dir, std::vector<btVector3> *intersections)
+{
+    if (distanceSQR(m_center, origin, dir) > m_radiusB) return false;
+
+    double t_near = -INFINITY;
+    double t_far  = INFINITY;
+    
+    for (int i = 0; i < 3; i++)
+    {
+	btVector3 &vN = i == 0 ? m_normalB1 : (i == 1 ? m_normalB2 : m_normalH);
+	double dp = vN.dot(dir);
+	
+	if (fabs(dp) > ZERO)
+	{
+	    double t1 = vN.dot(m_corner1 - origin) / dp;
+	    double t2 = vN.dot(m_corner2 - origin) / dp;
+	    
+	    if (t1 > t2)
+		std::swap(t1, t2);
+	    
+	    if (t1 > t_near)
+		t_near = t1;
+	    
+	    if (t2 < t_far)
+		t_far = t2;
+	    
+	    if (t_near > t_far)
+		return false;
+	    
+	    if (t_far < 0.0)
+		return false;
+	}
+	else
+	{
+	    if (i == 0)
+	    {
+		if ((std::min(m_corner1.y(), m_corner2.y()) > origin.y() ||
+		     std::max(m_corner1.y(), m_corner2.y()) < origin.y()) && 
+		    (std::min(m_corner1.z(), m_corner2.z()) > origin.z() ||
+		     std::max(m_corner1.z(), m_corner2.z()) < origin.z()))
+		    return false;
+	    }
+	    else
+	    {
+		if (i == 1)
+		{
+		    if ((std::min(m_corner1.x(), m_corner2.x()) > origin.x() ||
+			 std::max(m_corner1.x(), m_corner2.x()) < origin.x()) && 
+			(std::min(m_corner1.z(), m_corner2.z()) > origin.z() ||
+			 std::max(m_corner1.z(), m_corner2.z()) < origin.z()))
+			return false;
+		}
+		else
+		    if ((std::min(m_corner1.x(), m_corner2.x()) > origin.x() ||
+			 std::max(m_corner1.x(), m_corner2.x()) < origin.x()) && 
+			(std::min(m_corner1.y(), m_corner2.y()) > origin.y() ||
+			 std::max(m_corner1.y(), m_corner2.y()) < origin.y()))
+			return false;
+	    }
+	}
+    }
+    
+    // at this point we know there is intersection with the box around the cylinder
+    // \todo we need to figure out if this intersection is on the cylinder as well
+    
+    if (intersections)
+    {
+	if (t_far - t_near > ZERO)
+	{
+	    intersections->push_back(t_near * dir + origin);
+	    intersections->push_back(t_far  * dir + origin);
+	}
+	else
+	    intersections->push_back(t_far * dir + origin);
+    }
+    
+    return true;
 }
 
 bool bodies::Box::containsPoint(const btVector3 &p) const 
@@ -220,6 +369,10 @@ void bodies::Box::updateInternalData(void)
     m_normalL = basis.getColumn(0);
     m_normalW = basis.getColumn(1);
     m_normalH = basis.getColumn(2);
+
+    const btVector3 tmp(m_normalL * m_length2 + m_normalW * m_width2 + m_normalH * m_height2);
+    m_corner1 = m_center - tmp;
+    m_corner2 = m_center + tmp;
 }
 
 double bodies::Box::computeVolume(void) const
@@ -231,6 +384,82 @@ void bodies::Box::computeBoundingSphere(BoundingSphere &sphere) const
 {
     sphere.center = m_center;
     sphere.radius = m_radiusB;
+}
+
+bool bodies::Box::intersectsRay(const btVector3& origin, const btVector3& dir, std::vector<btVector3> *intersections)
+{  
+    if (distanceSQR(m_center, origin, dir) > m_radiusB) return false;
+
+    double t_near = -INFINITY;
+    double t_far  = INFINITY;
+    
+    for (int i = 0; i < 3; i++)
+    {
+	btVector3 &vN = i == 0 ? m_normalL : (i == 1 ? m_normalW : m_normalH);
+	double dp = vN.dot(dir);
+	
+	if (fabs(dp) > ZERO)
+	{
+	    double t1 = vN.dot(m_corner1 - origin) / dp;
+	    double t2 = vN.dot(m_corner2 - origin) / dp;
+	    
+	    if (t1 > t2)
+		std::swap(t1, t2);
+	    
+	    if (t1 > t_near)
+		t_near = t1;
+	    
+	    if (t2 < t_far)
+		t_far = t2;
+	    
+	    if (t_near > t_far)
+		return false;
+	    
+	    if (t_far < 0.0)
+		return false;
+	}
+	else
+	{
+	    if (i == 0)
+	    {
+		if ((std::min(m_corner1.y(), m_corner2.y()) > origin.y() ||
+		     std::max(m_corner1.y(), m_corner2.y()) < origin.y()) && 
+		    (std::min(m_corner1.z(), m_corner2.z()) > origin.z() ||
+		     std::max(m_corner1.z(), m_corner2.z()) < origin.z()))
+		    return false;
+	    }
+	    else
+	    {
+		if (i == 1)
+		{
+		    if ((std::min(m_corner1.x(), m_corner2.x()) > origin.x() ||
+			 std::max(m_corner1.x(), m_corner2.x()) < origin.x()) && 
+			(std::min(m_corner1.z(), m_corner2.z()) > origin.z() ||
+			 std::max(m_corner1.z(), m_corner2.z()) < origin.z()))
+			return false;
+		}
+		else
+		    if ((std::min(m_corner1.x(), m_corner2.x()) > origin.x() ||
+			 std::max(m_corner1.x(), m_corner2.x()) < origin.x()) && 
+			(std::min(m_corner1.y(), m_corner2.y()) > origin.y() ||
+			 std::max(m_corner1.y(), m_corner2.y()) < origin.y()))
+			return false;
+	    }
+	}
+    }
+    
+    if (intersections)
+    {
+	if (t_far - t_near > ZERO)
+	{
+	    intersections->push_back(t_near * dir + origin);
+	    intersections->push_back(t_far  * dir + origin);
+	}
+	else
+	    intersections->push_back(t_far * dir + origin);
+    }
+    
+    return true;
 }
 
 bool bodies::ConvexMesh::containsPoint(const btVector3 &p) const
@@ -245,6 +474,7 @@ void bodies::ConvexMesh::useDimensions(const shapes::Shape *shape)
     m_planes.clear();
     m_triangles.clear();
     m_vertices.clear();
+    m_vertDists.clear();
     m_meshRadiusB = 0.0;
     m_meshCenter.setValue(btScalar(0), btScalar(0), btScalar(0));
 
@@ -264,10 +494,12 @@ void bodies::ConvexMesh::useDimensions(const shapes::Shape *shape)
 	std::cout << "Convex hull has " << hr.m_OutputVertices.size() << " vertices (down from " << mesh->vertexCount << "), " << hr.mNumFaces << " faces" << std::endl;
 
 	m_vertices.reserve(hr.m_OutputVertices.size());
-	btVector3 sum(btScalar(0), btScalar(0), btScalar(0));	
+	btVector3 sum(0, 0, 0);	
+	
 	for (int j = 0 ; j < hr.m_OutputVertices.size() ; ++j)
 	{
 	    m_vertices.push_back(hr.m_OutputVertices[j]);
+	    m_vertDists.push_back(hr.m_OutputVertices[j].length());
 	    sum = sum + hr.m_OutputVertices[j];
 	}
 	
@@ -281,9 +513,6 @@ void bodies::ConvexMesh::useDimensions(const shapes::Shape *shape)
 	m_meshRadiusB = sqrt(m_meshRadiusB);
 	
 	m_triangles.reserve(hr.m_Indices.size());
-	for (int j = 0 ; j < hr.m_Indices.size() ; ++j)
-	    m_triangles.push_back(hr.m_Indices[j]);
-	
 	for (unsigned int j = 0 ; j < hr.mNumFaces ; ++j)
 	{
 	    const btVector3 &p1 = hr.m_OutputVertices[hr.m_Indices[j * 3    ]];
@@ -319,6 +548,10 @@ void bodies::ConvexMesh::useDimensions(const shapes::Shape *shape)
 		    std::cerr << "Approximate plane: " << behindPlane << " of " << m_vertices.size() << " points are behind the plane" << std::endl;
 		
 		m_planes.push_back(planeEquation);
+
+		m_triangles.push_back(hr.m_Indices[j * 3 + 0]);
+		m_triangles.push_back(hr.m_Indices[j * 3 + 1]);
+		m_triangles.push_back(hr.m_Indices[j * 3 + 2]);
 	    }
 	}
     }
@@ -379,4 +612,108 @@ double bodies::ConvexMesh::computeVolume(void) const
 	volume += v1.x()*v2.y()*v3.z() + v2.x()*v3.y()*v1.z() + v3.x()*v1.y()*v2.z() -v1.x()*v3.y()*v2.z() - v2.x()*v1.y()*v3.z() - v3.x()*v2.y()*v1.z();
     }
     return fabs(volume)/6.0;
+}
+
+namespace bodies
+{   
+
+    // temp structure for intersection points (used for ordering them)
+    struct intersc
+    {
+	intersc(const btVector3 &_pt, const double _tm) : pt(_pt), time(_tm) {}
+	
+	btVector3 pt;
+	double    time;
+    };
+    
+    struct interscOrder
+    {
+	bool operator()(const intersc &a, const intersc &b) const
+	{
+	    return a.time < b.time;
+	}
+	
+    };
+    
+}
+
+bool bodies::ConvexMesh::intersectsRay(const btVector3& origin, const btVector3& dir, std::vector<btVector3> *intersections)
+{
+    if (distanceSQR(m_center, origin, dir) > m_radiusB * m_radiusB) return false;
+    
+    // transform the ray into the coordinate frame of the mesh
+    btVector3 orig(m_iPose * origin);
+    btVector3 dr(m_iPose.getBasis() * dir);
+    
+    std::vector<intersc> ipts;
+    
+    bool result = false;
+    
+    // for each triangle 
+    const unsigned int nt = m_triangles.size() / 3;
+    for (unsigned int i = 0 ; i < nt ; ++i)
+    {
+	btScalar tmp = m_planes[i].dot(dr);
+	if (fabs(tmp) > ZERO)
+	{
+	    double t = -(m_planes[i].dot(orig) + m_planes[i].getW()) / tmp;
+	    if (t > 0.0)
+	    {
+		const int i3 = 3*i;
+		const int v1 = m_triangles[i3 + 0];
+		const int v2 = m_triangles[i3 + 1];
+		const int v3 = m_triangles[i3 + 2];
+
+		// this is not the best way to do scaling ....
+		const btVector3 a = m_vertices[v1] * (m_scale + (m_vertDists[v1] > ZERO ? m_padding / m_vertDists[v1] : 0.0));
+		const btVector3 b = m_vertices[v2] * (m_scale + (m_vertDists[v2] > ZERO ? m_padding / m_vertDists[v2] : 0.0));
+		const btVector3 c = m_vertices[v3] * (m_scale + (m_vertDists[v3] > ZERO ? m_padding / m_vertDists[v3] : 0.0));
+		
+		btVector3 cb(c - b);
+		btVector3 ab(a - b);
+		
+		// intersection of the plane defined by the triangle and the ray
+		btVector3 P(orig + dr * t);
+		
+		// check if it is inside the triangle
+		btVector3 pb(P - b);
+		btVector3 c1(cb.cross(pb));
+		btVector3 c2(cb.cross(ab));
+		if (c1.dot(c2) < 0.0)
+		    continue;
+		btVector3 ca(c - a);
+		btVector3 pa(P - a);
+		btVector3 ba(-ab);
+		
+		c1 = ca.cross(pa);
+		c2 = ca.cross(ba);
+		if (c1.dot(c2) < 0.0)
+		    continue;
+		
+		c1 = ba.cross(pa);
+		c2 = ba.cross(ca);
+		
+		if (c1.dot(c2) < 0.0)
+		    continue;
+		
+		result = true;
+		if (intersections)
+		{
+		    intersc ip(P, t);
+		    ipts.push_back(ip);
+		}
+		else
+		    break;
+	    }
+	}
+    }
+
+    if (intersections)
+    {
+	std::sort(ipts.begin(), ipts.end(), interscOrder());
+	for (unsigned int i = 0 ; i < ipts.size() ; ++i)
+	    intersections->push_back(ipts[i].pt);
+    }
+    
+    return result;
 }

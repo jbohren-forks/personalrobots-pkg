@@ -222,7 +222,7 @@ private:
     void computeCloudMask(const robot_msgs::PointCloud &cloud, std::vector<int> &mask)
     {
 	if (cloud_annotation_.empty())
-	    sf_.mask(cloud, mask);
+	    sf_.maskContainment(cloud, mask);
 	else
 	{
 	    int c = -1;
@@ -235,7 +235,7 @@ private:
 	    if (c < 0)
 	    {
 		ROS_WARN("Cloud annotation channel '%s' is missing", cloud_annotation_.c_str());
-		sf_.mask(cloud, mask);
+		sf_.maskContainment(cloud, mask);
 	    }
 	    else
 	    {
@@ -560,7 +560,7 @@ private:
 	else
 	{
 	    // this is the point in the robotFrame_; check if it is currently inside the robot
-	    bool out = sf_.getMask(x * bi_.resolution + bi_.originX, y * bi_.resolution + bi_.originY, z * bi_.resolution + bi_.originZ);
+	    bool out = sf_.getMaskContainment(x * bi_.resolution + bi_.originX, y * bi_.resolution + bi_.originY, z * bi_.resolution + bi_.originZ);
 	    
 	    // if we are already inside the robot, we mark the fact we want to stop when we are outside
 	    if (out == false)

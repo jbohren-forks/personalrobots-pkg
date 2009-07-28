@@ -39,6 +39,7 @@
 
 #include "geometric_shapes/shapes.h"
 #include <LinearMath/btTransform.h>
+#include <vector>
 
 /**
    This set of classes allows quickly detecting whether a given point
@@ -137,6 +138,9 @@ namespace bodies
 	    return containsPoint(btVector3(btScalar(x), btScalar(y), btScalar(z)));
 	}
 	
+	/** \brief Check is a ray intersects the body, and find the set of intersections, in order, along the ray */
+	virtual bool intersectsRay(const btVector3& origin, const btVector3 &dir, std::vector<btVector3> *intersections = NULL) = 0;
+	
 	/** \brief Check is a point is inside the body */
 	virtual bool containsPoint(const btVector3 &p) const = 0;	
 	
@@ -182,7 +186,8 @@ namespace bodies
 	virtual bool containsPoint(const btVector3 &p) const;
 	virtual double computeVolume(void) const;
 	virtual void computeBoundingSphere(BoundingSphere &sphere) const;
-	
+	virtual bool intersectsRay(const btVector3& origin, const btVector3 &dir, std::vector<btVector3> *intersections = NULL);
+
     protected:
 	
 	virtual void useDimensions(const shapes::Shape *shape);
@@ -217,7 +222,8 @@ namespace bodies
 	virtual bool containsPoint(const btVector3 &p) const;
 	virtual double computeVolume(void) const;
 	virtual void computeBoundingSphere(BoundingSphere &sphere) const;
-	
+	virtual bool intersectsRay(const btVector3& origin, const btVector3 &dir, std::vector<btVector3> *intersections = NULL);
+
     protected:
 	
 	virtual void useDimensions(const shapes::Shape *shape);
@@ -228,6 +234,9 @@ namespace bodies
 	btVector3 m_normalB1;
 	btVector3 m_normalB2;
 	
+	btVector3 m_corner1;
+	btVector3 m_corner2;
+
 	double    m_length;
 	double    m_length2;	
 	double    m_radius;
@@ -259,7 +268,8 @@ namespace bodies
 	virtual bool containsPoint(const btVector3 &p) const;
 	virtual double computeVolume(void) const;
 	virtual void computeBoundingSphere(BoundingSphere &sphere) const;
-	
+	virtual bool intersectsRay(const btVector3& origin, const btVector3 &dir, std::vector<btVector3> *intersections = NULL);
+
     protected:
 	
 	virtual void useDimensions(const shapes::Shape *shape); // (x, y, z) = (length, width, height)	    
@@ -270,6 +280,9 @@ namespace bodies
 	btVector3 m_normalW;
 	btVector3 m_normalH;
 	
+	btVector3 m_corner1;
+	btVector3 m_corner2;
+
 	double    m_length;
 	double    m_width;
 	double    m_height;	
@@ -304,7 +317,8 @@ namespace bodies
 	virtual bool containsPoint(const btVector3 &p) const;
 	virtual double computeVolume(void) const;
 	virtual void computeBoundingSphere(BoundingSphere &sphere) const;
-	
+	virtual bool intersectsRay(const btVector3& origin, const btVector3 &dir, std::vector<btVector3> *intersections = NULL);
+
     protected:
 	
 	virtual void useDimensions(const shapes::Shape *shape);
@@ -315,6 +329,7 @@ namespace bodies
 	
 	std::vector<btVector4>    m_planes;
 	std::vector<btVector3>    m_vertices;
+	std::vector<btScalar>     m_vertDists;
 	std::vector<unsigned int> m_triangles;
 	btTransform               m_iPose;
 	

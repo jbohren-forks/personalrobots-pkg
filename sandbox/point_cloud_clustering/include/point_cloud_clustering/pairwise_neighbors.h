@@ -44,13 +44,13 @@
 
 #include <point_cloud_mapping/kdtree/kdtree.h>
 
-#include <point_cloud_clustering/generic_clustering.h>
+#include <point_cloud_clustering/point_cloud_clustering.h>
 
 using namespace std;
 
 namespace point_cloud_clustering
 {
-  class PairwiseNeighbors: public GenericClustering
+  class PairwiseNeighbors: public PointCloudClustering
   {
     public:
       PairwiseNeighbors()

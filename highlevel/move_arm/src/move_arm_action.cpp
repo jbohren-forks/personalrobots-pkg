@@ -137,12 +137,13 @@ namespace move_arm
 	// do not spend more than this amount of time
 	req.allowed_time = 1.0;
 
-	if (perform_ik_)
-	    alterRequestUsingIK(req);
-	
 	// tell the planning monitor about the constraints we will be following
 	planningMonitor_->setPathConstraints(req.path_constraints);
 	planningMonitor_->setGoalConstraints(req.goal_constraints);
+
+	if (perform_ik_)
+	    alterRequestUsingIK(req);
+	
 
 	ResultStatus result = robot_actions::SUCCESS;
 	
@@ -398,7 +399,7 @@ namespace move_arm
 	visualization_msgs::Marker mk;
 	mk.header.stamp = planningMonitor_->lastMapUpdate();
 	mk.header.frame_id = planningMonitor_->getFrameId();
-	mk.ns = node_handle_.getName();
+	mk.ns = ros::this_node::getName();
 	mk.id = count++;
 	mk.type = visualization_msgs::Marker::SPHERE;
 	mk.action = visualization_msgs::Marker::ADD;
@@ -475,21 +476,16 @@ namespace move_arm
 	return true;
     }
     
-    bool MoveArm::fillStartState(std::vector<motion_planning_msgs::KinematicJoint> &start_state)
+    bool MoveArm::fixState(planning_models::StateParams &st, bool atGoal)
     {
 	bool result = true;
-	
-	// get the current state
-	planning_models::StateParams st(*planningMonitor_->getRobotState());
 	
 	// just in case the system is a bit outside bounds, we enforce the bounds
 	st.enforceBounds();
 	
 	// if the state is not valid, we try to fix it
-	if (!planningMonitor_->isStateValidOnPath(&st))
+	if (atGoal ? !planningMonitor_->isStateValidAtGoal(&st) : !planningMonitor_->isStateValidOnPath(&st))
 	{
-            ROS_DEBUG("Start state not valid, fixing it!");
-	    
 	    // try 2% change in each component
 	    planning_models::StateParams temp(st);
 	    int count = 0;
@@ -498,10 +494,10 @@ namespace move_arm
 		temp = st;
 		temp.perturbStateGroup(0.02, arm_);
 		count++;
-	    } while (!planningMonitor_->isStateValidOnPath(&temp) && count < 50);
+	    } while ((atGoal ? !planningMonitor_->isStateValidAtGoal(&temp) : !planningMonitor_->isStateValidOnPath(&temp)) && count < 50);
 	    
 	    // try 10% change in each component
-	    if (!planningMonitor_->isStateValidOnPath(&temp))
+	    if (atGoal ? !planningMonitor_->isStateValidAtGoal(&temp) : !planningMonitor_->isStateValidOnPath(&temp))
 	    {
 		count = 0;
 		do 
@@ -509,17 +505,26 @@ namespace move_arm
 		    temp = st;
 		    temp.perturbStateGroup(0.1, arm_);
 		    count++;
-		} while (!planningMonitor_->isStateValidOnPath(&temp) && count < 50);
+		} while ((atGoal ? !planningMonitor_->isStateValidAtGoal(&temp) : !planningMonitor_->isStateValidOnPath(&temp)) && count < 50);
 	    }
 	    
-	    if (planningMonitor_->isStateValidOnPath(&temp))
+	    if (atGoal ? !planningMonitor_->isStateValidAtGoal(&temp) : !planningMonitor_->isStateValidOnPath(&temp))
 		st = temp;
 	    else
-	    {
 		result = false;
-		ROS_ERROR("Starting state for the robot is in collision and attempting to fix it failed");
-	    }
 	}
+	return result;
+    }
+    
+    bool MoveArm::fillStartState(std::vector<motion_planning_msgs::KinematicJoint> &start_state)
+    {
+	// get the current state
+	planning_models::StateParams st(*planningMonitor_->getRobotState());
+	
+	bool result = fixState(st, false);
+	
+	if (!result)
+	    ROS_ERROR("Starting state for the robot is in collision and attempting to fix it failed");
 	
 	// fill in start state with current one
 	std::vector<planning_models::KinematicModel::Joint*> joints;
@@ -558,10 +563,10 @@ namespace move_arm
 	    {
 		// we can do ik can turn the pose constraint into a joint one
 		ROS_INFO("Converting pose constraint to joint constraint using IK...");
-
+		
 		planningMonitor_->getEnvironmentModel()->setVerbose(false);
 		ros::ServiceClient client = node_handle_.serviceClient<manipulation_srvs::IKService>(ARM_IK_NAME, true);
-		for (int t = 0 ; t < 20 ; ++t)
+		for (int t = 0 ; t < 2 ; ++t)
 		{
 		    robot_msgs::PoseStamped tpose = req.goal_constraints.pose_constraint[0].pose;
 		    if (t > 0)
@@ -594,6 +599,10 @@ namespace move_arm
 			    req.goal_constraints.joint_constraint.push_back(jc);
 			}
 			req.goal_constraints.pose_constraint.clear();
+
+			// update the goal constraints for the planning monitor as well
+			planningMonitor_->setGoalConstraints(req.goal_constraints);
+			
 			result = true;
 		    }
 		}
@@ -649,7 +658,7 @@ namespace move_arm
 		}
 		
 		for(unsigned int i = 0; i < solution.size() ; ++i)
-		    ROS_DEBUG("%f", solution[i]);
+		    ROS_DEBUG("IK[%d] = %f", (int)i, solution[i]);
 		
 		// if IK did not fail, check if the state is valid
 		planning_models::StateParams spTest(*planningMonitor_->getRobotState());
@@ -664,10 +673,23 @@ namespace move_arm
 		    }
 		    n += u;			
 		}
+		
+		// if state is not valid, we try to fix it
+		fixState(spTest, true);
+		
 		if (planningMonitor_->isStateValidAtGoal(&spTest))
+		{
 		    validSolution = true;
-		else
-		    request.data.positions = solution;
+		    
+		    // update solution
+		    solution.clear();
+		    for (unsigned int i = 0 ; i < arm_joint_names_.size() ; ++i)
+		    {
+			std::vector<double> params;
+			spTest.copyParamsJoint(params, arm_joint_names_[i]);
+			solution.insert(solution.end(), params.begin(), params.end());
+		    }
+		}
 	    }
 	    else
 	    {

@@ -6,10 +6,29 @@
     <script type="text/javascript" src="3rdparty/wz_jsgraphics.js"></script>
     <script type="text/javascript" src="ros.js"></script>
     <script type="text/javascript">
+
+      function gadgetsWindow()
+      {
+        width = document.body.clientWidth;
+        height = document.body.clientHeight;
+
+        l= width * 0.1;
+        t= height * 0.1;
+
+        newDiv = document.getElementById('displaybox');
+        newDiv.style.display = "";
+        newDiv.style.top = t;
+        newDiv.style.left = l;
+      }
+
+      function addGadget(name)
+      {
+        var gadget = new ROSGadget(name);
+      }
+
       function init()
       {
-        var image_gadget = new ROSGadget('image_gadget');
-        var map_gadget = new ROSGadget('map_gadget');
+        var gadget = new ROSGadget("startup_gadget");
       }
 
       window.onload = init;
@@ -17,5 +36,47 @@
   </head>
 
   <body>
+    <div id="header">
+      <div id="title">ROS Web Gadgets</div>
+      <div>
+        <a style="float:right; vertical-align: middle; text-decoration:none;" href="#" onclick='gadgetsWindow();'>+ Add Gadget</a>
+      </div>
+    </div>
+
+    <div id='displaybox' style="display:none;">
+      <h1> Add Gadget </h1>
+
+      <div id="gadgetdesc">
+        <div id="imgbox">
+          <img src="images/imageview.png" style="margin-bottom:10px;" height="100px">
+          <a href="#" style="display: block; text-decoration:none;" onclick="addGadget('image_gadget');">Add Now</a>
+        </div>
+
+        <p>
+          <h2>Image Viewer</h2>
+          The image viewer gadget displays and image from a topic that
+          publishes messages of type sensor_msgs/CompressedImage or
+          sensor_msgs/Image.
+        </p>
+      </div>
+
+      <div id="gadgetdesc">
+        <div id="imgbox">
+          <img src="images/navview.png" style="margin-bottom:10px;" height ="100px">
+          <a href="#" style="display:block; text-decoration:none;" 
+             onclick="addGadget('map_gadget');">Add Now</a>
+        </div>
+
+        <p>
+          <h2>Navigation Viewer</h2>
+          The navigation viewer gadget displays the static map, the pose of
+          the robot, and it's planned path. It is possible to set the robot's
+          pose, and assign a goal pose.
+          The map can be panned by clicking the left mouse button and dragging.
+          The map can be zoomed using the middle scroll wheel.
+        </p>
+      </div>
+    </div>
+
   </body>
 </html>

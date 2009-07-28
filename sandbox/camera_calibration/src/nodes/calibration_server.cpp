@@ -33,7 +33,7 @@ public:
     double square_size;
     if (!n.getParam("~board_width", board_width) ||
         !n.getParam("~board_height", board_height) ||
-        !n.getParam("square_size", square_size))
+        !n.getParam("~square_size", square_size))
     {
       ROS_FATAL("Board not fully specified");
       n.shutdown();
