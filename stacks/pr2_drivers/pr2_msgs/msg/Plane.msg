@@ -1,2 +1,2 @@
-robot_msgs/Point point
-robot_msgs/Vector3 normal
+geometry_msgs/Point point
+geometry_msgs/Vector3 normal
