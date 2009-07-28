@@ -44,7 +44,7 @@ histogram and matches it using HIK (the Histogram Intersection Kernel) to a "dat
 // ROS core
 #include <ros/node.h>
 // ROS messages
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 #include <robot_msgs/Polygon3D.h>
 #include <mapping_msgs/PolygonalMap.h>
 

@@ -41,7 +41,7 @@
 #include <ros/ros.h>
 #include "recognition_lambertian/ModelFit.h"
 
-#include "robot_msgs/Point.h"
+#include "geometry_msgs/Point.h"
 #include "visualization_msgs/Marker.h"
 #include "mapping_msgs/Object.h"
 

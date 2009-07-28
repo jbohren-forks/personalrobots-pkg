@@ -65,7 +65,7 @@ Subscribes to (name type):
 - @b "tf_message" tf/tfMessage : transforms
 
 Publishes to (name type):
-- @b "amcl_pose" robot_msgs/PoseWithCovariance : robot's estimated pose in the map, with covariance
+- @b "amcl_pose" geometry_msgs/PoseWithCovariance : robot's estimated pose in the map, with covariance
 - @b "particlecloud" nav_msgs/ParticleCloud : the set of pose estimates being maintained by the filter.
 - @b "tf_message" tf/tfMessage : publishes the transform from "odom" (which can be remapped via the ~odom_frame_id parameter) to "map"
 - @b "gui_laser" visualization_msgs/Polyline : re-projected laser scans (for visualization)
@@ -157,9 +157,9 @@ model.  The fifth parameter capture the tendency of the robot to translate
 
 // Messages that I need
 #include "sensor_msgs/LaserScan.h"
-#include "robot_msgs/PoseWithCovariance.h"
+#include "geometry_msgs/PoseWithCovariance.h"
 #include "nav_msgs/ParticleCloud.h"
-#include "robot_msgs/Pose.h"
+#include "geometry_msgs/Pose.h"
 #include "nav_srvs/StaticMap.h"
 #include "std_srvs/Empty.h"
 #include "visualization_msgs/Polyline.h"
@@ -226,7 +226,7 @@ class AmclNode
     static pf_vector_t uniformPoseGenerator(void* arg);
 
     // incoming messages
-    robot_msgs::PoseWithCovariance initial_pose_;
+    geometry_msgs::PoseWithCovariance initial_pose_;
 
     // Message callbacks
     bool globalLocalizationCallback(std_srvs::Empty::Request& req,
@@ -246,7 +246,7 @@ class AmclNode
     ros::Time save_pose_last_time;
     ros::Duration save_pose_period;
 
-    robot_msgs::PoseWithCovariance last_published_pose;
+    geometry_msgs::PoseWithCovariance last_published_pose;
 
     map_t* map_;
     char* mapdata;
@@ -439,7 +439,7 @@ AmclNode::AmclNode() :
     laser_->SetModelLikelihoodField(z_hit, z_rand, sigma_hit,
                                     laser_likelihood_max_dist);
 
-  ros::Node::instance()->advertise<robot_msgs::PoseWithCovariance>("amcl_pose",2);
+  ros::Node::instance()->advertise<geometry_msgs::PoseWithCovariance>("amcl_pose",2);
   ros::Node::instance()->advertise<nav_msgs::ParticleCloud>("particlecloud",2);
   ros::Node::instance()->advertise<visualization_msgs::Polyline>("gui_laser",2);
   ros::Node::instance()->advertiseService("global_localization",
@@ -782,7 +782,7 @@ AmclNode::laserReceived(const tf::MessageNotifier<sensor_msgs::LaserScan>::Messa
          puts("");
        */
 
-      robot_msgs::PoseWithCovariance p;
+      geometry_msgs::PoseWithCovariance p;
       // Fill in the header
       p.header.frame_id = "map";
       p.header.stamp = laser_scan->header.stamp;

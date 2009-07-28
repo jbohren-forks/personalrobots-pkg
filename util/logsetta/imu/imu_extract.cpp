@@ -32,11 +32,11 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#include "robot_msgs/PoseWithRatesStamped.h"
+#include "geometry_msgs/PoseWithRatesStamped.h"
 #include <string>
 #include "rosrecord/Player.h"
 
-void imu_callback(std::string name, robot_msgs::PoseWithRatesStamped* imu, ros::Time t, ros::Time t_no_use, void* f)
+void imu_callback(std::string name, geometry_msgs::PoseWithRatesStamped* imu, ros::Time t, ros::Time t_no_use, void* f)
 {
   FILE* file = (FILE*)f;
 
@@ -63,7 +63,7 @@ int main(int argc, char **argv)
 
   FILE* file = fopen("imu.txt", "w");
 
-  player.addHandler<robot_msgs::PoseWithRatesStamped>(std::string("*"), &imu_callback, file);
+  player.addHandler<geometry_msgs::PoseWithRatesStamped>(std::string("*"), &imu_callback, file);
 
   while(player.nextMsg())  {}
 

@@ -39,7 +39,7 @@
 #include "kinematic_calibration/msg_cache.h"
 
 #include "robot_msgs/MechanismState.h"
-#include "robot_msgs/PointStamped.h"
+#include "geometry_msgs/PointStamped.h"
 #include "sensor_msgs/Image.h"
 #include "kinematic_calibration/CameraCalSample.h"
 

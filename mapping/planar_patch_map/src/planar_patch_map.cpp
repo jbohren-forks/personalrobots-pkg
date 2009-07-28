@@ -42,7 +42,7 @@
 // ROS core
 #include <ros/node.h>
 // ROS messages
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 #include <robot_msgs/Polygon3D.h>
 #include <mapping_msgs/PolygonalMap.h>
 
@@ -163,7 +163,7 @@ class PlanarPatchMap
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void
-      filterCloudBasedOnDistance (robot_msgs::PointCloud *cloud_in, robot_msgs::PointCloud &cloud_out,
+      filterCloudBasedOnDistance (sensor_msgs::PointCloud *cloud_in, sensor_msgs::PointCloud &cloud_out,
                                   int d_idx, double d_min, double d_max)
     {
       cloud_out.pts.resize (cloud_in->pts.size ());

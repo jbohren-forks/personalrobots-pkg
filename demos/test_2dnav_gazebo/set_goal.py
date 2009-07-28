@@ -50,6 +50,7 @@ from std_msgs.msg import *
 from robot_actions.msg import *
 from nav_robot_actions.msg import *
 from robot_msgs.msg import *
+from geometry_msgs.msg import PoseWithRatesStamped
 from deprecated_msgs.msg import *
 from tf.transformations import *
 from numpy import *
@@ -173,12 +174,12 @@ class NavStackTest(unittest.TestCase):
                           ,p3d.pos.orientation.w]
         else:
             # update ground truth
-            self.p3d_x = p3d.pos.position.x
-            self.p3d_y = p3d.pos.position.y
-            self.p3d_q =[ p3d.pos.orientation.x \
-                         ,p3d.pos.orientation.y \
-                         ,p3d.pos.orientation.z \
-                         ,p3d.pos.orientation.w]
+            self.p3d_x = p3d.pose.position.x
+            self.p3d_y = p3d.pose.position.y
+            self.p3d_q =[ p3d.pose.orientation.x \
+                         ,p3d.pose.orientation.y \
+                         ,p3d.pose.orientation.z \
+                         ,p3d.pose.orientation.w]
 
     def bumpedInput(self, bumpString):
         print "robot touched something! ", bumpString.data

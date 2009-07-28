@@ -122,7 +122,7 @@ bool PlugTracker::detectObject(tf::Transform &pose)
 
   if (roi_policy_ == TargetFrame) {
     // Use target tool frame to inform initial estimate
-    robot_msgs::Pose target;
+    geometry_msgs::Pose target;
     try {
       target = getTargetInHighDef();
     }
@@ -239,7 +239,7 @@ void PlugTracker::publishBoardMarker(const tf::Transform &board_in_cam)
     double *grid_pt = grid_pts_->data.db + 3*offsets[i];
     tf::Point corner(grid_pt[0], grid_pt[1], grid_pt[2]);
     tf::Point pt = board_in_cam * corner;
-    robot_msgs::Point pt_msg;
+    geometry_msgs::Point pt_msg;
     tf::pointTFToMsg(pt, pt_msg);
     marker.points.push_back(pt_msg);
   }

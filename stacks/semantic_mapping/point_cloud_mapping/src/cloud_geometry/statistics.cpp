@@ -43,10 +43,10 @@ namespace cloud_geometry
     /** \brief Compute the median value of a 3D point cloud and return it as a Point32.
       * \param points the point cloud data message
       */
-    robot_msgs::Point32
-      computeMedian (const robot_msgs::PointCloud& points)
+    geometry_msgs::Point32
+      computeMedian (const sensor_msgs::PointCloud& points)
     {
-      robot_msgs::Point32 median;
+      geometry_msgs::Point32 median;
 
       // Copy the values to vectors for faster sorting
       std::vector<double> x (points.pts.size ());
@@ -84,10 +84,10 @@ namespace cloud_geometry
       * \param points the point cloud data message
       * \param indices the point indices
       */
-    robot_msgs::Point32
-      computeMedian (const robot_msgs::PointCloud &points, const std::vector<int> &indices)
+    geometry_msgs::Point32
+      computeMedian (const sensor_msgs::PointCloud &points, const std::vector<int> &indices)
     {
-      robot_msgs::Point32 median;
+      geometry_msgs::Point32 median;
 
       // Copy the values to vectors for faster sorting
       std::vector<double> x (indices.size ());
@@ -129,10 +129,10 @@ namespace cloud_geometry
       * \param sigma the sigma value
       */
     double
-      computeMedianAbsoluteDeviation (const robot_msgs::PointCloud &points, double sigma)
+      computeMedianAbsoluteDeviation (const sensor_msgs::PointCloud &points, double sigma)
     {
       // median (dist (x - median (x)))
-      robot_msgs::Point32 median = computeMedian (points);
+      geometry_msgs::Point32 median = computeMedian (points);
 
       std::vector<double> distances (points.pts.size ());
 
@@ -163,10 +163,10 @@ namespace cloud_geometry
       * \param sigma the sigma value
       */
     double
-      computeMedianAbsoluteDeviation (const robot_msgs::PointCloud &points, const std::vector<int> &indices, double sigma)
+      computeMedianAbsoluteDeviation (const sensor_msgs::PointCloud &points, const std::vector<int> &indices, double sigma)
     {
       // median (dist (x - median (x)))
-      robot_msgs::Point32 median = computeMedian (points, indices);
+      geometry_msgs::Point32 median = computeMedian (points, indices);
 
       std::vector<double> distances (indices.size ());
 
@@ -196,7 +196,7 @@ namespace cloud_geometry
       * \param stddev the resultant standard deviation of the distribution
       */
     void
-      getChannelMeanStd (const robot_msgs::PointCloud &points, int d_idx, double &mean, double &stddev)
+      getChannelMeanStd (const sensor_msgs::PointCloud &points, int d_idx, double &mean, double &stddev)
     {
       double sum = 0, sq_sum = 0;
 
@@ -219,7 +219,7 @@ namespace cloud_geometry
       * \param stddev the resultant standard deviation of the distribution
       */
     void
-      getChannelMeanStd (const robot_msgs::PointCloud &points, const std::vector<int> &indices, int d_idx, double &mean, double &stddev)
+      getChannelMeanStd (const sensor_msgs::PointCloud &points, const std::vector<int> &indices, int d_idx, double &mean, double &stddev)
     {
       double sum = 0, sq_sum = 0;
 
@@ -245,7 +245,7 @@ namespace cloud_geometry
       * \param inliers the resultant point indices
       */
     void
-      selectPointsOutsideDistribution (const robot_msgs::PointCloud &points, const std::vector<int> &indices, int d_idx,
+      selectPointsOutsideDistribution (const sensor_msgs::PointCloud &points, const std::vector<int> &indices, int d_idx,
                                        double mean, double stddev, double alpha, std::vector<int> &inliers)
     {
       inliers.resize (indices.size ());
@@ -275,7 +275,7 @@ namespace cloud_geometry
       * \param inliers the resultant point indices
       */
     void
-      selectPointsInsideDistribution (const robot_msgs::PointCloud &points, const std::vector<int> &indices, int d_idx,
+      selectPointsInsideDistribution (const sensor_msgs::PointCloud &points, const std::vector<int> &indices, int d_idx,
                                       double mean, double stddev, double alpha, std::vector<int> &inliers)
     {
       inliers.resize (indices.size ());

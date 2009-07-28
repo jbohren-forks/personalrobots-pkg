@@ -109,9 +109,9 @@ int SpectralAnalysis::setSpectralRadius(double support_radius)
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-int SpectralAnalysis::analyzeInterestPoints(const robot_msgs::PointCloud& data,
+int SpectralAnalysis::analyzeInterestPoints(const sensor_msgs::PointCloud& data,
                                             cloud_kdtree::KdTree& data_kdtree,
-                                            const cv::Vector<robot_msgs::Point32*>& interest_pts)
+                                            const cv::Vector<geometry_msgs::Point32*>& interest_pts)
 {
   // ----------------------------------------
   // Ensure some regions are provided
@@ -143,7 +143,7 @@ int SpectralAnalysis::analyzeInterestPoints(const robot_msgs::PointCloud& data,
   {
     // ---------------------
     // Retrieve next interest point
-    const robot_msgs::Point32* curr_interest_pt = interest_pts[i];
+    const geometry_msgs::Point32* curr_interest_pt = interest_pts[i];
     if (curr_interest_pt == NULL)
     {
       ROS_WARN("SpectralAnalysis::analyzeInterestPoints() passed NULL interest point");
@@ -170,7 +170,7 @@ int SpectralAnalysis::analyzeInterestPoints(const robot_msgs::PointCloud& data,
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-int SpectralAnalysis::analyzeInterestRegions(const robot_msgs::PointCloud& data,
+int SpectralAnalysis::analyzeInterestRegions(const sensor_msgs::PointCloud& data,
                                              cloud_kdtree::KdTree& data_kdtree,
                                              const cv::Vector<vector<int>*>& interest_region_indices)
 {
@@ -202,7 +202,7 @@ int SpectralAnalysis::analyzeInterestRegions(const robot_msgs::PointCloud& data,
   // For each interest region, either:
   //   Use the region itself as the support volume
   //   Find a support volume within a radius from the region's centroid
-  robot_msgs::Point32 region_centroid;
+  geometry_msgs::Point32 region_centroid;
   for (size_t i = 0 ; i < nbr_regions ; i++)
   {
     // ---------------------
@@ -243,7 +243,7 @@ int SpectralAnalysis::analyzeInterestRegions(const robot_msgs::PointCloud& data,
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-void SpectralAnalysis::computeSpectralInfo(const robot_msgs::PointCloud& data,
+void SpectralAnalysis::computeSpectralInfo(const sensor_msgs::PointCloud& data,
                                            const vector<int>& support_volume_indices,
                                            size_t idx)
 {
@@ -266,7 +266,7 @@ void SpectralAnalysis::computeSpectralInfo(const robot_msgs::PointCloud& data,
   // ----------------------------------------
   // Eigen-analysis of support volume
   // smallest eigenvalue = index 0
-  robot_msgs::Point32 centroid;
+  geometry_msgs::Point32 centroid;
   Eigen::Matrix3d eigen_vectors;
   cloud_geometry::nearest::computePatchEigenNormalized(data, support_volume_indices, eigen_vectors,
       *(eigen_values_[idx]), centroid);

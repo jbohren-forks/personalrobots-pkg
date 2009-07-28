@@ -123,7 +123,7 @@ void RosSimIface::InitChild()
 
 ////////////////////////////////////////////////////////////////////////////////
 // Update the controller
-void RosSimIface::UpdateObjectPose(const robot_msgs::PoseWithRatesStampedConstPtr& poseMsg)
+void RosSimIface::UpdateObjectPose(const geometry_msgs::PoseWithRatesStampedConstPtr& poseMsg)
 {
 
   this->lock.lock();

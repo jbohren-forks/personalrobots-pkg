@@ -38,7 +38,7 @@
 #include "point_cloud_assembler/BuildCloud.h"
 
 // Messages
-#include "robot_msgs/PointCloud.h"
+#include "sensor_msgs/PointCloud.h"
 #include "pr2_msgs/LaserScannerSignal.h"
 
 using namespace robot_msgs ;

@@ -1105,8 +1105,8 @@ void Transformer::removeTransformsChangedListener(boost::signals::connection c)
 
 /*
 void Transformer::transformTransform(const std::string& target_frame,
-                                  const robot_msgs::TransformStamped& msg_in,
-                                  robot_msgs::TransformStamped& msg_out)
+                                  const geometry_msgs::TransformStamped& msg_in,
+                                  geometry_msgs::TransformStamped& msg_out)
 {
   Stamped<Transform> pin, pout;
   transformStampedMsgToTF(msg_in, pin);

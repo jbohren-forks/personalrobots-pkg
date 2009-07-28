@@ -46,11 +46,11 @@
 
 // messages
 #include "deprecated_msgs/RobotBase2DOdom.h"
-#include "robot_msgs/PoseDot.h"
-#include "robot_msgs/PoseWithRatesStamped.h"
-#include "robot_msgs/PoseStamped.h"
+#include "geometry_msgs/PoseDot.h"
+#include "geometry_msgs/PoseWithRatesStamped.h"
+#include "geometry_msgs/PoseStamped.h"
 #include "robot_msgs/VOPose.h"
-#include "robot_msgs/PoseWithCovariance.h"
+#include "geometry_msgs/PoseWithCovariance.h"
 
 #include <boost/thread/mutex.hpp>
 
@@ -96,8 +96,8 @@ namespace estimation
 */
 
 typedef boost::shared_ptr<deprecated_msgs::RobotBase2DOdom const> OdomConstPtr;
-typedef boost::shared_ptr<robot_msgs::PoseWithRatesStamped const> ImuConstPtr;
-typedef boost::shared_ptr<robot_msgs::PoseDot const> VelConstPtr;
+typedef boost::shared_ptr<geometry_msgs::PoseWithRatesStamped const> ImuConstPtr;
+typedef boost::shared_ptr<geometry_msgs::PoseDot const> VelConstPtr;
 
 class OdomEstimationNode
 {
@@ -134,7 +134,7 @@ private:
   OdomEstimation my_filter_;
 
   // estimated robot pose message to send
-  robot_msgs::PoseWithCovariance  output_; 
+  geometry_msgs::PoseWithCovariance  output_; 
 
   // robot state
   tf::TransformListener    robot_state_;

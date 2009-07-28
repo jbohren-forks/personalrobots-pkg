@@ -70,9 +70,9 @@ void BoundingBox::setBoundingBoxRadius(float bbox_radius)
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-void BoundingBox::compute(const robot_msgs::PointCloud& data,
+void BoundingBox::compute(const sensor_msgs::PointCloud& data,
                           cloud_kdtree::KdTree& data_kdtree,
-                          const cv::Vector<robot_msgs::Point32*>& interest_pts,
+                          const cv::Vector<geometry_msgs::Point32*>& interest_pts,
                           cv::Vector<cv::Vector<float> >& results)
 {
   // ----------------------------------------
@@ -123,7 +123,7 @@ void BoundingBox::compute(const robot_msgs::PointCloud& data,
   for (size_t i = 0 ; i < nbr_interest_pts ; i++)
   {
     // Retrieve interest point
-    const robot_msgs::Point32* curr_interest_pt = interest_pts[i];
+    const geometry_msgs::Point32* curr_interest_pt = interest_pts[i];
     if (curr_interest_pt == NULL)
     {
       ROS_WARN("BoundingBox::compute() passed NULL interest point");
@@ -152,7 +152,7 @@ void BoundingBox::compute(const robot_msgs::PointCloud& data,
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-void BoundingBox::compute(const robot_msgs::PointCloud& data,
+void BoundingBox::compute(const sensor_msgs::PointCloud& data,
                           cloud_kdtree::KdTree& data_kdtree,
                           const cv::Vector<vector<int>*>& interest_region_indices,
                           cv::Vector<cv::Vector<float> >& results)
@@ -211,7 +211,7 @@ void BoundingBox::compute(const robot_msgs::PointCloud& data,
     if (bbox_radius_ > 1e-6)
     {
       // Compute centroid of interest region
-      robot_msgs::Point32 region_centroid;
+      geometry_msgs::Point32 region_centroid;
       cloud_geometry::nearest::computeCentroid(data, *curr_interest_region, region_centroid);
 
       vector<float> neighbor_distances; // unused
@@ -238,7 +238,7 @@ void BoundingBox::compute(const robot_msgs::PointCloud& data,
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-void BoundingBox::computeBoundingBoxFeatures(const robot_msgs::PointCloud& data,
+void BoundingBox::computeBoundingBoxFeatures(const sensor_msgs::PointCloud& data,
                                              const vector<int>& neighbor_indices,
                                              const Eigen::Vector3d* eig_vec_max,
                                              const Eigen::Vector3d* eig_vec_mid,

@@ -310,7 +310,7 @@ bool
     if (bad_candidate) continue;
 
     // Filter the region based on its height and width
-    robot_msgs::Point32 min_p, max_p;
+    geometry_msgs::Point32 min_p, max_p;
     cloud_geometry::statistics::getMinMax (pmap_.polygons[cc], min_p, max_p);
 
     // ---[ Quick test for min_p.z (!)
@@ -431,7 +431,7 @@ bool
 
   // Copy all clusters
   int nr_d = 0;
-  robot_msgs::Point32 min_p, max_p;
+  geometry_msgs::Point32 min_p, max_p;
   for (int cc = 0; cc < (int)clusters.size (); cc++)
   {
     if (goodness_factor[cc] == 0)
@@ -574,8 +574,8 @@ bool  DoorDetector::detectDoorSrv (door_handle_detector::DoorsDetector::Request 
   ROS_INFO("Door detection waiting for pointcloud to come in on topic %s", input_cloud_topic_.c_str());
   // receive a new laser scan
   num_clouds_received_ = 0;
-  tf::MessageNotifier<robot_msgs::PointCloud>* message_notifier =
-    new tf::MessageNotifier<robot_msgs::PointCloud> (&tf_, node_,  boost::bind (&DoorDetector::cloud_cb, this, _1),
+  tf::MessageNotifier<sensor_msgs::PointCloud>* message_notifier =
+    new tf::MessageNotifier<sensor_msgs::PointCloud> (&tf_, node_,  boost::bind (&DoorDetector::cloud_cb, this, _1),
                                                      input_cloud_topic_, parameter_frame_, 1);
   ros::Duration tictoc = ros::Duration ().fromSec (0.1);
   while ((int)num_clouds_received_ < 1)
@@ -600,7 +600,7 @@ bool DoorDetector::detectDoorCloudSrv (door_handle_detector::DoorsDetectorCloud:
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /** \brief Main point cloud callback.                                                                           */
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void DoorDetector::cloud_cb (const tf::MessageNotifier<robot_msgs::PointCloud>::MessagePtr& cloud)
+void DoorDetector::cloud_cb (const tf::MessageNotifier<sensor_msgs::PointCloud>::MessagePtr& cloud)
 {
   pointcloud_ = *cloud;
   ROS_INFO ("Received %d data points in frame %s with %d channels (%s).", (int)pointcloud_.pts.size (), pointcloud_.header.frame_id.c_str (),
@@ -609,7 +609,7 @@ void DoorDetector::cloud_cb (const tf::MessageNotifier<robot_msgs::PointCloud>::
 }
 
 
-double DoorDetector::distToHinge(const door_msgs::Door& door, robot_msgs::Point32& pnt) const
+double DoorDetector::distToHinge(const door_msgs::Door& door, geometry_msgs::Point32& pnt) const
 {
   double dist=-1;
   if (door.hinge == Door::HINGE_P1)

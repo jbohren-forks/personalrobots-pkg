@@ -44,7 +44,7 @@
 // ROS core
 #include <ros/node.h>
 // ROS messages
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 #include <robot_msgs/Polygon3D.h>
 #include <mapping_msgs/PolygonalMap.h>
 #include <plugs_msgs/PlugStow.h>
@@ -393,7 +393,7 @@ class PlugOnBaseDetector
       */
     int
       fitSACPlane (PointCloud &points, vector<int> indices, vector<int> &inliers, vector<double> &coeff,
-                   const robot_msgs::PointStamped &viewpoint_cloud, double dist_thresh, int min_pts)
+                   const geometry_msgs::PointStamped &viewpoint_cloud, double dist_thresh, int min_pts)
     {
       if ((int)indices.size () < min_pts)
       {
@@ -476,7 +476,7 @@ class PlugOnBaseDetector
       */
     inline void
       transformPoint (tf::TransformListener *tf, const std::string &target_frame,
-                      const tf::Stamped< robot_msgs::Point32 > &stamped_in, tf::Stamped< robot_msgs::Point32 > &stamped_out)
+                      const tf::Stamped< geometry_msgs::Point32 > &stamped_in, tf::Stamped< geometry_msgs::Point32 > &stamped_out)
     {
       tf::Stamped<tf::Point> tmp;
       tmp.stamp_ = stamped_in.stamp_;
@@ -505,10 +505,10 @@ class PlugOnBaseDetector
     inline double
       transformZValueTF (double z_val, std::string src_frame, std::string tgt_frame, ros::Time stamp, tf::TransformListener *tf)
     {
-      robot_msgs::Point32 temp;
+      geometry_msgs::Point32 temp;
       temp.x = temp.y = 0;
       temp.z = z_val;
-      tf::Stamped<robot_msgs::Point32> temp_stamped (temp, stamp, src_frame);
+      tf::Stamped<geometry_msgs::Point32> temp_stamped (temp, stamp, src_frame);
       transformPoint (tf, tgt_frame, temp_stamped, temp_stamped);
       return (temp_stamped.z);
     }

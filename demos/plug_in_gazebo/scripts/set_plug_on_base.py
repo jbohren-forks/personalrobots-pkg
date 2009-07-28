@@ -49,7 +49,7 @@ from robot_actions.msg import *
 from nav_robot_actions.msg import *
 from robot_msgs.msg import *
 from tf.transformations import *
-from geometry_msgs import Twist, PoseWithRatesStamped
+from geometry_msgs.msg import Twist, PoseWithRatesStamped
 from numpy import *
 
 def normalize_angle_positive(angle):

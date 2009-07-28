@@ -26,9 +26,9 @@
 #include "tf/transform_listener.h"
 #include "tf/message_notifier.h"
 
-#include "robot_msgs/PointCloud.h"
+#include "sensor_msgs/PointCloud.h"
 #include "robot_msgs/ChannelFloat32.h"
-#include "robot_msgs/Point32.h"
+#include "geometry_msgs/Point32.h"
 
 class Cropper
 {
@@ -41,12 +41,12 @@ class Cropper
       frame_id_ = frame_id;
 
       cloud_notifier_ =
-              new tf::MessageNotifier<robot_msgs::PointCloud>
+              new tf::MessageNotifier<sensor_msgs::PointCloud>
               (tf_, n.getNode(), 
                boost::bind(&Cropper::cloudCallback, this, _1),
                "full_cloud", frame_id_, 100);
 
-      pub_ = n.advertise<robot_msgs::PointCloud>("full_cloud_cropped", 1);
+      pub_ = n.advertise<sensor_msgs::PointCloud>("full_cloud_cropped", 1);
     }
 
     ~Cropper()
@@ -57,19 +57,19 @@ class Cropper
   private:
     ros::NodeHandle n;
     tf::TransformListener* tf_;
-    tf::MessageNotifier<robot_msgs::PointCloud>* cloud_notifier_;
+    tf::MessageNotifier<sensor_msgs::PointCloud>* cloud_notifier_;
     ros::Publisher pub_;
 
     double zmin_, zmax_;
     std::string frame_id_;
 
-    void cloudCallback(const tf::MessageNotifier<robot_msgs::PointCloud>::MessagePtr& cloud_in)
+    void cloudCallback(const tf::MessageNotifier<sensor_msgs::PointCloud>::MessagePtr& cloud_in)
     {
       ROS_INFO("Received message with %d points", cloud_in->pts.size());
-      robot_msgs::PointCloud cloud_transformed;
+      sensor_msgs::PointCloud cloud_transformed;
       tf_->transformPointCloud(frame_id_, *cloud_in, cloud_transformed);
 
-      robot_msgs::PointCloud cloud_out;
+      sensor_msgs::PointCloud cloud_out;
       cloud_out.header = cloud_transformed.header;
       for(unsigned int j=0;j<cloud_transformed.chan.size();j++)
       {

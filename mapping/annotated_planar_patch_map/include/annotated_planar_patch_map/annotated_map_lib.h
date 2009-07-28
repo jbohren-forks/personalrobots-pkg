@@ -189,7 +189,7 @@ bool doesQueryMatchAll(std::vector<std::string> query,const annotated_map_msgs::
 
 
 
-robot_msgs::Point32 computeMean(const robot_msgs::Polygon3D& poly);
+geometry_msgs::Point32 computeMean(const robot_msgs::Polygon3D& poly);
 
 } //end namespace
 

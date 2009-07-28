@@ -169,7 +169,7 @@ bool LedDetector::findLed(Image& image, const CamInfo& info, const Pose* led_pos
 }
 
 bool LedDetector::findLed(const IplImage* image, const sensor_msgs::CamInfo& info,
-                          const robot_msgs::Pose* led_pose,
+                          const geometry_msgs::Pose* led_pose,
                           kinematic_calibration::ImagePoint& led_pix, IplImage* debug_image)
 {
   IplImage* working = cvCloneImage(image) ;

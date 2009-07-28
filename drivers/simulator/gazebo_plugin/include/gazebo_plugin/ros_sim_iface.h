@@ -31,7 +31,7 @@
 #include "boost/thread/mutex.hpp"
 #include <gazebo/Controller.hh>
 #include <gazebo/Param.hh>
-#include <robot_msgs/PoseWithRatesStamped.h>
+#include <geometry_msgs/PoseWithRatesStamped.h>
 
 namespace gazebo
 {
@@ -91,7 +91,7 @@ class RosSimIface : public Controller
   protected: virtual void FiniChild();
 
   /// \brief call back when a PoseWithRatesStamped message is published
-  private: void UpdateObjectPose(const robot_msgs::PoseWithRatesStampedConstPtr& poseMsg);
+  private: void UpdateObjectPose(const geometry_msgs::PoseWithRatesStampedConstPtr& poseMsg);
 
   /// \brief A pointer to the parent entity
   private: Entity *myParent;

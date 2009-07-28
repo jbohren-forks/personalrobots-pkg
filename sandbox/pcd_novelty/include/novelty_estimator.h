@@ -40,7 +40,7 @@
 // ROS core
 #include <ros/ros.h>
 // ROS messages
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 
 
 // Cloud kd-tree
@@ -70,8 +70,8 @@ namespace pcd_novelty
 class PcdHolder
 {
 public:
-  robot_msgs::PointCloud cloud_3d_;
-  robot_msgs::PointCloud cloud_2d_;
+  sensor_msgs::PointCloud cloud_3d_;
+  sensor_msgs::PointCloud cloud_2d_;
   boost::shared_ptr<cloud_kdtree::KdTreeANN> kdtree_2d_;
   boost::shared_ptr<cloud_kdtree::KdTreeANN> kdtree_3d_;
 };
@@ -111,19 +111,19 @@ public:
    * \param cloud the cloud to add
    */
 
-  void addCloudToHistory(const robot_msgs::PointCloud &cloud);
+  void addCloudToHistory(const sensor_msgs::PointCloud &cloud);
 
   /** \brief Allocate new novelty channel in the point cloud
    * \param The point cloud to get the "novelty" channel
    * \param The pointer to the channel once it's allocated
    */
-  void allocateNoveltyChannel(robot_msgs::PointCloud& point_cloud,std::vector<float>** ptr_channel);
+  void allocateNoveltyChannel(sensor_msgs::PointCloud& point_cloud,std::vector<float>** ptr_channel);
 
   /** \brief Allocate new novelty channel in the point cloud
    * \param The point cloud to get the "novelty" channel
    * \param The pointer to the channel once it's allocated
    */
-  void computeNovelty(const robot_msgs::PointCloud& point_cloud,std::vector<float> &novelty_holder);
+  void computeNovelty(const sensor_msgs::PointCloud& point_cloud,std::vector<float> &novelty_holder);
 
 
 };

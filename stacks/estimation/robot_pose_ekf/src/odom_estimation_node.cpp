@@ -74,7 +74,7 @@ namespace estimation
     timer_ = node_.createTimer(ros::Duration(1.0/max(freq,1.0)), &OdomEstimationNode::spin, this);
 
     // advertise our estimation
-    pose_pub_ = node_.advertise<robot_msgs::PoseWithCovariance>("~"+publish_name, 10);
+    pose_pub_ = node_.advertise<geometry_msgs::PoseWithCovariance>("~"+publish_name, 10);
 
     // initialize
     filter_stamp_ = Time::now();

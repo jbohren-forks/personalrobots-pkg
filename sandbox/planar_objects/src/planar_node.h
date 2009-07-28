@@ -11,7 +11,7 @@
 #include "ros/ros.h"
 #include "topic_synchronizer2/topic_synchronizer.h"
 
-#include "robot_msgs/PointCloud.h"
+#include "sensor_msgs/PointCloud.h"
 
 #include "visualization_msgs/Marker.h"
 
@@ -44,7 +44,7 @@ public:
 
   // MESSAGES - INCOMING
   ros::Subscriber cloud_sub_;
-  robot_msgs::PointCloudConstPtr cloud_;
+  sensor_msgs::PointCloudConstPtr cloud_;
 
   ros::Subscriber disp_sub_;
   sensor_msgs::ImageConstPtr dimage_;
@@ -85,7 +85,7 @@ public:
   PlanarNode();
 
   // Callbacks
-  void cloudCallback(const robot_msgs::PointCloud::ConstPtr& point_cloud);
+  void cloudCallback(const sensor_msgs::PointCloud::ConstPtr& point_cloud);
   void dispCallback(const sensor_msgs::Image::ConstPtr& disp_img);
   void dinfoCallback(const sensor_msgs::DisparityInfo::ConstPtr& disp_img);
   void limageCallback(const sensor_msgs::Image::ConstPtr& left_img);

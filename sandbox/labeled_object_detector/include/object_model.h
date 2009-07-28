@@ -40,7 +40,7 @@
 // ROS core
 #include <ros/ros.h>
 // ROS messages
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 
 
 // Cloud kd-tree
@@ -64,7 +64,7 @@
 #include <tf/transform_broadcaster.h>
 
 #include <visualization_msgs/Marker.h>
-#include <robot_msgs/PointStamped.h>
+#include <geometry_msgs/PointStamped.h>
 
 #include <point_cloud_assembler/BuildCloud.h>
 
@@ -82,13 +82,13 @@ public:
   tf::Stamped<tf::Pose> object_frame_;
 
   visualization_msgs::Marker marker_;
-  robot_msgs::PointStamped center_;
+  geometry_msgs::PointStamped center_;
 
-  virtual robot_msgs::PointStamped getCenter();
+  virtual geometry_msgs::PointStamped getCenter();
   
 
-  inline robot_msgs::PoseStamped getPose(){
-    robot_msgs::PoseStamped msg;
+  inline geometry_msgs::PoseStamped getPose(){
+    geometry_msgs::PoseStamped msg;
     poseStampedTFToMsg(object_frame_, msg);
     return msg;
   }
@@ -98,7 +98,7 @@ public:
 class PlanarObjectModel : public ObjectModel
 {
 public:
-  robot_msgs::PointCloud pcd_;
+  sensor_msgs::PointCloud pcd_;
 
   PlanarObjectModel(){};
 

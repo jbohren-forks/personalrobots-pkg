@@ -96,7 +96,7 @@ void robot_self_filter::SelfMask::getLinkFrames(std::vector<std::string> &frames
 	frames.push_back(bodies_[i].name);
 }
 
-void robot_self_filter::SelfMask::mask(const robot_msgs::PointCloud& data_in, std::vector<int> &mask)
+void robot_self_filter::SelfMask::mask(const sensor_msgs::PointCloud& data_in, std::vector<int> &mask)
 {
     mask.resize(data_in.pts.size());
     if (bodies_.empty())
@@ -138,7 +138,7 @@ void robot_self_filter::SelfMask::assumeFrame(const roslib::Header& header)
     computeBoundingSpheres();
 }
 
-void robot_self_filter::SelfMask::maskAux(const robot_msgs::PointCloud& data_in, std::vector<int> &mask)
+void robot_self_filter::SelfMask::maskAux(const sensor_msgs::PointCloud& data_in, std::vector<int> &mask)
 {
     const unsigned int bs = bodies_.size();
     const unsigned int np = data_in.pts.size();

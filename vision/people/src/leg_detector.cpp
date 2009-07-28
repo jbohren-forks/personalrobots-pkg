@@ -240,7 +240,7 @@ public:
     }
 
     // advertise topics
-    advertise<robot_msgs::PointCloud>("kalman_filt_cloud",10);
+    advertise<sensor_msgs::PointCloud>("kalman_filt_cloud",10);
     advertise<people::PositionMeasurement>("people_tracker_measurements",1);
 
     // subscribe to topics
@@ -612,7 +612,7 @@ public:
 
     cvReleaseMat(&tmp_mat); tmp_mat = 0;
 
-    vector<robot_msgs::Point32> filter_visualize(saved_features_.size());
+    vector<geometry_msgs::Point32> filter_visualize(saved_features_.size());
     vector<float> weights(saved_features_.size());
     robot_msgs::ChannelFloat32 channel;
     int i = 0;
@@ -659,7 +659,7 @@ public:
     // visualize all trackers
     channel.name = "rgb";
     channel.vals = weights;
-    robot_msgs::PointCloud  people_cloud; 
+    sensor_msgs::PointCloud  people_cloud; 
     people_cloud.chan.push_back(channel);
     people_cloud.header.frame_id = fixed_frame;//scan_.header.frame_id;
     people_cloud.header.stamp = scan->header.stamp;

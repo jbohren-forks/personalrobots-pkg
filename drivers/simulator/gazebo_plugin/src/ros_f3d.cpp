@@ -79,7 +79,7 @@ void RosF3D::LoadChild(XMLConfigNode *node)
   this->frameName = node->GetString("frameName", "", 1);
 
   ROS_DEBUG("==== topic name for RosF3D ======== %s", this->topicName.c_str());
-  this->pub_ = this->rosnode_->advertise<robot_msgs::Vector3Stamped>(this->topicName,10);
+  this->pub_ = this->rosnode_->advertise<geometry_msgs::Vector3Stamped>(this->topicName,10);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -46,8 +46,8 @@
 
 #include <fstream>
 
-#include <robot_msgs/PointStamped.h>
-#include <robot_msgs/PointCloud.h>
+#include <geometry_msgs/PointStamped.h>
+#include <sensor_msgs/PointCloud.h>
 
 #include <point_cloud_mapping/cloud_io.h>
 #include <point_cloud_mapping/geometry/point.h>

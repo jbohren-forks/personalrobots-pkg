@@ -55,7 +55,7 @@
 
 //#include "CvStereoCamModel.h"
 
-#include "robot_msgs/PointCloud.h"
+#include "sensor_msgs/PointCloud.h"
 #include "std_msgs/UInt8.h" //for projector status
 #include <string>
 
@@ -147,7 +147,7 @@ public:
   sensor_msgs::CvBridge dbridge;
   sensor_msgs::CamInfo rcaminfo; /**< Right camera info msg. */
 
-  robot_msgs::PointCloud cloud, cloudIsTex, cloudNoTex;
+  sensor_msgs::PointCloud cloud, cloudIsTex, cloudNoTex;
 
   color_calib::Calibration lcal;
   color_calib::Calibration rcal;
@@ -572,7 +572,7 @@ void image_cb_all(ros::Time t)
   }
   
   /** \brief Writes out point cloud: X,Y,Z,r,g,b or X,Y,Z,r,g,b,img(x),img(y) if stereo/do_keep_coords launch param is true */
-  void write_out_point_cloud(string file_name,  robot_msgs::PointCloud &cloud_ )
+  void write_out_point_cloud(string file_name,  sensor_msgs::PointCloud &cloud_ )
   {
     int c_idx = -1;
     int cx_idx = -1, cy_idx = -1;
@@ -615,7 +615,7 @@ void image_cb_all(ros::Time t)
   }
 
   /** \brief Puts point cloud into 32F vector(width,height) of X, Y, Z and A assuming stereo/do_keep_coords launch param is true */
-  void point_cloud_to_xyVector(robot_msgs::PointCloud &cloud_, vector<float> &W, int width, int height )
+  void point_cloud_to_xyVector(sensor_msgs::PointCloud &cloud_, vector<float> &W, int width, int height )
   {
     int c_idx = -1;
     int cx_idx = -1, cy_idx = -1;

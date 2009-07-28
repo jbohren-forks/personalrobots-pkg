@@ -35,7 +35,7 @@
 /* Author: Wim Meeussen */
 
 #include <door_functions/door_functions.h>
-#include <robot_msgs/PoseStamped.h>
+#include <geometry_msgs/PoseStamped.h>
 #include "doors_core/action_push_door.h"
 
 using namespace tf;
@@ -56,7 +56,7 @@ PushDoorAction::PushDoorAction(tf::TransformListener& tf) :
   tf_(tf)
 {
   gripper_pub_ = node_.advertise<std_msgs::Float64>("r_gripper_effort_controller/command",10);
-  pose_pub_ = node_.advertise<robot_msgs::PoseStamped>("r_arm_constraint_cartesian_pose_controller/command",20);
+  pose_pub_ = node_.advertise<geometry_msgs::PoseStamped>("r_arm_constraint_cartesian_pose_controller/command",20);
 };
 
 
@@ -114,7 +114,7 @@ robot_actions::ResultStatus PushDoorAction::execute(const door_msgs::Door& goal,
 
   // push door
   Stamped<Pose> gripper_pose;
-  robot_msgs::PoseStamped gripper_pose_msg;
+  geometry_msgs::PoseStamped gripper_pose_msg;
   double angle = getNearestDoorAngle(shoulder_pose, goal_tr, 0.75, push_dist);
   while (!isPreemptRequested()){
     sleep_time.sleep();

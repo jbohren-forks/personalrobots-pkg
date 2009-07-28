@@ -117,7 +117,7 @@ bool HandleDetector::detectHandle (const door_msgs::Door& door, PointCloud point
   Point32 tmp_p;              // Used as a temporary point
 
   // Get the cloud viewpoint in the parameter frame
-  robot_msgs::PointStamped viewpoint_cloud;
+  geometry_msgs::PointStamped viewpoint_cloud;
   getCloudViewPoint (parameter_frame_, viewpoint_cloud, &tf_);
 
   // Get the rough planar coefficients
@@ -206,14 +206,14 @@ bool HandleDetector::detectHandle (const door_msgs::Door& door, PointCloud point
 
   // Refine the remaining handle indices using the door outliers
   ROS_DEBUG (" -- handle indices before refinement: %d.", (int)handle_indices.size ());
-  robot_msgs::Point32 door_axis = cloud_geometry::cross (coeff, z_axis_);
+  geometry_msgs::Point32 door_axis = cloud_geometry::cross (coeff, z_axis_);
   refineHandleCandidatesWithDoorOutliers (handle_indices, outliers, polygon, coeff, door_axis, door_tr, pointcloud);
   ROS_DEBUG (" -- handle indices after refinement: %d.", (int)handle_indices.size ());
 
   duration = ros::Time::now () - ts;
 
   // Assemble the reply
-  robot_msgs::Point32 min_h, max_h, handle_center;
+  geometry_msgs::Point32 min_h, max_h, handle_center;
   cloud_geometry::statistics::getLargestDiagonalPoints (pointcloud, handle_indices, min_h, max_h);
   handle_center.x = (min_h.x + max_h.x) / 2.0;
   handle_center.y = (min_h.y + max_h.y) / 2.0;
@@ -354,7 +354,7 @@ void HandleDetector::refineHandleCandidatesWithDoorOutliers (vector<int> &handle
     if (line_inliers[i].size () == 0)
       continue;
 
-    robot_msgs::Point32 min_h, max_h, mid;
+    geometry_msgs::Point32 min_h, max_h, mid;
     cloud_geometry::statistics::getLargestXYPoints (pointcloud, line_inliers[i], min_h, max_h);
     mid.x = (min_h.x + max_h.x)/2.0;  mid.y = (min_h.y + max_h.y)/2.0;
 
@@ -557,8 +557,8 @@ bool  HandleDetector::detectHandleSrv (door_handle_detector::DoorsDetector::Requ
 {
   // receive a new laser scan
   num_clouds_received_ = 0;
-  tf::MessageNotifier<robot_msgs::PointCloud>* message_notifier =
-    new tf::MessageNotifier<robot_msgs::PointCloud> (&tf_, node_,  boost::bind (&HandleDetector::cloud_cb, this, _1),
+  tf::MessageNotifier<sensor_msgs::PointCloud>* message_notifier =
+    new tf::MessageNotifier<sensor_msgs::PointCloud> (&tf_, node_,  boost::bind (&HandleDetector::cloud_cb, this, _1),
                                                      input_cloud_topic_, parameter_frame_, 1);
   ros::Duration tictoc = ros::Duration ().fromSec (0.1);
   while ((int)num_clouds_received_ < 1)
@@ -579,7 +579,7 @@ bool HandleDetector::detectHandleCloudSrv (door_handle_detector::DoorsDetectorCl
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void HandleDetector::cloud_cb (const tf::MessageNotifier<robot_msgs::PointCloud>::MessagePtr& cloud)
+void HandleDetector::cloud_cb (const tf::MessageNotifier<sensor_msgs::PointCloud>::MessagePtr& cloud)
 {
   pointcloud_ = *cloud;
   ROS_INFO ("Received %d data points in frame %s with %d channels (%s).", (int)pointcloud_.pts.size (), pointcloud_.header.frame_id.c_str (),

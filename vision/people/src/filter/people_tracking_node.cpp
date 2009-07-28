@@ -64,7 +64,7 @@ namespace estimation
       tracker_counter_(0)
   {
     // initialize
-    meas_cloud_.pts = vector<robot_msgs::Point32>(1);
+    meas_cloud_.pts = vector<geometry_msgs::Point32>(1);
     meas_cloud_.pts[0].x = 0;
     meas_cloud_.pts[0].y = 0;
     meas_cloud_.pts[0].z = 0;
@@ -86,8 +86,8 @@ namespace estimation
     advertise<people::PositionMeasurement>("people_tracker_filter",10);
 
     // advertise visualization
-    advertise<robot_msgs::PointCloud>("people_tracker_filter_visualization",10);
-    advertise<robot_msgs::PointCloud>("people_tracker_measurements_visualization",10);
+    advertise<sensor_msgs::PointCloud>("people_tracker_filter_visualization",10);
+    advertise<sensor_msgs::PointCloud>("people_tracker_measurements_visualization",10);
 
     // register message sequencer
     message_sequencer_ = new TimeSequencer<people::PositionMeasurement>(this, "people_tracker_measurements", 
@@ -207,7 +207,7 @@ namespace estimation
       boost::mutex::scoped_lock lock(filter_mutex_);
 
       // visualization variables
-      vector<robot_msgs::Point32> filter_visualize(trackers_.size());
+      vector<geometry_msgs::Point32> filter_visualize(trackers_.size());
       vector<float> weights(trackers_.size());
       robot_msgs::ChannelFloat32 channel;
 
@@ -247,7 +247,7 @@ namespace estimation
       // visualize all trackers
       channel.name = "rgb";
       channel.vals = weights;
-      robot_msgs::PointCloud  people_cloud; 
+      sensor_msgs::PointCloud  people_cloud; 
       people_cloud.chan.push_back(channel);
       people_cloud.header.frame_id = fixed_frame_;
       people_cloud.pts  = filter_visualize;

@@ -34,8 +34,8 @@
 // ROS core
 #include <ros/node.h>
 // ROS messages
-#include <robot_msgs/PointCloud.h>
-#include <robot_msgs/PointStamped.h>
+#include <sensor_msgs/PointCloud.h>
+#include <geometry_msgs/PointStamped.h>
 
 // tf
 #include <tf/transform_listener.h>
@@ -59,7 +59,7 @@ protected:
 public:
 
   // ROS messages
-  robot_msgs::PointCloud cloud_, cloud_down_, cloud_normals_;
+  sensor_msgs::PointCloud cloud_, cloud_down_, cloud_normals_;
   
   tf::TransformListener tf_;
   
@@ -73,7 +73,7 @@ public:
   int k_;
   // additional downsampling parameters
   int downsample_;
-  robot_msgs::Point leaf_width_;
+  geometry_msgs::Point leaf_width_;
   double cut_distance_;
   
   std::vector<cloud_geometry::Leaf> leaves_;
@@ -93,12 +93,12 @@ public:
    * \param viewpoint_cloud the resultant view point in the incoming cloud frame
    * \param tf a pointer to a TransformListener object
    */
-  void getCloudViewPoint (const std::string &cloud_frame, robot_msgs::PointStamped &viewpoint_cloud, tf::TransformListener &tf);
+  void getCloudViewPoint (const std::string &cloud_frame, geometry_msgs::PointStamped &viewpoint_cloud, tf::TransformListener &tf);
   
   
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Processing
-  void process_cloud (const robot_msgs::PointCloud& cloud_, robot_msgs::PointCloud& cloud_normals_);
+  void process_cloud (const sensor_msgs::PointCloud& cloud_, sensor_msgs::PointCloud& cloud_normals_);
   
 };
 

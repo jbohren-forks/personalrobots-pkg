@@ -31,7 +31,7 @@
 /** \author Alexander Sorokin */
 
 #include <gtest/gtest.h>
-#include <robot_msgs/Point32.h>
+#include <geometry_msgs/Point32.h>
 #include <robot_msgs/Polygon3D.h>
 
 #include <point_cloud_mapping/geometry/areas.h>
@@ -40,7 +40,7 @@ using namespace cloud_geometry::areas;
 
 TEST (Geometry, PolygonAreas)
 {
-  robot_msgs::Point32 p1, p2, p3, p4;
+  geometry_msgs::Point32 p1, p2, p3, p4;
   robot_msgs::Polygon3D poly;
 
   std::vector<double> normal;

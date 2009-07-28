@@ -24,7 +24,7 @@ ros::Subscriber sub;		// Pose message
 //
 //  Receiver (and Transmiter)
 //
-void receive_and_retransmit(const robot_msgs::PoseStampedConstPtr &msg)
+void receive_and_retransmit(const geometry_msgs::PoseStampedConstPtr &msg)
 {
   // Record the current pose
   tf::Pose tf_pose ;

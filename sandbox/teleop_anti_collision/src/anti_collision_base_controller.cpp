@@ -89,7 +89,7 @@ namespace anti_collision_base_controller
 
     joy_sub_ = ros_node_.subscribe(joy_listen_topic, 1, &AntiCollisionBaseController::joyCallBack, this);
     odom_sub_ = ros_node_.subscribe(odom_topic, 1, &AntiCollisionBaseController::odomCallback, this);
-    base_cmd_pub_ = ros_node_.advertise<robot_msgs::PoseDot>(base_cmd_topic,1);
+    base_cmd_pub_ = ros_node_.advertise<geometry_msgs::PoseDot>(base_cmd_topic,1);
 
     last_cmd_received_ = ros::Time();
 
@@ -287,7 +287,7 @@ namespace anti_collision_base_controller
     vtheta_result = vtheta_tmp;
   }
 
-  void AntiCollisionBaseController::joyCallBack(const robot_msgs::PoseDotConstPtr& msg)
+  void AntiCollisionBaseController::joyCallBack(const geometry_msgs::PoseDotConstPtr& msg)
   {
     last_cmd_received_ = ros::Time::now();
     vel_desired_.lock();

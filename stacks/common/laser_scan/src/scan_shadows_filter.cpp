@@ -35,7 +35,7 @@
  */
 
 #include <ros/node.h>
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 #include <sensor_msgs/LaserScan.h>
 
 #include <float.h>
@@ -73,7 +73,7 @@ class ScanShadowsFilter
     // TF
     tf::TransformListener* tf_;
     tf::MessageNotifier<sensor_msgs::LaserScan>* notifier_;
-    filters::FilterChain<robot_msgs::PointCloud> filter_chain_;
+    filters::FilterChain<sensor_msgs::PointCloud> filter_chain_;
 
     ////////////////////////////////////////////////////////////////////////////////
     ScanShadowsFilter () : laser_max_range_ (DBL_MAX), notifier_(NULL)

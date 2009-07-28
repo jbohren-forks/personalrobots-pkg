@@ -62,12 +62,12 @@ namespace door_functions{
     bool transformTo(const tf::Transformer& tf, const std::string& goal_frame, const door_msgs::Door& door_in, 
                      door_msgs::Door& door_out, const std::string& fixed_frame="odom_combined");
     bool transformPointTo(const tf::Transformer& tf, const std::string& source_frame, const std::string& goal_frame, const ros::Time& time_source,
-                          const robot_msgs::Point32& point_in, robot_msgs::Point32& point_out, const std::string& fixed_frame, const ros::Time& time_goal);
+                          const geometry_msgs::Point32& point_in, geometry_msgs::Point32& point_out, const std::string& fixed_frame, const ros::Time& time_goal);
     bool transformVectorTo(const tf::Transformer& tf, const std::string& source_frame, const std::string& goal_frame, const ros::Time& time_source,
-                           const robot_msgs::Vector3& point_in, robot_msgs::Vector3& point_out, const std::string& fixed_frame, const ros::Time& time_goal);
+                           const geometry_msgs::Vector3& point_in, geometry_msgs::Vector3& point_out, const std::string& fixed_frame, const ros::Time& time_goal);
 
     std::ostream& operator<< (std::ostream& os, const door_msgs::Door& d);
-    std::vector<robot_msgs::Point> getPolygon(const door_msgs::Door& door, const double &door_thickness);
+    std::vector<geometry_msgs::Point> getPolygon(const door_msgs::Door& door, const double &door_thickness);
     door_msgs::Door rotateDoor(const door_msgs::Door& door, const double &angle);
 }
 #endif

@@ -45,9 +45,9 @@
 #include "mocap_msgs/MocapMarker.h"
 #include "mocap_msgs/MocapBody.h"
 
-#include "robot_msgs/Transform.h"
+#include "geometry_msgs/Transform.h"
 #include "deprecated_msgs/RobotBase2DOdom.h"
-#include "robot_msgs/PoseWithRatesStamped.h"
+#include "geometry_msgs/PoseWithRatesStamped.h"
 
 #include <tf/tf.h>
 #include <tf/transform_broadcaster.h>
@@ -75,7 +75,7 @@ public :
     param("~base_id", base_id_, 1) ;
 
     advertise<deprecated_msgs::RobotBase2DOdom>("localizedpose", 1);
-    advertise<robot_msgs::PoseWithRatesStamped>("base_pose_ground_truth", 1) ;
+    advertise<geometry_msgs::PoseWithRatesStamped>("base_pose_ground_truth", 1) ;
 
     m_tfServer = new tf::TransformBroadcaster();
 
@@ -125,12 +125,12 @@ public :
           publish("localizedpose", m_currentPos) ;
 
         // Build Ground Truth Message
-        robot_msgs::PoseWithRatesStamped m_pose_with_rates ;
+        geometry_msgs::PoseWithRatesStamped m_pose_with_rates ;
         m_pose_with_rates.header = snapshot_.header ;
-        m_pose_with_rates.pos.position.x = body.pose.translation.x ;
-        m_pose_with_rates.pos.position.y = body.pose.translation.y ;
-        m_pose_with_rates.pos.position.z = body.pose.translation.z ;
-        m_pose_with_rates.pos.orientation = body.pose.rotation ;
+        m_pose_with_rates.pose_with_rates.pose.position.x = body.pose.translation.x ;
+        m_pose_with_rates.pose_with_rates.pose.position.y = body.pose.translation.y ;
+        m_pose_with_rates.pose_with_rates.pose.position.z = body.pose.translation.z ;
+        m_pose_with_rates.pose_with_rates.pose.orientation = body.pose.rotation ;
 
         publish("base_pose_ground_truth", m_pose_with_rates) ;
 

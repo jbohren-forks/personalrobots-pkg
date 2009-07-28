@@ -30,7 +30,7 @@
 #ifndef ROBOT_SELF_FILTER_SELF_MASK_
 #define ROBOT_SELF_FILTER_SELF_MASK_
 
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 #include <planning_environment/models/robot_models.h>
 #include <geometric_shapes/bodies.h>
 #include <tf/transform_listener.h>
@@ -87,7 +87,7 @@ namespace robot_self_filter
 	/** \brief Compute the mask for a given pointcloud. If a mask element is true, the point
 	    is outside the robot
 	 */
-	void mask(const robot_msgs::PointCloud& data_in, std::vector<int> &mask);
+	void mask(const sensor_msgs::PointCloud& data_in, std::vector<int> &mask);
 	
 	/** \brief Assume subsequent calls to getMask() will be in the frame passed to this function */
 	void assumeFrame(const roslib::Header& header);
@@ -114,7 +114,7 @@ namespace robot_self_filter
 	void computeBoundingSpheres(void);
 	
 	/** \brief Perform the actual mask computation. */
-	void maskAux(const robot_msgs::PointCloud& data_in, std::vector<int> &mask);
+	void maskAux(const sensor_msgs::PointCloud& data_in, std::vector<int> &mask);
 	
 	planning_environment::RobotModels   rm_;
 	tf::TransformListener              &tf_;

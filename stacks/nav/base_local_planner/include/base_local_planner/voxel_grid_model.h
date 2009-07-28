@@ -39,8 +39,8 @@
 #include <vector>
 #include <list>
 #include <cfloat>
-#include <robot_msgs/PointCloud.h>
-#include <robot_msgs/Point32.h>
+#include <sensor_msgs/PointCloud.h>
+#include <geometry_msgs/Point32.h>
 #include <costmap_2d/observation.h>
 #include <base_local_planner/world_model.h>
 
@@ -84,7 +84,7 @@ namespace base_local_planner {
        * @param  circumscribed_radius The radius of the circumscribed circle of the robot
        * @return Positive if all the points lie outside the footprint, negative otherwise
        */
-      virtual double footprintCost(const robot_msgs::Point& position, const std::vector<robot_msgs::Point>& footprint,
+      virtual double footprintCost(const geometry_msgs::Point& position, const std::vector<geometry_msgs::Point>& footprint,
           double inscribed_radius, double circumscribed_radius);
 
       /**
@@ -93,10 +93,10 @@ namespace base_local_planner {
        * @param observations The observations from various sensors 
        * @param laser_scan The scans used to clear freespace
        */
-      void updateWorld(const std::vector<robot_msgs::Point>& footprint,
+      void updateWorld(const std::vector<geometry_msgs::Point>& footprint,
           const std::vector<costmap_2d::Observation>& observations, const std::vector<PlanarLaserScan>& laser_scans);
 
-      void getPoints(robot_msgs::PointCloud& cloud);
+      void getPoints(sensor_msgs::PointCloud& cloud);
 
     private:
       /**
@@ -153,7 +153,7 @@ namespace base_local_planner {
         return sqrt((x1 - x0) * (x1 - x0) + (y1 - y0) * (y1 - y0) + (z1 - z0) * (z1 - z0));
       }
 
-      inline void insert(robot_msgs::Point32 pt){
+      inline void insert(geometry_msgs::Point32 pt){
         unsigned int cell_x, cell_y, cell_z;
         if(!worldToMap3D(pt.x, pt.y, pt.z, cell_x, cell_y, cell_z))
           return;

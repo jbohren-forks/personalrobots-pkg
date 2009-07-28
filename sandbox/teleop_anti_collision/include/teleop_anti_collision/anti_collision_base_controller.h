@@ -51,9 +51,9 @@
 #include <base_local_planner/costmap_model.h>
 
 //we'll take in a path as a vector of poses
-#include <robot_msgs/PoseStamped.h>
-#include <robot_msgs/Point.h>
-#include <robot_msgs/PoseDot.h>
+#include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/Point.h>
+#include <geometry_msgs/PoseDot.h>
 #include <deprecated_msgs/RobotBase2DOdom.h>
 
 //for some datatypes
@@ -83,7 +83,7 @@ namespace anti_collision_base_controller {
 
       tf::TransformListener tf_;
 
-      void joyCallBack(const robot_msgs::PoseDotConstPtr& msg);
+      void joyCallBack(const geometry_msgs::PoseDotConstPtr& msg);
 
       void odomCallback(const deprecated_msgs::RobotBase2DOdomConstPtr& msg);
 
@@ -124,7 +124,7 @@ namespace anti_collision_base_controller {
 
       costmap_2d::Costmap2D costmap_; ///< @brief Provides access to cost map information
 
-      std::vector<robot_msgs::Point> footprint_spec_; ///< @brief The footprint specification of the robot
+      std::vector<geometry_msgs::Point> footprint_spec_; ///< @brief The footprint specification of the robot
 
       double inscribed_radius_, circumscribed_radius_, inflation_radius_; ///< @brief The inscribed and circumscribed radii of the robot
 
@@ -207,7 +207,7 @@ namespace anti_collision_base_controller {
 
       costmap_2d::Costmap2DROS *costmap_ros_;
 
-      robot_msgs::PoseDot vel_desired_, base_odom_;
+      geometry_msgs::PoseDot vel_desired_, base_odom_;
 
       bool getRobotPose(double &x, double &y, double &theta);
 

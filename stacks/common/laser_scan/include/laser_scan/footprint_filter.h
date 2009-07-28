@@ -45,7 +45,7 @@ This is useful for ground plane extraction
 #include "filters/filter_base.h"
 #include "sensor_msgs/LaserScan.h"
 #include "tf/transform_listener.h"
-#include "robot_msgs/PointCloud.h"
+#include "sensor_msgs/PointCloud.h"
 #include "ros/ros.h"
 #include "laser_scan/laser_scan.h"
 
@@ -82,7 +82,7 @@ public:
 
 
     filtered_scan = input_scan ;
-    robot_msgs::PointCloud laser_cloud;
+    sensor_msgs::PointCloud laser_cloud;
 
     try{
     projector_.transformLaserScanToPointCloud("base_link", laser_cloud, input_scan, tf_);
@@ -109,7 +109,7 @@ public:
     return true;
   }
 
-  int indexChannel(const robot_msgs::PointCloud& scan_cloud){
+  int indexChannel(const sensor_msgs::PointCloud& scan_cloud){
       int c_idx = -1;
       for (unsigned int d = 0; d < scan_cloud.get_chan_size (); d++)
       {
@@ -122,7 +122,7 @@ public:
       return c_idx;
   }
 
-  bool inFootprint(const robot_msgs::Point32& scan_pt){
+  bool inFootprint(const geometry_msgs::Point32& scan_pt){
     if(scan_pt.x < -1.0 * inscribed_radius_ || scan_pt.x > inscribed_radius_ || scan_pt.y < -1.0 * inscribed_radius_ || scan_pt.y > inscribed_radius_)
       return false;
     return true;

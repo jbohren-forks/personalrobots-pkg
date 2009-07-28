@@ -134,7 +134,7 @@ interpolate: 0
 unknown: [129]
        */
 
-      robot_msgs::Quaternion & orientation = resp.map.info.origin.orientation;
+      geometry_msgs::Quaternion & orientation = resp.map.info.origin.orientation;
       btMatrix3x3 mat(btQuaternion(orientation.x, orientation.y, orientation.z, orientation.w));
       double yaw, pitch, roll;
       mat.getEulerZYX(yaw, pitch, roll);

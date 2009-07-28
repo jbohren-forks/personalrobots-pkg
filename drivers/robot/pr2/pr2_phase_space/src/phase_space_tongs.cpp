@@ -46,7 +46,7 @@
 
 // Messages
 #include "std_msgs/Float64.h"
-#include "robot_msgs/PoseStamped.h"
+#include "geometry_msgs/PoseStamped.h"
 #include "mocap_msgs/MocapSnapshot.h"
 #include "mocap_msgs/MocapMarker.h"
 #include "mocap_msgs/MocapBody.h"
@@ -72,7 +72,7 @@ public :
   PhaseSpaceTongs(ros::Node& node) : node_(&node)
   {
     prev_seq_num = 0 ;
-    node_->advertise<robot_msgs::PoseStamped>("tong_pose", 1) ;
+    node_->advertise<geometry_msgs::PoseStamped>("tong_pose", 1) ;
     node_->advertise<std_msgs::Float64>("tong_spacing",1) ;
     node_->subscribe("phase_space_snapshot", snapshot_, &PhaseSpaceTongs::snapshotCallback, this, 1) ;
 
@@ -134,7 +134,7 @@ public :
       // For now, just use the left tong as the pose
 
       tf::Stamped<tf::Pose> tf_pose(left, snapshot_.header.stamp, frame_id_) ;
-      robot_msgs::PoseStamped pose_msg ;
+      geometry_msgs::PoseStamped pose_msg ;
       tf::poseStampedTFToMsg(tf_pose, pose_msg) ;
 
       node_->publish("tong_spacing", tong_spacing) ;

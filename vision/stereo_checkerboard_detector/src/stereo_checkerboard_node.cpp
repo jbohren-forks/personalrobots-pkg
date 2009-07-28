@@ -38,7 +38,7 @@
 #include "ros/node.h"
 #include "stereo_checkerboard_detector/stereo_checkerboard_helper.h"
 
-#include "robot_msgs/PointCloud.h"
+#include "sensor_msgs/PointCloud.h"
 
 #include "topic_synchronizer/topic_synchronizer.h"
 #include "visualization_msgs/Marker.h"
@@ -69,10 +69,10 @@ public:
     sync_.subscribe("stereo/right/cam_info", right_info_msg_,  1) ;
 
     node_->advertise<calibration_msgs::CbStereoCorners>("cb_stereo_corners", 1) ;
-    node_->advertise<robot_msgs::PointCloud>("cb_corners", 1) ;
-    node_->advertise<robot_msgs::PointCloud>("cb_corners_left", 1) ;
-    node_->advertise<robot_msgs::PointCloud>("cb_corners_right", 1) ;
-    node_->advertise<robot_msgs::PoseStamped>("cb_pose", 1) ;
+    node_->advertise<sensor_msgs::PointCloud>("cb_corners", 1) ;
+    node_->advertise<sensor_msgs::PointCloud>("cb_corners_left", 1) ;
+    node_->advertise<sensor_msgs::PointCloud>("cb_corners_right", 1) ;
+    node_->advertise<geometry_msgs::PoseStamped>("cb_pose", 1) ;
     node_->advertise<sensor_msgs::Image>("left_cb_debug",1) ;
     node_->advertise<sensor_msgs::Image>("right_cb_debug",1) ;
     node->advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
@@ -85,7 +85,7 @@ public:
 
   }
 
-  void pointVecToCloud(const vector<robot_msgs::Point>& vec, robot_msgs::PointCloud& cloud)
+  void pointVecToCloud(const vector<geometry_msgs::Point>& vec, sensor_msgs::PointCloud& cloud)
   {
     cloud.pts.resize(vec.size()) ;
     for (unsigned int i=0; i<vec.size(); i++)
@@ -96,7 +96,7 @@ public:
     }
   }
 
-  void pointVecToCbCamCorners(const vector<robot_msgs::Point>& vec, unsigned int num_x, unsigned int num_y,
+  void pointVecToCbCamCorners(const vector<geometry_msgs::Point>& vec, unsigned int num_x, unsigned int num_y,
                               calibration_msgs::CbCamCorners& corners)
   {
     corners.num_x = num_x ;
@@ -124,7 +124,7 @@ public:
   {
     bool found = cb_helper_.findCheckerboard(left_image_msg_, right_image_msg_, left_info_msg_, right_info_msg_) ;
     // Define the cloud we'll be using to publish with
-    robot_msgs::PointCloud cloud ;
+    sensor_msgs::PointCloud cloud ;
     cloud.header.frame_id = left_image_msg_.header.frame_id ;
     cloud.header.stamp = left_image_msg_.header.stamp ;
 
@@ -140,20 +140,20 @@ public:
 
 
       // Publish the XYZ corners
-      vector<robot_msgs::Point> point_vec ;
+      vector<geometry_msgs::Point> point_vec ;
       cb_helper_.getCorners(point_vec) ;
       pointVecToCloud(point_vec, cloud) ;
       node_->publish("cb_corners", cloud) ;
 
       // Publish the left corners
-      vector<robot_msgs::Point> left_point_vec ;
+      vector<geometry_msgs::Point> left_point_vec ;
       cb_helper_.getCornersLeft(left_point_vec) ;
       pointVecToCloud(left_point_vec, cloud) ;
       pointVecToCbCamCorners(left_point_vec, num_x_, num_y_, stereo_corners.left) ;
       node_->publish("cb_corners_left", cloud) ;
 
       // Publish the right corners
-      vector<robot_msgs::Point> right_point_vec ;
+      vector<geometry_msgs::Point> right_point_vec ;
       cb_helper_.getCornersRight(right_point_vec) ;
       pointVecToCloud(right_point_vec, cloud) ;
       pointVecToCbCamCorners(right_point_vec, num_x_, num_y_, stereo_corners.right) ;
@@ -166,7 +166,7 @@ public:
       cb_helper_.getPose(pose) ;
       publishMarker(pose) ;
 
-      robot_msgs::PoseStamped pose_stamped_msg ;
+      geometry_msgs::PoseStamped pose_stamped_msg ;
       tf::poseTFToMsg(pose, pose_stamped_msg.pose) ;
       pose_stamped_msg.header.frame_id = left_image_msg_.header.frame_id ;
       pose_stamped_msg.header.stamp = left_image_msg_.header.stamp ;

@@ -44,7 +44,7 @@ using namespace robot_actions;
 namespace move_base {
 
   MoveBase::MoveBase(std::string name, tf::TransformListener& tf) :
-    Action<robot_msgs::PoseStamped, robot_msgs::PoseStamped>(name), tf_(tf),
+    Action<geometry_msgs::PoseStamped, geometry_msgs::PoseStamped>(name), tf_(tf),
     tc_(NULL), planner_costmap_ros_(NULL), controller_costmap_ros_(NULL), 
     planner_(NULL){
 
@@ -59,7 +59,7 @@ namespace move_base {
     ros_node_.param("~controller_patience", controller_patience_, 15.0);
 
     //for comanding the base
-    vel_pub_ = ros_node_.advertise<robot_msgs::PoseDot>("cmd_vel", 1);
+    vel_pub_ = ros_node_.advertise<geometry_msgs::PoseDot>("cmd_vel", 1);
     vis_pub_ = ros_node_.advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
 
     //we'll assume the radius of the robot to be consistent with what's specified for the costmaps
@@ -124,10 +124,10 @@ namespace move_base {
     //clear the planner's costmap
     planner_costmap_ros_->getRobotPose(global_pose);
 
-    std::vector<robot_msgs::Point> clear_poly;
+    std::vector<geometry_msgs::Point> clear_poly;
     double x = global_pose.getOrigin().x();
     double y = global_pose.getOrigin().y();
-    robot_msgs::Point pt;
+    geometry_msgs::Point pt;
 
     pt.x = x - size_x / 2;
     pt.y = y - size_x / 2;
@@ -191,7 +191,7 @@ namespace move_base {
       return false;
     }
 
-    robot_msgs::PoseStamped start;
+    geometry_msgs::PoseStamped start;
     tf::poseStampedTFToMsg(global_pose, start);
 
     //update the copy of the costmap the planner uses
@@ -200,8 +200,8 @@ namespace move_base {
     //if we have a tolerance on the goal point that is greater 
     //than the resolution of the map... compute the full potential function
     double resolution = planner_costmap_ros_->resolution();
-    std::vector<robot_msgs::PoseStamped> global_plan;
-    robot_msgs::PoseStamped p;
+    std::vector<geometry_msgs::PoseStamped> global_plan;
+    geometry_msgs::PoseStamped p;
     p = req.goal;
     p.pose.position.y = req.goal.pose.position.y - req.tolerance; 
     bool found_legal = false;
@@ -246,7 +246,7 @@ namespace move_base {
       delete controller_costmap_ros_;
   }
 
-  void MoveBase::publishGoal(const robot_msgs::PoseStamped& goal){
+  void MoveBase::publishGoal(const geometry_msgs::PoseStamped& goal){
     visualization_msgs::Marker marker;
     marker.header = goal.header;
     marker.ns = "move_base";
@@ -263,7 +263,7 @@ namespace move_base {
     vis_pub_.publish(marker);
   }
 
-  bool MoveBase::makePlan(const robot_msgs::PoseStamped& goal, std::vector<robot_msgs::PoseStamped>& plan){
+  bool MoveBase::makePlan(const geometry_msgs::PoseStamped& goal, std::vector<geometry_msgs::PoseStamped>& plan){
     //make sure to set the plan to be empty initially
     plan.clear();
 
@@ -276,7 +276,7 @@ namespace move_base {
     if(!planner_costmap_ros_->getRobotPose(global_pose))
       return false;
 
-    robot_msgs::PoseStamped start;
+    geometry_msgs::PoseStamped start;
     tf::poseStampedTFToMsg(global_pose, start);
 
     //if the planner fails or returns a zero length plan, planning failed
@@ -286,7 +286,7 @@ namespace move_base {
     }
 
     //we'll also push the goal point onto the end of the plan to make sure orientation is taken into account
-    robot_msgs::PoseStamped goal_copy = goal;
+    geometry_msgs::PoseStamped goal_copy = goal;
     goal_copy.header.stamp = ros::Time::now();
     plan.push_back(goal_copy);
 
@@ -300,7 +300,7 @@ namespace move_base {
       ROS_DEBUG("180 rotation %d", i);
       double angle = M_PI; //rotate 180 degrees
       tf::Stamped<tf::Pose> rotate_goal = tf::Stamped<tf::Pose>(tf::Pose(tf::Quaternion(angle, 0.0, 0.0), tf::Point(0.0, 0.0, 0.0)), ros::Time(), robot_base_frame_);
-      robot_msgs::PoseStamped rotate_goal_msg;
+      geometry_msgs::PoseStamped rotate_goal_msg;
 
       try{
         tf_.transformPose(global_frame_, rotate_goal, rotate_goal);
@@ -312,7 +312,7 @@ namespace move_base {
       }
 
       poseStampedTFToMsg(rotate_goal, rotate_goal_msg);
-      std::vector<robot_msgs::PoseStamped> rotate_plan;
+      std::vector<geometry_msgs::PoseStamped> rotate_plan;
       rotate_plan.push_back(rotate_goal_msg);
 
       //pass the rotation goal to the controller
@@ -321,7 +321,7 @@ namespace move_base {
         return;
       }
 
-      robot_msgs::PoseDot cmd_vel;
+      geometry_msgs::PoseDot cmd_vel;
       while(!isPreemptRequested() && ros_node_.ok() && !tc_->goalReached()){
         if(tc_->computeVelocityCommands(cmd_vel)){
           //make sure that we send the velocity command to the base
@@ -340,7 +340,7 @@ namespace move_base {
   }
 
   void MoveBase::publishZeroVelocity(){
-    robot_msgs::PoseDot cmd_vel;
+    geometry_msgs::PoseDot cmd_vel;
     cmd_vel.vel.vx = 0.0;
     cmd_vel.vel.vy = 0.0;
     cmd_vel.ang_vel.vz = 0.0;
@@ -348,7 +348,7 @@ namespace move_base {
 
   }
 
-  robot_actions::ResultStatus MoveBase::execute(const robot_msgs::PoseStamped& goal, robot_msgs::PoseStamped& feedback){
+  robot_actions::ResultStatus MoveBase::execute(const geometry_msgs::PoseStamped& goal, geometry_msgs::PoseStamped& feedback){
     //if we shutdown our costmaps when we're deactivated... we need to start them back up now
     if(shutdown_costmaps_){
       planner_costmap_ros_->start();
@@ -361,8 +361,8 @@ namespace move_base {
     //publish the goal point to the visualizer
     publishGoal(goal);
 
-    std::vector<robot_msgs::PoseStamped> global_plan;
-    robot_msgs::PoseDot cmd_vel;
+    std::vector<geometry_msgs::PoseStamped> global_plan;
+    geometry_msgs::PoseDot cmd_vel;
     ros::Time last_valid_plan, last_valid_control;
 
     last_valid_control = ros::Time::now();
@@ -548,7 +548,7 @@ int main(int argc, char** argv){
   
   move_base::MoveBase move_base(n.getName(), tf);
   robot_actions::ActionRunner runner(20.0);
-  runner.connect<robot_msgs::PoseStamped, nav_robot_actions::MoveBaseState, robot_msgs::PoseStamped>(move_base);
+  runner.connect<geometry_msgs::PoseStamped, nav_robot_actions::MoveBaseState, geometry_msgs::PoseStamped>(move_base);
   runner.run();
 
   //ros::MultiThreadedSpinner s;

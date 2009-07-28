@@ -54,9 +54,9 @@
 #include "sensor_msgs/DisparityInfo.h"
 #include "sensor_msgs/CamInfo.h"
 #include "sensor_msgs/Image.h"
-#include "robot_msgs/PointCloud.h"
-#include "robot_msgs/Point32.h"
-#include "robot_msgs/PointStamped.h"
+#include "sensor_msgs/PointCloud.h"
+#include "geometry_msgs/Point32.h"
+#include "geometry_msgs/PointStamped.h"
 #include "door_msgs/Door.h"
 #include "visualization_msgs/Marker.h"
 #include "door_handle_detector/DoorsDetector.h"
@@ -121,8 +121,8 @@ public:
 	sensor_msgs::CvBridge rbridge_;
 	sensor_msgs::CvBridge dbridge_;
 
-//	robot_msgs::PointCloud cloud_fetch;
-	robot_msgs::PointCloudConstPtr cloud_;
+//	sensor_msgs::PointCloud cloud_fetch;
+	sensor_msgs::PointCloudConstPtr cloud_;
 
 	IplImage* left_;
 	IplImage* right_;
@@ -307,7 +307,7 @@ private:
 //		stinfo_ = info;
 //	}
 
-	void cloudCallback(const robot_msgs::PointCloud::ConstPtr& point_cloud)
+	void cloudCallback(const sensor_msgs::PointCloud::ConstPtr& point_cloud)
 	{
 		boost::unique_lock<boost::mutex> lock(data_lock_);
 //		ROS_INFO("got cloud callback");
@@ -365,7 +365,7 @@ private:
 	 * @param b
 	 * @return
 	 */
-    double distance3D(robot_msgs::Point a, robot_msgs::Point b)
+    double distance3D(geometry_msgs::Point a, geometry_msgs::Point b)
     {
         return sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y) + (a.z - b.z) * (a.z - b.z));
     }
@@ -435,9 +435,9 @@ private:
      * @param rect Region in disparity image
      * @return Filtered point cloud
      */
-	robot_msgs::PointCloud filterPointCloud(const PointCloud pc, const CvRect& rect)
+	sensor_msgs::PointCloud filterPointCloud(const PointCloud pc, const CvRect& rect)
 	{
-		robot_msgs::PointCloud result;
+		sensor_msgs::PointCloud result;
 		result.header.frame_id = pc.header.frame_id;
 		result.header.stamp = pc.header.stamp;
 
@@ -481,7 +481,7 @@ private:
      * \brief Publishes a visualization marker for a point.
      * @param p
      */
-    void showHandleMarker(robot_msgs::PointStamped p)
+    void showHandleMarker(geometry_msgs::PointStamped p)
     {
         visualization_msgs::Marker marker;
         marker.header.frame_id = p.header.frame_id;
@@ -600,14 +600,14 @@ private:
 
 
     	// compute least-squares handle plane
-    	robot_msgs::PointCloud pc = filterPointCloud(*cloud_,r);
+    	sensor_msgs::PointCloud pc = filterPointCloud(*cloud_,r);
     	CvScalar plane = estimatePlaneLS(pc);
 
     	cnt = 0;
     	double avg = 0;
     	double max_dist = 0;
     	for(size_t i = 0;i < pc.pts.size();++i){
-    		robot_msgs::Point32 p = pc.pts[i];
+    		geometry_msgs::Point32 p = pc.pts[i];
     		double dist = fabs(plane.val[0] * p.x + plane.val[1] * p.y + plane.val[2] * p.z + plane.val[3]);
     		max_dist = max(max_dist, dist);
     		avg += dist;
@@ -632,7 +632,7 @@ private:
     		return false;
     	}
 
-    	robot_msgs::PointStamped pin, pout;
+    	geometry_msgs::PointStamped pin, pout;
     	pin.header.frame_id = cloud_->header.frame_id;
     	pin.header.stamp = cloud_->header.stamp;
     	pin.point.x = xstats.mean;
@@ -729,7 +729,7 @@ private:
      * @param handle Point indicating the real-world handle position
      * @return
      */
-    bool decideHandlePosition(vector<CvRect>& handle_rect, robot_msgs::PointStamped & handle)
+    bool decideHandlePosition(vector<CvRect>& handle_rect, geometry_msgs::PointStamped & handle)
     {
     	if (handle_rect.size()==0) {
     		return false;
@@ -786,7 +786,7 @@ private:
     	Stats zstats;
     	pointCloudStatistics(outlet_cloud, xstats, ystats, zstats );
 
-        robot_msgs::PointStamped handle_stereo;
+        geometry_msgs::PointStamped handle_stereo;
 
         handle_stereo.header.frame_id = cloud_->header.frame_id;
         handle_stereo.header.stamp = cloud_->header.stamp;
@@ -821,7 +821,7 @@ private:
      * @param handle Position of detected handle
      * @return True if handle was found, false otherwise.
      */
-    bool runHandleDetector(robot_msgs::PointStamped & handle)
+    bool runHandleDetector(geometry_msgs::PointStamped & handle)
     {
     	vector<CvRect> handle_rect;
 
@@ -872,7 +872,7 @@ private:
     	preempted_ = false;
 
     	ROS_INFO("door_handle_detector_vision: Service called");
-        robot_msgs::PointStamped handle;
+        geometry_msgs::PointStamped handle;
         handle.header.frame_id = req.door.header.frame_id;   // want handle in the same frame as the door
     	subscribeStereoData();
         bool found = runHandleDetector(handle);
@@ -881,7 +881,7 @@ private:
         if(!found){
             return false;
         }
-        robot_msgs::PointStamped handle_transformed;
+        geometry_msgs::PointStamped handle_transformed;
         // transform the point in the expected frame
         if (!tf_.canTransform(req.door.header.frame_id, handle.header.frame_id,
                                handle.header.stamp, ros::Duration(5.0))){
@@ -919,7 +919,7 @@ private:
      * @param points The point cloud
      * @return Plane in Hessian normal form
      */
-    CvScalar estimatePlaneLS(robot_msgs::PointCloud points)
+    CvScalar estimatePlaneLS(sensor_msgs::PointCloud points)
     {
         CvScalar plane;
         int cnt = points.pts.size();
@@ -929,7 +929,7 @@ private:
         }
         CvMat *A = cvCreateMat(cnt, 3, CV_32FC1);
         for(int i = 0;i < cnt;++i){
-            robot_msgs::Point32 p = points.pts[i];
+            geometry_msgs::Point32 p = points.pts[i];
             cvmSet(A, i, 0, p.x);
             cvmSet(A, i, 1, p.y);
             cvmSet(A, i, 2, p.z);
@@ -958,7 +958,7 @@ private:
      */
     void applyPositionPrior()
     {
-        robot_msgs::PointCloud base_cloud;
+        sensor_msgs::PointCloud base_cloud;
         if (!tf_.canTransform("base_footprint", cloud_->header.frame_id, cloud_->header.stamp, ros::Duration(5.0))){
           ROS_ERROR("Cannot transform from base_footprint to %s", cloud_->header.frame_id.c_str());
           return;
@@ -979,7 +979,7 @@ private:
             unsigned char *pd = (unsigned char*)(disp_->imageData);
             int ws = disp_->widthStep;
             for(size_t i = 0;i < base_cloud.get_pts_size();++i){
-                robot_msgs::Point32 crt_point = base_cloud.pts[i];
+                geometry_msgs::Point32 crt_point = base_cloud.pts[i];
                 int x = (int)(base_cloud.chan[xchan].vals[i]);
                 int y = (int)(base_cloud.chan[ychan].vals[i]);
 

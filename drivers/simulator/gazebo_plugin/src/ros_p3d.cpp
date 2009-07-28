@@ -84,7 +84,7 @@ void RosP3D::LoadChild(XMLConfigNode *node)
 
   ROS_DEBUG("==== topic name for RosP3D ======== %s", this->topicName.c_str());
   if (this->topicName != "")
-    this->pub_ = this->rosnode_->advertise<robot_msgs::PoseWithRatesStamped>(this->topicName,10);
+    this->pub_ = this->rosnode_->advertise<geometry_msgs::PoseWithRatesStamped>(this->topicName,10);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

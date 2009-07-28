@@ -126,9 +126,9 @@ class BoundingBox: public SpectralAnalysis
      * \see Descriptor3D::compute
      */
     // --------------------------------------------------------------
-    virtual void compute(const robot_msgs::PointCloud& data,
+    virtual void compute(const sensor_msgs::PointCloud& data,
                          cloud_kdtree::KdTree& data_kdtree,
-                         const cv::Vector<robot_msgs::Point32*>& interest_pts,
+                         const cv::Vector<geometry_msgs::Point32*>& interest_pts,
                          cv::Vector<cv::Vector<float> >& results);
 
     // --------------------------------------------------------------
@@ -142,7 +142,7 @@ class BoundingBox: public SpectralAnalysis
      * \see Descriptor3D::compute
      */
     // --------------------------------------------------------------
-    virtual void compute(const robot_msgs::PointCloud& data,
+    virtual void compute(const sensor_msgs::PointCloud& data,
                          cloud_kdtree::KdTree& data_kdtree,
                          const cv::Vector<vector<int>*>& interest_region_indices,
                          cv::Vector<cv::Vector<float> >& results);
@@ -160,7 +160,7 @@ class BoundingBox: public SpectralAnalysis
      * \param result The vector to hold the computed bounding box dimensions
      */
     // --------------------------------------------------------------
-    void computeBoundingBoxFeatures(const robot_msgs::PointCloud& data,
+    void computeBoundingBoxFeatures(const sensor_msgs::PointCloud& data,
                                     const vector<int>& neighbor_indices,
                                     const Eigen::Vector3d* eig_vec_max,
                                     const Eigen::Vector3d* eig_vec_mid,

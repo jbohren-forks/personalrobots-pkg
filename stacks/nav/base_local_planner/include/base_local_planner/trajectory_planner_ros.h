@@ -52,9 +52,9 @@
 #include <tf/transform_datatypes.h>
 
 #include <deprecated_msgs/RobotBase2DOdom.h>
-#include <robot_msgs/PoseStamped.h>
-#include <robot_msgs/PoseDot.h>
-#include <robot_msgs/Point.h>
+#include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/PoseDot.h>
+#include <geometry_msgs/Point.h>
 
 #include <tf/message_notifier.h>
 #include <tf/transform_listener.h>
@@ -95,21 +95,21 @@ namespace base_local_planner {
        * @param theta_i The orientation of the robot
        * @return A vector of points in world coordinates that correspond to the verticies of the robot's footprint 
        */
-      std::vector<robot_msgs::Point> drawFootprint(double x_i, double y_i, double theta_i);
+      std::vector<geometry_msgs::Point> drawFootprint(double x_i, double y_i, double theta_i);
 
       /**
        * @brief  Given the current position, orientation, and velocity of the robot, compute velocity commands to send to the base
        * @param cmd_vel Will be filled with the velocity command to be passed to the robot base
        * @return True if a valid trajectory was found, false otherwise
        */
-      bool computeVelocityCommands(robot_msgs::PoseDot& cmd_vel);
+      bool computeVelocityCommands(geometry_msgs::PoseDot& cmd_vel);
 
       /**
        * @brief  Update the plan that the controller is following
        * @param orig_global_plan The plan to pass to the controller
        * @return True if the plan was updated successfully, false otherwise
        */
-      bool updatePlan(const std::vector<robot_msgs::PoseStamped>& orig_global_plan);
+      bool updatePlan(const std::vector<geometry_msgs::PoseStamped>& orig_global_plan);
 
       /**
        * @brief  Returns the local goal the robot is pursuing
@@ -157,7 +157,7 @@ namespace base_local_planner {
        * @param  cmd_vel The velocity commands to be filled
        * @return  True if a valid trajectory was found, false otherwise
        */
-      bool rotateToGoal(const tf::Stamped<tf::Pose>& global_pose, const tf::Stamped<tf::Pose>& robot_vel, double goal_th, robot_msgs::PoseDot& cmd_vel);
+      bool rotateToGoal(const tf::Stamped<tf::Pose>& global_pose, const tf::Stamped<tf::Pose>& robot_vel, double goal_th, geometry_msgs::PoseDot& cmd_vel);
 
       /**
        * @brief  Compute the distance between two points
@@ -174,13 +174,13 @@ namespace base_local_planner {
        * @param plan The plan to be pruned
        * @param global_plan The plan to be pruned inf the frame of the planner
        */
-      void prunePlan(const tf::Stamped<tf::Pose>& global_pose, std::vector<robot_msgs::PoseStamped>& plan, std::vector<robot_msgs::PoseStamped>& global_plan);
+      void prunePlan(const tf::Stamped<tf::Pose>& global_pose, std::vector<geometry_msgs::PoseStamped>& plan, std::vector<geometry_msgs::PoseStamped>& global_plan);
 
       /**
        * @brief  Transforms the global plan of the robot from the planner frame to the local frame
        * @param transformed_plan Populated with the transformed plan
        */
-      bool transformGlobalPlan(std::vector<robot_msgs::PoseStamped>& transformed_plan);
+      bool transformGlobalPlan(std::vector<geometry_msgs::PoseStamped>& transformed_plan);
 
       /**
        * @brief  Publishes the footprint of the robot for visualization purposes
@@ -191,7 +191,7 @@ namespace base_local_planner {
       /**
        * @brief  Publish a plan for visualization purposes
        */
-      void publishPlan(const std::vector<robot_msgs::PoseStamped>& path, const ros::Publisher& pub, double r, double g, double b, double a);
+      void publishPlan(const std::vector<geometry_msgs::PoseStamped>& path, const ros::Publisher& pub, double r, double g, double b, double a);
 
       void odomCallback(const deprecated_msgs::RobotBase2DOdom::ConstPtr& msg);
 
@@ -208,7 +208,7 @@ namespace base_local_planner {
       double rot_stopped_velocity_, trans_stopped_velocity_;
       double xy_goal_tolerance_, yaw_goal_tolerance_, min_in_place_vel_th_;
       double inscribed_radius_, circumscribed_radius_, inflation_radius_; 
-      std::vector<robot_msgs::PoseStamped> global_plan_;
+      std::vector<geometry_msgs::PoseStamped> global_plan_;
       bool prune_plan_;
       ros::Publisher footprint_pub_, g_plan_pub_, l_plan_pub_;
       ros::Subscriber odom_sub_;

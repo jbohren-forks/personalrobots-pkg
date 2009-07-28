@@ -31,7 +31,7 @@
 #include <sys/time.h>
 
 #include "robot_msgs/Polygon3D.h"
-#include "robot_msgs/Point32.h"
+#include "geometry_msgs/Point32.h"
 #include <math.h>
 
 
@@ -48,7 +48,7 @@ TEST(annotated_map, projectPolygon)
 
   sensor_msgs::CamInfo cam_info;
 
-  robot_msgs::Point32 pt;
+  geometry_msgs::Point32 pt;
 
   pt.x=0;pt.y=0;pt.z=1;
   input_polygon.points.push_back(pt);

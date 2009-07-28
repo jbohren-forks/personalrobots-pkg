@@ -51,9 +51,9 @@ void SpectralShape::useCurvature()
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-void SpectralShape::compute(const robot_msgs::PointCloud& data,
+void SpectralShape::compute(const sensor_msgs::PointCloud& data,
                             cloud_kdtree::KdTree& data_kdtree,
-                            const cv::Vector<robot_msgs::Point32*>& interest_pts,
+                            const cv::Vector<geometry_msgs::Point32*>& interest_pts,
                             cv::Vector<cv::Vector<float> >& results)
 {
   results.resize(interest_pts.size());
@@ -72,7 +72,7 @@ void SpectralShape::compute(const robot_msgs::PointCloud& data,
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-void SpectralShape::compute(const robot_msgs::PointCloud& data,
+void SpectralShape::compute(const sensor_msgs::PointCloud& data,
                             cloud_kdtree::KdTree& data_kdtree,
                             const cv::Vector<vector<int>*>& interest_region_indices,
                             cv::Vector<cv::Vector<float> >& results)

@@ -43,7 +43,7 @@
 
 #include <ros/console.h>
 
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 
 #include <point_cloud_mapping/kdtree/kdtree.h>
 
@@ -89,9 +89,9 @@ class Descriptor3D
      *                results[i].size() = 0
      */
     // --------------------------------------------------------------
-    virtual void compute(const robot_msgs::PointCloud& data,
+    virtual void compute(const sensor_msgs::PointCloud& data,
                          cloud_kdtree::KdTree& data_kdtree,
-                         const cv::Vector<robot_msgs::Point32*>& interest_pts,
+                         const cv::Vector<geometry_msgs::Point32*>& interest_pts,
                          cv::Vector<cv::Vector<float> >& results) = 0;
 
     // --------------------------------------------------------------
@@ -108,7 +108,7 @@ class Descriptor3D
      *                results[i].size() = 0
      */
     // --------------------------------------------------------------
-    virtual void compute(const robot_msgs::PointCloud& data,
+    virtual void compute(const sensor_msgs::PointCloud& data,
                          cloud_kdtree::KdTree& data_kdtree,
                          const cv::Vector<vector<int>*>& interest_region_indices,
                          cv::Vector<cv::Vector<float> >& results) = 0;
@@ -149,9 +149,9 @@ class Descriptor3D
      * \return The total number of concatenated feature values
      */
     // --------------------------------------------------------------
-    static unsigned int computeAndConcatFeatures(const robot_msgs::PointCloud& data,
+    static unsigned int computeAndConcatFeatures(const sensor_msgs::PointCloud& data,
                                                  cloud_kdtree::KdTree& data_kdtree,
-                                                 const cv::Vector<robot_msgs::Point32*>& interest_pts,
+                                                 const cv::Vector<geometry_msgs::Point32*>& interest_pts,
                                                  vector<Descriptor3D*>& descriptors_3d,
                                                  vector<float*>& concatenated_features,
                                                  set<unsigned int>& failed_indices);
@@ -175,7 +175,7 @@ class Descriptor3D
      * \return The total number of concatenated feature values
      */
     // --------------------------------------------------------------
-    static unsigned int computeAndConcatFeatures(const robot_msgs::PointCloud& data,
+    static unsigned int computeAndConcatFeatures(const sensor_msgs::PointCloud& data,
                                                  cloud_kdtree::KdTree& data_kdtree,
                                                  const cv::Vector<vector<int>*>& interest_region_indices,
                                                  vector<Descriptor3D*>& descriptors_3d,

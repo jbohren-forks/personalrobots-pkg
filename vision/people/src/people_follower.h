@@ -47,7 +47,7 @@
 #include <tf/message_notifier.h>
 
 // messages
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 #include <people/PositionMeasurement.h>
 #include <pr2_robot_actions/Pose2D.h>
  
@@ -92,7 +92,7 @@ private:
 
   double follow_distance_, publish_rate_, distance_threshold_;
   bool initialized_;
-  robot_msgs::PointCloud  robot_goal_cloud_; 
+  sensor_msgs::PointCloud  robot_goal_cloud_; 
 
 
 }; // class

@@ -34,11 +34,11 @@
 #define _CLOUD_GEOMETRY_POINT_H_
 
 // ROS includes
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 #include <robot_msgs/Polygon3D.h>
-#include <robot_msgs/Point32.h>
-#include <robot_msgs/Point.h>
-#include <robot_msgs/Vector3.h>
+#include <geometry_msgs/Point32.h>
+#include <geometry_msgs/Point.h>
+#include <geometry_msgs/Vector3.h>
 
 #include <Eigen/Core>
 
@@ -62,7 +62,7 @@ namespace cloud_geometry
     * \param eps the maximum allowed difference between the points' values
     */
   inline bool
-    checkPointEqual (const robot_msgs::Point32 &p1, const robot_msgs::Point32 &p2, double eps = 1e-10)
+    checkPointEqual (const geometry_msgs::Point32 &p1, const geometry_msgs::Point32 &p2, double eps = 1e-10)
   {
     if (
         (fabs (p1.x - p2.x) < eps) && (fabs (p1.y - p2.y) < eps) && (fabs (p1.z - p2.z) < eps)
@@ -71,8 +71,8 @@ namespace cloud_geometry
     return (false);
   }
 
-  int getChannelIndex (const robot_msgs::PointCloud &points, std::string channel_name);
-  int getChannelIndex (robot_msgs::PointCloudConstPtr points, std::string channel_name);
+  int getChannelIndex (const sensor_msgs::PointCloud &points, std::string channel_name);
+  int getChannelIndex (sensor_msgs::PointCloudConstPtr points, std::string channel_name);
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /** \brief Create a quick copy of a point and its associated channels and return the data as a float vector.
@@ -81,7 +81,7 @@ namespace cloud_geometry
     * \param array the vector containing the result
     */
   inline void
-    getPointAsFloatArray (const robot_msgs::PointCloud &points, int index, std::vector<float> &array)
+    getPointAsFloatArray (const sensor_msgs::PointCloud &points, int index, std::vector<float> &array)
   {
     // Resize for XYZ (3) + NR_CHANNELS
     if (array.size () != 3 + points.get_chan_size ())
@@ -102,7 +102,7 @@ namespace cloud_geometry
     * \param nr_channels the number of channels to copy (starting with the first channel)
     */
   inline void
-    getPointAsFloatArray (const robot_msgs::PointCloud &points, int index, std::vector<float> &array, int nr_channels)
+    getPointAsFloatArray (const sensor_msgs::PointCloud &points, int index, std::vector<float> &array, int nr_channels)
   {
     // Resize for XYZ (3) + NR_CHANNELS
     if ((int)array.size () != 3 + nr_channels)
@@ -124,7 +124,7 @@ namespace cloud_geometry
     * \param end_channel the last channel to stop copying data at
     */
   inline void
-    getPointAsFloatArray (const robot_msgs::PointCloud &points, int index, std::vector<float> &array, int start_channel, int end_channel)
+    getPointAsFloatArray (const sensor_msgs::PointCloud &points, int index, std::vector<float> &array, int start_channel, int end_channel)
   {
     // Resize for XYZ (3) + NR_CHANNELS
     if ((int)array.size () != 3 + end_channel - start_channel)
@@ -146,7 +146,7 @@ namespace cloud_geometry
     * \param end_channel the last channel to stop copying data at
     */
   inline void
-    getPointAsFloatArray (const robot_msgs::PointCloud &points, int index, std::vector<float> &array, std::vector<int> channels)
+    getPointAsFloatArray (const sensor_msgs::PointCloud &points, int index, std::vector<float> &array, std::vector<int> channels)
   {
     if (channels.size () > points.get_chan_size ())
       return;
@@ -166,10 +166,10 @@ namespace cloud_geometry
     * \param p1 the first point/vector
     * \param p2 the second point/vector
     */
-  inline robot_msgs::Point32
-    cross (const robot_msgs::Point32 &p1, const robot_msgs::Point32 &p2)
+  inline geometry_msgs::Point32
+    cross (const geometry_msgs::Point32 &p1, const geometry_msgs::Point32 &p2)
   {
-    robot_msgs::Point32 r;
+    geometry_msgs::Point32 r;
     r.x = p1.y * p2.z - p1.z * p2.y;
     r.y = p1.z * p2.x - p1.x * p2.z;
     r.z = p1.x * p2.y - p1.y * p2.x;
@@ -181,10 +181,10 @@ namespace cloud_geometry
     * \param p1 the first point/vector
     * \param p2 the second point/vector
     */
-  inline robot_msgs::Point32
-    cross (const std::vector<double> &p1, const robot_msgs::Point32 &p2)
+  inline geometry_msgs::Point32
+    cross (const std::vector<double> &p1, const geometry_msgs::Point32 &p2)
   {
-    robot_msgs::Point32 r;
+    geometry_msgs::Point32 r;
     r.x = p1.at (1) * p2.z - p1.at (2) * p2.y;
     r.y = p1.at (2) * p2.x - p1.at (0) * p2.z;
     r.z = p1.at (0) * p2.y - p1.at (1) * p2.x;
@@ -196,10 +196,10 @@ namespace cloud_geometry
     * \param p1 the first point/vector
     * \param p2 the second point/vector
     */
-  inline robot_msgs::Point32
-    cross (const robot_msgs::Point32 &p1, const std::vector<double> &p2)
+  inline geometry_msgs::Point32
+    cross (const geometry_msgs::Point32 &p1, const std::vector<double> &p2)
   {
-    robot_msgs::Point32 r;
+    geometry_msgs::Point32 r;
     r.x = p2.at (1) * p1.z - p2.at (2) * p1.y;
     r.y = p2.at (2) * p1.x - p2.at (0) * p1.z;
     r.z = p2.at (0) * p1.y - p2.at (1) * p1.x;
@@ -228,7 +228,7 @@ namespace cloud_geometry
     * \param p2 the second point/vector
     */
   inline double
-    dot (const robot_msgs::Point32 &p1, const robot_msgs::Point32 &p2)
+    dot (const geometry_msgs::Point32 &p1, const geometry_msgs::Point32 &p2)
   {
     return (p1.x * p2.x + p1.y * p2.y + p1.z * p2.z);
   }
@@ -239,7 +239,7 @@ namespace cloud_geometry
     * \param p2 the second point/vector
     */
   inline double
-    dot (const robot_msgs::Point &p1, const robot_msgs::Point &p2)
+    dot (const geometry_msgs::Point &p1, const geometry_msgs::Point &p2)
   {
     return (p1.x * p2.x + p1.y * p2.y + p1.z * p2.z);
   }
@@ -250,7 +250,7 @@ namespace cloud_geometry
     * \param p2 the second point/vector
     */
   inline double
-    dot (const robot_msgs::Point32 &p1, const robot_msgs::Point &p2)
+    dot (const geometry_msgs::Point32 &p1, const geometry_msgs::Point &p2)
   {
     return (p1.x * p2.x + p1.y * p2.y + p1.z * p2.z);
   }
@@ -261,7 +261,7 @@ namespace cloud_geometry
     * \param p2 the second point/vector
     */
   inline double
-    dot (const robot_msgs::Point &p1, const robot_msgs::Point32 &p2)
+    dot (const geometry_msgs::Point &p1, const geometry_msgs::Point32 &p2)
   {
     return (p1.x * p2.x + p1.y * p2.y + p1.z * p2.z);
   }
@@ -272,7 +272,7 @@ namespace cloud_geometry
     * \param p2 the second point/vector
     */
   inline double
-    dot (const robot_msgs::Point32 &p1, const robot_msgs::Vector3 &p2)
+    dot (const geometry_msgs::Point32 &p1, const geometry_msgs::Vector3 &p2)
   {
     return (p1.x * p2.x + p1.y * p2.y + p1.z * p2.z);
   }
@@ -283,7 +283,7 @@ namespace cloud_geometry
     * \param p2 the second point/vector
     */
   inline double
-    dot (const robot_msgs::Vector3 &p1, const robot_msgs::Point32 &p2)
+    dot (const geometry_msgs::Vector3 &p1, const geometry_msgs::Point32 &p2)
   {
     return (p1.x * p2.x + p1.y * p2.y + p1.z * p2.z);
   }
@@ -294,7 +294,7 @@ namespace cloud_geometry
     * \param p2 the second point/vector
     */
   inline double
-    dot (const robot_msgs::Vector3 &p1, const robot_msgs::Vector3 &p2)
+    dot (const geometry_msgs::Vector3 &p1, const geometry_msgs::Vector3 &p2)
   {
     return (p1.x * p2.x + p1.y * p2.y + p1.z * p2.z);
   }
@@ -316,7 +316,7 @@ namespace cloud_geometry
     * \param q the resulted normalized point/vector
     */
   inline void
-    normalizePoint (const robot_msgs::Point32 &p, robot_msgs::Point32 &q)
+    normalizePoint (const geometry_msgs::Point32 &p, geometry_msgs::Point32 &q)
   {
     // Calculate the 2-norm: norm (x) = sqrt (sum (abs (v)^2))
     double n_norm = sqrt (p.x * p.x + p.y * p.y + p.z * p.z);
@@ -330,26 +330,26 @@ namespace cloud_geometry
     * \param p the point/vector to normalize
     */
   inline void
-    normalizePoint (robot_msgs::Point32 &p)
+    normalizePoint (geometry_msgs::Point32 &p)
   {
     normalizePoint (p, p);
   }
 
-  void getPointIndicesAxisParallelNormals (const robot_msgs::PointCloud &points, int nx, int ny, int nz, double eps_angle,
-                                           const robot_msgs::Point32 &axis, std::vector<int> &indices);
-  void getPointIndicesAxisPerpendicularNormals (const robot_msgs::PointCloud &points, int nx, int ny, int nz, double eps_angle,
-                                                const robot_msgs::Point32 &axis, std::vector<int> &indices);
+  void getPointIndicesAxisParallelNormals (const sensor_msgs::PointCloud &points, int nx, int ny, int nz, double eps_angle,
+                                           const geometry_msgs::Point32 &axis, std::vector<int> &indices);
+  void getPointIndicesAxisPerpendicularNormals (const sensor_msgs::PointCloud &points, int nx, int ny, int nz, double eps_angle,
+                                                const geometry_msgs::Point32 &axis, std::vector<int> &indices);
 
-  void downsamplePointCloud (const robot_msgs::PointCloud &points, const std::vector<int> &indices, robot_msgs::PointCloud &points_down, robot_msgs::Point leaf_size,
+  void downsamplePointCloud (const sensor_msgs::PointCloud &points, const std::vector<int> &indices, sensor_msgs::PointCloud &points_down, geometry_msgs::Point leaf_size,
                              std::vector<Leaf> &leaves, int d_idx, double cut_distance = DBL_MAX);
 
-  void downsamplePointCloud (const robot_msgs::PointCloud &points, robot_msgs::PointCloud &points_down, robot_msgs::Point leaf_size,
+  void downsamplePointCloud (const sensor_msgs::PointCloud &points, sensor_msgs::PointCloud &points_down, geometry_msgs::Point leaf_size,
                              std::vector<Leaf> &leaves, int d_idx, double cut_distance = DBL_MAX);
 
-  void downsamplePointCloud (robot_msgs::PointCloudConstPtr points, robot_msgs::PointCloud &points_down, robot_msgs::Point leaf_size,
+  void downsamplePointCloud (sensor_msgs::PointCloudConstPtr points, sensor_msgs::PointCloud &points_down, geometry_msgs::Point leaf_size,
                              std::vector<Leaf> &leaves, int d_idx, double cut_distance = DBL_MAX);
 
-  void downsamplePointCloud (const robot_msgs::PointCloud &points, robot_msgs::PointCloud &points_down, robot_msgs::Point leaf_size);
+  void downsamplePointCloud (const sensor_msgs::PointCloud &points, sensor_msgs::PointCloud &points_down, geometry_msgs::Point leaf_size);
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /** \brief Get a u-v-n coordinate system that lies on a plane defined by its normal
@@ -392,18 +392,18 @@ namespace cloud_geometry
     u (2) /= u_length;
   }
 
-  std::string getAvailableChannels (const robot_msgs::PointCloud &cloud);
-  std::string getAvailableChannels (const robot_msgs::PointCloudConstPtr& cloud);
+  std::string getAvailableChannels (const sensor_msgs::PointCloud &cloud);
+  std::string getAvailableChannels (const sensor_msgs::PointCloudConstPtr& cloud);
 
-  void getPointCloud (const robot_msgs::PointCloud &input, const std::vector<int> &indices, robot_msgs::PointCloud &output);
-  void getPointCloudOutside (const robot_msgs::PointCloud &input, std::vector<int> indices, robot_msgs::PointCloud &output);
+  void getPointCloud (const sensor_msgs::PointCloud &input, const std::vector<int> &indices, sensor_msgs::PointCloud &output);
+  void getPointCloudOutside (const sensor_msgs::PointCloud &input, std::vector<int> indices, sensor_msgs::PointCloud &output);
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /** \brief Write the point data to screen (stderr)
     * \param p the point
     */
   inline void
-    cerr_p (const robot_msgs::Point32 &p)
+    cerr_p (const geometry_msgs::Point32 &p)
   {
     std::cerr << p.x << " " << p.y << " " << p.z << std::endl;
   }

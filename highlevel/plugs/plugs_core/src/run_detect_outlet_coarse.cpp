@@ -59,7 +59,7 @@ int main(int argc, char** argv)
   DetectOutletCoarseAction detect_outlet_coarse;
 
   robot_actions::ActionRunner runner(10.0);
-  runner.connect<robot_msgs::PointStamped, pr2_robot_actions::DetectOutletState, robot_msgs::PoseStamped>(detect_outlet_coarse);
+  runner.connect<geometry_msgs::PointStamped, pr2_robot_actions::DetectOutletState, geometry_msgs::PoseStamped>(detect_outlet_coarse);
   runner.run();
 
   node.spin();

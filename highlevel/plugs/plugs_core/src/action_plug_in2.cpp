@@ -110,7 +110,7 @@ PlugInAction::PlugInAction(ros::Node& node) :
   node_.advertise<manipulation_msgs::TaskFrameFormalism>(arm_controller_ + "/command", 2);
 
   TF_.reset(new tf::TransformListener(node));
-  notifier_.reset(new tf::MessageNotifier<robot_msgs::PoseStamped>(
+  notifier_.reset(new tf::MessageNotifier<geometry_msgs::PoseStamped>(
                     TF_.get(), &node,
                     boost::bind(&PlugInAction::plugMeasurementCB, this, _1),
                     "/plug_detector/plug_pose", "outlet_pose", 100));
@@ -473,7 +473,7 @@ void PlugInAction::reset()
   g_stopped_forcing_ = ros::Time::now();
 }
 
-void PlugInAction::plugMeasurementCB(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr &msg)
+void PlugInAction::plugMeasurementCB(const tf::MessageNotifier<geometry_msgs::PoseStamped>::MessagePtr &msg)
 {
   plugs_core::PlugInState state_msg;
 
@@ -484,7 +484,7 @@ void PlugInAction::plugMeasurementCB(const tf::MessageNotifier<robot_msgs::PoseS
 
 
   // Both are transforms from the outlet to the estimated plug pose
-  robot_msgs::PoseStamped viz_offset_msg;
+  geometry_msgs::PoseStamped viz_offset_msg;
   tf::Stamped<tf::Transform> mech_offset;
   try {
     TF_->canTransform(COMMAND_FRAME, msg->header.frame_id, msg->header.stamp, ros::Duration(0.1));

@@ -43,7 +43,7 @@
 #include "sensor_msgs/Image.h"
 #include "sensor_msgs/CamInfo.h"
 #include "kinematic_calibration/ImagePoint.h"
-#include "robot_msgs/Pose.h"
+#include "geometry_msgs/Pose.h"
 
 namespace led_detection
 {
@@ -66,7 +66,7 @@ public:
    *         False: LED was not found
    */
   bool findLed(sensor_msgs::Image& image, const sensor_msgs::CamInfo& info,
-               const robot_msgs::Pose* led_pose,
+               const geometry_msgs::Pose* led_pose,
                kinematic_calibration::ImagePoint& led_pix, sensor_msgs::Image& debug_image) ;
 
   /**
@@ -81,7 +81,7 @@ public:
    *         False: LED was not found
    */
   bool findLed(const IplImage* image, const sensor_msgs::CamInfo& info,
-               const robot_msgs::Pose* led_pose,
+               const geometry_msgs::Pose* led_pose,
                kinematic_calibration::ImagePoint& led_pix, IplImage* debug_image) ;
 
 private:

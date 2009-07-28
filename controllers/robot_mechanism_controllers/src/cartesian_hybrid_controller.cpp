@@ -47,7 +47,7 @@
 
 namespace controller {
 
-void TransformKDLToMsg(const KDL::Frame &k, robot_msgs::Pose &m)
+void TransformKDLToMsg(const KDL::Frame &k, geometry_msgs::Pose &m)
 {
   tf::Transform tf;
   tf::TransformKDLToTF(k, tf);
@@ -605,7 +605,7 @@ bool CartesianHybridControllerNode::setToolFrame(
     return false;
   }
 
-  robot_msgs::PoseStamped tool_in_tip_msg;
+  geometry_msgs::PoseStamped tool_in_tip_msg;
   tf::Transform tool_in_tip;
   TF.transformPose(c_.kdl_chain_.getSegment(c_.kdl_chain_.getNrOfSegments()-1).getName(), req.p, tool_in_tip_msg);
   tf::poseMsgToTF(tool_in_tip_msg.pose, tool_in_tip);

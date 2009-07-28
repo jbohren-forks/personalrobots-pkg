@@ -98,7 +98,7 @@ Reads the following parameters from the parameter server
 #include "diagnostic_updater/diagnostic_updater.h"
 #include "diagnostic_updater/update_functions.h"
 
-#include "robot_msgs/PoseWithRatesStamped.h"
+#include "geometry_msgs/PoseWithRatesStamped.h"
 #include "std_srvs/Empty.h"
 #include "imu_node/GetBoolStatus.h"
 
@@ -113,7 +113,7 @@ class ImuNode
 {
 public:
   ms_3dmgx2_driver::IMU imu;
-  robot_msgs::PoseWithRatesStamped reading;
+  geometry_msgs::PoseWithRatesStamped reading;
 
   string port;
 
@@ -154,7 +154,7 @@ public:
   desired_freq_(100), 
   freq_diag_(diagnostic_updater::FrequencyStatusParam(&desired_freq_, &desired_freq_, 0.05))
   {
-    imu_data_pub_ = node_handle_.advertise<robot_msgs::PoseWithRatesStamped>("imu_data", 100);
+    imu_data_pub_ = node_handle_.advertise<geometry_msgs::PoseWithRatesStamped>("imu_data", 100);
 
     add_offset_serv_ = node_handle_.advertiseService("imu/add_offset", &ImuNode::addOffset, this);
     calibrate_serv_ = node_handle_.advertiseService("imu/calibrate", &ImuNode::calibrate, this);

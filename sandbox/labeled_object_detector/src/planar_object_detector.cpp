@@ -185,11 +185,11 @@ void PlanarObjectDetector::setup()
   ROS_INFO_STREAM("Setup done.");
 }
 
-void pointNormal(const robot_msgs::PointCloud pcd,const unsigned int point_id,
+void pointNormal(const sensor_msgs::PointCloud pcd,const unsigned int point_id,
                  const unsigned int nx_idx, 
                  const unsigned int ny_idx, 
                  const unsigned int nz_idx, 
-                 robot_msgs::Point32 &n)
+                 geometry_msgs::Point32 &n)
 {
   n.x=pcd.chan[nx_idx].vals[point_id];
   n.y=pcd.chan[ny_idx].vals[point_id];
@@ -493,7 +493,7 @@ void PlanarObjectDetector::makeObjectMarker(const Point pt,const Point pt2,const
 
 
   tf::Point ptA(pt.x,pt.y,pt.z);
-  robot_msgs::Point pt_msg;
+  geometry_msgs::Point pt_msg;
   tf::pointTFToMsg(ptA, pt_msg);
   marker.points.push_back(pt_msg);
 

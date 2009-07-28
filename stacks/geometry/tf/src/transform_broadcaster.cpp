@@ -45,7 +45,7 @@ TransformBroadcaster::TransformBroadcaster()
 void TransformBroadcaster::sendTransform(const Stamped<Transform> & transform)
 {
   tfMessage message;
-  robot_msgs::TransformStamped msgtf;
+  geometry_msgs::TransformStamped msgtf;
   transformStampedTFToMsg(transform, msgtf);
   msgtf.header.frame_id = tf::remap(tf_prefix_, msgtf.header.frame_id);
   msgtf.parent_id = tf::remap(tf_prefix_, msgtf.parent_id);
@@ -57,7 +57,7 @@ void TransformBroadcaster::sendTransform(const Stamped<Transform> & transform)
 void TransformBroadcaster::sendTransform(const Transform & transform, const ros::Time& time, const std::string& frame_id, const std::string& parent_id)
 {
   tfMessage message;
-  robot_msgs::TransformStamped msgtf;
+  geometry_msgs::TransformStamped msgtf;
   msgtf.header.stamp = time;
   msgtf.header.frame_id = frame_id;
   msgtf.header.frame_id = tf::remap(tf_prefix_, msgtf.header.frame_id);

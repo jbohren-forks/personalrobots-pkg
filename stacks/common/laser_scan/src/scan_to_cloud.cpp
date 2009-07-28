@@ -35,7 +35,7 @@
  */
 
 #include <ros/node.h>
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 #include <sensor_msgs/LaserScan.h>
 
 #include <float.h>
@@ -76,7 +76,7 @@ class ScanShadowsFilter
     // TF
     tf::TransformListener* tf_;
     tf::MessageNotifier<sensor_msgs::LaserScan>* notifier_;
-    filters::FilterChain<robot_msgs::PointCloud> cloud_filter_chain_;
+    filters::FilterChain<sensor_msgs::PointCloud> cloud_filter_chain_;
     filters::FilterChain<sensor_msgs::LaserScan> scan_filter_chain_;
 
     ////////////////////////////////////////////////////////////////////////////////

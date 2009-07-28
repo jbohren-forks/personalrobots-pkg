@@ -37,7 +37,7 @@
 #include <string>
 #include <gtest/gtest.h>
 #include "ros/node.h"
-#include "robot_msgs/PointCloud.h"
+#include "sensor_msgs/PointCloud.h"
 #include "sensor_msgs/LaserScan.h"
 #include "boost/thread.hpp"
 

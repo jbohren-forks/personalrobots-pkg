@@ -34,8 +34,8 @@
 #define _CLOUD_GEOMETRY_AREAS_H_
 
 // ROS includes
-#include <robot_msgs/Point32.h>
-#include <robot_msgs/PointCloud.h>
+#include <geometry_msgs/Point32.h>
+#include <sensor_msgs/PointCloud.h>
 #include <robot_msgs/Polygon3D.h>
 #include <visualization_msgs/Polyline.h>
 
@@ -53,7 +53,7 @@ namespace cloud_geometry
       * \param p2 the second Point32 point
       */
     inline bool
-      comparePoint2D (const robot_msgs::Point32 &p1, const robot_msgs::Point32 &p2)
+      comparePoint2D (const geometry_msgs::Point32 &p1, const geometry_msgs::Point32 &p2)
     {
       if (p1.x < p2.x)      return (true);
       else if (p1.x > p2.x) return (false);
@@ -67,7 +67,7 @@ namespace cloud_geometry
       * \param p2 the second 3d point
       */
     inline bool
-      comparePoint3D (const robot_msgs::Point32 &p1, const robot_msgs::Point32 &p2)
+      comparePoint3D (const geometry_msgs::Point32 &p1, const geometry_msgs::Point32 &p2)
     {
       if (p1.x < p2.x)      return (true);
       else if (p1.x > p2.x) return (false);
@@ -78,13 +78,13 @@ namespace cloud_geometry
     }
 
     bool compute2DPolygonNormal(const robot_msgs::Polygon3D &poly, std::vector<double> &normal);
-    double compute2DPolygonalArea (const robot_msgs::PointCloud &points, const std::vector<double> &normal);
+    double compute2DPolygonalArea (const sensor_msgs::PointCloud &points, const std::vector<double> &normal);
     double compute2DPolygonalArea (const robot_msgs::Polygon3D &polygon, const std::vector<double> &normal);
     double compute2DPolygonalArea (const robot_msgs::Polygon3D &polygon);
-    void convexHull2D (const robot_msgs::PointCloud &points, const std::vector<int> &indices, const std::vector<double> &coeff, robot_msgs::Polygon3D &hull);
-    void convexHull2D (const std::vector<robot_msgs::Point32> &points, visualization_msgs::Polyline &hull);
+    void convexHull2D (const sensor_msgs::PointCloud &points, const std::vector<int> &indices, const std::vector<double> &coeff, robot_msgs::Polygon3D &hull);
+    void convexHull2D (const std::vector<geometry_msgs::Point32> &points, visualization_msgs::Polyline &hull);
 
-    bool isPointIn2DPolygon (const robot_msgs::Point32 &point, const robot_msgs::Polygon3D &polygon);
+    bool isPointIn2DPolygon (const geometry_msgs::Point32 &point, const robot_msgs::Polygon3D &polygon);
   }
 }
 

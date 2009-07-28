@@ -75,7 +75,7 @@ namespace sample_consensus
       virtual void getDistancesToModel (const std::vector<double> &model_coefficients, std::vector<double> &distances);
       virtual void selectWithinDistance (const std::vector<double> &model_coefficients, double threshold, std::vector<int> &inliers);
 
-      virtual void projectPoints (const std::vector<int> &inliers, const std::vector<double> &model_coefficients, robot_msgs::PointCloud &projected_points);
+      virtual void projectPoints (const std::vector<int> &inliers, const std::vector<double> &model_coefficients, sensor_msgs::PointCloud &projected_points);
 
       virtual void projectPointsInPlace (const std::vector<int> &inliers, const std::vector<double> &model_coefficients);
       virtual bool doSamplesVerifyModel (const std::set<int> &indices, double threshold);
@@ -88,7 +88,7 @@ namespace sample_consensus
 		        std::vector<int> *closest_line, std::vector<double> *closest_dist);
       void closestLine (const std::set<int> &indices, const std::vector<double> &model_coefficients,
 		        std::vector<int> *closest_line, std::vector<double> *closest_dist);
-      double pointToLineSquareDistance (const robot_msgs::Point32 &line_point1, const robot_msgs::Point32 &line_point2, const robot_msgs::Point32 &point);
+      double pointToLineSquareDistance (const geometry_msgs::Point32 &line_point1, const geometry_msgs::Point32 &line_point2, const geometry_msgs::Point32 &point);
 
       double min_line_sep_m_;
       double max_line_sep_m_;

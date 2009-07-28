@@ -42,9 +42,9 @@ using namespace costmap_2d;
 using namespace navfn;
 using namespace robot_actions;
 using std::vector;
-using robot_msgs::Point;
-using robot_msgs::Point32;
-using robot_msgs::PoseStamped;
+using geometry_msgs::Point;
+using geometry_msgs::Point32;
+using geometry_msgs::PoseStamped;
 using robot_msgs::Polygon3D;
 
 namespace people_aware_nav {
@@ -62,7 +62,7 @@ namespace people_aware_nav {
     ros_node_.param("~controller_patience", controller_patience_, 10.0);
 
     //for comanding the base
-    ros_node_.advertise<robot_msgs::PoseDot>("cmd_vel", 1);
+    ros_node_.advertise<geometry_msgs::PoseDot>("cmd_vel", 1);
 
     //we'll assume the radius of the robot to be consistent with what's specified for the costmaps
     ros_node_.param("~base_local_planner/costmap/inscribed_radius", inscribed_radius_, 0.325);
@@ -136,10 +136,10 @@ void MoveBaseConstrained::makePlan(const PoseStamped& goal, const Polygon3D& for
       return;
     }
 
-    robot_msgs::PoseStamped start;
+    geometry_msgs::PoseStamped start;
     tf::poseStampedTFToMsg(global_pose, start);
 
-    std::vector<robot_msgs::PoseStamped> global_plan;
+    std::vector<geometry_msgs::PoseStamped> global_plan;
     bool valid_plan = planner_->makePlan(start, goal, global_plan);
 
     //sometimes the planner returns zero length plans and reports success
@@ -150,7 +150,7 @@ void MoveBaseConstrained::makePlan(const PoseStamped& goal, const Polygon3D& for
 
     //we'll also push the goal point onto the end of the plan to make sure orientation is taken into account
     if(valid_plan){
-      robot_msgs::PoseStamped goal_copy = goal;
+      geometry_msgs::PoseStamped goal_copy = goal;
       goal_copy.header.stamp = ros::Time::now();
       global_plan.push_back(goal_copy);
 
@@ -208,7 +208,7 @@ void MoveBaseConstrained::makePlan(const PoseStamped& goal, const Polygon3D& for
 
     costmap_2d::Rate r(controller_frequency_);
     last_valid_control_ = ros::Time::now();
-    robot_msgs::PoseDot cmd_vel;
+    geometry_msgs::PoseDot cmd_vel;
     while(!isPreemptRequested() && ros_node_.ok()){
       struct timeval start, end;
       double start_t, end_t, t_diff;
@@ -339,7 +339,7 @@ void MoveBaseConstrained::makePlan(const PoseStamped& goal, const Polygon3D& for
             //if planning fails... we'll try rotating in place to clear things out
             double angle = M_PI; //rotate 180 degrees
             tf::Stamped<tf::Pose> rotate_goal = tf::Stamped<tf::Pose>(tf::Pose(tf::Quaternion(angle, 0.0, 0.0), tf::Point(0.0, 0.0, 0.0)), ros::Time(), robot_base_frame_);
-            robot_msgs::PoseStamped rotate_goal_msg;
+            geometry_msgs::PoseStamped rotate_goal_msg;
 
             try{
               tf_.transformPose(global_frame_, rotate_goal, rotate_goal);
@@ -390,7 +390,7 @@ void MoveBaseConstrained::makePlan(const PoseStamped& goal, const Polygon3D& for
     attempted_costmap_reset_ = false;
   }
 
-bool MoveBaseConstrained::tryPlan(robot_msgs::PoseStamped goal, const Polygon3D& forbidden){
+bool MoveBaseConstrained::tryPlan(geometry_msgs::PoseStamped goal, const Polygon3D& forbidden){
     ros::Duration patience = ros::Duration(planner_patience_);
     ros::Time attempt_end = ros::Time::now() + patience;
     costmap_2d::Rate r(controller_frequency_);
@@ -402,7 +402,7 @@ bool MoveBaseConstrained::tryPlan(robot_msgs::PoseStamped goal, const Polygon3D&
         return true;
 
       //for now... we'll publish zero velocity
-      robot_msgs::PoseDot cmd_vel;
+      geometry_msgs::PoseDot cmd_vel;
 
       last_valid_control_ = ros::Time::now();
       cmd_vel.vel.vx = 0.0;
@@ -440,7 +440,7 @@ int main(int argc, char** argv){
   
   pan::MoveBaseConstrained move_base(ros_node, tf);
   robot_actions::ActionRunner runner(20.0);
-  runner.connect<pan::ConstrainedGoal, pan::ConstrainedMoveBaseState, robot_msgs::PoseStamped>(move_base);
+  runner.connect<pan::ConstrainedGoal, pan::ConstrainedMoveBaseState, geometry_msgs::PoseStamped>(move_base);
   runner.run();
 
   ROS_INFO ("move_base 2");

@@ -53,7 +53,7 @@ namespace cloud_geometry
     {
       double angle = cloud_geometry::angles::getAngleBetweenPlanes (plane_a, plane_b);
       // Compute the rotation axis R = Nplane x (0, 0, 1)
-      robot_msgs::Point32 r_axis;
+      geometry_msgs::Point32 r_axis;
       r_axis.x = plane_a[1]*plane_b[2] - plane_a[2]*plane_b[1];
       r_axis.y = plane_a[2]*plane_b[0] - plane_a[0]*plane_b[2];
       r_axis.z = plane_a[0]*plane_b[1] - plane_a[1]*plane_b[0];
@@ -89,12 +89,12 @@ namespace cloud_geometry
       * \param transformation the resultant transformation matrix
       */
     void
-      getPlaneToPlaneTransformation (const std::vector<double> &plane_a, const robot_msgs::Point32 &plane_b,
+      getPlaneToPlaneTransformation (const std::vector<double> &plane_a, const geometry_msgs::Point32 &plane_b,
                                      float tx, float ty, float tz, Eigen::Matrix4d &transformation)
     {
       double angle = cloud_geometry::angles::getAngleBetweenPlanes (plane_a, plane_b);
       // Compute the rotation axis R = Nplane x (0, 0, 1)
-      robot_msgs::Point32 r_axis;
+      geometry_msgs::Point32 r_axis;
       r_axis.x = plane_a[1]*plane_b.z - plane_a[2]*plane_b.y;
       r_axis.y = plane_a[2]*plane_b.x - plane_a[0]*plane_b.z;
       r_axis.z = plane_a[0]*plane_b.y - plane_a[1]*plane_b.x;
@@ -129,7 +129,7 @@ namespace cloud_geometry
       * \param rotation the resultant rotation
       */
     void
-      convertAxisAngleToRotationMatrix (const robot_msgs::Point32 &axis, double angle, Eigen::Matrix3d &rotation)
+      convertAxisAngleToRotationMatrix (const geometry_msgs::Point32 &axis, double angle, Eigen::Matrix3d &rotation)
     {
       double cos_a = cos (angle);
       double sin_a = sin (angle);

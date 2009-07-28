@@ -72,18 +72,18 @@ int
   pr2_robot_actions::SwitchControllers switchlist;
   std_msgs::Empty empty;
   plugs_msgs::PlugStow plug_stow;
-  robot_msgs::PointStamped point;
-  robot_msgs::PoseStamped pose;
+  geometry_msgs::PointStamped point;
+  geometry_msgs::PoseStamped pose;
 
   Duration switch_timeout = Duration(4.0);
 
-  robot_actions::ActionClient<robot_msgs::PointStamped, pr2_robot_actions::DetectOutletState, robot_msgs::PoseStamped>
+  robot_actions::ActionClient<geometry_msgs::PointStamped, pr2_robot_actions::DetectOutletState, geometry_msgs::PoseStamped>
     detect_outlet_coarse("detect_outlet_coarse");
   robot_actions::ActionClient<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>
     tuck_arm("safety_tuck_arms");
   robot_actions::ActionClient<pr2_robot_actions::SwitchControllers, pr2_robot_actions::SwitchControllersState,  std_msgs::Empty>
     switch_controllers("switch_controllers");
-  robot_actions::ActionClient<robot_msgs::PoseStamped, nav_robot_actions::MoveBaseState, robot_msgs::PoseStamped>
+  robot_actions::ActionClient<geometry_msgs::PoseStamped, nav_robot_actions::MoveBaseState, geometry_msgs::PoseStamped>
     move_base_local("move_base_local");
 
   Duration(1.0).sleep();
@@ -113,7 +113,7 @@ int
   if (tuck_arm.execute(empty, empty, Duration(20.0)) != robot_actions::SUCCESS) return -2;
 
   // Executes detect outlet (coarse)
-  robot_msgs::PointStamped guess;
+  geometry_msgs::PointStamped guess;
 #if 0
   guess.header.frame_id = "odom_combined";
   guess.point.x = 4.0;
@@ -125,7 +125,7 @@ int
   guess.point.y = 24.91;
   guess.point.z = 0.4;
 #endif
-  robot_msgs::PoseStamped coarse_outlet_pose_msg;
+  geometry_msgs::PoseStamped coarse_outlet_pose_msg;
   int tries = 0;
   while (detect_outlet_coarse.execute(guess, coarse_outlet_pose_msg, Duration(300.0)) != robot_actions::SUCCESS)
   {
@@ -142,7 +142,7 @@ int
   tf::Pose desi_offset(tf::Quaternion(0,0,0), tf::Vector3(-0.5, 0.25, 0.0));
   tf::Pose target = coarse_outlet_pose * desi_offset;
 
-  robot_msgs::PoseStamped target_msg;
+  geometry_msgs::PoseStamped target_msg;
   target_msg.header.frame_id = coarse_outlet_pose_msg.header.frame_id;
   tf::poseTFToMsg(target, target_msg.pose);
 

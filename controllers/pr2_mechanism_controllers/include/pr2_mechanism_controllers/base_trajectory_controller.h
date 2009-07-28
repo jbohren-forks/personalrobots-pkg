@@ -35,7 +35,7 @@
 * Author: Sachin Chitta
 *********************************************************************/
 
-#include <robot_msgs/PoseDot.h>
+#include <geometry_msgs/PoseDot.h>
 #include <pr2_robot_actions/Pose2D.h>
 #include <manipulation_msgs/JointTrajPoint.h>
 #include <manipulation_msgs/JointTraj.h>
@@ -77,7 +77,7 @@ namespace pr2_mechanism_controllers
 
     void updateControl();
 
-    robot_msgs::PoseDot getCommand();
+    geometry_msgs::PoseDot getCommand();
 
     private:
     tf::Stamped<tf::Pose> global_pose_;
@@ -112,7 +112,7 @@ namespace pr2_mechanism_controllers
     double  path_updated_time_;
     double max_update_time_;
 
-    robot_msgs::PoseDot checkCmd(const robot_msgs::PoseDot &cmd);
+    geometry_msgs::PoseDot checkCmd(const geometry_msgs::PoseDot &cmd);
 
     double diagnostics_expected_publish_time_;
 
@@ -120,7 +120,7 @@ namespace pr2_mechanism_controllers
 
     void publishDiagnostics(bool force);
 
-    robot_msgs::PoseDot cmd_vel_;
+    geometry_msgs::PoseDot cmd_vel_;
     double error_x_,error_y_,error_th_;
 
     std::string control_state_;

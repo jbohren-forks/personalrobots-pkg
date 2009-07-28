@@ -173,7 +173,7 @@ namespace sample_consensus
     */
   void
     SACModelCircle2D::projectPoints (const std::vector<int> &inliers, const std::vector<double> &model_coefficients,
-                                     robot_msgs::PointCloud &projected_points)
+                                     sensor_msgs::PointCloud &projected_points)
   {
     std::cerr << "[SACModelCircle2D::projecPoints] Not implemented yet." << std::endl;
     projected_points = *cloud_;
@@ -201,7 +201,7 @@ namespace sample_consensus
   {
     model_coefficients_.resize (3);
 
-    robot_msgs::Point32 u, v, m;
+    geometry_msgs::Point32 u, v, m;
     u.x = ( cloud_->pts.at (samples.at (0)).x + cloud_->pts.at (samples.at (1)).x ) / 2;
     u.y = ( cloud_->pts.at (samples.at (1)).x + cloud_->pts.at (samples.at (2)).x ) / 2;
 

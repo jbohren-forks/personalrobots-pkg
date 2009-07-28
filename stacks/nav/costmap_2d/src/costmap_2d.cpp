@@ -648,7 +648,7 @@ namespace costmap_2d{
 
   }
 
-  bool Costmap2D::setConvexPolygonCost(const std::vector<robot_msgs::Point>& polygon, unsigned char cost_value) {
+  bool Costmap2D::setConvexPolygonCost(const std::vector<geometry_msgs::Point>& polygon, unsigned char cost_value) {
     //we assume the polygon is given in the global_frame... we need to transform it to map coordinates
     std::vector<MapLocation> map_polygon;
     for(unsigned int i = 0; i < polygon.size(); ++i){

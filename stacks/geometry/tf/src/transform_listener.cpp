@@ -110,8 +110,8 @@ void TransformListener::init()
 
 
 void TransformListener::transformQuaternion(const std::string& target_frame,
-    const robot_msgs::QuaternionStamped& msg_in,
-    robot_msgs::QuaternionStamped& msg_out) const
+    const geometry_msgs::QuaternionStamped& msg_in,
+    geometry_msgs::QuaternionStamped& msg_out) const
 {
   Stamped<Quaternion> pin, pout;
   quaternionStampedMsgToTF(msg_in, pin);
@@ -120,8 +120,8 @@ void TransformListener::transformQuaternion(const std::string& target_frame,
 }
 
 void TransformListener::transformVector(const std::string& target_frame,
-    const robot_msgs::Vector3Stamped& msg_in,
-    robot_msgs::Vector3Stamped& msg_out) const
+    const geometry_msgs::Vector3Stamped& msg_in,
+    geometry_msgs::Vector3Stamped& msg_out) const
 {
   Stamped<Vector3> pin, pout;
   vector3StampedMsgToTF(msg_in, pin);
@@ -130,8 +130,8 @@ void TransformListener::transformVector(const std::string& target_frame,
 }
 
 void TransformListener::transformPoint(const std::string& target_frame,
-    const robot_msgs::PointStamped& msg_in,
-    robot_msgs::PointStamped& msg_out) const
+    const geometry_msgs::PointStamped& msg_in,
+    geometry_msgs::PointStamped& msg_out) const
 {
   Stamped<Point> pin, pout;
   pointStampedMsgToTF(msg_in, pin);
@@ -140,8 +140,8 @@ void TransformListener::transformPoint(const std::string& target_frame,
 }
 
 void TransformListener::transformPose(const std::string& target_frame,
-    const robot_msgs::PoseStamped& msg_in,
-    robot_msgs::PoseStamped& msg_out) const
+    const geometry_msgs::PoseStamped& msg_in,
+    geometry_msgs::PoseStamped& msg_out) const
 {
   Stamped<Pose> pin, pout;
   poseStampedMsgToTF(msg_in, pin);
@@ -149,8 +149,8 @@ void TransformListener::transformPose(const std::string& target_frame,
   poseStampedTFToMsg(pout, msg_out);
 }
 void TransformListener::transformQuaternion(const std::string& target_frame, const ros::Time& target_time,
-    const robot_msgs::QuaternionStamped& msg_in,
-    const std::string& fixed_frame, robot_msgs::QuaternionStamped& msg_out) const
+    const geometry_msgs::QuaternionStamped& msg_in,
+    const std::string& fixed_frame, geometry_msgs::QuaternionStamped& msg_out) const
 {
   Stamped<Quaternion> pin, pout;
   quaternionStampedMsgToTF(msg_in, pin);
@@ -159,8 +159,8 @@ void TransformListener::transformQuaternion(const std::string& target_frame, con
 }
 
 void TransformListener::transformVector(const std::string& target_frame, const ros::Time& target_time,
-    const robot_msgs::Vector3Stamped& msg_in,
-    const std::string& fixed_frame, robot_msgs::Vector3Stamped& msg_out) const
+    const geometry_msgs::Vector3Stamped& msg_in,
+    const std::string& fixed_frame, geometry_msgs::Vector3Stamped& msg_out) const
 {
   Stamped<Vector3> pin, pout;
   vector3StampedMsgToTF(msg_in, pin);
@@ -169,8 +169,8 @@ void TransformListener::transformVector(const std::string& target_frame, const r
 }
 
 void TransformListener::transformPoint(const std::string& target_frame, const ros::Time& target_time,
-    const robot_msgs::PointStamped& msg_in,
-    const std::string& fixed_frame, robot_msgs::PointStamped& msg_out) const
+    const geometry_msgs::PointStamped& msg_in,
+    const std::string& fixed_frame, geometry_msgs::PointStamped& msg_out) const
 {
   Stamped<Point> pin, pout;
   pointStampedMsgToTF(msg_in, pin);
@@ -179,8 +179,8 @@ void TransformListener::transformPoint(const std::string& target_frame, const ro
 }
 
 void TransformListener::transformPose(const std::string& target_frame, const ros::Time& target_time,
-    const robot_msgs::PoseStamped& msg_in,
-    const std::string& fixed_frame, robot_msgs::PoseStamped& msg_out) const
+    const geometry_msgs::PoseStamped& msg_in,
+    const std::string& fixed_frame, geometry_msgs::PoseStamped& msg_out) const
 {
   Stamped<Pose> pin, pout;
   poseStampedMsgToTF(msg_in, pin);
@@ -188,7 +188,7 @@ void TransformListener::transformPose(const std::string& target_frame, const ros
   poseStampedTFToMsg(pout, msg_out);
 }
 
-void TransformListener::transformPointCloud(const std::string & target_frame, const robot_msgs::PointCloud & cloudIn, robot_msgs::PointCloud & cloudOut) const
+void TransformListener::transformPointCloud(const std::string & target_frame, const sensor_msgs::PointCloud & cloudIn, sensor_msgs::PointCloud & cloudOut) const
 {
   Stamped<Transform> transform;
   lookupTransform(target_frame, cloudIn.header.frame_id, cloudIn.header.stamp, transform);
@@ -196,8 +196,8 @@ void TransformListener::transformPointCloud(const std::string & target_frame, co
   transformPointCloud(target_frame, transform, cloudIn.header.stamp, cloudIn, cloudOut);
 }
 void TransformListener::transformPointCloud(const std::string& target_frame, const ros::Time& target_time, 
-    const robot_msgs::PointCloud& cloudIn,
-    const std::string& fixed_frame, robot_msgs::PointCloud& cloudOut) const
+    const sensor_msgs::PointCloud& cloudIn,
+    const std::string& fixed_frame, sensor_msgs::PointCloud& cloudOut) const
 {
   Stamped<Transform> transform;
   lookupTransform(target_frame, target_time,
@@ -212,7 +212,7 @@ void TransformListener::transformPointCloud(const std::string& target_frame, con
 
 
 void TransformListener::transformPointCloud(const std::string & target_frame, const Transform& net_transform, 
-                                            const ros::Time& target_time, const robot_msgs::PointCloud & cloudIn, robot_msgs::PointCloud & cloudOut) const
+                                            const ros::Time& target_time, const sensor_msgs::PointCloud & cloudIn, sensor_msgs::PointCloud & cloudOut) const
 {
   boost::numeric::ublas::matrix<double> transform = transformAsMatrix(net_transform);
 

@@ -39,7 +39,7 @@
 #include "pr2_srvs/SetPeriodicCmd.h"
 
 // Messages
-#include "robot_msgs/PointCloud.h"
+#include "sensor_msgs/PointCloud.h"
 #include "pr2_msgs/LaserScannerSignal.h"
 
 #include <boost/thread/mutex.hpp>

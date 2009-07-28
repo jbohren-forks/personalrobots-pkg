@@ -42,7 +42,7 @@
 // ROS core
 #include <ros/node.h>
 // ROS messages
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 #include <robot_msgs/Polygon3D.h>
 #include <mapping_msgs/PolygonalMap.h>
 
@@ -209,7 +209,7 @@ class TableObjectDetector
 
       // Subscribe to a point cloud topic
       need_cloud_data_ = true;
-      tf::MessageNotifier<robot_msgs::PointCloud> _pointcloudnotifier (&tf_, ros::Node::instance (),
+      tf::MessageNotifier<sensor_msgs::PointCloud> _pointcloudnotifier (&tf_, ros::Node::instance (),
                                                                        boost::bind (&TableObjectDetector::cloud_cb, this, _1),
                                                                        input_cloud_topic_, global_frame_, 50);
       //node_.subscribe (input_cloud_topic_, cloud_in_, &TableObjectDetector::cloud_cb, this, 1);
@@ -305,7 +305,7 @@ class TableObjectDetector
       resp.table.header.stamp = cloud_in_.header.stamp;
 
       // Get the table bounds
-      robot_msgs::Point32 minP, maxP;
+      geometry_msgs::Point32 minP, maxP;
       cloud_geometry::statistics::getMinMax (cloud_down_, inliers, minP, maxP);
       // Transform to the global frame
       PointStamped minPstamped_local, maxPstamped_local;
@@ -458,7 +458,7 @@ class TableObjectDetector
       vector<vector<int> > object_clusters;
       cloud_geometry::nearest::extractEuclideanClusters (points, object_indices, object_cluster_tolerance_, object_clusters, -1, -1, -1, -1, object_cluster_min_pts_);
 
-      robot_msgs::Point32 minPCluster, maxPCluster;
+      geometry_msgs::Point32 minPCluster, maxPCluster;
       table.objects.resize (object_clusters.size ());
       for (unsigned int i = 0; i < object_clusters.size (); i++)
       {
@@ -484,7 +484,7 @@ class TableObjectDetector
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Callback
     void
-      cloud_cb (const tf::MessageNotifier<robot_msgs::PointCloud>::MessagePtr& pc)
+      cloud_cb (const tf::MessageNotifier<sensor_msgs::PointCloud>::MessagePtr& pc)
     {
       //cloud_in_ = *pc;
       tf_.transformPointCloud(global_frame_, *pc, cloud_in_);

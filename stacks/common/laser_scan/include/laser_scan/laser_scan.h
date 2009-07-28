@@ -39,8 +39,8 @@
 #include "tf/tf.h"
 
 #include "sensor_msgs/LaserScan.h"
-#include "robot_msgs/PointCloud.h"
-#include "robot_msgs/PointCloud.h"
+#include "sensor_msgs/PointCloud.h"
+#include "sensor_msgs/PointCloud.h"
 
 /* \mainpage
  * This is a class for laser scan utilities.
@@ -76,11 +76,11 @@ namespace laser_scan
        * \param range_cutoff An additional range cutoff which can be applied which is more limiting than max_range in the scan.
        * \param preservative Default: false  If true all points in scan will be projected, including out of range values.  Otherwise they will not be added to the cloud.
        */
-      void projectLaser (const sensor_msgs::LaserScan& scan_in, robot_msgs::PointCloud & cloud_out, double range_cutoff=-1.0, bool preservative = false, int mask = DEFAULT_MASK);
+      void projectLaser (const sensor_msgs::LaserScan& scan_in, sensor_msgs::PointCloud & cloud_out, double range_cutoff=-1.0, bool preservative = false, int mask = DEFAULT_MASK);
 
 
       /** \brief Transform a sensor_msgs::LaserScan into a PointCloud in target frame */
-      void transformLaserScanToPointCloud (const std::string& target_frame, robot_msgs::PointCloud & cloudOut, const sensor_msgs::LaserScan & scanIn, tf::Transformer & tf, int mask = DEFAULT_MASK, bool preservative = false);
+      void transformLaserScanToPointCloud (const std::string& target_frame, sensor_msgs::PointCloud & cloudOut, const sensor_msgs::LaserScan & scanIn, tf::Transformer & tf, int mask = DEFAULT_MASK, bool preservative = false);
 
       /** \brief Return the unit vectors for this configuration
        * Return the unit vectors for this configuration. 

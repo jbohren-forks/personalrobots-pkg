@@ -126,12 +126,12 @@ bool CartesianPoseController::init(mechanism::RobotState *robot_state, const ros
   }
 
   // subscribe to pose commands
-  command_notifier_.reset(new MessageNotifier<robot_msgs::PoseStamped>(&tf_, ros::Node::instance(),
+  command_notifier_.reset(new MessageNotifier<geometry_msgs::PoseStamped>(&tf_, ros::Node::instance(),
                                                                        boost::bind(&CartesianPoseController::command, this, _1),
                                                                        node_.getNamespace() + "/command", root_name_, 10));
   // realtime publisher for control state
   state_error_publisher_.reset(new realtime_tools::RealtimePublisher<geometry_msgs::Twist>(node_, "state/error", 1));
-  state_pose_publisher_.reset(new realtime_tools::RealtimePublisher<robot_msgs::PoseStamped>(node_, "state/pose", 1));
+  state_pose_publisher_.reset(new realtime_tools::RealtimePublisher<geometry_msgs::PoseStamped>(node_, "state/pose", 1));
 
   return true;
 }
@@ -209,7 +209,7 @@ Frame CartesianPoseController::getPose()
   return result;
 }
 
-void CartesianPoseController::command(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr& pose_msg)
+void CartesianPoseController::command(const tf::MessageNotifier<geometry_msgs::PoseStamped>::MessagePtr& pose_msg)
 {
   // convert message to transform
   Stamped<Pose> pose_stamped;

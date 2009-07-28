@@ -47,7 +47,7 @@
 #include <tf/transform_datatypes.h>
 #include <robot_mechanism_controllers/joint_position_controller.h>
 #include <mechanism_msgs/JointStates.h>
-#include <robot_msgs/PointStamped.h>
+#include <geometry_msgs/PointStamped.h>
 #include <boost/scoped_ptr.hpp>
 
 namespace controller {
@@ -76,12 +76,12 @@ private:
   
   void command(const mechanism_msgs::JointStatesConstPtr& command_msg);
   
-  void pointHead(const tf::MessageNotifier<robot_msgs::PointStamped>::MessagePtr& point_msg);
-  void pointFrameOnHead(const tf::MessageNotifier<robot_msgs::PointStamped>::MessagePtr& point_msg);
+  void pointHead(const tf::MessageNotifier<geometry_msgs::PointStamped>::MessagePtr& point_msg);
+  void pointFrameOnHead(const tf::MessageNotifier<geometry_msgs::PointStamped>::MessagePtr& point_msg);
 
   tf::TransformListener tf_;
-  boost::scoped_ptr<tf::MessageNotifier<robot_msgs::PointStamped> > point_head_notifier_;
-  boost::scoped_ptr<tf::MessageNotifier<robot_msgs::PointStamped> > point_frame_on_head_notifier_;  
+  boost::scoped_ptr<tf::MessageNotifier<geometry_msgs::PointStamped> > point_head_notifier_;
+  boost::scoped_ptr<tf::MessageNotifier<geometry_msgs::PointStamped> > point_frame_on_head_notifier_;  
 
   // position controller
   JointPositionController* head_pan_controller_;

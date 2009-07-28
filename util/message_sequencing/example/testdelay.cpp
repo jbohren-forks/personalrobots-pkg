@@ -1,5 +1,5 @@
 #include "ros/node.h"
-#include "robot_msgs/PointStamped.h"
+#include "geometry_msgs/PointStamped.h"
 #include "ros/time.h"
 
 
@@ -13,7 +13,7 @@ public:
 
   ros::Duration delay;
   int num;
-  robot_msgs::PointStamped point;
+  geometry_msgs::PointStamped point;
 
   TestDelay() : ros::Node("test_delay", ros::Node::ANONYMOUS_NAME)
   {
@@ -21,7 +21,7 @@ public:
     num = atoi(g_argv[2]);
 
     subscribe("orig",point,&TestDelay::cb,1);
-    advertise<robot_msgs::PointStamped>("delay",10);
+    advertise<geometry_msgs::PointStamped>("delay",10);
   }
 
   void cb()

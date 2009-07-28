@@ -93,7 +93,7 @@ namespace cloud_geometry
       * \param point holder for the computed 3D point
       */
     bool
-      lineWithPlaneIntersection (const std::vector<double> &plane, const std::vector<double> &line, robot_msgs::Point32 &point)
+      lineWithPlaneIntersection (const std::vector<double> &plane, const std::vector<double> &line, geometry_msgs::Point32 &point)
     {
       // line Direction * plane Normal
       double dn = line.at (3) * plane.at (0) + line.at (4) * plane.at (1) + line.at (5) * plane.at (2);
@@ -124,7 +124,7 @@ namespace cloud_geometry
       * \param sqr_eps maximum allowable squared distance to the true solution
       */
     bool
-      lineWithLineIntersection (const std::vector<double> &line_a, const std::vector<double> &line_b, robot_msgs::Point32 &point,
+      lineWithLineIntersection (const std::vector<double> &line_a, const std::vector<double> &line_b, geometry_msgs::Point32 &point,
                                 double sqr_eps)
     {
       std::vector<double> segment;
@@ -158,7 +158,7 @@ namespace cloud_geometry
         width[d] = cube.at (d + 3) - cube.at (d);
 
       double x[3];
-      robot_msgs::Point32 mean;
+      geometry_msgs::Point32 mean;
       mean.x = mean.y = mean.z = 0;
 
       // Keep one dimension constant
@@ -185,7 +185,7 @@ namespace cloud_geometry
               // Check if in cell
               if (x[k] >= cube.at (k) && x[k] <= cube.at (k + 3) )
               {
-                robot_msgs::Point32 ci;
+                geometry_msgs::Point32 ci;
                 ci.x = x[0]; ci.y = x[1]; ci.z = x[2];
                 polygon.points.push_back (ci);
 
@@ -321,7 +321,7 @@ namespace cloud_geometry
                 );
 
       // Compute the intersection point
-      robot_msgs::Point32 pi;
+      geometry_msgs::Point32 pi;
       pi.x = line[0] + (line[3] - line[0]) * u;
       pi.y = line[0] + (line[4] - line[1]) * u;
       pi.z = line[0] + (line[5] - line[2]) * u;

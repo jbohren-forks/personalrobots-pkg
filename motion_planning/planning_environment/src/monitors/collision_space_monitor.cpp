@@ -36,8 +36,8 @@
 
 #include "planning_environment/monitors/collision_space_monitor.h"
 #include "planning_environment/util/construct_object.h"
-#include <robot_msgs/PointStamped.h>
-#include <robot_msgs/PoseStamped.h>
+#include <geometry_msgs/PointStamped.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <boost/bind.hpp>
 #include <sstream>
 #include <climits>
@@ -45,7 +45,7 @@
 namespace planning_environment
 {
     
-    static inline double maxCoord(const robot_msgs::Point32 &point)
+    static inline double maxCoord(const geometry_msgs::Point32 &point)
     {
 	return std::max(std::max(point.x, point.y), point.z);
     }
@@ -162,13 +162,13 @@ void planning_environment::CollisionSpaceMonitor::updateCollisionSpace(const map
 	for (int i = 0 ; i < n ; ++i)
 	{
 	    int i4 = i * 4;
-	    robot_msgs::PointStamped psi;
+	    geometry_msgs::PointStamped psi;
 	    psi.header  = collisionMap->header;
 	    psi.point.x = collisionMap->boxes[i].center.x;
 	    psi.point.y = collisionMap->boxes[i].center.y;
 	    psi.point.z = collisionMap->boxes[i].center.z;
 	    
-	    robot_msgs::PointStamped pso;
+	    geometry_msgs::PointStamped pso;
 	    try
 	    {
 		tf_->transformPoint(target, psi, pso);
@@ -234,8 +234,8 @@ void planning_environment::CollisionSpaceMonitor::objectInMapCallback(const mapp
 	if (shape)
 	{
 	    bool err = false;
-	    robot_msgs::PoseStamped psi;
-	    robot_msgs::PoseStamped pso;
+	    geometry_msgs::PoseStamped psi;
+	    geometry_msgs::PoseStamped pso;
 	    psi.pose = objectInMap->pose;
 	    psi.header = objectInMap->header;
 	    try

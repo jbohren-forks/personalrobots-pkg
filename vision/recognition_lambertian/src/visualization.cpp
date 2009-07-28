@@ -38,7 +38,7 @@
 #include <recognition_lambertian/visualization.h>
 #include <visualization_msgs/Marker.h>
 
-void publishNormals(ros::Node* node, robot_msgs::PointCloud points, vector<robot_msgs::Vector3> coeff, float length)
+void publishNormals(ros::Node* node, sensor_msgs::PointCloud points, vector<geometry_msgs::Vector3> coeff, float length)
 {
 	node->advertise<visualization_msgs::Marker>("visualization_marker", 1);
 

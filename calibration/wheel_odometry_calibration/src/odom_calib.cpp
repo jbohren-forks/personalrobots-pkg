@@ -53,7 +53,7 @@ namespace calibration
       _completed(false)
   {
     // advertise the velocity commands
-    advertise<robot_msgs::PoseDot>("cmd_vel",10);
+    advertise<geometry_msgs::PoseDot>("cmd_vel",10);
 
     // subscribe to messages
     subscribe("odom",            _odom, &odom_calib::odom_callback, 10);
@@ -91,7 +91,7 @@ namespace calibration
   {
     _imu_mutex.lock();
     double tmp, yaw;  Transform tf;
-    poseMsgToTF(_imu.pos, tf);
+    poseMsgToTF(_imu.pose_with_rates.pose, tf);
     tf.getBasis().getEulerZYX(yaw, tmp, tmp);
 
     if (!_imu_active){

@@ -31,7 +31,7 @@
 /** \author Alex Sorokin */
 
 #include <gtest/gtest.h>
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 
 #include <novelty_estimator.h>
 

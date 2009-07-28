@@ -31,7 +31,7 @@
 
 #include "tf/transform_datatypes.h"
 #include "ros/ros.h"
-#include "robot_msgs/Point.h"
+#include "geometry_msgs/Point.h"
 
 int main(int argc, char ** argv)
 {
@@ -40,12 +40,12 @@ int main(int argc, char ** argv)
   ros::NodeHandle node;
 
   
-  ros::Publisher pub = node.advertise<robot_msgs::PoseStamped> ("object", 10);
+  ros::Publisher pub = node.advertise<geometry_msgs::PoseStamped> ("object", 10);
   while(node.ok())//Check if a Ctrl-C or other shutdown command has been recieved
   {
     //The shuttle sees something off to the side of it parallel
     tf::Stamped<tf::Pose> object_pose = tf::Stamped<tf::Pose>(tf::Pose(tf::Quaternion(0,0,0), tf::Point(2,2,0)), ros::Time::now(), "space_shuttle");
-    robot_msgs::PoseStamped object_pose_msg;
+    geometry_msgs::PoseStamped object_pose_msg;
     tf::poseStampedTFToMsg(object_pose, object_pose_msg);  //This could be constructed directly but the tf/bullet helper functions are easier
     //And reports it
     ROS_INFO("Shuttle saw an object at 2,2,0 at time %.2f", object_pose_msg.header.stamp.toSec());

@@ -39,7 +39,7 @@
  */
 
 #include <ros/node.h>
-#include <robot_msgs/PoseStamped.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <std_msgs/Float64.h>
 #include "joy/Joy.h"
 #include <ros/time.h>
@@ -54,7 +54,7 @@
 class TeleopGoalProjection: public ros::Node
 {
   public:
-    robot_msgs::PoseStamped cmd_;
+    geometry_msgs::PoseStamped cmd_;
     std_msgs::Float64 torso_vel;
     joy::Joy joy;
     double req_vx, req_vy, req_vw, req_torso, req_pan, req_tilt;
@@ -155,7 +155,7 @@ class TeleopGoalProjection: public ros::Node
         ros::Node::instance()->advertise<std_msgs::Float64> (TORSO_TOPIC, 1);
       if(head_button != 0)
         ros::Node::instance()->advertise<mechanism_msgs::JointStates> (HEAD_TOPIC, 1);
-      ros::Node::instance()->advertise<robot_msgs::PoseStamped> ("goal", 1);
+      ros::Node::instance()->advertise<geometry_msgs::PoseStamped> ("goal", 1);
       ros::Node::instance()->subscribe("joy", joy, &TeleopGoalProjection::joy_cb, 1);
       ROS_DEBUG("done with ctor\n");
     }
@@ -249,7 +249,7 @@ class TeleopGoalProjection: public ros::Node
           //ROS_INFO("!!!");
           // use commands from the local sticks
           //TODO::convert relative frame (base?) to global frame
-          robot_msgs::PoseStamped local_cmd;
+          geometry_msgs::PoseStamped local_cmd;
           local_cmd.pose.position.x = req_vx;
           local_cmd.pose.position.y = req_vy;
           local_cmd.pose.orientation.z = req_vw;
@@ -287,7 +287,7 @@ class TeleopGoalProjection: public ros::Node
         }
         else if(deadman_pressed_previous_iteration)
         {
-          robot_msgs::PoseStamped local_cmd;
+          geometry_msgs::PoseStamped local_cmd;
           local_cmd.pose.position.x = 0.0;
           local_cmd.pose.position.y = 0.0;
           local_cmd.pose.orientation.z = 0.0;

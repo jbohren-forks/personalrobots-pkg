@@ -61,7 +61,7 @@ using std::stringstream;
 using topological_map::TopologicalMap;
 using topological_map::ConnectorId;
 using topological_map::OutletId;
-using robot_msgs::PoseStamped;
+using geometry_msgs::PoseStamped;
 using nav_robot_actions::MoveBaseState;
 using topological_map::Point2D;
 using ros::Time;

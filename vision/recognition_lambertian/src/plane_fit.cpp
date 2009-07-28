@@ -29,7 +29,7 @@
 // ROS core
 #include <ros/node.h>
 // ROS messages
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 #include <robot_msgs/Polygon3D.h>
 
 // Cloud kd-tree
@@ -55,7 +55,7 @@ class PlanarFit
 
   void getPointIndicesInZBounds (const PointCloud &points, double z_min, double z_max, vector<int> &indices);
   bool fitSACPlanes (PointCloud *points, vector<int> &indices, vector<vector<int> > &inliers, vector<vector<double> > &coeff,
-                     const robot_msgs::Point32 &viewpoint_cloud, double dist_thresh, int n_max, int min_points_per_model = 100);
+                     const geometry_msgs::Point32 &viewpoint_cloud, double dist_thresh, int n_max, int min_points_per_model = 100);
 
   /**
       * Input
@@ -236,7 +236,7 @@ void
   */
 bool
   PlanarFit::fitSACPlanes (PointCloud *points, vector<int> &indices, vector<vector<int> > &inliers, vector<vector<double> > &coeff,
-                           const robot_msgs::Point32 &viewpoint_cloud, double dist_thresh, int n_max, int min_points_per_model)
+                           const geometry_msgs::Point32 &viewpoint_cloud, double dist_thresh, int n_max, int min_points_per_model)
 {
   // Create and initialize the SAC model
   sample_consensus::SACModelPlane *model = new sample_consensus::SACModelPlane ();

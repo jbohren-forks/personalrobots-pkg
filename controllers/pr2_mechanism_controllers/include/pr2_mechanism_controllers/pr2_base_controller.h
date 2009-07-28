@@ -84,13 +84,13 @@ namespace controller
        * \brief callback function for setting the desired velocity using a topic
        * @param cmd_vel Velocity command of the base in m/s and rad/s
        */
-      void setCommand(robot_msgs::PoseDot cmd_vel);
+      void setCommand(geometry_msgs::PoseDot cmd_vel);
 
       /*!
        * \brief Returns the current position command
        * @return Current velocity command
        */
-      robot_msgs::PoseDot getCommand();
+      geometry_msgs::PoseDot getCommand();
 
       /*!
        * \brief class where the robot's information is computed and stored
@@ -149,22 +149,22 @@ namespace controller
        * \brief Input speed command vector represents the desired speed requested by the node. Note that this may differ from the
        * current commanded speed due to acceleration limits imposed by the controller.
        */
-      robot_msgs::PoseDot cmd_vel_t_;
+      geometry_msgs::PoseDot cmd_vel_t_;
 
       /*!
        * \brief speed command vector used internally to represent the current commanded speed
        */
-      robot_msgs::PoseDot cmd_vel_;
+      geometry_msgs::PoseDot cmd_vel_;
 
       /*!
        * \brief Input speed command vector represents the desired speed requested by the node.
        */
-      robot_msgs::PoseDot desired_vel_;
+      geometry_msgs::PoseDot desired_vel_;
 
       /*!
        * \brief velocity limits specified externally
        */
-      robot_msgs::PoseDot max_vel_;
+      geometry_msgs::PoseDot max_vel_;
 
       /*!
        * \brief acceleration limits specified externally
@@ -264,17 +264,17 @@ namespace controller
       /*!
        * \brief interpolates velocities within a given time based on maximum accelerations
        */
-      robot_msgs::PoseDot interpolateCommand(robot_msgs::PoseDot start, robot_msgs::PoseDot end, geometry_msgs::Twist max_rate, double dT);
+      geometry_msgs::PoseDot interpolateCommand(geometry_msgs::PoseDot start, geometry_msgs::PoseDot end, geometry_msgs::Twist max_rate, double dT);
 
       /*!
        * \brief deal with cmd_vel command from 2dnav stack
        */
-      void CmdBaseVelReceived(const robot_msgs::PoseDotConstPtr& msg);
+      void CmdBaseVelReceived(const geometry_msgs::PoseDotConstPtr& msg);
 
       /*!
        * \brief callback message, used to remember where the base is commanded to go
        */
-      robot_msgs::PoseDot base_vel_msg_;
+      geometry_msgs::PoseDot base_vel_msg_;
 
       /*!
        * \brief generic epsilon value that is used as a minimum or maximum allowable input value

@@ -44,7 +44,7 @@
 
 #include <ros/console.h>
 
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 
 #include <point_cloud_mapping/kdtree/kdtree.h>
 #include <point_cloud_mapping/geometry/nearest.h>
@@ -186,11 +186,11 @@ class SpectralAnalysis: public Descriptor3D
     //@}
 
   protected:
-    int analyzeInterestPoints(const robot_msgs::PointCloud& data,
+    int analyzeInterestPoints(const sensor_msgs::PointCloud& data,
                               cloud_kdtree::KdTree& data_kdtree,
-                              const cv::Vector<robot_msgs::Point32*>& interest_pts);
+                              const cv::Vector<geometry_msgs::Point32*>& interest_pts);
 
-    int analyzeInterestRegions(const robot_msgs::PointCloud& data,
+    int analyzeInterestRegions(const sensor_msgs::PointCloud& data,
                                cloud_kdtree::KdTree& data_kdtree,
                                const cv::Vector<vector<int>*>& interest_region_indices);
 
@@ -206,7 +206,7 @@ class SpectralAnalysis: public Descriptor3D
     double support_radius_;
     bool support_radius_defined_;
 
-    void computeSpectralInfo(const robot_msgs::PointCloud& data,
+    void computeSpectralInfo(const sensor_msgs::PointCloud& data,
                              const vector<int>& curr_region_indices,
                              size_t idx);
 };

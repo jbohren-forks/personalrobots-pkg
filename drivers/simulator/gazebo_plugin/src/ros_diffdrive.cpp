@@ -29,7 +29,7 @@
 #include <gazebo/GazeboError.hh>
 #include <ros/ros.h>
 #include "tf/transform_broadcaster.h"
-#include <robot_msgs/PoseDot.h>
+#include <geometry_msgs/PoseDot.h>
 #include <deprecated_msgs/RobotBase2DOdom.h>
 
 #include <boost/bind.hpp>
@@ -41,7 +41,7 @@ public:
   ros::Subscriber  sub_;
   ros::Publisher   pub_;
   
-  void cmdVelCallBack(const robot_msgs::PoseDot::ConstPtr& cmd_msg) {
+  void cmdVelCallBack(const geometry_msgs::PoseDot::ConstPtr& cmd_msg) {
         std::cout << " pos " << this->posIface
                   <<    " x " << cmd_msg->vel.vx
                   <<    " y " << cmd_msg->vel.vy
@@ -94,8 +94,8 @@ public:
     this->posIface->Unlock();
 
     this->rnh_ = new ros::NodeHandle();
-    //this->sub_ = rnh_->subscribe<robot_msgs::PoseDot>("/cmd_vel", 100, boost::bind(&DiffDrive::cmdVelCallBack,this,_1));
-    this->sub_ = rnh_->subscribe<robot_msgs::PoseDot>("/cmd_vel", 100, &DiffDrive::cmdVelCallBack,this);
+    //this->sub_ = rnh_->subscribe<geometry_msgs::PoseDot>("/cmd_vel", 100, boost::bind(&DiffDrive::cmdVelCallBack,this,_1));
+    this->sub_ = rnh_->subscribe<geometry_msgs::PoseDot>("/cmd_vel", 100, &DiffDrive::cmdVelCallBack,this);
     this->pub_ = rnh_->advertise<deprecated_msgs::RobotBase2DOdom>("/odom", 1);
    
     // spawn 2 threads by default, ///@todo: make this a parameter

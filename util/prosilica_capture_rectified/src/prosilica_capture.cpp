@@ -79,8 +79,8 @@ class ProsilicaCapture {
 
 	unsigned int index;
 
-	robot_msgs::PointCloud base_cloud_;
-	robot_msgs::PointCloud base_cloud_fetch_;
+	sensor_msgs::PointCloud base_cloud_;
+	sensor_msgs::PointCloud base_cloud_fetch_;
 	string base_laser_topic_;
 
 	ros::Node& node_;
@@ -110,7 +110,7 @@ public:
 		node.param("~capture_button", capture_button_, 0);
 		node.param("~display", display_, false);
 		node.param<string>("~data_root", data_root_, "./");
-		node.subscribe<robot_msgs::PointCloud,ProsilicaCapture>(base_laser_topic_, base_cloud_fetch_, &ProsilicaCapture::laser_callback, this, 1);
+		node.subscribe<sensor_msgs::PointCloud,ProsilicaCapture>(base_laser_topic_, base_cloud_fetch_, &ProsilicaCapture::laser_callback, this, 1);
 		node.subscribe<joy::Joy,ProsilicaCapture>("/joy", joy, &ProsilicaCapture::joy_callback, this, 1);
 
 		if (display_) {

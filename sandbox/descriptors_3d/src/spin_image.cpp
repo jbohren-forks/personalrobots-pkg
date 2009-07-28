@@ -73,9 +73,9 @@ int SpinImage::setImageDimensions(double row_res,
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-void SpinImage::compute(const robot_msgs::PointCloud& data,
+void SpinImage::compute(const sensor_msgs::PointCloud& data,
                         cloud_kdtree::KdTree& data_kdtree,
-                        const cv::Vector<robot_msgs::Point32*>& interest_pts,
+                        const cv::Vector<geometry_msgs::Point32*>& interest_pts,
                         cv::Vector<cv::Vector<float> >& results)
 {
   size_t nbr_interest_pts = interest_pts.size();
@@ -133,7 +133,7 @@ void SpinImage::compute(const robot_msgs::PointCloud& data,
   {
     // ---------------------
     // Retrieve next interest point
-    const robot_msgs::Point32* curr_interest_pt = interest_pts[i];
+    const geometry_msgs::Point32* curr_interest_pt = interest_pts[i];
     if (curr_interest_pt == NULL)
     {
       ROS_WARN("SpinImage::compute given NULL interest point");
@@ -188,7 +188,7 @@ void SpinImage::compute(const robot_msgs::PointCloud& data,
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-void SpinImage::compute(const robot_msgs::PointCloud& data,
+void SpinImage::compute(const sensor_msgs::PointCloud& data,
                         cloud_kdtree::KdTree& data_kdtree,
                         const cv::Vector<vector<int>*>& interest_region_indices,
                         cv::Vector<cv::Vector<float> >& results)
@@ -281,7 +281,7 @@ void SpinImage::compute(const robot_msgs::PointCloud& data,
 
     // ---------------------
     // Compute centroid of interest region to be used
-    robot_msgs::Point32 region_centroid;
+    geometry_msgs::Point32 region_centroid;
     cloud_geometry::nearest::computeCentroid(data, *curr_interest_region, region_centroid);
 
     // ---------------------
@@ -312,7 +312,7 @@ void SpinImage::compute(const robot_msgs::PointCloud& data,
  * This method uses spin_axis_ and assumes it is unit length
  */
 // --------------------------------------------------------------
-void SpinImage::computeSpinImage(const robot_msgs::PointCloud& data,
+void SpinImage::computeSpinImage(const sensor_msgs::PointCloud& data,
                                  const vector<int>& neighbor_indices,
                                  const Eigen::Vector3d& center_pt,
                                  cv::Vector<float>& spin_image)

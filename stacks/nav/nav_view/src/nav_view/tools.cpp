@@ -87,8 +87,8 @@ PoseTool::PoseTool( NavViewPanel* panel, bool goal )
 , state_( Position )
 , is_goal_( goal )
 {
-  goal_pub_ = nh_.advertise<robot_msgs::PoseStamped>("goal", 1);
-  pose_pub_ = nh_.advertise<robot_msgs::PoseWithCovariance>("initialpose", 1);
+  goal_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("goal", 1);
+  pose_pub_ = nh_.advertise<geometry_msgs::PoseWithCovariance>("initialpose", 1);
 }
 
 PoseTool::~PoseTool()
@@ -161,7 +161,7 @@ int PoseTool::processMouseEvent( wxMouseEvent& event, int last_x, int last_y, fl
       if ( is_goal_ )
       {
         tf::Stamped<tf::Pose> p = tf::Stamped<tf::Pose>(tf::Pose(tf::Quaternion(angle, 0.0, 0.0), tf::Point(pos_.x, pos_.y, 0.0)), ros::Time::now(), panel_->getGlobalFrame());
-        robot_msgs::PoseStamped goal;
+        geometry_msgs::PoseStamped goal;
         tf::poseStampedTFToMsg(p, goal);
         printf("setting goal: Position(%.3f, %.3f, %.3f), Orientation(%.3f, %.3f, %.3f, %.3f) = Angle: %.3f\n", goal.pose.position.x, goal.pose.position.y, goal.pose.position.z,
             goal.pose.orientation.x, goal.pose.orientation.y, goal.pose.orientation.z, goal.pose.orientation.w, angle);
@@ -171,7 +171,7 @@ int PoseTool::processMouseEvent( wxMouseEvent& event, int last_x, int last_y, fl
       }
       else
       {
-        robot_msgs::PoseWithCovariance pose;
+        geometry_msgs::PoseWithCovariance pose;
         pose.pose.position.x = pos_.x;
         pose.pose.position.y = pos_.y;
         tf::quaternionTFToMsg(tf::Quaternion(angle, 0.0, 0.0),

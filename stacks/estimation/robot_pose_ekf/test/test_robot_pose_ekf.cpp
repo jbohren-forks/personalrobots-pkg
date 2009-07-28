@@ -37,8 +37,8 @@
 #include <string>
 #include <gtest/gtest.h>
 #include "ros/node.h"
-#include "robot_msgs/PoseWithCovariance.h"
-#include "robot_msgs/PoseWithRatesStamped.h"
+#include "geometry_msgs/PoseWithCovariance.h"
+#include "geometry_msgs/PoseWithRatesStamped.h"
 
 
 using namespace ros;

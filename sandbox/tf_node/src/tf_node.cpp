@@ -39,16 +39,16 @@
 #include "tf/tfMessage.h"
 
 
-#include "robot_msgs/PointStamped.h"
-#include "robot_msgs/PointCloud.h"
-#include "robot_msgs/PoseStamped.h"
-#include "robot_msgs/QuaternionStamped.h"
-#include "robot_msgs/Vector3Stamped.h"
+#include "geometry_msgs/PointStamped.h"
+#include "sensor_msgs/PointCloud.h"
+#include "geometry_msgs/PoseStamped.h"
+#include "geometry_msgs/QuaternionStamped.h"
+#include "geometry_msgs/Vector3Stamped.h"
 
-#include "robot_msgs/Vector3.h"
-#include "robot_msgs/Quaternion.h"
-#include "robot_msgs/Transform.h"
-#include "robot_msgs/TransformStamped.h"
+#include "geometry_msgs/Vector3.h"
+#include "geometry_msgs/Quaternion.h"
+#include "geometry_msgs/Transform.h"
+#include "geometry_msgs/TransformStamped.h"
 
 
 #include "tf_node/TransformPoint.h"
@@ -162,7 +162,7 @@ bool transformVectorCallback(TransformVector::Request &req,
  *  Publishing (static) transforms
  ******************************************************************************/
 
-void publishTransformCallback(const boost::shared_ptr<const robot_msgs::TransformStamped> &message) {
+void publishTransformCallback(const boost::shared_ptr<const geometry_msgs::TransformStamped> &message) {
   tf::Transform tft;
   tf::transformMsgToTF(message->transform, tft);
   ROS_INFO((std::string("Sending transform from parent ") + message->parent_id + " to " + message->header.frame_id).c_str());
@@ -216,23 +216,23 @@ void stopStaticTransformCallback(const boost::shared_ptr<const StopStaticTransfo
  ******************************************************************************/
 
 
-void doTransform(const std::string &target_frame, const robot_msgs::PointStamped &in, robot_msgs::PointStamped &out) {
+void doTransform(const std::string &target_frame, const geometry_msgs::PointStamped &in, geometry_msgs::PointStamped &out) {
   tl->transformPoint(target_frame, in, out);
 }
 
-void doTransform(const std::string &target_frame, const robot_msgs::PointCloud &in, robot_msgs::PointCloud &out) {
+void doTransform(const std::string &target_frame, const sensor_msgs::PointCloud &in, sensor_msgs::PointCloud &out) {
   tl->transformPointCloud(target_frame, in, out);
 }
 
-void doTransform(const std::string &target_frame, const robot_msgs::PoseStamped &in, robot_msgs::PoseStamped &out) {
+void doTransform(const std::string &target_frame, const geometry_msgs::PoseStamped &in, geometry_msgs::PoseStamped &out) {
   tl->transformPose(target_frame, in, out);
 }
 
-void doTransform(const std::string &target_frame, const robot_msgs::QuaternionStamped &in, robot_msgs::QuaternionStamped &out) {
+void doTransform(const std::string &target_frame, const geometry_msgs::QuaternionStamped &in, geometry_msgs::QuaternionStamped &out) {
   tl->transformQuaternion(target_frame, in, out);
 }
 
-void doTransform(const std::string &target_frame, const robot_msgs::Vector3Stamped &in, robot_msgs::Vector3Stamped &out) {
+void doTransform(const std::string &target_frame, const geometry_msgs::Vector3Stamped &in, geometry_msgs::Vector3Stamped &out) {
   tl->transformVector(target_frame, in, out);
 }
 
@@ -289,23 +289,23 @@ void startTransformingCallback(const boost::shared_ptr<StartTransforming const> 
   switch (msg->type) {
 
   case StartTransforming::point:
-    transformers[msg->out_topic] = boost::shared_ptr<GenericTopicTransformer>(new TopicTransformer<robot_msgs::PointStamped>(msg->in_topic, msg->out_topic, msg->target_frame, msg->queue_size));
+    transformers[msg->out_topic] = boost::shared_ptr<GenericTopicTransformer>(new TopicTransformer<geometry_msgs::PointStamped>(msg->in_topic, msg->out_topic, msg->target_frame, msg->queue_size));
     break;
 
   case StartTransforming::point_cloud:
-    transformers[msg->out_topic] = boost::shared_ptr<GenericTopicTransformer>(new TopicTransformer<robot_msgs::PointCloud>(msg->in_topic, msg->out_topic, msg->target_frame, msg->queue_size));   
+    transformers[msg->out_topic] = boost::shared_ptr<GenericTopicTransformer>(new TopicTransformer<sensor_msgs::PointCloud>(msg->in_topic, msg->out_topic, msg->target_frame, msg->queue_size));   
     break;
 
   case StartTransforming::pose:
-    transformers[msg->out_topic] = boost::shared_ptr<GenericTopicTransformer>(new TopicTransformer<robot_msgs::PoseStamped>(msg->in_topic, msg->out_topic, msg->target_frame, msg->queue_size));
+    transformers[msg->out_topic] = boost::shared_ptr<GenericTopicTransformer>(new TopicTransformer<geometry_msgs::PoseStamped>(msg->in_topic, msg->out_topic, msg->target_frame, msg->queue_size));
     break;
 
   case StartTransforming::vector:
-    transformers[msg->out_topic] = boost::shared_ptr<GenericTopicTransformer>(new TopicTransformer<robot_msgs::Vector3Stamped>(msg->in_topic, msg->out_topic, msg->target_frame, msg->queue_size));	    
+    transformers[msg->out_topic] = boost::shared_ptr<GenericTopicTransformer>(new TopicTransformer<geometry_msgs::Vector3Stamped>(msg->in_topic, msg->out_topic, msg->target_frame, msg->queue_size));	    
     break;
 
   case StartTransforming::quaternion:
-    transformers[msg->out_topic] = boost::shared_ptr<GenericTopicTransformer>(new TopicTransformer<robot_msgs::QuaternionStamped>(msg->in_topic, msg->out_topic, msg->target_frame, msg->queue_size));
+    transformers[msg->out_topic] = boost::shared_ptr<GenericTopicTransformer>(new TopicTransformer<geometry_msgs::QuaternionStamped>(msg->in_topic, msg->out_topic, msg->target_frame, msg->queue_size));
     break;
 
   default:
@@ -351,7 +351,7 @@ int main(int argc, char **argv)
 
   // Topics for publishing transforms  
   ros::Subscriber publishTransform     = 
-     nh->subscribe<robot_msgs::TransformStamped>("~publish_transform", 20, &publishTransformCallback);
+     nh->subscribe<geometry_msgs::TransformStamped>("~publish_transform", 20, &publishTransformCallback);
   ros::Subscriber startStaticTransform = 
      nh->subscribe<StartStaticTransform>("~start_static_transform", 20, &startStaticTransformCallback);
   ros::Subscriber stopStaticTransform  = 

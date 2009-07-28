@@ -83,7 +83,7 @@ namespace pr2_mechanism_controllers
     ros_node_.param("~max_update_time", max_update_time_, 0.2);
 
 
-    ros_node_.advertise<robot_msgs::PoseDot>(control_topic_name_, 1);
+    ros_node_.advertise<geometry_msgs::PoseDot>(control_topic_name_, 1);
     ros_node_.subscribe(path_input_topic_name_,path_msg_in_, &BaseTrajectoryController::pathCallback, this, 1);
     ros_node_.advertise<diagnostic_msgs::DiagnosticMessage> ("/diagnostics", 1) ;
 
@@ -355,7 +355,7 @@ namespace pr2_mechanism_controllers
 
   void BaseTrajectoryController::updateControl()
   {
-    robot_msgs::PoseDot cmd_vel;
+    geometry_msgs::PoseDot cmd_vel;
     if(stop_motion_)
     {
       ROS_DEBUG("updateControl:: stopping motion");
@@ -379,10 +379,10 @@ namespace pr2_mechanism_controllers
     }
   }
 
-  robot_msgs::PoseDot BaseTrajectoryController::getCommand()
+  geometry_msgs::PoseDot BaseTrajectoryController::getCommand()
   {
     double cmd[3];
-    robot_msgs::PoseDot cmd_vel;
+    geometry_msgs::PoseDot cmd_vel;
     trajectory::Trajectory::TPoint desired_position;
     desired_position.setDimension(dimension_);
     double sample_time =  current_time_ - trajectory_start_time_;
@@ -415,9 +415,9 @@ namespace pr2_mechanism_controllers
     return cmd_vel;
   }
 
-  robot_msgs::PoseDot BaseTrajectoryController::checkCmd(const robot_msgs::PoseDot &cmd)
+  geometry_msgs::PoseDot BaseTrajectoryController::checkCmd(const geometry_msgs::PoseDot &cmd)
   {
-    robot_msgs::PoseDot return_cmd = cmd;
+    geometry_msgs::PoseDot return_cmd = cmd;
     if(return_cmd.vel.vx > velocity_limits_[0])
       return_cmd.vel.vx = velocity_limits_[0];
     else if(return_cmd.vel.vx < -velocity_limits_[0])

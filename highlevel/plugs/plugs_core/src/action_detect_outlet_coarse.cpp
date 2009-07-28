@@ -41,7 +41,7 @@ namespace plugs_core
 {
 
 DetectOutletCoarseAction::DetectOutletCoarseAction()
-				: robot_actions::Action<robot_msgs::PointStamped, robot_msgs::PoseStamped>("detect_outlet_coarse"),
+				: robot_actions::Action<geometry_msgs::PointStamped, geometry_msgs::PoseStamped>("detect_outlet_coarse"),
           node_(ros::Node::instance()),
           action_name_("detect_outlet_coarse"),
           head_controller_("head_controller")
@@ -55,7 +55,7 @@ DetectOutletCoarseAction::DetectOutletCoarseAction()
       return;
     }
 
-	node_->advertise<robot_msgs::PointStamped>(head_controller_ + "/point_head",10);
+	node_->advertise<geometry_msgs::PointStamped>(head_controller_ + "/point_head",10);
 }
 
 DetectOutletCoarseAction::~DetectOutletCoarseAction()
@@ -64,7 +64,7 @@ DetectOutletCoarseAction::~DetectOutletCoarseAction()
 }
 
 
-robot_actions::ResultStatus DetectOutletCoarseAction::execute(const robot_msgs::PointStamped& point, robot_msgs::PoseStamped& feedback){
+robot_actions::ResultStatus DetectOutletCoarseAction::execute(const geometry_msgs::PointStamped& point, geometry_msgs::PoseStamped& feedback){
 
 
   ROS_DEBUG("%s: executing.", action_name_.c_str());
@@ -93,7 +93,7 @@ robot_actions::ResultStatus DetectOutletCoarseAction::execute(const robot_msgs::
 }
 
 
-bool DetectOutletCoarseAction::spotOutlet(const robot_msgs::PointStamped& outlet_estimate, robot_msgs::PoseStamped& pose)
+bool DetectOutletCoarseAction::spotOutlet(const geometry_msgs::PointStamped& outlet_estimate, geometry_msgs::PoseStamped& pose)
 {
 	// turn head to face outlet
 	node_->publish(head_controller_ + "/point_head", outlet_estimate);
@@ -106,7 +106,7 @@ bool DetectOutletCoarseAction::spotOutlet(const robot_msgs::PointStamped& outlet
 	if (ros::service::call("outlet_spotting/coarse_outlet_detect", req, resp)) {
 		pose = resp.pose;
 
-        robot_msgs::PointStamped outlet_final_position;
+        geometry_msgs::PointStamped outlet_final_position;
         outlet_final_position.header.frame_id = pose.header.frame_id;
         outlet_final_position.header.stamp = pose.header.stamp;
         outlet_final_position.point = pose.pose.position;

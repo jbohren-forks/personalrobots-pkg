@@ -35,7 +35,7 @@ using namespace std;
 
 #include <mpglue/plan.h>
 #include <mpglue/sbpl_environment.h>
-#include <robot_msgs/Pose.h>
+#include <geometry_msgs/Pose.h>
 #include <manipulation_msgs/JointTraj.h>
 #include <sfl/util/numeric.hpp>
 
@@ -53,12 +53,12 @@ namespace mpglue {
   waypoint_s::waypoint_s(waypoint_s const & orig)
     : x(orig.x), y(orig.y), theta(orig.theta), dr(orig.dr), dtheta(orig.dtheta) {}
 
-  waypoint_s::waypoint_s(robot_msgs::Pose const & pose, double _dr, double _dtheta)
+  waypoint_s::waypoint_s(geometry_msgs::Pose const & pose, double _dr, double _dtheta)
     : x(pose.position.x), y(pose.position.y),
       theta(atan2(pose.orientation.z, pose.orientation.w)),
       dr(_dr), dtheta(_dtheta) {}
   
-  waypoint_s::waypoint_s(robot_msgs::Pose const & pose)
+  waypoint_s::waypoint_s(geometry_msgs::Pose const & pose)
     : x(pose.position.x), y(pose.position.y),
       theta(atan2(pose.orientation.z, pose.orientation.w)),
       dr(default_dr), dtheta(default_dtheta) {}

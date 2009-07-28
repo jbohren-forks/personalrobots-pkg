@@ -3,7 +3,7 @@
 #include <math.h>
 #include "ros/node.h"
 #include "joy/Joy.h"
-#include "robot_msgs/PoseDot.h"
+#include "geometry_msgs/PoseDot.h"
 #include "mechanism_msgs/JointState.h"
 #include "mechanism_msgs/JointStates.h"
 
@@ -17,7 +17,7 @@ using namespace ros;
 class TeleopBase : public Node
 {
    public:
-  robot_msgs::PoseDot cmd, cmd_passthrough;
+  geometry_msgs::PoseDot cmd, cmd_passthrough;
   std_msgs::Float64 torso_vel;
   joy::Joy joy;
   double req_vx, req_vy, req_vw, req_torso, req_pan, req_tilt;
@@ -119,7 +119,7 @@ class TeleopBase : public Node
         if (head_button != 0)
           advertise<mechanism_msgs::JointStates>(HEAD_TOPIC, 1);
 
-        advertise<robot_msgs::PoseDot>("cmd_vel", 1);
+        advertise<geometry_msgs::PoseDot>("cmd_vel", 1);
         subscribe("joy", joy, &TeleopBase::joy_cb, 1);
         subscribe("cmd_passthrough", cmd_passthrough, &TeleopBase::passthrough_cb, 1);
         ROS_DEBUG("done with ctor\n");

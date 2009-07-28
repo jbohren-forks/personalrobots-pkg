@@ -32,7 +32,7 @@
 #include "tf/transform_listener.h"
 #include "tf/message_notifier.h"
 
-#include "robot_msgs/PoseStamped.h"
+#include "geometry_msgs/PoseStamped.h"
 #include "manipulation_msgs/TaskFrameFormalism.h"
 
 const double MIN_STANDOFF = 0.035;
@@ -46,7 +46,7 @@ ros::Time g_started_pushing = ros::Time::now(),
   g_stopped_forcing = ros::Time::now(),
   g_started_holding = ros::Time::now();
 
-boost::scoped_ptr<tf::MessageNotifier<robot_msgs::PoseStamped> > g_mn;
+boost::scoped_ptr<tf::MessageNotifier<geometry_msgs::PoseStamped> > g_mn;
 boost::scoped_ptr<tf::TransformListener> TF;
 
 void printTransform(const tf::Transform &t, const std::string &prefix = "")
@@ -62,7 +62,7 @@ void printTransform(const tf::Transform &t, const std::string &prefix = "")
          t.getRotation().w());
 }
 
-void plug_cb(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr &msg)
+void plug_cb(const tf::MessageNotifier<geometry_msgs::PoseStamped>::MessagePtr &msg)
 {
   if (msg->header.stamp < g_stopped_forcing + ros::Duration(5.0)) {
     printf("too soon after forcing\n");
@@ -70,7 +70,7 @@ void plug_cb(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr &msg
   }
 
   // Both are transforms from the outlet to the estimated plug pose
-  robot_msgs::PoseStamped viz_offset_msg;
+  geometry_msgs::PoseStamped viz_offset_msg;
   tf::Stamped<tf::Transform> mech_offset;
   try {
     TF->transformPose("outlet_pose", *(msg.get()), viz_offset_msg);
@@ -291,7 +291,7 @@ int main(int argc, char** argv)
   node.advertise<manipulation_msgs::TaskFrameFormalism>("/arm_hybrid/command", 2);
 
   TF.reset(new tf::TransformListener(node));
-  g_mn.reset(new tf::MessageNotifier<robot_msgs::PoseStamped>(
+  g_mn.reset(new tf::MessageNotifier<geometry_msgs::PoseStamped>(
                TF.get(), &node, plug_cb, "/plug_detector/pose", "outlet_pose", 100));
   node.spin();
 

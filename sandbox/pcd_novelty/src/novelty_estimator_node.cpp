@@ -61,13 +61,13 @@ void NoveltyEstimatorNode::setup()
   ROS_INFO_STREAM("Setup done.");
 }
 
-void NoveltyEstimatorNode::hist_cloudCallback(const robot_msgs::PointCloudConstPtr& the_cloud)
+void NoveltyEstimatorNode::hist_cloudCallback(const sensor_msgs::PointCloudConstPtr& the_cloud)
 {
   ROS_INFO("Adding cloud to history");
   estimator_.addCloudToHistory(*the_cloud);
 }
 
-void NoveltyEstimatorNode::observed_cloudCallback(const robot_msgs::PointCloudConstPtr& the_cloud)
+void NoveltyEstimatorNode::observed_cloudCallback(const sensor_msgs::PointCloudConstPtr& the_cloud)
 {
   PointCloud pcd_out=*the_cloud;
   std::vector<float>* ptr_channel;

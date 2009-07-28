@@ -127,7 +127,7 @@ bool CartesianTrajectoryController::initXml(mechanism::RobotState *robot_state, 
   }
 
   // subscribe to pose commands
-  command_notifier_ = new MessageNotifier<robot_msgs::PoseStamped>(&tf_, node_,
+  command_notifier_ = new MessageNotifier<geometry_msgs::PoseStamped>(&tf_, node_,
 								 boost::bind(&CartesianTrajectoryController::command, this, _1),
 								 controller_name_ + "/command", root_name_, 1);
   // advertise services
@@ -140,7 +140,7 @@ bool CartesianTrajectoryController::initXml(mechanism::RobotState *robot_state, 
 
 
 
-bool CartesianTrajectoryController::moveTo(const robot_msgs::PoseStamped& pose, const geometry_msgs::Twist& tolerance, double duration)
+bool CartesianTrajectoryController::moveTo(const geometry_msgs::PoseStamped& pose, const geometry_msgs::Twist& tolerance, double duration)
 {
   // don't do anything when still moving
   if (is_moving_) return false;
@@ -322,7 +322,7 @@ bool CartesianTrajectoryController::moveTo(deprecated_srvs::MoveToPose::Request 
 
 
 
-void CartesianTrajectoryController::command(const MessageNotifier<robot_msgs::PoseStamped>::MessagePtr& pose_msg)
+void CartesianTrajectoryController::command(const MessageNotifier<geometry_msgs::PoseStamped>::MessagePtr& pose_msg)
 {
   moveTo(*pose_msg);
 }

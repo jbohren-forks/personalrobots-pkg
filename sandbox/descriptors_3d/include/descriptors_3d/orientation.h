@@ -129,9 +129,9 @@ class Orientation: public SpectralAnalysis
      * \see Descriptor3D::compute
      */
     // --------------------------------------------------------------
-    virtual void compute(const robot_msgs::PointCloud& data,
+    virtual void compute(const sensor_msgs::PointCloud& data,
                          cloud_kdtree::KdTree& data_kdtree,
-                         const cv::Vector<robot_msgs::Point32*>& interest_pts,
+                         const cv::Vector<geometry_msgs::Point32*>& interest_pts,
                          cv::Vector<cv::Vector<float> >& results);
 
     // --------------------------------------------------------------
@@ -145,7 +145,7 @@ class Orientation: public SpectralAnalysis
      * \see Descriptor3D::compute
      */
     // --------------------------------------------------------------
-    virtual void compute(const robot_msgs::PointCloud& data,
+    virtual void compute(const sensor_msgs::PointCloud& data,
                          cloud_kdtree::KdTree& data_kdtree,
                          const cv::Vector<vector<int>*>& interest_region_indices,
                          cv::Vector<cv::Vector<float> >& results);

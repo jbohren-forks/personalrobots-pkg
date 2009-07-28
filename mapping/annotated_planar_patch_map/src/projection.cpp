@@ -118,8 +118,8 @@ void annotated_planar_patch_map::projection::projectAnyObject(const sensor_msgs:
   {
     CvPoint2D64f &img_pt=CV_MAT_ELEM( *image_points, CvPoint2D64f, 0, iPt );
 
-    robot_msgs::Point32 &old_pt=polyIn.points[iPt];
-    robot_msgs::Point32 &new_pt=polyOut.points[iPt];
+    geometry_msgs::Point32 &old_pt=polyIn.points[iPt];
+    geometry_msgs::Point32 &new_pt=polyOut.points[iPt];
     new_pt.x=img_pt.x;
     new_pt.y=img_pt.y;
     new_pt.z=old_pt.x; //I mean, this is the "z" - distance from the image
@@ -131,7 +131,7 @@ void annotated_planar_patch_map::projection::projectAnyObject(const sensor_msgs:
 }
 
 
-void annotated_planar_patch_map::projection::projectAnyObject(const sensor_msgs::CamInfo& cam_info,const robot_msgs::PointCloud& source_3D,robot_msgs::PointCloud& target_2D)
+void annotated_planar_patch_map::projection::projectAnyObject(const sensor_msgs::CamInfo& cam_info,const sensor_msgs::PointCloud& source_3D,sensor_msgs::PointCloud& target_2D)
 {
   //Projection setup
   CvMat *K_ = cvCreateMat(3, 3, CV_64FC1);
@@ -168,8 +168,8 @@ void annotated_planar_patch_map::projection::projectAnyObject(const sensor_msgs:
   {
     CvPoint2D64f &img_pt=CV_MAT_ELEM( *image_points, CvPoint2D64f, 0, iPt );
 
-    const robot_msgs::Point32 &old_pt=source_3D.pts[iPt];
-    robot_msgs::Point32 &new_pt=target_2D.pts[iPt];
+    const geometry_msgs::Point32 &old_pt=source_3D.pts[iPt];
+    geometry_msgs::Point32 &new_pt=target_2D.pts[iPt];
     new_pt.x=img_pt.x;
     new_pt.y=img_pt.y;
     new_pt.z=old_pt.x; //I mean, this is the "z" - distance from the image
@@ -198,11 +198,11 @@ void annotated_planar_patch_map::projection::projectPolygonPoints(double* projec
   polyOut.set_points_size(num_pts);
   for(unsigned int iPt = 0; iPt<num_pts; iPt++)
   {
-    robot_msgs::Point32 &mpt=polyIn.points[iPt];
+    geometry_msgs::Point32 &mpt=polyIn.points[iPt];
     tf::Vector3 pt(mpt.y,-mpt.z,mpt.x);
     //Vector3 projected_pt=projection * pt;
     
-    robot_msgs::Point32 projected_pt;
+    geometry_msgs::Point32 projected_pt;
     projected_pt.x=
       projection[0]*pt.x()/pt.z()+
       projection[4]*pt.y()/pt.z()+
@@ -217,7 +217,7 @@ void annotated_planar_patch_map::projection::projectPolygonPoints(double* projec
     // projection[6]*pt.y()/pt.z()+
     // projection[10];
 
-    robot_msgs::Point32 &new_pt=polyOut.points[iPt];
+    geometry_msgs::Point32 &new_pt=polyOut.points[iPt];
     if(projected_pt.z!=0)
     {
       new_pt.x= projected_pt.x;
@@ -244,11 +244,11 @@ void annotated_planar_patch_map::projection::projectPolygonPointsNOP(double* pro
   polyOut.set_points_size(num_pts);
   for(unsigned int iPt = 0; iPt<num_pts; iPt++)
   {
-    robot_msgs::Point32 &mpt=polyIn.points[iPt];
+    geometry_msgs::Point32 &mpt=polyIn.points[iPt];
     tf::Vector3 pt(-mpt.y,-mpt.z,mpt.x);
     //Vector3 projected_pt=projection * pt;
     
-    robot_msgs::Point32 projected_pt;
+    geometry_msgs::Point32 projected_pt;
     projected_pt.x=
       projection[0]*pt.x()+
       projection[4]*pt.y()+
@@ -270,7 +270,7 @@ void annotated_planar_patch_map::projection::projectPolygonPointsNOP(double* pro
       projection[11]*pt.z()+
       projection[15]*1;*/
 
-    robot_msgs::Point32 &new_pt=polyOut.points[iPt];
+    geometry_msgs::Point32 &new_pt=polyOut.points[iPt];
     new_pt.x= projected_pt.x;
     new_pt.y= projected_pt.y;
     new_pt.z = projected_pt.z;
@@ -412,7 +412,7 @@ bool annotated_planar_patch_map::projection::checkPolyInside(const robot_msgs::P
   unsigned int num_pts = poly.get_points_size();
   for(unsigned int iPt = 0; iPt<num_pts; iPt++)
   {
-    const robot_msgs::Point32& pt=poly.points[iPt];
+    const geometry_msgs::Point32& pt=poly.points[iPt];
 
     if( (pt.x<viewport[0]) || (pt.x>=viewport[1]))
        return false;
@@ -450,7 +450,7 @@ std::vector<int> annotated_planar_patch_map::projection::getVisibleProjectedPoly
   {
     if(checkPolyInside(map.polygons[iPoly].polygon,viewport))
     {
-      robot_msgs::Point32 center=annotated_map_lib::computeMean(map.polygons[iPoly].polygon);
+      geometry_msgs::Point32 center=annotated_map_lib::computeMean(map.polygons[iPoly].polygon);
       int cX=round(center.x/grid_scale)+oX;
       int cY=round(center.y/grid_scale)+oY;
       float d=cvmGet(depth_buffer,cX,cY);

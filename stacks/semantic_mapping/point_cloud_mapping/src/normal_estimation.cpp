@@ -43,8 +43,8 @@
 // ROS core
 #include <ros/ros.h>
 // ROS messages
-#include <robot_msgs/PointCloud.h>
-#include <robot_msgs/PointStamped.h>
+#include <sensor_msgs/PointCloud.h>
+#include <geometry_msgs/PointStamped.h>
 
 #include <tf/transform_listener.h>
 

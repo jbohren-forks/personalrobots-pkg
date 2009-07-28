@@ -57,9 +57,9 @@ namespace move_base {
     ros_node_.param("~controller_patience", controller_patience_, 15.0);
 
     //for comanding the base
-    vel_pub_ = ros_node_.advertise<robot_msgs::PoseDot>("cmd_vel", 1);
+    vel_pub_ = ros_node_.advertise<geometry_msgs::PoseDot>("cmd_vel", 1);
     vis_pub_ = ros_node_.advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
-    position_pub_ = ros_node_.advertise<robot_msgs::PoseStamped>("~current_position", 1);
+    position_pub_ = ros_node_.advertise<geometry_msgs::PoseStamped>("~current_position", 1);
 
     ros::NodeHandle action_node(ros_node_, name);
     action_goal_pub_ = action_node.advertise<MoveBaseActionGoal>("goal", 1);
@@ -67,7 +67,7 @@ namespace move_base {
     //we'll provide a mechanism for some people to send goals as PoseStamped messages over a topic
     //they won't get any useful information back about its status, but this is useful for tools
     //like nav_view and rviz
-    goal_sub_ = ros_node_.subscribe<robot_msgs::PoseStamped>("~activate", 1, boost::bind(&MoveBase::goalCB, this, _1));
+    goal_sub_ = ros_node_.subscribe<geometry_msgs::PoseStamped>("~activate", 1, boost::bind(&MoveBase::goalCB, this, _1));
 
     //we'll assume the radius of the robot to be consistent with what's specified for the costmaps
     ros_node_.param("~local_costmap/inscribed_radius", inscribed_radius_, 0.325);
@@ -127,7 +127,7 @@ namespace move_base {
 
   }
 
-  void MoveBase::goalCB(const robot_msgs::PoseStamped::ConstPtr& goal){
+  void MoveBase::goalCB(const geometry_msgs::PoseStamped::ConstPtr& goal){
     ROS_DEBUG("In ROS goal callback, wrapping the PoseStamped in the action message and re-sending to the server.");
     MoveBaseActionGoal action_goal;
     action_goal.goal.target_pose = *goal;
@@ -141,10 +141,10 @@ namespace move_base {
     //clear the planner's costmap
     planner_costmap_ros_->getRobotPose(global_pose);
 
-    std::vector<robot_msgs::Point> clear_poly;
+    std::vector<geometry_msgs::Point> clear_poly;
     double x = global_pose.getOrigin().x();
     double y = global_pose.getOrigin().y();
-    robot_msgs::Point pt;
+    geometry_msgs::Point pt;
 
     pt.x = x - size_x / 2;
     pt.y = y - size_x / 2;
@@ -208,7 +208,7 @@ namespace move_base {
       return false;
     }
 
-    robot_msgs::PoseStamped start;
+    geometry_msgs::PoseStamped start;
     tf::poseStampedTFToMsg(global_pose, start);
 
     //update the copy of the costmap the planner uses
@@ -217,8 +217,8 @@ namespace move_base {
     //if we have a tolerance on the goal point that is greater 
     //than the resolution of the map... compute the full potential function
     double resolution = planner_costmap_ros_->resolution();
-    std::vector<robot_msgs::PoseStamped> global_plan;
-    robot_msgs::PoseStamped p;
+    std::vector<geometry_msgs::PoseStamped> global_plan;
+    geometry_msgs::PoseStamped p;
     p = req.goal;
     p.pose.position.y = req.goal.pose.position.y - req.tolerance; 
     bool found_legal = false;
@@ -268,7 +268,7 @@ namespace move_base {
       delete controller_costmap_ros_;
   }
 
-  void MoveBase::publishGoal(const robot_msgs::PoseStamped& goal){
+  void MoveBase::publishGoal(const geometry_msgs::PoseStamped& goal){
     visualization_msgs::Marker marker;
     marker.header = goal.header;
     marker.ns = "move_base";
@@ -285,7 +285,7 @@ namespace move_base {
     vis_pub_.publish(marker);
   }
 
-  bool MoveBase::makePlan(const robot_msgs::PoseStamped& goal, std::vector<robot_msgs::PoseStamped>& plan){
+  bool MoveBase::makePlan(const geometry_msgs::PoseStamped& goal, std::vector<geometry_msgs::PoseStamped>& plan){
     //make sure to set the plan to be empty initially
     plan.clear();
 
@@ -298,7 +298,7 @@ namespace move_base {
     if(!planner_costmap_ros_->getRobotPose(global_pose))
       return false;
 
-    robot_msgs::PoseStamped start;
+    geometry_msgs::PoseStamped start;
     tf::poseStampedTFToMsg(global_pose, start);
 
     //if the planner fails or returns a zero length plan, planning failed
@@ -314,7 +314,7 @@ namespace move_base {
     ROS_DEBUG("180 rotation");
     double angle = M_PI; //rotate 180 degrees
     tf::Stamped<tf::Pose> rotate_goal = tf::Stamped<tf::Pose>(tf::Pose(tf::Quaternion(angle, 0.0, 0.0), tf::Point(0.0, 0.0, 0.0)), ros::Time(), robot_base_frame_);
-    robot_msgs::PoseStamped rotate_goal_msg;
+    geometry_msgs::PoseStamped rotate_goal_msg;
 
     try{
       tf_.transformPose(global_frame_, rotate_goal, rotate_goal);
@@ -326,7 +326,7 @@ namespace move_base {
     }
 
     poseStampedTFToMsg(rotate_goal, rotate_goal_msg);
-    std::vector<robot_msgs::PoseStamped> rotate_plan;
+    std::vector<geometry_msgs::PoseStamped> rotate_plan;
     rotate_plan.push_back(rotate_goal_msg);
 
     //pass the rotation goal to the controller
@@ -339,7 +339,7 @@ namespace move_base {
   }
 
   bool MoveBase::rotateRobot(){
-      robot_msgs::PoseDot cmd_vel;
+      geometry_msgs::PoseDot cmd_vel;
       if(tc_->computeVelocityCommands(cmd_vel)){
         //make sure that we send the velocity command to the base
         vel_pub_.publish(cmd_vel);
@@ -352,7 +352,7 @@ namespace move_base {
   }
 
   void MoveBase::publishZeroVelocity(){
-    robot_msgs::PoseDot cmd_vel;
+    geometry_msgs::PoseDot cmd_vel;
     cmd_vel.vel.vx = 0.0;
     cmd_vel.vel.vy = 0.0;
     cmd_vel.ang_vel.vz = 0.0;
@@ -362,8 +362,8 @@ namespace move_base {
 
   void MoveBase::runLoop(){
     ros::Rate r(controller_frequency_);
-    robot_msgs::PoseStamped goal;
-    std::vector<robot_msgs::PoseStamped> global_plan;
+    geometry_msgs::PoseStamped goal;
+    std::vector<geometry_msgs::PoseStamped> global_plan;
     while(ros_node_.ok()){
       if(as_.isActive()){
         if(!as_.isPreemptRequested()){
@@ -434,14 +434,14 @@ namespace move_base {
     }
   }
   
-  void MoveBase::executeCycle(robot_msgs::PoseStamped& goal, std::vector<robot_msgs::PoseStamped>& global_plan){
+  void MoveBase::executeCycle(geometry_msgs::PoseStamped& goal, std::vector<geometry_msgs::PoseStamped>& global_plan){
     //we need to be able to publish velocity commands
-    robot_msgs::PoseDot cmd_vel;
+    geometry_msgs::PoseDot cmd_vel;
 
     //update feedback to correspond to our curent position
     tf::Stamped<tf::Pose> global_pose;
     planner_costmap_ros_->getRobotPose(global_pose);
-    robot_msgs::PoseStamped current_position;
+    geometry_msgs::PoseStamped current_position;
     tf::poseStampedTFToMsg(global_pose, current_position);
 
     //push the feedback out

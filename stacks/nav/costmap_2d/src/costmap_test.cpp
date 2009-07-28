@@ -50,7 +50,7 @@
 #include <sensor_msgs/LaserScan.h>
 #include <laser_scan/laser_scan.h>
 
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 
 // Thread suppport
 #include <boost/thread.hpp>

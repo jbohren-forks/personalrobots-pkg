@@ -26,7 +26,7 @@
  */
 
 #include <ros/ros.h>
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 #include <costmap_2d/VoxelGrid.h>
 #include <voxel_grid/voxel_grid.h>
 
@@ -110,7 +110,7 @@ void voxelCallback(const ros::Publisher& pub_marked, const ros::Publisher& pub_u
   }
 
   {
-    robot_msgs::PointCloud cloud;
+    sensor_msgs::PointCloud cloud;
     cloud.pts.resize(num_marked);
     cloud.chan.resize(1);
     cloud.chan[0].vals.resize(num_marked);
@@ -121,7 +121,7 @@ void voxelCallback(const ros::Publisher& pub_marked, const ros::Publisher& pub_u
     robot_msgs::ChannelFloat32& chan = cloud.chan[0];
     for (uint32_t i = 0; i < num_marked; ++i)
     {
-      robot_msgs::Point32& p = cloud.pts[i];
+      geometry_msgs::Point32& p = cloud.pts[i];
       float& cval = chan.vals[i];
       Cell& c = g_marked[i];
 
@@ -142,7 +142,7 @@ void voxelCallback(const ros::Publisher& pub_marked, const ros::Publisher& pub_u
   }
 
   {
-    robot_msgs::PointCloud cloud;
+    sensor_msgs::PointCloud cloud;
     cloud.pts.resize(num_unknown);
     cloud.chan.resize(1);
     cloud.chan[0].vals.resize(num_unknown);
@@ -153,7 +153,7 @@ void voxelCallback(const ros::Publisher& pub_marked, const ros::Publisher& pub_u
     robot_msgs::ChannelFloat32& chan = cloud.chan[0];
     for (uint32_t i = 0; i < num_unknown; ++i)
     {
-      robot_msgs::Point32& p = cloud.pts[i];
+      geometry_msgs::Point32& p = cloud.pts[i];
       float& cval = chan.vals[i];
       Cell& c = g_unknown[i];
 
@@ -184,8 +184,8 @@ int main(int argc, char** argv)
 
   ROS_DEBUG("Startup");
 
-  ros::Publisher pub_marked = n.advertise<robot_msgs::PointCloud>("voxel_marked_cloud", 2);
-  ros::Publisher pub_unknown = n.advertise<robot_msgs::PointCloud>("voxel_unknown_cloud", 2);
+  ros::Publisher pub_marked = n.advertise<sensor_msgs::PointCloud>("voxel_marked_cloud", 2);
+  ros::Publisher pub_unknown = n.advertise<sensor_msgs::PointCloud>("voxel_unknown_cloud", 2);
   ros::Subscriber sub = n.subscribe<costmap_2d::VoxelGrid>("voxel_grid", 1, boost::bind(voxelCallback, pub_marked, pub_unknown, _1));
 
   ros::spin();

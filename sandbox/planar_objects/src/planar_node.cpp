@@ -67,7 +67,7 @@ PlanarNode::PlanarNode() :
   lastDuration = Duration::Duration(0);
 }
 
-void PlanarNode::cloudCallback(const robot_msgs::PointCloud::ConstPtr& point_cloud)
+void PlanarNode::cloudCallback(const sensor_msgs::PointCloud::ConstPtr& point_cloud)
 {
   cloud_ = point_cloud;
 }

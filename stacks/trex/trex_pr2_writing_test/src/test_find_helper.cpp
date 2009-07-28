@@ -40,7 +40,7 @@
 
 // Msgs
 #include <std_msgs/Empty.h>
-#include <robot_msgs/PoseStamped.h>
+#include <geometry_msgs/PoseStamped.h>
  
 // State Msgs
 #include <robot_actions/NoArgumentsActionState.h>
@@ -64,11 +64,11 @@ int
 
   pr2_robot_actions::SwitchControllers switchlist;
   std_msgs::Empty empty;
-  robot_msgs::PoseStamped find_helper_pose_msg;
+  geometry_msgs::PoseStamped find_helper_pose_msg;
 
   Duration switch_timeout = Duration(4.0);
 
-  robot_actions::ActionClient<std_msgs::Empty, pr2_robot_actions::FindHelperState, robot_msgs::PoseStamped> 
+  robot_actions::ActionClient<std_msgs::Empty, pr2_robot_actions::FindHelperState, geometry_msgs::PoseStamped> 
     find_helper("find_helper");
   robot_actions::ActionClient<pr2_robot_actions::SwitchControllers, pr2_robot_actions::SwitchControllersState,  std_msgs::Empty>
     switch_controllers("switch_controllers");

@@ -37,8 +37,8 @@
 
 #include <mechanism_model/robot.h>
 #include <mechanism_model/controller.h>
-#include <robot_msgs/PoseDot.h>
-#include <robot_msgs/Point.h>
+#include <geometry_msgs/PoseDot.h>
+#include <geometry_msgs/Point.h>
 #include <control_toolbox/filters.h>
 
 namespace controller
@@ -61,7 +61,7 @@ namespace controller
       /*!
        * \brief default offset from the parent caster before any transformations
        */
-      robot_msgs::Point offset_;
+      geometry_msgs::Point offset_;
 
       /*!
        * \brief name of the joint
@@ -77,7 +77,7 @@ namespace controller
       /*!
        * \brief offset_ after rotation transformation from the parent caster's position
        */
-      robot_msgs::Point position_;
+      geometry_msgs::Point position_;
 
       /*!
        * \brief the caster on which this wheel is mounted
@@ -148,7 +148,7 @@ namespace controller
       /*!
        * \brief offset from the center of the base
        */
-      robot_msgs::Point offset_;
+      geometry_msgs::Point offset_;
 
       /*!
        * \brief name of the link
@@ -160,7 +160,7 @@ namespace controller
        */
       std::string joint_name_;
 
-      //robot_msgs::Point position_;
+      //geometry_msgs::Point position_;
 
       /*!
        * \brief BaseKinematics to which this caster belongs
@@ -248,7 +248,7 @@ namespace controller
        * @param vel Velocity of the center of rotation
        * @return Velocity at the given point
        */
-      robot_msgs::PoseDot pointVel2D(const robot_msgs::Point& pos, const robot_msgs::PoseDot& vel);
+      geometry_msgs::PoseDot pointVel2D(const geometry_msgs::Point& pos, const geometry_msgs::PoseDot& vel);
 
       /*!
        * \brief remembers everything about the state of the robot

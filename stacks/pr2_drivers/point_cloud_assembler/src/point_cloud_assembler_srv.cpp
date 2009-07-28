@@ -48,10 +48,10 @@ namespace point_cloud_assembler
  * params
  *  * (Several params are inherited from BaseAssemblerSrv)
  */
-class PointCloudAssemblerSrv : public BaseAssemblerSrv<robot_msgs::PointCloud>
+class PointCloudAssemblerSrv : public BaseAssemblerSrv<sensor_msgs::PointCloud>
 {
 public:
-  PointCloudAssemblerSrv() : BaseAssemblerSrv<robot_msgs::PointCloud>("point_cloud_assembler")
+  PointCloudAssemblerSrv() : BaseAssemblerSrv<sensor_msgs::PointCloud>("point_cloud_assembler")
   {
 
   }

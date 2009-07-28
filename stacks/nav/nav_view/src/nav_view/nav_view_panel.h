@@ -33,9 +33,9 @@
 #include "nav_view_panel_generated.h"
 
 #include "nav_msgs/ParticleCloud.h"
-#include "robot_msgs/PoseStamped.h"
+#include "geometry_msgs/PoseStamped.h"
 #include "visualization_msgs/Polyline.h"
-#include "robot_msgs/PoseWithCovariance.h"
+#include "geometry_msgs/PoseWithCovariance.h"
 
 #include <OGRE/OgreTexture.h>
 #include <OGRE/OgreMaterial.h>

@@ -127,10 +127,10 @@ bool HeadPositionController::init(mechanism::RobotState *robot_state, const ros:
   // subscribe to head commands
   sub_command_ = node_.subscribe<mechanism_msgs::JointStates>("command", 1, &HeadPositionController::command, this);
 
-  point_head_notifier_.reset(new MessageNotifier<robot_msgs::PointStamped>(tf_,
+  point_head_notifier_.reset(new MessageNotifier<geometry_msgs::PointStamped>(tf_,
                                                                        boost::bind(&HeadPositionController::pointHead, this, _1),
                                                                        node_.getNamespace() + "/point_head", pan_link_name_, 10));
-  point_frame_on_head_notifier_.reset(new MessageNotifier<robot_msgs::PointStamped>(tf_,
+  point_frame_on_head_notifier_.reset(new MessageNotifier<geometry_msgs::PointStamped>(tf_,
                                                                        boost::bind(&HeadPositionController::pointFrameOnHead, this, _1),
                                                                        node_.getNamespace() + "/point_frame_on_head", pan_link_name_, 10));
 
@@ -169,7 +169,7 @@ void HeadPositionController::command(const mechanism_msgs::JointStatesConstPtr& 
   
 }
 
-void HeadPositionController::pointHead(const tf::MessageNotifier<robot_msgs::PointStamped>::MessagePtr& point_msg)
+void HeadPositionController::pointHead(const tf::MessageNotifier<geometry_msgs::PointStamped>::MessagePtr& point_msg)
 {
   std::string pan_parent;
   tf_.getParent( pan_link_name_, ros::Time(), pan_parent);
@@ -191,7 +191,7 @@ void HeadPositionController::pointHead(const tf::MessageNotifier<robot_msgs::Poi
 
 }
 
-void HeadPositionController::pointFrameOnHead(const tf::MessageNotifier<robot_msgs::PointStamped>::MessagePtr& point_msg)
+void HeadPositionController::pointFrameOnHead(const tf::MessageNotifier<geometry_msgs::PointStamped>::MessagePtr& point_msg)
 {
 
   Stamped<tf::Transform> frame;

@@ -558,7 +558,7 @@ namespace move_arm
 		ros::ServiceClient client = node_handle_.serviceClient<manipulation_srvs::IKService>(ARM_IK_NAME, true);
 		for (int t = 0 ; t < 5 ; ++t)
 		{
-		    robot_msgs::PoseStamped tpose = req.goal_constraints.pose_constraint[0].pose;
+		    geometry_msgs::PoseStamped tpose = req.goal_constraints.pose_constraint[0].pose;
 		    if (t > 0)
 		    {
 			tpose.pose.position.x = uniformDouble(tpose.pose.position.x - req.goal_constraints.pose_constraint[0].position_tolerance_below.x,
@@ -599,7 +599,7 @@ namespace move_arm
 	return result;
     }
 
-    bool MoveArm::computeIK(ros::ServiceClient &client, const robot_msgs::PoseStamped &pose_stamped_msg, int attempts, std::vector<double> &solution)
+    bool MoveArm::computeIK(ros::ServiceClient &client, const geometry_msgs::PoseStamped &pose_stamped_msg, int attempts, std::vector<double> &solution)
     {
 	// define the service messages
 	manipulation_srvs::IKService::Request request;

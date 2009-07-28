@@ -40,7 +40,7 @@
 #include <tf/transform_listener.h>
 #include <tf/message_notifier.h>
 #include <ros/node.h>
-#include <robot_msgs/PoseStamped.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Twist.h>
 #include <mechanism_model/controller.h>
 #include <realtime_tools/realtime_publisher.h>
@@ -62,7 +62,7 @@ public:
   bool starting();
   void update();
 
-  void command(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr& pose_msg);
+  void command(const tf::MessageNotifier<geometry_msgs::PoseStamped>::MessagePtr& pose_msg);
 
   // input of the controller
   KDL::Frame pose_desi_, pose_meas_;
@@ -95,11 +95,11 @@ private:
 
   // reatltime publisher
   boost::scoped_ptr<realtime_tools::RealtimePublisher<geometry_msgs::Twist> > state_error_publisher_;
-  boost::scoped_ptr<realtime_tools::RealtimePublisher<robot_msgs::PoseStamped> > state_pose_publisher_;
+  boost::scoped_ptr<realtime_tools::RealtimePublisher<geometry_msgs::PoseStamped> > state_pose_publisher_;
   unsigned int loop_count_;
 
   tf::TransformListener tf_;
-  boost::scoped_ptr<tf::MessageNotifier<robot_msgs::PoseStamped> > command_notifier_;
+  boost::scoped_ptr<tf::MessageNotifier<geometry_msgs::PoseStamped> > command_notifier_;
 
   // twist controller
   CartesianTwistController* twist_controller_;

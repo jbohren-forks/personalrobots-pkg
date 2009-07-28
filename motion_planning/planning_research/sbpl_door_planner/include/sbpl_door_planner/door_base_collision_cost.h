@@ -32,7 +32,7 @@
 #include <stdio.h>
 #include <algorithm>
 
-#include <robot_msgs/Point32.h>
+#include <geometry_msgs/Point32.h>
 #include <door_msgs/Door.h>
 #include <door_functions/door_functions.h>
 
@@ -51,9 +51,9 @@ namespace door_base_collision_cost
 
     void init();
 
-    void getValidDoorAngles(const robot_msgs::Point32 &global_position, const double &global_yaw, std::vector<int> &valid_angles, std::vector<int> &valid_cost, std::vector<unsigned char> &valid_door_interval);
+    void getValidDoorAngles(const geometry_msgs::Point32 &global_position, const double &global_yaw, std::vector<int> &valid_angles, std::vector<int> &valid_cost, std::vector<unsigned char> &valid_door_interval);
 
-    std::vector<robot_msgs::Point32> footprint_;/*! 2D footprint of the robot */
+    std::vector<geometry_msgs::Point32> footprint_;/*! 2D footprint of the robot */
 
     double arm_min_workspace_radius_; /*! min allowable radius of the workspace from the shoulder position of the arm */
 
@@ -63,13 +63,13 @@ namespace door_base_collision_cost
 
     double arm_max_workspace_angle_;  /*! max allowable workspace angle from the shoulder position of the arm */
 
-    robot_msgs::Point32 door_frame_global_position_; /*! Global 2D position of the door frame */
+    geometry_msgs::Point32 door_frame_global_position_; /*! Global 2D position of the door frame */
 
     double door_frame_global_yaw_;
 
-    robot_msgs::Point32 robot_shoulder_position_; /*! 2D position of the shoulder of the arm used for opening/closing the door in the robot frame ("base_link") frame */
+    geometry_msgs::Point32 robot_shoulder_position_; /*! 2D position of the shoulder of the arm used for opening/closing the door in the robot frame ("base_link") frame */
 
-    robot_msgs::Point32 door_handle_position_; /*! 2D position of the handle in a frame attached to the door at the hinge with X axis towards the free end of the door and Z pointing upwards */
+    geometry_msgs::Point32 door_handle_position_; /*! 2D position of the handle in a frame attached to the door at the hinge with X axis towards the free end of the door and Z pointing upwards */
 
     double door_thickness_; /*! Thickness of the door (in meters) */
 
@@ -89,59 +89,59 @@ namespace door_base_collision_cost
 
     void writeToFile(std::string filename);
 
-    void writeSolution(const std::string &filename, const robot_msgs::Point32 &robot_position, const double &robot_yaw, const std::vector<int> &angles, const std::vector<int> &angle_costs);
+    void writeSolution(const std::string &filename, const geometry_msgs::Point32 &robot_position, const double &robot_yaw, const std::vector<int> &angles, const std::vector<int> &angle_costs);
 
 
     void getDesiredDoorAngles(const std::vector<int> &desired_door_anglesV, std::vector<int> &local_desired_door_angles);
 
     double getDistanceFromDoorToBase(double angle);
 
-    bool checkArmDoorCollide(double door_angle, const robot_msgs::Point32 &robot_global_position, const double &robot_global_yaw);
+    bool checkArmDoorCollide(double door_angle, const geometry_msgs::Point32 &robot_global_position, const double &robot_global_yaw);
 
-    void printPoint(std::string name, robot_msgs::Point32 point);
+    void printPoint(std::string name, geometry_msgs::Point32 point);
 
     private:
 
-    void transform2DInverse(const robot_msgs::Point32 &point_in,
-                                  robot_msgs::Point32 &point_out,
-                            const robot_msgs::Point32 &frame,
+    void transform2DInverse(const geometry_msgs::Point32 &point_in,
+                                  geometry_msgs::Point32 &point_out,
+                            const geometry_msgs::Point32 &frame,
                             const double &frame_yaw);
 
-    void transform2D(const robot_msgs::Point32 &point_in,
-                           robot_msgs::Point32 &point_out,
-                     const robot_msgs::Point32 &frame,
+    void transform2D(const geometry_msgs::Point32 &point_in,
+                           geometry_msgs::Point32 &point_out,
+                     const geometry_msgs::Point32 &frame,
                      const double &frame_yaw);
 
 
-    unsigned char findWorkspaceCost(const robot_msgs::Point32 &robot_position,
+    unsigned char findWorkspaceCost(const geometry_msgs::Point32 &robot_position,
                                     const double &robot_yaw,
                                     const double &door_angle);
 
     bool  findAngleLimits(const double max_radius,
-                          const robot_msgs::Point32 &point,
+                          const geometry_msgs::Point32 &point,
                           double &angle);
 
 
-    bool findCircleLineSegmentIntersection(const robot_msgs::Point32 &p1, 
-                                           const robot_msgs::Point32 &p2, 
-                                           const robot_msgs::Point32 &center, 
+    bool findCircleLineSegmentIntersection(const geometry_msgs::Point32 &p1, 
+                                           const geometry_msgs::Point32 &p2, 
+                                           const geometry_msgs::Point32 &center, 
                                            const double &radius, 
-                                           std::vector<robot_msgs::Point32> &intersection_points);
+                                           std::vector<geometry_msgs::Point32> &intersection_points);
 
-    void findCirclePolygonIntersection(const robot_msgs::Point32 &center, 
+    void findCirclePolygonIntersection(const geometry_msgs::Point32 &center, 
                                        const double &radius, 
-                                       const std::vector<robot_msgs::Point32> &footprint, 
-                                       std::vector<robot_msgs::Point32> &solution);
+                                       const std::vector<geometry_msgs::Point32> &footprint, 
+                                       std::vector<geometry_msgs::Point32> &solution);
 
-    void freeAngleRange(const std::vector<robot_msgs::Point32> &footprint, 
+    void freeAngleRange(const std::vector<geometry_msgs::Point32> &footprint, 
                         const double &max_radius, 
                         double &min_obstructed_angle, 
                         double &max_obstructed_angle);
 
 
-    void getDoorFrameFootprint(const robot_msgs::Point32 &robot_global_position, 
+    void getDoorFrameFootprint(const geometry_msgs::Point32 &robot_global_position, 
                                const double &robot_global_yaw, 
-                               std::vector<robot_msgs::Point32> &fp_out);
+                               std::vector<geometry_msgs::Point32> &fp_out);
 
 
     double local_door_open_angle_;  /*! Angle of the door when open (in local door frame) */
@@ -152,17 +152,17 @@ namespace door_base_collision_cost
 
     double local_door_max_angle_;
 
-    bool doLineSegsIntersect(robot_msgs::Point32 a, robot_msgs::Point32 b, robot_msgs::Point32 c, robot_msgs::Point32 d);
+    bool doLineSegsIntersect(geometry_msgs::Point32 a, geometry_msgs::Point32 b, geometry_msgs::Point32 c, geometry_msgs::Point32 d);
 
     bool checkBaseDoorIntersect(double angle);
 
-    void ClosestPointOnLineSegment(robot_msgs::Point32 &l1, robot_msgs::Point32 &l2, robot_msgs::Point32 &p, robot_msgs::Point32 &sol);
+    void ClosestPointOnLineSegment(geometry_msgs::Point32 &l1, geometry_msgs::Point32 &l2, geometry_msgs::Point32 &p, geometry_msgs::Point32 &sol);
 
-    double PointDistanceFromLineSeg(robot_msgs::Point32 &l1, robot_msgs::Point32 &l2, robot_msgs::Point32 &p);
+    double PointDistanceFromLineSeg(geometry_msgs::Point32 &l1, geometry_msgs::Point32 &l2, geometry_msgs::Point32 &p);
 
 //     bool doArmSwitchHandle(double door_angle);
 
-//     void printPoint(std::string name, robot_msgs::Point32 point);
+//     void printPoint(std::string name, geometry_msgs::Point32 point);
 
   };
 }

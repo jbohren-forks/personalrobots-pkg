@@ -193,7 +193,7 @@ namespace sample_consensus
     */
   void
     SACModelSphere::projectPoints (const std::vector<int> &inliers, const std::vector<double> &model_coefficients,
-                                   robot_msgs::PointCloud &projected_points)
+                                   sensor_msgs::PointCloud &projected_points)
   {
     std::cerr << "[SACModelSphere::projecPoints] Not implemented yet." << std::endl;
     projected_points = *cloud_;

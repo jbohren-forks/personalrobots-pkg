@@ -109,7 +109,7 @@ bool Pr2BaseController::init(mechanism::RobotState *robot, const ros::NodeHandle
   node_.param<double> ("cmd_vel_trans_eps", cmd_vel_trans_eps_, 1e-5);
   node_.param<double> ("cmd_vel_rot_eps", cmd_vel_rot_eps_, 1e-5);
   node_.param<std::string> ("cmd_topic", cmd_topic_, "/cmd_vel");
-  cmd_sub_ = node_.subscribe<robot_msgs::PoseDot>(cmd_topic_, 1, &Pr2BaseController::CmdBaseVelReceived, this);
+  cmd_sub_ = node_.subscribe<geometry_msgs::PoseDot>(cmd_topic_, 1, &Pr2BaseController::CmdBaseVelReceived, this);
 
   //casters
   caster_controller_.resize(base_kin_.num_casters_);
@@ -142,7 +142,7 @@ bool Pr2BaseController::initXml(mechanism::RobotState *robot, TiXmlElement *conf
 }
 
 // Set the base velocity command
-void Pr2BaseController::setCommand(robot_msgs::PoseDot cmd_vel)
+void Pr2BaseController::setCommand(geometry_msgs::PoseDot cmd_vel)
 {
   double vel_mag = sqrt(cmd_vel.vel.vx * cmd_vel.vel.vx + cmd_vel.vel.vy * cmd_vel.vel.vy);
   double clamped_vel_mag = filters::clamp(vel_mag, -(max_vel_.vel.vx + max_vel_.vel.vy) / 2.0, (max_vel_.vel.vx + max_vel_.vel.vy) / 2.0);
@@ -175,9 +175,9 @@ void Pr2BaseController::setCommand(robot_msgs::PoseDot cmd_vel)
   new_cmd_available_ = true;
 }
 
-robot_msgs::PoseDot Pr2BaseController::interpolateCommand(robot_msgs::PoseDot start, robot_msgs::PoseDot end, geometry_msgs::Twist max_rate, double dT)
+geometry_msgs::PoseDot Pr2BaseController::interpolateCommand(geometry_msgs::PoseDot start, geometry_msgs::PoseDot end, geometry_msgs::Twist max_rate, double dT)
 {
-  robot_msgs::PoseDot result;
+  geometry_msgs::PoseDot result;
   geometry_msgs::Twist alpha;
   double delta(0), max_delta(0);
 
@@ -214,9 +214,9 @@ robot_msgs::PoseDot Pr2BaseController::interpolateCommand(robot_msgs::PoseDot st
   return result;
 }
 
-robot_msgs::PoseDot Pr2BaseController::getCommand()// Return the current velocity command
+geometry_msgs::PoseDot Pr2BaseController::getCommand()// Return the current velocity command
 {
-  robot_msgs::PoseDot cmd_vel;
+  geometry_msgs::PoseDot cmd_vel;
   pthread_mutex_lock(&pr2_base_controller_lock_);
   cmd_vel.vel.vx = cmd_vel_.vel.vx;
   cmd_vel.vel.vy = cmd_vel_.vel.vy;
@@ -323,7 +323,7 @@ void Pr2BaseController::setJointCommands()
 
 void Pr2BaseController::computeDesiredCasterSteer()
 {
-  robot_msgs::PoseDot result;
+  geometry_msgs::PoseDot result;
 
   double steer_angle_desired(0.0), steer_angle_desired_m_pi(0.0);
   double error_steer(0.0), error_steer_m_pi(0.0);
@@ -364,10 +364,10 @@ void Pr2BaseController::setDesiredCasterSteer()
 
 void Pr2BaseController::computeDesiredWheelSpeeds()
 {
-  robot_msgs::PoseDot wheel_point_velocity;
-  robot_msgs::PoseDot wheel_point_velocity_projected;
-  robot_msgs::PoseDot wheel_caster_steer_component;
-  robot_msgs::PoseDot caster_2d_velocity;
+  geometry_msgs::PoseDot wheel_point_velocity;
+  geometry_msgs::PoseDot wheel_point_velocity_projected;
+  geometry_msgs::PoseDot wheel_caster_steer_component;
+  geometry_msgs::PoseDot caster_2d_velocity;
 
   caster_2d_velocity.vel.vx = 0;
   caster_2d_velocity.vel.vy = 0;
@@ -441,7 +441,7 @@ void Pr2BaseController::computeStall()
   }
 }
 
-void Pr2BaseController::CmdBaseVelReceived(const robot_msgs::PoseDotConstPtr& msg)
+void Pr2BaseController::CmdBaseVelReceived(const geometry_msgs::PoseDotConstPtr& msg)
 {
   pthread_mutex_lock(&pr2_base_controller_lock_);
   base_vel_msg_ = *msg;

@@ -46,11 +46,11 @@
 // ROS messages
 #include <door_handle_detector/DoorsDetector.h>
 
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 #include <robot_msgs/Polygon3D.h>
 #include <mapping_msgs/PolygonalMap.h>
 
-#include <robot_msgs/Point32.h>
+#include <geometry_msgs/Point32.h>
 #include <door_msgs/Door.h>
 #include <visualization_msgs/Marker.h>
 
@@ -711,7 +711,7 @@ class DoorTracker
     }
 
 
-    void obtainCloudIndicesSet(robot_msgs::PointCloud *points, vector<int> &indices, door_msgs::Door door_msg, tf::TransformListener *tf, double frame_multiplier)
+    void obtainCloudIndicesSet(sensor_msgs::PointCloud *points, vector<int> &indices, door_msgs::Door door_msg, tf::TransformListener *tf, double frame_multiplier)
     {
       // frames used
       string cloud_frame = points->header.frame_id;
@@ -840,7 +840,7 @@ class DoorTracker
  */
     inline void
     transformPoint (tf::TransformListener *tf, const std::string &target_frame,
-                    const tf::Stamped< robot_msgs::Point32 > &stamped_in, tf::Stamped< robot_msgs::Point32 > &stamped_out)
+                    const tf::Stamped< geometry_msgs::Point32 > &stamped_in, tf::Stamped< geometry_msgs::Point32 > &stamped_out)
     {
       tf::Stamped<tf::Point> tmp;
       tmp.stamp_ = stamped_in.stamp_;

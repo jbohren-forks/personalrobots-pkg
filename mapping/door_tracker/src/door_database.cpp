@@ -45,7 +45,7 @@
 #include <ros/node.h>
 // ROS messages
 
-#include <robot_msgs/Point32.h>
+#include <geometry_msgs/Point32.h>
 #include <door_msgs/Door.h>
 #include <visualization_msgs/Marker.h>
 
@@ -139,14 +139,14 @@ class DoorDatabase
 
     }
 
-    robot_msgs::Point32 findHingePosition(door_tracker::DoorDatabaseObject &db)
+    geometry_msgs::Point32 findHingePosition(door_tracker::DoorDatabaseObject &db)
     {
       double x1(0.0),y1(0.0);
 
       x1 = (db.door.door_p1.x+db.door.door_p2.x)/2.0;
       y1 = (db.door.door_p1.y+db.door.door_p2.y)/2.0;
 
-      robot_msgs::Point32 hinge;
+      geometry_msgs::Point32 hinge;
       MatrixXf lhs;
       lhs = MatrixXf::Zero((int) db.angles.size(),3);
       for(int i=0; i< (int) db.angles.size(); i++)
@@ -178,7 +178,7 @@ class DoorDatabase
       return hinge;
     }
 
-    door_tracker::CoeffArray generateLinearCoeff(const robot_msgs::Point32 p1, const robot_msgs::Point32 p2)
+    door_tracker::CoeffArray generateLinearCoeff(const geometry_msgs::Point32 p1, const geometry_msgs::Point32 p2)
     {
       door_tracker::CoeffArray cf;
       cf.set_data_size(3);
@@ -220,7 +220,7 @@ class DoorDatabase
       ROS_INFO("There are %d candidate doors in the database now.",index+1);
     }
 
-    double distance(const robot_msgs::Point32 &d1, const robot_msgs::Point32 &d2)
+    double distance(const geometry_msgs::Point32 &d1, const geometry_msgs::Point32 &d2)
     {
       double dist = sqrt(pow(d1.x - d2.x,2) + pow(d1.y - d2.y,2));
       return dist;

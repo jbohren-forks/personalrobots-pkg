@@ -95,7 +95,7 @@ namespace trex_pr2 {
 
     try{
       // Get the approach pose for that
-      robot_msgs::Pose pose;
+      geometry_msgs::Pose pose;
       TopologicalMapAdapter::instance()->getDoorApproachPose(_connector_id.getSingletonValue(), pose);
       _x.set(pose.position.x);
       _y.set(pose.position.y);
@@ -232,7 +232,7 @@ namespace trex_pr2 {
    */
   void MapGetOutletApproachPoseConstraint::handleExecute(){
     static bool initialized(false);
-    static std::map<unsigned int, robot_msgs::Pose> approach_points_by_id;
+    static std::map<unsigned int, geometry_msgs::Pose> approach_points_by_id;
 
     if(!initialized){
 
@@ -252,7 +252,7 @@ namespace trex_pr2 {
     debugMsg("map:get_outlet_appoach_pose",  "BEFORE: "  << TREX::timeString() << toString());
 
     try{
-      robot_msgs::Pose pose;
+      geometry_msgs::Pose pose;
       unsigned int outlet_id = _outlet_id.getSingletonValue();
       // First we will see if the
       TopologicalMapAdapter::instance()->getOutletApproachPose(outlet_id, pose);
@@ -300,7 +300,7 @@ namespace trex_pr2 {
       return;
 
     debugMsg("map:get_outlet_state",  "BEFORE: "  << TREX::timeString() << toString());
-    robot_msgs::Pose outlet_pose;
+    geometry_msgs::Pose outlet_pose;
     TopologicalMapAdapter::instance()->getOutletState(_outlet.getSingletonValue(), outlet_pose);
     _x.set(outlet_pose.position.x);
     _y.set(outlet_pose.position.y);
@@ -980,7 +980,7 @@ TopologicalMapAdapter::TopologicalMapAdapter(std::istream& in, const std::string
     return next_connector;
   }
 
-  void TopologicalMapAdapter::getOutletState(unsigned int outlet_id, robot_msgs::Pose& outlet_pose){
+  void TopologicalMapAdapter::getOutletState(unsigned int outlet_id, geometry_msgs::Pose& outlet_pose){
     try{
       topological_map::OutletInfo outlet_info = _map->outletInfo(outlet_id);
       outlet_pose.position.x = outlet_info.x;
@@ -1002,7 +1002,7 @@ TopologicalMapAdapter::TopologicalMapAdapter(std::istream& in, const std::string
    * Impementation uses a distance of 1 meter and an error bound of 1 meter. Assume that the outlet pose can subsequently
    * be used.
    */
-  void TopologicalMapAdapter::getOutletApproachPose(unsigned int outlet_id, robot_msgs::Pose& approach_pose){
+  void TopologicalMapAdapter::getOutletApproachPose(unsigned int outlet_id, geometry_msgs::Pose& approach_pose){
     topological_map::OutletInfo outlet_info = _map->outletInfo(outlet_id);
     topological_map::Point2D p = _map->outletApproachPosition (outlet_id, 1.0, 0.3);
     approach_pose.position.x = p.x;
@@ -1018,7 +1018,7 @@ TopologicalMapAdapter::TopologicalMapAdapter(std::istream& in, const std::string
   /**
    * Impementation uses a distance of 1 meter
    */
-  void TopologicalMapAdapter::getDoorApproachPose(unsigned int connector_id, robot_msgs::Pose& approach_pose){
+  void TopologicalMapAdapter::getDoorApproachPose(unsigned int connector_id, geometry_msgs::Pose& approach_pose){
     topological_map::Point2D p = _map->doorApproachPosition (connector_id, 1.0);
     approach_pose.position.x = p.x;
     approach_pose.position.y = p.y;
@@ -1026,7 +1026,7 @@ TopologicalMapAdapter::TopologicalMapAdapter(std::istream& in, const std::string
 
 
     // Orientation to face the connector
-    robot_msgs::Vector3 orientation;
+    geometry_msgs::Vector3 orientation;
     double x, y;
     TopologicalMapAdapter::instance()->getConnectorPosition(connector_id, x, y);
     orientation.x = x - p.x;
@@ -1047,7 +1047,7 @@ TopologicalMapAdapter::TopologicalMapAdapter(std::istream& in, const std::string
 
     try{
       unsigned int region_of_interest(0);
-      robot_msgs::Pose connector_approach_pose;
+      geometry_msgs::Pose connector_approach_pose;
       getDoorApproachPose(doorway_connector, connector_approach_pose);
       unsigned int current_region = getRegion(current_x, current_y);
       unsigned int approach_point_region = getRegion(connector_approach_pose.position.x, connector_approach_pose.position.y);
@@ -1116,7 +1116,7 @@ TopologicalMapAdapter::TopologicalMapAdapter(std::istream& in, const std::string
 
   unsigned int TopologicalMapAdapter::getOutletByPosition(double x, double y){
     unsigned int nearest_outlet_id = TopologicalMapAdapter::instance()->getNearestOutlet(x, y);
-    robot_msgs::Pose outlet_pose;
+    geometry_msgs::Pose outlet_pose;
     TopologicalMapAdapter::instance()->getOutletState(nearest_outlet_id, outlet_pose);
     double distance_to_outlet = sqrt(pow(outlet_pose.position.x - x, 2) + pow(outlet_pose.position.y - y, 2));
     debugMsg("map:get_next_move", "cost from connector to nearest outlet is " << distance_to_outlet);
@@ -1155,7 +1155,7 @@ TopologicalMapAdapter::TopologicalMapAdapter(std::istream& in, const std::string
 
     // The next connector is insuffient if we are already close to it. In the case that it is a door connecto we have to check against
     // the approach point of the connector. Otherwise we can check against the connector itself.
-    robot_msgs::Pose pose;
+    geometry_msgs::Pose pose;
     if(isDoorwayConnector(next_connector)){
       getDoorApproachPose(next_connector, pose);
     }
@@ -1191,8 +1191,8 @@ TopologicalMapAdapter::TopologicalMapAdapter(std::istream& in, const std::string
     return ss.str();
   }
 
-robot_msgs::Pose RotatePose180(robot_msgs::Pose input){
-  robot_msgs::Pose output;
+geometry_msgs::Pose RotatePose180(geometry_msgs::Pose input){
+  geometry_msgs::Pose output;
   output.position = input.position;
   tf::Quaternion orientation;
   tf::quaternionMsgToTF(input.orientation, orientation);
@@ -1253,7 +1253,7 @@ robot_msgs::Pose RotatePose180(robot_msgs::Pose input){
     double target_y = _target_y.getSingletonValue();
     unsigned int next_connector = TopologicalMapAdapter::instance()->getNextConnector(current_x, current_y, target_x, target_y);
 
-    robot_msgs::Pose next_pose;
+    geometry_msgs::Pose next_pose;
     bool is_doorway_connector = (next_connector > 0 ? TopologicalMapAdapter::instance()->isDoorwayConnector(next_connector) : false);
     if(is_doorway_connector){
       TopologicalMapAdapter::instance()->getDoorApproachPose(next_connector, next_pose);
@@ -1284,7 +1284,7 @@ robot_msgs::Pose RotatePose180(robot_msgs::Pose input){
 
     debugMsg("map:get_next_move", "next move is in region " << next_region);
 
-    robot_msgs::Pose result_pose;
+    geometry_msgs::Pose result_pose;
 
     if(thru_doorway == false){
       result_pose = next_pose;

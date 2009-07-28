@@ -144,7 +144,7 @@ public:
 
     tf_ = boost::shared_ptr<tf::TransformListener>(new tf::TransformListener());
 
-    lifted_pub_=n_.advertise<robot_msgs::PointCloud>(out_topic_name_,1);
+    lifted_pub_=n_.advertise<sensor_msgs::PointCloud>(out_topic_name_,1);
     
     annotation_notifier_=new tf::MessageNotifier<cv_mech_turk::ExternalAnnotation>(*tf_,
                                                                                    boost::bind(&AnnotationLifterToPcdViaService::handleAnnotation, this,_1),
@@ -196,13 +196,13 @@ public:
 
   void liftAndSend(const boost::shared_ptr<cv_mech_turk::ExternalAnnotation const> annotation, 
                    const boost::shared_ptr<sensor_msgs::CamInfo const> cam_info, 
-                   const robot_msgs::PointCloud& cloud)
+                   const sensor_msgs::PointCloud& cloud)
   {
-    robot_msgs::PointCloud transformed_map_3D;
-    robot_msgs::PointCloud transformed_map_3D_fixed;
-    robot_msgs::PointCloud transformed_map_3D_fixed_w_normals;
-    robot_msgs::PointCloud transformed_map_2D;
-    robot_msgs::PointCloud map_final;
+    sensor_msgs::PointCloud transformed_map_3D;
+    sensor_msgs::PointCloud transformed_map_3D_fixed;
+    sensor_msgs::PointCloud transformed_map_3D_fixed_w_normals;
+    sensor_msgs::PointCloud transformed_map_2D;
+    sensor_msgs::PointCloud map_final;
 
     ROS_INFO_STREAM("Lifting \n\tannotation "<< annotation->header.frame_id);
     ROS_INFO_STREAM("\t cam_info "<< cam_info->header.frame_id);
@@ -231,8 +231,8 @@ public:
 
 
   void bindAnnotations(cv_mech_turk::ExternalAnnotationConstPtr annotation, 
-                       const robot_msgs::PointCloud& map_2D, const robot_msgs::PointCloud& map_3D, 
-                       robot_msgs::PointCloud& map_final)
+                       const sensor_msgs::PointCloud& map_2D, const sensor_msgs::PointCloud& map_3D, 
+                       sensor_msgs::PointCloud& map_final)
   {
 
     // Allocate overlap buffer to store 1-1 correspondence

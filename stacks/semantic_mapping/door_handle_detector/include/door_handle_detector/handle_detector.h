@@ -86,9 +86,9 @@ private:
    */
   void refineHandleCandidatesWithDoorOutliers (std::vector<int> &handle_indices, std::vector<int> &outliers,
                                                const robot_msgs::Polygon3D &polygon,
-                                               const std::vector<double> &coeff, const robot_msgs::Point32 &door_axis,
+                                               const std::vector<double> &coeff, const geometry_msgs::Point32 &door_axis,
                                                const door_msgs::Door& door_prior,
-                                               robot_msgs::PointCloud& pointcloud) const;
+                                               sensor_msgs::PointCloud& pointcloud) const;
 
   /** \brief Select all points that could represent a handle, including the door
    *
@@ -108,7 +108,7 @@ private:
   void getHandleCandidates (const std::vector<int> &indices, const std::vector<double> &coeff,
                             const robot_msgs::Polygon3D &polygon, const robot_msgs::Polygon3D &polygon_tr,
                             Eigen::Matrix4d transformation, std::vector<int> &handle_indices,
-                            robot_msgs::PointCloud& pointcloud, robot_msgs::PointStamped& viewpoint_cloud) const;
+                            sensor_msgs::PointCloud& pointcloud, geometry_msgs::PointStamped& viewpoint_cloud) const;
 
   /** \brief Select the door outliers that could represent a handle
    *
@@ -128,21 +128,21 @@ private:
   void getDoorOutliers (const std::vector<int> &indices, const std::vector<int> &inliers,
                         const std::vector<double> &coeff, const robot_msgs::Polygon3D &polygon,
                         const robot_msgs::Polygon3D &polygon_tr, Eigen::Matrix4d transformation,
-                        std::vector<int> &outliers, robot_msgs::PointCloud& pointcloud) const;
+                        std::vector<int> &outliers, sensor_msgs::PointCloud& pointcloud) const;
 
   /** \brief Main point cloud callback. */
-  void cloud_cb (const tf::MessageNotifier<robot_msgs::PointCloud>::MessagePtr& cloud);
+  void cloud_cb (const tf::MessageNotifier<sensor_msgs::PointCloud>::MessagePtr& cloud);
 
 
 
-  bool detectHandle (const door_msgs::Door& door, robot_msgs::PointCloud pointcloud,
+  bool detectHandle (const door_msgs::Door& door, sensor_msgs::PointCloud pointcloud,
                      std::vector<door_msgs::Door>& result) const;
 
   mutable ros::Node* node_;
 
   // ROS messages
-  robot_msgs::PointCloud pointcloud_;
-  robot_msgs::Point32 z_axis_;
+  sensor_msgs::PointCloud pointcloud_;
+  geometry_msgs::Point32 z_axis_;
 
 
   tf::TransformListener tf_;

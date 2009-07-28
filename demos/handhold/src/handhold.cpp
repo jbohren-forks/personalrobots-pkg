@@ -37,7 +37,7 @@
 
 #include "tf/transform_datatypes.h"
 #include "robot_msgs/Twist.h"
-#include "robot_msgs/PoseDot.h"
+#include "geometry_msgs/PoseDot.h"
 
 const char *TIP_FRAME = "";
 const char *ROOT_FRAME = "base_link";
@@ -59,7 +59,7 @@ class X {
 public:
   X(ros::NodeHandle &node_) : node(node_)
   {
-    pub_drive = node.advertise<robot_msgs::PoseDot>(DRIVE_TOPIC, 1);
+    pub_drive = node.advertise<geometry_msgs::PoseDot>(DRIVE_TOPIC, 1);
     sub_error = node.subscribe(CONTROLLER + "/state/error", 1, &X::stateCB, this);
 
     node.param("~dead_zone", dead_zone, 0.01);
@@ -75,7 +75,7 @@ public:
 
   void stateCB(const robot_msgs::TwistConstPtr &msg)
   {
-    robot_msgs::PoseDot base_vel;
+    geometry_msgs::PoseDot base_vel;
     //ROS_ERROR("%lf  %lf  %lf -- %lf  %lf", msg->vel.x, dead_zone, apply_dead_zone(msg->vel.x, dead_zone), k_trans, k_trans * apply_dead_zone(msg->vel.x, dead_zone));
     base_vel.vel.vx = k_trans * apply_dead_zone(msg->vel.x, dead_zone);
     base_vel.vel.vy = k_trans * apply_dead_zone(msg->vel.y, dead_zone);
@@ -99,7 +99,7 @@ int main(int argc, char** argv)
   ros::init(argc, argv, "handhold");
   ros::NodeHandle node("handhold");
 
-  robot_msgs::PoseStamped cmd;
+  geometry_msgs::PoseStamped cmd;
   node.param("~pose_frame", cmd.header.frame_id, std::string("base_link"));
   node.param("~pose_x", cmd.pose.position.x, 0.6);
   node.param("~pose_y", cmd.pose.position.y, -0.1);
@@ -109,7 +109,7 @@ int main(int argc, char** argv)
   node.param("~pose_qz", cmd.pose.orientation.z, 0.0);
   node.param("~pose_qw", cmd.pose.orientation.w, 1.0);
 
-  ros::Publisher pub_cmd = node.advertise<robot_msgs::PoseStamped>(CONTROLLER + "/command", 2);
+  ros::Publisher pub_cmd = node.advertise<geometry_msgs::PoseStamped>(CONTROLLER + "/command", 2);
   ROS_ERROR("Publishing to controller on %s (%d)", pub_cmd.getTopic().c_str(), (void*)pub_cmd);
 
   X x(node);

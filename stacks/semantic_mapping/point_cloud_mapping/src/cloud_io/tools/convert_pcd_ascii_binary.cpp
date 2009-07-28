@@ -39,7 +39,7 @@
 
  **/
 
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 #include <point_cloud_mapping/cloud_io.h>
 
 using namespace std;

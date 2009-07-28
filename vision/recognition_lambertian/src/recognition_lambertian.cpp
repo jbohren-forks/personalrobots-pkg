@@ -69,9 +69,9 @@
 #include "sensor_msgs/DisparityInfo.h"
 #include "sensor_msgs/CamInfo.h"
 #include "sensor_msgs/Image.h"
-#include "robot_msgs/PointCloud.h"
-#include "robot_msgs/Point32.h"
-#include "robot_msgs/PointStamped.h"
+#include "sensor_msgs/PointCloud.h"
+#include "geometry_msgs/Point32.h"
+#include "geometry_msgs/PointStamped.h"
 #include "visualization_msgs/Marker.h"
 
 #include <string>
@@ -130,7 +130,7 @@ public:
 
 	ros::ServiceServer service_;
 
-	robot_msgs::PointCloudConstPtr cloud;
+	sensor_msgs::PointCloudConstPtr cloud;
 
 	IplImage* left;
 	IplImage* right;
@@ -288,7 +288,7 @@ private:
 		dispinfo_ = dinfo;
 	}
 
-	void cloudCallback(const robot_msgs::PointCloud::ConstPtr& point_cloud)
+	void cloudCallback(const sensor_msgs::PointCloud::ConstPtr& point_cloud)
 	{
 		ROS_INFO("Cloud callback");
 		if (got_data_) {

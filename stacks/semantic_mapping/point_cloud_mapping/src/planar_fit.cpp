@@ -43,8 +43,8 @@ This node should be used for testing different planar segmentation strategies.
 // ROS core
 #include <ros/node.h>
 // ROS messages
-#include <robot_msgs/PointCloud.h>
-#include <robot_msgs/PointStamped.h>
+#include <sensor_msgs/PointCloud.h>
+#include <geometry_msgs/PointStamped.h>
 // For the normals visualization
 #include <visualization_msgs/Marker.h>
 
@@ -384,7 +384,7 @@ class PlanarFit
       */
     bool
       fitSACPlane (PointCloud *points, vector<int> &inliers, vector<double> &coeff,
-                   const robot_msgs::PointStamped &viewpoint_cloud, double dist_thresh)
+                   const geometry_msgs::PointStamped &viewpoint_cloud, double dist_thresh)
     {
       // Create and initialize the SAC model
       sample_consensus::SACModelPlane *model = new sample_consensus::SACModelPlane ();
@@ -437,7 +437,7 @@ class PlanarFit
       */
     bool
       fitSACPlane (PointCloud *points, vector<int> &indices, vector<int> &inliers, vector<double> &coeff,
-                   const robot_msgs::PointStamped &viewpoint_cloud, double dist_thresh)
+                   const geometry_msgs::PointStamped &viewpoint_cloud, double dist_thresh)
     {
       // Create and initialize the SAC model
       sample_consensus::SACModelPlane *model = new sample_consensus::SACModelPlane ();

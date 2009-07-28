@@ -42,8 +42,8 @@
 // ROS core
 #include <ros/ros.h>
 // ROS messages
-#include <robot_msgs/Point.h>
-#include <robot_msgs/PointCloud.h>
+#include <geometry_msgs/Point.h>
+#include <sensor_msgs/PointCloud.h>
 
 // Cloud geometry
 #include <point_cloud_mapping/geometry/point.h>

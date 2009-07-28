@@ -50,8 +50,8 @@ sizes.
 // ROS core
 #include <ros/node.h>
 // ROS messages
-#include <robot_msgs/Point.h>
-#include <robot_msgs/PointCloud.h>
+#include <geometry_msgs/Point.h>
+#include <sensor_msgs/PointCloud.h>
 
 #include <Eigen/Core>
 #include <point_cloud_mapping/geometry/transforms.h>

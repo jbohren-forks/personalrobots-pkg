@@ -34,9 +34,9 @@
 #include <ros/assert.h>
 #include <ros/time.h>
 #include <people/PositionMeasurement.h>
-#include <robot_msgs/Point.h>
-#include <robot_msgs/PointStamped.h>
-#include <robot_msgs/PointCloud.h>
+#include <geometry_msgs/Point.h>
+#include <geometry_msgs/PointStamped.h>
+#include <sensor_msgs/PointCloud.h>
 #include <people_aware_nav/ConstrainedGoal.h>
 #include <deprecated_msgs/Pose2DFloat32.h>
 #include <tf/transform_listener.h>
@@ -45,10 +45,10 @@
 namespace people_aware_nav
 {
 
-using robot_msgs::Point;
-using robot_msgs::PointStamped;
+using geometry_msgs::Point;
+using geometry_msgs::PointStamped;
 using people::PositionMeasurement;
-using robot_msgs::PointCloud;
+using sensor_msgs::PointCloud;
 using deprecated_msgs::Pose2DFloat32;
 using ros::Node;
 using ros::Time;

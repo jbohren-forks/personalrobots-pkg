@@ -143,9 +143,9 @@ bool Odometry::starting()
   return true;
 }
 
-robot_msgs::PoseDot Odometry::pointVel2D(const robot_msgs::Point& pos, const robot_msgs::PoseDot& vel)
+geometry_msgs::PoseDot Odometry::pointVel2D(const geometry_msgs::Point& pos, const geometry_msgs::PoseDot& vel)
 {
-  robot_msgs::PoseDot result;
+  geometry_msgs::PoseDot result;
   result.vel.vx = vel.vel.vx - pos.y * vel.ang_vel.vz;
   result.vel.vy = vel.vel.vy + pos.x * vel.ang_vel.vz;
   result.vel.vz = 0;
@@ -181,7 +181,7 @@ void Odometry::updateOdometry()
   odometer_angle_ += fabs(odom_delta_th);
 }
 
-void Odometry::getOdometry(robot_msgs::Point &odom, robot_msgs::PoseDot &odom_vel)
+void Odometry::getOdometry(geometry_msgs::Point &odom, geometry_msgs::PoseDot &odom_vel)
 {
   odom = odom_;
   odom_vel = odom_vel_;
@@ -237,7 +237,7 @@ void Odometry::getOdometry(double &x, double &y, double &yaw, double &vx, double
 
 void Wheel::updatePosition()
 {
-  robot_msgs::Point result = steer_offset_;
+  geometry_msgs::Point result = steer_offset_;
   double costh = cos(steer_->position_);
   double sinth = sin(steer_->position_);
   result.x += costh*offset_.x-sinth*offset_.y;
@@ -249,9 +249,9 @@ void Wheel::updatePosition()
 void Odometry::computeBaseVelocity()
 {
   double steer_angle,wheel_speed,costh,sinth;
-  robot_msgs::PoseDot caster_local_velocity;
-  robot_msgs::PoseDot wheel_local_velocity;
-  robot_msgs::Point wheel_position;
+  geometry_msgs::PoseDot caster_local_velocity;
+  geometry_msgs::PoseDot wheel_local_velocity;
+  geometry_msgs::Point wheel_position;
 
   for(int i = 0; i < num_wheels_; i++) 
   {
@@ -286,8 +286,8 @@ void Odometry::computeBaseVelocity()
 double Odometry::getCorrectedWheelSpeed(int index)
 {
   double wheel_speed;
-  robot_msgs::PoseDot caster_local_vel;
-  robot_msgs::PoseDot wheel_local_vel;
+  geometry_msgs::PoseDot caster_local_vel;
+  geometry_msgs::PoseDot wheel_local_vel;
   caster_local_vel.ang_vel.vz = wheel_[index].steer_->velocity_;
   wheel_local_vel = pointVel2D(wheel_[index].offset_,caster_local_vel);
   wheel_speed = wheel_[index].joint_->velocity_-wheel_local_vel.vel.vx/(wheel_radius_);
@@ -392,7 +392,7 @@ void Odometry::publish()
     double x(0.),y(0.0),yaw(0.0),vx(0.0),vy(0.0),vyaw(0.0);
     this->getOdometry(x,y,yaw,vx,vy,vyaw);
 
-    robot_msgs::TransformStamped &out = transform_publisher_->msg_.transforms[0];
+    geometry_msgs::TransformStamped &out = transform_publisher_->msg_.transforms[0];
     out.header.stamp.fromSec(current_time_);
     out.header.frame_id = "odom";
     out.parent_id = "base_footprint";
@@ -406,7 +406,7 @@ void Odometry::publish()
     out.transform.rotation.z = quat_trans.z();
     out.transform.rotation.w = quat_trans.w();
 
-    robot_msgs::TransformStamped &out2 = transform_publisher_->msg_.transforms[1];
+    geometry_msgs::TransformStamped &out2 = transform_publisher_->msg_.transforms[1];
     out2.header.stamp.fromSec(current_time_);
     out2.header.frame_id = "base_link";
     out2.parent_id = "base_footprint";

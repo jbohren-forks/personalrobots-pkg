@@ -117,7 +117,7 @@ bool ForwardKinematicsNode::computeForwardKinematics(ForwardKinematics::Request&
   kinematic_model_->getLinks(links);
   foreach (LinkPtr link, links) {
     resp.link_names.push_back(link->name);
-    robot_msgs::Pose pose;
+    geometry_msgs::Pose pose;
     tf::poseTFToMsg(link->globalTrans, pose);
     resp.link_poses.push_back(pose);
   }

@@ -66,9 +66,9 @@
 #include "sensor_msgs/DisparityInfo.h"
 #include "sensor_msgs/CamInfo.h"
 #include "sensor_msgs/Image.h"
-#include "robot_msgs/PointCloud.h"
-#include "robot_msgs/Point32.h"
-#include "robot_msgs/PoseStamped.h"
+#include "sensor_msgs/PointCloud.h"
+#include "geometry_msgs/Point32.h"
+#include "geometry_msgs/PoseStamped.h"
 #include "visualization_msgs/Marker.h"
 #include "outlet_detection/OutletDetection.h"
 
@@ -101,8 +101,8 @@ public:
 	sensor_msgs::ImageConstPtr dimage_;
 	sensor_msgs::DisparityInfoConstPtr dispinfo_;
 	sensor_msgs::CamInfoConstPtr lcinfo_;
-	robot_msgs::PointCloudConstPtr cloud_;
-	robot_msgs::PointCloudConstPtr base_cloud_;
+	sensor_msgs::PointCloudConstPtr cloud_;
+	sensor_msgs::PointCloudConstPtr base_cloud_;
 
 	sensor_msgs::CvBridge lbridge_;
 	sensor_msgs::CvBridge dbridge_;
@@ -192,7 +192,7 @@ public:
 		}
 
 		marker_pub_ = nh_.advertise<visualization_msgs::Marker>("visualization_marker",1);
-    	head_pub_ = nh_.advertise<robot_msgs::PointStamped>(head_controller_ + "/point_head",10);
+    	head_pub_ = nh_.advertise<geometry_msgs::PointStamped>(head_controller_ + "/point_head",10);
 
 
 		ros::AdvertiseServiceOptions service_opts = ros::AdvertiseServiceOptions::create<outlet_detection::OutletDetection>("~coarse_outlet_detect",
@@ -336,7 +336,7 @@ private:
 		dispinfo_ = dinfo;
 	}
 
-	void cloudCallback(const robot_msgs::PointCloud::ConstPtr& point_cloud)
+	void cloudCallback(const sensor_msgs::PointCloud::ConstPtr& point_cloud)
 	{
 		boost::unique_lock<boost::mutex> lock(data_lock_);
 //		ROS_INFO("got cloud callback");
@@ -345,7 +345,7 @@ private:
 
 
 
-	void baseScanCallback(const robot_msgs::PointCloud::ConstPtr& point_cloud)
+	void baseScanCallback(const sensor_msgs::PointCloud::ConstPtr& point_cloud)
 	{
 		boost::lock_guard<boost::mutex> lock(data_lock_);
 		base_cloud_ = point_cloud;
@@ -484,7 +484,7 @@ private:
      * \brief Publishes a visualization marker for a point.
      * @param p
      */
-    void showMarkers(robot_msgs::PoseStamped pose)
+    void showMarkers(geometry_msgs::PoseStamped pose)
     {
         visualization_msgs::Marker marker;
         marker.header.frame_id = pose.header.frame_id;
@@ -536,7 +536,7 @@ private:
     }
 
 
-    void showPointMarker(robot_msgs::PointStamped point, int id)
+    void showPointMarker(geometry_msgs::PointStamped point, int id)
     {
         visualization_msgs::Marker marker;
         marker.header.frame_id = point.header.frame_id;
@@ -794,7 +794,7 @@ private:
      */
     void filterByHeight(PointCloud stereo_cloud, IplImage* disparity, double min_height, double max_height)
     {
-        robot_msgs::PointCloud base_cloud;
+        sensor_msgs::PointCloud base_cloud;
         tf_.transformPointCloud("base_footprint", stereo_cloud, base_cloud);
 
         // find original image coordinates channels
@@ -811,7 +811,7 @@ private:
 
         if(xchan != -1 && ychan != -1){
             for(size_t i = 0;i < base_cloud.get_pts_size();++i){
-                robot_msgs::Point32 crt_point = base_cloud.pts[i];
+                geometry_msgs::Point32 crt_point = base_cloud.pts[i];
                 int x = (int)(base_cloud.chan[xchan].vals[i]);
                 int y = (int)(base_cloud.chan[ychan].vals[i]);
 
@@ -1369,9 +1369,9 @@ private:
 	}
 
 
-	robot_msgs::PointCloud filterPointCloud(const PointCloud pc, const CvRect& rect)
+	sensor_msgs::PointCloud filterPointCloud(const PointCloud pc, const CvRect& rect)
 	{
-		robot_msgs::PointCloud result;
+		sensor_msgs::PointCloud result;
 		result.header.frame_id = pc.header.frame_id;
 		result.header.stamp = pc.header.stamp;
 
@@ -1441,7 +1441,7 @@ private:
 	}
 
 
-	bool runDetectLoop(robot_msgs::PoseStamped& pose)
+	bool runDetectLoop(geometry_msgs::PoseStamped& pose)
 	{
 		// lock data
 		boost::unique_lock<boost::mutex> images_lock(data_lock_);
@@ -1537,7 +1537,7 @@ public:
 
 
 
-	bool runOutletSpotter(const robot_msgs::PointStamped& request, robot_msgs::PoseStamped& pose)
+	bool runOutletSpotter(const geometry_msgs::PointStamped& request, geometry_msgs::PoseStamped& pose)
 	{
 		bool found = false;
 		subscribeToData();

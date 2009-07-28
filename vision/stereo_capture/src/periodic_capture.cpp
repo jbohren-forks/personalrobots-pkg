@@ -58,9 +58,9 @@
 #include "sensor_msgs/DisparityInfo.h"
 #include "sensor_msgs/CamInfo.h"
 #include "sensor_msgs/Image.h"
-#include "robot_msgs/PointCloud.h"
-#include "robot_msgs/Point32.h"
-#include "robot_msgs/PoseStamped.h"
+#include "sensor_msgs/PointCloud.h"
+#include "geometry_msgs/Point32.h"
+#include "geometry_msgs/PoseStamped.h"
 
 #include <point_cloud_mapping/cloud_io.h>
 
@@ -90,11 +90,11 @@ public:
 	sensor_msgs::CvBridge rbridge_;
 	sensor_msgs::CvBridge dbridge_;
 
-	robot_msgs::PointCloud cloud_;
-	robot_msgs::PointCloud cloud_fetch_;
+	sensor_msgs::PointCloud cloud_;
+	sensor_msgs::PointCloud cloud_fetch_;
 
-	robot_msgs::PointCloud base_cloud_;
-	robot_msgs::PointCloud base_cloud_fetch_;
+	sensor_msgs::PointCloud base_cloud_;
+	sensor_msgs::PointCloud base_cloud_fetch_;
 
 	IplImage* left_;
 	IplImage* right_;

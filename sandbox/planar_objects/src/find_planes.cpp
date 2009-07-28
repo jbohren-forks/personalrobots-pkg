@@ -18,7 +18,7 @@ using namespace robot_msgs;
 #include <point_cloud_mapping/geometry/areas.h>
 
 bool find_planes::fitSACPlanes(PointCloud *points, vector<int> &indices, vector<vector<int> > &inliers, vector<vector<
-    double> > &coeff, const robot_msgs::Point32 &viewpoint_cloud, double dist_thresh, int n_max,
+    double> > &coeff, const geometry_msgs::Point32 &viewpoint_cloud, double dist_thresh, int n_max,
                                int min_points_per_model)
 {
   // Create and initialize the SAC model
@@ -165,7 +165,7 @@ void find_planes::findPlanes(const PointCloud& cloud, int n_planes_max, double s
   }
 }
 
-void find_planes::createPlaneImage(const robot_msgs::PointCloud& cloud, std::vector<int> &inliers,
+void find_planes::createPlaneImage(const sensor_msgs::PointCloud& cloud, std::vector<int> &inliers,
                                    std::vector<double> &plane_coeff,
                                    IplImage *pixOccupied,IplImage *pixFree,IplImage *pixUnknown)
 {

@@ -46,7 +46,7 @@ int
     return (-1);
   }
 
-  robot_msgs::PointCloud points;
+  sensor_msgs::PointCloud points;
   int res = cloud_io::loadPCDFile (argv[1], points);
 
   if (res == -1)
@@ -55,7 +55,7 @@ int
     return (-1);
   }
 
-  fprintf (stdout, "robot_msgs::PointCloud points;\n");
+  fprintf (stdout, "sensor_msgs::PointCloud points;\n");
   fprintf (stdout, "points.pts.resize (%i);\n", (int)points.pts.size ());
 
   if (points.chan.size () > 0)

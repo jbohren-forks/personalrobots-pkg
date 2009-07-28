@@ -75,7 +75,7 @@ public:
      * \param data_in T array with length width
      * \param data_out T array with length width
      */
-    virtual bool update(const robot_msgs::PointCloud& data_in, robot_msgs::PointCloud& data_out)
+    virtual bool update(const sensor_msgs::PointCloud& data_in, sensor_msgs::PointCloud& data_out)
     {
 	std::vector<bool> keep(data_in.pts.size());	
 	sm_.mask(data_in, keep);
@@ -83,7 +83,7 @@ public:
 	return true;
     }
 
-    void fillResult(const robot_msgs::PointCloud& data_in, const std::vector<bool> &keep, robot_msgs::PointCloud& data_out)
+    void fillResult(const sensor_msgs::PointCloud& data_in, const std::vector<bool> &keep, sensor_msgs::PointCloud& data_out)
     {
 	const unsigned int np = data_in.pts.size();
 	
@@ -110,7 +110,7 @@ public:
 	    }
     }
     
-    virtual bool update(const std::vector<robot_msgs::PointCloud> & data_in, std::vector<robot_msgs::PointCloud>& data_out)
+    virtual bool update(const std::vector<sensor_msgs::PointCloud> & data_in, std::vector<sensor_msgs::PointCloud>& data_out)
     {
 	bool result = true;
 	data_out.resize(data_in.size());
@@ -130,7 +130,7 @@ protected:
         
 };
     
-    typedef robot_msgs::PointCloud robot_msgs_PointCloud;
+    typedef sensor_msgs::PointCloud robot_msgs_PointCloud;
     FILTERS_REGISTER_FILTER(SelfFilter, robot_msgs_PointCloud);
     
 }

@@ -35,9 +35,9 @@
 #include <Eigen/Array>
 #include <Eigen/SVD>
 
-#include <robot_msgs/PoseDot.h>
-#include <robot_msgs/Point.h>
-#include <robot_msgs/Vector3.h>
+#include <geometry_msgs/PoseDot.h>
+#include <geometry_msgs/Point.h>
+#include <geometry_msgs/Vector3.h>
 #include <pr2_msgs/Odometry.h>
 
 #include <mechanism_model/robot.h>
@@ -66,13 +66,13 @@ namespace controller
 
       mechanism::JointState *steer_;
 
-      robot_msgs::Point offset_;
+      geometry_msgs::Point offset_;
 
-      robot_msgs::Point steer_offset_;
+      geometry_msgs::Point steer_offset_;
 
       std::string name_;
 
-      robot_msgs::Point position_;
+      geometry_msgs::Point position_;
       
       void initXml(mechanism::RobotState *robot_state, TiXmlElement *config);
 
@@ -102,7 +102,7 @@ namespace controller
 
       void init();
 
-      robot_msgs::PoseDot pointVel2D(const robot_msgs::Point& pos, const robot_msgs::PoseDot& vel);
+      geometry_msgs::PoseDot pointVel2D(const geometry_msgs::Point& pos, const geometry_msgs::PoseDot& vel);
 
       void updateOdometry();
 
@@ -110,7 +110,7 @@ namespace controller
 
       void getOdometry(double &x, double &y, double &yaw, double &vx, double &vy, double &vw);
 
-      void getOdometry(robot_msgs::Point &odom, robot_msgs::PoseDot &odom_vel);
+      void getOdometry(geometry_msgs::Point &odom, geometry_msgs::PoseDot &odom_vel);
 
       void computeBaseVelocity();
 
@@ -144,9 +144,9 @@ namespace controller
 
 //      OdomMatrix16x16 weight_matrix_;
 
-      robot_msgs::Point odom_;
+      geometry_msgs::Point odom_;
 
-      robot_msgs::PoseDot odom_vel_;
+      geometry_msgs::PoseDot odom_vel_;
 
       std::string ils_weight_type_,xml_wheel_name_;
 

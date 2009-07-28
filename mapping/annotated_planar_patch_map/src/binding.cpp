@@ -59,7 +59,7 @@ std::vector<int> computeCorrespondence(const annotated_map_msgs::TaggedPolygonal
   }
 
 
-  robot_msgs::PointCloud centers_from;
+  sensor_msgs::PointCloud centers_from;
   centers_from.pts.resize(num_poly_from);
   result.resize(num_poly_from);
   
@@ -69,7 +69,7 @@ std::vector<int> computeCorrespondence(const annotated_map_msgs::TaggedPolygonal
   }
 
   unsigned int num_poly_to=map_to.polygons.size();
-  robot_msgs::PointCloud centers_to;
+  sensor_msgs::PointCloud centers_to;
   centers_to.pts.resize(num_poly_to);
   
   for(unsigned int iPoly=0;iPoly<num_poly_to;iPoly++){

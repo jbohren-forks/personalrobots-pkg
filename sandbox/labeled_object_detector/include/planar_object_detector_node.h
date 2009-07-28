@@ -39,7 +39,7 @@
 // ROS core
 #include <ros/ros.h>
 // ROS messages
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 
 
 // Cloud kd-tree
@@ -77,7 +77,7 @@ protected:
 
   ros::NodeHandle n_;
   
-  robot_msgs::PointCloudConstPtr cloud_;
+  sensor_msgs::PointCloudConstPtr cloud_;
   
   ros::Subscriber cloud_sub_;
   ros::Publisher  cloud_pub_;
@@ -89,7 +89,7 @@ protected:
   tf::TransformBroadcaster broadcaster_;
 
 
-  robot_msgs::PointCloud full_cloud;
+  sensor_msgs::PointCloud full_cloud;
 
 
 public:
@@ -101,7 +101,7 @@ public:
 
   void setup();
 
-  void cloudCallback(const robot_msgs::PointCloudConstPtr& the_cloud);
+  void cloudCallback(const sensor_msgs::PointCloudConstPtr& the_cloud);
 
 
 };

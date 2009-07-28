@@ -41,7 +41,7 @@
 #include "topic_synchronizer/topic_synchronizer.h"
 
 #include "std_msgs/Empty.h"
-#include "robot_msgs/PointCloud.h"
+#include "sensor_msgs/PointCloud.h"
 
 #include "sensor_msgs/Image.h"
 #include "sensor_msgs/CamInfo.h"
@@ -86,8 +86,8 @@ public:
 
   // Stereo Messages
   boost::mutex stereo_lock_ ;
-  ADD_MSG(robot_msgs::PointCloud, corners_left_) ;
-  ADD_MSG(robot_msgs::PointCloud, corners_right_) ;
+  ADD_MSG(sensor_msgs::PointCloud, corners_left_) ;
+  ADD_MSG(sensor_msgs::PointCloud, corners_right_) ;
   ADD_MSG(sensor_msgs::Image, left_debug_) ;
   ADD_MSG(sensor_msgs::Image, right_debug_) ;
   ADD_MSG(sensor_msgs::CamInfo, left_info_) ;
@@ -95,7 +95,7 @@ public:
 
   // Laser Messages
   boost::mutex laser_lock_ ;
-  ADD_MSG(robot_msgs::PointCloud, laser_measurement_) ;
+  ADD_MSG(sensor_msgs::PointCloud, laser_measurement_) ;
   ADD_MSG(sensor_msgs::Image, laser_debug_) ;
 
   // Empty message used for callbacks
@@ -377,7 +377,7 @@ public:
   }
 
 
-  SensorSample buildCamCornersSample(const robot_msgs::PointCloud& corners, const string& sensor, const string& target)
+  SensorSample buildCamCornersSample(const sensor_msgs::PointCloud& corners, const string& sensor, const string& target)
   {
     SensorSample sample ;
     sample.sensor = sensor ;

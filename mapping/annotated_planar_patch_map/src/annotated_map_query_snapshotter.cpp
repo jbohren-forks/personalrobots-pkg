@@ -39,7 +39,7 @@
 #include "annotated_planar_patch_map/map_base_assembler_srv.h"
 
 // Messages
-//include "robot_msgs/PointCloud.h"
+//include "sensor_msgs/PointCloud.h"
 //include "pr2_mechanism_controllers/LaserScannerSignal.h"
 
 using namespace robot_msgs ;

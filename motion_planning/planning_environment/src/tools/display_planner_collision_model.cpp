@@ -120,8 +120,8 @@ protected:
 	unsigned int n = collisionMap->get_boxes_size();
 	for (unsigned int i = 0 ; i < n ; ++i)
 	{
-	    const robot_msgs::Point32 &point = collisionMap->boxes[i].center;
-	    const robot_msgs::Point32 &extents = collisionMap->boxes[i].extents;
+	    const geometry_msgs::Point32 &point = collisionMap->boxes[i].center;
+	    const geometry_msgs::Point32 &extents = collisionMap->boxes[i].extents;
 	    sendPoint(i, nh_.getName(), point.x, point.y, point.z,
 		      std::max(std::max(extents.x, extents.y), extents.z) * 0.867 + collisionSpaceMonitor_->getPointCloudPadd(),
 		      collisionMap->header);
@@ -238,14 +238,14 @@ private:
 		for (unsigned int i = 0 ; i < nt ; ++i)
 		{
 		    unsigned int v = mesh->triangles[3*i];
-		    robot_msgs::Point pt1;
+		    geometry_msgs::Point pt1;
 		    pt1.x = mesh->vertices[v];
 		    pt1.y = mesh->vertices[v+1];
 		    pt1.z = mesh->vertices[v+2];
 		    mk.points.push_back(pt1);
 
 		    v = mesh->triangles[3*i + 1];
-		    robot_msgs::Point pt2;
+		    geometry_msgs::Point pt2;
 		    pt2.x = mesh->vertices[v];
 		    pt2.y = mesh->vertices[v+1];
 		    pt2.z = mesh->vertices[v+2];
@@ -254,7 +254,7 @@ private:
 		    mk.points.push_back(pt1);
 
 		    v = mesh->triangles[3*i + 2];
-		    robot_msgs::Point pt3;
+		    geometry_msgs::Point pt3;
 		    pt3.x = mesh->vertices[v];
 		    pt3.y = mesh->vertices[v+1];
 		    pt3.z = mesh->vertices[v+2];

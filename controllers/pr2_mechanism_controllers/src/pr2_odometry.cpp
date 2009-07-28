@@ -153,7 +153,7 @@ void Pr2Odometry::updateOdometry()
   odometer_angle_ += fabs(odom_delta_th);
 }
 
-void Pr2Odometry::getOdometry(robot_msgs::Point &odom, robot_msgs::PoseDot &odom_vel)
+void Pr2Odometry::getOdometry(geometry_msgs::Point &odom, geometry_msgs::PoseDot &odom_vel)
 {
   odom = odom_;
   odom_vel = odom_vel_;
@@ -209,9 +209,9 @@ void Pr2Odometry::getOdometry(double &x, double &y, double &yaw, double &vx, dou
 void Pr2Odometry::computeBaseVelocity()
 {
   double steer_angle, wheel_speed, costh, sinth;
-  robot_msgs::PoseDot caster_local_velocity;
-  robot_msgs::PoseDot wheel_local_velocity;
-  robot_msgs::Point wheel_position;
+  geometry_msgs::PoseDot caster_local_velocity;
+  geometry_msgs::PoseDot wheel_local_velocity;
+  geometry_msgs::Point wheel_position;
   for(int i = 0; i < base_kin_.num_wheels_; i++)
   {
     base_kin_.wheel_[i].updatePosition();
@@ -243,8 +243,8 @@ void Pr2Odometry::computeBaseVelocity()
 double Pr2Odometry::getCorrectedWheelSpeed(int index)
 {
   double wheel_speed;
-  robot_msgs::PoseDot caster_local_vel;
-  robot_msgs::PoseDot wheel_local_vel;
+  geometry_msgs::PoseDot caster_local_vel;
+  geometry_msgs::PoseDot wheel_local_vel;
   caster_local_vel.ang_vel.vz = base_kin_.wheel_[index].parent_->joint_->velocity_;
   wheel_local_vel = base_kin_.pointVel2D(base_kin_.wheel_[index].offset_, caster_local_vel);
   wheel_speed = base_kin_.wheel_[index].joint_->velocity_ - wheel_local_vel.vel.vx / (base_kin_.wheel_radius_ * base_kin_.wheel_[index].wheel_radius_scaler_);
@@ -352,7 +352,7 @@ void Pr2Odometry::publish()
     double x(0.), y(0.0), yaw(0.0), vx(0.0), vy(0.0), vyaw(0.0);
     this->getOdometry(x, y, yaw, vx, vy, vyaw);
 
-    robot_msgs::TransformStamped &out = transform_publisher_->msg_.transforms[0];
+    geometry_msgs::TransformStamped &out = transform_publisher_->msg_.transforms[0];
     out.header.stamp.fromSec(current_time_);
     out.header.frame_id = "odom";
     out.parent_id = "base_footprint";
@@ -366,7 +366,7 @@ void Pr2Odometry::publish()
     out.transform.rotation.z = quat_trans.z();
     out.transform.rotation.w = quat_trans.w();
 
-    robot_msgs::TransformStamped &out2 = transform_publisher_->msg_.transforms[1];
+    geometry_msgs::TransformStamped &out2 = transform_publisher_->msg_.transforms[1];
     out2.header.stamp.fromSec(current_time_);
     out2.header.frame_id = "base_link";
     out2.parent_id = "base_footprint";

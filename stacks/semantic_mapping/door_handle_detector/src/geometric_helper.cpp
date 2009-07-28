@@ -47,7 +47,7 @@ using namespace robot_msgs;
   * \param frame_multiplier multiply the ||frame_p1-frame_p2|| distance by this number to wrap all possible situations in X-Y
   */
 void
-  obtainCloudIndicesSet (const robot_msgs::PointCloud &points, vector<int> &indices, door_msgs::Door& door,
+  obtainCloudIndicesSet (const sensor_msgs::PointCloud &points, vector<int> &indices, door_msgs::Door& door,
                          tf::TransformListener *tf, std::string parameter_frame,
                          double min_z_bounds, double max_z_bounds, double frame_multiplier)
 {
@@ -110,11 +110,11 @@ void
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 bool
-  checkDoorEdges (const robot_msgs::Polygon3D &poly, const robot_msgs::Point32 &z_axis, double min_height, double eps_angle,
+  checkDoorEdges (const robot_msgs::Polygon3D &poly, const geometry_msgs::Point32 &z_axis, double min_height, double eps_angle,
                   double &door_frame1, double &door_frame2)
 {
   // Compute the centroid of the polygon
-  robot_msgs::Point32 centroid;
+  geometry_msgs::Point32 centroid;
   cloud_geometry::nearest::computeCentroid (poly, centroid);
 
   // Divide into left and right
@@ -138,9 +138,9 @@ bool
   }
 
   door_frame1 = door_frame2 = 0.0;
-  robot_msgs::Point32 line_dir;
+  geometry_msgs::Point32 line_dir;
   // Parse over all the <left> lines defined by the polygon and check their length
-  std::vector<robot_msgs::Point32> new_points;
+  std::vector<geometry_msgs::Point32> new_points;
   for (unsigned int i = 0; i < inliers_left.size () - 1; i++)
   {
     // Check if the points are equal
@@ -564,7 +564,7 @@ void
   */
 bool
   fitSACPlane (PointCloud &points, vector<int> indices, vector<int> &inliers, vector<double> &coeff,
-               const robot_msgs::PointStamped &viewpoint_cloud, double dist_thresh, int min_pts)
+               const geometry_msgs::PointStamped &viewpoint_cloud, double dist_thresh, int min_pts)
 {
   if ((int)indices.size () < min_pts)
   {
@@ -792,8 +792,8 @@ void
   * \param line_inliers the resultant point inliers
   */
 int
-  fitSACOrientedLine (robot_msgs::PointCloud &points, const std::vector<int> &indices,
-                      double dist_thresh, const robot_msgs::Point32 &axis, double eps_angle, std::vector<int> &line_inliers)
+  fitSACOrientedLine (sensor_msgs::PointCloud &points, const std::vector<int> &indices,
+                      double dist_thresh, const geometry_msgs::Point32 &axis, double eps_angle, std::vector<int> &line_inliers)
 {
   if (indices.size () < 2)
   {
@@ -838,8 +838,8 @@ int
   * \param line_inliers the resultant point inliers
   */
 int
-  fitSACOrientedLine (robot_msgs::PointCloud &points,
-                      double dist_thresh, const robot_msgs::Point32 &axis, double eps_angle, std::vector<int> &line_inliers)
+  fitSACOrientedLine (sensor_msgs::PointCloud &points,
+                      double dist_thresh, const geometry_msgs::Point32 &axis, double eps_angle, std::vector<int> &line_inliers)
 {
   if (points.pts.size () < 2)
   {
@@ -882,7 +882,7 @@ int
   * \param dist_thresh the distance threshold used
   */
 void
-  growCurrentCluster (const robot_msgs::PointCloud &points, const std::vector<int> &indices, const std::vector<int> &cluster,
+  growCurrentCluster (const sensor_msgs::PointCloud &points, const std::vector<int> &indices, const std::vector<int> &cluster,
                       std::vector<int> &inliers, double dist_thresh)
 {
   // Copy the cluster

@@ -9,7 +9,7 @@
 #include <fstream>
 #include <vector>
 
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 
 #include <opencv/cxcore.h>
 #include <opencv/cv.h>
@@ -191,7 +191,7 @@ unsigned int populateParameters()
 
 // TODO: delete this
 void save_clusters(const map<unsigned int, vector<int> >& cluster_centroids_indices,
-                   const robot_msgs::PointCloud& pt_cloud)
+                   const sensor_msgs::PointCloud& pt_cloud)
 {
   ofstream outt("clusters.txt");
 
@@ -215,7 +215,7 @@ void save_clusters(const map<unsigned int, vector<int> >& cluster_centroids_indi
  * File format: x y z label 2
  */
 // --------------------------------------------------------------
-int loadPointCloud(string filename, robot_msgs::PointCloud& pt_cloud, vector<unsigned int>& labels)
+int loadPointCloud(string filename, sensor_msgs::PointCloud& pt_cloud, vector<unsigned int>& labels)
 {
   // ----------------------------------------------
   // Open file
@@ -265,7 +265,7 @@ int loadPointCloud(string filename, robot_msgs::PointCloud& pt_cloud, vector<uns
  * \brief Performs k-means on a point cloud
  */
 // --------------------------------------------------------------
-int kmeansPtCloud(const robot_msgs::PointCloud& pt_cloud,
+int kmeansPtCloud(const sensor_msgs::PointCloud& pt_cloud,
                   const set<unsigned int>& ignore_indices,
                   const kmeans_params_t& kmeans_params,
                   map<unsigned int, vector<float> >& cluster_xyz_centroids,
@@ -412,7 +412,7 @@ int kmeansPtCloud(const robot_msgs::PointCloud& pt_cloud,
  */
 // --------------------------------------------------------------
 void createNodes(RandomField& rf,
-                 robot_msgs::PointCloud& pt_cloud,
+                 sensor_msgs::PointCloud& pt_cloud,
                  cloud_kdtree::KdTree& pt_cloud_kdtree,
                  const vector<unsigned int>& labels,
                  set<unsigned int>& failed_indices)
@@ -422,7 +422,7 @@ void createNodes(RandomField& rf,
 
   // ----------------------------------------------
   // Create interests points over the whole point cloud
-  cv::Vector<robot_msgs::Point32*> interest_pts(nbr_pts, NULL);
+  cv::Vector<geometry_msgs::Point32*> interest_pts(nbr_pts, NULL);
   for (unsigned int i = 0 ; i < nbr_pts ; i++)
   {
     interest_pts[(size_t) i] = &(pt_cloud.pts[i]);
@@ -456,7 +456,7 @@ void createNodes(RandomField& rf,
   }
 }
 
-unsigned int createClusterFeatures(const robot_msgs::PointCloud& pt_cloud,
+unsigned int createClusterFeatures(const sensor_msgs::PointCloud& pt_cloud,
                                    cloud_kdtree::KdTree& pt_cloud_kdtree,
                                    map<unsigned int, vector<int> >& cluster_indices, // TODO: change to const vector<int>
                                    vector<Descriptor3D*>& feature_descriptors,
@@ -551,7 +551,7 @@ void constructRandomField(string pt_cloud_filename, RandomField& rf)
   // ----------------------------------------------------------
   // Load point cloud from file
   ROS_INFO("Loading point cloud...");
-  robot_msgs::PointCloud pt_cloud;
+  sensor_msgs::PointCloud pt_cloud;
   vector<unsigned int> labels;
   if (loadPointCloud(pt_cloud_filename, pt_cloud, labels) < 0)
   {

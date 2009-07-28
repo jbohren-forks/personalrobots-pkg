@@ -48,7 +48,7 @@
 #include <tf/tf.h>
 
 // msgs
-#include <robot_msgs/PoseWithCovariance.h>
+#include <geometry_msgs/PoseWithCovariance.h>
 
 // log files
 #include <fstream>
@@ -78,7 +78,7 @@ public:
   void getEstimate(MatrixWrapper::ColumnVector& estimate);
   void getEstimate(ros::Time time, tf::Transform& estiamte);
   void getEstimate(ros::Time time, tf::Stamped<tf::Transform>& estiamte);
-  void getEstimate(robot_msgs::PoseWithCovariance& estimate);
+  void getEstimate(geometry_msgs::PoseWithCovariance& estimate);
 
   /// Add a measurement to the measurement buffer
   void addMeasurement(const tf::Stamped<tf::Transform>& meas, double covar_multiplier=1);
