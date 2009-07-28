@@ -130,6 +130,8 @@ public:
 
 	ros::ServiceServer service_;
 
+	ros::ServiceClient model_fit_service_;
+
 	sensor_msgs::PointCloudConstPtr cloud;
 
 	IplImage* left;
@@ -203,8 +205,6 @@ public:
 //		advertise<PointCloud> ("~inliers", 1);
 		marker_pub_ = nh_.advertise<visualization_msgs::Marker>("visualization_marker",1);
 
-
-
 		ros::AdvertiseServiceOptions service_opts = ros::AdvertiseServiceOptions::create<recognition_lambertian::FindObjectPoses>("table_top/find_object_poses",
 							boost::bind(&RecognitionLambertian::findObjectPoses, this, _1, _2),ros::VoidPtr(), &service_queue_);
 
@@ -214,12 +214,13 @@ public:
 //        loadTemplates(template_path);
     	service_thread_ = new boost::thread(boost::bind(&RecognitionLambertian::serviceThread, this));
 
+    	model_fit_service_ = ros::service::createClient<recognition_lambertian::ModelFit::Request, recognition_lambertian::ModelFit::Response>("recognition_lambertian/model_fit", true);
+
 		cm = new ChamferMatching();
 	}
 
 	~RecognitionLambertian()
 	{
-
 		service_thread_->join();
 		delete service_thread_;
 		delete cm;
@@ -301,8 +302,6 @@ private:
 	}
 
 
-
-
 	bool findObjectPoses(recognition_lambertian::FindObjectPoses::Request& req,
 			recognition_lambertian::FindObjectPoses::Response& resp)
 	{
@@ -320,13 +319,13 @@ private:
 		// transform all poses to the target frame
 		for (size_t i=0;i<resp.objects.size();++i) {
 			PoseStamped& object_pose = resp.objects[i].object_pose;
-	        if (!tf_.canTransform(target_frame_, object_pose.header.frame_id, object_pose.header.stamp, ros::Duration(5.0))){
+	        if (!tf_.canTransform(target_frame_, object_pose.header.frame_id, object_pose.header.stamp, ros::Duration(0.1))){
 	          ROS_ERROR("Cannot transform from %s to %s", object_pose.header.frame_id.c_str(), target_frame_.c_str());
 	          return false;
 	        }
 			tf_.transformPose(target_frame_, object_pose, object_pose);
 			PoseStamped& grasp_pose = resp.objects[i].grasp_pose;
-	        if (!tf_.canTransform(target_frame_, grasp_pose.header.frame_id, grasp_pose.header.stamp, ros::Duration(5.0))){
+	        if (!tf_.canTransform(target_frame_, grasp_pose.header.frame_id, grasp_pose.header.stamp, ros::Duration(0.1))){
 	          ROS_ERROR("Cannot transform from %s to %s", grasp_pose.header.frame_id.c_str(), target_frame_.c_str());
 	          return false;
 	        }
@@ -1137,7 +1136,7 @@ private:
 			}
 
 			req.cloud = clouds[k];
-			if (ros::service::call("recognition_lambertian/model_fit", req, resp)) {
+			if (model_fit_service_.call(req, resp)) {
 				ROS_INFO("Service call succeeded");
 
 				// TODO: change this to real-world average distance error

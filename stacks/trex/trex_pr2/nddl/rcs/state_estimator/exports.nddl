@@ -1,0 +1,76 @@
+#include "rcs/rcs.nddl"
+
+/**
+ * This file defines actions and state variables
+ * @author Conor McGann
+ */
+
+/**
+ * @brief This is a general utility for tucking arms.
+ */
+class SafetyTuckArms extends  ROSAction {
+
+  predicate Active {}
+
+  predicate Inactive {}
+
+  SafetyTuckArms(Mode _mode){ super(_mode);}
+}
+
+/**
+ * Behavior to extract the gripper from a grasp on the handle
+ */
+class ReleaseHandle extends ROSAction {
+
+  // Redeclare because of bug in parser
+  predicate Active{}
+  predicate Inactive{}
+
+  ReleaseHandle(Mode _mode){
+    super(_mode);
+  }
+};
+
+/**
+ * Will set the laser tilt to a standard configuration. Eventually we will
+ * add parameters for this.
+ */
+class SetLaserTilt extends ROSAction {
+  predicate Inactive{}
+  predicate Active{}
+
+  SetLaserTilt(Mode _mode){
+    super(_mode);
+  }
+}
+
+/**
+ * Tracks the state if the arms are tucked or not. This is a safety issue for mobility.
+ */
+class ArmsTucked extends AgentTimeline {
+  predicate True{}
+  predicate False{};
+  ArmsTucked(Mode _mode){
+    super(_mode, "False");
+  }
+};
+
+/**
+ * This will change to actually track the laser tilt configuration
+ */
+class TiltLaserReady extends AgentTimeline {
+  predicate True{}
+  predicate False{};
+  TiltLaserReady(Mode _mode){
+    super(_mode, "False");
+  }
+};
+
+/**
+ * @brief An internal variable for tracking if the gripper is free or not
+ */
+class GripperFree extends AgentTimeline{
+  predicate True{}
+  predicate False{}
+  GripperFree(Mode _mode){ super(_mode, "True"); }
+};

@@ -96,6 +96,7 @@ class Inertial
 {
 public:
   bool initXml(TiXmlElement* config);
+  double getMass() {return this->mass_;};///make variables public instead?
 private:
   std::vector<TiXmlElement*> maps_;
   Pose origin_;
@@ -139,14 +140,20 @@ public:
   /// returns the parent link. The root link does not have a parent
   Link* getParent();
 
-  /// returns children of the link
-  std::vector<Link*> getChildren();
+  /// returns the parent link name
+  const std::string& getParentName() {return parent_name_;};
 
-  /// returns joint attaching link to parent
-  Joint* getParentJoint();
+  /// returns the origin xml for parent link -> parent joint transform
+  TiXmlElement* getOriginXml() {return origin_xml_;};
+
+  /// returns the parent joint name
+  const std::string& getParentJointName();
+
+  /// returns children of the link
+  std::vector<Link*>* getChildren();
 
   /// returns joints attaching link to children
-  std::vector<Joint*> getChildrenJoint();
+  std::vector<Joint*>* getChildrenJoint();
 
   /// inertial element
   boost::scoped_ptr<Inertial> inertial_;
@@ -157,24 +164,37 @@ public:
   /// collision element
   boost::scoped_ptr<Collision> collision_;
 
+  /// Parent Joint element
+  ///   explicitly stating "parent" because we want directional-ness for tree structure
+  ///   every link can have one parent
+  Joint* parent_joint_;
+
 private:
   std::string name_;
-  std::string joint_name_;
-
-  // store parent and origin, these are to be moved to joint
-  std::string parent_name_;
-  TiXmlElement* origin_xml_;
 
   Link* parent_;
   std::vector<Link*> children_;
 
-  Joint* parent_joint_;
+  std::vector<Joint*> child_joints_;
 
   std::vector<TiXmlElement*> maps_;
 
-protected:
+  // FOR CURRENT URDF --> NEW DOM COMPATIBILITY
+  // store parent Link, Joint and origin as raw string/TiXmlElement
+  // the relationship goes like this for the current urdf definition -> DOM:
+  //   * origin_xml_ defines the parent_joint_pose == the pose transform from parent_link to parent_joint
+  //   * assumes transform from current_link to current_joint IS Identity
+  //   * joint angle IS the pose difference between parent_joint_pose and current_joint_pose
+  std::string parent_joint_name_;
+  std::string parent_name_;
+  TiXmlElement* origin_xml_;
+
+public:
+  void setParent(Link* parent);
   void addChild(Link* child);
 
+  void setParentJoint(Joint* parent);
+  void addChildJoint(Joint* child);
 };
 
 

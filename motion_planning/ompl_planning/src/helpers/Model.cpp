@@ -39,6 +39,7 @@
 #include "ompl_planning/planners/kinematicpRRTSetup.h"
 #include "ompl_planning/planners/kinematicLazyRRTSetup.h"
 #include "ompl_planning/planners/kinematicSBLSetup.h"
+#include "ompl_planning/planners/kinematicpSBLSetup.h"
 #include "ompl_planning/planners/kinematicESTSetup.h"
 #include "ompl_planning/planners/kinematicIKSBLSetup.h"
 #include "ompl_planning/planners/kinematicKPIECESetup.h"
@@ -69,6 +70,9 @@ void ompl_planning::Model::createMotionPlanningInstances(std::vector< boost::sha
 	else
 	if (type == "kinematic::SBL")
 	    add_planner<kinematicSBLSetup>(cfgs[i]);
+	else
+	if (type == "kinematic::pSBL")
+	    add_planner<kinematicpSBLSetup>(cfgs[i]);
 	else
 	if (type == "kinematic::KPIECE")
 	    add_planner<kinematicKPIECESetup>(cfgs[i]);

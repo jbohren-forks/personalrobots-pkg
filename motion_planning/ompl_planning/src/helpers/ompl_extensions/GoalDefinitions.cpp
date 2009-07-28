@@ -83,10 +83,10 @@ void ompl_planning::GoalToState::setup(ompl::base::SpaceInformation *si, ModelBa
     for (unsigned int i = 0 ; i < jc.size() ; ++i)
     {
 	// get the index at which the joint parameters start
-	int idx = model->kmodel->getJointIndexInGroup(jc[i].joint_name, model->groupID);
+	int idx = model->planningMonitor->getKinematicModel()->getJointIndexInGroup(jc[i].joint_name, model->groupID);
 	if (idx >= 0)
 	{
-	    unsigned int usedParams = model->kmodel->getJoint(jc[i].joint_name)->usedParams;
+	    unsigned int usedParams = model->planningMonitor->getKinematicModel()->getJoint(jc[i].joint_name)->usedParams;
 	    
 	    if (jc[i].tolerance_above.size() != jc[i].tolerance_below.size() || jc[i].value.size() != jc[i].tolerance_below.size() || jc[i].value.size() != usedParams)
 		ROS_ERROR("Constraint on joint %s has incorrect number of parameters. Expected %u", jc[i].joint_name.c_str(), usedParams);
@@ -168,7 +168,8 @@ void ompl_planning::GoalToPosition::print(std::ostream &out) const
 	
 double ompl_planning::GoalToPosition::evaluateGoalAux(const ompl::base::State *state, std::vector<bool> *decision) const
 {
-    update(state);
+    EnvironmentDescription *ed = model_->getEnvironmentDescription();
+    ed->kmodel->computeTransformsGroup(state->values, model_->groupID);
     
     if (decision)
 	decision->resize(pce_.size());
@@ -176,6 +177,7 @@ double ompl_planning::GoalToPosition::evaluateGoalAux(const ompl::base::State *s
     for (unsigned int i = 0 ; i < pce_.size() ; ++i)
     {
 	double dPos, dAng;
+	pce_[i]->use(ed->kmodel);
 	pce_[i]->evaluate(&dPos, &dAng);
 	if (decision)
 	    (*decision)[i] = pce_[i]->decide(dPos, dAng);
@@ -184,12 +186,6 @@ double ompl_planning::GoalToPosition::evaluateGoalAux(const ompl::base::State *s
     
     return distance;
 }
-
-void ompl_planning::GoalToPosition::update(const ompl::base::State *state) const
-{
-    model_->kmodel->computeTransformsGroup(state->values, model_->groupID);
-    model_->collisionSpace->updateRobotModel();
-}    
 	
 double ompl_planning::GoalToMultipleConstraints::distanceGoal(const ompl::base::State *s) const
 {

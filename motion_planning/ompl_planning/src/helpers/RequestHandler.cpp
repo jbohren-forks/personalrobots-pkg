@@ -127,15 +127,16 @@ bool ompl_planning::RequestHandler::isRequestValid(ModelMap &models, motion_plan
 void ompl_planning::RequestHandler::configure(const planning_models::StateParams *startState, motion_planning_srvs::MotionPlan::Request &req, PlannerSetup *psetup)
 {
     /* clear memory */
-    psetup->si->clearGoal();
-    psetup->si->clearStartStates();	
-    static_cast<StateValidityPredicate*>(psetup->si->getStateValidityChecker())->clear();
+    psetup->si->clearGoal();           // goal definitions
+    psetup->si->clearStartStates();    // start states
     
+    // clear clones of environments 
+    psetup->model->clearEnvironmentDescriptions();
+
     /* before configuring, we may need to update bounds on the state space */
     static_cast<StateValidityPredicate*>(psetup->si->getStateValidityChecker())->setConstraints(req.path_constraints);
 
     /* set the workspace volume for planning */
-
     if (psetup->model->planningMonitor->getTransformListener()->frameExists(req.params.volumeMin.header.frame_id) &&
 	psetup->model->planningMonitor->getTransformListener()->frameExists(req.params.volumeMax.header.frame_id))
     {
@@ -182,8 +183,9 @@ void ompl_planning::RequestHandler::configure(const planning_models::StateParams
     if (psetup->model->groupID >= 0)
     {
 	/* set the pose of the whole robot */
-	psetup->model->kmodel->computeTransforms(startState->getParams());
-	psetup->model->collisionSpace->updateRobotModel();
+	EnvironmentDescription *ed = psetup->model->getEnvironmentDescription();
+	ed->kmodel->computeTransforms(startState->getParams());
+	ed->collisionSpace->updateRobotModel();
 	
 	/* extract the components needed for the start state of the desired group */
 	startState->copyParamsGroup(start->values, psetup->model->groupID);
@@ -235,9 +237,9 @@ bool ompl_planning::RequestHandler::fixInputStates(PlannerSetup *psetup, double 
 	}
     }
     
-    psetup->model->collisionSpace->setVerbose(true);
+    psetup->model->planningMonitor->getEnvironmentModel()->setVerbose(true);
     bool result = psetup->si->fixInvalidInputStates(rhoStart, rhoGoal, count);
-    psetup->model->collisionSpace->setVerbose(false);
+    psetup->model->planningMonitor->getEnvironmentModel()->setVerbose(false);
     
     return result;
 }
@@ -256,8 +258,8 @@ bool ompl_planning::RequestHandler::computePlan(ModelMap &models, const planning
     
     ROS_INFO("Selected motion planner: '%s', with priority %d", req.params.planner_id.c_str(), psetup->priority);
     
-    psetup->model->collisionSpace->lock();
-    psetup->model->kmodel->lock();
+    psetup->model->planningMonitor->getEnvironmentModel()->lock();
+    psetup->model->planningMonitor->getKinematicModel()->lock();
 
     // configure the planner
     configure(start, req, psetup);
@@ -269,11 +271,11 @@ bool ompl_planning::RequestHandler::computePlan(ModelMap &models, const planning
     sol.approximate = false;
     callPlanner(psetup, req.times, req.allowed_time, sol);
     
-    psetup->model->collisionSpace->unlock();
-    psetup->model->kmodel->unlock();
+    psetup->model->planningMonitor->getEnvironmentModel()->unlock();
+    psetup->model->planningMonitor->getKinematicModel()->unlock();
 
     psetup->si->clearGoal();
-    psetup->si->clearStartStates();	
+    psetup->si->clearStartStates();
 
     /* copy the solution to the result */
     if (sol.path)
@@ -301,7 +303,7 @@ bool ompl_planning::RequestHandler::computePlan(ModelMap &models, const planning
 void ompl_planning::RequestHandler::fillResult(PlannerSetup *psetup, const planning_models::StateParams *start, motion_planning_srvs::MotionPlan::Response &res, const Solution &sol)
 {   
     std::vector<planning_models::KinematicModel::Joint*> joints;
-    psetup->model->kmodel->getJoints(joints);
+    psetup->model->planningMonitor->getKinematicModel()->getJoints(joints);
     res.path.start_state.resize(joints.size());
     for (unsigned int i = 0 ; i < joints.size() ; ++i)
     {
@@ -316,7 +318,7 @@ void ompl_planning::RequestHandler::fillResult(PlannerSetup *psetup, const plann
 	res.path.states.resize(kpath->states.size());
 	res.path.times.resize(kpath->states.size());
 	res.path.names.clear();
-	psetup->model->kmodel->getJointsInGroup(res.path.names, psetup->model->groupID);
+	psetup->model->planningMonitor->getKinematicModel()->getJointsInGroup(res.path.names, psetup->model->groupID);
 	
 	const unsigned int dim = psetup->si->getStateDimension();
 	for (unsigned int i = 0 ; i < kpath->states.size() ; ++i)
@@ -334,7 +336,7 @@ void ompl_planning::RequestHandler::fillResult(PlannerSetup *psetup, const plann
 	res.path.states.resize(dpath->states.size());
 	res.path.times.resize(dpath->states.size());
 	res.path.names.clear();
-	psetup->model->kmodel->getJointsInGroup(res.path.names, psetup->model->groupID);
+	psetup->model->planningMonitor->getKinematicModel()->getJointsInGroup(res.path.names, psetup->model->groupID);
 	
 	const unsigned int dim = psetup->si->getStateDimension();
 	for (unsigned int i = 0 ; i < dpath->states.size() ; ++i)
@@ -413,9 +415,9 @@ bool ompl_planning::RequestHandler::callPlanner(PlannerSetup *psetup, int times,
 			psetup->smoother->smoothMax(path);
 			double tsmooth = (ros::WallTime::now() - startTime).toSec();
 			ROS_DEBUG("          Smoother spent %g seconds (%g seconds in total)", tsmooth, tsmooth + tsolve);
-			dynamic_cast<SpaceInformationKinematicModel*>(psetup->si)->interpolatePath(path, 3.0);
+			dynamic_cast<SpaceInformationKinematicModel*>(psetup->si)->interpolatePath(path, 0.3);
 		    }
-		}		
+		}
 		
 		if (sol.path == NULL || sol.difference > goal->getDifference() || 
 		    (sol.path && sol.difference == goal->getDifference() && sol.path->length() > goal->getSolutionPath()->length()))

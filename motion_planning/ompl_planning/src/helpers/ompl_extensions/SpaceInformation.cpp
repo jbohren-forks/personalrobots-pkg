@@ -41,9 +41,9 @@
 
 void ompl_planning::SpaceInformationKinematicModel::configureOMPLSpace(ModelBase *model)
 {	   
-    kmodel_ = model->kmodel;
+    kmodel_ = model->planningMonitor->getKinematicModel();
     groupID_ = model->groupID;
-    divisions_ = 20;
+    divisions_ = 40;
     
     /* compute the state space for this group */
     m_stateDimension = kmodel_->getModelInfo().groupStateIndexList[groupID_].size();
@@ -202,7 +202,7 @@ bool ompl_planning::SpaceInformationKinematicModel::checkBounds(void)
 
 void ompl_planning::SpaceInformationDynamicModel::configureOMPLSpace(ModelBase *model)
 {	   
-    kmodel_ = model->kmodel;
+    kmodel_ = model->planningMonitor->getKinematicModel();
     groupID_ = model->groupID;
     propagationModel_ = NULL;
     

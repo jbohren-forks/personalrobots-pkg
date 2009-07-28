@@ -62,6 +62,7 @@ public:
   bool initXml(TiXmlElement* config);
   double damping_;
   double friction_;
+  std::vector<TiXmlElement*> maps_;
 };
 
 class JointLimits
@@ -80,6 +81,7 @@ public:
   double max_;
   double effort_;
   double velocity_;
+  std::vector<TiXmlElement*> maps_;
 
 };
 
@@ -113,10 +115,18 @@ private:
   ///            FIXED       N/A
   Vector3 axis_;
 
+  /// parent Link element
   Link* parent_link_;
+
+  /// parent_pose_
+  ///   transform from parent Link to Joint frame in parent
   Pose  parent_pose_;
 
+  /// child Link element
   Link* child_link_;
+
+  /// child_pose_
+  ///   transform from child Link to Joint frame in parent
   Pose  child_pose_;
 
   /// Joint Properties
@@ -128,6 +138,12 @@ private:
   /// \brief A list of maps
   std::vector<TiXmlElement*> maps_;
 
+public:
+  // Joint element has one parent and one child Link
+  void setParentLink(Link* parent) {this->parent_link_ = parent;};
+  void setParentPose(Pose pose) {this->parent_pose_ = pose;};
+  void setChildLink(Link* child) {this->child_link_ = child;};
+  void setChildPose(Pose pose) {this->child_pose_ = pose;};
 };
 
 }

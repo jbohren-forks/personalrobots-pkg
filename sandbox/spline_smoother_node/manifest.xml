@@ -12,6 +12,10 @@
   <depend package="spline_smoother" />
   <depend package="roscpp" />
 
+  <export>
+    <cpp cflags="-I${prefix}/include -I${prefix}/msg/cpp" />
+  </export>
+
 </package>
 
 

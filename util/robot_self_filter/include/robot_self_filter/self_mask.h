@@ -72,6 +72,12 @@ namespace robot_self_filter
 	}
 
 	/** \brief Construct the filter */
+	SelfMask(tf::TransformListener &tf, double scale, double padd) : rm_("robot_description"), tf_(tf)
+	{
+	    configure(scale, padd);
+	}
+	
+	/** \brief Construct the filter */
 	SelfMask(tf::TransformListener &tf, const std::vector<std::string> &links, double scale, double padd) : rm_("robot_description"), tf_(tf)
 	{
 	    configure(links, scale, padd);
@@ -97,7 +103,7 @@ namespace robot_self_filter
 	int  getMask(double x, double y, double z) const;
 	
 	/** \brief Get the set of frames that correspond to the links */
-	void getLinkFrames(std::vector<std::string> &frames) const;
+	void getLinkNames(std::vector<std::string> &frames) const;
 	
     private:
 
@@ -106,6 +112,9 @@ namespace robot_self_filter
 	
 	/** \brief Configure the filter. */
 	bool configure(void);
+
+	/** \brief Configure the filter. */
+	bool configure(double scale, double padd);
 
 	/** \brief Configure the filter. */
 	bool configure(const std::vector<std::string> &links, double scale, double padd);

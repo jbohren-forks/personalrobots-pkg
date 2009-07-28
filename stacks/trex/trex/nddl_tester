@@ -1,0 +1,12 @@
+#!/bin/bash
+
+
+START=`pwd`
+cd `rospack find trex`
+pwd
+. devConfig
+cd $START
+pwd 
+rosrun trex nddl-reader_g_rt $1
+
+

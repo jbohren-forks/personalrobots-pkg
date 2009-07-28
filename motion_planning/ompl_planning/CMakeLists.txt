@@ -15,6 +15,7 @@ rospack_add_library(ompl_planning_helpers src/helpers/ompl_planner/PlannerSetup.
                                           src/helpers/ompl_planner/kinematicKPIECESetup.cpp
                                           src/helpers/ompl_planner/kinematicLBKPIECESetup.cpp
                                           src/helpers/ompl_planner/kinematicSBLSetup.cpp
+                                          src/helpers/ompl_planner/kinematicpSBLSetup.cpp
                                           src/helpers/ompl_planner/dynamicRRTSetup.cpp
                                           src/helpers/ompl_planner/dynamicKPIECESetup.cpp
                                           src/helpers/ompl_extensions/GoalDefinitions.cpp
@@ -23,6 +24,7 @@ rospack_add_library(ompl_planning_helpers src/helpers/ompl_planner/PlannerSetup.
                                           src/helpers/ompl_extensions/ForwardPropagationModels.cpp
 					  src/helpers/RequestHandler.cpp
 					  src/helpers/Model.cpp
+					  src/helpers/ModelBase.cpp
 					  )
 
 rospack_link_boost(ompl_planning_helpers thread)

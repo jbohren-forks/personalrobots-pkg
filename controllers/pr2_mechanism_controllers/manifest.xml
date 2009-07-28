@@ -27,7 +27,6 @@
   <depend package="filters" />
   <depend package="geometry_msgs" />
   <depend package="manipulation_msgs" />
-  <depend package="newmat10" />
 
   <url>http://pr.willowgarage.com</url>
   <repository>http://pr.willowgarage.com/repos</repository>

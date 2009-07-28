@@ -38,17 +38,8 @@
 #define MPBENCH_BENCHMARK_SETUP_HPP
 
 #include <mpglue/setup.h>
-
-// #include <mpglue/costmapper.h>
-// #include <mpglue/plan.h>
 #include <mpglue/planner.h>
 #include <mpglue/footprint.h>
-// #include <sfl/gplan/GridFrame.hpp>
-// #include <boost/shared_ptr.hpp>
-// #include <string>
-// #include <vector>
-// #include <set>
-
 #include <stdexcept>
 
 namespace mpbench {

@@ -93,7 +93,7 @@ public:
         
         if( !pnode->advertiseService("openrave_session",&SessionServer::session_callback,this, 1) )
             return false;
-        _sessionname = pnode->mapName("openrave_session");
+        _sessionname = pnode->resolveName("openrave_session");
 
         // advertise persistent services
         if( !pnode->advertiseService("body_destroy",&SessionServer::body_destroy_srv,this,-1) )

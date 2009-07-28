@@ -290,9 +290,9 @@ int main(int argc, char** argv){
   if (getComponentParam("/trex/enable_push_door"))
     runner.connect<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door>(push_door);
 
-  trex_pr2::SimpleStubAction<door_msgs::Door> release_handle("release_handle");
+  trex_pr2::SimpleStubAction<std_msgs::Empty> release_handle("release_handle");
   if (getComponentParam("/trex/enable_release_handle"))
-    runner.connect<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door>(release_handle);
+    runner.connect<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>(release_handle);
 
   /* Action stubs for plugs */
   trex_pr2::StubAction<std_msgs::Empty, plugs_msgs::PlugStow> detect_plug_on_base("detect_plug_on_base");

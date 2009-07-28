@@ -1,0 +1,3 @@
+manipulation_msgs/SplineTraj spline
+----
+int32 trajectory_id

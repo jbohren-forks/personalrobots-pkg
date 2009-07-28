@@ -47,6 +47,7 @@
 #include "tinyxml/tinyxml.h"
 #include "mechanism_model/transmission.h"
 #include "mechanism_model/robot.h"
+//#include <fstream>
 
 namespace mechanism {
 
@@ -54,7 +55,7 @@ class PR2GripperTransmission : public Transmission
 {
 public:
   PR2GripperTransmission() {}
-  virtual ~PR2GripperTransmission() {}
+  virtual ~PR2GripperTransmission() {/*myfile.close();*/}
 
   bool initXml(TiXmlElement *config, Robot *robot);
 
@@ -78,7 +79,7 @@ private:
   void computeGapStates(double MR,double MR_dot,double MT,
                         double &theta,double &dtheta_dMR,double &dt_dtheta,double &dt_dMR,double &gap_size,double &gap_velocity,double &gap_effort);
   void inverseGapStates(double theta,double &MR, double &dMR_dtheta,double &dtheta_dt,double &dMR_dt);
-
+  //std::ofstream myfile;
   void getRateFromMaxRateJoint(
     std::vector<JointState*>& js, std::vector<Actuator*>& as,
     int &maxRateJointIndex,double &rate);
@@ -89,11 +90,11 @@ private:
   // SOME CONSTANTS
   // the default theta0 when gap size is 0 is needed to assign passive joint angles
   //
+  double screw_reduction_; // in meters/revolution
+  double gear_ratio_;
   static const double theta0_              = 2.97571*M_PI/180.0; // convert to radians
   static const double phi0_                = 29.98717*M_PI/180.0; // convert to radians
-  static const double gear_ratio_          = 29.16; //729.0/25.0;
   static const double t0_                  = 0;  //-0.19543/1000.0; // convert to meters
-  static const double screw_reduction_     = 2.0/1000.0; // convert to meters
   static const double L0_                  = 34.70821/1000.0; // convert to meters
   static const double coef_h_              = 5.200/1000.0; // convert to meters
   static const double coef_a_              = 67.56801/1000.0; // convert to meters
@@ -107,8 +108,6 @@ private:
 extern const double PR2GripperTransmission::t0_              ;
 extern const double PR2GripperTransmission::theta0_          ;
 extern const double PR2GripperTransmission::phi0_            ;
-extern const double PR2GripperTransmission::gear_ratio_      ;
-extern const double PR2GripperTransmission::screw_reduction_ ;
 extern const double PR2GripperTransmission::L0_              ;
 extern const double PR2GripperTransmission::coef_h_          ;
 extern const double PR2GripperTransmission::coef_a_          ;

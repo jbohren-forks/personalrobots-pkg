@@ -74,7 +74,8 @@ void vis_utils::visualizePlanes(const sensor_msgs::PointCloud& cloud,
                                   std::vector<std::vector<double> >& plane_coeff,
                                   std::vector<float>& plane_color,
                                   sensor_msgs::PointCloud& outside,
-                                  ros::Publisher& cloud_planes_pub,ros::Publisher& visualization_pub)
+                                  ros::Publisher& cloud_planes_pub,ros::Publisher& visualization_pub,
+                                  bool convexHull)
 {
   PointCloud colored_cloud = cloud;
 
@@ -105,13 +106,12 @@ void vis_utils::visualizePlanes(const sensor_msgs::PointCloud& cloud,
       }
 
       rgb=HSV_to_RGB( i/(float)plane_indices.size(),0.5,1);
-      Polygon3D polygon;
-      cloud_geometry::areas::convexHull2D(cloud, plane_indices[i], plane_coeff[i],
-                      polygon);
-      visualizePolygon(cloud, polygon,rgb,i,visualization_pub);
-
-
-
+      if(convexHull) {
+        Polygon3D polygon;
+        cloud_geometry::areas::convexHull2D(cloud, plane_indices[i], plane_coeff[i],
+                        polygon);
+        visualizePolygon(cloud, polygon,rgb,i,visualization_pub);
+      }
     }
   }
 

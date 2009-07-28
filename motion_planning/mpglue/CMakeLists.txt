@@ -48,5 +48,8 @@ endif (MPGLUE_HAVE_ESTAR)
 rospack_add_library (mpglue ${MPGLUE_SRCS})
 target_link_libraries (mpglue ${MPGLUE_LIBS})
 
+rospack_add_gtest (test/mpglue_test test/mpglue_test.cpp)
+target_link_libraries (test/mpglue_test mpglue)
+
 ###set (EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 ##rospack_add_executable (mpglue_node src/mpglue_node.cpp)

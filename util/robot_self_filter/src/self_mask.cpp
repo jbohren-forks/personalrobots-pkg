@@ -85,12 +85,17 @@ bool robot_self_filter::SelfMask::configure(const std::vector<std::string> &link
     return true; 
 }
 
+bool robot_self_filter::SelfMask::configure(double scale, double padd)
+{
+    return configure(rm_.getSelfSeeLinks(), scale, padd);
+}
+
 bool robot_self_filter::SelfMask::configure(void)
 {
     return configure(rm_.getSelfSeeLinks(), rm_.getSelfSeeScale(), rm_.getSelfSeePadding());
 }
 
-void robot_self_filter::SelfMask::getLinkFrames(std::vector<std::string> &frames) const
+void robot_self_filter::SelfMask::getLinkNames(std::vector<std::string> &frames) const
 {
     for (unsigned int i = 0 ; i < bodies_.size() ; ++i)
 	frames.push_back(bodies_[i].name);

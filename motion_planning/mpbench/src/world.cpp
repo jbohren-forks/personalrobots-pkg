@@ -95,7 +95,7 @@ namespace mpbench {
   World::
   ~World()
   {
-#define HUNT_SEGFAULT_AT_EXIT
+#undef HUNT_SEGFAULT_AT_EXIT
 #ifdef HUNT_SEGFAULT_AT_EXIT
     cerr << "DBG ~mpbench::World() clearing cost mappers\n";
     costmapper_.clear();
@@ -247,93 +247,36 @@ namespace mpbench {
     if (cm)
       return cm;
     
+    mpglue::costmapper_params
+      base_cm_params(gridframe_.X(),
+		     gridframe_.Y(),
+		     gridframe_.Delta(),
+		     opt_.costmap_inscribed_radius,
+		     opt_.costmap_circumscribed_radius,
+		     opt_.costmap_inflation_radius,
+		     // use zero size as first guess, resize for "ros"
+		     // case though
+		     0, 0);
+    
     if ("sfl" == opt_.costmap_name) {
       if (verbose_os_)
 	*verbose_os_ << "World::getCostmapper(" << task_id << "): creating sfl costmapper\n";
-      boost::shared_ptr<sfl::Mapper2d::travmap_grow_strategy>
-	growstrategy(new sfl::Mapper2d::always_grow());
-      double const buffer_zone(opt_.costmap_inflation_radius - opt_.costmap_inscribed_radius);
-      double const padding_factor(0);
-      // costmap_2d seems to use a quadratic decay in r7215
-      shared_ptr<sfl::travmap_cost_decay> decay(new sfl::exponential_travmap_cost_decay(2));
-      shared_ptr<sfl::Mapper2d> m2d(new sfl::Mapper2d(gridframe_,
-						      0, 0, // grid_xbegin, grid_xend
-						      0, 0, // grid_ybegin, grid_yend
-						      opt_.costmap_inscribed_radius,
-						      sfl::maxval(0.0, buffer_zone),
-						      padding_factor,
-						      0, // freespace cost
-						      opt_.costmap_obstacle_cost,
-						      decay,
-						      "m2d",
-						      sfl::RWlock::Create("m2d"),
-						      growstrategy));
-      cm = mpglue::createCostmapper(m2d, m2d->ComputeCost(opt_.costmap_circumscribed_radius));
+      cm = mpglue::createCostmapper(mpglue::sfl_costmapper_params(base_cm_params,
+								  gridframe_.Theta(),
+								  0, 0,
+								  opt_.costmap_obstacle_cost));
     }
     
     else if ("ros" == opt_.costmap_name) {
-      double const origin_x(bbx0_);
-      double const origin_y(bby0_);
-      unsigned int const
-	cells_size_x(1+static_cast<unsigned int>(ceil((bbx1_ - bbx0_) / opt_.costmap_resolution)));
-      unsigned int const
-	cells_size_y(1+static_cast<unsigned int>(ceil((bby1_ - bby0_) / opt_.costmap_resolution)));
+      base_cm_params.ix_end =
+	1 + static_cast<mpglue::index_t>(ceil((bbx1_ - bbx0_) / opt_.costmap_resolution));
+      base_cm_params.iy_end =
+	1 + static_cast<mpglue::index_t>(ceil((bby1_ - bby0_) / opt_.costmap_resolution));
       if (verbose_os_)
 	*verbose_os_ << "World::getCostmapper(" << task_id << "): creating ROS costmapper\n"
-		     << "  origin_x = " << origin_x << "\n"
-		     << "  origin_y = " << origin_y << "\n"
-		     << "  resolution = " << opt_.costmap_resolution << "\n"
-		     << "  cells_size_x = " << cells_size_x << "\n"
-		     << "  cells_size_y = " << cells_size_y << "\n"
-		     << "  inscribed = " << opt_.costmap_inscribed_radius << "\n"
-		     << "  circumscribed = " << opt_.costmap_circumscribed_radius << "\n"
-		     << "  inflation = " << opt_.costmap_inflation_radius << "\n";
-      double const obstacle_range(8); // whatever
-      double const max_obstacle_height(1); // whatever
-      double const raytrace_range(8);	   // whatever
-      double const weight(1); // whatever: documentation says 0<w<=1 but default is 25???
-      vector<unsigned char> static_data(cells_size_x * cells_size_y);
-      unsigned char const lethal_threshold(1);
-
-#undef XXXX_INIT_CM2D_AT_CREATION
-#ifdef XXXX_INIT_CM2D_AT_CREATION
-      // XXXX to do (maybe): allow non-static maps, but for now just
-      // initialize to the obstacle delta number zero ... later: leave
-      // remaining args at default values, the obstacle updates will
-      // get managed by mpglue
-      shared_ptr<mpglue::ObstacleDelta const> obstdelta(getObstdelta(0));
-      mpglue::index_collection_t const * addidx(obstdelta->getAddedIndices());
-      for (mpglue::index_collection_t::const_iterator iadd(addidx->begin());
-	   iadd != addidx->end(); ++iadd) {
-	if ((iadd->ix < 0) || (iadd->iy < 0))
-	  continue;
-	if ((iadd->ix >= cells_size_x) || (iadd->iy >= cells_size_y))
-	  continue;
-	static_data[iadd->iy * cells_size_x + iadd->ix] = lethal_threshold;
-      }
-#endif // XXXX_INIT_CM2D_AT_CREATION
-      
-      // If we do not give an initial "static" map to Costmap2D, then
-      // it fills everything with NO_INFORMATION, which is actually
-      // LETHAL + 1, and we end up thinking the map is filled with
-      // obstacles... not very useful. So: create an empty initial
-      // map.
-      shared_ptr<costmap_2d::Costmap2D>
-	cm2d(new costmap_2d::Costmap2D(cells_size_x,
-				       cells_size_y,
-				       opt_.costmap_resolution,
-				       origin_x,
-				       origin_y,
-				       opt_.costmap_inscribed_radius,
-				       opt_.costmap_circumscribed_radius,
-				       opt_.costmap_inflation_radius,
-				       obstacle_range,
-				       max_obstacle_height,
-				       raytrace_range,
-				       weight,
-				       static_data,
-				       lethal_threshold));
-      cm = mpglue::createCostmapper(cm2d);
+		     << "  ix_end = " << base_cm_params.ix_end << "\n"
+		     << "  iy_end = " << base_cm_params.iy_end << "\n";
+      cm = mpglue::createCostmapper(mpglue::cm2d_costmapper_params(base_cm_params));
     }
     
     if ( ! cm)

@@ -39,12 +39,10 @@
 
 #include <ompl/base/StateValidityChecker.h>
 #include <collision_space/environment.h>
-#include <planning_environment/util/kinematic_state_constraint_evaluator.h>
 
 #include "ompl_planning/ModelBase.h"
 #include "ompl_planning/extensions/SpaceInformation.h"
 
-#include <boost/thread.hpp>
 #include <iostream>
 
 namespace ompl_planning
@@ -57,55 +55,35 @@ namespace ompl_planning
 	{
 	    ksi_ = si;
 	    dsi_ = NULL;
-	    setupModel(model);
+	    model_ = model;
 	}
 	
         StateValidityPredicate(SpaceInformationDynamicModel *si, ModelBase *model) : ompl::base::StateValidityChecker()
 	{
 	    dsi_ = si;
 	    ksi_ = NULL;
-	    setupModel(model);
+	    model_ = model;
 	}
 
 	virtual ~StateValidityPredicate(void)
 	{
-	    clearClones();
 	}
 	
 	virtual bool operator()(const ompl::base::State *s) const;
 	void setConstraints(const motion_planning_msgs::KinematicConstraints &kc);
 	void clearConstraints(void);
-	void clear(void);
 	void printSettings(std::ostream &out) const;
 	
     protected:
 	
-	void setupModel(ModelBase *model);
 	bool check(const ompl::base::State *s, collision_space::EnvironmentModel *em, planning_models::KinematicModel *km,
-		   planning_environment::KinematicConstraintEvaluatorSet *kce) const;
-	void useConstraints(planning_environment::KinematicConstraintEvaluatorSet *kce, planning_models::KinematicModel *km) const;
-	void clearClones(void);
-	
+		   const planning_environment::KinematicConstraintEvaluatorSet *kce) const;
 	
 	ModelBase                                             *model_;
 	
 	// one of the next two will be instantiated
 	SpaceInformationKinematicModel                        *ksi_;
 	SpaceInformationDynamicModel                          *dsi_;
-	motion_planning_msgs::KinematicConstraints             kc_;
-	
-	planning_environment::KinematicConstraintEvaluatorSet  kce_;
-
-	
-	struct Clone
-	{
-	    collision_space::EnvironmentModel                     *em;
-	    planning_models::KinematicModel                       *km;
-	    planning_environment::KinematicConstraintEvaluatorSet *kce;
-	};
-	
-	mutable std::map<boost::thread::id, Clone>             clones_;
-	mutable boost::mutex                                   lock_;
 	
     };
     

@@ -1,0 +1,11 @@
+#include "rcs/state_estimator/exports.nddl"
+
+SafetyTuckArms safety_tuck_arms = new SafetyTuckArms(Internal);
+
+
+SafetyTuckArms::Active {
+  eq(duration, 1);
+  meets(Inactive s);
+  eq(s.status, SUCCESS);
+}
+

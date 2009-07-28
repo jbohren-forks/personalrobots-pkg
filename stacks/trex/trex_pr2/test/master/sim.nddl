@@ -5,7 +5,7 @@
 #include "rcs/doors/exports.nddl"
 #include "test/sim/rcs.nddl"
 #include "test/sim/mechanism_control.nddl"
-#include "test/sim/safety.nddl"
+#include "test/sim/state_estimator.nddl"
 #include "test/sim/nav.nddl"
 #include "test/sim/plugs.nddl"
 #include "test/sim/doors.nddl"

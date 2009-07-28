@@ -48,7 +48,6 @@
 #include <pr2_mechanism_controllers/TrajectoryStart.h>
 #include <pr2_mechanism_controllers/TrajectoryQuery.h>
 #include <pr2_mechanism_controllers/TrajectoryCancel.h>
-#include <pr2_mechanism_controllers/base_controller.h>
 
 //Kinematics
 #include <trajectory/trajectory.h>
@@ -120,10 +119,6 @@ namespace controller
 
     double last_time_; /**< last time update was called */
 
-    std::vector<control_toolbox::Pid> base_pid_controller_;      /**< Internal PID controllers for controlling the base. */
-
-    std::vector<int> base_joint_index_; /**< index into the list of joints for the virtual joints corresponding to the base */
-
     std::vector<std::string> joint_name_; /**< names of joints controlled by this controller */
 
     std::vector<int> joint_type_; /**< joint types of the joints controlled by this controller, these are derived from the mechanism class */
@@ -137,8 +132,6 @@ namespace controller
     std::vector<double> joint_velocity_errors_;  /**< internal storage for the joint velocity errors (actual - command)*/
 
     std::vector<double> max_allowable_joint_errors_;  /**< max allowable joint errors. These are loaded through the ROS Param server. e.g. <param name="r_shoulder_pan_joint/joint_error_threshold" type="double" value="0.1"/>*/
-
-    controller::BaseControllerNode *base_controller_node_; /**< internal controller used to start up a controller for a robot base */
 
     std::vector<JointPDController *> joint_pv_controllers_; /**< internal set of controllers used to control individual joints */
 
@@ -269,11 +262,6 @@ namespace controller
      */
     void addJoint(const std::string &name);
 
-    /**
-     * @brief Add a virtual joint for a robot base
-     * @param elt A tinyXML element required to initialize the base controller
-     */
-    void addRobotBaseJoint(TiXmlElement *elt);
 
     /**
      * @brief Set the commanded trajectory for the controller
@@ -327,10 +315,6 @@ namespace controller
      */
     bool trajectoryDone();
 
-    /** 
-     * @brief Based on the current position of the base, update the velocity commands to be sent out to the base controller
-     */
-    void updateBaseCommand(double time);
 
     /**   
      * @brief Check if the goal position has been reached 
@@ -490,8 +474,6 @@ namespace controller
     std::vector<trajectory::Trajectory::TPoint> current_joint_position_vector_; /**< Pre-allocated to size 2 x num_joints in the constructor to have a realtime safe container for the current position of the joints */
 
     trajectory::Trajectory::TPoint trajectory_point_; /**< Pre-allocated to size num_joints in the constructor to have a realtime safe container for the current position of the joints */
-
-    int base_theta_index_; /**< Index corresponding to the rotational degree of freedom of a robot base */
 
     int num_trajectory_available_;
 

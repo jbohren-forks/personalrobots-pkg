@@ -38,10 +38,18 @@
 #define OMPL_PLANNING_MODEL_BASE_
 
 #include <planning_environment/monitors/planning_monitor.h>
+#include <planning_environment/util/kinematic_state_constraint_evaluator.h>
 #include <string>
 
 namespace ompl_planning
 {
+    
+    struct EnvironmentDescription
+    {
+	collision_space::EnvironmentModel                           *collisionSpace;
+	planning_models::KinematicModel                             *kmodel;
+	const planning_environment::KinematicConstraintEvaluatorSet *constraintEvaluator;	
+    };
     
     class ModelBase
     {
@@ -49,20 +57,25 @@ namespace ompl_planning
 	ModelBase(void)
 	{
 	    groupID = -1;
-	    kmodel = NULL;
-	    collisionSpace = NULL;
 	    planningMonitor = NULL;
 	}
 	
 	virtual ~ModelBase(void)
 	{
+	    clearEnvironmentDescriptions();
 	}
 	
-	planning_environment::PlanningMonitor *planningMonitor;
-	collision_space::EnvironmentModel     *collisionSpace;
-	planning_models::KinematicModel       *kmodel;
-	std::string                            groupName;
-	int                                    groupID;
+	/** \brief Thread safe function that returns the environment description corresponding to the active thread */
+	EnvironmentDescription* getEnvironmentDescription(void) const;
+	
+	/** \brief Clear the created environment descriptions */
+	void clearEnvironmentDescriptions(void) const;
+	
+	planning_environment::PlanningMonitor                 *planningMonitor;
+	planning_environment::KinematicConstraintEvaluatorSet  constraintEvaluator;
+	
+	std::string                                            groupName;
+	int                                                    groupID;
     };
 
 } // ompl_planning

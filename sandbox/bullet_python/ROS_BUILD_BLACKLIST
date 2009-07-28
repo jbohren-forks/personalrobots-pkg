@@ -1,0 +1,3 @@
+Crashing due to cmake issue for auto generated code.  
+
+Unblacklist after ROS 0.7.1 is released.  r5391 has the fix

@@ -36,6 +36,7 @@
 *********************************************************************/
 #include <ros/ros.h>
 #include <actionlib/action_server.h>
+#include <actionlib/single_goal_action_server.h>
 #include <boost/thread.hpp>
 #include <geometry_msgs/PoseStamped.h>
 #include <actionlib/MoveBaseAction.h>
@@ -46,12 +47,20 @@ typedef actionlib::ActionServer<actionlib::MoveBaseActionGoal, actionlib::MoveBa
 
 typedef MoveBaseActionServer::GoalHandle GoalHandle;
 
+std::vector<GoalHandle> goals;
+
 void goalCB(GoalHandle goal){
   ROS_INFO("In goal callback, got a goal with id: %.2f", goal.getGoalID().id.toSec());
+  goal.setActive();
+  goals.push_back(goal);
 }
 
 void preemptCB(GoalHandle goal){
   ROS_INFO("In preempt callback, got a goal with id: %.2f", goal.getGoalID().id.toSec());
+  for(unsigned int i = 0; i < goals.size(); ++i){
+    if(goals[i] == goal)
+      goals[i].setPreempted();
+  }
 }
 
 int main(int argc, char** argv){

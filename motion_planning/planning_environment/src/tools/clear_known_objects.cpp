@@ -209,6 +209,8 @@ private:
     
     void cloudCallback(const sensor_msgs::PointCloudConstPtr &cloud)
     {
+	ROS_DEBUG("Got pointcloud that is %f seconds old", (ros::Time::now() - cloud->header.stamp).toSec());
+	
 	std::vector<int> mask;
 	bool filter = false;
 	

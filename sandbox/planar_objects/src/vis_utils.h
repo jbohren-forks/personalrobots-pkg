@@ -28,7 +28,7 @@ void visualizePlanes(const sensor_msgs::PointCloud& cloud,
                      std::vector<std::vector<double> >& plane_coeff,
                      std::vector<float>& plane_color,
                      sensor_msgs::PointCloud& outside,
-                     ros::Publisher& cloud_planes_pub,ros::Publisher& visualization_pub_);
+                     ros::Publisher& cloud_planes_pub,ros::Publisher& visualization_pub_,bool convexHull=false);
 
 void visualizePolygon(const sensor_msgs::PointCloud& cloud,robot_msgs::Polygon3D &polygon, int rgb, int id, ros::Publisher& visualization_pub );
 

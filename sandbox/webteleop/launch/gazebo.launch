@@ -1,0 +1,29 @@
+<launch>
+
+  <!--<include file="$(find 2dnav_gazebo)/pr2-wg-amcl.launch"/>-->
+
+  <!--<param name="/use_sim_time" value="true"/>-->
+
+  <!-- start up wg world -->
+  <include file="$(find gazebo)/launch/wg_world.launch"/>
+
+  <!-- start up robot -->
+  <include file="$(find pr2_gazebo)/pr2.launch"/>
+
+  <!-- load map -->
+  <node pkg="map_server" type="map_server" args="$(find gazebo_worlds)/Media/materials/textures/willowMap.png 0.1" respawn="true" machine="three" />
+
+  <!-- Tug Arms For Navigation -->
+  <node pkg="pr2_mechanism_controllers" type="tuckarm.py" args="l" output="screen" />
+  <node pkg="pr2_mechanism_controllers" type="tuckarm.py" args="r" output="screen" />
+
+  <!-- nav-stack -->
+  <include file="$(find 2dnav_gazebo)/2dnav-stack-amcl.launch"/>
+
+  <node pkg="image_publisher" type="encoder">
+    <remap from="image" to="/stereo/left_image"/>
+  </node>
+
+
+</launch>
+

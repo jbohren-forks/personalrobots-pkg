@@ -45,7 +45,7 @@ public:
     SelfFilter(void) : sf_(tf_), mn_(tf_, boost::bind(&SelfFilter::cloudCallback, this, _1), "cloud_in", "", 1)
     {
 	std::vector<std::string> frames;
-	sf_.getLinkFrames(frames);
+	sf_.getLinkNames(frames);
 	mn_.setTargetFrame(frames);
 	nh_.param<std::string>("~annotate", annotate_, std::string());
 	pointCloudPublisher_ = nh_.advertise<sensor_msgs::PointCloud>("cloud_out", 1);
@@ -58,6 +58,9 @@ private:
     void cloudCallback(const sensor_msgs::PointCloudConstPtr &cloud)
     {
 	sensor_msgs::PointCloud out;
+
+	ROS_DEBUG("Got pointcloud that is %f seconds old", (ros::Time::now() - cloud->header.stamp).toSec());
+	
 	std::vector<int> mask;
 	ros::WallTime tm = ros::WallTime::now();
 	sf_.mask(*cloud, mask);

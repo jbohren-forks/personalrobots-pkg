@@ -49,6 +49,84 @@ namespace rdf_parser{
 
 /// RDF is a class containing DOMified robot description file
 /// Everyone using RDF should take data from the DOM rather than parsing it themselves
+///
+/// The parser now parses old URDF into new DOM
+///
+/// Example Robot Description Describing a Parent Link "P", a Child Link "C", and a Joint "J"
+///
+/// OLD URDF:
+///   <link name="C">
+///     <inertial>
+///       <mass value="10"/>
+///       <origin xyz="0 0 0" rpy="0 0 0"/>
+///       <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1"/>
+///     </inertial>
+///     <visual>
+///       <origin xyz="0 0 0" rpy="0 0 0"/>
+///       <geometry>
+///         <box size="1 1 1"/>
+///       </geometry>
+///     </visual>
+///     <collision>
+///       <origin xyz="0 0 0" rpy="0 0 0"/>
+///       <geometry>
+///         <box size="1.01 1.01 1.01"/>
+///       </geometry>
+///     </collision>
+///
+///     <parent name="P"/>  <!-- name of the parent link. in new URDF, this is in <link><joint>, not here -->
+///
+///     <!-- <origin> is the transform from parent Link to this Joint in parent Link frame -->
+///     <origin xyz="0 0 0" rpy="0 0 0"/> <!-- in new URDF, this is in <joint><parent>, not here -->
+///
+///     <joint name="J" type="revolute">
+///       <!-- joint properties -->
+///       <axis xyz="0 1 0"/>
+///       <joint_properties damping="1" friction="0"/>
+///       <limit min="0" max="1" effort="1000" velocity="1"/>
+///
+///       <!-- OPTIONAL: transform from this Joint in child Link frame to child Link (equivalent to <child> in new URDF) -->
+///       <anchor xyz="0 0 0"/>
+///     </joint>
+///   </link>
+///
+/// NEW PROPOSED URDF that corresponds to the new DOM:
+///   <link name="C">
+///     <inertial>
+///       <mass value="10"/>
+///       <origin xyz="0 0 0" rpy="0 0 0"/>
+///       <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1"/>
+///     </inertial>
+///     <visual>
+///       <origin xyz="0 0 0" rpy="0 0 0"/>
+///       <geometry>
+///         <box size="1 1 1"/>
+///       </geometry>
+///     </visual>
+///     <collision>
+///       <origin xyz="0 0 0" rpy="0 0 0"/>
+///       <geometry>
+///         <box size="1.01 1.01 1.01"/>
+///       </geometry>
+///     </collision>
+///     <joint name="J" type="revolute">
+///       <!-- joint properties -->
+///       <axis xyz="0 1 0"/>
+///       <joint_properties damping="1" friction="0"/>
+///       <limit min="0" max="1" effort="1000" velocity="1"/>
+///
+///       <parent name="P"/>  <!-- in old URDF, this is in <link> not in <joint> -->
+///         <!-- <origin> is the transform from parent Link to this Joint in parent Link frame -->
+///         <origin xyz="0 0 0" rpy="0 0 0"/> <!-- in old URDF, this is in <link> not in <joint><parent> -->
+///       </parent>
+///
+///       <!-- OPTIONAL: transform from child Link to this Joint in child Link frame (equivalent to OBSOLETE "anchor" tag) -->
+///       <child>
+///         <origin xyz="0 0 0" rpy="0 0 0"/> <!-- in old URDF, this is undefined and assumed to be identity transform -->
+///       </child>
+///     </joint>
+///   </link>
+
 class RDF
 {
 public:
@@ -57,8 +135,9 @@ public:
   bool initXml(TiXmlElement *xml);
   Link* getRoot() {return this->root_link_;};
 
+  std::vector<TiXmlElement*> maps_;
 private:
-  bool getLink(TiXmlElement *link_xml, Link& link);
+  Link* getLink(const std::string& name);
   void addChildren(Link* p);
 
   /// Every Robot Description File can be described as a

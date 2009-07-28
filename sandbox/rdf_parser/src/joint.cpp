@@ -44,58 +44,72 @@ bool JointProperties::initXml(TiXmlElement* config)
 {
   // Get joint damping
   const char* damping_str = config->Attribute("damping");
-  if (damping_str)
-    std::cout << "joint_properties: no damping\n" << std::endl;
+  if (damping_str == NULL)
+    std::cout << "INFO: joint_properties: no damping" << std::endl;
   else
     this->damping_ = atof(damping_str);
 
   // Get joint friction
   const char* friction_str = config->Attribute("friction");
-  if (friction_str)
-    std::cout << "joint_properties: no friction\n" << std::endl;
+  if (friction_str == NULL)
+    std::cout << "INFO: joint_properties: no friction" << std::endl;
   else
     this->friction_ = atof(friction_str);
 
-  if (damping_str || friction_str)
-    return true;
-  else
+  // Maps
+  for (TiXmlElement* map_xml = config->FirstChildElement("map"); map_xml; map_xml = map_xml->NextSiblingElement("map"))
+    this->maps_.push_back(map_xml);
+
+  if (damping_str == NULL && friction_str == NULL)
+  {
+    std::cerr << "ERROR: joint_properties element specified with no damping and no friction" << std::endl;
     return false;
+  }
+  else
+    return true;
 }
 
 bool JointLimits::initXml(TiXmlElement* config)
 {
   // Get min joint limit
   const char* min_str = config->Attribute("min");
-  if (min_str)
-    std::cout << "joint limit: no min\n" << std::endl;
+  if (min_str == NULL)
+    std::cout << "INFO: joint limit: no min" << std::endl;
   else
     this->min_ = atof(min_str);
 
   // Get min joint limit
   const char* max_str = config->Attribute("max");
-  if (max_str)
-    std::cout << "joint limit: no max\n" << std::endl;
+  if (max_str == NULL)
+    std::cout << "INFO: joint limit: no max" << std::endl;
   else
     this->max_ = atof(max_str);
 
   // Get min joint limit
   const char* effort_str = config->Attribute("effort");
-  if (effort_str)
-    std::cout << "joint limit: no effort\n" << std::endl;
+  if (effort_str == NULL)
+    std::cout << "INFO: joint limit: no effort" << std::endl;
   else
     this->effort_ = atof(effort_str);
 
   // Get min joint limit
   const char* velocity_str = config->Attribute("velocity");
-  if (velocity_str)
-    std::cout << "joint limit: no velocity\n" << std::endl;
+  if (velocity_str == NULL)
+    std::cout << "INFO: joint limit: no velocity" << std::endl;
   else
     this->velocity_ = atof(velocity_str);
 
-  if (min_str || max_str || effort_str || velocity_str)
-    return true;
-  else
+  // Maps
+  for (TiXmlElement* map_xml = config->FirstChildElement("map"); map_xml; map_xml = map_xml->NextSiblingElement("map"))
+    this->maps_.push_back(map_xml);
+
+  if (min_str == NULL && max_str == NULL && effort_str == NULL && velocity_str == NULL)
+  {
+    std::cerr << "ERROR: joint limit element specified with no readable attributes" << std::endl;
     return false;
+  }
+  else
+    return true;
 }
 
 const std::string& Joint::getName() const
@@ -108,13 +122,20 @@ bool Joint::initXml(TiXmlElement* config)
   const char *name = config->Attribute("name");
   if (!name)
   {
-    std::cerr << "unnamed joint found\n" << std::endl;
+    std::cerr << "ERROR: unnamed joint found" << std::endl;
     return false;
   }
   this->name_ = name;
 
   // Get Joint type
-  std::string type_str = config->Attribute("type");
+  const char* type = config->Attribute("type");
+  if (!type)
+  {
+    std::cout << "WARN: joint " << name_
+              << " has no type, check to see if it's a reference." << std::endl;
+    return false;
+  }
+  std::string type_str = type;
   if (type_str == "planar")
     type_ = PLANAR;
   else if (type_str == "floating")
@@ -127,7 +148,7 @@ bool Joint::initXml(TiXmlElement* config)
     type_ = FIXED;
   else
   {
-    std::cerr << "Joint " << this->name_ << " has no known type" << std::endl;
+    std::cerr << "ERROR: Joint " << this->name_ << " has no known type: " << type_str << std::endl;
     return false;
   }
 
@@ -137,47 +158,57 @@ bool Joint::initXml(TiXmlElement* config)
     // axis
     TiXmlElement *axis_xml = config->FirstChildElement("axis");
     if (axis_xml)
-    if (this->axis_.init(axis_xml->Attribute("xyz")))
     {
-      if (this->type_ == PLANAR)
-        std::cout << "PLANAR Joint " << this->name_
-                  << " will require an axis tag in the future"
-                  << " which indicates the surface normal of the plane."
-                  << std::endl;
-      else
+      if (!axis_xml->Attribute("xyz"))
+        std::cout << "WARN: no xyz attribute for axis element for Joint link: "
+                  << this->name_ << ", using default values" << std::endl;
+      else if (!this->axis_.init(axis_xml->Attribute("xyz")))
       {
-        std::cerr << "Joint " << this->name_
-                  << " has a malformed axis tag" << std::endl;
-        return false;
+        if (this->type_ == PLANAR)
+          std::cout << "INFO: PLANAR Joint " << this->name_
+                    << " will require an axis tag in the future"
+                    << " which indicates the surface normal of the plane."
+                    << std::endl;
+        else
+        {
+          std::cerr << "ERROR: Malformed axis element for joint:"
+                    << this->name_ << std::endl;
+          return false;
+        }
       }
     }
   }
 
-  /// Get limit
+  // Get limit
   TiXmlElement *limit_xml = config->FirstChildElement("limit");
   if (limit_xml)
   {
     joint_limits_.reset(new JointLimits);
     if (!joint_limits_->initXml(limit_xml))
     {
-      std::cerr << "Could not parse limit element for joint:"
+      std::cerr << "ERROR: Could not parse limit element for joint:"
                 << this->name_ << std::endl;
       joint_limits_.reset();
     }
   }
 
-  /// Get properties
+  // Get properties
   TiXmlElement *prop_xml = config->FirstChildElement("joint_properties");
   if (prop_xml)
   {
     joint_properties_.reset(new JointProperties);
     if (!joint_properties_->initXml(prop_xml))
     {
-      std::cerr << "Could not parse joint_properties element for joint:"
+      std::cerr << "ERROR: Could not parse joint_properties element for joint:"
                 << this->name_ << std::endl;
       joint_properties_.reset();
     }
   }
+
+  // Get Maps
+  for (TiXmlElement* map_xml = config->FirstChildElement("map"); map_xml; map_xml = map_xml->NextSiblingElement("map"))
+    this->maps_.push_back(map_xml);
+
   return true;
 }
 
