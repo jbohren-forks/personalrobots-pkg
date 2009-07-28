@@ -17,7 +17,7 @@
   </export>
   <depend package="roscpp"/>
   <depend package="std_msgs"/>
-  <depend package="robot_msgs"/>
+  <depend package="geometry_msgs"/>
   <depend package="opencv_latest"/>
   <depend package="sensor_msgs"/>
 </package>
