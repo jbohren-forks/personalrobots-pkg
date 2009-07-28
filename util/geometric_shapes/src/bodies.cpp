@@ -370,8 +370,9 @@ void bodies::Box::updateInternalData(void)
     m_normalW = basis.getColumn(1);
     m_normalH = basis.getColumn(2);
 
-    m_corner1 = m_center - m_normalL * m_length2 - m_normalW * m_width2 - m_normalH * m_height2;
-    m_corner2 = m_center + m_normalL * m_length2 + m_normalW * m_width2 + m_normalH * m_height2;
+    const btVector3 tmp(m_normalL * m_length2 + m_normalW * m_width2 + m_normalH * m_height2);
+    m_corner1 = m_center - tmp;
+    m_corner2 = m_center + tmp;
 }
 
 double bodies::Box::computeVolume(void) const
