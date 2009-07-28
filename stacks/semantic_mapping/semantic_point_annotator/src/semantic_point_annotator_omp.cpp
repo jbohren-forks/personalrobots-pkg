@@ -67,7 +67,6 @@
 #include <sys/time.h>
 
 using namespace std;
-using namespace robot_msgs;
 using namespace mapping_msgs;
 
 struct Region
@@ -84,8 +83,8 @@ class SemanticPointAnnotator
   public:
 
     // ROS messages
-    PointCloud cloud_, cloud_annotated_;
-    Point32 z_axis_;
+    sensor_msgs::PointCloud cloud_, cloud_annotated_;
+    geometry_msgs::Point32 z_axis_;
     PolygonalMap pmap_;
 
     tf::TransformListener tf_;
@@ -158,7 +157,7 @@ class SemanticPointAnnotator
 
       node_.subscribe (cloud_topic, cloud_, &SemanticPointAnnotator::cloud_cb, this, 1);
 
-      node_.advertise<PointCloud> ("cloud_annotated", 1);
+      node_.advertise<sensor_msgs::PointCloud> ("cloud_annotated", 1);
 
       z_axis_.x = 0; z_axis_.y = 0; z_axis_.z = 1;
 
@@ -178,7 +177,7 @@ class SemanticPointAnnotator
       * \param min_pts_per_cluster minimum number of points that a cluster may contain (default = 1)
       */
     void
-      findClusters (const PointCloud &points, const vector<int> &indices, double tolerance, vector<Region> &clusters,
+      findClusters (const sensor_msgs::PointCloud &points, const vector<int> &indices, double tolerance, vector<Region> &clusters,
                     int nx_idx, int ny_idx, int nz_idx,
                     unsigned int min_pts_per_cluster = 1)
     {
@@ -251,7 +250,7 @@ class SemanticPointAnnotator
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void
-      sortConcaveHull2D (const PointCloud &points, const vector<int> &indices, Polygon3D &poly)
+    sortConcaveHull2D (const sensor_msgs::PointCloud &points, const vector<int> &indices, robot_msgs::Polygon3D &poly)
     {
       // Create a tree for these points
       cloud_kdtree::KdTree* tree = new cloud_kdtree::KdTreeANN (points, indices);
@@ -297,7 +296,7 @@ class SemanticPointAnnotator
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     int
-      fitSACPlane (PointCloud *points, vector<int> *indices, vector<vector<int> > &inliers, vector<vector<double> > &coeff)
+      fitSACPlane (sensor_msgs::PointCloud *points, vector<int> *indices, vector<vector<int> > &inliers, vector<vector<double> > &coeff)
     {
       vector<int> empty_inliers;
       vector<double> empty_coeffs;
@@ -316,7 +315,7 @@ class SemanticPointAnnotator
       sac->setProbability (0.99);
       model->setDataSet (points, *indices);
 
-      PointCloud pts (*points);
+      sensor_msgs::PointCloud pts (*points);
       int nr_points_left = indices->size ();
       int nr_models = 0;
       while (nr_points_left > sac_min_points_left_)
@@ -355,12 +354,12 @@ class SemanticPointAnnotator
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void
-      getObjectClassForParallel (PointCloud *points, vector<int> *indices, vector<double> *coeff,
-                                 PointStamped map_origin, double &rgb)
+      getObjectClassForParallel (sensor_msgs::PointCloud *points, vector<int> *indices, vector<double> *coeff,
+                                 geometry_msgs::PointStamped map_origin, double &rgb)
     {
       double r = 0, g = 0, b = 0;
       // Get all planes parallel to the floor (perpendicular to Z)
-      Point32 robot_origin;
+      geometry_msgs::Point32 robot_origin;
       robot_origin.x = map_origin.point.x;
       robot_origin.y = map_origin.point.y;
       robot_origin.z = map_origin.point.z;
@@ -400,12 +399,12 @@ class SemanticPointAnnotator
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void
-      getObjectClassForPerpendicular (PointCloud *points, vector<int> *indices,
+      getObjectClassForPerpendicular (sensor_msgs::PointCloud *points, vector<int> *indices,
                                       double &rgb)
     {
       double r, g, b;
       // Get the minimum and maximum bounds of the plane
-      Point32 minP, maxP;
+      geometry_msgs::Point32 minP, maxP;
       cloud_geometry::statistics::getMinMax (*points, *indices, minP, maxP);
       // Test for wall
       if (maxP.z > rule_wall_)
@@ -425,8 +424,8 @@ class SemanticPointAnnotator
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void
-      computeConcaveHull (const PointCloud &points, const vector<int> &indices, const vector<double> &coeff,
-                          const vector<vector<int> > &neighbors, Polygon3D &poly)
+      computeConcaveHull (const sensor_msgs::PointCloud &points, const vector<int> &indices, const vector<double> &coeff,
+                          const vector<vector<int> > &neighbors, robot_msgs::Polygon3D &poly)
     {
       Eigen::Vector3d u, v;
       cloud_geometry::getCoordinateSystemOnPlane (coeff, u, v);
@@ -451,7 +450,7 @@ class SemanticPointAnnotator
     // Callback
     void cloud_cb ()
     {
-      PointStamped base_link_origin, map_origin;
+      geometry_msgs::PointStamped base_link_origin, map_origin;
       base_link_origin.point.x = base_link_origin.point.y = base_link_origin.point.z = 0.0;
       base_link_origin.header.frame_id = "base_link";
       base_link_origin.header.stamp = ros::Time();

@@ -79,11 +79,11 @@ class IncGroundRemoval
   public:
 
     // ROS messages
-    PointCloud laser_cloud_, cloud_, cloud_noground_;
+    sensor_msgs::PointCloud laser_cloud_, cloud_, cloud_noground_;
 
     tf::TransformListener tf_;
-    tf::MessageNotifier<PointCloud>* cloud_notifier_;
-    PointStamped viewpoint_cloud_;
+    tf::MessageNotifier<sensor_msgs::PointCloud>* cloud_notifier_;
+    geometry_msgs::PointStamped viewpoint_cloud_;
 
     // Parameters
   double z_threshold_, ground_slope_threshold_;
@@ -124,9 +124,9 @@ class IncGroundRemoval
         ROS_WARN ("Trying to subscribe to %s, but the topic doesn't exist!", cloud_topic.c_str ());
 
       //subscribe (cloud_topic.c_str (), laser_cloud_, &IncGroundRemoval::cloud_cb, 1);
-      cloud_notifier_ = new tf::MessageNotifier<PointCloud> (&tf_, ros::Node::instance (),
+      cloud_notifier_ = new tf::MessageNotifier<sensor_msgs::PointCloud> (&tf_, ros::Node::instance (),
                         boost::bind (&IncGroundRemoval::cloud_cb, this, _1), cloud_topic, "odom_combined", 50);
-      node_.advertise<PointCloud> ("cloud_ground_filtered", 1);
+      node_.advertise<sensor_msgs::PointCloud> ("cloud_ground_filtered", 1);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -150,7 +150,7 @@ class IncGroundRemoval
       * \param idx the index of the channel containing the laser scan index
       */
     void
-      splitPointsBasedOnLaserScanIndex (PointCloud *points, vector<int> *indices, vector<vector<int> > &clusters, int idx)
+      splitPointsBasedOnLaserScanIndex (sensor_msgs::PointCloud *points, vector<int> *indices, vector<vector<int> > &clusters, int idx)
     {
       vector<int> seed_queue;
       int prev_idx = -1;
@@ -194,7 +194,7 @@ class IncGroundRemoval
       * \param inliers the resultant inliers
       */
     bool
-      fitSACLine (PointCloud *points, vector<int> *indices, vector<int> &inliers)
+      fitSACLine (sensor_msgs::PointCloud *points, vector<int> *indices, vector<int> &inliers)
     {
       if ((int)indices->size () < sac_min_points_per_model_)
         return (false);
@@ -233,7 +233,7 @@ class IncGroundRemoval
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Callback
-    void cloud_cb (const tf::MessageNotifier<PointCloud>::MessagePtr& msg)
+    void cloud_cb (const tf::MessageNotifier<sensor_msgs::PointCloud>::MessagePtr& msg)
     {
       laser_cloud_ = *msg;
       //check to see if the point cloud is empty
@@ -400,10 +400,10 @@ class IncGroundRemoval
       * \param tf a pointer to a TransformListener object
       */
     void
-      getCloudViewPoint (string cloud_frame, PointStamped &viewpoint_cloud, tf::TransformListener *tf)
+      getCloudViewPoint (string cloud_frame, geometry_msgs::PointStamped &viewpoint_cloud, tf::TransformListener *tf)
     {
       // Figure out the viewpoint value in the point cloud frame
-      PointStamped viewpoint_laser;
+      geometry_msgs::PointStamped viewpoint_laser;
       viewpoint_laser.header.frame_id = laser_tilt_mount_frame_;
       // Set the viewpoint in the laser coordinate system to 0, 0, 0
       viewpoint_laser.point.x = viewpoint_laser.point.y = viewpoint_laser.point.z = 0.0;
