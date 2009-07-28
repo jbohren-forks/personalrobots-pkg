@@ -42,7 +42,6 @@
 #include "boost/thread.hpp"
 
 using namespace ros;
-using namespace robot_msgs;
 using namespace sensor_msgs;
 
 
@@ -57,9 +56,9 @@ public:
 
   Node* node_;
 
-  PointCloud cloud_msg_ ;
+  sensor_msgs::PointCloud cloud_msg_ ;
   boost::mutex cloud_mutex_ ;
-  PointCloud safe_cloud_ ;
+  sensor_msgs::PointCloud safe_cloud_ ;
   int cloud_counter_ ;
 
   LaserScan scan_msg_ ;
