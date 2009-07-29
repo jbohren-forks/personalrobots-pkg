@@ -45,42 +45,44 @@ int point_cloud_clustering::PointCloudClustering::computeClusterCentroids(const 
 {
   cluster_centroids.clear();
 
-  unsigned int total_nbr_pts = pt_cloud.pts.size();
+  const unsigned int nbr_total_pts = pt_cloud.pts.size();
 
   // Iterate over clusters (cluster_label --> [point cloud indices]
-  map<unsigned int, vector<int> >::const_iterator iter_clusters;
-  for (iter_clusters = clusters.begin(); iter_clusters != clusters.end() ; iter_clusters++)
+  for (map<unsigned int, vector<int> >::const_iterator iter_clusters = clusters.begin() ; iter_clusters
+      != clusters.end() ; iter_clusters++)
   {
     // retrieve point indices of current cluster
-    const vector<int>& curr_pt_indices = iter_clusters->second;
+    const vector<int>& curr_cluster_pt_indices = iter_clusters->second;
+    const unsigned int curr_cluster_nbr_pts = curr_cluster_pt_indices.size();
 
     // accumulate sum coordinates for each point in cluster
     vector<float> curr_centroid(3, 0.0);
-    unsigned int curr_nbr_pts = curr_pt_indices.size();
-    for (unsigned int i = 0 ; i < curr_nbr_pts ; i++)
+    for (unsigned int i = 0 ; i < curr_cluster_nbr_pts ; i++)
     {
       // Verify index does not exceed boundary
-      unsigned int curr_pt_idx = curr_pt_indices[i];
-      if (curr_pt_idx >= total_nbr_pts)
+      const unsigned int curr_pt_cloud_idx = curr_cluster_pt_indices[i];
+      if (curr_pt_cloud_idx >= nbr_total_pts)
       {
-        ROS_ERROR("Invalid index %u to compute cluster centroid", curr_pt_idx);
+        ROS_ERROR("Invalid index to compute centroid: %u out of %u", curr_pt_cloud_idx, nbr_total_pts);
         return -1;
       }
 
-      curr_centroid[0] += pt_cloud.pts[curr_pt_idx].x;
-      curr_centroid[1] += pt_cloud.pts[curr_pt_idx].y;
-      curr_centroid[2] += pt_cloud.pts[curr_pt_idx].z;
+      curr_centroid[0] += pt_cloud.pts[curr_pt_cloud_idx].x;
+      curr_centroid[1] += pt_cloud.pts[curr_pt_cloud_idx].y;
+      curr_centroid[2] += pt_cloud.pts[curr_pt_cloud_idx].z;
     }
 
     // normalize by number of points
-    curr_nbr_pts = std::max(curr_nbr_pts, static_cast<unsigned int> (1));
-    for (unsigned int i = 0 ; i < 3 ; i++)
+    if (curr_cluster_nbr_pts > 0)
     {
-      curr_centroid[i] /= static_cast<float> (curr_nbr_pts);
+      for (unsigned int i = 0 ; i < 3 ; i++)
+      {
+        curr_centroid[i] /= static_cast<float> (curr_cluster_nbr_pts);
+      }
     }
 
     // insert into results
-    unsigned int curr_cluster_label = iter_clusters->first;
+    const unsigned int curr_cluster_label = iter_clusters->first;
     cluster_centroids.insert(pair<unsigned int, vector<float> > (curr_cluster_label, curr_centroid));
   }
 
@@ -112,11 +114,11 @@ int point_cloud_clustering::PointCloudClustering::cluster(const robot_msgs::Poin
 {
   // Create set of all indices in the point cloud
   set<unsigned int> all_indices;
-  unsigned int nbr_pts = pt_cloud.pts.size();
+  const unsigned int nbr_pts = pt_cloud.pts.size();
   pair<set<unsigned int>::iterator, bool> ret = all_indices.insert(0);
   for (unsigned int i = 1 ; i < nbr_pts ; i++)
   {
-    set<unsigned int>::iterator& next_position = ret.first;
+    const set<unsigned int>::iterator& next_position = ret.first;
     ret.first = all_indices.insert(next_position, i);
   }
 
@@ -137,11 +139,11 @@ unsigned int point_cloud_clustering::PointCloudClustering::findRadiusNeighbors(c
   pt_cloud_kdtree.radiusSearch(static_cast<int> (index), radius, k_indices, k_distances);
 
   // check if each neighbor is a valid index to cluster
-  unsigned int nbr_k_neighbors = k_indices.size();
+  const unsigned int nbr_k_neighbors = k_indices.size();
   unsigned int nbr_valid_neighbors = 0;
   for (unsigned int i = 0 ; i < nbr_k_neighbors ; i++)
   {
-    unsigned int neighbor_idx = static_cast<unsigned int> (k_indices[i]);
+    const unsigned int neighbor_idx = static_cast<unsigned int> (k_indices[i]);
     if (indices_to_cluster.count(neighbor_idx) != 0)
     {
       neighbor_indices.push_back(neighbor_idx);

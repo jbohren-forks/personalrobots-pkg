@@ -80,12 +80,12 @@ int point_cloud_clustering::PairwiseNeighbors::cluster(const robot_msgs::PointCl
   map<unsigned int, set<unsigned int> > adj_list;
 
   // Iterate over each index, find neighboring points, and randomly link to them
-  unsigned int nbr_total_pts = pt_cloud.pts.size();
+  const unsigned int nbr_total_pts = pt_cloud.pts.size();
   for (set<unsigned int>::const_iterator iter_indices_to_cluster = indices_to_cluster.begin() ; iter_indices_to_cluster
       != indices_to_cluster.end() ; iter_indices_to_cluster++)
   {
     // retrieve next index
-    unsigned int curr_pt_cloud_idx = *iter_indices_to_cluster;
+    const unsigned int curr_pt_cloud_idx = *iter_indices_to_cluster;
     if (curr_pt_cloud_idx >= nbr_total_pts)
     {
       ROS_ERROR("Invalid index to cluster: %u out of %u", curr_pt_cloud_idx, nbr_total_pts);
@@ -97,7 +97,7 @@ int point_cloud_clustering::PairwiseNeighbors::cluster(const robot_msgs::PointCl
 
     // Find valid neighboring points to cluster on
     list<unsigned int> valid_neighbor_indices;
-    unsigned int nbr_valid_neighbors = findRadiusNeighbors(pt_cloud_kdtree, curr_pt_cloud_idx, radius_,
+    const unsigned int nbr_valid_neighbors = findRadiusNeighbors(pt_cloud_kdtree, curr_pt_cloud_idx, radius_,
         indices_to_cluster, valid_neighbor_indices);
 
     // Generate random indices
@@ -113,7 +113,7 @@ int point_cloud_clustering::PairwiseNeighbors::cluster(const robot_msgs::PointCl
     for (unsigned int i = 0 ; i < nbr_neighbors_ && i < nbr_valid_neighbors ; i++)
     {
       // retrieve neighboring index
-      unsigned int curr_neighbor_idx = random_indices[i];
+      const unsigned int curr_neighbor_idx = random_indices[i];
 
       // avoid self-edges
       if (curr_neighbor_idx == curr_pt_cloud_idx)
@@ -122,8 +122,8 @@ int point_cloud_clustering::PairwiseNeighbors::cluster(const robot_msgs::PointCl
       }
 
       // define edge (a,b) st. a < b
-      unsigned int a = std::min(curr_pt_cloud_idx, curr_neighbor_idx);
-      unsigned int b = std::max(curr_pt_cloud_idx, curr_neighbor_idx);
+      const unsigned int a = std::min(curr_pt_cloud_idx, curr_neighbor_idx);
+      const unsigned int b = std::max(curr_pt_cloud_idx, curr_neighbor_idx);
       adj_list[a].insert(b); // a guaranteed to exist since iterating in ascending order with set
     }
   }
@@ -135,16 +135,16 @@ int point_cloud_clustering::PairwiseNeighbors::cluster(const robot_msgs::PointCl
       != adj_list.end() ; iter_adj_list++)
   {
     // i
-    unsigned int curr_source_idx = iter_adj_list->first;
+    const unsigned int curr_source_idx = iter_adj_list->first;
     // i's neighbors j
-    set<unsigned int>& curr_neighbors = iter_adj_list->second;
+    const set<unsigned int>& curr_neighbors = iter_adj_list->second;
 
     // Iterate and create edges from i to each neighbor j
-    for (set<unsigned int>::iterator iter_neighbors = curr_neighbors.begin() ; iter_neighbors
+    for (set<unsigned int>::const_iterator iter_neighbors = curr_neighbors.begin() ; iter_neighbors
         != curr_neighbors.end() ; iter_neighbors++)
     {
       // j
-      unsigned int curr_target_idx = *iter_neighbors;
+      const unsigned int curr_target_idx = *iter_neighbors;
 
       // The "cluster" is an edge with 2 points
       created_clusters[curr_cluster_label] = vector<int> (2);

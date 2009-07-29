@@ -81,13 +81,13 @@ int point_cloud_clustering::KMeans::cluster(const robot_msgs::PointCloud& pt_clo
 
   // ----------------------------------------------------------
   // Calculate clustering information
-  unsigned int nbr_total_pts = pt_cloud.pts.size();
-  unsigned int nbr_cluster_samples = indices_to_cluster.size();
-  unsigned int cluster_feature_dim = 3; // x y z
+  const unsigned int nbr_total_pts = pt_cloud.pts.size();
+  const unsigned int nbr_cluster_samples = indices_to_cluster.size();
+  const unsigned int cluster_feature_dim = 3; // x y z
 
   // ----------------------------------------------------------
   // Verify will create at least 1 cluster
-  int nbr_clusters = static_cast<int> (k_factor_ * static_cast<double> (nbr_cluster_samples));
+  const int nbr_clusters = static_cast<int> (k_factor_ * static_cast<double> (nbr_cluster_samples));
   if (nbr_clusters < 1)
   {
     ROS_WARN("KMeans::cluster creating no clusters");
@@ -104,7 +104,7 @@ int point_cloud_clustering::KMeans::cluster(const robot_msgs::PointCloud& pt_clo
       != indices_to_cluster.end() ; iter_indices_to_cluster++)
   {
     // Verify the index to cluster is contained in the point cloud
-    unsigned int curr_pt_cloud_idx = *iter_indices_to_cluster;
+    const unsigned int curr_pt_cloud_idx = *iter_indices_to_cluster;
     if (curr_pt_cloud_idx >= nbr_total_pts)
     {
       ROS_ERROR("Invalid index to cluster: %u out of %u", curr_pt_cloud_idx, nbr_total_pts);
@@ -112,7 +112,7 @@ int point_cloud_clustering::KMeans::cluster(const robot_msgs::PointCloud& pt_clo
     }
 
     // offset over previous samples in feature_matrix
-    unsigned int curr_offset = curr_sample_idx * cluster_feature_dim;
+    const unsigned int curr_offset = curr_sample_idx * cluster_feature_dim;
 
     // copy xyz coordinates
     feature_matrix[curr_offset] = pt_cloud.pts[curr_pt_cloud_idx].x;
@@ -138,8 +138,8 @@ int point_cloud_clustering::KMeans::cluster(const robot_msgs::PointCloud& pt_clo
       != indices_to_cluster.end() ; iter_indices_to_cluster++)
   {
     // retrieve the current point index and its cluster label
-    unsigned int curr_pt_cloud_idx = *iter_indices_to_cluster;
-    unsigned int curr_cluster_label = starting_label_
+    const unsigned int curr_pt_cloud_idx = *iter_indices_to_cluster;
+    const unsigned int curr_cluster_label = starting_label_
         + static_cast<unsigned int> (cluster_labels->data.i[curr_sample_idx]);
 
     // Instantiate container if never encountered label before
