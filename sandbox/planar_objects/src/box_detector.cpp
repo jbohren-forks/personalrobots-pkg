@@ -1,11 +1,11 @@
 /*
- * planar_node.cpp
+ * box_detector.cpp
  *
  *  Created on: Jul 7, 2009
  *      Author: sturm
  */
 #include "assert.h"
-#include "planar_node.h"
+#include "box_detector.h"
 #include "find_planes.h"
 #include "vis_utils.h"
 
@@ -22,9 +22,9 @@ using namespace vis_utils;
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv, "planar_node");
+  ros::init(argc, argv, "box_detector");
 
-  planar_objects::PlanarNode node;
+  planar_objects::BoxDetector node;
   node.spin();
 
   return 0;
@@ -37,8 +37,8 @@ namespace planar_objects
 #define SQR(a) ((a)*(a))
 
 // Constructor
-PlanarNode::PlanarNode() :
-  sync_(&PlanarNode::syncCallback, this)
+BoxDetector::BoxDetector() :
+  sync_(&BoxDetector::syncCallback, this)
 {
   nh_.param("~n_planes_max", n_planes_max_, 5);
   nh_.param("~point_plane_distance", point_plane_distance_, 0.01);
@@ -84,17 +84,16 @@ PlanarNode::PlanarNode() :
   }
 
   // subscribe to topics
-  cloud_sub_ = nh_.subscribe("stereo/cloud", 1, sync_.synchronize(&PlanarNode::cloudCallback, this));
-  disp_sub_ = nh_.subscribe("stereo/disparity", 1, sync_.synchronize(&PlanarNode::dispCallback, this));
-  dinfo_sub_ = nh_.subscribe("stereo/disparity_info", 1, sync_.synchronize(&PlanarNode::dinfoCallback, this));
-  limage_sub_ = nh_.subscribe("stereo/left/image_rect", 1, sync_.synchronize(&PlanarNode::limageCallback, this));
-  rimage_sub_ = nh_.subscribe("stereo/right/image_rect", 1, sync_.synchronize(&PlanarNode::rimageCallback, this));
-  linfo_sub_ = nh_.subscribe("stereo/left/cam_info", 1, sync_.synchronize(&PlanarNode::linfoCallback, this));
-  rinfo_sub_ = nh_.subscribe("stereo/right/cam_info", 1, sync_.synchronize(&PlanarNode::rinfoCallback, this));
+  cloud_sub_ = nh_.subscribe("stereo/cloud", 1, sync_.synchronize(&BoxDetector::cloudCallback, this));
+  disp_sub_ = nh_.subscribe("stereo/disparity", 1, sync_.synchronize(&BoxDetector::dispCallback, this));
+  dinfo_sub_ = nh_.subscribe("stereo/disparity_info", 1, sync_.synchronize(&BoxDetector::dinfoCallback, this));
+  limage_sub_ = nh_.subscribe("stereo/left/image_rect", 1, sync_.synchronize(&BoxDetector::limageCallback, this));
+  rimage_sub_ = nh_.subscribe("stereo/right/image_rect", 1, sync_.synchronize(&BoxDetector::rimageCallback, this));
+  linfo_sub_ = nh_.subscribe("stereo/left/cam_info", 1, sync_.synchronize(&BoxDetector::linfoCallback, this));
+  rinfo_sub_ = nh_.subscribe("stereo/right/cam_info", 1, sync_.synchronize(&BoxDetector::rinfoCallback, this));
 
   // advertise topics
   cloud_planes_pub_ = nh_.advertise<PointCloud> ("~planes", 1);
-  cloud_outliers_pub_ = nh_.advertise<PointCloud> ("~outliers", 1);
   visualization_pub_ = nh_.advertise<visualization_msgs::Marker> ("visualization_marker", 1);
   observations_pub_ = nh_.advertise<BoxObservations> ("~observations", 1);
 
@@ -103,27 +102,27 @@ PlanarNode::PlanarNode() :
   lastDuration = Duration::Duration(0);
 }
 
-void PlanarNode::cloudCallback(const robot_msgs::PointCloud::ConstPtr& point_cloud)
+void BoxDetector::cloudCallback(const robot_msgs::PointCloud::ConstPtr& point_cloud)
 {
   cloud_ = point_cloud;
 }
 
-void PlanarNode::dinfoCallback(const sensor_msgs::DisparityInfo::ConstPtr& dinfo)
+void BoxDetector::dinfoCallback(const sensor_msgs::DisparityInfo::ConstPtr& dinfo)
 {
   dinfo_ = dinfo;
 }
 
-void PlanarNode::linfoCallback(const sensor_msgs::CamInfo::ConstPtr& linfo)
+void BoxDetector::linfoCallback(const sensor_msgs::CamInfo::ConstPtr& linfo)
 {
   linfo_ = linfo;
 }
 
-void PlanarNode::rinfoCallback(const sensor_msgs::CamInfo::ConstPtr& rinfo)
+void BoxDetector::rinfoCallback(const sensor_msgs::CamInfo::ConstPtr& rinfo)
 {
   rinfo_ = rinfo;
 }
 
-void PlanarNode::dispCallback(const sensor_msgs::Image::ConstPtr& disp_img)
+void BoxDetector::dispCallback(const sensor_msgs::Image::ConstPtr& disp_img)
 {
   dimage_ = disp_img;
 
@@ -137,7 +136,7 @@ void PlanarNode::dispCallback(const sensor_msgs::Image::ConstPtr& disp_img)
   }
 }
 
-void PlanarNode::limageCallback(const sensor_msgs::Image::ConstPtr& left_img)
+void BoxDetector::limageCallback(const sensor_msgs::Image::ConstPtr& left_img)
 {
   limage_ = left_img;
 
@@ -149,7 +148,7 @@ void PlanarNode::limageCallback(const sensor_msgs::Image::ConstPtr& left_img)
   }
 }
 
-void PlanarNode::rimageCallback(const sensor_msgs::Image::ConstPtr& right_img)
+void BoxDetector::rimageCallback(const sensor_msgs::Image::ConstPtr& right_img)
 {
   rimage_ = right_img;
 
@@ -171,7 +170,7 @@ double inner_prod(std::vector<double> vec1, std::vector<double> vec2)
   return (sum);
 }
 
-void PlanarNode::buildRP()
+void BoxDetector::buildRP()
 {
   double offx = 0;
 
@@ -203,7 +202,7 @@ void PlanarNode::buildRP()
 
 }
 
-btVector3 PlanarNode::calcPt(int x, int y, std::vector<double>& coeff)
+btVector3 BoxDetector::calcPt(int x, int y, std::vector<double>& coeff)
 {
   double cx = RP[3];
   double cy = RP[7];
@@ -223,9 +222,9 @@ bool sortCornersByAngle(const CornerCandidate& d1, const CornerCandidate& d2)
 
 #define MEASURE(timeStamp,s) cout<<"["<<s<<"] took "<<(Time::now() - timeStamp).toSec()<<"s"<<endl; timeStamp = Time::now();
 
-void PlanarNode::syncCallback()
+void BoxDetector::syncCallback()
 {
-  ROS_INFO("PlanarNode::syncCallback(), %d points in cloud",cloud_->get_pts_size());
+  ROS_INFO("BoxDetector::syncCallback(), %d points in cloud",cloud_->get_pts_size());
 
   Time timeStamp = Time::now();
 
@@ -355,7 +354,7 @@ void PlanarNode::syncCallback()
   lastTime = currentTime;
 }
 
-bool PlanarNode::spin()
+bool BoxDetector::spin()
 {
   while (nh_.ok())
   {
@@ -369,7 +368,7 @@ bool PlanarNode::spin()
   return true;
 }
 
-void PlanarNode::findFrontAndBackPlane(int& frontplane, int& backplane, std::vector<std::vector<int> >& plane_indices,
+void BoxDetector::findFrontAndBackPlane(int& frontplane, int& backplane, std::vector<std::vector<int> >& plane_indices,
                                        vector<vector<double> >& plane_coeff)
 {
   int n = plane_coeff.size();
@@ -400,7 +399,7 @@ void PlanarNode::findFrontAndBackPlane(int& frontplane, int& backplane, std::vec
   //  ROS_INFO("backplane %d, frontplane %d", backplane, frontplane);
 }
 
-void PlanarNode::visualizeFrontAndBackPlane(int frontplane, int backplane, const robot_msgs::PointCloud& cloud,
+void BoxDetector::visualizeFrontAndBackPlane(int frontplane, int backplane, const robot_msgs::PointCloud& cloud,
                                             std::vector<std::vector<int> >& plane_indices, std::vector<
                                                 robot_msgs::PointCloud>& plane_cloud,
                                             std::vector<std::vector<double> >& plane_coeff,
@@ -419,7 +418,7 @@ void PlanarNode::visualizeFrontAndBackPlane(int frontplane, int backplane, const
 
 }
 
-void PlanarNode::visualizePlanes(const robot_msgs::PointCloud& cloud, std::vector<std::vector<int> >& plane_indices,
+void BoxDetector::visualizePlanes(const robot_msgs::PointCloud& cloud, std::vector<std::vector<int> >& plane_indices,
                                  std::vector<robot_msgs::PointCloud>& plane_cloud,
                                  std::vector<std::vector<double> >& plane_coeff, robot_msgs::PointCloud& outside,
                                  bool convexHull)
@@ -435,7 +434,7 @@ void PlanarNode::visualizePlanes(const robot_msgs::PointCloud& cloud, std::vecto
 
 }
 
-void PlanarNode::findCornerCandidates(IplImage* pixOccupied, IplImage *pixFree, IplImage* pixUnknown,
+void BoxDetector::findCornerCandidates(IplImage* pixOccupied, IplImage *pixFree, IplImage* pixUnknown,
                                       IplImage* &pixCannyDist, vector<double>& plane_coeff,
                                       std::vector<CornerCandidate> &corner, int id)
 {
@@ -503,6 +502,13 @@ void PlanarNode::findCornerCandidates(IplImage* pixOccupied, IplImage *pixFree, 
   if (lines->total > max_lines)
   {
     if(verbose)  cout << "too many lines! skipping plane " << endl;
+    cvClearMemStorage(storage);
+    cvReleaseMemStorage(&storage);
+    cvReleaseImage(&pixFreeDilated);
+    cvReleaseImage(&pixCanny);
+    cvReleaseImage(&pixCannyFiltered);
+    cvReleaseImage(&pixCannyFilteredAndDilated);
+    cvReleaseImage(&pixHough);
     return;
   }
   if (show_lines)
@@ -616,6 +622,15 @@ void PlanarNode::findCornerCandidates(IplImage* pixOccupied, IplImage *pixFree, 
   {
     if(verbose)  cout << "too many corners! skipping plane " << endl;
     corner.clear();
+
+    cvClearMemStorage(storage);
+    cvReleaseMemStorage(&storage);
+    cvReleaseImage(&pixFreeDilated);
+    cvReleaseImage(&pixCanny);
+    cvReleaseImage(&pixCannyFiltered);
+    cvReleaseImage(&pixCannyFilteredAndDilated);
+    cvReleaseImage(&pixHough);
+
     return;
   }
 
@@ -630,8 +645,6 @@ void PlanarNode::findCornerCandidates(IplImage* pixOccupied, IplImage *pixFree, 
   //    broadcaster_.sendTransform(table_pose_frame);
   //  }
 
-  cvClearMemStorage(storage);
-  cvReleaseMemStorage(&storage);
   cvShowImage("hough", pixHough);
 
   cvNot(pixCannyFiltered, pixCannyFiltered);
@@ -653,13 +666,16 @@ void PlanarNode::findCornerCandidates(IplImage* pixOccupied, IplImage *pixFree, 
   //  cvReleaseImage(&pixFree);
   //  cvReleaseImage(&pixUnknown);
   //  cvReleaseImage(&pixCanny);
+  cvClearMemStorage(storage);
+  cvReleaseMemStorage(&storage);
   cvReleaseImage(&pixFreeDilated);
+  cvReleaseImage(&pixCanny);
   cvReleaseImage(&pixCannyFiltered);
   cvReleaseImage(&pixCannyFilteredAndDilated);
   cvReleaseImage(&pixHough);
 }
 
-void PlanarNode::visualizeLines(std::vector<std::pair<btVector3, btVector3> > lines, int id, double r, double g,
+void BoxDetector::visualizeLines(std::vector<std::pair<btVector3, btVector3> > lines, int id, double r, double g,
                                 double b)
 {
   // visualize edges in 3D
@@ -690,7 +706,7 @@ void PlanarNode::visualizeLines(std::vector<std::pair<btVector3, btVector3> > li
   visualization_pub_.publish(marker);
 }
 
-std::vector<CornerCandidate> PlanarNode::groupCorners(std::vector<CornerCandidate> &corner, double group_dist)
+std::vector<CornerCandidate> BoxDetector::groupCorners(std::vector<CornerCandidate> &corner, double group_dist)
 {
   // group within distance
   std::vector<std::vector<CornerCandidate> > grouped_corners;
@@ -779,7 +795,7 @@ std::vector<CornerCandidate> PlanarNode::groupCorners(std::vector<CornerCandidat
   return result;
 }
 
-void PlanarNode::visualizeCorners(std::vector<CornerCandidate> &corner, int id)
+void BoxDetector::visualizeCorners(std::vector<CornerCandidate> &corner, int id)
 {
   std::vector<std::pair<btVector3, btVector3> > lines;
 
@@ -796,7 +812,7 @@ void PlanarNode::visualizeCorners(std::vector<CornerCandidate> &corner, int id)
   }
 }
 
-void PlanarNode::visualizeRectangles3d(std::vector<CornerCandidate> &corner, int id)
+void BoxDetector::visualizeRectangles3d(std::vector<CornerCandidate> &corner, int id)
 {
   std::vector<std::pair<btVector3, btVector3> > lines;
 
@@ -823,7 +839,7 @@ void PlanarNode::visualizeRectangles3d(std::vector<CornerCandidate> &corner, int
     visualizeLines(lines, id + 100 + i);
 }
 
-void PlanarNode::visualizeRectangles2d(std::vector<CornerCandidate> &corner)
+void BoxDetector::visualizeRectangles2d(std::vector<CornerCandidate> &corner)
 {
   for (size_t i = 0; i < corner.size(); i++)
   {
@@ -831,7 +847,7 @@ void PlanarNode::visualizeRectangles2d(std::vector<CornerCandidate> &corner)
   }
 }
 
-void PlanarNode::visualizeRectangle2d(CornerCandidate &corner)
+void BoxDetector::visualizeRectangle2d(CornerCandidate &corner)
 {
   corner.updatePoints3d();
   corner.updatePoints2d();
@@ -843,7 +859,7 @@ void PlanarNode::visualizeRectangle2d(CornerCandidate &corner)
   }
 }
 
-void PlanarNode::findRectangles(std::vector<CornerCandidate> &corner, IplImage* pixDist)
+void BoxDetector::findRectangles(std::vector<CornerCandidate> &corner, IplImage* pixDist)
 {
 
   for (size_t i = 0; i < corner.size(); i++)
@@ -858,7 +874,7 @@ void PlanarNode::findRectangles(std::vector<CornerCandidate> &corner, IplImage* 
   //  cvReleaseImage(&pixDist);
 }
 
-void PlanarNode::initializeRectangle(CornerCandidate &corner, IplImage* pixDist)
+void BoxDetector::initializeRectangle(CornerCandidate &corner, IplImage* pixDist)
 {
   corner.w = rect_min_size;
   corner.h = rect_min_size;
@@ -879,218 +895,7 @@ void PlanarNode::initializeRectangle(CornerCandidate &corner, IplImage* pixDist)
   }
 }
 
-void CornerCandidate::updatePoints3d()
-{
-  points3d[0] = tf * btVector3(0, 0, 0);
-  points3d[1] = tf * btVector3(w, 0, 0);
-  points3d[2] = tf * btVector3(w, h, 0);
-  points3d[3] = tf * btVector3(0, h, 0);
-
-  //  for(int i=0;i<4;i++) {
-  //    cout << "X="<<points3d[i].x()<<" "<< "Y="<<points3d[i].y()<<" "<< "Z="<<points3d[i].z()<<" "<<endl;
-  //  }
-}
-
-void CornerCandidate::updatePoints2d()
-{
-  for (int i = 0; i < 4; i++)
-  {
-    points2d[i].x = (P[0] * points3d[i].x() + P[1] * points3d[i].y() + P[2] * points3d[i].z() + P[3]) / (P[8]
-        * points3d[i].x() + P[9] * points3d[i].y() + P[10] * points3d[i].z() + P[11]);
-    points2d[i].y = (P[4] * points3d[i].x() + P[5] * points3d[i].y() + P[6] * points3d[i].z() + P[7]) / (P[8]
-        * points3d[i].x() + P[9] * points3d[i].y() + P[10] * points3d[i].z() + P[11]);
-
-  }
-}
-
-double CornerCandidate::computeDistance(IplImage* distImage)
-{
-  updatePoints3d();
-  updatePoints2d();
-
-  bool invalidPoints = false;
-  for (int i = 0; i < 4; i++)
-  {
-    if (points2d[i].x < 0)
-      invalidPoints = true;
-    if (points2d[i].y < 0)
-      invalidPoints = true;
-    if (points2d[i].x >= distImage->width)
-      invalidPoints = true;
-    if (points2d[i].y >= distImage->height)
-      invalidPoints = true;
-  }
-  if (invalidPoints)
-    return DBL_MAX;
-
-  int global_sum = 0;
-  int global_count = 0;
-  for (int i = 0; i < 4; i++)
-  {
-    CvLineIterator iterator;
-
-    int sum = 0;
-    int count = cvInitLineIterator(distImage, points2d[i], points2d[(i + 1) % 4], &iterator, 8, 0);
-    for (int j = 0; j < count; j++)
-    {
-      sum += iterator.ptr[0];
-      CV_NEXT_LINE_POINT(iterator);
-    }
-    global_sum += sum;
-    global_count += count;
-  }
-  //  cout <<"global_sum="<<global_sum<<" global_count="<<global_count<<endl;
-  return (global_sum / (double)global_count);
-}
-
-void CornerCandidate::optimizeWidth(IplImage* distImage, double a, double b, int steps)
-{
-  double best_d = DBL_MAX;
-  double best_w = w;
-  double d;
-  double start = w;
-  for (int i = 0; i < steps; i++)
-  {
-    w = MIN(rect_max_size,MAX( rect_min_size,start + a + ((b-a)*(i))/(double)steps));
-    d = computeDistance(distImage);
-    //    cout << "i="<<i<<" steps="<<steps<< " w="<<w<<" d="<<d << endl;
-    if (d < best_d)
-    {
-      best_d = d;
-      best_w = w;
-    }
-  }
-  //  cout << "found w="<< best_w << endl;
-
-  w = best_w;
-}
-
-void CornerCandidate::optimizeHeight(IplImage* distImage, double a, double b, int steps)
-{
-  double best_d = DBL_MAX;
-  double best_h = h;
-  double d;
-  double start = h;
-  for (int i = 0; i < steps; i++)
-  {
-    h = MIN(rect_max_size,MAX( rect_min_size,start + a + ((b-a)*(i))/(double)steps));
-    d = computeDistance(distImage);
-    if (d < best_d)
-    {
-      best_d = d;
-      best_h = h;
-    }
-  }
-  h = best_h;
-}
-
-void CornerCandidate::optimizePhi(IplImage* distImage, double a, double b, int steps)
-{
-  double best_d = DBL_MAX;
-  int best_i = 0;
-  double d;
-
-  btTransform org_tf = tf;
-
-  for (int i = 0; i < steps; i++)
-  {
-    tf = org_tf * btTransform(btQuaternion(btVector3(0, 0, 1), a + ((b - a) * (i)) / (double)steps));
-    d = computeDistance(distImage);
-    if (d < best_d)
-    {
-      best_d = d;
-      best_i = i;
-    }
-  }
-  tf = org_tf * btTransform(btQuaternion(btVector3(0, 0, 1), a + ((b - a) * (best_i)) / (double)steps));
-}
-
-void CornerCandidate::optimizeX(IplImage* distImage, double a, double b, int steps)
-{
-  double best_d = DBL_MAX;
-  int best_i = 0;
-  double d;
-
-  btTransform org_tf = tf;
-
-  for (int i = 0; i < steps; i++)
-  {
-    tf = org_tf * btTransform(btQuaternion::getIdentity(), btVector3(a + ((b - a) * (i)) / (double)steps, 0, 0));
-    d = computeDistance(distImage);
-    //    cout << "i="<<i<<" steps="<<steps<< " x+="<<a + (((b-a)*(i))/(double)steps)<<" d="<<d
-    //    <<  " x="<<tf.getOrigin().x()
-    //<<  " y="<<tf.getOrigin().y()
-    //<<  " z="<<tf.getOrigin().z()
-    //    <<endl;
-    if (d < best_d)
-    {
-      best_d = d;
-      best_i = i;
-    }
-  }
-  tf = org_tf * btTransform(btQuaternion::getIdentity(), btVector3(a + ((b - a) * (best_i)) / (double)steps, 0, 0));
-}
-
-void CornerCandidate::optimizeY(IplImage* distImage, double a, double b, int steps)
-{
-  double best_d = DBL_MAX;
-  int best_i = 0;
-  double d;
-
-  btTransform org_tf = tf;
-
-  for (int i = 0; i < steps; i++)
-  {
-    tf = org_tf * btTransform(btQuaternion::getIdentity(), btVector3(0, a + ((b - a) * (i)) / (double)steps, 0));
-    d = computeDistance(distImage);
-    if (d < best_d)
-    {
-      best_d = d;
-      best_i = i;
-    }
-  }
-  tf = org_tf * btTransform(btQuaternion::getIdentity(), btVector3(0, a + ((b - a) * (best_i)) / (double)steps, 0));
-}
-
-double CornerCandidate::computeSupport2d(IplImage* pixOccupied, IplImage* pixDebug)
-{
-  std::map<int, std::map<int, bool> > rect;
-
-  for (int i = 0; i < 4; i++)
-  {
-    CvLineIterator iterator;
-
-    int count = cvInitLineIterator(pixOccupied, points2d[i], points2d[(i + 1) % 4], &iterator, 8, 0);
-    for (int j = 0; j < count; j++)
-    {
-      int y = (iterator.ptr - (uchar*)pixOccupied->imageData) / pixOccupied->widthStep;
-      int x = ((iterator.ptr - (uchar*)pixOccupied->imageData) % pixOccupied->widthStep) / pixOccupied->nChannels;
-      rect[x][y] = true;
-      CV_NEXT_LINE_POINT(iterator);
-    }
-  }
-
-  int count = 0;
-  int sum = 0;
-  std::map<int, std::map<int, bool> >::iterator i;
-  for (i = rect.begin(); i != rect.end(); i++)
-  {
-    int x = i->first;
-    int y1 = i->second.begin()->first;
-    int y2 = i->second.rbegin()->first;
-    for (int y = y1; y <= y2; y++)
-    {
-      if (pixOccupied->imageData[y * pixOccupied->widthStep + x * pixOccupied->nChannels] != 0)
-        sum++;
-      if (pixDebug != NULL)
-        pixDebug->imageData[y * pixDebug->widthStep + x * pixDebug->nChannels] = 255;
-    }
-    count += y2 - y1 + 1;
-  }
-  return (sum / (double)count);
-}
-
-std::vector<CornerCandidate> PlanarNode::filterRectanglesBySupport2d(std::vector<CornerCandidate> &corner,
+std::vector<CornerCandidate> BoxDetector::filterRectanglesBySupport2d(std::vector<CornerCandidate> &corner,
                                                                      IplImage* pixOccupied, double min_support)
 {
   std::vector<CornerCandidate> result;
@@ -1102,7 +907,7 @@ std::vector<CornerCandidate> PlanarNode::filterRectanglesBySupport2d(std::vector
   return (result);
 }
 
-std::vector<CornerCandidate> PlanarNode::filterRectanglesBySupport3d(std::vector<CornerCandidate> &corner,
+std::vector<CornerCandidate> BoxDetector::filterRectanglesBySupport3d(std::vector<CornerCandidate> &corner,
                                                                      const robot_msgs::PointCloud& cloud, std::vector<
                                                                          int> & plane_indices, double min_support)
 {
@@ -1115,23 +920,5 @@ std::vector<CornerCandidate> PlanarNode::filterRectanglesBySupport3d(std::vector
   return (result);
 }
 
-double CornerCandidate::computeSupport3d(const robot_msgs::PointCloud& cloud, std::vector<int> & plane_indices)
-{
-  int count = MAX(1,plane_indices.size());
-  int sum = 0;
-
-  btTransform tf_inv = tf.inverse();
-  for (size_t i = 0; i < plane_indices.size(); i++)
-  {
-    robot_msgs::Point32 point = cloud.pts[plane_indices[i]];
-    btVector3 vec = tf_inv * btVector3(point.x, point.y, point.z);
-    if (vec.x() >= 0 && vec.x() <= w && vec.y() >= 0 && vec.y() <= h)
-    {
-      sum++;
-    }
-  }
-  //cout << "sum="<<sum<<" count="<<count<<endl;
-  return (sum / (double)count);
-}
 
 }

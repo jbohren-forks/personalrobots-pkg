@@ -1,12 +1,12 @@
 /*
- * planar_node.h
+ * box_detector.h
  *
  *  Created on: Jul 7, 2009
  *      Author: sturm
  */
 
-#ifndef PLANAR_NODE_H_
-#define PLANAR_NODE_H_
+#ifndef BOX_DETECTOR_H_
+#define BOX_DETECTOR_H_
 
 #include "ros/ros.h"
 #include "topic_synchronizer2/topic_synchronizer.h"
@@ -31,50 +31,11 @@
 #include <tf/transform_listener.h>
 #include <tf/transform_broadcaster.h>
 
+#include "cornercandidate.h"
+
 namespace planar_objects {
 
-class CornerCandidate
-{
-public:
-  double *P;
-  double *RP;
-  double rect_min_size;
-  double rect_max_size;
-  double rect_max_displace;
-
-  btTransform tf;
-
-  double x;
-  double y;
-
-  double angle;
-  double dist1;
-  double dist2;
-
-  double w;
-  double h;
-
-  double precision;
-  double recall;
-  int plane_id;
-
-  btVector3 points3d[4];
-  CvPoint points2d[4];
-
-  void updatePoints3d();
-  void updatePoints2d();
-  double computeDistance(IplImage* distImage);
-  double computeSupport2d(IplImage* pixOccupied, IplImage* pixDebug = NULL);
-  double computeSupport3d(const robot_msgs::PointCloud& cloud,
-                          std::vector<int> & plane_indices);
-  void optimizeWidth(IplImage* distImage, double a = -0.5, double b = +0.5, int steps = 20);
-  void optimizeHeight(IplImage* distImage, double a = -0.5, double b = +0.5, int steps = 20);
-  void optimizePhi(IplImage* distImage, double a = -0.5, double b = +0.5, int steps = 20);
-  void optimizeX(IplImage* distImage, double a = -0.5, double b = +0.5, int steps = 20);
-  void optimizeY(IplImage* distImage, double a = -0.5, double b = +0.5, int steps = 20);
-};
-
-class PlanarNode
+class BoxDetector
 {
 public:
   ros::NodeHandle nh_;
@@ -142,14 +103,13 @@ public:
 
   // MESSAGES - OUTGOING
   ros::Publisher cloud_planes_pub_;
-  ros::Publisher cloud_outliers_pub_;
   ros::Publisher visualization_pub_;
   ros::Publisher observations_pub_;
   //  sensor_msgs::Image pimage_;
   //  sensor_msgs::CvBridge pbridge;
 
   // Constructor
-  PlanarNode();
+  BoxDetector();
 
   // Callbacks
   void cloudCallback(const robot_msgs::PointCloud::ConstPtr& point_cloud);
@@ -198,4 +158,4 @@ public:
 
 int main(int argc, char** argv);
 
-#endif /* PLANAR_NODE_H_ */
+#endif /* BOX_DETECTOR_H_ */
