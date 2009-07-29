@@ -16,7 +16,7 @@
 <!--    <param name="fixed_frame" type="string" value="/odom_combined" /> -->
     <param name="fixed_frame" type="string" value="base_link" />
 
-    <!-- define a box of size 2x3x4 around (1.1,  0, 0) in the robot frame -->
+    <!-- define a box of size 2x3x4 around (1.1,  0, 0) in the robot frame; this frame should stay fixed with respect to the sensor origin -->
     <param name="robot_frame" type="string" value="base_link" />
 
     <param name="origin_x" type="double" value="1.1" />
