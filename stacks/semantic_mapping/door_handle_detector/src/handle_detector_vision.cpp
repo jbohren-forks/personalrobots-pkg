@@ -1011,7 +1011,7 @@ public:
 		while (nh_.ok())
 		{
 			data_lock_.lock();
-			if (!(have_images_ && have_cloud_point_)) {
+			if (!got_images_ ) {
 				if ((ros::Time::now()-start_image_wait_) > ros::Duration(timeout_)) {
 					preempted_ = true;
 					data_cv_.notify_all();
