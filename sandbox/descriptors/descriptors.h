@@ -285,6 +285,29 @@ class SuperpixelStatistic : public ImageDescriptor {
 };
 
 /**
+ * @class WatershedSegmenter
+ * @brief Class that segments an image into superpixels using watershed with a regular grid of seed points.
+ */
+class WatershedSegmenter {
+ public:
+  //! (*index_)[i] returns the vector of CvPoints for segment i of the image.
+  std::vector< std::vector<CvPoint> > *index_;
+  //! The segmentation.
+  IplImage* seg_;
+
+  WatershedSegmenter(int seed_spacing, float scale);
+  void segment();
+  IplImage* createSegmentMask(int label, CvRect* rect);
+  int getSeedSpacing();
+  float getScale();
+
+ private:
+  int seed_spacing_;
+  //! Scaling factor to apply to the image when computing the segmentation.
+  float scale_;
+}  
+
+/**
  * @class SuperpixelColorHistogram
  * @brief Descriptor that segments the image, then computes a histogram of hue and saturation values for each segment.
  */
