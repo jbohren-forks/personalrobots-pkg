@@ -115,7 +115,7 @@ void robot_self_filter::SelfMask::maskContainment(const sensor_msgs::PointCloud&
     }
 }
 
-void robot_self_filter::SelfMask::maskIntersection(const robot_msgs::PointCloud& data_in, const std::string &sensor_frame, std::vector<int> &mask)
+void robot_self_filter::SelfMask::maskIntersection(const sensor_msgs::PointCloud& data_in, const std::string &sensor_frame, std::vector<int> &mask)
 {
     mask.resize(data_in.pts.size());
     if (bodies_.empty())
@@ -130,7 +130,7 @@ void robot_self_filter::SelfMask::maskIntersection(const robot_msgs::PointCloud&
     }
 }
 
-void robot_self_filter::SelfMask::maskIntersection(const robot_msgs::PointCloud& data_in, const btVector3 &sensor, std::vector<int> &mask)
+void robot_self_filter::SelfMask::maskIntersection(const sensor_msgs::PointCloud& data_in, const btVector3 &sensor, std::vector<int> &mask)
 {
     mask.resize(data_in.pts.size());
     if (bodies_.empty())
@@ -223,7 +223,7 @@ void robot_self_filter::SelfMask::maskAuxContainment(const sensor_msgs::PointClo
     }
 }
 
-void robot_self_filter::SelfMask::maskAuxIntersection(const robot_msgs::PointCloud& data_in, std::vector<int> &mask)
+void robot_self_filter::SelfMask::maskAuxIntersection(const sensor_msgs::PointCloud& data_in, std::vector<int> &mask)
 {
     const unsigned int bs = bodies_.size();
     const unsigned int np = data_in.pts.size();

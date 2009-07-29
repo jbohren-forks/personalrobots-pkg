@@ -101,7 +101,7 @@ namespace robot_self_filter
 	/** \brief Compute the containment mask (INSIDE or OUTSIDE) for a given pointcloud. If a mask element is 1, the point
 	    is outside the robot. The point is outside if the mask element is 0.
 	 */
-	void maskContainment(const robot_msgs::PointCloud& data_in, std::vector<int> &mask);
+	void maskContainment(const sensor_msgs::PointCloud& data_in, std::vector<int> &mask);
 
 	/** \brief Compute the intersection mask for a given pointcloud. If a mask
 	    element can have one of the values INSIDE, OUTSIDE or SHADOW. If the value is SHADOW,
@@ -117,7 +117,7 @@ namespace robot_self_filter
 	    been seen. If the mask element is INSIDE, the point is inside
 	    the robot. The origin of the sensor is specified as well.
 	 */
-	void maskIntersection(const robot_msgs::PointCloud& data_in, const btVector3 &sensor, std::vector<int> &mask);
+	void maskIntersection(const sensor_msgs::PointCloud& data_in, const btVector3 &sensor, std::vector<int> &mask);
 	
 	/** \brief Assume subsequent calls to getMaskX() will be in the frame passed to this function.
 	 *   The frame in which the sensor is located is optional */
