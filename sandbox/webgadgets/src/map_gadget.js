@@ -1,10 +1,31 @@
-var ROSMapGadget = Class.create({
-  initialize: function(service, _parentElem)
+var ROSMapGadget = Class.create(ROSGadget, {
+  initialize: function(service)
   {
-    this.parentElem = _parentElem;
+    // Create the ros gadget 
+    this.create("Nav View");
 
-    this.parentElem.style.position = 'relative';
-    this.parentElem.style.height = '300';
+    // Create the set pose button
+    this.setPoseButton = document.createElement("input");
+    this.setPoseButton.value = "Set Pose";
+    this.setPoseButton.type = "button";
+    this.setPoseButton.style.cssFloat = "right";
+    this.setPoseButton.style.margin = "2px 0 0 0";
+    this.setPoseButton.observe('click', this.setPose.bind(this) );
+
+    // Create the set goal button
+    this.setGoalButton = document.createElement("input");
+    this.setGoalButton.value = "Set Goal";
+    this.setGoalButton.type = "button";
+    this.setGoalButton.style.cssFloat = "right";
+    this.setGoalButton.style.margin = "2px 0 0 0";
+    this.setGoalButton.observe('click', this.setGoal.bind(this) );
+   
+    // Add the two buttons to the title span 
+    this.titleSpan.appendChild(this.setPoseButton);
+    this.titleSpan.appendChild(this.setGoalButton);
+
+    this.contentDiv.style.position = 'relative';
+    this.contentDiv.style.height = '300';
 
     // This div hold the map image, and the canvas (which is used for
     // painting)
@@ -34,8 +55,8 @@ var ROSMapGadget = Class.create({
     this.imgDiv.appendChild(this.canvas);
     this.imgDiv.appendChild(this.pathCanvas);
 
-    this.parentElem.appendChild(this.imgDiv);
-    this.parentElem.appendChild(this.activeDiv);
+    this.contentDiv.appendChild(this.imgDiv);
+    this.contentDiv.appendChild(this.activeDiv);
 
     this.service = "/static_map";
     this.mapresolution = 0.1;
@@ -50,8 +71,8 @@ var ROSMapGadget = Class.create({
     this.winSize.h = parseInt(this.activeDiv.offsetHeight);
 
     // Center the image
-    this.imgDiv.style.left = parseInt(this.parentElem.offsetWidth)/2 - this.winSize.w/2;
-    this.imgDiv.style.top = parseInt(this.parentElem.offsetHeight)/2 - this.winSize.h/2;
+    this.imgDiv.style.left = parseInt(this.contentDiv.offsetWidth)/2 - this.winSize.w/2;
+    this.imgDiv.style.top = parseInt(this.contentDiv.offsetHeight)/2 - this.winSize.h/2;
 
     this.activeDiv.style.left = this.imgDiv.style.left;
     this.activeDiv.style.top = this.imgDiv.style.top;
@@ -62,7 +83,7 @@ var ROSMapGadget = Class.create({
     this.drag = false;
     this.zoom = 1.0;
 
-    this.parentElem.observe('mousedown', Event.stop);
+    this.contentDiv.observe('mousedown', Event.stop);
 
     this.activeDiv.addEventListener('DOMMouseScroll', this.zoomCB.bind(this), false);
 
@@ -83,17 +104,20 @@ var ROSMapGadget = Class.create({
     this.poseTF = new ROSTF("/base_link");
     this.poseTF.subscribe(this, this.poseSubscribed);
 
-    Event.observe($('activediv'), 'mouseup', this.mouseup.bind(this));
-    Event.observe($('activediv'), 'mousedown', this.mousedown.bind(this));
-    Event.observe($('activediv'), 'mousemove', this.mousemove.bind(this));
-    Event.observe($('activediv'), 'mouseout', this.mouseup.bind(this));
-    Event.observe($('activediv'), 'dblclick', this.dblclick.bind(this));
+    this.activeDiv.observe('mouseup', this.mouseup.bind(this));
+    this.activeDiv.observe('mousedown', this.mousedown.bind(this));
+    this.activeDiv.observe('mousemove', this.mousemove.bind(this));
+    this.activeDiv.observe('mouseout', this.mouseup.bind(this));
 
+    // Get the static map
+    pump = new MessagePump();
+    pump.sendAJAX('/ros/service' + this.service + '?x=0&y=0', 
+                  this, this.mapResponseCB);
   },
 
   debug: function (str)
   {
-    document.getElementById("debug").value = str;
+    //document.getElementById("debug").value = str;
   },
 
   setGoal: function()
@@ -101,14 +125,6 @@ var ROSMapGadget = Class.create({
     this.settingGoal = true;
   },
 
-  dblclick: function(e)
-  {
-    /*mousePos = {'x': e.pageX, 'y' : e.pageY };
-    pos = this.screenToMap(mousePos);
-
-    this.goalPoseTopic.publish("?x="+pos.x+"&y="+pos.y+"&t=" + this.initPoseAngle );
-     */
-  },
 
   setPose: function()
   {
@@ -387,20 +403,14 @@ var ROSMapGadget = Class.create({
     this.poseTF.getMessage(this, this.poseResponseCB);
   },
 
-  call: function()
-  {
-    pump = new MessagePump();
-    pump.sendAJAX('/ros/service' + this.service + '?x=0&y=0', this, this.responseCB);
-  },
 
-  responseCB: function (myself, pump)
+  mapResponseCB: function (myself, pump)
   {
     jsonData = eval( '(' + pump.response + ')' );
 
     myself.img.src = jsonData.data;
     myself.mapSize.w = jsonData.width;
     myself.mapSize.h = jsonData.height;
-
   }
 
 });

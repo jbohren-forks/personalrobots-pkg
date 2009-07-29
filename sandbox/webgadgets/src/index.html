@@ -5,9 +5,12 @@
     <script type="text/javascript" src="3rdparty/prototype.js"></script>
     <script type="text/javascript" src="3rdparty/wz_jsgraphics.js"></script>
     <script type="text/javascript" src="ros.js"></script>
+    <script type="text/javascript" src="image_gadget.js"></script>
+    <script type="text/javascript" src="map_gadget.js"></script>
+    <script type="text/javascript" src="startup_gadget.js"></script>
     <script type="text/javascript">
 
-      function gadgetsWindow()
+      function showGadgets()
       {
         width = document.body.clientWidth;
         height = document.body.clientHeight;
@@ -21,14 +24,23 @@
         newDiv.style.left = l;
       }
 
+      function hideGadgets()
+      {
+        document.getElementById('displaybox').style.display="none";
+      }
+
       function addGadget(name)
       {
-        var gadget = new ROSGadget(name);
+        if (name == "image_gadget")
+          gadget = new ROSImageGadget();
+        else if (name == "map_gadget")
+          gadget = new ROSMapGadget();
+
       }
 
       function init()
       {
-        var gadget = new ROSGadget("startup_gadget");
+        var gadget = new ROSStartupGadget();
       }
 
       window.onload = init;
@@ -36,20 +48,19 @@
   </head>
 
   <body>
-    <div id="header">
+    <div id="mainheader">
       <div id="title">ROS Web Gadgets</div>
-      <div>
-        <a style="float:right; vertical-align: middle; text-decoration:none;" href="#" onclick='gadgetsWindow();'>+ Add Gadget</a>
-      </div>
+      <div style="width:100%; text-align: right;"><a href='#' onclick='showGadgets();'>+ Add Gadget</a></div>
     </div>
 
     <div id='displaybox' style="display:none;">
+      <a href='#' style="float:left; float:top; padding-top:2px;font-weight: bold;" onclick="hideGadgets();">Close</a>
       <h1> Add Gadget </h1>
 
       <div id="gadgetdesc">
         <div id="imgbox">
           <img src="images/imageview.png" style="margin-bottom:10px;" height="100px">
-          <a href="#" style="display: block; text-decoration:none;" onclick="addGadget('image_gadget');">Add Now</a>
+          <a href="#" style="display: block;" onclick="addGadget('image_gadget');"><b>Add Now</b></a>
         </div>
 
         <p>
@@ -63,8 +74,8 @@
       <div id="gadgetdesc">
         <div id="imgbox">
           <img src="images/navview.png" style="margin-bottom:10px;" height ="100px">
-          <a href="#" style="display:block; text-decoration:none;" 
-             onclick="addGadget('map_gadget');">Add Now</a>
+          <a href="#" style="display:block;" 
+            onclick="addGadget('map_gadget');"><b>Add Now</b></a>
         </div>
 
         <p>
@@ -77,6 +88,8 @@
         </p>
       </div>
     </div>
+
+    <div id='maincontent'> </div>
 
   </body>
 </html>

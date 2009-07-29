@@ -15,12 +15,12 @@
 
         if (gadget == null)
         {
-          gadget = new ROSImageGadget(topic,document.body);
+          gadget = new ROSImageGadget(topic);
         }
         else
         {
           gadget.stop();
-          gadget.initialize(topic, document.body);
+          gadget.initialize(topic);
         }
         gadget.start();
       }
@@ -35,9 +35,8 @@
 
       function initcb(myself, pump)
       {
-        topics = eval( '(' + pump.response + ')' );
+        /*topics = eval( '(' + pump.response + ')' );
         myselect = document.getElementById('topicselect');
-
 
         myselect.add(new Option("----",""), null);
         for (i = 0; i < topics.topics.length; i+=1)
@@ -48,7 +47,7 @@
             var optNew = new Option(topics.topics[i].name, topics.topics[i].type);
             myselect.add(optNew, null);
           }
-        }
+        }*/
       }
 
       function init()
@@ -56,6 +55,10 @@
         pump = new MessagePump();
         pump.sendAJAX("/ros/topics",null, initcb);
 
+        /*document.writeln(parent.document.getElementById('image_gadget').width);
+        parent.document.getElementById('image_gadget').height = '420';
+        parent.document.getElementById('image_gadget').style.position='fixed';
+        */
       }
 
       window.onload = init;

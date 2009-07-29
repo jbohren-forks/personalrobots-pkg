@@ -4,18 +4,31 @@ body
   font-size: 12px;
 }
 
-#header
+a
 {
-  height: 50px;
-  border-bottom: 5px solid #1e2a47;
+  text-decoration: none;
+  color: #2c3c53;
 }
 
-#header #title
+a:hover
+{
+  color: #6f98ee;
+}
+
+#mainheader
+{
+  border-bottom: 5px solid #1e2a47;
+  margin-bottom: 10px;
+}
+
+#mainheader #title
 {
   font-size: 200%;
   font-weight: bold;
   color: #1e2a47;
 }
+
+
 
 #displaybox
 {
@@ -55,16 +68,19 @@ body
   min-width: 200px;
 }
 
+#displaybox a
+{
+  font-size: 120%;
+}
 
 
-
-.gadget
+#gadget
 {
   min-width: 400px;
   position: relative;
 }
 
-.gadget #header
+#gadget #header
 {
   background-color: #7cbd47;
   vertical-align: middle;
@@ -78,7 +94,7 @@ body
   font-size: 120%;
 }
 
-.gadget #content
+#gadget #content
 {
   padding: 10px;
   background-color: #eef9e6;
