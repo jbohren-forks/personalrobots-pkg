@@ -41,6 +41,12 @@
 namespace actionlib
 {
 
+/**
+ * \brief Full interface to an ActionServer
+ * ActionClient provides a complete client side implementation of the ActionInterface protocol.
+ * It provides callbacks for every client side transition, giving the user full observation into
+ * the client side state machine.
+ */
 template <class ActionSpec>
 class ActionClient
 {
@@ -51,16 +57,32 @@ public:
   typedef boost::function<void (GoalHandle<ActionSpec>, const FeedbackConstPtr&) > FeedbackCallback;
   typedef boost::function<void (const ActionGoalConstPtr)> SendGoalFunc;
 
+  /**
+   * \brief ActionClient
+   * Constructs an ActionClient and sets up the necessary ros topics for the ActionInterface
+   * \param name The action name. Defines the namespace in which the action communicates
+   */
   ActionClient(const std::string& name) : n_(name)
   {
     initClient();
   }
 
+  /**
+   * Constructs an ActionClient and sets up the necessary ros topics for the ActionInterface,
+   * and namespaces them according the a specified NodeHandle
+   * \param n The node handle on top of which we want to namespace our action
+   * \param name The action name. Defines the namespace in which the action communicates
+   */
   ActionClient(const ros::NodeHandle& n, const std::string& name) : n_(n, name)
   {
     initClient();
   }
 
+  /**
+   * \brief Sends a goal to the ActionServer, and also registers callbacks
+   * \param transition_cb Callback that gets called on every client state transition
+   * \param feedback_cb Callback that gets called whenever feedback for this goal is received
+   */
   GoalHandle<ActionSpec> sendGoal(const Goal& goal,
                                   TransitionCallback transition_cb = TransitionCallback(),
                                   FeedbackCallback   feedback_cb   = FeedbackCallback())
@@ -74,6 +96,34 @@ public:
     ROS_DEBUG("Done");
 
     return gh;
+  }
+
+  /**
+   * \brief Cancel all goals currently running on the action server
+   * This preempts all goals running on the action server at the point that
+   * this message is serviced by the ActionServer.
+   */
+  void cancelAllGoals()
+  {
+    ActionGoal cancel_msg;
+    // CancelAll policy encoded by stamp=0, id=0
+    cancel_msg.goal_id.stamp = ros::Time(0,0);
+    cancel_msg.goal_id.id = ros::Time(0,0);
+    cancel_msg.request_type.type = RequestType::PREEMPT_REQUEST;
+    goal_pub_.publish(cancel_msg);
+  }
+
+  /**
+   * \brief Cancel all goals that were stamped at and before the specified time
+   * \param time All goals stamped at or before `time` will be canceled
+   */
+  void cancelGoalsAtAndBeforeTime(const ros::Time& time)
+  {
+    ActionGoal cancel_msg;
+    cancel_msg.goal_id.stamp = time;
+    cancel_msg.goal_id.id = ros::Time(0,0);
+    cancel_msg.request_type.type = RequestType::PREEMPT_REQUEST;
+    goal_pub_.publish(cancel_msg);
   }
 
 private:

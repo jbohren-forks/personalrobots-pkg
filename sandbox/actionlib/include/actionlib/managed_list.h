@@ -109,12 +109,13 @@ public:
       /**
        * \brief Construct an empty handle
        */
-      Handle() : it_(iterator()), handle_tracker_(boost::shared_ptr<void>()) { }
+      Handle() : it_(iterator()), handle_tracker_(boost::shared_ptr<void>()), valid_(false) { }
 
       const Handle& operator=(const Handle& rhs)
       {
         it_ = rhs.it_;
         handle_tracker_ = rhs.handle_tracker_;
+        valid_ = rhs.valid_;
         return rhs;
       }
 
@@ -125,17 +126,19 @@ public:
        */
       T& getElem()
       {
+        assert(valid_);
         return *it_;
       }
 
       friend class ManagedList;
     private:
       Handle( const boost::shared_ptr<void>& handle_tracker, iterator it) :
-        it_(it), handle_tracker_(handle_tracker)
+        it_(it), handle_tracker_(handle_tracker), valid_(true)
       { }
 
       iterator it_;
       boost::shared_ptr<void> handle_tracker_;
+      bool valid_;
   };
 
   ManagedList() { }
