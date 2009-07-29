@@ -11,7 +11,7 @@ float64 resolution
 uint32[] size
 
 # origin of the distance field
-robot_msgs/Vector3 origin
+geometry_msgs/Vector3 origin
 
 # array of voxels with the associated distance field information
 Voxel[] voxels 
