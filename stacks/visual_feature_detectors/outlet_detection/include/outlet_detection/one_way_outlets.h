@@ -28,4 +28,8 @@ void detect_outlets_one_way(IplImage* test_image, const outlet_template_t& outle
                             vector<outlet_t>& holes, IplImage* color_image, 
                             const char* output_path, const char* output_filename);
 
+// helper function for running hough transform over several scales
+void ScaleFeatures(const vector<feature_t>& src, vector<feature_t>& dst, float scale);
+
+
 #endif //_ONE_WAY_OUTLET

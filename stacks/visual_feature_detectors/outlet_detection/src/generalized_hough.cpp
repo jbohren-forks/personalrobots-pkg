@@ -1704,7 +1704,7 @@ void calcExactLocation_(vector<feature_t>& features,const vector<feature_t>& tra
 	}
 }
 
-void generilizedHoughTransform(vector<feature_t>& hole_candidates, const vector<feature_t>& train_features, int* hist_size, float** ranges,vector<outlet_t>& holes, IplImage* ghtImage, IplImage* resImage)
+float generalizedHoughTransform(vector<feature_t>& hole_candidates, const vector<feature_t>& train_features, int* hist_size, float** ranges,vector<outlet_t>& holes, IplImage* ghtImage, IplImage* resImage)
 {
 	CvSparseMat* hist = buildHoughHist(hole_candidates,train_features,hist_size,ranges);
 	float** values = new float*[1];// = getMaxHistValues(hist,hist_size);
@@ -1825,4 +1825,6 @@ if (resImage)
 	for (int i=0;i<count;i++)
 		delete[] values[i];
 	delete[] values;
+    
+    return error;
 }
