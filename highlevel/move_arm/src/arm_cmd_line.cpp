@@ -180,13 +180,15 @@ void setupGoalEEf(const std::string &link, double x, double y, double z, pr2_rob
     goal.goal_constraints.pose_constraint[0].orientation_importance = 0.01;
 }
 
-void setConfig(const planning_models::StateParams *sp, const std::vector<std::string> &names, pr2_robot_actions::MoveArmGoal &goal)
+void setConfig(const planning_models::StateParams *_sp, const std::vector<std::string> &names, pr2_robot_actions::MoveArmGoal &goal)
 {
     setupGoal(names, goal);
+    planning_models::StateParams sp(*_sp);
+    sp.enforceBounds();
     for (unsigned int i = 0 ; i < names.size() ; ++i)
     {
 	goal.goal_constraints.joint_constraint[i].value[0] = 
-	    sp->getParamsJoint(goal.goal_constraints.joint_constraint[i].joint_name)[0];
+	    sp.getParamsJoint(goal.goal_constraints.joint_constraint[i].joint_name)[0];
     }
 }
 
