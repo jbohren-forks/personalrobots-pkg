@@ -350,7 +350,7 @@ namespace actionlib {
            * @brief  A private method to set status to PENDING or RECALLING
            * @return True if the cancel request should be passed on to the user, false otherwise
            */
-          bool cancelRequested(){
+          bool setCancelRequested(){
             ROS_DEBUG("Transisitoning to a cancel requested state on goal id: %.2f, stamp: %.2f", getGoalID().id.toSec(), getGoalID().stamp.toSec());
             if(goal_){
               unsigned int status = (*status_it_).status_.status;
@@ -478,20 +478,21 @@ namespace actionlib {
             //set the status of the goal to PREEMPTING or RECALLING as approriate
             //and check if the request should be passed on to the user
             GoalHandle gh(it, this);
-            if(gh.cancelRequested()){
+            if(gh.setCancelRequested()){
               //call the user's cancel callback on the relevant goal
               cancel_callback_(gh);
             }
           }
 
-          //if the requested goal_id was not found, and it is non-zero, then we need to store the cancel request
-          if(goal_id->id != ros::Time() && !goal_id_found){
-            typename std::list<StatusTracker>::iterator it = status_list_.insert(status_list_.end(), 
-                StatusTracker(*goal_id, GoalStatus::RECALLING));
-            //start the timer for how long the status will live in the list without a goal handle to it
-            (*it).handle_destruction_time_ = ros::Time::now();
-          }
         }
+
+	//if the requested goal_id was not found, and it is non-zero, then we need to store the cancel request
+	if(goal_id->id != ros::Time() && !goal_id_found){
+		typename std::list<StatusTracker>::iterator it = status_list_.insert(status_list_.end(), 
+				StatusTracker(*goal_id, GoalStatus::RECALLING));
+		//start the timer for how long the status will live in the list without a goal handle to it
+		(*it).handle_destruction_time_ = ros::Time::now();
+	}
 
         //make sure to set last_cancel_ based on the stamp associated with this cancel request
         if(goal_id->stamp > last_cancel_)
@@ -573,7 +574,7 @@ namespace actionlib {
           //check if the item is due for deletion from the status list
           if((*it).handle_destruction_time_ != ros::Time()
               && (*it).handle_destruction_time_ + status_list_timeout_ < ros::Time::now()){
-            status_list_.erase(it++);
+            it = status_list_.erase(it);
           }
           else
             ++it;
