@@ -38,7 +38,7 @@
 #define SPLINE_SMOOTHER_H_
 
 #include <vector>
-#include <spline_smoother/WaypointTrajectory.h>
+#include <manipulation_msgs/WaypointTraj.h>
 
 namespace spline_smoother
 {
@@ -59,7 +59,7 @@ public:
    *
    * \return true if successful, false if not
    */
-  virtual bool smooth(const WaypointTrajectory& trajectory_in, WaypointTrajectory& trajectory_out) const = 0;
+  virtual bool smooth(const manipulation_msgs::WaypointTraj& trajectory_in, manipulation_msgs::WaypointTraj& trajectory_out) const = 0;
 };
 
 }

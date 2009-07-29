@@ -14,6 +14,7 @@ based criteria.
 
   <depend package="roscpp" />
   <depend package="filters" />
+  <depend package="manipulation_msgs" />
 
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lspline_smoother"/>

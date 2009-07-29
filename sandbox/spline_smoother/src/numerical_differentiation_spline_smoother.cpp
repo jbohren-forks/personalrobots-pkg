@@ -35,6 +35,7 @@
 /** \author Mrinal Kalakrishnan */
 
 #include <spline_smoother/numerical_differentiation_spline_smoother.h>
+#include <spline_smoother/spline_smoother_utils.h>
 
 namespace spline_smoother
 {
@@ -47,31 +48,41 @@ NumericalDifferentiationSplineSmoother::~NumericalDifferentiationSplineSmoother(
 {
 }
 
-bool NumericalDifferentiationSplineSmoother::smooth(const WaypointTrajectory& trajectory_in, WaypointTrajectory& trajectory_out) const
+bool NumericalDifferentiationSplineSmoother::smooth(const manipulation_msgs::WaypointTraj& trajectory_in, manipulation_msgs::WaypointTraj& trajectory_out) const
 {
   bool success = true;
-  int size = trajectory_in.waypoints.size();
+  int size = trajectory_in.points.size();
+  int num_traj = trajectory_in.names.size();
   trajectory_out = trajectory_in;
+
+  if (!checkTrajectoryConsistency(trajectory_out))
+    return false;
 
   // keep the first and last velocities intact
 
-  for (int i=1; i<size-1; i++)
+  // for every point in time:
+  for (int i=1; i<size-1; ++i)
   {
-    double dt1 = trajectory_in.waypoints[i].time - trajectory_in.waypoints[i-1].time;
-    double dt2 = trajectory_in.waypoints[i+1].time - trajectory_in.waypoints[i].time;
-    double dx1 = trajectory_in.waypoints[i].position - trajectory_in.waypoints[i-1].position;
-    double dx2 = trajectory_in.waypoints[i+1].position - trajectory_in.waypoints[i].position;
-    double dt = dt1+dt2;
+    double dt1 = trajectory_in.points[i].time - trajectory_in.points[i-1].time;
+    double dt2 = trajectory_in.points[i+1].time - trajectory_in.points[i].time;
 
-    double v1 = dx1/dt1;
-    double v2 = dx2/dt2;
+    // for every (joint) trajectory
+    for (int j=0; j<num_traj; ++j)
+    {
+      double dx1 = trajectory_in.points[i].positions[j] - trajectory_in.points[i-1].positions[j];
+      double dx2 = trajectory_in.points[i+1].positions[j] - trajectory_in.points[i].positions[j];
 
-    trajectory_out.waypoints[i].velocity = v1*(dt1/dt) + v2*(dt2/dt);
+      double v1 = dx1/dt1;
+      double v2 = dx2/dt2;
+
+      trajectory_out.points[i].velocities[j] = 0.5*(v1 + v2);
+    }
   }
 
   // all accelerations are 0 for now:
   for (int i=0; i<size; i++)
-    trajectory_out.waypoints[i].acceleration = 0.0;
+    for (int j=0; j<num_traj; j++)
+      trajectory_out.points[i].accelerations[j] = 0.0;
 
   return success;
 }

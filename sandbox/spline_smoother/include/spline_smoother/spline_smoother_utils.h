@@ -38,8 +38,20 @@
 #ifndef SPLINE_SMOOTHER_UTILS_H_
 #define SPLINE_SMOOTHER_UTILS_H_
 
+#include <manipulation_msgs/WaypointTraj.h>
+#include <ros/ros.h>
+
 namespace spline_smoother
 {
+
+/**
+ * \brief Ensures the consistency of a WaypointTraj message, and resizes vel and acc arrays
+ *
+ * Ensures that the number of (joint) names matches the number of positions in each waypoint
+ * Resizes the velocities and accelerations for every waypoint, filling in zeros if necessary
+ * Ensures that time is strictly increasing
+ */
+bool checkTrajectoryConsistency(manipulation_msgs::WaypointTraj& waypoint_traj);
 
 template <typename T>
 void differentiate(const std::vector<T>& x, std::vector<T>& xd);
@@ -65,7 +77,7 @@ void tridiagonalSolve(std::vector<T>& a,
 /////////////////////////// inline implementations follow //////////////////////////////
 
 template <typename T>
-inline void differentiate(const std::vector<T>& x, std::vector<T>& xd)
+void differentiate(const std::vector<T>& x, std::vector<T>& xd)
 {
   int size = x.size();
   xd.resize(size-1);
@@ -100,6 +112,34 @@ void tridiagonalSolve(std::vector<T>& a,
   {
     x[i] = (d[i] - c[i]*x[i+1])/b[i];
   }
+}
+
+inline bool checkTrajectoryConsistency(manipulation_msgs::WaypointTraj& waypoint_traj)
+{
+  unsigned int length = waypoint_traj.points.size();
+  unsigned int num_joints = waypoint_traj.names.size();
+
+  double prev_time = -1.0;
+
+  for (unsigned int i=0; i<length; i++)
+  {
+    if (waypoint_traj.points[i].positions.size() != num_joints)
+    {
+      ROS_ERROR("Number of positions (%d) at trajectory index %d doesn't match number of joint names (%d)",
+          waypoint_traj.points[i].positions.size(), i, num_joints);
+      return false;
+    }
+    if (waypoint_traj.points[i].time < prev_time)
+    {
+      ROS_ERROR("Time of waypoint at trajectory index %d (%f) is not greater than or equal to the previous time (%f)",
+          i, waypoint_traj.points[i].time, prev_time);
+      return false;
+    }
+    prev_time = waypoint_traj.points[i].time;
+    waypoint_traj.points[i].velocities.resize(num_joints, 0.0);
+    waypoint_traj.points[i].accelerations.resize(num_joints, 0.0);
+  }
+  return true;
 }
 
 }
