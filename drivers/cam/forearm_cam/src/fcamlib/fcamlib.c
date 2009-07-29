@@ -133,7 +133,7 @@ int fcamDiscover(const char *ifName, IpCamList *ipCamList, const char *ipAddress
 	int newCamCount = 0;
 	do {
 		// Wait in the loop for replies. wait_us is updated each time through the loop.
-		if( !wgWaitForPacket(s, PKTT_ANNOUNCE, sizeof(PacketAnnounce) - CAMERA_NAME_LEN, &wait_us)  && (wait_us != 0) ) {
+		if( !wgWaitForPacket(s, PKTT_ANNOUNCE, sizeof(PacketAnnounce) - CAMERA_NAME_LEN - sizeof(IPAddress), &wait_us)  && (wait_us != 0) ) {
 			// We've received an Announce packet, so pull it out of the receive queue
 			PacketAnnounce aPkt;
       struct sockaddr_in fromaddr;
@@ -257,7 +257,7 @@ int fcamConfigure( IpCamList *camInfo, const char *ipAddress, unsigned wait_us) 
 
 	// Wait up to wait_us for a valid packet to be received on s
 	do {
-		if( !wgWaitForPacket(s, PKTT_ANNOUNCE, sizeof(PacketAnnounce) - CAMERA_NAME_LEN - 1, &wait_us)  && (wait_us != 0) ) {
+		if( !wgWaitForPacket(s, PKTT_ANNOUNCE, sizeof(PacketAnnounce) - CAMERA_NAME_LEN - sizeof(IPAddress), &wait_us)  && (wait_us != 0) ) {
 			PacketAnnounce aPkt;
 
 			if( recvfrom( s, &aPkt, sizeof(PacketAnnounce), 0, NULL, NULL )  == -1 ) {
