@@ -1,0 +1,4 @@
+<filters>
+	<filter type="ClampedCubicSplineSmoother" name="clamped_cubic"/>
+</filters>
+

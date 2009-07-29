@@ -1,0 +1,5 @@
+<launch> 
+	<node pkg="joint_waypoint_controller" name="joint_waypoint_controller" type="joint_waypoint_controller" output="screen" clear_params="true">
+		<param name="filters" textfile="$(find joint_waypoint_controller)/launch/filters.xml"/>
+	</node>
+</launch>
