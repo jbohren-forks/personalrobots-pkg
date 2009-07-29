@@ -37,6 +37,13 @@ import wx
 import wx.aui
 import wx.py.shell
 import rxtools
+
+# TODO: remove once 0.7.1 is released
+try:
+    import rxtools.cppwidgets as rxtools
+except ImportError:
+    pass
+
 import runtime_monitor
 import hardware_panel
 from runtime_monitor.monitor_panel import *
