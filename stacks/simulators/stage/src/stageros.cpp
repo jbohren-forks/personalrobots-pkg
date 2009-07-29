@@ -92,7 +92,7 @@ Publishes to (name / type):
 #include <sensor_msgs/LaserScan.h>
 #include <deprecated_msgs/RobotBase2DOdom.h>
 #include <geometry_msgs/PoseWithRatesStamped.h>
-#include <geometry_msgs/PoseDot.h>
+#include <robot_msgs/PoseDot.h>
 #include <roslib/Time.h>
 
 #include "tf/transform_broadcaster.h"
@@ -108,7 +108,7 @@ class StageNode : public ros::Node
 {
   private:
     // Messages that we'll send or receive
-    geometry_msgs::PoseDot *velMsgs;
+    robot_msgs::PoseDot *velMsgs;
     sensor_msgs::LaserScan *laserMsgs;
     deprecated_msgs::RobotBase2DOdom *odomMsgs;
     geometry_msgs::PoseWithRatesStamped *groundTruthMsgs;
@@ -227,7 +227,7 @@ StageNode::StageNode(int argc, char** argv, bool gui, const char* fname) :
   size_t numRobots = positionmodels.size();
   ROS_INFO("found %d position model(s) in the file", numRobots);
 
-  this->velMsgs = new geometry_msgs::PoseDot[numRobots];
+  this->velMsgs = new robot_msgs::PoseDot[numRobots];
   this->laserMsgs = new sensor_msgs::LaserScan[numRobots];
   this->odomMsgs = new deprecated_msgs::RobotBase2DOdom[numRobots];
   this->groundTruthMsgs = new geometry_msgs::PoseWithRatesStamped[numRobots];
@@ -365,13 +365,13 @@ StageNode::Update()
     tf::Transform gt(tf::Quaternion(gpose.a-M_PI/2.0, 0, 0), 
         tf::Point(gpose.y, -gpose.x, 0.0));
 
-    this->groundTruthMsgs[r].pos.position.x     = gt.getOrigin().x();
-    this->groundTruthMsgs[r].pos.position.y     = gt.getOrigin().y();
-    this->groundTruthMsgs[r].pos.position.z     = gt.getOrigin().z();
-    this->groundTruthMsgs[r].pos.orientation.x  = gt.getRotation().x();
-    this->groundTruthMsgs[r].pos.orientation.y  = gt.getRotation().y();
-    this->groundTruthMsgs[r].pos.orientation.z  = gt.getRotation().z();
-    this->groundTruthMsgs[r].pos.orientation.w  = gt.getRotation().w();
+    this->groundTruthMsgs[r].pose_with_rates.pose.position.x     = gt.getOrigin().x();
+    this->groundTruthMsgs[r].pose_with_rates.pose.position.y     = gt.getOrigin().y();
+    this->groundTruthMsgs[r].pose_with_rates.pose.position.z     = gt.getOrigin().z();
+    this->groundTruthMsgs[r].pose_with_rates.pose.orientation.x  = gt.getRotation().x();
+    this->groundTruthMsgs[r].pose_with_rates.pose.orientation.y  = gt.getRotation().y();
+    this->groundTruthMsgs[r].pose_with_rates.pose.orientation.z  = gt.getRotation().z();
+    this->groundTruthMsgs[r].pose_with_rates.pose.orientation.w  = gt.getRotation().w();
 
     this->groundTruthMsgs[r].header.frame_id = mapName("odom", r);
     this->groundTruthMsgs[r].header.stamp = sim_time;
