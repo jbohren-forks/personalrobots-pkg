@@ -38,7 +38,6 @@
 
 
 using namespace std;
-using namespace robot_msgs;
 
 
 static const string node_name = "timing_diagnostics_node";

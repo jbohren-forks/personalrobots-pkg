@@ -40,7 +40,6 @@
 using namespace std;
 using namespace ros;
 using namespace tf;
-using namespace robot_msgs;
 
 
 

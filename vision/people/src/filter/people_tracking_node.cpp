@@ -45,7 +45,6 @@
 using namespace std;
 using namespace tf;
 using namespace BFL;
-using namespace robot_msgs;
 using namespace message_sequencing;
 
 static const double       sequencer_delay            = 0.8;
@@ -209,7 +208,7 @@ namespace estimation
       // visualization variables
       vector<geometry_msgs::Point32> filter_visualize(trackers_.size());
       vector<float> weights(trackers_.size());
-      robot_msgs::ChannelFloat32 channel;
+      sensor_msgs::ChannelFloat32 channel;
 
       // loop over trackers
       unsigned int i=0;

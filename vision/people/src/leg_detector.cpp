@@ -614,7 +614,7 @@ public:
 
     vector<geometry_msgs::Point32> filter_visualize(saved_features_.size());
     vector<float> weights(saved_features_.size());
-    robot_msgs::ChannelFloat32 channel;
+    sensor_msgs::ChannelFloat32 channel;
     int i = 0;
 
     for (list<SavedFeature*>::iterator sf_iter = saved_features_.begin();
