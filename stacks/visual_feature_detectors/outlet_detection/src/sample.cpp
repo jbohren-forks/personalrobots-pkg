@@ -25,9 +25,11 @@ using namespace std;
 #include "outlet_detection/learning.h"
 #include "star_detector/detector.h"
 #include "outlet_detection/outlet_detector.h"
+#include "outlet_detection/outlet_detector_test.h"
 
-int LoadCameraParams(char* filename, CvMat** intrinsic_matrix, CvMat** distortion_coeffs)
+int __LoadCameraParams(char* filename, CvMat** intrinsic_matrix, CvMat** distortion_coeffs)
 {
+
 	CvFileStorage* fs = cvOpenFileStorage( filename, 0, CV_STORAGE_READ );
 	if (fs==NULL) return 0;
 	
@@ -39,8 +41,11 @@ int LoadCameraParams(char* filename, CvMat** intrinsic_matrix, CvMat** distortio
 	return 1;
 }
 
-int main(int argc,char** argv)
+int __main(int argc,char** argv)
 {    
+	
+
+
 	char path[1024], config_filename[1024], camera_filename[1024], output_path[1024], 
         train_path[1024], train_config[1024], pca_config[1024];
     
@@ -128,7 +133,17 @@ int main(int argc,char** argv)
 	// reading camera params
 	CvMat* intrinsic_matrix = 0;
 	CvMat* distortion_params = 0; 
-	LoadCameraParams(camera_filename, &intrinsic_matrix, &distortion_params);
+	__LoadCameraParams(camera_filename, &intrinsic_matrix, &distortion_params);
+
+	//vector<outlet_test_elem> test_data;
+	//readTestFile("D:/1_full.txt",test_data);
+	//setRealOutlet(test_data[0]);
+	//runOutletDetectorTest(intrinsic_matrix, distortion_params, outlet_template, test_data, output_path);
+	//convertTestToReal(test_data);
+	//compareAllOutlets(test_data);
+	//showRealOutlet(test_data[0]);
+	//writeTestFile("d:/1_full.txt",test_data);
+	//writeTestResults("d:/res.txt",test_data);
     
 	while((ret=fscanf(fp, "%s\n", buf)) > 0)
 	{

@@ -7,6 +7,9 @@ Created by: Alexey Latyshev
 
 #include "outlet_detection/outlet_detector_test.h"
 
+#define DETECT_NA -1
+#define DETECT_SKIP -2
+
 int readTestFile(char* filename, vector<outlet_test_elem>& test_data)
 {
 	FILE* f = fopen(filename,"r");
@@ -49,10 +52,7 @@ int readTestFile(char* filename, vector<outlet_test_elem>& test_data)
 			}
 
 			if ((n_holes > 0)&&(n_holes % 3 == 0)&&((n_holes % 2 == 0)))
-			{
-
-				
-				
+			{				
 				fseek(f ,0 ,SEEK_SET);
 				int ground_n = 2*n_holes /3;
 				CvPoint* points = new CvPoint[n_holes];
@@ -79,26 +79,31 @@ int readTestFile(char* filename, vector<outlet_test_elem>& test_data)
 						tok = strtok(NULL,",");
 					}
 
-
+					outlet_t outlet;
 					if (j/2!=n_holes)
 					{
-						delete[] points;
-						fclose(f);
-						return 0;
+						//delete[] points;
+						test_data[i].n_matches = DETECT_SKIP;
+						//fclose(f);
+						//return 0;
 					}
-					outlet_t outlet;
-					for (j=0;j<ground_n/2;j++)
+					else
 					{
-						outlet.hole1 = points[2*j];
-						outlet.hole2 = points[2*j+1];
-						test_data[i].real_outlet.push_back(outlet);
-						
+					
+						for (j=0;j<ground_n/2;j++)
+						{
+							outlet.hole1 = points[2*j];
+							outlet.hole2 = points[2*j+1];
+							test_data[i].real_outlet.push_back(outlet);
+							
+						}
+						for (j = ground_n;j<n_holes;j++)
+						{
+							test_data[i].real_outlet[j-ground_n].ground_hole = points[j];
+						}
+						test_data[i].n_matches = DETECT_NA;
 					}
-					for (j = ground_n;j<n_holes;j++)
-					{
-						test_data[i].real_outlet[j-ground_n].ground_hole = points[j];
-					}
-					test_data[i].n_matches = -1;
+					
 					i++;
 				}
 
@@ -122,6 +127,8 @@ int writeTestFile(char* filename, vector<outlet_test_elem>& data)
 	{
 		for (int i=0;i<(size_t)(data.size());i++)
 		{
+			//if (data[i].n_matches == DETECT_SKIP)
+			//	continue;
 			fprintf(f,"%s",data[i].filename);
 			for (int j=0;j<(size_t)(data[i].real_outlet.size());j++)
 			{
@@ -145,6 +152,8 @@ void convertTestToReal(vector<outlet_test_elem>& data)
 {
 	for (int i=0;i<(size_t)data.size();i++)
 	{
+		if (data[i].n_matches == DETECT_SKIP)
+			continue;
 		data[i].real_outlet = data[i].test_outlet;
 	}
 }
@@ -335,7 +344,7 @@ void setRealOutlet(outlet_test_elem& test_elem, CvMat* intrinsic_matrix, CvMat* 
 			{
 				test_elem.real_outlet[j-ground_n].ground_hole = points[j];
 			}
-			test_elem.n_matches = -1;
+			test_elem.n_matches = DETECT_NA;
 		}
 
 
@@ -352,12 +361,21 @@ int writeTestResults(char* filename, const vector<outlet_test_elem>& test_data)
 	{
 		int nCorrect = 0;
 		int nNA = 0;
+		int nTotal = (size_t)test_data.size();
+		int nSkipped = 0;
 		fprintf(f,"Outlet detector test results\n---------------------\n");
 		for (int i=0;i<(size_t)test_data.size();i++)
 		{
+			if (test_data[i].n_matches == DETECT_SKIP)
+			{
+				//nTotal--;
+				fprintf(f,"%s: image was skipped\n",test_data[i].filename);
+				nSkipped++;
+				continue;
+			}
 			if (test_data[i].n_matches != 3*(int)(test_data[i].real_outlet.size()))
 			{
-				if (test_data[i].n_matches == -1)
+				if (test_data[i].n_matches == DETECT_NA)
 				{
 					fprintf(f,"%s: image wasn't tested\n",test_data[i].filename);
 					nNA++;
@@ -372,9 +390,9 @@ int writeTestResults(char* filename, const vector<outlet_test_elem>& test_data)
 		}
 		if (nCorrect+nNA > 0)
 			fprintf(f,"---------------------\n");
-		fprintf(f,"Total images:%d\nCorrect:%d\nIncorrect:%d\nNA:%d",(int)test_data.size(),nCorrect,(int)test_data.size()-nCorrect-nNA,nNA);
+		fprintf(f,"Total images:%d\nSkipped:%d\nCorrect:%d\nIncorrect:%d\nNA:%d",nTotal,nSkipped,nCorrect,(int)test_data.size()-nCorrect-nNA,nNA);
 		fclose(f);
-		return (int)test_data.size();
+		return nTotal-nSkipped;
 	}
 
 	return 0;
@@ -384,8 +402,13 @@ int compareOutlets(outlet_test_elem& test_elem, int accuracy)
 {
 	if ((int)test_elem.real_outlet.size() != (int)test_elem.test_outlet.size())
 	{
-		test_elem.n_matches = -1;
-		return -1;
+		if (((int)test_elem.test_outlet.size()==0)&&((int)test_elem.real_outlet.size()>0))
+		{
+			test_elem.n_matches = 0;
+			return 0;
+		}
+		test_elem.n_matches = DETECT_NA;
+		return DETECT_NA;
 	}
 
 	int nOutlets = 0;
@@ -416,6 +439,8 @@ int compareAllOutlets(vector<outlet_test_elem>& test_data, int accuracy)
 	int res = 0;
 	for (int i=0;i<(size_t)test_data.size();i++)
 	{
+		if (test_data[i].n_matches == DETECT_SKIP)
+			continue;
 		if (compareOutlets(test_data[i]) == (int)test_data[i].real_outlet.size())
 			res++;
 	}
@@ -431,6 +456,8 @@ void runOutletDetectorTest(CvMat* intrinsic_matrix, CvMat* distortion_params,
 
 	for (int i=0;i<(size_t)test_data.size();i++)
 	{
+		if (test_data[i].n_matches == DETECT_SKIP)
+			continue;
 		if (output_path)
 		{
 			char* name = strrchr(test_data[i].filename,'/');
@@ -443,6 +470,7 @@ void runOutletDetectorTest(CvMat* intrinsic_matrix, CvMat* distortion_params,
 			printf("Unable to load image %s\n",test_data[i].filename);
 			continue;
 		}
+		printf("%s\n",filename);
 		if (output_path)
 			detect_outlet_tuple(img,intrinsic_matrix,distortion_params,test_data[i].test_outlet,outlet_templ,output_path,filename);
 		else

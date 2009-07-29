@@ -22,6 +22,7 @@ typedef struct
 	int n_matches;
 } outlet_test_elem;
 
+
 //Reading test file from the hard drive
 //Returns number of outlets in the test template
 // Test file has the following structure:
