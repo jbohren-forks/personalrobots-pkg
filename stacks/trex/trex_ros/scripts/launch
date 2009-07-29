@@ -27,14 +27,19 @@ def set_params():
 argv = sys.argv
 
 # Check arguments
-if(len(argv) < 3):
-  print("usage: launch start_dir launch_file [roslaunch args]")
+if(len(argv) < 2):
+  print("usage: launch [start_dir] launch_file [roslaunch args]")
   exit(-1)
 
 # Process arguments
-start_dir = argv[1]
-launch_base = os.path.splitext(argv[2])[0] + ".launch"
-roslaunch_args = argv[3:]
+if len(argv) == 3:
+  start_dir = argv[1]
+  launch_base = os.path.splitext(argv[2])[0] + ".launch"
+  roslaunch_args = argv[3:]
+else:
+  start_dir = "."
+  launch_base = os.path.splitext(argv[1])[0] + ".launch"
+  roslaunch_args = argv[2:]
 
 # Generate target start path
 cwd = os.getcwd()
