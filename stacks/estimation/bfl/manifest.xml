@@ -1,7 +1,9 @@
 <package>
 <description brief="The Bayesian Filtering Library (latest)">
 
-This package contains the latest code from the Bayesian Filtering Library (BFL).  
+This package contains a recent version of the Bayesian Filtering Library (BFL).  
+For stability reasons, this package locks in a specific revision of BFL. This revision
+will be updated on a regular basis to the latest available BFL revision.
 This ROS package does not modify BFL in any way;
 it simply provides a convenient way to download and compile the library
 in a way that can be managed by the ROS dependency system.
