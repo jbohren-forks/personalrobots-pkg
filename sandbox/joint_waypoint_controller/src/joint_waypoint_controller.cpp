@@ -58,8 +58,6 @@ JointWaypointController::~JointWaypointController()
 
 bool JointWaypointController::init()
 {
-  //smooth_joint_trajectory_server_ = node_handle_.advertiseService("smooth_joint_trajectory", &SplineSmootherNode::smoothJointTrajectory, this);
-
   // get some params:
   std::string filters_xml;
   std::string trajectory_type_str;
@@ -95,9 +93,9 @@ bool JointWaypointController::init()
 
 
   // advertise services:
-  trajectory_start_server_ = node_handle_.advertiseService("TrajectoryStart", &JointWaypointController::trajectoryStart, this);
-  trajectory_query_server_ = node_handle_.advertiseService("TrajectoryQuery", &JointWaypointController::trajectoryQuery, this);
-  trajectory_cancel_server_ = node_handle_.advertiseService("TrajectoryCancel", &JointWaypointController::trajectoryCancel, this);
+  trajectory_start_server_ = node_handle_.advertiseService("~TrajectoryStart", &JointWaypointController::trajectoryStart, this);
+  trajectory_query_server_ = node_handle_.advertiseService("~TrajectoryQuery", &JointWaypointController::trajectoryQuery, this);
+  trajectory_cancel_server_ = node_handle_.advertiseService("~TrajectoryCancel", &JointWaypointController::trajectoryCancel, this);
 
   return true;
 }
