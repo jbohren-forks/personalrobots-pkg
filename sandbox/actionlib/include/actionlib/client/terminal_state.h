@@ -1,5 +1,4 @@
 /*********************************************************************
-*
 * Software License Agreement (BSD License)
 *
 *  Copyright (c) 2008, Willow Garage, Inc.
@@ -15,7 +14,7 @@
 *     copyright notice, this list of conditions and the following
 *     disclaimer in the documentation and/or other materials provided
 *     with the distribution.
-*   * Neither the name of Willow Garage, Inc. nor the names of its
+*   * Neither the name of the Willow Garage nor the names of its
 *     contributors may be used to endorse or promote products derived
 *     from this software without specific prior written permission.
 *
@@ -31,30 +30,32 @@
 *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
-*
-* Author: Eitan Marder-Eppstein
 *********************************************************************/
-#ifndef ACTION_DEFINITION_H_
-#define ACTION_DEFINITION_H_
-//A macro that will generate helpful typedefs for action client, server, and policy implementers
-namespace actionlib {
-#define ACTION_DEFINITION(ActionSpec) \
-  typedef typename ActionSpec::_action_goal_type ActionGoal; \
-  typedef typename ActionGoal::_goal_type Goal; \
-  typedef typename ActionSpec::_action_result_type ActionResult; \
-  typedef typename ActionResult::_result_type Result; \
-  typedef typename ActionSpec::_action_feedback_type ActionFeedback; \
-  typedef typename ActionFeedback::_feedback_type Feedback; \
-  \
-  typedef boost::shared_ptr<const ActionGoal> ActionGoalConstPtr; \
-  typedef boost::shared_ptr<ActionGoal> ActionGoalPtr; \
-  typedef boost::shared_ptr<const Goal> GoalConstPtr;\
-  \
-  typedef boost::shared_ptr<const ActionResult> ActionResultConstPtr; \
-  typedef boost::shared_ptr<const Result> ResultConstPtr;\
-  \
-  typedef boost::shared_ptr<const ActionFeedback> ActionFeedbackConstPtr; \
-  typedef boost::shared_ptr<const Feedback> FeedbackConstPtr;
+
+#ifndef ACTIONLIB_CLIENT_TERMINAL_STATE_H_
+#define ACTIONLIB_CLIENT_TERMINAL_STATE_H_
+
+namespace actionlib
+{
+
+class TerminalState
+{
+public:
+  enum StateEnum
+  {
+    RECALLED,
+    REJECTED,
+    PREEMPTED,
+    ABORTED,
+    SUCCEEDED,
+    LOST
+  } ;
+
+  StateEnum state_;
 };
+
+
+}
+
 #endif
 

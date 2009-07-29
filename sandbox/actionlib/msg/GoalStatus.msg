@@ -10,5 +10,8 @@ uint8 PREEMPTING      = 6
 uint8 RECALLING       = 7
 uint8 RECALLED        = 8
 
+# An action client can determine that a goal is LOST. This should not be sent over the wire.
+uint8 LOST            = 9
+
 #Allow for the user to associate a string with GoalStatus for debugging
 string text  
