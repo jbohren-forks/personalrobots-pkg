@@ -1,3 +1,0 @@
-string[] names
-JointWaypoint[] points
-
