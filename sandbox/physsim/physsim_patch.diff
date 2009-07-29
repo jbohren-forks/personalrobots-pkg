@@ -1,9 +1,9 @@
 Index: BUILD-OPTIONS.py
 ===================================================================
---- BUILD-OPTIONS.py	(revision 314)
+--- BUILD-OPTIONS.py	(revision 337)
 +++ BUILD-OPTIONS.py	(working copy)
-@@ -20,7 +20,7 @@
- PROFILE=0
+@@ -29,7 +29,7 @@
+ BUILD_KINEMATIC=True
  
  # Path to Boost includes
 -BOOST_INCLUDE_PATH="/usr/include"
@@ -11,50 +11,19 @@ Index: BUILD-OPTIONS.py
   
  # Path to Qhull includes
  QHULL_INCLUDE_PATH="/usr/include"
-Index: include/Physsim/Vector3.h
-===================================================================
---- include/Physsim/Vector3.h	(revision 314)
-+++ include/Physsim/Vector3.h	(working copy)
-@@ -26,7 +26,8 @@
-     void copy(const Vector3& source) { operator=(source); }
-     Real dot(const Vector3& v) const { return v[0]*_data[0] + v[1]*_data[1] + v[2]*_data[2]; }
-     static Real dot(const Vector3& v1, const Vector3& v2) { return v1[0]*v2[0] + v1[1]*v2[1] + v1[2]*v2[2]; }
--    void normalize() { assert(norm() > std::numeric_limits<Real>::epsilon()); operator/=(norm()); }
-+    //void normalize() { assert(norm() > std::numeric_limits<Real>::epsilon()); operator/=(norm()); }
-+    void normalize() { if (norm() > std::numeric_limits<Real>::epsilon()) operator/=(norm()); }
-     void normalize_or_zero() { Real nrm = norm(); if (nrm > std::numeric_limits<Real>::epsilon()) operator/=(nrm); else _data[0] = _data[1] = _data[2] = (Real) 0.0; }
-     static Vector3 normalize(const Vector3& v) { Vector3 w = v; w.normalize(); return w; }
-     unsigned size() const { return 3; }
-Index: include/Physsim/CollisionDetection.inl
-===================================================================
---- include/Physsim/CollisionDetection.inl	(revision 314)
-+++ include/Physsim/CollisionDetection.inl	(working copy)
-@@ -22,8 +22,10 @@
-   std::list<DynamicBodyPtr> dbs;
-   BOOST_FOREACH(CollisionGeometryPtr cg, _geoms)
-   {
--    RigidBodyPtr rb = cg->get_rigid_body();
--    ArticulatedBodyPtr ab = rb->get_articulated_body();
-+    //RigidBodyPtr rb = cg->get_rigid_body();
-+    //ArticulatedBodyPtr ab = rb->get_articulated_body();
-+    boost::shared_ptr<RigidBody> rb = cg->get_rigid_body();
-+    boost::shared_ptr<DynamicBody> ab = rb->get_articulated_body();
-     DynamicBodyPtr db;
-     if (ab)
-       db = ab;
 Index: SConstruct
 ===================================================================
---- SConstruct	(revision 314)
+--- SConstruct	(revision 337)
 +++ SConstruct	(working copy)
-@@ -35,6 +35,7 @@
+@@ -36,6 +36,7 @@
  DEFAULT_QHULL_LIB_PATH = '/usr/lib'
  DEFAULT_QT_LIB_PATH = '/usr/lib'
  DEFAULT_LAPACK_LIB_PATH = '/usr/lib'
 +DEFAULT_PREFIX_PATH = '/usr'
+ DEFAULT_PATH_LIB_PATH = '/usr/lib'
  
  # get options 
- vars.Add('CC', 'C++ compiler', 'g++')
-@@ -57,11 +58,15 @@
+@@ -63,11 +64,15 @@
  vars.Add('QT_LIB_PATH', 'Path to qt library', DEFAULT_QT_LIB_PATH)
  vars.Add('LAPACK_LIB_PATH', 'Path to LAPACK library', DEFAULT_LAPACK_LIB_PATH)
  vars.Add('QHULL_LIB_PATH', 'Path to qhull library', DEFAULT_QHULL_LIB_PATH)
@@ -67,27 +36,32 @@ Index: SConstruct
 +# make a copy for examples
 +env_with_vars = env.Clone()
 +
- # set C++ and link flags to empty initially
- __CCFLAGS = ""
- __LINKFLAGS = ""
-@@ -226,7 +231,7 @@
+ # setup C++ compiler
+ __CXX = env['CXX']
+ 
+@@ -250,9 +255,13 @@
      if USE_INVENTOR:
        libs.append(['Coin', 'SoQt', 'qt-mt', 'Xmu', 'Xi', 'Xext', 'SM'])
        libs.append(['ICE', 'X11'])
--    libs.append(['dl', 'pthread', LAPACK_LIB, 'cblas', 'qhull', 'm'])
-+    libs.append(['dl', 'pthread', LAPACK_LIB, 'cblas', 'qhull', 'm', 'gfortran'])
-     env = Environment(CPPPATH=inc_path, LIBS=libs, LIBPATH=lib_path,
++
+     if USE_PATH:
+       libs.append(['path46'])
+     libs.append(['dl', 'pthread', LAPACK_LIB, 'cblas', 'qhull', 'm'])
++
++    libs.append(['gfortran'])
++
+     env = Environment(CXX=__CXX, CPPPATH=inc_path, LIBS=libs, LIBPATH=lib_path,
                        CCFLAGS=__CCFLAGS, LINKFLAGS=__LINKFLAGS, 
-                       TOOLS=['default', 'qt'])
-@@ -276,15 +281,19 @@
+                       CXXFLAGS=__CCFLAGS, TOOLS=['default', 'qt'])
+@@ -306,15 +315,21 @@
  
- # build the Physsim library
+ # build the Moby library
  if SHARED_LIBRARY:
--	env.SharedLibrary('lib/libphyssim', sources)
 +	physsim = env.SharedLibrary('lib/physsim', sources)
+ 	env.SharedLibrary('lib/libmoby', sources)
  else:
--	env.Library('lib/libphyssim', sources)
 +	physsim = env.Library('lib/libphyssim', sources)
+ 	env.Library('lib/libmoby', sources)
  
  # build the examples and utilities
  if BUILD_EXAMPLES:
@@ -104,9 +78,9 @@ Index: SConstruct
 +
 Index: example/SConscript
 ===================================================================
---- example/SConscript	(revision 314)
+--- example/SConscript	(revision 337)
 +++ example/SConscript	(working copy)
-@@ -1,25 +1,29 @@
+@@ -1,28 +1,39 @@
  # import variables from calling scripts
 -Import(['env_copy', 'USE_INVENTOR'])
 +Import(['env_copy', 'env_with_vars', 'USE_INVENTOR'])
@@ -115,15 +89,15 @@ Index: example/SConscript
 +RPATH = '-Wl,-rpath,'+env_with_vars['PREFIX_PATH']+'/lib'
 +print "\n",RPATH,"\n"
 +
- # build utilities that don't require Physsim
+ # build utilities that don't require Moby
  if USE_INVENTOR:
 -  env_copy.Program('view.cpp')
 +  env_copy.Program('view','view.cpp',LINKFLAGS=RPATH)
  
- # add physsim libraries to libraries used by env_copyironment
- env_copy['LIBS'].append('physsim')
+ # add moby libraries to libraries used by env_copyironment
+ env_copy['LIBS'].append('moby')
  
- # build utilities that do require Physsim
+ # build utilities that do require Moby
 -env_copy.Program('convexify.cpp')
 -#env_copy.Program('objwrl.cpp')
 -env_copy.Program('conv-decomp.cpp')
@@ -144,9 +118,8 @@ Index: example/SConscript
 +env_copy.Program('driver','driver.cpp',LINKFLAGS=RPATH)
  
  # build controllers
- #SConscript(['mrobot/SConscript'], exports='env_copy')
-@@ -27,3 +31,10 @@
- #SConscript(['bullet/SConscript'], exports='env_copy')
+ SConscript(['mrobot/SConscript'], exports='env_copy')
+ SConscript(['contact_simple/SConscript'], exports='env_copy')
  SConscript(['banditII/SConscript'], exports='env_copy')
  
 +#install above binaries
