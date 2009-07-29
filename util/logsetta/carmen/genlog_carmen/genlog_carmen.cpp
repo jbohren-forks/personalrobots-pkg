@@ -31,7 +31,7 @@
 #include <cmath>
 #include "ros/node.h"
 #include "sensor_msgs/LaserScan.h"
-//#include "robot_msgs/PoseStamped.h"
+//#include "geometry_msgs/PoseStamped.h"
 #include "deprecated_msgs/RobotBase2DOdom.h"
 #include <vector>
 #include <string>

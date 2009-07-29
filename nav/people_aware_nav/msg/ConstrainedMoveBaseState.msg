@@ -7,4 +7,4 @@ robot_actions/ActionStatus status
 ConstrainedGoal goal
 
 # Actual position and orientation
-robot_msgs/PoseStamped feedback
+geometry_msgs/PoseStamped feedback

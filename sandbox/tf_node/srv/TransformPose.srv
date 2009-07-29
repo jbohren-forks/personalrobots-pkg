@@ -3,7 +3,7 @@
 
 string target_frame
 time   target_time 
-robot_msgs/PoseStamped pin
+geometry_msgs/PoseStamped pin
 string fixed_frame
 ---
-robot_msgs/PoseStamped pout
+geometry_msgs/PoseStamped pout
