@@ -36,7 +36,7 @@
 #include <fcntl.h>
 #include "ros/ros.h"
 #include "joy/Joy.h"
-#include "geometry_msgs/PoseDot.h"
+#include "robot_msgs/PoseDot.h"
 #include "mechanism_msgs/JointState.h"
 #include "mechanism_msgs/JointStates.h"
 

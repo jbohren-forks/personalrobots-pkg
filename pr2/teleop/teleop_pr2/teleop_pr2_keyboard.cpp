@@ -36,7 +36,7 @@
 #include <stdlib.h>
 
 #include <ros/ros.h>
-#include <geometry_msgs/PoseDot.h>
+#include <robot_msgs/PoseDot.h>
 
 #define KEYCODE_A 0x61
 #define KEYCODE_D 0x64
@@ -56,7 +56,7 @@ class TeleopPR2Keyboard
 {
   private:
   double walk_vel, run_vel, yaw_rate, yaw_rate_run;
-  geometry_msgs::PoseDot cmd;
+  robot_msgs::PoseDot cmd;
 
   ros::NodeHandle n_;
   ros::Publisher vel_pub_;
@@ -66,7 +66,7 @@ class TeleopPR2Keyboard
   { 
     cmd.vel.vx = cmd.vel.vy = cmd.ang_vel.vz = 0;
 
-    vel_pub_ = n_.advertise<geometry_msgs::PoseDot>("cmd_vel", 1);
+    vel_pub_ = n_.advertise<robot_msgs::PoseDot>("cmd_vel", 1);
     
     n_.param("walk_vel", walk_vel, 0.5);
     n_.param("run_vel", run_vel, 1.0);
