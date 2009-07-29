@@ -38,13 +38,12 @@
 #include <base_local_planner/trajectory_planner.h>
 
 using namespace std;
-using namespace robot_msgs;
 using namespace costmap_2d;
 
 namespace base_local_planner{
   TrajectoryPlanner::TrajectoryPlanner(WorldModel& world_model, 
       const Costmap2D& costmap, 
-      std::vector<Point> footprint_spec,
+      std::vector<geometry_msgs::Point> footprint_spec,
       double inscribed_radius, double circumscribed_radius,
       double acc_lim_x, double acc_lim_y, double acc_lim_theta,
       double sim_time, double sim_granularity, 
@@ -941,9 +940,9 @@ namespace base_local_planner{
     //build the oriented footprint
     double cos_th = cos(theta_i);
     double sin_th = sin(theta_i);
-    vector<Point> oriented_footprint;
+    vector<geometry_msgs::Point> oriented_footprint;
     for(unsigned int i = 0; i < footprint_spec_.size(); ++i){
-      Point new_pt;
+      geometry_msgs::Point new_pt;
       new_pt.x = x_i + (footprint_spec_[i].x * cos_th - footprint_spec_[i].y * sin_th);
       new_pt.y = y_i + (footprint_spec_[i].x * sin_th + footprint_spec_[i].y * cos_th);
       oriented_footprint.push_back(new_pt);
@@ -1031,10 +1030,10 @@ namespace base_local_planner{
   }
 
   //its nice to be able to draw a footprint for a particular point for debugging info
-  vector<Point> TrajectoryPlanner::drawFootprint(double x_i, double y_i, double theta_i){
+  vector<geometry_msgs::Point> TrajectoryPlanner::drawFootprint(double x_i, double y_i, double theta_i){
     vector<base_local_planner::Position2DInt> footprint_cells = getFootprintCells(x_i, y_i, theta_i, false);
-    vector<Point> footprint_pts;
-    Point pt;
+    vector<geometry_msgs::Point> footprint_pts;
+    geometry_msgs::Point pt;
     for(unsigned int i = 0; i < footprint_cells.size(); ++i){
       double pt_x, pt_y;
       costmap_.mapToWorld(footprint_cells[i].x, footprint_cells[i].y, pt_x, pt_y);

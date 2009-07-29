@@ -53,7 +53,7 @@
 
 #include <deprecated_msgs/RobotBase2DOdom.h>
 #include <geometry_msgs/PoseStamped.h>
-#include <geometry_msgs/PoseDot.h>
+#include <robot_msgs/PoseDot.h>
 #include <geometry_msgs/Point.h>
 
 #include <tf/message_notifier.h>
