@@ -4,7 +4,15 @@ var ROSStartupGadget = Class.create(ROSGadget, {
   {
     this.create("Startup");
 
-    this.titleSpan.innerHTML += "<input type='button' id='startbutton' value='Start' style='float:right; margin-top: 2px' onclick='start();'>";
+    this.startButton = document.createElement('input');
+    this.startButton.type = 'button';
+    this.startButton.id = 'startbutton';
+    this.startButton.value = 'Start';
+    this.startButton.style.cssFloat = 'right';
+    this.startButton.style.margin = '2px 0 0 0';
+    this.startButton.observe('click', this.start.bind(this) );
+
+    this.titleSpan.appendChild(this.startButton);
 
     statusDiv = document.createElement('div');
     statusDiv.innerHTML = '<div style="height:25px;line-height:25px;vertical-align:middle;font-size:120%;margin-bottom:10px;"><img id="coreStatusIcon" src="images/redbutton.png" width="25" style="border:0;float:left; display:inline; margin-right: 10px;"/> <b>ROS Core</b>: <span id="corestatus"></span> </div>';
@@ -30,12 +38,12 @@ var ROSStartupGadget = Class.create(ROSGadget, {
   start: function()
   {
     this.run = true;
-    this.pump.SendAJAX('/ros/startup', this, this.started);
+    this.pump.sendAJAX('/ros/startup', this, this.started);
   },
   
   stop: function()
   {
-    this.pump.SendAJAX('/ros/shutdown', this, this.stopped);
+    this.pump.sendAJAX('/ros/shutdown', this, this.stopped);
     this.run = false;
   },
 
