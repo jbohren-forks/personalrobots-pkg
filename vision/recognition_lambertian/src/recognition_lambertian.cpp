@@ -197,10 +197,10 @@ public:
 		dispinfo_sub_ = nh_.subscribe(nh_.resolveName("stereo")+"/disparity_info", 1, sync_.synchronize(&RecognitionLambertian::dispinfoCallback, this));
 
 		// advertise topics
-		objects_pub_ = nh_.advertise<PointCloud> ("~objects", 1);
-		object_pub_ = nh_.advertise<PointCloud> ("~object", 1);
-//		advertise<PointCloud> ("~outliers", 1);
-//		advertise<PointCloud> ("~inliers", 1);
+		objects_pub_ = nh_.advertise<sensor_msgs::PointCloud> ("~objects", 1);
+		object_pub_ = nh_.advertise<sensor_msgs::PointCloud> ("~object", 1);
+//		advertise<sensor_msgs::PointCloud> ("~outliers", 1);
+//		advertise<sensor_msgs::PointCloud> ("~inliers", 1);
 		marker_pub_ = nh_.advertise<visualization_msgs::Marker>("visualization_marker",1);
 
 		ros::AdvertiseServiceOptions service_opts = ros::AdvertiseServiceOptions::create<recognition_lambertian::FindObjectPoses>("table_top/find_object_poses",
@@ -316,13 +316,13 @@ private:
 
 		// transform all poses to the target frame
 		for (size_t i=0;i<resp.objects.size();++i) {
-			PoseStamped& object_pose = resp.objects[i].object_pose;
+			geometry_msgs::PoseStamped& object_pose = resp.objects[i].object_pose;
 	        if (!tf_.canTransform(target_frame_, object_pose.header.frame_id, object_pose.header.stamp, ros::Duration(0.1))){
 	          ROS_ERROR("Cannot transform from %s to %s", object_pose.header.frame_id.c_str(), target_frame_.c_str());
 	          return false;
 	        }
 			tf_.transformPose(target_frame_, object_pose, object_pose);
-			PoseStamped& grasp_pose = resp.objects[i].grasp_pose;
+			geometry_msgs::PoseStamped& grasp_pose = resp.objects[i].grasp_pose;
 	        if (!tf_.canTransform(target_frame_, grasp_pose.header.frame_id, grasp_pose.header.stamp, ros::Duration(0.1))){
 	          ROS_ERROR("Cannot transform from %s to %s", grasp_pose.header.frame_id.c_str(), target_frame_.c_str());
 	          return false;
@@ -394,7 +394,7 @@ private:
 	}
 
 
-	bool fitSACPlane (const PointCloud& points, const vector<int> &indices,  // input
+	bool fitSACPlane (const sensor_msgs::PointCloud& points, const vector<int> &indices,  // input
 			vector<int> &inliers, vector<double> &coeff,  // output
 			double dist_thresh, int min_points_per_model)
 	{
@@ -402,7 +402,7 @@ private:
 		sample_consensus::SACModelPlane *model = new sample_consensus::SACModelPlane ();
 		sample_consensus::SAC *sac             = new sample_consensus::RANSAC (model, dist_thresh);
 		sac->setMaxIterations (100);
-		model->setDataSet ((PointCloud*)&points, indices);
+		model->setDataSet ((sensor_msgs::PointCloud*)&points, indices);
 
 		// Search for the best plane
 		if (sac->computeModel ()) {
@@ -416,7 +416,7 @@ private:
 				return false;
 			}
 
-			Point32 viewpoint;
+			geometry_msgs::Point32 viewpoint;
 			viewpoint.x = 0;
 			viewpoint.y = 0;
 			viewpoint.z = 0;
@@ -436,7 +436,7 @@ private:
 	}
 
 
-	void filterByZBounds(const PointCloud& pc, double zmin, double zmax, PointCloud& filtered_pc, PointCloud& filtered_outside)
+	void filterByZBounds(const sensor_msgs::PointCloud& pc, double zmin, double zmax, sensor_msgs::PointCloud& filtered_pc, sensor_msgs::PointCloud& filtered_outside)
 	{
 		vector<int> indices_remove;
 		for (size_t i = 0;i<pc.get_pts_size();++i) {
@@ -449,7 +449,7 @@ private:
 	}
 
 
-	void clearFromImage(IplImage* disp_img, const PointCloud& pc)
+	void clearFromImage(IplImage* disp_img, const sensor_msgs::PointCloud& pc)
 	{
 		int xchan = -1;
 		int ychan = -1;
@@ -477,13 +477,13 @@ private:
 	}
 
 
-	void filterTablePlane(const PointCloud& pc, vector<double>& coefficients, PointCloud& object_cloud, PointCloud& plane_cloud)
+	void filterTablePlane(const sensor_msgs::PointCloud& pc, vector<double>& coefficients, sensor_msgs::PointCloud& object_cloud, sensor_msgs::PointCloud& plane_cloud)
 	{
 
 		disp_clone = cvCloneImage(disp);
 
-		PointCloud filtered_cloud;
-		PointCloud filtered_outside;
+		sensor_msgs::PointCloud filtered_cloud;
+		sensor_msgs::PointCloud filtered_outside;
 
 		filterByZBounds(pc, 0.1, 1.2 , filtered_cloud, filtered_outside );
 
@@ -507,7 +507,7 @@ private:
 	}
 
 
-	void projectToPlane(const PointCloud& objects, const vector<double>& plane, PointCloud& projected_objects)
+	void projectToPlane(const sensor_msgs::PointCloud& objects, const vector<double>& plane, sensor_msgs::PointCloud& projected_objects)
 	{
 		vector<int> object_indices(objects.pts.size());
 		for (size_t i=0;i<objects.get_pts_size();++i) {
@@ -572,7 +572,7 @@ private:
 	 * @param origin - origin of the frame
 	 * @param plane - the XOY plane of the new frame
 	 */
-	void addTableFrame(PointStamped origin, const vector<double>& plane)
+	void addTableFrame(geometry_msgs::PointStamped origin, const vector<double>& plane)
 	{
 
 		btVector3 position(origin.point.x,origin.point.y,origin.point.z);
@@ -602,7 +602,7 @@ private:
 
 
 
-	void drawTableBBox(const PointCloud& cloud)
+	void drawTableBBox(const sensor_msgs::PointCloud& cloud)
 	{
 		if (cloud.get_pts_size()==0) return;
 		float xmin = cloud.pts[0].x;
@@ -665,7 +665,7 @@ private:
 
 	}
 
-	void showCluster(Point32 p, float radius, int idx, const ros::Time& stamp, float* color = NULL)
+	void showCluster(geometry_msgs::Point32 p, float radius, int idx, const ros::Time& stamp, float* color = NULL)
 	{
 		float default_color[] = { 1,1,0};
 
@@ -708,7 +708,7 @@ private:
 		float* grid;
 
 	public:
-		NNGridIndexer(const PointCloud& cloud)
+		NNGridIndexer(const sensor_msgs::PointCloud& cloud)
 		{
 			xmin = cloud.pts[0].x;
 			xmax = cloud.pts[0].x;
@@ -729,7 +729,7 @@ private:
 			memset(grid,0,resolution*resolution*sizeof(float));
 
 			for (size_t i=0;i<cloud.get_pts_size();++i) {
-				Point32 p = cloud.pts[i];
+				geometry_msgs::Point32 p = cloud.pts[i];
 
 				int x = int((p.x-xmin)/xd+0.5);
 				int y = int((p.y-ymin)/yd+0.5);
@@ -745,7 +745,7 @@ private:
 		}
 
 
-		int computeMean(const Point32& p, float radius, Point32& result)
+		int computeMean(const geometry_msgs::Point32& p, float radius, geometry_msgs::Point32& result)
 		{
 			int xc = int((p.x-xmin)/xd+0.5);
 			int yc = int((p.y-ymin)/yd+0.5);
@@ -785,9 +785,9 @@ private:
 	};
 
 
-	Point32 computeMean(const PointCloud& pc, const vector<int>& indices, int count)
+	geometry_msgs::Point32 computeMean(const sensor_msgs::PointCloud& pc, const vector<int>& indices, int count)
 	{
-		Point32 mean;
+		geometry_msgs::Point32 mean;
 		mean.x = 0;
 		mean.y = 0;
 
@@ -811,12 +811,12 @@ private:
 	}
 
 
-	double meanShiftIteration(const PointCloud& pc, NNGridIndexer& index, vector<Point32>& centers, vector<Point32>& means, float step)
+	double meanShiftIteration(const sensor_msgs::PointCloud& pc, NNGridIndexer& index, vector<geometry_msgs::Point32>& centers, vector<geometry_msgs::Point32>& means, float step)
 	{
 		double total_dist = 0;
 		for (size_t i=0;i<centers.size();++i) {
 
-			Point32 mean;
+			geometry_msgs::Point32 mean;
 			int count = index.computeMean(centers[i], step, mean);
 			if (count==0) {
 				ROS_WARN("Got empty cluster, this should not happen\n");
@@ -831,7 +831,7 @@ private:
 #define CLUSTER_RADIUS 0.15/2
 
 
-	void filterClusters(const PointCloud& cloud, vector<Point32>& centers, vector<PointCloud>& clusters)
+	void filterClusters(const sensor_msgs::PointCloud& cloud, vector<geometry_msgs::Point32>& centers, vector<sensor_msgs::PointCloud>& clusters)
 	{
 		// compute cluster heights (use to prune clusters)
 		vector<double> cluster_heights(centers.size(), 0);
@@ -846,7 +846,7 @@ private:
 
 
 		// remove overlapping clusters
-		vector<Point32> centers_pruned;
+		vector<geometry_msgs::Point32> centers_pruned;
 		for (size_t i=0;i<centers.size();++i) {
 			if (cluster_heights[i]>min_object_height_) {
 
@@ -867,7 +867,7 @@ private:
 
 
 		// compute clusters
-		PointCloud object;
+		sensor_msgs::PointCloud object;
 		object.header.frame_id = cloud.header.frame_id;
 		object.header.stamp = cloud.header.stamp;
 
@@ -888,7 +888,7 @@ private:
 
 
 
-	void findTabletopClusters(const PointCloud& cloud, vector<Point32>& centers, vector<PointCloud>& clusters)
+	void findTabletopClusters(const sensor_msgs::PointCloud& cloud, vector<geometry_msgs::Point32>& centers, vector<sensor_msgs::PointCloud>& clusters)
 	{
 		if (cloud.get_pts_size()==0) return;
 
@@ -913,16 +913,16 @@ private:
 		float step = CLUSTER_RADIUS;
 		NNGridIndexer index(cloud);
 //		vector<int> indices(cloud.get_pts_size());
-		vector<Point32> centers(NUM_CLUSTERS);
-		vector<Point32> means(NUM_CLUSTERS);
-		Point32 p;
+		vector<geometry_msgs::Point32> centers(NUM_CLUSTERS);
+		vector<geometry_msgs::Point32> means(NUM_CLUSTERS);
+		geometry_msgs::Point32 p;
 		double total_dist = 0;
 		for (int i=0;i<NUM_CLUSTERS;++i) {
 			float* ptr = (float*)(centers_->data.ptr + i * centers_->step);
 			p.x = ptr[0];
 			p.y = ptr[1];
 			centers[i] = p;
-			Point32 mean;
+			geometry_msgs::Point32 mean;
 			int count = index.computeMean(p, step, mean);
 			means[i]= mean;
 			total_dist += dist2D(mean, p);
@@ -952,9 +952,9 @@ private:
 		NNGridIndexer index(cloud);
 
 		// getting the initial centers
-//		vector<Point32> centers;
-		vector<Point32> means;
-		Point32 p;
+//		vector<geometry_msgs::Point32> centers;
+		vector<geometry_msgs::Point32> means;
+		geometry_msgs::Point32 p;
 
 		// layout initial clusters in a grid
 		double total_dist = 0;
@@ -963,7 +963,7 @@ private:
 				p.x = x;
 				p.y = y;
 
-				Point32 mean;
+				geometry_msgs::Point32 mean;
 				int found = index.computeMean(p, step, mean);
 
 				if (found>min_points_per_cluster_) {
@@ -1013,11 +1013,11 @@ private:
 	 * @param point The 3D point
 	 * @return Projected point
 	 */
-	Point project3DPointIntoImage(const sensor_msgs::CamInfo& cam_info, PointStamped point)
+	geometry_msgs::Point project3DPointIntoImage(const sensor_msgs::CamInfo& cam_info, geometry_msgs::PointStamped point)
 	{
-		PointStamped image_point;
+		geometry_msgs::PointStamped image_point;
 		tf_.transformPoint(cam_info.header.frame_id, point, image_point);
-		Point pp; // projected point
+		geometry_msgs::Point pp; // projected point
 
 		pp.x = cam_info.P[0]*image_point.point.x+
 				cam_info.P[1]*image_point.point.y+
@@ -1039,13 +1039,13 @@ private:
 		return pp;
 	}
 
-	void projectClusters(const PointCloud& objects_table_frame, const vector<Point32>& clusters)
+	void projectClusters(const sensor_msgs::PointCloud& objects_table_frame, const vector<geometry_msgs::Point32>& clusters)
 	{
 		const sensor_msgs::CamInfo& lcinfo = *lcinfo_;
 
-		Point pp[8];
+		geometry_msgs::Point pp[8];
 		for (size_t i=0;i<clusters.size();++i) {
-			PointStamped ps;
+			geometry_msgs::PointStamped ps;
 			ps.header.frame_id = objects_table_frame.header.frame_id;
 			ps.header.stamp = objects_table_frame.header.stamp;
 			ps.point.z = 0;
@@ -1106,7 +1106,7 @@ private:
 			ps.point.y = clusters[i].y;
 			ps.point.z = clusters[i].z/2;
 
-			Point center_pp = project3DPointIntoImage(lcinfo, ps);
+			geometry_msgs::Point center_pp = project3DPointIntoImage(lcinfo, ps);
 
 			cvCircle(left, cvPoint(int(center_pp.x), int(center_pp.y)), 5, CV_RGB(0,255,0));
 
@@ -1114,7 +1114,7 @@ private:
 	}
 
 
-	void fitModels(const vector<PointCloud>& clouds, vector<recognition_lambertian::TableTopObject>& objects)
+	void fitModels(const vector<sensor_msgs::PointCloud>& clouds, vector<recognition_lambertian::TableTopObject>& objects)
 	{
 
 		int count = 0;
@@ -1155,17 +1155,17 @@ private:
 	{
 		// find the table plane
 		vector<double> plane;
-		PointCloud objects_pc;
-		PointCloud plane_pc;
+		sensor_msgs::PointCloud objects_pc;
+		sensor_msgs::PointCloud plane_pc;
 		filterTablePlane(*cloud, plane,objects_pc,plane_pc);
 
 		// project outliers (the objects on the table) to the table plane
-		PointCloud projected_objects;
+		sensor_msgs::PointCloud projected_objects;
 		projectToPlane(objects_pc, plane, projected_objects);
 
 
 		// add table frame to tf
-		PointStamped table_point;
+		geometry_msgs::PointStamped table_point;
 		table_point.header.frame_id = projected_objects.header.frame_id;
 		table_point.header.stamp = projected_objects.header.stamp;
 		table_point.point.x = projected_objects.pts[0].x;
@@ -1186,7 +1186,7 @@ private:
 
 		ROS_INFO("Calling transformCloud with stamp: %0.15f", objects_pc.header.stamp.toSec());
 		// transform all the objects into the table frame
-		PointCloud objects_table_frame;
+		sensor_msgs::PointCloud objects_table_frame;
 		tf_.transformPointCloud("table_frame", objects_pc, objects_table_frame);
 
 		if (display_) {
@@ -1194,8 +1194,8 @@ private:
 		}
 
 		// cluster objects
-		vector<Point32> centers;
-		vector<PointCloud> clouds;
+		vector<geometry_msgs::Point32> centers;
+		vector<sensor_msgs::PointCloud> clouds;
 		findTabletopClusters(objects_table_frame, centers, clouds);
 
 		fitModels(clouds, objects);
@@ -1208,17 +1208,17 @@ private:
 	{
 		// find the table plane
 		vector<double> plane;
-		PointCloud objects_pc;
-		PointCloud plane_pc;
+		sensor_msgs::PointCloud objects_pc;
+		sensor_msgs::PointCloud plane_pc;
 		filterTablePlane(*cloud, plane,objects_pc,plane_pc);
 
 		// project outliers (the object on teh table) to the table plane
-		PointCloud projected_objects;
+		sensor_msgs::PointCloud projected_objects;
 		projectToPlane(objects_pc, plane, projected_objects);
 
 
 		// add table frame to tf
-		PointStamped table_point;
+		geometry_msgs::PointStamped table_point;
 		table_point.header.frame_id = projected_objects.header.frame_id;
 		table_point.header.stamp = projected_objects.header.stamp;
 		table_point.point.x = projected_objects.pts[0].x;
@@ -1227,7 +1227,7 @@ private:
 		addTableFrame(table_point,plane);
 
 		// transform all the objects into the table frame
-		PointCloud objects_table_frame;
+		sensor_msgs::PointCloud objects_table_frame;
 		tf_.transformPointCloud("table_frame", objects_pc, objects_table_frame);
 
 		if (display_) {
@@ -1235,11 +1235,11 @@ private:
 		}
 
 		// cluster objects
-		vector<Point32> centers;
-		vector<PointCloud> objects;
+		vector<geometry_msgs::Point32> centers;
+		vector<sensor_msgs::PointCloud> objects;
 		findTabletopClusters(objects_table_frame, centers, objects);
 
-//		vector<PoseStamped> poses;
+//		vector<geometry_msgs::PoseStamped> poses;
 //		fitModels(objects, poses);
 
 
@@ -1254,7 +1254,7 @@ private:
 		locations.resize(centers.size());
 		scales.resize(centers.size());
 		for (size_t i=0;i<centers.size();++i) {
-			PointStamped ps;
+			geometry_msgs::PointStamped ps;
 			ps.header.frame_id = objects_table_frame.header.frame_id;
 			ps.header.stamp = objects_table_frame.header.stamp;
 
@@ -1262,16 +1262,16 @@ private:
 			ps.point.x = centers[i].x;
 			ps.point.y = centers[i].y;
 			ps.point.z = centers[i].z/2;
-			Point pp = project3DPointIntoImage(lcinfo, ps);
+			geometry_msgs::Point pp = project3DPointIntoImage(lcinfo, ps);
 
 			locations[i].x = int(pp.x);
 			locations[i].y = int(pp.y);
 
 			// compute scale
 			ps.point.z = 0;
-			Point pp1 = project3DPointIntoImage(lcinfo, ps);
+			geometry_msgs::Point pp1 = project3DPointIntoImage(lcinfo, ps);
 			ps.point.z = centers[i].z;
-			Point pp2 = project3DPointIntoImage(lcinfo, ps);
+			geometry_msgs::Point pp2 = project3DPointIntoImage(lcinfo, ps);
 
 			float dist = sqrt(dist2D(pp1,pp2));
 			scales[i] = dist/centers[i].z;  // pixels per meter

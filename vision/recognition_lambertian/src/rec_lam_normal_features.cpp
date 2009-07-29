@@ -125,8 +125,8 @@ static inline cv::Vec4f transform4x4(const Mat4x4f& M, const cv::Vec4f& v)
 class PlanarFit
 {
 
-  void getPointIndicesInZBounds (const PointCloud &points, double z_min, double z_max, vector<int> &indices);
-  bool fitSACPlanes (PointCloud *points, vector<int> &indices, vector<vector<int> > &inliers, vector<vector<double> > &coeff,
+  void getPointIndicesInZBounds (const sensor_msgs::PointCloud &points, double z_min, double z_max, vector<int> &indices);
+  bool fitSACPlanes (sensor_msgs::PointCloud *points, vector<int> &indices, vector<vector<int> > &inliers, vector<vector<double> > &coeff,
                      const geometry_msgs::Point32 &viewpoint_cloud, double dist_thresh, int n_max, int min_points_per_model = 100);
 
   /**
@@ -159,7 +159,7 @@ public:
 	 * @param models			Equations of planes that were found.  Again, if models[i].size() = 0, then the plane wsa invalid
 	 */
   void
-     segmentPlanes (PointCloud &points, vector<int> &indices_in_bounds, int num_pts, int n_max,
+     segmentPlanes (sensor_msgs::PointCloud &points, vector<int> &indices_in_bounds, int num_pts, int n_max,
                     vector<vector<int> > &indices, vector<vector<double> > &models)
    {
 		// This should be given as a parameter as well, or set global, etc
@@ -168,7 +168,7 @@ public:
 		// We need to know the viewpoint where the data was acquired
 		// For simplicity, assuming 0,0,0 for stereo data in the stereo frame - however if this is not true, use TF to get
 		//the point in a different frame !
-		Point32 viewpoint;
+		geometry_msgs::Point32 viewpoint;
 		viewpoint.x = viewpoint.y = viewpoint.z = 0;
 
 		// Use the entire data to estimate the plane equation.
@@ -196,7 +196,7 @@ public:
 	}
 
   void
-    segmentPlanes (PointCloud &points, double z_min, double z_max, double min_area, int n_max,
+    segmentPlanes (sensor_msgs::PointCloud &points, double z_min, double z_max, double min_area, int n_max,
                    vector<vector<int> > &indices, vector<vector<double> > &models)
   {
     // This should be given as a parameter as well, or set global, etc
@@ -209,7 +209,7 @@ public:
     // We need to know the viewpoint where the data was acquired
     // For simplicity, assuming 0,0,0 for stereo data in the stereo frame - however if this is not true, use TF to get
     //the point in a different frame !
-    Point32 viewpoint;
+    geometry_msgs::Point32 viewpoint;
     viewpoint.x = viewpoint.y = viewpoint.z = 0;
 
     // Use the entire data to estimate the plane equation.
@@ -258,7 +258,7 @@ public:
   public:
 
     // ROS messages
-//    PointCloud cloud_, cloud_plane_, cloud_outliers_;
+//    sensor_msgs::PointCloud cloud_, cloud_plane_, cloud_outliers_;
 //
 //    double z_min_, z_max_, support_, min_area_;
 //    int n_max_;
@@ -289,8 +289,8 @@ public:
         ROS_WARN ("Trying to subscribe to %s, but the topic doesn't exist!", node_.mapName (cloud_topic).c_str ());
 
       node_.subscribe (cloud_topic, cloud_, &PlanarFit::cloud_cb, this, 1);
-      node_.advertise<PointCloud> ("~plane", 1);
-      node_.advertise<PointCloud> ("~outliers", 1);
+      node_.advertise<sensor_msgs::PointCloud> ("~plane", 1);
+      node_.advertise<sensor_msgs::PointCloud> ("~outliers", 1);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -330,7 +330,7 @@ public:
   * \param z_max the maximum Z value
   */
 void
-  PlanarFit::getPointIndicesInZBounds (const PointCloud &points, double z_min, double z_max, vector<int> &indices)
+  PlanarFit::getPointIndicesInZBounds (const sensor_msgs::PointCloud &points, double z_min, double z_max, vector<int> &indices)
 {
   indices.resize (points.pts.size ());
   int nr_p = 0;
@@ -357,7 +357,7 @@ void
   * \param min_points_per_model the minimum number of points allowed for a planar model (default: 100)
   */
 bool
-  PlanarFit::fitSACPlanes (PointCloud *points, vector<int> &indices, vector<vector<int> > &inliers, vector<vector<double> > &coeff,
+  PlanarFit::fitSACPlanes (sensor_msgs::PointCloud *points, vector<int> &indices, vector<vector<int> > &inliers, vector<vector<double> > &coeff,
                            const geometry_msgs::Point32 &viewpoint_cloud, double dist_thresh, int n_max, int min_points_per_model)
 {
   // Create and initialize the SAC model
@@ -677,7 +677,7 @@ public:
 		  int planes_found = 0;
 
 		  //STUFF POINT CLOUD
-		  PointCloud pc;
+		  sensor_msgs::PointCloud pc;
 		  geometry_msgs::Point32 pt3d;
 		  int rows = xyza->rows;
 		  int cols = xyza->cols;
@@ -2333,12 +2333,12 @@ public:
   	    float *fM,*fnM;
   	    int jumpby = subsample*4;
   	    int cols = color_depth->width;
-		vector<Vector3 > coef;
-		PointCloud points;
+		vector<geometry_msgs::Vector3 > coef;
+		sensor_msgs::PointCloud points;
 		points.header.frame_id = cloud.header.frame_id;
 		points.header.stamp = cloud.header.stamp;
-		Vector3 v3;
-		Point32 p3;
+		geometry_msgs::Vector3 v3;
+		geometry_msgs::Point32 p3;
 
 		//Send normals to rviz
 		for (int y=ry;y<rh;y+=subsample)
