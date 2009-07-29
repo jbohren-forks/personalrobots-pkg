@@ -675,7 +675,7 @@ class MyHTTPServer(threading.Thread, SocketServer.ThreadingMixIn,
 # Main
 if __name__ == '__main__':
 
-  print 'starting web server'
+  print 'starting web server on port 8080'
 
   httpServer = MyHTTPServer( ('', 8080), Handler)
   httpServer.setDaemon(True)
