@@ -461,7 +461,7 @@ namespace base_local_planner{
     return cost;
   }
 
-  void TrajectoryPlanner::updatePlan(const vector<PoseStamped>& new_plan){
+  void TrajectoryPlanner::updatePlan(const vector<geometry_msgs::PoseStamped>& new_plan){
     global_plan_.resize(new_plan.size());
     for(unsigned int i = 0; i < new_plan.size(); ++i){
       global_plan_[i] = new_plan[i];
@@ -948,7 +948,7 @@ namespace base_local_planner{
       oriented_footprint.push_back(new_pt);
     }
 
-    Point robot_position;
+    geometry_msgs::Point robot_position;
     robot_position.x = x_i;
     robot_position.y = y_i;
 

@@ -102,7 +102,7 @@ namespace base_local_planner {
        * @param cmd_vel Will be filled with the velocity command to be passed to the robot base
        * @return True if a valid trajectory was found, false otherwise
        */
-      bool computeVelocityCommands(geometry_msgs::PoseDot& cmd_vel);
+      bool computeVelocityCommands(robot_msgs::PoseDot& cmd_vel);
 
       /**
        * @brief  Update the plan that the controller is following
@@ -157,7 +157,7 @@ namespace base_local_planner {
        * @param  cmd_vel The velocity commands to be filled
        * @return  True if a valid trajectory was found, false otherwise
        */
-      bool rotateToGoal(const tf::Stamped<tf::Pose>& global_pose, const tf::Stamped<tf::Pose>& robot_vel, double goal_th, geometry_msgs::PoseDot& cmd_vel);
+      bool rotateToGoal(const tf::Stamped<tf::Pose>& global_pose, const tf::Stamped<tf::Pose>& robot_vel, double goal_th, robot_msgs::PoseDot& cmd_vel);
 
       /**
        * @brief  Compute the distance between two points

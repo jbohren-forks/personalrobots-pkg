@@ -142,7 +142,7 @@ namespace base_local_planner {
       delete world_model_;
   }
 
-  vector<Point> TrajectoryPlannerROS::drawFootprint(double x_i, double y_i, double theta_i){
+  vector<geometry_msgs::Point> TrajectoryPlannerROS::drawFootprint(double x_i, double y_i, double theta_i){
     return tc_->drawFootprint(x_i, y_i, theta_i);
   }
 
@@ -167,7 +167,7 @@ namespace base_local_planner {
     return fabs(angles::shortest_angular_distance(yaw, goal_th)) <= yaw_goal_tolerance_;
   }
 
-  bool TrajectoryPlannerROS::rotateToGoal(const tf::Stamped<tf::Pose>& global_pose, const tf::Stamped<tf::Pose>& robot_vel, double goal_th, geometry_msgs::PoseDot& cmd_vel){
+  bool TrajectoryPlannerROS::rotateToGoal(const tf::Stamped<tf::Pose>& global_pose, const tf::Stamped<tf::Pose>& robot_vel, double goal_th, robot_msgs::PoseDot& cmd_vel){
     double uselessPitch, uselessRoll, yaw, vel_yaw;
     global_pose.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
     robot_vel.getBasis().getEulerZYX(vel_yaw, uselessPitch, uselessRoll);
@@ -345,7 +345,7 @@ namespace base_local_planner {
     return true;
   }
 
-  bool TrajectoryPlannerROS::computeVelocityCommands(geometry_msgs::PoseDot& cmd_vel){
+  bool TrajectoryPlannerROS::computeVelocityCommands(robot_msgs::PoseDot& cmd_vel){
     std::vector<geometry_msgs::PoseStamped> local_plan;
     tf::Stamped<tf::Pose> global_pose;
     if(!costmap_ros_.getRobotPose(global_pose))
@@ -370,7 +370,7 @@ namespace base_local_planner {
     costmap_ros_.getCostmapCopy(costmap_);
 
     // Set current velocities from odometry
-    geometry_msgs::PoseDot global_vel;
+    robot_msgs::PoseDot global_vel;
     global_vel.vel.vx = base_odom_.vel.x;
     global_vel.vel.vy = base_odom_.vel.y;
     global_vel.ang_vel.vz = base_odom_.vel.th;
