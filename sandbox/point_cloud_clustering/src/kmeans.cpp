@@ -96,10 +96,10 @@ int point_cloud_clustering::KMeans::cluster(const robot_msgs::PointCloud& pt_clo
       != indices_to_cluster.end() ; iter_indices_to_cluster++)
   {
     // Verify the index to cluster is contained in the point cloud
-    unsigned int curr_idx = *iter_indices_to_cluster;
-    if (curr_idx >= nbr_total_pts)
+    unsigned int curr_pt_cloud_idx = *iter_indices_to_cluster;
+    if (curr_pt_cloud_idx >= nbr_total_pts)
     {
-      ROS_ERROR("Invalid index to cluster: %u", curr_idx);
+      ROS_ERROR("Invalid index to cluster: %u", curr_pt_cloud_idx);
       return -1;
     }
 
@@ -107,9 +107,9 @@ int point_cloud_clustering::KMeans::cluster(const robot_msgs::PointCloud& pt_clo
     unsigned int curr_offset = curr_sample_idx * cluster_feature_dim;
 
     // copy xyz coordinates
-    feature_matrix[curr_offset] = pt_cloud.pts[curr_idx].x;
-    feature_matrix[curr_offset + 1] = pt_cloud.pts[curr_idx].y;
-    feature_matrix[curr_offset + 2] = pt_cloud.pts[curr_idx].z;
+    feature_matrix[curr_offset] = pt_cloud.pts[curr_pt_cloud_idx].x;
+    feature_matrix[curr_offset + 1] = pt_cloud.pts[curr_pt_cloud_idx].y;
+    feature_matrix[curr_offset + 2] = pt_cloud.pts[curr_pt_cloud_idx].z;
 
     curr_sample_idx++;
   }

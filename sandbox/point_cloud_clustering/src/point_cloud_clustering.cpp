@@ -47,6 +47,7 @@ int point_cloud_clustering::PointCloudClustering::computeClusterCentroids(const 
 
   unsigned int total_nbr_pts = pt_cloud.pts.size();
 
+  // Iterate over clusters (cluster_label --> [point cloud indices]
   map<unsigned int, vector<int> >::const_iterator iter_clusters;
   for (iter_clusters = clusters.begin(); iter_clusters != clusters.end() ; iter_clusters++)
   {
@@ -56,13 +57,13 @@ int point_cloud_clustering::PointCloudClustering::computeClusterCentroids(const 
     // accumulate sum coordinates for each point in cluster
     vector<float> curr_centroid(3, 0.0);
     unsigned int curr_nbr_pts = curr_pt_indices.size();
-    for (unsigned int i = 0 ; curr_nbr_pts ; i++)
+    for (unsigned int i = 0 ; i < curr_nbr_pts ; i++)
     {
       // Verify index does not exceed boundary
       unsigned int curr_pt_idx = curr_pt_indices[i];
       if (curr_pt_idx >= total_nbr_pts)
       {
-        ROS_ERROR("Invalid indices to compute cluster centroid");
+        ROS_ERROR("Invalid index %u to compute cluster centroid", curr_pt_idx);
         return -1;
       }
 
