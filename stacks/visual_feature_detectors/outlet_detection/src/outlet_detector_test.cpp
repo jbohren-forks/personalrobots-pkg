@@ -10,6 +10,11 @@ Created by: Alexey Latyshev
 #define DETECT_NA -1
 #define DETECT_SKIP -2
 
+#define REG_DO_NOTHING -1
+#define REG_DRAW_RECT 0
+#define REG_STOP_SELECT 1
+#define REG_CLEAR_SELECT 2
+
 int readTestFile(char* filename, vector<outlet_test_elem>& test_data)
 {
 	FILE* f = fopen(filename,"r");
@@ -214,6 +219,51 @@ IplImage* getRealOutletImage(const outlet_test_elem& test_elem,CvMat* intrinsic_
 	return NULL;
 }
 //--------------------------------
+void on_mouse_region( int event, int x, int y, int flags, void* param )
+{
+	switch( event )
+	{
+		case CV_EVENT_LBUTTONDOWN:
+				((int*)param)[0] = x;
+				((int*)param)[1] = y;
+				((int*)param)[2] = x;
+				((int*)param)[3] = y;
+				((int*)param)[4] = REG_DRAW_RECT;
+				break;
+
+		case CV_EVENT_LBUTTONUP:
+			if (((int*)param)[4] == REG_DRAW_RECT)
+			{
+				((int*)param)[2] = x;
+				((int*)param)[3] = y;
+				((int*)param)[4] = REG_STOP_SELECT;
+			}
+			else
+				((int*)param)[4] = REG_CLEAR_SELECT;
+			break;
+
+		case CV_EVENT_RBUTTONDOWN:
+			if (((int*)param)[4] == REG_DRAW_RECT)
+			{
+				((int*)param)[4] = REG_CLEAR_SELECT;
+			}
+			else
+				((int*)param)[4] = REG_DO_NOTHING;
+			break;
+
+		case CV_EVENT_MOUSEMOVE:
+			if (((int*)param)[4] == REG_DRAW_RECT)
+			{
+				((int*)param)[2] = x;
+				((int*)param)[3] = y;
+			}
+			else
+				if (((int*)param)[4] != REG_STOP_SELECT)
+					((int*)param)[4] = REG_DO_NOTHING;
+			break;
+	}
+}
+
 void on_mouse_points( int event, int x, int y, int flags, void* param )
 {
 	switch( event )
@@ -244,15 +294,107 @@ void setRealOutlet(outlet_test_elem& test_elem, CvMat* intrinsic_matrix, CvMat* 
 		printf("Unable to load image %s",test_elem.filename);
 		return;
 	}
-
+	IplImage* img;
 	if (intrinsic_matrix)
 	{
-		IplImage* img = cvCloneImage(img2);
+		img = cvCloneImage(img2);
 		cvUndistort2(img,img2,intrinsic_matrix, distortion_params);
 		cvReleaseImage(&img);
 	}
-	cvNamedWindow(window_name);
+	img = cvCloneImage(img2);
+	cvNamedWindow(window_name,0);
+	cvResizeWindow(window_name,img->width,img->height);
 	cvShowImage(window_name,img2);
+	int key = 0;
+	bool isEnd = false;
+#if 1
+//Added zoom
+	int* params = new int[5]; // Rect Coordinates + parameter (-1 - do nothing, 0 - draw rectangle, 1 - stop selection, 2 - clear selection)
+	//CvRect region;
+	//IplImage* region;
+	CvRect region_rect;
+
+	printf("-----------------------\n");
+	printf("Select the region with outlet.\nPress left mouse button to start the selection and release it to end the selection\nPress right mouse button to try again\n");
+
+	cvSetMouseCallback( window_name, on_mouse_region, params );
+	while (!isEnd)
+	{
+		while (params[4] != REG_STOP_SELECT)
+		{
+			key = cvWaitKey(30);
+			if (key == 27)
+				break;
+			if (params[4] == REG_DRAW_RECT)
+			{
+				cvReleaseImage(&img2);
+				img2 = cvCloneImage(img);
+				cvRectangle(img2,cvPoint(params[0],params[1]),cvPoint(params[2],params[3]),cvScalar(50,200,50),2);
+				cvShowImage(window_name,img2);
+			}
+			if (params[4] == REG_CLEAR_SELECT)
+			{
+				cvReleaseImage(&img2);
+				img2 = cvCloneImage(img);
+				cvShowImage(window_name,img2);
+
+			}
+		}
+
+		if (key!=27)
+		{
+			if ((params[2] != params[0]) && (params[3] != params[1]))
+			{
+				if (params[2] < params[0])
+				{
+					int temp = params[0];
+					params[0] = params[2];
+					params[2] = temp;
+				}
+				if (params[3] < params[1])
+				{
+					int temp = params[1];
+					params[1] = params[3];
+					params[3] = temp;
+				}
+				cvReleaseImage(&img2);
+				img2 = cvCloneImage(img);
+				region_rect.x = params[0];
+				region_rect.y = params[1];
+				region_rect.width = params[2] - params[0];
+				region_rect.height = params[3] - params[1];
+				cvSetImageROI(img2,region_rect);
+				cvReleaseImage(&img);
+				img = cvCreateImage(cvSize(img2->roi->width,img2->roi->height),img2->depth,img2->nChannels);
+				cvCopy(img2,img);
+				
+
+				
+				cvReleaseImage(&img2);
+				img2 = cvCloneImage(img);
+				//cvReleaseImage(&region);
+				cvShowImage(window_name,img2);
+				cvResizeWindow(window_name,img2->width*2,img2->height*2);
+				isEnd = true;
+
+			}
+			else
+			{
+				printf("Incorrect selection, try again\n");
+				isEnd = false;
+			}
+		}
+		else
+			isEnd = true;
+	}
+	
+
+
+	delete[] params;
+//End
+#endif
+
+
 	CvMemStorage* storage = cvCreateMemStorage(0);
 	CvSeq* seq = cvCreateSeq( CV_32SC2, sizeof(CvSeq), sizeof(CvPoint), storage );
 
@@ -262,10 +404,10 @@ void setRealOutlet(outlet_test_elem& test_elem, CvMat* intrinsic_matrix, CvMat* 
 	cvSetMouseCallback( window_name, on_mouse_points, seq );
 
 	CvPoint* test_point;
-	int key = 0;
 	int total= seq->total;
 	CvScalar color = CV_RGB(255, 255, 0);
-	bool isEnd = false;
+	isEnd = false;
+	key = 0;
 	while ((!isEnd)&&(key!=27))
 	{
 		key = cvWaitKey(30);
@@ -284,13 +426,13 @@ void setRealOutlet(outlet_test_elem& test_elem, CvMat* intrinsic_matrix, CvMat* 
 			if (seq->total < total)
 			{
 				cvReleaseImage(&img2);
-				img2 = cvLoadImage(test_elem.filename);
-				if (intrinsic_matrix)
-				{
-					IplImage* img = cvCloneImage(img2);
-					cvUndistort2(img,img2,intrinsic_matrix, distortion_params);
-					cvReleaseImage(&img);
-				}
+				img2 = cvCloneImage(img);
+				//if (intrinsic_matrix)
+				//{
+				//	IplImage* img = cvCloneImage(img2);
+				//	cvUndistort2(img,img2,intrinsic_matrix, distortion_params);
+				//	cvReleaseImage(&img);
+				//}
 				CvPoint* pt;
 				for (int i=0; i< seq->total;i++)
 				{
@@ -315,6 +457,7 @@ void setRealOutlet(outlet_test_elem& test_elem, CvMat* intrinsic_matrix, CvMat* 
 
 	cvDestroyWindow(window_name);
 	cvReleaseImage(&img2);
+	cvReleaseImage(&img);
 
 	if (key == 27)
 	{
@@ -345,7 +488,21 @@ void setRealOutlet(outlet_test_elem& test_elem, CvMat* intrinsic_matrix, CvMat* 
 				test_elem.real_outlet[j-ground_n].ground_hole = points[j];
 			}
 			test_elem.n_matches = DETECT_NA;
+#if 1
+//Added zoom
+			for (int i=0;i<(size_t)test_elem.real_outlet.size();i++)
+			{
+				test_elem.real_outlet[i].hole1.x +=region_rect.x;
+				test_elem.real_outlet[i].hole1.y +=region_rect.y;
+				test_elem.real_outlet[i].hole2.x +=region_rect.x;
+				test_elem.real_outlet[i].hole2.y +=region_rect.y;
+				test_elem.real_outlet[i].ground_hole.x +=region_rect.x;
+				test_elem.real_outlet[i].ground_hole.y +=region_rect.y;
+			}
+//End
+#endif
 		}
+
 
 
 		
