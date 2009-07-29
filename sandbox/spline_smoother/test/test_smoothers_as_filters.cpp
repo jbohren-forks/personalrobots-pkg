@@ -35,10 +35,9 @@
 /** \author Mrinal Kalakrishnan */
 
 #include <gtest/gtest.h>
-#include <spline_smoother/numerical_differentiation_spline_smoother.h>
+#include <manipulation_msgs/WaypointTraj.h>
 #include <filters/filter_chain.h>
 
-using namespace spline_smoother;
 using namespace filters;
 
 TEST(TestSmoothersAsFilters, TestSmoothersAsFilters1)
