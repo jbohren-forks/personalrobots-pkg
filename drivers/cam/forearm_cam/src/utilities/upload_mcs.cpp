@@ -250,43 +250,23 @@ int write_flash(char *if_name, char *ip_address, int sn)
     }
 
     int addr = page * FLASH_PAGE_SIZE;
+    int startretries = 1;
+    int retries = startretries;
 
-    for (int i = 0; ; i++)
+    if (pr2ReliableFlashWrite(camera, page, (uint8_t *) firmware + addr, &retries) != 0)
     {
-      if (i > 20) {
-        ROS_FATAL("Flash write error on page %i.", page);
-        ROS_FATAL("If you reset the camera it will probably not come up.");
-        ROS_FATAL("Try reflashing NOW, to possibly avoid a hard JTAG reflash.");
-        return -2;
-      }
-      
-      if (pr2FlashWrite(camera, page, (uint8_t *) firmware + addr) != 0)
-      {
-        printf("w");
-        fflush(stdout);
-        sleep(1);
-        continue;
-      }
+      ROS_FATAL("Flash write error on page %i.", page);
+      ROS_FATAL("If you reset the camera it will probably not come up.");
+      ROS_FATAL("Try reflashing NOW, to possibly avoid a hard JTAG reflash.");
+      return -2;
+    }
 
-      if (pr2FlashRead(camera, page, (uint8_t *) buff) != 0)
-      {
-        printf("r");
-        fflush(stdout);
-        sleep(1);
-        continue;
-      }
-      
-      if (memcmp(buff, firmware + addr, FLASH_PAGE_SIZE)) 
-      {
-        printf("c");
-        fflush(stdout);
-        sleep(1);
-        continue;
-      }
-
-      break;
+    if (retries < startretries)
+    {
+      fprintf(stderr, "x(%i)", startretries - retries);
     }
   }
+  
   fprintf(stderr, "\n");
 
   ROS_INFO("Verifying flash.");
@@ -294,40 +274,27 @@ int write_flash(char *if_name, char *ip_address, int sn)
   for (int page = 0; page < (firmwarelen + FLASH_PAGE_SIZE - 1) / FLASH_PAGE_SIZE; 
       page++)
   {
+    int addr = page * FLASH_PAGE_SIZE;
     if (page % 100 == 0)
     {
       fprintf(stderr, ".");
       fflush(stderr);
     }
 
-    int addr = page * FLASH_PAGE_SIZE;
-
-    for (int i = 0; ; i++)
+    if (pr2ReliableFlashRead(camera, page, (uint8_t *) buff, NULL) != 0)
     {
-      if (i > 20) {
-        ROS_FATAL("Flash read/compare error on page %i.", page);
-        ROS_FATAL("If you reset the camera it will probably not come up.");
-        ROS_FATAL("Try reflashing NOW, to possibly avoid a hard JTAG reflash.");
-        return -2;
-      }
-      
-      if (pr2FlashRead(camera, page, (uint8_t *) buff) != 0)
-      {
-        printf("r");
-        fflush(stdout);
-        sleep(1);
-        continue;
-      }
-      
-      if (memcmp(buff, firmware + addr, FLASH_PAGE_SIZE)) 
-      {
-        printf("c");
-        fflush(stdout);
-        sleep(1);
-        continue;
-      }
+      ROS_FATAL("Flash read error on page %i.", page);
+      ROS_FATAL("If you reset the camera it will probably not come up.");
+      ROS_FATAL("Try reflashing NOW, to possibly avoid a hard JTAG reflash.");
+      return -2;
+    }
 
-      break;
+    if (memcmp(buff, (uint8_t *) firmware + addr, FLASH_PAGE_SIZE))
+    {
+      ROS_FATAL("Flash compare error on page %i.", page);
+      ROS_FATAL("If you reset the camera it will probably not come up.");
+      ROS_FATAL("Try reflashing NOW, to possibly avoid a hard JTAG reflash.");
+    //  return -2;
     }
   }
   fprintf(stderr, "\n");
@@ -339,13 +306,20 @@ int write_flash(char *if_name, char *ip_address, int sn)
 
 int main(int argc, char **argv)
 {
-  if (argc != 5) {
+  if (argc != 5 && argc != 2) {
     fprintf(stderr, "Usage: %s <file.mcs> <Interface> <IP address> <Serial number>\n", argv[0]);
+    fprintf(stderr, "       %s <file.mcs> > dump.bin\n", argv[0]);
     return -1;
   }
 
   if (read_mcs(argv[1]))
     return -1;
+
+  if (argc == 2)
+  {
+    fwrite(firmware, FLASH_SIZE, 1, stdout);
+    return 0;
+  }
 
   char* if_name = argv[2];
   char* ip_address = argv[3];

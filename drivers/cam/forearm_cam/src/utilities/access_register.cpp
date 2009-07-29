@@ -10,7 +10,7 @@ int sensorread(IpCamList *camera, uint8_t reg)
 {
   uint16_t val;
 
-  if ( pr2SensorRead( camera, reg, &val ) != 0) {
+  if ( pr2ReliableSensorRead( camera, reg, &val, NULL ) != 0) {
     fprintf(stderr, "Could not get register.");
     return -1;
   }
@@ -20,7 +20,7 @@ int sensorread(IpCamList *camera, uint8_t reg)
 
 int sensorwrite(IpCamList *camera, uint8_t reg, uint16_t val)
 {
-  if ( pr2SensorWrite( camera, reg, val ) != 0) {
+  if ( pr2ReliableSensorWrite( camera, reg, val, NULL ) != 0) {
     fprintf(stderr, "Could not set register.");
     return -1;
   }

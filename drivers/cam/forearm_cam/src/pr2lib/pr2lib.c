@@ -74,6 +74,7 @@ int pr2StatusWait( int s, uint32_t wait_us, uint32_t *type, uint32_t *code ) {
 }
 
 
+
 /**
  * Discovers all PR2 cameras that are connected to the 'ifName' ethernet interface and
  * adds new ones to the 'ipCamList' list.
@@ -132,7 +133,7 @@ int pr2Discover(const char *ifName, IpCamList *ipCamList, const char *ipAddress,
 	int newCamCount = 0;
 	do {
 		// Wait in the loop for replies. wait_us is updated each time through the loop.
-		if( !wgWaitForPacket(s, PKTT_ANNOUNCE, sizeof(PacketAnnounce), &wait_us)  && (wait_us != 0) ) {
+		if( !wgWaitForPacket(s, PKTT_ANNOUNCE, sizeof(PacketAnnounce) - CAMERA_NAME_LEN - 1, &wait_us)  && (wait_us != 0) ) {
 			// We've received an Announce packet, so pull it out of the receive queue
 			PacketAnnounce aPkt;
       struct sockaddr_in fromaddr;
@@ -151,7 +152,7 @@ int pr2Discover(const char *ifName, IpCamList *ipCamList, const char *ipAddress,
       {
         if (packet_len != sizeof(PacketAnnounce) - sizeof(aPkt.camera_name))
           continue; // Not a valid packet
-        else // Old discover packet
+        else // Old announce packet
           bzero(aPkt.camera_name, sizeof(aPkt.camera_name));
       }
 
@@ -253,7 +254,7 @@ int pr2Configure( IpCamList *camInfo, const char *ipAddress, unsigned wait_us) {
 
 	// Wait up to wait_us for a valid packet to be received on s
 	do {
-		if( !wgWaitForPacket(s, PKTT_ANNOUNCE, sizeof(PacketAnnounce), &wait_us)  && (wait_us != 0) ) {
+		if( !wgWaitForPacket(s, PKTT_ANNOUNCE, sizeof(PacketAnnounce) - CAMERA_NAME_LEN - 1, &wait_us)  && (wait_us != 0) ) {
 			PacketAnnounce aPkt;
 
 			if( recvfrom( s, &aPkt, sizeof(PacketAnnounce), 0, NULL, NULL )  == -1 ) {
@@ -550,11 +551,46 @@ int pr2GetTimer( const IpCamList *camInfo, uint64_t *time_us ) {
 }
 
 /**
+ * Reads one FLASH_PAGE_SIZE byte page of the camera's onboard Atmel dataflash. Does repeated attempts 
+ * if an error occurs.
+ *
+ * @param camInfo Describes the camera to connect to.
+ * @param address Specifies the 12-bit flash page address to read (0-4095)
+ * @param pageDataOut Points to at least FLASH_PAGE_SIZE bytes of storage in which to place the flash data.
+ * @param retries Maximum number of retries. Decremented for each retry. NULL does 10 retries.
+ *
+ * @return 	Returns 0 for success
+ * 			Returns -2 for out of retries
+ * 			Returns -1 for system error
+ * 			Returns 1 for protocol error
+ *
+ */
+
+int pr2ReliableFlashRead( const IpCamList *camInfo, uint32_t address, uint8_t *pageDataOut, int *retries ) {
+  int retval = -2;
+
+  int counter = 10;
+
+  if (retries == NULL)
+    retries = &counter;
+  for (; *retries > 0; (*retries)--)
+  {
+    retval = pr2FlashRead( camInfo, address, pageDataOut );
+
+    if (!retval)
+      return 0;
+  }
+
+  return retval;
+}
+
+/**
  * Reads one FLASH_PAGE_SIZE byte page of the camera's onboard Atmel dataflash.
  *
  * @param camInfo Describes the camera to connect to.
  * @param address Specifies the 12-bit flash page address to read (0-4095)
  * @param pageDataOut Points to at least FLASH_PAGE_SIZE bytes of storage in which to place the flash data.
+ * @param retries Indicates the maximum allowed number of retries.
  *
  * @return 	Returns 0 for success
  * 			Returns -1 for system error
@@ -617,6 +653,60 @@ int pr2FlashRead( const IpCamList *camInfo, uint32_t address, uint8_t *pageDataO
 	debug("Timed out waiting for flash value\n");
 	close(s);
 	return 1;
+}
+
+/**
+ * Writes one FLASH_PAGE_SIZE byte page to the camera's onboard Atmel dataflash. Repeats the write until
+ * the written value matches, and reads back the written page to check that
+ * it has been correctly written.
+ *
+ * @param camInfo Describes the camera to connect to.
+ * @param address Specifies the 12-bit flash page address to write (0-4095)
+ * @param pageDataOut Points to at least FLASH_PAGE_SIZE bytes of storage from which to get the flash data.
+ * @param retries Maximum number of retries. Decremented for each retry. NULL does 10 retries.
+ *
+ * @return 	Returns 0 for success
+ * 			Returns -2 for out of retries
+ * 			Returns -1 for system error
+ * 			Returns 1 for protocol error
+ *
+ */
+
+int pr2ReliableFlashWrite( const IpCamList *camInfo, uint32_t address, const uint8_t *pageDataIn, int *retries ) {
+  uint8_t buffer[FLASH_PAGE_SIZE];
+  int retval = -2;
+  int counter = 10;
+
+  if (retries == NULL)
+    retries = &counter;
+
+  for (; *retries > 0; (*retries)--)
+  {
+    retval = pr2FlashWrite( camInfo, address, pageDataIn );
+    if (retval)
+    {
+      //printf("Failed compare write.\n");
+      continue;
+    }
+    
+    usleep(8000);
+
+    retval = pr2ReliableFlashRead( camInfo, address, buffer, retries );
+    if (retval)
+    {
+      //printf("Failed compare read.\n");
+      continue;
+    }
+
+    if (!memcmp(buffer, pageDataIn, FLASH_PAGE_SIZE))
+      return 0;
+    //printf("Failed compare.\n");
+    
+    if (*retries == 0) // In case retries ran out during the read.
+      break;
+  }
+
+  return retval;
 }
 
 /**
@@ -792,6 +882,49 @@ int pr2ConfigureBoard( const IpCamList *camInfo, uint32_t serial, MACAddress *ma
 }
 
 /**
+ * Writes to one image sensor I2C register on one camera. Repeats reads and
+ * reads back written value until it gets a match.
+ *
+ * @param camInfo Describes the camera to connect to
+ * @param reg The 8-bit register address to write into
+ * @parm data 16-bit value to write into the register
+ * @param retries Maximum number of retries. Decremented for each retry. NULL does 10 retries.
+ *
+ * @return 	Returns 0 for success
+ * 			Returns -2 for out of retries
+ * 			Returns -1 for system error
+ * 			Returns 1 for protocol error
+ */
+
+int pr2ReliableSensorWrite( const IpCamList *camInfo, uint8_t reg, uint16_t data, int *retries ) {
+  uint16_t readbackdata;
+  int retval = -2;
+  int counter = 10;
+
+  if (retries == NULL)
+    retries = &counter;
+
+  for (; *retries > 0; (*retries)--)
+  {
+    retval = pr2SensorWrite( camInfo, reg, data );
+    if (retval)
+      continue;
+
+    retval = pr2ReliableSensorRead( camInfo, reg, &readbackdata, retries );
+    if (retval)
+      continue;
+
+    if (readbackdata == data)
+      return 0;
+    
+    if (*retries == 0) // In case retries ran out during the read.
+      break;
+  }
+
+  return retval;
+}
+  
+/**
  * Writes to one image sensor I2C register on one camera.
  *
  * @param camInfo Describes the camera to connect to
@@ -843,6 +976,39 @@ int pr2SensorWrite( const IpCamList *camInfo, uint8_t reg, uint16_t data ) {
 		debug("Error: wgStatusWait returned status %d, code %d\n", type, code);
 		return 1;
 	}
+}
+
+/**
+ * Reads the value of one image sensor I2C register on one camera. Retries
+ * if there are any errors.
+ *
+ * @param camInfo Describes the camera to connect to
+ * @param reg The 8-bit register address to read from
+ * @parm data Pointer to 16 bits of storage to write the value to
+ * @param retries Maximum number of retries. Decremented for each retry. NULL does 10 retries.
+ *
+ * @return 	Returns 0 for success
+ * 			Returns -2 for out of retries
+ * 			Returns -1 for system error
+ * 			Returns 1 for protocol error
+ */
+
+int pr2ReliableSensorRead( const IpCamList *camInfo, uint8_t reg, uint16_t *data, int *retries ) {
+  int retval = -2;
+
+  int counter = 10;
+
+  if (retries == NULL)
+    retries = &counter;
+  for (; *retries > 0; (*retries)--)
+  {
+    retval = pr2SensorRead( camInfo, reg, data );
+
+    if (!retval)
+      return 0;
+  }
+
+  return retval;
 }
 
 /**

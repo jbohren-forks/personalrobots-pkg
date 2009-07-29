@@ -53,25 +53,25 @@ int main(int argc, char** argv)
 
   for (int i = 0; i <= FLASH_MAX_PAGENO; i++)
   {
+    int retries = 20;
     if (i % 100 == 0)
     {
       fprintf(stderr, ".");
       fflush(stderr);
     }
-    if (pr2FlashRead(camera, i, buffer) != 0) {
-      printf("r");
-      if (pr2FlashRead(camera, i, buffer) != 0) {
-        fprintf(stderr, "Flash read error\n");
-        return -1;
-      }
+    if (pr2ReliableFlashRead(camera, i, buffer, &retries) != 0) {
+      fprintf(stderr, "Flash read error\n");
+      return -1;
     }
+    if (retries < 20)
+      fprintf(stderr, "x");
     if (fwrite(buffer, FLASH_PAGE_SIZE, 1, stdout) != 1)
     {
       fprintf(stderr, "error: fwrite did not write one item. Image will be corrupt.\n");
     }
   }
   
-  printf("\n");
+  fprintf(stderr, "\n");
 
   return 0;
 }

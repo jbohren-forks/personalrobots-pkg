@@ -610,19 +610,19 @@ public:
 
     int bin_size = width_ > 320 ? 1 : 2;
     // Set horizontal blanking
-    if ( pr2SensorWrite( camera_, MT9V_REG_HORIZONTAL_BLANKING, MT9VModes[video_mode_].hblank * bin_size ) != 0)
+    if ( pr2ReliableSensorWrite( camera_, MT9V_REG_HORIZONTAL_BLANKING, MT9VModes[video_mode_].hblank * bin_size, NULL ) != 0)
     {
       ROS_WARN("Error setting horizontal blanking.");
     }
 
-    if ( pr2SensorWrite( camera_, MT9V_REG_VERTICAL_BLANKING, MT9VModes[video_mode_].vblank) != 0)
+    if ( pr2ReliableSensorWrite( camera_, MT9V_REG_VERTICAL_BLANKING, MT9VModes[video_mode_].vblank, NULL) != 0)
     {
       ROS_WARN("Error setting vertical blanking.");
     }
 
     /*
     // Set maximum course shutter width
-    if ( pr2SensorWrite( camera_, 0xBD, 240 ) != 0) {
+    if ( pr2ReliableSensorWrite( camera_, 0xBD, 240, NULL ) != 0) {
       ROS_FATAL("Sensor write error");
       exit_status_ = 1;
       node_handle_.shutdown();
@@ -630,14 +630,14 @@ public:
     }
     */
 
-    if (pr2SensorWrite(camera_, MT9V_REG_AGC_AEC_ENABLE, (gain_ == -1) * 2 + (exposure_ == -1)) != 0)
+    if (pr2ReliableSensorWrite(camera_, MT9V_REG_AGC_AEC_ENABLE, (gain_ == -1) * 2 + (exposure_ == -1), NULL) != 0)
     {
       ROS_WARN("Error setting AGC/AEC mode. Exposure and gain may be incorrect.");
     }
 
     if (gain_ != -1) // Manual gain
     {
-      if ( pr2SensorWrite( camera_, MT9V_REG_ANALOG_GAIN, gain_) != 0)
+      if ( pr2ReliableSensorWrite( camera_, MT9V_REG_ANALOG_GAIN, gain_, NULL) != 0)
       {
         ROS_WARN("Error setting analog gain.");
       }
@@ -655,7 +655,7 @@ public:
       if (explines > 32767) /// @TODO warning here?
         explines = 32767;
       ROS_DEBUG("Setting exposure lines to %i.", explines);
-      if ( pr2SensorWrite( camera_, MT9V_REG_TOTAL_SHUTTER_WIDTH, explines) != 0)
+      if ( pr2ReliableSensorWrite( camera_, MT9V_REG_TOTAL_SHUTTER_WIDTH, explines, NULL) != 0)
       {
         ROS_WARN("Error setting exposure.");
       }
@@ -815,7 +815,7 @@ stop_video:
     stat.adds("Interface", if_name_);
     stat.adds("Camera IP", ip_address_);
     stat.adds("Camera Serial #", serial_number_);
-    stat.adds("Camera Name #", camera_name_);
+    stat.adds("Camera Name", camera_name_);
     stat.adds("Camera Hardware", hwinfo_);
     stat.addsf("Camera MAC", "%02X:%02X:%02X:%02X:%02X:%02X", mac_[0], mac_[1], mac_[2], mac_[3], mac_[4], mac_[5]);
     stat.adds("Image mode", mode_name_);
@@ -1029,7 +1029,7 @@ stop_video:
     // Retrieve contents of user memory
     static const int CALIBRATION_PAGE = 0;
     std::string buffer(FLASH_PAGE_SIZE, '\0');
-    if (pr2FlashRead(camera_, CALIBRATION_PAGE, (uint8_t*)&buffer[0]) != 0) {
+    if (pr2ReliableFlashRead(camera_, CALIBRATION_PAGE, (uint8_t*)&buffer[0], NULL) != 0) {
       ROS_WARN("Flash read error");
       return false;
     }
@@ -1187,7 +1187,7 @@ stop_video:
   
   int setTestMode(uint16_t mode, diagnostic_updater::DiagnosticStatusWrapper &status)
   {
-    if ( pr2SensorWrite( camera_, 0x7F, mode ) != 0) {
+    if ( pr2ReliableSensorWrite( camera_, 0x7F, mode, NULL ) != 0) {
       status.summary(2, "Could not set imager into test mode.");
       status.adds("Writing imager test mode", "Fail");
       return 1;
@@ -1199,7 +1199,7 @@ stop_video:
 
     usleep(100000);
     uint16_t inmode;
-    if ( pr2SensorRead( camera_, 0x7F, &inmode ) != 0) {
+    if ( pr2ReliableSensorRead( camera_, 0x7F, &inmode, NULL ) != 0) {
       status.summary(2, "Could not read imager mode back.");
       status.adds("Reading imager test mode", "Fail");
       return 1;

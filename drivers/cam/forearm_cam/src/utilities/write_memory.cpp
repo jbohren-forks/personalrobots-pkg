@@ -76,7 +76,7 @@ int main(int argc, char** argv)
 
   // Write data to flash memory
   static const int PAGE_NUMBER = 4092;
-  if (pr2FlashWrite(camera, PAGE_NUMBER, buffer) != 0) {
+  if (pr2ReliableFlashWrite(camera, PAGE_NUMBER, buffer, NULL) != 0) {
     printf("Flash write error\n");
     return -1;
   }
@@ -84,7 +84,7 @@ int main(int argc, char** argv)
 
   // Verify
   uint8_t data[FLASH_PAGE_SIZE];
-  if (pr2FlashRead(camera, PAGE_NUMBER, data) != 0) {
+  if (pr2ReliableFlashRead(camera, PAGE_NUMBER, data, NULL) != 0) {
     printf("Flash read error, couldn't verify\n");
     return -1;
   }

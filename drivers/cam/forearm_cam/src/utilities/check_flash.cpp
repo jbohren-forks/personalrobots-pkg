@@ -73,7 +73,7 @@ int main(int argc, char** argv)
     for (int j = 0; j < FLASH_SIZE_LONG; j++)
       buffer[j] = pattern += incr;
 
-    if (pr2FlashWrite(camera, i, (uint8_t*) buffer) != 0) {
+    if (pr2ReliableFlashWrite(camera, i, (uint8_t*) buffer, NULL) != 0) {
       fprintf(stderr, "Flash write error\n");
       return -1;
     }
@@ -92,7 +92,7 @@ int main(int argc, char** argv)
     for (int j = 0; j < FLASH_SIZE_LONG; j++)
       buffer[j] = pattern += incr;
 
-    if (pr2FlashRead(camera, i, (uint8_t*) buffer2) != 0) {
+    if (pr2ReliableFlashRead(camera, i, (uint8_t*) buffer2, NULL) != 0) {
       fprintf(stderr, "Flash read error\n");
       return -1;
     }
@@ -104,7 +104,7 @@ int main(int argc, char** argv)
     }
   }
 
-  printf("\nCheck completed, %i errors.", errcount);
+  fprintf(stderr, "\nCheck completed, %i errors.", errcount);
 
   return 0;
 }

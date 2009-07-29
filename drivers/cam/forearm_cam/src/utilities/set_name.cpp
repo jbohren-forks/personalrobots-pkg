@@ -89,50 +89,38 @@ int write_name(char *if_name, char *ip_address, int sn, char *name)
     return -1;
   }
   
-  unsigned char chkbuff[FLASH_PAGE_SIZE];
   unsigned char namebuff[FLASH_PAGE_SIZE];
+
+  if(pr2ReliableFlashRead(camera, FLASH_NAME_PAGENO, (uint8_t *) namebuff, NULL) != 0)
+  {
+    ROS_FATAL("Flash read error. The camera name is an undetermined state.");
+    return -2;
+  }
+ 
+  uint8_t checksum = 0;
+  for (int i = 0; i <= CAMERA_NAME_LEN; i++)
+    checksum += namebuff[i];
+
+  if (checksum != 0xFF)
+  {
+    ROS_ERROR("Previous camera name had bad checksum: %02x", checksum);
+  }
+  
+  namebuff[CAMERA_NAME_LEN] = 0;
+  printf("Previous camera name was: %s.\n", namebuff);
 
   bzero(namebuff, FLASH_PAGE_SIZE);
   strncpy((char *) namebuff, name, CAMERA_NAME_LEN);
-  uint8_t checksum = 0;
+  checksum = 0;
   for (int i = 0; i < CAMERA_NAME_LEN; i++)
     checksum += namebuff[i];
   namebuff[CAMERA_NAME_LEN] = 255 - checksum;
 
-  for (int i = 0; ; i++)
-  {
-      if (i > 20) {
-        ROS_FATAL("Flash write error. The camera name is an undetermined state.");
-        return -2;
-      }
-      
-      if (pr2FlashWrite(camera, FLASH_NAME_PAGENO, (uint8_t *) namebuff) != 0)
-      {
-        printf("w");
-        fflush(stdout);
-        sleep(1);
-        continue;
-      }
-
-      if (pr2FlashRead(camera, FLASH_NAME_PAGENO, (uint8_t *) chkbuff) != 0)
-      {
-        printf("r");
-        fflush(stdout);
-        sleep(1);
-        continue;
-      }
-      
-      if (memcmp(chkbuff, namebuff, FLASH_PAGE_SIZE)) 
-      {
-        printf("c");
-        fflush(stdout);
-        sleep(1);
-        continue;
-      }
-
-      break;
+  if (pr2ReliableFlashWrite(camera, FLASH_NAME_PAGENO, (uint8_t *) namebuff, NULL) != 0)
+  {    
+    ROS_FATAL("Flash write error. The camera name is an undetermined state.");
+    return -2;
   }
-  printf("\n");
   
   ROS_INFO("Success!");
 
