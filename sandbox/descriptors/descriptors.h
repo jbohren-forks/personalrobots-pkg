@@ -76,6 +76,10 @@ class ImageDescriptor {
   unsigned int getSize();
   //! Vectorized feature computation call.
   virtual void compute(IplImage* img, const cv::Vector<cv::Keypoint>& points, vvf& results) {};
+  //! Clean up any data specific to computation at a point.
+  virtual void clearPointCache() {}
+  //! Clean up any data specific to computation on a particular image.
+  virtual void clearImageCache() {}
 
  protected:
   //! Name of the descriptor.  Should be unique for any parameter setting.
@@ -85,10 +89,6 @@ class ImageDescriptor {
   //! The image that we are computing descriptors on.
   IplImage* img_;
 
-  //! Clean up any data specific to computation at a point.
-  virtual void clearPointCache() {}
-  //! Clean up any data specific to computation on a particular image.
-  virtual void clearImageCache() {}
   //! Show the input image and a red + at the point at which the descriptor is being computed.
   void commonDebug(cv::Keypoint kp, IplImage* vis = NULL);
   //! Sets the img_ pointer and clears the image cache.
@@ -262,17 +262,22 @@ class ContourFragmentDescriptor : public ImageDescriptor {
  */
 class SuperpixelStatistic : public ImageDescriptor {
  public:
+  SuperpixelStatistic(int seed_spacing, float scale, SuperpixelStatistic* provider);
+  ~SuperpixelStatistic();
+  void segment(IplImage* img);
+  void clearImageCache();
+  int getSeedSpacing();
+  float getScale();
+  SuperpixelStatistic* getSegProvider();
+  IplImage* getSegmentation();
+  std::vector< std::vector<CvPoint> >* getIndex();
+
+ protected:
   //! (*index_)[i] returns the vector of CvPoints for segment i of the image.
   std::vector< std::vector<CvPoint> > *index_;
   //! The segmentation.
   IplImage* seg_;
-
-  SuperpixelStatistic(int seed_spacing, float scale, SuperpixelStatistic* provider);
-  int getSeedSpacing();
-  float getScale();
-  SuperpixelStatistic* getSegProvider();
-
- protected:
+  //! Number of pixels between each seed.
   int seed_spacing_;
   //! Scaling factor to apply to the image when computing the segmentation.
   float scale_;
@@ -282,6 +287,7 @@ class SuperpixelStatistic : public ImageDescriptor {
   //! Computes superpixels and puts into seg_, and computes the superpixel to pixel index.  Is called automatically, if necessary, by the compute(.) function.
   void segment();
   IplImage* createSegmentMask(int label, CvRect* rect);
+
 };
 
 

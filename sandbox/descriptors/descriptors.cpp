@@ -792,9 +792,16 @@ IplImage* SuperpixelStatistic::createSegmentMask(int label, CvRect* rect) {
   return mask;
 }
 
+void SuperpixelStatistic::segment(IplImage* img) {
+  setImage(img);
+  segment();
+}
+
 void SuperpixelStatistic::segment() {
   assert(!seg_); //Should be null if this is called.
-  
+  assert(!index_);
+  index_ = new vector< vector<CvPoint> >;  
+
   // -- Downsample image.
   IplImage* img_small = cvCreateImage(cvSize(((float)img_->width)*scale_, ((float)img_->height)*scale_), img_->depth, img_->nChannels);
   cvResize(img_, img_small, CV_INTER_AREA);
@@ -926,6 +933,7 @@ void SuperpixelStatistic::segment() {
     cvReleaseMat(&color_tab);
     cvReleaseImage(&wshed);
     cvReleaseImage(&marker_mask);
+    cvDestroyWindow(name_.c_str());
   }
 
   cvReleaseImage(&img_small);
@@ -943,7 +951,35 @@ float SuperpixelStatistic::getScale() {
 SuperpixelStatistic* SuperpixelStatistic::getSegProvider() {
   return seg_provider_;
 }
-  
+
+void SuperpixelStatistic::clearImageCache() {
+  if(seg_provider_ == NULL) {
+    if(seg_)
+      cvReleaseImage(&seg_);
+    if(index_) {
+      delete index_;
+      index_ = NULL;
+    }
+  }
+  else {
+    seg_ = NULL;
+    index_ = NULL;
+  }
+}
+ 
+SuperpixelStatistic::~SuperpixelStatistic() {
+  clearImageCache();
+}
+
+IplImage* SuperpixelStatistic::getSegmentation() {
+  return seg_;
+}
+
+std::vector< std::vector<CvPoint> >* SuperpixelStatistic::getIndex() {
+  return index_;
+}
+
+ 
 /***************************************************************************
 ***********  ImageDescriptor::SuperpixelStatistic::SuperpixelColorHistogram
 ****************************************************************************/
@@ -981,8 +1017,7 @@ void SuperpixelColorHistogram::compute(IplImage* img, const Vector<Keypoint>& po
   results.resize(points.size());
 
   // -- Make sure we have access to a segmentation.
-  if(seg_provider_ == NULL && seg_ == NULL) {
-    index_ = new vector< vector<CvPoint> >;
+  if(seg_provider_ == NULL && seg_ == NULL) {    
     segment();
   }
   else if(seg_provider_ != NULL && seg_ == NULL) {
@@ -990,8 +1025,8 @@ void SuperpixelColorHistogram::compute(IplImage* img, const Vector<Keypoint>& po
     assert(seg_provider_->getScale() == scale_);
     assert(seg_provider_->getSegProvider() == NULL);
    
-    seg_ = seg_provider_->seg_;
-    index_ = seg_provider_->index_;
+    seg_ = seg_provider_->getSegmentation();
+    index_ = seg_provider_->getIndex();
   }
 
   // -- Make sure we have access to HSV image.
@@ -1108,16 +1143,7 @@ void SuperpixelColorHistogram::clearImageCache() {
   }
 
   // -- Clean up index and seg_.
-  if(seg_provider_ == NULL) {
-    cvReleaseImage(&seg_);
-    if(index_) {
-      delete index_;
-    }
-  }
-  else {
-    seg_ = NULL;
-    index_ = NULL;
-  }
+  SuperpixelStatistic::clearImageCache();
 
   // -- Clean up cv histograms.
   for(size_t i=0; i<histograms_cv_.size(); i++) {
