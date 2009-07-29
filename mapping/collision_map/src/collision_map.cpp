@@ -66,7 +66,6 @@ sizes.
 
 using namespace std;
 using namespace std_msgs;
-using namespace robot_msgs;
 using namespace mapping_msgs;
 
 struct Leaf
@@ -100,7 +99,7 @@ class CollisionMapper
   public:
 
     // ROS messages
-    PointCloud cloud_;
+    sensor_msgs::PointCloud cloud_;
     CollisionMap c_map_;
     OrientedBoundingBox box_sub_obj_;
 
@@ -109,7 +108,7 @@ class CollisionMapper
     vector<Leaf> leaves_;
 
     // Parameters
-    Point leaf_width_, robot_max_;
+    geometry_msgs::Point leaf_width_, robot_max_;
     bool only_updates_, subtract_object_;
 
     int min_nr_points_;
@@ -199,13 +198,13 @@ class CollisionMapper
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void
-      computeCollisionMap (PointCloud *points, vector<Leaf> &leaves, CollisionMap &cmap)
+      computeCollisionMap (sensor_msgs::PointCloud *points, vector<Leaf> &leaves, CollisionMap &cmap)
     {
       // Copy the header (and implicitly the frame_id)
       cmap.header = cloud_.header;
       cmap.boxes.resize (cloud_.pts.size ());
 
-      PointStamped base_origin, torso_lift_origin;
+      geometry_msgs::PointStamped base_origin, torso_lift_origin;
       base_origin.point.x = base_origin.point.y = base_origin.point.z = 0.0;
       base_origin.header.frame_id = "torso_lift_link";
       base_origin.header.stamp = ros::Time();
@@ -224,7 +223,7 @@ class CollisionMapper
       vector<int> indices (cloud_.pts.size ());
       int nr_p = 0;
 
-      Point32 minP, maxP;
+      geometry_msgs::Point32 minP, maxP;
       minP.x = minP.y = minP.z = FLT_MAX;
       maxP.x = maxP.y = maxP.z = FLT_MIN;
       double distance_sqr_x, distance_sqr_y, distance_sqr_z;
@@ -252,7 +251,7 @@ class CollisionMapper
       indices.resize (nr_p);
 
       // Compute the minimum and maximum bounding box values
-      Point32 minB, maxB, divB;
+      geometry_msgs::Point32 minB, maxB, divB;
 
       minB.x = (int)(floor (minP.x / leaf_width_.x));
       maxB.x = (int)(floor (maxP.x / leaf_width_.x));
@@ -417,7 +416,7 @@ class CollisionMapper
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     bool
-      isBoxInsideBounds (Point32 *center, Point32 *extents, Eigen::Vector3d minB, Eigen::Vector3d maxB)
+      isBoxInsideBounds (geometry_msgs::Point32 *center, geometry_msgs::Point32 *extents, Eigen::Vector3d minB, Eigen::Vector3d maxB)
     {
       // Check all 8 points
       float ce_x = center->x - extents->x, ce_y = center->y - extents->y, ce_z = center->z - extents->z;
@@ -482,7 +481,7 @@ class CollisionMapper
 
       // Subtract the received oriented bounding box
       m_lock_.lock ();
-      Point32 center, extents;
+      geometry_msgs::Point32 center, extents;
       if (leaves_.size () > 0)
       {
         // Check all leaves against the given OBB
