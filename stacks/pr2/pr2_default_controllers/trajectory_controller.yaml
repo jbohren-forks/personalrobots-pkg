@@ -6,6 +6,7 @@ r_shoulder_pan_joint:
   d: 30.0
   i: 100.0
   i_clamp: 10000.0
+  goal_reached_threshold: 0.1
 
 r_shoulder_lift_joint:
   joint: r_shoulder_lift_joint
@@ -13,6 +14,7 @@ r_shoulder_lift_joint:
   d: 20.0
   i: 100.0
   i_clamp: 10000.0
+  goal_reached_threshold: 0.1
 
 r_upper_arm_roll_joint:
   joint: r_upper_arm_roll_joint
@@ -20,6 +22,7 @@ r_upper_arm_roll_joint:
   d: 5.0
   i: 100.0
   i_clamp: 10000.0
+  goal_reached_threshold: 0.1
 
 r_elbow_flex_joint:
   joint: r_elbow_flex_joint
@@ -27,6 +30,7 @@ r_elbow_flex_joint:
   d: 5.0
   i: 100.0
   i_clamp: 10000.0
+  goal_reached_threshold: 0.1
 
 r_forearm_roll_joint:
   joint: r_forearm_roll_joint
@@ -34,6 +38,7 @@ r_forearm_roll_joint:
   d: 2.0
   i: 100.0
   i_clamp: 10000.0
+  goal_reached_threshold: 0.1
 
 r_wrist_flex_joint:
   joint: r_wrist_flex_joint
@@ -41,6 +46,7 @@ r_wrist_flex_joint:
   d: 0.5
   i: 100.0
   i_clamp: 10000.0
+  goal_reached_threshold: 0.1
 
 r_wrist_roll_joint:
   joint: r_wrist_roll_joint
@@ -48,4 +54,5 @@ r_wrist_roll_joint:
   d: 0.5
   i: 100.0
   i_clamp: 10000.0
+  goal_reached_threshold: 0.1
 
