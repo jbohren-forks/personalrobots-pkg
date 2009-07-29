@@ -27,5 +27,9 @@ genmsg()
 #rospack_add_boost_directories()
 #rospack_link_boost(${PROJECT_NAME} thread)
 #rospack_add_executable(rectangular_fit src/rectangular_fit.cpp)
+
 rospack_add_executable(box_detector src/box_detector.cpp src/find_planes.cpp src/vis_utils.cpp src/cornercandidate.cpp)
+
+rospack_add_executable(box_tracker src/box_tracker.cpp)
+
 #target_link_libraries(example ${PROJECT_NAME})

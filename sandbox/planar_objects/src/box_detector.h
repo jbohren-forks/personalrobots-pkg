@@ -131,8 +131,6 @@ public:
       std::vector<double> >& plane_coeff);
   void findCornerCandidates(IplImage* pixOccupied, IplImage *pixFree, IplImage* pixUnknown, IplImage* &pixDist,
                             std::vector<double> & plane_coeff, std::vector<CornerCandidate> &corner,int id);
-  void visualizeLines(std::vector<std::pair<btVector3, btVector3> > lines, int id = 1, double r = 1.0, double b = 1.0,
-                      double g = 1.0);
   std::vector<CornerCandidate> groupCorners(std::vector<CornerCandidate> &corner, double group_dist = 20);
   void visualizeCorners(std::vector<CornerCandidate> &corner, int id = 0);
   void visualizeFrontAndBackPlane(int frontplane, int backplane, const robot_msgs::PointCloud& cloud, std::vector<

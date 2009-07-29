@@ -11,12 +11,13 @@
 using namespace ros;
 using namespace std;
 using namespace robot_msgs;
-using namespace vis_utils;
+
+namespace planar_objects {
 
 #define RETURN_RGB(r1,g1,b1) r=(int)(r1*255);g=(int)(g1*255);b=(int)(b1*255);
 
 
-int vis_utils::HSV_to_RGB( float h, float s, float v) {
+int HSV_to_RGB( float h, float s, float v) {
         // H is given on [0, 6] or UNDEFINED. S and V are given on [0, 1].
         // RGB are each returned on [0, 1].
         h *= 6;
@@ -46,12 +47,12 @@ int vis_utils::HSV_to_RGB( float h, float s, float v) {
         return(rgb);
 }
 
-float vis_utils::HSV_to_RGBf(float h, float s, float v) {
+float HSV_to_RGBf(float h, float s, float v) {
   int rgb=HSV_to_RGB(h,s,v);
   return(*(float*)&rgb);
 }
 
-float vis_utils::mix_color( float mix, float a, float b ) {
+float mix_color( float mix, float a, float b ) {
   int ai = *(int*)&a;
   int bi = *(int*)&b;
   int ar = (ai >> 16) & 0xff;
@@ -68,7 +69,7 @@ float vis_utils::mix_color( float mix, float a, float b ) {
 }
 
 
-void vis_utils::visualizePlanes(const robot_msgs::PointCloud& cloud,
+void visualizePlanes2(const robot_msgs::PointCloud& cloud,
                                   std::vector<std::vector<int> >& plane_indices,
                                   std::vector<robot_msgs::PointCloud>& plane_cloud,
                                   std::vector<std::vector<double> >& plane_coeff,
@@ -119,7 +120,7 @@ void vis_utils::visualizePlanes(const robot_msgs::PointCloud& cloud,
 }
 
 
-void vis_utils::visualizePolygon(const robot_msgs::PointCloud& cloud,robot_msgs::Polygon3D &polygon, int rgb, int id, ros::Publisher& visualization_pub ) {
+void visualizePolygon(const robot_msgs::PointCloud& cloud,robot_msgs::Polygon3D &polygon, int rgb, int id, ros::Publisher& visualization_pub ) {
   visualization_msgs::Marker marker;
   marker.header.frame_id = cloud.header.frame_id;
   marker.header.stamp = ros::Time((uint64_t)0ULL);
@@ -143,4 +144,37 @@ void vis_utils::visualizePolygon(const robot_msgs::PointCloud& cloud,robot_msgs:
   }
 //  ROS_INFO("visualization_marker polygon with n=%d points",polygon.get_points_size());
   visualization_pub.publish(  marker );
+}
+
+void visualizeLines(ros::Publisher& visualization_pub_,std::string frame_id,std::vector<std::pair<btVector3, btVector3> > lines, int id, double r, double g,
+                                double b)
+{
+  // visualize edges in 3D
+  visualization_msgs::Marker marker;
+  marker.header.frame_id = frame_id;
+  marker.header.stamp = ros::Time((uint64_t)0ULL);
+  marker.ns = "edges";
+  marker.id = id;
+  marker.type = visualization_msgs::Marker::LINE_LIST;
+  marker.action = lines.size() == 0 ? visualization_msgs::Marker::DELETE : visualization_msgs::Marker::ADD;
+  marker.pose.orientation.w = 1.0;
+  marker.scale.x = 0.002;
+  marker.color.a = 1.0;
+  marker.color.r = r;
+  marker.color.g = g;
+  marker.color.b = b;
+
+  marker.set_points_size(lines.size() * 2);
+  for (size_t i = 0; i < lines.size(); i++)
+  {
+    marker.points[i * 2 + 0].x = lines[i].first.x();
+    marker.points[i * 2 + 0].y = lines[i].first.y();
+    marker.points[i * 2 + 0].z = lines[i].first.z();
+    marker.points[i * 2 + 1].x = lines[i].second.x();
+    marker.points[i * 2 + 1].y = lines[i].second.y();
+    marker.points[i * 2 + 1].z = lines[i].second.z();
+  }
+  visualization_pub_.publish(marker);
+}
+
 }

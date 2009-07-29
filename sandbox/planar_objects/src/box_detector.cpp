@@ -18,7 +18,6 @@
 using namespace ros;
 using namespace std;
 using namespace robot_msgs;
-using namespace vis_utils;
 
 int main(int argc, char **argv)
 {
@@ -242,7 +241,7 @@ void BoxDetector::syncCallback()
   vector<vector<int> > plane_indices;
   PointCloud outside;
 
-  find_planes::findPlanes(*cloud_, n_planes_max_, point_plane_distance_, plane_indices, plane_cloud, plane_coeff,
+  findPlanes(*cloud_, n_planes_max_, point_plane_distance_, plane_indices, plane_cloud, plane_coeff,
                           outside);
   MEASURE(timeStamp,"findPlanes");
 
@@ -282,7 +281,7 @@ void BoxDetector::syncCallback()
     cvSetZero(pixUnknown);
     cvSetZero(pixDist);
     //  int frontplane=1;
-    find_planes::createPlaneImage(*cloud_, plane_indices[frontplane], plane_coeff[frontplane], pixOccupied, pixFree,
+    createPlaneImage(*cloud_, plane_indices[frontplane], plane_coeff[frontplane], pixOccupied, pixFree,
                                   pixUnknown);
     cvShowImage("occupied", pixOccupied);
     cvShowImage("free", pixFree);
@@ -413,7 +412,7 @@ void BoxDetector::visualizeFrontAndBackPlane(int frontplane, int backplane, cons
   }
   plane_color[backplane] = HSV_to_RGBf(0.3, 0.3, 1);
   plane_color[frontplane] = HSV_to_RGBf(0., 0.3, 1);
-  vis_utils::visualizePlanes(*cloud_, plane_indices, plane_cloud, plane_coeff, plane_color, outside, cloud_planes_pub_,
+  visualizePlanes2(*cloud_, plane_indices, plane_cloud, plane_coeff, plane_color, outside, cloud_planes_pub_,
                              visualization_pub_, convexHull);
 
 }
@@ -429,7 +428,7 @@ void BoxDetector::visualizePlanes(const robot_msgs::PointCloud& cloud, std::vect
   {
     plane_color[i] = HSV_to_RGBf(i / (double)plane_coeff.size(), 0.3, 1.0);
   }
-  vis_utils::visualizePlanes(*cloud_, plane_indices, plane_cloud, plane_coeff, plane_color, outside, cloud_planes_pub_,
+  visualizePlanes2(*cloud_, plane_indices, plane_cloud, plane_coeff, plane_color, outside, cloud_planes_pub_,
                              visualization_pub_, convexHull);
 
 }
@@ -512,7 +511,7 @@ void BoxDetector::findCornerCandidates(IplImage* pixOccupied, IplImage *pixFree,
     return;
   }
   if (show_lines)
-    visualizeLines(lines3d, id, 0.5, 0.5, 0.5);
+    visualizeLines(visualization_pub_,cloud_->header.frame_id,lines3d, id, 0.5, 0.5, 0.5);
 
   // compute corner candidates
   btVector3 vecPlane(plane_coeff[0], plane_coeff[1], plane_coeff[2]);
@@ -675,37 +674,6 @@ void BoxDetector::findCornerCandidates(IplImage* pixOccupied, IplImage *pixFree,
   cvReleaseImage(&pixHough);
 }
 
-void BoxDetector::visualizeLines(std::vector<std::pair<btVector3, btVector3> > lines, int id, double r, double g,
-                                double b)
-{
-  // visualize edges in 3D
-  visualization_msgs::Marker marker;
-  marker.header.frame_id = cloud_->header.frame_id;
-  marker.header.stamp = ros::Time((uint64_t)0ULL);
-  marker.ns = "edges";
-  marker.id = id;
-  marker.type = visualization_msgs::Marker::LINE_LIST;
-  marker.action = lines.size() == 0 ? visualization_msgs::Marker::DELETE : visualization_msgs::Marker::ADD;
-  marker.pose.orientation.w = 1.0;
-  marker.scale.x = 0.002;
-  marker.color.a = 1.0;
-  marker.color.r = r;
-  marker.color.g = g;
-  marker.color.b = b;
-
-  marker.set_points_size(lines.size() * 2);
-  for (size_t i = 0; i < lines.size(); i++)
-  {
-    marker.points[i * 2 + 0].x = lines[i].first.x();
-    marker.points[i * 2 + 0].y = lines[i].first.y();
-    marker.points[i * 2 + 0].z = lines[i].first.z();
-    marker.points[i * 2 + 1].x = lines[i].second.x();
-    marker.points[i * 2 + 1].y = lines[i].second.y();
-    marker.points[i * 2 + 1].z = lines[i].second.z();
-  }
-  visualization_pub_.publish(marker);
-}
-
 std::vector<CornerCandidate> BoxDetector::groupCorners(std::vector<CornerCandidate> &corner, double group_dist)
 {
   // group within distance
@@ -808,7 +776,7 @@ void BoxDetector::visualizeCorners(std::vector<CornerCandidate> &corner, int id)
       lines[i].first = corner[i].tf.getOrigin();
       lines[i].second = corner[i].tf * (vec * 0.05);
     }
-    visualizeLines(lines, id + 10 + j, j == 0 ? 1.00 : 0.00, j == 1 ? 1.00 : 0.00, j == 2 ? 1.00 : 0.00);
+    visualizeLines(visualization_pub_,cloud_->header.frame_id,lines, id + 10 + j, j == 0 ? 1.00 : 0.00, j == 1 ? 1.00 : 0.00, j == 2 ? 1.00 : 0.00);
   }
 }
 
@@ -832,11 +800,11 @@ void BoxDetector::visualizeRectangles3d(std::vector<CornerCandidate> &corner, in
     lines[3].first = corner[i].points3d[3];
     lines[3].second = corner[i].points3d[0];
 
-    visualizeLines(lines, id + 100 + i, MIN(i*0.1,1.00), MAX(0.00, 1.00-i*.01), 0.00);
+    visualizeLines(visualization_pub_,cloud_->header.frame_id,lines, id + 100 + i, MIN(i*0.1,1.00), MAX(0.00, 1.00-i*.01), 0.00);
   }
   lines.resize(0);
   for (size_t i = corner.size(); i < 100; i++)
-    visualizeLines(lines, id + 100 + i);
+    visualizeLines(visualization_pub_,cloud_->header.frame_id,lines, id + 100 + i);
 }
 
 void BoxDetector::visualizeRectangles2d(std::vector<CornerCandidate> &corner)
