@@ -3,7 +3,10 @@
     <remap from="cloud_in" to="full_cloud_annotated" />
     <remap from="cloud_incremental_in" to="tilt_scan_cloud_annotated" />
 
+    <!-- we do not want a separate map with occlusions alone -->
     <param name="publish_occlusion" type="bool" value="false" />
+
+    <!-- we do not want to assume initially occluded space (when we start the robot) is in collision -->
     <param name="mark_self_occlusion" type="bool" value="false" />
 
     <!-- tell the collision map there may be an annotation channel telling which points are on the robot -->

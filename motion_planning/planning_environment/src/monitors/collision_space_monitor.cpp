@@ -39,7 +39,6 @@
 #include <robot_msgs/PointStamped.h>
 #include <robot_msgs/PoseStamped.h>
 #include <boost/bind.hpp>
-#include <sstream>
 #include <climits>
 
 namespace planning_environment
