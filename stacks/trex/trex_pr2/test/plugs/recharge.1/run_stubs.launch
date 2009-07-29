@@ -1,6 +1,0 @@
-<launch>
-  <master auto="start"/>
-  <param name="/trex/start_dir" value="$(find trex_pr2)/test/plugs/recharge.1"/>
-  <include file="$(find trex_pr2)/test/plugs/stubs.launch" />
-  <node pkg="tf" type="transform_sender" args="0 0 0 0 0 0 base_footprint map  10"/>	
-</launch> 

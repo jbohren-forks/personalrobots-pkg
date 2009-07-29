@@ -1,6 +1,4 @@
 <launch>
-  <master auto="start"/>
-  <include file="$(find trex_pr2)/test/stubs.launch" />
-  <include file="$(find trex_pr2)/test/trex_config.launch" />
   <param name="/trex/input_file" value="recharger.cfg"/>
+  <include file="$(find trex_pr2)/test/stubs.launch" />
 </launch>
