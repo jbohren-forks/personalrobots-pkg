@@ -74,7 +74,7 @@ class PlanarPatchMap
   public:
 
     // ROS messages
-    PointCloud cloud_, cloud_f_;
+    sensor_msgs::PointCloud cloud_, cloud_f_;
 
     // Octree stuff
 //    cloud_octree::Octree *octree_;
@@ -115,7 +115,7 @@ class PlanarPatchMap
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void
-      fitSACPlane (PointCloud *points, cloud_octree::Octree *octree, cloud_octree::Leaf* leaf, Polygon3D &poly)
+      fitSACPlane (sensor_msgs::PointCloud *points, cloud_octree::Octree *octree, cloud_octree::Leaf* leaf, Polygon3D &poly)
     {
       double dist_thresh = 0.05;
       vector<int> indices = leaf->getIndices ();
@@ -147,7 +147,7 @@ class PlanarPatchMap
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void
-      filterCloudBasedOnDistance (PointCloud *cloud_in, PointCloud &cloud_out,
+      filterCloudBasedOnDistance (sensor_msgs::PointCloud *cloud_in, sensor_msgs::PointCloud &cloud_out,
                                   int d_idx, double d_min, double d_max)
     {
       cloud_out.pts.resize (cloud_in->pts.size ());

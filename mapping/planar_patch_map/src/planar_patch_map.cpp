@@ -76,7 +76,7 @@ class PlanarPatchMap
   public:
 
     // ROS messages
-    PointCloud cloud_, cloud_f_;
+    sensor_msgs::PointCloud cloud_, cloud_f_;
 
     // Octree stuff
     cloud_octree::Octree *octree_;
@@ -131,7 +131,7 @@ class PlanarPatchMap
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void
-      fitSACPlane (PointCloud *points, cloud_octree::Octree *octree, cloud_octree::Leaf* leaf, Polygon3D &poly)
+      fitSACPlane (sensor_msgs::PointCloud *points, cloud_octree::Octree *octree, cloud_octree::Leaf* leaf, Polygon3D &poly)
     {
       double dist_thresh = 0.02;
       vector<int> indices = leaf->getIndices ();
