@@ -579,9 +579,9 @@ typedef struct PACKED_ATTRIBUTE {
 
     /// Camera Identification Section
     MACAddress mac;                 ///< The unique six-byte IEEE MAC address assigned to this camera
-    uint32_t product_id;            ///< The fixed four-byte product ID assigned to the PR2 camera by Willow Garage
+    uint32_t product_id;            ///< The fixed four-byte product ID assigned to the FCAM camera by Willow Garage
     uint32_t ser_no;                ///< The unique four-byte serial number assigned to this camera
-    char product_name[40];          ///< The fixed product name assigned to the PR2 camera by Willow Garage. Null terminated string.
+    char product_name[40];          ///< The fixed product name assigned to the FCAM camera by Willow Garage. Null terminated string.
     char camera_name[40];           ///< The name assigned to this particular camera. Null terminated string.
 
     /**

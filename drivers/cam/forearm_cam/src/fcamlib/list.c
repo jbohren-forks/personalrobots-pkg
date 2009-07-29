@@ -13,7 +13,7 @@
  *
  * @return Always returns zero.
  */
-int pr2CamListInit( IpCamList *ipCamList ) {
+int fcamCamListInit( IpCamList *ipCamList ) {
 	INIT_LIST_HEAD(&ipCamList->list);
 	return 0;
 }
@@ -28,7 +28,7 @@ int pr2CamListInit( IpCamList *ipCamList ) {
 *
 * @return Returns CAMLIST_ADD_OK if the camera was added to the list, or CAMLIST_ADD_DUP if it was a duplicate.
 */
-int pr2CamListAdd( IpCamList *ipCamList, IpCamList *newItem) {
+int fcamCamListAdd( IpCamList *ipCamList, IpCamList *newItem) {
 	IpCamList *listIterator;
 
 	int isInList = 0;
@@ -59,7 +59,7 @@ int pr2CamListAdd( IpCamList *ipCamList, IpCamList *newItem) {
  * @param serial	Serial number (not including product ID) to look for
  * @return			Returns the index of the camera, or -1 if not found
  */
-int pr2CamListFind( IpCamList *ipCamList, uint32_t serial ) {
+int fcamCamListFind( IpCamList *ipCamList, uint32_t serial ) {
 	int count;
 
 	IpCamList *listIterator;
@@ -78,7 +78,7 @@ int pr2CamListFind( IpCamList *ipCamList, uint32_t serial ) {
 /**
  * Utility function to return a specific element number from the camera list.
  *
- * @pre index must be less than the value returned by pr2CamListNumEntries().
+ * @pre index must be less than the value returned by fcamCamListNumEntries().
  * If it is greater, then the last element in the list will be returned.
  *
  * @param ipCamList 	Pointer to the camera list head
@@ -86,7 +86,7 @@ int pr2CamListFind( IpCamList *ipCamList, uint32_t serial ) {
  *
  * @return Returns a pointer to the requested list element
  */
-IpCamList *pr2CamListGetEntry( const IpCamList *ipCamList, int index ) {
+IpCamList *fcamCamListGetEntry( const IpCamList *ipCamList, int index ) {
 	IpCamList *listIterator;
 
 	// Iterate through the list until we have counted off 'index' entries
@@ -102,14 +102,14 @@ IpCamList *pr2CamListGetEntry( const IpCamList *ipCamList, int index ) {
 /**
  * Utility function to remove a specific element number from the camera list.
  *
- * @pre index must be less than the value returned by pr2CamListNumEntries().
+ * @pre index must be less than the value returned by fcamCamListNumEntries().
  *
  * @param ipCamList 	Pointer to the camera list head
  * @param index		Number of the list element to remove (0..max)
  *
  * @return Returns 0 if successful, -1 if index was invalid
  */
-int pr2CamListDelEntry( IpCamList *ipCamList, int index ) {
+int fcamCamListDelEntry( IpCamList *ipCamList, int index ) {
 	int count;
 
 	IpCamList *tmpListItem;
@@ -134,7 +134,7 @@ int pr2CamListDelEntry( IpCamList *ipCamList, int index ) {
  *
  * @return Returns the number of elements in the list
  */
-int pr2CamListNumEntries( const IpCamList *ipCamList ) {
+int fcamCamListNumEntries( const IpCamList *ipCamList ) {
 	int count;
 
 	IpCamList *listIterator;

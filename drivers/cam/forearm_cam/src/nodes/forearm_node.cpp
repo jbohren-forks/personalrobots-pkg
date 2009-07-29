@@ -58,7 +58,7 @@
 #include <boost/tokenizer.hpp>
 #include <boost/format.hpp>
 
-#include "pr2lib.h"
+#include "fcamlib.h"
 #include "host_netutil.h"
 #include "mt9v.h"
 
@@ -432,8 +432,8 @@ public:
       if (frameless_updates >= 2)
       {
         ROS_WARN("No frames are arriving. Attempting to restart image stream.");
-        pr2Reset(camera_);
-        if ( pr2StartVid( camera_, (uint8_t *)&(localMac_.sa_data[0]), inet_ntoa(localIp_), port_) != 0 )
+        fcamReset(camera_);
+        if ( fcamStartVid( camera_, (uint8_t *)&(localMac_.sa_data[0]), inet_ntoa(localIp_), port_) != 0 )
         {
           ROS_ERROR("Failed to restart image stream. Will retry later.");
         }
@@ -461,7 +461,7 @@ public:
     int retval;
     // Create a new IpCamList to hold the camera list
     IpCamList camList;
-    pr2CamListInit(&camList);
+    fcamCamListInit(&camList);
     
     // Check that rmem_max is large enough.
     int rmem_max;
@@ -475,14 +475,14 @@ public:
     }
 
     // Discover any connected cameras, wait for 0.5 second for replies
-    if( pr2Discover(if_name_.c_str(), &camList, ip_address_.c_str(), SEC_TO_USEC(0.5)) == -1) {
+    if( fcamDiscover(if_name_.c_str(), &camList, ip_address_.c_str(), SEC_TO_USEC(0.5)) == -1) {
       ROS_FATAL("Discover error");
       exit_status_ = 1;
       //node_handle_.shutdown();
       return;
     }
 
-    if (pr2CamListNumEntries(&camList) == 0) {
+    if (fcamCamListNumEntries(&camList) == 0) {
       ROS_FATAL("No cameras found");
       exit_status_ = 1;
       //node_handle_.shutdown();
@@ -493,13 +493,13 @@ public:
     int index = -1;
     if (serial_number_ == -1) // Auto
     {
-      if (pr2CamListNumEntries(&camList) == 1)
+      if (fcamCamListNumEntries(&camList) == 1)
       {
         index = 0;
       }
       else
       {
-        ROS_FATAL("Camera autodetection only works when exactly one camera is discoverable. Unfortunately, we found %i cameras.", pr2CamListNumEntries(&camList));
+        ROS_FATAL("Camera autodetection only works when exactly one camera is discoverable. Unfortunately, we found %i cameras.", fcamCamListNumEntries(&camList));
       }
     }
     else if (serial_number_ == -2) // Nothing specified
@@ -509,7 +509,7 @@ public:
     }
     else
     {
-      index = pr2CamListFind(&camList, serial_number_);
+      index = fcamCamListFind(&camList, serial_number_);
       if (index == -1) {
         ROS_FATAL("Couldn't find camera with S/N %i", serial_number_);
         exit_status_ = 1;
@@ -520,9 +520,9 @@ public:
     // none was specified. 
     if (index == -1)
     {
-      for (int i = 0; i < pr2CamListNumEntries(&camList); i++)
+      for (int i = 0; i < fcamCamListNumEntries(&camList); i++)
       {
-        camera_ = pr2CamListGetEntry(&camList, i);
+        camera_ = fcamCamListGetEntry(&camList, i);
         ROS_FATAL("Found camera with S/N #%u", camera_->serial);
         exit_status_ = 1;
       }
@@ -531,8 +531,8 @@ public:
     }
 
     // Configure the camera with its IP address, wait up to 500ms for completion
-    camera_ = pr2CamListGetEntry(&camList, index);
-    retval = pr2Configure(camera_, ip_address_.c_str(), SEC_TO_USEC(0.5));
+    camera_ = fcamCamListGetEntry(&camList, index);
+    retval = fcamConfigure(camera_, ip_address_.c_str(), SEC_TO_USEC(0.5));
     if (retval != 0) {
       if (retval == ERR_CONFIG_ARPFAIL) {
         ROS_WARN("Unable to create ARP entry (are you root?), continuing anyway");
@@ -568,7 +568,7 @@ public:
     }
       
     // Select trigger mode.
-    if ( pr2TriggerControl( camera_, ext_trigger_ ? TRIG_STATE_EXTERNAL : TRIG_STATE_INTERNAL ) != 0) {
+    if ( fcamTriggerControl( camera_, ext_trigger_ ? TRIG_STATE_EXTERNAL : TRIG_STATE_INTERNAL ) != 0) {
       ROS_FATAL("Trigger mode set error. Is %s accessible from interface %s? (Try running route to check.)", ip_address_.c_str(), if_name_.c_str());
       exit_status_ = 1;
       //node_handle_.shutdown();
@@ -601,7 +601,7 @@ public:
     }
 
     // Select a video mode
-    if ( pr2ImagerModeSelect( camera_, video_mode_ ) != 0) {
+    if ( fcamImagerModeSelect( camera_, video_mode_ ) != 0) {
       ROS_FATAL("Mode select error");
       exit_status_ = 1;
       //node_handle_.shutdown();
@@ -610,19 +610,19 @@ public:
 
     int bin_size = width_ > 320 ? 1 : 2;
     // Set horizontal blanking
-    if ( pr2ReliableSensorWrite( camera_, MT9V_REG_HORIZONTAL_BLANKING, MT9VModes[video_mode_].hblank * bin_size, NULL ) != 0)
+    if ( fcamReliableSensorWrite( camera_, MT9V_REG_HORIZONTAL_BLANKING, MT9VModes[video_mode_].hblank * bin_size, NULL ) != 0)
     {
       ROS_WARN("Error setting horizontal blanking.");
     }
 
-    if ( pr2ReliableSensorWrite( camera_, MT9V_REG_VERTICAL_BLANKING, MT9VModes[video_mode_].vblank, NULL) != 0)
+    if ( fcamReliableSensorWrite( camera_, MT9V_REG_VERTICAL_BLANKING, MT9VModes[video_mode_].vblank, NULL) != 0)
     {
       ROS_WARN("Error setting vertical blanking.");
     }
 
     /*
     // Set maximum course shutter width
-    if ( pr2ReliableSensorWrite( camera_, 0xBD, 240, NULL ) != 0) {
+    if ( fcamReliableSensorWrite( camera_, 0xBD, 240, NULL ) != 0) {
       ROS_FATAL("Sensor write error");
       exit_status_ = 1;
       node_handle_.shutdown();
@@ -630,14 +630,14 @@ public:
     }
     */
 
-    if (pr2ReliableSensorWrite(camera_, MT9V_REG_AGC_AEC_ENABLE, (gain_ == -1) * 2 + (exposure_ == -1), NULL) != 0)
+    if (fcamReliableSensorWrite(camera_, MT9V_REG_AGC_AEC_ENABLE, (gain_ == -1) * 2 + (exposure_ == -1), NULL) != 0)
     {
       ROS_WARN("Error setting AGC/AEC mode. Exposure and gain may be incorrect.");
     }
 
     if (gain_ != -1) // Manual gain
     {
-      if ( pr2ReliableSensorWrite( camera_, MT9V_REG_ANALOG_GAIN, gain_, NULL) != 0)
+      if ( fcamReliableSensorWrite( camera_, MT9V_REG_ANALOG_GAIN, gain_, NULL) != 0)
       {
         ROS_WARN("Error setting analog gain.");
       }
@@ -655,7 +655,7 @@ public:
       if (explines > 32767) /// @TODO warning here?
         explines = 32767;
       ROS_DEBUG("Setting exposure lines to %i.", explines);
-      if ( pr2ReliableSensorWrite( camera_, MT9V_REG_TOTAL_SHUTTER_WIDTH, explines, NULL) != 0)
+      if ( fcamReliableSensorWrite( camera_, MT9V_REG_TOTAL_SHUTTER_WIDTH, explines, NULL) != 0)
       {
         ROS_WARN("Error setting exposure.");
       }
@@ -728,7 +728,7 @@ private:
   void imageThread(int port)
   {
     // Start video
-    if ( pr2StartVid( camera_, (uint8_t *)&(localMac_.sa_data[0]),
+    if ( fcamStartVid( camera_, (uint8_t *)&(localMac_.sa_data[0]),
                       inet_ntoa(localIp_), port_) != 0 ) {
       ROS_FATAL("Video start error");
       started_video_ = false;
@@ -755,7 +755,7 @@ private:
     ROS_INFO("Camera running.");
   
       // Receive video
-    pr2VidReceive(camera_->ifName, port, height_, width_, &ForearmNode::frameHandler, this);
+    fcamVidReceive(camera_->ifName, port, height_, width_, &ForearmNode::frameHandler, this);
     
     // Stop Triggering
     if (!trig_controller_cmd_.empty())
@@ -778,11 +778,11 @@ stop_video:
       started_video_ = false;
       ROS_ERROR("Image thread exited unexpectedly.");
       
-      if ( pr2StopVid(camera_) == 0 )
+      if ( fcamStopVid(camera_) == 0 )
         ROS_ERROR("Video should have been stopped"); /// @todo get rid of this once things have stabilized.
     }
     else // Exited expectedly.
-      if ( pr2StopVid(camera_) != 0)
+      if ( fcamStopVid(camera_) != 0)
         ROS_ERROR("Video Stop error");
     
     ROS_DEBUG("Image thread exiting.");
@@ -917,7 +917,7 @@ stop_video:
 //    ROS_INFO("Frame #%u time %f ofs %f ms delta %f Hz %f", eofInfo->header.frame_number, imageTime, 1000 * (imageTime - firstFrameTime - 1. / (29.5/* * 0.9999767*/) * (eofInfo->header.frame_number - 100)), imageTime - lastImageTime, 1. / (imageTime - lastImageTime));
 //    lastImageTime = imageTime;
   
-  int frameHandler(pr2FrameInfo *frame_info)
+  int frameHandler(fcamFrameInfo *frame_info)
   {
     boost::mutex::scoped_lock(diagnostics_lock_);
     
@@ -997,7 +997,7 @@ stop_video:
     return 0;
   }
 
-  static int frameHandler(pr2FrameInfo *frameInfo, void *userData)
+  static int frameHandler(fcamFrameInfo *frameInfo, void *userData)
   {
     ForearmNode &fa_node = *(ForearmNode*)userData;
     return fa_node.frameHandler(frameInfo);
@@ -1029,7 +1029,7 @@ stop_video:
     // Retrieve contents of user memory
     static const int CALIBRATION_PAGE = 0;
     std::string buffer(FLASH_PAGE_SIZE, '\0');
-    if (pr2ReliableFlashRead(camera_, CALIBRATION_PAGE, (uint8_t*)&buffer[0], NULL) != 0) {
+    if (fcamReliableFlashRead(camera_, CALIBRATION_PAGE, (uint8_t*)&buffer[0], NULL) != 0) {
       ROS_WARN("Flash read error");
       return false;
     }
@@ -1102,7 +1102,7 @@ stop_video:
       mac[i] = req.mac[i];
     ROS_INFO("board_config called s/n #%i, and MAC %02x:%02x:%02x:%02x:%02x:%02x.", req.serial, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
     stop();
-    rsp.success = !pr2ConfigureBoard(camera_, req.serial, &mac);
+    rsp.success = !fcamConfigureBoard(camera_, req.serial, &mac);
 
     if (rsp.success)
       ROS_INFO("board_config succeeded.");
@@ -1187,7 +1187,7 @@ stop_video:
   
   int setTestMode(uint16_t mode, diagnostic_updater::DiagnosticStatusWrapper &status)
   {
-    if ( pr2ReliableSensorWrite( camera_, 0x7F, mode, NULL ) != 0) {
+    if ( fcamReliableSensorWrite( camera_, 0x7F, mode, NULL ) != 0) {
       status.summary(2, "Could not set imager into test mode.");
       status.adds("Writing imager test mode", "Fail");
       return 1;
@@ -1199,7 +1199,7 @@ stop_video:
 
     usleep(100000);
     uint16_t inmode;
-    if ( pr2ReliableSensorRead( camera_, 0x7F, &inmode, NULL ) != 0) {
+    if ( fcamReliableSensorRead( camera_, 0x7F, &inmode, NULL ) != 0) {
       status.summary(2, "Could not read imager mode back.");
       status.adds("Reading imager test mode", "Fail");
       return 1;

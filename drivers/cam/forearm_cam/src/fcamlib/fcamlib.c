@@ -1,4 +1,4 @@
-#include "pr2lib.h"
+#include "fcamlib.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -34,13 +34,13 @@ const struct MT9VMode MT9VModes[MT9V_NUM_MODES] = {
  *
  * @return	Returns the the library as an integer 0x0000MMNN, where MM = Major version and NN = Minor version
  */
-int pr2LibVersion() {
-	return PR2LIB_VERSION;
+int fcamlibVersion() {
+	return FCAMLIB_VERSION;
 }
 
 
 /**
- * Waits for a PR2 StatusPacket on the specified socket for a specified duration.
+ * Waits for a FCAM StatusPacket on the specified socket for a specified duration.
  *
  * The Status type and code will be reported back to the called via the 'type' & 'code'
  * arguments. If the timeout expires before a valid status packet is received, then
@@ -53,7 +53,7 @@ int pr2LibVersion() {
  *
  * @return Returns 0 if no system errors occured. -1 with errno set otherwise.
  */
-int pr2StatusWait( int s, uint32_t wait_us, uint32_t *type, uint32_t *code ) {
+int fcamStatusWait( int s, uint32_t wait_us, uint32_t *type, uint32_t *code ) {
 	if( !wgWaitForPacket(s, PKTT_STATUS, sizeof(PacketStatus), &wait_us) && (wait_us != 0) ) {
 		PacketStatus sPkt;
 		if( recvfrom( s, &sPkt, sizeof(PacketStatus), 0, NULL, NULL )  == -1 ) {
@@ -76,7 +76,7 @@ int pr2StatusWait( int s, uint32_t wait_us, uint32_t *type, uint32_t *code ) {
 
 
 /**
- * Discovers all PR2 cameras that are connected to the 'ifName' ethernet interface and
+ * Discovers all FCAM cameras that are connected to the 'ifName' ethernet interface and
  * adds new ones to the 'ipCamList' list.
  *
  * @param ifName 		The ethernet interface name to use. Null terminated string (e.g., "eth0").
@@ -86,7 +86,7 @@ int pr2StatusWait( int s, uint32_t wait_us, uint32_t *type, uint32_t *code ) {
  * @return	Returns -1 with errno set for system call errors. Otherwise returns number of new
  * 			cameras found.
  */
-int pr2Discover(const char *ifName, IpCamList *ipCamList, const char *ipAddress, unsigned wait_us) {
+int fcamDiscover(const char *ifName, IpCamList *ipCamList, const char *ipAddress, unsigned wait_us) {
 	// Create and initialize a new Discover packet
 	PacketDiscover dPkt;
 	dPkt.hdr.magic_no = htonl(WG_MAGIC_NO);
@@ -163,7 +163,7 @@ int pr2Discover(const char *ifName, IpCamList *ipCamList, const char *ipAddress,
 				close(s);
 				return -1;
 			}
-			pr2CamListInit( tmpListItem );
+			fcamCamListInit( tmpListItem );
 
 			// Initialize the new list item's data fields (byte order corrected)
       tmpListItem->hw_version = ntohl(aPkt.hw_version);
@@ -177,10 +177,10 @@ int pr2Discover(const char *ifName, IpCamList *ipCamList, const char *ipAddress,
 			tmpListItem->status = CamStatusDiscovered;
 			char pcb_rev = 0x0A + (0x0000000F & ntohl(aPkt.hw_version));
 			int hdl_rev = 0x00000FFF & (ntohl(aPkt.hw_version)>>4);
-		  snprintf(tmpListItem->hwinfo, PR2_CAMINFO_LEN, "PCB rev %X : HDL rev %3X : FW rev %3X", pcb_rev, hdl_rev, ntohl(aPkt.fw_version));
+		  snprintf(tmpListItem->hwinfo, FCAM_CAMINFO_LEN, "PCB rev %X : HDL rev %3X : FW rev %3X", pcb_rev, hdl_rev, ntohl(aPkt.fw_version));
 
 			// If this camera is already in the list, we don't want to add another copy
-			if( pr2CamListAdd( ipCamList, tmpListItem ) == CAMLIST_ADD_DUP) {
+			if( fcamCamListAdd( ipCamList, tmpListItem ) == CAMLIST_ADD_DUP) {
 				free(tmpListItem);
 			} else {
 				debug("MAC Address: %02X:%02X:%02X:%02X:%02X:%02X\n", aPkt.mac[0], aPkt.mac[1], aPkt.mac[2], aPkt.mac[3], aPkt.mac[4], aPkt.mac[5]);
@@ -210,7 +210,7 @@ int pr2Discover(const char *ifName, IpCamList *ipCamList, const char *ipAddress,
  * 					the host system could not update its arp table. This is normally because
  * 					the library is not running as root.
  */
-int pr2Configure( IpCamList *camInfo, const char *ipAddress, unsigned wait_us) {
+int fcamConfigure( IpCamList *camInfo, const char *ipAddress, unsigned wait_us) {
 	// Create and initialize a new Configure packet
 	PacketConfigure cPkt;
 
@@ -234,7 +234,7 @@ int pr2Configure( IpCamList *camInfo, const char *ipAddress, unsigned wait_us) {
 	 */
 	int s = wgCmdSocketCreate(camInfo->ifName, &cPkt.hdr.reply_to);
 	if(s == -1) {
-		perror("pr2Configure socket creation failed");
+		perror("fcamConfigure socket creation failed");
 		return -1;
 	}
 
@@ -298,7 +298,7 @@ int pr2Configure( IpCamList *camInfo, const char *ipAddress, unsigned wait_us) {
  * 			Returns 0 for success
  * 			Returns 1 for protocol failures (timeout, etc)
  */
-int pr2StartVid( const IpCamList *camInfo, const uint8_t mac[6], const char *ipAddress, uint16_t port ) {
+int fcamStartVid( const IpCamList *camInfo, const uint8_t mac[6], const char *ipAddress, uint16_t port ) {
 	PacketVidStart vPkt;
 
 	// Initialize the packet
@@ -335,7 +335,7 @@ int pr2StartVid( const IpCamList *camInfo, const uint8_t mac[6], const char *ipA
 
 	// Wait for a status reply
 	uint32_t type, code;
-	if( pr2StatusWait( s, STD_REPLY_TIMEOUT, &type, &code ) == -1) {
+	if( fcamStatusWait( s, STD_REPLY_TIMEOUT, &type, &code ) == -1) {
     goto err_out;
   }
 
@@ -360,7 +360,7 @@ err_out:
  * 			Returns -1 with errno set for system errors
  * 			Returns 1 for protocol errors
  */
-int pr2StopVid( const IpCamList *camInfo ) {
+int fcamStopVid( const IpCamList *camInfo ) {
 	PacketVidStop vPkt;
 
 	// Initialize the packet
@@ -386,7 +386,7 @@ int pr2StopVid( const IpCamList *camInfo ) {
 	}
 
 	uint32_t type, code;
-	if(pr2StatusWait( s, STD_REPLY_TIMEOUT, &type, &code ) == -1) {
+	if(fcamStatusWait( s, STD_REPLY_TIMEOUT, &type, &code ) == -1) {
     goto err_out;
 	}
 
@@ -394,7 +394,7 @@ int pr2StopVid( const IpCamList *camInfo ) {
 	if(type == PKT_STATUST_OK) {
 		return 0;
 	} else {
-		debug("Error: pr2StatusWait returned status %d, code %d\n", type, code);
+		debug("Error: fcamStatusWait returned status %d, code %d\n", type, code);
 		return 1;
 	}
 
@@ -410,7 +410,7 @@ err_out:
  * @return 	Returns 0 for success
  * 			Returns -1 for system errors
  */
-int pr2ReconfigureFPGA( IpCamList *camInfo ) {
+int fcamReconfigureFPGA( IpCamList *camInfo ) {
 	PacketReconfigureFPGA gPkt;
 
 	// Initialize the packet
@@ -448,7 +448,7 @@ int pr2ReconfigureFPGA( IpCamList *camInfo ) {
  * @return 	Returns 0 for success
  * 			Returns -1 for system errors
  */
-int pr2Reset( IpCamList *camInfo ) {
+int fcamReset( IpCamList *camInfo ) {
 	PacketReset gPkt;
 
 	// Initialize the packet
@@ -492,7 +492,7 @@ int pr2Reset( IpCamList *camInfo ) {
  *
  * @return Returns 0 for success, -1 for system error, or 1 for protocol error.
  */
-int pr2GetTimer( const IpCamList *camInfo, uint64_t *time_us ) {
+int fcamGetTimer( const IpCamList *camInfo, uint64_t *time_us ) {
 	PacketTimeRequest gPkt;
 
 	// Initialize the packet
@@ -566,7 +566,7 @@ int pr2GetTimer( const IpCamList *camInfo, uint64_t *time_us ) {
  *
  */
 
-int pr2ReliableFlashRead( const IpCamList *camInfo, uint32_t address, uint8_t *pageDataOut, int *retries ) {
+int fcamReliableFlashRead( const IpCamList *camInfo, uint32_t address, uint8_t *pageDataOut, int *retries ) {
   int retval = -2;
 
   int counter = 10;
@@ -575,7 +575,7 @@ int pr2ReliableFlashRead( const IpCamList *camInfo, uint32_t address, uint8_t *p
     retries = &counter;
   for (; *retries > 0; (*retries)--)
   {
-    retval = pr2FlashRead( camInfo, address, pageDataOut );
+    retval = fcamFlashRead( camInfo, address, pageDataOut );
 
     if (!retval)
       return 0;
@@ -598,7 +598,7 @@ int pr2ReliableFlashRead( const IpCamList *camInfo, uint32_t address, uint8_t *p
  *
  */
 
-int pr2FlashRead( const IpCamList *camInfo, uint32_t address, uint8_t *pageDataOut ) {
+int fcamFlashRead( const IpCamList *camInfo, uint32_t address, uint8_t *pageDataOut ) {
 	PacketFlashRequest rPkt;
 
 	// Initialize the packet
@@ -672,7 +672,7 @@ int pr2FlashRead( const IpCamList *camInfo, uint32_t address, uint8_t *pageDataO
  *
  */
 
-int pr2ReliableFlashWrite( const IpCamList *camInfo, uint32_t address, const uint8_t *pageDataIn, int *retries ) {
+int fcamReliableFlashWrite( const IpCamList *camInfo, uint32_t address, const uint8_t *pageDataIn, int *retries ) {
   uint8_t buffer[FLASH_PAGE_SIZE];
   int retval = -2;
   int counter = 10;
@@ -682,7 +682,7 @@ int pr2ReliableFlashWrite( const IpCamList *camInfo, uint32_t address, const uin
 
   for (; *retries > 0; (*retries)--)
   {
-    retval = pr2FlashWrite( camInfo, address, pageDataIn );
+    retval = fcamFlashWrite( camInfo, address, pageDataIn );
     if (retval)
     {
       //printf("Failed compare write.\n");
@@ -691,7 +691,7 @@ int pr2ReliableFlashWrite( const IpCamList *camInfo, uint32_t address, const uin
     
     usleep(8000);
 
-    retval = pr2ReliableFlashRead( camInfo, address, buffer, retries );
+    retval = fcamReliableFlashRead( camInfo, address, buffer, retries );
     if (retval)
     {
       //printf("Failed compare read.\n");
@@ -721,7 +721,7 @@ int pr2ReliableFlashWrite( const IpCamList *camInfo, uint32_t address, const uin
  * 			Returns 1 for protocol error
  *
  */
-int pr2FlashWrite( const IpCamList *camInfo, uint32_t address, const uint8_t *pageDataIn ) {
+int fcamFlashWrite( const IpCamList *camInfo, uint32_t address, const uint8_t *pageDataIn ) {
 	PacketFlashPayload rPkt;
 
 	// Initialize the packet
@@ -758,7 +758,7 @@ int pr2FlashWrite( const IpCamList *camInfo, uint32_t address, const uint8_t *pa
 
 	// Wait for response - once we get an OK, we're clear to send the next page.
 	uint32_t type, code;
-	pr2StatusWait( s, STD_REPLY_TIMEOUT, &type, &code );
+	fcamStatusWait( s, STD_REPLY_TIMEOUT, &type, &code );
 
 	close(s);
 	if(type == PKT_STATUST_OK) {
@@ -779,7 +779,7 @@ int pr2FlashWrite( const IpCamList *camInfo, uint32_t address, const uint8_t *pa
  * 			Returns -1 for system error
  * 			Returns 1 for protocol error
  */
-int pr2TriggerControl( const IpCamList *camInfo, uint32_t triggerType ) {
+int fcamTriggerControl( const IpCamList *camInfo, uint32_t triggerType ) {
 	PacketTrigControl tPkt;
 
 	// Initialize the packet
@@ -814,7 +814,7 @@ int pr2TriggerControl( const IpCamList *camInfo, uint32_t triggerType ) {
 
 	// Wait for response
 	uint32_t type, code;
-	pr2StatusWait( s, STD_REPLY_TIMEOUT, &type, &code );
+	fcamStatusWait( s, STD_REPLY_TIMEOUT, &type, &code );
 
 	close(s);
 	if(type == PKT_STATUST_OK) {
@@ -838,7 +838,7 @@ int pr2TriggerControl( const IpCamList *camInfo, uint32_t triggerType ) {
  * 			Returns -1 for system error
  * 			Returns 1 for protocol error
  */
-int pr2ConfigureBoard( const IpCamList *camInfo, uint32_t serial, MACAddress *mac ) {
+int fcamConfigureBoard( const IpCamList *camInfo, uint32_t serial, MACAddress *mac ) {
 	PacketSysConfig sPkt;
 
 	// Initialize the packet
@@ -870,7 +870,7 @@ int pr2ConfigureBoard( const IpCamList *camInfo, uint32_t serial, MACAddress *ma
 	}
 	// Wait for response
 	uint32_t type, code;
-	pr2StatusWait( s, STD_REPLY_TIMEOUT, &type, &code );
+	fcamStatusWait( s, STD_REPLY_TIMEOUT, &type, &code );
 
 	close(s);
 	if(type == PKT_STATUST_OK) {
@@ -896,7 +896,7 @@ int pr2ConfigureBoard( const IpCamList *camInfo, uint32_t serial, MACAddress *ma
  * 			Returns 1 for protocol error
  */
 
-int pr2ReliableSensorWrite( const IpCamList *camInfo, uint8_t reg, uint16_t data, int *retries ) {
+int fcamReliableSensorWrite( const IpCamList *camInfo, uint8_t reg, uint16_t data, int *retries ) {
   uint16_t readbackdata;
   int retval = -2;
   int counter = 10;
@@ -906,11 +906,11 @@ int pr2ReliableSensorWrite( const IpCamList *camInfo, uint8_t reg, uint16_t data
 
   for (; *retries > 0; (*retries)--)
   {
-    retval = pr2SensorWrite( camInfo, reg, data );
+    retval = fcamSensorWrite( camInfo, reg, data );
     if (retval)
       continue;
 
-    retval = pr2ReliableSensorRead( camInfo, reg, &readbackdata, retries );
+    retval = fcamReliableSensorRead( camInfo, reg, &readbackdata, retries );
     if (retval)
       continue;
 
@@ -935,7 +935,7 @@ int pr2ReliableSensorWrite( const IpCamList *camInfo, uint8_t reg, uint16_t data
  * 			Returns -1 for system error
  * 			Returns 1 for protocol error
  */
-int pr2SensorWrite( const IpCamList *camInfo, uint8_t reg, uint16_t data ) {
+int fcamSensorWrite( const IpCamList *camInfo, uint8_t reg, uint16_t data ) {
 	PacketSensorData sPkt;
 
 	// Initialize the packet
@@ -967,7 +967,7 @@ int pr2SensorWrite( const IpCamList *camInfo, uint8_t reg, uint16_t data ) {
 
 	// Wait for response
 	uint32_t type, code;
-	pr2StatusWait( s, STD_REPLY_TIMEOUT, &type, &code );
+	fcamStatusWait( s, STD_REPLY_TIMEOUT, &type, &code );
 
 	close(s);
 	if(type == PKT_STATUST_OK) {
@@ -993,7 +993,7 @@ int pr2SensorWrite( const IpCamList *camInfo, uint8_t reg, uint16_t data ) {
  * 			Returns 1 for protocol error
  */
 
-int pr2ReliableSensorRead( const IpCamList *camInfo, uint8_t reg, uint16_t *data, int *retries ) {
+int fcamReliableSensorRead( const IpCamList *camInfo, uint8_t reg, uint16_t *data, int *retries ) {
   int retval = -2;
 
   int counter = 10;
@@ -1002,7 +1002,7 @@ int pr2ReliableSensorRead( const IpCamList *camInfo, uint8_t reg, uint16_t *data
     retries = &counter;
   for (; *retries > 0; (*retries)--)
   {
-    retval = pr2SensorRead( camInfo, reg, data );
+    retval = fcamSensorRead( camInfo, reg, data );
 
     if (!retval)
       return 0;
@@ -1022,7 +1022,7 @@ int pr2ReliableSensorRead( const IpCamList *camInfo, uint8_t reg, uint16_t *data
  * 			Returns -1 for system error
  * 			Returns 1 for protocol error
  */
-int pr2SensorRead( const IpCamList *camInfo, uint8_t reg, uint16_t *data ) {
+int fcamSensorRead( const IpCamList *camInfo, uint8_t reg, uint16_t *data ) {
 	PacketSensorRequest rPkt;
 
 	// Initialize the packet
@@ -1082,7 +1082,7 @@ int pr2SensorRead( const IpCamList *camInfo, uint8_t reg, uint16_t *data ) {
  * 			Returns -1 for system error
  * 			Returns 1 for protocol error
  */
-int pr2SensorSelect( const IpCamList *camInfo, uint8_t index, uint32_t reg ) {
+int fcamSensorSelect( const IpCamList *camInfo, uint8_t index, uint32_t reg ) {
 	PacketSensorSelect sPkt;
 
 	// Initialize the packet
@@ -1114,7 +1114,7 @@ int pr2SensorSelect( const IpCamList *camInfo, uint8_t index, uint32_t reg ) {
 
 	// Wait for response
 	uint32_t type, code;
-	pr2StatusWait( s, STD_REPLY_TIMEOUT, &type, &code );
+	fcamStatusWait( s, STD_REPLY_TIMEOUT, &type, &code );
 
 	close(s);
 	if(type == PKT_STATUST_OK) {
@@ -1135,7 +1135,7 @@ int pr2SensorSelect( const IpCamList *camInfo, uint8_t index, uint32_t reg ) {
  * 			Returns -1 for system error
  * 			Returns 1 for protocol error
  */
-int pr2ImagerModeSelect( const IpCamList *camInfo, uint32_t mode ) {
+int fcamImagerModeSelect( const IpCamList *camInfo, uint32_t mode ) {
 	PacketImagerMode mPkt;
 
 	// Initialize the packet
@@ -1167,7 +1167,7 @@ int pr2ImagerModeSelect( const IpCamList *camInfo, uint32_t mode ) {
 
 	// Wait for response
 	uint32_t type, code;
-	pr2StatusWait( s, STD_REPLY_TIMEOUT, &type, &code );
+	fcamStatusWait( s, STD_REPLY_TIMEOUT, &type, &code );
 
 	close(s);
 	if(type == PKT_STATUST_OK) {
@@ -1192,7 +1192,7 @@ int pr2ImagerModeSelect( const IpCamList *camInfo, uint32_t mode ) {
  * 			Returns -1 for system error
  * 			Returns 1 for protocol error
  */
-int pr2ImagerSetRes( const IpCamList *camInfo, uint16_t horizontal, uint16_t vertical ) {
+int fcamImagerSetRes( const IpCamList *camInfo, uint16_t horizontal, uint16_t vertical ) {
 	PacketImagerSetRes rPkt;
 
 	// Initialize the packet
@@ -1225,7 +1225,7 @@ int pr2ImagerSetRes( const IpCamList *camInfo, uint16_t horizontal, uint16_t ver
 
 	// Wait for response
 	uint32_t type, code;
-	pr2StatusWait( s, STD_REPLY_TIMEOUT, &type, &code );
+	fcamStatusWait( s, STD_REPLY_TIMEOUT, &type, &code );
 
 	close(s);
 	if(type == PKT_STATUST_OK) {
@@ -1241,7 +1241,7 @@ int pr2ImagerSetRes( const IpCamList *camInfo, uint16_t horizontal, uint16_t ver
 #define LINE_NUMBER_MASK 0x3FF
 
 
-int pr2VidReceive( const char *ifName, uint16_t port, size_t height, size_t width, FrameHandler frameHandler, void *userData ) {
+int fcamVidReceive( const char *ifName, uint16_t port, size_t height, size_t width, FrameHandler frameHandler, void *userData ) {
 	struct in_addr host_addr;
 	wgIpGetLocalAddr( ifName, &host_addr );
 
@@ -1250,7 +1250,7 @@ int pr2VidReceive( const char *ifName, uint16_t port, size_t height, size_t widt
 		return 1;
 	}
 
-	debug("pr2VidReceive ready to receive on %s (%s:%u)\n", ifName, inet_ntoa(host_addr), port);
+	debug("fcamVidReceive ready to receive on %s (%s:%u)\n", ifName, inet_ntoa(host_addr), port);
 
 	int s = wgSocketCreate( &host_addr, port );
 	if( s == -1 ) {
@@ -1323,7 +1323,7 @@ int pr2VidReceive( const char *ifName, uint16_t port, size_t height, size_t widt
 	PacketEOF *eof = NULL;
 
   // Information structure to pass to the frame handler.
-  pr2FrameInfo frameInfo;
+  fcamFrameInfo frameInfo;
   
   frameInfo.width = width;
   frameInfo.height = height;
@@ -1368,7 +1368,7 @@ int pr2VidReceive( const char *ifName, uint16_t port, size_t height, size_t widt
         FD_SET(s, &set);
         
         if( select(s+1, &set, NULL, NULL, &readtimeout) == -1 ) {
-          perror("pr2VidReceive select failed");
+          perror("fcamVidReceive select failed");
           close(s);
           return -1;
         }
@@ -1387,7 +1387,7 @@ int pr2VidReceive( const char *ifName, uint16_t port, size_t height, size_t widt
         break;
       
       if( recvfrom( s, vPkt, sizeof(HeaderVideoLine)+width, 0, (struct sockaddr *) &fromaddr, &fromaddrlen )  == -1 ) {
-				perror("pr2VidReceive unable to receive from socket");
+				perror("fcamVidReceive unable to receive from socket");
 				break;
 			}
 				

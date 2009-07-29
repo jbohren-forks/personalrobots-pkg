@@ -1,4 +1,4 @@
-#include "pr2lib.h"
+#include "fcamlib.h"
 #include "host_netutil.h"
 #include <cstdio>
 #include <cstdlib>
@@ -18,29 +18,29 @@ int main(int argc, char** argv)
 
   // Create a new IpCamList to hold the camera list
   IpCamList camList;
-  pr2CamListInit(&camList);
+  fcamCamListInit(&camList);
 
   // Discover any connected cameras, wait for 0.5 second for replies
-  if( pr2Discover(if_name, &camList, NULL, SEC_TO_USEC(0.5)) == -1) {
+  if( fcamDiscover(if_name, &camList, NULL, SEC_TO_USEC(0.5)) == -1) {
     printf("Discover error\n");
     return -1;
   }
 
-  if (pr2CamListNumEntries(&camList) == 0) {
+  if (fcamCamListNumEntries(&camList) == 0) {
     printf("No cameras found\n");
     return -1;
   }
 
   // Open camera with requested serial number
-  int index = pr2CamListFind(&camList, sn);
+  int index = fcamCamListFind(&camList, sn);
   if (index == -1) {
     printf("Couldn't find camera with S/N %i\n", sn);
     return -1;
   }
-  IpCamList* camera = pr2CamListGetEntry(&camList, index);
+  IpCamList* camera = fcamCamListGetEntry(&camList, index);
 
   // Configure the camera with its IP address, wait up to 500ms for completion
-  int retval = pr2Configure(camera, ip_address, SEC_TO_USEC(0.5));
+  int retval = fcamConfigure(camera, ip_address, SEC_TO_USEC(0.5));
   if (retval != 0) {
     if (retval == ERR_CONFIG_ARPFAIL) {
       printf("Unable to create ARP entry (are you root?), continuing anyway\n");
@@ -76,7 +76,7 @@ int main(int argc, char** argv)
 
   // Write data to flash memory
   static const int PAGE_NUMBER = 4092;
-  if (pr2ReliableFlashWrite(camera, PAGE_NUMBER, buffer, NULL) != 0) {
+  if (fcamReliableFlashWrite(camera, PAGE_NUMBER, buffer, NULL) != 0) {
     printf("Flash write error\n");
     return -1;
   }
@@ -84,7 +84,7 @@ int main(int argc, char** argv)
 
   // Verify
   uint8_t data[FLASH_PAGE_SIZE];
-  if (pr2ReliableFlashRead(camera, PAGE_NUMBER, data, NULL) != 0) {
+  if (fcamReliableFlashRead(camera, PAGE_NUMBER, data, NULL) != 0) {
     printf("Flash read error, couldn't verify\n");
     return -1;
   }

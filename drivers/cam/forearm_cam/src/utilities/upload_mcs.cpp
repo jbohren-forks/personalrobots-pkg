@@ -47,7 +47,7 @@
 
 #include <ipcam_packet.h>
 #include <host_netutil.h>
-#include <pr2lib.h>
+#include <fcamlib.h>
   
 // We are assuming that the firmware will fit in the first half of the
 // pages. This may not turn out to be true later...
@@ -193,29 +193,29 @@ int write_flash(char *if_name, char *ip_address, int sn)
 {
   // Create a new IpCamList to hold the camera list
   IpCamList camList;
-  pr2CamListInit(&camList);
+  fcamCamListInit(&camList);
 
   // Discover any connected cameras, wait for 0.5 second for replies
-  if( pr2Discover(if_name, &camList, NULL, SEC_TO_USEC(0.5)) == -1) {
+  if( fcamDiscover(if_name, &camList, NULL, SEC_TO_USEC(0.5)) == -1) {
     fprintf(stderr, "Discover error\n");
     return -1;
   }
 
-  if (pr2CamListNumEntries(&camList) == 0) {
+  if (fcamCamListNumEntries(&camList) == 0) {
     fprintf(stderr, "No cameras found\n");
     return -1;
   }
 
   // Open camera with requested serial number
-  int index = pr2CamListFind(&camList, sn);
+  int index = fcamCamListFind(&camList, sn);
   if (index == -1) {
     fprintf(stderr, "Couldn't find camera with S/N %i\n", sn);
     return -1;
   }
-  IpCamList* camera = pr2CamListGetEntry(&camList, index);
+  IpCamList* camera = fcamCamListGetEntry(&camList, index);
 
   // Configure the camera with its IP address, wait up to 500ms for completion
-  int retval = pr2Configure(camera, ip_address, SEC_TO_USEC(0.5));
+  int retval = fcamConfigure(camera, ip_address, SEC_TO_USEC(0.5));
   if (retval != 0) {
     if (retval == ERR_CONFIG_ARPFAIL) {
       fprintf(stderr, "Unable to create ARP entry (are you root?), continuing anyway\n");
@@ -225,7 +225,7 @@ int write_flash(char *if_name, char *ip_address, int sn)
     }
   }
 
-  if ( pr2TriggerControl( camera, TRIG_STATE_INTERNAL ) != 0) {
+  if ( fcamTriggerControl( camera, TRIG_STATE_INTERNAL ) != 0) {
     ROS_FATAL("Could not communicate with camera after configuring IP. Is ARP set? Is %s accessible from %s?", ip_address, if_name);
     return -1;
   }
@@ -253,7 +253,7 @@ int write_flash(char *if_name, char *ip_address, int sn)
     int startretries = 1;
     int retries = startretries;
 
-    if (pr2ReliableFlashWrite(camera, page, (uint8_t *) firmware + addr, &retries) != 0)
+    if (fcamReliableFlashWrite(camera, page, (uint8_t *) firmware + addr, &retries) != 0)
     {
       ROS_FATAL("Flash write error on page %i.", page);
       ROS_FATAL("If you reset the camera it will probably not come up.");
@@ -281,7 +281,7 @@ int write_flash(char *if_name, char *ip_address, int sn)
       fflush(stderr);
     }
 
-    if (pr2ReliableFlashRead(camera, page, (uint8_t *) buff, NULL) != 0)
+    if (fcamReliableFlashRead(camera, page, (uint8_t *) buff, NULL) != 0)
     {
       ROS_FATAL("Flash read error on page %i.", page);
       ROS_FATAL("If you reset the camera it will probably not come up.");

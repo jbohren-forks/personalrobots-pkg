@@ -250,7 +250,7 @@ static inline void list_splice_init(struct list_head *list,
 
 typedef enum { CamStatusDiscovered, CamStatusConfigured, CamStatusVideo, CamStatusError, CamStatusMissing } IpCamStatus;
 
-#define PR2_CAMINFO_LEN 100
+#define FCAM_CAMINFO_LEN 100
 
 typedef struct {
 	uint32_t serial;
@@ -279,17 +279,17 @@ typedef struct {
 
 	struct list_head list;
 
-  char hwinfo[PR2_CAMINFO_LEN];
+  char hwinfo[FCAM_CAMINFO_LEN];
 
   char cam_name[CAMERA_NAME_LEN];
 } IpCamList;
 
-int pr2CamListInit( IpCamList *ipCamList );
-int pr2CamListAdd( IpCamList *ipCamList, IpCamList *newItem);
-int pr2CamListFind( IpCamList *ipCamList, uint32_t serial);
-int pr2CamListNumEntries( const IpCamList *ipCamList );
-IpCamList *pr2CamListGetEntry( const IpCamList *ipCamList, int index );
-int pr2CamListDelEntry( IpCamList *ipCamList, int index );
+int fcamCamListInit( IpCamList *ipCamList );
+int fcamCamListAdd( IpCamList *ipCamList, IpCamList *newItem);
+int fcamCamListFind( IpCamList *ipCamList, uint32_t serial);
+int fcamCamListNumEntries( const IpCamList *ipCamList );
+IpCamList *fcamCamListGetEntry( const IpCamList *ipCamList, int index );
+int fcamCamListDelEntry( IpCamList *ipCamList, int index );
 
 #define CAMLIST_ADD_OK 	0
 #define CAMLIST_ADD_DUP 1

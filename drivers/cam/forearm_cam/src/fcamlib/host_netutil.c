@@ -31,7 +31,7 @@ int wgArpAdd(IpCamList *camInfo) {
 
 	// Create a dummy socket
 	if ((s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP))==-1) {
-		perror("pr2ArpAdd can't create socket");
+		perror("fcamArpAdd can't create socket");
 		return -1;
 	}
 
@@ -76,7 +76,7 @@ int wgArpDel(IpCamList *camInfo) {
 
 	// Create a dummy socket
 	if ((s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP))==-1) {
-		perror("pr2ArpDel can't create socket");
+		perror("fcamArpDel can't create socket");
 		return -1;
 	}
 
@@ -418,16 +418,16 @@ int wgSendUDPBcast(int s, const char *ifName, const void *data, size_t dataSize)
 
 
 /**
- * Waits for a specified amount of time for a PR2 packet that matches the specified
+ * Waits for a specified amount of time for a FCAM packet that matches the specified
  * length and type criteria.
  *
  *	On return, the wait_us argument is updated to reflect the amount of time still remaining
  *	in the original timeout. This can be useful when calling wgWaitForPacket() in a loop.
  *
  * @param s		The datagram socket to listen on. It must be opened, bound, and connected.
- * @param type	The PR2 packet type to listen for. Packets that do not match this type will
+ * @param type	The FCAM packet type to listen for. Packets that do not match this type will
  * 				be discarded
- * @param pktLen The length of PR2 packet to listen for. Packets that do not match this length
+ * @param pktLen The length of FCAM packet to listen for. Packets that do not match this length
  * 				will be discarded.
  * @param wait_us The duration of time to wait before timing out. Is adjusted upon return to
  * 					reflect actual time remaning on the timeout.
