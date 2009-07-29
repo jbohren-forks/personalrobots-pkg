@@ -22,6 +22,10 @@ LDFLAGS += -L$(VISODOM)/lib -lvisual_odometry -Wl,-rpath $(VISODOM)/lib
 STEREO_UTILS = $(shell rospack find stereo_utils)
 CFLAGS += -I$(STEREO_UTILS)/include
 LDFLAGS += -L$(STEREO_UTILS)/lib -lstereo_utils -Wl,-rpath $(STEREO_UTILS)/lib
+# TF (for VO)
+TF = $(shell rospack find tf)
+CFLAGS += -I$(TF)/include
+LDFLAGS += -L$(TF)/lib -ltf -Wl,-rpath $(TF)/lib
 # Eigen
 EIGEN = $(shell rospack find eigen)/build/eigen2
 CFLAGS += -I$(EIGEN)
@@ -45,7 +49,8 @@ CFLAGS += -msse2
 
 SOURCES = detectors.cpp
 OBJECTS = $(SOURCES:.cpp=.o)
-PROGRAMS = vocab_test geom_test loop_test make_empty kmeans_test
+PROGRAMS = geom_test make_sigs make_tree
+#PROGRAMS += vocab_test loop_test make_empty kmeans_test 
 
 all: $(PROGRAMS)
 

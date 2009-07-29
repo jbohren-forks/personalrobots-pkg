@@ -188,6 +188,7 @@ VocabularyTree::findNearestChild(Node* node, const FeatureMatrix::RowXpr& featur
     }
   }
   // TODO: debugging code, remove
+  /*
   if (nearest == NULL) {
     printf("ERROR: findNearestChild returning NULL\n");
     if (node->children.empty())
@@ -195,6 +196,7 @@ VocabularyTree::findNearestChild(Node* node, const FeatureMatrix::RowXpr& featur
     else
       printf("node->children is not empty\n");
   }
+  */
   return nearest;
 }
 #endif
@@ -479,6 +481,19 @@ void VocabularyTree::load(const std::string& file)
     db_vectors_.resize(db_size);
     calculateDatabaseVectors();
   }
+}
+
+boost::uint64_t VocabularyTree::findWord(const uint8_t* feature)
+{
+  return findWordAux(root_, feature);
+}
+
+boost::uint64_t VocabularyTree::findWordAux(Node* node, const uint8_t* feature)
+{
+  if ( node->children.empty() )
+    return reinterpret_cast<boost::uint64_t>(node);
+  Node* nearest = findNearestChild(node, feature);
+  return findWordAux(nearest, feature);
 }
 
 } // namespace vision

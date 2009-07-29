@@ -4,17 +4,19 @@ rospack(place_recognition)
 
 rospack_add_boost_directories()
 
-# set(ROS_BUILD_TYPE Release)
+set(ROS_BUILD_TYPE Release)
 rospack_add_library(place_recognition src/kmeans.cpp src/vocabulary_tree.cpp)
 rospack_add_compile_flags(place_recognition -g -Wno-missing-field-initializers -save-temps -msse3)
 
 find_package(PythonLibs)
 include_directories(${PYTHON_INCLUDE_PATH})
 
-rospack_add_library(pyplace_recognition src/kmeans.cpp src/vocabulary_tree.cpp src/py.cpp)
+rospack_add_library(pyplace_recognition src/py.cpp)
+target_link_libraries(pyplace_recognition place_recognition)
 set_target_properties(pyplace_recognition PROPERTIES OUTPUT_NAME place_recognition PREFIX "")
 rospack_add_compile_flags(pyplace_recognition -g -Wno-missing-field-initializers -save-temps -msse3)
 
+# Graphical test
 #rospack_add_pyunit(test/directed.py)
 
 # thrash.py must be declared as a graphical test, because it loads the 

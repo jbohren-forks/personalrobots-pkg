@@ -17,7 +17,6 @@
 #include <cvwimage.h>
 #include <highgui.h>
 
-using boost::format;
 using namespace features;
 using namespace vision;
 
@@ -47,7 +46,7 @@ int main(int argc, char** argv)
   // List query files and their corresponding files
   for (unsigned int i = 0; i < NUM_QUERIES; ++i) {
     std::stringstream ss;
-    ss << format(image_format) % (i * 30);
+    ss << boost::format(image_format) % (i * 30);
     query_files.push_back(ss.str());
   }
   printf("%d database images\n", num_objs);

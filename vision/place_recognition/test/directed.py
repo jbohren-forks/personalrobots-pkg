@@ -22,10 +22,10 @@ if 0:
   vt.save("foo")
 if 1:
   print "loading..."
-  #vt = place_recognition.load("foo")
-  vt = place_recognition.load("/u/mihelich/images/holidays/holidays.tree")
   cl = calonder.classifier()
   cl.read('/u/prdata/calonder_trees/current.rtc')
+  #vt = place_recognition.load("foo")
+  vt = place_recognition.load("/u/mihelich/images/holidays/holidays.tree", cl)
 
   def kp_d(frame):
     #sd = starfeature.star_detector(frame.size[0], frame.size[1], 5, 10.0, 10.0)
