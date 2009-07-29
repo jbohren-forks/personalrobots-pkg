@@ -49,6 +49,7 @@
 
 #include <robot_actions/action.h>
 #include <robot_actions/action_runner.h>
+#include <robot_actions/NoArgumentsActionState.h>
 #include <pr2_robot_actions/DoorActionState.h>
 #include <pr2_robot_actions/CheckPathState.h>
 
@@ -85,7 +86,7 @@ int main(int argc, char** argv)
   runner.connect<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door>(grasp);
   runner.connect<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door>(open);
   runner.connect<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door>(push);
-  runner.connect<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door>(release);
+  runner.connect<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>(release);
   runner.connect<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door>(touch);
   runner.connect<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door>(unlatch);
 
