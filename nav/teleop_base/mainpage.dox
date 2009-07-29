@@ -1,3 +1,4 @@
+/**
 @mainpage
 
 @htmlinclude manifest.html
@@ -8,32 +9,37 @@
 
 The two nodes, teleop_base and teleop_base_keyboard, are designed primarily to drive the base of the PR-2. Teleop_base can also able to drive the spine and head.
 
-\b teleop_base
-\b teleop_base_keyboard
+List of nodes:
+- \b teleop_base
+- \b teleop_base_keyboard
 
 <hr>
 
 \subsection teleop_base_keyboard teleop_base_keyboard
 
-\b teleop_base_keyboard teleoperates a PR-2 base using keyboard commands. 
-WASD controls X/Y, QE controls yaw. Shift to go faster.
+\b teleop_base_keyboard can teleoperate a diff-drive robot using a keyboard.
 
-\subsubsection usage Usage
-\verbatim
+@section usage Usage
+@verbatim
 $ teleop_base_keyboard [standard ROS args]
-\endverbatim
+@endverbatim
 
-Key mappings are printed to screen on startup. Press any unmapped key to stop robot.
+Key mappings are printed to screen on startup.  Press any unmapped key to
+stop the robot.
 
-\subsubsection topic ROS topics
+<hr>
 
-Subscribes to (name / type):
+@section topic ROS topics
+
+Subscribes to (name/type):
 - None
 
 Publishes to (name / type):
-- \b "cmd_vel/PoseDot" : velocity to the pr2 base; sent on every keypress.
+- @b "cmd_vel"/PoseDot : velocity to the robot; sent on every keypress.
 
-\subsubsection parameters ROS parameters
+<hr>
+
+@section parameters ROS parameters
 
 - None
 
@@ -41,7 +47,7 @@ Publishes to (name / type):
 
 \subsection teleop_base teleop_base
 
-\b teleop_base teleoperate a PR-2 using a joystick. 
+\b teleop_base teleoperate a robot's base using a joystick. 
 
 X - Forward
 Y - Left
@@ -73,3 +79,4 @@ Publishes to (name / type):
 
 - \b "deadman_button" : \b int Button that enables joystick commands. No commands will work without deadman button depressed
 - \b "run_button" : \b int Base moves at maximum of "run" velocities.
+*/
