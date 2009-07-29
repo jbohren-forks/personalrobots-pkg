@@ -30,5 +30,5 @@
 %% author: Rosen Diankov
 function session = openraveros_getglobalsession()
 global openraveros_globalsession
-openraveros_startup();
+openraveros_startup([],0);
 session = openraveros_globalsession;

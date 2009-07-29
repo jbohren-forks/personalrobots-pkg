@@ -50,16 +50,19 @@ using namespace ros;
         return state._pserver->srvname##_srv(req,res); \
     }
 
-class SessionServer
+class SessionServer : public boost::enable_shared_from_this<SessionServer>
 {
     class SessionState
     {
     public:
+        SessionState() {}
+        SessionState(boost::shared_ptr<SessionServer> psessionserver) : _psessionserver(psessionserver) {}
         virtual ~SessionState() {
             _pserver.reset();
             _penv.reset();
         }
 
+        boost::shared_ptr<SessionServer> _psessionserver;
         boost::shared_ptr<ROSServer> _pserver;
         boost::shared_ptr<EnvironmentBase> _penv;
     };
@@ -67,13 +70,13 @@ class SessionServer
     class SessionSetViewerFunc : public SetViewerFunc
     {
     public:
-        SessionSetViewerFunc(SessionServer* pserv) : _pserv(pserv) {}
+        SessionSetViewerFunc(boost::shared_ptr<SessionServer> pserver) : _pserver(pserver) {}
         virtual bool SetViewer(EnvironmentBase* penv, const string& viewername, const string& title) {
-            return _pserv->SetViewer(penv,viewername,title);
+            return _pserver->SetViewer(penv,viewername,title);
         }
 
     private:
-        SessionServer* _pserv;
+        boost::shared_ptr<SessionServer> _pserver;
     };
 
     string _sessionname;
@@ -87,147 +90,62 @@ public:
 
     bool Init()
     {
-        Node* pnode = Node::instance();
-        if( pnode == NULL )
-            return false;
+        _ros.reset(new ros::NodeHandle());
         
-        if( !pnode->advertiseService("openrave_session",&SessionServer::session_callback,this, 1) )
-            return false;
-        _sessionname = pnode->resolveName("openrave_session");
+        _srvSession = _ros->advertiseService("openrave_session",&SessionServer::session_callback,shared_from_this());
+        _sessionname = _ros->resolveName("openrave_session");
 
         // advertise persistent services
-        if( !pnode->advertiseService("body_destroy",&SessionServer::body_destroy_srv,this,-1) )
-            return false;
-        if( !pnode->advertiseService("body_enable",&SessionServer::body_enable_srv,this,-1) )
-            return false;
-        if( !pnode->advertiseService("body_getaabb",&SessionServer::body_getaabb_srv,this,-1) )
-            return false;
-        if( !pnode->advertiseService("body_getaabbs",&SessionServer::body_getaabbs_srv,this,-1) )
-            return false;
-        if( !pnode->advertiseService("body_getdof",&SessionServer::body_getdof_srv,this,-1) )
-            return false;
-        if( !pnode->advertiseService("body_getjointvalues",&SessionServer::body_getjointvalues_srv,this,-1) )
-            return false;
-        if( !pnode->advertiseService("body_setjointvalues",&SessionServer::body_setjointvalues_srv,this,-1) )
-            return false;
-        if( !pnode->advertiseService("body_settransform",&SessionServer::body_settransform_srv,this,-1) )
-            return false;
-        if( !pnode->advertiseService("env_checkcollision",&SessionServer::env_checkcollision_srv,this,-1) )
-            return false;
-        if( !pnode->advertiseService("env_closefigures",&SessionServer::env_closefigures_srv,this,-1) )
-            return false;
-        if( !pnode->advertiseService("env_createbody",&SessionServer::env_createbody_srv,this,-1) )
-            return false;
-        if( !pnode->advertiseService("env_createplanner",&SessionServer::env_createplanner_srv,this,-1) )
-            return false;
-        if( !pnode->advertiseService("env_createproblem",&SessionServer::env_createproblem_srv,this,-1) )
-            return false;
-        if( !pnode->advertiseService("env_createrobot",&SessionServer::env_createrobot_srv,this,-1) )
-            return false;
-        if( !pnode->advertiseService("env_destroyproblem",&SessionServer::env_destroyproblem_srv,this,-1) )
-            return false;
-        if( !pnode->advertiseService("env_getbodies",&SessionServer::env_getbodies_srv,this,-1) )
-            return false;
-        if( !pnode->advertiseService("env_getbody",&SessionServer::env_getbody_srv,this,-1) )
-            return false;
-        if( !pnode->advertiseService("env_getrobots",&SessionServer::env_getrobots_srv,this,-1) )
-            return false;
-        if( !pnode->advertiseService("env_loadplugin",&SessionServer::env_loadplugin_srv,this,-1) )
-            return false;
-        if( !pnode->advertiseService("env_loadscene",&SessionServer::env_loadscene_srv,this,-1) )
-            return false;
-        if( !pnode->advertiseService("env_plot",&SessionServer::env_plot_srv,this,-1) )
-            return false;
-        if( !pnode->advertiseService("env_raycollision",&SessionServer::env_raycollision_srv,this,-1) )
-            return false;
-        if( !pnode->advertiseService("env_set",&SessionServer::env_set_srv,this,-1) )
-            return false;
-        if( !pnode->advertiseService("env_triangulate",&SessionServer::env_triangulate_srv,this,-1) )
-            return false;
-        if( !pnode->advertiseService("env_wait",&SessionServer::env_wait_srv,this,-1) )
-            return false;
-        if( !pnode->advertiseService("planner_init",&SessionServer::planner_init_srv,this,-1) )
-            return false;
-        if( !pnode->advertiseService("planner_plan",&SessionServer::planner_plan_srv,this,-1) )
-            return false;
-        if( !pnode->advertiseService("problem_sendcommand",&SessionServer::problem_sendcommand_srv,this,-1) )
-            return false;
-        if( !pnode->advertiseService("robot_controllersend",&SessionServer::robot_controllersend_srv,this,-1) )
-            return false;
-        if( !pnode->advertiseService("robot_controllerset",&SessionServer::robot_controllerset_srv,this,-1) )
-            return false;
-        if( !pnode->advertiseService("robot_getactivevalues",&SessionServer::robot_getactivevalues_srv,this,-1) )
-            return false;
-        if( !pnode->advertiseService("robot_sensorgetdata",&SessionServer::robot_sensorgetdata_srv,this,-1) )
-            return false;
-        if( !pnode->advertiseService("robot_sensorsend",&SessionServer::robot_sensorsend_srv,this,-1) )
-            return false;
-        if( !pnode->advertiseService("robot_setactivedofs",&SessionServer::robot_setactivedofs_srv,this,-1) )
-            return false;
-        if( !pnode->advertiseService("robot_setactivevalues",&SessionServer::robot_setactivevalues_srv,this,-1) )
-            return false;
+        _mapservices["body_destroy"] = _ros->advertiseService("body_destroy",&SessionServer::body_destroy_srv,shared_from_this());
+        _mapservices["body_enable"] = _ros->advertiseService("body_enable",&SessionServer::body_enable_srv,shared_from_this());
+        _mapservices["body_getaabb"] = _ros->advertiseService("body_getaabb",&SessionServer::body_getaabb_srv,shared_from_this());
+        _mapservices["body_getaabbs"] = _ros->advertiseService("body_getaabbs",&SessionServer::body_getaabbs_srv,shared_from_this());
+        _mapservices["body_getdof"] = _ros->advertiseService("body_getdof",&SessionServer::body_getdof_srv,shared_from_this());
+        _mapservices["body_getjointvalues"] = _ros->advertiseService("body_getjointvalues",&SessionServer::body_getjointvalues_srv,shared_from_this());
+        _mapservices["body_setjointvalues"] = _ros->advertiseService("body_setjointvalues",&SessionServer::body_setjointvalues_srv,shared_from_this());
+        _mapservices["body_settransform"] = _ros->advertiseService("body_settransform",&SessionServer::body_settransform_srv,shared_from_this());
+        _mapservices["env_checkcollision"] = _ros->advertiseService("env_checkcollision",&SessionServer::env_checkcollision_srv,shared_from_this());
+        _mapservices["env_closefigures"] = _ros->advertiseService("env_closefigures",&SessionServer::env_closefigures_srv,shared_from_this());
+        _mapservices["env_createbody"] = _ros->advertiseService("env_createbody",&SessionServer::env_createbody_srv,shared_from_this());
+        _mapservices["env_createplanner"] = _ros->advertiseService("env_createplanner",&SessionServer::env_createplanner_srv,shared_from_this());
+        _mapservices["env_createproblem"] = _ros->advertiseService("env_createproblem",&SessionServer::env_createproblem_srv,shared_from_this());
+        _mapservices["env_createrobot"] = _ros->advertiseService("env_createrobot",&SessionServer::env_createrobot_srv,shared_from_this());
+        _mapservices["env_destroyproblem"] = _ros->advertiseService("env_destroyproblem",&SessionServer::env_destroyproblem_srv,shared_from_this());
+        _mapservices["env_getbodies"] = _ros->advertiseService("env_getbodies",&SessionServer::env_getbodies_srv,shared_from_this());
+        _mapservices["env_getbody"] = _ros->advertiseService("env_getbody",&SessionServer::env_getbody_srv,shared_from_this());
+        _mapservices["env_getrobots"] = _ros->advertiseService("env_getrobots",&SessionServer::env_getrobots_srv,shared_from_this());
+        _mapservices["env_loadplugin"] = _ros->advertiseService("env_loadplugin",&SessionServer::env_loadplugin_srv,shared_from_this());
+        _mapservices["env_loadscene"] = _ros->advertiseService("env_loadscene",&SessionServer::env_loadscene_srv,shared_from_this());
+        _mapservices["env_plot"] = _ros->advertiseService("env_plot",&SessionServer::env_plot_srv,shared_from_this());
+        _mapservices["env_raycollision"] = _ros->advertiseService("env_raycollision",&SessionServer::env_raycollision_srv,shared_from_this());
+        _mapservices["env_set"] = _ros->advertiseService("env_set",&SessionServer::env_set_srv,shared_from_this());
+        _mapservices["env_triangulate"] = _ros->advertiseService("env_triangulate",&SessionServer::env_triangulate_srv,shared_from_this());
+        _mapservices["env_wait"] = _ros->advertiseService("env_wait",&SessionServer::env_wait_srv,shared_from_this());
+        _mapservices["planner_init"] = _ros->advertiseService("planner_init",&SessionServer::planner_init_srv,shared_from_this());
+        _mapservices["planner_plan"] = _ros->advertiseService("planner_plan",&SessionServer::planner_plan_srv,shared_from_this());
+        _mapservices["problem_sendcommand"] = _ros->advertiseService("problem_sendcommand",&SessionServer::problem_sendcommand_srv,shared_from_this());
+        _mapservices["robot_controllersend"] = _ros->advertiseService("robot_controllersend",&SessionServer::robot_controllersend_srv,shared_from_this());
+        _mapservices["robot_controllerset"] = _ros->advertiseService("robot_controllerset",&SessionServer::robot_controllerset_srv,shared_from_this());
+        _mapservices["robot_getactivevalues"] = _ros->advertiseService("robot_getactivevalues",&SessionServer::robot_getactivevalues_srv,shared_from_this());
+        _mapservices["robot_sensorgetdata"] = _ros->advertiseService("robot_sensorgetdata",&SessionServer::robot_sensorgetdata_srv,shared_from_this());
+        _mapservices["robot_sensorsend"] = _ros->advertiseService("robot_sensorsend",&SessionServer::robot_sensorsend_srv,shared_from_this());
+        _mapservices["robot_setactivedofs"] = _ros->advertiseService("robot_setactivedofs",&SessionServer::robot_setactivedofs_srv,shared_from_this());
+        _mapservices["robot_setactivevalues"] = _ros->advertiseService("robot_setactivevalues",&SessionServer::robot_setactivevalues_srv,shared_from_this());
 
         _ok = true;
         _threadviewer = boost::thread(boost::bind(&SessionServer::ViewerThread, this));
-
         return true;
     }
 
     void Destroy()
     {
         shutdown();
-
-        Node* pnode = Node::instance();
-        if( pnode == NULL )
-            return;
-
-        pnode->unadvertiseService("openrave_session");
-        pnode->unadvertiseService("body_destroy");
-        pnode->unadvertiseService("body_enable");
-        pnode->unadvertiseService("body_getaabb");
-        pnode->unadvertiseService("body_getaabbs");
-        pnode->unadvertiseService("body_getdof");
-        pnode->unadvertiseService("body_getjointvalues");
-        pnode->unadvertiseService("body_setjointvalues");
-        pnode->unadvertiseService("body_settransform");
-        pnode->unadvertiseService("env_checkcollision");
-        pnode->unadvertiseService("env_closefigures");
-        pnode->unadvertiseService("env_createbody");
-        pnode->unadvertiseService("env_createplanner");
-        pnode->unadvertiseService("env_createproblem");
-        pnode->unadvertiseService("env_createrobot");
-        pnode->unadvertiseService("env_destroyproblem");
-        pnode->unadvertiseService("env_getbodies");
-        pnode->unadvertiseService("env_getbody");
-        pnode->unadvertiseService("env_getrobots");
-        pnode->unadvertiseService("env_loadplugin");
-        pnode->unadvertiseService("env_loadscene");
-        pnode->unadvertiseService("env_plot");
-        pnode->unadvertiseService("env_raycollision");
-        pnode->unadvertiseService("env_set");
-        pnode->unadvertiseService("set_triangulate");
-        pnode->unadvertiseService("env_wait");
-        pnode->unadvertiseService("planner_init");
-        pnode->unadvertiseService("planner_plan");
-        pnode->unadvertiseService("problem_sendcommand");
-        pnode->unadvertiseService("robot_controllersend");
-        pnode->unadvertiseService("robot_controllerset");
-        pnode->unadvertiseService("robot_getactivevalues");
-        pnode->unadvertiseService("robot_sensorgetdata");
-        pnode->unadvertiseService("robot_sensorsend");
-        pnode->unadvertiseService("robot_setactivedofs");
-        pnode->unadvertiseService("robot_setactivevalues");
-
+        _srvSession.shutdown();
+        _mapservices.clear();
+        _ros.reset();
         _threadviewer.join();
     }
     
-    virtual void spin()
-    {
-        while (_ok) {
-            usleep(1000);
-        };
-    }
-
     virtual void shutdown()
     {
         _ok = false;
@@ -261,7 +179,12 @@ public:
 
     boost::shared_ptr<EnvironmentBase> GetParentEnvironment() const { return _pParentEnvironment; }
 
-private:
+protected:
+    // ross
+    boost::shared_ptr<ros::NodeHandle> _ros;
+    ros::ServiceServer _srvSession;
+    map<string,ros::ServiceServer> _mapservices;
+
     map<int,SessionState> _mapsessions;
     boost::mutex _mutexsession;
     boost::shared_ptr<EnvironmentBase> _pParentEnvironment;
@@ -322,17 +245,17 @@ private:
     SessionState getstate(const MReq& req)
     {
         if( !req.__connection_header )
-            return SessionState();
+            return SessionState(shared_from_this());
 
         ros::M_string::const_iterator it = req.__connection_header->find(_sessionname);
         if( it == req.__connection_header->end() )
-            return SessionState();
+            return SessionState(shared_from_this());
 
         boost::mutex::scoped_lock lock(_mutexsession);
         
         int sessionid = atoi(it->second.c_str());
         if( _mapsessions.find(sessionid) == _mapsessions.end() )
-            return SessionState();
+            return SessionState(shared_from_this());
         return _mapsessions[sessionid];
     }
 
@@ -358,18 +281,18 @@ private:
             return true;
         }
 
+        SessionState state(shared_from_this());
         int id = rand();
         {
             boost::mutex::scoped_lock lock(_mutexsession);
             while(id == 0 || _mapsessions.find(id) != _mapsessions.end())
                 id = rand();
+            _mapsessions[id] = state; // grab it
         }
-
-        SessionState state;
         
         if( req.clone_sessionid ) {
             // clone the environment from clone_sessionid
-            SessionState clonestate;
+            SessionState clonestate(shared_from_this());
             {
                 boost::mutex::scoped_lock lock(_mutexsession);
                 clonestate = _mapsessions[req.clone_sessionid];
@@ -387,7 +310,7 @@ private:
             state._penv.reset(_pParentEnvironment->CloneSelf(0));
         }
 
-        state._pserver.reset(new ROSServer(id, new SessionSetViewerFunc(this), state._penv.get(), req.physicsengine, req.collisionchecker, req.viewer));
+        state._pserver.reset(new ROSServer(id, new SessionSetViewerFunc(shared_from_this()), state._penv.get(), req.physicsengine, req.collisionchecker, req.viewer));
         state._penv->AttachServer(state._pserver.get());
 
         boost::mutex::scoped_lock lock(_mutexsession);

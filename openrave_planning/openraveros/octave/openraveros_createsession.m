@@ -38,7 +38,7 @@ function session = openraveros_createsession(sessionserver, cloneuuid, cloneopti
 if( ~exist('sessionserver','var') )
     sessionserver = 'openrave_session';
 end
-openraveros_startup(sessionserver);
+openraveros_startup(sessionserver,0);
 
 req = openraveros_openrave_session();
 if( exist('cloneuuid','var') )

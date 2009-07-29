@@ -1277,7 +1277,8 @@ public:
             
             res.values.resize(req.indices.size());
             for(size_t i = 0; i < req.indices.size(); ++i) {
-                ROS_ASSERT( req.indices[i] < vtemp.size() );
+                if( req.indices[i] >= vtemp.size() )
+                    return false;
                 res.values[i] = vtemp[req.indices[i]];
             }
         }
@@ -1353,7 +1354,7 @@ public:
 
             break;
         }
-        case SensorBase::ST_Camera:
+        case SensorBase::ST_Camera: {
             res.type = "camera";
             SensorBase::CameraSensorData* pcameradata = (SensorBase::CameraSensorData*)pdata.get();
 
@@ -1418,6 +1419,10 @@ public:
             layout.dim[2].stride = nchannels;
             res.camimage.uint8_data.data.resize(layout.dim[0].stride);
             memcpy(&res.camimage.uint8_data.data[0], &pcameradata->vimagedata[0], res.camimage.uint8_data.data.size());
+            break;
+        }
+        default:
+            RAVELOG_WARNA("sensor type not serialized\n");
         }
         
         return true;

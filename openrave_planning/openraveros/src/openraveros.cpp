@@ -29,7 +29,7 @@
 
 void sigint_handler(int);
 
-boost::shared_ptr<ros::Node> s_pmasternode;
+boost::shared_ptr<ros::NodeHandle> s_pmasternode;
 boost::shared_ptr<SessionServer> s_sessionserver;
 
 void printhelp()
@@ -99,15 +99,15 @@ int main(int argc, char ** argv)
 {
     signal(SIGINT,sigint_handler); // control C
 
-    ros::init(argc,argv);
-    s_pmasternode.reset(new ros::Node("openraveserver", ros::Node::DONT_HANDLE_SIGINT));
+    ros::init(argc,argv,"openraveserver", ros::init_options::NoSigintHandler);
+    s_pmasternode.reset(new ros::NodeHandle());
 
     if( !s_pmasternode->checkMaster() )
-        return -1;
+        return 1;
     
     s_sessionserver.reset(new SessionServer());
     if( !s_sessionserver->Init() )
-        return -1;
+        return 2;
 
     // parse the command line options
     bool bExit = false;
@@ -132,9 +132,8 @@ int main(int argc, char ** argv)
     }
 
     if( !bExit )
-        s_sessionserver->spin();
-    s_sessionserver.reset();
-    
+        ros::spin();
+    s_sessionserver.reset();    
     s_pmasternode.reset();
     return 0;
 }
@@ -143,4 +142,5 @@ void sigint_handler(int)
 {
     s_sessionserver->shutdown();
     s_pmasternode->shutdown();
+    ros::shutdown();
 }
