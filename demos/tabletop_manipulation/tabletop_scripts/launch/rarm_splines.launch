@@ -3,26 +3,13 @@
   <include file="$(find 3dnav_pr2)/launch/pr2_planning_environment.launch" />
   <include file="$(find pr2_ik)/pr2_ik_rarm_node.launch"/>
 
-  <param name="r_arm_joint_trajectory_controller/r_shoulder_pan_joint/goal_reached_threshold" value="0.001" />
-  <param name="r_arm_joint_trajectory_controller/r_shoulder_lift_joint/goal_reached_threshold" value="0.001" />
-  <param name="r_arm_joint_trajectory_controller/r_upper_arm_roll_joint/goal_reached_threshold" value="0.001" />
-  <param name="r_arm_joint_trajectory_controller/r_elbow_flex_joint/goal_reached_threshold" value="0.001" />
-  <param name="r_arm_joint_trajectory_controller/r_forearm_roll_joint/goal_reached_threshold" value="0.001" />
-  <param name="r_arm_joint_trajectory_controller/r_wrist_flex_joint/goal_reached_threshold" value="0.001" />
-  <param name="r_arm_joint_trajectory_controller/r_wrist_roll_joint/goal_reached_threshold" value="0.001" />
-
-  <param name="r_arm_joint_trajectory_controller/r_shoulder_pan_joint/joint_error_threshold" value="0.1" />
-  <param name="r_arm_joint_trajectory_controller/r_shoulder_lift_joint/joint_error_threshold" value="0.1" />
-  <param name="r_arm_joint_trajectory_controller/r_upper_arm_roll_joint/joint_error_threshold" value="0.1" />
-  <param name="r_arm_joint_trajectory_controller/r_elbow_flex_joint/joint_error_threshold" value="0.1" />
-  <param name="r_arm_joint_trajectory_controller/r_forearm_roll_joint/joint_error_threshold" value="0.1" />
-  <param name="r_arm_joint_trajectory_controller/r_wrist_flex_joint/joint_error_threshold" value="0.1" />
-  <param name="r_arm_joint_trajectory_controller/r_wrist_roll_joint/joint_error_threshold" value="0.1" />
-
   <rosparam file="$(find pr2_default_controllers)/trajectory_controller.yaml" command="load" ns="trajectory_controller"/>
+
   <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/trajectory_controller.xml" output="screen"/>
 
 
   <include file="$(find move_arm)/launch/move_rarm_splines.launch"/> 
+
+  <include file="$(find joint_waypoint_controller)/launch/joint_waypoint_controller.launch"/>
 
 </launch>
