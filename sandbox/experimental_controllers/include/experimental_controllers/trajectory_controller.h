@@ -52,6 +52,8 @@
 
 #include <experimental_controllers/pid_position_velocity_controller.h>
 
+#include <boost/shared_ptr.hpp>
+
 namespace controller {
 
   class TrajectoryController : public Controller
@@ -80,7 +82,8 @@ namespace controller {
     mechanism::RobotState *robot_state_;
 
     // pid controllers
-    std::vector<controller::PIDPositionVelocityController*> joint_controllers_;
+
+    std::vector<boost::shared_ptr<controller::PIDPositionVelocityController> > joint_controllers_;
 
     // reatltime publisher
 //    boost::scoped_ptr<realtime_tools::RealtimePublisher<robot_msgs::Twist> > state_error_publisher_;

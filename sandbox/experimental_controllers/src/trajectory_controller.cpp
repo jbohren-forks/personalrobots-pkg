@@ -48,10 +48,6 @@ TrajectoryController::TrajectoryController():num_joints_(0),num_controllers_(0)
 
 TrajectoryController::~TrajectoryController()
 {
-  for(int i=0; i < num_controllers_; i++)
-  {
-    delete joint_controllers_[i];
-  }
 }
 
 bool TrajectoryController::init(mechanism::RobotState *robot_state, const ros::NodeHandle &n)
@@ -95,7 +91,8 @@ bool TrajectoryController::init(mechanism::RobotState *robot_state, const ros::N
 
   for(int i=0; i < (int)joint_names_.size(); i++)
   {
-    joint_controllers_[i] = new controller::PIDPositionVelocityController();
+    joint_controllers_[i].reset(new controller::PIDPositionVelocityController());
+
     num_controllers_++;
     if(!joint_controllers_[i]->init(robot_state_,ros::NodeHandle(n.getNamespace()+"/" + joint_names_[i])))
     {
