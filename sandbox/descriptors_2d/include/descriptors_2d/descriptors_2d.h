@@ -304,14 +304,13 @@ class SuperpixelColorHistogram : public SuperpixelStatistic {
   IplImage* val_;
   IplImage* channel_;
 
-  SuperpixelColorHistogram(int seed_spacing, float scale, int nBins, std::string type, SuperpixelStatistic* seg_provider=NULL, SuperpixelColorHistogram* hsv_provider_=NULL);
+  SuperpixelColorHistogram(int seed_spacing, float scale, int nBins, SuperpixelStatistic* seg_provider=NULL, SuperpixelColorHistogram* hsv_provider_=NULL);
   ~SuperpixelColorHistogram();
   void compute(IplImage* img, const cv::Vector<cv::Keypoint>& points, vvf& results);
 
  protected:
   int nBins_;
   //! Not used right now.
-  std::string type_;
   SuperpixelColorHistogram* hsv_provider_;
   float max_val_;
   bool hists_reserved_;
@@ -325,58 +324,5 @@ class SuperpixelColorHistogram : public SuperpixelStatistic {
 std::vector<ImageDescriptor*> setupImageDescriptors();
 void whiten(Eigen::MatrixXf* m);
 int getdir (string dir, vector<string> &files);
-
-
-/***************************************************************************
-***********  Patch-based.  
-****************************************************************************/
-//Not converted to standard yet.  Only will be if wanted.
-
-/* class Patch : public ImageDescriptor { */
-/*  public: */
-/*   //! Length of the sides of the patch, before scaling. */
-/*   int raw_size_; */
-/*   //! Scaling to apply to the raw patch before computing the feature. */
-/*   float scale_; */
-/*   //! The final patch, made available for other descriptors to re-use computation. */
-/*   IplImage* final_patch_; */
-/*   //! Length of the sides of the patch, after scaling. */
-/*   int size_; */
-/*   //! The scaled color image patch. */
-/*   IplImage* scaled_patch_; */
-
-
-/*   Patch(int raw_size, float scale); */
-/*   //! Common patch constructor computation. */
-/*   bool preCompute(); */
-
-/*   void clearPointCache(); */
-/*   ~Patch() {}   */
-/* }; */
-
-/* class IntensityPatch : public Patch { */
-/*  public: */
-/*   //! If true, the resulting feature vector has its mean set to 0 and variance set to 1.  This might give some lighting invariance for intensity patches, for example. */
-/*   bool whiten_; */
-
-/*   IntensityPatch(int raw_size, float scale, bool whiten); */
-/*   bool compute(Eigen::MatrixXf** result); */
-/*   void compute(IplImage* img, const cv::Vector<cv::Keypoint>& points, vvf& results); */
-/*   void clearImageCache() {} */
-/* }; */
-
-/* class PatchStatistic : public ImageDescriptor { */
-/*  public: */
-/*   //! "variance" */
-/*   std::string type_; */
-/*   //! Pointer to Patch object which will contain the final_patch_ to compute the statistic on. */
-/*   Patch* patch_; */
-
-/*   PatchStatistic(std::string type, Patch* patch); */
-/*   bool compute(Eigen::MatrixXf** result); */
-
-/*   void clearPointCache() {} */
-/*   void clearImageCache() {} */
-/* }; */
 
 #endif

@@ -47,7 +47,7 @@ using namespace cv;
    vvf == cv::Vector< cv::Vector<float> >
    
    You should not be able to screw yourself with precomputation sharing, 
-   e.g. d.push_back(new SuperpixelColorHistogram(5, 0.25, 10, string("hue"), sch1, sch1));
+   e.g. d.push_back(new SuperpixelColorHistogram(5, 0.25, 10, sch1, sch1));
    should die saying that the segmentation params do not match. 
 */
 
@@ -67,11 +67,11 @@ vector<ImageDescriptor*> setupImageDescriptors() {
 
   //SuperpixelColorHistogram(int seed_spacing, float scale, int nBins, std::string type, SuperpixelStatistic* seg_provider=NULL,
   //                         SuperpixelColorHistogram* hsv_provider_=NULL);
-  SuperpixelColorHistogram* sch1 = new SuperpixelColorHistogram(20, 0.5, 10, string("hue"));
+  SuperpixelColorHistogram* sch1 = new SuperpixelColorHistogram(20, 0.5, 10);
   descriptors.push_back(sch1);
-  descriptors.push_back(new SuperpixelColorHistogram(5, 0.5, 10, string("hue"), NULL, sch1));
-  descriptors.push_back(new SuperpixelColorHistogram(5, 1, 10, string("hue"), NULL, sch1));
-  descriptors.push_back(new SuperpixelColorHistogram(5, 0.25, 10, string("hue"), NULL, sch1));
+  descriptors.push_back(new SuperpixelColorHistogram(5, 0.5, 10, NULL, sch1));
+  descriptors.push_back(new SuperpixelColorHistogram(5, 1, 10, NULL, sch1));
+  descriptors.push_back(new SuperpixelColorHistogram(5, 0.25, 10, NULL, sch1));
  
   //SurfWrapper(bool extended = true, int size = 100)
   descriptors.push_back(new SurfWrapper(true, 150));

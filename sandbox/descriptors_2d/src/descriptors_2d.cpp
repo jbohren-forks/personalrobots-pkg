@@ -46,24 +46,6 @@ USING_PART_OF_NAMESPACE_EIGEN
 *************  Generally Useful Functions
 *****************************************************************************/
 
-
-//! This is an example of how to set up the descriptors.  Using this one is ill-advised as it may change without notice.
-vector<ImageDescriptor*> setupImageDescriptorsExample() {
-  vector<ImageDescriptor*> d;
-
-  SuperpixelColorHistogram* sch1 = new SuperpixelColorHistogram(20, 0.5, 50, string("hue"));
-  SuperpixelColorHistogram* sch2 = new SuperpixelColorHistogram(5, 0.5, 50, string("hue"), NULL, sch1);
-  SuperpixelColorHistogram* sch3 = new SuperpixelColorHistogram(5, 1, 50, string("hue"), NULL, sch1);
-  SuperpixelColorHistogram* sch4 = new SuperpixelColorHistogram(5, .25, 50, string("hue"), NULL, sch1);
-
-  d.push_back(sch1);
-  d.push_back(sch2);
-  d.push_back(sch3);
-  d.push_back(sch4);
-
-  return d;
-}
-
 //! Transate and scale a vector to have mean of 0 and variance of 1.
 void whiten(Vector<float>& m) {
   // -- Get sum and mean.
@@ -984,7 +966,7 @@ std::vector< std::vector<CvPoint> >* SuperpixelStatistic::getIndex() {
 ***********  ImageDescriptor::SuperpixelStatistic::SuperpixelColorHistogram
 ****************************************************************************/
  
-SuperpixelColorHistogram::SuperpixelColorHistogram(int seed_spacing, float scale, int nBins, string type, SuperpixelStatistic* seg_provider, 
+SuperpixelColorHistogram::SuperpixelColorHistogram(int seed_spacing, float scale, int nBins, SuperpixelStatistic* seg_provider, 
 						   SuperpixelColorHistogram* hsv_provider) : 
   SuperpixelStatistic(seed_spacing, scale, seg_provider), 
   hsv_(NULL), 
@@ -992,14 +974,13 @@ SuperpixelColorHistogram::SuperpixelColorHistogram(int seed_spacing, float scale
   sat_(NULL), 
   val_(NULL), 
   nBins_(nBins), 
-  type_(type), 
   hsv_provider_(hsv_provider), 
   max_val_(0), 
   hists_reserved_(false)
 {
   //printf("SuperpixelColorHistogram internal: %d\n", sizeof(SuperpixelColorHistogram));
   char buf[100];
-  sprintf(buf, "_colorHistogram_type:%s_nBins%d", type_.c_str(), nBins);
+  sprintf(buf, "_colorHistogram_nBins%d", nBins);
   name_.append(buf);
 
   result_size_ = nBins_*nBins_;
@@ -1041,7 +1022,6 @@ void SuperpixelColorHistogram::compute(IplImage* img, const Vector<Keypoint>& po
     hue_ = cvCreateImage( cvGetSize(img_), 8, 1 );
     sat_ = cvCreateImage( cvGetSize(img_), 8, 1 );
     val_ = cvCreateImage( cvGetSize(img_), 8, 1 );
-    if(type_.compare("hue") == 0 || type_.compare("sat") == 0 || type_.compare("val") == 0)
     cvCvtColor(img_, hsv_, CV_BGR2HSV);
     cvSplit(hsv_, hue_, sat_, val_, 0);
   }
@@ -1731,249 +1711,3 @@ void Histogram::clear() {
   }
   nInsertions_ = 0;
 }
-  
-  
-
-/***************************************************************************
-***********  ImageDescriptor::Patch::EdgePatch
-****************************************************************************/
-
-/*
-
-EdgePatch::compute(MatrixXf** result) {
-  Patch::compute(IplImage* img_, row_, col_, result, debug);
-  IplImage* gray = cvCreateImage(cvGetSize(img_), IPL_DEPTH_8U, 1);
-  IplImage* detail_edge = cvCloneImage(gray);
-  cvCvtColor(img_, gray, CV_BGR2GRAY);
-  cvCanny(gray, detail_edge, thresh1_, thresh2_);
-  cvNamedWindow("detail_edge");
-  cvShowImage("detail_edge", detail_edge);
-  
-  cvResize(detail_edge, final_patch_, CV_INTER_AREA);
-  cvReleaseImage(&gray);
-  cvReleaseImage(&detail_edge);
-  
-  // -- Convert ipl to Newmat.
-  int idx=0;
-  for(int r=0; r<final_patch_->height; r++) {
-    uchar* ptr = (uchar*)(final_patch_->imageData + r * final_patch_->widthStep);
-    for(int c=0; c<final_patch_->width; c++) {
-      (*res)(idx+1, 1) = *ptr;
-      ptr++;
-      idx++;
-    }
-  }
-  result = res;
-
-  // -- Set mean to 0, variance to 1 if appropriate and desired.
-  if(whiten_)
-    whiten(result);
-  
-  // -- Display for debugging.
-  if(debug) {
-    cout << name_ << " dump: ";
-    cout << (*result).t() << endl;
-      
-    IplImage* final_patch_rescaled = cvCreateImage(cvSize(500,500), IPL_DEPTH_8U, 1);
-    cvResize(final_patch_, final_patch_rescaled, CV_INTER_NN);
-    cvNamedWindow(name_.c_str());
-    cvShowImage(name_.c_str(), final_patch_rescaled);
-    commonDebug(img_, row_, col_);
-
-    cvReleaseImage(&final_patch_rescaled);
-  }
-   
-  // -- Clean up.
-  cvResetImageROI(img_);
-  return true;
-}
-
-*/
-
-/****************************************************************************
-*************  ImageDescriptor::Patch
-****************************************************************************/
-
-/*
-
-Patch::Patch(int raw_size, float scale) 
-  : raw_size_(raw_size), scale_(scale), final_patch_(NULL), scaled_patch_(NULL)
-{
-  //Common patch constructor computation.
-  cout << "Doing common constructor computation." << endl;
-  size_ = (size_t) ((float)raw_size * scale);
-  if(size_%2==0)
-    size_ -= 1;
-
-  
-  char buf[100];
-  sprintf(buf, "Patch_sz%d_scale%g", raw_size_, scale_);
-  name_.assign(buf);
-}
-
-bool Patch::preCompute() {
-  if(debug_)
-    cout << "Computing " << name_ << endl;
-  
-  // -- final_patch_ should have been deallocated on clearPointCache(), which must be called by the user.
-  if(final_patch_ != NULL || scaled_patch_ != NULL)
-    cout << "WARNING: final_patch_  or scaled_patch_ has not been deallocated.  Have you called clearPointCache()?" << endl;
-
-  // -- Catch edge cases.
-  int half = ceil((float)raw_size_ / 2.0);
-  if(row_-half < 0 || row_+half >= img_->height || col_-half < 0 || col_+half >= img_->width) {
-    //cout << "Out of bounds; size: " << raw_size_ << ", row: " << row_ << ", col_: " << col_ << endl;
-    return false;
-  }
-  
-  // -- Get the scaled patch.
-  //cout << "Setting roi to " << row_-half << " " << col_-half << " " << raw_size_ << endl;
-  cvSetImageROI(img_, cvRect(col_-half, row_-half, raw_size_, raw_size_));
-  scaled_patch_ = cvCreateImage(cvSize(size_, size_), img_->depth, img_->nChannels);
-  cvResize(img_, scaled_patch_,CV_INTER_AREA);
-  
-  return true;
-}
-     
-void Patch::clearPointCache() {
-  cvReleaseImage(&scaled_patch_);
-  cvReleaseImage(&final_patch_);
-  final_patch_ = NULL;
-  scaled_patch_ = NULL;
-}
-
-//void Patch::clearImageCache() {}
-*/
-/****************************************************************************
-*************  ImageDescriptor::Patch::IntensityPatch
-****************************************************************************/
-/*
-IntensityPatch::IntensityPatch(int raw_size, float scale, bool whiten)
-  : Patch(raw_size, scale), whiten_(whiten)
-{
-  char buf[100];
-  sprintf(buf, "_whiten%d_Intensity", whiten_);
-  name_.append(buf);
-  cout << "Creating " << name_ << endl;
-
-  result_size_ = size_ * size_;
-}
-
-
-bool IntensityPatch::compute(MatrixXf** result) {
-  //Do common patch processing.  
-  if(!preCompute())
-    return false;
-
-
-  final_patch_ = cvCreateImage(cvSize(size_, size_), IPL_DEPTH_8U, 1);
-  cvCvtColor(scaled_patch_, final_patch_, CV_BGR2GRAY);
-  MatrixXf* res = new MatrixXf(result_size_,1);
-
-  // -- Convert ipl to Newmat.
-  int idx=0;
-  for(int r=0; r<final_patch_->height; r++) {
-    uchar* ptr = (uchar*)(final_patch_->imageData + r * final_patch_->widthStep);
-    for(int c=0; c<final_patch_->width; c++) {
-      (*res)(idx, 0) = *ptr;
-      ptr++;
-      idx++;
-    }
-  }
-
-  // -- Set mean to 0, variance to 1 if appropriate and desired.
-  if(whiten_)
-    whiten(res);
-  
-  *result = res;
-
-  // -- Display for debugging.
-  if(debug_) {
-    cout << name_ << " dump: ";
-    cout << (**result) << endl;
-      
-    IplImage* final_patch_rescaled = cvCreateImage(cvSize(500,500), IPL_DEPTH_8U, 1);
-    cvResize(final_patch_, final_patch_rescaled, CV_INTER_NN);
-    cvNamedWindow(name_.c_str());
-    cvShowImage(name_.c_str(), final_patch_rescaled);
-    commonDebug(row_, col_);
-
-    cvReleaseImage(&final_patch_rescaled);
-  }
-   
-  // -- Clean up.
-  cvResetImageROI(img_);
-  return true;
-}
-
-  */   
-/****************************************************************************
-*************  ImageDescriptor::PatchStatistic
-****************************************************************************/
-/*
-PatchStatistic::PatchStatistic(string type, Patch* patch) :
-  type_(type), patch_(patch)
-{
-  char buf[200];
-  sprintf(buf, "%s_PatchStatistic_%s", patch_->name_.c_str(), type_.c_str());
-  name_.assign(buf);
-  cout << "Creating " << name_ << endl;
-
-  if(type_.compare("variance") == 0) {  
-    result_size_ = 1;
-  }
-}
-
-bool PatchStatistic::compute(MatrixXf** result) {
-
-  if(patch_ == NULL) {
-    cout << "patch_ was null" << endl;
-    return false; 
-  }
-  if(patch_->final_patch_ == NULL) {
-    cout << "final_patch_ was null" << endl;
-    return false; 
-  }
-
-  IplImage* fp = patch_->final_patch_;
-  if(type_.compare("variance") == 0) {  
-    (*result) = new MatrixXf(1,1);
-
-    // -- Get the mean.
-    double mean = 0.0;
-    for(int r=0; r<fp->height; r++) {
-      uchar* ptr = (uchar*)(fp->imageData + r * fp->widthStep);
-      for(int c=0; c<fp->width; c++) {
-	mean += (double)*ptr;
-      }
-    }
-    mean /= (double)(fp->height * fp->width);
-    //cout << "Mean is " << mean << endl;    
-
-    // -- Compute variance.
-    double var = 0.0;
-    double tmp = 0.0;
-    for(int r=0; r<fp->height; r++) {
-      uchar* ptr = (uchar*)(fp->imageData + r * fp->widthStep);
-      for(int c=0; c<fp->width; c++) {
-	tmp = (double)(*ptr) - mean;
-	var += tmp * tmp;
-	//cout << "tmp " << tmp << " var " << var << endl;
-      }
-    }
-    //cout << "Total pts " << (double)(fp->height * fp->width) << endl;
-    var /= (double)(fp->height * fp->width);
-    
-    (**result)(0,0) = var;
-  }
-
-  if(debug_) {
-    cout << name_ << " is " << **result << endl;
-//     cvNamedWindow("fp");
-//     cvShowImage("fp", fp);
-    commonDebug(row_, col_);
-  }
-
-  return true;
-}
-*/

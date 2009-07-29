@@ -1,5 +1,5 @@
-#ifndef IMAGE_DESCRIPTORS_GPL_H
-#define IMAGE_DESCRIPTORS_GPL_H
+#ifndef DESCRIPTORS_2D_GPL_H
+#define DESCRIPTORS_2D_GPL_H
 
 #include <daisy/daisy.h>
 #include <descriptors_2d/descriptors_2d.h>
