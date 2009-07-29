@@ -10,6 +10,8 @@
   <url>http://www.informatik.uni-freiburg.de/~sturm/projectposeestimationfrompointclouds.html</url>
 
 
+  <depend package="robot_msgs" />
+  
   <depend package="point_cloud_mapping" />
   <depend package="visualization_msgs" />
   <depend package="topic_synchronizer2" />

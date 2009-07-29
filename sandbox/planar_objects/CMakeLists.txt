@@ -17,7 +17,7 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 #uncomment if you have defined messages
-#genmsg()
+genmsg()
 #uncomment if you have defined services
 #gensrv()
 
@@ -26,6 +26,6 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #target_link_libraries(${PROJECT_NAME} another_library)
 #rospack_add_boost_directories()
 #rospack_link_boost(${PROJECT_NAME} thread)
-rospack_add_executable(rectangular_fit src/rectangular_fit.cpp)
+#rospack_add_executable(rectangular_fit src/rectangular_fit.cpp)
 rospack_add_executable(planar_node src/planar_node.cpp src/find_planes.cpp src/vis_utils.cpp)
 #target_link_libraries(example ${PROJECT_NAME})

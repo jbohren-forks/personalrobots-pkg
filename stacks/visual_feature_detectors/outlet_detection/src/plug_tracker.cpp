@@ -7,7 +7,6 @@ int cvFindChessboardCorners_ex( const void* arr, CvSize pattern_size,
                                 CvPoint2D32f* out_corners, int* out_corner_count,
                                 int flags );
 
-
 PlugTracker::PlugTracker(ros::Node &node)
   : TrackerBase(node, "plug"), grid_pts_(NULL)
 {
@@ -151,9 +150,19 @@ bool PlugTracker::detectObject(tf::Transform &pose)
     ROS_WARN("Not using target frame info, orientation may be bogus");
   }
 
-  //static const int RADIUS = 5;
-  static const int RADIUS = 11;
-  cvFindCornerSubPix(image, &corners_[0], ncorners_, cvSize(RADIUS,RADIUS), cvSize(-1,-1),
+  CvPoint2D32f board_corners[4];
+  getBoardCorners(board_corners);
+  float perimeter = 0.0f;
+  for (int i = 0; i < 4; ++i) {
+    int next = (i + 1) % 4;
+    float xdiff = board_corners[i].x - board_corners[next].x;
+    float ydiff = board_corners[i].y - board_corners[next].y;
+    perimeter += std::sqrt(xdiff*xdiff + ydiff*ydiff);
+  }
+  // Estimate square size in pixels
+  float square_size = perimeter / ((board_w_ - 1 + board_h_ - 1)*2);
+  int radius = square_size * 0.5f + 0.5f;
+  cvFindCornerSubPix(image, &corners_[0], ncorners_, cvSize(radius,radius), cvSize(-1,-1),
                      cvTermCriteria(CV_TERMCRIT_EPS | CV_TERMCRIT_ITER, 30, 0.1));
 
   // Refine checkerboard pose
@@ -180,13 +189,18 @@ bool PlugTracker::detectObject(tf::Transform &pose)
   return true;
 }
 
+void PlugTracker::getBoardCorners(CvPoint2D32f corners[4])
+{
+  corners[0] = corners_[0];
+  corners[1] = corners_[board_w_ - 1];
+  corners[2] = corners_[(board_h_ - 1) * board_w_];
+  corners[3] = corners_[corners_.size() - 1];
+}
+
 CvRect PlugTracker::getBoundingBox()
 {
   CvPoint2D32f board_corners[4];
-  board_corners[0] = corners_[0];
-  board_corners[1] = corners_[board_w_ - 1];
-  board_corners[2] = corners_[(board_h_ - 1) * board_w_];
-  board_corners[3] = corners_[corners_.size() - 1];
+  getBoardCorners(board_corners);
   float min_x = frame_w_, min_y = frame_h_, max_x = 0, max_y = 0;
   for (int i = 0; i < 4; ++i) {
     min_x = std::min(min_x, board_corners[i].x);

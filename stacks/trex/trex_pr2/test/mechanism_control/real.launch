@@ -1,4 +1,4 @@
 <launch>
-  <param name="/trex/input_file" value="doorman.cfg"/>
+  <param name="/trex/input_file" value="mechanism_control.cfg"/>
   <include file="$(find trex_pr2)/test/real.launch" />
 </launch>

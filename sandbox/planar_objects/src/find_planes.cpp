@@ -23,9 +23,27 @@ bool find_planes::fitSACPlanes(PointCloud *points, vector<int> &indices, vector<
 {
   // Create and initialize the SAC model
   sample_consensus::SACModelPlane *model = new sample_consensus::SACModelPlane();
+  sample_consensus::SACModelPlane *modelFull = new sample_consensus::SACModelPlane();
   sample_consensus::SAC *sac = new sample_consensus::RANSAC(model, dist_thresh);
   sac->setMaxIterations(100);
-  model->setDataSet(points, indices);
+
+  int downsample = 0;
+
+  vector<int> indices_reduced;
+  if(downsample>0) {
+    size_t n_reduced = MIN(10000, points->get_pts_size());
+    size_t stepSize = points->get_pts_size() / n_reduced;
+    n_reduced = points->get_pts_size() / stepSize;
+    indices_reduced.resize(n_reduced);
+    for(size_t i=0;i<n_reduced;i++) {
+      indices_reduced[i] = indices[i*stepSize];
+    }
+  } else {
+    indices_reduced = indices;
+  }
+
+  model->setDataSet(points, indices_reduced);
+  modelFull->setDataSet(points, indices);
 
   int nr_models = 0, nr_points_left = indices.size();
   while (nr_models < n_max && nr_points_left > min_points_per_model)
@@ -39,7 +57,7 @@ bool find_planes::fitSACPlanes(PointCloud *points, vector<int> &indices, vector<
 
       // Get the list of inliers
       vector<int> model_inliers;
-      model->selectWithinDistance(model_coeff, dist_thresh, model_inliers);
+      modelFull->selectWithinDistance(model_coeff, dist_thresh, model_inliers);
       inliers.push_back(model_inliers);
 
       // Flip the plane normal towards the viewpoint
@@ -62,6 +80,7 @@ bool find_planes::fitSACPlanes(PointCloud *points, vector<int> &indices, vector<
 
   delete sac;
   delete model;
+  delete modelFull;
   return (true);
 }
 

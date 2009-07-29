@@ -31,38 +31,55 @@
 *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
+#ifndef URDF2GAZEBO_HH
+#define URDF2GAZEBO_HH
 
-#ifndef PLUG_TRACKER_H
-#define PLUG_TRACKER_H
+#include <cstdio>
+#include <cstdlib>
+#include <cmath>
 
-#include "outlet_detection/tracker_base.h"
+#include <vector>
+#include <string>
 
-class PlugTracker : public TrackerBase
+#include <sstream>
+
+#include <rdf_parser/rdf.h>
+
+#include "LinearMath/btTransform.h"
+#include "LinearMath/btVector3.h"
+
+namespace urdf2gazebo
 {
-public:
-  PlugTracker(ros::Node &node);
-  ~PlugTracker();
+  double rad2deg(double v) { return v * 180.0 / M_PI; };
+  class URDF2Gazebo
+  {
+    public:
+      URDF2Gazebo();
+      URDF2Gazebo(std::string robot_model_name);
+      ~URDF2Gazebo();
 
-protected:
-  virtual bool detectObject(tf::Transform &pose);
-  virtual CvRect getBoundingBox();
-  virtual IplImage* getDisplayImage(bool success);
-  void getBoardCorners(CvPoint2D32f corners[4]);
+      std::string values2str(unsigned int count, const double *values, double (*conv)(double));
 
-  void publishBoardMarker(const tf::Transform &board_in_cam);
-  void publishBoardRayMarker(const tf::Transform &board_in_cam);
-  void publishPlugRayMarker(const tf::Transform &board_in_cam,
-                            const tf::Transform &plug_pose);
+      void setupTransform(btTransform &transform, const double *xyz, const double *rpy);
 
-  int board_w_, board_h_;
-  CvMat *grid_pts_;
-  int ncorners_;
-  std::vector<CvPoint2D32f> corners_;
+      void addKeyValue(TiXmlElement *elem, const std::string& key, const std::string &value);
 
-  tf::Transform plug_in_board_, camera_in_cvcam_;
-  tf::Transform prong_in_board_;
-  
-  cv::WImageBuffer3_b display_img_;
-};
+      void addTransform(TiXmlElement *elem, const::btTransform& transform);
+
+      void copyGazeboMap(std::vector<TiXmlElement*>& data, TiXmlElement *elem, const std::vector<std::string> *tags);
+
+      void copyOgreMap(const std::vector<TiXmlElement*>& data, TiXmlElement *elem, const std::vector<std::string> *tags);
+
+      std::string getGeometrySize(rdf_parser::Geometry* geometry, int *sizeCount, double *sizeVals);
+      
+      std::string getGeometryBoundingBox(rdf_parser::Geometry* geometry, double *sizeVals);
+
+      void convertLink(TiXmlElement *root, rdf_parser::Link *link, const btTransform &transform, bool enforce_limits);
+
+      void convert(rdf_parser::RDF &wgxml, TiXmlDocument &doc, bool enforce_limits);
+
+      std::string robot_model_name_;
+  };
+}
 
 #endif

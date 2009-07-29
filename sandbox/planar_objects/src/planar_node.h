@@ -25,15 +25,22 @@
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
 
+#include "planar_objects/BoxObservations.h"
+
 // transform library
 #include <tf/transform_listener.h>
 #include <tf/transform_broadcaster.h>
+
+namespace planar_objects {
 
 class CornerCandidate
 {
 public:
   double *P;
   double *RP;
+  double rect_min_size;
+  double rect_max_size;
+  double rect_max_displace;
 
   btTransform tf;
 
@@ -47,18 +54,24 @@ public:
   double w;
   double h;
 
+  double precision;
+  double recall;
+  int plane_id;
+
   btVector3 points3d[4];
   CvPoint points2d[4];
 
   void updatePoints3d();
   void updatePoints2d();
   double computeDistance(IplImage* distImage);
-  double computeSupport(IplImage* pixOccupied,IplImage* pixDebug=NULL);
-  void optimizeWidth(IplImage* distImage, double a=-0.5,double b=+0.5,int steps=20);
-  void optimizeHeight(IplImage* distImage, double a=-0.5,double b=+0.5,int steps=20);
-  void optimizePhi(IplImage* distImage, double a=-0.5,double b=+0.5,int steps=20);
-  void optimizeX(IplImage* distImage, double a=-0.5,double b=+0.5,int steps=20);
-  void optimizeY(IplImage* distImage, double a=-0.5,double b=+0.5,int steps=20);
+  double computeSupport2d(IplImage* pixOccupied, IplImage* pixDebug = NULL);
+  double computeSupport3d(const robot_msgs::PointCloud& cloud,
+                          std::vector<int> & plane_indices);
+  void optimizeWidth(IplImage* distImage, double a = -0.5, double b = +0.5, int steps = 20);
+  void optimizeHeight(IplImage* distImage, double a = -0.5, double b = +0.5, int steps = 20);
+  void optimizePhi(IplImage* distImage, double a = -0.5, double b = +0.5, int steps = 20);
+  void optimizeX(IplImage* distImage, double a = -0.5, double b = +0.5, int steps = 20);
+  void optimizeY(IplImage* distImage, double a = -0.5, double b = +0.5, int steps = 20);
 };
 
 class PlanarNode
@@ -70,6 +83,26 @@ public:
   // PARAMETERS
   int n_planes_max_; // number of planes to be fitted
   double point_plane_distance_; // maximally allowed point-to-plane distance
+
+  bool show_colorized_planes;
+  bool show_convex_hulls;
+  bool show_lines;
+  bool show_images;
+  bool show_corners;
+  bool show_rectangles;
+
+  bool verbose;
+
+  int select_frontplane;
+  int max_lines;
+  int max_corners;
+
+  double min_precision;
+  double min_recall;
+
+  double rect_min_size;
+  double rect_max_size;
+  double rect_max_displace;
 
   // reprojection matrix
   double RP[16];
@@ -111,6 +144,7 @@ public:
   ros::Publisher cloud_planes_pub_;
   ros::Publisher cloud_outliers_pub_;
   ros::Publisher visualization_pub_;
+  ros::Publisher observations_pub_;
   //  sensor_msgs::Image pimage_;
   //  sensor_msgs::CvBridge pbridge;
 
@@ -135,22 +169,32 @@ public:
 
   void findFrontAndBackPlane(int& frontplane, int& backplane, std::vector<std::vector<int> >& indices, std::vector<
       std::vector<double> >& plane_coeff);
-  void findCornerCandidates(IplImage* pixOccupied, IplImage *pixFree, IplImage* pixUnknown,IplImage* &pixDist,
-      std::vector<double> & plane_coeff, std::vector<      CornerCandidate> &corner);
-  void visualizeLines(std::vector<std::pair<btVector3, btVector3> > lines,int id=1,double r=1.0,double b=1.0,double g=1.0);
-  std::vector<CornerCandidate> groupCorners(std::vector<CornerCandidate> &corner,double group_dist = 20);
-  void visualizeCorners(std::vector<CornerCandidate> &corner,int id=0);
+  void findCornerCandidates(IplImage* pixOccupied, IplImage *pixFree, IplImage* pixUnknown, IplImage* &pixDist,
+                            std::vector<double> & plane_coeff, std::vector<CornerCandidate> &corner,int id);
+  void visualizeLines(std::vector<std::pair<btVector3, btVector3> > lines, int id = 1, double r = 1.0, double b = 1.0,
+                      double g = 1.0);
+  std::vector<CornerCandidate> groupCorners(std::vector<CornerCandidate> &corner, double group_dist = 20);
+  void visualizeCorners(std::vector<CornerCandidate> &corner, int id = 0);
   void visualizeFrontAndBackPlane(int frontplane, int backplane, const robot_msgs::PointCloud& cloud, std::vector<
       std::vector<int> >& plane_indices, std::vector<robot_msgs::PointCloud>& plane_cloud, std::vector<std::vector<
-      double> >& plane_coeff, robot_msgs::PointCloud& outside,bool showConvexHull=false);
+      double> >& plane_coeff, robot_msgs::PointCloud& outside, bool showConvexHull = false);
+  void visualizePlanes(const robot_msgs::PointCloud& cloud, std::vector<
+      std::vector<int> >& plane_indices, std::vector<robot_msgs::PointCloud>& plane_cloud, std::vector<std::vector<
+      double> >& plane_coeff, robot_msgs::PointCloud& outside, bool showConvexHull = false);
 
-  void visualizeRectangles3d(std::vector<CornerCandidate> &corner,int id=0);
+  void visualizeRectangles3d(std::vector<CornerCandidate> &corner, int id = 0);
   void visualizeRectangles2d(std::vector<CornerCandidate> &corner);
   void visualizeRectangle2d(CornerCandidate &corner);
   void findRectangles(std::vector<CornerCandidate> &corner, IplImage* pixDist);
-  std::vector<CornerCandidate> filterRectanglesBySupport(std::vector<CornerCandidate> &corner, IplImage* pixOccupied, double min_support=0.8);
+  std::vector<CornerCandidate> filterRectanglesBySupport2d(std::vector<CornerCandidate> &corner, IplImage* pixOccupied,
+                                                           double min_support = 0.8);
+  std::vector<CornerCandidate> filterRectanglesBySupport3d(std::vector<CornerCandidate> &corner,
+                                                           const robot_msgs::PointCloud& cloud,
+                                                           std::vector<int> & plane_indices, double min_support = 0.8);
   void initializeRectangle(CornerCandidate &corner, IplImage* pixDist);
 };
+
+}
 
 int main(int argc, char** argv);
 

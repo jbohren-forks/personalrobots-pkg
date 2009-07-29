@@ -1,5 +1,0 @@
-<launch>
-  <master auto="start"/>
-  <param name="/trex/start_dir" value="$(find trex_pr2)/test/master/m2_remote_interface"/>
-  <include file="$(find trex_pr2)/test/master/stubs.launch" />
-</launch>

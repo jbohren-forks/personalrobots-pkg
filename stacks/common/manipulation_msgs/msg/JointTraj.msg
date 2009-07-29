@@ -1,1 +1,2 @@
+string[] names
 JointTrajPoint[] points
