@@ -77,13 +77,19 @@ int point_cloud_clustering::KMeans::cluster(const robot_msgs::PointCloud& pt_clo
     return -1;
   }
 
+  // ----------------------------------------------------------
+  // Calculate clustering information
   unsigned int nbr_total_pts = pt_cloud.pts.size();
   unsigned int nbr_cluster_samples = indices_to_cluster.size();
   unsigned int cluster_feature_dim = 3; // x y z
-  if (nbr_cluster_samples == 0 || nbr_total_pts == 0)
+
+  // ----------------------------------------------------------
+  // Verify will create at least 1 cluster
+  int nbr_clusters = static_cast<int> (k_factor_ * static_cast<double> (nbr_cluster_samples));
+  if (nbr_clusters < 1)
   {
-    ROS_ERROR("There are no samples to cluster on");
-    return -1;
+    ROS_WARN("KMeans::cluster creating no clusters");
+    return 0;
   }
 
   // ----------------------------------------------------------
@@ -99,7 +105,7 @@ int point_cloud_clustering::KMeans::cluster(const robot_msgs::PointCloud& pt_clo
     unsigned int curr_pt_cloud_idx = *iter_indices_to_cluster;
     if (curr_pt_cloud_idx >= nbr_total_pts)
     {
-      ROS_ERROR("Invalid index to cluster: %u", curr_pt_cloud_idx);
+      ROS_ERROR("Invalid index to cluster: %u out of %u", curr_pt_cloud_idx, nbr_total_pts);
       return -1;
     }
 
@@ -119,7 +125,6 @@ int point_cloud_clustering::KMeans::cluster(const robot_msgs::PointCloud& pt_clo
   CvMat cv_feature_matrix;
   cvInitMatHeader(&cv_feature_matrix, nbr_cluster_samples, cluster_feature_dim, CV_32F, feature_matrix);
   CvMat* cluster_labels = cvCreateMat(nbr_cluster_samples, 1, CV_32SC1);
-  int nbr_clusters = static_cast<int> (static_cast<double> (nbr_cluster_samples) * k_factor_);
   cvKMeans2(&cv_feature_matrix, nbr_clusters, cluster_labels, cvTermCriteria(CV_TERMCRIT_ITER
       + CV_TERMCRIT_EPS, max_iter_, accuracy_));
 
@@ -132,7 +137,8 @@ int point_cloud_clustering::KMeans::cluster(const robot_msgs::PointCloud& pt_clo
   {
     // retrieve the current point index and its cluster label
     unsigned int curr_pt_cloud_idx = *iter_indices_to_cluster;
-    unsigned int curr_cluster_label = static_cast<unsigned int> (cluster_labels->data.i[curr_sample_idx]);
+    unsigned int curr_cluster_label = starting_label_
+        + static_cast<unsigned int> (cluster_labels->data.i[curr_sample_idx]);
 
     // Instantiate container if never encountered label before
     if (created_clusters.count(curr_cluster_label) == 0)

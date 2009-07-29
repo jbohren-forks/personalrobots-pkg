@@ -106,6 +106,26 @@ point_cloud_clustering::PointCloudClustering::~PointCloudClustering()
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
+int point_cloud_clustering::PointCloudClustering::cluster(const robot_msgs::PointCloud& pt_cloud,
+                                                          cloud_kdtree::KdTree& pt_cloud_kdtree,
+                                                          std::map<unsigned int, std::vector<int> >& created_clusters)
+{
+  // Create set of all indices in the point cloud
+  set<unsigned int> all_indices;
+  unsigned int nbr_pts = pt_cloud.pts.size();
+  pair<set<unsigned int>::iterator, bool> ret = all_indices.insert(0);
+  for (unsigned int i = 1 ; i < nbr_pts ; i++)
+  {
+    set<unsigned int>::iterator& next_position = ret.first;
+    ret.first = all_indices.insert(next_position, i);
+  }
+
+  return cluster(pt_cloud, pt_cloud_kdtree, all_indices, created_clusters);
+}
+
+// --------------------------------------------------------------
+/* See function definition */
+// --------------------------------------------------------------
 unsigned int point_cloud_clustering::PointCloudClustering::findRadiusNeighbors(cloud_kdtree::KdTree& pt_cloud_kdtree,
                                                                                unsigned int index,
                                                                                double radius,
