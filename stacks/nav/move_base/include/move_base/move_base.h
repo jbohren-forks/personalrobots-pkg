@@ -50,7 +50,7 @@
 #include <string>
 #include <nav_srvs/Plan.h>
 #include <visualization_msgs/Marker.h>
-#include <geometry_msgs/PoseDot.h>
+#include <robot_msgs/PoseDot.h>
 
 namespace move_base {
   //typedefs to help us out with the action server so that we don't hace to type so much

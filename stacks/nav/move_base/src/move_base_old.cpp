@@ -59,7 +59,7 @@ namespace move_base {
     ros_node_.param("~controller_patience", controller_patience_, 15.0);
 
     //for comanding the base
-    vel_pub_ = ros_node_.advertise<geometry_msgs::PoseDot>("cmd_vel", 1);
+    vel_pub_ = ros_node_.advertise<robot_msgs::PoseDot>("cmd_vel", 1);
     vis_pub_ = ros_node_.advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
 
     //we'll assume the radius of the robot to be consistent with what's specified for the costmaps
@@ -321,7 +321,7 @@ namespace move_base {
         return;
       }
 
-      geometry_msgs::PoseDot cmd_vel;
+      robot_msgs::PoseDot cmd_vel;
       while(!isPreemptRequested() && ros_node_.ok() && !tc_->goalReached()){
         if(tc_->computeVelocityCommands(cmd_vel)){
           //make sure that we send the velocity command to the base
@@ -340,7 +340,7 @@ namespace move_base {
   }
 
   void MoveBase::publishZeroVelocity(){
-    geometry_msgs::PoseDot cmd_vel;
+    robot_msgs::PoseDot cmd_vel;
     cmd_vel.vel.vx = 0.0;
     cmd_vel.vel.vy = 0.0;
     cmd_vel.ang_vel.vz = 0.0;
@@ -362,7 +362,7 @@ namespace move_base {
     publishGoal(goal);
 
     std::vector<geometry_msgs::PoseStamped> global_plan;
-    geometry_msgs::PoseDot cmd_vel;
+    robot_msgs::PoseDot cmd_vel;
     ros::Time last_valid_plan, last_valid_control;
 
     last_valid_control = ros::Time::now();
