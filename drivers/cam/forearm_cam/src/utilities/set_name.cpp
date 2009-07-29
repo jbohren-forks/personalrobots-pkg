@@ -48,7 +48,15 @@
 #include <host_netutil.h>
 #include <fcamlib.h>
   
-int write_name(char *if_name, char *ip_address, int sn, char *name)
+uint16_t checksum(uint16_t *data)
+{
+  uint16_t sum = 0;
+  for (int i = 0; i < FLASH_PAGE_SIZE / 2; i++)
+    sum += htons(data[i]);
+ return htons(0xFFFF - sum);
+}
+
+int write_name(char *if_name, char *ip_address, int sn, char *name, char *new_ip)
 {
   // Create a new IpCamList to hold the camera list
   IpCamList camList;
@@ -90,31 +98,41 @@ int write_name(char *if_name, char *ip_address, int sn, char *name)
   }
   
   unsigned char namebuff[FLASH_PAGE_SIZE];
+  IdentityFlashPage *id = (IdentityFlashPage *) &namebuff;
 
   if(fcamReliableFlashRead(camera, FLASH_NAME_PAGENO, (uint8_t *) namebuff, NULL) != 0)
   {
-    ROS_FATAL("Flash read error. The camera name is an undetermined state.");
+    ROS_FATAL("Flash read error. Aborting.");
     return -2;
   }
  
-  uint8_t checksum = 0;
-  for (int i = 0; i <= CAMERA_NAME_LEN; i++)
-    checksum += namebuff[i];
-
-  if (checksum != 0xFF)
+  uint16_t chk = checksum((uint16_t *) namebuff);
+  if (chk)
   {
-    ROS_ERROR("Previous camera name had bad checksum: %02x", checksum);
+    ROS_ERROR("Previous camera name had bad checksum. Error: %04x", chk);
   }
   
-  namebuff[CAMERA_NAME_LEN] = 0;
-  printf("Previous camera name was: %s.\n", namebuff);
+  id->cam_name[sizeof(id->cam_name) - 1] = 0;
+  printf("Previous camera name was: %s.\n", id->cam_name);
+  uint8_t *oldip = (uint8_t *) &id->cam_addr;
+  printf("Previous camera IP: %i.%i.%i.%i.\n", oldip[0], oldip[1], oldip[2], oldip[3]);
 
+  if (strlen(name) > sizeof(id->cam_name) - 1)
+  {
+    ROS_FATAL("Name is too long, the maximum number of characters is %i.", sizeof(id->cam_name) - 1);
+    return -2;
+  }
   bzero(namebuff, FLASH_PAGE_SIZE);
-  strncpy((char *) namebuff, name, CAMERA_NAME_LEN);
-  checksum = 0;
-  for (int i = 0; i < CAMERA_NAME_LEN; i++)
-    checksum += namebuff[i];
-  namebuff[CAMERA_NAME_LEN] = 255 - checksum;
+  strncpy(id->cam_name, name, sizeof(id->cam_name) - 1);
+  id->cam_name[sizeof(id->cam_name) - 1] = 0;
+  struct in_addr cam_ip;
+  if (!inet_aton(new_ip, &cam_ip))
+  {
+    ROS_FATAL("This is not a valid IP address: %s", new_ip);
+    return -2;
+  }
+  id->cam_addr = cam_ip.s_addr;
+  id->checksum = checksum((uint16_t *) namebuff);
 
   if (fcamReliableFlashWrite(camera, FLASH_NAME_PAGENO, (uint8_t *) namebuff, NULL) != 0)
   {    
@@ -122,22 +140,25 @@ int write_name(char *if_name, char *ip_address, int sn, char *name)
     return -2;
   }
   
-  ROS_INFO("Success!");
+  ROS_INFO("Success! Restarting camera, should take about 10 seconds to come back up after this.");
+
+  fcamReconfigureFPGA(camera);
 
   return 0;
 }
 
 int main(int argc, char **argv)
 {
-  if (argc != 5) {
-    fprintf(stderr, "Usage: %s <Name> <Interface> <IP address> <Serial number>\n", argv[0]);
+  if (argc != 6) {
+    fprintf(stderr, "Usage: %s <Name> <SetIP> <Interface> <Current IP address> <Serial number>\n", argv[0]);
     return -1;
   }
 
   char* name = argv[1];
-  char* if_name = argv[2];
-  char* ip_address = argv[3];
-  int sn = atoi(argv[4]);
+  char* new_ip = argv[2];
+  char* if_name = argv[3];
+  char* ip_address = argv[4];
+  int sn = atoi(argv[5]);
 
-  write_name(if_name, ip_address, sn, name);
+  write_name(if_name, ip_address, sn, name, new_ip);
 }

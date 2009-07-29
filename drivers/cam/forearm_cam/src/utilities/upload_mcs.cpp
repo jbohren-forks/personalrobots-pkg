@@ -52,7 +52,7 @@
 // We are assuming that the firmware will fit in the first half of the
 // pages. This may not turn out to be true later...
 #define FLASH_SIZE (FLASH_PAGE_SIZE * (FLASH_MAX_PAGENO + 1) / 2)
-char firmware[FLASH_SIZE];
+uint8_t firmware[FLASH_SIZE];
 int  firmwarelen = 0;
 
 int hexval(char c)
@@ -188,7 +188,29 @@ int read_mcs(std::string fname)
   ROS_FATAL("Unexpected EOF after line %i.", linenum);
   return -1;
 }
-  
+
+// For a serial flash, the bits in each byte need to be swapped around.
+void bitswap()
+{
+  // Precompute bit-swap table
+  uint8_t swapped[256];
+
+  for (int i = 0; i < 256; i++)
+  {
+    uint8_t shift = i;
+    swapped[i] = 0;
+    for (int j = 0; j < 8; j++)
+    {
+      swapped[i] = (swapped[i] << 1) | (shift & 1);
+      shift >>= 1;
+    }
+  }
+
+  // Bit-swap the whole firmware.
+  for (int i = 0; i < FLASH_SIZE; i++)
+    firmware[i] = swapped[firmware[i]];
+}
+
 int write_flash(char *if_name, char *ip_address, int sn)
 {
   // Create a new IpCamList to hold the camera list
@@ -299,7 +321,9 @@ int write_flash(char *if_name, char *ip_address, int sn)
   }
   fprintf(stderr, "\n");
   
-  ROS_INFO("Success!");
+  ROS_INFO("Success! Restarting camera, should take about 10 seconds to come back up after this.");
+
+  fcamReconfigureFPGA(camera);
 
   return 0;
 }
@@ -314,6 +338,14 @@ int main(int argc, char **argv)
 
   if (read_mcs(argv[1]))
     return -1;
+
+  if (firmware[4] == 0x55)
+    bitswap();
+  else if (firmware[4] != 0xaa)
+  {
+    ROS_FATAL("Unexpected value at position 4. Don't know whether to bit-swap.");
+    return -1;
+  }
 
   if (argc == 2)
   {

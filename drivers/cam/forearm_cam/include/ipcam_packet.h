@@ -22,15 +22,14 @@
 
 #endif //DEVICE_BUILD
 
-
-#ifdef LIBRARY_BUILD
-//#warning Building for LIBRARY
-
 #define FLASH_MAX_PAGENO 4095
 #define FLASH_PAGE_SIZE 264
 
 #define FLASH_NAME_PAGENO FLASH_MAX_PAGENO
-#define CAMERA_NAME_LEN 39
+#define CAMERA_NAME_LEN 40
+
+#ifdef LIBRARY_BUILD
+//#warning Building for LIBRARY
 
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -66,7 +65,6 @@ typedef struct {
  */
 #define WG_CAMCMD_PORT 1627
 
-
 /**
  * @defgroup PacketTypes    Complete listing of valid command packet types.
  * Packet types starting with zero and going up to PKT_MAX_ID are packets to be received by the camera.
@@ -89,7 +87,7 @@ typedef struct {
 #define PKTT_IMGRSETRES    13
 #define PKTT_SYSCONFIG     14
 #define PKTT_RECONFIG_FPGA 15
-#define PKT_MAX_ID PKTT_SYSCONFIG
+#define PKT_MAX_ID PKTT_RECONFIG_FPGA
 
 #define PKTT_ANNOUNCE   0x80
 #define PKTT_TIMEREPLY  0x81
@@ -97,6 +95,21 @@ typedef struct {
 #define PKTT_FLASHDATA  0x83
 #define PKTT_SENSORDATA 0x84
 /*@}*/
+
+/**
+ * Structure of the last page of flash containing configuration information.
+ * The name is zero terminated. The 16-bit sum of the whole page should be 0xFFFF.
+ */
+
+ #if CAMERA_NAME_LEN != 40
+ #error CAMERA_NAME_LEN should be 40.
+ #endif
+
+ typedef struct PACKED_ATTRIBUTE {
+    char cam_name[CAMERA_NAME_LEN];  ///< Should be zero terminated. Will be forcibly zero terminated otherwise.
+    IPAddress cam_addr;                 ///< Camera address at power-on
+    uint16_t checksum;               ///< Makes the sum of the page 0xFFFF
+ } IdentityFlashPage;
 
 /**
  * A PacketGeneric contains only the basic elements that are included in all camera command packets.
@@ -583,6 +596,7 @@ typedef struct PACKED_ATTRIBUTE {
     uint32_t ser_no;                ///< The unique four-byte serial number assigned to this camera
     char product_name[40];          ///< The fixed product name assigned to the FCAM camera by Willow Garage. Null terminated string.
     char camera_name[40];           ///< The name assigned to this particular camera. Null terminated string.
+    IPAddress camera_ip;            ///< The currently configured camera name.
 
     /**
      * FPGA and system board revision, formatted as follows:

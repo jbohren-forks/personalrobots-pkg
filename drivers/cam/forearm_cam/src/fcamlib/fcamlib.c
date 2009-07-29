@@ -57,7 +57,7 @@ int fcamStatusWait( int s, uint32_t wait_us, uint32_t *type, uint32_t *code ) {
 	if( !wgWaitForPacket(s, PKTT_STATUS, sizeof(PacketStatus), &wait_us) && (wait_us != 0) ) {
 		PacketStatus sPkt;
 		if( recvfrom( s, &sPkt, sizeof(PacketStatus), 0, NULL, NULL )  == -1 ) {
-			perror("wgDiscover unable to receive from socket");
+			perror("fcamStatusWait unable to receive from socket");
 			*type = PKT_STATUST_ERROR;
 			*code = PKT_ERROR_SYSERR;
 			return -1;
@@ -133,7 +133,7 @@ int fcamDiscover(const char *ifName, IpCamList *ipCamList, const char *ipAddress
 	int newCamCount = 0;
 	do {
 		// Wait in the loop for replies. wait_us is updated each time through the loop.
-		if( !wgWaitForPacket(s, PKTT_ANNOUNCE, sizeof(PacketAnnounce) - CAMERA_NAME_LEN - 1, &wait_us)  && (wait_us != 0) ) {
+		if( !wgWaitForPacket(s, PKTT_ANNOUNCE, sizeof(PacketAnnounce) - CAMERA_NAME_LEN, &wait_us)  && (wait_us != 0) ) {
 			// We've received an Announce packet, so pull it out of the receive queue
 			PacketAnnounce aPkt;
       struct sockaddr_in fromaddr;
@@ -150,10 +150,13 @@ int fcamDiscover(const char *ifName, IpCamList *ipCamList, const char *ipAddress
 
       if (packet_len != sizeof(PacketAnnounce))
       {
-        if (packet_len != sizeof(PacketAnnounce) - sizeof(aPkt.camera_name))
+        if (packet_len != sizeof(PacketAnnounce) - sizeof(aPkt.camera_name) - sizeof(IPAddress))
           continue; // Not a valid packet
         else // Old announce packet
+        {
           bzero(aPkt.camera_name, sizeof(aPkt.camera_name));
+          aPkt.camera_ip = fromaddr.sin_addr.s_addr;
+        }
       }
 
 			// Create a new list entry and initialize it
@@ -168,7 +171,7 @@ int fcamDiscover(const char *ifName, IpCamList *ipCamList, const char *ipAddress
 			// Initialize the new list item's data fields (byte order corrected)
       tmpListItem->hw_version = ntohl(aPkt.hw_version);
       tmpListItem->fw_version = ntohl(aPkt.fw_version);
-      tmpListItem->ip = fromaddr.sin_addr.s_addr;
+      tmpListItem->ip = aPkt.camera_ip;
 			tmpListItem->serial = ntohl(aPkt.ser_no);
 			memcpy(&tmpListItem->mac, aPkt.mac, sizeof(aPkt.mac));
       memcpy(tmpListItem->cam_name, aPkt.camera_name, sizeof(aPkt.camera_name));
@@ -689,8 +692,6 @@ int fcamReliableFlashWrite( const IpCamList *camInfo, uint32_t address, const ui
       continue;
     }
     
-    usleep(8000);
-
     retval = fcamReliableFlashRead( camInfo, address, buffer, retries );
     if (retval)
     {
