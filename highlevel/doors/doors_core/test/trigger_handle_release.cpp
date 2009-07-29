@@ -68,7 +68,7 @@ int
 
   door_handle_detector::ReleaseHandleAction release_handle(tf);
   robot_actions::ActionRunner runner(10.0);
-  runner.connect<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door>(release_handle);
+  runner.connect<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>(release_handle);
   runner.run();
 
   door_msgs::Door feedback;
