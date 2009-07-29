@@ -34,6 +34,8 @@
 
 #include <point_cloud_clustering/kmeans.h>
 
+using namespace std;
+
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------

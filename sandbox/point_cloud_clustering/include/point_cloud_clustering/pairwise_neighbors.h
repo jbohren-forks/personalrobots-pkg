@@ -46,8 +46,6 @@
 
 #include <point_cloud_clustering/point_cloud_clustering.h>
 
-using namespace std;
-
 namespace point_cloud_clustering
 {
   class PairwiseNeighbors: public PointCloudClustering
@@ -61,8 +59,8 @@ namespace point_cloud_clustering
 
       virtual int cluster(const robot_msgs::PointCloud& pt_cloud,
                           cloud_kdtree::KdTree& pt_cloud_kdtree,
-                          const set<unsigned int>& indices_to_cluster,
-                          map<unsigned int, vector<int> >& created_clusters);
+                          const std::set<unsigned int>& indices_to_cluster,
+                          std::map<unsigned int, std::vector<int> >& created_clusters);
 
     private:
       double radius_;
