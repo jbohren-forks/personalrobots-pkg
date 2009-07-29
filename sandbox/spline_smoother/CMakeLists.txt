@@ -32,6 +32,7 @@ genmsg()
 rospack_add_library(spline_smoother
 	src/clamped_cubic_spline_smoother.cpp
 	src/numerical_differentiation_spline_smoother.cpp
+	src/spline_smoother.cpp
 )
 
 rospack_add_gtest(test/test_spline_smoother

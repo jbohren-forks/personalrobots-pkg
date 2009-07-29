@@ -39,6 +39,7 @@
 
 #include <vector>
 #include <manipulation_msgs/WaypointTraj.h>
+#include <filters/filter_base.h>
 
 namespace spline_smoother
 {
@@ -48,11 +49,15 @@ namespace spline_smoother
  *
  * To implement a smoother, just override the virtual "smooth" method
  */
-class SplineSmoother
+class SplineSmoother: public filters::FilterBase<manipulation_msgs::WaypointTraj>
 {
 public:
-  SplineSmoother(){};
-  virtual ~SplineSmoother(){};
+  SplineSmoother();
+  virtual ~SplineSmoother();
+
+  virtual bool configure();
+
+  virtual bool update(const std::vector<manipulation_msgs::WaypointTraj>& data_in, std::vector<manipulation_msgs::WaypointTraj>& data_out);
 
   /**
    * \brief Smooths the input position trajectory by generating velocities and accelerations at the waypoints.
