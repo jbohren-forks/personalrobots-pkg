@@ -316,7 +316,7 @@ bool TrajectoryController::goalReached()
     if(joint_controllers_[i]->joint_state_->joint_->type_ == mechanism::JOINT_CONTINUOUS || joint_controllers_[i]->joint_state_->joint_->type_ == mechanism::JOINT_ROTARY)
     {
       error = fabs(angles::shortest_angular_distance(goal_.positions[i], joint_controllers_[i]->joint_state_->position_));
-      ROS_INFO("Error: %d, %f",i,error);
+      ROS_DEBUG("Joint: %d position error: %f",i,error);
     }
     else //prismatic
     {
