@@ -101,7 +101,7 @@ public:
 
   ros::Node *node_;
 
-  PointCloud cloud_;
+  sensor_msgs::PointCloud cloud_;
   laser_scan::LaserProjection projector_; // Used to project laser scans into point clouds
 
   tf::TransformListener *tf_;
