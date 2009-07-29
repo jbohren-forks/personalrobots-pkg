@@ -38,7 +38,8 @@
 #define SPLINE_SMOOTHER_H_
 
 #include <vector>
-#include <spline_smoother/WaypointTrajectory.h>
+#include <manipulation_msgs/WaypointTraj.h>
+#include <filters/filter_base.h>
 
 namespace spline_smoother
 {
@@ -46,22 +47,37 @@ namespace spline_smoother
 /**
  * \brief Abstract base class for spline smoothing.
  *
- * To implement a smoother, just override the virtual "smooth" method
+ * To implement a smoother, just override the virtual "smooth" method, and call the
+ * REGISTER_SPLINE_SMOOTHER macro with the class name (anywhere in the cpp file)
  */
-class SplineSmoother
+class SplineSmoother: public filters::FilterBase<manipulation_msgs::WaypointTraj>
 {
 public:
-  SplineSmoother(){};
-  virtual ~SplineSmoother(){};
+  SplineSmoother();
+  virtual ~SplineSmoother();
+
+  virtual bool configure();
+
+  virtual bool update(const std::vector<manipulation_msgs::WaypointTraj>& data_in, std::vector<manipulation_msgs::WaypointTraj>& data_out);
 
   /**
    * \brief Smooths the input position trajectory by generating velocities and accelerations at the waypoints.
    *
    * \return true if successful, false if not
    */
-  virtual bool smooth(const WaypointTrajectory& trajectory_in, WaypointTrajectory& trajectory_out) const = 0;
+  virtual bool smooth(const manipulation_msgs::WaypointTraj& trajectory_in, manipulation_msgs::WaypointTraj& trajectory_out) const = 0;
 };
 
 }
+
+typedef manipulation_msgs::WaypointTraj manipulation_msgs__WaypointTraj;
+
+#define FILTERS_REGISTER_FILTER_NONTEMPLATED(c,t) \
+  filters::FilterBase<t> * Filters_New_##c##__##t() {return new c;}; \
+  bool ROS_FILTER_## c ## _ ## t =                                                    \
+    filters::FilterFactory<t>::Instance().Register(filters::getFilterID<t>(std::string(#c)), Filters_New_##c##__##t);
+
+#define REGISTER_SPLINE_SMOOTHER(c) \
+  FILTERS_REGISTER_FILTER_NONTEMPLATED(c, manipulation_msgs__WaypointTraj)
 
 #endif /* SPLINE_SMOOTHER_H_ */

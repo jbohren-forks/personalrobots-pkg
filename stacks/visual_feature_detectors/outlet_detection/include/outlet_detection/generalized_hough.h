@@ -65,6 +65,6 @@ void calcExactLocation_(vector<feature_t>& features,const vector<feature_t>& tra
 
 // Main function for GeneralizedHough transform
 // Output: holes
-void generilizedHoughTransform(vector<feature_t>& hole_candidates, const vector<feature_t>& train_features, int* hist_size, float** ranges, vector<outlet_t>& holes, IplImage* ghtImage = NULL, IplImage* resImage = NULL);
+float generalizedHoughTransform(vector<feature_t>& hole_candidates, const vector<feature_t>& train_features, int* hist_size, float** ranges, vector<outlet_t>& holes, IplImage* ghtImage = NULL, IplImage* resImage = NULL);
 
 #endif

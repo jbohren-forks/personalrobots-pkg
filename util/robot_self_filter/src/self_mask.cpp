@@ -44,6 +44,7 @@ bool robot_self_filter::SelfMask::configure(const std::vector<std::string> &link
 {
     // in case configure was called before, we free the memory
     freeMemory();
+    sensor_pos_.setValue(0, 0, 0);
     
     // from the geometric model, find the shape of each link of interest
     // and create a body from it, one that knows about poses and can 
@@ -77,12 +78,12 @@ bool robot_self_filter::SelfMask::configure(const std::vector<std::string> &link
     
     bspheres_.resize(bodies_.size());
     bspheresRadius2_.resize(bodies_.size());
-    
+
     for (unsigned int i = 0 ; i < bodies_.size() ; ++i)
 	ROS_DEBUG("Self mask includes link %s with volume %f", bodies_[i].name.c_str(), bodies_[i].body->computeVolume());
     
     ROS_INFO("Self filter using %f padding and %f scaling", padd, scale);
-    
+
     return true; 
 }
 
@@ -108,7 +109,10 @@ void robot_self_filter::SelfMask::maskContainment(const sensor_msgs::PointCloud&
     if (bodies_.empty())
 	std::fill(mask.begin(), mask.end(), (int)OUTSIDE);
     else
+    {
+	assumeFrame(data_in.header);
 	maskAuxContainment(data_in, mask);
+    }
 }
 
 void robot_self_filter::SelfMask::maskIntersection(const robot_msgs::PointCloud& data_in, const std::string &sensor_frame, std::vector<int> &mask)
@@ -117,9 +121,26 @@ void robot_self_filter::SelfMask::maskIntersection(const robot_msgs::PointCloud&
     if (bodies_.empty())
 	std::fill(mask.begin(), mask.end(), (int)OUTSIDE);
     else
-	maskAuxIntersection(data_in, sensor_frame, mask);
+    {
+	assumeFrame(data_in.header, sensor_frame);
+	if (sensor_frame.empty())
+	    maskAuxContainment(data_in, mask);
+	else
+	    maskAuxIntersection(data_in, mask);
+    }
 }
 
+void robot_self_filter::SelfMask::maskIntersection(const robot_msgs::PointCloud& data_in, const btVector3 &sensor, std::vector<int> &mask)
+{
+    mask.resize(data_in.pts.size());
+    if (bodies_.empty())
+	std::fill(mask.begin(), mask.end(), (int)OUTSIDE);
+    else
+    {
+	assumeFrame(data_in.header, sensor);
+	maskAuxIntersection(data_in, mask);
+    }
+}
 
 void robot_self_filter::SelfMask::computeBoundingSpheres(void)
 {
@@ -129,6 +150,12 @@ void robot_self_filter::SelfMask::computeBoundingSpheres(void)
 	bodies_[i].body->computeBoundingSphere(bspheres_[i]);
 	bspheresRadius2_[i] = bspheres_[i].radius * bspheres_[i].radius;
     }
+}
+
+void robot_self_filter::SelfMask::assumeFrame(const roslib::Header& header, const btVector3 &sensor)
+{
+    assumeFrame(header);
+    sensor_pos_ = sensor;
 }
 
 void robot_self_filter::SelfMask::assumeFrame(const roslib::Header& header, const std::string &sensor_frame)
@@ -176,8 +203,6 @@ void robot_self_filter::SelfMask::maskAuxContainment(const sensor_msgs::PointClo
     const unsigned int bs = bodies_.size();
     const unsigned int np = data_in.pts.size();
     
-    assumeFrame(data_in.header);
-    
     // compute a sphere that bounds the entire robot
     bodies::BoundingSphere bound;
     bodies::mergeBoundingSpheres(bspheres_, bound);	  
@@ -198,12 +223,10 @@ void robot_self_filter::SelfMask::maskAuxContainment(const sensor_msgs::PointClo
     }
 }
 
-void robot_self_filter::SelfMask::maskAuxIntersection(const robot_msgs::PointCloud& data_in, const std::string &sensor_frame, std::vector<int> &mask)
+void robot_self_filter::SelfMask::maskAuxIntersection(const robot_msgs::PointCloud& data_in, std::vector<int> &mask)
 {
     const unsigned int bs = bodies_.size();
     const unsigned int np = data_in.pts.size();
-    
-    assumeFrame(data_in.header, sensor_frame);
     
     // compute a sphere that bounds the entire robot
     bodies::BoundingSphere bound;
@@ -221,21 +244,49 @@ void robot_self_filter::SelfMask::maskAuxIntersection(const robot_msgs::PointClo
 		if (bodies_[j].body->containsPoint(pt))
 		    out = INSIDE; 
 	if (out == OUTSIDE)
+	{
+	    btVector3 dir(sensor_pos_ - pt);
+	    dir.normalize();
 	    for (unsigned int j = 0 ; out == OUTSIDE && j < bs ; ++j)
-		if (bodies_[j].body->intersectsRay(pt, (sensor_pos_ - pt).normalized()))
+		if (bodies_[j].body->intersectsRay(pt, dir))
 		    out = SHADOW;
+	}
 	
 	mask[i] = out;
     }
 }
 
-int robot_self_filter::SelfMask::getMaskContainment(double x, double y, double z) const
+int robot_self_filter::SelfMask::getMaskContainment(const btVector3 &pt) const
 {
-    btVector3 pt = btVector3(x, y, z);
     const unsigned int bs = bodies_.size();
     int out = OUTSIDE;
     for (unsigned int j = 0 ; out == OUTSIDE && j < bs ; ++j)
 	if (bodies_[j].body->containsPoint(pt))
 	    out = INSIDE;
     return out;
+}
+
+int robot_self_filter::SelfMask::getMaskContainment(double x, double y, double z) const
+{
+    return getMaskContainment(btVector3(x, y, z));
+}
+
+int robot_self_filter::SelfMask::getMaskIntersection(const btVector3 &pt) const
+{  
+    int out = getMaskContainment(pt);
+    if (out == OUTSIDE)
+    {
+	const unsigned int bs = bodies_.size();
+	btVector3 dir(sensor_pos_ - pt);
+	dir.normalize();
+	for (unsigned int j = 0 ; out == OUTSIDE && j < bs ; ++j)
+	    if (bodies_[j].body->intersectsRay(pt, dir))
+		out = SHADOW;
+    }
+    return out;
+}
+
+int robot_self_filter::SelfMask::getMaskIntersection(double x, double y, double z) const
+{
+    return getMaskIntersection(btVector3(x, y, z));
 }

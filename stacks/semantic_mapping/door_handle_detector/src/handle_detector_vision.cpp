@@ -162,7 +162,7 @@ public:
 	bool got_images_;
 
 
-	double image_timeout_;
+	double timeout_;
 	ros::Time start_image_wait_;
 
 
@@ -181,7 +181,7 @@ public:
     	nh_.param("~min_height", min_height_, 0.8);
     	nh_.param("~max_height", max_height_, 1.2);
     	nh_.param("~frames_no", frames_no_, 10);
-    	nh_.param("~timeout", image_timeout_, 3.0);		// timeout (in seconds) until an image must be received, otherwise abort
+    	nh_.param("~timeout", timeout_, 3.0);		// timeout (in seconds) until an image must be received, otherwise abort
     	nh_.param("~display", display_, false);
         stringstream ss;
         ss << getenv("ROS_ROOT") << "/../ros-pkg/mapping/door_handle_detector/data/";
@@ -835,7 +835,10 @@ private:
         	while (!got_images_ && !preempted_) {
         		data_cv_.wait(lock);
         	}
-        	if (preempted_) break;
+        	if (preempted_) {
+        		ROS_INFO("OutletSpotter: detect loop preempted, stereo data not received");
+        		return false;
+        	}
 
         	if(display_){
         		// show original disparity
@@ -1006,6 +1009,16 @@ public:
 		ros::Rate r(10);
 		while (nh_.ok())
 		{
+			data_lock_.lock();
+			if (!got_images_ ) {
+				if ((ros::Time::now()-start_image_wait_) > ros::Duration(timeout_)) {
+					preempted_ = true;
+					data_cv_.notify_all();
+				}
+			}
+			data_lock_.unlock();
+
+
 			if (display_) {
 				int key = cvWaitKey(10)&0x00FF;
 				if(key == 27) //ESC

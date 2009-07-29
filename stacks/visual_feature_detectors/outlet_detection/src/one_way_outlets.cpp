@@ -410,11 +410,36 @@ void detect_outlets_one_way(IplImage* test_image, const outlet_template_t& outle
 	float y_scale_ranges[] = { 0.7, 1.1 };
 	float* ranges[] ={ x_ranges, y_ranges, angle1_ranges, x_scale_ranges, y_scale_ranges, angle2_ranges};
 
+    float modelErrorMin = 1e10;
+#if defined(_VERBOSE)
+    IplImage* _image1 = cvCloneImage(color_image);
+#endif //_VERBOSE
+    for(int i = 0; i < descriptors->GetPyrLevels(); i++)
+    {
+        vector<feature_t> train_features;
+        ScaleFeatures(descriptors->GetTrainFeatures(), train_features, 1.0f/(1<<i));
+        
+        vector<outlet_t> _holes;
+                
 #if defined(_VERBOSE) 
-	generilizedHoughTransform(hole_candidates,descriptors->GetTrainFeatures(),hist_size,ranges,holes, image2,image1);
+        cvCopy(color_image, _image1);
+        float modelError = generalizedHoughTransform(hole_candidates,train_features,hist_size,ranges,_holes, image2,_image1);
 #else
-	generilizedHoughTransform(hole_candidates,descriptors->GetTrainFeatures(),hist_size,ranges,holes);
-
+        float modelError = generalizedHoughTransform(hole_candidates,train_features,hist_size,ranges,_holes);
+#endif //_VERBOSE
+        
+        if(modelError < modelErrorMin)
+        {
+            modelErrorMin = modelError;
+            holes = _holes;
+            printf("Picked up scale %d\n", i);
+#if defined(_VERBOSE)
+            cvCopy(_image1, image1);
+#endif //_VERBOSE
+        }
+    }
+#if defined(_VERBOSE)
+    cvReleaseImage(&_image1);
 #endif //_VERBOSE
     
 #endif //_GHT
@@ -488,4 +513,13 @@ void detect_outlets_one_way(IplImage* test_image, const outlet_template_t& outle
     cvReleaseImage(&image);
     cvReleaseImage(&image1);
     cvReleaseImage(&image2);
+}
+
+void ScaleFeatures(const vector<feature_t>& src, vector<feature_t>& dst, float scale)
+{
+    dst.resize(src.size());
+    for(size_t i = 0; i < src.size(); i++)
+    {
+        dst[i] = feature_t(cvPoint(src[i].center.x*scale, src[i].center.y*scale), src[i].scale, src[i].part_id);
+    }
 }

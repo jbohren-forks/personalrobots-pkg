@@ -71,7 +71,7 @@ robot_actions::ResultStatus ReleaseHandleAction::execute(const door_msgs::Door& 
   // open the gripper during 4 seconds
   ROS_INFO("ReleaseHandleAction: open the gripper");
   std_msgs::Float64 gripper_msg;
-  gripper_msg.data = 20.0;
+  gripper_msg.data = 100.0;
   for (unsigned int i=0; i<100; i++){
     Duration().fromSec(4.0/100.0).sleep();
     gripper_publisher_.publish(gripper_msg);

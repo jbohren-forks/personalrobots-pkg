@@ -163,30 +163,32 @@ void setupGoalEEf(const std::string &link, double x, double y, double z, pr2_rob
     goal.goal_constraints.pose_constraint[0].pose.pose.orientation.z = 0.0;
     goal.goal_constraints.pose_constraint[0].pose.pose.orientation.w = 1.0;
     
-    goal.goal_constraints.pose_constraint[0].position_tolerance_above.x = 0.002;
-    goal.goal_constraints.pose_constraint[0].position_tolerance_above.y = 0.003;
-    goal.goal_constraints.pose_constraint[0].position_tolerance_above.z = 0.008;
-    goal.goal_constraints.pose_constraint[0].position_tolerance_below.x = 0.002;
-    goal.goal_constraints.pose_constraint[0].position_tolerance_below.y = 0.003;
-    goal.goal_constraints.pose_constraint[0].position_tolerance_below.z = 0.008;
+    goal.goal_constraints.pose_constraint[0].position_tolerance_above.x = 0.01;
+    goal.goal_constraints.pose_constraint[0].position_tolerance_above.y = 0.01;
+    goal.goal_constraints.pose_constraint[0].position_tolerance_above.z = 0.015;
+    goal.goal_constraints.pose_constraint[0].position_tolerance_below.x = 0.01;
+    goal.goal_constraints.pose_constraint[0].position_tolerance_below.y = 0.01;
+    goal.goal_constraints.pose_constraint[0].position_tolerance_below.z = 0.015;
     
-    goal.goal_constraints.pose_constraint[0].orientation_tolerance_above.x = 0.005;
-    goal.goal_constraints.pose_constraint[0].orientation_tolerance_above.y = 0.005;
-    goal.goal_constraints.pose_constraint[0].orientation_tolerance_above.z = 0.005;
-    goal.goal_constraints.pose_constraint[0].orientation_tolerance_below.x = 0.005;
-    goal.goal_constraints.pose_constraint[0].orientation_tolerance_below.y = 0.005;
-    goal.goal_constraints.pose_constraint[0].orientation_tolerance_below.z = 0.005;    
+    goal.goal_constraints.pose_constraint[0].orientation_tolerance_above.x = 0.15;
+    goal.goal_constraints.pose_constraint[0].orientation_tolerance_above.y = 0.15;
+    goal.goal_constraints.pose_constraint[0].orientation_tolerance_above.z = 0.15;
+    goal.goal_constraints.pose_constraint[0].orientation_tolerance_below.x = 0.15;
+    goal.goal_constraints.pose_constraint[0].orientation_tolerance_below.y = 0.15;
+    goal.goal_constraints.pose_constraint[0].orientation_tolerance_below.z = 0.15;    
 
     goal.goal_constraints.pose_constraint[0].orientation_importance = 0.01;
 }
 
-void setConfig(const planning_models::StateParams *sp, const std::vector<std::string> &names, pr2_robot_actions::MoveArmGoal &goal)
+void setConfig(const planning_models::StateParams *_sp, const std::vector<std::string> &names, pr2_robot_actions::MoveArmGoal &goal)
 {
     setupGoal(names, goal);
+    planning_models::StateParams sp(*_sp);
+    sp.enforceBounds();
     for (unsigned int i = 0 ; i < names.size() ; ++i)
     {
 	goal.goal_constraints.joint_constraint[i].value[0] = 
-	    sp->getParamsJoint(goal.goal_constraints.joint_constraint[i].joint_name)[0];
+	    sp.getParamsJoint(goal.goal_constraints.joint_constraint[i].joint_name)[0];
     }
 }
 

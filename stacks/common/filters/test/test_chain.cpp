@@ -31,6 +31,7 @@
 #include "filters/filter_chain.h"
 #include "filters/median.h"
 #include "filters/mean.h"
+#include <sstream>
 
 template <typename T>
 class TestFilter : public filters::FilterBase<T>
@@ -58,18 +59,39 @@ public:
     return true;
   };
 
-
-
 };
 
 
 FILTERS_REGISTER_FILTER(TestFilter, double)
 FILTERS_REGISTER_FILTER(TestFilter, float)
 
+template <typename T>
+class IncrementFilter: public filters::FilterBase<int>
+{
+public:
+  IncrementFilter() {};
+
+  ~IncrementFilter() {};
+
+  virtual bool configure()
+  {
+    return true;
+  };
+
+  virtual bool update(const std::vector<int> & data_in, std::vector<int>& data_out)
+  {
+    data_out = data_in;
+    for (unsigned int i=0; i<data_out.size(); ++i)
+      data_out[i]++;
+    return true;
+  };
+
+};
+
+FILTERS_REGISTER_FILTER(IncrementFilter, int)
 
 static std::string mean_filter_5 = "<filter type=\"MeanFilter\" name=\"mean_test_5\"> <params number_of_observations=\"5\"/></filter>";
 static std::string median_filter_5 = "<filter type=\"MedianFilter\" name=\"median_test_5\"> <params number_of_observations=\"5\"/></filter>";
-
 
 
 TEST(FilterChain, configuring){
@@ -140,7 +162,35 @@ TEST(FilterChain, OverlappingNames){
 
 }
 
+/**
+ * This test tests the execution of filter chains of varying sizes from 1 to 10
+ * to exercise the different cases in FilterChain::update()
+ */
+TEST(FilterChain, LongChainExecution) {
 
+  for (int num_filters=1; num_filters<=10; num_filters++)
+  {
+    filters::FilterChain<int> chain;
+    std::ostringstream sstr;
+
+    sstr << "<filters>";
+    for (int i=0; i<num_filters; i++)
+    {
+      sstr << "<filter type=\"IncrementFilter\" name=\"inc_" <<  i << "\"/>";
+    }
+    sstr << "</filters>";
+
+    chain.configureFromXMLString(1, sstr.str());
+
+    int input = 1;
+    int output = 0;
+
+    int expected = input+num_filters;
+
+    chain.update(input, output);
+    EXPECT_EQ(expected, output);
+  }
+}
 
 int main(int argc, char **argv){
   testing::InitGoogleTest(&argc, argv);

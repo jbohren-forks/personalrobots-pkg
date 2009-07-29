@@ -1,0 +1,131 @@
+Index: BUILD-OPTIONS.py
+===================================================================
+--- BUILD-OPTIONS.py	(revision 337)
++++ BUILD-OPTIONS.py	(working copy)
+@@ -29,7 +29,7 @@
+ BUILD_KINEMATIC=True
+ 
+ # Path to Boost includes
+-BOOST_INCLUDE_PATH="/usr/include"
++BOOST_INCLUDE_PATH="/opt/ros/include/boost-1_37"
+  
+ # Path to Qhull includes
+ QHULL_INCLUDE_PATH="/usr/include"
+Index: SConstruct
+===================================================================
+--- SConstruct	(revision 337)
++++ SConstruct	(working copy)
+@@ -36,6 +36,7 @@
+ DEFAULT_QHULL_LIB_PATH = '/usr/lib'
+ DEFAULT_QT_LIB_PATH = '/usr/lib'
+ DEFAULT_LAPACK_LIB_PATH = '/usr/lib'
++DEFAULT_PREFIX_PATH = '/usr'
+ DEFAULT_PATH_LIB_PATH = '/usr/lib'
+ 
+ # get options 
+@@ -63,11 +64,15 @@
+ vars.Add('QT_LIB_PATH', 'Path to qt library', DEFAULT_QT_LIB_PATH)
+ vars.Add('LAPACK_LIB_PATH', 'Path to LAPACK library', DEFAULT_LAPACK_LIB_PATH)
+ vars.Add('QHULL_LIB_PATH', 'Path to qhull library', DEFAULT_QHULL_LIB_PATH)
++vars.Add('PREFIX_PATH', 'installation path', DEFAULT_PREFIX_PATH)
+ 
+ # setup a construction environment
+ env = Environment(variables=vars)
+ Help(vars.GenerateHelpText(env))
+ 
++# make a copy for examples
++env_with_vars = env.Clone()
++
+ # setup C++ compiler
+ __CXX = env['CXX']
+ 
+@@ -250,9 +255,13 @@
+     if USE_INVENTOR:
+       libs.append(['Coin', 'SoQt', 'qt-mt', 'Xmu', 'Xi', 'Xext', 'SM'])
+       libs.append(['ICE', 'X11'])
++
+     if USE_PATH:
+       libs.append(['path46'])
+     libs.append(['dl', 'pthread', LAPACK_LIB, 'cblas', 'qhull', 'm'])
++
++    libs.append(['gfortran'])
++
+     env = Environment(CXX=__CXX, CPPPATH=inc_path, LIBS=libs, LIBPATH=lib_path,
+                       CCFLAGS=__CCFLAGS, LINKFLAGS=__LINKFLAGS, 
+                       CXXFLAGS=__CCFLAGS, TOOLS=['default', 'qt'])
+@@ -306,15 +315,21 @@
+ 
+ # build the Moby library
+ if SHARED_LIBRARY:
++	physsim = env.SharedLibrary('lib/physsim', sources)
+ 	env.SharedLibrary('lib/libmoby', sources)
+ else:
++	physsim = env.Library('lib/libphyssim', sources)
+ 	env.Library('lib/libmoby', sources)
+ 
+ # build the examples and utilities
+ if BUILD_EXAMPLES:
+ 	env_copy = env.Clone()
+-	SConscript(['example/SConscript'], exports=['env_copy', 'USE_INVENTOR'])
++	SConscript(['example/SConscript'], exports=['env_copy', 'env_with_vars', 'USE_INVENTOR'])
+ if BUILD_KINEMATIC:
+ 	env_copy = env.Clone()
+ 	SConscript(['Kinematic/SConscript'], exports=['env_copy', 'USE_INVENTOR'])
+ 
++# install libraries
++#env.Alias('install',env_with_vars['PREFIX_PATH'])
++env.Install(env_with_vars['PREFIX_PATH']+'/lib',physsim)
++
+Index: example/SConscript
+===================================================================
+--- example/SConscript	(revision 337)
++++ example/SConscript	(working copy)
+@@ -1,28 +1,39 @@
+ # import variables from calling scripts
+-Import(['env_copy', 'USE_INVENTOR'])
++Import(['env_copy', 'env_with_vars', 'USE_INVENTOR'])
+ 
++# setup rpath for shared libraries
++RPATH = '-Wl,-rpath,'+env_with_vars['PREFIX_PATH']+'/lib'
++print "\n",RPATH,"\n"
++
+ # build utilities that don't require Moby
+ if USE_INVENTOR:
+-  env_copy.Program('view.cpp')
++  env_copy.Program('view','view.cpp',LINKFLAGS=RPATH)
+ 
+ # add moby libraries to libraries used by env_copyironment
+ env_copy['LIBS'].append('moby')
+ 
+ # build utilities that do require Moby
+-env_copy.Program('convexify.cpp')
+-#env_copy.Program('objwrl.cpp')
+-env_copy.Program('conv-decomp.cpp')
+-env_copy.Program('center.cpp')
+-env_copy.Program('construct-OBB.cpp')
++env_copy.Program('convexify','convexify.cpp',LINKFLAGS=RPATH)
++#env_copy.Program('objwrl.cpp',LINKFLAGS=RPATH)
++env_copy.Program('conv-decomp','conv-decomp.cpp',LINKFLAGS=RPATH)
++env_copy.Program('center','center.cpp',LINKFLAGS=RPATH)
++env_copy.Program('construct-OBB','construct-OBB.cpp',LINKFLAGS=RPATH)
+ 
+ # build the symbolic output program
+-env_copy.Program('output_symbolic.cpp')
++env_copy.Program('oubput_symbolic','output_symbolic.cpp',LINKFLAGS=RPATH)
+ 
+ # build the driver program
+-env_copy.Program('driver.cpp')
++env_copy.Program('driver','driver.cpp',LINKFLAGS=RPATH)
+ 
+ # build controllers
+ SConscript(['mrobot/SConscript'], exports='env_copy')
+ SConscript(['contact_simple/SConscript'], exports='env_copy')
+ SConscript(['banditII/SConscript'], exports='env_copy')
+ 
++#install above binaries
++env_copy.Alias('install',env_with_vars['PREFIX_PATH'])
++env_copy.Install(env_with_vars['PREFIX_PATH']+'/bin','driver')
++env_copy.Install(env_with_vars['PREFIX_PATH']+'/bin','convexify')
++env_copy.Install(env_with_vars['PREFIX_PATH']+'/bin','conv-decomp')
++env_copy.Install(env_with_vars['PREFIX_PATH']+'/bin','center')
++env_copy.Install(env_with_vars['PREFIX_PATH']+'/bin','construct-OBB')

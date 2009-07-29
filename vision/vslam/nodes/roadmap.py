@@ -66,7 +66,8 @@ import vslam.msg
 class RoadmapServer:
     def __init__(self, args):
         rospy.init_node('roadmap_server')
-        self.optimization_distance = int(args[1])
+        self.optimization_distance = rospy.get_param('~optimization_distance', 10);
+        
         self.tf = TransformListener()
         stereo_cam = camera.Camera((389.0, 389.0, 89.23 * 1e-3, 323.42, 323.42, 274.95))
         self.skel = Skeleton(stereo_cam)
@@ -81,7 +82,7 @@ class RoadmapServer:
         self.frame_timestamps = {}
         self.vo = None
 
-        self.pub = rospy.Publisher("/roadmap", vslam.msg.Roadmap)
+        self.pub = rospy.Publisher("roadmap", vslam.msg.Roadmap)
 
         time.sleep(1)
         #self.send_map(rospy.time(0))

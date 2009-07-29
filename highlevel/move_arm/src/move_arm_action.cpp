@@ -370,6 +370,7 @@ namespace move_arm
     void MoveArm::fillTrajectoryPath(const motion_planning_msgs::KinematicPath &path, manipulation_msgs::JointTraj &traj)
     {
 	/// \todo Joint controller does not take joint names; make sure we set them when the controller is updated
+        traj.names = arm_joint_names_;
 	traj.points.resize(path.states.size());
 	for (unsigned int i = 0 ; i < path.states.size() ; ++i)
 	{

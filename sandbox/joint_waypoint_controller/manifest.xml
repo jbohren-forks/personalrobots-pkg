@@ -1,10 +1,10 @@
 <package>
   <description brief="joint_waypoint_controller">
 
-This "controller" is a node that accepts a set of position waypoints per joint,
-smooths them using a set of filters that fill in velocities and accelerations
-for cubic/quintic splines, and then forwards these spline trajectories to the
-real controller.
+This "controller" is a node (NOT a real-time controller) that accepts a set of
+position waypoints per joint, smooths them using a set of filters that fill in
+velocities and accelerations for cubic/quintic splines, and then forwards these
+spline trajectories to the real controller.
 
   </description>
   <author>Mrinal Kalakrishnan / kalakris@willowgarage.com </author>
@@ -13,6 +13,11 @@ real controller.
   <url>http://pr.willowgarage.com/wiki/joint_waypoint_controller</url>
 
 	<depend package="spline_smoother" />
+	<depend package="pr2_mechanism_controllers" />
+	<depend package="filters" />
+	<depend package="roscpp" />
+	<depend package="manipulation_msgs" />
+	<depend package="manipulation_srvs" />
 
 </package>
 

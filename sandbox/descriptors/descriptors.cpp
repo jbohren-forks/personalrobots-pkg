@@ -931,6 +931,18 @@ void SuperpixelStatistic::segment() {
   cvReleaseImage(&img_small);
   cvReleaseImage(&seg_small);
 }
+
+int SuperpixelStatistic::getSeedSpacing() {
+  return seed_spacing_;
+}
+
+float SuperpixelStatistic::getScale() {
+  return scale_;
+}
+
+SuperpixelStatistic* SuperpixelStatistic::getSegProvider() {
+  return seg_provider_;
+}
   
 /***************************************************************************
 ***********  ImageDescriptor::SuperpixelStatistic::SuperpixelColorHistogram
@@ -974,9 +986,12 @@ void SuperpixelColorHistogram::compute(IplImage* img, const Vector<Keypoint>& po
     segment();
   }
   else if(seg_provider_ != NULL && seg_ == NULL) {
+    assert(seg_provider_->getSeedSpacing() == seed_spacing_);
+    assert(seg_provider_->getScale() == scale_);
+    assert(seg_provider_->getSegProvider() == NULL);
+   
     seg_ = seg_provider_->seg_;
     index_ = seg_provider_->index_;
-
   }
 
   // -- Make sure we have access to HSV image.

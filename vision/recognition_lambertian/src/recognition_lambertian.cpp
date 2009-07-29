@@ -62,7 +62,6 @@
 #include <point_cloud_mapping/geometry/projections.h>
 
 
-
 #include "ros/ros.h"
 #include "ros/callback_queue.h"
 #include "sensor_msgs/StereoInfo.h"
@@ -95,7 +94,6 @@
 
 using namespace robot_msgs;
 using namespace std;
-
 
 #define CV_PIXEL(type,img,x,y) (((type*)(img->imageData+y*img->widthStep))+x*img->nChannels)
 

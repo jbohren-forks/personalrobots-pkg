@@ -30,7 +30,8 @@ class CvOneWayDescriptorBase
         // - pca_hr_config: the name of the file that contains PCA for large patches (of patch_size size)
         // - pca_desc_config: the name of the file that contains descriptors of PCA components
         CvOneWayDescriptorBase(CvSize patch_size, int pose_count, const char* train_path, const char* train_config, 
-                               const char* pca_config, const char* pca_hr_config = 0, const char* pca_desc_config = 0);
+                               const char* pca_config, const char* pca_hr_config = 0, const char* pca_desc_config = 0, 
+                                int pyr_levels = 2);
         
         ~CvOneWayDescriptorBase();
         
@@ -38,6 +39,9 @@ class CvOneWayDescriptorBase
         CvSize GetPatchSize() const {return m_patch_size;};
         // returns the number of poses for each descriptor
         int GetPoseCount() const {return m_pose_count;};
+        
+        // returns the number of pyramid levels
+        int GetPyrLevels() const {return m_pyr_levels;};
         
         // LoadTrainingFeatures: loads positive and negative features from images
         // - train_image_filename: positive image
@@ -110,6 +114,7 @@ class CvOneWayDescriptorBase
         CvMat** m_transforms; // array of affine transformations corresponding to poses
         
         int* m_part_id; // contains part id for each of object descriptors
+        int m_pyr_levels;
     };
 
 void readTrainingBase(const char* config_filename, char* outlet_filename, 

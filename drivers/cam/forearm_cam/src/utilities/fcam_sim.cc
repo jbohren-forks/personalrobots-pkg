@@ -51,7 +51,7 @@
 
 #include <ipcam_packet.h>
 #include <host_netutil.h>
-#include <pr2lib.h>
+#include <fcamlib.h>
 
 class ForearmCameraSimulator
 {
