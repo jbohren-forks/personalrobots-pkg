@@ -8,7 +8,7 @@
 <depend package="roscpp" />
 <depend package="roslib" />
 <depend package="robot_msgs" />
-<rosdep name="pygame" />
+<rosdep name="python-pygame" />
 </package>
 
 
