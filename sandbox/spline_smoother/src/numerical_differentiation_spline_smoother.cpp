@@ -87,4 +87,5 @@ bool NumericalDifferentiationSplineSmoother::smooth(const manipulation_msgs::Way
   return success;
 }
 
+REGISTER_SPLINE_SMOOTHER(NumericalDifferentiationSplineSmoother)
 }

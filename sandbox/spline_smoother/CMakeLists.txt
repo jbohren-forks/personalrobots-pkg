@@ -37,6 +37,7 @@ rospack_add_library(spline_smoother
 
 rospack_add_gtest(test/test_spline_smoother
 	test/test_clamped_cubic_spline_smoother.cpp
+	test/test_smoothers_as_filters.cpp
 	test/test_splines.cpp
 	test/test_utils.cpp
 )

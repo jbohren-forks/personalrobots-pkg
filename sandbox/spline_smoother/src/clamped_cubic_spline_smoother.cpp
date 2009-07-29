@@ -134,4 +134,5 @@ bool ClampedCubicSplineSmoother::smoothSegment(std::vector<manipulation_msgs::Wa
   return true;
 }
 
+REGISTER_SPLINE_SMOOTHER(ClampedCubicSplineSmoother)
 }

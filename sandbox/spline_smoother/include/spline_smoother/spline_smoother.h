@@ -47,7 +47,8 @@ namespace spline_smoother
 /**
  * \brief Abstract base class for spline smoothing.
  *
- * To implement a smoother, just override the virtual "smooth" method
+ * To implement a smoother, just override the virtual "smooth" method, and call the
+ * REGISTER_SPLINE_SMOOTHER macro with the class name (anywhere in the cpp file)
  */
 class SplineSmoother: public filters::FilterBase<manipulation_msgs::WaypointTraj>
 {
@@ -68,5 +69,15 @@ public:
 };
 
 }
+
+typedef manipulation_msgs::WaypointTraj manipulation_msgs__WaypointTraj;
+
+#define FILTERS_REGISTER_FILTER_NONTEMPLATED(c,t) \
+  filters::FilterBase<t> * Filters_New_##c##__##t() {return new c;}; \
+  bool ROS_FILTER_## c ## _ ## t =                                                    \
+    filters::FilterFactory<t>::Instance().Register(filters::getFilterID<t>(std::string(#c)), Filters_New_##c##__##t);
+
+#define REGISTER_SPLINE_SMOOTHER(c) \
+  FILTERS_REGISTER_FILTER_NONTEMPLATED(c, manipulation_msgs__WaypointTraj)
 
 #endif /* SPLINE_SMOOTHER_H_ */
