@@ -223,7 +223,7 @@ bool FilterChain<T>::update (const std::vector<T>& data_in, std::vector<T>& data
   else
   {
     result = reference_pointers_[0]->update(data_in, buffer0_);  //first copy in
-    for (unsigned int i = 1; i <  reference_pointers_.size() - 1; i++) // all but first and last (never gets executed if size==2)
+    for (unsigned int i = 1; i <  reference_pointers_.size() - 1; i++) // all but first and last (this loop never gets executed if size==2)
     {
       if (i %2 == 1)
         result = result && reference_pointers_[i]->update(buffer0_, buffer1_);
