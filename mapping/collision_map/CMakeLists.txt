@@ -82,3 +82,7 @@ rospack_add_executable(collision_map_buffer_node src/collision_map_buffer.cpp)
 rospack_add_executable(collision_map_occ_node src/collision_map_occ.cpp)
 rospack_add_openmp_flags(collision_map_occ_node)
 rospack_link_boost(collision_map_occ_node thread)
+
+rospack_add_executable(collision_map_self_occ_node src/collision_map_self_occ.cpp)
+rospack_add_openmp_flags(collision_map_self_occ_node)
+rospack_link_boost(collision_map_self_occ_node thread)

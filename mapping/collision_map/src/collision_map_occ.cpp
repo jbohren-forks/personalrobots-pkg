@@ -828,7 +828,7 @@ private:
 
 int main (int argc, char** argv)
 {
-    ros::init(argc, argv, "collision_map_occ");
+    ros::init(argc, argv, "collision_map_occ", ros::init_options::AnonymousName);
 
     CollisionMapperOcc cm;
 

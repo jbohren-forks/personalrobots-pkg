@@ -33,7 +33,7 @@
     <remap from="robot_description" to="robot_description" />
     <remap from="cloud_in" to="tilt_scan_cloud_without_known_objects" />
     <remap from="cloud_out" to="tilt_scan_cloud_annotated" />
-    <param name="annotate" type="string" value="on_self" />
+<!--    <param name="annotate" type="string" value="on_self" /> -->
     <!-- we also want to remove shadow points -->
     <param name="sensor_frame" type="string" value="laser_tilt_mount_link" />
   </node>
@@ -56,6 +56,6 @@
   </node>
   
   <!-- start collision map -->
-  <include file="$(find 3dnav_pr2)/launch/collision_map_occ.launch" />  
-    
+  <include file="$(find 3dnav_pr2)/launch/perception/collision_map_self_occ.launch" />    
+
 </launch>
