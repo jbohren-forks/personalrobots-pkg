@@ -253,7 +253,7 @@ class ContourFragmentDescriptor : public ImageDescriptor {
 
 
 /***************************************************************************
-***********  Superpixel Statistics
+***********  Superpixel Statistic
 ****************************************************************************/
 
 /**
@@ -268,6 +268,9 @@ class SuperpixelStatistic : public ImageDescriptor {
   IplImage* seg_;
 
   SuperpixelStatistic(int seed_spacing, float scale, SuperpixelStatistic* provider);
+  int getSeedSpacing();
+  float getScale();
+  SuperpixelStatistic* getSegProvider();
 
  protected:
   int seed_spacing_;
