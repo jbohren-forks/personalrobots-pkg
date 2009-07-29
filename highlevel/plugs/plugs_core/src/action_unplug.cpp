@@ -88,18 +88,18 @@ robot_actions::ResultStatus UnplugAction::execute(const std_msgs::Empty& empty, 
   ROS_DEBUG("%s: executing.", action_name_.c_str());
   tff_msg_.header.frame_id = "outlet_pose";
   tff_msg_.header.stamp = ros::Time::now();
-  tff_msg_.mode.vel.x = 3;
-  tff_msg_.mode.vel.y = 3;
-  tff_msg_.mode.vel.z = 3;
-  tff_msg_.mode.rot.x = 2;
-  tff_msg_.mode.rot.y = 2;
-  tff_msg_.mode.rot.z = 2;
-  tff_msg_.value.vel.x = unplug_x_target;
-  tff_msg_.value.vel.y = 0.0;
-  tff_msg_.value.vel.z = 0.0;
-  tff_msg_.value.rot.x = 0.0;
-  tff_msg_.value.rot.y = 0.0;
-  tff_msg_.value.rot.z = 0.0;
+  tff_msg_.mode.linear.x = 3;
+  tff_msg_.mode.linear.y = 3;
+  tff_msg_.mode.linear.z = 3;
+  tff_msg_.mode.angular.x = 2;
+  tff_msg_.mode.angular.y = 2;
+  tff_msg_.mode.angular.z = 2;
+  tff_msg_.value.linear.x = unplug_x_target;
+  tff_msg_.value.linear.y = 0.0;
+  tff_msg_.value.linear.z = 0.0;
+  tff_msg_.value.angular.x = 0.0;
+  tff_msg_.value.angular.y = 0.0;
+  tff_msg_.value.angular.z = 0.0;
 
   //Start effort controller
   ros::NodeHandle n;
@@ -164,26 +164,26 @@ void  UnplugAction::checkUnplug()
 
   tff_msg_.header.stamp = ros::Time::now();
   tff_msg_.header.frame_id = "outlet_pose";
-  tff_msg_.mode.vel.x = 3;
-  tff_msg_.mode.vel.y = 3;
-  tff_msg_.mode.vel.z = 3;
-  tff_msg_.mode.rot.x = 3;
-  tff_msg_.mode.rot.y = 3;
-  tff_msg_.mode.rot.z = 3;
-  tff_msg_.value.vel.x = unplug_x_threshold - 0.02;
-  tff_msg_.value.vel.y = first_state_.last_pose_meas.vel.y;
-  tff_msg_.value.vel.z = first_state_.last_pose_meas.vel.z;
+  tff_msg_.mode.linear.x = 3;
+  tff_msg_.mode.linear.y = 3;
+  tff_msg_.mode.linear.z = 3;
+  tff_msg_.mode.angular.x = 3;
+  tff_msg_.mode.angular.y = 3;
+  tff_msg_.mode.angular.z = 3;
+  tff_msg_.value.linear.x = unplug_x_threshold - 0.02;
+  tff_msg_.value.linear.y = first_state_.last_pose_meas.linear.y;
+  tff_msg_.value.linear.z = first_state_.last_pose_meas.linear.z;
   double time = ros::Time::now().toSec();
-  tff_msg_.value.rot.x = first_state_.last_pose_meas.rot.x + 0.06 * sin(time*37.0*M_PI);
-  tff_msg_.value.rot.y = first_state_.last_pose_meas.rot.y + 0.15 * sin(time*2.0 *M_PI);
-  tff_msg_.value.rot.z = first_state_.last_pose_meas.rot.z + 0.03 * sin(time*55.0 *M_PI);    
+  tff_msg_.value.angular.x = first_state_.last_pose_meas.angular.x + 0.06 * sin(time*37.0*M_PI);
+  tff_msg_.value.angular.y = first_state_.last_pose_meas.angular.y + 0.15 * sin(time*2.0 *M_PI);
+  tff_msg_.value.angular.z = first_state_.last_pose_meas.angular.z + 0.03 * sin(time*55.0 *M_PI);    
   node_->publish(arm_controller_ + "/command", tff_msg_);
 
-  if (controller_state_msg_.last_pose_meas.vel.x  < unplug_x_threshold){
+  if (controller_state_msg_.last_pose_meas.linear.x  < unplug_x_threshold){
     ROS_DEBUG("%s: succeeded.", action_name_.c_str());
     deactivate(robot_actions::SUCCESS, empty_);
   }
-  ROS_DEBUG("Unplug is %f from the threshold", controller_state_msg_.last_pose_meas.vel.x - unplug_x_threshold);
+  ROS_DEBUG("Unplug is %f from the threshold", controller_state_msg_.last_pose_meas.linear.x - unplug_x_threshold);
 
   return;
 }
