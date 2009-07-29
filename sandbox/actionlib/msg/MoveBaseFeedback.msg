@@ -1,1 +1,1 @@
-robot_msgs/PoseStamped cur_pose
+geometry_msgs/PoseStamped cur_pose

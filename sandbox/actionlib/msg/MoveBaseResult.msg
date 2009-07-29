@@ -1,1 +1,1 @@
-robot_msgs/PoseStamped final_pose
+geometry_msgs/PoseStamped final_pose

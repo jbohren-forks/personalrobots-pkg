@@ -43,7 +43,6 @@
 #include "boost/thread.hpp"
 
 using namespace actionlib;
-using namespace robot_msgs;
 
 typedef ActionClient<MoveBaseActionGoal, MoveBaseGoal, MoveBaseActionResult, MoveBaseResult, MoveBaseActionFeedback, MoveBaseFeedback> MoveBaseClient;
 
