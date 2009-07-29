@@ -62,7 +62,7 @@ namespace people_aware_nav {
     ros_node_.param("~controller_patience", controller_patience_, 10.0);
 
     //for comanding the base
-    ros_node_.advertise<geometry_msgs::PoseDot>("cmd_vel", 1);
+    ros_node_.advertise<robot_msgs::PoseDot>("cmd_vel", 1);
 
     //we'll assume the radius of the robot to be consistent with what's specified for the costmaps
     ros_node_.param("~base_local_planner/costmap/inscribed_radius", inscribed_radius_, 0.325);
@@ -208,7 +208,7 @@ void MoveBaseConstrained::makePlan(const PoseStamped& goal, const Polygon3D& for
 
     costmap_2d::Rate r(controller_frequency_);
     last_valid_control_ = ros::Time::now();
-    geometry_msgs::PoseDot cmd_vel;
+    robot_msgs::PoseDot cmd_vel;
     while(!isPreemptRequested() && ros_node_.ok()){
       struct timeval start, end;
       double start_t, end_t, t_diff;
@@ -402,7 +402,7 @@ bool MoveBaseConstrained::tryPlan(geometry_msgs::PoseStamped goal, const Polygon
         return true;
 
       //for now... we'll publish zero velocity
-      geometry_msgs::PoseDot cmd_vel;
+      robot_msgs::PoseDot cmd_vel;
 
       last_valid_control_ = ros::Time::now();
       cmd_vel.vel.vx = 0.0;
