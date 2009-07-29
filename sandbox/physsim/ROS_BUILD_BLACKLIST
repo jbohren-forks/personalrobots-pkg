@@ -1,0 +1,19 @@
+Checked out revision 314.
+patch -d physsim-svn -p0 < physsim_patch.diff;
+patching file BUILD-OPTIONS.py
+patching file include/Physsim/Vector3.h
+patching file include/Physsim/CollisionDetection.inl
+patching file SConstruct
+patching file example/SConscript
+if test -z "-r 314" -o "x-r 314" != "x-r `svn info physsim-svn | grep Revision | cut -d " " -f 2,2`"; then \
+          cd physsim-svn && svn up -r 314; \
+        fi
+touch rospack_nosubdirs
+touch patched
+cd physsim-svn && scons DEBUG=false PREFIX_PATH=/home/rosbuild/.hudson/jobs/personalrobots-stable-update/workspace/ros/../personalrobots/sandbox/physsim/physsim
+scons: Reading SConscript files ...
+NameError: name 'Variables' is not defined:
+  File "/home/rosbuild/.hudson/jobs/personalrobots-stable-update/workspace/personalrobots/sandbox/physsim/physsim-svn/SConstruct", line 23:
+    vars = Variables("BUILD-OPTIONS.py")
+make: *** [installed] Error 2
+
