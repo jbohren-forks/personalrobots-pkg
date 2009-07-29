@@ -21,6 +21,17 @@
 namespace planar_objects
 {
 
+class btBoxObservation {
+public:
+  btTransform tf;
+  double w;
+  double h;
+  double precision;
+  double recall;
+
+  btBoxObservation( BoxObservation obs );
+};
+
 class BoxTracker
 {
 public:
@@ -33,7 +44,8 @@ public:
 
   // MESSAGES - INCOMING
   ros::Subscriber observations_sub;
-  BoxObservationsConstPtr observations;
+  BoxObservationsConstPtr observations_msg;
+  std::vector<btBoxObservation> observations;
 
   // MESSAGES - OUTGOING
   ros::Publisher filtered_observations_pub;

@@ -177,4 +177,9 @@ void visualizeLines(ros::Publisher& visualization_pub_,std::string frame_id,std:
   visualization_pub_.publish(marker);
 }
 
+void visualizeLines(ros::Publisher& visualization_pub_, std::string frame_id, std::vector<std::pair<btVector3,
+    btVector3> > lines, int id, int rgb) {
+  visualizeLines(visualization_pub_, frame_id, lines, id, (rgb&0xff)/255.0,((rgb>>8)&0xff)/255.0,((rgb>>16)&0xff)/255.0);
+}
+
 }

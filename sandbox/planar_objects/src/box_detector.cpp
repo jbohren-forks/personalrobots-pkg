@@ -804,7 +804,7 @@ void BoxDetector::visualizeRectangles3d(std::vector<CornerCandidate> &corner, in
   }
   lines.resize(0);
   for (size_t i = corner.size(); i < 100; i++)
-    visualizeLines(visualization_pub_,cloud_->header.frame_id,lines, id + 100 + i);
+    visualizeLines(visualization_pub_,cloud_->header.frame_id,lines, id + 100 + i,1.0,1.0,1.0);
 }
 
 void BoxDetector::visualizeRectangles2d(std::vector<CornerCandidate> &corner)
