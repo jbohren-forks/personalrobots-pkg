@@ -12,8 +12,8 @@
   <depend package="opencv_latest"/>
   <depend package="eigen"/>
   <depend package="rosrecord"/>
-  <depend package="descriptors"/>
-  <depend package="image_descriptors_gpl"/>
+  <depend package="descriptors_2d"/>
+  <depend package="descriptors_2d_gpl"/>
 
   <export>
     <cpp cflags="-I${prefix}" lflags="-L${prefix}/lib"/>

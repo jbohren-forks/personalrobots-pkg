@@ -9,11 +9,11 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 #  MinSizeRel     : w/o debug symbols, w/ optimization, stripped binaries
 set(ROS_BUILD_TYPE Debug)
 
-rospack(descriptors)
+rospack(descriptors_2d)
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
-rospack_add_library(descriptors descriptors.cpp)
-rospack_add_executable(example example.cpp)
-target_link_libraries(example descriptors)
+rospack_add_library(descriptors_2d src/descriptors_2d.cpp)
+rospack_add_executable(example src/example.cpp)
+target_link_libraries(example descriptors_2d)

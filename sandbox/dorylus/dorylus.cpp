@@ -596,11 +596,11 @@ bool Dorylus::learnWC(int nCandidates, map<string, float> max_thetas, vector<str
     pwts[i] = exp(pwts[i]);
   }
 
-  // -- Choose wc candidates from the distribution of weights over the objects.
+  // -- Choose wc candidates from the distribution of weights over the non-background objects.
   vector<weak_classifier*> cand;
   for(int iCand=0; iCand<nCandidates; iCand++) {
-    float dice = (float)rand() / (float)RAND_MAX * non_bg_weights.Sum(); //The weights aren't necessarily normalized.
-    float w = 0.0;
+    double dice = (double)rand() / (double)RAND_MAX * non_bg_weights.Sum(); //The weights aren't necessarily normalized.
+    double w = 0.0;
     int obj_id=-1;
     int m=0;
     for(int i=0; i<non_bg_weights.Ncols(); i++, m++) {
@@ -612,6 +612,10 @@ bool Dorylus::learnWC(int nCandidates, map<string, float> max_thetas, vector<str
 	obj_id = m;
 	break;
       }
+    }
+    if(obj_id == -1) {
+      cerr << "**** obj id = -1." << endl;
+      obj_id = 0;
     }
     assert(obj_id >= 0);
 

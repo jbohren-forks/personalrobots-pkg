@@ -36,7 +36,7 @@
 *********************************************************************/
 
 
-#include "descriptors.h"
+#include <descriptors_2d/descriptors_2d.h>
 
 using namespace std;
 using namespace cv;

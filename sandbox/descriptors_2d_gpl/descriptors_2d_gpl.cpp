@@ -1,4 +1,4 @@
-#include <image_descriptors_gpl/image_descriptors_gpl.h>
+#include <descriptors_2d_gpl/descriptors_2d_gpl.h>
 
 using namespace kutility;
 using namespace std;

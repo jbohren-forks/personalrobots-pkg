@@ -1,5 +1,5 @@
-#ifndef DESCRIPTORS_H
-#define DESCRIPTORS_H
+#ifndef DESCRIPTORS_2D_H
+#define DESCRIPTORS_2D_H
  
 #include <iostream>
 #include "opencv/cxcore.h"

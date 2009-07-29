@@ -2,7 +2,7 @@
 #define IMAGE_DESCRIPTORS_GPL_H
 
 #include <daisy/daisy.h>
-#include <descriptors.h>
+#include <descriptors_2d/descriptors_2d.h>
 #include <time.h>
 
 #define START_TIMER() clock_t timer_start_aoeu = clock();
