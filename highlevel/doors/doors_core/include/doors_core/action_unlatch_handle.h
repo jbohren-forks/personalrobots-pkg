@@ -50,7 +50,7 @@
 
 namespace door_handle_detector{
 
-typedef boost::shared_ptr<robot_msgs::Twist const> TffConstPtr;
+typedef boost::shared_ptr<geometry_msgs::Twist const> TffConstPtr;
 
 
 class UnlatchHandleAction: public robot_actions::Action<door_msgs::Door, door_msgs::Door>
@@ -70,7 +70,7 @@ private:
 
   manipulation_msgs::TaskFrameFormalism tff_stop_, tff_handle_, tff_door_;
 
-  robot_msgs::Twist tff_state_;
+  geometry_msgs::Twist tff_state_;
   bool tff_state_received_;
   boost::mutex tff_mutex_;
 

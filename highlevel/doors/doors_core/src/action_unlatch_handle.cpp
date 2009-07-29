@@ -74,34 +74,34 @@ robot_actions::ResultStatus UnlatchHandleAction::execute(const door_msgs::Door& 
   double handle_dir = getHandleDir(goal);
 
   // stop
-  tff_stop_.mode.vel.x = tff_stop_.FORCE;
-  tff_stop_.mode.vel.y = tff_stop_.FORCE;
-  tff_stop_.mode.vel.z = tff_stop_.FORCE;
-  tff_stop_.mode.rot.x = tff_stop_.FORCE;
-  tff_stop_.mode.rot.y = tff_stop_.FORCE;
-  tff_stop_.mode.rot.z = tff_stop_.FORCE;
+  tff_stop_.mode.linear.x = tff_stop_.FORCE;
+  tff_stop_.mode.linear.y = tff_stop_.FORCE;
+  tff_stop_.mode.linear.z = tff_stop_.FORCE;
+  tff_stop_.mode.angular.x = tff_stop_.FORCE;
+  tff_stop_.mode.angular.y = tff_stop_.FORCE;
+  tff_stop_.mode.angular.z = tff_stop_.FORCE;
   
-  tff_stop_.value.vel.x = 0.0;
-  tff_stop_.value.vel.y = 0.0;
-  tff_stop_.value.vel.z = 0.0;
-  tff_stop_.value.rot.x = 0.0;
-  tff_stop_.value.rot.y = 0.0;
-  tff_stop_.value.rot.z = 0.0;
+  tff_stop_.value.linear.x = 0.0;
+  tff_stop_.value.linear.y = 0.0;
+  tff_stop_.value.linear.z = 0.0;
+  tff_stop_.value.angular.x = 0.0;
+  tff_stop_.value.angular.y = 0.0;
+  tff_stop_.value.angular.z = 0.0;
   
   // turn handle
-  tff_handle_.mode.vel.x = tff_handle_.FORCE;
-  tff_handle_.mode.vel.y = tff_handle_.FORCE;
-  tff_handle_.mode.vel.z = tff_handle_.FORCE;
-  tff_handle_.mode.rot.x = tff_handle_.FORCE;
-  tff_handle_.mode.rot.y = tff_handle_.FORCE;
-  tff_handle_.mode.rot.z = tff_handle_.POSITION;
+  tff_handle_.mode.linear.x = tff_handle_.FORCE;
+  tff_handle_.mode.linear.y = tff_handle_.FORCE;
+  tff_handle_.mode.linear.z = tff_handle_.FORCE;
+  tff_handle_.mode.angular.x = tff_handle_.FORCE;
+  tff_handle_.mode.angular.y = tff_handle_.FORCE;
+  tff_handle_.mode.angular.z = tff_handle_.POSITION;
   
-  tff_handle_.value.vel.x = 20.0 * door_dir;
-  tff_handle_.value.vel.y = 0.0;
-  tff_handle_.value.vel.z = 0.0;
-  tff_handle_.value.rot.x = 0.0;
-  tff_handle_.value.rot.y = 0.0;
-  tff_handle_.value.rot.z = 0.0;
+  tff_handle_.value.linear.x = 20.0 * door_dir;
+  tff_handle_.value.linear.y = 0.0;
+  tff_handle_.value.linear.z = 0.0;
+  tff_handle_.value.angular.x = 0.0;
+  tff_handle_.value.angular.y = 0.0;
+  tff_handle_.value.angular.z = 0.0;
   
 
   // start monitoring tf position
@@ -124,24 +124,24 @@ robot_actions::ResultStatus UnlatchHandleAction::execute(const door_msgs::Door& 
 
   // turn handle and push door, until door moves forward
   ROS_INFO("Start turning handle");
-  tff_handle_.value.rot.x = handle_dir * 0.5;
+  tff_handle_.value.angular.x = handle_dir * 0.5;
   while (time_door_moved == ros::Time() || ros::Time::now() < time_door_moved + wait_after_door_moved){
     Duration(sleep_time).sleep();
     boost::mutex::scoped_lock lock(tff_mutex_);
 
     // increase torque to turn handle until door is open
-    if (fabs(tff_state_.vel.x) < 0.05)
-      tff_handle_.value.rot.x += handle_dir * 0.5 * sleep_time; // add 0.5 Nm per second
+    if (fabs(tff_state_.linear.x) < 0.05)
+      tff_handle_.value.angular.x += handle_dir * 0.5 * sleep_time; // add 0.5 Nm per second
     else{
-      tff_handle_.value.rot.x = 0;
+      tff_handle_.value.angular.x = 0;
       if (time_door_moved == Time())
 	time_door_moved = ros::Time::now();
     }
     tff_pub_.publish(tff_handle_);
 
     // detect when gripper is not on hanlde
-    if (fabs(tff_state_.rot.x) > M_PI/2.0 || fabs(tff_state_.vel.y) > 0.1 || fabs(tff_state_.vel.z) > 0.1 || 
-	fabs(tff_state_.rot.y) > M_PI/8.0 || fabs(tff_state_.rot.z) > M_PI/8.0){
+    if (fabs(tff_state_.angular.x) > M_PI/2.0 || fabs(tff_state_.linear.y) > 0.1 || fabs(tff_state_.linear.z) > 0.1 || 
+	fabs(tff_state_.angular.y) > M_PI/8.0 || fabs(tff_state_.angular.z) > M_PI/8.0){
       tff_pub_.publish(tff_stop_);
       lock.unlock();
       ROS_ERROR("UnlatchHandleAction: Gripper was not on door handle");
@@ -149,7 +149,7 @@ robot_actions::ResultStatus UnlatchHandleAction::execute(const door_msgs::Door& 
     }
 
     // detect when door is locked
-    if (fabs(tff_handle_.value.rot.x) > 3.5 && fabs(tff_state_.rot.x < M_PI/6.0)){
+    if (fabs(tff_handle_.value.angular.x) > 3.5 && fabs(tff_state_.angular.x < M_PI/6.0)){
       tff_pub_.publish(tff_stop_);
       lock.unlock();
       ROS_INFO("UnlatchHandleAction: Door is locked");
