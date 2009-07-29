@@ -95,10 +95,10 @@ class TableObjectDetector
   public:
 
     // ROS messages
-    PointCloud cloud_in_, cloud_down_;
-    Point leaf_width_;
-    PointCloud cloud_annotated_;
-    Point32 z_axis_;
+    sensor_msgs::PointCloud cloud_in_, cloud_down_;
+    geometry_msgs::Point leaf_width_;
+    sensor_msgs::PointCloud cloud_annotated_;
+    geometry_msgs::Point32 z_axis_;
     PolygonalMap pmap_;
 
     tf::TransformListener tf_;
@@ -175,7 +175,7 @@ class TableObjectDetector
       if (publish_debug_)
       {
         node_.advertise<PolygonalMap> ("semantic_polygonal_map", 1);
-        node_.advertise<PointCloud> ("cloud_annotated", 1);
+        node_.advertise<sensor_msgs::PointCloud> ("cloud_annotated", 1);
       }
     }
 
@@ -308,14 +308,14 @@ class TableObjectDetector
       geometry_msgs::Point32 minP, maxP;
       cloud_geometry::statistics::getMinMax (cloud_down_, inliers, minP, maxP);
       // Transform to the global frame
-      PointStamped minPstamped_local, maxPstamped_local;
+      geometry_msgs::PointStamped minPstamped_local, maxPstamped_local;
       minPstamped_local.point.x = minP.x;
       minPstamped_local.point.y = minP.y;
       minPstamped_local.header = cloud_in_.header;
       maxPstamped_local.point.x = maxP.x;
       maxPstamped_local.point.y = maxP.y;
       maxPstamped_local.header = cloud_in_.header;
-      PointStamped minPstamped_global, maxPstamped_global;
+      geometry_msgs::PointStamped minPstamped_global, maxPstamped_global;
       try
       {
         tf_.transformPoint (global_frame_, minPstamped_local, minPstamped_global);
@@ -344,7 +344,7 @@ class TableObjectDetector
       // Transform into the global frame
       try
       {
-        PointStamped local, global;
+        geometry_msgs::PointStamped local, global;
         local.header = cloud_down_.header;
         for (unsigned int i = 0; i < pmap_.polygons.size (); i++)
         {
@@ -417,12 +417,12 @@ class TableObjectDetector
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void
-      findObjectClusters (PointCloud &points, const vector<double> &coeff, const Polygon3D &poly,
-                          const Point32 &minP, const Point32 &maxP,
+      findObjectClusters (sensor_msgs::PointCloud &points, const vector<double> &coeff, const Polygon3D &poly,
+                          const geometry_msgs::Point32 &minP, const geometry_msgs::Point32 &maxP,
                           vector<int> &object_indices, Table &table)
     {
       int nr_p = 0;
-      Point32 pt;
+      geometry_msgs::Point32 pt;
       object_indices.resize (points.pts.size ());
       for (unsigned int i = 0; i < points.pts.size (); i++)
       {
@@ -493,7 +493,7 @@ class TableObjectDetector
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     int
-      fitSACPlane (PointCloud *points, vector<int> *indices, vector<int> &inliers, vector<double> &coeff)
+      fitSACPlane (sensor_msgs::PointCloud *points, vector<int> *indices, vector<int> &inliers, vector<double> &coeff)
     {
       if ((int)indices->size () < clusters_min_pts_)
       {
@@ -535,7 +535,7 @@ class TableObjectDetector
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void
-      estimatePointNormals (PointCloud &cloud)
+      estimatePointNormals (sensor_msgs::PointCloud &cloud)
     {
       cloud_kdtree::KdTree *kdtree = new cloud_kdtree::KdTreeANN (cloud);
       vector<vector<int> > points_k_indices;
@@ -549,7 +549,7 @@ class TableObjectDetector
         kdtree->nearestKSearch (i, k_, points_k_indices[i], distances);
 
       // Figure out the viewpoint value in the point cloud frame
-      PointStamped viewpoint_laser, viewpoint_cloud;
+      geometry_msgs::PointStamped viewpoint_laser, viewpoint_cloud;
       viewpoint_laser.header.frame_id = "laser_tilt_mount_link";
       // Set the viewpoint in the laser coordinate system to 0,0,0
       viewpoint_laser.point.x = viewpoint_laser.point.y = viewpoint_laser.point.z = 0.0;
