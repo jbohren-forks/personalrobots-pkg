@@ -175,11 +175,14 @@ class M3NModel
      *        given RandomFields.
      *
      * \param training_rfs The RandomFields containing the labels this classifier should handle
+     * \param invalid_rf_indices Indices of RandomFields that did not contain necessary/consistent
+     *                           training information
      *
      * \return 0 on success, otherwise negative value on error
      */
     // --------------------------------------------------------------
-    int extractVerifyLabelsFeatures(const vector<const RandomField*>& training_rfs);
+    int extractVerifyLabelsFeatures(const vector<const RandomField*>& training_rfs,
+                                    set<unsigned int>& invalid_rf_indices);
 
     // --------------------------------------------------------------
     /*!

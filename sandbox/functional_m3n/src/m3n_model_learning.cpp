@@ -44,7 +44,8 @@ int M3NModel::train(const vector<const RandomField*>& training_rfs, const M3NPar
 
   // -------------------------------------------
   // Extract the labels to train on
-  if (extractVerifyLabelsFeatures(training_rfs) < 0)
+  set<unsigned int> invalid_training_indices;
+  if (extractVerifyLabelsFeatures(training_rfs, invalid_training_indices) < 0)
   {
     return -1;
   }
@@ -111,6 +112,11 @@ int M3NModel::train(const vector<const RandomField*>& training_rfs, const M3NPar
     // Iterate over each RandomField
     for (unsigned int i = 0 ; i < training_rfs.size() ; i++)
     {
+      if (invalid_training_indices.count(i) != 0)
+      {
+        continue;
+      }
+
       const RandomField* curr_rf = training_rfs[i];
       const map<unsigned int, RandomField::Node*>& nodes = curr_rf->getNodesRandomFieldIDs();
       const vector<map<unsigned int, RandomField::Clique*> >& clique_sets = curr_rf->getCliqueSets();
@@ -321,8 +327,11 @@ RegressorWrapper* M3NModel::instantiateRegressor(const M3NParams& m3n_params)
 // --------------------------------------------------------------
 /*! See function definition */
 // --------------------------------------------------------------
-int M3NModel::extractVerifyLabelsFeatures(const vector<const RandomField*>& training_rfs)
+int M3NModel::extractVerifyLabelsFeatures(const vector<const RandomField*>& training_rfs,
+                                          set<unsigned int>& invalid_training_indices)
 {
+  invalid_training_indices.clear();
+
   // ---------------------------------------------------
   // Extract and verify the feature dimensions and labels for each random field
   for (unsigned int i = 0 ; i < training_rfs.size() ; i++)
@@ -337,7 +346,7 @@ int M3NModel::extractVerifyLabelsFeatures(const vector<const RandomField*>& trai
 
     // ---------------------------------------------------
     // Flag indicating if its the first time encountering node/clique in random field/clique-set
-    bool is_first = true;
+    bool node_dimensions_defined = false;
 
     // ---------------------------------------------------
     // Nodes: extract/verify feature dimension and labels
@@ -345,15 +354,15 @@ int M3NModel::extractVerifyLabelsFeatures(const vector<const RandomField*>& trai
     for (map<unsigned int, RandomField::Node*>::const_iterator iter_nodes = nodes.begin() ; iter_nodes
         != nodes.end() ; iter_nodes++)
     {
-      unsigned int curr_label = iter_nodes->second->getLabel();
-      unsigned int curr_feature_dim = iter_nodes->second->getNumberFeatureVals();
+      const unsigned int curr_label = iter_nodes->second->getLabel();
+      const unsigned int curr_feature_dim = iter_nodes->second->getNumberFeatureVals();
 
       // --------------------------
       // Extract or verify the node feature dimension to be used by this model
-      if (!trained_ && is_first)
+      if (!trained_ && !node_dimensions_defined)
       {
         node_feature_dim_ = curr_feature_dim;
-        is_first = false;
+        node_dimensions_defined = true;
       }
       else if (curr_feature_dim != node_feature_dim_)
       {
@@ -381,7 +390,7 @@ int M3NModel::extractVerifyLabelsFeatures(const vector<const RandomField*>& trai
           }
         }
       }
-      // Otherwise, the model is already trained so verify it can handle all encountered labels
+      // Otherwise, the model is already trained so verify it can handle all labels in the random field
       else
       {
         if (find(training_labels_.begin(), training_labels_.end(), curr_label) == training_labels_.end())
@@ -395,7 +404,7 @@ int M3NModel::extractVerifyLabelsFeatures(const vector<const RandomField*>& trai
     }// end iteration over nodes
 
     // ---------------------------------------------------
-    // Ensure the node feature dimensions are defined
+    // Ensure the node feature dimensions are defined by the presence of one node
     if (node_feature_dim_ == 0)
     {
       ROS_ERROR("Did not find any nodes from the RandomField %u  (%u)", i, nodes.size());
@@ -421,7 +430,7 @@ int M3NModel::extractVerifyLabelsFeatures(const vector<const RandomField*>& trai
     for (unsigned int j = 0 ; j < clique_sets.size() ; j++)
     {
       // Reset flag for encountering first clique in the clique-set
-      is_first = true;
+      bool curr_cs_dimensions_defined = false;
 
       // --------------------------
       // Iterate over the cliques in the current clique-set
@@ -432,10 +441,10 @@ int M3NModel::extractVerifyLabelsFeatures(const vector<const RandomField*>& trai
 
         // --------------------------
         // If never trained before and is the first clique in the clique set, then record the feature dimensions
-        if (!trained_ && is_first)
+        if (!trained_ && !curr_cs_dimensions_defined)
         {
           clique_set_feature_dims_[j] = curr_feature_dim;
-          is_first = false;
+          curr_cs_dimensions_defined = true;
         }
         // Otherwise, verify the feature dimensions are consistent
         else if (curr_feature_dim != clique_set_feature_dims_[j])
@@ -447,18 +456,32 @@ int M3NModel::extractVerifyLabelsFeatures(const vector<const RandomField*>& trai
       } // end iteration over cliques
 
       // --------------------------
-      // Ensure the node feature dimensions are defined
+      // Ensure the clique set's feature dimensions are defined
       if (clique_set_feature_dims_[j] == 0)
       {
-        ROS_ERROR("Did not find any cliques in clique-set %u from RandomField %u", j, i);
-        return -1;
+        ROS_WARN("Did not find any cliques in clique-set %u from RandomField %u; skipping.", j, i);
+        invalid_training_indices.insert(i);
       }
     } // end iteration over clique sets
   } // end iteration over random fields
 
   if (training_labels_.size() == 1)
   {
+    if (!trained_)
+    {
+      training_labels_.clear();
+    }
     ROS_ERROR("Cannot train with data containing only 1 label");
+    return -1;
+  }
+
+  if (invalid_training_indices.size() == training_rfs.size())
+  {
+    if (!trained_)
+    {
+      training_labels_.clear();
+    }
+    ROS_ERROR("Could not find any valid random fields to train on");
     return -1;
   }
 
