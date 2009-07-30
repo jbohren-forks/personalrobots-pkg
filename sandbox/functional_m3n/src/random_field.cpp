@@ -274,7 +274,7 @@ const RandomField::Clique* RandomField::createClique(const unsigned int clique_i
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-int RandomField::saveNodeFeatures(string filename)
+int RandomField::saveNodeFeatures(string filename) const
 {
   ofstream file_out(filename.c_str());
   if (file_out.is_open() == false)
@@ -283,10 +283,10 @@ int RandomField::saveNodeFeatures(string filename)
     return -1;
   }
 
-  for (map<unsigned int, RandomField::Node*>::iterator iter_nodes = rf_nodes_.begin() ; iter_nodes
+  for (map<unsigned int, RandomField::Node*>::const_iterator iter_nodes = rf_nodes_.begin() ; iter_nodes
       != rf_nodes_.end() ; iter_nodes++)
   {
-    RandomField::Node* curr_node = iter_nodes->second;
+    const RandomField::Node* curr_node = iter_nodes->second;
 
     // x y z node_id label
     file_out << curr_node->getX() << " " << curr_node->getY() << " " << curr_node->getZ() << " "
@@ -308,7 +308,7 @@ int RandomField::saveNodeFeatures(string filename)
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-int RandomField::saveCliqueFeatures(string basename)
+int RandomField::saveCliqueFeatures(string basename) const
 {
   const unsigned int nbr_clique_sets = clique_sets_.size();
   for (unsigned int i = 0 ; i < nbr_clique_sets ; i++)

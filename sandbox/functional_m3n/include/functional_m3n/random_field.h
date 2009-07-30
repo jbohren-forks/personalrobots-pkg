@@ -228,6 +228,27 @@ class RandomField
     {
       return clique_sets_;
     }
+
+    // --------------------------------------------------------------
+    /*!
+     * \brief Returns the number of nodes in this RandomField
+     */
+    // --------------------------------------------------------------
+    inline unsigned int getNumberOfNodes() const
+    {
+      return rf_nodes_.size();
+    }
+
+    // --------------------------------------------------------------
+    /*!
+     * \brief Returns the number of clique-sets in this RandomField
+     */
+    // --------------------------------------------------------------
+    inline unsigned int getNumberOfCliqueSets() const
+    {
+      return clique_sets_.size();
+    }
+
     //@}
 
     // ===================================================================
@@ -245,7 +266,7 @@ class RandomField
      * \return 0 on success, otherwise negative value on error
      */
     // --------------------------------------------------------------
-    int saveNodeFeatures(string filename);
+    int saveNodeFeatures(string filename) const;
 
     // --------------------------------------------------------------
     /*!
@@ -261,7 +282,7 @@ class RandomField
      * \return 0 on success, otherwise negative value on error
      */
     // --------------------------------------------------------------
-    int saveCliqueFeatures(string basename);
+    int saveCliqueFeatures(string basename) const;
     //@}
 
   private:
