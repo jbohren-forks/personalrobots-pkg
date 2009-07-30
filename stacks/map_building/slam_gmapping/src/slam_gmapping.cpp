@@ -67,6 +67,7 @@ SlamGMapping::SlamGMapping():
   gsp_odom_ = NULL;
 
   got_first_scan_ = false;
+  got_map_ = false;
 
   // Parameters used by our GMapping wrapper
   node_->param("~inverted_laser", inverted_laser_, false);
@@ -81,7 +82,7 @@ SlamGMapping::SlamGMapping():
   map_update_interval_.fromSec(tmp);
   
   // Parameters used by GMapping itself
-  node_->param("~/maxUrange", maxUrange_, 80.0);
+  node_->param("~/maxUrange", maxUrange_, -1.0);
   node_->param("~/sigma", sigma_, 0.05);
   node_->param("~/kernelSize", kernelSize_, 1);
   node_->param("~/lstep", lstep_, 0.05);
@@ -204,6 +205,9 @@ SlamGMapping::initMapper(const sensor_msgs::LaserScan& scan)
   GMapping::OrientedPoint initialPose;
   if(!getOdomPose(initialPose, scan.header.stamp))
     initialPose = GMapping::OrientedPoint(0.0, 0.0, 0.0);
+
+  if(maxUrange_ == -1.0)
+    maxUrange_ = 0.98 * maxrange;
 
   gsp_->setMatchingParameters(maxUrange_, maxrange, sigma_,
                               kernelSize_, lstep_, astep_, iterations_,
@@ -353,7 +357,6 @@ SlamGMapping::updateMap(const sensor_msgs::LaserScan& scan)
     theta += scan.angle_increment;
   }
 
-  /// @todo Check the pose that's being passed here
   matcher.setLaserParameters(scan.ranges.size(), laser_angles,
                              gsp_laser_->getPose());
 
@@ -365,30 +368,23 @@ SlamGMapping::updateMap(const sensor_msgs::LaserScan& scan)
   GMapping::GridSlamProcessor::Particle best =
           gsp_->getParticles()[gsp_->getBestParticleIndex()];
 
-  /// @todo Dynamically determine bounding box for map
-  GMapping::Point wmin(xmin_, ymin_);
-  GMapping::Point wmax(xmax_, ymax_);
-  map_.map.info.resolution = delta_;
-  map_.map.info.origin.position.x = xmin_;
-  map_.map.info.origin.position.y = ymin_;
-  map_.map.info.origin.position.z = 0.0;
-  map_.map.info.origin.orientation.x = 0.0;
-  map_.map.info.origin.orientation.y = 0.0;
-  map_.map.info.origin.orientation.z = 0.0;
-  map_.map.info.origin.orientation.w = 1.0;
+  if(!got_map_) {
+    map_.map.info.resolution = delta_;
+    map_.map.info.origin.position.x = 0.0;
+    map_.map.info.origin.position.y = 0.0;
+    map_.map.info.origin.position.z = 0.0;
+    map_.map.info.origin.orientation.x = 0.0;
+    map_.map.info.origin.orientation.y = 0.0;
+    map_.map.info.origin.orientation.z = 0.0;
+    map_.map.info.origin.orientation.w = 1.0;
+  } 
 
   GMapping::Point center;
-  center.x=(wmin.x + wmax.x) / 2.0;
-  center.y=(wmin.y + wmax.y) / 2.0;
+  center.x=(xmin_ + ymax_) / 2.0;
+  center.y=(ymin_ + ymax_) / 2.0;
 
-  GMapping::ScanMatcherMap smap(center, wmin.x, wmin.y, wmax.x, wmax.y,
-                                map_.map.info.resolution);
-
-  GMapping::IntPoint imin = smap.world2map(wmin);
-  GMapping::IntPoint imax = smap.world2map(wmax);
-  map_.map.info.width = imax.x - imin.x;
-  map_.map.info.height = imax.y - imin.y;
-  map_.map.data.resize(map_.map.info.width * map_.map.info.height);
+  GMapping::ScanMatcherMap smap(center, xmin_, ymin_, xmax_, ymax_, 
+                                delta_);
 
   ROS_DEBUG("Trajectory tree:");
   for(GMapping::GridSlamProcessor::TNode* n = best.node;
@@ -409,12 +405,34 @@ SlamGMapping::updateMap(const sensor_msgs::LaserScan& scan)
     matcher.registerScan(smap, n->pose, &((*n->reading)[0]));
   }
 
+  // the map may have expanded, so resize ros message as well
+  if(map_.map.info.width != smap.getMapSizeX() || map_.map.info.height != smap.getMapSizeY()) {
+
+    // NOTE: The results of ScanMatcherMap::getSize() are different from the parameters given to the constructor
+    //       so we must obtain the bounding box ina different way
+    GMapping::Point wmin = smap.map2world(GMapping::IntPoint(0, 0));
+    GMapping::Point wmax = smap.map2world(GMapping::IntPoint(smap.getMapSizeX(), smap.getMapSizeY()));
+    xmin_ = wmin.x; ymin_ = wmin.y;
+    xmax_ = wmax.x; ymax_ = wmax.y;
+    
+    ROS_DEBUG("map size is now %dx%d pixels (%f,%f)-(%f, %f)", smap.getMapSizeX(), smap.getMapSizeY(),
+              xmin_, ymin_, xmax_, ymax_);
+
+    map_.map.info.width = smap.getMapSizeX();
+    map_.map.info.height = smap.getMapSizeY();
+    map_.map.info.origin.position.x = -(xmin_ + xmax_)/2;
+    map_.map.info.origin.position.y = -(ymin_ + ymax_)/2;
+    map_.map.data.resize(map_.map.info.width * map_.map.info.height);
+
+    ROS_DEBUG("map origin: (%f, %f)", map_.map.info.origin.position.x, map_.map.info.origin.position.y);
+  }
+
   for(int x=0; x < smap.getMapSizeX(); x++)
   {
     for(int y=0; y < smap.getMapSizeY(); y++)
     {
       /// @todo Sort out the unknown vs. free vs. obstacle thresholding
-      GMapping::IntPoint p(imin.x + x, imin.y + y);
+      GMapping::IntPoint p(x, y);
 //      double entropy = smap.cell(p).entropy();
 //      int e = (int)round(entropy * 140);
 //      if (e != 97)
