@@ -342,9 +342,9 @@ namespace actionlib {
            * @brief  A private constructor used by the ActionServer to initialize a GoalHandle
            */
           GoalHandle(typename std::list<StatusTracker>::iterator status_it,
-              ActionServer<ActionSpec>* as)
+              ActionServer<ActionSpec>* as, boost::shared_ptr<void> handle_tracker)
             : status_it_(status_it), goal_((*status_it).goal_),
-              as_(as), handle_tracker_((*status_it).handle_tracker_.lock()){}
+              as_(as), handle_tracker_(handle_tracker){}
 
           /**
            * @brief  A private method to set status to PENDING or RECALLING
@@ -475,9 +475,22 @@ namespace actionlib {
             if(goal_id->id == (*it).status_.goal_id.id)
               goal_id_found = true;
 
+            //attempt to get the handle_tracker for the list item if it exists
+            boost::shared_ptr<void> handle_tracker = (*it).handle_tracker_.lock();
+
+            if((*it).handle_tracker_.expired()){
+              //if the handle tracker is expired, then we need to create a new one
+              HandleTrackerDeleter d(this, it);
+              handle_tracker = boost::shared_ptr<void>((void *)NULL, d);
+              (*it).handle_tracker_ = handle_tracker;
+
+              //we also need to reset the time that the status is supposed to be removed from the list
+              (*it).handle_destruction_time_ = ros::Time();
+            }
+
             //set the status of the goal to PREEMPTING or RECALLING as approriate
             //and check if the request should be passed on to the user
-            GoalHandle gh(it, this);
+            GoalHandle gh(it, this, handle_tracker);
             if(gh.setCancelRequested()){
               //call the user's cancel callback on the relevant goal
               cancel_callback_(gh);
@@ -510,7 +523,6 @@ namespace actionlib {
         //we need to check if this goal already lives in the status list
         for(typename std::list<StatusTracker>::iterator it = status_list_.begin(); it != status_list_.end(); ++it){
           if(goal->goal_id.id == (*it).status_.goal_id.id){
-            unsigned int status = (*it).status_.status;
 
             //if this is a request for a goal that has no active handles left,
             //we'll bump how long it stays in the list
@@ -534,12 +546,12 @@ namespace actionlib {
         //check if this goal has already been canceled based on its timestamp
         if(goal->goal_id.stamp != ros::Time() && goal->goal_id.stamp <= last_cancel_){
           //if it has... just create a GoalHandle for it and setCanceled
-          GoalHandle gh(it, this);
+          GoalHandle gh(it, this, handle_tracker);
           gh.setCanceled();
         }
         else{
           //now, we need to create a goal handle and call the user's callback
-          goal_callback_(GoalHandle(it, this));
+          goal_callback_(GoalHandle(it, this, handle_tracker));
         }
       }
 

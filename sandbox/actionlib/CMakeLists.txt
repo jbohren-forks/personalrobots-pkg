@@ -21,7 +21,7 @@ genmsg()
 
 #rospack_add_executable(goal_manager_test src/goal_manager_test.cpp)
 
-#rospack_add_executable(move_base_server src/move_base_server.cpp)
+rospack_add_executable(move_base_server src/move_base_server.cpp)
 rospack_add_executable(move_base_client src/move_base_client.cpp)
 
 
