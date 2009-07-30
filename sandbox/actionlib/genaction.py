@@ -118,7 +118,7 @@ actionlib/GoalStatus status
             write_file(os.path.join(output_dir, "%sActionGoal.msg"%name), action_goal_msg)
             write_file(os.path.join(output_dir, "%sResult.msg"%name), result_msg)
             write_file(os.path.join(output_dir, "%sActionResult.msg"%name), action_result_msg)
-            write_file(os.path.join(output_dir, "%sFeedback.msg"%name), action_feedback_msg)
+            write_file(os.path.join(output_dir, "%sFeedback.msg"%name), feedback_msg)
             write_file(os.path.join(output_dir, "%sActionFeedback.msg"%name), action_feedback_msg)
 
 
