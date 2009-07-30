@@ -11,11 +11,14 @@ set(ROS_BUILD_TYPE Debug)
 
 rospack(dorylus)
 
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
+set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR})
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 rospack_add_library(dorylus dorylus.cpp)
-rospack_add_executable(test_dorylus test_dorylus.cpp)
-target_link_libraries(test_dorylus dorylus)
 
-
+rospack_download_test_data(http://pr.willowgarage.com/data/dorylus/sanity.d test/sanity.d)
+rospack_download_test_data(http://pr.willowgarage.com/data/dorylus/sanity.dd test/sanity.dd)
+rospack_download_test_data(http://pr.willowgarage.com/data/dorylus/test.dd test/test.dd)
+rospack_download_test_data(http://pr.willowgarage.com/data/dorylus/test.d test/test.d)
+rospack_add_gtest(test/test_dorylus test/test_dorylus.cpp)
+target_link_libraries(test/test_dorylus dorylus)

@@ -1,7 +1,50 @@
 #include <dorylus.h>
-//using namespace NEWMAT;
+#include <gtest/gtest.h>
+
 USING_PART_OF_NAMESPACE_EIGEN;
 using namespace std;
+
+
+TEST(Dorylus, training) {
+  Dorylus d, d2;
+  DorylusDataset dd;
+  dd.load("test/sanity.dd");
+  d.useDataset(&dd);
+
+  int nCandidates = 5;
+  int max_secs = 50000;
+  int max_wcs = 5;
+  srand(0);
+  d.train(nCandidates, max_secs, max_wcs);
+
+  d2.load("test/sanity.d");
+  cout << d.status() << endl;
+  cout << d2.status() << endl;
+  EXPECT_TRUE(d2.compare(d));
+}
+
+
+TEST(Dorylus, loadAndSave) {
+  Dorylus d, d2, d3;
+  d.load("test/sanity.d");
+  d.save("test/sanity_dupe.d");
+  d2.load("test/sanity_dupe.d");
+  d3.load("test/test.d");
+  system("rm test/sanity_dupe.d");
+  EXPECT_TRUE(d2.compare(d));
+  EXPECT_FALSE(d2.compare(d3));
+}
+
+TEST(DorylusDataset, loadAndSave) {
+  DorylusDataset dd, dd2, dd3;
+  dd.load("test/sanity.dd");
+  dd.save("test/sanity_dupe.dd");
+  dd2.load("test/sanity_dupe.dd");
+  dd3.load("test/test.dd");
+  system("rm test/sanity_dupe.dd");
+  EXPECT_TRUE(dd2.compare(dd));
+  EXPECT_FALSE(dd2.compare(dd3));
+}
 
 void testDatasetSave()
 {
@@ -65,5 +108,6 @@ void testDatasetSave()
 }
 
 int main(int argc, char** argv) {
-  testDatasetSave();
+  testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }

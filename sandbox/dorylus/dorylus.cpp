@@ -37,6 +37,25 @@ bool DorylusDataset::join(const DorylusDataset& dd2)
   return true;
 }
 
+bool DorylusDataset::compare(const DorylusDataset& dd) {
+  for(size_t i=0; i<objs_.size(); ++i) {
+    object& o = *objs_[i];
+    object& o2 = *dd.objs_[i];
+    if(o.label != o2.label)
+      return false;
+    if(o.features.size() != o2.features.size())
+      return false;
+
+    map<string, MatrixXf*>::const_iterator it;
+    for(it = o.features.begin(); it != o.features.end(); ++it) {
+      if(*o2.features[it->first] != *it->second)
+	return false;
+    }
+  }
+    
+  return true;
+}
+
 
 void DorylusDataset::setObjs(const vector<object*> &objs)
 {
@@ -117,11 +136,11 @@ std::string Dorylus::status()
 
   // -- Compute utilities for each descriptor space.
   map<string, float> utilities;
-  map<string, vector<weak_classifier> >::iterator it;
+  map<string, vector<weak_classifier*> >::iterator it;
   for(it=battery_.begin(); it != battery_.end(); it++) {
-    vector<weak_classifier>& vwc = it->second;
+    vector<weak_classifier*>& vwc = it->second;
     for(size_t i=0; i<vwc.size(); i++) {
-      utilities[it->first] += vwc[i].utility;
+      utilities[it->first] += vwc[i]->utility;
     }
   }
 
@@ -329,24 +348,24 @@ bool Dorylus::save(string filename, string *user_data_str)
   f << "End classes." << endl;
 
   float buf;
-  map<string, vector<weak_classifier> >::iterator bit;
+  map<string, vector<weak_classifier*> >::iterator bit;
   for(bit = battery_.begin(); bit != battery_.end(); bit++) {
-    vector<weak_classifier> &wcs = bit->second;
+    vector<weak_classifier*> &wcs = bit->second;
     for(unsigned int t=0; t<wcs.size(); t++) {
       f << "New weak classifier." << endl;
-      f << "ID" << endl << wcs[t].id << endl;
+      f << "ID" << endl << wcs[t]->id << endl;
       f << bit->first << endl;
-      f << "Theta" << endl << wcs[t].theta << endl;
-      f << "Utility" << endl << wcs[t].utility << endl;
-      f << "Center" << endl << wcs[t].center.rows() << endl;
-      for(int i=0; i<wcs[t].center.rows(); i++) {
-	buf = wcs[t].center(i,0);
+      f << "Theta" << endl << wcs[t]->theta << endl;
+      f << "Utility" << endl << wcs[t]->utility << endl;
+      f << "Center" << endl << wcs[t]->center.rows() << endl;
+      for(int i=0; i<wcs[t]->center.rows(); i++) {
+	buf = wcs[t]->center(i,0);
 	f.write((char*)&buf, sizeof(float));
       }
       f << endl;
-      f << "Vals" << endl << wcs[t].vals.Nrows() << endl;
-      for(int i=1; i<=wcs[t].vals.Nrows(); i++) {
-	buf = wcs[t].vals(i,1);
+      f << "Vals" << endl << wcs[t]->vals.Nrows() << endl;
+      for(int i=1; i<=wcs[t]->vals.Nrows(); i++) {
+	buf = wcs[t]->vals(i,1);
 	f.write((char*)&buf, sizeof(float));
       }
       f << endl;
@@ -404,9 +423,9 @@ bool Dorylus::load(string filename, bool quiet, string *user_data_str)
 
     if(line.size() == 0) {
       if(pwc) {
-	battery_[pwc->descriptor].push_back(*pwc);
-	pwcs_.push_back(&battery_[pwc->descriptor].back());
-	delete pwc; pwc = NULL;
+	battery_[pwc->descriptor].push_back(pwc);
+	pwcs_.push_back(pwc);
+	pwc = NULL;
       }
       else {
 	cerr << "no wc??" << endl;
@@ -428,9 +447,9 @@ bool Dorylus::load(string filename, bool quiet, string *user_data_str)
 
     else if(line.compare(string("New weak classifier.")) == 0) {
       if(pwc) {
-	battery_[pwc->descriptor].push_back(*pwc);
-	pwcs_.push_back(&battery_[pwc->descriptor].back());
-	delete pwc; pwc = NULL;
+	battery_[pwc->descriptor].push_back(pwc);
+	pwcs_.push_back(pwc);
+	pwc = NULL;
       }
       pwc = new weak_classifier;
       getline(f, line);
@@ -509,14 +528,14 @@ void Dorylus::useDataset(DorylusDataset *dd) {
 }
 
 vector<weak_classifier*>* Dorylus::findActivatedWCs(const string &descriptor, const MatrixXf &pt) {
-  vector<weak_classifier> &wcs = battery_[descriptor];
+  vector<weak_classifier*> &wcs = battery_[descriptor];
   vector<weak_classifier*> *activated = new vector<weak_classifier*>;
   activated->reserve(wcs.size());
 
   for(unsigned int t=0; t<wcs.size(); t++) {
-    if(max_wc_ == 0 || max_wc_ > 0 && wcs[t].id <= max_wc_) {
-      if(euc(pt, wcs[t].center) <= wcs[t].theta) {
-	activated->push_back(&wcs[t]);
+    if(max_wc_ == 0 || max_wc_ > 0 && wcs[t]->id <= max_wc_) {
+      if(euc(pt, wcs[t]->center) <= wcs[t]->theta) {
+	activated->push_back(wcs[t]);
       }
     }
   }
@@ -566,11 +585,32 @@ void Dorylus::train(int nCandidates, int max_secs, int max_wcs, void (*debugHook
   cout << "Done training." << endl;
 }
 
+//! Comprehensive with high probability, but not guaranteed.
+bool Dorylus::compare(const Dorylus& d) {
+  if(pwcs_.size() != d.pwcs_.size()) 
+    return false;
+
+
+  for(size_t i=0; i<pwcs_.size(); ++i) {
+//     cout << i << " theta " << pwcs_[i]->theta << " " <<  d.pwcs_[i]->theta << endl;
+//     cout << i << " utility " << pwcs_[i]->utility << " " <<  d.pwcs_[i]->utility << endl;
+//     cout << i << " id " << pwcs_[i]->id << " " <<  d.pwcs_[i]->id << endl;
+
+    if(abs(pwcs_[i]->theta - d.pwcs_[i]->theta) > 1e-4) 
+      return false;
+    if(abs(pwcs_[i]->utility - d.pwcs_[i]->utility) > 1e-4) 
+      return false;
+    if(abs(pwcs_[i]->id - d.pwcs_[i]->id) > 1e-4) 
+      return false;
+  }
+
+  return true;
+}
 
 bool Dorylus::learnWC(int nCandidates, map<string, float> max_thetas, vector<string> *desc_ignore) {
   int nThetas = 100;
   assert(dd_!=NULL);
-  weak_classifier best;
+  weak_classifier* best = new weak_classifier;
   time_t start, end;
   time(&start);
 
@@ -767,8 +807,8 @@ bool Dorylus::learnWC(int nCandidates, map<string, float> max_thetas, vector<str
       if(util > max_util) {
 	found_better = true;
 	max_util = util;
-	best = *cand[i];
-	best.utility = util;
+	*best = *cand[i];
+	best->utility = util;
 	//best_weights = **ppweights;
 	best_mmt = mmt;
       }
@@ -781,18 +821,19 @@ bool Dorylus::learnWC(int nCandidates, map<string, float> max_thetas, vector<str
   if(!found_better) {
     cout << "Did not find a weak classifier that improves the classification!" << endl;
     return false;
+    delete best;
   }
 
   cout << "Found wc with utility " << max_util << endl;
 
   // -- Add the best to the strong classifier.
-  best.id = pwcs_.size()+1;
-  battery_[best.descriptor].push_back(best);
-  pwcs_.push_back(&battery_[best.descriptor].back());
+  best->id = pwcs_.size()+1;
+  battery_[best->descriptor].push_back(best);
+  pwcs_.push_back(best);
 
   time(&end);
   cout << "Took " << difftime(end,start) << " seconds to try " << nCandidates << " wcs with " << nThetas << " thetas each." << endl;
-  cout << displayWeakClassifier(best) << endl;
+  cout << displayWeakClassifier(*best) << endl;
   int nObjs_encompassed = 0;
   for(int i=1; i<=best_mmt.Ncols(); i++) {
     if(best_mmt(1,i) != 0)
@@ -805,7 +846,7 @@ bool Dorylus::learnWC(int nCandidates, map<string, float> max_thetas, vector<str
     if(best_mmt(1, m+1) == 0)
       continue;
     for(unsigned int c=0; c<dd_->nClasses_; c++) {
-      log_weights_(c+1, m+1) += -dd_->ymc_(c+1, m+1) * best.vals(c+1,1) * best_mmt(1, m+1);
+      log_weights_(c+1, m+1) += -dd_->ymc_(c+1, m+1) * best->vals(c+1,1) * best_mmt(1, m+1);
     }
   }
   //  delete *ppweights; *ppweights = NULL;
@@ -1004,7 +1045,7 @@ NEWMAT::Matrix Dorylus::classify(object &obj, NEWMAT::Matrix **confidence) {
   if(battery_.size() == 0)
     return response;
 
-  map<string, vector<weak_classifier> >::iterator bit = battery_.begin();
+  map<string, vector<weak_classifier*> >::iterator bit = battery_.begin();
   for(bit = battery_.begin(); bit != battery_.end(); bit++) {
     string descriptor = bit->first;
     //cout << obj.status(false) << endl;

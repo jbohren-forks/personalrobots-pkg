@@ -145,13 +145,14 @@ class DorylusDataset {
   bool save(std::string filename);
   bool load(std::string filename, bool quiet=false);
   bool join(const DorylusDataset& dd2);
+  bool compare(const DorylusDataset& dd);
 };
 
 
 class Dorylus {
  public:
   //! Weak classifiers are stored according to which descriptor they are from.
-  map<string, vector<weak_classifier> > battery_;
+  map<string, vector<weak_classifier*> > battery_;
   //! Pointers to weak classifiers, in the order that they were learned.
   vector<weak_classifier*> pwcs_;
   //! nClasses x nTrEx.
@@ -181,12 +182,18 @@ class Dorylus {
   //void train(int nCandidates, int max_secs, int max_wcs);
   vector<weak_classifier*>* findActivatedWCs(const string &descriptor, const Eigen::MatrixXf &pt);
   NEWMAT::Matrix computeDatasetActivations(const weak_classifier& wc, const NEWMAT::Matrix& mmt);
+  bool compare(const Dorylus& d);
 
  Dorylus() : dd_(NULL), nClasses_(0), max_wc_(0)
     {
       version_string_ = std::string("#DORYLUS CLASSIFIER LOG v0.2");
     }
 
+  ~Dorylus() {
+    for(size_t i=0; i<pwcs_.size(); ++i) {
+      delete pwcs_[i];
+    }
+  }
 };
 
 class Function {
