@@ -60,6 +60,8 @@ collision_space::EnvironmentModelODE::EnvironmentModelODE(void) : EnvironmentMod
     ODEInitCountLock.unlock();
     
     checkThreadInit();
+
+    m_modelGeom.space = dSweepAndPruneSpaceCreate(0, dSAP_AXES_XZY);
 }
 
 collision_space::EnvironmentModelODE::~EnvironmentModelODE(void)
@@ -98,7 +100,7 @@ void collision_space::EnvironmentModelODE::freeMemory(void)
 	delete it->second;
 }
 
-void collision_space::EnvironmentModelODE::setRobotModel(const boost::shared_ptr<planning_models::KinematicModel> &model, const std::vector<std::string> &links, double scale, double padding)
+void collision_space::EnvironmentModelODE::setRobotModel(const boost::shared_ptr<const planning_models::KinematicModel> &model, const std::vector<std::string> &links, double scale, double padding)
 {
     collision_space::EnvironmentModel::setRobotModel(model, links, scale, padding);
     createODERobotModel();
@@ -106,8 +108,6 @@ void collision_space::EnvironmentModelODE::setRobotModel(const boost::shared_ptr
 
 void collision_space::EnvironmentModelODE::createODERobotModel(void)
 {
-    m_modelGeom.space = dSweepAndPruneSpaceCreate(0, dSAP_AXES_XZY);
-
     for (unsigned int i = 0 ; i < m_collisionLinks.size() ; ++i)
     {
 	/* skip this link if we have no geometry or if the link
@@ -134,6 +134,23 @@ void collision_space::EnvironmentModelODE::createODERobotModel(void)
 	}
 	m_modelGeom.linkGeom.push_back(kg);
     } 
+}
+
+dGeomID collision_space::EnvironmentModelODE::createODEGeom(dSpaceID space, ODEStorage &storage, const shapes::StaticShape *shape)
+{
+    dGeomID g = NULL;
+    switch (shape->type)
+    {
+    case shapes::PLANE:
+	{
+	    const shapes::Plane *p = static_cast<const shapes::Plane*>(shape);
+	    g = dCreatePlane(space, p->a, p->b, p->c, p->d);
+	}
+	break;
+    default:
+	break;
+    }
+    return g;
 }
 
 dGeomID collision_space::EnvironmentModelODE::createODEGeom(dSpaceID space, ODEStorage &storage, const shapes::Shape *shape, double scale, double padding)
@@ -587,8 +604,9 @@ void collision_space::EnvironmentModelODE::testCollision(CollisionData *cdata)
     }
 }
 
-void collision_space::EnvironmentModelODE::addPointCloudSpheres(const std::string &ns, unsigned int n, const double *points)
+void collision_space::EnvironmentModelODE::addObjects(const std::string &ns, const std::vector<shapes::Shape*> &shapes, const std::vector<btTransform> &poses)
 {
+    assert(shapes.size() == poses.size());
     std::map<std::string, CollisionNamespace*>::iterator it = m_collNs.find(ns);
     CollisionNamespace* cn = NULL;    
     if (it == m_collNs.end())
@@ -598,12 +616,15 @@ void collision_space::EnvironmentModelODE::addPointCloudSpheres(const std::strin
     }
     else
 	cn = it->second;
+
+    unsigned int n = shapes.size();
     for (unsigned int i = 0 ; i < n ; ++i)
     {
-	unsigned int i4 = i * 4;
-	dGeomID g = dCreateSphere(cn->space, points[i4 + 3]);
-	dGeomSetPosition(g, points[i4], points[i4 + 1], points[i4 + 2]);
+	dGeomID g = createODEGeom(cn->space, cn->storage, shapes[i], 1.0, 0.0);
+	assert(g);
+	updateGeom(g, poses[i]);
 	cn->collide2.registerGeom(g);
+	m_objects->addObject(ns, shapes[i], poses[i]);
     }
     cn->collide2.setup();
 }
@@ -621,11 +642,13 @@ void collision_space::EnvironmentModelODE::addObject(const std::string &ns, cons
 	cn = it->second;
     
     dGeomID g = createODEGeom(cn->space, cn->storage, shape, 1.0, 0.0);
+    assert(g);
     updateGeom(g, pose);
     cn->geoms.push_back(g);
+    m_objects->addObject(ns, shape, pose);
 }
 
-void collision_space::EnvironmentModelODE::addPlane(const std::string &ns, double a, double b, double c, double d)
+void collision_space::EnvironmentModelODE::addObject(const std::string &ns, const shapes::StaticShape* shape)
 {   
     std::map<std::string, CollisionNamespace*>::iterator it = m_collNs.find(ns);
     CollisionNamespace* cn = NULL;    
@@ -636,22 +659,27 @@ void collision_space::EnvironmentModelODE::addPlane(const std::string &ns, doubl
     }
     else
 	cn = it->second;
-    dGeomID g = dCreatePlane(cn->space, a, b, c, d);
+
+    dGeomID g = createODEGeom(cn->space, cn->storage, shape);
+    assert(g);
     cn->geoms.push_back(g);
+    m_objects->addObject(ns, shape);
 }
 
-void collision_space::EnvironmentModelODE::clearObstacles(void)
+void collision_space::EnvironmentModelODE::clearObjects(void)
 {
     for (std::map<std::string, CollisionNamespace*>::iterator it = m_collNs.begin() ; it != m_collNs.end() ; ++it)
 	delete it->second;
     m_collNs.clear();
+    m_objects->clearObjects();
 }
 
-void collision_space::EnvironmentModelODE::clearObstacles(const std::string &ns)
+void collision_space::EnvironmentModelODE::clearObjects(const std::string &ns)
 {
     std::map<std::string, CollisionNamespace*>::iterator it = m_collNs.find(ns);
     if (it != m_collNs.end())
 	it->second->clear();
+    m_objects->clearObjects(ns);
 }
 
 int collision_space::EnvironmentModelODE::setCollisionCheck(const std::string &link, bool state)
@@ -753,7 +781,7 @@ collision_space::EnvironmentModel* collision_space::EnvironmentModelODE::clone(v
     env->m_verbose = m_verbose;
     env->m_robotScale = m_robotScale;
     env->m_robotPadd = m_robotPadd;
-    env->m_robotModel = boost::shared_ptr<planning_models::KinematicModel>(m_robotModel->clone());
+    env->m_robotModel = boost::shared_ptr<const planning_models::KinematicModel>(m_robotModel->clone());
     env->createODERobotModel();
     for (unsigned int j = 0 ; j < m_modelGeom.linkGeom.size() ; ++j)
 	env->m_modelGeom.linkGeom[j]->enabled = m_modelGeom.linkGeom[j]->enabled;
@@ -771,6 +799,8 @@ collision_space::EnvironmentModel* collision_space::EnvironmentModelODE::clone(v
 	for (unsigned int i = 0 ; i < n ; ++i)
 	    cn->collide2.registerGeom(copyGeom(cn->space, cn->storage, geoms[i], it->second->storage));
     }
-    
+    if (env->m_objects)
+	delete env->m_objects;
+    env->m_objects = m_objects->clone();
     return env;    
 }

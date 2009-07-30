@@ -37,6 +37,7 @@
 #ifndef COLLISION_SPACE_ENVIRONMENT_MODEL_
 #define COLLISION_SPACE_ENVIRONMENT_MODEL_
 
+#include "collision_space/environment_objects.h"
 #include <planning_models/kinematic.h>
 #include <planning_models/output.h>
 #include <LinearMath/btVector3.h>
@@ -49,6 +50,7 @@
 /** \brief Main namespace */
 namespace collision_space
 {
+    
     /** \brief A class describing an environment for a kinematic
     robot. This is the base (abstract) definition. Different
     implementations are possible. The class is aware of a set of
@@ -78,10 +80,13 @@ namespace collision_space
 	{
 	    m_selfCollision = true;
 	    m_verbose = false;
+	    m_objects = new EnvironmentObjects();
 	}
 	
 	virtual ~EnvironmentModel(void)
 	{
+	    if (m_objects)
+		delete m_objects;
 	}
 
 	/**********************************************************************/
@@ -95,7 +100,7 @@ namespace collision_space
 	bool getSelfCollision(void) const;
 			
 	/** \brief Add a group of links to be checked for self collision */
-	virtual void addSelfCollisionGroup(std::vector<std::string> &links);
+	virtual void addSelfCollisionGroup(const std::vector<std::string> &links);
 
 	/** \brief Enable/Disable collision checking for specific links. Return the previous value of the state (1 or 0) if succesful; -1 otherwise */
 	virtual int setCollisionCheck(const std::string &link, bool state) = 0;
@@ -106,7 +111,7 @@ namespace collision_space
 	    bodies (multiplicative factor). The padding can be used to
 	    increase or decrease the robot's bodies with by an
 	    additive term */
-	virtual void setRobotModel(const boost::shared_ptr<planning_models::KinematicModel> &model, const std::vector<std::string> &links, double scale = 1.0, double padding = 0.0);
+	virtual void setRobotModel(const boost::shared_ptr<const planning_models::KinematicModel> &model, const std::vector<std::string> &links, double scale = 1.0, double padding = 0.0);
 
 	/** \brief Get robot scale */
 	double getRobotScale(void) const
@@ -127,7 +132,7 @@ namespace collision_space
 	virtual void updateAttachedBodies(void) = 0;
 		
 	/** \brief Get the robot model */
-	boost::shared_ptr<planning_models::KinematicModel> getRobotModel(void) const
+	const boost::shared_ptr<const planning_models::KinematicModel>& getRobotModel(void) const
 	{
 	    return m_robotModel;
 	}	
@@ -152,20 +157,23 @@ namespace collision_space
 	/* Collision Bodies                                                   */
 	/**********************************************************************/
 	
-	/** \brief Remove all obstacles from collision model */
-	virtual void clearObstacles(void) = 0;
+	/** \brief Remove all objects from collision model */
+	virtual void clearObjects(void) = 0;
 	
-	/** \brief Remove obstacles from a specific namespace in the collision model */
-	virtual void clearObstacles(const std::string &ns) = 0;
+	/** \brief Remove objects from a specific namespace in the collision model */
+	virtual void clearObjects(const std::string &ns) = 0;
+	
+	/** \brief Add a static collision object to the map. The user releases ownership of the passed object. */
+	virtual void addObject(const std::string &ns, const shapes::StaticShape *shape) = 0;
 
-	/** \brief Add a point cloud to the collision space */
-	virtual void addPointCloudSpheres(const std::string &ns, unsigned int n, const double* points) = 0;
+	/** \brief Add a collision object to the map. The user releases ownership of the passed object.*/
+	virtual void addObject(const std::string &ns, const shapes::Shape* shape, const btTransform &pose) = 0;
 
-	/** \brief Add a plane to the collision space. Equation it satisfies is a*x+b*y+c*z = d*/
-	virtual void addPlane(const std::string &ns, double a, double b, double c, double d) = 0;
+	/** \brief Add a set of collision objects to the map. The user releases ownership of the passed objects. */
+	virtual void addObjects(const std::string &ns, const std::vector<shapes::Shape*> &shapes, const std::vector<btTransform> &poses) = 0;
 
-	/** \brief Add a collision object to the map */
-	virtual void addObject(const std::string &ns, const shapes::Shape *shape, const btTransform &pose) = 0;
+	/** \brief Get the objects currently contained in the model */
+	const EnvironmentObjects* getObjects(void) const;
 	
 	/**********************************************************************/
 	/* Miscellaneous Routines                                             */
@@ -188,22 +196,41 @@ namespace collision_space
 	
     protected:
         
-	boost::mutex                                       m_lock;
-	std::vector<std::string>                           m_collisionLinks;
-	std::map<std::string, unsigned int>                m_collisionLinkIndex;
-	std::vector< std::vector<bool> >                   m_selfCollisionTest;
+	/** \brief Mutex used to lock the datastructure */
+	boost::mutex                                             m_lock;
+
+	/** \brief List of links (names) from the robot model that are considered for collision checking */
+	std::vector<std::string>                                 m_collisionLinks;
+
+	/** \brief Map used internally to find the index of a link that we do collision checking for */
+	std::map<std::string, unsigned int>                      m_collisionLinkIndex;
+
+	/** \brief Matrix of booleans indicating whether pairs of links can self collide */
+	std::vector< std::vector<bool> >                         m_selfCollisionTest;
 	
-	bool                                               m_selfCollision;
-	bool                                               m_verbose;
-	planning_models::msg::Interface                    m_msg;
+	/** \brief Flag to indicate whether self collision checking is enabled */
+	bool                                                     m_selfCollision;
 	
-	/** \brief List of loaded robot models */	
-	boost::shared_ptr<planning_models::KinematicModel> m_robotModel;
-	double                                             m_robotScale;
-	double                                             m_robotPadd;	
+	/** \brief Flag to indicate whether verbose mode is on */
+	bool                                                     m_verbose;
+
+	/** \brief Interface to printing information */
+	planning_models::msg::Interface                          m_msg;
+	
+	/** \brief Loaded robot model */	
+	boost::shared_ptr<const planning_models::KinematicModel> m_robotModel;
+
+	/** \brief List of objects contained in the environment */
+	EnvironmentObjects                                      *m_objects;
+	
+	/** \brief Scaling used for robot links */
+	double                                                   m_robotScale;
+
+	/** \brief Padding used for robot links */
+	double                                                   m_robotPadd;	
 	
     };
 }
 
 #endif
-    
+

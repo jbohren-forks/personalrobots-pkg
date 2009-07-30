@@ -59,7 +59,8 @@ void planning_environment::CollisionModels::setupModel(boost::shared_ptr<collisi
 
     for (unsigned int i = 0 ; i < boundingPlanes_.size() / 4 ; ++i)
     {
-	model->addPlane("bounds", boundingPlanes_[i * 4], boundingPlanes_[i * 4 + 1], boundingPlanes_[i * 4 + 2], boundingPlanes_[i * 4 + 3]);
+	shapes::Plane *plane = new shapes::Plane(boundingPlanes_[i * 4], boundingPlanes_[i * 4 + 1], boundingPlanes_[i * 4 + 2], boundingPlanes_[i * 4 + 3]);
+	model->addObject("bounds", plane);
 	ROS_INFO("Added static plane %fx + %fy + %fz + %f = 0 for model %p", boundingPlanes_[i * 4], boundingPlanes_[i * 4 + 1], boundingPlanes_[i * 4 + 2], boundingPlanes_[i * 4 + 3], model.get());
     }
     

@@ -6,7 +6,8 @@ set(ROS_BUILD_TYPE Release)
 
 rospack_add_boost_directories()
 
-rospack_add_library(collision_space src/environment.cpp
+rospack_add_library(collision_space src/environment_objects.cpp
+				    src/environment.cpp
 				    src/environmentBullet.cpp
 				    src/environmentODE.cpp)
 

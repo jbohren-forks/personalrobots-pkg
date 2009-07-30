@@ -63,29 +63,29 @@ namespace collision_space
 
 	/** \brief Check if a model is in self collision */
 	virtual bool isSelfCollision(void);
-
-	/** \brief Remove all obstacles from collision model */
-	virtual void clearObstacles(void);
-
-	/** \brief Remove obstacles from a specific namespace in the collision model */
-	virtual void clearObstacles(const std::string &ns);
-
-	/** \brief Add a point cloud to the collision space */
-	virtual void addPointCloudSpheres(const std::string &ns, unsigned int n, const double *points); 
-
-	/** \brief Add a collision object to the map */
-	virtual void addObject(const std::string &ns, const shapes::Shape *shape, const btTransform &pose);
-
-	/** \brief Add a plane to the collision space. Equation it satisfies is a*x+b*y+c*z = d*/
-	virtual void addPlane(const std::string &ns, double a, double b, double c, double d);
 	
+	/** \brief Remove all objects from collision model */
+	virtual void clearObjects(void);
+	
+	/** \brief Remove objects from a specific namespace in the collision model */
+	virtual void clearObjects(const std::string &ns);
+		
+	/** \brief Add a static collision object to the map. The user releases ownership of the passed object. */
+	virtual void addObject(const std::string &ns, const shapes::StaticShape *shape);
+
+	/** \brief Add a collision object to the map. The user releases ownership of the passed object.*/
+	virtual void addObject(const std::string &ns, const shapes::Shape* shape, const btTransform &pose);
+
+	/** \brief Add a set of collision objects to the map. The user releases ownership of the passed objects. */
+	virtual void addObjects(const std::string &ns, const std::vector<shapes::Shape*> &shapes, const std::vector<btTransform> &poses);
+
 	/** \brief Add a robot model. Ignore robot links if their name is not
 	    specified in the string vector. The scale argument can be
 	    used to increase or decrease the size of the robot's
 	    bodies (multiplicative factor). The padding can be used to
 	    increase or decrease the robot's bodies with by an
 	    additive term */
-	virtual void setRobotModel(const boost::shared_ptr<planning_models::KinematicModel> &model, const std::vector<std::string> &links, double scale = 1.0, double padding = 0.0);
+	virtual void setRobotModel(const boost::shared_ptr<const planning_models::KinematicModel> &model, const std::vector<std::string> &links, double scale = 1.0, double padding = 0.0);
 
 	/** \brief Update the positions of the geometry used in collision detection */
 	virtual void updateRobotModel(void);
@@ -272,13 +272,13 @@ namespace collision_space
 		storage.clear();
 	    }
 	    
-	    std::string          name;	    
+	    std::string          name;
 	    dSpaceID             space;
 	    std::vector<dGeomID> geoms;
 	    ODECollide2          collide2;
 	    ODEStorage           storage;
 	};
-	
+    
 	struct CollisionData
 	{
 	    CollisionData(void)
@@ -315,6 +315,7 @@ namespace collision_space
 	dGeomID copyGeom(dSpaceID space, ODEStorage &storage, dGeomID geom, ODEStorage &sourceStorage) const;
 	void    createODERobotModel(void);	
 	dGeomID createODEGeom(dSpaceID space, ODEStorage &storage, const shapes::Shape *shape, double scale, double padding);
+	dGeomID createODEGeom(dSpaceID space, ODEStorage &storage, const shapes::StaticShape *shape);
 	void    updateGeom(dGeomID geom, const btTransform &pose) const;	
 
 	/** \brief Check if thread-specific routines have been called */

@@ -67,19 +67,20 @@ public:
 	ROS_INFO("Collision (should be 0): %d", em->isCollision());
 	
 	const int n = 10000;
-	double *data = new double[n * 4];
+	
+	std::vector<shapes::Shape*> spheres;
+	std::vector<btTransform>    poses;
 	
 	for (int i = 0 ; i < n ; ++i)
 	{
-	    int i4 = i * 4;
+	    btTransform pos;
+	    pos.setIdentity();
 	    do 
 	    {
-		data[i4 + 0] = uniform(1.5);
-		data[i4 + 1] = uniform(1.5);
-		data[i4 + 2] = uniform(1.5);
-		data[i4 + 3] = 0.02;
-		em->clearObstacles();
-		em->addPointCloudSpheres("points", 1, data + i4);
+		shapes::Sphere* obj = new shapes::Sphere(0.02);
+		em->clearObjects();
+		pos.setOrigin(btVector3(uniform(1.5), uniform(1.5), uniform(1.5)));
+		em->addObject("points", obj, pos);
 		if (n < 100)
 		{
 		    collision_space::EnvironmentModel *clone = em->clone();
@@ -90,15 +91,20 @@ public:
 		}
 	    }
 	    while(em->isCollision());
+	    spheres.push_back(new shapes::Sphere(0.02));
+	    poses.push_back(pos);
 	}
 	
-	em->clearObstacles();
-	em->addPointCloudSpheres("points", n, data);
-	ROS_INFO("Added %d points", n);
+	em->clearObjects();
+	em->addObjects("points", spheres, poses);
+	ROS_INFO("Added %d spheres", n);
 	
-	delete[] data;
-
 	ROS_INFO("Collision (should be 0): %d", em->isCollision());
+	collision_space::EnvironmentModel *clone = em->clone();
+	clone->updateRobotModel();
+	clone->setVerbose(true);
+	ROS_INFO("Collision of clone (should be 0): %d", clone->isCollision());
+	delete clone;
 	
 	const unsigned int K = 10000;
 	
@@ -130,45 +136,44 @@ public:
 	}	
 	ROS_INFO("%f collision tests + clones per second", (double)C/(ros::WallTime::now() - tm).toSec());
     }
-
+    
     void testCollision(void)
     {
 	if (!cm_->loadedModels())
 	    return;	
-	collision_space::EnvironmentModel *em = cm_->getODECollisionModel().get();
+	collision_space::EnvironmentModel *em = cm_->getODECollisionModel()->clone();
 	em->setSelfCollision(false);
 	
 	em->updateRobotModel();
 	ROS_INFO("Collision (should be 0): %d", em->isCollision());
 	
 	const int n = 10000;
-	double *data = new double[n * 4];
 	
 	for (int i = 0 ; i < n ; ++i)
 	{
-	    int i4 = i * 4;
+	    btTransform pos;
+	    pos.setIdentity();
 	    do 
-	    {
-		data[i4 + 0] = uniform(1.5);
-		data[i4 + 1] = uniform(1.5);
-		data[i4 + 2] = uniform(1.5);
-		data[i4 + 3] = 0.02;
-		em->clearObstacles();
-		em->addPointCloudSpheres("points", 1, data + i4);
+	    {	shapes::Sphere* obj = new shapes::Sphere(0.02);
+		em->clearObjects();
+		pos.setOrigin(btVector3(uniform(1.5), uniform(1.5), uniform(1.5)));
+		em->addObject("points", obj, pos);
 	    }
 	    while(!em->isCollision());
-	    sendPoint(data[i4], data[i4 + 1], data[i4 + 2]);
+	    sendPoint(pos.getOrigin().x(), pos.getOrigin().y(), pos.getOrigin().z());
 	}
 	
 	ROS_INFO("Added %d points", n);
 	
-	delete[] data;
+	delete em;
     }
 
     void collisionThread(int tid, collision_space::EnvironmentModel *emx)
     {
 	collision_space::EnvironmentModel *em = emx->clone();
-	ROS_INFO("Thread %d using instance %p", tid, em);
+	em->updateRobotModel();
+	
+	ROS_INFO("Thread %d using instance %p, collision = %d (should be 0)", tid, em, em->isCollision());
 	
 	const unsigned int K = 10000;
 	
@@ -178,34 +183,37 @@ public:
 	for (unsigned int i = 0 ; i < K ; ++i)
 	    em->isCollision();
 	ROS_INFO("Thread %d: %f collision tests per second (with self collision checking)", tid, (double)K/(ros::WallTime::now() - tm).toSec());
+	
 	delete em;
     }
 
     void collisionSetupThread(collision_space::EnvironmentModel *em)
     {
 	const int n = 10000;
-	double *data = new double[n * 4];
+	
+	std::vector<shapes::Shape*> spheres;
+	std::vector<btTransform>    poses;
 	
 	for (int i = 0 ; i < n ; ++i)
 	{
-	    int i4 = i * 4;
+	    btTransform pos;
+	    pos.setIdentity();
 	    do 
-	    {
-		data[i4 + 0] = uniform(1.5);
-		data[i4 + 1] = uniform(1.5);
-		data[i4 + 2] = uniform(1.5);
-		data[i4 + 3] = 0.02;
-		em->clearObstacles();
-		em->addPointCloudSpheres("points", 1, data + i4);
+	    {	shapes::Sphere* obj = new shapes::Sphere(0.02);
+		em->clearObjects();
+		pos.setOrigin(btVector3(uniform(1.5), uniform(1.5), uniform(1.5)));
+		em->addObject("points", obj, pos);
 	    }
 	    while(em->isCollision());
+	    spheres.push_back(new shapes::Sphere(0.02));
+	    poses.push_back(pos);
 	}
 	
-	em->clearObstacles();
-	em->addPointCloudSpheres("points", n, data);
-	ROS_INFO("Added %d points", n);
-	
-	delete[] data;
+	em->clearObjects();
+	em->addObjects("points", spheres, poses);
+	ROS_INFO("Added %d points", n);	
+	ROS_INFO("Collision after thread setup (should be 0): %d", em->isCollision());
+
     }
     
     void testThreads(void)

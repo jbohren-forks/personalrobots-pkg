@@ -46,7 +46,12 @@ void collision_space::EnvironmentModel::setVerbose(bool verbose)
     m_verbose = verbose;
 }
 
-void collision_space::EnvironmentModel::setRobotModel(const boost::shared_ptr<planning_models::KinematicModel> &model, const std::vector<std::string> &links, double scale, double padding)
+const collision_space::EnvironmentObjects* collision_space::EnvironmentModel::getObjects(void) const
+{
+    return m_objects;
+}
+
+void collision_space::EnvironmentModel::setRobotModel(const boost::shared_ptr<const planning_models::KinematicModel> &model, const std::vector<std::string> &links, double scale, double padding)
 {
     m_robotModel = model;
     m_collisionLinks = links;
@@ -60,7 +65,7 @@ void collision_space::EnvironmentModel::setRobotModel(const boost::shared_ptr<pl
     m_robotPadd = padding;
 }
 
-void collision_space::EnvironmentModel::addSelfCollisionGroup(std::vector<std::string> &links)
+void collision_space::EnvironmentModel::addSelfCollisionGroup(const std::vector<std::string> &links)
 {
     for (unsigned int i = 0 ; i < links.size() ; ++i)
     {

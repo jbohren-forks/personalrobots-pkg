@@ -143,23 +143,16 @@ void planning_environment::CollisionSpaceMonitor::collisionMapCallback(const map
     updateCollisionSpace(collisionMap, true);
 }
 
-void planning_environment::CollisionSpaceMonitor::updateCollisionSpace(const mapping_msgs::CollisionMapConstPtr &collisionMap, bool clear)
+void planning_environment::CollisionSpaceMonitor::collisionMapAsSpheres(const mapping_msgs::CollisionMapConstPtr &collisionMap,
+									std::vector<shapes::Shape*> &spheres, std::vector<btTransform> &poses)
 {
-    boost::mutex::scoped_lock lock(mapUpdateLock_);
-    
-    int n = collisionMap->get_boxes_size();
-    
-    ROS_DEBUG("Received collision map with %d points that is %f seconds old", n, (ros::Time::now() - collisionMap->header.stamp).toSec());
-    
-    if (onBeforeMapUpdate_ != NULL)
-	onBeforeMapUpdate_(collisionMap, clear);
-
     // we want to make sure the frame the robot model is kept in is the same as the frame of the collisionMap
     bool transform = !frame_id_.empty() && collisionMap->header.frame_id != frame_id_;
-
-    ros::WallTime startTime = ros::WallTime::now();
-    double *data = n > 0 ? new double[4 * n] : NULL;	
-
+    const int n = collisionMap->get_boxes_size();
+    
+    spheres.resize(n);
+    poses.resize(n);
+    
     if (transform)
     {
 	std::string target = frame_id_;
@@ -168,7 +161,6 @@ void planning_environment::CollisionSpaceMonitor::updateCollisionSpace(const map
 #pragma omp parallel for
 	for (int i = 0 ; i < n ; ++i)
 	{
-	    int i4 = i * 4;
 	    robot_msgs::PointStamped psi;
 	    psi.header  = collisionMap->header;
 	    psi.point.x = collisionMap->boxes[i].center.x;
@@ -186,11 +178,9 @@ void planning_environment::CollisionSpaceMonitor::updateCollisionSpace(const map
 		pso = psi;
 	    }
 	    
-	    data[i4    ] = pso.point.x;
-	    data[i4 + 1] = pso.point.y;
-	    data[i4 + 2] = pso.point.z;
-	    
-	    data[i4 + 3] = maxCoord(collisionMap->boxes[i].extents) * 0.867 + pointcloud_padd_;
+	    poses[i].setIdentity();
+	    poses[i].setOrigin(btVector3(pso.point.x, pso.point.y, pso.point.z));
+	    spheres[i] = new shapes::Sphere(maxCoord(collisionMap->boxes[i].extents) * 0.867 + pointcloud_padd_);
 	}
 	
 	if (err)
@@ -202,26 +192,33 @@ void planning_environment::CollisionSpaceMonitor::updateCollisionSpace(const map
 #pragma omp parallel for
 	for (int i = 0 ; i < n ; ++i)
 	{
-	    int i4 = i * 4;
-	    data[i4    ] = collisionMap->boxes[i].center.x;
-	    data[i4 + 1] = collisionMap->boxes[i].center.y;
-	    data[i4 + 2] = collisionMap->boxes[i].center.z;
-	    
-	    data[i4 + 3] = maxCoord(collisionMap->boxes[i].extents) * 0.867 + pointcloud_padd_;
+	    poses[i].setIdentity();
+	    poses[i].setOrigin(btVector3(collisionMap->boxes[i].center.x, collisionMap->boxes[i].center.y, collisionMap->boxes[i].center.z));
+	    spheres[i] = new shapes::Sphere(maxCoord(collisionMap->boxes[i].extents) * 0.867 + pointcloud_padd_);
 	}
     }
+}
+
+void planning_environment::CollisionSpaceMonitor::updateCollisionSpace(const mapping_msgs::CollisionMapConstPtr &collisionMap, bool clear)
+{
+    boost::mutex::scoped_lock lock(mapUpdateLock_);
     
+    ROS_DEBUG("Received collision map with %d points that is %f seconds old", collisionMap->get_boxes_size(), (ros::Time::now() - collisionMap->header.stamp).toSec());
+    
+    if (onBeforeMapUpdate_ != NULL)
+	onBeforeMapUpdate_(collisionMap, clear);
+
+    ros::WallTime startTime = ros::WallTime::now();
+    
+    std::vector<shapes::Shape*> spheres;
+    std::vector<btTransform>    poses;
+    collisionMapAsSpheres(collisionMap, spheres, poses);
+
     collisionSpace_->lock();
-
     if (clear)
-	collisionSpace_->clearObstacles("points");
-    if (n > 0)
-        collisionSpace_->addPointCloudSpheres("points", n, data);
-
+	collisionSpace_->clearObjects("points");
+    collisionSpace_->addObjects("points", spheres, poses);
     collisionSpace_->unlock();
-    
-    if (data)
-       delete[] data;
     
     double tupd = (ros::WallTime::now() - startTime).toSec();
     ROS_DEBUG("Updated map model in %f seconds", tupd);
@@ -265,19 +262,18 @@ void planning_environment::CollisionSpaceMonitor::objectInMapCallback(const mapp
 		btTransform pose;
 		tf::poseMsgToTF(pso.pose, pose);
 		collisionSpace_->lock();
-		collisionSpace_->clearObstacles(objectInMap->id);
+		collisionSpace_->clearObjects(objectInMap->id);
 		collisionSpace_->addObject(objectInMap->id, shape, pose);
 		collisionSpace_->unlock();
 		ROS_INFO("Added object '%s' to collision space", objectInMap->id.c_str());
 	    }
-	    delete shape;
 	}
     }
     else
     {
 	// remove the object from the map
 	collisionSpace_->lock();
-	collisionSpace_->clearObstacles(objectInMap->id);
+	collisionSpace_->clearObjects(objectInMap->id);
 	collisionSpace_->unlock();
 	ROS_INFO("Removed object '%s' from collision space", objectInMap->id.c_str());
     }

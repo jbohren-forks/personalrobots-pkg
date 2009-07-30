@@ -146,6 +146,8 @@ namespace planning_environment
 	
 	void setupCSM(void);
 	void updateCollisionSpace(const mapping_msgs::CollisionMapConstPtr &collisionMap, bool clear);
+	void collisionMapAsSpheres(const mapping_msgs::CollisionMapConstPtr &collisionMap,
+				   std::vector<shapes::Shape*> &spheres, std::vector<btTransform> &poses);
 	void collisionMapCallback(const mapping_msgs::CollisionMapConstPtr &collisionMap);
 	void collisionMapUpdateCallback(const mapping_msgs::CollisionMapConstPtr &collisionMap);
 	void objectInMapCallback(const mapping_msgs::ObjectInMapConstPtr &objectInMap);

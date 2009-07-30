@@ -59,7 +59,7 @@ void collision_space::EnvironmentModelBullet::freeMemory(void)
     delete m_config; */
 }
 
-void collision_space::EnvironmentModelBullet::setRobotModel(const boost::shared_ptr<planning_models::KinematicModel> &model, const std::vector<std::string> &links, double scale, double padding)
+void collision_space::EnvironmentModelBullet::setRobotModel(const boost::shared_ptr<const planning_models::KinematicModel> &model, const std::vector<std::string> &links, double scale, double padding)
 {
     collision_space::EnvironmentModel::setRobotModel(model, links, scale, padding);
     m_modelGeom.scale = scale;
@@ -131,6 +131,33 @@ btCollisionObject* collision_space::EnvironmentModelBullet::createCollisionBody(
 	    btshape = dynamic_cast<btCollisionShape*>(btmesh);
 	}
 	
+    default:
+	break;
+    }
+    
+    if (btshape)
+    {
+	btCollisionObject *object = new btCollisionObject();
+	object->setCollisionShape(btshape);
+	return object;
+    }
+    else
+	return NULL;
+}
+
+btCollisionObject* collision_space::EnvironmentModelBullet::createCollisionBody(const shapes::StaticShape *shape)
+{
+    btCollisionShape *btshape = NULL;
+    
+    switch (shape->type)
+    {
+    case shapes::PLANE:
+	{
+	    const shapes::Plane *p = static_cast<const shapes::Plane*>(shape);
+	    btshape = new btStaticPlaneShape(btVector3(p->a, p->b, p->c), p->d);
+	}
+	break;
+
     default:
 	break;
     }
@@ -265,7 +292,7 @@ bool collision_space::EnvironmentModelBullet::isSelfCollision(void)
     
     return false;
 }
-
+/*
 void collision_space::EnvironmentModelBullet::addPointCloudSpheres(const std::string &ns, unsigned int n, const double *points)
 {
     btTransform t;
@@ -283,14 +310,22 @@ void collision_space::EnvironmentModelBullet::addPointCloudSpheres(const std::st
 	m_obstacles[ns].push_back(object);
     }
 }
+*/
 
-void collision_space::EnvironmentModelBullet::addPlane(const std::string &ns, double a, double b, double c, double d)
+
+void collision_space::EnvironmentModelBullet::addObjects(const std::string &ns, const std::vector<shapes::Shape*> &shapes, const std::vector<btTransform> &poses)
 {
-    btCollisionObject *object = new btCollisionObject();
-    btCollisionShape *shape = new btStaticPlaneShape(btVector3(a, b, c), d);
-    object->setCollisionShape(shape);
-    m_world->addCollisionObject(object);
-    m_obstacles[ns].push_back(object);
+    assert(shapes.size() == poses.size());
+    for (unsigned int i = 0 ; i < shapes.size() ; ++i)
+	addObject(ns, shapes[i], poses[i]);
+}
+
+void collision_space::EnvironmentModelBullet::addObject(const std::string &ns, const shapes::StaticShape* shape)
+{
+    btCollisionObject *obj = createCollisionBody(shape);
+    m_world->addCollisionObject(obj);
+    m_obstacles[ns].push_back(obj);
+    m_objects->addObject(ns, shape);
 }
 
 void collision_space::EnvironmentModelBullet::addObject(const std::string &ns, const shapes::Shape *shape, const btTransform &pose)
@@ -299,9 +334,10 @@ void collision_space::EnvironmentModelBullet::addObject(const std::string &ns, c
     obj->setWorldTransform(pose);
     m_world->addCollisionObject(obj);
     m_obstacles[ns].push_back(obj);
+    m_objects->addObject(ns, shape, pose);    
 }
 
-void collision_space::EnvironmentModelBullet::clearObstacles(const std::string &ns)
+void collision_space::EnvironmentModelBullet::clearObjects(const std::string &ns)
 {
     if (m_obstacles.find(ns) != m_obstacles.end())
     {
@@ -314,13 +350,14 @@ void collision_space::EnvironmentModelBullet::clearObstacles(const std::string &
 	    //	delete obj;
 	}
 	m_obstacles.erase(ns);
-    }
+    }   
+    m_objects->clearObjects(ns);
 }
 
-void collision_space::EnvironmentModelBullet::clearObstacles(void)
+void collision_space::EnvironmentModelBullet::clearObjects(void)
 {
     for (std::map<std::string, std::vector<btCollisionObject*> >::iterator it = m_obstacles.begin() ; it != m_obstacles.end() ; ++it)
-	clearObstacles(it->first);
+	clearObjects(it->first);
 }
 
 int collision_space::EnvironmentModelBullet::setCollisionCheck(const std::string &link, bool state)
