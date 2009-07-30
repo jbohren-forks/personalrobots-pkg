@@ -15,6 +15,7 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR})
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 rospack_add_library(dorylus dorylus.cpp)
+rospack_add_executable(eigentest eigentest.cpp)
 
 rospack_download_test_data(http://pr.willowgarage.com/data/dorylus/sanity.d test/sanity.d)
 rospack_download_test_data(http://pr.willowgarage.com/data/dorylus/sanity.dd test/sanity.dd)

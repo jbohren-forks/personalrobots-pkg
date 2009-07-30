@@ -1,3 +1,40 @@
+/*********************************************************************
+*
+* Software License Agreement (BSD License)
+*
+*  Copyright (c) 2008, Willow Garage, Inc.
+*  All rights reserved.
+*
+*  Redistribution and use in source and binary forms, with or without
+*  modification, are permitted provided that the following conditions
+*  are met:
+*
+*   * Redistributions of source code must retain the above copyright
+*     notice, this list of conditions and the following disclaimer.
+*   * Redistributions in binary form must reproduce the above
+*     copyright notice, this list of conditions and the following
+*     disclaimer in the documentation and/or other materials provided
+*     with the distribution.
+*   * Neither the name of the Willow Garage nor the names of its
+*     contributors may be used to endorse or promote products derived
+*     from this software without specific prior written permission.
+*
+*  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+*  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+*  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+*  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+*  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+*  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+*  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+*  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+*  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+*  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+*  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+*  POSSIBILITY OF SUCH DAMAGE.
+*
+* Author: Alex Teichman
+*********************************************************************/
+
 #ifndef DORYLUS_H
 #define DORYLUS_H
 
@@ -44,7 +81,7 @@ typedef struct
   Eigen::MatrixXf center;
   float theta;
   //! The a_t^c's, i.e. the values of the weak classifier responses.
-  NEWMAT::Matrix vals;
+  Eigen::VectorXf vals;
   //! to identify which was learned first, second, third, etc.
   int id;
   //! For centroid voting, boundary fragments, etc.  Not yet fully supported.
@@ -121,8 +158,8 @@ inline float euc(const Eigen::MatrixXf& a, const Eigen::MatrixXf& b)
 class DorylusDataset {
  public:
   vector<object*> objs_;
-  //! NEWMAT::Matrix of y_m^c values.  i.e. ymc_(c,m) = +1 if the label of training example m is c, and -1 otherwise.
-  NEWMAT::Matrix ymc_;
+  //! Matrix of y_m^c values.  i.e. ymc_(c,m) = +1 if the label of training example m is c, and -1 otherwise.
+  Eigen::MatrixXf ymc_;
   //! Number of classes, not including class 0.
   unsigned int nClasses_; 
   //! num_class_objs[label] = num training examples with that label.  Unlike classes_, this does include the label 0, which is used for background / unknown objects.
@@ -173,11 +210,11 @@ class Dorylus {
   bool load(string filename, bool quiet=false, string *user_data_str=NULL);
   std::string status();
   bool learnWC(int nCandidates, map<string, float> max_thetas, vector<string> *desc_ignore=NULL);
-  NEWMAT::Matrix classify(object &obj, NEWMAT::Matrix **confidence = NULL);
+  Eigen::VectorXf classify(object &obj, NEWMAT::Matrix **confidence = NULL);
   float classify(DorylusDataset &dd);
   map<string, float> computeMaxThetas(const DorylusDataset &dd);
   //  float computeNewObjective(const weak_classifier& wc, const NEWMAT::Matrix& mmt, NEWMAT::Matrix** ppweights = NULL);
-  float computeUtility(const weak_classifier& wc, const NEWMAT::Matrix& mmt);
+  float computeUtility(const weak_classifier& wc, const Eigen::VectorXf& mmt);
   float computeObjective();
   //void train(int nCandidates, int max_secs, int max_wcs);
   vector<weak_classifier*>* findActivatedWCs(const string &descriptor, const Eigen::MatrixXf &pt);
