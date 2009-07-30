@@ -42,13 +42,15 @@ namespace actionlib
 template<class ActionSpec>
 GoalHandle<ActionSpec>::GoalHandle()
 {
-
+  gm_ = NULL;
+  active_ = false;
 }
 
 template<class ActionSpec>
 GoalHandle<ActionSpec>::GoalHandle(GoalManagerT* gm, typename ManagedListT::Handle handle)
 {
   gm_ = gm;
+  active_ = true;
   list_handle_ = handle;
 }
 
@@ -56,12 +58,23 @@ template<class ActionSpec>
 void GoalHandle<ActionSpec>::reset()
 {
   list_handle_.reset();
+  active_ = false;
   gm_ = NULL;
 }
 
 template<class ActionSpec>
+bool GoalHandle<ActionSpec>::isActive() const
+{
+  return active_;
+}
+
+
+template<class ActionSpec>
 CommState GoalHandle<ActionSpec>::getCommState()
 {
+  if (!active_)
+    ROS_ERROR("Trying to getCommState on an inactive GoalHandle. You are incorrectly using a GoalHandle");
+
   assert(gm_);
 
   ScopedLock(gm_->list_mutex_);
@@ -71,6 +84,9 @@ CommState GoalHandle<ActionSpec>::getCommState()
 template<class ActionSpec>
 TerminalState GoalHandle<ActionSpec>::getTerminalState()
 {
+  if (!active_)
+    ROS_ERROR("Trying to getTerminalState on an inactive GoalHandle. You are incorrectly using a GoalHandle");
+
   assert(gm_);
 
   boost::mutex::scoped_lock(gm_->list_mutex_);
@@ -104,6 +120,8 @@ TerminalState GoalHandle<ActionSpec>::getTerminalState()
 template<class ActionSpec>
 typename GoalHandle<ActionSpec>::ResultConstPtr GoalHandle<ActionSpec>::getResult()
 {
+  if (!active_)
+    ROS_ERROR("Trying to getResult on an inactive GoalHandle. You are incorrectly using a GoalHandle");
   assert(gm_);
   ScopedLock(gm_->list_mutex_);
   return list_handle_.getElem()->getResult();
@@ -112,6 +130,8 @@ typename GoalHandle<ActionSpec>::ResultConstPtr GoalHandle<ActionSpec>::getResul
 template<class ActionSpec>
 void GoalHandle<ActionSpec>::resend()
 {
+  if (!active_)
+    ROS_ERROR("Trying to resend() on an inactive GoalHandle. You are incorrectly using a GoalHandle");
   assert(gm_);
   boost::mutex::scoped_lock(gm_->list_mutex_);
 
@@ -127,6 +147,8 @@ void GoalHandle<ActionSpec>::resend()
 template<class ActionSpec>
 void GoalHandle<ActionSpec>::cancel()
 {
+  if (!active_)
+    ROS_ERROR("Trying to cancel() on an inactive GoalHandle. You are incorrectly using a GoalHandle");
   assert(gm_);
   ScopedLock(gm_->list_mutex_);
 

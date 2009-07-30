@@ -51,11 +51,58 @@ public:
     LOST
   } ;
 
-  StateEnum state_;
-};
+  TerminalState(const StateEnum& state) : state_(state) { }
 
+  inline bool operator==(const TerminalState& rhs) const
+  {
+    return (state_ == rhs.state_) ;
+  }
+
+  inline bool operator==(const TerminalState::StateEnum& rhs) const
+  {
+    return (state_ == rhs);
+  }
+
+  inline bool operator!=(const TerminalState::StateEnum& rhs) const
+  {
+    return !(*this == rhs);
+  }
+
+  inline bool operator!=(const TerminalState& rhs) const
+  {
+    return !(*this == rhs);
+  }
+
+  std::string toString() const
+  {
+    switch(state_)
+    {
+      case RECALLED:
+        return "RECALLED";
+      case REJECTED:
+        return "REJECTED";
+      case PREEMPTED:
+        return "PREEMPTED";
+      case ABORTED:
+        return "ABORTED";
+      case SUCCEEDED:
+        return "SUCCEEDED";
+      case LOST:
+        return "LOST";
+
+      default:
+        ROS_ERROR("BUG: Unhandled TerminalState: %u", state_);
+        break;
+    }
+    return "BUG-UNKNOWN";
+  }
+
+  StateEnum state_;
+private:
+  TerminalState();
+
+} ;
 
 }
 
 #endif
-

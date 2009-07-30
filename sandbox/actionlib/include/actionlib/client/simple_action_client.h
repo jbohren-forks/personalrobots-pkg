@@ -38,6 +38,7 @@
 #include "ros/ros.h"
 #include "actionlib/client/action_client.h"
 #include "actionlib/client/simple_goal_state.h"
+#include "actionlib/client/terminal_state.h"
 
 namespace actionlib
 {
@@ -52,8 +53,16 @@ namespace actionlib
 template <class ActionSpec>
 class SimpleActionClient
 {
+private:
+  ACTION_DEFINITION(ActionSpec);
+  typedef GoalHandle<ActionSpec> GoalHandleT;
+  typedef SimpleActionClient<ActionSpec> SimpleActionClientT;
 
 public:
+  typedef boost::function<void (const TerminalState& terminal_state, const ResultConstPtr& result) > SimpleDoneCallback;
+  typedef boost::function<void () > SimpleActiveCallback;
+  typedef boost::function<void (const FeedbackConstPtr& feedback) > SimpleFeedbackCallback;
+
   /**
    * \brief Simple constructor
    *
@@ -62,7 +71,7 @@ public:
    */
   SimpleActionClient(const std::string& name) : ac_(name)
   {
-    initClient();
+    initSimpleClient();
   }
 
   /**
@@ -75,7 +84,7 @@ public:
    */
   SimpleActionClient(const ros::NodeHandle& n, const std::string& name) : ac_(n, name)
   {
-    initClient();
+    initSimpleClient();
   }
 
   /**
@@ -88,7 +97,7 @@ public:
    * \param feedback_cb Callback that gets called whenever feedback for this goal is received
    */
   void sendGoal(const Goal& goal,
-                SimpleDoneCallback     result_cb   = SimpleDoneCallback(),
+                SimpleDoneCallback     done_cb     = SimpleDoneCallback(),
                 SimpleActiveCallback   active_cb   = SimpleActiveCallback(),
                 SimpleFeedbackCallback feedback_cb = SimpleFeedbackCallback());
 
@@ -128,7 +137,7 @@ public:
   /**
    * \brief Cancel the goal that we are currently pursuing
    */
-  void cancelCurrentGoal();
+  void cancelGoal();
 
   /**
    * \brief Stops tracking the state of the current goal. Unregisters this goal's callbacks
@@ -141,9 +150,123 @@ public:
 private:
   typedef ActionClient<ActionSpec> ActionClientT;
   ActionClientT ac_;
+  GoalHandleT gh_;
 
+  SimpleGoalState cur_simple_state_;
+
+  // User Callbacks
+  SimpleDoneCallback done_cb_;
+  SimpleActiveCallback active_cb_;
+  SimpleFeedbackCallback feedback_cb_;
+
+  // ***** Private Funcs *****
+  void initSimpleClient();
+  void handleTransition(GoalHandleT gh);
+  void handleFeedback(GoalHandleT gh, const FeedbackConstPtr& feedback);
 };
 
+
+
+template<class ActionSpec>
+void SimpleActionClient<ActionSpec>::initSimpleClient()
+{
+
 }
+
+template<class ActionSpec>
+void SimpleActionClient<ActionSpec>::sendGoal(const Goal& goal,
+                                              SimpleDoneCallback     done_cb,
+                                              SimpleActiveCallback   active_cb,
+                                              SimpleFeedbackCallback feedback_cb)
+{
+  // Reset the old GoalHandle, so that our callbacks won't get called anymore
+  gh_.reset();
+
+  // Store all the callbacks
+  done_cb_     = done_cb;
+  active_cb_   = active_cb;
+  feedback_cb_ = feedback_cb;
+
+  // Send the goal to the ActionServer
+  gh_ = ac_.sendGoal(goal, boost::bind(&SimpleActionClientT::handleTransition, this, _1),
+                           boost::bind(&SimpleActionClientT::handleFeedback, this, _1));
+}
+
+template<class ActionSpec>
+SimpleGoalState SimpleActionClient<ActionSpec>::getGoalState()
+{
+  if (!gh_.isActive())
+    ROS_ERROR("Trying to getGoalState() when no goal is running. You are incorrectly using SimpleActionClient");
+
+  CommState comm_state_ = gh_.getCommState();
+
+  switch( comm_state_.state_)
+  {
+    case CommState::WAITING_FOR_GOAL_ACK:
+    case CommState::PENDING:
+    case CommState::RECALLING:
+      return SimpleGoalState(SimpleGoalState::PENDING);
+    case CommState::ACTIVE:
+    case CommState::PREEMPTING:
+      return SimpleGoalState(SimpleGoalState::ACTIVE);
+    case CommState::DONE:
+      return SimpleGoalState(SimpleGoalState::DONE);
+    case CommState::WAITING_FOR_RESULT:
+    case CommState::WAITING_FOR_CANCEL_ACK:
+      return cur_simple_state_;
+    default:
+      break;
+  }
+  ROS_ERROR("Error trying to interpret CommState - %u", comm_state_.state_);
+  return SimpleGoalState(SimpleGoalState::DONE);
+}
+
+template<class ActionSpec>
+TerminalState SimpleActionClient<ActionSpec>::getTerminalState()
+{
+  if (!gh_.isActive())
+    ROS_ERROR("Trying to getTerminalState() when no goal is running. You are incorrectly using SimpleActionClient");
+
+  if (gh_.getCommState() != CommState::DONE)
+    ROS_ERROR("Trying to getTerminalState() when we're not yet in a [DONE] state. You are incorrectly using SimpleActionClient");
+
+  return gh_.getTerminalState();
+}
+
+template<class ActionSpec>
+void SimpleActionClient<ActionSpec>::cancelAllGoals()
+{
+  ac_.cancelAllGoals();
+}
+
+template<class ActionSpec>
+void SimpleActionClient<ActionSpec>::cancelGoalsAtAndBeforeTime(const ros::Time& time)
+{
+  ac_.cancelAllGoalsBeforeTime(time);
+}
+
+template<class ActionSpec>
+void SimpleActionClient<ActionSpec>::cancelGoal()
+{
+  if (!gh_.isActive())
+    ROS_ERROR("Trying to cancelGoal() when no goal is running. You are incorrectly using SimpleActionClient");
+
+  gh_.cancel();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #endif // ACTIONLIB_SINGLE_GOAL_ACTION_CLIENT_H_

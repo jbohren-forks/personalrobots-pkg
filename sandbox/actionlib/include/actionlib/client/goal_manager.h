@@ -140,6 +140,12 @@ public:
   void reset();
 
   /**
+   * \brief Checks if this goal handle is tracking a goal
+   * \return True if this goal handle is indeed tracking a goal
+   */
+  inline bool isActive() const;
+
+  /**
    * \brief Get the state of this goal's communication state machine from interaction with the server
    *
    * Possible States are: WAITING_FOR_GOAL_ACK, PENDING, ACTIVE, WAITING_FOR_RESULT,
@@ -186,6 +192,7 @@ private:
   GoalHandle(GoalManagerT* gm, typename ManagedListT::Handle handle);
 
   GoalManagerT* gm_;
+  bool active_;
   //typename ManagedListT::iterator it_;
   typename ManagedListT::Handle list_handle_;
 };
