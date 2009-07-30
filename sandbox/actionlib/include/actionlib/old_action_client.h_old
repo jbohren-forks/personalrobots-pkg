@@ -32,8 +32,8 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#ifndef ACTIONLIB_ACTION_CLIENT_H_
-#define ACTIONLIB_ACTION_CLIENT_H_
+#ifndef ACTIONLIB_OLD_ACTION_CLIENT_H_
+#define ACTIONLIB_OLD_ACTION_CLIENT_H_
 
 #include <list>
 
@@ -854,4 +854,4 @@ void ActionClientPrefix::GoalManager::finishWaitingForResult()
 #undef ActionClientTemplate
 #undef ActionClientPrefix
 
-#endif // ACTIONLIB_ACTION_CLIENT_H_
+#endif // ACTIONLIB_OLD_ACTION_CLIENT_H_

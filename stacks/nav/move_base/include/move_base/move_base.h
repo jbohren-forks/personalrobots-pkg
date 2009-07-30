@@ -54,9 +54,7 @@
 
 namespace move_base {
   //typedefs to help us out with the action server so that we don't hace to type so much
-  typedef actionlib::SingleGoalActionServer<MoveBaseActionGoal, MoveBaseGoal,
-          MoveBaseActionResult, MoveBaseResult, 
-          MoveBaseActionFeedback, MoveBaseFeedback> MoveBaseActionServer;
+  typedef actionlib::SingleGoalActionServer<MoveBaseAction> MoveBaseActionServer;
 
   enum MoveBaseState {
     PLANNING,
@@ -159,6 +157,8 @@ namespace move_base {
       void resetState();
 
       void goalCB(const robot_msgs::PoseStamped::ConstPtr& goal);
+
+      robot_msgs::PoseStamped goalToGlobalFrame(const robot_msgs::PoseStamped& goal_pose_msg);
 
       ros::NodeHandle ros_node_;
       tf::TransformListener& tf_;

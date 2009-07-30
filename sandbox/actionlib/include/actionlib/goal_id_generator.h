@@ -48,7 +48,7 @@ public:
   /**
    * \param name Name of the action we're generating GoalIDs for
    */
-  GoalIDGenerator(const std::string name) : name_(name)
+  GoalIDGenerator(const std::string name = "") : name_(name)
   {
 
   }

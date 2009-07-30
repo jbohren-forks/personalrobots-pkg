@@ -45,6 +45,7 @@
 #include <actionlib/GoalStatus.h>
 #include <actionlib/RequestType.h>
 #include <actionlib/enclosure_deleter.h>
+#include <actionlib/action_definition.h>
 
 #include <list>
 
@@ -53,15 +54,18 @@ namespace actionlib {
    * @class ActionServer
    * @brief The ActionServer is a helpful tool for managing goal requests to a
    * node. It allows the user to specify callbacks that are invoked when goal
-   * or preempt requests come over the wire, and passes back GoalHandles that
+   * or cancel requests come over the wire, and passes back GoalHandles that
    * can be used to track the state of a given goal request. The ActionServer
    * makes no assumptions about the policy used to service these goals, and
    * sends status for each goal over the wire until the last GoalHandle
    * associated with a goal request is destroyed.
    */
-  template <class ActionGoal, class Goal, class ActionResult, class Result, class ActionFeedback, class Feedback>
+  template <class ActionSpec>
   class ActionServer {
     private:
+      //generates typedefs that we'll use to make our lives easier
+      ACTION_DEFINITION(ActionSpec);
+
       /**
        * @class StatusTracker
        * @brief A class for storing the status of each goal the action server
@@ -69,6 +73,12 @@ namespace actionlib {
        */
       class StatusTracker {
         public:
+          StatusTracker(const GoalID& goal_id, unsigned int status){
+            //set the goal id and status appropriately
+            status_.goal_id = goal_id;
+            status_.status = status;
+          }
+
           StatusTracker(const boost::shared_ptr<const ActionGoal>& goal)
             : goal_(goal) {
               //set the goal_id from the message
@@ -91,6 +101,7 @@ namespace actionlib {
           boost::shared_ptr<const ActionGoal> goal_;
           boost::weak_ptr<void> handle_tracker_;
           GoalStatus status_;
+          ros::Time handle_destruction_time_;
       };
 
       /**
@@ -102,7 +113,7 @@ namespace actionlib {
       //class to help with tracking status objects
       class HandleTrackerDeleter {
         public:
-          HandleTrackerDeleter(ActionServer<ActionGoal, Goal, ActionResult, Result, ActionFeedback, Feedback>* as,
+          HandleTrackerDeleter(ActionServer<ActionSpec>* as,
               typename std::list<StatusTracker>::iterator status_it)
             : as_(as), status_it_(status_it) {}
 
@@ -110,13 +121,14 @@ namespace actionlib {
             if(as_){
               //make sure to lock while we erase status for this goal from the list
               as_->lock_.lock();
-              as_->status_list_.erase(status_it_);
+              (*status_it_).handle_destruction_time_ = ros::Time::now();
+              //as_->status_list_.erase(status_it_);
               as_->lock_.unlock();
             }
           }
 
         private:
-          ActionServer<ActionGoal, Goal, ActionResult, Result, ActionFeedback, Feedback>* as_;
+          ActionServer<ActionSpec>* as_;
           typename std::list<StatusTracker>::iterator status_it_;
       };
 
@@ -134,18 +146,52 @@ namespace actionlib {
            */
           GoalHandle(){}
 
-          /**
-           * @brief  Set the status of the goal associated with the GoalHandle to active
+          /** @brief  Accept the goal referenced by the goal handle. This will
+           * transition to the ACTIVE state or the PREEMPTING state depending
+           * on whether a cancel request has been received for the goal
            */
-          void setActive(){
-            ROS_DEBUG("Going active on goal, id: %.2f, stamp: %.2f", getGoalID().id.toSec(), getGoalID().stamp.toSec());
+          void setAccepted(){
+            ROS_DEBUG("Accepting goal, id: %.2f, stamp: %.2f", getGoalID().id.toSec(), getGoalID().stamp.toSec());
             if(goal_){
-              if((*status_it_).status_.status == GoalStatus::PENDING){
+              unsigned int status = (*status_it_).status_.status;
+
+              //if we were pending before, then we'll go active
+              if(status == GoalStatus::PENDING){
                 (*status_it_).status_.status = GoalStatus::ACTIVE;
                 as_->publishStatus();
               }
+              //if we were recalling before, now we'll go to preempting
+              else if(status == GoalStatus::RECALLING){
+                (*status_it_).status_.status = GoalStatus::PREEMPTING;
+                as_->publishStatus();
+              }
               else
-                ROS_ERROR("To transition to an active state, the goal must be in a pending state, it is currently in state: %d",
+                ROS_ERROR("To transition to an active state, the goal must be in a pending or recalling state, it is currently in state: %d",
+                    (*status_it_).status_.status);
+            }
+            else
+              ROS_ERROR("Attempt to set status on an uninitialized GoalHandle");
+          }
+
+          /**
+           * @brief  Set the status of the goal associated with the GoalHandle to RECALLED or PREEMPTED
+           * depending on what the current status of the goal is
+           * @param  result Optionally, the user can pass in a result to be sent to any clients of the goal
+           */
+          void setCanceled(const Result& result = Result()){
+            ROS_DEBUG("Setting status to canceled on goal, id: %.2f, stamp: %.2f", getGoalID().id.toSec(), getGoalID().stamp.toSec());
+            if(goal_){
+              unsigned int status = (*status_it_).status_.status;
+              if(status == GoalStatus::PENDING || status == GoalStatus::RECALLING){
+                (*status_it_).status_.status = GoalStatus::RECALLED;
+                as_->publishResult((*status_it_).status_, result);
+              }
+              else if(status == GoalStatus::ACTIVE || status == GoalStatus::PREEMPTING){
+                (*status_it_).status_.status = GoalStatus::PREEMPTED;
+                as_->publishResult((*status_it_).status_, result);
+              }
+              else
+                ROS_ERROR("To transition to a cancelled state, the goal must be in a pending, recalling, active, or preempting state, it is currently in state: %d",
                     (*status_it_).status_.status);
             }
             else
@@ -159,12 +205,13 @@ namespace actionlib {
           void setRejected(const Result& result = Result()){
             ROS_DEBUG("Setting status to rejected on goal, id: %.2f, stamp: %.2f", getGoalID().id.toSec(), getGoalID().stamp.toSec());
             if(goal_){
-              if((*status_it_).status_.status == GoalStatus::PENDING){
+              unsigned int status = (*status_it_).status_.status;
+              if(status == GoalStatus::PENDING || status == GoalStatus::RECALLING){
                 (*status_it_).status_.status = GoalStatus::REJECTED;
                 as_->publishResult((*status_it_).status_, result);
               }
               else
-                ROS_ERROR("To transition to a rejected state, the goal must be in a pending state, it is currently in state: %d",
+                ROS_ERROR("To transition to a rejected state, the goal must be in a pending or recalling state, it is currently in state: %d",
                     (*status_it_).status_.status);
             }
             else
@@ -179,32 +226,12 @@ namespace actionlib {
             ROS_DEBUG("Setting status to aborted on goal, id: %.2f, stamp: %.2f", getGoalID().id.toSec(), getGoalID().stamp.toSec());
             if(goal_){
               unsigned int status = (*status_it_).status_.status;
-              if(status == GoalStatus::PENDING || status == GoalStatus::ACTIVE){
+              if(status == GoalStatus::PREEMPTING || status == GoalStatus::ACTIVE){
                 (*status_it_).status_.status = GoalStatus::ABORTED;
                 as_->publishResult((*status_it_).status_, result);
               }
               else
-                ROS_ERROR("To transition to an aborted state, the goal must be in a pending or active state, it is currently in state: %d",
-                    status);
-            }
-            else
-              ROS_ERROR("Attempt to set status on an uninitialized GoalHandle");
-          }
-
-          /**
-           * @brief  Set the status of the goal associated with the GoalHandle to preempted
-           * @param  result Optionally, the user can pass in a result to be sent to any clients of the goal
-           */
-          void setPreempted(const Result& result = Result()){
-            ROS_DEBUG("Setting status to preempted on goal, id: %.2f, stamp: %.2f", getGoalID().id.toSec(), getGoalID().stamp.toSec());
-            if(goal_){
-              unsigned int status = (*status_it_).status_.status;
-              if(status == GoalStatus::PENDING || status == GoalStatus::ACTIVE){
-                (*status_it_).status_.status = GoalStatus::PREEMPTED;
-                as_->publishResult((*status_it_).status_, result);
-              }
-              else
-                ROS_ERROR("To transition to a preempted state, the goal must be in a pending or active state, it is currently in state: %d",
+                ROS_ERROR("To transition to an aborted state, the goal must be in a preempting or active state, it is currently in state: %d",
                     status);
             }
             else
@@ -219,12 +246,12 @@ namespace actionlib {
             ROS_DEBUG("Setting status to succeeded on goal, id: %.2f, stamp: %.2f", getGoalID().id.toSec(), getGoalID().stamp.toSec());
             if(goal_){
               unsigned int status = (*status_it_).status_.status;
-              if(status == GoalStatus::PENDING || status == GoalStatus::ACTIVE){
+              if(status == GoalStatus::PREEMPTING || status == GoalStatus::ACTIVE){
                 (*status_it_).status_.status = GoalStatus::SUCCEEDED;
                 as_->publishResult((*status_it_).status_, result);
               }
               else
-                ROS_ERROR("To transition to a succeeded state, the goal must be in a pending or active state, it is currently in state: %d",
+                ROS_ERROR("To transition to a succeeded state, the goal must be in a preempting or active state, it is currently in state: %d",
                     status);
             }
             else
@@ -238,12 +265,7 @@ namespace actionlib {
           void publishFeedback(const Feedback& feedback){
             ROS_DEBUG("Publishing feedback for goal, id: %.2f, stamp: %.2f", getGoalID().id.toSec(), getGoalID().stamp.toSec());
             if(goal_) {
-              unsigned int status = (*status_it_).status_.status;
-              if(status == GoalStatus::ACTIVE || status == GoalStatus::PENDING)
-                as_->publishFeedback((*status_it_).status_, feedback);
-              else
-                ROS_ERROR("To send feedback, the goal must be in a pending or active state, it is currently in state: %d",
-                    status);
+              as_->publishFeedback((*status_it_).status_, feedback);
             }
             else
               ROS_ERROR("Attempt to publish feedback on an uninitialized GoalHandle");
@@ -320,15 +342,39 @@ namespace actionlib {
            * @brief  A private constructor used by the ActionServer to initialize a GoalHandle
            */
           GoalHandle(typename std::list<StatusTracker>::iterator status_it,
-              ActionServer<ActionGoal, Goal, ActionResult, Result, ActionFeedback, Feedback>* as)
+              ActionServer<ActionSpec>* as)
             : status_it_(status_it), goal_((*status_it).goal_),
               as_(as), handle_tracker_((*status_it).handle_tracker_.lock()){}
 
+          /**
+           * @brief  A private method to set status to PENDING or RECALLING
+           * @return True if the cancel request should be passed on to the user, false otherwise
+           */
+          bool setCancelRequested(){
+            ROS_DEBUG("Transisitoning to a cancel requested state on goal id: %.2f, stamp: %.2f", getGoalID().id.toSec(), getGoalID().stamp.toSec());
+            if(goal_){
+              unsigned int status = (*status_it_).status_.status;
+              if(status == GoalStatus::PENDING){
+                (*status_it_).status_.status = GoalStatus::RECALLING;
+                as_->publishStatus();
+                return true;
+              }
+
+              if(status == GoalStatus::ACTIVE){
+                (*status_it_).status_.status = GoalStatus::PREEMPTING;
+                as_->publishStatus();
+                return true;
+              }
+
+            }
+            return false;
+          }
+
           typename std::list<StatusTracker>::iterator status_it_;
           boost::shared_ptr<const ActionGoal> goal_;
-          ActionServer<ActionGoal, Goal, ActionResult, Result, ActionFeedback, Feedback>* as_;
+          ActionServer<ActionSpec>* as_;
           boost::shared_ptr<void> handle_tracker_;
-          friend class ActionServer<ActionGoal, Goal, ActionResult, Result, ActionFeedback, Feedback>;
+          friend class ActionServer<ActionSpec>;
       };
 
       /**
@@ -336,13 +382,12 @@ namespace actionlib {
        * @param  n A NodeHandle to create a namespace under
        * @param  name The name of the action
        * @param  goal_cb A goal callback to be called when the ActionServer receives a new goal over the wire
-       * @param  preempt_cb A preempt callback to be called when the ActionServer receives a new preempt over the wire
-       * @return
+       * @param  cancel_cb A cancel callback to be called when the ActionServer receives a new cancel request over the wire
        */
       ActionServer(ros::NodeHandle n, std::string name,
           boost::function<void (GoalHandle)> goal_cb = boost::function<void (GoalHandle)>(),
-          boost::function<void (GoalHandle)> preempt_cb = boost::function<void (GoalHandle)>())
-        : node_(n, name), goal_callback_(goal_cb), preempt_callback_(preempt_cb) {
+          boost::function<void (GoalHandle)> cancel_cb = boost::function<void (GoalHandle)>())
+        : node_(n, name), goal_callback_(goal_cb), cancel_callback_(cancel_cb) {
           status_pub_ = node_.advertise<actionlib::GoalStatusArray>("status", 1);
           result_pub_ = node_.advertise<ActionResult>("result", 1);
           feedback_pub_ = node_.advertise<ActionFeedback>("feedback", 1);
@@ -350,9 +395,15 @@ namespace actionlib {
           goal_sub_ = node_.subscribe<ActionGoal>("goal", 1,
               boost::bind(&ActionServer::goalCallback, this, _1));
 
+          cancel_sub_ = node_.subscribe<GoalID>("cancel", 1,
+              boost::bind(&ActionServer::cancelCallback, this, _1));
+
           //read the frequency with which to publish status from the parameter server
-          double status_frequency;
+          double status_frequency, status_list_timeout;
           node_.param("status_frequency", status_frequency, 5.0);
+          node_.param("status_list_timeout", status_list_timeout, 5.0);
+
+          status_list_timeout_ = ros::Duration(status_list_timeout);
 
           status_timer_ = node_.createTimer(ros::Duration(1.0 / status_frequency),
               boost::bind(&ActionServer::publishStatus, this, _1));
@@ -360,7 +411,7 @@ namespace actionlib {
       }
 
       /**
-       * @brief  Register a callback to be invoked when a new goal is received, this will replace any  previously registerd callback
+       * @brief  Register a callback to be invoked when a new goal is received, this will replace any  previously registered callback
        * @param  cb The callback to invoke
        */
       void registerGoalCallback(boost::function<void (GoalHandle)> cb){
@@ -368,11 +419,11 @@ namespace actionlib {
       }
 
       /**
-       * @brief  Register a callback to be invoked when a new preempt is received, this will replace any  previously registerd callback
+       * @brief  Register a callback to be invoked when a new cancel is received, this will replace any  previously registered callback
        * @param  cb The callback to invoke
        */
-      void registerPreemptCallback(boost::function<void (GoalHandle)> cb){
-        preempt_callback_ = cb;
+      void registerCancelCallback(boost::function<void (GoalHandle)> cb){
+        cancel_callback_ = cb;
       }
 
     private:
@@ -405,58 +456,97 @@ namespace actionlib {
       }
 
       /**
+       * @brief  The ROS callback for cancel requests coming into the ActionServer
+       */
+      void cancelCallback(const boost::shared_ptr<const GoalID>& goal_id){
+        boost::mutex::scoped_lock(lock_);
+        //we need to handle a cancel for the user
+        ROS_DEBUG("The action server has received a new cancel request");
+        bool goal_id_found = false;
+        for(typename std::list<StatusTracker>::iterator it = status_list_.begin(); it != status_list_.end(); ++it){
+          //check if the goal id is zero or if it is equal to the goal id of
+          //the iterator or if the time of the iterator warrants a cancel
+          if(
+              (goal_id->id == ros::Time() && goal_id->stamp == ros::Time()) //id and stamp 0 --> cancel everything
+              || goal_id->id == (*it).status_.goal_id.id //ids match... cancel that goal
+              || (goal_id->stamp != ros::Time() && (*it).status_.goal_id.stamp <= goal_id->stamp) //stamp != 0 --> cancel everything before stamp
+            ){
+            //we need to check if we need to store this cancel request for later
+            if(goal_id->id == (*it).status_.goal_id.id)
+              goal_id_found = true;
+
+            //set the status of the goal to PREEMPTING or RECALLING as approriate
+            //and check if the request should be passed on to the user
+            GoalHandle gh(it, this);
+            if(gh.setCancelRequested()){
+              //call the user's cancel callback on the relevant goal
+              cancel_callback_(gh);
+            }
+          }
+
+        }
+
+	//if the requested goal_id was not found, and it is non-zero, then we need to store the cancel request
+	if(goal_id->id != ros::Time() && !goal_id_found){
+		typename std::list<StatusTracker>::iterator it = status_list_.insert(status_list_.end(), 
+				StatusTracker(*goal_id, GoalStatus::RECALLING));
+		//start the timer for how long the status will live in the list without a goal handle to it
+		(*it).handle_destruction_time_ = ros::Time::now();
+	}
+
+        //make sure to set last_cancel_ based on the stamp associated with this cancel request
+        if(goal_id->stamp > last_cancel_)
+          last_cancel_ = goal_id->stamp;
+      }
+
+      /**
        * @brief  The ROS callback for goals coming into the ActionServer
        */
       void goalCallback(const boost::shared_ptr<const ActionGoal>& goal){
         boost::mutex::scoped_lock(lock_);
-        ROS_DEBUG("The action server is in the ROS goal callback");
 
-        //first, we'll check if its a goal callback
-        if(goal->request_type.type == RequestType::GOAL_REQUEST){
-          ROS_DEBUG("The action server has received a new goal request");
-          //first, we need to create a StatusTracker associated with this goal and push it onto our list
-          typename std::list<StatusTracker>::iterator it = status_list_.insert(status_list_.end(), StatusTracker(goal));
+        ROS_DEBUG("The action server has received a new goal request");
 
-          //we need to create a handle tracker for the incoming goal and update the StatusTracker
-          HandleTrackerDeleter d(this, it);
-          boost::shared_ptr<void> handle_tracker((void *)NULL, d);
-          (*it).handle_tracker_ = handle_tracker;
+        //we need to check if this goal already lives in the status list
+        for(typename std::list<StatusTracker>::iterator it = status_list_.begin(); it != status_list_.end(); ++it){
+          if(goal->goal_id.id == (*it).status_.goal_id.id){
+            unsigned int status = (*it).status_.status;
+            //if the goal has already been canceled, we'll set its status to successfully recalled
+            if(status == GoalStatus::RECALLING){
+              (*it).status_.status = GoalStatus::RECALLED;
+              publishStatus();
+            }
 
-          //check if this goal has already been preempted
-          if(goal->goal_id.stamp != ros::Time() && goal->goal_id.stamp <= last_preempt_){
-            //if it has... just create a GoalHandle for it and setPreempted
-            GoalHandle gh(it, this);
-            gh.setPreempted();
-          }
-          else{
-            //now, we need to create a goal handle and call the user's callback
-            goal_callback_(GoalHandle(it, this));
+            //otherwise this is a request for a goal that is already in-flight,
+            //but we'll check if we should bump how long it stays in the list
+            //depending on whether a goal handle to the status exists or not
+            if(!(*it).handle_tracker_.lock()){
+              (*it).handle_destruction_time_ = ros::Time::now();
+            }
+
+            //make sure not to call any user callbacks or add duplicate status onto the list
+            return;
           }
         }
-        //we need to handle a preempt for the user
-        else if(goal->request_type.type == RequestType::PREEMPT_REQUEST){
-          ROS_DEBUG("The action server has received a new preempt request");
-          for(typename std::list<StatusTracker>::iterator it = status_list_.begin(); it != status_list_.end(); ++it){
-            //check if the goal id is zero or if it is equal to the goal id of the iterator
-            if(
-                (goal->goal_id.id == ros::Time() && goal->goal_id.stamp == ros::Time()) //id and stamp 0 --> preempt everything
-                || goal->goal_id.id == (*it).status_.goal_id.id //ids match... preempt that goal
-                || (goal->goal_id.stamp != ros::Time() && (*it).status_.goal_id.stamp <= goal->goal_id.stamp) //stamp != 0 --> preempt everything before stamp
-                ){
-              //call the user's preempt callback on the relevant goal
-              preempt_callback_(GoalHandle(it, this));
-            }
-          }
 
-          //make sure to set last_preempt_ based on the stamp associated with this preempt
-          if(goal->goal_id.stamp > last_preempt_)
-            last_preempt_ = goal->goal_id.stamp;
+        //if the goal is not in our list, we need to create a StatusTracker associated with this goal and push it on
+        typename std::list<StatusTracker>::iterator it = status_list_.insert(status_list_.end(), StatusTracker(goal));
+
+        //we need to create a handle tracker for the incoming goal and update the StatusTracker
+        HandleTrackerDeleter d(this, it);
+        boost::shared_ptr<void> handle_tracker((void *)NULL, d);
+        (*it).handle_tracker_ = handle_tracker;
+
+        //check if this goal has already been canceled based on its timestamp
+        if(goal->goal_id.stamp != ros::Time() && goal->goal_id.stamp <= last_cancel_){
+          //if it has... just create a GoalHandle for it and setCanceled
+          GoalHandle gh(it, this);
+          gh.setCanceled();
         }
         else{
-          //someone sent a goal with an unsupported status... we'll throw an error
-          ROS_ERROR("A goal was sent to this action server with an undefined request_type! This goal will not be processed");
+          //now, we need to create a goal handle and call the user's callback
+          goal_callback_(GoalHandle(it, this));
         }
-
       }
 
       /**
@@ -478,16 +568,26 @@ namespace actionlib {
         status_array.set_status_list_size(status_list_.size());
 
         unsigned int i = 0;
-        for(typename std::list<StatusTracker>::iterator it = status_list_.begin(); it != status_list_.end(); ++it){
+        for(typename std::list<StatusTracker>::iterator it = status_list_.begin(); it != status_list_.end();){
           status_array.status_list[i] = (*it).status_;
+
+          //check if the item is due for deletion from the status list
+          if((*it).handle_destruction_time_ != ros::Time()
+              && (*it).handle_destruction_time_ + status_list_timeout_ < ros::Time::now()){
+            it = status_list_.erase(it);
+          }
+          else
+            ++it;
+
           ++i;
         }
+
         status_pub_.publish(status_array);
       }
 
       ros::NodeHandle node_;
 
-      ros::Subscriber goal_sub_;
+      ros::Subscriber goal_sub_, cancel_sub_;
       ros::Publisher status_pub_, result_pub_, feedback_pub_;
 
       boost::recursive_mutex lock_;
@@ -497,9 +597,10 @@ namespace actionlib {
       std::list<StatusTracker> status_list_;
 
       boost::function<void (GoalHandle)> goal_callback_;
-      boost::function<void (GoalHandle)> preempt_callback_;
+      boost::function<void (GoalHandle)> cancel_callback_;
 
-      ros::Time last_preempt_;
+      ros::Time last_cancel_;
+      ros::Duration status_list_timeout_;
 
 
   };

@@ -360,6 +360,30 @@ namespace move_base {
 
   }
 
+  robot_msgs::PoseStamped MoveBase::goalToGlobalFrame(const robot_msgs::PoseStamped& goal_pose_msg){
+    std::string global_frame = planner_costmap_ros_->globalFrame();
+    tf::Stamped<tf::Pose> goal_pose, global_pose;
+    poseStampedMsgToTF(goal_pose_msg, goal_pose);
+
+    //just get the latest available transform... for accuracy they should send
+    //goals in the frame of the planner
+    goal_pose.stamp_ = ros::Time(); 
+
+    try{
+      tf_.transformPose(global_frame, goal_pose, global_pose);
+    }
+    catch(tf::TransformException& ex){
+      ROS_WARN("Failed to transform the goal pose from %s into the %s frame: %s", 
+          goal_pose.frame_id_.c_str(), global_frame.c_str(), ex.what());
+      return goal_pose_msg;
+    }
+
+    robot_msgs::PoseStamped global_pose_msg;
+    tf::poseStampedTFToMsg(global_pose, global_pose_msg);
+    return global_pose_msg;
+
+  }
+
   void MoveBase::runLoop(){
     ros::Rate r(controller_frequency_);
     robot_msgs::PoseStamped goal;
@@ -369,7 +393,7 @@ namespace move_base {
         if(!as_.isPreemptRequested()){
           if(as_.isNewGoalAvailable()){
             //if we're active and a new goal is available, we'll accept it, but we won't shut anything down
-            goal = (*as_.acceptNewGoal()).target_pose;
+            goal = goalToGlobalFrame((*as_.acceptNewGoal()).target_pose);
 
             //we'll make sure that we reset our state for the next execution cycle
             clearing_state_ = CONSERVATIVE_RESET;
@@ -407,7 +431,7 @@ namespace move_base {
       }
       else if(as_.isNewGoalAvailable()){
         //if we're inactive and a new goal is available, we'll accept it
-        goal = (*as_.acceptNewGoal()).target_pose;
+        goal = goalToGlobalFrame((*as_.acceptNewGoal()).target_pose);
 
         //if we shutdown our costmaps when we're deactivated... we need to start them back up now
         if(shutdown_costmaps_){
@@ -626,9 +650,8 @@ namespace move_base {
 int main(int argc, char** argv){
   ros::init(argc, argv, "move_base");
   tf::TransformListener tf(ros::Duration(10));
-  ros::NodeHandle n;
   
-  move_base::MoveBase move_base(n.getName(), tf);
+  move_base::MoveBase move_base(ros::this_node::getName(), tf);
 
   //ros::MultiThreadedSpinner s;
   ros::spin();

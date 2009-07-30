@@ -32,81 +32,90 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#include "ros/ros.h"
+#ifndef ACTIONLIB_CLIENT_COMM_STATE_H_
+#define ACTIONLIB_CLIENT_COMM_STATE_H_
 
-#include "actionlib/MoveBaseAction.h"
-#include "actionlib/client/action_client.h"
+#include <string>
+#include "ros/console.h"
 
-#include "boost/thread.hpp"
-
-using namespace actionlib;
-using namespace robot_msgs;
-
-typedef ActionClient<MoveBaseAction> MoveBaseClient;
-
-void goalCallback(GoalHandle<MoveBaseAction> gh)
+namespace actionlib
 {
-  ROS_DEBUG("In the goalCallback");
 
-  ROS_DEBUG("Our final status is: [%s]", gh.getCommState().toString().c_str());
+/**
+ * \brief Thin wrapper around an enum in order to help interpret the state of the communication state machine
+ **/
+class CommState
+{
+public:
 
-  if (gh.getResult())
-    ROS_DEBUG("Got a Result!");
-  else
-    ROS_DEBUG("Got a NULL Result.");
+  //! \brief Defines the various states the Communication State Machine can be in
+  enum StateEnum
+  {
+    WAITING_FOR_GOAL_ACK,
+    PENDING,
+    ACTIVE,
+    WAITING_FOR_RESULT,
+    WAITING_FOR_CANCEL_ACK,
+    RECALLING,
+    PREEMPTING,
+    DONE
+  } ;
+
+  CommState(const StateEnum& state) : state_(state) { }
+
+  inline bool operator==(const CommState& rhs) const
+  {
+    return (state_ == rhs.state_) ;
+  }
+
+  inline bool operator==(const CommState::StateEnum& rhs) const
+  {
+    return (state_ == rhs);
+  }
+
+  inline bool operator!=(const CommState::StateEnum& rhs) const
+  {
+    return !(*this == rhs);
+  }
+
+  inline bool operator!=(const CommState& rhs) const
+  {
+    return !(*this == rhs);
+  }
+
+  std::string toString() const
+  {
+    switch(state_)
+    {
+      case WAITING_FOR_GOAL_ACK:
+        return "WAITING_FOR_GOAL_ACK";
+      case PENDING:
+        return "PENDING";
+      case ACTIVE:
+        return "ACTIVE";
+      case WAITING_FOR_RESULT:
+        return "WAITING_FOR_RESULT";
+      case WAITING_FOR_CANCEL_ACK:
+        return "WAITING_FOR_CANCEL_ACK";
+      case RECALLING:
+        return "RECALLING";
+      case PREEMPTING:
+        return "PREEMPTING";
+      case DONE:
+        return "DONE";
+      default:
+        ROS_ERROR("BUG: Unhandled CommState: %u", state_);
+        break;
+    }
+    return "BUG-UNKNOWN";
+  }
+
+  StateEnum state_;
+private:
+  CommState();
+
+} ;
 
 }
 
-void feedbackCallback(GoalHandle<MoveBaseAction> gh, const MoveBaseFeedbackConstPtr& fb)
-{
-  ROS_INFO("Got Feedback!");
-}
-
-void spinThread()
-{
-  ros::spin();
-}
-
-int main(int argc, char** argv)
-{
-  ros::init(argc, argv, "move_base_action_client");
-
-  ros::NodeHandle n;
-
-  boost::thread spinthread = boost::thread(boost::bind(&spinThread)) ;
-
-  MoveBaseClient ac("move_base");
-
-  //ros::Duration sleep_duration = ros::Duration().fromSec(1.0);
-  //sleep_duration.sleep();
-  sleep(2.0);
-
-  MoveBaseGoal goal;
-
-  GoalHandle<MoveBaseAction> gh = ac.sendGoal(goal, &goalCallback, &feedbackCallback);
-
-  sleep(1.0);
-
-  gh.cancel();
-
-  /*sleep(2.0);
-
-  ROS_INFO("About to send a goal");
-  gh.reset();
-  gh = ac.sendGoal(goal, &goalCallback, &feedbackCallback, ros::Duration(10.0));
-
-  sleep(2.0);
-
-  ROS_INFO("About to preempt the goal");
-  gh.preemptGoal();*/
-
-  //ac.sendGoal(goal);
-
-  while(n.ok())
-    sleep(.1);
-
-  sleep(3);
-
-
-  return 0;
-}
+#endif

@@ -60,7 +60,7 @@ Subscribes to (name/type):
 
 Publishes to (name / type):
 - @b "amcl_pose" robot_msgs/PoseWithCovariance : robot's estimated pose in the map, with covariance
-- @b "particlecloud" nav_msgs/ParticleCloud : fake set of particles being maintained by the filter (one paricle only).
+- @b "particlecloud" nav_msgs/PoseArray : fake set of poses being maintained by the filter (one paricle only).
 
 <hr>
 
@@ -74,7 +74,7 @@ Publishes to (name / type):
 #include <ros/time.h>
 
 #include <robot_msgs/PoseWithRatesStamped.h>
-#include <nav_msgs/ParticleCloud.h>
+#include <nav_msgs/PoseArray.h>
 #include <robot_msgs/PoseWithCovariance.h>
 
 #include <angles/angles.h>
@@ -92,7 +92,7 @@ public:
     FakeOdomNode(void) : ros::Node("fake_localization")
     {
       advertise<robot_msgs::PoseWithCovariance>("amcl_pose",1);
-      advertise<nav_msgs::ParticleCloud>("particlecloud",1);
+      advertise<nav_msgs::PoseArray>("particlecloud",1);
       m_tfServer = new tf::TransformBroadcaster();	
       m_tfListener = new tf::TransformListener(*this);
       m_lastUpdate = ros::Time::now();
@@ -100,7 +100,9 @@ public:
       m_base_pos_received = false;
 
       param("~odom_frame_id", odom_frame_id_, std::string("odom"));
-      m_particleCloud.set_particles_size(1);
+      m_particleCloud.header.stamp = ros::Time::now();
+      m_particleCloud.header.frame_id = "/map";
+      m_particleCloud.set_poses_size(1);
       notifier = new tf::MessageNotifier<robot_msgs::PoseWithRatesStamped>(m_tfListener, this, 
                                                                            boost::bind(&FakeOdomNode::update, this, _1),
                                                                            "",//empty topic it will be manually stuffed
@@ -138,7 +140,7 @@ private:
     bool                           m_base_pos_received;
     
     robot_msgs::PoseWithRatesStamped  m_basePosMsg;
-    nav_msgs::ParticleCloud      m_particleCloud;
+    nav_msgs::PoseArray      m_particleCloud;
     robot_msgs::PoseWithCovariance      m_currentPos;
 
     //parameter for what odom to use
@@ -212,7 +214,7 @@ public:
     publish("amcl_pose", m_currentPos);
 
     // The particle cloud is the current position. Quite convenient.
-    m_particleCloud.particles[0] = m_currentPos.pose;
+    m_particleCloud.poses[0] = m_currentPos.pose;
     publish("particlecloud", m_particleCloud);
   }   
 };

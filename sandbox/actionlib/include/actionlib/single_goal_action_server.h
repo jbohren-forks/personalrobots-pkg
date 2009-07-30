@@ -39,6 +39,7 @@
 
 #include <ros/ros.h>
 #include <actionlib/action_server.h>
+#include <actionlib/action_definition.h>
 
 namespace actionlib {
   /** @class SingleGoalActionServer @brief The SingleGoalActionServer
@@ -51,11 +52,13 @@ namespace actionlib {
    * goal implies successful preemption of any old goal and the status of the
    * old goal will be change automatically to reflect this.
    */
-  template <class ActionGoal, class Goal, class ActionResult, class Result, class ActionFeedback, class Feedback>
+  template <class ActionSpec>
   class SingleGoalActionServer {
     public:
-      typedef ActionServer<ActionGoal, Goal, ActionResult, Result, ActionFeedback, Feedback> TypedActionServer;
-      typedef typename TypedActionServer::GoalHandle GoalHandle;
+      //generates typedefs that we'll use to make our lives easier
+      ACTION_DEFINITION(ActionSpec);
+
+      typedef typename ActionServer<ActionSpec>::GoalHandle GoalHandle;
 
       /**
        * @brief  Constructor for a SingleGoalActionServer
@@ -66,7 +69,7 @@ namespace actionlib {
         : new_goal_(false), preempt_request_(false), new_goal_preempt_request_(false) {
 
           //create the action server
-          as_ = boost::shared_ptr<TypedActionServer>(new TypedActionServer(n, name,
+          as_ = boost::shared_ptr<ActionServer<ActionSpec> >(new ActionServer<ActionSpec>(n, name,
                 boost::bind(&SingleGoalActionServer::goalCallback, this, _1),
                 boost::bind(&SingleGoalActionServer::preemptCallback, this, _1)));
 
@@ -95,7 +98,7 @@ namespace actionlib {
         if(isActive()
             && current_goal_.getGoal()
             && current_goal_ != next_goal_){
-          current_goal_.setPreempted();
+          current_goal_.setCanceled();
         }
 
         ROS_DEBUG("Accepting a new goal");
@@ -109,7 +112,7 @@ namespace actionlib {
         new_goal_preempt_request_ = false;
 
         //set the status of the current goal to be active
-        current_goal_.setActive();
+        current_goal_.setAccepted();
 
         return current_goal_.getGoal();
       }
@@ -165,7 +168,7 @@ namespace actionlib {
        */
       void setPreempted(const Result& result = Result()){
         boost::mutex::scoped_lock(lock_);
-        current_goal_.setPreempted(result);
+        current_goal_.setCanceled(result);
       }
 
       /**
@@ -198,7 +201,7 @@ namespace actionlib {
 
           //if next_goal has not been accepted already... its going to get bumped, but we need to let the client know we're preempting
           if(next_goal_.getGoal() && (!current_goal_.getGoal() || next_goal_ != current_goal_)){
-            next_goal_.setPreempted();
+            next_goal_.setCanceled();
           }
 
           next_goal_ = goal;
@@ -211,7 +214,7 @@ namespace actionlib {
         }
         else{
           //the goal requested has already been preempted by a different goal, so we're not going to execute it
-          goal.setPreempted();
+          goal.setCanceled();
         }
       }
 
@@ -238,7 +241,7 @@ namespace actionlib {
         }
       }
 
-      boost::shared_ptr<TypedActionServer> as_;
+      boost::shared_ptr<ActionServer<ActionSpec> > as_;
 
       GoalHandle current_goal_, next_goal_;
 

@@ -1,5 +1,4 @@
 /*********************************************************************
-*
 * Software License Agreement (BSD License)
 *
 *  Copyright (c) 2008, Willow Garage, Inc.
@@ -15,7 +14,7 @@
 *     copyright notice, this list of conditions and the following
 *     disclaimer in the documentation and/or other materials provided
 *     with the distribution.
-*   * Neither the name of Willow Garage, Inc. nor the names of its
+*   * Neither the name of the Willow Garage nor the names of its
 *     contributors may be used to endorse or promote products derived
 *     from this software without specific prior written permission.
 *
@@ -31,42 +30,18 @@
 *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
-*
-* Author: Eitan Marder-Eppstein
 *********************************************************************/
-#include <ros/ros.h>
-#include <actionlib/action_server.h>
-#include <actionlib/single_goal_action_server.h>
-#include <boost/thread.hpp>
-#include <robot_msgs/PoseStamped.h>
-#include <actionlib/MoveBaseAction.h>
 
-typedef actionlib::ActionServer<actionlib::MoveBaseAction> MoveBaseActionServer;
+#ifndef ACTIONLIB_COMM_STATE_MACHINE_H_
+#define ACTIONLIB_COMM_STATE_MACHINE_H_
 
-typedef MoveBaseActionServer::GoalHandle GoalHandle;
+#include "ros/console.h"
+#include "actionlib/client/comm_state.h"
 
-std::vector<GoalHandle> goals;
+namespace actionlib
+{
 
-void goalCB(GoalHandle goal){
-  ROS_INFO("In goal callback, got a goal with id: %.2f", goal.getGoalID().id.toSec());
-  goal.setAccepted();
-  goals.push_back(goal);
+};
+
 }
-
-void cancelCB(GoalHandle goal){
-  ROS_INFO("In cancel callback, got a goal with id: %.2f", goal.getGoalID().id.toSec());
-  for(unsigned int i = 0; i < goals.size(); ++i){
-    if(goals[i] == goal)
-      goals[i].setCanceled();
-  }
-}
-
-int main(int argc, char** argv){
-  ros::init(argc, argv, "test_action");
-
-  ros::NodeHandle n;
-
-  MoveBaseActionServer as(n, "move_base", boost::bind(&goalCB, _1), boost::bind(&cancelCB, _1));
-
-  ros::spin();
-}
+#endif
