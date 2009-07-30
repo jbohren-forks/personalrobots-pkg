@@ -69,7 +69,6 @@
 #include "topic_synchronizer/topic_synchronizer.h"
 
 using namespace std;
-using namespace robot_msgs;
 
 
 #define CV_PIXEL(type,img,x,y) (((type*)(img->imageData+y*img->widthStep))+x*img->nChannels)
@@ -274,7 +273,7 @@ private:
 			}
 
 			// transfrom base_cloud to stereo frame
-			PointCloud base_cloud_in_stereo_frame;
+			sensor_msgs::PointCloud base_cloud_in_stereo_frame;
 			tf_->transformPointCloud(cloud_.header.frame_id, base_cloud_, base_cloud_in_stereo_frame);
 
 			char name[1024];
