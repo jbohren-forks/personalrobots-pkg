@@ -1,5 +1,7 @@
 <package>
-<description>Package to merge sensor data from odometry,IMU, VO, etc, into an estimate for the robot pose.</description>
+<description>
+  Package to estimate the 3D pose of a robot, based on partial pose measurements from wheel odometry, IMU and visual odometry.
+</description>
 <author>Wim Meeussen</author>
 <license>BSD</license>
 <review status="proposal cleared" notes=""/>
