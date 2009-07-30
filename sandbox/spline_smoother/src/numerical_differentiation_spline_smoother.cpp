@@ -35,6 +35,7 @@
 /** \author Mrinal Kalakrishnan */
 
 #include <spline_smoother/numerical_differentiation_spline_smoother.h>
+#include <spline_smoother/spline_smoother_utils.h>
 
 namespace spline_smoother
 {
@@ -47,29 +48,44 @@ NumericalDifferentiationSplineSmoother::~NumericalDifferentiationSplineSmoother(
 {
 }
 
-bool NumericalDifferentiationSplineSmoother::smooth(const std::vector<double>& positions,
-    std::vector<double>& velocities,
-    std::vector<double>& accelerations,
-    const std::vector<double>& times) const
+bool NumericalDifferentiationSplineSmoother::smooth(const manipulation_msgs::WaypointTraj& trajectory_in, manipulation_msgs::WaypointTraj& trajectory_out) const
 {
+  bool success = true;
+  int size = trajectory_in.points.size();
+  int num_traj = trajectory_in.names.size();
+  trajectory_out = trajectory_in;
+
+  if (!checkTrajectoryConsistency(trajectory_out))
+    return false;
+
   // keep the first and last velocities intact
 
-  int size = positions.size();
-  velocities.resize(size);
-  accelerations.resize(size);
-
-  for (int i=1; i<size-1; i++)
+  // for every point in time:
+  for (int i=1; i<size-1; ++i)
   {
-    velocities[i] = (0.5*(positions[i+1] - positions[i]))/(times[i+1] - times[i]);
-    velocities[i] += (0.5*(positions[i] - positions[i-1]))/(times[i] - times[i-1]);
+    double dt1 = trajectory_in.points[i].time - trajectory_in.points[i-1].time;
+    double dt2 = trajectory_in.points[i+1].time - trajectory_in.points[i].time;
+
+    // for every (joint) trajectory
+    for (int j=0; j<num_traj; ++j)
+    {
+      double dx1 = trajectory_in.points[i].positions[j] - trajectory_in.points[i-1].positions[j];
+      double dx2 = trajectory_in.points[i+1].positions[j] - trajectory_in.points[i].positions[j];
+
+      double v1 = dx1/dt1;
+      double v2 = dx2/dt2;
+
+      trajectory_out.points[i].velocities[j] = 0.5*(v1 + v2);
+    }
   }
 
   // all accelerations are 0 for now:
   for (int i=0; i<size; i++)
-    accelerations[i] = 0.0;
+    for (int j=0; j<num_traj; j++)
+      trajectory_out.points[i].accelerations[j] = 0.0;
 
-  return true;
+  return success;
 }
 
-
+REGISTER_SPLINE_SMOOTHER(NumericalDifferentiationSplineSmoother)
 }

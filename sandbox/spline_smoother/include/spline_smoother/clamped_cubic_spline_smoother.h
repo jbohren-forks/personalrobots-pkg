@@ -61,17 +61,11 @@ public:
    *
    * \return true if successful, false if not
    */
-  virtual bool smooth(const std::vector<double>& positions,
-      std::vector<double>& velocities,
-      std::vector<double>& accelerations,
-      const std::vector<double>& times) const;
+  virtual bool smooth(const manipulation_msgs::WaypointTraj& trajectory_in, manipulation_msgs::WaypointTraj& trajectory_out) const;
 
 private:
   NumericalDifferentiationSplineSmoother num_diff_spline_smoother_;
-  bool smoothSegment(const std::vector<double>& positions,
-      std::vector<double>& velocities,
-      std::vector<double>& accelerations,
-      const std::vector<double>& times) const;
+  bool smoothSegment(std::vector<manipulation_msgs::Waypoint>& waypoints) const;
 
 };
 

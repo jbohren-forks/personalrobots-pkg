@@ -13,7 +13,7 @@
   <depend package="robot_srvs"/>
   <depend package="nav_srvs"/>
   <depend package="nav_msgs"/>
-  <depend package="bullet"/>
+  <depend package="bullet_python"/>
   <depend package="tf"/>
 
 </package>

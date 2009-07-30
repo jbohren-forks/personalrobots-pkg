@@ -360,6 +360,16 @@ PyObject *vttopN(PyObject *self, PyObject *args)
   return l;
 }
 
+PyObject *vtword(PyObject *self, PyObject *args)
+{
+  VocabularyTree *vt = ((vocabularytree_t*)self)->vt;
+  PyObject *descriptor;
+  if (!PyArg_ParseTuple(args, "O", &descriptor))
+    return NULL;
+
+  return PyInt_FromLong(vt->findWord( ((signature_t*)descriptor)->data ));
+}
+
 /* Method table */
 static PyMethodDef vocabularytree_methods[] = {
   {"save", vtsave, METH_VARARGS},
@@ -367,6 +377,7 @@ static PyMethodDef vocabularytree_methods[] = {
   {"add", vtadd, METH_VARARGS},
   //{"query", vtquery, METH_VARARGS},
   {"topN", vttopN, METH_VARARGS},
+  {"word", vtword, METH_VARARGS},
   {NULL, NULL},
 };
 

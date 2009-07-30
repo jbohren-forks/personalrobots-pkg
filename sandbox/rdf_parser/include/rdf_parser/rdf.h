@@ -97,33 +97,43 @@ namespace rdf_parser{
 ///       <origin xyz="0 0 0" rpy="0 0 0"/>
 ///       <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1"/>
 ///     </inertial>
+///
 ///     <visual>
 ///       <origin xyz="0 0 0" rpy="0 0 0"/>
 ///       <geometry>
+///         <texture name="PR2/Green"/>
 ///         <box size="1 1 1"/>
 ///       </geometry>
 ///     </visual>
+///
 ///     <collision>
 ///       <origin xyz="0 0 0" rpy="0 0 0"/>
 ///       <geometry>
 ///         <box size="1.01 1.01 1.01"/>
 ///       </geometry>
+///       <contact_coefficient>
+///         <mu value="0"/>
+///         <resitution value="0"/>
+///         <k_p value="0"/>
+///         <k_d value="0"/>
+///       </contact_coefficient>
 ///     </collision>
+///
 ///     <joint name="J" type="revolute">
+///       <!-- transform from link to joint frame -->
+///       <!-- in old URDF, this is undefined and assumed to be identity transform -->
+///       <origin xyz="0 0 0" rpy="0 0 0"/> 
+///
 ///       <!-- joint properties -->
-///       <axis xyz="0 1 0"/>
+///       <axis xyz="0 1 0"/>  <!--in the joint frame-->
 ///       <joint_properties damping="1" friction="0"/>
-///       <limit min="0" max="1" effort="1000" velocity="1"/>
+///       <limit hard_min="0.9" hard_max="2.1" soft_min="1.0" soft_max="2.0" effort="1000" velocity="1"/>
 ///
 ///       <parent name="P"/>  <!-- in old URDF, this is in <link> not in <joint> -->
 ///         <!-- <origin> is the transform from parent Link to this Joint in parent Link frame -->
-///         <origin xyz="0 0 0" rpy="0 0 0"/> <!-- in old URDF, this is in <link> not in <joint><parent> -->
+///         <!-- in old URDF, this is in <link> not in <joint><parent> -->
+///         <origin xyz="0 0 0" rpy="0 0 0"/> 
 ///       </parent>
-///
-///       <!-- OPTIONAL: transform from child Link to this Joint in child Link frame (equivalent to OBSOLETE "anchor" tag) -->
-///       <child>
-///         <origin xyz="0 0 0" rpy="0 0 0"/> <!-- in old URDF, this is undefined and assumed to be identity transform -->
-///       </child>
 ///     </joint>
 ///   </link>
 

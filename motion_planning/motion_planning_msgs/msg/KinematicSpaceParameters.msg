@@ -5,12 +5,6 @@
 # for which the motion planner should plan for
 string model_id
 
-
-# The name of the motion planner to use. If no name is specified,
-# a default motion planner will be used
-string planner_id
-
-
 # A string that identifies which distance metric the planner should use
 string distance_metric
 

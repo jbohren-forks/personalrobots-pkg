@@ -49,8 +49,6 @@
 #include <ompl/base/Planner.h>
 #include <ompl/extension/kinematic/PathSmootherKinematic.h>
 
-#include <planning_environment/models/robot_models.h>
-
 #include <ros/console.h>
 #include <string>
 #include <map>

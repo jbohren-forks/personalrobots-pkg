@@ -41,14 +41,14 @@
 
 #include <net/if.h>
 
-#include "pr2lib.h"
+#include "fcamlib.h"
 #include "host_netutil.h"
 
 int discover(const std::string &if_name, bool verbose, bool report_rp_filter)
 {
   // Create a new IpCamList to hold the camera list
   IpCamList camList;
-  pr2CamListInit(&camList);
+  fcamCamListInit(&camList);
 
   // Set anti-spoofing filter off on camera interface. Needed to prevent
   // the first reply from the camera from being filtered out.
@@ -62,28 +62,28 @@ int discover(const std::string &if_name, bool verbose, bool report_rp_filter)
   }
 
   // Discover any connected cameras, wait for 0.5 second for replies
-  if( pr2Discover(if_name.c_str(), &camList, NULL, SEC_TO_USEC(0.5)) == -1) {
+  if( fcamDiscover(if_name.c_str(), &camList, NULL, SEC_TO_USEC(0.5)) == -1) {
     if (verbose)
       fprintf(stderr, "Discover error on interface %s.\n", if_name.c_str());
     return -1;
   }
 
-  if (pr2CamListNumEntries(&camList) == 0) {
+  if (fcamCamListNumEntries(&camList) == 0) {
     if (verbose)
       fprintf(stderr, "No cameras found on interface %s\n", if_name.c_str());
     return 0;
   }
 
-  for (int i = 0; i < pr2CamListNumEntries(&camList); i++)
+  for (int i = 0; i < fcamCamListNumEntries(&camList); i++)
   {
-    IpCamList *camera = pr2CamListGetEntry(&camList, i);
+    IpCamList *camera = fcamCamListGetEntry(&camList, i);
     uint8_t *mac = camera->mac;
     uint8_t *ip = (uint8_t *) &camera->ip;
     char pcb_rev = 0x0A + (0x0000000F & camera->hw_version);
     int hdl_rev = 0x00000FFF & (camera->hw_version>>4);
-    printf("Found camera with S/N #%u, MAC: %02x:%02x:%02x:%02x:%02x:%02x, iface: %s IP: %i.%i.%i.%i, PCB rev %X : HDL rev %3X : FW rev %3X\n", 
+    printf("Found camera with S/N #%u, MAC: %02x:%02x:%02x:%02x:%02x:%02x, iface: %s IP: %i.%i.%i.%i, PCB rev %X : HDL rev %3X : FW rev %3X, name: %s\n", 
         camera->serial, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5], if_name.c_str(), ip[0], ip[1], ip[2], ip[3], 
-        pcb_rev, hdl_rev, camera->fw_version);
+        pcb_rev, hdl_rev, camera->fw_version, camera->cam_name);
   }
 
   return 0;

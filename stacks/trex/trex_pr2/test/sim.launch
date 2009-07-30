@@ -1,0 +1,4 @@
+<launch>
+  <!-- TREX Configuration -->
+  <include file="$(find trex_pr2)/test/trex_config.launch" />
+</launch>

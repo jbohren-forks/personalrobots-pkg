@@ -38,7 +38,7 @@
 #define CHOMP_PLANNER_NODE_H_
 
 #include <ros/ros.h>
-#include <motion_planning_srvs/MotionPlan.h>
+#include <motion_planning_msgs/GetMotionPlan.h>
 #include <chomp_motion_planner/chomp_robot_model.h>
 #include <chomp_motion_planner/chomp_parameters.h>
 #include <chomp_motion_planner/chomp_collision_space.h>
@@ -79,7 +79,7 @@ public:
   /**
    * \brief Main entry point for motion planning (callback for the plan_kinematic_path service)
    */
-  bool planKinematicPath(motion_planning_srvs::MotionPlan::Request &req, motion_planning_srvs::MotionPlan::Response &res);
+  bool planKinematicPath(motion_planning_msgs::GetMotionPlan::Request &req, motion_planning_msgs::GetMotionPlan::Response &res);
 
 private:
   ros::NodeHandle node_handle_;                         /**< ROS Node handle */

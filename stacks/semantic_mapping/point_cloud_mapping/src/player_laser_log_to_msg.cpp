@@ -69,10 +69,12 @@ class PlayerLogToMsg
     Publisher scan_pub_;
 
     ifstream logfile_stream_;
+    bool is_file_;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     PlayerLogToMsg () : tf_frame_ ("laser_tilt_mount_link"),
-                        transform_ (btTransform (btQuaternion (0, 0, 0), btVector3 (0, 0, 0)), Time::now (), tf_frame_, tf_frame_)
+                        transform_ (btTransform (btQuaternion (0, 0, 0), btVector3 (0, 0, 0)), Time::now (), tf_frame_, tf_frame_),
+                        is_file_ (true)
     {
       msg_topic_ = "/laser_scan";
       scan_pub_ = nh_.advertise<LaserScan> (msg_topic_.c_str (), 1);
@@ -111,9 +113,19 @@ class PlayerLogToMsg
       string line;
       vector<string> st;
 
-      while ((!logfile_stream_.eof ()))
+      while (1)
       {
         getline (logfile_stream_, line);
+        // Do we assume that the input is a file? If so, and EOF, break
+        if (logfile_stream_.eof () && is_file_)
+          break;
+        // If any bad/eof/fail flags are set, continue
+        if (!logfile_stream_.good ())
+        {
+          usleep (500);
+          continue;
+        }
+        // If the line is empty, continue
         if (line == "")
           continue;
 
@@ -179,6 +191,8 @@ class PlayerLogToMsg
 
         spinOnce ();
         tj = ti;
+
+        logfile_stream_.clear ();
       }
 
       // Close the file and finish the movie
@@ -193,9 +207,11 @@ class PlayerLogToMsg
 int
   main (int argc, char** argv)
 {
-  if (argc < 2)
+  if (argc < 3)
   {
-    ROS_ERROR ("Syntax is: %s <file.log>", argv[0]);
+    ROS_WARN ("Syntax is: %s <file.log> [bool is_file (0/1)]", argv[0]);
+    ROS_INFO ("           [note: set 'is_file' to 0 if the input .log file is a stream (i.e., data is still written to it during the execution of %s)]", argv[0]);
+    ROS_INFO ("Usage example: %s 1190378714.log 0", argv[0]);
     return (-1);
   }
 
@@ -203,6 +219,7 @@ int
 
   PlayerLogToMsg p;
   p.file_name_ = string (argv[1]);
+  p.is_file_   = atoi (argv[2]);
 
   if (p.start () == -1)
   {

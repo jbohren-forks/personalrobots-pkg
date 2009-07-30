@@ -39,14 +39,14 @@
 #include <string>
 #include <string.h>
 
-#include "pr2lib.h"
+#include "fcamlib.h"
 #include "host_netutil.h"
 
 int discover(const std::string &if_name)
 {
   // Create a new IpCamList to hold the camera list
   IpCamList camList;
-  pr2CamListInit(&camList);
+  fcamCamListInit(&camList);
 
   // Set anti-spoofing filter off on camera interface. Needed to prevent
   // the first reply from the camera from being filtered out.
@@ -64,7 +64,7 @@ int discover(const std::string &if_name)
   camera.ifName[sizeof(camera.ifName) - 1] = 0;
   camera.serial = -1;
     
-  pr2Configure(&camera, "127.0.0.1", SEC_TO_USEC(0));
+  fcamConfigure(&camera, "127.0.0.1", SEC_TO_USEC(0));
 
   printf("Killer configure packet has been requested.\n");
 

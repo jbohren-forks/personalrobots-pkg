@@ -48,7 +48,7 @@ static const string fixed_frame = "odom_combined";
 
 
 ReleaseHandleAction::ReleaseHandleAction(tf::TransformListener& tf) : 
-  robot_actions::Action<door_msgs::Door, door_msgs::Door>("release_handle"), 
+  robot_actions::Action<std_msgs::Empty, std_msgs::Empty>("release_handle"), 
   tf_(tf)
 {
   gripper_publisher_ = node_.advertise<std_msgs::Float64>("r_gripper_effort_controller/command",10);
@@ -60,7 +60,7 @@ ReleaseHandleAction::~ReleaseHandleAction()
 
 
 
-robot_actions::ResultStatus ReleaseHandleAction::execute(const door_msgs::Door& goal, door_msgs::Door& feedback)
+robot_actions::ResultStatus ReleaseHandleAction::execute(const std_msgs::Empty&, std_msgs::Empty&)
 {
   ROS_INFO("ReleaseHandleAction: execute");
 
@@ -71,7 +71,7 @@ robot_actions::ResultStatus ReleaseHandleAction::execute(const door_msgs::Door& 
   // open the gripper during 4 seconds
   ROS_INFO("ReleaseHandleAction: open the gripper");
   std_msgs::Float64 gripper_msg;
-  gripper_msg.data = 20.0;
+  gripper_msg.data = 100.0;
   for (unsigned int i=0; i<100; i++){
     Duration().fromSec(4.0/100.0).sleep();
     gripper_publisher_.publish(gripper_msg);

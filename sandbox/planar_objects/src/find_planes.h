@@ -18,7 +18,7 @@
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
 
-namespace find_planes
+namespace planar_objects
 {
 
 void filterByZBounds(const robot_msgs::PointCloud& pc, double zmin, double zmax, robot_msgs::PointCloud& filtered_pc,

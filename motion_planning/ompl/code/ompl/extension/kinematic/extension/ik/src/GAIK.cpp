@@ -37,12 +37,7 @@
 #include "ompl/extension/kinematic/extension/ik/GAIK.h"
 #include <algorithm>
 
-bool ompl::kinematic::GAIK::valid(const base::State *state) const
-{
-    return m_checkValidity ? m_si->isValid(state) : true;
-}
-
-bool ompl::kinematic::GAIK::solve(double solveTime, base::State *result, const base::State *hint)
+bool ompl::kinematic::GAIK::solve(double solveTime, base::State *result, const std::vector<base::State*> &hint)
 {
     base::GoalRegion *goal_r = dynamic_cast<base::GoalRegion*>(m_si->getGoal());
     unsigned int   dim = m_si->getStateDimension();
@@ -67,21 +62,22 @@ bool ompl::kinematic::GAIK::solve(double solveTime, base::State *result, const b
 	return false;	
     }
     
-    if (hint)
+    unsigned int nh = std::min<unsigned int>(maxPoolSize, hint.size());
+    for (unsigned int i = 0 ; i < nh ; ++i)
     {
-	pool[0].state = new base::State(dim);
-	m_si->copyState(pool[0].state, hint);
-	if (goal_r->isSatisfied(pool[0].state, &(pool[0].distance)))
+	pool[i].state = new base::State(dim);
+	m_si->copyState(pool[i].state, hint[i]);
+	if (goal_r->isSatisfied(pool[i].state, &(pool[i].distance)))
 	{
-	    if (valid(pool[0].state))
+	    if (valid(pool[i].state))
 	    {
 		solved = true;
-		solution = 0;
+		solution = i;
 	    }
 	}
     }
     
-    for (unsigned int i = (hint ? 1 : 0) ; i < maxPoolSize ; ++i)
+    for (unsigned int i = nh ; i < maxPoolSize ; ++i)
     {
 	pool[i].state = new base::State(dim);
 	m_sCore.sample(pool[i].state);
@@ -108,7 +104,7 @@ bool ompl::kinematic::GAIK::solve(double solveTime, base::State *result, const b
 	
 	for (unsigned int i = m_poolSize ; i < maxPoolSize ; ++i)
 	{
-	    m_sCore.sampleNear(pool[i].state, pool[i%m_poolSize].state, range);
+	    m_sCore.sampleNear(pool[i].state, pool[i % m_poolSize].state, range);
 	    if (goal_r->isSatisfied(pool[i].state, &(pool[i].distance)))
 	    {
 		if (valid(pool[i].state))
@@ -167,7 +163,7 @@ bool ompl::kinematic::GAIK::solve(double solveTime, base::State *result, const b
 
 bool ompl::kinematic::GAIK::tryToImprove(base::State *state, double distance)
 {
-    m_msg.inform("GAIK: Distance to goal before improvement: %g", distance);    
+    m_msg.message("GAIK: Distance to goal before improvement: %g", distance);    
     time_utils::Time start = time_utils::Time::now();
     m_hcik.tryToImprove(state, 0.1, &distance);
     m_hcik.tryToImprove(state, 0.05, &distance);
@@ -179,7 +175,7 @@ bool ompl::kinematic::GAIK::tryToImprove(base::State *state, double distance)
     m_hcik.tryToImprove(state, 0.00005, &distance);
     m_hcik.tryToImprove(state, 0.000025, &distance);
     m_hcik.tryToImprove(state, 0.000005, &distance);
-    m_msg.inform("GAIK: Improvement took  %g seconds", (time_utils::Time::now() - start).toSeconds());    
-    m_msg.inform("GAIK: Distance to goal after improvement: %g", distance);    
+    m_msg.message("GAIK: Improvement took  %g seconds", (time_utils::Time::now() - start).toSeconds());    
+    m_msg.message("GAIK: Distance to goal after improvement: %g", distance);    
     return true;
 }

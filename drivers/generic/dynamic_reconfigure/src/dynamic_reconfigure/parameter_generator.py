@@ -45,6 +45,12 @@ import os
 import inspect
 import string 
 
+# Convenience names for types
+str_t = "str"
+bool_t = "bool"
+int_t = "int"
+double_t = "double"
+
 class ParameterGenerator:
     minval = {
             'int' : 'INT_MIN',
@@ -174,18 +180,14 @@ class ParameterGenerator:
 
     def crepr(self, param, val):
         type = param["type"]
+        print "Crepr", param["name"], type, val
         if type == 'str':
             return '"'+val+'"'
-        if 'uint' in type:
-            return str(val)+'ULL'
-        if 'int' in type:
-            return str(val)+'LL'
-        if 'time' in type:
-            return 'ros::Time('+str(val)+')'
-        if 'duration' in type:
-            return 'ros::Duration('+str(val)+')'
-        if  'float' in types:
+        if type in [ 'int', 'double']:
             return str(val)
+        if  type == 'bool':
+            return { True : 1, False : 2 }[val]
+        raise TypeError(type)
 #        if type == 'string':
 #            return '"'+val+'"'
 #        if 'uint' in type:
@@ -242,18 +244,23 @@ class ParameterGenerator:
             changelvl = changelvl, defminmax = defminmax))
         f.close()
 
+    def msgtype(self, type):
+        return { 'int' : 'int32', 'bool' : 'int8', 'str' : 'string', 'double' : 'float64' }[type]
+
     def generatemsg(self):
         self.mkdir("msg")
         f = open(os.path.join(self.pkgpath, "msg", self.msgname+".msg"), 'w')
         print >> f, "# This is an autogerenated file. Please do not edit."
+        print >> f, ""
         for param in self.parameters:
-            print >> f, Template("$type $name # $description").substitute(param)
+            print >> f, Template("$type $name # $description").substitute(param, type=self.msgtype(param['type']))
         f.close()
 
     def generategetsrv(self):
         self.mkdir("srv")
         f = open(os.path.join(self.pkgpath, "srv", "Get"+self.msgname+".srv"), 'w')
         print >> f, "# This is an autogerenated file. Please do not edit."
+        print >> f, ""
         print >> f, "---" 
         print >> f, self.msgname, "config", "# Current configuration of node."
         print >> f, self.msgname, "defaults", "# Minimum values where appropriate."

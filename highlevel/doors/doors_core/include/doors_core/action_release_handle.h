@@ -40,9 +40,9 @@
 
 
 #include <ros/node.h>
-#include <door_msgs/Door.h>
 #include <std_msgs/Float64.h>
 #include <std_msgs/String.h>
+#include <std_msgs/Empty.h>
 #include <std_srvs/Empty.h>
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
@@ -56,13 +56,13 @@ namespace door_handle_detector{
 
 typedef boost::shared_ptr<robot_msgs::PoseStamped const> PoseConstPtr;
 
-class ReleaseHandleAction: public robot_actions::Action<door_msgs::Door, door_msgs::Door>
+ class ReleaseHandleAction: public robot_actions::Action<std_msgs::Empty, std_msgs::Empty>
 {
 public:
   ReleaseHandleAction(tf::TransformListener& tf);
   ~ReleaseHandleAction();
 
-  virtual robot_actions::ResultStatus execute(const door_msgs::Door& goal, door_msgs::Door& feedback);
+  virtual robot_actions::ResultStatus execute(const std_msgs::Empty& goal, std_msgs::Empty& feedback);
 
   void poseCallback(const PoseConstPtr& pose);
 

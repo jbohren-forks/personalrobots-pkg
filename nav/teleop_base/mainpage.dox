@@ -1,0 +1,82 @@
+/**
+@mainpage
+
+@htmlinclude manifest.html
+
+@b teleop_base teleoperation of a robot from keyboard and joystick. 
+
+\section rosapi ROS API
+
+The two nodes, teleop_base and teleop_base_keyboard, are designed primarily to drive the base of the PR-2. Teleop_base can also able to drive the spine and head.
+
+List of nodes:
+- \b teleop_base
+- \b teleop_base_keyboard
+
+<hr>
+
+\subsection teleop_base_keyboard teleop_base_keyboard
+
+\b teleop_base_keyboard can teleoperate a diff-drive robot using a keyboard.
+
+@section usage Usage
+@verbatim
+$ teleop_base_keyboard [standard ROS args]
+@endverbatim
+
+Key mappings are printed to screen on startup.  Press any unmapped key to
+stop the robot.
+
+<hr>
+
+@section topic ROS topics
+
+Subscribes to (name/type):
+- None
+
+Publishes to (name / type):
+- @b "cmd_vel"/PoseDot : velocity to the robot; sent on every keypress.
+
+<hr>
+
+@section parameters ROS parameters
+
+- None
+
+<hr>
+
+\subsection teleop_base teleop_base
+
+\b teleop_base teleoperate a robot's base using a joystick. 
+
+X - Forward
+Y - Left
+Angle Z - Yaw Rate CCW
+
+\subsubsection usage Usage
+\verbatim
+$ teleop_base --deadman_no_publish [standard ROS args]
+\endverbatim
+
+"--deadman_no_publish" is optional. If set, the node will only publish if the deadman is depressed.
+
+\subsubsection topic ROS topics
+
+Subscribes to (name / type):
+- \b "joy/Joy" : ROS joystick topic
+
+Publishes to (name / type):
+- \b "cmd_vel/PoseDot" : velocity to the pr2 base; sent on every keypress.
+
+\subsubsection parameters ROS parameters
+- \b "max_vx" : \b double Maximum (walking) X velocity
+- \b "max_vy" : \b double Maximum (walking) Y velocity
+- \b "max_vw" : \b double Maximum (walking) Z angular velocity
+
+- \b "max_vx_run" : \b double Maximum (running) X velocity
+- \b "max_vy_run" : \b double Maximum (running) Y velocity
+- \b "max_vw_run" : \b double Maximum (running) Z angular velocity
+
+- \b "deadman_button" : \b int Button that enables joystick commands. No commands will work without deadman button depressed
+- \b "run_button" : \b int Base moves at maximum of "run" velocities.
+*/

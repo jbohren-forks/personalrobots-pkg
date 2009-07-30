@@ -1,0 +1,40 @@
+# This service contains the definition for a request to the motion
+# planner and the output it provides
+
+# Parameters for the state space 
+motion_planning_msgs/KinematicSpaceParameters params
+
+# Starting state updates. If certain joints should be considered
+# at positions other than the current ones, these positions should
+# be set here
+motion_planning_msgs/KinematicJoint[] start_state
+
+# The goal state for the model to plan for. The goal is achieved
+# if all constraints are satisfied
+motion_planning_msgs/KinematicConstraints goal_constraints
+
+# No state in the produced motion plan will violate these constraints
+motion_planning_msgs/KinematicConstraints path_constraints
+
+# The name of the motion planner to use. If no name is specified,
+# a default motion planner will be used
+string planner_id
+
+# The number of times this plan is to be computed. Shortest solution
+# will be reported.
+int32 times
+
+# The maximum amount of time the motion planner is allowed to plan for
+float64 allowed_time
+
+---
+
+# A solution path, if found
+motion_planning_msgs/KinematicPath path
+
+# distance to goal as computed by internal planning heuristic
+# this should be 0.0 if the solution was achieved exaclty
+float64 distance
+
+# set to 1 if the computed path was approximate
+byte approximate

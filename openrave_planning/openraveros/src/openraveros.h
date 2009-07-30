@@ -102,6 +102,7 @@ inline std::string _stdwcstombs(const wchar_t* pname)
 #include <boost/thread/condition.hpp>
 #include <boost/static_assert.hpp>
 #include <boost/bind.hpp>
+#include <boost/enable_shared_from_this.hpp> 
 
 // services
 #include <openraveros/body_destroy.h>

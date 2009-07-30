@@ -25,9 +25,11 @@ using namespace std;
 #include "outlet_detection/learning.h"
 #include "star_detector/detector.h"
 #include "outlet_detection/outlet_detector.h"
+#include "outlet_detection/outlet_detector_test.h"
 
 int LoadCameraParams(char* filename, CvMat** intrinsic_matrix, CvMat** distortion_coeffs)
 {
+
 	CvFileStorage* fs = cvOpenFileStorage( filename, 0, CV_STORAGE_READ );
 	if (fs==NULL) return 0;
 	
@@ -41,6 +43,9 @@ int LoadCameraParams(char* filename, CvMat** intrinsic_matrix, CvMat** distortio
 
 int main(int argc,char** argv)
 {    
+	
+
+
 	char path[1024], config_filename[1024], camera_filename[1024], output_path[1024], 
         train_path[1024], train_config[1024], pca_config[1024];
     

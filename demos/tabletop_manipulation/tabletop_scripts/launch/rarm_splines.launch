@@ -1,0 +1,15 @@
+<launch>
+
+  <include file="$(find 3dnav_pr2)/launch/pr2_planning_environment.launch" />
+  <include file="$(find pr2_ik)/pr2_ik_rarm_node.launch"/>
+
+  <rosparam file="$(find pr2_default_controllers)/trajectory_controller.yaml" command="load" ns="trajectory_controller"/>
+
+  <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/trajectory_controller.xml" output="screen"/>
+
+
+  <include file="$(find move_arm)/launch/move_rarm_splines.launch"/> 
+
+  <include file="$(find joint_waypoint_controller)/launch/joint_waypoint_controller.launch"/>
+
+</launch>

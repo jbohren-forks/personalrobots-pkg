@@ -40,6 +40,7 @@
 #include <door_msgs/Door.h>
 #include <ros/node.h>
 #include <robot_actions/action_runner.h>
+#include <robot_actions/NoArgumentsActionState.h>
 
 using namespace ros;
 using namespace std;
@@ -68,11 +69,11 @@ int
 
   door_handle_detector::ReleaseHandleAction release_handle(tf);
   robot_actions::ActionRunner runner(10.0);
-  runner.connect<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door>(release_handle);
+  runner.connect<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>(release_handle);
   runner.run();
 
-  door_msgs::Door feedback;
-  release_handle.execute(my_door_, feedback);
+  std_msgs::Empty empty;
+  release_handle.execute(empty, empty);
 
   return (0);
 }

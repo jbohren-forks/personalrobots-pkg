@@ -1,0 +1,5 @@
+<filters>
+	<filter type="FixWraparoundJoints" name="fix_wraparound_joints"/>
+	<filter type="ClampedCubicSplineSmoother" name="clamped_cubic_spline_smoother"/>
+</filters>
+

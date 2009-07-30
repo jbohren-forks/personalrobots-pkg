@@ -494,29 +494,20 @@ bool planning_environment::PlanningMonitor::isPathValidAux(const motion_planning
 	    break;
 	}
     }
+
+    unsigned int sdim = getKinematicModel()->getJointsDimension(path.names);
     
     // check every state
     for (unsigned int i = start ; valid && i <= end ; ++i)
     {
-	unsigned int u = 0;
-	for (unsigned int j = 0 ; j < joints.size() ; ++j)
+	if (path.states[i].vals.size() != sdim)
 	{
-	    if (path.states[i].vals.size() < u + joints[j]->usedParams)
-	    {
-		ROS_ERROR("Incorrect state specification on path");
-		valid = false;
-		break;
-	    }
-	    
-	    /* copy the parameters that describe the joint */
-	    std::vector<double> params;
-	    for (unsigned int k = 0 ; k < joints[j]->usedParams ; ++k)
-		params.push_back(path.states[i].vals[u + k]);
-	    u += joints[j]->usedParams;
-	    
-	    /* set the parameters */
-	    sp->setParamsJoint(params, joints[j]->name);
+	    ROS_ERROR("Incorrect state specification on path");
+	    valid = false;
+	    break;
 	}
+	sp->setParamsJoints(path.states[i].vals, path.names);	
+
 	getKinematicModel()->computeTransforms(sp->getParams());
 	getEnvironmentModel()->updateRobotModel();
 	

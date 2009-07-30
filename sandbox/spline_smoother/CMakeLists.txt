@@ -17,7 +17,7 @@ rospack(spline_smoother)
 #set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 #uncomment if you have defined messages
-#genmsg()
+genmsg()
 #uncomment if you have defined services
 #gensrv()
 
@@ -32,10 +32,12 @@ rospack(spline_smoother)
 rospack_add_library(spline_smoother
 	src/clamped_cubic_spline_smoother.cpp
 	src/numerical_differentiation_spline_smoother.cpp
+	src/spline_smoother.cpp
 )
 
 rospack_add_gtest(test/test_spline_smoother
 	test/test_clamped_cubic_spline_smoother.cpp
+	test/test_smoothers_as_filters.cpp
 	test/test_splines.cpp
 	test/test_utils.cpp
 )

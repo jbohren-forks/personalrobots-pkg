@@ -1457,7 +1457,7 @@ private:
 				data_cv_.wait(images_lock);
 			}
 			if (preempt_) {
-				ROS_INFO("OutletSpotter: detect loop preempted");
+				ROS_INFO("OutletSpotter: detect loop preempted, stereo or base laser not received");
 				return false;
 			}
 			ROS_INFO("OutletSpotter: received images and base laser data, performing detection");
@@ -1497,7 +1497,7 @@ public:
 		while (nh_.ok())
 		{
 			data_lock_.lock();
-			if (!have_images_ && !have_cloud_point_) {
+			if (!(have_images_ && have_cloud_point_)) {
 				if ((ros::Time::now()-start_image_wait_) > ros::Duration(timeout_)) {
 					preempt_ = true;
 					data_cv_.notify_all();

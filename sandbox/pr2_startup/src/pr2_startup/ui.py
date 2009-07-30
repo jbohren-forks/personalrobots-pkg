@@ -58,7 +58,8 @@ class PR2StartUpAppFrame(wx.Frame):
     wx.Frame.__init__(self, parent, wx.ID_ANY, "PR2StartUp")
     self.Bind(wx.EVT_CLOSE, self.OnExit)
     
-    self._robots = { 'PRE' : 'pre.launch', 
+    self._robots = { ''    : None,
+                     'PRE' : 'pre.launch', 
                      'PRF' : 'prf.launch', 
                      'PRG' : 'prg.launch'}
     
@@ -79,23 +80,21 @@ class PR2StartUpAppFrame(wx.Frame):
     self._real_panel = self._xrc.LoadPanel(self, 'PR2StartUpPanel')
     
 
-    self._real_panel.Bind(wx.EVT_BUTTON, self.LaunchCore, id=xrc.XRCID('m_button7'))
-    self._real_panel.Bind(wx.EVT_BUTTON, self.LaunchRobot, id=xrc.XRCID('m_button8'))
-    self._real_panel.Bind(wx.EVT_BUTTON, self.LaunchJoystick, id=xrc.XRCID('m_button9'))
+    self._real_panel.Bind(wx.EVT_BUTTON, self.LaunchCore, id=xrc.XRCID('m_button71'))
+    self._real_panel.Bind(wx.EVT_BUTTON, self.LaunchRobot, id=xrc.XRCID('m_button81'))
+    self._real_panel.Bind(wx.EVT_BUTTON, self.LaunchJoystick, id=xrc.XRCID('m_button91'))
     self._real_panel.Bind(wx.EVT_BUTTON, self.LaunchDashboard, id=xrc.XRCID('m_button10'))
     self._real_panel.Bind(wx.EVT_BUTTON, self.LaunchRviz, id=xrc.XRCID('m_button11'))
     self._real_panel.Bind(wx.EVT_BUTTON, self.LaunchRxgraph, id=xrc.XRCID('m_button12'))
     self._real_panel.Bind(wx.EVT_CHOICE, self.ChooseRobot, id=xrc.XRCID('m_choice1'))
 
-    self.core_status = xrc.XRCCTRL(self._real_panel, 'm_textCtrl4')
-    self.robot_status = xrc.XRCCTRL(self._real_panel, 'm_textCtrl5')
-    self.joystick_status = xrc.XRCCTRL(self._real_panel, 'm_textCtrl6')
+    self.core_status = xrc.XRCCTRL(self._real_panel, 'm_button71')
+    self.robot_status = xrc.XRCCTRL(self._real_panel, 'm_button81')
+    self.joystick_status = xrc.XRCCTRL(self._real_panel, 'm_button91')
     self.robot_choice = xrc.XRCCTRL(self._real_panel, 'm_choice1')
     self.robot_choice.SetItems(self._robots)
+    
 
-    self.core_status.SetEditable(False)
-    self.robot_status.SetEditable(False)
-    self.joystick_status.SetEditable(False)
     self.core_status.SetBackgroundColour("Red")
     self.robot_status.SetBackgroundColour("Red")
     self.joystick_status.SetBackgroundColour("Red")
@@ -114,7 +113,7 @@ class PR2StartUpAppFrame(wx.Frame):
     print "launching robot" 
     if self._robot_launcher == None:
       if self._robot_launch == None:
-        self._help_popup = wx.MessageDialog(self._real_panel, 'Please select a robot', 'caption', wx.OK)  
+        self._help_popup = wx.MessageDialog(self._real_panel, 'Please select a robot', 'Robot?', wx.OK)  
         self._help_popup.ShowModal()
       else:
         script = roslib.packages.get_pkg_dir('pr2_alpha') +'/'+ self._robot_launch
@@ -131,8 +130,12 @@ class PR2StartUpAppFrame(wx.Frame):
     if self._joystick_launcher == None:
       script = roslib.packages.get_pkg_dir('pr2_alpha') +'/'+ 'teleop_joystick.launch'
       self._joystick_launcher = self.launch_script(script, None)
-      self._joystick_launcher.spin_once()
-      self.joystick_status.SetBackgroundColour("Light Green")
+      if self._joystick_launcher == None:
+        self._joystick_popup = wx.MessageDialog(self._real_panel, 'joystick could not be launched', 'Launch Failed', wx.OK)  
+        self._joystick_popup.ShowModal()
+      else:
+        self._joystick_launcher.spin_once()
+        self.joystick_status.SetBackgroundColour("Light Green")
     else:
       self._joystick_launcher.shutdown()
       self._joystick_launcher =None
@@ -143,27 +146,39 @@ class PR2StartUpAppFrame(wx.Frame):
     if self._dashboard_launcher == None:
       script = roslib.packages.get_pkg_dir(PKG) + '/launch/dashboard.launch'
       self._dashboard_launcher = self.launch_script(script, None)
-      self._dashboard_launcher.spin_once()
+      if self._dashboard_launcher == None:
+        self._dashboard_popup = wx.MessageDialog(self._real_panel, 'dashboard could not be launched', 'Launch Failed', wx.OK)  
+        self._dashboard_popup.ShowModal()
+      else:
+        self._dashboard_launcher.spin_once()
     else:
       self._dashboard_launcher.shutdown()
       self._dashboard_launcher = None
   
   def LaunchRviz(self, event):
-    print "launching dashboard"
+    print "launching rviz"
     if self._rviz_launcher == None:
       script = roslib.packages.get_pkg_dir(PKG) + '/launch/rviz.launch'
       self._rviz_launcher = self.launch_script(script, None)
-      self._rviz_launcher.spin_once()
+      if self._rviz_launcher == None:
+        self._rviz_popup = wx.MessageDialog(self._real_panel, 'rviz could not be launched', 'Launch Failed', wx.OK)  
+        self._rviz_popup.ShowModal()
+      else:
+        self._rviz_launcher.spin_once()
     else:
       self._rviz_launcher.shutdown()
       self._rviz_launcher = None
   
   def LaunchRxgraph(self, event):
-    print "launching dashboard"
+    print "launching rxgraph"
     if self._rxgraph_launcher == None:
       script = roslib.packages.get_pkg_dir(PKG) + '/launch/rxgraph.launch'
       self._rxgraph_launcher = self.launch_script(script, None)
-      self._rxgraph_launcher.spin_once()
+      if self._rxgraph_launcher == None:
+        self._rxgraph_popup = wx.MessageDialog(self._real_panel, 'rxgraph could not be launched', 'Launch Failed', wx.OK)  
+        self._rxgraph_popup.ShowModal()
+      else:
+        self._rxgraph_launcher.spin_once()
     else:
       self._rxgraph_launcher.shutdown()
       self._rxgraph_launcher = None
@@ -172,11 +187,17 @@ class PR2StartUpAppFrame(wx.Frame):
     self._robot_launch = self._robots[self.robot_choice.GetStringSelection()]
 
   def launch_script(self, script, process_listener_object = None):  
+
+    if self._core_launcher == None:
+      return None
+
     f = open(script, 'r')
     launch_xml = f.read()
     f.close()
-
-    launch = roslaunch_caller.ScriptRoslaunch(launch_xml, process_listener_object)
+    try:    
+      launch = roslaunch_caller.ScriptRoslaunch(launch_xml, process_listener_object)
+    except roslaunch.RLException, e:
+      print "exception"
     try:
       launch.start()
     except roslaunch.RLException, e:
@@ -187,8 +208,20 @@ class PR2StartUpAppFrame(wx.Frame):
 
   def OnExit(self,e):
     print "existing frame"
+    if self._joystick_launcher != None:   
+      self._joystick_launcher.shutdown()
+    if self._robot_launcher != None:   
+      self._robot_launcher.shutdown()
+    if self._rviz_launcher != None:   
+      self._rviz_launcher.shutdown()
+    if self._dashboard_launcher != None:   
+      self._dashboard_launcher.shutdown()
+    if self._rxgraph_launcher != None:   
+      self._rxgraph_launcher.shutdown()
     if self._core_launcher != None:   
       self._core_launcher.stop()
+
+
     self.Destroy()
     wx.GetApp().ProcessIdle()
     
@@ -197,7 +230,7 @@ class PR2StartUpApp(wx.App):
   def OnInit(self):
     
     self._frame = PR2StartUpAppFrame(None)
-    self._frame.SetSize(wx.Size(300,350))
+    self._frame.SetSize(wx.Size(300,210))
     self._frame.Layout()
     self._frame.Centre()
     self._frame.Show(True)

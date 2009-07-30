@@ -60,7 +60,7 @@
 
 /** services **/
 #include <sbpl_arm_planner_node/PlanPathSrv.h>
-#include <motion_planning_srvs/MotionPlan.h>
+#include <motion_planning_msgs/GetMotionPlan.h>
 
 #include <boost/thread/mutex.hpp>
 #include "boost/shared_ptr.hpp"
@@ -71,7 +71,6 @@
 #include <kdl/frames.hpp>
 #include <kdl/chainjnttojacsolver.hpp>
 #include <robot_msgs/Wrench.h>
-#include <motion_planning_srvs/MotionPlan.h>
 #include <manipulation_srvs/IKService.h>
 
 
@@ -90,7 +89,7 @@ class SBPLArmPlannerNode
 
       int run();
 
-      bool planKinematicPath(motion_planning_srvs::MotionPlan::Request &req, motion_planning_srvs::MotionPlan::Response &res);
+      bool planKinematicPath(motion_planning_msgs::GetMotionPlan::Request &req, motion_planning_msgs::GetMotionPlan::Response &res);
 
       void getCurrentJointAngles(const std::vector <std::string> &joint_names, std::vector <double> *joint_angles);
 
@@ -226,9 +225,9 @@ class SBPLArmPlannerNode
 
       bool setGoalState(const std::vector<motion_planning_msgs::JointConstraint> &joint_constraint);
 
-      bool planToState(motion_planning_srvs::MotionPlan::Request &req, motion_planning_srvs::MotionPlan::Response &res);
+      bool planToState(motion_planning_msgs::GetMotionPlan::Request &req, motion_planning_msgs::GetMotionPlan::Response &res);
 
-      bool planToPosition(motion_planning_srvs::MotionPlan::Request &req, motion_planning_srvs::MotionPlan::Response &res);
+      bool planToPosition(motion_planning_msgs::GetMotionPlan::Request &req, motion_planning_msgs::GetMotionPlan::Response &res);
 
       bool plan(motion_planning_msgs::KinematicPath &arm_path);
 
@@ -248,7 +247,7 @@ class SBPLArmPlannerNode
 
       bool updateOccupancyGrid();
 
-      void updatePMWrapper(motion_planning_srvs::MotionPlan::Request &req);
+      void updatePMWrapper(motion_planning_msgs::GetMotionPlan::Request &req);
 
       void finishPath(motion_planning_msgs::KinematicPath &arm_path, motion_planning_msgs::PoseConstraint &goal_pose);
 

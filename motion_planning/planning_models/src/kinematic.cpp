@@ -492,6 +492,20 @@ void planning_models::KinematicModel::getJoints(std::vector<Joint*> &joints) con
 	    joints.push_back(jn[i]);
 }
 
+unsigned int planning_models::KinematicModel::getJointsDimension(const std::vector<std::string> &names) const
+{
+    unsigned int dim = 0;
+    for (unsigned int i = 0 ; i < names.size() ; ++i)
+    {
+	Joint *joint = getJoint(names[i]);
+	if (joint)
+	    dim += joint->usedParams;
+	else
+	    m_msg.error("Unknown joint '" + names[i] + "'");	
+    }
+    return dim;
+}
+
 unsigned int planning_models::KinematicModel::getGroupDimension(int groupID) const
 {
     assert(groupID >= 0 && groupID < (int)m_groups.size());

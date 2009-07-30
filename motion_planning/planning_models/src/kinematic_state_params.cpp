@@ -256,7 +256,41 @@ const double* planning_models::StateParams::getParamsJoint(const std::string &na
 	    return NULL;
     }
     else
-	return NULL;    
+    {
+	m_msg.error("Unknown joint: '" + name + "'");
+	return NULL;
+    }
+}
+
+bool planning_models::StateParams::setParamsJoints(const double *params, const std::vector<std::string> &names)
+{
+    bool change = false;
+    int u = 0;
+    for (unsigned int i = 0 ; i < names.size() ; ++i)
+    {
+	KinematicModel::Joint *joint = m_owner->getJoint(names[i]);
+	if (joint)
+	{
+	    bool ch = setParamsJoint(params + u, names[i]);
+	    u += joint->usedParams;
+	    change = change || ch;
+	}	
+	else
+	{
+	    m_msg.error("Unknown joint: '" + names[i] + "'");
+	    break;
+	}
+    }
+    return change;
+}
+
+bool planning_models::StateParams::setParamsJoints(const std::vector<double> &params, const std::vector<std::string> &names)
+{
+    double *dparams = new double[params.size()];
+    std::copy(params.begin(), params.end(), dparams);
+    bool res = setParamsJoints(dparams, names);
+    delete[] dparams;
+    return res;
 }
 
 bool planning_models::StateParams::setParamsJoint(const std::vector<double> &params, const std::string &name)
@@ -270,6 +304,8 @@ bool planning_models::StateParams::setParamsJoint(const std::vector<double> &par
 	result = setParamsJoint(dparams, name);
 	delete[] dparams;
     }
+    else
+	m_msg.error("Unknown joint: '" + name + "'");	
     return result;
 }
 

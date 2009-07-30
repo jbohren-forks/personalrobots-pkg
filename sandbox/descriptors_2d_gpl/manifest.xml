@@ -1,0 +1,22 @@
+<package>
+  <description brief="descriptors_2d_gpl">
+
+     Image descriptors that must be in a GPL package.
+
+  </description>
+  <author>Alex Teichman</author>
+  <license>GPL</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/descriptors_2d_gpl</url>
+  <depend package="opencv_latest"/>
+  <depend package="daisy"/>
+  <depend package="descriptors_2d"/>
+
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -ldescriptors_2d_gpl -Wl,-rpath,${prefix}/lib" />
+  </export>
+
+
+</package>
+
+

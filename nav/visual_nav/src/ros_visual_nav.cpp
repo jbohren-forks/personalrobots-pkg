@@ -294,7 +294,8 @@ RosVisualNavigator::~RosVisualNavigator ()
 
 void RosVisualNavigator::run ()
 {
-  Duration d(0.1);
+  Duration d(.1);
+  unsigned counter=0;
 
   while (true) {
 
@@ -314,9 +315,11 @@ void RosVisualNavigator::run ()
           publishExitPoint();
         }
       }
-      publishVisualization();
+      if (!(counter++%10))
+        publishVisualization();
     }
-
+    
+    ros::spinOnce();
     d.sleep();
   }
 }
@@ -360,6 +363,7 @@ void RosVisualNavigator::roadmapCallback (const vslam::Roadmap::ConstPtr& messag
   else {
     start_id_=id_map_[localization];
     map_received_=true;
+    ROS_DEBUG_NAMED ("node", "Received roadmap message");
   }
 }
 
@@ -406,7 +410,7 @@ inline Point2D convertPoint (const Point32& p)
 // Convert the scan to a set of points and store that, together with the pose and node id at the time the scan was taken
 void RosVisualNavigator::baseScanCallback(const Notifier::MessagePtr& message)
 {
-  if (!(scan_counter_++%scan_period_)) {
+  if (!(scan_counter_++%scan_period_)&&roadmap_.get()) {
     try {
       robot_msgs::PointCloud point_cloud;
       projector_.transformLaserScanToPointCloud (vslam_frame_, point_cloud, *message, tf_listener_);
@@ -559,6 +563,7 @@ void RosVisualNavigator::deleteOldMarkers ()
     marker.id=i;
     marker.action=Marker::DELETE;
     visualization_publisher_.publish(marker);
+    ROS_DEBUG_STREAM_NAMED ("rviz", "Published delete message with frame " << marker.header.frame_id);
   }
 
   ROS_DEBUG_STREAM_NAMED ("rviz", "Deleted " << num_active_markers_ << " old markers upon node destruction");

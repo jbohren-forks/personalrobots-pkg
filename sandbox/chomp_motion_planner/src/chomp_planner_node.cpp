@@ -96,7 +96,7 @@ int ChompPlannerNode::run()
   return 0;
 }
 
-bool ChompPlannerNode::planKinematicPath(motion_planning_srvs::MotionPlan::Request &req, motion_planning_srvs::MotionPlan::Response &res)
+bool ChompPlannerNode::planKinematicPath(motion_planning_msgs::GetMotionPlan::Request &req, motion_planning_msgs::GetMotionPlan::Response &res)
 {
   ros::WallTime start_time = ros::WallTime::now();
   ROS_INFO("Received planning request...");

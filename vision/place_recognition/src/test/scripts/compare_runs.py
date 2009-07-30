@@ -1,15 +1,12 @@
 #! /usr/bin/python
 import roslib
 roslib.load_manifest('place_recognition')
-import rostest
 import pylab, numpy
 import Image
 import fast
 import calonder
 import operator
 
-import sys
-sys.path.append('lib')
 import place_recognition
 
 def get_features(frame, classifier):

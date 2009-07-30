@@ -12,10 +12,10 @@
 #include <errno.h>
 #include <vector>
 #include <string>
-#include "descriptors.h"
 #include <fstream>
 
-#include <image_descriptors_gpl/image_descriptors_gpl.h>
+#include <descriptors_2d/descriptors_2d.h>
+#include <descriptors_2d_gpl/descriptors_2d_gpl.h>
 
 USING_PART_OF_NAMESPACE_EIGEN
 using namespace std;
@@ -155,7 +155,7 @@ void Stanleyi::collectObjectsFromImageVectorized(int samples_per_img, vector<obj
       
   }
   
-  // -- Call all descriptors, get vectorized results.
+  // -- Call all criptors, get vectorized results.
   for(size_t i=0; i<descriptor_.size(); i++) {
     descriptor_[i]->compute(img_, desired, results[i]);
   }
@@ -284,6 +284,9 @@ void Stanleyi::makeClassificationVideo(string bagfile, Dorylus& d, int samples_p
   //d.exclude_descriptors_.push_back(desc[4]->name_);
   if(getenv("MAX_WC") != NULL)
     d.max_wc_ = atoi(getenv("MAX_WC"));
+  int max_frames = 0;
+  if(getenv("MAX_FRAMES") != NULL)
+    max_frames = atoi(getenv("MAX_FRAMES"));
   
 
   cvNamedWindow("Classification Visualization", CV_WINDOW_AUTOSIZE);
@@ -307,8 +310,10 @@ void Stanleyi::makeClassificationVideo(string bagfile, Dorylus& d, int samples_p
     frame_num++;
   }
 
+  int nFrames = 0;
   while(lp_.nextMsg()) {
     frame_num++;
+    nFrames++;
 
     // -- Get next image from the bag.
     if (!img_bridge_.fromImage(img_msg_, "bgr")) {
@@ -387,7 +392,7 @@ void Stanleyi::makeClassificationVideo(string bagfile, Dorylus& d, int samples_p
     for(size_t i=0; i<objects.size(); ++i)
       delete objects[i];
 
-    if(cvWaitKey(100) == 'q') {
+    if(cvWaitKey(500) == 'q' || nFrames == max_frames) {
       break;
     }
   }
@@ -651,41 +656,46 @@ vector<ImageDescriptor*> setupImageDescriptors() {
 // Size winSize, Size blockSize, Size blockStride, Size cellSize,
 //   int nbins, int derivAperture=1, double winSigma=-1,
 // //   int histogramNormType=L2Hys, double L2HysThreshold=0.2, bool gammaCorrection=false)
-// //  d.push_back(new HogWrapper());
-//   d.push_back(new HogWrapper(Size(16,16), Size(16,16), Size(8,8), Size(8,8), 7, 1, -1, 0, 0.2, true));
-//   d.push_back(new HogWrapper(Size(32,32), Size(16,16), Size(8,8), Size(8,8), 7, 1, -1, 0, 0.2, true));
-//   d.push_back(new HogWrapper(Size(64,64), Size(32,32), Size(16,16), Size(16,16), 7, 1, -1, 0, 0.2, true));
-//   d.push_back(new HogWrapper(Size(128,128), Size(64,64), Size(32,32), Size(32,32), 7, 1, -1, 0, 0.2, true));
+//  d.push_back(new HogWrapper());
+  d.push_back(new HogWrapper(Size(16,16), Size(16,16), Size(8,8), Size(8,8), 7, 1, -1, 0, 0.2, true));
+  d.push_back(new HogWrapper(Size(32,32), Size(16,16), Size(8,8), Size(8,8), 7, 1, -1, 0, 0.2, true));
+  d.push_back(new HogWrapper(Size(64,64), Size(32,32), Size(16,16), Size(16,16), 7, 1, -1, 0, 0.2, true));
+  d.push_back(new HogWrapper(Size(128,128), Size(64,64), Size(32,32), Size(32,32), 7, 1, -1, 0, 0.2, true));
 
-//   SuperpixelColorHistogram* sch1 = new SuperpixelColorHistogram(20, 0.5, 10, string("hue"));
-//   SuperpixelColorHistogram* sch2 = new SuperpixelColorHistogram(5, 0.5, 10, string("hue"), NULL, sch1);
-//   SuperpixelColorHistogram* sch3 = new SuperpixelColorHistogram(5, 1, 10, string("hue"), NULL, sch1);
-//   SuperpixelColorHistogram* sch4 = new SuperpixelColorHistogram(5, .25, 10, string("hue"), NULL, sch1);
-//   d.push_back(sch1);
-//   d.push_back(sch2);
-//   d.push_back(sch3);
-//   d.push_back(sch4);
+  SuperpixelColorHistogram* sch1 = new SuperpixelColorHistogram(20, 0.5, 10);
+  SuperpixelColorHistogram* sch2 = new SuperpixelColorHistogram(5, 0.5, 10, NULL, sch1);
+  SuperpixelColorHistogram* sch3 = new SuperpixelColorHistogram(5, 1, 10, NULL, sch1);
+  SuperpixelColorHistogram* sch4 = new SuperpixelColorHistogram(5, .25, 10, NULL, sch1);
+  d.push_back(sch1);
+  d.push_back(sch2);
+  d.push_back(sch3);
+  d.push_back(sch4);
  
   
-// //  d.push_back(new ContourFragmentDescriptor(0, "contour_fragments"));
-// //   IntegralImageTexture* iit = new IntegralImageTexture(1);
-// //   d.push_back(iit);
-// //   d.push_back(new IntegralImageTexture(2, iit));
-// //   d.push_back(new IntegralImageTexture(3, iit));
+// // //  d.push_back(new ContourFragmentDescriptor(0, "contour_fragments"));
+// // //   IntegralImageTexture* iit = new IntegralImageTexture(1);
+// // //   d.push_back(iit);
+// // //   d.push_back(new IntegralImageTexture(2, iit));
+// // //   d.push_back(new IntegralImageTexture(3, iit));
 
-// // -- SURF.
-//   d.push_back(new SurfWrapper(true, 150));
-//   d.push_back(new SurfWrapper(true, 100));
-//   d.push_back(new SurfWrapper(true, 50));
-//   d.push_back(new SurfWrapper(true, 25));
-//   d.push_back(new SurfWrapper(true, 10));
- 
-  //-- Haar.
-//   vector<ImageDescriptor*> haar = setupDefaultHaarDescriptors();
-//   d.insert(d.end(), haar.begin(), haar.end());
+// // // -- SURF.
+  d.push_back(new SurfWrapper(true, 150));
+  d.push_back(new SurfWrapper(true, 100));
+  d.push_back(new SurfWrapper(true, 50));
+  d.push_back(new SurfWrapper(true, 25));
+  d.push_back(new SurfWrapper(true, 10));
+  
+//   //-- Haar.
+// //   vector<ImageDescriptor*> haar = setupDefaultHaarDescriptors();
+// //   d.insert(d.end(), haar.begin(), haar.end());
 
   // -- Daisy.
-  d.push_back(new Daisy());
+  Daisy* base_daisy = new Daisy(25, 3, 8, 8, NULL);
+  d.push_back(base_daisy);
+  d.push_back(new Daisy(50, 3, 8, 8, base_daisy));
+  d.push_back(new Daisy(75, 3, 8, 8, base_daisy));
+  d.push_back(new Daisy(100, 3, 8, 8, base_daisy));
+  d.push_back(new Daisy(150, 3, 8, 8, base_daisy));
 
   return d;
 }

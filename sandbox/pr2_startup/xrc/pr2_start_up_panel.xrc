@@ -2,7 +2,7 @@
 <resource xmlns="http://www.wxwindows.org/wxxrc" version="2.3.0.1">
 	<object class="wxPanel" name="PR2StartUpPanel">
 		<style>wxTAB_TRAVERSAL</style>
-		<size>375,366</size>
+		<size>375,227</size>
 		<object class="wxBoxSizer">
 			<orient>wxVERTICAL</orient>
 			<object class="sizeritem">
@@ -12,42 +12,6 @@
 				<object class="wxStaticBoxSizer">
 					<orient>wxVERTICAL</orient>
 					<label>PR-2 Start Up</label>
-					<object class="sizeritem">
-						<option>0</option>
-						<flag>wxEXPAND</flag>
-						<border>5</border>
-						<object class="wxStaticBoxSizer">
-							<orient>wxHORIZONTAL</orient>
-							<label>Status</label>
-							<object class="sizeritem">
-								<option>1</option>
-								<flag>wxALL</flag>
-								<border>5</border>
-								<object class="wxTextCtrl" name="m_textCtrl4">
-									<value>roscore</value>
-									<maxlength>0</maxlength>
-								</object>
-							</object>
-							<object class="sizeritem">
-								<option>1</option>
-								<flag>wxALL</flag>
-								<border>5</border>
-								<object class="wxTextCtrl" name="m_textCtrl5">
-									<value>robot</value>
-									<maxlength>0</maxlength>
-								</object>
-							</object>
-							<object class="sizeritem">
-								<option>1</option>
-								<flag>wxALL</flag>
-								<border>5</border>
-								<object class="wxTextCtrl" name="m_textCtrl6">
-									<value>joystick</value>
-									<maxlength>0</maxlength>
-								</object>
-							</object>
-						</object>
-					</object>
 					<object class="sizeritem">
 						<option>0</option>
 						<flag>wxEXPAND</flag>
@@ -67,35 +31,35 @@
 						</object>
 					</object>
 					<object class="sizeritem">
-						<option>1</option>
+						<option>0</option>
 						<flag>wxEXPAND</flag>
 						<border>5</border>
 						<object class="wxStaticBoxSizer">
-							<orient>wxVERTICAL</orient>
+							<orient>wxHORIZONTAL</orient>
 							<label>Launch</label>
 							<object class="sizeritem">
-								<option>0</option>
-								<flag>wxALL|wxEXPAND</flag>
+								<option>1</option>
+								<flag>wxALL</flag>
 								<border>5</border>
-								<object class="wxButton" name="m_button7">
+								<object class="wxButton" name="m_button71">
 									<label>roscore</label>
 									<default>0</default>
 								</object>
 							</object>
 							<object class="sizeritem">
-								<option>0</option>
-								<flag>wxALL|wxEXPAND</flag>
+								<option>1</option>
+								<flag>wxALL</flag>
 								<border>5</border>
-								<object class="wxButton" name="m_button8">
+								<object class="wxButton" name="m_button81">
 									<label>robot</label>
 									<default>0</default>
 								</object>
 							</object>
 							<object class="sizeritem">
-								<option>0</option>
-								<flag>wxALL|wxEXPAND</flag>
+								<option>1</option>
+								<flag>wxALL</flag>
 								<border>5</border>
-								<object class="wxButton" name="m_button9">
+								<object class="wxButton" name="m_button91">
 									<label>joystick</label>
 									<default>0</default>
 								</object>

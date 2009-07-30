@@ -34,6 +34,8 @@
 
 #include <point_cloud_clustering/pairwise_neighbors.h>
 
+using namespace std;
+
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
@@ -73,96 +75,92 @@ int point_cloud_clustering::PairwiseNeighbors::cluster(const robot_msgs::PointCl
     return -1;
   }
 
-  unsigned int nbr_pts = pt_cloud.pts.size();
-
-  // i --> [point i's neighbors j]
-  // (i < j)
+  // Create adjacency list where
+  // adj_list: i --> [point i's neighbors j], such that i < j
   map<unsigned int, set<unsigned int> > adj_list;
 
   // Iterate over each index, find neighboring points, and randomly link to them
-  set<unsigned int>::const_iterator iter_indices_to_cluster;
-  for (iter_indices_to_cluster = indices_to_cluster.begin(); iter_indices_to_cluster
+  const unsigned int nbr_total_pts = pt_cloud.pts.size();
+  for (set<unsigned int>::const_iterator iter_indices_to_cluster = indices_to_cluster.begin() ; iter_indices_to_cluster
       != indices_to_cluster.end() ; iter_indices_to_cluster++)
   {
     // retrieve next index
-    unsigned int curr_idx = *iter_indices_to_cluster;
-    if (curr_idx >= nbr_pts)
+    const unsigned int curr_pt_cloud_idx = *iter_indices_to_cluster;
+    if (curr_pt_cloud_idx >= nbr_total_pts)
     {
-      ROS_ERROR("Invalid index to cluster");
+      ROS_ERROR("Invalid index to cluster: %u out of %u", curr_pt_cloud_idx, nbr_total_pts);
       return -1;
     }
 
-    // Create adj list entry if necessary
-    if (adj_list.count(curr_idx) == 0)
-    {
-      adj_list[curr_idx] = set<unsigned int> ();
-    }
+    // STL set contains unique values, so next index guaranteed to not exist
+    adj_list[curr_pt_cloud_idx] = set<unsigned int> ();
 
-    // range search radius_
-    vector<int> neighbor_indices;
-    vector<float> neighbor_distances;
-    pt_cloud_kdtree.radiusSearch(curr_idx, radius_, neighbor_indices, neighbor_distances);
+    // Find valid neighboring points to cluster on
+    list<unsigned int> valid_neighbor_indices;
+    const unsigned int nbr_valid_neighbors = findRadiusNeighbors(pt_cloud_kdtree, curr_pt_cloud_idx, radius_,
+        indices_to_cluster, valid_neighbor_indices);
 
-    // generate random indices
-    unsigned int nbr_radius_neighbors = neighbor_indices.size();
-    vector<unsigned int> random_indices(nbr_radius_neighbors, 0);
-    for (unsigned int i = 0 ; i < nbr_radius_neighbors ; i++)
+    // Generate random indices
+    vector<unsigned int> random_indices(nbr_valid_neighbors, 0);
+    for (unsigned int i = 0 ; i < nbr_valid_neighbors ; i++)
     {
-      random_indices[i] = i;
+      random_indices[i] = valid_neighbor_indices.front();
+      valid_neighbor_indices.pop_front();
     }
     random_shuffle(random_indices.begin(), random_indices.end());
 
     // Randomly link to neighbors within radius
-    unsigned int nbr_linked_neighbors = 0;
-    for (unsigned int i = 0 ; nbr_linked_neighbors < nbr_neighbors_ && i < nbr_radius_neighbors ; i++)
+    for (unsigned int i = 0 ; i < nbr_neighbors_ && i < nbr_valid_neighbors ; i++)
     {
-      // retrieve neighboring index, verify it is valid
-      unsigned int curr_neighbor_idx = random_indices[i];
-      if (indices_to_cluster.count(curr_neighbor_idx) == 0)
-      {
-        continue;
-      }
+      // retrieve neighboring index
+      const unsigned int curr_neighbor_idx = random_indices[i];
 
       // avoid self-edges
-      if (curr_neighbor_idx == curr_idx)
+      if (curr_neighbor_idx == curr_pt_cloud_idx)
       {
         continue;
       }
 
       // define edge (a,b) st. a < b
-      unsigned int a = std::min(curr_idx, curr_neighbor_idx);
-      unsigned int b = std::max(curr_idx, curr_neighbor_idx);
+      const unsigned int a = std::min(curr_pt_cloud_idx, curr_neighbor_idx);
+      const unsigned int b = std::max(curr_pt_cloud_idx, curr_neighbor_idx);
       adj_list[a].insert(b); // a guaranteed to exist since iterating in ascending order with set
-      nbr_linked_neighbors++;
     }
   }
 
   // Create clusters from adjacency list
   created_clusters.clear();
-  unsigned int cluster_id = 0;
-  map<unsigned int, set<unsigned int> >::iterator iter_adj_list;
-  for (iter_adj_list = adj_list.begin(); iter_adj_list != adj_list.end() ; iter_adj_list++)
+  unsigned int curr_cluster_label = starting_label_;
+  for (map<unsigned int, set<unsigned int> >::iterator iter_adj_list = adj_list.begin() ; iter_adj_list
+      != adj_list.end() ; iter_adj_list++)
   {
-    unsigned int curr_source = iter_adj_list->first;
-    set<unsigned int>& curr_neighbors = iter_adj_list->second;
-    set<unsigned int>::iterator iter_neighbors;
-    for (iter_neighbors = curr_neighbors.begin(); iter_neighbors != curr_neighbors.end() ; iter_neighbors++)
-    {
-      unsigned int curr_target = *iter_neighbors;
-      created_clusters[cluster_id] = vector<int> (2);
+    // i
+    const unsigned int curr_source_idx = iter_adj_list->first;
+    // i's neighbors j
+    const set<unsigned int>& curr_neighbors = iter_adj_list->second;
 
-      // Create edges based on z-coordinate
-      if (pt_cloud.pts[curr_source].z < pt_cloud.pts[curr_target].z)
+    // Iterate and create edges from i to each neighbor j
+    for (set<unsigned int>::const_iterator iter_neighbors = curr_neighbors.begin() ; iter_neighbors
+        != curr_neighbors.end() ; iter_neighbors++)
+    {
+      // j
+      const unsigned int curr_target_idx = *iter_neighbors;
+
+      // The "cluster" is an edge with 2 points
+      created_clusters[curr_cluster_label] = vector<int> (2);
+
+      // Create edges such that first point is always lower than the second point
+      if (pt_cloud.pts[curr_source_idx].z < pt_cloud.pts[curr_target_idx].z)
       {
-        created_clusters[cluster_id][0] = static_cast<int> (curr_source);
-        created_clusters[cluster_id][1] = static_cast<int> (curr_target);
+        created_clusters[curr_cluster_label][0] = static_cast<int> (curr_source_idx);
+        created_clusters[curr_cluster_label][1] = static_cast<int> (curr_target_idx);
       }
       else
       {
-        created_clusters[cluster_id][0] = static_cast<int> (curr_target);
-        created_clusters[cluster_id][1] = static_cast<int> (curr_source);
+        created_clusters[curr_cluster_label][0] = static_cast<int> (curr_target_idx);
+        created_clusters[curr_cluster_label][1] = static_cast<int> (curr_source_idx);
       }
-      cluster_id++;
+      curr_cluster_label++;
     }
   }
 

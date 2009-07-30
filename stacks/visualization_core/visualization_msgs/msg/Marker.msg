@@ -1,3 +1,5 @@
+# See http://pr.willowgarage.com/wiki/rviz/UsingVisualizationMarkers for more information on using this message with rviz
+
 byte ARROW=0
 byte CUBE=1
 byte SPHERE=2

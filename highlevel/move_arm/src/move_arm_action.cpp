@@ -43,6 +43,7 @@
 
 #include <manipulation_srvs/IKService.h>
 #include <manipulation_srvs/IKQuery.h>
+#include <motion_planning_msgs/ConvertPoseToJointConstraint.h>
 
 #include <visualization_msgs/Marker.h>
 #include <cstdlib>
@@ -53,13 +54,12 @@ namespace move_arm
 {
     // these are the strings used internally to access services
     // they should be remaped in the launch file
-    static const std::string CONTROL_START_NAME  = "controller_start";
-    static const std::string CONTROL_QUERY_NAME  = "controller_query";
-    static const std::string CONTROL_CANCEL_NAME = "controller_cancel";
-    static const std::string MOTION_PLAN_NAME    = "motion_plan";
-
-    static const std::string ARM_IK_NAME         = "arm_ik";
-    static const std::string ARM_IK_QUERY_NAME   = "arm_ik_query";
+    static const std::string CONTROL_START_NAME      = "controller_start";
+    static const std::string CONTROL_QUERY_NAME      = "controller_query";
+    static const std::string CONTROL_CANCEL_NAME     = "controller_cancel";
+    static const std::string MOTION_PLAN_NAME        = "get_motion_plan";
+    static const std::string SEARCH_VALID_STATE_NAME = "get_valid_state";
+    static const std::string ARM_IK_NAME             = "arm_ik";
 
     MoveArm::MoveArm(const::std::string &arm_name) : Action<pr2_robot_actions::MoveArmGoal, int32_t>("move_" + arm_name)
     {	
@@ -120,8 +120,8 @@ namespace move_arm
 	    return robot_actions::ABORTED;
 	}
 	
-	motion_planning_srvs::MotionPlan::Request  req;
-	motion_planning_srvs::MotionPlan::Response res;
+	motion_planning_msgs::GetMotionPlan::Request  req;
+	motion_planning_msgs::GetMotionPlan::Response res;
 	
 	
 	req.params.model_id = arm_;              // the model to plan for (should be defined in planning.yaml)
@@ -140,17 +140,19 @@ namespace move_arm
 	// tell the planning monitor about the constraints we will be following
 	planningMonitor_->setPathConstraints(req.path_constraints);
 	planningMonitor_->setGoalConstraints(req.goal_constraints);
+	
+	// fill the staring state
+	fillStartState(req.start_state);
 
 	if (perform_ik_)
 	    alterRequestUsingIK(req);
 	
-
 	ResultStatus result = robot_actions::SUCCESS;
 	
 	feedback = pr2_robot_actions::MoveArmState::PLANNING;
 	update(feedback);
 	
-	ros::ServiceClient clientPlan   = node_handle_.serviceClient<motion_planning_srvs::MotionPlan>(MOTION_PLAN_NAME, true);
+	ros::ServiceClient clientPlan   = node_handle_.serviceClient<motion_planning_msgs::GetMotionPlan>(MOTION_PLAN_NAME, true);
 	ros::ServiceClient clientStart  = node_handle_.serviceClient<pr2_mechanism_controllers::TrajectoryStart>(CONTROL_START_NAME, true);
 	ros::ServiceClient clientQuery  = node_handle_.serviceClient<pr2_mechanism_controllers::TrajectoryQuery>(CONTROL_QUERY_NAME, true);
 	ros::ServiceClient clientCancel = node_handle_.serviceClient<pr2_mechanism_controllers::TrajectoryCancel>(CONTROL_CANCEL_NAME, true);
@@ -369,18 +371,28 @@ namespace move_arm
 
     void MoveArm::fillTrajectoryPath(const motion_planning_msgs::KinematicPath &path, manipulation_msgs::JointTraj &traj)
     {
-	/// \todo Joint controller does not take joint names; make sure we set them when the controller is updated
+        traj.names = arm_joint_names_;
 	traj.points.resize(path.states.size());
+	planning_models::StateParams *sp = planningMonitor_->getKinematicModel()->newStateParams();
 	for (unsigned int i = 0 ; i < path.states.size() ; ++i)
 	{
-	    traj.points[i].positions = path.states[i].vals;
 	    traj.points[i].time = path.times[i];
+	    traj.points[i].positions.reserve(path.states[i].vals.size());
+	    
+	    sp->setParamsGroup(path.states[i].vals, arm_);	    
+	    for (unsigned int j = 0 ; j < arm_joint_names_.size() ; ++j)
+	    {
+		planning_models::KinematicModel::Joint *joint = planningMonitor_->getKinematicModel()->getJoint(arm_joint_names_[j]);
+		const double *params = sp->getParamsJoint(arm_joint_names_[j]);
+		for (unsigned int k = 0 ; k < joint->usedParams ; ++k)
+		    traj.points[i].positions.push_back(params[k]);
+	    }
 	}
+	delete sp;
     }
     
     void MoveArm::printPath(const motion_planning_msgs::KinematicPath &path)
     {
-	ROS_DEBUG("Received path with %d states", (int)path.states.size());
 	for (unsigned int i = 0 ; i < path.states.size() ; ++i)
 	{
 	    std::stringstream ss;
@@ -425,17 +437,17 @@ namespace move_arm
 	ros::ServiceClient client_query = node_handle_.serviceClient<pr2_mechanism_controllers::TrajectoryQuery>(CONTROL_QUERY_NAME);
 	pr2_mechanism_controllers::TrajectoryQuery::Request  req_query;
 	pr2_mechanism_controllers::TrajectoryQuery::Response res_query;
-	req_query.trajectoryid = -1;
+	req_query.trajectoryid = pr2_mechanism_controllers::TrajectoryQuery::Request::Query_Joint_Names;
 	
 	bool result = client_query.call(req_query, res_query);
 	
 	if (!result)
 	{
-	    ROS_WARN("Unable to retrieve controller joint names from control query service. Waiting a bit and retrying...");
+	    ROS_INFO("Querying controller for joint names ...");
 	    ros::Duration(5.0).sleep();
 	    result = client_query.call(req_query, res_query);
 	    if (result)
-		ROS_WARN("Retrieved controller joints on second attempt");
+		ROS_INFO("Joint names received");
 	}
 	
 	if (!result)
@@ -466,12 +478,9 @@ namespace move_arm
 	planningMonitor_->getKinematicModel()->getJointsInGroup(groupNames, arm_);
 	if (groupNames.size() != joint_names.size())
 	{
-	    ROS_ERROR("The group '%s' has more joints than the controller can handle", arm_.c_str());
+	    ROS_ERROR("The group '%s' does not have the same number of joints as the controller can handle", arm_.c_str());
 	    return false;	    
 	}
-	
-	if (groupNames != joint_names)
-	    ROS_WARN("The group joints are not in the same order as the controller expects");
 	
 	return true;
     }
@@ -547,7 +556,7 @@ namespace move_arm
 	return (upper_bound - lower_bound) * drand48() + lower_bound;     
     }
     
-    bool MoveArm::alterRequestUsingIK(motion_planning_srvs::MotionPlan::Request &req)
+    bool MoveArm::alterRequestUsingIK(motion_planning_msgs::GetMotionPlan::Request &req)
     {
 	bool result = false;
 	
@@ -565,28 +574,24 @@ namespace move_arm
 		ROS_INFO("Converting pose constraint to joint constraint using IK...");
 		
 		planningMonitor_->getEnvironmentModel()->setVerbose(false);
-		ros::ServiceClient client = node_handle_.serviceClient<manipulation_srvs::IKService>(ARM_IK_NAME, true);
-		for (int t = 0 ; t < 2 ; ++t)
+		ros::ServiceClient ik_client = node_handle_.serviceClient<manipulation_srvs::IKService>(ARM_IK_NAME, true);
+		
+		// find an IK solution
+		std::vector<double> solution;
+		if (computeIK(ik_client, req.goal_constraints.pose_constraint[0].pose, solution))
 		{
-		    robot_msgs::PoseStamped tpose = req.goal_constraints.pose_constraint[0].pose;
-		    if (t > 0)
-		    {
-			tpose.pose.position.x = uniformDouble(tpose.pose.position.x - req.goal_constraints.pose_constraint[0].position_tolerance_below.x,
-							      tpose.pose.position.x + req.goal_constraints.pose_constraint[0].position_tolerance_above.x);
-			tpose.pose.position.y = uniformDouble(tpose.pose.position.y - req.goal_constraints.pose_constraint[0].position_tolerance_below.y,
-							      tpose.pose.position.y + req.goal_constraints.pose_constraint[0].position_tolerance_above.y);
-			tpose.pose.position.z = uniformDouble(tpose.pose.position.z - req.goal_constraints.pose_constraint[0].position_tolerance_below.z,
-							      tpose.pose.position.z + req.goal_constraints.pose_constraint[0].position_tolerance_above.z);
-		    }
-		    std::vector<double> solution;
-		    if (computeIK(client, tpose, 5, solution))
+		    // check if it is a valid state
+		    planning_models::StateParams spTest(*planningMonitor_->getRobotState());
+		    spTest.setParamsJoints(solution, arm_joint_names_);
+		    
+		    if (planningMonitor_->isStateValidAtGoal(&spTest))
 		    {
 			unsigned int n = 0;
 			for (unsigned int i = 0 ; i < arm_joint_names_.size() ; ++i)
 			{
 			    motion_planning_msgs::JointConstraint jc;
 			    jc.joint_name = arm_joint_names_[i];
-			    jc.header.frame_id = tpose.header.frame_id;
+			    jc.header.frame_id = req.goal_constraints.pose_constraint[0].pose.header.frame_id;
 			    jc.header.stamp = planningMonitor_->lastMechanismStateUpdate();
 			    unsigned int u = planningMonitor_->getKinematicModel()->getJoint(arm_joint_names_[i])->usedParams;
 			    for (unsigned int j = 0 ; j < u ; ++j)
@@ -599,22 +604,92 @@ namespace move_arm
 			    req.goal_constraints.joint_constraint.push_back(jc);
 			}
 			req.goal_constraints.pose_constraint.clear();
-
+			
 			// update the goal constraints for the planning monitor as well
 			planningMonitor_->setGoalConstraints(req.goal_constraints);
 			
 			result = true;
 		    }
+		    else
+		    {
+			// if it is not, we try to fix it
+			motion_planning_msgs::ConvertPoseToJointConstraint::Request c_req;
+			c_req.params = req.params;
+			c_req.start_state = req.start_state;
+			c_req.constraints = req.goal_constraints;
+			c_req.names = arm_joint_names_;
+			c_req.states.resize(1);
+			c_req.states[0].vals = solution;
+			c_req.allowed_time = 0.3;
+
+			// add a few more guesses
+			for (int t = 0 ; t < 4 ; ++t)
+			{
+			    robot_msgs::PoseStamped tpose = req.goal_constraints.pose_constraint[0].pose;
+			    tpose.pose.position.x = uniformDouble(tpose.pose.position.x - req.goal_constraints.pose_constraint[0].position_tolerance_below.x,
+								  tpose.pose.position.x + req.goal_constraints.pose_constraint[0].position_tolerance_above.x);
+			    tpose.pose.position.y = uniformDouble(tpose.pose.position.y - req.goal_constraints.pose_constraint[0].position_tolerance_below.y,
+								  tpose.pose.position.y + req.goal_constraints.pose_constraint[0].position_tolerance_above.y);
+			    tpose.pose.position.z = uniformDouble(tpose.pose.position.z - req.goal_constraints.pose_constraint[0].position_tolerance_below.z,
+								  tpose.pose.position.z + req.goal_constraints.pose_constraint[0].position_tolerance_above.z);
+			    std::vector<double> sol;
+			    if (computeIK(ik_client, tpose, sol))
+			    {
+				unsigned int sz = c_req.states.size();				
+				c_req.states.resize(sz + 1);
+				c_req.states[sz].vals = sol;	
+			    }
+			}
+			
+			motion_planning_msgs::ConvertPoseToJointConstraint::Response c_res;
+			ros::ServiceClient s_client = node_handle_.serviceClient<motion_planning_msgs::ConvertPoseToJointConstraint>(SEARCH_VALID_STATE_NAME);
+			if (s_client.call(c_req, c_res))
+			{
+			    if (!c_res.joint_constraint.empty())
+			    {
+				req.goal_constraints.joint_constraint = c_res.joint_constraint;
+				req.goal_constraints.pose_constraint.clear();
+				
+				// update the goal constraints for the planning monitor as well
+				planningMonitor_->setGoalConstraints(req.goal_constraints);
+				result = true;
+			    }
+			}
+			else
+			    ROS_ERROR("Service for searching for valid states failed");
+		    }
 		}
-		planningMonitor_->getEnvironmentModel()->setVerbose(true);
-		if (!result)
-		    ROS_WARN("Unable to compute IK");
+		else
+		{
+		    motion_planning_msgs::ConvertPoseToJointConstraint::Request c_req;
+		    c_req.params = req.params;
+		    c_req.start_state = req.start_state;
+		    c_req.constraints = req.goal_constraints;
+		    c_req.names = arm_joint_names_;
+		    c_req.allowed_time = 0.3;
+		    motion_planning_msgs::ConvertPoseToJointConstraint::Response c_res;
+		    ros::ServiceClient s_client = node_handle_.serviceClient<motion_planning_msgs::ConvertPoseToJointConstraint>(SEARCH_VALID_STATE_NAME);
+		    if (s_client.call(c_req, c_res))
+		    {
+			if (!c_res.joint_constraint.empty())
+			{
+			    req.goal_constraints.joint_constraint = c_res.joint_constraint;
+			    req.goal_constraints.pose_constraint.clear();
+			    
+			    // update the goal constraints for the planning monitor as well
+			    planningMonitor_->setGoalConstraints(req.goal_constraints);
+			    result = true;
+			}
+		    }
+		    else
+			ROS_ERROR("Service for searching for valid states failed");
+		}
 	    }
 	}
 	return result;
     }
 
-    bool MoveArm::computeIK(ros::ServiceClient &client, const robot_msgs::PoseStamped &pose_stamped_msg, int attempts, std::vector<double> &solution)
+    bool MoveArm::computeIK(ros::ServiceClient &client, const robot_msgs::PoseStamped &pose_stamped_msg, std::vector<double> &solution)
     {
 	// define the service messages
 	manipulation_srvs::IKService::Request request;
@@ -623,82 +698,36 @@ namespace move_arm
 	request.data.pose_stamped = pose_stamped_msg;
 	request.data.joint_names = arm_joint_names_;
 
-	bool validSolution = false;
-	int ikSteps = 0;
-	while (ikSteps < attempts && !validSolution)
+	planning_models::StateParams *sp = planningMonitor_->getKinematicModel()->newStateParams();
+	sp->randomStateGroup(arm_);
+	for(unsigned int i = 0; i < arm_joint_names_.size() ; ++i)
 	{
-	    request.data.positions.clear();
-	    planning_models::StateParams *sp = NULL;
-	    if (ikSteps == 0)
-		sp = new planning_models::StateParams(*planningMonitor_->getRobotState());
-	    else
+	    const double *params = sp->getParamsJoint(arm_joint_names_[i]);
+	    const unsigned int u = planningMonitor_->getKinematicModel()->getJoint(arm_joint_names_[i])->usedParams;
+	    for (unsigned int j = 0 ; j < u ; ++j)
+		request.data.positions.push_back(params[j]);
+	}
+	delete sp;
+	
+	if (client.call(request, response))
+	{ 
+	    ROS_DEBUG("Obtained IK solution");
+	    solution = response.solution;
+	    if (solution.size() != request.data.positions.size())
 	    {
-		sp = planningMonitor_->getKinematicModel()->newStateParams();
-		sp->randomStateGroup(arm_);
-	    }
-	    ikSteps++;
-	    
-	    for(unsigned int i = 0; i < arm_joint_names_.size() ; ++i)
-	    {
-		const double *params = sp->getParamsJoint(arm_joint_names_[i]);
-		const unsigned int u = planningMonitor_->getKinematicModel()->getJoint(arm_joint_names_[i])->usedParams;
-		for (unsigned int j = 0 ; j < u ; ++j)
-		    request.data.positions.push_back(params[j]);
-	    }
-	    delete sp;
-	    
-	    if (client.call(request, response))
-	    { 
-		ROS_DEBUG("Obtained IK solution");
-		solution = response.solution;
-		if (solution.size() != request.data.positions.size())
-		{
-		    ROS_ERROR("Incorrect number of elements in IK output");
-		    return false;
-		}
-		
-		for(unsigned int i = 0; i < solution.size() ; ++i)
-		    ROS_DEBUG("IK[%d] = %f", (int)i, solution[i]);
-		
-		// if IK did not fail, check if the state is valid
-		planning_models::StateParams spTest(*planningMonitor_->getRobotState());
-		unsigned int n = 0;		    
-		for (unsigned int i = 0 ; i < arm_joint_names_.size() ; ++i)
-		{
-		    unsigned int u = planningMonitor_->getKinematicModel()->getJoint(arm_joint_names_[i])->usedParams;
-		    for (unsigned int j = 0 ; j < u ; ++j)
-		    {
-			std::vector<double> params(solution.begin() + n, solution.begin() + n + u);
-			spTest.setParamsJoint(params, arm_joint_names_[i]);
-		    }
-		    n += u;			
-		}
-		
-		// if state is not valid, we try to fix it
-		fixState(spTest, true);
-		
-		if (planningMonitor_->isStateValidAtGoal(&spTest))
-		{
-		    validSolution = true;
-		    
-		    // update solution
-		    solution.clear();
-		    for (unsigned int i = 0 ; i < arm_joint_names_.size() ; ++i)
-		    {
-			std::vector<double> params;
-			spTest.copyParamsJoint(params, arm_joint_names_[i]);
-			solution.insert(solution.end(), params.begin(), params.end());
-		    }
-		}
-	    }
-	    else
-	    {
-		ROS_ERROR("IK service failed");
+		ROS_ERROR("Incorrect number of elements in IK output");
 		return false;
 	    }
+	    for(unsigned int i = 0; i < solution.size() ; ++i)
+		ROS_DEBUG("IK[%d] = %f", (int)i, solution[i]);
 	}
-	
-	return validSolution;
+	else
+	{
+	    ROS_ERROR("IK service failed");
+	    return false;
+	}
+	    
+	return true;
     }
     
 }

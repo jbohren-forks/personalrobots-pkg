@@ -71,6 +71,9 @@ public:
   void find(const FeatureMatrix& query, unsigned int N, OutputIterator output);
 #endif
 
+  // FIXME: hack to make matching by word possible externally
+  boost::uint64_t findWord(const uint8_t* feature);
+  
   //! Save an image represented by its feature descriptors for future lookup
 #ifdef USE_BYTE_SIGNATURES
   unsigned int insert(const uint8_t* image_features, unsigned int num_features);
@@ -142,6 +145,8 @@ public:
                               const std::vector<unsigned int>& input,
                               Node* node, unsigned int level);
 
+  boost::uint64_t findWordAux(Node* node, const uint8_t* feature);
+  
 #ifdef USE_BYTE_SIGNATURES
   Node* findNearestChild(Node* node, const uint8_t* feature);
 #else

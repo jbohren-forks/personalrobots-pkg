@@ -220,16 +220,10 @@ bool FilterChain<T>::update (const std::vector<T>& data_in, std::vector<T>& data
   }
   else if (list_size == 1)
     result = reference_pointers_[0]->update(data_in, data_out);
-  else if (list_size == 2)
-  {
-    result = reference_pointers_[0]->update(data_in, buffer0_);
-    if (result == false) {return false; };//don't keep processing on failure
-    result = result && reference_pointers_[1]->update(buffer0_, data_out);
-  }
   else
   {
     result = reference_pointers_[0]->update(data_in, buffer0_);  //first copy in
-    for (unsigned int i = 1; i <  reference_pointers_.size() - 1; i++) // all but first and last
+    for (unsigned int i = 1; i <  reference_pointers_.size() - 1; i++) // all but first and last (this loop never gets executed if size==2)
     {
       if (i %2 == 1)
         result = result && reference_pointers_[i]->update(buffer0_, buffer1_);
@@ -238,10 +232,10 @@ bool FilterChain<T>::update (const std::vector<T>& data_in, std::vector<T>& data
 
       if (result == false) {return false; }; //don't keep processing on failure
     }
-    if (list_size % 2 == 1) // odd number last deposit was in buffer0
-      result = result && reference_pointers_.back()->update(buffer0_, data_out);
-    else
+    if (list_size % 2 == 1) // odd number last deposit was in buffer1
       result = result && reference_pointers_.back()->update(buffer1_, data_out);
+    else
+      result = result && reference_pointers_.back()->update(buffer0_, data_out);
   }
   return result;
             

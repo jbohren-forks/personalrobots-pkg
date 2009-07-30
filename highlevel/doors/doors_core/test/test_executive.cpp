@@ -116,7 +116,7 @@ int
   robot_actions::ActionClient<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door> unlatch_handle("unlatch_handle");
   robot_actions::ActionClient<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door> open_door("open_door");
   robot_actions::ActionClient<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door> push_door("push_door");
-  robot_actions::ActionClient<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door> release_handle("release_handle");
+  robot_actions::ActionClient<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty> release_handle("release_handle");
   robot_actions::ActionClient<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door> move_base_door("move_base_door");
   robot_actions::ActionClient<robot_msgs::PoseStamped, nav_robot_actions::MoveBaseState, robot_msgs::PoseStamped> move_base_local("move_base_local");
 
@@ -149,6 +149,8 @@ int
   if (!open_by_pushing){
     switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
     switchlist.start_controllers.push_back("head_controller");
+    switchlist.start_controllers.push_back("head_pan_joint_position_controller");
+    switchlist.start_controllers.push_back("head_tilt_joint_position_controller");
     if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
     while (detect_handle.execute(res_detect_door, tmp_door, timeout_long) != robot_actions::SUCCESS);
     res_detect_handle = tmp_door;
@@ -244,7 +246,7 @@ int
     switchlist.start_controllers.push_back("r_arm_constraint_cartesian_pose_controller");
     switchlist.start_controllers.push_back("r_arm_constraint_cartesian_twist_controller");
     if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
-    if (release_handle.execute(res_detect_door, tmp_door, timeout_long) != robot_actions::SUCCESS) return -1;
+    if (release_handle.execute(empty, empty, timeout_long) != robot_actions::SUCCESS) return -1;
   }
 
   // tuck arm

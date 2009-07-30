@@ -16,7 +16,7 @@
 		<param name="collision_links/r_forearm_link/link_clearance" value="0.085"/>
 		<param name="collision_links/r_upper_arm_link/link_clearance" value="0.07"/>
 		
-		<param name="animate_path" value="true"/>
+		<param name="animate_path" value="false"/>
 		<param name="reference_frame" value="base_link"/>
 	
 		<param name="collision_space/size_x" value="2.0" />

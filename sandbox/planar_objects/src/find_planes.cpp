@@ -17,15 +17,35 @@ using namespace robot_msgs;
 #include <point_cloud_mapping/geometry/angles.h>
 #include <point_cloud_mapping/geometry/areas.h>
 
-bool find_planes::fitSACPlanes(PointCloud *points, vector<int> &indices, vector<vector<int> > &inliers, vector<vector<
+namespace planar_objects {
+
+bool fitSACPlanes(PointCloud *points, vector<int> &indices, vector<vector<int> > &inliers, vector<vector<
     double> > &coeff, const robot_msgs::Point32 &viewpoint_cloud, double dist_thresh, int n_max,
                                int min_points_per_model)
 {
   // Create and initialize the SAC model
   sample_consensus::SACModelPlane *model = new sample_consensus::SACModelPlane();
+  sample_consensus::SACModelPlane *modelFull = new sample_consensus::SACModelPlane();
   sample_consensus::SAC *sac = new sample_consensus::RANSAC(model, dist_thresh);
   sac->setMaxIterations(100);
-  model->setDataSet(points, indices);
+
+  int downsample = 0;
+
+  vector<int> indices_reduced;
+  if(downsample>0) {
+    size_t n_reduced = MIN(10000, points->get_pts_size());
+    size_t stepSize = points->get_pts_size() / n_reduced;
+    n_reduced = points->get_pts_size() / stepSize;
+    indices_reduced.resize(n_reduced);
+    for(size_t i=0;i<n_reduced;i++) {
+      indices_reduced[i] = indices[i*stepSize];
+    }
+  } else {
+    indices_reduced = indices;
+  }
+
+  model->setDataSet(points, indices_reduced);
+  modelFull->setDataSet(points, indices);
 
   int nr_models = 0, nr_points_left = indices.size();
   while (nr_models < n_max && nr_points_left > min_points_per_model)
@@ -39,7 +59,7 @@ bool find_planes::fitSACPlanes(PointCloud *points, vector<int> &indices, vector<
 
       // Get the list of inliers
       vector<int> model_inliers;
-      model->selectWithinDistance(model_coeff, dist_thresh, model_inliers);
+      modelFull->selectWithinDistance(model_coeff, dist_thresh, model_inliers);
       inliers.push_back(model_inliers);
 
       // Flip the plane normal towards the viewpoint
@@ -62,10 +82,11 @@ bool find_planes::fitSACPlanes(PointCloud *points, vector<int> &indices, vector<
 
   delete sac;
   delete model;
+  delete modelFull;
   return (true);
 }
 
-void find_planes::filterByZBounds(const PointCloud& pc, double zmin, double zmax, PointCloud& filtered_pc,
+void filterByZBounds(const PointCloud& pc, double zmin, double zmax, PointCloud& filtered_pc,
                                   PointCloud& filtered_outside)
 {
   vector<int> indices_remove;
@@ -80,7 +101,7 @@ void find_planes::filterByZBounds(const PointCloud& pc, double zmin, double zmax
   cloud_geometry::getPointCloud(pc, indices_remove, filtered_outside);
 }
 
-void find_planes::getPointIndicesInZBounds(const PointCloud &points, double z_min, double z_max, vector<int> &indices)
+void getPointIndicesInZBounds(const PointCloud &points, double z_min, double z_max, vector<int> &indices)
 {
   indices.resize(points.pts.size());
   int nr_p = 0;
@@ -95,7 +116,7 @@ void find_planes::getPointIndicesInZBounds(const PointCloud &points, double z_mi
   indices.resize(nr_p);
 }
 
-void find_planes::segmentPlanes(const PointCloud &const_points, double sac_distance_threshold_, double z_min,
+void segmentPlanes(const PointCloud &const_points, double sac_distance_threshold_, double z_min,
                                 double z_max, double support, double min_area, int n_max,
                                 vector<vector<int> > &indices, vector<vector<double> > &models, int number)
 {
@@ -105,7 +126,7 @@ void find_planes::segmentPlanes(const PointCloud &const_points, double sac_dista
 
   vector<int> indices_in_bounds;
   // Get the point indices within z_min <-> z_max
-  find_planes::getPointIndicesInZBounds(points, z_min, z_max, indices_in_bounds);
+  getPointIndicesInZBounds(points, z_min, z_max, indices_in_bounds);
   //  ROS_INFO("segmentPlanes #%d running on %d/%d points",number,points.get_pts_size(),indices_in_bounds.size());
 
   // We need to know the viewpoint where the data was acquired
@@ -119,7 +140,7 @@ void find_planes::segmentPlanes(const PointCloud &const_points, double sac_dista
   indices.clear(); //Points that are in plane
   models.clear(); //Plane equations
 
-  find_planes::fitSACPlanes(&points, indices_in_bounds, indices, models, viewpoint, sac_distance_threshold_, n_max, 100);
+  fitSACPlanes(&points, indices_in_bounds, indices, models, viewpoint, sac_distance_threshold_, n_max, 100);
 
   // Check the list of planar areas found against the minimally imposed area
   for (unsigned int i = 0; i < models.size(); i++)
@@ -142,7 +163,7 @@ void find_planes::segmentPlanes(const PointCloud &const_points, double sac_dista
   }
 }
 
-void find_planes::findPlanes(const PointCloud& cloud, int n_planes_max, double sac_distance_threshold, std::vector<
+void findPlanes(const PointCloud& cloud, int n_planes_max, double sac_distance_threshold, std::vector<
     std::vector<int> >& indices, vector<PointCloud>& plane_cloud, vector<vector<double> >& plane_coeff,
                              PointCloud& outside)
 {
@@ -152,7 +173,7 @@ void find_planes::findPlanes(const PointCloud& cloud, int n_planes_max, double s
   double support = 0.2;
   double min_area = 0.00;
 
-  find_planes::segmentPlanes(cloud, sac_distance_threshold, z_min, z_max, support, min_area, n_planes_max, indices,
+  segmentPlanes(cloud, sac_distance_threshold, z_min, z_max, support, min_area, n_planes_max, indices,
                              plane_coeff, 1);
 
   outside = cloud;
@@ -165,7 +186,7 @@ void find_planes::findPlanes(const PointCloud& cloud, int n_planes_max, double s
   }
 }
 
-void find_planes::createPlaneImage(const robot_msgs::PointCloud& cloud, std::vector<int> &inliers,
+void createPlaneImage(const robot_msgs::PointCloud& cloud, std::vector<int> &inliers,
                                    std::vector<double> &plane_coeff,
                                    IplImage *pixOccupied,IplImage *pixFree,IplImage *pixUnknown)
 {
@@ -209,4 +230,6 @@ void find_planes::createPlaneImage(const robot_msgs::PointCloud& cloud, std::vec
     ((uchar *)(pixFree->imageData + y*pixFree->widthStep))[x] = 0;
     ((uchar *)(pixUnknown->imageData + y*pixUnknown->widthStep))[x] = 0;
   }
+}
+
 }

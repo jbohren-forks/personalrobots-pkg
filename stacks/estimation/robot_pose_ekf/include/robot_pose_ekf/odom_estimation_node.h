@@ -60,12 +60,15 @@
 namespace estimation
 {
 
-/** \brief This package fuses information from wheel odometry, the IMU, and visual odometry.
+/** \mainpage
+ *  \htmlinclude manifest.html
  * 
  * <b>Package Summary</b>
- * This package fuses information from wheel odometry, the IMU, and visual odometry. 
+ * This package employs an extended Kalman filter to estimate the 3D pose of a robot. 
+ * The robot pose is estimated based on wheel odometry, IMU sensor, and visual odometry. 
  * The basic idea is to use a loosely-coupled Extended Kalman Filter to fuse the 
- * information from these sources. Each source gives a pose estimate and a covariance. 
+ * information from these sources. The filter does not require all these sources to be
+ * available all the time. Each source gives a pose estimate and a covariance. 
  * The sources operate at different rates and with different latencies.
  *
  * The robot_pose_ekf node automatically detects which sensors (wheel odometry, IMU, 
@@ -130,7 +133,7 @@ private:
   ros::Publisher pose_pub_;
   ros::Subscriber cmd_vel_sub_, odom_sub_, imu_sub_;
 
-  /// ekf filter
+  // ekf filter
   OdomEstimation my_filter_;
 
   // estimated robot pose message to send

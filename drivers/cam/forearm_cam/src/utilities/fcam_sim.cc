@@ -51,7 +51,7 @@
 
 #include <ipcam_packet.h>
 #include <host_netutil.h>
-#include <pr2lib.h>
+#include <fcamlib.h>
 
 class ForearmCameraSimulator
 {
@@ -359,6 +359,7 @@ sendto(socket_, &rsp, sizeof(rsp), 0, \
     strncpy(rsp.product_name, "Forearm_camera_simulator.", sizeof(rsp.product_name)); 
     rsp.hw_version = htonl(0x2041); 
     rsp.fw_version = htonl(0x0112); 
+    strncpy(rsp.camera_name, "Forearm_camera_simulator.", sizeof(rsp.camera_name)); 
     SEND_RSP;
   }
 

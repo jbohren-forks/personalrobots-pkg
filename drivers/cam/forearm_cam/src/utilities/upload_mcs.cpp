@@ -47,12 +47,12 @@
 
 #include <ipcam_packet.h>
 #include <host_netutil.h>
-#include <pr2lib.h>
+#include <fcamlib.h>
   
 // We are assuming that the firmware will fit in the first half of the
 // pages. This may not turn out to be true later...
 #define FLASH_SIZE (FLASH_PAGE_SIZE * (FLASH_MAX_PAGENO + 1) / 2)
-char firmware[FLASH_SIZE];
+uint8_t firmware[FLASH_SIZE];
 int  firmwarelen = 0;
 
 int hexval(char c)
@@ -188,34 +188,56 @@ int read_mcs(std::string fname)
   ROS_FATAL("Unexpected EOF after line %i.", linenum);
   return -1;
 }
-  
+
+// For a serial flash, the bits in each byte need to be swapped around.
+void bitswap()
+{
+  // Precompute bit-swap table
+  uint8_t swapped[256];
+
+  for (int i = 0; i < 256; i++)
+  {
+    uint8_t shift = i;
+    swapped[i] = 0;
+    for (int j = 0; j < 8; j++)
+    {
+      swapped[i] = (swapped[i] << 1) | (shift & 1);
+      shift >>= 1;
+    }
+  }
+
+  // Bit-swap the whole firmware.
+  for (int i = 0; i < FLASH_SIZE; i++)
+    firmware[i] = swapped[firmware[i]];
+}
+
 int write_flash(char *if_name, char *ip_address, int sn)
 {
   // Create a new IpCamList to hold the camera list
   IpCamList camList;
-  pr2CamListInit(&camList);
+  fcamCamListInit(&camList);
 
   // Discover any connected cameras, wait for 0.5 second for replies
-  if( pr2Discover(if_name, &camList, NULL, SEC_TO_USEC(0.5)) == -1) {
+  if( fcamDiscover(if_name, &camList, NULL, SEC_TO_USEC(0.5)) == -1) {
     fprintf(stderr, "Discover error\n");
     return -1;
   }
 
-  if (pr2CamListNumEntries(&camList) == 0) {
+  if (fcamCamListNumEntries(&camList) == 0) {
     fprintf(stderr, "No cameras found\n");
     return -1;
   }
 
   // Open camera with requested serial number
-  int index = pr2CamListFind(&camList, sn);
+  int index = fcamCamListFind(&camList, sn);
   if (index == -1) {
     fprintf(stderr, "Couldn't find camera with S/N %i\n", sn);
     return -1;
   }
-  IpCamList* camera = pr2CamListGetEntry(&camList, index);
+  IpCamList* camera = fcamCamListGetEntry(&camList, index);
 
   // Configure the camera with its IP address, wait up to 500ms for completion
-  int retval = pr2Configure(camera, ip_address, SEC_TO_USEC(0.5));
+  int retval = fcamConfigure(camera, ip_address, SEC_TO_USEC(0.5));
   if (retval != 0) {
     if (retval == ERR_CONFIG_ARPFAIL) {
       fprintf(stderr, "Unable to create ARP entry (are you root?), continuing anyway\n");
@@ -225,7 +247,7 @@ int write_flash(char *if_name, char *ip_address, int sn)
     }
   }
 
-  if ( pr2TriggerControl( camera, TRIG_STATE_INTERNAL ) != 0) {
+  if ( fcamTriggerControl( camera, TRIG_STATE_INTERNAL ) != 0) {
     ROS_FATAL("Could not communicate with camera after configuring IP. Is ARP set? Is %s accessible from %s?", ip_address, if_name);
     return -1;
   }
@@ -250,43 +272,23 @@ int write_flash(char *if_name, char *ip_address, int sn)
     }
 
     int addr = page * FLASH_PAGE_SIZE;
+    int startretries = 1;
+    int retries = startretries;
 
-    for (int i = 0; ; i++)
+    if (fcamReliableFlashWrite(camera, page, (uint8_t *) firmware + addr, &retries) != 0)
     {
-      if (i > 20) {
-        ROS_FATAL("Flash write error on page %i.", page);
-        ROS_FATAL("If you reset the camera it will probably not come up.");
-        ROS_FATAL("Try reflashing NOW, to possibly avoid a hard JTAG reflash.");
-        return -2;
-      }
-      
-      if (pr2FlashWrite(camera, page, (uint8_t *) firmware + addr) != 0)
-      {
-        printf("w");
-        fflush(stdout);
-        sleep(1);
-        continue;
-      }
+      ROS_FATAL("Flash write error on page %i.", page);
+      ROS_FATAL("If you reset the camera it will probably not come up.");
+      ROS_FATAL("Try reflashing NOW, to possibly avoid a hard JTAG reflash.");
+      return -2;
+    }
 
-      if (pr2FlashRead(camera, page, (uint8_t *) buff) != 0)
-      {
-        printf("r");
-        fflush(stdout);
-        sleep(1);
-        continue;
-      }
-      
-      if (memcmp(buff, firmware + addr, FLASH_PAGE_SIZE)) 
-      {
-        printf("c");
-        fflush(stdout);
-        sleep(1);
-        continue;
-      }
-
-      break;
+    if (retries < startretries)
+    {
+      fprintf(stderr, "x(%i)", startretries - retries);
     }
   }
+  
   fprintf(stderr, "\n");
 
   ROS_INFO("Verifying flash.");
@@ -294,58 +296,62 @@ int write_flash(char *if_name, char *ip_address, int sn)
   for (int page = 0; page < (firmwarelen + FLASH_PAGE_SIZE - 1) / FLASH_PAGE_SIZE; 
       page++)
   {
+    int addr = page * FLASH_PAGE_SIZE;
     if (page % 100 == 0)
     {
       fprintf(stderr, ".");
       fflush(stderr);
     }
 
-    int addr = page * FLASH_PAGE_SIZE;
-
-    for (int i = 0; ; i++)
+    if (fcamReliableFlashRead(camera, page, (uint8_t *) buff, NULL) != 0)
     {
-      if (i > 20) {
-        ROS_FATAL("Flash read/compare error on page %i.", page);
-        ROS_FATAL("If you reset the camera it will probably not come up.");
-        ROS_FATAL("Try reflashing NOW, to possibly avoid a hard JTAG reflash.");
-        return -2;
-      }
-      
-      if (pr2FlashRead(camera, page, (uint8_t *) buff) != 0)
-      {
-        printf("r");
-        fflush(stdout);
-        sleep(1);
-        continue;
-      }
-      
-      if (memcmp(buff, firmware + addr, FLASH_PAGE_SIZE)) 
-      {
-        printf("c");
-        fflush(stdout);
-        sleep(1);
-        continue;
-      }
+      ROS_FATAL("Flash read error on page %i.", page);
+      ROS_FATAL("If you reset the camera it will probably not come up.");
+      ROS_FATAL("Try reflashing NOW, to possibly avoid a hard JTAG reflash.");
+      return -2;
+    }
 
-      break;
+    if (memcmp(buff, (uint8_t *) firmware + addr, FLASH_PAGE_SIZE))
+    {
+      ROS_FATAL("Flash compare error on page %i.", page);
+      ROS_FATAL("If you reset the camera it will probably not come up.");
+      ROS_FATAL("Try reflashing NOW, to possibly avoid a hard JTAG reflash.");
+    //  return -2;
     }
   }
   fprintf(stderr, "\n");
   
-  ROS_INFO("Success!");
+  ROS_INFO("Success! Restarting camera, should take about 10 seconds to come back up after this.");
+
+  fcamReconfigureFPGA(camera);
 
   return 0;
 }
 
 int main(int argc, char **argv)
 {
-  if (argc != 5) {
+  if (argc != 5 && argc != 2) {
     fprintf(stderr, "Usage: %s <file.mcs> <Interface> <IP address> <Serial number>\n", argv[0]);
+    fprintf(stderr, "       %s <file.mcs> > dump.bin\n", argv[0]);
     return -1;
   }
 
   if (read_mcs(argv[1]))
     return -1;
+
+  if (firmware[4] == 0x55)
+    bitswap();
+  else if (firmware[4] != 0xaa)
+  {
+    ROS_FATAL("Unexpected value at position 4. Don't know whether to bit-swap.");
+    return -1;
+  }
+
+  if (argc == 2)
+  {
+    fwrite(firmware, FLASH_SIZE, 1, stdout);
+    return 0;
+  }
 
   char* if_name = argv[2];
   char* ip_address = argv[3];

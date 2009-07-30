@@ -89,7 +89,7 @@ void ompl_planning::GoalToState::setup(ompl::base::SpaceInformation *si, ModelBa
 	    unsigned int usedParams = model->planningMonitor->getKinematicModel()->getJoint(jc[i].joint_name)->usedParams;
 	    
 	    if (jc[i].tolerance_above.size() != jc[i].tolerance_below.size() || jc[i].value.size() != jc[i].tolerance_below.size() || jc[i].value.size() != usedParams)
-		ROS_ERROR("Constraint on joint %s has incorrect number of parameters. Expected %u", jc[i].joint_name.c_str(), usedParams);
+		ROS_ERROR("Constraint on joint %s has incorrect number of parameters. Expected %u.", jc[i].joint_name.c_str(), usedParams);
 	    else
 	    {
 		for (unsigned int j = 0 ; j < usedParams ; ++j)

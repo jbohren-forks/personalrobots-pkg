@@ -7,6 +7,14 @@ Created by: Alexey Latyshev
 
 #include "outlet_detection/outlet_detector_test.h"
 
+#define DETECT_NA -1
+#define DETECT_SKIP -2
+
+#define REG_DO_NOTHING -1
+#define REG_DRAW_RECT 0
+#define REG_STOP_SELECT 1
+#define REG_CLEAR_SELECT 2
+
 int readTestFile(char* filename, vector<outlet_test_elem>& test_data)
 {
 	FILE* f = fopen(filename,"r");
@@ -49,10 +57,7 @@ int readTestFile(char* filename, vector<outlet_test_elem>& test_data)
 			}
 
 			if ((n_holes > 0)&&(n_holes % 3 == 0)&&((n_holes % 2 == 0)))
-			{
-
-				
-				
+			{				
 				fseek(f ,0 ,SEEK_SET);
 				int ground_n = 2*n_holes /3;
 				CvPoint* points = new CvPoint[n_holes];
@@ -79,26 +84,31 @@ int readTestFile(char* filename, vector<outlet_test_elem>& test_data)
 						tok = strtok(NULL,",");
 					}
 
-
+					outlet_t outlet;
 					if (j/2!=n_holes)
 					{
-						delete[] points;
-						fclose(f);
-						return 0;
+						//delete[] points;
+						test_data[i].n_matches = DETECT_SKIP;
+						//fclose(f);
+						//return 0;
 					}
-					outlet_t outlet;
-					for (j=0;j<ground_n/2;j++)
+					else
 					{
-						outlet.hole1 = points[2*j];
-						outlet.hole2 = points[2*j+1];
-						test_data[i].real_outlet.push_back(outlet);
-						
+					
+						for (j=0;j<ground_n/2;j++)
+						{
+							outlet.hole1 = points[2*j];
+							outlet.hole2 = points[2*j+1];
+							test_data[i].real_outlet.push_back(outlet);
+							
+						}
+						for (j = ground_n;j<n_holes;j++)
+						{
+							test_data[i].real_outlet[j-ground_n].ground_hole = points[j];
+						}
+						test_data[i].n_matches = DETECT_NA;
 					}
-					for (j = ground_n;j<n_holes;j++)
-					{
-						test_data[i].real_outlet[j-ground_n].ground_hole = points[j];
-					}
-					test_data[i].n_matches = -1;
+					
 					i++;
 				}
 
@@ -122,6 +132,8 @@ int writeTestFile(char* filename, vector<outlet_test_elem>& data)
 	{
 		for (int i=0;i<(size_t)(data.size());i++)
 		{
+			//if (data[i].n_matches == DETECT_SKIP)
+			//	continue;
 			fprintf(f,"%s",data[i].filename);
 			for (int j=0;j<(size_t)(data[i].real_outlet.size());j++)
 			{
@@ -145,6 +157,8 @@ void convertTestToReal(vector<outlet_test_elem>& data)
 {
 	for (int i=0;i<(size_t)data.size();i++)
 	{
+		if (data[i].n_matches == DETECT_SKIP)
+			continue;
 		data[i].real_outlet = data[i].test_outlet;
 	}
 }
@@ -205,6 +219,51 @@ IplImage* getRealOutletImage(const outlet_test_elem& test_elem,CvMat* intrinsic_
 	return NULL;
 }
 //--------------------------------
+void on_mouse_region( int event, int x, int y, int flags, void* param )
+{
+	switch( event )
+	{
+		case CV_EVENT_LBUTTONDOWN:
+				((int*)param)[0] = x;
+				((int*)param)[1] = y;
+				((int*)param)[2] = x;
+				((int*)param)[3] = y;
+				((int*)param)[4] = REG_DRAW_RECT;
+				break;
+
+		case CV_EVENT_LBUTTONUP:
+			if (((int*)param)[4] == REG_DRAW_RECT)
+			{
+				((int*)param)[2] = x;
+				((int*)param)[3] = y;
+				((int*)param)[4] = REG_STOP_SELECT;
+			}
+			else
+				((int*)param)[4] = REG_CLEAR_SELECT;
+			break;
+
+		case CV_EVENT_RBUTTONDOWN:
+			if (((int*)param)[4] == REG_DRAW_RECT)
+			{
+				((int*)param)[4] = REG_CLEAR_SELECT;
+			}
+			else
+				((int*)param)[4] = REG_DO_NOTHING;
+			break;
+
+		case CV_EVENT_MOUSEMOVE:
+			if (((int*)param)[4] == REG_DRAW_RECT)
+			{
+				((int*)param)[2] = x;
+				((int*)param)[3] = y;
+			}
+			else
+				if (((int*)param)[4] != REG_STOP_SELECT)
+					((int*)param)[4] = REG_DO_NOTHING;
+			break;
+	}
+}
+
 void on_mouse_points( int event, int x, int y, int flags, void* param )
 {
 	switch( event )
@@ -235,15 +294,107 @@ void setRealOutlet(outlet_test_elem& test_elem, CvMat* intrinsic_matrix, CvMat* 
 		printf("Unable to load image %s",test_elem.filename);
 		return;
 	}
-
+	IplImage* img;
 	if (intrinsic_matrix)
 	{
-		IplImage* img = cvCloneImage(img2);
+		img = cvCloneImage(img2);
 		cvUndistort2(img,img2,intrinsic_matrix, distortion_params);
 		cvReleaseImage(&img);
 	}
-	cvNamedWindow(window_name);
+	img = cvCloneImage(img2);
+	cvNamedWindow(window_name,0);
+	cvResizeWindow(window_name,img->width,img->height);
 	cvShowImage(window_name,img2);
+	int key = 0;
+	bool isEnd = false;
+#if 1
+//Added zoom
+	int* params = new int[5]; // Rect Coordinates + parameter (-1 - do nothing, 0 - draw rectangle, 1 - stop selection, 2 - clear selection)
+	//CvRect region;
+	//IplImage* region;
+	CvRect region_rect;
+
+	printf("-----------------------\n");
+	printf("Select the region with outlet.\nPress left mouse button to start the selection and release it to end the selection\nPress right mouse button to try again\n");
+
+	cvSetMouseCallback( window_name, on_mouse_region, params );
+	while (!isEnd)
+	{
+		while (params[4] != REG_STOP_SELECT)
+		{
+			key = cvWaitKey(30);
+			if (key == 27)
+				break;
+			if (params[4] == REG_DRAW_RECT)
+			{
+				cvReleaseImage(&img2);
+				img2 = cvCloneImage(img);
+				cvRectangle(img2,cvPoint(params[0],params[1]),cvPoint(params[2],params[3]),cvScalar(50,200,50),2);
+				cvShowImage(window_name,img2);
+			}
+			if (params[4] == REG_CLEAR_SELECT)
+			{
+				cvReleaseImage(&img2);
+				img2 = cvCloneImage(img);
+				cvShowImage(window_name,img2);
+
+			}
+		}
+
+		if (key!=27)
+		{
+			if ((params[2] != params[0]) && (params[3] != params[1]))
+			{
+				if (params[2] < params[0])
+				{
+					int temp = params[0];
+					params[0] = params[2];
+					params[2] = temp;
+				}
+				if (params[3] < params[1])
+				{
+					int temp = params[1];
+					params[1] = params[3];
+					params[3] = temp;
+				}
+				cvReleaseImage(&img2);
+				img2 = cvCloneImage(img);
+				region_rect.x = params[0];
+				region_rect.y = params[1];
+				region_rect.width = params[2] - params[0];
+				region_rect.height = params[3] - params[1];
+				cvSetImageROI(img2,region_rect);
+				cvReleaseImage(&img);
+				img = cvCreateImage(cvSize(img2->roi->width,img2->roi->height),img2->depth,img2->nChannels);
+				cvCopy(img2,img);
+				
+
+				
+				cvReleaseImage(&img2);
+				img2 = cvCloneImage(img);
+				//cvReleaseImage(&region);
+				cvShowImage(window_name,img2);
+				cvResizeWindow(window_name,img2->width*2,img2->height*2);
+				isEnd = true;
+
+			}
+			else
+			{
+				printf("Incorrect selection, try again\n");
+				isEnd = false;
+			}
+		}
+		else
+			isEnd = true;
+	}
+	
+
+
+	delete[] params;
+//End
+#endif
+
+
 	CvMemStorage* storage = cvCreateMemStorage(0);
 	CvSeq* seq = cvCreateSeq( CV_32SC2, sizeof(CvSeq), sizeof(CvPoint), storage );
 
@@ -253,10 +404,10 @@ void setRealOutlet(outlet_test_elem& test_elem, CvMat* intrinsic_matrix, CvMat* 
 	cvSetMouseCallback( window_name, on_mouse_points, seq );
 
 	CvPoint* test_point;
-	int key = 0;
 	int total= seq->total;
 	CvScalar color = CV_RGB(255, 255, 0);
-	bool isEnd = false;
+	isEnd = false;
+	key = 0;
 	while ((!isEnd)&&(key!=27))
 	{
 		key = cvWaitKey(30);
@@ -275,13 +426,13 @@ void setRealOutlet(outlet_test_elem& test_elem, CvMat* intrinsic_matrix, CvMat* 
 			if (seq->total < total)
 			{
 				cvReleaseImage(&img2);
-				img2 = cvLoadImage(test_elem.filename);
-				if (intrinsic_matrix)
-				{
-					IplImage* img = cvCloneImage(img2);
-					cvUndistort2(img,img2,intrinsic_matrix, distortion_params);
-					cvReleaseImage(&img);
-				}
+				img2 = cvCloneImage(img);
+				//if (intrinsic_matrix)
+				//{
+				//	IplImage* img = cvCloneImage(img2);
+				//	cvUndistort2(img,img2,intrinsic_matrix, distortion_params);
+				//	cvReleaseImage(&img);
+				//}
 				CvPoint* pt;
 				for (int i=0; i< seq->total;i++)
 				{
@@ -306,6 +457,7 @@ void setRealOutlet(outlet_test_elem& test_elem, CvMat* intrinsic_matrix, CvMat* 
 
 	cvDestroyWindow(window_name);
 	cvReleaseImage(&img2);
+	cvReleaseImage(&img);
 
 	if (key == 27)
 	{
@@ -335,8 +487,22 @@ void setRealOutlet(outlet_test_elem& test_elem, CvMat* intrinsic_matrix, CvMat* 
 			{
 				test_elem.real_outlet[j-ground_n].ground_hole = points[j];
 			}
-			test_elem.n_matches = -1;
+			test_elem.n_matches = DETECT_NA;
+#if 1
+//Added zoom
+			for (int i=0;i<(size_t)test_elem.real_outlet.size();i++)
+			{
+				test_elem.real_outlet[i].hole1.x +=region_rect.x;
+				test_elem.real_outlet[i].hole1.y +=region_rect.y;
+				test_elem.real_outlet[i].hole2.x +=region_rect.x;
+				test_elem.real_outlet[i].hole2.y +=region_rect.y;
+				test_elem.real_outlet[i].ground_hole.x +=region_rect.x;
+				test_elem.real_outlet[i].ground_hole.y +=region_rect.y;
+			}
+//End
+#endif
 		}
+
 
 
 		
@@ -352,12 +518,21 @@ int writeTestResults(char* filename, const vector<outlet_test_elem>& test_data)
 	{
 		int nCorrect = 0;
 		int nNA = 0;
+		int nTotal = (size_t)test_data.size();
+		int nSkipped = 0;
 		fprintf(f,"Outlet detector test results\n---------------------\n");
 		for (int i=0;i<(size_t)test_data.size();i++)
 		{
+			if (test_data[i].n_matches == DETECT_SKIP)
+			{
+				//nTotal--;
+				fprintf(f,"%s: image was skipped\n",test_data[i].filename);
+				nSkipped++;
+				continue;
+			}
 			if (test_data[i].n_matches != 3*(int)(test_data[i].real_outlet.size()))
 			{
-				if (test_data[i].n_matches == -1)
+				if (test_data[i].n_matches == DETECT_NA)
 				{
 					fprintf(f,"%s: image wasn't tested\n",test_data[i].filename);
 					nNA++;
@@ -372,9 +547,9 @@ int writeTestResults(char* filename, const vector<outlet_test_elem>& test_data)
 		}
 		if (nCorrect+nNA > 0)
 			fprintf(f,"---------------------\n");
-		fprintf(f,"Total images:%d\nCorrect:%d\nIncorrect:%d\nNA:%d",(int)test_data.size(),nCorrect,(int)test_data.size()-nCorrect-nNA,nNA);
+		fprintf(f,"Total images:%d\nSkipped:%d\nCorrect:%d\nIncorrect:%d\nNA:%d",nTotal,nSkipped,nCorrect,(int)test_data.size()-nCorrect-nNA,nNA);
 		fclose(f);
-		return (int)test_data.size();
+		return nTotal-nSkipped;
 	}
 
 	return 0;
@@ -384,8 +559,13 @@ int compareOutlets(outlet_test_elem& test_elem, int accuracy)
 {
 	if ((int)test_elem.real_outlet.size() != (int)test_elem.test_outlet.size())
 	{
-		test_elem.n_matches = -1;
-		return -1;
+		if (((int)test_elem.test_outlet.size()==0)&&((int)test_elem.real_outlet.size()>0))
+		{
+			test_elem.n_matches = 0;
+			return 0;
+		}
+		test_elem.n_matches = DETECT_NA;
+		return DETECT_NA;
 	}
 
 	int nOutlets = 0;
@@ -416,6 +596,8 @@ int compareAllOutlets(vector<outlet_test_elem>& test_data, int accuracy)
 	int res = 0;
 	for (int i=0;i<(size_t)test_data.size();i++)
 	{
+		if (test_data[i].n_matches == DETECT_SKIP)
+			continue;
 		if (compareOutlets(test_data[i]) == (int)test_data[i].real_outlet.size())
 			res++;
 	}
@@ -431,6 +613,8 @@ void runOutletDetectorTest(CvMat* intrinsic_matrix, CvMat* distortion_params,
 
 	for (int i=0;i<(size_t)test_data.size();i++)
 	{
+		if (test_data[i].n_matches == DETECT_SKIP)
+			continue;
 		if (output_path)
 		{
 			char* name = strrchr(test_data[i].filename,'/');
@@ -443,6 +627,7 @@ void runOutletDetectorTest(CvMat* intrinsic_matrix, CvMat* distortion_params,
 			printf("Unable to load image %s\n",test_data[i].filename);
 			continue;
 		}
+		printf("%s\n",filename);
 		if (output_path)
 			detect_outlet_tuple(img,intrinsic_matrix,distortion_params,test_data[i].test_outlet,outlet_templ,output_path,filename);
 		else

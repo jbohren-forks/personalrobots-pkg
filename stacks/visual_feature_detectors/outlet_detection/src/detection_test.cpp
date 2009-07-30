@@ -186,7 +186,7 @@ int main(int argc,char** argv)
 	#endif //_VERBOSE
 			
 		
-		if (argc !=5)
+		if ((argc !=6) && (strcmp(mode,"modify")!=0))
 		{
 			outlet_template.load(train_config);
 		}

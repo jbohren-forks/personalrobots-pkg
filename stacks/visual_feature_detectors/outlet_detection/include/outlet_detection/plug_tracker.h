@@ -47,6 +47,7 @@ protected:
   virtual bool detectObject(tf::Transform &pose);
   virtual CvRect getBoundingBox();
   virtual IplImage* getDisplayImage(bool success);
+  void getBoardCorners(CvPoint2D32f corners[4]);
 
   void publishBoardMarker(const tf::Transform &board_in_cam);
   void publishBoardRayMarker(const tf::Transform &board_in_cam);

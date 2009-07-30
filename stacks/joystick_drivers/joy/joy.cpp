@@ -30,37 +30,6 @@
 
 // Author: Jeremy Leibs
 
-/**
-
-@mainpage
-
-@b joy ROS joystick driver for Logitech Wireless rumblepad joystick. 
-
-<hr>
-
-@section usage Usage
-@verbatim
-$ joy [standard ROS args]
-@endverbatim
-
-<hr>
-
-@section topic ROS topics
-
-Subscribes to (name / type):
-- None
-
-Publishes to (name / type):
-- @b "joy/Joy" : Joystick output. Axes are [-1, 1], buttons are 0 or 1 (depressed).
-
-<hr>
-
-@section parameters ROS parameters
-- "~dev" : Input device for joystick, default /dev/input/js0
-= "~deadzone" : Output is zero for axis in deadzone, devault 2000
-
-**/
-
 #include <unistd.h>
 #include <math.h>
 #include <linux/joystick.h>
@@ -127,8 +96,9 @@ public:
         case JS_EVENT_BUTTON:
           if(event.number >= joy_msg.get_buttons_size())
           {
+            int old_buttons_size = joy_msg.buttons.size();
             joy_msg.set_buttons_size(event.number+1);
-            for(unsigned int i=0;i<joy_msg.get_buttons_size();i++)
+            for(unsigned int i=old_buttons_size; i<joy_msg.get_buttons_size(); i++)
               joy_msg.buttons[i] = 0;
           }
           if(event.value)
@@ -140,8 +110,9 @@ public:
         case JS_EVENT_AXIS:
           if(event.number >= joy_msg.get_axes_size())
           {
+            int old_axes_size = joy_msg.axes.size();
             joy_msg.set_axes_size(event.number+1);
-            for(unsigned int i=0;i<joy_msg.get_axes_size();i++)
+            for(unsigned int i=old_axes_size;i<joy_msg.get_axes_size();i++)
               joy_msg.axes[i] = 0.0;
           }
           joy_msg.axes[event.number] = (fabs(event.value) < deadzone) ? 0.0 :

@@ -83,6 +83,18 @@ namespace planning_environment
 		delete attachedBodyNotifier_;
 	}
 
+	/** \brief Start the state monitor. By default, the monitor is started after creation */
+	void startStateMonitor(void);
+	
+	/** \brief Stop the state monitor. */
+	void stopStateMonitor(void);
+	
+	/** \brief Check if the state monitor is currently started */
+	bool isStateMonitorStarted(void) const
+	{
+	    return stateMonitorStarted_;
+	}	
+
 	/** \brief Define a callback for when the state is changed */
 	void setOnStateUpdateCallback(const boost::function<void(void)> &callback)
 	{
@@ -182,6 +194,8 @@ namespace planning_environment
 	std::string                      planarJoint_;
 	std::string                      floatingJoint_;
 
+	bool                             stateMonitorStarted_;
+	
 	ros::NodeHandle                  nh_;
 	ros::Subscriber                  mechanismStateSubscriber_;
 	tf::TransformListener           *tf_;

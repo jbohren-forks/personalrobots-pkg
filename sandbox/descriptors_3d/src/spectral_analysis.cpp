@@ -41,34 +41,35 @@ using namespace std;
 // --------------------------------------------------------------
 SpectralAnalysis::~SpectralAnalysis()
 {
-  clear();
+  freeSpectral();
 }
 
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-void SpectralAnalysis::clear()
+void SpectralAnalysis::freeSpectral()
 {
-  unsigned int nbr_data = normals_.size();
-  for (unsigned int i = 0 ; i < nbr_data ; i++)
+  if (spectral_info_ == this)
   {
-    if (normals_[i] != NULL)
+    unsigned int nbr_data = normals_.size();
+    for (unsigned int i = 0 ; i < nbr_data ; i++)
     {
-      delete normals_[i];
-      delete middle_eig_vecs_[i];
-      delete tangents_[i];
-      delete eigen_values_[i];
-      delete centroids_[i];
+      if (normals_[i] != NULL)
+      {
+        delete normals_[i];
+        delete middle_eig_vecs_[i];
+        delete tangents_[i];
+        delete eigen_values_[i];
+        delete centroids_[i];
+      }
     }
+    normals_.clear();
+    middle_eig_vecs_.clear();
+    tangents_.clear();
+    eigen_values_.clear();
+    centroids_.clear();
+    spectral_info_ = NULL;
   }
-  normals_.clear();
-  middle_eig_vecs_.clear();
-  tangents_.clear();
-  eigen_values_.clear();
-  centroids_.clear();
-
-  support_radius_defined_ = false;
-  spectral_info_ = NULL;
 }
 
 // --------------------------------------------------------------
@@ -126,10 +127,6 @@ int SpectralAnalysis::analyzeInterestPoints(const robot_msgs::PointCloud& data,
   }
 
   // ----------------------------------------
-  // Clear out any previous computations
-  clear();
-
-  // ----------------------------------------
   // Allocate accordingly
   normals_.assign(nbr_interest_pts, NULL);
   middle_eig_vecs_.assign(nbr_interest_pts, NULL);
@@ -185,10 +182,6 @@ int SpectralAnalysis::analyzeInterestRegions(const robot_msgs::PointCloud& data,
     ROS_ERROR("SpectralShape::compute() support radius must be set");
     return -1;
   }
-
-  // ----------------------------------------
-  // Clear out any previous computations
-  clear();
 
   // ----------------------------------------
   // Allocate accordingly

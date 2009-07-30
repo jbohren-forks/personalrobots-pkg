@@ -29,15 +29,14 @@ void IA3N_INFO(const char * msg)
 
 void startRecording()
 {
-	FILE * result = popen("bash `rospack find person_data`/startRecordingDummy.sh","r");
-	fclose(result);
+	system("bash `rospack find person_data`/startRecordingDummy.sh 1> /dev/null 2>&1");
+	//pclose(result);
 	recording = true;
 }
 
 void stopRecording()
 {
-	FILE * result = popen("bash `rospack find person_data`/stopRecordingDummy.sh","r");
-	fclose(result);
+	system("bash `rospack find person_data`/stopRecordingDummy.sh 1> /dev/null 2>&1");
 	recording = false;
 }
 
@@ -114,7 +113,7 @@ void joyCallback(const joy::Joy::ConstPtr & msg)
 
 int main(int argc, char ** argv)
 {
-	ros::init(argc, argv, "joylistener");
+	ros::init(argc, argv, "joylistener_dummy");
 	ros::NodeHandle n;
 	debug_pub = n.advertise<std_msgs::String>("ia3n_debug",100);
 	ros::Subscriber chatter_sub = n.subscribe("joy",100,joyCallback);

@@ -648,7 +648,7 @@ bool SBPLArmPlannerNode::setGoalState(const std::vector<motion_planning_msgs::Jo
 }
 
 /** \brief Plan a path to a joint space goal(s) */
-bool SBPLArmPlannerNode::planToState(motion_planning_srvs::MotionPlan::Request &req, motion_planning_srvs::MotionPlan::Response &res)
+bool SBPLArmPlannerNode::planToState(motion_planning_msgs::GetMotionPlan::Request &req, motion_planning_msgs::GetMotionPlan::Response &res)
 {
   unsigned int i;
   int nind = 0;
@@ -753,7 +753,7 @@ bool SBPLArmPlannerNode::planToState(motion_planning_srvs::MotionPlan::Request &
 }
 
 /** \brief Plan a path to a cartesian goal(s) */
-bool SBPLArmPlannerNode::planToPosition(motion_planning_srvs::MotionPlan::Request &req, motion_planning_srvs::MotionPlan::Response &res)
+bool SBPLArmPlannerNode::planToPosition(motion_planning_msgs::GetMotionPlan::Request &req, motion_planning_msgs::GetMotionPlan::Response &res)
 {
   unsigned int i;
   int nind = 0;
@@ -899,7 +899,7 @@ bool SBPLArmPlannerNode::planToPosition(motion_planning_srvs::MotionPlan::Reques
 }
 
 /** \brief Planning service call back function */
-bool SBPLArmPlannerNode::planKinematicPath(motion_planning_srvs::MotionPlan::Request &req, motion_planning_srvs::MotionPlan::Response &res)
+bool SBPLArmPlannerNode::planKinematicPath(motion_planning_msgs::GetMotionPlan::Request &req, motion_planning_msgs::GetMotionPlan::Response &res)
 {
   if(!planner_initialized_)
   {
@@ -1233,7 +1233,7 @@ void SBPLArmPlannerNode::initializePM()
 }
 
 /** \brief Update the planning monitor with the current goal request message */
-void SBPLArmPlannerNode::updatePMWrapper(motion_planning_srvs::MotionPlan::Request &req)
+void SBPLArmPlannerNode::updatePMWrapper(motion_planning_msgs::GetMotionPlan::Request &req)
 {
   pm_->updatePM(req);
 }

@@ -453,7 +453,10 @@ private:
 				     (int)(0.5 + (p.y() - bi_.originY) / bi_.resolution),
 				     (int)(0.5 + (p.z() - bi_.originZ) / bi_.resolution));
 		    c.t = pts[i].t;
-		    map.insert(c);
+#pragma omp critical
+		    {
+			map.insert(c);
+		    }		    
 		}
 	    }
 	    
@@ -828,7 +831,7 @@ private:
 
 int main (int argc, char** argv)
 {
-    ros::init(argc, argv, "collision_map_occ");
+    ros::init(argc, argv, "collision_map_occ", ros::init_options::AnonymousName);
 
     CollisionMapperOcc cm;
 

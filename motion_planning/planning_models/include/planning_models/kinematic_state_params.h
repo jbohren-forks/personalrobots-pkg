@@ -147,6 +147,16 @@ namespace planning_models
 	    parameters describing the joint. Return true if any
 	    change was observed in the set value */
 	bool setParamsJoint(const std::vector<double> &params, const std::string &name);
+
+	/** \brief Given the names of some joints, set the values of the
+	    parameters describing the joints. Return true if any
+	    change was observed in the set values */
+	bool setParamsJoints(const double *params, const std::vector<std::string> &names);
+
+	/** \brief Given the names of some joints, set the values of the
+	    parameters describing the joints. Return true if any
+	    change was observed in the set values */
+	bool setParamsJoints(const std::vector<double> &params, const std::vector<std::string> &names);
 	
 	/** \brief Given the name of a joint, get the values of the
 	    parameters describing the joint. */

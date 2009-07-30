@@ -1,0 +1,7 @@
+map_initialize_from_file("willow.tmap");
+
+#include "master/master.nddl"
+#include "test/locations.nddl"
+#include "test/master/m2lite/goals.nddl"
+
+close();

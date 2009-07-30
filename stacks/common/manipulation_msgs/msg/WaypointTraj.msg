@@ -1,0 +1,2 @@
+string[] names
+Waypoint[] points

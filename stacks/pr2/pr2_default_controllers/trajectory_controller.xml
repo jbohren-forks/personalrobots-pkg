@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<controller name="dynamic_loader" type="DynamicLoaderController"
+   package="experimental_controllers" lib="libexperimental_controllers">
+<controllers>
+  <controller name="trajectory_controller" type="TrajectoryController"/>
+</controllers>
+</controller>

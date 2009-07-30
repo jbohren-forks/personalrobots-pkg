@@ -179,7 +179,7 @@ void planning_environment::PoseConstraintEvaluator::evaluate(double *distPos, do
 		}
 		if (m_pc.type & motion_planning_msgs::PoseConstraint::POSITION_Y)
 		{
-		    double dy = bodyPos.getX() - m_y;
+		    double dy = bodyPos.getY() - m_y;
 		    if (dy > m_pc.position_tolerance_above.y || -m_pc.position_tolerance_below.y > dy)
 			*distPos += dy * dy;
 		}
@@ -292,7 +292,7 @@ void planning_environment::PoseConstraintEvaluator::print(std::ostream &out) con
 	    
 	}
 	if (m_pc.type & (motion_planning_msgs::PoseConstraint::ORIENTATION_R | motion_planning_msgs::PoseConstraint::ORIENTATION_P | motion_planning_msgs::PoseConstraint::ORIENTATION_Y))
-	    out << "Orientation importance is " << m_pc.orientation_importance;
+	    out << "Orientation importance is " << m_pc.orientation_importance << std::endl;
     }
     else
 	out << "No constraint" << std::endl;

@@ -45,7 +45,7 @@ using namespace door_handle_detector;
 using namespace door_functions;
 
 static const string fixed_frame = "odom_combined";
-
+static const double gripper_effort = 100;
 
 
 
@@ -92,7 +92,7 @@ robot_actions::ResultStatus GraspHandleAction::execute(const door_msgs::Door& go
 
   // open the gripper while moving in front of the door
   std_msgs::Float64 gripper_msg;
-  gripper_msg.data = 20.0;
+  gripper_msg.data = gripper_effort;
   pub_.publish(gripper_msg);
   
   // move gripper in front of door
@@ -136,7 +136,7 @@ robot_actions::ResultStatus GraspHandleAction::execute(const door_msgs::Door& go
   }
   
   // close the gripper during 4 seconds
-  gripper_msg.data = -20.0;
+  gripper_msg.data = -gripper_effort;
   pub_.publish(gripper_msg);
   for (unsigned int i=0; i<100; i++){
     Duration().fromSec(4.0/100.0).sleep();

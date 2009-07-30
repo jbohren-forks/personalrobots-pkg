@@ -1,11 +1,11 @@
 <launch>
 <node pkg="person_data" type="joylistener" output="screen"/>
 <node pkg ="person_data" type="headhack" output="screen" />
+<node pkg ="pr2_default_controllers" type="tuckarm.py" args="r" output="screen" />
 <!-- for some reason putting joylistener after the other launch files broke it,
 and putting headhack after them makes roslaunch not find it! -->
-
+<!-- node pkg="pr2_default_controllers" type="tuckarm.py" args="r" -->
 <include file="$(find person_data)/data_collector_record.launch"  />
 <include file="$(find person_data)/truly_passive.launch" />
 <include file="$(find person_data)/teleop_joystick.launch" />
-
 </launch>

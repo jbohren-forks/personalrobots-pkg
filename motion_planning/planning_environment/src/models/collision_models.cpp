@@ -37,6 +37,8 @@
 #include "planning_environment/models/collision_models.h"
 #include <collision_space/environmentODE.h>
 #include <collision_space/environmentBullet.h>
+#include <sstream>
+#include <vector>
 
 void planning_environment::CollisionModels::setupModel(boost::shared_ptr<collision_space::EnvironmentModel> &model, const std::vector<std::string> &links)
 {
@@ -54,6 +56,13 @@ void planning_environment::CollisionModels::setupModel(boost::shared_ptr<collisi
 		model->addSelfCollisionGroup(scg);
 	    }
     model->updateRobotModel();
+
+    for (unsigned int i = 0 ; i < boundingPlanes_.size() / 4 ; ++i)
+    {
+	model->addPlane("bounds", boundingPlanes_[i * 4], boundingPlanes_[i * 4 + 1], boundingPlanes_[i * 4 + 2], boundingPlanes_[i * 4 + 3]);
+	ROS_INFO("Added static plane %fx + %fy + %fz + %f = 0 for model %p", boundingPlanes_[i * 4], boundingPlanes_[i * 4 + 1], boundingPlanes_[i * 4 + 2], boundingPlanes_[i * 4 + 3], model.get());
+    }
+    
     model->unlock();    
 }
 
@@ -65,6 +74,26 @@ void planning_environment::CollisionModels::loadParams(void)
 
 void planning_environment::CollisionModels::loadCollision(const std::vector<std::string> &links)
 {
+    // a list of static planes bounding the environment
+    boundingPlanes_.clear();
+    
+    std::string planes;
+    nh_.param<std::string>("~bounding_planes", planes, std::string());
+    
+    std::stringstream ss(planes);
+    if (!planes.empty())
+	while (ss.good() && !ss.eof())
+	{
+	    double value;
+	    ss >> value;
+	    boundingPlanes_.push_back(value);
+	}
+    if (boundingPlanes_.size() % 4 != 0)
+    {
+	ROS_WARN("~bounding_planes must be a list of 4-tuples (a b c d) that define planes ax+by+cz+d=0");
+	boundingPlanes_.resize(boundingPlanes_.size() - (boundingPlanes_.size() % 4));
+    }
+    
     if (loadedModels())
     {
 	ode_collision_model_ = boost::shared_ptr<collision_space::EnvironmentModel>(new collision_space::EnvironmentModelODE());

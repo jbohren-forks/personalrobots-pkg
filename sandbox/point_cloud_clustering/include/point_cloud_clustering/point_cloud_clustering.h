@@ -61,6 +61,9 @@ namespace point_cloud_clustering
         starting_label_ = starting_label;
       }
 
+      int cluster(const robot_msgs::PointCloud& pt_cloud, cloud_kdtree::KdTree& pt_cloud_kdtree, std::map<
+          unsigned int, std::vector<int> >& created_clusters);
+
       virtual int cluster(const robot_msgs::PointCloud& pt_cloud,
                           cloud_kdtree::KdTree& pt_cloud_kdtree,
                           const std::set<unsigned int>& indices_to_cluster,

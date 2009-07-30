@@ -44,7 +44,7 @@
 #include <manipulation_msgs/JointTraj.h>
 #include <pr2_robot_actions/MoveArmState.h>
 #include <pr2_robot_actions/MoveArmGoal.h>
-#include <motion_planning_srvs/MotionPlan.h>
+#include <motion_planning_msgs/GetMotionPlan.h>
 
 #include <ros/ros.h>
 #include <planning_environment/monitors/planning_monitor.h>
@@ -104,8 +104,8 @@ namespace move_arm
 	bool fixState(planning_models::StateParams &sp, bool atGoal);
 	bool fillStartState(std::vector<motion_planning_msgs::KinematicJoint> &start);	
 	void fillTrajectoryPath(const motion_planning_msgs::KinematicPath &path, manipulation_msgs::JointTraj &traj);
-	bool alterRequestUsingIK(motion_planning_srvs::MotionPlan::Request &req);
-	bool computeIK(ros::ServiceClient &client, const robot_msgs::PoseStamped &pose_stamped_msg, int attempts, std::vector<double> &solution);
+	bool alterRequestUsingIK(motion_planning_msgs::GetMotionPlan::Request &req);
+	bool computeIK(ros::ServiceClient &client, const robot_msgs::PoseStamped &pose_stamped_msg, std::vector<double> &solution);
     };
 }
 

@@ -341,6 +341,13 @@ class FilterFactory : public Loki::SingletonHolder < Loki::Factory< filters::Fil
   bool ROS_FILTER_## c ## _ ## t =                                                    \
     filters::FilterFactory<t>::Instance().Register(filters::getFilterID<t>(std::string(#c)), Filters_New_##c##__##t); 
 
+/** An additional macro equivalent to the above, but for use with a non-templated filter class */
+#define FILTERS_REGISTER_FILTER_NONTEMPLATE(c,t) \
+  filters::FilterBase<t> * Filters_New_##c##__##t() {return new c;}; \
+  bool ROS_FILTER_## c ## _ ## t =                                                    \
+    filters::FilterFactory<t>::Instance().Register(filters::getFilterID<t>(std::string(#c)), Filters_New_##c##__##t);
+
+
 }
 
 #endif //#ifndef FILTERS_FILTER_BASE_H_

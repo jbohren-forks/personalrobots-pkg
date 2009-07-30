@@ -41,6 +41,7 @@
 
 void planning_environment::KinematicModelStateMonitor::setupRSM(void)
 {
+    stateMonitorStarted_ = false;
     pose_.setIdentity();
     kmodel_ = NULL;
     robotState_ = NULL;
@@ -76,14 +77,41 @@ void planning_environment::KinematicModelStateMonitor::setupRSM(void)
 	    else
 		frame_id_ = robot_frame_;
 	}
+    }
+    
+    startStateMonitor();
+}
 
+void planning_environment::KinematicModelStateMonitor::startStateMonitor(void)
+{   
+    if (stateMonitorStarted_)
+	return;
+    
+    if (rm_->loadedModels())
+    {
 	mechanismStateSubscriber_ = nh_.subscribe("mechanism_state", 1, &KinematicModelStateMonitor::mechanismStateCallback, this);
 	ROS_DEBUG("Listening to mechanism state");
-
+	
 	attachedBodyNotifier_ = new tf::MessageNotifier<mapping_msgs::AttachedObject>(*tf_, boost::bind(&KinematicModelStateMonitor::attachObjectCallback, this, _1), "attach_object", "", 1);
 	attachedBodyNotifier_->setTargetFrame(rm_->getCollisionCheckLinks());
 	ROS_DEBUG("Listening to attach_object using message notifier with target frame %s", attachedBodyNotifier_->getTargetFramesString().c_str());
     }
+    stateMonitorStarted_ = true;
+}
+
+void planning_environment::KinematicModelStateMonitor::stopStateMonitor(void)
+{
+    if (!stateMonitorStarted_)
+	return;
+    
+    delete attachedBodyNotifier_;
+    attachedBodyNotifier_ = NULL;
+    
+    mechanismStateSubscriber_.shutdown();
+    
+    ROS_DEBUG("Kinematic state is no longer being monitored");
+    
+    stateMonitorStarted_ = false;
 }
 
 void planning_environment::KinematicModelStateMonitor::mechanismStateCallback(const mechanism_msgs::MechanismStateConstPtr &mechanismState)

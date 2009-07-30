@@ -1,4 +1,4 @@
-#include "pr2lib.h"
+#include "fcamlib.h"
 #include "host_netutil.h"
 #include <cstdio>
 #include <cstdlib>
@@ -10,7 +10,7 @@ int sensorread(IpCamList *camera, uint8_t reg)
 {
   uint16_t val;
 
-  if ( pr2SensorRead( camera, reg, &val ) != 0) {
+  if ( fcamReliableSensorRead( camera, reg, &val, NULL ) != 0) {
     fprintf(stderr, "Could not get register.");
     return -1;
   }
@@ -20,7 +20,7 @@ int sensorread(IpCamList *camera, uint8_t reg)
 
 int sensorwrite(IpCamList *camera, uint8_t reg, uint16_t val)
 {
-  if ( pr2SensorWrite( camera, reg, val ) != 0) {
+  if ( fcamReliableSensorWrite( camera, reg, val, NULL ) != 0) {
     fprintf(stderr, "Could not set register.");
     return -1;
   }
@@ -45,26 +45,26 @@ int main(int argc, char** argv)
 
   // Create a new IpCamList to hold the camera list
   IpCamList camList;
-  pr2CamListInit(&camList);
+  fcamCamListInit(&camList);
   
   // Discover any connected cameras, wait for 0.5 second for replies
-  if( pr2Discover(if_name, &camList, ip_address, SEC_TO_USEC(0.5)) == -1) {
+  if( fcamDiscover(if_name, &camList, ip_address, SEC_TO_USEC(0.5)) == -1) {
     fprintf(stderr, "Discover error\n");
     return -1;
   }
 
-  if (pr2CamListNumEntries(&camList) == 0) {
+  if (fcamCamListNumEntries(&camList) == 0) {
     fprintf(stderr, "No cameras found\n");
     return -1;
   }
 
   // Open camera with requested serial number
-  int index = pr2CamListFind(&camList, sn);
+  int index = fcamCamListFind(&camList, sn);
   if (index == -1) {
     fprintf(stderr, "Couldn't find camera with S/N %i\n", sn);
     return -1;
   }
-  IpCamList* camera = pr2CamListGetEntry(&camList, index);
+  IpCamList* camera = fcamCamListGetEntry(&camList, index);
 
   if (argc >= 5 && !strcmp(argv[4], "readtst"))
   {
