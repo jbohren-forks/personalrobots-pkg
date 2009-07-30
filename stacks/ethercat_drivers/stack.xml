@@ -1,0 +1,11 @@
+<stack name="camera_drivers" version="0.1">
+  <description brief="drivers related to ethercat">
+    This stack contains drivers for the ethercat system and the peripherals
+    that connect to it: motor control boards, fingertip sensors, texture 
+    projector, hand accelerometer.
+  </description>
+  <author>Maintained by Blaise Gassend</author>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/ethercat_drivers</url>
+  <depend stack="ros" version="0.7"/>
+</stack>
