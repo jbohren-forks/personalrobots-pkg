@@ -65,7 +65,6 @@
 #define HINGE_POINT_CONST 200
 
 using namespace std;
-using namespace robot_msgs;
 using namespace door_tracker;
 using namespace Eigen;
 
@@ -298,7 +297,7 @@ class DoorDatabase
       return false;
     }
 
-    void publishPoint(const Point32 &point, const int &id, const std::string &frame_id)
+    void publishPoint(const geometry_msgs::Point32 &point, const int &id, const std::string &frame_id)
     {
       visualization_msgs::Marker marker;
       marker.header.frame_id = frame_id;
