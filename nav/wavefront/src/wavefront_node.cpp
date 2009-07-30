@@ -103,7 +103,7 @@ parameters.
 // The messages that we'll use
 #include <nav_robot_actions/MoveBaseState.h>
 #include <geometry_msgs/PoseStamped.h>
-#include <geometry_msgs/PoseDot.h>
+#include <robot_msgs/PoseDot.h>
 #include <sensor_msgs/PointCloud.h>
 #include <sensor_msgs/LaserScan.h>
 #include <nav_srvs/StaticMap.h>
@@ -364,7 +364,7 @@ WavefrontNode::WavefrontNode() :
   advertise<nav_robot_actions::MoveBaseState>("state",1);
   advertise<visualization_msgs::Polyline>("gui_path",1);
   advertise<visualization_msgs::Polyline>("gui_laser",1);
-  advertise<geometry_msgs::PoseDot>("cmd_vel",1);
+  advertise<robot_msgs::PoseDot>("cmd_vel",1);
   subscribe("goal", goalMsg, &WavefrontNode::goalReceived,1);
 
   scan_notifier = new tf::MessageNotifier<sensor_msgs::LaserScan>(&tf, this, boost::bind(&WavefrontNode::laserReceived, this, _1), "scan", "/map", 1);
@@ -545,13 +545,13 @@ WavefrontNode::stopRobot()
 
 // Declare this globally, so that it never gets desctructed (message
 // desctruction causes master disconnect)
-geometry_msgs::PoseDot* cmdvel;
+robot_msgs::PoseDot* cmdvel;
 
 void
 WavefrontNode::sendVelCmd(double vx, double vy, double vth)
 {
   if(!cmdvel)
-    cmdvel = new geometry_msgs::PoseDot();
+    cmdvel = new robot_msgs::PoseDot();
   cmdvel->vel.vx = vx;
   cmdvel->ang_vel.vz = vth;
   this->ros::Node::publish("cmd_vel", *cmdvel);
