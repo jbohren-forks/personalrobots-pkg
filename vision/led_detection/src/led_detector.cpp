@@ -45,7 +45,6 @@
 using namespace led_detection ;
 using namespace sensor_msgs ;
 using namespace kinematic_calibration ;
-using namespace robot_msgs ;
 
 // ******************** Helper Functions (Hack) ********************8
 template <typename T>
@@ -105,7 +104,7 @@ bool toRosImage(const IplImage* pcvimage, sensor_msgs::Image& imagemsg)
   return true;
 }
 
-void poseToPixelCoords(const Pose& pose, const CamInfo& info, ImagePoint& pix)
+void poseToPixelCoords(const geometry_msgs::Pose& pose, const CamInfo& info, ImagePoint& pix)
 {
   assert(info.get_P_size() == 12) ;
 
@@ -139,7 +138,7 @@ LedDetector::~LedDetector()
 
 }
 
-bool LedDetector::findLed(Image& image, const CamInfo& info, const Pose* led_pose,
+bool LedDetector::findLed(Image& image, const CamInfo& info, const geometry_msgs::Pose* led_pose,
                             ImagePoint& led_pix, Image& debug_image)
 {
   // Right now we're assuming that we're only going to be working in grayscale space.
