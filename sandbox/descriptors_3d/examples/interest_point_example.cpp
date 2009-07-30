@@ -47,7 +47,7 @@
 
 using namespace std;
 
-void createPointCloud(robot_msgs::PointCloud& data);
+void createPointCloud(sensor_msgs::PointCloud& data);
 
 // --------------------------------------------------------------
 /*!
@@ -59,10 +59,10 @@ int main()
   // ----------------------------------------------
   // Read point cloud data and create Kd-tree that represents points.
   // We will compute features for all points in the point cloud.
-  robot_msgs::PointCloud data;
+  sensor_msgs::PointCloud data;
   createPointCloud(data);
   cloud_kdtree::KdTreeANN data_kdtree(data);
-  cv::Vector<const robot_msgs::Point32*> interest_pts(data.pts.size());
+  cv::Vector<const geometry_msgs::Point32*> interest_pts(data.pts.size());
   for (unsigned int i = 0 ; i < data.pts.size() ; i++)
   {
     interest_pts[i] = &(data.pts[i]);
@@ -152,7 +152,7 @@ int main()
 }
 
 // Generates random point cloud
-void createPointCloud(robot_msgs::PointCloud& data)
+void createPointCloud(sensor_msgs::PointCloud& data)
 {
   unsigned int nbr_pts = 5000;
   data.pts.resize(nbr_pts);
