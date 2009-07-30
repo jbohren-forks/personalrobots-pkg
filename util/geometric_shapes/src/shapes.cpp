@@ -71,3 +71,19 @@ shapes::Shape* shapes::clone_shape(const shapes::Shape *shape)
     }
     return result;
 }
+
+shapes::StaticShape* shapes::clone_shape(const shapes::StaticShape *shape)
+{
+    shapes::StaticShape *result = NULL;
+    switch (shape->type)
+    {
+    case PLANE:
+	result = new Plane(static_cast<const Plane*>(shape)->a, static_cast<const Plane*>(shape)->b, 
+			   static_cast<const Plane*>(shape)->c, static_cast<const Plane*>(shape)->d);
+	break;
+    default:
+	break;
+    }
+    
+    return result;
+}

@@ -49,7 +49,9 @@ namespace shapes
 {
     
     /** \brief A list of known shape types */
-    enum ShapeType { UNKNOWN, SPHERE, CYLINDER, BOX, MESH };
+    enum ShapeType { UNKNOWN_SHAPE, SPHERE, CYLINDER, BOX, MESH };
+
+    enum StaticShapeType { UNKNOWN_STATIC_SHAPE, PLANE };
     
     
     /** \brief A basic definition of a shape. Shapes are considered centered at origin */
@@ -58,7 +60,7 @@ namespace shapes
     public:	    
 	Shape(void)
 	{
-	    type = UNKNOWN;
+	    type = UNKNOWN_SHAPE;
 	}
 	
 	virtual ~Shape(void)
@@ -66,6 +68,22 @@ namespace shapes
 	}
 
 	ShapeType type;
+    };
+
+    /** \brief A basic definition of a static shape. Static shapes do not have a pose */
+    class StaticShape
+    {
+    public:
+	StaticShape(void)
+	{
+	    type = UNKNOWN_STATIC_SHAPE;
+	}
+	
+	virtual ~StaticShape(void)
+	{
+	}
+	
+	StaticShapeType type;
     };
     
     /** \brief Definition of a sphere */
@@ -181,6 +199,27 @@ namespace shapes
 	    as (x,y,z)  */
 	double       *normals;       
     };
+
+    /** \brief Definition of a plane with equation ax + by + cz + d = 0 */
+    class Plane : public StaticShape
+    {
+    public:
+	
+	Plane(void) : StaticShape()
+	{
+	    type = PLANE;
+	    a = b = c = d = 0.0;	    
+	}
+	
+	Plane(double pa, double pb, double pc, double pd) : StaticShape()
+	{
+	    type = PLANE;
+	    a = pa; b = pb; c = pc; d = pd;
+	}
+	
+	double a, b, c, d;
+    };
+    
     
     /** \brief Load a mesh from a set of vertices. Triangles are
 	constructed using index values from the triangles
@@ -200,6 +239,9 @@ namespace shapes
 
     /** \brief Create a copy of a shape */
     Shape* clone_shape(const Shape *shape);
+
+    /** \brief Create a copy of a static shape */
+    StaticShape* clone_shape(const StaticShape *shape);
     
 }
 

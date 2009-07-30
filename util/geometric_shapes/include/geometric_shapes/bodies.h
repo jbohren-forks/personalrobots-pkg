@@ -72,7 +72,7 @@ namespace bodies
 	    m_scale = 1.0;
 	    m_padding = 0.0;
 	    m_pose.setIdentity();
-	    m_type = shapes::UNKNOWN;
+	    m_type = shapes::UNKNOWN_SHAPE;
 	}
 	
 	virtual ~Body(void)
