@@ -82,14 +82,15 @@ BoxDetector::BoxDetector() :
     CVWINDOW("hough");
   }
 
-  // subscribe to topics
-  cloud_sub_ = nh_.subscribe("stereo/cloud", 1, sync_.synchronize(&BoxDetector::cloudCallback, this));
-  disp_sub_ = nh_.subscribe("stereo/disparity", 1, sync_.synchronize(&BoxDetector::dispCallback, this));
-  dinfo_sub_ = nh_.subscribe("stereo/disparity_info", 1, sync_.synchronize(&BoxDetector::dinfoCallback, this));
-  limage_sub_ = nh_.subscribe("stereo/left/image_rect", 1, sync_.synchronize(&BoxDetector::limageCallback, this));
-  rimage_sub_ = nh_.subscribe("stereo/right/image_rect", 1, sync_.synchronize(&BoxDetector::rimageCallback, this));
-  linfo_sub_ = nh_.subscribe("stereo/left/cam_info", 1, sync_.synchronize(&BoxDetector::linfoCallback, this));
-  rinfo_sub_ = nh_.subscribe("stereo/right/cam_info", 1, sync_.synchronize(&BoxDetector::rinfoCallback, this));
+  string stereo_ns = nh_.resolveName("stereo");  
+// subscribe to topics
+  cloud_sub_ = nh_.subscribe(stereo_ns+"/cloud", 1, sync_.synchronize(&BoxDetector::cloudCallback, this));
+  disp_sub_ = nh_.subscribe(stereo_ns+"/disparity", 1, sync_.synchronize(&BoxDetector::dispCallback, this));
+  dinfo_sub_ = nh_.subscribe(stereo_ns+"/disparity_info", 1, sync_.synchronize(&BoxDetector::dinfoCallback, this));
+  limage_sub_ = nh_.subscribe(stereo_ns+"/left/image_rect", 1, sync_.synchronize(&BoxDetector::limageCallback, this));
+  rimage_sub_ = nh_.subscribe(stereo_ns+"/right/image_rect", 1, sync_.synchronize(&BoxDetector::rimageCallback, this));
+  linfo_sub_ = nh_.subscribe(stereo_ns+"/left/cam_info", 1, sync_.synchronize(&BoxDetector::linfoCallback, this));
+  rinfo_sub_ = nh_.subscribe(stereo_ns+"/right/cam_info", 1, sync_.synchronize(&BoxDetector::rinfoCallback, this));
 
   // advertise topics
   cloud_planes_pub_ = nh_.advertise<PointCloud> ("~planes", 1);
