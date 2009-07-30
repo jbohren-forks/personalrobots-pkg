@@ -15,7 +15,7 @@ Created by: Alexey Latyshev
 #define REG_STOP_SELECT 1
 #define REG_CLEAR_SELECT 2
 
-int readTestFile(char* filename, vector<outlet_test_elem>& test_data)
+int readTestFile(char* filename, char* test_path, vector<outlet_test_elem>& test_data)
 {
 	FILE* f = fopen(filename,"r");
 	test_data.clear();
@@ -50,7 +50,7 @@ int readTestFile(char* filename, vector<outlet_test_elem>& test_data)
 				{
 					outlet_test_elem elem;
 					test_data.push_back(elem);
-					sprintf(test_data[i++].filename,"%s",tok);
+					sprintf(test_data[i++].filename,"%s/%s",test_path,tok);
 				}
 				
 
@@ -134,7 +134,9 @@ int writeTestFile(char* filename, vector<outlet_test_elem>& data)
 		{
 			//if (data[i].n_matches == DETECT_SKIP)
 			//	continue;
-			fprintf(f,"%s",data[i].filename);
+			char* name = strrchr(data[i].filename,'/');
+			name++;
+			fprintf(f,"%s",name);
 			for (int j=0;j<(size_t)(data[i].real_outlet.size());j++)
 			{
 				fprintf(f,",%d,%d,%d,%d",data[i].real_outlet[j].hole1.x,data[i].real_outlet[j].hole1.y,

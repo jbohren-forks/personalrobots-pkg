@@ -25,12 +25,13 @@ typedef struct
 
 //Reading test file from the hard drive
 //Returns number of outlets in the test template
+//test_path is path to the test images
 // Test file has the following structure:
 // First line: n - number of holes
 // Oter lines: filename,x1,y1,... 
 // where xi and yi are the coordinates of holes. Power holes are the first ones, ground holes are the last ones.
 // Number of ground holes is in two times less than number of power holes.
-int readTestFile(char* filename,vector<outlet_test_elem>& test_data);
+int readTestFile(char* filename, char* test_path, vector<outlet_test_elem>& test_data);
 
 int writeTestFile(char* filename,vector<outlet_test_elem>& data);
 

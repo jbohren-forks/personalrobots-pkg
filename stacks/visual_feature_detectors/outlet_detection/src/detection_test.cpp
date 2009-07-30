@@ -40,32 +40,33 @@ int main(int argc,char** argv)
 
 
 	char mode[1024], config_filename[1024], camera_filename[1024], output_path[1024], 
-        train_path[1024], train_config[1024], pca_config[1024], output_test_config[1024];
+        test_path[1024], train_config[1024], pca_config[1024], output_test_config[1024];
 	int accuracy = 5;
 	
     
-	if(argc != 6 && argc != 7)
+	if(argc != 7 && argc != 8)
 	{
-		printf("Usage: detection_test <mode[test|modify|generate]> <test_config_filename> <camera_config> <output_path> <accuracy|output_test_config_filename|output_test_config_filename>\n");
-        printf("Usage: detection_test <mode[test|modify|generate]> <test_config_filename> <camera_config> <train_config_path> <output_path> <accuracy|output_test_config_filename|output_test_config_filename>\n");
+		printf("Usage: detection_test <mode[test|modify|generate]> <images_path> <test_config_filename> <camera_config> <output_path> <accuracy|output_test_config_filename|output_test_config_filename>\n");
+        printf("Usage: detection_test <mode[test|modify|generate]> <images_path> <test_config_filename> <camera_config> <train_config_path> <output_path> <accuracy|output_test_config_filename|output_test_config_filename>\n");
 		return(0);
 	}
     
 	
 	strcpy(mode, argv[1]);
-	strcpy(config_filename, argv[2]);
-	strcpy(camera_filename, argv[3]);
+	strcpy(test_path, argv[2]);
+	strcpy(config_filename, argv[3]);
+	strcpy(camera_filename, argv[4]);
     
     
     outlet_template_t outlet_template;
-    if(argc == 6)
+    if(argc == 7)
     {
-        strcpy(output_path, argv[4]);
+        strcpy(output_path, argv[5]);
     }
     else
     {
-        strcpy(train_config, argv[4]);
-        strcpy(output_path, argv[5]);
+        strcpy(train_config, argv[5]);
+        strcpy(output_path, argv[6]);
     }
 
 	if ((strcmp(mode,"test")==0) )
@@ -84,7 +85,7 @@ int main(int argc,char** argv)
 
 	vector<outlet_test_elem> test_data;
 
-	if (readTestFile(config_filename,test_data) > 0)
+	if (readTestFile(config_filename,test_path,test_data) > 0)
 	{
 		if (strcmp(mode,"modify")==0)
 		{
@@ -186,7 +187,7 @@ int main(int argc,char** argv)
 	#endif //_VERBOSE
 			
 		
-		if ((argc !=6) && (strcmp(mode,"modify")!=0))
+		if ((argc !=7) && (strcmp(mode,"modify")!=0))
 		{
 			outlet_template.load(train_config);
 		}
