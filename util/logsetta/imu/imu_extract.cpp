@@ -43,8 +43,8 @@ void imu_callback(std::string name, geometry_msgs::PoseWithRatesStamped* imu, ro
   fprintf(file, "%.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f\n",
           t.toSec(),
           imu->header.stamp.toSec(),
-          imu->acc.acc.ax, imu->acc.acc.ay, imu->acc.acc.az,
-          imu->vel.ang_vel.vx, imu->vel.ang_vel.vy, imu->vel.ang_vel.vz);
+          imu->pose_with_rates.acceleration.linear.x, imu->pose_with_rates.acceleration.linear.y, imu->pose_with_rates.acceleration.linear.z,
+          imu->pose_with_rates.velocity.angular.x, imu->pose_with_rates.velocity.angular.y, imu->pose_with_rates.velocity.angular.z);
 }
 
 int main(int argc, char **argv)
