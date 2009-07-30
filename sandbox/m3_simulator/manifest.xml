@@ -1,0 +1,13 @@
+<package>
+  <description brief="m3_simulator">
+Miscellaneous launch files and scripts for m3 simulator use case.
+  </description>
+  <author>Bhaskara Marthi</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/m3_simulator</url>
+  <depend package="pr2_gazebo"/>
+
+</package>
+
+
