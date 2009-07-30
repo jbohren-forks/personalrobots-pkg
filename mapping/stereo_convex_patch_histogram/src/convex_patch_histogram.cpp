@@ -75,7 +75,7 @@ class ConvexPatchHistogram
   public:
 
     // ROS messages
-    PointCloud cloud_, cloud_textured_, cloud_annotated_;
+    sensor_msgs::PointCloud cloud_, cloud_textured_, cloud_annotated_;
 
     string src_normal_, src_textured_;
 
@@ -90,12 +90,12 @@ class ConvexPatchHistogram
       node_.subscribe ("cloud_pcd", cloud_, &ConvexPatchHistogram::cloud_cb, this, 1);
       node_.subscribe ("cloud_textured", cloud_textured_, &ConvexPatchHistogram::cloud_cb, this, 1);
 
-      node_.advertise<PointCloud> ("cloud_annotated", 1);
+      node_.advertise<sensor_msgs::PointCloud> ("cloud_annotated", 1);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void
-      fitSACPlane (PointCloud *points, vector<int> &inliers, vector<double> &coeff)
+      fitSACPlane (sensor_msgs::PointCloud *points, vector<int> &inliers, vector<double> &coeff)
     {
       // Create and initialize the SAC model
       sample_consensus::SACModelPlane *model = new sample_consensus::SACModelPlane ();
@@ -119,7 +119,7 @@ class ConvexPatchHistogram
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void
-      findClusters (const PointCloud &points, vector<double> coeff, vector<vector<int> > &clusters)
+      findClusters (const sensor_msgs::PointCloud &points, vector<double> coeff, vector<vector<int> > &clusters)
     {
       cloud_kdtree::KdTree* tree = new cloud_kdtree::KdTreeANN (points);
 
@@ -198,7 +198,7 @@ class ConvexPatchHistogram
 
     // Assumes rgb channels are consecutive
     void
-      createRGBHistogram (PointCloud *points, vector<int> *indices, int c_idx, vector<double> &histogram)
+      createRGBHistogram (sensor_msgs::PointCloud *points, vector<int> *indices, int c_idx, vector<double> &histogram)
     {
       histogram.resize (256, 0);
 
