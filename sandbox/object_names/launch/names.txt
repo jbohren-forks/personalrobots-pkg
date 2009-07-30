@@ -1,5 +1,6 @@
 #A few standard ones
-   
+
+0    big-error   
 1    error
 2    floor
 3    wall
@@ -11,6 +12,15 @@
 9    whiteboard
 10   window
 11   robot
+12   table
+13   chair
+14   light
+15   trash-basket
+16   monitor
+17   couch
+18   ceiling
+19   column
+
 
 #People definitions are here
 100  person

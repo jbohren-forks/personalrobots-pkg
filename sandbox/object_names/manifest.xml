@@ -15,7 +15,6 @@
 
   <export>
     <cpp cflags="-I${prefix}/srv/cpp "/>
-
   </export>
 </package>
 

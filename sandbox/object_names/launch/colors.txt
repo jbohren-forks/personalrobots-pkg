@@ -1,6 +1,7 @@
 #A few standard ones
 
 255 0 0      error
+255 0 0      error
 0 127 0      floor
 127 127 0    wall
 0 255 0      outlet
@@ -11,4 +12,13 @@
 255 255 255  whiteboard
 255 0 255    window
 127 127 127  robot
+131 164 162  table
+205 194 250  chair
+14 110 221   light
+13 131 58    trash-basket
+202 1 17     monitor
+69 231 99    couch
+93 235 235   other
+220 20 60    ceiling
+255 165 0    column
 

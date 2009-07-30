@@ -72,6 +72,8 @@ class SimpleColorServer:
 
 
     def handle_name_to_color(self,req):
+        rospy.loginfo("Translating name %s to color" % req.name) 
+
         resp=Name2ColorResponse();
         if req.name not in self.name2color:
             rospy.logwarn("Missing id for name %s" % req.name) 

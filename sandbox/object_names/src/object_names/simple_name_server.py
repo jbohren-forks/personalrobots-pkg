@@ -86,6 +86,7 @@ class SimpleNameServer:
         return resp        
 
     def handle_float_to_name(self,req):
+        rospy.loginfo("Translating float %d to name" % req.id) 
         resp=Float2NameResponse();
 
         int_id=int(round(req.id));
