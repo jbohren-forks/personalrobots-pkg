@@ -453,7 +453,10 @@ private:
 				     (int)(0.5 + (p.y() - bi_.originY) / bi_.resolution),
 				     (int)(0.5 + (p.z() - bi_.originZ) / bi_.resolution));
 		    c.t = pts[i].t;
-		    map.insert(c);
+#pragma omp critical
+		    {
+			map.insert(c);
+		    }		    
 		}
 	    }
 	    

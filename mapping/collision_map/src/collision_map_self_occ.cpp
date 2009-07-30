@@ -325,7 +325,11 @@ private:
 		    CollisionPoint c((int)(0.5 + (p.x() - bi_.originX) / bi_.resolution),
 				     (int)(0.5 + (p.y() - bi_.originY) / bi_.resolution),
 				     (int)(0.5 + (p.z() - bi_.originZ) / bi_.resolution));
-		    map.insert(c);
+#pragma omp critical
+		    {
+			map.insert(c);
+		    }
+		    
 		}
 	    }
 	    
