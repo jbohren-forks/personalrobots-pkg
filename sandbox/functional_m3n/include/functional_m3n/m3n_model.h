@@ -54,7 +54,8 @@
 #include <functional_m3n/regressors/regressor_includes.h>
 #include <functional_m3n/logging/m3n_logging.h>
 
-using namespace vk_energy; // corresponds to submodular energy minimzer
+using namespace vk_energy;
+// corresponds to submodular energy minimzer
 using namespace std;
 
 // --------------------------------------------------------------
@@ -111,6 +112,16 @@ class M3NModel
      */
     // --------------------------------------------------------------
     int loadFromFile(const string& basename);
+
+    // --------------------------------------------------------------
+    /*!
+     * \brief Returns the labels used to train this M3NModel
+     */
+    // --------------------------------------------------------------
+    inline const std::vector<unsigned int>& getTrainingLabels() const
+    {
+      return training_labels_;
+    }
 
     // --------------------------------------------------------------
     /*!
