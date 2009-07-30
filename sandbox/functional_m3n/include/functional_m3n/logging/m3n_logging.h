@@ -89,10 +89,12 @@ class M3NLogger
       // (map: label -> counter)
       map<unsigned int, unsigned int> total_label_count; // how many nodes with gt label
       map<unsigned int, unsigned int> correct_label_count; // how many correctly classified
+      map<unsigned int, unsigned int> false_pos_label_count; // how many wrongly classified
       for (unsigned int i = 0 ; i < labels.size() ; i++)
       {
         total_label_count[labels[i]] = 0;
         correct_label_count[labels[i]] = 0;
+        false_pos_label_count[labels[i]] = 0;
       }
 
       // Holds the total number of nodes correctly classified
@@ -116,6 +118,10 @@ class M3NLogger
           nbr_correct++;
           correct_label_count[curr_gt_label]++;
         }
+        else
+        {
+          false_pos_label_count[curr_infer_label]++;
+        }
       }
 
       // Print statistics
@@ -127,7 +133,7 @@ class M3NLogger
       {
         curr_label = labels[i];
         ss << "[" << curr_label << ": " << correct_label_count[curr_label] << "/"
-            << total_label_count[curr_label] << "]  ";
+            << total_label_count[curr_label] << " (" << false_pos_label_count[curr_label] << ")]  ";
       }
       ROS_INFO("%s", ss.str().c_str());
     }
