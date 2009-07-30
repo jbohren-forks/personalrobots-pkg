@@ -8,10 +8,10 @@ rospack_add_boost_directories()
 #rospack_add_executable (bin/test_fm3n examples/test_fm3n.cpp)
 #target_link_libraries (bin/test_fm3n fm3n)
 
-#rospack_add_executable (bin/classify_m3n
-#                        examples/classify_m3n.cpp
-#                        examples/random_field_creator.cpp)
-#target_link_libraries (bin/classify_m3n fm3n)
+rospack_add_executable (bin/classify_m3n
+                        examples/classify_m3n.cpp
+                        examples/random_field_creator.cpp)
+target_link_libraries (bin/classify_m3n fm3n)
 
 rospack_add_executable (bin/train_m3n
                         examples/train_m3n.cpp
