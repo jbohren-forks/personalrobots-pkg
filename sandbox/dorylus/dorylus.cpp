@@ -553,15 +553,10 @@ bool Dorylus::load(string filename, bool quiet, string *user_data_str)
 void Dorylus::useDataset(DorylusDataset *dd) {
   dd_ = dd;
 
-  log_weights_ = NEWMAT::Matrix(dd_->nClasses_, dd_->objs_.size());
-  for(int i=1; i<=log_weights_.Nrows(); i++) {
-    for(int j=1; j<=log_weights_.Ncols(); j++) {
-      log_weights_(i,j) = 0;
-    }
-  }
+  log_weights_ = MatrixXf::Zero(dd_->nClasses_, dd_->objs_.size());
 
- nClasses_ = dd_->nClasses_;
- classes_ = dd->classes_;
+  nClasses_ = dd_->nClasses_;
+  classes_ = dd->classes_;
 }
 
 vector<weak_classifier*>* Dorylus::findActivatedWCs(const string &descriptor, const MatrixXf &pt) {
@@ -659,31 +654,28 @@ bool Dorylus::learnWC(int nCandidates, map<string, float> max_thetas, vector<str
       continue;
     nNonBGObjs += it->second;
   }
-  NEWMAT::Matrix non_bg_weights = NEWMAT::Matrix(nClasses_, nNonBGObjs);
+  MatrixXf non_bg_weights = MatrixXf::Zero(nClasses_, nNonBGObjs);
   int m=0;
-  for(int col=1; col<=nNonBGObjs; col++) {
+  for(int col=0; col<nNonBGObjs; col++) {
     while(dd_->objs_[m]->label==0) {
       m++;
     }
-    non_bg_weights.Column(col) = log_weights_.Column(m+1);
+    non_bg_weights.col(col) = log_weights_.col(m);
     m++;
   }
-  NEWMAT::Real* pwts = non_bg_weights.Store();
-  for(unsigned int i=0; i<nClasses_ * nNonBGObjs; i++) {
-    pwts[i] = exp(pwts[i]);
-  }
+  non_bg_weights = non_bg_weights.cwise().exp();
 
   // -- Choose wc candidates from the distribution of weights over the non-background objects.
   vector<weak_classifier*> cand;
   for(int iCand=0; iCand<nCandidates; iCand++) {
-    double dice = (double)rand() / (double)RAND_MAX * non_bg_weights.Sum(); //The weights aren't necessarily normalized.
+    double dice = (double)rand() / (double)RAND_MAX * non_bg_weights.sum(); //The weights aren't necessarily normalized.
     double w = 0.0;
     int obj_id=-1;
     int m=0;
-    for(int i=0; i<non_bg_weights.Ncols(); i++, m++) {
+    for(int i=0; i<non_bg_weights.cols(); i++, m++) {
       while(dd_->objs_[m]->label == 0)
 	m++;
-      w = non_bg_weights.Column(i+1).Sum();
+      w = non_bg_weights.col(i).sum();
       dice -= w;
       if(dice <= 0) {
 	obj_id = m;
@@ -802,10 +794,8 @@ bool Dorylus::learnWC(int nCandidates, map<string, float> max_thetas, vector<str
       // -- GentleBoost: take a single newton step to set the a_t^c's.
       cand[i]->vals = VectorXf::Zero(dd_->nClasses_);
 
-      int idx=0;
       int M = dd_->objs_.size();
 
-      NEWMAT::Real* plog_weights_ = log_weights_.Store();
       NEWMAT::Matrix numerators(nClasses_,1);
       NEWMAT::Matrix denominators(nClasses_,1);
       numerators = 0.0;
@@ -816,9 +806,8 @@ bool Dorylus::learnWC(int nCandidates, map<string, float> max_thetas, vector<str
 	if(mmt(m) == 0)
 	  continue;
 	for(unsigned int c=0; c<dd_->nClasses_; c++) {
-	  idx = m + M*c;
-	  pnums[c] += exp(plog_weights_[idx]) * dd_->ymc_(c, m) * mmt(m);
-	  pdens[c] += exp(plog_weights_[idx]) * mmt(m) * mmt(m);
+	  pnums[c] += exp(log_weights_(c, m)) * dd_->ymc_(c, m) * mmt(m);
+	  pdens[c] += exp(log_weights_(c, m)) * mmt(m) * mmt(m);
 	}
 
 // 	// -- Non-negative responses test.
@@ -883,7 +872,7 @@ bool Dorylus::learnWC(int nCandidates, map<string, float> max_thetas, vector<str
     if(best_mmt(m) == 0)
       continue;
     for(unsigned int c=0; c<dd_->nClasses_; c++) {
-      log_weights_(c+1, m+1) += -dd_->ymc_(c, m) * best->vals(c) * best_mmt(m);
+      log_weights_(c, m) += -dd_->ymc_(c, m) * best->vals(c) * best_mmt(m);
     }
   }
   //  delete *ppweights; *ppweights = NULL;
@@ -966,13 +955,7 @@ string displayWeakClassifier(const weak_classifier &wc) {
 
 
 float Dorylus::computeObjective() {
-  float obj=0;
-  NEWMAT::Real* plog_weights = log_weights_.Store();
-  for(int i=0; i<log_weights_.Nrows() * log_weights_.Ncols(); i++) {
-    obj += exp(plog_weights[i]);
-  }
-  obj /= log_weights_.Nrows() * log_weights_.Ncols();
-  return obj;
+  return log_weights_.cwise().exp().sum() / (log_weights_.rows() * log_weights_.cols());
 }
 
 //mmt is a M_m^t specific to this weak classifier and this dataset.
@@ -1006,16 +989,13 @@ float Dorylus::computeObjective() {
 
 float Dorylus::computeUtility(const weak_classifier& wc, const VectorXf& mmt) {
 
-  NEWMAT::Real* plog_weights_ = log_weights_.Store();
   float util=0;
-  int idx;
   int M = dd_->objs_.size();
   for(int m=0; m<M; m++) {
     if(mmt(m) == 0)
       continue;
     for(unsigned int c=0; c<dd_->nClasses_; c++) {
-      idx = m + c*M;
-      util += exp(plog_weights_[idx]) * (1 - exp(-dd_->ymc_(c,m) * wc.vals(c) * mmt(m)));
+      util += exp(log_weights_(c, m)) * (1 - exp(-dd_->ymc_(c,m) * wc.vals(c) * mmt(m)));
     }
   }
 

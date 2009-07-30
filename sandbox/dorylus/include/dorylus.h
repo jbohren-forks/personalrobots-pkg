@@ -193,7 +193,7 @@ class Dorylus {
   //! Pointers to weak classifiers, in the order that they were learned.
   vector<weak_classifier*> pwcs_;
   //! nClasses x nTrEx.
-  NEWMAT::Matrix log_weights_;
+  Eigen::MatrixXf log_weights_;
   float objective_, objective_prev_, training_err_;
   DorylusDataset *dd_;
   string version_string_;
