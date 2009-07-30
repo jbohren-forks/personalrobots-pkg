@@ -10,39 +10,12 @@
 
     <param name="/use_sim_time" value="false"/>
 
-    <node pkg="people_aware_nav" type="move_base_constrained" respawn="false" name="move_base" machine="three" output="screen">
-
-      <param name="controller_frequency" value="10.0" />
-      <param name="footprint_padding" value="0.015" />
-      <param name="controller_patience" value="15.0" />
-      <param name="clearing_radius" value="0.59" />
-      
-      <param name="odom_frame" value="odom_combined"/>
-      <param name="global_frame" value="map" />
-      <param name="robot_base_frame" value="base_link" />
-
-      <param name="inscribed_radius" value="0.325" />
-      <param name="circumscribed_radius" value="0.46" />
-      <param name="inflation_radius" value="0.55" />
-
-      <rosparam file="$(find 2dnav_pr2)/config/costmap_common_params.yaml" command="load" ns="navfn" />
-      <rosparam file="$(find 2dnav_pr2)/config/costmap_common_params.yaml" command="load" ns="base_local_planner" />
-      <rosparam file="$(find 2dnav_pr2)/move_base/navfn_params.yaml" command="load" />
-      <rosparam file="$(find 2dnav_pr2)/move_base/base_local_planner_params.yaml" command="load" />
-
-    </node>
-
-    <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
-    <include file="$(find 2dnav_pr2)/config/new_amcl_node.xml" />
-    <include file="$(find 2dnav_pr2)/config/base_odom_teleop.xml" />
-    <include file="$(find 2dnav_pr2)/config/lasers_and_filters.xml" />
-    <include file="$(find 2dnav_pr2)/config/map_server.xml" />
-    <include file="$(find 2dnav_pr2)/config/ground_plane.xml" />
-
+    <param name="move_base/base_global_planner" value="NavfnROSConstrained"/>
+    <include file="$(find 2dnav_pr2)/move_base/2dnav_pr2.launch" />
 
     <node pkg="people_aware_nav" type="person_pos_sender" output="screen" />
     <node pkg="people_aware_nav" type="is_person_on_path" output="screen" />
-
+    <node pkg="pr2_default_controllers" type="tuckarm.py" args="r" />
     <!-- node pkg="people_aware_nav" type="hallway_move" output="screen" /> -->
 
   </group>

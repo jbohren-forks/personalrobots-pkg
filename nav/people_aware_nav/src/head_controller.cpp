@@ -69,7 +69,7 @@ public:
     do_continuous_ = false;
     have_goal_ = false;
 
-    node_.advertise<PointStamped>("/head_controller/head_track_point",1);
+    node_.advertise<PointStamped>("/head_controller/point_head",1);
 
     node_.advertiseService ("look_straight_ahead", &HeadController::lookStraightAhead, this);
     node_.advertiseService ("glance_at", &HeadController::glanceAt, this);
@@ -101,8 +101,8 @@ public:
   bool glanceAt(people_aware_nav::GlanceAt::Request &req, people_aware_nav::GlanceAt::Response& resp) {
 
     do_continuous_ = false; // Turn off track point publishing
-    node_.publish("/head_controller/head_track_point",req.point_stamped);
-    usleep(300000);
+    node_.publish("/head_controller/point_head",req.point_stamped);
+    usleep(2000000);
     if (state_== TRACK) {
       lookAtGoal(); // Look at the goal once with a reasonable speed before passing it back to the continuous publication.
       do_continuous_ = true;
@@ -164,7 +164,7 @@ private:
       p.point.x = 1;
       p.point.y = 0;
       p.point.z = 1.1;
-      node_.publish("/head_controller/head_track_point",p);
+      node_.publish("/head_controller/point_head",p);
     }
     else {
       // Change this to include the speed.
@@ -173,7 +173,7 @@ private:
       p.point.x = 1;
       p.point.y = 0;
       p.point.z = 1.1;
-      node_.publish("/head_controller/head_track_point",p);
+      node_.publish("/head_controller/point_head",p);
     }
   }
 
