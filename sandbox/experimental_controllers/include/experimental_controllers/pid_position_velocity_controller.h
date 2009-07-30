@@ -63,7 +63,7 @@
 #include <ros/node.h>
 #include <ros/node_handle.h>
 
-#include "mechanism_model/controller.h"
+#include "mechanism_control/controller.h"
 #include "control_toolbox/pid.h"
 #include "control_toolbox/pid_gains_setter.h"
 #include "misc_utils/advertised_service_guard.h"

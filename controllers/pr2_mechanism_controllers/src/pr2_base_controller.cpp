@@ -156,7 +156,6 @@ bool Pr2BaseController::init(mechanism::RobotState *robot, const ros::NodeHandle
       ROS_ERROR("Could not initialize joint velocity controller for %s",base_kin_.wheel_[j].joint_name_.c_str());
    }
   }
-  ROS_INFO("PR2 base controller initialized");
   return true;
 }
 

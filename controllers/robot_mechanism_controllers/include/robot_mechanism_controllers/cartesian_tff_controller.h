@@ -41,7 +41,7 @@
 #include <ros/node.h>
 #include <manipulation_msgs/TaskFrameFormalism.h>
 #include <robot_msgs/Twist.h>
-#include <mechanism_model/controller.h>
+#include <mechanism_control/controller.h>
 #include <tf/transform_datatypes.h>
 #include <control_toolbox/pid.h>
 #include <boost/scoped_ptr.hpp>
@@ -56,16 +56,15 @@ public:
   CartesianTFFController();
   ~CartesianTFFController();
 
-  bool initXml(mechanism::RobotState *robot_state, TiXmlElement *config);
-
+  bool init(mechanism::RobotState *robot_state, const ros::NodeHandle& n);
   bool starting();
   void update();
 
-  void command();
+  void command(const manipulation_msgs::TaskFrameFormalismConstPtr& tff_msg);
 
 private:
-  ros::Node* node_;
-  std::string controller_name_;
+  ros::NodeHandle node_;
+  ros::Subscriber sub_command_;
   double last_time_;
 
   // pid controllers
@@ -90,7 +89,6 @@ private:
   KDL::Twist position_, twist_meas_;
   KDL::Frame pose_meas_, pose_meas_old_;
 
-  manipulation_msgs::TaskFrameFormalism tff_msg_;
   boost::scoped_ptr<realtime_tools::RealtimePublisher<robot_msgs::Twist> > state_position_publisher_;
   unsigned int loop_count_;
 

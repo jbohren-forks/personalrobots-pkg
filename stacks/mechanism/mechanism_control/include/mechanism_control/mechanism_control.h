@@ -37,18 +37,11 @@
 #include <vector>
 #include "ros/ros.h"
 #include "roslib/Time.h"
+#include "mechanism_control/controller_spec.h"
+#include "mechanism_control/controller_handle.h"
 #include <tinyxml/tinyxml.h>
 #include <hardware_interface/hardware_interface.h>
 #include <mechanism_model/robot.h>
-#define BOOST_CB_DISABLE_DEBUG
-#include <boost/circular_buffer.hpp>
-#include <boost/thread/mutex.hpp>
-#include <boost/accumulators/accumulators.hpp>
-#include <boost/accumulators/statistics/stats.hpp>
-#include <boost/accumulators/statistics/max.hpp>
-#include <boost/accumulators/statistics/mean.hpp>
-#include <boost/accumulators/statistics/variance.hpp>
-#include <mechanism_model/controller.h>
 #include <realtime_tools/realtime_publisher.h>
 #include <misc_utils/advertised_service_guard.h>
 
@@ -56,21 +49,18 @@
 #include <mechanism_msgs/ListControllers.h>
 #include <mechanism_msgs/SpawnController.h>
 #include <mechanism_msgs/KillController.h>
-#include <mechanism_msgs/KillAndSpawnControllers.h>
 #include <mechanism_msgs/SwitchController.h>
 #include <mechanism_msgs/MechanismState.h>
 #include <mechanism_msgs/JointStates.h>
 #include <diagnostic_msgs/DiagnosticMessage.h>
 
-typedef controller::Controller* (*ControllerAllocator)();
+typedef controller::ControllerHandle* (*ControllerAllocator)();
 
+namespace controller{
 
 class MechanismControl {
 
 public:
-  // Give access to mechanism control
-  static bool Instance(MechanismControl*& mech);
-
   MechanismControl(HardwareInterface *hw);
   virtual ~MechanismControl();
 
@@ -79,21 +69,18 @@ public:
 
   // Non real-time functions
   bool initXml(TiXmlElement* config);
-  void getControllerNames(std::vector<std::string> &v);
   bool spawnController(const std::string& name);
-  bool spawnController(const std::string &xml_string,
-                       std::vector<int8_t>& ok, std::vector<std::string>& name);
-  bool spawnController(TiXmlElement *config, std::string& name);
   bool killController(const std::string &name);
   bool switchController(const std::vector<std::string>& start_controllers,
-                        const std::vector<std::string>& stop_controllers);
+                        const std::vector<std::string>& stop_controllers,
+                        const int strictness);
 
   // controllers_lock_ must be locked before calling
-  controller::Controller* getControllerByName(const std::string& name);
+  controller::ControllerHandle* getControllerByName(const std::string& name);
   template<class ControllerType> bool getControllerByName(const std::string& name, ControllerType*& c)
   {
     // get controller
-    controller::Controller* controller = getControllerByName(name);
+    controller::ControllerHandle* controller = getControllerByName(name);
     if (controller == NULL) return false;
 
     // cast controller to ControllerType
@@ -110,37 +97,20 @@ public:
   HardwareInterface *hw_;
 
 private:
+  void getControllerNames(std::vector<std::string> &v);
+  void getControllerSchedule(std::vector<size_t> &schedule);
+
   ros::NodeHandle node_;
-  static MechanismControl* mechanism_control_;
-
-  typedef boost::accumulators::accumulator_set<
-    double, boost::accumulators::stats<boost::accumulators::tag::max,
-                                       boost::accumulators::tag::mean,
-                                       boost::accumulators::tag::variance> > TimeStatistics;
-  struct Statistics {
-    TimeStatistics acc;
-    double max;
-    boost::circular_buffer<double> max1;
-    Statistics() : max(0), max1(60) {}
-  };
-
-  struct ControllerSpec {
-    std::string name;
-    boost::shared_ptr<controller::Controller> c;
-    boost::shared_ptr<Statistics> stats;
-
-    ControllerSpec() : stats(new Statistics) {}
-    ControllerSpec(const ControllerSpec &spec)
-      : name(spec.name), c(spec.c), stats(spec.stats) {}
-  };
 
   // for controller switching
-  std::vector<controller::Controller*> start_request_, stop_request_;
+  std::vector<controller::ControllerHandle*> start_request_, stop_request_;
   bool please_switch_, switch_success_;
+  int switch_strictness_;
 
   // controller lists
   boost::mutex controllers_lock_;
   std::vector<ControllerSpec> controllers_lists_[2];
+  std::vector<size_t>   controllers_scheduling_[2];
   int current_controllers_list_, used_by_realtime_;
 
   // for controller statistics
@@ -162,8 +132,6 @@ private:
                               mechanism_msgs::ListControllerTypes::Response &resp);
   bool listControllersSrv(mechanism_msgs::ListControllers::Request &req,
                           mechanism_msgs::ListControllers::Response &resp);
-  bool killAndSpawnControllersSrv(mechanism_msgs::KillAndSpawnControllers::Request &req,
-                                  mechanism_msgs::KillAndSpawnControllers::Response &resp);
   bool switchControllerSrv(mechanism_msgs::SwitchController::Request &req,
                            mechanism_msgs::SwitchController::Response &resp);
   bool spawnControllerSrv(mechanism_msgs::SpawnController::Request &req,
@@ -172,7 +140,8 @@ private:
                          mechanism_msgs::KillController::Response &resp);
   boost::mutex services_lock_; 
   ros::ServiceServer srv_list_controllers_, srv_list_controller_types_, srv_spawn_controller_;
-  ros::ServiceServer srv_kill_controller_, srv_switch_controller_, srv_kill_and_spawn_controller_;
+  ros::ServiceServer srv_kill_controller_, srv_switch_controller_;
 };
 
+}
 #endif /* MECHANISM_CONTROL_H */

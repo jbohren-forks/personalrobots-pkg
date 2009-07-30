@@ -136,7 +136,7 @@ private:
 
   Model *parent_model_;
   HardwareInterface hw_;
-  MechanismControl *mc_;
+  controller::MechanismControl *mc_;
 
   /// @todo The fake state helps Gazebo run the transmissions backwards, so
   ///       that it can figure out what its joints should do based on the

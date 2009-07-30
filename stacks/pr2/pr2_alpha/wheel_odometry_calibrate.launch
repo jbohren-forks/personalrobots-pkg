@@ -1,13 +1,11 @@
 <launch>
- <rosparam file="$(find pr2_default_controllers)/pr2_base_controller.yaml" command="load" ns="pr2_base_controller" />
- <rosparam file="$(find pr2_default_controllers)/pr2_odometry.yaml" command="load" ns="pr2_odometry" />
+  <rosparam file="$(find pr2_default_controllers)/pr2_base_controller.yaml" command="load" ns="pr2_base_controller" />
+  <rosparam file="$(find pr2_default_controllers)/pr2_odometry.yaml" command="load" ns="pr2_odometry" />
+  <node pkg="mechanism_control" type="spawner.py" args="pr2_base_controller pr2_odometry" output="screen"/>
 
-<node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/pr2_base_controller.xml" output="screen"/>
-<node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/pr2_base_odometry.xml" output="screen"/>
-
-<param name="odom_calibration/rot_vel" value="0.5"/>
-<param name="odom_calibration/trans_vel" value="0.0"/>
-<param name="odom_calibration/duration" value="10.0"/>
-<node pkg="wheel_odometry_calibration" type="wheel_odometry_calibration" output="screen"/>
+  <param name="odom_calibration/rot_vel" value="0.5"/>
+  <param name="odom_calibration/trans_vel" value="0.0"/>
+  <param name="odom_calibration/duration" value="10.0"/>
+  <node pkg="wheel_odometry_calibration" type="wheel_odometry_calibration" output="screen"/>
 </launch>
 

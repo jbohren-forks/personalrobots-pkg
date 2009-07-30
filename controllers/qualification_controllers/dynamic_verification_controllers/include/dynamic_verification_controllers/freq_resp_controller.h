@@ -50,7 +50,7 @@
 #include <dynamic_verification_controllers/DynamicResponseData.h>
 #include <realtime_tools/realtime_publisher.h>
 #include <realtime_tools/realtime_srv_call.h>
-#include <mechanism_model/controller.h>
+#include <mechanism_control/controller.h>
 #include <robot_mechanism_controllers/joint_velocity_controller.h>
 
 namespace controller

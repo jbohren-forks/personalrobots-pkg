@@ -58,21 +58,45 @@ JointTrajectoryController::JointTrajectoryController() : Controller(), node_(ros
   next_free_index_ = 0;
   current_trajectory_index_ = 0;
   trajectory_preempted_ = false;
+  joint_trajectory_ = NULL;
 }
 
 
 JointTrajectoryController::~JointTrajectoryController()
 {
   for(unsigned int i=0; i<joint_pv_controllers_.size();++i)
-    delete joint_pv_controllers_[i];
+    if (joint_pv_controllers_[i])
+      delete joint_pv_controllers_[i];
 
 
   stopPublishers();
   unadvertiseServices();
   unsubscribeTopics();
 
-  delete joint_trajectory_;
+  if (joint_trajectory_)
+    delete joint_trajectory_;
 }
+
+bool JointTrajectoryController::init(mechanism::RobotState *robot, const ros::NodeHandle& n)
+{
+  // get xml from parameter server
+  string xml_string;
+  if (!n.getParam("xml", xml_string)){
+    ROS_ERROR("Could not read xml from parameter server");
+    return false;
+  }
+
+  TiXmlDocument xml_doc;
+  xml_doc.Parse(xml_string.c_str());
+  TiXmlElement *xml = xml_doc.FirstChildElement("controller");
+  if (!xml){
+    ROS_ERROR("could not parse xml %s",xml_string.c_str());
+    return false;
+  }
+
+  return initXml(robot, xml);
+}
+
 
 bool JointTrajectoryController::initXml(mechanism::RobotState * robot, TiXmlElement * config)
 {
@@ -143,11 +167,10 @@ void JointTrajectoryController::initializePublishers()
 
 void JointTrajectoryController::stopPublishers()
 {
-  controller_state_publisher_->stop();
-  diagnostics_publisher_->stop();
-
-  delete controller_state_publisher_;
-  delete diagnostics_publisher_;
+  if (controller_state_publisher_)
+    delete controller_state_publisher_;
+  if (diagnostics_publisher_)
+    delete diagnostics_publisher_;
 }
 
 void JointTrajectoryController::advertiseServices()

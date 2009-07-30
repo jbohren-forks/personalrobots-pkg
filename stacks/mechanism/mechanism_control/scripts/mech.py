@@ -19,15 +19,15 @@ class Tracker:
 
 def print_usage(exit_code = 0):
     print '''Commands:
-    list          - List active controllers
-    spawn         - Spawn and start a controller using the xml passed over stdin
-    spawn-stopped - Spawn a controller without starting it using the xml passed over stdin
-    kill <name>   - Kills the controller named <name>
-    start <name>  - Starts the controller named <name>
-    stop <name>   - Stops the controller named <name>
-    shutdown      - Ends whole process
-    list-joints   - List joints and actuators
-    list-types    - List controller Types'''
+    list                 - List active controllers
+    spawn <name>         - Spawn and start the controller named <name>
+    spawn-stopped <name> - Spawn the controller controller named <name> without starting it
+    kill <name>          - Kills the controller named <name>
+    start <name>         - Starts the controller named <name>
+    stop <name>          - Stops the controller named <name>
+    shutdown             - Ends whole process
+    list-joints          - List joints and actuators
+    list-types           - List controller Types'''
 
     sys.exit(exit_code)
 
@@ -45,23 +45,11 @@ if __name__ == '__main__':
         for c in sys.argv[2:]:
           mechanism.start_stop_controller(c, False)
     elif sys.argv[1] == 'sp' or sys.argv[1] == 'spawn':
-        xml = ""
-        if len(sys.argv) > 2:
-            f = open(sys.argv[2])
-            xml = f.read()
-            f.close()
-        else:
-            xml = sys.stdin.read()
-        mechanism.spawn_controller(xml, 1)
+        for c in sys.argv[2:]:
+            mechanism.spawn_controller(c, 1)
     elif sys.argv[1] == 'spawn-stopped':
-        xml = ""
-        if len(sys.argv) > 2:
-            f = open(sys.argv[2])
-            xml = f.read()
-            f.close()
-        else:
-            xml = sys.stdin.read()
-        mechanism.spawn_controller(xml, 0)
+        for c in sys.argv[2:]:
+            mechanism.spawn_controller(c, 0)
     elif sys.argv[1] == 'kl' or sys.argv[1] == 'kill':
         for c in sys.argv[2:]:
             mechanism.kill_controller(c)

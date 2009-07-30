@@ -40,7 +40,7 @@
 #include <kdl/frames.hpp>
 #include <ros/node.h>
 #include <robot_msgs/Twist.h>
-#include <mechanism_model/controller.h>
+#include <mechanism_control/controller.h>
 #include <tf/transform_datatypes.h>
 #include <robot_mechanism_controllers/cartesian_wrench_controller.h>
 #include <control_toolbox/pid.h>

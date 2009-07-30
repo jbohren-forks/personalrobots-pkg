@@ -36,7 +36,7 @@
 
 #include <ros/node.h>
 
-#include <mechanism_model/controller.h>
+#include <mechanism_control/controller.h>
 #include <robot_mechanism_controllers/joint_position_smoothing_controller.h>
 
 #include <realtime_tools/realtime_publisher.h>

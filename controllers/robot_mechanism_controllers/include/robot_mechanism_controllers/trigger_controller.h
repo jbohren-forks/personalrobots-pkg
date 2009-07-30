@@ -36,7 +36,7 @@
 #define TRIGGER_CONTROLLER_H
 
 #include <ros/node.h>
-#include <mechanism_model/controller.h>
+#include <mechanism_control/controller.h>
 #include <mechanism_model/robot.h>
 #include <robot_mechanism_controllers/SetWaveform.h>
 #include "hardware_interface/hardware_interface.h"

@@ -1,3 +1,7 @@
+torso_lift_effort_controller:
+  type: JointEffortController
+  joint: torso_lift_joint
+
 r_shoulder_pan_effort_controller:
   type: JointEffortController
   joint: r_shouler_pan_joint
@@ -41,3 +45,10 @@ l_wrist_flex_effort_controller:
 l_wrist_roll_effort_controller:
   type: JointEffortController
   joint: l_wrist_roll_joint
+
+r_gripper_effort_controller:
+  type: JointEffortController
+  joint: r_gripper_joint
+l_gripper_effort_controller:
+  type: JointEffortController
+  joint: l_gripper_joint

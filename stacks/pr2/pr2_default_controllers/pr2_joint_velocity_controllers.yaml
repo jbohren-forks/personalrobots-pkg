@@ -1,3 +1,9 @@
+torso_lift_velocity_gains: &torso_lift_velocity_gains
+  p: 2000000.0
+  d: 0.0
+  i: 1000.0
+  i_clamp: 1200.0
+
 shoulder_pan_velocity_gains: &shoulder_pan_velocity_gains
   p: 30
   i: 4.67
@@ -92,6 +98,12 @@ l_wrist_roll_velocity_controller:
   type: JointVelocityController
   joint: l_wrist_roll_joint
   pid: *wrist_roll_velocity_gains
+
+
+torso_lift_velocity_controller:
+  type: JointVelocityController
+  joint: torso_lift_joint
+  pid: *torso_lift_velocity_gains
 
 
 

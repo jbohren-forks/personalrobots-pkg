@@ -32,65 +32,65 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-/*
- * Author: Melonee Wise
- */
+#include <mechanism_control/controller_handle.h>
 
-#ifndef HEAD_POSITION_CONTROLLER_H
-#define HEAD_POSITION_CONTROLLER_H
 
-#include <ros/node.h>
-#include <ros/node_handle.h>
-#include <mechanism_control/controller.h>
-#include <tf/transform_listener.h>
-#include <tf/message_notifier.h>
-#include <tf/transform_datatypes.h>
-#include <robot_mechanism_controllers/joint_position_controller.h>
-#include <mechanism_msgs/JointStates.h>
-#include <robot_msgs/PointStamped.h>
-#include <boost/scoped_ptr.hpp>
+using namespace controller;
 
-namespace controller {
 
-class HeadPositionController : public Controller
+bool ControllerHandle::isRunning()
 {
-public:
-  HeadPositionController();
-  ~HeadPositionController();
+  return (state_ == RUNNING);
+}
 
-  bool initXml(mechanism::RobotState *robot_state, TiXmlElement *config);
-  bool init(mechanism::RobotState *robot, const ros::NodeHandle &n);
+void ControllerHandle::updateRequest()
+{
+  if (state_ == RUNNING)
+    update();
+}
 
-  bool starting();
-  void update();
-
-  // input of the controller
-  double pan_out_, tilt_out_;
-
-private:
+bool ControllerHandle::startRequest()
+{
+  bool ret = false;
   
-  ros::NodeHandle node_;
-  std::string pan_link_name_, tilt_link_name_;
-  mechanism::RobotState *robot_state_;
-  ros::Subscriber sub_command_;
+  // start succeeds even if the controller was already started
+  if (state_ == RUNNING || state_ == INITIALIZED){
+    ret = starting();
+    if (ret) state_ = RUNNING;
+  }
   
-  void command(const mechanism_msgs::JointStatesConstPtr& command_msg);
+  return ret;
+}
+
+
+bool ControllerHandle::stopRequest()
   
-  void pointHead(const tf::MessageNotifier<robot_msgs::PointStamped>::MessagePtr& point_msg);
-  void pointFrameOnHead(const tf::MessageNotifier<robot_msgs::PointStamped>::MessagePtr& point_msg);
+{
+  bool ret = false;
+  
+  // stop succeeds even if the controller was already stopped
+  if (state_ == RUNNING || state_ == INITIALIZED){
+    stopping();
+    state_ = INITIALIZED;
+  }
+  
+  return ret;
+}
 
-  tf::TransformListener tf_;
-  boost::scoped_ptr<tf::MessageNotifier<robot_msgs::PointStamped> > point_head_notifier_;
-  boost::scoped_ptr<tf::MessageNotifier<robot_msgs::PointStamped> > point_frame_on_head_notifier_;  
+bool ControllerHandle::initRequest(MechanismControl* mc, mechanism::RobotState *robot, const ros::NodeHandle &n)
+{
+  mc_ = mc;
 
-  // position controller
-  JointPositionController* head_pan_controller_;
-  JointPositionController* head_tilt_controller_;
+  if (state_ != CONSTRUCTED)
+    return false;
+  else
+  {
+    // initialize
+    if (!init(robot, n))
+      return false;
+    state_ = INITIALIZED;
+    
+    return true;
+  }
+}
 
-
-};
-
-} 
-
-
-#endif

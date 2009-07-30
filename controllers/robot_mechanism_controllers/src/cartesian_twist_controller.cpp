@@ -116,25 +116,15 @@ bool CartesianTwistController::init(mechanism::RobotState *robot_state, const ro
   node_.param("ff_rot", ff_rot_, 0.0) ;
 
   // get a pointer to the wrench controller
-  MechanismControl* mc;
-  if (!MechanismControl::Instance(mc)){
-    ROS_ERROR("CartesianTwistController: could not get instance of mechanism control");
-    return false;
-  }
   std::string output;
   if (!node_.getParam("output", output)){
     ROS_ERROR("CartesianTwistController: No ouptut name found on parameter server (namespace: %s)",
               node_.getNamespace().c_str());
     return false;
   }
-  if (!mc->getControllerByName<CartesianWrenchController>(output, wrench_controller_)){
+  if (!getController<CartesianWrenchController>(output, AFTER_ME, wrench_controller_)){
     ROS_ERROR("CartesianTwistController: could not connect to wrench controller %s (namespace: %s)",
               output.c_str(), node_.getNamespace().c_str());
-    ROS_DEBUG("Existing controllers:");
-    std::vector<std::string> existing;
-    mc->getControllerNames(existing);
-    for (size_t i = 0; i < existing.size(); ++i)
-      ROS_DEBUG("  %s", existing[i].c_str());
     return false;
   }
 

@@ -36,7 +36,7 @@
 
 namespace controller {
 
-//ROS_REGISTER_CONTROLLER(JointEffortController)
+ROS_REGISTER_CONTROLLER(JointEffortController)
 
 JointEffortController::JointEffortController()
 : joint_state_(NULL), command_(0), robot_(NULL)
@@ -45,7 +45,9 @@ JointEffortController::JointEffortController()
 
 JointEffortController::~JointEffortController()
 {
+  sub_command_.shutdown();
 }
+
 bool JointEffortController::init(mechanism::RobotState *robot, const std::string &joint_name)
 {
   if (!robot)
@@ -58,7 +60,7 @@ bool JointEffortController::init(mechanism::RobotState *robot, const std::string
   joint_state_ = robot_->getJointState(joint_name);
   if (!joint_state_)
   {
-    ROS_ERROR("JointEffortController could not find joint named \"%s\"\n",
+    ROS_ERROR("JointEffortController could not find joint named \"%s\"",
             joint_name.c_str());
     return false;
   }
@@ -77,7 +79,7 @@ bool JointEffortController::initXml(mechanism::RobotState *robot, TiXmlElement *
   TiXmlElement *j = config->FirstChildElement("joint");
   if (!j || !j->Attribute("name"))
   {
-    ROS_ERROR("JointEffortController was not given a joint\n");
+    ROS_ERROR("JointEffortController was not given a joint");
     return false;
   }
 
@@ -88,11 +90,41 @@ bool JointEffortController::initXml(mechanism::RobotState *robot, TiXmlElement *
 
 }
 
+bool JointEffortController::init(mechanism::RobotState *robot, const ros::NodeHandle &n)
+{
+  assert(robot);
+  node_ = n;
+  robot_ = robot;
+
+  std::string joint_name;
+  if (!node_.getParam("joint", joint_name))
+  {
+    ROS_ERROR("No joint given (namespace: %s)", node_.getNamespace().c_str());
+    return false;
+  }
+
+  if (!(joint_state_ = robot_->getJointState(joint_name)))
+  {
+    ROS_ERROR("Could not find joint \"%s\" (namespace: %s)",
+              joint_name.c_str(), node_.getNamespace().c_str());
+    return false;
+  }
+
+  sub_command_ = node_.subscribe<std_msgs::Float64>(
+    "command", 1, &JointEffortController::commandCB, this);
+
+  return true;
+}
+
 void JointEffortController::update()
 {
   joint_state_->commanded_effort_ += command_;
 }
 
+void JointEffortController::commandCB(const std_msgs::Float64ConstPtr& msg)
+{
+  command_ = msg->data;
+}
 
 //------ Joint Effort controller node --------
 ROS_REGISTER_CONTROLLER(JointEffortControllerNode)

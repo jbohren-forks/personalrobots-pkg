@@ -41,7 +41,7 @@
 #include <boost/thread/mutex.hpp>
 
 // Controllers
-#include <mechanism_model/controller.h>
+#include <mechanism_control/controller.h>
 #include <mechanism_model/joint.h>
 #include <robot_mechanism_controllers/joint_velocity_controller.h>
 

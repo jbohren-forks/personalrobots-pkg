@@ -35,7 +35,7 @@
 #define PROBE_CONTROLLER_H
 
 #include <ros/node.h>
-#include <mechanism_model/controller.h>
+#include <mechanism_control/controller.h>
 
 #include <robot_mechanism_controllers/JointControllerState.h>
 #include <robot_mechanism_controllers/JointTuningMsg.h>

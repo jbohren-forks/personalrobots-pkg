@@ -47,6 +47,8 @@
 
 namespace controller {
 
+ROS_REGISTER_CONTROLLER(CartesianHybridController)
+
 void TransformKDLToMsg(const KDL::Frame &k, robot_msgs::Pose &m)
 {
   tf::Transform tf;
@@ -81,6 +83,7 @@ CartesianHybridController::CartesianHybridController()
 
 bool CartesianHybridController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
+
   assert(robot);
   robot_ = robot;
   std::string name = config->Attribute("name") ? config->Attribute("name") : "";
@@ -90,17 +93,24 @@ bool CartesianHybridController::initXml(mechanism::RobotState *robot, TiXmlEleme
     return false;
   }
 
-  ros::Node *node = ros::Node::instance();
+  return init(robot, ros::NodeHandle(name));
+}
+
+bool CartesianHybridController::init(mechanism::RobotState *robot, const ros::NodeHandle &n)
+{
+  node_ = n;
+  assert(robot);
+  robot_ = robot;
 
   // Chain
 
   std::string root_link, tip_link;
-  if (!node->getParam(name + "/root_link", root_link)) {
-    ROS_ERROR("No root link specified");
+  if (!node_.getParam("root_link", root_link)) {
+    ROS_ERROR("No root link specified (namespace: %s)", node_.getNamespace().c_str());
     return false;
   }
-  if (!node->getParam(name + "/tip_link", tip_link)) {
-    ROS_ERROR("No tip link specified");
+  if (!node_.getParam("tip_link", tip_link)) {
+    ROS_ERROR("No tip link specified (namespace: %s)", node_.getNamespace().c_str());
     return false;
   }
   if (!chain_.init(robot->model_, root_link, tip_link))
@@ -111,75 +121,90 @@ bool CartesianHybridController::initXml(mechanism::RobotState *robot, TiXmlEleme
 
   control_toolbox::Pid temp_pid;
 
-  if (!temp_pid.initParam(name + "/pose/fb_trans"))
+  if (!temp_pid.init(ros::NodeHandle(node_, "pose/fb_trans")))
     return false;
   for (size_t i = 0; i < 3; ++i)
     pose_pids_[i] = temp_pid;
 
-  if (!temp_pid.initParam(name + "/pose/fb_rot"))
+  if (!temp_pid.init(ros::NodeHandle(node_, "pose/fb_rot")))
     return false;
   for (size_t i = 0; i < 3; ++i)
     pose_pids_[i+3] = temp_pid;
 
-  if (!temp_pid.initParam(name + "/twist/fb_trans"))
+  if (!temp_pid.init(ros::NodeHandle(node_, "twist/fb_trans")))
     return false;
   for (size_t i = 0; i < 3; ++i)
     twist_pids_[i] = temp_pid;
 
-  if (!temp_pid.initParam(name + "/twist/fb_rot"))
+  if (!temp_pid.init(ros::NodeHandle(node_, "twist/fb_rot")))
     return false;
   for (size_t i = 0; i < 3; ++i)
     twist_pids_[i+3] = temp_pid;
 
+  // Pid gain setters
+
+  for (int i = 0; i < 3; ++i)
+    pose_pid_tuner_.add(pose_pids_ + i);
+  pose_pid_tuner_.advertise(ros::NodeHandle(node_, "pose"));
+  for (int i = 3; i < 6; ++i)
+    pose_rot_pid_tuner_.add(pose_pids_ + i);
+  pose_rot_pid_tuner_.advertise(ros::NodeHandle(node_, "pose_rot"));
+  for (int i = 0; i < 3; ++i)
+    twist_pid_tuner_.add(twist_pids_ + i);
+  twist_pid_tuner_.advertise(ros::NodeHandle(node_, "twist"));
+  for (int i = 3; i < 6; ++i)
+    twist_rot_pid_tuner_.add(twist_pids_ + i);
+  twist_rot_pid_tuner_.advertise(ros::NodeHandle(node_, "twist_rot"));
+
+
   // Filter
 
-  if (node->hasParam(name + "/twist_filter"))
+  if (node_.hasParam("twist_filter"))
   {
     use_filter_ = true;
     std::string filter_xml;
-    node->getParam(name + "/twist_filter", filter_xml);
+    node_.getParam("twist_filter", filter_xml);
 
     TiXmlDocument doc;
     doc.Parse(filter_xml.c_str());
     if (!doc.RootElement())
     {
-      ROS_ERROR("%s: Could not parse twist_filter xml", name.c_str());
+      ROS_ERROR("Could not parse twist_filter xml (namespace: %s)",
+                node_.getNamespace().c_str());
       return false;
     }
 
     if (!twist_filter_.configure(6, doc.RootElement()))
       return false;
-    ROS_INFO("%s: Successfully configured twist_filter", name.c_str());
+    ROS_INFO("Successfully configured twist_filter (namespace: %s)",
+             node_.getNamespace().c_str());
   }
   else
     use_filter_ = false;
 
   // Initial mode
-
-  if (!node->getParam(name + "/initial_mode", initial_mode_))
-    initial_mode_ = manipulation_msgs::TaskFrameFormalism::FORCE;
+  node_.param("initial_mode", initial_mode_, manipulation_msgs::TaskFrameFormalism::FORCE);
 
   // Saturated velocity
-
-  node->param(name + "/saturated_velocity", saturated_velocity_, -1.0);
-  node->param(name + "/saturated_rot_velocity", saturated_rot_velocity_, -1.0);
+  node_.param("saturated_velocity", saturated_velocity_, -1.0);
+  node_.param("saturated_rot_velocity", saturated_rot_velocity_, -1.0);
 
   // Tool frame
 
-  if (node->hasParam(name + "/tool_frame"))
+  if (node_.hasParam("tool_frame"))
   {
-    if (!node->getParam(name + "/tool_frame/translation/x", tool_frame_offset_.p[0]) ||
-        !node->getParam(name + "/tool_frame/translation/y", tool_frame_offset_.p[1]) ||
-        !node->getParam(name + "/tool_frame/translation/z", tool_frame_offset_.p[2]))
+    if (!node_.getParam("tool_frame/translation/x", tool_frame_offset_.p[0]) ||
+        !node_.getParam("tool_frame/translation/y", tool_frame_offset_.p[1]) ||
+        !node_.getParam("tool_frame/translation/z", tool_frame_offset_.p[2]))
     {
       ROS_ERROR("Tool frame was missing elements of the translation");
       return false;
     }
     tf::Quaternion q;
-    if (!node->getParam(name + "/tool_frame/rotation/x", q[0]) ||
-        !node->getParam(name + "/tool_frame/rotation/y", q[1]) ||
-        !node->getParam(name + "/tool_frame/rotation/z", q[2]) ||
-        !node->getParam(name + "/tool_frame/rotation/w", q[3]))
+    if (!node_.getParam("tool_frame/rotation/x", q[0]) ||
+        !node_.getParam("tool_frame/rotation/y", q[1]) ||
+        !node_.getParam("tool_frame/rotation/z", q[2]) ||
+        !node_.getParam("tool_frame/rotation/w", q[3]))
     {
       ROS_ERROR("Tool frame was missing elements of the rotation");
       return false;
@@ -218,6 +243,7 @@ bool CartesianHybridController::initXml(mechanism::RobotState *robot, TiXmlEleme
 
   return true;
 }
+
 
 void CartesianHybridController::update()
 {
@@ -344,18 +370,18 @@ void CartesianHybridController::update()
     }
   }
 
-  // Finds the Jacobian with reference frame root, and reference point tool 
+  // Finds the Jacobian with reference frame root, and reference point tool
   KDL::ChainJntToJacSolver jac_solver(kdl_chain_);
   KDL::Jacobian ee_jacobian(kdl_chain_.getNrOfJoints());
-  KDL::Jacobian jacobian(kdl_chain_.getNrOfJoints());  
-  // get jacobian with reference frame root, and reference point tip 
+  KDL::Jacobian jacobian(kdl_chain_.getNrOfJoints());
+  // get jacobian with reference frame root, and reference point tip
   jac_solver.JntToJac(jnt_vel.q, ee_jacobian);
   // change reference point of jacobian from ee to tool
-  KDL::changeRefPoint(ee_jacobian, ee_in_root.value().M * tool_frame_offset_.p, jacobian);  
+  KDL::changeRefPoint(ee_jacobian, ee_in_root.value().M * tool_frame_offset_.p, jacobian);
 
   // scale the force component in wrench_desi_ to prevent it from saturating the joint efforts
   KDL::Wrench push_force(wrench_desi_.force, KDL::Vector::Zero());
-  push_force = task_frame_offset_.M * push_force;  
+  push_force = task_frame_offset_.M * push_force;
   KDL::JntArray jnt_eff_push(kdl_chain_.getNrOfJoints());
   for (size_t i = 0; i < kdl_chain_.getNrOfJoints(); ++i){
     jnt_eff_push(i) = 0;
@@ -372,7 +398,7 @@ void CartesianHybridController::update()
 
   // transform the reference frame from the task frame to the root frame
   KDL::Wrench wrench_in_root;
-  wrench_in_root = task_frame_offset_.M * wrench_desi_;  
+  wrench_in_root = task_frame_offset_.M * wrench_desi_;
 
   // jnt_eff = jacobian * wrench
   KDL::JntArray jnt_eff(kdl_chain_.getNrOfJoints());
@@ -464,6 +490,7 @@ bool CartesianHybridControllerNode::initXml(mechanism::RobotState *robot, TiXmlE
   if (!config->Attribute("name"))
     return false;
   name_ = config->Attribute("name");
+  node_ = ros::NodeHandle(config->Attribute("name"));
 
   ros::Node *node = ros::Node::instance();
 
@@ -481,18 +508,35 @@ bool CartesianHybridControllerNode::initXml(mechanism::RobotState *robot, TiXmlE
 
   node->advertiseService(name_ + "/set_tool_frame", &CartesianHybridControllerNode::setToolFrame, this);
 
-  for (int i = 0; i < 3; ++i)
-    pose_pid_tuner_.add(c_.pose_pids_ + i);
-  pose_pid_tuner_.advertise(name_ + "/pose");
-  for (int i = 3; i < 6; ++i)
-    pose_rot_pid_tuner_.add(c_.pose_pids_ + i);
-  pose_rot_pid_tuner_.advertise(name_ + "/pose_rot");
-  for (int i = 0; i < 3; ++i)
-    twist_pid_tuner_.add(c_.twist_pids_ + i);
-  twist_pid_tuner_.advertise(name_ + "/twist");
-  for (int i = 3; i < 6; ++i)
-    twist_rot_pid_tuner_.add(c_.twist_pids_ + i);
-  twist_rot_pid_tuner_.advertise(name_ + "/twist_rot");
+  // allocate vector in non-realtime
+  pub_state_->msg_.measured_torque.resize(c_.kdl_chain_.getNrOfJoints());
+  pub_state_->msg_.desired_torque.resize(c_.kdl_chain_.getNrOfJoints());
+
+  return true;
+
+}
+
+bool CartesianHybridControllerNode::init(mechanism::RobotState *robot, const ros::NodeHandle &n)
+{
+  node_ = n;
+  if (c_.init(robot, n))
+    return false;
+
+  task_frame_name_ = c_.kdl_chain_.getSegment(0).getName();
+
+  //node->subscribe(name_ + "/command", command_msg_, &CartesianHybridControllerNode::command, this, 5);
+  command_notifier_.reset(new tf::MessageNotifier<manipulation_msgs::TaskFrameFormalism>(
+                            TF,
+                            boost::bind(&CartesianHybridControllerNode::command, this, _1),
+                            node_.getNamespace() + "/command", c_.kdl_chain_.getSegment(0).getName(),
+                            100));
+
+  pub_state_.reset(new realtime_tools::RealtimePublisher<robot_mechanism_controllers::CartesianHybridState>
+                   (node_, "state", 1));
+  pub_tf_.reset(new realtime_tools::RealtimePublisher<tf::tfMessage>("/tf_message", 5));
+  pub_tf_->msg_.transforms.resize(1);
+
+  node_.advertiseService("set_tool_frame",&CartesianHybridControllerNode::setToolFrame, this);
 
   // allocate vector in non-realtime
   pub_state_->msg_.measured_torque.resize(c_.kdl_chain_.getNrOfJoints());
@@ -501,6 +545,7 @@ bool CartesianHybridControllerNode::initXml(mechanism::RobotState *robot, TiXmlE
   return true;
 
 }
+
 
 void CartesianHybridControllerNode::update()
 {
@@ -567,7 +612,7 @@ void CartesianHybridControllerNode::command(
     return;
   }
   tf::TransformTFToKDL(task_frame, c_.task_frame_offset_);
-  
+
   int old_modes[6];
   for (int i =0 ; i < 6; i++){
     old_modes[i] = c_.mode_[i];

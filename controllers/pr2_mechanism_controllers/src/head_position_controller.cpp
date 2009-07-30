@@ -91,11 +91,6 @@ bool HeadPositionController::init(mechanism::RobotState *robot_state, const ros:
   robot_state_ = robot_state;
 
   // get a pointer to the wrench controller
-  MechanismControl* mc;
-  if (!MechanismControl::Instance(mc)){
-    ROS_ERROR("HeadPositionController: could not get instance of mechanism control");
-    return false;
-  }
   std::string pan_output;
   if (!node_.getParam("pan_output", pan_output))
   {
@@ -103,7 +98,7 @@ bool HeadPositionController::init(mechanism::RobotState *robot_state, const ros:
               node_.getNamespace().c_str());
     return false;
   }
-  if (!mc->getControllerByName<JointPositionController>(pan_output, head_pan_controller_))
+  if (!getController<JointPositionController>(pan_output, AFTER_ME, head_pan_controller_))
   {
     ROS_ERROR("HeadPositionController: could not connect to the pan joint controller %s (namespace: %s)",
               pan_output.c_str(), node_.getNamespace().c_str());
@@ -117,7 +112,7 @@ bool HeadPositionController::init(mechanism::RobotState *robot_state, const ros:
               node_.getNamespace().c_str());
     return false;
   }
-  if (!mc->getControllerByName<JointPositionController>(tilt_output, head_tilt_controller_))
+  if (!getController<JointPositionController>(tilt_output, AFTER_ME, head_tilt_controller_))
   {
     ROS_ERROR("HeadPositionController: could not connect to the tilt joint controller %s (namespace: %s)",
               tilt_output.c_str(), node_.getNamespace().c_str());

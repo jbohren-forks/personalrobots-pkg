@@ -42,134 +42,51 @@
  */
 /***************************************************/
 
-#include <loki/Factory.h>
 #include <mechanism_model/robot.h>
-
-#include <tinyxml/tinyxml.h>
-#include <std_srvs/Empty.h>
-#include <ros/node.h>
 #include <ros/node_handle.h>
-
+#include <mechanism_control/mechanism_control.h>
+#include <mechanism_control/controller_handle.h>
 
 namespace controller
 {
 
-class Controller;
-typedef Loki::SingletonHolder
-<
-  Loki::Factory< Controller, std::string >,
-  Loki::CreateUsingNew,
-  Loki::LongevityLifetime::DieAsSmallObjectParent
-> ControllerFactory;
-
-  Loki::Factory< controller::Controller, std::string >& getControllerFactoryInstance();
-#define ROS_REGISTER_CONTROLLER(c) \
-  extern Loki::Factory< controller::Controller, std::string >& getControllerFactoryInstance(); \
-  controller::Controller *ROS_New_##c() { return new c(); }             \
-  class RosController##c { \
-  public: \
-    RosController##c() \
-    { \
-      controller::getControllerFactoryInstance().Register(#c, ROS_New_##c); \
-    } \
-    ~RosController##c() \
-    { \
-      controller::getControllerFactoryInstance().Unregister(#c); \
-    } \
-  }; \
-  static RosController##c ROS_CONTROLLER_##c;
-
-
-class Controller
+class Controller: public ControllerHandle
 {
 public:
-  enum {CONSTRUCTED, INITIALIZED, RUNNING};
-  int state_;
+  enum {BEFORE_ME, AFTER_ME};
 
-  Controller()
-  {
-    state_ = CONSTRUCTED;
-  }
-  virtual ~Controller()
-  {
-  }
+  Controller(){}
+  virtual ~Controller(){}
 
   // The starting method is called by the realtime thread just before
   // the first call to update.
   virtual bool starting() { return true; }
   virtual void update(void) = 0;
   virtual bool stopping() {return true;}
-  virtual bool initXml(mechanism::RobotState *robot, TiXmlElement *config) { return false; }
-  virtual bool init(mechanism::RobotState *robot, const ros::NodeHandle &n) { return false; }
-
-  bool isRunning()
+  virtual bool init(mechanism::RobotState *robot, const ros::NodeHandle &n) 
   {
-    return (state_ == RUNNING);
+    ROS_ERROR("Controller %s did not implement init function", n.getNamespace().c_str());
+    return false; 
   }
 
-  void updateRequest()
+  template<class ControllerType> bool getController(const std::string& name, int sched, ControllerType*& c)
   {
-    if (state_ == RUNNING)
-      update();
-  }
-
-  bool startRequest()
-  {
-    bool ret = false;
-
-    // start succeeds even if the controller was already started
-    if (state_ == RUNNING || state_ == INITIALIZED){
-      ret = starting();
-      if (ret) state_ = RUNNING;
-    }
-
-    return ret;
-  }
-
-
-  bool stopRequest()
-
-  {
-    bool ret = false;
-
-    // stop succeeds even if the controller was already stopped
-    if (state_ == RUNNING || state_ == INITIALIZED){
-      stopping();
-      state_ = INITIALIZED;
-    }
-
-    return ret;
-  }
-
-  bool initRequest(mechanism::RobotState *robot, const ros::NodeHandle &n)
-  {
-    if (state_ != CONSTRUCTED)
+    if (mc_ == NULL){
+      ROS_ERROR("No valid pointer to Mechanism Control exists");
       return false;
-    else
-    {
-      // initialize
-      if (!init(robot, n))
-        return false;
-      state_ = INITIALIZED;
-
-      return true;
     }
-  }
-
-  bool initXmlRequest(mechanism::RobotState *robot, TiXmlElement *config, std::string controller_name)
-  {
-    if (state_ != CONSTRUCTED)
+    if (!mc_->getControllerByName(name, c)){
+      ROS_ERROR("Could not find controller %s", name.c_str());
       return false;
-    else
-    {
-      // initialize
-      if (!initXml(robot, config))
-        return false;
-      state_ = INITIALIZED;
-
-      return true;
     }
-  }
+    if (sched == BEFORE_ME) before_list_.push_back(name);
+    else if (sched == AFTER_ME) after_list_.push_back(name);
+    else{
+      ROS_ERROR("No valid scheduling specified. Need BEFORE_ME or AFTER_ME in getController function");
+      return false;
+    }
+    return true;
+  };
 
 private:
   Controller(const Controller &c);

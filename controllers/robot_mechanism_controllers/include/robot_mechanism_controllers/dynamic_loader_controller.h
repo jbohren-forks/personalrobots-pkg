@@ -34,7 +34,7 @@
 #ifndef DYNAMIC_LOADER_CONTROLLER_H
 #define DYNAMIC_LOADER_CONTROLLER_H
 
-#include "mechanism_model/controller.h"
+#include "mechanism_control/controller.h"
 #include <ltdl.h>
 
 namespace controller {
@@ -103,7 +103,7 @@ private:
   std::vector<std::string> names_;
   lt_dlhandle handle_;
 
-  void loadLibrary(std::string& xml);
+  void loadLibrary(std::string& name);
   static void unloadLibrary(std::vector<std::string> names, lt_dlhandle handle);
 };
 

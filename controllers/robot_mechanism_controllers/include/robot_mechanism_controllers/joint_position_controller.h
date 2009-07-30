@@ -54,7 +54,7 @@
 
 #include <ros/node.h>
 
-#include <mechanism_model/controller.h>
+#include <mechanism_control/controller.h>
 #include <control_toolbox/pid.h>
 #include "misc_utils/advertised_service_guard.h"
 #include "misc_utils/subscription_guard.h"

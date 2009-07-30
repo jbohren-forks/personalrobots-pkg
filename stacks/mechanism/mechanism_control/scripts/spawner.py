@@ -36,19 +36,25 @@ import roslib, time
 roslib.load_manifest('mechanism_control')
 
 import rospy, sys
+import os.path
 from mechanism_control import mechanism
-from mechanism_msgs.srv import SpawnController, KillController
+from mechanism_msgs.srv import SpawnController, KillController, SwitchController
+
+from xml.dom.minidom import parse, parseString
+import xml.dom
 
 def print_usage(exit_code = 0):
-    print 'spawner.py [--stopped] <controllers_config>'
+    print 'spawner.py [--stopped] <controller names>'
     sys.exit(exit_code)
 
 rospy.wait_for_service('spawn_controller')
 spawn_controller = rospy.ServiceProxy('spawn_controller', SpawnController)
 kill_controller = rospy.ServiceProxy('kill_controller', KillController)
+switch_controller = rospy.ServiceProxy('switch_controller', SwitchController)
 
 spawned = []
 prev_handler = None
+
 
 def shutdown(sig, stackframe):
     global spawned
@@ -85,16 +91,46 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, shutdown)
 
     for c in range(argstart,len(argv)):
-        f = open(argv[c])
-        xml = f.read()
-        f.close()
-        resp = spawn_controller(xml, autostart)
+        name = argv[c]
+        if os.path.exists(name):
+            # Spawning with XML, put here for backwards compatibility
+            # so all out launch scripts don't break.
+            f = open(name)
+            doc = parse(f)
+            f.close()
 
-        for r in range(len(resp.ok)):
-            if resp.ok[r] != 0:
-                spawned.append(resp.name[r])
+            c_node = doc.firstChild
+            if c_node.tagName == 'controllers':
+                c_node = c_node.firstChild
+            while c_node:
+                if c_node.nodeType == xml.dom.Node.ELEMENT_NODE and c_node.tagName == 'controller':
+                    n = str(c_node.getAttribute('name'))
+                    type = str(c_node.getAttribute('type'))
+                    rospy.set_param(n + "/xml", c_node.toxml())
+                    rospy.set_param(n + "/type", type)
+                    resp = spawn_controller(n)
+                    if resp.ok != 0:
+                        spawned.append(n)
+                    else:
+                        time.sleep(1) # give error message a chance to get out
+                        rospy.logerr("Failed to spawn %s" % n)
+                c_node = c_node.nextSibling
+        else:
+            resp = spawn_controller(name)
+            if resp.ok != 0:
+                spawned.append(name)
             else:
-                print "Failed to spawn %s" % resp.name[r]
+                time.sleep(1) # give error message a chance to get out
+                rospy.logerr("Failed to spawn %s" % name)
 
-    print "Spawned controllers: %s" % ', '.join(spawned)
+    rospy.loginfo("Spawned controllers: %s" % ', '.join(spawned))
+
+    # start controllers is requested
+    if autostart:
+        resp = switch_controller(spawned, [], 2)
+        if resp.ok != 0:
+            rospy.loginfo("Started controllers: %s" % ', '.join(spawned))
+        else:
+            rospy.logerr("Failed to start controllers: %s" % ', '.join(spawned))
+
     rospy.spin()

@@ -8,8 +8,9 @@
   <node machine="realtime_root" pkg="pr2_etherCAT" type="pr2_etherCAT" args="-i eth0 -x robot_description" />
 
   <!-- Calibration -->
-  <node pkg="mechanism_bringup" type="calibrate.py" 
-  args="$(find pr2_default_controllers)/calibration_controllers/hcb_calibration_controller.xml" output="screen" />
+  <rosparam command="load" file="$(find pr2_default_controllers)/pr2_calibration_controllers.yaml" />
+  <node pkg="mechanism_bringup" type="calibrate.py" output="screen"
+        args="cal_head_pan cal_head_tilt cal_laser_tilt" />
 
   <!-- Robot state publisher -->
   <node machine="two" pkg="robot_state_publisher" type="state_publisher" name="robot_state_publisher">

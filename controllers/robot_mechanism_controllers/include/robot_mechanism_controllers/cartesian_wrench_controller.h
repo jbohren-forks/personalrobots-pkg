@@ -40,7 +40,7 @@
 #include <kdl/chainjnttojacsolver.hpp>
 #include <ros/node_handle.h>
 #include <robot_msgs/Wrench.h>
-#include <mechanism_model/controller.h>
+#include <mechanism_control/controller.h>
 #include <mechanism_model/chain.h>
 #include <tf/transform_datatypes.h>
 #include <diagnostic_msgs/DiagnosticMessage.h>

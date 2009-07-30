@@ -25,16 +25,16 @@ def list_controllers():
         for c in resp.controllers:
             print c
 
-def spawn_controller(xml, autostart):
+def spawn_controller(name, autostart):
     rospy.wait_for_service('spawn_controller')
     s = rospy.ServiceProxy('spawn_controller', SpawnController)
-    resp = s.call(SpawnControllerRequest(xml, autostart))
-    #print ','.join([str(k) for k in resp.ok])
-    for i in range(len(resp.ok)):
-        if resp.ok[i] != 0:
-            print "Spawned", resp.name[i]
-        else:
-            print "Error when spawning", resp.name[i]
+    resp = s.call(SpawnControllerRequest(name))
+    if resp.ok:
+        print "Spawned", name
+        if autostart:
+            start_stop_controller(name, 1)
+    else:
+        print "Error when spawning", name
 
 def kill_controller(name):
     rospy.wait_for_service('kill_controller')
@@ -50,11 +50,12 @@ def start_stop_controller(name, st):
     s = rospy.ServiceProxy('switch_controller', SwitchController)
     start = []
     stop = []
+    strictness = 1
     if st:
         start = [name]
     else:
         stop = [name]
-    resp = s.call(SwitchControllerRequest(start, stop))
+    resp = s.call(SwitchControllerRequest(start, stop, strictness))
     if resp.ok == 1:
         if st:
             print "Started %s successfully" % name

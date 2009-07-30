@@ -46,7 +46,7 @@
 
 #include <ros/node.h>
 #include <std_msgs/Float64MultiArray.h>
-#include <mechanism_model/controller.h>
+#include <mechanism_control/controller.h>
 #include <mechanism_model/chain.h>
 #include <tf/transform_datatypes.h>
 #include <diagnostic_msgs/DiagnosticMessage.h>
@@ -64,24 +64,24 @@ namespace controller {
     JointInverseDynamicsController();
     ~JointInverseDynamicsController();
 
-    bool initXml(mechanism::RobotState *robot_state, TiXmlElement *config);
-
+    bool init(mechanism::RobotState *robot_state, const ros::NodeHandle& n);
     bool starting();
     void update();
-
-    void command();
 
     // input of the controller
     KDL::JntArrayAcc jnt_posvelacc_desi_;
     KDL::Wrenches sgmnt_forces_;
 
   private:
+    ros::NodeHandle node_;
+
     int counter;
     bool publishDiagnostics(int level, const std::string& message);
 
     double last_time_;
-    ros::Node* node_;
-    std::string controller_name_;
+
+    ros::Publisher pub_pos_desi_, pub_pos_meas_, pub_vel_desi_, pub_vel_meas_;
+    ros::Publisher pub_acc_desi_, pub_acc_control_, pub_eff_calculated_, pub_eff_sent_;
     mechanism::RobotState *robot_state_;
     mechanism::Chain chain_;
   

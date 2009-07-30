@@ -38,6 +38,7 @@
 
 
 using namespace KDL;
+using namespace ros;
 
 static const bool use_constraint_controller = false;
 
@@ -47,8 +48,7 @@ namespace controller {
 ROS_REGISTER_CONTROLLER(CartesianTFFController)
 
 CartesianTFFController::CartesianTFFController()
-: node_(ros::Node::instance()),
-  robot_state_(NULL),
+: robot_state_(NULL),
   jnt_to_twist_solver_(NULL),
   mode_(6),
   value_(6),
@@ -59,28 +59,21 @@ CartesianTFFController::CartesianTFFController()
 
 
 CartesianTFFController::~CartesianTFFController()
+{}
+
+
+
+bool CartesianTFFController::init(mechanism::RobotState *robot_state, const ros::NodeHandle& n)
 {
-  node_->unsubscribe(controller_name_ + "/command");
-}
-
-
-
-bool CartesianTFFController::initXml(mechanism::RobotState *robot_state, TiXmlElement *config)
-{
-  // get the controller name from xml file
-  controller_name_ = config->Attribute("name") ? config->Attribute("name") : "";
-  if (controller_name_ == ""){
-    ROS_ERROR("CartesianTFFController: No controller name given in xml file");
-    return false;
-  }
+  node_ = n;
 
   // get name of root and tip from the parameter server
   std::string root_name, tip_name;
-  if (!node_->getParam(controller_name_+"/root_name", root_name)){
+  if (!node_.getParam("root_name", root_name)){
     ROS_ERROR("CartesianTFFController: No root name found on parameter server");
     return false;
   }
-  if (!node_->getParam(controller_name_+"/tip_name", tip_name)){
+  if (!node_.getParam("tip_name", tip_name)){
     ROS_ERROR("CartesianTFFController: No tip name found on parameter server");
     return false;
   }
@@ -100,53 +93,48 @@ bool CartesianTFFController::initXml(mechanism::RobotState *robot_state, TiXmlEl
 
   // twist to wrench
   double trans, rot;
-  node_->param(controller_name_+"/twist_to_wrench_trans", trans, 0.0);
+  node_.param("twist_to_wrench_trans", trans, 0.0);
   for (unsigned int i=0; i<3; i++)
     twist_to_wrench_[i] = trans;
-  node_->param(controller_name_+"/twist_to_wrench_trans", rot, 0.0);
+  node_.param("twist_to_wrench_trans", rot, 0.0);
   for (unsigned int i=3; i<6; i++)
     twist_to_wrench_[i] = rot;
 
   // get pid controllers
   control_toolbox::Pid pid_controller;
-  if (!pid_controller.initParam(controller_name_+"/vel_trans")) return false;
+  if (!pid_controller.init(NodeHandle(node_, "vel_trans"))) return false;
   for (unsigned int i=0; i<3; i++)
     vel_pid_controller_.push_back(pid_controller);
 
-  if (!pid_controller.initParam(controller_name_+"/vel_rot")) return false;
+  if (!pid_controller.init(NodeHandle(node_, "vel_rot"))) return false;
   for (unsigned int i=0; i<3; i++)
     vel_pid_controller_.push_back(pid_controller);
 
-  if (!pid_controller.initParam(controller_name_+"/pos_trans")) return false;
+  if (!pid_controller.init(NodeHandle(node_, "pos_trans"))) return false;
   for (unsigned int i=0; i<3; i++)
     pos_pid_controller_.push_back(pid_controller);
 
-  if (!pid_controller.initParam(controller_name_+"/pos_rot")) return false;
+  if (!pid_controller.init(NodeHandle(node_, "pos_rot"))) return false;
   for (unsigned int i=0; i<3; i++)
     pos_pid_controller_.push_back(pid_controller);
 
   // get a pointer to the wrench controller
-  MechanismControl* mc;
-  if (!MechanismControl::Instance(mc)){
-    ROS_ERROR("CartesianTFFController: could not get instance to mechanism control");
-    return false;
-  }
   std::string output;
-  if (!node_->getParam(controller_name_+"/output", output)){
+  if (!node_.getParam("output", output)){
     ROS_ERROR("CartesianTFFController: No ouptut name found on parameter server");
     return false;
   }
-  if (!mc->getControllerByName<CartesianWrenchController>(output, wrench_controller_)){
+  if (!getController<CartesianWrenchController>(output, AFTER_ME, wrench_controller_)){
     ROS_ERROR("CartesianTFFController: could not connect to wrench controller");
     return false;
   }
 
   // subscribe to tff commands
-  node_->subscribe(controller_name_ + "/command", tff_msg_,
-		   &CartesianTFFController::command, this, 1);
+  sub_command_ = node_.subscribe<manipulation_msgs::TaskFrameFormalism>("command", 1,
+                                 &CartesianTFFController::command, this);
 
   // realtime publisher for control state
-  state_position_publisher_.reset(new realtime_tools::RealtimePublisher<robot_msgs::Twist>(controller_name_+"/state/position", 1));
+  state_position_publisher_.reset(new realtime_tools::RealtimePublisher<robot_msgs::Twist>(node_, "state/position", 1));
 
   return true;
 }
@@ -160,7 +148,7 @@ bool CartesianTFFController::starting()
 
   // set initial modes and values
   for (unsigned int i=0; i<6; i++){
-    mode_[i] = tff_msg_.FORCE;
+    mode_[i] = manipulation_msgs::TaskFrameFormalism::FORCE;
     value_[i] = 0;
   }
 
@@ -205,11 +193,11 @@ void CartesianTFFController::update()
   // calculate desired wrench
   wrench_desi_ = Wrench::Zero();
   for (unsigned int i=0; i<6; i++){
-    if (mode_[i] == tff_msg_.FORCE)
+    if (mode_[i] == manipulation_msgs::TaskFrameFormalism::FORCE)
       wrench_desi_[i] = value_[i];
-    else if (mode_[i] ==  tff_msg_.VELOCITY)
+    else if (mode_[i] ==  manipulation_msgs::TaskFrameFormalism::VELOCITY)
       wrench_desi_[i] = twist_to_wrench_[i] * (value_[i] + vel_pid_controller_[i].updatePid(twist_meas_[i] - value_[i], dt));
-    else if (mode_[i] == tff_msg_.POSITION)
+    else if (mode_[i] == manipulation_msgs::TaskFrameFormalism::POSITION)
       wrench_desi_[i] = twist_to_wrench_[i] * (pos_pid_controller_[i].updatePid(position_[i] - value_[i], dt));
   }
 
@@ -233,21 +221,21 @@ void CartesianTFFController::update()
 }
 
 
-void CartesianTFFController::command()
+void CartesianTFFController::command(const manipulation_msgs::TaskFrameFormalismConstPtr& tff_msg)
 {
-  mode_[0] = trunc(tff_msg_.mode.vel.x);
-  mode_[1] = trunc(tff_msg_.mode.vel.y);
-  mode_[2] = trunc(tff_msg_.mode.vel.z);
-  mode_[3] = trunc(tff_msg_.mode.rot.x);
-  mode_[4] = trunc(tff_msg_.mode.rot.y);
-  mode_[5] = trunc(tff_msg_.mode.rot.z);
+  mode_[0] = trunc(tff_msg->mode.vel.x);
+  mode_[1] = trunc(tff_msg->mode.vel.y);
+  mode_[2] = trunc(tff_msg->mode.vel.z);
+  mode_[3] = trunc(tff_msg->mode.rot.x);
+  mode_[4] = trunc(tff_msg->mode.rot.y);
+  mode_[5] = trunc(tff_msg->mode.rot.z);
 
-  value_[0] = tff_msg_.value.vel.x;
-  value_[1] = tff_msg_.value.vel.y;
-  value_[2] = tff_msg_.value.vel.z;
-  value_[3] =  tff_msg_.value.rot.x;
-  value_[4] =  tff_msg_.value.rot.y;
-  value_[5] =  tff_msg_.value.rot.z;
+  value_[0] = tff_msg->value.vel.x;
+  value_[1] = tff_msg->value.vel.y;
+  value_[2] = tff_msg->value.vel.z;
+  value_[3] =  tff_msg->value.rot.x;
+  value_[4] =  tff_msg->value.rot.y;
+  value_[5] =  tff_msg->value.rot.z;
 }
 
 

@@ -53,25 +53,12 @@ CartesianPoseController::CartesianPoseController()
   jnt_to_pose_solver_(NULL),
   state_error_publisher_(NULL),
   state_pose_publisher_(NULL),
-  tf_(*ros::Node::instance()),
   command_notifier_(NULL)
 {}
 
 CartesianPoseController::~CartesianPoseController()
 {}
 
-
-bool CartesianPoseController::initXml(mechanism::RobotState *robot_state, TiXmlElement *config)
-{
-  // get the controller name from xml file
-  std::string controller_name = config->Attribute("name") ? config->Attribute("name") : "";
-  if (controller_name == ""){
-    ROS_ERROR("CartesianPoseController: No controller name given in xml file");
-    return false;
-  }
-
-  return init(robot_state, controller_name);
-}
 
 bool CartesianPoseController::init(mechanism::RobotState *robot_state, const ros::NodeHandle &n)
 {
@@ -110,23 +97,18 @@ bool CartesianPoseController::init(mechanism::RobotState *robot_state, const ros
     pid_controller_.push_back(pid_controller);
 
   // get a pointer to the twist controller
-  MechanismControl* mc;
-  if (!MechanismControl::Instance(mc)){
-    ROS_ERROR("CartesianPoseController: could not get instance to mechanism control");
-    return false;
-  }
   string output;
   if (!node_.getParam("output", output)){
     ROS_ERROR("No ouptut name found on parameter server (namespace: %s)", node_.getNamespace().c_str());
     return false;
   }
-  if (!mc->getControllerByName<CartesianTwistController>(output, twist_controller_)){
+  if (!getController<CartesianTwistController>(output, AFTER_ME, twist_controller_)){
     ROS_ERROR("Could not connect to twist controller \"%s\"", output.c_str());
     return false;
   }
 
   // subscribe to pose commands
-  command_notifier_.reset(new MessageNotifier<robot_msgs::PoseStamped>(&tf_, ros::Node::instance(),
+  command_notifier_.reset(new MessageNotifier<robot_msgs::PoseStamped>(tf_, 
                                                                        boost::bind(&CartesianPoseController::command, this, _1),
                                                                        node_.getNamespace() + "/command", root_name_, 10));
   // realtime publisher for control state

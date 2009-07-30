@@ -36,7 +36,7 @@
 
 #include <ros/node.h>
 
-#include <mechanism_model/controller.h>
+#include <mechanism_control/controller.h>
 #include <robot_mechanism_controllers/joint_position_smoothing_controller.h>
 
 #include <realtime_tools/realtime_publisher.h>
@@ -70,6 +70,7 @@ public:
   ~LaserScannerTrajController() ;
 
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
+  bool init(mechanism::RobotState *robot, const ros::NodeHandle &n);
 
   virtual void update() ;
 
@@ -134,6 +135,7 @@ public:
   void update() ;
 
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config) ;
+  bool init(mechanism::RobotState *robot, const ros::NodeHandle &n);
 
   // Message Callbacks
   void setPeriodicCmd() ;

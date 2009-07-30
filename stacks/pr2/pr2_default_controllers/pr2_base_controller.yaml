@@ -1,5 +1,7 @@
 caster_names: fr_caster_rotation_link fl_caster_rotation_link bl_caster_rotation_link br_caster_rotation_link
 
+type: Pr2BaseController
+
 caster_pid_gains: &caster_pid_gains
   p: 3.0
   d: 0.0

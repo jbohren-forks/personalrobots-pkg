@@ -32,7 +32,7 @@
 
 #include "ros/node.h"
 #include "boost/scoped_ptr.hpp"
-#include "mechanism_model/controller.h"
+#include "mechanism_control/controller.h"
 #include <kdl/chain.hpp>
 #include <kdl/frames.hpp>
 #include "mechanism_model/chain.h"
@@ -56,6 +56,7 @@ public:
   ~CartesianHybridController() {}
 
   virtual bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
+  virtual bool init(mechanism::RobotState *robot, const ros::NodeHandle &n);
   virtual void update(void);
   virtual bool starting();
 
@@ -72,6 +73,10 @@ public:
 
   control_toolbox::Pid pose_pids_[6];  // (x,y,z) position, then (x,y,z) rot
   control_toolbox::Pid twist_pids_[6];
+  control_toolbox::PidGainsSetter pose_pid_tuner_;
+  control_toolbox::PidGainsSetter pose_rot_pid_tuner_;
+  control_toolbox::PidGainsSetter twist_pid_tuner_;
+  control_toolbox::PidGainsSetter twist_rot_pid_tuner_;
 
   // x, y, z, rx, ry, rz
   int mode_[6];
@@ -91,6 +96,8 @@ public:
 
   bool use_filter_;
   filters::FilterChain<double> twist_filter_;
+
+  ros::NodeHandle node_;
 };
 
 class CartesianHybridControllerNode : public Controller
@@ -100,6 +107,7 @@ public:
   ~CartesianHybridControllerNode();
 
   virtual bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
+  virtual bool init(mechanism::RobotState *robot, const ros::NodeHandle &n);
   virtual void update(void);
   virtual bool starting() { return c_.starting(); }
 
@@ -109,10 +117,10 @@ public:
                     robot_srvs::SetPoseStamped::Response &resp);
 
 private:
+  ros::NodeHandle node_;
   std::string name_;
   tf::TransformListener TF;
   CartesianHybridController c_;
-  ros::Node *node_;
   //manipulation_msgs::TaskFrameFormalism command_msg_;
   boost::scoped_ptr<tf::MessageNotifier<manipulation_msgs::TaskFrameFormalism> > command_notifier_;
 
@@ -121,10 +129,6 @@ private:
   unsigned int loop_count_;
   boost::scoped_ptr<realtime_tools::RealtimePublisher<robot_mechanism_controllers::CartesianHybridState> > pub_state_;
   boost::scoped_ptr<realtime_tools::RealtimePublisher<tf::tfMessage> > pub_tf_;
-  control_toolbox::PidGainsSetter pose_pid_tuner_;
-  control_toolbox::PidGainsSetter pose_rot_pid_tuner_;
-  control_toolbox::PidGainsSetter twist_pid_tuner_;
-  control_toolbox::PidGainsSetter twist_rot_pid_tuner_;
 };
 
 }

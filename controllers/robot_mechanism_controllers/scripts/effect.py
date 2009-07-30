@@ -42,14 +42,12 @@ roslib.load_manifest('mechanism_control')
 import rospy
 from std_msgs.msg import *
 from mechanism_control import mechanism
-from mechanism_msgs.srv import SpawnController, KillController
+from mechanism_msgs.srv import SpawnController, KillController, SwitchController
 
 
-def xml_for(joint):
-    return "\
-<controller name=\"%s\" type=\"JointEffortControllerNode\">\
-<joint name=\"%s\" />\
-</controller>" % (CONTROLLER_NAME, joint)
+def load_joint_config(joint_name):
+    rospy.set_param(CONTROLLER_NAME+'/type', 'JointEffortController')
+    rospy.set_param(CONTROLLER_NAME+'/joint', joint_name)
 
 def main():
     if len(sys.argv) < 2:
@@ -59,12 +57,20 @@ def main():
 
     rospy.init_node('effect', anonymous=True)
     rospy.wait_for_service('spawn_controller')
+    rospy.wait_for_service('kill_controller')
+    rospy.wait_for_service('switch_controller')
     spawn_controller = rospy.ServiceProxy('spawn_controller', SpawnController)
     kill_controller = rospy.ServiceProxy('kill_controller', KillController)
+    switch_controller = rospy.ServiceProxy('switch_controller', SwitchController)
 
-    resp = spawn_controller(xml_for(joint), 1)
-    if len(resp.ok) < 1 or not resp.ok[0]:
+    load_joint_config(joint)
+    resp = spawn_controller(CONTROLLER_NAME)
+    if not resp.ok:
         print "Failed to spawn effort controller"
+        sys.exit(1)
+    resp = switch_controller([CONTROLLER_NAME],[],2)
+    if not resp.ok:
+        print "Failed to start effort controller"
         sys.exit(1)
 
     pub = rospy.Publisher("%s/command" % CONTROLLER_NAME, Float64)
@@ -75,7 +81,10 @@ def main():
             effort = float(sys.stdin.readline().strip())
             pub.publish(Float64(effort))
     finally:
-        kill_controller(CONTROLLER_NAME)
+        resp = kill_controller(CONTROLLER_NAME)
+        if not resp.ok:
+            print "Failed to kill effort controller"
+            sys.exit(1)
 
 
 if __name__ == '__main__':

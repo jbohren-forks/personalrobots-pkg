@@ -46,7 +46,7 @@
 
 #include <ros/node.h>
 #include <vector>
-#include <mechanism_model/controller.h>
+#include <mechanism_control/controller.h>
 #include <control_toolbox/pid.h>
 
 // Services

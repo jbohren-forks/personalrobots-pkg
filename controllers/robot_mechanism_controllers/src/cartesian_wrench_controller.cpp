@@ -45,7 +45,7 @@ ROS_REGISTER_CONTROLLER(CartesianWrenchController)
 CartesianWrenchController::CartesianWrenchController()
 : robot_state_(NULL),
   jnt_to_jac_solver_(NULL),
-  diagnostics_publisher_("/diagnostics", 2)
+  diagnostics_publisher_(node_, "/diagnostics", 2)
 {}
 
 

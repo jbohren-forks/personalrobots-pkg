@@ -1,4 +1,10 @@
 string[] start_controllers
 string[] stop_controllers
+int32 strictness
+int32 BEST_EFFORT=1
+int32 STRICT=2
 ---
 byte ok
+
+
+

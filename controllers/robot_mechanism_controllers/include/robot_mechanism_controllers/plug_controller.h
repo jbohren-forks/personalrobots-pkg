@@ -31,8 +31,8 @@
  * Author: Melonee Wise
  */
 
-#ifndef ENDEFFECTOR_CONSTRAINT_CONTROLLER_H
-#define ENDEFFECTOR_CONSTRAINT_CONTROLLER_H
+#ifndef PLUG_CONTROLLER_H
+#define PLUG_CONTROLLER_H
 
 #include <vector>
 #include "boost/scoped_ptr.hpp"
@@ -42,39 +42,66 @@
 #include "kdl/chainfksolver.hpp"
 #include "ros/node.h"
 #include "robot_msgs/Wrench.h"
+#include "robot_msgs/PoseStamped.h"
+#include "robot_msgs/Transform.h"
+#include "robot_mechanism_controllers/PlugInternalState.h"
+#include "robot_srvs/SetPoseStamped.h"
+#include "control_toolbox/pid.h"
 #include "misc_utils/subscription_guard.h"
 #include "mechanism_control/controller.h"
 #include "tf/transform_datatypes.h"
+#include "tf/transform_listener.h"
 #include "misc_utils/advertised_service_guard.h"
-#include "joy/Joy.h"
+#include "realtime_tools/realtime_publisher.h"
+
+#include "Eigen/Geometry"
 #include "Eigen/LU"
 #include "Eigen/Core"
+
 #include <visualization_msgs/Marker.h>
 
 
 namespace controller {
 
-class EndeffectorConstraintController : public Controller
+class PlugController : public Controller
 {
 public:
-  EndeffectorConstraintController();
-  ~EndeffectorConstraintController();
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+  PlugController();
+  ~PlugController();
 
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
   void update();
   void computeConstraintJacobian();
   void computeConstraintNullSpace();
+
+  void setToolOffset(const tf::Transform &);
+
+  std::string root_name_;
+
   // input of the controller
   KDL::Wrench wrench_desi_;
   Eigen::Matrix<float,6,1> task_wrench_;
+  Eigen::Vector3f outlet_pt_;
+  Eigen::Vector3f outlet_norm_; // this must be normalized
+
+  KDL::Frame endeffector_frame_;
+  KDL::Frame desired_frame_;
+
+  mechanism::Chain chain_;
+  KDL::Chain kdl_chain_;
+
+  double dist_to_line_;
+  double f_r_;
+  double f_roll_;
+  double f_pitch_;
+  double f_yaw_;
+  KDL::Twist pose_error_;
 
 private:
 
   mechanism::RobotState *robot_;
-
-  // kdl stuff for kinematics
-  mechanism::Chain chain_;
-  KDL::Chain kdl_chain_;
+  std::string controller_name_;
   boost::scoped_ptr<KDL::ChainJntToJacSolver> jnt_to_jac_solver_;
   boost::scoped_ptr<KDL::ChainFkSolverPos> jnt_to_pose_solver_;
 
@@ -94,46 +121,59 @@ private:
   Eigen::MatrixXf constraint_torq_;
   Eigen::MatrixXf joint_constraint_torq_;
   Eigen::MatrixXf task_torq_;
-  KDL::Frame endeffector_frame_;
-  KDL::Frame desired_frame_;
 
   // some parameters to define the constraint
-  double wall_x;
-  double elbow_limit;
-  double threshold_x;
-  double wall_r;
-  double threshold_r;
-  double f_x_max;
+
+  double upper_arm_limit;
+  double upper_arm_dead_zone;
   double f_r_max;
   double f_pose_max;
   double f_limit_max;
-
-  double desired_roll_;
-  double desired_pitch_;
-  double desired_yaw_;
+  double last_time_;
   bool initialized_;
+
+
+
+
+  control_toolbox::Pid roll_pid_;       /**< Internal PID controller. */
+  control_toolbox::Pid pitch_pid_;       /**< Internal PID controller. */
+  control_toolbox::Pid yaw_pid_;       /**< Internal PID controller. */
+  control_toolbox::Pid line_pid_;       /**< Internal PID controller. */
 };
 
 
-class EndeffectorConstraintControllerNode : public Controller
+class PlugControllerNode : public Controller
 {
  public:
-  EndeffectorConstraintControllerNode();
-  ~EndeffectorConstraintControllerNode();
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+
+  PlugControllerNode();
+  ~PlugControllerNode();
 
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
   void update();
   void command();
+  void outletPose();
+
+  bool setToolFrame(robot_srvs::SetPoseStamped::Request &req,
+                    robot_srvs::SetPoseStamped::Response &resp);
 
  private:
   std::string topic_;
   ros::Node *node_;
-  EndeffectorConstraintController controller_;
+  PlugController controller_;
   SubscriptionGuard guard_command_;
+  SubscriptionGuard guard_outlet_pose_;
+  AdvertisedServiceGuard guard_set_tool_frame_;
 
   robot_msgs::Wrench wrench_msg_;
-
+  robot_msgs::PoseStamped outlet_pose_msg_;
   unsigned int loop_count_;
+
+  tf::TransformListener TF;                    /**< The transform for converting from point to head and tilt frames. */
+  realtime_tools::RealtimePublisher <robot_msgs::Transform>* current_frame_publisher_;
+  realtime_tools::RealtimePublisher <robot_mechanism_controllers::PlugInternalState>* internal_state_publisher_;
+
 };
 
 } // namespace

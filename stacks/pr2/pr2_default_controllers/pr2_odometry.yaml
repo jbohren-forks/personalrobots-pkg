@@ -1,3 +1,5 @@
 caster_names: fr_caster_rotation_link fl_caster_rotation_link bl_caster_rotation_link br_caster_rotation_link
 
+type: Pr2Odometry
+
 expected_publish_time: 0.03

@@ -36,7 +36,7 @@
  */
 
 #include <mechanism_model/robot.h>
-#include <mechanism_model/controller.h>
+#include <mechanism_control/controller.h>
 #include <robot_msgs/PoseDot.h>
 #include <robot_msgs/Point.h>
 #include <control_toolbox/filters.h>

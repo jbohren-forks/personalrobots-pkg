@@ -57,7 +57,7 @@ JointStateListener::JointStateListener(const KDL::Tree& tree)
   
   // subscribe to mechanism state
   string joint_state_topic;
-  n_.param("~joint_state_topic", joint_state_topic, string("/joint_states"));
+  n_.param("~joint_state_topic", joint_state_topic, string("joint_states"));
   joint_state_sub_ = n_.subscribe(joint_state_topic, 1, &JointStateListener::callbackJointState, this);;
 };
 

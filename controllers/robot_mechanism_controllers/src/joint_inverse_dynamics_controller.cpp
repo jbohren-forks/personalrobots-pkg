@@ -39,6 +39,7 @@
 #include <filters/filter_chain.h>
 
 using namespace KDL;
+using namespace ros;
 
 namespace controller {
 
@@ -46,64 +47,51 @@ namespace controller {
 ROS_REGISTER_CONTROLLER(JointInverseDynamicsController);
 
 JointInverseDynamicsController::JointInverseDynamicsController()
-: node_(ros::Node::instance()),
-  robot_state_(NULL),
-  id_solver_(NULL),
-  diagnostics_publisher_("/diagnostics", 2)
+  :robot_state_(NULL),
+   id_solver_(NULL),
+   diagnostics_publisher_(node_, "/diagnostics", 2)
 {}
 
 
 
 JointInverseDynamicsController::~JointInverseDynamicsController()
+{}
+
+
+
+
+bool JointInverseDynamicsController::init(mechanism::RobotState *robot_state, const NodeHandle& n)
 {
-  node_->unsubscribe(controller_name_ + "/command");
-  /*
-  delete acc_vel_filter_;
-  delete vel_filter_;
-  delete acc_filter_;
-  */
-}
-
-
-
-
-bool JointInverseDynamicsController::initXml(mechanism::RobotState *robot_state, TiXmlElement *config)
-{
-  // get the controller name from xml file
-  controller_name_ = config->Attribute("name") ? config->Attribute("name") : "";
-  if (controller_name_ == ""){
-    ROS_ERROR("JointInverseDynamicsController: No controller name given in xml file");
-    return false;
-  }
+  node_ = n;
 
   // get name of root and tip from the parameter server
   std::string root_name, tip_name;
-  if (!node_->getParam(controller_name_+"/root_name", root_name)){
+  if (!node_.getParam("root_name", root_name)){
     ROS_ERROR("JointInverseDynamicsController: No root name found on parameter server");
     return false;
   }
-  if (!node_->getParam(controller_name_+"/tip_name", tip_name)){
+  if (!node_.getParam("tip_name", tip_name)){
     ROS_ERROR("JointInverseDynamicsController: No tip name found on parameter server");
     return false;
   }
 
-  if (!node_->getParam(controller_name_+"/Kp_acc", Kp_acc_)){
+  if (!node_.getParam("Kp_acc", Kp_acc_)){
     ROS_ERROR("JointInverseDynamicsController: No Kp_acc found on parameter server");
     return false;
   }
-  if (!node_->getParam(controller_name_+"/Kv_acc", Kv_acc_)){
+  if (!node_.getParam("Kv_acc", Kv_acc_)){
     ROS_ERROR("JointInverseDynamicsController: No Kv_acc found on parameter server");
     return false;
   }
-  if (!node_->getParam(controller_name_+"/Kp_tau", Kp_tau_)){
+  if (!node_.getParam("Kp_tau", Kp_tau_)){
     ROS_ERROR("JointInverseDynamicsController: No Kp_tau found on parameter server");
     return false;
   }
-  if (!node_->getParam(controller_name_+"/Kv_tau", Kv_tau_)){
+  if (!node_.getParam("Kv_tau", Kv_tau_)){
     ROS_ERROR("JointInverseDynamicsController: No Kv_tau found on parameter server");
     return false;
   }
-  if (!node_->getParam(controller_name_+"/Kf_acc", Kf_acc_)){
+  if (!node_.getParam("Kf_acc", Kf_acc_)){
     ROS_ERROR("JointInverseDynamicsController: No Kfa found on parameter server");
     return false;
   }
@@ -147,14 +135,14 @@ bool JointInverseDynamicsController::initXml(mechanism::RobotState *robot_state,
 
 
   //advertise our messages:
-  node_->advertise<std_msgs::Float64MultiArray>("pos_desired",100);
-  node_->advertise<std_msgs::Float64MultiArray>("pos_meas",100);
-  node_->advertise<std_msgs::Float64MultiArray>("vel_desired",100);
-  node_->advertise<std_msgs::Float64MultiArray>("vel_meas",100);
-  node_->advertise<std_msgs::Float64MultiArray>("acc_desired",100);
-  node_->advertise<std_msgs::Float64MultiArray>("acc_control",100);
-  node_->advertise<std_msgs::Float64MultiArray>("torque_calculated",100);
-  node_->advertise<std_msgs::Float64MultiArray>("torque_send",100);
+  pub_pos_desi_ = node_.advertise<std_msgs::Float64MultiArray>("pos_desired",100);
+  pub_pos_meas_ = node_.advertise<std_msgs::Float64MultiArray>("pos_meas",100);
+  pub_vel_desi_ = node_.advertise<std_msgs::Float64MultiArray>("vel_desired",100);
+  pub_vel_meas_ = node_.advertise<std_msgs::Float64MultiArray>("vel_meas",100);
+  pub_acc_desi_ = node_.advertise<std_msgs::Float64MultiArray>("acc_desired",100);
+  pub_acc_control_ = node_.advertise<std_msgs::Float64MultiArray>("acc_control",100);
+  pub_eff_calculated_ = node_.advertise<std_msgs::Float64MultiArray>("effort_calculated",100);
+  pub_eff_sent_ = node_.advertise<std_msgs::Float64MultiArray>("effort_send",100);
 
   jnt_msg_.set_data_size(kdl_chain_.getNrOfJoints());
 
@@ -176,7 +164,6 @@ bool JointInverseDynamicsController::starting()
 
 void JointInverseDynamicsController::update()
 {
-  //std::cout<<"JointInverseDynamicsController::update"<<std::endl;
   // check if joints are calibrated
   if (!chain_.allCalibrated(robot_state_->joint_states_)){
     publishDiagnostics(2, "Not all joints are calibrated");
@@ -231,36 +218,34 @@ void JointInverseDynamicsController::update()
   for(unsigned int i=0;i<kdl_chain_.getNrOfJoints();i++)
     jnt_msg_std_[i]=jnt_tau_(i);
   jnt_msg_.set_data_vec(jnt_msg_std_);
-  node_->publish("torque_calculated",jnt_msg_);
+  pub_eff_calculated_.publish(jnt_msg_);
   
   chain_.getEfforts(robot_state_->joint_states_,jnt_msg_std_);
   jnt_msg_.set_data_vec(jnt_eff_std_);
-  node_->publish("torque_send",jnt_msg_);
+  pub_eff_sent_.publish(jnt_msg_);
 
   for(unsigned int i=0;i<kdl_chain_.getNrOfJoints();i++)
     jnt_msg_std_[i]=jnt_posvelacc_desi_.qdot(i);
   jnt_msg_.set_data_vec(jnt_msg_std_);
-  node_->publish("vel_desired",jnt_msg_);
-
-  for(unsigned int i=0;i<kdl_chain_.getNrOfJoints();i++)
-    jnt_msg_std_[i]=jnt_posvelacc_desi_.qdotdot(i);
-  jnt_msg_.set_data_vec(jnt_msg_std_);
-  node_->publish("acc_desired",jnt_msg_);
-
-  for(unsigned int i=0;i<kdl_chain_.getNrOfJoints();i++)
-    jnt_msg_std_[i]=jnt_acc_out_(i);
-  jnt_msg_.set_data_vec(jnt_eff_std_);
-  node_->publish("acc_control",jnt_msg_);
+  pub_vel_desi_.publish(jnt_msg_);
 
   for(unsigned int i=0;i<kdl_chain_.getNrOfJoints();i++)
     jnt_msg_std_[i]=jnt_posvel_meas_.qdot(i);
   jnt_msg_.set_data_vec(jnt_eff_std_);
-  node_->publish("acc_control",jnt_msg_);
+  pub_vel_meas_.publish(jnt_msg_);
   
+  for(unsigned int i=0;i<kdl_chain_.getNrOfJoints();i++)
+    jnt_msg_std_[i]=jnt_posvelacc_desi_.qdotdot(i);
+  jnt_msg_.set_data_vec(jnt_msg_std_);
+  pub_acc_desi_.publish(jnt_msg_);
+
+  for(unsigned int i=0;i<kdl_chain_.getNrOfJoints();i++)
+    jnt_msg_std_[i]=jnt_acc_out_(i);
+  jnt_msg_.set_data_vec(jnt_eff_std_);
+  pub_acc_control_.publish(jnt_msg_);
+
   // set effort to joints
   chain_.setEfforts(jnt_tau_, robot_state_->joint_states_);
-  
-
 }
 
 
@@ -284,14 +269,5 @@ bool JointInverseDynamicsController::publishDiagnostics(int level, const std::st
 }
 
 
-
-void JointInverseDynamicsController::command()
-{
-  /*
-  //copy to jnt_vel_ and apply filter for to calculate jnt_acc_
-  for(unsigned int i=0;i<jnt_vel_.rows();i++)
-    jnt_vel_(i)=jnt_vel_msg_.data[i];
-  */
-}
 
 }; // namespace

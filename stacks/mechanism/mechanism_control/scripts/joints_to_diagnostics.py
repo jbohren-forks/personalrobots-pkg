@@ -1,0 +1,66 @@
+#! /usr/bin/python
+# Copyright (c) 2009, Willow Garage, Inc.
+# All rights reserved.
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+# 
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of the Willow Garage, Inc. nor the names of its
+#       contributors may be used to endorse or promote products derived from
+#       this software without specific prior written permission.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+
+import roslib; roslib.load_manifest('mechanism_control')
+import rospy
+
+from mechanism_msgs.msg import JointStates
+from diagnostic_msgs.msg import *
+
+def joint_to_diag(js):
+    d = DiagnosticStatus()
+    d.level = 0
+    d.message = ''
+    if not js.is_calibrated:
+        d.level = 1
+        d.message = 'UNCALIBRATED'
+    d.name = "Joint (%s)" % js.name
+    d.values = [
+        DiagnosticValue(js.position, 'Position'),
+        DiagnosticValue(js.velocity, 'Velocity'),
+        DiagnosticValue(js.applied_effort, 'Applied Effort'),
+        DiagnosticValue(js.commanded_effort, 'Commanded Effort'),
+        DiagnosticValue(js.is_calibrated, 'Calibrated')]
+    return d
+
+rospy.init_node('joints_to_diagnostics')
+pub_diag = rospy.Publisher('/diagnostics', DiagnosticMessage)
+
+last_publish_time = rospy.Time(0.0)
+def state_cb(j):
+    global last_publish_time
+    now = rospy.get_rostime()
+    if (now - last_publish_time).to_seconds() > 1.0:
+        d = DiagnosticMessage()
+        d.header.stamp = j.header.stamp
+        d.status = [joint_to_diag(js) for js in j.joints]
+        pub_diag.publish(d)
+        last_publish_time = now
+
+rospy.Subscriber('/joint_states', JointStates, state_cb)
+rospy.spin()

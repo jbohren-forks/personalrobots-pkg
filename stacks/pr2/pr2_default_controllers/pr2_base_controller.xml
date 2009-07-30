@@ -1,5 +1,0 @@
-<?xml version="1.0"?>
-
-<controllers>
-  <controller name="pr2_base_controller" type="Pr2BaseController"/>
-</controllers>

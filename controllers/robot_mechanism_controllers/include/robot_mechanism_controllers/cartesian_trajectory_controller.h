@@ -43,7 +43,7 @@
 #include <tf/message_notifier.h>
 #include <ros/node.h>
 #include <robot_msgs/PoseStamped.h>
-#include <mechanism_model/controller.h>
+#include <mechanism_control/controller.h>
 #include <robot_mechanism_controllers/cartesian_pose_controller.h>
 #include <deprecated_srvs/MoveToPose.h>
 #include <std_srvs/Empty.h>
@@ -58,11 +58,12 @@ public:
   CartesianTrajectoryController();
   ~CartesianTrajectoryController();
 
-  bool initXml(mechanism::RobotState *robot_state, TiXmlElement *config);
+  bool init(mechanism::RobotState *robot_state, const ros::NodeHandle& n);
 
   bool starting();
   void update();
-  bool moveTo(const robot_msgs::PoseStamped& pose, const robot_msgs::Twist& tolerance=robot_msgs::Twist(), double duration=0);
+  bool moveTo(const robot_msgs::PoseStamped& pose, 
+              const robot_msgs::Twist& tolerance=robot_msgs::Twist(), double duration=0);
 
 
 private:
@@ -76,7 +77,9 @@ private:
   bool moveTo(deprecated_srvs::MoveToPose::Request &req, deprecated_srvs::MoveToPose::Response &resp);
   bool preempt(std_srvs::Empty::Request &req, std_srvs::Empty::Response &resp);
 
-  ros::Node* node_;
+  ros::NodeHandle node_;
+  ros::ServiceServer move_to_srv_, preempt_srv_;
+
   std::string controller_name_;
   double last_time_, time_started_, time_passed_, max_duration_;
   bool is_moving_, request_preempt_, exceed_tolerance_;
@@ -100,7 +103,7 @@ private:
   CartesianPoseController* pose_controller_;
 
   tf::TransformListener tf_;
-  tf::MessageNotifier<robot_msgs::PoseStamped>* command_notifier_;
+  boost::scoped_ptr<tf::MessageNotifier<robot_msgs::PoseStamped> > command_notifier_;
 
   std::string root_name_;
 };

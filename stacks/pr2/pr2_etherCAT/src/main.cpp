@@ -195,7 +195,7 @@ void *controlLoop(void *)
   ec.init(g_options.interface_, g_options.allow_unprogrammed_, g_options.motor_model_);
 
   // Create mechanism control
-  MechanismControl mc(ec.hw_);
+  controller::MechanismControl mc(ec.hw_);
 
   // Load robot description
   TiXmlDocument xml;

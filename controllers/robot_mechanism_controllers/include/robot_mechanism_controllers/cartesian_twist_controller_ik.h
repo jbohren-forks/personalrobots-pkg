@@ -43,7 +43,7 @@
 #include <kdl/chainiksolver.hpp>
 #include <ros/node.h>
 #include <robot_msgs/Twist.h>
-#include <mechanism_model/controller.h>
+#include <mechanism_control/controller.h>
 #include <mechanism_model/chain.h>
 #include <tf/transform_datatypes.h>
 #include <control_toolbox/pid.h>
@@ -58,12 +58,11 @@ namespace controller {
     CartesianTwistControllerIk();
     ~CartesianTwistControllerIk();
 
-    bool initXml(mechanism::RobotState *robot_state, TiXmlElement *config);
-
+    bool init(mechanism::RobotState *robot_state, const ros::NodeHandle& n);
     bool starting();
     void update();
 
-    void command();
+    void command(const robot_msgs::TwistConstPtr& twist_msg);
 
     // input of the controller
     KDL::Twist twist_desi_;
@@ -71,8 +70,9 @@ namespace controller {
   private:
     KDL::Twist twist_meas_,error,twist_out_;
   
-    ros::Node* node_;
-    std::string controller_name_;
+    ros::NodeHandle node_;
+    ros::Subscriber sub_command_;
+
     double last_time_,ff_trans_,ff_rot_;
 
     // pid controllers
@@ -89,8 +89,6 @@ namespace controller {
     KDL::JntArrayVel          jnt_posvel_;
 
     JointInverseDynamicsController* id_controller_;
-
-    robot_msgs::Twist twist_msg_;
   };
 
 } // namespace

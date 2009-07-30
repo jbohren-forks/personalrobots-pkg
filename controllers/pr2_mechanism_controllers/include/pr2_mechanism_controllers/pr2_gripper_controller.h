@@ -37,7 +37,7 @@
 
 #include <ros/node.h>
 #include <mechanism_model/robot.h>
-#include <mechanism_model/controller.h>
+#include <mechanism_control/controller.h>
 #include <robot_mechanism_controllers/joint_effort_controller.h>
 #include <pr2_mechanism_controllers/GripperControllerCmd.h>
 #include <pr2_msgs/GripperControllerState.h>

@@ -33,10 +33,16 @@ wrist_roll_position_gains: &wrist_roll_position_gains
   i: 0.0
   d: 8.0
   i_clamp: 0.0
+gripper_position_gains: &gripper_position_gains
+  p: 200
+  i: 0.0
+  d: 8.0
+  i_clamp: 0.0
+
 
 r_shoulder_pan_position_controller:
   type: JointPositionController
-  joint: r_shouler_pan_joint
+  joint: r_shoulder_pan_joint
   pid: *shoulder_pan_position_gains
 r_shoulder_lift_position_controller:
   type: JointPositionController
@@ -62,10 +68,14 @@ r_wrist_roll_position_controller:
   type: JointPositionController
   joint: r_wrist_roll_joint
   pid: *wrist_roll_position_gains
+r_gripper_position_controller:
+  type: JointPositionController
+  joint: r_gripper_joint
+  pid: *gripper_position_gains
 
 l_shoulder_pan_position_controller:
   type: JointPositionController
-  joint: l_shouler_pan_joint
+  joint: l_shoulder_pan_joint
   pid: *shoulder_pan_position_gains
 l_shoulder_lift_position_controller:
   type: JointPositionController
@@ -91,4 +101,33 @@ l_wrist_roll_position_controller:
   type: JointPositionController
   joint: l_wrist_roll_joint
   pid: *wrist_roll_position_gains
+l_gripper_position_controller:
+  type: JointPositionController
+  joint: l_gripper_joint
+  pid: *gripper_position_gains
 
+torso_lift_position_controller:
+  type: JointPositionController
+  joint: torso_lift_joint
+  pid:
+    p: 1000000
+    i: 0.0
+    d: 10000
+    i_clamp: 0.0
+    
+head_pan_position_controller:
+  type: JointPositionController
+  joint: head_pan_joint
+  pid:
+    p: 10.0
+    i: 12.0
+    d: 0.5
+    i_clamp: 0.5
+head_tilt_position_controller:
+  type: JointPositionController
+  joint: head_tilt_joint
+  pid:
+    p: 12.4
+    i: 2.0
+    d: 0.4
+    i_clamp: 0.1

@@ -1,7 +1,8 @@
 <launch>
 
   <!-- Gripper effort controller -->
-  <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/r_gripper_effort_controller.xml" />
+  <rosparam command="load" file="$(find pr2_default_controllers)/pr2_joint_effort_controllers.yaml" />
+  <node pkg="mechanism_control" type="spawner.py" args="r_gripper_effort_controller" />
 
   <node pkg="move_arm" type="actuate_gripper_action">
     <remap from="gripper_command" to="r_gripper_effort_controller/command" />

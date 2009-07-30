@@ -250,3 +250,27 @@ cal_head_tilt:
     d: 0
     i: 0.0
     i_clamp: 5.0
+
+
+cal_head_pan_alpha2:
+  type: JointUDCalibrationController
+  joint: head_pan_joint
+  actuator: head_pan_motor
+  transmission: head_pan_trans
+  velocity: 1.5
+  pid:
+    p: 3.0
+    i: 0.0
+    d: 0
+    i_clamp: 1.0
+cal_head_tilt_alpha2:
+  type: JointUDCalibrationController
+  joint: head_tilt_joint
+  actuator: head_tilt_motor_alpha2b
+  transmission: head_tilt_trans
+  velocity: -1.0
+  pid:
+    p: 20.0
+    i: 5.0
+    d: 0
+    i_clamp: 1.0

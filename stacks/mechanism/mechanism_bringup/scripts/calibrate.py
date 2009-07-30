@@ -48,28 +48,30 @@ from mechanism_msgs.srv import *
 from robot_mechanism_controllers.srv import *
 from imu_node.srv import GetBoolStatus
 
-def calibrate(config):
+def calibrate(controllers):
     spawn_controller = rospy.ServiceProxy('spawn_controller', SpawnController)
     kill_controller = rospy.ServiceProxy('kill_controller', KillController)
+    switch_controller = rospy.ServiceProxy('switch_controller', SwitchController)
 
     success = True
 
-    # Spawns the controllers
-    resp = spawn_controller(config, 1)
+    if type(controllers) is not list:
+        controllers = [controllers]
 
-    # Accumulates the list of spawned controllers
     launched = []
-    print "OKs: " + ','.join([str(ok) for ok in resp.ok])
     try:
-        for i in range(len(resp.ok)):
-            if resp.ok[i] == 0:
-                print "Failed: %s" % resp.name[i]
-                if len(resp.error) > i - 1:
-                    rospy.logerr('%s failure msg: %s' % (resp.name[i], resp.error[i]))
+        # Spawns the controllers
+        for c in controllers:
+            resp = spawn_controller(c)
+            if resp.ok == 0:
+                rospy.logerr("Failed: %s" % c)
                 success = False
             else:
-                launched.append(resp.name[i])
+                launched.append(c)
         print "Launched: %s" % ', '.join(launched)
+
+        # Starts the launched controllers
+        switch_controller(launched, [], SwitchControllerRequest.BEST_EFFORT)
 
         # Sets up callbacks for calibration completion
         waiting_for = launched[:]
@@ -122,20 +124,9 @@ def main():
 
     xml = ''
 
-    if len(sys.argv) > 1:
-        xacro_cmd = roslib.packages.get_pkg_dir('xacro', True) + '/xacro.py'
-        xmls = [os.popen2(xacro_cmd + " %s" % f)[1].read() for f in rospy.myargv()[1:]]
+    controllers = rospy.myargv()[1:]
 
-        # Poor man's xml splicer
-        for i in range(len(xmls) - 1):
-            xmls[i] = xmls[i].replace('</controllers>', '')
-            xmls[i+1] = xmls[i+1].replace('<controllers>', '')
-        xml = "\n".join(xmls)
-    else:
-        print "Reading from stdin..."
-        xml = sys.stdin.read()
-
-    if not calibrate(xml):
+    if not calibrate(controllers):
         sys.exit(3)
 
     if not imustatus:

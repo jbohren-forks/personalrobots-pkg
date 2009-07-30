@@ -36,7 +36,7 @@
 
 #include <ros/node.h>
 
-#include <mechanism_model/controller.h>
+#include <mechanism_control/controller.h>
 
 #include <manipulation_msgs/Waypoint.h>
 
@@ -58,7 +58,7 @@ namespace controller {
 
   class TrajectoryController : public Controller
   {
-    public: 
+    public:
 
     TrajectoryController(); /*** Constructor ***/
 
@@ -67,7 +67,7 @@ namespace controller {
     bool init(mechanism::RobotState *robot_state, const ros::NodeHandle &n);
 
     bool starting();
-  
+
     void update();
 
     bool initXml(mechanism::RobotState *robot, TiXmlElement *config);

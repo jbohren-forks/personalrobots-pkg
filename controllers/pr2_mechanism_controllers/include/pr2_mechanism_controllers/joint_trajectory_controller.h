@@ -37,7 +37,7 @@
 #include <ros/node.h>
 #include <boost/thread/mutex.hpp>
 
-#include <mechanism_model/controller.h>
+#include <mechanism_control/controller.h>
 #include <robot_mechanism_controllers/joint_pd_controller.h>
 
 // Services
@@ -102,6 +102,8 @@ namespace controller
      * @config TiXml configuration element
      */
     bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
+
+    bool init(mechanism::RobotState *robot, const ros::NodeHandle& n);
 
     /*!
      * @brief Issues commands to the joints and is called at regular intervals in realtime. This function is required 

@@ -50,7 +50,7 @@
 #include <ros/node_handle.h>
 #include <control_toolbox/pid.h>
 #include <mechanism_control/recorder.h>
-#include <mechanism_model/controller.h>
+#include <mechanism_control/controller.h>
 #include <realtime_tools/realtime_infuser.h>
 
 #include <manipulation_msgs/SplineTraj.h>

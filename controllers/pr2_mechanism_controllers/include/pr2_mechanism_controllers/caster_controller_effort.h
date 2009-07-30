@@ -41,7 +41,7 @@
 #ifndef CASTER_CONTROLLER_EFFORT_H
 #define CASTER_CONTROLLER_EFFORT_H
 
-#include "mechanism_model/controller.h"
+#include "mechanism_control/controller.h"
 #include "mechanism_model/robot.h"
 #include "control_toolbox/pid.h"
 #include "robot_mechanism_controllers/joint_velocity_controller.h"

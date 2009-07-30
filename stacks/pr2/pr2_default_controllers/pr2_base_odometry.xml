@@ -1,5 +1,0 @@
-<?xml version="1.0"?>
-
-<controllers>
-  <controller name="pr2_odometry" type="Pr2Odometry"/>
-</controllers>

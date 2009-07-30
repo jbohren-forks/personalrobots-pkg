@@ -63,7 +63,7 @@
 #include <ros/node.h>
 #include <ros/node_handle.h>
 
-#include "mechanism_model/controller.h"
+#include "mechanism_control/controller.h"
 #include "control_toolbox/pid.h"
 #include "control_toolbox/pid_gains_setter.h"
 #include "misc_utils/advertised_service_guard.h"
@@ -114,6 +114,7 @@ public:
    * \brief Issues commands to the joint. Should be called at regular intervals
    */
 
+  virtual bool starting() { pid_controller_.reset(); return true; }
   virtual void update();
 
   void getGains(double &p, double &i, double &d, double &i_max, double &i_min);

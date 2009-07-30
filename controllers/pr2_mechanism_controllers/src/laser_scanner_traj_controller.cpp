@@ -144,6 +144,26 @@ bool LaserScannerTrajController::initXml(mechanism::RobotState *robot, TiXmlElem
   return true ;
 }
 
+bool LaserScannerTrajController::init(mechanism::RobotState *robot, const ros::NodeHandle &n)
+{
+  std::string xml;
+  if (!n.getParam("xml", xml))
+  {
+    ROS_ERROR("No XML given (namespace: %s)", n.getNamespace().c_str());
+    return false;
+  }
+
+  TiXmlDocument doc;
+  doc.Parse(xml.c_str());
+  if (!doc.RootElement())
+  {
+    ROS_ERROR("Error parsing XML (namespace: %s)", n.getNamespace().c_str());
+    return false;
+  }
+
+  return initXml(robot, doc.RootElement());
+}
+
 void LaserScannerTrajController::update()
 {
   if (!joint_state_->calibrated_)
@@ -493,6 +513,28 @@ bool LaserScannerTrajControllerNode::initXml(mechanism::RobotState *robot, TiXml
 
   return true ;
 }
+
+bool LaserScannerTrajControllerNode::init(mechanism::RobotState *robot,
+                                          const ros::NodeHandle &n)
+{
+  std::string xml;
+  if (!n.getParam("xml", xml))
+  {
+    ROS_ERROR("No XML given (namespace: %s)", n.getNamespace().c_str());
+    return false;
+  }
+
+  TiXmlDocument doc;
+  doc.Parse(xml.c_str());
+  if (!doc.RootElement())
+  {
+    ROS_ERROR("Error parsing XML (namespace: %s)", n.getNamespace().c_str());
+    return false;
+  }
+
+  return initXml(robot, doc.RootElement());
+}
+
 
 bool LaserScannerTrajControllerNode::setPeriodicSrv(pr2_srvs::SetPeriodicCmd::Request &req,
                                                     pr2_srvs::SetPeriodicCmd::Response &res)

@@ -42,7 +42,7 @@
 #include <ros/node.h>
 #include <robot_msgs/PoseStamped.h>
 #include <robot_msgs/Twist.h>
-#include <mechanism_model/controller.h>
+#include <mechanism_control/controller.h>
 #include <realtime_tools/realtime_publisher.h>
 #include <boost/scoped_ptr.hpp>
 #include "robot_mechanism_controllers/cartesian_twist_controller.h"
@@ -56,9 +56,7 @@ public:
   CartesianPoseController();
   ~CartesianPoseController();
 
-  bool initXml(mechanism::RobotState *robot_state, TiXmlElement *config);
   bool init(mechanism::RobotState *robot, const ros::NodeHandle &n);
-
   bool starting();
   void update();
 
