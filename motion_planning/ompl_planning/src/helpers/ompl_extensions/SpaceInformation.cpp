@@ -43,7 +43,7 @@ void ompl_planning::SpaceInformationKinematicModel::configureOMPLSpace(ModelBase
 {	   
     kmodel_ = model->planningMonitor->getKinematicModel();
     groupID_ = model->groupID;
-    divisions_ = 40;
+    divisions_ = 100;
     
     /* compute the state space for this group */
     m_stateDimension = kmodel_->getModelInfo().groupStateIndexList[groupID_].size();

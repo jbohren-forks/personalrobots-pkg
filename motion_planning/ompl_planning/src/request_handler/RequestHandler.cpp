@@ -328,10 +328,7 @@ bool ompl_planning::RequestHandler::fixInputStates(PlannerSetup *psetup, double 
 	}
     }
     
-    psetup->model->planningMonitor->getEnvironmentModel()->setVerbose(true);
     bool result = psetup->si->fixInvalidInputStates(rhoStart, rhoGoal, count);
-    psetup->model->planningMonitor->getEnvironmentModel()->setVerbose(false);
-    
     return result;
 }
 
