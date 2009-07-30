@@ -109,31 +109,85 @@ private:
   void listElemDeleter(typename ManagedListT::iterator it);
 };
 
-
+/**
+ * \brief Client side handle to monitor goal progress
+ *
+ * A GoalHandle is a reference counted object that is used to manipulate and monitor the progress
+ * of an already dispatched goal. Once all the goal handles go out of scope (or are reset), an
+ * ActionClient stops maintaining state for that goal.
+ */
 template <class ActionSpec>
 class GoalHandle
 {
-  public:
-    ACTION_DEFINITION(ActionSpec);
+private:
+  ACTION_DEFINITION(ActionSpec);
 
-    GoalHandle();
-    void reset();
-    CommState getCommState();
-    TerminalState getTerminalState();
-    ResultConstPtr getResult();
-    void resend();
-    void cancel();
+public:
+  /**
+   * \brief Create an empty goal handle
+   *
+   * Constructs a goal handle that doesn't track any goal. Calling any method on an empty goal
+   * handle other than operator= will trigger an assertion.
+   */
+  GoalHandle();
 
-    friend class GoalManager<ActionSpec>;
-  private:
-    typedef GoalManager<ActionSpec> GoalManagerT;
-    typedef ManagedList< boost::shared_ptr<CommStateMachine<ActionSpec> > > ManagedListT;
+  /**
+   * \brief Stops goal handle from tracking a goal
+   *
+   * Useful if you want to stop tracking the progress of a goal, but it is inconvenient to force
+   * the goal handle to go out of scope. Has pretty much the same semantics as boost::shared_ptr::reset()
+   */
+  void reset();
 
-    GoalHandle(GoalManagerT* gm, typename ManagedListT::Handle handle);
+  /**
+   * \brief Get the state of this goal's communication state machine from interaction with the server
+   *
+   * Possible States are: WAITING_FOR_GOAL_ACK, PENDING, ACTIVE, WAITING_FOR_RESULT,
+   *                      WAITING_FOR_CANCEL_ACK, RECALLING, PREEMPTING, DONE
+   * \return The current goal's communication state with the server
+   */
+  CommState getCommState();
 
-    GoalManagerT* gm_;
-    //typename ManagedListT::iterator it_;
-    typename ManagedListT::Handle list_handle_;
+  /**
+   * \brief Get the terminal state information for this goal
+   *
+   * Possible States Are: RECALLED, REJECTED, PREEMPTED, ABORTED, SUCCEEDED, LOST
+   * This call only makes sense if CommState==DONE. This will send ROS_WARNs if we're not in DONE
+   * \return The terminal state
+   */
+  TerminalState getTerminalState();
+
+  /**
+   * \brief Get result associated with this goal
+   *
+   * \return NULL if no reseult received.  Otherwise returns shared_ptr to result.
+   */
+  ResultConstPtr getResult();
+
+  /**
+   * \brief Resends this goal [with the same GoalID] to the ActionServer
+   *
+   * Useful if the user thinks that the goal may have gotten lost in transit
+   */
+  void resend();
+
+  /**
+   * \brief Sends a cancel message for this specific goal to the ActionServer
+   *
+   * Also transitions the Communication State Machine to WAITING_FOR_CANCEL_ACK
+   */
+  void cancel();
+
+  friend class GoalManager<ActionSpec>;
+private:
+  typedef GoalManager<ActionSpec> GoalManagerT;
+  typedef ManagedList< boost::shared_ptr<CommStateMachine<ActionSpec> > > ManagedListT;
+
+  GoalHandle(GoalManagerT* gm, typename ManagedListT::Handle handle);
+
+  GoalManagerT* gm_;
+  //typename ManagedListT::iterator it_;
+  typename ManagedListT::Handle list_handle_;
 };
 
 template <class ActionSpec>

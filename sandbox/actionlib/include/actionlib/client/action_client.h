@@ -43,6 +43,7 @@ namespace actionlib
 
 /**
  * \brief Full interface to an ActionServer
+ *
  * ActionClient provides a complete client side implementation of the ActionInterface protocol.
  * It provides callbacks for every client side transition, giving the user full observation into
  * the client side state machine.
@@ -50,15 +51,17 @@ namespace actionlib
 template <class ActionSpec>
 class ActionClient
 {
-public:
+private:
   ACTION_DEFINITION(ActionSpec);
   typedef ActionClient<ActionSpec> ActionClientT;
   typedef boost::function<void (GoalHandle<ActionSpec>) > TransitionCallback;
   typedef boost::function<void (GoalHandle<ActionSpec>, const FeedbackConstPtr&) > FeedbackCallback;
   typedef boost::function<void (const ActionGoalConstPtr)> SendGoalFunc;
 
+public:
   /**
-   * \brief ActionClient
+   * \brief Simple constructor
+   *
    * Constructs an ActionClient and sets up the necessary ros topics for the ActionInterface
    * \param name The action name. Defines the namespace in which the action communicates
    */
@@ -68,6 +71,8 @@ public:
   }
 
   /**
+   * \brief Constructor with namespacing options
+   *
    * Constructs an ActionClient and sets up the necessary ros topics for the ActionInterface,
    * and namespaces them according the a specified NodeHandle
    * \param n The node handle on top of which we want to namespace our action
@@ -100,6 +105,7 @@ public:
 
   /**
    * \brief Cancel all goals currently running on the action server
+   *
    * This preempts all goals running on the action server at the point that
    * this message is serviced by the ActionServer.
    */
@@ -168,14 +174,7 @@ private:
   }
 };
 
+
 }
-
-
-
-
-
-
-
-
 
 #endif

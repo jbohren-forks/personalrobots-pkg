@@ -27,141 +27,27 @@ We need to add a lot more description here
 The values for the status of a goal are as follows: 
 - \b PENDING - The goal has yet to be processed by the action server
 - \b ACTIVE - The goal is currently being processed by the action server
+- \b REJECTED - The goal was rejected by the action server without being processed and without a request from the action client to cancel 
 - \b SUCCEEDED - The goal was achieved successfully by the action server
 - \b ABORTED - The goal was aborted by the action server
+- \b PREEMPTING - Processing of the goal was canceled by either another goal, or a cancel request sent to the action server 
 - \b PREEMPTED - The goal was preempted by either another goal, or a preempt message being sent to the action server
+- \b RECALLING - The goal has not been processed and a cancel request has been received from the action client, but the action server has not confirmed the goal is canceled 
+- \b RECALLED - The goal was canceled by either another goal, or a cancel request before the action server began processing the goal 
 - \b LOST - The goal was sent by the ActionClient, but disappeared due to some communication error 
 
 \section ActionClientAPI ActionClient Code API
-The ActionClient provides a simple interface to dispatch goal requests to an
-ActionServer, while monitoring the progress of each specific goal. In the
-simplest Goals can be sent from an action client with just a few lines of code.
-In this example, we are interface with the \b MoveBase ActionServer
-\verbatim
-  typedef ActionClient<MoveActionGoal, MoveBaseGoal,
-                       MoveBaseActionResult, MoveBaseResult,
-                       MoveBaseActionFeedback, MoveBaseFeedback> MoveBaseClient;
+These are the most relevant parts of the client side API
+- \link actionlib::ActionClient ActionClient \endlink - The main class for using actions on the client side 
+- \link actionlib::SimpleActionClient SimpleActionClient \endlink - A simple wrapper around the ActionClient
 
-  MoveBaseClient ac("move_base");
-  MoveBaseGoal goal;
-  goal.target_pose.x = 1.0;
-  goal.target_pose.y = 2.0;
-  MoveBaseClient::GoalHandle gh = ac.sendGoal(goal);
-
-  while(gh.getStatus() == ClientGoalStatus::PENDING ||
-        gh.getStatus() == ClientGoalStatus::ACTIVE)
-  {
-    sleep(.1);
-  }
-
-\endverbatim
-
+The action client also defines several Enums to pass information to the user
+- \link actionlib::GoalHandle GoalHandle \endlink - Return by ActionClient on each dispacthed goal
+- \link actionlib::CommState CommState \endlink - Enum defining the communication states of a goal
+- \link actionlib::SimpleGoalState SimpleGoalState \endlink - Enum with a simpler representation of
+the communication state of the goal. Thus, a more coarse version of \link actionlib::CommState CommState \endlink
+- \link actionlib::TerminalState TerminalState \endlink - Enum defining the terminal states of a goal
 
 \section ActionServerAPI ActionServer Code API
-
-
-
-\section codeapi Code API
-
-<!--
-Provide links to specific auto-generated API documentation within your
-package that is of particular interest to a reader. Doxygen will
-document pretty much every part of your code, so do your best here to
-point the reader to the actual API.
-
-If your codebase is fairly large or has different sets of APIs, you
-should use the doxygen 'group' tag to keep these APIs together. For
-example, the roscpp documentation has 'libros' group.
--->
-
-\section rosapi ROS API
-
-<!--
-Names are very important in ROS because they can be remapped on the
-command-line, so it is VERY IMPORTANT THAT YOU LIST NAMES AS THEY
-APPEAR IN THE CODE. You should list names of every topic, service and
-parameter used in your code. There is a template below that you can
-use to document each node separately.
-
-List of nodes:
-- \b node_name1
-- \b node_name2
--->
-
-<!-- START: copy from here to 'END' for each node 
-
-<hr>
-
-\subsection node_name node_name
-
-node_name does (provide a basic description of your node)
-
-\subsubsection Usage
-\verbatim
-$ node_type1 [standard ROS args]
-\endverbatim
-
-\par Example
-
-\verbatim
-$ node_type1
-\endverbatim
-
-
-\subsubsection topics ROS topics
-
-Subscribes to:
-- \b "in": [std_msgs/FooType] description of in
-
-Publishes to:
-- \b "out": [std_msgs/FooType] description of out
-
-
-\subsubsection parameters ROS parameters
-
-Reads the following parameters from the parameter server
-
-- \b "~param_name" : \b [type] description of param_name
-- \b "~my_param" : \b [string] description of my_param
-
-Sets the following parameters on the parameter server
-
-- \b "~param_name" : \b [type] description of param_name
-
-
-\subsubsection services ROS services
-- \b "foo_service": [std_srvs/FooType] description of foo_service
-
-
-END: copy for each node -->
-
-
-<!-- START: Uncomment if you have any command-line tools
-
-\section commandline Command-line tools
-
-This section is a catch-all for any additional tools that your package
-provides or uses that may be of use to the reader. For example:
-
-- tools/scripts (e.g. rospack, roscd)
-- roslaunch .launch files
-- xmlparam files
-
-\subsection script_name script_name
-
-Description of what this script/file does.
-
-\subsubsection Usage
-\verbatim
-$ ./script_name [args]
-\endverbatim
-
-\par Example
-
-\verbatim
-$ ./script_name foo bar
-\endverbatim
-
-END: Command-Line Tools Section -->
 
 */
