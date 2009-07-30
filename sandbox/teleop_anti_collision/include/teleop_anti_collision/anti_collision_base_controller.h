@@ -53,7 +53,7 @@
 //we'll take in a path as a vector of poses
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Point.h>
-#include <geometry_msgs/PoseDot.h>
+#include <robot_msgs/PoseDot.h>
 #include <deprecated_msgs/RobotBase2DOdom.h>
 
 //for some datatypes
@@ -83,7 +83,7 @@ namespace anti_collision_base_controller {
 
       tf::TransformListener tf_;
 
-      void joyCallBack(const geometry_msgs::PoseDotConstPtr& msg);
+      void joyCallBack(const robot_msgs::PoseDotConstPtr& msg);
 
       void odomCallback(const deprecated_msgs::RobotBase2DOdomConstPtr& msg);
 
@@ -207,7 +207,7 @@ namespace anti_collision_base_controller {
 
       costmap_2d::Costmap2DROS *costmap_ros_;
 
-      geometry_msgs::PoseDot vel_desired_, base_odom_;
+      robot_msgs::PoseDot vel_desired_, base_odom_;
 
       bool getRobotPose(double &x, double &y, double &theta);
 

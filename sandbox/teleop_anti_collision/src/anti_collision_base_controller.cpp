@@ -38,7 +38,6 @@
 #include <teleop_anti_collision/anti_collision_base_controller.h>
 
 using namespace std;
-using namespace robot_msgs;
 using namespace costmap_2d;
 using namespace base_local_planner;
 
@@ -89,7 +88,7 @@ namespace anti_collision_base_controller
 
     joy_sub_ = ros_node_.subscribe(joy_listen_topic, 1, &AntiCollisionBaseController::joyCallBack, this);
     odom_sub_ = ros_node_.subscribe(odom_topic, 1, &AntiCollisionBaseController::odomCallback, this);
-    base_cmd_pub_ = ros_node_.advertise<geometry_msgs::PoseDot>(base_cmd_topic,1);
+    base_cmd_pub_ = ros_node_.advertise<robot_msgs::PoseDot>(base_cmd_topic,1);
 
     last_cmd_received_ = ros::Time();
 
@@ -236,15 +235,15 @@ namespace anti_collision_base_controller
     //build the oriented footprint
     double cos_th = cos(theta_i);
     double sin_th = sin(theta_i);
-    vector<Point> oriented_footprint;
+    vector<geometry_msgs::Point> oriented_footprint;
     for(unsigned int i = 0; i < footprint_spec_.size(); ++i){
-      Point new_pt;
+      geometry_msgs::Point new_pt;
       new_pt.x = x_i + (footprint_spec_[i].x * cos_th - footprint_spec_[i].y * sin_th);
       new_pt.y = y_i + (footprint_spec_[i].x * sin_th + footprint_spec_[i].y * cos_th);
       oriented_footprint.push_back(new_pt);
     }
 
-    Point robot_position;
+    geometry_msgs::Point robot_position;
     robot_position.x = x_i;
     robot_position.y = y_i;
 
@@ -287,7 +286,7 @@ namespace anti_collision_base_controller
     vtheta_result = vtheta_tmp;
   }
 
-  void AntiCollisionBaseController::joyCallBack(const geometry_msgs::PoseDotConstPtr& msg)
+void AntiCollisionBaseController::joyCallBack(const robot_msgs::PoseDot::ConstPtr& msg)
   {
     last_cmd_received_ = ros::Time::now();
     vel_desired_.lock();
@@ -379,7 +378,7 @@ namespace anti_collision_base_controller
         vt_result = 0.0;
       }
 
-      PoseDot cmd;
+      robot_msgs::PoseDot cmd;
       cmd.vel.vx = vx_result;
       cmd.vel.vy = vy_result;
       cmd.ang_vel.vz = vt_result;
