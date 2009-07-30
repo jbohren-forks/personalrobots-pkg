@@ -1,0 +1,58 @@
+joint_names: l_shoulder_pan_joint l_shoulder_lift_joint l_upper_arm_roll_joint l_elbow_flex_joint l_forearm_roll_joint l_wrist_flex_joint l_wrist_roll_joint
+
+l_shoulder_pan_joint:
+  joint: l_shoulder_pan_joint
+  p: 140.0
+  d: 30.0
+  i: 100.0
+  i_clamp: 3.0
+  goal_reached_threshold: 0.01
+
+l_shoulder_lift_joint:
+  joint: l_shoulder_lift_joint
+  p: 70.0
+  d: 20.0
+  i: 300.0
+  i_clamp: 3.0
+  goal_reached_threshold: 0.01
+
+l_upper_arm_roll_joint:
+  joint: l_upper_arm_roll_joint
+  p: 50.0
+  d: 5.0
+  i: 100.0
+  i_clamp: 3.0
+  goal_reached_threshold: 0.01
+
+l_elbow_flex_joint:
+  joint: l_elbow_flex_joint
+  p: 100.0
+  d: 5.0
+  i: 100.0
+  i_clamp: 1.0
+  goal_reached_threshold: 0.01
+
+l_forearm_roll_joint:
+  joint: l_forearm_roll_joint
+  p: 10.0
+  d: 2.0
+  i: 100.0
+  i_clamp: 1.0
+  goal_reached_threshold: 0.01
+
+l_wrist_flex_joint:
+  joint: l_wrist_flex_joint
+  p: 20.0
+  d: 0.5
+  i: 100.0
+  i_clamp: 1.0
+  goal_reached_threshold: 0.01
+
+l_wrist_roll_joint:
+  joint: l_wrist_roll_joint
+  p: 10.0
+  d: 0.5
+  i: 100.0
+  i_clamp: 1.0
+  goal_reached_threshold: 0.01
+

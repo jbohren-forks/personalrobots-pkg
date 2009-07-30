@@ -1,7 +1,0 @@
-<launch> 
-	<node pkg="joint_waypoint_controller" name="joint_waypoint_controller" type="joint_waypoint_controller" output="screen" clear_params="true">
-		<param name="filters" textfile="$(find joint_waypoint_controller)/launch/filters.xml"/>
-		<param name="trajectory_type" value="cubic"/>
-		<param name="spline_controller_prefix" value="/trajectory_controller/"/>
-	</node>
-</launch>
