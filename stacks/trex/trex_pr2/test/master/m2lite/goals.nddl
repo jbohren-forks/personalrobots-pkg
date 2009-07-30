@@ -1,0 +1,10 @@
+/*
+ *Auto-generated goals file, created at Fri May 29 09:09:24 2009
+ */
+// Enter Sachin's office, plug in
+rejectable(m2_goals.Active g_1);
+g_1.outlet_id = 4;
+
+// Plug in in the green room
+rejectable(m2_goals.Active g_0);
+g_0.outlet_id = 1;
