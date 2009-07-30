@@ -15,6 +15,8 @@
 #include <opencv/cv.h>
 #include <opencv/cvaux.hpp>
 
+#include <point_cloud_clustering/kmeans.h>
+
 #include <point_cloud_mapping/geometry/nearest.h>
 #include <point_cloud_mapping/kdtree/kdtree.h>
 #include <point_cloud_mapping/kdtree/kdtree_ann.h>
@@ -405,7 +407,6 @@ int kmeansPtCloud(const robot_msgs::PointCloud& pt_cloud,
 
   ROS_INFO("KMEANS: request %d clusters, and returned %d", nbr_clusters, cluster_pt_indices.size());
 
-
   return 0;
 }
 
@@ -571,6 +572,15 @@ void constructRandomField(string pt_cloud_filename, RandomField& rf)
   createNodes(rf, pt_cloud, pt_cloud_kdtree, labels, skip_indices_for_clustering);
   ROS_INFO("--------- done ---------");
 
+  set<unsigned int> indices_to_cluster;
+  for (unsigned int i = 0 ; i < pt_cloud.pts.size() ; i++)
+  {
+    if (skip_indices_for_clustering.count(i) == 0)
+    {
+      indices_to_cluster.insert(i);
+    }
+  }
+
   // ----------------------------------------------------------
   // Create clique sets
   for (unsigned int i = 0 ; i < rf.getCliqueSets().size() ; i++)
@@ -581,8 +591,14 @@ void constructRandomField(string pt_cloud_filename, RandomField& rf)
     map<unsigned int, vector<float> > cluster_xyz_centroids;
     map<unsigned int, vector<int> > cluster_pt_indices;
     ROS_INFO("   -- Clustering... --");
-    kmeansPtCloud(pt_cloud, skip_indices_for_clustering, GLOBAL_cs_kmeans_params[i], cluster_xyz_centroids,
-        cluster_pt_indices);
+    point_cloud_clustering::KMeans kmeans_pt_cloud;
+    kmeans_pt_cloud.setParameters(GLOBAL_cs_kmeans_params[i].factor, GLOBAL_cs_kmeans_params[i].accuracy,
+        GLOBAL_cs_kmeans_params[i].max_iter);
+    kmeans_pt_cloud.cluster(pt_cloud, pt_cloud_kdtree, indices_to_cluster, cluster_pt_indices);
+    point_cloud_clustering::PointCloudClustering::computeClusterCentroids(pt_cloud, cluster_pt_indices,
+        cluster_xyz_centroids);
+    //kmeansPtCloud(pt_cloud, skip_indices_for_clustering, GLOBAL_cs_kmeans_params[i], cluster_xyz_centroids,
+    //    cluster_pt_indices);
     ROS_INFO("   -- done --");
 
     save_clusters(cluster_pt_indices, pt_cloud);
@@ -621,18 +637,18 @@ int main()
   constructRandomField("training_data.xyz_label_conf", training_rf);
   training_rf.saveNodeFeatures("tempo/train_node_unknown.txt");
   training_rf.saveCliqueFeatures("tempo/train_rf_unknown");
-   // ----------------------------------------------------------
-   // Train M3N model
-   ROS_INFO("Starting to train...");
-   M3NModel m3n_model;
-   vector<const RandomField*> training_rfs(1, &training_rf);
-   if (m3n_model.train(training_rfs, GLOBAL_m3n_params) < 0)
-   {
-   ROS_ERROR("Failed to train M3N model");
-   return -1;
-   }
-   ROS_INFO("Successfully trained M3n model");
-   m3n_model.saveToFile("m3n_models/2cs_pn_potts");
+  // ----------------------------------------------------------
+  // Train M3N model
+  ROS_INFO("Starting to train...");
+  M3NModel m3n_model;
+  vector<const RandomField*> training_rfs(1, &training_rf);
+  if (m3n_model.train(training_rfs, GLOBAL_m3n_params) < 0)
+  {
+    ROS_ERROR("Failed to train M3N model");
+    return -1;
+  }
+  ROS_INFO("Successfully trained M3n model");
+  m3n_model.saveToFile("m3n_models/2cs_pn_potts");
 
   // ----------------------------------------------------------
   // Load M3N model
@@ -643,7 +659,6 @@ int main()
     ROS_ERROR("couldnt load model");
     return -1;
   }
-
 
   populateParameters();
 

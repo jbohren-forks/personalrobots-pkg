@@ -17,10 +17,9 @@
   <depend package="opencv_latest" />
 
   <!-- For example programs only -->
-  <depend package="ANN" />
-  <depend package="opencv_latest" />
   <depend package="point_cloud_mapping" />
   <depend package="descriptors_3d" />
+  <depend package="point_cloud_clustering" />
 
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lfm3n" />
