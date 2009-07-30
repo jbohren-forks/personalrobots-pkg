@@ -379,7 +379,7 @@ void RandomFieldCreator::createCliqueSet(RandomField& rf,
         }
 
         // Ensure the clique has at least two nodes
-        if (nbr_nodes_in_clique < 2)
+        if (nbr_nodes_in_clique < 0)
         {
           free(curr_cluster_features);
           ROS_INFO("Skipping clique of size less than 2");
@@ -402,9 +402,9 @@ void RandomFieldCreator::createCliqueSet(RandomField& rf,
         {
           nbr_created_cliques++;
         }
-      }
-    }
-    cluster_idx++;
+      } // end if (curr_cluster_features != NULL)
+      cluster_idx++;
+    } // end iterate over clusters
   }
 
   ROS_INFO("    ########### Created clique set %u with %u cliques from %u clusters #############", clique_set_idx, nbr_created_cliques, nbr_created_clusters);
