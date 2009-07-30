@@ -1,0 +1,14 @@
+<package>
+  <description brief="bag_image_view">The package allows to browse images in an indexed bagfile. 
+  </description>
+  <author>Alex Sorokin</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/bag_image_view</url>
+  <depend package="rospy"/>
+  <depend package="sensor_msgs"/>
+  <depend package="bagserver"/>
+
+</package>
+
+
