@@ -386,25 +386,26 @@ void RandomFieldCreator::createCliqueSet(RandomField& rf,
         if (nbr_nodes_in_clique < 2)
         {
           free(curr_cluster_features);
-          ROS_INFO("Skipping clique of size less than 2");
-          continue;
-        }
-
-        // Retrieve the cluster's label
-        const unsigned int curr_cluster_label = iter_created_clusters->first;
-
-        // Retrieve the cluster's centroid
-        const vector<float>& centroid = cluster_centroids.find(curr_cluster_label)->second;
-
-        // Create clique using the cluster label as the clique id
-        if (rf.createClique(curr_cluster_label, clique_set_idx, clique_nodes, curr_cluster_features,
-            nbr_concatenated_vals, centroid[0], centroid[1], centroid[2]) == NULL)
-        {
-          abort();
+          ROS_DEBUG("Skipping clique of size less than 2");
         }
         else
         {
-          nbr_created_cliques++;
+          // Retrieve the cluster's label
+          const unsigned int curr_cluster_label = iter_created_clusters->first;
+
+          // Retrieve the cluster's centroid
+          const vector<float>& centroid = cluster_centroids.find(curr_cluster_label)->second;
+
+          // Create clique using the cluster label as the clique id
+          if (rf.createClique(curr_cluster_label, clique_set_idx, clique_nodes, curr_cluster_features,
+              nbr_concatenated_vals, centroid[0], centroid[1], centroid[2]) == NULL)
+          {
+            abort();
+          }
+          else
+          {
+            nbr_created_cliques++;
+          }
         }
       } // end if (curr_cluster_features != NULL)
       cluster_idx++;
@@ -414,8 +415,8 @@ void RandomFieldCreator::createCliqueSet(RandomField& rf,
   ROS_INFO("    ########### Created clique set %u with %u cliques from %u clusters #############", clique_set_idx, nbr_created_cliques, nbr_created_clusters);
 }
 
-RandomField* RandomFieldCreator::createRandomField(const robot_msgs::PointCloud pt_cloud, const vector<
-    float>& labels)
+RandomField* RandomFieldCreator::createRandomField(const robot_msgs::PointCloud pt_cloud,
+                                                   const vector<float>& labels)
 {
   createDescriptors();
   unsigned int nbr_clique_sets = clique_set_clusterings_.size();
