@@ -266,7 +266,7 @@ void BoxDetector::syncCallback()
 
   std::vector<CornerCandidate> corners;
 
-  for (size_t frontplane = 1; frontplane < plane_coeff.size(); frontplane++)
+  for (size_t frontplane = 0; frontplane < plane_coeff.size(); frontplane++)
   {
     if (select_frontplane != -1)
     {
