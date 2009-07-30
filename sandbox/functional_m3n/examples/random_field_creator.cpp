@@ -359,7 +359,7 @@ void RandomFieldCreator::createCliqueSet(RandomField& rf,
     for (map<unsigned int, vector<int> >::iterator iter_created_clusters = created_clusters.begin() ; iter_created_clusters
         != created_clusters.end() ; iter_created_clusters++)
     {
-      float* curr_cluster_features = concatenated_features[cluster_idx];
+      float* curr_cluster_features = concatenated_features[cluster_idx++];
 
       // Only create cliques where could compute cluster features
       if (curr_cluster_features != NULL)
@@ -408,7 +408,6 @@ void RandomFieldCreator::createCliqueSet(RandomField& rf,
           }
         }
       } // end if (curr_cluster_features != NULL)
-      cluster_idx++;
     } // end iterate over clusters
   }
 
