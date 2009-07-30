@@ -19,7 +19,7 @@ using namespace robot_msgs;
 
 namespace planar_objects {
 
-bool fitSACPlanes(PointCloud *points, vector<int> &indices, vector<vector<int> > &inliers, vector<vector<
+bool fitSACPlanes(sensor_msgs::PointCloud *points, vector<int> &indices, vector<vector<int> > &inliers, vector<vector<
     double> > &coeff, const geometry_msgs::Point32 &viewpoint_cloud, double dist_thresh, int n_max,
                                int min_points_per_model)
 {
@@ -86,8 +86,8 @@ bool fitSACPlanes(PointCloud *points, vector<int> &indices, vector<vector<int> >
   return (true);
 }
 
-void filterByZBounds(const PointCloud& pc, double zmin, double zmax, PointCloud& filtered_pc,
-                                  PointCloud& filtered_outside)
+void filterByZBounds(const sensor_msgs::PointCloud& pc, double zmin, double zmax, sensor_msgs::PointCloud& filtered_pc,
+                                  sensor_msgs::PointCloud& filtered_outside)
 {
   vector<int> indices_remove;
   for (size_t i = 0; i < pc.get_pts_size(); ++i)
@@ -101,7 +101,7 @@ void filterByZBounds(const PointCloud& pc, double zmin, double zmax, PointCloud&
   cloud_geometry::getPointCloud(pc, indices_remove, filtered_outside);
 }
 
-void getPointIndicesInZBounds(const PointCloud &points, double z_min, double z_max, vector<int> &indices)
+void getPointIndicesInZBounds(const sensor_msgs::PointCloud &points, double z_min, double z_max, vector<int> &indices)
 {
   indices.resize(points.pts.size());
   int nr_p = 0;
@@ -116,11 +116,11 @@ void getPointIndicesInZBounds(const PointCloud &points, double z_min, double z_m
   indices.resize(nr_p);
 }
 
-void segmentPlanes(const PointCloud &const_points, double sac_distance_threshold_, double z_min,
+void segmentPlanes(const sensor_msgs::PointCloud &const_points, double sac_distance_threshold_, double z_min,
                                 double z_max, double support, double min_area, int n_max,
                                 vector<vector<int> > &indices, vector<vector<double> > &models, int number)
 {
-  PointCloud points = const_points;
+  sensor_msgs::PointCloud points = const_points;
   // This should be given as a parameter as well, or set global, etc
   //  double sac_distance_threshold_ = 0.02; // 2cm distance threshold for inliers (point-to-plane distance)
 
@@ -132,7 +132,7 @@ void segmentPlanes(const PointCloud &const_points, double sac_distance_threshold
   // We need to know the viewpoint where the data was acquired
   // For simplicity, assuming 0,0,0 for stereo data in the stereo frame - however if this is not true, use TF to get
   //the point in a different frame !
-  Point32 viewpoint;
+  geometry_msgs::Point32 viewpoint;
   viewpoint.x = viewpoint.y = viewpoint.z = 0;
 
   // Use the entire data to estimate the plane equation.
@@ -163,9 +163,9 @@ void segmentPlanes(const PointCloud &const_points, double sac_distance_threshold
   }
 }
 
-void findPlanes(const PointCloud& cloud, int n_planes_max, double sac_distance_threshold, std::vector<
-    std::vector<int> >& indices, vector<PointCloud>& plane_cloud, vector<vector<double> >& plane_coeff,
-                             PointCloud& outside)
+void findPlanes(const sensor_msgs::PointCloud& cloud, int n_planes_max, double sac_distance_threshold, std::vector<
+    std::vector<int> >& indices, vector<sensor_msgs::PointCloud>& plane_cloud, vector<vector<double> >& plane_coeff,
+                             sensor_msgs::PointCloud& outside)
 {
 
   double z_min = 0.3;
@@ -181,7 +181,7 @@ void findPlanes(const PointCloud& cloud, int n_planes_max, double sac_distance_t
   for (size_t i = 0; i < indices.size(); i++)
   {
     cloud_geometry::getPointCloud(cloud, indices[i], plane_cloud[i]);
-    PointCloud current = outside;
+    sensor_msgs::PointCloud current = outside;
     cloud_geometry::getPointCloudOutside(current, indices[i], outside);
   }
 }

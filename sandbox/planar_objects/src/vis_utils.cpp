@@ -69,7 +69,7 @@ float mix_color( float mix, float a, float b ) {
 }
 
 
-void vis_utils::visualizePlanes2(const sensor_msgs::PointCloud& cloud,
+void visualizePlanes2(const sensor_msgs::PointCloud& cloud,
                                   std::vector<std::vector<int> >& plane_indices,
                                   std::vector<sensor_msgs::PointCloud>& plane_cloud,
                                   std::vector<std::vector<double> >& plane_coeff,
@@ -78,7 +78,7 @@ void vis_utils::visualizePlanes2(const sensor_msgs::PointCloud& cloud,
                                   ros::Publisher& cloud_planes_pub,ros::Publisher& visualization_pub,
                                   bool convexHull)
 {
-  PointCloud colored_cloud = cloud;
+  sensor_msgs::PointCloud colored_cloud = cloud;
 
   int rgb_chann=-1;
   for(size_t i=0;i<cloud.chan.size();i++)

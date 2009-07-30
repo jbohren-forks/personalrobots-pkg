@@ -220,7 +220,7 @@ double CornerCandidate::computeSupport2d(IplImage* pixOccupied, IplImage* pixDeb
   return (sum / (double)count);
 }
 
-double CornerCandidate::computeSupport3d(const robot_msgs::PointCloud& cloud, std::vector<int> & plane_indices)
+double CornerCandidate::computeSupport3d(const sensor_msgs::PointCloud& cloud, std::vector<int> & plane_indices)
 {
   int count = MAX(1,plane_indices.size());
   int sum = 0;
@@ -228,7 +228,7 @@ double CornerCandidate::computeSupport3d(const robot_msgs::PointCloud& cloud, st
   btTransform tf_inv = tf.inverse();
   for (size_t i = 0; i < plane_indices.size(); i++)
   {
-    robot_msgs::Point32 point = cloud.pts[plane_indices[i]];
+    geometry_msgs::Point32 point = cloud.pts[plane_indices[i]];
     btVector3 vec = tf_inv * btVector3(point.x, point.y, point.z);
     if (vec.x() >= 0 && vec.x() <= w && vec.y() >= 0 && vec.y() <= h)
     {
