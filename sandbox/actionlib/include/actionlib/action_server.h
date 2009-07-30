@@ -486,13 +486,13 @@ namespace actionlib {
 
         }
 
-	//if the requested goal_id was not found, and it is non-zero, then we need to store the cancel request
-	if(goal_id->id != ros::Time() && !goal_id_found){
-		typename std::list<StatusTracker>::iterator it = status_list_.insert(status_list_.end(), 
-				StatusTracker(*goal_id, GoalStatus::RECALLING));
-		//start the timer for how long the status will live in the list without a goal handle to it
-		(*it).handle_destruction_time_ = ros::Time::now();
-	}
+        //if the requested goal_id was not found, and it is non-zero, then we need to store the cancel request
+        if(goal_id->id != ros::Time() && !goal_id_found){
+          typename std::list<StatusTracker>::iterator it = status_list_.insert(status_list_.end(), 
+              StatusTracker(*goal_id, GoalStatus::RECALLING));
+          //start the timer for how long the status will live in the list without a goal handle to it
+          (*it).handle_destruction_time_ = ros::Time::now();
+        }
 
         //make sure to set last_cancel_ based on the stamp associated with this cancel request
         if(goal_id->stamp > last_cancel_)
@@ -511,16 +511,10 @@ namespace actionlib {
         for(typename std::list<StatusTracker>::iterator it = status_list_.begin(); it != status_list_.end(); ++it){
           if(goal->goal_id.id == (*it).status_.goal_id.id){
             unsigned int status = (*it).status_.status;
-            //if the goal has already been canceled, we'll set its status to successfully recalled
-            if(status == GoalStatus::RECALLING){
-              (*it).status_.status = GoalStatus::RECALLED;
-              publishStatus();
-            }
 
-            //otherwise this is a request for a goal that is already in-flight,
-            //but we'll check if we should bump how long it stays in the list
-            //depending on whether a goal handle to the status exists or not
-            if(!(*it).handle_tracker_.lock()){
+            //if this is a request for a goal that has no active handles left,
+            //we'll bump how long it stays in the list
+            if((*it).handle_tracker_.expired()){
               (*it).handle_destruction_time_ = ros::Time::now();
             }
 
