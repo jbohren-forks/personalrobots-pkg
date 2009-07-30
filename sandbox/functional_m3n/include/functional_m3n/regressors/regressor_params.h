@@ -54,11 +54,13 @@ class RegressionTreeWrapperParams
      * min_sample_count \n
      * regression_accuracy \n
      * nbr_xvalidation_folds \n
+     *
+     * max_allocation The max size of the matrix to train regressor TODO
      */
     // --------------------------------------------------------------
     RegressionTreeWrapperParams() :
       max_tree_depth_factor(0.75), min_sample_count(10), regression_accuracy(0.001),
-          nbr_xvalidation_folds(10)
+          nbr_xvalidation_folds(10), max_allocation(2e8)
     {
     }
 
@@ -66,6 +68,7 @@ class RegressionTreeWrapperParams
     unsigned int min_sample_count;
     double regression_accuracy;
     unsigned int nbr_xvalidation_folds;
+    unsigned int max_allocation;
 };
 
 #endif

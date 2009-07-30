@@ -241,6 +241,12 @@ int RegressionTreeWrapper::addTrainingSample(const float* const feature_vals,
     return -1;
   }
 
+  // This is to avoid opencv's malloc failing
+  if ((stacked_feature_dim_ * interm_feature_vals_.size()) > rtree_params_.max_allocation)
+  {
+    return 0;
+  }
+
   // -------------------------------------------
   // Save value for training stage
   interm_feature_vals_.push_back(feature_vals);
