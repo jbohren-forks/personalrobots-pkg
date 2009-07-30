@@ -114,7 +114,7 @@ class MechFetchResults:
             print "%d of %d" % (idx,len(results))
 
             
-        if image_time=="n/a":
+        if image_time=="n/a" or image_time=="0.0":
           image_name=original_name.split("/")[-1];
           name= ".".join(image_name.split(".")[0:-1])
         else:
