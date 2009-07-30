@@ -266,10 +266,11 @@ void Transformer::lookupTransform(const std::string& target_frame,const ros::Tim
 
 bool Transformer::canTransform(const std::string& target_frame, const std::string& source_frame,
                                const ros::Time& time,
-                               const ros::Duration& timeout, const ros::Duration& polling_sleep_duration) const
+                               const ros::Duration& timeout, const ros::Duration& polling_sleep_duration,
+                               std::string* error_msg) const
 {
   ros::Time start_time = ros::Time::now();
-  while (!canTransform(target_frame, source_frame, time))
+  while (!canTransform(target_frame, source_frame, time, error_msg))
   {
     if ((ros::Time::now() - start_time) >= timeout)
       return false;
@@ -280,7 +281,8 @@ bool Transformer::canTransform(const std::string& target_frame, const std::strin
 
 
 bool Transformer::canTransform(const std::string& target_frame, const std::string& source_frame,
-                               const ros::Time& time) const
+                               const ros::Time& time,
+                               std::string* error_msg) const
 {
   std::string mapped_target_frame = remap(tf_prefix_, target_frame);
   std::string mapped_source_frame = remap(tf_prefix_, source_frame);
@@ -291,7 +293,7 @@ bool Transformer::canTransform(const std::string& target_frame, const std::strin
   if (mapped_source_frame == mapped_target_frame) return true;
 
   if (local_time == ros::Time())
-    if (NO_ERROR != getLatestCommonTime(mapped_source_frame, mapped_target_frame, local_time, NULL)) // set time if zero
+    if (NO_ERROR != getLatestCommonTime(mapped_source_frame, mapped_target_frame, local_time, error_msg)) // set time if zero
       {
 	return false;
       }
@@ -303,7 +305,7 @@ bool Transformer::canTransform(const std::string& target_frame, const std::strin
   int retval;
   try
   {
-    retval = lookupLists(lookupFrameNumber( mapped_target_frame), local_time, lookupFrameNumber( mapped_source_frame), t_list, NULL);
+    retval = lookupLists(lookupFrameNumber( mapped_target_frame), local_time, lookupFrameNumber( mapped_source_frame), t_list, error_msg);
   }
   catch (tf::LookupException &ex)
   {
@@ -333,16 +335,18 @@ bool Transformer::canTransform(const std::string& target_frame, const std::strin
 };
 
 bool Transformer::canTransform(const std::string& target_frame,const ros::Time& target_time, const std::string& source_frame,
-                     const ros::Time& source_time, const std::string& fixed_frame) const
+                               const ros::Time& source_time, const std::string& fixed_frame,
+                               std::string* error_msg) const
 {
-  return canTransform(target_frame, fixed_frame, target_time) && canTransform(fixed_frame, source_frame, source_time);
+  return canTransform(target_frame, fixed_frame, target_time) && canTransform(fixed_frame, source_frame, source_time, error_msg);
 };
 
 bool Transformer::canTransform(const std::string& target_frame,const ros::Time& target_time, const std::string& source_frame,
 			       const ros::Time& source_time, const std::string& fixed_frame,
-                               const ros::Duration& timeout, const ros::Duration& polling_sleep_duration) const
+                               const ros::Duration& timeout, const ros::Duration& polling_sleep_duration,
+                               std::string* error_msg) const
 {
-  return canTransform(target_frame, fixed_frame, target_time, timeout, polling_sleep_duration) && canTransform(fixed_frame, source_frame, source_time, timeout, polling_sleep_duration);
+  return canTransform(target_frame, fixed_frame, target_time, timeout, polling_sleep_duration) && canTransform(fixed_frame, source_frame, source_time, timeout, polling_sleep_duration, error_msg);
 };
 
 

@@ -123,17 +123,21 @@ public:
                        const std::string& source_frame, const ros::Time& source_time,
                        const std::string& fixed_frame, Stamped<btTransform>& transform) const;
   bool canTransform(const std::string& target_frame, const std::string& source_frame,
-                    const ros::Time& time, const ros::Duration& timeout, const ros::Duration& polling_sleep_duration = ros::Duration(0.01)) const;
+                    const ros::Time& time, const ros::Duration& timeout, const ros::Duration& polling_sleep_duration = ros::Duration(0.01),
+                    std::string* error_msg = NULL) const;
   bool canTransform(const std::string& target_frame, const std::string& source_frame,
-                    const ros::Time& time) const;
+                    const ros::Time& time,
+                    std::string* error_msg = NULL) const;
   //time traveling version
   bool canTransform(const std::string& target_frame, const ros::Time& target_time,
-                       const std::string& source_frame, const ros::Time& source_time,
-                       const std::string& fixed_frame) const;
+                    const std::string& source_frame, const ros::Time& source_time,
+                    const std::string& fixed_frame,
+                    std::string* error_msg = NULL) const;
   bool canTransform(const std::string& target_frame, const ros::Time& target_time,
                     const std::string& source_frame, const ros::Time& source_time,
 		    const std::string& fixed_frame,
-                    const ros::Duration& timeout, const ros::Duration& polling_sleep_duration = ros::Duration(0.01)) const;
+                    const ros::Duration& timeout, const ros::Duration& polling_sleep_duration = ros::Duration(0.01),
+                    std::string* error_msg = NULL) const;
 
   /**@brief Return the latest rostime which is common across the spanning set
    * zero if fails to cross */
