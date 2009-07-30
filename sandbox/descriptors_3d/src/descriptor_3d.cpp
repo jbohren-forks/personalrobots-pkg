@@ -103,7 +103,7 @@ void Descriptor3D::concatenateFeatures(const vector<cv::Vector<cv::Vector<float>
     // Otherwise features not successful, so note them
     else
     {
-      ROS_WARN("skipping concatenation of sample %u", i);
+      ROS_DEBUG("skipping concatenation of sample %u", i);
       failed_indices.insert(i);
     }
   }
@@ -138,7 +138,7 @@ unsigned int Descriptor3D::computeAndConcatFeatures(const robot_msgs::PointCloud
 
     descriptors_3d[i]->compute(data, data_kdtree, interest_pts, all_descriptor_results[i]);
     nbr_concatenated_vals += (descriptors_3d[i])->getResultSize();
-    ROS_INFO("Descriptor will have this many features: %u", descriptors_3d[i]->getResultSize());
+    ROS_DEBUG("Descriptor will have this many features: %u", descriptors_3d[i]->getResultSize());
   }
 
   concatenateFeatures(all_descriptor_results, interest_pts.size(), nbr_concatenated_vals,
@@ -173,7 +173,7 @@ unsigned int Descriptor3D::computeAndConcatFeatures(const robot_msgs::PointCloud
 
     descriptors_3d[i]->compute(data, data_kdtree, interest_region_indices, all_descriptor_results[i]);
     nbr_concatenated_vals += (descriptors_3d[i])->getResultSize();
-    ROS_INFO("Descriptor will have this many features: %u", descriptors_3d[i]->getResultSize());
+    ROS_DEBUG("Descriptor will have this many features: %u", descriptors_3d[i]->getResultSize());
   }
 
   concatenateFeatures(all_descriptor_results, interest_region_indices.size(), nbr_concatenated_vals,
