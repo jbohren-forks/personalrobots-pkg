@@ -248,12 +248,12 @@ void Stanleyi::sanityCheck(string bagfile, string results_dir) {
       if(objs[i] == NULL) 
 	continue;
 
-      NEWMAT::Matrix response_nm = d.classify(*objs[i]);
+      MatrixXf response = d.classify(*objs[i]);
       int col = keypoints[i].pt.x;
       int row = keypoints[i].pt.y;
 
-      drawResponse(vis_img, response_nm(1,1), cvPoint(col, row));
-      drawResponse(vis_mask, response_nm(1,1), cvPoint(col, row));
+      drawResponse(vis_img, response(0,0), cvPoint(col, row));
+      drawResponse(vis_mask, response(0,0), cvPoint(col, row));
     }
 
     // -- Display
@@ -294,7 +294,7 @@ void Stanleyi::makeClassificationVideo(string bagfile, Dorylus& d, int samples_p
 
   int row = 0, col = 0;
   IplImage* vis = NULL;
-  NEWMAT::Matrix response_nm;
+  MatrixXf response;
   int frame_num = 0;
   CvVideoWriter* writer = NULL;
   vector<object*> objects;
@@ -343,7 +343,7 @@ void Stanleyi::makeClassificationVideo(string bagfile, Dorylus& d, int samples_p
       if(objects[i] == NULL) 
 	continue;
       //cout << objects[i]->status(false) << endl;
-      response_nm = d.classify(*objects[i]);
+      response = d.classify(*objects[i]);
       col = keypoints[i].pt.x;
       row = keypoints[i].pt.y;
 
@@ -351,20 +351,20 @@ void Stanleyi::makeClassificationVideo(string bagfile, Dorylus& d, int samples_p
 	CvScalar s = cvGet2D(mask, row, col);
 	//cout << s.val[0] << " " << s.val[1] << " " << s.val[2] << " " << s.val[3] << endl;
 	int label = s.val[0];
-	if(label != 0 && response_nm(1,1) > 0)
+	if(label != 0 && response(0,0) > 0)
 	  tp++;
-	else if(label == 0 && response_nm(1,1) > 0)
+	else if(label == 0 && response(0,0) > 0)
 	  fp++;
-	else if(label == 0 && response_nm(1,1) <= 0)
+	else if(label == 0 && response(0,0) <= 0)
 	  tn++;
-	else// if(label == 0 && response_nm(1,1) > 0)
+	else// if(label == 0 && response(0,0) > 0)
 	  fn++;
       }
 
       //cout << response_nm.Nrows() << " " << response_nm.Ncols() << endl;
 
-      int size = ceil(log(ceil(abs(response_nm(1,1)))));
-      if(response_nm(1,1) > 0) {
+      int size = ceil(log(ceil(abs(response(0,0)))));
+      if(response(0,0) > 0) {
 	cvCircle(vis, cvPoint(col, row), size, cvScalar(0,255,0), -1);
 	if(mask)
 	  cvCircle(mask, cvPoint(col, row), size, cvScalar(0,255,0), -1);
