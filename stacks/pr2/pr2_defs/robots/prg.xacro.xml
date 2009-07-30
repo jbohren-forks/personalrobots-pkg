@@ -13,7 +13,6 @@
   <include filename="$(find pr2_defs)/defs/head_defs.xml" />
   <include filename="$(find pr2_defs)/defs/body_defs.xml" />
   <include filename="$(find pr2_defs)/defs/base_defs.xml" />
-  <include filename="$(find pr2_defs)/defs/ptz_defs.xml" />
   <include filename="$(find pr2_defs)/defs/prosilica_defs.xml" />
   <include filename="$(find pr2_defs)/defs/gazebo_defs.xml" />
   <include filename="$(find pr2_defs)/defs/mono_cam_defs.xml" />
@@ -59,14 +58,6 @@
     <origin xyz="0 0 0" rpy="0 0 0" />
   </pr2_gripper>
   -->
-
-  <pr2_ptz side="r" reflect="-1" parent="torso_lift_link">
-    <origin xyz="0.0 -0.1975 0.2265" rpy="0 0 0" />
-  </pr2_ptz>
-
-  <pr2_ptz side="l" reflect="1" parent="torso_lift_link">
-    <origin xyz="0.0 0.1975 0.2265" rpy="0 0 0" />
-  </pr2_ptz>
 
   <!-- Forearm Cam (Hand approximated values) -->
 

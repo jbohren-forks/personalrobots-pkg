@@ -13,7 +13,6 @@
   <include filename="$(find pr2_defs)/defs/head_defs.xml" />
   <include filename="$(find pr2_defs)/defs/body_defs.xml" />
   <include filename="$(find pr2_defs)/defs/base_defs.xml" />
-  <include filename="$(find pr2_defs)/defs/ptz_defs.xml" />
   <include filename="$(find pr2_defs)/defs/prosilica_defs.xml" />
   <include filename="$(find pr2_defs)/defs/gazebo_defs.xml" />
 
@@ -65,14 +64,6 @@
   <pr2_gripper screw_reduction="${2.0/1000.0}" gear_ratio="${29.16}" side="l" parent="l_wrist_roll_link" >
     <origin xyz="0 0 0" rpy="0 0 0" />
   </pr2_gripper>
-
-  <pr2_ptz side="r" reflect="-1" parent="torso_lift_link">
-    <origin xyz="0.0 -0.1975 0.2265" rpy="0 0 0" />
-  </pr2_ptz>
-
-  <pr2_ptz side="l" reflect="1" parent="torso_lift_link">
-    <origin xyz="0.0 0.1975 0.2265" rpy="0 0 0" />
-  </pr2_ptz>
 
   <!-- Define groups of links; a link may be part of multiple groups -->
   <include filename="$(find pr2_defs)/robots/pr2_groups.xml" />
