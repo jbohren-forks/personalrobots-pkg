@@ -33,30 +33,50 @@
  *********************************************************************/
 
 #include <ros/ros.h>
+#include <mpglue/SetIndexTransform.h>
 #include <navfn/SetCostmap.h>
+
+#define PREFIX "/costmap_planner_node/"
 
 int main(int argc, char ** argv)
 {
   ros::init(argc, argv, "test_costmap_planner_node");
   ros::NodeHandle nh;
-  ros::ServiceClient
-    client(nh.serviceClient<navfn::SetCostmap>("/costmap_planner_node/set_costmap"));
-  
-  navfn::SetCostmap srv;
-  srv.request.width = 4;
-  srv.request.height = 3;
-  uint16_t const tt(srv.request.width * srv.request.height);
-  srv.request.costs.reserve(tt);
-  for (uint8_t ii(0); ii < tt; ++ii)
-    srv.request.costs.push_back(ii);
   
   bool ok(true);
-  if (client.call(srv))
-    ROS_INFO("set_costmap() succeeded");
-  else {
-    ROS_ERROR("set_costmap() FAILED");
-    ok = false;
+  {
+    ros::ServiceClient
+      client(nh.serviceClient<navfn::SetCostmap>(PREFIX "set_costmap"));
+    navfn::SetCostmap srv;
+    srv.request.width = 4;
+    srv.request.height = 3;
+    uint16_t const tt(srv.request.width * srv.request.height);
+    srv.request.costs.reserve(tt);
+    for (uint8_t ii(0); ii < tt; ++ii)
+      srv.request.costs.push_back(ii);
+    if (client.call(srv))
+      ROS_INFO("set_costmap() succeeded");
+    else {
+      ROS_ERROR("set_costmap() FAILED");
+      ok = false;
+    }
   }
+  {
+    ros::ServiceClient
+      client(nh.serviceClient<mpglue::SetIndexTransform>(PREFIX "set_index_transform"));
+    mpglue::SetIndexTransform srv;
+    srv.request.origin_x =    0.3;
+    srv.request.origin_y =  -10.5;
+    srv.request.origin_th =   1.234;
+    srv.request.resolution =  0.05;
+    if (client.call(srv))
+      ROS_INFO("set_index_transform() succeeded");
+    else {
+      ROS_ERROR("set_index_transform() FAILED");
+      ok = false;
+    }
+  }
+  
   
   if (ok)
     return 0;

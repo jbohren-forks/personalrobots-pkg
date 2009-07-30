@@ -11,7 +11,7 @@ add_definitions (-Wall)
 rospack (mpglue)
 
 ##genmsg ()
-##gensrv ()
+gensrv ()
 
 list (APPEND MPGLUE_SRCS
       src/setup.cpp

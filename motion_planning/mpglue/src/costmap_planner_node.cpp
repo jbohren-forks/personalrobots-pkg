@@ -34,8 +34,10 @@
 
 #include <mpglue/costmap.h>
 #include <ros/ros.h>
+#include <mpglue/SetIndexTransform.h>
 #include <navfn/SetCostmap.h>
 #include <costmap_2d/cost_values.h>
+#include <sfl/gplan/GridFrame.hpp>
 
 
 namespace mpglue_node {
@@ -57,12 +59,16 @@ namespace mpglue_node {
     CostmapPlannerNode();
     ~CostmapPlannerNode();
     
-    bool setCostmap(SetCostmap::Request& req, SetCostmap::Response& resp);
+    bool setCostmap(SetCostmap::Request & req, SetCostmap::Response & resp);
+    bool setIndexTransform(SetIndexTransform::Request & req, SetIndexTransform::Response & resp);
     
   protected:
     ros::NodeHandle node_;
     ros::ServiceServer set_costmap_service_;
+    ros::ServiceServer set_index_transform_service_;
     raw_costmap_t costmap_;
+    sfl::GridFrame gridframe_;
+    boost::shared_ptr<mpglue::IndexTransform> indexTransform_;
   };
   
 }
@@ -85,10 +91,14 @@ namespace mpglue_node {
 	       0, 0,		// start with 0-by-0 dimensions
 	       lethal_cost,
 	       inscribed_cost,
-	       circumscribed_cost)
+	       circumscribed_cost),
+      gridframe_(0, 0, 0, 1)
   {
     set_costmap_service_
       = node_.advertiseService("~set_costmap", &CostmapPlannerNode::setCostmap, this);
+    set_index_transform_service_
+      = node_.advertiseService("~set_index_transform", &CostmapPlannerNode::setIndexTransform,
+			       this);
   }
   
   
@@ -130,6 +140,28 @@ namespace mpglue_node {
     }
     
     memcpy(costmap_.raw, &req.costs[0], sizeof(*costmap_.raw) * ttncells);
+    return true;
+  }
+  
+  
+  bool CostmapPlannerNode::
+  setIndexTransform(SetIndexTransform::Request & req, SetIndexTransform::Response & resp)
+  {
+    ROS_INFO("CostmapPlannerNode::setIndexTransform(): x = %g  y = %g  th = %g  res = %g",
+	     req.origin_x, req.origin_y, req.origin_th, req.resolution);
+    
+    if (0 > req.resolution) {
+      ROS_ERROR("CostmapPlannerNode::setIndexTransform(): invalid resolution %g (must be >0)",
+		req.resolution);
+      return false;
+    }
+    gridframe_.Configure(req.origin_x, req.origin_y, req.origin_th, req.resolution);
+    
+    if ( ! indexTransform_) {
+      ROS_INFO("  allocating index transform (wrapper)");
+      indexTransform_.reset(mpglue::createIndexTransform(&gridframe_));
+    }
+    
     return true;
   }
   

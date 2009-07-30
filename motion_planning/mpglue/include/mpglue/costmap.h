@@ -303,6 +303,14 @@ namespace mpglue {
   */
   IndexTransform * createIndexTransform(mpglue::costmap_2d_getter * get_costmap);
   
+  /**
+     Create an IndexTransform wrapper for a sfl::GridFrame.
+     
+     \note The calling code retains ownership of the sfl::GridFrame
+     object, beware of passing in local variables.
+     
+     \see mpglue::costmap_2d_getter for the reason of yet another indirection.
+  */
   IndexTransform * createIndexTransform(sfl::GridFrame const * gf);
   
   
