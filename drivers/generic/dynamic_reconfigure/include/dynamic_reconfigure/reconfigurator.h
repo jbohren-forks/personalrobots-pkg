@@ -70,7 +70,7 @@ public:
     callback_.clear();
   }
 
-private:
+protected:
   boost::function<void(int level)> callback_;
 };
 
@@ -80,13 +80,15 @@ class Reconfigurator : public AbstractReconfigurator
 public:
   Reconfigurator(ros::NodeHandle &nh) : node_handle_(nh)
   {
-    config_ = ConfigManipulator::defaults;
+    config_ = ConfigManipulator::get_defaults();
     ConfigManipulator::read_from_param_server(node_handle_, config_);
     // Write to make sure everything is filled in.
     ConfigManipulator::write_to_param_server(node_handle_, config_);
     
-    get_service_ = node_handle_.advertiseService("~get_configuration", &get_config_service, this);
-    set_service_ = node_handle_.advertiseService("~set_configuration", &set_config_service, this);
+    static const std::string get_config = "~get_configuration";
+    get_service_ = node_handle_.advertiseService(get_config, &Reconfigurator<ConfigManipulator>::get_config_service, this);
+    static const std::string set_config = "~set_configuration";
+    set_service_ = node_handle_.advertiseService(set_config, &Reconfigurator<ConfigManipulator>::set_config_service, this);
   }
 
   void get_config(class ConfigManipulator::ConfigType &config)
@@ -101,8 +103,8 @@ public:
   }
 
 private:
-  bool get_config_service(class ConfigManipulator::GetService::Request &req, 
-      class ConfigManipulator::SetService::Response &rsp)
+  bool get_config_service(typename ConfigManipulator::GetService::Request &req, 
+      typename ConfigManipulator::GetService::Response &rsp)
   {
     rsp.defaults = ConfigManipulator::get_defaults();
     rsp.min = ConfigManipulator::get_min();
@@ -110,8 +112,8 @@ private:
     return true;
   }
 
-  bool set_config_service(class ConfigManipulator::GetService::Request &req, 
-      class ConfigManipulator::SetService::Response &rsp)
+  bool set_config_service(typename ConfigManipulator::SetService::Request &req, 
+      typename ConfigManipulator::SetService::Response &rsp)
   {
     int level = ConfigManipulator::get_change_level(req.config, config_);
 
@@ -120,7 +122,7 @@ private:
     // We expect config_ to be read, and possibly written during the
     // callback.
     if (callback_)
-      callback_();
+      callback_(level);
     
     rsp.config = config_;
 

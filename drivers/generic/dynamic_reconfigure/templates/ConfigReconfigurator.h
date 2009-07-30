@@ -53,6 +53,7 @@
 #include <${pkgname}/Set${name}Config.h>
 
 #include <boost/thread.hpp>
+#include <limits>
 
 namespace ${pkgname}
 {
@@ -63,19 +64,19 @@ namespace ${pkgname}
     typedef ${pkgname}::Set${name}Config SetService;
     typedef ${pkgname}::${name}Config ConfigType;
   
-    const ConfigType &get_defaults()
+    static const ConfigType &get_defaults()
     {
       initialize();
       return defaults;
     }
 
-    const ConfigType &get_min()
+    static const ConfigType &get_min()
     {
       initialize();
       return min;
     }
 
-    const ConfigType &get_max()
+    static const ConfigType &get_max()
     {
       initialize();
       return max;
@@ -88,19 +89,19 @@ namespace ${pkgname}
      * \param nh ros::NodeHandle through which to access the name server
      * \param config Reference to the configuration to modify
      */
-    void read_from_param_server(ros::NodeHandle &nh, ConfigType &config)
+    static void read_from_param_server(ros::NodeHandle &nh, ConfigType &config)
     {
 $readparam
 #line ${linenum} "${filename}"
     }
 
-    void write_to_param_server(ros::NodeHandle &nh, const ConfigType &config)
+    static void write_to_param_server(ros::NodeHandle &nh, const ConfigType &config)
     {
 $writeparam
 #line ${linenum} "${filename}"
     }
     
-    int get_change_level(const ConfigType &config1, const ConfigType &config2)
+    static int get_change_level(const ConfigType &config1, const ConfigType &config2)
     {
       int changelvl = 0;
 $changelvl
@@ -109,9 +110,9 @@ $changelvl
     }
 
   private:
-    bool initialized;
-    boost::mutex initializing;
-    void initialize()
+    static bool initialized;
+    static boost::mutex initializing;
+    static void initialize()
     {
       if (initialized) // Test without taking the lock for speed.
         return;
@@ -124,12 +125,18 @@ $changelvl
 $defminmax
     }
 
-    ConfigType defaults;
-    ConfigType min;
-    ConfigType max;
+    static ConfigType defaults;
+    static ConfigType min;
+    static ConfigType max;
   };
 
   typedef dynamic_reconfigure::Reconfigurator<${name}ConfigManipulator> ${name}Reconfigurator;
+
+  bool ${name}ConfigManipulator::initialized = false;
+  boost::mutex  ${name}ConfigManipulator::initializing;
+  ${name}ConfigManipulator::ConfigType ${name}ConfigManipulator::defaults;
+  ${name}ConfigManipulator::ConfigType ${name}ConfigManipulator::min;
+  ${name}ConfigManipulator::ConfigType ${name}ConfigManipulator::max;
 }
 
 #endif // __${uname}MANIPULATOR_H__

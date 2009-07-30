@@ -38,6 +38,10 @@
 # classes to allow runtime reconfiguration. Documentation of a node's
 # parameters is a handy byproduct.
 
+## @todo
+# Need to check types of min max and default
+# Need to put sane error on exceptions
+
 import roslib; roslib.load_manifest("dynamic_reconfigure")
 import roslib.packages
 from string import Template
@@ -54,7 +58,7 @@ double_t = "double"
 class ParameterGenerator:
     minval = {
             'int' : 'INT_MIN',
-            'double' : '-1./0.',
+            'double' : '-std::numeric_limits<double>::infinity()',
             'str' : '',
             'bool' : False,
 #            'float32' : '-1./0.',
@@ -74,7 +78,7 @@ class ParameterGenerator:
             
     maxval = {
             'int' : 'INT_MAX',
-            'double' : '1./0.',
+            'double' : 'std::numeric_limits<double>::infinity()',
             'str' : '',
             'bool' : True,
 #            'float32' : '1./0.',
@@ -126,7 +130,7 @@ class ParameterGenerator:
         if max == None:
             max = self.maxval[type]
         if default == None:
-            default = self.defaultval[type]
+            default = self.defval[type]
         self.parameters.append({
             'name' : name,
             'type' : type,
@@ -139,17 +143,23 @@ class ParameterGenerator:
             'srcfile' : inspect.getsourcefile(inspect.currentframe().f_back.f_code),
             })
 
-    def mkdirabs(self, path):
+    def mkdirabs(self, path, second_attempt = False):
         if os.path.isdir(path):
             pass
         elif os.path.isfile(path):
             raise OSError("Error creating directory %s, a file with the same name exists" %path)
+        elif second_attempt: # An exception occurred, but we still don't know why.
+            raise
         else:
             head, tail = os.path.split(path)
             if head and not os.path.isdir(head):
                 self.mkdir(head)
             if tail:
-                os.mkdir(path)
+                try:
+                    os.mkdir(path)
+                except OSError:
+                    # Probably got created by somebody else, lets check.
+                    self.mkdirabs(self, path, True)
 
     def mkdir(self, path):
         path = os.path.join(self.pkgpath, path)
@@ -173,14 +183,13 @@ class ParameterGenerator:
         print >> f, "Reads and maintains the following parameters on the ROS server"
         print >> f
         for param in self.parameters:
-          print >> f, Template("- \b \"~$name\" : \b [$type] $description").substitute(param)
+            print >> f, Template("- \b \"~$name\" : \b [$type] $description min: $min, default: $default, max: $max").substitute(param)
         print >> f
         print >> f, "*/"
         f.close()
 
     def crepr(self, param, val):
         type = param["type"]
-        print "Crepr", param["name"], type, val
         if type == 'str':
             return '"'+val+'"'
         if type in [ 'int', 'double']:
@@ -206,6 +215,7 @@ class ParameterGenerator:
             val = ""
         else:
             val = self.crepr(param, param[value])
+        #list.append(Template('      '+text).substitute(param, v=val))
         list.append(Template('#line $srcline "$srcfile"\n      '+text).substitute(param, v=val))
     
     def generateconfigmanipulator(self):
@@ -233,8 +243,16 @@ class ParameterGenerator:
             self.appendline(defminmax, "max.$name = $v;", param, "max")
             self.appendline(defminmax, "defaults.$name = $v;", param, "default")
             self.appendline(changelvl, "if (config1.$name != config2.$name) changelvl |= $level;", param)
-            self.appendline(writeparam, "nh.setParam(\"~$name\", config.$name);", param)
-            self.appendline(readparam, "nh.getParam(\"~$name\", config.$name);", param)
+            # We introduce tmp_name because bool is not supported in a .msg file.
+            if param['type'] == 'bool':
+                self.appendline(writeparam, "bool tmp_$name = config.$name;", param)
+                self.appendline(writeparam, "nh.setParam(\"~$name\", tmp_$name);", param)
+                self.appendline(readparam, "bool tmp_$name = config.$name;", param)
+                self.appendline(readparam, "nh.getParam(\"~$name\", tmp_$name, true);", param)
+                self.appendline(readparam, "config.$name = tmp_$name;", param)
+            else:
+                self.appendline(writeparam, "nh.setParam(\"~$name\", config.$name);", param)
+                self.appendline(readparam, "nh.getParam(\"~$name\", config.$name, true);", param)
         defminmax = string.join(defminmax, '\n')
         changelvl = string.join(changelvl, '\n')
         writeparam = string.join(writeparam, '\n')
