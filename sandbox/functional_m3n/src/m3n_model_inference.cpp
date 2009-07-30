@@ -54,7 +54,7 @@ int M3NModel::infer(const RandomField& random_field,
 }
 
 // --------------------------------------------------------------
-/* See function definition TODO: use this in the code */
+/* See function definition */
 // --------------------------------------------------------------
 int M3NModel::cachePotentials(const RandomField& random_field)
 {
@@ -71,13 +71,13 @@ int M3NModel::cachePotentials(const RandomField& random_field)
       != nodes.end() ; iter_nodes++)
   {
     // Retrieve current node info
-    unsigned int curr_node_id = iter_nodes->first;
+    const unsigned int curr_node_id = iter_nodes->first;
     const RandomField::Node* curr_node = iter_nodes->second;
 
     // Compute scores for each label
     for (unsigned int i = 0 ; i < training_labels_.size() ; i++)
     {
-      unsigned int curr_label = training_labels_[i];
+      const unsigned int curr_label = training_labels_[i];
 
       double potential_value = 0.0;
       if (computePotential(*curr_node, curr_label, potential_value) < 0)
@@ -101,13 +101,13 @@ int M3NModel::cachePotentials(const RandomField& random_field)
         != curr_clique_set.end() ; iter_cliques++)
     {
       // Retrieve current clique info
-      unsigned int curr_clique_id = iter_cliques->first;
+      const unsigned int curr_clique_id = iter_cliques->first;
       const RandomField::Clique* curr_clique = iter_cliques->second;
 
       // Compute scores for each label
       for (unsigned int i = 0 ; i < training_labels_.size() ; i++)
       {
-        unsigned int curr_label = training_labels_[i];
+        const unsigned int curr_label = training_labels_[i];
 
         double potential_value = 0.0;
         if (computePotential(*curr_clique, cs_idx, curr_label, potential_value) < 0)

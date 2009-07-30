@@ -218,7 +218,7 @@ int M3NModel::train(const vector<const RandomField*>& training_rfs, const M3NPar
 
             if (gt_residual > 1e-5)
             {
-              // +features with ground truth label
+              // +1 features with ground truth label
               if (curr_regressor->addTrainingSample(iter_cliques->second->getFeatureVals(),
                   clique_set_feature_dims_[clique_set_idx],
                   clique_set_stacked_feature_start_idx_[clique_set_idx][curr_clique_gt_mode1_label],
@@ -235,7 +235,7 @@ int M3NModel::train(const vector<const RandomField*>& training_rfs, const M3NPar
 
             if (infer_residual > 1e-5)
             {
-              // -features with wrong inferred label
+              // -1 features with wrong inferred label
               if (curr_regressor->addTrainingSample(iter_cliques->second->getFeatureVals(),
                   clique_set_feature_dims_[clique_set_idx],
                   clique_set_stacked_feature_start_idx_[clique_set_idx][curr_clique_infer_mode1_label],
