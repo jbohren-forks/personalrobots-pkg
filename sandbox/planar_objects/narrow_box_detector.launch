@@ -1,24 +1,24 @@
 <launch>
     <node pkg="planar_objects" type="box_detector" respawn="false" output="screen" name="box_detector">
       <remap from="stereo" to="narrow_stereo" />
-      <param name="verbose" type="bool" value="true"/>
+      <param name="verbose" type="bool" value="false"/>
 
       <param name="n_planes_max" type="int" value="5"/>
       <param name="point_plane_distance" value="0.01"/>
 
       <param name="show_colorized_planes" type="bool" value="true"/>
-      <param name="show_convex_hulls" type="bool" value="false"/>
-      <param name="show_lines" type="bool" value="false"/>
-      <param name="show_images" type="bool" value="false"/>
+      <param name="show_convex_hulls" type="bool" value="true"/>
+      <param name="show_lines" type="bool" value="true"/>
+      <param name="show_images" type="bool" value="true"/>
       <param name="show_corners" type="bool" value="true"/>
       <param name="show_rectangles" type="bool" value="true"/>
 
       <param name="select_frontplane" type="int" value="-1"/>
-      <param name="max_lines" type="int" value="500"/>
+      <param name="max_lines" type="int" value="200"/>
       <param name="max_corners" type="int" value="500"/>
 
-      <param name="min_precision" type="double" value="0.1"/>
-      <param name="min_recall" type="double" value="0.1"/>
+      <param name="min_precision" type="double" value="0.5"/>
+      <param name="min_recall" type="double" value="0.3"/>
 
       <param name="rect_min_size" type="double" value="0.05"/>
       <param name="rect_max_size" type="double" value="1.50"/>

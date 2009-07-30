@@ -62,15 +62,17 @@ BoxDetector::BoxDetector() :
   nh_.param("~rect_max_size", rect_max_size, 1.50);
   nh_.param("~rect_max_displace", rect_max_displace, 0.3);
 
+  int cvWindows = 0;
   if(show_images) {
-    int cvWindows = 0;
     CVWINDOW("left");
-    CVWINDOW("right");
     CVWINDOW("disparity");
+    CVWINDOW("debug");
+  }
+  if(show_images && verbose) {
+    CVWINDOW("right");
 
     CVWINDOW("occupied");
     CVWINDOW("distance");
-    CVWINDOW("debug");
     CVWINDOW("free");
     CVWINDOW("unknown");
 
@@ -270,11 +272,11 @@ void BoxDetector::syncCallback()
     {
       if (select_frontplane >= 0 || select_frontplane < (int)plane_coeff.size())
       {
-        ROS_ERROR("selected frontplane %d does not exist (n=%d planes)",select_frontplane,plane_coeff.size());
+        frontplane = select_frontplane;
       }
       else
       {
-        frontplane = select_frontplane;
+        ROS_ERROR("selected frontplane %d does not exist (n=%d planes)",select_frontplane,plane_coeff.size());
       }
     }
     cvSetZero(pixOccupied);
@@ -308,7 +310,7 @@ void BoxDetector::syncCallback()
 
     for (size_t i = 0; i < corner.size(); i++)
     {
-      corner[i].precision = corner[i].computeSupport2d(pixOccupied);
+      corner[i].precision = corner[i].computeSupport2d(pixOccupied,pixDebug);
       corner[i].recall = corner[i].computeSupport3d(*cloud_, plane_indices[frontplane]);
       corner[i].plane_id = frontplane;
     }
@@ -483,7 +485,8 @@ void BoxDetector::findCornerCandidates(IplImage* pixOccupied, IplImage *pixFree,
   for (int i = 0; i < lines->total; i++)
   {
     CvPoint* line = (CvPoint*)cvGetSeqElem(lines, i);
-    cvLine(pixHough, line[0], line[1], CV_RGB(rand()%255,rand()%255,rand()%255), 1, 8);
+//    cvLine(pixDebug, line[0], line[1], CV_RGB(rand()%255,rand()%255,rand()%255), 1, 8);
+    cvLine(pixDebug, line[0], line[1], CV_RGB(255,128,128), 1, 8);
   }
 
   // compute 3d lines

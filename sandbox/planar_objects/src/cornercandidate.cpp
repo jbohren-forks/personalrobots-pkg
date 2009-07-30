@@ -213,7 +213,10 @@ double CornerCandidate::computeSupport2d(IplImage* pixOccupied, IplImage* pixDeb
       if (pixOccupied->imageData[y * pixOccupied->widthStep + x * pixOccupied->nChannels] != 0)
         sum++;
       if (pixDebug != NULL)
-        pixDebug->imageData[y * pixDebug->widthStep + x * pixDebug->nChannels] = 255;
+        ((uchar*)pixDebug->imageData)[y * pixDebug->widthStep + x * pixDebug->nChannels] = MIN(255,((uchar*)pixDebug->imageData)[y * 
+pixDebug->widthStep 
++ x * 
+pixDebug->nChannels] + 64);
     }
     count += y2 - y1 + 1;
   }
