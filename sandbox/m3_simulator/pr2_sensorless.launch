@@ -1,5 +1,6 @@
 <launch>
   
+
   <!-- send pr2.xml to param server -->
   <param name="robot_description" command="$(find xacro)/xacro.py '$(find m3_simulator)/pr2_sensorless.xacro.xml'" />
 
@@ -11,6 +12,9 @@
     <param name="publish_frequency" type="double" value="50.0" />
     <param name="tf_prefix" type="string" value="" />
   </node>
+
+  <!-- Start gazebo -->
+  <include file="$(find gazebo)/launch/office_world.launch" />
 
 </launch>
 
