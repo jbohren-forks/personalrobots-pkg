@@ -54,13 +54,13 @@ class RandomFieldCreator
     {
     }
 
-    const RandomField* createRandomField(const robot_msgs::PointCloud pt_cloud)
+    RandomField* createRandomField(const robot_msgs::PointCloud pt_cloud)
     {
       std::vector<float> labels;
       return createRandomField(pt_cloud, labels);
     }
 
-    const RandomField* createRandomField(const robot_msgs::PointCloud pt_cloud,
+    RandomField* createRandomField(const robot_msgs::PointCloud pt_cloud,
                                          const std::vector<float>& labels);
   private:
     void createDescriptors();

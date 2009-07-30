@@ -84,7 +84,7 @@ int main()
   // Define learning parameters
   vector<float> robust_potts_params(training_rf->getNumberOfCliqueSets(), -1.0);
   RegressionTreeWrapperParams regression_tree_params;
-  regression_tree_params.max_tree_depth_factor = 0.2;
+  regression_tree_params.max_tree_depth_factor = 0.07; // was 0.2
   M3NParams m3n_learning_params;
   m3n_learning_params.setLearningRate(0.4);
   m3n_learning_params.setNumberOfIterations(6);

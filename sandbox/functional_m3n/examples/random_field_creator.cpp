@@ -146,11 +146,11 @@ std::vector<std::pair<bool, point_cloud_clustering::PointCloudClustering*> > ini
 {
   //
   point_cloud_clustering::KMeans* kmeans_cluster = new point_cloud_clustering::KMeans();
-  kmeans_cluster->setParameters(0.003, 0.9, 100); // TODO change to 10
+  kmeans_cluster->setParameters(0.003, 1.0, 10);
 
   // ---------------
   std::vector<std::pair<bool, point_cloud_clustering::PointCloudClustering*> > cs0_clusterings(1);
-  bool cluster_only_nodes = true; // TODO change
+  bool cluster_only_nodes = false;
   cs0_clusterings[0].first = cluster_only_nodes;
   cs0_clusterings[0].second = kmeans_cluster;
   return cs0_clusterings;
@@ -166,7 +166,7 @@ std::vector<std::pair<bool, point_cloud_clustering::PointCloudClustering*> > ini
   kmeans_cluster->setParameters(0.001, 1.0, 10);
   // ---------------
   std::vector<std::pair<bool, point_cloud_clustering::PointCloudClustering*> > cs1_clusterings(1);
-  bool cluster_only_nodes = true; // TODO change
+  bool cluster_only_nodes = false;
   cs1_clusterings[0].first = cluster_only_nodes;
   cs1_clusterings[0].second = kmeans_cluster;
   return cs1_clusterings;
@@ -247,9 +247,13 @@ void RandomFieldCreator::createNodes(RandomField& rf,
     // NULL indicates couldnt compute features for interest point
     if (concatenated_features[i] != NULL)
     {
-      const RandomField::Node* created_node = 0;
+      const RandomField::Node* created_node = NULL;
       if (use_labels)
       {
+        if (labels[i] == RandomField::UNKNOWN_LABEL)
+        {
+          continue;
+        }
         created_node = rf.createNode(i, concatenated_features[i], nbr_concatenated_vals,
             static_cast<unsigned int> (labels[i]), pt_cloud.pts[i].x, pt_cloud.pts[i].y, pt_cloud.pts[i].z);
       }
@@ -379,7 +383,7 @@ void RandomFieldCreator::createCliqueSet(RandomField& rf,
         }
 
         // Ensure the clique has at least two nodes
-        if (nbr_nodes_in_clique < 0)
+        if (nbr_nodes_in_clique < 2)
         {
           free(curr_cluster_features);
           ROS_INFO("Skipping clique of size less than 2");
@@ -410,7 +414,7 @@ void RandomFieldCreator::createCliqueSet(RandomField& rf,
   ROS_INFO("    ########### Created clique set %u with %u cliques from %u clusters #############", clique_set_idx, nbr_created_cliques, nbr_created_clusters);
 }
 
-const RandomField* RandomFieldCreator::createRandomField(const robot_msgs::PointCloud pt_cloud, const vector<
+RandomField* RandomFieldCreator::createRandomField(const robot_msgs::PointCloud pt_cloud, const vector<
     float>& labels)
 {
   createDescriptors();
