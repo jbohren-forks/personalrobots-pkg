@@ -82,10 +82,16 @@ class SpectralAnalysis: public Descriptor3D
 
     // --------------------------------------------------------------
     /*!
-     * \brief Clears out all computed spectral information.
+     * \brief Clears & frees previously computed spectral data
+     *
+     * This function should be called when calling compute() on different
+     * sequential point clouds.
+     *
+     * This method has no affect if called on an instance that did not
+     * compute the spectral data.
      */
     // --------------------------------------------------------------
-    void clear();
+    void freeSpectral();
 
     // ===================================================================
     /*! \name Required settings (one or the other) */
