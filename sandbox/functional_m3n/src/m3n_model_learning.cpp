@@ -97,6 +97,16 @@ int M3NModel::train(const vector<const RandomField*>& training_rfs, const M3NPar
   for (unsigned int t = 0 ; t < nbr_iterations ; t++)
   {
     ROS_INFO("-------- Starting iteration %u --------", t);
+
+    // ---------------------------------------------------
+    // Instantiate new regressor
+    RegressorWrapper* curr_regressor = instantiateRegressor(m3n_params);
+    if (curr_regressor == NULL)
+    {
+      ROS_ERROR("Could not create new regressor at iteration %u", t);
+      return -1;
+    }
+
     // ---------------------------------------------------
     // Iterate over each RandomField
     for (unsigned int i = 0 ; i < training_rfs.size() ; i++)
@@ -128,18 +138,9 @@ int M3NModel::train(const vector<const RandomField*>& training_rfs, const M3NPar
         inferPrivate(*curr_rf, curr_inferred_labeling);
       }
       time(&end_timer);
+      // TODO this is invalid, want to record overall inference over all random fields
       logger.addTimingInference(start_timer, end_timer);
       logger.printClassificationRates(nodes, curr_inferred_labeling, training_labels_);
-
-      // ---------------------------------------------------
-      // Instantiate new regressor
-      time(&start_timer);
-      RegressorWrapper* curr_regressor = instantiateRegressor(m3n_params);
-      if (curr_regressor == NULL)
-      {
-        ROS_ERROR("Could not create new regressor at iteration %u", t);
-        return -1;
-      }
 
       // ---------------------------------------------------
       // Create training set for the new regressor from node and clique features.
@@ -162,7 +163,7 @@ int M3NModel::train(const vector<const RandomField*>& training_rfs, const M3NPar
             abort();
           }
 
-          // -1 features with inferred label
+          // -1 features with wrong inferred label
           if (curr_regressor->addTrainingSample(iter_nodes->second->getFeatureVals(), node_feature_dim_,
               node_stacked_feature_start_idx_[curr_node_infer_label], -1.0) < 0)
           {
@@ -234,6 +235,7 @@ int M3NModel::train(const vector<const RandomField*>& training_rfs, const M3NPar
 
             if (infer_residual > 1e-5)
             {
+              // -features with wrong inferred label
               if (curr_regressor->addTrainingSample(iter_cliques->second->getFeatureVals(),
                   clique_set_feature_dims_[clique_set_idx],
                   clique_set_stacked_feature_start_idx_[clique_set_idx][curr_clique_infer_mode1_label],
@@ -245,19 +247,20 @@ int M3NModel::train(const vector<const RandomField*>& training_rfs, const M3NPar
           }
         } // end iterate over cliques
       } // end iterate over clique sets
-
-      // ---------------------------------------------------
-      // Train and augment regressor to the model
-      if (curr_regressor->train() < 0)
-      {
-        return -1;
-      }
-      double curr_step_size = learning_rate / sqrt(static_cast<double> (t + 1));
-      regressors_.push_back(pair<double, RegressorWrapper*> (curr_step_size, curr_regressor));
-
-      time(&end_timer);
-      logger.addTimingRegressors(start_timer, end_timer);
     } // end iterate over random fields
+
+    // ---------------------------------------------------
+    // Train and augment regressor to the model
+    time(&start_timer);
+    if (curr_regressor->train() < 0)
+    {
+      // TODO: free regressors?  set trained_ true?
+      return -1;
+    }
+    const double curr_step_size = learning_rate / sqrt(static_cast<double> (t + 1));
+    regressors_.push_back(pair<double, RegressorWrapper*> (curr_step_size, curr_regressor));
+    time(&end_timer);
+    logger.addTimingRegressors(start_timer, end_timer);
   } // end training iterations
 
   trained_ = true;
