@@ -54,12 +54,12 @@ ActionMechanismControl::~ActionMechanismControl(){};
 
 robot_actions::ResultStatus ActionMechanismControl::execute(const pr2_robot_actions::SwitchControllers& c, std_msgs::Empty&)
 {
-  ROS_INFO("ActionMechanismControl: received request to start %i controllers and stop %i controllers",
+  ROS_DEBUG("ActionMechanismControl: received request to start %i controllers and stop %i controllers",
            c.start_controllers.size(), c.stop_controllers.size());
   for (unsigned int i=0; i<c.start_controllers.size(); i++)
-    ROS_INFO("ActionMechanismControl:   - starting controller %s", c.start_controllers[i].c_str());
+    ROS_DEBUG("ActionMechanismControl:   - starting controller %s", c.start_controllers[i].c_str());
   for (unsigned int i=0; i<c.stop_controllers.size(); i++)
-    ROS_INFO("ActionMechanismControl:   - stopping controller %s", c.stop_controllers[i].c_str());
+    ROS_DEBUG("ActionMechanismControl:   - stopping controller %s", c.stop_controllers[i].c_str());
   mechanism_msgs::SwitchController::Request req;
   mechanism_msgs::SwitchController::Response resp;
   req.start_controllers = c.start_controllers;
@@ -70,7 +70,7 @@ robot_actions::ResultStatus ActionMechanismControl::execute(const pr2_robot_acti
   }
   else{
     if (resp.ok){
-      ROS_INFO("ActionMechanismControl: controlers switched succesfully");
+      ROS_DEBUG("ActionMechanismControl: controlers switched succesfully");
       return robot_actions::SUCCESS;
     }
     else{
