@@ -187,9 +187,9 @@ public:
 	}
 
 
-	bool fitSACLine(PointCloud& points, vector<int> indices, vector<double> &coeff, double dist_thresh, int min_pts, vector<Point32> &line_segment)
+	bool fitSACLine(sensor_msgs::PointCloud& points, vector<int> indices, vector<double> &coeff, double dist_thresh, int min_pts, vector<geometry_msgs::Point32> &line_segment)
 	{
-		Point32 minP, maxP;
+		geometry_msgs::Point32 minP, maxP;
 
 		// Create and initialize the SAC model
 		sample_consensus::SACModelLine *model = new sample_consensus::SACModelLine ();
@@ -205,7 +205,7 @@ public:
 			}
 			sac->computeCoefficients (coeff);
 
-			Point32 minP, maxP;
+			geometry_msgs::Point32 minP, maxP;
 			cloud_geometry::statistics::getLargestDiagonalPoints(points, sac->getInliers(), minP, maxP);
 			line_segment.push_back(minP);
 			line_segment.push_back(maxP);
@@ -219,7 +219,7 @@ public:
 		return true;
 	}
 
-	double squaredPointDistance(Point32 p1, Point32 p2)
+	double squaredPointDistance(geometry_msgs::Point32 p1, geometry_msgs::Point32 p2)
 	{
 		return (p1.x-p2.x)*(p1.x-p2.x)+(p1.y-p2.y)*(p1.y-p2.y)+(p1.z-p2.z)*(p1.z-p2.z);
 	}
@@ -230,13 +230,13 @@ public:
 	* @param cloud
 	* @return
 	*/
-	Point32 findPointAhead(const PointCloud& cloud)
+	geometry_msgs::Point32 findPointAhead(const sensor_msgs::PointCloud& cloud)
 	{
-		Point32 closest;
+		geometry_msgs::Point32 closest;
 		float dist = 1e10;
 
 		for (size_t i=0; i<cloud.get_pts_size(); ++i) {
-			Point32 crt = cloud.pts[i];
+			geometry_msgs::Point32 crt = cloud.pts[i];
 			if (fabs(crt.x)<1e-10 && fabs(crt.y)<1e-10 && fabs(crt.z)<1e-10) continue;
 			float crt_dist = fabs(crt.y);
 
@@ -250,9 +250,9 @@ public:
 	}
 
 
-	PointCloud getWallCloud(PointCloud laser_cloud, Point32 point, double distance)
+	sensor_msgs::PointCloud getWallCloud(sensor_msgs::PointCloud laser_cloud, geometry_msgs::Point32 point, double distance)
 	{
-		PointCloud result;
+		sensor_msgs::PointCloud result;
 		result.header.frame_id = laser_cloud.header.frame_id;
 		result.header.stamp = laser_cloud.header.stamp;
 
@@ -272,11 +272,11 @@ public:
 	void rectifyProsilicaImage()
 	{
 		ROS_INFO("Finding wall point in front of the robot, the robot should be facing to the wall at this point.");
-		Point32 start_point = findPointAhead(base_cloud_);
+		geometry_msgs::Point32 start_point = findPointAhead(base_cloud_);
 //		printf("(%f,%f,%f)\n", start_point.x,start_point.y,start_point.z);
 
 		ROS_INFO("Filtering point cloud");
-		PointCloud wall_cloud = getWallCloud(base_cloud_,start_point,0.4);
+		sensor_msgs::PointCloud wall_cloud = getWallCloud(base_cloud_,start_point,0.4);
 
 		// fit a line in the outlet cloud
 		vector<int> indices(wall_cloud.pts.size());
@@ -288,7 +288,7 @@ public:
 		double dist_thresh = 0.01;
 		int min_pts = 20;
 
-		vector<Point32> line_segment;
+		vector<geometry_msgs::Point32> line_segment;
 		ROS_INFO("Computing wall orientation");
 		if ( !fitSACLine(wall_cloud, indices, coeff, dist_thresh, min_pts, line_segment) ) {
 			ROS_ERROR("Cannot fit line in laser scan, aborting...");
@@ -296,8 +296,8 @@ public:
 		}
 
 
-		PointStamped base_p1, base_p2;
-		PointStamped prosilica_p1,prosilica_p2;
+		geometry_msgs::PointStamped base_p1, base_p2;
+		geometry_msgs::PointStamped prosilica_p1,prosilica_p2;
 
 		base_p1.header.stamp = ros::Time();
 		base_p1.header.frame_id = base_cloud_.header.frame_id;
