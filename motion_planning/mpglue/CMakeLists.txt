@@ -53,3 +53,6 @@ target_link_libraries (test/mpglue_test mpglue)
 
 rospack_add_executable (bin/costmap_planner_node src/costmap_planner_node.cpp)
 target_link_libraries (bin/costmap_planner_node mpglue)
+
+rospack_add_executable (bin/test_costmap_planner_node src/test_costmap_planner_node.cpp)
+target_link_libraries (bin/test_costmap_planner_node mpglue)
