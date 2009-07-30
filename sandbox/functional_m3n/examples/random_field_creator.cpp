@@ -415,7 +415,7 @@ void RandomFieldCreator::createCliqueSet(RandomField& rf,
   ROS_INFO("    ########### Created clique set %u with %u cliques from %u clusters #############", clique_set_idx, nbr_created_cliques, nbr_created_clusters);
 }
 
-RandomField* RandomFieldCreator::createRandomField(const robot_msgs::PointCloud pt_cloud,
+RandomField* RandomFieldCreator::createRandomField(const robot_msgs::PointCloud& pt_cloud,
                                                    const vector<float>& labels)
 {
   createDescriptors();
