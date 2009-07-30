@@ -13,10 +13,6 @@ rospack_add_executable (bin/train_m3n
                         examples/random_field_creator.cpp)
 target_link_libraries (bin/train_m3n fm3n)
 
-rospack_add_executable (bin/create_pt_cloud 
-			examples/create_pt_cloud.cpp)
-target_link_libraries (bin/create_pt_cloud fm3n)
-
 #rospack_add_link_flags(bin/create_pt_cloud "-lprofiler")
 
 # ---[ Functional Max-Margin Markov Network library
