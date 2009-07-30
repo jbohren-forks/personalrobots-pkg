@@ -19,7 +19,7 @@ history_build_index.py <index_name> <topic_filter> bag_names
 
 Index builder takes the name to store the index, a comma-separated list of topics to include in the index and a list of bag file names.
 
-Note that the file names will be stored in the index name and should be available to the history service.
+Note that the file names will be stored in the index name and should be available to the history service. 
 
 
 \subsection bagserver_srv.py
@@ -53,16 +53,17 @@ To map from (time,topic) to file position, we have a hashtable indexed by a seco
 
 \section Example
 
-The example assumes certain bag files. Assume you have them here:
+The example requires some bag files. Use make test to get them:
 \verbatim
-D=/u/sorokin/ros/ros-pkg/util/bagserver/test_data
+roscd bagserver
+make test
 \endverbatim
 
 
 Create an index from bag files:
 
 \verbatim
-./src/history_build_index.py $D/test1.stereo.index /stereo/raw_stereo,/annotations_2d,/tf_messages,/tilt_scan,/laser_tilt_controller/laser_scanner_signal $D/test1.bag $D/annotations1_reordered_v2.bag 
+rosrun bagserver history_build_index.py test_images2.tmp.index /stereo/left/image,/stereo/right/image_rect test_images2.bag
 \endverbatim
 
 Launch the stereo processor (note, that is's in the scope /hist)
@@ -74,12 +75,13 @@ Launch the stereo processor (note, that is's in the scope /hist)
 Launch the history server
 
 \verbatim
-  rosrun bagserver bagserver_srv.py /hist test_data/test1.stereo.index
+  rosrun bagserver bagserver_srv.py _namespace:=/hist _index:=$(rospack find bagserver)/test_data/test_images2.index
 \endverbatim
 
+Set rviz to listen to /stereo/left/image and run 
 Do this several times:
 \verbatim
-./src/bagserver_query.py 1242970240 1242970250
+  ./src/bagserver_query.py 1244500678 1244500702
 \endverbatim
 
 You will see the stereo output from that interval.

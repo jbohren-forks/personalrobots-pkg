@@ -38,18 +38,12 @@ import rospy
 from bagserver.srv import *
 
 def call_history():
-    rospy.wait_for_service('hist')
+    rospy.wait_for_service('timeline_info')
     try:
-        hist = rospy.ServiceProxy('hist', History)
-        b=rospy.Time(1242970240,0);
-        e=rospy.Time(1242970280,0);
-        resp = hist(b, e,"")
+        tl_info = rospy.ServiceProxy('timeline_info', TimelineInfo)
+        info=tl_info();
+        print info.begin, info.end
 
-        #resp = hist(b, e,"/stereo/raw_stereo")
-
-        #resp = hist(b, e,"/annotations_2d")
-
-        #resp = hist(rospy.Time(0,0), rospy.Time.now(),"/stereo/raw_stereo")
         return "done"
     except rospy.ServiceException, e:
         print "Service call failed: %s"%e

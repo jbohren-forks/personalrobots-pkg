@@ -1,0 +1,5 @@
+string locator
+time begin
+string topic
+---
+robot_msgs/PointCloud result

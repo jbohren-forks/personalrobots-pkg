@@ -1,0 +1,5 @@
+string locator
+time begin
+string topic
+---
+sensor_msgs/Image result

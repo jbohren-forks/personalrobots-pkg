@@ -1,0 +1,5 @@
+string locator
+time begin
+string topic
+---
+cv_mech_turk/ExternalAnnotation result
