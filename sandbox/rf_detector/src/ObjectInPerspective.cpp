@@ -43,7 +43,7 @@ static double dist2D(const T& a, const T& b)
 	return (a.x-b.x)*(a.x-b.x)+(a.y-b.y)*(a.y-b.y);
 }
 
-    void filterByZBounds( const PointCloud& pc, double zmin, double zmax, PointCloud& filtered_pc, PointCloud& filtered_outside)
+    void filterByZBounds( const sensor_msgs::PointCloud& pc, double zmin, double zmax, sensor_msgs::PointCloud& filtered_pc, sensor_msgs::PointCloud& filtered_outside)
 	{
 		vector<int> indices_remove;
 		for (size_t i = 0;i<pc.get_pts_size();++i) {
@@ -55,7 +55,7 @@ static double dist2D(const T& a, const T& b)
 		cloud_geometry::getPointCloud(pc, indices_remove, filtered_outside);
 	}
 
-//    void clearFromImage(IplImage* disp_img, const PointCloud& pc)
+//    void clearFromImage(IplImage* disp_img, const sensor_msgs::PointCloud& pc)
 //	{
 //		int xchan = -1;
 //		int ychan = -1;
@@ -82,7 +82,7 @@ static double dist2D(const T& a, const T& b)
 //		}
 //	}
 
-    bool fitSACPlane(const PointCloud& points, const vector<int> &indices,  // input
+    bool fitSACPlane(const sensor_msgs::PointCloud& points, const vector<int> &indices,  // input
 			vector<int> &inliers, vector<double> &coeff,  // output
 			double dist_thresh, int min_points_per_model)
 	{
@@ -90,7 +90,7 @@ static double dist2D(const T& a, const T& b)
 		sample_consensus::SACModelPlane *model = new sample_consensus::SACModelPlane ();
 		sample_consensus::SAC *sac             = new sample_consensus::RANSAC (model, dist_thresh);
 		sac->setMaxIterations (100);
-		model->setDataSet ((PointCloud*)&points, indices);
+		model->setDataSet ((sensor_msgs::PointCloud*)&points, indices);
 
 		// Search for the best plane
 		if (sac->computeModel ()) {
@@ -104,7 +104,7 @@ static double dist2D(const T& a, const T& b)
 				return false;
 			}
 
-			Point32 viewpoint;
+			geometry_msgs::Point32 viewpoint;
 			viewpoint.x = 0;
 			viewpoint.y = 0;
 			viewpoint.z = 0;
@@ -123,7 +123,7 @@ static double dist2D(const T& a, const T& b)
 		return true;
 	}
 
-    PointCloud projectToPlane(const PointCloud& objects, const vector<double>& coefficients)
+    sensor_msgs::PointCloud projectToPlane(const sensor_msgs::PointCloud& objects, const vector<double>& coefficients)
 	{
 		// clear "under the table" points
 		vector<int> object_indices(objects.pts.size());
@@ -131,7 +131,7 @@ static double dist2D(const T& a, const T& b)
 			object_indices[i] = i;
 		}
 
-		PointCloud object_projections;
+		sensor_msgs::PointCloud object_projections;
 		object_projections.header.stamp = objects.header.stamp;
 		object_projections.header.frame_id = objects.header.frame_id;
 
@@ -141,13 +141,13 @@ static double dist2D(const T& a, const T& b)
 
 	}
 
-    void filterTablePlane(const PointCloud& cloud, vector<double>& coefficients, PointCloud& object_cloud, PointCloud& plane_cloud)
+    void filterTablePlane(const sensor_msgs::PointCloud& cloud, vector<double>& coefficients, sensor_msgs::PointCloud& object_cloud, sensor_msgs::PointCloud& plane_cloud)
 	{
 
 //		disp_clone = cvCloneImage(disp);
 
-		PointCloud filtered_cloud;
-		PointCloud filtered_outside;
+		sensor_msgs::PointCloud filtered_cloud;
+		sensor_msgs::PointCloud filtered_outside;
 
 		filterByZBounds(cloud,0.1, 1.5 , filtered_cloud, filtered_outside );
 
@@ -170,7 +170,7 @@ static double dist2D(const T& a, const T& b)
 //		clearFromImage(disp, plane_cloud);
 	}
 
-    void addTableFrame(PointStamped origin, const vector<double>& plane, tf::TransformListener& tf_, tf::TransformBroadcaster& broadcaster_)
+    void addTableFrame(geometry_msgs::PointStamped origin, const vector<double>& plane, tf::TransformListener& tf_, tf::TransformBroadcaster& broadcaster_)
 	{
 
 		btVector3 position(origin.point.x,origin.point.y,origin.point.z);
@@ -197,9 +197,9 @@ static double dist2D(const T& a, const T& b)
 		broadcaster_.sendTransform(table_pose_frame);
 	}
 
-    float GetCameraHeight(const PointCloud& pc, tf::TransformListener& tf_){
-        PointCloud camera_center;
-        PointCloud camera_center_table_frame;
+    float GetCameraHeight(const sensor_msgs::PointCloud& pc, tf::TransformListener& tf_){
+        sensor_msgs::PointCloud camera_center;
+        sensor_msgs::PointCloud camera_center_table_frame;
         camera_center.header = pc.header;
         camera_center.chan.resize(pc.chan.size ());
         camera_center.pts.resize(1);
@@ -220,12 +220,12 @@ static double dist2D(const T& a, const T& b)
         return camera_center_table_frame.pts[0].z;
     }
 
-    float CalHorizontalLine( const PointCloud& cloud, vector<double> plane_coeff, const sensor_msgs::CamInfo& lcinfo, tf::TransformListener& tf_){
+    float CalHorizontalLine( const sensor_msgs::PointCloud& cloud, vector<double> plane_coeff, const sensor_msgs::CamInfo& lcinfo, tf::TransformListener& tf_){
         // calculate new plane_coeff which includes the origin pts
         plane_coeff[3] = 0;
 
         // calulcate a pts on the plane and in front of the camera
-        PointStamped ps;
+        geometry_msgs::PointStamped ps;
         ps.header.frame_id = cloud.header.frame_id;
 		ps.header.stamp = cloud.header.stamp;
 
@@ -233,7 +233,7 @@ static double dist2D(const T& a, const T& b)
         ps.point.x = 0;
         ps.point.z = 0.7;
 		ps.point.y = -(plane_coeff[2]/plane_coeff[1])*ps.point.z;
-		Point pp = project3DPointIntoImage(lcinfo, ps, tf_);
+		geometry_msgs::Point pp = project3DPointIntoImage(lcinfo, ps, tf_);
 
         // get imaeg coordinate of the pts
 
@@ -243,7 +243,7 @@ static double dist2D(const T& a, const T& b)
 
     class NNGridIndexer
 	{
-		const PointCloud& cloud_;
+		const sensor_msgs::PointCloud& cloud_;
 		float xmin, xmax, ymin, ymax;
 		float xd,yd;
 
@@ -252,7 +252,7 @@ static double dist2D(const T& a, const T& b)
 		float* grid;
 
 	public:
-		NNGridIndexer(const PointCloud& cloud) : cloud_(cloud)
+		NNGridIndexer(const sensor_msgs::PointCloud& cloud) : cloud_(cloud)
 		{
 			xmin = cloud.pts[0].x;
 			xmax = cloud.pts[0].x;
@@ -273,7 +273,7 @@ static double dist2D(const T& a, const T& b)
 			memset(grid,0,resolution*resolution*sizeof(float));
 
 			for (size_t i=0;i<cloud.get_pts_size();++i) {
-				Point32 p = cloud.pts[i];
+				geometry_msgs::Point32 p = cloud.pts[i];
 
 				int x = int((p.x-xmin)/xd+0.5);
 				int y = int((p.y-ymin)/yd+0.5);
@@ -289,7 +289,7 @@ static double dist2D(const T& a, const T& b)
 		}
 
 
-		int computeMean(const Point32& p, float radius, Point32& result)
+		int computeMean(const geometry_msgs::Point32& p, float radius, geometry_msgs::Point32& result)
 		{
 			int xc = int((p.x-xmin)/xd+0.5);
 			int yc = int((p.y-ymin)/yd+0.5);
@@ -331,12 +331,12 @@ static double dist2D(const T& a, const T& b)
 #define CLUSTER_RADIUS 0.15/2
 #define MIN_OBJ_HEIGHT 0.06
 #define MIN_OBJ_DIST 0.05
-    double meanShiftIteration(const PointCloud& pc, NNGridIndexer& index, vector<Point32>& centers, vector<Point32>& means, float step)
+    double meanShiftIteration(const sensor_msgs::PointCloud& pc, NNGridIndexer& index, vector<geometry_msgs::Point32>& centers, vector<geometry_msgs::Point32>& means, float step)
 	{
 		double total_dist = 0;
 		for (size_t i=0;i<centers.size();++i) {
 
-			Point32 mean;
+			geometry_msgs::Point32 mean;
 			int count = index.computeMean(centers[i], step, mean);
 			if (count==0) {
 				printf("This should not happen\n");
@@ -348,7 +348,7 @@ static double dist2D(const T& a, const T& b)
 		return total_dist;
 	}
 
-	void filterClusters(const PointCloud& cloud, vector<Point32>& centers, vector<Point32>& clusters)
+	void filterClusters(const sensor_msgs::PointCloud& cloud, vector<geometry_msgs::Point32>& centers, vector<geometry_msgs::Point32>& clusters)
 	{
 		vector<double> cluster_heights(centers.size(), 0);
 //		vector<double> cluster_center_depth(centers.size(), 0);
@@ -385,7 +385,7 @@ static double dist2D(const T& a, const T& b)
 		printf("Number of clusters: %d\n", clusters.size());
 	}
 
-    void findClusters2(const PointCloud& cloud, vector<Point32>& clusters)
+    void findClusters2(const sensor_msgs::PointCloud& cloud, vector<geometry_msgs::Point32>& clusters)
 	{
 		if (cloud.get_pts_size()==0) return;
 
@@ -410,16 +410,16 @@ static double dist2D(const T& a, const T& b)
 		float step = CLUSTER_RADIUS;
 		NNGridIndexer index(cloud);
 //		vector<int> indices(cloud.get_pts_size());
-		vector<Point32> centers(NUM_CLUSTERS);
-		vector<Point32> means(NUM_CLUSTERS);
-		Point32 p;
+		vector<geometry_msgs::Point32> centers(NUM_CLUSTERS);
+		vector<geometry_msgs::Point32> means(NUM_CLUSTERS);
+		geometry_msgs::Point32 p;
 		double total_dist = 0;
 		for (int i=0;i<NUM_CLUSTERS;++i) {
 			float* ptr = (float*)(centers_->data.ptr + i * centers_->step);
 			p.x = ptr[0];
 			p.y = ptr[1];
 			centers[i] = p;
-			Point32 mean;
+			geometry_msgs::Point32 mean;
 			int count = index.computeMean(p, step, mean);
 			means[i]= mean;
 			total_dist += dist2D(mean, p);
@@ -448,9 +448,9 @@ static double dist2D(const T& a, const T& b)
 //		vector<int> indices(cloud.get_pts_size());
 
 		// getting the initial centers
-		vector<Point32> centers;
-		vector<Point32> means;
-		Point32 p;
+		vector<geometry_msgs::Point32> centers;
+		vector<geometry_msgs::Point32> means;
+		geometry_msgs::Point32 p;
 
 		double total_dist = 0;
 		for (double x = xmin;x<xmax;x+=step/2) {
@@ -459,7 +459,7 @@ static double dist2D(const T& a, const T& b)
 				p.x = x;
 				p.y = y;
 
-				Point32 mean;
+				geometry_msgs::Point32 mean;
 				int found = index.computeMean(p, step, mean);
 
 				if (found>10) {
@@ -499,19 +499,19 @@ static double dist2D(const T& a, const T& b)
 
 	}
 
-    float findObjectPositionsFromStereo(const PointCloud& cloud, vector<CvPoint>& locations, vector<CvPoint>& obj_bottom,
+    float findObjectPositionsFromStereo(const sensor_msgs::PointCloud& cloud, vector<CvPoint>& locations, vector<CvPoint>& obj_bottom,
         vector<float>& scales, vector<float>& scales_msun, tf::TransformListener& tf_, tf::TransformBroadcaster& broadcaster_,
         const sensor_msgs::CamInfo& lcinfo)
 	{
 		vector<double> plane;
-		PointCloud objects_pc;
-		PointCloud plane_pc;
+		sensor_msgs::PointCloud objects_pc;
+		sensor_msgs::PointCloud plane_pc;
 		filterTablePlane(cloud, plane,objects_pc,plane_pc);// fiting table plane
 
-		PointCloud projected_objects = projectToPlane(objects_pc, plane);
+		sensor_msgs::PointCloud projected_objects = projectToPlane(objects_pc, plane);
 
 
-		PointStamped table_point;
+		geometry_msgs::PointStamped table_point;
 		table_point.header.frame_id = projected_objects.header.frame_id;
 		table_point.header.stamp = projected_objects.header.stamp;
 		table_point.point.x = projected_objects.pts[0].x;
@@ -520,7 +520,7 @@ static double dist2D(const T& a, const T& b)
 
 		addTableFrame(table_point,plane, tf_, broadcaster_);
 
-		PointCloud objects_table_frame;
+		sensor_msgs::PointCloud objects_table_frame;
 		tf_.transformPointCloud("table_frame", objects_pc, objects_table_frame);
 
         // getting camera height
@@ -531,7 +531,7 @@ static double dist2D(const T& a, const T& b)
 //        cout << "horizontal_line_row " << horizontal_line_row << endl;
 
 		// find clusters
-		vector<Point32> clusters;
+		vector<geometry_msgs::Point32> clusters;
 		findClusters2(objects_table_frame, clusters);
 
 		locations.resize(clusters.size());
@@ -539,7 +539,7 @@ static double dist2D(const T& a, const T& b)
 		scales.resize(clusters.size());
 		scales_msun.resize(clusters.size());
 		for (size_t i=0;i<clusters.size();++i) {
-			PointStamped ps;
+			geometry_msgs::PointStamped ps;
 			ps.header.frame_id = objects_table_frame.header.frame_id;
 			ps.header.stamp = objects_table_frame.header.stamp;
 
@@ -547,16 +547,16 @@ static double dist2D(const T& a, const T& b)
 			ps.point.x = clusters[i].x;
 			ps.point.y = clusters[i].y;
 			ps.point.z = clusters[i].z/2;
-			Point pp = project3DPointIntoImage(lcinfo, ps, tf_);
+			geometry_msgs::Point pp = project3DPointIntoImage(lcinfo, ps, tf_);
 
 			locations[i].x = int(pp.x);
 			locations[i].y = int(pp.y);
 
 			// compute scale
 			ps.point.z = 0;
-			Point pp1 = project3DPointIntoImage(lcinfo, ps, tf_);  // compute obj bottom in image coordinate
+			geometry_msgs::Point pp1 = project3DPointIntoImage(lcinfo, ps, tf_);  // compute obj bottom in image coordinate
 			ps.point.z = clusters[i].z;
-			Point pp2 = project3DPointIntoImage(lcinfo, ps, tf_);
+			geometry_msgs::Point pp2 = project3DPointIntoImage(lcinfo, ps, tf_);
 
 			float dist = sqrt(dist2D(pp1,pp2));
 			printf("Pixel height: %f\n", dist);
@@ -576,11 +576,11 @@ static double dist2D(const T& a, const T& b)
 		return camera_height;
 	}
 
-    Point project3DPointIntoImage(const sensor_msgs::CamInfo& cam_info, PointStamped point, tf::TransformListener& tf_)
+    geometry_msgs::Point project3DPointIntoImage(const sensor_msgs::CamInfo& cam_info, geometry_msgs::PointStamped point, tf::TransformListener& tf_)
 	{
-		PointStamped image_point;
+		geometry_msgs::PointStamped image_point;
 		tf_.transformPoint(cam_info.header.frame_id, point, image_point);
-		Point pp; // projected point
+		geometry_msgs::Point pp; // projected point
 
 		pp.x = cam_info.P[0]*image_point.point.x+
 				cam_info.P[1]*image_point.point.y+
