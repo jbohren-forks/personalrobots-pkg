@@ -361,8 +361,10 @@ bool ompl_planning::RequestHandler::findState(ModelMap &models, const planning_m
 	ompl::base::State *st = new ompl::base::State(dim);
 	hs.setParamsJoints(req.states[i].vals, req.names);
 	hs.copyParamsGroup(st->values, m->groupID);
-	printf("hint state: ");	
-	iksetup->si->printState(st);	
+	std::stringstream ss;
+	ss << "Hint state: ";
+	iksetup->si->printState(st, ss);	
+	ROS_DEBUG("%s", ss.str().c_str());
 	hints.push_back(st);
     }
     
@@ -382,6 +384,7 @@ bool ompl_planning::RequestHandler::findState(ModelMap &models, const planning_m
     {
 	int u = 0;
 	std::vector<std::string> jnames;
+	std::stringstream ss;
 	m->planningMonitor->getKinematicModel()->getJointsInGroup(jnames, m->groupID);
 	res.joint_constraint.resize(jnames.size());
 	for (unsigned int i = 0; i < jnames.size() ; ++i)
@@ -394,10 +397,13 @@ bool ompl_planning::RequestHandler::findState(ModelMap &models, const planning_m
 	    res.joint_constraint[i].tolerance_above.resize(joint->usedParams, 0.0);
 	    res.joint_constraint[i].tolerance_below.resize(joint->usedParams, 0.0);
 	    for (unsigned int j = 0 ; j < joint->usedParams ; ++j)
+	    {
 		res.joint_constraint[i].value[j] = goal->values[j + u];
+		ss << goal->values[j + u] << " ";
+	    }
 	    u += joint->usedParams;
 	}
-	ROS_DEBUG("Solution was found");
+	ROS_DEBUG("Solution was found: %s", ss.str().c_str());
     }
     else
 	ROS_DEBUG("No solution was found");
