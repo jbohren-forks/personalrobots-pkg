@@ -38,7 +38,7 @@
 #include <boost/shared_ptr.hpp>
 #include <vector>
 
-namespace robot_msgs {
+namespace geometry_msgs {
   class Pose;
 }
 namespace manipulation_msgs {
