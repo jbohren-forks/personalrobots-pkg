@@ -113,7 +113,7 @@ planning_models::StateParams* pm_wrapper::fillStartState(const std::vector<motio
 }
 
 /** \brief update the planning monitor with the current robot state and lock it (call right before planning) */
-void pm_wrapper::updatePM(const motion_planning_srvs::MotionPlan::Request &req)
+void pm_wrapper::updatePM(const motion_planning_msgs::GetMotionPlan::Request &req)
 {
   start_state_ = fillStartState(req.start_state);
 

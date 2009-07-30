@@ -34,13 +34,75 @@
 
 /** \author Ioan Sucan */
 
-#include "ompl_planning/RequestHandler.h"
+#include "RequestHandler.h"
 #include <visualization_msgs/Marker.h>
 #include <ros/console.h>
 #include <sstream>
 #include <cstdlib>
 
-bool ompl_planning::RequestHandler::isRequestValid(ModelMap &models, motion_planning_srvs::MotionPlan::Request &req)
+bool ompl_planning::RequestHandler::isRequestValid(ModelMap &models, motion_planning_msgs::ConvertPoseToJointConstraint::Request &req)
+{   
+    ModelMap::const_iterator pos = models.find(req.params.model_id);
+    
+    if (pos == models.end())
+    {
+	ROS_ERROR("Cannot search for '%s'. Model does not exist", req.params.model_id.c_str());
+	return false;
+    }
+    
+    /* find the model */
+    Model *m = pos->second;
+    
+    IKSetup *iksetup = m->ik;
+    if (iksetup == NULL)
+    {
+	ROS_ERROR("No IK setup available for model '%s'", pos->first.c_str());
+	return false;
+    }
+    
+    /* check if the desired distance metric is defined */
+    if (iksetup->sde.find(req.params.distance_metric) == iksetup->sde.end())
+    {
+	ROS_ERROR("Distance evaluator not found: '%s'", req.params.distance_metric.c_str());
+	return false;
+    }
+    
+    // check headers
+    for (unsigned int i = 0 ; i < req.constraints.pose_constraint.size() ; ++i)
+	if (!m->planningMonitor->getTransformListener()->frameExists(req.constraints.pose_constraint[i].pose.header.frame_id))
+	{
+	    ROS_ERROR("Frame '%s' is not defined for pose constraint message %u", req.constraints.pose_constraint[i].pose.header.frame_id.c_str(), i);
+	    return false;
+	}
+    
+    for (unsigned int i = 0 ; i < req.constraints.joint_constraint.size() ; ++i)
+	if (!m->planningMonitor->getTransformListener()->frameExists(req.constraints.joint_constraint[i].header.frame_id))
+	{
+	    ROS_ERROR("Frame '%s' is not defined for joint constraint message %u", req.constraints.joint_constraint[i].header.frame_id.c_str(), i);
+	    return false;
+	}
+    
+    if (!req.states.empty())
+    {
+	// make sure all joints are in the group
+	for (unsigned int i = 0 ; i < req.names.size() ; ++i)
+	{
+	    int idx = m->planningMonitor->getKinematicModel()->getJointIndexInGroup(req.names[i], m->groupID);
+	    if (idx < 0)
+		return false;
+	}
+	
+	if (iksetup->si->getStateDimension() != m->planningMonitor->getKinematicModel()->getJointsDimension(req.names))
+	{
+	    ROS_ERROR("The state dimension for model '%s' does not match the dimension of the joints defining the hint states", req.params.model_id.c_str());
+	    return false;
+	}
+    }
+    
+    return true;
+}
+
+bool ompl_planning::RequestHandler::isRequestValid(ModelMap &models, motion_planning_msgs::GetMotionPlan::Request &req)
 {   
     ModelMap::const_iterator pos = models.find(req.params.model_id);
     
@@ -54,32 +116,32 @@ bool ompl_planning::RequestHandler::isRequestValid(ModelMap &models, motion_plan
     Model *m = pos->second;
     
     /* if the user did not specify a planner, use the first available one */
-    if (req.params.planner_id.empty())
+    if (req.planner_id.empty())
 	for (std::map<std::string, PlannerSetup*>::const_iterator it = m->planners.begin() ; it != m->planners.end() ; ++it)
 	    if ((req.goal_constraints.pose_constraint.empty() && (it->second->mp->getType() & ompl::base::PLAN_TO_GOAL_STATE) != 0) ||
 		(!req.goal_constraints.pose_constraint.empty() && (it->second->mp->getType() & ompl::base::PLAN_TO_GOAL_REGION) != 0))
 	    {
-		if (req.params.planner_id.empty())
-		    req.params.planner_id = it->first;
+		if (req.planner_id.empty())
+		    req.planner_id = it->first;
 		else
-		    if (m->planners[req.params.planner_id]->priority < it->second->priority ||
-			(m->planners[req.params.planner_id]->priority == it->second->priority && rand() % 2 == 1))
-			req.params.planner_id = it->first;
+		    if (m->planners[req.planner_id]->priority < it->second->priority ||
+			(m->planners[req.planner_id]->priority == it->second->priority && rand() % 2 == 1))
+			req.planner_id = it->first;
 	    }
     
     /* check if desired planner exists */
     std::map<std::string, PlannerSetup*>::iterator plannerIt = m->planners.end();
     for (std::map<std::string, PlannerSetup*>::iterator it = m->planners.begin() ; it != m->planners.end() ; ++it)
-	if (it->first.find(req.params.planner_id) != std::string::npos)
+	if (it->first.find(req.planner_id) != std::string::npos)
 	{
-	    req.params.planner_id = it->first;
+	    req.planner_id = it->first;
 	    plannerIt = it;
 	    break;
 	}
     
     if (plannerIt == m->planners.end())
     {
-	ROS_ERROR("Motion planner not found: '%s'", req.params.planner_id.c_str());
+	ROS_ERROR("Motion planner not found: '%s'", req.planner_id.c_str());
 	return false;
     }
     
@@ -124,27 +186,41 @@ bool ompl_planning::RequestHandler::isRequestValid(ModelMap &models, motion_plan
     return true;
 }
 
-void ompl_planning::RequestHandler::configure(const planning_models::StateParams *startState, motion_planning_srvs::MotionPlan::Request &req, PlannerSetup *psetup)
+void ompl_planning::RequestHandler::configure(const planning_models::StateParams *startState, motion_planning_msgs::ConvertPoseToJointConstraint::Request &req, IKSetup *iksetup)
 {
     /* clear memory */
-    psetup->si->clearGoal();           // goal definitions
-    psetup->si->clearStartStates();    // start states
+    iksetup->si->clearGoal();
     
     // clear clones of environments 
-    psetup->model->clearEnvironmentDescriptions();
+    iksetup->model->clearEnvironmentDescriptions();
 
-    /* before configuring, we may need to update bounds on the state space */
-    static_cast<StateValidityPredicate*>(psetup->si->getStateValidityChecker())->setConstraints(req.path_constraints);
+    setWorkspaceBounds(req.params, iksetup->model, iksetup->si);
+    iksetup->si->setStateDistanceEvaluator(iksetup->sde[req.params.distance_metric]);
 
+    /* set the pose of the whole robot */
+    EnvironmentDescription *ed = iksetup->model->getEnvironmentDescription();
+    ed->kmodel->computeTransforms(startState->getParams());
+    ed->collisionSpace->updateRobotModel();
+    
+    /* add goal state */
+    iksetup->model->planningMonitor->transformConstraintsToFrame(req.constraints, iksetup->model->planningMonitor->getFrameId());
+    iksetup->si->setGoal(computeGoalFromConstraints(iksetup->si, iksetup->model, req.constraints));
+
+    /* print some information */
+    printSettings(iksetup->si);
+}
+
+void ompl_planning::RequestHandler::setWorkspaceBounds(motion_planning_msgs::KinematicSpaceParameters &params, ModelBase *model, ompl::base::SpaceInformation *si)
+{
     /* set the workspace volume for planning */
-    if (psetup->model->planningMonitor->getTransformListener()->frameExists(req.params.volumeMin.header.frame_id) &&
-	psetup->model->planningMonitor->getTransformListener()->frameExists(req.params.volumeMax.header.frame_id))
+    if (model->planningMonitor->getTransformListener()->frameExists(params.volumeMin.header.frame_id) &&
+	model->planningMonitor->getTransformListener()->frameExists(params.volumeMax.header.frame_id))
     {
 	bool err = false;
 	try
 	{
-	    psetup->model->planningMonitor->getTransformListener()->transformPoint(psetup->model->planningMonitor->getFrameId(), req.params.volumeMin, req.params.volumeMin);
-	    psetup->model->planningMonitor->getTransformListener()->transformPoint(psetup->model->planningMonitor->getFrameId(), req.params.volumeMax, req.params.volumeMax);
+	    model->planningMonitor->getTransformListener()->transformPoint(model->planningMonitor->getFrameId(), params.volumeMin, params.volumeMin);
+	    model->planningMonitor->getTransformListener()->transformPoint(model->planningMonitor->getFrameId(), params.volumeMax, params.volumeMax);
 	}
 	catch(...)
 	{
@@ -155,25 +231,39 @@ void ompl_planning::RequestHandler::configure(const planning_models::StateParams
 	else
 	{	    
 	    // only area or volume should go through
-	    if (SpaceInformationKinematicModel *s = dynamic_cast<SpaceInformationKinematicModel*>(psetup->si))
+	    if (SpaceInformationKinematicModel *s = dynamic_cast<SpaceInformationKinematicModel*>(si))
 	    {
-		s->setPlanningArea(req.params.volumeMin.point.x, req.params.volumeMin.point.y,
-				   req.params.volumeMax.point.x, req.params.volumeMax.point.y);
-		s->setPlanningVolume(req.params.volumeMin.point.x, req.params.volumeMin.point.y, req.params.volumeMin.point.z,
-				     req.params.volumeMax.point.x, req.params.volumeMax.point.y, req.params.volumeMax.point.z);
+		s->setPlanningArea(params.volumeMin.point.x, params.volumeMin.point.y,
+				   params.volumeMax.point.x, params.volumeMax.point.y);
+		s->setPlanningVolume(params.volumeMin.point.x, params.volumeMin.point.y, params.volumeMin.point.z,
+				     params.volumeMax.point.x, params.volumeMax.point.y, params.volumeMax.point.z);
 	    }
-	    if (SpaceInformationDynamicModel *s = dynamic_cast<SpaceInformationDynamicModel*>(psetup->si))
+	    if (SpaceInformationDynamicModel *s = dynamic_cast<SpaceInformationDynamicModel*>(si))
 	    {
-		s->setPlanningArea(req.params.volumeMin.point.x, req.params.volumeMin.point.y,
-				   req.params.volumeMax.point.x, req.params.volumeMax.point.y);
-		s->setPlanningVolume(req.params.volumeMin.point.x, req.params.volumeMin.point.y, req.params.volumeMin.point.z,
-				     req.params.volumeMax.point.x, req.params.volumeMax.point.y, req.params.volumeMax.point.z);
+		s->setPlanningArea(params.volumeMin.point.x, params.volumeMin.point.y,
+				   params.volumeMax.point.x, params.volumeMax.point.y);
+		s->setPlanningVolume(params.volumeMin.point.x, params.volumeMin.point.y, params.volumeMin.point.z,
+				     params.volumeMax.point.x, params.volumeMax.point.y, params.volumeMax.point.z);
 	    }
 	}
     }
     else
 	ROS_DEBUG("No workspace bounding volume was set");
+}
+
+void ompl_planning::RequestHandler::configure(const planning_models::StateParams *startState, motion_planning_msgs::GetMotionPlan::Request &req, PlannerSetup *psetup)
+{
+    /* clear memory */
+    psetup->si->clearGoal();           // goal definitions
+    psetup->si->clearStartStates();    // start states
     
+    // clear clones of environments 
+    psetup->model->clearEnvironmentDescriptions();
+
+    /* before configuring, we may need to update bounds on the state space */
+    psetup->model->planningMonitor->transformConstraintsToFrame(req.path_constraints, psetup->model->planningMonitor->getFrameId());
+    static_cast<StateValidityPredicate*>(psetup->si->getStateValidityChecker())->setConstraints(req.path_constraints);
+    setWorkspaceBounds(req.params, psetup->model, psetup->si);
     psetup->si->setStateDistanceEvaluator(psetup->sde[req.params.distance_metric]);
     
     /* set the starting state */
@@ -197,6 +287,7 @@ void ompl_planning::RequestHandler::configure(const planning_models::StateParams
     psetup->si->addStartState(start);
     
     /* add goal state */
+    psetup->model->planningMonitor->transformConstraintsToFrame(req.goal_constraints, psetup->model->planningMonitor->getFrameId());
     psetup->si->setGoal(computeGoalFromConstraints(psetup->si, psetup->model, req.goal_constraints));
 
     /* fix invalid input states, if we have any */
@@ -204,15 +295,15 @@ void ompl_planning::RequestHandler::configure(const planning_models::StateParams
     fixInputStates(psetup, 0.05, 50);
     
     /* print some information */
-    printSettings(psetup);
+    printSettings(psetup->si);
 }
 
-void ompl_planning::RequestHandler::printSettings(PlannerSetup *psetup)
+void ompl_planning::RequestHandler::printSettings(ompl::base::SpaceInformation *si)
 {
     ROS_DEBUG("=======================================");
     std::stringstream ss;
-    psetup->si->printSettings(ss);
-    static_cast<StateValidityPredicate*>(psetup->si->getStateValidityChecker())->printSettings(ss);
+    si->printSettings(ss);
+    static_cast<StateValidityPredicate*>(si->getStateValidityChecker())->printSettings(ss);
     ROS_DEBUG("%s", ss.str().c_str());
     ROS_DEBUG("=======================================");	
 }
@@ -244,8 +335,83 @@ bool ompl_planning::RequestHandler::fixInputStates(PlannerSetup *psetup, double 
     return result;
 }
 
+bool ompl_planning::RequestHandler::findState(ModelMap &models, const planning_models::StateParams *start, motion_planning_msgs::ConvertPoseToJointConstraint::Request &req,
+					      motion_planning_msgs::ConvertPoseToJointConstraint::Response &res)
+{    
+    if (!isRequestValid(models, req))
+	return false;
+        
+    // find the data we need 
+    Model *m = models[req.params.model_id];
+    IKSetup *iksetup = m->ik;
+    
+    // copy the hint states to OMPL datastructures
+    const unsigned int dim = iksetup->si->getStateDimension();
+    ompl::base::State *goal = new ompl::base::State(dim);
+    std::vector<ompl::base::State*> hints;
+    planning_models::StateParams hs(*start);
+    unsigned int sdim = m->planningMonitor->getKinematicModel()->getJointsDimension(req.names);
+    for (unsigned int i = 0 ; i < req.states.size() ; ++i)
+    {
+	if (req.states[i].vals.size() != sdim)
+	{
+	    ROS_ERROR("Incorrect number of parameters for hint state at index %u. Expected %u, got %d.", i, sdim, (int)req.states[i].vals.size());
+	    continue;
+	}
+	ompl::base::State *st = new ompl::base::State(dim);
+	hs.setParamsJoints(req.states[i].vals, req.names);
+	hs.copyParamsGroup(st->values, m->groupID);
+	printf("hint state: ");	
+	iksetup->si->printState(st);	
+	hints.push_back(st);
+    }
+    
+    m->planningMonitor->getEnvironmentModel()->lock();
+    m->planningMonitor->getKinematicModel()->lock();
+    
+    configure(start, req, iksetup);
+    ros::WallTime startTime = ros::WallTime::now();
+    bool found = iksetup->gaik->solve(req.allowed_time, goal, hints);
+    double stime = (ros::WallTime::now() - startTime).toSec();
+    m->planningMonitor->getEnvironmentModel()->unlock();
+    m->planningMonitor->getKinematicModel()->unlock();
+    
+    ROS_DEBUG("Spent %f seconds searching for state", stime);
+    
+    if (found)
+    {
+	int u = 0;
+	std::vector<std::string> jnames;
+	m->planningMonitor->getKinematicModel()->getJointsInGroup(jnames, m->groupID);
+	res.joint_constraint.resize(jnames.size());
+	for (unsigned int i = 0; i < jnames.size() ; ++i)
+	{
+	    res.joint_constraint[i].header.frame_id = m->planningMonitor->getFrameId();
+	    res.joint_constraint[i].header.stamp = m->planningMonitor->lastMapUpdate();
+	    res.joint_constraint[i].joint_name = jnames[i];
+	    planning_models::KinematicModel::Joint *joint = m->planningMonitor->getKinematicModel()->getJoint(jnames[i]);
+	    res.joint_constraint[i].value.resize(joint->usedParams);
+	    res.joint_constraint[i].tolerance_above.resize(joint->usedParams, 0.0);
+	    res.joint_constraint[i].tolerance_below.resize(joint->usedParams, 0.0);
+	    for (unsigned int j = 0 ; j < joint->usedParams ; ++j)
+		res.joint_constraint[i].value[j] = goal->values[j + u];
+	    u += joint->usedParams;
+	}
+	ROS_DEBUG("Solution was found");
+    }
+    else
+	ROS_DEBUG("No solution was found");
+    
+    iksetup->si->clearGoal();
+    delete goal;
+    for (unsigned int i = 0 ; i < hints.size() ; ++i)
+	delete hints[i];
+    
+    return true;
+}
+
 bool ompl_planning::RequestHandler::computePlan(ModelMap &models, const planning_models::StateParams *start, 
-						motion_planning_srvs::MotionPlan::Request &req, motion_planning_srvs::MotionPlan::Response &res)
+						motion_planning_msgs::GetMotionPlan::Request &req, motion_planning_msgs::GetMotionPlan::Response &res)
 {
     if (!isRequestValid(models, req))
 	return false;
@@ -254,12 +420,12 @@ bool ompl_planning::RequestHandler::computePlan(ModelMap &models, const planning
     Model *m = models[req.params.model_id];
     
     // get the planner setup
-    PlannerSetup *psetup = m->planners[req.params.planner_id];
+    PlannerSetup *psetup = m->planners[req.planner_id];
     
-    ROS_INFO("Selected motion planner: '%s', with priority %d", req.params.planner_id.c_str(), psetup->priority);
+    ROS_INFO("Selected motion planner: '%s', with priority %d", req.planner_id.c_str(), psetup->priority);
     
-    psetup->model->planningMonitor->getEnvironmentModel()->lock();
-    psetup->model->planningMonitor->getKinematicModel()->lock();
+    m->planningMonitor->getEnvironmentModel()->lock();
+    m->planningMonitor->getKinematicModel()->lock();
 
     // configure the planner
     configure(start, req, psetup);
@@ -296,11 +462,11 @@ bool ompl_planning::RequestHandler::computePlan(ModelMap &models, const planning
 	if (psetup->priority < -(int)m->planners.size())
 	    psetup->priority = -m->planners.size();
     }
-    ROS_DEBUG("New motion priority for  '%s' is %d", req.params.planner_id.c_str(), psetup->priority);
+    ROS_DEBUG("New motion priority for  '%s' is %d", req.planner_id.c_str(), psetup->priority);
     return true;
 }
 
-void ompl_planning::RequestHandler::fillResult(PlannerSetup *psetup, const planning_models::StateParams *start, motion_planning_srvs::MotionPlan::Response &res, const Solution &sol)
+void ompl_planning::RequestHandler::fillResult(PlannerSetup *psetup, const planning_models::StateParams *start, motion_planning_msgs::GetMotionPlan::Response &res, const Solution &sol)
 {   
     std::vector<planning_models::KinematicModel::Joint*> joints;
     psetup->model->planningMonitor->getKinematicModel()->getJoints(joints);

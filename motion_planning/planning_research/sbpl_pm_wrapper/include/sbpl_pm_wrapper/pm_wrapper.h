@@ -50,7 +50,7 @@ This package is only temporary. I'll eventually replace it with a better solutio
 #include <planning_environment/monitors/planning_monitor.h>
 #include <planning_environment/models/collision_models.h>
 #include <motion_planning_msgs/KinematicJoint.h>
-#include <motion_planning_srvs/MotionPlan.h>
+#include <motion_planning_msgs/GetMotionPlan.h>
 #include <planning_models/kinematic_state_params.h>
 
 
@@ -68,7 +68,7 @@ namespace sbpl_arm_planner_node
 
       bool areLinksValid(const double * angles);
 
-      void updatePM(const motion_planning_srvs::MotionPlan::Request &req);
+      void updatePM(const motion_planning_msgs::GetMotionPlan::Request &req);
 
       void unlockPM();
 

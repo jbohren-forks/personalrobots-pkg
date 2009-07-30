@@ -1,0 +1,30 @@
+# Parameters for the state space 
+motion_planning_msgs/KinematicSpaceParameters params
+
+
+# Starting state updates. If certain joints should be considered
+# at positions other than the current ones, these positions should
+# be set here
+motion_planning_msgs/KinematicJoint[] start_state
+
+
+# The joint names, in the same order as the values in the state
+string[] names
+
+# A list of states, each with the dimension of the requested model.
+# The dimension of the model may be different from the number of joints
+# (when there are joints that use more than one parameter)
+# Each state is to be used as a hint (initialization) for the search
+# if the valid state
+motion_planning_msgs/KinematicState[] states
+
+# The input constraints, to be converted to a set of joint constraints
+motion_planning_msgs/KinematicConstraints constraints
+
+# The maximum amount of time the search is to be run for
+float64 allowed_time
+
+---
+
+# The set of joint constraints that correspond to the pose constraint
+motion_planning_msgs/JointConstraint[] joint_constraint

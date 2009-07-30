@@ -6,13 +6,14 @@
     <remap from="collision_map_update" to="collision_map_occ_update" />
 
     <remap from="arm_ik" to="pr2_ik_left_arm/ik_service" />	
-    <remap from="arm_ik_query" to="pr2_ik_left_arm/ik_query" />
+
+    <remap from="get_valid_state" to="find_valid_state" />
     
     <remap from="controller_start"  to="l_arm_joint_trajectory_controller/TrajectoryStart" />
     <remap from="controller_query"  to="l_arm_joint_trajectory_controller/TrajectoryQuery" />
     <remap from="controller_cancel" to="l_arm_joint_trajectory_controller/TrajectoryCancel" />
     
-    <remap from="motion_plan" to="plan_kinematic_path" />
+    <remap from="get_motion_plan" to="plan_kinematic_path" />
     
     <param name="arm" type="string" value="left_arm" />
     <param name="show_collisions" type="bool" value="true" />

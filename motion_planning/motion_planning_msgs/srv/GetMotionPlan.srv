@@ -16,6 +16,10 @@ motion_planning_msgs/KinematicConstraints goal_constraints
 # No state in the produced motion plan will violate these constraints
 motion_planning_msgs/KinematicConstraints path_constraints
 
+# The name of the motion planner to use. If no name is specified,
+# a default motion planner will be used
+string planner_id
+
 # The number of times this plan is to be computed. Shortest solution
 # will be reported.
 int32 times

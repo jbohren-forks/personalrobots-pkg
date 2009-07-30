@@ -12,7 +12,6 @@
   <depend package="roscpp" />
   <depend package="planning_environment" />
   <depend package="motion_planning_msgs" />
-  <depend package="motion_planning_srvs" />
   <depend package="kdl" />
   <depend package="kdl_parser" />
   <depend package="angles" />

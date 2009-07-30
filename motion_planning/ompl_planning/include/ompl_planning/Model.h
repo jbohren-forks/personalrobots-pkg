@@ -39,6 +39,7 @@
 
 #include "ompl_planning/ModelBase.h"
 #include "ompl_planning/planners/PlannerSetup.h"
+#include "ompl_planning/planners/IKSetup.h"
 
 #include <boost/shared_ptr.hpp>
 #include <string>
@@ -52,6 +53,7 @@ namespace ompl_planning
     public:
         Model(void) : ModelBase()
 	{
+	    ik = NULL;
 	}
 	
 	virtual ~Model(void)
@@ -59,12 +61,15 @@ namespace ompl_planning
 	    for (std::map<std::string, PlannerSetup*>::iterator i = planners.begin(); i != planners.end() ; ++i)
 		if (i->second)
 		    delete i->second;
+	    if (ik)
+		delete ik;
 	}
 	
 	/* instantiate the planners that can be used  */
 	void createMotionPlanningInstances(std::vector< boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> > cfgs);
 	
-	std::map<std::string, PlannerSetup*> planners;
+	std::map<std::string, PlannerSetup*>  planners;
+	IKSetup                              *ik;
 	
     protected:
 
@@ -74,6 +79,15 @@ namespace ompl_planning
     };
     
     typedef std::map<std::string, Model*> ModelMap;
+    
+    /** \brief Create all the instances needed by OMPL using the planning parameters from the ROS server */
+    void setupPlanningModels(planning_environment::PlanningMonitor *planningMonitor, ModelMap &models);
+
+    /** \brief Get a list of known models */
+    std::vector<std::string> knownModels(ModelMap &models);
+
+    /** \brief Free all allocated memory */
+    void destroyPlanningModels(ModelMap &models);
     
 } // ompl_planning
 

@@ -35,7 +35,8 @@
 /** \author Ioan Sucan */
 
 #include "ompl_planning/Model.h"
-#include "ompl_planning/RequestHandler.h"
+#include "request_handler/RequestHandler.h"
+#include <motion_planning_msgs/ConvertPoseToJointConstraint.h>
 
 using namespace ompl_planning;
 
@@ -59,13 +60,13 @@ public:
 	    planningMonitor_ = new planning_environment::PlanningMonitor(collisionModels_, &tf_);
 	
 	planKinematicPathService_ = nodeHandle_.advertiseService("plan_kinematic_path", &OMPLPlanning::planToGoal, this);
+	findValidStateService_    = nodeHandle_.advertiseService("find_valid_state", &OMPLPlanning::findValidState, this);
     }
     
     /** Free the memory */
     ~OMPLPlanning(void)
     {
-	for (std::map<std::string, Model*>::iterator i = models_.begin() ; i != models_.end() ; i++)
-	    delete i->second;
+	destroyPlanningModels(models_);
 	delete planningMonitor_;
 	delete collisionModels_;
     }
@@ -77,9 +78,9 @@ public:
 	
 	if (collisionModels_->loadedModels())
 	{
-	    setupPlanningModels();
+	    setupPlanningModels(planningMonitor_, models_);
 	    
-	    knownModels(mlist);
+	    mlist = knownModels(models_);
 	    ROS_INFO("Known models:");    
 	    for (unsigned int i = 0 ; i < mlist.size() ; ++i)
 		ROS_INFO("  * %s", mlist[i].c_str());    
@@ -91,12 +92,26 @@ public:
 	}
 	
 	if (execute)
+	{
+	    bool verbose_collisions;	
+	    nodeHandle_.param("~verbose_collisions", verbose_collisions, false);
+	    if (verbose_collisions)
+	    {
+		planningMonitor_->getEnvironmentModel()->setVerbose(true);
+		ROS_WARN("Verbose collisions is enabled");
+	    }
+	    else
+		planningMonitor_->getEnvironmentModel()->setVerbose(false);
+    
 	    ros::spin();
+	}
 	else
 	    if (mlist.empty())
 		ROS_ERROR("No robot model loaded. OMPL planning node cannot start.");
     }
-    
+
+private:
+
     planning_models::StateParams* fillStartState(const std::vector<motion_planning_msgs::KinematicJoint> &given)
     {
 	planning_models::StateParams *s = planningMonitor_->getKinematicModel()->newStateParams();
@@ -131,7 +146,7 @@ public:
 	return NULL;
     }
     
-    bool planToGoal(motion_planning_srvs::MotionPlan::Request &req, motion_planning_srvs::MotionPlan::Response &res)
+    bool planToGoal(motion_planning_msgs::GetMotionPlan::Request &req, motion_planning_msgs::GetMotionPlan::Response &res)
     {
 	ROS_INFO("Received request for planning");
 	bool st = false;
@@ -165,46 +180,25 @@ public:
 	return st;	
     }
     
-    void setupPlanningModels(void)
+    bool findValidState(motion_planning_msgs::ConvertPoseToJointConstraint::Request &req, motion_planning_msgs::ConvertPoseToJointConstraint::Response &res)
     {
-	bool verbose_collisions;	
-	nodeHandle_.param("~verbose_collisions", verbose_collisions, false);
-	if (verbose_collisions)
+	ROS_INFO("Received request for searching a valid state");
+	bool st = false;
+
+	planning_models::StateParams *startState = fillStartState(req.start_state);
+	if (startState)
 	{
-	    planningMonitor_->getEnvironmentModel()->setVerbose(true);
-	    ROS_WARN("Verbose collisions is enabled");
+	    std::stringstream ss;
+	    startState->print(ss);
+	    ROS_DEBUG("Complete starting state:\n%s", ss.str().c_str());
+	    st = requestHandler_.findState(models_, startState, req, res);
+	    delete startState;
 	}
 	else
-	    planningMonitor_->getEnvironmentModel()->setVerbose(false);
+	    ROS_ERROR("Starting robot state is unknown. Cannot start search.");
 	
-	ROS_DEBUG("=======================================");	
-	std::stringstream ss;
-	collisionModels_->getKinematicModel()->printModelInfo(ss);
-	ROS_DEBUG("%s", ss.str().c_str());	
-	ROS_DEBUG("=======================================");
-
-	/* create a model for each group */
-	std::map< std::string, std::vector<std::string> > groups = collisionModels_->getPlanningGroups();
-	
-	for (std::map< std::string, std::vector<std::string> >::iterator it = groups.begin(); it != groups.end() ; ++it)
-	{
-	    Model *model = new Model();
-	    model->planningMonitor = planningMonitor_;
-	    model->groupID = planningMonitor_->getKinematicModel()->getGroupID(it->first);
-	    model->groupName = it->first;
-
-	    model->createMotionPlanningInstances(collisionModels_->getGroupPlannersConfig(model->groupName));
-	    models_[model->groupName] = model;
-	}
+	return st;
     }
-
-    void knownModels(std::vector<std::string> &model_ids)
-    {
-	for (std::map<std::string, Model*>::const_iterator i = models_.begin() ; i != models_.end() ; ++i)
-	    model_ids.push_back(i->first);
-    }
-
-private:
     
     // ROS interface 
     ros::NodeHandle                        nodeHandle_;
@@ -212,7 +206,7 @@ private:
     planning_environment::PlanningMonitor *planningMonitor_;
     tf::TransformListener                  tf_;
     ros::ServiceServer                     planKinematicPathService_;
-
+    ros::ServiceServer                     findValidStateService_;    
 
     // planning data
     ModelMap                               models_;

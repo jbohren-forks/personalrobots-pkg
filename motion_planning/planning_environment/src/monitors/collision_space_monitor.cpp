@@ -225,8 +225,12 @@ void planning_environment::CollisionSpaceMonitor::updateCollisionSpace(const map
     
     double tupd = (ros::WallTime::now() - startTime).toSec();
     ROS_DEBUG("Updated map model in %f seconds", tupd);
-    lastMapUpdate_ = collisionMap->header.stamp;
-    haveMap_ = true;
+    
+    if (clear)
+    {
+	lastMapUpdate_ = collisionMap->header.stamp;
+	haveMap_ = true;
+    }
     
     if (onAfterMapUpdate_ != NULL)
 	onAfterMapUpdate_(collisionMap, clear);

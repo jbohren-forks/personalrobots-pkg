@@ -51,7 +51,6 @@
 /* instantiate the planners that can be used  */
 void ompl_planning::Model::createMotionPlanningInstances(std::vector< boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> > cfgs)
 {	
-    
     for (unsigned int i = 0 ; i < cfgs.size() ; ++i)
     {
 	std::string type = cfgs[i]->getParamString("type");
@@ -89,6 +88,17 @@ void ompl_planning::Model::createMotionPlanningInstances(std::vector< boost::sha
 	if (type == "dynamic::KPIECE")
 	    add_planner<dynamicKPIECESetup>(cfgs[i]);
 	else
+	if (type == "GAIK")
+	{
+	    if (ik)
+	    {
+		ROS_WARN("Re-definition of '%s'", type.c_str());
+		delete ik;
+	    }
+	    ik = new IKSetup(dynamic_cast<ModelBase*>(this));
+	    ik->setup(cfgs[i]);
+	}
+	else
 	    ROS_WARN("Unknown planner type: %s", type.c_str());
     }
 }
@@ -98,8 +108,52 @@ void ompl_planning::Model::add_planner(boost::shared_ptr<planning_environment::R
 {
     PlannerSetup *p = new _T(dynamic_cast<ModelBase*>(this));
     if (p->setup(options))
-	planners[p->name + "[" + options->getName() + "]"] = p;
+    {
+	std::string location = p->name + "[" + options->getName() + "]";
+	if (planners.find(location) != planners.end())
+	{
+	    ROS_WARN("Re-definition of '%s'", location.c_str());
+	    delete planners[location];
+	}
+	planners[location] = p;
+    }
     else
 	delete p;
 }
 
+void ompl_planning::setupPlanningModels(planning_environment::PlanningMonitor *planningMonitor, ompl_planning::ModelMap &models)
+{
+    ROS_DEBUG("=======================================");	
+    std::stringstream ss;
+    planningMonitor->getKinematicModel()->printModelInfo(ss);
+    ROS_DEBUG("%s", ss.str().c_str());	
+    ROS_DEBUG("=======================================");
+    
+    /* create a model for each group */
+    std::map< std::string, std::vector<std::string> > groups = planningMonitor->getCollisionModels()->getPlanningGroups();
+    
+    for (std::map< std::string, std::vector<std::string> >::iterator it = groups.begin(); it != groups.end() ; ++it)
+    {
+	Model *model = new Model();
+	model->planningMonitor = planningMonitor;
+	model->groupID = planningMonitor->getKinematicModel()->getGroupID(it->first);
+	model->groupName = it->first;
+	model->createMotionPlanningInstances(planningMonitor->getCollisionModels()->getGroupPlannersConfig(model->groupName));
+	models[model->groupName] = model;
+    }
+}
+
+std::vector<std::string> ompl_planning::knownModels(ompl_planning::ModelMap &models)
+{
+    std::vector<std::string> model_ids;
+    for (std::map<std::string, Model*>::const_iterator i = models.begin() ; i != models.end() ; ++i)
+	model_ids.push_back(i->first);
+    return model_ids;
+}
+
+void ompl_planning::destroyPlanningModels(ompl_planning::ModelMap &models)
+{
+    for (std::map<std::string, Model*>::iterator i = models.begin() ; i != models.end() ; i++)
+	delete i->second;
+    models.clear();
+}

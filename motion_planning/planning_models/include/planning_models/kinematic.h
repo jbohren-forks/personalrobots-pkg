@@ -517,6 +517,9 @@ namespace planning_models
 	/** \brief Get the index for the parameter of a joint in a given group */
 	int getJointIndexInGroup(const std::string &name, int groupID) const;
 
+	/** \brief Returns the dimension of a set of joints */
+	unsigned int getJointsDimension(const std::vector<std::string> &names) const;
+
 	/** \brief Returns the dimension of the group (as a state, not number of joints) */
 	unsigned int getGroupDimension(int groupID) const;
 	

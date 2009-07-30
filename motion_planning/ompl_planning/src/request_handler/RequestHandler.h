@@ -39,7 +39,8 @@
 
 #include "ompl_planning/Model.h"
 #include <ros/ros.h>
-#include <motion_planning_srvs/MotionPlan.h>
+#include <motion_planning_msgs/GetMotionPlan.h>
+#include <motion_planning_msgs/ConvertPoseToJointConstraint.h>
 
 /** \brief Main namespace */
 namespace ompl_planning
@@ -81,14 +82,17 @@ namespace ompl_planning
 	void disableDebugMode(void);
 	
 	/** \brief Check if the request is valid */
-	bool isRequestValid(ModelMap &models, motion_planning_srvs::MotionPlan::Request &req);
+	bool isRequestValid(ModelMap &models, motion_planning_msgs::GetMotionPlan::Request &req);
+
+	/** \brief Check if the request is valid */
+	bool isRequestValid(ModelMap &models, motion_planning_msgs::ConvertPoseToJointConstraint::Request &req);
 
 	/** \brief Check and compute a motion plan. Return true if the plan was succesfully computed */
-	bool computePlan(ModelMap &models, const planning_models::StateParams *start, motion_planning_srvs::MotionPlan::Request &req, motion_planning_srvs::MotionPlan::Response &res);
+	bool computePlan(ModelMap &models, const planning_models::StateParams *start, motion_planning_msgs::GetMotionPlan::Request &req, motion_planning_msgs::GetMotionPlan::Response &res);
 
-	/** \brief Print the planner setup settings as debug messages */
-	void printSettings(PlannerSetup *psetup);	
-	
+	/** \brief Find a state in the specified goal region. Return true if state was found */
+	bool findState(ModelMap &models, const planning_models::StateParams *start, motion_planning_msgs::ConvertPoseToJointConstraint::Request &req, motion_planning_msgs::ConvertPoseToJointConstraint::Response &res);
+
     private:
 
 	struct Solution
@@ -98,18 +102,26 @@ namespace ompl_planning
 	    bool              approximate;
 	};	
 	
-	/** \brief Set up all the data needed by motion planning based on a request and lock the planner setup
-	 *  using this data */
-	void configure(const planning_models::StateParams *startState, motion_planning_srvs::MotionPlan::Request &req, PlannerSetup *psetup);
+	/** \brief Set up all the data needed by motion planning based on a request */
+	void configure(const planning_models::StateParams *startState, motion_planning_msgs::GetMotionPlan::Request &req, PlannerSetup *psetup);
+
+	/** \brief Set up all the data needed by inverse kinematics based on a request */
+	void configure(const planning_models::StateParams *startState, motion_planning_msgs::ConvertPoseToJointConstraint::Request &req, IKSetup *iksetup);
 	
 	/** \brief Compute the actual motion plan. Return true if computed plan was trivial (start state already in goal region) */
 	bool callPlanner(PlannerSetup *psetup, int times, double allowed_time, Solution &sol);
-
+	
+	/** \brief Set the workspace bounds based on the request */
+	void setWorkspaceBounds(motion_planning_msgs::KinematicSpaceParameters &params, ModelBase *model, ompl::base::SpaceInformation *si);
+	
 	/** \brief Fill the response with solution data */
-	void fillResult(PlannerSetup *psetup, const planning_models::StateParams *start, motion_planning_srvs::MotionPlan::Response &res, const Solution &sol);
+	void fillResult(PlannerSetup *psetup, const planning_models::StateParams *start, motion_planning_msgs::GetMotionPlan::Response &res, const Solution &sol);
 
 	/** \brief Fix the input states, if they are not valid */
 	bool fixInputStates(PlannerSetup *psetup, double value, unsigned int count);
+
+	/** \brief Print the planner setup settings as debug messages */
+	void printSettings(ompl::base::SpaceInformation *si);
 	
 	/** \brief Send visualization markers */
 	void display(PlannerSetup *psetup);
