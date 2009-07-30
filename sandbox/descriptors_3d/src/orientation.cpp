@@ -86,6 +86,7 @@ void Orientation::compute(const robot_msgs::PointCloud& data,
                           const cv::Vector<const robot_msgs::Point32*>& interest_pts,
                           cv::Vector<cv::Vector<float> >& results)
 {
+  results.clear();
   results.resize(interest_pts.size());
 
   if (spectral_info_ == NULL)
@@ -107,6 +108,7 @@ void Orientation::compute(const robot_msgs::PointCloud& data,
                           const cv::Vector<const vector<int>*>& interest_region_indices,
                           cv::Vector<cv::Vector<float> >& results)
 {
+  results.clear();
   results.resize(interest_region_indices.size());
 
   if (spectral_info_ == NULL)
@@ -138,16 +140,11 @@ void Orientation::computeFeatures(cv::Vector<cv::Vector<float> >& results)
 
   for (size_t i = 0 ; i < nbr_interest_samples ; i++)
   {
-    size_t feature_idx = 0;
-
-    // Indicate couldnt compute feature
-    if (tangents[i] == NULL || normals[i] == NULL)
-    {
-      results[i].clear();
-    }
-    else
+    // Can compute feature only when spectral info available
+    if (tangents[i] != NULL)
     {
       results[i].resize(result_size_);
+      size_t feature_idx = 0;
 
       if (ref_tangent_defined_)
       {
