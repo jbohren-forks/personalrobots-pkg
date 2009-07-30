@@ -1,0 +1,12 @@
+# use empty string for default (which probably is "NavFn")
+string planner_spec
+
+# use empty string for default (which probably is "pr2")
+string robot_spec
+
+---
+
+# 1 on success, 0 on error
+uint8 ok
+
+string error_message

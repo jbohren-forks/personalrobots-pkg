@@ -123,7 +123,9 @@ namespace mpglue {
   /**
      All parameters required for initializing a planning request.
   */
-  struct requestspec {    
+  struct requestspec {
+    requestspec(requestspec const & orig);
+    
     requestspec(std::string const & planner_spec,
 		std::string const & robot_spec);
     
@@ -147,8 +149,13 @@ namespace mpglue {
 		  description, except for the title. */
 	      std::string const & prefix) const;
     
-    std::string const planner_spec;
-    std::string const robot_spec;
+    requestspec & operator = (requestspec const & rhs);
+    
+    inline bool operator == (requestspec const & rhs) const
+    { return (planner_spec == rhs.planner_spec) && (robot_spec == rhs.robot_spec); }
+    
+    std::string planner_spec;
+    std::string robot_spec;
     
     tokenlist_t planner_tok;
     tokenlist_t robot_tok;

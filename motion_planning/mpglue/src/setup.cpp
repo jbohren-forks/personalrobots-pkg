@@ -51,6 +51,30 @@ using namespace std;
 namespace mpglue {  
   
   
+  requestspec::
+  requestspec(requestspec const & orig)
+  {
+    *this = orig;
+  }
+  
+  
+  requestspec & requestspec::
+  operator = (requestspec const & rhs)
+  {
+    if (&rhs == this)
+      return *this;
+    planner_spec = rhs.planner_spec;
+    robot_spec = rhs.robot_spec;
+    planner_tok = rhs.planner_tok;
+    robot_tok = rhs.robot_tok;
+    robot_name = rhs.robot_name;
+    robot_inscribed_radius = rhs.robot_inscribed_radius;
+    robot_circumscribed_radius = rhs.robot_circumscribed_radius;
+    robot_nominal_forward_speed = rhs.robot_nominal_forward_speed;
+    robot_nominal_rotation_speed = rhs.robot_nominal_rotation_speed;
+  }
+  
+  
   void requestspec::
   dump(std::ostream & os, std::string const & title, std::string const & prefix) const
   {
@@ -364,15 +388,24 @@ namespace mpglue {
   {
     if (request.planner_tok.empty())
       throw runtime_error("mpglue::createCostmapPlanner(): no planner tokens in request");
-    string const planner_name(canonicalPlannerName(request.planner_tok[0]));
+    string const canonical_planner_name(canonicalPlannerName(request.planner_tok[0]));
     
-    if ("NavFn" == planner_name)
+    if ("NavFn" == canonical_planner_name)
       return createNavFnPlanner(request, costmap, indexTransform, verbose_os);
     
-    if ("EStar" == planner_name)
+    if ("EStar" == canonical_planner_name)
       return createEstarPlanner(request, costmap, indexTransform, verbose_os);
     
-    // all others must be SBPL
+    // all others must be SBPL... UNLESS the user made an error, so
+    // check for that before creating the SBPLEnvironment instance.
+    //
+    // XXXX this check is done twice, here and further down, make sure
+    // to update both places when adding or removing SBPL planners
+    if (("ARAStar" != canonical_planner_name) && ("ADStar" != canonical_planner_name))
+      throw runtime_error("mpglue::createCostmapPlanner(): invalid canonical planner name \""
+			  + canonical_planner_name + "\" from planner spec \""
+			  + request.planner_spec + "\"");
+    
     bool default_forwardsearch(false);
     shared_ptr<SBPLEnvironment>
       sbpl_environment(createSBPLEnvironment(request, costmap, indexTransform, footprint,
@@ -407,20 +440,23 @@ namespace mpglue {
     if (verbose_os)
       *verbose_os << "mpglue::createCostmapPlanner(): effective search direction: forward\n" << flush;
     
+    // XXXX this check is done twice, here and further up, make sure
+    // to update both places when adding or removing SBPL planners
     shared_ptr<SBPLPlanner> sbpl_planner;
-    if ("ARAStar" == planner_name) {
+    if ("ARAStar" == canonical_planner_name) {
       if (verbose_os)
 	*verbose_os << "mpglue::createCostmapPlanner(): ARAPlanner\n" << flush;	
       sbpl_planner.reset(new ARAPlanner(sbpl_environment->getDSI(), forwardsearch));
     }
-    else if ("ADStar" == planner_name) {
+    else if ("ADStar" == canonical_planner_name) {
       if (verbose_os)
 	*verbose_os << "mpglue::createCostmapPlanner(): ADPlanner\n" << flush;	
       sbpl_planner.reset(new ADPlanner(sbpl_environment->getDSI(), forwardsearch));
     }
     else
-      throw runtime_error("mpglue::createCostmapPlanner(): invalid planner name \"" + planner_name
-			  + "\"");
+      throw runtime_error("mpglue::createCostmapPlanner(): invalid canonical planner name \""
+			  + canonical_planner_name + "\" from planner spec \""
+			  + request.planner_spec + "\"");
     
     return new SBPLPlannerWrap(sbpl_environment, sbpl_planner);
   }

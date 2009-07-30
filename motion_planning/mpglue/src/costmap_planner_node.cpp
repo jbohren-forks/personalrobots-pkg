@@ -33,8 +33,11 @@
  *********************************************************************/
 
 #include <mpglue/costmap.h>
+#include <mpglue/planner.h>
+#include <mpglue/setup.h>
 #include <ros/ros.h>
 #include <mpglue/SetIndexTransform.h>
+#include <mpglue/SelectPlanner.h>
 #include <navfn/SetCostmap.h>
 #include <costmap_2d/cost_values.h>
 #include <sfl/gplan/GridFrame.hpp>
@@ -44,6 +47,8 @@ namespace mpglue_node {
   
   using namespace mpglue;
   using namespace navfn;
+  using namespace boost;
+  using namespace std;
   
   typedef RawCostmapAccessor<uint8_t, uint8_t *, uint16_t> raw_costmap_t;
   
@@ -51,6 +56,8 @@ namespace mpglue_node {
   static uint8_t const lethal_cost(       costmap_2d::LETHAL_OBSTACLE);
   static uint8_t const inscribed_cost(    costmap_2d::INSCRIBED_INFLATED_OBSTACLE);
   static uint8_t const circumscribed_cost(costmap_2d::INSCRIBED_INFLATED_OBSTACLE / 2);
+  static string const default_planner_spec("NavFn");
+  static string const default_robot_spec("pr2");
   
   
   class CostmapPlannerNode
@@ -61,14 +68,16 @@ namespace mpglue_node {
     
     bool setCostmap(SetCostmap::Request & req, SetCostmap::Response & resp);
     bool setIndexTransform(SetIndexTransform::Request & req, SetIndexTransform::Response & resp);
+    bool selectPlanner(SelectPlanner::Request & req, SelectPlanner::Response & resp);
     
   protected:
     ros::NodeHandle node_;
-    ros::ServiceServer set_costmap_service_;
-    ros::ServiceServer set_index_transform_service_;
-    raw_costmap_t costmap_;
+    list<ros::ServiceServer> services_;
+    shared_ptr<raw_costmap_t> costmap_;
     sfl::GridFrame gridframe_;
-    boost::shared_ptr<mpglue::IndexTransform> indexTransform_;
+    shared_ptr<mpglue::IndexTransform> indexTransform_;
+    requestspec spec_;
+    shared_ptr<CostmapPlanner> planner_;
   };
   
 }
@@ -87,25 +96,30 @@ namespace mpglue_node {
   
   CostmapPlannerNode::
   CostmapPlannerNode()
-    : costmap_(0,		// start with NULL raw data
-	       0, 0,		// start with 0-by-0 dimensions
-	       lethal_cost,
-	       inscribed_cost,
-	       circumscribed_cost),
-      gridframe_(0, 0, 0, 1)
+    : costmap_(new raw_costmap_t(0, // start with NULL raw data
+				 0, 0, // start with 0-by-0 dimensions
+				 lethal_cost,
+				 inscribed_cost,
+				 circumscribed_cost)),
+      gridframe_(0, 0, 0, 1),
+      spec_(default_planner_spec, default_robot_spec)
   {
-    set_costmap_service_
-      = node_.advertiseService("~set_costmap", &CostmapPlannerNode::setCostmap, this);
-    set_index_transform_service_
-      = node_.advertiseService("~set_index_transform", &CostmapPlannerNode::setIndexTransform,
-			       this);
+    services_.push_back(node_.advertiseService("~set_costmap",
+					       &CostmapPlannerNode::setCostmap,
+					       this));
+    services_.push_back(node_.advertiseService("~set_index_transform",
+					       &CostmapPlannerNode::setIndexTransform,
+					       this));
+    services_.push_back(node_.advertiseService("~select_planner",
+					       &CostmapPlannerNode::selectPlanner,
+					       this));
   }
   
   
   CostmapPlannerNode::
   ~CostmapPlannerNode()
   {
-    delete[] costmap_.raw;
+    delete[] costmap_->raw;
   }
   
   
@@ -116,13 +130,13 @@ namespace mpglue_node {
     size_t const ttncells(req.width * req.height);
     
     // if we have a costmap with different size, just ditch it
-    if ((costmap_.raw) && (costmap_.ncells_x * costmap_.ncells_y != ttncells)) {
+    if ((costmap_->raw) && ((size_t) costmap_->ncells_x * costmap_->ncells_y != ttncells)) {
       ROS_INFO("  existing costmap differs in size");
-      delete[] costmap_.raw;
-      costmap_.raw = 0;
+      delete[] costmap_->raw;
+      costmap_->raw = 0;
     }
-    costmap_.ncells_x = req.width;
-    costmap_.ncells_y = req.height;
+    costmap_->ncells_x = req.width;
+    costmap_->ncells_y = req.height;
     
     // handle empty ranges
     if (0 == ttncells) {
@@ -130,16 +144,16 @@ namespace mpglue_node {
       return true;
     }
     
-    if ( ! costmap_.raw) {
+    if ( ! costmap_->raw) {
       ROS_INFO("  (re)allocating costmap with %zu cells", ttncells);
-      costmap_.raw = new uint8_t[ttncells];
+      costmap_->raw = new uint8_t[ttncells];
     }
-    if ( ! costmap_.raw) {
+    if ( ! costmap_->raw) {
       ROS_ERROR("CostmapPlannerNode::setCostmap(): failed to allocate %zu cells", ttncells);
       return false;		// alloc error
     }
     
-    memcpy(costmap_.raw, &req.costs[0], sizeof(*costmap_.raw) * ttncells);
+    memcpy(costmap_->raw, &req.costs[0], sizeof(*costmap_->raw) * ttncells);
     return true;
   }
   
@@ -162,6 +176,63 @@ namespace mpglue_node {
       indexTransform_.reset(mpglue::createIndexTransform(&gridframe_));
     }
     
+    return true;
+  }
+  
+  
+  bool CostmapPlannerNode::
+  selectPlanner(SelectPlanner::Request & req, SelectPlanner::Response & resp)
+  {
+    ROS_INFO("CostmapPlannerNode::selectPlanner(): planner_spec = \"%s\"  robot_spec = \"%s\"",
+	     req.planner_spec.c_str(), req.robot_spec.c_str());
+    
+    if (req.planner_spec.empty()) {
+      ROS_INFO("  using default planner spec = \"%s\"", default_planner_spec.c_str());
+      req.planner_spec = default_planner_spec;
+    }
+    if (req.robot_spec.empty()) {
+      ROS_INFO("  using default robot spec = \"%s\"", default_robot_spec.c_str());
+      req.robot_spec = default_robot_spec;
+    }
+    
+    requestspec const newspec(req.planner_spec, req.robot_spec);
+    if (planner_ && (newspec == spec_)) {
+      ROS_INFO("  already have a planner, and spec has not changed: doing nothing");
+    }
+    else {
+      ROS_INFO("  creating costmap planner");
+      if ( ! costmap_->raw) {
+	ROS_WARN("  no costmap (yet), will not be able to plan until you send one...");
+      }
+      // XXXX to do: configurable footprint, optional doorspec
+      footprint_t footprint;
+      initSimpleFootprint(footprint,
+			  newspec.robot_inscribed_radius,
+			  newspec.robot_circumscribed_radius);
+      doorspec * optional_door(0);
+      ostream * verbose_os(0);
+      try {
+	planner_.reset(createCostmapPlanner(newspec, costmap_, indexTransform_,
+					    footprint, optional_door, verbose_os));
+      }
+      catch (runtime_error const & ee) {
+	ROS_ERROR("CostmapPlannerNode::selectPlanner():"
+		  " planner_spec = \"%s\"  robot_spec = \"%s\":"
+		  " EXCEPTION from mpglue::createCostmapPlanner(): %s",
+		  req.planner_spec.c_str(), req.robot_spec.c_str(), ee.what());
+	ostringstream os;
+	requestspec::help(os, "  requestspec::help()", "    ");
+	ROS_INFO("%s", os.str().c_str());
+	resp.ok = 0;
+	resp.error_message = string("EXCEPTION from mpglue::createCostmapPlanner(): ") + ee.what();
+	//	return false;
+	return true; // if we return false, the resp does not get sent to the caller
+      }
+      spec_ = newspec;
+    }
+    
+    resp.ok = 1;
+    resp.error_message = "success";
     return true;
   }
   
