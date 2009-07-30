@@ -31,7 +31,7 @@
 
 #include "ogre_tools/wx_ogre_render_window.h"
 
-#include "nav_srvs/StaticMap.h"
+#include "nav_msgs/GetMap.h"
 #include "nav_msgs/PoseArray.h"
 
 #include <tf/transform_listener.h>
@@ -193,8 +193,8 @@ void NavViewPanel::onRender( wxCommandEvent& event )
 
 void NavViewPanel::loadMap()
 {
-  nav_srvs::StaticMap::Request  req;
-  nav_srvs::StaticMap::Response resp;
+  nav_msgs::GetMap::Request  req;
+  nav_msgs::GetMap::Response resp;
   ROS_INFO("Requesting the map...\n");
   if( !ros::service::call("/static_map", req, resp) )
   {

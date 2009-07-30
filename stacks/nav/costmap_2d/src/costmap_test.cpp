@@ -38,7 +38,7 @@
 #include <ros/console.h>
 #include <new_costmap/costmap_2d.h>
 #include <new_costmap/observation_buffer.h>
-#include <nav_srvs/StaticMap.h>
+#include <nav_msgs/GetMap.h>
 #include <visualization_msgs/Polyline.h>
 #include <map>
 #include <vector>
@@ -71,8 +71,8 @@ class CostmapTester {
           boost::bind(&CostmapTester::baseScanCallback, this, _1, (int) 1),
           "base_scan", global_frame_, 50);
 
-      nav_srvs::StaticMap::Request map_req;
-      nav_srvs::StaticMap::Response map_resp;
+      nav_msgs::GetMap::Request map_req;
+      nav_msgs::GetMap::Response map_resp;
       ROS_INFO("Requesting the map...\n");
       while(!ros::service::call("static_map", map_req, map_resp))
       {

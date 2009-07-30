@@ -5,7 +5,6 @@
   <review status="proposal cleared" notes=""/>
   <url>http://pr.willowgarage.com/wiki/nav_view</url>
   <depend package="roscpp"/>
-  <depend package="nav_srvs"/>
   <depend package="robot_srvs"/>
   <depend package="nav_msgs"/>
   <depend package="tf"/>

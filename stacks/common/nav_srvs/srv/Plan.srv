@@ -1,4 +1,0 @@
-robot_msgs/PoseStamped goal
-float32 tolerance
----
-robot_msgs/Path plan

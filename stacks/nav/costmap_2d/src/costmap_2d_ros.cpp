@@ -36,7 +36,7 @@
  *********************************************************************/
 #include <costmap_2d/costmap_2d_ros.h>
 
-#include <nav_srvs/StaticMap.h>
+#include <nav_msgs/GetMap.h>
 
 
 namespace costmap_2d {
@@ -155,8 +155,8 @@ namespace costmap_2d {
     map_height = (unsigned int)(map_height_meters / map_resolution);
 
     if(static_map){
-      nav_srvs::StaticMap::Request map_req;
-      nav_srvs::StaticMap::Response map_resp;
+      nav_msgs::GetMap::Request map_req;
+      nav_msgs::GetMap::Response map_resp;
       ROS_INFO("Requesting the map...\n");
       while(!ros::service::call("/static_map", map_req, map_resp))
       {

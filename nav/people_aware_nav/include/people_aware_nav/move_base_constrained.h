@@ -49,7 +49,7 @@
 #include <base_local_planner/trajectory_planner_ros.h>
 #include <vector>
 #include <string>
-#include <nav_srvs/Plan.h>
+#include <nav_msgs/GetPlan.h>
 
 namespace people_aware_nav {
   /**
@@ -86,7 +86,7 @@ namespace people_aware_nav {
        * @param  resp The plan request
        * @return True if planning succeeded, false otherwise
        */
-      bool planService(nav_srvs::Plan::Request &req, nav_srvs::Plan::Response &resp);
+      bool planService(nav_msgs::GetPlan::Request &req, nav_msgs::GetPlan::Response &resp);
 
       /**
        * @brief  Make a new global plan

@@ -42,7 +42,7 @@
 #include <ros/node.h>
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
-#include <nav_srvs/Plan.h>
+#include <nav_msgs/GetPlan.h>
 #include <robot_actions/action.h>
 
 namespace door_handle_detector{
@@ -60,8 +60,8 @@ public:
 private:
   tf::TransformListener& tf_; 
 
-  nav_srvs::Plan::Request  req_plan;
-  nav_srvs::Plan::Response res_plan;
+  nav_msgs::GetPlan::Request  req_plan;
+  nav_msgs::GetPlan::Response res_plan;
 };
 
 }

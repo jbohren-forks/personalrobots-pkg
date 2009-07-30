@@ -7,7 +7,7 @@
   <depend package="rosconsole"/>
   <depend package="std_msgs"/>
   <depend package="laser_scan"/>
-  <depend package="nav_srvs"/>
+  <depend package="nav_msgs"/>
   <depend package="gmapping"/>
   <depend package="tf"/>
 </package>

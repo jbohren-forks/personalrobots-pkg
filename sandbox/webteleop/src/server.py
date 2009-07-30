@@ -22,7 +22,7 @@ from tf import *
 import bullet
 
 from tf.msg import tfMessage
-from nav_srvs.srv import *
+from nav_msgs.srv import *
 from nav_msgs.msg import *
 from std_msgs.msg import *
 from robot_msgs.msg import *
@@ -314,7 +314,7 @@ def GetMapAsJPEG(service_proxy, qdict):
   data = ''
   try:
     #staticMap = rospy.ServiceProxy(topic, service_class)
-    #staticMap = rospy.ServiceProxy('/static_map', StaticMap)
+    #staticMap = rospy.ServiceProxy('/static_map', GetMap)
     map = service_proxy()
 
     mapW = map.map.info.width

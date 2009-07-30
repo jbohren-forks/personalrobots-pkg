@@ -452,8 +452,8 @@ SlamGMapping::updateMap(const sensor_msgs::LaserScan& scan)
 }
 
 bool 
-SlamGMapping::map_cb(nav_srvs::StaticMap::Request  &req,
-                     nav_srvs::StaticMap::Response &res)
+SlamGMapping::map_cb(nav_msgs::GetMap::Request  &req,
+                     nav_msgs::GetMap::Response &res)
 {
   if(got_map_ && map_.map.info.width && map_.map.info.height)
   {

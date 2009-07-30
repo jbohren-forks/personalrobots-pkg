@@ -41,7 +41,7 @@ roslib.load_manifest(PKG)
 import sys, unittest, time
 
 import rospy, rostest
-from nav_srvs.srv import StaticMap
+from nav_msgs.srv import GetMap
 
 class TestConsumer(unittest.TestCase):
     def __init__(self, *args):
@@ -55,7 +55,7 @@ class TestConsumer(unittest.TestCase):
 
     def test_consumer(self):
         rospy.wait_for_service('static_map')
-        mapsrv = rospy.ServiceProxy('static_map', StaticMap)
+        mapsrv = rospy.ServiceProxy('static_map', GetMap)
         resp = mapsrv()
         self.success = True
         print resp

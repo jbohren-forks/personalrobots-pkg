@@ -48,7 +48,7 @@
 #include <costmap_2d/costmap_2d.h>
 #include <vector>
 #include <string>
-#include <nav_srvs/Plan.h>
+#include <nav_msgs/GetPlan.h>
 #include <visualization_msgs/Marker.h>
 #include <robot_msgs/PoseDot.h>
 
@@ -109,7 +109,7 @@ namespace move_base {
        * @param  resp The plan request
        * @return True if planning succeeded, false otherwise
        */
-      bool planService(nav_srvs::Plan::Request &req, nav_srvs::Plan::Response &resp);
+      bool planService(nav_msgs::GetPlan::Request &req, nav_msgs::GetPlan::Response &resp);
 
       /**
        * @brief  Make a new global plan

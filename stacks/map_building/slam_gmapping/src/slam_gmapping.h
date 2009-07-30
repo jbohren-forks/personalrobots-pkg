@@ -31,7 +31,7 @@
 
 #include "ros/node.h"
 #include "sensor_msgs/LaserScan.h"
-#include "nav_srvs/StaticMap.h"
+#include "nav_msgs/GetMap.h"
 #include "tf/transform_listener.h"
 #include "tf/transform_broadcaster.h"
 #include <tf/message_notifier.h>
@@ -48,8 +48,8 @@ class SlamGMapping
     void main_loop();
   
     void laser_cb(const tf::MessageNotifier<sensor_msgs::LaserScan>::MessagePtr& message);
-    bool map_cb(nav_srvs::StaticMap::Request  &req,
-                nav_srvs::StaticMap::Response &res);
+    bool map_cb(nav_msgs::GetMap::Request  &req,
+                nav_msgs::GetMap::Response &res);
 
   private:
     ros::Node* node_;
@@ -65,7 +65,7 @@ class SlamGMapping
     bool got_first_scan_;
 
     bool got_map_;
-    nav_srvs::StaticMap::Response map_;
+    nav_msgs::GetMap::Response map_;
 
     ros::Duration map_update_interval_;
     tf::Transform map_to_odom_;

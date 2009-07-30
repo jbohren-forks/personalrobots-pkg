@@ -173,7 +173,7 @@ namespace move_base {
     controller_costmap_ros_->setConvexPolygonCost(clear_poly, costmap_2d::FREE_SPACE);
   }
 
-  bool MoveBase::planService(nav_srvs::Plan::Request &req, nav_srvs::Plan::Response &resp){
+  bool MoveBase::planService(nav_msgs::GetPlan::Request &req, nav_msgs::GetPlan::Response &resp){
     if(isActive()){
       ROS_ERROR("move_base must be in an inactive state to make a plan for an external user");
       return false;

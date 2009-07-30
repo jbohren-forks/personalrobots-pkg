@@ -32,7 +32,7 @@
 #include <gtest/gtest.h>
 #include <ros/service.h>
 #include <ros/node.h>
-#include <nav_srvs/StaticMap.h>
+#include <nav_msgs/GetMap.h>
 
 #include "test_constants.h"
 
@@ -65,8 +65,8 @@ TEST_F(MapClientTest, retrieve_valid_bmp)
 {
   try
   {
-    nav_srvs::StaticMap::Request  req;
-    nav_srvs::StaticMap::Response resp;
+    nav_msgs::GetMap::Request  req;
+    nav_msgs::GetMap::Response resp;
     // Try a few times, because the server may not be up yet.
     int i=10;
     bool call_result;
