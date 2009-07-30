@@ -79,5 +79,8 @@
   <node pkg="pr2_computer_monitor" type="cpu_monitor.py" machine="realtime" />
   <node pkg="pr2_computer_monitor" type="cpu_monitor.py" machine="two" />
 
+  <!-- Joint states diagnostics logging -->
+  <node pkg="mechanism_control" node="joints_to_diagnostics.py" machine="realtime" />
+
 </launch>
 
