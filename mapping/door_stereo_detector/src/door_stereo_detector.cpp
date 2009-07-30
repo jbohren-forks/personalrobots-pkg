@@ -225,7 +225,7 @@ class DoorStereo : public ros::Node
         unsubscribe("stereo/cloud");
     }
 
-    void fitDoorEdges(PointCloud& cloud)
+    void fitDoorEdges(sensor_msgs::PointCloud& cloud)
     {
       ROS_INFO("Received a point cloud with %d points in frame: %s",(int) cloud.pts.size(),cloud.header.frame_id.c_str());
       if(cloud.pts.empty())
@@ -250,8 +250,8 @@ class DoorStereo : public ros::Node
       vector<vector<int> > inliers;
       vector<vector<double> > coeff;
 
-      vector<Point32> line_segment_min;
-      vector<Point32> line_segment_max;
+      vector<geometry_msgs::Point32> line_segment_min;
+      vector<geometry_msgs::Point32> line_segment_max;
 
       fitSACLines(&cloud,indices,inliers,coeff,line_segment_min,line_segment_max);
 
@@ -285,9 +285,9 @@ class DoorStereo : public ros::Node
       }
    }
 
-    void fitSACLines(PointCloud *points, vector<int> indices, vector<vector<int> > &inliers, vector<vector<double> > &coeff, vector<Point32> &line_segment_min, vector<Point32> &line_segment_max)
+    void fitSACLines(sensor_msgs::PointCloud *points, vector<int> indices, vector<vector<int> > &inliers, vector<vector<double> > &coeff, vector<geometry_msgs::Point32> &line_segment_min, vector<geometry_msgs::Point32> &line_segment_max)
     {
-      Point32 minP, maxP;
+      geometry_msgs::Point32 minP, maxP;
 
       vector<int> inliers_local;
 
@@ -309,7 +309,7 @@ class DoorStereo : public ros::Node
 
        tf_->transformVector("stereo_link",axis_original,axis_transformed);
 
-       Point32 axis_point_32;
+       geometry_msgs::Point32 axis_point_32;
        axis_point_32.x = axis_transformed.vector.x;
        axis_point_32.y = axis_transformed.vector.y;
        axis_point_32.z = axis_transformed.vector.z;
@@ -437,7 +437,7 @@ class DoorStereo : public ros::Node
 
 
 
-    void filterPointCloud(const PointCloud& in_cloud, Lines& lines, PointCloud& out)
+    void filterPointCloud(const sensor_msgs::PointCloud& in_cloud, Lines& lines, sensor_msgs::PointCloud& out)
     {
 
     	int n_lines = lines.size();
@@ -505,7 +505,7 @@ class DoorStereo : public ros::Node
     void runDetector()
     {
     	Lines lines;
-    	PointCloud filtered_cloud;
+    	sensor_msgs::PointCloud filtered_cloud;
     	findVerticalEdges(left, lines);
     	if (do_edge_filter_) {
     		filterPointCloud(cloud_,lines,filtered_cloud);
