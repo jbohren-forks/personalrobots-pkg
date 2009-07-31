@@ -48,9 +48,6 @@ import re
 from cStringIO import StringIO
 import os
 
-def load_current_class(type):
-  return roslib.scriptutil.get_message_class(type)
-
 class TestCommonMsgsMigration(unittest.TestCase):
 
   def setUp(self):
@@ -120,16 +117,16 @@ class TestCommonMsgsMigration(unittest.TestCase):
     
     diagnostic_status = diagnostic_status_classes['diagnostic_msgs/DiagnosticStatus']
     diagnostic_value  = diagnostic_status_classes['diagnostic_msgs/DiagnosticValue']
-    diagnostic_value  = diagnostic_status_classes['diagnostic_msgs/DiagnosticString']
+    diagnostic_string = diagnostic_status_classes['diagnostic_msgs/DiagnosticString']
 
-    return diagnostic_status(0, "abcdef", "ghijkl", [diagnostic_value(42.42, 'foo')], [diagnostic_value('xxxxx', 'bar')])
+    return diagnostic_status(0, "abcdef", "ghijkl", [diagnostic_value(42.42, 'foo')], [diagnostic_string('xxxxx', 'bar')])
 
   def get_new_diagnostic_status(self):
-    diagnostic_status = load_current_class('diagnostic_msgs/DiagnosticStatus')
-    diagnostic_value  = load_current_class('diagnostic_msgs/DiagnosticValue')
-    diagnostic_value  = load_current_class('diagnostic_msgs/DiagnosticString')
+    from diagnostic_msgs.msg import DiagnosticStatus
+    from diagnostic_msgs.msg import DiagnosticValue
+    from diagnostic_msgs.msg import DiagnosticString
 
-    return diagnostic_status(0, "abcdef", "ghijkl", "NONE", [diagnostic_value(42.42, 'foo')], [diagnostic_value('xxxxx', 'bar')])
+    return DiagnosticStatus(0, "abcdef", "ghijkl", "NONE", [DiagnosticValue(42.42, 'foo')], [DiagnosticString('xxxxx', 'bar')])
 
 
   def test_diagnostic_status(self):
@@ -147,11 +144,9 @@ class TestCommonMsgsMigration(unittest.TestCase):
     return vector3(1.23, 4.56, 7.89)
 
   def get_new_vector3(self):
-#    from geometry_msgs.msg import Vector3
+    from geometry_msgs.msg import Vector3
     
-    vector3  = load_current_class('geometry_msgs/Vector3')
-
-    return vector3(1.23, 4.56, 7.89)
+    return Vector3(1.23, 4.56, 7.89)
 
 
   def test_vector3(self):
@@ -170,10 +165,10 @@ class TestCommonMsgsMigration(unittest.TestCase):
     return twist(None, vector3(1,2,3), vector3(4, 5, 6))
 
   def get_new_twist(self):
-    twist    = load_current_class('geometry_msgs/Twist')
-    vector3  = load_current_class('geometry_msgs/Vector3')
+    from geometry_msgs.msg import Twist
+    from geometry_msgs.msg import Vector3
 
-    return twist(vector3(1,2,3), vector3(4, 5, 6))
+    return Twist(Vector3(1,2,3), Vector3(4, 5, 6))
 
 
   def test_twist(self):
