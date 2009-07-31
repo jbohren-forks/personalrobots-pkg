@@ -29,7 +29,7 @@ MoveBehavior doorman = new MoveBehavior(External);
 BaseState base_state = new BaseState(External);
 
 Navigator::Active{
-  if(start){
+  if(isSingleton(start)){
     starts(nav_controller.Holds nc);
     starts_during(base_state.Holds bs);
     eq(nc.active, true);

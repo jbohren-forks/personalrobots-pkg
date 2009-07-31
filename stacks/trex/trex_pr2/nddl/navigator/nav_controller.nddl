@@ -31,6 +31,10 @@ class NavController extends AgentTimeline {
     float y;
   }
 
+  NavController(Mode _mode){
+    super(_mode, "Holds");
+  }
+
   NavController(){
     super(Internal, "Holds");
   }
@@ -46,7 +50,7 @@ MoveBehavior doorman = new MoveBehavior(External, true);
 BaseState base_state = new BaseState(External);
 
 NavGoals::Active{
-  if(start){
+  if(isSingleton(start)){
     starts(nav_controller.Holds nc);
     starts_during(base_state.Holds bs);
 
