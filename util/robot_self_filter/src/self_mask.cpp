@@ -168,9 +168,11 @@ void robot_self_filter::SelfMask::assumeFrame(const roslib::Header& header, cons
     {
 	// find the transform between the link's frame and the pointcloud frame
 	tf::Stamped<btTransform> transf;
-	if (tf_.canTransform(header.frame_id, bodies_[i].name, header.stamp))
+	try
+	{
 	    tf_.lookupTransform(header.frame_id, bodies_[i].name, header.stamp, transf);
-	else
+	}
+	catch(...)
 	{
 	    transf.setIdentity();
 	    ROS_ERROR("Unable to lookup transform from %s to %s", bodies_[i].name.c_str(), header.frame_id.c_str());
@@ -185,13 +187,13 @@ void robot_self_filter::SelfMask::assumeFrame(const roslib::Header& header, cons
     // compute the origin of the sensor in the frame of the cloud
     if (!sensor_frame.empty())
     {
-	if (tf_.canTransform(header.frame_id, sensor_frame, header.stamp))
+	try
 	{
 	    tf::Stamped<btTransform> transf;
 	    tf_.lookupTransform(header.frame_id, sensor_frame, header.stamp, transf);
 	    sensor_pos_ = transf.getOrigin();
 	}
-	else
+	catch(...)
 	{
 	    sensor_pos_.setValue(0, 0, 0);
 	    ROS_ERROR("Unable to lookup transform from %s to %s", sensor_frame.c_str(), header.frame_id.c_str());

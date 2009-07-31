@@ -22,3 +22,7 @@ target_link_libraries(test_filter robot_self_filter)
 rospack_add_executable(self_filter src/self_filter.cpp)
 rospack_add_openmp_flags(self_filter)
 target_link_libraries(self_filter robot_self_filter)
+
+rospack_add_executable(draw_rays src/draw_rays.cpp)
+rospack_add_openmp_flags(draw_rays)
+target_link_libraries(draw_rays robot_self_filter)
