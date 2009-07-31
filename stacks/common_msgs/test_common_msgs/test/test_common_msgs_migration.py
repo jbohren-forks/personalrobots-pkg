@@ -155,8 +155,150 @@ class TestCommonMsgsMigration(unittest.TestCase):
     return QuaternionStamped(None, Quaternion(1.23, 4.56, 7.89, 1.23))
 
 
-  def test_quaternion(self):
+  def test_quaternion_stamped(self):
     self.do_test('quaternion_stamped', self.get_old_quaternion_stamped, self.get_new_quaternion_stamped)
+
+
+########### Point ###############
+
+
+  def get_old_point(self):
+    point_classes = self.load_saved_classes('Point.saved')
+    
+    point  = point_classes['robot_msgs/Point']
+    
+    return point(1.23, 4.56, 7.89)
+
+  def get_new_point(self):
+    from geometry_msgs.msg import Point
+    
+    return Point(1.23, 4.56, 7.89)
+
+
+  def test_point(self):
+    self.do_test('point', self.get_old_point, self.get_new_point)
+
+
+########### PointStamped ###############
+
+
+  def get_old_point_stamped(self):
+    point_classes = self.load_saved_classes('PointStamped.saved')
+    
+    point_stamped  = point_classes['robot_msgs/PointStamped']
+    point  = point_classes['robot_msgs/Point']
+    
+    return point_stamped(None, point(1.23, 4.56, 7.89))
+
+  def get_new_point_stamped(self):
+    from geometry_msgs.msg import PointStamped
+    from geometry_msgs.msg import Point
+    
+    return PointStamped(None, Point(1.23, 4.56, 7.89))
+
+
+  def test_point_stamped(self):
+    self.do_test('point_stamped', self.get_old_point_stamped, self.get_new_point_stamped)
+
+
+########### Transform ###############
+
+
+  def get_old_transform(self):
+    transform_classes = self.load_saved_classes('Transform.saved')
+    
+    transform  = transform_classes['robot_msgs/Transform']
+    vector3  = transform_classes['robot_msgs/Vector3']
+    quaternion  = transform_classes['robot_msgs/Quaternion']
+    
+    return transform(vector3(1.23, 4.56, 7.89), quaternion(0,0,0,1))
+
+  def get_new_transform(self):
+    from geometry_msgs.msg import Transform
+    from geometry_msgs.msg import Vector3
+    from geometry_msgs.msg import Quaternion
+    
+    return Transform(Vector3(1.23, 4.56, 7.89), Quaternion(0,0,0,1))
+
+
+  def test_transform(self):
+    self.do_test('transform', self.get_old_transform, self.get_new_transform)
+
+
+########### TransformStamped ###############
+
+
+  def get_old_transform_stamped(self):
+    transform_classes = self.load_saved_classes('TransformStamped.saved')
+    
+    transform_stamped  = transform_classes['robot_msgs/TransformStamped']
+    transform  = transform_classes['robot_msgs/Transform']
+    vector3  = transform_classes['robot_msgs/Vector3']
+    quaternion  = transform_classes['robot_msgs/Quaternion']
+    
+    return transform_stamped(None, "parent_frame", transform(vector3(1.23, 4.56, 7.89), quaternion(0,0,0,1)))
+
+  def get_new_transform_stamped(self):
+    from geometry_msgs.msg import TransformStamped
+    from geometry_msgs.msg import Transform
+    from geometry_msgs.msg import Vector3
+    from geometry_msgs.msg import Quaternion
+    
+    return TransformStamped(None, "parent_frame", Transform(Vector3(1.23, 4.56, 7.89), Quaternion(0,0,0,1)))
+
+
+  def test_transform_stamped(self):
+    self.do_test('transform_stamped', self.get_old_transform_stamped, self.get_new_transform_stamped)
+
+
+########### Pose ###############
+
+
+  def get_old_pose(self):
+    pose_classes = self.load_saved_classes('Pose.saved')
+    
+    pose  = pose_classes['robot_msgs/Pose']
+    point  = pose_classes['robot_msgs/Point']
+    quaternion  = pose_classes['robot_msgs/Quaternion']
+    
+    return pose(point(1.23, 4.56, 7.89), quaternion(0,0,0,1))
+
+  def get_new_pose(self):
+    from geometry_msgs.msg import Pose
+    from geometry_msgs.msg import Point
+    from geometry_msgs.msg import Quaternion
+    
+    return Pose(Point(1.23, 4.56, 7.89), Quaternion(0,0,0,1))
+
+
+  def test_pose(self):
+    self.do_test('pose', self.get_old_pose, self.get_new_pose)
+
+
+########### PoseStamped ###############
+
+
+  def get_old_pose_stamped(self):
+    pose_classes = self.load_saved_classes('PoseStamped.saved')
+    
+    pose_stamped  = pose_classes['robot_msgs/PoseStamped']
+    pose  = pose_classes['robot_msgs/Pose']
+    point  = pose_classes['robot_msgs/Point']
+    quaternion  = pose_classes['robot_msgs/Quaternion']
+    
+    return pose_stamped(None, pose(point(1.23, 4.56, 7.89), quaternion(0,0,0,1)))
+
+  def get_new_pose_stamped(self):
+    from geometry_msgs.msg import PoseStamped
+    from geometry_msgs.msg import Pose
+    from geometry_msgs.msg import Point
+    from geometry_msgs.msg import Quaternion
+    
+    return PoseStamped(None, Pose(Point(1.23, 4.56, 7.89), Quaternion(0,0,0,1)))
+
+
+  def test_pose_stamped(self):
+    self.do_test('pose_stamped', self.get_old_pose_stamped, self.get_new_pose_stamped)
 
 
 ########### Twist ###############
