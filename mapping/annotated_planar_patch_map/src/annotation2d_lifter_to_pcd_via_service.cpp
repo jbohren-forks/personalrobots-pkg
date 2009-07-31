@@ -54,7 +54,7 @@
 
 #include <mapping_msgs/PolygonalMap.h>
 #include <sensor_msgs/StereoInfo.h>
-#include <sensor_msgs/CamInfo.h>
+#include <sensor_msgs/CameraInfo.h>
 #include <std_msgs/ColorRGBA.h>
 #include "tf/message_notifier.h"
 
@@ -154,7 +154,7 @@ public:
 
     annotation_notifier_->setTolerance(lifting_delay_+ros::Duration(0.1));
 
-    typedef annotated_planar_patch_map::RollingHistory<sensor_msgs::CamInfo> cam_hist_type;
+    typedef annotated_planar_patch_map::RollingHistory<sensor_msgs::CameraInfo> cam_hist_type;
 
 
     boost::shared_ptr<cam_hist_type> cam_hist_lookup(new cam_hist_type("cam_info","~cam_info_hist/"));
@@ -169,8 +169,8 @@ public:
     try{
     ROS_INFO_STREAM("Annotation " << annotation->header.stamp);
 
-    //const image_msgs::CamInfoConstPtr cam_info = cam_hist_->getMsgAtExactTime(annotation->header.stamp);
-    const sensor_msgs::CamInfoConstPtr cam_info = cam_hist_->getMsgNearTime(annotation->header.stamp,ros::Duration(0.01));
+    //const image_msgs::CameraInfoConstPtr cam_info = cam_hist_->getMsgAtExactTime(annotation->header.stamp);
+    const sensor_msgs::CameraInfoConstPtr cam_info = cam_hist_->getMsgNearTime(annotation->header.stamp,ros::Duration(0.01));
 
     if(cam_info==NULL)
     {
@@ -195,7 +195,7 @@ public:
   }
 
   void liftAndSend(const boost::shared_ptr<cv_mech_turk::ExternalAnnotation const> annotation, 
-                   const boost::shared_ptr<sensor_msgs::CamInfo const> cam_info, 
+                   const boost::shared_ptr<sensor_msgs::CameraInfo const> cam_info, 
                    const robot_msgs::PointCloud& cloud)
   {
     robot_msgs::PointCloud transformed_map_3D;
@@ -463,7 +463,7 @@ protected:
 
   boost::shared_ptr<tf::TransformListener> tf_;
   tf::MessageNotifier<cv_mech_turk::ExternalAnnotation>* annotation_notifier_ ;
-  boost::shared_ptr<annotated_planar_patch_map::RollingHistory<sensor_msgs::CamInfo> > cam_hist_;
+  boost::shared_ptr<annotated_planar_patch_map::RollingHistory<sensor_msgs::CameraInfo> > cam_hist_;
 
   boost::mutex lift_mutex_;
 

@@ -46,7 +46,7 @@
 
 
 #include "sensor_msgs/Image.h"
-#include "sensor_msgs/CamInfo.h"
+#include "sensor_msgs/CameraInfo.h"
 #include "robot_msgs/PointStamped.h"
 #include "topic_synchronizer/topic_synchronizer.h"
 
@@ -81,7 +81,7 @@ private:
   bool use_led_pose_ ;          //!< True: Use LED pose via TF to help find LED.  False: Ignore prior information
 
   sensor_msgs::Image image_msg_ ;
-  sensor_msgs::CamInfo cam_info_msg_ ;
+  sensor_msgs::CameraInfo cam_info_msg_ ;
   sensor_msgs::Image debug_image_msg_ ;
 };
 

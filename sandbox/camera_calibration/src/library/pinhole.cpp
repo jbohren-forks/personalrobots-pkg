@@ -121,7 +121,7 @@ bool PinholeCameraModel::parse(const std::string& buffer, const std::string& for
   return success;
 }
 
-void PinholeCameraModel::fillCamInfo(sensor_msgs::CamInfo &info) const
+void PinholeCameraModel::fillCameraInfo(sensor_msgs::CameraInfo &info) const
 {
   std::copy(K, K+9, &info.K[0]);
   std::copy(D, D+5, &info.D[0]);

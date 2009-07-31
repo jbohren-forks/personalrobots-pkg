@@ -40,7 +40,7 @@
 #include <vector>
 #include "opencv/cv.h"
 #include "robot_msgs/Point.h"
-#include "sensor_msgs/CamInfo.h"
+#include "sensor_msgs/CameraInfo.h"
 
 namespace stereo_checkerboard_detector
 {
@@ -81,29 +81,29 @@ public:
   /**
    * Reprojects the list of disparity points, using standard ROS datatypes
    * \param ros_uvd Disparity point of the form (left_u, left_v, disparity), using ROS messages
-   * \param left_info  CamInfo message holding intrinsics for the left camera, using ROS messages
-   * \param right_info CamInfo message holding intrinsics for the right camera, using ROS messages
+   * \param left_info  CameraInfo message holding intrinsics for the left camera, using ROS messages
+   * \param right_info CameraInfo message holding intrinsics for the right camera, using ROS messages
    * \param ros_xyz Output vector with reprojected points from uvd, using ROS messages
    */
   void reproject(const std::vector<robot_msgs::Point>& uvd,
-                 const sensor_msgs::CamInfo& left_info,
-                 const sensor_msgs::CamInfo& right_info,
+                 const sensor_msgs::CameraInfo& left_info,
+                 const sensor_msgs::CameraInfo& right_info,
                  std::vector<robot_msgs::Point>& xyz) ;
 
 
   void reproject(const CvMat* uvd,
-                 const sensor_msgs::CamInfo& left_info,
-                 const sensor_msgs::CamInfo& right_info,
+                 const sensor_msgs::CameraInfo& left_info,
+                 const sensor_msgs::CameraInfo& right_info,
                  CvMat* xyz) ;
 
 
   /**
    * Build the reprojection matrix Q, based on the left and right cameras' projection matricies
-   * \param left_info CamInfo message holding intrinsics for the left camera, using ROS messages
-   * \param right_info CamInfo message holding intrinsics for the right camera, using ROS messages
+   * \param left_info CameraInfo message holding intrinsics for the left camera, using ROS messages
+   * \param right_info CameraInfo message holding intrinsics for the right camera, using ROS messages
    */
-  void buildQ(const sensor_msgs::CamInfo& left_info,
-              const sensor_msgs::CamInfo& right_info,
+  void buildQ(const sensor_msgs::CameraInfo& left_info,
+              const sensor_msgs::CameraInfo& right_info,
               CvMat* Q) ;
 
 

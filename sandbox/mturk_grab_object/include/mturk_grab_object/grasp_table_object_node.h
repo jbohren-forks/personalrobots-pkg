@@ -41,7 +41,7 @@
 // ROS messages
 #include <robot_msgs/PointCloud.h>
 #include <sensor_msgs/Image.h>
-#include <sensor_msgs/CamInfo.h>
+#include <sensor_msgs/CameraInfo.h>
 
 
 #include <map>
@@ -61,7 +61,7 @@ class GraspTask
 {
  public:
   robot_msgs::PointCloudConstPtr cloud_;
-  sensor_msgs::CamInfoConstPtr cam_info_;
+  sensor_msgs::CameraInfoConstPtr cam_info_;
   sensor_msgs::ImageConstPtr image_;
 
   tabletop_msgs::TableConstPtr table_;

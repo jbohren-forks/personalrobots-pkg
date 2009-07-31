@@ -66,7 +66,7 @@
 #include "ros/callback_queue.h"
 #include "sensor_msgs/StereoInfo.h"
 #include "sensor_msgs/DisparityInfo.h"
-#include "sensor_msgs/CamInfo.h"
+#include "sensor_msgs/CameraInfo.h"
 #include "sensor_msgs/Image.h"
 #include "robot_msgs/PointCloud.h"
 #include "robot_msgs/Point32.h"
@@ -108,7 +108,7 @@ public:
 	sensor_msgs::ImageConstPtr dimage_;
 	sensor_msgs::StereoInfoConstPtr stinfo_;
 	sensor_msgs::DisparityInfoConstPtr dispinfo_;
-	sensor_msgs::CamInfoConstPtr lcinfo_;
+	sensor_msgs::CameraInfoConstPtr lcinfo_;
 	sensor_msgs::CvBridge lbridge_;
 	sensor_msgs::CvBridge rbridge_;
 	sensor_msgs::CvBridge dbridge_;
@@ -190,7 +190,7 @@ public:
 
 		// subscribe to topics
 		left_image_sub_ = nh_.subscribe(nh_.resolveName("stereo")+"/left/image_rect", 1, sync_.synchronize(&RecognitionLambertian::leftImageCallback, this));
-		left_caminfo_image_sub_ = nh_.subscribe(nh_.resolveName("stereo")+"/left/cam_info", 1, sync_.synchronize(&RecognitionLambertian::leftCamInfoCallback, this));
+		left_caminfo_image_sub_ = nh_.subscribe(nh_.resolveName("stereo")+"/left/cam_info", 1, sync_.synchronize(&RecognitionLambertian::leftCameraInfoCallback, this));
 		right_image_sub_ = nh_.subscribe(nh_.resolveName("stereo")+"/right/image_rect", 1, sync_.synchronize(&RecognitionLambertian::rightImageCallback, this));
 		disparity_sub_ = nh_.subscribe(nh_.resolveName("stereo")+"/disparity", 1, sync_.synchronize(&RecognitionLambertian::disparityImageCallback, this));
 		cloud_sub_ = nh_.subscribe(nh_.resolveName("stereo")+"/cloud", 1, sync_.synchronize(&RecognitionLambertian::cloudCallback, this));
@@ -242,7 +242,7 @@ private:
 		data_cv_.notify_all();
 	}
 
-	void leftCamInfoCallback(const sensor_msgs::CamInfo::ConstPtr& info)
+	void leftCameraInfoCallback(const sensor_msgs::CameraInfo::ConstPtr& info)
 	{
 		if (got_data_) return;
 //		ROS_INFO("Left caminfo callback");
@@ -1013,7 +1013,7 @@ private:
 	 * @param point The 3D point
 	 * @return Projected point
 	 */
-	Point project3DPointIntoImage(const sensor_msgs::CamInfo& cam_info, PointStamped point)
+	Point project3DPointIntoImage(const sensor_msgs::CameraInfo& cam_info, PointStamped point)
 	{
 		PointStamped image_point;
 		tf_.transformPoint(cam_info.header.frame_id, point, image_point);
@@ -1041,7 +1041,7 @@ private:
 
 	void projectClusters(const PointCloud& objects_table_frame, const vector<Point32>& clusters)
 	{
-		const sensor_msgs::CamInfo& lcinfo = *lcinfo_;
+		const sensor_msgs::CameraInfo& lcinfo = *lcinfo_;
 
 		Point pp[8];
 		for (size_t i=0;i<clusters.size();++i) {
@@ -1249,7 +1249,7 @@ private:
 		// reproject bboxes in image
 //		projectClusters(objects_table_frame, clusters);
 
-		const sensor_msgs::CamInfo& lcinfo = *lcinfo_;
+		const sensor_msgs::CameraInfo& lcinfo = *lcinfo_;
 
 		locations.resize(centers.size());
 		scales.resize(centers.size());

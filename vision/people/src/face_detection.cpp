@@ -46,7 +46,7 @@
 #include <people/PositionMeasurement.h>
 #include "sensor_msgs/StereoInfo.h"
 #include "sensor_msgs/DisparityInfo.h"
-#include "sensor_msgs/CamInfo.h"
+#include "sensor_msgs/CameraInfo.h"
 #include "sensor_msgs/Image.h"
 #include "opencv_latest/CvBridge.h"
 #include "visualization_msgs/ColoredLine.h"
@@ -92,7 +92,7 @@ public:
   sensor_msgs::ImageConstPtr limage_; /**< Left image msg. */
   sensor_msgs::ImageConstPtr dimage_; /**< Disparity image msg. */
   sensor_msgs::DisparityInfoConstPtr dispinfo_; /**< Disparity info msg. */
-  sensor_msgs::CamInfoConstPtr rcinfo_; /**< Right camera info msg. */
+  sensor_msgs::CameraInfoConstPtr rcinfo_; /**< Right camera info msg. */
   sensor_msgs::CvBridge lbridge_; /**< ROS->OpenCV bridge for the left image. */
   sensor_msgs::CvBridge dbridge_; /**< ROS->OpenCV bridge for the disparity image. */
 
@@ -305,7 +305,7 @@ public:
     dispinfo_ = info_ptr;
   }
 
-  void rcamInfoCallback(const sensor_msgs::CamInfoConstPtr &info_ptr)
+  void rcamInfoCallback(const sensor_msgs::CameraInfoConstPtr &info_ptr)
   {
     rcinfo_ = info_ptr;
   }

@@ -39,7 +39,7 @@
 #include "ros/node.h"
 #include "sensor_msgs/Image.h"
 #include "sensor_msgs/FillImage.h"
-#include "sensor_msgs/CamInfo.h"
+#include "sensor_msgs/CameraInfo.h"
 #include "sensor_msgs/StereoInfo.h"
 #include "robot_msgs/PointCloud.h"
 
@@ -55,7 +55,7 @@ class DcamNode : public ros::Node
   bool do_rectify_;
 
   sensor_msgs::Image        img_;
-  sensor_msgs::CamInfo      cam_info_;
+  sensor_msgs::CameraInfo   cam_info_;
 
   DiagnosticUpdater<DcamNode> diagnostic_;
   diagnostic_updater::TimeStampStatus timestamp_diag_;
@@ -286,7 +286,7 @@ public:
 
   void advertiseImages(std::string base_name, cam::ImageData* img_data)
   {
-    advertise<sensor_msgs::CamInfo>(base_name + std::string("cam_info"), 1);
+    advertise<sensor_msgs::CameraInfo>(base_name + std::string("cam_info"), 1);
 
     if (img_data->imRawType != COLOR_CODING_NONE)
       advertise<sensor_msgs::Image>(base_name + std::string("image_raw"), 1);

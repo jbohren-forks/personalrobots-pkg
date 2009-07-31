@@ -114,12 +114,12 @@ void BoxDetector::dinfoCallback(const sensor_msgs::DisparityInfo::ConstPtr& dinf
   dinfo_ = dinfo;
 }
 
-void BoxDetector::linfoCallback(const sensor_msgs::CamInfo::ConstPtr& linfo)
+void BoxDetector::linfoCallback(const sensor_msgs::CameraInfo::ConstPtr& linfo)
 {
   linfo_ = linfo;
 }
 
-void BoxDetector::rinfoCallback(const sensor_msgs::CamInfo::ConstPtr& rinfo)
+void BoxDetector::rinfoCallback(const sensor_msgs::CameraInfo::ConstPtr& rinfo)
 {
   rinfo_ = rinfo;
 }

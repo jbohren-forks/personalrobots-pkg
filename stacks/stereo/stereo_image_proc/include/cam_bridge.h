@@ -41,7 +41,7 @@
 
 namespace cam_bridge
 {
-  void CamDataToRawStereo(cam::ImageData* im, sensor_msgs::Image& im_msg, sensor_msgs::CamInfo& info_msg, uint8_t& type)
+  void CamDataToRawStereo(cam::ImageData* im, sensor_msgs::Image& im_msg, sensor_msgs::CameraInfo& info_msg, uint8_t& type)
   {
     if (im->imRawType != COLOR_CODING_NONE)
     {
@@ -183,7 +183,7 @@ namespace cam_bridge
     memcpy((char*)(*d), (char*)(&arr.data[0]), new_size);
   }
 
-  void RawStereoToCamData(sensor_msgs::Image& im_msg, sensor_msgs::CamInfo& info_msg, uint8_t type, cam::ImageData* im)
+  void RawStereoToCamData(sensor_msgs::Image& im_msg, sensor_msgs::CameraInfo& info_msg, uint8_t type, cam::ImageData* im)
   {
 
     im->imRawType = COLOR_CODING_NONE;

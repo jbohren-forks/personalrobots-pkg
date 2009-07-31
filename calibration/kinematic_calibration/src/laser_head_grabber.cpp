@@ -44,7 +44,7 @@
 #include "robot_msgs/PointCloud.h"
 
 #include "sensor_msgs/Image.h"
-#include "sensor_msgs/CamInfo.h"
+#include "sensor_msgs/CameraInfo.h"
 
 #include "kinematic_calibration/CalSnapshot.h"
 
@@ -90,8 +90,8 @@ public:
   ADD_MSG(robot_msgs::PointCloud, corners_right_) ;
   ADD_MSG(sensor_msgs::Image, left_debug_) ;
   ADD_MSG(sensor_msgs::Image, right_debug_) ;
-  ADD_MSG(sensor_msgs::CamInfo, left_info_) ;
-  ADD_MSG(sensor_msgs::CamInfo, right_info_) ;
+  ADD_MSG(sensor_msgs::CameraInfo, left_info_) ;
+  ADD_MSG(sensor_msgs::CameraInfo, right_info_) ;
 
   // Laser Messages
   boost::mutex laser_lock_ ;
@@ -333,8 +333,8 @@ public:
 
     SensorSample left_cb_sample    = buildCamCornersSample(safe_corners_left_,  "stereo_left",  "6x8_cb") ;
     SensorSample right_cb_sample   = buildCamCornersSample(safe_corners_right_, "stereo_right", "6x8_cb") ;
-    SensorSample left_info_sample  = buildCamInfoSample(safe_left_info_,  "stereo_left_info","6x8_cb") ;
-    SensorSample right_info_sample = buildCamInfoSample(safe_right_info_, "stereo_right_info","6x8_cb") ;
+    SensorSample left_info_sample  = buildCameraInfoSample(safe_left_info_,  "stereo_left_info","6x8_cb") ;
+    SensorSample right_info_sample = buildCameraInfoSample(safe_right_info_, "stereo_right_info","6x8_cb") ;
 
     snapshot_msg_.samples.resize(5) ;
     snapshot_msg_.samples[0] = laser_sample ;
@@ -391,7 +391,7 @@ public:
     return sample ;
   }
 
-  SensorSample buildCamInfoSample(const sensor_msgs::CamInfo& info, const string& sensor, const string& target)
+  SensorSample buildCameraInfoSample(const sensor_msgs::CameraInfo& info, const string& sensor, const string& target)
   {
     SensorSample sample ;
     sample.sensor = sensor ;

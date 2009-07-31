@@ -42,7 +42,7 @@
 
 #include <ros/node.h>
 #include <sensor_msgs/Image.h>
-#include <sensor_msgs/CamInfo.h>
+#include <sensor_msgs/CameraInfo.h>
 #include <sensor_msgs/FillImage.h>
 #include <dynamic_reconfigure/SensorLevels.h>
 #include <diagnostic_updater/diagnostic_updater.h>
@@ -192,9 +192,9 @@ private:
   
   // Publications
   diagnostic_updater::DiagnosedPublisher<sensor_msgs::Image> cam_pub_;
-  diagnostic_updater::DiagnosedPublisher<sensor_msgs::CamInfo> cam_info_pub_;
+  diagnostic_updater::DiagnosedPublisher<sensor_msgs::CameraInfo> cam_info_pub_;
   sensor_msgs::Image image_;
-  sensor_msgs::CamInfo cam_info_;
+  sensor_msgs::CameraInfo cam_info_;
 
   // Services
   
@@ -633,7 +633,7 @@ public:
     
     // Receive frames through callback
     if (calibrated_)
-      cam_info_pub_.set_publisher(node_handle_.advertise<sensor_msgs::CamInfo>("~cam_info", 1));
+      cam_info_pub_.set_publisher(node_handle_.advertise<sensor_msgs::CameraInfo>("~cam_info", 1));
     else
       cam_info_pub_.set_publisher(ros::Publisher());
     

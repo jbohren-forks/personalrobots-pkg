@@ -42,7 +42,7 @@
 
 #include "sensor_msgs/Image.h"
 #include "sensor_msgs/FillImage.h"
-#include "sensor_msgs/CamInfo.h"
+#include "sensor_msgs/CameraInfo.h"
 #include "sensor_msgs/StereoInfo.h"
 #include "robot_msgs/PointCloud.h"
 
@@ -64,7 +64,7 @@ class StereoProc : public ros::Node
 
   sensor_msgs::Image         img_;
   robot_msgs::PointCloud      cloud_;
-  sensor_msgs::CamInfo       cam_info_;
+  sensor_msgs::CameraInfo       cam_info_;
   sensor_msgs::DisparityInfo disparity_info_;
   sensor_msgs::StereoInfo    stereo_info_;
 
@@ -365,7 +365,7 @@ public:
 
   void advertiseImages(std::string base_name, cam::ImageData* img_data)
   {
-    advertise<sensor_msgs::CamInfo>(base_name + std::string("cam_info"), 1);
+    advertise<sensor_msgs::CameraInfo>(base_name + std::string("cam_info"), 1);
 
     if (img_data->imRawType != COLOR_CODING_NONE)
       advertise<sensor_msgs::Image>(base_name + std::string("image_raw"), 1);

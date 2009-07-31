@@ -9,8 +9,8 @@ sensor_msgs/Image left_image
 sensor_msgs/Image right_image
 sensor_msgs/Image disparity_image
 sensor_msgs/StereoInfo stereo_info
-sensor_msgs/CamInfo left_info
-sensor_msgs/CamInfo right_info
+sensor_msgs/CameraInfo left_info
+sensor_msgs/CameraInfo right_info
 
 # Mechanism State - Stores the robots joint angles
 mechanism_msgs/MechanismState mechanism_state

@@ -49,7 +49,7 @@
 
 
 #include <mapping_msgs/PolygonalMap.h>
-#include <sensor_msgs/CamInfo.h>
+#include <sensor_msgs/CameraInfo.h>
 
 #include <cv_mech_turk/ExternalAnnotation.h>
 #include <annotated_map_msgs/TaggedPolygonalMap.h>
@@ -73,7 +73,7 @@ protected:
 
   annotated_map_msgs::TaggedPolygonalMapConstPtr last_map_;
 
-  sensor_msgs::CamInfoConstPtr cam_info_;
+  sensor_msgs::CameraInfoConstPtr cam_info_;
 
 public:
 
@@ -87,7 +87,7 @@ public:
     tf_ = new tf::TransformListener( *node_handle_.getNode(), true);
 
     subs_.push_back(node_handle_.subscribe<annotated_map_msgs::TaggedPolygonalMap>("annotated_map", 1000, &ImageValueNode::mapCallback, this));
-    subs_.push_back(node_handle_.subscribe<sensor_msgs::CamInfo>("cam_info", 500, &ImageValueNode::caminfoCallback, this));
+    subs_.push_back(node_handle_.subscribe<sensor_msgs::CameraInfo>("cam_info", 500, &ImageValueNode::caminfoCallback, this));
 
     //actual_topic_ = node_handle_.mapName("annotated_map");
   }
@@ -99,7 +99,7 @@ public:
     last_map_=map;
   }
 
-  void caminfoCallback(const sensor_msgs::CamInfoConstPtr& si)
+  void caminfoCallback(const sensor_msgs::CameraInfoConstPtr& si)
   {
     cam_info_=si;
     annotated_map_msgs::TaggedPolygonalMap transformed_map;

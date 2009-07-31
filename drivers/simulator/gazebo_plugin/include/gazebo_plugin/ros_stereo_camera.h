@@ -40,7 +40,7 @@
 #include <sensor_msgs/Image.h>
 #include "sensor_msgs/RawStereo.h"
 #include "sensor_msgs/StereoInfo.h"
-#include "sensor_msgs/CamInfo.h"
+#include "sensor_msgs/CameraInfo.h"
 #include "sensor_msgs/DisparityInfo.h"
 
 namespace gazebo
@@ -167,8 +167,8 @@ class RosStereoCamera : public Controller
   private: sensor_msgs::RawStereo rawStereoMsg;
   private: sensor_msgs::Image* leftImageMsg;
   private: sensor_msgs::Image* rightImageMsg;
-  private: sensor_msgs::CamInfo* leftCamInfoMsg;
-  private: sensor_msgs::CamInfo* rightCamInfoMsg;
+  private: sensor_msgs::CameraInfo* leftCameraInfoMsg;
+  private: sensor_msgs::CameraInfo* rightCameraInfoMsg;
   private: sensor_msgs::StereoInfo* stereoInfoMsg;
 
   /// \brief A mutex to lock access to fields that are used in message callbacks

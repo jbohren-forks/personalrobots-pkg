@@ -220,7 +220,7 @@ static double dist2D(const T& a, const T& b)
         return camera_center_table_frame.pts[0].z;
     }
 
-    float CalHorizontalLine( const PointCloud& cloud, vector<double> plane_coeff, const sensor_msgs::CamInfo& lcinfo, tf::TransformListener& tf_){
+    float CalHorizontalLine( const PointCloud& cloud, vector<double> plane_coeff, const sensor_msgs::CameraInfo& lcinfo, tf::TransformListener& tf_){
         // calculate new plane_coeff which includes the origin pts
         plane_coeff[3] = 0;
 
@@ -501,7 +501,7 @@ static double dist2D(const T& a, const T& b)
 
     float findObjectPositionsFromStereo(const PointCloud& cloud, vector<CvPoint>& locations, vector<CvPoint>& obj_bottom,
         vector<float>& scales, vector<float>& scales_msun, tf::TransformListener& tf_, tf::TransformBroadcaster& broadcaster_,
-        const sensor_msgs::CamInfo& lcinfo)
+        const sensor_msgs::CameraInfo& lcinfo)
 	{
 		vector<double> plane;
 		PointCloud objects_pc;
@@ -576,7 +576,7 @@ static double dist2D(const T& a, const T& b)
 		return camera_height;
 	}
 
-    Point project3DPointIntoImage(const sensor_msgs::CamInfo& cam_info, PointStamped point, tf::TransformListener& tf_)
+    Point project3DPointIntoImage(const sensor_msgs::CameraInfo& cam_info, PointStamped point, tf::TransformListener& tf_)
 	{
 		PointStamped image_point;
 		tf_.transformPoint(cam_info.header.frame_id, point, image_point);

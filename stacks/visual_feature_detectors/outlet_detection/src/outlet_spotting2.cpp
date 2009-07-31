@@ -64,7 +64,7 @@
 #include "ros/callback_queue.h"
 #include "sensor_msgs/StereoInfo.h"
 #include "sensor_msgs/DisparityInfo.h"
-#include "sensor_msgs/CamInfo.h"
+#include "sensor_msgs/CameraInfo.h"
 #include "sensor_msgs/Image.h"
 #include "robot_msgs/PointCloud.h"
 #include "robot_msgs/Point32.h"
@@ -100,7 +100,7 @@ public:
 	sensor_msgs::ImageConstPtr limage_;
 	sensor_msgs::ImageConstPtr dimage_;
 	sensor_msgs::DisparityInfoConstPtr dispinfo_;
-	sensor_msgs::CamInfoConstPtr lcinfo_;
+	sensor_msgs::CameraInfoConstPtr lcinfo_;
 	robot_msgs::PointCloudConstPtr cloud_;
 	robot_msgs::PointCloudConstPtr base_cloud_;
 
@@ -263,7 +263,7 @@ private:
 
 
 		left_image_sub_ = nh_.subscribe(nh_.resolveName("stereo")+"/left/image_rect", 1, sync_.synchronize(&OutletSpotting::leftImageCallback, this));
-		left_caminfo_sub_ = nh_.subscribe(nh_.resolveName("stereo")+"/left/cam_info", 1, sync_.synchronize(&OutletSpotting::leftCamInfoCallback, this));
+		left_caminfo_sub_ = nh_.subscribe(nh_.resolveName("stereo")+"/left/cam_info", 1, sync_.synchronize(&OutletSpotting::leftCameraInfoCallback, this));
 		disparity_sub_ = nh_.subscribe(nh_.resolveName("stereo")+"/disparity", 1, sync_.synchronize(&OutletSpotting::disparityImageCallback, this));
 		cloud_sub_ = nh_.subscribe(nh_.resolveName("stereo")+"/cloud", 1, sync_.synchronize(&OutletSpotting::cloudCallback, this));
 		dispinfo_sub_ = nh_.subscribe(nh_.resolveName("stereo")+"/disparity_info", 1, sync_.synchronize(&OutletSpotting::dispinfoCallback, this));
@@ -305,7 +305,7 @@ private:
 //		ROS_INFO("got sync callback");
 	}
 
-	void leftCamInfoCallback(const sensor_msgs::CamInfo::ConstPtr& info)
+	void leftCameraInfoCallback(const sensor_msgs::CameraInfo::ConstPtr& info)
 	{
 		boost::unique_lock<boost::mutex> lock(data_lock_);
 		lcinfo_ = info;
@@ -697,7 +697,7 @@ private:
 	 * @param point The 3D point
 	 * @return Projected point
 	 */
-	Point project3DPointIntoImage(const sensor_msgs::CamInfo& cam_info, PointStamped point)
+	Point project3DPointIntoImage(const sensor_msgs::CameraInfo& cam_info, PointStamped point)
 	{
 		PointStamped image_point;
 		tf_.transformPoint(cam_info.header.frame_id, point, image_point);

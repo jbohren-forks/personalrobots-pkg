@@ -105,7 +105,7 @@ bool toRosImage(const IplImage* pcvimage, sensor_msgs::Image& imagemsg)
   return true;
 }
 
-void poseToPixelCoords(const Pose& pose, const CamInfo& info, ImagePoint& pix)
+void poseToPixelCoords(const Pose& pose, const CameraInfo& info, ImagePoint& pix)
 {
   assert(info.get_P_size() == 12) ;
 
@@ -139,7 +139,7 @@ LedDetector::~LedDetector()
 
 }
 
-bool LedDetector::findLed(Image& image, const CamInfo& info, const Pose* led_pose,
+bool LedDetector::findLed(Image& image, const CameraInfo& info, const Pose* led_pose,
                             ImagePoint& led_pix, Image& debug_image)
 {
   // Right now we're assuming that we're only going to be working in grayscale space.
@@ -168,7 +168,7 @@ bool LedDetector::findLed(Image& image, const CamInfo& info, const Pose* led_pos
   return true ;
 }
 
-bool LedDetector::findLed(const IplImage* image, const sensor_msgs::CamInfo& info,
+bool LedDetector::findLed(const IplImage* image, const sensor_msgs::CameraInfo& info,
                           const robot_msgs::Pose* led_pose,
                           kinematic_calibration::ImagePoint& led_pix, IplImage* debug_image)
 {

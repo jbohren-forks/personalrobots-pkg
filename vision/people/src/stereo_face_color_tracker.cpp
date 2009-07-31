@@ -46,7 +46,7 @@
 #include <people/PositionMeasurement.h>
 #include "sensor_msgs/StereoInfo.h"
 #include "sensor_msgs/DisparityInfo.h"
-#include "sensor_msgs/CamInfo.h"
+#include "sensor_msgs/CameraInfo.h"
 #include "sensor_msgs/Image.h"
 #include "opencv_latest/CvBridge.h"
 #include "topic_synchronizer/topic_synchronizer.h"
@@ -74,7 +74,7 @@ public:
   sensor_msgs::Image dimage_;
   sensor_msgs::StereoInfo stinfo_;
   sensor_msgs::DisparityInfo dispinfo_;
-  sensor_msgs::CamInfo rcinfo_;
+  sensor_msgs::CameraInfo rcinfo_;
   sensor_msgs::CvBridge lbridge_;
   sensor_msgs::CvBridge dbridge_;
   color_calib::Calibration lcolor_cal_;

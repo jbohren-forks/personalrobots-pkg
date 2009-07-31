@@ -51,7 +51,7 @@
 
 #include <mapping_msgs/PolygonalMap.h>
 #include <sensor_msgs/StereoInfo.h>
-#include <sensor_msgs/CamInfo.h>
+#include <sensor_msgs/CameraInfo.h>
 #include <annotated_map_msgs/TaggedPolygonalMap.h>
 #include <annotated_map_msgs/TaggedPolygon3D.h>
 
@@ -62,14 +62,14 @@ namespace annotated_planar_patch_map
 namespace projection
 {
 
-void projectAnyObject(const sensor_msgs::CamInfo& cam_info,robot_msgs::Polygon3D polyIn,robot_msgs::Polygon3D& polyOut);
+void projectAnyObject(const sensor_msgs::CameraInfo& cam_info,robot_msgs::Polygon3D polyIn,robot_msgs::Polygon3D& polyOut);
 
 void projectAnyObject(const sensor_msgs::StereoInfo& stereo_info_, const annotated_map_msgs::TaggedPolygonalMap& transformed_map_3D, annotated_map_msgs::TaggedPolygonalMap &transformed_map_2D);
 
 
-void projectAnyObject(const sensor_msgs::CamInfo& cam_info_, const annotated_map_msgs::TaggedPolygonalMap& transformed_map_3D, annotated_map_msgs::TaggedPolygonalMap &transformed_map_2D);
+void projectAnyObject(const sensor_msgs::CameraInfo& cam_info_, const annotated_map_msgs::TaggedPolygonalMap& transformed_map_3D, annotated_map_msgs::TaggedPolygonalMap &transformed_map_2D);
 
-void projectAnyObject(const sensor_msgs::CamInfo& cam_info_, const robot_msgs::PointCloud& source_3D, robot_msgs::PointCloud& target_2D);
+void projectAnyObject(const sensor_msgs::CameraInfo& cam_info_, const robot_msgs::PointCloud& source_3D, robot_msgs::PointCloud& target_2D);
 
 
 
@@ -82,7 +82,7 @@ void projectPolygonPointsNOP(double* projection,double img_w, double img_h, robo
 
 
 
-void projectAnyObjectNOP(const sensor_msgs::CamInfo& stereo_info_, const annotated_map_msgs::TaggedPolygonalMap& transformed_map_3D, annotated_map_msgs::TaggedPolygonalMap &transformed_map_2D);
+void projectAnyObjectNOP(const sensor_msgs::CameraInfo& stereo_info_, const annotated_map_msgs::TaggedPolygonalMap& transformed_map_3D, annotated_map_msgs::TaggedPolygonalMap &transformed_map_2D);
 
 /* !
  * \brief Finds which polygons are visible in the current view. The polygons should be transformed 

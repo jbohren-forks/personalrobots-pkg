@@ -51,7 +51,7 @@
 #include "ros/node.h"
 #include "sensor_msgs/StereoInfo.h"
 #include "sensor_msgs/DisparityInfo.h"
-#include "sensor_msgs/CamInfo.h"
+#include "sensor_msgs/CameraInfo.h"
 #include "sensor_msgs/Image.h"
 #include "sensor_msgs/RawStereo.h"
 #include "robot_msgs/PointCloud.h"
@@ -134,7 +134,7 @@ public:
 	sensor_msgs::Image dimage;
 	sensor_msgs::StereoInfo stinfo;
 	sensor_msgs::DisparityInfo dispinfo;
-	sensor_msgs::CamInfo rcinfo;
+	sensor_msgs::CameraInfo rcinfo;
 	sensor_msgs::RawStereo raw_stereo;
 
 	sensor_msgs::CvBridge lbridge;

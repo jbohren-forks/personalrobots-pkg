@@ -41,7 +41,7 @@
 #include "opencv/cv.h"
 #include "opencv_latest/CvBridge.h"
 #include "robot_msgs/PointCloud.h"
-#include "sensor_msgs/CamInfo.h"
+#include "sensor_msgs/CameraInfo.h"
 #include "topic_synchronizer/topic_synchronizer.h"
 
 using namespace std ;
@@ -133,7 +133,7 @@ private:
   sensor_msgs::CvBridge img_bridge_ ;
 
   sensor_msgs::Image image_msg_ ;
-  sensor_msgs::CamInfo info_msg_ ;
+  sensor_msgs::CameraInfo info_msg_ ;
   robot_msgs::PointCloud pc_msg_ ;
 
 

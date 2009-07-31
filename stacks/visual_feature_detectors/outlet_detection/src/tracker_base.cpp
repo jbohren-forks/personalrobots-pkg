@@ -1,6 +1,6 @@
 #include "outlet_detection/tracker_base.h"
 #include <robot_msgs/PoseStamped.h>
-#include <prosilica_cam/CamInfo.h>
+#include <prosilica_cam/CameraInfo.h>
 #include <boost/bind.hpp>
 #include <unistd.h> // getpid
 
@@ -88,7 +88,7 @@ IplImage* TrackerBase::getDisplayImage(bool success)
   return img_bridge_.toIpl();
 }
 
-void TrackerBase::processCamInfo()
+void TrackerBase::processCameraInfo()
 {
   if (K_ == NULL)
     K_ = cvCreateMat(3, 3, CV_64FC1);
@@ -176,7 +176,7 @@ void TrackerBase::spin()
       setRoiToTargetFrame();
 
     if (ros::service::call(image_service_, req_, res_)) {
-      processCamInfo();
+      processCameraInfo();
       processImage();
       //cvWaitKey(0);
       usleep(100000);
@@ -211,11 +211,11 @@ void TrackerBase::setRoiToTargetFrame()
   // Try to get calibration parameters
   if (!K_) {
     if (waitForService(cam_info_service_)) {
-      prosilica_cam::CamInfo::Request cam_req;
-      prosilica_cam::CamInfo::Response cam_rsp;
+      prosilica_cam::CameraInfo::Request cam_req;
+      prosilica_cam::CameraInfo::Response cam_rsp;
       if (ros::service::call(cam_info_service_, cam_req, cam_rsp)) {
         cam_info_ = cam_rsp.cam_info;
-        processCamInfo();
+        processCameraInfo();
       }
     }
   }

@@ -39,7 +39,7 @@
 
 #include "sensor_msgs/Image.h"
 #include "sensor_msgs/FillImage.h"
-#include "sensor_msgs/CamInfo.h"
+#include "sensor_msgs/CameraInfo.h"
 
 #include <boost/thread.hpp>
 
@@ -53,7 +53,7 @@ class ImageProc
   bool do_rectify_;
 
   sensor_msgs::Image raw_img_;
-  sensor_msgs::CamInfo cam_info_;
+  sensor_msgs::CameraInfo cam_info_;
   bool have_cam_info_;
   boost::mutex cam_info_mutex_;
 

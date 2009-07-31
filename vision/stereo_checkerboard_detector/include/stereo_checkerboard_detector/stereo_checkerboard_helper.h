@@ -83,7 +83,7 @@ public:
    * \todo const-ify images, once cv_bridge is const correct
    */
   bool findCheckerboard(sensor_msgs::Image& left, sensor_msgs::Image& right,
-                        const sensor_msgs::CamInfo& left_info, const sensor_msgs::CamInfo& right_info) ;
+                        const sensor_msgs::CameraInfo& left_info, const sensor_msgs::CameraInfo& right_info) ;
 
 
   /**

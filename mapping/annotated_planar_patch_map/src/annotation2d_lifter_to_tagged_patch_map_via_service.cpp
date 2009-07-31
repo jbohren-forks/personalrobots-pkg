@@ -54,7 +54,7 @@
 
 #include <mapping_msgs/PolygonalMap.h>
 #include <sensor_msgs/StereoInfo.h>
-#include <sensor_msgs/CamInfo.h>
+#include <sensor_msgs/CameraInfo.h>
 #include "tf/message_notifier.h"
 
 #include <cv_mech_turk/ExternalAnnotation.h>
@@ -421,7 +421,7 @@ protected:
 
   cv_mech_turk::ExternalAnnotation annotation2d_object_;
   sensor_msgs::StereoInfo stereo_info_;
-  //sensor_msgs::CamInfo stereo_info_;
+  //sensor_msgs::CameraInfo stereo_info_;
 
   std::string fixed_frame_;
 

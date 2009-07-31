@@ -51,7 +51,7 @@
 #include "sensor_msgs/DisparityInfo.h"
 #include "sensor_msgs/StereoInfo.h"
 #include "sensor_msgs/Image.h"
-#include "sensor_msgs/CamInfo.h"
+#include "sensor_msgs/CameraInfo.h"
 
 //#include "CvStereoCamModel.h"
 
@@ -61,7 +61,7 @@
 
 
 //  to get and use camera info ...
-//#include "sensor_msgs/CamInfo.h"
+//#include "sensor_msgs/CameraInfo.h"
 //#include "CvStereoCamModel.h"
 // ... //
 
@@ -145,7 +145,7 @@ public:
   sensor_msgs::CvBridge lbridge;
   sensor_msgs::CvBridge rbridge;
   sensor_msgs::CvBridge dbridge;
-  sensor_msgs::CamInfo rcaminfo; /**< Right camera info msg. */
+  sensor_msgs::CameraInfo rcaminfo; /**< Right camera info msg. */
 
   robot_msgs::PointCloud cloud, cloudIsTex, cloudNoTex;
 

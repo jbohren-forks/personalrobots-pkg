@@ -45,7 +45,7 @@
 
 
 #include <sensor_msgs/Image.h>
-#include <sensor_msgs/CamInfo.h>
+#include <sensor_msgs/CameraInfo.h>
 #include <sensor_msgs/FillImage.h>
 #include <diagnostic_updater/diagnostic_updater.h>
 
@@ -163,19 +163,19 @@ void RosProsilica::LoadChild(XMLConfigNode *node)
   ROS_DEBUG("prosilica image topic name %s", this->imageTopicName.c_str());
   this->image_pub_ = this->rosnode_->advertise<sensor_msgs::Image>(this->imageTopicName,1);
   this->image_rect_pub_ = this->rosnode_->advertise<sensor_msgs::Image>(this->imageRectTopicName,1);
-  this->cam_info_pub_ = this->rosnode_->advertise<sensor_msgs::CamInfo>(this->camInfoTopicName,1);
+  this->cam_info_pub_ = this->rosnode_->advertise<sensor_msgs::CameraInfo>(this->camInfoTopicName,1);
   this->cam_info_ser_ = this->rosnode_->advertiseService(this->camInfoServiceName,&RosProsilica::camInfoService, this);
   this->poll_ser_ = this->rosnode_->advertiseService(this->pollServiceName,&RosProsilica::triggeredGrab, this);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // service call to return camera info
-bool RosProsilica::camInfoService(prosilica_cam::CamInfo::Request &req,
-                                  prosilica_cam::CamInfo::Response &res)
+bool RosProsilica::camInfoService(prosilica_cam::CameraInfo::Request &req,
+                                  prosilica_cam::CameraInfo::Response &res)
 {
   // should return the cam info for the entire camera frame
   this->camInfoMsg = &res.cam_info;
-  // fill CamInfo
+  // fill CameraInfo
   this->camInfoMsg->header.frame_id = this->frameName;
   this->camInfoMsg->header.stamp    = ros::Time((unsigned long)floor(Simulator::Instance()->GetSimTime()));
   this->camInfoMsg->height = this->myParent->GetImageHeight();
@@ -247,51 +247,51 @@ bool RosProsilica::triggeredGrab(prosilica_cam::PolledImage::Request &req,
   {
     this->lock.lock();
 
-    // fill CamInfo
-    this->roiCamInfoMsg = &res.cam_info;
-    this->roiCamInfoMsg->header.frame_id = this->frameName;
-    this->roiCamInfoMsg->header.stamp    = ros::Time((unsigned long)floor(Simulator::Instance()->GetSimTime()));
-    this->roiCamInfoMsg->width  = req.width; //this->myParent->GetImageWidth() ;
-    this->roiCamInfoMsg->height = req.height; //this->myParent->GetImageHeight();
+    // fill CameraInfo
+    this->roiCameraInfoMsg = &res.cam_info;
+    this->roiCameraInfoMsg->header.frame_id = this->frameName;
+    this->roiCameraInfoMsg->header.stamp    = ros::Time((unsigned long)floor(Simulator::Instance()->GetSimTime()));
+    this->roiCameraInfoMsg->width  = req.width; //this->myParent->GetImageWidth() ;
+    this->roiCameraInfoMsg->height = req.height; //this->myParent->GetImageHeight();
     // distortion
-    this->roiCamInfoMsg->D[0] = 0.0;
-    this->roiCamInfoMsg->D[1] = 0.0;
-    this->roiCamInfoMsg->D[2] = 0.0;
-    this->roiCamInfoMsg->D[3] = 0.0;
-    this->roiCamInfoMsg->D[4] = 0.0;
+    this->roiCameraInfoMsg->D[0] = 0.0;
+    this->roiCameraInfoMsg->D[1] = 0.0;
+    this->roiCameraInfoMsg->D[2] = 0.0;
+    this->roiCameraInfoMsg->D[3] = 0.0;
+    this->roiCameraInfoMsg->D[4] = 0.0;
     // original camera matrix
-    this->roiCamInfoMsg->K[0] = this->focal_length;
-    this->roiCamInfoMsg->K[1] = 0.0;
-    this->roiCamInfoMsg->K[2] = this->Cx - req.region_x;
-    this->roiCamInfoMsg->K[3] = 0.0;
-    this->roiCamInfoMsg->K[4] = this->focal_length;
-    this->roiCamInfoMsg->K[5] = this->Cy - req.region_y;
-    this->roiCamInfoMsg->K[6] = 0.0;
-    this->roiCamInfoMsg->K[7] = 0.0;
-    this->roiCamInfoMsg->K[8] = 1.0;
+    this->roiCameraInfoMsg->K[0] = this->focal_length;
+    this->roiCameraInfoMsg->K[1] = 0.0;
+    this->roiCameraInfoMsg->K[2] = this->Cx - req.region_x;
+    this->roiCameraInfoMsg->K[3] = 0.0;
+    this->roiCameraInfoMsg->K[4] = this->focal_length;
+    this->roiCameraInfoMsg->K[5] = this->Cy - req.region_y;
+    this->roiCameraInfoMsg->K[6] = 0.0;
+    this->roiCameraInfoMsg->K[7] = 0.0;
+    this->roiCameraInfoMsg->K[8] = 1.0;
     // rectification
-    this->roiCamInfoMsg->R[0] = 1.0;
-    this->roiCamInfoMsg->R[1] = 0.0;
-    this->roiCamInfoMsg->R[2] = 0.0;
-    this->roiCamInfoMsg->R[3] = 0.0;
-    this->roiCamInfoMsg->R[4] = 1.0;
-    this->roiCamInfoMsg->R[5] = 0.0;
-    this->roiCamInfoMsg->R[6] = 0.0;
-    this->roiCamInfoMsg->R[7] = 0.0;
-    this->roiCamInfoMsg->R[8] = 1.0;
+    this->roiCameraInfoMsg->R[0] = 1.0;
+    this->roiCameraInfoMsg->R[1] = 0.0;
+    this->roiCameraInfoMsg->R[2] = 0.0;
+    this->roiCameraInfoMsg->R[3] = 0.0;
+    this->roiCameraInfoMsg->R[4] = 1.0;
+    this->roiCameraInfoMsg->R[5] = 0.0;
+    this->roiCameraInfoMsg->R[6] = 0.0;
+    this->roiCameraInfoMsg->R[7] = 0.0;
+    this->roiCameraInfoMsg->R[8] = 1.0;
     // camera projection matrix (same as camera matrix due to lack of distortion/rectification) (is this generated?)
-    this->roiCamInfoMsg->P[0] = this->focal_length;
-    this->roiCamInfoMsg->P[1] = 0.0;
-    this->roiCamInfoMsg->P[2] = this->Cx - req.region_x;
-    this->roiCamInfoMsg->P[3] = 0.0;
-    this->roiCamInfoMsg->P[4] = 0.0;
-    this->roiCamInfoMsg->P[5] = this->focal_length;
-    this->roiCamInfoMsg->P[6] = this->Cy - req.region_y;
-    this->roiCamInfoMsg->P[7] = 0.0;
-    this->roiCamInfoMsg->P[8] = 0.0;
-    this->roiCamInfoMsg->P[9] = 0.0;
-    this->roiCamInfoMsg->P[10] = 1.0;
-    this->roiCamInfoMsg->P[11] = 0.0;
+    this->roiCameraInfoMsg->P[0] = this->focal_length;
+    this->roiCameraInfoMsg->P[1] = 0.0;
+    this->roiCameraInfoMsg->P[2] = this->Cx - req.region_x;
+    this->roiCameraInfoMsg->P[3] = 0.0;
+    this->roiCameraInfoMsg->P[4] = 0.0;
+    this->roiCameraInfoMsg->P[5] = this->focal_length;
+    this->roiCameraInfoMsg->P[6] = this->Cy - req.region_y;
+    this->roiCameraInfoMsg->P[7] = 0.0;
+    this->roiCameraInfoMsg->P[8] = 0.0;
+    this->roiCameraInfoMsg->P[9] = 0.0;
+    this->roiCameraInfoMsg->P[10] = 1.0;
+    this->roiCameraInfoMsg->P[11] = 0.0;
 
 
     // copy data into image

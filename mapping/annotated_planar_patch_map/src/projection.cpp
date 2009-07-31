@@ -79,7 +79,7 @@ void annotated_planar_patch_map::projection::projectPolygonalMap(const sensor_ms
   }
 }
 
-void annotated_planar_patch_map::projection::projectAnyObject(const sensor_msgs::CamInfo& cam_info,robot_msgs::Polygon3D polyIn,robot_msgs::Polygon3D& polyOut)  
+void annotated_planar_patch_map::projection::projectAnyObject(const sensor_msgs::CameraInfo& cam_info,robot_msgs::Polygon3D polyIn,robot_msgs::Polygon3D& polyOut)  
 {
   //Projection setup
   CvMat *K_ = cvCreateMat(3, 3, CV_64FC1);
@@ -131,7 +131,7 @@ void annotated_planar_patch_map::projection::projectAnyObject(const sensor_msgs:
 }
 
 
-void annotated_planar_patch_map::projection::projectAnyObject(const sensor_msgs::CamInfo& cam_info,const robot_msgs::PointCloud& source_3D,robot_msgs::PointCloud& target_2D)
+void annotated_planar_patch_map::projection::projectAnyObject(const sensor_msgs::CameraInfo& cam_info,const robot_msgs::PointCloud& source_3D,robot_msgs::PointCloud& target_2D)
 {
   //Projection setup
   CvMat *K_ = cvCreateMat(3, 3, CV_64FC1);
@@ -327,7 +327,7 @@ void annotated_planar_patch_map::projection::projectAnyObject(const sensor_msgs:
 
 
 
-void annotated_planar_patch_map::projection::projectAnyObjectNOP(const sensor_msgs::CamInfo& stereo_info, const annotated_map_msgs::TaggedPolygonalMap& transformed_map_3D, annotated_map_msgs::TaggedPolygonalMap &transformed_map_2D)
+void annotated_planar_patch_map::projection::projectAnyObjectNOP(const sensor_msgs::CameraInfo& stereo_info, const annotated_map_msgs::TaggedPolygonalMap& transformed_map_3D, annotated_map_msgs::TaggedPolygonalMap &transformed_map_2D)
 {
   bool bSame = (&transformed_map_3D == &transformed_map_2D);
 
@@ -373,7 +373,7 @@ void annotated_planar_patch_map::projection::projectAnyObjectNOP(const sensor_ms
   }
 }
 
-void annotated_planar_patch_map::projection::projectAnyObject(const sensor_msgs::CamInfo& cam_info, const annotated_map_msgs::TaggedPolygonalMap& transformed_map_3D, annotated_map_msgs::TaggedPolygonalMap &transformed_map_2D)
+void annotated_planar_patch_map::projection::projectAnyObject(const sensor_msgs::CameraInfo& cam_info, const annotated_map_msgs::TaggedPolygonalMap& transformed_map_3D, annotated_map_msgs::TaggedPolygonalMap &transformed_map_2D)
 {
   bool bSame = (&transformed_map_3D == &transformed_map_2D);
 

@@ -36,7 +36,7 @@
 
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
-#include <sensor_msgs/CamInfo.h>
+#include <sensor_msgs/CameraInfo.h>
 #include <sensor_msgs/FillImage.h>
 #include <opencv_latest/CvBridge.h>
 #include <camera_calibration/pinhole.h>
@@ -56,7 +56,7 @@
 #include "prosilica/prosilica.h"
 #include "prosilica/rolling_sum.h"
 #include "prosilica_cam/PolledImage.h"
-#include "prosilica_cam/CamInfo.h"
+#include "prosilica_cam/CameraInfo.h"
 
 class ProsilicaNode
 {
@@ -76,7 +76,7 @@ private:
   // ROS messages
   sensor_msgs::Image img_, rect_img_;
   sensor_msgs::CvBridge img_bridge_, rect_img_bridge_;
-  sensor_msgs::CamInfo cam_info_;
+  sensor_msgs::CameraInfo cam_info_;
   sensor_msgs::Image thumbnail_;
   int thumbnail_size_;
   std::string frame_id_;
@@ -247,7 +247,7 @@ public:
     img_pub_.advertise("~image");
     if (calibrated_) {
       rect_pub_.advertise("~image_rect");
-      info_pub_ = nh_.advertise<sensor_msgs::CamInfo>("~cam_info", 1);
+      info_pub_ = nh_.advertise<sensor_msgs::CameraInfo>("~cam_info", 1);
       info_srv_ = nh_.advertiseService<>("~cam_info_service", &ProsilicaNode::camInfoService, this);
     }
 
@@ -486,8 +486,8 @@ public:
     return true;
   }
 
-  bool camInfoService(prosilica_cam::CamInfo::Request &req,
-                      prosilica_cam::CamInfo::Response &res)
+  bool camInfoService(prosilica_cam::CameraInfo::Request &req,
+                      prosilica_cam::CameraInfo::Response &res)
   {
     res.cam_info = cam_info_;
     res.cam_info.header.stamp = ros::Time::now();
@@ -608,7 +608,7 @@ private:
   }
 
   bool rectifyFrame(tPvFrame* frame, sensor_msgs::Image &img, sensor_msgs::Image &rect_img,
-                    sensor_msgs::CamInfo &cam_info)
+                    sensor_msgs::CameraInfo &cam_info)
   {
     // Currently assume BGR format so bridge.toIpl() image points to msg data buffer
     if (img.encoding != "bgr") {
@@ -632,14 +632,14 @@ private:
       assert(frame->RegionX == 0 && frame->RegionY == 0);
       
       model_.undistort(raw, rect);
-      model_.fillCamInfo(cam_info);
+      model_.fillCameraInfo(cam_info);
     }
     else {
       camera_calibration::PinholeCameraModel roi_model =
         model_.withRoi(frame->RegionX, frame->RegionY, frame->Width, frame->Height);
       roi_model.undistort(raw, rect);
-      roi_model.fillCamInfo(cam_info);
-      // @todo: trackers expect CamInfo to contain full resolution dimensions, but this feels wrong
+      roi_model.fillCameraInfo(cam_info);
+      // @todo: trackers expect CameraInfo to contain full resolution dimensions, but this feels wrong
       cam_info.width = model_.width();
       cam_info.height = model_.height();
     }
@@ -648,7 +648,7 @@ private:
   }
   
   bool processFrame(tPvFrame* frame, sensor_msgs::Image &img, sensor_msgs::Image &rect_img,
-                    sensor_msgs::CamInfo &cam_info)
+                    sensor_msgs::CameraInfo &cam_info)
   {
     ros::Time time = ros::Time::now();
     
@@ -673,7 +673,7 @@ private:
   }
 
   void publishTopics(sensor_msgs::Image &img, sensor_msgs::Image &rect_img,
-                     sensor_msgs::CamInfo &cam_info)
+                     sensor_msgs::CameraInfo &cam_info)
   {
     img_pub_.publish(img);
     if (calibrated_) {

@@ -46,7 +46,7 @@
 
 #include "sensor_msgs/RawStereo.h"
 #include "sensor_msgs/Image.h"
-#include "sensor_msgs/CamInfo.h"
+#include "sensor_msgs/CameraInfo.h"
 
 #include "kinematic_calibration/CalibrationData2.h"
 
@@ -94,8 +94,8 @@ public:
   // HiRes Camera messages
   sensor_msgs::Image hi_res_image_ ;
   sensor_msgs::Image safe_hi_res_image_ ;
-  sensor_msgs::CamInfo hi_res_info_ ;
-  sensor_msgs::CamInfo safe_hi_res_info_ ;
+  sensor_msgs::CameraInfo hi_res_info_ ;
+  sensor_msgs::CameraInfo safe_hi_res_info_ ;
   boost::mutex hi_res_lock_ ;
 
   // Point Cloud Messages

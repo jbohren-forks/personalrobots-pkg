@@ -37,7 +37,7 @@
 
 #include <ros/node.h>
 #include <sensor_msgs/Image.h>
-#include <sensor_msgs/CamInfo.h>
+#include <sensor_msgs/CameraInfo.h>
 #include <opencv_latest/CvBridge.h>
 #include <prosilica_cam/PolledImage.h>
 #include <tf/transform_broadcaster.h>
@@ -65,7 +65,7 @@ protected:
   virtual CvRect getBoundingBox() = 0;
   virtual IplImage* getDisplayImage(bool success);
 
-  void processCamInfo();
+  void processCameraInfo();
   void processImage();
 
   CvRect fitToFrame(CvRect roi);
@@ -86,7 +86,7 @@ protected:
   std::string image_service_;
   std::string cam_info_service_;
   sensor_msgs::Image &img_;
-  sensor_msgs::CamInfo &cam_info_;
+  sensor_msgs::CameraInfo &cam_info_;
   sensor_msgs::CvBridge img_bridge_;
   std::string pose_topic_name_;
   tf::TransformBroadcaster tf_broadcaster_;

@@ -33,7 +33,7 @@
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
 #include "opencv_latest/CvBridge.h"
-#include "sensor_msgs/CamInfo.h"
+#include "sensor_msgs/CameraInfo.h"
 #include "sensor_msgs/Image.h"
 #include "checkerboard_detector/ObjectDetection.h"
 #include "math.h"
@@ -71,7 +71,7 @@ public:
         TransformMatrix tlocaltrans;
     };
 
-    sensor_msgs::CamInfo _caminfomsg;
+    sensor_msgs::CameraInfo _caminfomsg;
     sensor_msgs::Image _imagemsg;
     checkerboard_detector::ObjectDetection _objdetmsg;
     sensor_msgs::CvBridge _cvbridge;
@@ -196,7 +196,7 @@ public:
     {
         boost::mutex::scoped_lock lock(_mutexcalib);
         if( intrinsic_matrix == NULL ) {
-            ROS_ERROR("need CamInfo message for calibration info");
+            ROS_ERROR("need CameraInfo message for calibration info");
             return;
         }
         

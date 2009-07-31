@@ -52,7 +52,7 @@
 #include "ros/callback_queue.h"
 #include "sensor_msgs/StereoInfo.h"
 #include "sensor_msgs/DisparityInfo.h"
-#include "sensor_msgs/CamInfo.h"
+#include "sensor_msgs/CameraInfo.h"
 #include "sensor_msgs/Image.h"
 #include "robot_msgs/PointCloud.h"
 #include "robot_msgs/Point32.h"
@@ -115,7 +115,7 @@ public:
 	sensor_msgs::ImageConstPtr dimage_;
 	sensor_msgs::StereoInfoConstPtr stinfo_;
 	sensor_msgs::DisparityInfoConstPtr dispinfo_;
-	sensor_msgs::CamInfoConstPtr rcinfo_;
+	sensor_msgs::CameraInfoConstPtr rcinfo_;
 
 	sensor_msgs::CvBridge lbridge_;
 	sensor_msgs::CvBridge rbridge_;
@@ -235,7 +235,7 @@ private:
     void subscribeStereoData()
     {
 		left_image_sub_ = nh_.subscribe(nh_.resolveName("stereo")+"/left/image_rect", 1, sync_.synchronize(&HandleDetector::leftImageCallback, this));
-//		right_caminfo_sub_ = nh_.subscribe(nh_.resolveName("stereo")+"/right/cam_info", 1, sync_.synchronize(&HandleDetector::rightCamInfoCallback, this));
+//		right_caminfo_sub_ = nh_.subscribe(nh_.resolveName("stereo")+"/right/cam_info", 1, sync_.synchronize(&HandleDetector::rightCameraInfoCallback, this));
 		disparity_sub_ = nh_.subscribe(nh_.resolveName("stereo")+"/disparity", 1, sync_.synchronize(&HandleDetector::disparityImageCallback, this));
 		cloud_sub_ = nh_.subscribe(nh_.resolveName("stereo")+"/cloud", 1, sync_.synchronize(&HandleDetector::cloudCallback, this));
 		dispinfo_sub_ = nh_.subscribe(nh_.resolveName("stereo")+"/disparity_info", 1, sync_.synchronize(&HandleDetector::dispinfoCallback, this));
@@ -272,7 +272,7 @@ private:
 //		ROS_INFO("got sync callback");
 	}
 
-//	void rightCamInfoCallback(const sensor_msgs::CamInfo::ConstPtr& info)
+//	void rightCameraInfoCallback(const sensor_msgs::CameraInfo::ConstPtr& info)
 //	{
 //		rcinfo_ = info;
 //	}

@@ -18,7 +18,7 @@
 #include "sensor_msgs/Image.h"
 #include "sensor_msgs/StereoInfo.h"
 #include "sensor_msgs/DisparityInfo.h"
-#include "sensor_msgs/CamInfo.h"
+#include "sensor_msgs/CameraInfo.h"
 
 #include "opencv_latest/CvBridge.h"
 #include "opencv/cxcore.h"
@@ -90,10 +90,10 @@ public:
   sensor_msgs::DisparityInfoConstPtr dinfo_;
 
   ros::Subscriber linfo_sub_;
-  sensor_msgs::CamInfoConstPtr linfo_;
+  sensor_msgs::CameraInfoConstPtr linfo_;
 
   ros::Subscriber rinfo_sub_;
-  sensor_msgs::CamInfoConstPtr rinfo_;
+  sensor_msgs::CameraInfoConstPtr rinfo_;
 
   tf::TransformBroadcaster broadcaster_;
 
@@ -117,8 +117,8 @@ public:
   void dinfoCallback(const sensor_msgs::DisparityInfo::ConstPtr& disp_img);
   void limageCallback(const sensor_msgs::Image::ConstPtr& left_img);
   void rimageCallback(const sensor_msgs::Image::ConstPtr& right_img);
-  void linfoCallback(const sensor_msgs::CamInfo::ConstPtr& rinfo);
-  void rinfoCallback(const sensor_msgs::CamInfo::ConstPtr& linfo);
+  void linfoCallback(const sensor_msgs::CameraInfo::ConstPtr& rinfo);
+  void rinfoCallback(const sensor_msgs::CameraInfo::ConstPtr& linfo);
   void syncCallback();
 
   void buildRP();

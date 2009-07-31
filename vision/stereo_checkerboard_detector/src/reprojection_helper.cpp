@@ -89,8 +89,8 @@ void ReprojectionHelper::computeDisparity(const vector<CvPoint2D32f>& left_pts,
 }
 
 void ReprojectionHelper::reproject(const std::vector<robot_msgs::Point>& ros_uvd,
-                                   const sensor_msgs::CamInfo& left_info,
-                                   const sensor_msgs::CamInfo& right_info,
+                                   const sensor_msgs::CameraInfo& left_info,
+                                   const sensor_msgs::CameraInfo& right_info,
                                    std::vector<robot_msgs::Point>& ros_xyz)
 {
   const unsigned int N = ros_uvd.size() ;
@@ -120,8 +120,8 @@ void ReprojectionHelper::reproject(const std::vector<robot_msgs::Point>& ros_uvd
 }
 
 void ReprojectionHelper::reproject(const CvMat* uvd,
-                                   const sensor_msgs::CamInfo& left_info,
-                                   const sensor_msgs::CamInfo& right_info,
+                                   const sensor_msgs::CameraInfo& left_info,
+                                   const sensor_msgs::CameraInfo& right_info,
                                    CvMat* xyz)
 {
   unsigned int N = uvd->rows ;
@@ -169,8 +169,8 @@ void ReprojectionHelper::reproject(const CvMat* uvd,
 
 }
 
-void ReprojectionHelper::buildQ(const sensor_msgs::CamInfo& left_info,
-                                const sensor_msgs::CamInfo& right_info,
+void ReprojectionHelper::buildQ(const sensor_msgs::CameraInfo& left_info,
+                                const sensor_msgs::CameraInfo& right_info,
                                 CvMat* Q)
 {
   // Clear Q

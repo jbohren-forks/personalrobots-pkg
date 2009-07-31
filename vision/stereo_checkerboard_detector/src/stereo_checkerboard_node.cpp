@@ -271,9 +271,9 @@ private :
   unsigned int num_y_ ;
 
   sensor_msgs::Image left_image_msg_ ;
-  sensor_msgs::CamInfo left_info_msg_ ;
+  sensor_msgs::CameraInfo left_info_msg_ ;
   sensor_msgs::Image right_image_msg_ ;
-  sensor_msgs::CamInfo right_info_msg_ ;
+  sensor_msgs::CameraInfo right_info_msg_ ;
 } ;
 
 

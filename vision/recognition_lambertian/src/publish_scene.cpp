@@ -48,7 +48,7 @@
 #include <robot_msgs/PointCloud.h>
 
 #include <sensor_msgs/Image.h>
-#include <sensor_msgs/CamInfo.h>
+#include <sensor_msgs/CameraInfo.h>
 #include <sensor_msgs/DisparityInfo.h>
 
 #include <opencv_latest/CvBridge.h>
@@ -78,7 +78,7 @@ protected:
 	Image left_;
 	Image right_;
 	Image disp_;
-	CamInfo left_caminfo_;
+	CameraInfo left_caminfo_;
 	DisparityInfo dispinfo_;
 
 
@@ -116,7 +116,7 @@ public:
 		node_.advertise<sensor_msgs::Image> (left_topic_.c_str (), 1);
 		node_.advertise<sensor_msgs::Image> (right_topic_.c_str (), 1);
 		node_.advertise<sensor_msgs::Image> (disp_topic_.c_str (), 1);
-		node_.advertise<sensor_msgs::CamInfo> (left_caminfo_topic_.c_str (), 1);
+		node_.advertise<sensor_msgs::CameraInfo> (left_caminfo_topic_.c_str (), 1);
 		node_.advertise<sensor_msgs::DisparityInfo> (dispinfo_topic_.c_str (), 1);
 		ROS_INFO ("Publishing data on topic %s.", node_.mapName (cloud_topic_).c_str ());
 

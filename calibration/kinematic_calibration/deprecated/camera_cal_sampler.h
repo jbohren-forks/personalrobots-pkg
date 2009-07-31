@@ -46,7 +46,7 @@
 #include "kinematic_calibration/Capture.h"
 #include "robot_msgs/MechanismState.h"
 #include "sensor_msgs/Image.h"
-#include "sensor_msgs/CamInfo.h"
+#include "sensor_msgs/CameraInfo.h"
 #include "topic_synchronizer/topic_synchronizer.h"
 #include "tinyxml/tinyxml.h"
 

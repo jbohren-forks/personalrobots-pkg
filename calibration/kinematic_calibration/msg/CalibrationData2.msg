@@ -18,4 +18,4 @@ mocap_msgs/MocapSnapshot mocap_snapshot
 
 # Data from multiple monocular cameras
 sensor_msgs/Image[] image
-sensor_msgs/CamInfo[] cam_info
+sensor_msgs/CameraInfo[] cam_info

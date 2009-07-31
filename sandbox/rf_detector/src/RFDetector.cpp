@@ -58,7 +58,7 @@
 #include <point_cloud_mapping/sample_consensus/lmeds.h>
 #include <point_cloud_mapping/geometry/projections.h>
 
-#include "sensor_msgs/CamInfo.h"
+#include "sensor_msgs/CameraInfo.h"
 #include "robot_msgs/PointCloud.h"
 #include "robot_msgs/Point32.h"
 #include "robot_msgs/PointStamped.h"
@@ -106,7 +106,7 @@ public:
     TopicSynchronizer sync_;
     sensor_msgs::ImageConstPtr limage;
     sensor_msgs::CvBridge lbridge;
-    sensor_msgs::CamInfoConstPtr lcinfo_;
+    sensor_msgs::CameraInfoConstPtr lcinfo_;
 
     ros::Subscriber left_image_sub_;
     ros::Subscriber left_caminfo_image_sub_;
@@ -220,7 +220,7 @@ public:
     namedWindow("left_objbbx", 1);
     // subscribe to topics
     left_image_sub_ = n.subscribe("stereo/left/image_rect", 1, sync_.synchronize(&rf_detector::leftImageCallback, this));
-    left_caminfo_image_sub_ = n.subscribe("stereo/left/cam_info", 1, sync_.synchronize(&rf_detector::leftCamInfoCallback, this));
+    left_caminfo_image_sub_ = n.subscribe("stereo/left/cam_info", 1, sync_.synchronize(&rf_detector::leftCameraInfoCallback, this));
     cloud_sub_ = n.subscribe("stereo/cloud", 1, sync_.synchronize(&rf_detector::cloudCallback, this));
 
     }
@@ -247,7 +247,7 @@ private:
             }
     }
 
-    void leftCamInfoCallback(const sensor_msgs::CamInfo::ConstPtr& info)
+    void leftCameraInfoCallback(const sensor_msgs::CameraInfo::ConstPtr& info)
 	{
 		lcinfo_ = info;
 	}

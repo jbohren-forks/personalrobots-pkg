@@ -35,11 +35,11 @@
 // image components
 #include "opencv_latest/CvBridge.h"
 #include "sensor_msgs/Image.h"
-#include "sensor_msgs/CamInfo.h"
+#include "sensor_msgs/CameraInfo.h"
 
 // prosilica components
 #include "prosilica/prosilica.h"
-#include "prosilica_cam/CamInfo.h"
+#include "prosilica_cam/CameraInfo.h"
 #include "prosilica_cam/PolledImage.h"
 
 
@@ -128,8 +128,8 @@ class RosProsilica : public Controller
   private: static void mouse_cb(int event, int x, int y, int flags, void* param) { };
 
   /// \brief Service call to publish images, cam info
-  private: bool camInfoService(prosilica_cam::CamInfo::Request &req,
-                               prosilica_cam::CamInfo::Response &res);
+  private: bool camInfoService(prosilica_cam::CameraInfo::Request &req,
+                               prosilica_cam::CameraInfo::Response &res);
   private: bool triggeredGrab(prosilica_cam::PolledImage::Request &req,
                               prosilica_cam::PolledImage::Response &res);
 
@@ -146,8 +146,8 @@ class RosProsilica : public Controller
   private: sensor_msgs::Image imageMsg;
   private: sensor_msgs::Image imageRectMsg;
   private: sensor_msgs::Image *roiImageMsg;
-  private: sensor_msgs::CamInfo *camInfoMsg;
-  private: sensor_msgs::CamInfo *roiCamInfoMsg;
+  private: sensor_msgs::CameraInfo *camInfoMsg;
+  private: sensor_msgs::CameraInfo *roiCameraInfoMsg;
 
 
   /// \brief Parameters
