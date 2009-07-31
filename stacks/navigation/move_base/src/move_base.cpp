@@ -426,6 +426,7 @@ namespace move_base {
           resetState();
 
           //notify the ActionServer that we've successfully preemted
+          ROS_DEBUG("Move base preempting the current goal");
           as_.setPreempted();
         }
       }
