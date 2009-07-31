@@ -141,7 +141,8 @@ namespace actionlib {
       bool isActive(){
         if(!current_goal_.getGoal())
           return false;
-        return current_goal_.getGoalStatus().status == GoalStatus::ACTIVE;
+        unsigned int status = current_goal_.getGoalStatus().status;
+        return status == GoalStatus::ACTIVE || status == GoalStatus::PREEMPTING;
       }
 
       /**
@@ -168,6 +169,7 @@ namespace actionlib {
        */
       void setPreempted(const Result& result = Result()){
         boost::mutex::scoped_lock(lock_);
+        ROS_DEBUG("Setting the current goal as canceled");
         current_goal_.setCanceled(result);
       }
 
