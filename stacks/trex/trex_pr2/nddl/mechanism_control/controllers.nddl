@@ -1,0 +1,40 @@
+
+// Mechanism Controller Base Class. An instance at this level is used to capture the case of an empty domain without
+// implying inconsistency
+
+// Right Arm Controllers
+class RightArmController extends MechanismController{};
+RightArmController r_arm_joint_trajectory_controller = new RightArmController();
+RightArmController r_arm_cartesian_trajectory_controller = new RightArmController();
+RightArmController r_arm_cartesian_tff_controller = new RightArmController();
+RightArmController r_arm_hybrid_controller = new RightArmController();
+RightArmController r_arm_constraint_cartesian_twist_controller = new RightArmController();
+RightArmController r_arm_constraint_cartesian_wrench_controller = new RightArmController();
+RightArmController r_arm_constraint_cartesian_pose_controller = new RightArmController();
+RightArmController r_arm_constraint_cartesian_trajectory_controller = new RightArmController();
+RightArmController r_arm_cartesian_twist_controller = new RightArmController();
+RightArmController r_arm_cartesian_wrench_controller = new RightArmController();
+RightArmController r_arm_cartesian_pose_controller = new RightArmController();
+RightArmController no_controller_right_arm = new RightArmController();
+RightArmController all_right_arm_controllers;
+
+// Head Controllers
+class HeadController extends MechanismController{};
+HeadController head_controller = new HeadController();
+HeadController head_tilt_joint_position_controller = new HeadController(); 
+HeadController head_pan_joint_position_controller = new HeadController(); 
+HeadController no_controller_head = new HeadController();
+HeadController all_head_controllers;
+
+// RightGripper Controller
+class RightGripperController extends MechanismController{};
+RightGripperController r_gripper_effort_controller = new RightGripperController();
+RightGripperController r_gripper_position_controller = new RightGripperController();
+RightGripperController no_controller_right_gripper = new RightGripperController();
+RightGripperController all_right_gripper_controllers;
+
+// Tilt Laser
+class TiltLaserController extends MechanismController{}
+TiltLaserController laser_tilt_controller = new TiltLaserController();
+TiltLaserController no_controller_tilt_laser = new TiltLaserController();
+TiltLaserController all_laser_tilt_controllers;
