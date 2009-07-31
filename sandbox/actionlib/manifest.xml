@@ -4,7 +4,7 @@
   </description>
   <author>Eitan Marder-Eppstein, Vijay Pradeep</author>
   <license>BSD</license>
-  <review status="unreviewed" notes=""/>
+  <review status="api cleared" notes=""/>
   <url>http://pr.willowgarage.com/wiki/actionlib</url>
 
   <depend package="robot_msgs" />
