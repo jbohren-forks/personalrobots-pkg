@@ -6,7 +6,7 @@
   <author>Eitan eitan@willowgarage.com</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
-  <url>http://pr.willowgarage.com/wiki/nav</url>
+  <url>http://pr.willowgarage.com/wiki/navigation</url>
   
   <depend stack="ros" version="0.5"/>
   <depend stack="ros-pkg_common" version="0.1"/>
