@@ -63,9 +63,9 @@ void GoalHandle<ActionSpec>::reset()
 }
 
 template<class ActionSpec>
-bool GoalHandle<ActionSpec>::isActive() const
+bool GoalHandle<ActionSpec>::isExpired() const
 {
-  return active_;
+  return !active_;
 }
 
 
@@ -77,7 +77,7 @@ CommState GoalHandle<ActionSpec>::getCommState()
 
   assert(gm_);
 
-  ScopedLock(gm_->list_mutex_);
+  boost::recursive_mutex::scoped_lock lock(gm_->list_mutex_);
   return list_handle_.getElem()->getCommState();
 }
 
@@ -89,7 +89,7 @@ TerminalState GoalHandle<ActionSpec>::getTerminalState()
 
   assert(gm_);
 
-  ScopedLock(gm_->list_mutex_);
+  boost::recursive_mutex::scoped_lock lock(gm_->list_mutex_);
   CommState comm_state_ = list_handle_.getElem()->getCommState();
   if (comm_state_ != CommState::DONE)
     ROS_WARN("Asking for the terminal state when we're in [%s]", comm_state_.toString().c_str());
@@ -123,7 +123,7 @@ typename GoalHandle<ActionSpec>::ResultConstPtr GoalHandle<ActionSpec>::getResul
   if (!active_)
     ROS_ERROR("Trying to getResult on an inactive GoalHandle. You are incorrectly using a GoalHandle");
   assert(gm_);
-  ScopedLock(gm_->list_mutex_);
+  boost::recursive_mutex::scoped_lock lock(gm_->list_mutex_);
   return list_handle_.getElem()->getResult();
 }
 
@@ -133,7 +133,7 @@ void GoalHandle<ActionSpec>::resend()
   if (!active_)
     ROS_ERROR("Trying to resend() on an inactive GoalHandle. You are incorrectly using a GoalHandle");
   assert(gm_);
-  boost::mutex::scoped_lock(gm_->list_mutex_);
+  boost::recursive_mutex::scoped_lock lock(gm_->list_mutex_);
 
   ActionGoalConstPtr action_goal = list_handle_.getElem()->getActionGoal();
 
@@ -150,7 +150,7 @@ void GoalHandle<ActionSpec>::cancel()
   if (!active_)
     ROS_ERROR("Trying to cancel() on an inactive GoalHandle. You are incorrectly using a GoalHandle");
   assert(gm_);
-  ScopedLock(gm_->list_mutex_);
+  boost::recursive_mutex::scoped_lock lock(gm_->list_mutex_);
 
   ActionGoalConstPtr action_goal = list_handle_.getElem()->getActionGoal();
 

@@ -70,7 +70,7 @@ GoalHandle<ActionSpec> GoalManager<ActionSpec>::initGoal(const Goal& goal,
   typedef CommStateMachine<ActionSpec> CommStateMachineT;
   boost::shared_ptr<CommStateMachineT> comm_state_machine(new CommStateMachineT(action_goal, transition_cb, feedback_cb));
 
-  boost::mutex::scoped_lock(list_mutex_);
+  boost::recursive_mutex::scoped_lock lock(list_mutex_);
   typename ManagedListT::Handle list_handle = list_.add(comm_state_machine, boost::bind(&GoalManagerT::listElemDeleter, this, _1));
 
   return GoalHandle<ActionSpec>(this, list_handle);
@@ -80,7 +80,7 @@ template<class ActionSpec>
 void GoalManager<ActionSpec>::listElemDeleter(typename ManagedListT::iterator it)
 {
   ROS_DEBUG("About to erase CommStateMachine");
-  boost::mutex::scoped_lock(list_mutex_);
+  boost::recursive_mutex::scoped_lock lock(list_mutex_);
   list_.erase(it);
   ROS_DEBUG("Done erasing CommStateMachine");
 }
@@ -88,7 +88,7 @@ void GoalManager<ActionSpec>::listElemDeleter(typename ManagedListT::iterator it
 template<class ActionSpec>
 void GoalManager<ActionSpec>::updateStatuses(const GoalStatusArrayConstPtr& status_array)
 {
-  boost::mutex::scoped_lock(list_mutex_);
+  boost::recursive_mutex::scoped_lock lock(list_mutex_);
   typename ManagedListT::iterator it = list_.begin();
 
   while (it != list_.end())
@@ -102,7 +102,7 @@ void GoalManager<ActionSpec>::updateStatuses(const GoalStatusArrayConstPtr& stat
 template<class ActionSpec>
 void GoalManager<ActionSpec>::updateFeedbacks(const ActionFeedbackConstPtr& action_feedback)
 {
-  boost::mutex::scoped_lock(list_mutex_);
+  boost::recursive_mutex::scoped_lock lock(list_mutex_);
   typename ManagedListT::iterator it = list_.begin();
 
   while (it != list_.end())
@@ -116,7 +116,7 @@ void GoalManager<ActionSpec>::updateFeedbacks(const ActionFeedbackConstPtr& acti
 template<class ActionSpec>
 void GoalManager<ActionSpec>::updateResults(const ActionResultConstPtr& action_result)
 {
-  boost::mutex::scoped_lock(list_mutex_);
+  boost::recursive_mutex::scoped_lock lock(list_mutex_);
   typename ManagedListT::iterator it = list_.begin();
 
   while (it != list_.end())

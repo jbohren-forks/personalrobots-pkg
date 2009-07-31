@@ -81,22 +81,25 @@ int main(int argc, char** argv)
 
   ac.sendGoal(goal, &doneCallback, &activeCallback, &feedbackCallback);
 
-  sleep(5.0);
+  ROS_INFO("Blocking until goal finishes");
+  ac.waitForGoalToFinish();
+  ROS_INFO("Blocking call finished");
 
-  ac.cancelGoal();
+  ROS_INFO("Making sure wait for goal doesn't get stuck if we call it again");
+  ac.waitForGoalToFinish();
+  ROS_INFO("Yay, it worked");
 
-  /*sleep(2.0);
-
-  ROS_INFO("About to send a goal");
-  gh.reset();
-  gh = ac.sendGoal(goal, &goalCallback, &feedbackCallback, ros::Duration(10.0));
+  MoveBaseResultConstPtr result = ac.getResult();
+  if (result)
+    ROS_INFO("Got A Result!");
+  else
+    ROS_INFO("Got a NULL Result");
 
   sleep(2.0);
 
-  ROS_INFO("About to preempt the goal");
-  gh.preemptGoal();*/
-
-  //ac.sendGoal(goal);
+  ac.sendGoal(goal, &doneCallback, &activeCallback, &feedbackCallback);
+  sleep(4.0);
+  ac.cancelGoal();
 
   while(n.ok())
     sleep(.1);

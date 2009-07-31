@@ -433,7 +433,7 @@ namespace actionlib {
        * @param result The result to publish
        */
       void publishResult(const GoalStatus& status, const Result& result){
-        boost::mutex::scoped_lock(lock_);
+        boost::recursive_mutex::scoped_lock lock(lock_);
         //we'll create a shared_ptr to pass to ROS to limit copying
         boost::shared_ptr<ActionResult> ar(new ActionResult);
         ar->status = status;
@@ -447,7 +447,7 @@ namespace actionlib {
        * @param feedback The feedback to publish
        */
       void publishFeedback(const GoalStatus& status, const Feedback& feedback){
-        boost::mutex::scoped_lock(lock_);
+        boost::recursive_mutex::scoped_lock lock(lock_);
         //we'll create a shared_ptr to pass to ROS to limit copying
         boost::shared_ptr<ActionFeedback> af(new ActionFeedback);
         af->status = status;
@@ -459,7 +459,7 @@ namespace actionlib {
        * @brief  The ROS callback for cancel requests coming into the ActionServer
        */
       void cancelCallback(const boost::shared_ptr<const GoalID>& goal_id){
-        boost::mutex::scoped_lock(lock_);
+        boost::recursive_mutex::scoped_lock lock(lock_);
         //we need to handle a cancel for the user
         ROS_DEBUG("The action server has received a new cancel request");
         bool goal_id_found = false;
@@ -501,7 +501,7 @@ namespace actionlib {
 
         //if the requested goal_id was not found, and it is non-zero, then we need to store the cancel request
         if(goal_id->id != ros::Time() && !goal_id_found){
-          typename std::list<StatusTracker>::iterator it = status_list_.insert(status_list_.end(), 
+          typename std::list<StatusTracker>::iterator it = status_list_.insert(status_list_.end(),
               StatusTracker(*goal_id, GoalStatus::RECALLING));
           //start the timer for how long the status will live in the list without a goal handle to it
           (*it).handle_destruction_time_ = ros::Time::now();
@@ -516,7 +516,7 @@ namespace actionlib {
        * @brief  The ROS callback for goals coming into the ActionServer
        */
       void goalCallback(const boost::shared_ptr<const ActionGoal>& goal){
-        boost::mutex::scoped_lock(lock_);
+        boost::recursive_mutex::scoped_lock lock(lock_);
 
         ROS_DEBUG("The action server has received a new goal request");
 
@@ -559,7 +559,7 @@ namespace actionlib {
        * @brief  Publish status for all goals on a timer event
        */
       void publishStatus(const ros::TimerEvent& e){
-        boost::mutex::scoped_lock(lock_);
+        boost::recursive_mutex::scoped_lock lock(lock_);
         publishStatus();
       }
 
@@ -567,7 +567,7 @@ namespace actionlib {
        * @brief  Explicitly publish status
        */
       void publishStatus(){
-        boost::mutex::scoped_lock(lock_);
+        boost::recursive_mutex::scoped_lock lock(lock_);
         //build a status array
         GoalStatusArray status_array;
 

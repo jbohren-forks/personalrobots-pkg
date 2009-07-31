@@ -58,16 +58,6 @@
 namespace actionlib
 {
 
-//! \todo figure out why I get compile errors trying to use boost::mutex::scoped_lock()
-class ScopedLock
-{
-public:
-  ScopedLock(boost::recursive_mutex& mutex) : mutex_(mutex)  {  mutex_.lock(); }
-  ~ScopedLock()  { mutex_.unlock(); }
-private:
-  boost::recursive_mutex& mutex_;
-};
-
 template <class ActionSpec>
 class GoalHandle;
 
@@ -146,9 +136,11 @@ public:
 
   /**
    * \brief Checks if this goal handle is tracking a goal
-   * \return True if this goal handle is indeed tracking a goal
+   *
+   * Has pretty much the same semantics as boost::shared_ptr::expired()
+   * \return True if this goal handle is not tracking a goal
    */
-  inline bool isActive() const;
+  inline bool isExpired() const;
 
   /**
    * \brief Get the state of this goal's communication state machine from interaction with the server

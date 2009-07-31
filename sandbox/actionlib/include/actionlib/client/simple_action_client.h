@@ -116,6 +116,14 @@ public:
   SimpleGoalState getGoalState();
 
   /**
+   * \brief Get the Result of the current goal
+   * \return shared pointer to the result
+   */
+  //ResultConstPtr getResult();
+  ResultConstPtr getResult();
+
+
+  /**
    * \brief Get the terminal state information for this goal
    *
    * Possible States Are: RECALLED, REJECTED, PREEMPTED, ABORTED, SUCCEEDED, LOST
@@ -222,7 +230,7 @@ void SimpleActionClient<ActionSpec>::sendGoal(const Goal& goal,
 template<class ActionSpec>
 SimpleGoalState SimpleActionClient<ActionSpec>::getGoalState()
 {
-  if (!gh_.isActive())
+  if (gh_.isExpired())
     ROS_ERROR("Trying to getGoalState() when no goal is running. You are incorrectly using SimpleActionClient");
 
   CommState comm_state_ = gh_.getCommState();
@@ -251,7 +259,7 @@ SimpleGoalState SimpleActionClient<ActionSpec>::getGoalState()
 template<class ActionSpec>
 TerminalState SimpleActionClient<ActionSpec>::getTerminalState()
 {
-  if (!gh_.isActive())
+  if (gh_.isExpired())
     ROS_ERROR("Trying to getTerminalState() when no goal is running. You are incorrectly using SimpleActionClient");
 
   if (gh_.getCommState() != CommState::DONE)
@@ -259,6 +267,15 @@ TerminalState SimpleActionClient<ActionSpec>::getTerminalState()
 
   return gh_.getTerminalState();
 }
+
+template<class ActionSpec>
+typename SimpleActionClient<ActionSpec>::ResultConstPtr SimpleActionClient<ActionSpec>::getResult()
+{
+  if (gh_.isExpired())
+    ROS_ERROR("Trying to getResult() when no goal is running. You are incorrectly using SimpleActionClient");
+  return gh_.getResult();
+}
+
 
 template<class ActionSpec>
 void SimpleActionClient<ActionSpec>::cancelAllGoals()
@@ -275,7 +292,7 @@ void SimpleActionClient<ActionSpec>::cancelGoalsAtAndBeforeTime(const ros::Time&
 template<class ActionSpec>
 void SimpleActionClient<ActionSpec>::cancelGoal()
 {
-  if (!gh_.isActive())
+  if (gh_.isExpired())
     ROS_ERROR("Trying to cancelGoal() when no goal is running. You are incorrectly using SimpleActionClient");
 
   gh_.cancel();
@@ -284,7 +301,7 @@ void SimpleActionClient<ActionSpec>::cancelGoal()
 template<class ActionSpec>
 void SimpleActionClient<ActionSpec>::stopTrackingGoal()
 {
-  if (!gh_.isActive())
+  if (gh_.isExpired())
     ROS_ERROR("Trying to stopTrackingGoal() when no goal is running. You are incorrectly using SimpleActionClient");
   gh_.reset();
 }
@@ -392,7 +409,7 @@ void SimpleActionClient<ActionSpec>::handleTransition(GoalHandleT gh)
 template<class ActionSpec>
 void SimpleActionClient<ActionSpec>::waitForGoalToFinish()
 {
-  if (!gh_.isActive())
+  if (gh_.isExpired())
     ROS_ERROR("Trying to waitForGoalToFinish() when no goal is running. You are incorrectly using SimpleActionClient");
 
   boost::mutex::scoped_lock lock(done_mutex_);

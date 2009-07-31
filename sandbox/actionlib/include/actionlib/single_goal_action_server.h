@@ -87,7 +87,7 @@ namespace actionlib {
        * @return A shared_ptr to the new goal.
        */
       boost::shared_ptr<const Goal> acceptNewGoal(){
-        boost::mutex::scoped_lock(lock_);
+        boost::recursive_mutex::scoped_lock lock(lock_);
 
         if(!new_goal_ || !next_goal_.getGoal()){
           ROS_ERROR("Attempting to accept the next goal when a new goal is not available");
@@ -150,7 +150,7 @@ namespace actionlib {
        * @param  result An optional result to send back to any clients of the goal
        */
       void setSucceeded(const Result& result = Result()){
-        boost::mutex::scoped_lock(lock_);
+        boost::recursive_mutex::scoped_lock lock(lock_);
         current_goal_.setSucceeded(result);
       }
 
@@ -159,7 +159,7 @@ namespace actionlib {
        * @param  result An optional result to send back to any clients of the goal
        */
       void setAborted(const Result& result = Result()){
-        boost::mutex::scoped_lock(lock_);
+        boost::recursive_mutex::scoped_lock lock(lock_);
         current_goal_.setAborted(result);
       }
 
@@ -168,7 +168,7 @@ namespace actionlib {
        * @param  result An optional result to send back to any clients of the goal
        */
       void setPreempted(const Result& result = Result()){
-        boost::mutex::scoped_lock(lock_);
+        boost::recursive_mutex::scoped_lock lock(lock_);
         ROS_DEBUG("Setting the current goal as canceled");
         current_goal_.setCanceled(result);
       }
@@ -194,7 +194,7 @@ namespace actionlib {
        * @brief  Callback for when the ActionServer receives a new goal and passes it on
        */
       void goalCallback(GoalHandle goal){
-        boost::mutex::scoped_lock(lock_);
+        boost::recursive_mutex::scoped_lock lock(lock_);
         ROS_DEBUG("A new goal has been recieved by the single goal action server");
 
         //check that the timestamp is past that of the current goal and the next goal
@@ -224,7 +224,7 @@ namespace actionlib {
        * @brief  Callback for when the ActionServer receives a new preempt and passes it on
        */
       void preemptCallback(GoalHandle preempt){
-        boost::mutex::scoped_lock(lock_);
+        boost::recursive_mutex::scoped_lock lock(lock_);
         ROS_DEBUG("A preempt has been received by the SingleGoalActionServer");
 
         //if the preempt is for the current goal, then we'll set the preemptRequest flag and call the user's preempt callback
