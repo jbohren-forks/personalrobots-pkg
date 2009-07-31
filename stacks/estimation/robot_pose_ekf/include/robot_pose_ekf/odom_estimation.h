@@ -65,22 +65,53 @@ public:
   /// destructor
   virtual ~OdomEstimation();
 
-  /// update filter
+  /** update the extended Kalman filter
+   * \param odom_active specifies if the odometry sensor is active or not
+   * \param imu_active specifies if the imu sensor is active or not
+   * \param vo_active specifies if the vo sensor is active or not
+   * \param filter_time update the ekf up to this time
+   * \param diagnostics_res returns false if the diagnostics found that the sensor measurements are inconsistent
+   * returns true on successfull update
+   */
   bool update(bool odom_active, bool imu_active, bool vo_active, const ros::Time& filter_time, bool& diagnostics_res);
 
-  /// initialize filter
+  /** initialize the extended Kalman filter
+   * \param prior the prior robot pose
+   * \param time the initial time of the ekf
+   */
   void initialize(const tf::Transform& prior, const ros::Time& time);
 
-  /// return if filter was initialized
+  /** check if the filter is initialized
+   * returns true if the ekf has been initialized already
+   */
   bool isInitialized() {return filter_initialized_;};
 
-  /// get filter posterior
+  /** get the filter posterior
+   * \param estimate the filter posterior as a columnvector
+   */
   void getEstimate(MatrixWrapper::ColumnVector& estimate);
+
+  /** get the filter posterior
+   * \param time the time of the filter posterior
+   * \param estimate the filter posterior as a tf transform
+   */
   void getEstimate(ros::Time time, tf::Transform& estiamte);
+
+  /** get the filter posterior
+   * \param time the time of the filter posterior
+   * \param estimate the filter posterior as a stamped tf transform
+   */
   void getEstimate(ros::Time time, tf::Stamped<tf::Transform>& estiamte);
+
+  /** get the filter posterior
+   * \param estimate the filter posterior as a pose with covariance
+   */
   void getEstimate(robot_msgs::PoseWithCovariance& estimate);
 
-  /// Add a measurement to the measurement buffer
+  /** Add a sensor measurement to the measurement buffer
+   * \param meas the measurement to add
+   * \param covar_multiplier a measure for the covariance of the measurement. The covariance matrix is multiplied with this value
+   */
   void addMeasurement(const tf::Stamped<tf::Transform>& meas, double covar_multiplier=1);
 
 private:
