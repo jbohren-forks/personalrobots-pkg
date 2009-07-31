@@ -113,11 +113,9 @@ var ROSMapGadget = Class.create(ROSGadget, {
     pump = new MessagePump();
     pump.sendAJAX('/ros/service' + this.service + '?x=0&y=0', 
                   this, this.mapResponseCB);
-  },
+    var helpTxt="<dl><dt>Purpose:</dt><dd>This gadget is used to view the static map, set/get the robot's pose, and set/get the robot's goal pose.</dd><dt>Overview:</dt><dd>The two button located in the title bar provide the means to set the robot's pose and set the robot's goal pose. Once either button is selected, simply click anywhere on the map, and drag while holding the left mouse button. The click location will determin the robot's <x,y> position, and dragging will determine the robot's orientation. <p> The main content of this gadget show's the static map. The robot's current pose is depicted by a red circle and a line for orientation. A blue line will be present when the robot has a path planned.</p></dd></dl>";
+    this.setHelpText(helpTxt);
 
-  debug: function (str)
-  {
-    //document.getElementById("debug").value = str;
   },
 
   setGoal: function()
@@ -335,14 +333,7 @@ var ROSMapGadget = Class.create(ROSGadget, {
       pt = {'x':jsonData.points[i].x, 'y': jsonData.points[i].y};
       pt = myself.mapToScreen(pt);
       myself.path.push( pt );
-      /*myself.path.push( {'x':jsonData.points[1].x, 
-                         'y':jsonData.points[i].y} ); */
     }
-
-    /*myself.debug(myself.path[0].x + "," + myself.path[0].y + "--" +
-                 myself.path[1].x + "," + myself.path[1].y);
-                 */
-
 
     myself.drawPath();
 

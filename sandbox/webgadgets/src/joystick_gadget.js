@@ -2,7 +2,7 @@ var ROSJoystickGadget = Class.create(ROSGadget, {
 
   initialize: function()
   {
-    this.create("Joystick", 300);
+    this.create("Joystick", 500);
 
     this.startButton = document.createElement('input');
     this.startButton.type = 'button';
@@ -96,6 +96,10 @@ var ROSJoystickGadget = Class.create(ROSGadget, {
       delete this.pump;
 
     this.pump = new MessagePump();
+
+    var helpTxt="<dl><dt>Purpose:</dt><dd>This gadget is used to enable joystick control of the robot.</dd><dt>Overview:</dt><dd>The <Start> button located in this gadget's title bar will start the joystick controller.</dd> <dt>Driving the Robot with a Joystick Controller</dt><dd>To drive the robot, hold down the “dead man's switch” with your left index finger. The button is located at the top of the left hand grip. This switch helps prevent accidental operation of the robot. To drive the robot around, hold down the button while using the two joysticks to move the base of the robot. The right joystick moves the base to the right, left, forward, and backward, while the left joystick rotates the base clockwise and counterclockwise. The 4 button moves the spine up, while the 2 button moves the spine down.<br><img src='images/joystickimg.jpg'></dd></dl>";
+    this.setHelpText(helpTxt);
+
   },
 
   start: function()

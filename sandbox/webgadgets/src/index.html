@@ -4,6 +4,7 @@
     <link rel='stylesheet' type='text/css' href='style.css'/>
     <script type="text/javascript" src="3rdparty/prototype.js"></script>
     <script type="text/javascript" src="3rdparty/wz_jsgraphics.js"></script>
+    <script type="text/javascript" src="help_gadget.js"></script>
     <script type="text/javascript" src="ros.js"></script>
     <script type="text/javascript" src="image_gadget.js"></script>
     <script type="text/javascript" src="map_gadget.js"></script>
@@ -23,6 +24,18 @@
         newDiv.style.display = "";
         newDiv.style.top = t;
         newDiv.style.left = l;
+      }
+
+      // This is not the cleanest way to close the help gadgets....
+      function hideHelp()
+      {
+        allHelp = document.getElementsByTagName('div');
+
+        for (i=0; i<allHelp.length; i++)
+        {
+          if (allHelp[i].id == "helpbox")
+            allHelp[i].style.display = "none";
+        }
       }
 
       function hideGadgets()
@@ -99,7 +112,7 @@
       <div id="gadgetdesc">
         <div id="imgbox">
           <a href="#" style="display:block;" onclick="addGadget('joystick_gadget');">
-            <img src="images/navview.png" style="margin-bottom:10px;display:block; border: 1px solid bloack;" height ="100px">
+            <img src="images/joystick.png" style="margin-bottom:10px;display:block; border: 1px solid bloack;" width ="200px">
           <b>Add Now</b></a>
         </div>
 

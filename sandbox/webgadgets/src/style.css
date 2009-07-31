@@ -45,7 +45,7 @@ a:hover
 
 #helpbox
 {
-  z-index: 500;
+  z-index: 1000;
   border: 2px solid black;
   background-color: #FFFFFF;
   position: fixed;
@@ -73,7 +73,17 @@ a:hover
 
 #helpbox #content
 {
-  font-size: 110%;
+  font-size: 120%;
+  text-align: left;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+#helpbox #content dt
+{
+  font-weight: bold;
+  font-size: 120%;
+  margin-top: 5px;
 }
 
 #displaybox

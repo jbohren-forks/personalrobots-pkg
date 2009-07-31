@@ -144,7 +144,7 @@ var ROSGadget = Class.create({
     title = document.createElement("b");
     title.style.id = "gadgetTitle";
     title.style.cssFloat = "left";
-    title.style.margin= "0 0 0 30px";
+    title.style.margin= "0 0 0 10px";
     title.innerHTML = titleName;
 
     this.closeButton = document.createElement('a');
@@ -162,41 +162,28 @@ var ROSGadget = Class.create({
     this.titleSpan.appendChild(this.helpButton);
     this.titleSpan.appendChild(title);
 
-    this.closeButton.observe('click', this.closeGadget.bind(this) );
-    this.helpButton.observe('click', this.helpGadget.bind(this) );
-
-
     this.headerDiv.appendChild(this.titleSpan);
 
     this.mainDiv.appendChild(this.headerDiv);
     this.mainDiv.appendChild(this.contentDiv);
     document.getElementById('maincontent').appendChild(this.mainDiv);
 
-    this.headerDiv.observe('mousedown', this.dragDivStart.bind(this));
 
     this.dragging = false;
     this.divDragStart = {'x': 0, 'y':0};
     this.mainDivStart = {'x': 0, 'y':0};
 
-    // The help DIV
-    this.helpDiv = document.createElement("div");
-    this.helpDiv.id = "helpbox";
-    this.helpDiv.style.display = "none";
-    helpDivHeader = document.createElement("div");
-    helpDivHeader.id = "header";
-    helpDivHeader.innerHTML = "Help: "+titleName+"";
-    this.helpDivContent = document.createElement("div");
-    this.helpDivContent.id = "content";
+    this.headerDiv.observe('mousedown', this.dragDivStart.bind(this));
+    this.closeButton.observe('click', this.closeGadget.bind(this) );
 
-    this.helpDiv.appendChild(helpDivHeader);
-    this.helpDiv.appendChild(this.helpDivContent);
+    this.helpButton.observe('click', this.showHelp.bind(this) );
 
-    document.body.appendChild(this.helpDiv);
+    this.help = new HelpGadget(titleName);
   },
 
   setHelpText : function(txt)
   {
-    this.helpDivContent.innerHTML = txt;
+    this.help.setContent(txt);
   },
 
   closeGadget : function(e)
@@ -204,9 +191,9 @@ var ROSGadget = Class.create({
     this.mainDiv.remove();
   },
 
-  helpGadget : function(e)
+  showHelp : function(e)
   {
-    this.helpDiv.style.display = "";
+    this.help.showHelp();
   },
 
   dragDivStart : function(e)
