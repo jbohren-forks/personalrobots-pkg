@@ -75,6 +75,7 @@ TransformListener::TransformListener(ros::Node & rosnode,
   Transformer(interpolating, max_cache_time)
 {
   init();
+  using_dedicated_thread_ = true; //Node API spins a thread automatically
 }
 
 TransformListener::TransformListener(ros::Duration max_cache_time, bool spin_thread):
