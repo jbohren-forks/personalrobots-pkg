@@ -272,6 +272,10 @@ bool CartesianTrajectoryController::moveTo(deprecated_srvs::MoveToPose::Request 
 					   deprecated_srvs::MoveToPose::Response &resp)
 {
   ROS_INFO("in cartesian traj move_to service");
+
+  // @TODO: remove this temporary fix for the tf-threading problems
+  req.pose.header.stamp = ros::Time();  // set time to 0, so transforming will always work
+
   if (!moveTo(req.pose, req.tolerance, 0.0)){
     ROS_ERROR("CartesianTrajectoryController: not starting trajectory because either previous one is still running or the transform frame could not be found");
     return false;
