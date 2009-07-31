@@ -50,65 +50,6 @@ import os
 
 class TestCommonMsgsMigration(unittest.TestCase):
 
-  def setUp(self):
-    self.pkg_dir = roslib.packages.get_pkg_dir("test_common_msgs")
-
-
-  def load_saved_classes(self,saved_msg):
-    f = open("%s/test/%s"%(self.pkg_dir,saved_msg), 'r')
-
-    type_line = f.readline()
-    pat = re.compile(r"\[(.*)]:")
-    type_match = pat.match(type_line)
-
-    self.assertTrue(type_match is not None, "Full definition file malformed.  First line should be: '[my_package/my_msg]:'")
-
-    saved_type = type_match.groups()[0]
-    saved_full_text = f.read()
-
-    saved_classes = roslib.genpy.generate_dynamic(saved_type,saved_full_text)
-
-    self.assertTrue(saved_classes is not None, "Could not generate class from full definition file.")
-    self.assertTrue(saved_classes.has_key(saved_type), "Could not generate class from full definition file.")
-
-    return saved_classes
-
-  def do_test(self, name, old_msg, new_msg):
-    # Name the bags
-    oldbag = "%s/test/%s_old.bag"%(self.pkg_dir,name)
-    newbag = "%s/test/%s_new.bag"%(self.pkg_dir,name)
-
-    # Create an old message
-    bag = rosrecord.Rebagger(oldbag)
-    bag.add("topic", old_msg(), roslib.rostime.Time())
-    bag.close()
-
-    # Check and migrate
-    res = rosbagmigration.checkbag(oldbag, [])
-    self.assertTrue(res is None or res == [], 'Bag not ready to be migrated')
-    res = rosbagmigration.fixbag(oldbag, newbag, [])
-    self.assertTrue(res, 'Bag not converted successfully')
-
-    # Pull the first message out of the bag
-    msgs = [msg for msg in rosrecord.logplayer(newbag)]
-
-    # Reserialize the new message so that floats get screwed up, etc.
-    m = new_msg()
-    buff = StringIO()
-    m.serialize(buff)
-    m.deserialize(buff.getvalue())
-    
-    #Compare
-
-    # Strifying them helps make the comparison easier until I figure out why the equality operator is failing
-    self.assertTrue(roslib.message.strify_message(msgs[0][1]) == roslib.message.strify_message(m))
-#    self.assertTrue(msgs[0][1] == m)
-
-    #Cleanup
-    os.remove(oldbag)
-    os.remove(newbag)
-
-
 
 ########### DiagnosticStatus ###############
 
@@ -173,6 +114,75 @@ class TestCommonMsgsMigration(unittest.TestCase):
 
   def test_twist(self):
     self.do_test('twist', self.get_old_twist, self.get_new_twist)
+
+
+
+
+
+
+########### Helper functions ###########
+
+
+  def setUp(self):
+    self.pkg_dir = roslib.packages.get_pkg_dir("test_common_msgs")
+
+
+  def load_saved_classes(self,saved_msg):
+    f = open("%s/test/%s"%(self.pkg_dir,saved_msg), 'r')
+
+    type_line = f.readline()
+    pat = re.compile(r"\[(.*)]:")
+    type_match = pat.match(type_line)
+
+    self.assertTrue(type_match is not None, "Full definition file malformed.  First line should be: '[my_package/my_msg]:'")
+
+    saved_type = type_match.groups()[0]
+    saved_full_text = f.read()
+
+    saved_classes = roslib.genpy.generate_dynamic(saved_type,saved_full_text)
+
+    self.assertTrue(saved_classes is not None, "Could not generate class from full definition file.")
+    self.assertTrue(saved_classes.has_key(saved_type), "Could not generate class from full definition file.")
+
+    return saved_classes
+
+  def do_test(self, name, old_msg, new_msg):
+    # Name the bags
+    oldbag = "%s/test/%s_old.bag"%(self.pkg_dir,name)
+    newbag = "%s/test/%s_new.bag"%(self.pkg_dir,name)
+
+    # Create an old message
+    bag = rosrecord.Rebagger(oldbag)
+    bag.add("topic", old_msg(), roslib.rostime.Time())
+    bag.close()
+
+    # Check and migrate
+    res = rosbagmigration.checkbag(oldbag, [])
+    self.assertTrue(res is None or res == [], 'Bag not ready to be migrated')
+    res = rosbagmigration.fixbag(oldbag, newbag, [])
+    self.assertTrue(res, 'Bag not converted successfully')
+
+    # Pull the first message out of the bag
+    msgs = [msg for msg in rosrecord.logplayer(newbag)]
+
+    # Reserialize the new message so that floats get screwed up, etc.
+    m = new_msg()
+    buff = StringIO()
+    m.serialize(buff)
+    m.deserialize(buff.getvalue())
+    
+    #Compare
+
+    # Strifying them helps make the comparison easier until I figure out why the equality operator is failing
+    self.assertTrue(roslib.message.strify_message(msgs[0][1]) == roslib.message.strify_message(m))
+#    self.assertTrue(msgs[0][1] == m)
+
+    #Cleanup
+    os.remove(oldbag)
+    os.remove(newbag)
+
+
+
 
 
 if __name__ == '__main__':
