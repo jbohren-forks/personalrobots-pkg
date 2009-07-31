@@ -121,7 +121,7 @@ public:
   /**
    * \brief Gets the planning group corresponding to the group name
    */
-  const ChompPlanningGroup* getPlanningGroup(std::string group_name) const;
+  const ChompPlanningGroup* getPlanningGroup(const std::string& group_name) const;
 
   /**
    * \brief Gets the planning_environment::RobotModels class
@@ -143,7 +143,7 @@ public:
    *
    * \return -1 if the joint name is not found
    */
-  int urdfNameToKdlNumber(std::string urdf_name) const;
+  int urdfNameToKdlNumber(const std::string& urdf_name) const;
 
   /**
    * \brief Gets the URDF joint name from the KDL joint number
@@ -201,7 +201,7 @@ private:
 
 /////////////////////////////// inline functions follow ///////////////////////////////////
 
-inline const ChompRobotModel::ChompPlanningGroup* ChompRobotModel::getPlanningGroup(std::string group_name) const
+inline const ChompRobotModel::ChompPlanningGroup* ChompRobotModel::getPlanningGroup(const std::string& group_name) const
 {
   std::map<std::string, ChompRobotModel::ChompPlanningGroup>::const_iterator it = planning_groups_.find(group_name);
   if (it == planning_groups_.end())
@@ -225,7 +225,7 @@ inline const KDL::Tree* ChompRobotModel::getKDLTree() const
   return &kdl_tree_;
 }
 
-inline int ChompRobotModel::urdfNameToKdlNumber(std::string urdf_name) const
+inline int ChompRobotModel::urdfNameToKdlNumber(const std::string& urdf_name) const
 {
   std::map<std::string, int>::const_iterator it = urdf_name_to_kdl_number_.find(urdf_name);
   if (it!=urdf_name_to_kdl_number_.end())

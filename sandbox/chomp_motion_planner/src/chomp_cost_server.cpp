@@ -35,7 +35,6 @@
 /** \author Mrinal Kalakrishnan */
 
 #include <chomp_motion_planner/chomp_cost_server.h>
-#include <kdl/jntarray.hpp>
 
 namespace chomp
 {
@@ -59,6 +58,9 @@ bool ChompCostServer::init(bool advertise_service)
   if (!chomp_collision_space_.init())
     return false;
 
+  // listen to mechanism_state
+  mechanism_state_subscriber_ = node_.subscribe(std::string("/mechanism_state"), 1, &ChompCostServer::mechanismStateCallback, this);
+
   // advertise the cost service
   if (advertise_service)
     get_chomp_collision_cost_server_ = node_.advertiseService("get_chomp_collision_cost", &ChompCostServer::getChompCollisionCost, this);
@@ -69,6 +71,8 @@ bool ChompCostServer::init(bool advertise_service)
 bool ChompCostServer::getChompCollisionCost(chomp_motion_planner::GetChompCollisionCost::Request& request, chomp_motion_planner::GetChompCollisionCost::Response& response)
 {
   KDL::JntArray joint_array(chomp_robot_model_.getNumKDLJoints());
+
+  fillDefaultJointArray(joint_array);
   chomp_robot_model_.jointMsgToArray(request.state, joint_array);
 
   std::vector<KDL::Vector> joint_axis;
@@ -105,6 +109,30 @@ bool ChompCostServer::getChompCollisionCost(chomp_motion_planner::GetChompCollis
   }
 
   return true;
+}
+
+void ChompCostServer::mechanismStateCallback(const mechanism_msgs::MechanismStateConstPtr& mech_state)
+{
+  if (mechanism_state_mutex_.try_lock())
+  {
+    mechanism_state_ = *mech_state;
+    mechanism_state_mutex_.unlock();
+  }
+}
+
+void ChompCostServer::fillDefaultJointArray(KDL::JntArray& jnt_array)
+{
+  mechanism_state_mutex_.lock();
+
+  int num_joints = mechanism_state_.joint_states.size();
+  for (int i=0; i<num_joints; i++)
+  {
+    std::string& name = mechanism_state_.joint_states[i].name;
+    int num = chomp_robot_model_.urdfNameToKdlNumber(name);
+    if (num>=0)
+      jnt_array(num) = mechanism_state_.joint_states[i].position;
+  }
+  mechanism_state_mutex_.unlock();
 }
 
 int ChompCostServer::run()

@@ -41,6 +41,9 @@
 #include <chomp_motion_planner/GetChompCollisionCost.h>
 #include <chomp_motion_planner/chomp_robot_model.h>
 #include <chomp_motion_planner/chomp_collision_space.h>
+#include <boost/thread/mutex.hpp>
+#include <kdl/jntarray.hpp>
+#include <mechanism_msgs/MechanismState.h>
 
 namespace chomp
 {
@@ -59,13 +62,21 @@ public:
   int run();
   bool getChompCollisionCost(chomp_motion_planner::GetChompCollisionCost::Request& request, chomp_motion_planner::GetChompCollisionCost::Response& response);
 
+  void mechanismStateCallback(const mechanism_msgs::MechanismStateConstPtr& mech_state);
+
 private:
 
   ros::NodeHandle node_;
   ros::ServiceServer get_chomp_collision_cost_server_;
+  ros::Subscriber mechanism_state_subscriber_;
 
   ChompRobotModel chomp_robot_model_;
   ChompCollisionSpace chomp_collision_space_;
+  boost::mutex mechanism_state_mutex_;
+
+  mechanism_msgs::MechanismState mechanism_state_;
+
+  void fillDefaultJointArray(KDL::JntArray& jnt_array);
 };
 
 }
