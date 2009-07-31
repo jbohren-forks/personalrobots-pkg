@@ -11,13 +11,11 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 rospack_add_boost_directories()
 
 rospack_add_executable (classify_m3n
-                        examples/classify_m3n.cpp
-                        examples/random_field_creator.cpp)
+                        examples/classify_m3n.cpp)
 target_link_libraries (classify_m3n ${PROJECT_NAME})
 
 rospack_add_executable (train_m3n
-                        examples/train_m3n.cpp
-                        examples/random_field_creator.cpp)
+                        examples/train_m3n.cpp)
 target_link_libraries (train_m3n ${PROJECT_NAME})
 
 #rospack_add_link_flags(create_pt_cloud "-lprofiler")
@@ -32,6 +30,7 @@ rospack_add_library (${PROJECT_NAME}
 			src/m3n_model_learning.cpp
 			src/regressors/regression_tree_wrapper.cpp
 			src/m3n_params.cpp
+			src/example/pt_cloud_rf_creator.cpp
                       )
 
 # check for OpenMP

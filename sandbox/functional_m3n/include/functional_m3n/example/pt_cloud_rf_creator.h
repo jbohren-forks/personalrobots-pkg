@@ -1,5 +1,5 @@
-#ifndef __RF_CREATOR_H__
-#define __RF_CREATOR_H__
+#ifndef __PT_CLOUD_RF_CREATOR_H__
+#define __PT_CLOUD_RF_CREATOR_H__
 /*********************************************************************
  * Software License Agreement (BSD License)
  *
@@ -48,11 +48,12 @@
 
 #include <functional_m3n/random_field.h>
 
-class RandomFieldCreator
+class PtCloudRFCreator
 {
   public:
-    RandomFieldCreator()
+    PtCloudRFCreator()
     {
+      nbr_clique_sets_ = 2;
     }
 
     RandomField* createRandomField(const robot_msgs::PointCloud& pt_cloud)
@@ -62,6 +63,7 @@ class RandomFieldCreator
     }
 
     RandomField* createRandomField(const robot_msgs::PointCloud& pt_cloud, const std::vector<float>& labels);
+
   private:
     void createDescriptors();
 
@@ -77,6 +79,7 @@ class RandomFieldCreator
                          const set<unsigned int>& node_indices,
                          const unsigned int clique_set_idx);
 
+    unsigned int nbr_clique_sets_;
     std::vector<Descriptor3D*> node_feature_descriptors_;
     std::vector<std::vector<Descriptor3D*> > clique_set_feature_descriptors_;
     // use only nodes for clustering

@@ -32,7 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include "random_field_creator.h"
+#include <functional_m3n/example/pt_cloud_rf_creator.h>
 
 using namespace std;
 
@@ -42,15 +42,15 @@ using namespace std;
 vector<Descriptor3D*> initNodeFeatures()
 {
 
-   //
-   SpectralShape* spectral_shape = new SpectralShape();
-   spectral_shape->setSpectralRadius(0.15);
+  //
+  SpectralShape* spectral_shape = new SpectralShape();
+  spectral_shape->setSpectralRadius(0.15);
 
-   //
-   Orientation* orientation = new Orientation();
-   orientation->useSpectralInformation(spectral_shape);
-   orientation->useNormalOrientation(0.0, 0.0, 1.0);
-   orientation->useTangentOrientation(0.0, 0.0, 1.0);
+  //
+  Orientation* orientation = new Orientation();
+  orientation->useSpectralInformation(spectral_shape);
+  orientation->useNormalOrientation(0.0, 0.0, 1.0);
+  orientation->useTangentOrientation(0.0, 0.0, 1.0);
 
   Position* position = new Position();
 
@@ -59,23 +59,22 @@ vector<Descriptor3D*> initNodeFeatures()
   node_feature_descriptors.push_back(orientation);
   node_feature_descriptors.push_back(position);
 
-
   /*
-  //
-  Position* position = new Position();
+   //
+   Position* position = new Position();
 
-  SpectralAnalysis* sa = new SpectralAnalysis(0.15);
-  ShapeSpectral* spectral_shape = new ShapeSpectral(*sa);
-  OrientationTangent* o_tangent = new OrientationTangent(0, 0, 1.0, *sa);
-  OrientationNormal* o_normal = new OrientationNormal(0, 0, 1.0, *sa);
+   SpectralAnalysis* sa = new SpectralAnalysis(0.15);
+   ShapeSpectral* spectral_shape = new ShapeSpectral(*sa);
+   OrientationTangent* o_tangent = new OrientationTangent(0, 0, 1.0, *sa);
+   OrientationNormal* o_normal = new OrientationNormal(0, 0, 1.0, *sa);
 
-  // ---------------
-  vector<Descriptor3D*> node_feature_descriptors;
-  node_feature_descriptors.push_back(spectral_shape);
-  node_feature_descriptors.push_back(o_tangent);
-  node_feature_descriptors.push_back(o_normal);
-  node_feature_descriptors.push_back(position);
-*/
+   // ---------------
+   vector<Descriptor3D*> node_feature_descriptors;
+   node_feature_descriptors.push_back(spectral_shape);
+   node_feature_descriptors.push_back(o_tangent);
+   node_feature_descriptors.push_back(o_normal);
+   node_feature_descriptors.push_back(position);
+   */
   return node_feature_descriptors;
 }
 
@@ -85,28 +84,28 @@ vector<Descriptor3D*> initNodeFeatures()
 vector<Descriptor3D*> initCS0Features()
 {
 
-   //
-   SpectralShape* spectral_shape = new SpectralShape();
-   spectral_shape->setSpectralRadius(0.2286);
+  //
+  SpectralShape* spectral_shape = new SpectralShape();
+  spectral_shape->setSpectralRadius(0.2286);
 
-   //
-   Orientation* orientation = new Orientation();
-   orientation->useSpectralInformation(spectral_shape);
-   orientation->useNormalOrientation(0.0, 0.0, 1.0);
-   orientation->useTangentOrientation(0.0, 0.0, 1.0);
+  //
+  Orientation* orientation = new Orientation();
+  orientation->useSpectralInformation(spectral_shape);
+  orientation->useNormalOrientation(0.0, 0.0, 1.0);
+  orientation->useTangentOrientation(0.0, 0.0, 1.0);
 
-   //
-   Position* position = new Position();
+  //
+  Position* position = new Position();
 
-   //
-   SpinImage* spin_image = new SpinImage();
-   spin_image->setAxisCustom(0.0, 0.0, 1.0);
-   spin_image->setImageDimensions(0.0762, 0.0762, 5, 4);
+  //
+  SpinImage* spin_image = new SpinImage();
+  spin_image->setAxisCustom(0.0, 0.0, 1.0);
+  spin_image->setImageDimensions(0.0762, 0.0762, 5, 4);
 
-   //
-   BoundingBox* bounding_box = new BoundingBox(true, false);
-   bounding_box->useSpectralInformation(spectral_shape);
-   bounding_box->setBoundingBoxRadius(-1.0);
+  //
+  BoundingBox* bounding_box = new BoundingBox(true, false);
+  bounding_box->useSpectralInformation(spectral_shape);
+  bounding_box->setBoundingBoxRadius(-1.0);
 
   vector<Descriptor3D*> cs0_feature_descriptors;
   cs0_feature_descriptors.push_back(spectral_shape);
@@ -115,25 +114,24 @@ vector<Descriptor3D*> initCS0Features()
   cs0_feature_descriptors.push_back(spin_image);
   cs0_feature_descriptors.push_back(bounding_box);
 
+  /*
+   SpectralAnalysis* sa = new SpectralAnalysis(0.2286);
+   ShapeSpectral* spectral_shape = new ShapeSpectral(*sa);
+   OrientationTangent* o_tangent = new OrientationTangent(0, 0, 1.0, *sa);
+   OrientationNormal* o_normal = new OrientationNormal(0, 0, 1.0, *sa);
+   Position* position = new Position();
+   SpinImageCustom* spin_image = new SpinImageCustom(0, 0, 1.0, 0.0762, 0.0762, 5, 4, false);
+   BoundingBoxSpectral* bbox_spectral = new BoundingBoxSpectral(-1.0, *sa);
 
-/*
-  SpectralAnalysis* sa = new SpectralAnalysis(0.2286);
-  ShapeSpectral* spectral_shape = new ShapeSpectral(*sa);
-  OrientationTangent* o_tangent = new OrientationTangent(0, 0, 1.0, *sa);
-  OrientationNormal* o_normal = new OrientationNormal(0, 0, 1.0, *sa);
-  Position* position = new Position();
-  SpinImageCustom* spin_image = new SpinImageCustom(0, 0, 1.0, 0.0762, 0.0762, 5, 4, false);
-  BoundingBoxSpectral* bbox_spectral = new BoundingBoxSpectral(-1.0, *sa);
-
-  // ---------------
-  vector<Descriptor3D*> cs0_feature_descriptors;
-  cs0_feature_descriptors.push_back(spectral_shape);
-  cs0_feature_descriptors.push_back(o_tangent);
-  cs0_feature_descriptors.push_back(o_normal);
-  cs0_feature_descriptors.push_back(position);
-  cs0_feature_descriptors.push_back(spin_image);
-  cs0_feature_descriptors.push_back(bbox_spectral);
-*/
+   // ---------------
+   vector<Descriptor3D*> cs0_feature_descriptors;
+   cs0_feature_descriptors.push_back(spectral_shape);
+   cs0_feature_descriptors.push_back(o_tangent);
+   cs0_feature_descriptors.push_back(o_normal);
+   cs0_feature_descriptors.push_back(position);
+   cs0_feature_descriptors.push_back(spin_image);
+   cs0_feature_descriptors.push_back(bbox_spectral);
+   */
 
   return cs0_feature_descriptors;
 }
@@ -175,25 +173,24 @@ vector<Descriptor3D*> initCS1Features()
   cs1_feature_descriptors.push_back(spin_image);
   cs1_feature_descriptors.push_back(bounding_box);
 
-
   /*
-  SpectralAnalysis* sa = new SpectralAnalysis(-1);
-  ShapeSpectral* spectral_shape = new ShapeSpectral(*sa);
-  OrientationTangent* o_tangent = new OrientationTangent(0, 0, 1.0, *sa);
-  OrientationNormal* o_normal = new OrientationNormal(0, 0, 1.0, *sa);
-  Position* position = new Position();
-  SpinImageNormal* spin_image = new SpinImageNormal(0.0762, 0.0762, 7, 5, false, *sa);
-  BoundingBoxSpectral* bbox_spectral = new BoundingBoxSpectral(-1.0, *sa);
+   SpectralAnalysis* sa = new SpectralAnalysis(-1);
+   ShapeSpectral* spectral_shape = new ShapeSpectral(*sa);
+   OrientationTangent* o_tangent = new OrientationTangent(0, 0, 1.0, *sa);
+   OrientationNormal* o_normal = new OrientationNormal(0, 0, 1.0, *sa);
+   Position* position = new Position();
+   SpinImageNormal* spin_image = new SpinImageNormal(0.0762, 0.0762, 7, 5, false, *sa);
+   BoundingBoxSpectral* bbox_spectral = new BoundingBoxSpectral(-1.0, *sa);
 
-  // ---------------
-  vector<Descriptor3D*> cs1_feature_descriptors;
-  cs1_feature_descriptors.push_back(spectral_shape);
-  cs1_feature_descriptors.push_back(o_tangent);
-  cs1_feature_descriptors.push_back(o_normal);
-  cs1_feature_descriptors.push_back(position);
-  cs1_feature_descriptors.push_back(spin_image);
-  cs1_feature_descriptors.push_back(bbox_spectral);
-*/
+   // ---------------
+   vector<Descriptor3D*> cs1_feature_descriptors;
+   cs1_feature_descriptors.push_back(spectral_shape);
+   cs1_feature_descriptors.push_back(o_tangent);
+   cs1_feature_descriptors.push_back(o_normal);
+   cs1_feature_descriptors.push_back(position);
+   cs1_feature_descriptors.push_back(spin_image);
+   cs1_feature_descriptors.push_back(bbox_spectral);
+   */
   return cs1_feature_descriptors;
 }
 
@@ -230,11 +227,16 @@ std::vector<std::pair<bool, point_cloud_clustering::PointCloudClustering*> > ini
   return cs1_clusterings;
 }
 
-// ----------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------
+// /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
+// /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
+// /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
+// -------------------------------------------------------------------------------------
+
 // --------------------------------------------------------------
 /* Instantiate the parameters for the how the random field is constructed */
 // --------------------------------------------------------------
-void RandomFieldCreator::createDescriptors()
+void PtCloudRFCreator::createDescriptors()
 {
   const unsigned int nbr_clique_sets = 2;
 
@@ -268,11 +270,11 @@ void RandomFieldCreator::createDescriptors()
  * \brief Create nodes in the random field
  */
 // --------------------------------------------------------------
-void RandomFieldCreator::createNodes(RandomField& rf,
-                                     const robot_msgs::PointCloud& pt_cloud,
-                                     cloud_kdtree::KdTree& pt_cloud_kdtree,
-                                     const vector<float>& labels,
-                                     set<unsigned int>& failed_indices)
+void PtCloudRFCreator::createNodes(RandomField& rf,
+                                   const robot_msgs::PointCloud& pt_cloud,
+                                   cloud_kdtree::KdTree& pt_cloud_kdtree,
+                                   const vector<float>& labels,
+                                   set<unsigned int>& failed_indices)
 
 {
   bool use_labels = labels.size() != 0;
@@ -341,11 +343,11 @@ void RandomFieldCreator::createNodes(RandomField& rf,
  * \brief Create clique set in the RandomField using kmeans clustering
  */
 // --------------------------------------------------------------
-void RandomFieldCreator::createCliqueSet(RandomField& rf,
-                                         const robot_msgs::PointCloud& pt_cloud,
-                                         cloud_kdtree::KdTree& pt_cloud_kdtree,
-                                         const set<unsigned int>& node_indices,
-                                         const unsigned int clique_set_idx)
+void PtCloudRFCreator::createCliqueSet(RandomField& rf,
+                                       const robot_msgs::PointCloud& pt_cloud,
+                                       cloud_kdtree::KdTree& pt_cloud_kdtree,
+                                       const set<unsigned int>& node_indices,
+                                       const unsigned int clique_set_idx)
 {
   const map<unsigned int, RandomField::Node*>& rf_nodes = rf.getNodesRandomFieldIDs();
   vector<pair<bool, point_cloud_clustering::PointCloudClustering*> >& clique_set_info =
@@ -472,8 +474,11 @@ void RandomFieldCreator::createCliqueSet(RandomField& rf,
   ROS_INFO("    ########### Created clique set %u with %u cliques from %u clusters #############", clique_set_idx, nbr_created_cliques, nbr_created_clusters);
 }
 
-RandomField* RandomFieldCreator::createRandomField(const robot_msgs::PointCloud& pt_cloud,
-                                                   const vector<float>& labels)
+// --------------------------------------------------------------
+/*! See function definition */
+// --------------------------------------------------------------
+RandomField* PtCloudRFCreator::createRandomField(const robot_msgs::PointCloud& pt_cloud,
+                                                 const vector<float>& labels)
 {
   createDescriptors();
   unsigned int nbr_clique_sets = clique_set_clusterings_.size();

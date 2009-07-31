@@ -7,7 +7,7 @@
 
 #include <robot_msgs/PointCloud.h>
 
-#include "random_field_creator.h"
+#include <functional_m3n/example/pt_cloud_rf_creator.h>
 
 #include <functional_m3n/random_field.h>
 #include <functional_m3n/m3n_model.h>
@@ -84,7 +84,7 @@ int main()
 
   // ----------------------------------------------------------
   // Create random field
-  RandomFieldCreator rf_creator;
+  PtCloudRFCreator rf_creator;
   RandomField* testing_rf = rf_creator.createRandomField(pt_cloud);
 
   // ----------------------------------------------------------
