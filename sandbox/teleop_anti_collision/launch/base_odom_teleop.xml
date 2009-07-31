@@ -4,8 +4,8 @@
 <rosparam file="$(find pr2_default_controllers)/pr2_base_controller.yaml" command="load" ns="pr2_base_controller" />
 <rosparam file="$(find pr2_default_controllers)/pr2_odometry.yaml" command="load" ns="pr2_odometry" />
 
-<node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/pr2_base_controller.xml" output="screen"/>
-<node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/pr2_base_odometry.xml" output="screen"/>
+<node pkg="mechanism_control" type="spawner.py" args="pr2_base_controller" output="screen"/>
+<node pkg="mechanism_control" type="spawner.py" args="pr2_odometry" output="screen"/>
  <!--param name="base_controller/autostart" value="true"/-->
  <!--node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/base_controller.xml" output="screen"/-->
  <!--param name="base_controller/odom_publish_rate" value="10" /-->
@@ -64,7 +64,7 @@
  <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/pr2_base_controller.xml" output="screen"/>
  <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/pr2_base_odometry.xml" output="screen"/-->
  
- <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/torso_lift_vel_controller.xml" output="screen" />
+ <node pkg="mechanism_control" type="spawner.py" args="torso_lift_vel_controller" output="screen" />
  
  <node pkg="backup_safetysound" type="backingup.py" machine="four" />
  
@@ -83,7 +83,7 @@
  <param name="tilt" value="5" type="int"/>
  <param name="max_vw" value="0.785" />
  <param name="max_vx" value="1.0" />
- <param name="max_vy" value="0.4" />
+ <param name="max_vy" value="1.0" />
  
  <param name="max_vw_run" value="1.4" />
  <param name="max_vx_run" value="1.0" />
