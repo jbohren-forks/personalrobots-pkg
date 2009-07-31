@@ -11,7 +11,6 @@ float DRIVER_DURATION_BOUND = 600.0;
 class NavController extends AgentTimeline {
   predicate Holds {
     bool active;
-    bool finished;
     float x;
     float y;
   }
@@ -32,8 +31,7 @@ Navigator::Active{
   if(isSingleton(start)){
     starts(nav_controller.Holds nc);
     starts_during(base_state.Holds bs);
-    eq(nc.active, true);
-    eq(nc.finished, false);	
+    eq(nc.active, true);	
     eq(nc.x, bs.x);
     eq(nc.y, bs.y);
   }
@@ -47,9 +45,6 @@ NavController::Holds{
   // Default based on predecessors
   met_by(Holds p);
   defaultOnCommit(active, p.active);
-  defaultOnCommit(finished, p.finished);
-  defaultOnCommit(x, p.x);
-  defaultOnCommit(y, p.y);
 
   if(active == true){
     meets(Holds s);
@@ -60,66 +55,51 @@ NavController::Holds{
     calcDistance(distance, x, y, nav_active.x, nav_active.y);
     bool at_goal;
     testLEQ(at_goal, distance, 0.2);
-
-    // Determine result status
-    if(finished == true){
+      
+    if(at_goal == true){
       meets(navigator.Inactive nav_inactive);
+      eq(nav_inactive.status, SUCCESS);
       eq(s.active, false);
       eq(duration, 1);
-
-      if(at_goal == true){
-	eq(nav_inactive.status, SUCCESS);
-      }
-      else {
-	eq(nav_inactive.status, ABORTED);
-      }
     }
-    else {
-      
-      if(at_goal == true){
-	meets(navigator.Inactive nav_inactive);
-	eq(nav_inactive.status, SUCCESS);
-	eq(s.active, false);
-	eq(duration, 1);
+    else{
+      // Take the next step towards the goal. This will either navigate to the
+      // goal, or navigate to the next connector along the way. It would be
+      // ideal to be able to specify for the nav stack that we do not care
+      // about orientation, and that we want to get as close as possible to
+      // the goal, but the criteria for success is based on a given error
+      // bound. Thus we could get close if possible, but permit a successful
+      // termination when we cannot get any closer but are within that bound.
+      // This is desirable since the precise approach is based on calcuations
+      // that deal with position of approach and location of the socket or
+      // door and these are encoded internally in the domains.
+      contains_start(MoveBehavior.Active cmd);
+      concurrent(cmd.end, end);
+      eq(cmd.frame_id, nav_active.frame_id);
+      eq(cmd.status, SUCCESS);
+
+      // Determine the next map point to go for. It will either be the outlet
+      // or it will be a doorway en-route to the outlet. This function calls a
+      // topological planner.
+      bool thru_doorway;
+      map_get_next_move(cmd.x, cmd.y, cmd.z, cmd.qx,
+			cmd.qy, cmd.qz, cmd.qw,
+			thru_doorway, 
+			x, y, 
+			nav_active.x, nav_active.y, nav_active.z,
+			nav_active.qx, nav_active.qy, nav_active.qz, nav_active.qw);
+
+      map_get_nearest_connector(cmd.start_connector,
+				x, y,
+				nav_active.x, nav_active.y);
+
+      if(thru_doorway == true){
+	eq(cmd.object, doorman);
+	leq(cmd.duration, DOORMAN_DURATION_BOUND);
       }
       else{
-	// Take the next step towards the goal. This will either navigate to the
-	// goal, or navigate to the next connector along the way. It would be
-	// ideal to be able to specify for the nav stack that we do not care
-	// about orientation, and that we want to get as close as possible to
-	// the goal, but the criteria for success is based on a given error
-	// bound. Thus we could get close if possible, but permit a successful
-	// termination when we cannot get any closer but are within that bound.
-	// This is desirable since the precise approach is based on calcuations
-	// that deal with position of approach and location of the socket or
-	// door and these are encoded internally in the domains.
-	contains_start(MoveBehavior.Active cmd);
-	concurrent(cmd.end, end);
-	eq(cmd.frame_id, nav_active.frame_id);
-
-	// Determine the next map point to go for. It will either be the outlet
-	// or it will be a doorway en-route to the outlet. This function calls a
-	// topological planner.
-	bool thru_doorway;
-	map_get_next_move(cmd.x, cmd.y, cmd.z, cmd.qx,
-			  cmd.qy, cmd.qz, cmd.qw,
-			  thru_doorway, 
-			  x, y, 
-			  nav_active.x, nav_active.y, nav_active.z,
-			  nav_active.qx, nav_active.qy, nav_active.qz, nav_active.qw);
-
-	map_get_nearest_connector(cmd.start_connector,
-				  x, y,
-				  nav_active.x, nav_active.y);
-
-	if(thru_doorway == true){
-	  eq(cmd.object, doorman);
-	  leq(cmd.duration, DOORMAN_DURATION_BOUND);
-	}
-	else{
-	  eq(cmd.object, driver);
-	  leq(cmd.duration, DRIVER_DURATION_BOUND);
-	}
+	eq(cmd.object, driver);
+	leq(cmd.duration, DRIVER_DURATION_BOUND);
       }
     }
   }
@@ -127,11 +107,6 @@ NavController::Holds{
 
 MoveBehavior::Inactive{
   starts(nav_controller.Holds nc);
-  if(status == SUCCESS){
-    eq(nc.x, x);
-    eq(nc.y, y);
-  }
-  else {
-    eq(nc.finished, true);
-  }
+  eq(nc.x, x);
+  eq(nc.y, y);
 }
