@@ -82,6 +82,10 @@ public:
   /// destructor
   virtual ~OdomEstimationNode();
 
+private:
+  /// the mail filter loop that will be called periodically
+  void spin(const ros::TimerEvent& e);
+
   /// callback function for vel data
   void velCallback(const VelConstPtr& vel);
 
@@ -94,11 +98,7 @@ public:
   /// callback function for vo data
   void voCallback(const tf::MessageNotifier<robot_msgs::VOPose>::MessagePtr& vo);
 
-  /// filter loop
-  void spin(const ros::TimerEvent& e);
 
-
-private:
   ros::NodeHandle node_;
   ros::Timer timer_;
   ros::Publisher pose_pub_;
