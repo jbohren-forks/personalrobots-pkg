@@ -142,7 +142,7 @@ public:
 
   void visualizeRectangles3d(std::vector<CornerCandidate> &corner, int id = 0);
   void visualizeRectangles2d(std::vector<CornerCandidate> &corner);
-  void visualizeRectangle2d(CornerCandidate &corner);
+  void visualizeRectangle2d(CornerCandidate &corner, int col=0);
   void findRectangles(std::vector<CornerCandidate> &corner, IplImage* pixDist);
   std::vector<CornerCandidate> filterRectanglesBySupport2d(std::vector<CornerCandidate> &corner, IplImage* pixOccupied,
                                                            double min_support = 0.8);

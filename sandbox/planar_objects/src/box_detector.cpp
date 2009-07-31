@@ -819,14 +819,14 @@ void BoxDetector::visualizeRectangles2d(std::vector<CornerCandidate> &corner)
   }
 }
 
-void BoxDetector::visualizeRectangle2d(CornerCandidate &corner)
+void BoxDetector::visualizeRectangle2d(CornerCandidate &corner,int i)
 {
   corner.updatePoints3d();
   corner.updatePoints2d();
 
   for (int j = 0; j < 4; j++)
   {
-    cvLine(pixDebug, corner.points2d[j], corner.points2d[(j + 1) % 4], CV_RGB(MIN(j*50,255),MAX(0,255-j*50),0), 1, 8);
+    cvLine(pixDebug, corner.points2d[j], corner.points2d[(j + 1) % 4], CV_RGB(MIN(i*50,255),MAX(0,255-i*50),0), 1, 8);
     //      cout << "j="<<j<<" x="<< corner[i].points2d[j].x <<" y="<<corner[i].points2d[j].y << endl;
   }
 }
@@ -851,19 +851,19 @@ void BoxDetector::initializeRectangle(CornerCandidate &corner, IplImage* pixDist
   corner.w = rect_min_size;
   corner.h = rect_min_size;
 
-  for (int i = 1; i < 4; i++)
+  for (int i = 0; i < 3; i++)
   {
-    visualizeRectangle2d(corner);
+    visualizeRectangle2d(corner,i*4);
     corner.optimizeWidth(pixDist, -(rect_max_size - rect_min_size) / (2), (rect_max_size - rect_min_size) / (2), 100);
-    visualizeRectangle2d(corner);
+    visualizeRectangle2d(corner,i*4+1);
     corner.optimizeHeight(pixDist, -(rect_max_size - rect_min_size) / (2), (rect_max_size - rect_min_size) / (2), 100);
-    visualizeRectangle2d(corner);
+    visualizeRectangle2d(corner,i*4+2);
     corner.optimizePhi(pixDist, -M_PI / (4), +M_PI / (4), 100);
-    visualizeRectangle2d(corner);
+    visualizeRectangle2d(corner,i*4+3);
     corner.optimizeX(pixDist, -rect_max_displace / (2), rect_max_displace / (2), 20);
-    visualizeRectangle2d(corner);
+    visualizeRectangle2d(corner,i*4+4);
     corner.optimizeY(pixDist, -rect_max_displace / (2), rect_max_displace / (2), 20);
-    visualizeRectangle2d(corner);
+    visualizeRectangle2d(corner,i*4+5);
   }
 }
 

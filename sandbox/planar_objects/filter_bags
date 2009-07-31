@@ -1,0 +1,30 @@
+#!/bin/bash
+
+source $HOME/.bashrc
+
+#for f in $HOME/bags/*.bag; do
+
+TERM=$(which gnome-terminal)
+echo Using $TERM
+
+function start {
+  echo gnome-terminal --geometry $1 --command "bash -i -c \". $HOME/.bashrc; echo \"$2\"; read; $2; read\""
+
+  gnome-terminal --geometry $1 --command "bash -i -c \". $HOME/.bashrc; pwd; echo $2; $2; echo Exiting..; sleep 3\""
+}
+
+#f=$HOME/bags/drawers-easy_2009-07-29-20-00-24-topic.bag
+f=$HOME/bags/drawers-easy_2009-07-29-20-00-24-topic.bag
+f=$HOME/bags/drawer2-simple_2009-07-29-20-54-41-topic.bag
+echo "-------------------------------"
+echo Working on $f
+echo
+
+start 80x6-0-0 "rosplay $f; kill -INT \$(pidof rosrecord)"
+
+name=$(echo $(basename $f) | awk '//{print substr($0,1,index($0,"_")-1)}')
+
+start 80x6-0-400 "rosrun rosrecord rosrecord -f $HOME/bags-filtered/$name /stereo_throttle/raw_stereo"
+
+#done
+

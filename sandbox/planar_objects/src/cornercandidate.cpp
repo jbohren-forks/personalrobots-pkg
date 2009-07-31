@@ -70,7 +70,10 @@ double CornerCandidate::computeDistance(IplImage* distImage)
     global_count += count;
   }
   //  cout <<"global_sum="<<global_sum<<" global_count="<<global_count<<endl;
-  return (global_sum / (double)global_count);
+  double size = 1.00;
+//  size = sqrt(sqrt(w*h));
+  size = 0.2+w*h;
+  return (global_sum / (double)global_count) * size;
 }
 
 void CornerCandidate::optimizeWidth(IplImage* distImage, double a, double b, int steps)
@@ -198,6 +201,8 @@ double CornerCandidate::computeSupport2d(IplImage* pixOccupied, IplImage* pixDeb
       rect[x][y] = true;
       CV_NEXT_LINE_POINT(iterator);
     }
+    if (pixDebug != NULL)
+    cvLine( pixDebug, points2d[i],points2d[(i + 1) % 4], CV_RGB(0,0,255), 1, 8);
   }
 
   int count = 0;

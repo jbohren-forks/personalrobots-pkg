@@ -20,6 +20,8 @@
 namespace planar_objects
 {
 
+typedef std::vector<std::pair<btVector3,btVector3> > LineVector;
+
 int HSV_to_RGB(float h, float s, float v);
 
 float HSV_to_RGBf(float h, float s, float v);

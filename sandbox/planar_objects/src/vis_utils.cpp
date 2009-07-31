@@ -18,8 +18,9 @@ namespace planar_objects {
 
 
 int HSV_to_RGB( float h, float s, float v) {
-        // H is given on [0, 6] or UNDEFINED. S and V are given on [0, 1].
+        // H is given on [0, 1] or UNDEFINED. S and V are given on [0, 1].
         // RGB are each returned on [0, 1].
+        h -= floor(h);
         h *= 6;
         int i;
         float m,n,f;

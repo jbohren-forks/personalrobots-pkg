@@ -1,0 +1,15 @@
+<launch>
+  <group ns="stereo_throttle">
+    <node pkg="stereo_image_proc" type="stereoproc" respawn="false" output="screen" name="stereoproc">
+      <param name="videre_mode" type="str" value="none"/>
+      <param name="do_colorize" type="bool" value="True"/>
+      <param name="do_rectify" type="bool" value="True"/>
+      <param name="do_stereo" type="bool" value="True"/>
+      <param name="do_calc_points" type="bool" value="True"/>
+      <param name="do_keep_coords" type="bool" value="True"/>
+      <param name="num_disp" type="int" value="128"/>
+      <param name="corr_size" type="int" value="15"/>
+    </node>
+  </group>
+</launch>
+
