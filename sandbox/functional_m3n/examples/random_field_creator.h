@@ -43,6 +43,7 @@
 #include <point_cloud_mapping/kdtree/kdtree.h>
 #include <point_cloud_mapping/kdtree/kdtree_ann.h>
 
+//#include <new_descriptors_3d/all_descriptors.h>
 #include <descriptors_3d/all_descriptors.h>
 
 #include <functional_m3n/random_field.h>

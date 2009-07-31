@@ -41,24 +41,41 @@ using namespace std;
 // --------------------------------------------------------------
 vector<Descriptor3D*> initNodeFeatures()
 {
-  //
-  SpectralShape* spectral_shape = new SpectralShape();
-  spectral_shape->setSpectralRadius(0.15);
 
-  //
-  Orientation* orientation = new Orientation();
-  orientation->useSpectralInformation(spectral_shape);
-  orientation->useNormalOrientation(0.0, 0.0, 1.0);
-  orientation->useTangentOrientation(0.0, 0.0, 1.0);
+   //
+   SpectralShape* spectral_shape = new SpectralShape();
+   spectral_shape->setSpectralRadius(0.15);
 
-  //
+   //
+   Orientation* orientation = new Orientation();
+   orientation->useSpectralInformation(spectral_shape);
+   orientation->useNormalOrientation(0.0, 0.0, 1.0);
+   orientation->useTangentOrientation(0.0, 0.0, 1.0);
+
   Position* position = new Position();
 
-  // ---------------
   vector<Descriptor3D*> node_feature_descriptors;
   node_feature_descriptors.push_back(spectral_shape);
   node_feature_descriptors.push_back(orientation);
   node_feature_descriptors.push_back(position);
+
+
+  /*
+  //
+  Position* position = new Position();
+
+  SpectralAnalysis* sa = new SpectralAnalysis(0.15);
+  ShapeSpectral* spectral_shape = new ShapeSpectral(*sa);
+  OrientationTangent* o_tangent = new OrientationTangent(0, 0, 1.0, *sa);
+  OrientationNormal* o_normal = new OrientationNormal(0, 0, 1.0, *sa);
+
+  // ---------------
+  vector<Descriptor3D*> node_feature_descriptors;
+  node_feature_descriptors.push_back(spectral_shape);
+  node_feature_descriptors.push_back(o_tangent);
+  node_feature_descriptors.push_back(o_normal);
+  node_feature_descriptors.push_back(position);
+*/
   return node_feature_descriptors;
 }
 
@@ -67,36 +84,57 @@ vector<Descriptor3D*> initNodeFeatures()
 // --------------------------------------------------------------
 vector<Descriptor3D*> initCS0Features()
 {
-  //
-  SpectralShape* spectral_shape = new SpectralShape();
-  spectral_shape->setSpectralRadius(0.2286);
 
-  //
-  Orientation* orientation = new Orientation();
-  orientation->useSpectralInformation(spectral_shape);
-  orientation->useNormalOrientation(0.0, 0.0, 1.0);
-  orientation->useTangentOrientation(0.0, 0.0, 1.0);
+   //
+   SpectralShape* spectral_shape = new SpectralShape();
+   spectral_shape->setSpectralRadius(0.2286);
 
-  //
-  Position* position = new Position();
+   //
+   Orientation* orientation = new Orientation();
+   orientation->useSpectralInformation(spectral_shape);
+   orientation->useNormalOrientation(0.0, 0.0, 1.0);
+   orientation->useTangentOrientation(0.0, 0.0, 1.0);
 
-  //
-  SpinImage* spin_image = new SpinImage();
-  spin_image->setAxisCustom(0.0, 0.0, 1.0);
-  spin_image->setImageDimensions(0.0762, 0.0762, 5, 4);
+   //
+   Position* position = new Position();
 
-  //
-  BoundingBox* bounding_box = new BoundingBox(true, false);
-  bounding_box->useSpectralInformation(spectral_shape);
-  bounding_box->setBoundingBoxRadius(-1.0);
+   //
+   SpinImage* spin_image = new SpinImage();
+   spin_image->setAxisCustom(0.0, 0.0, 1.0);
+   spin_image->setImageDimensions(0.0762, 0.0762, 5, 4);
 
-  // ---------------
+   //
+   BoundingBox* bounding_box = new BoundingBox(true, false);
+   bounding_box->useSpectralInformation(spectral_shape);
+   bounding_box->setBoundingBoxRadius(-1.0);
+
   vector<Descriptor3D*> cs0_feature_descriptors;
   cs0_feature_descriptors.push_back(spectral_shape);
   cs0_feature_descriptors.push_back(orientation);
   cs0_feature_descriptors.push_back(position);
   cs0_feature_descriptors.push_back(spin_image);
   cs0_feature_descriptors.push_back(bounding_box);
+
+
+/*
+  SpectralAnalysis* sa = new SpectralAnalysis(0.2286);
+  ShapeSpectral* spectral_shape = new ShapeSpectral(*sa);
+  OrientationTangent* o_tangent = new OrientationTangent(0, 0, 1.0, *sa);
+  OrientationNormal* o_normal = new OrientationNormal(0, 0, 1.0, *sa);
+  Position* position = new Position();
+  SpinImageCustom* spin_image = new SpinImageCustom(0, 0, 1.0, 0.0762, 0.0762, 5, 4, false);
+  BoundingBoxSpectral* bbox_spectral = new BoundingBoxSpectral(-1.0, *sa);
+
+  // ---------------
+  vector<Descriptor3D*> cs0_feature_descriptors;
+  cs0_feature_descriptors.push_back(spectral_shape);
+  cs0_feature_descriptors.push_back(o_tangent);
+  cs0_feature_descriptors.push_back(o_normal);
+  cs0_feature_descriptors.push_back(position);
+  cs0_feature_descriptors.push_back(spin_image);
+  cs0_feature_descriptors.push_back(bbox_spectral);
+*/
+
   return cs0_feature_descriptors;
 }
 
@@ -105,6 +143,7 @@ vector<Descriptor3D*> initCS0Features()
 // --------------------------------------------------------------
 vector<Descriptor3D*> initCS1Features()
 {
+
   //
   SpectralShape* spectral_shape = new SpectralShape();
   spectral_shape->setSpectralRadius(-1);
@@ -129,13 +168,32 @@ vector<Descriptor3D*> initCS1Features()
   bounding_box->useSpectralInformation(spectral_shape);
   bounding_box->setBoundingBoxRadius(-1.0);
 
-  // ---------------
   vector<Descriptor3D*> cs1_feature_descriptors;
   cs1_feature_descriptors.push_back(spectral_shape);
   cs1_feature_descriptors.push_back(orientation);
   cs1_feature_descriptors.push_back(position);
   cs1_feature_descriptors.push_back(spin_image);
   cs1_feature_descriptors.push_back(bounding_box);
+
+
+  /*
+  SpectralAnalysis* sa = new SpectralAnalysis(-1);
+  ShapeSpectral* spectral_shape = new ShapeSpectral(*sa);
+  OrientationTangent* o_tangent = new OrientationTangent(0, 0, 1.0, *sa);
+  OrientationNormal* o_normal = new OrientationNormal(0, 0, 1.0, *sa);
+  Position* position = new Position();
+  SpinImageNormal* spin_image = new SpinImageNormal(0.0762, 0.0762, 7, 5, false, *sa);
+  BoundingBoxSpectral* bbox_spectral = new BoundingBoxSpectral(-1.0, *sa);
+
+  // ---------------
+  vector<Descriptor3D*> cs1_feature_descriptors;
+  cs1_feature_descriptors.push_back(spectral_shape);
+  cs1_feature_descriptors.push_back(o_tangent);
+  cs1_feature_descriptors.push_back(o_normal);
+  cs1_feature_descriptors.push_back(position);
+  cs1_feature_descriptors.push_back(spin_image);
+  cs1_feature_descriptors.push_back(bbox_spectral);
+*/
   return cs1_feature_descriptors;
 }
 
