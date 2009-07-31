@@ -129,8 +129,6 @@ var ROSGadget = Class.create({
     this.mainDiv.id = 'gadget';
     this.mainDiv.name = titleName + d.getTime();
     this.mainDiv.style.width = width + 'px';
-    this.mainDiv.style.padding = '10px';
-    this.mainDiv.style.position = 'fixed';
     this.mainDiv.style.left = "10px";
     this.mainDiv.style.top = maxY + "px";
 
