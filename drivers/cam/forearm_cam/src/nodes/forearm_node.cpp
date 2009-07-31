@@ -213,7 +213,7 @@ private:
   diagnostic_updater::DiagnosedPublisher<sensor_msgs::Image> cam_pub_;
   ros::Publisher cam_info_pub_;
   ros::ServiceClient trig_service_;
-  ros::ServiceServer conf_service_;
+  ros::ServiceServer config_bord_service_;
 
   boost::mutex diagnostics_lock_;
 
@@ -677,7 +677,7 @@ public:
     if (calibrated_)
       cam_info_pub_ = node_handle_.advertise<sensor_msgs::CamInfo>("~cam_info", 1);
     
-    conf_service_ = node_handle_.advertiseService("~board_config", &ForearmNode::boardConfig, this);
+    config_bord_service_ = node_handle_.advertiseService("~board_config", &ForearmNode::boardConfig, this);
     
     open_ = true;;
   }
@@ -686,7 +686,7 @@ public:
   {
     ROS_DEBUG("close()");
     stop();
-    conf_service_ = ros::ServiceServer();
+    config_bord_service_ = ros::ServiceServer();
     open_ = false;
   }
 

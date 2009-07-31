@@ -15,7 +15,6 @@
   <!--depend package="image_view" /-->
   <depend package="robot_mechanism_controllers" />
   <depend package="dynamic_reconfigure" />
-  <depend package="dynamic_reconfigure" />
   <export>
     <cpp cflags="-I${prefix}/msg/include:${prefix}/srv/include"/>
   </export>
