@@ -120,6 +120,17 @@ public:
       }
 
       /**
+       * \brief stop tracking the list element with this handle, even though the
+       * Handle hasn't gone out of scope
+       */
+      void reset()
+      {
+        valid_ = false;
+        it_ = iterator();
+        handle_tracker_.reset();
+      }
+
+      /**
        * \brief get the list element that this handle points to
        * fails/asserts if this is an empty handle
        * \return Reference to the element this handle points to
@@ -128,6 +139,14 @@ public:
       {
         assert(valid_);
         return *it_;
+      }
+
+      /**
+       * \brief Checks if two handles point to the same list elem
+       */
+      bool operator==(const Handle& rhs)
+      {
+        return (it_ == rhs.it_);
       }
 
       friend class ManagedList;

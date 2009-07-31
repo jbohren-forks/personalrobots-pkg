@@ -89,12 +89,12 @@ TerminalState GoalHandle<ActionSpec>::getTerminalState()
 
   assert(gm_);
 
-  boost::mutex::scoped_lock(gm_->list_mutex_);
-  CommState comm_state_ = list_handle_.getElem()->getState();
+  ScopedLock(gm_->list_mutex_);
+  CommState comm_state_ = list_handle_.getElem()->getCommState();
   if (comm_state_ != CommState::DONE)
     ROS_WARN("Asking for the terminal state when we're in [%s]", comm_state_.toString().c_str());
 
-  GoalStatus goal_status = list_handle_.getElem()->getGoalStatus().status;
+  GoalStatus goal_status = list_handle_.getElem()->getGoalStatus();
 
   switch (goal_status.status)
   {
@@ -162,6 +162,26 @@ void GoalHandle<ActionSpec>::cancel()
     gm_->cancel_func_(cancel_msg);
 
   list_handle_.getElem()->transitionToState(*this, CommState::WAITING_FOR_CANCEL_ACK);
+}
+
+template<class ActionSpec>
+bool GoalHandle<ActionSpec>::operator==(const GoalHandle<ActionSpec>& rhs)
+{
+  // Check if both are inactive
+  if (!active_ && !rhs.active_)
+    return true;
+
+  // Check if one or the other is inactive
+  if (!active_ || !rhs.active_)
+    return false;
+
+  return (list_handle_ == rhs.list_handle_) ;
+}
+
+template<class ActionSpec>
+bool GoalHandle<ActionSpec>::operator!=(const GoalHandle<ActionSpec>& rhs)
+{
+  return !(*this==rhs);
 }
 
 }

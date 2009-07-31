@@ -189,6 +189,17 @@ public:
    */
   void cancel();
 
+  /**
+   * \brief Check if two goal handles point to the same goal
+   * \return TRUE if both point to the same goal. Also returns TRUE if both handles are inactive.
+   */
+  bool operator==(const GoalHandle<ActionSpec>& rhs);
+
+  /**
+   * \brief !(operator==())
+   */
+  bool operator!=(const GoalHandle<ActionSpec>& rhs);
+
   friend class GoalManager<ActionSpec>;
 private:
   typedef GoalManager<ActionSpec> GoalManagerT;

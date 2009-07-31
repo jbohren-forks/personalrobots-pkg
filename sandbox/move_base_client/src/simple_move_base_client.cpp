@@ -50,7 +50,7 @@ void activeCallback()
   ROS_DEBUG("In the activeCallback");
 }
 
-void doneCallback(const TerminalState& terminal_state)
+void doneCallback(const TerminalState& terminal_state, const MoveBaseResultConstPtr& result)
 {
   ROS_DEBUG("In the done callback with terminal state=[%s]", terminal_state.toString().c_str());
 }
@@ -79,11 +79,11 @@ int main(int argc, char** argv)
 
   MoveBaseGoal goal;
 
-  //ac.sendGoal(goal, &doneCallback, &activeCallback, &feedbackCallback);
+  ac.sendGoal(goal, &doneCallback, &activeCallback, &feedbackCallback);
 
-  sleep(1.0);
+  sleep(5.0);
 
-  //ac.cancel();
+  ac.cancelGoal();
 
   /*sleep(2.0);
 

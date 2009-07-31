@@ -216,7 +216,7 @@ void SimpleActionClient<ActionSpec>::sendGoal(const Goal& goal,
 
   // Send the goal to the ActionServer
   gh_ = ac_.sendGoal(goal, boost::bind(&SimpleActionClientT::handleTransition, this, _1),
-                           boost::bind(&SimpleActionClientT::handleFeedback, this, _1));
+                           boost::bind(&SimpleActionClientT::handleFeedback, this, _1, _2));
 }
 
 template<class ActionSpec>
