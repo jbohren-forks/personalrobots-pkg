@@ -1,0 +1,17 @@
+<package>
+  <description brief="simple_navigation_goals">
+
+     simple_navigation_goals
+
+  </description>
+  <author>Eitan Marder-Eppstein</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/simple_navigation_goals</url>
+  <depend package="move_base"/>
+  <depend package="actionlib"/>
+  <depend package="roscpp"/>
+
+</package>
+
+
