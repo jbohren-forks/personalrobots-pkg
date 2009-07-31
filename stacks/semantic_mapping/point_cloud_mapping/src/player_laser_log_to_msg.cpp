@@ -43,7 +43,6 @@
 #include <ros/ros.h>
 // ROS messages
 #include <sensor_msgs/LaserScan.h>
-#include <tf/transform_broadcaster.h>
 
 #include <fstream>
 #include <boost/algorithm/string.hpp>
@@ -58,7 +57,6 @@ class PlayerLogToMsg
     string tf_frame_;
     NodeHandle nh_;
     tf::TransformBroadcaster broadcaster_;
-    tf::Stamped<tf::Transform> transform_;
 
   public:
 
@@ -73,7 +71,6 @@ class PlayerLogToMsg
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     PlayerLogToMsg () : tf_frame_ ("laser_tilt_mount_link"),
-                        transform_ (btTransform (btQuaternion (0, 0, 0), btVector3 (0, 0, 0)), Time::now (), tf_frame_, tf_frame_),
                         is_file_ (true)
     {
       msg_topic_ = "/laser_scan";
@@ -178,16 +175,14 @@ class PlayerLogToMsg
         }
         total_nr_points += msg_scan_.ranges.size ();
 
-        transform_.stamp_ = Time::now ();
-        broadcaster_.sendTransform (transform_);
-
-        ROS_DEBUG ("Publishing data (%d points) on topic %s in frame %s. Angle min/max/resulution: %f/%f/%f, Range min/max: %f/%f",
-                   (int)msg_scan_.ranges.size (), nh_.resolveName (msg_topic_).c_str (), msg_scan_.header.frame_id.c_str (),
-                   msg_scan_.angle_min, msg_scan_.angle_max, msg_scan_.angle_increment, msg_scan_.range_min, msg_scan_.range_max);
+        if (is_file_)
+          ROS_DEBUG ("Publishing data (%d points) on topic %s in frame %s. Angle min/max/resulution: %f/%f/%f, Range min/max: %f/%f",
+                     (int)msg_scan_.ranges.size (), nh_.resolveName (msg_topic_).c_str (), msg_scan_.header.frame_id.c_str (),
+                     msg_scan_.angle_min, msg_scan_.angle_max, msg_scan_.angle_increment, msg_scan_.range_min, msg_scan_.range_max);
         scan_pub_.publish (msg_scan_);
 
         // Sleep for a certain number of seconds (tdif)
-        if (tj != 0)
+        if (tj != 0 && is_file_)
         {
           Duration tictoc (tdif);
           tictoc.sleep ();
