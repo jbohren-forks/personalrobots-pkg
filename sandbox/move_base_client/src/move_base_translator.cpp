@@ -76,7 +76,8 @@ int main(int argc, char** argv)
 
   runner.run();
 
-  ros::spin();
+  ros::MultiThreadedSpinner m_spinner(2);
+  m_spinner.spin();
 
   return 0;
 }
