@@ -250,6 +250,11 @@ public:
    */
   std::string getTFPrefix() const { return tf_prefix_;};
 
+  //Declare that it is safe to call waitForTransform
+  void setUsingDedicatedThread(bool value) { using_dedicated_thread_ = value;};
+  // Get the state of using_dedicated_thread_
+  bool isUsingDedicatedThread() { return using_dedicated_thread_;};
+
 protected:
 
   /** \brief The internal storage class for ReferenceTransform.
@@ -294,6 +299,9 @@ protected:
   TransformsChangedSignal transforms_changed_;
   boost::mutex transforms_changed_mutex_;
 
+  //Whether it is safe to use waitForTransform.  This is basically stating that tf is multithreaded.  
+  bool using_dedicated_thread_;
+  
   /************************* Internal Functions ****************************/
 
   /** \brief An accessor to get a frame, which will throw an exception if the frame is no there.

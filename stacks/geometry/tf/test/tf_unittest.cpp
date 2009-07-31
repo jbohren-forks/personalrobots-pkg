@@ -867,7 +867,9 @@ TEST(tf, NO_PARENT_SET)
 TEST(tf, waitForTransform)
 {
   tf::Transformer mTR(true);
-  
+
+  //A seperate thread is required to use the blocking call for normal usage
+  mTR.setUsingDedicatedThread(true);  
   // make sure timeout is resonably lengthed
 
   ros::Duration timeout = ros::Duration().fromSec(1.0);

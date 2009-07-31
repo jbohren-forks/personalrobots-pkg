@@ -31,6 +31,7 @@
 
 #include "tf/tf.h"
 #include <sys/time.h>
+#include "ros/assert.h"
 using namespace tf;
 
 // Must provide storage for non-integral static const class members.
@@ -81,7 +82,8 @@ std::string tf::remap(const std::string& prefix, const std::string& frame_id)
 Transformer::Transformer(bool interpolating,
                                 ros::Duration cache_time):
   cache_time(cache_time),
-  interpolating (interpolating)
+  interpolating (interpolating), 
+  using_dedicated_thread_(false)
 {
   max_extrapolation_distance_.fromNSec(DEFAULT_MAX_EXTRAPOLATION_DISTANCE);
   frameIDs_["NO_PARENT"] = 0;
@@ -269,6 +271,9 @@ bool Transformer::waitForTransform(const std::string& target_frame, const std::s
                                    const ros::Duration& timeout, const ros::Duration& polling_sleep_duration,
                                    std::string* error_msg) const
 {
+  
+  ROS_ASSERT_MSG(using_dedicated_thread_, "Do not call waitForTransform unless you are using another thread for populating data. If you are using multiple threads setUsingDedicatedThread(true)");
+
   ros::Time start_time = ros::Time::now();
   while (!canTransform(target_frame, source_frame, time, error_msg))
   {

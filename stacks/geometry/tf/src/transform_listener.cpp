@@ -78,20 +78,37 @@ TransformListener::TransformListener(ros::Node & rosnode,
 }
 
 TransformListener::TransformListener(ros::Duration max_cache_time):
-  Transformer(true, max_cache_time)
+  Transformer(true, max_cache_time), dedicated_listener_thread_(NULL)
 {
   init();
 }
 
 TransformListener::TransformListener(const ros::NodeHandle& nh, ros::Duration max_cache_time):
-  Transformer(true, max_cache_time), node_(nh)
+  Transformer(true, max_cache_time), node_(nh), dedicated_listener_thread_(NULL)
 {
   init();
 }
 
+TransformListener::TransformListener(bool spin_thread, ros::Duration max_cache_time):
+  Transformer(true, max_cache_time), dedicated_listener_thread_(NULL)
+{
+  initWithThread();
+}
+
+TransformListener::TransformListener(const ros::NodeHandle& nh, bool spin_thread, ros::Duration max_cache_time):
+  Transformer(true, max_cache_time), node_(nh), dedicated_listener_thread_(NULL)
+{
+  initWithThread();
+}
 
 TransformListener::~TransformListener()
 {
+  using_dedicated_thread_ = false;
+  if (dedicated_listener_thread_)
+  {
+    dedicated_listener_thread_->join();
+    delete dedicated_listener_thread_;
+  }
 }
 
 void TransformListener::init()
@@ -108,6 +125,26 @@ void TransformListener::init()
     node_.param(std::string("~tf_prefix"), tf_prefix_, std::string(""));
 }
 
+void TransformListener::initWithThread()
+{
+  using_dedicated_thread_ = true;
+  ros::SubscribeOptions ops = ros::SubscribeOptions::create<tf::tfMessage>("/tf_message", 100, boost::bind(&TransformListener::subscription_callback, this, _1), ros::VoidPtr(), &tf_message_callback_queue_); ///\todo magic number
+    
+    message_subscriber_ = node_.subscribe(ops);
+  
+  ros::SubscribeOptions reset_ops = ros::SubscribeOptions::create<std_msgs::Empty>("/reset_time", 100, boost::bind(&TransformListener::reset_callback, this, _1), ros::VoidPtr(), &tf_message_callback_queue_); ///\todo magic number
+
+  reset_time_subscriber_ = node_.subscribe(reset_ops);
+  
+  dedicated_listener_thread_ = new boost::thread(boost::bind(&TransformListener::dedicatedListenerThread, this));
+
+  if (! ros::service::exists("~tf_frames", false))  // Avoid doublely advertizing if multiple instances of this library
+    {
+      tf_frames_srv_ = node_.advertiseService("~tf_frames", &TransformListener::getFrames, this);
+    }
+    
+    node_.param(std::string("~tf_prefix"), tf_prefix_, std::string(""));
+}
 
 void TransformListener::transformQuaternion(const std::string& target_frame,
     const robot_msgs::QuaternionStamped& msg_in,

@@ -37,8 +37,10 @@
 #include "tf/tfMessage.h"
 #include "tf/tf.h"
 #include "ros/ros.h"
+#include "ros/callback_queue.h"
 
 #include "tf/FrameGraph.h" //frame graph service
+#include "boost/thread.hpp"
 
 namespace tf{
 
@@ -68,6 +70,21 @@ public:
    * \param max_cache_time How long to store transform information
    */
   TransformListener(const ros::NodeHandle& nh,
+                    ros::Duration max_cache_time = ros::Duration(DEFAULT_CACHE_TIME));
+  /**
+   * \brief Alternate constructor for transform listener
+   * \param nh The NodeHandle to use for any ROS interaction
+   * \param spin_thread This will trigger spinning a dedicated thread for the listener to recieve
+   * \param max_cache_time How long to store transform information
+   */
+  TransformListener(const ros::NodeHandle& nh, bool spin_thread,
+                    ros::Duration max_cache_time = ros::Duration(DEFAULT_CACHE_TIME));
+  /**
+   * \brief Alternate constructor for transform listener
+   * \param spin_thread This will trigger spinning a dedicated thread for the listener to recieve
+   * \param max_cache_time How long to store transform information
+   */
+  TransformListener(bool spin_thread,
                     ros::Duration max_cache_time = ros::Duration(DEFAULT_CACHE_TIME));
 
   
@@ -129,6 +146,7 @@ public:
 private:
   /// Initialize this transform listener, subscribing, advertising services, etc.
   void init();
+  void initWithThread();
 
   /// Callback function for ros message subscriptoin
   void subscription_callback(const tf::tfMessageConstPtr& msg);
@@ -140,6 +158,18 @@ private:
   void reset_callback(const std_msgs::EmptyConstPtr &msg);
   std_msgs::Empty empty_;
   ros::ServiceServer tf_frames_srv_;
+
+
+  ros::CallbackQueue tf_message_callback_queue_;
+  boost::thread* dedicated_listener_thread_;
+
+  void dedicatedListenerThread()
+  {
+    while (using_dedicated_thread_)
+    {
+      tf_message_callback_queue_.callAvailable(ros::WallDuration(0.01));
+    }
+  };
 
 };
 }
