@@ -101,9 +101,9 @@ namespace rdf_parser{
 ///     <visual>
 ///       <origin xyz="0 0 0" rpy="0 0 0"/>
 ///       <geometry>
-///         <texture name="PR2/Green"/>
 ///         <box size="1 1 1"/>
 ///       </geometry>
+///       <texture name="PR2/Green"/>
 ///     </visual>
 ///
 ///     <collision>
@@ -111,12 +111,7 @@ namespace rdf_parser{
 ///       <geometry>
 ///         <box size="1.01 1.01 1.01"/>
 ///       </geometry>
-///       <contact_coefficient>
-///         <mu value="0"/>
-///         <resitution value="0"/>
-///         <k_p value="0"/>
-///         <k_d value="0"/>
-///       </contact_coefficient>
+///       <contact_coefficient mu="0"  resitution="0"  k_p="0"  k_d="0" />
 ///     </collision>
 ///
 ///     <joint name="J" type="revolute">
