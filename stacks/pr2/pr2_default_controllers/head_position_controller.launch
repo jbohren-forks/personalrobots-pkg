@@ -1,13 +1,29 @@
 <launch>
-
- <group ns="head_controller" clear_params="true">
+<!-- Head controller -->
+  <group ns="head_controller" clear_params="true">
+    <param name="type" type="string" value="HeadPositionController" />
     <param name="pan_link_name" type="string" value="head_pan_link" />
     <param name="tilt_link_name" type="string" value="head_tilt_link" />
     <param name="pan_output" type="string" value="head_pan_joint_position_controller" />
     <param name="tilt_output" type="string" value="head_tilt_joint_position_controller" />
- </group>
+  </group>
+  <group ns="head_tilt_joint_position_controller" clear_params="true">
+    <param name="type" type="string" value="JointPositionController" />
+    <param name="joint" type="string" value="head_tilt_joint" />
+    <param name="pid/p" type="double" value="12.4" />
+    <param name="pid/i" type="double" value="2.0" />
+    <param name="pid/d" type="double" value="0.4" />
+    <param name="pid/iClamp" type="double" value="0.1" />
+  </group>
+  <group ns="head_pan_joint_position_controller" clear_params="true">
+    <param name="type" type="string" value="JointPositionController" />
+    <param name="joint" type="string" value="head_pan_joint" />
+    <param name="pid/p" type="double" value="12.4" />
+    <param name="pid/i" type="double" value="2.0" />
+    <param name="pid/d" type="double" value="0.4" />
+    <param name="pid/iClamp" type="double" value="0.1" />
+  </group>
+  <node pkg="mechanism_control" type="spawner.py" args=" head_pan_joint_position_controller head_tilt_joint_position_controller head_controller" output="screen" />
 
-
-  <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/head_pan_joint_position_controller.xml $(find pr2_default_controllers)/head_tilt_joint_position_controller.xml $(find pr2_default_controllers)/head_position_controller.xml" output="screen" />
 
 </launch>
