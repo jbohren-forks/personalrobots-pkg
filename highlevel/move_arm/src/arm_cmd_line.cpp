@@ -97,7 +97,7 @@ void printPose(const btTransform &p)
 {
     std::cout << "  -position [x, y, z]    = [" << p.getOrigin().x() << ", " << p.getOrigin().y() << ", " << p.getOrigin().z() << "]" << std::endl;
     btQuaternion q = p.getRotation();
-    std::cout << "  -rotation [x, y, z, w] = [" << p.getOrigin().x() << ", " << p.getOrigin().y() << ", " << p.getOrigin().z() << ", " << p.getOrigin().w() << "]" << std::endl;
+    std::cout << "  -rotation [x, y, z, w] = [" << q.x() << ", " << q.y() << ", " << q.z() << ", " << q.w() << "]" << std::endl;
 }
 
 void goalToState(const pr2_robot_actions::MoveArmGoal &goal, planning_models::StateParams &sp)
@@ -146,7 +146,7 @@ void setupGoal(const std::vector<std::string> &names, pr2_robot_actions::MoveArm
     }
 }
 
-void setupGoalEEf(const std::string &link, double x, double y, double z, pr2_robot_actions::MoveArmGoal &goal)
+void setupGoalEEf(const std::string &link, const std::vector<double> &pz, pr2_robot_actions::MoveArmGoal &goal)
 {
     goal.goal_constraints.pose_constraint.resize(1);
     goal.goal_constraints.pose_constraint[0].type = motion_planning_msgs::PoseConstraint::POSITION_X + motion_planning_msgs::PoseConstraint::POSITION_Y + motion_planning_msgs::PoseConstraint::POSITION_Z + 
@@ -154,14 +154,14 @@ void setupGoalEEf(const std::string &link, double x, double y, double z, pr2_rob
     goal.goal_constraints.pose_constraint[0].link_name = link;
     goal.goal_constraints.pose_constraint[0].pose.header.stamp = ros::Time::now();
     goal.goal_constraints.pose_constraint[0].pose.header.frame_id = "/base_link";
-    goal.goal_constraints.pose_constraint[0].pose.pose.position.x = x;
-    goal.goal_constraints.pose_constraint[0].pose.pose.position.y = y;	
-    goal.goal_constraints.pose_constraint[0].pose.pose.position.z = z;	
+    goal.goal_constraints.pose_constraint[0].pose.pose.position.x = pz[0];
+    goal.goal_constraints.pose_constraint[0].pose.pose.position.y = pz[1];	
+    goal.goal_constraints.pose_constraint[0].pose.pose.position.z = pz[2];	
     
-    goal.goal_constraints.pose_constraint[0].pose.pose.orientation.x = 0.0;
-    goal.goal_constraints.pose_constraint[0].pose.pose.orientation.y = 0.0;
-    goal.goal_constraints.pose_constraint[0].pose.pose.orientation.z = 0.0;
-    goal.goal_constraints.pose_constraint[0].pose.pose.orientation.w = 1.0;
+    goal.goal_constraints.pose_constraint[0].pose.pose.orientation.x = pz[3];
+    goal.goal_constraints.pose_constraint[0].pose.pose.orientation.y = pz[4];
+    goal.goal_constraints.pose_constraint[0].pose.pose.orientation.z = pz[5];
+    goal.goal_constraints.pose_constraint[0].pose.pose.orientation.w = pz[6];
     
     goal.goal_constraints.pose_constraint[0].position_tolerance_above.x = 0.01;
     goal.goal_constraints.pose_constraint[0].position_tolerance_above.y = 0.01;
@@ -498,34 +498,48 @@ int main(int argc, char **argv)
 	    std::string config = cmd.substr(3);
 	    boost::trim(config);
 	    if (goals.find(config) == goals.end())
-	    {
+	      {
 		std::stringstream ss(config);
-		double x, y, z;
+		std::vector<double> nrs;
+		while (ss.good() && !ss.eof())
+		  {
+		    double value;
+		    ss >> value;
+		    nrs.push_back(value);
+		  }
+
 		bool err = true;
-		if (ss.good() && !ss.eof())
+		if (nrs.size() == 3)
 		{
-		    ss >> x;
-		    if (ss.good() && !ss.eof())
-		    {
-			ss >> y;
-			if (ss.good() && !ss.eof())
-			{
-			    ss >> z;
-			    err = false;
-			    std::string link = km.getKinematicModel()->getJoint(names.back())->after->name;
-			    std::cout << "Moving " << link << " to " << x << ", " << y << ", " << z << ", 0, 0, 0, 1..." << std::endl;
-			    pr2_robot_actions::MoveArmGoal g;
-			    setupGoalEEf(link, x, y, z, g);
-			    if (move_arm.execute(g, feedback, ros::Duration(allowed_time)) != robot_actions::SUCCESS)
-				std::cerr << "Failed achieving goal" << std::endl;
-			    else
-				std::cout << "Success!" << std::endl;
-			}
-		    }
+		  nrs.push_back(0);
+		  nrs.push_back(0);
+		  nrs.push_back(0);
+		  nrs.push_back(1);
 		}
+
+		if (nrs.size() == 7)
+		  {
+		    err = false;
+
+		std::string link = km.getKinematicModel()->getJoint(names.back())->after->name;
+		std::cout << "Moving " << link << " to " << nrs[0] << ", " << nrs[1] << ", " << nrs[2] << ", " <<
+		  nrs[3] << ", " << nrs[4] << ", " << nrs[5] << ", " << nrs[6] << "..." << std::endl;
+		pr2_robot_actions::MoveArmGoal g;
+		setupGoalEEf(link, nrs, g);
+		if (move_arm.execute(g, feedback, ros::Duration(allowed_time)) != robot_actions::SUCCESS)
+		  std::cerr << "Failed achieving goal" << std::endl;
+		else
+		  std::cout << "Success!" << std::endl;
+		
+
+		    
+		}
+		
+		
 		if (err)
 		    std::cout << "Configuration '" << config << "' not found" << std::endl;
-	    }
+	      }
+	
 	    else
 	    {
 		std::cout << "Moving to " << config << "..." << std::endl;
