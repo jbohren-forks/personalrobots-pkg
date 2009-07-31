@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 
+import signal
 import cStringIO
 import time
 import Image, ImageDraw
 import os
 import sys
-from SocketServer import ThreadingMixIn
 import BaseHTTPServer, socket, SocketServer, urlparse, select
+SocketServer.ThreadingMixIn.daemon_threads = True
 import Cookie
 import cgi
 import threading
@@ -21,15 +22,20 @@ import rosjson
 from tf import *
 import bullet
 
+import wg_hardware_roslaunch.roslaunch_caller as roslaunch_caller
+
 from tf.msg import tfMessage
-from nav_msgs.srv import *
+from nav_msgs import *
 from nav_msgs.msg import *
 from std_msgs.msg import *
 from robot_msgs.msg import *
 
-tfclient = ''
+tfclient = None
 CALLER_ID = '/webteleop'
 index = 0
+core_launcher = None
+running = False
+rosCoreUp = False
 
 msgClasses = { '/initialpose' : robot_msgs.msg.PoseWithCovariance,
                '/move_base/activate' : robot_msgs.msg.PoseStamped
@@ -209,6 +215,8 @@ class ROSWebTopic(object):
   ##############################################################################
   # Get data from this topic
   def getData(self):
+    global tfclient
+
     msg = ''
     try:
       self.cond.acquire()
@@ -262,6 +270,7 @@ class ROSWebTF():
     self.tfname = _tfname
 
   def getData(self):
+    global tfclient
     msg = ''
     try:
       if tfclient.frameExists(self.tfname) and tfclient.frameExists("/map") :
@@ -310,7 +319,10 @@ def get_service_class(service_name):
       if s is not None:
           s.close()
 
-def GetMapAsJPEG(service_proxy, qdict):
+
+################################################################################
+# Convert a map message to a jpeg
+def getMapAsJPEG(service_proxy, qdict):
   data = ''
   try:
     #staticMap = rospy.ServiceProxy(topic, service_class)
@@ -365,6 +377,22 @@ def GetMapAsJPEG(service_proxy, qdict):
 
   return msg
 
+################################################################################
+# Run a launch script
+def launchScript(script, process_listener_object = None):
+  f = open(script, 'r')
+  launchXML = f.read()
+  f.close()
+
+  launch = roslaunch_caller.ScriptRoslaunch(launchXML, process_listener_object)
+
+  try:
+    launch.start()
+  except roslaunch.RLException, e:
+    traceback.print_exc()
+    return None
+
+  return launch
 
 ################################################################################
 # HTTP request handler
@@ -375,7 +403,6 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
   ##############################################################################
   # Connect to a server
   def _connect_to(self, netloc, soc):
-    print netloc
     i = netloc.find(':')
 
     if i>=0:
@@ -398,6 +425,8 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
   ##############################################################################
   def handleROS(self, path, qdict):
     global factory
+    global core_launcher
+    global tfclient
 
     path_parts = path.split('/')
 
@@ -405,9 +434,46 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
     cmd = path_parts[2].lower()
     topic = '/'+"/".join( path_parts[p] for p in range(3, len(path_parts) ) )
 
-    print "CMD[%s] Topic[%s]" % (cmd, topic)
+    if cmd == "startup":
+      print "Startup[%s]" % topic
 
-    if cmd == "subscribe":
+      if rosCoreUp == False:
+        core_launcher = roslaunch_caller.launch_core()
+        launchScript('../launch/gazebo.launch')
+
+      time.sleep(2)
+      rospy.init_node(CALLER_ID, disable_signals=True)
+      time.sleep(1)
+      tfclient = TransformListener()
+
+
+      self.send_response(200)
+      self.send_header( "Content-type", "text/html" )
+      self.end_headers()
+      self.wfile.write("started")
+
+    elif cmd == "shutdown":
+      print "Shutdown[%s]" % topic
+
+      core_launcher.stop()
+      core_launcher = None
+
+      self.send_response(200)
+      self.send_header( "Content-type", "text/html" )
+      self.end_headers()
+      self.wfile.write("shutdown")
+
+    elif cmd == "launch":
+      print "Launch[%s]" % topic
+
+      launchScript(topic)
+
+      self.send_response(200)
+      self.send_header( "Content-type", "text/html" )
+      self.end_headers()
+      self.wfile.write("launched")
+     
+    elif cmd == "subscribe":
       print "Subscribe[%s]\n" % topic
 
       rwt = factory.get(topic)
@@ -541,7 +607,7 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
       msg = ''
 
       if topic == '/static_map':
-        msg = GetMapAsJPEG(service_proxy, qdict)
+        msg = getMapAsJPEG(service_proxy, qdict)
       else:
         print "Unable to handle service[%s]" % topic
 
@@ -583,20 +649,11 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
       self.handleROS(path, qdict)
     # Otherwise pass the request to the normal apache server
     else:
-      #self.send_response(200);
-      #self.send_header( "Content-type", "text/html" )
-      #self.end_headers()
-      #self.wfile.write("HELP")
-
       netloc = "localhost:80"
       scm = "http"
       soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
       try:
         if self._connect_to(netloc, soc):
-          #print "%s %s %s\r\n" % (
-          #  self.command,
-          #  urlparse.urlunparse(('', '', path, params, query, '')),
-          #  self.request_version)
           soc.send("%s %s %s\r\n" % (
             self.command,
             urlparse.urlunparse(('', '', path, params, query, '')),
@@ -629,7 +686,7 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
             out = self.connection
           else:
             out = soc
-          data = i.recv(8192)
+          data = i.recv(8192*100)
           if data:
             out.send(data)
             
@@ -649,31 +706,49 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
 
 class MasterMonitor:
   def run(self):
+    global running, rosCoreUp
     master = roslib.scriptutil.get_master()
-    while 1:
+    running = True
+    rosCoreUp = False
+
+    while running == True:
       try:
-        master.getSystemState('/rostopic')
+        code, msg, state = master.getSystemState('/rostopic')
+        rosCoreUp = True
       except:
-        import traceback
-        return
+        rosCoreUp = False
+        pass
       time.sleep(.1)
 
 
+################################################################################
+# The HTTP server
 class MyHTTPServer(threading.Thread, SocketServer.ThreadingMixIn, 
                    BaseHTTPServer.HTTPServer):
   def __init__(self, hostport, handler):
     threading.Thread.__init__(self)
     SocketServer.TCPServer.__init__(self, hostport, handler)
+
+  def __del__(self):
+    SocketSrever.TCPServer.__del__(self)
     
   def run(self):
     while 1:
       self.handle_request()
 
 
+################################################################################
+# Signal handler
+def signal_handler(signal, frame):
+  global running
+  running = False
+  
 
 ################################################################################
 # Main
 if __name__ == '__main__':
+
+  signal.signal(signal.SIGINT, signal_handler)
 
   print 'starting web server on port 8080'
 
@@ -682,21 +757,14 @@ if __name__ == '__main__':
   httpServer.start()
 
   try:
-    rospy.init_node('webteleop', disable_signals=True)
-    time.sleep(1)
-    tfclient = TransformListener()
-
     mm = MasterMonitor()
     mm.run()
   finally:
+    if core_launcher != None:
+      core_launcher.stop()
     rospy.signal_shutdown('webteleop exiting')
-    if httpServer: httpServer.server_close()
+    time.sleep(1)
 
-  #try:
-  #  httpServer.serve_forever()
-  #except KeyboardInterrupt:
-  #  pass
-
-  #httpServer.close()
-  #
-  rospy.signal_shutdown('webteleop exiting')
+    if httpServer: 
+      httpServer.server_close()
+  
