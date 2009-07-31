@@ -98,7 +98,6 @@ int M3NModel::train(const vector<const RandomField*>& training_rfs, const M3NPar
   for (unsigned int t = 0 ; t < nbr_iterations ; t++)
   {
     ROS_INFO("-------- Starting iteration %u --------", t);
-
     // ---------------------------------------------------
     // Instantiate new regressor
     RegressorWrapper* curr_regressor = instantiateRegressor(m3n_params);
@@ -110,6 +109,7 @@ int M3NModel::train(const vector<const RandomField*>& training_rfs, const M3NPar
 
     // ---------------------------------------------------
     // Iterate over each RandomField
+    double iteration_inference_time = 0.0;
     for (unsigned int i = 0 ; i < training_rfs.size() ; i++)
     {
       if (invalid_training_indices.count(i) != 0)
@@ -144,8 +144,7 @@ int M3NModel::train(const vector<const RandomField*>& training_rfs, const M3NPar
         inferPrivate(*curr_rf, curr_inferred_labeling);
       }
       time(&end_timer);
-      // TODO this is invalid, want to record overall inference over all random fields
-      logger.addTimingInference(start_timer, end_timer);
+      iteration_inference_time += difftime(end_timer, start_timer);
       logger.printClassificationRates(nodes, curr_inferred_labeling, training_labels_);
 
       // ---------------------------------------------------
@@ -260,13 +259,16 @@ int M3NModel::train(const vector<const RandomField*>& training_rfs, const M3NPar
     time(&start_timer);
     if (curr_regressor->train() < 0)
     {
-      // TODO: free regressors?  set trained_ true?
+      // TODO: free previous regressors? set trained_ true? return 0?
       return -1;
     }
     const double curr_step_size = learning_rate / sqrt(static_cast<double> (t + 1));
     regressors_.push_back(pair<double, RegressorWrapper*> (curr_step_size, curr_regressor));
     time(&end_timer);
-    logger.addTimingRegressors(start_timer, end_timer);
+    double iteration_regressor_time = difftime(end_timer, start_timer);
+
+    logger.addTimingInference(iteration_inference_time);
+    logger.addTimingRegressors(iteration_regressor_time);
   } // end training iterations
 
   trained_ = true;

@@ -66,16 +66,16 @@ class M3NLogger
       // TODO
     }
 
-    void addTimingRegressors(time_t& start, time_t& end)
+    void addTimingRegressors(double iteration_regressor_time)
     {
-      timings_regressors.push_back(difftime(end, start));
-      ROS_INFO("Regressor time: %f", timings_regressors.back());
+      timings_regressors.push_back(iteration_regressor_time);
+      ROS_INFO("Iteration REGRESSOR training time: %f", timings_regressors.back());
     }
 
-    void addTimingInference(time_t& start, time_t& end)
+    void addTimingInference(double iteration_inference_time)
     {
-      timings_inference.push_back(difftime(end, start));
-      ROS_INFO("Inference time: %f", timings_inference.back());
+      timings_inference.push_back(iteration_inference_time);
+      ROS_INFO("Iteration INFERENCE overall time: %f", timings_inference.back());
     }
     // --------------------------------------------------------------
     /**
