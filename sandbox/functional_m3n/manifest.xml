@@ -1,5 +1,5 @@
 <package>
-  <description>
+  <description brief="functional_m3n">
 
     Implementation of Max-Margin Markov Networks using functional gradient boosting
     as described in Munoz et al., "Contextual Classification with Functional Max-Margin
@@ -23,6 +23,6 @@
   <depend package="descriptors_3d" />
 
   <export>
-    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lfm3n" />
+    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lfunctional_m3n" />
   </export>
 </package>

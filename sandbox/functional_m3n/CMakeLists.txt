@@ -1,27 +1,29 @@
 cmake_minimum_required(VERSION 2.4.6)
-
 include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 
 rospack(functional_m3n)
+
+#set the default path for built executables to the "bin" directory
+set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
+#set the default path for built libraries to the "lib" directory
+set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
+
 rospack_add_boost_directories()
 
-#rospack_add_executable (bin/test_fm3n examples/test_fm3n.cpp)
-#target_link_libraries (bin/test_fm3n fm3n)
-
-rospack_add_executable (bin/classify_m3n
+rospack_add_executable (classify_m3n
                         examples/classify_m3n.cpp
                         examples/random_field_creator.cpp)
-target_link_libraries (bin/classify_m3n fm3n)
+target_link_libraries (classify_m3n ${PROJECT_NAME})
 
-rospack_add_executable (bin/train_m3n
+rospack_add_executable (train_m3n
                         examples/train_m3n.cpp
                         examples/random_field_creator.cpp)
-target_link_libraries (bin/train_m3n fm3n)
+target_link_libraries (train_m3n ${PROJECT_NAME})
 
-#rospack_add_link_flags(bin/create_pt_cloud "-lprofiler")
+#rospack_add_link_flags(create_pt_cloud "-lprofiler")
 
 # ---[ Functional Max-Margin Markov Network library
-rospack_add_library (fm3n
+rospack_add_library (${PROJECT_NAME}
                         src/inference_tools/vk_submodular_energy_min.cpp
 			src/inference_tools/bgl_submodular_energy_min.cpp
 			src/random_field.cpp
