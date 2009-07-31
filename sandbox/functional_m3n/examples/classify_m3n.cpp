@@ -5,6 +5,8 @@
  *      Author: dmunoz
  */
 
+#include <boost/shared_ptr.hpp>
+
 #include <robot_msgs/PointCloud.h>
 
 #include <functional_m3n/example/pt_cloud_rf_creator.h>
@@ -85,7 +87,7 @@ int main()
   // ----------------------------------------------------------
   // Create random field
   PtCloudRFCreator rf_creator;
-  RandomField* testing_rf = rf_creator.createRandomField(pt_cloud);
+  boost::shared_ptr<RandomField> testing_rf = rf_creator.createRandomField(pt_cloud);
 
   // ----------------------------------------------------------
   // Load M3N model

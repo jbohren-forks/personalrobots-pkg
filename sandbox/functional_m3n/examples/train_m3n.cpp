@@ -5,6 +5,8 @@
  *      Author: dmunoz
  */
 
+#include <boost/shared_ptr.hpp>
+
 #include <robot_msgs/PointCloud.h>
 
 #include <functional_m3n/example/pt_cloud_rf_creator.h>
@@ -76,7 +78,7 @@ int main()
   // ----------------------------------------------------------
   // Create random field
   PtCloudRFCreator rf_creator;
-  const RandomField* training_rf = rf_creator.createRandomField(pt_cloud, labels);
+  const boost::shared_ptr<RandomField> training_rf = rf_creator.createRandomField(pt_cloud, labels);
   training_rf->saveNodeFeatures("tempo/train_node_unknown.txt");
   training_rf->saveCliqueFeatures("tempo/train_rf_unknown");
 
@@ -95,7 +97,7 @@ int main()
   // Train M3N model
   ROS_INFO("Starting to train...");
   M3NModel m3n_model;
-  vector<const RandomField*> training_rfs(1, training_rf);
+  vector<const RandomField*> training_rfs(1, training_rf.get());
   if (m3n_model.train(training_rfs, m3n_learning_params) < 0)
   {
     ROS_ERROR("Failed to train M3N model");

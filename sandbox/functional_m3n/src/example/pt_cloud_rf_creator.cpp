@@ -477,14 +477,14 @@ void PtCloudRFCreator::createCliqueSet(RandomField& rf,
 // --------------------------------------------------------------
 /*! See function definition */
 // --------------------------------------------------------------
-RandomField* PtCloudRFCreator::createRandomField(const robot_msgs::PointCloud& pt_cloud,
+boost::shared_ptr<RandomField> PtCloudRFCreator::createRandomField(const robot_msgs::PointCloud& pt_cloud,
                                                  const vector<float>& labels)
 {
   createDescriptors();
   unsigned int nbr_clique_sets = clique_set_clusterings_.size();
 
   cloud_kdtree::KdTreeANN pt_cloud_kdtree(pt_cloud);
-  RandomField* rf = new RandomField(nbr_clique_sets);
+  boost::shared_ptr<RandomField> rf = boost::shared_ptr<RandomField>(new RandomField(nbr_clique_sets));
 
   ROS_INFO("=============== CREATING RANDOM FIELD =================");
 
@@ -511,4 +511,10 @@ RandomField* PtCloudRFCreator::createRandomField(const robot_msgs::PointCloud& p
 
   ROS_INFO("=============== FINISHED RANDOM FIELD =================\n");
   return rf;
+}
+
+boost::shared_ptr<RandomField> PtCloudRFCreator::createRandomField(const robot_msgs::PointCloud& pt_cloud)
+{
+  std::vector<float> labels;
+  return createRandomField(pt_cloud, labels);
 }

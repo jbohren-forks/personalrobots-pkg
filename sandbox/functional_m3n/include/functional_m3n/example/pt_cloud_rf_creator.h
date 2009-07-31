@@ -36,6 +36,8 @@
 
 #include <vector>
 
+#include <boost/shared_ptr.hpp>
+
 #include <robot_msgs/PointCloud.h>
 
 #include <point_cloud_clustering/kmeans.h>
@@ -56,13 +58,10 @@ class PtCloudRFCreator
       nbr_clique_sets_ = 2;
     }
 
-    RandomField* createRandomField(const robot_msgs::PointCloud& pt_cloud)
-    {
-      std::vector<float> labels;
-      return createRandomField(pt_cloud, labels);
-    }
+    boost::shared_ptr<RandomField> createRandomField(const robot_msgs::PointCloud& pt_cloud);
 
-    RandomField* createRandomField(const robot_msgs::PointCloud& pt_cloud, const std::vector<float>& labels);
+    boost::shared_ptr<RandomField> createRandomField(const robot_msgs::PointCloud& pt_cloud,
+                                                     const std::vector<float>& labels);
 
   private:
     void createDescriptors();
