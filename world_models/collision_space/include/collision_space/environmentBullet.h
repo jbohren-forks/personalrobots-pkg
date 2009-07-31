@@ -45,7 +45,7 @@
 namespace collision_space
 {
     	
-    /** \brief A class describing an environment for a kinematic robot using bullet */
+    /** \brief A class describing an environment for a kinematic robot using bullet. This class is still experimental, and methos such as cloning are not implemented. */
     class EnvironmentModelBullet : public EnvironmentModel
     {     
     public:
@@ -80,15 +80,21 @@ namespace collision_space
 	/** \brief Remove objects from a specific namespace in the collision model */
 	virtual void clearObjects(const std::string &ns);
 	
-	/** \brief Add a static collision object to the map. The user releases ownership of the passed object. */
-	virtual void addObject(const std::string &ns, const shapes::StaticShape *shape);
+	/** \brief Add a static collision object to the map. The user releases ownership of the passed object. Memory allocated for the shape is freed by the collision environment. */
+	virtual void addObject(const std::string &ns, shapes::StaticShape *shape);
 
-	/** \brief Add a collision object to the map. The user releases ownership of the passed object.*/
-	virtual void addObject(const std::string &ns, const shapes::Shape* shape, const btTransform &pose);
+	/** \brief Add a collision object to the map. The user releases ownership of the passed object. Memory allocated for the shape is freed by the collision environment. */
+	virtual void addObject(const std::string &ns, shapes::Shape* shape, const btTransform &pose);
 
-	/** \brief Add a set of collision objects to the map. The user releases ownership of the passed objects. */
+	/** \brief Add a set of collision objects to the map. The user releases ownership of the passed objects. Memory allocated for the shapes is freed by the collision environment. */
 	virtual void addObjects(const std::string &ns, const std::vector<shapes::Shape*> &shapes, const std::vector<btTransform> &poses);
 
+	/** \brief Remove objects in the collision space that are collising with the object supplied as argument */
+	virtual void removeCollidingObjects(const shapes::StaticShape *shape);
+
+	/** \brief Remove objects in the collision space that are collising with the object supplied as argument */
+	virtual void removeCollidingObjects(const shapes::Shape *shape, const btTransform &pose);
+	
 	/** \brief Add a robot model. Ignore robot links if their name is not
 	    specified in the string vector. The scale argument can be
 	    used to increase or decrease the size of the robot's

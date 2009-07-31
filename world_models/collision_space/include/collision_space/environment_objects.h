@@ -63,13 +63,13 @@ namespace collision_space
 	struct NamespaceObjects
 	{
 	    /** \brief An array of static shapes */
-	    std::vector< const shapes::StaticShape* > staticShape;
+	    std::vector< shapes::StaticShape* > staticShape;
 	    
 	    /** \brief An array of shapes */
-	    std::vector< const shapes::Shape* >       shape;
+	    std::vector< shapes::Shape* >       shape;
 
 	    /** \brief An array of shape poses */
-	    std::vector< btTransform >                shapePose;
+	    std::vector< btTransform >          shapePose;
 	};
 	
 	/** \brief Get the list of namespaces */
@@ -77,13 +77,22 @@ namespace collision_space
 
 	/** \brief Get the list of objects */
 	const NamespaceObjects& getObjects(const std::string &ns) const;
+
+	/** \brief Get the list of objects */
+	NamespaceObjects& getObjects(const std::string &ns);
 	
 	/** \brief Add a static object to the namespace. The user releases ownership of the object. */
-	void addObject(const std::string &ns, const shapes::StaticShape *shape);
+	void addObject(const std::string &ns, shapes::StaticShape *shape);
 
 	/** \brief Add an object to the namespace. The user releases ownership of the object. */
-	void addObject(const std::string &ns, const shapes::Shape *shape, const btTransform &pose);
-
+	void addObject(const std::string &ns, shapes::Shape *shape, const btTransform &pose);
+	
+	/** \brief Remove object. Object equality is verified by comparing pointers. Ownership of the object is renounced upon. Returns true on success. */
+	bool removeObject(const std::string &ns, const shapes::Shape *shape);
+	
+	/** \brief Remove object. Object equality is verified by comparing pointers. Ownership of the object is renounced upon. Returns true on success. */
+	bool removeObject(const std::string &ns, const shapes::StaticShape *shape);
+	
 	/** \brief Clear the objects in a specific namespace. Memory is freed. */
 	void clearObjects(const std::string &ns);
 	

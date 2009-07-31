@@ -199,6 +199,64 @@ void planning_environment::CollisionSpaceMonitor::collisionMapAsSpheres(const ma
     }
 }
 
+void planning_environment::CollisionSpaceMonitor::collisionMapAsBoxes(const mapping_msgs::CollisionMapConstPtr &collisionMap,
+								      std::vector<shapes::Shape*> &boxes, std::vector<btTransform> &poses)
+{
+    // we want to make sure the frame the robot model is kept in is the same as the frame of the collisionMap
+    bool transform = !frame_id_.empty() && collisionMap->header.frame_id != frame_id_;
+    const int n = collisionMap->get_boxes_size();
+    
+    double pd = 2.0 * pointcloud_padd_;
+    
+    boxes.resize(n);
+    poses.resize(n);
+    
+    if (transform)
+    {
+	std::string target = frame_id_;
+	bool err = false;
+	
+#pragma omp parallel for
+	for (int i = 0 ; i < n ; ++i)
+	{
+	    robot_msgs::PointStamped psi;
+	    psi.header  = collisionMap->header;
+	    psi.point.x = collisionMap->boxes[i].center.x;
+	    psi.point.y = collisionMap->boxes[i].center.y;
+	    psi.point.z = collisionMap->boxes[i].center.z;
+	    
+	    robot_msgs::PointStamped pso;
+	    try
+	    {
+		tf_->transformPoint(target, psi, pso);
+	    }
+	    catch(...)
+	    {
+		err = true;
+		pso = psi;
+	    }
+	    
+	    poses[i].setRotation(btQuaternion(btVector3(collisionMap->boxes[i].axis.x, collisionMap->boxes[i].axis.y, collisionMap->boxes[i].axis.z), collisionMap->boxes[i].angle));
+	    poses[i].setOrigin(btVector3(pso.point.x, pso.point.y, pso.point.z));
+	    boxes[i] = new shapes::Box(collisionMap->boxes[i].extents.x + pd, collisionMap->boxes[i].extents.y + pd, collisionMap->boxes[i].extents.z + pd);
+	}
+	
+	if (err)
+	    ROS_ERROR("Some errors encountered in transforming the collision map to frame '%s' from frame '%s'", target.c_str(), collisionMap->header.frame_id.c_str());
+    }
+    else
+    {
+
+#pragma omp parallel for
+	for (int i = 0 ; i < n ; ++i)
+	{
+	    poses[i].setRotation(btQuaternion(btVector3(collisionMap->boxes[i].axis.x, collisionMap->boxes[i].axis.y, collisionMap->boxes[i].axis.z), collisionMap->boxes[i].angle));
+	    poses[i].setOrigin(btVector3(collisionMap->boxes[i].center.x, collisionMap->boxes[i].center.y, collisionMap->boxes[i].center.z));
+	    boxes[i] = new shapes::Box(collisionMap->boxes[i].extents.x + pd, collisionMap->boxes[i].extents.y + pd, collisionMap->boxes[i].extents.z + pd);
+	}
+    }
+}
+
 void planning_environment::CollisionSpaceMonitor::updateCollisionSpace(const mapping_msgs::CollisionMapConstPtr &collisionMap, bool clear)
 {
     boost::mutex::scoped_lock lock(mapUpdateLock_);
@@ -212,7 +270,7 @@ void planning_environment::CollisionSpaceMonitor::updateCollisionSpace(const map
     
     std::vector<shapes::Shape*> spheres;
     std::vector<btTransform>    poses;
-    collisionMapAsSpheres(collisionMap, spheres, poses);
+    collisionMapAsBoxes(collisionMap, spheres, poses);
 
     collisionSpace_->lock();
     if (clear)
@@ -306,4 +364,35 @@ bool planning_environment::CollisionSpaceMonitor::attachObject(const mapping_msg
 	onAfterAttachBody_(kmodel_->getLink(attachedObject->link_name), attachedObject); 
     
     return result;
+}
+
+void planning_environment::CollisionSpaceMonitor::recoverCollisionMap(const collision_space::EnvironmentModel *env, mapping_msgs::CollisionMap &cmap)
+{
+    cmap.header.frame_id = getFrameId();
+    cmap.header.stamp = ros::Time::now();
+    cmap.boxes.clear();
+    
+    const collision_space::EnvironmentObjects::NamespaceObjects &no = env->getObjects()->getObjects("points");
+    const unsigned int n = no.shape.size();
+    double pd = pointcloud_padd_ * 2.0;    
+    for (unsigned int i = 0 ; i < n ; ++i)
+	if (no.shape[i]->type == shapes::BOX)
+	{
+	    const shapes::Box* box = static_cast<const shapes::Box*>(no.shape[i]);
+	    mapping_msgs::OrientedBoundingBox obb;
+	    obb.extents.x = box->size[0] - pd;
+	    obb.extents.y = box->size[1] - pd;
+	    obb.extents.z = box->size[2] - pd;
+	    const btVector3 &c = no.shapePose[i].getOrigin();
+	    obb.center.x = c.x();
+	    obb.center.y = c.y();
+	    obb.center.z = c.z();
+	    const btQuaternion q = no.shapePose[i].getRotation();
+	    obb.angle = q.getAngle();
+	    const btVector3 axis = q.getAxis();
+	    obb.axis.x = axis.x();
+	    obb.axis.y = axis.y();
+	    obb.axis.z = axis.z();
+	    cmap.boxes.push_back(obb);
+	}
 }

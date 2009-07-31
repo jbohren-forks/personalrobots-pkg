@@ -142,12 +142,18 @@ namespace planning_environment
 	    return pointcloud_padd_;
 	}
 	
+	/** \brief If the used modified some instance of an environment model, this function provides the means to obtain a collision map (the set of boxes)
+	 *  from that environment model */
+	void recoverCollisionMap(const collision_space::EnvironmentModel *env, mapping_msgs::CollisionMap &cmap);
+	
     protected:
 	
 	void setupCSM(void);
 	void updateCollisionSpace(const mapping_msgs::CollisionMapConstPtr &collisionMap, bool clear);
 	void collisionMapAsSpheres(const mapping_msgs::CollisionMapConstPtr &collisionMap,
 				   std::vector<shapes::Shape*> &spheres, std::vector<btTransform> &poses);
+	void collisionMapAsBoxes(const mapping_msgs::CollisionMapConstPtr &collisionMap,
+				 std::vector<shapes::Shape*> &boxes, std::vector<btTransform> &poses);
 	void collisionMapCallback(const mapping_msgs::CollisionMapConstPtr &collisionMap);
 	void collisionMapUpdateCallback(const mapping_msgs::CollisionMapConstPtr &collisionMap);
 	void objectInMapCallback(const mapping_msgs::ObjectInMapConstPtr &objectInMap);

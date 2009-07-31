@@ -53,15 +53,53 @@ const collision_space::EnvironmentObjects::NamespaceObjects& collision_space::En
 	return it->second;
 }
 
-void collision_space::EnvironmentObjects::addObject(const std::string &ns, const shapes::StaticShape *shape)
+collision_space::EnvironmentObjects::NamespaceObjects& collision_space::EnvironmentObjects::getObjects(const std::string &ns)
+{
+    return m_objects[ns];
+}
+
+void collision_space::EnvironmentObjects::addObject(const std::string &ns, shapes::StaticShape *shape)
 {
     m_objects[ns].staticShape.push_back(shape);
 }
 
-void collision_space::EnvironmentObjects::addObject(const std::string &ns, const shapes::Shape *shape, const btTransform &pose)
+void collision_space::EnvironmentObjects::addObject(const std::string &ns, shapes::Shape *shape, const btTransform &pose)
 {
     m_objects[ns].shape.push_back(shape);
     m_objects[ns].shapePose.push_back(pose);
+}
+
+bool collision_space::EnvironmentObjects::removeObject(const std::string &ns, const shapes::Shape *shape)
+{
+    std::map<std::string, NamespaceObjects>::iterator it = m_objects.find(ns);
+    if (it != m_objects.end())
+    { 
+	unsigned int n = it->second.shape.size();
+	for (unsigned int i = 0 ; i < n ; ++i)
+	    if (it->second.shape[i] == shape)
+	    {
+		it->second.shape.erase(it->second.shape.begin() + i);
+		it->second.shapePose.erase(it->second.shapePose.begin() + i);
+		return true;
+	    }
+    }
+    return false;
+}
+
+bool collision_space::EnvironmentObjects::removeObject(const std::string &ns, const shapes::StaticShape *shape)
+{
+    std::map<std::string, NamespaceObjects>::iterator it = m_objects.find(ns);
+    if (it != m_objects.end())
+    { 
+	unsigned int n = it->second.staticShape.size();
+	for (unsigned int i = 0 ; i < n ; ++i)
+	    if (it->second.staticShape[i] == shape)
+	    {
+		it->second.staticShape.erase(it->second.staticShape.begin() + i);
+		return true;
+	    }
+    }
+    return false;
 }
 
 void collision_space::EnvironmentObjects::clearObjects(const std::string &ns)

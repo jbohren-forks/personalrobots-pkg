@@ -292,26 +292,14 @@ bool collision_space::EnvironmentModelBullet::isSelfCollision(void)
     
     return false;
 }
-/*
-void collision_space::EnvironmentModelBullet::addPointCloudSpheres(const std::string &ns, unsigned int n, const double *points)
-{
-    btTransform t;
-    t.setIdentity();
-    
-    for (unsigned int i = 0 ; i < n ; ++i)
-    {
-	unsigned int i4 = i * 4;
-	btCollisionObject *object = new btCollisionObject();
-	btCollisionShape *shape = new btSphereShape(points[i4 + 3]);
-	object->setCollisionShape(shape);
-	t.setOrigin(btVector3(points[i4], points[i4 + 1], points[i4 + 2]));
-	object->setWorldTransform(t);
-	m_world->addCollisionObject(object);	
-	m_obstacles[ns].push_back(object);
-    }
-}
-*/
 
+void collision_space::EnvironmentModelBullet::removeCollidingObjects(const shapes::StaticShape *shape)
+{
+}
+
+void collision_space::EnvironmentModelBullet::removeCollidingObjects(const shapes::Shape *shape, const btTransform &pose)
+{
+}
 
 void collision_space::EnvironmentModelBullet::addObjects(const std::string &ns, const std::vector<shapes::Shape*> &shapes, const std::vector<btTransform> &poses)
 {
@@ -320,7 +308,7 @@ void collision_space::EnvironmentModelBullet::addObjects(const std::string &ns, 
 	addObject(ns, shapes[i], poses[i]);
 }
 
-void collision_space::EnvironmentModelBullet::addObject(const std::string &ns, const shapes::StaticShape* shape)
+void collision_space::EnvironmentModelBullet::addObject(const std::string &ns, shapes::StaticShape* shape)
 {
     btCollisionObject *obj = createCollisionBody(shape);
     m_world->addCollisionObject(obj);
@@ -328,7 +316,7 @@ void collision_space::EnvironmentModelBullet::addObject(const std::string &ns, c
     m_objects->addObject(ns, shape);
 }
 
-void collision_space::EnvironmentModelBullet::addObject(const std::string &ns, const shapes::Shape *shape, const btTransform &pose)
+void collision_space::EnvironmentModelBullet::addObject(const std::string &ns, shapes::Shape *shape, const btTransform &pose)
 {
     btCollisionObject *obj = createCollisionBody(shape, 1.0, 0.0);
     obj->setWorldTransform(pose);

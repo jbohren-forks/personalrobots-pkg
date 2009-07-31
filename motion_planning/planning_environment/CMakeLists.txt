@@ -36,6 +36,12 @@ target_link_libraries(display_planner_collision_model planning_environment)
 rospack_link_boost(display_planner_collision_model thread)
 rospack_add_openmp_flags(display_planner_collision_model)
 
+# Examples
+rospack_add_executable(remove_object_example src/examples/remove_object_example.cpp) 
+target_link_libraries(remove_object_example planning_environment)
+rospack_link_boost(remove_object_example thread)
+rospack_add_openmp_flags(remove_object_example)
+
 # Tests
 
 # Create a model of the PR2
