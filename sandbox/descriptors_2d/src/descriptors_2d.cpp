@@ -945,24 +945,24 @@ std::vector< std::vector<CvPoint> >* SuperpixelStatistic::getIndex() {
 ***********  ImageDescriptor::SuperpixelStatistic::SuperpixelColorHistogram
 ****************************************************************************/
  
-SuperpixelColorHistogram::SuperpixelColorHistogram(int seed_spacing, float scale, int nBins, SuperpixelStatistic* seg_provider, 
+SuperpixelColorHistogram::SuperpixelColorHistogram(int seed_spacing, float scale, int num_bins, SuperpixelStatistic* seg_provider, 
 						   SuperpixelColorHistogram* hsv_provider) : 
   SuperpixelStatistic(seed_spacing, scale, seg_provider), 
   hsv_(NULL), 
   hue_(NULL), 
   sat_(NULL), 
   val_(NULL), 
-  nBins_(nBins), 
+  num_bins_(num_bins), 
   hsv_provider_(hsv_provider), 
   max_val_(0), 
   hists_reserved_(false)
 {
   //printf("SuperpixelColorHistogram internal: %d\n", sizeof(SuperpixelColorHistogram));
   char buf[100];
-  sprintf(buf, "_colorHistogram_nBins%d", nBins);
+  sprintf(buf, "_colorHistogram_nBins%d", num_bins);
   name_.append(buf);
 
-  result_size_ = nBins_*nBins_;
+  result_size_ = num_bins_*num_bins_;
 }
 
 SuperpixelColorHistogram::~SuperpixelColorHistogram() {
@@ -1032,8 +1032,8 @@ void SuperpixelColorHistogram::doComputation(IplImage* img, const Keypoint& poin
   // -- Copy into result.
   result.resize(result_size_);
   int ctr = 0;
-  for(int i=0; i<nBins_; i++) {
-    for(int j=0; j<nBins_; j++) {
+  for(int i=0; i<num_bins_; i++) {
+    for(int j=0; j<num_bins_; j++) {
       result[ctr] = cvQueryHistValue_2D(histograms_cv_[label], i, j);
       ctr++;
     }
@@ -1042,8 +1042,8 @@ void SuperpixelColorHistogram::doComputation(IplImage* img, const Keypoint& poin
   if(debug_) {
     cout << name_ << endl;;
     cout << "cv hist: " << endl;
-    for(int i=0; i<nBins_; i++) {
-      for(int j=0; j<nBins_; j++) {
+    for(int i=0; i<num_bins_; i++) {
+      for(int j=0; j<num_bins_; j++) {
       cout << cvQueryHistValue_2D(histograms_cv_[label], i, j) << " ";
       }
     }
@@ -1060,7 +1060,7 @@ void SuperpixelColorHistogram::computeHistogramCV(int label) {
     float huerange[] = {0, 180}; //hsv
     float satrange[] = {0, 255}; //hsv
     float* ranges[] = {huerange, satrange}; //hue and sat.
-    int sizes[] = {nBins_, nBins_};
+    int sizes[] = {num_bins_, num_bins_};
     CvHistogram* hist = cvCreateHist(2, sizes, CV_HIST_ARRAY, ranges, 1);
     CvRect rect;
     IplImage* mask = createSegmentMask(label, &rect);
@@ -1581,14 +1581,14 @@ void IntegralImageTexture::doComputation(IplImage* img, const Keypoint& point, V
 ****************************************************************************/
  
 
-Histogram::Histogram(int nBins, float min, float max) : 
-  nInsertions_(0), 
-  nBins_(nBins), 
+Histogram::Histogram(int num_bins, float min, float max) : 
+  num_insertions_(0), 
+  num_bins_(num_bins), 
   min_(min), 
   max_(max)
 {
-  bin_size_ = (max_ - min_) / (float)nBins_;
-  boundaries_.reserve(nBins_+1);
+  bin_size_ = (max_ - min_) / (float)num_bins_;
+  boundaries_.reserve(num_bins_+1);
 
   float b = min_;
   while(b <= max_) {
@@ -1597,8 +1597,8 @@ Histogram::Histogram(int nBins, float min, float max) :
   } 
   boundaries_.push_back(max);
 
-  bins_.reserve(nBins_);
-  for(int i=0; i<nBins; i++) {
+  bins_.reserve(num_bins_);
+  for(int i=0; i<num_bins; i++) {
     bins_.push_back(0);
   }
 
@@ -1611,7 +1611,7 @@ Histogram::Histogram(int nBins, float min, float max) :
 
 //! Temporary, slow version.
 bool Histogram::insert(float val) {
-  nInsertions_++;
+  num_insertions_++;
   for(size_t i=0; i<boundaries_.size() - 1; i++) {
     if (boundaries_[i] <= val && boundaries_[i+1] + .001 >= val) {
       bins_[i]++;
@@ -1635,7 +1635,7 @@ void Histogram::normalize() {
 }
 
 void Histogram::print() {
-  cout << "Histogram (" << nInsertions_ << " insertions): " << endl;
+  cout << "Histogram (" << num_insertions_ << " insertions): " << endl;
   for(size_t i=0; i<bins_.size(); i++) {
     cout << bins_[i] << " ";
   }
@@ -1646,7 +1646,7 @@ void Histogram::printGraph() {
   Histogram h2 = *this;
   h2.normalize();
 
-  cout << "Histogram (" << nInsertions_ << " insertions) graph: " << endl;
+  cout << "Histogram (" << num_insertions_ << " insertions) graph: " << endl;
   for(float row=1; row >= 0; row=row-.1) {
     for(size_t i=0; i<h2.bins_.size(); i++) {
       if(h2.bins_[i] >= row)
@@ -1675,5 +1675,5 @@ void Histogram::clear() {
   for(size_t i=0; i<bins_.size(); i++) {
     bins_[i] = 0;
   }
-  nInsertions_ = 0;
+  num_insertions_ = 0;
 }

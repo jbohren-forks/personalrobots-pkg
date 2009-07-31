@@ -38,8 +38,8 @@ typedef cv::Vector< cv::Vector<float> > vvf;
 class Histogram {
 public:
   std::vector<float> bins_;
-  Histogram(int nBins, float min, float max);
-  int nInsertions_;
+  Histogram(int num_bins, float min, float max);
+  int num_insertions_;
   bool insert(float val);
   void normalize();
   void print();
@@ -49,7 +49,7 @@ public:
 
 private:
   std::vector<float> boundaries_;
-  int nBins_;
+  int num_bins_;
   float min_;
   float max_;
   float bin_size_;
@@ -85,7 +85,7 @@ class ImageDescriptor {
   std::string name_;
   //! Length of the vector that results from computing the feature at a point.
   unsigned int result_size_;
-  //! The image that we are computing descriptors on.
+  //! Pointer to the image that we are computing descriptors on.
   IplImage* img_;
 
   //! Show the input image and a red + at the point at which the descriptor is being computed.
@@ -316,11 +316,11 @@ class SuperpixelColorHistogram : public SuperpixelStatistic {
   IplImage* val_;
   IplImage* channel_;
 
-  SuperpixelColorHistogram(int seed_spacing, float scale, int nBins, SuperpixelStatistic* seg_provider=NULL, SuperpixelColorHistogram* hsv_provider_=NULL);
+  SuperpixelColorHistogram(int seed_spacing, float scale, int num_bins, SuperpixelStatistic* seg_provider=NULL, SuperpixelColorHistogram* hsv_provider_=NULL);
   ~SuperpixelColorHistogram();
 
  protected:
-  int nBins_;
+  int num_bins_;
   //! Not used right now.
   SuperpixelColorHistogram* hsv_provider_;
   float max_val_;
