@@ -124,7 +124,14 @@ public:
                        const std::string& fixed_frame, Stamped<btTransform>& transform) const;
   bool canTransform(const std::string& target_frame, const std::string& source_frame,
                     const ros::Time& time, const ros::Duration& timeout, const ros::Duration& polling_sleep_duration = ros::Duration(0.01),
-                    std::string* error_msg = NULL) const;
+                    std::string* error_msg = NULL) const __attribute__((deprecated))
+  {
+    return waitForTransform( target_frame, source_frame, time, timeout, polling_sleep_duration, error_msg);
+  };
+
+  bool waitForTransform(const std::string& target_frame, const std::string& source_frame,
+                        const ros::Time& time, const ros::Duration& timeout, const ros::Duration& polling_sleep_duration = ros::Duration(0.01),
+                        std::string* error_msg = NULL) const;
   bool canTransform(const std::string& target_frame, const std::string& source_frame,
                     const ros::Time& time,
                     std::string* error_msg = NULL) const;
@@ -134,6 +141,15 @@ public:
                     const std::string& fixed_frame,
                     std::string* error_msg = NULL) const;
   bool canTransform(const std::string& target_frame, const ros::Time& target_time,
+                    const std::string& source_frame, const ros::Time& source_time,
+		    const std::string& fixed_frame,
+                    const ros::Duration& timeout, const ros::Duration& polling_sleep_duration = ros::Duration(0.01),
+                    std::string* error_msg = NULL) const __attribute__((deprecated))
+  {
+    return waitForTransform(target_frame, target_time, source_frame,source_time, fixed_frame, timeout, polling_sleep_duration, error_msg);
+  };
+
+  bool waitForTransform(const std::string& target_frame, const ros::Time& target_time,
                     const std::string& source_frame, const ros::Time& source_time,
 		    const std::string& fixed_frame,
                     const ros::Duration& timeout, const ros::Duration& polling_sleep_duration = ros::Duration(0.01),

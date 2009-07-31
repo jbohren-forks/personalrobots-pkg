@@ -864,6 +864,45 @@ TEST(tf, NO_PARENT_SET)
   
 }
 
+TEST(tf, waitForTransform)
+{
+  tf::Transformer mTR(true);
+  
+  // make sure timeout is resonably lengthed
+
+  ros::Duration timeout = ros::Duration().fromSec(1.0);
+  ros::Duration poll_freq = ros::Duration().fromSec(0.1);
+  double eps = 0.2;
+
+  // Default polling freq
+  ros::Time start_time = ros::Time::now();
+  EXPECT_FALSE(mTR.waitForTransform("parent", "me", ros::Time().fromNSec(10000000), timeout));
+  ros::Time stop_time = ros::Time::now();
+  EXPECT_TRUE(fabs(((stop_time-start_time)-timeout).toSec()) < eps);
+
+  // 10Hz polling
+  start_time = ros::Time::now();
+  EXPECT_FALSE(mTR.waitForTransform("parent", "me", ros::Time().fromNSec(10000000), timeout, poll_freq));
+  stop_time = ros::Time::now();
+  EXPECT_TRUE(fabs(((stop_time-start_time)-timeout).toSec()) < eps);
+  
+
+  //Now it should be able to transform
+  mTR.setTransform( Stamped<btTransform>(btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time().fromNSec(10000000) , "me",  "parent"));
+  
+  start_time = ros::Time::now();
+  EXPECT_TRUE(mTR.waitForTransform("parent", "me", ros::Time().fromNSec(10000000),timeout));
+  stop_time = ros::Time::now();
+  EXPECT_TRUE(fabs(((stop_time-start_time)).toSec()) < eps);
+
+
+  start_time = ros::Time::now();
+  EXPECT_TRUE(mTR.waitForTransform("parent", "me", ros::Time().fromNSec(10000000),timeout, poll_freq));
+  stop_time = ros::Time::now();
+  EXPECT_TRUE(fabs(((stop_time-start_time)).toSec()) < eps);
+}
+
+
 TEST(tf, Exceptions)
 {
 
@@ -889,15 +928,6 @@ TEST(tf, Exceptions)
    EXPECT_FALSE("Other Exception Caught");
  }
  
-
- ros::Duration timeout = ros::Duration().fromSec(2.0);
- double eps = 0.2;
- ros::Time start_time = ros::Time::now();
- EXPECT_FALSE(mTR.canTransform("parent", "me", ros::Time().fromNSec(10000000), timeout));
- ros::Time stop_time = ros::Time::now();
- EXPECT_TRUE(fabs(((stop_time-start_time)-timeout).toSec()) < eps);
-
-
  mTR.setTransform( Stamped<btTransform>(btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time().fromNSec(100000) , "me",  "parent"));
 
  //Extrapolation not valid with one value
@@ -938,10 +968,6 @@ TEST(tf, Exceptions)
    EXPECT_FALSE("Other Exception Caught");
  }
 
- start_time = ros::Time::now();
- EXPECT_TRUE(mTR.canTransform("parent", "me", ros::Time().fromNSec(200000),timeout));
- stop_time = ros::Time::now();
- EXPECT_TRUE(fabs(((stop_time-start_time)).toSec()) < eps);
 
 
  //forward list

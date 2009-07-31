@@ -264,10 +264,10 @@ void Transformer::lookupTransform(const std::string& target_frame,const ros::Tim
 
 
 
-bool Transformer::canTransform(const std::string& target_frame, const std::string& source_frame,
-                               const ros::Time& time,
-                               const ros::Duration& timeout, const ros::Duration& polling_sleep_duration,
-                               std::string* error_msg) const
+bool Transformer::waitForTransform(const std::string& target_frame, const std::string& source_frame,
+                                   const ros::Time& time,
+                                   const ros::Duration& timeout, const ros::Duration& polling_sleep_duration,
+                                   std::string* error_msg) const
 {
   ros::Time start_time = ros::Time::now();
   while (!canTransform(target_frame, source_frame, time, error_msg))
@@ -294,10 +294,10 @@ bool Transformer::canTransform(const std::string& target_frame, const std::strin
 
   if (local_time == ros::Time())
     if (NO_ERROR != getLatestCommonTime(mapped_source_frame, mapped_target_frame, local_time, error_msg)) // set time if zero
-      {
-	return false;
-      }
-
+    {
+      return false;
+    }
+  
 
 
   TransformLists t_list;
@@ -311,6 +311,7 @@ bool Transformer::canTransform(const std::string& target_frame, const std::strin
   {
     return false;
   }
+  
 
 
   ///\todo WRITE HELPER FUNCITON TO RETHROW
@@ -326,7 +327,7 @@ bool Transformer::canTransform(const std::string& target_frame, const std::strin
     }
   }
 
-  if (test_extrapolation(local_time, t_list, NULL))
+  if (test_extrapolation(local_time, t_list, error_msg))
     {
       return false;
     }
@@ -341,12 +342,12 @@ bool Transformer::canTransform(const std::string& target_frame,const ros::Time& 
   return canTransform(target_frame, fixed_frame, target_time) && canTransform(fixed_frame, source_frame, source_time, error_msg);
 };
 
-bool Transformer::canTransform(const std::string& target_frame,const ros::Time& target_time, const std::string& source_frame,
-			       const ros::Time& source_time, const std::string& fixed_frame,
-                               const ros::Duration& timeout, const ros::Duration& polling_sleep_duration,
-                               std::string* error_msg) const
+bool Transformer::waitForTransform(const std::string& target_frame,const ros::Time& target_time, const std::string& source_frame,
+                                   const ros::Time& source_time, const std::string& fixed_frame,
+                                   const ros::Duration& timeout, const ros::Duration& polling_sleep_duration,
+                                   std::string* error_msg) const
 {
-  return canTransform(target_frame, fixed_frame, target_time, timeout, polling_sleep_duration) && canTransform(fixed_frame, source_frame, source_time, timeout, polling_sleep_duration, error_msg);
+  return waitForTransform(target_frame, fixed_frame, target_time, timeout, polling_sleep_duration, error_msg) && waitForTransform(fixed_frame, source_frame, source_time, timeout, polling_sleep_duration, error_msg);
 };
 
 
