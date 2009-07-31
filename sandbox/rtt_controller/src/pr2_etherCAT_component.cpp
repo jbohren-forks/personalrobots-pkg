@@ -18,7 +18,7 @@ private:
     WriteDataPort<std::vector<double> > joint_pos_port;
     WriteDataPort<std::vector<double> > joint_vel_port;
     EthercatHardware ec;
-    MechanismControl* mc;
+    controller::MechanismControl* mc;
     std::vector<double> joint_pos,joint_vel,joint_eff;
     std::vector<mechanism::JointState*> joints;
     
@@ -72,7 +72,7 @@ public:
         bool allow_override=false;
         ec.initXml(root, allow_override);
         // Create mechanism control
-        mc = new MechanismControl(ec.hw_);
+        mc = new controller::MechanismControl(ec.hw_);
         // Initialize mechanism control from robot description
         mc->initXml(root);
 
