@@ -7,6 +7,15 @@
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/mturk_grab_object</url>
 
+  <depend package="table_object_detector" />
+  <depend package="tabletop_srvs" />
+  <depend package="tabletop_msgs" />
+  <depend package="sensor_msgs" />
+
+  <depend package="robot_actions" />
+  <depend package="pr2_robot_actions" />
+  <depend package="motion_planning_msgs" />
+  
 </package>
 
 
