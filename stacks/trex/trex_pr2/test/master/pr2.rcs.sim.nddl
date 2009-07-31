@@ -1,5 +1,6 @@
 #include "test/master/sim.nddl";
 #include "test/locations.nddl";
+#include "mechanism_control/controllers.nddl"
 
 #include "test/sim/default_rules.nddl"
 

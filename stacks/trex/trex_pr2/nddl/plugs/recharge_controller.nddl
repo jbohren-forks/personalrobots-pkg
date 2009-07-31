@@ -216,6 +216,11 @@ RechargeController::LocalizingPlugInGripper{
   }
 }
 
+/**
+ * After we have plugged in successfully, we transition to Inactive. Note that
+ * the timepoint for that actual transition is not bound by the recharger. Instead, the
+ * successor will require a plug_stowed state which will need to first be established.
+ */
 RechargeController::PluggingIn{
   contained_by(recharger.Active rc);
   contains(plug_in.Active cmd);
@@ -223,6 +228,7 @@ RechargeController::PluggingIn{
   eq(cmd.outlet_id, rc.outlet_id);
 
   if(cmd.status == SUCCESS){
+    // @see Inactive rule for how the start time gets bound
     meets(Inactive s);
     eq(s.status, SUCCESS);
   }

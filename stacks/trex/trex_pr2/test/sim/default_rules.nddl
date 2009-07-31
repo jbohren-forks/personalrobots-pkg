@@ -4,23 +4,26 @@
 DoorManipulationBehavior::Active{
   meets(Inactive s);
   eq(s.status, SUCCESS);
-  eq(duration, 1);
+  defaultOnCommit(duration, 1);
 }
 
 CheckPath::Active{
   meets(Inactive s);
   eq(s.status, SUCCESS);
-  eq(duration, 1);
+  defaultOnCommit(duration, 1);
 }
 
 MoveBase::Active{
   meets(Inactive s);
   eq(s.status, SUCCESS);
-  eq(duration, 1);
+  defaultOnCommit(duration, 1);
+  meets(base_state.Holds bs);
+  eq_pose_msg(s.object, object);
+  eq_pose_msg(bs.object, object);
 }
 
 StopAction::Active{
-  eq(duration, 5);
+  defaultOnCommit(duration, 5);
   meets(Inactive s);
   eq(s.status, SUCCESS);
 }
@@ -36,3 +39,13 @@ UnlatchHandle::Inactive{
     eq(latch_state, LATCH_STATE_UNLATCHED);
   }
 }
+
+PushDoor::Active{
+  eq(duration, 10);
+}
+
+OpenDoor::Active{
+  eq(duration, 10);
+}
+
+

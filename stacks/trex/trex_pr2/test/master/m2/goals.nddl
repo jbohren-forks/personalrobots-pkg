@@ -1,5 +1,4 @@
 /** ALL M2 GOALS **/
-/*
 rejectable(m2_goals.Active g_0);
 g_0.outlet_id = 1;
 rejectable(m2_goals.Active g_1);
@@ -22,7 +21,3 @@ rejectable(m2_goals.Active g_10);
 g_10.outlet_id = 40;
 rejectable(m2_goals.Active g_11);
 g_11.outlet_id = 26;
-*/
-
-rejectable(m2_goals.Active g_2);
-g_2.outlet_id = 6;

@@ -283,6 +283,7 @@ DoorController::DetectingHandle{
   ends cmd;
   // Duration bounds
   leq(cmd.max_duration, DETECT_HANDLE_DURATION_BOUND);
+
   // If we fail here, we can try get a new door pose. If we succeed we are ready to approach the door to open it
   if(cmd.status == SUCCESS){
     meets(ApproachingDoor);

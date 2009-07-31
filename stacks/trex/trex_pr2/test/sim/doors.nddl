@@ -35,5 +35,10 @@ StopAction stop_action = new StopAction(Internal);
 
 SimulationControl simulation_control = new SimulationControl();
 
+DetectDoor::Active{
+  meets(Inactive s);
+  eq(s.latch_state, LATCH_STATE_LATCHED);
+}
+
 
 
