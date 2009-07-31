@@ -46,7 +46,7 @@
 #include "sensor_msgs/CameraInfo.h"
 #include "sensor_msgs/Image.h"
 #include "opencv_latest/CvBridge.h"
-#include "visualization_msgs/ColoredLines.h"
+#include "people/ColoredLines.h"
 #include "topic_synchronizer/topic_synchronizer.h"
 #include "tf/transform_listener.h"
 #include <tf/message_notifier.h>
@@ -160,7 +160,7 @@ namespace people
       node_->advertise<people::PositionMeasurement>("people_tracker_measurements",1);
 
       if (do_display_) {
-	node_->advertise<visualization_msgs::ColoredLines>("lines_to_draw",1);
+	node_->advertise<people::ColoredLines>("lines_to_draw",1);
 	ROS_INFO_STREAM_NAMED("color_tracker","Advertising colored lines to draw remotely.");
       }
 
@@ -740,8 +740,8 @@ namespace people
 
 
       if (do_display_) {
-	visualization_msgs::ColoredLines all_cls;
-	vector<visualization_msgs::ColoredLine> lines; 
+	people::ColoredLines all_cls;
+	vector<people::ColoredLine> lines; 
 	lines.resize(4); 
 	lines[0].r = 255; lines[0].g = 0; lines[0].b = 0;
 	lines[1].r = 255; lines[1].g = 0; lines[1].b = 0;
