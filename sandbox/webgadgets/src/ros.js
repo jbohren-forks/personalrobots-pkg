@@ -104,9 +104,9 @@ var ROSTopic = Class.create({
 ////////////////////////////////////////////////////////////////////////////////
 // A ROS Gadget. This will load a ros gadget
 var ROSGadget = Class.create({
-  create: function(titleName)
+  create: function(titleName, width)
   {
-    var maxY = 50;
+    var maxY = 70;
     allGadgets = document.getElementById('maincontent').getElementsByTagName('div');
 
     for (i=0; i<allGadgets.length; i++)
@@ -123,10 +123,12 @@ var ROSGadget = Class.create({
       }
     }
 
+    var d = new Date();
+
     this.mainDiv = document.createElement('div');
     this.mainDiv.id = 'gadget';
-    this.mainDiv.name = 'gadget';
-    this.mainDiv.style.width = '600px';
+    this.mainDiv.name = titleName + d.getTime();
+    this.mainDiv.style.width = width + 'px';
     this.mainDiv.style.padding = '10px';
     this.mainDiv.style.position = 'fixed';
     this.mainDiv.style.left = "10px";
@@ -140,10 +142,28 @@ var ROSGadget = Class.create({
     
     this.titleSpan = document.createElement("span");
     title = document.createElement("b");
-    title.style.id = "mytitle";
+    title.style.id = "gadgetTitle";
     title.style.cssFloat = "left";
+    title.style.margin= "0 0 0 30px";
     title.innerHTML = titleName;
+
+    this.closeButton = document.createElement('a');
+    this.closeButton.id = 'closeButton';
+    this.closeButton.href='#';
+    this.closeButton.id ='xbutton';
+    this.closeButton.innerHTML = "<img src='images/xicon.png' style='margin-top:2px;' height='20px'>";
+
+    this.helpButton = document.createElement('a');
+    this.helpButton.href='#';
+    this.helpButton.id ='xbutton';
+    this.helpButton.innerHTML = "<img src='images/questionicon.png' style='margin-top:2px;'  height='20px'>";
+
+    this.titleSpan.appendChild(this.closeButton);
+    this.titleSpan.appendChild(this.helpButton);
     this.titleSpan.appendChild(title);
+
+    this.closeButton.observe('click', this.closeGadget.bind(this) );
+    this.helpButton.observe('click', this.helpGadget.bind(this) );
 
 
     this.headerDiv.appendChild(this.titleSpan);
@@ -157,6 +177,36 @@ var ROSGadget = Class.create({
     this.dragging = false;
     this.divDragStart = {'x': 0, 'y':0};
     this.mainDivStart = {'x': 0, 'y':0};
+
+    // The help DIV
+    this.helpDiv = document.createElement("div");
+    this.helpDiv.id = "helpbox";
+    this.helpDiv.style.display = "none";
+    helpDivHeader = document.createElement("div");
+    helpDivHeader.id = "header";
+    helpDivHeader.innerHTML = "Help: "+titleName+"";
+    this.helpDivContent = document.createElement("div");
+    this.helpDivContent.id = "content";
+
+    this.helpDiv.appendChild(helpDivHeader);
+    this.helpDiv.appendChild(this.helpDivContent);
+
+    document.body.appendChild(this.helpDiv);
+  },
+
+  setHelpText : function(txt)
+  {
+    this.helpDivContent.innerHTML = txt;
+  },
+
+  closeGadget : function(e)
+  {
+    this.mainDiv.remove();
+  },
+
+  helpGadget : function(e)
+  {
+    this.helpDiv.style.display = "";
   },
 
   dragDivStart : function(e)
@@ -198,11 +248,13 @@ var ROSGadget = Class.create({
       newX = Math.max(10, newX);
       newY = Math.max(headerHeight, newY);
 
-      if (newX + width > document.body.clientWidth-10)
+      /// This will lock the widgets to the viewable area.
+      /*if (newX + width > document.body.clientWidth-10)
         newX = document.body.clientWidth - width - 10;
       
       if (newY + height > document.body.clientHeight-headerHeight)
         newY = document.body.clientHeight - height - headerHeight;
+        */
 
 
       this.mainDiv.style.left = newX + "px";

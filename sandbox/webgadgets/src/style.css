@@ -15,6 +15,19 @@ a:hover
   color: #6f98ee;
 }
 
+#xbutton
+{
+  line-height: 10px;
+  display: inline;
+  float: left;
+  margin-right: 5px;
+  margin-top: 2px;
+}
+
+#xbutton img
+{
+  border: none;
+}
 #mainheader
 {
   border-bottom: 5px solid #1e2a47;
@@ -25,38 +38,76 @@ a:hover
 {
   font-size: 200%;
   font-weight: bold;
+  width: 300px;
+  height: 40px;
   color: #1e2a47;
 }
 
-
-
-#displaybox
+#helpbox
 {
-  z-index: 10000;
+  z-index: 500;
   border: 2px solid black;
   background-color: #FFFFFF;
   position: fixed;
   width: 80%;
-  height: 80%;
+  left: 10%;
+  height: 150%;
   text-align: center;
   vertical-align: middle;
-  padding-left: 10px;
-  padding-right: 10px;
-  padding-bottom: 10px;
+  overflow: auto;
 }
 
-#displaybox h1
+#helpbox #header
+{
+  border:1px solid black;
+  display:block;
+  width:100%;
+  background-image: url("images/gadgetHeaderBkg.png");
+  background-repeat:repeat-x;
+  height: 30px; 
+  vertical-align:middle;
+  font-size: 180%;
+  font-weight: bold;
+  color: #ffffff;
+}
+
+#helpbox #content
+{
+  font-size: 110%;
+}
+
+#displaybox
+{
+  z-index: 1000;
+  border: 2px solid black;
+  background-color: #FFFFFF;
+  position: fixed;
+  width: 80%;
+  height: 150%;
+  text-align: center;
+  vertical-align: middle;
+  overflow: auto;
+  /*padding-left: 10px;
+  padding-right: 10px;
+  padding-bottom: 10px;
+  */
+}
+
+/*#displaybox h1
 {
   display:block; 
   color: #1e2a47; 
   background-color:#7cbd47;
-}
+}*/
+
 
 #displaybox #gadgetdesc
 {
   text-align: left;
-  border-bottom: 1px solid black;
+  border-bottom: 1px dotted black;
   min-height: 140px;
+  margin-left: 10px;
+  margin-right: 10px;
 }
 
 #displaybox #gadgetdesc #imgbox
@@ -82,26 +133,26 @@ a:hover
 
 #gadget #header
 {
-  background-color: #7cbd47;
+  background-image: url('images/gadgetHeaderBkg.png');
   vertical-align: middle;
-  border: 1px solid #537e2f;
+  border: 1px solid #16223f;
   height: 30px;
   line-height: 30px;
   padding-left: 5px;
   padding-right: 5px;
-  color: #1e2a47;
+  color: #FFFFFF;
   font-weight: bold;
-  font-size: 120%;
+  font-size: 140%;
+  text-align: center;
 }
 
 #gadget #content
 {
   padding: 10px;
-  background-color: #eef9e6;
-  
-  border-left: 1px solid #629b34;
-  border-right: 1px solid #629b34;
-  border-bottom: 1px solid #629b34;
+  background-color: #cdd2de; 
+  border-left: 1px solid #16223f;
+  border-right: 1px solid #16223f;
+  border-bottom: 1px solid #16223f;
 }
 
 .gadget #content img
@@ -116,10 +167,6 @@ a:hover
   width: 500;
   height: 300;
   border: 1px solid black;
-  /*top: 0;
-  left: 0;
-  margin: 0 auto;
-  */
   position: absolute;
 }
 

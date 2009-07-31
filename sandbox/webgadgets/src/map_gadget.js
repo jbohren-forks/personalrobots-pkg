@@ -2,7 +2,7 @@ var ROSMapGadget = Class.create(ROSGadget, {
   initialize: function(service)
   {
     // Create the ros gadget 
-    this.create("Nav View");
+    this.create("Nav View", 600);
 
     // Create the set pose button
     this.setPoseButton = document.createElement("input");

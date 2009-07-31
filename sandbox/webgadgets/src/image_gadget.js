@@ -1,7 +1,7 @@
 var ROSImageGadget = Class.create(ROSGadget, {
   initialize: function()
   {
-    this.create("Image View");
+    this.create("Image View", 600);
 
     this.subscribeButton = document.createElement('input');
 

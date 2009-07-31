@@ -8,6 +8,7 @@
     <script type="text/javascript" src="image_gadget.js"></script>
     <script type="text/javascript" src="map_gadget.js"></script>
     <script type="text/javascript" src="startup_gadget.js"></script>
+    <script type="text/javascript" src="joystick_gadget.js"></script>
     <script type="text/javascript">
 
       function showGadgets()
@@ -35,7 +36,8 @@
           gadget = new ROSImageGadget();
         else if (name == "map_gadget")
           gadget = new ROSMapGadget();
-
+        else if (name == "joystick_gadget")
+          gadget = new ROSJoystickGadget();
       }
 
       function init()
@@ -48,19 +50,25 @@
   </head>
 
   <body>
+
     <div id="mainheader">
-      <div id="title">ROS Web Gadgets</div>
+      <div id="title"><object data='images/maintitle.svg' width="100%" height="100%" type='image/svg+xml'></div>
       <div style="width:100%; text-align: right;"><a href='#' onclick='showGadgets();'>+ Add Gadget</a></div>
     </div>
 
+    <!-- This is the pop-up window that allows a user to add gadgets -->
     <div id='displaybox' style="display:none;">
-      <a href='#' style="float:left; float:top; padding-top:2px;font-weight: bold;" onclick="hideGadgets();">Close</a>
-      <h1> Add Gadget </h1>
+
+      <div style='border:1px solid black;display:block;width:100%;background-image: url("images/gadgetHeaderBkg.png");background-repeat:repeat-x; height: 30px; vertical-align:middle;'>
+        <a href='#' style="float:left; float:top; padding-top:2px;font-weight: bold;" onclick="hideGadgets();"><img src='images/xicon.png' height="15px" style="border:none;margin-left:2px;"></a>
+        <b style="color: #ffffff;font-size:180%;vertical-align:middle;">Add Gadget</b>
+      </div>
 
       <div id="gadgetdesc">
         <div id="imgbox">
-          <img src="images/imageview.png" style="margin-bottom:10px;" height="100px">
-          <a href="#" style="display: block;" onclick="addGadget('image_gadget');"><b>Add Now</b></a>
+          <a href="#" style="display: block;" onclick="addGadget('image_gadget');">
+            <img src="images/imageview.png" style="margin-bottom:10px;display:block;border:1px solid black;" height="100px">
+          <b>Add Now</b></a>
         </div>
 
         <p>
@@ -73,9 +81,9 @@
 
       <div id="gadgetdesc">
         <div id="imgbox">
-          <img src="images/navview.png" style="margin-bottom:10px;" height ="100px">
-          <a href="#" style="display:block;" 
-            onclick="addGadget('map_gadget');"><b>Add Now</b></a>
+          <a href="#" style="display:block;" onclick="addGadget('map_gadget');">
+            <img src="images/navview.png" style="margin-bottom:10px;display:block; border: 1px solid bloack;" height ="100px">
+          <b>Add Now</b></a>
         </div>
 
         <p>
@@ -87,6 +95,22 @@
           The map can be zoomed using the middle scroll wheel.
         </p>
       </div>
+
+      <div id="gadgetdesc">
+        <div id="imgbox">
+          <a href="#" style="display:block;" onclick="addGadget('joystick_gadget');">
+            <img src="images/navview.png" style="margin-bottom:10px;display:block; border: 1px solid bloack;" height ="100px">
+          <b>Add Now</b></a>
+        </div>
+
+        <p>
+          <h2>Joystick</h2>
+          The joystick gadget is capable of starting the joystick controller
+          for the robot. Once started the external PS3 jostick can be used
+          to drive the robot.
+        </p>
+      </div>
+
     </div>
 
     <div id='maincontent'> </div>
