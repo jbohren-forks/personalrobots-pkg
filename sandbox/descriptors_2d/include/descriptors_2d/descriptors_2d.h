@@ -18,11 +18,6 @@
 #include <errno.h>
 #include <sys/stat.h>
 
-namespace cv
-{
-    typedef KeyPoint Keypoint;
-}
-
 typedef cv::Vector< cv::Vector<float> > vvf;
 #define CVSHOW(name, img) cvNamedWindow(name); cvShowImage(name, img)
   
@@ -40,6 +35,7 @@ public:
   std::vector<float> bins_;
   Histogram(int num_bins, float min, float max);
   int num_insertions_;
+  //! Temporary, slow version.
   bool insert(float val);
   void normalize();
   void print();
@@ -74,11 +70,17 @@ class ImageDescriptor {
   std::string getName();
   //! Returns result_size_.
   unsigned int getSize();
-  //! Clean up any data specific to computation at a point.
+  //! Cleans up any data specific to computation at a point.
   virtual void clearPointCache() {}
-  //! Clean up any data specific to computation on a particular image.
+  //! Cleans up any data specific to computation on a particular image.
   virtual void clearImageCache() {}
-  void compute(IplImage* img, const cv::Vector<cv::Keypoint>& points, vvf& results);
+
+  //! @brief Primary user call to compute a set of features on an image.
+  //! @param img The image to operate on.
+  //! @param points A Vector of KeyPoints of the points at which to compute features.
+  //! @param results A Vector<Vector<float>>  that contains the results.  
+  //!        results[i].empty() == true if no feature could be computed at points[i].  results should be passed in empty, and compute will fill it in.
+  void compute(IplImage* img, const cv::Vector<cv::KeyPoint>& points, vvf& results);
 
  protected:
   //! Name of the descriptor.  Should be unique for any parameter setting.
@@ -88,10 +90,12 @@ class ImageDescriptor {
   //! Pointer to the image that we are computing descriptors on.
   IplImage* img_;
 
-  //! Show the input image and a red + at the point at which the descriptor is being computed.
-  void commonDebug(cv::Keypoint kp, IplImage* vis = NULL);
+  //! @brief Shows the input image and a red + at the point at which the descriptor is being computed.
+  //! @param kp The point at which we are computing a descriptor.
+  //! @param vis An image to draw on, so commonDebug can be combined with other debugging output on the same image.
+  void commonDebug(cv::KeyPoint kp, IplImage* vis = NULL);
   //! Vectorized feature computation call.
-  virtual void doComputation(IplImage* img, const cv::Vector<cv::Keypoint>& points, vvf& results) = 0;
+  virtual void doComputation(IplImage* img, const cv::Vector<cv::KeyPoint>& points, vvf& results) = 0;
 
 };
 
@@ -110,13 +114,13 @@ class SurfWrapper : public ImageDescriptor {
   bool extended_;
   int size_;
 
-  /** 
-   * @param extended If true, features are 128 elements long.  Otherwise, they are 64. 
-   * @param size A scaling factor applied to the support of the descriptor.
-   */
+  //! @param extended If true, features are 128 elements long.  Otherwise, they are 64. 
+  //! @param size A scaling factor applied to the support of the descriptor.
   SurfWrapper(bool extended = true, int size = 100);
   ~SurfWrapper();
-  void doComputation(IplImage* img, const cv::Vector<cv::Keypoint>& points, vvf& results);
+
+ protected:
+  void doComputation(IplImage* img, const cv::Vector<cv::KeyPoint>& points, vvf& results);
 };
 
 /***************************************************************************
@@ -133,7 +137,7 @@ class HogWrapper : public ImageDescriptor {
   HogWrapper(cv::Size winSize, cv::Size blockSize, cv::Size blockStride, cv::Size cellSize,
 	     int nbins, int derivAperture=1, double winSigma=-1,
 	     int histogramNormType=0, double L2HysThreshold=0.2, bool gammaCorrection=false); //0=L2Hys
-  void doComputation(IplImage* img, const cv::Vector<cv::Keypoint>& points, vvf& results);
+  void doComputation(IplImage* img, const cv::Vector<cv::KeyPoint>& points, vvf& results);
   
  protected:
   cv::HOGDescriptor hog_;
@@ -164,26 +168,26 @@ class IntegralImageDescriptor : public ImageDescriptor {
  protected:
   IntegralImageDescriptor* ii_provider_;
 
-  bool integrateRect(float* result, int row_offset, int col_offset, int half_height, int half_width, const cv::Keypoint& kp, float* area = NULL);
-  bool integrateRect(float* result, const cv::Keypoint& kp, const CvRect& rect);
+  bool integrateRect(float* result, int row_offset, int col_offset, int half_height, int half_width, const cv::KeyPoint& kp, float* area = NULL);
+  bool integrateRect(float* result, const cv::KeyPoint& kp, const CvRect& rect);
   void integrate();
   virtual void clearImageCache();
 };
 
 /**
  * @class HaarDescriptor
- * @brief Haar descriptor like those from Viola-Jones.
+ * @brief Haar descriptor like those from Viola-Jones.  The scale of the window is determined by cv::KeyPoint.
  */
 class HaarDescriptor : public IntegralImageDescriptor {
  public:
   HaarDescriptor(cv::Vector<CvRect> rects, cv::Vector<int> weights, IntegralImageDescriptor* ii_provider = NULL);
-  //! Scale of the window is determined by cv::Keypoint.
-  void doComputation(IplImage* img, const cv::Vector<cv::Keypoint>& points, vvf& results);
 
  protected:
   cv::Vector<CvRect> rects_;
   //! e.g. weights_[i] == -1 if the sum of values in rects_[i] should be subtracted.
   cv::Vector<int> weights_;
+
+  void doComputation(IplImage* img, const cv::Vector<cv::KeyPoint>& points, vvf& results);
 };
 
 vector<ImageDescriptor*> setupDefaultHaarDescriptors();
@@ -194,12 +198,15 @@ vector<ImageDescriptor*> setupDefaultHaarDescriptors();
  */
 class IntegralImageTexture : public IntegralImageDescriptor {
  public:
+  //! @param scale The multiplicative factor to apply to the 
+  //! @param ii_provider A pointer to an object with an integral image to use.  If NULL, this object will compute the integral image.
   IntegralImageTexture(int scale = 1, IntegralImageDescriptor* ii_provider = NULL);
-  void doComputation(IplImage* img, const cv::Vector<cv::Keypoint>& points, vvf& results);
-  void doComputation(IplImage* img, const cv::Keypoint& point, cv::Vector<float>& result);
 
  protected:
   int scale_;
+
+  void doComputation(IplImage* img, const cv::Vector<cv::KeyPoint>& points, vvf& results);
+  void doComputation(IplImage* img, const cv::KeyPoint& point, cv::Vector<float>& result);
 };
 
 
@@ -209,7 +216,7 @@ class IntegralImageTexture : public IntegralImageDescriptor {
 
 /**
  * @class ContourFragmentManager
- * @brief Class to load, save, and extract contour fragments. 
+ * @brief Class to load, save, and extract contour fragments.
  */
 class ContourFragmentManager {
  public:
@@ -249,13 +256,15 @@ class ContourFragmentDescriptor : public ImageDescriptor {
   ContourFragmentDescriptor(int cf_id, string dir);
   //! Uses another ContourFragmentDescriptor object to get its data.  
   ContourFragmentDescriptor(int cf_id, ContourFragmentDescriptor* chamfer_provider);
-  void doComputation(IplImage* img, const cv::Vector<cv::Keypoint>& points, vvf& results);
+
 
  private:
   int cf_id_;
   ContourFragmentManager cfc_;
   ChamferMatching* chamfer_;
   ChamferMatch* matches_;
+
+  void doComputation(IplImage* img, const cv::Vector<cv::KeyPoint>& points, vvf& results);
 };
 
 
@@ -270,7 +279,10 @@ class ContourFragmentDescriptor : public ImageDescriptor {
  */
 class SuperpixelStatistic : public ImageDescriptor {
  public:
-  SuperpixelStatistic(int seed_spacing, float scale, SuperpixelStatistic* provider);
+  //! @param seed_spacing Number of pixels between each seed of the segmentation.
+  //! @param scale How to scale the image before doing the segmentation.  Generally this is less than 1 to make the segmentation run faster on a smaller image.
+  //! @param seg_provider A pointer to an object with a segmentation to use.  If NULL, this object will compute the segmentation.
+  SuperpixelStatistic(int seed_spacing, float scale, SuperpixelStatistic* seg_provider);
   ~SuperpixelStatistic();
   void segment(IplImage* img);
   void clearImageCache();
@@ -283,7 +295,7 @@ class SuperpixelStatistic : public ImageDescriptor {
 
 
  protected:
-  //! (*index_)[i] returns the vector of CvPoints for segment i of the image.
+  //! (*index_)[i] is the vector of CvPoints for segment i of the image.
   std::vector< std::vector<CvPoint> > *index_;
   //! The segmentation.
   IplImage* seg_;
@@ -297,7 +309,8 @@ class SuperpixelStatistic : public ImageDescriptor {
   //! Computes superpixels and puts into seg_, and computes the superpixel to pixel index.  Is called automatically, if necessary, by the compute(.) function.
   void segment();
   //! Stub so people can use this class as a standalone segmenter.
-  void doComputation(IplImage* img, const cv::Vector<cv::Keypoint>& points, vvf& results) {}
+  void doComputation(IplImage* img, const cv::Vector<cv::KeyPoint>& points, vvf& results) {}
+  //! Create a mask of 255 for segment number seg, and 0 for everything else.  Useful for histograms.
   IplImage* createSegmentMask(int label, CvRect* rect);
 
 };
@@ -305,7 +318,8 @@ class SuperpixelStatistic : public ImageDescriptor {
 
 /**
  * @class SuperpixelColorHistogram
- * @brief Descriptor that segments the image, then computes a histogram of hue and saturation values for each segment.
+ * @brief Descriptor that segments the image into superpixels using watershed segmentation with a grid of seed points, 
+ * then computes a histogram of hue and saturation values for each segment.
  */
 class SuperpixelColorHistogram : public SuperpixelStatistic {
  public:
@@ -314,27 +328,32 @@ class SuperpixelColorHistogram : public SuperpixelStatistic {
   IplImage* hue_;
   IplImage* sat_;
   IplImage* val_;
-  IplImage* channel_;
 
+  //! @param seed_spacing Number of pixels between each seed of the segmentation.
+  //! @param num_bins Number of bins in the histogram.
+  //! @param scale How to scale the image before doing the segmentation.  Generally this is less than 1 to make the segmentation run faster on a smaller image.
+  //! @param seg_provider A pointer to an object with a segmentation to use.  If NULL, this object will compute the segmentation.
+  //! @param hsv_provider A pointer to an object with an hsv image to use.  If NULL, this object will compute the hsv image.
   SuperpixelColorHistogram(int seed_spacing, float scale, int num_bins, SuperpixelStatistic* seg_provider=NULL, SuperpixelColorHistogram* hsv_provider_=NULL);
   ~SuperpixelColorHistogram();
 
  protected:
+  //! Number of bins in the histogram.
   int num_bins_;
-  //! Not used right now.
+  //! Pointer to object that has an hsv image.  If NULL, this object will compute the hsv image.
   SuperpixelColorHistogram* hsv_provider_;
-  float max_val_;
   bool hists_reserved_;
 
-  void doComputation(IplImage* img, const cv::Vector<cv::Keypoint>& points, vvf& results);
+  void doComputation(IplImage* img, const cv::Vector<cv::KeyPoint>& points, vvf& results);
   void computeHistogram(int label);
   void computeHistogramCV(int label); 
-  void doComputation(IplImage* img, const cv::Keypoint& point, cv::Vector<float>& result);
+  void doComputation(IplImage* img, const cv::KeyPoint& point, cv::Vector<float>& result);
   void clearImageCache();
 };
 
 std::vector<ImageDescriptor*> setupImageDescriptors();
+//! Transate and scale a Vector to have mean of 0 and variance of 1.
 void whiten(Eigen::MatrixXf* m);
-int getdir (string dir, vector<string> &files);
+int getDir(string dir, vector<string> &files);
 
 #endif

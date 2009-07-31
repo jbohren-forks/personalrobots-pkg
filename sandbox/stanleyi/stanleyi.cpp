@@ -55,7 +55,7 @@ private:
   vector<ImageDescriptor*> descriptor_;
 
   void drawResponse(IplImage* img, float response, CvPoint pt);
-  void collectObjectsFromImageVectorized(int samples_per_img, vector<object*>* objects, Vector<Keypoint>* keypoints);
+  void collectObjectsFromImageVectorized(int samples_per_img, vector<object*>* objects, Vector<KeyPoint>* keypoints);
 };
 
 Stanleyi::Stanleyi()
@@ -107,7 +107,7 @@ DorylusDataset* Stanleyi::collectDataset(string bagfile, int samples_per_img, st
     
     ROS_ASSERT(img_ != NULL);
     
-    Vector<Keypoint> keypoints;
+    Vector<KeyPoint> keypoints;
     collectObjectsFromImageVectorized(samples_per_img, &objs, &keypoints);
 
     cvReleaseImage(&mask_);
@@ -128,9 +128,9 @@ MatrixXf* cvVector2Eigen(const Vector<float>& v) {
 
 
   //! Appends to objects.  If an object is invalid, a NULL pointer is used so that keypoints[i] corresponds to objects[i].
-void Stanleyi::collectObjectsFromImageVectorized(int samples_per_img, vector<object*>* objects, Vector<Keypoint>* keypoints) {
+void Stanleyi::collectObjectsFromImageVectorized(int samples_per_img, vector<object*>* objects, Vector<KeyPoint>* keypoints) {
   vector<vvf> results(descriptor_.size());
-  Vector<Keypoint> desired;
+  Vector<KeyPoint> desired;
 
   // -- Choose random locations and make keypoints.
   keypoints->clear();
@@ -141,7 +141,7 @@ void Stanleyi::collectObjectsFromImageVectorized(int samples_per_img, vector<obj
     int r = rand() % img_->height;
     int c = rand() % img_->width;
     int size = 1;
-    desired.push_back(Keypoint(c, r, size));
+    desired.push_back(KeyPoint(c, r, size));
 
     if(mask_) {
       CvScalar s = cvGet2D(mask_, r, c);
@@ -218,7 +218,7 @@ void Stanleyi::sanityCheck(string bagfile, string results_dir) {
   }
 
   // -- Collect dataset on that image.
-  Vector<Keypoint> keypoints;
+  Vector<KeyPoint> keypoints;
   vector<object*> objs;
   collectObjectsFromImageVectorized(samples_per_img, &objs, &keypoints);
   DorylusDataset dd;
@@ -332,7 +332,7 @@ void Stanleyi::makeClassificationVideo(string bagfile, Dorylus& d, int samples_p
       continue;
 
 
-    Vector<Keypoint> keypoints;
+    Vector<KeyPoint> keypoints;
 
     // -- Collect features.
     objects.clear();
@@ -726,7 +726,7 @@ IplImage* findLabelMask(double stamp, string results_dir)
   string sbuf(buf);
   sbuf = sbuf.substr(0, sbuf.length()-1);   //Remove the last digit - it's been rounded.
 
-  getdir(masks_dir, files);
+  getDir(masks_dir, files);
   for(size_t i=0; i<files.size(); i++)
     {
       if(files[i].find(sbuf) != string::npos && 

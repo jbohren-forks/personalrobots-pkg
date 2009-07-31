@@ -126,13 +126,13 @@ int main(int argc, char** argv)  {
   }
 
   // -- Choose random locations and make keypoints.
-  Vector<Keypoint> kp;
+  Vector<KeyPoint> kp;
   kp.reserve(NSAMPLES);
   for(int i=0; i<NSAMPLES; i++)  {
     int r = rand() % img->height;
     int c = rand() % img->width;
     int size = 1;
-    kp.push_back(Keypoint(c, r, size));      
+    kp.push_back(KeyPoint(c, r, size));      
   }
   
   // -- Call all descriptors, get vectorized results.
