@@ -62,7 +62,7 @@ public:
 
   /**@brief Constructor for transform listener
    * \param max_cache_time How long to store transform information */
-  TransformListener(ros::Duration max_cache_time = ros::Duration(DEFAULT_CACHE_TIME));
+  TransformListener(ros::Duration max_cache_time = ros::Duration(DEFAULT_CACHE_TIME), bool spin_thread = true);
 
   /**
    * \brief Alternate constructor for transform listener
@@ -70,23 +70,7 @@ public:
    * \param max_cache_time How long to store transform information
    */
   TransformListener(const ros::NodeHandle& nh,
-                    ros::Duration max_cache_time = ros::Duration(DEFAULT_CACHE_TIME));
-  /**
-   * \brief Alternate constructor for transform listener
-   * \param nh The NodeHandle to use for any ROS interaction
-   * \param spin_thread This will trigger spinning a dedicated thread for the listener to recieve
-   * \param max_cache_time How long to store transform information
-   */
-  TransformListener(const ros::NodeHandle& nh, bool spin_thread,
-                    ros::Duration max_cache_time = ros::Duration(DEFAULT_CACHE_TIME));
-  /**
-   * \brief Alternate constructor for transform listener
-   * \param spin_thread This will trigger spinning a dedicated thread for the listener to recieve
-   * \param max_cache_time How long to store transform information
-   */
-  TransformListener(bool spin_thread,
-                    ros::Duration max_cache_time = ros::Duration(DEFAULT_CACHE_TIME));
-
+                    ros::Duration max_cache_time = ros::Duration(DEFAULT_CACHE_TIME), bool spin_thread = true);
   
   ~TransformListener();
 

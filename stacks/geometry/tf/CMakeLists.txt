@@ -51,7 +51,7 @@ rospack_add_executable(test/test_notifier EXCLUDE_FROM_ALL test/test_notifier.cp
 rospack_declare_test(test/test_notifier)
 rospack_add_gtest_build_flags(test/test_notifier)
 target_link_libraries(test/test_notifier tf ${Boost_LIBRARIES})
-rospack_add_rostest(test/test_notifier.xml)
+rospack_add_rostest_future(test/test_notifier.xml)
 
 rospack_add_executable(test/test_message_filter EXCLUDE_FROM_ALL test/test_message_filter.cpp)
 rospack_declare_test(test/test_message_filter)

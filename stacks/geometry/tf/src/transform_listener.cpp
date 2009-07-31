@@ -77,28 +77,22 @@ TransformListener::TransformListener(ros::Node & rosnode,
   init();
 }
 
-TransformListener::TransformListener(ros::Duration max_cache_time):
+TransformListener::TransformListener(ros::Duration max_cache_time, bool spin_thread):
   Transformer(true, max_cache_time), dedicated_listener_thread_(NULL)
 {
-  init();
+  if (spin_thread)
+    initWithThread();
+  else
+    init();
 }
 
-TransformListener::TransformListener(const ros::NodeHandle& nh, ros::Duration max_cache_time):
+TransformListener::TransformListener(const ros::NodeHandle& nh, ros::Duration max_cache_time, bool spin_thread):
   Transformer(true, max_cache_time), node_(nh), dedicated_listener_thread_(NULL)
 {
-  init();
-}
-
-TransformListener::TransformListener(bool spin_thread, ros::Duration max_cache_time):
-  Transformer(true, max_cache_time), dedicated_listener_thread_(NULL)
-{
-  initWithThread();
-}
-
-TransformListener::TransformListener(const ros::NodeHandle& nh, bool spin_thread, ros::Duration max_cache_time):
-  Transformer(true, max_cache_time), node_(nh), dedicated_listener_thread_(NULL)
-{
-  initWithThread();
+  if (spin_thread)
+    initWithThread();
+  else
+    init();
 }
 
 TransformListener::~TransformListener()
