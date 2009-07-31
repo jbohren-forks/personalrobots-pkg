@@ -1,0 +1,24 @@
+<package>
+  <description brief="Tools to convert between the old and new actions (robot_actions and actionlib)">
+     This package provides tools that allow actionlib::ActionServer actions
+    to communicate over the robot_actions protocol. This is extremely useful
+    when an action needs to communicate with TREX.
+    
+    Once TREX supports actionlib actions and python has an actionlib::ActionClient
+    interface implemented, this package should be deprecated.
+  </description>
+  <author>Vijay Pradeep</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/action_bridge</url>
+  
+  <depend package="actionlib" />
+  <depend package="robot_actions" />
+  
+  <export>
+    <cpp cflags="-I${prefix}/include" />
+  </export>
+  
+</package>
+
+
