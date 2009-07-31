@@ -70,7 +70,7 @@ public:
 	ros::Rate r(10.0);
 	ros::Time start = ros::Time::now();
 	
-	while(ros::Time::now()-start < ros::Duration(10.0))
+	while(ros::Time::now()-start < ros::Duration(4.0))
 	{
 	    if (isPreemptRequested()) {
 		gripper_msg.data = 0.0;

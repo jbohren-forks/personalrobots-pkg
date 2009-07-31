@@ -90,7 +90,7 @@ self_see:
   
 
 ## The padding to be added for the body parts the robot can see
-self_see_padd: 0.05
+self_see_padd: 0.002
 
 ## The scaling to be considered for the body parts the robot can see
 self_see_scale: 1.0
