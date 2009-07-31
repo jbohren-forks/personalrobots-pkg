@@ -1,5 +1,5 @@
-#rospack_add_executable(forearm_node forearm_node.cpp)
-#target_link_libraries(forearm_node forearmcam)
+rospack_add_executable(forearm_node forearm_node.cpp)
+target_link_libraries(forearm_node forearmcam)
 
-#rospack_add_executable(forearm_node_new forearm_node_new.cpp)
-#target_link_libraries(forearm_node_new forearmcam)
+rospack_add_executable(forearm_node_new forearm_node_new.cpp)
+target_link_libraries(forearm_node_new forearmcam)
