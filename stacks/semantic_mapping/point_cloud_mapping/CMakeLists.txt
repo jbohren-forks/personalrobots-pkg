@@ -5,6 +5,7 @@ set(ROS_BUILD_TYPE RelWithDebInfo)
 rospack(point_cloud_mapping)
 rospack_add_boost_directories()
 #add_definitions(-Wall -O3 -DNDEBUG -march=pentium4 -mfpmath=sse -mmmx -msse -msse2 -msse3)
+add_definitions(-Wall -O3 -DNDEBUG -mfpmath=sse -mmmx -msse -msse2 -msse3)
 
 #set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
@@ -14,6 +15,10 @@ target_link_libraries (bin/cloud_downsampler_node cloud_geometry cloud_kdtree)
 rospack_add_executable (bin/normal_estimation_node src/normal_estimation.cpp)
 target_link_libraries (bin/normal_estimation_node cloud_geometry cloud_kdtree)
 rospack_add_openmp_flags (bin/normal_estimation_node)
+
+rospack_add_executable (bin/organized_normal_estimation_node src/organized_normal_estimation.cpp)
+target_link_libraries (bin/organized_normal_estimation_node cloud_geometry)
+rospack_add_openmp_flags (bin/organized_normal_estimation_node)
 
 rospack_add_library (normal_estimation_in_proc src/normal_estimation_in_proc.cpp)
 rospack_add_openmp_flags (normal_estimation_in_proc)
@@ -38,6 +43,7 @@ target_link_libraries (bin/player_laser_log_to_msg cloud_geometry)
                        src/cloud_geometry/transforms.cpp
                       )
   target_link_libraries (cloud_geometry cloud_kdtree)
+  rospack_add_openmp_flags (cloud_geometry)
   rospack_add_gtest (bin/test_geometry_statistics test/cloud_geometry/test_geometry_statistics.cpp)
   rospack_add_gtest (bin/test_geometry_angles     test/cloud_geometry/test_geometry_angles.cpp)
   rospack_add_gtest (bin/test_geometry_areas      test/cloud_geometry/test_geometry_areas.cpp)

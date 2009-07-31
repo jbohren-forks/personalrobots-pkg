@@ -123,6 +123,29 @@ namespace cloud_geometry
       * \param centroid the output centroid
       */
     inline void
+      computeCentroid (const robot_msgs::PointCloudConstPtr &points, const std::vector<int> &indices, robot_msgs::Point32 &centroid)
+    {
+      centroid.x = centroid.y = centroid.z = 0;
+      // For each point in the cloud
+      for (unsigned int i = 0; i < indices.size (); i++)
+      {
+        centroid.x += points->pts.at (indices.at (i)).x;
+        centroid.y += points->pts.at (indices.at (i)).y;
+        centroid.z += points->pts.at (indices.at (i)).z;
+      }
+
+      centroid.x /= indices.size ();
+      centroid.y /= indices.size ();
+      centroid.z /= indices.size ();
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Compute the centroid of a set of points using their indices and return it as a Point32 message.
+      * \param points the input point cloud
+      * \param indices the point cloud indices that need to be used
+      * \param centroid the output centroid
+      */
+    inline void
       computeCentroid (const robot_msgs::PointCloud &points, const std::vector<int> &indices, std::vector<double> &centroid)
     {
       centroid.resize (3);
@@ -221,6 +244,39 @@ namespace cloud_geometry
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /** \brief Compute the 3x3 covariance matrix of a given set of points using their indices.
       * The result is returned as a Eigen::Matrix3d.
+      * \note The (x-y-z) centroid is also returned as a Point32 message.
+      * \param points the input point cloud
+      * \param indices the point cloud indices that need to be used
+      * \param covariance_matrix the 3x3 covariance matrix
+      * \param centroid the computed centroid
+      */
+    inline void
+      computeCovarianceMatrix (const robot_msgs::PointCloudConstPtr &points, const std::vector<int> &indices, Eigen::Matrix3d &covariance_matrix, robot_msgs::Point32 &centroid)
+    {
+      computeCentroid (points, indices, centroid);
+
+      // Initialize to 0
+      covariance_matrix = Eigen::Matrix3d::Zero ();
+
+      for (unsigned int j = 0; j < indices.size (); j++)
+      {
+        covariance_matrix (0, 0) += (points->pts[indices.at (j)].x - centroid.x) * (points->pts[indices.at (j)].x - centroid.x);
+        covariance_matrix (0, 1) += (points->pts[indices.at (j)].x - centroid.x) * (points->pts[indices.at (j)].y - centroid.y);
+        covariance_matrix (0, 2) += (points->pts[indices.at (j)].x - centroid.x) * (points->pts[indices.at (j)].z - centroid.z);
+
+        covariance_matrix (1, 0) += (points->pts[indices.at (j)].y - centroid.y) * (points->pts[indices.at (j)].x - centroid.x);
+        covariance_matrix (1, 1) += (points->pts[indices.at (j)].y - centroid.y) * (points->pts[indices.at (j)].y - centroid.y);
+        covariance_matrix (1, 2) += (points->pts[indices.at (j)].y - centroid.y) * (points->pts[indices.at (j)].z - centroid.z);
+
+        covariance_matrix (2, 0) += (points->pts[indices.at (j)].z - centroid.z) * (points->pts[indices.at (j)].x - centroid.x);
+        covariance_matrix (2, 1) += (points->pts[indices.at (j)].z - centroid.z) * (points->pts[indices.at (j)].y - centroid.y);
+        covariance_matrix (2, 2) += (points->pts[indices.at (j)].z - centroid.z) * (points->pts[indices.at (j)].z - centroid.z);
+      }
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Compute the 3x3 covariance matrix of a given set of points using their indices.
+      * The result is returned as a Eigen::Matrix3d.
       * \param points the input point cloud
       * \param indices the point cloud indices that need to be used
       * \param covariance_matrix the 3x3 covariance matrix
@@ -277,6 +333,7 @@ namespace cloud_geometry
 
     void computePointNormal (const robot_msgs::PointCloud &points, Eigen::Vector4d &plane_parameters, double &curvature);
     void computePointNormal (const robot_msgs::PointCloud &points, const std::vector<int> &indices, Eigen::Vector4d &plane_parameters, double &curvature);
+    void computePointNormal (const robot_msgs::PointCloudConstPtr &points, const std::vector<int> &indices, Eigen::Vector4d &plane_parameters, double &curvature);
 
     void computeMomentInvariants (const robot_msgs::PointCloud &points, double &j1, double &j2, double &j3);
     void computeMomentInvariants (const robot_msgs::PointCloud &points, const std::vector<int> &indices, double &j1, double &j2, double &j3);
@@ -289,6 +346,8 @@ namespace cloud_geometry
     void computePointCloudNormals (robot_msgs::PointCloud &points, double radius, const robot_msgs::PointStamped &viewpoint);
 
     void computeOrganizedPointCloudNormals (robot_msgs::PointCloud &points, const robot_msgs::PointCloud &surface, int k, int downsample_factor, int width, int height, double max_z, 
+                                            const robot_msgs::Point32 &viewpoint);
+    void computeOrganizedPointCloudNormals (robot_msgs::PointCloud &points, const robot_msgs::PointCloudConstPtr &surface, int k, int downsample_factor, int width, int height, double max_z, 
                                             const robot_msgs::Point32 &viewpoint);
     void computeOrganizedPointCloudNormalsWithFiltering (robot_msgs::PointCloud &points, const robot_msgs::PointCloud &surface, int k, int downsample_factor, int width, int height, 
                                                          double max_z, double min_angle, double max_angle, const robot_msgs::Point32 &viewpoint);

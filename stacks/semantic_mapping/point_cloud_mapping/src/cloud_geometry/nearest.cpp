@@ -299,6 +299,47 @@ namespace cloud_geometry
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Compute the Least-Squares plane fit for a given set of points, using their indices,
+      * and return the estimated plane parameters together with the surface curvature.
+      * \param points the input point cloud
+      * \param indices the point cloud indices that need to be used
+      * \param plane_parameters the plane parameters as: a, b, c, d (ax + by + cz + d = 0)
+      * \param curvature the estimated surface curvature as a measure of
+      * \f[
+      * \lambda_0 / (\lambda_0 + \lambda_1 + \lambda_2)
+      * \f]
+      */
+    void
+      computePointNormal (const robot_msgs::PointCloudConstPtr &points, const std::vector<int> &indices, Eigen::Vector4d &plane_parameters, double &curvature)
+    {
+      robot_msgs::Point32 centroid;
+      // Compute the 3x3 covariance matrix
+      Eigen::Matrix3d covariance_matrix;
+      computeCovarianceMatrix (points, indices, covariance_matrix, centroid);
+
+      // Extract the eigenvalues and eigenvectors
+      Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> ei_symm (covariance_matrix);
+      Eigen::Vector3d eigen_values  = ei_symm.eigenvalues ();
+      Eigen::Matrix3d eigen_vectors = ei_symm.eigenvectors ();
+
+      // Normalize the surface normal (eigenvector corresponding to the smallest eigenvalue)
+      // Note: Remember to take care of the eigen_vectors ordering
+      double norm = sqrt ( eigen_vectors (0, 0) * eigen_vectors (0, 0) +
+                           eigen_vectors (1, 0) * eigen_vectors (1, 0) +
+                           eigen_vectors (2, 0) * eigen_vectors (2, 0));
+      plane_parameters (0) = eigen_vectors (0, 0) / norm;
+      plane_parameters (1) = eigen_vectors (1, 0) / norm;
+      plane_parameters (2) = eigen_vectors (2, 0) / norm;
+
+      // Hessian form (D = nc . p_plane (centroid here) + p)
+      plane_parameters (3) = -1 * (plane_parameters (0) * centroid.x + plane_parameters (1) * centroid.y + plane_parameters (2) * centroid.z);
+
+      // Compute the curvature surface change
+      curvature = fabs ( eigen_values (0) / (eigen_values (0) + eigen_values (1) + eigen_values (2)) );
+    }
+
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /** \brief Compute the 3 moment invariants (j1, j2, j3) for a given set of points.
       * \param points the input point cloud
       * \param j1 the first moment invariant
@@ -700,6 +741,103 @@ namespace cloud_geometry
         // Compute the point normals (nx, ny, nz), surface curvature estimates (c)
         cloud_geometry::nearest::computePointNormal (surface, nn_indices, plane_parameters, curvature);
         cloud_geometry::angles::flipNormalTowardsViewpoint (plane_parameters, surface.pts[i], viewpoint);
+
+        points.chan[orig_dims + 0].vals[j] = plane_parameters (0);
+        points.chan[orig_dims + 1].vals[j] = plane_parameters (1);
+        points.chan[orig_dims + 2].vals[j] = plane_parameters (2);
+        points.chan[orig_dims + 3].vals[j] = curvature;
+        j++;
+      }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Estimate the point normals and surface curvatures for a given organized point cloud dataset (points)
+      * using the data from a different point cloud (surface) for least-squares planar estimation.
+      *
+      * \note The main difference between this method and its \a computePointCloudNormals () sibblings is that 
+      * assumptions are being made regarding the organization of points in the cloud. For example, point clouds
+      * acquired using camera sensors are assumed to be row-major, and the width and height of the depth image
+      * are assumed to be known, etc.
+      * \param points the input point cloud (on output, 4 extra channels will be added: \a nx, \a ny, \a nz, and \a curvatures)
+      * \param surface the point cloud data to use for least-squares planar estimation
+      * \param k the windowing factor (i.e., how many pixels in the depth image in all directions should the neighborhood of a point contain)
+      * \param downsample_factor factor for downsampling the input data, i.e., take every Nth row and column in the depth image
+      * \param width the width in pixels of the depth image
+      * \param height the height in pixels of the depth image
+      * \param max_z maximum distance threshold (on Z) between the query point and its neighbors (set to -1 to ignore the check)
+      * \param viewpoint the viewpoint where the cloud was acquired from (used for normal flip)
+      */
+    void
+      computeOrganizedPointCloudNormals (robot_msgs::PointCloud &points, const robot_msgs::PointCloudConstPtr &surface,
+                                         int k, int downsample_factor, int width, int height, double max_z, 
+                                         const robot_msgs::Point32 &viewpoint)
+    {
+      // Reduce by a factor of N
+      int nr_points = lrint (ceil (width / (double)downsample_factor)) *
+                      lrint (ceil (height / (double)downsample_factor));
+      int orig_dims = points.chan.size ();
+      points.chan.resize (orig_dims + 4);                     // Reserve space for 4 channels: nx, ny, nz, curvature
+      points.chan[orig_dims + 0].name = "nx";
+      points.chan[orig_dims + 1].name = "ny";
+      points.chan[orig_dims + 2].name = "nz";
+      points.chan[orig_dims + 3].name = "curvatures";
+      points.pts.resize (nr_points);
+      // Reserve space for 4 channels: nx, ny, nz, curvature
+      for (unsigned int d = orig_dims; d < points.chan.size (); d++)
+        points.chan[d].vals.resize (nr_points);
+
+      // Reserve enough space for the neighborhood
+      std::vector<int> nn_indices ((k + k + 1) * (k + k + 1));
+      Eigen::Vector4d plane_parameters;
+      double curvature;
+
+      int j = 0;
+//#pragma omp parallel for schedule(dynamic)
+      for (int i = 0; i < (int)surface->pts.size (); i++)
+      {
+        // Obtain the <u,v> pixel values
+        int u = i / width;
+        int v = i % width;
+
+        // Get every Nth pixel in both rows, cols
+        if ((u % downsample_factor != 0) || (v % downsample_factor != 0))
+          continue;
+
+        // Copy the data
+        points.pts[j] = surface->pts[i];
+
+        // Get all point neighbors in a k x k window
+        int l = 0;
+        for (int x = -k; x < k+1; x++)
+        {
+          for (int y = -k; y < k+1; y++)
+          {
+            int idx = (u+x) * width + (v+y);
+            if (idx == i)
+              continue;
+            // If the index is not in the point cloud, continue
+            if (idx < 0 || idx >= (int)surface->pts.size ())
+              continue;
+            // If the difference in Z (depth) between the query point and the current neighbor is smaller than max_z
+            if (max_z != -1)
+            {
+              if ( fabs (points.pts[j].z - surface->pts[idx].z) <  max_z )
+                nn_indices[l++] = idx;
+            }
+            else
+              nn_indices[l++] = idx;
+          }
+        }
+        nn_indices.resize (l);
+        if (nn_indices.size () < 4)
+        {
+          //ROS_ERROR ("Not enough neighboring indices found for point %d (%f, %f, %f).", i, surface->pts[i].x, surface->pts[i].y, surface->pts[i].z);
+          continue;
+        }
+
+        // Compute the point normals (nx, ny, nz), surface curvature estimates (c)
+        cloud_geometry::nearest::computePointNormal (surface, nn_indices, plane_parameters, curvature);
+        cloud_geometry::angles::flipNormalTowardsViewpoint (plane_parameters, surface->pts[i], viewpoint);
 
         points.chan[orig_dims + 0].vals[j] = plane_parameters (0);
         points.chan[orig_dims + 1].vals[j] = plane_parameters (1);
