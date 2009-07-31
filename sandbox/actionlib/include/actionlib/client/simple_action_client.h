@@ -35,6 +35,9 @@
 #ifndef ACTIONLIB_SIMPLE_ACTION_CLIENT_H_
 #define ACTIONLIB_SIMPLE_ACTION_CLIENT_H_
 
+#include <boost/thread/condition.hpp>
+#include <boost/thread/mutex.hpp>
+
 #include "ros/ros.h"
 #include "actionlib/client/action_client.h"
 #include "actionlib/client/simple_goal_state.h"
@@ -69,7 +72,7 @@ public:
    * Constructs a SingleGoalActionClient and sets up the necessary ros topics for the ActionInterface
    * \param name The action name. Defines the namespace in which the action communicates
    */
-  SimpleActionClient(const std::string& name) : ac_(name)
+  SimpleActionClient(const std::string& name) : ac_(name), cur_simple_state_(SimpleGoalState::PENDING)
   {
     initSimpleClient();
   }
@@ -82,7 +85,7 @@ public:
    * \param n The node handle on top of which we want to namespace our action
    * \param name The action name. Defines the namespace in which the action communicates
    */
-  SimpleActionClient(const ros::NodeHandle& n, const std::string& name) : ac_(n, name)
+  SimpleActionClient(const ros::NodeHandle& n, const std::string& name) : ac_(n, name), cur_simple_state_(SimpleGoalState::PENDING)
   {
     initSimpleClient();
   }
@@ -103,6 +106,7 @@ public:
 
   /**
    * \brief Blocks until this goal transitions to done
+   * Note that this call exits only after the SimpleDoneCallback() is called.
    */
   void waitForGoalToFinish();
 
@@ -154,6 +158,10 @@ private:
 
   SimpleGoalState cur_simple_state_;
 
+  // Signalling Stuff
+  boost::condition done_condition_;
+  boost::mutex done_mutex_;
+
   // User Callbacks
   SimpleDoneCallback done_cb_;
   SimpleActiveCallback active_cb_;
@@ -163,6 +171,8 @@ private:
   void initSimpleClient();
   void handleTransition(GoalHandleT gh);
   void handleFeedback(GoalHandleT gh, const FeedbackConstPtr& feedback);
+  void setSimpleState(const SimpleGoalState::StateEnum& next_state);
+  void setSimpleState(const SimpleGoalState& next_state);
 };
 
 
@@ -171,6 +181,21 @@ template<class ActionSpec>
 void SimpleActionClient<ActionSpec>::initSimpleClient()
 {
 
+}
+
+template<class ActionSpec>
+void SimpleActionClient<ActionSpec>::setSimpleState(const SimpleGoalState::StateEnum& next_state)
+{
+  setSimpleState( SimpleGoalState(next_state) );
+}
+
+template<class ActionSpec>
+void SimpleActionClient<ActionSpec>::setSimpleState(const SimpleGoalState& next_state)
+{
+  ROS_DEBUG("Transitioning SimpleState from [%s] to [%s]",
+            cur_simple_state_.toString().c_str(),
+            next_state.toString().c_str());
+  cur_simple_state_ = next_state;
 }
 
 template<class ActionSpec>
@@ -186,6 +211,8 @@ void SimpleActionClient<ActionSpec>::sendGoal(const Goal& goal,
   done_cb_     = done_cb;
   active_cb_   = active_cb;
   feedback_cb_ = feedback_cb;
+
+  cur_simple_state_ = SimpleGoalState::PENDING;
 
   // Send the goal to the ActionServer
   gh_ = ac_.sendGoal(goal, boost::bind(&SimpleActionClientT::handleTransition, this, _1),
@@ -254,19 +281,127 @@ void SimpleActionClient<ActionSpec>::cancelGoal()
   gh_.cancel();
 }
 
+template<class ActionSpec>
+void SimpleActionClient<ActionSpec>::stopTrackingGoal()
+{
+  if (!gh_.isActive())
+    ROS_ERROR("Trying to stopTrackingGoal() when no goal is running. You are incorrectly using SimpleActionClient");
+  gh_.reset();
+}
+
+template<class ActionSpec>
+void SimpleActionClient<ActionSpec>::handleFeedback(GoalHandleT gh, const FeedbackConstPtr& feedback)
+{
+  if (gh_ != gh)
+    ROS_ERROR("Got a callback on a goalHandle that we're not tracking.  \
+               This is an internal SimpleActionClient/ActionClient bug.  \
+               This could also be a GoalID collision");
+  if (feedback_cb_)
+    feedback_cb_(feedback);
+}
+
+template<class ActionSpec>
+void SimpleActionClient<ActionSpec>::handleTransition(GoalHandleT gh)
+{
+  CommState comm_state_ = gh.getCommState();
+  switch (comm_state_.state_)
+  {
+    case CommState::WAITING_FOR_GOAL_ACK:
+      ROS_ERROR("BUG: Shouldn't ever get a transition callback for WAITING_FOR_GOAL_ACK");
+      break;
+    case CommState::PENDING:
+      ROS_ERROR_COND( cur_simple_state_ != SimpleGoalState::PENDING,
+                      "BUG: Got a transition to CommState [%s] when our in SimpleGoalState [%s]",
+                      comm_state_.toString().c_str(), cur_simple_state_.toString().c_str());
+      break;
+    case CommState::ACTIVE:
+      switch (cur_simple_state_.state_)
+      {
+        case SimpleGoalState::PENDING:
+          setSimpleState(SimpleGoalState::ACTIVE);
+          if (active_cb_)
+            active_cb_();
+          break;
+        case SimpleGoalState::ACTIVE:
+          break;
+        case SimpleGoalState::DONE:
+          ROS_ERROR("BUG: Got a transition to CommState [%s] when in SimpleGoalState [%s]",
+                    comm_state_.toString().c_str(), cur_simple_state_.toString().c_str());
+          break;
+        default:
+          ROS_FATAL("Unknown SimpleGoalState %u", cur_simple_state_.state_);
+          break;
+      }
+      break;
+    case CommState::WAITING_FOR_RESULT:
+      break;
+    case CommState::WAITING_FOR_CANCEL_ACK:
+      break;
+    case CommState::RECALLING:
+      ROS_ERROR_COND( cur_simple_state_ != SimpleGoalState::PENDING,
+                      "BUG: Got a transition to CommState [%s] when our in SimpleGoalState [%s]",
+                      comm_state_.toString().c_str(), cur_simple_state_.toString().c_str());
+      break;
+    case CommState::PREEMPTING:
+      switch (cur_simple_state_.state_)
+      {
+        case SimpleGoalState::PENDING:
+          setSimpleState(SimpleGoalState::ACTIVE);
+          if (active_cb_)
+            active_cb_();
+          break;
+        case SimpleGoalState::ACTIVE:
+          break;
+        case SimpleGoalState::DONE:
+          ROS_ERROR("BUG: Got a transition to CommState [%s] when in SimpleGoalState [%s]",
+                     comm_state_.toString().c_str(), cur_simple_state_.toString().c_str());
+          break;
+        default:
+          ROS_FATAL("Unknown SimpleGoalState %u", cur_simple_state_.state_);
+          break;
+      }
+      break;
+    case CommState::DONE:
+      switch (cur_simple_state_.state_)
+      {
+        case SimpleGoalState::PENDING:
+        case SimpleGoalState::ACTIVE:
+          done_mutex_.lock();
+          setSimpleState(SimpleGoalState::DONE);
+          done_mutex_.unlock();
+
+          if (done_cb_)
+            done_cb_(gh.getTerminalState(), gh.getResult());
+
+          done_condition_.notify_all();
+          break;
+        case SimpleGoalState::DONE:
+          ROS_ERROR("BUG: Got a second transition to DONE");
+          break;
+        default:
+          ROS_FATAL("Unknown SimpleGoalState %u", cur_simple_state_.state_);
+          break;
+      }
+      break;
+    default:
+      ROS_ERROR("Unknown CommState received [%u]", comm_state_.state_);
+      break;
+  }
+}
+
+template<class ActionSpec>
+void SimpleActionClient<ActionSpec>::waitForGoalToFinish()
+{
+  if (!gh_.isActive())
+    ROS_ERROR("Trying to waitForGoalToFinish() when no goal is running. You are incorrectly using SimpleActionClient");
+
+  boost::mutex::scoped_lock lock(done_mutex_);
+
+  if (cur_simple_state_ != SimpleGoalState::DONE)
+    done_condition_.wait(lock);
+}
 
 
-
-
-
-
-
-
-
-
-
-
-
-
+}
 
 #endif // ACTIONLIB_SINGLE_GOAL_ACTION_CLIENT_H_

@@ -1,0 +1,15 @@
+<package>
+  <description brief="move_base_client">
+     move_base_client
+  </description>
+  <author>Vijay Pradeep</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/move_base_client</url>
+
+  <depend package="move_base" />
+  <depend package="actionlib" />
+
+</package>
+
+

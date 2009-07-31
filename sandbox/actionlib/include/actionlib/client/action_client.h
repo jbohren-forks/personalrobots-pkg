@@ -111,12 +111,11 @@ public:
    */
   void cancelAllGoals()
   {
-    ActionGoal cancel_msg;
+    GoalID cancel_msg;
     // CancelAll policy encoded by stamp=0, id=0
-    cancel_msg.goal_id.stamp = ros::Time(0,0);
-    cancel_msg.goal_id.id = ros::Time(0,0);
-    cancel_msg.request_type.type = RequestType::PREEMPT_REQUEST;
-    goal_pub_.publish(cancel_msg);
+    cancel_msg.stamp = ros::Time(0,0);
+    cancel_msg.id = ros::Time(0,0);
+    cancel_pub_.publish(cancel_msg);
   }
 
   /**
@@ -137,6 +136,7 @@ private:
 
   ros::Subscriber feedback_sub_;
   ros::Publisher  goal_pub_;
+  ros::Publisher  cancel_pub_;
   ros::Subscriber status_sub_;
   ros::Subscriber result_sub_;
 
@@ -147,11 +147,18 @@ private:
     goal_pub_.publish(action_goal);
   }
 
+  void sendCancelFunc(const GoalID& cancel_msg)
+  {
+    cancel_pub_.publish(cancel_msg);
+  }
+
   void initClient()
   {
     // Start publishers and subscribers
     goal_pub_ = n_.advertise<ActionGoal>("goal", 1);
+    cancel_pub_ = n_.advertise<GoalID>("cancel", 1);
     manager_.registerSendGoalFunc(boost::bind(&ActionClientT::sendGoalFunc, this, _1));
+    manager_.registerCancelFunc(boost::bind(&ActionClientT::sendCancelFunc, this, _1));
 
     status_sub_   = n_.subscribe("status",   1, &ActionClientT::statusCb, this);
     feedback_sub_ = n_.subscribe("feedback", 1, &ActionClientT::feedbackCb, this);

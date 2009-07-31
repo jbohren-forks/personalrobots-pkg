@@ -46,6 +46,13 @@ void GoalManager<ActionSpec>::registerSendGoalFunc(SendGoalFunc send_goal_func)
 }
 
 template<class ActionSpec>
+void GoalManager<ActionSpec>::registerCancelFunc(CancelFunc cancel_func)
+{
+  cancel_func_ = cancel_func;
+}
+
+
+template<class ActionSpec>
 GoalHandle<ActionSpec> GoalManager<ActionSpec>::initGoal(const Goal& goal,
                                                          TransitionCallback transition_cb,
                                                          FeedbackCallback feedback_cb )

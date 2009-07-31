@@ -154,13 +154,12 @@ void GoalHandle<ActionSpec>::cancel()
 
   ActionGoalConstPtr action_goal = list_handle_.getElem()->getActionGoal();
 
-  boost::shared_ptr<ActionGoal> cancel_msg(new ActionGoal);
-  cancel_msg->goal_id.stamp = ros::Time();
-  cancel_msg->goal_id.id = action_goal->goal_id.id;
-  cancel_msg->request_type.type = RequestType::PREEMPT_REQUEST;
+  GoalID cancel_msg;
+  cancel_msg.stamp = ros::Time(0,0);
+  cancel_msg.id = list_handle_.getElem()->getActionGoal()->goal_id.id;
 
-  if (gm_->send_goal_func_)
-    gm_->send_goal_func_(cancel_msg);
+  if (gm_->cancel_func_)
+    gm_->cancel_func_(cancel_msg);
 
   list_handle_.getElem()->transitionToState(*this, CommState::WAITING_FOR_CANCEL_ACK);
 }

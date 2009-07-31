@@ -83,10 +83,13 @@ public:
   typedef boost::function<void (GoalHandle<ActionSpec>) > TransitionCallback;
   typedef boost::function<void (GoalHandle<ActionSpec>, const FeedbackConstPtr&) > FeedbackCallback;
   typedef boost::function<void (const ActionGoalConstPtr)> SendGoalFunc;
+  typedef boost::function<void (const GoalID&)> CancelFunc;
 
   GoalManager() { }
 
   void registerSendGoalFunc(SendGoalFunc send_goal_func);
+  void registerCancelFunc(CancelFunc cancel_func);
+
   GoalHandle<ActionSpec> initGoal( const Goal& goal,
                                    TransitionCallback transition_cb = TransitionCallback(),
                                    FeedbackCallback feedback_cb = FeedbackCallback() );
@@ -102,6 +105,8 @@ public:
   ManagedListT list_;
 private:
   SendGoalFunc send_goal_func_ ;
+  CancelFunc cancel_func_ ;
+
   boost::recursive_mutex list_mutex_;
 
   GoalIDGenerator id_generator_;

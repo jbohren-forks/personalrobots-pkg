@@ -9,22 +9,25 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 #  MinSizeRel     : w/o debug symbols, w/ optimization, stripped binaries
 #set(ROS_BUILD_TYPE RelWithDebInfo)
 
-rospack(actionlib)
+rospack(move_base_client)
 
 #set the default path for built executables to the "bin" directory
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
-
 #set the default path for built libraries to the "lib" directory
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
-genmsg()
+#uncomment if you have defined messages
+#genmsg()
+#uncomment if you have defined services
+#gensrv()
 
-#rospack_add_executable(goal_manager_test src/goal_manager_test.cpp)
+rospack_add_executable(move_base_client src/move_base_client.cpp)
+rospack_add_executable(simple_move_base_client src/simple_move_base_client.cpp)
 
-rospack_add_executable(move_base_server src/move_base_server.cpp)
-#rospack_add_executable(move_base_client src/move_base_client.cpp)
-#rospack_add_executable(simple_move_base_client src/simple_move_base_client.cpp)
-
-
-
-#add_subdirectory(test)
+#common commands for building c++ executables and libraries
+#rospack_add_library(${PROJECT_NAME} src/example.cpp)
+#target_link_libraries(${PROJECT_NAME} another_library)
+#rospack_add_boost_directories()
+#rospack_link_boost(${PROJECT_NAME} thread)
+#rospack_add_executable(example examples/example.cpp)
+#target_link_libraries(example ${PROJECT_NAME})

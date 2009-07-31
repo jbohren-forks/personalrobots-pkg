@@ -34,27 +34,27 @@
 
 #include "ros/ros.h"
 
-#include "actionlib/MoveBaseAction.h"
+#include "move_base/MoveBaseAction.h"
 #include "actionlib/client/action_client.h"
 
 #include "boost/thread.hpp"
 
 using namespace actionlib;
 using namespace robot_msgs;
+using namespace move_base;
 
 typedef ActionClient<MoveBaseAction> MoveBaseClient;
 
-void goalCallback(GoalHandle<MoveBaseAction> gh)
+void transitionCallback(GoalHandle<MoveBaseAction> gh)
 {
-  ROS_DEBUG("In the goalCallback");
+  ROS_DEBUG("In the transition");
 
-  ROS_DEBUG("Our final status is: [%s]", gh.getCommState().toString().c_str());
+  ROS_DEBUG("We have transitioned to: [%s]", gh.getCommState().toString().c_str());
 
   if (gh.getResult())
     ROS_DEBUG("Got a Result!");
   else
-    ROS_DEBUG("Got a NULL Result.");
-
+    ROS_DEBUG("NULL Result");
 }
 
 void feedbackCallback(GoalHandle<MoveBaseAction> gh, const MoveBaseFeedbackConstPtr& fb)
@@ -83,7 +83,7 @@ int main(int argc, char** argv)
 
   MoveBaseGoal goal;
 
-  GoalHandle<MoveBaseAction> gh = ac.sendGoal(goal, &goalCallback, &feedbackCallback);
+  GoalHandle<MoveBaseAction> gh = ac.sendGoal(goal, &transitionCallback, &feedbackCallback);
 
   sleep(1.0);
 
