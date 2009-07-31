@@ -50,7 +50,7 @@ class TestPython(unittest.TestCase):
         pass
 
     def common(self, t):
-        m = robot_msgs.msg.TransformStamped()
+        m = geometry_msgs.msg.TransformStamped()
         m.header.frame_id = "THISFRAME"
         m.parent_id = "PARENT"
         m.transform.translation.y = 5.0
