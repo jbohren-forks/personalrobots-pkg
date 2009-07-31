@@ -47,7 +47,7 @@ static struct
 void controlLoop()
 {
   NullHardware hw;
-  MechanismControl mc(hw.hw_);
+  controller::MechanismControl mc(hw.hw_);
 
 
   // Load robot description
