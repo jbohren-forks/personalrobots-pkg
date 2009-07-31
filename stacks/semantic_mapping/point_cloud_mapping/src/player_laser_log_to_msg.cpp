@@ -130,7 +130,8 @@ class PlayerLogToMsg
           continue;
 
         // Split a line into tokens
-        boost::split (st, line, boost::is_any_of (" "));
+        boost::trim (line);
+        boost::split (st, line, boost::is_any_of (" "), boost::token_compress_on);
 
         string line_type = st.at (0);
         if (line_type.substr (0, 1) == "#")
@@ -167,10 +168,12 @@ class PlayerLogToMsg
         if (msg_scan_.ranges.size () == 0)        // If no points found, continue to the next packet
           continue;
 
+        int j = 0;
         for (unsigned int i = 0; i < msg_scan_.ranges.size (); i++)
         {
-          msg_scan_.ranges[i] = atof (st.at (13 + i).c_str ());
-          msg_scan_.intensities[i] = atoi (st.at (14 + i).c_str ());
+          msg_scan_.ranges[i] = atof (st.at (13 + i + j).c_str ());
+          msg_scan_.intensities[i] = atoi (st.at (14 + i + j).c_str ());
+          j++;
         }
         total_nr_points += msg_scan_.ranges.size ();
 
