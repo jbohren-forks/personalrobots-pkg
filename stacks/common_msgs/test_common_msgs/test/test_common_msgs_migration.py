@@ -201,6 +201,26 @@ class TestCommonMsgsMigration(unittest.TestCase):
     self.do_test('point_stamped', self.get_old_point_stamped, self.get_new_point_stamped)
 
 
+########### Point32 ###############
+
+
+  def get_old_point32(self):
+    point32_classes = self.load_saved_classes('Point32.saved')
+    
+    point32  = point32_classes['robot_msgs/Point32']
+    
+    return point32(1.23, 4.56, 7.89)
+
+  def get_new_point32(self):
+    from geometry_msgs.msg import Point32
+    
+    return Point32(1.23, 4.56, 7.89)
+
+
+  def test_point32(self):
+    self.do_test('point32', self.get_old_point32, self.get_new_point32)
+
+
 ########### Transform ###############
 
 
@@ -299,7 +319,27 @@ class TestCommonMsgsMigration(unittest.TestCase):
 
   def test_pose_stamped(self):
     self.do_test('pose_stamped', self.get_old_pose_stamped, self.get_new_pose_stamped)
+    
 
+########### Velocity ###############
+
+
+  def get_old_velocity(self):
+    velocity_classes = """self.load_saved_classes('Velocity.saved')
+    
+    velocity  = velocity_classes['robot_msgs/Velocity']
+    
+    return velocity(1.23, 4.56, 7.89)
+
+  def get_new_velocity(self):
+    from geometry_msgs.msg import Vector3
+    
+    return Vector3(1.23, 4.56, 7.89)
+
+
+  def test_velocity(self):
+    self.do_test('velocity', self.get_old_velocity, self.get_new_velocity)
+    """
 
 ########### Twist ###############
 
@@ -325,6 +365,58 @@ class TestCommonMsgsMigration(unittest.TestCase):
 
 
 
+
+
+########### Channelfloat32 ###############
+
+
+  def get_old_channelfloat32(self):
+    channelfloat32_classes = self.load_saved_classes('ChannelFloat32.saved')
+    
+    channelfloat32  = channelfloat32_classes['robot_msgs/ChannelFloat32']
+    
+    return channelfloat32("myname", [1.23, 4.56, 7.89])
+
+  def get_new_channelfloat32(self):
+    from sensor_msgs.msg import ChannelFloat32
+    
+    return ChannelFloat32("myname", [1.23, 4.56, 7.89])
+
+
+  def test_channelfloat32(self):
+    self.do_test('channelfloat32', self.get_old_channelfloat32, self.get_new_channelfloat32)
+
+
+########### PointCloud ###############
+
+
+  def get_old_pointcloud(self):
+    pointcloud_classes = self.load_saved_classes('PointCloud.saved')
+    
+    pointcloud  = pointcloud_classes['robot_msgs/PointCloud']
+    point32  = pointcloud_classes['robot_msgs/PointCloud']
+    channelfloat32  = pointcloud_classes['robot_msgs/ChannelFloat32']
+
+    points = [point32(1,2,3), point32(4,5,6)]
+    channels = [channelfloat32("myname", [1.23, 4.56]),
+                channelfloat32("myname", [1.23, 4.56])]
+    return pointcloud(None, points, channels)
+
+  def get_new_pointcloud(self):
+    from sensor_msgs.msg import PointCloud
+    from geometry_msgs.msg import Point32
+    from sensor_msgs.msg import ChannelFloat32
+
+    Points = [point32(1,2,3), point32(4,5,6)]
+    Channels = [channelfloat32("myname", [1.23, 4.56]),
+                channelfloat32("myname", [1.23, 4.56])]
+
+    
+    return PointCloud(None, Points, Channels)
+
+
+  def test_pointcloud(self):
+    self.do_test('pointcloud', self.get_old_pointcloud, self.get_new_pointcloud)
 
 
 ########### Helper functions ###########
@@ -379,6 +471,10 @@ class TestCommonMsgsMigration(unittest.TestCase):
     m.deserialize(buff.getvalue())
     
     #Compare
+    print "old"
+    print roslib.message.strify_message(msgs[0][1])
+    print "new"
+    print roslib.message.strify_message(m)
 
     # Strifying them helps make the comparison easier until I figure out why the equality operator is failing
     self.assertTrue(roslib.message.strify_message(msgs[0][1]) == roslib.message.strify_message(m))

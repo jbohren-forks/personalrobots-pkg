@@ -618,3 +618,52 @@ float64 w
 		self.migrate(old_msg.header, new_msg.header)
 		self.migrate(old_msg.pose, new_msg.pose)
 
+class update_robot_msgs_Velocity_ffb367ff390f5e01cb55c0c75927c19a(MessageUpdateRule):
+	old_type = "robot_msgs/Velocity"
+	old_full_text = """
+float64 vx
+float64 vy
+float64 vz
+"""
+
+	new_type = "geometry_msgs/Vector3"
+	new_full_text = """
+float64 x
+float64 y
+float64 z
+"""
+
+	order = 0
+	migrated_types = []
+
+	valid = True
+
+	def update(self, old_msg, new_msg):
+		new_msg.x = old_msg.vx
+		new_msg.y = old_msg.vy
+		new_msg.z = old_msg.vz
+class update_robot_msgs_Point32_cc153912f1453b708d221682bc23d9ac(MessageUpdateRule):
+	old_type = "robot_msgs/Point32"
+	old_full_text = """
+float32 x
+float32 y
+float32 z
+"""
+
+	new_type = "geometry_msgs/Point32"
+	new_full_text = """
+float32 x
+float32 y
+float32 z
+"""
+
+	order = 0
+	migrated_types = []
+
+	valid = True
+
+	def update(self, old_msg, new_msg):
+		new_msg.x = old_msg.x
+		new_msg.y = old_msg.y
+		new_msg.z = old_msg.z
+

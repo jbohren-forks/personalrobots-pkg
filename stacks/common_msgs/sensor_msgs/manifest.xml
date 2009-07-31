@@ -11,6 +11,7 @@
 
   <export>
     <cpp cflags="-I${prefix}/include -I${prefix}/msg/cpp"/>
+    <rosbagmigration rule_file="migration_rules/migration_rules.py"/>
   </export>
 
   <depend package="std_msgs"/>
