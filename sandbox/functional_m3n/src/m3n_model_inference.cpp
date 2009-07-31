@@ -171,6 +171,9 @@ int M3NModel::inferPrivate(const RandomField& random_field,
                            map<unsigned int, unsigned int>& inferred_labels,
                            unsigned int max_iterations)
 {
+  time_t start_timer, end_timer;
+  time(&start_timer);
+
   // WARNING: if you change this value, you must change the calls in addNodeEnergy, addCliqueEnergy
   const unsigned int ALPHA_VALUE = 0;
 
@@ -178,6 +181,12 @@ int M3NModel::inferPrivate(const RandomField& random_field,
   // Retrieve random field information
   const map<unsigned int, RandomField::Node*>& nodes = random_field.getNodesRandomFieldIDs();
   const vector<map<unsigned int, RandomField::Clique*> >& clique_sets = random_field.getCliqueSets();
+  if (nodes.size() == 0)
+  {
+    ROS_WARN("M3NModel::inferPrivate called on an empty random field");
+    inferred_labels.clear();
+    return 0;
+  }
 
   // Estimate the max number of nodes and edges in the graph for alpha-expansion
   int est_nbr_energy_nodes = nodes.size() + (clique_sets.size() * 3);
@@ -318,7 +327,17 @@ int M3NModel::inferPrivate(const RandomField& random_field,
       }
     }
   }
-  ROS_INFO("Inference converged to energy %f after %u iterations", prev_energy, t);
+
+  time(&end_timer);
+
+  if (ret_val == 0)
+  {
+    ROS_INFO("Inference converged to energy %f after %u iterations in %f seconds", prev_energy, t, difftime(end_timer, start_timer));
+  }
+  else
+  {
+    ROS_WARN("Inference failed after %u iterations", t);
+  }
   return ret_val;
 }
 
