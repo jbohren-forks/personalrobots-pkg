@@ -59,8 +59,7 @@ public:
 
   virtual ~EthercatDevice() {}
 
-  virtual int initialize(Actuator *, bool allow_unprogrammed=0, bool motor_model=0) = 0;
-  virtual void initXml(TiXmlElement *) {}
+  virtual int initialize(Actuator *, bool allow_unprogrammed=0) = 0;
 
   virtual void convertCommand(ActuatorCommand &command, unsigned char *buffer) = 0;
   virtual void convertState(ActuatorState &state, unsigned char *current_buffer, unsigned char *last_buffer) = 0;

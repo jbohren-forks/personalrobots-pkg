@@ -72,7 +72,7 @@ EthercatHardware::~EthercatHardware()
   publisher_.stop();
 }
 
-void EthercatHardware::init(char *interface, bool allow_unprogrammed, bool motor_model)
+void EthercatHardware::init(char *interface, bool allow_unprogrammed)
 {
   // Initialize network interface
   interface_ = interface;
@@ -161,7 +161,7 @@ void EthercatHardware::init(char *interface, bool allow_unprogrammed, bool motor
   set<string> actuator_names;
   for (unsigned int slave = 0, a = 0; slave < num_slaves_; ++slave)
   {
-    if (slaves_[slave]->initialize(slaves_[slave]->has_actuator_ ? hw_->actuators_[a] : NULL, allow_unprogrammed, motor_model) < 0)
+    if (slaves_[slave]->initialize(slaves_[slave]->has_actuator_ ? hw_->actuators_[a] : NULL, allow_unprogrammed) < 0)
     {
       ROS_FATAL("Unable to initialize slave #%d", slave);
       ROS_BREAK();
@@ -191,39 +191,6 @@ void EthercatHardware::init(char *interface, bool allow_unprogrammed, bool motor
   statuses_.reserve(num_slaves_ + 1);
   strings_.reserve(5);
   values_.reserve(5);
-}
-
-void EthercatHardware::initXml(TiXmlElement *config, bool allow_override)
-{
-  unsigned int a = 0, s = 0;
-
-  for (TiXmlElement *elt = config->FirstChildElement("actuator"); elt; elt = elt->NextSiblingElement("actuator"))
-  {
-    while (s < num_slaves_ && !slaves_[s]->has_actuator_)
-      ++s;
-    if (s == num_slaves_)
-    {
-      ROS_FATAL("Too many actuators defined in XML file");
-      ROS_BREAK();
-    }
-
-    if (allow_override)
-    {
-      hw_->actuators_[a]->name_ = elt->Attribute("name");
-      slaves_[s]->initXml(elt);
-      ++s;
-    }
-    else
-    {
-      if (hw_->actuators_[a]->name_ != elt->Attribute("name"))
-      {
-        ROS_FATAL("Name programmed into board ('%s') does not equal actuator name in XML file ('%s')\n", hw_->actuators_[a]->name_.c_str(), elt->Attribute("name"));
-        ROS_BREAK();
-      }
-    }
-    ++a;
-  }
-  publishDiagnostics();
 }
 
 #define ADD_STRING_FMT(lab, fmt, ...) \

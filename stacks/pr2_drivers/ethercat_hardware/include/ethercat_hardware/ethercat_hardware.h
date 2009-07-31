@@ -35,8 +35,6 @@
 #ifndef ETHERCAT_HARDWARE_H
 #define ETHERCAT_HARDWARE_H
 
-#include <tinyxml/tinyxml.h>
-
 #include <hardware_interface/hardware_interface.h>
 
 #include <al/ethercat_AL.h>
@@ -74,12 +72,7 @@ public:
   /*!
    * \brief Initialize the EtherCAT Master Library.
    */
-  void init(char *interface, bool allow_unprogrammed, bool motor_model);
-
-  /*!
-   * \brief Register actuators with mechanism control
-   */
-  void initXml(TiXmlElement *config, bool allow_override);
+  void init(char *interface, bool allow_unprogrammed);
 
   /*!
    * \brief Publish diagnostic messages

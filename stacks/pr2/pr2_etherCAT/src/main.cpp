@@ -48,7 +48,6 @@
 
 #include <ros/ros.h>
 #include <std_srvs/Empty.h>
-#include <pr2_etherCAT/RealtimeStats.h>
 
 #include <realtime_tools/realtime_publisher.h>
 
@@ -63,11 +62,7 @@ static struct
   char *program_;
   char *interface_;
   char *xml_;
-  bool allow_override_;
   bool allow_unprogrammed_;
-  bool quiet_;
-  bool motor_model_;
-  bool stats;
 } g_options;
 
 std::string g_robot_desc;
@@ -79,9 +74,6 @@ void Usage(string msg = "")
   fprintf(stderr, "    -i, --interface <interface> Connect to EtherCAT devices on this interface\n");
   fprintf(stderr, "    -x, --xml <file|param>      Load the robot description from this file or parameter name\n");
   fprintf(stderr, "    -u, --allow_unprogrammed    Allow control loop to run with unprogrammed devices\n");
-  fprintf(stderr, "    -m, --motor_model           Publish motor model values\n");
-  fprintf(stderr, "    -s, --stats                 Publish realtime statistics\n");
-  fprintf(stderr, "    -q, --quiet                 Don't print warning messages when switching to secondary mode\n");
   fprintf(stderr, "    -h, --help                  Print this message and exit\n");
   if (msg != "")
   {
@@ -103,7 +95,6 @@ static struct
 {
   accumulator_set<double, stats<tag::max, tag::mean> > ec_acc;
   accumulator_set<double, stats<tag::max, tag::mean> > mc_acc;
-  int secondary;
 } g_stats;
 
 static void publishDiagnostics(realtime_tools::RealtimePublisher<diagnostic_msgs::DiagnosticMessage> &publisher)
@@ -145,7 +136,6 @@ static void publishDiagnostics(realtime_tools::RealtimePublisher<diagnostic_msgs
   } \
   strings.push_back(s)
 
-    ADD_STRING_FMT("Secondary mode switches", "%d", g_stats.secondary);
     ADD_STRING_FMT("Max EtherCAT roundtrip (us)", "%.2f", max_ec*1e+6);
     ADD_STRING_FMT("Avg EtherCAT roundtrip (us)", "%.2f", avg_ec*1e+6);
     ADD_STRING_FMT("Max Mechanism Control roundtrip (us)", "%.2f", max_mc*1e+6);
@@ -154,14 +144,6 @@ static void publishDiagnostics(realtime_tools::RealtimePublisher<diagnostic_msgs
     status.name = "Realtime Control Loop";
     status.level = 0;
     status.message = "OK";
-    if (g_stats.secondary > 100) {
-      status.level = 1;
-      status.message = "Too many secondary mode switches";
-    }
-    if (g_stats.secondary > 1000) {
-      status.level = 2;
-      status.message = "Too many secondary mode switches";
-    }
 
     status.set_values_vec(values);
     status.set_strings_vec(strings);
@@ -182,17 +164,10 @@ void *controlLoop(void *)
 {
   ros::NodeHandle node;
   realtime_tools::RealtimePublisher<diagnostic_msgs::DiagnosticMessage> publisher(node, "/diagnostics", 2);
-  realtime_tools::RealtimePublisher<pr2_etherCAT::RealtimeStats> *rtpublisher = 0;
-  accumulator_set<double, stats<tag::max, tag::mean> > acc;
-
-  if (g_options.stats)
-  {
-    rtpublisher = new realtime_tools::RealtimePublisher<pr2_etherCAT::RealtimeStats> (node, "/realtime", 2);
-  }
 
   // Initialize the hardware interface
   EthercatHardware ec;
-  ec.init(g_options.interface_, g_options.allow_unprogrammed_, g_options.motor_model_);
+  ec.init(g_options.interface_, g_options.allow_unprogrammed_);
 
   // Create mechanism control
   controller::MechanismControl mc(ec.hw_);
@@ -224,9 +199,6 @@ void *controlLoop(void *)
   }
   urdf::normalizeXml(root_element);
 
-  // Register actuators with mechanism control
-  ec.initXml(root, g_options.allow_override_);
-
   // Initialize mechanism control from robot description
   mc.initXml(root);
 
@@ -249,8 +221,6 @@ void *controlLoop(void *)
     double start = now();
     if (g_reset_motors)
     {
-      accumulator_set<double, stats<tag::max, tag::mean> > zero;
-      acc = zero;
       ec.update(true, g_halt_motors);
       g_reset_motors = false;
     }
@@ -279,21 +249,6 @@ void *controlLoop(void *)
       tick.tv_sec++;
     }
     clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &tick, NULL);
-
-    if (rtpublisher)
-    {
-      struct timespec after;
-      clock_gettime(CLOCK_MONOTONIC, &after);
-      double jitter = (after.tv_sec - tick.tv_sec + double(after.tv_nsec-tick.tv_nsec)/1e9)*1e6;
-      acc(jitter);
-      if (rtpublisher->trylock())
-      {
-        rtpublisher->msg_.jitter  = jitter;
-        rtpublisher->msg_.avg_jitter  = extract_result<tag::mean>(acc);
-        rtpublisher->msg_.max_jitter  = extract_result<tag::max>(acc);
-        rtpublisher->unlockAndPublish();
-      }
-    }
   }
 
   /* Shutdown all of the motors on exit */
@@ -305,7 +260,6 @@ void *controlLoop(void *)
   ec.update(false, true);
 
   publisher.stop();
-  if (rtpublisher) delete rtpublisher;
 
   ros::shutdown();
 
@@ -333,25 +287,6 @@ bool haltMotorsService(std_srvs::Empty::Request &req, std_srvs::Empty::Response 
 {
   g_halt_motors = true;
   return true;
-}
-
-void warnOnSecondary(int sig)
-{
-  void *bt[32];
-  int nentries;
-
-  // Increment diagnostic count of secondary mode switches
-  ++g_stats.secondary;
-
-  // Dump a backtrace of the frame which caused the switch to
-  // secondary mode
-  if (!g_options.quiet_)
-  {
-    nentries = backtrace(bt, sizeof(bt) / sizeof(bt[0]));
-    backtrace_symbols_fd(bt, nentries, fileno(stdout));
-    printf("\n");
-    fflush(stdout);
-  }
 }
 
 static int
@@ -478,36 +413,20 @@ int main(int argc, char *argv[])
   {
     static struct option long_options[] = {
       {"help", no_argument, 0, 'h'},
-      {"allow_override", no_argument, 0, 'a'},
       {"allow_unprogrammed", no_argument, 0, 'u'},
-      {"quiet", no_argument, 0, 'q'},
-      {"motor_model", no_argument, 0, 'm'},
-      {"stats", no_argument, 0, 's'},
       {"interface", required_argument, 0, 'i'},
       {"xml", required_argument, 0, 'x'},
     };
     int option_index = 0;
-    int c = getopt_long(argc, argv, "ahi:mqsux:", long_options, &option_index);
+    int c = getopt_long(argc, argv, "hi:ux:", long_options, &option_index);
     if (c == -1) break;
     switch (c)
     {
       case 'h':
         Usage();
         break;
-      case 'a':
-        g_options.allow_override_ = 1;
-        break;
       case 'u':
         g_options.allow_unprogrammed_ = 1;
-        break;
-      case 'm':
-        g_options.motor_model_ = 1;
-        break;
-      case 'q':
-        g_options.quiet_ = 1;
-        break;
-      case 's':
-        g_options.stats = 1;
         break;
       case 'i':
         g_options.interface_ = optarg;
@@ -533,9 +452,6 @@ int main(int argc, char *argv[])
   signal(SIGTERM, quitRequested);
   signal(SIGINT, quitRequested);
   signal(SIGHUP, quitRequested);
-
-  // Catch if we fall back to secondary mode
-  signal(SIGXCPU, warnOnSecondary);
 
   ros::ServiceServer shutdown = node.advertiseService("shutdown", shutdownService);
   ros::ServiceServer reset = node.advertiseService("reset_motors", resetMotorsService);

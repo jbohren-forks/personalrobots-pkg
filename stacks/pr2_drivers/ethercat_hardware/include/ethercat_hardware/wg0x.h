@@ -39,7 +39,6 @@
 
 #include <realtime_tools/realtime_publisher.h>
 #include <ethercat_hardware/PressureState.h>
-#include <ethercat_hardware/MotorModel.h>
 #include <ethercat_hardware/AccelerometerState.h>
 
 struct WG0XMbxHdr
@@ -229,8 +228,7 @@ public:
   WG0X(EtherCAT_SlaveHandler *sh, int &start_address);
   virtual ~WG0X();
 
-  virtual int initialize(Actuator *, bool allow_unprogrammed=true, bool motor_model=false);
-  void initXml(TiXmlElement *);
+  virtual int initialize(Actuator *, bool allow_unprogrammed=true);
 
   void convertCommand(ActuatorCommand &command, unsigned char *buffer);
   virtual void convertState(ActuatorState &state, unsigned char *current_buffer, unsigned char *last_buffer);
@@ -320,9 +318,6 @@ private:
   int consecutive_drops_;
   int max_consecutive_drops_;
   bool in_lockout_;
-
-  realtime_tools::RealtimePublisher<ethercat_hardware::MotorModel> *motor_publisher_;
-
 };
 
 class WG05 : public WG0X
@@ -349,7 +344,7 @@ class WG06 : public WG0X
 public:
   WG06(EtherCAT_SlaveHandler *sh, int &addr) : WG0X(sh, addr), use_ros_(true), last_pressure_time_(0), pressure_publisher_(0), accel_publisher_(0) {}
   ~WG06();
-  int initialize(Actuator *, bool allow_unprogrammed=true, bool motor_model=false);
+  int initialize(Actuator *, bool allow_unprogrammed=true);
   void convertState(ActuatorState &state, unsigned char *current_buffer, unsigned char *last_buffer);
   enum
   {

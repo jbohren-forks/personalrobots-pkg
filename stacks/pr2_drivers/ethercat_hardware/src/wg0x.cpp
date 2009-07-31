@@ -101,7 +101,6 @@ void WG0XMbxCmd::build(unsigned address, unsigned length, bool write_nread, void
 
 WG0X::~WG0X()
 {
-  if (motor_publisher_) delete motor_publisher_;
   delete sh_->get_fmmu_config();
   delete sh_->get_pd_config();
 }
@@ -129,7 +128,6 @@ WG0X::WG0X(EtherCAT_SlaveHandler *sh, int &startAddress) : EthercatDevice(sh, tr
   consecutive_drops_ = 0;
   max_consecutive_drops_ = 0;
   in_lockout_ = false;
-  motor_publisher_ = 0;
 
   fw_major_ = (sh->get_revision() >> 8) & 0xff;
   fw_minor_ = sh->get_revision() & 0xff;
@@ -215,9 +213,9 @@ WG0X::WG0X(EtherCAT_SlaveHandler *sh, int &startAddress) : EthercatDevice(sh, tr
   sh->set_pd_config(pd);
 }
 
-int WG06::initialize(Actuator *actuator, bool allow_unprogrammed, bool motor_model)
+int WG06::initialize(Actuator *actuator, bool allow_unprogrammed)
 {
-  int retval = WG0X::initialize(actuator, allow_unprogrammed, motor_model);
+  int retval = WG0X::initialize(actuator, allow_unprogrammed);
   
   if (!retval && use_ros_)
   {
@@ -239,7 +237,7 @@ int WG06::initialize(Actuator *actuator, bool allow_unprogrammed, bool motor_mod
   return retval;
 }
 
-int WG0X::initialize(Actuator *actuator, bool allow_unprogrammed, bool motor_model)
+int WG0X::initialize(Actuator *actuator, bool allow_unprogrammed)
 {
   ROS_DEBUG("Device #%02d: WG0%d (%#08x) Firmware Revision %d.%02d, PCB Revision %c.%02d", sh_->get_ring_position(),
          sh_->get_product_code() == WG05::PRODUCT_CODE ? 5 : 6,
@@ -299,8 +297,6 @@ int WG0X::initialize(Actuator *actuator, bool allow_unprogrammed, bool motor_mod
     actuator->name_ = actuator_info_.name_;
     backemf_constant_ = 1.0 / (actuator_info_.speed_constant_ * 2 * M_PI * 1.0/60);
     ROS_DEBUG("            Name: %s", actuator_info_.name_);
-    string topic = "/motor_model/" + string(actuator_info_.name_);
-    motor_publisher_ = motor_model ? new realtime_tools::RealtimePublisher<ethercat_hardware::MotorModel>(ros::NodeHandle(), topic, 1) : 0;
   }
   else if (allow_unprogrammed)
   {
@@ -328,27 +324,6 @@ int WG0X::initialize(Actuator *actuator, bool allow_unprogrammed, bool motor_mod
       ROS_BREAK(); \
     } \
   } \
-}
-
-void WG0X::initXml(TiXmlElement *elt)
-{
-  ROS_WARN("Overriding actuator: %s", actuator_info_.name_);
-
-  const char *attr;
-  GET_ATTR("name");
-  strcpy(actuator_info_.name_, attr);
-
-  GET_ATTR("motorTorqueConstant");
-  actuator_info_.motor_torque_constant_ = atof(attr);
-
-  GET_ATTR("pulsesPerRevolution");
-  actuator_info_.pulses_per_revolution_ = atof(attr);
-
-  GET_ATTR("encoderReduction");
-  actuator_info_.encoder_reduction_ = atof(attr);
-
-  GET_ATTR("maxCurrent");
-  actuator_info_.max_current_ = atof(attr);
 }
 
 void WG0X::convertCommand(ActuatorCommand &command, unsigned char *buffer)
@@ -570,20 +545,6 @@ bool WG0X::verifyState(ActuatorState &state, unsigned char *this_buffer, unsigne
     reason = "Current loop error too large";
     level = 2;
   }
-
-  if (motor_publisher_ && motor_publisher_->trylock())
-  {
-    motor_publisher_->msg_.measured_current = state.last_measured_current_;
-    motor_publisher_->msg_.commanded_current = last_commanded_current;
-    motor_publisher_->msg_.current_error = current_error_;
-    motor_publisher_->msg_.filtered_current_error = filtered_current_error_;
-    motor_publisher_->msg_.measured_voltage = voltage_estimate_;
-    motor_publisher_->msg_.expected_voltage = expected_voltage;
-    motor_publisher_->msg_.voltage_error = voltage_error_;
-    motor_publisher_->msg_.filtered_voltage_error = filtered_voltage_error_;
-    motor_publisher_->unlockAndPublish();
-  }
-
 
 end:
   if (level_ != 1)

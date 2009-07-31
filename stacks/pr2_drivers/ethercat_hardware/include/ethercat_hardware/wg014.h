@@ -42,7 +42,7 @@ class WG014 : public EthercatDevice
 public:
   WG014(EtherCAT_SlaveHandler *sh, int &start_address);
   ~WG014();
-  int initialize(Actuator *, bool, bool);
+  int initialize(Actuator *, bool);
   void convertCommand(ActuatorCommand &command, unsigned char *buffer) {}
   void convertState(ActuatorState &state, unsigned char *current_buffer, unsigned char *last_buffer) {}
   void computeCurrent(ActuatorCommand &command) {}
