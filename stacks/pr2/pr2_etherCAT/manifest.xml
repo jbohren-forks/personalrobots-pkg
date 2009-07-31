@@ -16,6 +16,7 @@ Main loop that runs the robot.
   <depend package="dynamic_verification_controllers" />
   <depend package="realtime_tools"/>
   <depend package="diagnostic_msgs"/>
+  <depend package="experimental_controllers"/>
   <url>http://pr.willowgarage.com</url>
   <repository>http://pr.willowgarage.com/repos</repository>
 </package>
