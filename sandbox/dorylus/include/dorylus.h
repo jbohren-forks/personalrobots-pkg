@@ -38,12 +38,9 @@
 #ifndef DORYLUS_H
 #define DORYLUS_H
 
-//#include <Eigen/StdVector>
 #include <limits>
 
 #include <iomanip>
-#include <newmat10/newmat.h>
-#include <newmat10/newmatio.h>
 #include <Eigen/Core>
 #include <Eigen/Array>
 
@@ -59,25 +56,12 @@
 #include <float.h>
 #include <math.h>
 #include <cmath>
-
-
-
-
-NEWMAT::Matrix* eigen2Newmat(const Eigen::MatrixXf& eig) {
-  NEWMAT::Matrix *m = new NEWMAT::Matrix(eig.rows(), eig.cols());
-  for(int i=0; i<eig.rows(); i++) {
-    for(int j=0; j<eig.cols(); j++) {
-      (*m)(i+1, j+1) = eig(i,j);
-    }
-  }
-  return m;
-}
-
+#include <string>
 
 typedef struct
 {
   //! The name of the descriptor this weak classifier is concerned with.
-  string descriptor;
+  std::string descriptor;
   Eigen::MatrixXf center;
   float theta;
   //! The a_t^c's, i.e. the values of the weak classifier responses.
@@ -85,23 +69,23 @@ typedef struct
   //! to identify which was learned first, second, third, etc.
   int id;
   //! For centroid voting, boundary fragments, etc.  Not yet fully supported.
-  map<string, void*> user_data;
+  std::map<std::string, void*> user_data;
   float utility;
 } weak_classifier;
 
-string displayWeakClassifier(const weak_classifier &wc);
+std::string displayWeakClassifier(const weak_classifier &wc);
 
 class object {
  public:
   //! 0 = Background.
   int label;
-  map<string, Eigen::MatrixXf*> features;
+  std::map<std::string, Eigen::MatrixXf*> features;
 
 
-  string status(bool showFeatures=true);
+  std::string status(bool showFeatures=true);
   object() {}
   ~object() {
-    map<string, Eigen::MatrixXf*>::iterator fit;
+    std::map<std::string, Eigen::MatrixXf*>::iterator fit;
     for(fit=features.begin(); fit!=features.end(); fit++) {
       delete fit->second;
     }
@@ -110,31 +94,13 @@ class object {
   //! Allocates new memory for features.
   object(const object& o) {
     label = o.label;
-    map<string, Eigen::MatrixXf*>::const_iterator fit; 
+    std::map<std::string, Eigen::MatrixXf*>::const_iterator fit; 
     for(fit = o.features.begin(); fit!=o.features.end(); fit++) {
       features[fit->first] = new Eigen::MatrixXf(*(fit->second));
     }
   }    
 };
 
-
-inline float euc(const NEWMAT::Matrix& a, const NEWMAT::Matrix& b)
-{
-  assert(a.Ncols() == 1 && b.Ncols() == 1);
-  assert(a.Nrows() == b.Nrows());
-
-  NEWMAT::Real* pa = a.Store();
-  NEWMAT::Real* pb = b.Store();
-  float r = 0;
-  for(int i=0; i<a.Nrows(); i++) {
-    r += pow((float)((*pa) - (*pb)), 2);
-    pa++;
-    pb++;
-  }
-
-  //assert(abs((float)((a-b).NormFrobenius() - sqrt(r))) < 1e-3);  
-  return sqrt(r);
-}
 
 inline float euc(const Eigen::MatrixXf& a, const Eigen::MatrixXf& b)
 {
@@ -157,28 +123,28 @@ inline float euc(const Eigen::MatrixXf& a, const Eigen::MatrixXf& b)
 
 class DorylusDataset {
  public:
-  vector<object*> objs_;
+  std::vector<object*> objs_;
   //! Matrix of y_m^c values.  i.e. ymc_(c,m) = +1 if the label of training example m is c, and -1 otherwise.
   Eigen::MatrixXf ymc_;
   //! Number of classes, not including class 0.
   unsigned int nClasses_; 
   //! num_class_objs[label] = num training examples with that label.  Unlike classes_, this does include the label 0, which is used for background / unknown objects.
-  map<int, unsigned int> num_objs_of_class_;
+  std::map<int, unsigned int> num_objs_of_class_;
   //! List of labels in the dataset.  Does not include the label 0, which is used for background / unknown objects.
-  vector<int> classes_;
+  std::vector<int> classes_;
   std::string version_string_;
 
  DorylusDataset() : nClasses_(0)
   {
     version_string_ = std::string("#DORYLUS DATASET LOG v0.1");
-    cout << "DorylusDataset(), version_string_ = "<< version_string_ << endl;
+    std::cout << "DorylusDataset(), version_string_ = "<< version_string_ << std::endl;
   }
 
   std::string status();
   std::string displayObjects();
   std::string displayYmc();
 
-  void setObjs(const vector<object*> &objs);
+  void setObjs(const std::vector<object*> &objs);
   bool save(std::string filename);
   bool load(std::string filename, bool quiet=false);
   bool join(const DorylusDataset& dd2);
@@ -189,34 +155,34 @@ class DorylusDataset {
 class Dorylus {
  public:
   //! Weak classifiers are stored according to which descriptor they are from.
-  map<string, vector<weak_classifier*> > battery_;
+  std::map<std::string, std::vector<weak_classifier*> > battery_;
   //! Pointers to weak classifiers, in the order that they were learned.
-  vector<weak_classifier*> pwcs_;
+  std::vector<weak_classifier*> pwcs_;
   //! nClasses x nTrEx.
   Eigen::MatrixXf log_weights_;
   float objective_, objective_prev_, training_err_;
   DorylusDataset *dd_;
-  string version_string_;
+  std::string version_string_;
   unsigned int nClasses_;
-  vector<int> classes_;
-  vector<string> exclude_descriptors_;
+  std::vector<int> classes_;
+  std::vector<std::string> exclude_descriptors_;
   //! Prevents classifier from using any weak classifier learned after this number of weak classifiers.  If 0, no limit.
   int max_wc_;
 
   //! debugHook will be called each time a new weak classifier is learned. 
   void train(int nCandidates, int max_secs, int max_wcs, void (*debugHook)(weak_classifier)=NULL);
   void useDataset(DorylusDataset *dd);
-  bool save(string filename, string *user_data_str=NULL);
-  bool load(string filename, bool quiet=false, string *user_data_str=NULL);
+  bool save(std::string filename, std::string *user_data_str=NULL);
+  bool load(std::string filename, bool quiet=false, std::string *user_data_str=NULL);
   std::string status();
-  bool learnWC(int nCandidates, map<string, float> max_thetas, vector<string> *desc_ignore=NULL);
+  bool learnWC(int nCandidates, std::map<std::string, float> max_thetas, std::vector<std::string> *desc_ignore=NULL);
   Eigen::VectorXf classify(object &obj);
   float classify(DorylusDataset &dd);
-  map<string, float> computeMaxThetas(const DorylusDataset &dd);
+  std::map<std::string, float> computeMaxThetas(const DorylusDataset &dd);
   float computeUtility(const weak_classifier& wc, const Eigen::VectorXf& mmt);
   float computeObjective();
   //void train(int nCandidates, int max_secs, int max_wcs);
-  vector<weak_classifier*>* findActivatedWCs(const string &descriptor, const Eigen::MatrixXf &pt);
+  std::vector<weak_classifier*>* findActivatedWCs(const std::string &descriptor, const Eigen::MatrixXf &pt);
   bool compare(const Dorylus& d);
 
  Dorylus() : dd_(NULL), nClasses_(0), max_wc_(0)

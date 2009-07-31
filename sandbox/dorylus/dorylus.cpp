@@ -40,7 +40,6 @@
 #include <signal.h>
 
 using namespace std;
-//using namespace NEWMAT;
 USING_PART_OF_NAMESPACE_EIGEN
 
 bool g_int = false;
@@ -766,7 +765,6 @@ bool Dorylus::learnWC(int nCandidates, map<string, float> max_thetas, vector<str
       }
 
       //Get the M_m^t, number of points in the hypersphere of cand[i] for each object.
-      //NEWMAT::Matrix mmt(1,dd_->objs_.size()); mmt=0.0;
       VectorXf mmt = VectorXf::Zero(dd_->objs_.size());
       for(unsigned int j=0; j<dists.size(); j++) {
 	for(int k=0; k<dists[j].rows(); k++) {
@@ -775,48 +773,26 @@ bool Dorylus::learnWC(int nCandidates, map<string, float> max_thetas, vector<str
 	}
       }
 
-//       // -- AdaBoost: Use Newton's method to solve for the a_t^c's.
-//       cand[i]->vals = NEWMAT::Matrix(dd_->nClasses_, 1); cand[i]->vals = 0.0;
-//       for(unsigned int c=0; c<dd_->nClasses_; c++) {
-// 	//TODO: Check if the function is unbounded below.
-
-// 	Function fcn(this, mmt, c);
-// 	Gradient grad(this, mmt, c);
-// 	Hessian hes(this, mmt, c);
-
-// 	cand[i]->vals(c+1,1) = newtonSingle(fcn, grad, hes, 1e-6);
-//       }
-
       // -- GentleBoost: take a single newton step to set the a_t^c's.
       cand[i]->vals = VectorXf::Zero(dd_->nClasses_);
 
       int M = dd_->objs_.size();
 
-      NEWMAT::Matrix numerators(nClasses_,1);
-      NEWMAT::Matrix denominators(nClasses_,1);
-      numerators = 0.0;
-      denominators = 0.0;
-      NEWMAT::Real* pnums = numerators.Store();
-      NEWMAT::Real* pdens = denominators.Store();
+      VectorXf numerators = VectorXf::Zero(nClasses_);
+      VectorXf denominators = VectorXf::Zero(nClasses_);
       for(int m=0; m<M; m++) {
 	if(mmt(m) == 0)
 	  continue;
 	for(unsigned int c=0; c<dd_->nClasses_; c++) {
-	  pnums[c] += exp(log_weights_(c, m)) * dd_->ymc_(c, m) * mmt(m);
-	  pdens[c] += exp(log_weights_(c, m)) * mmt(m) * mmt(m);
+	  numerators(c) += exp(log_weights_(c, m)) * dd_->ymc_(c, m) * mmt(m);
+	  denominators(c) += exp(log_weights_(c, m)) * mmt(m) * mmt(m);
 	}
-
-// 	// -- Non-negative responses test.
-// 	if(cand[i]->vals(c+1,1) < 0) {
-// 	  cand[i]->vals(c+1,1) = 0;
-// 	}
-
       }
       for(unsigned int c=0; c<dd_->nClasses_; c++) {
-	if(pdens[c]==0)
+	if(denominators(c) == 0)
 	  cand[i]->vals(c) = 0;
 	else
-	  cand[i]->vals(c) = pnums[c] / pdens[c];
+	  cand[i]->vals(c) = numerators(c) / denominators(c);
       }
 
 
@@ -904,8 +880,6 @@ map<string, float> Dorylus::computeMaxThetas(const DorylusDataset &dd) {
   map<string, VectorXf>::iterator mit;
   for(mit = means.begin(); mit != means.end(); mit++) {
     mit->second = mit->second / nPts[mit->first];
-//     NEWMAT::Matrix div(1,1); div = 1 / nPts[mit->first];
-//     mit->second = KP(mit->second, div);
   }
 
   // -- Get the variances for each descriptor space.
