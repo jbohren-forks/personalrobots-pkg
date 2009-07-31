@@ -66,7 +66,7 @@
 
 #include <trajectory/trajectory.h>
 
-#include <robot_msgs/ControllerState.h>
+#include <pr2_mechanism_controllers/ControllerState.h>
 #include <realtime_tools/realtime_publisher.h>
 #include <realtime_tools/realtime_tools.h>
 #include <std_msgs/String.h>
@@ -83,7 +83,7 @@ namespace controller
     // comment this out if the controller is not supposed to publish its own max execution time
   #define PUBLISH_MAX_TIME
 
- 
+
 // The maximum number of joints expected in an arm.
   static const int MAX_ARM_JOINTS = 7;
 
@@ -170,7 +170,7 @@ namespace controller
 
     std::vector<double> goal_reached_threshold_;
 
-    realtime_tools::RealtimePublisher <robot_msgs::ControllerState>* controller_state_publisher_ ;  //!< Publishes controller information
+    realtime_tools::RealtimePublisher <pr2_mechanism_controllers::ControllerState>* controller_state_publisher_ ;  //!< Publishes controller information
 
 
     double max_update_time_;
