@@ -203,9 +203,6 @@ namespace planning_environment
 	tf::MessageNotifier<mapping_msgs::AttachedObject>
 	                                *attachedBodyNotifier_;
 
-	/** \brief How long to wait for a TF if it is not yet available, before failing */
-	ros::Duration                    tfWait_;
-
 	planning_models::StateParams    *robotState_;
 	tf::Pose                         pose_;
 	std::string                      robot_frame_;

@@ -48,7 +48,6 @@ void planning_environment::KinematicModelStateMonitor::setupRSM(void)
     onStateUpdate_ = NULL;
     onAfterAttachBody_ = NULL;
     attachedBodyNotifier_ = NULL;
-    tfWait_ = ros::Duration(0.1);
     havePose_ = haveMechanismState_ = false;
 
     if (rm_->loadedModels())

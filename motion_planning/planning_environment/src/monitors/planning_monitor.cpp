@@ -94,17 +94,23 @@ bool planning_environment::PlanningMonitor::transformConstraintsToFrame(motion_p
     for (unsigned int i = 0; i < kc.pose_constraint.size() ; ++i)
     {
 	bool ok = false;
-	if (tf_->canTransform(target, kc.pose_constraint[i].pose.header.frame_id, kc.pose_constraint[i].pose.header.stamp, tfWait_))
+	
+	unsigned int steps = 0;
+	while (!tf_->canTransform(target, kc.pose_constraint[i].pose.header.frame_id, kc.pose_constraint[i].pose.header.stamp) && steps < 10)
 	{
-	    try
-	    {
-		tf_->transformPose(target, kc.pose_constraint[i].pose, kc.pose_constraint[i].pose);
-		ok = true;
-	    }
-	    catch(...)
-	    {
-	    }
+	    ros::Duration(0.01).sleep();
+	    steps++;
 	}
+	
+	try
+	{
+	    tf_->transformPose(target, kc.pose_constraint[i].pose, kc.pose_constraint[i].pose);
+	    ok = true;
+	}
+	catch(...)
+	{
+	}
+	
 	if (!ok)
 	{
 	    ROS_ERROR("Unable to transform pose constraint on link '%s' to frame '%s'", kc.pose_constraint[i].link_name.c_str(), target.c_str());
@@ -202,17 +208,23 @@ bool planning_environment::PlanningMonitor::transformJoint(const std::string &na
 	pose.stamp_ = header.stamp;
 	pose.frame_id_ = header.frame_id;
 	bool ok = false;
-	if (tf_->canTransform(target, pose.frame_id_, pose.stamp_, tfWait_))
+
+	unsigned int steps = 0;
+	while (!tf_->canTransform(target, pose.frame_id_, pose.stamp_) && steps < 10)
 	{
-	    try
-	    {
-		tf_->transformPose(target, pose, pose);
-		ok = true;
-	    }
-	    catch(...)
-	    {
-	    }
+	    ros::Duration(0.01).sleep();
+	    steps++;
 	}
+	
+	try
+	{
+	    tf_->transformPose(target, pose, pose);
+	    ok = true;
+	}
+	catch(...)
+	{
+	}
+	
 	if (!ok)
 	{
 	    ROS_ERROR("Unable to transform planar joint '%s' to frame '%s'", name.c_str(), target.c_str());
@@ -235,22 +247,29 @@ bool planning_environment::PlanningMonitor::transformJoint(const std::string &na
 	pose.stamp_ = header.stamp;
 	pose.frame_id_ = header.frame_id;
 	bool ok = false;
-	if (tf_->canTransform(target, pose.frame_id_, pose.stamp_, tfWait_))
+	
+	unsigned int steps = 0;
+	while (!tf_->canTransform(target, pose.frame_id_, pose.stamp_) && steps < 10)
 	{
-	    try
-	    {
-		tf_->transformPose(target, pose, pose);
-		ok = true;
-	    }
-	    catch(...)
-	    {
-	    }
+	    ros::Duration(0.01).sleep();
+	    steps++;
 	}
+	
+	try
+	{
+	    tf_->transformPose(target, pose, pose);
+	    ok = true;
+	}
+	catch(...)
+	{
+	}
+
 	if (!ok)
 	{
 	    ROS_ERROR("Unable to transform floating joint '%s' to frame '%s'", name.c_str(), target.c_str());
 	    return false;
 	}
+	
 	params[index + 0] = pose.getOrigin().getX();
 	params[index + 1] = pose.getOrigin().getY();
 	params[index + 2] = pose.getOrigin().getZ();
