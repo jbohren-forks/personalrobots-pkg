@@ -51,8 +51,7 @@ ROS_REGISTER_CONTROLLER(CartesianTrajectoryController)
 
 CartesianTrajectoryController::CartesianTrajectoryController()
 : jnt_to_pose_solver_(NULL),
-  motion_profile_(6, VelocityProfile_Trap(0,0)),
-  command_notifier_(NULL)
+  motion_profile_(6, VelocityProfile_Trap(0,0))
 {}
 
 CartesianTrajectoryController::~CartesianTrajectoryController()
@@ -133,14 +132,11 @@ bool CartesianTrajectoryController::moveTo(const robot_msgs::PoseStamped& pose, 
   Stamped<Pose> pose_stamped;
   poseStampedMsgToTF(pose, pose_stamped);
 
-  // @TODO: remove this temporary fix for the tf-threading problems
-  pose_stamped.stamp_ = ros::Time();  // set time to 0, so transforming will always work
-
   // convert to reference frame of root link of the controller chain
   Duration timeout = Duration().fromSec(2.0);
-  if (!tf_.canTransform(root_name_, pose.header.frame_id, pose_stamped.stamp_, timeout)){
-    ROS_ERROR("CartesianTrajectoryController: could not transform goal pose from '%s' to '%s' at time %f",
-              pose.header.frame_id.c_str(), root_name_.c_str(), pose_stamped.stamp_.toSec());
+  std::string error_msg;
+  if (!tf_.waitForTransform(root_name_, pose.header.frame_id, pose_stamped.stamp_, timeout, Duration(0.01), &error_msg)){
+    ROS_ERROR("CartesianTrajectoryController: %s", error_msg.c_str());
     return false;
   }
   tf_.transformPose(root_name_, pose_stamped, pose_stamped);
