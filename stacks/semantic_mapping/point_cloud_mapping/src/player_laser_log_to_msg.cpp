@@ -56,7 +56,6 @@ class PlayerLogToMsg
   protected:
     string tf_frame_;
     NodeHandle nh_;
-    tf::TransformBroadcaster broadcaster_;
 
   public:
 
