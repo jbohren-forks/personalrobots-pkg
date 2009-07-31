@@ -112,6 +112,9 @@ class TestCommonMsgsMigration(unittest.TestCase):
     os.remove(newbag)
 
 
+
+########### DiagnosticStatus ###############
+
   def get_old_diagnostic_status(self):
     diagnostic_status_classes = self.load_saved_classes('DiagnosticStatus.saved')
     
@@ -126,11 +129,55 @@ class TestCommonMsgsMigration(unittest.TestCase):
     diagnostic_value  = load_current_class('diagnostic_msgs/DiagnosticValue')
     diagnostic_value  = load_current_class('diagnostic_msgs/DiagnosticString')
 
-    return diagnostic_status(0, "abcdef", "ghijkl", [diagnostic_value(42.42, 'foo')], [diagnostic_value('xxxxx', 'bar')])
+    return diagnostic_status(0, "abcdef", "ghijkl", "NONE", [diagnostic_value(42.42, 'foo')], [diagnostic_value('xxxxx', 'bar')])
 
 
   def test_diagnostic_status(self):
     self.do_test('diagnostic_status', self.get_old_diagnostic_status, self.get_new_diagnostic_status)
+
+
+########### Vector3 ###############
+
+
+  def get_old_vector3(self):
+    vector3_classes = self.load_saved_classes('Vector3.saved')
+    
+    vector3  = vector3_classes['robot_msgs/Vector3']
+    
+    return vector3(1.23, 4.56, 7.89)
+
+  def get_new_vector3(self):
+#    from geometry_msgs.msg import Vector3
+    
+    vector3  = load_current_class('geometry_msgs/Vector3')
+
+    return vector3(1.23, 4.56, 7.89)
+
+
+  def test_vector3(self):
+    self.do_test('vector3', self.get_old_vector3, self.get_new_vector3)
+
+
+########### Twist ###############
+
+
+  def get_old_twist(self):
+    twist_classes = self.load_saved_classes('Twist.saved')
+    
+    twist    = twist_classes['robot_msgs/Twist']
+    vector3  = twist_classes['robot_msgs/Vector3']
+    
+    return twist(None, vector3(1,2,3), vector3(4, 5, 6))
+
+  def get_new_twist(self):
+    twist    = load_current_class('geometry_msgs/Twist')
+    vector3  = load_current_class('geometry_msgs/Vector3')
+
+    return twist(vector3(1,2,3), vector3(4, 5, 6))
+
+
+  def test_twist(self):
+    self.do_test('twist', self.get_old_twist, self.get_new_twist)
 
 
 if __name__ == '__main__':
