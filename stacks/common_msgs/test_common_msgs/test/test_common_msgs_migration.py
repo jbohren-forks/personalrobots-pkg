@@ -94,6 +94,29 @@ class TestCommonMsgsMigration(unittest.TestCase):
     self.do_test('vector3', self.get_old_vector3, self.get_new_vector3)
 
 
+########### Vector3Stamped ###############
+
+
+  def get_old_vector3_stamped(self):
+    vector3_classes = self.load_saved_classes('Vector3.saved')
+    vector3_stamped_classes = self.load_saved_classes('Vector3Stamped.saved')
+    
+    vector3  = vector3_classes['robot_msgs/Vector3']
+    vector3_stamped  = vector3_stamped_classes['robot_msgs/Vector3Stamped']
+    
+    return vector3_stamped(None, vector3(1.23, 4.56, 7.89))
+
+  def get_new_vector3_stamped(self):
+    from geometry_msgs.msg import Vector3
+    from geometry_msgs.msg import Vector3Stamped
+    
+    return Vector3Stamped(None, Vector3(1.23, 4.56, 7.89))
+
+
+  def test_vector3_stamped(self):
+    self.do_test('vector3_stamped', self.get_old_vector3_stamped, self.get_new_vector3_stamped)
+
+
 ########### Quaternion ###############
 
 
@@ -112,6 +135,28 @@ class TestCommonMsgsMigration(unittest.TestCase):
 
   def test_quaternion(self):
     self.do_test('quaternion', self.get_old_quaternion, self.get_new_quaternion)
+
+
+########### QuaternionStamped ###############
+
+
+  def get_old_quaternion_stamped(self):
+    quaternion_classes = self.load_saved_classes('QuaternionStamped.saved')
+    
+    quaternion_stamped  = quaternion_classes['robot_msgs/QuaternionStamped']
+    quaternion  = quaternion_classes['robot_msgs/Quaternion']
+    
+    return quaternion_stamped(None, quaternion(1.23, 4.56, 7.89, 1.23))
+
+  def get_new_quaternion_stamped(self):
+    from geometry_msgs.msg import QuaternionStamped
+    from geometry_msgs.msg import Quaternion
+    
+    return QuaternionStamped(None, Quaternion(1.23, 4.56, 7.89, 1.23))
+
+
+  def test_quaternion(self):
+    self.do_test('quaternion_stamped', self.get_old_quaternion_stamped, self.get_new_quaternion_stamped)
 
 
 ########### Twist ###############
