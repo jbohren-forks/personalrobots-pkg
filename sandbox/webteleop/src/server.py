@@ -439,13 +439,22 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
 
       if rosCoreUp == False:
         core_launcher = roslaunch_caller.launch_core()
-        launchScript('../launch/gazebo.launch')
+        if topic == "/Sim":
+          print "SIMULATION STARTUP"
+          launchScript('../launch/gazebo.launch')
+        elif topic == "/PRF":
+          print "PRF STARTUP"
+          #launchScript('../launch/prf.launch')
+        elif topic == "/PRG":
+          print "PRG STARTUP"
+          #launchScript('../launch/prg.launch')
 
-      time.sleep(2)
+      time.sleep(3)
       rospy.init_node(CALLER_ID, disable_signals=True)
       time.sleep(1)
-      tfclient = TransformListener()
 
+      if tfclient == None:
+        tfclient = TransformListener()
 
       self.send_response(200)
       self.send_header( "Content-type", "text/html" )
@@ -455,7 +464,9 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
     elif cmd == "shutdown":
       print "Shutdown[%s]" % topic
 
-      core_launcher.stop()
+      if core_launcher != None:
+        core_launcher.stop()
+
       core_launcher = None
 
       self.send_response(200)
@@ -750,9 +761,11 @@ if __name__ == '__main__':
 
   signal.signal(signal.SIGINT, signal_handler)
 
-  print 'starting web server on port 8080'
+  port = 8081
 
-  httpServer = MyHTTPServer( ('', 8080), Handler)
+  print 'starting web server on port %s' % port
+
+  httpServer = MyHTTPServer( ('', port), Handler)
   httpServer.setDaemon(True)
   httpServer.start()
 
