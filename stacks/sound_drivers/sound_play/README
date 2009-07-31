@@ -34,3 +34,8 @@ To set this default to all users, copy this to the system-wide alsa
 configuration file:
 mv ~/.asoundrc.asoundconf /etc/asound.conf
 
+Getting started
+---------------
+
+Start the sound play node, and have a look at the scripts in the scripts
+directory that exercise the node's functionality. 
