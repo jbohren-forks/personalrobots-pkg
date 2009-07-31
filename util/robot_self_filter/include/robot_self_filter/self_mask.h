@@ -61,13 +61,14 @@ namespace robot_self_filter
 	    std::string   name;
 	    bodies::Body *body;
 	    btTransform   constTransf;
+	    double        volume;
 	};
 	
 	struct SortBodies
 	{
 	    bool operator()(const SeeLink &b1, const SeeLink &b2)
 	    {
-		return b1.body->computeVolume() > b2.body->computeVolume();
+		return b1.volume > b2.volume;
 	    }
 	};
 	

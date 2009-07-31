@@ -64,6 +64,7 @@ bool robot_self_filter::SelfMask::configure(const std::vector<std::string> &link
 	    sl.constTransf = link->constGeomTrans;
 	    sl.body->setScale(scale);
 	    sl.body->setPadding(padd);
+	    sl.volume = sl.body->computeVolume();
 	    bodies_.push_back(sl);
 	}
 	else
