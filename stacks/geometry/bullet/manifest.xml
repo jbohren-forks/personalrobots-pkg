@@ -12,7 +12,7 @@ The Bullet Physics Engine
 <rosdep name="libxext"/>
 <rosdep name="glut"/>
 <export>
-<cpp cflags="-I${prefix}/build/include -DBT_USE_DOUBLE_PRECISION -DBT_EULER_DEFAULT_ZYX  -I${prefix}/swig" lflags="-L${prefix}/build/lib -lLinearMath -lBulletCollision -lBulletDynamics" />
+<cpp cflags="-I${prefix}/build/include -DBT_USE_DOUBLE_PRECISION -DBT_EULER_DEFAULT_ZYX  -I${prefix}/swig" lflags="-L${prefix}/build/lib -lBulletDynamics -lBulletCollision -lLinearMath" />
   <doxymaker external="http://www.continuousphysics.com/Bullet/BulletFull/index.html" />
 <swig flags="-python -c++ -I${prefix}/build/include -DBT_USE_DOUBLE_PRECISION -DBT_EULER_DEFAULT_ZYX -I${prefix}/swig "/>
 </export>
