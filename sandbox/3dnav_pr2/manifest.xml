@@ -24,6 +24,7 @@
   <depent package="pr2_default_controllers" />
   <depent package="pr2_mechanism_controllers" />
   <depent package="pr2_experimental_controllers" />
+  <depent package="joint_waypoint_controller" />
 
   <!-- mapping -->
   <depend package="laser_scan"/>
