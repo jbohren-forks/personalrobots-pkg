@@ -491,7 +491,7 @@ void bodies::ConvexMesh::useDimensions(const shapes::Shape *shape)
     HullLibrary hl;
     if (hl.CreateConvexHull(hd, hr) == QE_OK)
     {
-	std::cout << "Convex hull has " << hr.m_OutputVertices.size() << " vertices (down from " << mesh->vertexCount << "), " << hr.mNumFaces << " faces" << std::endl;
+	//	std::cout << "Convex hull has " << hr.m_OutputVertices.size() << " vertices (down from " << mesh->vertexCount << "), " << hr.mNumFaces << " faces" << std::endl;
 
 	m_vertices.reserve(hr.m_OutputVertices.size());
 	btVector3 sum(0, 0, 0);	

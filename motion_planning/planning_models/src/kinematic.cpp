@@ -264,7 +264,7 @@ void planning_models::KinematicModel::Link::extractInformation(const robot_desc:
 		static_cast<const robot_desc::URDF::Link::Geometry::Mesh*>(urdfLink->collision->geometry->shape)->filename;
 	    if (filename.rfind(".stl") == std::string::npos)
 		filename += ".stl";
-	    std::cout << "Loading '" << filename << "'" << std::endl;	    
+	    //	    std::cout << "Loading '" << filename << "'" << std::endl;	    
 	    shapes::Mesh *mesh = shapes::create_mesh_from_binary_stl(filename.c_str());
 	    shape              = mesh;
 	}
