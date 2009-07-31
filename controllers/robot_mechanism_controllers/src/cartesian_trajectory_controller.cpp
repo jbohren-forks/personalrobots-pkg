@@ -133,11 +133,14 @@ bool CartesianTrajectoryController::moveTo(const robot_msgs::PoseStamped& pose, 
   Stamped<Pose> pose_stamped;
   poseStampedMsgToTF(pose, pose_stamped);
 
+  // @TODO: remove this temporary fix for the tf-threading problems
+  pose_stamped.stamp_ = ros::Time();  // set time to 0, so transforming will always work
+
   // convert to reference frame of root link of the controller chain
   Duration timeout = Duration().fromSec(2.0);
-  if (!tf_.canTransform(root_name_, pose.header.frame_id, pose.header.stamp, timeout)){
+  if (!tf_.canTransform(root_name_, pose.header.frame_id, pose_stamped.stamp_, timeout)){
     ROS_ERROR("CartesianTrajectoryController: could not transform goal pose from '%s' to '%s' at time %f",
-              pose.header.frame_id.c_str(), root_name_.c_str(), pose.header.stamp.toSec());
+              pose.header.frame_id.c_str(), root_name_.c_str(), pose_stamped.stamp_.toSec());
     return false;
   }
   tf_.transformPose(root_name_, pose_stamped, pose_stamped);
@@ -272,9 +275,6 @@ bool CartesianTrajectoryController::moveTo(deprecated_srvs::MoveToPose::Request 
 					   deprecated_srvs::MoveToPose::Response &resp)
 {
   ROS_INFO("in cartesian traj move_to service");
-
-  // @TODO: remove this temporary fix for the tf-threading problems
-  req.pose.header.stamp = ros::Time();  // set time to 0, so transforming will always work
 
   if (!moveTo(req.pose, req.tolerance, 0.0)){
     ROS_ERROR("CartesianTrajectoryController: not starting trajectory because either previous one is still running or the transform frame could not be found");
