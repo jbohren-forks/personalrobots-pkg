@@ -60,7 +60,6 @@ class backingup:
         rospy.Subscriber("cmd_vel", PoseDot, self.callback)
     
         while not rospy.is_shutdown():
-            rospy.sleep(.5)
             self.mutex.acquire()
             try:
                 if self.state == self.STOPPING and self.targettime < rospy.get_time():
@@ -70,6 +69,7 @@ class backingup:
                     self.start()
             finally:
                 self.mutex.release()
+            rospy.sleep(.5)
 
 
 if __name__ == '__main__':
