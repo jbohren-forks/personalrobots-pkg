@@ -74,12 +74,11 @@ class ImageDescriptor {
   std::string getName();
   //! Returns result_size_.
   unsigned int getSize();
-  //! Vectorized feature computation call.
-  virtual void compute(IplImage* img, const cv::Vector<cv::Keypoint>& points, vvf& results) {};
   //! Clean up any data specific to computation at a point.
   virtual void clearPointCache() {}
   //! Clean up any data specific to computation on a particular image.
   virtual void clearImageCache() {}
+  void compute(IplImage* img, const cv::Vector<cv::Keypoint>& points, vvf& results);
 
  protected:
   //! Name of the descriptor.  Should be unique for any parameter setting.
@@ -91,8 +90,9 @@ class ImageDescriptor {
 
   //! Show the input image and a red + at the point at which the descriptor is being computed.
   void commonDebug(cv::Keypoint kp, IplImage* vis = NULL);
-  //! Sets the img_ pointer and clears the image cache.
-  virtual void setImage(IplImage* img);
+  //! Vectorized feature computation call.
+  virtual void doComputation(IplImage* img, const cv::Vector<cv::Keypoint>& points, vvf& results) = 0;
+
 };
 
 
@@ -101,14 +101,22 @@ class ImageDescriptor {
 ***********  SURF
 ****************************************************************************/
 
+/**
+ * @class SurfWrapper
+ * @brief Dense SURF descriptor computation.  Wraps the OpenCV descriptor. 
+ */
 class SurfWrapper : public ImageDescriptor {
  public:
   bool extended_;
   int size_;
 
+  /** 
+   * @param extended If true, features are 128 elements long.  Otherwise, they are 64. 
+   * @param size A scaling factor applied to the support of the descriptor.
+   */
   SurfWrapper(bool extended = true, int size = 100);
   ~SurfWrapper();
-  void compute(IplImage* img, const cv::Vector<cv::Keypoint>& points, vvf& results);
+  void doComputation(IplImage* img, const cv::Vector<cv::Keypoint>& points, vvf& results);
 };
 
 /***************************************************************************
@@ -117,7 +125,7 @@ class SurfWrapper : public ImageDescriptor {
 
 /**
  * @class HogWrapper
- * @brief Histogram of oriented gradients.  Wraps the opencv descriptor.
+ * @brief Histogram of oriented gradients.  Wraps the OpenCV descriptor.
  */
 class HogWrapper : public ImageDescriptor {
  public:
@@ -125,7 +133,7 @@ class HogWrapper : public ImageDescriptor {
   HogWrapper(cv::Size winSize, cv::Size blockSize, cv::Size blockStride, cv::Size cellSize,
 	     int nbins, int derivAperture=1, double winSigma=-1,
 	     int histogramNormType=0, double L2HysThreshold=0.2, bool gammaCorrection=false); //0=L2Hys
-  void compute(IplImage* img, const cv::Vector<cv::Keypoint>& points, vvf& results);
+  void doComputation(IplImage* img, const cv::Vector<cv::Keypoint>& points, vvf& results);
   
  protected:
   cv::HOGDescriptor hog_;
@@ -170,7 +178,7 @@ class HaarDescriptor : public IntegralImageDescriptor {
  public:
   HaarDescriptor(cv::Vector<CvRect> rects, cv::Vector<int> weights, IntegralImageDescriptor* ii_provider = NULL);
   //! Scale of the window is determined by cv::Keypoint.
-  void compute(IplImage* img, const cv::Vector<cv::Keypoint>& points, vvf& results);
+  void doComputation(IplImage* img, const cv::Vector<cv::Keypoint>& points, vvf& results);
 
  protected:
   cv::Vector<CvRect> rects_;
@@ -187,8 +195,8 @@ vector<ImageDescriptor*> setupDefaultHaarDescriptors();
 class IntegralImageTexture : public IntegralImageDescriptor {
  public:
   IntegralImageTexture(int scale = 1, IntegralImageDescriptor* ii_provider = NULL);
-  void compute(IplImage* img, const cv::Vector<cv::Keypoint>& points, vvf& results);
-  void compute(IplImage* img, const cv::Keypoint& point, cv::Vector<float>& result);
+  void doComputation(IplImage* img, const cv::Vector<cv::Keypoint>& points, vvf& results);
+  void doComputation(IplImage* img, const cv::Keypoint& point, cv::Vector<float>& result);
 
  protected:
   int scale_;
@@ -241,7 +249,7 @@ class ContourFragmentDescriptor : public ImageDescriptor {
   ContourFragmentDescriptor(int cf_id, string dir);
   //! Uses another ContourFragmentDescriptor object to get its data.  
   ContourFragmentDescriptor(int cf_id, ContourFragmentDescriptor* chamfer_provider);
-  void compute(IplImage* img, const cv::Vector<cv::Keypoint>& points, vvf& results);
+  void doComputation(IplImage* img, const cv::Vector<cv::Keypoint>& points, vvf& results);
 
  private:
   int cf_id_;
@@ -271,6 +279,8 @@ class SuperpixelStatistic : public ImageDescriptor {
   SuperpixelStatistic* getSegProvider();
   IplImage* getSegmentation();
   std::vector< std::vector<CvPoint> >* getIndex();
+  
+
 
  protected:
   //! (*index_)[i] returns the vector of CvPoints for segment i of the image.
@@ -286,6 +296,8 @@ class SuperpixelStatistic : public ImageDescriptor {
 
   //! Computes superpixels and puts into seg_, and computes the superpixel to pixel index.  Is called automatically, if necessary, by the compute(.) function.
   void segment();
+  //! Stub so people can use this class as a standalone segmenter.
+  void doComputation(IplImage* img, const cv::Vector<cv::Keypoint>& points, vvf& results) {}
   IplImage* createSegmentMask(int label, CvRect* rect);
 
 };
@@ -306,7 +318,6 @@ class SuperpixelColorHistogram : public SuperpixelStatistic {
 
   SuperpixelColorHistogram(int seed_spacing, float scale, int nBins, SuperpixelStatistic* seg_provider=NULL, SuperpixelColorHistogram* hsv_provider_=NULL);
   ~SuperpixelColorHistogram();
-  void compute(IplImage* img, const cv::Vector<cv::Keypoint>& points, vvf& results);
 
  protected:
   int nBins_;
@@ -315,9 +326,10 @@ class SuperpixelColorHistogram : public SuperpixelStatistic {
   float max_val_;
   bool hists_reserved_;
 
+  void doComputation(IplImage* img, const cv::Vector<cv::Keypoint>& points, vvf& results);
   void computeHistogram(int label);
   void computeHistogramCV(int label); 
-  void compute(IplImage* img, const cv::Keypoint& point, cv::Vector<float>& result);
+  void doComputation(IplImage* img, const cv::Keypoint& point, cv::Vector<float>& result);
   void clearImageCache();
 };
 

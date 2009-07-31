@@ -159,6 +159,16 @@ ImageDescriptor::ImageDescriptor() :
 {
 }
 
+void ImageDescriptor::compute(IplImage* img, const cv::Vector<cv::Keypoint>& points, vvf& results) {
+  assert(results.empty());
+  assert(result_size_ != 0);
+  results.resize(points.size());
+  img_ = img;
+  clearImageCache();
+
+  doComputation(img, points, results);
+}
+
 string ImageDescriptor::getName() {
   return name_;
 }
@@ -166,12 +176,6 @@ string ImageDescriptor::getName() {
 unsigned int ImageDescriptor::getSize() {
   return result_size_;
 }
-
-void ImageDescriptor::setImage(IplImage* img) {
-  img_ = img;
-  clearImageCache();
-}
-
 
 void ImageDescriptor::commonDebug(Keypoint kp, IplImage* vis) {
   int row = (int)kp.pt.y;
@@ -215,8 +219,7 @@ SurfWrapper::SurfWrapper(bool extended, int size) :
 SurfWrapper::~SurfWrapper() {
 }
 
-void SurfWrapper::compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf& results) {
-  setImage(img);
+void SurfWrapper::doComputation(IplImage* img, const cv::Vector<Keypoint>& points, vvf& results) {
 
   // -- Get params.
   int threshold = 500; // For keypoint detection; we aren't using this.
@@ -257,7 +260,6 @@ void SurfWrapper::compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf
   CvSeqReader kp_reader;
   cvStartReadSeq(features, &reader);
   cvStartReadSeq(surf_kp, &kp_reader);
-  results.reserve(points.size());
   int matches = 0;
   for(size_t i=0; i<points.size(); ++i) {
     // -- Get the feature.
@@ -268,7 +270,6 @@ void SurfWrapper::compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf
     if(kp->pt.x != points[i].pt.x ||
        kp->pt.y != points[i].pt.y) {
       
-      results.push_back(Vector<float>());
       assert(results[i].empty());
       cout << "Skipped" << endl;
       continue;
@@ -284,7 +285,6 @@ void SurfWrapper::compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf
     assert(length == (int)result_size_);
 
     // -- Copy into result.
-    results.push_back(Vector<float>());
     results[i] = Vector<float>(result_size_, 0);
     for(size_t j=0; j<result_size_; ++j) {
       results[i][j] = feature[j];
@@ -348,8 +348,7 @@ HogWrapper::HogWrapper(Size winSize, Size blockSize, Size blockStride, Size cell
 }
 
 
-void HogWrapper::compute(IplImage* img, const Vector<Keypoint>& points, vvf& results) {
-  setImage(img);
+void HogWrapper::doComputation(IplImage* img, const Vector<Keypoint>& points, vvf& results) {
 
   // -- Translate from Keypoint to Point.
   Vector<Point> locations;
@@ -369,7 +368,6 @@ void HogWrapper::compute(IplImage* img, const Vector<Keypoint>& points, vvf& res
   //    Assume that an all 0 vector was the result of an edge case.
   size_t sz = hog_.getDescriptorSize();
   int nValid = 0;
-  results.resize(points.size());
   for(size_t i=0; i<points.size(); i++) {
     bool valid = false;
     for(size_t j=i*sz; j<(i+1)*sz; j++) {
@@ -681,9 +679,8 @@ ContourFragmentDescriptor::ContourFragmentDescriptor(int cf_id, ContourFragmentD
 }
 
 
-void ContourFragmentDescriptor::compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf& results) {
-  results.clear();
-
+//! Placeholder.
+void ContourFragmentDescriptor::doComputation(IplImage* img, const cv::Vector<Keypoint>& points, vvf& results) {
   IplImage *edge_img = cvCreateImage(cvGetSize(img), IPL_DEPTH_8U, 1);
   cvCvtColor(img, edge_img, CV_BGR2GRAY);
   cvCanny(edge_img, edge_img, 80, 160);
@@ -698,11 +695,6 @@ void ContourFragmentDescriptor::compute(IplImage* img, const cv::Vector<Keypoint
     CVSHOW("edge", edge_img);
     cvWaitKey(0);
     cvReleaseImage(&vis);
-  }
-
-  results.reserve(points.size());
-  for(size_t i=0; i<points.size(); i++) {
-    results.push_back(Vector<float>());
   }
   
   cvReleaseImage(&edge_img);
@@ -758,30 +750,19 @@ IplImage* SuperpixelStatistic::createSegmentMask(int label, CvRect* rect) {
 
   *rect = cvRect(min_x, min_y, max_x - min_x + 1, max_y - min_y + 1);
   
-  //Slow.
-//   for(int r=0; r<mask->height; r++) {
-//     uchar* mask_ptr = (uchar*)(mask->imageData + r * mask->widthStep);
-//     int* seg_ptr = (int*)(seg_->imageData + r * seg_->widthStep);
-//     for(int c=0; c<mask->width; c++) {
-//       if(*seg_ptr == label)
-// 	*mask_ptr = 255;
-//       else
-// 	*mask_ptr = 0;
-//       seg_ptr++;
-//       mask_ptr++;
-//     }
-//   }
   return mask;
 }
 
 void SuperpixelStatistic::segment(IplImage* img) {
-  setImage(img);
+  img_ = img;
+  clearImageCache();
   segment();
 }
 
 void SuperpixelStatistic::segment() {
   assert(!seg_); //Should be null if this is called.
   assert(!index_);
+  assert(img_);
   index_ = new vector< vector<CvPoint> >;  
 
   // -- Downsample image.
@@ -817,8 +798,6 @@ void SuperpixelStatistic::segment() {
       assert(*ptr < label);
     }
   }
-
-
 
   // -- Enlarge segmentation back to size of image.
   seg_ = cvCreateImage( cvGetSize(img_), IPL_DEPTH_32S, 1 );
@@ -991,11 +970,7 @@ SuperpixelColorHistogram::~SuperpixelColorHistogram() {
 }
 
 
-void SuperpixelColorHistogram::compute(IplImage* img, const Vector<Keypoint>& points, vvf& results) {
-  // -- Set up.
-  setImage(img);
-  results.clear();
-  results.resize(points.size());
+void SuperpixelColorHistogram::doComputation(IplImage* img, const Vector<Keypoint>& points, vvf& results) {
 
   // -- Make sure we have access to a segmentation.
   if(seg_provider_ == NULL && seg_ == NULL) {    
@@ -1040,13 +1015,12 @@ void SuperpixelColorHistogram::compute(IplImage* img, const Vector<Keypoint>& po
 
   // -- Compute at each point.
   for(size_t i=0; i<points.size(); i++) {
-    compute(img, points[i], results[i]);
+    doComputation(img, points[i], results[i]);
   }
 }
 
 
-void SuperpixelColorHistogram::compute(IplImage* img, const Keypoint& point, Vector<float>& result) {
-  result.clear();
+void SuperpixelColorHistogram::doComputation(IplImage* img, const Keypoint& point, Vector<float>& result) {
 
   // -- Get the label at this point.
   int label = CV_IMAGE_ELEM(seg_, int, (size_t)point.pt.y, (size_t)point.pt.x);
@@ -1328,9 +1302,7 @@ HaarDescriptor::HaarDescriptor(Vector<CvRect> rects, Vector<int> weights, Integr
 }
 
 
-void HaarDescriptor::compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf& results) {
-  img_ = img;
-  
+void HaarDescriptor::doComputation(IplImage* img, const cv::Vector<Keypoint>& points, vvf& results) {
   // -- Get the integral image.
   if(!ii_ && !ii_provider_)
     integrate();
@@ -1340,8 +1312,6 @@ void HaarDescriptor::compute(IplImage* img, const cv::Vector<Keypoint>& points, 
   }
   
   // -- Setup results.
-  results.clear();
-  results.reserve(points.size());
   float val = 0;
 
   // -- Compute feature at all keypoints.
@@ -1477,19 +1447,15 @@ IntegralImageTexture::IntegralImageTexture(int scale, IntegralImageDescriptor* i
   result_size_ = 21;
 }
 
-void IntegralImageTexture::compute(IplImage* img, const Vector<Keypoint>& points, vvf& results) {
-  setImage(img);
-  results.clear();
-
+void IntegralImageTexture::doComputation(IplImage* img, const Vector<Keypoint>& points, vvf& results) {
   for(size_t i=0; i<points.size(); i++) {
-    compute(img, points[i], results[i]);
+    doComputation(img, points[i], results[i]);
   }
 }
 
-void IntegralImageTexture::compute(IplImage* img, const Keypoint& point, Vector<float>& result) {
-  img_ = img;
+void IntegralImageTexture::doComputation(IplImage* img, const Keypoint& point, Vector<float>& result) {
   
-  //bool IntegralImageTexture::compute(Eigen::MatrixXf** result) {
+  //bool IntegralImageTexture::doComputation(Eigen::MatrixXf** result) {
   if(!ii_ && !ii_provider_)
     integrate();
   if(!ii_ && ii_provider_)  {

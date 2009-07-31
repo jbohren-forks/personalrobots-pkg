@@ -41,8 +41,7 @@ void Daisy::clearImageCache() {
   //     delete[] im_;
 }
 
-void Daisy::compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf& results) {
-  setImage(img);
+void Daisy::doComputation(IplImage* img, const cv::Vector<Keypoint>& points, vvf& results) {
 
   // -- Stupid way to pass img to daisy.
   if(im_provider_) {
@@ -61,8 +60,6 @@ void Daisy::compute(IplImage* img, const cv::Vector<Keypoint>& points, vvf& resu
   dai_.initialize_single_descriptor_mode();
 
 
-  results.clear();
-  results.resize(points.size());
   int nValid = 0;
   START_TIMER();
   for(size_t i=0; i<points.size(); ++i) {

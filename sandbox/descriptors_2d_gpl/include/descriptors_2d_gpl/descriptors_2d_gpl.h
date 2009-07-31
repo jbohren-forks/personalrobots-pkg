@@ -18,7 +18,7 @@ class Daisy : public ImageDescriptor {
   
   Daisy(double rad = 15, int rad_q_no = 3, int th_q_no = 8, int hist_th_q_no = 8, Daisy* im_provider = NULL);
   ~Daisy();
-  void compute(IplImage* img, const cv::Vector<cv::Keypoint>& points, vvf& results);
+
   void clearImageCache();
  
  protected:
@@ -34,6 +34,8 @@ class Daisy : public ImageDescriptor {
   //! Image format used by Daisy.
   uchar* im_;
   Daisy* im_provider_;
+
+  void doComputation(IplImage* img, const cv::Vector<cv::Keypoint>& points, vvf& results);
 };
 
 #endif

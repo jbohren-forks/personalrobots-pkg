@@ -41,6 +41,7 @@
 
 using namespace std;
 USING_PART_OF_NAMESPACE_EIGEN
+#define EIGEN_NO_DEBUG
 
 bool g_int = false;
 
