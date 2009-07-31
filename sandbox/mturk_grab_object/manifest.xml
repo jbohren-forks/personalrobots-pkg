@@ -1,0 +1,12 @@
+<package>
+  <description brief="mturk_grab_object">
+    The package to grab object using mechanical turk for object recognition and grasp points.
+  </description>
+  <author>Alex Sorokin</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/mturk_grab_object</url>
+
+</package>
+
+
