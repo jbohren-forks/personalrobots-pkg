@@ -33,7 +33,7 @@
 #
 
 import roslib
-roslib.load_manifest('test_rosbagmigration')
+roslib.load_manifest('test_common_msgs')
 
 import sys
 import struct
