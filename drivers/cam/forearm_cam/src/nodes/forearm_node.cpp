@@ -38,10 +38,13 @@
 // TODO: Check that partial EOF missing frames get caught.
 // @todo Do the triggering based on a stream of incoming timestamps.
 
+#include <forearm_cam/ForearmCamReconfigurator.h>
+
 #include <ros/node.h>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/CamInfo.h>
 #include <sensor_msgs/FillImage.h>
+#include <dynamic_reconfigure/SensorLevels.h>
 #include <diagnostic_updater/diagnostic_updater.h>
 #include <diagnostic_updater/update_functions.h>
 #include <diagnostic_updater/publisher.h>
@@ -55,6 +58,7 @@
 #include <iostream>
 #include <fstream>
 #include <forearm_cam/BoardConfig.h>
+#include <forearm_cam/ForearmCamReconfigurator.h>
 #include <boost/tokenizer.hpp>
 #include <boost/format.hpp>
 
@@ -179,96 +183,107 @@ private:
 class ForearmNode
 {
 private:
+  // Driver classes
   ros::NodeHandle &node_handle_;
-  IpCamList* camera_;
+  forearm_cam::ForearmCamConfig config_;
+  forearm_cam::ForearmCamReconfigurator reconfigurator_;
+  diagnostic_updater::Updater diagnostic_;
+  SelfTest<ForearmNode> self_test_;
+  
+  // Publications
+  diagnostic_updater::DiagnosedPublisher<sensor_msgs::Image> cam_pub_;
+  diagnostic_updater::DiagnosedPublisher<sensor_msgs::CamInfo> cam_info_pub_;
   sensor_msgs::Image image_;
   sensor_msgs::CamInfo cam_info_;
-  bool calibrated_;
-  std::string frame_id_;
+
+  // Services
+  
+  ros::ServiceClient trig_service_;
+  ros::ServiceServer config_bord_service_;
+
+  // Driver State
+  bool started_video_;
+  bool open_;
+  bool was_running_pretest_;
+  int exit_status_;
+  
+  // Locks
+  boost::mutex diagnostics_lock_;
+
+  // Video mode
 
   int video_mode_;
   int width_;
   int height_;
-  double desired_freq_;
   double imager_freq_;
-  double trig_rate_;
-  double trig_phase_;
-  double first_packet_offset_;
-  bool started_video_;
-  bool ext_trigger_;
+  double desired_freq_;
+  
+  // Statistics
   int missed_eof_count_;
   int missed_line_count_;
   double last_image_time_;
   unsigned int last_frame_number_;
+ 
+  // Timing
   int misfire_blank_;
+  FrameTimeFilter frameTimeFilter_;
+
+  // Link information
   sockaddr localMac_;
   in_addr localIp_;
-  int port_;
-  bool exit_on_fault_;
   
-  bool open_;
-
-  diagnostic_updater::Updater diagnostic_;
-  
-  diagnostic_updater::DiagnosedPublisher<sensor_msgs::Image> cam_pub_;
-  ros::Publisher cam_info_pub_;
-  ros::ServiceClient trig_service_;
-  ros::ServiceServer config_bord_service_;
-
-  boost::mutex diagnostics_lock_;
-
-  unsigned char mac_[6];
-  std::string trig_controller_;
-  std::string trig_controller_cmd_;
-  std::string ip_address_;
-  std::string if_name_;
-  int serial_number_;
+  // Camera information
   std::string hwinfo_;
-  std::string mode_name_;
-  std::string camera_name_;
+  int serial_number_;
+  IpCamList* camera_;
+
+  // Trigger information
+  std::string trig_controller_cmd_;
   controller::trigger_configuration trig_req_;
   robot_mechanism_controllers::SetWaveform::Response trig_rsp_;
   
-  int gain_;
-  double exposure_;
-
-//  diagnostic_updater::FrequencyStatus freq_diag_;
-//  diagnostic_updater::TimeStampStatus timestamp_diag_;
-
-  SelfTest<ForearmNode> self_test_;
-  bool was_running_pretest_;
+  // Calibration
+  bool calibrated_;
   
-  FrameTimeFilter frameTimeFilter_;
-  
+  // Threads
   boost::thread *image_thread_;
   boost::thread *diagnostic_thread_;
 
+  // Frame function (gets called when a frame arrives).
   typedef boost::function<int(size_t, size_t, uint8_t*, ros::Time)> UseFrameFunction;
   UseFrameFunction useFrame_;
-
+  
 public:
-  int exit_status_;
 
-  ForearmNode(ros::NodeHandle &nh)
-    : node_handle_(nh), camera_(NULL), started_video_(false),
-      diagnostic_(ros::NodeHandle()), 
-      cam_pub_(node_handle_.advertise<sensor_msgs::Image>("~image_raw", 1), 
-          diagnostic_,
-          diagnostic_updater::FrequencyStatusParam(&desired_freq_, &desired_freq_, 0.05), 
-          diagnostic_updater::TimeStampStatusParam()),
-      self_test_(this),
-      useFrame_(boost::bind(&ForearmNode::publishImage, this, _1, _2, _3, _4))
+  ForearmNode(ros::NodeHandle &nh) :
+    node_handle_(nh), 
+    reconfigurator_(node_handle_),
+    diagnostic_(ros::NodeHandle()), 
+    self_test_(this),
+    cam_pub_(node_handle_.advertise<sensor_msgs::Image>("~image_raw", 1), 
+        diagnostic_,
+        diagnostic_updater::FrequencyStatusParam(&desired_freq_, &desired_freq_, 0.05), 
+        diagnostic_updater::TimeStampStatusParam()),
+    cam_info_pub_(ros::Publisher(), 
+        diagnostic_,
+        diagnostic_updater::FrequencyStatusParam(&desired_freq_, &desired_freq_, 0.05), 
+        diagnostic_updater::TimeStampStatusParam()),
+    started_video_(false),
+    camera_(NULL), 
+    useFrame_(boost::bind(&ForearmNode::publishImage, this, _1, _2, _3, _4))
   {
     started_video_ = false;
     open_ = false;
-    exit_status_ = 0;
     misfire_blank_ = 0;
     image_thread_ = NULL;
     diagnostic_thread_ = NULL;
-
+    
+    // Clear statistics
+    last_image_time_ = 0;
+    missed_line_count_ = 0;
+    missed_eof_count_ = 0;
+    
     // Setup diagnostics
-    //diagnostic_.add(timestamp_diag_);
-    //diagnostic_.add("Frequency Status", this, &ForearmNode::freqStatus );
     diagnostic_.add("Link Status", this, &ForearmNode::linkStatus );
 
     // Setup self test
@@ -285,67 +300,47 @@ public:
     }
     self_test_.addTest( &ForearmNode::resumeTest );
     
-    // Clear statistics
-    last_image_time_ = 0;
-    missed_line_count_ = 0;
-    missed_eof_count_ = 0;
+    // Set up reconfiguration
+    reconfigurator_.set_callback(boost::bind<void>(&ForearmNode::reconfigure, this, _1));
     
-    // Read parameters
-    read_config();
+    // Start up the 
+    diagnostic_thread_ = new boost::thread(boost::bind(&ForearmNode::diagnosticsLoop, this));
+  }
+  
+  void reconfigure(int level)
+  {
+    bool was_running_ = started_video_;
+    bool was_open_ = open_;
 
-    if (node_handle_.ok())
-    {
-      cam_pub_.clear_window(); // Avoids having an error until the window fills up.
-      diagnostic_thread_ = new boost::thread( boost::bind(&ForearmNode::diagnosticsLoop, this) );
-    }
+    if ((level | dynamic_reconfigure::SensorLevels::RECONFIGURE_STOP) == level)
+      stop();
+
+    if ((level | dynamic_reconfigure::SensorLevels::RECONFIGURE_CLOSE) == level)
+      close();
+
+    reconfigurator_.get_config(config_);
+    config_update();
+    reconfigurator_.set_config(config_);
+
+    if (was_open_)
+      open();
+
+    if (was_running_)
+      start();
   }
  
-  void read_config()
+  void config_update()
   {
-    node_handle_.param("~if_name", if_name_, std::string("eth0"));
-    
-    node_handle_.param("~exit_on_fault", exit_on_fault_, false);
-    
-    if (node_handle_.hasParam("~ip_address"))
-      node_handle_.getParam("~ip_address", ip_address_);
-    else {
-      ROS_FATAL("IP address not specified");
-      exit_status_ = 1;
-      //node_handle_.shutdown();
-      return;
-    }
-
-    node_handle_.param("~gain", gain_, -1);
-    if (gain_ != -1)
-    {
-      if (gain_ < 16)
-      {
-        ROS_WARN("Gain of %i is too low. Legal range is 16 to 64. Resetting to 16.", gain_);
-        gain_ = 16;
-      }
-      if (gain_ > 64)
-      {
-        ROS_WARN("Gain of %i is too high. Legal range is 16 to 64. Resetting to 64.", gain_);
-        gain_ = 64;
-      }
-    }
-
-    node_handle_.param("~port", port_, 9090); /// @todo Should get rid of this and let the OS pick a free port.
-
-    node_handle_.param("~ext_trigger", ext_trigger_, false);
-
-    node_handle_.param("~video_mode", mode_name_, std::string("752x480x15"));
     for (video_mode_ = 0; video_mode_ < MT9V_NUM_MODES; video_mode_++)
-      if (mode_name_.compare(MT9VModes[video_mode_].name) == 0)
+      if (config_.video_mode.compare(MT9VModes[video_mode_].name) == 0)
         break;
     if (video_mode_ == MT9V_NUM_MODES) 
     {
-      ROS_FATAL("Unknown video mode %s", mode_name_.c_str());
-      exit_status_ = 1;
-      //node_handle_.shutdown();
-      return;
+      ROS_ERROR("Unknown video mode %s. Using 640x480x30", config_.video_mode.c_str());
+      video_mode_ = 2;
+      config_.video_mode = "640x480x30";
     }
-
+  
     /// @todo add a check that width_ and height_ are set in cam_info in test bench
     width_ = MT9VModes[video_mode_].width;
     height_ = MT9VModes[video_mode_].height;
@@ -354,44 +349,27 @@ public:
     imager_freq_ = MT9VModes[video_mode_].fps;
 
     // Specify which frame to add to message header
-    node_handle_.param("~frame_id", frame_id_, std::string("NO_FRAME"));
-    image_.header.frame_id = frame_id_;
-    cam_info_.header.frame_id = frame_id_;
+    image_.header.frame_id = config_.frame_id;
+    cam_info_.header.frame_id = config_.frame_id;
         
-    node_handle_.param("~trigger_controller", trig_controller_, std::string());
-    node_handle_.param("~trigger_rate", trig_rate_, imager_freq_ - 1.);
-    node_handle_.param("~serial_number", serial_number_, -2);
-    node_handle_.param("~trigger_phase", trig_phase_, 0.);
-    
-    desired_freq_ = ext_trigger_ ? trig_rate_ : imager_freq_;
-    
-    // First packet offset parameter
+    // Distinguish between serial_number_ and config_.serial_number_ so
+    // that when auto is selected, we will try to restart the previous
+    // camera before probing again.
 
-    node_handle_.param("~first_packet_offset", first_packet_offset_, 0.0025);
-    if (!node_handle_.hasParam("~first_packet_offset") && trig_controller_.empty())
-      ROS_INFO("first_packet_offset not specified. Using default value of %f ms.", first_packet_offset_);
+    serial_number_ = config_.serial_number;
     
-    node_handle_.param("~exposure", exposure_, -1.0);
-    if (exposure_ != -1)
+    desired_freq_ = config_.ext_trig ? config_.trig_rate : imager_freq_;
+    
+    if (!config_.auto_exposure && config_.exposure > 1 / desired_freq_)
     {
-      if (exposure_ <= 0)
-      {
-        ROS_WARN("Exposure is %f, but must be positive. Setting to automatic.", exposure_);
-        exposure_ = -1;
-      }
-
-      if (exposure_ > 1 / desired_freq_)
-      {
-        ROS_WARN("Exposure (%f s) is greater frame period (%f s). Setting to 90%% of frame period.", 
-            exposure_, 1 / desired_freq_);
-        exposure_ = 0.9 * 1 / desired_freq_;
-      }
-
-      if (exposure_ > 0.95 / desired_freq_)
-      {
-        ROS_WARN("Exposure (%f s) is greater than 95%% of frame period (%f s). You may miss frames.", 
-            exposure_, 0.95 / desired_freq_);
-      }
+      ROS_WARN("Exposure (%f s) is greater frame period (%f s). Setting to 90%% of frame period.", 
+          config_.exposure, 1 / desired_freq_);
+      config_.exposure = 0.9 * 1 / desired_freq_;
+    }
+    if (!config_.auto_exposure && config_.exposure > 0.95 / desired_freq_)
+    {
+      ROS_WARN("Exposure (%f s) is greater than 95%% of frame period (%f s). You may miss frames.", 
+          config_.exposure, 0.95 / desired_freq_);
     }
   }
 
@@ -400,14 +378,15 @@ public:
     //int frameless_updates = 0;
     
     bool have_started = false;
-
+    
+    cam_pub_.clear_window(); // Avoids having an error until the window fills up.
     while (node_handle_.ok())
     {
       if (!started_video_)
       {
         stop();
         close();
-        if (have_started && exit_on_fault_)
+        if (have_started && config_.exit_on_fault)
         {
           node_handle_.shutdown();
           break;
@@ -475,17 +454,14 @@ public:
     }
 
     // Discover any connected cameras, wait for 0.5 second for replies
-    if( fcamDiscover(if_name_.c_str(), &camList, ip_address_.c_str(), SEC_TO_USEC(0.5)) == -1) {
+    if( fcamDiscover(config_.if_name.c_str(), &camList, config_.ip_address.c_str(), SEC_TO_USEC(0.5)) == -1) {
       ROS_FATAL("Discover error");
-      exit_status_ = 1;
       //node_handle_.shutdown();
       return;
     }
 
     if (fcamCamListNumEntries(&camList) == 0) {
       ROS_FATAL("No cameras found");
-      exit_status_ = 1;
-      //node_handle_.shutdown();
       return;
     }
 
@@ -505,14 +481,12 @@ public:
     else if (serial_number_ == -2) // Nothing specified
     {
       ROS_FATAL("No camera serial_number was specified. Specifying a serial number is now mandatory to avoid accidentally configuring a random camera elsewhere in the building. You can specify -1 for autodetection.");
-      exit_status_ = 1;
     }
     else
     {
       index = fcamCamListFind(&camList, serial_number_);
       if (index == -1) {
         ROS_FATAL("Couldn't find camera with S/N %i", serial_number_);
-        exit_status_ = 1;
       }
     }
 
@@ -524,69 +498,57 @@ public:
       {
         camera_ = fcamCamListGetEntry(&camList, i);
         ROS_FATAL("Found camera with S/N #%u", camera_->serial);
-        exit_status_ = 1;
       }
-      //node_handle_.shutdown();
       return;
     }
 
     // Configure the camera with its IP address, wait up to 500ms for completion
     camera_ = fcamCamListGetEntry(&camList, index);
-    retval = fcamConfigure(camera_, ip_address_.c_str(), SEC_TO_USEC(0.5));
+    retval = fcamConfigure(camera_, config_.ip_address.c_str(), SEC_TO_USEC(0.5));
     if (retval != 0) {
       if (retval == ERR_CONFIG_ARPFAIL) {
         ROS_WARN("Unable to create ARP entry (are you root?), continuing anyway");
       } else {
         ROS_FATAL("IP address configuration failed");
-        exit_status_ = 1;
-        //node_handle_.shutdown();
         return;
       }
     }
     ROS_INFO("Configured camera, S/N #%u, IP address %s, name %s",
-             camera_->serial, ip_address_.c_str(), camera_->cam_name);
+             camera_->serial, config_.ip_address.c_str(), camera_->cam_name);
       
     serial_number_ = camera_->serial;
-    camera_name_ = camera_->cam_name;
     hwinfo_ = camera_->hwinfo;
-    memcpy(mac_, camera_->mac, sizeof(mac_));
 
     // We are going to receive the video on this host, so we need our own MAC address
     if ( wgEthGetLocalMac(camera_->ifName, &localMac_) != 0 ) {
       ROS_FATAL("Unable to get local MAC address for interface %s", camera_->ifName);
-      exit_status_ = 1;
-      //node_handle_.shutdown();
       return;
     }
 
     // We also need our local IP address
     if ( wgIpGetLocalAddr(camera_->ifName, &localIp_) != 0) {
       ROS_FATAL("Unable to get local IP address for interface %s", camera_->ifName);
-      exit_status_ = 1;
-      //node_handle_.shutdown();
       return;
     }
       
     // Select trigger mode.
-    if ( fcamTriggerControl( camera_, ext_trigger_ ? TRIG_STATE_EXTERNAL : TRIG_STATE_INTERNAL ) != 0) {
-      ROS_FATAL("Trigger mode set error. Is %s accessible from interface %s? (Try running route to check.)", ip_address_.c_str(), if_name_.c_str());
-      exit_status_ = 1;
-      //node_handle_.shutdown();
+    if ( fcamTriggerControl( camera_, config_.ext_trig ? TRIG_STATE_EXTERNAL : TRIG_STATE_INTERNAL ) != 0) {
+      ROS_FATAL("Trigger mode set error. Is %s accessible from interface %s? (Try running route to check.)", config_.ip_address.c_str(), config_.if_name.c_str());
       return;
     }
 
-    if (ext_trigger_)
+    if (config_.ext_trig)
     {
       // Configure the triggering controller
-      if (!trig_controller_.empty())
+      if (!config_.trig_controller.empty())
       {
-        ROS_INFO("Configuring controller \"%s\" for triggering.", trig_controller_.c_str());
-        trig_controller_cmd_ = trig_controller_ + "/set_waveform";
+        ROS_INFO("Configuring controller \"%s\" for triggering.", config_.trig_controller.c_str());
+        trig_controller_cmd_ = config_.trig_controller + "/set_waveform";
 
         ROS_DEBUG("Setting trigger.");
         trig_req_.running = 1;
-        trig_req_.rep_rate = trig_rate_; 
-        trig_req_.phase = trig_phase_;
+        trig_req_.rep_rate = config_.trig_rate; 
+        trig_req_.phase = config_.trig_phase;
         trig_req_.active_low = 0;
         trig_req_.pulsed = 1;
         trig_req_.duty_cycle = 0; // Unused in pulsed mode.
@@ -603,7 +565,6 @@ public:
     // Select a video mode
     if ( fcamImagerModeSelect( camera_, video_mode_ ) != 0) {
       ROS_FATAL("Mode select error");
-      exit_status_ = 1;
       //node_handle_.shutdown();
       return;
     }
@@ -624,32 +585,31 @@ public:
     // Set maximum course shutter width
     if ( fcamReliableSensorWrite( camera_, 0xBD, 240, NULL ) != 0) {
       ROS_FATAL("Sensor write error");
-      exit_status_ = 1;
       node_handle_.shutdown();
       return;
     }
     */
 
-    if (fcamReliableSensorWrite(camera_, MT9V_REG_AGC_AEC_ENABLE, (gain_ == -1) * 2 + (exposure_ == -1), NULL) != 0)
+    if (fcamReliableSensorWrite(camera_, MT9V_REG_AGC_AEC_ENABLE, config_.auto_gain * 2 + config_.auto_exposure, NULL) != 0)
     {
       ROS_WARN("Error setting AGC/AEC mode. Exposure and gain may be incorrect.");
     }
 
-    if (gain_ != -1) // Manual gain
+    if (!config_.auto_gain)
     {
-      if ( fcamReliableSensorWrite( camera_, MT9V_REG_ANALOG_GAIN, gain_, NULL) != 0)
+      if ( fcamReliableSensorWrite( camera_, MT9V_REG_ANALOG_GAIN, config_.gain, NULL) != 0)
       {
         ROS_WARN("Error setting analog gain.");
       }
     }
 
-    if (exposure_ != -1) // Manual exposure
+    if (!config_.auto_exposure)
     {
       uint16_t hblank = MT9VModes[video_mode_].hblank; 
       uint16_t hpix = width_ * bin_size; 
       double line_time = (hpix + hblank) / MT9V_CK_FREQ;
       ROS_DEBUG("Line time is %f microseconds. (hpix = %i, hblank = %i)", line_time * 1e6, hpix, hblank);
-      int explines = exposure_ / line_time;
+      int explines = config_.exposure / line_time;
       if (explines < 1) /// @TODO warning here?
         explines = 1;
       if (explines > 32767) /// @TODO warning here?
@@ -672,10 +632,10 @@ public:
     frameTimeFilter_ = FrameTimeFilter(desired_freq_, 0.001, 0.5 / imager_freq_); 
     
     // Receive frames through callback
-    // TODO: start this in separate thread?
-    //cam_pub_ = node_handle_.advertise<sensor_msgs::Image>("~image_raw", 1);
     if (calibrated_)
-      cam_info_pub_ = node_handle_.advertise<sensor_msgs::CamInfo>("~cam_info", 1);
+      cam_info_pub_.set_publisher(node_handle_.advertise<sensor_msgs::CamInfo>("~cam_info", 1));
+    else
+      cam_info_pub_.set_publisher(ros::Publisher());
     
     config_bord_service_ = node_handle_.advertiseService("~board_config", &ForearmNode::boardConfig, this);
     
@@ -700,7 +660,7 @@ public:
       // Start video; send it to specified host port
       // @todo TODO: Only start when somebody is listening?
       started_video_ = true;
-      image_thread_ = new boost::thread(boost::bind(&ForearmNode::imageThread, this, port_));
+      image_thread_ = new boost::thread(boost::bind(&ForearmNode::imageThread, this, config_.port));
     }
   }
 
@@ -729,10 +689,9 @@ private:
   {
     // Start video
     if ( fcamStartVid( camera_, (uint8_t *)&(localMac_.sa_data[0]),
-                      inet_ntoa(localIp_), port_) != 0 ) {
+                      inet_ntoa(localIp_), config_.port) != 0 ) {
       ROS_FATAL("Video start error");
       started_video_ = false;
-      exit_status_ = 1;
       return;
     }
     if (!trig_controller_cmd_.empty())
@@ -745,7 +704,6 @@ private:
         if (!trig_service_.call(trig_req_, trig_rsp_))
         {
           ROS_ERROR("Unable to set trigger controller.");
-          exit_status_ = 1;
           //node_handle_.shutdown();
           goto stop_video;
         }
@@ -811,19 +769,19 @@ stop_video:
     
     stat.addv("Missing image line frames", missed_line_count_);
     stat.addv("Missing EOF frames", missed_eof_count_);
-    stat.addv("First packet offset", first_packet_offset_);
-    stat.adds("Interface", if_name_);
-    stat.adds("Camera IP", ip_address_);
+    stat.addv("First packet offset", config_.first_packet_offset);
+    stat.adds("Interface", config_.if_name);
+    stat.adds("Camera IP", config_.ip_address);
     stat.adds("Camera Serial #", serial_number_);
-    stat.adds("Camera Name", camera_name_);
+    stat.adds("Camera Name", camera_->cam_name);
     stat.adds("Camera Hardware", hwinfo_);
-    stat.addsf("Camera MAC", "%02X:%02X:%02X:%02X:%02X:%02X", mac_[0], mac_[1], mac_[2], mac_[3], mac_[4], mac_[5]);
-    stat.adds("Image mode", mode_name_);
+    stat.addsf("Camera MAC", "%02X:%02X:%02X:%02X:%02X:%02X", camera_->mac[0], camera_->mac[1], camera_->mac[2], camera_->mac[3], camera_->mac[4], camera_->mac[5]);
+    stat.adds("Image mode", config_.video_mode);
     stat.addsf("Latest frame time", "%f", last_image_time_);
     stat.adds("Latest frame #", last_frame_number_);
     stat.addv("Free-running frequency", imager_freq_);
-    stat.adds("External trigger controller", trig_controller_);
-    stat.adds("Trigger mode", ext_trigger_ ? "external" : "internal");
+    stat.adds("External trigger controller", config_.trig_controller);
+    stat.adds("Trigger mode", config_.ext_trig ? "external" : "internal");
   }
 
   int publishImage(size_t width, size_t height, uint8_t *frameData, ros::Time t)
@@ -877,7 +835,7 @@ stop_video:
     double exposeEndTime = pulseStartTime + 
       controller::TriggerController::getTickDurationSec(trig_req_) +
       1 / imager_freq_ -
-      1 / trig_rate_;
+      1 / config_.trig_rate;
 
     return exposeEndTime;
   }
@@ -888,9 +846,9 @@ stop_video:
     // empirically determined first packet offset, going back one pulse
     // duration, and going forward one camera frame time.
     
-    double exposeEndTime = firstPacketTime - first_packet_offset_ + 
+    double exposeEndTime = firstPacketTime - config_.first_packet_offset + 
       1 / imager_freq_ - 
-      1 / trig_rate_;
+      1 / config_.trig_rate;
 
     return exposeEndTime;
   }
@@ -899,7 +857,7 @@ stop_video:
   {
     // This offset is empirical, but fits quite nicely most of the time.
     
-    return firstPacketTime - first_packet_offset_;
+    return firstPacketTime - config_.first_packet_offset;
   }
   
 //    double nowTime = ros::Time::now().toSec();
@@ -943,9 +901,9 @@ stop_video:
     double unfilteredImageTime;
     double frameStartTime = frame_info->startTime.tv_sec + frame_info->startTime.tv_usec / 1e6;
     
-    if (!trig_controller_.empty())
+    if (!config_.trig_controller.empty())
       unfilteredImageTime = getTriggeredFrameTime(frameStartTime);
-    else if (ext_trigger_)
+    else if (config_.ext_trig)
       unfilteredImageTime = getExternallyTriggeredFrameTime(frameStartTime);
     else
       unfilteredImageTime = getFreeRunningFrameTime(frameStartTime);
@@ -958,7 +916,7 @@ stop_video:
     if (imageTime < 0) // Signals an early frame arrival.
     {
       imageTime = -imageTime;
-      if (!trig_controller_.empty())
+      if (!config_.trig_controller.empty())
         misfire_blank_ = 1 + imager_freq_ / (imager_freq_ - desired_freq_);
     }
 
@@ -1267,10 +1225,11 @@ stop_video:
 
   void videoModeTest(const std::string mode, diagnostic_updater::DiagnosticStatusWrapper& status) 
   {
-    const std::string oldmode = mode_name_;
+    const std::string oldmode = config_.video_mode;
     UseFrameFunction oldUseFrame = useFrame_;
 
-    mode_name_ = mode;
+    config_.video_mode = mode;
+    config_update();
     VideoModeTestFrameHandler callback(status);
     useFrame_ = boost::bind(&VideoModeTestFrameHandler::run, boost::ref(callback), _1, _2, _3, _4);
 
@@ -1301,7 +1260,8 @@ stop_video:
 reset_state:
     close();
     useFrame_ = oldUseFrame;
-    mode_name_ = oldmode;
+    config_.video_mode = oldmode;
+    config_update();
   }
 
   void resumeTest(diagnostic_updater::DiagnosticStatusWrapper& status)
@@ -1347,5 +1307,5 @@ int main(int argc, char **argv)
   if (s != -1)
     close(s);
 #endif  
-  return fn.exit_status_;
+  return 0;
 }
