@@ -1,0 +1,16 @@
+<stack name="2dnav_pr2_app" version="0.1">
+  <description brief="A 2D navigation application for the PR2 robot platform.">
+    The 2D navigation application for the PR2 robot
+  </description>
+  <version>0.1</version>
+  <author>Eitan eitan@willowgarage.com</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/2dnav_pr2_app</url>
+  
+  <depend stack="ros" version="0.5"/>
+  <depend stack="ros-pkg_common" version="0.1"/>
+  <depend stack="ros-pkg_visualization_core" version="0.1"/>
+  <depend stack="navigation" version="0.1"/>
+</stack>
+
