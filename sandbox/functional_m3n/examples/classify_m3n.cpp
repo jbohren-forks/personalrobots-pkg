@@ -54,7 +54,7 @@ int loadPointCloud(string filename,
   // ----------------------------------------------
   // Read file
   // file format: x y z label 2
-  unsigned int tempo;
+  int tempo;
   for (unsigned int i = 0 ; i < nbr_samples ; i++)
   {
     infile >> pt_cloud.pts[i].x;
@@ -78,9 +78,9 @@ int main()
   // ----------------------------------------------------------
   // Load point cloud from file
   robot_msgs::PointCloud pt_cloud;
-  unsigned int nbr_cols = 3;
+  unsigned int nbr_cols = 5;
   vector<float> labels;
-  loadPointCloud("cube-200-200-80.pts", nbr_cols, pt_cloud, labels);
+  loadPointCloud("pt_cloud_260.xyz_label_conf", nbr_cols, pt_cloud, labels);
 
   // ----------------------------------------------------------
   // Create random field
