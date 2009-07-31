@@ -343,7 +343,6 @@ bool DorylusDataset::load(string filename, bool quiet)
       iss_ncols >> nCols;
 
       float buf;
-      //What was this?  NEWMAT::Matrix v(nRows, nCols);
       pobj->features[descriptor] = new MatrixXf(nRows, nCols);
       for(int i=0; i<nCols; i++) {
 	for (int j=0; j<nRows; j++) {
@@ -727,21 +726,18 @@ bool Dorylus::learnWC(int nCandidates, map<string, float> max_thetas, vector<str
 
 
   // -- For all candidates, try several thetas and get their utilities.
-//   NEWMAT::Matrix best_weights, *pweights=NULL;
-//   NEWMAT::Matrix **ppweights = &pweights;
-//  float objective = computeObjective();
   float max_util = 0.0;
   VectorXf best_mmt;
   bool found_better = false;
   for(unsigned int i=0; i<cand.size(); i++) {
 
     // -- Get the distances from this candidate to all other points.
-    vector<NEWMAT::Matrix> dists;
+    vector<VectorXf> dists; // dists[i](j) is the distance to the jth feature vector for object i.
     int nPts = 0;
     dists.reserve(dd_->objs_.size());
     for(unsigned int j=0; j<dd_->objs_.size(); j++) {
       MatrixXf* f = dd_->objs_[j]->features[cand[i]->descriptor];
-      dists.push_back(NEWMAT::Matrix(1, f->cols()));
+      dists.push_back(VectorXf::Zero(f->cols()));
       nPts += f->cols();
     }
 
@@ -750,8 +746,8 @@ bool Dorylus::learnWC(int nCandidates, map<string, float> max_thetas, vector<str
 
     for(j=0; j<(int)dd_->objs_.size(); j++) {
       f = dd_->objs_[j]->features[cand[i]->descriptor];
-      for(k=1; k<=f->cols(); k++) {
-	dists[j](1, k) = euc(f->col(k-1), cand[i]->center);
+      for(k=0; k<f->cols(); k++) {
+	dists[j](k) = euc(f->col(k), cand[i]->center);
       }
     }
 
@@ -769,12 +765,12 @@ bool Dorylus::learnWC(int nCandidates, map<string, float> max_thetas, vector<str
 	  break;
       }
 
-      //Get the M_m^t, number of points in the hypersphere for each object.
+      //Get the M_m^t, number of points in the hypersphere of cand[i] for each object.
       //NEWMAT::Matrix mmt(1,dd_->objs_.size()); mmt=0.0;
       VectorXf mmt = VectorXf::Zero(dd_->objs_.size());
       for(unsigned int j=0; j<dists.size(); j++) {
-	for(int k=1; k<=dists[j].Ncols(); k++) {
-	  if(dists[j](1,k) < cand[i]->theta)
+	for(int k=0; k<dists[j].rows(); k++) {
+	  if(dists[j](k) < cand[i]->theta)
 	    mmt(j)++;
 	}
       }
@@ -958,34 +954,6 @@ float Dorylus::computeObjective() {
   return log_weights_.cwise().exp().sum() / (log_weights_.rows() * log_weights_.cols());
 }
 
-//mmt is a M_m^t specific to this weak classifier and this dataset.
-// NEWMAT::Matrix Dorylus::computeDatasetActivations(const weak_classifier& wc, const MatrixXf& mmt) {
-//   NEWMAT::Matrix act(dd_->nClasses_, dd_->objs_.size()); act = 0.0;
-
-//   for(unsigned int m=0; m<dd_->objs_.size(); m++) {
-
-//     //This can become an outer product.
-//     for(unsigned int c=0; c<dd_->nClasses_; c++) {
-//       act(c+1, m+1) += wc.vals(c) * mmt(1, m+1);
-//     }
-//   }
-
-//   NEWMAT::Matrix act2(dd_->nClasses_, dd_->objs_.size());
-//   act2 = wc.vals * mmt;
-
-//   for(unsigned int m=0; m<dd_->objs_.size(); m++) {
-//     for(unsigned int c=0; c<dd_->nClasses_; c++) {
-//       if(act2(c+1, m+1) != act(c+1, m+1)) {
-// 	cout << act2(c+1, m+1) << " " <<  act(c+1, m+1) << endl;
-// 	cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-//       }
-//     }
-//   }
-
-
-//   return act2;
-// }
-
 
 float Dorylus::computeUtility(const weak_classifier& wc, const VectorXf& mmt) {
 
@@ -1002,7 +970,7 @@ float Dorylus::computeUtility(const weak_classifier& wc, const VectorXf& mmt) {
   return util / (M * dd_->nClasses_);
 }
 
-VectorXf Dorylus::classify(object &obj, NEWMAT::Matrix **confidence) {
+VectorXf Dorylus::classify(object &obj) {
   assert(nClasses_ > 0);
   VectorXf response = VectorXf::Zero(nClasses_);
   if(battery_.size() == 0)

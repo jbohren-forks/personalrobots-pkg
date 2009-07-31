@@ -210,15 +210,13 @@ class Dorylus {
   bool load(string filename, bool quiet=false, string *user_data_str=NULL);
   std::string status();
   bool learnWC(int nCandidates, map<string, float> max_thetas, vector<string> *desc_ignore=NULL);
-  Eigen::VectorXf classify(object &obj, NEWMAT::Matrix **confidence = NULL);
+  Eigen::VectorXf classify(object &obj);
   float classify(DorylusDataset &dd);
   map<string, float> computeMaxThetas(const DorylusDataset &dd);
-  //  float computeNewObjective(const weak_classifier& wc, const NEWMAT::Matrix& mmt, NEWMAT::Matrix** ppweights = NULL);
   float computeUtility(const weak_classifier& wc, const Eigen::VectorXf& mmt);
   float computeObjective();
   //void train(int nCandidates, int max_secs, int max_wcs);
   vector<weak_classifier*>* findActivatedWCs(const string &descriptor, const Eigen::MatrixXf &pt);
-  NEWMAT::Matrix computeDatasetActivations(const weak_classifier& wc, const NEWMAT::Matrix& mmt);
   bool compare(const Dorylus& d);
 
  Dorylus() : dd_(NULL), nClasses_(0), max_wc_(0)
@@ -236,10 +234,10 @@ class Dorylus {
 class Function {
  public:
   Dorylus *d_;
-  const NEWMAT::Matrix &mmt_;
+  const Eigen::MatrixXf &mmt_;
   int label_;
 
- Function(Dorylus* d, const NEWMAT::Matrix &mmt, int label) :
+ Function(Dorylus* d, const Eigen::MatrixXf &mmt, int label) :
   d_(d), mmt_(mmt), label_(label)
   {
   }
@@ -247,7 +245,7 @@ class Function {
   float operator()(float x) const {
     float val = 0.0;
     for(unsigned int m=0; m<d_->dd_->objs_.size(); m++) {
-      val += exp(d_->log_weights_(label_+1, m+1)) * exp(-d_->dd_->ymc_(label_+1, m+1) * mmt_(1, m+1) * x);
+      val += exp(d_->log_weights_(label_+1, m+1)) * exp(-d_->dd_->ymc_(label_+1, m+1) * mmt_(0, m) * x);
     }
     return val;
   }
@@ -257,7 +255,7 @@ class Function {
 
 class Gradient : public Function {
  public:
- Gradient(Dorylus* d, const NEWMAT::Matrix &mmt, int label) : Function(d, mmt, label)
+ Gradient(Dorylus* d, const Eigen::MatrixXf &mmt, int label) : Function(d, mmt, label)
   {
   }
 
@@ -269,7 +267,7 @@ class Gradient : public Function {
 /*       cout << d_->dd_->ymc_.Nrows() << endl; */
 /*       cout << mmt_.Nrows() << endl; */
 /*       cout << label_ << endl; */
-      val += exp(d_->log_weights_(label_+1, m+1)) * exp(-d_->dd_->ymc_(label_+1, m+1) * mmt_(1, m+1) * x) * (-d_->dd_->ymc_(label_+1, m+1) * mmt_(1, m+1));
+      val += exp(d_->log_weights_(label_+1, m+1)) * exp(-d_->dd_->ymc_(label_+1, m+1) * mmt_(0, m) * x) * (-d_->dd_->ymc_(label_+1, m+1) * mmt_(0, m));
     }
     return val;
   }
@@ -279,14 +277,14 @@ class Gradient : public Function {
 class Hessian : public Function {
  public:
 
- Hessian(Dorylus* d, const NEWMAT::Matrix &mmt, int label) : Function(d, mmt, label)
+ Hessian(Dorylus* d, const Eigen::MatrixXf &mmt, int label) : Function(d, mmt, label)
   {
   }
 
   float operator()(float x) const {
     float val = 0.0;
     for(unsigned int m=0; m<d_->dd_->objs_.size(); m++) {
-      val += exp(d_->log_weights_(label_+1, m+1)) * exp(-d_->dd_->ymc_(label_+1, m+1) * mmt_(1, m+1) * x) * (mmt_(1, m+1) * mmt_(1, m+1));
+      val += exp(d_->log_weights_(label_+1, m+1)) * exp(-d_->dd_->ymc_(label_+1, m+1) * mmt_(0, m) * x) * (mmt_(0, m) * mmt_(0, m));
     }
     return val;
   }
