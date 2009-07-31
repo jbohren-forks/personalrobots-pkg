@@ -1,0 +1,11 @@
+<stack name="sound_drivers" version="0.1">
+  <description brief="Stack containing drivers to play/record sound.">
+    
+  This stack contains sound-related drivers.
+  
+  </description>
+  <author>Maintained by Blaise Gassend</author>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/sound_drivers</url>
+  <depend stack="ros" version="0.7"/>
+</stack>
