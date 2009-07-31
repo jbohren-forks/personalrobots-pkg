@@ -85,7 +85,7 @@ namespace collision_space
 	    bodies (multiplicative factor). The padding can be used to
 	    increase or decrease the robot's bodies with by an
 	    additive term */
-	virtual void setRobotModel(const boost::shared_ptr<const planning_models::KinematicModel> &model, const std::vector<std::string> &links, double scale = 1.0, double padding = 0.0);
+	virtual void setRobotModel(const boost::shared_ptr<planning_models::KinematicModel> &model, const std::vector<std::string> &links, double scale = 1.0, double padding = 0.0);
 
 	/** \brief Update the positions of the geometry used in collision detection */
 	virtual void updateRobotModel(void);

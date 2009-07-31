@@ -51,7 +51,22 @@ const collision_space::EnvironmentObjects* collision_space::EnvironmentModel::ge
     return m_objects;
 }
 
-void collision_space::EnvironmentModel::setRobotModel(const boost::shared_ptr<const planning_models::KinematicModel> &model, const std::vector<std::string> &links, double scale, double padding)
+const boost::shared_ptr<planning_models::KinematicModel>& collision_space::EnvironmentModel::getRobotModel(void) const
+{
+    return m_robotModel;
+}
+
+double collision_space::EnvironmentModel::getRobotScale(void) const
+{
+    return m_robotScale;
+}
+
+double collision_space::EnvironmentModel::getRobotPadding(void) const
+{
+    return m_robotPadd;
+}
+	
+void collision_space::EnvironmentModel::setRobotModel(const boost::shared_ptr<planning_models::KinematicModel> &model, const std::vector<std::string> &links, double scale, double padding)
 {
     m_robotModel = model;
     m_collisionLinks = links;

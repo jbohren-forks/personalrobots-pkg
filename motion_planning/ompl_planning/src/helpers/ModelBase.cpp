@@ -57,7 +57,7 @@ ompl_planning::EnvironmentDescription* ompl_planning::ModelBase::getEnvironmentD
 	{
 	    result = new EnvironmentDescription();
 	    result->collisionSpace = planningMonitor->getEnvironmentModel();
-	    result->kmodel = const_cast<planning_models::KinematicModel*>(result->collisionSpace->getRobotModel().get());
+	    result->kmodel = result->collisionSpace->getRobotModel().get();
 	    result->constraintEvaluator = &constraintEvaluator;
 	}
 	else
@@ -65,7 +65,7 @@ ompl_planning::EnvironmentDescription* ompl_planning::ModelBase::getEnvironmentD
 	    ROS_DEBUG("Cloning collision environment (%d total)", (int)ENVS.size() + 1);
 	    result = new EnvironmentDescription();
 	    result->collisionSpace = planningMonitor->getEnvironmentModel()->clone();
-	    result->kmodel = const_cast<planning_models::KinematicModel*>(result->collisionSpace->getRobotModel().get());
+	    result->kmodel = result->collisionSpace->getRobotModel().get();
 	    planning_environment::KinematicConstraintEvaluatorSet *kce = new planning_environment::KinematicConstraintEvaluatorSet();
 	    kce->add(result->kmodel, constraintEvaluator.getPoseConstraints());
 	    kce->add(result->kmodel, constraintEvaluator.getJointConstraints());

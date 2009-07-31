@@ -59,7 +59,7 @@ void collision_space::EnvironmentModelBullet::freeMemory(void)
     delete m_config; */
 }
 
-void collision_space::EnvironmentModelBullet::setRobotModel(const boost::shared_ptr<const planning_models::KinematicModel> &model, const std::vector<std::string> &links, double scale, double padding)
+void collision_space::EnvironmentModelBullet::setRobotModel(const boost::shared_ptr<planning_models::KinematicModel> &model, const std::vector<std::string> &links, double scale, double padding)
 {
     collision_space::EnvironmentModel::setRobotModel(model, links, scale, padding);
     m_modelGeom.scale = scale;

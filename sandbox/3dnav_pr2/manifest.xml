@@ -20,6 +20,11 @@
   <depend package="manipulation_msgs" />
   <depend package="visualization_msgs" />
   
+  <!-- controllers -->
+  <depent package="pr2_default_controllers" />
+  <depent package="pr2_mechanism_controllers" />
+  <depent package="pr2_experimental_controllers" />
+
   <!-- mapping -->
   <depend package="laser_scan"/>
   <depend package="point_cloud_assembler"/>

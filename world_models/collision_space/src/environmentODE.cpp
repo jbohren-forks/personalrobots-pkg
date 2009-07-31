@@ -100,7 +100,7 @@ void collision_space::EnvironmentModelODE::freeMemory(void)
 	delete it->second;
 }
 
-void collision_space::EnvironmentModelODE::setRobotModel(const boost::shared_ptr<const planning_models::KinematicModel> &model, const std::vector<std::string> &links, double scale, double padding)
+void collision_space::EnvironmentModelODE::setRobotModel(const boost::shared_ptr<planning_models::KinematicModel> &model, const std::vector<std::string> &links, double scale, double padding)
 {
     collision_space::EnvironmentModel::setRobotModel(model, links, scale, padding);
     createODERobotModel();
@@ -781,7 +781,7 @@ collision_space::EnvironmentModel* collision_space::EnvironmentModelODE::clone(v
     env->m_verbose = m_verbose;
     env->m_robotScale = m_robotScale;
     env->m_robotPadd = m_robotPadd;
-    env->m_robotModel = boost::shared_ptr<const planning_models::KinematicModel>(m_robotModel->clone());
+    env->m_robotModel = boost::shared_ptr<planning_models::KinematicModel>(m_robotModel->clone());
     env->createODERobotModel();
     for (unsigned int j = 0 ; j < m_modelGeom.linkGeom.size() ; ++j)
 	env->m_modelGeom.linkGeom[j]->enabled = m_modelGeom.linkGeom[j]->enabled;

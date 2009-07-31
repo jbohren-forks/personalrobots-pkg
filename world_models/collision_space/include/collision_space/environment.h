@@ -111,19 +111,13 @@ namespace collision_space
 	    bodies (multiplicative factor). The padding can be used to
 	    increase or decrease the robot's bodies with by an
 	    additive term */
-	virtual void setRobotModel(const boost::shared_ptr<const planning_models::KinematicModel> &model, const std::vector<std::string> &links, double scale = 1.0, double padding = 0.0);
+	virtual void setRobotModel(const boost::shared_ptr<planning_models::KinematicModel> &model, const std::vector<std::string> &links, double scale = 1.0, double padding = 0.0);
 
 	/** \brief Get robot scale */
-	double getRobotScale(void) const
-	{
-	    return m_robotScale;
-	}
-
+	double getRobotScale(void) const;
+	
 	/** \brief Get robot padding */
-	double getRobotPadding(void) const
-	{
-	    return m_robotPadd;
-	}
+	double getRobotPadding(void) const;
 	
 	/** \brief Update the positions of the geometry used in collision detection */
 	virtual void updateRobotModel(void) = 0;
@@ -132,12 +126,8 @@ namespace collision_space
 	virtual void updateAttachedBodies(void) = 0;
 		
 	/** \brief Get the robot model */
-	const boost::shared_ptr<const planning_models::KinematicModel>& getRobotModel(void) const
-	{
-	    return m_robotModel;
-	}	
+	const boost::shared_ptr<planning_models::KinematicModel>& getRobotModel(void) const;
 	
-
 	/**********************************************************************/
 	/* Collision Checking Routines                                        */
 	/**********************************************************************/
@@ -218,7 +208,7 @@ namespace collision_space
 	planning_models::msg::Interface                          m_msg;
 	
 	/** \brief Loaded robot model */	
-	boost::shared_ptr<const planning_models::KinematicModel> m_robotModel;
+	boost::shared_ptr<planning_models::KinematicModel>       m_robotModel;
 
 	/** \brief List of objects contained in the environment */
 	EnvironmentObjects                                      *m_objects;
