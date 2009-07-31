@@ -123,6 +123,7 @@ class PlayerLogToMsg
         if (!logfile_stream_.good ())
         {
           usleep (500);
+          logfile_stream_.clear ();
           continue;
         }
         // If the line is empty, continue
