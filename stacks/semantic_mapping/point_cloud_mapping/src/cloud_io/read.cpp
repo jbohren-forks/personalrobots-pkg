@@ -49,7 +49,7 @@ namespace cloud_io
   * \param points the resulting point array
   */
   int
-  loadPCDFile (const char* file_name, robot_msgs::PointCloud &points)
+    loadPCDFile (const char* file_name, robot_msgs::PointCloud &points)
   {
     bool binary_data = false;
     int nr_points = 0;
@@ -75,7 +75,7 @@ namespace cloud_io
         continue;
 
       std::vector<std::string> st;
-      boost::split (st, line, boost::is_any_of (" "));
+      boost::split (st, line, boost::is_any_of (" "), boost::token_compress_on);
 
       std::string line_type = st.at (0);
 

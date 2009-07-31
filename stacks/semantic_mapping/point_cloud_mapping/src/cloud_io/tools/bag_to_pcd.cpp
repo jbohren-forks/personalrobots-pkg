@@ -83,6 +83,8 @@ class BagToPcd
     void
       cloud_cb (const PointCloudConstPtr& cloud)
     {
+      if (cloud->pts.size () == 0)
+        return;
       PointStamped pin, pout;
       pin.header.frame_id = "laser_tilt_mount_link";
       pin.point.x = pin.point.y = pin.point.z = 0.0;
@@ -102,28 +104,31 @@ class BagToPcd
       sprintf (fn_, "%.0f.pcd", c_time);
       if (dump_to_disk_)
       {
+        ROS_INFO ("Data saved to %s (%f).", fn_, c_time);
         {
           PointCloud cloud_out;
           cloud_out.header = cloud->header;
           cloud_out.pts    = cloud->pts;
           cloud_out.chan   = cloud->chan;
           // Add information about the viewpoint - rudimentary stuff
-          cloud_out.chan.resize (cloud->chan.size () + 3);
-          cloud_out.chan[cloud->chan.size () - 3].name = "vx";
-          cloud_out.chan[cloud->chan.size () - 2].name = "vy";
-          cloud_out.chan[cloud->chan.size () - 1].name = "vz";
-          cloud_out.chan[cloud->chan.size () - 3].vals.resize (cloud->pts.size ());
-          cloud_out.chan[cloud->chan.size () - 2].vals.resize (cloud->pts.size ());
-          cloud_out.chan[cloud->chan.size () - 1].vals.resize (cloud->pts.size ());
-          for (unsigned int i = 0; i < cloud->pts.size (); i++)
+          if (cloud_geometry::getChannelIndex (cloud_out, "vx") == -1)
           {
-            cloud_out.chan[cloud->chan.size () - 3].vals[i] = pout.point.x;
-            cloud_out.chan[cloud->chan.size () - 2].vals[i] = pout.point.y;
-            cloud_out.chan[cloud->chan.size () - 1].vals[i] = pout.point.z;
+            cloud_out.chan.resize (cloud->chan.size () + 3);
+            cloud_out.chan[cloud->chan.size () - 3].name = "vx";
+            cloud_out.chan[cloud->chan.size () - 2].name = "vy";
+            cloud_out.chan[cloud->chan.size () - 1].name = "vz";
+            cloud_out.chan[cloud->chan.size () - 3].vals.resize (cloud->pts.size ());
+            cloud_out.chan[cloud->chan.size () - 2].vals.resize (cloud->pts.size ());
+            cloud_out.chan[cloud->chan.size () - 1].vals.resize (cloud->pts.size ());
+            for (unsigned int i = 0; i < cloud->pts.size (); i++)
+            {
+              cloud_out.chan[cloud->chan.size () - 3].vals[i] = pout.point.x;
+              cloud_out.chan[cloud->chan.size () - 2].vals[i] = pout.point.y;
+              cloud_out.chan[cloud->chan.size () - 1].vals[i] = pout.point.z;
+            }
           }
-          cloud_io::savePCDFile (fn_, cloud_out, 5);
+          cloud_io::savePCDFileASCII (fn_, cloud_out, 5);
         }
-        ROS_INFO ("Data saved to %s (%f).", fn_, c_time);
       }
     }
 };
