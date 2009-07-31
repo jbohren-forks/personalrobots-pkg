@@ -94,6 +94,26 @@ class TestCommonMsgsMigration(unittest.TestCase):
     self.do_test('vector3', self.get_old_vector3, self.get_new_vector3)
 
 
+########### Quaternion ###############
+
+
+  def get_old_quaternion(self):
+    quaternion_classes = self.load_saved_classes('Quaternion.saved')
+    
+    quaternion  = quaternion_classes['robot_msgs/Quaternion']
+    
+    return quaternion(1.23, 4.56, 7.89, 1.23)
+
+  def get_new_quaternion(self):
+    from geometry_msgs.msg import Quaternion
+    
+    return Quaternion(1.23, 4.56, 7.89, 1.23)
+
+
+  def test_quaternion(self):
+    self.do_test('quaternion', self.get_old_quaternion, self.get_new_quaternion)
+
+
 ########### Twist ###############
 
 

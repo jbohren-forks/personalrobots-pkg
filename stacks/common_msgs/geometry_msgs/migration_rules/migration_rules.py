@@ -74,3 +74,33 @@ float64 z
                 self.migrate(old_msg.vel, new_msg.linear)
                 self.migrate(old_msg.rot, new_msg.angular)
 
+class update_robot_msgs_Quaternion_a779879fadf0160734f906b8c19c7004(MessageUpdateRule):
+	old_type = "robot_msgs/Quaternion"
+	old_full_text = """
+# xyz - vector rotation axis, w - scalar term (cos(ang/2))
+float64 x
+float64 y
+float64 z
+float64 w
+"""
+
+	new_type = "geometry_msgs/Quaternion"
+	new_full_text = """
+# xyz - vector rotation axis, w - scalar term (cos(ang/2))
+float64 x
+float64 y
+float64 z
+float64 w
+"""
+
+	order = 0
+	migrated_types = []
+
+	valid = True
+
+	def update(self, old_msg, new_msg):
+		new_msg.x = old_msg.x
+		new_msg.y = old_msg.y
+		new_msg.z = old_msg.z
+		new_msg.w = old_msg.w
+
