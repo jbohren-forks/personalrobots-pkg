@@ -61,19 +61,6 @@ class ParameterGenerator:
             'double' : '-std::numeric_limits<double>::infinity()',
             'str' : '',
             'bool' : False,
-#            'float32' : '-1./0.',
-#            'float64' : '-1./0.',
-#            'uint8' : '0',
-#            'uint16' : '0',
-#            'uint32' : '0',
-#            'uint64' : '0',
-#            'int8' : '1LL << 7',
-#            'int16' : '1LL << 15',
-#            'int32' : '1LL << 31',
-#            'int64' : '1LL << 63',
-#            'time' : 'ros::Time(0, 0)',
-#            'duration' : 'ros::Duration(1LL << 31, 1LL << 31)',
-#            'string' : '',
             }
             
     maxval = {
@@ -81,19 +68,6 @@ class ParameterGenerator:
             'double' : 'std::numeric_limits<double>::infinity()',
             'str' : '',
             'bool' : True,
-#            'float32' : '1./0.',
-#            'float64' : '1./0.',
-#            'uint8' : '-1LL',
-#            'uint16' : '-1LL',
-#            'uint32' : '-1LL',
-#            'uint64' : '-1LL',
-#            'int8' : '~(1LL << 7)',
-#            'int16' : '~(1LL << 15)',
-#            'int32' : '~(1LL << 31)',
-#            'int64' : '~(1LL << 63)',
-#            'time' : 'ros::Time(-1LL, -1LL)',
-#            'duration' : 'ros::Duration(~(1LL << 31), ~(1LL << 31))',
-#            'string' : '',
             }
     
     defval = {
@@ -101,19 +75,6 @@ class ParameterGenerator:
             'double' : 0,
             'str' : '',
             'bool' : False,
-#            'float32' : '0',
-#            'float64' : '0',
-#            'uint8' : '0',
-#            'uint16' : '0',
-#            'uint32' : '0',
-#            'uint64' : '0',
-#            'int8' : '0',
-#            'int16' : '0',
-#            'int32' : '0',
-#            'int64' : '0',
-#            'time' : '0',
-#            'duration' : '0',
-#            'string' : '',
             }
             
     def __init__(self, pkgname, name):
@@ -195,7 +156,7 @@ class ParameterGenerator:
         if type in [ 'int', 'double']:
             return str(val)
         if  type == 'bool':
-            return { True : 1, False : 2 }[val]
+            return { True : 1, False : 0 }[val]
         raise TypeError(type)
 #        if type == 'string':
 #            return '"'+val+'"'
@@ -215,8 +176,8 @@ class ParameterGenerator:
             val = ""
         else:
             val = self.crepr(param, param[value])
-        #list.append(Template('      '+text).substitute(param, v=val))
-        list.append(Template('#line $srcline "$srcfile"\n      '+text).substitute(param, v=val))
+        list.append(Template('      '+text).substitute(param, v=val))
+        #list.append(Template('#line $srcline "$srcfile"\n      '+text).substitute(param, v=val))
     
     def generateconfigmanipulator(self):
         # Read the configuration manipulator template and insert line numbers and file name into template.

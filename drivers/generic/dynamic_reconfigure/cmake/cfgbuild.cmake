@@ -182,8 +182,10 @@ macro(gencfg_cpp)
     add_generated_msg(${_output_msg_name})
     add_generated_srv(${_output_setsrv_name} ${_output_getsrv_name})
 
-    # Add the rule to build the .h the .cfg
-    add_custom_command(OUTPUT ${_output_cpp} ${_output_msg} ${_output_getsrv} ${_output_setsrv} ${_output_dox}
+    # Add the rule to build the .h the .cfg and the .msg
+    # FIXME Horrible hack. Can't get CMAKE to add dependencies for anything
+    # but the first output in add_custom_command.
+    add_custom_command(OUTPUT ${_output_msg} ${_output_cpp} ${_output_getsrv} ${_output_setsrv} ${_output_dox}
                        COMMAND ${gencfg_cpp_exe} ${_input}
                        DEPENDS ${_input} ${gencfg_cpp_exe} ${ROS_MANIFEST_LIST} ${gencfg_build_files})
     list(APPEND _autogen ${_output_cpp} ${_output_msg} ${_output_getsrv} ${_output_setsrv} ${_output_dox})

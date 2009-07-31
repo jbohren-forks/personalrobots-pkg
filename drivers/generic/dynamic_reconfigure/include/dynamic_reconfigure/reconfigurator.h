@@ -60,9 +60,11 @@ public:
   {
   }
   
-  void set_callback(boost::function<void(int level)> &callback)
+  void set_callback(const boost::function<void(int level)> &callback)
   {
     callback_ = callback;
+    if (callback) // At startup we need to load the configuration with all level bits set. (Everything has changed.)
+      callback(~0);
   }
 
   void clear_callback()
