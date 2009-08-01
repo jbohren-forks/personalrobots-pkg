@@ -640,7 +640,6 @@ TEST(executive_trex_pr2, map_region_from_position_constraint){
       // Obtain random values for x and y
       double x, y;
       pickPointInSpace(WIDTH_24 + 5, HEIGHT_21 + 5, x, y);
-      std::cout << "This";
       unsigned int region_id = TopologicalMapAdapter::instance()->getRegion(x, y);
       // Now bind x and y - should propagate
       v_x.specify(x);
@@ -652,10 +651,8 @@ TEST(executive_trex_pr2, map_region_from_position_constraint){
       v_y.reset();
     }
     catch(std::runtime_error e){
-      std::cout << "This";
     }
     catch(...){
-      std::cout << "This";
     }
   }
 }
