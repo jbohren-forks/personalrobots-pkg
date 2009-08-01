@@ -1080,7 +1080,7 @@ stop_video:
   {
     status.name = "Interruption Test";
 
-    if (node_handle_.getNode()->numSubscriptions() == 0)
+    if (node_handle_.getNode()->numSubscribers("~image_raw") == 0)
     {
       status.level = 0;
       status.message = "No operation interrupted.";
