@@ -302,44 +302,45 @@ private:
     
     bool transformMap(CMap &map, const roslib::Header &from, const roslib::Header &to)
     {
-	if (tf_.canTransform(to.frame_id, to.stamp, from.frame_id, from.stamp, fixedFrame_))
+	tf::Stamped<btTransform> transf;
+	try
 	{
-	    tf::Stamped<btTransform> transf;
 	    tf_.lookupTransform(to.frame_id, to.stamp, from.frame_id, from.stamp, fixedFrame_, transf);
-
-	    // copy data to temporary location
-	    const int n = map.size();
-	    std::vector<CollisionPoint> pts(n);
-	    std::copy(map.begin(), map.end(), pts.begin());
-	    map.clear();
-	    
-#pragma omp parallel for
-	    for (int i = 0 ; i < n ; ++i)
-	    {
-		btVector3 p(((double)pts[i].x - 0.5) * bi_.resolution + bi_.originX,
-			    ((double)pts[i].y - 0.5) * bi_.resolution + bi_.originY,
-			    ((double)pts[i].z - 0.5) * bi_.resolution + bi_.originZ);
-		p = transf * p;
-		if (p.x() > bi_.real_minX && p.x() < bi_.real_maxX && p.y() > bi_.real_minY && p.y() < bi_.real_maxY && p.z() > bi_.real_minZ && p.z() < bi_.real_maxZ)
-		{
-		    CollisionPoint c((int)(0.5 + (p.x() - bi_.originX) / bi_.resolution),
-				     (int)(0.5 + (p.y() - bi_.originY) / bi_.resolution),
-				     (int)(0.5 + (p.z() - bi_.originZ) / bi_.resolution));
-#pragma omp critical
-		    {
-			map.insert(c);
-		    }
-		    
-		}
-	    }
-	    
-	    return true;
 	}
-	else
+	catch(...)
 	{
 	    ROS_WARN("Unable to transform previous collision map into new frame");
 	    return false;
 	}
+	
+	// copy data to temporary location
+	const int n = map.size();
+	std::vector<CollisionPoint> pts(n);
+	std::copy(map.begin(), map.end(), pts.begin());
+	map.clear();
+	
+#pragma omp parallel for
+	for (int i = 0 ; i < n ; ++i)
+	{
+	    btVector3 p(((double)pts[i].x - 0.5) * bi_.resolution + bi_.originX,
+			((double)pts[i].y - 0.5) * bi_.resolution + bi_.originY,
+			((double)pts[i].z - 0.5) * bi_.resolution + bi_.originZ);
+	    p = transf * p;
+	    if (p.x() > bi_.real_minX && p.x() < bi_.real_maxX && p.y() > bi_.real_minY && p.y() < bi_.real_maxY && p.z() > bi_.real_minZ && p.z() < bi_.real_maxZ)
+	    {
+		CollisionPoint c((int)(0.5 + (p.x() - bi_.originX) / bi_.resolution),
+				 (int)(0.5 + (p.y() - bi_.originY) / bi_.resolution),
+				 (int)(0.5 + (p.z() - bi_.originZ) / bi_.resolution));
+#pragma omp critical
+		{
+		    map.insert(c);
+		}
+		
+	    }
+	}
+	
+	return true;
+
     }
 
     /** Construct an axis-aligned collision map from a point cloud assumed to be in the robot frame */
