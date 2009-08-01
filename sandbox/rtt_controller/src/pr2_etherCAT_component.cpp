@@ -48,8 +48,7 @@ public:
     bool configureHook(){
         // Initialize the hardware interface
         bool allow_unprogrammed=false;
-        bool publish_motor_model=false;
-        ec.init(const_cast<char *>(interface.rvalue().c_str()), allow_unprogrammed, publish_motor_model);
+        ec.init(const_cast<char *>(interface.rvalue().c_str()), allow_unprogrammed);
         
         // Load robot description
         TiXmlDocument xml;
@@ -68,9 +67,6 @@ public:
         }
         urdf::normalizeXml(root_element);
 
-        // Register actuators with mechanism control
-        bool allow_override=false;
-        ec.initXml(root, allow_override);
         // Create mechanism control
         mc = new controller::MechanismControl(ec.hw_);
         // Initialize mechanism control from robot description

@@ -23,6 +23,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 #common commands for building c++ executables and libraries
 rospack_add_library(${PROJECT_NAME} src/pr2_etherCAT_component.cpp)
+rospack_remove_compile_flags(${PROJECT_NAME} -W)
 add_definitions(-DOCL_DLL_EXPORT)
 #target_link_libraries(${PROJECT_NAME} another_library)
 #rospack_add_boost_directories()
