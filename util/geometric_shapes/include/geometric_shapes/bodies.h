@@ -139,8 +139,11 @@ namespace bodies
 	    return containsPoint(btVector3(btScalar(x), btScalar(y), btScalar(z)));
 	}
 	
-	/** \brief Check is a ray intersects the body, and find the set of intersections, in order, along the ray */
-	virtual bool intersectsRay(const btVector3& origin, const btVector3 &dir, std::vector<btVector3> *intersections = NULL) = 0;
+	/** \brief Check is a ray intersects the body, and find the
+	    set of intersections, in order, along the ray. A maximum
+	    number of intersections can be specified as well. If that
+	    number is 0, all intersections are returned */
+	virtual bool intersectsRay(const btVector3& origin, const btVector3 &dir, std::vector<btVector3> *intersections = NULL, unsigned int count = 0) = 0;
 	
 	/** \brief Check is a point is inside the body */
 	virtual bool containsPoint(const btVector3 &p) const = 0;	
@@ -187,7 +190,7 @@ namespace bodies
 	virtual bool containsPoint(const btVector3 &p) const;
 	virtual double computeVolume(void) const;
 	virtual void computeBoundingSphere(BoundingSphere &sphere) const;
-	virtual bool intersectsRay(const btVector3& origin, const btVector3 &dir, std::vector<btVector3> *intersections = NULL);
+	virtual bool intersectsRay(const btVector3& origin, const btVector3 &dir, std::vector<btVector3> *intersections = NULL, unsigned int count = 0);
 
     protected:
 	
@@ -223,7 +226,7 @@ namespace bodies
 	virtual bool containsPoint(const btVector3 &p) const;
 	virtual double computeVolume(void) const;
 	virtual void computeBoundingSphere(BoundingSphere &sphere) const;
-	virtual bool intersectsRay(const btVector3& origin, const btVector3 &dir, std::vector<btVector3> *intersections = NULL);
+	virtual bool intersectsRay(const btVector3& origin, const btVector3 &dir, std::vector<btVector3> *intersections = NULL, unsigned int count = 0);
 
     protected:
 	
@@ -269,7 +272,7 @@ namespace bodies
 	virtual bool containsPoint(const btVector3 &p) const;
 	virtual double computeVolume(void) const;
 	virtual void computeBoundingSphere(BoundingSphere &sphere) const;
-	virtual bool intersectsRay(const btVector3& origin, const btVector3 &dir, std::vector<btVector3> *intersections = NULL);
+	virtual bool intersectsRay(const btVector3& origin, const btVector3 &dir, std::vector<btVector3> *intersections = NULL, unsigned int count = 0);
 
     protected:
 	
@@ -301,13 +304,15 @@ namespace bodies
 	ConvexMesh(void) : Body()
 	{	    
 	    m_type = shapes::MESH;
-	    m_meshCenter.setValue(btScalar(0), btScalar(0), btScalar(0));
+	    m_meshCenter.setValue(0, 0, 0);
+	    m_boxOffset.setValue(0, 0, 0);
 	}
 	
 	ConvexMesh(const shapes::Shape *shape) : Body()
 	{	  
 	    m_type = shapes::MESH;
-	    m_meshCenter.setValue(btScalar(0), btScalar(0), btScalar(0));
+	    m_meshCenter.setValue(0, 0, 0);
+	    m_boxOffset.setValue(0, 0, 0);
 	    setDimensions(shape);
 	}
 	
@@ -318,7 +323,7 @@ namespace bodies
 	virtual bool containsPoint(const btVector3 &p) const;
 	virtual double computeVolume(void) const;
 	virtual void computeBoundingSphere(BoundingSphere &sphere) const;
-	virtual bool intersectsRay(const btVector3& origin, const btVector3 &dir, std::vector<btVector3> *intersections = NULL);
+	virtual bool intersectsRay(const btVector3& origin, const btVector3 &dir, std::vector<btVector3> *intersections = NULL, unsigned int count = 0);
 
     protected:
 	
@@ -338,6 +343,9 @@ namespace bodies
 	btVector3                 m_meshCenter;
 	double                    m_radiusB;
 	double                    m_meshRadiusB;
+	
+	btVector3                 m_boxOffset;
+	Box                       m_boundingBox;
     };
     
     
