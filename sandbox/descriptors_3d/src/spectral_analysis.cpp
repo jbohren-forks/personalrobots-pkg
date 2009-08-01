@@ -110,11 +110,13 @@ int SpectralAnalysis::analyzeInterestPoints(const robot_msgs::PointCloud& data,
 
   // ----------------------------------------
   // Find neighboring points within radius for each interest point
-  for (size_t i = 0 ; i < nbr_interest_pts ; i++)
+  int int_nbr_interest_pts = static_cast<int> (nbr_interest_pts);
+#pragma omp parallel for schedule(dynamic)
+  for (int i = 0 ; i < int_nbr_interest_pts ; i++)
   {
     // ---------------------
     // Retrieve next interest point
-    const robot_msgs::Point32* curr_interest_pt = interest_pts[i];
+    const robot_msgs::Point32* curr_interest_pt = interest_pts[static_cast<size_t> (i)];
     if (curr_interest_pt == NULL)
     {
       ROS_WARN("SpectralAnalysis::analyzeInterestPoints() passed NULL interest point");
@@ -130,7 +132,7 @@ int SpectralAnalysis::analyzeInterestPoints(const robot_msgs::PointCloud& data,
 
     // ---------------------
     // Compute spectral information for interest point
-    computeSpectralInfo(data, neighbor_indices, i);
+    computeSpectralInfo(data, neighbor_indices, static_cast<size_t> (i));
   }
 
   spectral_computed_ = true;
@@ -165,13 +167,14 @@ int SpectralAnalysis::analyzeInterestRegions(const robot_msgs::PointCloud& data,
   // For each interest region, either:
   //   Use the region itself as the support volume
   //   Find a support volume within a radius from the region's centroid
-  robot_msgs::Point32 region_centroid;
-  for (size_t i = 0 ; i < nbr_regions ; i++)
+  int int_nbr_regions = static_cast<int> (nbr_regions);
+#pragma omp parallel for schedule(dynamic)
+  for (int i = 0 ; i < int_nbr_regions ; i++)
   {
     // ---------------------
     // Retrieve next interest region
     // (By default, use the interest region as the support volume)
-    const vector<int>* curr_interest_region = interest_region_indices[i];
+    const vector<int>* curr_interest_region = interest_region_indices[static_cast<size_t> (i)];
     if (curr_interest_region == NULL)
     {
       ROS_WARN("SpectralAnalysis::analyzeInterestPoints() passed NULL interest region");
@@ -183,6 +186,7 @@ int SpectralAnalysis::analyzeInterestRegions(const robot_msgs::PointCloud& data,
     if (support_radius_ > 1e-6)
     {
       // Compute centroid of interest region
+      robot_msgs::Point32 region_centroid;
       cloud_geometry::nearest::computeCentroid(data, *curr_interest_region, region_centroid);
 
       vector<float> neighbor_distances; // unused
@@ -195,7 +199,7 @@ int SpectralAnalysis::analyzeInterestRegions(const robot_msgs::PointCloud& data,
 
     // ---------------------
     // Compute spectral information for interest region
-    computeSpectralInfo(data, *curr_interest_region, i);
+    computeSpectralInfo(data, *curr_interest_region, static_cast<size_t> (i));
   }
 
   // ----------------------------------------

@@ -154,7 +154,7 @@ int main()
 // Generates random point cloud
 void createPointCloud(robot_msgs::PointCloud& data)
 {
-  unsigned int nbr_pts = 5000;
+  unsigned int nbr_pts = 500000;
   data.pts.resize(nbr_pts);
 
   for (unsigned int i = 0 ; i < nbr_pts ; i++)
