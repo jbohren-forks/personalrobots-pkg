@@ -394,12 +394,12 @@ class TestCommonMsgsMigration(unittest.TestCase):
     pointcloud_classes = self.load_saved_classes('PointCloud.saved')
     
     pointcloud  = pointcloud_classes['robot_msgs/PointCloud']
-    point32  = pointcloud_classes['robot_msgs/PointCloud']
+    point32  = pointcloud_classes['robot_msgs/Point32']
     channelfloat32  = pointcloud_classes['robot_msgs/ChannelFloat32']
 
     points = [point32(1,2,3), point32(4,5,6)]
-    channels = [channelfloat32("myname", [1.23, 4.56]),
-                channelfloat32("myname", [1.23, 4.56])]
+    channels = [channelfloat32("myname1", [1.23, 4.56]),
+                channelfloat32("myname2", [1.231, 4.561])]
     return pointcloud(None, points, channels)
 
   def get_new_pointcloud(self):
@@ -407,9 +407,9 @@ class TestCommonMsgsMigration(unittest.TestCase):
     from geometry_msgs.msg import Point32
     from sensor_msgs.msg import ChannelFloat32
 
-    Points = [point32(1,2,3), point32(4,5,6)]
-    Channels = [channelfloat32("myname", [1.23, 4.56]),
-                channelfloat32("myname", [1.23, 4.56])]
+    Points = [Point32(1,2,3), Point32(4,5,6)]
+    Channels = [ChannelFloat32("myname1", [1.23, 4.56]),
+                ChannelFloat32("myname2", [1.231, 4.561])]
 
     
     return PointCloud(None, Points, Channels)
