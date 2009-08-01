@@ -58,6 +58,8 @@ int M3NModel::infer(const RandomField& random_field,
 // --------------------------------------------------------------
 int M3NModel::cachePotentials(const RandomField& random_field)
 {
+  int ret_val = 0;
+
   // -------------------------------------------
   // Clear out old values
   cache_node_potentials_.clear();
@@ -75,53 +77,74 @@ int M3NModel::cachePotentials(const RandomField& random_field)
     const RandomField::Node* curr_node = iter_nodes->second;
 
     // Compute scores for each label
-    for (unsigned int i = 0 ; i < training_labels_.size() ; i++)
+    int nbr_training_labels = training_labels_.size();
+#pragma omp parallel for
+    for (int i = 0 ; i < nbr_training_labels ; i++)
     {
       const unsigned int curr_label = training_labels_[i];
 
       double potential_value = 0.0;
       if (computePotential(*curr_node, curr_label, potential_value) < 0)
       {
-        return -1;
+        ret_val = -1;
       }
 
-      cache_node_potentials_[curr_node_id][curr_label] = potential_value;
-    }
-  }
-
-  // -------------------------------------------
-  // Populate clique scores
-  const vector<map<unsigned int, RandomField::Clique*> >& clique_sets = random_field.getCliqueSets();
-  const unsigned int nbr_clique_sets = clique_sets.size();
-  for (unsigned int cs_idx = 0 ; cs_idx < nbr_clique_sets ; cs_idx++)
-  {
-    // Iterate over the cliques in each clique set
-    const map<unsigned int, RandomField::Clique*>& curr_clique_set = clique_sets[cs_idx];
-    for (map<unsigned int, RandomField::Clique*>::const_iterator iter_cliques = curr_clique_set.begin() ; iter_cliques
-        != curr_clique_set.end() ; iter_cliques++)
-    {
-      // Retrieve current clique info
-      const unsigned int curr_clique_id = iter_cliques->first;
-      const RandomField::Clique* curr_clique = iter_cliques->second;
-
-      // Compute scores for each label
-      for (unsigned int i = 0 ; i < training_labels_.size() ; i++)
+#pragma omp critical
       {
-        const unsigned int curr_label = training_labels_[i];
-
-        double potential_value = 0.0;
-        if (computePotential(*curr_clique, cs_idx, curr_label, potential_value) < 0)
-        {
-          return -1;
-        }
-
-        cache_clique_set_potentials_[cs_idx][curr_clique_id][curr_label] = potential_value;
+        cache_node_potentials_[curr_node_id][curr_label] = potential_value;
       }
     }
   }
 
-  ROS_INFO("finished caching");
-  return 0;
+  if (ret_val == 0)
+  {
+    // -------------------------------------------
+    // Populate clique scores
+    const vector<map<unsigned int, RandomField::Clique*> >& clique_sets = random_field.getCliqueSets();
+    const int nbr_clique_sets = clique_sets.size();
+#pragma omp parallel for
+    for (int cs_idx = 0 ; cs_idx < nbr_clique_sets ; cs_idx++)
+    {
+      // Iterate over the cliques in each clique set
+      const map<unsigned int, RandomField::Clique*>& curr_clique_set = clique_sets[cs_idx];
+      for (map<unsigned int, RandomField::Clique*>::const_iterator iter_cliques = curr_clique_set.begin() ; iter_cliques
+          != curr_clique_set.end() ; iter_cliques++)
+      {
+        // Retrieve current clique info
+        const unsigned int curr_clique_id = iter_cliques->first;
+        const RandomField::Clique* curr_clique = iter_cliques->second;
+
+        // Compute scores for each label
+        int nbr_training_labels = training_labels_.size();
+#pragma omp parallel for
+        for (int i = 0 ; i < nbr_training_labels ; i++)
+        {
+          const unsigned int curr_label = training_labels_[i];
+
+          double potential_value = 0.0;
+          if (computePotential(*curr_clique, cs_idx, curr_label, potential_value) < 0)
+          {
+            ret_val = -1;
+          }
+
+#pragma omp critical
+          {
+            cache_clique_set_potentials_[cs_idx][curr_clique_id][curr_label] = potential_value;
+          }
+        }
+      }
+    }
+  }
+
+  if (ret_val == 0)
+  {
+    ROS_INFO("Successfully cached potentials");
+  }
+  else
+  {
+    ROS_ERROR("Failed to cache all potentials");
+  }
+  return ret_val;
 }
 
 // --------------------------------------------------------------

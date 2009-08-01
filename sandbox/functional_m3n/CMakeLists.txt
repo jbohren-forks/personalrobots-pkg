@@ -13,10 +13,12 @@ rospack_add_boost_directories()
 rospack_add_executable (classify_m3n
                         examples/classify_m3n.cpp)
 target_link_libraries (classify_m3n ${PROJECT_NAME})
+rospack_add_openmp_flags (classify_m3n)
 
 rospack_add_executable (train_m3n
                         examples/train_m3n.cpp)
 target_link_libraries (train_m3n ${PROJECT_NAME})
+rospack_add_openmp_flags (train_m3n)
 
 #rospack_add_link_flags(create_pt_cloud "-lprofiler")
 
@@ -32,21 +34,5 @@ rospack_add_library (${PROJECT_NAME}
 			src/m3n_params.cpp
 			src/example/pt_cloud_rf_creator.cpp
                       )
+rospack_add_openmp_flags (${PROJECT_NAME})
 
-# check for OpenMP
-include(CheckIncludeFile)
-include(CheckCXXCompilerFlag)
-include(CheckLibraryExists)
-
-if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
-  # check if compilers supports -fopenmp
-  check_cxx_compiler_flag (-fopenmp HAVE_OPENMP)
-  check_library_exists (gomp omp_get_num_threads "" HAS_GOMP_LIB)
-
-  if(HAVE_OPENMP AND HAS_GOMP_LIB)
-    add_definitions ("-fopenmp")
-#    target_link_libraries (bin/normal_estimation_node gomp)
-#    target_link_libraries (bin/planar_fit_node gomp)
-    set (OPENMP_LFLAGS "-lgomp")
-  endif(HAVE_OPENMP AND HAS_GOMP_LIB)
-endif(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
