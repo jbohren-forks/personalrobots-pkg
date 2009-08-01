@@ -1,5 +1,8 @@
 <launch>
-  <node pkg="collision_map" type="collision_map_self_occ_node" respawn="true" output="screen">
+
+  <include file="$(find 3dnav_pr2)/launch/prX.machine" />
+
+  <node machine="four" pkg="collision_map" type="collision_map_self_occ_node" respawn="true" output="screen">
     <remap from="cloud_in" to="full_cloud_annotated" />
     <remap from="cloud_incremental_in" to="tilt_scan_cloud_annotated" />
 
@@ -28,4 +31,5 @@
     <param name="sensor_frame" type="string" value="laser_tilt_mount_link" />
 
   </node>
+
 </launch>

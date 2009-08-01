@@ -25,8 +25,12 @@
        num_disp:        Number of disparities (pixels)
                         Default value: 64
        -->
+
+
+  <include file="$(find 3dnav_pr2)/launch/prX.machine" />
+
   <group ns="narrow_stereo">
-    <node pkg="stereo_image_proc" type="stereoproc" respawn="false" output="screen" name="stereoproc">
+    <node machine="three" pkg="stereo_image_proc" type="stereoproc" respawn="false" output="screen" name="stereoproc">
       <param name="videre_mode" type="str" value="none"/>
       <param name="do_colorize" type="bool" value="True"/>
       <param name="do_rectify" type="bool" value="True"/>
@@ -37,5 +41,6 @@
       <param name="corr_size" type="int" value="7"/>
     </node>
   </group>
+
 </launch>
 

@@ -1,4 +1,6 @@
 <launch>
+
+  <include file="$(find 3dnav_pr2)/launch/prX.machine" />
   
   <!-- send additional description parameters -->
   <include file="$(find 3dnav_pr2)/launch/pr2_planning_environment.launch" />
@@ -8,7 +10,7 @@
   <node pkg="pr2_mechanism_controllers" type="send_periodic_cmd_srv.py" args="laser_tilt_controller linear 10 .75 .25" />
   
   <!-- convert laser scan to pointcloud -->
-  <node pkg="laser_scan" type="scan_to_cloud" output="screen">
+  <node machine="three" pkg="laser_scan" type="scan_to_cloud" output="screen">
     <param name="scan_topic" type="string" value="tilt_scan" />
     <param name="scan_filters" textfile="$(find laser_scan)/default_scan_shadows.xml" />
     <param name="high_fidelity" type="bool" value="true" />
@@ -16,7 +18,7 @@
   </node>
 
   <!-- remove points corresponding to known objects -->
-  <node pkg="planning_environment" type="clear_known_objects" respawn="false" output="screen">
+  <node machine="three" pkg="planning_environment" type="clear_known_objects" respawn="false" output="screen">
     <remap from="robot_description" to="robot_description" />
 
 <!-- define a frame that stays fixed for the known objects -->
@@ -29,17 +31,18 @@
   </node>
   
   <!-- add a channel that marks points that are on the robot -->
-  <node pkg="robot_self_filter" type="self_filter" respawn="true" output="screen">
+  <node machine="three" pkg="robot_self_filter" type="self_filter" respawn="true" output="screen">
     <remap from="robot_description" to="robot_description" />
     <remap from="cloud_in" to="tilt_scan_cloud_without_known_objects" />
     <remap from="cloud_out" to="tilt_scan_cloud_annotated" />
 <!--    <param name="annotate" type="string" value="on_self" /> -->
     <!-- we also want to remove shadow points -->
     <param name="sensor_frame" type="string" value="laser_tilt_mount_link" />
+
   </node>
   
   <!-- assemble pointcloud into a full world view -->
-  <node pkg="point_cloud_assembler" type="point_cloud_assembler_srv" output="screen"  name="point_cloud_assembler">
+  <node machine="four" pkg="point_cloud_assembler" type="point_cloud_assembler_srv" output="screen"  name="point_cloud_assembler">
     <remap from="scan_in" to="tilt_scan_cloud_annotated"/>
     <param name="tf_cache_time_secs" type="double" value="10.0" />
     <param name="tf_tolerance_secs" type="double" value="0.0" />
@@ -49,7 +52,7 @@
     <param name="downsample_factor" type="int" value="2" />
   </node>
   
-  <node pkg="point_cloud_assembler" type="point_cloud_snapshotter" output="screen" name="snapshotter">
+  <node machine="four" pkg="point_cloud_assembler" type="point_cloud_snapshotter" output="screen" name="snapshotter">
     <remap from="laser_scanner_signal" to="laser_tilt_controller/laser_scanner_signal"/>
     <remap from="build_cloud" to="point_cloud_assembler/build_cloud" />
     <remap from="full_cloud" to="full_cloud_annotated" />
