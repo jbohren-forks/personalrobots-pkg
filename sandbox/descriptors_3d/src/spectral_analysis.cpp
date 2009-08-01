@@ -97,7 +97,7 @@ int SpectralAnalysis::analyzeInterestPoints(const robot_msgs::PointCloud& data,
   // Ensure radius is valid
   if (support_radius_ < 1e-6)
   {
-    ROS_ERROR("SpectralShape::compute() support radius must be set to a positive value");
+    ROS_ERROR("SpectralAnalysis::compute() support radius must be set to a positive value");
     return -1;
   }
 
@@ -214,7 +214,7 @@ void SpectralAnalysis::computeSpectralInfo(const robot_msgs::PointCloud& data,
   // Need 3-by-3 matrix to have full rank
   if (support_volume_indices.size() < 3)
   {
-    ROS_WARN("SpectralAnalysis::computeSpectralInfo() not enough neighbors for interest sample %u", idx);
+    ROS_DEBUG("SpectralAnalysis::computeSpectralInfo() not enough neighbors for interest sample %u", idx);
     return;
   }
 
