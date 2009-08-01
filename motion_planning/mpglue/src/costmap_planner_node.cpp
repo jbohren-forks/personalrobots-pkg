@@ -39,6 +39,7 @@
 #include <mpglue/SetIndexTransform.h>
 #include <mpglue/SelectPlanner.h>
 #include <navfn/SetCostmap.h>
+#include <navfn/MakeNavPlan.h>
 #include <costmap_2d/cost_values.h>
 #include <sfl/gplan/GridFrame.hpp>
 
@@ -69,6 +70,7 @@ namespace mpglue_node {
     bool setCostmap(SetCostmap::Request & req, SetCostmap::Response & resp);
     bool setIndexTransform(SetIndexTransform::Request & req, SetIndexTransform::Response & resp);
     bool selectPlanner(SelectPlanner::Request & req, SelectPlanner::Response & resp);
+    bool makeNavPlan(MakeNavPlan::Request & req, MakeNavPlan::Response & resp);
     
   protected:
     ros::NodeHandle node_;
@@ -112,6 +114,9 @@ namespace mpglue_node {
 					       this));
     services_.push_back(node_.advertiseService("~select_planner",
 					       &CostmapPlannerNode::selectPlanner,
+					       this));
+    services_.push_back(node_.advertiseService("~make_nav_plan",
+					       &CostmapPlannerNode::makeNavPlan,
 					       this));
   }
   
@@ -233,6 +238,79 @@ namespace mpglue_node {
     
     resp.ok = 1;
     resp.error_message = "success";
+    return true;
+  }
+  
+  
+  bool CostmapPlannerNode::
+  makeNavPlan(MakeNavPlan::Request & req, MakeNavPlan::Response & resp)
+  {
+    waypoint_s const start(req.start.pose);
+    waypoint_s const goal(req.goal.pose);
+    ROS_INFO("CostmapPlannerNode::makeNavPlan():"
+	     " start %.2f %.2f %.2f"
+	     "  goal %.2f %.2f %.2f %.2f %.2f",
+	     start.x, start.y, start.theta,
+	     goal.x, goal.y, goal.theta, goal.dr, goal.dtheta);
+    
+    resp.plan_found = 0;
+    
+    if ( ! costmap_->raw) {
+      ROS_ERROR("CostmapPlannerNode::makeNavPlan():"
+		" no costmap - use set_costmap service!");
+      // XXXX to do: add an error message to the reply
+      return true; // if we return false, the resp does not get sent to the caller
+    }
+    
+    if ( ! planner_) {
+      ROS_ERROR("CostmapPlannerNode::makeNavPlan():"
+		" no planner - use select_planner service!");
+      // XXXX to do: add an error message to the reply
+      return true; // if we return false, the resp does not get sent to the caller
+    }
+    
+    // XXXX to do: find an explicit or heuristic way to determine
+    // from_scratch. Eg for SBPL planners, you only really need it if
+    // a lot of the costs in the vicinity of the old and new path have
+    // changed.
+    bool force_from_scratch(true);
+    
+    // XXXX to do: this should only be true if costs have really
+    // changed, but maybe also if planner spec got changed since last
+    // time this service was called.
+    bool flush_cost_changes(true);
+    
+    planner_->setGoal(goal.x, goal.y, goal.theta);
+    planner_->setGoalTolerance(goal.dr, goal.dtheta);
+    planner_->setStart(start.x, start.y, start.theta);
+    planner_->forcePlanningFromScratch(force_from_scratch);
+    planner_->flushCostChanges(flush_cost_changes);
+    
+    // we should treat SBPL planners specially, because they are
+    // capable of incremental planning...
+    //   sbpl_planner->stopAtFirstSolution(start.use_initial_solution);
+    //   sbpl_planner->setAllocatedTime(start.alloc_time);
+    
+    shared_ptr<waypoint_plan_t> plan;
+    try {
+      plan = planner_->createPlan();
+    }
+    catch (std::exception const & ee) {
+      ROS_ERROR("CostmapPlannerNode::makeNavPlan(): createPlan() EXCEPTION %s", ee.what());
+      // XXXX to do: add an error message to the reply
+      return true; // if we return false, the resp does not get sent to the caller
+    }
+    
+    // XXXX to do: if the log level is above INFO, we should skip
+    // creating this stats message.
+    ostringstream os;
+    if (plan)
+      planner_->getStats().logStream(os, "  planning success", "    ");
+    else
+      planner_->getStats().logStream(os, "  planning FAILURE", "    ");
+    ROS_INFO("%s", os.str().c_str());
+    
+    // XXXX to do: convert path into response message
     return true;
   }
   
