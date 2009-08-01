@@ -17,9 +17,7 @@ float32[] vals
 	valid = True
 
 	def update(self, old_msg, new_msg):
-		new_msg.name = old_msg.name
-		#new_msg.vals = old_msg.vals
-		self.migrate_array(old_msg.vals, new_msg.vals)
+                assert 0, "md5sum matches, update should never be called."
 
 class update_robot_msgs_PointCloud_c47b5cedd2b77d241b27547ed7624840(MessageUpdateRule):
 	old_type = "robot_msgs/PointCloud"
@@ -95,11 +93,5 @@ float32[] vals
 	valid = True
 
 	def update(self, old_msg, new_msg):
-		self.migrate(old_msg.header, new_msg.header)
-		#No migration path between [Point32] and [geometry_msgs/Point32]
-		#new_msg.pts = []
-		#No migration path between [ChannelFloat32] and [ChannelFloat32]
-		#new_msg.chan = []
-		self.migrate(old_msg.pts, new_msg.pts)
-		self.migrate(old_msg.chan, new_msg.chan)
+                assert 0, "md5sum matches, update should never be called."
 
