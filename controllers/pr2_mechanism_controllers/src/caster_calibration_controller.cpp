@@ -38,7 +38,8 @@ namespace controller {
 ROS_REGISTER_CONTROLLER(CasterCalibrationController)
 
 CasterCalibrationController::CasterCalibrationController()
-  : robot_(NULL), state_(INITIALIZED), last_publish_time_(0)
+: robot_(NULL), state_(INITIALIZED),
+  joint_(NULL), wheel_l_joint_(NULL), wheel_r_joint_(NULL), last_publish_time_(0)
 {
 }
 
@@ -110,7 +111,7 @@ bool CasterCalibrationController::init(mechanism::RobotState *robot, const ros::
     return false;
   }
 
-  // Joint
+  // Joints
 
   std::string joint_name;
   if (!node_.getParam("joints/caster", joint_name))
@@ -119,6 +120,30 @@ bool CasterCalibrationController::init(mechanism::RobotState *robot, const ros::
     return false;
   }
   if (!(joint_ = robot->getJointState(joint_name)))
+  {
+    ROS_ERROR("Could not find joint %s (namespace: %s)",
+              joint_name.c_str(), node_.getNamespace().c_str());
+    return false;
+  }
+
+  if (!node_.getParam("joints/wheel_l", joint_name))
+  {
+    ROS_ERROR("No joint given (namespace: %s)", node_.getNamespace().c_str());
+    return false;
+  }
+  if (!(wheel_l_joint_ = robot->getJointState(joint_name)))
+  {
+    ROS_ERROR("Could not find joint %s (namespace: %s)",
+              joint_name.c_str(), node_.getNamespace().c_str());
+    return false;
+  }
+
+  if (!node_.getParam("joints/wheel_r", joint_name))
+  {
+    ROS_ERROR("No joint given (namespace: %s)", node_.getNamespace().c_str());
+    return false;
+  }
+  if (!(wheel_r_joint_ = robot->getJointState(joint_name)))
   {
     ROS_ERROR("Could not find joint %s (namespace: %s)",
               joint_name.c_str(), node_.getNamespace().c_str());
@@ -211,6 +236,8 @@ void CasterCalibrationController::update()
 
       actuator_->state_.zero_offset_ = fake_a[0]->state_.position_;
       joint_->calibrated_ = true;
+      wheel_l_joint_->calibrated_ = true;
+      wheel_r_joint_->calibrated_ = true;
 
       state_ = CALIBRATED;
     }

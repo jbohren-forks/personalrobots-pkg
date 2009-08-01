@@ -76,7 +76,7 @@ protected:
   bool original_switch_state_;
 
   Actuator *actuator_;
-  mechanism::JointState *joint_;
+  mechanism::JointState *joint_, *wheel_l_joint_, *wheel_r_joint_;
   mechanism::Transmission *transmission_;
 
   controller::CasterController cc_;
