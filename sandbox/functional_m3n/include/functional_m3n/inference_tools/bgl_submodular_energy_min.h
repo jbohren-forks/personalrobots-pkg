@@ -52,8 +52,7 @@ using namespace std;
 //* SubmodularEnergyMin
 /** 
  * \brief Minimizes a submodular energy function with binary variables
- *
- * Minimization is done using the Graph Boost Library (BGL)
+ *        using the Graph Boost Library (BGL)
  *
  * This implementation is based on a class originally written by Vladimir Kolmogorov,
  * implementing the graph structure as described in:

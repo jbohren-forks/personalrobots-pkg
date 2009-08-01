@@ -47,9 +47,8 @@ using namespace std;
 //* SubmodularEnergyMin
 /** 
  * \brief Minimizes a submodular energy function with binary variables
- *
- * Minimization is done using Vladimir Kolmogorov's maxflow library, which
- * is under "research-only" license.
+ *        using Vladimir Kolmogorov's maxflow-v3.0 library, which
+ *        is under "research-only" license.
  *
  * This implementation is based on a class originally written by Vladimir Kolmogorov,
  * implementing the graph structure as described in:
