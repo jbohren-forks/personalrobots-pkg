@@ -69,11 +69,7 @@ class SpectralAnalysis
      *        or parameters have been defined
      */
     // --------------------------------------------------------------
-    SpectralAnalysis(double support_radius)
-    {
-      support_radius_ = support_radius;
-      spectral_computed_ = false;
-    }
+    SpectralAnalysis(double support_radius);
 
     ~SpectralAnalysis();
 

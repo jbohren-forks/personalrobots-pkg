@@ -39,6 +39,15 @@ using namespace std;
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
+SpectralAnalysis::SpectralAnalysis(double support_radius)
+{
+  support_radius_ = support_radius;
+  spectral_computed_ = false;
+}
+
+// --------------------------------------------------------------
+/* See function definition */
+// --------------------------------------------------------------
 SpectralAnalysis::~SpectralAnalysis()
 {
   clearSpectral();
@@ -76,8 +85,7 @@ int SpectralAnalysis::analyzeInterestPoints(const robot_msgs::PointCloud& data,
 {
   if (spectral_computed_)
   {
-    // TODO error msg
-    abort();
+    ROS_ERROR("SpectralAnalysis::analyzeInterestPoints() spectral info already exists");
     return -1;
   }
 
@@ -138,8 +146,7 @@ int SpectralAnalysis::analyzeInterestRegions(const robot_msgs::PointCloud& data,
 {
   if (spectral_computed_)
   {
-    // TODO error msg
-    abort();
+    ROS_ERROR("SpectralAnalysis::analyzeInterestRegions() spectral info already exists");
     return -1;
   }
 
