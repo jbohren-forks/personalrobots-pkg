@@ -1,5 +1,5 @@
-#ifndef __D3D_POSITION_H__
-#define __D3D_POSITION_H__
+#ifndef __D3D_SPIN_IMAGE_CUSTOM_H__
+#define __D3D_SPIN_IMAGE_CUSTOM_H__
 /*********************************************************************
  * Software License Agreement (BSD License)
  *
@@ -34,45 +34,54 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
+#include <vector>
+
+#include <Eigen/Core>
+
 #include <opencv/cv.h>
 #include <opencv/cxcore.h>
 #include <opencv/cvaux.hpp>
 
-#include <robot_msgs/PointCloud.h>
-
-#include <point_cloud_mapping/kdtree/kdtree.h>
-#include <point_cloud_mapping/geometry/nearest.h>
-
-#include <descriptors_3d/descriptor_3d.h>
-
-using namespace std;
+#include <descriptors_3d/generic/spin_image_generic.h>
 
 // --------------------------------------------------------------
-//* Position
+//* Orientation
 /*!
- * \brief A Position descriptor simply uses the 3rd coordinate (z) of the
- *        interest point/region, for now.
+ * \brief An Orientation descriptor looks at the angle of an interest
+ *        point/region's neighborhood principle directions with respect
+ *        to a given reference direction.
+ *
+ * The principle directions are the tangent (biggest eigenvector)
+ * and normal (smallest eigenvector) vectors from the extracted spectral
+ * information.
  */
 // --------------------------------------------------------------
-class Position: public Descriptor3D
+class SpinImageCustom: public SpinImageGeneric
 {
   public:
     // --------------------------------------------------------------
     /*!
-     * \brief Instantiates the Position descriptor
+     * \brief Instantiates the Orientation descriptor
      *
-     * The computed feature is the z-coordinate of the given interest point
-     * or of the centroid from the given interest region
+     * The computed feature is the cosine of the angle between the extracted
+     * tangent/normal vector against the specified reference directions.
+     *
+     * \warning Since the sign of the extracted vectors have no meaning, the
+     *          computed feature is always between 0 and 1
+     *
+     * If computing using both tangent and normal vectors, the feature vector
+     * format is: [a b] where a is the projection of the tangent vector and b
+     * is the projection of the normal vector
      */
     // --------------------------------------------------------------
-    Position();
-
-    // TODO use sensor location so height is relative and dont assume flat ground
-    //void useSensorLocation();
-
-    // TODO: use map information such as distance from known walls
-    //void useMapInformation(void* mapData);
-
+    SpinImageCustom(const double ref_x,
+                    const double ref_y,
+                    const double ref_z,
+                    const double row_res,
+                    const double col_res,
+                    const unsigned int nbr_rows,
+                    const unsigned int nbr_cols,
+                    const bool use_interest_regions_only);
 
   protected:
     virtual int precompute(const robot_msgs::PointCloud& data,
@@ -82,29 +91,10 @@ class Position: public Descriptor3D
     virtual int precompute(const robot_msgs::PointCloud& data,
                            cloud_kdtree::KdTree& data_kdtree,
                            const cv::Vector<const std::vector<int>*>& interest_region_indices);
-    // --------------------------------------------------------------
-    /*!
-     * \brief Extract the z-coordinate of the interest points
-     *
-     * \see Descriptor3D::compute
-     */
-    // --------------------------------------------------------------
-    virtual void doComputation(const robot_msgs::PointCloud& data,
-                               cloud_kdtree::KdTree& data_kdtree,
-                               const cv::Vector<const robot_msgs::Point32*>& interest_pts,
-                               cv::Vector<cv::Vector<float> >& results);
 
-    // --------------------------------------------------------------
-    /*!
-     * \brief Extract the z-coordinate of the interest regions' centroids
-     *
-     * \see Descriptor3D::compute
-     */
-    // --------------------------------------------------------------
-    virtual void doComputation(const robot_msgs::PointCloud& data,
-                               cloud_kdtree::KdTree& data_kdtree,
-                               const cv::Vector<const vector<int>*>& interest_region_indices,
-                               cv::Vector<cv::Vector<float> >& results);
+  private:
+    Eigen::Vector3d custom_axis_;
+    std::vector<const Eigen::Vector3d*> custom_axis_duplicated_;
 };
 
 #endif

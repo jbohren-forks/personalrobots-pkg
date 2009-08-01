@@ -1,5 +1,5 @@
-#ifndef __D3D_POSITION_H__
-#define __D3D_POSITION_H__
+#ifndef __D3D_ORIENTATION_GENERIC_H__
+#define __D3D_ORIENTATION_GENERIC_H__
 /*********************************************************************
  * Software License Agreement (BSD License)
  *
@@ -34,57 +34,58 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
+#include <vector>
+
+#include <Eigen/Core>
+
 #include <opencv/cv.h>
 #include <opencv/cxcore.h>
 #include <opencv/cvaux.hpp>
 
-#include <robot_msgs/PointCloud.h>
-
-#include <point_cloud_mapping/kdtree/kdtree.h>
-#include <point_cloud_mapping/geometry/nearest.h>
-
 #include <descriptors_3d/descriptor_3d.h>
 
-using namespace std;
-
 // --------------------------------------------------------------
-//* Position
+//* Orientation
 /*!
- * \brief A Position descriptor simply uses the 3rd coordinate (z) of the
- *        interest point/region, for now.
+ * \brief An Orientation descriptor looks at the angle of an interest
+ *        point/region's neighborhood principle directions with respect
+ *        to a given reference direction.
+ *
+ * The principle directions are the tangent (biggest eigenvector)
+ * and normal (smallest eigenvector) vectors from the extracted spectral
+ * information.
  */
 // --------------------------------------------------------------
-class Position: public Descriptor3D
+class OrientationGeneric: public Descriptor3D
 {
   public:
     // --------------------------------------------------------------
     /*!
-     * \brief Instantiates the Position descriptor
+     * \brief Instantiates the Orientation descriptor
      *
-     * The computed feature is the z-coordinate of the given interest point
-     * or of the centroid from the given interest region
+     * The computed feature is the cosine of the angle between the extracted
+     * tangent/normal vector against the specified reference directions.
+     *
+     * \warning Since the sign of the extracted vectors have no meaning, the
+     *          computed feature is always between 0 and 1
+     *
+     * If computing using both tangent and normal vectors, the feature vector
+     * format is: [a b] where a is the projection of the tangent vector and b
+     * is the projection of the normal vector
      */
     // --------------------------------------------------------------
-    Position();
+    OrientationGeneric();
 
-    // TODO use sensor location so height is relative and dont assume flat ground
-    //void useSensorLocation();
-
-    // TODO: use map information such as distance from known walls
-    //void useMapInformation(void* mapData);
-
+    virtual ~OrientationGeneric() = 0;
 
   protected:
-    virtual int precompute(const robot_msgs::PointCloud& data,
-                           cloud_kdtree::KdTree& data_kdtree,
-                           const cv::Vector<const robot_msgs::Point32*>& interest_pts);
-
-    virtual int precompute(const robot_msgs::PointCloud& data,
-                           cloud_kdtree::KdTree& data_kdtree,
-                           const cv::Vector<const std::vector<int>*>& interest_region_indices);
     // --------------------------------------------------------------
     /*!
-     * \brief Extract the z-coordinate of the interest points
+     * \brief Computes the bounding box dimensions around each interest point
+     *
+     * \warning setBoundingBoxRadius() must be called first
+     * \warning If computing the bounding box in principle component space, then
+     *          setSpectralRadius() or useSpectralInformation() must be called first
      *
      * \see Descriptor3D::compute
      */
@@ -96,15 +97,34 @@ class Position: public Descriptor3D
 
     // --------------------------------------------------------------
     /*!
-     * \brief Extract the z-coordinate of the interest regions' centroids
+     * \brief Computes the bounding box dimensions around/for each interest region
+     *
+     * \warning setBoundingBoxRadius() must be called first
+     * \warning If computing the bounding box in principle component space, then
+     *          setSpectralRadius() or useSpectralInformation() must be called first
      *
      * \see Descriptor3D::compute
      */
     // --------------------------------------------------------------
     virtual void doComputation(const robot_msgs::PointCloud& data,
                                cloud_kdtree::KdTree& data_kdtree,
-                               const cv::Vector<const vector<int>*>& interest_region_indices,
+                               const cv::Vector<const std::vector<int>*>& interest_region_indices,
                                cv::Vector<cv::Vector<float> >& results);
+
+    // --------------------------------------------------------------
+    /*!
+     * \brief Computes the bounding box information of the given neighborhood
+     *
+     * \param data The overall point cloud data
+     * \param neighbor_indices List of indices in data that constitute the neighborhood
+     * \param result The vector to hold the computed bounding box dimensions
+     */
+    // --------------------------------------------------------------
+    virtual void computeOrientation(const unsigned int interest_sample_idx, cv::Vector<float>& result) const;
+
+    const std::vector<const Eigen::Vector3d*>* local_directions_;
+    Eigen::Vector3d reference_direction_;
+    Eigen::Vector3d reference_direction_flipped_;
 };
 
 #endif

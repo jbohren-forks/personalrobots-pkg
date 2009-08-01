@@ -1,5 +1,5 @@
-#ifndef __D3D_BOUNDING_BOX_H__
-#define __D3D_BOUNDING_BOX_H__
+#ifndef __D3D_NEIGHBORHOOD_FEATURE_H__
+#define __D3D_NEIGHBORHOOD_FEATURE_H__
 /*********************************************************************
  * Software License Agreement (BSD License)
  *
@@ -42,9 +42,12 @@
 #include <opencv/cxcore.h>
 #include <opencv/cvaux.hpp>
 
-#include <descriptors_3d/spectral_analysis.h>
+#include <robot_msgs/PointCloud.h>
 
-using namespace std;
+#include <point_cloud_mapping/geometry/nearest.h>
+#include <point_cloud_mapping/kdtree/kdtree.h>
+
+#include <descriptors_3d/descriptor_3d.h>
 
 // --------------------------------------------------------------
 //* BoundingBox
@@ -64,7 +67,7 @@ using namespace std;
  * and/or in the projected principle component space.
  */
 // --------------------------------------------------------------
-class BoundingBox: public SpectralAnalysis
+class NeighborhoodFeature: public Descriptor3D
 {
   public:
     // --------------------------------------------------------------
@@ -89,32 +92,11 @@ class BoundingBox: public SpectralAnalysis
      *                     coordinate xyz space
      */
     // --------------------------------------------------------------
-    BoundingBox(bool use_pca_bbox, bool use_raw_bbox);
+    NeighborhoodFeature();
 
-    // ===================================================================
-    /*! \name Required settings  */
-    // ===================================================================
-    //@{
-    // --------------------------------------------------------------
-    /*!
-     * \brief Sets the radius that defines the neighboring points within the
-     *        bounding box.
-     *
-     * If using this descriptor for interest points, then bbox_radius must be
-     * positive.
-     *
-     * If using this descriptor for interest regions, then a negative bbox_radius
-     * indicates to compute the bounding box for the given region of points.
-     * Otherwise, a positive value indicates to find the neighboring points within
-     * the specified radius from the region's centroid.
-     *
-     * \param bbox_radius The radius from the interest point/region that
-     *        defines the bounding box
-     */
-    // --------------------------------------------------------------
-    void setBoundingBoxRadius(float bbox_radius);
-    //@}
+    virtual ~NeighborhoodFeature() = 0;
 
+  protected:
     // --------------------------------------------------------------
     /*!
      * \brief Computes the bounding box dimensions around each interest point
@@ -126,10 +108,10 @@ class BoundingBox: public SpectralAnalysis
      * \see Descriptor3D::compute
      */
     // --------------------------------------------------------------
-    virtual void compute(const robot_msgs::PointCloud& data,
-                         cloud_kdtree::KdTree& data_kdtree,
-                         const cv::Vector<const robot_msgs::Point32*>& interest_pts,
-                         cv::Vector<cv::Vector<float> >& results);
+    virtual void doComputation(const robot_msgs::PointCloud& data,
+                               cloud_kdtree::KdTree& data_kdtree,
+                               const cv::Vector<const robot_msgs::Point32*>& interest_pts,
+                               cv::Vector<cv::Vector<float> >& results);
 
     // --------------------------------------------------------------
     /*!
@@ -142,40 +124,29 @@ class BoundingBox: public SpectralAnalysis
      * \see Descriptor3D::compute
      */
     // --------------------------------------------------------------
-    virtual void compute(const robot_msgs::PointCloud& data,
-                         cloud_kdtree::KdTree& data_kdtree,
-                         const cv::Vector<const vector<int>*>& interest_region_indices,
-                         cv::Vector<cv::Vector<float> >& results);
+    virtual void doComputation(const robot_msgs::PointCloud& data,
+                               cloud_kdtree::KdTree& data_kdtree,
+                               const cv::Vector<const std::vector<int>*>& interest_region_indices,
+                               cv::Vector<cv::Vector<float> >& results);
 
-  private:
     // --------------------------------------------------------------
     /*!
      * \brief Computes the bounding box information of the given neighborhood
      *
      * \param data The overall point cloud data
      * \param neighbor_indices List of indices in data that constitute the neighborhood
-     * \param eig_vec_max The eigenvector corresponding to the biggest eigenvalue
-     * \param eig_vec_max The eigenvector corresponding to the middle eigenvalue
-     * \param eig_vec_max The eigenvector corresponding to the smallest eigenvalue
      * \param result The vector to hold the computed bounding box dimensions
      */
     // --------------------------------------------------------------
-    void computeBoundingBoxFeatures(const robot_msgs::PointCloud& data,
-                                    const vector<int>& neighbor_indices,
-                                    const Eigen::Vector3d* eig_vec_max,
-                                    const Eigen::Vector3d* eig_vec_mid,
-                                    const Eigen::Vector3d* eig_vec_min,
-                                    cv::Vector<float>& result);
+    virtual void computeNeighborhoodFeature(const robot_msgs::PointCloud& data,
+                                            const std::vector<int>& neighbor_indices,
+                                            const unsigned int interest_sample_idx,
+                                            cv::Vector<float>& result) const = 0;
 
     /*! \brief The radius to define the bounding box */
-    float bbox_radius_;
-    /*! \brief Flag if setBoundingBoxRadius() has been called */
-    bool bbox_radius_set_;
-
-    /*! \brief Flag if to compute bounding box in principle component space */
-    bool use_pca_bbox_;
-    /*! \brief Flag if to compute bounding box in given coordinate frame */
-    bool use_raw_bbox_;
+    float neighborhood_radius_;
+    /*! \brief Flag if neighborhood_radius_ has been defined */
+    bool neighborhood_radius_defined_;
 };
 
 #endif

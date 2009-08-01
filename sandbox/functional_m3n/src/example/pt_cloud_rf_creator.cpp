@@ -41,7 +41,7 @@ using namespace std;
 // --------------------------------------------------------------
 vector<Descriptor3D*> initNodeFeatures()
 {
-
+/*
   //
   SpectralShape* spectral_shape = new SpectralShape();
   spectral_shape->setSpectralRadius(0.15);
@@ -58,8 +58,8 @@ vector<Descriptor3D*> initNodeFeatures()
   node_feature_descriptors.push_back(spectral_shape);
   node_feature_descriptors.push_back(orientation);
   node_feature_descriptors.push_back(position);
-
-  /*
+*/
+//  /*
    //
    Position* position = new Position();
 
@@ -74,7 +74,7 @@ vector<Descriptor3D*> initNodeFeatures()
    node_feature_descriptors.push_back(o_tangent);
    node_feature_descriptors.push_back(o_normal);
    node_feature_descriptors.push_back(position);
-   */
+//   */
   return node_feature_descriptors;
 }
 
@@ -83,7 +83,7 @@ vector<Descriptor3D*> initNodeFeatures()
 // --------------------------------------------------------------
 vector<Descriptor3D*> initCS0Features()
 {
-
+/*
   //
   SpectralShape* spectral_shape = new SpectralShape();
   spectral_shape->setSpectralRadius(0.2286);
@@ -113,8 +113,9 @@ vector<Descriptor3D*> initCS0Features()
   cs0_feature_descriptors.push_back(position);
   cs0_feature_descriptors.push_back(spin_image);
   cs0_feature_descriptors.push_back(bounding_box);
+*/
 
-  /*
+  ///*
    SpectralAnalysis* sa = new SpectralAnalysis(0.2286);
    ShapeSpectral* spectral_shape = new ShapeSpectral(*sa);
    OrientationTangent* o_tangent = new OrientationTangent(0, 0, 1.0, *sa);
@@ -131,7 +132,7 @@ vector<Descriptor3D*> initCS0Features()
    cs0_feature_descriptors.push_back(position);
    cs0_feature_descriptors.push_back(spin_image);
    cs0_feature_descriptors.push_back(bbox_spectral);
-   */
+   //*/
 
   return cs0_feature_descriptors;
 }
@@ -141,7 +142,7 @@ vector<Descriptor3D*> initCS0Features()
 // --------------------------------------------------------------
 vector<Descriptor3D*> initCS1Features()
 {
-
+/*
   //
   SpectralShape* spectral_shape = new SpectralShape();
   spectral_shape->setSpectralRadius(-1);
@@ -172,8 +173,9 @@ vector<Descriptor3D*> initCS1Features()
   cs1_feature_descriptors.push_back(position);
   cs1_feature_descriptors.push_back(spin_image);
   cs1_feature_descriptors.push_back(bounding_box);
+*/
 
-  /*
+//  /*
    SpectralAnalysis* sa = new SpectralAnalysis(-1);
    ShapeSpectral* spectral_shape = new ShapeSpectral(*sa);
    OrientationTangent* o_tangent = new OrientationTangent(0, 0, 1.0, *sa);
@@ -190,7 +192,7 @@ vector<Descriptor3D*> initCS1Features()
    cs1_feature_descriptors.push_back(position);
    cs1_feature_descriptors.push_back(spin_image);
    cs1_feature_descriptors.push_back(bbox_spectral);
-   */
+//   */
   return cs1_feature_descriptors;
 }
 

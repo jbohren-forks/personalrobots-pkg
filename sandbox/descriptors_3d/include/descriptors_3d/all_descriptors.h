@@ -34,12 +34,18 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
+// All features (ignoring the pure virtual generic ones)
 #include <descriptors_3d/descriptor_3d.h>
-#include <descriptors_3d/bounding_box.h>
-#include <descriptors_3d/orientation.h>
+#include <descriptors_3d/bounding_box_raw.h>
+#include <descriptors_3d/bounding_box_spectral.h>
+#include <descriptors_3d/orientation_normal.h>
+#include <descriptors_3d/orientation_tangent.h>
 #include <descriptors_3d/position.h>
-#include <descriptors_3d/spectral_shape.h>
-#include <descriptors_3d/spin_image.h>
+#include <descriptors_3d/shape_spectral.h>
+#include <descriptors_3d/spectral_analysis.h>
+#include <descriptors_3d/spin_image_custom.h>
+#include <descriptors_3d/spin_image_normal.h>
+#include <descriptors_3d/spin_image_tangent.h>
 
 #endif
 

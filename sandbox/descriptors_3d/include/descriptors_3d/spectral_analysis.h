@@ -49,10 +49,6 @@
 #include <point_cloud_mapping/kdtree/kdtree.h>
 #include <point_cloud_mapping/geometry/nearest.h>
 
-#include <descriptors_3d/descriptor_3d.h>
-
-using namespace std;
-
 // --------------------------------------------------------------
 //* SpectralAnalysis
 /**
@@ -64,7 +60,7 @@ using namespace std;
  * unnecessarily repeated.
  */
 // --------------------------------------------------------------
-class SpectralAnalysis: public Descriptor3D
+class SpectralAnalysis
 {
   public:
     // --------------------------------------------------------------
@@ -73,12 +69,13 @@ class SpectralAnalysis: public Descriptor3D
      *        or parameters have been defined
      */
     // --------------------------------------------------------------
-    SpectralAnalysis() :
-      spectral_info_(NULL), support_radius_(-1.0), support_radius_defined_(false)
+    SpectralAnalysis(double support_radius)
     {
+      support_radius_ = support_radius;
+      spectral_computed_ = false;
     }
 
-    virtual ~SpectralAnalysis() = 0;
+    ~SpectralAnalysis();
 
     // --------------------------------------------------------------
     /*!
@@ -91,58 +88,25 @@ class SpectralAnalysis: public Descriptor3D
      * compute the spectral data.
      */
     // --------------------------------------------------------------
-    void freeSpectral();
-
-    // ===================================================================
-    /*! \name Required settings (one or the other) */
-    // ===================================================================
-    //@{
-    // --------------------------------------------------------------
-    /*!
-     * \brief Indicates for this Descriptor3D to use the given spectral information
-     *
-     * \warning This method cannot be called if setSpectralRadius has already
-     *          been called.
-     *
-     * \param spectral_info Pointer to another SpectralAnalysis that contains
-     *                      computed information
-     *
-     * \return 0 on success, otherwise negative value on error
-     */
-    // --------------------------------------------------------------
-    int useSpectralInformation(SpectralAnalysis* spectral_info);
-
-    // --------------------------------------------------------------
-    /*!
-     * \brief Defines the neighborhood radius when doing spectral analysis
-     *
-     * The radius must be positive when computing features for interest
-     * points.  However, the value can be negative when giving interest
-     * REGIONs to indicate to use only the points within the interest region
-     * for spectral analysis
-     *
-     * \warning This method cannot be called if useSpectralInformation has already
-     *          been called.
-     *
-     * \param support_radius The radius value
-     *
-     * \return 0 on success, otherwise negative value on error
-     */
-    // --------------------------------------------------------------
-    int setSpectralRadius(double support_radius);
-    //@}
+    void clearSpectral();
 
     // ===================================================================
     /*! \name Accessors */
     // ===================================================================
     //@{
+    // TODO comment
+    inline const bool isSpectralComputed() const
+    {
+      return spectral_computed_;
+    }
+
     // --------------------------------------------------------------
     /*!
      * \brief Returns the saved normals estimated for each interest point/region
      *        that was passed to compute()
      */
     // --------------------------------------------------------------
-    inline const vector<Eigen::Vector3d*>& getNormals()
+    inline const std::vector<const Eigen::Vector3d*>& getNormals() const
     {
       return normals_;
     }
@@ -153,7 +117,7 @@ class SpectralAnalysis: public Descriptor3D
      *        that was passed to compute()
      */
     // --------------------------------------------------------------
-    inline const vector<Eigen::Vector3d*>& getTangents()
+    inline const std::vector<const Eigen::Vector3d*>& getTangents() const
     {
       return tangents_;
     }
@@ -163,7 +127,7 @@ class SpectralAnalysis: public Descriptor3D
      * \brief Returns the saved middle component direction
      */
     // --------------------------------------------------------------
-    inline const vector<Eigen::Vector3d*>& getMiddleEigenVectors()
+    inline const std::vector<const Eigen::Vector3d*>& getMiddleEigenVectors() const
     {
       return middle_eig_vecs_;
     }
@@ -174,47 +138,31 @@ class SpectralAnalysis: public Descriptor3D
      *        interest point/region that was passed to compute()
      */
     // --------------------------------------------------------------
-    inline const vector<Eigen::Vector3d*>& getEigenValues()
+    inline const std::vector<const Eigen::Vector3d*>& getEigenValues() const
     {
       return eigen_values_;
     }
-
-    // --------------------------------------------------------------
-    /*!
-     * \brief Returns the saved centroids for each interest point/region
-     *        that was passed to compute()
-     */
-    // --------------------------------------------------------------
-    inline const vector<Eigen::Vector3d*>& getCentroids()
-    {
-      return centroids_;
-    }
     //@}
 
-  protected:
     int analyzeInterestPoints(const robot_msgs::PointCloud& data,
                               cloud_kdtree::KdTree& data_kdtree,
                               const cv::Vector<const robot_msgs::Point32*>& interest_pts);
 
     int analyzeInterestRegions(const robot_msgs::PointCloud& data,
                                cloud_kdtree::KdTree& data_kdtree,
-                               const cv::Vector<const vector<int>*>& interest_region_indices);
-
-    SpectralAnalysis* spectral_info_;
-
-    vector<Eigen::Vector3d*> normals_;
-    vector<Eigen::Vector3d*> tangents_;
-    vector<Eigen::Vector3d*> middle_eig_vecs_;
-    vector<Eigen::Vector3d*> eigen_values_;
-    vector<Eigen::Vector3d*> centroids_;
+                               const cv::Vector<const std::vector<int>*>& interest_region_indices);
 
   private:
-    double support_radius_;
-    bool support_radius_defined_;
-
     void computeSpectralInfo(const robot_msgs::PointCloud& data,
-                             const vector<int>& curr_region_indices,
-                             size_t idx);
+                             const std::vector<int>& curr_region_indices,
+                             const size_t idx);
+    double support_radius_;
+    bool spectral_computed_;
+
+    std::vector<const Eigen::Vector3d*> normals_;
+    std::vector<const Eigen::Vector3d*> tangents_;
+    std::vector<const Eigen::Vector3d*> middle_eig_vecs_;
+    std::vector<const Eigen::Vector3d*> eigen_values_;
 };
 
 #endif

@@ -18,7 +18,6 @@
 
   <!-- For example programs only -->
   <depend package="point_cloud_mapping" />
-  <!--  <depend package="new_descriptors_3d" /> -->
   <depend package="point_cloud_clustering" />
   <depend package="descriptors_3d" />
 

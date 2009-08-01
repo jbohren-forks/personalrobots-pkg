@@ -39,16 +39,44 @@ using namespace std;
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-void Position::compute(const robot_msgs::PointCloud& data,
-                       cloud_kdtree::KdTree& data_kdtree,
-                       const cv::Vector<const robot_msgs::Point32*>& interest_pts,
-                       cv::Vector<cv::Vector<float> >& results)
+Position::Position()
+{
+  result_size_ = 1;
+  result_size_defined_ = true;
+}
+
+// --------------------------------------------------------------
+/* See function definition */
+// --------------------------------------------------------------
+int Position::precompute(const robot_msgs::PointCloud& data,
+                         cloud_kdtree::KdTree& data_kdtree,
+                         const cv::Vector<const robot_msgs::Point32*>& interest_pts)
+{
+  return 0;
+}
+
+// --------------------------------------------------------------
+/* See function definition */
+// --------------------------------------------------------------
+int Position::precompute(const robot_msgs::PointCloud& data,
+                         cloud_kdtree::KdTree& data_kdtree,
+                         const cv::Vector<const std::vector<int>*>& interest_region_indices)
+{
+  return 0;
+}
+
+// --------------------------------------------------------------
+/* See function definition */
+// --------------------------------------------------------------
+void Position::doComputation(const robot_msgs::PointCloud& data,
+                             cloud_kdtree::KdTree& data_kdtree,
+                             const cv::Vector<const robot_msgs::Point32*>& interest_pts,
+                             cv::Vector<cv::Vector<float> >& results)
 {
   size_t nbr_interest_pts = interest_pts.size();
-  results.resize(nbr_interest_pts);
   for (size_t i = 0 ; i < nbr_interest_pts ; i++)
   {
-    results[i].resize(1);
+    results[i].resize(result_size_);
     results[i][0] = (interest_pts[i])->z;
   }
 }
@@ -56,19 +84,17 @@ void Position::compute(const robot_msgs::PointCloud& data,
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-void Position::compute(const robot_msgs::PointCloud& data,
-                       cloud_kdtree::KdTree& data_kdtree,
-                       const cv::Vector<const vector<int>*>& interest_region_indices,
-                       cv::Vector<cv::Vector<float> >& results)
+void Position::doComputation(const robot_msgs::PointCloud& data,
+                             cloud_kdtree::KdTree& data_kdtree,
+                             const cv::Vector<const vector<int>*>& interest_region_indices,
+                             cv::Vector<cv::Vector<float> >& results)
 {
-  size_t nbr_interest_regions = interest_region_indices.size();
-  results.resize(nbr_interest_regions);
-
   robot_msgs::Point32 region_centroid;
+  size_t nbr_interest_regions = interest_region_indices.size();
   for (size_t i = 0 ; i < nbr_interest_regions ; i++)
   {
     cloud_geometry::nearest::computeCentroid(data, *(interest_region_indices[i]), region_centroid);
-    results[i].resize(1);
+    results[i].resize(result_size_);
     results[i][0] = region_centroid.z;
   }
 }

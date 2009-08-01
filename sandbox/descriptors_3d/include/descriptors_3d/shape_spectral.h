@@ -1,5 +1,5 @@
-#ifndef __D3D_SPECTRAL_SHAPE_H__
-#define __D3D_SPECTRAL_SHAPE_H__
+#ifndef __D3D_SHAPE_SPECTRAL_H__
+#define __D3D_SHAPE_SPECTRAL_H__
 /*********************************************************************
  * Software License Agreement (BSD License)
  *
@@ -40,26 +40,25 @@
 #include <opencv/cxcore.h>
 #include <opencv/cvaux.hpp>
 
+#include <descriptors_3d/generic/neighborhood_feature.h>
 #include <descriptors_3d/spectral_analysis.h>
 
-using namespace std;
-
 // --------------------------------------------------------------
-//* SpectralShape
+//* ShapeSpectral
 /*!
- * \brief A SpectralShape descriptor computes features that describe
+ * \brief A ShapeSpectral descriptor computes features that describe
  *        the local shape of a neighborhood of points.
  *
  * It is based from the Tensor Voting framework from Medioni et al.,
  * "A Computational Framework for Segmentation and Grouping", Elsevier 2000.
  */
 // --------------------------------------------------------------
-class SpectralShape: public SpectralAnalysis
+class ShapeSpectral: public Descriptor3D
 {
   public:
     // --------------------------------------------------------------
     /*!
-     * \brief Instantiates the SpectralShape descriptor
+     * \brief Instantiates the ShapeSpectral descriptor
      *
      * The features indicate the flat-ness (F), linear-ness (L), and
      * scattered-ness (S) of a local neighborhood around an interest point/region.
@@ -71,67 +70,63 @@ class SpectralShape: public SpectralAnalysis
      * The feature vector format is: [S L F (C)]
      */
     // --------------------------------------------------------------
-    SpectralShape() :
-      use_curvature_(false)
-    {
-      result_size_ = 3;
-    }
-
-    // ===================================================================
-    /*! \name Optional settings  */
-    // ===================================================================
-    //@{
-    // --------------------------------------------------------------
-    /*!
-     * \brief Indicates to compute the curvature feature
-     */
-    // --------------------------------------------------------------
-    void useCurvature();
-    //@}
-
-    // --------------------------------------------------------------
-    /*!
-     * \brief Computes the saliency features that describe the local
-     *        shape around the interest points
-     *
-     * \warning setSpectralRadius() or useSpectralInformation() must be called first
-     *
-     * \see Descriptor3D::compute
-     */
-    // --------------------------------------------------------------
-    virtual void compute(const robot_msgs::PointCloud& data,
-                         cloud_kdtree::KdTree& data_kdtree,
-                         const cv::Vector<const robot_msgs::Point32*>& interest_pts,
-                         cv::Vector<cv::Vector<float> >& results);
-
-    // --------------------------------------------------------------
-    /*!
-     * \brief Computes the saliency features that describe the local
-     *        shape around/in the interest regions
-     *
-     * \warning setSpectralRadius() or useSpectralInformation() must be called first
-     *
-     * \see Descriptor3D::compute
-     */
-    // --------------------------------------------------------------
-    virtual void compute(const robot_msgs::PointCloud& data,
-                         cloud_kdtree::KdTree& data_kdtree,
-                         const cv::Vector<const vector<int>*>& interest_region_indices,
-                         cv::Vector<cv::Vector<float> >& results);
+    ShapeSpectral(SpectralAnalysis& spectral_information);
 
   protected:
+    virtual int precompute(const robot_msgs::PointCloud& data,
+                           cloud_kdtree::KdTree& data_kdtree,
+                           const cv::Vector<const robot_msgs::Point32*>& interest_pts);
+
+    virtual int precompute(const robot_msgs::PointCloud& data,
+                           cloud_kdtree::KdTree& data_kdtree,
+                           const cv::Vector<const std::vector<int>*>& interest_region_indices);
+
     // --------------------------------------------------------------
     /*!
-     * \brief Computes the spectral features
+     * \brief Computes the bounding box dimensions around each interest point
      *
-     * \param results Container to hold computed features for each interest sample
+     * \warning setBoundingBoxRadius() must be called first
+     * \warning If computing the bounding box in principle component space, then
+     *          setSpectralRadius() or useSpectralInformation() must be called first
+     *
+     * \see Descriptor3D::compute
      */
     // --------------------------------------------------------------
-    void computeFeatures(cv::Vector<cv::Vector<float> >& results);
+    virtual void doComputation(const robot_msgs::PointCloud& data,
+                               cloud_kdtree::KdTree& data_kdtree,
+                               const cv::Vector<const robot_msgs::Point32*>& interest_pts,
+                               cv::Vector<cv::Vector<float> >& results);
+
+    // --------------------------------------------------------------
+    /*!
+     * \brief Computes the bounding box dimensions around/for each interest region
+     *
+     * \warning setBoundingBoxRadius() must be called first
+     * \warning If computing the bounding box in principle component space, then
+     *          setSpectralRadius() or useSpectralInformation() must be called first
+     *
+     * \see Descriptor3D::compute
+     */
+    // --------------------------------------------------------------
+    virtual void doComputation(const robot_msgs::PointCloud& data,
+                               cloud_kdtree::KdTree& data_kdtree,
+                               const cv::Vector<const std::vector<int>*>& interest_region_indices,
+                               cv::Vector<cv::Vector<float> >& results);
+
+    // --------------------------------------------------------------
+    /*!
+     * \brief Computes the bounding box information of the given neighborhood
+     *
+     * \param data The overall point cloud data
+     * \param neighbor_indices List of indices in data that constitute the neighborhood
+     * \param result The vector to hold the computed bounding box dimensions
+     */
+    // --------------------------------------------------------------
+    virtual void computeShapeFeatures(const unsigned int interest_sample_idx, cv::Vector<float>& result) const;
 
   private:
-    /*! \brief Flag if useCurvature() has been called */
-    bool use_curvature_;
+    SpectralAnalysis* spectral_information_;
+    const std::vector<const Eigen::Vector3d*>* eig_vals_;
 };
 
 #endif

@@ -1,5 +1,5 @@
-#ifndef __D3D_POSITION_H__
-#define __D3D_POSITION_H__
+#ifndef __D3D_BOUNDING_BOX_RAW_H__
+#define __D3D_BOUNDING_BOX_RAW_H__
 /*********************************************************************
  * Software License Agreement (BSD License)
  *
@@ -34,45 +34,60 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
+#include <vector>
+
+#include <Eigen/Core>
+
 #include <opencv/cv.h>
 #include <opencv/cxcore.h>
 #include <opencv/cvaux.hpp>
 
-#include <robot_msgs/PointCloud.h>
-
-#include <point_cloud_mapping/kdtree/kdtree.h>
-#include <point_cloud_mapping/geometry/nearest.h>
-
-#include <descriptors_3d/descriptor_3d.h>
-
-using namespace std;
+#include <descriptors_3d/generic/neighborhood_feature.h>
 
 // --------------------------------------------------------------
-//* Position
+//* BoundingBox
 /*!
- * \brief A Position descriptor simply uses the 3rd coordinate (z) of the
- *        interest point/region, for now.
+ * \brief A BoundingBox descriptor computes the dimensions of the
+ *        3-D box that encloses a group of points.
+ *
+ * When computing the feature for an interest point, the bounding box
+ * is defined by the neighboring points within some specified radius.
+ *
+ * When computing the feature for an interest region of points, the
+ * bounding box can either be the box that encloses the given region of
+ * points, or from the neighboring points within some specified radius
+ * from the region's centroid.
+ *
+ * The bounding box can be computed in the given coordinate frame
+ * and/or in the projected principle component space.
  */
 // --------------------------------------------------------------
-class Position: public Descriptor3D
+class BoundingBoxRaw: public NeighborhoodFeature
 {
   public:
     // --------------------------------------------------------------
     /*!
-     * \brief Instantiates the Position descriptor
+     * \brief Instantiates the BoundingBox descriptor with specified parameters
      *
-     * The computed feature is the z-coordinate of the given interest point
-     * or of the centroid from the given interest region
+     * If computing the bounding box in principle component space, then features are
+     * in order: [a,b,c] where a is the length along the principle eigenvector, b
+     * is the length along the middle eigenvector, and c is the length along the
+     * smallest eigenvector.
+     *
+     * If computing the bounding box in the given coordinate frame, then the
+     * features are in order: [x,y,z] where x is the length along the first dimension,
+     * y is the length along the second dimension, z is the length along the third
+     * dimension.
+     *
+     * If computing both bounding boxes, the values are in order: [a b c x y z]
+     *
+     * \param use_pca_bbox Flag to compute the bounding box in the principle
+     *                     component space
+     * \param use_raw_bbox Flag to compute the bounding box in the given
+     *                     coordinate xyz space
      */
     // --------------------------------------------------------------
-    Position();
-
-    // TODO use sensor location so height is relative and dont assume flat ground
-    //void useSensorLocation();
-
-    // TODO: use map information such as distance from known walls
-    //void useMapInformation(void* mapData);
-
+    BoundingBoxRaw(double bbox_radius);
 
   protected:
     virtual int precompute(const robot_msgs::PointCloud& data,
@@ -84,27 +99,17 @@ class Position: public Descriptor3D
                            const cv::Vector<const std::vector<int>*>& interest_region_indices);
     // --------------------------------------------------------------
     /*!
-     * \brief Extract the z-coordinate of the interest points
+     * \brief Computes the bounding box information of the given neighborhood
      *
-     * \see Descriptor3D::compute
+     * \param data The overall point cloud data
+     * \param neighbor_indices List of indices in data that constitute the neighborhood
+     * \param result The vector to hold the computed bounding box dimensions
      */
     // --------------------------------------------------------------
-    virtual void doComputation(const robot_msgs::PointCloud& data,
-                               cloud_kdtree::KdTree& data_kdtree,
-                               const cv::Vector<const robot_msgs::Point32*>& interest_pts,
-                               cv::Vector<cv::Vector<float> >& results);
-
-    // --------------------------------------------------------------
-    /*!
-     * \brief Extract the z-coordinate of the interest regions' centroids
-     *
-     * \see Descriptor3D::compute
-     */
-    // --------------------------------------------------------------
-    virtual void doComputation(const robot_msgs::PointCloud& data,
-                               cloud_kdtree::KdTree& data_kdtree,
-                               const cv::Vector<const vector<int>*>& interest_region_indices,
-                               cv::Vector<cv::Vector<float> >& results);
+    virtual void computeNeighborhoodFeature(const robot_msgs::PointCloud& data,
+                                            const std::vector<int>& neighbor_indices,
+                                            const unsigned int interest_sample_idx,
+                                            cv::Vector<float>& result) const;
 };
 
 #endif

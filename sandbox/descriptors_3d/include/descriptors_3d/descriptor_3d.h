@@ -47,8 +47,6 @@
 
 #include <point_cloud_mapping/kdtree/kdtree.h>
 
-using namespace std;
-
 // --------------------------------------------------------------
 //* Descriptor3D
 /*!
@@ -64,10 +62,7 @@ class Descriptor3D
      * \brief Instantiates a descriptor with 0 feature values
      */
     // --------------------------------------------------------------
-    Descriptor3D() :
-      result_size_(0)
-    {
-    }
+    Descriptor3D();
 
     virtual ~Descriptor3D() = 0;
 
@@ -89,10 +84,8 @@ class Descriptor3D
      *                results[i].size() = 0
      */
     // --------------------------------------------------------------
-    virtual void compute(const robot_msgs::PointCloud& data,
-                         cloud_kdtree::KdTree& data_kdtree,
-                         const cv::Vector<const robot_msgs::Point32*>& interest_pts,
-                         cv::Vector<cv::Vector<float> >& results) = 0;
+    void compute(const robot_msgs::PointCloud& data, cloud_kdtree::KdTree& data_kdtree, const cv::Vector<
+        const robot_msgs::Point32*>& interest_pts, cv::Vector<cv::Vector<float> >& results);
 
     // --------------------------------------------------------------
     /*!
@@ -108,10 +101,8 @@ class Descriptor3D
      *                results[i].size() = 0
      */
     // --------------------------------------------------------------
-    virtual void compute(const robot_msgs::PointCloud& data,
-                         cloud_kdtree::KdTree& data_kdtree,
-                         const cv::Vector<const vector<int>*>& interest_region_indices,
-                         cv::Vector<cv::Vector<float> >& results) = 0;
+    void compute(const robot_msgs::PointCloud& data, cloud_kdtree::KdTree& data_kdtree, const cv::Vector<
+        const std::vector<int>*>& interest_region_indices, cv::Vector<cv::Vector<float> >& results);
     //@}
 
     // --------------------------------------------------------------
@@ -152,9 +143,9 @@ class Descriptor3D
     static unsigned int computeAndConcatFeatures(const robot_msgs::PointCloud& data,
                                                  cloud_kdtree::KdTree& data_kdtree,
                                                  const cv::Vector<const robot_msgs::Point32*>& interest_pts,
-                                                 vector<Descriptor3D*>& descriptors_3d,
-                                                 vector<float*>& concatenated_features,
-                                                 set<unsigned int>& failed_indices);
+                                                 std::vector<Descriptor3D*>& descriptors_3d,
+                                                 std::vector<float*>& concatenated_features,
+                                                 std::set<unsigned int>& failed_indices);
 
     // --------------------------------------------------------------
     /*!
@@ -178,15 +169,34 @@ class Descriptor3D
     static unsigned int
     computeAndConcatFeatures(const robot_msgs::PointCloud& data,
                              cloud_kdtree::KdTree& data_kdtree,
-                             const cv::Vector<const vector<int>*>& interest_region_indices,
-                             vector<Descriptor3D*>& descriptors_3d,
-                             vector<float*>& concatenated_features,
-                             set<unsigned int>& failed_indices);
+                             const cv::Vector<const std::vector<int>*>& interest_region_indices,
+                             std::vector<Descriptor3D*>& descriptors_3d,
+                             std::vector<float*>& concatenated_features,
+                             std::set<unsigned int>& failed_indices);
     //@}
 
   protected:
+    virtual int precompute(const robot_msgs::PointCloud& data,
+                           cloud_kdtree::KdTree& data_kdtree,
+                           const cv::Vector<const robot_msgs::Point32*>& interest_pts) = 0;
+
+    virtual int precompute(const robot_msgs::PointCloud& data,
+                           cloud_kdtree::KdTree& data_kdtree,
+                           const cv::Vector<const std::vector<int>*>& interest_region_indices) = 0;
+
+    virtual void doComputation(const robot_msgs::PointCloud& data,
+                               cloud_kdtree::KdTree& data_kdtree,
+                               const cv::Vector<const robot_msgs::Point32*>& interest_pts,
+                               cv::Vector<cv::Vector<float> >& results) = 0;
+
+    virtual void doComputation(const robot_msgs::PointCloud& data,
+                               cloud_kdtree::KdTree& data_kdtree,
+                               const cv::Vector<const std::vector<int>*>& interest_region_indices,
+                               cv::Vector<cv::Vector<float> >& results) = 0;
+
     /*! \brief The number of feature values the descriptors computes on success */
     unsigned int result_size_;
+    bool result_size_defined_;
 
   private:
     // --------------------------------------------------------------
@@ -202,11 +212,12 @@ class Descriptor3D
      * \param failed_indices The indices in concatenated_features that are NULL
      */
     // --------------------------------------------------------------
-    static void concatenateFeatures(const vector<cv::Vector<cv::Vector<float> > >& all_descriptor_results,
-                                    const unsigned int nbr_samples,
-                                    const unsigned int nbr_concatenated_vals,
-                                    vector<float*>& concatenated_features,
-                                    set<unsigned int>& failed_indices);
+    static void
+    concatenateFeatures(const std::vector<cv::Vector<cv::Vector<float> > >& all_descriptor_results,
+                        const unsigned int nbr_samples,
+                        const unsigned int nbr_concatenated_vals,
+                        std::vector<float*>& concatenated_features,
+                        std::set<unsigned int>& failed_indices);
 };
 
 #endif

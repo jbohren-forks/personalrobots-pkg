@@ -41,70 +41,30 @@ using namespace std;
 // --------------------------------------------------------------
 SpectralAnalysis::~SpectralAnalysis()
 {
-  freeSpectral();
+  clearSpectral();
 }
 
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-void SpectralAnalysis::freeSpectral()
+void SpectralAnalysis::clearSpectral()
 {
-  if (spectral_info_ == this)
+  unsigned int nbr_data = normals_.size();
+  for (unsigned int i = 0 ; i < nbr_data ; i++)
   {
-    unsigned int nbr_data = normals_.size();
-    for (unsigned int i = 0 ; i < nbr_data ; i++)
+    if (normals_[i] != NULL)
     {
-      if (normals_[i] != NULL)
-      {
-        delete normals_[i];
-        delete middle_eig_vecs_[i];
-        delete tangents_[i];
-        delete eigen_values_[i];
-        delete centroids_[i];
-      }
+      delete normals_[i];
+      delete middle_eig_vecs_[i];
+      delete tangents_[i];
+      delete eigen_values_[i];
     }
-    normals_.clear();
-    middle_eig_vecs_.clear();
-    tangents_.clear();
-    eigen_values_.clear();
-    centroids_.clear();
-    spectral_info_ = NULL;
   }
-}
-
-// --------------------------------------------------------------
-/* See function definition */
-// --------------------------------------------------------------
-int SpectralAnalysis::useSpectralInformation(SpectralAnalysis* spectral_info)
-{
-  if (support_radius_defined_)
-  {
-    ROS_ERROR("Cannot use spectral information after the radius had been defined");
-    return -1;
-  }
-  else
-  {
-    spectral_info_ = spectral_info;
-    return 0;
-  }
-}
-
-// --------------------------------------------------------------
-/* See function definition */
-// --------------------------------------------------------------
-int SpectralAnalysis::setSpectralRadius(double support_radius)
-{
-  if (spectral_info_ == NULL)
-  {
-    support_radius_ = support_radius;
-    support_radius_defined_ = true;
-    return 0;
-  }
-  else
-  {
-    ROS_ERROR("Cannot change support radius when spectral information has been defined");
-    return -1;
-  }
+  normals_.clear();
+  middle_eig_vecs_.clear();
+  tangents_.clear();
+  eigen_values_.clear();
+  spectral_computed_ = false;
 }
 
 // --------------------------------------------------------------
@@ -114,13 +74,20 @@ int SpectralAnalysis::analyzeInterestPoints(const robot_msgs::PointCloud& data,
                                             cloud_kdtree::KdTree& data_kdtree,
                                             const cv::Vector<const robot_msgs::Point32*>& interest_pts)
 {
+  if (spectral_computed_)
+  {
+    // TODO error msg
+    abort();
+    return -1;
+  }
+
   // ----------------------------------------
   // Ensure some regions are provided
   unsigned int nbr_interest_pts = interest_pts.size();
 
   // ----------------------------------------
   // Ensure radius is valid
-  if (support_radius_defined_ == false || support_radius_ < 1e-6)
+  if (support_radius_ < 1e-6)
   {
     ROS_ERROR("SpectralShape::compute() support radius must be set to a positive value");
     return -1;
@@ -132,7 +99,6 @@ int SpectralAnalysis::analyzeInterestPoints(const robot_msgs::PointCloud& data,
   middle_eig_vecs_.assign(nbr_interest_pts, NULL);
   tangents_.assign(nbr_interest_pts, NULL);
   eigen_values_.assign(nbr_interest_pts, NULL);
-  centroids_.assign(nbr_interest_pts, NULL);
 
   // ----------------------------------------
   // Find neighboring points within radius for each interest point
@@ -159,8 +125,7 @@ int SpectralAnalysis::analyzeInterestPoints(const robot_msgs::PointCloud& data,
     computeSpectralInfo(data, neighbor_indices, i);
   }
 
-  // ----------------------------------------
-  spectral_info_ = this;
+  spectral_computed_ = true;
   return 0;
 }
 
@@ -171,17 +136,16 @@ int SpectralAnalysis::analyzeInterestRegions(const robot_msgs::PointCloud& data,
                                              cloud_kdtree::KdTree& data_kdtree,
                                              const cv::Vector<const vector<int>*>& interest_region_indices)
 {
+  if (spectral_computed_)
+  {
+    // TODO error msg
+    abort();
+    return -1;
+  }
+
   // ----------------------------------------
   // Ensure some regions are provided
   unsigned int nbr_regions = interest_region_indices.size();
-
-  // ----------------------------------------
-  // Ensure radius has been defined (negative value is okay if using regions)
-  if (support_radius_defined_ == false)
-  {
-    ROS_ERROR("SpectralShape::compute() support radius must be set");
-    return -1;
-  }
 
   // ----------------------------------------
   // Allocate accordingly
@@ -189,7 +153,6 @@ int SpectralAnalysis::analyzeInterestRegions(const robot_msgs::PointCloud& data,
   middle_eig_vecs_.assign(nbr_regions, NULL);
   tangents_.assign(nbr_regions, NULL);
   eigen_values_.assign(nbr_regions, NULL);
-  centroids_.assign(nbr_regions, NULL);
 
   // ----------------------------------------
   // For each interest region, either:
@@ -229,7 +192,7 @@ int SpectralAnalysis::analyzeInterestRegions(const robot_msgs::PointCloud& data,
   }
 
   // ----------------------------------------
-  spectral_info_ = this;
+  spectral_computed_ = true;
   return 0;
 }
 
@@ -238,7 +201,7 @@ int SpectralAnalysis::analyzeInterestRegions(const robot_msgs::PointCloud& data,
 // --------------------------------------------------------------
 void SpectralAnalysis::computeSpectralInfo(const robot_msgs::PointCloud& data,
                                            const vector<int>& support_volume_indices,
-                                           size_t idx)
+                                           const size_t idx)
 {
   // ----------------------------------------
   // Need 3-by-3 matrix to have full rank
@@ -250,11 +213,10 @@ void SpectralAnalysis::computeSpectralInfo(const robot_msgs::PointCloud& data,
 
   // ----------------------------------------
   // Allocate for new data
-  normals_[idx] = new Eigen::Vector3d();
-  middle_eig_vecs_[idx] = new Eigen::Vector3d();
-  tangents_[idx] = new Eigen::Vector3d();
-  eigen_values_[idx] = new Eigen::Vector3d();
-  centroids_[idx] = new Eigen::Vector3d();
+  Eigen::Vector3d* new_normal = new Eigen::Vector3d();
+  Eigen::Vector3d* new_middle_eigvec = new Eigen::Vector3d();
+  Eigen::Vector3d* new_tangent = new Eigen::Vector3d();
+  Eigen::Vector3d* new_eig_vals = new Eigen::Vector3d();
 
   // ----------------------------------------
   // Eigen-analysis of support volume
@@ -262,24 +224,26 @@ void SpectralAnalysis::computeSpectralInfo(const robot_msgs::PointCloud& data,
   robot_msgs::Point32 centroid;
   Eigen::Matrix3d eigen_vectors;
   cloud_geometry::nearest::computePatchEigenNormalized(data, support_volume_indices, eigen_vectors,
-      *(eigen_values_[idx]), centroid);
+      *(new_eig_vals), centroid);
 
   // ----------------------------------------
   // Populate containers
   for (unsigned int j = 0 ; j < 3 ; j++)
   {
-    (*(normals_[idx]))[j] = eigen_vectors(j, 0);
-    (*(middle_eig_vecs_[idx]))[j] = eigen_vectors(j, 1);
-    (*(tangents_[idx]))[j] = eigen_vectors(j, 2);
+    (*(new_normal))[j] = eigen_vectors(j, 0);
+    (*(new_middle_eigvec))[j] = eigen_vectors(j, 1);
+    (*(new_tangent))[j] = eigen_vectors(j, 2);
   }
 
   // Make unit length
-  (normals_[idx])->normalize();
-  (middle_eig_vecs_[idx])->normalize();
-  (tangents_[idx])->normalize();
+  new_normal->normalize();
+  new_middle_eigvec->normalize();
+  new_tangent->normalize();
 
-  (*(centroids_[idx]))[0] = centroid.x;
-  (*(centroids_[idx]))[1] = centroid.y;
-  (*(centroids_[idx]))[2] = centroid.z;
+  normals_[idx] = new_normal;
+  middle_eig_vecs_[idx] = new_middle_eigvec;
+  tangents_[idx] = new_tangent;
+  eigen_values_[idx] = new_eig_vals;
+
 }
 

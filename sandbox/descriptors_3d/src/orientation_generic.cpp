@@ -32,99 +32,77 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include <descriptors_3d/spectral_shape.h>
+#include <descriptors_3d/generic/orientation_generic.h>
 
 using namespace std;
 
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-void SpectralShape::useCurvature()
+OrientationGeneric::OrientationGeneric()
 {
-  if (!use_curvature_)
-  {
-    result_size_++;
-    use_curvature_ = true;
-  }
+  result_size_ = 1;
+  result_size_defined_ = true;
+}
+
+OrientationGeneric::~OrientationGeneric()
+{
 }
 
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-void SpectralShape::compute(const robot_msgs::PointCloud& data,
-                            cloud_kdtree::KdTree& data_kdtree,
-                            const cv::Vector<const robot_msgs::Point32*>& interest_pts,
-                            cv::Vector<cv::Vector<float> >& results)
+void OrientationGeneric::doComputation(const robot_msgs::PointCloud& data,
+                                       cloud_kdtree::KdTree& data_kdtree,
+                                       const cv::Vector<const robot_msgs::Point32*>& interest_pts,
+                                       cv::Vector<cv::Vector<float> >& results)
 {
-  results.resize(interest_pts.size());
-
-  if (spectral_info_ == NULL)
-  {
-    if (analyzeInterestPoints(data, data_kdtree, interest_pts) < 0)
-    {
-      return;
-    }
-  }
-
-  computeFeatures(results);
-}
-
-// --------------------------------------------------------------
-/* See function definition */
-// --------------------------------------------------------------
-void SpectralShape::compute(const robot_msgs::PointCloud& data,
-                            cloud_kdtree::KdTree& data_kdtree,
-                            const cv::Vector<const vector<int>*>& interest_region_indices,
-                            cv::Vector<cv::Vector<float> >& results)
-{
-  results.resize(interest_region_indices.size());
-
-  if (spectral_info_ == NULL)
-  {
-    if (analyzeInterestRegions(data, data_kdtree, interest_region_indices) < 0)
-    {
-      return;
-    }
-  }
-
-  computeFeatures(results);
-}
-
-// --------------------------------------------------------------
-/* See function definition */
-// --------------------------------------------------------------
-void SpectralShape::computeFeatures(cv::Vector<cv::Vector<float> >& results)
-{
-  // Assumes it has been correctly resized in compute() above
-  unsigned int nbr_interest_pts = results.size();
-
-  // Verify the retrieved spectral information contains the same number of interest points/regions
-  const vector<Eigen::Vector3d*>& eigen_values = spectral_info_->getEigenValues();
-  if (eigen_values.size() != nbr_interest_pts)
-  {
-    ROS_ERROR("SpectralShape::computeFeatures inconsistent spectral information");
-    return;
-  }
-
-  // Iterate over each interest sample and compute its features
+  // ----------------------------------------
+  // Iterate over each interest point, grab neighbors within bbox radius,
+  // then compute bounding box
+  size_t nbr_interest_pts = interest_pts.size();
   for (size_t i = 0 ; i < nbr_interest_pts ; i++)
   {
-    size_t feature_idx = 0;
-
-    // NULL indicates couldnt compute spectral information for interest sample
-    if (eigen_values[i] != NULL)
-    {
-      results[i].resize(result_size_);
-
-      results[i][feature_idx++] = static_cast<float> ((*(eigen_values[i]))[0]); // scatter
-      results[i][feature_idx++] = static_cast<float> ((*(eigen_values[i]))[2] - (*(eigen_values[i]))[1]); // linear
-      results[i][feature_idx++] = static_cast<float> ((*(eigen_values[i]))[1] - (*(eigen_values[i]))[0]); // surface
-
-      if (use_curvature_)
-      {
-        results[i][feature_idx++] = static_cast<float> ((*(eigen_values[i]))[0] / ((*(eigen_values[i]))[0]
-            + (*(eigen_values[i]))[1] + (*(eigen_values[i]))[2]));
-      }
-    }
+    computeOrientation(i, results[i]);
   }
 }
+
+// --------------------------------------------------------------
+/* See function definition */
+// --------------------------------------------------------------
+void OrientationGeneric::doComputation(const robot_msgs::PointCloud& data,
+                                       cloud_kdtree::KdTree& data_kdtree,
+                                       const cv::Vector<const std::vector<int>*>& interest_region_indices,
+                                       cv::Vector<cv::Vector<float> >& results)
+{
+  // ----------------------------------------
+  // Iterate over each interest point, grab neighbors within bbox radius,
+  // then compute bounding box
+  size_t nbr_interest_regions = interest_region_indices.size();
+  for (size_t i = 0 ; i < nbr_interest_regions ; i++)
+  {
+    computeOrientation(i, results[i]);
+  }
+}
+
+// --------------------------------------------------------------
+/* See function definition */
+// --------------------------------------------------------------
+inline void OrientationGeneric::computeOrientation(const unsigned int interest_sample_idx,
+                                                   cv::Vector<float>& result) const
+{
+  const Eigen::Vector3d* curr_local_direction = (*local_directions_)[interest_sample_idx];
+  if (curr_local_direction != NULL)
+  {
+    // Invariant: local and reference directions are both unit
+    float cos_theta = curr_local_direction->dot(reference_direction_);
+    if (cos_theta < 0.0)
+    {
+      cos_theta = curr_local_direction->dot(reference_direction_flipped_);
+    }
+
+    result.resize(result_size_);
+    result[0] = cos_theta;
+  }
+}
+

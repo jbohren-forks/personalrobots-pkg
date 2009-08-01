@@ -36,8 +36,76 @@
 
 using namespace std;
 
+// --------------------------------------------------------------
+/* See function definition */
+// --------------------------------------------------------------
+Descriptor3D::Descriptor3D()
+{
+  result_size_ = 0;
+  result_size_defined_ = false;
+}
+
+// --------------------------------------------------------------
+/* See function definition */
+// --------------------------------------------------------------
 Descriptor3D::~Descriptor3D()
 {
+}
+
+// --------------------------------------------------------------
+/* See function definition */
+// --------------------------------------------------------------
+void Descriptor3D::compute(const robot_msgs::PointCloud& data,
+                           cloud_kdtree::KdTree& data_kdtree,
+                           const cv::Vector<const robot_msgs::Point32*>& interest_pts,
+                           cv::Vector<cv::Vector<float> >& results)
+{
+  // ----------------------------------------
+  // Allocate the results to be 0 vectors for each interest point
+  unsigned int nbr_interest_pts = interest_pts.size();
+  results.clear();
+  results.resize(nbr_interest_pts);
+
+  if (result_size_defined_ == false)
+  {
+    ROS_ERROR("Descriptor3D::compute result size not defined yet");
+    return;
+  }
+
+  if (precompute(data, data_kdtree, interest_pts) < 0)
+  {
+    return;
+  }
+
+  return doComputation(data, data_kdtree, interest_pts, results);
+}
+
+// --------------------------------------------------------------
+/* See function definition */
+// --------------------------------------------------------------
+void Descriptor3D::compute(const robot_msgs::PointCloud& data,
+                           cloud_kdtree::KdTree& data_kdtree,
+                           const cv::Vector<const vector<int>*>& interest_region_indices,
+                           cv::Vector<cv::Vector<float> >& results)
+{
+  // ----------------------------------------
+  // Allocate the results to be 0 vectors for each interest region
+  unsigned int nbr_interest_regions = interest_region_indices.size();
+  results.clear();
+  results.resize(nbr_interest_regions);
+
+  if (result_size_defined_ == false)
+  {
+    ROS_ERROR("Descriptor3D::compute result size not defined yet");
+    return;
+  }
+
+  if (precompute(data, data_kdtree, interest_region_indices) < 0)
+  {
+    return;
+  }
+
+  return doComputation(data, data_kdtree, interest_region_indices, results);
 }
 
 // --------------------------------------------------------------
