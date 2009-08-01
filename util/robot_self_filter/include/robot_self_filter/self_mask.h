@@ -44,8 +44,8 @@ namespace robot_self_filter
     enum
     {
 	INSIDE = 0,
-	SHADOW = -1,
-	OUTSIDE = 1
+	OUTSIDE = 1,
+	SHADOW = 2,
     };
     
 
