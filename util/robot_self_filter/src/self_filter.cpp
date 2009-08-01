@@ -42,7 +42,7 @@ class SelfFilter
 {
 public:
 
-    SelfFilter(void) : sf_(tf_, 1.0, 0.1), mn_(tf_, boost::bind(&SelfFilter::cloudCallback, this, _1), "cloud_in", "", 1)
+    SelfFilter(void) : sf_(tf_), mn_(tf_, boost::bind(&SelfFilter::cloudCallback, this, _1), "cloud_in", "", 1)
     {
 	nh_.param<std::string>("~sensor_frame", sensor_frame_, std::string());
 	std::vector<std::string> frames;
