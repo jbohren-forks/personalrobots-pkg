@@ -2,13 +2,16 @@
   <description brief="BackingUpSound">
      A node to play sounds requested on the robotsound topic.
   </description>
-<author>Blaise Gassend</author>
-<license>BSD</license>
-<depend package="rospy" />
-<depend package="roscpp" />
-<depend package="roslib" />
-<depend package="robot_msgs" />
-<rosdep name="python-pygame" />
+  <author>Blaise Gassend</author>
+  <license>BSD</license>
+  <depend package="rospy" />
+  <depend package="roscpp" />
+  <depend package="roslib" />
+  <depend package="robot_msgs" />
+  <rosdep name="python-pygame" />
+  <export>
+    <cpp cflags="-I${prefix}/msg/cpp" />
+  </export>
 </package>
 
 
