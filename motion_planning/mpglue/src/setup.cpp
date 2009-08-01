@@ -72,6 +72,7 @@ namespace mpglue {
     robot_circumscribed_radius = rhs.robot_circumscribed_radius;
     robot_nominal_forward_speed = rhs.robot_nominal_forward_speed;
     robot_nominal_rotation_speed = rhs.robot_nominal_rotation_speed;
+    return *this;
   }
   
   

@@ -64,7 +64,9 @@ namespace mpglue {
     explicit waypoint_s(robot_msgs::Pose const & pose);
     
     virtual ~waypoint_s() {}
-      
+    
+    void toPose(robot_msgs::Pose & pose) const;
+    waypoint_s & operator = (robot_msgs::Pose const & pose);
     bool ignoreTheta() const;
     
     double x, y, theta, dr, dtheta;

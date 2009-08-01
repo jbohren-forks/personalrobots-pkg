@@ -31,13 +31,14 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
-using namespace std;
 
 #include <mpglue/plan.h>
 #include <mpglue/sbpl_environment.h>
 #include <robot_msgs/Pose.h>
 #include <manipulation_msgs/JointTraj.h>
 #include <sfl/util/numeric.hpp>
+
+using namespace std;
 
 namespace mpglue {
   
@@ -54,14 +55,32 @@ namespace mpglue {
     : x(orig.x), y(orig.y), theta(orig.theta), dr(orig.dr), dtheta(orig.dtheta) {}
 
   waypoint_s::waypoint_s(robot_msgs::Pose const & pose, double _dr, double _dtheta)
-    : x(pose.position.x), y(pose.position.y),
-      theta(atan2(pose.orientation.z, pose.orientation.w)),
-      dr(_dr), dtheta(_dtheta) {}
+    : dr(_dr), dtheta(_dtheta)
+  { *this = pose; }
   
   waypoint_s::waypoint_s(robot_msgs::Pose const & pose)
-    : x(pose.position.x), y(pose.position.y),
-      theta(atan2(pose.orientation.z, pose.orientation.w)),
-      dr(default_dr), dtheta(default_dtheta) {}
+    : dr(default_dr), dtheta(default_dtheta)
+  { *this = pose; }
+  
+  void waypoint_s::toPose(robot_msgs::Pose & pose) const
+  {
+    pose.position.x = x;
+    pose.position.y = y;
+    pose.position.z = 0;
+    pose.orientation.x = 0;
+    pose.orientation.y = 0;
+    pose.orientation.z = sin(theta / 2);
+    pose.orientation.w = cos(theta / 2);
+  }
+  
+  waypoint_s & waypoint_s::
+  operator = (robot_msgs::Pose const & pose)
+  {
+    x = pose.position.x;
+    y = pose.position.y;
+    theta = 2 * atan2(pose.orientation.z, pose.orientation.w);
+    return *this;
+  }
   
   bool waypoint_s::ignoreTheta() const
   {

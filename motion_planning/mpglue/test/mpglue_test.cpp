@@ -35,6 +35,9 @@
 #include <gtest/gtest.h>
 #include <costmap_2d/costmap_2d.h>
 #include <mpglue/costmapper.h>
+#include <mpglue/plan.h>
+#include <robot_msgs/Pose.h>
+#include <sfl/util/numeric.hpp>
 
 using namespace std;
 using namespace boost;
@@ -280,7 +283,7 @@ TEST (costmap, raw_accessor)
       for (size_t iy(0); iy < ysize; ++iy) {
 	int const raw_idx(rcm.indexToRaw(ix, iy));
 	ASSERT_GE (raw_idx, 0) << "negative rcm.indexToRaw()";
-	ASSERT_LT (raw_idx, xsize * ysize) << "rcm.indexToRaw() too big";
+	ASSERT_LT (size_t(raw_idx), xsize * ysize) << "rcm.indexToRaw() too big";
 	rcm.raw[raw_idx] = cost;
 	++cost;
 	if (cost > 42)
@@ -326,6 +329,33 @@ TEST (costmap, raw_accessor)
     }
   }
   delete rcm.raw;
+}
+
+
+TEST (plan, waypoint_conversion)
+{
+  for (double xx(-3); xx <= 2; xx += 0.1)
+    for (double yy(89); yy <= 102; yy += 1.1)
+      for (double theta(-M_PI / 2); theta <= 2 * M_PI; theta += 0.1) {
+	mpglue::waypoint_s const wp0(xx, yy, theta);
+	robot_msgs::Pose pp0;
+	wp0.toPose(pp0);
+	mpglue::waypoint_s const wp1(pp0);
+	// 	robot_msgs::Pose pp1;
+	// 	wp1.toPose(pp1);
+	double const dx(wp1.x - wp0.x);
+	double const dy(wp1.y - wp0.y);
+	double const dth(wp1.theta - wp0.theta);
+	std::ostringstream os;
+	os << "(" << wp0.x << " " << wp0.y << " " << wp0.theta
+	   << ") -> [(" << pp0.position.x << " " << pp0.position.y << " " << pp0.position.z
+	   << ") (" << pp0.orientation.x << " " << pp0.orientation.y
+	   << " " << pp0.orientation.z << " " << pp0.orientation.w
+	   << ")] -> ("  << wp1.x << " " << wp1.y << " " << wp1.theta << ")";
+	EXPECT_LT (sfl::absval(dx), 1e-4) << "dx " << dx << ": " << os.str();
+	EXPECT_LT (sfl::absval(dy), 1e-4) << "dy " << dy << ": " << os.str();
+	EXPECT_LT (sfl::absval(dth), 1e-4) << "dth " << dth << ": " << os.str();
+      }
 }
 
 
