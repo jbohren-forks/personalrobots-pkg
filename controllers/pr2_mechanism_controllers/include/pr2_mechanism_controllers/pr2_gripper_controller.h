@@ -43,7 +43,10 @@
 #include <pr2_msgs/GripperControllerState.h>
 #include <ethercat_hardware/PressureState.h>
 #include <realtime_tools/realtime_publisher.h>
+#include <control_toolbox/pid.h>
 #include <manipulation_srvs/GraspClosedLoop.h>
+#include <boost/thread.hpp>
+#include "ros/callback_queue.h"
 
 namespace controller
 {
@@ -53,6 +56,8 @@ namespace controller
       enum grasp_state {unstarted, open0, close0_closing, close0_contact, open1, close1_closing, close1_contact, complete, failed};
 
       Pr2GripperController();
+
+      ~Pr2GripperController();
 
       /*!
        * \brief Loads controller's information from the xml description file and param server
@@ -78,14 +83,22 @@ namespace controller
 
       double stepMove(double step_size);
 
-      double grasp(bool closed_loop);
+      double grasp(bool service_callback, bool closed_loop);
+
+      void callbackThread();
 
     private:
+
+
       std::string name_;
 
       std::string fingertip_sensor_topic_;
 
-      double default_speed_;
+      double default_effort_;
+
+      double default_low_speed_;
+
+      double default_high_speed_;
 
       ros::Subscriber cmd_sub_;
 
@@ -179,7 +192,12 @@ namespace controller
       /*!
        * \brief remembers last time it was commanded to close or open
        */
-      ros::Duration timeout_duration;
+      ros::Duration timeout_duration_;
+
+      /*!
+      * \brief time after the object has been sqeezed that can be considered steady
+      */
+      ros::Duration timeout_duration_steady_;
 
       /*!
        * \brief remembers the state of the closed loop grasp
@@ -212,18 +230,18 @@ namespace controller
        */
       realtime_tools::RealtimePublisher<pr2_msgs::GripperControllerState>* state_publisher_;
 
-      int fingertip_sensor_start0[15];
-      int fingertip_sensor_start1[15];
-      int fingertip_sensor_first_peak0[15];
-      int fingertip_sensor_first_peak1[15];
-      int fingertip_sensor_first_steady0[15];
-      int fingertip_sensor_first_steady1[15];
-      int fingertip_sensor_second_peak0[15];
-      int fingertip_sensor_second_peak1[15];
-      int fingertip_sensor_second_steady0[15];
-      int fingertip_sensor_second_steady1[15];
-      int fingertip_sensor_sides_start0[7];
-      int fingertip_sensor_sides_start1[7];
+      std::vector<int> fingertip_sensor_start0_;
+      std::vector<int> fingertip_sensor_start1_;
+      std::vector<int> fingertip_sensor_first_peak0_;
+      std::vector<int> fingertip_sensor_first_peak1_;
+      std::vector<int> fingertip_sensor_first_steady0_;
+      std::vector<int> fingertip_sensor_first_steady1_;
+      std::vector<int> fingertip_sensor_second_peak0_;
+      std::vector<int> fingertip_sensor_second_peak1_;
+      std::vector<int> fingertip_sensor_second_steady0_;
+      std::vector<int> fingertip_sensor_second_steady1_;
+      std::vector<int> fingertip_sensor_sides_start0_;
+      std::vector<int> fingertip_sensor_sides_start1_;
 
       double position_first_contact;
       double position_second_contact;
@@ -245,8 +263,29 @@ namespace controller
 
       bool service_success_;
 
-      manipulation_srvs::GraspClosedLoop::Request* service_request_;
-      manipulation_srvs::GraspClosedLoop::Response* service_response_;
+      /*
+       * \brief remembers if the current grasp command is from a service or a topic
+       */
+      bool service_callback_;
+
+      manipulation_srvs::GraspClosedLoop::Request service_request_;
+      manipulation_srvs::GraspClosedLoop::Response service_response_;
+
+      int num_pressure_pads_side_;
+      int num_pressure_pads_front_;
+
+      control_toolbox::Pid p_i_d_;
+
+      /*
+       * \brief remembers if the control scheme is velocity control or effort control
+       */
+      bool velocity_mode_;
+
+      double last_velocity_time_;
+
+      ros::CallbackQueue service_queue_;
+
+      boost::thread* service_thread_;
   };
 }
 
