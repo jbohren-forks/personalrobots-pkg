@@ -45,21 +45,11 @@
 #include <descriptors_3d/generic/neighborhood_feature.h>
 
 // --------------------------------------------------------------
-//* BoundingBox
 /*!
+ * \file bounding_box_raw.h
+ *
  * \brief A BoundingBox descriptor computes the dimensions of the
- *        3-D box that encloses a group of points.
- *
- * When computing the feature for an interest point, the bounding box
- * is defined by the neighboring points within some specified radius.
- *
- * When computing the feature for an interest region of points, the
- * bounding box can either be the box that encloses the given region of
- * points, or from the neighboring points within some specified radius
- * from the region's centroid.
- *
- * The bounding box can be computed in the given coordinate frame
- * and/or in the projected principle component space.
+ *        3-D box that encloses a group of points in given xyz space.
  */
 // --------------------------------------------------------------
 class BoundingBoxRaw: public NeighborhoodFeature
@@ -67,42 +57,57 @@ class BoundingBoxRaw: public NeighborhoodFeature
   public:
     // --------------------------------------------------------------
     /*!
-     * \brief Instantiates the BoundingBox descriptor with specified parameters
+     * \brief Instantiates the bounding box descriptor
      *
-     * If computing the bounding box in principle component space, then features are
-     * in order: [a,b,c] where a is the length along the principle eigenvector, b
-     * is the length along the middle eigenvector, and c is the length along the
-     * smallest eigenvector.
+     * The descriptor computes the dimensions of the bounding box that
+     * encloses a neighborhood of points within bbox_radius of the
+     * interest point/region.
      *
-     * If computing the bounding box in the given coordinate frame, then the
-     * features are in order: [x,y,z] where x is the length along the first dimension,
-     * y is the length along the second dimension, z is the length along the third
-     * dimension.
+     * The compute features are in order: [dx,dy,dz] where dx is the length
+     * along the x dimension, dy is the length along the y dimension, dz is
+     * the length along the zdimension.
      *
-     * If computing both bounding boxes, the values are in order: [a b c x y z]
+     * When computing the feature for an interest region of points, the
+     * bounding box can either be the box that encloses the given region
+     * of points (indicated by -1), or from the neighboring points within
+     * the specified radius from the region's centroid (indicated by positive
+     * value).
      *
-     * \param use_pca_bbox Flag to compute the bounding box in the principle
-     *                     component space
-     * \param use_raw_bbox Flag to compute the bounding box in the given
-     *                     coordinate xyz space
+     * \param bbox_radius The radius from the interest point/region to define
+     *                    the neighborhood that defines the bounding box
      */
     // --------------------------------------------------------------
     BoundingBoxRaw(double bbox_radius);
 
   protected:
+    // --------------------------------------------------------------
+    /*!
+     * \brief This descriptor requires no pre-computation, so this method
+     *        has no affect
+     */
+    // --------------------------------------------------------------
     virtual int precompute(const robot_msgs::PointCloud& data,
                            cloud_kdtree::KdTree& data_kdtree,
                            const cv::Vector<const robot_msgs::Point32*>& interest_pts);
 
+    // --------------------------------------------------------------
+    /*!
+     * \brief This descriptor requires no pre-computation, so this method
+     *        has no affect
+     */
+    // --------------------------------------------------------------
     virtual int precompute(const robot_msgs::PointCloud& data,
                            cloud_kdtree::KdTree& data_kdtree,
                            const cv::Vector<const std::vector<int>*>& interest_region_indices);
+
     // --------------------------------------------------------------
     /*!
      * \brief Computes the bounding box information of the given neighborhood
      *
      * \param data The overall point cloud data
      * \param neighbor_indices List of indices in data that constitute the neighborhood
+     * \param interest_sample_idx The index of the interest point/region that is being
+     *                            processed from Descriptor3D::compute()
      * \param result The vector to hold the computed bounding box dimensions
      */
     // --------------------------------------------------------------
