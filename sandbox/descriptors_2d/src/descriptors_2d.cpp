@@ -161,6 +161,7 @@ ImageDescriptor::ImageDescriptor() :
 void ImageDescriptor::compute(IplImage* img, const cv::Vector<cv::KeyPoint>& points, vvf& results) {
   assert(results.empty());
   assert(result_size_ != 0);
+  assert(name_.size() != 0);
   results.resize(points.size());
   img_ = img;
   clearImageCache();
@@ -245,11 +246,20 @@ void SurfWrapper::doComputation(IplImage* img, const cv::Vector<KeyPoint>& point
     cvSeqPush(surf_kp, &point);
   }
 
+  // -- Get a grayscale image.
+  IplImage* gray;
+  bool deallocGray = false;
+  if(img->nChannels == 3) {
+    gray = cvCreateImage(cvGetSize(img), IPL_DEPTH_8U, 1);
+    cvCvtColor(img, gray, CV_BGR2GRAY);
+    deallocGray = true;
+  }
+  else
+    gray = img;
+
   // -- Get SURF features.
   CvMemStorage* feature_storage = cvCreateMemStorage(0);
   CvSeq* features = NULL;
-  IplImage* gray = cvCreateImage(cvGetSize(img), IPL_DEPTH_8U, 1);
-  cvCvtColor(img, gray, CV_BGR2GRAY);
   int useProvidedKeyPoints = 1; //Otherwise it will find its own keypoints.
   cvExtractSURF(gray, NULL, &surf_kp, &features, feature_storage, params, useProvidedKeyPoints);
   assert(features->total == surf_kp->total);
@@ -311,6 +321,8 @@ void SurfWrapper::doComputation(IplImage* img, const cv::Vector<KeyPoint>& point
   cvClearMemStorage(kp_storage);
   cvClearSeq(features);
   cvClearMemStorage(feature_storage);
+  if(deallocGray)
+    cvReleaseImage(&gray);
 }
 
 
@@ -966,6 +978,7 @@ SuperpixelColorHistogram::~SuperpixelColorHistogram() {
 
 
 void SuperpixelColorHistogram::doComputation(IplImage* img, const Vector<KeyPoint>& points, vvf& results) {
+  assert(img->nChannels == 3);
 
   // -- Make sure we have access to a segmentation.
   if(seg_provider_ == NULL && seg_ == NULL) {    
@@ -1115,7 +1128,8 @@ IntegralImageDescriptor::IntegralImageDescriptor(IntegralImageDescriptor* ii_pro
   ii_(NULL), 
   ii_tilt_(NULL), 
   gray_(NULL), 
-  ii_provider_(ii_provider)
+  ii_provider_(ii_provider),
+  dealloc_gray_(false)
 {
   char buf[100];
   sprintf(buf, "IntegralImageDescriptor");
@@ -1128,16 +1142,25 @@ IntegralImageDescriptor::~IntegralImageDescriptor() {
       cvReleaseImage(&ii_);
     if(ii_tilt_)
       cvReleaseImage(&ii_tilt_);
-    if(gray_)
+    if(gray_ && dealloc_gray_)
       cvReleaseImage(&gray_);
   }
+
+  dealloc_gray_ = false;
 }
 
 void IntegralImageDescriptor::integrate() {
   
   if(!gray_) {
-    gray_ = cvCreateImage(cvGetSize(img_), IPL_DEPTH_8U, 1);
-    cvCvtColor(img_, gray_, CV_BGR2GRAY);
+    if(img_->nChannels == 3) {
+      gray_ = cvCreateImage(cvGetSize(img_), IPL_DEPTH_8U, 1);
+      cvCvtColor(img_, gray_, CV_BGR2GRAY);
+      dealloc_gray_ = true;
+    }
+    else {
+      gray_ = img_;
+      dealloc_gray_ = false;
+    }
   }
 
   // TODO: Don't reallocate for every image.

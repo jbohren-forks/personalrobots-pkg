@@ -18,13 +18,13 @@ void writeResultsToFile(vvf results, string name) {
   f.close();
 }
 
-Vector<Keypoint> getPoints() {
+Vector<KeyPoint> getPoints() {
   srand(0);
-  Vector<Keypoint> points;
-  points.push_back(Keypoint(342, 342, 1));
-  points.push_back(Keypoint(442, 442, 1));
-  points.push_back(Keypoint(242, 242, 1));
-  points.push_back(Keypoint(639, 479, 1));
+  Vector<KeyPoint> points;
+  points.push_back(KeyPoint(342, 342, 1));
+  points.push_back(KeyPoint(442, 442, 1));
+  points.push_back(KeyPoint(242, 242, 1));
+  points.push_back(KeyPoint(639, 479, 1));
   return points;
 }
 
@@ -34,7 +34,7 @@ TEST(descriptors, SuperpixelColorHistogram) {
 
   IplImage* img = cvLoadImage("test/frame0000.jpg");
   vvf results;
-  Vector<Keypoint> points = getPoints();
+  Vector<KeyPoint> points = getPoints();
   desc.compute(img, points, results);
 
   mkdir("test/output", S_IRWXO | S_IRWXU);
@@ -50,7 +50,7 @@ TEST(descriptors, Hog) {
 
   IplImage* img = cvLoadImage("test/frame0000.jpg");
   vvf results;
-  Vector<Keypoint> points = getPoints();
+  Vector<KeyPoint> points = getPoints();
   desc.compute(img, points, results);
 
   mkdir("test/output", S_IRWXO | S_IRWXU);
@@ -65,7 +65,7 @@ TEST(descriptors, SURF) {
 
   IplImage* img = cvLoadImage("test/frame0000.jpg");
   vvf results;
-  Vector<Keypoint> points = getPoints();
+  Vector<KeyPoint> points = getPoints();
   desc.compute(img, points, results);
 
   mkdir("test/output", S_IRWXO | S_IRWXU);

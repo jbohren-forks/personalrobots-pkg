@@ -70,10 +70,6 @@ class ImageDescriptor {
   std::string getName();
   //! Returns result_size_.
   unsigned int getSize();
-  //! Cleans up any data specific to computation at a point.
-  virtual void clearPointCache() {}
-  //! Cleans up any data specific to computation on a particular image.
-  virtual void clearImageCache() {}
 
   //! @brief Primary user call to compute a set of features on an image.
   //! @param img The image to operate on.
@@ -96,7 +92,10 @@ class ImageDescriptor {
   void commonDebug(cv::KeyPoint kp, IplImage* vis = NULL);
   //! Vectorized feature computation call.
   virtual void doComputation(IplImage* img, const cv::Vector<cv::KeyPoint>& points, vvf& results) = 0;
-
+  //! Cleans up any data specific to computation at a point.
+  virtual void clearPointCache() {}
+  //! Cleans up any data specific to computation on a particular image.
+  virtual void clearImageCache() {}
 };
 
 
@@ -167,6 +166,7 @@ class IntegralImageDescriptor : public ImageDescriptor {
 
  protected:
   IntegralImageDescriptor* ii_provider_;
+  bool dealloc_gray_;
 
   bool integrateRect(float* result, int row_offset, int col_offset, int half_height, int half_width, const cv::KeyPoint& kp, float* area = NULL);
   bool integrateRect(float* result, const cv::KeyPoint& kp, const CvRect& rect);
@@ -285,7 +285,6 @@ class SuperpixelStatistic : public ImageDescriptor {
   SuperpixelStatistic(int seed_spacing, float scale, SuperpixelStatistic* seg_provider);
   ~SuperpixelStatistic();
   void segment(IplImage* img);
-  void clearImageCache();
   int getSeedSpacing();
   float getScale();
   SuperpixelStatistic* getSegProvider();
@@ -312,14 +311,14 @@ class SuperpixelStatistic : public ImageDescriptor {
   void doComputation(IplImage* img, const cv::Vector<cv::KeyPoint>& points, vvf& results) {}
   //! Create a mask of 255 for segment number seg, and 0 for everything else.  Useful for histograms.
   IplImage* createSegmentMask(int label, CvRect* rect);
-
+  void clearImageCache();
 };
 
 
 /**
  * @class SuperpixelColorHistogram
  * @brief Descriptor that segments the image into superpixels using watershed segmentation with a grid of seed points, 
- * then computes a histogram of hue and saturation values for each segment.
+ * then computes a histogram of hue and saturation values for each segment.  Only works for 3-channel RGB or BGR images.
  */
 class SuperpixelColorHistogram : public SuperpixelStatistic {
  public:
