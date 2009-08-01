@@ -44,7 +44,7 @@
 // messages
 #include "deprecated_msgs/RobotBase2DOdom.h"
 #include "robot_msgs/PoseDot.h"
-#include "robot_msgs/PoseWithRatesStamped.h"
+#include "geometry_msgs/PoseWithRatesStamped.h"
 #include "mechanism_msgs/MechanismState.h"
 
 namespace calibration
@@ -80,7 +80,7 @@ private:
 
   // messages to receive
   deprecated_msgs::RobotBase2DOdom       _odom;
-  robot_msgs::PoseWithRatesStamped  _imu;
+  geometry_msgs::PoseWithRatesStamped  _imu;
   mechanism_msgs::MechanismState      _mech;
 
   // estimated robot pose message to send

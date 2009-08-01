@@ -72,7 +72,7 @@ void PlanarFit::cloud_cb() {
 
 
 		ROS_INFO("coeff[0] %f, %f, %f, %f; %d, %d ",models[0][0],models[0][1],models[0][2],models[0][3],models[0].size(),models.size());
-		vector<robot_msgs::Vector3> normals;
+		vector<geometry_msgs::Vector3> normals;
 		normals.resize(cloud_plane_.get_pts_size());
 
 //		for (size_t i=0;i<cloud_plane_.get_pts_size();++i) {
@@ -182,7 +182,7 @@ void PlanarFit::getPointIndicesInZBounds(const PointCloud &points,
  */
 bool PlanarFit::fitSACPlanes(PointCloud *points, vector<int> &indices, vector<
 		vector<int> > &inliers, vector<vector<double> > &coeff,
-		const robot_msgs::Point32 &viewpoint_cloud, double dist_thresh,
+		const geometry_msgs::Point32 &viewpoint_cloud, double dist_thresh,
 		int n_max, int min_points_per_model) {
 	// Create and initialize the SAC model
 	sample_consensus::SACModelPlane *model =
@@ -227,7 +227,7 @@ bool PlanarFit::fitSACPlanes(PointCloud *points, vector<int> &indices, vector<
 	return (true);
 }
 
-void PlanarFit::publishNormals(robot_msgs::PointCloud points, vector<robot_msgs::Vector3> coeff, float length)
+void PlanarFit::publishNormals(sensor_msgs::PointCloud points, vector<geometry_msgs::Vector3> coeff, float length)
 {
 
 	visualization_msgs::Marker marker;
@@ -269,7 +269,7 @@ void PlanarFit::publishNormals(robot_msgs::PointCloud points, vector<robot_msgs:
 
 
 
-void PlanarFit::publishPolygon(robot_msgs::PointCloud pointcloud,Polygon3D points,int number)
+void PlanarFit::publishPolygon(sensor_msgs::PointCloud pointcloud,Polygon3D points,int number)
 {
 	visualization_msgs::Marker marker;
 	marker.header.frame_id = pointcloud.header.frame_id;

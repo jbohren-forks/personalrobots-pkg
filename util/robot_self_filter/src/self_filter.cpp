@@ -52,7 +52,7 @@ public:
 	mn_.setTargetFrame(frames);
 	
 	nh_.param<std::string>("~annotate", annotate_, std::string());
-	pointCloudPublisher_ = nh_.advertise<robot_msgs::PointCloud>("cloud_out", 1);
+	pointCloudPublisher_ = nh_.advertise<sensor_msgs::PointCloud>("cloud_out", 1);
 	if (!annotate_.empty())
 	    ROS_INFO("Self filter is adding annotation channel '%s'", annotate_.c_str());
 	if (!sensor_frame_.empty())
@@ -61,10 +61,11 @@ public:
     
 private:
     
-    void cloudCallback(const robot_msgs::PointCloudConstPtr &cloud)
+    void cloudCallback(const sensor_msgs::PointCloudConstPtr &cloud)
     {
+	sensor_msgs::PointCloud out;
+
 	ROS_DEBUG("Got pointcloud that is %f seconds old", (ros::Time::now() - cloud->header.stamp).toSec());
-	robot_msgs::PointCloud out;
 	std::vector<int> mask;
 	ros::WallTime tm = ros::WallTime::now();
 	
@@ -80,7 +81,7 @@ private:
 	ROS_DEBUG("Self filter: reduced %d points to %d points in %f seconds", (int)cloud->pts.size(), (int)out.pts.size(), sec);
     }
 
-    void fillResult(const robot_msgs::PointCloud& data_in, const std::vector<int> &keep, robot_msgs::PointCloud& data_out)
+    void fillResult(const sensor_msgs::PointCloud& data_in, const std::vector<int> &keep, sensor_msgs::PointCloud& data_out)
     {
 	const unsigned int np = data_in.pts.size();
 
@@ -145,7 +146,7 @@ private:
     
     tf::TransformListener                       tf_;
     robot_self_filter::SelfMask                 sf_;
-    tf::MessageNotifier<robot_msgs::PointCloud> mn_;
+    tf::MessageNotifier<sensor_msgs::PointCloud> mn_;
     ros::Publisher                              pointCloudPublisher_;
     std::string                                 sensor_frame_;
     ros::NodeHandle                             nh_;

@@ -33,7 +33,7 @@
 #ifndef _SAMPLE_CONSENSUS_SACMODELORIENTEDPLANE_H_
 #define _SAMPLE_CONSENSUS_SACMODELORIENTEDPLANE_H_
 
-#include <robot_msgs/Point32.h>
+#include <geometry_msgs/Point32.h>
 #include <point_cloud_mapping/sample_consensus/sac_model.h>
 #include <point_cloud_mapping/sample_consensus/sac_model_plane.h>
 #include <point_cloud_mapping/sample_consensus/model_types.h>
@@ -51,7 +51,7 @@ namespace sample_consensus
         * \param ax a pointer to the axis
         */
       void
-        setAxis (const robot_msgs::Point32 &ax)
+        setAxis (const geometry_msgs::Point32 &ax)
       {
         this->axis_.x = ax.x;
         this->axis_.y = ax.y;
@@ -72,7 +72,7 @@ namespace sample_consensus
       virtual int getModelType () { return (SACMODEL_ORIENTED_PLANE); }
 
     protected:
-      robot_msgs::Point32 axis_;
+      geometry_msgs::Point32 axis_;
       double eps_angle_;
   };
 }

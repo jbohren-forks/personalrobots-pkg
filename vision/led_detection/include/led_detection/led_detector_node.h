@@ -47,7 +47,7 @@
 
 #include "sensor_msgs/Image.h"
 #include "sensor_msgs/CameraInfo.h"
-#include "robot_msgs/PointStamped.h"
+#include "geometry_msgs/PointStamped.h"
 #include "topic_synchronizer/topic_synchronizer.h"
 
 

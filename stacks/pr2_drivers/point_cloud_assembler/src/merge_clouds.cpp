@@ -42,7 +42,7 @@ potentially from different sensors
 **/
 
 #include <ros/ros.h>
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 #include <tf/message_notifier.h>
 #include <tf/transform_listener.h>
 
@@ -55,7 +55,7 @@ public:
 
     MergeClouds(void)
     {
-	cloudOut_ = nh_.advertise<robot_msgs::PointCloud>("cloud_out", 1);
+	cloudOut_ = nh_.advertise<sensor_msgs::PointCloud>("cloud_out", 1);
 	nh_.param<std::string>("~output_frame", output_frame_, std::string());
 	nh_.param<double>("~max_frequency", max_freq_, 0.0);
 	newCloud1_ = newCloud2_ = false;
@@ -75,8 +75,8 @@ public:
 	else
 	    haveTimer_ = false;
 	
-	cloudNotifier1_ = new tf::MessageNotifier<robot_msgs::PointCloud>(tf_, boost::bind(&MergeClouds::receiveCloud1, this, _1), "cloud_in1", output_frame_, 1);
-	cloudNotifier2_ = new tf::MessageNotifier<robot_msgs::PointCloud>(tf_, boost::bind(&MergeClouds::receiveCloud2, this, _1), "cloud_in2", output_frame_, 1);
+	cloudNotifier1_ = new tf::MessageNotifier<sensor_msgs::PointCloud>(tf_, boost::bind(&MergeClouds::receiveCloud1, this, _1), "cloud_in1", output_frame_, 1);
+	cloudNotifier2_ = new tf::MessageNotifier<sensor_msgs::PointCloud>(tf_, boost::bind(&MergeClouds::receiveCloud2, this, _1), "cloud_in2", output_frame_, 1);
     }
 
     ~MergeClouds(void)
@@ -101,7 +101,7 @@ private:
 	newCloud1_ = false;
 	newCloud2_ = false;
 
-	robot_msgs::PointCloud out;
+	sensor_msgs::PointCloud out;
 	if (cloud1_.header.stamp > cloud2_.header.stamp)
 	    out.header = cloud1_.header;
 	else
@@ -135,7 +135,7 @@ private:
 	cloudOut_.publish(out);
     }
     
-    void receiveCloud1(const robot_msgs::PointCloudConstPtr &cloud)
+    void receiveCloud1(const sensor_msgs::PointCloudConstPtr &cloud)
     {
 	lock1_.lock();	
 	processCloud(cloud, cloud1_);
@@ -145,7 +145,7 @@ private:
 	    publishClouds();
     }
 
-    void receiveCloud2(const robot_msgs::PointCloudConstPtr &cloud)
+    void receiveCloud2(const sensor_msgs::PointCloudConstPtr &cloud)
     {
 	lock2_.lock();
 	processCloud(cloud, cloud2_);
@@ -155,7 +155,7 @@ private:
 	    publishClouds();
     }
     
-    void processCloud(const robot_msgs::PointCloudConstPtr &cloud, robot_msgs::PointCloud &cloudOut)
+    void processCloud(const sensor_msgs::PointCloudConstPtr &cloud, sensor_msgs::PointCloud &cloudOut)
     {
 	if (output_frame_ != cloud->header.frame_id)
 	    tf_.transformPointCloud(output_frame_, *cloud, cloudOut);
@@ -173,12 +173,12 @@ private:
     double                max_freq_;
     std::string           output_frame_;
 
-    tf::MessageNotifier<robot_msgs::PointCloud> *cloudNotifier1_;
-    tf::MessageNotifier<robot_msgs::PointCloud> *cloudNotifier2_;
+    tf::MessageNotifier<sensor_msgs::PointCloud> *cloudNotifier1_;
+    tf::MessageNotifier<sensor_msgs::PointCloud> *cloudNotifier2_;
     bool                   newCloud1_;
     bool                   newCloud2_;
-    robot_msgs::PointCloud cloud1_;
-    robot_msgs::PointCloud cloud2_;
+    sensor_msgs::PointCloud cloud1_;
+    sensor_msgs::PointCloud cloud2_;
     boost::mutex           lock1_;
     boost::mutex           lock2_;
     

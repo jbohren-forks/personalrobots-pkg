@@ -105,7 +105,7 @@ namespace move_arm
 	bool fillStartState(std::vector<motion_planning_msgs::KinematicJoint> &start);	
 	void fillTrajectoryPath(const motion_planning_msgs::KinematicPath &path, manipulation_msgs::JointTraj &traj);
 	bool alterRequestUsingIK(motion_planning_msgs::GetMotionPlan::Request &req);
-	bool computeIK(ros::ServiceClient &client, const robot_msgs::PoseStamped &pose_stamped_msg, std::vector<double> &solution);
+	bool computeIK(ros::ServiceClient &client, const geometry_msgs::PoseStamped &pose_stamped_msg, std::vector<double> &solution);
     };
 }
 

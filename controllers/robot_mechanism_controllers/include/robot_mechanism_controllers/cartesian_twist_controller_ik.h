@@ -42,7 +42,7 @@
 #include <kdl/chainfksolver.hpp>
 #include <kdl/chainiksolver.hpp>
 #include <ros/node.h>
-#include <robot_msgs/Twist.h>
+#include <geometry_msgs/Twist.h>
 #include <mechanism_control/controller.h>
 #include <mechanism_model/chain.h>
 #include <tf/transform_datatypes.h>

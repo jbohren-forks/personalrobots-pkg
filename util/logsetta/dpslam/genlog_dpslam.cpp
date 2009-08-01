@@ -31,7 +31,7 @@
 #include <cmath>
 #include "ros/node.h"
 #include "sensor_msgs/LaserScan.h"
-#include "robot_msgs/PoseStamped.h"
+#include "geometry_msgs/PoseStamped.h"
 #include <vector>
 #include <string>
 #include "rosrecord/Player.h"
@@ -41,7 +41,7 @@ using std::string;
 FILE *clog = NULL;
 double odom_x = 0, odom_y = 0, odom_th = 0;
 
-void odom_callback(string name, robot_msgs::PoseStamped * odom, ros::Time t, ros::Time t_no_use, void* n)
+void odom_callback(string name, geometry_msgs::PoseStamped * odom, ros::Time t, ros::Time t_no_use, void* n)
 {
   //printf("odom cb\n");
   odom_th = 2 * asin(odom->pose.orientation.z);
@@ -79,7 +79,7 @@ int main(int argc, char **argv)
   for (int i = 1; i < argc; i++)
     files.push_back(argv[i]);
   player.open(files, ros::Time());
-  player.addHandler<robot_msgs::PoseStamped>(string("odom"), &odom_callback, NULL);
+  player.addHandler<geometry_msgs::PoseStamped>(string("odom"), &odom_callback, NULL);
   player.addHandler<sensor_msgs::LaserScan>(string("scan"), &scan_callback, NULL);
   clog = fopen("dpslam.log", "w");
   while(player.nextMsg()) { }

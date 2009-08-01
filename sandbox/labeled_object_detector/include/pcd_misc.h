@@ -49,7 +49,7 @@
 
 
 
-#include "robot_msgs/PointCloud.h"
+#include "sensor_msgs/PointCloud.h"
 
 namespace pcd_misc
 {
@@ -57,12 +57,12 @@ namespace pcd_misc
   /** \brief split point cloud into disjoint components
    *
    */
-  void cluster_pcd_points(const robot_msgs::PointCloud& centers,double max_radius,std::vector<int>& cluster_ids, unsigned int& num_clusters);
+  void cluster_pcd_points(const sensor_msgs::PointCloud& centers,double max_radius,std::vector<int>& cluster_ids, unsigned int& num_clusters);
 
-//void pcd_split_into_clusters(const robot_msgs::PointCloud& source,const std::vector<int>& cluster_ids, const int& num_clusters, std::vector<robot_msgs::PointCloud>& clouds_out );
+//void pcd_split_into_clusters(const sensor_msgs::PointCloud& source,const std::vector<int>& cluster_ids, const int& num_clusters, std::vector<sensor_msgs::PointCloud>& clouds_out );
 
 void cluster_ids_to_cluster_indices(const std::vector<int>& cluster_ids, const unsigned int& num_clusters, std::vector<std::vector<int> >& clouds_by_indices_out );
 
 
-void variationAlongLine(robot_msgs::Point32 dir_line,robot_msgs::Point32 pt_line, robot_msgs::PointCloud cloud, std::vector<int> indices, float &min_v,float& max_v);
+void variationAlongLine(geometry_msgs::Point32 dir_line,geometry_msgs::Point32 pt_line, sensor_msgs::PointCloud cloud, std::vector<int> indices, float &min_v,float& max_v);
 }

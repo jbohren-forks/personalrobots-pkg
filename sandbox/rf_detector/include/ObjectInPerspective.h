@@ -53,9 +53,9 @@
 #include <point_cloud_mapping/geometry/projections.h>
 
 #include "sensor_msgs/CameraInfo.h"
-#include "robot_msgs/PointCloud.h"
-#include "robot_msgs/Point32.h"
-#include "robot_msgs/PointStamped.h"
+#include "sensor_msgs/PointCloud.h"
+#include "geometry_msgs/Point32.h"
+#include "geometry_msgs/PointStamped.h"
 
 // transform library
 #include <tf/transform_listener.h>
@@ -64,31 +64,31 @@
 using namespace std;
 #define CV_PIXEL(type,img,x,y) (((type*)(img->imageData+y*img->widthStep))+x*img->nChannels)
 //function lists
-void filterByZBounds( const robot_msgs::PointCloud& pc, double zmin, double zmax, robot_msgs::PointCloud& filtered_pc, robot_msgs::PointCloud& filtered_outside);
+void filterByZBounds( const sensor_msgs::PointCloud& pc, double zmin, double zmax, sensor_msgs::PointCloud& filtered_pc, sensor_msgs::PointCloud& filtered_outside);
 
-bool fitSACPlane(const robot_msgs::PointCloud& points, const vector<int> &indices,  // input
+bool fitSACPlane(const sensor_msgs::PointCloud& points, const vector<int> &indices,  // input
 			vector<int> &inliers, vector<double> &coeff,  // output
 			double dist_thresh, int min_points_per_model);
 
 
-void filterTablePlane(const robot_msgs::PointCloud& cloud, vector<double>& coefficients, robot_msgs::PointCloud& object_cloud, robot_msgs::PointCloud& plane_cloud);
+void filterTablePlane(const sensor_msgs::PointCloud& cloud, vector<double>& coefficients, sensor_msgs::PointCloud& object_cloud, sensor_msgs::PointCloud& plane_cloud);
 
-void addTableFrame( robot_msgs::PointStamped origin, const vector<double>& plane, tf::TransformListener& tf_, tf::TransformBroadcaster& broadcaster_);
+void addTableFrame( geometry_msgs::PointStamped origin, const vector<double>& plane, tf::TransformListener& tf_, tf::TransformBroadcaster& broadcaster_);
 
-float GetCameraHeight(const robot_msgs::PointCloud& pc, tf::TransformListener& tf_);
+float GetCameraHeight(const sensor_msgs::PointCloud& pc, tf::TransformListener& tf_);
 
-float CalHorizontalLine( const robot_msgs::PointCloud& cloud, vector<double> plane_coeff, const sensor_msgs::CameraInfo& lcinfo, tf::TransformListener& tf_);
+float CalHorizontalLine( const sensor_msgs::PointCloud& cloud, vector<double> plane_coeff, const sensor_msgs::CameraInfo& lcinfo, tf::TransformListener& tf_);
 
-void filterClusters(const robot_msgs::PointCloud& cloud, vector<robot_msgs::Point32>& centers, vector<robot_msgs::Point32>& clusters);
+void filterClusters(const sensor_msgs::PointCloud& cloud, vector<geometry_msgs::Point32>& centers, vector<geometry_msgs::Point32>& clusters);
 
-void findClusters2(const robot_msgs::PointCloud& cloud, vector<robot_msgs::Point32>& clusters);
+void findClusters2(const sensor_msgs::PointCloud& cloud, vector<geometry_msgs::Point32>& clusters);
 
 //double meanShiftIteration(const PointCloud& pc, NNGridIndexer& index, vector<Point32>& centers, vector<Point32>& means, float step);
 
-//void clearFromImage(IplImage* disp_img, const robot_msgs::PointCloud& pc);
+//void clearFromImage(IplImage* disp_img, const sensor_msgs::PointCloud& pc);
 
-float findObjectPositionsFromStereo(const robot_msgs::PointCloud& cloud, vector<CvPoint>& locations, vector<CvPoint>& obj_bottom,
+float findObjectPositionsFromStereo(const sensor_msgs::PointCloud& cloud, vector<CvPoint>& locations, vector<CvPoint>& obj_bottom,
         vector<float>& scales, vector<float>& scales_msun, tf::TransformListener& tf_, tf::TransformBroadcaster& broadcaster_,
         const sensor_msgs::CameraInfo& lcinfo);
 
-robot_msgs::Point project3DPointIntoImage(const sensor_msgs::CameraInfo& cam_info, robot_msgs::PointStamped point, tf::TransformListener& tf_);
+geometry_msgs::Point project3DPointIntoImage(const sensor_msgs::CameraInfo& cam_info, geometry_msgs::PointStamped point, tf::TransformListener& tf_);

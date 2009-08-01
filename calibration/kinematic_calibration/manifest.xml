@@ -5,7 +5,7 @@
   <review status="unreviewed" notes=""/>
   <depend package="kdl" />
   <depend package="phase_space" />
-  <depend package="robot_msgs" />
+  <depend package="geometry_msgs" />
   <depend package="mechanism_msgs" />
   <depend package="mocap_msgs" />
   <depend package="std_msgs" />

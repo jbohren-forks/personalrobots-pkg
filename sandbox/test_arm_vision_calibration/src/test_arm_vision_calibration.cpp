@@ -37,7 +37,7 @@
 #include <ros/ros.h>
 #include "robot_self_filter/self_mask.h"
 #include <tf/message_notifier.h>
-#include <robot_msgs/Point.h>
+#include <geometry_msgs/Point.h>
 
 class TestArmVisionCallibration
 {
@@ -56,8 +56,8 @@ public:
 	sfMax_->getLinkNames(frames);
 	mn_.setTargetFrame(frames);
 
-	pointCloudPublisherMax_ = nh_.advertise<robot_msgs::PointCloud>("should_be_empty", 1);
-	pointCloudPublisherMin_ = nh_.advertise<robot_msgs::PointCloud>("should_be_full",  1);
+	pointCloudPublisherMax_ = nh_.advertise<sensor_msgs::PointCloud>("should_be_empty", 1);
+	pointCloudPublisherMin_ = nh_.advertise<sensor_msgs::PointCloud>("should_be_full",  1);
     }
 
     ~TestArmVisionCallibration(void)
@@ -73,18 +73,18 @@ public:
 
 private:
 
-    void cloudCallback(const robot_msgs::PointCloudConstPtr &cloud)
+    void cloudCallback(const sensor_msgs::PointCloudConstPtr &cloud)
     {
 	ROS_INFO("Received %f second old pointcloud with %d points", (ros::Time::now() - cloud->header.stamp).toSec(), cloud->pts.size());
 	
-	robot_msgs::PointCloud transformed;
+	sensor_msgs::PointCloud transformed;
 	tf_.transformPointCloud("torso_lift_link", *cloud, transformed);
 
-	robot_msgs::PointCloud close;
+	sensor_msgs::PointCloud close;
 	keepClose(transformed, close);
 
-	robot_msgs::PointCloud outMax;
-	robot_msgs::PointCloud outMin;
+	sensor_msgs::PointCloud outMax;
+	sensor_msgs::PointCloud outMin;
 	std::vector<int> maskMax;
 	std::vector<int> maskMin;
 	sfMax_->maskContainment(close, maskMax);
@@ -101,7 +101,7 @@ private:
 	    ROS_ERROR("%f%% of points are seen further to the sensor (as compared to where they should be)", 100.0 - 100.0 * (double)outMin.pts.size() / (double)close.pts.size());
     }
     
-    void fillResult(const robot_msgs::PointCloud& data_in, const std::vector<int> &keep, robot_msgs::PointCloud& data_out)
+    void fillResult(const sensor_msgs::PointCloud& data_in, const std::vector<int> &keep, sensor_msgs::PointCloud& data_out)
     {
 	const unsigned int np = data_in.pts.size();
 	
@@ -131,7 +131,7 @@ private:
     }
 
     // keep points in a bounding box around robot
-    void keepClose(const robot_msgs::PointCloud& data_in, robot_msgs::PointCloud& data_out)
+    void keepClose(const sensor_msgs::PointCloud& data_in, sensor_msgs::PointCloud& data_out)
     {	
 	const unsigned int np = data_in.pts.size();
 	
@@ -169,9 +169,9 @@ private:
     ros::Publisher               pointCloudPublisherMin_;
     ros::Publisher               pointCloudPublisherMax_;   
 
-    robot_msgs::Point            d_;
+    geometry_msgs::Point            d_;
     
-    tf::MessageNotifier<robot_msgs::PointCloud> mn_;
+    tf::MessageNotifier<sensor_msgs::PointCloud> mn_;
 };
    
 int main(int argc, char **argv)

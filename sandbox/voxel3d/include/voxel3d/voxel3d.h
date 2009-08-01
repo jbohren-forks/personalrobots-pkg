@@ -32,7 +32,7 @@
 #include <vector>
 #include "ros/node_handle.h"
 #include "tf/transform_datatypes.h"
-#include "robot_msgs/PointCloud.h"
+#include "sensor_msgs/PointCloud.h"
 #include "mapping_msgs/CollisionMap.h"
 #include "voxel3d/DistanceField.h"
 #include <limits>
@@ -48,7 +48,7 @@ public:
   ~Voxel3d();
 
   /** \brief add the points in the point cloud to the voxel */
-  void updateWorld(const robot_msgs::PointCloud &cloud);
+  void updateWorld(const sensor_msgs::PointCloud &cloud);
 
   /** \brief adds the points in a collision map to the voxel - only works on 1cm cells! (temporarily) */
   void updateWorld(const mapping_msgs::CollisionMap &collision_map);

@@ -39,7 +39,7 @@
 // ROS core
 #include <ros/ros.h>
 // ROS messages
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 
 
 // Cloud kd-tree
@@ -70,19 +70,19 @@
 
 #include <robot_actions/action.h>
 
-#include <robot_msgs/PoseStamped.h>
+#include <geometry_msgs/PoseStamped.h>
 
 namespace labeled_object_detector
 {
 
-class DetectNearestObjectAction: public robot_actions::Action<robot_msgs::PoseStamped, robot_msgs::PoseStamped> {
+class DetectNearestObjectAction: public robot_actions::Action<geometry_msgs::PoseStamped, geometry_msgs::PoseStamped> {
 
 protected:
   PlanarObjectDetector detector_;
 
   ros::NodeHandle n_;
   
-  robot_msgs::PointCloudConstPtr cloud_;
+  sensor_msgs::PointCloudConstPtr cloud_;
   
   boost::shared_ptr<ros::Subscriber>  cloud_sub_;
   ros::Publisher  cloud_pub_;
@@ -94,10 +94,10 @@ protected:
   tf::TransformBroadcaster broadcaster_;
 
   std::string fixed_frame_;
-  robot_msgs::PointCloud full_cloud;
+  sensor_msgs::PointCloud full_cloud;
 
-  robot_msgs::PoseStamped goal_;
-  robot_msgs::PoseStamped goal_fixed_;
+  geometry_msgs::PoseStamped goal_;
+  geometry_msgs::PoseStamped goal_fixed_;
 
 public:
 
@@ -109,9 +109,9 @@ public:
 
   void setup();
 
-  void cloudCallback(const robot_msgs::PointCloudConstPtr& the_cloud);
+  void cloudCallback(const sensor_msgs::PointCloudConstPtr& the_cloud);
 
-  virtual robot_actions::ResultStatus execute(const robot_msgs::PoseStamped& goal, robot_msgs::PoseStamped& feedback);
+  virtual robot_actions::ResultStatus execute(const geometry_msgs::PoseStamped& goal, geometry_msgs::PoseStamped& feedback);
 };
 
 

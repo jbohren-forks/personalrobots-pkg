@@ -42,10 +42,8 @@
 #include "point_cloud_assembler/BuildCloud.h"
 
 // Messages
-#include "robot_msgs/PointCloud.h"
+#include "sensor_msgs/PointCloud.h"
 
-
-using namespace robot_msgs ;
 
 /***
  * This a simple test app that requests a point cloud from the point_cloud_assembler, and then publishes the resulting data
@@ -61,7 +59,7 @@ public:
 
   GrabCloudData() : ros::Node("grab_cloud_data")
   {
-    advertise<PointCloud> ("full_cloud", 1) ;
+    advertise<sensor_msgs::PointCloud> ("full_cloud", 1) ;
   }
 
   ~GrabCloudData()

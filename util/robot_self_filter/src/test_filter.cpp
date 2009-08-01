@@ -86,7 +86,7 @@ public:
 
     void run(void)
     {
-	robot_msgs::PointCloud in;
+	sensor_msgs::PointCloud in;
 	
 	in.header.stamp = ros::Time::now();
 	in.header.frame_id = "base_link";

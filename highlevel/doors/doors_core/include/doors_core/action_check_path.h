@@ -47,13 +47,13 @@
 
 namespace door_handle_detector{
 
-class CheckPathAction: public robot_actions::Action<robot_msgs::PoseStamped, int8_t>
+class CheckPathAction: public robot_actions::Action<geometry_msgs::PoseStamped, int8_t>
 {
 public:
   CheckPathAction(tf::TransformListener& tf);
   ~CheckPathAction();
 
-  virtual robot_actions::ResultStatus execute(const robot_msgs::PoseStamped& goal, int8_t& feedback);
+  virtual robot_actions::ResultStatus execute(const geometry_msgs::PoseStamped& goal, int8_t& feedback);
 
 
 

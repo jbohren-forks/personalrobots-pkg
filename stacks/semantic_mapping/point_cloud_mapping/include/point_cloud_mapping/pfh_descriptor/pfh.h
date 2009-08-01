@@ -34,8 +34,8 @@
 #define _PFH_DESCRIPTOR_PFH_H_
 
 // ROS includes
-#include <robot_msgs/Point32.h>
-#include <robot_msgs/PointCloud.h>
+#include <geometry_msgs/Point32.h>
+#include <sensor_msgs/PointCloud.h>
 
 namespace pfh_descriptor
 {

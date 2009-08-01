@@ -42,7 +42,7 @@
 #include "opencv/cv.h"
 #include "opencv_latest/CvBridge.h"
 
-#include "robot_msgs/Point.h"
+#include "geometry_msgs/Point.h"
 
 namespace stereo_checkerboard_detector
 {
@@ -83,7 +83,7 @@ public :
    * \return True if found.  False otherwise
    * \todo make image a 'const reference' once openCV calls are const-ified
    */
-  bool getCorners(sensor_msgs::Image& image, std::vector<robot_msgs::Point>& corners) ;
+  bool getCorners(sensor_msgs::Image& image, std::vector<geometry_msgs::Point>& corners) ;
 
   /**
    * Finding checkerboard corner points in an IPL image from a single camera

@@ -39,7 +39,7 @@
 // ROS core
 #include <ros/ros.h>
 // ROS messages
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 
 
 #include "novelty_estimator.h"
@@ -54,8 +54,8 @@ protected:
 
   ros::NodeHandle n_;
   
-  robot_msgs::PointCloudConstPtr cloud_hist_;
-  robot_msgs::PointCloudConstPtr cloud_observed_;
+  sensor_msgs::PointCloudConstPtr cloud_hist_;
+  sensor_msgs::PointCloudConstPtr cloud_observed_;
   
   ros::Subscriber cloud_hist_sub_;
   ros::Subscriber cloud_sub_;
@@ -73,8 +73,8 @@ public:
 
   void setup();
 
-  void hist_cloudCallback(const robot_msgs::PointCloudConstPtr& the_cloud);
-  void observed_cloudCallback(const robot_msgs::PointCloudConstPtr& the_cloud);
+  void hist_cloudCallback(const sensor_msgs::PointCloudConstPtr& the_cloud);
+  void observed_cloudCallback(const sensor_msgs::PointCloudConstPtr& the_cloud);
 
 
 };

@@ -138,7 +138,7 @@ namespace controller
     * @param odom Point into which the odometry position is placed (z is theta)
     * @param odom_vel into which the odometry velocity is placed
     */
-    void getOdometry(robot_msgs::Point &odom, robot_msgs::PoseDot &odom_vel);
+    void getOdometry(geometry_msgs::Point &odom, robot_msgs::PoseDot &odom_vel);
 
     /*!
     * \brief Computes the base velocity from the caster positions and wheel speeds
@@ -184,7 +184,7 @@ namespace controller
     /*!
     * \brief Point that stores the current translational position (x,y) and angular position (z)
     */
-    robot_msgs::Point odom_;
+    geometry_msgs::Point odom_;
 
     /*!
     * \brief PoseDot that remembers the current translational velocities (vel.vx, vel.vy) and angular position (ang_vel.vz)

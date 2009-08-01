@@ -99,7 +99,7 @@ int main(int argc, char** argv)
   ros::init(argc, argv, "handhold");
   ros::NodeHandle node("handhold");
 
-  robot_msgs::PoseStamped cmd;
+  geometry_msgs::PoseStamped cmd;
   node.param("~pose_frame", cmd.header.frame_id, std::string("base_link"));
   node.param("~pose_x", cmd.pose.position.x, 0.6);
   node.param("~pose_y", cmd.pose.position.y, -0.1);
@@ -109,7 +109,7 @@ int main(int argc, char** argv)
   node.param("~pose_qz", cmd.pose.orientation.z, 0.0);
   node.param("~pose_qw", cmd.pose.orientation.w, 1.0);
 
-  ros::Publisher pub_cmd = node.advertise<robot_msgs::PoseStamped>(CONTROLLER + "/command", 2);
+  ros::Publisher pub_cmd = node.advertise<geometry_msgs::PoseStamped>(CONTROLLER + "/command", 2);
   ROS_ERROR("Publishing to controller on %s (%d)", pub_cmd.getTopic().c_str(), (void*)pub_cmd);
 
   X x(node);

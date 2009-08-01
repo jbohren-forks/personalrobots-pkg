@@ -37,10 +37,10 @@
 #include <tf/tf.h>
 
 
-robot_msgs::Pose transformOutletPose(robot_msgs::Pose outletPose, float value)
+geometry_msgs::Pose transformOutletPose(geometry_msgs::Pose outletPose, float value)
 {
     tf::Pose tf_pose;
-    robot_msgs::Pose final_pose;
+    geometry_msgs::Pose final_pose;
 
     tf::poseMsgToTF(outletPose,tf_pose);
     tf::Point point(-value,0,0);

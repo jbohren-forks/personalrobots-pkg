@@ -32,19 +32,19 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#include "robot_msgs/PoseWithRatesStamped.h"
+#include "geometry_msgs/PoseWithRatesStamped.h"
 #include <string>
 #include "rosrecord/Player.h"
 
-void imu_callback(std::string name, robot_msgs::PoseWithRatesStamped* imu, ros::Time t, ros::Time t_no_use, void* f)
+void imu_callback(std::string name, geometry_msgs::PoseWithRatesStamped* imu, ros::Time t, ros::Time t_no_use, void* f)
 {
   FILE* file = (FILE*)f;
 
   fprintf(file, "%.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f\n",
           t.toSec(),
           imu->header.stamp.toSec(),
-          imu->acc.acc.ax, imu->acc.acc.ay, imu->acc.acc.az,
-          imu->vel.ang_vel.vx, imu->vel.ang_vel.vy, imu->vel.ang_vel.vz);
+          imu->pose_with_rates.acceleration.linear.x, imu->pose_with_rates.acceleration.linear.y, imu->pose_with_rates.acceleration.linear.z,
+          imu->pose_with_rates.velocity.angular.x, imu->pose_with_rates.velocity.angular.y, imu->pose_with_rates.velocity.angular.z);
 }
 
 int main(int argc, char **argv)
@@ -63,7 +63,7 @@ int main(int argc, char **argv)
 
   FILE* file = fopen("imu.txt", "w");
 
-  player.addHandler<robot_msgs::PoseWithRatesStamped>(std::string("*"), &imu_callback, file);
+  player.addHandler<geometry_msgs::PoseWithRatesStamped>(std::string("*"), &imu_callback, file);
 
   while(player.nextMsg())  {}
 

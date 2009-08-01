@@ -55,13 +55,13 @@ namespace annotated_planar_patch_map
  * params
  *  * (Several params are inherited from BaseAssemblerSrv)
  */
-class PcdAssemblerSrv : public GenericMapBaseAssemblerSrv<PointCloud,PointCloud>
+class PcdAssemblerSrv : public GenericMapBaseAssemblerSrv<sensor_msgs::PointCloud,sensor_msgs::PointCloud>
 {
 protected:
   ros::ServiceServer svc_;
 
 public:
-  PcdAssemblerSrv() : GenericMapBaseAssemblerSrv<PointCloud,PointCloud>()
+  PcdAssemblerSrv() : GenericMapBaseAssemblerSrv<sensor_msgs::PointCloud,sensor_msgs::PointCloud>()
   {
     // ***** Start Services *****
     svc_ = n_.advertiseService<BuildCloud::Request,BuildCloud::Response>("~build_cloud", boost::bind(&PcdAssemblerSrv::buildCloud, this,_1,_2)) ;
@@ -74,12 +74,12 @@ public:
   }
 
 
-  unsigned int GetPointsInCloud(const PointCloud& scan)
+  unsigned int GetPointsInCloud(const sensor_msgs::PointCloud& scan)
   {
     return scan.pts.size();
   }
 
-  void ConvertScanToCloud(const string& fixed_frame_id, const PointCloud& scan_in, PointCloud& cloud_out)
+  void ConvertScanToCloud(const string& fixed_frame_id, const sensor_msgs::PointCloud& scan_in, sensor_msgs::PointCloud& cloud_out)
   {
     tf_->transformPointCloud(fixed_frame_id, scan_in, cloud_out) ;
     return ;
@@ -137,7 +137,7 @@ public:
       // Allocate space for the cloud
       unsigned int nC=scan_hist_[start_index].chan.size();
 
-      PointCloud& map=resp.cloud;
+      sensor_msgs::PointCloud& map=resp.cloud;
 
       map.header.frame_id = fixed_frame_ ;
       map.header.stamp = req.end ;

@@ -51,7 +51,7 @@
 
 //Kinematics
 #include <trajectory/trajectory.h>
-#include <robot_msgs/ControllerState.h>
+#include <pr2_mechanism_controllers/ControllerState.h>
 
 #include <realtime_tools/realtime_publisher.h>
 #include <realtime_tools/realtime_tools.h>
@@ -106,10 +106,10 @@ namespace controller
     bool init(mechanism::RobotState *robot, const ros::NodeHandle& n);
 
     /*!
-     * @brief Issues commands to the joints and is called at regular intervals in realtime. This function is required 
+     * @brief Issues commands to the joints and is called at regular intervals in realtime. This function is required
      * to be realtime safe.
      */
-    virtual void update(void); 
+    virtual void update(void);
 
     virtual bool starting(void);
 
@@ -167,7 +167,7 @@ namespace controller
 
     std::vector<double> goal_reached_threshold_; /**< Threshold within which the joints must be before goal is declared to have been reached */
 
-    realtime_tools::RealtimePublisher <robot_msgs::ControllerState>* controller_state_publisher_ ;  /**< Publishes controller information */
+    realtime_tools::RealtimePublisher <pr2_mechanism_controllers::ControllerState>* controller_state_publisher_ ;  /**< Publishes controller information */
 
     double max_update_time_; /**< maximum time (over the complete history of the run) taken for the update loop of this controller*/
 
@@ -175,7 +175,7 @@ namespace controller
 
     double max_allowed_update_time_; /**< Safety behavior: Max allowed time between commands */
 
-    bool watch_dog_active_; 
+    bool watch_dog_active_;
 
     realtime_tools::RealtimePublisher <diagnostic_msgs::DiagnosticMessage>* diagnostics_publisher_ ;  /**< Publishes controller information as a diagnostic message */
 
@@ -206,27 +206,27 @@ namespace controller
     std::vector<int> joint_trajectory_id_; /**< Vector of ids for trajectory requests */
 
     /**
-     * @brief Get the parameters from the ROS parameter server 
+     * @brief Get the parameters from the ROS parameter server
      */
-    void getParams(); 
+    void getParams();
 
     /**
-     * @brief Initialize publishers (diagnostic, state) 
+     * @brief Initialize publishers (diagnostic, state)
      */
     void initializePublishers();
 
     /**
-     * @brief Stop publishers (diagnostic, state) 
+     * @brief Stop publishers (diagnostic, state)
      */
     void stopPublishers();
 
     /**
-     * @brief Advertise all services 
+     * @brief Advertise all services
      */
     void advertiseServices();
 
     /**
-     * @brief Unadvertise all services 
+     * @brief Unadvertise all services
      */
     void unadvertiseServices();
 
@@ -241,14 +241,14 @@ namespace controller
     void unsubscribeTopics();
 
     /**
-     * @brief Load parameters from an XML file 
+     * @brief Load parameters from an XML file
      * @param robot pointer to a robot object passed in by all controllers.
      * @config TiXml configuration element
      */
     bool loadXmlFile(mechanism::RobotState * robot, TiXmlElement * config);
 
     /**
-     * @brief Initialize the trajectory from a tiny XML element 
+     * @brief Initialize the trajectory from a tiny XML element
      */
     void initTrajectory(TiXmlElement * config);
 
@@ -267,19 +267,19 @@ namespace controller
 
     /**
      * @brief Set the commanded trajectory for the controller
-     * @param joint_trajectory A vector of trajectory points that this controller must follow 
+     * @param joint_trajectory A vector of trajectory points that this controller must follow
      */
     bool setTrajectoryCmd(const std::vector<trajectory::Trajectory::TPoint>& joint_trajectory);
 
     /**
-     * @brief Determine if the joint position errors are within the threshold specified by goal_reached_threshold. 
-     * These thresholds are set using the ROS param server e.g. <param name="r_shoulder_pan_joint/goal_reached_threshold" type="double" value="0.1"/> 
+     * @brief Determine if the joint position errors are within the threshold specified by goal_reached_threshold.
+     * These thresholds are set using the ROS param server e.g. <param name="r_shoulder_pan_joint/goal_reached_threshold" type="double" value="0.1"/>
      * @return true if absolute position errors are less than threshold values, false otherwise
      */
     bool errorsWithinThreshold();
 
     /**
-     * @brief Determine if the joints are at rest. 
+     * @brief Determine if the joints are at rest.
      * @return true if absolute velocities are less than zero
      */
     bool atRest();
@@ -291,19 +291,19 @@ namespace controller
 
     /**
      * @brief Check watchdog. If there has been no trajectory request externally for a while or if the position errors are too great, this will set the current position to the desired position, thus effectively stopping the robot.
-     * The parameters that affect this function are 
+     * The parameters that affect this function are
      * (a) max_allowed_update_time_ which can be set using a ROS param call, e.g. <param name="max_allowed_update_time" type="double" value="0.1"/>
      * (b) max_allowable_joint_errors_ which can be set individually for each joint using a ROS param call, e.g. <param name="r_shoulder_pan_joint/joint_error_threshold" type="double" value="0.1"/>
      */
     bool checkWatchDog(double current_time);
 
     /**
-     * @brief Stop the motion of all joints. In addition to setting all desired joint positions to the current position, it also sets velocities for the base to zero 
+     * @brief Stop the motion of all joints. In addition to setting all desired joint positions to the current position, it also sets velocities for the base to zero
      */
     void stopMotion();
 
     /**
-     * @brief Reset all the trajectory times on completion of an old trajectory or receipt of a new one that preempts the previous one 
+     * @brief Reset all the trajectory times on completion of an old trajectory or receipt of a new one that preempts the previous one
      */
     void resetTrajectoryTimes();
 
@@ -318,22 +318,22 @@ namespace controller
     bool trajectoryDone();
 
 
-    /**   
-     * @brief Check if the goal position has been reached 
+    /**
+     * @brief Check if the goal position has been reached
      */
     bool reachedGoalPosition(std::vector<double> joint_cmd);
 
-    /**   
+    /**
      * @brief Call update() on each joint controller. (This actually sends out the commands into hardware)
      */
     void updateJointControllers(void);
 
-    /**   
+    /**
      * @brief Update all joint values by reading from the robot structure
      */
     void updateJointValues();
 
-    /**   
+    /**
      * @brief Update the trajectory queue by removing trajectories that are done, set the current trajectory to be executed to the next trajectory on the queue.
      * If no new trajectory is available, set the desired joint positions to the current joint positions
      * @param id  The id of the last trajectory
@@ -341,25 +341,25 @@ namespace controller
      */
     void updateTrajectoryQueue(int id, int finish_status);
 
-    /**   
+    /**
      * @brief Get the next trajectory from the queue
      & @param index The index of the requested trajectory
      */
     bool getTrajectoryFromQueue(int &index);
 
-    /**   
+    /**
      * @brief Convert a trajectory command (from the queue) and set the current desired trajectory to it
      * @param traj_msg Trajectory message received on a topic or a service
      * @param id The associated id for the trajectory command
      */
     void setTrajectoryCmdFromMsg(manipulation_msgs::JointTraj traj_msg, int id);
 
-    /**   
+    /**
      * @brief Callback when a trajectory message is received on a topic
      */
     void TrajectoryReceivedOnTopic();
 
-    /**   
+    /**
      * @brief Service provided to set trajectories
      * @param req The request containing the trajectory to be queued up
      * @param resp The response contains the id assigned to the trajectory
@@ -367,19 +367,19 @@ namespace controller
     bool setJointTrajSrv(pr2_mechanism_controllers::TrajectoryStart::Request &req,
                                                 pr2_mechanism_controllers::TrajectoryStart::Response &resp);
 
-    /**   
+    /**
      * @brief Service provided to set trajectories
      * @param req The request contains the id of the trajectory about which you need information (Use the rosmsg tool to see the fields required for the request. e.g. rosmsg show TrajectoryQuery)
-     * @param resp The response contains information about the trajectory in the following fields: 
-     *             (a) done: 1 if trajectory is done, 0 if ongoing, 2 if queued, 3 if deleted, 4 if failed, 5 if canceled 
+     * @param resp The response contains information about the trajectory in the following fields:
+     *             (a) done: 1 if trajectory is done, 0 if ongoing, 2 if queued, 3 if deleted, 4 if failed, 5 if canceled
      *             (b) trajectorytime: If active, the current timestamp the trajectory is at, if done the total time taken for the trajectory, if queued 0
      *             (c) jointnames: the names of the joints controlled by this controller
-     *             (d) jointpositions: the current joint positions 
+     *             (d) jointpositions: the current joint positions
      */
     bool queryJointTrajSrv(pr2_mechanism_controllers::TrajectoryQuery::Request &req,
                                                   pr2_mechanism_controllers::TrajectoryQuery::Response &resp);
 
-    /**   
+    /**
      * @brief Service provided to cancel trajectories
      * @param req The request contains the id of the trajectory which needs to be canceled (Use the rosmsg tool to see the fields required for the request. e.g. rosmsg show TrajectoryCancel)
      */
@@ -387,68 +387,68 @@ namespace controller
                                                    pr2_mechanism_controllers::TrajectoryCancel::Response &resp);
 
 
-    /**   
+    /**
      * @brief Create a vector of trajectory point(TPoint) objects from a trajectory message
      * @param new_traj The trajectory message that needs to be converted
      * @param tp The resultant vector of TPoints
      */
     bool createTrajectoryPointsVectorFromMsg(const manipulation_msgs::JointTraj &new_traj, std::vector<trajectory::Trajectory::TPoint> &tp);
 
-    /**   
+    /**
      * @brief Create a trajectory object from a trajectory message
      * @param new_traj The trajectory message that needs to be converted
      * @param return_trajectory The resultant trajectory object
      */
     bool createTrajectoryFromMsg(const manipulation_msgs::JointTraj &new_traj,trajectory::Trajectory &return_trajectory);
 
-    /**   
+    /**
      * @brief Add a new trajectory request to the queue of trajectories that need to be sent out
      * @param new_traj The trajectory message that needs to be queued
      * @param id The id of the trajectory to be queued
      */
     void addTrajectoryToQueue(manipulation_msgs::JointTraj new_traj, int id);
 
-    /**   
+    /**
      * @brief Preempt the current trajectory queue
      * @param new_traj The trajectory message that needs to executed
      * @param id The id of the trajectory
      */
     void preemptTrajectoryQueue(manipulation_msgs::JointTraj new_traj, int id);
 
-    /**   
+    /**
      * @brief Delete a trajectory from the queue of trajectories
      * @param new_traj The trajectory message that needs to be deleted
      */
     void deleteTrajectoryFromQueue(int id);
 
-    /**   
+    /**
      * @brief Publish diagnostic information
      */
     void publishDiagnostics();
 
-    /**   
+    /**
      * @brief Initialized to 1 (0 represents a trajectory that keeps the robot at its current position)
      */
     int request_trajectory_id_;
 
-    /**   
+    /**
      * @brief Initialized to 0 and then set to the requested trajectory id. Reverts to 0 when no trajectories are available on the queue
      */
     int current_trajectory_id_;
 
-    /**   
+    /**
      * @brief A map from trajectory ids to trajectory status
      */
 //    std::map<int,int> joint_trajectory_status_;
     std::vector<int> joint_trajectory_status_;
 
-    /**   
+    /**
      * @brief A map from trajectory ids to trajectory times
      */
     std::vector<double> joint_trajectory_time_;
 //    std::map<int,double>joint_trajectory_time_;
 
-    /**   
+    /**
      * @brief Enumeration of trajectory status
      */
     enum JointTrajectoryStatus{
@@ -462,8 +462,8 @@ namespace controller
       NUM_STATUS
     };
 
-    /**   
-     * @brief The maximum amount of time that the controller waits after the expected completion time for a trajectory before declaring that a trajectory has failed 
+    /**
+     * @brief The maximum amount of time that the controller waits after the expected completion time for a trajectory before declaring that a trajectory has failed
      */
     double trajectory_wait_timeout_;
 

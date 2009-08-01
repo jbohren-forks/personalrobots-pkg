@@ -84,7 +84,7 @@ void RosP3D::LoadChild(XMLConfigNode *node)
 
   ROS_DEBUG("==== topic name for RosP3D ======== %s", this->topicName.c_str());
   if (this->topicName != "")
-    this->pub_ = this->rosnode_->advertise<robot_msgs::PoseWithRatesStamped>(this->topicName,10);
+    this->pub_ = this->rosnode_->advertise<geometry_msgs::PoseWithRatesStamped>(this->topicName,10);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -149,30 +149,30 @@ void RosP3D::UpdateChild()
 
     // pose is given in inertial frame for Gazebo, transform to the designated frame name
 
-    this->poseMsg.pos.position.x    = pos.x;
-    this->poseMsg.pos.position.y    = pos.y;
-    this->poseMsg.pos.position.z    = pos.z;
+    this->poseMsg.pose_with_rates.pose.position.x    = pos.x;
+    this->poseMsg.pose_with_rates.pose.position.y    = pos.y;
+    this->poseMsg.pose_with_rates.pose.position.z    = pos.z;
 
-    this->poseMsg.pos.orientation.x = rot.x;
-    this->poseMsg.pos.orientation.y = rot.y;
-    this->poseMsg.pos.orientation.z = rot.z;
-    this->poseMsg.pos.orientation.w = rot.u;
+    this->poseMsg.pose_with_rates.pose.orientation.x = rot.x;
+    this->poseMsg.pose_with_rates.pose.orientation.y = rot.y;
+    this->poseMsg.pose_with_rates.pose.orientation.z = rot.z;
+    this->poseMsg.pose_with_rates.pose.orientation.w = rot.u;
 
-    this->poseMsg.vel.vel.vx        = vpos.x + this->GaussianKernel(0,this->gaussianNoise) ;
-    this->poseMsg.vel.vel.vy        = vpos.y + this->GaussianKernel(0,this->gaussianNoise) ;
-    this->poseMsg.vel.vel.vz        = vpos.z + this->GaussianKernel(0,this->gaussianNoise) ;
+    this->poseMsg.pose_with_rates.velocity.linear.x        = vpos.x + this->GaussianKernel(0,this->gaussianNoise) ;
+    this->poseMsg.pose_with_rates.velocity.linear.y        = vpos.y + this->GaussianKernel(0,this->gaussianNoise) ;
+    this->poseMsg.pose_with_rates.velocity.linear.z        = vpos.z + this->GaussianKernel(0,this->gaussianNoise) ;
     // pass euler anglular rates
-    this->poseMsg.vel.ang_vel.vx    = veul.x + this->GaussianKernel(0,this->gaussianNoise) ;
-    this->poseMsg.vel.ang_vel.vy    = veul.y + this->GaussianKernel(0,this->gaussianNoise) ;
-    this->poseMsg.vel.ang_vel.vz    = veul.z + this->GaussianKernel(0,this->gaussianNoise) ;
+    this->poseMsg.pose_with_rates.velocity.angular.x    = veul.x + this->GaussianKernel(0,this->gaussianNoise) ;
+    this->poseMsg.pose_with_rates.velocity.angular.y    = veul.y + this->GaussianKernel(0,this->gaussianNoise) ;
+    this->poseMsg.pose_with_rates.velocity.angular.z    = veul.z + this->GaussianKernel(0,this->gaussianNoise) ;
 
-    this->poseMsg.acc.acc.ax        = this->apos.x + this->GaussianKernel(0,this->gaussianNoise) ;
-    this->poseMsg.acc.acc.ay        = this->apos.y + this->GaussianKernel(0,this->gaussianNoise) ;
-    this->poseMsg.acc.acc.az        = this->apos.z + this->GaussianKernel(0,this->gaussianNoise) ;
+    this->poseMsg.pose_with_rates.acceleration.linear.x        = this->apos.x + this->GaussianKernel(0,this->gaussianNoise) ;
+    this->poseMsg.pose_with_rates.acceleration.linear.y        = this->apos.y + this->GaussianKernel(0,this->gaussianNoise) ;
+    this->poseMsg.pose_with_rates.acceleration.linear.z        = this->apos.z + this->GaussianKernel(0,this->gaussianNoise) ;
     // pass euler anglular rates
-    this->poseMsg.acc.ang_acc.ax    = this->aeul.x + this->GaussianKernel(0,this->gaussianNoise) ;
-    this->poseMsg.acc.ang_acc.ay    = this->aeul.y + this->GaussianKernel(0,this->gaussianNoise) ;
-    this->poseMsg.acc.ang_acc.az    = this->aeul.z + this->GaussianKernel(0,this->gaussianNoise) ;
+    this->poseMsg.pose_with_rates.acceleration.angular.x    = this->aeul.x + this->GaussianKernel(0,this->gaussianNoise) ;
+    this->poseMsg.pose_with_rates.acceleration.angular.y    = this->aeul.y + this->GaussianKernel(0,this->gaussianNoise) ;
+    this->poseMsg.pose_with_rates.acceleration.angular.z    = this->aeul.z + this->GaussianKernel(0,this->gaussianNoise) ;
 
     // publish to ros
     this->pub_.publish(this->poseMsg);

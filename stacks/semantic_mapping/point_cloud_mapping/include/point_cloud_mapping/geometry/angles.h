@@ -34,10 +34,10 @@
 #define _CLOUD_GEOMETRY_ANGLES_H_
 
 // ROS includes
-#include <robot_msgs/Point.h>
-#include <robot_msgs/Point32.h>
-#include <robot_msgs/PointStamped.h>
-#include <robot_msgs/PointCloud.h>
+#include <geometry_msgs/Point.h>
+#include <geometry_msgs/Point32.h>
+#include <geometry_msgs/PointStamped.h>
+#include <sensor_msgs/PointCloud.h>
 #include <robot_msgs/Polygon3D.h>
 #include <visualization_msgs/Polyline.h>
 
@@ -68,7 +68,7 @@ namespace cloud_geometry
       * \param plane_b the normalized coefficients of the second plane
       */
     inline double
-      getAngleBetweenPlanes (const robot_msgs::Point32 &plane_a, const robot_msgs::Point32 &plane_b)
+      getAngleBetweenPlanes (const geometry_msgs::Point32 &plane_a, const geometry_msgs::Point32 &plane_b)
     {
       return (acos (plane_a.x * plane_b.x + plane_a.y * plane_b.y + plane_a.z * plane_b.z));
     }
@@ -79,7 +79,7 @@ namespace cloud_geometry
       * \param plane_b the normalized coefficients of the second plane
       */
     inline double
-      getAngleBetweenPlanes (const robot_msgs::Point32 &plane_a, const std::vector<double> &plane_b)
+      getAngleBetweenPlanes (const geometry_msgs::Point32 &plane_a, const std::vector<double> &plane_b)
     {
       return (acos (plane_a.x * plane_b[0] + plane_a.y * plane_b[1] + plane_a.z * plane_b[2]));
     }
@@ -90,7 +90,7 @@ namespace cloud_geometry
       * \param plane_b the normalized coefficients of the second plane
       */
     inline double
-      getAngleBetweenPlanes (const std::vector<double> &plane_a, const robot_msgs::Point32 &plane_b)
+      getAngleBetweenPlanes (const std::vector<double> &plane_a, const geometry_msgs::Point32 &plane_b)
     {
       return (acos (plane_a[0] * plane_b.x + plane_a[1] * plane_b.y + plane_a[2] * plane_b.z));
     }
@@ -146,7 +146,7 @@ namespace cloud_geometry
       * \param v2 the second 3D vector
       */
     inline double
-      getAngle3D (const robot_msgs::Point32 &v1, const robot_msgs::Point32 &v2)
+      getAngle3D (const geometry_msgs::Point32 &v1, const geometry_msgs::Point32 &v2)
     {
       // Compute the vectors norms
       double norm_v1 = (v1.x * v1.x) + (v1.y * v1.y) + (v1.z * v1.z);
@@ -167,7 +167,7 @@ namespace cloud_geometry
       * \param v2 the second 3D vector
       */
     inline double
-      getAngle3D (const robot_msgs::Point &v1, const robot_msgs::Point &v2)
+      getAngle3D (const geometry_msgs::Point &v1, const geometry_msgs::Point &v2)
     {
       // Compute the vectors norms
       double norm_v1 = (v1.x * v1.x) + (v1.y * v1.y) + (v1.z * v1.z);
@@ -188,7 +188,7 @@ namespace cloud_geometry
       * \param v2 the second 3D vector
       */
     inline double
-      getAngle3D (const robot_msgs::Point32 &v1, const robot_msgs::Point &v2)
+      getAngle3D (const geometry_msgs::Point32 &v1, const geometry_msgs::Point &v2)
     {
       // Compute the vectors norms
       double norm_v1 = (v1.x * v1.x) + (v1.y * v1.y) + (v1.z * v1.z);
@@ -209,7 +209,7 @@ namespace cloud_geometry
       * \param v2 the second 3D vector
       */
     inline double
-      getAngle3D (const robot_msgs::Point &v1, const robot_msgs::Point32 &v2)
+      getAngle3D (const geometry_msgs::Point &v1, const geometry_msgs::Point32 &v2)
     {
       // Compute the vectors norms
       double norm_v1 = (v1.x * v1.x) + (v1.y * v1.y) + (v1.z * v1.z);
@@ -232,7 +232,7 @@ namespace cloud_geometry
       * \param viewpoint the viewpoint
       */
     inline void
-      flipNormalTowardsViewpoint (Eigen::Vector4d &normal, const robot_msgs::Point32 &point, const robot_msgs::PointStamped &viewpoint)
+      flipNormalTowardsViewpoint (Eigen::Vector4d &normal, const geometry_msgs::Point32 &point, const geometry_msgs::PointStamped &viewpoint)
     {
       // See if we need to flip any plane normals
       float vp_m[3];
@@ -260,7 +260,7 @@ namespace cloud_geometry
       * \param viewpoint the viewpoint
       */
     inline void
-      flipNormalTowardsViewpoint (Eigen::Vector4d &normal, const robot_msgs::Point32 &point, const robot_msgs::Point &viewpoint)
+      flipNormalTowardsViewpoint (Eigen::Vector4d &normal, const geometry_msgs::Point32 &point, const geometry_msgs::Point &viewpoint)
     {
       // See if we need to flip any plane normals
       float vp_m[3];
@@ -288,7 +288,7 @@ namespace cloud_geometry
       * \param viewpoint the viewpoint
       */
     inline void
-      flipNormalTowardsViewpoint (Eigen::Vector4d &normal, const robot_msgs::Point32 &point, const robot_msgs::Point32 &viewpoint)
+      flipNormalTowardsViewpoint (Eigen::Vector4d &normal, const geometry_msgs::Point32 &point, const geometry_msgs::Point32 &viewpoint)
     {
       // See if we need to flip any plane normals
       float vp_m[3];
@@ -316,7 +316,7 @@ namespace cloud_geometry
       * \param viewpoint the viewpoint
       */
     inline void
-      flipNormalTowardsViewpoint (std::vector<double> &normal, const robot_msgs::Point32 &point, const robot_msgs::PointStamped &viewpoint)
+      flipNormalTowardsViewpoint (std::vector<double> &normal, const geometry_msgs::Point32 &point, const geometry_msgs::PointStamped &viewpoint)
     {
       // See if we need to flip any plane normals
       float vp_m[3];
@@ -344,7 +344,7 @@ namespace cloud_geometry
       * \param viewpoint the viewpoint
       */
     inline void
-      flipNormalTowardsViewpoint (std::vector<double> &normal, const robot_msgs::Point32 &point, const robot_msgs::Point32 &viewpoint)
+      flipNormalTowardsViewpoint (std::vector<double> &normal, const geometry_msgs::Point32 &point, const geometry_msgs::Point32 &viewpoint)
     {
       // See if we need to flip any plane normals
       float vp_m[3];

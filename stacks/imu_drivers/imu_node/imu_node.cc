@@ -98,7 +98,7 @@ Reads the following parameters from the parameter server
 #include "diagnostic_updater/diagnostic_updater.h"
 #include "diagnostic_updater/update_functions.h"
 
-#include "robot_msgs/PoseWithRatesStamped.h"
+#include "geometry_msgs/PoseWithRatesStamped.h"
 #include "std_srvs/Empty.h"
 #include "imu_node/GetBoolStatus.h"
 
@@ -113,7 +113,7 @@ class ImuNode
 {
 public:
   ms_3dmgx2_driver::IMU imu;
-  robot_msgs::PoseWithRatesStamped reading;
+  geometry_msgs::PoseWithRatesStamped reading;
 
   string port;
 
@@ -154,7 +154,7 @@ public:
   desired_freq_(100), 
   freq_diag_(diagnostic_updater::FrequencyStatusParam(&desired_freq_, &desired_freq_, 0.05))
   {
-    imu_data_pub_ = node_handle_.advertise<robot_msgs::PoseWithRatesStamped>("imu_data", 100);
+    imu_data_pub_ = node_handle_.advertise<geometry_msgs::PoseWithRatesStamped>("imu_data", 100);
 
     add_offset_serv_ = node_handle_.advertiseService("imu/add_offset", &ImuNode::addOffset, this);
     calibrate_serv_ = node_handle_.advertiseService("imu/calibrate", &ImuNode::calibrate, this);
@@ -284,20 +284,20 @@ public:
         ROS_WARN("Gathering data took %f ms. Nominal is 10ms.", 1000 * (endtime - starttime));
       prevtime = starttime;
 
-      reading.acc.acc.ax = accel[0];
-      reading.acc.acc.ay = accel[1];
-      reading.acc.acc.az = accel[2];
+      reading.pose_with_rates.acceleration.linear.x = accel[0];
+      reading.pose_with_rates.acceleration.linear.y = accel[1];
+      reading.pose_with_rates.acceleration.linear.z = accel[2];
  
-      reading.vel.ang_vel.vx = angrate[0];
-      reading.vel.ang_vel.vy = angrate[1];
-      reading.vel.ang_vel.vz = angrate[2];
+      reading.pose_with_rates.velocity.angular.x = angrate[0];
+      reading.pose_with_rates.velocity.angular.y = angrate[1];
+      reading.pose_with_rates.velocity.angular.z = angrate[2];
       
       btTransform pose(btMatrix3x3(orientation[0], orientation[1], orientation[2],
                                    orientation[3], orientation[4], orientation[5],
                                    orientation[6], orientation[7], orientation[8]), 
                        btVector3(0,0,0));
 
-      tf::poseTFToMsg(pose, reading.pos);
+      tf::poseTFToMsg(pose, reading.pose_with_rates.pose);
       
       
       reading.header.stamp = ros::Time::now().fromNSec(time);

@@ -42,7 +42,6 @@ using namespace BFL;
 using namespace tf;
 using namespace std;
 using namespace ros;
-using namespace robot_msgs;
 
 
 
@@ -126,7 +125,7 @@ namespace estimation
 
 
   // get evenly spaced particle cloud
-  void TrackerParticle::getParticleCloud(const tf::Vector3& step, double threshold, robot_msgs::PointCloud& cloud) const
+  void TrackerParticle::getParticleCloud(const tf::Vector3& step, double threshold, sensor_msgs::PointCloud& cloud) const
   {
     ((MCPdfPosVel*)(filter_->PostGet()))->getParticleCloud(step, threshold, cloud);
   };

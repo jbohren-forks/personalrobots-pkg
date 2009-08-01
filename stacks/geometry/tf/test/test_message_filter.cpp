@@ -32,7 +32,7 @@
 #include <tf/message_filter.h>
 #include <tf/transform_listener.h>
 #include <tf/transform_broadcaster.h>
-#include <robot_msgs/PointStamped.h>
+#include <geometry_msgs/PointStamped.h>
 #include <boost/bind.hpp>
 #include <boost/scoped_ptr.hpp>
 
@@ -53,7 +53,7 @@ public:
 	{
 	}
 
-	void notify(const robot_msgs::PointStamped::ConstPtr& message)
+	void notify(const geometry_msgs::PointStamped::ConstPtr& message)
 	{
 		++count_;
 	}
@@ -67,10 +67,10 @@ TEST(MessageFilter, noTransforms)
 {
   tf::TransformListener tf_client;
 	Notification n(1);
-	MessageFilter<robot_msgs::PointStamped> filter(tf_client, "frame1", 1);
+	MessageFilter<geometry_msgs::PointStamped> filter(tf_client, "frame1", 1);
 	filter.registerCallback(boost::bind(&Notification::notify, &n, _1));
 
-	robot_msgs::PointStampedPtr msg(new robot_msgs::PointStamped);
+	geometry_msgs::PointStampedPtr msg(new geometry_msgs::PointStamped);
 	msg->header.stamp = ros::Time::now();
 	msg->header.frame_id = "frame2";
 	filter.add(msg);
@@ -82,10 +82,10 @@ TEST(MessageFilter, noTransformsSameFrame)
 {
   tf::TransformListener tf_client;
   Notification n(1);
-  MessageFilter<robot_msgs::PointStamped> filter(tf_client, "frame1", 1);
+  MessageFilter<geometry_msgs::PointStamped> filter(tf_client, "frame1", 1);
   filter.registerCallback(boost::bind(&Notification::notify, &n, _1));
 
-  robot_msgs::PointStampedPtr msg(new robot_msgs::PointStamped);
+  geometry_msgs::PointStampedPtr msg(new geometry_msgs::PointStamped);
   msg->header.stamp = ros::Time::now();
   msg->header.frame_id = "frame1";
   filter.add(msg);
@@ -97,14 +97,14 @@ TEST(MessageFilter, preexistingTransforms)
 {
   tf::TransformListener tf_client;
   Notification n(1);
-  MessageFilter<robot_msgs::PointStamped> filter(tf_client, "frame1", 1);
+  MessageFilter<geometry_msgs::PointStamped> filter(tf_client, "frame1", 1);
   filter.registerCallback(boost::bind(&Notification::notify, &n, _1));
 
 	ros::Time stamp = ros::Time::now();
 	tf::Stamped<tf::Transform> transform(btTransform(btQuaternion(0,0,0), btVector3(1,2,3)), stamp, "frame1", "frame2");
 	tf_client.setTransform(transform);
 
-	robot_msgs::PointStampedPtr msg(new robot_msgs::PointStamped);
+	geometry_msgs::PointStampedPtr msg(new geometry_msgs::PointStamped);
 	msg->header.stamp = stamp;
 	msg->header.frame_id = "frame2";
 
@@ -117,12 +117,12 @@ TEST(MessageFilter, postTransforms)
 {
   tf::TransformListener tf_client;
   Notification n(1);
-  MessageFilter<robot_msgs::PointStamped> filter(tf_client, "frame1", 1);
+  MessageFilter<geometry_msgs::PointStamped> filter(tf_client, "frame1", 1);
   filter.registerCallback(boost::bind(&Notification::notify, &n, _1));
 
 	ros::Time stamp = ros::Time::now();
 
-	robot_msgs::PointStampedPtr msg(new robot_msgs::PointStamped);
+	geometry_msgs::PointStampedPtr msg(new geometry_msgs::PointStamped);
   msg->header.stamp = stamp;
   msg->header.frame_id = "frame2";
 
@@ -140,14 +140,14 @@ TEST(MessageFilter, queueSize)
 {
   tf::TransformListener tf_client;
   Notification n(10);
-  MessageFilter<robot_msgs::PointStamped> filter(tf_client, "frame1", 10);
+  MessageFilter<geometry_msgs::PointStamped> filter(tf_client, "frame1", 10);
   filter.registerCallback(boost::bind(&Notification::notify, &n, _1));
 
 	ros::Time stamp = ros::Time::now();
 
 	for (int i = 0; i < 20; ++i)
 	{
-	  robot_msgs::PointStampedPtr msg(new robot_msgs::PointStamped);
+	  geometry_msgs::PointStampedPtr msg(new geometry_msgs::PointStamped);
     msg->header.stamp = stamp;
     msg->header.frame_id = "frame2";
 
@@ -166,7 +166,7 @@ TEST(MessageFilter, setTargetFrame)
 {
   tf::TransformListener tf_client;
   Notification n(1);
-  MessageFilter<robot_msgs::PointStamped> filter(tf_client, "frame1", 1);
+  MessageFilter<geometry_msgs::PointStamped> filter(tf_client, "frame1", 1);
   filter.registerCallback(boost::bind(&Notification::notify, &n, _1));
 	filter.setTargetFrame("frame1000");
 
@@ -174,7 +174,7 @@ TEST(MessageFilter, setTargetFrame)
   tf::Stamped<tf::Transform> transform(btTransform(btQuaternion(0,0,0), btVector3(1,2,3)), stamp, "frame1000", "frame2");
   tf_client.setTransform(transform);
 
-  robot_msgs::PointStampedPtr msg(new robot_msgs::PointStamped);
+  geometry_msgs::PointStampedPtr msg(new geometry_msgs::PointStamped);
   msg->header.stamp = stamp;
   msg->header.frame_id = "frame2";
 
@@ -188,7 +188,7 @@ TEST(MessageFilter, multipleTargetFrames)
 {
   tf::TransformListener tf_client;
   Notification n(1);
-  MessageFilter<robot_msgs::PointStamped> filter(tf_client, "", 1);
+  MessageFilter<geometry_msgs::PointStamped> filter(tf_client, "", 1);
   filter.registerCallback(boost::bind(&Notification::notify, &n, _1));
 
   std::vector<std::string> target_frames;
@@ -200,7 +200,7 @@ TEST(MessageFilter, multipleTargetFrames)
   tf::Stamped<tf::Transform> transform(btTransform(btQuaternion(0,0,0), btVector3(1,2,3)), stamp, "frame1", "frame3");
   tf_client.setTransform(transform);
 
-  robot_msgs::PointStampedPtr msg(new robot_msgs::PointStamped);
+  geometry_msgs::PointStampedPtr msg(new geometry_msgs::PointStamped);
   msg->header.stamp = stamp;
   msg->header.frame_id = "frame3";
   filter.add(msg);
@@ -220,7 +220,7 @@ TEST(MessageFilter, tolerance)
   ros::Duration offset(0.2);
   tf::TransformListener tf_client;
   Notification n(1);
-  MessageFilter<robot_msgs::PointStamped> filter(tf_client, "frame1", 1);
+  MessageFilter<geometry_msgs::PointStamped> filter(tf_client, "frame1", 1);
   filter.registerCallback(boost::bind(&Notification::notify, &n, _1));
   filter.setTolerance(offset);
 
@@ -228,7 +228,7 @@ TEST(MessageFilter, tolerance)
   tf::Stamped<tf::Transform> transform(btTransform(btQuaternion(0,0,0), btVector3(1,2,3)), stamp, "frame1", "frame2");
   tf_client.setTransform(transform);
 
-  robot_msgs::PointStampedPtr msg(new robot_msgs::PointStamped);
+  geometry_msgs::PointStampedPtr msg(new geometry_msgs::PointStamped);
   msg->header.stamp = stamp;
   msg->header.frame_id = "frame2";
   filter.add(msg);
@@ -252,7 +252,7 @@ TEST(MessageFilter, maxRate)
 {
   tf::TransformListener tf_client;
   Notification n(1);
-  MessageFilter<robot_msgs::PointStamped> filter(tf_client, "frame1", 1, ros::NodeHandle(), ros::Duration(1.0), ros::Duration());
+  MessageFilter<geometry_msgs::PointStamped> filter(tf_client, "frame1", 1, ros::NodeHandle(), ros::Duration(1.0), ros::Duration());
   filter.registerCallback(boost::bind(&Notification::notify, &n, _1));
 
   ros::Time stamp = ros::Time::now();
@@ -260,7 +260,7 @@ TEST(MessageFilter, maxRate)
   tf_client.setTransform(transform);
 
   stamp += ros::Duration(0.1);
-  robot_msgs::PointStampedPtr msg(new robot_msgs::PointStamped);
+  geometry_msgs::PointStampedPtr msg(new geometry_msgs::PointStamped);
   msg->header.stamp = stamp;
   msg->header.frame_id = "frame2";
   filter.add(msg);

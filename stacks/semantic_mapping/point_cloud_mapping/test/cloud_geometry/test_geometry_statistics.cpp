@@ -31,7 +31,7 @@
 /** \author Radu Bogdan Rusu */
 
 #include <gtest/gtest.h>
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 
 #include <point_cloud_mapping/geometry/statistics.h>
 
@@ -39,7 +39,7 @@ using namespace cloud_geometry::statistics;
 
 TEST (Geom, Statistics)
 {
-  robot_msgs::PointCloud points;
+  sensor_msgs::PointCloud points;
   points.pts.resize (18);
 
   points.pts[0].x = 3.587751;  points.pts[0].y = -4.190982;  points.pts[0].z = 0;

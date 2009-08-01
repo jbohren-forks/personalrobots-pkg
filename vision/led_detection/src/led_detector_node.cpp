@@ -36,8 +36,8 @@
 
 #include "led_detection/led_detector_node.h"
 
-#include "robot_msgs/PoseStamped.h"
-#include "robot_msgs/PointStamped.h"
+#include "geometry_msgs/PoseStamped.h"
+#include "geometry_msgs/PointStamped.h"
 #include "kinematic_calibration/ImagePointStamped.h"
 
 using namespace led_detection ;
@@ -86,7 +86,7 @@ void LedDetectionNode::msgCallback(ros::Time t)
 {
   printf("%f - In callback\n", t.toSec()) ;
   // Define the LED somewhere in the world
-  robot_msgs::PoseStamped led_world ;
+  geometry_msgs::PoseStamped led_world ;
   led_world.header.frame_id    = led_frame_ ;
   led_world.header.stamp       = t ;
   led_world.pose.position.x    = 0.0 ;
@@ -101,7 +101,7 @@ void LedDetectionNode::msgCallback(ros::Time t)
   bool found ;
   if (use_led_pose_)
   {
-    robot_msgs::PoseStamped led_cam ;
+    geometry_msgs::PoseStamped led_cam ;
     try
     {
       std::string target_frame = cam_info_msg_.header.frame_id ;

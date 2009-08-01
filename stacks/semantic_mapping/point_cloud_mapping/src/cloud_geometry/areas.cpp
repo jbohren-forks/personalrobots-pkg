@@ -53,7 +53,7 @@ namespace cloud_geometry
       * \param normal the plane normal
       */
     double
-      compute2DPolygonalArea (const robot_msgs::PointCloud &points, const std::vector<double> &normal)
+      compute2DPolygonalArea (const sensor_msgs::PointCloud &points, const std::vector<double> &normal)
     {
       int k0, k1, k2;
 
@@ -177,10 +177,10 @@ namespace cloud_geometry
       * \param hull the resultant convex hull model as a \a Polygon3D
       */
     void
-      convexHull2D (const robot_msgs::PointCloud &points, const std::vector<int> &indices, const std::vector<double> &coeff,
+      convexHull2D (const sensor_msgs::PointCloud &points, const std::vector<int> &indices, const std::vector<double> &coeff,
                     robot_msgs::Polygon3D &hull)
     {
-      // Copy the point data to a local Eigen::Matrix. This is slow and should be replaced by extending robot_msgs::Point32
+      // Copy the point data to a local Eigen::Matrix. This is slow and should be replaced by extending geometry_msgs::Point32
       // to allow []/() accessors.
       std::vector<Eigen::Vector3f> epoints (indices.size ());
       for (unsigned int cp = 0; cp < indices.size (); cp++)
@@ -208,7 +208,7 @@ namespace cloud_geometry
       centroid (1) /= epoints.size ();
 
       // Push projected centered 2d points
-      std::vector<robot_msgs::Point32> epoints_demean (epoints.size ());
+      std::vector<geometry_msgs::Point32> epoints_demean (epoints.size ());
       for (unsigned int cp = 0; cp < indices.size (); cp++)
       {
         epoints_demean[cp].x = epoints[cp](k1) - centroid (0);
@@ -266,7 +266,7 @@ namespace cloud_geometry
       * \param hull the resultant 2D convex hull model as a \a Polyline
       */
     void
-      convexHull2D (const std::vector<robot_msgs::Point32> &points, visualization_msgs::Polyline &hull)
+      convexHull2D (const std::vector<geometry_msgs::Point32> &points, visualization_msgs::Polyline &hull)
     {
       int nr_points = points.size ();
       hull.points.resize (nr_points + 1);
@@ -403,7 +403,7 @@ namespace cloud_geometry
       * \param polygon a polygon
       */
     bool
-      isPointIn2DPolygon (const robot_msgs::Point32 &point, const robot_msgs::Polygon3D &polygon)
+      isPointIn2DPolygon (const geometry_msgs::Point32 &point, const robot_msgs::Polygon3D &polygon)
     {
       bool in_poly = false;
       double x1, x2, y1, y2;

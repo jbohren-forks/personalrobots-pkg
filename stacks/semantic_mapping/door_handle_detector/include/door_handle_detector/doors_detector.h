@@ -80,22 +80,22 @@ public:
 
 private:
   /** \brief This is the main door detection function */
-  bool detectDoors(const door_msgs::Door& door, robot_msgs::PointCloud pointcloud,
+  bool detectDoors(const door_msgs::Door& door, sensor_msgs::PointCloud pointcloud,
                    std::vector<door_msgs::Door>& result) const;
 
   /** \brief Main point cloud callback.*/
-  void cloud_cb (const tf::MessageNotifier<robot_msgs::PointCloud>::MessagePtr& cloud);
+  void cloud_cb (const tf::MessageNotifier<sensor_msgs::PointCloud>::MessagePtr& cloud);
 
-  double distToHinge(const door_msgs::Door& door, robot_msgs::Point32& pnt) const;
+  double distToHinge(const door_msgs::Door& door, geometry_msgs::Point32& pnt) const;
 
   mutable ros::Node* node_;
   mutable int global_marker_id_;
 
   // parameters for callback function
-  robot_msgs::PointCloud pointcloud_;
+  sensor_msgs::PointCloud pointcloud_;
   std::string input_cloud_topic_;
   unsigned int num_clouds_received_;
-  robot_msgs::Point32 z_axis_;
+  geometry_msgs::Point32 z_axis_;
   tf::TransformListener tf_;
 
   std::string parameter_frame_, fixed_frame_;

@@ -36,7 +36,6 @@
 #include "point_cloud_assembler/base_assembler_srv.h"
 
 
-using namespace robot_msgs;
 using namespace std ;
 
 namespace point_cloud_assembler
@@ -48,10 +47,10 @@ namespace point_cloud_assembler
  * params
  *  * (Several params are inherited from BaseAssemblerSrv)
  */
-class PointCloudAssemblerSrv : public BaseAssemblerSrv<robot_msgs::PointCloud>
+class PointCloudAssemblerSrv : public BaseAssemblerSrv<sensor_msgs::PointCloud>
 {
 public:
-  PointCloudAssemblerSrv() : BaseAssemblerSrv<robot_msgs::PointCloud>("point_cloud_assembler")
+  PointCloudAssemblerSrv() : BaseAssemblerSrv<sensor_msgs::PointCloud>("point_cloud_assembler")
   {
 
   }
@@ -61,12 +60,12 @@ public:
 
   }
 
-  unsigned int GetPointsInScan(const PointCloud& scan)
+  unsigned int GetPointsInScan(const sensor_msgs::PointCloud& scan)
   {
     return scan.get_pts_size() ;
   }
 
-  void ConvertToCloud(const string& fixed_frame_id, const PointCloud& scan_in, PointCloud& cloud_out)
+  void ConvertToCloud(const string& fixed_frame_id, const sensor_msgs::PointCloud& scan_in, sensor_msgs::PointCloud& cloud_out)
   {
     tf_->transformPointCloud(fixed_frame_id, scan_in, cloud_out) ;
     return ;

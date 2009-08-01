@@ -41,7 +41,7 @@
 #include "sensor_msgs/FillImage.h"
 #include "sensor_msgs/CameraInfo.h"
 #include "sensor_msgs/StereoInfo.h"
-#include "robot_msgs/PointCloud.h"
+#include "sensor_msgs/PointCloud.h"
 
 #include <diagnostic_updater/diagnostic_updater.h>
 #include <diagnostic_updater/update_functions.h>

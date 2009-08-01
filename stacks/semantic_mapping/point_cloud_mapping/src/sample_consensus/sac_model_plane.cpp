@@ -164,7 +164,7 @@ namespace sample_consensus
     */
   void
     SACModelPlane::projectPoints (const std::vector<int> &inliers, const std::vector<double> &model_coefficients,
-                                  robot_msgs::PointCloud &projected_points)
+                                  sensor_msgs::PointCloud &projected_points)
   {
     // Allocate enough space
     projected_points.pts.resize (inliers.size ());

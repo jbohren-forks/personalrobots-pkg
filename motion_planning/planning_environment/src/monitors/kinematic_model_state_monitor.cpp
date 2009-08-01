@@ -240,8 +240,8 @@ bool planning_environment::KinematicModelStateMonitor::attachObject(const mappin
 	    // create the new ones
 	    for (unsigned int i = 0 ; i < n ; ++i)
 	    {
-		robot_msgs::PoseStamped pose;
-		robot_msgs::PoseStamped poseP;
+		geometry_msgs::PoseStamped pose;
+		geometry_msgs::PoseStamped poseP;
 		pose.pose = attachedObject->poses[i];
 		pose.header = attachedObject->header;
 		bool err = false;

@@ -62,11 +62,11 @@ $ wavefront
 
 Subscribes to (name/type):
 - @b "tf_message" tf/tfMessage: robot's pose in the "map" frame
-- @b "goal" robot_msgs/PoseStamped : goal for the robot.
+- @b "goal" geometry_msgs/PoseStamped : goal for the robot.
 - @b "scan" sensor_msgs/LaserScan : laser scans.  Used to temporarily modify the map for dynamic obstacles.
 
 Publishes to (name / type):
-- @b "cmd_vel" robot_msgs/PoseDot : velocity commands to robot
+- @b "cmd_vel" geometry_msgs/PoseDot : velocity commands to robot
 - @b "state" nav_robot_actions/MoveBaseState : current planner state (e.g., goal reached, no path)
 - @b "gui_path" visualization_msgs/Polyline : current global path (for visualization)
 - @b "gui_laser" visualization_msgs/Polyline : re-projected laser scans (for visualization)
@@ -102,9 +102,9 @@ parameters.
 
 // The messages that we'll use
 #include <nav_robot_actions/MoveBaseState.h>
-#include <robot_msgs/PoseStamped.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <robot_msgs/PoseDot.h>
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 #include <sensor_msgs/LaserScan.h>
 #include <nav_msgs/GetMap.h>
 
@@ -194,7 +194,7 @@ class WavefrontNode: public ros::Node
     double tvmin, tvmax, avmin, avmax, amin, amax;
 
     // incoming/outgoing messages
-    robot_msgs::PoseStamped goalMsg;
+    geometry_msgs::PoseStamped goalMsg;
     //MsgRobotBase2DOdom odomMsg;
     visualization_msgs::Polyline polylineMsg;
     visualization_msgs::Polyline pointcloudMsg;
@@ -412,7 +412,7 @@ WavefrontNode::goalReceived()
     this->pstate.status.value = this->pstate.status.SUCCESS;
   }
 
-  robot_msgs::PoseStamped pose_msg;
+  geometry_msgs::PoseStamped pose_msg;
   tf::poseStampedTFToMsg(global_pose_, pose_msg);
 
   // Fill out and publish response
@@ -426,11 +426,11 @@ void
 WavefrontNode::laserReceived(const tf::MessageNotifier<sensor_msgs::LaserScan>::MessagePtr& message)
 {
 	// Assemble a point cloud, in the laser's frame
-	robot_msgs::PointCloud local_cloud;
+	sensor_msgs::PointCloud local_cloud;
 	projector_.projectLaser(*message, local_cloud, laser_maxrange);
 
 	// Convert to a point cloud in the map frame
-	robot_msgs::PointCloud global_cloud;
+	sensor_msgs::PointCloud global_cloud;
 
 	try
 	{
@@ -759,7 +759,7 @@ WavefrontNode::doOneCycle()
   else
     this->pstate.status.value = this->pstate.status.SUCCESS;
 
-  robot_msgs::PoseStamped pose_out;
+  geometry_msgs::PoseStamped pose_out;
   tf::poseStampedTFToMsg(global_pose_, pose_out);
   this->pstate.feedback = pose_out;
   tf::poseStampedTFToMsg(this->goalPose_, pose_out);

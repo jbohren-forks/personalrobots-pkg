@@ -31,7 +31,7 @@
 /** \author Radu Bogdan Rusu */
 
 #include <gtest/gtest.h>
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 
 #include <point_cloud_mapping/sample_consensus/sac.h>
 #include <point_cloud_mapping/sample_consensus/lmeds.h>
@@ -47,7 +47,7 @@ using namespace sample_consensus;
 
 TEST (LMedS, SACModelPlane)
 {
-  robot_msgs::PointCloud points;
+  sensor_msgs::PointCloud points;
   points.pts.resize (10);
 
   points.pts[0].x = 0;      points.pts[0].y = 1.5708; points.pts[0].z = 0.75;
@@ -115,7 +115,7 @@ TEST (LMedS, SACModelPlane)
 
 TEST (RANSAC, SACModelPlane)
 {
-  robot_msgs::PointCloud points;
+  sensor_msgs::PointCloud points;
   points.pts.resize (10);
 
   points.pts[0].x = 0;      points.pts[0].y = 1.5708; points.pts[0].z = 0.75;
@@ -183,7 +183,7 @@ TEST (RANSAC, SACModelPlane)
 
 TEST (MSAC, SACModelPlane)
 {
-  robot_msgs::PointCloud points;
+  sensor_msgs::PointCloud points;
   points.pts.resize (10);
 
   points.pts[0].x = 0;      points.pts[0].y = 1.5708; points.pts[0].z = 0.75;
@@ -251,7 +251,7 @@ TEST (MSAC, SACModelPlane)
 
 TEST (MLESAC, SACModelPlane)
 {
-  robot_msgs::PointCloud points;
+  sensor_msgs::PointCloud points;
   points.pts.resize (10);
 
   points.pts[0].x = 0;      points.pts[0].y = 1.5708; points.pts[0].z = 0.75;
@@ -319,7 +319,7 @@ TEST (MLESAC, SACModelPlane)
 
 TEST (RRANSAC, SACModelPlane)
 {
-  robot_msgs::PointCloud points;
+  sensor_msgs::PointCloud points;
   points.pts.resize (10);
 
   points.pts[0].x = 0;      points.pts[0].y = 1.5708; points.pts[0].z = 0.75;
@@ -389,7 +389,7 @@ TEST (RRANSAC, SACModelPlane)
 
 TEST (RMSAC, SACModelPlane)
 {
-  robot_msgs::PointCloud points;
+  sensor_msgs::PointCloud points;
   points.pts.resize (10);
 
   points.pts[0].x = 0;      points.pts[0].y = 1.5708; points.pts[0].z = 0.75;

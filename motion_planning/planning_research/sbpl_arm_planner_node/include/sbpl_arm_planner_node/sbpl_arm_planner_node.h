@@ -45,7 +45,7 @@
 #include <tf/transform_datatypes.h>
 
 /** Messages needed for trajectory control and collision map**/
-#include <robot_msgs/Pose.h>
+#include <geometry_msgs/Pose.h>
 #include <manipulation_msgs/JointTraj.h>
 #include <mapping_msgs/CollisionMap.h>
 // #include <manipulation_msgs/JointTrajPoint.h>
@@ -203,9 +203,9 @@ class SBPLArmPlannerNode
 
       boost::shared_ptr<Voxel3d> lowres_planning_grid_;
 
-      robot_msgs::PointCloud point_cloud_;
+      sensor_msgs::PointCloud point_cloud_;
 
-      robot_msgs::PointCloud tf_point_cloud_;
+      sensor_msgs::PointCloud tf_point_cloud_;
 
       boost::mutex mCopyingVoxel_;
 
@@ -235,13 +235,13 @@ class SBPLArmPlannerNode
 
       void collisionMapCallback(const mapping_msgs::CollisionMapConstPtr &collision_map);
 
-      void pointCloudCallback(const robot_msgs::PointCloudConstPtr &point_cloud);
+      void pointCloudCallback(const sensor_msgs::PointCloudConstPtr &point_cloud);
 
       void dummyCallback(const mechanism_msgs::MechanismStateConstPtr &mechanism_state);
 
       void createOccupancyGrid();
 
-      void visualizeGoalPosition(robot_msgs::PoseStamped pose);
+      void visualizeGoalPosition(geometry_msgs::PoseStamped pose);
 
       void initializePM();
 
@@ -251,7 +251,7 @@ class SBPLArmPlannerNode
 
       void finishPath(motion_planning_msgs::KinematicPath &arm_path, motion_planning_msgs::PoseConstraint &goal_pose);
 
-      bool computeIK(const robot_msgs::PoseStamped &pose_stamped_msg, std::vector<double> jnt_pos, std::vector<double> &solution);
+      bool computeIK(const geometry_msgs::PoseStamped &pose_stamped_msg, std::vector<double> jnt_pos, std::vector<double> &solution);
 
       bool initChain(std::string robot_description);
 

@@ -81,8 +81,8 @@ int
   pr2_robot_actions::SwitchControllers switchlist;
   std_msgs::Empty empty;
   plugs_msgs::PlugStow plug_stow;
-  robot_msgs::PointStamped point;
-  robot_msgs::PoseStamped pose;
+  geometry_msgs::PointStamped point;
+  geometry_msgs::PoseStamped pose;
 
   point.header.frame_id = "torso_lift_link";
   point.point.x=0;
@@ -98,7 +98,7 @@ int
   robot_actions::ActionClient<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty> untuck_arm("plugs_untuck_arms");
   robot_actions::ActionClient<std_msgs::Empty, pr2_robot_actions::DetectPlugOnBaseState, plugs_msgs::PlugStow> detect_plug_on_base("detect_plug_on_base");
   robot_actions::ActionClient<plugs_msgs::PlugStow, pr2_robot_actions::MoveAndGraspPlugState, std_msgs::Empty> move_and_grasp_plug("move_and_grasp_plug");
-  robot_actions::ActionClient<robot_msgs::PointStamped, pr2_robot_actions::DetectOutletState, robot_msgs::PoseStamped> detect_outlet_fine("detect_outlet_fine");
+  robot_actions::ActionClient<geometry_msgs::PointStamped, pr2_robot_actions::DetectOutletState, geometry_msgs::PoseStamped> detect_outlet_fine("detect_outlet_fine");
   robot_actions::ActionClient<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty> localize_plug_in_gripper("localize_plug_in_gripper");
   robot_actions::ActionClient<std_msgs::Int32, pr2_robot_actions::PlugInState, std_msgs::Empty>
     plug_in("plug_in");

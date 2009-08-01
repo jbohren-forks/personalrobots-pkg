@@ -36,8 +36,8 @@
 
 #include "ros/node.h"
 #include "dense_laser_assembler/Float32MultiArrayStamped.h"
-#include "robot_msgs/PointCloud.h"
-#include "robot_msgs/Point32.h"
+#include "sensor_msgs/PointCloud.h"
+#include "geometry_msgs/Point32.h"
 #include "sensor_msgs/LaserScan.h"
 
 #include "topic_synchronizer/topic_synchronizer.h"
@@ -78,7 +78,7 @@ public:
     sync_.subscribe("/dense_tilt_scan/scan_info", scan_info_, 1);
 
     // Publish corners as a (tilt angle, pointing angle, depth) tuple
-    node_->advertise<robot_msgs::PointCloud> ("dense_tilt_scan/measured_corners", 1);
+    node_->advertise<sensor_msgs::PointCloud> ("dense_tilt_scan/measured_corners", 1);
 
     sync_.ready();
   }
@@ -88,7 +88,7 @@ public:
     ROS_INFO("%f - Callback", t.toSec());
 
     unsigned int C = pixel_corners_.pts.size() ;
-    robot_msgs::PointCloud measured_corners;
+    sensor_msgs::PointCloud measured_corners;
     measured_corners.header.stamp = pixel_corners_.header.stamp ;
     measured_corners.header.frame_id = "NOT_APPLICABLE" ;
     measured_corners.pts.resize(C);
@@ -195,7 +195,7 @@ private:
   ros::Node* node_;
   TopicSynchronizer<LaserCBProcessing> sync_;
 
-  robot_msgs::PointCloud pixel_corners_;
+  sensor_msgs::PointCloud pixel_corners_;
   dense_laser_assembler::Float32MultiArrayStamped dense_range_;
   dense_laser_assembler::Float32MultiArrayStamped joint_info_;
   sensor_msgs::LaserScan scan_info_;

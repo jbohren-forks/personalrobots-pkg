@@ -51,25 +51,25 @@ void NoveltyEstimatorNode::setup()
   boost::mutex::scoped_lock lock(proc_mutex_);  
   // Query map 
 
-  cloud_pub_ = n_.advertise<PointCloud>("novelty_cloud",1);
+  cloud_pub_ = n_.advertise<sensor_msgs::PointCloud>("novelty_cloud",1);
 
 
-  cloud_hist_sub_ = n_.subscribe<PointCloud>("cloud_hist",100,boost::bind(&NoveltyEstimatorNode::hist_cloudCallback, this,  _1));
-  cloud_sub_ = n_.subscribe<PointCloud>("cloud",100,boost::bind(&NoveltyEstimatorNode::observed_cloudCallback, this,  _1));
+  cloud_hist_sub_ = n_.subscribe<sensor_msgs::PointCloud>("cloud_hist",100,boost::bind(&NoveltyEstimatorNode::hist_cloudCallback, this,  _1));
+  cloud_sub_ = n_.subscribe<sensor_msgs::PointCloud>("cloud",100,boost::bind(&NoveltyEstimatorNode::observed_cloudCallback, this,  _1));
 
 
   ROS_INFO_STREAM("Setup done.");
 }
 
-void NoveltyEstimatorNode::hist_cloudCallback(const robot_msgs::PointCloudConstPtr& the_cloud)
+void NoveltyEstimatorNode::hist_cloudCallback(const sensor_msgs::PointCloudConstPtr& the_cloud)
 {
   ROS_INFO("Adding cloud to history");
   estimator_.addCloudToHistory(*the_cloud);
 }
 
-void NoveltyEstimatorNode::observed_cloudCallback(const robot_msgs::PointCloudConstPtr& the_cloud)
+void NoveltyEstimatorNode::observed_cloudCallback(const sensor_msgs::PointCloudConstPtr& the_cloud)
 {
-  PointCloud pcd_out=*the_cloud;
+  sensor_msgs::PointCloud pcd_out=*the_cloud;
   std::vector<float>* ptr_channel;
   estimator_.allocateNoveltyChannel(pcd_out,&ptr_channel);
   estimator_.computeNovelty(pcd_out,*ptr_channel);

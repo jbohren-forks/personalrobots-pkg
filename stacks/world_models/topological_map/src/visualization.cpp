@@ -39,9 +39,9 @@
 #include <ros/console.h>
 #include <ros/assert.h>
 #include <door_msgs/Door.h>
-#include <robot_msgs/Point.h>
-#include <robot_msgs/Point32.h>
-#include <robot_msgs/PointCloud.h>
+#include <geometry_msgs/Point.h>
+#include <geometry_msgs/Point32.h>
+#include <sensor_msgs/PointCloud.h>
 #include <visualization_msgs/Marker.h>
 
 #define foreach BOOST_FOREACH
@@ -52,9 +52,9 @@ namespace topological_map
 using ros::NodeHandle;
 using ros::Publisher;
 using door_msgs::Door;
-using robot_msgs::Point;
-using robot_msgs::Point32;
-using robot_msgs::PointCloud;
+using geometry_msgs::Point;
+using geometry_msgs::Point32;
+using sensor_msgs::PointCloud;
 using visualization_msgs::Marker;
 using std::set;
 using std::string;

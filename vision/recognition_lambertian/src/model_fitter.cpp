@@ -41,7 +41,7 @@
 #include <ros/ros.h>
 #include "recognition_lambertian/ModelFit.h"
 
-#include "robot_msgs/Point.h"
+#include "geometry_msgs/Point.h"
 #include "visualization_msgs/Marker.h"
 #include "mapping_msgs/Object.h"
 
@@ -52,7 +52,6 @@
 
 namespace bfs = boost::filesystem;
 using namespace std;
-using namespace robot_msgs;
 
 namespace model_fit {
 
@@ -266,10 +265,10 @@ public:
 		return name_;
 	}
 
-	Pose graspPose()
+	geometry_msgs::Pose graspPose()
 	{
 		// TODO: fix this, models annotated with pose
-		Pose pose;
+		geometry_msgs::Pose pose;
 		pose.position.x = 0;
 		pose.position.y = 0;
 		pose.position.z = 0.05;
@@ -289,9 +288,9 @@ public:
 		return pose;
 	}
 
-	void getExtents(Point32& low_extent, Point32& high_extent)
+	void getExtents(geometry_msgs::Point32& low_extent, geometry_msgs::Point32& high_extent)
 	{
-		Pose pose = graspPose();
+		geometry_msgs::Pose pose = graspPose();
 
 		low_extent.x = pose.position.x-x_min;
 		low_extent.y = pose.position.y-y_min;
@@ -309,16 +308,16 @@ public:
 	}
 
 
-	void show(const ros::Publisher& publisher, const Point32& location, float fit_score);
+	void show(const ros::Publisher& publisher, const geometry_msgs::Point32& location, float fit_score);
 
 	bool in_bounds(int x, int y, int z)
 	{
 		return (x>=0 && x<x_res && y>=0 && y<y_res && z>=0 && z<z_res);
 	}
 
-	void fitPointCloud(const PointCloud& cloud, const Point32& location, ModelFitSet& mfs);
+	void fitPointCloud(const sensor_msgs::PointCloud& cloud, const geometry_msgs::Point32& location, ModelFitSet& mfs);
 
-	void findBestFit(const PointCloud& cloud, ModelFitSet& mfs);
+	void findBestFit(const sensor_msgs::PointCloud& cloud, ModelFitSet& mfs);
 };
 
 
@@ -328,7 +327,7 @@ public:
 	struct ModelFit
 	{
 		TemplateModel* model_;
-		Point32 location_;
+		geometry_msgs::Point32 location_;
 		float score_;
 		float max_dist_;
 
@@ -336,7 +335,7 @@ public:
 		{
 		}
 
-		ModelFit(TemplateModel* model, const Point32& location, float score, float max_dist) :
+		ModelFit(TemplateModel* model, const geometry_msgs::Point32& location, float score, float max_dist) :
 			model_(model), location_(location), score_(score), max_dist_(max_dist)
 		{
 		}
@@ -345,10 +344,10 @@ public:
 			return score_;
 		}
 
-		Pose graspPose()
+		geometry_msgs::Pose graspPose()
 		{
-			Pose object_pose = objectPose();
-			Pose model_grasp_pose = model_->graspPose();
+			geometry_msgs::Pose object_pose = objectPose();
+			geometry_msgs::Pose model_grasp_pose = model_->graspPose();
 			tf::Pose tf_object_pose;
 			tf::Pose tf_model_grasp_pose;
 
@@ -356,7 +355,7 @@ public:
 			tf::poseMsgToTF(model_grasp_pose, tf_model_grasp_pose);
 
 			tf::Pose tf_grasp_pose = tf_object_pose*tf_model_grasp_pose;
-			Pose grasp_pose;
+			geometry_msgs::Pose grasp_pose;
 
 			tf::poseTFToMsg(tf_grasp_pose, grasp_pose);
 
@@ -364,9 +363,9 @@ public:
 			return grasp_pose;
 		}
 
-		Pose objectPose()
+		geometry_msgs::Pose objectPose()
 		{
-			Pose pose;
+			geometry_msgs::Pose pose;
 			pose.position.x = location_.x;
 			pose.position.y = location_.y;
 			pose.position.z = location_.z;
@@ -389,7 +388,7 @@ public:
 		best_fit_ = new ModelFit[size_];
 	}
 
-	void add(TemplateModel* model, const Point32& location, float score, float max_dist)
+	void add(TemplateModel* model, const geometry_msgs::Point32& location, float score, float max_dist)
 	{
 		ModelFit crt(model,location, score, max_dist);
 
@@ -443,7 +442,7 @@ void TemplateModel::load(const string& file, const string& name)
 }
 
 
-void TemplateModel::show(const ros::Publisher& publisher, const Point32& location, float fit_score)
+void TemplateModel::show(const ros::Publisher& publisher, const geometry_msgs::Point32& location, float fit_score)
 {
 	static int model_id = 0;
 
@@ -482,7 +481,7 @@ void TemplateModel::show(const ros::Publisher& publisher, const Point32& locatio
 		for (int j=0;j<y_res;++j) {
 			for (int k=0;k<z_res;++k) {
 				if (grid[((i*y_res)+j)*z_res+k]==0) {
-					Point p;
+					geometry_msgs::Point p;
 					p.x = i*x_d+x_min;
 					p.y = j*y_d+y_min;
 					p.z = k*z_d+z_min;
@@ -495,7 +494,7 @@ void TemplateModel::show(const ros::Publisher& publisher, const Point32& locatio
 }
 
 
-void TemplateModel::fitPointCloud(const PointCloud& cloud, const Point32& location, ModelFitSet& mfs)
+void TemplateModel::fitPointCloud(const sensor_msgs::PointCloud& cloud, const geometry_msgs::Point32& location, ModelFitSet& mfs)
 {
 	float score = 0;
 	float max_dist = 0;
@@ -519,10 +518,10 @@ void TemplateModel::fitPointCloud(const PointCloud& cloud, const Point32& locati
 	mfs.add(this, location, score, max_dist);
 }
 
-void TemplateModel::findBestFit(const PointCloud& cloud, ModelFitSet& mfs)
+void TemplateModel::findBestFit(const sensor_msgs::PointCloud& cloud, ModelFitSet& mfs)
 {
 	// compute center of point cloud
-	Point32 center;
+	geometry_msgs::Point32 center;
 	center.x =0; center.y = 0; center.z = 0;
 	int count = cloud.pts.size();
 
@@ -536,7 +535,7 @@ void TemplateModel::findBestFit(const PointCloud& cloud, ModelFitSet& mfs)
 	center.y /=count;
 	//		center.z /=count;
 
-	Point32 location = center;
+	geometry_msgs::Point32 location = center;
 
 	for (float dx=-0.02; dx<=0.02; dx+=0.01) {
 		for (float dy=-0.02; dy<=0.02; dy+=0.01) {
@@ -611,7 +610,7 @@ public:
 	}
 
 
-	void fitBestModel(const PointCloud& cloud, ModelFitSet& mfs)
+	void fitBestModel(const sensor_msgs::PointCloud& cloud, ModelFitSet& mfs)
 	{
 		for (size_t i=0;i<templates.size();++i) {
 			templates[i]->findBestFit(cloud, mfs);

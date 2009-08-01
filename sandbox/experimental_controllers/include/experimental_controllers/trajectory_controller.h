@@ -90,7 +90,7 @@ namespace controller {
 
 //    boost::scoped_ptr<realtime_tools::RealtimePublisher<> > spline_info_publisher_;
 
-//    boost::scoped_ptr<realtime_tools::RealtimePublisher<robot_msgs::PoseStamped> > state_pose_publisher_;
+//    boost::scoped_ptr<realtime_tools::RealtimePublisher<geometry_msgs::PoseStamped> > state_pose_publisher_;
 
     int spline_num_segments_, num_joints_, spline_index_, trajectory_id_;
 

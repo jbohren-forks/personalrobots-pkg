@@ -42,7 +42,7 @@
 #include "topic_synchronizer/topic_synchronizer.h"
 
 #include "std_msgs/Empty.h"
-#include "robot_msgs/PointCloud.h"
+#include "sensor_msgs/PointCloud.h"
 
 #include "sensor_msgs/RawStereo.h"
 #include "sensor_msgs/Image.h"
@@ -99,8 +99,8 @@ public:
   boost::mutex hi_res_lock_ ;
 
   // Point Cloud Messages
-  robot_msgs::PointCloud laser_cloud_ ;
-  robot_msgs::PointCloud safe_laser_cloud_ ;
+  sensor_msgs::PointCloud laser_cloud_ ;
+  sensor_msgs::PointCloud safe_laser_cloud_ ;
   boost::mutex laser_cloud_lock_ ;
 
   unsigned int capture_count_ ;

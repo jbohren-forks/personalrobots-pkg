@@ -46,8 +46,8 @@
 
 #include <fstream>
 
-#include <robot_msgs/PointStamped.h>
-#include <robot_msgs/PointCloud.h>
+#include <geometry_msgs/PointStamped.h>
+#include <sensor_msgs/PointCloud.h>
 
 #include <point_cloud_mapping/cloud_io.h>
 #include <point_cloud_mapping/geometry/point.h>
@@ -81,11 +81,11 @@ class BagToPcd
     ////////////////////////////////////////////////////////////////////////////////
     // Callback
     void
-      cloud_cb (const PointCloudConstPtr& cloud)
+    cloud_cb (const sensor_msgs::PointCloudConstPtr& cloud)
     {
       if (cloud->pts.size () == 0)
         return;
-      PointStamped pin, pout;
+      geometry_msgs::PointStamped pin, pout;
       pin.header.frame_id = "laser_tilt_mount_link";
       pin.point.x = pin.point.y = pin.point.z = 0.0;
 
@@ -106,7 +106,7 @@ class BagToPcd
       {
         ROS_INFO ("Data saved to %s (%f).", fn_, c_time);
         {
-          PointCloud cloud_out;
+          sensor_msgs::PointCloud cloud_out;
           cloud_out.header = cloud->header;
           cloud_out.pts    = cloud->pts;
           cloud_out.chan   = cloud->chan;

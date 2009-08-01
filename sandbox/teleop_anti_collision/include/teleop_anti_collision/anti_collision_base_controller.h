@@ -51,8 +51,8 @@
 #include <base_local_planner/costmap_model.h>
 
 //we'll take in a path as a vector of poses
-#include <robot_msgs/PoseStamped.h>
-#include <robot_msgs/Point.h>
+#include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/Point.h>
 #include <robot_msgs/PoseDot.h>
 #include <deprecated_msgs/RobotBase2DOdom.h>
 
@@ -124,7 +124,7 @@ namespace anti_collision_base_controller {
 
       costmap_2d::Costmap2D costmap_; ///< @brief Provides access to cost map information
 
-      std::vector<robot_msgs::Point> footprint_spec_; ///< @brief The footprint specification of the robot
+      std::vector<geometry_msgs::Point> footprint_spec_; ///< @brief The footprint specification of the robot
 
       double inscribed_radius_, circumscribed_radius_, inflation_radius_; ///< @brief The inscribed and circumscribed radii of the robot
 

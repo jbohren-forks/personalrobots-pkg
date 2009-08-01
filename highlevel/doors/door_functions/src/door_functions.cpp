@@ -229,7 +229,7 @@ namespace door_functions{
   }
 
   bool transformPointTo(const tf::Transformer& tf, const string& source_frame, const string& goal_frame, const Time& time_source,
-                        const robot_msgs::Point32& point_in, robot_msgs::Point32& point_out, const std::string& fixed_frame, const Time& time_goal)
+                        const geometry_msgs::Point32& point_in, geometry_msgs::Point32& point_out, const std::string& fixed_frame, const Time& time_goal)
   {
     ros::Duration timeout = Duration().fromSec(5.0);
     if (!tf.canTransform(source_frame, time_source, goal_frame, time_goal, fixed_frame, timeout)) return false;
@@ -243,7 +243,7 @@ namespace door_functions{
   }
 
   bool transformVectorTo(const tf::Transformer& tf, const string& source_frame, const string& goal_frame, const Time& time_source,
-                         const robot_msgs::Vector3& point_in, robot_msgs::Vector3& point_out, const std::string& fixed_frame, const Time& time_goal)
+                         const geometry_msgs::Vector3& point_in, geometry_msgs::Vector3& point_out, const std::string& fixed_frame, const Time& time_goal)
   {
     ros::Duration timeout = Duration().fromSec(2.0);
     if (!tf.canTransform(source_frame, time_source, goal_frame, time_goal, fixed_frame, timeout)) return false;
@@ -256,10 +256,10 @@ namespace door_functions{
     return true;
   }
 
-  std::vector<robot_msgs::Point> getPolygon(const door_msgs::Door& door, const double &door_thickness)
+  std::vector<geometry_msgs::Point> getPolygon(const door_msgs::Door& door, const double &door_thickness)
   {
-    std::vector<robot_msgs::Point> door_polygon;
-    robot_msgs::Point tmp;
+    std::vector<geometry_msgs::Point> door_polygon;
+    geometry_msgs::Point tmp;
     Vector door_normal = getDoorNormal(door);
     tmp.x = door.frame_p1.x + door_normal(0) * door_thickness/2.0;
     tmp.y = door.frame_p1.y + door_normal(1) * door_thickness/2.0;
@@ -282,8 +282,8 @@ namespace door_functions{
   door_msgs::Door rotateDoor(const door_msgs::Door& door, const double &angle)
   {
     door_msgs::Door result = door;
-    robot_msgs::Point32 hinge = door.frame_p1;
-    robot_msgs::Point32 edge = door.frame_p2;
+    geometry_msgs::Point32 hinge = door.frame_p1;
+    geometry_msgs::Point32 edge = door.frame_p2;
     if(door.hinge == door.HINGE_P2)
     {
       hinge = door.frame_p2;
@@ -296,10 +296,10 @@ namespace door_functions{
     double sth = sin(door_frame_global_yaw+angle);
     double cth = cos(door_frame_global_yaw+angle);
 
-    robot_msgs::Point32 new_edge;
+    geometry_msgs::Point32 new_edge;
     new_edge.x = hinge.x + cth *door_length;
     new_edge.y = hinge.y + sth *door_length;
-    robot_msgs::Point32 new_handle = door.handle;
+    geometry_msgs::Point32 new_handle = door.handle;
     new_handle.x = hinge.x + cth*handle_distance;
     new_handle.y = hinge.y + sth*handle_distance;
 

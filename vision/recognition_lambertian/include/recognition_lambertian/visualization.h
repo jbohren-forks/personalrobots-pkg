@@ -38,13 +38,13 @@
 #define VISUALIZATION_H_
 
 #include <vector>
-#include <robot_msgs/PointCloud.h>
-#include <robot_msgs/Vector3.h>
+#include <sensor_msgs/PointCloud.h>
+#include <geometry_msgs/Vector3.h>
 #include "ros/node.h"
 
 using namespace std;
 
-void publishNormals(ros::Node* node, robot_msgs::PointCloud points, vector<robot_msgs::Vector3> coeff, float length=0.1);
+void publishNormals(ros::Node* node, sensor_msgs::PointCloud points, vector<geometry_msgs::Vector3> coeff, float length=0.1);
 
 
 #endif /* VISUALIZATION_H_ */

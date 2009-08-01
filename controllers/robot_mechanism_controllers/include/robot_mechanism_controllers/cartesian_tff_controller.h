@@ -40,7 +40,7 @@
 #include <kdl/frames.hpp>
 #include <ros/node.h>
 #include <manipulation_msgs/TaskFrameFormalism.h>
-#include <robot_msgs/Twist.h>
+#include <geometry_msgs/Twist.h>
 #include <mechanism_control/controller.h>
 #include <tf/transform_datatypes.h>
 #include <control_toolbox/pid.h>
@@ -89,7 +89,7 @@ private:
   KDL::Twist position_, twist_meas_;
   KDL::Frame pose_meas_, pose_meas_old_;
 
-  boost::scoped_ptr<realtime_tools::RealtimePublisher<robot_msgs::Twist> > state_position_publisher_;
+  boost::scoped_ptr<realtime_tools::RealtimePublisher<geometry_msgs::Twist> > state_position_publisher_;
   unsigned int loop_count_;
 
   // internal wrench controller

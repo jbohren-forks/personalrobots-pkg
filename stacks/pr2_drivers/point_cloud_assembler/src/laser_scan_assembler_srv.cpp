@@ -42,7 +42,6 @@
 #include "point_cloud_assembler/base_assembler_srv.h"
 
 
-using namespace robot_msgs;
 using namespace laser_scan;
 using namespace std ;
 
@@ -84,7 +83,7 @@ public:
     return scan.get_ranges_size() ;
   }
 
-  void ConvertToCloud(const string& fixed_frame_id, const sensor_msgs::LaserScan& scan_in, PointCloud& cloud_out)
+  void ConvertToCloud(const string& fixed_frame_id, const sensor_msgs::LaserScan& scan_in, sensor_msgs::PointCloud& cloud_out)
   {
     // apply filters on laser scan
     filter_chain_.update (scan_in, scan_filtered_);

@@ -104,7 +104,7 @@ void robot_self_filter::SelfMask::getLinkNames(std::vector<std::string> &frames)
 	frames.push_back(bodies_[i].name);
 }
 
-void robot_self_filter::SelfMask::maskContainment(const robot_msgs::PointCloud& data_in, std::vector<int> &mask)
+void robot_self_filter::SelfMask::maskContainment(const sensor_msgs::PointCloud& data_in, std::vector<int> &mask)
 {
     mask.resize(data_in.pts.size());
     if (bodies_.empty())
@@ -116,7 +116,7 @@ void robot_self_filter::SelfMask::maskContainment(const robot_msgs::PointCloud& 
     }
 }
 
-void robot_self_filter::SelfMask::maskIntersection(const robot_msgs::PointCloud& data_in, const std::string &sensor_frame, std::vector<int> &mask)
+void robot_self_filter::SelfMask::maskIntersection(const sensor_msgs::PointCloud& data_in, const std::string &sensor_frame, std::vector<int> &mask)
 {
     mask.resize(data_in.pts.size());
     if (bodies_.empty())
@@ -131,7 +131,7 @@ void robot_self_filter::SelfMask::maskIntersection(const robot_msgs::PointCloud&
     }
 }
 
-void robot_self_filter::SelfMask::maskIntersection(const robot_msgs::PointCloud& data_in, const btVector3 &sensor, std::vector<int> &mask)
+void robot_self_filter::SelfMask::maskIntersection(const sensor_msgs::PointCloud& data_in, const btVector3 &sensor, std::vector<int> &mask)
 {
     mask.resize(data_in.pts.size());
     if (bodies_.empty())
@@ -201,7 +201,7 @@ void robot_self_filter::SelfMask::assumeFrame(const roslib::Header& header, cons
     }
 }
 
-void robot_self_filter::SelfMask::maskAuxContainment(const robot_msgs::PointCloud& data_in, std::vector<int> &mask)
+void robot_self_filter::SelfMask::maskAuxContainment(const sensor_msgs::PointCloud& data_in, std::vector<int> &mask)
 {
     const unsigned int bs = bodies_.size();
     const unsigned int np = data_in.pts.size();
@@ -226,7 +226,7 @@ void robot_self_filter::SelfMask::maskAuxContainment(const robot_msgs::PointClou
     }
 }
 
-void robot_self_filter::SelfMask::maskAuxIntersection(const robot_msgs::PointCloud& data_in, std::vector<int> &mask)
+void robot_self_filter::SelfMask::maskAuxIntersection(const sensor_msgs::PointCloud& data_in, std::vector<int> &mask)
 {
     const unsigned int bs = bodies_.size();
     const unsigned int np = data_in.pts.size();

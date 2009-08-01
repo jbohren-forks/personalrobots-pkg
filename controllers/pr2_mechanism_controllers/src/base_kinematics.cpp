@@ -170,7 +170,7 @@ bool BaseKinematics::init(mechanism::RobotState *robot_state, const ros::NodeHan
 
 void Wheel::updatePosition()
 {
-  robot_msgs::Point result = parent_->offset_;
+  geometry_msgs::Point result = parent_->offset_;
   double costh = cos(parent_->joint_->position_);
   double sinth = sin(parent_->joint_->position_);
   result.x += costh * offset_.x - sinth * offset_.y;
@@ -188,7 +188,7 @@ void BaseKinematics::computeWheelPositions()
 
 }
 
-robot_msgs::PoseDot BaseKinematics::pointVel2D(const robot_msgs::Point& pos, const robot_msgs::PoseDot& vel)
+robot_msgs::PoseDot BaseKinematics::pointVel2D(const geometry_msgs::Point& pos, const robot_msgs::PoseDot& vel)
 {
   robot_msgs::PoseDot result;
   result.vel.vx = vel.vel.vx - pos.y * vel.ang_vel.vz;

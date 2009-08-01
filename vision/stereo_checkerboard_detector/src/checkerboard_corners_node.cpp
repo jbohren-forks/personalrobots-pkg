@@ -36,7 +36,7 @@
 
 #include "ros/ros.h"
 #include "sensor_msgs/Image.h"
-#include "robot_msgs/PointCloud.h"
+#include "sensor_msgs/PointCloud.h"
 //#include "stereo_checkerboard_detector/mono_checkerboard_helper.h"
 #include "opencv_latest/CvBridge.h"
 
@@ -52,7 +52,7 @@ public:
     //! \todo make checkerboard size a parameter
     setSize(6,8) ;
 
-    corners_pub_ = nh_.advertise<robot_msgs::PointCloud>("corners", 10) ;
+    corners_pub_ = nh_.advertise<sensor_msgs::PointCloud>("corners", 10) ;
     debug_pub_   = nh_.advertise<sensor_msgs::Image>("~debug_image", 1) ;
 
     image_sub_   = nh_.subscribe("image", 1, &CheckerboardCornersNode::imageCallback, this) ;
@@ -106,7 +106,7 @@ public:
       cv_corners[i].y /= scale ;
     }
 
-    robot_msgs::PointCloud cloud ;
+    sensor_msgs::PointCloud cloud ;
     cloud.header.frame_id = msg->header.frame_id ;
     cloud.header.stamp = msg->header.stamp ;
     if (found)

@@ -38,9 +38,9 @@
 #include <robot_actions/action_client.h>
 #include <robot_actions/action.h>
 #include <ros/ros.h>
-#include <robot_msgs/PointStamped.h>
-#include <robot_msgs/PoseStamped.h>
-#include <robot_msgs/PoseWithCovariance.h>
+#include <geometry_msgs/PointStamped.h>
+#include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/PoseWithCovariance.h>
 #include <gtest/gtest.h>
 
 using namespace robot_msgs;

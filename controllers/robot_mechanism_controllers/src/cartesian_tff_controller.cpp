@@ -134,7 +134,7 @@ bool CartesianTFFController::init(mechanism::RobotState *robot_state, const ros:
                                  &CartesianTFFController::command, this);
 
   // realtime publisher for control state
-  state_position_publisher_.reset(new realtime_tools::RealtimePublisher<robot_msgs::Twist>(node_, "state/position", 1));
+  state_position_publisher_.reset(new realtime_tools::RealtimePublisher<geometry_msgs::Twist>(node_, "state/position", 1));
 
   return true;
 }
@@ -207,12 +207,12 @@ void CartesianTFFController::update()
   if (++loop_count_ % 100 == 0){
     if (state_position_publisher_){
       if (state_position_publisher_->trylock()){
-        state_position_publisher_->msg_.vel.x = position_.vel(0);
-        state_position_publisher_->msg_.vel.y = position_.vel(1);
-        state_position_publisher_->msg_.vel.z = position_.vel(2);
-        state_position_publisher_->msg_.rot.x = position_.rot(0);
-	state_position_publisher_->msg_.rot.y = position_.rot(1);
-        state_position_publisher_->msg_.rot.z = position_.rot(2);
+        state_position_publisher_->msg_.linear.x = position_.vel(0);
+        state_position_publisher_->msg_.linear.y = position_.vel(1);
+        state_position_publisher_->msg_.linear.z = position_.vel(2);
+        state_position_publisher_->msg_.angular.x = position_.rot(0);
+	state_position_publisher_->msg_.angular.y = position_.rot(1);
+        state_position_publisher_->msg_.angular.z = position_.rot(2);
         state_position_publisher_->unlockAndPublish();
       }
     }
@@ -223,19 +223,19 @@ void CartesianTFFController::update()
 
 void CartesianTFFController::command(const manipulation_msgs::TaskFrameFormalismConstPtr& tff_msg)
 {
-  mode_[0] = trunc(tff_msg->mode.vel.x);
-  mode_[1] = trunc(tff_msg->mode.vel.y);
-  mode_[2] = trunc(tff_msg->mode.vel.z);
-  mode_[3] = trunc(tff_msg->mode.rot.x);
-  mode_[4] = trunc(tff_msg->mode.rot.y);
-  mode_[5] = trunc(tff_msg->mode.rot.z);
+  mode_[0] = trunc(tff_msg_->mode.linear.x);
+  mode_[1] = trunc(tff_msg_->mode.linear.y);
+  mode_[2] = trunc(tff_msg_->mode.linear.z);
+  mode_[3] = trunc(tff_msg_->mode.angular.x);
+  mode_[4] = trunc(tff_msg_->mode.angular.y);
+  mode_[5] = trunc(tff_msg_->mode.angular.z);
 
-  value_[0] = tff_msg->value.vel.x;
-  value_[1] = tff_msg->value.vel.y;
-  value_[2] = tff_msg->value.vel.z;
-  value_[3] =  tff_msg->value.rot.x;
-  value_[4] =  tff_msg->value.rot.y;
-  value_[5] =  tff_msg->value.rot.z;
+  value_[0] = tff_msg_->value.linear.x;
+  value_[1] = tff_msg_->value.linear.y;
+  value_[2] = tff_msg_->value.linear.z;
+  value_[3] =  tff_msg_->value.angular.x;
+  value_[4] =  tff_msg_->value.angular.y;
+  value_[5] =  tff_msg_->value.angular.z;
 }
 
 

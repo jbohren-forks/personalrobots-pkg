@@ -69,7 +69,7 @@ void projectAnyObject(const sensor_msgs::StereoInfo& stereo_info_, const annotat
 
 void projectAnyObject(const sensor_msgs::CameraInfo& cam_info_, const annotated_map_msgs::TaggedPolygonalMap& transformed_map_3D, annotated_map_msgs::TaggedPolygonalMap &transformed_map_2D);
 
-void projectAnyObject(const sensor_msgs::CameraInfo& cam_info_, const robot_msgs::PointCloud& source_3D, robot_msgs::PointCloud& target_2D);
+void projectAnyObject(const sensor_msgs::CameraInfo& cam_info_, const sensor_msgs::PointCloud& source_3D, sensor_msgs::PointCloud& target_2D);
 
 
 

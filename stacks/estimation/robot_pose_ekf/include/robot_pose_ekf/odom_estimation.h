@@ -48,7 +48,7 @@
 #include <tf/tf.h>
 
 // msgs
-#include <robot_msgs/PoseWithCovariance.h>
+#include <geometry_msgs/PoseWithCovariance.h>
 
 // log files
 #include <fstream>
@@ -106,7 +106,7 @@ public:
   /** get the filter posterior
    * \param estimate the filter posterior as a pose with covariance
    */
-  void getEstimate(robot_msgs::PoseWithCovariance& estimate);
+  void getEstimate(geometry_msgs::PoseWithCovariance& estimate);
 
   /** Add a sensor measurement to the measurement buffer
    * \param meas the measurement to add

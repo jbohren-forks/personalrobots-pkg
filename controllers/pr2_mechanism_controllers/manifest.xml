@@ -25,6 +25,7 @@
   <depend package="angles" />
   <depend package="control_toolbox" />
   <depend package="filters" />
+  <depend package="geometry_msgs" />
   <depend package="manipulation_msgs" />
 
   <url>http://pr.willowgarage.com</url>

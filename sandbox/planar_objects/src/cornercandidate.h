@@ -63,7 +63,7 @@ public:
   void updatePoints2d();
   double computeDistance(IplImage* distImage);
   double computeSupport2d(IplImage* pixOccupied, IplImage* pixDebug = NULL);
-  double computeSupport3d(const robot_msgs::PointCloud& cloud,
+  double computeSupport3d(const sensor_msgs::PointCloud& cloud,
                           std::vector<int> & plane_indices);
   void optimizeWidth(IplImage* distImage, double a = -0.5, double b = +0.5, int steps = 20);
   void optimizeHeight(IplImage* distImage, double a = -0.5, double b = +0.5, int steps = 20);

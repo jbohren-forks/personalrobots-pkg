@@ -20,15 +20,15 @@ int32 type
 string link_name
 
 # The desired pose of the robot link
-robot_msgs/PoseStamped pose
+geometry_msgs/PoseStamped pose
 
 # The acceptable tolerance
-robot_msgs/Point position_tolerance_above
-robot_msgs/Point position_tolerance_below
+geometry_msgs/Point position_tolerance_above
+geometry_msgs/Point position_tolerance_below
 
 # The acceptable tolerance (roll pitch yaw)
-robot_msgs/Point orientation_tolerance_above
-robot_msgs/Point orientation_tolerance_below
+geometry_msgs/Point orientation_tolerance_above
+geometry_msgs/Point orientation_tolerance_below
 
 # The planner may internally compute a distance from current state to goal pose.
 # This is done with a weighted sum such as:

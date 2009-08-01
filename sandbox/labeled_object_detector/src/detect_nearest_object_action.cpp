@@ -44,7 +44,7 @@ using namespace labeled_object_detector;
 
 
 
-DetectNearestObjectAction::DetectNearestObjectAction(const std::string& name):robot_actions::Action<robot_msgs::PoseStamped, robot_msgs::PoseStamped>(name)
+DetectNearestObjectAction::DetectNearestObjectAction(const std::string& name):robot_actions::Action<geometry_msgs::PoseStamped, geometry_msgs::PoseStamped>(name)
 {
 
   tf_ = boost::shared_ptr<tf::TransformListener>(new  tf::TransformListener);

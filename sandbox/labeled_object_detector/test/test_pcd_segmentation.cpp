@@ -30,8 +30,8 @@
 #include <gtest/gtest.h>
 #include <sys/time.h>
 
-#include "robot_msgs/PointCloud.h"
-#include "robot_msgs/Point32.h"
+#include "sensor_msgs/PointCloud.h"
+#include "geometry_msgs/Point32.h"
 #include <math.h>
 
 

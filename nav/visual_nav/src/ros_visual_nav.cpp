@@ -48,10 +48,10 @@
 #include <boost/tokenizer.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/thread/mutex.hpp>
-#include <robot_msgs/Point.h>
-#include <robot_msgs/PointCloud.h>
-#include <robot_msgs/PoseStamped.h>
-#include <robot_msgs/PointStamped.h>
+#include <geometry_msgs/Point.h>
+#include <sensor_msgs/PointCloud.h>
+#include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/PointStamped.h>
 #include <laser_scan/laser_scan.h>
 #include <ros/ros.h>
 #include <tf/transform_listener.h>
@@ -68,10 +68,10 @@
 
 using std::string;
 using std::vector;
-using robot_msgs::PoseStamped;
-using robot_msgs::Point;
-using robot_msgs::PointStamped;
-using robot_msgs::Point32;
+using geometry_msgs::PoseStamped;
+using geometry_msgs::Point;
+using geometry_msgs::PointStamped;
+using geometry_msgs::Point32;
 using ros::Duration;
 using vslam::Roadmap;
 using visualization_msgs::Polyline;
@@ -412,7 +412,7 @@ void RosVisualNavigator::baseScanCallback(const Notifier::MessagePtr& message)
 {
   if (!(scan_counter_++%scan_period_)&&roadmap_.get()) {
     try {
-      robot_msgs::PointCloud point_cloud;
+      sensor_msgs::PointCloud point_cloud;
       projector_.transformLaserScanToPointCloud (vslam_frame_, point_cloud, *message, tf_listener_);
 
       vector<Point32> point_vec;

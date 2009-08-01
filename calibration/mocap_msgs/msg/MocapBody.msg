@@ -1,3 +1,3 @@
 int32 id
-robot_msgs/Transform pose
+geometry_msgs/Transform pose
 float32 condition

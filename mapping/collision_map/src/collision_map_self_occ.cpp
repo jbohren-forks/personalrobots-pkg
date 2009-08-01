@@ -64,8 +64,8 @@ public:
   	    occPublisher_ = nh_.advertise<mapping_msgs::CollisionMap>("collision_map_occ_occlusion", 1);
 
 	// create a message notifier (and enable subscription) for both the full map and for the updates
-	mnCloud_ = new tf::MessageNotifier<robot_msgs::PointCloud>(tf_, boost::bind(&CollisionMapperOcc::cloudCallback, this, _1), "cloud_in", "", 1);
-	mnCloudIncremental_ = new tf::MessageNotifier<robot_msgs::PointCloud>(tf_, boost::bind(&CollisionMapperOcc::cloudIncrementalCallback, this, _1), "cloud_incremental_in", "", 1);
+	mnCloud_ = new tf::MessageNotifier<sensor_msgs::PointCloud>(tf_, boost::bind(&CollisionMapperOcc::cloudCallback, this, _1), "cloud_in", "", 1);
+	mnCloudIncremental_ = new tf::MessageNotifier<sensor_msgs::PointCloud>(tf_, boost::bind(&CollisionMapperOcc::cloudIncrementalCallback, this, _1), "cloud_incremental_in", "", 1);
 
 	// configure the self mask and the message notifier
 	std::vector<std::string> frames;
@@ -171,14 +171,14 @@ private:
 	bi_.real_maxZ =  bi_.dimensionZ + bi_.originZ;	
     }
     
-    void cloudIncrementalCallback(const robot_msgs::PointCloudConstPtr &cloud)
+    void cloudIncrementalCallback(const sensor_msgs::PointCloudConstPtr &cloud)
     {
 	if (!mapProcessing_.try_lock())
 	    return;
 
 	ROS_DEBUG("Got pointcloud update that is %f seconds old", (ros::Time::now() - cloud->header.stamp).toSec());
 	
-	robot_msgs::PointCloud out;
+	sensor_msgs::PointCloud out;
 	ros::WallTime tm = ros::WallTime::now();
 
 	// transform the pointcloud to the robot frame
@@ -198,13 +198,13 @@ private:
 	    publishCollisionMap(diff, out.header, cmapUpdPublisher_);
     }
     
-    void cloudCallback(const robot_msgs::PointCloudConstPtr &cloud)
+    void cloudCallback(const sensor_msgs::PointCloudConstPtr &cloud)
     {
 	ROS_DEBUG("Got pointcloud that is %f seconds old", (ros::Time::now() - cloud->header.stamp).toSec());
 	
 	mapProcessing_.lock();
 	
-	robot_msgs::PointCloud out;
+	sensor_msgs::PointCloud out;
 	ros::WallTime tm = ros::WallTime::now();
 	
 	CMap obstacles;
@@ -344,14 +344,14 @@ private:
     }
 
     /** Construct an axis-aligned collision map from a point cloud assumed to be in the robot frame */
-    void constructCollisionMap(const robot_msgs::PointCloud &cloud, CMap &map)
+    void constructCollisionMap(const sensor_msgs::PointCloud &cloud, CMap &map)
     {
 	const unsigned int n = cloud.pts.size();
 	CollisionPoint c;
 	
 	for (unsigned int i = 0 ; i < n ; ++i)
 	{
-	    const robot_msgs::Point32 &p = cloud.pts[i];
+	    const geometry_msgs::Point32 &p = cloud.pts[i];
 	    if (p.x > bi_.real_minX && p.x < bi_.real_maxX && p.y > bi_.real_minY && p.y < bi_.real_maxY && p.z > bi_.real_minZ && p.z < bi_.real_maxZ)
 	    {
 		c.x = (int)(0.5 + (p.x - bi_.originX) / bi_.resolution);
@@ -387,8 +387,8 @@ private:
 
     tf::TransformListener                        tf_;
     robot_self_filter::SelfMask                  sf_;
-    tf::MessageNotifier<robot_msgs::PointCloud> *mnCloud_;
-    tf::MessageNotifier<robot_msgs::PointCloud> *mnCloudIncremental_;
+    tf::MessageNotifier<sensor_msgs::PointCloud> *mnCloud_;
+    tf::MessageNotifier<sensor_msgs::PointCloud> *mnCloudIncremental_;
     ros::NodeHandle                              nh_;
     ros::Publisher                               cmapPublisher_;
     ros::Publisher                               cmapUpdPublisher_;

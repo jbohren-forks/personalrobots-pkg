@@ -44,14 +44,14 @@ This is useful for ground plane extraction
 
 #include "filters/filter_base.h"
 #include "tf/transform_listener.h"
-#include "robot_msgs/PointCloud.h"
+#include "sensor_msgs/PointCloud.h"
 #include "ros/ros.h"
 
 namespace laser_scan
 {
 
 template <typename T>
-class PointCloudFootprintFilter : public filters::FilterBase<robot_msgs::PointCloud>
+class PointCloudFootprintFilter : public filters::FilterBase<sensor_msgs::PointCloud>
 {
 public:
   PointCloudFootprintFilter() {}
@@ -67,7 +67,7 @@ public:
 
   }
 
-  bool update(const std::vector<robot_msgs::PointCloud>& data_in, std::vector<robot_msgs::PointCloud>& data_out)
+  bool update(const std::vector<sensor_msgs::PointCloud>& data_in, std::vector<sensor_msgs::PointCloud>& data_out)
   {
     if(&data_in == &data_out){
       ROS_ERROR("This filter does not currently support in place copying");
@@ -79,10 +79,10 @@ public:
       return false;
     }
     
-    const robot_msgs::PointCloud& input_scan = data_in[0];
-    robot_msgs::PointCloud& filtered_scan = data_out[0];
+    const sensor_msgs::PointCloud& input_scan = data_in[0];
+    sensor_msgs::PointCloud& filtered_scan = data_out[0];
 
-    robot_msgs::PointCloud laser_cloud;
+    sensor_msgs::PointCloud laser_cloud;
 
     try{
       tf_.transformPointCloud("base_link", input_scan, laser_cloud);
@@ -120,7 +120,7 @@ public:
   }
 
 
-  bool inFootprint(const robot_msgs::Point32& scan_pt){
+  bool inFootprint(const geometry_msgs::Point32& scan_pt){
     if(scan_pt.x < -1.0 * inscribed_radius_ || scan_pt.x > inscribed_radius_ || scan_pt.y < -1.0 * inscribed_radius_ || scan_pt.y > inscribed_radius_)
       return false;
     return true;
@@ -132,7 +132,7 @@ private:
   double inscribed_radius_;
 } ;
 
-typedef robot_msgs::PointCloud RM_POINT_CLOUD;
+typedef sensor_msgs::PointCloud RM_POINT_CLOUD;
 FILTERS_REGISTER_FILTER(PointCloudFootprintFilter, RM_POINT_CLOUD);
 }
 

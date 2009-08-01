@@ -50,7 +50,7 @@ namespace cloud_geometry
       * \param centroid the output centroid
       */
     void
-      computeCentroid (const robot_msgs::PointCloud &points, robot_msgs::PointCloud &centroid)
+      computeCentroid (const sensor_msgs::PointCloud &points, sensor_msgs::PointCloud &centroid)
     {
       // Prepare the data output
       centroid.pts.resize (1);
@@ -87,7 +87,7 @@ namespace cloud_geometry
       * \param centroid the output centroid
       */
     void
-      computeCentroid (const robot_msgs::PointCloud &points, const std::vector<int> &indices, robot_msgs::PointCloud &centroid)
+      computeCentroid (const sensor_msgs::PointCloud &points, const std::vector<int> &indices, sensor_msgs::PointCloud &centroid)
     {
       // Prepare the data output
       centroid.pts.resize (1);
@@ -124,9 +124,9 @@ namespace cloud_geometry
       * \param eigen_values the resultant eigenvalues
       */
     void
-      computePatchEigen (const robot_msgs::PointCloud &points, Eigen::Matrix3d &eigen_vectors, Eigen::Vector3d &eigen_values)
+      computePatchEigen (const sensor_msgs::PointCloud &points, Eigen::Matrix3d &eigen_vectors, Eigen::Vector3d &eigen_values)
     {
-      robot_msgs::Point32 centroid;
+      geometry_msgs::Point32 centroid;
       // Compute the 3x3 covariance matrix
       Eigen::Matrix3d covariance_matrix;
       computeCovarianceMatrix (points, covariance_matrix, centroid);
@@ -145,9 +145,9 @@ namespace cloud_geometry
       * \param eigen_values the resultant eigenvalues
       */
     void
-      computePatchEigen (const robot_msgs::PointCloud &points, const std::vector<int> &indices, Eigen::Matrix3d &eigen_vectors, Eigen::Vector3d &eigen_values)
+      computePatchEigen (const sensor_msgs::PointCloud &points, const std::vector<int> &indices, Eigen::Matrix3d &eigen_vectors, Eigen::Vector3d &eigen_values)
     {
-      robot_msgs::Point32 centroid;
+      geometry_msgs::Point32 centroid;
       // Compute the 3x3 covariance matrix
       Eigen::Matrix3d covariance_matrix;
       computeCovarianceMatrix (points, indices, covariance_matrix, centroid);
@@ -166,9 +166,9 @@ namespace cloud_geometry
       * \param centroid the centroid of the points
       */
     void
-      computePatchEigenNormalized (const robot_msgs::PointCloud &points, Eigen::Matrix3d &eigen_vectors, Eigen::Vector3d &eigen_values, robot_msgs::Point32& centroid)
+      computePatchEigenNormalized (const sensor_msgs::PointCloud &points, Eigen::Matrix3d &eigen_vectors, Eigen::Vector3d &eigen_values, geometry_msgs::Point32& centroid)
     {
-      //robot_msgs::Point32 centroid;
+      //geometry_msgs::Point32 centroid;
       // Compute the 3x3 covariance matrix
       Eigen::Matrix3d covariance_matrix;
       computeCovarianceMatrix (points, covariance_matrix, centroid);
@@ -197,9 +197,9 @@ namespace cloud_geometry
       * \param centroid the centroid of the points
       */
     void
-      computePatchEigenNormalized (const robot_msgs::PointCloud &points, const std::vector<int> &indices, Eigen::Matrix3d &eigen_vectors, Eigen::Vector3d &eigen_values, robot_msgs::Point32& centroid)
+      computePatchEigenNormalized (const sensor_msgs::PointCloud &points, const std::vector<int> &indices, Eigen::Matrix3d &eigen_vectors, Eigen::Vector3d &eigen_values, geometry_msgs::Point32& centroid)
     {
-      //robot_msgs::Point32 centroid;
+      //geometry_msgs::Point32 centroid;
       // Compute the 3x3 covariance matrix
       Eigen::Matrix3d covariance_matrix;
       computeCovarianceMatrix (points, indices, covariance_matrix, centroid);
@@ -231,9 +231,9 @@ namespace cloud_geometry
       * \f]
       */
     void
-      computePointNormal (const robot_msgs::PointCloud &points, Eigen::Vector4d &plane_parameters, double &curvature)
+      computePointNormal (const sensor_msgs::PointCloud &points, Eigen::Vector4d &plane_parameters, double &curvature)
     {
-      robot_msgs::Point32 centroid;
+      geometry_msgs::Point32 centroid;
       // Compute the 3x3 covariance matrix
       Eigen::Matrix3d covariance_matrix;
       computeCovarianceMatrix (points, covariance_matrix, centroid);
@@ -270,9 +270,9 @@ namespace cloud_geometry
       * \f]
       */
     void
-      computePointNormal (const robot_msgs::PointCloud &points, const std::vector<int> &indices, Eigen::Vector4d &plane_parameters, double &curvature)
+      computePointNormal (const sensor_msgs::PointCloud &points, const std::vector<int> &indices, Eigen::Vector4d &plane_parameters, double &curvature)
     {
-      robot_msgs::Point32 centroid;
+      geometry_msgs::Point32 centroid;
       // Compute the 3x3 covariance matrix
       Eigen::Matrix3d covariance_matrix;
       computeCovarianceMatrix (points, indices, covariance_matrix, centroid);
@@ -347,14 +347,14 @@ namespace cloud_geometry
       * \param j3 the third moment invariant
       */
     void
-      computeMomentInvariants (const robot_msgs::PointCloud &points, double &j1, double &j2, double &j3)
+      computeMomentInvariants (const sensor_msgs::PointCloud &points, double &j1, double &j2, double &j3)
     {
       // Compute the centroid
-      robot_msgs::Point32 centroid;
+      geometry_msgs::Point32 centroid;
       computeCentroid (points, centroid);
 
       // Demean the pointset
-      robot_msgs::PointCloud points_c;
+      sensor_msgs::PointCloud points_c;
       points_c.pts.resize (points.pts.size ());
       for (unsigned int i = 0; i < points.pts.size (); i++)
       {
@@ -384,14 +384,14 @@ namespace cloud_geometry
       * \param j3 the third moment invariant
       */
     void
-      computeMomentInvariants (const robot_msgs::PointCloud &points, const std::vector<int> &indices, double &j1, double &j2, double &j3)
+      computeMomentInvariants (const sensor_msgs::PointCloud &points, const std::vector<int> &indices, double &j1, double &j2, double &j3)
     {
       // Compute the centroid
-      robot_msgs::Point32 centroid;
+      geometry_msgs::Point32 centroid;
       computeCentroid (points, indices, centroid);
 
       // Demean the pointset
-      robot_msgs::PointCloud points_c;
+      sensor_msgs::PointCloud points_c;
       points_c.pts.resize (indices.size ());
       for (unsigned int i = 0; i < indices.size (); i++)
       {
@@ -423,7 +423,7 @@ namespace cloud_geometry
       * \param angle_threshold the threshold angle (default $\pi / 2.0$)
       */
     bool
-      isBoundaryPoint (const robot_msgs::PointCloud &points, int q_idx, const std::vector<int> &neighbors,
+      isBoundaryPoint (const sensor_msgs::PointCloud &points, int q_idx, const std::vector<int> &neighbors,
                        const Eigen::Vector3d& u, const Eigen::Vector3d& v, double angle_threshold)
     {
       if (neighbors.size () < 3)
@@ -475,8 +475,8 @@ namespace cloud_geometry
       * \param viewpoint the viewpoint where the cloud was acquired from (used for normal flip)
       */
     void
-      computePointCloudNormals (robot_msgs::PointCloud &points, const robot_msgs::PointCloud &surface, int k,
-                                const robot_msgs::PointStamped &viewpoint)
+      computePointCloudNormals (sensor_msgs::PointCloud &points, const sensor_msgs::PointCloud &surface, int k,
+                                const geometry_msgs::PointStamped &viewpoint)
     {
       int nr_points = points.pts.size ();
       int orig_dims = points.chan.size ();
@@ -520,8 +520,8 @@ namespace cloud_geometry
       * \param viewpoint the viewpoint where the cloud was acquired from (used for normal flip)
       */
     void
-      computePointCloudNormals (robot_msgs::PointCloud &points, const robot_msgs::PointCloud &surface, double radius,
-                                const robot_msgs::PointStamped &viewpoint)
+      computePointCloudNormals (sensor_msgs::PointCloud &points, const sensor_msgs::PointCloud &surface, double radius,
+                                const geometry_msgs::PointStamped &viewpoint)
     {
       int nr_points = points.pts.size ();
       int orig_dims = points.chan.size ();
@@ -563,7 +563,7 @@ namespace cloud_geometry
       * \param viewpoint the viewpoint where the cloud was acquired from (used for normal flip)
       */
     void
-      computePointCloudNormals (robot_msgs::PointCloud &points, int k, const robot_msgs::PointStamped &viewpoint)
+      computePointCloudNormals (sensor_msgs::PointCloud &points, int k, const geometry_msgs::PointStamped &viewpoint)
     {
       int nr_points = points.pts.size ();
       int orig_dims = points.chan.size ();
@@ -618,7 +618,7 @@ namespace cloud_geometry
       * \param viewpoint the viewpoint where the cloud was acquired from (used for normal flip)
       */
     void
-      computePointCloudNormals (robot_msgs::PointCloud &points, double radius, const robot_msgs::PointStamped &viewpoint)
+      computePointCloudNormals (sensor_msgs::PointCloud &points, double radius, const geometry_msgs::PointStamped &viewpoint)
     {
       int nr_points = points.pts.size ();
       int orig_dims = points.chan.size ();
@@ -671,9 +671,9 @@ namespace cloud_geometry
       * \param viewpoint the viewpoint where the cloud was acquired from (used for normal flip)
       */
     void
-      computeOrganizedPointCloudNormals (robot_msgs::PointCloud &points, const robot_msgs::PointCloud &surface,
+      computeOrganizedPointCloudNormals (sensor_msgs::PointCloud &points, const sensor_msgs::PointCloud &surface,
                                          int k, int downsample_factor, int width, int height, double max_z, 
-                                         const robot_msgs::Point32 &viewpoint)
+                                         const geometry_msgs::Point32 &viewpoint)
     {
       // Reduce by a factor of N
       int nr_points = lrint (ceil (width / (double)downsample_factor)) *
@@ -867,10 +867,10 @@ namespace cloud_geometry
       * \param viewpoint the viewpoint where the cloud was acquired from (used for normal flip)
       */
     void
-      computeOrganizedPointCloudNormalsWithFiltering (robot_msgs::PointCloud &points, const robot_msgs::PointCloud &surface,
+      computeOrganizedPointCloudNormalsWithFiltering (sensor_msgs::PointCloud &points, const sensor_msgs::PointCloud &surface,
                                                       int k, int downsample_factor, int width, int height, double max_z, 
                                                       double min_angle, double max_angle, 
-                                                      const robot_msgs::Point32 &viewpoint)
+                                                      const geometry_msgs::Point32 &viewpoint)
     {
       // Reduce by a factor of N
       int nr_points = lrint (ceil (width / (double)downsample_factor)) *
@@ -970,8 +970,8 @@ namespace cloud_geometry
       * \param viewpoint the viewpoint where the cloud was acquired from (used for normal flip)
       */
     void
-      filterJumpEdges (const robot_msgs::PointCloud &points, robot_msgs::PointCloud &points_filtered, int k, int width, int height, 
-                       double min_angle, double max_angle, const robot_msgs::Point32 &viewpoint)
+      filterJumpEdges (const sensor_msgs::PointCloud &points, sensor_msgs::PointCloud &points_filtered, int k, int width, int height, 
+                       double min_angle, double max_angle, const geometry_msgs::Point32 &viewpoint)
     {
       // Copy the header, and reserve the correct number of channels and points, etc
       points_filtered.header = points.header;
@@ -1050,7 +1050,7 @@ namespace cloud_geometry
       * \param min_pts_per_cluster minimum number of points that a cluster may contain (default = 1)
       */
     void
-      extractEuclideanClusters (const robot_msgs::PointCloud &points, const std::vector<int> &indices, double tolerance,
+      extractEuclideanClusters (const sensor_msgs::PointCloud &points, const std::vector<int> &indices, double tolerance,
                                 std::vector<std::vector<int> > &clusters,
                                 int nx_idx, int ny_idx, int nz_idx, double eps_angle, unsigned int min_pts_per_cluster)
     {
@@ -1144,7 +1144,7 @@ namespace cloud_geometry
       * \param min_pts_per_cluster minimum number of points that a cluster may contain (default = 1)
       */
     void
-      extractEuclideanClusters (const robot_msgs::PointCloud &points, double tolerance,
+      extractEuclideanClusters (const sensor_msgs::PointCloud &points, double tolerance,
                                 std::vector<std::vector<int> > &clusters,
                                 int nx_idx, int ny_idx, int nz_idx, double eps_angle, unsigned int min_pts_per_cluster)
     {

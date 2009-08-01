@@ -1,5 +1,5 @@
 #include "outlet_detection/tracker_base.h"
-#include <robot_msgs/PoseStamped.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <prosilica_cam/CameraInfo.h>
 #include <boost/bind.hpp>
 #include <unistd.h> // getpid
@@ -68,7 +68,7 @@ TrackerBase::~TrackerBase()
 
 void TrackerBase::activate()
 {
-  node_.advertise<robot_msgs::PoseStamped>(pose_topic_name_, 1);
+  node_.advertise<geometry_msgs::PoseStamped>(pose_topic_name_, 1);
   node_.advertise<sensor_msgs::Image>(display_topic_name_, 1);
 
   boost::thread t(boost::bind(&TrackerBase::spin, this));
@@ -104,7 +104,7 @@ void TrackerBase::processImage()
 
   if (success) {
     // Publish to topic
-    robot_msgs::PoseStamped pose;
+    geometry_msgs::PoseStamped pose;
     pose.header.frame_id = "high_def_frame";
     pose.header.stamp = img_.header.stamp;
     tf::poseTFToMsg(transform, pose.pose);
@@ -228,9 +228,9 @@ void TrackerBase::setRoiToTargetFrame()
   }
 
   // Get target frame pose in high def frame
-  robot_msgs::Point target;
+  geometry_msgs::Point target;
   try {
-    robot_msgs::Pose target_pose = getTargetInHighDef();
+    geometry_msgs::Pose target_pose = getTargetInHighDef();
     target = target_pose.position;
   }
   catch (tf::TransformException &ex)
@@ -262,9 +262,9 @@ void TrackerBase::setRoiToTargetFrame()
   setRoi( fitToFrame(object_roi) );
 }
 
-robot_msgs::Pose TrackerBase::getTargetInHighDef()
+geometry_msgs::Pose TrackerBase::getTargetInHighDef()
 {
-  robot_msgs::PoseStamped origin, target_in_high_def;
+  geometry_msgs::PoseStamped origin, target_in_high_def;
   tf::Transform origin_tf;
   origin_tf.setIdentity();
   tf::poseTFToMsg(origin_tf, origin.pose);
@@ -298,7 +298,7 @@ void TrackerBase::saveImage(bool success)
   FILE *tf_file = fopen(filename, "w");
   if (tf_file) {
     try {
-      robot_msgs::PoseStamped origin, xfm_in_base_link;
+      geometry_msgs::PoseStamped origin, xfm_in_base_link;
       origin.pose.orientation.w = 1.0;
       origin.header.frame_id = "high_def_frame";
       origin.header.stamp = ros::Time::now();

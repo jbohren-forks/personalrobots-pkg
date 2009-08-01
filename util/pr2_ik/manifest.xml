@@ -10,7 +10,7 @@
 <depend package="eigen"/>
 <depend package="angles"/>
 <depend package="tf_conversions"/>
-<depend package="robot_msgs"/>
+<depend package="geometry_msgs"/>
 <depend package="mechanism_model"/>
 <depend package="wg_robot_description_parser"/>
 <depend package="manipulation_srvs"/>

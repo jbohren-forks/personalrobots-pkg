@@ -10,6 +10,7 @@
   <url>http://pr.willowgarage.com/wiki/tabletop_msgs</url>
 
   <depend package="robot_msgs" />
+  <depend package="geometry_msgs" />
   <depend package="std_msgs"/>
   
   <export>

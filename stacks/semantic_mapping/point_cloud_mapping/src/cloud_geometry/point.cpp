@@ -44,7 +44,7 @@ namespace cloud_geometry
     * \param channel_name the string defining the channel name
     */
   int
-    getChannelIndex (const robot_msgs::PointCloud &points, std::string channel_name)
+    getChannelIndex (const sensor_msgs::PointCloud &points, std::string channel_name)
   {
     for (unsigned int d = 0; d < points.chan.size (); d++)
       if (points.chan[d].name == channel_name)
@@ -58,7 +58,7 @@ namespace cloud_geometry
     * \param channel_name the string defining the channel name
     */
   int
-    getChannelIndex (robot_msgs::PointCloudConstPtr points, std::string channel_name)
+    getChannelIndex (sensor_msgs::PointCloudConstPtr points, std::string channel_name)
   {
     for (unsigned int d = 0; d < points->chan.size (); d++)
       if (points->chan[d].name == channel_name)
@@ -71,7 +71,7 @@ namespace cloud_geometry
     * \param cloud the point cloud data message
     */
   std::string
-    getAvailableChannels (const robot_msgs::PointCloud &cloud)
+    getAvailableChannels (const sensor_msgs::PointCloud &cloud)
   {
     std::string result;
     if (cloud.chan.size () == 0)
@@ -92,7 +92,7 @@ namespace cloud_geometry
     * \param cloud a pointer to the point cloud data message
     */
   std::string
-    getAvailableChannels (const robot_msgs::PointCloudConstPtr& cloud)
+    getAvailableChannels (const sensor_msgs::PointCloudConstPtr& cloud)
   {
     std::string result;
     if (cloud->chan.size () == 0)
@@ -119,13 +119,13 @@ namespace cloud_geometry
     * \param indices the resultant indices
     */
   void
-    getPointIndicesAxisParallelNormals (const robot_msgs::PointCloud &points, int nx, int ny, int nz, double eps_angle,
-                                        const robot_msgs::Point32 &axis, std::vector<int> &indices)
+    getPointIndicesAxisParallelNormals (const sensor_msgs::PointCloud &points, int nx, int ny, int nz, double eps_angle,
+                                        const geometry_msgs::Point32 &axis, std::vector<int> &indices)
   {
     // Check all points
     for (unsigned int i = 0; i < points.pts.size (); i++)
     {
-      robot_msgs::Point32 p;
+      geometry_msgs::Point32 p;
       p.x = points.chan[nx].vals[i];
       p.y = points.chan[ny].vals[i];
       p.z = points.chan[nz].vals[i];
@@ -147,13 +147,13 @@ namespace cloud_geometry
     * \param indices the resultant indices
     */
   void
-    getPointIndicesAxisPerpendicularNormals (const robot_msgs::PointCloud &points, int nx, int ny, int nz, double eps_angle,
-                                             const robot_msgs::Point32 &axis, std::vector<int> &indices)
+    getPointIndicesAxisPerpendicularNormals (const sensor_msgs::PointCloud &points, int nx, int ny, int nz, double eps_angle,
+                                             const geometry_msgs::Point32 &axis, std::vector<int> &indices)
   {
     // Check all points
     for (unsigned int i = 0; i < points.pts.size (); i++)
     {
-      robot_msgs::Point32 p;
+      geometry_msgs::Point32 p;
       p.x = points.chan[nx].vals[i];
       p.y = points.chan[ny].vals[i];
       p.z = points.chan[nz].vals[i];
@@ -174,7 +174,7 @@ namespace cloud_geometry
     * \param cut_distance the maximum admissible distance of a point from the viewpoint (default: FLT_MAX)
     */
   void
-    downsamplePointCloud (const robot_msgs::PointCloud &points, const std::vector<int> &indices, robot_msgs::PointCloud &points_down, robot_msgs::Point leaf_size,
+    downsamplePointCloud (const sensor_msgs::PointCloud &points, const std::vector<int> &indices, sensor_msgs::PointCloud &points_down, geometry_msgs::Point leaf_size,
                           std::vector<Leaf> &leaves, int d_idx, double cut_distance)
   {
     if (d_idx == -1)
@@ -183,7 +183,7 @@ namespace cloud_geometry
     points_down.header = points.header;
     points_down.pts.resize (points.pts.size ());
 
-    robot_msgs::Point32 min_p, max_p, min_b, max_b, div_b;
+    geometry_msgs::Point32 min_p, max_p, min_b, max_b, div_b;
     cloud_geometry::statistics::getMinMax (points, indices, min_p, max_p, d_idx, cut_distance);
 
     // Compute the minimum and maximum bounding box values
@@ -269,7 +269,7 @@ namespace cloud_geometry
     * \param cut_distance the maximum admissible distance of a point from the viewpoint (default: FLT_MAX)
     */
   void
-    downsamplePointCloud (const robot_msgs::PointCloud &points, robot_msgs::PointCloud &points_down, robot_msgs::Point leaf_size,
+    downsamplePointCloud (const sensor_msgs::PointCloud &points, sensor_msgs::PointCloud &points_down, geometry_msgs::Point leaf_size,
                           std::vector<Leaf> &leaves, int d_idx, double cut_distance)
   {
     if (d_idx == -1)
@@ -278,7 +278,7 @@ namespace cloud_geometry
     points_down.header = points.header;
     points_down.pts.resize (points.pts.size ());
 
-    robot_msgs::Point32 min_p, max_p, min_b, max_b, div_b;
+    geometry_msgs::Point32 min_p, max_p, min_b, max_b, div_b;
     cloud_geometry::statistics::getMinMax (points, min_p, max_p, d_idx, cut_distance);
 
     // Compute the minimum and maximum bounding box values
@@ -361,7 +361,7 @@ namespace cloud_geometry
     * \param cut_distance the maximum admissible distance of a point from the viewpoint (default: FLT_MAX)
     */
   void
-    downsamplePointCloud (robot_msgs::PointCloudConstPtr points, robot_msgs::PointCloud &points_down, robot_msgs::Point leaf_size,
+    downsamplePointCloud (sensor_msgs::PointCloudConstPtr points, sensor_msgs::PointCloud &points_down, geometry_msgs::Point leaf_size,
                           std::vector<Leaf> &leaves, int d_idx, double cut_distance)
   {
     if (d_idx == -1)
@@ -370,7 +370,7 @@ namespace cloud_geometry
     points_down.header = points->header;
     points_down.pts.resize (points->pts.size ());
 
-    robot_msgs::Point32 min_p, max_p, min_b, max_b, div_b;
+    geometry_msgs::Point32 min_p, max_p, min_b, max_b, div_b;
     cloud_geometry::statistics::getMinMax (points, min_p, max_p, d_idx, cut_distance);
 
     // Compute the minimum and maximum bounding box values
@@ -450,7 +450,7 @@ namespace cloud_geometry
     * \param leaf_size the voxel leaf dimensions
     */
   void
-    downsamplePointCloud (const robot_msgs::PointCloud &points, robot_msgs::PointCloud &points_down, robot_msgs::Point leaf_size)
+    downsamplePointCloud (const sensor_msgs::PointCloud &points, sensor_msgs::PointCloud &points_down, geometry_msgs::Point leaf_size)
   {
     std::vector<Leaf> leaves;
     downsamplePointCloud (points, points_down, leaf_size, leaves, -1);
@@ -463,7 +463,7 @@ namespace cloud_geometry
     * \param points the resultant/output point cloud message
     */
   void
-    getPointCloud (const robot_msgs::PointCloud &input, const std::vector<int> &indices, robot_msgs::PointCloud &output)
+    getPointCloud (const sensor_msgs::PointCloud &input, const std::vector<int> &indices, sensor_msgs::PointCloud &output)
   {
     output.header = input.header;
     output.pts.resize (indices.size ());
@@ -493,7 +493,7 @@ namespace cloud_geometry
     * \param points the resultant/output point cloud message
     */
   void
-    getPointCloudOutside (const robot_msgs::PointCloud &input, std::vector<int> indices, robot_msgs::PointCloud &output)
+    getPointCloudOutside (const sensor_msgs::PointCloud &input, std::vector<int> indices, sensor_msgs::PointCloud &output)
   {
     std::vector<int> indices_outside;
     // Create the entire index list

@@ -42,8 +42,8 @@
 #include <ros/node.h>
 
 // Msgs
-#include <robot_msgs/PointStamped.h>
-#include <robot_msgs/PoseStamped.h>
+#include <geometry_msgs/PointStamped.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <pr2_robot_actions/DetectOutletState.h>
 
 // Robot Action Stuff
@@ -56,13 +56,13 @@
 namespace plugs_core{
 
 class DetectOutletFineAction
-  : public robot_actions::Action<robot_msgs::PointStamped,
-                                 robot_msgs::PoseStamped>
+  : public robot_actions::Action<geometry_msgs::PointStamped,
+                                 geometry_msgs::PoseStamped>
 {
 public:
   DetectOutletFineAction(ros::Node& node);
   ~DetectOutletFineAction();
-  virtual robot_actions::ResultStatus execute(const robot_msgs::PointStamped& outlet_estimate, robot_msgs::PoseStamped& feedback);
+  virtual robot_actions::ResultStatus execute(const geometry_msgs::PointStamped& outlet_estimate, geometry_msgs::PoseStamped& feedback);
 
 private:
   ros::Node& node_;
@@ -73,7 +73,7 @@ private:
   OutletTracker::OutletTracker* detector_;
   
   
-  robot_msgs::PoseStamped outlet_pose_msg_;
+  geometry_msgs::PoseStamped outlet_pose_msg_;
   void foundOutlet();
   
 };

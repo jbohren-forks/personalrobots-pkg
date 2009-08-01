@@ -96,7 +96,7 @@ PlugInAction::PlugInAction(ros::Node& node) :
   node_.advertise<manipulation_msgs::TaskFrameFormalism>(arm_controller_ + "/command", 2);
 
   TF_.reset(new tf::TransformListener(node));
-  notifier_.reset(new tf::MessageNotifier<robot_msgs::PoseStamped>(
+  notifier_.reset(new tf::MessageNotifier<geometry_msgs::PoseStamped>(
                     TF_.get(), &node,
                     boost::bind(&PlugInAction::plugMeasurementCallback, this, _1),
                     "/plug_detector/plug_pose", "outlet_pose", 100));
@@ -149,15 +149,15 @@ void PlugInAction::reset()
   g_stopped_forcing_ = ros::Time::now();
 }
 
-void poseTFToMsg(const tf::Pose &p, robot_msgs::Twist &t)
+void poseTFToMsg(const tf::Pose &p, geometry_msgs::Twist &t)
 {
-  t.vel.x = p.getOrigin().x();
-  t.vel.y = p.getOrigin().y();
-  t.vel.z = p.getOrigin().z();
-  btMatrix3x3(p.getRotation()).getEulerYPR(t.rot.z, t.rot.y, t.rot.x);
+  t.linear.x = p.getOrigin().x();
+  t.linear.y = p.getOrigin().y();
+  t.linear.z = p.getOrigin().z();
+  btMatrix3x3(p.getRotation()).getEulerYPR(t.angular.z, t.angular.y, t.angular.x);
 }
 
-void PlugInAction::plugMeasurementCallback(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr &msg)
+void PlugInAction::plugMeasurementCallback(const tf::MessageNotifier<geometry_msgs::PoseStamped>::MessagePtr &msg)
 {
   plugs_core::PlugInState state_msg;
 
@@ -174,7 +174,7 @@ void PlugInAction::plugMeasurementCallback(const tf::MessageNotifier<robot_msgs:
 
   tff_msg_.header.stamp = msg->header.stamp;
   // Both are transforms from the outlet to the estimated plug pose
-  robot_msgs::PoseStamped viz_offset_msg;
+  geometry_msgs::PoseStamped viz_offset_msg;
   usleep(10000);
   try {
     TF_->transformPose("outlet_pose", *(msg.get()), viz_offset_msg);
@@ -357,16 +357,16 @@ void PlugInAction::measure()
   if (!isActive())
     return;
 
-  tff_msg_.mode.vel.x = 3;
-  tff_msg_.mode.vel.y = 3;
-  tff_msg_.mode.vel.z = 3;
-  tff_msg_.mode.rot.x = 3;
-  tff_msg_.mode.rot.y = 3;
-  tff_msg_.mode.rot.z = 3;
-  tff_msg_.value.vel.x = mech_offset_.getOrigin().x() - 0.05;  // backs off 5cm
-  tff_msg_.value.vel.y = mech_offset_.getOrigin().y();
-  tff_msg_.value.vel.z = mech_offset_.getOrigin().z();
-  mech_offset_.getBasis().getEulerZYX(tff_msg_.value.rot.z, tff_msg_.value.rot.y, tff_msg_.value.rot.x);
+  tff_msg_.mode.linear.x = 3;
+  tff_msg_.mode.linear.y = 3;
+  tff_msg_.mode.linear.z = 3;
+  tff_msg_.mode.angular.x = 3;
+  tff_msg_.mode.angular.y = 3;
+  tff_msg_.mode.angular.z = 3;
+  tff_msg_.value.linear.x = mech_offset_.getOrigin().x() - 0.05;  // backs off 5cm
+  tff_msg_.value.linear.y = mech_offset_.getOrigin().y();
+  tff_msg_.value.linear.z = mech_offset_.getOrigin().z();
+  mech_offset_.getBasis().getEulerZYX(tff_msg_.value.angular.z, tff_msg_.value.angular.y, tff_msg_.value.angular.x);
   node_.publish(arm_controller_ + "/command", tff_msg_);
   g_stopped_forcing_ = ros::Time::now();
   last_standoff_ = 0.05;
@@ -385,16 +385,16 @@ void PlugInAction::move()
     target.setOrigin(mech_offset_.getOrigin() + MAX * v / v.length());
   }
 
-  tff_msg_.mode.vel.x = 3;
-  tff_msg_.mode.vel.y = 3;
-  tff_msg_.mode.vel.z = 3;
-  tff_msg_.mode.rot.x = 3;
-  tff_msg_.mode.rot.y = 3;
-  tff_msg_.mode.rot.z = 3;
-  tff_msg_.value.vel.x = target.getOrigin().x();
-  tff_msg_.value.vel.y = target.getOrigin().y();
-  tff_msg_.value.vel.z = target.getOrigin().z();
-  target.getBasis().getEulerZYX(tff_msg_.value.rot.z, tff_msg_.value.rot.y, tff_msg_.value.rot.x);
+  tff_msg_.mode.linear.x = 3;
+  tff_msg_.mode.linear.y = 3;
+  tff_msg_.mode.linear.z = 3;
+  tff_msg_.mode.angular.x = 3;
+  tff_msg_.mode.angular.y = 3;
+  tff_msg_.mode.angular.z = 3;
+  tff_msg_.value.linear.x = target.getOrigin().x();
+  tff_msg_.value.linear.y = target.getOrigin().y();
+  tff_msg_.value.linear.z = target.getOrigin().z();
+  target.getBasis().getEulerZYX(tff_msg_.value.angular.z, tff_msg_.value.angular.y, tff_msg_.value.angular.x);
   ROS_DEBUG("plublishing command to hybrid controller to move");
   node_.publish(arm_controller_ + "/command", tff_msg_);
   return;
@@ -407,16 +407,16 @@ void PlugInAction::insert()
     return;
   g_started_inserting_ = ros::Time::now();
 
-  tff_msg_.mode.vel.x = 2;
-  tff_msg_.mode.vel.y = 3;
-  tff_msg_.mode.vel.z = 3;
-  tff_msg_.mode.rot.x = 3;
-  tff_msg_.mode.rot.y = 3;
-  tff_msg_.mode.rot.z = 3;
-  tff_msg_.value.vel.x = 0.003;
-  tff_msg_.value.vel.y = mech_offset_desi_.getOrigin().y();
-  tff_msg_.value.vel.z = mech_offset_desi_.getOrigin().z();
-  mech_offset_desi_.getBasis().getEulerZYX(tff_msg_.value.rot.z, tff_msg_.value.rot.y, tff_msg_.value.rot.x);
+  tff_msg_.mode.linear.x = 2;
+  tff_msg_.mode.linear.y = 3;
+  tff_msg_.mode.linear.z = 3;
+  tff_msg_.mode.angular.x = 3;
+  tff_msg_.mode.angular.y = 3;
+  tff_msg_.mode.angular.z = 3;
+  tff_msg_.value.linear.x = 0.003;
+  tff_msg_.value.linear.y = mech_offset_desi_.getOrigin().y();
+  tff_msg_.value.linear.z = mech_offset_desi_.getOrigin().z();
+  mech_offset_desi_.getBasis().getEulerZYX(tff_msg_.value.angular.z, tff_msg_.value.angular.y, tff_msg_.value.angular.x);
   node_.publish(arm_controller_ + "/command", tff_msg_);
 
   return;
@@ -429,43 +429,43 @@ void PlugInAction::force()
 
   g_started_forcing_ = ros::Time::now();
 
-  tff_msg_.mode.vel.x = 1;
-  tff_msg_.mode.vel.y = 3;
-  tff_msg_.mode.vel.z = 3;
-  tff_msg_.mode.rot.x = 2;
-  tff_msg_.mode.rot.y = 2;
-  tff_msg_.mode.rot.z = 2;
-  tff_msg_.value.vel.x = 50;
-  tff_msg_.value.vel.y = mech_offset_.getOrigin().y();
-  tff_msg_.value.vel.z = mech_offset_.getOrigin().z();
-  tff_msg_.value.rot.x = 0.0;
-  tff_msg_.value.rot.y = 0.0;
-  tff_msg_.value.rot.z = 0.0;
-  tff_msg_.mode.vel.y = 2;
-  tff_msg_.mode.vel.z = 2;
-  tff_msg_.value.vel.y = 0.0;
-  tff_msg_.value.vel.z = 0.0;
+  tff_msg_.mode.linear.x = 1;
+  tff_msg_.mode.linear.y = 3;
+  tff_msg_.mode.linear.z = 3;
+  tff_msg_.mode.angular.x = 2;
+  tff_msg_.mode.angular.y = 2;
+  tff_msg_.mode.angular.z = 2;
+  tff_msg_.value.linear.x = 50;
+  tff_msg_.value.linear.y = mech_offset_.getOrigin().y();
+  tff_msg_.value.linear.z = mech_offset_.getOrigin().z();
+  tff_msg_.value.angular.x = 0.0;
+  tff_msg_.value.angular.y = 0.0;
+  tff_msg_.value.angular.z = 0.0;
+  tff_msg_.mode.linear.y = 2;
+  tff_msg_.mode.linear.z = 2;
+  tff_msg_.value.linear.y = 0.0;
+  tff_msg_.value.linear.z = 0.0;
 
 
-  tff_msg_.mode.vel.x = 1;
-  tff_msg_.mode.vel.y = 3;
-  tff_msg_.mode.vel.z = 3;
-  tff_msg_.mode.rot.x = 3;
-  tff_msg_.mode.rot.y = 3;
-  tff_msg_.mode.rot.z = 3;
-  tff_msg_.value.vel.x = 30;
-  tff_msg_.value.vel.y = mech_offset_.getOrigin().y();
-  tff_msg_.value.vel.z = mech_offset_.getOrigin().z();
-  mech_offset_desi_.getBasis().getEulerZYX(tff_msg_.value.rot.z, tff_msg_.value.rot.y, tff_msg_.value.rot.x);
+  tff_msg_.mode.linear.x = 1;
+  tff_msg_.mode.linear.y = 3;
+  tff_msg_.mode.linear.z = 3;
+  tff_msg_.mode.angular.x = 3;
+  tff_msg_.mode.angular.y = 3;
+  tff_msg_.mode.angular.z = 3;
+  tff_msg_.value.linear.x = 30;
+  tff_msg_.value.linear.y = mech_offset_.getOrigin().y();
+  tff_msg_.value.linear.z = mech_offset_.getOrigin().z();
+  mech_offset_desi_.getBasis().getEulerZYX(tff_msg_.value.angular.z, tff_msg_.value.angular.y, tff_msg_.value.angular.x);
 
   node_.publish(arm_controller_ + "/command", tff_msg_);
 
-  double base_roll = tff_msg_.value.rot.x;
-  double base_pitch = tff_msg_.value.rot.y;
+  double base_roll = tff_msg_.value.angular.x;
+  double base_pitch = tff_msg_.value.angular.y;
   while (ros::Time::now() - g_started_forcing_ < ros::Duration(5.0))
   {
-    tff_msg_.value.rot.x = base_roll + 0.1 * (2.0*drand48()-1.0);
-    tff_msg_.value.rot.y = base_pitch + 0.03 * (2.0*drand48()-1.0);
+    tff_msg_.value.angular.x = base_roll + 0.1 * (2.0*drand48()-1.0);
+    tff_msg_.value.angular.y = base_pitch + 0.03 * (2.0*drand48()-1.0);
     node_.publish(arm_controller_ + "/command", tff_msg_);
     usleep(10000);
   }
@@ -478,16 +478,16 @@ void PlugInAction::hold()
   if (!isActive())
     return;
 
-  tff_msg_.mode.vel.x = 1;
-  tff_msg_.mode.vel.y = 3;
-  tff_msg_.mode.vel.z = 3;
-  tff_msg_.mode.rot.x = 3;
-  tff_msg_.mode.rot.y = 3;
-  tff_msg_.mode.rot.z = 3;
-  tff_msg_.value.vel.x = 4;
-  tff_msg_.value.vel.y = mech_offset_.getOrigin().y();
-  tff_msg_.value.vel.z = mech_offset_.getOrigin().z();
-  mech_offset_.getBasis().getEulerZYX(tff_msg_.value.rot.z, tff_msg_.value.rot.y, tff_msg_.value.rot.x);
+  tff_msg_.mode.linear.x = 1;
+  tff_msg_.mode.linear.y = 3;
+  tff_msg_.mode.linear.z = 3;
+  tff_msg_.mode.angular.x = 3;
+  tff_msg_.mode.angular.y = 3;
+  tff_msg_.mode.angular.z = 3;
+  tff_msg_.value.linear.x = 4;
+  tff_msg_.value.linear.y = mech_offset_.getOrigin().y();
+  tff_msg_.value.linear.z = mech_offset_.getOrigin().z();
+  mech_offset_.getBasis().getEulerZYX(tff_msg_.value.angular.z, tff_msg_.value.angular.y, tff_msg_.value.angular.x);
   node_.publish(arm_controller_ + "/command", tff_msg_);
   return;
 }

@@ -56,7 +56,7 @@ NoveltyEstimator::NoveltyEstimator()
 
 
 
-void NoveltyEstimator::addCloudToHistory(const PointCloud &cloud)
+void NoveltyEstimator::addCloudToHistory(const sensor_msgs::PointCloud &cloud)
 {  
   boost::mutex::scoped_lock lock(proc_mutex_);
 
@@ -83,7 +83,7 @@ void NoveltyEstimator::addCloudToHistory(const PointCloud &cloud)
   clouds_.push_back(pcd_holder);
 }
 
-void NoveltyEstimator::allocateNoveltyChannel(PointCloud& point_cloud,std::vector<float>** ptr_channel)
+void NoveltyEstimator::allocateNoveltyChannel(sensor_msgs::PointCloud& point_cloud,std::vector<float>** ptr_channel)
 {
   int novelty_idx=cloud_geometry::getChannelIndex(point_cloud,novelty_channel_);
   if(novelty_idx==-1)
@@ -100,7 +100,7 @@ void NoveltyEstimator::allocateNoveltyChannel(PointCloud& point_cloud,std::vecto
 
 
 
-void NoveltyEstimator::computeNovelty(const PointCloud& point_cloud,std::vector<float> &novelty_holder)
+void NoveltyEstimator::computeNovelty(const sensor_msgs::PointCloud& point_cloud,std::vector<float> &novelty_holder)
 {
   ROS_INFO("Computing novelty");
 
@@ -136,7 +136,7 @@ void NoveltyEstimator::computeNovelty(const PointCloud& point_cloud,std::vector<
       vector<float> k_distances;
       vector<int> k_indices3d;
       vector<float> k_distances3d;
-      Point32 pt2d=point_cloud.pts[iPt];
+      geometry_msgs::Point32 pt2d=point_cloud.pts[iPt];
       pt2d.z=0;
       (*it)->kdtree_2d_->radiusSearch (pt2d, max_2d_search_radius_, 
                                       k_indices, k_distances,num_required_nei_2d_);

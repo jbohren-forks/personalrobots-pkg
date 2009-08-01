@@ -94,7 +94,7 @@ public:
     this->posIface->Unlock();
 
     this->rnh_ = new ros::NodeHandle();
-    //this->sub_ = rnh_->subscribe<robot_msgs::PoseDot>("/cmd_vel", 100, boost::bind(&DiffDrive::cmdVelCallBack,this,_1));
+    //this->sub_ = rnh_->subscribe<geometry_msgs::PoseDot>("/cmd_vel", 100, boost::bind(&DiffDrive::cmdVelCallBack,this,_1));
     this->sub_ = rnh_->subscribe<robot_msgs::PoseDot>("/cmd_vel", 100, &DiffDrive::cmdVelCallBack,this);
     this->pub_ = rnh_->advertise<deprecated_msgs::RobotBase2DOdom>("/odom", 1);
    

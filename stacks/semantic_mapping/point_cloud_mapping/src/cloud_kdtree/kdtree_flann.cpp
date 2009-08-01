@@ -42,7 +42,7 @@ namespace cloud_kdtree
    * \param k_distances the resultant point distances
    */
   void
-    KdTreeFLANN::nearestKSearch (const robot_msgs::Point32 &p_q, int k, std::vector<int> &k_indices, std::vector<float> &k_distances)
+    KdTreeFLANN::nearestKSearch (const geometry_msgs::Point32 &p_q, int k, std::vector<int> &k_indices, std::vector<float> &k_distances)
   {
     k_indices.resize (k);
     k_distances.resize (k);
@@ -96,7 +96,7 @@ namespace cloud_kdtree
    * \param k_distances the resultant point distances
    */
   void
-    KdTreeFLANN::nearestKSearch (const robot_msgs::PointCloud &points, int index, int k, std::vector<int> &k_indices, std::vector<float> &k_distances)
+    KdTreeFLANN::nearestKSearch (const sensor_msgs::PointCloud &points, int index, int k, std::vector<int> &k_indices, std::vector<float> &k_distances)
   {
     if (index >= (int)points.pts.size ())
       return;
@@ -124,7 +124,7 @@ namespace cloud_kdtree
    * \param max_nn if given, bounds the maximum returned neighbors to this value
    */
   bool
-    KdTreeFLANN::radiusSearch (const robot_msgs::Point32 &p_q, double radius, std::vector<int> &k_indices, std::vector<float> &k_distances,
+    KdTreeFLANN::radiusSearch (const geometry_msgs::Point32 &p_q, double radius, std::vector<int> &k_indices, std::vector<float> &k_distances,
                                int max_nn)
   {
     float* p = (float*)malloc (3 * sizeof (float));
@@ -165,7 +165,7 @@ namespace cloud_kdtree
    * \param max_nn if given, bounds the maximum returned neighbors to this value
    */
   bool
-    KdTreeFLANN::radiusSearch (const robot_msgs::PointCloud &points, int index, double radius, std::vector<int> &k_indices, std::vector<float> &k_distances,
+    KdTreeFLANN::radiusSearch (const sensor_msgs::PointCloud &points, int index, double radius, std::vector<int> &k_indices, std::vector<float> &k_distances,
                                int max_nn)
   {
     float* p = (float*)malloc (3 * sizeof (float));
@@ -203,7 +203,7 @@ namespace cloud_kdtree
    * \param ros_cloud the ROS PointCloud message
    */
   int
-    KdTreeFLANN::convertCloudToArray (const robot_msgs::PointCloud &ros_cloud)
+    KdTreeFLANN::convertCloudToArray (const sensor_msgs::PointCloud &ros_cloud)
   {
     // No point in doing anything if the array is empty
     if (ros_cloud.pts.size () == 0)
@@ -238,7 +238,7 @@ namespace cloud_kdtree
    * \param indices the point cloud indices
    */
   int
-    KdTreeFLANN::convertCloudToArray (const robot_msgs::PointCloud &ros_cloud, const std::vector<int> &indices)
+    KdTreeFLANN::convertCloudToArray (const sensor_msgs::PointCloud &ros_cloud, const std::vector<int> &indices)
   {
     // No point in doing anything if the array is empty
     if (ros_cloud.pts.size () == 0 || indices.size () > ros_cloud.pts.size ())

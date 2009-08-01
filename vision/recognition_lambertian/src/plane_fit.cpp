@@ -29,7 +29,7 @@
 // ROS core
 #include <ros/node.h>
 // ROS messages
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 #include <robot_msgs/Polygon3D.h>
 
 // Cloud kd-tree
@@ -53,9 +53,9 @@ using namespace robot_msgs;
 class PlanarFit
 {
 
-  void getPointIndicesInZBounds (const PointCloud &points, double z_min, double z_max, vector<int> &indices);
-  bool fitSACPlanes (PointCloud *points, vector<int> &indices, vector<vector<int> > &inliers, vector<vector<double> > &coeff,
-                     const robot_msgs::Point32 &viewpoint_cloud, double dist_thresh, int n_max, int min_points_per_model = 100);
+  void getPointIndicesInZBounds (const sensor_msgs::PointCloud &points, double z_min, double z_max, vector<int> &indices);
+  bool fitSACPlanes (sensor_msgs::PointCloud *points, vector<int> &indices, vector<vector<int> > &inliers, vector<vector<double> > &coeff,
+                     const geometry_msgs::Point32 &viewpoint_cloud, double dist_thresh, int n_max, int min_points_per_model = 100);
 
   /**
       * Input
@@ -75,7 +75,7 @@ class PlanarFit
 
    **/
   void
-    segmentPlanes (PointCloud &points, double z_min, double z_max, double support, double min_area, int n_max,
+    segmentPlanes (sensor_msgs::PointCloud &points, double z_min, double z_max, double support, double min_area, int n_max,
                    vector<vector<int> > &indices, vector<vector<double> > &models)
   {
     // This should be given as a parameter as well, or set global, etc
@@ -88,7 +88,7 @@ class PlanarFit
     // We need to know the viewpoint where the data was acquired
     // For simplicity, assuming 0,0,0 for stereo data in the stereo frame - however if this is not true, use TF to get
     //the point in a different frame !
-    Point32 viewpoint;
+    geometry_msgs::Point32 viewpoint;
     viewpoint.x = viewpoint.y = viewpoint.z = 0;
 
     // Use the entire data to estimate the plane equation.
@@ -137,7 +137,7 @@ class PlanarFit
   public:
 
     // ROS messages
-    PointCloud cloud_, cloud_plane_, cloud_outliers_;
+    sensor_msgs::PointCloud cloud_, cloud_plane_, cloud_outliers_;
 
     double z_min_, z_max_, support_, min_area_;
     int n_max_;
@@ -168,8 +168,8 @@ class PlanarFit
         ROS_WARN ("Trying to subscribe to %s, but the topic doesn't exist!", node_.mapName (cloud_topic).c_str ());
 
       node_.subscribe (cloud_topic, cloud_, &PlanarFit::cloud_cb, this, 1);
-      node_.advertise<PointCloud> ("~plane", 1);
-      node_.advertise<PointCloud> ("~outliers", 1);
+      node_.advertise<sensor_msgs::PointCloud> ("~plane", 1);
+      node_.advertise<sensor_msgs::PointCloud> ("~outliers", 1);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -208,7 +208,7 @@ class PlanarFit
   * \param z_max the maximum Z value
   */
 void
-  PlanarFit::getPointIndicesInZBounds (const PointCloud &points, double z_min, double z_max, vector<int> &indices)
+  PlanarFit::getPointIndicesInZBounds (const sensor_msgs::PointCloud &points, double z_min, double z_max, vector<int> &indices)
 {
   indices.resize (points.pts.size ());
   int nr_p = 0;
@@ -235,8 +235,8 @@ void
   * \param min_points_per_model the minimum number of points allowed for a planar model (default: 100)
   */
 bool
-  PlanarFit::fitSACPlanes (PointCloud *points, vector<int> &indices, vector<vector<int> > &inliers, vector<vector<double> > &coeff,
-                           const robot_msgs::Point32 &viewpoint_cloud, double dist_thresh, int n_max, int min_points_per_model)
+  PlanarFit::fitSACPlanes (sensor_msgs::PointCloud *points, vector<int> &indices, vector<vector<int> > &inliers, vector<vector<double> > &coeff,
+                           const geometry_msgs::Point32 &viewpoint_cloud, double dist_thresh, int n_max, int min_points_per_model)
 {
   // Create and initialize the SAC model
   sample_consensus::SACModelPlane *model = new sample_consensus::SACModelPlane ();

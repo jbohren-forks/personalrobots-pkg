@@ -34,7 +34,7 @@
 #define _CLOUD_GEOMETRY_PROJECTIONS_H_
 
 // ROS includes
-#include <robot_msgs/Point32.h>
+#include <geometry_msgs/Point32.h>
 #include <robot_msgs/Polygon3D.h>
 
 namespace cloud_geometry
@@ -50,7 +50,7 @@ namespace cloud_geometry
       * \param plane_coefficients the normalized coefficients (a, b, c, d) of a plane
       */
     inline void
-      pointToPlane (const robot_msgs::Point32 &p, robot_msgs::Point32 &q, const std::vector<double> &plane_coefficients)
+      pointToPlane (const geometry_msgs::Point32 &p, geometry_msgs::Point32 &q, const std::vector<double> &plane_coefficients)
     {
       double distance = plane_coefficients.at (0) * p.x +
                         plane_coefficients.at (1) * p.y +
@@ -83,7 +83,7 @@ namespace cloud_geometry
       * \param plane_coefficients the normalized coefficients (a, b, c, d) of a plane
       */
     inline void
-      pointsToPlane (robot_msgs::PointCloud &p, const std::vector<int> &indices, const std::vector<double> &plane_coefficients)
+      pointsToPlane (sensor_msgs::PointCloud &p, const std::vector<int> &indices, const std::vector<double> &plane_coefficients)
     {
       for (unsigned int i = 0; i < indices.size (); i++)
         pointToPlane (p.pts[indices.at (i)], p.pts[indices.at (i)], plane_coefficients);
@@ -97,7 +97,7 @@ namespace cloud_geometry
       * \param plane_coefficients the normalized coefficients (a, b, c, d) of a plane
       */
     inline void
-      pointsToPlane (const robot_msgs::PointCloud &p, const std::vector<int> &indices, robot_msgs::PointCloud &q, const std::vector<double> &plane_coefficients)
+      pointsToPlane (const sensor_msgs::PointCloud &p, const std::vector<int> &indices, sensor_msgs::PointCloud &q, const std::vector<double> &plane_coefficients)
     {
       q.pts.resize (indices.size ());
       for (unsigned int i = 0; i < indices.size (); i++)
@@ -112,7 +112,7 @@ namespace cloud_geometry
       * \param distance the computed distance from p to the plane
       */
     inline void
-      pointToPlane (const robot_msgs::Point32 &p, robot_msgs::Point32 &q, const std::vector<double> &plane_coefficients,
+      pointToPlane (const geometry_msgs::Point32 &p, geometry_msgs::Point32 &q, const std::vector<double> &plane_coefficients,
                     double &distance)
     {
       distance = plane_coefficients.at (0) * p.x +
