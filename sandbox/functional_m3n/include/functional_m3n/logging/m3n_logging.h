@@ -53,7 +53,6 @@ using namespace std;
  * \brief Functions for printing and logging statistics from the classifier
  */
 // --------------------------------------------------------------
-
 class M3NLogger
 {
   public:

@@ -50,8 +50,9 @@
 using namespace std;
 
 // --------------------------------------------------------------
-//* RegressionTreeWrapper
-/**
+/*!
+ * \file regression_tree_wrapper.h
+ *
  * \brief Wrapper around the OpenCV regression tree implementation
  */
 // --------------------------------------------------------------

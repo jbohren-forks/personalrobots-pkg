@@ -38,8 +38,9 @@
 using namespace std;
 
 // --------------------------------------------------------------
-//* RegressionTreeWrapper
-/**
+/*!
+ * \file regressor_wrapper.h
+ *
  * \brief Generic wrapper around various regressor/classification algorithms.
  *
  * Multi-class regression/classification can be handled by creating a "stacked"

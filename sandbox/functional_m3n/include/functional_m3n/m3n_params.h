@@ -42,8 +42,9 @@
 #include <functional_m3n/regressors/regressor_wrapper.h>
 
 // --------------------------------------------------------------
-//* M3NParams
-/**
+/*!
+ * \file m3n_params.h
+ *
  * \brief Parameters to train a M3NModel
  */
 // --------------------------------------------------------------
