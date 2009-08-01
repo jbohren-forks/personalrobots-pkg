@@ -2,4 +2,4 @@ string locator
 time begin
 string topic
 ---
-robot_msgs/PointCloud result
+sensor_msgs/PointCloud result
