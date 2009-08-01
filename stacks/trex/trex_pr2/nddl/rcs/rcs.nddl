@@ -42,7 +42,5 @@ class StopAction extends  ROSAction {
     string action_name;
   }
 
-  predicate Inactive {}
-
   StopAction(Mode _mode){ super(_mode);}
 };

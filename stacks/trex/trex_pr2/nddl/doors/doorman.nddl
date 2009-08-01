@@ -13,7 +13,7 @@ MoveBehavior::Inactive {
   if(status == ABORTED){
     met_by(Active p);
     MAP_KEY doorway_id;
-    neq(doorway_id, NO_KEY);
+    doorway_id != NO_KEY;
     map_get_doorway_from_points(doorway_id, 0.0, 0.0, p.x, p.y);
     map_notify_door_blocked(doorway_id);
   }
@@ -24,14 +24,14 @@ MoveBehavior::Active {
 
   // Initialize door message from the topological map
   MAP_KEY doorway_id;
-  neq(doorway_id, NO_KEY);
+  doorway_id != NO_KEY;
 
   // Only using the second point, since that point should be coming from the topological
   // map. The doorway is derived from a connector whose approach pose is closest to this
   map_get_doorway_from_points(doorway_id, 0.0, 0.0, x, y);
   starts(door_state.Holds ds);
   map_get_door_state(ds.object, doorway_id);
-  eq(ds.frame_id, frame_id);
+  ds.frame_id == frame_id;
 
   // Set travel direction based on deltas
   any(base_state.Holds bs);

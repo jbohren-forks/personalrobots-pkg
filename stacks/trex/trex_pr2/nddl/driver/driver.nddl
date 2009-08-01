@@ -2,7 +2,7 @@
 #include "common/move_behavior.nddl"
 
 
-float MOVE_BASE_DURATION_BOUND = 600.0;
+float MOVE_BASE_DURATION_BOUND = 6000.0;
 
 class DriverController extends AgentTimeline{
   predicate Holds{
@@ -25,11 +25,20 @@ fact(driver_controller.Holds nc_initial_value);
 nc_initial_value.active = false;
 
 MoveBehavior::Active{
+  ends(move_base.Active cmd_move);
+  contains cmd_move;
+  cmd_move.duration <= MOVE_BASE_DURATION_BOUND;
+  eq_pose_msg(cmd_move.object, this.object);
+  cmd_move.status == SUCCESS;
+
+       /*
   starts(DriverController.Holds nc);
   eq(nc.active, true);
   eq(nc.finished, false);
+       */
 }
 
+/*
 DriverController::Holds{
   if(active == false){
     defaultOnCommit(at_goal, false);
@@ -76,3 +85,4 @@ MoveBase::Inactive{
     eq(nc.at_goal, true);
   }
 }
+*/

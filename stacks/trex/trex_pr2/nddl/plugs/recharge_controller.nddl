@@ -3,17 +3,17 @@
 /**
  * ALL TIME BOUNDS FOR INTERNAL ACTIONS
  */
-float DETECT_OUTLET_COARSE_DURATION_BOUND = 60.0;
-float DETECT_OUTLET_FINE_DURATION_BOUND = 60.0;
-float PLUGS_UNTUCK_ARMS_DURATION_BOUND = 60.0;
-float DETECT_PLUG_ON_BASE_DURATION_BOUND = 60.0;
-float MOVE_BASE_LOCAL_DURATION_BOUND = 60.0;
-float MOVE_BASE_DURATION_BOUND = 60.0;
-float MOVE_AND_GRASP_PLUG_DURATION_BOUND = 60.0;
-float LOCALIZE_PLUG_IN_GRIPPER_DURATION_BOUND = 60.0;
-float PLUG_IN_DURATION_BOUND = 300.0;
-float UNPLUG_DURATION_BOUND = 60.0;
-float STOW_PLUG_DURATION_BOUND = 60.0;
+float DETECT_OUTLET_COARSE_DURATION_BOUND = 600.0;
+float DETECT_OUTLET_FINE_DURATION_BOUND = 600.0;
+float PLUGS_UNTUCK_ARMS_DURATION_BOUND = 600.0;
+float DETECT_PLUG_ON_BASE_DURATION_BOUND = 600.0;
+float MOVE_BASE_LOCAL_DURATION_BOUND = 600.0;
+float MOVE_BASE_DURATION_BOUND = 600.0;
+float MOVE_AND_GRASP_PLUG_DURATION_BOUND = 600.0;
+float LOCALIZE_PLUG_IN_GRIPPER_DURATION_BOUND = 600.0;
+float PLUG_IN_DURATION_BOUND = 3000.0;
+float UNPLUG_DURATION_BOUND = 600.0;
+float STOW_PLUG_DURATION_BOUND = 600.0;
 
 /**
  * @todo Get better default values
@@ -52,21 +52,15 @@ class OutletState extends AgentTimeline {
 /**
  * @note This could be sensed from the battery state
  */
-class PluggedIn extends AgentTimeline{
-  predicate True{}
-  predicate False{}
+class PluggedIn extends BooleanTimeline{
   PluggedIn(){ super(Internal, "False"); }
 };
 
-class ArmsClear extends AgentTimeline{
-  predicate True{}
-  predicate False{}
+class ArmsClear extends BooleanTimeline {
   ArmsClear(){ super(Internal, "False"); }
 };
 
-class PlugStowed extends AgentTimeline{
-  predicate True{}
-  predicate False{}
+class PlugStowed extends BooleanTimeline{
   PlugStowed(){ super(Internal, "True"); }
 };
 
@@ -117,11 +111,11 @@ RechargeController::Positioning{
   contained_by(recharger.Active rc);
   contains_start(move_base.Active cmd);
   ends cmd;
-  eq(cmd.status, SUCCESS);
-  leq(cmd.max_duration, MOVE_BASE_DURATION_BOUND);
+  cmd.status == SUCCESS;
+  cmd.max_duration <= MOVE_BASE_DURATION_BOUND;
   // Bind pose based on approach pose for the outlet
   map_get_outlet_approach_pose(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, rc.outlet_id);
-  defaultOnCommit(cmd.frame_id, "map");
+  cmd.frame_id == rc.frame_id;
   meets(FindingOutlet);
 }
 
@@ -129,7 +123,7 @@ RechargeController::FindingOutlet{
   contained_by(recharger.Active);
   contains_start(detect_outlet_coarse.Active cmd);
   ends cmd;
-  leq(cmd.max_duration, DETECT_OUTLET_COARSE_DURATION_BOUND);
+  cmd.max_duration <= DETECT_OUTLET_COARSE_DURATION_BOUND;
 
   if(cmd.status == SUCCESS){
     meets(Approaching);
@@ -143,12 +137,12 @@ RechargeController::Approaching{
   contained_by(recharger.Active);
   contains_start(move_base_local.Active cmd);
   ends cmd;
-  leq(cmd.max_duration, MOVE_BASE_LOCAL_DURATION_BOUND);
+  cmd.max_duration <= MOVE_BASE_LOCAL_DURATION_BOUND;
 
   // Here we can obtain the outlet state to get parameters from move_base local since
   // it should not be done generically at the action level as this is a shared action
-  starts_during(outlet_state.Holds os);
-  eq(cmd.frame_id, os.frame_id);
+  cmd starts_during(outlet_state.Holds os);
+  cmd.frame_id == os.frame_id;
   plugs_get_offset_pose(os.x, os.y, os.z, os.qx, os.qy, os.qz, os.qw, 0.6, 
 			cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy,cmd.qz, cmd.qw);
 
@@ -164,7 +158,7 @@ RechargeController::LocalizingOutlet{
   contained_by(recharger.Active);
   contains_start(detect_outlet_fine.Active cmd);
   ends cmd;
-  leq(cmd.max_duration, DETECT_OUTLET_FINE_DURATION_BOUND);
+  cmd.max_duration <= DETECT_OUTLET_FINE_DURATION_BOUND;
 
   if(cmd.status == SUCCESS){
     meets(FindingPlug);
@@ -178,7 +172,7 @@ RechargeController::FindingPlug{
   contained_by(recharger.Active);
   contains_start(detect_plug_on_base.Active cmd);
   ends cmd;
-  leq(cmd.max_duration, DETECT_PLUG_ON_BASE_DURATION_BOUND);
+  cmd.max_duration <= DETECT_PLUG_ON_BASE_DURATION_BOUND;
 
   if(cmd.status == SUCCESS){
     meets(GraspingPlug);
@@ -192,7 +186,7 @@ RechargeController::GraspingPlug{
   contained_by(recharger.Active);
   contains_start(move_and_grasp_plug.Active cmd);
   ends cmd;
-  leq(cmd.max_duration, MOVE_AND_GRASP_PLUG_DURATION_BOUND);
+  cmd.max_duration <= MOVE_AND_GRASP_PLUG_DURATION_BOUND;
 
   if(cmd.status == SUCCESS){
     meets(LocalizingPlugInGripper);
@@ -206,7 +200,7 @@ RechargeController::LocalizingPlugInGripper{
   contained_by(recharger.Active);
   contains_start(localize_plug_in_gripper.Active cmd);
   ends cmd;
-  leq(cmd.max_duration, LOCALIZE_PLUG_IN_GRIPPER_DURATION_BOUND);
+  cmd.max_duration <= LOCALIZE_PLUG_IN_GRIPPER_DURATION_BOUND;
 
   if(cmd.status == SUCCESS){
     meets(PluggingIn);
@@ -224,13 +218,13 @@ RechargeController::LocalizingPlugInGripper{
 RechargeController::PluggingIn{
   contained_by(recharger.Active rc);
   contains(plug_in.Active cmd);
-  leq(cmd.max_duration, PLUG_IN_DURATION_BOUND);
-  eq(cmd.outlet_id, rc.outlet_id);
+  cmd.max_duration <= PLUG_IN_DURATION_BOUND;
+  cmd.outlet_id == rc.outlet_id;
 
   if(cmd.status == SUCCESS){
     // @see Inactive rule for how the start time gets bound
     meets(Inactive s);
-    eq(s.status, SUCCESS);
+    s.status == SUCCESS;
   }
   else{
     meets(Positioning);
@@ -249,7 +243,7 @@ RechargeController::Inactive{
 // The plug gets stowed by the plug_stow action
 PlugStowed::True{
   met_by(stow_plug.Active cmd);
-  eq(cmd.status, SUCCESS);
+  cmd.status == SUCCESS;
 }
 // Use prior plug state
 StowPlug::Active{
@@ -281,8 +275,8 @@ MoveAndGraspPlug::Inactive{
 // Unplug to become unplugged!
 PluggedIn::False{
   met_by(unplug.Active cmd);
-  eq(cmd.status, SUCCESS);
-  leq(cmd.max_duration, UNPLUG_DURATION_BOUND);
+  cmd.status == SUCCESS;
+  cmd.max_duration <= UNPLUG_DURATION_BOUND;
 }
 // If plug_in succeeds, it will transition internal state
 PlugIn::Active{
@@ -293,7 +287,7 @@ PlugIn::Active{
 // The arms become clear by untucking them
 ArmsClear::True{
   met_by(plugs_untuck_arms.Active cmd);
-  leq(cmd.max_duration, PLUGS_UNTUCK_ARMS_DURATION_BOUND);
+  cmd.max_duration <= PLUGS_UNTUCK_ARMS_DURATION_BOUND;
 }
 // The arms are not clear if they are tucked
 ArmsTucked::True{
@@ -304,12 +298,14 @@ DetectPlugOnBase::Inactive{
   if(status == SUCCESS){
     starts(plug_state.Holds ps);
     eq_plug_stow_msg(ps.object, object);
+    ps.frame_id == frame_id;
   }
 }
 // Use prior outlet state
 DetectOutletFine::Active{
   starts_during(outlet_state.Holds os);
   eq_point_msg(object, os.object);
+  os.frame_id == frame_id;
 }
 // Update OutletState
 DetectOutletFine::Inactive{
@@ -317,22 +313,26 @@ DetectOutletFine::Inactive{
     // Update outlet state with feedback
     starts(outlet_state.Holds os);
     eq_pose_msg(os.object, object);
+    os.frame_id == frame_id;
   }
 }
 // Use prior outlet state
 DetectOutletCoarse::Active{
   starts_during(outlet_state.Holds os);
   eq_point_msg(object, os.object);
+  os.frame_id == frame_id;
 }
 // Update outlet state
 DetectOutletCoarse::Inactive{
   if(status == SUCCESS){
     starts(outlet_state.Holds os);
     eq_pose_msg(os.object, object);
+    os.frame_id == frame_id;
   }
 }
 // Use prior outlet state
 LocalizePlugInGripper::Active{
   starts_during(outlet_state.Holds os);
   eq_pose_msg(object, os.object);
+  os.frame_id == frame_id;
 }

@@ -128,10 +128,6 @@ class DoorManipulationBehavior extends ROSAction {
  */
 class GraspHandle extends DoorManipulationBehavior {
 
-  // Redeclare because of bug in parser
-  predicate Active{}
-  predicate Inactive{}
-
   GraspHandle(Mode _mode){
     super(_mode);
   }
@@ -143,10 +139,6 @@ class GraspHandle extends DoorManipulationBehavior {
  */
 class UnlatchHandle extends DoorManipulationBehavior {
 
-  // Redeclare because of bug in parser
-  predicate Active{}
-  predicate Inactive{}
-
   UnlatchHandle(Mode _mode){
     super(_mode);
   }
@@ -157,10 +149,6 @@ class UnlatchHandle extends DoorManipulationBehavior {
  */
 class DetectDoor extends DoorManipulationBehavior {
 
-  // Redeclare because of bug in parser
-  predicate Active{}
-  predicate Inactive{}
-
   DetectDoor(Mode _mode){
     super(_mode);
   }
@@ -170,10 +158,6 @@ class DetectDoor extends DoorManipulationBehavior {
  * DetectHandle is activated to search for the door. It will assume it is in a suitable observation position facing the door
  */
 class DetectHandle extends DoorManipulationBehavior {
-
-  // Redeclare because of bug in parser
-  predicate Active{}
-  predicate Inactive{}
 
   DetectHandle(Mode _mode){
     super(_mode);
@@ -186,10 +170,6 @@ class DetectHandle extends DoorManipulationBehavior {
  */
 class MoveBaseDoor extends DoorManipulationBehavior {
 
-  // Redeclare because of bug in parser
-  predicate Active{}
-  predicate Inactive{}
-
   MoveBaseDoor(Mode _mode){
     super(_mode);
   }
@@ -201,10 +181,6 @@ class MoveBaseDoor extends DoorManipulationBehavior {
  */
 class TouchDoor extends DoorManipulationBehavior {
 
-  // Redeclare because of bug in parser
-  predicate Active{}
-  predicate Inactive{}
-
   TouchDoor(Mode _mode){
     super(_mode, false);
   }
@@ -215,10 +191,6 @@ class TouchDoor extends DoorManipulationBehavior {
  */
 class PushDoor extends DoorManipulationBehavior {
 
-  // Redeclare because of bug in parser
-  predicate Active{}
-  predicate Inactive{}
-
   PushDoor(Mode _mode){
     super(_mode, false);
   }
@@ -228,12 +200,6 @@ class PushDoor extends DoorManipulationBehavior {
  * Behavior to open the door, assuming it is ajar, and assuming it has a grasp on the handle
  */
 class OpenDoor extends DoorManipulationBehavior {
-
-  // Redeclare because of bug in parser
-  predicate Active{
-  }
-
-  predicate Inactive{}
 
   OpenDoor(Mode _mode){
     super(_mode, false);

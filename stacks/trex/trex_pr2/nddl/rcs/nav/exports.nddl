@@ -13,8 +13,6 @@ typedef float [0.0 1.0] UNIT_FLOAT;
  * @brief Common base class for navigation behaviors which will impose similar requirements
  */
 class NavigationBehavior extends ROSAction{
-  predicate Inactive{}
-  predicate Active{}
   NavigationBehavior(Mode _mode){
     super(_mode);
   }

@@ -38,10 +38,6 @@ PlugsUntuckArms::Active{
   contained_by(right_arm_mechanism.use_joint_trajectory_controller);
 }
 
-PlugsTuckArms::Active{
-  contained_by(right_arm_mechanism.use_joint_trajectory_controller);
-}
-
 MoveAndGraspPlug::Active{
   contained_by(right_arm_mechanism.use_composite_cartesian_trajectory_controller);
   contained_by(right_gripper_mechanism.use_position_controller);

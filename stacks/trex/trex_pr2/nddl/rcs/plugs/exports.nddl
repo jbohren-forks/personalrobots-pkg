@@ -7,8 +7,6 @@
 
 
 class PlugDomainAction extends ROSAction{
-  predicate Active{}
-  predicate Inactive{}
   PlugDomainAction(Mode _mode){super(_mode);}
 };
 
@@ -16,21 +14,8 @@ class PlugDomainAction extends ROSAction{
  * @brief 
  */
 class PlugsUntuckArms extends PlugDomainAction {
-  predicate Active{}
-  predicate Inactive{}
   PlugsUntuckArms(Mode _mode){super(_mode);}
 };
-
-
-/**
- * @brief Tuck arms after plugged in
- */
-class PlugsTuckArms extends PlugDomainAction {
-  predicate Active{}
-  predicate Inactive{}
-  PlugsTuckArms(Mode _mode){super(_mode);}
-};
-
 
 /**
  * @brief This is a sensing action which will be used during navigation and recharging.
@@ -40,8 +25,6 @@ class PlugsTuckArms extends PlugDomainAction {
  * actual x and y values.
  */
 class DetectPlugOnBase extends PlugDomainAction {
-
-  predicate Active {}
 
   predicate Inactive {
     float time_stamp; // A double encoding is reliable
@@ -69,9 +52,6 @@ class StowPlug extends PlugDomainAction {
     float z;
   }
 
-  // No feedback. Just succeeds or not
-  predicate Inactive{}
-
   StowPlug(Mode _mode){super(_mode);}
 };
 
@@ -79,9 +59,6 @@ class StowPlug extends PlugDomainAction {
  * @brief For unplugging from the socket. Just using a force controller so no args required.
  */
 class Unplug extends PlugDomainAction {
-
-  predicate Active{}
-  predicate Inactive{}
 
   Unplug(Mode _mode){super(_mode);}
 };
@@ -95,8 +72,6 @@ class PlugIn extends PlugDomainAction {
   predicate Active{
     MAP_KEY outlet_id;
   }
-
-  predicate Inactive{}
 
   PlugIn(Mode _mode){super(_mode);}
 };
@@ -178,8 +153,6 @@ class LocalizePlugInGripper extends PlugDomainAction {
     float qw;
   }
 
-  predicate Inactive{}
-
   LocalizePlugInGripper(Mode _mode){super(_mode);}
 };
 
@@ -195,8 +168,6 @@ class MoveAndGraspPlug extends PlugDomainAction {
     float y;
     float z;
   }
-
-  predicate Inactive{}
 
   MoveAndGraspPlug(Mode _mode){super(_mode);}
 };

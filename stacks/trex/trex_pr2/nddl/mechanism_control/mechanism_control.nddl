@@ -19,102 +19,102 @@ SwitchControllers::Active{
 
 HeadMechanism::use_head_controller{
   met_by(switch_controllers.Active cmd);
-  eq(cmd.status, SUCCESS);
+  cmd.status == SUCCESS;
   subsetOf(cmd.up_list, all_head_controllers);
   subsetOf(cmd.down_list, all_head_controllers);
-  neq(head_controller, cmd.down_list);
-  neq(head_pan_joint_position_controller, cmd.down_list); 
-  neq(head_tilt_joint_position_controller, cmd.down_list); 
+  head_controller != cmd.down_list;
+  head_pan_joint_position_controller != cmd.down_list; 
+  head_tilt_joint_position_controller != cmd.down_list; 
 }
 
 TiltLaserMechanism::use_laser_tilt_controller{ 
   met_by(switch_controllers.Active cmd);
-  eq(cmd.status, SUCCESS);
+  cmd.status == SUCCESS;
   subsetOf(cmd.up_list, all_laser_tilt_controllers);
   subsetOf(cmd.down_list, all_laser_tilt_controllers);
-  neq(laser_tilt_controller, cmd.down_list);
+  laser_tilt_controller != cmd.down_list;
 }
 
 RightArmMechanism::use_composite_cartesian_trajectory_controller{
   met_by(switch_controllers.Active cmd);
-  eq(cmd.status, SUCCESS);
+  cmd.status == SUCCESS;
   subsetOf(cmd.up_list, all_right_arm_controllers);
   subsetOf(cmd.down_list, all_right_arm_controllers);
-  neq(r_arm_cartesian_wrench_controller, cmd.down_list);
-  neq(r_arm_cartesian_twist_controller, cmd.down_list);
-  neq(r_arm_cartesian_pose_controller, cmd.down_list);
-  neq(r_arm_cartesian_trajectory_controller, cmd.down_list);
+  r_arm_cartesian_wrench_controller != cmd.down_list;
+  r_arm_cartesian_twist_controller != cmd.down_list;
+  r_arm_cartesian_pose_controller != cmd.down_list;
+  r_arm_cartesian_trajectory_controller != cmd.down_list;
 }
 
 
 RightArmMechanism::use_constraint_composite_cartesian_trajectory_controller{
   met_by(switch_controllers.Active cmd);
-  eq(cmd.status, SUCCESS);
+  cmd.status == SUCCESS;
   subsetOf(cmd.up_list, all_right_arm_controllers);
   subsetOf(cmd.down_list, all_right_arm_controllers);
-  neq(r_arm_constraint_cartesian_wrench_controller, cmd.down_list);
-  neq(r_arm_constraint_cartesian_twist_controller, cmd.down_list);
-  neq(r_arm_constraint_cartesian_pose_controller, cmd.down_list);
-  neq(r_arm_constraint_cartesian_trajectory_controller, cmd.down_list);
+  r_arm_constraint_cartesian_wrench_controller != cmd.down_list;
+  r_arm_constraint_cartesian_twist_controller != cmd.down_list;
+  r_arm_constraint_cartesian_pose_controller != cmd.down_list;
+  r_arm_constraint_cartesian_trajectory_controller != cmd.down_list;
 }
 
 RightArmMechanism::use_constraint_composite_cartesian_pose_controller{
   met_by(switch_controllers.Active cmd);
-  eq(cmd.status, SUCCESS);
+  cmd.status == SUCCESS;
   subsetOf(cmd.up_list, all_right_arm_controllers);
   subsetOf(cmd.down_list, all_right_arm_controllers);
-  neq(r_arm_constraint_cartesian_wrench_controller, cmd.down_list);
-  neq(r_arm_constraint_cartesian_twist_controller, cmd.down_list);
-  neq(r_arm_constraint_cartesian_pose_controller, cmd.down_list);
+  r_arm_constraint_cartesian_wrench_controller != cmd.down_list;
+  r_arm_constraint_cartesian_twist_controller != cmd.down_list;
+  r_arm_constraint_cartesian_pose_controller != cmd.down_list;
 }
 
 
 RightArmMechanism::use_composite_tff_controller{
   met_by(switch_controllers.Active cmd);
-  eq(cmd.status, SUCCESS);
+  cmd.status == SUCCESS;
   subsetOf(cmd.up_list, all_right_arm_controllers);
   subsetOf(cmd.down_list, all_right_arm_controllers);
-  neq(r_arm_constraint_cartesian_wrench_controller, cmd.down_list);
-  neq(r_arm_cartesian_tff_controller, cmd.down_list);
+  r_arm_constraint_cartesian_wrench_controller != cmd.down_list;
+  r_arm_cartesian_tff_controller != cmd.down_list;
 }
 
 RightArmMechanism::use_joint_trajectory_controller{
   met_by(switch_controllers.Active cmd);
-  eq(cmd.status, SUCCESS);
+  cmd.status == SUCCESS;
   subsetOf(cmd.up_list, all_right_arm_controllers);
   subsetOf(cmd.down_list, all_right_arm_controllers);
-  neq(r_arm_joint_trajectory_controller, cmd.down_list);
+  r_arm_joint_trajectory_controller != cmd.down_list;
 }
 
 RightArmMechanism::use_cartesian_trajectory_controller{
   met_by(switch_controllers.Active cmd);
-  eq(cmd.status, SUCCESS);
+  cmd.status == SUCCESS;
   subsetOf(cmd.up_list, all_right_arm_controllers);
   subsetOf(cmd.down_list, all_right_arm_controllers);
-  neq(r_arm_cartesian_trajectory_controller, cmd.down_list);
+  r_arm_cartesian_trajectory_controller != cmd.down_list;
 }
 
 
 RightArmMechanism::use_hybrid_controller{
   met_by(switch_controllers.Active cmd);
-  eq(cmd.status, SUCCESS);
+  cmd.status == SUCCESS;
   subsetOf(cmd.up_list, all_right_arm_controllers);
   subsetOf(cmd.down_list, all_right_arm_controllers);
-  neq(r_arm_hybrid_controller, cmd.down_list);
+  r_arm_hybrid_controller != cmd.down_list;
 }
 
 RightGripperMechanism::use_effort_controller{
   met_by(switch_controllers.Active cmd);
-  eq(cmd.status, SUCCESS);
+  cmd.status == SUCCESS;
   subsetOf(cmd.up_list, all_right_gripper_controllers);
   subsetOf(cmd.down_list, all_right_gripper_controllers);
-  neq(r_gripper_effort_controller, cmd.down_list);
+  r_gripper_effort_controller != cmd.down_list;
 }
 
 RightGripperMechanism::use_position_controller{
   met_by(switch_controllers.Active cmd);
-  eq(cmd.status, SUCCESS);
+  cmd.status == SUCCESS;
   subsetOf(cmd.up_list, all_right_gripper_controllers);
   subsetOf(cmd.down_list, all_right_gripper_controllers);
-  neq(r_gripper_position_controller, cmd.down_list);
+  r_gripper_position_controller != cmd.down_list;
 }

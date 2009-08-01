@@ -10,10 +10,6 @@
  */
 class SafetyTuckArms extends  ROSAction {
 
-  predicate Active {}
-
-  predicate Inactive {}
-
   SafetyTuckArms(Mode _mode){ super(_mode);}
 }
 
@@ -21,10 +17,6 @@ class SafetyTuckArms extends  ROSAction {
  * Behavior to extract the gripper from a grasp on the handle
  */
 class ReleaseHandle extends ROSAction {
-
-  // Redeclare because of bug in parser
-  predicate Active{}
-  predicate Inactive{}
 
   ReleaseHandle(Mode _mode){
     super(_mode);
@@ -36,8 +28,6 @@ class ReleaseHandle extends ROSAction {
  * add parameters for this.
  */
 class SetLaserTilt extends ROSAction {
-  predicate Inactive{}
-  predicate Active{}
 
   SetLaserTilt(Mode _mode){
     super(_mode);
@@ -47,9 +37,7 @@ class SetLaserTilt extends ROSAction {
 /**
  * Tracks the state if the arms are tucked or not. This is a safety issue for mobility.
  */
-class ArmsTucked extends AgentTimeline {
-  predicate True{}
-  predicate False{};
+class ArmsTucked extends BooleanTimeline {
   ArmsTucked(Mode _mode){
     super(_mode, "False");
   }
@@ -58,9 +46,7 @@ class ArmsTucked extends AgentTimeline {
 /**
  * This will change to actually track the laser tilt configuration
  */
-class TiltLaserReady extends AgentTimeline {
-  predicate True{}
-  predicate False{};
+class TiltLaserReady extends BooleanTimeline {
   TiltLaserReady(Mode _mode){
     super(_mode, "False");
   }
@@ -69,8 +55,6 @@ class TiltLaserReady extends AgentTimeline {
 /**
  * @brief An internal variable for tracking if the gripper is free or not
  */
-class GripperFree extends AgentTimeline{
-  predicate True{}
-  predicate False{}
+class GripperFree extends BooleanTimeline{
   GripperFree(Mode _mode){ super(_mode, "True"); }
 };

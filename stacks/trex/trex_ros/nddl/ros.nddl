@@ -60,3 +60,14 @@ ROSAction::Active{
   addEq(dispatch_time, time_since_dispatch, start);
   leq(time_since_dispatch, 100); // Magic number to break the plan if 100 ticks passes between dispatch and starting
 }
+
+/**
+ * Reusable class for boolean state variables
+ */
+class BooleanTimeline extends AgentTimeline {
+  predicate True{}
+  predicate False{};
+  BooleanTimeline(Mode _mode, string _default_value){
+    super(_mode, _default_value);
+  }
+};

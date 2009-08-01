@@ -52,7 +52,6 @@ class M2Goals extends AgentTimeline {
 
     // Constraint must be defined here to allow x and y values to be accessible for planning.
     map_get_outlet_approach_pose(x, y, z, qx, qy, qz, qw, outlet_id);
-    defaultOnCommit(frame_id, "map");
   }
 
   predicate Inactive{
@@ -73,25 +72,29 @@ Recharger recharger = new Recharger(External);
 BaseState base_state = new BaseState(External);
 
 M2Goals::Active{
-  meets(Inactive s); // Successor state
+ default(frame_id, "map");
+ meets(Inactive s); // Successor state
 
-  // Must get to the target location
-  contains(navigator.Active cmd_nav);
-  eq_pose_msg(cmd_nav.object, object);
-  eq(cmd_nav.status, SUCCESS);
+ // Must get to the target location
+ contains(navigator.Active cmd_nav);
+ eq_pose_msg(cmd_nav.object, object);
+ cmd_nav.frame_id == frame_id;
+ cmd_nav.status == SUCCESS;
 
-  // Now have to conditionally handle the case of recharging since we might not need to do it. If not recharging,
-  // then this goal will be terminated on the transition to the desired inactive navigation state. Otherwise it will
-  // end when recharging is done.
-  if(outlet_id == NO_KEY){
-    concurrent(end, cmd_nav.end);
-    eq(s.status, SUCCESS);
-  }
-  else {
-    ends(recharger.Active cmd_recharge);
-    cmd_nav before cmd_recharge;
-    eq(s.status, cmd_recharge.status);
-  }
+ // Now have to conditionally handle the case of recharging since we might not need to do it. If not recharging,
+ // then this goal will be terminated on the transition to the desired inactive navigation state. Otherwise it will
+ // end when recharging is done.
+ if(outlet_id == NO_KEY){
+   concurrent(end, cmd_nav.end);
+   s.status == SUCCESS;
+ }
+ else {
+   ends(recharger.Active cmd_recharge);
+   cmd_nav before cmd_recharge;
+   s.status == cmd_recharge.status;
+   cmd_recharge.outlet_id == outlet_id;
+   cmd_recharge.frame_id == frame_id;
+ }
 }
 
 /**
@@ -99,12 +102,11 @@ M2Goals::Active{
  * to say - if(status != SUCCESS){}
  */
 M2Goals::Inactive{
-  if(status == SUCCESS){}
-  else {
+  if(status != SUCCESS){
     met_by(Active p);
     before (Active g);
-    eq(g.outlet_id, p.outlet_id);
+    g.outlet_id == p.outlet_id;
     eq_pose_msg(g.object, p.object);
+    g.frame_id == p.frame_id;
   }
 }
-

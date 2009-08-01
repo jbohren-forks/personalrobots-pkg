@@ -7,6 +7,11 @@ DoorManipulationBehavior::Active{
   defaultOnCommit(duration, 1);
 }
 
+// Set the farme id to be odom_bombined for testing purposes
+DoorManipulationBehavior::Inactive{
+  frame_id == "odom_combined";
+}
+
 CheckPath::Active{
   meets(Inactive s);
   eq(s.status, SUCCESS);
@@ -48,4 +53,32 @@ OpenDoor::Active{
   eq(duration, 10);
 }
 
+DetectOutletCoarse::Inactive{
+  frame_id == "odom_combined";
+  x == 1.0;
+  y == 1.0;
+  z == 0.0;
+  qx == 0.0;
+  qy == 1.0;
+  qz == 0.0;
+  qw == 1.0;
+}
+
+DetectOutletFine::Inactive{
+  frame_id == "odom_combined";
+  x == 1.0;
+  y == 1.0;
+  z == 0.0;
+  qx == 0.0;
+  qy == 1.0;
+  qz == 0.0;
+  qw == 1.0;
+}
+
+DetectPlugOnBase::Inactive{
+  frame_id == "odom_combined";
+  x == 0.5;
+  y == 0.5;
+  z == 0.3;
+}
 

@@ -45,14 +45,14 @@
  * These constants are the set of all individual action timeout limits for actions
  * used in the door domain. All values are in seconds
  */
-float CHECK_PATH_DURATION_BOUND = 30.0;
-float DETECT_DOOR_DURATION_BOUND = 30.0;
-float DETECT_HANDLE_DURATION_BOUND = 60.0;
-float GRASP_HANDLE_DURATION_BOUND = 30.0;
-float UNLATCH_HANDLE_DURATION_BOUND = 30.0;
-float MOVE_BASE_LOCAL_APPROACH_DURATION_BOUND = 60.0;
-float MOVE_BASE_THROUGH_DOOR_DURATION_BOUND = 600.0;
-float MOVE_BASE_DOOR_DURATION_BOUND = 120.0;
+float CHECK_PATH_DURATION_BOUND = 300.0;
+float DETECT_DOOR_DURATION_BOUND = 300.0;
+float DETECT_HANDLE_DURATION_BOUND = 600.0;
+float GRASP_HANDLE_DURATION_BOUND = 300.0;
+float UNLATCH_HANDLE_DURATION_BOUND = 300.0;
+float MOVE_BASE_LOCAL_APPROACH_DURATION_BOUND = 600.0;
+float MOVE_BASE_THROUGH_DOOR_DURATION_BOUND = 6000.0;
+float MOVE_BASE_DOOR_DURATION_BOUND = 1200.0;
 
 /**
  * @brief We maintain an internal model of soor state. This is a time-dependent specification of a Door Msg. It will be
@@ -197,7 +197,7 @@ dc_initial_state.status = UNDEFINED;
 // constraints across timelines
 DoorController::Inactive{
   equals(doorman.Inactive dm);
-  eq(dm.status, status);
+  dm.status == status;
 }
 
 DoorController::CheckingDoorway{
@@ -206,7 +206,7 @@ DoorController::CheckingDoorway{
   contains_start(check_path.Active cmd);
   ends cmd;
   // Apply the local duration bound. This will force preemption
-  leq(cmd.max_duration, CHECK_PATH_DURATION_BOUND);
+  cmd.max_duration <= CHECK_PATH_DURATION_BOUND;
   // Read the pose arguments from the goal pose of the doorman
   eq_pose_msg(cmd.object, dm.object);
   // We require that the cmd succeed. Failure will trigger a replan
@@ -214,7 +214,7 @@ DoorController::CheckingDoorway{
   // If the doorway is clear we can drive on thru. Otherwise we have to figure out how to open the door. To do so,
   // we must be in position for detection
   cmd meets (check_path.Inactive cmd_feedback);
-  eq(cmd_feedback.status, SUCCESS);
+  cmd_feedback.status == SUCCESS;
   if(cmd_feedback.is_clear == true){
     meets(DriveThruDoorway);
   }
@@ -229,14 +229,14 @@ DoorController::DriveThruDoorway{
   contains_start(move_base.Active cmd);
   ends cmd;
   // Duration bounds
-  leq(cmd.max_duration, MOVE_BASE_THROUGH_DOOR_DURATION_BOUND);
+  cmd.max_duration <= MOVE_BASE_THROUGH_DOOR_DURATION_BOUND;
   // Command parameters based on doorman goal pose
   eq_pose_msg(cmd.object, dm.object);
   // If the command succeded we are done! If not, it is likely because the door is actually blocking us so we will want
   // to get back to detect the door and figure out how to get thru
   if(cmd.status == SUCCESS){
     meets(Inactive s);
-    eq(s.status, SUCCESS);
+    s.status == SUCCESS;
   }
   else{
     meets(Positioning);
@@ -247,7 +247,8 @@ DoorController::Positioning{
   contained_by(doorman.Active dm);
   contains_start(move_base.Active cmd);
   ends cmd;
-  eq(cmd.status, SUCCESS);
+  cmd.status == SUCCESS;
+
   // Arguments derived from the topological map
   eq(cmd.frame_id, "map");
   map_get_door_approach_pose(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, dm.start_connector);
@@ -282,7 +283,7 @@ DoorController::DetectingHandle{
   contains_start(detect_handle.Active cmd);
   ends cmd;
   // Duration bounds
-  leq(cmd.max_duration, DETECT_HANDLE_DURATION_BOUND);
+  cmd.max_duration <= DETECT_HANDLE_DURATION_BOUND;
 
   // If we fail here, we can try get a new door pose. If we succeed we are ready to approach the door to open it
   if(cmd.status == SUCCESS){
@@ -298,10 +299,11 @@ DoorController::ApproachingDoor{
   // Action that does all the work
   contains_start(move_base_local.Active cmd);
   ends cmd;
-  leq(cmd.max_duration, MOVE_BASE_LOCAL_APPROACH_DURATION_BOUND);
+  cmd.max_duration <= MOVE_BASE_LOCAL_APPROACH_DURATION_BOUND;
+
   // target pose derived from the door state, and assuming a desired grasp range
   contained_by(door_state.Holds ds);
-  eq(cmd.frame_id, ds.frame_id);
+  cmd.frame_id == ds.frame_id;
   door_get_robot_pose_for_door(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, ds.object, GRASP_RANGE);
 
   // If we succed, then based on the latch state we will open the door or have to grasp the handle first. On failure we restart!
@@ -311,7 +313,7 @@ DoorController::ApproachingDoor{
     }
     else{
       meets(OpenDoor s);
-      eq(s.use_handle, false);
+      s.use_handle == false;
     }
   }
   else {
@@ -324,7 +326,7 @@ DoorController::GraspingHandle{
   // Action with duration bounds
   contains_start(grasp_handle.Active cmd);
   ends cmd;
-  leq(cmd.max_duration, GRASP_HANDLE_DURATION_BOUND);
+  cmd.max_duration <= GRASP_HANDLE_DURATION_BOUND;
   // If we have it, we can unlatch it. Otherwise we need to release the handle and go back to the start
   if(cmd.status == SUCCESS){
     meets(UnlatchingHandle);
@@ -338,7 +340,7 @@ DoorController::UnlatchingHandle{
   contained_by(doorman.Active);
   // Action with bounds
   contains_start(unlatch_handle.Active cmd);
-  leq(cmd.max_duration, UNLATCH_HANDLE_DURATION_BOUND);
+  cmd.max_duration <= UNLATCH_HANDLE_DURATION_BOUND;
   // We could fail. In which case we want to restart. Otherwise handle case where the door is locked, vs unlatched.
   if(cmd.status == SUCCESS){
     cmd meets(unlatch_handle.Inactive cmd_feedback);
@@ -347,11 +349,11 @@ DoorController::UnlatchingHandle{
       // After the end time, release the handle
       ends cmd;
       meets(Inactive s);
-      eq(s.status, ABORTED);
+      s.status == ABORTED;
     }
     else {
       cmd meets(OpenDoor s);
-      eq(s.use_handle, true);
+      s.use_handle == true;
     }
   }
   else {
@@ -364,7 +366,7 @@ DoorController::OpenDoor{
   // We will be moving the base thru the doorway. It must succeed, eventually, as we have no implemented recovery
   // for failure.
   contains(move_base_door.Active cmd_move_base_door);
-  leq(cmd_move_base_door.max_duration, MOVE_BASE_DOOR_DURATION_BOUND);
+  cmd_move_base_door.max_duration <= MOVE_BASE_DOOR_DURATION_BOUND;
   // Introduce a stop action that will preempt children
   cmd_move_base_door before(stop_action.Active cmd_stop_action);
 
@@ -375,7 +377,7 @@ DoorController::OpenDoor{
     // This must start before we begin moving the base
     cmd_open_door starts_before cmd_move_base_door;
     // Must stop the open door action explicitly
-    eq(cmd_stop_action.action_name,"open_door");
+    eq(cmd_stop_action.action_name, "open_door");
     // Ends when open_door finishes
     concurrent(cmd_open_door.end, end);
   }
@@ -383,10 +385,10 @@ DoorController::OpenDoor{
     // Need to touch the door and then push it. Both must succeed
     contains(touch_door.Active cmd_touch_door);
     cmd_touch_door before(push_door.Active cmd_push_door);
-    eq(cmd_touch_door.status, SUCCESS);
+    cmd_touch_door.status == SUCCESS;
     // Must start pushing before we begin moving the base
     cmd_push_door starts_before cmd_move_base_door;
-    eq(cmd_stop_action.action_name,"push_door");
+    eq(cmd_stop_action.action_name, "push_door");
     // Ends when push_door finishes
     concurrent(cmd_push_door.end, end);
   }

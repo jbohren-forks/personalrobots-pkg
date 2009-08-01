@@ -5,8 +5,8 @@
 #include "common/move_behavior.nddl"
 #include "navigator/exports.nddl"
 
-float DOORMAN_DURATION_BOUND = 600.0;
-float DRIVER_DURATION_BOUND = 600.0;
+float DOORMAN_DURATION_BOUND = 6000.0;
+float DRIVER_DURATION_BOUND = 6000.0;
 
 class NavController extends AgentTimeline {
   predicate Holds {
@@ -31,9 +31,9 @@ Navigator::Active{
   if(isSingleton(start)){
     starts(nav_controller.Holds nc);
     starts_during(base_state.Holds bs);
-    eq(nc.active, true);	
-    eq(nc.x, bs.x);
-    eq(nc.y, bs.y);
+    nc.active == true;	
+    nc.x == bs.x;
+    nc.y == bs.y;
   }
 }
 
@@ -53,14 +53,12 @@ NavController::Holds{
     // Are we at the goal?
     float distance;
     calcDistance(distance, x, y, nav_active.x, nav_active.y);
-    bool at_goal;
-    testLEQ(at_goal, distance, 0.2);
       
-    if(at_goal == true){
+    if(distance <= 0.2){
       meets(navigator.Inactive nav_inactive);
-      eq(nav_inactive.status, SUCCESS);
-      eq(s.active, false);
-      eq(duration, 1);
+      nav_inactive.status == SUCCESS;
+      s.active == false;
+      duration == 1;
     }
     else{
       // Take the next step towards the goal. This will either navigate to the
@@ -75,8 +73,8 @@ NavController::Holds{
       // door and these are encoded internally in the domains.
       contains_start(MoveBehavior.Active cmd);
       concurrent(cmd.end, end);
-      eq(cmd.frame_id, nav_active.frame_id);
-      eq(cmd.status, SUCCESS);
+      cmd.frame_id == nav_active.frame_id;
+      cmd.status == SUCCESS;
 
       // Determine the next map point to go for. It will either be the outlet
       // or it will be a doorway en-route to the outlet. This function calls a
@@ -94,12 +92,12 @@ NavController::Holds{
 				nav_active.x, nav_active.y);
 
       if(thru_doorway == true){
-	eq(cmd.object, doorman);
-	leq(cmd.duration, DOORMAN_DURATION_BOUND);
+	cmd.object == doorman;
+	cmd.duration <= DOORMAN_DURATION_BOUND;
       }
       else{
-	eq(cmd.object, driver);
-	leq(cmd.duration, DRIVER_DURATION_BOUND);
+	cmd.object == driver;
+	cmd.duration <= DRIVER_DURATION_BOUND;
       }
     }
   }
@@ -107,6 +105,6 @@ NavController::Holds{
 
 MoveBehavior::Inactive{
   starts(nav_controller.Holds nc);
-  eq(nc.x, x);
-  eq(nc.y, y);
+  nc.x == x;
+  nc.y == y;
 }
