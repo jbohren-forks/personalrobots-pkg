@@ -6,4 +6,7 @@
   <depend package="roscpp" />
   <depend package="rospy" />
   <depend package="diagnostic_msgs" />
+  <export> 
+    <cpp cflags="-I${prefix}/srv/cpp" />   
+  </export> 
 </package>
