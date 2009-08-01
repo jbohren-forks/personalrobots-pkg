@@ -36,64 +36,94 @@
 #include <mpglue/SetIndexTransform.h>
 #include <mpglue/SelectPlanner.h>
 #include <navfn/SetCostmap.h>
+#include <navfn/MakeNavPlan.h>
 #include <gtest/gtest.h>
 
 #define PREFIX "/costmap_planner_node/"
 
-
-TEST (costmap_planner_node, set_costmap)
-{
-  ros::NodeHandle nh;
-  ros::ServiceClient
-    client(nh.serviceClient<navfn::SetCostmap>(PREFIX "set_costmap"));
-  navfn::SetCostmap srv;
-  srv.request.width = 4;
-  srv.request.height = 3;
-  uint16_t const tt(srv.request.width * srv.request.height);
-  srv.request.costs.reserve(tt);
-  for (uint8_t ii(0); ii < tt; ++ii)
-    srv.request.costs.push_back(ii);
-  ASSERT_TRUE (client.call(srv));
-}
+using navfn::SetCostmap;
+using mpglue::SetIndexTransform;
+using mpglue::SelectPlanner;
+using navfn::MakeNavPlan;
 
 
-TEST (costmap_planner_node, set_index_transform)
-{
-  ros::NodeHandle nh;
-  ros::ServiceClient
-    client(nh.serviceClient<mpglue::SetIndexTransform>(PREFIX "set_index_transform"));
-  mpglue::SetIndexTransform srv;
-  srv.request.origin_x =    0.3;
-  srv.request.origin_y =  -10.5;
-  srv.request.origin_th =   1.234;
-  srv.request.resolution =  0.05;
-  EXPECT_TRUE (client.call(srv));
-  srv.request.resolution =  -9876;
-  EXPECT_FALSE (client.call(srv));
-}
+namespace mpglue_test {
 
-
-TEST (costmap_planner_node, select_planner)
-{
-  ros::NodeHandle nh;
-  ros::ServiceClient
-    client(nh.serviceClient<mpglue::SelectPlanner>(PREFIX "select_planner"));
-  mpglue::SelectPlanner srv;
-
-  srv.request.planner_spec = "";
-  srv.request.robot_spec = "";
-  EXPECT_TRUE (client.call(srv)) << "error_message " << srv.response.error_message;
-  EXPECT_EQ (srv.response.ok, 1);
-
-  srv.request.planner_spec = "ad:3dkin";
-  srv.request.robot_spec = "pr2:100:150:55:34";
-  EXPECT_TRUE (client.call(srv)) << "error_message " << srv.response.error_message;
-  EXPECT_EQ (srv.response.ok, 1);
+  class CostmapPlannerNodeTest
+    : public testing::Test {
+  public:
+    CostmapPlannerNodeTest()
+      : set_costmap_client(nh.serviceClient<SetCostmap>(PREFIX "set_costmap")),
+	set_index_transform_client(nh.serviceClient<SetIndexTransform>(PREFIX "set_index_transform")),
+	select_planner_client(nh.serviceClient<SelectPlanner>(PREFIX "select_planner")),
+	make_nav_plan_client(nh.serviceClient<mpglue::SelectPlanner>(PREFIX "make_nav_plan"))
+    {}
   
-  srv.request.planner_spec = "__NoSuchPlanner";
-  srv.request.robot_spec = "__NoSuchRobot";
-  EXPECT_TRUE (client.call(srv));
-  EXPECT_EQ (srv.response.ok, 0);
+    ros::NodeHandle nh;
+  
+    ros::ServiceClient set_costmap_client;
+    ros::ServiceClient set_index_transform_client;
+    ros::ServiceClient select_planner_client;
+    ros::ServiceClient make_nav_plan_client;
+  
+    SetCostmap set_costmap_srv;
+    SetIndexTransform set_index_transform_srv;
+    SelectPlanner select_planner_srv;
+    MakeNavPlan make_nav_plan_srv;
+  };
+
+}
+
+using namespace mpglue_test;
+
+TEST_F (CostmapPlannerNodeTest, set_costmap)
+{
+  set_costmap_srv.request.width = 4;
+  set_costmap_srv.request.height = 3;
+  uint16_t const tt(set_costmap_srv.request.width * set_costmap_srv.request.height);
+  set_costmap_srv.request.costs.reserve(tt);
+  for (uint8_t ii(0); ii < tt; ++ii)
+    set_costmap_srv.request.costs.push_back(ii);
+  ASSERT_TRUE (set_costmap_client.call(set_costmap_srv));
+}
+
+
+TEST_F (CostmapPlannerNodeTest, set_index_transform)
+{
+  set_index_transform_srv.request.origin_x =    0.3;
+  set_index_transform_srv.request.origin_y =  -10.5;
+  set_index_transform_srv.request.origin_th =   1.234;
+  set_index_transform_srv.request.resolution =  0.05;
+  EXPECT_TRUE (set_index_transform_client.call(set_index_transform_srv));
+  set_index_transform_srv.request.resolution =  -9876;
+  EXPECT_FALSE (set_index_transform_client.call(set_index_transform_srv));
+}
+
+
+TEST_F (CostmapPlannerNodeTest, select_planner)
+{
+  select_planner_srv.request.planner_spec = "";
+  select_planner_srv.request.robot_spec = "";
+  EXPECT_TRUE (select_planner_client.call(select_planner_srv))
+    << "error_message " << select_planner_srv.response.error_message;
+  EXPECT_EQ (select_planner_srv.response.ok, 1);
+
+  select_planner_srv.request.planner_spec = "ad:3dkin";
+  select_planner_srv.request.robot_spec = "pr2:100:150:55:34";
+  EXPECT_TRUE (select_planner_client.call(select_planner_srv))
+    << "error_message " << select_planner_srv.response.error_message;
+  EXPECT_EQ (select_planner_srv.response.ok, 1);
+  
+  select_planner_srv.request.planner_spec = "__NoSuchPlanner";
+  select_planner_srv.request.robot_spec = "__NoSuchRobot";
+  EXPECT_TRUE (select_planner_client.call(select_planner_srv));
+  EXPECT_EQ (select_planner_srv.response.ok, 0);
+}
+
+
+TEST_F (CostmapPlannerNodeTest, make_nav_plan)
+{
+  
 }
 
 
