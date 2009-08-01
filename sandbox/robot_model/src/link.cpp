@@ -128,10 +128,6 @@ bool Inertial::initXml(TiXmlElement *config)
   iyz_  = atof(inertia_xml->Attribute("iyz"));
   izz_  = atof(inertia_xml->Attribute("izz"));
 
-  // Maps
-  for (TiXmlElement* map_xml = config->FirstChildElement("map"); map_xml; map_xml = map_xml->NextSiblingElement("map"))
-    this->maps_.push_back(map_xml);
-
   return true;
 }
 
@@ -154,10 +150,6 @@ bool Visual::initXml(TiXmlElement *config)
     return false;
   }
 
-  // Maps
-  for (TiXmlElement* map_xml = config->FirstChildElement("map"); map_xml; map_xml = map_xml->NextSiblingElement("map"))
-    this->maps_.push_back(map_xml);
-
   return true;
 }
 
@@ -179,10 +171,6 @@ bool Collision::initXml(TiXmlElement* config)
     std::cerr << "ERROR: Malformed geometry for Collision element" << std::endl;
     return false;
   }
-
-  // Maps
-  for (TiXmlElement* map_xml = config->FirstChildElement("map"); map_xml; map_xml = map_xml->NextSiblingElement("map"))
-    this->maps_.push_back(map_xml);
 
   return true;
 }
@@ -253,9 +241,11 @@ bool Mesh::initXml(TiXmlElement *c)
 
 bool Link::initXml(TiXmlElement* config)
 {
+  this->name_.clear();
+  this->parent_joint_ = NULL;
+  this->parent_ = NULL;
   this->children_.clear();
   this->child_joints_.clear();
-  this->maps_.clear();
 
   const char *name = config->Attribute("name");
   if (!name)
@@ -339,10 +329,6 @@ bool Link::initXml(TiXmlElement* config)
       collision_.reset();
     }
   }
-
-  // Maps
-  for (TiXmlElement* map_xml = config->FirstChildElement("map"); map_xml; map_xml = map_xml->NextSiblingElement("map"))
-    this->maps_.push_back(map_xml);
 
   return true;
 }

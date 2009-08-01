@@ -62,7 +62,6 @@ public:
   bool initXml(TiXmlElement* config);
   double damping_;
   double friction_;
-  std::vector<TiXmlElement*> maps_;
 };
 
 class JointLimits
@@ -81,7 +80,6 @@ public:
   double max_;
   double effort_;
   double velocity_;
-  std::vector<TiXmlElement*> maps_;
 
 };
 
@@ -98,7 +96,6 @@ public:
   Link* getChildLink() {return this->child_link_;};
 
 private:
-  TiXmlElement* xml_;
   std::string name_;
 
   enum
@@ -134,9 +131,6 @@ private:
 
   /// Joint Limits
   boost::scoped_ptr<JointLimits> joint_limits_;
-
-  /// \brief A list of maps
-  std::vector<TiXmlElement*> maps_;
 
 public:
   // Joint element has one parent and one child Link

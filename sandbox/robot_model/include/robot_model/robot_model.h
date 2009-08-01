@@ -140,10 +140,8 @@ public:
   bool initXml(TiXmlElement *xml);
   Link* getRoot() {return this->root_link_;};
 
-  std::vector<TiXmlElement*> maps_;
 private:
   Link* getLink(const std::string& name);
-  void addChildren(Link* p);
 
   /// Every Robot Description File can be described as a
   ///   list of Links and Joints

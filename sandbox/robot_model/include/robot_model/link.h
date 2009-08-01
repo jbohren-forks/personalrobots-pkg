@@ -54,8 +54,6 @@ public:
   virtual bool initXml(TiXmlElement *) = 0;
 
   enum {SPHERE, BOX, CYLINDER, MESH} type_;
-
-  std::vector<TiXmlElement*> maps_;
 };
 
 class Sphere : public Geometry
@@ -98,7 +96,6 @@ public:
   bool initXml(TiXmlElement* config);
   double getMass() {return this->mass_;};///make variables public instead?
 private:
-  std::vector<TiXmlElement*> maps_;
   Pose origin_;
   double mass_;
   double ixx_,ixy_,ixz_,iyy_,iyz_,izz_;
@@ -110,7 +107,6 @@ public:
   Visual(void) {};
   bool initXml(TiXmlElement* config);
 private:
-  std::vector<TiXmlElement*> maps_;
   Pose origin_;
   boost::scoped_ptr<Geometry> geometry_;
 
@@ -121,7 +117,6 @@ class Collision
 public:
   bool initXml(TiXmlElement* config);
 private:
-  std::vector<TiXmlElement*> maps_;
   Pose origin_;
   boost::scoped_ptr<Geometry> geometry_;
 
@@ -176,8 +171,6 @@ private:
   std::vector<Link*> children_;
 
   std::vector<Joint*> child_joints_;
-
-  std::vector<TiXmlElement*> maps_;
 
   // FOR CURRENT URobotModel --> NEW DOM COMPATIBILITY
   // store parent Link, Joint and origin as raw string/TiXmlElement

@@ -46,7 +46,7 @@ char** g_argv;
 class TestParser : public testing::Test
 {
 public:
-  RobotModel parser;
+  RobotModel robot;
 
 protected:
   /// constructor
@@ -67,14 +67,15 @@ protected:
 TEST_F(TestParser, test)
 {
   for (int i=1; i<g_argc-1; i++){
+    printf("\n\nprocessing file %d : %s\n",i,g_argv[i]);
     TiXmlDocument robot_model_xml;
     robot_model_xml.LoadFile(g_argv[i]);
     TiXmlElement *robot_xml = robot_model_xml.FirstChildElement("robot");
     ASSERT_TRUE(robot_xml != NULL);
     if (i == g_argc-2)
-      ASSERT_TRUE(parser.initXml(robot_xml));
+      ASSERT_TRUE(robot.initXml(robot_xml));
     else
-      ASSERT_FALSE(parser.initXml(robot_xml));
+      ASSERT_FALSE(robot.initXml(robot_xml));
   }
   SUCCEED();
 }

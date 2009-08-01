@@ -54,6 +54,11 @@ RobotModel::RobotModel()
 
 bool RobotModel::initXml(TiXmlElement *robot_xml)
 {
+  links_.clear();
+  joints_.clear();
+  root_link_ = NULL;
+  link_parent_.clear();
+
   cout << "INFO: Parsing robot xml" << endl;
   if (!robot_xml) return false;
 
@@ -188,6 +193,7 @@ bool RobotModel::initXml(TiXmlElement *robot_xml)
 
         // set transform from parent Link to parent Joint frame for Link element
         Pose parent_pose;
+
         parent_pose.initXml(link->second->getOriginXml());
         parent_joint->second->setParentPose(parent_pose);
 
@@ -224,23 +230,7 @@ bool RobotModel::initXml(TiXmlElement *robot_xml)
   cout << "INFO: Link: " << *root_name << " is the root Link " << endl;
   this->root_link_ = getLink(*root_name); // set root link
 
-  // Get Maps
-  for (TiXmlElement* map_xml = robot_xml->FirstChildElement("map"); map_xml; map_xml = map_xml->NextSiblingElement("map"))
-    this->maps_.push_back(map_xml);
-
   return true;
-}
-
-void RobotModel::addChildren(Link* p)
-{
-  // find links that have parent 'p'
-  for (map<string, string>::const_iterator c=link_parent_.begin(); c!=link_parent_.end(); c++)
-  {
-    if (c->second == p->getName())
-    {
-      //addChildren(links_.find(c->first)->second);
-    }
-  }
 }
 
 Link* RobotModel::getLink(const std::string& name)

@@ -56,10 +56,6 @@ bool JointProperties::initXml(TiXmlElement* config)
   else
     this->friction_ = atof(friction_str);
 
-  // Maps
-  for (TiXmlElement* map_xml = config->FirstChildElement("map"); map_xml; map_xml = map_xml->NextSiblingElement("map"))
-    this->maps_.push_back(map_xml);
-
   if (damping_str == NULL && friction_str == NULL)
   {
     std::cerr << "ERROR: joint_properties element specified with no damping and no friction" << std::endl;
@@ -99,10 +95,6 @@ bool JointLimits::initXml(TiXmlElement* config)
   else
     this->velocity_ = atof(velocity_str);
 
-  // Maps
-  for (TiXmlElement* map_xml = config->FirstChildElement("map"); map_xml; map_xml = map_xml->NextSiblingElement("map"))
-    this->maps_.push_back(map_xml);
-
   if (min_str == NULL && max_str == NULL && effort_str == NULL && velocity_str == NULL)
   {
     std::cerr << "ERROR: joint limit element specified with no readable attributes" << std::endl;
@@ -119,6 +111,10 @@ const std::string& Joint::getName() const
 
 bool Joint::initXml(TiXmlElement* config)
 {
+  this->name_.clear();
+  this->parent_link_ = NULL;
+  this->child_link_ = NULL;
+
   const char *name = config->Attribute("name");
   if (!name)
   {
@@ -204,10 +200,6 @@ bool Joint::initXml(TiXmlElement* config)
       joint_properties_.reset();
     }
   }
-
-  // Get Maps
-  for (TiXmlElement* map_xml = config->FirstChildElement("map"); map_xml; map_xml = map_xml->NextSiblingElement("map"))
-    this->maps_.push_back(map_xml);
 
   return true;
 }
