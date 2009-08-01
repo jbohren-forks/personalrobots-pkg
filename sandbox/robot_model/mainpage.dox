@@ -2,7 +2,7 @@
 \mainpage
 \htmlinclude manifest.html
 
-\b urdf_parser is ... 
+\b robot_model is ... 
 
 <!-- 
 In addition to providing an overview of your package,

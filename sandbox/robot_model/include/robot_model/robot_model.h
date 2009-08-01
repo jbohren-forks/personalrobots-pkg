@@ -34,21 +34,21 @@
 
 /* Author: Wim Meeussen */
 
-#ifndef RDF_PARSER_H
-#define RDF_PARSER_H
+#ifndef ROBOT_MODEL_PARSER_H
+#define ROBOT_MODEL_PARSER_H
 
 #include <string>
 #include <map>
 #include <tinyxml/tinyxml.h>
 #include <boost/function.hpp>
-#include "rdf_parser/link.h"
+#include "robot_model/link.h"
 
 using namespace std;
 
-namespace rdf_parser{
+namespace robot_model{
 
-/// RDF is a class containing DOMified robot description file
-/// Everyone using RDF should take data from the DOM rather than parsing it themselves
+/// RobotModel is a class containing robot model data structure
+/// Everyone using RobotModel should take data from the DOM rather than parsing it themselves
 ///
 /// The parser now parses old URDF into new DOM
 ///
@@ -74,10 +74,10 @@ namespace rdf_parser{
 ///       </geometry>
 ///     </collision>
 ///
-///     <parent name="P"/>  <!-- name of the parent link. in new URDF, this is in <link><joint>, not here -->
+///     <parent name="P"/>  <!-- name of the parent link. in new RobotModel, this is in <link><joint>, not here -->
 ///
 ///     <!-- <origin> is the transform from parent Link to this Joint in parent Link frame -->
-///     <origin xyz="0 0 0" rpy="0 0 0"/> <!-- in new URDF, this is in <joint><parent>, not here -->
+///     <origin xyz="0 0 0" rpy="0 0 0"/> <!-- in new RobotModel, this is in <joint><parent>, not here -->
 ///
 ///     <joint name="J" type="revolute">
 ///       <!-- joint properties -->
@@ -85,12 +85,12 @@ namespace rdf_parser{
 ///       <joint_properties damping="1" friction="0"/>
 ///       <limit min="0" max="1" effort="1000" velocity="1"/>
 ///
-///       <!-- OPTIONAL: transform from this Joint in child Link frame to child Link (equivalent to <child> in new URDF) -->
+///       <!-- OPTIONAL: transform from this Joint in child Link frame to child Link (equivalent to <child> in new RobotModel) -->
 ///       <anchor xyz="0 0 0"/>
 ///     </joint>
 ///   </link>
 ///
-/// NEW PROPOSED URDF that corresponds to the new DOM:
+/// NEW PROPOSED RobotModel XML that corresponds to the new RobotModel data structure:
 ///   <link name="C">
 ///     <inertial>
 ///       <mass value="10"/>
@@ -132,10 +132,10 @@ namespace rdf_parser{
 ///     </joint>
 ///   </link>
 
-class RDF
+class RobotModel
 {
 public:
-  RDF();
+  RobotModel();
 
   bool initXml(TiXmlElement *xml);
   Link* getRoot() {return this->root_link_;};
@@ -149,11 +149,11 @@ private:
   ///   list of Links and Joints
   /// The connection between links(nodes) and joints(edges)
   ///   should define a tree (i.e. 1 parent link, 0+ children links)
-  /// RDF currently do not support 
+  /// RobotModel currently do not support 
   std::map<std::string, Link*> links_;
   std::map<std::string, Joint*> joints_;
 
-  /// RDF is restricted to a tree for now, which means there exists one root link
+  /// RobotModel is restricted to a tree for now, which means there exists one root link
   ///  typically, root link is the world(inertial).  Where world is a special link
   /// or is the root_link_ the link attached to the world by PLANAR/FLOATING joint?
   ///  hmm...

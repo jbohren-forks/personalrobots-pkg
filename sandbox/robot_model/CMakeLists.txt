@@ -9,7 +9,7 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 #  MinSizeRel     : w/o debug symbols, w/ optimization, stripped binaries
 set(ROS_BUILD_TYPE Debug)
 
-rospack(rdf_parser)
+rospack(robot_model)
 
 #set the default path for built executables to the "bin" directory
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
@@ -22,7 +22,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #gensrv()
 
 #common commands for building c++ executables and libraries
-rospack_add_library(${PROJECT_NAME} src/rdf.cpp src/link.cpp src/joint.cpp)
+rospack_add_library(${PROJECT_NAME} src/robot_model.cpp src/link.cpp src/joint.cpp)
 #target_link_libraries(${PROJECT_NAME} another_library)
 rospack_add_boost_directories()
 #rospack_link_boost(${PROJECT_NAME} thread)
@@ -30,6 +30,6 @@ rospack_add_boost_directories()
 rospack_add_executable(example test/example.cpp)
 target_link_libraries(example ${PROJECT_NAME})
 
-rospack_add_executable(test_parser test/test_rdf_parser.cpp)
+rospack_add_executable(test_parser test/test_robot_model_parser.cpp)
 target_link_libraries(test_parser ${PROJECT_NAME})
-rospack_add_rostest(${PROJECT_SOURCE_DIR}/test/test_rdf_parser.launch)
+rospack_add_rostest(${PROJECT_SOURCE_DIR}/test/test_robot_model_parser.launch)

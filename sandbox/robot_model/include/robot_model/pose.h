@@ -34,8 +34,8 @@
 
 /* Author: Wim Meeussen */
 
-#ifndef RDF_PARSER_POSE_H
-#define RDF_PARSER_POSE_H
+#ifndef RobotModel_PARSER_POSE_H
+#define RobotModel_PARSER_POSE_H
 
 #include <string>
 #include <vector>
@@ -44,7 +44,7 @@
 
 using namespace std;
 
-namespace rdf_parser{
+namespace robot_model{
 
 class Vector3
 {

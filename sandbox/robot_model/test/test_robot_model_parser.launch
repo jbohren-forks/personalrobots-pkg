@@ -1,0 +1,4 @@
+<launch>
+  <test test-name="test_robot_model_parser" pkg="robot_model" type="test_parser"
+        args="$(find robot_model)/test/pr2_desc_double_joint.xml $(find robot_model)/test/pr2_desc_loop.xml $(find robot_model)/test/pr2_desc_no_joint.xml $(find robot_model)/test/pr2_desc_two_trees.xml $(find robot_model)/test/pr2_desc_bracket.xml  $(find robot_model)/test/pr2_desc_double.xml $(find robot_model)/test/pr2_desc_no_joint2.xml $(find robot_model)/test/pr2_desc_parent_itself.xml $(find robot_model)/test/pr2_desc.xml" />
+</launch>

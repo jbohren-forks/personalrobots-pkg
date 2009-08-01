@@ -34,11 +34,11 @@
 
 /* Author: Wim Meeussen */
 
-#include "rdf_parser/rdf.h"
+#include "robot_model/robot_model.h"
 #include <iostream>
 
 using namespace std;
-using namespace rdf_parser;
+using namespace robot_model;
 
 void printTree(Link* link,int level = 0)
 {
@@ -72,22 +72,22 @@ int main(int argc, char** argv)
     cerr << "Expect xml file to parse" << std::endl;
     return -1;
   }
-  TiXmlDocument rdf_xml;
-  rdf_xml.LoadFile(argv[1]);
-  TiXmlElement *robot_xml = rdf_xml.FirstChildElement("robot");
+  TiXmlDocument robot_model_xml;
+  robot_model_xml.LoadFile(argv[1]);
+  TiXmlElement *robot_xml = robot_model_xml.FirstChildElement("robot");
   if (!robot_xml){
     cerr << "ERROR: Could not load the xml into TiXmlElement" << std::endl;
     return -1;
   }
 
-  RDF robot;
+  RobotModel robot;
   if (!robot.initXml(robot_xml)){
-    cerr << "ERROR: RDF Parsing the xml failed" << std::endl;
+    cerr << "ERROR: RobotModel Parsing the xml failed" << std::endl;
     return -1;
   }
 
   // get info from parser
-  std::cout << "---------- Finished Loading from URDF XML, Now Checking RDF structure ------------" << std::endl;
+  std::cout << "---------- Finished Loading from RobotModel XML, Now Checking RobotModel structure ------------" << std::endl;
   // get root link
   Link* root_link=robot.getRoot();
   std::cout << "root Link: " << root_link->getName() << " has " << root_link->getChildren()->size() << " children" << std::endl;

@@ -36,14 +36,14 @@
 
 #include <boost/algorithm/string.hpp>
 #include <vector>
-#include "rdf_parser/rdf.h"
+#include "robot_model/robot_model.h"
 
 using namespace std;
 
-namespace rdf_parser{
+namespace robot_model{
 
 
-RDF::RDF()
+RobotModel::RobotModel()
 {
   links_.clear();
   joints_.clear();
@@ -52,7 +52,7 @@ RDF::RDF()
 }
 
 
-bool RDF::initXml(TiXmlElement *robot_xml)
+bool RobotModel::initXml(TiXmlElement *robot_xml)
 {
   cout << "INFO: Parsing robot xml" << endl;
   if (!robot_xml) return false;
@@ -64,7 +64,7 @@ bool RDF::initXml(TiXmlElement *robot_xml)
   ///   3.  build tree - fill in pointers for parents, children, etc
   ///
   ///
-  /// When we switch to the new RDF structure, we'll have to change the steps to below:
+  /// When we switch to the new RobotModel structure, we'll have to change the steps to below:
   ///   1.  get all Link elements, store in map<nam,Link*>
   ///   2.  get all Joint elements, store in map<nam,Joint*> AND
   ///         fill in parent/child information in Joint::initXml() for both Joint and Link elements.
@@ -72,7 +72,7 @@ bool RDF::initXml(TiXmlElement *robot_xml)
 
 
 
-  /// Because old URDF allows us to define Joint elements inside/outside of Link elements, we have to do this
+  /// Because old URobotModel allows us to define Joint elements inside/outside of Link elements, we have to do this
   /// @todo: give deprecation warning and phase out defining Joint elements inside Link elements
   // Get Joint elements defined outside of Link elements
   for (TiXmlElement* joint_xml = robot_xml->FirstChildElement("joint"); joint_xml; joint_xml = joint_xml->NextSiblingElement("joint"))
@@ -191,7 +191,7 @@ bool RDF::initXml(TiXmlElement *robot_xml)
         parent_pose.initXml(link->second->getOriginXml());
         parent_joint->second->setParentPose(parent_pose);
 
-        // since we're using old URDF format, set origins for Joint elements using origin_xml_ in links
+        // since we're using old URobotModel format, set origins for Joint elements using origin_xml_ in links
         parent_joint->second->setChildLink(link->second);
 
         parent_joint->second->setChildPose(Pose());
@@ -231,7 +231,7 @@ bool RDF::initXml(TiXmlElement *robot_xml)
   return true;
 }
 
-void RDF::addChildren(Link* p)
+void RobotModel::addChildren(Link* p)
 {
   // find links that have parent 'p'
   for (map<string, string>::const_iterator c=link_parent_.begin(); c!=link_parent_.end(); c++)
@@ -243,7 +243,7 @@ void RDF::addChildren(Link* p)
   }
 }
 
-Link* RDF::getLink(const std::string& name)
+Link* RobotModel::getLink(const std::string& name)
 {
   if (this->links_.find(name) == this->links_.end())
     return NULL;

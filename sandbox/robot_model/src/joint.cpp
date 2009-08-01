@@ -34,11 +34,11 @@
 
 /* Author: John Hsu */
 
-#include <rdf_parser/joint.h>
+#include <robot_model/joint.h>
 
 using namespace std;
 
-namespace rdf_parser{
+namespace robot_model{
 
 bool JointProperties::initXml(TiXmlElement* config)
 {

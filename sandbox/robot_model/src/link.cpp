@@ -35,12 +35,12 @@
 /* Author: Wim Meeussen */
 
 
-#include "rdf_parser/link.h"
+#include "robot_model/link.h"
 
 using namespace std;
 
 
-namespace rdf_parser{
+namespace robot_model{
 
 Geometry *parseGeometry(TiXmlElement *g)
 {
@@ -81,7 +81,7 @@ bool Inertial::initXml(TiXmlElement *config)
   TiXmlElement *o = config->FirstChildElement("origin");
   if (!o)
   {
-    std::cout << "WARN: origin tag not present for inertial element, checking old URDF format com: " << std::endl;
+    std::cout << "WARN: origin tag not present for inertial element, checking old URobotModel format com: " << std::endl;
     o = config->FirstChildElement("com");
     if (!o)
     {
@@ -270,7 +270,7 @@ bool Link::initXml(TiXmlElement* config)
   const char *parent_joint_name = j ? j->Attribute("name") : NULL;
   if (!parent_joint_name)
   {
-    // in proposed new URDF links are to have no joints, but the other way around
+    // in proposed new URobotModel links are to have no joints, but the other way around
     std::cerr << "ERROR: Invalid parent joint name: " << parent_joint_name << " for Link:"
               << this->name_ << std::endl;
     return false;
@@ -283,7 +283,7 @@ bool Link::initXml(TiXmlElement* config)
   const char *parent_name = p ? p->Attribute("name") : NULL;
   if (!parent_name)
   {
-    // in proposed new URDF, parent is specified in joint, joints connect to parent and child links
+    // in proposed new URobotModel, parent is specified in joint, joints connect to parent and child links
     std::cerr << "ERROR: No parent name given for Link:"
               << this->name_ << std::endl;
     return false;
@@ -295,7 +295,7 @@ bool Link::initXml(TiXmlElement* config)
   origin_xml_ = config->FirstChildElement("origin");
   if (!origin_xml_)
   {
-    // in proposed new URDF, origin is specified in joint, for both parent and child
+    // in proposed new URobotModel, origin is specified in joint, for both parent and child
     std::cerr << "ERROR: No origin tag for Link:"
               << this->name_ << std::endl;
     return false;

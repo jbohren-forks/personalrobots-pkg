@@ -34,19 +34,19 @@
 
 /* Author: Wim Meeussen */
 
-#ifndef RDF_PARSER_JOINT_H
-#define RDF_PARSER_JOINT_H
+#ifndef RobotModel_PARSER_JOINT_H
+#define RobotModel_PARSER_JOINT_H
 
 #include <string>
 #include <vector>
 #include <tinyxml/tinyxml.h>
 #include <boost/scoped_ptr.hpp>
 
-#include <rdf_parser/pose.h>
+#include <robot_model/pose.h>
 
 using namespace std;
 
-namespace rdf_parser{
+namespace robot_model{
 
 class Link;
 

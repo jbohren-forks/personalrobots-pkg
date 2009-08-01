@@ -34,19 +34,19 @@
 
 /* Author: Wim Meeussen */
 
-#ifndef RDF_PARSER_LINK_H
-#define RDF_PARSER_LINK_H
+#ifndef RobotModel_PARSER_LINK_H
+#define RobotModel_PARSER_LINK_H
 
 #include <string>
 #include <vector>
 #include <tinyxml/tinyxml.h>
 #include <boost/scoped_ptr.hpp>
 
-#include <rdf_parser/joint.h>
+#include <robot_model/joint.h>
 
 using namespace std;
 
-namespace rdf_parser{
+namespace robot_model{
 
 class Geometry
 {
@@ -179,9 +179,9 @@ private:
 
   std::vector<TiXmlElement*> maps_;
 
-  // FOR CURRENT URDF --> NEW DOM COMPATIBILITY
+  // FOR CURRENT URobotModel --> NEW DOM COMPATIBILITY
   // store parent Link, Joint and origin as raw string/TiXmlElement
-  // the relationship goes like this for the current urdf definition -> DOM:
+  // the relationship goes like this for the current urdf definition -> RobotModel:
   //   * origin_xml_ defines the parent_joint_pose == the pose transform from parent_link to parent_joint
   //   * assumes transform from current_link to current_joint IS Identity
   //   * joint angle IS the pose difference between parent_joint_pose and current_joint_pose

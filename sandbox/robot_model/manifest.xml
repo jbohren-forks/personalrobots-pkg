@@ -1,0 +1,19 @@
+<package>
+  <description brief="robot_model">
+     robot model / robot description format parser
+  </description>
+  <author>Wim Meeussen, John Hsu</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/robot_model</url>
+
+  <depend package="tinyxml" />
+  <depend package="gtest" />
+
+  <export>
+    <cpp cflags="-I${prefix}/include -I${prefix}/msg/cpp -I${prefix}/srv/cpp" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lrobot_model"/>
+  </export>
+
+</package>
+
+

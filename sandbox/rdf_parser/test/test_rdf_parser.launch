@@ -1,3 +1,0 @@
-<launch>
-  <test test-name="test_rdf_parser" pkg="rdf_parser" type="test_parser" args="$(find rdf_parser)/test/pr2_desc_double_joint.xml $(find rdf_parser)/test/pr2_desc_loop.xml $(find rdf_parser)/test/pr2_desc_no_joint.xml $(find rdf_parser)/test/pr2_desc_two_trees.xml $(find rdf_parser)/test/pr2_desc_bracket.xml  $(find rdf_parser)/test/pr2_desc_double.xml $(find rdf_parser)/test/pr2_desc_no_joint2.xml $(find rdf_parser)/test/pr2_desc_parent_itself.xml $(find rdf_parser)/test/pr2_desc.xml" />
-</launch>

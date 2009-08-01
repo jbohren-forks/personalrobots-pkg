@@ -36,9 +36,9 @@
 
 #include <string>
 #include <gtest/gtest.h>
-#include "rdf_parser/rdf.h"
+#include "robot_model/robot_model.h"
 
-using namespace rdf_parser;
+using namespace robot_model;
 
 int g_argc;
 char** g_argv;
@@ -46,7 +46,7 @@ char** g_argv;
 class TestParser : public testing::Test
 {
 public:
-  RDF parser;
+  RobotModel parser;
 
 protected:
   /// constructor
@@ -67,9 +67,9 @@ protected:
 TEST_F(TestParser, test)
 {
   for (int i=1; i<g_argc-1; i++){
-    TiXmlDocument rdf_xml;
-    rdf_xml.LoadFile(g_argv[i]);
-    TiXmlElement *robot_xml = rdf_xml.FirstChildElement("robot");
+    TiXmlDocument robot_model_xml;
+    robot_model_xml.LoadFile(g_argv[i]);
+    TiXmlElement *robot_xml = robot_model_xml.FirstChildElement("robot");
     ASSERT_TRUE(robot_xml != NULL);
     if (i == g_argc-2)
       ASSERT_TRUE(parser.initXml(robot_xml));
