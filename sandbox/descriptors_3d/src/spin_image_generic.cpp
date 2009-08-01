@@ -59,14 +59,6 @@ void SpinImageGeneric::computeNeighborhoodFeature(const robot_msgs::PointCloud& 
                                                   const unsigned int interest_sample_idx,
                                                   cv::Vector<float>& result) const
 {
-  // TODO delete
-  if (interest_sample_idx == 141)
-  {
-    ROS_INFO("SPIN IMAGE cluster 141: nbr neighbors: %u", neighbor_indices.size());
-    ROS_INFO("SPIN IMAGE cluster 141: centroid: %f %f %f", spin_image_centers_[interest_sample_idx][0], spin_image_centers_[interest_sample_idx][1], spin_image_centers_[interest_sample_idx][2]);
-  }
-  // TODO delete
-
   const Eigen::Vector3d* curr_spin_axis = (*spin_axes_)[interest_sample_idx];
   if (curr_spin_axis == NULL)
   {
