@@ -39,22 +39,52 @@
 namespace driver_base
 {
 
+/**
+ *
+ * State transition functions assume that they are called from the correct
+ * state. It is the caller's responsibility to check that the state is
+ * correct. The Device mutex_ should always be locked by the caller before
+ * checking the current state and throughout the call to the transition function.
+ *
+ * State should not change between calls to the transition function except
+ * for transitions from RUNNING to STOPPED. The device must hold its lock
+ * while doing this transition to allow the caller to enforce that stop is
+ * only called from the RUNNING state.
+ *
+ * Transitions may fail. It is the caller's responsibility to check success
+ * by looking at the device's state_. After a failure, the device can set
+ * itself into any state. For example, if a call to start() fails, the
+ * device may end up in the CLOSED state.
+ *
+ */
+
 class Device
 {
-  virtual bool open() = 0;
-  virtual bool close() = 0;
-  
-  virtual bool start() = 0;
-  virtual bool stop() = 0;
-  
-  virtual void poll() = 0;
+protected:
+  char state_;
 
-  static const char CLOSED = 0;
-  static const char OPENED = 1;
-  static const char RUNNING = 2;
-  static const char ERROR = -1;
+public:
+  boost::mutex mutex_;
+  
+  virtual void open() = 0;
+  virtual void close() = 0;
+  
+  virtual void start() = 0;
+  virtual void stop() = 0;
+  
+  typedef char state_t;
 
-}
+  static const state_t CLOSED = 0; // Not connected to the hardware.
+  static const state_t OPENED = 1; // Connected to the hardware, ready to start streaming.
+  static const state_t RUNNING = 2; // Streaming data.
+
+  state_t getState()
+  {
+    return state_;
+  }
+
+  virtual ~Device() {}
+};
 
 /// @fixme derived classes for nodes that only poll or only stream.
 

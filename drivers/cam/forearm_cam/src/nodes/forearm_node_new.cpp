@@ -58,9 +58,10 @@
 #include <iostream>
 #include <fstream>
 #include <forearm_cam/BoardConfig.h>
-#include <forearm_cam/ForearmCamReconfigurator.h>
 #include <boost/tokenizer.hpp>
 #include <boost/format.hpp>
+#include <driver_base/driver.h>
+#include <driver_base/device.h>
 
 #include "fcamlib.h"
 #include "host_netutil.h"
@@ -180,35 +181,17 @@ private:
   double frame_period_;
 };
 
-class ForearmNode
+class ForearmCamDevice : public driver_base::Device
 {
+  friend class ForearmCamDriver;
 private:
   // Driver classes
-  ros::NodeHandle &node_handle_;
+  ros::NodeHandle node_handle_; /// @todo this should end up being eliminated.
   forearm_cam::ForearmCamConfig config_;
-  forearm_cam::ForearmCamReconfigurator reconfigurator_;
-  diagnostic_updater::Updater diagnostic_;
-  SelfTest<ForearmNode> self_test_;
   
-  // Publications
-  diagnostic_updater::DiagnosedPublisher<sensor_msgs::Image> cam_pub_;
-  diagnostic_updater::DiagnosedPublisher<sensor_msgs::CameraInfo> cam_info_pub_;
-  sensor_msgs::Image image_;
-  sensor_msgs::CameraInfo cam_info_;
-
   // Services
-  
   ros::ServiceClient trig_service_;
   ros::ServiceServer config_bord_service_;
-
-  // Driver State
-  bool started_video_;
-  bool open_;
-  bool was_running_pretest_;
-  int exit_status_;
-  
-  // Locks
-  boost::mutex diagnostics_lock_;
 
   // Video mode
 
@@ -223,6 +206,7 @@ private:
   int missed_line_count_;
   double last_image_time_;
   unsigned int last_frame_number_;
+  int lost_image_thread_count_;
  
   // Timing
   int misfire_blank_;
@@ -242,93 +226,28 @@ private:
   controller::trigger_configuration trig_req_;
   robot_mechanism_controllers::SetWaveform::Response trig_rsp_;
   
-  // Calibration
-  bool calibrated_;
-  
   // Threads
-  boost::thread *image_thread_;
-  boost::thread *diagnostic_thread_;
+  boost::shared_ptr<boost::thread> image_thread_;
 
   // Frame function (gets called when a frame arrives).
   typedef boost::function<int(size_t, size_t, uint8_t*, ros::Time)> UseFrameFunction;
   UseFrameFunction useFrame_;
   
 public:
-
-  ForearmNode(ros::NodeHandle &nh) :
-    node_handle_(nh), 
-    reconfigurator_(node_handle_),
-    diagnostic_(ros::NodeHandle()), 
-    self_test_(this),
-    cam_pub_(node_handle_.advertise<sensor_msgs::Image>("~image_raw", 1), 
-        diagnostic_,
-        diagnostic_updater::FrequencyStatusParam(&desired_freq_, &desired_freq_, 0.05), 
-        diagnostic_updater::TimeStampStatusParam()),
-    cam_info_pub_(ros::Publisher(), 
-        diagnostic_,
-        diagnostic_updater::FrequencyStatusParam(&desired_freq_, &desired_freq_, 0.05), 
-        diagnostic_updater::TimeStampStatusParam()),
-    started_video_(false),
-    camera_(NULL), 
-    useFrame_(boost::bind(&ForearmNode::publishImage, this, _1, _2, _3, _4))
+  typedef forearm_cam::ForearmCamReconfigurator Reconfigurator;
+  
+  ForearmCamDevice() :
+    camera_(NULL) 
   {
-    started_video_ = false;
-    open_ = false;
     misfire_blank_ = 0;
-    image_thread_ = NULL;
-    diagnostic_thread_ = NULL;
     
     // Clear statistics
     last_image_time_ = 0;
     missed_line_count_ = 0;
     missed_eof_count_ = 0;
-    
-    // Setup diagnostics
-    diagnostic_.add("Link Status", this, &ForearmNode::linkStatus );
-
-    // Setup self test
-    self_test_.setPretest( &ForearmNode::pretest );
-    self_test_.addTest( &ForearmNode::interruptionTest );
-    self_test_.addTest( &ForearmNode::connectTest );
-    self_test_.addTest( &ForearmNode::startTest );
-    self_test_.addTest( &ForearmNode::streamingTest );
-    self_test_.addTest( &ForearmNode::disconnectTest );
-    for (int i = 0; i < MT9V_NUM_MODES; i++)
-    {
-      diagnostic_updater::TaskFunction f = boost::bind(&ForearmNode::videoModeTest, this, MT9VModes[i].name, _1);
-      self_test_.add( str(boost::format("Test Pattern in mode %s")%MT9VModes[i].name), f );
-    }
-    self_test_.addTest( &ForearmNode::resumeTest );
-    
-    // Set up reconfiguration
-    reconfigurator_.set_callback(boost::bind<void>(&ForearmNode::reconfigure, this, _1));
-    
-    // Start up the 
-    diagnostic_thread_ = new boost::thread(boost::bind(&ForearmNode::diagnosticsLoop, this));
+    lost_image_thread_count_ = 0;
   }
   
-  void reconfigure(int level)
-  {
-    bool was_running_ = started_video_;
-    bool was_open_ = open_;
-
-    if ((level | dynamic_reconfigure::SensorLevels::RECONFIGURE_STOP) == level)
-      stop();
-
-    if ((level | dynamic_reconfigure::SensorLevels::RECONFIGURE_CLOSE) == level)
-      close();
-
-    reconfigurator_.get_config(config_);
-    config_update();
-    reconfigurator_.set_config(config_);
-
-    if (was_open_)
-      open();
-
-    if (was_running_)
-      start();
-  }
- 
   void config_update()
   {
     for (video_mode_ = 0; video_mode_ < MT9V_NUM_MODES; video_mode_++)
@@ -344,14 +263,8 @@ public:
     /// @todo add a check that width_ and height_ are set in cam_info in test bench
     width_ = MT9VModes[video_mode_].width;
     height_ = MT9VModes[video_mode_].height;
-    cam_info_.width = width_;
-    cam_info_.height = height_;
     imager_freq_ = MT9VModes[video_mode_].fps;
 
-    // Specify which frame to add to message header
-    image_.header.frame_id = config_.frame_id;
-    cam_info_.header.frame_id = config_.frame_id;
-        
     // Distinguish between serial_number_ and config_.serial_number_ so
     // that when auto is selected, we will try to restart the previous
     // camera before probing again.
@@ -373,69 +286,16 @@ public:
     }
   }
 
-  void diagnosticsLoop()
-  {
-    //int frameless_updates = 0;
-    
-    bool have_started = false;
-    
-    cam_pub_.clear_window(); // Avoids having an error until the window fills up.
-    while (node_handle_.ok())
-    {
-      if (!started_video_)
-      {
-        stop();
-        close();
-        if (have_started && config_.exit_on_fault)
-        {
-          node_handle_.shutdown();
-          break;
-        }
-        open();
-        start();
-        have_started = true;
-      }
-
-      { 
-        boost::mutex::scoped_lock(diagnostics_lock_);
-        diagnostic_.update();
-        self_test_.checkTest();
-      }
-      sleep(1);
-
-      /*if (count_ == 0 && started_video_)
-        frameless_updates++;
-      else
-        frameless_updates = 0;
-
-      if (frameless_updates >= 2)
-      {
-        ROS_WARN("No frames are arriving. Attempting to restart image stream.");
-        fcamReset(camera_);
-        if ( fcamStartVid( camera_, (uint8_t *)&(localMac_.sa_data[0]), inet_ntoa(localIp_), port_) != 0 )
-        {
-          ROS_ERROR("Failed to restart image stream. Will retry later.");
-        }
-      }*/
-    }
-
-    ROS_DEBUG("Diagnostic thread exiting.");
-  }
-
-  ~ForearmNode()
+  ~ForearmCamDevice()
   {
     close();
 
-    ROS_DEBUG("ForearmNode destructor exiting.");
-    
-    node_handle_.shutdown();
   }
 
   void open()
   {
+    assert(state_ == CLOSED);
     ROS_DEBUG("open()");
-    if (open_)
-      return;
     
     int retval;
     // Create a new IpCamList to hold the camera list
@@ -621,77 +481,91 @@ public:
       }
     }
 
-    // Try to load camera intrinsics from flash memory
-    calibrated_ = loadIntrinsics(&cam_info_.D[0], &cam_info_.K[0],
-                                 &cam_info_.R[0], &cam_info_.P[0]);
-    if (calibrated_)
-      ROS_INFO("Loaded intrinsics from camera");
-    else
-      ROS_WARN("Failed to load intrinsics from camera");
-
+    // Initialize frame time filter.
     frameTimeFilter_ = FrameTimeFilter(desired_freq_, 0.001, 0.5 / imager_freq_); 
     
-    // Receive frames through callback
-    if (calibrated_)
-      cam_info_pub_.set_publisher(node_handle_.advertise<sensor_msgs::CameraInfo>("~cam_info", 1));
-    else
-      cam_info_pub_.set_publisher(ros::Publisher());
+    config_bord_service_ = node_handle_.advertiseService("~board_config", &ForearmCamDevice::boardConfig, this);
     
-    config_bord_service_ = node_handle_.advertiseService("~board_config", &ForearmNode::boardConfig, this);
-    
-    open_ = true;;
+    state_ = OPENED;
   }
 
   void close()
   {
     ROS_DEBUG("close()");
-    stop();
+    assert(state_ == OPENED);
     config_bord_service_ = ros::ServiceServer();
-    open_ = false;
+    state_ = CLOSED;
   }
 
   void start()
   {
     ROS_DEBUG("start()");
-    if (!open_)
-      open();
-    if (open_)
-    {
-      // Start video; send it to specified host port
-      // @todo TODO: Only start when somebody is listening?
-      started_video_ = true;
-      image_thread_ = new boost::thread(boost::bind(&ForearmNode::imageThread, this, config_.port));
-    }
+    assert(state_ == OPENED);
+    image_thread_.reset(new boost::thread(boost::bind(&ForearmCamDevice::imageThread, this, config_.port)));
+    state_ = RUNNING;   
   }
 
   void stop()
   {
     ROS_DEBUG("stop()");
+    assert(state_ == RUNNING);
 
-    started_video_ = false;
-    if (image_thread_)
+    if (image_thread_ && !image_thread_->timed_join((boost::posix_time::milliseconds) 2000))
     {
-      if (image_thread_->timed_join((boost::posix_time::milliseconds) 2000))
-      {
-        delete image_thread_;
-        image_thread_ = NULL;
-      }
-      else
-      {
-        ROS_DEBUG("image_thread_ did not die after two seconds. Proceeding.");
-      }
+      ROS_ERROR("image_thread_ did not die after two seconds. Pretending that it did. This is probably a bad sign.");
+      lost_image_thread_count_++;
     }
+    image_thread_.reset();
     
+    state_ = OPENED;
   }
   
+  int setTestMode(uint16_t mode, diagnostic_updater::DiagnosticStatusWrapper &status)
+  {
+    if ( fcamReliableSensorWrite( camera_, 0x7F, mode, NULL ) != 0) {
+      status.summary(2, "Could not set imager into test mode.");
+      status.adds("Writing imager test mode", "Fail");
+      return 1;
+    }
+    else
+    {
+      status.adds("Writing imager test mode", "Pass");
+    }
+
+    usleep(100000);
+    uint16_t inmode;
+    if ( fcamReliableSensorRead( camera_, 0x7F, &inmode, NULL ) != 0) {
+      status.summary(2, "Could not read imager mode back.");
+      status.adds("Reading imager test mode", "Fail");
+      return 1;
+    }
+    else
+    {
+      status.adds("Reading imager test mode", "Pass");
+    }
+    
+    if (inmode != mode) {
+      status.summary(2, "Imager test mode read back did not match.");
+      status.addsf("Comparing read back value", "Fail (%04x != %04x)", inmode, mode);
+      return 1;
+    }
+    else
+    {
+      status.adds("Comparing read back value", "Pass");
+    }
+    
+    return 0;
+  }
+
 private:
   void imageThread(int port)
   {
     // Start video
-    if ( fcamStartVid( camera_, (uint8_t *)&(localMac_.sa_data[0]),
-                      inet_ntoa(localIp_), config_.port) != 0 ) {
-      ROS_FATAL("Video start error");
-      started_video_ = false;
+    if ( fcamStartVid( camera_, (uint8_t *)&(localMac_.sa_data[0]), inet_ntoa(localIp_), config_.port) != 0 ) 
+    {
+      ROS_FATAL("Could not start camera streaming.");
+      boost::mutex::scoped_lock lock(mutex_);
+      state_ = OPENED;
       return;
     }
     if (!trig_controller_cmd_.empty())
@@ -712,8 +586,8 @@ private:
     frameTimeFilter_.reset_filter();
     ROS_INFO("Camera running.");
   
-      // Receive video
-    fcamVidReceive(camera_->ifName, port, height_, width_, &ForearmNode::frameHandler, this);
+    // Receive video
+    fcamVidReceive(camera_->ifName, port, height_, width_, &ForearmCamDevice::frameHandler, this);
     
     // Stop Triggering
     if (!trig_controller_cmd_.empty())
@@ -731,9 +605,10 @@ private:
     }
 stop_video:
     // Stop video
-    if (started_video_) // Exited unexpectedly.
+    boost::mutex::scoped_lock lock(mutex_);
+    if (state_ == RUNNING)
     {
-      started_video_ = false;
+      state_ = OPENED;
       ROS_ERROR("Image thread exited unexpectedly.");
       
       if ( fcamStopVid(camera_) == 0 )
@@ -746,19 +621,13 @@ stop_video:
     ROS_DEBUG("Image thread exiting.");
   }
 
-/*  void freqStatus(diagnostic_updater::DiagnosticStatusWrapper& status)
-  {
-    freq_diag_(status);
-
-  }*/
-
   void linkStatus(diagnostic_updater::DiagnosticStatusWrapper& stat)
   {
     if (ros::Time::now().toSec() - last_image_time_ > 5 / desired_freq_)
     {
       stat.summary(2, "Next frame is past due.");
     }
-    else if (started_video_)
+    else if (state_ == RUNNING)
     {
       stat.summary(0, "Frames are streaming.");
     }
@@ -769,6 +638,7 @@ stop_video:
     
     stat.addv("Missing image line frames", missed_line_count_);
     stat.addv("Missing EOF frames", missed_eof_count_);
+    stat.addv("Losses of image thread", lost_image_thread_count_);
     stat.addv("First packet offset", config_.first_packet_offset);
     stat.adds("Interface", config_.if_name);
     stat.adds("Camera IP", config_.ip_address);
@@ -784,43 +654,6 @@ stop_video:
     stat.adds("Trigger mode", config_.ext_trig ? "external" : "internal");
   }
 
-  int publishImage(size_t width, size_t height, uint8_t *frameData, ros::Time t)
-  {
-    fillImage(image_, "image", height, width, 1, "bayer_bggr", "uint8", frameData);
-    
-    /*static FILE *f = fopen("/tmp/deltas.out", "w");
-    std::vector<unsigned char> idat = image_.uint8_data.data;
-    int maxdelta = 0;
-    for (int i = width_/3; i < 2*width_/3; i++)
-    {
-      int d1 = (i & 1) * width_;
-      int d2 = width_ - d1;
-      int h1 = idat[width_ * (height_ / 2) + i + d2] - idat[width_ * (height_ / 2) + i + 1 + d1];
-      if (abs(h1) > maxdelta)
-        maxdelta = abs(h1);
-      h1 += height_ / 2;
-      image_.uint8_data.data[h1 * width_ + i] = 255;
-      image_.uint8_data.data[(h1 + 1) * width_ + i] = 0;
-      image_.uint8_data.data[(h1 + 2) * width_ + i] = 255;
-      image_.uint8_data.data[(height_/2 - 1) * width_ + i] = 0;
-      image_.uint8_data.data[height_/2 * width_ + i] = 255;
-      image_.uint8_data.data[(height_/2 + 1) * width_ + i] = 0;
-    }
-    fprintf(f, "Maxdelta: %i\n", maxdelta);
-    fflush(f);*/
-
-    image_.header.stamp = t;
-    //timestamp_diag_.tick(t);
-    cam_pub_.publish(image_);
-    if (calibrated_) {
-      cam_info_.header.stamp = t;
-      cam_info_pub_.publish(cam_info_);
-    }
-    //freq_diag_.tick();
-
-    return 0;
-  }
-  
   double getTriggeredFrameTime(double firstPacketTime)
   {
     // Assuming that there was no delay in receiving the first packet,
@@ -879,21 +712,19 @@ stop_video:
   {
     boost::mutex::scoped_lock(diagnostics_lock_);
     
-    if (!node_handle_.ok())
-      started_video_ = false;
-
-    if (!started_video_)
-    {
-      return 1;
-    }
-
     if (frame_info == NULL)
     {
       // The select call in the driver timed out.
-      ROS_WARN("No data have arrived for more than one second.");
-      started_video_ = false;
-      return 1;
+      /// @TODO Do we want to support rates less than 1 Hz?
+      ROS_WARN("No data have arrived for more than one second. Assuming that camera is no longer streaming.");
+      state_ = OPENED;
     }
+
+    if (!node_handle_.ok() && state_ == RUNNING)
+      state_ = OPENED;
+
+    if (state_ != RUNNING)
+      return 1;
 
     // If we are not in triggered mode then use the arrival time of the
     // first packet as the image time.
@@ -948,7 +779,9 @@ stop_video:
     
     if (useFrame_(frame_info->width, frame_info->height, frame_info->frameData, ros::Time(imageTime)))
     {
-      started_video_ = false;
+      boost::mutex::scoped_lock lock(mutex_);
+      if (state_ == RUNNING)
+        state_ = OPENED;                       
       return 1;
     }
 
@@ -957,7 +790,7 @@ stop_video:
 
   static int frameHandler(fcamFrameInfo *frameInfo, void *userData)
   {
-    ForearmNode &fa_node = *(ForearmNode*)userData;
+    ForearmCamDevice &fa_node = *(ForearmCamDevice*)userData;
     return fa_node.frameHandler(frameInfo);
   }
 
@@ -1070,57 +903,92 @@ stop_video:
     return 1;
   }
   
-  void pretest()
+};
+
+class ForearmCamDriver : public driver_base::Driver<ForearmCamDevice>
+{
+public:
+  ForearmCamDriver(ros::NodeHandle &nh) :
+    driver_base::Driver<ForearmCamDevice>(nh),
+    cam_pub_(node_handle_.advertise<sensor_msgs::Image>("~image_raw", 1), 
+        diagnostic_,
+        diagnostic_updater::FrequencyStatusParam(&device_.desired_freq_, &device_.desired_freq_, 0.05), 
+        diagnostic_updater::TimeStampStatusParam()),
+    cam_info_pub_(ros::Publisher(), 
+        diagnostic_,
+        diagnostic_updater::FrequencyStatusParam(&device_.desired_freq_, &device_.desired_freq_, 0.05), 
+        diagnostic_updater::TimeStampStatusParam())
   {
-    was_running_pretest_ = started_video_;
-    stop();
+    device_.useFrame_ = boost::bind(&ForearmCamDriver::publishImage, this, _1, _2, _3, _4);
+  }
+  
+private:  
+  // Publications
+  diagnostic_updater::DiagnosedPublisher<sensor_msgs::Image> cam_pub_;
+  diagnostic_updater::DiagnosedPublisher<sensor_msgs::CameraInfo> cam_info_pub_;
+  sensor_msgs::Image image_;
+  sensor_msgs::CameraInfo cam_info_;
+  
+  // Calibration
+  bool calibrated_;
+
+  int publishImage(size_t width, size_t height, uint8_t *frameData, ros::Time t)
+  {
+    fillImage(image_, "image", height, width, 1, "bayer_bggr", "uint8", frameData);
+    
+    image_.header.stamp = t;
+    cam_pub_.publish(image_);
+    if (calibrated_) {
+      cam_info_.header.stamp = t;
+      cam_info_pub_.publish(cam_info_);
+    }
+
+    return 0;
+  }
+  
+  virtual void reconfigure_hook(int level)
+  {
+    if ((level | dynamic_reconfigure::SensorLevels::RECONFIGURE_CLOSE) == level)
+    {
+      cam_info_.width = device_.width_;
+      cam_info_.height = device_.height_;
+      image_.header.frame_id = device_.config_.frame_id;
+      cam_info_.header.frame_id = device_.config_.frame_id;
+    
+      // Try to load camera intrinsics from flash memory
+      calibrated_ = device_.loadIntrinsics(&cam_info_.D[0], &cam_info_.K[0],
+                                 &cam_info_.R[0], &cam_info_.P[0]);
+      if (calibrated_)
+        ROS_INFO("Loaded intrinsics from camera");
+      else
+        ROS_WARN("Failed to load intrinsics from camera");
+
+      // Receive frames through callback
+      if (calibrated_)
+        cam_info_pub_.set_publisher(node_handle_.advertise<sensor_msgs::CameraInfo>("~cam_info", 1));
+      else
+        cam_info_pub_.set_publisher(ros::Publisher());
+    }
   }
 
-  void interruptionTest(diagnostic_updater::DiagnosticStatusWrapper& status)
+  virtual void add_diagnostics()
   {
-    status.name = "Interruption Test";
-
-    if (node_handle_.getNode()->numSubscribers("~image_raw") == 0)
-    {
-      status.level = 0;
-      status.message = "No operation interrupted.";
-    }
-    else
-    {
-      status.level = 1;
-      status.message = "There were active subscribers.  Running of self test interrupted operations.";
-    }
+    // Set up diagnostics
+    diagnostic_.add("Link Status", &device_, &ForearmCamDevice::linkStatus );
   }
-
-  void connectTest(diagnostic_updater::DiagnosticStatusWrapper& status)
+  
+  virtual void add_running_tests()
   {
-    status.name = "Connection Test";
-
-    open();
-
-    if (open_)
-    {
-      status.level = 0;
-      status.message = 
-        str(boost::format("Connected successfully to camera %i.")%serial_number_);
-    }
-    else
-    {
-      status.level = 2;
-      status.message = "Failed to connect.";
-    }
-
-    self_test_.setID(str(boost::format("FCAM%i")%serial_number_));
+    self_test_.add( "", boost::bind(&ForearmCamDriver::streamingTest, this) );
   }
-
-  void startTest(diagnostic_updater::DiagnosticStatusWrapper& status)
+  
+  virtual void add_stopped_tests(SelfTest<ForearmCamDevice> st)
   {
-    status.name = "Start Test";
-
-    start();
-
-    status.level = 0;
-    status.message = "Started successfully.";
+    for (int i = 0; i < MT9V_NUM_MODES; i++)
+    {
+      diagnostic_updater::TaskFunction f = boost::bind(&ForearmCamDriver::videoModeTest, this, MT9VModes[i].name, _1);
+      self_test_.add( str(boost::format("Test Pattern in mode %s")%MT9VModes[i].name), f );
+    }
   }
 
   void streamingTest(diagnostic_updater::DiagnosticStatusWrapper& status)
@@ -1131,53 +999,6 @@ stop_video:
     cam_pub_.run(status);
 
     status.name = "Streaming Test";
-  }
-
-  void disconnectTest(diagnostic_updater::DiagnosticStatusWrapper& status)
-  {
-    status.name = "Disconnect Test";
-
-    close();
-
-    status.level = 0;
-    status.message = "Disconnected successfully.";
-  }
-  
-  int setTestMode(uint16_t mode, diagnostic_updater::DiagnosticStatusWrapper &status)
-  {
-    if ( fcamReliableSensorWrite( camera_, 0x7F, mode, NULL ) != 0) {
-      status.summary(2, "Could not set imager into test mode.");
-      status.adds("Writing imager test mode", "Fail");
-      return 1;
-    }
-    else
-    {
-      status.adds("Writing imager test mode", "Pass");
-    }
-
-    usleep(100000);
-    uint16_t inmode;
-    if ( fcamReliableSensorRead( camera_, 0x7F, &inmode, NULL ) != 0) {
-      status.summary(2, "Could not read imager mode back.");
-      status.adds("Reading imager test mode", "Fail");
-      return 1;
-    }
-    else
-    {
-      status.adds("Reading imager test mode", "Pass");
-    }
-    
-    if (inmode != mode) {
-      status.summary(2, "Imager test mode read back did not match.");
-      status.addsf("Comparing read back value", "Fail (%04x != %04x)", inmode, mode);
-      return 1;
-    }
-    else
-    {
-      status.adds("Comparing read back value", "Pass");
-    }
-    
-    return 0;
   }
 
   class VideoModeTestFrameHandler
@@ -1225,87 +1046,46 @@ stop_video:
 
   void videoModeTest(const std::string mode, diagnostic_updater::DiagnosticStatusWrapper& status) 
   {
-    const std::string oldmode = config_.video_mode;
-    UseFrameFunction oldUseFrame = useFrame_;
+    const std::string oldmode = device_.config_.video_mode;
+    ForearmCamDevice::UseFrameFunction oldUseFrame = device_.useFrame_;
 
-    config_.video_mode = mode;
-    config_update();
+    device_.config_.video_mode = mode;
+    device_.config_update();
     VideoModeTestFrameHandler callback(status);
-    useFrame_ = boost::bind(&VideoModeTestFrameHandler::run, boost::ref(callback), _1, _2, _3, _4);
+    device_.useFrame_ = boost::bind(&VideoModeTestFrameHandler::run, boost::ref(callback), _1, _2, _3, _4);
 
     status.name = mode + " Pattern Test";
     status.summary(0, "Passed"); // If nobody else fills this, then the test passed.
 
     open();
 
-    if (setTestMode(0x3800, status))
+    if (device_.setTestMode(0x3800, status))
       goto reset_state;
 
     start();  
-    if (image_thread_->timed_join((boost::posix_time::milliseconds) 3000))
     {
-      delete image_thread_;
-      image_thread_ = NULL;
-    }
-    else
-    {
-      ROS_ERROR("Lost the image_thread. This should never happen.");
-      status.summary(2, "Lost the image_thread. This should never happen.");
+      int oldcount = device_.lost_image_thread_count_;
+      stop();
+      if (oldcount < device_.lost_image_thread_count_)
+      {
+        ROS_ERROR("Lost the image_thread. This should never happen.");
+        status.summary(2, "Lost the image_thread. This should never happen.");
+      }
     }
     close();
 
-    if (setTestMode(0x0000, status))
+    if (device_.setTestMode(0x0000, status))
       goto reset_state;
 
 reset_state:
     close();
-    useFrame_ = oldUseFrame;
-    config_.video_mode = oldmode;
-    config_update();
+    device_.useFrame_ = oldUseFrame;
+    device_.config_.video_mode = oldmode;
+    device_.config_update();
   }
-
-  void resumeTest(diagnostic_updater::DiagnosticStatusWrapper& status)
-  {
-    status.name = "Resume Test";
-
-    if (was_running_pretest_)
-    {
-      open();
-      start();
-
-      if (!started_video_)
-      {
-        status.level = 2;
-        status.message = "Failed to resume previous mode of operation.";
-        return;
-      }
-    }
-
-    status.level = 0;
-    status.message = "Previous operation resumed successfully.";
-  }
-
 };
 
-#define __CHECK_FD_FREE__
-#ifdef __CHECK_FD_FREE__
-#include <sys/types.h>          /* See NOTES */
-#include <sys/socket.h>
-#endif
-
 int main(int argc, char **argv)
-{
-  ros::init(argc, argv, "forearm_node");
-  ros::NodeHandle nh;
-  ForearmNode fn(nh);
-  ros::spin();
-  ROS_DEBUG("Exited from nh.spin()");
-	
-#ifdef __CHECK_FD_FREE__
-  int s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-  ROS_DEBUG("First free file descriptor is: %i", s); 
-  if (s != -1)
-    close(s);
-#endif  
-  return 0;
+{ 
+  return driver_base::main<ForearmCamDriver>(argc, argv, "forearm_camera");
 }

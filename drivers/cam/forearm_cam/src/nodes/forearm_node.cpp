@@ -184,7 +184,7 @@ class ForearmNode
 {
 private:
   // Driver classes
-  ros::NodeHandle &node_handle_;
+  ros::NodeHandle node_handle_;
   forearm_cam::ForearmCamConfig config_;
   forearm_cam::ForearmCamReconfigurator reconfigurator_;
   diagnostic_updater::Updater diagnostic_;
@@ -1080,7 +1080,7 @@ stop_video:
   {
     status.name = "Interruption Test";
 
-    if (node_handle_.getNode()->numSubscribers("~image_raw") == 0)
+    if (node_handle_.getNode()->numSubscriptions() == 0)
     {
       status.level = 0;
       status.message = "No operation interrupted.";

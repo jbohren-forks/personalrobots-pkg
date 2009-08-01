@@ -44,8 +44,8 @@
 // Author: Blaise Gassend
 
 
-#ifndef __${uname}MANIPULATOR_H__
-#define __${uname}MANIPULATOR_H__
+#ifndef __${uname}RECONFIGURATOR_H__
+#define __${uname}RECONFIGURATOR_H__
 
 #include <dynamic_reconfigure/reconfigurator.h>
 #include <${pkgname}/${name}Config.h>
@@ -139,4 +139,4 @@ $defminmax
   ${name}ConfigManipulator::ConfigType ${name}ConfigManipulator::max;
 }
 
-#endif // __${uname}MANIPULATOR_H__
+#endif // __${uname}RECONFIGURATOR_H__
