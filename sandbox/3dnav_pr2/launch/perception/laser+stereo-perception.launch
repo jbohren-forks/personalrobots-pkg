@@ -46,7 +46,7 @@
     <param name="tf_tolerance_secs" type="double" value="0.0" />
     <param name="max_scans" type="int" value="400" />
     <param name="ignore_laser_skew" type="bool" value="true" />
-    <param name="fixed_frame" type="string" value="torso_lift_link" />
+    <param name="fixed_frame" type="string" value="base_link" />
     <param name="downsample_factor" type="int" value="2" />
   </node>
   
