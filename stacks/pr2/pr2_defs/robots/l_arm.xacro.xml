@@ -22,7 +22,6 @@
   <include filename="$(find pr2_defs)/defs/arm_defs.xml" />
   <include filename="$(find pr2_defs)/defs/gripper_defs.xml" />
   <include filename="$(find pr2_defs)/defs/gazebo_defs.xml" />
-  <include filename="./l_arm_groups.xml" />
 
   <pr2_arm side="l" reflect="1" parent="torso_lift_link">
     <origin xyz="0.0 0.0 1.0" rpy="0 0 0" />
