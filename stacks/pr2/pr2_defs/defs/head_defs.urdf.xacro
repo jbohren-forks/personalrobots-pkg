@@ -8,44 +8,42 @@
 
   <macro name="pr2_tilting_laser" params="name parent *origin">
 
-    <joint name="${name}_mount_joint" type="revolute">
-      <axis xyz="0 1 0" />
-      <anchor xyz="0 0 0" />
-      <limit min="-0.785" max="1.57" effort="0.5292" velocity="100"
-             k_position="100" k_velocity="0.05"
-             safety_length_min="0.0" safety_length_max="0.0" />
-      <calibration reference_position="-0.35" values="0 0" />
-      <joint_properties damping="0.008" />
-    </joint>
-
     <link name="${name}_mount_link">
-      <parent name="${parent}" />
-      <insert_block name="origin" />
-      <joint name="${name}_mount_joint" />
+      <joint name="${name}_mount_joint" type="revolute">
+        <axis xyz="0 1 0" />
+        <anchor xyz="0 0 0" />
+        <limit min="-0.785" max="1.57" effort="0.5292" velocity="100" />
+        <safety_controller k_position="100" k_velocity="0.05" lower="${-0.785+0.0}" upper="${1.57-0.0}" />
+        <joint_properties damping="0.008" />
+        <parent name="${parent}">
+          <insert_block name="origin" />
+        </parent>
+      </joint>
+
       <inertial>
         <mass value="0.05" />
-        <com xyz="-0.03 0 -0.03" />
+        <origin xyz="-0.03 0 -0.03" rpy="0 0 0" />
         <inertia ixx="0.0001" ixy="0" ixz="0" 
-		 iyy="0.00001" iyz="0" 
-		 izz="0.0001" />
+                 iyy="0.00001" iyz="0" 
+                 izz="0.0001" />
       </inertial>
 
-      <visual>
+      <visual name="${name}_mount_visual">
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <map name="gazebo_material" flag="gazebo">
-          <elem key="material" value="PR2/Red" />
+        <map name="gazebo_material" reference="${name}_mount_visual">
+          <material value="PR2/Red" />
         </map>
-        <geometry name="${name}_mount_visual">
+        <geometry name="${name}_mount_visual_geom">
           <mesh filename="hok_tilt.stlb" />
         </geometry>
-        <map name="${name}_mount_visual_mesh" flag="ogre">
-          <elem key="mesh" value="hok_tilt.mesh" />
+        <map name="${name}_mount_visual_mesh" reference="${name}_mount_visual">
+          <mesh value="hok_tilt.mesh" />
         </map>
       </visual>
 
-      <collision>
+      <collision name="${name}_mount_collision">
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <geometry name="${name}_mount_collision" >
+        <geometry name="${name}_mount_collision_geom" >
           <box size=".001 .001 .001" />
         </geometry>
       </collision>
@@ -55,38 +53,39 @@
       <actuator name="${name}_mount_motor" />
       <joint name="${name}_mount_joint" />
       <mechanicalReduction>6.0</mechanicalReduction>
+      <calibration reference_position="-0.35" values="0 0" />
     </transmission>
 
-    <joint name="${name}_joint" type="fixed">
-      <axis xyz="0 1 0" />
-      <anchor xyz="0 0 0" />
-    </joint>
-
     <link name="${name}_link" type="laser">
-      <parent name="${name}_mount_link" />
-      <origin xyz="0 0 0.03" rpy="0 0 0" />
-      <joint name="${name}_joint" />
+      <joint name="${name}_joint" type="fixed">
+        <axis xyz="0 1 0" />
+        <anchor xyz="0 0 0" />
+        <parent name="${name}_mount_link">
+          <origin xyz="0 0 0.03" rpy="0 0 0" />
+        </parent>
+      </joint>
+
       <inertial>
         <mass value="0.001" />
-        <com xyz="0 0 0" />
+        <origin xyz="0 0 0" rpy="0 0 0" />
         <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.000001" iyz="0" izz="0.0001" />
       </inertial>
 
-      <visual>
+      <visual name="${name}_visual">
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <geometry name="${name}_visual">
+        <geometry name="${name}_visual_geom">
           <box size="0.001 0.001 0.001" />
         </geometry>
       </visual>
 
-      <collision>
+      <collision name="${name}_collision">
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <geometry name="${name}_collision" >
+        <geometry name="${name}_collision_geom" >
           <box size=".001 .001 .001" />
         </geometry>
       </collision>
 
-      <map name="sensor" flag="gazebo">
+      <map name="sensor" reference="${name}_link">
         <verbatim key="sensor_${name}_ray">
           <sensor:ray name="${name}">
             <rayCount>640</rayCount>
@@ -136,33 +135,35 @@
   <!-- Origin is center mount screw on sensor plate mount -->
   <!-- When mounted properly, should have same origin as head plate frame -->
   <macro name="pr2_head_sensor_package" params="name hd_name stereo_name parent *origin">
-    <joint name="${name}_fixed_joint" type="fixed" />
     <link name="${name}_link" >
-      <parent name="${parent}" />
-      <insert_block name="origin" />
-      <joint name="${name}_fixed_joint" />
+      <joint name="${name}_fixed_joint" type="fixed">
+        <parent name="${parent}">
+          <insert_block name="origin" />
+        </parent>
+      </joint>
+
       <inertial>
-	<!-- Needs verification with CAD -->	
-	<mass value="0.05" />
-	<com xyz="0 0 0" />
-	<inertia ixx="0.001" ixy="0.0" ixz="0.0"
-		 iyy="0.001" iyz="0.0" izz="0.01" />
+        <!-- Needs verification with CAD -->
+        <mass value="0.05" />
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <inertia ixx="0.001" ixy="0.0" ixz="0.0"
+                 iyy="0.001" iyz="0.0" izz="0.01" />
       </inertial>
 
       <!-- Should probably get real visuals here at some point -->
-      <visual>
+      <visual name="${name}_sensor_visual">
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <map name="gazebo_material" flag="gazebo">
-          <elem key="material" value="PR2/Blue" />
+        <map name="gazebo_material" reference="${name}_sensor_visual">
+          <material value="PR2/Blue" />
         </map>
-        <geometry name="${name}_sensor_visual">
+        <geometry name="${name}_sensor_visual_geom">
           <box size="0.01 0.01 0.01" />
         </geometry>
       </visual>
 
-      <collision>
+      <collision name="${name}_sensor_collision">
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <geometry name="${name}_sensor_collision">
+        <geometry name="${name}_sensor_collision_geom">
           <box size="0.01 0.01 0.01" />
         </geometry>
       </collision>
@@ -170,8 +171,8 @@
 
     <!-- Prosilica Camera -->
     <prosilica_cam name="${hd_name}" parent="${name}_link" >
-    <!-- Center of camera is 109mm right of center screw, 35mm up -->
-    <!-- Camera is slightly recessed from front, where is camera origin? Lens? -->
+      <!-- Center of camera is 109mm right of center screw, 35mm up -->
+      <!-- Camera is slightly recessed from front, where is camera origin? Lens? -->
       <origin xyz="0 -0.109 0.035" rpy="0 0 0" />        
     </prosilica_cam>
 
@@ -185,33 +186,35 @@
   <!-- Needs calibration verification, and CAD check. -->
   <macro name="double_stereo_camera" params="name parent *origin">
     <!-- Define link to stereo cameras, set origin relative to that -->
-    <joint name="${name}_fixed_joint" type="fixed" />
     <link name="${name}_link">
-      <parent name="${parent}" />
-      <insert_block name="origin" />
-      <joint name="${name}_fixed_joint" />
+      <joint name="${name}_fixed_joint" type="fixed">
+        <parent name="${parent}">
+          <insert_block name="origin" />
+        </parent>
+      </joint>
+
       <inertial>
-	<!-- Needs verification with CAD -->	
-	<mass value="0.1" />
-	<com xyz="0 0 0" />
-	<inertia ixx="0.001" ixy="0.0" ixz="0.0"
-		 iyy="0.001" iyz="0.0" izz="0.01" />
+        <!-- Needs verification with CAD -->
+        <mass value="0.1" />
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <inertia ixx="0.001" ixy="0.0" ixz="0.0"
+                 iyy="0.001" iyz="0.0" izz="0.01" />
       </inertial>
 
       <!-- Should probably get real visuals here at some point -->
-      <visual>
+      <visual name="${name}_double_stereo_visual">
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <map name="gazebo_material" flag="gazebo">
-          <elem key="material" value="PR2/Blue" />
+        <map name="gazebo_material" reference="${name}_double_stereo_visual">
+          <material value="PR2/Blue" />
         </map>
-        <geometry name="${name}_double_stereo_visual">
+        <geometry name="${name}_double_stereo_visual_geom">
           <box size="0.01 0.01 0.01" />
         </geometry>
       </visual>
 
-      <collision>
+      <collision name="${name}_double_stereo_collision">
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <geometry name="${name}_double_stereo_collision">
+        <geometry name="${name}_double_stereo_collision_geom">
           <box size="0.01 0.01 0.01" />
         </geometry>
       </collision>
@@ -231,32 +234,33 @@
 
   <macro name="stereo_camera" params="name parent *origin">
     
-    <joint name="${name}_fixed_joint" type="fixed" />
     <link name="${name}_link">
-      <parent name="${parent}" />
-      <insert_block name="origin" />
-      <joint name="${name}_fixed_joint" />
+      <joint name="${name}_fixed_joint" type="fixed">
+        <parent name="${parent}">
+          <insert_block name="origin" />
+        </parent>
+      </joint>
       
       <inertial>
         <mass value="0.1" />
-        <com xyz="0 0 0" />
+        <origin xyz="0 0 0" rpy="0 0 0" />
         <inertia ixx="0.00482611007"  ixy="-0.000144683999"  ixz="0.000110076136"
                  iyy="0.005218991412"  iyz="-0.000314239509"  izz="0.008618784925" />
       </inertial>
 
-      <visual>
+      <visual name="${name}_visual">
         <origin xyz="${stereo_center_box_center_offset_x} 0 ${stereo_center_box_center_offset_z}" rpy="0 0 0" />
-        <map name="gazebo_material" flag="gazebo">
-          <elem key="material" value="PR2/Blue" />
+        <map name="gazebo_material" reference="${name}_visual">
+          <material value="PR2/Blue" />
         </map>
-        <geometry name="${name}_visual">
+        <geometry name="${name}_visual_geom">
           <box size="${stereo_size_x} ${stereo_size_y} ${stereo_size_z}" />
         </geometry>
       </visual>
 
-      <collision>
+      <collision name="${name}_collision">
         <origin xyz="${stereo_center_box_center_offset_x} 0 ${stereo_center_box_center_offset_z}" rpy="0 0 0" />
-        <geometry name="${name}_collision">
+        <geometry name="${name}_collision_geom">
           <box size="${stereo_size_x} ${stereo_size_y} ${stereo_size_z}" />
         </geometry>
       </collision>
@@ -264,72 +268,74 @@
     </link>
 
 
-    <joint name="${name}_optical_fixed_joint" type="fixed" />
     <link name="${name}_optical_frame" type="camera">
-      <parent name="${name}_link" />
-      <origin xyz="${cal_stereo_x}            ${0.045+cal_stereo_y}   ${.0305+cal_stereo_z}"
-              rpy="${-M_PI/2+cal_stereo_roll} ${0.0+cal_stereo_pitch} ${-M_PI/2+cal_stereo_yaw}" />
-      <joint name="${name}_optical_fixed_joint" />
+      <joint name="${name}_optical_fixed_joint" type="fixed">
+        <parent name="${name}_link">
+          <origin xyz="${cal_stereo_x}            ${0.045+cal_stereo_y}   ${.0305+cal_stereo_z}"
+                  rpy="${-M_PI/2+cal_stereo_roll} ${0.0+cal_stereo_pitch} ${-M_PI/2+cal_stereo_yaw}" />
+        </parent>
+      </joint>
 
       <inertial>
         <mass value="0.01" />
-        <com xyz="0 0 0" />
+        <origin xyz="0 0 0" rpy="0 0 0" />
         <inertia ixx="0.001"  ixy="0.0"  ixz="0.0"
                  iyy="0.001"  iyz="0.0"
                  izz="0.001" />
       </inertial>
 
-      <visual>
+      <visual name="${name}_optical_fixed_visual">
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <map name="gazebo_material" flag="gazebo">
-          <elem key="material" value="PR2/Blue" />
+        <map name="gazebo_material" reference="${name}_optical_fixed_visual">
+          <material value="PR2/Blue" />
         </map>
-        <geometry name="${name}_optical_fixed_visual">
+        <geometry name="${name}_optical_fixed_visual_geom">
           <box size="0.01 0.01 0.01" />
         </geometry>
       </visual>
 
-      <collision>
+      <collision name="${name}_optical_fixed_collision">
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <geometry name="${name}_optical_fixed_collision">
+        <geometry name="${name}_optical_fixed_collision_geom">
           <box size="0.01 0.01 0.01" />
         </geometry>
       </collision>
 
     </link>
 
-    <joint name="${name}_l_stereo_camera_fixed_joint" type="fixed" />
     <link name="${name}_l_stereo_camera_frame">
-      <parent name="${name}_optical_frame" />
-      <origin xyz="0 0 0" rpy="0 ${-M_PI/2} ${M_PI/2}" />
-      <joint name="${name}_l_stereo_camera_fixed_joint" />
+      <joint name="${name}_l_stereo_camera_fixed_joint" type="fixed">
+        <parent name="${name}_optical_frame">
+          <origin xyz="0 0 0" rpy="0 ${-M_PI/2} ${M_PI/2}" />
+        </parent>
+      </joint>
       
       <inertial>
         <mass value="0.01" />
-        <com xyz="0 0 0" />
+        <origin xyz="0 0 0" rpy="0 0 0" />
         <inertia ixx="0.001" ixy="0.000"  ixz="0.000"
                  iyy="0.001" iyz="0.000"
                  izz="0.001" />
       </inertial>
 
-      <visual>
+      <visual name="${name}_l_stereo_camera_visual">
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <map name="gazebo_material" flag="gazebo">
-          <elem key="material" value="PR2/Blue" />
+        <map name="gazebo_material" reference="${name}_l_stereo_camera_visual">
+          <material value="PR2/Blue" />
         </map>
-        <geometry name="${name}_l_stereo_camera_visual">
+        <geometry name="${name}_l_stereo_camera_visual_geom">
           <box size="0.01 0.01 0.01" />
         </geometry>
       </visual>
 
-      <collision>
+      <collision name="${name}_l_stereo_camera_collision">
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <geometry name="${name}_l_stereo_camera_collision">
+        <geometry name="${name}_l_stereo_camera_collision_geom">
           <box size="0.01 0.01 0.01" />
         </geometry>
       </collision>
       
-      <map name="sensor" flag="gazebo">
+      <map name="sensor" reference="${name}_l_stereo_camera_frame">
         <verbatim key="sensor_${name}_l_camera">
           <sensor:camera name="${name}_l_sensor">
             <imageSize>640 480</imageSize>
@@ -346,43 +352,44 @@
               <interface:camera name="${name}_l_iface" />
             </controller:ros_camera>
           </sensor:camera>
-       	</verbatim>
+        </verbatim>
       </map>
     </link>
 
-    <joint name="${name}_r_stereo_camera_fixed_joint" type="fixed" />
     <link name="${name}_r_stereo_camera_frame">
-      <parent name="${name}_l_stereo_camera_frame" />
-      <origin xyz="${stereo_dx} ${stereo_dy} ${stereo_dz}"
-              rpy="${stereo_rx} ${stereo_ry} ${stereo_rz}" />
-      <joint name="${name}_r_stereo_camera_fixed_joint" />
+      <joint name="${name}_r_stereo_camera_fixed_joint" type="fixed">
+        <parent name="${name}_l_stereo_camera_frame">
+          <origin xyz="${stereo_dx} ${stereo_dy} ${stereo_dz}"
+                  rpy="${stereo_rx} ${stereo_ry} ${stereo_rz}" />
+        </parent>
+      </joint>
       
       <inertial>
         <mass value="0.01" />
-        <com xyz="0 0 0" />
+        <origin xyz="0 0 0" rpy="0 0 0" />
         <inertia ixx="0.001" ixy="0.000"  ixz="0.000"
                  iyy="0.001" iyz="0.000"
                  izz="0.001" />
       </inertial>
 
-      <visual>
+      <visual name="${name}_r_stereo_camera_visual">
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <map name="gazebo_material" flag="gazebo">
-          <elem key="material" value="PR2/Blue" />
+        <map name="gazebo_material" reference="${name}_r_stereo_camera_visual">
+          <material value="PR2/Blue" />
         </map>
-        <geometry name="${name}_r_stereo_camera_visual">
+        <geometry name="${name}_r_stereo_camera_visual_geom">
           <box size="0.01 0.01 0.01" />
         </geometry>
       </visual>
 
-      <collision>
+      <collision name="${name}_r_stereo_camera_collision">
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <geometry name="${name}_r_stereo_camera_collision">
+        <geometry name="${name}_r_stereo_camera_collision_geom">
           <box size="0.01 0.01 0.01" />
         </geometry>
       </collision>
       
-      <map name="sensor" flag="gazebo">
+      <map name="sensor" reference="${name}_r_stereo_camera_frame">
         <verbatim key="sensor_${name}_r_camera">
           <sensor:camera name="${name}_r_sensor">
             <imageSize>640 480</imageSize>
@@ -399,14 +406,14 @@
               <interface:camera name="${name}_r_iface" />
             </controller:ros_camera>
           </sensor:camera>
-       	</verbatim>
+        </verbatim>
       </map>
     </link>
 
 
     <!-- stereo plugin that produces a raw_stereo message
     -->
-    <map name="sensor" flag="gazebo">
+    <map name="sensor">
       <verbatim key="controller_${name}_camera">
         <controller:ros_stereo_camera name="${name}_controller" plugin="libros_stereo_camera.so">
           <alwaysOn>true</alwaysOn>
@@ -435,107 +442,110 @@
 
   <macro name="pr2_head_pan" params="name parent *origin">
 
-    <joint name="${name}_joint" type="revolute">
-      <axis xyz="0 0 1" />
-      <limit min="-2.92" max="2.92"
-             effort="2.645"
-             velocity="6" k_velocity="1.5"
-             safety_length_min="0.15" safety_length_max="0.15" k_position="100" />
-      <calibration reference_position="${-2.79+cal_head_pan_flag}" values="0 0" />
-      <joint_properties damping="1.0" />
-    </joint>
-
-    <transmission type="SimpleTransmission" name="${name}_trans">
-      <actuator name="${name}_motor" />
-      <joint name="${name}_joint" />
-      <mechanicalReduction>6.0</mechanicalReduction>
-    </transmission>
-
     <link name="${name}_link">
-      <parent name="${parent}" />
-      <insert_block name="origin" />
-      <joint name="${name}_joint" />
+      <joint name="${name}_joint" type="revolute">
+        <axis xyz="0 0 1" />
+        <limit min="-2.92" max="2.92" effort="2.645" velocity="6" />
+        <safety_controller k_velocity="1.5" lower="${-2.92+0.15}" upper="${2.92-0.15}" k_position="100" />
+        <joint_properties damping="1.0" />
+        <parent name="${parent}">
+          <insert_block name="origin" />
+        </parent>
+      </joint>
+
 
       <inertial>
         <mass value="1.611118" />
-        <com xyz="-0.005717  0.010312 -0.029649" />
+        <origin xyz="-0.005717  0.010312 -0.029649" rpy="0 0 0" />
         <inertia ixx="0.00482611007"  ixy="-0.000144683999"  ixz="0.000110076136"
-		 iyy="0.005218991412"  iyz="-0.000314239509"  izz="0.008618784925" />
+                 iyy="0.005218991412"  iyz="-0.000314239509"  izz="0.008618784925" />
       </inertial>
 
-      <visual>
+      <visual name="${name}_visual">
         <origin xyz="0 0 0.0" rpy="0 0 0 " />
-        <map name="gazebo_material" flag="gazebo">
-          <elem key="material" value="PR2/Blue" />
+        <map name="gazebo_material" reference="${name}_visual">
+          <material value="PR2/Blue" />
         </map>
-        <geometry name="${name}_visual">
+        <geometry name="${name}_visual_geom">
           <mesh filename="head_pan.stlb" />
         </geometry>
-        <map name="${name}_visual_mesh" flag="ogre">
-          <elem key="mesh" value="head_pan.mesh" />
+        <map name="${name}_visual_mesh" reference="${name}_visual">
+          <mesh value="head_pan.mesh" />
         </map>
       </visual>
 
-      <collision>
+      <collision name="${name}_collision">
         <origin xyz="-0.005717  0.010312 -0.029649" rpy="0.0 0.0 0.0 " />
-        <geometry name="${name}_collision">
+        <geometry name="${name}_collision_geom">
           <box size="0.188 0.219 0.137" />
         </geometry>
       </collision>
 
     </link>
+
+
+    <transmission type="SimpleTransmission" name="${name}_trans">
+      <actuator name="${name}_motor" />
+      <joint name="${name}_joint" />
+      <mechanicalReduction>6.0</mechanicalReduction>
+      <calibration reference_position="${-2.79+cal_head_pan_flag}" values="0 0" />
+    </transmission>
+
   </macro>
 
 
 
   <macro name="pr2_head_tilt" params="name parent *origin">
 
-    <joint name="${name}_joint" type="revolute">
-      <axis xyz="0 1 0" />
-      <limit min="-0.55" max="1.047" effort="12.21"
-             velocity="100" k_velocity="1.5"
-             safety_length_min="0.02" safety_length_max="0.002" k_position="100" />
-      <calibration reference_position="${-0.195+cal_head_tilt_flag}" values="0 0" />
-      <joint_properties damping="1.0" />
-    </joint>
+    <link name="${name}_link">
+      <joint name="${name}_joint" type="revolute">
+        <axis xyz="0 1 0" />
+        <limit min="-0.55" max="1.047" effort="12.21" velocity="100" />
+        <safety_controller k_velocity="1.5" lower="${-0.55+0.02}" upper="${1.047-0.002}" k_position="100" />
+        <joint_properties damping="1.0" />
+        <parent name="${parent}">
+          <insert_block name="origin" />
+        </parent>
+      </joint>
+
+
+      <inertial>
+        <mass value="1.749727" />
+        <origin xyz="0.041935 0.003569 0.028143" rpy="0 0 0" />
+        <inertia ixx="0.010602303435"  ixy="-0.000408814235"  ixz="0.00198303894"
+                 iyy="0.011874383747"  iyz="0.000197908779"
+                 izz="0.005516790626" />
+      </inertial>
+
+      <visual name="${name}_visual">
+        <origin xyz="0 0 0" rpy="0.0 0.0 0.0 " />
+        <map name="gazebo_material" reference="${name}_visual">
+          <material value="PR2/Green" />
+        </map>
+        <geometry name="${name}_visual_geom">
+          <mesh filename="head_tilt.stlb" />
+        </geometry>
+        <map name="${name}_visual_mesh" reference="${name}_visual">
+          <mesh value="head_tilt.mesh" />
+        </map>
+      </visual>
+
+      <collision name="${name}_collision">
+        <origin xyz="0.041935 0.003569 0.028143" rpy="0 0 0" />
+        <geometry name="${name}_collision_geom">
+          <box size="0.064 0.253 0.181" />
+        </geometry>
+      </collision>
+    </link>
+
 
     <transmission type="SimpleTransmission" name="${name}_trans">
       <actuator name="${name}_motor" />
       <joint name="${name}_joint" />
       <mechanicalReduction>6.0</mechanicalReduction>
+      <calibration reference_position="${-0.195+cal_head_tilt_flag}" values="0 0" />
     </transmission>
 
-    <link name="${name}_link">
-      <parent name="${parent}" />
-      <insert_block name="origin" />
-      <joint name="${name}_joint" />
-
-      <inertial>
-        <mass value="1.749727" />
-        <com xyz="0.041935 0.003569 0.028143" />
-        <inertia ixx="0.010602303435"  ixy="-0.000408814235"  ixz="0.00198303894"  iyy="0.011874383747"  iyz="0.000197908779"  izz="0.005516790626" />
-      </inertial>
-
-      <visual>
-        <origin xyz="0 0 0" rpy="0.0 0.0 0.0 " />
-        <map name="gazebo_material" flag="gazebo">
-          <elem key="material" value="PR2/Green" />
-        </map>
-        <geometry name="${name}_visual">
-          <mesh filename="head_tilt.stlb" />
-        </geometry>
-        <map name="${name}_visual_mesh" flag="ogre">
-          <elem key="mesh" value="head_tilt.mesh" />
-        </map>
-      </visual>
-
-      <collision>
-        <origin xyz="0.041935 0.003569 0.028143" rpy="0 0 0" />
-        <geometry name="${name}_collision">
-          <box size="0.064 0.253 0.181" />
-        </geometry>
-      </collision>
-    </link>
   </macro>
 
 
@@ -550,33 +560,34 @@
     </pr2_head_tilt>
 
     <!-- Head plate frame -->
-    <joint name="${name}_plate_fixed_joint" type="fixed" />
     <link name="${name}_plate_frame">
-      <parent name="${name}_tilt_link" />
-      <origin xyz="0.0232 0 0.0645" rpy="0 0 0" />     
-      <joint name="${name}_plate_fixed_joint" />
+      <joint name="${name}_plate_fixed_joint" type="fixed">
+        <parent name="${name}_tilt_link">
+          <origin xyz="0.0232 0 0.0645" rpy="0 0 0" />     
+        </parent>
+      </joint>
 
       <inertial>
         <mass value="0.01" />
-        <com xyz="0 0 0" />
+        <origin xyz="0 0 0" rpy="0 0 0" />
         <inertia ixx="0.001"  ixy="0.0"  ixz="0.0"
                  iyy="0.001"  iyz="0.0"
                  izz="0.001" />
       </inertial>
 
-      <visual>
+      <visual name="${name}_plate_frame_visual">
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <map name="gazebo_material" flag="gazebo">
-          <elem key="material" value="PR2/Blue" />
+        <map name="gazebo_material" reference="${name}_plate_frame_visual">
+          <material value="PR2/Blue" />
         </map>
-        <geometry name="${name}_plate_frame_visual">
+        <geometry name="${name}_plate_frame_visual_geom">
           <box size="0.01 0.01 0.01" />
         </geometry>
       </visual>
 
-      <collision>
+      <collision name="${name}_plate_frame_collision">
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <geometry name="${name}_plate_frame_collision">
+        <geometry name="${name}_plate_frame_collision_geom">
           <box size="0.01 0.01 0.01" />
         </geometry>
       </collision>
@@ -589,44 +600,42 @@
        different joint link positions -->
  <macro name="pr2_tilting_laser_alpha2" params="name parent *origin">
 
-    <joint name="${name}_mount_joint" type="revolute">
-      <axis xyz="0 1 0" />
-      <anchor xyz="0 0 0" />
-      <limit min="-0.785" max="1.57" effort="0.5292" velocity="10.0"
-             k_position="100" k_velocity="0.05"
-             safety_length_min="0.0" safety_length_max="0.0" />
-      <calibration reference_position="0.0" values="0 0" />
-      <joint_properties damping="1.0" />
-    </joint>
-
     <link name="${name}_mount_link">
-      <parent name="${parent}" />
-      <insert_block name="origin" />
-      <joint name="${name}_mount_joint" />
+      <joint name="${name}_mount_joint" type="revolute">
+        <axis xyz="0 1 0" />
+        <anchor xyz="0 0 0" />
+        <limit min="-0.785" max="1.57" effort="0.5292" velocity="10.0" />
+        <safety_controller k_position="100" k_velocity="0.05" lower="${-0.785+0.0}" upper="${1.57-0.0}" />
+        <joint_properties damping="1.0" />
+        <parent name="${parent}">
+          <insert_block name="origin" />
+        </parent>
+      </joint>
+
       <inertial>
         <mass value="0.1" />
-        <com xyz="0 0 0" />
+        <origin xyz="0 0 0" rpy="0 0 0" />
         <inertia ixx="0.001" ixy="0" ixz="0" 
-		 iyy="0.001" iyz="0" 
-		 izz="0.001" />
+                 iyy="0.001" iyz="0" 
+                 izz="0.001" />
       </inertial>
 
-      <visual>
+      <visual name="${name}_mount_visual">
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <map name="gazebo_material" flag="gazebo">
-          <elem key="material" value="PR2/Red" />
+        <map name="gazebo_material" reference="${name}_mount_visual">
+          <material value="PR2/Red" />
         </map>
-        <geometry name="${name}_mount_visual">
+        <geometry name="${name}_mount_visual_geom">
           <mesh filename="hok_tilt.stlb" />
         </geometry>
-        <map name="${name}_mount_visual_mesh" flag="ogre">
-          <elem key="mesh" value="hok_tilt.mesh" />
+        <map name="${name}_mount_visual_mesh" reference="${name}_mount_visual">
+          <mesh value="hok_tilt.mesh" />
         </map>
       </visual>
 
-      <collision>
+      <collision name="${name}_mount_collision">
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <geometry name="${name}_mount_collision" >
+        <geometry name="${name}_mount_collision_geom" >
           <box size=".001 .001 .001" />
         </geometry>
       </collision>
@@ -636,38 +645,39 @@
       <actuator name="${name}_mount_motor" />
       <joint name="${name}_mount_joint" />
       <mechanicalReduction>6.0</mechanicalReduction>
+      <calibration reference_position="0.0" values="0 0" />
     </transmission>
 
-    <joint name="${name}_joint" type="fixed">
-      <axis xyz="0 1 0" />
-      <anchor xyz="0 0 0" />
-    </joint>
-
     <link name="${name}_link" type="laser">
-      <parent name="${name}_mount_link" />
-      <origin xyz="0 0 0.03" rpy="0 0 0" />
-      <joint name="${name}_joint" />
+      <joint name="${name}_joint" type="fixed">
+        <axis xyz="0 1 0" />
+        <anchor xyz="0 0 0" />
+        <parent name="${name}_mount_link">
+          <origin xyz="0 0 0.03" rpy="0 0 0" />
+        </parent>
+      </joint>
+
       <inertial>
         <mass value="0.1" />
-        <com xyz="0 0 0" />
+        <origin xyz="0 0 0" rpy="0 0 0" />
         <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001" />
       </inertial>
 
-      <visual>
+      <visual name="${name}_visual">
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <geometry name="${name}_visual">
+        <geometry name="${name}_visual_geom">
           <box size="0.001 0.001 0.001" />
         </geometry>
       </visual>
 
-      <collision>
+      <collision name="${name}_collision">
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <geometry name="${name}_collision" >
+        <geometry name="${name}_collision_geom" >
           <box size=".001 .001 .001" />
         </geometry>
       </collision>
 
-      <map name="sensor" flag="gazebo">
+      <map name="sensor" reference="${name}_link">
         <verbatim key="sensor_${name}_ray">
           <sensor:ray name="${name}">
             <rayCount>640</rayCount>
@@ -704,207 +714,204 @@
 
   <macro name="pr2_head_pan_alpha2" params="name parent *origin">
 
-    <joint name="${name}_joint" type="revolute">
-      <axis xyz="0 0 1" />
-      <limit min="-2.92" max="2.92"
-             effort="2.645"
-             velocity="6" k_velocity="1.5"
-             safety_length_min="0.15" safety_length_max="0.15" k_position="100" />
-      <calibration reference_position="${0.0+cal_head_pan_flag_alpha2}" values="0 0" />
-      <joint_properties damping="1.0" />
-    </joint>
-
-    <transmission type="SimpleTransmission" name="${name}_trans">
-      <actuator name="${name}_motor" />
-      <joint name="${name}_joint" />
-      <mechanicalReduction>6.0</mechanicalReduction>
-    </transmission>
-
     <link name="${name}_link">
-      <parent name="${parent}" />
-      <insert_block name="origin" />
-      <joint name="${name}_joint" />
+      <joint name="${name}_joint" type="revolute">
+        <axis xyz="0 0 1" />
+        <limit min="-2.92" max="2.92" effort="2.645" velocity="6" />
+        <safety_controller k_velocity="1.5" lower="${-2.92+0.15}" upper="${2.92-0.15}" k_position="100" />
+        <joint_properties damping="1.0" />
+        <parent name="${parent}">
+          <insert_block name="origin" />
+        </parent>
+      </joint>
+
 
       <inertial>
         <mass value="1.611118" />
-        <com xyz="-0.005717  0.010312 -0.029649" />
-        <inertia ixx="0.00482611007"  ixy="-0.000144683999"  ixz="0.000110076136"
-		 iyy="0.005218991412"  iyz="-0.000314239509"  izz="0.008618784925" />
+        <origin xyz="-0.005717  0.010312 -0.029649" rpy="0 0 0" />
+        <inertia ixx="0.00482611007"   ixy="-0.000144683999"  ixz="0.000110076136"
+                 iyy="0.005218991412"  iyz="-0.000314239509"  izz="0.008618784925" />
       </inertial>
 
-      <visual>
+      <visual name="${name}_visual">
         <origin xyz="0 0 0.0" rpy="0 0 0 " />
-        <map name="gazebo_material" flag="gazebo">
-          <elem key="material" value="PR2/Blue" />
+        <map name="gazebo_material" reference="${name}_visual">
+          <material value="PR2/Blue" />
         </map>
-        <geometry name="${name}_visual">
+        <geometry name="${name}_visual_geom">
           <mesh filename="head_pan.stlb" />
         </geometry>
-        <map name="${name}_visual_mesh" flag="ogre">
-          <elem key="mesh" value="head_pan.mesh" />
+        <map name="${name}_visual_mesh" reference="${name}_visual">
+          <mesh value="head_pan.mesh" />
         </map>
       </visual>
 
-      <collision>
+      <collision name="${name}_collision">
         <origin xyz="-0.005717  0.010312 -0.029649" rpy="0.0 0.0 0.0 " />
-        <geometry name="${name}_collision">
+        <geometry name="${name}_collision_geom">
           <box size="0.188 0.219 0.137" />
         </geometry>
       </collision>
 
     </link>
+
+    <transmission type="SimpleTransmission" name="${name}_trans">
+      <actuator name="${name}_motor" />
+      <joint name="${name}_joint" />
+      <mechanicalReduction>6.0</mechanicalReduction>
+      <calibration reference_position="${0.0+cal_head_pan_flag_alpha2}" values="0 0" />
+    </transmission>
   </macro>
 
   <!-- Reverts to small tilt motor, still has same cal flags and limits -->
   <macro name="pr2_head_tilt_alpha2" params="name parent *origin">
 
-    <joint name="${name}_joint" type="revolute">
-      <axis xyz="0 1 0" />
-      <limit min="-0.45" max="1.37" effort="12"
-             velocity="5" k_velocity="100"
-             safety_length_min="0.02" safety_length_max="0.02" k_position="100" />
-      <calibration reference_position="${0.0+cal_head_tilt_flag}" values="0 0" />
-      <joint_properties damping="1.0" />
-    </joint>
+    <link name="${name}_link">
+      <joint name="${name}_joint" type="revolute">
+        <axis xyz="0 1 0" />
+        <limit min="-0.45" max="1.37" effort="12" velocity="5" />
+        <safety_controller k_velocity="100" lower="${-0.45+0.02}" upper="${1.37-0.02}" k_position="100" />
+        <joint_properties damping="1.0" />
+        <parent name="${parent}">
+          <insert_block name="origin" />
+        </parent>
+      </joint>
+
+
+      <inertial>
+        <mass value="1.749727" />
+        <origin xyz="0.041935 0.003569 0.028143" rpy="0 0 0" />
+        <inertia ixx="0.010602303435"  ixy="-0.000408814235"  ixz="0.00198303894"  iyy="0.011874383747"  iyz="0.000197908779"  izz="0.005516790626" />
+      </inertial>
+
+      <visual name="${name}_visual">
+        <origin xyz="0 0 0" rpy="0.0 0.0 0.0 " />
+        <map name="gazebo_material" reference="${name}_visual">
+          <material value="PR2/Green" />
+        </map>
+        <geometry name="${name}_visual_geom">
+          <mesh filename="head_tilt.stlb" />
+        </geometry>
+        <map name="${name}_visual_mesh" reference="${name}_visual">
+          <mesh value="head_tilt.mesh" />
+        </map>
+      </visual>
+
+      <collision name="${name}_collision">
+        <origin xyz="0.041935 0.003569 0.028143" rpy="0 0 0" />
+        <geometry name="${name}_collision_geom">
+          <box size="0.064 0.253 0.181" />
+        </geometry>
+      </collision>
+    </link>
 
     <transmission type="SimpleTransmission" name="${name}_trans">
       <actuator name="${name}_motor" /> <!-- Alpha 1.0 motor -->
       <joint name="${name}_joint" />
       <mechanicalReduction>6.0</mechanicalReduction>
+      <calibration reference_position="${0.0+cal_head_tilt_flag}" values="0 0" />
     </transmission>
-
-    <link name="${name}_link">
-      <parent name="${parent}" />
-      <insert_block name="origin" />
-      <joint name="${name}_joint" />
-
-      <inertial>
-        <mass value="1.749727" />
-        <com xyz="0.041935 0.003569 0.028143" />
-        <inertia ixx="0.010602303435"  ixy="-0.000408814235"  ixz="0.00198303894"  iyy="0.011874383747"  iyz="0.000197908779"  izz="0.005516790626" />
-      </inertial>
-
-      <visual>
-        <origin xyz="0 0 0" rpy="0.0 0.0 0.0 " />
-        <map name="gazebo_material" flag="gazebo">
-          <elem key="material" value="PR2/Green" />
-        </map>
-        <geometry name="${name}_visual">
-          <mesh filename="head_tilt.stlb" />
-        </geometry>
-        <map name="${name}_visual_mesh" flag="ogre">
-          <elem key="mesh" value="head_tilt.mesh" />
-        </map>
-      </visual>
-
-      <collision>
-        <origin xyz="0.041935 0.003569 0.028143" rpy="0 0 0" />
-        <geometry name="${name}_collision">
-          <box size="0.064 0.253 0.181" />
-        </geometry>
-      </collision>
-    </link>
   </macro>
 
 
 <macro name="pr2_head_tilt_alpha2a" params="name parent *origin">
   <!-- Motor must be configured with 148877 motor -->
-    <joint name="${name}_joint" type="revolute">
-      <axis xyz="0 1 0" />
-      <limit min="-0.45" max="1.37" effort="12.0"
-             velocity="5" k_velocity="10"
-             safety_length_min="0.02" safety_length_max="0.02" k_position="100" />
-      <calibration reference_position="${0.0+cal_head_tilt_flag_alpha2}" values="0 0" />
-      <joint_properties damping="1.0" />
-    </joint>
+    <link name="${name}_link">
+      <joint name="${name}_joint" type="revolute">
+        <axis xyz="0 1 0" />
+        <limit min="-0.45" max="1.37" effort="12.0" velocity="5" />
+        <safety_controller k_velocity="10" lower="${-0.45+0.02}" upper="${1.37-0.02}" k_position="100" />
+        <joint_properties damping="1.0" />
+        <parent name="${parent}">
+          <insert_block name="origin" />
+        </parent>
+      </joint>
+
+
+      <inertial>
+        <mass value="1.749727" />
+        <origin xyz="0.041935 0.003569 0.028143" rpy="0 0 0" />
+        <inertia ixx="0.010602303435"  ixy="-0.000408814235"  ixz="0.00198303894"  iyy="0.011874383747"  iyz="0.000197908779"  izz="0.005516790626" />
+      </inertial>
+
+      <visual name="${name}_visual">
+        <origin xyz="0 0 0" rpy="0.0 0.0 0.0" />
+        <map name="gazebo_material" reference="${name}_visual">
+          <material value="PR2/Green" />
+        </map>
+        <geometry name="${name}_visual_geom">
+          <mesh filename="head_tilt.stlb" />
+        </geometry>
+        <map name="${name}_visual_mesh" reference="${name}_visual">
+          <mesh value="head_tilt.mesh" />
+        </map>
+      </visual>
+
+      <collision name="${name}_collision">
+        <origin xyz="0.041935 0.003569 0.028143" rpy="0 0 0" />
+        <geometry name="${name}_collision_geom">
+          <box size="0.064 0.253 0.181" />
+        </geometry>
+      </collision>
+    </link>
 
     <transmission type="SimpleTransmission" name="${name}_trans">
       <actuator name="${name}_motor_alpha2a" />
       <joint name="${name}_joint" />
       <mechanicalReduction>6.0</mechanicalReduction>
+      <calibration reference_position="${0.0+cal_head_tilt_flag_alpha2}" values="0 0" />
     </transmission>
+  </macro>
 
+ <macro name="pr2_head_tilt_alpha2b" params="name parent *origin">
     <link name="${name}_link">
-      <parent name="${parent}" />
-      <insert_block name="origin" />
-      <joint name="${name}_joint" />
+      <joint name="${name}_joint" type="revolute">
+        <axis xyz="0 1 0" />
+        <limit min="-0.45" max="1.37" effort="12.0" velocity="5" />
+        <safety_controller k_velocity="10" lower="${-0.45+0.02}" upper="${1.37-0.02}" k_position="100" />
+        <joint_properties damping="1.0" />
+        <parent name="${parent}">
+          <insert_block name="origin" />
+        </parent>
+      </joint>
+
 
       <inertial>
         <mass value="1.749727" />
-        <com xyz="0.041935 0.003569 0.028143" />
-        <inertia ixx="0.010602303435"  ixy="-0.000408814235"  ixz="0.00198303894"  iyy="0.011874383747"  iyz="0.000197908779"  izz="0.005516790626" />
+        <origin xyz="0.041935 0.003569 0.028143" rpy="0 0 0" />
+        <inertia ixx="0.010602303435"  ixy="-0.000408814235"  ixz="0.00198303894"
+                 iyy="0.011874383747"  iyz="0.000197908779"
+                 izz="0.005516790626" />
       </inertial>
 
-      <visual>
+      <visual name="${name}_visual">
         <origin xyz="0 0 0" rpy="0.0 0.0 0.0 " />
-        <map name="gazebo_material" flag="gazebo">
-          <elem key="material" value="PR2/Green" />
+        <map name="gazebo_material" reference="${name}_visual">
+          <material value="PR2/Green" />
         </map>
-        <geometry name="${name}_visual">
+        <geometry name="${name}_visual_geom">
           <mesh filename="head_tilt.stlb" />
         </geometry>
-        <map name="${name}_visual_mesh" flag="ogre">
-          <elem key="mesh" value="head_tilt.mesh" />
+        <map name="${name}_visual_mesh" reference="${name}_visual">
+          <mesh value="head_tilt.mesh" />
         </map>
       </visual>
 
-      <collision>
+      <collision name="${name}_collision">
         <origin xyz="0.041935 0.003569 0.028143" rpy="0 0 0" />
-        <geometry name="${name}_collision">
+        <geometry name="${name}_collision_geom">
           <box size="0.064 0.253 0.181" />
         </geometry>
       </collision>
     </link>
-  </macro>
-
- <macro name="pr2_head_tilt_alpha2b" params="name parent *origin">
-    <joint name="${name}_joint" type="revolute">
-      <axis xyz="0 1 0" />
-      <limit min="-0.45" max="1.37" effort="12.0"
-             velocity="5" k_velocity="10"
-             safety_length_min="0.02" safety_length_max="0.02" k_position="100" />
-      <calibration reference_position="${0.0+cal_head_tilt_flag_alpha2}" values="0 0" />
-      <joint_properties damping="1.0" />
-    </joint>
 
     <transmission type="SimpleTransmission" name="${name}_trans">
       <!-- Motor must be configured with 310009 motor with large gearhead -->
       <actuator name="${name}_motor_alpha2b" />
       <joint name="${name}_joint" />
       <mechanicalReduction>6.0</mechanicalReduction>
+      <calibration reference_position="${0.0+cal_head_tilt_flag_alpha2}" values="0 0" />
     </transmission>
-
-    <link name="${name}_link">
-      <parent name="${parent}" />
-      <insert_block name="origin" />
-      <joint name="${name}_joint" />
-
-      <inertial>
-        <mass value="1.749727" />
-        <com xyz="0.041935 0.003569 0.028143" />
-        <inertia ixx="0.010602303435"  ixy="-0.000408814235"  ixz="0.00198303894"  iyy="0.011874383747"  iyz="0.000197908779"  izz="0.005516790626" />
-      </inertial>
-
-      <visual>
-        <origin xyz="0 0 0" rpy="0.0 0.0 0.0 " />
-        <map name="gazebo_material" flag="gazebo">
-          <elem key="material" value="PR2/Green" />
-        </map>
-        <geometry name="${name}_visual">
-          <mesh filename="head_tilt.stlb" />
-        </geometry>
-        <map name="${name}_visual_mesh" flag="ogre">
-          <elem key="mesh" value="head_tilt.mesh" />
-        </map>
-      </visual>
-
-      <collision>
-        <origin xyz="0.041935 0.003569 0.028143" rpy="0 0 0" />
-        <geometry name="${name}_collision">
-          <box size="0.064 0.253 0.181" />
-        </geometry>
-      </collision>
-    </link>
   </macro>
 
  <macro name="pr2_head_alpha2" params="name parent *origin">
@@ -918,37 +925,38 @@
     </pr2_head_tilt_alpha2>
 
     <!-- Head plate frame -->
-    <joint name="${name}_plate_fixed_joint" type="fixed" />
     <link name="${name}_plate_frame">
-      <parent name="${name}_tilt_link" />
-      <origin xyz="0.0232 0 0.0645" rpy="0 0 0" />
-      <joint name="${name}_plate_fixed_joint" />
+      <joint name="${name}_plate_fixed_joint" type="fixed">
+        <parent name="${name}_tilt_link">
+          <origin xyz="0.0232 0 0.0645" rpy="0 0 0" />
+        </parent>
+      </joint>
 
       <inertial>
         <mass value="0.01" />
-        <com xyz="0 0 0" />
+        <origin xyz="0 0 0" rpy="0 0 0" />
         <inertia ixx="0.001"  ixy="0.0"  ixz="0.0"
                  iyy="0.001"  iyz="0.0"
                  izz="0.001" />
       </inertial>
 
-      <visual>
+      <visual name="${name}_plate_frame_visual">
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <map name="gazebo_material" flag="gazebo">
-          <elem key="material" value="PR2/Blue" />
+        <map name="gazebo_material" reference="${name}_plate_frame_visual">
+          <material value="PR2/Blue" />
         </map>
-        <geometry name="${name}_plate_frame_visual">
+        <geometry name="${name}_plate_frame_visual_geom">
           <box size="0.01 0.01 0.01" />
         </geometry>
       </visual>
 
-      <collision>
+      <collision name="${name}_plate_frame_collision">
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <geometry name="${name}_plate_frame_collision">
+        <geometry name="${name}_plate_frame_collision_geom">
           <box size="0.01 0.01 0.01" />
         </geometry>
-        <map name="${name}_plate_frame_collision_mesh" flag="gazebo">
-          <elem key="mesh">unit_box</elem>
+        <map name="${name}_plate_frame_collision_mesh" reference="${name}_plate_frame_collision">
+          <mesh>unit_box</mesh>
         </map>
       </collision>
     </link>
@@ -968,33 +976,34 @@
     </pr2_head_tilt_alpha2a>
 
     <!-- Head plate frame -->
-    <joint name="${name}_plate_fixed_joint" type="fixed" />
     <link name="${name}_plate_frame">
-      <parent name="${name}_tilt_link" />
-      <origin xyz="0.0232 0 0.0645" rpy="0 0 0" />     
-      <joint name="${name}_plate_fixed_joint" />
+      <joint name="${name}_plate_fixed_joint" type="fixed">
+        <parent name="${name}_tilt_link">
+          <origin xyz="0.0232 0 0.0645" rpy="0 0 0" />     
+        </parent>
+      </joint>
 
       <inertial>
         <mass value="0.01" />
-        <com xyz="0 0 0" />
+        <origin xyz="0 0 0" rpy="0 0 0" />
         <inertia ixx="0.001"  ixy="0.0"  ixz="0.0"
                  iyy="0.001"  iyz="0.0"
                  izz="0.001" />
       </inertial>
 
-      <visual>
+      <visual name="${name}_plate_frame_visual">
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <map name="gazebo_material" flag="gazebo">
-          <elem key="material" value="PR2/Blue" />
+        <map name="gazebo_material" reference="${name}_plate_frame_visual">
+          <material value="PR2/Blue" />
         </map>
-        <geometry name="${name}_plate_frame_visual">
+        <geometry name="${name}_plate_frame_visual_geom">
           <box size="0.01 0.01 0.01" />
         </geometry>
       </visual>
 
-      <collision>
+      <collision name="${name}_plate_frame_collision">
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <geometry name="${name}_plate_frame_collision">
+        <geometry name="${name}_plate_frame_collision_geom">
           <box size="0.01 0.01 0.01" />
         </geometry>
       </collision>
@@ -1013,33 +1022,34 @@
     </pr2_head_tilt_alpha2b>
 
     <!-- Head plate frame -->
-    <joint name="${name}_plate_fixed_joint" type="fixed" />
     <link name="${name}_plate_frame">
-      <parent name="${name}_tilt_link" />
-      <origin xyz="0.0232 0 0.0645" rpy="0 0 0" />     
-      <joint name="${name}_plate_fixed_joint" />
+      <joint name="${name}_plate_fixed_joint" type="fixed">
+        <parent name="${name}_tilt_link">
+          <origin xyz="0.0232 0 0.0645" rpy="0 0 0" />     
+        </parent>
+      </joint>
 
       <inertial>
         <mass value="0.01" />
-        <com xyz="0 0 0" />
+        <origin xyz="0 0 0" rpy="0 0 0" />
         <inertia ixx="0.001"  ixy="0.0"  ixz="0.0"
                  iyy="0.001"  iyz="0.0"
                  izz="0.001" />
       </inertial>
 
-      <visual>
+      <visual name="${name}_plate_frame_visual">
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <map name="gazebo_material" flag="gazebo">
-          <elem key="material" value="PR2/Blue" />
+        <map name="gazebo_material" reference="${name}_plate_frame_visual">
+          <material value="PR2/Blue" />
         </map>
-        <geometry name="${name}_plate_frame_visual">
+        <geometry name="${name}_plate_frame_visual_geom">
           <box size="0.01 0.01 0.01" />
         </geometry>
       </visual>
 
-      <collision>
+      <collision name="${name}_plate_frame_collision">
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <geometry name="${name}_plate_frame_collision">
+        <geometry name="${name}_plate_frame_collision_geom">
           <box size="0.01 0.01 0.01" />
         </geometry>
       </collision>

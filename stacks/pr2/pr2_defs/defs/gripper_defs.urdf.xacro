@@ -31,40 +31,40 @@
 
   <macro name="pr2_finger_limits" params="reflect">
     <limit effort="${finger_joint_effort_limit}" velocity="0.5"
-           min="${gripper_min_angle}" max="${gripper_max_angle}"
-           k_velocity="100.0" k_position="100.0"
-           safety_length_min="0.0" safety_length_max="0.0" />
+           min="${gripper_min_angle}" max="${gripper_max_angle}" />
+    <safety_controller k_velocity="100.0" k_position="100.0"
+                       lower="${gripper_min_angle+0.0}" upper="${gripper_max_angle-0.0}" />
   </macro>
 
   <macro name="pr2_finger" params="prefix parent">
 
     <!-- Finger proximal digit -->
-
-    <joint name="${prefix}_l_finger_joint" type="revolute">
-      <axis xyz="0 0 1" />
-      <anchor xyz="0 0 0" />
-      <calibration reference_position="0" values="1.0 -1.0" />
-      <pr2_finger_limits reflect="1" />
-      <joint_properties damping="${finger_damping}" />
-      <map name="${prefix}_l_finger_joint_feedback" flag="gazebo">
-        <elem key="provideFeedback" value="true"/>
-        <elem key="initialAngle" value="${gripper_min_angle}"/>
-      </map>
-      <map name="${prefix}_l_finger_joint_ode" flag="gazebo">
-        <elem key="stopKd" value="${finger_stop_kd}" />
-        <elem key="stopKp" value="${finger_stop_kp}" />
-        <elem key="fudgeFactor" value="${finger_fudge_factor}" />
-      </map>
-    </joint>
-
     <link name="${prefix}_l_finger_link">
-      <parent name="${parent}" />
-      <origin xyz="0.07691 0.01 0" rpy="0 0 0" />
 
-      <joint name="${prefix}_l_finger_joint" />
+      <joint name="${prefix}_l_finger_joint" type="revolute">
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <axis xyz="0 0 1" />
+
+        <pr2_finger_limits reflect="1" />
+
+        <joint_properties damping="${finger_damping}" />
+        <parent name="${parent}">
+          <origin xyz="0.07691 0.01 0" rpy="0 0 0" />
+        </parent>
+        <map name="${prefix}_l_finger_joint_feedback" reference="${prefix}_l_finger_joint">
+          <provideFeedback value="true"/>
+          <initialAngle value="${gripper_min_angle}"/>
+        </map>
+        <map name="${prefix}_l_finger_joint_ode" reference="${prefix}_l_finger_joint">
+          <stopKd value="${finger_stop_kd}" />
+          <stopKp value="${finger_stop_kp}" />
+          <fudgeFactor value="${finger_fudge_factor}" />
+        </map>
+      </joint>
+
       <inertial>
         <mass value="0.17126" />
-        <com xyz="${0.03598} 0.01730 -0.00164" />
+        <origin xyz="${0.03598} 0.01730 -0.00164" rpy="0 0 0" />
         <inertia  ixx= "0.00007756198"
                   ixy= "0.00000149095"
                   ixz="-0.00000983385"
@@ -72,38 +72,38 @@
                   iyz="-0.00000306125"
                   izz= "0.00018105446" />
       </inertial>
-      <visual>
+      <visual name="${prefix}_l_finger_visual">
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <map name="gazebo_material" flag="gazebo">
-          <elem key="material" value="PR2/Grey" />
+        <map name="gazebo_material" reference="${prefix}_l_finger_visual">
+          <material value="PR2/Grey" />
         </map>
-        <geometry name="${prefix}_l_finger_visual">
+        <map name="${prefix}_l_finger_visual_mesh" reference="${prefix}_l_finger_visual">
+          <mesh value="upper_finger_l.mesh" />
+        </map>
+        <geometry name="${prefix}_l_finger_visual_geom">
           <mesh filename="upper_finger_l.stlb" />
         </geometry>
-        <map name="${prefix}_l_finger_visual_mesh" flag="ogre">
-          <elem key="mesh" value="upper_finger_l.mesh" />
-        </map>
       </visual>
-      <collision>
+      <collision name="${prefix}_l_finger_collision">
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <geometry name="${prefix}_l_finger_collision">
+        <geometry name="${prefix}_l_finger_collision_geom">
           <mesh filename="convex/upper_finger_l_convex.stlb" />
         </geometry>
-        <map name="${prefix}_l_finger_collision_mesh" flag="ogre">
-          <elem key="mesh" value="convex/upper_finger_l_convex.mesh" />
+        <map name="${prefix}_l_finger_collision_mesh" reference="${prefix}_l_finger_collision">
+          <mesh value="convex/upper_finger_l_convex.mesh" />
         </map>
         <verbose value="Yes" />
-        <map flag="collision" name="mesh">
-          <elem key="type" value="visual"/>
+        <map reference="${prefix}_l_finger_collision" name="mesh">
+          <type value="visual"/>
         </map>
-        <map name="${prefix}_l_finger_contact" flag="gazebo">
-          <elem key="mu1" value="${finger_mu}" />
-          <elem key="mu2" value="${finger_mu}" />
-          <elem key="kp" value="1000000.0" />
-          <elem key="kd" value="1.0" />
+        <map name="${prefix}_l_finger_contact" reference="${prefix}_l_finger_collision">
+          <mu1 value="${finger_mu}" />
+          <mu2 value="${finger_mu}" />
+          <kp value="1000000.0" />
+          <kd value="1.0" />
         </map>
       </collision>
-      <map name="${prefix}_l_finger_sensor" flag="gazebo">
+      <map name="${prefix}_l_finger_sensor" reference="${prefix}_l_finger_link">
         <verbatim key="${prefix}_l_finger_bumper_sensor">
           <sensor:contact name="${prefix}_l_finger_contact_sensor">
             <geom>${prefix}_l_finger_collision</geom>
@@ -117,44 +117,43 @@
           </sensor:contact>
         </verbatim>
       </map>
-      <map name="${prefix}_l_finger_gravity" flag="gazebo">
-        <elem key="turnGravityOff">true</elem>
+      <map name="${prefix}_l_finger_gravity" reference="${prefix}_l_finger_link">
+        <turnGravityOff>true</turnGravityOff>
       </map>
     </link>
 
     <!-- Finger proximal digit -->
 
-    <joint name="${prefix}_r_finger_joint" type="revolute">
-      <axis xyz="0 0 -1" />
-      <anchor xyz="0 0 0" />
-      <calibration reference_position="0" values="1.0 -1.0" />
-      <pr2_finger_limits reflect="1" />
-      <joint_properties damping="${finger_damping}" />
-      <mimic name="${prefix}_l_finger_joint" mult="1" offset="0"/>
-      <map name="${prefix}_r_finger_mimic" flag="gazebo">
-        <elem key="mimicKp"   value="${finger_kp}" />
-        <elem key="mimicKd"   value="${finger_kd}" />
-        <elem key="mimicFMax" value="${finger_fm}" />
-      </map>
-      <map name="${prefix}_r_finger_options" flag="gazebo">
-        <elem key="provideFeedback" value="true"/>
-        <elem key="initialAngle" value="${-gripper_min_angle}"/>
-      </map>
-      <map name="${prefix}_r_finger_joint_ode" flag="gazebo">
-        <elem key="stopKd" value="${finger_stop_kd}" />
-        <elem key="stopKp" value="${finger_stop_kp}" />
-        <elem key="fudgeFactor" value="${finger_fudge_factor}" />
-      </map>
-    </joint>
-
     <link name="${prefix}_r_finger_link">
-      <parent name="${parent}" />
-      <origin xyz="0.07691 -0.01 0" rpy="0 0 0" />
 
-      <joint name="${prefix}_r_finger_joint" />
+      <joint name="${prefix}_r_finger_joint" type="revolute">
+        <axis xyz="0 0 -1" />
+        <anchor xyz="0 0 0" />
+        <pr2_finger_limits reflect="1" />
+        <joint_properties damping="${finger_damping}" />
+        <mimic name="${prefix}_l_finger_joint" mult="1" offset="0"/>
+        <map name="${prefix}_r_finger_mimic" reference="${prefix}_r_finger_joint">
+          <mimicKp   value="${finger_kp}" />
+          <mimicKd   value="${finger_kd}" />
+          <mimicFMax value="${finger_fm}" />
+        </map>
+        <map name="${prefix}_r_finger_options" reference="${prefix}_r_finger_joint">
+          <provideFeedback value="true"/>
+          <initialAngle value="${-gripper_min_angle}"/>
+        </map>
+        <map name="${prefix}_r_finger_joint_ode" reference="${prefix}_r_finger_joint">
+          <stopKd value="${finger_stop_kd}" />
+          <stopKp value="${finger_stop_kp}" />
+          <fudgeFactor value="${finger_fudge_factor}" />
+        </map>
+        <parent name="${parent}">
+          <origin xyz="0.07691 -0.01 0" rpy="0 0 0" />
+        </parent>
+      </joint>
+
       <inertial>
         <mass value="0.17389" />
-        <com xyz="${0.03576} -0.01736 -0.00095" />
+        <origin xyz="${0.03576} -0.01736 -0.00095" rpy="0 0 0" />
         <inertia  ixx= "0.00007738410"
                   ixy="-0.00000209309"
                   ixz="-0.00000836228"
@@ -162,38 +161,38 @@
                   iyz= "0.00000246110"
                   izz= "0.00018106988" />
       </inertial>
-      <visual>
+      <visual name="${prefix}_r_finger_visual">
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <map name="gazebo_material" flag="gazebo">
-          <elem key="material" value="PR2/Grey" />
+        <map name="gazebo_material" reference="${prefix}_r_finger_visual">
+          <material value="PR2/Grey" />
         </map>
-        <geometry name="${prefix}_r_finger_visual">
+        <map name="${prefix}_r_finger_visual_mesh" reference="${prefix}_r_finger_visual">
+          <mesh value="upper_finger_r.mesh" />
+        </map>
+        <geometry name="${prefix}_r_finger_visual_geom">
           <mesh filename="upper_finger_r.stlb" />
         </geometry>
-        <map name="${prefix}_r_finger_visual_mesh" flag="ogre">
-          <elem key="mesh" value="upper_finger_r.mesh" />
-        </map>
       </visual>
-      <collision>
+      <collision name="${prefix}_r_finger_collision">
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <geometry name="${prefix}_r_finger_collision">
+        <geometry name="${prefix}_r_finger_collision_geom">
           <mesh filename="convex/upper_finger_r_convex.stlb" />
         </geometry>
-        <map name="${prefix}_r_finger_collision_mesh" flag="ogre">
-          <elem key="mesh" value="convex/upper_finger_r_convex.mesh" />
-        </map>
         <verbose value="Yes" />
-        <map flag="collision" name="mesh">
-          <elem key="type" value="visual"/>
+        <map name="${prefix}_r_finger_collision_mesh" reference="${prefix}_r_finger_collision">
+          <mesh value="convex/upper_finger_r_convex.mesh" />
         </map>
-        <map name="${prefix}_r_finger_contact" flag="gazebo">
-          <elem key="mu1" value="${finger_mu}" />
-          <elem key="mu2" value="${finger_mu}" />
-          <elem key="kp" value="1000000.0" />
-          <elem key="kd" value="1.0" />
+        <map name="mesh" reference="${prefix}_r_finger_collision">
+          <type value="visual"/>
+        </map>
+        <map name="${prefix}_r_finger_contact" reference="${prefix}_r_finger_collision">
+          <mu1 value="${finger_mu}" />
+          <mu2 value="${finger_mu}" />
+          <kp value="1000000.0" />
+          <kd value="1.0" />
         </map>
       </collision>
-      <map name="${prefix}_r_finger_sensor" flag="gazebo">
+      <map name="${prefix}_r_finger_sensor" reference="${prefix}_r_finger_link">
         <verbatim key="${prefix}_r_finger_bumper_sensor">
           <sensor:contact name="${prefix}_r_finger_contact_sensor">
             <geom>${prefix}_r_finger_collision</geom>
@@ -207,80 +206,79 @@
           </sensor:contact>
         </verbatim>
       </map>
-      <map name="${prefix}_r_finger_gravity" flag="gazebo">
-        <elem key="turnGravityOff">true</elem>
+      <map name="${prefix}_r_finger_gravity" reference="${prefix}_r_finger_link">
+        <turnGravityOff>true</turnGravityOff>
       </map>
     </link>
 
     <!-- Finger tip -->
 
-    <joint name="${prefix}_l_finger_tip_joint" type="revolute">
-      <axis xyz="0 0 -1" />
-      <anchor xyz="0 0 0" />
-      <calibration reference_position="0" values="1.0 -1.0" />
-      <pr2_finger_limits reflect="1" />
-      <joint_properties damping="${finger_tip_damping}" />
-      <mimic name="${prefix}_l_finger_joint" mult="1" offset="0"/>
-      <map name="${prefix}_l_finger_tip_mimic" flag="gazebo">
-        <elem key="mimicKp"   value="${finger_tip_kp}" />
-        <elem key="mimicKd"   value="${finger_tip_kd}" />
-        <elem key="mimicFMax" value="${finger_tip_fm}" />
-      </map>
-      <map name="${prefix}_l_finger_tip_options" flag="gazebo">
-        <elem key="provideFeedback" value="true"/>
-        <elem key="initialAngle" value="${-gripper_min_angle}"/>
-      </map>
-      <map name="${prefix}_l_finger_tip_joint_ode" flag="gazebo">
-        <elem key="stopKd" value="${finger_stop_kd}" />
-        <elem key="stopKp" value="${finger_stop_kp}" />
-        <elem key="fudgeFactor" value="${finger_fudge_factor}" />
-      </map>
-    </joint>
-
     <link name="${prefix}_l_finger_tip_link">
-      <parent name="${prefix}_l_finger_link" />
-      <origin xyz="0.09137 0.00495 0" rpy="0 0 0" />
 
-      <joint name="${prefix}_l_finger_tip_joint" />
+      <joint name="${prefix}_l_finger_tip_joint" type="revolute">
+        <axis xyz="0 0 -1" />
+        <anchor xyz="0 0 0" />
+        <pr2_finger_limits reflect="1" />
+        <joint_properties damping="${finger_tip_damping}" />
+        <mimic name="${prefix}_l_finger_joint" mult="1" offset="0"/>
+        <map name="${prefix}_l_finger_tip_mimic" reference="${prefix}_l_finger_tip_link">
+          <mimicKp   value="${finger_tip_kp}" />
+          <mimicKd   value="${finger_tip_kd}" />
+          <mimicFMax value="${finger_tip_fm}" />
+        </map>
+        <map name="${prefix}_l_finger_tip_options" reference="${prefix}_l_finger_tip_link">
+          <provideFeedback value="true"/>
+          <initialAngle value="${-gripper_min_angle}"/>
+        </map>
+        <map name="${prefix}_l_finger_tip_joint_ode" reference="${prefix}_l_finger_tip_link">
+          <stopKd value="${finger_stop_kd}" />
+          <stopKp value="${finger_stop_kp}" />
+          <fudgeFactor value="${finger_fudge_factor}" />
+        </map>
+        <parent name="${prefix}_l_finger_link">
+          <origin xyz="0.09137 0.00495 0" rpy="0 0 0" />
+        </parent>
+      </joint>
+
       <inertial>
         <mass value="0.04419" />
-        <com xyz="0.00423 0.00284 0.0" />
+        <origin xyz="0.00423 0.00284 0.0" rpy="0 0 0" />
         <inertia  ixx="0.00000837047" ixy="0.00000583632" ixz="0.0"
                   iyy="0.00000987067" iyz="0.0"
                   izz="0.00001541768" />
       </inertial>
-      <visual>
+      <visual name="${prefix}_l_finger_tip_visual">
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <map name="gazebo_material" flag="gazebo">
-          <elem key="material" value="PR2/Green" />
+        <map name="gazebo_material" reference="${prefix}_l_finger_tip_visual">
+          <material value="PR2/Green" />
         </map>
-        <geometry name="${prefix}_l_finger_tip_visual">
+        <geometry name="${prefix}_l_finger_tip_visual_geom">
           <mesh filename="finger_tip_l.stlb" />
         </geometry>
-        <map name="${prefix}_l_finger_tip_visual_mesh" flag="ogre">
-          <elem key="mesh" value="finger_tip_l.mesh" />
+        <map name="${prefix}_l_finger_tip_visual_mesh" reference="${prefix}_l_finger_tip_visual">
+          <mesh value="finger_tip_l.mesh" />
         </map>
       </visual>
-      <collision>
+      <collision name="${prefix}_l_finger_tip_collision">
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <geometry name="${prefix}_l_finger_tip_collision">
+        <geometry name="${prefix}_l_finger_tip_collision_geom">
           <mesh filename="convex/finger_tip_l_convex.stlb" />
         </geometry>
-        <map name="${prefix}_l_finger_tip_collision_mesh" flag="ogre">
-          <elem key="mesh" value="convex/finger_tip_l_convex.mesh" />
+        <map name="${prefix}_l_finger_tip_collision_mesh" reference="${prefix}_l_finger_tip_collision">
+          <mesh value="convex/finger_tip_l_convex.mesh" />
         </map>
         <verbose value="Yes" />
-        <map flag="collision" name="mesh">
-          <elem key="type" value="visual"/>
+        <map reference="${prefix}_l_finger_tip_collision" name="mesh">
+          <type value="visual"/>
         </map>
-        <map name="${prefix}_l_finger_tip_contact" flag="gazebo">
-          <elem key="mu1" value="${finger_tip_mu}" />
-          <elem key="mu2" value="${finger_tip_mu}" />
-          <elem key="kp"  value="10000000.0" />
-          <elem key="kd"  value="1.0" />
+        <map name="${prefix}_l_finger_tip_contact" reference="${prefix}_l_finger_tip_collision">
+          <mu1 value="${finger_tip_mu}" />
+          <mu2 value="${finger_tip_mu}" />
+          <kp  value="10000000.0" />
+          <kd  value="1.0" />
         </map>
       </collision>
-      <map name="${prefix}_l_finger_tip_sensor" flag="gazebo">
+      <map name="${prefix}_l_finger_tip_sensor" reference="${prefix}_l_finger_tip_link">
         <verbatim key="${prefix}_l_finger_tip_bumper_sensor">
           <sensor:contact name="${prefix}_l_finger_tip_contact_sensor">
             <geom>${prefix}_l_finger_tip_collision</geom>
@@ -294,81 +292,80 @@
           </sensor:contact>
         </verbatim>
       </map>
-      <map name="${prefix}_l_finger_tip_gravity" flag="gazebo">
-        <elem key="turnGravityOff">true</elem>
-        <elem key="selfCollide" value="false" />
+      <map name="${prefix}_l_finger_tip_gravity" reference="${prefix}_l_finger_tip_link">
+        <turnGravityOff>true</mimicKp>
+        <selfCollide value="false" />
       </map>
     </link>
 
     <!-- Finger tip -->
 
-    <joint name="${prefix}_r_finger_tip_joint" type="revolute">
-      <axis xyz="0 0 1" />
-      <anchor xyz="0 0 0" />
-      <calibration reference_position="0" values="1.0 -1.0" />
-      <pr2_finger_limits reflect="1" />
-      <joint_properties damping="${finger_tip_damping}" />
-      <mimic name="${prefix}_l_finger_joint" mult="1" offset="0"/>
-      <map name="${prefix}_r_finger_tip_mimic" flag="gazebo">
-        <elem key="mimicKp"   value="${finger_tip_kp}" />
-        <elem key="mimicKd"   value="${finger_tip_kd}" />
-        <elem key="mimicFMax" value="${finger_tip_fm}" />
-      </map>
-      <map name="${prefix}_r_finger_tip_options" flag="gazebo">
-        <elem key="provideFeedback" value="true"/>
-        <elem key="initialAngle" value="${gripper_min_angle}"/>
-      </map>
-      <map name="${prefix}_r_finger_tip_joint_ode" flag="gazebo">
-        <elem key="stopKd" value="${finger_stop_kd}" />
-        <elem key="stopKp" value="${finger_stop_kp}" />
-        <elem key="fudgeFactor" value="${finger_fudge_factor}" />
-      </map>
-    </joint>
-
     <link name="${prefix}_r_finger_tip_link">
-      <parent name="${prefix}_r_finger_link" />
-      <origin xyz="${0.09137} ${-0.00495} 0" rpy="0 0 0" />
 
-      <joint name="${prefix}_r_finger_tip_joint" />
+      <joint name="${prefix}_r_finger_tip_joint" type="revolute">
+        <axis xyz="0 0 1" />
+        <anchor xyz="0 0 0" />
+        <pr2_finger_limits reflect="1" />
+        <joint_properties damping="${finger_tip_damping}" />
+        <mimic name="${prefix}_l_finger_joint" mult="1" offset="0"/>
+        <map name="${prefix}_r_finger_tip_mimic" reference="${prefix}_r_finger_tip_joint">
+          <mimicKp   value="${finger_tip_kp}" />
+          <mimicKd   value="${finger_tip_kd}" />
+          <mimicFMax value="${finger_tip_fm}" />
+        </map>
+        <map name="${prefix}_r_finger_tip_options" reference="${prefix}_r_finger_tip_joint">
+          <provideFeedback value="true"/>
+          <initialAngle value="${gripper_min_angle}"/>
+        </map>
+        <map name="${prefix}_r_finger_tip_joint_ode" reference="${prefix}_r_finger_tip_joint">
+          <stopKd value="${finger_stop_kd}" />
+          <stopKp value="${finger_stop_kp}" />
+          <fudgeFactor value="${finger_fudge_factor}" />
+        </map>
+        <parent name="${prefix}_r_finger_link">
+          <origin xyz="${0.09137} ${-0.00495} 0" rpy="0 0 0" />
+        </parent>
+      </joint>
+
       <inertial>
         <mass value="0.04419" />
-        <com xyz="${0.00423} ${-0.00284} ${0.0}" />
+        <origin xyz="${0.00423} ${-0.00284} ${0.0}" rpy="0 0 0" />
         <inertia  ixx="0.00000837047" ixy="-0.00000583632" ixz="0.0"
                   iyy="0.00000987067" iyz="0.0"
                   izz="0.00001541768" />
       </inertial>
-      <visual>
+      <visual name="${prefix}_r_finger_tip_visual">
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <map name="gazebo_material" flag="gazebo">
-          <elem key="material" value="PR2/Green" />
+        <map name="gazebo_material" reference="${prefix}_r_finger_tip_visual">
+          <material value="PR2/Green" />
         </map>
-        <geometry name="${prefix}_r_finger_tip_visual">
+        <geometry name="${prefix}_r_finger_tip_visual_geom">
           <mesh filename="finger_tip_r.stlb" />
         </geometry>
-        <map name="${prefix}_r_finger_tip_visual_mesh" flag="ogre">
-          <elem key="mesh" value="finger_tip_r.mesh" />
+        <map name="${prefix}_r_finger_tip_visual_mesh" reference="${prefix}_r_finger_tip_visual">
+          <mesh value="finger_tip_r.mesh" />
         </map>
       </visual>
-      <collision>
+      <collision name="${prefix}_r_finger_tip_collision">
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <geometry name="${prefix}_r_finger_tip_collision">
+        <geometry name="${prefix}_r_finger_tip_collision_geom">
           <mesh filename="convex/finger_tip_r_convex.stlb" />
         </geometry>
-        <map name="${prefix}_r_finger_tip_collision_mesh" flag="ogre">
-          <elem key="mesh" value="convex/finger_tip_r_convex.mesh" />
+        <map name="${prefix}_r_finger_tip_collision_mesh" reference="${prefix}_r_finger_tip_collision">
+          <mesh value="convex/finger_tip_r_convex.mesh" />
         </map>
         <verbose value="Yes" />
-        <map flag="collision" name="mesh">
-          <elem key="type" value="visual"/>
+        <map reference="${prefix}_r_finger_tip_collision" name="mesh">
+          <type value="visual"/>
         </map>
-        <map name="${prefix}_r_finger_tip_contact" flag="gazebo">
-          <elem key="mu1" value="${finger_tip_mu}" />
-          <elem key="mu2" value="${finger_tip_mu}" />
-          <elem key="kp"  value="10000000.0" />
-          <elem key="kd"  value="1.0" />
+        <map name="${prefix}_r_finger_tip_contact" reference="${prefix}_r_finger_tip_collision">
+          <mu1 value="${finger_tip_mu}" />
+          <mu2 value="${finger_tip_mu}" />
+          <kp  value="10000000.0" />
+          <kd  value="1.0" />
         </map>
       </collision>
-      <map name="${prefix}_r_finger_tip_sensor" flag="gazebo">
+      <map name="${prefix}_r_finger_tip_sensor" reference="${prefix}_r_finger_tip_link">
         <verbatim key="${prefix}_r_finger_tip_bumper_sensor">
           <sensor:contact name="${prefix}_r_finger_tip_contact_sensor">
             <geom>${prefix}_r_finger_tip_collision</geom>
@@ -382,13 +379,13 @@
           </sensor:contact>
         </verbatim>
       </map>
-      <map name="${prefix}_r_finger_tip_gravity" flag="gazebo">
-        <elem key="turnGravityOff">true</elem>
-        <elem key="selfCollide" value="false" />
+      <map name="${prefix}_r_finger_tip_gravity" reference="${prefix}_r_finger_tip_link">
+        <turnGravityOff>true</turnGravityOff>
+        <selfCollide value="false" />
       </map>
     </link>
 
-    <map name="sensor" flag="gazebo">
+    <map name="sensor" reference="${prefix}_r_finger_tip_link">
       <verbatim key="p3d_${prefix}_l_finger">
         <controller:ros_p3d name="p3d_${prefix}_l_finger_controller" plugin="libros_p3d.so">
           <alwaysOn>true</alwaysOn>
@@ -417,45 +414,46 @@
 
   <macro name="pr2_gripper" params="side parent *origin gear_ratio screw_reduction">
 
-    <joint name="${side}_gripper_palm_joint" type="fixed" />
     <link name="${side}_gripper_palm_link">
-      <parent name="${parent}" />
-      <joint name="${side}_gripper_palm_joint" />
-      <insert_block name="origin" />
+      <joint name="${side}_gripper_palm_joint" type="fixed">
+        <parent name="${parent}">
+          <insert_block name="origin"/>
+        </parent>
+      </joint>
       <inertial>
         <mass value="0.58007" />
-        <com xyz="0.06623 0.00053 -0.00119" />
+        <origin xyz="0.06623 0.00053 -0.00119" rpy="0 0 0" />
         <inertia  ixx="0.00035223921" ixy="-0.00001580476" ixz="-0.00000091750"
                   iyy="0.00067741312" iyz="-0.00000059554"
                   izz="0.00086563316" />
       </inertial>
 
-      <visual>
+      <visual name="${side}_gripper_palm_visual">
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <map name="gazebo_material" flag="gazebo">
-          <elem key="material" value="PR2/Red" />
+        <map name="gazebo_material" reference="${side}_gripper_palm_visual">
+          <material value="PR2/Red" />
         </map>
-        <geometry name="${side}_gripper_palm_visual">
+        <geometry name="${side}_gripper_palm_visual_geom">
           <mesh filename="gripper_palm.stlb" />
         </geometry>
-        <map name="${side}_gripper_palm_visual_mesh" flag="ogre">
-          <elem key="mesh" value="gripper_palm.mesh" />
+        <map name="${side}_gripper_palm_visual_mesh" reference="${side}_gripper_palm_visual">
+          <mesh value="gripper_palm.mesh" />
         </map>
       </visual>
-      <collision>
+      <collision name="${side}_gripper_palm_collision">
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <geometry name="${side}_gripper_palm_collision">
+        <geometry name="${side}_gripper_palm_collision_geom">
           <mesh filename="convex/gripper_palm_convex.stlb" />
         </geometry>
-        <map name="${side}_gripper_palm_collision_mesh" flag="ogre">
-          <elem key="mesh" value="convex/gripper_palm_convex.mesh" />
+        <map name="${side}_gripper_palm_collision_mesh" reference="${side}_gripper_palm_collision">
+          <mesh value="convex/gripper_palm_convex.mesh" />
         </map>
         <verbose value="Yes" />
-        <map flag="collision" name="mesh">
-          <elem key="type" value="visual"/>
+        <map reference="${side}_gripper_palm_collision" name="mesh">
+          <type value="visual"/>
         </map>
       </collision>
-      <map name="${side}_gripper_palm_sensor" flag="gazebo">
+      <map name="${side}_gripper_palm_sensor" reference="${side}_gripper_palm_link">
         <verbatim key="${side}_gripper_palm_bumper_sensor">
           <sensor:contact name="${side}_gripper_palm_contact_sensor">
             <geom>${side}_gripper_palm_collision</geom>
@@ -469,55 +467,56 @@
           </sensor:contact>
         </verbatim>
       </map>
-      <map name="${side}_gripper_palm_gravity" flag="gazebo">
-        <elem key="turnGravityOff">true</elem>
+      <map name="${side}_gripper_palm_gravity" reference="${side}_gripper_palm_link">
+        <turnGravityOff>true</turnGravityOff>
       </map>
     </link>
 
 
 
     <!-- floating link for simulating gripper constraints -->
-    <joint name="${side}_gripper_float_joint" type="prismatic">
-      <limit min="-0.05" max="0.001" effort="0"
-           safety_length_min="0.0" safety_length_max="0.0" />
-      <axis xyz="1 0 0" />
-      <joint_properties damping="10.0" />
-    </joint>
     <link name="${side}_gripper_float_link">
-      <parent name="${side}_gripper_palm_link" />
-      <joint name="${side}_gripper_float_joint" />
-      <origin xyz="0.05 0 0" rpy="0 0 0" />
+      <joint name="${side}_gripper_float_joint" type="prismatic">
+        <limit min="-0.05" max="0.001" effort="0" />
+        <safety_controller lower="${-0.05+0.0}" upper="${0.001-0.0}" />
+        <axis xyz="1 0 0" />
+        <joint_properties damping="10.0" />
+        <parent name="${side}_gripper_palm_link">
+          <origin xyz="0.05 0 0" rpy="0 0 0" />
+        </parent>
+      </joint>
+
       <inertial>
         <mass value="0.01" />
-        <com xyz="0 0 0" />
+        <origin xyz="0 0 0" rpy="0 0 0" />
         <inertia  ixx="0.0001" ixy="0" ixz="0"
                   iyy="0.0001" iyz="0"
                   izz="0.0001" />
       </inertial>
-      <visual>
+      <visual name="${side}_gripper_float_visual">
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <map name="gazebo_material" flag="gazebo">
-          <elem key="material" value="PR2/White" />
+        <map name="gazebo_material" reference="${side}_gripper_float_visual">
+          <material value="PR2/White" />
         </map>
-        <geometry name="${side}_gripper_float_visual">
+        <geometry name="${side}_gripper_float_visual_geom">
           <box size="0.001 0.001 0.001" />
         </geometry>
       </visual>
-      <collision>
+      <collision name="${side}_gripper_float_collision">
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <geometry name="${side}_gripper_float_collision">
+        <geometry name="${side}_gripper_float_collision_geom">
           <box size="0.001 0.001 0.001" />
         </geometry>
         <verbose value="Yes" />
-        <map flag="collision" name="mesh">
-          <elem key="type" value="visual"/>
+        <map reference="${side}_gripper_float_collision" name="mesh">
+          <type value="visual"/>
         </map>
       </collision>
-      <map name="${side}_gripper_float_gravity" flag="gazebo">
-        <elem key="turnGravityOff">true</elem>
+      <map name="${side}_gripper_float_gravity" reference="${side}_gripper_float_link">
+        <turnGravityOff>true</turnGravityOff>
       </map>
     </link>
-    <map name="${side}_fake_gripper_slider_joint" flag="gazebo">
+    <map name="${side}_fake_gripper_slider_joint">
       <verbatim key="${side}_fake_gripper_slider_joint">
         <joint:slider name="${side}_gripper_l_finger_tip_slider_joint">
             <body1>${side}_gripper_l_finger_tip_link</body1>
@@ -525,6 +524,7 @@
             <anchor>${side}_gripper_l_finger_tip_link</anchor>
             <axis>0 1 0</axis>
             <anchorOffset>0 0 0</anchorOffset>
+            </anchorOffset>
         </joint:slider>
         <joint:slider name="${side}_gripper_r_finger_tip_slider_joint">
             <body1>${side}_gripper_r_finger_tip_link</body1>
@@ -549,7 +549,7 @@
 
 
 
-    <map name="sensor" flag="gazebo">
+    <map name="sensor">
       <verbatim key="p3d_${side}_gripper_palm">
         <controller:ros_p3d name="p3d_${side}_gripper_palm_controller" plugin="libros_p3d.so">
           <alwaysOn>true</alwaysOn>
@@ -566,35 +566,36 @@
     </map>
 
 
-    <joint name="${side}_gripper_tool_joint" type="fixed" />
     <link name="${side}_gripper_tool_frame">
-      <parent name="${side}_gripper_palm_link" />
-      <joint name="${side}_gripper_tool_joint" />
-      <origin xyz="0.18 0 0" rpy="0 0 0" />
+      <joint name="${side}_gripper_tool_joint" type="fixed">
+        <parent name="${side}_gripper_palm_link">
+          <origin xyz="0.18 0 0" rpy="0 0 0" />
+        </parent>
+      </joint>
 
       <!-- TODO: all that follows is made-up and useless, but the old parser crashes without it -->
       <inertial>
         <mass value="0" />
-        <com xyz="0 0 0" />
+        <origin xyz="0 0 0" rpy="0 0 0" />
         <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0" />
       </inertial>
-      <visual>
+      <visual name="${side}_gripper_tool_visual">
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <map name="gazebo_material" flag="gazebo">
-          <elem key="material" value="PR2/Grey" />
+        <map name="gazebo_material" reference="${side}_gripper_tool_visual">
+          <material value="PR2/Grey" />
         </map>
-        <geometry name="${side}_gripper_tool_visual">
+        <geometry name="${side}_gripper_tool_visual_geom">
           <box size="0.001 0.001 0.001" />
         </geometry>
       </visual>
-      <collision>
+      <collision name="${side}_gripper_tool_collision">
         <origin xyz="-0.1 0 0" rpy="0 0 0" /> <!-- move it out of the way -->
-        <geometry name="${side}_gripper_tool_collision">
+        <geometry name="${side}_gripper_tool_collision_geom">
           <box size="0.001 0.001 0.001" />
         </geometry>
       </collision>
-      <map name="${side}_gripper_tool_gravity" flag="gazebo">
-        <elem key="turnGravityOff">true</elem>
+      <map name="${side}_gripper_tool_gravity" reference="${side}_gripper_tool_link">
+        <turnGravityOff>true</turnGravityOff>
       </map>
     </link>
 
@@ -626,10 +627,8 @@
     -->
     <joint name="${side}_gripper_joint" type="prismatic">
       <axis xyz="0 0 1" />
-      <limit effort="100.0" velocity="0.2"
-             min="0.0" max="0.09"
-             k_velocity="500.0" k_position="20.0"
-             safety_length_min="0.0" safety_length_max="0.001" />
+      <limit effort="100.0" velocity="0.2" min="0.0" max="0.09" />
+      <safety_controller k_velocity="500.0" k_position="20.0" lower="${0.0+0.0}" upper="${0.09-0.001}" />
     </joint>
 
   </macro>
