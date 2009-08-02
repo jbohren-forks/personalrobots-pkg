@@ -37,13 +37,12 @@
 #include <base_local_planner/costmap_model.h>
 
 using namespace std;
-using namespace robot_msgs;
 using namespace costmap_2d;
 
 namespace base_local_planner {
   CostmapModel::CostmapModel(const Costmap2D& ma) : costmap_(ma) {}
 
-  double CostmapModel::footprintCost(const Point& position, const vector<Point>& footprint, 
+  double CostmapModel::footprintCost(const geometry_msgs::Point& position, const vector<geometry_msgs::Point>& footprint, 
       double inscribed_radius, double circumscribed_radius){
     if(footprint.size() < 3)
       return -1.0;

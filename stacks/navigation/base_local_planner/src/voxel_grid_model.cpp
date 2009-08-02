@@ -37,7 +37,6 @@
 #include <base_local_planner/voxel_grid_model.h>
 
 using namespace std;
-using namespace robot_msgs;
 using namespace costmap_2d;
 
 namespace base_local_planner {
@@ -47,7 +46,7 @@ namespace base_local_planner {
     origin_x_(origin_x), origin_y_(origin_y), origin_z_(origin_z),
     max_z_(max_z), sq_obstacle_range_(obstacle_range * obstacle_range) {}
 
-  double VoxelGridModel::footprintCost(const Point& position, const vector<Point>& footprint, 
+  double VoxelGridModel::footprintCost(const geometry_msgs::Point& position, const vector<geometry_msgs::Point>& footprint, 
       double inscribed_radius, double circumscribed_radius){
     if(footprint.size() < 3)
       return -1.0;
@@ -180,7 +179,7 @@ namespace base_local_planner {
     return 1;
   }
 
-  void VoxelGridModel::updateWorld(const vector<Point>& footprint, 
+  void VoxelGridModel::updateWorld(const vector<geometry_msgs::Point>& footprint, 
       const vector<Observation>& observations, const vector<PlanarLaserScan>& laser_scans){
 
     //remove points in the laser scan boundry
@@ -190,7 +189,7 @@ namespace base_local_planner {
     //iterate through all observations and update the grid
     for(vector<Observation>::const_iterator it = observations.begin(); it != observations.end(); ++it){
       const Observation& obs = *it;
-      const PointCloud& cloud = obs.cloud_;
+      const sensor_msgs::PointCloud& cloud = obs.cloud_;
       for(unsigned int i = 0; i < cloud.get_pts_size(); ++i){
         //filter out points that are too high
         if(cloud.pts[i].z > max_z_)
@@ -267,14 +266,14 @@ namespace base_local_planner {
     }
   }
 
-  void VoxelGridModel::getPoints(PointCloud& cloud){
+  void VoxelGridModel::getPoints(sensor_msgs::PointCloud& cloud){
     for(unsigned int i = 0; i < obstacle_grid_.sizeX(); ++i){
       for(unsigned int j = 0; j < obstacle_grid_.sizeY(); ++j){
         for(unsigned int k = 0; k < obstacle_grid_.sizeZ(); ++k){
           if(obstacle_grid_.getVoxel(i, j, k)){
             double wx, wy, wz;
             mapToWorld3D(i, j, k, wx, wy, wz);
-            Point32 pt;
+            geometry_msgs::Point32 pt;
             pt.x = wx;
             pt.y = wy;
             pt.z = wz;

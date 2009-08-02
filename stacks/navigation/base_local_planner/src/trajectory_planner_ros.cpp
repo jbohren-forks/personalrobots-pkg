@@ -142,7 +142,7 @@ namespace base_local_planner {
       delete world_model_;
   }
 
-  vector<Point> TrajectoryPlannerROS::drawFootprint(double x_i, double y_i, double theta_i){
+  vector<geometry_msgs::Point> TrajectoryPlannerROS::drawFootprint(double x_i, double y_i, double theta_i){
     return tc_->drawFootprint(x_i, y_i, theta_i);
   }
 
@@ -220,7 +220,7 @@ namespace base_local_planner {
   }
 
   bool TrajectoryPlannerROS::goalReached(){
-    const robot_msgs::PoseStamped& plan_goal_pose = global_plan_.back();
+    const geometry_msgs::PoseStamped& plan_goal_pose = global_plan_.back();
     tf::Stamped<tf::Pose> goal_pose;
 
     try{
@@ -283,7 +283,7 @@ namespace base_local_planner {
     return false;
   }
 
-  bool TrajectoryPlannerROS::updatePlan(const std::vector<robot_msgs::PoseStamped>& orig_global_plan){
+  bool TrajectoryPlannerROS::updatePlan(const std::vector<geometry_msgs::PoseStamped>& orig_global_plan){
     //reset the global plan
     global_plan_.clear();
     global_plan_ = orig_global_plan;
@@ -291,8 +291,8 @@ namespace base_local_planner {
     return true;
   }
 
-  bool TrajectoryPlannerROS::transformGlobalPlan(std::vector<robot_msgs::PoseStamped>& transformed_plan){
-    const robot_msgs::PoseStamped& plan_pose = global_plan_[0];
+  bool TrajectoryPlannerROS::transformGlobalPlan(std::vector<geometry_msgs::PoseStamped>& transformed_plan){
+    const geometry_msgs::PoseStamped& plan_pose = global_plan_[0];
 
     transformed_plan.clear();
 
@@ -310,13 +310,13 @@ namespace base_local_planner {
 
 
       tf::Stamped<tf::Pose> tf_pose;
-      robot_msgs::PoseStamped newer_pose;
+      geometry_msgs::PoseStamped newer_pose;
 
       //we'll look ahead on the path the size of our window
       unsigned int needed_path_length = std::max(costmap_.cellSizeX(), costmap_.cellSizeY());
 
       for(unsigned int i = 0; i < std::min((unsigned int)global_plan_.size(), needed_path_length); ++i){
-        const robot_msgs::PoseStamped& new_pose = global_plan_[i];
+        const geometry_msgs::PoseStamped& new_pose = global_plan_[i];
         poseStampedMsgToTF(new_pose, tf_pose);
         tf_pose.setData(transform * tf_pose);
         tf_pose.stamp_ = transform.stamp_;
@@ -346,12 +346,12 @@ namespace base_local_planner {
   }
 
   bool TrajectoryPlannerROS::computeVelocityCommands(robot_msgs::PoseDot& cmd_vel){
-    std::vector<robot_msgs::PoseStamped> local_plan;
+    std::vector<geometry_msgs::PoseStamped> local_plan;
     tf::Stamped<tf::Pose> global_pose;
     if(!costmap_ros_.getRobotPose(global_pose))
       return false;
 
-    std::vector<robot_msgs::PoseStamped> transformed_plan;
+    std::vector<geometry_msgs::PoseStamped> transformed_plan;
     //get the global plan in our frame
     if(!transformGlobalPlan(transformed_plan)){
       ROS_WARN("Could not transform the global plan to the frame of the controller");
@@ -467,7 +467,7 @@ namespace base_local_planner {
       path.getPoint(i, p_x, p_y, p_th);
 
       tf::Stamped<tf::Pose> p = tf::Stamped<tf::Pose>(tf::Pose(tf::Quaternion(p_th, 0.0, 0.0), tf::Point(p_x, p_y, 0.0)), ros::Time::now(), global_frame_);
-      robot_msgs::PoseStamped pose;
+      geometry_msgs::PoseStamped pose;
       tf::poseStampedTFToMsg(p, pose);
       local_plan.push_back(pose);
     }
@@ -483,12 +483,12 @@ namespace base_local_planner {
     return tc_->getLocalGoal(x, y);
   }
 
-  void TrajectoryPlannerROS::prunePlan(const tf::Stamped<tf::Pose>& global_pose, std::vector<robot_msgs::PoseStamped>& plan, std::vector<robot_msgs::PoseStamped>& global_plan){
+  void TrajectoryPlannerROS::prunePlan(const tf::Stamped<tf::Pose>& global_pose, std::vector<geometry_msgs::PoseStamped>& plan, std::vector<geometry_msgs::PoseStamped>& global_plan){
     ROS_ASSERT(global_plan.size() >= plan.size());
-    std::vector<robot_msgs::PoseStamped>::iterator it = plan.begin();
-    std::vector<robot_msgs::PoseStamped>::iterator global_it = global_plan.begin();
+    std::vector<geometry_msgs::PoseStamped>::iterator it = plan.begin();
+    std::vector<geometry_msgs::PoseStamped>::iterator global_it = global_plan.begin();
     while(it != plan.end()){
-      const robot_msgs::PoseStamped& w = *it;
+      const geometry_msgs::PoseStamped& w = *it;
       // Fixed error bound of 2 meters for now. Can reduce to a portion of the map size or based on the resolution
       double x_diff = global_pose.getOrigin().x() - w.pose.position.x;
       double y_diff = global_pose.getOrigin().y() - w.pose.position.y;
@@ -505,7 +505,7 @@ namespace base_local_planner {
   void TrajectoryPlannerROS::publishFootprint(const tf::Stamped<tf::Pose>& global_pose){
     double useless_pitch, useless_roll, yaw;
     global_pose.getBasis().getEulerZYX(yaw, useless_pitch, useless_roll);
-    std::vector<robot_msgs::Point> footprint = drawFootprint(global_pose.getOrigin().x(), global_pose.getOrigin().y(), yaw);
+    std::vector<geometry_msgs::Point> footprint = drawFootprint(global_pose.getOrigin().x(), global_pose.getOrigin().y(), yaw);
     visualization_msgs::Polyline footprint_msg;
     footprint_msg.header.frame_id = global_frame_;
     footprint_msg.set_points_size(footprint.size());
@@ -521,7 +521,7 @@ namespace base_local_planner {
     footprint_pub_.publish(footprint_msg);
   }
 
-  void TrajectoryPlannerROS::publishPlan(const std::vector<robot_msgs::PoseStamped>& path, const ros::Publisher& pub, double r, double g, double b, double a){
+  void TrajectoryPlannerROS::publishPlan(const std::vector<geometry_msgs::PoseStamped>& path, const ros::Publisher& pub, double r, double g, double b, double a){
     visualization_msgs::Polyline gui_path_msg;
     gui_path_msg.header.frame_id = global_frame_;
 

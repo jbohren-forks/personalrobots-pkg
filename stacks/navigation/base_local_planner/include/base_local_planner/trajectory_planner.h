@@ -53,8 +53,8 @@
 #include <base_local_planner/trajectory.h>
 
 //we'll take in a path as a vector of poses
-#include <robot_msgs/PoseStamped.h>
-#include <robot_msgs/Point.h>
+#include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/Point.h>
 #include <base_local_planner/Position2DInt.h>
 
 //for computing path distance
@@ -107,7 +107,7 @@ namespace base_local_planner {
        */
       TrajectoryPlanner(WorldModel& world_model, 
           const costmap_2d::Costmap2D& costmap, 
-          std::vector<robot_msgs::Point> footprint_spec,
+          std::vector<geometry_msgs::Point> footprint_spec,
           double inscribed_radius, double circumscribed_radius,
           double acc_lim_x = 1.0, double acc_lim_y = 1.0, double acc_lim_theta = 1.0,
           double sim_time = 1.0, double sim_granularity = 0.025, 
@@ -142,7 +142,7 @@ namespace base_local_planner {
        * @brief  Update the plan that the controller is following
        * @param new_plan A new plan for the controller to follow 
        */
-      void updatePlan(const std::vector<robot_msgs::PoseStamped>& new_plan);
+      void updatePlan(const std::vector<geometry_msgs::PoseStamped>& new_plan);
 
       /**
        * @brief  Used for display purposes, allows the footprint of the robot to be drawn in visualization tools
@@ -151,7 +151,7 @@ namespace base_local_planner {
        * @param theta_i The orientation of the robot
        * @return A vector of points in world coordinates that correspond to the verticies of the robot's footprint 
        */
-      std::vector<robot_msgs::Point> drawFootprint(double x_i, double y_i, double theta_i);
+      std::vector<geometry_msgs::Point> drawFootprint(double x_i, double y_i, double theta_i);
 
       /**
        * @brief  Accessor for the goal the robot is currently pursuing in world corrdinates
@@ -270,11 +270,11 @@ namespace base_local_planner {
       const costmap_2d::Costmap2D& costmap_; ///< @brief Provides access to cost map information
       WorldModel& world_model_; ///< @brief The world model that the controller uses for collision detection
 
-      std::vector<robot_msgs::Point> footprint_spec_; ///< @brief The footprint specification of the robot
+      std::vector<geometry_msgs::Point> footprint_spec_; ///< @brief The footprint specification of the robot
 
       double inscribed_radius_, circumscribed_radius_; ///< @brief The inscribed and circumscribed radii of the robot
 
-      std::vector<robot_msgs::PoseStamped> global_plan_; ///< @brief The global path for the robot to follow
+      std::vector<geometry_msgs::PoseStamped> global_plan_; ///< @brief The global path for the robot to follow
 
       bool stuck_left, stuck_right; ///< @brief Booleans to keep the robot from oscillating during rotation
       bool rotating_left, rotating_right; ///< @brief Booleans to keep track of the direction of rotation for the robot
