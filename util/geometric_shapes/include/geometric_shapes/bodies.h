@@ -145,7 +145,7 @@ namespace bodies
 	    set of intersections, in order, along the ray. A maximum
 	    number of intersections can be specified as well. If that
 	    number is 0, all intersections are returned */
-	virtual bool intersectsRay(const btVector3& origin, const btVector3 &dir, std::vector<btVector3> *intersections = NULL, unsigned int count = 0) = 0;
+	virtual bool intersectsRay(const btVector3& origin, const btVector3 &dir, std::vector<btVector3> *intersections = NULL, unsigned int count = 0) const = 0;
 	
 	/** \brief Check is a point is inside the body */
 	virtual bool containsPoint(const btVector3 &p) const = 0;	
@@ -192,7 +192,7 @@ namespace bodies
 	virtual bool containsPoint(const btVector3 &p) const;
 	virtual double computeVolume(void) const;
 	virtual void computeBoundingSphere(BoundingSphere &sphere) const;
-	virtual bool intersectsRay(const btVector3& origin, const btVector3 &dir, std::vector<btVector3> *intersections = NULL, unsigned int count = 0);
+	virtual bool intersectsRay(const btVector3& origin, const btVector3 &dir, std::vector<btVector3> *intersections = NULL, unsigned int count = 0) const;
 
     protected:
 	
@@ -228,7 +228,7 @@ namespace bodies
 	virtual bool containsPoint(const btVector3 &p) const;
 	virtual double computeVolume(void) const;
 	virtual void computeBoundingSphere(BoundingSphere &sphere) const;
-	virtual bool intersectsRay(const btVector3& origin, const btVector3 &dir, std::vector<btVector3> *intersections = NULL, unsigned int count = 0);
+	virtual bool intersectsRay(const btVector3& origin, const btVector3 &dir, std::vector<btVector3> *intersections = NULL, unsigned int count = 0) const;
 
     protected:
 	
@@ -274,7 +274,7 @@ namespace bodies
 	virtual bool containsPoint(const btVector3 &p) const;
 	virtual double computeVolume(void) const;
 	virtual void computeBoundingSphere(BoundingSphere &sphere) const;
-	virtual bool intersectsRay(const btVector3& origin, const btVector3 &dir, std::vector<btVector3> *intersections = NULL, unsigned int count = 0);
+	virtual bool intersectsRay(const btVector3& origin, const btVector3 &dir, std::vector<btVector3> *intersections = NULL, unsigned int count = 0) const;
 
     protected:
 	
@@ -299,7 +299,8 @@ namespace bodies
     };
 
     class Mesh : public Body
-    {
+    {	
+	/// \todo When this class is tested, make ConvexMesh depend on it and use the ray intersection function
 	Mesh(void) : Body()
 	{
 	    m_type = shapes::MESH;
@@ -329,13 +330,13 @@ namespace bodies
 		delete m_btMesh;
 	}
 	
-	/** \brief The mesh is considered to be concave, so this function is implemented with raycasting. This is a bit slow. */
+	/** \brief The mesh is considered to be concave, so this function is implemented with raycasting. This is a bit slow and not so accurate for very small triangles. */
 	virtual bool containsPoint(const btVector3 &p) const;
 
 	/** \brief This function is approximate. It returns the volume of the AABB enclosing the shape */
 	virtual double computeVolume(void) const;
 	virtual void computeBoundingSphere(BoundingSphere &sphere) const;
-	virtual bool intersectsRay(const btVector3& origin, const btVector3 &dir, std::vector<btVector3> *intersections = NULL, unsigned int count = 0);
+	virtual bool intersectsRay(const btVector3& origin, const btVector3 &dir, std::vector<btVector3> *intersections = NULL, unsigned int count = 0) const;
 	
     protected:
 
@@ -381,7 +382,7 @@ namespace bodies
 	virtual double computeVolume(void) const;
 	
 	virtual void computeBoundingSphere(BoundingSphere &sphere) const;
-	virtual bool intersectsRay(const btVector3& origin, const btVector3 &dir, std::vector<btVector3> *intersections = NULL, unsigned int count = 0);
+	virtual bool intersectsRay(const btVector3& origin, const btVector3 &dir, std::vector<btVector3> *intersections = NULL, unsigned int count = 0) const;
 
     protected:
 	

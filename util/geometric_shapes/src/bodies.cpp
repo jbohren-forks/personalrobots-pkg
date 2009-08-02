@@ -141,7 +141,7 @@ void bodies::Sphere::computeBoundingSphere(BoundingSphere &sphere) const
     sphere.radius = m_radiusU;
 }
 
-bool bodies::Sphere::intersectsRay(const btVector3& origin, const btVector3& dir, std::vector<btVector3> *intersections, unsigned int count)
+bool bodies::Sphere::intersectsRay(const btVector3& origin, const btVector3& dir, std::vector<btVector3> *intersections, unsigned int count) const
 {
     if (distanceSQR(m_center, origin, dir) > m_radius2) return false;
     
@@ -252,7 +252,7 @@ void bodies::Cylinder::computeBoundingSphere(BoundingSphere &sphere) const
     sphere.radius = m_radiusB;
 }
 
-bool bodies::Cylinder::intersectsRay(const btVector3& origin, const btVector3& dir, std::vector<btVector3> *intersections, unsigned int count)
+bool bodies::Cylinder::intersectsRay(const btVector3& origin, const btVector3& dir, std::vector<btVector3> *intersections, unsigned int count) const
 {
     if (distanceSQR(m_center, origin, dir) > m_radiusB) return false;
 
@@ -261,7 +261,7 @@ bool bodies::Cylinder::intersectsRay(const btVector3& origin, const btVector3& d
     
     for (int i = 0; i < 3; i++)
     {
-	btVector3 &vN = i == 0 ? m_normalB1 : (i == 1 ? m_normalB2 : m_normalH);
+	const btVector3 &vN = i == 0 ? m_normalB1 : (i == 1 ? m_normalB2 : m_normalH);
 	double dp = vN.dot(dir);
 	
 	if (fabs(dp) > ZERO)
@@ -393,7 +393,7 @@ void bodies::Box::computeBoundingSphere(BoundingSphere &sphere) const
     sphere.radius = m_radiusB;
 }
 
-bool bodies::Box::intersectsRay(const btVector3& origin, const btVector3& dir, std::vector<btVector3> *intersections, unsigned int count)
+bool bodies::Box::intersectsRay(const btVector3& origin, const btVector3& dir, std::vector<btVector3> *intersections, unsigned int count) const
 {  
     if (distanceSQR(m_center, origin, dir) > m_radiusB) return false;
 
@@ -402,7 +402,7 @@ bool bodies::Box::intersectsRay(const btVector3& origin, const btVector3& dir, s
     
     for (int i = 0; i < 3; i++)
     {
-	btVector3 &vN = i == 0 ? m_normalL : (i == 1 ? m_normalW : m_normalH);
+	const btVector3 &vN = i == 0 ? m_normalL : (i == 1 ? m_normalW : m_normalH);
 	double dp = vN.dot(dir);
 	
 	if (fabs(dp) > ZERO)
@@ -472,13 +472,19 @@ bool bodies::Box::intersectsRay(const btVector3& origin, const btVector3& dir, s
 
 bool bodies::Mesh::containsPoint(const btVector3 &p) const
 {
-    return false;
+    // compute all intersections
+    std::vector<btVector3> pts;
+    intersectsRay(p, btVector3(0, 0, 1), &pts);
+    
+    // if we have an odd number of intersections, we are inside
+    return pts.size() % 2 == 1;
 }
 
 namespace bodies
 {
     namespace detail
     {
+	// callback for bullet 
 	class myTriangleCallback : public btTriangleCallback
 	{
 	public:
@@ -493,6 +499,7 @@ namespace bodies
 		found_intersections = true;
 		if (keep_triangles_)
 		    triangles.push_back(btTriangleShape(triangle[0], triangle[1], triangle[2]));
+		/// \todo figure out if scaling & margins are used for this triangle
 	    }
 	    
 	    bool                         found_intersections;
@@ -502,24 +509,90 @@ namespace bodies
 	    
 	    bool                         keep_triangles_;
 	};
+
+	
+	// temp structure for intersection points (used for ordering them)
+	struct intersc
+	{
+	    intersc(const btVector3 &_pt, const double _tm) : pt(_pt), time(_tm) {}
+	    
+	    btVector3 pt;
+	    double    time;
+	};
+	
+	// define order on intersection points
+	struct interscOrder
+	{
+	    bool operator()(const intersc &a, const intersc &b) const
+	    {
+		return a.time < b.time;
+	    }
+	};
     }
 }
 
-bool bodies::Mesh::intersectsRay(const btVector3& origin, const btVector3& dir, std::vector<btVector3> *intersections, unsigned int count)
+bool bodies::Mesh::intersectsRay(const btVector3& origin, const btVector3& dir, std::vector<btVector3> *intersections, unsigned int count) const
 {
     if (m_btMeshShape)
     {
 	// transform the ray into the coordinate frame of the mesh
 	btVector3 orig(m_iPose * origin);
 	btVector3 dr(m_iPose.getBasis() * dir);
-	/// \todo should do intersection with AABB first; the target for performRayCast is the intersection if the box
+	
+	// find intersection with AABB
+	btScalar maxT = 0.0;
+	
+	if (fabs(dr.x()) > ZERO)
+	{
+	    btScalar t = (m_aabbMax.x() - orig.x()) / dr.x();
+	    if (t < 0.0)
+		t = (m_aabbMin.x() - orig.x()) / dr.x();
+	    if (t > maxT)
+		maxT = t;
+	}
+	if (fabs(dr.y()) > ZERO)
+	{
+	    btScalar t = (m_aabbMax.y() - orig.y()) / dr.y();
+	    if (t < 0.0)
+		t = (m_aabbMin.y() - orig.y()) / dr.y();
+	    if (t > maxT)
+		maxT = t;
+	}
+	if (fabs(dr.z()) > ZERO)
+	{
+	    btScalar t = (m_aabbMax.z() - orig.z()) / dr.z();
+	    if (t < 0.0)
+		t = (m_aabbMin.z() - orig.z()) / dr.z();
+	    if (t > maxT)
+		maxT = t;
+	}
+	
+	// the farthest point where we could have an intersection id orig + dr * maxT
+	
 	detail::myTriangleCallback cb(intersections != NULL);
-	m_btMeshShape->performRaycast(&cb, orig, dr);
+	m_btMeshShape->performRaycast(&cb, orig, orig + dr * maxT);
 	if (cb.found_intersections)
 	{
 	    if (intersections)
 	    {
-		/// \todo find the intersections with list of triangles
+		std::vector<detail::intersc> intpt;
+		for (unsigned int i = 0 ; i < cb.triangles.size() ; ++i)
+		{
+		    btVector3 normal;
+		    cb.triangles[i].calcNormal(normal);
+		    btScalar dv = normal.dot(dr);
+		    if (fabs(dv) > ZERO)
+		    {
+			double t = (normal.dot(cb.triangles[i].getVertexPtr(0)) - normal.dot(orig)) / dv;
+			// here we use the input origin & direction, since the transform is linear
+			detail::intersc ip(origin + dir * t, t);
+			intpt.push_back(ip);
+		    }
+		}
+		std::sort(intpt.begin(), intpt.end(), detail::interscOrder());
+		const unsigned int n = count > 0 ? std::min<unsigned int>(count, intpt.size()) : intpt.size();
+		for (unsigned int i = 0 ; i < n ; ++i)
+		    intersections->push_back(intpt[i].pt);
 	    }
 	    return true;	    
 	}
@@ -792,33 +865,7 @@ double bodies::ConvexMesh::computeVolume(void) const
     return fabs(volume)/6.0;
 }
 
-namespace bodies
-{   
-    
-    namespace detail
-    {
-	
-	// temp structure for intersection points (used for ordering them)
-	struct intersc
-	{
-	    intersc(const btVector3 &_pt, const double _tm) : pt(_pt), time(_tm) {}
-	    
-	    btVector3 pt;
-	    double    time;
-	};
-	
-	struct interscOrder
-	{
-	    bool operator()(const intersc &a, const intersc &b) const
-	    {
-		return a.time < b.time;
-	    }
-	    
-	};
-    }
-}
-
-bool bodies::ConvexMesh::intersectsRay(const btVector3& origin, const btVector3& dir, std::vector<btVector3> *intersections, unsigned int count)
+bool bodies::ConvexMesh::intersectsRay(const btVector3& origin, const btVector3& dir, std::vector<btVector3> *intersections, unsigned int count) const
 {
     if (distanceSQR(m_center, origin, dir) > m_radiusB * m_radiusB) return false;
     //    if (!m_boundingBox.intersectsRay(origin, dir)) return false;
