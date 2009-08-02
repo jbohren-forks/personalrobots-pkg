@@ -42,7 +42,7 @@
 #include <costmap_2d/observation.h>
 #include <costmap_2d/cell_data.h>
 #include <costmap_2d/cost_values.h>
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 #include <boost/thread.hpp>
 
 namespace costmap_2d {
@@ -296,7 +296,7 @@ namespace costmap_2d {
        * @param cost_value The value to set costs to
        * @return True if the polygon was filled... false if it could not be filled
        */
-      bool setConvexPolygonCost(const std::vector<robot_msgs::Point>& polygon, unsigned char cost_value);
+      bool setConvexPolygonCost(const std::vector<geometry_msgs::Point>& polygon, unsigned char cost_value);
 
       /**
        * @brief  Get the map cells that make up the outline of a polygon

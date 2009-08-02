@@ -115,7 +115,7 @@ void voxelCallback(const ros::Publisher& pub, const costmap_2d::VoxelGridConstPt
   for (uint32_t i = 0; i < num_markers; ++i)
   {
     Cell& c = g_cells[i];
-    robot_msgs::Point& p = m.points[i];
+    geometry_msgs::Point& p = m.points[i];
     p.x = c.x;
     p.y = c.y;
     p.z = c.z;

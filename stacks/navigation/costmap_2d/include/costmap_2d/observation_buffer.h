@@ -44,7 +44,7 @@
 #include <costmap_2d/observation.h>
 #include <tf/transform_listener.h>
 #include <tf/transform_datatypes.h>
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 // Thread suppport
 #include <boost/thread.hpp>
 
@@ -80,7 +80,7 @@ namespace costmap_2d {
        * <b>Note: The burden is on the user to make sure the transform is available... ie they should use a MessageNotifier</b>
        * @param  cloud The cloud to be buffered
        */
-      void bufferCloud(const robot_msgs::PointCloud& cloud);
+      void bufferCloud(const sensor_msgs::PointCloud& cloud);
 
       /**
        * @brief  Pushes copies of all current observations onto the end of the vector passed in
