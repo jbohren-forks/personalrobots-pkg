@@ -30,15 +30,9 @@
 
       <visual name="${name}_mount_visual">
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <map name="gazebo_material" reference="${name}_mount_visual">
-          <material value="PR2/Red" />
-        </map>
         <geometry name="${name}_mount_visual_geom">
           <mesh filename="hok_tilt.stlb" />
         </geometry>
-        <map name="${name}_mount_visual_mesh" reference="${name}_mount_visual">
-          <mesh value="hok_tilt.mesh" />
-        </map>
       </visual>
 
       <collision name="${name}_mount_collision">
@@ -48,6 +42,13 @@
         </geometry>
       </collision>
     </link>
+
+    <gazebo name="gazebo_material" reference="${name}_mount_visual">
+      <material value="PR2/Red" />
+    </gazebo>
+    <ogre name="${name}_mount_visual_mesh" reference="${name}_mount_visual">
+      <mesh value="hok_tilt.mesh" />
+    </ogre>
 
     <transmission type="SimpleTransmission" name="${name}_mount_trans">
       <actuator name="${name}_mount_motor" />
@@ -85,36 +86,34 @@
         </geometry>
       </collision>
 
-      <map name="sensor" reference="${name}_link">
-        <verbatim key="sensor_${name}_ray">
-          <sensor:ray name="${name}">
-            <rayCount>640</rayCount>
-            <rangeCount>640</rangeCount>
-            <laserCount>1</laserCount>
-
-            <origin>0.0 0.0 0.0</origin>
-            <displayRays>false</displayRays>
-
-            <minAngle>-80</minAngle>
-            <maxAngle> 80</maxAngle>
-
-            <minRange>0.05</minRange>
-            <maxRange>10.0</maxRange>
-            <resRange>0.01</resRange>
-            <updateRate>20.0</updateRate>
-            <controller:ros_laser name="ros_${name}_controller" plugin="libros_laser.so">
-              <gaussianNoise>0.005</gaussianNoise>
-              <alwaysOn>true</alwaysOn>
-              <updateRate>20.0</updateRate>
-              <topicName>tilt_scan</topicName>
-              <frameName>${name}_link</frameName>
-              <interface:laser name="ros_${name}_iface" />
-            </controller:ros_laser>
-          </sensor:ray>
-        </verbatim>
-      </map>
-
     </link>
+
+    <gazebo name="sensor" reference="${name}_link">
+      <sensor:ray name="${name}">
+        <rayCount>640</rayCount>
+        <rangeCount>640</rangeCount>
+        <laserCount>1</laserCount>
+
+        <origin>0.0 0.0 0.0</origin>
+        <displayRays>false</displayRays>
+
+        <minAngle>-80</minAngle>
+        <maxAngle> 80</maxAngle>
+
+        <minRange>0.05</minRange>
+        <maxRange>10.0</maxRange>
+        <resRange>0.01</resRange>
+        <updateRate>20.0</updateRate>
+        <controller:ros_laser name="ros_${name}_controller" plugin="libros_laser.so">
+          <gaussianNoise>0.005</gaussianNoise>
+          <alwaysOn>true</alwaysOn>
+          <updateRate>20.0</updateRate>
+          <topicName>tilt_scan</topicName>
+          <frameName>${name}_link</frameName>
+          <interface:laser name="ros_${name}_iface" />
+        </controller:ros_laser>
+      </sensor:ray>
+    </gazebo>
 
   </macro>
 
@@ -153,9 +152,6 @@
       <!-- Should probably get real visuals here at some point -->
       <visual name="${name}_sensor_visual">
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <map name="gazebo_material" reference="${name}_sensor_visual">
-          <material value="PR2/Blue" />
-        </map>
         <geometry name="${name}_sensor_visual_geom">
           <box size="0.01 0.01 0.01" />
         </geometry>
@@ -168,6 +164,10 @@
         </geometry>
       </collision>
     </link>
+
+    <gazebo name="gazebo_material" reference="${name}_sensor_visual">
+      <material value="PR2/Blue" />
+    </gazebo>
 
     <!-- Prosilica Camera -->
     <prosilica_cam name="${hd_name}" parent="${name}_link" >
@@ -204,9 +204,6 @@
       <!-- Should probably get real visuals here at some point -->
       <visual name="${name}_double_stereo_visual">
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <map name="gazebo_material" reference="${name}_double_stereo_visual">
-          <material value="PR2/Blue" />
-        </map>
         <geometry name="${name}_double_stereo_visual_geom">
           <box size="0.01 0.01 0.01" />
         </geometry>
@@ -220,6 +217,9 @@
       </collision>
     </link>
 
+    <gazebo name="gazebo_material" reference="${name}_double_stereo_visual">
+      <material value="PR2/Blue" />
+    </gazebo>
     
     <!-- Wide camera is on robot right (hca1), narrow on left (hca2)? -->
     <!-- 15mm offset from center needs check with CAD -->
@@ -250,9 +250,6 @@
 
       <visual name="${name}_visual">
         <origin xyz="${stereo_center_box_center_offset_x} 0 ${stereo_center_box_center_offset_z}" rpy="0 0 0" />
-        <map name="gazebo_material" reference="${name}_visual">
-          <material value="PR2/Blue" />
-        </map>
         <geometry name="${name}_visual_geom">
           <box size="${stereo_size_x} ${stereo_size_y} ${stereo_size_z}" />
         </geometry>
@@ -267,6 +264,9 @@
       
     </link>
 
+    <gazebo name="gazebo_material" reference="${name}_visual">
+      <material value="PR2/Blue" />
+    </gazebo>
 
     <link name="${name}_optical_frame" type="camera">
       <joint name="${name}_optical_fixed_joint" type="fixed">
@@ -286,9 +286,6 @@
 
       <visual name="${name}_optical_fixed_visual">
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <map name="gazebo_material" reference="${name}_optical_fixed_visual">
-          <material value="PR2/Blue" />
-        </map>
         <geometry name="${name}_optical_fixed_visual_geom">
           <box size="0.01 0.01 0.01" />
         </geometry>
@@ -302,6 +299,10 @@
       </collision>
 
     </link>
+
+    <gazebo name="gazebo_material" reference="${name}_optical_fixed_visual">
+      <material value="PR2/Blue" />
+    </gazebo>
 
     <link name="${name}_l_stereo_camera_frame">
       <joint name="${name}_l_stereo_camera_fixed_joint" type="fixed">
@@ -320,9 +321,6 @@
 
       <visual name="${name}_l_stereo_camera_visual">
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <map name="gazebo_material" reference="${name}_l_stereo_camera_visual">
-          <material value="PR2/Blue" />
-        </map>
         <geometry name="${name}_l_stereo_camera_visual_geom">
           <box size="0.01 0.01 0.01" />
         </geometry>
@@ -335,26 +333,28 @@
         </geometry>
       </collision>
       
-      <map name="sensor" reference="${name}_l_stereo_camera_frame">
-        <verbatim key="sensor_${name}_l_camera">
-          <sensor:camera name="${name}_l_sensor">
-            <imageSize>640 480</imageSize>
-            <imageFormat>L8</imageFormat>
-            <hfov>90</hfov>
-            <nearClip>0.1</nearClip>
-            <farClip>100</farClip>
-            <updateRate>20.0</updateRate>
-            <controller:ros_camera name="${name}_l_controller" plugin="libros_camera.so">
-              <alwaysOn>true</alwaysOn>
-              <updateRate>20.0</updateRate>
-              <topicName>${name}/left_image</topicName>
-              <frameName>${name}_l_stereo_camera_frame</frameName>
-              <interface:camera name="${name}_l_iface" />
-            </controller:ros_camera>
-          </sensor:camera>
-        </verbatim>
-      </map>
     </link>
+
+    <gazebo name="sensor" reference="${name}_l_stereo_camera_frame">
+      <sensor:camera name="${name}_l_sensor">
+        <imageSize>640 480</imageSize>
+        <imageFormat>L8</imageFormat>
+        <hfov>90</hfov>
+        <nearClip>0.1</nearClip>
+        <farClip>100</farClip>
+        <updateRate>20.0</updateRate>
+        <controller:ros_camera name="${name}_l_controller" plugin="libros_camera.so">
+          <alwaysOn>true</alwaysOn>
+          <updateRate>20.0</updateRate>
+          <topicName>${name}/left_image</topicName>
+          <frameName>${name}_l_stereo_camera_frame</frameName>
+          <interface:camera name="${name}_l_iface" />
+        </controller:ros_camera>
+      </sensor:camera>
+    </gazebo>
+    <gazebo name="gazebo_material" reference="${name}_l_stereo_camera_visual">
+      <material value="PR2/Blue" />
+    </gazebo>
 
     <link name="${name}_r_stereo_camera_frame">
       <joint name="${name}_r_stereo_camera_fixed_joint" type="fixed">
@@ -374,9 +374,6 @@
 
       <visual name="${name}_r_stereo_camera_visual">
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <map name="gazebo_material" reference="${name}_r_stereo_camera_visual">
-          <material value="PR2/Blue" />
-        </map>
         <geometry name="${name}_r_stereo_camera_visual_geom">
           <box size="0.01 0.01 0.01" />
         </geometry>
@@ -389,53 +386,53 @@
         </geometry>
       </collision>
       
-      <map name="sensor" reference="${name}_r_stereo_camera_frame">
-        <verbatim key="sensor_${name}_r_camera">
-          <sensor:camera name="${name}_r_sensor">
-            <imageSize>640 480</imageSize>
-            <imageFormat>L8</imageFormat>
-            <hfov>90</hfov>
-            <nearClip>0.1</nearClip>
-            <farClip>100</farClip>
-            <updateRate>20.0</updateRate>
-            <controller:ros_camera name="${name}_r_controller" plugin="libros_camera.so">
-              <alwaysOn>true</alwaysOn>
-              <updateRate>20.0</updateRate>
-              <topicName>${name}/right_image</topicName>
-              <frameName>${name}_r_stereo_camera_frame</frameName>
-              <interface:camera name="${name}_r_iface" />
-            </controller:ros_camera>
-          </sensor:camera>
-        </verbatim>
-      </map>
     </link>
+
+    <gazebo name="sensor" reference="${name}_r_stereo_camera_frame">
+      <sensor:camera name="${name}_r_sensor">
+        <imageSize>640 480</imageSize>
+        <imageFormat>L8</imageFormat>
+        <hfov>90</hfov>
+        <nearClip>0.1</nearClip>
+        <farClip>100</farClip>
+        <updateRate>20.0</updateRate>
+        <controller:ros_camera name="${name}_r_controller" plugin="libros_camera.so">
+          <alwaysOn>true</alwaysOn>
+          <updateRate>20.0</updateRate>
+          <topicName>${name}/right_image</topicName>
+          <frameName>${name}_r_stereo_camera_frame</frameName>
+          <interface:camera name="${name}_r_iface" />
+        </controller:ros_camera>
+      </sensor:camera>
+    </gazebo>
+    <gazebo name="gazebo_material" reference="${name}_r_stereo_camera_visual">
+      <material value="PR2/Blue" />
+    </gazebo>
 
 
     <!-- stereo plugin that produces a raw_stereo message
     -->
-    <map name="sensor">
-      <verbatim key="controller_${name}_camera">
-        <controller:ros_stereo_camera name="${name}_controller" plugin="libros_stereo_camera.so">
-          <alwaysOn>true</alwaysOn>
-          <updateRate>20.0</updateRate>
-          <leftCamera>${name}_l_sensor</leftCamera>
-          <rightCamera>${name}_r_sensor</rightCamera>
-          <topicName>${name}/raw_stereo</topicName>
-          <frameName>${name}_optical_frame</frameName>
-          <CxPrime>320</CxPrime>
-          <Cx>320</Cx>
-          <Cy>240</Cy>
-          <focal_length>320</focal_length> <!-- image_width / (2*tan(hfov_radian /2)) -->
-          <distortion_k1>0</distortion_k1>
-          <distortion_k2>0</distortion_k2>
-          <distortion_k3>0</distortion_k3>
-          <distortion_t1>0</distortion_t1>
-          <distortion_t2>0</distortion_t2>
-          <baseline>${stereo_dy}</baseline> <!-- home pos. of robot has +x forward, +y left -->
-          <interface:stereocamera name="${name}_iface" />
-        </controller:ros_stereo_camera>
-      </verbatim>
-    </map>
+    <gazebo name="sensor">
+      <controller:ros_stereo_camera name="${name}_controller" plugin="libros_stereo_camera.so">
+        <alwaysOn>true</alwaysOn>
+        <updateRate>20.0</updateRate>
+        <leftCamera>${name}_l_sensor</leftCamera>
+        <rightCamera>${name}_r_sensor</rightCamera>
+        <topicName>${name}/raw_stereo</topicName>
+        <frameName>${name}_optical_frame</frameName>
+        <CxPrime>320</CxPrime>
+        <Cx>320</Cx>
+        <Cy>240</Cy>
+        <focal_length>320</focal_length> <!-- image_width / (2*tan(hfov_radian /2)) -->
+        <distortion_k1>0</distortion_k1>
+        <distortion_k2>0</distortion_k2>
+        <distortion_k3>0</distortion_k3>
+        <distortion_t1>0</distortion_t1>
+        <distortion_t2>0</distortion_t2>
+        <baseline>${stereo_dy}</baseline> <!-- home pos. of robot has +x forward, +y left -->
+        <interface:stereocamera name="${name}_iface" />
+      </controller:ros_stereo_camera>
+    </gazebo>
 
   </macro>
 
@@ -463,15 +460,9 @@
 
       <visual name="${name}_visual">
         <origin xyz="0 0 0.0" rpy="0 0 0 " />
-        <map name="gazebo_material" reference="${name}_visual">
-          <material value="PR2/Blue" />
-        </map>
         <geometry name="${name}_visual_geom">
           <mesh filename="head_pan.stlb" />
         </geometry>
-        <map name="${name}_visual_mesh" reference="${name}_visual">
-          <mesh value="head_pan.mesh" />
-        </map>
       </visual>
 
       <collision name="${name}_collision">
@@ -482,6 +473,13 @@
       </collision>
 
     </link>
+
+    <gazebo name="gazebo_material" reference="${name}_visual">
+      <material value="PR2/Blue" />
+    </gazebo>
+    <ogre name="${name}_visual_mesh" reference="${name}_visual">
+      <mesh value="head_pan.mesh" />
+    </ogre>
 
 
     <transmission type="SimpleTransmission" name="${name}_trans">
@@ -519,15 +517,9 @@
 
       <visual name="${name}_visual">
         <origin xyz="0 0 0" rpy="0.0 0.0 0.0 " />
-        <map name="gazebo_material" reference="${name}_visual">
-          <material value="PR2/Green" />
-        </map>
         <geometry name="${name}_visual_geom">
           <mesh filename="head_tilt.stlb" />
         </geometry>
-        <map name="${name}_visual_mesh" reference="${name}_visual">
-          <mesh value="head_tilt.mesh" />
-        </map>
       </visual>
 
       <collision name="${name}_collision">
@@ -537,6 +529,13 @@
         </geometry>
       </collision>
     </link>
+
+    <gazebo name="gazebo_material" reference="${name}_visual">
+      <material value="PR2/Green" />
+    </gazebo>
+    <ogre name="${name}_visual_mesh" reference="${name}_visual">
+      <mesh value="head_tilt.mesh" />
+    </ogre>
 
 
     <transmission type="SimpleTransmission" name="${name}_trans">
@@ -577,9 +576,6 @@
 
       <visual name="${name}_plate_frame_visual">
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <map name="gazebo_material" reference="${name}_plate_frame_visual">
-          <material value="PR2/Blue" />
-        </map>
         <geometry name="${name}_plate_frame_visual_geom">
           <box size="0.01 0.01 0.01" />
         </geometry>
@@ -592,6 +588,10 @@
         </geometry>
       </collision>
     </link>
+
+    <gazebo name="gazebo_material" reference="${name}_plate_frame_visual">
+      <material value="PR2/Blue" />
+    </gazebo>
     
   </macro>
 
@@ -622,15 +622,9 @@
 
       <visual name="${name}_mount_visual">
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <map name="gazebo_material" reference="${name}_mount_visual">
-          <material value="PR2/Red" />
-        </map>
         <geometry name="${name}_mount_visual_geom">
           <mesh filename="hok_tilt.stlb" />
         </geometry>
-        <map name="${name}_mount_visual_mesh" reference="${name}_mount_visual">
-          <mesh value="hok_tilt.mesh" />
-        </map>
       </visual>
 
       <collision name="${name}_mount_collision">
@@ -640,6 +634,13 @@
         </geometry>
       </collision>
     </link>
+
+    <gazebo name="gazebo_material" reference="${name}_mount_visual">
+      <material value="PR2/Red" />
+    </gazebo>
+    <ogre name="${name}_mount_visual_mesh" reference="${name}_mount_visual">
+      <mesh value="hok_tilt.mesh" />
+    </ogre>
 
     <transmission type="SimpleTransmission" name="${name}_mount_trans">
       <actuator name="${name}_mount_motor" />
@@ -677,36 +678,35 @@
         </geometry>
       </collision>
 
-      <map name="sensor" reference="${name}_link">
-        <verbatim key="sensor_${name}_ray">
-          <sensor:ray name="${name}">
-            <rayCount>640</rayCount>
-            <rangeCount>640</rangeCount>
-            <laserCount>1</laserCount>
-
-            <origin>0.0 0.0 0.0</origin>
-            <displayRays>false</displayRays>
-
-            <minAngle>-80</minAngle>
-            <maxAngle> 80</maxAngle>
-
-            <minRange>0.05</minRange>
-            <maxRange>10.0</maxRange>
-            <resRange>0.01</resRange>
-            <updateRate>20.0</updateRate>
-            <controller:ros_laser name="ros_${name}_controller" plugin="libros_laser.so">
-              <gaussianNoise>0.005</gaussianNoise>
-              <alwaysOn>true</alwaysOn>
-              <updateRate>20.0</updateRate>
-              <topicName>tilt_scan</topicName>
-              <frameName>${name}_link</frameName>
-              <interface:laser name="ros_${name}_iface" />
-            </controller:ros_laser>
-          </sensor:ray>
-        </verbatim>
-      </map>
 
     </link>
+
+    <gazebo name="sensor" reference="${name}_link">
+      <sensor:ray name="${name}">
+        <rayCount>640</rayCount>
+        <rangeCount>640</rangeCount>
+        <laserCount>1</laserCount>
+
+        <origin>0.0 0.0 0.0</origin>
+        <displayRays>false</displayRays>
+
+        <minAngle>-80</minAngle>
+        <maxAngle> 80</maxAngle>
+
+        <minRange>0.05</minRange>
+        <maxRange>10.0</maxRange>
+        <resRange>0.01</resRange>
+        <updateRate>20.0</updateRate>
+        <controller:ros_laser name="ros_${name}_controller" plugin="libros_laser.so">
+          <gaussianNoise>0.005</gaussianNoise>
+          <alwaysOn>true</alwaysOn>
+          <updateRate>20.0</updateRate>
+          <topicName>tilt_scan</topicName>
+          <frameName>${name}_link</frameName>
+          <interface:laser name="ros_${name}_iface" />
+        </controller:ros_laser>
+      </sensor:ray>
+    </gazebo>
 
   </macro>
 
@@ -735,15 +735,9 @@
 
       <visual name="${name}_visual">
         <origin xyz="0 0 0.0" rpy="0 0 0 " />
-        <map name="gazebo_material" reference="${name}_visual">
-          <material value="PR2/Blue" />
-        </map>
         <geometry name="${name}_visual_geom">
           <mesh filename="head_pan.stlb" />
         </geometry>
-        <map name="${name}_visual_mesh" reference="${name}_visual">
-          <mesh value="head_pan.mesh" />
-        </map>
       </visual>
 
       <collision name="${name}_collision">
@@ -754,6 +748,13 @@
       </collision>
 
     </link>
+
+    <gazebo name="gazebo_material" reference="${name}_visual">
+      <material value="PR2/Blue" />
+    </gazebo>
+    <ogre name="${name}_visual_mesh" reference="${name}_visual">
+      <mesh value="head_pan.mesh" />
+    </ogre>
 
     <transmission type="SimpleTransmission" name="${name}_trans">
       <actuator name="${name}_motor" />
@@ -786,15 +787,9 @@
 
       <visual name="${name}_visual">
         <origin xyz="0 0 0" rpy="0.0 0.0 0.0 " />
-        <map name="gazebo_material" reference="${name}_visual">
-          <material value="PR2/Green" />
-        </map>
         <geometry name="${name}_visual_geom">
           <mesh filename="head_tilt.stlb" />
         </geometry>
-        <map name="${name}_visual_mesh" reference="${name}_visual">
-          <mesh value="head_tilt.mesh" />
-        </map>
       </visual>
 
       <collision name="${name}_collision">
@@ -804,6 +799,13 @@
         </geometry>
       </collision>
     </link>
+
+    <gazebo name="gazebo_material" reference="${name}_visual">
+      <material value="PR2/Green" />
+    </gazebo>
+    <ogre name="${name}_visual_mesh" reference="${name}_visual">
+      <mesh value="head_tilt.mesh" />
+    </ogre>
 
     <transmission type="SimpleTransmission" name="${name}_trans">
       <actuator name="${name}_motor" /> <!-- Alpha 1.0 motor -->
@@ -836,15 +838,9 @@
 
       <visual name="${name}_visual">
         <origin xyz="0 0 0" rpy="0.0 0.0 0.0" />
-        <map name="gazebo_material" reference="${name}_visual">
-          <material value="PR2/Green" />
-        </map>
         <geometry name="${name}_visual_geom">
           <mesh filename="head_tilt.stlb" />
         </geometry>
-        <map name="${name}_visual_mesh" reference="${name}_visual">
-          <mesh value="head_tilt.mesh" />
-        </map>
       </visual>
 
       <collision name="${name}_collision">
@@ -854,6 +850,13 @@
         </geometry>
       </collision>
     </link>
+
+    <gazebo name="gazebo_material" reference="${name}_visual">
+      <material value="PR2/Green" />
+    </gazebo>
+    <ogre name="${name}_visual_mesh" reference="${name}_visual">
+      <mesh value="head_tilt.mesh" />
+    </ogre>
 
     <transmission type="SimpleTransmission" name="${name}_trans">
       <actuator name="${name}_motor_alpha2a" />
@@ -886,15 +889,9 @@
 
       <visual name="${name}_visual">
         <origin xyz="0 0 0" rpy="0.0 0.0 0.0 " />
-        <map name="gazebo_material" reference="${name}_visual">
-          <material value="PR2/Green" />
-        </map>
         <geometry name="${name}_visual_geom">
           <mesh filename="head_tilt.stlb" />
         </geometry>
-        <map name="${name}_visual_mesh" reference="${name}_visual">
-          <mesh value="head_tilt.mesh" />
-        </map>
       </visual>
 
       <collision name="${name}_collision">
@@ -904,6 +901,13 @@
         </geometry>
       </collision>
     </link>
+
+    <gazebo name="gazebo_material" reference="${name}_visual">
+      <material value="PR2/Green" />
+    </gazebo>
+    <ogre name="${name}_visual_mesh" reference="${name}_visual">
+      <mesh value="head_tilt.mesh" />
+    </ogre>
 
     <transmission type="SimpleTransmission" name="${name}_trans">
       <!-- Motor must be configured with 310009 motor with large gearhead -->
@@ -942,9 +946,6 @@
 
       <visual name="${name}_plate_frame_visual">
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <map name="gazebo_material" reference="${name}_plate_frame_visual">
-          <material value="PR2/Blue" />
-        </map>
         <geometry name="${name}_plate_frame_visual_geom">
           <box size="0.01 0.01 0.01" />
         </geometry>
@@ -955,11 +956,15 @@
         <geometry name="${name}_plate_frame_collision_geom">
           <box size="0.01 0.01 0.01" />
         </geometry>
-        <map name="${name}_plate_frame_collision_mesh" reference="${name}_plate_frame_collision">
-          <mesh>unit_box</mesh>
-        </map>
       </collision>
     </link>
+
+    <gazebo name="gazebo_material" reference="${name}_plate_frame_visual">
+      <material value="PR2/Blue" />
+    </gazebo>
+    <ogre name="${name}_plate_frame_collision_mesh" reference="${name}_plate_frame_collision">
+      <mesh>unit_box</mesh>
+    </ogre>
 
   </macro>
 
@@ -993,9 +998,6 @@
 
       <visual name="${name}_plate_frame_visual">
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <map name="gazebo_material" reference="${name}_plate_frame_visual">
-          <material value="PR2/Blue" />
-        </map>
         <geometry name="${name}_plate_frame_visual_geom">
           <box size="0.01 0.01 0.01" />
         </geometry>
@@ -1008,6 +1010,10 @@
         </geometry>
       </collision>
     </link>
+
+    <gazebo name="gazebo_material" reference="${name}_plate_frame_visual">
+      <material value="PR2/Blue" />
+    </gazebo>
     
   </macro>
 
@@ -1039,9 +1045,6 @@
 
       <visual name="${name}_plate_frame_visual">
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <map name="gazebo_material" reference="${name}_plate_frame_visual">
-          <material value="PR2/Blue" />
-        </map>
         <geometry name="${name}_plate_frame_visual_geom">
           <box size="0.01 0.01 0.01" />
         </geometry>
@@ -1054,6 +1057,10 @@
         </geometry>
       </collision>
     </link>
+
+    <gazebo name="gazebo_material" reference="${name}_plate_frame_visual">
+      <material value="PR2/Blue" />
+    </gazebo>
     
   </macro>
 

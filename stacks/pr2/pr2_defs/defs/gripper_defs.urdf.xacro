@@ -51,15 +51,6 @@
         <parent name="${parent}">
           <origin xyz="0.07691 0.01 0" rpy="0 0 0" />
         </parent>
-        <map name="${prefix}_l_finger_joint_feedback" reference="${prefix}_l_finger_joint">
-          <provideFeedback value="true"/>
-          <initialAngle value="${gripper_min_angle}"/>
-        </map>
-        <map name="${prefix}_l_finger_joint_ode" reference="${prefix}_l_finger_joint">
-          <stopKd value="${finger_stop_kd}" />
-          <stopKp value="${finger_stop_kp}" />
-          <fudgeFactor value="${finger_fudge_factor}" />
-        </map>
       </joint>
 
       <inertial>
@@ -74,12 +65,6 @@
       </inertial>
       <visual name="${prefix}_l_finger_visual">
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <map name="gazebo_material" reference="${prefix}_l_finger_visual">
-          <material value="PR2/Grey" />
-        </map>
-        <map name="${prefix}_l_finger_visual_mesh" reference="${prefix}_l_finger_visual">
-          <mesh value="upper_finger_l.mesh" />
-        </map>
         <geometry name="${prefix}_l_finger_visual_geom">
           <mesh filename="upper_finger_l.stlb" />
         </geometry>
@@ -89,38 +74,53 @@
         <geometry name="${prefix}_l_finger_collision_geom">
           <mesh filename="convex/upper_finger_l_convex.stlb" />
         </geometry>
-        <map name="${prefix}_l_finger_collision_mesh" reference="${prefix}_l_finger_collision">
-          <mesh value="convex/upper_finger_l_convex.mesh" />
-        </map>
         <verbose value="Yes" />
-        <map reference="${prefix}_l_finger_collision" name="mesh">
-          <type value="visual"/>
-        </map>
-        <map name="${prefix}_l_finger_contact" reference="${prefix}_l_finger_collision">
-          <mu1 value="${finger_mu}" />
-          <mu2 value="${finger_mu}" />
-          <kp value="1000000.0" />
-          <kd value="1.0" />
-        </map>
       </collision>
-      <map name="${prefix}_l_finger_sensor" reference="${prefix}_l_finger_link">
-        <verbatim key="${prefix}_l_finger_bumper_sensor">
-          <sensor:contact name="${prefix}_l_finger_contact_sensor">
-            <geom>${prefix}_l_finger_collision</geom>
-            <updateRate>100.0</updateRate>
-            <controller:ros_bumper name="${prefix}_l_finger_ros_bumper_controller" plugin="libros_bumper.so">
-              <alwaysOn>true</alwaysOn>
-              <updateRate>100.0</updateRate>
-              <bumperTopicName>${prefix}_l_finger_bumper</bumperTopicName>
-              <interface:bumper name="${prefix}_l_finger_ros_bumper_iface" />
-            </controller:ros_bumper>
-          </sensor:contact>
-        </verbatim>
-      </map>
-      <map name="${prefix}_l_finger_gravity" reference="${prefix}_l_finger_link">
-        <turnGravityOff>true</turnGravityOff>
-      </map>
     </link>
+
+    <gazebo name="${prefix}_l_finger_gravity" reference="${prefix}_l_finger_link">
+      <turnGravityOff>true</turnGravityOff>
+    </gazebo>
+    <gazebo name="${prefix}_l_finger_sensor" reference="${prefix}_l_finger_link">
+      <sensor:contact name="${prefix}_l_finger_contact_sensor">
+        <geom>${prefix}_l_finger_collision</geom>
+        <updateRate>100.0</updateRate>
+        <controller:ros_bumper name="${prefix}_l_finger_ros_bumper_controller" plugin="libros_bumper.so">
+          <alwaysOn>true</alwaysOn>
+          <updateRate>100.0</updateRate>
+          <bumperTopicName>${prefix}_l_finger_bumper</bumperTopicName>
+          <interface:bumper name="${prefix}_l_finger_ros_bumper_iface" />
+        </controller:ros_bumper>
+      </sensor:contact>
+    </gazebo>
+    <gazebo name="${prefix}_l_finger_contact" reference="${prefix}_l_finger_collision">
+      <mu1 value="${finger_mu}" />
+      <mu2 value="${finger_mu}" />
+      <kp value="1000000.0" />
+      <kd value="1.0" />
+    </gazebo>
+    <gazebo name="gazebo_material" reference="${prefix}_l_finger_visual">
+      <material value="PR2/Grey" />
+    </gazebo>
+    <gazebo name="${prefix}_l_finger_joint_ode" reference="${prefix}_l_finger_joint">
+      <stopKd value="${finger_stop_kd}" />
+      <stopKp value="${finger_stop_kp}" />
+      <fudgeFactor value="${finger_fudge_factor}" />
+    </gazebo>
+    <gazebo name="${prefix}_l_finger_joint_feedback" reference="${prefix}_l_finger_joint">
+      <provideFeedback value="true"/>
+      <initialAngle value="${gripper_min_angle}"/>
+    </gazebo>
+
+    <ogre reference="${prefix}_l_finger_collision" name="mesh" reference="${prefix}_l_finger_collision">
+      <type value="visual"/>
+    </ogre>
+    <ogre name="${prefix}_l_finger_collision_mesh" reference="${prefix}_l_finger_collision">
+      <mesh value="convex/upper_finger_l_convex.mesh" />
+    </ogre>
+    <ogre name="${prefix}_l_finger_visual_mesh" reference="${prefix}_l_finger_visual">
+      <mesh value="upper_finger_l.mesh" />
+    </ogre>
 
     <!-- Finger proximal digit -->
 
@@ -132,20 +132,6 @@
         <pr2_finger_limits reflect="1" />
         <joint_properties damping="${finger_damping}" />
         <mimic name="${prefix}_l_finger_joint" mult="1" offset="0"/>
-        <map name="${prefix}_r_finger_mimic" reference="${prefix}_r_finger_joint">
-          <mimicKp   value="${finger_kp}" />
-          <mimicKd   value="${finger_kd}" />
-          <mimicFMax value="${finger_fm}" />
-        </map>
-        <map name="${prefix}_r_finger_options" reference="${prefix}_r_finger_joint">
-          <provideFeedback value="true"/>
-          <initialAngle value="${-gripper_min_angle}"/>
-        </map>
-        <map name="${prefix}_r_finger_joint_ode" reference="${prefix}_r_finger_joint">
-          <stopKd value="${finger_stop_kd}" />
-          <stopKp value="${finger_stop_kp}" />
-          <fudgeFactor value="${finger_fudge_factor}" />
-        </map>
         <parent name="${parent}">
           <origin xyz="0.07691 -0.01 0" rpy="0 0 0" />
         </parent>
@@ -163,12 +149,6 @@
       </inertial>
       <visual name="${prefix}_r_finger_visual">
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <map name="gazebo_material" reference="${prefix}_r_finger_visual">
-          <material value="PR2/Grey" />
-        </map>
-        <map name="${prefix}_r_finger_visual_mesh" reference="${prefix}_r_finger_visual">
-          <mesh value="upper_finger_r.mesh" />
-        </map>
         <geometry name="${prefix}_r_finger_visual_geom">
           <mesh filename="upper_finger_r.stlb" />
         </geometry>
@@ -179,37 +159,55 @@
           <mesh filename="convex/upper_finger_r_convex.stlb" />
         </geometry>
         <verbose value="Yes" />
-        <map name="${prefix}_r_finger_collision_mesh" reference="${prefix}_r_finger_collision">
-          <mesh value="convex/upper_finger_r_convex.mesh" />
-        </map>
-        <map name="mesh" reference="${prefix}_r_finger_collision">
-          <type value="visual"/>
-        </map>
-        <map name="${prefix}_r_finger_contact" reference="${prefix}_r_finger_collision">
-          <mu1 value="${finger_mu}" />
-          <mu2 value="${finger_mu}" />
-          <kp value="1000000.0" />
-          <kd value="1.0" />
-        </map>
       </collision>
-      <map name="${prefix}_r_finger_sensor" reference="${prefix}_r_finger_link">
-        <verbatim key="${prefix}_r_finger_bumper_sensor">
-          <sensor:contact name="${prefix}_r_finger_contact_sensor">
-            <geom>${prefix}_r_finger_collision</geom>
-            <updateRate>100.0</updateRate>
-            <controller:ros_bumper name="${prefix}_r_finger_ros_bumper_controller" plugin="libros_bumper.so">
-              <alwaysOn>true</alwaysOn>
-              <updateRate>100.0</updateRate>
-              <bumperTopicName>${prefix}_r_finger_bumper</bumperTopicName>
-              <interface:bumper name="${prefix}_r_finger_ros_bumper_iface" />
-            </controller:ros_bumper>
-          </sensor:contact>
-        </verbatim>
-      </map>
-      <map name="${prefix}_r_finger_gravity" reference="${prefix}_r_finger_link">
-        <turnGravityOff>true</turnGravityOff>
-      </map>
     </link>
+    <gazebo name="${prefix}_r_finger_gravity" reference="${prefix}_r_finger_link">
+      <turnGravityOff>true</turnGravityOff>
+    </gazebo>
+    <gazebo name="${prefix}_r_finger_sensor" reference="${prefix}_r_finger_link">
+      <sensor:contact name="${prefix}_r_finger_contact_sensor">
+        <geom>${prefix}_r_finger_collision</geom>
+        <updateRate>100.0</updateRate>
+        <controller:ros_bumper name="${prefix}_r_finger_ros_bumper_controller" plugin="libros_bumper.so">
+          <alwaysOn>true</alwaysOn>
+          <updateRate>100.0</updateRate>
+          <bumperTopicName>${prefix}_r_finger_bumper</bumperTopicName>
+          <interface:bumper name="${prefix}_r_finger_ros_bumper_iface" />
+        </controller:ros_bumper>
+      </sensor:contact>
+    </gazebo>
+    <gazebo name="${prefix}_r_finger_contact" reference="${prefix}_r_finger_collision">
+      <mu1 value="${finger_mu}" />
+      <mu2 value="${finger_mu}" />
+      <kp value="1000000.0" />
+      <kd value="1.0" />
+    </gazebo>
+    <gazebo name="gazebo_material" reference="${prefix}_r_finger_visual">
+      <material value="PR2/Grey" />
+    </gazebo>
+    <gazebo name="${prefix}_r_finger_joint_ode" reference="${prefix}_r_finger_joint">
+      <stopKd value="${finger_stop_kd}" />
+      <stopKp value="${finger_stop_kp}" />
+      <fudgeFactor value="${finger_fudge_factor}" />
+    </gazebo>
+    <gazebo name="${prefix}_r_finger_options" reference="${prefix}_r_finger_joint">
+      <provideFeedback value="true"/>
+      <initialAngle value="${-gripper_min_angle}"/>
+    </gazebo>
+    <gazebo name="${prefix}_r_finger_mimic" reference="${prefix}_r_finger_joint">
+      <mimicKp   value="${finger_kp}" />
+      <mimicKd   value="${finger_kd}" />
+      <mimicFMax value="${finger_fm}" />
+    </gazebo>
+    <ogre name="mesh" reference="${prefix}_r_finger_collision">
+      <type value="visual"/>
+    </ogre>
+    <ogre name="${prefix}_r_finger_collision_mesh" reference="${prefix}_r_finger_collision">
+      <mesh value="convex/upper_finger_r_convex.mesh" />
+    </ogre>
+    <ogre name="${prefix}_r_finger_visual_mesh" reference="${prefix}_r_finger_visual">
+      <mesh value="upper_finger_r.mesh" />
+    </ogre>
 
     <!-- Finger tip -->
 
@@ -221,20 +219,6 @@
         <pr2_finger_limits reflect="1" />
         <joint_properties damping="${finger_tip_damping}" />
         <mimic name="${prefix}_l_finger_joint" mult="1" offset="0"/>
-        <map name="${prefix}_l_finger_tip_mimic" reference="${prefix}_l_finger_tip_link">
-          <mimicKp   value="${finger_tip_kp}" />
-          <mimicKd   value="${finger_tip_kd}" />
-          <mimicFMax value="${finger_tip_fm}" />
-        </map>
-        <map name="${prefix}_l_finger_tip_options" reference="${prefix}_l_finger_tip_link">
-          <provideFeedback value="true"/>
-          <initialAngle value="${-gripper_min_angle}"/>
-        </map>
-        <map name="${prefix}_l_finger_tip_joint_ode" reference="${prefix}_l_finger_tip_link">
-          <stopKd value="${finger_stop_kd}" />
-          <stopKp value="${finger_stop_kp}" />
-          <fudgeFactor value="${finger_fudge_factor}" />
-        </map>
         <parent name="${prefix}_l_finger_link">
           <origin xyz="0.09137 0.00495 0" rpy="0 0 0" />
         </parent>
@@ -249,54 +233,66 @@
       </inertial>
       <visual name="${prefix}_l_finger_tip_visual">
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <map name="gazebo_material" reference="${prefix}_l_finger_tip_visual">
-          <material value="PR2/Green" />
-        </map>
         <geometry name="${prefix}_l_finger_tip_visual_geom">
           <mesh filename="finger_tip_l.stlb" />
         </geometry>
-        <map name="${prefix}_l_finger_tip_visual_mesh" reference="${prefix}_l_finger_tip_visual">
-          <mesh value="finger_tip_l.mesh" />
-        </map>
       </visual>
       <collision name="${prefix}_l_finger_tip_collision">
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${prefix}_l_finger_tip_collision_geom">
           <mesh filename="convex/finger_tip_l_convex.stlb" />
         </geometry>
-        <map name="${prefix}_l_finger_tip_collision_mesh" reference="${prefix}_l_finger_tip_collision">
-          <mesh value="convex/finger_tip_l_convex.mesh" />
-        </map>
         <verbose value="Yes" />
-        <map reference="${prefix}_l_finger_tip_collision" name="mesh">
-          <type value="visual"/>
-        </map>
-        <map name="${prefix}_l_finger_tip_contact" reference="${prefix}_l_finger_tip_collision">
-          <mu1 value="${finger_tip_mu}" />
-          <mu2 value="${finger_tip_mu}" />
-          <kp  value="10000000.0" />
-          <kd  value="1.0" />
-        </map>
       </collision>
-      <map name="${prefix}_l_finger_tip_sensor" reference="${prefix}_l_finger_tip_link">
-        <verbatim key="${prefix}_l_finger_tip_bumper_sensor">
-          <sensor:contact name="${prefix}_l_finger_tip_contact_sensor">
-            <geom>${prefix}_l_finger_tip_collision</geom>
-            <updateRate>100.0</updateRate>
-            <controller:ros_bumper name="${prefix}_l_finger_tip_ros_bumper_controller" plugin="libros_bumper.so">
-              <alwaysOn>true</alwaysOn>
-              <updateRate>100.0</updateRate>
-              <bumperTopicName>${prefix}_l_finger_tip_bumper</bumperTopicName>
-              <interface:bumper name="${prefix}_l_finger_tip_ros_bumper_iface" />
-            </controller:ros_bumper>
-          </sensor:contact>
-        </verbatim>
-      </map>
-      <map name="${prefix}_l_finger_tip_gravity" reference="${prefix}_l_finger_tip_link">
-        <turnGravityOff>true</mimicKp>
-        <selfCollide value="false" />
-      </map>
     </link>
+    <gazebo name="${prefix}_l_finger_tip_gravity" reference="${prefix}_l_finger_tip_link">
+      <turnGravityOff>true</mimicKp>
+      <selfCollide value="false" />
+    </gazebo>
+    <gazebo name="${prefix}_l_finger_tip_sensor" reference="${prefix}_l_finger_tip_link">
+      <sensor:contact name="${prefix}_l_finger_tip_contact_sensor">
+        <geom>${prefix}_l_finger_tip_collision</geom>
+        <updateRate>100.0</updateRate>
+        <controller:ros_bumper name="${prefix}_l_finger_tip_ros_bumper_controller" plugin="libros_bumper.so">
+          <alwaysOn>true</alwaysOn>
+          <updateRate>100.0</updateRate>
+          <bumperTopicName>${prefix}_l_finger_tip_bumper</bumperTopicName>
+          <interface:bumper name="${prefix}_l_finger_tip_ros_bumper_iface" />
+        </controller:ros_bumper>
+      </sensor:contact>
+    </gazebo>
+    <gazebo name="${prefix}_l_finger_tip_contact" reference="${prefix}_l_finger_tip_collision">
+      <mu1 value="${finger_tip_mu}" />
+      <mu2 value="${finger_tip_mu}" />
+      <kp  value="10000000.0" />
+      <kd  value="1.0" />
+    </gazebo>
+    <gazebo name="gazebo_material" reference="${prefix}_l_finger_tip_visual">
+      <material value="PR2/Green" />
+    </gazebo>
+    <gazebo name="${prefix}_l_finger_tip_joint_ode" reference="${prefix}_l_finger_tip_link">
+      <stopKd value="${finger_stop_kd}" />
+      <stopKp value="${finger_stop_kp}" />
+      <fudgeFactor value="${finger_fudge_factor}" />
+    </gazebo>
+    <gazebo name="${prefix}_l_finger_tip_options" reference="${prefix}_l_finger_tip_link">
+      <provideFeedback value="true"/>
+      <initialAngle value="${-gripper_min_angle}"/>
+    </gazebo>
+    <gazebo name="${prefix}_l_finger_tip_mimic" reference="${prefix}_l_finger_tip_link">
+      <mimicKp   value="${finger_tip_kp}" />
+      <mimicKd   value="${finger_tip_kd}" />
+      <mimicFMax value="${finger_tip_fm}" />
+    </gazebo>
+    <ogre reference="${prefix}_l_finger_tip_collision" name="mesh">
+      <type value="visual"/>
+    </ogre>
+    <ogre name="${prefix}_l_finger_tip_collision_mesh" reference="${prefix}_l_finger_tip_collision">
+      <mesh value="convex/finger_tip_l_convex.mesh" />
+    </ogre>
+    <ogre name="${prefix}_l_finger_tip_visual_mesh" reference="${prefix}_l_finger_tip_visual">
+      <mesh value="finger_tip_l.mesh" />
+    </ogre>
 
     <!-- Finger tip -->
 
@@ -308,20 +304,6 @@
         <pr2_finger_limits reflect="1" />
         <joint_properties damping="${finger_tip_damping}" />
         <mimic name="${prefix}_l_finger_joint" mult="1" offset="0"/>
-        <map name="${prefix}_r_finger_tip_mimic" reference="${prefix}_r_finger_tip_joint">
-          <mimicKp   value="${finger_tip_kp}" />
-          <mimicKd   value="${finger_tip_kd}" />
-          <mimicFMax value="${finger_tip_fm}" />
-        </map>
-        <map name="${prefix}_r_finger_tip_options" reference="${prefix}_r_finger_tip_joint">
-          <provideFeedback value="true"/>
-          <initialAngle value="${gripper_min_angle}"/>
-        </map>
-        <map name="${prefix}_r_finger_tip_joint_ode" reference="${prefix}_r_finger_tip_joint">
-          <stopKd value="${finger_stop_kd}" />
-          <stopKp value="${finger_stop_kp}" />
-          <fudgeFactor value="${finger_fudge_factor}" />
-        </map>
         <parent name="${prefix}_r_finger_link">
           <origin xyz="${0.09137} ${-0.00495} 0" rpy="0 0 0" />
         </parent>
@@ -336,77 +318,87 @@
       </inertial>
       <visual name="${prefix}_r_finger_tip_visual">
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <map name="gazebo_material" reference="${prefix}_r_finger_tip_visual">
-          <material value="PR2/Green" />
-        </map>
         <geometry name="${prefix}_r_finger_tip_visual_geom">
           <mesh filename="finger_tip_r.stlb" />
         </geometry>
-        <map name="${prefix}_r_finger_tip_visual_mesh" reference="${prefix}_r_finger_tip_visual">
-          <mesh value="finger_tip_r.mesh" />
-        </map>
       </visual>
       <collision name="${prefix}_r_finger_tip_collision">
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${prefix}_r_finger_tip_collision_geom">
           <mesh filename="convex/finger_tip_r_convex.stlb" />
         </geometry>
-        <map name="${prefix}_r_finger_tip_collision_mesh" reference="${prefix}_r_finger_tip_collision">
-          <mesh value="convex/finger_tip_r_convex.mesh" />
-        </map>
         <verbose value="Yes" />
-        <map reference="${prefix}_r_finger_tip_collision" name="mesh">
-          <type value="visual"/>
-        </map>
-        <map name="${prefix}_r_finger_tip_contact" reference="${prefix}_r_finger_tip_collision">
-          <mu1 value="${finger_tip_mu}" />
-          <mu2 value="${finger_tip_mu}" />
-          <kp  value="10000000.0" />
-          <kd  value="1.0" />
-        </map>
       </collision>
-      <map name="${prefix}_r_finger_tip_sensor" reference="${prefix}_r_finger_tip_link">
-        <verbatim key="${prefix}_r_finger_tip_bumper_sensor">
-          <sensor:contact name="${prefix}_r_finger_tip_contact_sensor">
-            <geom>${prefix}_r_finger_tip_collision</geom>
-            <updateRate>100.0</updateRate>
-            <controller:ros_bumper name="${prefix}_r_finger_tip_ros_bumper_controller" plugin="libros_bumper.so">
-              <alwaysOn>true</alwaysOn>
-              <updateRate>100.0</updateRate>
-              <bumperTopicName>${prefix}_r_finger_tip_bumper</bumperTopicName>
-              <interface:bumper name="${prefix}_r_finger_tip_ros_bumper_iface" />
-            </controller:ros_bumper>
-          </sensor:contact>
-        </verbatim>
-      </map>
-      <map name="${prefix}_r_finger_tip_gravity" reference="${prefix}_r_finger_tip_link">
-        <turnGravityOff>true</turnGravityOff>
-        <selfCollide value="false" />
-      </map>
     </link>
-
-    <map name="sensor" reference="${prefix}_r_finger_tip_link">
-      <verbatim key="p3d_${prefix}_l_finger">
-        <controller:ros_p3d name="p3d_${prefix}_l_finger_controller" plugin="libros_p3d.so">
+    <gazebo name="${prefix}_r_finger_tip_gravity" reference="${prefix}_r_finger_tip_link">
+      <turnGravityOff>true</turnGravityOff>
+      <selfCollide value="false" />
+    </gazebo>
+    <gazebo name="${prefix}_r_finger_tip_sensor" reference="${prefix}_r_finger_tip_link">
+      <sensor:contact name="${prefix}_r_finger_tip_contact_sensor">
+        <geom>${prefix}_r_finger_tip_collision</geom>
+        <updateRate>100.0</updateRate>
+        <controller:ros_bumper name="${prefix}_r_finger_tip_ros_bumper_controller" plugin="libros_bumper.so">
           <alwaysOn>true</alwaysOn>
           <updateRate>100.0</updateRate>
-          <bodyName>${prefix}_l_finger_link</bodyName>
-          <topicName>${prefix}_l_finger_pose_ground_truth</topicName>
-          <gaussianNoise>0.0</gaussianNoise>
-          <frameName>map</frameName>
-          <interface:position name="p3d_${prefix}_l_finger_position_iface" />
-        </controller:ros_p3d>
-        <controller:ros_f3d name="f3d_${prefix}_l_finger_controller" plugin="libros_f3d.so">
-          <alwaysOn>true</alwaysOn>
-          <updateRate>100.0</updateRate>
-          <bodyName>${prefix}_l_finger_link</bodyName>
-          <topicName>${prefix}_l_finger_force_ground_truth</topicName>
-          <frameName>${prefix}_l_finger_link</frameName>
-          <interface:position name="f3d_${prefix}_l_finger_force_iface" />
-        </controller:ros_f3d>
-      </verbatim>
-    </map>
+          <bumperTopicName>${prefix}_r_finger_tip_bumper</bumperTopicName>
+          <interface:bumper name="${prefix}_r_finger_tip_ros_bumper_iface" />
+        </controller:ros_bumper>
+      </sensor:contact>
+    </gazebo>
+    <gazebo name="${prefix}_r_finger_tip_contact" reference="${prefix}_r_finger_tip_collision">
+      <mu1 value="${finger_tip_mu}" />
+      <mu2 value="${finger_tip_mu}" />
+      <kp  value="10000000.0" />
+      <kd  value="1.0" />
+    </gazebo>
+    <gazebo name="gazebo_material" reference="${prefix}_r_finger_tip_visual">
+      <material value="PR2/Green" />
+    </gazebo>
+    <gazebo name="${prefix}_r_finger_tip_joint_ode" reference="${prefix}_r_finger_tip_joint">
+      <stopKd value="${finger_stop_kd}" />
+      <stopKp value="${finger_stop_kp}" />
+      <fudgeFactor value="${finger_fudge_factor}" />
+    </gazebo>
+    <gazebo name="${prefix}_r_finger_tip_options" reference="${prefix}_r_finger_tip_joint">
+      <provideFeedback value="true"/>
+      <initialAngle value="${gripper_min_angle}"/>
+    </gazebo>
+    <gazebo name="${prefix}_r_finger_tip_mimic" reference="${prefix}_r_finger_tip_joint">
+      <mimicKp   value="${finger_tip_kp}" />
+      <mimicKd   value="${finger_tip_kd}" />
+      <mimicFMax value="${finger_tip_fm}" />
+    </gazebo>
 
+    <gazebo name="sensor" reference="${prefix}_r_finger_tip_link">
+      <controller:ros_p3d name="p3d_${prefix}_l_finger_controller" plugin="libros_p3d.so">
+        <alwaysOn>true</alwaysOn>
+        <updateRate>100.0</updateRate>
+        <bodyName>${prefix}_l_finger_link</bodyName>
+        <topicName>${prefix}_l_finger_pose_ground_truth</topicName>
+        <gaussianNoise>0.0</gaussianNoise>
+        <frameName>map</frameName>
+        <interface:position name="p3d_${prefix}_l_finger_position_iface" />
+      </controller:ros_p3d>
+      <controller:ros_f3d name="f3d_${prefix}_l_finger_controller" plugin="libros_f3d.so">
+        <alwaysOn>true</alwaysOn>
+        <updateRate>100.0</updateRate>
+        <bodyName>${prefix}_l_finger_link</bodyName>
+        <topicName>${prefix}_l_finger_force_ground_truth</topicName>
+        <frameName>${prefix}_l_finger_link</frameName>
+        <interface:position name="f3d_${prefix}_l_finger_force_iface" />
+      </controller:ros_f3d>
+    </gazebo>
+
+    <ogre reference="${prefix}_r_finger_tip_collision" name="mesh">
+      <type value="visual"/>
+    </ogre>
+    <ogre name="${prefix}_r_finger_tip_collision_mesh" reference="${prefix}_r_finger_tip_collision">
+      <mesh value="convex/finger_tip_r_convex.mesh" />
+    </ogre>
+    <ogre name="${prefix}_r_finger_tip_visual_mesh" reference="${prefix}_r_finger_tip_visual">
+      <mesh value="finger_tip_r.mesh" />
+    </ogre>
 
   </macro>
 
@@ -430,47 +422,46 @@
 
       <visual name="${side}_gripper_palm_visual">
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <map name="gazebo_material" reference="${side}_gripper_palm_visual">
-          <material value="PR2/Red" />
-        </map>
         <geometry name="${side}_gripper_palm_visual_geom">
           <mesh filename="gripper_palm.stlb" />
         </geometry>
-        <map name="${side}_gripper_palm_visual_mesh" reference="${side}_gripper_palm_visual">
-          <mesh value="gripper_palm.mesh" />
-        </map>
       </visual>
       <collision name="${side}_gripper_palm_collision">
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${side}_gripper_palm_collision_geom">
           <mesh filename="convex/gripper_palm_convex.stlb" />
         </geometry>
-        <map name="${side}_gripper_palm_collision_mesh" reference="${side}_gripper_palm_collision">
-          <mesh value="convex/gripper_palm_convex.mesh" />
-        </map>
         <verbose value="Yes" />
-        <map reference="${side}_gripper_palm_collision" name="mesh">
-          <type value="visual"/>
-        </map>
       </collision>
-      <map name="${side}_gripper_palm_sensor" reference="${side}_gripper_palm_link">
-        <verbatim key="${side}_gripper_palm_bumper_sensor">
-          <sensor:contact name="${side}_gripper_palm_contact_sensor">
-            <geom>${side}_gripper_palm_collision</geom>
-            <updateRate>100.0</updateRate>
-            <controller:ros_bumper name="${side}_gripper_palm_ros_bumper_controller" plugin="libros_bumper.so">
-              <alwaysOn>true</alwaysOn>
-              <updateRate>100.0</updateRate>
-              <bumperTopicName>${side}_gripper_palm_bumper</bumperTopicName>
-              <interface:bumper name="${side}_gripper_palm_ros_bumper_iface" />
-            </controller:ros_bumper>
-          </sensor:contact>
-        </verbatim>
-      </map>
-      <map name="${side}_gripper_palm_gravity" reference="${side}_gripper_palm_link">
-        <turnGravityOff>true</turnGravityOff>
-      </map>
     </link>
+
+    <gazebo name="${side}_gripper_palm_gravity" reference="${side}_gripper_palm_link">
+      <turnGravityOff>true</turnGravityOff>
+    </gazebo>
+    <gazebo name="${side}_gripper_palm_sensor" reference="${side}_gripper_palm_link">
+      <sensor:contact name="${side}_gripper_palm_contact_sensor">
+        <geom>${side}_gripper_palm_collision</geom>
+        <updateRate>100.0</updateRate>
+        <controller:ros_bumper name="${side}_gripper_palm_ros_bumper_controller" plugin="libros_bumper.so">
+          <alwaysOn>true</alwaysOn>
+          <updateRate>100.0</updateRate>
+          <bumperTopicName>${side}_gripper_palm_bumper</bumperTopicName>
+          <interface:bumper name="${side}_gripper_palm_ros_bumper_iface" />
+        </controller:ros_bumper>
+      </sensor:contact>
+    </gazebo>
+    <gazebo name="gazebo_material" reference="${side}_gripper_palm_visual">
+      <material value="PR2/Red" />
+    </gazebo>
+    <ogre reference="${side}_gripper_palm_collision" name="mesh">
+      <type value="visual"/>
+    </ogre>
+    <ogre name="${side}_gripper_palm_collision_mesh" reference="${side}_gripper_palm_collision">
+      <mesh value="convex/gripper_palm_convex.mesh" />
+    </ogre>
+    <ogre name="${side}_gripper_palm_visual_mesh" reference="${side}_gripper_palm_visual">
+      <mesh value="gripper_palm.mesh" />
+    </ogre>
 
 
 
@@ -495,9 +486,6 @@
       </inertial>
       <visual name="${side}_gripper_float_visual">
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <map name="gazebo_material" reference="${side}_gripper_float_visual">
-          <material value="PR2/White" />
-        </map>
         <geometry name="${side}_gripper_float_visual_geom">
           <box size="0.001 0.001 0.001" />
         </geometry>
@@ -508,62 +496,58 @@
           <box size="0.001 0.001 0.001" />
         </geometry>
         <verbose value="Yes" />
-        <map reference="${side}_gripper_float_collision" name="mesh">
-          <type value="visual"/>
-        </map>
       </collision>
-      <map name="${side}_gripper_float_gravity" reference="${side}_gripper_float_link">
-        <turnGravityOff>true</turnGravityOff>
-      </map>
     </link>
-    <map name="${side}_fake_gripper_slider_joint">
-      <verbatim key="${side}_fake_gripper_slider_joint">
-        <joint:slider name="${side}_gripper_l_finger_tip_slider_joint">
-            <body1>${side}_gripper_l_finger_tip_link</body1>
-            <body2>${side}_gripper_float_link</body2>
-            <anchor>${side}_gripper_l_finger_tip_link</anchor>
-            <axis>0 1 0</axis>
-            <anchorOffset>0 0 0</anchorOffset>
-            </anchorOffset>
-        </joint:slider>
-        <joint:slider name="${side}_gripper_r_finger_tip_slider_joint">
-            <body1>${side}_gripper_r_finger_tip_link</body1>
-            <body2>${side}_gripper_float_link</body2>
-            <anchor>${side}_gripper_r_finger_tip_link</anchor>
-            <axis>0 1 0</axis>
-            <anchorOffset>0 0 0</anchorOffset>
-        </joint:slider>
-        <!--
-        <joint:slider name="${side}_gripper_finger_tip_slider_joint">
-            <body1>${side}_gripper_l_finger_tip_link</body1>
-            <body2>${side}_gripper_r_finger_tip_link</body2>
-            <anchor>${side}_gripper_l_finger_tip_link</anchor>
-            <axis>0 1 0</axis>
-            <anchorOffset>0 0 0</anchorOffset>
-            <lowStop>0.0</lowStop>
-            <highStop>0.08</highStop>
-        </joint:slider>
-        -->
-      </verbatim>
-    </map>
-
-
-
-    <map name="sensor">
-      <verbatim key="p3d_${side}_gripper_palm">
-        <controller:ros_p3d name="p3d_${side}_gripper_palm_controller" plugin="libros_p3d.so">
-          <alwaysOn>true</alwaysOn>
-          <updateRate>100.0</updateRate>
-          <bodyName>${side}_gripper_palm_link</bodyName>
-          <topicName>${side}_gripper_palm_pose_ground_truth</topicName>
-          <xyzOffsets>0 0 0</xyzOffsets>
-          <rpyOffsets>0 0 0</rpyOffsets>
-          <gaussianNoise>0.0</gaussianNoise>
-          <frameName>map</frameName>
-          <interface:position name="p3d_${side}_gripper_palm_position_iface" />
-        </controller:ros_p3d>
-      </verbatim>
-    </map>
+    <gazebo name="${side}_gripper_float_gravity" reference="${side}_gripper_float_link">
+      <turnGravityOff>true</turnGravityOff>
+    </gazebo>
+    <gazebo name="gazebo_material" reference="${side}_gripper_float_visual">
+      <material value="PR2/White" />
+    </gazebo>
+    <gazebo name="${side}_fake_gripper_slider_joint">
+      <joint:slider name="${side}_gripper_l_finger_tip_slider_joint">
+          <body1>${side}_gripper_l_finger_tip_link</body1>
+          <body2>${side}_gripper_float_link</body2>
+          <anchor>${side}_gripper_l_finger_tip_link</anchor>
+          <axis>0 1 0</axis>
+          <anchorOffset>0 0 0</anchorOffset>
+          </anchorOffset>
+      </joint:slider>
+      <joint:slider name="${side}_gripper_r_finger_tip_slider_joint">
+          <body1>${side}_gripper_r_finger_tip_link</body1>
+          <body2>${side}_gripper_float_link</body2>
+          <anchor>${side}_gripper_r_finger_tip_link</anchor>
+          <axis>0 1 0</axis>
+          <anchorOffset>0 0 0</anchorOffset>
+      </joint:slider>
+      <!--
+      <joint:slider name="${side}_gripper_finger_tip_slider_joint">
+          <body1>${side}_gripper_l_finger_tip_link</body1>
+          <body2>${side}_gripper_r_finger_tip_link</body2>
+          <anchor>${side}_gripper_l_finger_tip_link</anchor>
+          <axis>0 1 0</axis>
+          <anchorOffset>0 0 0</anchorOffset>
+          <lowStop>0.0</lowStop>
+          <highStop>0.08</highStop>
+      </joint:slider>
+      -->
+    </gazebo>
+    <gazebo name="sensor">
+      <controller:ros_p3d name="p3d_${side}_gripper_palm_controller" plugin="libros_p3d.so">
+        <alwaysOn>true</alwaysOn>
+        <updateRate>100.0</updateRate>
+        <bodyName>${side}_gripper_palm_link</bodyName>
+        <topicName>${side}_gripper_palm_pose_ground_truth</topicName>
+        <xyzOffsets>0 0 0</xyzOffsets>
+        <rpyOffsets>0 0 0</rpyOffsets>
+        <gaussianNoise>0.0</gaussianNoise>
+        <frameName>map</frameName>
+        <interface:position name="p3d_${side}_gripper_palm_position_iface" />
+      </controller:ros_p3d>
+    </gazebo>
+    <ogre reference="${side}_gripper_float_collision" name="mesh">
+      <type value="visual"/>
+    </ogre>
 
 
     <link name="${side}_gripper_tool_frame">
@@ -581,9 +565,6 @@
       </inertial>
       <visual name="${side}_gripper_tool_visual">
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <map name="gazebo_material" reference="${side}_gripper_tool_visual">
-          <material value="PR2/Grey" />
-        </map>
         <geometry name="${side}_gripper_tool_visual_geom">
           <box size="0.001 0.001 0.001" />
         </geometry>
@@ -594,10 +575,13 @@
           <box size="0.001 0.001 0.001" />
         </geometry>
       </collision>
-      <map name="${side}_gripper_tool_gravity" reference="${side}_gripper_tool_link">
-        <turnGravityOff>true</turnGravityOff>
-      </map>
     </link>
+    <gazebo name="${side}_gripper_tool_gravity" reference="${side}_gripper_tool_link">
+      <turnGravityOff>true</turnGravityOff>
+    </gazebo>
+    <gazebo name="gazebo_material" reference="${side}_gripper_tool_visual">
+      <material value="PR2/Grey" />
+    </gazebo>
 
     <pr2_finger prefix="${side}_gripper" parent="${side}_gripper_palm_link" />
 
