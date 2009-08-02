@@ -84,7 +84,7 @@ void BoundingBoxRaw::computeNeighborhoodFeature(const robot_msgs::PointCloud& da
   // the min/max extremas using the first point below
   if (nbr_neighbors == 0)
   {
-    ROS_WARN("BoundingBox::computeBoundingBoxFeatures() No points to form bounding box");
+    ROS_INFO("BoundingBoxRaw::computeNeighborhoodFeature() No points to form bounding box");
     for (size_t i = 0 ; i < result_size_ ; i++)
     {
       result[i] = 0.0;
