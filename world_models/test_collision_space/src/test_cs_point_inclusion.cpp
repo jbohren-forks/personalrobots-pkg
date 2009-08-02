@@ -250,7 +250,7 @@ public:
 	pts[11] = v3;
 
 	//	shapes::Mesh *shape = shapes::create_mesh_from_binary_stl("base.stl");
-	shapes::Mesh *shape = shapes::create_mesh_from_vertices(pts);
+	shapes::Mesh *shape = shapes::createMeshFromVertices(pts);
 	bodies::Body *s = new bodies::ConvexMesh(shape);
 	printf("Mesh volume = %f\n", s->computeVolume());
 	
