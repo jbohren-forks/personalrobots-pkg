@@ -27,7 +27,7 @@
 #include "tf/message_notifier.h"
 
 #include "sensor_msgs/PointCloud.h"
-#include "robot_msgs/ChannelFloat32.h"
+#include "sensor_msgs/ChannelFloat32.h"
 #include "geometry_msgs/Point32.h"
 
 class Cropper
