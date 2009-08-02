@@ -14,6 +14,8 @@
 using namespace std;
 
 #include <cv.h>
+//#include <cv.hpp>
+using namespace cv;
 
 #include "outlet_detection/features.h"
 

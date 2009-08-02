@@ -11,6 +11,7 @@
 #define _ONE_WAY_DESCRIPTOR_BASE
 
 #include <cv.h>
+#include "outlet_detection/features.h"
 
 #include "outlet_detection/one_way_descriptor.h"
 

@@ -22,7 +22,7 @@ using namespace std;
 #include <ml.h>
 
 #include "outlet_detection/outlet_tuple.h"
-#include "star_detector/detector.h"
+//#include "star_detector/detector.h"
 
 typedef struct 
 {
@@ -113,7 +113,7 @@ inline int is_point_inside_rect(CvRect rect, CvPoint point)
 
 int is_point_incenter_roi(const vector<CvRect>& rects, CvPoint point);
 
-void DrawKeypoints(IplImage* img, std::vector<Keypoint> keypts);
+//void DrawKeypoints(IplImage* img, std::vector<Keypoint> keypts);
 void DrawKeypoints(IplImage* img, std::vector<outlet_feature_t> features);
 
 typedef map<string, vector<CvRect> > outlet_roi_t;
@@ -122,13 +122,13 @@ void read_outlet_roi(const char* filename, outlet_roi_t& outlet_roi);
 void extract_intensity_features(IplImage* grey, const vector<outlet_feature_t>& keypts, CvMat** mat, 
 								int equalize_hist = 0,
 								const vector<int>& labels = vector<int>(), const char* buf = 0);
-void calc_labels(const vector<CvRect>& rects, const vector<Keypoint>& keypts, vector<int>& labels);
+//void calc_labels(const vector<CvRect>& rects, const vector<Keypoint>& keypts, vector<int>& labels);
 void calc_labels(const vector<CvRect>& rects, const vector<outlet_feature_t>& keypts, vector<int>& labels);
 void FilterPoints(IplImage* grey, vector<outlet_feature_t>& keypts, const CvRTrees* rtrees);
 void filter_outlets(IplImage* grey, vector<outlet_t>& outlets, CvRTrees* rtrees);
 
-void outletfarr2keypointarr(const vector<outlet_feature_t>& features, vector<Keypoint>& keypoints);
-void keypointarr2outletfarr(const vector<Keypoint>& keypoints, vector<outlet_feature_t>& features);
+//void outletfarr2keypointarr(const vector<outlet_feature_t>& features, vector<Keypoint>& keypoints);
+//void keypointarr2outletfarr(const vector<Keypoint>& keypoints, vector<outlet_feature_t>& features);
 
 void find_outlet_features(IplImage* src, vector<outlet_feature_t>& features, const char* filename);
 void find_outlet_features_fast(IplImage* src, vector<outlet_feature_t>& features, float hole_contrast, 

@@ -11,6 +11,8 @@
 #include "outlet_detection/pca_features.h"
 #include "outlet_detection/one_way_descriptor_base.h"
 
+#include <cv.h>
+
 CvMat* ConvertImageToMatrix(IplImage* patch)
 {
     CvRect roi = cvGetImageROI(patch);
@@ -158,7 +160,7 @@ void CvOneWayDescriptorBase::BuildDescriptors(IplImage* train_image, const vecto
 {
     for(int i = 0; i < (int)features.size(); i++)
     {
-        CvPoint center = features[i].center;
+        CvPoint center = features[i].pt;
         
         CvRect roi = cvRect(center.x - m_patch_size.width/2, center.y - m_patch_size.height/2, m_patch_size.width, m_patch_size.height);
         cvSetImageROI(train_image, roi);
@@ -278,7 +280,7 @@ int CvOneWayDescriptorBase::MatchPointToPart(CvPoint pt) const
     const int max_dist = 10;
     for(int i = 0; i < (int)m_train_features.size(); i++)
     {
-        if(length(pt - m_train_features[i].center) < max_dist)
+        if(length(pt - m_train_features[i].pt) < max_dist)
         {
             idx = i;
             break;

@@ -14,7 +14,7 @@ using namespace std;
 #include <highgui.h>
 #include <ml.h>
 
-#include "star_detector/detector.h"
+//#include "star_detector/detector.h"
 
 #include "outlet_detection/outlet_model.h"
 #include "outlet_detection/learning.h"
@@ -24,14 +24,6 @@ using namespace std;
 const int xsize = 11;
 const int ysize = 11;
 const int feature_count = xsize*ysize;
-
-void DrawKeypoints(IplImage* img, std::vector<Keypoint> keypts)
-{
-	for(std::vector<Keypoint>::const_iterator it = keypts.begin(); it != keypts.end(); it++)
-	{
-		cvCircle(img, cvPoint(it->x, it->y), it->scale, CV_RGB(0, 0, 255), 2);
-	}
-}
 
 void DrawKeypoints(IplImage* img, std::vector<outlet_feature_t> keypts)
 {
@@ -859,19 +851,6 @@ inline int is_rect_inside_rect(CvRect large, CvRect smaller)
 	}
 }
 
-void calc_labels(const vector<CvRect>& rects, const vector<Keypoint>& keypts, vector<int>& labels)
-{
-	for(vector<Keypoint>::const_iterator it = keypts.begin(); it != keypts.end(); it++)
-	{
-#if defined(_TRAIN)
-		int label = is_point_incenter_roi(rects, cvPoint(it->x, it->y));
-#else
-		int label = is_point_inside_roi(rects, cvPoint(it->x, it->y));
-#endif //_TRAIN
-		labels.push_back(label);
-	}
-}
-
 void calc_labels(const vector<CvRect>& rects, const vector<outlet_feature_t>& keypts, vector<int>& labels)
 {
 	for(vector<outlet_feature_t>::const_iterator it = keypts.begin(); it != keypts.end(); it++)
@@ -1059,41 +1038,6 @@ void filter_outlets(IplImage* grey, vector<outlet_t>& outlets, CvRTrees* rtrees)
 	outlets = filtered_outlets;
 }
 
-Keypoint outletf2keypoint(outlet_feature_t feature)
-{
-	Keypoint p;
-	p.x = feature.bbox.x + feature.bbox.width/2;
-	p.y = feature.bbox.y + feature.bbox.height/2;
-	p.scale = min(feature.bbox.width, feature.bbox.height)/2;
-	return p;
-}
-
-outlet_feature_t keypoint2outletf(Keypoint p)
-{
-	outlet_feature_t feature;
-	feature.bbox = cvRect(p.x - p.scale, p.y - p.scale, p.scale*2, p.scale*2);
-	return feature;
-}
-
-void outletfarr2keypointarr(const vector<outlet_feature_t>& features, vector<Keypoint>& keypoints)
-{
-	for(vector<outlet_feature_t>::const_iterator it = features.begin(); it != features.end(); it++)
-	{
-		outlet_feature_t feature = *it;
-		Keypoint p = outletf2keypoint(feature);
-		keypoints.push_back(p);
-	}
-}
-
-void keypointarr2outletfarr(const vector<Keypoint>& keypoints, vector<outlet_feature_t>& features)
-{
-	for(vector<Keypoint>::const_iterator it = keypoints.begin(); it != keypoints.end(); it++)
-	{
-		Keypoint p = *it;
-		outlet_feature_t feature = keypoint2outletf(p);
-		features.push_back(feature);
-	}
-}
 
 void find_outlet_features_fast(IplImage* src, vector<outlet_feature_t>& features, float hole_contrast, 
                                const char* output_path, const char* filename)
@@ -1773,6 +1717,7 @@ int calc_outlet_coords(vector<outlet_t>& outlets, CvMat* map_matrix, CvPoint3D32
 											 (it->coord_hole1.y + it->coord_hole2.y)*0.5f - ground_hole_offset,
 											 0.0f);
         
+#if !defined(_GHT) // TBD somehow the inverse matrix here is corrupt when _GHT is defined
         if(inv_map_matrix)
         {
             // update ground hole image coordinates
@@ -1781,6 +1726,7 @@ int calc_outlet_coords(vector<outlet_t>& outlets, CvMat* map_matrix, CvPoint3D32
             cvPerspectiveTransform(src, dst, inv_map_matrix);
             it->ground_hole = cvPoint(floor(dst->data.fl[0]), floor(dst->data.fl[1]));
         }
+#endif //_GHT
 		
 		it->coord_hole1 = map_point_rt(it->coord_hole1, rotation_mat, translation_vector);
 		it->coord_hole2 = map_point_rt(it->coord_hole2, rotation_mat, translation_vector);

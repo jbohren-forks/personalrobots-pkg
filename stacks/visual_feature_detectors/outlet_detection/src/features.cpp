@@ -76,7 +76,7 @@ void GetHoleFeatures(IplImage* src, vector<feature_t>& features, float hole_cont
 {
     vector<outlet_feature_t> outlet_features;
     find_outlet_features_fast(src, outlet_features, hole_contrast, 0, 0);
-    for(int i = 0; i < outlet_features.size(); i++)
+    for(size_t i = 0; i < outlet_features.size(); i++)
     {
         features.push_back(feature_t(feature_center(outlet_features[i]), outlet_features[i].bbox.width));
     }
@@ -84,18 +84,18 @@ void GetHoleFeatures(IplImage* src, vector<feature_t>& features, float hole_cont
 
 void DrawFeatures(IplImage* img, const vector<feature_t>& features)
 {
-    for(int i = 0; i < features.size(); i++)
+    for(size_t i = 0; i < features.size(); i++)
     {
-        cvCircle(img, features[i].center, features[i].scale, CV_RGB(255, 0, 0), 2);
+        cvCircle(img, features[i].pt, features[i].size, CV_RGB(255, 0, 0), 2);
     }
 }
 
 void FilterFeatures(vector<feature_t>& features, float min_scale, float max_scale)
 {
     vector<feature_t> selected;
-    for(int i = 0; i < features.size(); i++)
+    for(size_t i = 0; i < features.size(); i++)
     {
-        if(features[i].scale >= min_scale && features[i].scale <= max_scale)
+        if(features[i].size >= min_scale && features[i].size <= max_scale)
         {
             selected.push_back(features[i]);
         }
@@ -112,7 +112,7 @@ void SelectNeighborFeatures(vector<feature_t>& features, const vector<feature_t>
     {
         for(int j = 0; j < (int)voc.size(); j++)
         {
-            if(length(features[i].center - voc[j].center) < max_dist)
+            if(length(features[i].pt - voc[j].pt) < max_dist)
             {
                 filtered.push_back(features[i]);
             }

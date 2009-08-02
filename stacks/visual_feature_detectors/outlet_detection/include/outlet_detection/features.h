@@ -14,6 +14,7 @@
 using namespace std;
 
 #include <cv.h>
+using namespace cv;
 
 inline CvPoint operator -(CvPoint p1, CvPoint p2)
 {
@@ -25,7 +26,27 @@ inline float length(CvPoint p)
     return sqrt(float(p.x*p.x) + p.y*p.y);
 };
 
+inline Point2f operator -(Point2f p1, Point2f p2)
+{
+    return Point2f(p1.x - p2.x, p1.y - p2.y);
+};
 
+inline Point2f operator -(Point2f p1, CvPoint p2)
+{
+    return Point2f(p1.x - p2.x, p1.y - p2.y);
+};
+
+inline Point2f operator -(CvPoint p1, Point2f p2)
+{
+    return Point2f(p1.x - p2.x, p1.y - p2.y);
+};
+
+inline float length(Point2f p)
+{
+    return sqrt(float(p.x*p.x) + p.y*p.y);
+};
+
+#if 0
 struct feature_t
 {
     CvPoint center;
@@ -40,6 +61,28 @@ struct feature_t
         part_id = _part_id;
     };
 };
+#else
+class CV_EXPORTS KeyPointEx : public KeyPoint
+{
+public:
+    KeyPointEx(CvPoint _center = cvPoint(-1, -1), float _scale = 1, int _class_id = -1) : 
+        KeyPoint(_center.x, _center.y, _scale, 0.0f, 0.0f, 0)
+    {
+        class_id = _class_id;
+    };
+    
+    ~KeyPointEx() {};
+    
+    int class_id;
+};
+
+typedef KeyPointEx feature_t;
+
+/*void operator =(const Point2f& src, CvPoint& dst)
+{
+    dst = cvPoint((int)src.x, (int)src.y);
+};*/
+#endif
 
 void GetSURFFeatures(IplImage* src, vector<feature_t>& features);
 void GetStarFeatures(IplImage* src, vector<feature_t>& features);

@@ -573,21 +573,24 @@ int compareOutlets(outlet_test_elem& test_elem, int accuracy)
 	int nOutlets = 0;
 	test_elem.n_matches = 0;
 	nOutlets = (int)test_elem.real_outlet.size();
+    int flag = 0;
 	for (int i=0;i<nOutlets;i++)
 	{
 		float distance = (test_elem.real_outlet[i].hole1.x - test_elem.test_outlet[i].hole1.x)*(test_elem.real_outlet[i].hole1.x - test_elem.test_outlet[i].hole1.x)+
 			(test_elem.real_outlet[i].hole1.y - test_elem.test_outlet[i].hole1.y)*(test_elem.real_outlet[i].hole1.y - test_elem.test_outlet[i].hole1.y);
 		if (distance < accuracy*accuracy)
 			test_elem.n_matches++;
+
 		distance = (test_elem.real_outlet[i].hole2.x - test_elem.test_outlet[i].hole2.x)*(test_elem.real_outlet[i].hole2.x - test_elem.test_outlet[i].hole2.x)+
 			(test_elem.real_outlet[i].hole2.y - test_elem.test_outlet[i].hole2.y)*(test_elem.real_outlet[i].hole2.y - test_elem.test_outlet[i].hole2.y);
 		if (distance < accuracy*accuracy)
 			test_elem.n_matches++;
+
 		distance = (test_elem.real_outlet[i].ground_hole.x - test_elem.test_outlet[i].ground_hole.x)*(test_elem.real_outlet[i].ground_hole.x - test_elem.test_outlet[i].ground_hole.x)+
 			(test_elem.real_outlet[i].ground_hole.y - test_elem.test_outlet[i].ground_hole.y)*(test_elem.real_outlet[i].ground_hole.y - test_elem.test_outlet[i].ground_hole.y);
 		if (distance < accuracy*accuracy)
 			test_elem.n_matches++;
-	}
+    }
 
 	return test_elem.n_matches;
 
@@ -600,7 +603,7 @@ int compareAllOutlets(vector<outlet_test_elem>& test_data, int accuracy)
 	{
 		if (test_data[i].n_matches == DETECT_SKIP)
 			continue;
-		if (compareOutlets(test_data[i]) == (int)test_data[i].real_outlet.size())
+        if(compareOutlets(test_data[i], accuracy) == (int)test_data[i].real_outlet.size())
 			res++;
 	}
 	return res;
@@ -634,6 +637,8 @@ void runOutletDetectorTest(CvMat* intrinsic_matrix, CvMat* distortion_params,
 			detect_outlet_tuple(img,intrinsic_matrix,distortion_params,test_data[i].test_outlet,outlet_templ,output_path,filename);
 		else
 			detect_outlet_tuple(img,intrinsic_matrix,distortion_params,test_data[i].test_outlet,outlet_templ);
+        printf("Detected %d outlets, origin %d,%d, real origin %d,%d\n", (int)test_data[i].test_outlet.size(), test_data[i].test_outlet[0].ground_hole.x, 
+            test_data[i].test_outlet[0].ground_hole.y, test_data[i].real_outlet[0].ground_hole.x, test_data[i].real_outlet[0].ground_hole.y);
 		cvReleaseImage(&img);
 	}	
 }

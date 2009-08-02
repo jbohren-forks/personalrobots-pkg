@@ -77,9 +77,9 @@ void MapFeaturesAffine(const vector<feature_t>& features, vector<feature_t>& map
     
     for(int i = 0; i < (int)features.size(); i++)
     {
-        float x = a*features[i].center.x + b*features[i].center.y + c;
-        float y = d*features[i].center.x + e*features[i].center.y + f;
-        mapped_features.push_back(feature_t(cvPoint(x, y), features[i].scale, features[i].part_id));
+        float x = a*features[i].pt.x + b*features[i].pt.y + c;
+        float y = d*features[i].pt.x + e*features[i].pt.y + f;
+        mapped_features.push_back(feature_t(cvPoint(x, y), features[i].size, features[i].class_id));
     }
 }
 

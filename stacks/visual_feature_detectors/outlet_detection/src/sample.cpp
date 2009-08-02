@@ -23,7 +23,7 @@ using namespace std;
 
 #include "outlet_detection/pca_features.h"
 #include "outlet_detection/learning.h"
-#include "star_detector/detector.h"
+//#include "star_detector/detector.h"
 #include "outlet_detection/outlet_detector.h"
 #include "outlet_detection/outlet_detector_test.h"
 

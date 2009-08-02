@@ -101,7 +101,7 @@ void loadPCAFeatures(const char* path, vector<IplImage*>& patches)
             const int patch_width = 24;
             const int patch_height = 24;
             
-            CvPoint center = features[j].center;
+            CvPoint center = features[j].pt;
             
             CvRect roi = cvRect(center.x - patch_width/2, center.y - patch_height/2, patch_width, patch_height);
             cvSetImageROI(img, roi);

@@ -67,14 +67,14 @@ CvPoint* getOutletCenter(feature_t feature, const vector<feature_t>& train_featu
 	outlet_center.y = 0;
 	for (int i=0;i<train_length;i++)
 	{
-		outlet_center.x += train_features[i].center.x;
-		outlet_center.y += train_features[i].center.y;
+		outlet_center.x += train_features[i].pt.x;
+		outlet_center.y += train_features[i].pt.y;
 	}
 	outlet_center.x /= train_length;
 	outlet_center.y /= train_length;
 
-	float rel_center_x = - outlet_center.x + train_features[feature_id].center.x; 
-	float rel_center_y = - outlet_center.y + train_features[feature_id].center.y; 
+	float rel_center_x = - outlet_center.x + train_features[feature_id].pt.x; 
+	float rel_center_y = - outlet_center.y + train_features[feature_id].pt.y; 
 	float t1 = rel_center_x * cos(angle1) + rel_center_y*sin(angle1); 
 	float t2 = - rel_center_x * sin(angle1) + rel_center_y * cos(angle1); 
 	rel_center_x = t1*x_scale;
@@ -83,8 +83,8 @@ CvPoint* getOutletCenter(feature_t feature, const vector<feature_t>& train_featu
 	t2 = - rel_center_x * sin(angle2) + rel_center_y * cos(angle2); 
 
 	result = new CvPoint();
-	result->x = feature.center.x-t1;
-	result->y = feature.center.y-t2;
+	result->x = feature.pt.x-t1;
+	result->y = feature.pt.y-t2;
 
 	return result;
 
@@ -103,7 +103,7 @@ CvSparseMat* buildHoughHist(vector<feature_t>& input, const vector<feature_t>& t
 	{
 		for (int feature_id = 0; feature_id < (int)train_features.size(); feature_id++)
 		{
-			if (input[n].part_id != train_features[feature_id].part_id)
+			if (input[n].class_id != train_features[feature_id].class_id)
 				continue;
 
 			for (float angle1 = ranges[2][0]+(ranges[2][1]-ranges[2][0])/(hist_size[2]*2); angle1 <= ranges[2][1]; angle1 += ((ranges[2][1]-ranges[2][0] > 0) ? (ranges[2][1]-ranges[2][0])/hist_size[2] : 1))
@@ -261,7 +261,7 @@ CvMatND* buildHoughHistSparse(vector<feature_t>& input, const vector<feature_t>&
 				{
 					for (int feature_id = 0; feature_id < (int)train_features.size(); feature_id++)
 					{
-						if (input[n].part_id != train_features[feature_id].part_id)
+						if (input[n].class_id != train_features[feature_id].class_id)
 							continue;
 
 						for (float angle1 = ranges[2][0]+(ranges[2][1]-ranges[2][0])/(hist_size[2]*2); angle1 <= ranges[2][1]; angle1 += ((ranges[2][1]-ranges[2][0] > 0) ? (ranges[2][1]-ranges[2][0])/hist_size[2] : 1))
@@ -758,16 +758,16 @@ void calcOutletPosition(const vector<feature_t>& train_features, float* affine_t
 	outlet_center.y = 0;
 	for (int i=0;i<train_length;i++)
 	{
-		outlet_center.x += train_features[i].center.x;
-		outlet_center.y += train_features[i].center.y;
+		outlet_center.x += train_features[i].pt.x;
+		outlet_center.y += train_features[i].pt.y;
 	}
 	outlet_center.x /= train_length;
 	outlet_center.y /= train_length;
 
 	for (int i=0; i< train_length; i++)
 	{
-		float rel_center_x = - outlet_center.x + train_features[i].center.x; 
-		float rel_center_y = - outlet_center.y + train_features[i].center.y; 
+		float rel_center_x = - outlet_center.x + train_features[i].pt.x; 
+		float rel_center_y = - outlet_center.y + train_features[i].pt.y; 
 		float t1 = rel_center_x * cos(angle1) + rel_center_y*sin(angle1); 
 		float t2 = - rel_center_x * sin(angle1) + rel_center_y * cos(angle1); 
 		rel_center_x = t1*x_scale;
@@ -779,9 +779,9 @@ void calcOutletPosition(const vector<feature_t>& train_features, float* affine_t
 		result_point.x = center.x+t1;
 		result_point.y = center.y+t2;
 		feature_t feature;
-		feature.scale = train_features[i].scale;
-		feature.center = result_point;
-		feature.part_id = train_features[i].part_id;
+		feature.size = train_features[i].size;
+		feature.pt = result_point;
+		feature.class_id = train_features[i].class_id;
 
 		features.push_back(feature);
 	}
@@ -803,10 +803,10 @@ void calcExactLocation1(vector<feature_t>& features, vector<feature_t>& outlet)
 		float min_distance = 1e30;
 		for (int j=0;j<features_length;j++)
 		{
-			if (features[j].part_id == outlet[i].part_id)
+			if (features[j].class_id == outlet[i].class_id)
 			{
-				float distance = (features[j].center.x - outlet[i].center.x)*(features[j].center.x - outlet[i].center.x)+
-					(features[j].center.y - outlet[i].center.y)*(features[j].center.y - outlet[i].center.y);
+				float distance = (features[j].pt.x - outlet[i].pt.x)*(features[j].pt.x - outlet[i].pt.x)+
+					(features[j].pt.y - outlet[i].pt.y)*(features[j].pt.y - outlet[i].pt.y);
 				if (distance < min_distance)
 				{
 					min_distance = distance;
@@ -815,7 +815,7 @@ void calcExactLocation1(vector<feature_t>& features, vector<feature_t>& outlet)
 			}
 			distances[i] = min_distance;
 			indexes[i] = min_index;
-			distance_vectors[i] = features[min_index].center - outlet[i].center;
+			distance_vectors[i] = features[min_index].pt - outlet[i].pt;
 			if (distances[i] > 0)
 			{
 				if (float angle = asin(distance_vectors[i].y/sqrt(distances[i])) > 0)
@@ -830,7 +830,6 @@ void calcExactLocation1(vector<feature_t>& features, vector<feature_t>& outlet)
 		}
 	}
 
-	int index = 0;
 	CvPoint move = cvPoint(0,0);
 
 	//for (int i=0;i<outlet_length;i++)
@@ -927,7 +926,6 @@ void calcExactLocation1(vector<feature_t>& features, vector<feature_t>& outlet)
 	delete[] votes;
 
 	int count = 0;
-	int maxindex = 0;
 	for (int i=0;i<outlet_length;i++)
 	{
 		if (indexes[i] > 0)
@@ -951,8 +949,8 @@ void calcExactLocation1(vector<feature_t>& features, vector<feature_t>& outlet)
 
 	for (int i=0;i<outlet_length;i++)
 	{
-		outlet[i].center.x += move.x;
-		outlet[i].center.y += move.y;
+		outlet[i].pt.x += move.x;
+		outlet[i].pt.y += move.y;
 	}
 
 	delete[] distances;
@@ -967,29 +965,29 @@ void calcExactLocation2(vector<feature_t>& features, vector<feature_t>& outlet, 
 	int features_length = (int)(features.size());
 	int outlet_length = (int)(outlet.size());
 	//int accuracy = 2;
-	CvRect outlet_rect = cvRect(outlet[0].center.x,outlet[0].center.y,0,0);
+	CvRect outlet_rect = cvRect(outlet[0].pt.x,outlet[0].pt.y,0,0);
 	for (int i=1;i<(int)(outlet.size());i++)
 	{
-		if (outlet[i].center.x < outlet_rect.x)
+		if (outlet[i].pt.x < outlet_rect.x)
 		{
-			outlet_rect.width += (outlet_rect.x - outlet[i].center.x);
-			outlet_rect.x = outlet[i].center.x;
+			outlet_rect.width += (outlet_rect.x - outlet[i].pt.x);
+			outlet_rect.x = outlet[i].pt.x;
 		}
 
-		if (outlet[i].center.x > (outlet_rect.x+outlet_rect.width))
+		if (outlet[i].pt.x > (outlet_rect.x+outlet_rect.width))
 		{
-			outlet_rect.width = outlet[i].center.x - outlet_rect.x;
+			outlet_rect.width = outlet[i].pt.x - outlet_rect.x;
 		}
 
-		if (outlet[i].center.y < outlet_rect.y)
+		if (outlet[i].pt.y < outlet_rect.y)
 		{
-			outlet_rect.height += (outlet_rect.y - outlet[i].center.y);
-			outlet_rect.y = outlet[i].center.y;
+			outlet_rect.height += (outlet_rect.y - outlet[i].pt.y);
+			outlet_rect.y = outlet[i].pt.y;
 		}
 
-		if (outlet[i].center.y > (outlet_rect.x+outlet_rect.height))
+		if (outlet[i].pt.y > (outlet_rect.x+outlet_rect.height))
 		{
-			outlet_rect.height = outlet[i].center.y - outlet_rect.y;
+			outlet_rect.height = outlet[i].pt.y - outlet_rect.y;
 		}
 	}
 
@@ -1012,10 +1010,11 @@ void calcExactLocation2(vector<feature_t>& features, vector<feature_t>& outlet, 
 			{
 				for (int j = 0; j< features_length;j++)
 				{
-					if (outlet[i].part_id == features[j].part_id)
+					if (outlet[i].class_id == features[j].class_id)
 					{
 						// Change to normal metrics
-						float dist = (outlet[i].center.x + x - features[j].center.x)*(outlet[i].center.x + x - features[j].center.x) + (outlet[i].center.y + y - features[j].center.y)*(outlet[i].center.y + y - features[j].center.y);
+						float dist = (outlet[i].pt.x + x - features[j].pt.x)*(outlet[i].pt.x + x - features[j].pt.x) + 
+                            (outlet[i].pt.y + y - features[j].pt.y)*(outlet[i].pt.y + y - features[j].pt.y);
 						if (dist < accuracy*accuracy)
 						{
 							nvotes ++;
@@ -1035,8 +1034,8 @@ void calcExactLocation2(vector<feature_t>& features, vector<feature_t>& outlet, 
 
 	for (int i = 0; i< outlet_length; i++)
 	{
-		outlet[i].center.x +=movement.x;
-		outlet[i].center.y +=movement.y;
+		outlet[i].pt.x +=movement.x;
+		outlet[i].pt.y +=movement.y;
 	}
 
 
@@ -1057,10 +1056,10 @@ void calcExactLocation3(vector<feature_t>& features, vector<feature_t>& outlet, 
 		float min_distance = 1e30;
 		for (int j=0;j<features_length;j++)
 		{
-			if (features[j].part_id == outlet[i].part_id)
+			if (features[j].class_id == outlet[i].class_id)
 			{
-				float distance = (features[j].center.x - outlet[i].center.x)*(features[j].center.x - outlet[i].center.x)+
-					(features[j].center.y - outlet[i].center.y)*(features[j].center.y - outlet[i].center.y);
+				float distance = (features[j].pt.x - outlet[i].pt.x)*(features[j].pt.x - outlet[i].pt.x)+
+					(features[j].pt.y - outlet[i].pt.y)*(features[j].pt.y - outlet[i].pt.y);
 				if (distance < min_distance)
 				{
 					min_distance = distance;
@@ -1069,7 +1068,7 @@ void calcExactLocation3(vector<feature_t>& features, vector<feature_t>& outlet, 
 			}
 			distances[i] = min_distance;
 			indexes[i] = min_index;
-			distance_vectors[i] = features[min_index].center - outlet[i].center;
+			distance_vectors[i] = features[min_index].pt - outlet[i].pt;
 		}
 	}
 
@@ -1081,8 +1080,8 @@ void calcExactLocation3(vector<feature_t>& features, vector<feature_t>& outlet, 
 			{
 				if (k!=i)
 				{
-					float d = (outlet[k].center.x + distance_vectors[i].x - features[j].center.x)*(outlet[k].center.x + distance_vectors[i].x - features[j].center.x)+
-						(outlet[k].center.y + distance_vectors[i].y- features[j].center.y)*(outlet[k].center.y + distance_vectors[i].y- features[j].center.y);
+					float d = (outlet[k].pt.x + distance_vectors[i].x - features[j].pt.x)*(outlet[k].pt.x + distance_vectors[i].x - features[j].pt.x)+
+						(outlet[k].pt.y + distance_vectors[i].y- features[j].pt.y)*(outlet[k].pt.y + distance_vectors[i].y- features[j].pt.y);
 					if (d < accuracy*accuracy)
 					{
 						votes[i]++;
@@ -1111,8 +1110,8 @@ void calcExactLocation3(vector<feature_t>& features, vector<feature_t>& outlet, 
 
 	for (int i = 0; i< outlet_length; i++)
 	{
-		outlet[i].center.x +=distance_vectors[maxindex].x;
-		outlet[i].center.y +=distance_vectors[maxindex].y;
+		outlet[i].pt.x +=distance_vectors[maxindex].x;
+		outlet[i].pt.y +=distance_vectors[maxindex].y;
 	}
 
 
@@ -1138,10 +1137,10 @@ void calcExactLocation4(vector<feature_t>& features, vector<feature_t>& outlet)
 		float min_distance = 1e30;
 		for (int j=0;j<features_length;j++)
 		{
-			if (features[j].part_id == outlet[i].part_id)
+			if (features[j].class_id == outlet[i].class_id)
 			{
-				float distance = (features[j].center.x - outlet[i].center.x)*(features[j].center.x - outlet[i].center.x)+
-					(features[j].center.y - outlet[i].center.y)*(features[j].center.y - outlet[i].center.y);
+				float distance = (features[j].pt.x - outlet[i].pt.x)*(features[j].pt.x - outlet[i].pt.x)+
+					(features[j].pt.y - outlet[i].pt.y)*(features[j].pt.y - outlet[i].pt.y);
 				if (distance < min_distance)
 				{
 					min_distance = distance;
@@ -1150,7 +1149,7 @@ void calcExactLocation4(vector<feature_t>& features, vector<feature_t>& outlet)
 			}
 			distances[i] = min_distance;
 			indexes[i] = min_index;
-			distance_vectors[i] = features[min_index].center - outlet[i].center;
+			distance_vectors[i] = features[min_index].pt - outlet[i].pt;
 			if (distances[i] > 0)
 			{
 				if (float angle = asin(distance_vectors[i].y/sqrt(distances[i])) > 0)
@@ -1271,8 +1270,8 @@ void calcExactLocation4(vector<feature_t>& features, vector<feature_t>& outlet)
 			//	if (distances[maxindex] > distances[i])
 			//		maxindex = i;
 			//End
-			outlet[i].center.x += distance_vectors[i].x;
-			outlet[i].center.y += distance_vectors[i].y;
+			outlet[i].pt.x += distance_vectors[i].x;
+			outlet[i].pt.y += distance_vectors[i].y;
 			//move.x += distance_vectors[i].x;
 			//	move.y += distance_vectors[i].y;
 			count++;
@@ -1329,10 +1328,10 @@ void calcExactLocation(vector<feature_t>& features,const vector<feature_t>& trai
 			float last_min_distance;
 			for (int j=0;j<(int)features.size();j++)
 			{
-				if (features[j].part_id == src_outlet[i].part_id)
+				if (features[j].class_id == src_outlet[i].class_id)
 				{
-					float distance = (features[j].center.x - src_outlet[i].center.x)*(features[j].center.x - src_outlet[i].center.x)+
-						(features[j].center.y - src_outlet[i].center.y)*(features[j].center.y - src_outlet[i].center.y);
+					float distance = (features[j].pt.x - src_outlet[i].pt.x)*(features[j].pt.x - src_outlet[i].pt.x)+
+						(features[j].pt.y - src_outlet[i].pt.y)*(features[j].pt.y - src_outlet[i].pt.y);
 					if ((distance < min_distance)/* && (distance < accuracy*accuracy)*/)
 					{
 						last_min_distance = min_distance;
@@ -1387,8 +1386,8 @@ void calcExactLocation(vector<feature_t>& features,const vector<feature_t>& trai
 		{
 			if (indexes[i] >=0)
 			{
-				train_points.push_back(train_features[i].center);
-				features_points.push_back(features[indexes[i]].center);
+				train_points.push_back(train_features[i].pt);
+				features_points.push_back(features[indexes[i]].pt);
 			}
 		}
 
@@ -1410,16 +1409,16 @@ void calcExactLocation(vector<feature_t>& features,const vector<feature_t>& trai
 				float last_min_distance;
 				for (int j=0;j<(int)features.size();j++)
 				{				
-					if (features[j].part_id == dst_outlet[i].part_id)
+					if (features[j].class_id == dst_outlet[i].class_id)
 					{
-						float distance = (features[j].center.x - dst_outlet[i].center.x)*(features[j].center.x - dst_outlet[i].center.x)+
-							(features[j].center.y - dst_outlet[i].center.y)*(features[j].center.y - dst_outlet[i].center.y);
+						float distance = (features[j].pt.x - dst_outlet[i].pt.x)*(features[j].pt.x - dst_outlet[i].pt.x)+
+							(features[j].pt.y - dst_outlet[i].pt.y)*(features[j].pt.y - dst_outlet[i].pt.y);
 						if (distance < min_distance)
 						{
 							last_min_distance = distance;
 							//setting min distance to power holes distance / 3
-							float acc = (float)((train_features[1].center.x - train_features[0].center.x)*(train_features[1].center.x - train_features[0].center.x)+
-											(train_features[1].center.y - train_features[0].center.y)*(train_features[1].center.y - train_features[0].center.y))/9;
+							float acc = (float)((train_features[1].pt.x - train_features[0].pt.x)*(train_features[1].pt.x - train_features[0].pt.x)+
+											(train_features[1].pt.y - train_features[0].pt.y)*(train_features[1].pt.y - train_features[0].pt.y))/9;
 							if (distance < acc)
 							{
 								min_distance = distance;
@@ -1511,10 +1510,10 @@ void calcExactLocation_(vector<feature_t>& features,const vector<feature_t>& tra
 
 			for (int j=0;j<(int)features.size();j++)
 			{
-				if (features[j].part_id == src_outlet[i].part_id)
+				if (features[j].class_id == src_outlet[i].class_id)
 				{
-					float distance = (features[j].center.x - src_outlet[i].center.x)*(features[j].center.x - src_outlet[i].center.x)+
-						(features[j].center.y - src_outlet[i].center.y)*(features[j].center.y - src_outlet[i].center.y);
+					float distance = (features[j].pt.x - src_outlet[i].pt.x)*(features[j].pt.x - src_outlet[i].pt.x)+
+						(features[j].pt.y - src_outlet[i].pt.y)*(features[j].pt.y - src_outlet[i].pt.y);
 					if ( (distance < accuracy*accuracy))
 					{
 						elem.x = j;
@@ -1531,7 +1530,7 @@ void calcExactLocation_(vector<feature_t>& features,const vector<feature_t>& tra
 		int* seq_indexes = new int[src_outlet.size()];
 		int* seq_indexes_min = new int[src_outlet.size()];
 		float min_distance = 1e38;
-		for (int i=0;i<src_outlet.size(); i++)
+		for (size_t i=0;i<src_outlet.size(); i++)
 		{
 			seq_indexes[i] = 0;
 			seq_indexes_min[i] = -1;
@@ -1558,8 +1557,8 @@ void calcExactLocation_(vector<feature_t>& features,const vector<feature_t>& tra
 					if (seq[i]->total >0)
 					{
 						elem = *(CvPoint2D32f*)(cvGetSeqElem(seq[i],seq_indexes[i]));
-						train_points.push_back(train_features[i].center);
-						features_points.push_back(features[(int)(elem.x)].center);
+						train_points.push_back(train_features[i].pt);
+						features_points.push_back(features[(int)(elem.x)].pt);
 					}
 				}
 
@@ -1620,8 +1619,8 @@ void calcExactLocation_(vector<feature_t>& features,const vector<feature_t>& tra
 				if (seq[i]->total >0)
 				{
 					elem = *(CvPoint2D32f*)(cvGetSeqElem(seq[i],seq_indexes_min[i]));
-					train_points.push_back(train_features[i].center);
-					features_points.push_back(features[(int)(elem.x)].center);
+					train_points.push_back(train_features[i].pt);
+					features_points.push_back(features[(int)(elem.x)].pt);
 				}
 			}
 
@@ -1648,10 +1647,10 @@ void calcExactLocation_(vector<feature_t>& features,const vector<feature_t>& tra
 				float min_distance = 1e38;
 				for (int j=0;j<(int)features.size();j++)
 				{
-					if (features[j].part_id == dst_outlet[i].part_id)
+					if (features[j].class_id == dst_outlet[i].class_id)
 					{
-						float distance = (features[j].center.x - dst_outlet[i].center.x)*(features[j].center.x - dst_outlet[i].center.x)+
-							(features[j].center.y - dst_outlet[i].center.y)*(features[j].center.y - dst_outlet[i].center.y);
+						float distance = (features[j].pt.x - dst_outlet[i].pt.x)*(features[j].pt.x - dst_outlet[i].pt.x)+
+							(features[j].pt.y - dst_outlet[i].pt.y)*(features[j].pt.y - dst_outlet[i].pt.y);
 						if ((distance < min_distance) && (distance < accuracy*accuracy/4))
 						{
 							min_distance = distance;
@@ -1757,8 +1756,8 @@ float generalizedHoughTransform(vector<feature_t>& hole_candidates, const vector
 	vector<feature_t> hole_features_corrected;
 	vector<feature_t> res_features;
   
-	float accuracy = sqrt((float)((train_features[1].center.x -train_features[0].center.x)*(train_features[1].center.x -train_features[0].center.x)+
-			(train_features[1].center.y -train_features[0].center.y)*(train_features[1].center.y -train_features[0].center.y)));
+	float accuracy = sqrt((float)((train_features[1].pt.x -train_features[0].pt.x)*(train_features[1].pt.x -train_features[0].pt.x)+
+			(train_features[1].pt.y -train_features[0].pt.y)*(train_features[1].pt.y -train_features[0].pt.y)));
 	float error = 1e38;
 	int index = -1;
 	for (int j=0;j<count;j++)
@@ -1770,9 +1769,9 @@ if (ghtImage)
 {
 		for(int i = 0; i < (int)hole_features.size(); i++)
 		{
-			CvScalar pointColor = hole_features[i].part_id == 0 ? cvScalar(0,255,50) : cvScalar(255,0,50);	
-			cvLine(ghtImage, cvPoint(hole_features[i].center.x+7, hole_features[i].center.y), cvPoint(hole_features[i].center.x-7, hole_features[i].center.y),pointColor,2); 
-			cvLine(ghtImage, cvPoint(hole_features[i].center.x, hole_features[i].center.y+7), cvPoint(hole_features[i].center.x, hole_features[i].center.y-7),pointColor,2); 
+			CvScalar pointColor = hole_features[i].class_id == 0 ? cvScalar(0,255,50) : cvScalar(255,0,50);	
+			cvLine(ghtImage, cvPoint(hole_features[i].pt.x+7, hole_features[i].pt.y), cvPoint(hole_features[i].pt.x-7, hole_features[i].pt.y),pointColor,2); 
+			cvLine(ghtImage, cvPoint(hole_features[i].pt.x, hole_features[i].pt.y+7), cvPoint(hole_features[i].pt.x, hole_features[i].pt.y-7),pointColor,2); 
             
 		}
 }
@@ -1802,9 +1801,9 @@ if (ghtImage)
 
 		for (int i=0;i<(int)res_features.size()/3;i++)
 		{
-			outlet.hole1 = res_features[2*i].center;
-			outlet.hole2 = res_features[2*i+1].center;
-			outlet.ground_hole = res_features[2*(int)res_features.size()/3+i].center;
+			outlet.hole1 = res_features[2*i].pt;
+			outlet.hole2 = res_features[2*i+1].pt;
+			outlet.ground_hole = res_features[2*(int)res_features.size()/3+i].pt;
 			holes.push_back(outlet);
 		}
 
@@ -1813,9 +1812,9 @@ if (resImage)
 		for(int i = 0; i < (int)res_features.size(); i++)
 		{
 			
-			CvScalar pointColor = res_features[i].part_id == 0 ? cvScalar(0,255,50) : cvScalar(255,0,50);	
-			cvLine(resImage, cvPoint(res_features[i].center.x+7, res_features[i].center.y), cvPoint(res_features[i].center.x-7, res_features[i].center.y),pointColor,2); 
-			cvLine(resImage, cvPoint(res_features[i].center.x, res_features[i].center.y+7), cvPoint(res_features[i].center.x, res_features[i].center.y-7),pointColor,2); 
+			CvScalar pointColor = res_features[i].class_id == 0 ? cvScalar(0,255,50) : cvScalar(255,0,50);	
+			cvLine(resImage, cvPoint(res_features[i].pt.x+7, res_features[i].pt.y), cvPoint(res_features[i].pt.x-7, res_features[i].pt.y),pointColor,2); 
+			cvLine(resImage, cvPoint(res_features[i].pt.x, res_features[i].pt.y+7), cvPoint(res_features[i].pt.x, res_features[i].pt.y-7),pointColor,2); 
 		}
 }
 

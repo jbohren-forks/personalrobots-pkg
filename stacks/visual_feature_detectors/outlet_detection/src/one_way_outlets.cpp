@@ -54,8 +54,8 @@ void detect_outlets_2x1_one_way(IplImage* test_image, const CvOneWayDescriptorBa
     int patch_height = descriptors->GetPatchSize().height/2; 
     for(int i = 0; i < (int)features.size(); i++)
     {
-        CvPoint center = features[i].center;
-        float scale = features[i].scale;
+        CvPoint center = features[i].pt;
+        float scale = features[i].size;
         
         CvRect roi = cvRect(center.x - patch_width/2, center.y - patch_height/2, patch_width, patch_height);
         cvSetImageROI(test_image, roi);
@@ -106,8 +106,8 @@ void detect_outlets_2x1_one_way(IplImage* test_image, const CvOneWayDescriptorBa
         if(part_idx >= 0)
         {
             feature_t candidate = features[i];
-            if(part_idx < 4) candidate.part_id = 0;
-                else candidate.part_id = 1;
+            if(part_idx < 4) candidate.class_id = 0;
+                else candidate.class_id = 1;
             hole_candidates.push_back(candidate);                    
         }
         
@@ -170,7 +170,7 @@ void detect_outlets_2x1_one_way(IplImage* test_image, const CvOneWayDescriptorBa
     for(int k = 0; k < (int)clusters.size(); k++)
     {
         vector<feature_t> clustered_features;
-        SelectNeighborFeatures(hole_candidates, clusters[k].center, clustered_features, dist*4);
+        SelectNeighborFeatures(hole_candidates, clusters[k].pt, clustered_features, dist*4);
         
         DetectObjectConstellation(descriptors->GetTrainFeatures(), clustered_features, homography, indices);
         
@@ -212,7 +212,7 @@ void detect_outlets_2x1_one_way(IplImage* test_image, const CvOneWayDescriptorBa
     CvScalar color_parts[] = {CV_RGB(255, 255, 0), CV_RGB(0, 255, 255)};
     for(int i = 0; i < (int)hole_candidates.size(); i++)
     {
-        cvCircle(image2, hole_candidates[i].center, hole_candidates[i].scale, color_parts[hole_candidates[i].part_id], 2);
+        cvCircle(image2, hole_candidates[i].pt, hole_candidates[i].size, color_parts[hole_candidates[i].class_id], 2);
     }
     
     CvScalar color[] = {CV_RGB(255, 255, 0), CV_RGB(255, 255, 0), CV_RGB(128, 128, 0), 
@@ -220,18 +220,18 @@ void detect_outlets_2x1_one_way(IplImage* test_image, const CvOneWayDescriptorBa
     for(int i = 0; i < (int)holes.size(); i++)
     {
         //CvScalar color = i < 4 ? CV_RGB(255, 255, 0) : CV_RGB(0, 255, 255);
-        cvCircle(image1, holes[i].center, holes[i].scale, color[i], 2);
+        cvCircle(image1, holes[i].pt, holes[i].size, color[i], 2);
     }
     
     if(holes.size() >= 6)
     {
-        drawLine(image1, holes[0].center, holes[1].center, CV_RGB(255, 0, 0), 3);
-        drawLine(image1, holes[1].center, holes[4].center, CV_RGB(255, 0, 0), 3);
-        drawLine(image1, holes[4].center, holes[0].center, CV_RGB(255, 0, 0), 3);
+        drawLine(image1, holes[0].pt, holes[1].pt, CV_RGB(255, 0, 0), 3);
+        drawLine(image1, holes[1].pt, holes[4].pt, CV_RGB(255, 0, 0), 3);
+        drawLine(image1, holes[4].pt, holes[0].pt, CV_RGB(255, 0, 0), 3);
         
-        drawLine(image1, holes[2].center, holes[3].center, CV_RGB(255, 0, 0), 3);
-        drawLine(image1, holes[3].center, holes[5].center, CV_RGB(255, 0, 0), 3);
-        drawLine(image1, holes[5].center, holes[2].center, CV_RGB(255, 0, 0), 3);
+        drawLine(image1, holes[2].pt, holes[3].pt, CV_RGB(255, 0, 0), 3);
+        drawLine(image1, holes[3].pt, holes[5].pt, CV_RGB(255, 0, 0), 3);
+        drawLine(image1, holes[5].pt, holes[2].pt, CV_RGB(255, 0, 0), 3);
     }
     
 #if defined(_VERBOSE)
@@ -280,8 +280,8 @@ void detect_outlets_one_way(IplImage* test_image, const outlet_template_t& outle
     int patch_height = descriptors->GetPatchSize().height/2; 
     for(int i = 0; i < (int)features.size(); i++)
     {
-        CvPoint center = features[i].center;
-        float scale = features[i].scale;
+        CvPoint center = features[i].pt;
+        float scale = features[i].size;
         
         CvRect roi = cvRect(center.x - patch_width/2, center.y - patch_height/2, patch_width, patch_height);
         cvSetImageROI(test_image, roi);
@@ -334,8 +334,8 @@ void detect_outlets_one_way(IplImage* test_image, const outlet_template_t& outle
         if(part_idx >= 0)
         {
             feature_t candidate = features[i];
-            if(part_idx < min_ground_idx) candidate.part_id = 0;
-            else candidate.part_id = 1;
+            if(part_idx < min_ground_idx) candidate.class_id = 0;
+            else candidate.class_id = 1;
             hole_candidates.push_back(candidate);                    
         }
         
@@ -493,7 +493,7 @@ void detect_outlets_one_way(IplImage* test_image, const outlet_template_t& outle
     CvScalar color_parts[] = {CV_RGB(255, 255, 0), CV_RGB(0, 255, 255)};
     for(int i = 0; i < (int)hole_candidates.size(); i++)
     {
-        cvCircle(image2, hole_candidates[i].center, hole_candidates[i].scale, color_parts[hole_candidates[i].part_id], 2);
+        cvCircle(image2, hole_candidates[i].pt, hole_candidates[i].size, color_parts[hole_candidates[i].class_id], 2);
     }
     
     
@@ -520,6 +520,6 @@ void ScaleFeatures(const vector<feature_t>& src, vector<feature_t>& dst, float s
     dst.resize(src.size());
     for(size_t i = 0; i < src.size(); i++)
     {
-        dst[i] = feature_t(cvPoint(src[i].center.x*scale, src[i].center.y*scale), src[i].scale, src[i].part_id);
+        dst[i] = feature_t(cvPoint(src[i].pt.x*scale, src[i].pt.y*scale), src[i].size, src[i].class_id);
     }
 }

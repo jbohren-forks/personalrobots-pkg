@@ -300,7 +300,7 @@ int detect_outlet_tuple_2x1(IplImage* src, CvMat* intrinsic_matrix, CvMat* disto
         CvPoint2D32f centers[6];
         for(int i = 0; i < 6; i++)
         {
-            centers[i] = cvPoint2D32f(holes[i].center.x*2, holes[i].center.y*2);
+            centers[i] = cvPoint2D32f(holes[i].pt.x*2, holes[i].pt.y*2);
         }
         
         CvPoint2D32f object_points[6];
@@ -328,13 +328,13 @@ int detect_outlet_tuple_2x1(IplImage* src, CvMat* intrinsic_matrix, CvMat* disto
 void features2outlets_2x1(const vector<feature_t>& features, vector<outlet_t>& outlets)
 {
     outlet_t outlet;
-    outlet.hole1 = features[0].center*2;
-    outlet.hole2 = features[1].center*2;
-    outlet.ground_hole = features[4].center*2;
+    outlet.hole1 = features[0].pt*2;
+    outlet.hole2 = features[1].pt*2;
+    outlet.ground_hole = features[4].pt*2;
     outlets.push_back(outlet);
     
-    outlet.hole1 = features[2].center*2;
-    outlet.hole2 = features[3].center*2;
-    outlet.ground_hole = features[5].center*2;
+    outlet.hole1 = features[2].pt*2;
+    outlet.hole2 = features[3].pt*2;
+    outlet.ground_hole = features[5].pt*2;
     outlets.push_back(outlet); 
 }

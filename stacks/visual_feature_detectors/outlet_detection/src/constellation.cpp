@@ -69,12 +69,12 @@ int validate_parts(const vector<feature_t>& train, const vector<feature_t>& test
     {
         if(indices[i] == -1) continue;
         
-        if(test[i].part_id != train[indices[i]].part_id)
+        if(test[i].class_id != train[indices[i]].class_id)
         {
             return -1;
         }
         
-        part_count[train[indices[i]].part_id]++;
+        part_count[train[indices[i]].class_id]++;
     }
     
     if(part_count[0] < min_part_count[0] || part_count[1] < min_part_count[1] || 
@@ -124,7 +124,7 @@ int validate_order(const vector<feature_t>& train, const vector<feature_t>& test
     for(int i = 0; i < (int)indices.size(); i++)
     {
         if(indices[i] == -1) continue;
-        centers[indices[i]] = test[i].center;
+        centers[indices[i]] = test[i].pt;
         parts_index[indices[i]] = 1;
     }
 
@@ -164,10 +164,10 @@ float calc_set_std(const vector<feature_t>& features, const vector<int>& indices
         {
             if(indices[i] < 0) continue;
             
-            sum.x += features[i].center.x;
-            sum.y += features[i].center.y;
-            sum2.x += features[i].center.x*features[i].center.x;
-            sum2.y += features[i].center.y*features[i].center.y;
+            sum.x += features[i].pt.x;
+            sum.y += features[i].pt.y;
+            sum2.x += features[i].pt.x*features[i].pt.x;
+            sum2.y += features[i].pt.y*features[i].pt.y;
             
             count++;
         }
@@ -176,10 +176,10 @@ float calc_set_std(const vector<feature_t>& features, const vector<int>& indices
     {
         for(int i = 0; i < (int)features.size(); i++)
         {
-            sum.x += features[i].center.x;
-            sum.y += features[i].center.y;
-            sum2.x += features[i].center.x*features[i].center.x;
-            sum2.y += features[i].center.y*features[i].center.y;
+            sum.x += features[i].pt.x;
+            sum.y += features[i].pt.y;
+            sum2.x += features[i].pt.x*features[i].pt.x;
+            sum2.y += features[i].pt.y*features[i].pt.y;
         }
         
         count = features.size();
@@ -216,7 +216,7 @@ void count_parts(const vector<feature_t>& features, int* min_part_count, int par
 
     for(int i = 0; i < (int)features.size(); i++)
     {
-        part_count[features[i].part_id]++;
+        part_count[features[i].class_id]++;
     }
     
     for(int i = 0; i < parts_number; i++)
@@ -247,9 +247,6 @@ void DetectObjectConstellation(const vector<feature_t>& train, const vector<feat
     
     CvMat* _train_points = cvCreateMat(parts_number, 2, CV_32FC1);
     CvMat* _test_points = cvCreateMat(test_feature_count, 2, CV_32FC1);
-    CvMat* _test_points2 = cvCreateMat(test_feature_count, 2, CV_32FC1); 
-    
-    CvMat* hack = cvCreateMatHeader(1, 1, CV_32FC2); // ugly hack, a workaround for getting a correct matrix type out of OpenCV guts
     
     vector<int> min_indices = indices;
     float min_error = 1e10;
@@ -326,8 +323,8 @@ void DetectObjectConstellation(const vector<feature_t>& train, const vector<feat
         {
             if(indices[i] == -1) continue;
             
-            p1.push_back(train[indices[i]].center);
-            p2.push_back(input[i].center);
+            p1.push_back(train[indices[i]].pt);
+            p2.push_back(input[i].pt);
         }
         
         FindAffineTransform(p1, p2, homography);
@@ -360,7 +357,7 @@ void features2points(const vector<feature_t>& features, vector<CvPoint2D32f>& po
 {
     for(int i = 0; i < (int)features.size(); i++)
     {
-        points.push_back(cvPoint2D32f(features[i].center.x, features[i].center.y));
+        points.push_back(cvPoint2D32f(features[i].pt.x, features[i].pt.y));
     }
 }
 
@@ -369,7 +366,7 @@ void points2features(const vector<CvPoint2D32f>& points, vector<feature_t>& feat
     features.resize(points.size());
     for(int i = 0; i < (int)points.size(); i++)
     {
-        features[i].center = cvPoint(points[i].x, points[i].y);
+        features[i].pt = cvPoint(points[i].x, points[i].y);
     }
 }
 
@@ -424,7 +421,7 @@ void FilterOutletFeatures(const vector<feature_t>& src_features, vector<feature_
     // find all ground hole candidates
     for(int i = 0; i < (int)src_features.size(); i++)
     {
-        if(src_features[i].part_id == 1)
+        if(src_features[i].class_id == 1)
         {
             ground_idx.push_back(i);
         }
@@ -437,7 +434,7 @@ void FilterOutletFeatures(const vector<feature_t>& src_features, vector<feature_
         int flag = 0;
         for(int j = 0; j < (int)ground_idx_filtered.size(); j++)
         {
-            if(length(src_features[ground_idx[i]].center - src_features[ground_idx_filtered[j]].center) < max_dist)
+            if(length(src_features[ground_idx[i]].pt - src_features[ground_idx_filtered[j]].pt) < max_dist)
             {
                 flag = 1;
                 break;
@@ -460,7 +457,7 @@ void FilterOutletFeatures(const vector<feature_t>& src_features, vector<feature_
     {
         for(int j = 0; j < (int)src_features.size(); j++)
         {
-            if(length(src_features[j].center - src_features[ground_idx[i]].center) < max_dist)
+            if(length(src_features[j].pt - src_features[ground_idx[i]].pt) < max_dist)
             {
                 indices[j] = 1;
             }
@@ -483,7 +480,7 @@ void ClusterOutletFeatures(const vector<feature_t>& src_features, vector<feature
     // find all ground hole candidates
     for(int i = 0; i < (int)src_features.size(); i++)
     {
-        if(src_features[i].part_id == 1)
+        if(src_features[i].class_id == 1)
         {
             ground_idx.push_back(i);
         }
@@ -496,7 +493,7 @@ void ClusterOutletFeatures(const vector<feature_t>& src_features, vector<feature
         int flag = 0;
         for(int j = 0; j < (int)ground_idx_filtered.size(); j++)
         {
-            if(length(src_features[ground_idx[i]].center - src_features[ground_idx_filtered[j]].center) < max_dist)
+            if(length(src_features[ground_idx[i]].pt - src_features[ground_idx_filtered[j]].pt) < max_dist)
             {
                 flag = 1;
                 break;
@@ -523,7 +520,7 @@ void SelectNeighborFeatures(const vector<feature_t>& src_features, CvPoint cente
 {
     for(int i = 0; i < (int)src_features.size(); i++)
     {
-        if(length(src_features[i].center - center) < max_dist)
+        if(length(src_features[i].pt - center) < max_dist)
         {
             dst_features.push_back(src_features[i]);
         }
