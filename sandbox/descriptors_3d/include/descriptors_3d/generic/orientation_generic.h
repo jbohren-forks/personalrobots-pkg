@@ -90,9 +90,9 @@ class OrientationGeneric: public Descriptor3D
      * \see Descriptor3D::compute
      */
     // --------------------------------------------------------------
-    virtual void doComputation(const robot_msgs::PointCloud& data,
+    virtual void doComputation(const sensor_msgs::PointCloud& data,
                                cloud_kdtree::KdTree& data_kdtree,
-                               const cv::Vector<const robot_msgs::Point32*>& interest_pts,
+                               const cv::Vector<const geometry_msgs::Point32*>& interest_pts,
                                cv::Vector<cv::Vector<float> >& results);
 
     // --------------------------------------------------------------
@@ -106,7 +106,7 @@ class OrientationGeneric: public Descriptor3D
      * \see Descriptor3D::compute
      */
     // --------------------------------------------------------------
-    virtual void doComputation(const robot_msgs::PointCloud& data,
+    virtual void doComputation(const sensor_msgs::PointCloud& data,
                                cloud_kdtree::KdTree& data_kdtree,
                                const cv::Vector<const std::vector<int>*>& interest_region_indices,
                                cv::Vector<cv::Vector<float> >& results);

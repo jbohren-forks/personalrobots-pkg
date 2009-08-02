@@ -73,9 +73,9 @@ SpinImageCustom::SpinImageCustom(const double ref_x,
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-int SpinImageCustom::precompute(const robot_msgs::PointCloud& data,
+int SpinImageCustom::precompute(const sensor_msgs::PointCloud& data,
                                 cloud_kdtree::KdTree& data_kdtree,
-                                const cv::Vector<const robot_msgs::Point32*>& interest_pts)
+                                const cv::Vector<const geometry_msgs::Point32*>& interest_pts)
 {
   // Point spin_axis_ to duplicate copies of the custom spin axis
   size_t nbr_interest_pts = interest_pts.size();
@@ -101,7 +101,7 @@ int SpinImageCustom::precompute(const robot_msgs::PointCloud& data,
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-int SpinImageCustom::precompute(const robot_msgs::PointCloud& data,
+int SpinImageCustom::precompute(const sensor_msgs::PointCloud& data,
                                 cloud_kdtree::KdTree& data_kdtree,
                                 const cv::Vector<const std::vector<int>*>& interest_region_indices)
 {
@@ -114,7 +114,7 @@ int SpinImageCustom::precompute(const robot_msgs::PointCloud& data,
   spin_image_centers_.resize(nbr_interest_regions);
   for (size_t i = 0 ; i < nbr_interest_regions ; i++)
   {
-    robot_msgs::Point32 region_centroid;
+    geometry_msgs::Point32 region_centroid;
     // Will be handled in compute() if region indices are NULL
     if (interest_region_indices[i] != NULL && (*spin_axes_)[i] != NULL)
     {

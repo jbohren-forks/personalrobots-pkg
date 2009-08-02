@@ -52,9 +52,9 @@ OrientationGeneric::~OrientationGeneric()
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-void OrientationGeneric::doComputation(const robot_msgs::PointCloud& data,
+void OrientationGeneric::doComputation(const sensor_msgs::PointCloud& data,
                                        cloud_kdtree::KdTree& data_kdtree,
-                                       const cv::Vector<const robot_msgs::Point32*>& interest_pts,
+                                       const cv::Vector<const geometry_msgs::Point32*>& interest_pts,
                                        cv::Vector<cv::Vector<float> >& results)
 {
   // ----------------------------------------
@@ -70,7 +70,7 @@ void OrientationGeneric::doComputation(const robot_msgs::PointCloud& data,
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-void OrientationGeneric::doComputation(const robot_msgs::PointCloud& data,
+void OrientationGeneric::doComputation(const sensor_msgs::PointCloud& data,
                                        cloud_kdtree::KdTree& data_kdtree,
                                        const cv::Vector<const std::vector<int>*>& interest_region_indices,
                                        cv::Vector<cv::Vector<float> >& results)

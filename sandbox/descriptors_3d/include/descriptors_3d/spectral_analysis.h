@@ -149,7 +149,7 @@ class SpectralAnalysis
                                const cv::Vector<const std::vector<int>*>& interest_region_indices);
 
   private:
-    void computeSpectralInfo(const robot_msgs::PointCloud& data,
+    void computeSpectralInfo(const sensor_msgs::PointCloud& data,
                              const std::vector<int>& curr_region_indices,
                              const size_t idx);
     double support_radius_;

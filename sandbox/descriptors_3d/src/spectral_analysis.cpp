@@ -79,9 +79,9 @@ void SpectralAnalysis::clearSpectral()
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-int SpectralAnalysis::analyzeInterestPoints(const robot_msgs::PointCloud& data,
+int SpectralAnalysis::analyzeInterestPoints(const sensor_msgs::PointCloud& data,
                                             cloud_kdtree::KdTree& data_kdtree,
-                                            const cv::Vector<const robot_msgs::Point32*>& interest_pts)
+                                            const cv::Vector<const geometry_msgs::Point32*>& interest_pts)
 {
   if (spectral_computed_)
   {

@@ -56,9 +56,9 @@ NeighborhoodFeature::~NeighborhoodFeature()
 /* See function definition.
  * Invariant: neighborhood_radius_ is positive */
 // --------------------------------------------------------------
-void NeighborhoodFeature::doComputation(const robot_msgs::PointCloud& data,
+void NeighborhoodFeature::doComputation(const sensor_msgs::PointCloud& data,
                                         cloud_kdtree::KdTree& data_kdtree,
-                                        const cv::Vector<const robot_msgs::Point32*>& interest_pts,
+                                        const cv::Vector<const geometry_msgs::Point32*>& interest_pts,
                                         cv::Vector<cv::Vector<float> >& results)
 {
   // ----------------------------------------
@@ -75,7 +75,7 @@ void NeighborhoodFeature::doComputation(const robot_msgs::PointCloud& data,
   for (size_t i = 0 ; i < nbr_interest_pts ; i++)
   {
     // Retrieve interest point
-    const robot_msgs::Point32* curr_interest_pt = interest_pts[i];
+    const geometry_msgs::Point32* curr_interest_pt = interest_pts[i];
     if (curr_interest_pt == NULL)
     {
       ROS_WARN("BoundingBox::compute() passed NULL interest point");
@@ -95,7 +95,7 @@ void NeighborhoodFeature::doComputation(const robot_msgs::PointCloud& data,
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-void NeighborhoodFeature::doComputation(const robot_msgs::PointCloud& data,
+void NeighborhoodFeature::doComputation(const sensor_msgs::PointCloud& data,
                                         cloud_kdtree::KdTree& data_kdtree,
                                         const cv::Vector<const vector<int>*>& interest_region_indices,
                                         cv::Vector<cv::Vector<float> >& results)
@@ -125,7 +125,7 @@ void NeighborhoodFeature::doComputation(const robot_msgs::PointCloud& data,
     if (neighborhood_radius_ > 1e-6)
     {
       // Compute centroid of interest region
-      robot_msgs::Point32 region_centroid;
+      geometry_msgs::Point32 region_centroid;
       cloud_geometry::nearest::computeCentroid(data, *curr_interest_region, region_centroid);
 
       vector<float> neighbor_distances; // unused

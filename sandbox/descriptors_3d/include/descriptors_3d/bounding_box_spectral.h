@@ -91,11 +91,11 @@ class BoundingBoxSpectral: public NeighborhoodFeature
     BoundingBoxSpectral(double bbox_radius, SpectralAnalysis& spectral_information);
 
   protected:
-    virtual int precompute(const robot_msgs::PointCloud& data,
+    virtual int precompute(const sensor_msgs::PointCloud& data,
                            cloud_kdtree::KdTree& data_kdtree,
-                           const cv::Vector<const robot_msgs::Point32*>& interest_pts);
+                           const cv::Vector<const geometry_msgs::Point32*>& interest_pts);
 
-    virtual int precompute(const robot_msgs::PointCloud& data,
+    virtual int precompute(const sensor_msgs::PointCloud& data,
                            cloud_kdtree::KdTree& data_kdtree,
                            const cv::Vector<const std::vector<int>*>& interest_region_indices);
 
@@ -108,7 +108,7 @@ class BoundingBoxSpectral: public NeighborhoodFeature
      * \param result The vector to hold the computed bounding box dimensions
      */
     // --------------------------------------------------------------
-    virtual void computeNeighborhoodFeature(const robot_msgs::PointCloud& data,
+    virtual void computeNeighborhoodFeature(const sensor_msgs::PointCloud& data,
                                             const std::vector<int>& neighbor_indices,
                                             const unsigned int interest_sample_idx,
                                             cv::Vector<float>& result) const;

@@ -57,9 +57,9 @@ OrientationTangent::OrientationTangent(const double ref_x,
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-int OrientationTangent::precompute(const robot_msgs::PointCloud& data,
+int OrientationTangent::precompute(const sensor_msgs::PointCloud& data,
                                    cloud_kdtree::KdTree& data_kdtree,
-                                   const cv::Vector<const robot_msgs::Point32*>& interest_pts)
+                                   const cv::Vector<const geometry_msgs::Point32*>& interest_pts)
 {
   // Compute spectral information if not already done
   if (spectral_information_->isSpectralComputed() == false)
@@ -87,7 +87,7 @@ int OrientationTangent::precompute(const robot_msgs::PointCloud& data,
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-int OrientationTangent::precompute(const robot_msgs::PointCloud& data,
+int OrientationTangent::precompute(const sensor_msgs::PointCloud& data,
                                    cloud_kdtree::KdTree& data_kdtree,
                                    const cv::Vector<const std::vector<int>*>& interest_region_indices)
 {

@@ -56,9 +56,9 @@ BoundingBoxSpectral::BoundingBoxSpectral(double bbox_radius, SpectralAnalysis& s
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-int BoundingBoxSpectral::precompute(const robot_msgs::PointCloud& data,
+int BoundingBoxSpectral::precompute(const sensor_msgs::PointCloud& data,
                                     cloud_kdtree::KdTree& data_kdtree,
-                                    const cv::Vector<const robot_msgs::Point32*>& interest_pts)
+                                    const cv::Vector<const geometry_msgs::Point32*>& interest_pts)
 {
   // Compute spectral information if not already done
   if (spectral_information_->isSpectralComputed() == false)
@@ -90,7 +90,7 @@ int BoundingBoxSpectral::precompute(const robot_msgs::PointCloud& data,
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-int BoundingBoxSpectral::precompute(const robot_msgs::PointCloud& data,
+int BoundingBoxSpectral::precompute(const sensor_msgs::PointCloud& data,
                                     cloud_kdtree::KdTree& data_kdtree,
                                     const cv::Vector<const std::vector<int>*>& interest_region_indices)
 {
@@ -124,7 +124,7 @@ int BoundingBoxSpectral::precompute(const robot_msgs::PointCloud& data,
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-void BoundingBoxSpectral::computeNeighborhoodFeature(const robot_msgs::PointCloud& data,
+void BoundingBoxSpectral::computeNeighborhoodFeature(const sensor_msgs::PointCloud& data,
                                                      const vector<int>& neighbor_indices,
                                                      const unsigned int interest_sample_idx,
                                                      cv::Vector<float>& result) const

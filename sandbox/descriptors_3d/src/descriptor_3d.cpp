@@ -55,9 +55,9 @@ Descriptor3D::~Descriptor3D()
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-void Descriptor3D::compute(const robot_msgs::PointCloud& data,
+void Descriptor3D::compute(const sensor_msgs::PointCloud& data,
                            cloud_kdtree::KdTree& data_kdtree,
-                           const cv::Vector<const robot_msgs::Point32*>& interest_pts,
+                           const cv::Vector<const geometry_msgs::Point32*>& interest_pts,
                            cv::Vector<cv::Vector<float> >& results)
 {
   // ----------------------------------------
@@ -83,7 +83,7 @@ void Descriptor3D::compute(const robot_msgs::PointCloud& data,
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-void Descriptor3D::compute(const robot_msgs::PointCloud& data,
+void Descriptor3D::compute(const sensor_msgs::PointCloud& data,
                            cloud_kdtree::KdTree& data_kdtree,
                            const cv::Vector<const vector<int>*>& interest_region_indices,
                            cv::Vector<cv::Vector<float> >& results)

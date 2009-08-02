@@ -69,9 +69,9 @@ SpinImageTangent::SpinImageTangent(const double row_res,
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-int SpinImageTangent::precompute(const robot_msgs::PointCloud& data,
+int SpinImageTangent::precompute(const sensor_msgs::PointCloud& data,
                                  cloud_kdtree::KdTree& data_kdtree,
-                                 const cv::Vector<const robot_msgs::Point32*>& interest_pts)
+                                 const cv::Vector<const geometry_msgs::Point32*>& interest_pts)
 {
   // Compute spectral information if not already done
   if (spectral_information_->isSpectralComputed() == false)
@@ -113,7 +113,7 @@ int SpinImageTangent::precompute(const robot_msgs::PointCloud& data,
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-int SpinImageTangent::precompute(const robot_msgs::PointCloud& data,
+int SpinImageTangent::precompute(const sensor_msgs::PointCloud& data,
                                  cloud_kdtree::KdTree& data_kdtree,
                                  const cv::Vector<const std::vector<int>*>& interest_region_indices)
 {
@@ -142,7 +142,7 @@ int SpinImageTangent::precompute(const robot_msgs::PointCloud& data,
   spin_image_centers_.resize(nbr_interest_regions);
   for (size_t i = 0 ; i < nbr_interest_regions ; i++)
   {
-    robot_msgs::Point32 region_centroid;
+    geometry_msgs::Point32 region_centroid;
     // Will be handled in compute() if region indices are NULL
     if (interest_region_indices[i] != NULL && (*spin_axes_)[i] != NULL)
     {

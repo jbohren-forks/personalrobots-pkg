@@ -51,9 +51,9 @@ ShapeSpectral::ShapeSpectral(SpectralAnalysis& spectral_information)
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-int ShapeSpectral::precompute(const robot_msgs::PointCloud& data,
+int ShapeSpectral::precompute(const sensor_msgs::PointCloud& data,
                               cloud_kdtree::KdTree& data_kdtree,
-                              const cv::Vector<const robot_msgs::Point32*>& interest_pts)
+                              const cv::Vector<const geometry_msgs::Point32*>& interest_pts)
 {
   // Compute spectral information if not already done
   if (spectral_information_->isSpectralComputed() == false)
@@ -81,7 +81,7 @@ int ShapeSpectral::precompute(const robot_msgs::PointCloud& data,
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-int ShapeSpectral::precompute(const robot_msgs::PointCloud& data,
+int ShapeSpectral::precompute(const sensor_msgs::PointCloud& data,
                               cloud_kdtree::KdTree& data_kdtree,
                               const cv::Vector<const std::vector<int>*>& interest_region_indices)
 {
@@ -111,9 +111,9 @@ int ShapeSpectral::precompute(const robot_msgs::PointCloud& data,
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-void ShapeSpectral::doComputation(const robot_msgs::PointCloud& data,
+void ShapeSpectral::doComputation(const sensor_msgs::PointCloud& data,
                                   cloud_kdtree::KdTree& data_kdtree,
-                                  const cv::Vector<const robot_msgs::Point32*>& interest_pts,
+                                  const cv::Vector<const geometry_msgs::Point32*>& interest_pts,
                                   cv::Vector<cv::Vector<float> >& results)
 {
   // ----------------------------------------
@@ -129,7 +129,7 @@ void ShapeSpectral::doComputation(const robot_msgs::PointCloud& data,
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-void ShapeSpectral::doComputation(const robot_msgs::PointCloud& data,
+void ShapeSpectral::doComputation(const sensor_msgs::PointCloud& data,
                                   cloud_kdtree::KdTree& data_kdtree,
                                   const cv::Vector<const std::vector<int>*>& interest_region_indices,
                                   cv::Vector<cv::Vector<float> >& results)

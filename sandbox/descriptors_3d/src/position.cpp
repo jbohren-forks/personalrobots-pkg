@@ -48,9 +48,9 @@ Position::Position()
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-int Position::precompute(const robot_msgs::PointCloud& data,
+int Position::precompute(const sensor_msgs::PointCloud& data,
                          cloud_kdtree::KdTree& data_kdtree,
-                         const cv::Vector<const robot_msgs::Point32*>& interest_pts)
+                         const cv::Vector<const geometry_msgs::Point32*>& interest_pts)
 {
   return 0;
 }
@@ -58,7 +58,7 @@ int Position::precompute(const robot_msgs::PointCloud& data,
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-int Position::precompute(const robot_msgs::PointCloud& data,
+int Position::precompute(const sensor_msgs::PointCloud& data,
                          cloud_kdtree::KdTree& data_kdtree,
                          const cv::Vector<const std::vector<int>*>& interest_region_indices)
 {
@@ -68,9 +68,9 @@ int Position::precompute(const robot_msgs::PointCloud& data,
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-void Position::doComputation(const robot_msgs::PointCloud& data,
+void Position::doComputation(const sensor_msgs::PointCloud& data,
                              cloud_kdtree::KdTree& data_kdtree,
-                             const cv::Vector<const robot_msgs::Point32*>& interest_pts,
+                             const cv::Vector<const geometry_msgs::Point32*>& interest_pts,
                              cv::Vector<cv::Vector<float> >& results)
 {
   size_t nbr_interest_pts = interest_pts.size();
@@ -89,7 +89,7 @@ void Position::doComputation(const sensor_msgs::PointCloud& data,
                              const cv::Vector<const vector<int>*>& interest_region_indices,
                              cv::Vector<cv::Vector<float> >& results)
 {
-  robot_msgs::Point32 region_centroid;
+  geometry_msgs::Point32 region_centroid;
   size_t nbr_interest_regions = interest_region_indices.size();
   for (size_t i = 0 ; i < nbr_interest_regions ; i++)
   {

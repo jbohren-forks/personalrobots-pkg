@@ -42,7 +42,7 @@
 #include <opencv/cxcore.h>
 #include <opencv/cvaux.hpp>
 
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 
 #include <point_cloud_mapping/geometry/nearest.h>
 #include <point_cloud_mapping/kdtree/kdtree.h>
@@ -108,9 +108,9 @@ class NeighborhoodFeature: public Descriptor3D
      * \see Descriptor3D::compute
      */
     // --------------------------------------------------------------
-    virtual void doComputation(const robot_msgs::PointCloud& data,
+    virtual void doComputation(const sensor_msgs::PointCloud& data,
                                cloud_kdtree::KdTree& data_kdtree,
-                               const cv::Vector<const robot_msgs::Point32*>& interest_pts,
+                               const cv::Vector<const geometry_msgs::Point32*>& interest_pts,
                                cv::Vector<cv::Vector<float> >& results);
 
     // --------------------------------------------------------------
@@ -124,7 +124,7 @@ class NeighborhoodFeature: public Descriptor3D
      * \see Descriptor3D::compute
      */
     // --------------------------------------------------------------
-    virtual void doComputation(const robot_msgs::PointCloud& data,
+    virtual void doComputation(const sensor_msgs::PointCloud& data,
                                cloud_kdtree::KdTree& data_kdtree,
                                const cv::Vector<const std::vector<int>*>& interest_region_indices,
                                cv::Vector<cv::Vector<float> >& results);
@@ -138,7 +138,7 @@ class NeighborhoodFeature: public Descriptor3D
      * \param result The vector to hold the computed bounding box dimensions
      */
     // --------------------------------------------------------------
-    virtual void computeNeighborhoodFeature(const robot_msgs::PointCloud& data,
+    virtual void computeNeighborhoodFeature(const sensor_msgs::PointCloud& data,
                                             const std::vector<int>& neighbor_indices,
                                             const unsigned int interest_sample_idx,
                                             cv::Vector<float>& result) const = 0;

@@ -54,7 +54,7 @@ SpinImageGeneric::~SpinImageGeneric()
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-void SpinImageGeneric::computeNeighborhoodFeature(const robot_msgs::PointCloud& data,
+void SpinImageGeneric::computeNeighborhoodFeature(const sensor_msgs::PointCloud& data,
                                                   const std::vector<int>& neighbor_indices,
                                                   const unsigned int interest_sample_idx,
                                                   cv::Vector<float>& result) const
