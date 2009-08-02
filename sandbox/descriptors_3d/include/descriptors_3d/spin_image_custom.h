@@ -45,15 +45,10 @@
 #include <descriptors_3d/generic/spin_image_generic.h>
 
 // --------------------------------------------------------------
-//* Orientation
 /*!
- * \brief An Orientation descriptor looks at the angle of an interest
- *        point/region's neighborhood principle directions with respect
- *        to a given reference direction.
+ * \file spin_image_custom.h
  *
- * The principle directions are the tangent (biggest eigenvector)
- * and normal (smallest eigenvector) vectors from the extracted spectral
- * information.
+ * \brief A spin image descriptor with custom spinning axis
  */
 // --------------------------------------------------------------
 class SpinImageCustom: public SpinImageGeneric
@@ -61,17 +56,32 @@ class SpinImageCustom: public SpinImageGeneric
   public:
     // --------------------------------------------------------------
     /*!
-     * \brief Instantiates the Orientation descriptor
+     * \brief A SpinImageCustom descriptor computes a spin image spinning
+     *        around a custom axis.
      *
-     * The computed feature is the cosine of the angle between the extracted
-     * tangent/normal vector against the specified reference directions.
+     * The custom axis is the "beta" axis as described in Johnson & Hebert 1999.
      *
-     * \warning Since the sign of the extracted vectors have no meaning, the
-     *          computed feature is always between 0 and 1
+     * Example spin image definition with 3 rows and 4 cols: \n
+     *   beta                 \n
+     *    ^                   \n
+     *    |_ _ _ _            \n
+     *    |_|_|_|_|           \n
+     *    x_|_|_|_|           \n
+     *    |_|_|_|_|           \n
+     *    -----------> alpha  \n
+     * (x = center point of spin image, beta = [ref_x, ref_y, ref_z])
      *
-     * If computing using both tangent and normal vectors, the feature vector
-     * format is: [a b] where a is the projection of the tangent vector and b
-     * is the projection of the normal vector
+     * \param ref_x The x dimension of the vector
+     * \param ref_y The y dimension of the vector
+     * \param ref_z The z dimension of the vector
+     * \param row_res The cell resolution along the beta axis
+     * \param col_res The cell resolution along the alpha axis
+     * \param nbr_rows The number of cells along the beta axis
+     * \param nbr_cols The number of cells along the alpha axis
+     *
+     * \warning nbr_rows must be odd
+     *
+     * \return 0 on success, otherwise negative value on error
      */
     // --------------------------------------------------------------
     SpinImageCustom(const double ref_x,

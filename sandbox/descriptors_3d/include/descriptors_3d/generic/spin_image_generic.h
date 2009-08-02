@@ -46,15 +46,13 @@
 #include <descriptors_3d/generic/neighborhood_feature.h>
 
 // --------------------------------------------------------------
-//* Orientation
 /*!
- * \brief An Orientation descriptor looks at the angle of an interest
- *        point/region's neighborhood principle directions with respect
- *        to a given reference direction.
+ * \file spin_image_generic.h
  *
- * The principle directions are the tangent (biggest eigenvector)
- * and normal (smallest eigenvector) vectors from the extracted spectral
- * information.
+ * \brief A SpinImageGeneric descriptor is the base abstract class for
+ *        computing the feature described in: \n
+ *        Johnson and Hebert, "Using Spin-Images for Efficient Object
+ *        Recognition in Cluttered 3-D Scenes", PAMI 1999.
  */
 // --------------------------------------------------------------
 class SpinImageGeneric: public NeighborhoodFeature
@@ -62,17 +60,10 @@ class SpinImageGeneric: public NeighborhoodFeature
   public:
     // --------------------------------------------------------------
     /*!
-     * \brief Instantiates the Orientation descriptor
+     * \brief SpinImageGeneric is the base class for descriptors that
+     *        compute spin images.
      *
-     * The computed feature is the cosine of the angle between the extracted
-     * tangent/normal vector against the specified reference directions.
-     *
-     * \warning Since the sign of the extracted vectors have no meaning, the
-     *          computed feature is always between 0 and 1
-     *
-     * If computing using both tangent and normal vectors, the feature vector
-     * format is: [a b] where a is the projection of the tangent vector and b
-     * is the projection of the normal vector
+     * See the inheriting class' description
      */
     // --------------------------------------------------------------
     SpinImageGeneric();
@@ -82,11 +73,13 @@ class SpinImageGeneric: public NeighborhoodFeature
   protected:
     // --------------------------------------------------------------
     /*!
-     * \brief Computes the bounding box information of the given neighborhood
+     * \brief Computes the spin image descriptor for the given neighborhood of
+     *        points
      *
      * \param data The overall point cloud data
      * \param neighbor_indices List of indices in data that constitute the neighborhood
-     * \param result The vector to hold the computed bounding box dimensions
+     * \param interest_sample_idx The interest point/region that is being processed.
+     * \param result The vector to hold the resulting spin image feature vector
      */
     // --------------------------------------------------------------
     virtual void computeNeighborhoodFeature(const robot_msgs::PointCloud& data,
@@ -94,15 +87,21 @@ class SpinImageGeneric: public NeighborhoodFeature
                                             const unsigned int interest_sample_idx,
                                             cv::Vector<float>& result) const;
 
+    /*! \brief The spinning (beta) axis for each interest point/region */
     const std::vector<const Eigen::Vector3d*>* spin_axes_;
+
+    /*! \brief The point that the image is spinning around */
     std::vector<Eigen::Vector3d> spin_image_centers_;
 
     /*! \brief The cell resolution along the beta axis */
     double row_res_;
+
     /*! \brief The cell resolution along the alpha axis */
     double col_res_;
+
     /*! \brief The number of cells along the beta axis */
     unsigned int nbr_rows_;
+
     /*! \brief The number of cells along the alpha axis */
     unsigned int nbr_cols_;
 };

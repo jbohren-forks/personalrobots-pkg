@@ -48,7 +48,7 @@
 /*!
  * \file orientation_generic.h
  *
- * \brief An Orientation descriptor computes the angle between a local
+ * \brief An OrientationGeneric descriptor computes the angle between a local
  *        direction (data dependent) and a specified reference direction.
  */
 // --------------------------------------------------------------
