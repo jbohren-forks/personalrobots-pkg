@@ -36,6 +36,7 @@
 
 #include "geometric_shapes/bodies.h"
 #include <LinearMath/btConvexHull.h>
+#include <BulletCollision/CollisionShapes/btTriangleShape.h>
 #include <algorithm>
 #include <iostream>
 #include <cmath>
@@ -467,6 +468,133 @@ bool bodies::Box::intersectsRay(const btVector3& origin, const btVector3& dir, s
     }
     
     return true;
+}
+
+bool bodies::Mesh::containsPoint(const btVector3 &p) const
+{
+    return false;
+}
+
+namespace bodies
+{
+    namespace detail
+    {
+	class myTriangleCallback : public btTriangleCallback
+	{
+	public:
+	    
+	    myTriangleCallback(bool keep_triangles) : keep_triangles_(keep_triangles)
+	    {
+		found_intersections = false;
+	    }
+	    
+	    virtual void processTriangle(btVector3 *triangle, int partId, int triangleIndex)
+	    {
+		found_intersections = true;
+		if (keep_triangles_)
+		    triangles.push_back(btTriangleShape(triangle[0], triangle[1], triangle[2]));
+	    }
+	    
+	    bool                         found_intersections;
+	    std::vector<btTriangleShape> triangles;
+	    
+	private:
+	    
+	    bool                         keep_triangles_;
+	};
+    }
+}
+
+bool bodies::Mesh::intersectsRay(const btVector3& origin, const btVector3& dir, std::vector<btVector3> *intersections, unsigned int count)
+{
+    if (m_btMeshShape)
+    {
+	// transform the ray into the coordinate frame of the mesh
+	btVector3 orig(m_iPose * origin);
+	btVector3 dr(m_iPose.getBasis() * dir);
+	/// \todo should do intersection with AABB first; the target for performRayCast is the intersection if the box
+	detail::myTriangleCallback cb(intersections != NULL);
+	m_btMeshShape->performRaycast(&cb, orig, dr);
+	if (cb.found_intersections)
+	{
+	    if (intersections)
+	    {
+		/// \todo find the intersections with list of triangles
+	    }
+	    return true;	    
+	}
+	else
+	    return false;
+    }
+    else
+	return false;
+}   
+
+void bodies::Mesh::useDimensions(const shapes::Shape *shape)
+{  
+    const shapes::Mesh *mesh = static_cast<const shapes::Mesh*>(shape);
+    if (m_btMeshShape)
+	delete m_btMeshShape;
+    if (m_btMesh)
+	delete m_btMesh;
+    
+    m_btMesh = new btTriangleMesh();
+    const unsigned int nt = mesh->triangleCount / 3;
+    for (unsigned int i = 0 ; i < nt ; ++i)
+    {
+	const unsigned int i3 = i *3;
+	const unsigned int v1 = 3 * mesh->triangles[i3];
+	const unsigned int v2 = 3 * mesh->triangles[i3 + 1];
+	const unsigned int v3 = 3 * mesh->triangles[i3 + 2];
+	m_btMesh->addTriangle(btVector3(mesh->vertices[v1], mesh->vertices[v1 + 1], mesh->vertices[v1 + 2]),
+			      btVector3(mesh->vertices[v2], mesh->vertices[v2 + 1], mesh->vertices[v2 + 2]),
+			      btVector3(mesh->vertices[v3], mesh->vertices[v3 + 1], mesh->vertices[v3 + 2]), true);
+    }
+    
+    m_btMeshShape = new btBvhTriangleMeshShape(m_btMesh, true);
+}
+
+void bodies::Mesh::updateInternalData(void) 
+{
+    if (m_btMeshShape)
+    {
+	m_btMeshShape->setLocalScaling(btVector3(m_scale, m_scale, m_scale));
+	m_btMeshShape->setMargin(m_padding);
+    }
+    m_iPose = m_pose.inverse();
+    m_center = m_pose.getOrigin();
+
+    btTransform id;
+    id.setIdentity();
+    m_btMeshShape->getAabb(id, m_aabbMin, m_aabbMax);
+    /// \todo check if the AABB computation includes padding & scaling; if not, include it
+}
+
+double bodies::Mesh::computeVolume(void) const
+{
+    if (m_btMeshShape)
+    {
+	// approximation; volume of AABB at identity transform
+	btVector3 d = m_aabbMax - m_aabbMin;
+	return d.x() * d.y() * d.z();
+    }
+    else
+	return 0.0;
+}
+
+void bodies::Mesh::computeBoundingSphere(BoundingSphere &sphere) const
+{
+    if (m_btMeshShape)
+    {
+	sphere.center = m_center + (m_aabbMax + m_aabbMin) / 2.0;
+	btVector3 d = (m_aabbMax - m_aabbMin) / 2.0;
+	sphere.radius = d.length();
+    }
+    else
+    {
+	sphere.center = m_center;
+	sphere.radius = 0.0;
+    }
 }
 
 bool bodies::ConvexMesh::containsPoint(const btVector3 &p) const

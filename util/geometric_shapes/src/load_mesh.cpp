@@ -80,7 +80,7 @@ namespace shapes
 	};
     }
     
-    shapes::Mesh* create_mesh_from_vertices(const std::vector<btVector3> &vertices, const std::vector<unsigned int> &triangles)
+    shapes::Mesh* createMeshFromVertices(const std::vector<btVector3> &vertices, const std::vector<unsigned int> &triangles)
     {
 	unsigned int nt = triangles.size() / 3;
 	shapes::Mesh *mesh = new shapes::Mesh(vertices.size(), nt);
@@ -107,7 +107,7 @@ namespace shapes
 	return mesh;
     }
     
-    shapes::Mesh* create_mesh_from_vertices(const std::vector<btVector3> &source)
+    shapes::Mesh* createMeshFromVertices(const std::vector<btVector3> &source)
     {
 	if (source.size() < 3)
 	    return NULL;
@@ -188,7 +188,7 @@ namespace shapes
 	return mesh;
     }
     
-    shapes::Mesh* create_mesh_from_binary_stl(const char *filename)
+    shapes::Mesh* createMeshFromBinaryStl(const char *filename)
     {
 	
 	FILE* input = fopen(filename, "r");
@@ -258,7 +258,7 @@ namespace shapes
 		
 		delete[] buffer;
 		
-		return create_mesh_from_vertices(vertices);
+		return createMeshFromVertices(vertices);
 	    }
 	}
 	

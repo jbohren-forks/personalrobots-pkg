@@ -132,10 +132,10 @@ collision_space::EnvironmentObjects* collision_space::EnvironmentObjects::clone(
 	NamespaceObjects &ns = c->m_objects[it->first];
 	unsigned int n = it->second.staticShape.size();
 	for (unsigned int i = 0 ; i < n ; ++i)
-	    ns.staticShape.push_back(shapes::clone_shape(it->second.staticShape[i]));
+	    ns.staticShape.push_back(shapes::cloneShape(it->second.staticShape[i]));
 	n = it->second.shape.size();
 	for (unsigned int i = 0 ; i < n ; ++i)
-	    ns.shape.push_back(shapes::clone_shape(it->second.shape[i]));
+	    ns.shape.push_back(shapes::cloneShape(it->second.shape[i]));
 	ns.shapePose = it->second.shapePose;
     }
     return c;

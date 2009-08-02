@@ -36,7 +36,7 @@
 
 #include "geometric_shapes/shapes.h"
 
-shapes::Shape* shapes::clone_shape(const shapes::Shape *shape)
+shapes::Shape* shapes::cloneShape(const shapes::Shape *shape)
 {
     shapes::Shape *result = NULL;
     switch (shape->type)
@@ -72,7 +72,7 @@ shapes::Shape* shapes::clone_shape(const shapes::Shape *shape)
     return result;
 }
 
-shapes::StaticShape* shapes::clone_shape(const shapes::StaticShape *shape)
+shapes::StaticShape* shapes::cloneShape(const shapes::StaticShape *shape)
 {
     shapes::StaticShape *result = NULL;
     switch (shape->type)

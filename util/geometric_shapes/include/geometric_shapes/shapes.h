@@ -225,23 +225,23 @@ namespace shapes
 	constructed using index values from the triangles
 	vector. Triangle k has vertices at index values triangles[3k],
 	triangles[3k+1], triangles[3k+2]  */
-    Mesh* create_mesh_from_vertices(const std::vector<btVector3> &vertices, const std::vector<unsigned int> &triangles);
+    Mesh* createMeshFromVertices(const std::vector<btVector3> &vertices, const std::vector<unsigned int> &triangles);
     
     /** \brief Load a mesh from a set of vertices. Every 3 vertices
 	are considered a triangle. Repeating vertices are identified
 	and the set of triangle indices is constructed. The normal at
 	each triangle is also computed */
-    Mesh* create_mesh_from_vertices(const std::vector<btVector3> &source);
+    Mesh* createMeshFromVertices(const std::vector<btVector3> &source);
 
     /** \brief Load a mesh from a binary STL file. Normals are
 	recomputed and repeating vertices are identified. */
-    Mesh* create_mesh_from_binary_stl(const char *filename);
+    Mesh* createMeshFromBinaryStl(const char *filename);
 
     /** \brief Create a copy of a shape */
-    Shape* clone_shape(const Shape *shape);
+    Shape* cloneShape(const Shape *shape);
 
     /** \brief Create a copy of a static shape */
-    StaticShape* clone_shape(const StaticShape *shape);
+    StaticShape* cloneShape(const StaticShape *shape);
     
 }
 

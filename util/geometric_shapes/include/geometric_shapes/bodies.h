@@ -39,6 +39,8 @@
 
 #include "geometric_shapes/shapes.h"
 #include <LinearMath/btTransform.h>
+#include <BulletCollision/CollisionShapes/btBvhTriangleMeshShape.h>
+#include <BulletCollision/CollisionShapes/btTriangleMesh.h>
 #include <vector>
 
 /**
@@ -295,7 +297,61 @@ namespace bodies
 	double    m_height2;	
 	double    m_radiusB;
     };
+
+    class Mesh : public Body
+    {
+	Mesh(void) : Body()
+	{
+	    m_type = shapes::MESH;
+	    m_btMeshShape = NULL;
+	    m_btMesh = NULL;
+	    m_center.setValue(0, 0, 0);	    
+	    m_aabbMin.setValue(0, 0, 0);	    
+	    m_aabbMax.setValue(0, 0, 0);	    
+	}
+	
+	Mesh(const shapes::Shape *shape) : Body()
+	{
+	    m_type = shapes::MESH;	
+	    m_btMeshShape = NULL;
+	    m_btMesh = NULL;
+	    m_center.setValue(0, 0, 0);
+	    m_aabbMin.setValue(0, 0, 0);	    
+	    m_aabbMax.setValue(0, 0, 0);	    
+	    setDimensions(shape);
+	}
+	
+	virtual ~Mesh(void)
+	{
+	    if (m_btMeshShape)
+		delete m_btMeshShape;
+	    if (m_btMesh)
+		delete m_btMesh;
+	}
+	
+	/** \brief The mesh is considered to be concave, so this function is implemented with raycasting. This is a bit slow. */
+	virtual bool containsPoint(const btVector3 &p) const;
+
+	/** \brief This function is approximate. It returns the volume of the AABB enclosing the shape */
+	virtual double computeVolume(void) const;
+	virtual void computeBoundingSphere(BoundingSphere &sphere) const;
+	virtual bool intersectsRay(const btVector3& origin, const btVector3 &dir, std::vector<btVector3> *intersections = NULL, unsigned int count = 0);
+	
+    protected:
+
+	virtual void useDimensions(const shapes::Shape *shape);
+	virtual void updateInternalData(void);
+	
+	btBvhTriangleMeshShape  *m_btMeshShape;
+	btTriangleMesh          *m_btMesh;
+	btTransform              m_iPose;
+	btVector3                m_center;
+	btVector3                m_aabbMin;
+	btVector3                m_aabbMax;
+	
+    };
     
+	    
     /** \brief Definition of a convex mesh. Convex hull is computed for a given shape::Mesh */
     class ConvexMesh : public Body
     {
@@ -320,8 +376,10 @@ namespace bodies
 	{
 	}
 	
+
 	virtual bool containsPoint(const btVector3 &p) const;
 	virtual double computeVolume(void) const;
+	
 	virtual void computeBoundingSphere(BoundingSphere &sphere) const;
 	virtual bool intersectsRay(const btVector3& origin, const btVector3 &dir, std::vector<btVector3> *intersections = NULL, unsigned int count = 0);
 

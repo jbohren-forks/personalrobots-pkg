@@ -84,7 +84,7 @@ shapes::Shape* planning_environment::construct_object(const mapping_msgs::Object
 			vertices[i].setValue(obj.vertices[i].x, obj.vertices[i].y, obj.vertices[i].z);
 		    for (unsigned int i = 0 ; i < obj.triangles.size() ; ++i)
 			triangles[i] = obj.triangles[i];
-		    shape = shapes::create_mesh_from_vertices(vertices, triangles);
+		    shape = shapes::createMeshFromVertices(vertices, triangles);
 		}
 	    }
 	}

@@ -966,13 +966,13 @@ collision_space::EnvironmentModel* collision_space::EnvironmentModelODE::clone(v
 	    int idx = shapePtrs[dGeomGetData(it->second->geoms[i])];
 	    if (idx < 0) // static geom
 	    {
-		shapes::StaticShape *newShape = shapes::clone_shape(ns.staticShape[-idx - 1]);
+		shapes::StaticShape *newShape = shapes::cloneShape(ns.staticShape[-idx - 1]);
 		dGeomSetData(newGeom, reinterpret_cast<void*>(newShape));
 		env->m_objects->addObject(it->first, newShape);
 	    }
 	    else // movable geom
 	    {
-		shapes::Shape *newShape = shapes::clone_shape(ns.shape[idx]);
+		shapes::Shape *newShape = shapes::cloneShape(ns.shape[idx]);
 		dGeomSetData(newGeom, reinterpret_cast<void*>(newShape));
 		env->m_objects->addObject(it->first, newShape, ns.shapePose[idx]);
 	    }
@@ -987,13 +987,13 @@ collision_space::EnvironmentModel* collision_space::EnvironmentModelODE::clone(v
 	    int idx = shapePtrs[dGeomGetData(geoms[i])];
 	    if (idx < 0) // static geom
 	    {
-		shapes::StaticShape *newShape = shapes::clone_shape(ns.staticShape[-idx - 1]);
+		shapes::StaticShape *newShape = shapes::cloneShape(ns.staticShape[-idx - 1]);
 		dGeomSetData(newGeom, reinterpret_cast<void*>(newShape));
 		env->m_objects->addObject(it->first, newShape);
 	    }
 	    else // movable geom
 	    {
-		shapes::Shape *newShape = shapes::clone_shape(ns.shape[idx]);
+		shapes::Shape *newShape = shapes::cloneShape(ns.shape[idx]);
 		dGeomSetData(newGeom, reinterpret_cast<void*>(newShape));
 		env->m_objects->addObject(it->first, newShape, ns.shapePose[idx]);
 	    }

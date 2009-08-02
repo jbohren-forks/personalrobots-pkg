@@ -265,7 +265,7 @@ void planning_models::KinematicModel::Link::extractInformation(const robot_desc:
 	    if (filename.rfind(".stl") == std::string::npos)
 		filename += ".stl";
 	    //	    std::cout << "Loading '" << filename << "'" << std::endl;	    
-	    shapes::Mesh *mesh = shapes::create_mesh_from_binary_stl(filename.c_str());
+	    shapes::Mesh *mesh = shapes::createMeshFromBinaryStl(filename.c_str());
 	    shape              = mesh;
 	}
 	break;	
@@ -852,12 +852,12 @@ void planning_models::KinematicModel::cloneAfterLink(Robot *rb, Link *dest, cons
     dest->constGeomTrans = src->constGeomTrans;
     dest->globalTransFwd = src->globalTransFwd;
     dest->globalTrans = src->globalTrans;
-    dest->shape = shapes::clone_shape(src->shape);
+    dest->shape = shapes::cloneShape(src->shape);
     for (unsigned int i = 0 ; i < src->attachedBodies.size() ; ++i)
     {
 	AttachedBody *ab = new AttachedBody(dest);
 	ab->attachTrans = src->attachedBodies[i]->attachTrans;
-	ab->shape = shapes::clone_shape(src->attachedBodies[i]->shape);
+	ab->shape = shapes::cloneShape(src->attachedBodies[i]->shape);
 	ab->globalTrans = src->attachedBodies[i]->globalTrans;
 	dest->attachedBodies.push_back(ab);
     }
