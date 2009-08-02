@@ -471,13 +471,13 @@ bool bodies::Box::intersectsRay(const btVector3& origin, const btVector3& dir, s
 
 bool bodies::ConvexMesh::containsPoint(const btVector3 &p) const
 {
-    if (m_boundingBox.containsPoint(p))
-    {
+    //    if (m_boundingBox.containsPoint(p))
+    //    {
 	btVector3 ip = (m_iPose * p) / m_scale;
 	return isPointInsidePlanes(ip);
-    }
-    else
-	return false;
+	//    }
+	//    else
+	//	return false;
 }
 
 void bodies::ConvexMesh::useDimensions(const shapes::Shape *shape)
@@ -693,7 +693,7 @@ namespace bodies
 bool bodies::ConvexMesh::intersectsRay(const btVector3& origin, const btVector3& dir, std::vector<btVector3> *intersections, unsigned int count)
 {
     if (distanceSQR(m_center, origin, dir) > m_radiusB * m_radiusB) return false;
-    if (!m_boundingBox.intersectsRay(origin, dir)) return false;
+    //    if (!m_boundingBox.intersectsRay(origin, dir)) return false;
     
     // transform the ray into the coordinate frame of the mesh
     btVector3 orig(m_iPose * origin);
