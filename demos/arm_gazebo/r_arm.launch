@@ -9,7 +9,7 @@
 
   <!-- send arm a command -->
   <!-- open gripper .5 radians
-  <node pkg="robot_mechanism_controllers" type="control.py" args="set r_gripper_controller 0.5" respawn="false" output="screen" />
+  <include file="$(find arm_gazebo)/controllers/r_arm_position_controller.launch" />
   -->
   <!-- tests
   <node pkg="robot_mechanism_controllers" type="control.py" args="set r_gripper_controller 0.5" respawn="false" output="screen" />
