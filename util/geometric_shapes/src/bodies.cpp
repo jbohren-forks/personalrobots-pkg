@@ -765,7 +765,7 @@ bool bodies::ConvexMesh::intersectsRay(const btVector3& origin, const btVector3&
     if (intersections)
     {
 	std::sort(ipts.begin(), ipts.end(), detail::interscOrder());
-	const unsigned int n = count > 0 ? std::min(count, ipts.size()) : ipts.size();
+	const unsigned int n = count > 0 ? std::min((size_t)count, (size_t)ipts.size()) : ipts.size();
 	for (unsigned int i = 0 ; i < n ; ++i)
 	    intersections->push_back(ipts[i].pt);
     }
