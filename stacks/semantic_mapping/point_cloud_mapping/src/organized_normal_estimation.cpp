@@ -43,7 +43,7 @@
 // ROS core
 #include <ros/ros.h>
 // ROS messages
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 
 // Cloud geometry
 #include <point_cloud_mapping/geometry/angles.h>
@@ -51,7 +51,6 @@
 #include <point_cloud_mapping/geometry/nearest.h>
 
 using namespace std;
-using namespace robot_msgs;
 
 class OrganizedNormalEstimation
 {
@@ -61,7 +60,7 @@ class OrganizedNormalEstimation
   public:
 
     // ROS messages
-    PointCloud cloud_down_, cloud_normals_;
+    sensor_msgs::PointCloud cloud_down_, cloud_normals_;
 
     // Parameters
     double max_z_;
@@ -102,7 +101,7 @@ class OrganizedNormalEstimation
         ROS_WARN ("Trying to subscribe to %s, but the topic doesn't exist!", cloud_topic.c_str ());
 
       cloud_sub_ = nh_.subscribe (cloud_topic, 1, &OrganizedNormalEstimation::cloud_cb, this);
-      cloud_norm_pub_ = nh_.advertise<PointCloud> ("cloud_normals", 1);
+      cloud_norm_pub_ = nh_.advertise<sensor_msgs::PointCloud> ("cloud_normals", 1);
       
       cloud_normals_.chan.resize (4);   // Reserve space for 4 channels: nx, ny, nz, curvature
       cloud_normals_.chan[0].name = "nx";
@@ -159,7 +158,7 @@ class OrganizedNormalEstimation
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Callback
     void
-      cloud_cb (const PointCloudConstPtr& cloud)
+      cloud_cb (const sensor_msgs::PointCloudConstPtr& cloud)
     {
       updateParametersFromServer ();
 
@@ -172,7 +171,7 @@ class OrganizedNormalEstimation
       }
 
       // Viewpoint value in the point cloud frame should be 0,0,0
-      Point32 viewpoint_cloud;
+      geometry_msgs::Point32 viewpoint_cloud;
       viewpoint_cloud.x = viewpoint_cloud.y = viewpoint_cloud.z = 0.0;
 
       cloud_normals_.header = cloud->header;

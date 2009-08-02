@@ -310,9 +310,9 @@ namespace cloud_geometry
       * \f]
       */
     void
-      computePointNormal (const robot_msgs::PointCloudConstPtr &points, const std::vector<int> &indices, Eigen::Vector4d &plane_parameters, double &curvature)
+      computePointNormal (const sensor_msgs::PointCloudConstPtr &points, const std::vector<int> &indices, Eigen::Vector4d &plane_parameters, double &curvature)
     {
-      robot_msgs::Point32 centroid;
+      geometry_msgs::Point32 centroid;
       // Compute the 3x3 covariance matrix
       Eigen::Matrix3d covariance_matrix;
       computeCovarianceMatrix (points, indices, covariance_matrix, centroid);
@@ -768,9 +768,9 @@ namespace cloud_geometry
       * \param viewpoint the viewpoint where the cloud was acquired from (used for normal flip)
       */
     void
-      computeOrganizedPointCloudNormals (robot_msgs::PointCloud &points, const robot_msgs::PointCloudConstPtr &surface,
+      computeOrganizedPointCloudNormals (sensor_msgs::PointCloud &points, const sensor_msgs::PointCloudConstPtr &surface,
                                          int k, int downsample_factor, int width, int height, double max_z, 
-                                         const robot_msgs::Point32 &viewpoint)
+                                         const geometry_msgs::Point32 &viewpoint)
     {
       // Reduce by a factor of N
       int nr_points = lrint (ceil (width / (double)downsample_factor)) *

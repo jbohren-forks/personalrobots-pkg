@@ -123,7 +123,7 @@ namespace cloud_geometry
       * \param centroid the output centroid
       */
     inline void
-      computeCentroid (const robot_msgs::PointCloudConstPtr &points, const std::vector<int> &indices, robot_msgs::Point32 &centroid)
+      computeCentroid (const sensor_msgs::PointCloudConstPtr &points, const std::vector<int> &indices, geometry_msgs::Point32 &centroid)
     {
       centroid.x = centroid.y = centroid.z = 0;
       // For each point in the cloud
@@ -146,7 +146,7 @@ namespace cloud_geometry
       * \param centroid the output centroid
       */
     inline void
-      computeCentroid (const robot_msgs::PointCloud &points, const std::vector<int> &indices, std::vector<double> &centroid)
+      computeCentroid (const sensor_msgs::PointCloud &points, const std::vector<int> &indices, std::vector<double> &centroid)
     {
       centroid.resize (3);
       centroid[0] = centroid[1] = centroid[2] = 0;
@@ -251,7 +251,7 @@ namespace cloud_geometry
       * \param centroid the computed centroid
       */
     inline void
-      computeCovarianceMatrix (const robot_msgs::PointCloudConstPtr &points, const std::vector<int> &indices, Eigen::Matrix3d &covariance_matrix, robot_msgs::Point32 &centroid)
+      computeCovarianceMatrix (const sensor_msgs::PointCloudConstPtr &points, const std::vector<int> &indices, Eigen::Matrix3d &covariance_matrix, geometry_msgs::Point32 &centroid)
     {
       computeCentroid (points, indices, centroid);
 
@@ -282,7 +282,7 @@ namespace cloud_geometry
       * \param covariance_matrix the 3x3 covariance matrix
       */
     inline void
-      computeCovarianceMatrix (const robot_msgs::PointCloud &points, const std::vector<int> &indices, Eigen::Matrix3d &covariance_matrix)
+      computeCovarianceMatrix (const sensor_msgs::PointCloud &points, const std::vector<int> &indices, Eigen::Matrix3d &covariance_matrix)
     {
       geometry_msgs::Point32 centroid;
       computeCovarianceMatrix (points, indices, covariance_matrix, centroid);
@@ -333,7 +333,7 @@ namespace cloud_geometry
 
     void computePointNormal (const sensor_msgs::PointCloud &points, Eigen::Vector4d &plane_parameters, double &curvature);
     void computePointNormal (const sensor_msgs::PointCloud &points, const std::vector<int> &indices, Eigen::Vector4d &plane_parameters, double &curvature);
-    void computePointNormal (const robot_msgs::PointCloudConstPtr &points, const std::vector<int> &indices, Eigen::Vector4d &plane_parameters, double &curvature);
+    void computePointNormal (const sensor_msgs::PointCloudConstPtr &points, const std::vector<int> &indices, Eigen::Vector4d &plane_parameters, double &curvature);
 
     void computeMomentInvariants (const sensor_msgs::PointCloud &points, double &j1, double &j2, double &j3);
     void computeMomentInvariants (const sensor_msgs::PointCloud &points, const std::vector<int> &indices, double &j1, double &j2, double &j3);
@@ -345,12 +345,12 @@ namespace cloud_geometry
     void computePointCloudNormals (sensor_msgs::PointCloud &points, int k, const geometry_msgs::PointStamped &viewpoint);
     void computePointCloudNormals (sensor_msgs::PointCloud &points, double radius, const geometry_msgs::PointStamped &viewpoint);
 
-    void computeOrganizedPointCloudNormals (robot_msgs::PointCloud &points, const robot_msgs::PointCloud &surface, int k, int downsample_factor, int width, int height, double max_z, 
-                                            const robot_msgs::Point32 &viewpoint);
-    void computeOrganizedPointCloudNormals (robot_msgs::PointCloud &points, const robot_msgs::PointCloudConstPtr &surface, int k, int downsample_factor, int width, int height, double max_z, 
-                                            const robot_msgs::Point32 &viewpoint);
-    void computeOrganizedPointCloudNormalsWithFiltering (robot_msgs::PointCloud &points, const robot_msgs::PointCloud &surface, int k, int downsample_factor, int width, int height, 
-                                                         double max_z, double min_angle, double max_angle, const robot_msgs::Point32 &viewpoint);
+    void computeOrganizedPointCloudNormals (sensor_msgs::PointCloud &points, const sensor_msgs::PointCloud &surface, int k, int downsample_factor, int width, int height, double max_z, 
+                                            const geometry_msgs::Point32 &viewpoint);
+    void computeOrganizedPointCloudNormals (sensor_msgs::PointCloud &points, const sensor_msgs::PointCloudConstPtr &surface, int k, int downsample_factor, int width, int height, double max_z, 
+                                            const geometry_msgs::Point32 &viewpoint);
+    void computeOrganizedPointCloudNormalsWithFiltering (sensor_msgs::PointCloud &points, const sensor_msgs::PointCloud &surface, int k, int downsample_factor, int width, int height, 
+                                                         double max_z, double min_angle, double max_angle, const geometry_msgs::Point32 &viewpoint);
 
     void extractEuclideanClusters (const sensor_msgs::PointCloud &points, const std::vector<int> &indices, double tolerance, std::vector<std::vector<int> > &clusters,
                                    int nx_idx, int ny_idx, int nz_idx, double eps_angle, unsigned int min_pts_per_cluster = 1);
