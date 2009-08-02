@@ -66,6 +66,8 @@ Uses (name type):
 #include "ros/console.h"
 #include "nav_msgs/GetMap.h"
 #include "LinearMath/btMatrix3x3.h"
+#include "geometry_msgs/Quaternion.h"
+
 using namespace std;
  
 /**
@@ -134,7 +136,7 @@ interpolate: 0
 unknown: [129]
        */
 
-      robot_msgs::Quaternion & orientation = resp.map.info.origin.orientation;
+      geometry_msgs::Quaternion & orientation = resp.map.info.origin.orientation;
       btMatrix3x3 mat(btQuaternion(orientation.x, orientation.y, orientation.z, orientation.w));
       double yaw, pitch, roll;
       mat.getEulerZYX(yaw, pitch, roll);
