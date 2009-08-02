@@ -79,16 +79,17 @@ void NeighborhoodFeature::doComputation(const robot_msgs::PointCloud& data,
     if (curr_interest_pt == NULL)
     {
       ROS_WARN("BoundingBox::compute() passed NULL interest point");
-      continue;
     }
+    else
+    {
+      // Grab neighbors around interest point
+      vector<int> neighbor_indices;
+      vector<float> neighbor_distances; // unused
+      // radiusSearch returning false (0 points) is handled by computeBoundingBoxFeatures
+      data_kdtree.radiusSearch(*curr_interest_pt, neighborhood_radius_, neighbor_indices, neighbor_distances);
 
-    // Grab neighbors around interest point
-    vector<int> neighbor_indices;
-    vector<float> neighbor_distances; // unused
-    // radiusSearch returning false (0 points) is handled by computeBoundingBoxFeatures
-    data_kdtree.radiusSearch(*curr_interest_pt, neighborhood_radius_, neighbor_indices, neighbor_distances);
-
-    computeNeighborhoodFeature(data, neighbor_indices, i, results[i]);
+      computeNeighborhoodFeature(data, neighbor_indices, i, results[i]);
+    }
   }
 }
 
@@ -117,25 +118,26 @@ void NeighborhoodFeature::doComputation(const robot_msgs::PointCloud& data,
     if (curr_interest_region == NULL)
     {
       ROS_WARN("BoundingBox::compute() passed NULL interest region");
-      continue;
     }
-
-    // Find the neighborhood around the region's centroid if indicated to.
-    vector<int> neighbor_indices;
-    if (neighborhood_radius_ > 1e-6)
+    else
     {
-      // Compute centroid of interest region
-      robot_msgs::Point32 region_centroid;
-      cloud_geometry::nearest::computeCentroid(data, *curr_interest_region, region_centroid);
+      // Find the neighborhood around the region's centroid if indicated to.
+      vector<int> neighbor_indices;
+      if (neighborhood_radius_ > 1e-6)
+      {
+        // Compute centroid of interest region
+        robot_msgs::Point32 region_centroid;
+        cloud_geometry::nearest::computeCentroid(data, *curr_interest_region, region_centroid);
 
-      vector<float> neighbor_distances; // unused
-      // radiusSearch returning false (0 points) is handled by computeBoundingBoxFeatures
-      data_kdtree.radiusSearch(region_centroid, neighborhood_radius_, neighbor_indices, neighbor_distances);
+        vector<float> neighbor_distances; // unused
+        // radiusSearch returning false (0 points) is handled by computeBoundingBoxFeatures
+        data_kdtree.radiusSearch(region_centroid, neighborhood_radius_, neighbor_indices, neighbor_distances);
 
-      // Now point to the neighboring points from radiusSearch
-      curr_interest_region = &neighbor_indices;
+        // Now point to the neighboring points from radiusSearch
+        curr_interest_region = &neighbor_indices;
+      }
+
+      computeNeighborhoodFeature(data, *curr_interest_region, i, results[i]);
     }
-
-    computeNeighborhoodFeature(data, *curr_interest_region, i, results[i]);
   }
 }

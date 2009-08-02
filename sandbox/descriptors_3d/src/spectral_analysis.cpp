@@ -120,19 +120,20 @@ int SpectralAnalysis::analyzeInterestPoints(const robot_msgs::PointCloud& data,
     if (curr_interest_pt == NULL)
     {
       ROS_WARN("SpectralAnalysis::analyzeInterestPoints() passed NULL interest point");
-      continue;
     }
+    else
+    {
+      // ---------------------
+      // Retrieve neighboring points around the interest point
+      vector<int> neighbor_indices;
+      vector<float> neighbor_distances; // unused
+      // radiusSearch returning false (0 neighbors) is okay
+      data_kdtree.radiusSearch(*curr_interest_pt, support_radius_, neighbor_indices, neighbor_distances);
 
-    // ---------------------
-    // Retrieve neighboring points around the interest point
-    vector<int> neighbor_indices;
-    vector<float> neighbor_distances; // unused
-    // radiusSearch returning false (0 neighbors) is okay
-    data_kdtree.radiusSearch(*curr_interest_pt, support_radius_, neighbor_indices, neighbor_distances);
-
-    // ---------------------
-    // Compute spectral information for interest point
-    computeSpectralInfo(data, neighbor_indices, static_cast<size_t> (i));
+      // ---------------------
+      // Compute spectral information for interest point
+      computeSpectralInfo(data, neighbor_indices, static_cast<size_t> (i));
+    }
   }
 
   spectral_computed_ = true;
@@ -178,28 +179,29 @@ int SpectralAnalysis::analyzeInterestRegions(const robot_msgs::PointCloud& data,
     if (curr_interest_region == NULL)
     {
       ROS_WARN("SpectralAnalysis::analyzeInterestPoints() passed NULL interest region");
-      continue;
     }
-
-    // Do a range search around the interest region's CENTROID if indicated
-    vector<int> neighbor_indices;
-    if (support_radius_ > 1e-6)
+    else
     {
-      // Compute centroid of interest region
-      robot_msgs::Point32 region_centroid;
-      cloud_geometry::nearest::computeCentroid(data, *curr_interest_region, region_centroid);
+      // Do a range search around the interest region's CENTROID if indicated
+      vector<int> neighbor_indices;
+      if (support_radius_ > 1e-6)
+      {
+        // Compute centroid of interest region
+        robot_msgs::Point32 region_centroid;
+        cloud_geometry::nearest::computeCentroid(data, *curr_interest_region, region_centroid);
 
-      vector<float> neighbor_distances; // unused
-      // radiusSearch returning false (0 neighbors) is okay
-      data_kdtree.radiusSearch(region_centroid, support_radius_, neighbor_indices, neighbor_distances);
+        vector<float> neighbor_distances; // unused
+        // radiusSearch returning false (0 neighbors) is okay
+        data_kdtree.radiusSearch(region_centroid, support_radius_, neighbor_indices, neighbor_distances);
 
-      // Now point to the neighboring points from radiusSearch
-      curr_interest_region = &neighbor_indices;
+        // Now point to the neighboring points from radiusSearch
+        curr_interest_region = &neighbor_indices;
+      }
+
+      // ---------------------
+      // Compute spectral information for interest region
+      computeSpectralInfo(data, *curr_interest_region, static_cast<size_t> (i));
     }
-
-    // ---------------------
-    // Compute spectral information for interest region
-    computeSpectralInfo(data, *curr_interest_region, static_cast<size_t> (i));
   }
 
   // ----------------------------------------
