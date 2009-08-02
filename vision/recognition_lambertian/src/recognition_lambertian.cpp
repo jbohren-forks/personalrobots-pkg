@@ -289,7 +289,7 @@ private:
 
 	void cloudCallback(const robot_msgs::PointCloud::ConstPtr& point_cloud)
 	{
-		ROS_INFO("Cloud callback");
+	    //		ROS_INFO("Cloud callback");
 		if (got_data_) {
 //			ROS_INFO("Discarding point cloud");
 			return;
