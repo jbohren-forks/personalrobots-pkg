@@ -48,8 +48,9 @@
 using namespace std;
 
 // --------------------------------------------------------------
-//* Position
 /*!
+ * \file position.h
+ *
  * \brief A Position descriptor simply uses the 3rd coordinate (z) of the
  *        interest point/region, for now.
  */
@@ -59,26 +60,36 @@ class Position: public Descriptor3D
   public:
     // --------------------------------------------------------------
     /*!
-     * \brief Instantiates the Position descriptor
+     * \brief Position descriptor defines the value to be the z-coordinate
+     *        of the interest point or the interest region's centroid
      *
-     * The computed feature is the z-coordinate of the given interest point
-     * or of the centroid from the given interest region
+     * TODO: use sensor location so height is relative and dont assume flat groudn
+     * TODO: use map information such as distance from walls
      */
     // --------------------------------------------------------------
     Position();
 
-    // TODO use sensor location so height is relative and dont assume flat ground
-    //void useSensorLocation();
-
-    // TODO: use map information such as distance from known walls
-    //void useMapInformation(void* mapData);
-
-
   protected:
+    // --------------------------------------------------------------
+    /*!
+     * \brief This descriptor requires no pre-computation, so this method
+     *        has no affect
+     *
+     * \return 0 always
+     */
+    // --------------------------------------------------------------
     virtual int precompute(const robot_msgs::PointCloud& data,
                            cloud_kdtree::KdTree& data_kdtree,
                            const cv::Vector<const robot_msgs::Point32*>& interest_pts);
 
+    // --------------------------------------------------------------
+    /*!
+     * \brief This descriptor requires no pre-computation, so this method
+     *        has no affect
+     *
+     * \return 0 always
+     */
+    // --------------------------------------------------------------
     virtual int precompute(const robot_msgs::PointCloud& data,
                            cloud_kdtree::KdTree& data_kdtree,
                            const cv::Vector<const std::vector<int>*>& interest_region_indices);
