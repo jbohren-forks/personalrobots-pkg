@@ -56,10 +56,10 @@ $ fake_localization
 @section topic ROS topics
 
 Subscribes to (name/type):
-- @b "base_pose_ground_truth" robot_msgs/PoseWithRatesStamped : robot's odometric pose.  Only the position information is used (velocity is ignored).
+- @b "base_pose_ground_truth" geometry_msgs/PoseWithRatesStamped : robot's odometric pose.  Only the position information is used (velocity is ignored).
 
 Publishes to (name / type):
-- @b "amcl_pose" robot_msgs/PoseWithCovariance : robot's estimated pose in the map, with covariance
+- @b "amcl_pose" geometry_msgs/PoseWithCovariance : robot's estimated pose in the map, with covariance
 - @b "particlecloud" nav_msgs/PoseArray : fake set of poses being maintained by the filter (one paricle only).
 
 <hr>
@@ -73,9 +73,9 @@ Publishes to (name / type):
 #include <ros/node.h>
 #include <ros/time.h>
 
-#include <robot_msgs/PoseWithRatesStamped.h>
+#include <geometry_msgs/PoseWithRatesStamped.h>
 #include <nav_msgs/PoseArray.h>
-#include <robot_msgs/PoseWithCovariance.h>
+#include <geometry_msgs/PoseWithCovariance.h>
 
 #include <angles/angles.h>
 
@@ -91,7 +91,7 @@ class FakeOdomNode: public ros::Node
 public:
     FakeOdomNode(void) : ros::Node("fake_localization")
     {
-      advertise<robot_msgs::PoseWithCovariance>("amcl_pose",1);
+      advertise<geometry_msgs::PoseWithCovariance>("amcl_pose",1);
       advertise<nav_msgs::PoseArray>("particlecloud",1);
       m_tfServer = new tf::TransformBroadcaster();	
       m_tfListener = new tf::TransformListener(*this);
@@ -103,7 +103,7 @@ public:
       m_particleCloud.header.stamp = ros::Time::now();
       m_particleCloud.header.frame_id = "/map";
       m_particleCloud.set_poses_size(1);
-      notifier = new tf::MessageNotifier<robot_msgs::PoseWithRatesStamped>(m_tfListener, this, 
+      notifier = new tf::MessageNotifier<geometry_msgs::PoseWithRatesStamped>(m_tfListener, this, 
                                                                            boost::bind(&FakeOdomNode::update, this, _1),
                                                                            "",//empty topic it will be manually stuffed
                                                                            odom_frame_id_, 100);
@@ -133,15 +133,15 @@ public:
 private:
     tf::TransformBroadcaster       *m_tfServer;
     tf::TransformListener          *m_tfListener;
-    tf::MessageNotifier<robot_msgs::PoseWithRatesStamped>* notifier;
+    tf::MessageNotifier<geometry_msgs::PoseWithRatesStamped>* notifier;
   
     ros::Time                      m_lastUpdate;
     double                         m_maxPublishFrequency;
     bool                           m_base_pos_received;
     
-    robot_msgs::PoseWithRatesStamped  m_basePosMsg;
+    geometry_msgs::PoseWithRatesStamped  m_basePosMsg;
     nav_msgs::PoseArray      m_particleCloud;
-    robot_msgs::PoseWithCovariance      m_currentPos;
+    geometry_msgs::PoseWithCovariance      m_currentPos;
 
     //parameter for what odom to use
     std::string odom_frame_id_;
@@ -149,20 +149,20 @@ private:
   void basePosReceived()
   {
     m_basePosMsg.header.frame_id = "base_footprint"; //hack to make the notifier do what I want (changed back later)
-    boost::shared_ptr<robot_msgs::PoseWithRatesStamped>  message(new robot_msgs::PoseWithRatesStamped);
+    boost::shared_ptr<geometry_msgs::PoseWithRatesStamped>  message(new geometry_msgs::PoseWithRatesStamped);
     *message = m_basePosMsg;
     notifier->enqueueMessage(message);
     //    update();
   }
 public:
-  void update(const tf::MessageNotifier<robot_msgs::PoseWithRatesStamped>::MessagePtr & message){
-    tf::Transform txi(tf::Quaternion(message->pos.orientation.x,
-				     message->pos.orientation.y, 
-				     message->pos.orientation.z, 
-				     message->pos.orientation.w),
-		      tf::Point(message->pos.position.x,
-				message->pos.position.y,
-                                0.0*message->pos.position.z )); // zero height for base_footprint
+  void update(const tf::MessageNotifier<geometry_msgs::PoseWithRatesStamped>::MessagePtr & message){
+    tf::Transform txi(tf::Quaternion(message->pose_with_rates.pose.orientation.x,
+				     message->pose_with_rates.pose.orientation.y, 
+				     message->pose_with_rates.pose.orientation.z, 
+				     message->pose_with_rates.pose.orientation.w),
+		      tf::Point(message->pose_with_rates.pose.position.x,
+				message->pose_with_rates.pose.position.y,
+                                0.0*message->pose_with_rates.pose.position.z )); // zero height for base_footprint
 
     double x = txi.getOrigin().x();
     double y = txi.getOrigin().y();
