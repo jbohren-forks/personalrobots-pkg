@@ -48,10 +48,11 @@
 #include <point_cloud_mapping/kdtree/kdtree.h>
 
 // --------------------------------------------------------------
-//* Descriptor3D
 /*!
- * \brief An abstract class representing a descriptor that can
- *        compute feature values from 3-D data
+ * \file descriptor_3d.h
+ *
+ * \brief The abstract base class for all feature descriptors
+ *        that operate on 3-D data
  */
 // --------------------------------------------------------------
 class Descriptor3D
@@ -59,29 +60,32 @@ class Descriptor3D
   public:
     // --------------------------------------------------------------
     /*!
-     * \brief Instantiates a descriptor with 0 feature values
+     * \brief Descriptor3D is the abstract base class for all descriptors
+     *        that operate on 3-D data.  All inheriting classes define
+     *        all necessary parameters in their constructor.  Hence,
+     *        after instantiation, all descriptors can compute feature
+     *        values through the compute() method.  The number of feature
+     *        values the descriptor generates on success is given by
+     *        getResultSize()
      */
     // --------------------------------------------------------------
     Descriptor3D();
 
     virtual ~Descriptor3D() = 0;
 
-    // ===================================================================
-    /*! \name Virtual methods */
-    // ===================================================================
-    //@{
     // --------------------------------------------------------------
     /*!
      * \brief Computes feature values for each specified interest point
      *
      * See the inherited class constructor for the type of features computed
+     * and necessary parameters
      *
      * \param data Point cloud of the data
      * \param data_kdtree K-D tree representation of data
      * \param interest_pts List of interest points to compute features for
      * \param results Vector to hold computed vector of features for each interest point.
      *                If the features could not be computed for an interest point i, then
-     *                results[i].size() = 0
+     *                results[i].size() == 0
      */
     // --------------------------------------------------------------
     void compute(const robot_msgs::PointCloud& data, cloud_kdtree::KdTree& data_kdtree, const cv::Vector<
@@ -92,18 +96,18 @@ class Descriptor3D
      * \brief Computes feature values for each interest region of points
      *
      * See the inherited class constructor for the type of features computed
+     * and necessary parameters
      *
      * \param data Point cloud of the data
      * \param data_kdtree K-D tree representation of data
      * \param interest_region_indices List of groups of indices into data that represent an interest region
-     * \param results Vector to hold computed vector of features for each interest point.
-     *                If the features could not be computed for an interest point i, then
-     *                results[i].size() = 0
+     * \param results Vector to hold computed vector of features for each interest region.
+     *                If the features could not be computed for an interest region i, then
+     *                results[i].size() == 0
      */
     // --------------------------------------------------------------
     void compute(const robot_msgs::PointCloud& data, cloud_kdtree::KdTree& data_kdtree, const cv::Vector<
         const std::vector<int>*>& interest_region_indices, cv::Vector<cv::Vector<float> >& results);
-    //@}
 
     // --------------------------------------------------------------
     /*!
@@ -176,26 +180,68 @@ class Descriptor3D
     //@}
 
   protected:
+    // --------------------------------------------------------------
+    /*!
+     * \brief Method to do any setup pre-computation necessary for the
+     *        inheriting descriptor.
+     *
+     *  Example: estimating normals for each interest point.
+     *
+     * \param data Point cloud of the data
+     * \param data_kdtree K-D tree representation of data
+     * \param interest_pts List of interest points for feature computation
+     */
+    // --------------------------------------------------------------
     virtual int precompute(const robot_msgs::PointCloud& data,
                            cloud_kdtree::KdTree& data_kdtree,
                            const cv::Vector<const robot_msgs::Point32*>& interest_pts) = 0;
 
+    // --------------------------------------------------------------
+    /*!
+     * \brief Method to do any setup pre-computation necessary for the
+     *        inheriting descriptor.
+     *
+     *  Example: estimating normals for each interest point.
+     *
+     * \param data Point cloud of the data
+     * \param data_kdtree K-D tree representation of data
+     * \param interest_region_indices  List of groups of indices into data
+     *                                 that represent an interest region for
+     *                                 feature computation
+     */
+    // --------------------------------------------------------------
     virtual int precompute(const robot_msgs::PointCloud& data,
                            cloud_kdtree::KdTree& data_kdtree,
                            const cv::Vector<const std::vector<int>*>& interest_region_indices) = 0;
 
+    // --------------------------------------------------------------
+    /*!
+     * \brief Does the actual computation after any pre-computations
+     *
+     * \see Descriptor3D::compute()
+     */
+    // --------------------------------------------------------------
     virtual void doComputation(const robot_msgs::PointCloud& data,
                                cloud_kdtree::KdTree& data_kdtree,
                                const cv::Vector<const robot_msgs::Point32*>& interest_pts,
                                cv::Vector<cv::Vector<float> >& results) = 0;
 
+    // --------------------------------------------------------------
+    /*!
+     * \brief Does the actual computation after any pre-computations
+     *
+     * \see Descriptor3D::compute()
+     */
+    // --------------------------------------------------------------
     virtual void doComputation(const robot_msgs::PointCloud& data,
                                cloud_kdtree::KdTree& data_kdtree,
                                const cv::Vector<const std::vector<int>*>& interest_region_indices,
                                cv::Vector<cv::Vector<float> >& results) = 0;
 
-    /*! \brief The number of feature values the descriptors computes on success */
+    /*! \brief The number of feature values the inheriting descriptor computes on success */
     unsigned int result_size_;
+
+    /*! \brief Flag if the inheriting descriptor has defined the result size */
     bool result_size_defined_;
 
   private:
