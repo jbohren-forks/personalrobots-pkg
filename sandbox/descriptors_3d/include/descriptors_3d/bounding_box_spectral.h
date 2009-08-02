@@ -46,21 +46,12 @@
 #include <descriptors_3d/spectral_analysis.h>
 
 // --------------------------------------------------------------
-//* BoundingBox
 /*!
+ * \file bounding_box_raw.h
+ *
  * \brief A BoundingBox descriptor computes the dimensions of the
- *        3-D box that encloses a group of points.
- *
- * When computing the feature for an interest point, the bounding box
- * is defined by the neighboring points within some specified radius.
- *
- * When computing the feature for an interest region of points, the
- * bounding box can either be the box that encloses the given region of
- * points, or from the neighboring points within some specified radius
- * from the region's centroid.
- *
- * The bounding box can be computed in the given coordinate frame
- * and/or in the projected principle component space.
+ *        3-D box that encloses a group of points in the neighborhood's
+ *        principle component space
  */
 // --------------------------------------------------------------
 class BoundingBoxSpectral: public NeighborhoodFeature
@@ -68,43 +59,71 @@ class BoundingBoxSpectral: public NeighborhoodFeature
   public:
     // --------------------------------------------------------------
     /*!
-     * \brief Instantiates the BoundingBox descriptor with specified parameters
+     * \brief Instantiates the descriptor to compute the dimensions
+     *        of the bounding box in principle component space that
+     *        encloses a neighborhood of points within a radius of
+     *        the interest point/region.
      *
-     * If computing the bounding box in principle component space, then features are
-     * in order: [a,b,c] where a is the length along the principle eigenvector, b
-     * is the length along the middle eigenvector, and c is the length along the
-     * smallest eigenvector.
+     * The compute features are in order: [a,b,c] where a is the length
+     * along the principle eigenvector, b is the length along the middle
+     * eigenvector, and c is the length along the smallest eigenvector.
      *
-     * If computing the bounding box in the given coordinate frame, then the
-     * features are in order: [x,y,z] where x is the length along the first dimension,
-     * y is the length along the second dimension, z is the length along the third
-     * dimension.
+     * When computing the feature for an interest region of points, the
+     * bounding box can either be the box that encloses the given region
+     * of points (indicated by -negative value), or from the neighboring points
+     * within the specified radius from the region's centroid (indicated
+     * by positive value).
      *
-     * If computing both bounding boxes, the values are in order: [a b c x y z]
-     *
-     * \param use_pca_bbox Flag to compute the bounding box in the principle
-     *                     component space
-     * \param use_raw_bbox Flag to compute the bounding box in the given
-     *                     coordinate xyz space
+     * \param bbox_radius The radius from the interest point/region to define
+     *                    the neighborhood that defines the bounding box
+     * \param spectral_information Class to retrieve spectral information for the
+     *                             point cloud during Descriptor3D::compute()
      */
     // --------------------------------------------------------------
     BoundingBoxSpectral(double bbox_radius, SpectralAnalysis& spectral_information);
 
   protected:
+    // --------------------------------------------------------------
+    /*!
+     * \brief Computes the spectral information (eigenvectors), necessary
+     *        to project the points into principle component space;
+     *
+     * \param data The point cloud to process from Descriptor3D::compute()
+     * \param data_kdtree The efficient neighborhood data structure
+     * \param interest_pts  The list of interest points to be processed
+     *
+     * \return 0 on success, otherwise negative value on error
+     */
+    // --------------------------------------------------------------
     virtual int precompute(const robot_msgs::PointCloud& data,
                            cloud_kdtree::KdTree& data_kdtree,
                            const cv::Vector<const robot_msgs::Point32*>& interest_pts);
 
+    // --------------------------------------------------------------
+    /*!
+     * \brief Computes the spectral information (eigenvectors), necessary
+     *        to project the points into principle component space;
+     *
+     * \param data The point cloud to process from Descriptor3D::compute()
+     * \param data_kdtree The efficient neighborhood data structure
+     * \param interest_pts  The list of interest regions to be processed
+     *
+     * \return 0 on success, otherwise negative value on error
+     */
+    // --------------------------------------------------------------
     virtual int precompute(const robot_msgs::PointCloud& data,
                            cloud_kdtree::KdTree& data_kdtree,
                            const cv::Vector<const std::vector<int>*>& interest_region_indices);
 
     // --------------------------------------------------------------
     /*!
-     * \brief Computes the bounding box information of the given neighborhood
+     * \brief Projects the given neighborhood in principle component space and then
+     *        computes its bounding box
      *
-     * \param data The overall point cloud data
-     * \param neighbor_indices List of indices in data that constitute the neighborhood
+     * \param data The point cloud to process from Descriptor3D::compute()
+     * \param neighbor_indices The list of indices in data that constitute the neighborhood
+     * \param interest_sample_idx The index of the interest point/region that is being
+     *                            processed from Descriptor3D::compute()
      * \param result The vector to hold the computed bounding box dimensions
      */
     // --------------------------------------------------------------
@@ -114,9 +133,16 @@ class BoundingBoxSpectral: public NeighborhoodFeature
                                             cv::Vector<float>& result) const;
 
   private:
+    /*! \brief The smallest eigenvector for each interest point/region */
     const std::vector<const Eigen::Vector3d*>* eig_vecs_min_;
+
+    /*! \brief The middle eigenvector for each interest point/region */
     const std::vector<const Eigen::Vector3d*>* eig_vecs_mid_;
+
+    /*! \brief The biggest eigenvector for each interest point/region */
     const std::vector<const Eigen::Vector3d*>* eig_vecs_max_;
+
+    /*! \brief The container the holds spectral information for the point cloud */
     SpectralAnalysis* spectral_information_;
 };
 
