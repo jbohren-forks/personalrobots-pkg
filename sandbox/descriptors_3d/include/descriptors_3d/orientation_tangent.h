@@ -49,8 +49,8 @@
 /*!
  * \file orientation_tangent.h
  *
- * \brief An Orientation descriptor using locally extracted tangents as
- *        the local direction.
+ * \brief An OrientationTangent descriptor using locally extracted
+ *        tangents as the local direction.
  */
 // --------------------------------------------------------------
 class OrientationTangent: public OrientationGeneric
@@ -58,8 +58,9 @@ class OrientationTangent: public OrientationGeneric
   public:
     // --------------------------------------------------------------
     /*!
-     * \brief OrientationTangent uses extracted local tangents around each interest
-     *        point/region to use as the local directions.
+     * \brief An OrientationTangent descriptor uses extracted local
+     *        tangents around each interest point/region to use as
+     *        the local directions.
      *
      * \warning This descriptor ignores the sign of the extracted tangent and
      *          the computed feature is always between 0 and 1

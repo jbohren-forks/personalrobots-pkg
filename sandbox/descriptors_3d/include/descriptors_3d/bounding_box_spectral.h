@@ -86,11 +86,11 @@ class BoundingBoxSpectral: public NeighborhoodFeature
     // --------------------------------------------------------------
     /*!
      * \brief Computes the spectral information (eigenvectors), necessary
-     *        to project the points into principle component space;
+     *        to project the points into principle component space
      *
      * \param data The point cloud to process from Descriptor3D::compute()
      * \param data_kdtree The efficient neighborhood data structure
-     * \param interest_pts  The list of interest points to be processed
+     * \param interest_pts The list of interest points to be processed
      *
      * \return 0 on success, otherwise negative value on error
      */
@@ -102,11 +102,11 @@ class BoundingBoxSpectral: public NeighborhoodFeature
     // --------------------------------------------------------------
     /*!
      * \brief Computes the spectral information (eigenvectors), necessary
-     *        to project the points into principle component space;
+     *        to project the points into principle component space
      *
      * \param data The point cloud to process from Descriptor3D::compute()
      * \param data_kdtree The efficient neighborhood data structure
-     * \param interest_pts  The list of interest regions to be processed
+     * \param interest_pts The list of interest regions to be processed
      *
      * \return 0 on success, otherwise negative value on error
      */

@@ -58,8 +58,9 @@ class OrientationNormal: public OrientationGeneric
   public:
     // --------------------------------------------------------------
     /*!
-     * \brief OrientationNormal uses extracted local normals around each interest
-     *        point/region to use as the local directions.
+     * \brief An OrientationNormal descriptor uses extracted local
+     *        normals around each interest point/region to use as the
+     *        local directions.
      *
      * \warning This descriptor ignores the sign of the extracted normal and
      *          the computed feature is always between 0 and 1

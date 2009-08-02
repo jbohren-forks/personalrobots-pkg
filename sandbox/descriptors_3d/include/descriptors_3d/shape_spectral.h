@@ -44,8 +44,9 @@
 #include <descriptors_3d/spectral_analysis.h>
 
 // --------------------------------------------------------------
-//* ShapeSpectral
 /*!
+ * \file shape_spectral.h
+ *
  * \brief A ShapeSpectral descriptor computes features that describe
  *        the local shape of a neighborhood of points.
  *
@@ -58,36 +59,55 @@ class ShapeSpectral: public Descriptor3D
   public:
     // --------------------------------------------------------------
     /*!
-     * \brief Instantiates the ShapeSpectral descriptor
+     * \brief A ShapeSpectral descriptor computes features that indicate
+     *        the flat-ness (F), linear-ness (L), and scattered-ness (S)
+     *        of a local neighborhood around an interest point/region.
      *
-     * The features indicate the flat-ness (F), linear-ness (L), and
-     * scattered-ness (S) of a local neighborhood around an interest point/region.
      * The features are based on the eigenvalues from the scatter matrix
      * constructed from the neighborhood of points.
-     *
-     * A curvature (C) feature can optionally be computed
-     *
      * The feature vector format is: [S L F (C)]
+     *
+     * \param spectral_information Class to retrieve the eigenvalues from
+     *
      */
     // --------------------------------------------------------------
     ShapeSpectral(SpectralAnalysis& spectral_information);
 
   protected:
+    // --------------------------------------------------------------
+    /*!
+     * \brief Computes/retrieves the eigenvalues for each interest point
+     *
+     * \param data The point cloud to process from Descriptor3D::compute()
+     * \param data_kdtree The efficient neighborhood data structure
+     * \param interest_pts  The list of interest points to be processed
+     *
+     * \return 0 on success, otherwise negative value on error
+     */
+    // --------------------------------------------------------------
     virtual int precompute(const robot_msgs::PointCloud& data,
                            cloud_kdtree::KdTree& data_kdtree,
                            const cv::Vector<const robot_msgs::Point32*>& interest_pts);
 
+    // --------------------------------------------------------------
+    /*!
+     * \brief Computes/retrieves the eigenvalues for each interest region
+     *
+     * \param data The point cloud to process from Descriptor3D::compute()
+     * \param data_kdtree The efficient neighborhood data structure
+     * \param interest_pts  The list of interest regions to be processed
+     *
+     * \return 0 on success, otherwise negative value on error
+     */
+    // --------------------------------------------------------------
     virtual int precompute(const robot_msgs::PointCloud& data,
                            cloud_kdtree::KdTree& data_kdtree,
                            const cv::Vector<const std::vector<int>*>& interest_region_indices);
 
     // --------------------------------------------------------------
     /*!
-     * \brief Computes the bounding box dimensions around each interest point
-     *
-     * \warning setBoundingBoxRadius() must be called first
-     * \warning If computing the bounding box in principle component space, then
-     *          setSpectralRadius() or useSpectralInformation() must be called first
+     * \brief Computes the saliency features that describe the local
+     *        shape around each interest point
      *
      * \see Descriptor3D::compute
      */
@@ -99,11 +119,8 @@ class ShapeSpectral: public Descriptor3D
 
     // --------------------------------------------------------------
     /*!
-     * \brief Computes the bounding box dimensions around/for each interest region
-     *
-     * \warning setBoundingBoxRadius() must be called first
-     * \warning If computing the bounding box in principle component space, then
-     *          setSpectralRadius() or useSpectralInformation() must be called first
+     * \brief Computes the saliency features that describe the local
+     *        shape around/in each interest region
      *
      * \see Descriptor3D::compute
      */
@@ -115,18 +132,16 @@ class ShapeSpectral: public Descriptor3D
 
     // --------------------------------------------------------------
     /*!
-     * \brief Computes the bounding box information of the given neighborhood
-     *
-     * \param data The overall point cloud data
-     * \param neighbor_indices List of indices in data that constitute the neighborhood
-     * \param result The vector to hold the computed bounding box dimensions
+     * \brief Computes local shape features for the specified interest point/region
      */
     // --------------------------------------------------------------
     virtual void computeShapeFeatures(const unsigned int interest_sample_idx, cv::Vector<float>& result) const;
 
   private:
-    SpectralAnalysis* spectral_information_;
+    /*! \brief The eigenvalues for each interest point/region to be processed */
     const std::vector<const Eigen::Vector3d*>* eig_vals_;
+
+    SpectralAnalysis* spectral_information_;
 };
 
 #endif
