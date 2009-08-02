@@ -566,18 +566,16 @@
     </gazebo>
 
     <gazebo name="${side}_wrist_flex_sensor" reference="${side}_wrist_flex_link">
-      <verbatim key="${side}_wrist_flex_bumper_sensor">
-        <sensor:contact name="${side}_wrist_flex_contact_sensor">
-          <geom>${side}_wrist_flex_collision</geom>
+      <sensor:contact name="${side}_wrist_flex_contact_sensor">
+        <geom>${side}_wrist_flex_collision</geom>
+        <updateRate>100.0</updateRate>
+        <controller:ros_bumper name="${side}_wrist_flex_ros_bumper_controller" plugin="libros_bumper.so">
+          <alwaysOn>true</alwaysOn>
           <updateRate>100.0</updateRate>
-          <controller:ros_bumper name="${side}_wrist_flex_ros_bumper_controller" plugin="libros_bumper.so">
-            <alwaysOn>true</alwaysOn>
-            <updateRate>100.0</updateRate>
-            <bumperTopicName>${side}_wrist_flex_bumper</bumperTopicName>
-            <interface:bumper name="${side}_wrist_flex_ros_bumper_iface" />
-          </controller:ros_bumper>
-        </sensor:contact>
-      </verbatim>
+          <bumperTopicName>${side}_wrist_flex_bumper</bumperTopicName>
+          <interface:bumper name="${side}_wrist_flex_ros_bumper_iface" />
+        </controller:ros_bumper>
+      </sensor:contact>
     </gazebo>
     <gazebo name="gazebo_material" reference="${side}_wrist_flex_visual">
       <material value="PR2/Grey" />
