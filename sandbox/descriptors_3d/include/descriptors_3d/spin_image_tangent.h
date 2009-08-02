@@ -46,15 +46,11 @@
 #include <descriptors_3d/spectral_analysis.h>
 
 // --------------------------------------------------------------
-//* Orientation
 /*!
- * \brief An Orientation descriptor looks at the angle of an interest
- *        point/region's neighborhood principle directions with respect
- *        to a given reference direction.
+ * \file spin_image_normal.h
  *
- * The principle directions are the tangent (biggest eigenvector)
- * and normal (smallest eigenvector) vectors from the extracted spectral
- * information.
+ * \brief A spin image descriptor using local tangent as the
+ *        spinning axis
  */
 // --------------------------------------------------------------
 class SpinImageTangent: public SpinImageGeneric
@@ -62,17 +58,32 @@ class SpinImageTangent: public SpinImageGeneric
   public:
     // --------------------------------------------------------------
     /*!
-     * \brief Instantiates the Orientation descriptor
+     * \brief A SpinImageTangent descriptor computes a spin image spinning
+     *        around the extracted tangent vector.
      *
-     * The computed feature is the cosine of the angle between the extracted
-     * tangent/normal vector against the specified reference directions.
+     * The tangent vector is the "beta" axis as described in Johnson & Hebert 1999.
      *
-     * \warning Since the sign of the extracted vectors have no meaning, the
-     *          computed feature is always between 0 and 1
+     * Example spin image definition with 3 rows and 4 cols: \n
+     *   beta                 \n
+     *    ^                   \n
+     *    |_ _ _ _            \n
+     *    |_|_|_|_|           \n
+     *    x_|_|_|_|           \n
+     *    |_|_|_|_|           \n
+     *    -----------> alpha  \n
+     * (x = center point of spin image, beta = [tangent vector])
      *
-     * If computing using both tangent and normal vectors, the feature vector
-     * format is: [a b] where a is the projection of the tangent vector and b
-     * is the projection of the normal vector
+     * \param row_res The cell resolution along the beta axis
+     * \param col_res The cell resolution along the alpha axis
+     * \param nbr_rows The number of cells along the beta axis
+     * \param nbr_cols The number of cells along the alpha axis
+     * \param use_interest_regions_only When computing for interest regions,
+     *                                  true indicates to use the points within
+     *                                  the interest region to compute the spin image
+     * \param spectral_information The class to retrieve the tangent from for
+     *                             each interest point/region
+     *
+     * \warning nbr_rows must be odd
      */
     // --------------------------------------------------------------
     SpinImageTangent(const double row_res,

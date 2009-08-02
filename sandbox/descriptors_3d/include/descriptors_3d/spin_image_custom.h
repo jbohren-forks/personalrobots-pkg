@@ -78,10 +78,11 @@ class SpinImageCustom: public SpinImageGeneric
      * \param col_res The cell resolution along the alpha axis
      * \param nbr_rows The number of cells along the beta axis
      * \param nbr_cols The number of cells along the alpha axis
+     * \param use_interest_regions_only When computing for interest regions,
+     *                                  true indicates to use the points within
+     *                                  the interest region to compute the spin image
      *
      * \warning nbr_rows must be odd
-     *
-     * \return 0 on success, otherwise negative value on error
      */
     // --------------------------------------------------------------
     SpinImageCustom(const double ref_x,
