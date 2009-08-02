@@ -37,7 +37,7 @@
     for this test (tf_message_test vs. scan_test). -->
     <param name="topic" value="/tf_message" />
     <param name="hz" value="100.0" />
-    <param name="hzerror" value="20.0" />
+    <param name="hzerror" value="30.0" />
     <param name="test_duration" value="10.0" />
     <param name="check_intervals" value="false" />
   </test>
