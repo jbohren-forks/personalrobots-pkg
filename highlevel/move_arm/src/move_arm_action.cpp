@@ -42,8 +42,7 @@
 #include <pr2_mechanism_controllers/TrajectoryCancel.h>
 
 #include <manipulation_srvs/IKService.h>
-#include <manipulation_srvs/IKQuery.h>
-#include <motion_planning_msgs/ConvertPoseToJointConstraint.h>
+#include <motion_planning_msgs/ConvertToJointConstraint.h>
 
 #include <visualization_msgs/Marker.h>
 #include <cstdlib>
@@ -613,7 +612,7 @@ namespace move_arm
 		    else
 		    {
 			// if it is not, we try to fix it
-			motion_planning_msgs::ConvertPoseToJointConstraint::Request c_req;
+			motion_planning_msgs::ConvertToJointConstraint::Request c_req;
 			c_req.params = req.params;
 			c_req.start_state = req.start_state;
 			c_req.constraints = req.goal_constraints;
@@ -641,8 +640,8 @@ namespace move_arm
 			    }
 			}
 			
-			motion_planning_msgs::ConvertPoseToJointConstraint::Response c_res;
-			ros::ServiceClient s_client = node_handle_.serviceClient<motion_planning_msgs::ConvertPoseToJointConstraint>(SEARCH_VALID_STATE_NAME);
+			motion_planning_msgs::ConvertToJointConstraint::Response c_res;
+			ros::ServiceClient s_client = node_handle_.serviceClient<motion_planning_msgs::ConvertToJointConstraint>(SEARCH_VALID_STATE_NAME);
 			if (s_client.call(c_req, c_res))
 			{
 			    if (!c_res.joint_constraint.empty())
@@ -661,14 +660,14 @@ namespace move_arm
 		}
 		else
 		{
-		    motion_planning_msgs::ConvertPoseToJointConstraint::Request c_req;
+		    motion_planning_msgs::ConvertToJointConstraint::Request c_req;
 		    c_req.params = req.params;
 		    c_req.start_state = req.start_state;
 		    c_req.constraints = req.goal_constraints;
 		    c_req.names = arm_joint_names_;
 		    c_req.allowed_time = 1.0;
-		    motion_planning_msgs::ConvertPoseToJointConstraint::Response c_res;
-		    ros::ServiceClient s_client = node_handle_.serviceClient<motion_planning_msgs::ConvertPoseToJointConstraint>(SEARCH_VALID_STATE_NAME);
+		    motion_planning_msgs::ConvertToJointConstraint::Response c_res;
+		    ros::ServiceClient s_client = node_handle_.serviceClient<motion_planning_msgs::ConvertToJointConstraint>(SEARCH_VALID_STATE_NAME);
 		    if (s_client.call(c_req, c_res))
 		    {
 			if (!c_res.joint_constraint.empty())

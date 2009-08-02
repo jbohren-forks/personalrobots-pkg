@@ -40,7 +40,7 @@
 #include "ompl_planning/Model.h"
 #include <ros/ros.h>
 #include <motion_planning_msgs/GetMotionPlan.h>
-#include <motion_planning_msgs/ConvertPoseToJointConstraint.h>
+#include <motion_planning_msgs/ConvertToJointConstraint.h>
 
 /** \brief Main namespace */
 namespace ompl_planning
@@ -85,13 +85,13 @@ namespace ompl_planning
 	bool isRequestValid(ModelMap &models, motion_planning_msgs::GetMotionPlan::Request &req);
 
 	/** \brief Check if the request is valid */
-	bool isRequestValid(ModelMap &models, motion_planning_msgs::ConvertPoseToJointConstraint::Request &req);
+	bool isRequestValid(ModelMap &models, motion_planning_msgs::ConvertToJointConstraint::Request &req);
 
 	/** \brief Check and compute a motion plan. Return true if the plan was succesfully computed */
 	bool computePlan(ModelMap &models, const planning_models::StateParams *start, motion_planning_msgs::GetMotionPlan::Request &req, motion_planning_msgs::GetMotionPlan::Response &res);
 
 	/** \brief Find a state in the specified goal region. Return true if state was found */
-	bool findState(ModelMap &models, const planning_models::StateParams *start, motion_planning_msgs::ConvertPoseToJointConstraint::Request &req, motion_planning_msgs::ConvertPoseToJointConstraint::Response &res);
+	bool findState(ModelMap &models, const planning_models::StateParams *start, motion_planning_msgs::ConvertToJointConstraint::Request &req, motion_planning_msgs::ConvertToJointConstraint::Response &res);
 
     private:
 
@@ -106,7 +106,7 @@ namespace ompl_planning
 	void configure(const planning_models::StateParams *startState, motion_planning_msgs::GetMotionPlan::Request &req, PlannerSetup *psetup);
 
 	/** \brief Set up all the data needed by inverse kinematics based on a request */
-	void configure(const planning_models::StateParams *startState, motion_planning_msgs::ConvertPoseToJointConstraint::Request &req, IKSetup *iksetup);
+	void configure(const planning_models::StateParams *startState, motion_planning_msgs::ConvertToJointConstraint::Request &req, IKSetup *iksetup);
 	
 	/** \brief Compute the actual motion plan. Return true if computed plan was trivial (start state already in goal region) */
 	bool callPlanner(PlannerSetup *psetup, int times, double allowed_time, Solution &sol);

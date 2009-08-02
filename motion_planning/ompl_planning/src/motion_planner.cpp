@@ -36,7 +36,6 @@
 
 #include "ompl_planning/Model.h"
 #include "request_handler/RequestHandler.h"
-#include <motion_planning_msgs/ConvertPoseToJointConstraint.h>
 
 using namespace ompl_planning;
 
@@ -180,7 +179,7 @@ private:
 	return st;	
     }
     
-    bool findValidState(motion_planning_msgs::ConvertPoseToJointConstraint::Request &req, motion_planning_msgs::ConvertPoseToJointConstraint::Response &res)
+    bool findValidState(motion_planning_msgs::ConvertToJointConstraint::Request &req, motion_planning_msgs::ConvertToJointConstraint::Response &res)
     {
 	ROS_INFO("Received request for searching a valid state");
 	bool st = false;

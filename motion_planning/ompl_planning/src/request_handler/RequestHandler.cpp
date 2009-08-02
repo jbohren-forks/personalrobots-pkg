@@ -40,7 +40,7 @@
 #include <sstream>
 #include <cstdlib>
 
-bool ompl_planning::RequestHandler::isRequestValid(ModelMap &models, motion_planning_msgs::ConvertPoseToJointConstraint::Request &req)
+bool ompl_planning::RequestHandler::isRequestValid(ModelMap &models, motion_planning_msgs::ConvertToJointConstraint::Request &req)
 {   
     ModelMap::const_iterator pos = models.find(req.params.model_id);
     
@@ -186,7 +186,7 @@ bool ompl_planning::RequestHandler::isRequestValid(ModelMap &models, motion_plan
     return true;
 }
 
-void ompl_planning::RequestHandler::configure(const planning_models::StateParams *startState, motion_planning_msgs::ConvertPoseToJointConstraint::Request &req, IKSetup *iksetup)
+void ompl_planning::RequestHandler::configure(const planning_models::StateParams *startState, motion_planning_msgs::ConvertToJointConstraint::Request &req, IKSetup *iksetup)
 {
     /* clear memory */
     iksetup->si->clearGoal();
@@ -332,8 +332,8 @@ bool ompl_planning::RequestHandler::fixInputStates(PlannerSetup *psetup, double 
     return result;
 }
 
-bool ompl_planning::RequestHandler::findState(ModelMap &models, const planning_models::StateParams *start, motion_planning_msgs::ConvertPoseToJointConstraint::Request &req,
-					      motion_planning_msgs::ConvertPoseToJointConstraint::Response &res)
+bool ompl_planning::RequestHandler::findState(ModelMap &models, const planning_models::StateParams *start, motion_planning_msgs::ConvertToJointConstraint::Request &req,
+					      motion_planning_msgs::ConvertToJointConstraint::Response &res)
 {    
     if (!isRequestValid(models, req))
 	return false;
