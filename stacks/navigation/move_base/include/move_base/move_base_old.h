@@ -41,7 +41,7 @@
 #include <nav_robot_actions/MoveBaseState.h>
 #include <nav_robot_actions/base_local_planner.h>
 #include <nav_robot_actions/base_global_planner.h>
-#include <robot_msgs/PoseStamped.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <ros/ros.h>
 #include <costmap_2d/costmap_2d_ros.h>
 #include <costmap_2d/costmap_2d.h>
@@ -70,7 +70,7 @@ namespace move_base {
    * @class MoveBase
    * @brief A class adhering to the robot_actions::Action interface that moves the robot base to a goal location.
    */
-  class MoveBase : public robot_actions::Action<robot_msgs::PoseStamped, robot_msgs::PoseStamped> {
+  class MoveBase : public robot_actions::Action<geometry_msgs::PoseStamped, geometry_msgs::PoseStamped> {
     public:
       /**
        * @brief  Constructor for the actions
@@ -90,7 +90,7 @@ namespace move_base {
        * @param feedback Feedback that the action gives to a higher-level monitor, in this case, the position of the robot
        * @return The result of the execution, ie: Success, Preempted, Aborted, etc.
        */
-      virtual robot_actions::ResultStatus execute(const robot_msgs::PoseStamped& goal, robot_msgs::PoseStamped& feedback);
+      virtual robot_actions::ResultStatus execute(const geometry_msgs::PoseStamped& goal, geometry_msgs::PoseStamped& feedback);
 
     private:
       /**
@@ -107,13 +107,13 @@ namespace move_base {
        * @param  plan Will be filled in with the plan made by the planner
        * @return  True if planning succeeds, false otherwise
        */
-      bool makePlan(const robot_msgs::PoseStamped& goal, std::vector<robot_msgs::PoseStamped>& plan);
+      bool makePlan(const geometry_msgs::PoseStamped& goal, std::vector<geometry_msgs::PoseStamped>& plan);
 
       /**
        * @brief  Publish a goal to the visualizer
        * @param  goal The goal to visualize
        */
-      void publishGoal(const robot_msgs::PoseStamped& goal);
+      void publishGoal(const geometry_msgs::PoseStamped& goal);
 
       /**
        * @brief  Resets the costmaps to the static map outside a given window
