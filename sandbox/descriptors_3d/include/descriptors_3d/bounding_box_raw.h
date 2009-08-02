@@ -57,21 +57,19 @@ class BoundingBoxRaw: public NeighborhoodFeature
   public:
     // --------------------------------------------------------------
     /*!
-     * \brief Instantiates the bounding box descriptor
-     *
-     * The descriptor computes the dimensions of the bounding box that
-     * encloses a neighborhood of points within bbox_radius of the
-     * interest point/region.
+     * \brief Instantiates the descriptor to compute the dimensions
+     *        of the bounding box that encloses a neighborhood of points
+     *        within a radius of the interest point/region.
      *
      * The compute features are in order: [dx,dy,dz] where dx is the length
      * along the x dimension, dy is the length along the y dimension, dz is
-     * the length along the zdimension.
+     * the length along the z dimension.
      *
      * When computing the feature for an interest region of points, the
      * bounding box can either be the box that encloses the given region
-     * of points (indicated by -1), or from the neighboring points within
-     * the specified radius from the region's centroid (indicated by positive
-     * value).
+     * of points (indicated by -negative value), or from the neighboring points
+     * within the specified radius from the region's centroid (indicated
+     * by positive value).
      *
      * \param bbox_radius The radius from the interest point/region to define
      *                    the neighborhood that defines the bounding box
@@ -84,6 +82,8 @@ class BoundingBoxRaw: public NeighborhoodFeature
     /*!
      * \brief This descriptor requires no pre-computation, so this method
      *        has no affect
+     *
+     * \return 0 always
      */
     // --------------------------------------------------------------
     virtual int precompute(const robot_msgs::PointCloud& data,
@@ -94,6 +94,8 @@ class BoundingBoxRaw: public NeighborhoodFeature
     /*!
      * \brief This descriptor requires no pre-computation, so this method
      *        has no affect
+     *
+     * \return 0 always
      */
     // --------------------------------------------------------------
     virtual int precompute(const robot_msgs::PointCloud& data,
@@ -105,7 +107,7 @@ class BoundingBoxRaw: public NeighborhoodFeature
      * \brief Computes the bounding box information of the given neighborhood
      *
      * \param data The overall point cloud data
-     * \param neighbor_indices List of indices in data that constitute the neighborhood
+     * \param neighbor_indices The list of indices in data that constitute the neighborhood
      * \param interest_sample_idx The index of the interest point/region that is being
      *                            processed from Descriptor3D::compute()
      * \param result The vector to hold the computed bounding box dimensions

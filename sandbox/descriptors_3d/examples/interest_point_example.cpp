@@ -60,7 +60,7 @@ int main()
   createPointCloud(data);
   cloud_kdtree::KdTreeANN data_kdtree(data);
   cv::Vector<const robot_msgs::Point32*> interest_pts(data.pts.size());
-  for (unsigned int i = 0 ; i < data.pts.size() ; i++)
+  for (size_t i = 0 ; i < data.pts.size() ; i++)
   {
     interest_pts[i] = &(data.pts[i]);
   }
