@@ -71,11 +71,12 @@ void NeighborhoodFeature::doComputation(const robot_msgs::PointCloud& data,
   // ----------------------------------------
   // Iterate over each interest point, grab neighbors within bbox radius,
   // then compute bounding box
-  size_t nbr_interest_pts = interest_pts.size();
-  for (size_t i = 0 ; i < nbr_interest_pts ; i++)
+  int nbr_interest_pts = interest_pts.size();
+#pragma omp parallel for
+  for (int i = 0 ; i < nbr_interest_pts ; i++)
   {
     // Retrieve interest point
-    const robot_msgs::Point32* curr_interest_pt = interest_pts[i];
+    const robot_msgs::Point32* curr_interest_pt = interest_pts[static_cast<size_t> (i)];
     if (curr_interest_pt == NULL)
     {
       ROS_WARN("BoundingBox::compute() passed NULL interest point");
@@ -88,7 +89,7 @@ void NeighborhoodFeature::doComputation(const robot_msgs::PointCloud& data,
       // radiusSearch returning false (0 points) is handled by computeBoundingBoxFeatures
       data_kdtree.radiusSearch(*curr_interest_pt, neighborhood_radius_, neighbor_indices, neighbor_distances);
 
-      computeNeighborhoodFeature(data, neighbor_indices, i, results[i]);
+      computeNeighborhoodFeature(data, neighbor_indices, i, results[static_cast<size_t> (i)]);
     }
   }
 }
@@ -110,11 +111,12 @@ void NeighborhoodFeature::doComputation(const robot_msgs::PointCloud& data,
 
   // ----------------------------------------
   // Compute the dimensions of the bounding box around the points
-  size_t nbr_interest_regions = interest_region_indices.size();
-  for (size_t i = 0 ; i < nbr_interest_regions ; i++)
+  int nbr_interest_regions = interest_region_indices.size();
+#pragma omp parallel for
+  for (int i = 0 ; i < nbr_interest_regions ; i++)
   {
     // Retrieve interest region
-    const vector<int>* curr_interest_region = interest_region_indices[i];
+    const vector<int>* curr_interest_region = interest_region_indices[static_cast<size_t> (i)];
     if (curr_interest_region == NULL)
     {
       ROS_WARN("BoundingBox::compute() passed NULL interest region");
@@ -137,7 +139,7 @@ void NeighborhoodFeature::doComputation(const robot_msgs::PointCloud& data,
         curr_interest_region = &neighbor_indices;
       }
 
-      computeNeighborhoodFeature(data, *curr_interest_region, i, results[i]);
+      computeNeighborhoodFeature(data, *curr_interest_region, i, results[static_cast<size_t> (i)]);
     }
   }
 }

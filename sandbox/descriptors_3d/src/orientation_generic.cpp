@@ -60,10 +60,11 @@ void OrientationGeneric::doComputation(const robot_msgs::PointCloud& data,
   // ----------------------------------------
   // Iterate over each interest point, grab neighbors within bbox radius,
   // then compute bounding box
-  size_t nbr_interest_pts = interest_pts.size();
-  for (size_t i = 0 ; i < nbr_interest_pts ; i++)
+  int nbr_interest_pts = interest_pts.size();
+#pragma omp parallel for
+  for (int i = 0 ; i < nbr_interest_pts ; i++)
   {
-    computeOrientation(i, results[i]);
+    computeOrientation(i, results[static_cast<size_t> (i)]);
   }
 }
 
@@ -78,10 +79,11 @@ void OrientationGeneric::doComputation(const robot_msgs::PointCloud& data,
   // ----------------------------------------
   // Iterate over each interest point, grab neighbors within bbox radius,
   // then compute bounding box
-  size_t nbr_interest_regions = interest_region_indices.size();
-  for (size_t i = 0 ; i < nbr_interest_regions ; i++)
+  int nbr_interest_regions = interest_region_indices.size();
+#pragma omp parallel for
+  for (int i = 0 ; i < nbr_interest_regions ; i++)
   {
-    computeOrientation(i, results[i]);
+    computeOrientation(i, results[static_cast<size_t> (i)]);
   }
 }
 

@@ -72,8 +72,9 @@ void SpinImageGeneric::computeNeighborhoodFeature(const robot_msgs::PointCloud& 
   const Eigen::Vector3d& curr_center_pt = spin_image_centers_[interest_sample_idx];
 
   float max_bin_count = 1.0; // init to 1.0 so avoid divide by 0 if no neighbor points
-  unsigned int nbr_neighbors = neighbor_indices.size();
-  for (unsigned int i = 0 ; i < nbr_neighbors ; i++)
+  int nbr_neighbors = neighbor_indices.size();
+#pragma omp parallel for
+  for (int i = 0 ; i < nbr_neighbors ; i++)
   {
     // Create vector from center point to neighboring point
     Eigen::Vector3d neighbor_vec;
@@ -104,10 +105,13 @@ void SpinImageGeneric::computeNeighborhoodFeature(const robot_msgs::PointCloud& 
     if (curr_row >= 0 && static_cast<unsigned int> (curr_row) < nbr_rows_ && curr_col < nbr_cols_)
     {
       size_t cell_nbr = static_cast<size_t> (curr_row * nbr_cols_ + curr_col);
-      result[cell_nbr] += 1.0;
-      if (result[cell_nbr] > max_bin_count)
+#pragma omp critical
       {
-        max_bin_count = result[cell_nbr];
+        result[cell_nbr] += 1.0;
+        if (result[cell_nbr] > max_bin_count)
+        {
+          max_bin_count = result[cell_nbr];
+        }
       }
     }
   }
