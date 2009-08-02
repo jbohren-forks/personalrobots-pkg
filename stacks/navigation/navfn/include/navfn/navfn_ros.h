@@ -40,12 +40,11 @@
 #include <ros/ros.h>
 #include <navfn/navfn.h>
 #include <costmap_2d/costmap_2d_ros.h>
-#include <robot_msgs/PoseStamped.h>
-#include <robot_msgs/Point.h>
+#include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/Point.h>
 #include <visualization_msgs/Polyline.h>
 #include <tf/transform_datatypes.h>
 #include <vector>
-#include <robot_msgs/Point.h>
 #include <nav_robot_actions/base_global_planner.h>
 
 namespace navfn {
@@ -65,34 +64,34 @@ namespace navfn {
        * @param plan The plan... filled by the planner
        * @return True if a valid plan was found, false otherwise
        */
-      bool makePlan(const robot_msgs::PoseStamped& start, 
-          const robot_msgs::PoseStamped& goal, std::vector<robot_msgs::PoseStamped>& plan);
+      bool makePlan(const geometry_msgs::PoseStamped& start, 
+          const geometry_msgs::PoseStamped& goal, std::vector<geometry_msgs::PoseStamped>& plan);
 
       /**
        * @brief  Compute the full navigation function for the costmap given a point in the world to start from
        * @param world_point The point to use for seeding the navigation function 
        * @return True if the navigation function was computed successfully, false otherwise
        */
-      bool computePotential(const robot_msgs::Point& world_point);
+      bool computePotential(const geometry_msgs::Point& world_point);
 
       /**
        * @brief Get the potential, or naviagation cost, at a given point in the world (Note: You should call computePotential first)
        * @param world_point The point to get the potential for 
        * @return The navigation function's value at that point in the world
        */
-      double getPointPotential(const robot_msgs::Point& world_point);
+      double getPointPotential(const geometry_msgs::Point& world_point);
 
       /**
        * @brief Check for a valid potential value at a given point in the world (Note: You should call computePotential first)
        * @param world_point The point to get the potential for 
        * @return True if the navigation function is valid at that point in the world, false otherwise
        */
-      bool validPointPotential(const robot_msgs::Point& world_point);
+      bool validPointPotential(const geometry_msgs::Point& world_point);
 
       /**
        * @brief  Publish a path for visualization purposes
        */
-      void publishPlan(const std::vector<robot_msgs::PoseStamped>& path, double r, double g, double b, double a);
+      void publishPlan(const std::vector<geometry_msgs::PoseStamped>& path, double r, double g, double b, double a);
 
       ~NavfnROS(){}
 
