@@ -620,10 +620,10 @@ namespace move_arm
 			c_req.names = arm_joint_names_;
 			c_req.states.resize(1);
 			c_req.states[0].vals = solution;
-			c_req.allowed_time = 0.3;
+			c_req.allowed_time = 1.0;
 
 			// add a few more guesses
-			for (int t = 0 ; t < 4 ; ++t)
+			for (int t = 0 ; t < 9 ; ++t)
 			{
 			    robot_msgs::PoseStamped tpose = req.goal_constraints.pose_constraint[0].pose;
 			    tpose.pose.position.x = uniformDouble(tpose.pose.position.x - req.goal_constraints.pose_constraint[0].position_tolerance_below.x,
@@ -666,7 +666,7 @@ namespace move_arm
 		    c_req.start_state = req.start_state;
 		    c_req.constraints = req.goal_constraints;
 		    c_req.names = arm_joint_names_;
-		    c_req.allowed_time = 0.3;
+		    c_req.allowed_time = 1.0;
 		    motion_planning_msgs::ConvertPoseToJointConstraint::Response c_res;
 		    ros::ServiceClient s_client = node_handle_.serviceClient<motion_planning_msgs::ConvertPoseToJointConstraint>(SEARCH_VALID_STATE_NAME);
 		    if (s_client.call(c_req, c_res))
