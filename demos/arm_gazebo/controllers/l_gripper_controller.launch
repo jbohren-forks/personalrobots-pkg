@@ -1,0 +1,11 @@
+<launch>
+  <group ns="l_gripper_controller" clear_params="true">
+    <param name="type" type="string" value="JointPositionController" />
+    <param name="joint" type="string" value="l_gripper_joint" />
+    <param name="pid/p" type="double" value="100.0" />
+    <param name="pid/i" type="double" value="0.0" />
+    <param name="pid/d" type="double" value="0.0" />
+    <param name="pid/iClamp" type="double" value="0.0" />
+  </group>
+  <node pkg="mechanism_control" type="spawner.py" args="l_gripper_controller" output="screen" />
+</launch>

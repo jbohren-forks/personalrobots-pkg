@@ -1,6 +1,69 @@
 <launch>
   <!--  arm controller -->
-  <rosparam file="$(find arm_gazebo)/controllers/l_arm_position_controller.xml" command="load" output="screen"/>
+  <group ns="l_shoulder_pan_controller" clear_params="true">
+    <param name="type" type="string" value="JointPositionController" />
+    <param name="joint" type="string" value="l_shoulder_pan_joint" />
+    <param name="pid/p" type="double" value="200.0" />
+    <param name="pid/i" type="double" value="0.1" />
+    <param name="pid/d" type="double" value="0.1" />
+    <param name="pid/iClamp" type="double" value="1" />
+  </group>
+  <group ns="l_shoulder_lift_controller" clear_params="true">
+    <param name="type" type="string" value="JointPositionController" />
+    <param name="joint" type="string" value="l_shoulder_lift_joint" />
+    <param name="pid/p" type="double" value="600.0" />
+    <param name="pid/i" type="double" value="0.1" />
+    <param name="pid/d" type="double" value="0.1" />
+    <param name="pid/iClamp" type="double" value="1" />
+  </group>
+  <group ns="l_upper_arm_roll_controller" clear_params="true">
+    <param name="type" type="string" value="JointPositionController" />
+    <param name="joint" type="string" value="l_upper_arm_roll_joint" />
+    <param name="pid/p" type="double" value="50.0" />
+    <param name="pid/i" type="double" value="0.1" />
+    <param name="pid/d" type="double" value="0.1" />
+    <param name="pid/iClamp" type="double" value="1" />
+  </group>
+  <group ns="l_elbow_flex_controller" clear_params="true">
+    <param name="type" type="string" value="JointPositionController" />
+    <param name="joint" type="string" value="l_elbow_flex_joint" />
+    <param name="pid/p" type="double" value="200.0" />
+    <param name="pid/i" type="double" value="0.1" />
+    <param name="pid/d" type="double" value="0.1" />
+    <param name="pid/iClamp" type="double" value="1" />
+  </group>
+  <group ns="l_forearm_roll_controller" clear_params="true">
+    <param name="type" type="string" value="JointPositionController" />
+    <param name="joint" type="string" value="l_forearm_roll_joint" />
+    <param name="pid/p" type="double" value="40.0" />
+    <param name="pid/i" type="double" value="0.1" />
+    <param name="pid/d" type="double" value="0.1" />
+    <param name="pid/iClamp" type="double" value="1" />
+  </group>
+  <group ns="l_wrist_flex_controller" clear_params="true">
+    <param name="type" type="string" value="JointPositionController" />
+    <param name="joint" type="string" value="l_wrist_flex_joint" />
+    <param name="pid/p" type="double" value="50.0" />
+    <param name="pid/i" type="double" value="0.1" />
+    <param name="pid/d" type="double" value="0.1" />
+    <param name="pid/iClamp" type="double" value="1" />
+  </group>
+  <group ns="l_wrist_roll_controller" clear_params="true">
+    <param name="type" type="string" value="JointPositionController" />
+    <param name="joint" type="string" value="l_wrist_roll_joint" />
+    <param name="pid/p" type="double" value="10.0" />
+    <param name="pid/i" type="double" value="0.1" />
+    <param name="pid/d" type="double" value="0.1" />
+    <param name="pid/iClamp" type="double" value="1" />
+  </group>
+  <group ns="l_gripper_controller" clear_params="true">
+    <param name="type" type="string" value="JointPositionController" />
+    <param name="joint" type="string" value="l_gripper_joint" />
+    <param name="pid/p" type="double" value="1000.0" />
+    <param name="pid/i" type="double" value="1.0" />
+    <param name="pid/d" type="double" value="0.0" />
+    <param name="pid/iClamp" type="double" value="10.0" />
+  </group>
   <node pkg="mechanism_control" type="spawner.py" args="l_shoulder_pan_controller l_shoulder_lift_controller l_upper_arm_roll_controller l_elbow_flex_controller l_forearm_roll_controller l_wrist_flex_controller l_wrist_roll_controller l_gripper_controller" output="screen"/>
 </launch>
 

@@ -6,12 +6,6 @@
   <!-- push robot_description to factory and spawn robot in gazebo -->
   <node pkg="gazebo_tools" type="urdf2factory" args="robot_description" respawn="false" output="screen"/>
 
-  <!-- start arm controller -->
-  <!--
-  <node pkg="mechanism_control" type="spawner.py" args="$(find arm_gazebo)/r_arm_trajectory_controller.xml" respawn="false"  />
-  <node pkg="mechanism_control" type="spawner.py" args="$(find arm_gazebo)/r_arm_cartesian_pos_controller.xml" respawn="false"  />
-  <node pkg="mechanism_control" type="spawner.py" args="$(find arm_gazebo)/r_arm_default_controller.xml" respawn="false"  />
-  -->
 
   <!-- send arm a command -->
   <!-- open gripper .5 radians
