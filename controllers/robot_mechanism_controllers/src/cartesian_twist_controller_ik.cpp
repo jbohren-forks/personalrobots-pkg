@@ -185,7 +185,7 @@ namespace controller {
   }
 
 
-  void CartesianTwistControllerIk::command(const robot_msgs::TwistConstPtr& twist_msg)
+  void CartesianTwistControllerIk::command(const geometry_msgs::TwistConstPtr& twist_msg)
   {
     // convert to twist command
     twist_desi_.vel(0) = twist_msg->linear.x;

@@ -62,7 +62,7 @@ namespace controller {
     bool starting();
     void update();
 
-    void command(const robot_msgs::TwistConstPtr& twist_msg);
+    void command(const geometry_msgs::TwistConstPtr& twist_msg);
 
     // input of the controller
     KDL::Twist twist_desi_;

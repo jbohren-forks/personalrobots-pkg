@@ -223,19 +223,19 @@ void CartesianTFFController::update()
 
 void CartesianTFFController::command(const manipulation_msgs::TaskFrameFormalismConstPtr& tff_msg)
 {
-  mode_[0] = trunc(tff_msg_->mode.linear.x);
-  mode_[1] = trunc(tff_msg_->mode.linear.y);
-  mode_[2] = trunc(tff_msg_->mode.linear.z);
-  mode_[3] = trunc(tff_msg_->mode.angular.x);
-  mode_[4] = trunc(tff_msg_->mode.angular.y);
-  mode_[5] = trunc(tff_msg_->mode.angular.z);
+  mode_[0] = trunc(tff_msg->mode.linear.x);
+  mode_[1] = trunc(tff_msg->mode.linear.y);
+  mode_[2] = trunc(tff_msg->mode.linear.z);
+  mode_[3] = trunc(tff_msg->mode.angular.x);
+  mode_[4] = trunc(tff_msg->mode.angular.y);
+  mode_[5] = trunc(tff_msg->mode.angular.z);
 
-  value_[0] = tff_msg_->value.linear.x;
-  value_[1] = tff_msg_->value.linear.y;
-  value_[2] = tff_msg_->value.linear.z;
-  value_[3] =  tff_msg_->value.angular.x;
-  value_[4] =  tff_msg_->value.angular.y;
-  value_[5] =  tff_msg_->value.angular.z;
+  value_[0] = tff_msg->value.linear.x;
+  value_[1] = tff_msg->value.linear.y;
+  value_[2] = tff_msg->value.linear.z;
+  value_[3] =  tff_msg->value.angular.x;
+  value_[4] =  tff_msg->value.angular.y;
+  value_[5] =  tff_msg->value.angular.z;
 }
 
 
