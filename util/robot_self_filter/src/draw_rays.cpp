@@ -36,7 +36,7 @@
 
 #include <ros/ros.h>
 #include <visualization_msgs/Marker.h>
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 #include <tf/message_notifier.h>
 #include <tf/transform_listener.h>
 
@@ -55,7 +55,7 @@ public:
     {
     }
 
-    void cloudCallback(const robot_msgs::PointCloudConstPtr &cloud)
+    void cloudCallback(const sensor_msgs::PointCloudConstPtr &cloud)
     {
 	// compute the origin of the sensor in the frame of the cloud
 	btVector3 sensor_pos;
@@ -119,7 +119,7 @@ protected:
   
     ros::NodeHandle                             nodeHandle_;        
     tf::TransformListener                       tf_;
-    tf::MessageNotifier<robot_msgs::PointCloud> cloudNotifier_;
+    tf::MessageNotifier<sensor_msgs::PointCloud> cloudNotifier_;
     std::string                                 sensor_frame_;
     
     ros::Publisher                              vmPub_;
