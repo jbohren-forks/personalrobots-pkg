@@ -45,15 +45,11 @@
 #include <descriptors_3d/descriptor_3d.h>
 
 // --------------------------------------------------------------
-//* Orientation
 /*!
- * \brief An Orientation descriptor looks at the angle of an interest
- *        point/region's neighborhood principle directions with respect
- *        to a given reference direction.
+ * \file orientation_generic.h
  *
- * The principle directions are the tangent (biggest eigenvector)
- * and normal (smallest eigenvector) vectors from the extracted spectral
- * information.
+ * \brief An Orientation descriptor computes the angle between a local
+ *        direction (data dependent) and a specified reference direction.
  */
 // --------------------------------------------------------------
 class OrientationGeneric: public Descriptor3D
@@ -61,17 +57,13 @@ class OrientationGeneric: public Descriptor3D
   public:
     // --------------------------------------------------------------
     /*!
-     * \brief Instantiates the Orientation descriptor
+     * \brief OrientationGeneric is an abstract base class for descriptors
+     *        that compute the angle between a locally extracted direction
+     *        and a specified reference direction. the Orientation descriptor
      *
-     * The computed feature is the cosine of the angle between the extracted
-     * tangent/normal vector against the specified reference directions.
-     *
-     * \warning Since the sign of the extracted vectors have no meaning, the
-     *          computed feature is always between 0 and 1
-     *
-     * If computing using both tangent and normal vectors, the feature vector
-     * format is: [a b] where a is the projection of the tangent vector and b
-     * is the projection of the normal vector
+     * The computed feature is the cosine of the angle between the two vectors.
+     * See the inheriting class for the definition of the extracted local
+     * direction.
      */
     // --------------------------------------------------------------
     OrientationGeneric();
@@ -81,11 +73,8 @@ class OrientationGeneric: public Descriptor3D
   protected:
     // --------------------------------------------------------------
     /*!
-     * \brief Computes the bounding box dimensions around each interest point
-     *
-     * \warning setBoundingBoxRadius() must be called first
-     * \warning If computing the bounding box in principle component space, then
-     *          setSpectralRadius() or useSpectralInformation() must be called first
+     * \brief Computes the angle between the local around each interest point
+     *        and the reference direction
      *
      * \see Descriptor3D::compute
      */
@@ -97,11 +86,8 @@ class OrientationGeneric: public Descriptor3D
 
     // --------------------------------------------------------------
     /*!
-     * \brief Computes the bounding box dimensions around/for each interest region
-     *
-     * \warning setBoundingBoxRadius() must be called first
-     * \warning If computing the bounding box in principle component space, then
-     *          setSpectralRadius() or useSpectralInformation() must be called first
+     * \brief Computes the angle between the local around each interest region
+     *        and the reference direction
      *
      * \see Descriptor3D::compute
      */
@@ -113,17 +99,21 @@ class OrientationGeneric: public Descriptor3D
 
     // --------------------------------------------------------------
     /*!
-     * \brief Computes the bounding box information of the given neighborhood
+     * \brief Computes the angle for an interest point/region
      *
-     * \param data The overall point cloud data
-     * \param neighbor_indices List of indices in data that constitute the neighborhood
-     * \param result The vector to hold the computed bounding box dimensions
+     * \param interest_sample_idx The interest point/region being processed
+     * \param result Container to hold cosine(theta)
      */
     // --------------------------------------------------------------
     virtual void computeOrientation(const unsigned int interest_sample_idx, cv::Vector<float>& result) const;
 
+    /*! \brief Container of the extracted local direction for each interest point/region */
     const std::vector<const Eigen::Vector3d*>* local_directions_;
+
+    /*! \brief The reference direction to compare the local direction against */
     Eigen::Vector3d reference_direction_;
+
+    /*! \brief The negative of reference_direction_ */
     Eigen::Vector3d reference_direction_flipped_;
 };
 

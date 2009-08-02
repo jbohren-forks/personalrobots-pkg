@@ -46,15 +46,11 @@
 #include <descriptors_3d/spectral_analysis.h>
 
 // --------------------------------------------------------------
-//* Orientation
 /*!
- * \brief An Orientation descriptor looks at the angle of an interest
- *        point/region's neighborhood principle directions with respect
- *        to a given reference direction.
+ * \file orientation_tangent.h
  *
- * The principle directions are the tangent (biggest eigenvector)
- * and normal (smallest eigenvector) vectors from the extracted spectral
- * information.
+ * \brief An Orientation descriptor using locally extracted tangents as
+ *        the local direction.
  */
 // --------------------------------------------------------------
 class OrientationTangent: public OrientationGeneric
@@ -62,17 +58,19 @@ class OrientationTangent: public OrientationGeneric
   public:
     // --------------------------------------------------------------
     /*!
-     * \brief Instantiates the Orientation descriptor
+     * \brief OrientationTangent uses extracted local tangents around each interest
+     *        point/region to use as the local directions.
      *
-     * The computed feature is the cosine of the angle between the extracted
-     * tangent/normal vector against the specified reference directions.
+     * \warning This descriptor ignores the sign of the extracted tangent and
+     *          the computed feature is always between 0 and 1
      *
-     * \warning Since the sign of the extracted vectors have no meaning, the
-     *          computed feature is always between 0 and 1
+     * TODO: use sensor location so the extracted directions have meaningful signs
      *
-     * If computing using both tangent and normal vectors, the feature vector
-     * format is: [a b] where a is the projection of the tangent vector and b
-     * is the projection of the normal vector
+     * \param ref_x The x dimension of the reference direction
+     * \param ref_y The y dimension of the reference direction
+     * \param ref_z The z dimension of the reference direction
+     * \param spectral_information The class to retrieve the tangents from for
+     *                             each interest point/region
      */
     // --------------------------------------------------------------
     OrientationTangent(const double ref_x,
@@ -81,10 +79,24 @@ class OrientationTangent: public OrientationGeneric
                        SpectralAnalysis& spectral_information);
 
   protected:
+    // --------------------------------------------------------------
+    /*!
+     * \brief Extracts the tangents around each interest point
+     *
+     * \see Descriptor3D::precompute()
+     */
+    // --------------------------------------------------------------
     virtual int precompute(const robot_msgs::PointCloud& data,
                            cloud_kdtree::KdTree& data_kdtree,
                            const cv::Vector<const robot_msgs::Point32*>& interest_pts);
 
+    // --------------------------------------------------------------
+    /*!
+     * \brief Extracts the tangents around each interest point
+     *
+     * \see Descriptor3D::precompute()
+     */
+    // --------------------------------------------------------------
     virtual int precompute(const robot_msgs::PointCloud& data,
                            cloud_kdtree::KdTree& data_kdtree,
                            const cv::Vector<const std::vector<int>*>& interest_region_indices);

@@ -76,7 +76,7 @@ int OrientationTangent::precompute(const robot_msgs::PointCloud& data,
   // verify the normals are for the interest points
   if (local_directions_->size() != interest_pts.size())
   {
-    ROS_ERROR("OrientationTangent::initDescriptor inconsistent number of points and spectral info");
+    ROS_ERROR("OrientationTangent::precompute inconsistent number of points and spectral info");
     local_directions_ = NULL;
     return -1;
   }
@@ -106,7 +106,7 @@ int OrientationTangent::precompute(const robot_msgs::PointCloud& data,
   // verify the normals are for the interest regions
   if (local_directions_->size() != interest_region_indices.size())
   {
-    ROS_ERROR("OrientationTangent::initDescriptor inconsistent number of regions and spectral info");
+    ROS_ERROR("OrientationTangent::precompute inconsistent number of regions and spectral info");
     local_directions_ = NULL;
     return -1;
   }

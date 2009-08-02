@@ -67,6 +67,7 @@ class SpectralAnalysis
     /*!
      * \brief Instantiates the class indicating no spectral information
      *        or parameters have been defined
+     *        TODO add sensor location
      */
     // --------------------------------------------------------------
     SpectralAnalysis(double support_radius);
