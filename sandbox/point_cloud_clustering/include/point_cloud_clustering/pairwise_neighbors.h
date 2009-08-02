@@ -40,7 +40,7 @@
 #include <map>
 #include <vector>
 
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 
 #include <point_cloud_mapping/kdtree/kdtree.h>
 
@@ -57,7 +57,7 @@ namespace point_cloud_clustering
 
       int setParameters(double radius, unsigned int nbr_neighbors);
 
-      virtual int cluster(const robot_msgs::PointCloud& pt_cloud,
+      virtual int cluster(const sensor_msgs::PointCloud& pt_cloud,
                           cloud_kdtree::KdTree& pt_cloud_kdtree,
                           const std::set<unsigned int>& indices_to_cluster,
                           std::map<unsigned int, std::vector<int> >& created_clusters);
