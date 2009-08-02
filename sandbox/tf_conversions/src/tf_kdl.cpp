@@ -74,24 +74,24 @@ void PoseKDLToTF(const KDL::Frame& k, tf::Pose& t)
     t.getBasis()[i/3][i%3] = k.M.data[i];
 }
 
-void TwistKDLToMsg(const KDL::Twist &t, robot_msgs::Twist &m)
+void TwistKDLToMsg(const KDL::Twist &t, geometry_msgs::Twist &m)
 {
-  m.vel.x = t.vel.data[0];
-  m.vel.y = t.vel.data[1];
-  m.vel.z = t.vel.data[2];
-  m.rot.x = t.rot.data[0];
-  m.rot.y = t.rot.data[1];
-  m.rot.z = t.rot.data[2];
+  m.linear.x = t.vel.data[0];
+  m.linear.y = t.vel.data[1];
+  m.linear.z = t.vel.data[2];
+  m.angular.x = t.rot.data[0];
+  m.angular.y = t.rot.data[1];
+  m.angular.z = t.rot.data[2];
 }
 
-void TwistMsgToKDL(const robot_msgs::Twist &m, KDL::Twist &t)
+void TwistMsgToKDL(const geometry_msgs::Twist &m, KDL::Twist &t)
 {
-  t.vel.data[0] = m.vel.x;
-  t.vel.data[1] = m.vel.y;
-  t.vel.data[2] = m.vel.z;
-  t.rot.data[0] = m.rot.x;
-  t.rot.data[1] = m.rot.y;
-  t.rot.data[2] = m.rot.z;
+  t.vel.data[0] = m.linear.x;
+  t.vel.data[1] = m.linear.y;
+  t.vel.data[2] = m.linear.z;
+  t.rot.data[0] = m.angular.x;
+  t.rot.data[1] = m.angular.y;
+  t.rot.data[2] = m.angular.z;
 }
 
 }

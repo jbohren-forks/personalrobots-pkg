@@ -32,7 +32,7 @@
 
 #include "tf/transform_datatypes.h"
 #include "kdl/frames.hpp"
-#include "robot_msgs/Twist.h"
+#include "geometry_msgs/Twist.h"
 
 namespace tf
 {
@@ -43,8 +43,8 @@ void TransformKDLToTF(const KDL::Frame &k, tf::Transform &t);
 void PoseTFToKDL(const tf::Pose& pose, KDL::Frame& frame);
 void PoseKDLToTF(const KDL::Frame& frame, tf::Pose& pose);
 
-void TwistKDLToMsg(const KDL::Twist &t, robot_msgs::Twist &m);
-void TwistMsgToKDL(const robot_msgs::Twist &m, KDL::Twist &t);
+void TwistKDLToMsg(const KDL::Twist &t, geometry_msgs::Twist &m);
+void TwistMsgToKDL(const geometry_msgs::Twist &m, KDL::Twist &t);
 }
 
 #endif
