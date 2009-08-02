@@ -161,13 +161,13 @@ void planning_environment::CollisionSpaceMonitor::collisionMapAsSpheres(const ma
 #pragma omp parallel for
 	for (int i = 0 ; i < n ; ++i)
 	{
-	    robot_msgs::PointStamped psi;
+	    geometry_msgs::PointStamped psi;
 	    psi.header  = collisionMap->header;
 	    psi.point.x = collisionMap->boxes[i].center.x;
 	    psi.point.y = collisionMap->boxes[i].center.y;
 	    psi.point.z = collisionMap->boxes[i].center.z;
 	    
-	    robot_msgs::PointStamped pso;
+	    geometry_msgs::PointStamped pso;
 	    try
 	    {
 		tf_->transformPoint(target, psi, pso);
