@@ -94,10 +94,32 @@ class SpinImageTangent: public SpinImageGeneric
                      SpectralAnalysis& spectral_information);
 
   protected:
+    // --------------------------------------------------------------
+    /*!
+     * \brief Computes/retrieves the tangent for each interest point
+     *
+     * \param data The point cloud to process from Descriptor3D::compute()
+     * \param data_kdtree The efficient neighborhood data structure
+     * \param interest_pts  The list of interest points to be processed
+     *
+     * \return 0 on success, otherwise negative value on error
+     */
+    // --------------------------------------------------------------
     virtual int precompute(const robot_msgs::PointCloud& data,
                            cloud_kdtree::KdTree& data_kdtree,
                            const cv::Vector<const robot_msgs::Point32*>& interest_pts);
 
+    // --------------------------------------------------------------
+    /*!
+     * \brief Computes/retrieves the tangent for each interest region
+     *
+     * \param data The point cloud to process from Descriptor3D::compute()
+     * \param data_kdtree The efficient neighborhood data structure
+     * \param interest_pts  The list of interest points to be processed
+     *
+     * \return 0 on success, otherwise negative value on error
+     */
+    // --------------------------------------------------------------
     virtual int precompute(const robot_msgs::PointCloud& data,
                            cloud_kdtree::KdTree& data_kdtree,
                            const cv::Vector<const std::vector<int>*>& interest_region_indices);

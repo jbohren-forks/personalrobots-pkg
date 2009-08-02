@@ -95,16 +95,41 @@ class SpinImageCustom: public SpinImageGeneric
                     const bool use_interest_regions_only);
 
   protected:
+    // --------------------------------------------------------------
+    /*!
+     * \brief Defines the spin axis to be the custom direction for each interest point
+     *
+     * \param data The point cloud to process from Descriptor3D::compute()
+     * \param data_kdtree The efficient neighborhood data structure
+     * \param interest_pts  The list of interest points to be processed
+     *
+     * \return 0 on success, otherwise negative value on error
+     */
+    // --------------------------------------------------------------
     virtual int precompute(const robot_msgs::PointCloud& data,
                            cloud_kdtree::KdTree& data_kdtree,
                            const cv::Vector<const robot_msgs::Point32*>& interest_pts);
 
+    // --------------------------------------------------------------
+    /*!
+     * \brief Defines the spin axis to be the custom direction for each interest region
+     *
+     * \param data The point cloud to process from Descriptor3D::compute()
+     * \param data_kdtree The efficient neighborhood data structure
+     * \param interest_pts  The list of interest points to be processed
+     *
+     * \return 0 on success, otherwise negative value on error
+     */
+    // --------------------------------------------------------------
     virtual int precompute(const robot_msgs::PointCloud& data,
                            cloud_kdtree::KdTree& data_kdtree,
                            const cv::Vector<const std::vector<int>*>& interest_region_indices);
 
   private:
+    /*! \brief The custom spinning axis */
     Eigen::Vector3d custom_axis_;
+
+    /*! \brief The custom axis duplicated for each interest point/region */
     std::vector<const Eigen::Vector3d*> custom_axis_duplicated_;
 };
 
