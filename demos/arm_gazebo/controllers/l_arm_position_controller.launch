@@ -1,0 +1,6 @@
+<launch>
+  <!--  arm controller -->
+  <rosparam file="$(find arm_gazebo)/controllers/l_arm_position_controller.xml" command="load" output="screen"/>
+  <node pkg="mechanism_control" type="spawner.py" args="l_shoulder_pan_controller l_shoulder_lift_controller l_upper_arm_roll_controller l_elbow_flex_controller l_forearm_roll_controller l_wrist_flex_controller l_wrist_roll_controller l_gripper_controller" output="screen"/>
+</launch>
+

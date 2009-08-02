@@ -6,10 +6,9 @@
   <!-- start prototype1 robot (pr2 - arms) -->
   <include file="$(find pr2_gazebo)/prototype1.launch"/>
 
-  <!-- startup base controller -->
-  <param name="base_controller/odom_publish_rate" value="10" />
-  <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/base_controller.xml" output="screen"/>
-  <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/gazebo_head_torso_lift_controller.xml" output="screen"/>
+  <!-- load head and base controllers -->
+  <include file="$(find pr2_default_controllers)/pr2_base_controller_odom.launch"/>
+  <include file="$(find pr2_default_controllers)/head_position_controller.launch"/>
 
   <!-- for visualization -->
   <node pkg="rviz" type="rviz" respawn="false" />
