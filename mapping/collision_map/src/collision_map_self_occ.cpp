@@ -35,7 +35,7 @@
 /** \author Ioan Sucan */
 
 #include <ros/ros.h>
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 #include <mapping_msgs/CollisionMap.h>
 #include <tf/transform_listener.h>
 #include <tf/message_notifier.h>
