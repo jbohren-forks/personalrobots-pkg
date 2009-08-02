@@ -134,6 +134,10 @@ namespace mpglue_node {
     ROS_INFO("CostmapPlannerNode::setCostmap(): w = %u  h = %u", req.width, req.height);
     size_t const ttncells(req.width * req.height);
     
+    // XXXX to do: some planners can cope with changing costmap
+    // dimensions, others cannot... express this in the CostmapPlanner
+    // interface and handle it here.
+    
     // if we have a costmap with different size, just ditch it
     if ((costmap_->raw) && ((size_t) costmap_->ncells_x * costmap_->ncells_y != ttncells)) {
       ROS_INFO("  existing costmap differs in size");
@@ -280,19 +284,19 @@ namespace mpglue_node {
     // time this service was called.
     bool flush_cost_changes(true);
     
-    planner_->setGoal(goal.x, goal.y, goal.theta);
-    planner_->setGoalTolerance(goal.dr, goal.dtheta);
-    planner_->setStart(start.x, start.y, start.theta);
-    planner_->forcePlanningFromScratch(force_from_scratch);
-    planner_->flushCostChanges(flush_cost_changes);
-    
-    // we should treat SBPL planners specially, because they are
-    // capable of incremental planning...
-    //   sbpl_planner->stopAtFirstSolution(start.use_initial_solution);
-    //   sbpl_planner->setAllocatedTime(start.alloc_time);
-    
     shared_ptr<waypoint_plan_t> plan;
     try {
+      planner_->setGoal(goal.x, goal.y, goal.theta);
+      planner_->setGoalTolerance(goal.dr, goal.dtheta);
+      planner_->setStart(start.x, start.y, start.theta);
+      planner_->forcePlanningFromScratch(force_from_scratch);
+      planner_->flushCostChanges(flush_cost_changes);
+      
+      // XXXX to do: should treat SBPL planners specially, because they are
+      // capable of incremental planning...
+      //   sbpl_planner->stopAtFirstSolution(start.use_initial_solution);
+      //   sbpl_planner->setAllocatedTime(start.alloc_time);
+      
       plan = planner_->createPlan();
     }
     catch (std::exception const & ee) {
@@ -304,8 +308,10 @@ namespace mpglue_node {
     // XXXX to do: if the log level is above INFO, we should skip
     // creating this stats message.
     ostringstream os;
-    if (plan)
+    if (plan) {
+      resp.plan_found = 1;
       planner_->getStats().logStream(os, "  planning success", "    ");
+    }
     else
       planner_->getStats().logStream(os, "  planning FAILURE", "    ");
     ROS_INFO("%s", os.str().c_str());
