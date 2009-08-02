@@ -117,8 +117,7 @@ void ShapeSpectral::doComputation(const robot_msgs::PointCloud& data,
                                   cv::Vector<cv::Vector<float> >& results)
 {
   // ----------------------------------------
-  // Iterate over each interest point, grab neighbors within bbox radius,
-  // then compute bounding box
+  // Compute the shape features for each interest point
   int nbr_interest_pts = interest_pts.size();
 #pragma omp parallel for
   for (int i = 0 ; i < nbr_interest_pts ; i++)
@@ -136,8 +135,7 @@ void ShapeSpectral::doComputation(const robot_msgs::PointCloud& data,
                                   cv::Vector<cv::Vector<float> >& results)
 {
   // ----------------------------------------
-  // Iterate over each interest point, grab neighbors within bbox radius,
-  // then compute bounding box
+  // Compute the shape features for each interest region
   int nbr_interest_regions = interest_region_indices.size();
 #pragma omp parallel for
   for (int i = 0 ; i < nbr_interest_regions ; i++)

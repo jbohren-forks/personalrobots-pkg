@@ -66,13 +66,13 @@ void SpectralAnalysis::clearSpectral()
       delete normals_[i];
       delete middle_eig_vecs_[i];
       delete tangents_[i];
-      delete eigen_values_[i];
+      delete eigenvalues_[i];
     }
   }
   normals_.clear();
   middle_eig_vecs_.clear();
   tangents_.clear();
-  eigen_values_.clear();
+  eigenvalues_.clear();
   spectral_computed_ = false;
 }
 
@@ -106,7 +106,7 @@ int SpectralAnalysis::analyzeInterestPoints(const robot_msgs::PointCloud& data,
   normals_.assign(nbr_interest_pts, NULL);
   middle_eig_vecs_.assign(nbr_interest_pts, NULL);
   tangents_.assign(nbr_interest_pts, NULL);
-  eigen_values_.assign(nbr_interest_pts, NULL);
+  eigenvalues_.assign(nbr_interest_pts, NULL);
 
   // ----------------------------------------
   // Find neighboring points within radius for each interest point
@@ -162,7 +162,7 @@ int SpectralAnalysis::analyzeInterestRegions(const robot_msgs::PointCloud& data,
   normals_.assign(nbr_regions, NULL);
   middle_eig_vecs_.assign(nbr_regions, NULL);
   tangents_.assign(nbr_regions, NULL);
-  eigen_values_.assign(nbr_regions, NULL);
+  eigenvalues_.assign(nbr_regions, NULL);
 
   // ----------------------------------------
   // For each interest region, either:
@@ -256,7 +256,7 @@ void SpectralAnalysis::computeSpectralInfo(const robot_msgs::PointCloud& data,
   normals_[idx] = new_normal;
   middle_eig_vecs_[idx] = new_middle_eigvec;
   tangents_[idx] = new_tangent;
-  eigen_values_[idx] = new_eig_vals;
+  eigenvalues_[idx] = new_eig_vals;
 
 }
 

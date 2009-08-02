@@ -65,7 +65,7 @@ class ShapeSpectral: public Descriptor3D
      *
      * The features are based on the eigenvalues from the scatter matrix
      * constructed from the neighborhood of points.
-     * The feature vector format is: [S L F (C)]
+     * The feature vector format is: [S L F]
      *
      * \param spectral_information Class to retrieve the eigenvalues from
      *

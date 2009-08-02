@@ -50,14 +50,11 @@
 #include <point_cloud_mapping/geometry/nearest.h>
 
 // --------------------------------------------------------------
-//* SpectralAnalysis
-/**
+/*!
+ * \file spectral_analysis.h
+ *
  * \brief An abstract class for descriptors that require the results
  *        from spectral analysis of a given volume of points
- *
- * This class is meant to hold intermediate results needed for the
- * computation of other descriptors so that computation is not
- * unnecessarily repeated.
  */
 // --------------------------------------------------------------
 class SpectralAnalysis
@@ -65,9 +62,21 @@ class SpectralAnalysis
   public:
     // --------------------------------------------------------------
     /*!
-     * \brief Instantiates the class indicating no spectral information
-     *        or parameters have been defined
-     *        TODO add sensor location
+     * \brief A SpectralAnalysis performs eigen-decomposition on neighborhoods
+     *        of point clouds and saves the resulting eigenvectors and
+     *        eigenvalues
+     *
+     * This class is meant to hold intermediate results needed for the
+     * computation of other descriptors so that computation is not
+     * unnecessarily repeated. Calling analyzeInterestPoints explicitly
+     * is not needed before passing to a Descriptor3D
+     *
+     * TODO add sensor location (for aligning normals to viewpoint)
+     *
+     * \param support_radius The radius to define the local neighborhood around
+     *                       each interest point/region.  For interest regions,
+     *                       a negative value indicates to use the region itself
+     *                       for spectral analysis
      */
     // --------------------------------------------------------------
     SpectralAnalysis(double support_radius);
@@ -80,9 +89,6 @@ class SpectralAnalysis
      *
      * This function should be called when calling compute() on different
      * sequential point clouds.
-     *
-     * This method has no affect if called on an instance that did not
-     * compute the spectral data.
      */
     // --------------------------------------------------------------
     void clearSpectral();
@@ -91,7 +97,11 @@ class SpectralAnalysis
     /*! \name Accessors */
     // ===================================================================
     //@{
-    // TODO comment
+    // --------------------------------------------------------------
+    /*!
+     * \brief Returns flag if spectral information has been computed
+     */
+    // --------------------------------------------------------------
     inline const bool isSpectralComputed() const
     {
       return spectral_computed_;
@@ -99,8 +109,8 @@ class SpectralAnalysis
 
     // --------------------------------------------------------------
     /*!
-     * \brief Returns the saved normals estimated for each interest point/region
-     *        that was passed to compute()
+     * \brief Returns the saved normals (smallest eigenvector)
+     *        estimated for each interest point/region
      */
     // --------------------------------------------------------------
     inline const std::vector<const Eigen::Vector3d*>& getNormals() const
@@ -110,8 +120,8 @@ class SpectralAnalysis
 
     // --------------------------------------------------------------
     /*!
-     * \brief Returns the saved tangents estimated for each interest point/region
-     *        that was passed to compute()
+     * \brief Returns the saved tangents (biggest eigenvector) estimated
+     *        for each interest point/region
      */
     // --------------------------------------------------------------
     inline const std::vector<const Eigen::Vector3d*>& getTangents() const
@@ -121,7 +131,8 @@ class SpectralAnalysis
 
     // --------------------------------------------------------------
     /*!
-     * \brief Returns the saved middle component direction
+     * \brief Returns the saved middle/2nd eigenvector estimated for
+     *        each interest ponit/region
      */
     // --------------------------------------------------------------
     inline const std::vector<const Eigen::Vector3d*>& getMiddleEigenVectors() const
@@ -131,35 +142,67 @@ class SpectralAnalysis
 
     // --------------------------------------------------------------
     /*!
-     * \brief Returns the saved eigen values of the covariance matrix for each
-     *        interest point/region that was passed to compute()
+     * \brief Returns the saved eigenvalues of the covariance matrix for each
+     *        interest point/region
      */
     // --------------------------------------------------------------
     inline const std::vector<const Eigen::Vector3d*>& getEigenValues() const
     {
-      return eigen_values_;
+      return eigenvalues_;
     }
     //@}
 
+    // --------------------------------------------------------------
+    /*!
+     * \brief Performs eigen-decomposition for each neighborhood around
+     *        the interest points
+     *
+     * This method does NOT need to be called by the user before passing
+     * to a Descriptor3D
+     */
+    // --------------------------------------------------------------
     int analyzeInterestPoints(const robot_msgs::PointCloud& data,
                               cloud_kdtree::KdTree& data_kdtree,
                               const cv::Vector<const robot_msgs::Point32*>& interest_pts);
 
+    // --------------------------------------------------------------
+    /*!
+     * \brief Performs eigen-decomposition for each neighborhood in/around
+     *        the interest regions
+     *
+     * This method does NOT need to be called by the user before passing
+     * to a Descriptor3D
+     */
+    // --------------------------------------------------------------
     int analyzeInterestRegions(const robot_msgs::PointCloud& data,
                                cloud_kdtree::KdTree& data_kdtree,
                                const cv::Vector<const std::vector<int>*>& interest_region_indices);
 
   private:
+    // --------------------------------------------------------------
+    /*!
+     * \brief Common method that computes the eigen-vector/values of the
+     *        scattered matrix constructed from the given neighborhood
+     */
+    // --------------------------------------------------------------
     void computeSpectralInfo(const robot_msgs::PointCloud& data,
                              const std::vector<int>& curr_region_indices,
                              const size_t idx);
+
     double support_radius_;
     bool spectral_computed_;
 
+    /*! \brief The smallest extracted eigenvectors */
     std::vector<const Eigen::Vector3d*> normals_;
+
+    /*! \brief The biggest extracted eigenvectors */
     std::vector<const Eigen::Vector3d*> tangents_;
+
+    /*! \brief The 2nd/middle extracted eigenvectors */
     std::vector<const Eigen::Vector3d*> middle_eig_vecs_;
-    std::vector<const Eigen::Vector3d*> eigen_values_;
+
+    /*! \brief The extracted eigenvalues */
+    std::vector<const Eigen::Vector3d*> eigenvalues_;
 };
 
 #endif
