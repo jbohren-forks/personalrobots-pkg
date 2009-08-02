@@ -42,22 +42,6 @@ rospack_link_boost(ros_sim_iface thread)
 rospack_add_library(ros_prosilica src/ros_prosilica.cpp)
 rospack_link_boost(ros_prosilica thread)
 
-
-
-
 rospack_add_executable(bin/ros_diffdrive src/ros_diffdrive.cpp)
 rospack_link_boost(bin/ros_diffdrive thread)
 
-rospack_add_library(urdf2gazebo src/urdf2gazebo.cpp)
-
-rospack_add_executable(bin/remove_model src/remove_model.cpp)
-target_link_libraries(bin/remove_model)
-
-rospack_add_executable(bin/xml2factory src/xml2factory.cpp)
-target_link_libraries(bin/xml2factory)
-
-rospack_add_executable(bin/urdf2factory src/urdf2factory.cpp)
-target_link_libraries(bin/urdf2factory urdf2gazebo)
-
-rospack_add_executable(bin/urdf2file src/urdf2file.cpp)
-target_link_libraries(bin/urdf2file urdf2gazebo)

@@ -38,7 +38,7 @@
 
 #include <urdf/URDF.h>
 
-#include <gazebo_plugin/urdf2gazebo.h>
+#include <gazebo_tools/urdf2gazebo.h>
 
 using namespace urdf2gazebo;
 

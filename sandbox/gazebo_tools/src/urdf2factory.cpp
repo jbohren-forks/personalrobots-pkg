@@ -45,7 +45,7 @@
 
 #include <urdf/URDF.h>
 
-#include <gazebo_plugin/urdf2gazebo.h>
+#include <gazebo_tools/urdf2gazebo.h>
 
 using namespace urdf2gazebo;
 
@@ -58,6 +58,8 @@ void usage(const char *progname)
 
 int main(int argc, char **argv)
 {
+    ros::init(argc,argv,"urdf2factory",ros::init_options::AnonymousName);
+
     if (argc < 2)
     {
         usage(argv[0]);
@@ -84,13 +86,9 @@ int main(int argc, char **argv)
     }
 
     std::string robot_model_name(argv[1]);
-    // make sure this is not the ros-generated commandline log filename
     if (argc >= 9)
     {
-        std::string name = std::string(argv[8]);
-        ROS_DEBUG("Model Name: %s %d\n",name.c_str(),name.find(std::string("__log:")));
-        if (name.find(std::string("__log:")) == -1)
-            robot_model_name = name;
+        robot_model_name = std::string(argv[8]);
     }
     // get rid of slahses
     std::replace(robot_model_name.begin(),robot_model_name.end(),'/','_');
@@ -135,7 +133,6 @@ int main(int argc, char **argv)
     }
 
     // Load parameter server string for pr2 robot description
-    ros::init(argc,argv,"urdf2factory",ros::init_options::AnonymousName);
     ros::NodeHandle rosnode;
     ROS_INFO("-------------------- starting node for pr2 param server factory \n");
 

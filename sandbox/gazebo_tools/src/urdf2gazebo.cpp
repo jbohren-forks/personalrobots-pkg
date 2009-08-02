@@ -32,7 +32,7 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#include <gazebo_plugin/urdf2gazebo.h>
+#include <gazebo_tools/urdf2gazebo.h>
 #include "ros/node.h"
 
 using namespace urdf2gazebo;

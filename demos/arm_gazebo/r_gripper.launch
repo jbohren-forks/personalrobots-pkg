@@ -4,7 +4,7 @@
   <param name="robot_description" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/r_gripper.xacro.xml'" />
 
   <!-- push robot_description to factory and spawn robot in gazebo -->
-  <node pkg="gazebo_plugin" type="urdf2factory" args="robot_description" respawn="false" output="screen"/>
+  <node pkg="gazebo_tools" type="urdf2factory" args="robot_description" respawn="false" output="screen"/>
 
   <!-- start arm controller -->
   <!--

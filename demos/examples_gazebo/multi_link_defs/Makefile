@@ -1,5 +1,5 @@
 XACRO = `rospack find xacro`/xacro.py
-URDF2GAZEBO = `rospack find gazebo_plugin`/bin/urdf2file
+URDF2GAZEBO = `rospack find gazebo_tools`/bin/urdf2file
 MODEL_FILE = `rospack find examples_gazebo`
 
 ROBOT = multi_link

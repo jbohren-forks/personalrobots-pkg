@@ -7,10 +7,10 @@
   <param name="coffee_cup"      textfile="$(find gazebo_worlds)/objects/coffee_cup.model" />
 
   <!-- push urdf to factory and spawn robot in gazebo -->
-  <node pkg="gazebo_plugin" type="xml2factory" args="ikea_cup 0 -.8 0 0 0 0 ikea_cup" respawn="false" output="screen" />
-  <node pkg="gazebo_plugin" type="xml2factory" args="wine 1 0.0 0 0 0 0 wine" respawn="false" output="screen" />
-  <node pkg="gazebo_plugin" type="xml2factory" args="bowl 0 0.0 0 0 0 0 bowl" respawn="false" output="screen" />
-  <node pkg="gazebo_plugin" type="xml2factory" args="coffee_cup 0 .8 0 0 0 0 coffee_cup" respawn="false" output="screen" />
+  <node pkg="gazebo_tools" type="xml2factory" args="ikea_cup 0 -.8 0 0 0 0 ikea_cup" respawn="false" output="screen" />
+  <node pkg="gazebo_tools" type="xml2factory" args="wine 1 0.0 0 0 0 0 wine" respawn="false" output="screen" />
+  <node pkg="gazebo_tools" type="xml2factory" args="bowl 0 0.0 0 0 0 0 bowl" respawn="false" output="screen" />
+  <node pkg="gazebo_tools" type="xml2factory" args="coffee_cup 0 .8 0 0 0 0 coffee_cup" respawn="false" output="screen" />
 
 </launch>
 

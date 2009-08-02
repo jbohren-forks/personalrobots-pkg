@@ -1,0 +1,22 @@
+<package>
+  <description brief="Gazebo Tools for Personal Robots">
+    Gazebo tools for working with 3D simulator in the ROS environment.
+  </description>
+  <author>John Hsu</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/gazebo_tools</url>
+  <depend package="gazebo"/>
+  <depend package="roscpp"/>
+  <depend package="rospy"/>  
+  <depend package="std_msgs" />
+  <depend package="angles" />
+  <depend package="tinyxml" />
+  <depend package="bullet" />
+  <depend package="wg_robot_description_parser" />
+  <depend package="robot_model" />
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib" />
+  </export>
+  <rosdep name="python-numpy"/>
+</package>

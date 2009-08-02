@@ -16,7 +16,7 @@
   </node>
 
   <!-- push robot_description to factory and spawn robot in gazebo -->
-  <node pkg="gazebo_plugin" type="urdf2factory" args="robot_description" respawn="false" output="screen" />
+  <node pkg="gazebo_tools" type="urdf2factory" args="robot_description" respawn="false" output="screen" />
 
   <!-- load controllers -->
   <node pkg="gazebo_plugin" type="ros_diffdrive" respawn="true" output="screen"/>

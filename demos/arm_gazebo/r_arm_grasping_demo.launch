@@ -12,7 +12,7 @@
   <param name="robot_description" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/r_arm.xacro.xml'" />
 
   <!-- push robot_description to factory and spawn robot in gazebo -->
-  <node pkg="gazebo_plugin" type="urdf2factory" args="robot_description" respawn="false" output="screen"/>
+  <node pkg="gazebo_tools" type="urdf2factory" args="robot_description" respawn="false" output="screen"/>
 
   <!-- start arm controller -->
   <!--
@@ -39,7 +39,7 @@
   <!--include file="$(find arm_gazebo)/tests/debug_plot.launch"/-->
 
   <param name="table_description" command="$(find xacro)/xacro.py '$(find examples_gazebo)/table_defs/table_defs.xml'" />
-  <node pkg="gazebo_plugin" type="urdf2factory" args="table_description 0 0 0.01 0 0 0 table_model" respawn="false" output="screen" />
+  <node pkg="gazebo_tools" type="urdf2factory" args="table_description 0 0 0.01 0 0 0 table_model" respawn="false" output="screen" />
 
   <include file="$(find examples_gazebo)/coffee_cup.launch" />
 </launch>

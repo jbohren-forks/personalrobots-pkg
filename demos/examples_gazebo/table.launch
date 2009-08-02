@@ -3,6 +3,6 @@
   <param name="table_description" command="$(find xacro)/xacro.py '$(find examples_gazebo)/table_defs/table.xml'" />
 
   <!-- push table_description to factory and spawn robot in gazebo -->
-  <node pkg="gazebo_plugin" type="urdf2factory" args="table_description" respawn="false" output="screen" /> <!-- load default arm controller -->
+  <node pkg="gazebo_tools" type="urdf2factory" args="table_description" respawn="false" output="screen" /> <!-- load default arm controller -->
 </launch>
 

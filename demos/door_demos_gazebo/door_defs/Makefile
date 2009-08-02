@@ -1,5 +1,5 @@
 XACRO = `rospack find xacro`/xacro.py
-URDF2GAZEBO = `rospack find gazebo_plugin`/urdf2file
+URDF2GAZEBO = `rospack find gazebo_tools`/urdf2file
 ROBOT_PATH = `rospack find door_demos_gazebo`/robots
 
 ROBOT = door

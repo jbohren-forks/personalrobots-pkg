@@ -6,7 +6,7 @@
   <param name="door_description" command="$(find xacro)/xacro.py '$(find door_demos_gazebo)/robots/door_only.xacro.xml'" />
 
   <!-- push door_description to factory and spawn robot in gazebo -->
-  <node pkg="gazebo_plugin" type="urdf2factory" args="door_description" respawn="false" output="screen" /> <!-- load default arm controller -->
+  <node pkg="gazebo_tools" type="urdf2factory" args="door_description" respawn="false" output="screen" /> <!-- load default arm controller -->
 
   <!-- load door controllers -->
   <node pkg="mechanism_control" type="spawner.py" args="$(find door_demos_gazebo)/door_defs/door_controllers.xml" respawn="false" output="screen" />
