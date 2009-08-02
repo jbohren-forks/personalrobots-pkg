@@ -625,7 +625,7 @@ namespace move_arm
 			// add a few more guesses
 			for (int t = 0 ; t < 4 ; ++t)
 			{
-			    robot_msgs::PoseStamped tpose = req.goal_constraints.pose_constraint[0].pose;
+                          geometry_msgs::PoseStamped tpose = req.goal_constraints.pose_constraint[0].pose;
 			    tpose.pose.position.x = uniformDouble(tpose.pose.position.x - req.goal_constraints.pose_constraint[0].position_tolerance_below.x,
 								  tpose.pose.position.x + req.goal_constraints.pose_constraint[0].position_tolerance_above.x);
 			    tpose.pose.position.y = uniformDouble(tpose.pose.position.y - req.goal_constraints.pose_constraint[0].position_tolerance_below.y,
