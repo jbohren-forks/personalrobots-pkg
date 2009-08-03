@@ -35,8 +35,13 @@
 void robot_self_filter::SelfMask::freeMemory(void)
 {
     for (unsigned int i = 0 ; i < bodies_.size() ; ++i)
+    {
 	if (bodies_[i].body)
 	    delete bodies_[i].body;
+	if (bodies_[i].unscaledBody)
+	    delete bodies_[i].unscaledBody;
+    }
+    
     bodies_.clear();
 }
 
@@ -65,6 +70,7 @@ bool robot_self_filter::SelfMask::configure(const std::vector<std::string> &link
 	    sl.body->setScale(scale);
 	    sl.body->setPadding(padd);
 	    sl.volume = sl.body->computeVolume();
+	    sl.unscaledBody = bodies::createBodyFromShape(link->shape);
 	    bodies_.push_back(sl);
 	}
 	else
@@ -81,7 +87,7 @@ bool robot_self_filter::SelfMask::configure(const std::vector<std::string> &link
     bspheresRadius2_.resize(bodies_.size());
 
     for (unsigned int i = 0 ; i < bodies_.size() ; ++i)
-	ROS_DEBUG("Self mask includes link %s with volume %f", bodies_[i].name.c_str(), bodies_[i].body->computeVolume());
+	ROS_DEBUG("Self mask includes link %s with volume %f", bodies_[i].name.c_str(), bodies_[i].volume);
     
     ROS_INFO("Self filter using %f padding and %f scaling", padd, scale);
 
@@ -182,6 +188,7 @@ void robot_self_filter::SelfMask::assumeFrame(const roslib::Header& header, cons
 	
 	// set it for each body; we also include the offset specified in URDF
 	bodies_[i].body->setPose(transf * bodies_[i].constTransf);
+	bodies_[i].unscaledBody->setPose(transf * bodies_[i].constTransf);
     }
     
     computeBoundingSpheres();
@@ -244,12 +251,18 @@ void robot_self_filter::SelfMask::maskAuxIntersection(const robot_msgs::PointClo
     {
 	btVector3 pt = btVector3(data_in.pts[i].x, data_in.pts[i].y, data_in.pts[i].z);
 	int out = OUTSIDE;
+
+	// we first check is the point is in the unscaled body. 
+	// if it is, the point is definitely inside
 	if (bound.center.distance2(pt) < radiusSquared)
 	    for (unsigned int j = 0 ; out == OUTSIDE && j < bs ; ++j)
-		if (bodies_[j].body->containsPoint(pt))
-		    out = INSIDE; 
+		if (bodies_[j].unscaledBody->containsPoint(pt))
+		    out = INSIDE;
+
+	// if the point is not inside the unscaled body,
 	if (out == OUTSIDE)
 	{
+	    // we check it the point is a shadow point 
 	    btVector3 dir(sensor_pos_ - pt);
 	    dir.normalize();
 	    if (callback)
@@ -268,6 +281,12 @@ void robot_self_filter::SelfMask::maskAuxIntersection(const robot_msgs::PointClo
 		    if (bodies_[j].body->intersectsRay(pt, dir))
 			out = SHADOW;
 	    }
+
+	    // if it is not a shadow point, we check if it is inside the scaled body
+	    if (out == OUTSIDE && bound.center.distance2(pt) < radiusSquared)
+		for (unsigned int j = 0 ; out == OUTSIDE && j < bs ; ++j)
+		    if (bodies_[j].body->containsPoint(pt))
+			out = INSIDE;
 	}
 	
 	mask[i] = out;
@@ -291,10 +310,19 @@ int robot_self_filter::SelfMask::getMaskContainment(double x, double y, double z
 
 int robot_self_filter::SelfMask::getMaskIntersection(const btVector3 &pt, const boost::function<void(const btVector3&)> &callback) const
 {  
-    int out = getMaskContainment(pt);
+    const unsigned int bs = bodies_.size();
+
+    // we first check is the point is in the unscaled body. 
+    // if it is, the point is definitely inside
+    int out = OUTSIDE;
+    for (unsigned int j = 0 ; out == OUTSIDE && j < bs ; ++j)
+	if (bodies_[j].unscaledBody->containsPoint(pt))
+	    out = INSIDE;
+    
     if (out == OUTSIDE)
     {
-	const unsigned int bs = bodies_.size();
+
+	// we check it the point is a shadow point 
 	btVector3 dir(sensor_pos_ - pt);
 	dir.normalize();
 	if (callback)
@@ -313,6 +341,11 @@ int robot_self_filter::SelfMask::getMaskIntersection(const btVector3 &pt, const 
 		    out = SHADOW;
 		}
 	}
+
+	// if it is not a shadow point, we check if it is inside the scaled body
+	for (unsigned int j = 0 ; out == OUTSIDE && j < bs ; ++j)
+	    if (bodies_[j].body->containsPoint(pt))
+		out = INSIDE;
     }
     return out;
 }

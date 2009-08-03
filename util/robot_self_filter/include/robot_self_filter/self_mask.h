@@ -59,8 +59,14 @@ namespace robot_self_filter
 	
 	struct SeeLink
 	{
+	    SeeLink(void)
+	    {
+		body = unscaledBody = NULL;
+	    }
+	    
 	    std::string   name;
 	    bodies::Body *body;
+	    bodies::Body *unscaledBody;
 	    btTransform   constTransf;
 	    double        volume;
 	};
