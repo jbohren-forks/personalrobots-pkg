@@ -71,9 +71,9 @@ class SpinImageCustom: public SpinImageGeneric
      *    -----------> alpha  \n
      * (x = center point of spin image, beta = [ref_x, ref_y, ref_z])
      *
-     * \param ref_x The x dimension of the vector
-     * \param ref_y The y dimension of the vector
-     * \param ref_z The z dimension of the vector
+     * \param ref_x The x dimension of the beta vector
+     * \param ref_y The y dimension of the beta vector
+     * \param ref_z The z dimension of the beta vector
      * \param row_res The cell resolution along the beta axis
      * \param col_res The cell resolution along the alpha axis
      * \param nbr_rows The number of cells along the beta axis
