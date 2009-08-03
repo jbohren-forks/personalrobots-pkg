@@ -11,7 +11,7 @@
 #include "ros/ros.h"
 #include "topic_synchronizer2/topic_synchronizer.h"
 
-#include "robot_msgs/PointCloud.h"
+#include "sensor_msgs/PointCloud.h"
 
 #include "visualization_msgs/Marker.h"
 
