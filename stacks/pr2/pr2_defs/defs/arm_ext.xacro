@@ -1,0 +1,312 @@
+<?xml version="1.0"?>
+<robot xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor"
+       xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
+       xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface">
+
+  <macro name="pr2_shoulder_ext" params="side parent reflect *origin">
+
+    <!-- Shoulder pan -->
+    <ogre name="${side}_shoulder_pan_collision_mesh" reference="${side}_shoulder_pan_collision">
+      <mesh value="convex/shoulder_yaw_convex.mesh" />
+    </ogre>
+    <ogre name="${side}_shoulder_pan_visual_mesh" reference="${side}_shoulder_pan_visual">
+      <mesh value="shoulder_yaw.mesh" />
+    </ogre>
+
+    <gazebo name="${side}_shoulder_pan_material" reference="${side}_shoulder_pan_visual">
+      <material value="PR2/Blue" />
+    </gazebo>
+    <gazebo name="${side}_shoulder_pan_sensor" reference="${side}_shoulder_pan_link">
+      <sensor:contact name="${side}_shoulder_pan_contact_sensor">
+        <geom>${side}_shoulder_pan_collision</geom>
+        <updateRate>100.0</updateRate>
+        <controller:ros_bumper name="${side}_shoulder_pan_ros_bumper_controller" plugin="libros_bumper.so">
+          <alwaysOn>true</alwaysOn>
+          <updateRate>100.0</updateRate>
+          <bumperTopicName>${side}_shoulder_pan_bumper</bumperTopicName>
+          <interface:bumper name="${side}_shoulder_pan_ros_bumper_iface" />
+        </controller:ros_bumper>
+      </sensor:contact>
+    <gazebo>
+    <gazebo name="${side}_shoulder_pan_gravity" reference="${side}_shoulder_pan_link">
+      <turnGravityOff>true</turnGravityOff>
+    </gazebo>
+    <gazebo name="${side}_shoulder_pan_joint_stop" reference="${side}_shoulder_pan_joint">
+      <stopKd value="1.0" />
+      <stopKp value="1000000.0" />
+    </gazebo>
+
+    <transmission type="SimpleTransmission" name="${side}_shoulder_pan_trans">
+      <actuator name="${side}_shoulder_pan_motor" />
+      <joint name="${side}_shoulder_pan_joint" />
+      <mechanicalReduction>${63.16/cal_r_shoulder_pan_gearing}</mechanicalReduction>
+      <calibration reference_position="${(reflect*M_PI/4)*cal_r_shoulder_pan_gearing+cal_r_shoulder_pan_flag}"
+                   values="1.5 -1" />
+    </transmission>
+
+    <!-- Shoulder lift -->
+    <ogre name="${side}_shoulder_lift_collision_mesh" reference="${side}_shoulder_lift_collision">
+      <mesh value="convex/shoulder_lift_convex.mesh" />
+    </ogre>
+    <gazebo name="${side}_shoulder_lift_sensor" reference="${side}_shoulder_lift_link">
+      <sensor:contact name="${side}_shoulder_lift_contact_sensor">
+        <geom>${side}_shoulder_lift_collision_geom</geom>
+        <updateRate>100.0</updateRate>
+        <controller:ros_bumper name="${side}_shoulder_lift_ros_bumper_controller" plugin="libros_bumper.so">
+          <alwaysOn>true</alwaysOn>
+          <updateRate>100.0</updateRate>
+          <bumperTopicName>${side}_r_shoulder_lift_bumper</bumperTopicName>
+          <interface:bumper name="${side}_shoulder_lift_ros_bumper_iface" />
+        </controller:ros_bumper>
+      </sensor:contact>
+    </gazebo>
+    <gazebo name="${side}_shoulder_lift_gravity" reference="${side}_shoulder_lift_link">
+      <turnGravityOff>true</turnGravityOff>
+    </gazebo>
+    <ogre name="gazebo_material" reference="${side}_shoulder_lift_visual">
+      <material value="PR2/Grey" />
+    </ogre>
+    <ogre name="${side}_shoulder_lift_visual_mesh" reference="${side}_shoulder_lift_visual">
+      <mesh value="shoulder_lift.mesh" />
+    </ogre>
+    <gazebo name="${side}_shoulder_lift_joint_stop" reference="${side}_shoulder_lift_joint">
+      <stopKd value="1.0" />
+      <stopKp value="1000000.0" />
+    </gazebo>
+
+    <transmission type="SimpleTransmission" name="${side}_shoulder_lift_trans">
+      <actuator name="${side}_shoulder_lift_motor" />
+      <joint name="${side}_shoulder_lift_joint" />
+      <mechanicalReduction>${61.89/cal_r_shoulder_lift_gearing}</mechanicalReduction>
+      <calibration reference_position="cal_r_shoulder_lift_flag" values="1.5 -1" />
+    </transmission>
+
+    <!-- Upperarm roll: internal fixed attchment point for upper arm -->
+    <gazebo name="${side}_upper_arm_roll_gravity" reference="${side}_upper_arm_roll_collision">
+      <turnGravityOff>true</turnGravityOff>
+    </gazebo>
+    <gazebo name="gazebo_material" reference="${side}_upper_arm_roll_visual">
+      <material value="PR2/RollLinks" />
+    </gazebo>
+    <ogre name="${side}_upper_arm_roll_visual_mesh" reference="${side}_upper_arm_roll_visual">
+      <mesh value="upper_arm_roll.mesh" />
+    </ogre>
+    <gazebo name="${side}_upper_arm_roll_joint_ode" reference="${side}_upper_arm_roll_joint">
+      <stopKd value="1.0" />
+      <stopKp value="1000000.0" />
+      <fudgeFactor value="0.5" />
+    </gazebo>
+    <transmission type="SimpleTransmission" name="${side}_upper_arm_roll_trans">
+      <actuator name="${side}_upper_arm_roll_motor" />
+      <joint name="${side}_upper_arm_roll_joint" />
+      <mechanicalReduction>${32.65/cal_r_upper_arm_roll_gearing}</mechanicalReduction>
+      <calibration reference_position="${(reflect*M_PI/2)*cal_r_upper_arm_roll_gearing + cal_r_upper_arm_roll_flag}" values="1.5 -1" />
+    </transmission>
+
+  </macro>
+
+
+
+  <!-- ============================   Upper Arm   ============================ -->
+
+
+  <macro name="pr2_upper_arm_ext" params="side parent reflect">
+
+    <ogre name="${side}_upper_arm_visual_mesh" reference="{side}_upper_arm_visual">
+      <mesh value="upper_arm.mesh" />
+    </ogre>
+    <ogre name="${side}_upper_arm_collision_mesh" reference="${side}_upper_arm_collision">
+      <mesh value="convex/upper_arm_convex.mesh" />
+    </ogre>
+
+    <gazebo name="${side}_upper_arm_sensor" reference="${side}_upper_arm_link">
+      <sensor:contact name="${side}_upper_arm_contact_sensor">
+        <geom>${side}_upper_arm_collision_geom</geom><!-- TODO -->
+        <updateRate>100.0</updateRate>
+        <controller:ros_bumper name="${side}_upper_arm_ros_bumper_controller" plugin="libros_bumper.so">
+          <alwaysOn>true</alwaysOn>
+          <updateRate>100.0</updateRate>
+          <bumperTopicName>${side}_upper_arm_bumper</bumperTopicName>
+          <interface:bumper name="${side}_upper_arm_ros_bumper_iface" />
+        </controller:ros_bumper>
+      </sensor:contact>
+    </gazebo>
+    <gazebo name="${side}_upper_arm_gravity" reference="${side}_upper_arm_link">
+      <turnGravityOff>true</turnGravityOff>
+    </gazebo>
+    <gazebo name="gazebo_material" reference="{side}_upper_arm_visual">
+      <material value="PR2/Green" />
+    </gazebo>
+
+
+    <!-- Elbow flex -->
+
+    <ogre name="${side}_elbow_flex_visual_mesh" reference="${side}_elbow_flex_visual">
+      <mesh value="elbow_flex.mesh" />
+    </ogre>
+    <ogre name="${side}_elbow_flex_collision_mesh" reference="${side}_elbow_flex_collision">
+      <mesh value="convex/elbow_flex_convex.mesh" />
+    </ogre>
+
+    <gazebo name="${side}_elbow_flex_joint_ode" reference="${side}_elbow_flex_joint">
+      <stopKd value="1.0" />
+      <stopKp value="1000000.0" />
+    </gazebo>
+    <gazebo name="gazebo_material" reference="${side}_elbow_flex_visual">
+      <material value="PR2/Grey" />
+    </gazebo>
+    <gazebo name="${side}_elbow_flex_sensor" reference="${side}_elbow_flex_link">
+      <sensor:contact name="${side}_elbow_flex_contact_sensor">
+        <geom>${side}_elbow_flex_collision_geom</geom>
+        <updateRate>100.0</updateRate>
+        <controller:ros_bumper name="${side}_elbow_flex_ros_bumper_controller" plugin="libros_bumper.so">
+          <alwaysOn>true</alwaysOn>
+          <updateRate>100.0</updateRate>
+          <bumperTopicName>${side}_elbow_flex_bumper</bumperTopicName>
+          <interface:bumper name="${side}_elbow_flex_ros_bumper_iface" />
+        </controller:ros_bumper>
+      </sensor:contact>
+    </gazebo>
+    <gazebo name="${side}_elbow_flex_gravity" reference="${side}_elbow_flex_link">
+      <turnGravityOff>true</turnGravityOff>
+    </gazebo>
+
+    <transmission type="SimpleTransmission" name="${side}_elbow_flex_trans">
+      <actuator name="${side}_elbow_flex_motor" />
+      <joint name="${side}_elbow_flex_joint" />
+      <mechanicalReduction>-36.17</mechanicalReduction>
+      <calibration reference_position="${-1.1606 + cal_r_elbow_flex_flag}" values="1.5 -1" />
+    </transmission>
+
+    <!-- Forearm roll -->
+
+    <ogre name="${side}_forearm_roll_visual_mesh" reference="${side}_forearm_roll_visual">
+      <mesh value="forearm_roll.mesh" />
+    </ogre>
+
+    <gazebo name="gazebo_material" reference="${side}_forearm_roll_visual">
+      <material value="PR2/RollLinks" />
+    </gazebo>
+    <gazebo name="${side}_forearm_roll_joint_ode" reference="${side}_forearm_roll_joint">
+      <fudgeFactor value="0.5" />
+    </gazebo>
+    <gazebo name="${side}_forearm_roll_gravity" reference="${side}_forearm_roll_link">
+      <turnGravityOff>true</turnGravityOff>
+    </gazebo>
+
+    <transmission type="SimpleTransmission" name="${side}_forearm_roll_trans">
+      <actuator name="${side}_forearm_roll_motor" />
+      <joint name="${side}_forearm_roll_joint" />
+      <mechanicalReduction>${576/25*55/14}</mechanicalReduction>
+      <calibration reference_position="cal_r_forearm_roll_flag" values="1.5 -1" />
+    </transmission>
+
+  </macro>
+
+
+  <!-- ============================   Forearm   ============================ -->
+
+  <macro name="pr2_forearm_ext" params="side parent reflect">
+
+    <gazebo name="${side}_forearm_gravity" reference="${side}_forearm_link">
+      <turnGravityOff>true</turnGravityOff>
+    </gazebo>
+    <gazebo name="${side}_forearm_sensor" reference="${side}_forearm_link">
+      <sensor:contact name="${side}_forearm_contact_sensor">
+        <geom>${side}_forearm_collision</geom>
+        <updateRate>100.0</updateRate>
+        <controller:ros_bumper name="${side}_forearm_ros_bumper_controller" plugin="libros_bumper.so">
+          <alwaysOn>true</alwaysOn>
+          <updateRate>100.0</updateRate>
+          <bumperTopicName>${side}_forearm_bumper</bumperTopicName>
+          <interface:bumper name="${side}_forearm_ros_bumper_iface" />
+        </controller:ros_bumper>
+      </sensor:contact>
+    </gazebo>
+    <gazebo name="gazebo_material" reference="${side}_forearm_visual">
+      <material value="PR2/Blue" />
+    </gazebo>
+
+    <ogre name="${side}_forearm_collision_mesh" reference="${side}_forearm_collision">
+      <mesh value="convex/forearm_convex.mesh" />
+    </ogre>
+    <ogre name="${side}_forearm_visual_mesh" reference="${side}_forearm_visual">
+      <mesh value="forearm.mesh" />
+    </ogre>
+
+    <!-- Wrist flex -->
+
+    <gazebo name="${side}_wrist_flex_gravity" reference="${side}_wrist_flex_link">
+      <turnGravityOff>true</turnGravityOff>
+    </gazebo>
+
+    <gazebo name="${side}_wrist_flex_sensor" reference="${side}_wrist_flex_link">
+      <sensor:contact name="${side}_wrist_flex_contact_sensor">
+        <geom>${side}_wrist_flex_collision</geom>
+        <updateRate>100.0</updateRate>
+        <controller:ros_bumper name="${side}_wrist_flex_ros_bumper_controller" plugin="libros_bumper.so">
+          <alwaysOn>true</alwaysOn>
+          <updateRate>100.0</updateRate>
+          <bumperTopicName>${side}_wrist_flex_bumper</bumperTopicName>
+          <interface:bumper name="${side}_wrist_flex_ros_bumper_iface" />
+        </controller:ros_bumper>
+      </sensor:contact>
+    </gazebo>
+    <gazebo name="gazebo_material" reference="${side}_wrist_flex_visual">
+      <material value="PR2/Grey" />
+    </gazebo>
+
+    <gazebo name="${side}_wrist_flex_joint_ode" reference="${side}_wrist_flex_joint">
+      <stopKd value="1.0" />
+      <stopKp value="1000000.0" />
+    </gazebo>
+    <ogre name="${side}_wrist_flex_collision_mesh" reference="${side}_wrist_flex_collision">
+      <mesh value="convex/wrist_flex_convex.mesh" />
+    </ogre>
+
+    <ogre name="${side}_wrist_flex_visual_mesh" reference="${side}_wrist_flex_visual">
+      <mesh value="wrist_flex.mesh" />
+    </ogre>
+
+    <!-- Wrist roll -->
+
+    <gazebo name="${side}_wrist_roll_gravity" reference="${side}_wrist_roll_link">
+      <turnGravityOff>true</turnGravityOff>
+    </gazebo>
+    <gazebo name="${side}_wrist_roll_sensor" reference="${side}_wrist_roll_link">
+      <sensor:contact name="${side}_wrist_roll_contact_sensor">
+        <geom>${side}_wrist_roll_collision</geom>
+        <updateRate>100.0</updateRate>
+        <controller:ros_bumper name="${side}_wrist_roll_ros_bumper_controller" plugin="libros_bumper.so">
+          <alwaysOn>true</alwaysOn>
+          <updateRate>100.0</updateRate>
+          <bumperTopicName>${side}_wrist_roll_bumper</bumperTopicName>
+          <interface:bumper name="${side}_wrist_roll_ros_bumper_iface" />
+        </controller:ros_bumper>
+      </sensor:contact>
+    </gazebo>
+    <ogre name="${side}_wrist_roll_visual_mesh" reference="${side}_wrist_roll_visual">
+      <mesh value="wrist_roll.mesh" />
+    </ogre>
+    <ogre name="gazebo_material" reference="${side}_wrist_roll_visual">
+      <material value="PR2/RollLinks" />
+    </ogre>
+    <gazebo name="${side}_wrist_roll_joint_ode" reference="${side}_wrist_roll_joint">
+      <fudgeFactor value="0.5" />
+    </gazebo>
+    <transmission type="WristTransmission" name="${side}_wrist_trans">
+      <rightActuator name="${side}_wrist_r_motor" />
+      <leftActuator name="${side}_wrist_l_motor" />
+      <flexJoint name="${side}_wrist_flex_joint" mechanicalReduction="${624/35*54/16}">
+        <calibration reference_position="${0.4363+cal_r_wrist_flex_flag}" values="1.5 -1" />
+      </flexJoint>
+      <rollJoint name="${side}_wrist_roll_joint" mechanicalReduction="${624/35*54/16}" >
+      </rollJoint>
+      <calibration reference_position="${1.27+cal_r_wrist_roll_flag}" values="1.5 -1" />
+    </transmission>
+
+  </macro>
+
+
+
+</robot>
