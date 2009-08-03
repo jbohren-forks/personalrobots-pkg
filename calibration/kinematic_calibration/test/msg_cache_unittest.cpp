@@ -36,7 +36,7 @@
 
 #include <gtest/gtest.h>
 #include "../deprecated/msg_cache.h"
-#include <robot_msgs/PointStamped.h>
+#include <geometry_msgs/PointStamped.h>
 #include <ros/time.h>
 
 using namespace kinematic_calibration ;
@@ -45,8 +45,8 @@ static const double epsilon = 1e-6 ;
 
 TEST(KINEMATIC_CALIBRATION_MSG_CACHE, test1)
 {
-  MsgCache<robot_msgs::PointStamped> cache(10) ;
-  robot_msgs::PointStamped sample ;
+  MsgCache<geometry_msgs::PointStamped> cache(10) ;
+  geometry_msgs::PointStamped sample ;
 
   sample.header.stamp =ros::Time(1.0) ;
   sample.point.x = 10 ;
@@ -60,7 +60,7 @@ TEST(KINEMATIC_CALIBRATION_MSG_CACHE, test1)
   sample.point.x = 21 ;
   cache.insertData(sample) ;
 
-  robot_msgs::PointStamped data_out ;
+  geometry_msgs::PointStamped data_out ;
   cache.findClosestAfter(ros::Time(1.5), data_out) ;
   EXPECT_EQ(data_out.point.x, 11) ;
 
@@ -74,7 +74,7 @@ TEST(KINEMATIC_CALIBRATION_MSG_CACHE, test1)
 
 TEST(KINEMATIC_CALIBRATION_MSG_CACHE, test2)
 {
-  MsgCacheListener<robot_msgs::PointStamped> cache_listener(10) ;
+  MsgCacheListener<geometry_msgs::PointStamped> cache_listener(10) ;
 }
 
 int main(int argc, char **argv){

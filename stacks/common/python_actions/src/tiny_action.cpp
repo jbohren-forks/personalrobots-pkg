@@ -5,7 +5,7 @@
 
 // Msgs
 #include <std_msgs/Empty.h>
-#include "robot_msgs/PoseStamped.h"
+#include "geometry_msgs/PoseStamped.h"
 
 #include <robot_actions/NoArgumentsActionState.h>
 

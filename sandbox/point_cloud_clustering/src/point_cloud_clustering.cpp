@@ -39,7 +39,7 @@ using namespace std;
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-int point_cloud_clustering::PointCloudClustering::computeClusterCentroids(const robot_msgs::PointCloud& pt_cloud,
+int point_cloud_clustering::PointCloudClustering::computeClusterCentroids(const sensor_msgs::PointCloud& pt_cloud,
                                                                           const map<unsigned int, vector<int> >& clusters,
                                                                           map<unsigned int, vector<float> >& cluster_centroids)
 {
@@ -108,7 +108,7 @@ point_cloud_clustering::PointCloudClustering::~PointCloudClustering()
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-int point_cloud_clustering::PointCloudClustering::cluster(const robot_msgs::PointCloud& pt_cloud,
+int point_cloud_clustering::PointCloudClustering::cluster(const sensor_msgs::PointCloud& pt_cloud,
                                                           cloud_kdtree::KdTree& pt_cloud_kdtree,
                                                           std::map<unsigned int, std::vector<int> >& created_clusters)
 {

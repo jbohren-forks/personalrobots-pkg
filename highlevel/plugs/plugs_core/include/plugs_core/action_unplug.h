@@ -43,7 +43,7 @@
 
 // Msgs
 #include <std_msgs/Empty.h>
-#include "robot_msgs/PoseStamped.h"
+#include "geometry_msgs/PoseStamped.h"
 #include "manipulation_msgs/TaskFrameFormalism.h"
 #include "robot_mechanism_controllers/CartesianHybridState.h"
 

@@ -51,7 +51,7 @@
 #include "gaussian_vector.h"
 
 // messages
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 #include <people/PositionMeasurement.h>
 #include <message_sequencing/time_sequencer.h>
  
@@ -99,7 +99,7 @@ private:
   std::string fixed_frame_;
   boost::mutex filter_mutex_;
 
-  robot_msgs::PointCloud  meas_cloud_; 
+  sensor_msgs::PointCloud  meas_cloud_; 
   unsigned int meas_visualize_counter_;
 
   // Track only one person who the robot will follow. 

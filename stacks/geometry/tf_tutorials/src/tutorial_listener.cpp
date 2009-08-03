@@ -53,7 +53,7 @@ class NotifierUsingClass
 public:
   tf::TransformListener& tfl_;
 
-  void notifierCallback(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr& message)
+  void notifierCallback(const tf::MessageNotifier<geometry_msgs::PoseStamped>::MessagePtr& message)
   {
     tf::Stamped<tf::Pose> pose;
     tf::poseStampedMsgToTF(*message, pose);
@@ -142,7 +142,7 @@ int main(int argc, char ** argv)
     //Notifier
     ROS_INFO("This class will buffer messages coming in on topic objects and provide a callback when they can be transformed into target frame canaveral");
     NotifierUsingClass notifier_callback_class(tfl);   
-    tf::MessageNotifier<robot_msgs::PoseStamped>* notifier = new tf::MessageNotifier<robot_msgs::PoseStamped>(tfl,
+    tf::MessageNotifier<geometry_msgs::PoseStamped>* notifier = new tf::MessageNotifier<geometry_msgs::PoseStamped>(tfl,
                                                                                                               boost::bind(&NotifierUsingClass::notifierCallback, &notifier_callback_class, _1), //callback function
                                                                                                               std::string("object"), //topic
                                                                                                               std::string("canaveral"), //target_frame

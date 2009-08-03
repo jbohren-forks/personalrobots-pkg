@@ -17,7 +17,6 @@
 
 using namespace ros;
 using namespace std;
-using namespace robot_msgs;
 
 int main(int argc, char **argv)
 {
@@ -95,7 +94,7 @@ BoxDetector::BoxDetector() :
   rinfo_sub_ = nh_.subscribe(stereo_ns+"/right/cam_info", 1, sync_.synchronize(&BoxDetector::rinfoCallback, this));
 
   // advertise topics
-  cloud_planes_pub_ = nh_.advertise<PointCloud> ("~planes", 1);
+  cloud_planes_pub_ = nh_.advertise<sensor_msgs::PointCloud> ("~planes", 1);
   visualization_pub_ = nh_.advertise<visualization_msgs::Marker> ("visualization_marker", 1);
   observations_pub_ = nh_.advertise<BoxObservations> ("~observations", 1);
 
@@ -104,7 +103,7 @@ BoxDetector::BoxDetector() :
   lastDuration = Duration::Duration(0);
 }
 
-void BoxDetector::cloudCallback(const robot_msgs::PointCloud::ConstPtr& point_cloud)
+void BoxDetector::cloudCallback(const sensor_msgs::PointCloud::ConstPtr& point_cloud)
 {
   cloud_ = point_cloud;
 }
@@ -239,10 +238,10 @@ void BoxDetector::syncCallback()
 
   buildRP();
 
-  vector<PointCloud> plane_cloud;
+  vector<sensor_msgs::PointCloud> plane_cloud;
   vector<vector<double> > plane_coeff;
   vector<vector<int> > plane_indices;
-  PointCloud outside;
+  sensor_msgs::PointCloud outside;
 
   findPlanes(*cloud_, n_planes_max_, point_plane_distance_, plane_indices, plane_cloud, plane_coeff,
                           outside);
@@ -401,11 +400,11 @@ void BoxDetector::findFrontAndBackPlane(int& frontplane, int& backplane, std::ve
   //  ROS_INFO("backplane %d, frontplane %d", backplane, frontplane);
 }
 
-void BoxDetector::visualizeFrontAndBackPlane(int frontplane, int backplane, const robot_msgs::PointCloud& cloud,
+void BoxDetector::visualizeFrontAndBackPlane(int frontplane, int backplane, const sensor_msgs::PointCloud& cloud,
                                             std::vector<std::vector<int> >& plane_indices, std::vector<
-                                                robot_msgs::PointCloud>& plane_cloud,
+                                                sensor_msgs::PointCloud>& plane_cloud,
                                             std::vector<std::vector<double> >& plane_coeff,
-                                            robot_msgs::PointCloud& outside, bool convexHull)
+                                            sensor_msgs::PointCloud& outside, bool convexHull)
 {
   std::vector<float> plane_color;
   plane_color.resize(plane_coeff.size());
@@ -420,9 +419,9 @@ void BoxDetector::visualizeFrontAndBackPlane(int frontplane, int backplane, cons
 
 }
 
-void BoxDetector::visualizePlanes(const robot_msgs::PointCloud& cloud, std::vector<std::vector<int> >& plane_indices,
-                                 std::vector<robot_msgs::PointCloud>& plane_cloud,
-                                 std::vector<std::vector<double> >& plane_coeff, robot_msgs::PointCloud& outside,
+void BoxDetector::visualizePlanes(const sensor_msgs::PointCloud& cloud, std::vector<std::vector<int> >& plane_indices,
+                                 std::vector<sensor_msgs::PointCloud>& plane_cloud,
+                                 std::vector<std::vector<double> >& plane_coeff, sensor_msgs::PointCloud& outside,
                                  bool convexHull)
 {
   std::vector<float> plane_color;
@@ -880,7 +879,7 @@ std::vector<CornerCandidate> BoxDetector::filterRectanglesBySupport2d(std::vecto
 }
 
 std::vector<CornerCandidate> BoxDetector::filterRectanglesBySupport3d(std::vector<CornerCandidate> &corner,
-                                                                     const robot_msgs::PointCloud& cloud, std::vector<
+                                                                     const sensor_msgs::PointCloud& cloud, std::vector<
                                                                          int> & plane_indices, double min_support)
 {
   std::vector<CornerCandidate> result;

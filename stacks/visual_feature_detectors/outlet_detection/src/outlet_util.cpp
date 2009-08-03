@@ -58,7 +58,8 @@
 #include <tf/transform_datatypes.h>
 
 using namespace std;
-using namespace robot_msgs;
+using namespace sensor_msgs;
+using namespace geometry_msgs;
 
 PointCloud pointCloudVicinity(PointCloud laser_cloud, PointStamped ps_cloud, double distance, Point32& closest)
 {
@@ -209,7 +210,7 @@ bool getWallPoseFromBaseLaser(const PointCloud& pc, const PointStamped& near_poi
 */
 bool fitSACOrientedPlane (const PointCloud& points, const vector<int> &indices,  // input
 		vector<int> &inliers, vector<double> &coeff,  // output
-		/*const robot_msgs::Point32 &viewpoint_cloud,*/ const Point32& orientation, double dist_thresh, double eps_angle, int min_points_per_model // constraints
+		/*const geometry_msgs::Point32 &viewpoint_cloud,*/ const Point32& orientation, double dist_thresh, double eps_angle, int min_points_per_model // constraints
 		)
 {
 	// Create and initialize the SAC model

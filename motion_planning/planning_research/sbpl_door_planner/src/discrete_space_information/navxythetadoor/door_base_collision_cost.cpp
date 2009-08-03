@@ -28,7 +28,7 @@
  */
 
 #include <sbpl_door_planner/door_base_collision_cost.h>
-#include <robot_msgs/Point32.h>
+#include <geometry_msgs/Point32.h>
 #include <angles/angles.h>
 
 
@@ -40,9 +40,9 @@ using namespace door_functions;
 namespace door_base_collision_cost
 {
 
-  void DoorBaseCollisionCost::transform2DInverse(const robot_msgs::Point32 &point_in, 
-                                                 robot_msgs::Point32 &point_out, 
-                                                 const robot_msgs::Point32 &frame, 
+  void DoorBaseCollisionCost::transform2DInverse(const geometry_msgs::Point32 &point_in, 
+                                                 geometry_msgs::Point32 &point_out, 
+                                                 const geometry_msgs::Point32 &frame, 
                                                  const double &frame_yaw)
   {
     double cth = cos(frame_yaw);
@@ -53,7 +53,7 @@ namespace door_base_collision_cost
     return;
   }
 
-  void DoorBaseCollisionCost::transform2D(const robot_msgs::Point32 &point_in, robot_msgs::Point32 &point_out, const robot_msgs::Point32 &frame, const double &frame_yaw)
+  void DoorBaseCollisionCost::transform2D(const geometry_msgs::Point32 &point_in, geometry_msgs::Point32 &point_out, const geometry_msgs::Point32 &frame, const double &frame_yaw)
   {
     double cth = cos(frame_yaw);
     double sth = sin(frame_yaw);
@@ -65,13 +65,13 @@ namespace door_base_collision_cost
 
 
 
-  unsigned char DoorBaseCollisionCost::findWorkspaceCost(const robot_msgs::Point32 &robot_position, 
+  unsigned char DoorBaseCollisionCost::findWorkspaceCost(const geometry_msgs::Point32 &robot_position, 
                                                          const double &robot_yaw, 
                                                          const double &door_angle)
   {
 
-    robot_msgs::Point32 global_handle_position;
-    robot_msgs::Point32 robot_handle_position;
+    geometry_msgs::Point32 global_handle_position;
+    geometry_msgs::Point32 robot_handle_position;
 
     //Transform the handle position
     transform2D(door_handle_position_,global_handle_position,door_frame_global_position_,door_frame_global_yaw_+door_angle);
@@ -114,7 +114,7 @@ namespace door_base_collision_cost
     }
   }
 
-  bool  DoorBaseCollisionCost::findAngleLimits(const double max_radius, const robot_msgs::Point32 &point, double &angle)
+  bool  DoorBaseCollisionCost::findAngleLimits(const double max_radius, const geometry_msgs::Point32 &point, double &angle)
   {
     double eps_distance = 0.001;
     double dx = point.x;
@@ -132,11 +132,11 @@ namespace door_base_collision_cost
   }
 
 
-  bool DoorBaseCollisionCost::findCircleLineSegmentIntersection(const robot_msgs::Point32 &p1, 
-                                                                const robot_msgs::Point32 &p2, 
-                                                                const robot_msgs::Point32 &center, 
+  bool DoorBaseCollisionCost::findCircleLineSegmentIntersection(const geometry_msgs::Point32 &p1, 
+                                                                const geometry_msgs::Point32 &p2, 
+                                                                const geometry_msgs::Point32 &center, 
                                                                 const double &radius, 
-                                                                std::vector<robot_msgs::Point32> &intersection_points)
+                                                                std::vector<geometry_msgs::Point32> &intersection_points)
   {
     double eps = 1e-5;
     double dx = p2.x-p1.x;
@@ -154,7 +154,7 @@ namespace door_base_collision_cost
       return false;
     }
 
-    robot_msgs::Point32 int_pt;
+    geometry_msgs::Point32 int_pt;
 
     double a = pow(d,2);
     double b = -2*center.x*d*cost + 2*p1.x*d*cost -2*center.y*d*sint + 2*p1.y*d*sint;
@@ -183,12 +183,12 @@ namespace door_base_collision_cost
   }
 
 
-  void DoorBaseCollisionCost::findCirclePolygonIntersection(const robot_msgs::Point32 &center, 
+  void DoorBaseCollisionCost::findCirclePolygonIntersection(const geometry_msgs::Point32 &center, 
                                                             const double &radius, 
-                                                            const std::vector<robot_msgs::Point32> &footprint, 
-                                                            std::vector<robot_msgs::Point32> &solution)
+                                                            const std::vector<geometry_msgs::Point32> &footprint, 
+                                                            std::vector<geometry_msgs::Point32> &solution)
   {
-    std::vector<robot_msgs::Point32> intersection_points;
+    std::vector<geometry_msgs::Point32> intersection_points;
 
     for(int i=0; i < (int) footprint.size(); i++)
     {
@@ -212,7 +212,7 @@ namespace door_base_collision_cost
     }
   }
 
-  void DoorBaseCollisionCost::freeAngleRange(const std::vector<robot_msgs::Point32> &footprint, 
+  void DoorBaseCollisionCost::freeAngleRange(const std::vector<geometry_msgs::Point32> &footprint, 
                                              const double &max_radius, 
                                              double &min_obstructed_angle, 
                                              double &max_obstructed_angle)
@@ -235,8 +235,8 @@ namespace door_base_collision_cost
         obstructed_angles.push_back(angle);
       }
     }
-    std::vector<robot_msgs::Point32> solution;
-    robot_msgs::Point32 center;
+    std::vector<geometry_msgs::Point32> solution;
+    geometry_msgs::Point32 center;
     center.x = 0.0;
     center.y = 0.0;
     findCirclePolygonIntersection(center,max_radius,footprint, solution);
@@ -285,9 +285,9 @@ namespace door_base_collision_cost
   }
 
 
-  void DoorBaseCollisionCost::getDoorFrameFootprint(const robot_msgs::Point32 &robot_global_position, const double &robot_global_yaw, std::vector<robot_msgs::Point32> &fp_out)
+  void DoorBaseCollisionCost::getDoorFrameFootprint(const geometry_msgs::Point32 &robot_global_position, const double &robot_global_yaw, std::vector<geometry_msgs::Point32> &fp_out)
   {
-    std::vector<robot_msgs::Point32> global_fp;
+    std::vector<geometry_msgs::Point32> global_fp;
     global_fp.resize(footprint_.size());
     for(int i=0; i < (int) footprint_.size(); i++)
     {
@@ -306,10 +306,10 @@ namespace door_base_collision_cost
     local_door_max_angle_ = std::max<double>(local_door_open_angle_,local_door_closed_angle_);      
   }
 
-  void DoorBaseCollisionCost::getValidDoorAngles(const robot_msgs::Point32 &global_position, const double &global_yaw, std::vector<int> &valid_angles, std::vector<int> &valid_cost, std::vector<unsigned char> &valid_interval) 
+  void DoorBaseCollisionCost::getValidDoorAngles(const geometry_msgs::Point32 &global_position, const double &global_yaw, std::vector<int> &valid_angles, std::vector<int> &valid_cost, std::vector<unsigned char> &valid_interval) 
   {
     double min_obstructed_angle(0.0),max_obstructed_angle(0.0);
-    std::vector<robot_msgs::Point32> door_fp;
+    std::vector<geometry_msgs::Point32> door_fp;
 
     door_fp.resize(footprint_.size());
     getDoorFrameFootprint(global_position,global_yaw,door_fp);
@@ -448,7 +448,7 @@ namespace door_base_collision_cost
     fclose(fp);
   }
 
-  void DoorBaseCollisionCost::writeSolution(const std::string &filename, const robot_msgs::Point32 &robot_position, const double &robot_yaw, const std::vector<int> &angles, const std::vector<int> &angle_costs)
+  void DoorBaseCollisionCost::writeSolution(const std::string &filename, const geometry_msgs::Point32 &robot_position, const double &robot_yaw, const std::vector<int> &angles, const std::vector<int> &angle_costs)
   {
     FILE *fp = fopen(filename.c_str(),"wt");
     //Print door position
@@ -470,7 +470,7 @@ namespace door_base_collision_cost
     }
   }
 
-  bool DoorBaseCollisionCost::doLineSegsIntersect(robot_msgs::Point32 a, robot_msgs::Point32 b, robot_msgs::Point32 c, robot_msgs::Point32 d)
+  bool DoorBaseCollisionCost::doLineSegsIntersect(geometry_msgs::Point32 a, geometry_msgs::Point32 b, geometry_msgs::Point32 c, geometry_msgs::Point32 d)
   {
     double b_a[2], c_d[2], c_a[2];
     b_a[0] = b.x-a.x;
@@ -498,10 +498,10 @@ namespace door_base_collision_cost
     door_msgs::Door rotated_door = door_functions::rotateDoor(door_msg_, angle);
 
     // get polygon of door
-    std::vector<robot_msgs::Point32> door_polygon(4);
-    std::vector<robot_msgs::Point> door_polygon64 = door_functions::getPolygon(rotated_door, door_thickness_);
+    std::vector<geometry_msgs::Point32> door_polygon(4);
+    std::vector<geometry_msgs::Point> door_polygon64 = door_functions::getPolygon(rotated_door, door_thickness_);
 
-    //convert to type robot_msgs::Point32 to check for intersection (getPolygon returns 64-bit floats)
+    //convert to type geometry_msgs::Point32 to check for intersection (getPolygon returns 64-bit floats)
     door_polygon[0].x = door_polygon64[0].x;
     door_polygon[0].y = door_polygon64[0].y;
 
@@ -541,9 +541,9 @@ namespace door_base_collision_cost
     return false;
   }
 
-  void DoorBaseCollisionCost::ClosestPointOnLineSegment(robot_msgs::Point32 &l1, robot_msgs::Point32 &l2, robot_msgs::Point32 &p, robot_msgs::Point32 &sol)
+  void DoorBaseCollisionCost::ClosestPointOnLineSegment(geometry_msgs::Point32 &l1, geometry_msgs::Point32 &l2, geometry_msgs::Point32 &p, geometry_msgs::Point32 &sol)
   {
-    robot_msgs::Point32 l2_l1, p_l1;
+    geometry_msgs::Point32 l2_l1, p_l1;
 
     l2_l1.x = l2.x-l1.x;  //overloaded subtraction operator?
     l2_l1.y = l2.y-l1.y;
@@ -561,9 +561,9 @@ namespace door_base_collision_cost
     sol.y = l1.y+l2_l1.y*t;
   }
 
-  double DoorBaseCollisionCost::PointDistanceFromLineSeg(robot_msgs::Point32 &l1, robot_msgs::Point32 &l2, robot_msgs::Point32 &p)
+  double DoorBaseCollisionCost::PointDistanceFromLineSeg(geometry_msgs::Point32 &l1, geometry_msgs::Point32 &l2, geometry_msgs::Point32 &p)
   {
-    robot_msgs::Point32 sol;
+    geometry_msgs::Point32 sol;
     ClosestPointOnLineSegment(l1,l2,p,sol);
 
     return(sqrt((p.x*sol.x)*(p.x*sol.x) + (p.y*sol.y)*(p.y*sol.y)));
@@ -577,10 +577,10 @@ namespace door_base_collision_cost
     door_msgs::Door rotated_door = door_functions::rotateDoor(door_msg_, angle);
 
     // get polygon of door
-    std::vector<robot_msgs::Point32> door_polygon(4);
-    std::vector<robot_msgs::Point> door_polygon64 = door_functions::getPolygon(rotated_door, door_thickness_);
+    std::vector<geometry_msgs::Point32> door_polygon(4);
+    std::vector<geometry_msgs::Point> door_polygon64 = door_functions::getPolygon(rotated_door, door_thickness_);
 
-    //convert to type robot_msgs::Point32 to check for intersection (getPolygon returns 64-bit floats)
+    //convert to type geometry_msgs::Point32 to check for intersection (getPolygon returns 64-bit floats)
     door_polygon[0].x = door_polygon64[0].x;
     door_polygon[0].y = door_polygon64[0].y;
 
@@ -604,9 +604,9 @@ namespace door_base_collision_cost
     return min_distance;
   }
 
-  bool DoorBaseCollisionCost::checkArmDoorCollide(double door_angle, const robot_msgs::Point32 &robot_global_position, const double &robot_global_yaw)
+  bool DoorBaseCollisionCost::checkArmDoorCollide(double door_angle, const geometry_msgs::Point32 &robot_global_position, const double &robot_global_yaw)
   {
-    robot_msgs::Point32 global_handle_position, global_shoulder_position;
+    geometry_msgs::Point32 global_handle_position, global_shoulder_position;
 
     // rotate the door
     door_msgs::Door rotated_door = door_functions::rotateDoor(door_msg_, door_angle);
@@ -623,7 +623,7 @@ namespace door_base_collision_cost
     return doLineSegsIntersect(rotated_door.door_p1, rotated_door.door_p2, global_shoulder_position, global_handle_position);
   }
 
-  void DoorBaseCollisionCost::printPoint(std::string name, robot_msgs::Point32 point)
+  void DoorBaseCollisionCost::printPoint(std::string name, geometry_msgs::Point32 point)
   {
     printf("%s: x: %.3f y: %.3f z: %.3f\n", name.c_str(), point.x, point.y, point.z);
   }

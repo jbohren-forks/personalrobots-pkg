@@ -82,8 +82,8 @@ int
   pr2_robot_actions::SwitchControllers switchlist;
   std_msgs::Empty empty;
   plugs_msgs::PlugStow plug_stow;
-  robot_msgs::PointStamped point;
-  robot_msgs::PoseStamped pose;
+  geometry_msgs::PointStamped point;
+  geometry_msgs::PoseStamped pose;
 
   point.header.frame_id = "torso_lift_link";
   point.point.x=0;
@@ -102,7 +102,7 @@ int
     detect_plug_on_base("detect_plug_on_base");
   robot_actions::ActionClient<plugs_msgs::PlugStow, pr2_robot_actions::MoveAndGraspPlugState, std_msgs::Empty>
     move_and_grasp_plug("move_and_grasp_plug");
-  robot_actions::ActionClient<robot_msgs::PointStamped, pr2_robot_actions::DetectOutletState, robot_msgs::PoseStamped>
+  robot_actions::ActionClient<geometry_msgs::PointStamped, pr2_robot_actions::DetectOutletState, geometry_msgs::PoseStamped>
     detect_outlet_fine("detect_outlet_fine");
   robot_actions::ActionClient<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>
     localize_plug_in_gripper("localize_plug_in_gripper");
@@ -112,9 +112,9 @@ int
     unplug("unplug");
   robot_actions::ActionClient< plugs_msgs::PlugStow, pr2_robot_actions::StowPlugState, std_msgs::Empty>
     stow_plug("stow_plug");
-  robot_actions::ActionClient<robot_msgs::PointStamped, pr2_robot_actions::DetectOutletState, robot_msgs::PoseStamped>
+  robot_actions::ActionClient<geometry_msgs::PointStamped, pr2_robot_actions::DetectOutletState, geometry_msgs::PoseStamped>
     detect_outlet_coarse("detect_outlet_coarse");
-  robot_actions::ActionClient<robot_msgs::PoseStamped, nav_robot_actions::MoveBaseState, robot_msgs::PoseStamped>
+  robot_actions::ActionClient<geometry_msgs::PoseStamped, nav_robot_actions::MoveBaseState, geometry_msgs::PoseStamped>
     move_base_local("move_base_local");
 
   Duration(1.0).sleep();
@@ -158,12 +158,12 @@ int
   switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
   switchlist.start_controllers.push_back("head_controller");
   if (switch_controllers.execute(switchlist, empty, switch_timeout) != robot_actions::SUCCESS) return -37;
-  robot_msgs::PointStamped guess;
+  geometry_msgs::PointStamped guess;
   guess.header.frame_id = "base_link";
   guess.point.x = 2.0;
   guess.point.y = 0.0;
   guess.point.z = 0.4;
-  robot_msgs::PoseStamped coarse_outlet_pose_msg;
+  geometry_msgs::PoseStamped coarse_outlet_pose_msg;
   int tries = 0;
   while (detect_outlet_coarse.execute(guess, coarse_outlet_pose_msg, Duration(300.0)) != robot_actions::SUCCESS)
   {
@@ -180,7 +180,7 @@ int
   tf::Pose desi_offset(tf::Quaternion(0,0,0), tf::Vector3(-0.5, 0.25, 0.0));
   tf::Pose target = coarse_outlet_pose * desi_offset;
 
-  robot_msgs::PoseStamped target_msg;
+  geometry_msgs::PoseStamped target_msg;
   target_msg.header.frame_id = coarse_outlet_pose_msg.header.frame_id;
   tf::poseTFToMsg(target, target_msg.pose);
 
@@ -188,7 +188,7 @@ int
   if (move_base_local.execute(target_msg, target_msg, Duration(500.0)) != robot_actions::SUCCESS) return -50;
 
   // detect outlet fine
-  robot_msgs::PointStamped outlet_pt;
+  geometry_msgs::PointStamped outlet_pt;
   outlet_pt.header.frame_id = coarse_outlet_pose_msg.header.frame_id;
   outlet_pt.header.stamp = coarse_outlet_pose_msg.header.stamp;
   outlet_pt.point = coarse_outlet_pose_msg.pose.position;

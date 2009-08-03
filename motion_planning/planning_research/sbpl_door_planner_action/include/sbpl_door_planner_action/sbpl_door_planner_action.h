@@ -43,7 +43,7 @@
 #include <tf/transform_datatypes.h>
 
 /** Messages needed for trajectory control and collision map**/
-#include <robot_msgs/Pose.h>
+#include <geometry_msgs/Pose.h>
 #include <manipulation_msgs/JointTraj.h>
 #include <manipulation_msgs/JointTrajPoint.h>
 #include <mapping_msgs/CollisionMap.h>
@@ -75,7 +75,7 @@ typedef struct
     double arm_min_workspace_radius;
     double arm_max_workspace_radius;
     double door_angle_discretization_interval;
-    robot_msgs::Point32 shoulder;
+    geometry_msgs::Point32 shoulder;
 }DoorEnvProperties;
 
 class SBPLDoorPlanner : public robot_actions::Action<door_msgs::Door, door_msgs::Door>
@@ -131,7 +131,7 @@ class SBPLDoorPlanner : public robot_actions::Action<door_msgs::Door, door_msgs:
   
   bool makePlan(const pr2_robot_actions::Pose2D &start, const pr2_robot_actions::Pose2D &goal, manipulation_msgs::JointTraj &path);
 
-  std::vector<robot_msgs::Point> footprint_;
+  std::vector<geometry_msgs::Point> footprint_;
 
   boost::recursive_mutex lock_; /*!< Lock for access to class members in callbacks */
 
@@ -153,7 +153,7 @@ class SBPLDoorPlanner : public robot_actions::Action<door_msgs::Door, door_msgs:
 
   void publishPath(const manipulation_msgs::JointTraj &path, std::string topic, double r, double g, double b, double a);
 
-  bool computeOrientedFootprint(const pr2_robot_actions::Pose2D &position, const std::vector<robot_msgs::Point>& footprint_spec, std::vector<robot_msgs::Point>& oriented_footprint);
+  bool computeOrientedFootprint(const pr2_robot_actions::Pose2D &position, const std::vector<geometry_msgs::Point>& footprint_spec, std::vector<geometry_msgs::Point>& oriented_footprint);
 
   bool clearRobotFootprint(costmap_2d::Costmap2D& cost_map);
 
@@ -203,6 +203,6 @@ class SBPLDoorPlanner : public robot_actions::Action<door_msgs::Door, door_msgs:
 
   bool checkArmDoorCollide(const manipulation_msgs::JointTrajPoint &waypoint);
 
-  bool doLineSegsIntersect(robot_msgs::Point32 a, robot_msgs::Point32 b, robot_msgs::Point32 c, robot_msgs::Point32 d);
+  bool doLineSegsIntersect(geometry_msgs::Point32 a, geometry_msgs::Point32 b, geometry_msgs::Point32 c, geometry_msgs::Point32 d);
 
 };

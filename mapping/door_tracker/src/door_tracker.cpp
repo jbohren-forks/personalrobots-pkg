@@ -46,11 +46,11 @@
 // ROS messages
 #include <door_handle_detector/DoorsDetector.h>
 
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 #include <robot_msgs/Polygon3D.h>
 #include <mapping_msgs/PolygonalMap.h>
 
-#include <robot_msgs/Point32.h>
+#include <geometry_msgs/Point32.h>
 #include <door_msgs/Door.h>
 #include <visualization_msgs/Marker.h>
 
@@ -105,7 +105,7 @@ class DoorTracker
 
     ros::Node *node_;
 
-    PointCloud cloud_;
+    sensor_msgs::PointCloud cloud_;
     laser_scan::LaserProjection projector_; // Used to project laser scans into point clouds
 
     tf::TransformListener *tf_;
@@ -199,7 +199,7 @@ class DoorTracker
  * \param min_pts_per_cluster minimum number of points that a cluster may contain (default = 1)
  */
     void
-    findClusters (const PointCloud &points, const vector<int> &indices, double tolerance, vector<vector<int> > &clusters,
+    findClusters (const sensor_msgs::PointCloud &points, const vector<int> &indices, double tolerance, vector<vector<int> > &clusters,
                   int nx_idx, int ny_idx, int nz_idx,
                   double eps_angle, unsigned int min_pts_per_cluster)
     {
@@ -456,7 +456,7 @@ class DoorTracker
       cloud_msg_mutex_.unlock();
     }
 
-    void publishLine(const Point32 &min_p, const Point32 &max_p, const int &id, const std::string &frame_id)
+    void publishLine(const geometry_msgs::Point32 &min_p, const geometry_msgs::Point32 &max_p, const int &id, const std::string &frame_id)
     {
       visualization_msgs::Marker marker;
       marker.header.frame_id = frame_id;
@@ -486,7 +486,7 @@ class DoorTracker
     }
 
 
-    void transform2DInverse(const Point32 &fp_in, Point32 &fp_out, const double &robot_x, const double &robot_y, const double &robot_theta)
+    void transform2DInverse(const geometry_msgs::Point32 &fp_in, geometry_msgs::Point32 &fp_out, const double &robot_x, const double &robot_y, const double &robot_theta)
     {
       double cth = cos(robot_theta);
       double sth = sin(robot_theta);
@@ -499,7 +499,7 @@ class DoorTracker
     {
       ROS_DEBUG("Finding door");
       //cloud_msg_mutex_.lock();
-      PointCloud cloud = cloud_;//create a local copy - should be fine since its a small scan from the base laser
+      sensor_msgs::PointCloud cloud = cloud_;//create a local copy - should be fine since its a small scan from the base laser
       //cloud_msg_mutex_.unlock();
 
       updateGlobalPose();
@@ -520,8 +520,8 @@ class DoorTracker
       vector<vector<int> > inliers;
       vector<vector<double> > coeff;
 
-      vector<Point32> line_segment_min;
-      vector<Point32> line_segment_max;
+      vector<geometry_msgs::Point32> line_segment_min;
+      vector<geometry_msgs::Point32> line_segment_max;
 
       fitSACLines(&cloud,indices,inliers,coeff,line_segment_min,line_segment_max);
 
@@ -542,7 +542,7 @@ class DoorTracker
           continue;
         }
 
-        Point32 temp_min,temp_max;
+        geometry_msgs::Point32 temp_min,temp_max;
         transform2DInverse(line_segment_min[i],temp_min,global_x_,global_y_,global_yaw_);
         transform2DInverse(line_segment_max[i],temp_max,global_x_,global_y_,global_yaw_);
 
@@ -626,9 +626,9 @@ class DoorTracker
       return;
     }
 
-    void fitSACLines(PointCloud *points, vector<int> indices, vector<vector<int> > &inliers, vector<vector<double> > &coeff, vector<Point32> &line_segment_min, vector<Point32> &line_segment_max)
+    void fitSACLines(sensor_msgs::PointCloud *points, vector<int> indices, vector<vector<int> > &inliers, vector<vector<double> > &coeff, vector<geometry_msgs::Point32> &line_segment_min, vector<geometry_msgs::Point32> &line_segment_max)
     {
-      Point32 minP, maxP;
+      geometry_msgs::Point32 minP, maxP;
 
       // Create and initialize the SAC model
       sample_consensus::SACModelLine *model = new sample_consensus::SACModelLine ();
@@ -711,7 +711,7 @@ class DoorTracker
     }
 
 
-    void obtainCloudIndicesSet(robot_msgs::PointCloud *points, vector<int> &indices, door_msgs::Door door_msg, tf::TransformListener *tf, double frame_multiplier)
+    void obtainCloudIndicesSet(sensor_msgs::PointCloud *points, vector<int> &indices, door_msgs::Door door_msg, tf::TransformListener *tf, double frame_multiplier)
     {
       // frames used
       string cloud_frame = points->header.frame_id;
@@ -721,8 +721,8 @@ class DoorTracker
       indices.resize (points->pts.size ());
 
       // Transform the X-Y bounds from the door request service into the cloud TF frame
-      tf::Stamped<Point32> frame_p1 (door_msg.frame_p1, points->header.stamp, door_frame);
-      tf::Stamped<Point32> frame_p2 (door_msg.frame_p2, points->header.stamp, door_frame);
+      tf::Stamped<geometry_msgs::Point32> frame_p1 (door_msg.frame_p1, points->header.stamp, door_frame);
+      tf::Stamped<geometry_msgs::Point32> frame_p2 (door_msg.frame_p2, points->header.stamp, door_frame);
       transformPoint (tf,cloud_frame, frame_p1, frame_p1);
       transformPoint (tf,cloud_frame, frame_p2, frame_p2);
 
@@ -730,7 +730,7 @@ class DoorTracker
                 cloud_frame.c_str (), frame_p1.x, frame_p1.y, frame_p1.z, frame_p2.x, frame_p2.y, frame_p2.z);
 
       // Obtain the bounding box information in the reference frame of the laser scan
-      Point32 min_bbox, max_bbox;
+      geometry_msgs::Point32 min_bbox, max_bbox;
 
       if (frame_multiplier == -1)
       {
@@ -763,7 +763,7 @@ class DoorTracker
 
 
 /*
-  void get3DBounds (Point32 *p1, Point32 *p2, Point32 &min_b, Point32 &max_b, int multiplier)
+  void get3DBounds (geometry_msgs::Point32 *p1, geometry_msgs::Point32 *p2, geometry_msgs::Point32 &min_b, geometry_msgs::Point32 &max_b, int multiplier)
   {
   // Get the door_frame distance in the X-Y plane
   float door_frame = sqrt ( (p1->x - p2->x) * (p1->x - p2->x) + (p1->y - p2->y) * (p1->y - p2->y) );
@@ -797,7 +797,7 @@ class DoorTracker
   }
 */
 
-    void get3DBounds (Point32 *p1, Point32 *p2, Point32 &min_b, Point32 &max_b, int multiplier)
+    void get3DBounds (geometry_msgs::Point32 *p1, geometry_msgs::Point32 *p2, geometry_msgs::Point32 &min_b, geometry_msgs::Point32 &max_b, int multiplier)
     {
       // Get the door_frame distance in the X-Y plane
       float door_frame = sqrt ( (p1->x - p2->x) * (p1->x - p2->x) + (p1->y - p2->y) * (p1->y - p2->y) );
@@ -840,7 +840,7 @@ class DoorTracker
  */
     inline void
     transformPoint (tf::TransformListener *tf, const std::string &target_frame,
-                    const tf::Stamped< robot_msgs::Point32 > &stamped_in, tf::Stamped< robot_msgs::Point32 > &stamped_out)
+                    const tf::Stamped< geometry_msgs::Point32 > &stamped_in, tf::Stamped< geometry_msgs::Point32 > &stamped_out)
     {
       tf::Stamped<tf::Point> tmp;
       tmp.stamp_ = stamped_in.stamp_;

@@ -4,7 +4,7 @@
 // ROS core
 #include <ros/node.h>
 // ROS messages
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 #include <robot_msgs/Polygon3D.h>
 
 // Cloud geometry
@@ -20,13 +20,13 @@
 #include <angles/angles.h>
 
 class PlanarFit {
-	void getPointIndicesInZBounds(const robot_msgs::PointCloud &points,
+	void getPointIndicesInZBounds(const sensor_msgs::PointCloud &points,
 			double z_min, double z_max, std::vector<int> &indices);
 
-	bool fitSACPlanes(robot_msgs::PointCloud *points,
+	bool fitSACPlanes(sensor_msgs::PointCloud *points,
 			std::vector<int> &indices, std::vector<std::vector<int> > &inliers,
 			std::vector<std::vector<double> > &coeff,
-			const robot_msgs::Point32 &viewpoint_cloud, double dist_thresh,
+			const geometry_msgs::Point32 &viewpoint_cloud, double dist_thresh,
 			int n_max, int min_points_per_model = 100);
 	/**
 	 * Input
@@ -42,18 +42,18 @@ class PlanarFit {
 	 + -1, -2, -3 means supported object by cluster (or for now for speed, all points that are not a 0 or not a plane are -1).
 	 **/
 
-	void segmentPlanes(robot_msgs::PointCloud &points, double z_min,
+	void segmentPlanes(sensor_msgs::PointCloud &points, double z_min,
 			double z_max, double support, double min_area, int n_max,
 			std::vector<std::vector<int> > &indices, std::vector<std::vector<
 					double> > &models,int number);
-	void publishNormals(robot_msgs::PointCloud points, std::vector<robot_msgs::Vector3> coeff, float length=0.1);
-	void publishPolygon(robot_msgs::PointCloud pointcloud,robot_msgs::Polygon3D points,int number);
+	void publishNormals(sensor_msgs::PointCloud points, std::vector<geometry_msgs::Vector3> coeff, float length=0.1);
+	void publishPolygon(sensor_msgs::PointCloud pointcloud,robot_msgs::Polygon3D points,int number);
 protected:
 	ros::Node& node_;
 
 public:
 	// ROS messages
-	robot_msgs::PointCloud cloud_, cloud_plane_, cloud_outliers_;
+	sensor_msgs::PointCloud cloud_, cloud_plane_, cloud_outliers_;
 
 	double z_min_, z_max_, support_, min_area_;
 	int n_max_;

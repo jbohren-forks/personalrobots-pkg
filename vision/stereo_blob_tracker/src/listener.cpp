@@ -29,14 +29,14 @@
 
 #include "ros/node.h"
 #include "std_msgs/String.h"
-#include "robot_msgs/PointStamped.h"
+#include "geometry_msgs/PointStamped.h"
 #include "stereo_blob_tracker/Rect2DStamped.h"
 using namespace stereo_blob_tracker;
 
 class Listener : public ros::Node
 {
 public:
-  robot_msgs::PointStamped msg;
+  geometry_msgs::PointStamped msg;
   Rect2DStamped sbox_msg;
   Rect2DStamped tbox_msg;
   Listener() : ros::Node("listener")

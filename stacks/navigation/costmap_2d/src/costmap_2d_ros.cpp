@@ -120,7 +120,7 @@ namespace costmap_2d {
         observation_notifiers_.back()->setTolerance(ros::Duration(0.05));
       }
       else{
-        observation_notifiers_.push_back(new tf::MessageNotifier<robot_msgs::PointCloud>(tf_,
+        observation_notifiers_.push_back(new tf::MessageNotifier<sensor_msgs::PointCloud>(tf_,
               boost::bind(&Costmap2DROS::pointCloudCallback, this, _1, observation_buffers_.back()), topic, global_frame_, 50));
       }
 
@@ -265,9 +265,9 @@ namespace costmap_2d {
 
   }
 
-  std::vector<robot_msgs::Point> Costmap2DROS::loadRobotFootprint(ros::NodeHandle node, double inscribed_radius, double circumscribed_radius){
-    std::vector<robot_msgs::Point> footprint;
-    robot_msgs::Point pt;
+  std::vector<geometry_msgs::Point> Costmap2DROS::loadRobotFootprint(ros::NodeHandle node, double inscribed_radius, double circumscribed_radius){
+    std::vector<geometry_msgs::Point> footprint;
+    geometry_msgs::Point pt;
     double padding;
     node.param("~footprint_padding", padding, 0.01);
 
@@ -377,7 +377,7 @@ namespace costmap_2d {
 
   void Costmap2DROS::laserScanCallback(const tf::MessageNotifier<sensor_msgs::LaserScan>::MessagePtr& message, ObservationBuffer* buffer){
     //project the laser into a point cloud
-    robot_msgs::PointCloud base_cloud;
+    sensor_msgs::PointCloud base_cloud;
     base_cloud.header = message->header;
 
     //project the scan into a point cloud
@@ -397,7 +397,7 @@ namespace costmap_2d {
     buffer->unlock();
   }
 
-  void Costmap2DROS::pointCloudCallback(const tf::MessageNotifier<robot_msgs::PointCloud>::MessagePtr& message, ObservationBuffer* buffer){
+  void Costmap2DROS::pointCloudCallback(const tf::MessageNotifier<sensor_msgs::PointCloud>::MessagePtr& message, ObservationBuffer* buffer){
     //buffer the point cloud
     buffer->lock();
     buffer->bufferCloud(*message);
@@ -609,23 +609,23 @@ namespace costmap_2d {
     clearRobotFootprint(global_pose);
   }
 
-  std::vector<robot_msgs::Point> Costmap2DROS::robotFootprint(){
+  std::vector<geometry_msgs::Point> Costmap2DROS::robotFootprint(){
     return footprint_spec_;
   }
 
-  void Costmap2DROS::getOrientedFootprint(double x, double y, double theta, std::vector<robot_msgs::Point>& oriented_footprint){
+  void Costmap2DROS::getOrientedFootprint(double x, double y, double theta, std::vector<geometry_msgs::Point>& oriented_footprint){
     //build the oriented footprint at the robot's current location
     double cos_th = cos(theta);
     double sin_th = sin(theta);
     for(unsigned int i = 0; i < footprint_spec_.size(); ++i){
-      robot_msgs::Point new_pt;
+      geometry_msgs::Point new_pt;
       new_pt.x = x + (footprint_spec_[i].x * cos_th - footprint_spec_[i].y * sin_th);
       new_pt.y = y + (footprint_spec_[i].x * sin_th + footprint_spec_[i].y * cos_th);
       oriented_footprint.push_back(new_pt);
     }
   }
 
-  bool Costmap2DROS::setConvexPolygonCost(const std::vector<robot_msgs::Point>& polygon, unsigned char cost_value){
+  bool Costmap2DROS::setConvexPolygonCost(const std::vector<geometry_msgs::Point>& polygon, unsigned char cost_value){
     costmap_->lock();
     bool success = costmap_->setConvexPolygonCost(polygon, costmap_2d::FREE_SPACE);
     costmap_->unlock();
@@ -679,7 +679,7 @@ namespace costmap_2d {
     double theta = yaw;
 
     //build the oriented footprint at the robot's current location
-    std::vector<robot_msgs::Point> oriented_footprint;
+    std::vector<geometry_msgs::Point> oriented_footprint;
     getOrientedFootprint(x, y, theta, oriented_footprint);
 
     costmap_->lock();

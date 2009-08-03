@@ -128,7 +128,7 @@ class EnvironmentNAVXYTHETADOORLAT : public EnvironmentNAVXYTHETALATTICE
                                                    const double &max_workspace_radius, 
                                                    const double &min_workspace_angle, 
                                                    const double &max_workspace_angle,
-                          const robot_msgs::Point32 &robot_shoulder_position);                        
+                          const geometry_msgs::Point32 &robot_shoulder_position);                        
 
 
   //overloaded functions to support door_interval  

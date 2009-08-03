@@ -1,8 +1,8 @@
-robot_msgs/PoseStamped start
-robot_msgs/PoseStamped goal
+geometry_msgs/PoseStamped start
+geometry_msgs/PoseStamped goal
 ---
 
 byte plan_found
 
 # if plan_found is true, this is an array of waypoints from start to goal, where the first one equals start and the last one equals goal
-robot_msgs/PoseStamped[] path
+geometry_msgs/PoseStamped[] path

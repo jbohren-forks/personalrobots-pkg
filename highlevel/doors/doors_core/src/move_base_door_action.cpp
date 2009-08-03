@@ -383,7 +383,7 @@ namespace nav
   void MoveBaseDoorAction::publishFootprint(){
     double useless_pitch, useless_roll, yaw;
     global_pose_.getBasis().getEulerZYX(yaw, useless_pitch, useless_roll);
-    std::vector<robot_msgs::Point> footprint;
+    std::vector<geometry_msgs::Point> footprint;
     planner_->computeOrientedFootprint(getPose2D(global_pose_), planner_->footprint_, footprint);
 
     visualization_msgs::Polyline footprint_msg;

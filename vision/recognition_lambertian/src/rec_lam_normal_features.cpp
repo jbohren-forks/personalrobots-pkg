@@ -56,10 +56,10 @@
 #include "sensor_msgs/DisparityInfo.h"
 #include "sensor_msgs/CameraInfo.h"
 #include "sensor_msgs/Image.h"
-#include "robot_msgs/PointCloud.h"
-#include "robot_msgs/Point32.h"
-#include "robot_msgs/Vector3.h"
-#include "robot_msgs/PointStamped.h"
+#include "sensor_msgs/PointCloud.h"
+#include "geometry_msgs/Point32.h"
+#include "geometry_msgs/Vector3.h"
+#include "geometry_msgs/PointStamped.h"
 #include <robot_msgs/Polygon3D.h>
 #include "door_msgs/Door.h"
 //#include "robot_msgs/VisualizationMarker.h"
@@ -125,9 +125,9 @@ static inline cv::Vec4f transform4x4(const Mat4x4f& M, const cv::Vec4f& v)
 class PlanarFit
 {
 
-  void getPointIndicesInZBounds (const PointCloud &points, double z_min, double z_max, vector<int> &indices);
-  bool fitSACPlanes (PointCloud *points, vector<int> &indices, vector<vector<int> > &inliers, vector<vector<double> > &coeff,
-                     const robot_msgs::Point32 &viewpoint_cloud, double dist_thresh, int n_max, int min_points_per_model = 100);
+  void getPointIndicesInZBounds (const sensor_msgs::PointCloud &points, double z_min, double z_max, vector<int> &indices);
+  bool fitSACPlanes (sensor_msgs::PointCloud *points, vector<int> &indices, vector<vector<int> > &inliers, vector<vector<double> > &coeff,
+                     const geometry_msgs::Point32 &viewpoint_cloud, double dist_thresh, int n_max, int min_points_per_model = 100);
 
   /**
       * Input
@@ -159,7 +159,7 @@ public:
 	 * @param models			Equations of planes that were found.  Again, if models[i].size() = 0, then the plane wsa invalid
 	 */
   void
-     segmentPlanes (PointCloud &points, vector<int> &indices_in_bounds, int num_pts, int n_max,
+     segmentPlanes (sensor_msgs::PointCloud &points, vector<int> &indices_in_bounds, int num_pts, int n_max,
                     vector<vector<int> > &indices, vector<vector<double> > &models)
    {
 		// This should be given as a parameter as well, or set global, etc
@@ -168,7 +168,7 @@ public:
 		// We need to know the viewpoint where the data was acquired
 		// For simplicity, assuming 0,0,0 for stereo data in the stereo frame - however if this is not true, use TF to get
 		//the point in a different frame !
-		Point32 viewpoint;
+		geometry_msgs::Point32 viewpoint;
 		viewpoint.x = viewpoint.y = viewpoint.z = 0;
 
 		// Use the entire data to estimate the plane equation.
@@ -196,7 +196,7 @@ public:
 	}
 
   void
-    segmentPlanes (PointCloud &points, double z_min, double z_max, double min_area, int n_max,
+    segmentPlanes (sensor_msgs::PointCloud &points, double z_min, double z_max, double min_area, int n_max,
                    vector<vector<int> > &indices, vector<vector<double> > &models)
   {
     // This should be given as a parameter as well, or set global, etc
@@ -209,7 +209,7 @@ public:
     // We need to know the viewpoint where the data was acquired
     // For simplicity, assuming 0,0,0 for stereo data in the stereo frame - however if this is not true, use TF to get
     //the point in a different frame !
-    Point32 viewpoint;
+    geometry_msgs::Point32 viewpoint;
     viewpoint.x = viewpoint.y = viewpoint.z = 0;
 
     // Use the entire data to estimate the plane equation.
@@ -258,7 +258,7 @@ public:
   public:
 
     // ROS messages
-//    PointCloud cloud_, cloud_plane_, cloud_outliers_;
+//    sensor_msgs::PointCloud cloud_, cloud_plane_, cloud_outliers_;
 //
 //    double z_min_, z_max_, support_, min_area_;
 //    int n_max_;
@@ -289,8 +289,8 @@ public:
         ROS_WARN ("Trying to subscribe to %s, but the topic doesn't exist!", node_.mapName (cloud_topic).c_str ());
 
       node_.subscribe (cloud_topic, cloud_, &PlanarFit::cloud_cb, this, 1);
-      node_.advertise<PointCloud> ("~plane", 1);
-      node_.advertise<PointCloud> ("~outliers", 1);
+      node_.advertise<sensor_msgs::PointCloud> ("~plane", 1);
+      node_.advertise<sensor_msgs::PointCloud> ("~outliers", 1);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -330,7 +330,7 @@ public:
   * \param z_max the maximum Z value
   */
 void
-  PlanarFit::getPointIndicesInZBounds (const PointCloud &points, double z_min, double z_max, vector<int> &indices)
+  PlanarFit::getPointIndicesInZBounds (const sensor_msgs::PointCloud &points, double z_min, double z_max, vector<int> &indices)
 {
   indices.resize (points.pts.size ());
   int nr_p = 0;
@@ -357,8 +357,8 @@ void
   * \param min_points_per_model the minimum number of points allowed for a planar model (default: 100)
   */
 bool
-  PlanarFit::fitSACPlanes (PointCloud *points, vector<int> &indices, vector<vector<int> > &inliers, vector<vector<double> > &coeff,
-                           const robot_msgs::Point32 &viewpoint_cloud, double dist_thresh, int n_max, int min_points_per_model)
+  PlanarFit::fitSACPlanes (sensor_msgs::PointCloud *points, vector<int> &indices, vector<vector<int> > &inliers, vector<vector<double> > &coeff,
+                           const geometry_msgs::Point32 &viewpoint_cloud, double dist_thresh, int n_max, int min_points_per_model)
 {
   // Create and initialize the SAC model
   sample_consensus::SACModelPlane *model = new sample_consensus::SACModelPlane ();
@@ -677,8 +677,8 @@ public:
 		  int planes_found = 0;
 
 		  //STUFF POINT CLOUD
-		  PointCloud pc;
-		  robot_msgs::Point32 pt3d;
+		  sensor_msgs::PointCloud pc;
+		  geometry_msgs::Point32 pt3d;
 		  int rows = xyza->rows;
 		  int cols = xyza->cols;
 		  float *fptr = xyza->data.fl;
@@ -1242,7 +1242,7 @@ public:
        * @param rect Region of interest -- only record points inside this box
        * @return 0:OK; -1: no matrix; -2: matrix not 4 float channels; -3: image not floating point
        */
-      int pointCloud2PointMat(CvMat *M, const CvRect & rect, const robot_msgs::PointCloud & cloud)
+      int pointCloud2PointMat(CvMat *M, const CvRect & rect, const sensor_msgs::PointCloud & cloud)
       {
           if(!M)
               return -1;
@@ -1308,7 +1308,7 @@ public:
      * @param rect Region of interest -- only record points inside this box
      * @return 0:OK; -1: no image; -2: image not 3 channels; -3: image not floating point
      */
-    int pointCloud2PointImage(IplImage *I, const CvRect & rect, robot_msgs::PointCloud & cloud)
+    int pointCloud2PointImage(IplImage *I, const CvRect & rect, sensor_msgs::PointCloud & cloud)
     {
        	if(!I)
         	return -1;
@@ -1440,8 +1440,8 @@ public:
 	sensor_msgs::CvBridge rbridge;
 	sensor_msgs::CvBridge dbridge;
 
-	robot_msgs::PointCloud cloud_fetch;
-	robot_msgs::PointCloud cloud;
+	sensor_msgs::PointCloud cloud_fetch;
+	sensor_msgs::PointCloud cloud;
 
 	IplImage* left;
 	IplImage* right;
@@ -1548,7 +1548,7 @@ public:
          }
 
 
-//        advertise<robot_msgs::PointStamped>("handle_detector/handle_location", 1);
+//        advertise<geometry_msgs::PointStamped>("handle_detector/handle_location", 1);
        // advertise<robot_msgs::VisualizationMarker>("visualizationMarker", 1);
 
         subscribeStereoData();
@@ -1716,7 +1716,7 @@ private:
      * @param d disparity pixel value
      * @return point in 3D space
      */
-    robot_msgs::Point disparityTo3D(CvStereoCamModel & cam_model, int x, int y, double d)
+    geometry_msgs::Point disparityTo3D(CvStereoCamModel & cam_model, int x, int y, double d)
     {
         CvMat *uvd = cvCreateMat(1, 3, CV_32FC1);
         cvmSet(uvd, 0, 0, x);
@@ -1724,7 +1724,7 @@ private:
         cvmSet(uvd, 0, 2, d);
         CvMat *xyz = cvCreateMat(1, 3, CV_32FC1);
         cam_model.dispToCart(uvd, xyz);
-        robot_msgs::Point result;
+        geometry_msgs::Point result;
         result.x = cvmGet(xyz, 0, 0);
         result.y = cvmGet(xyz, 0, 1);
         result.z = cvmGet(xyz, 0, 2);
@@ -1738,7 +1738,7 @@ private:
 	 * @param b
 	 * @return
 	 */
-    double distance3D(robot_msgs::Point a, robot_msgs::Point b)
+    double distance3D(geometry_msgs::Point a, geometry_msgs::Point b)
     {
         return sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y) + (a.z - b.z) * (a.z - b.z));
     }
@@ -1760,7 +1760,7 @@ private:
      * @param dy
      * @param center
      */
-    void getROIDimensions(const CvRect& r, double & dx, double & dy, robot_msgs::Point & center)
+    void getROIDimensions(const CvRect& r, double & dx, double & dy, geometry_msgs::Point & center)
     {
         // initialize stereo camera model
         double Fx = rcinfo.P[0];
@@ -1774,9 +1774,9 @@ private:
         double mean = 0;
         disparitySTD(disp, r, mean);
 
-        robot_msgs::Point p1 = disparityTo3D(cam_model, r.x, r.y, mean);
-        robot_msgs::Point p2 = disparityTo3D(cam_model, r.x + r.width, r.y, mean);
-        robot_msgs::Point p3 = disparityTo3D(cam_model, r.x, r.y + r.height, mean);
+        geometry_msgs::Point p1 = disparityTo3D(cam_model, r.x, r.y, mean);
+        geometry_msgs::Point p2 = disparityTo3D(cam_model, r.x + r.width, r.y, mean);
+        geometry_msgs::Point p3 = disparityTo3D(cam_model, r.x, r.y + r.height, mean);
         center = disparityTo3D(cam_model, r.x + r.width / 2, r.y + r.height / 2, mean);
         dx = distance3D(p1, p2);
         dy = distance3D(p1, p3);
@@ -2011,9 +2011,9 @@ private:
      * @param rect Region in disparity image
      * @return Filtered point cloud
      */
-    robot_msgs::PointCloud filterPointCloud(const CvRect & rect)
+    sensor_msgs::PointCloud filterPointCloud(const CvRect & rect)
     {
-        robot_msgs::PointCloud result;
+        sensor_msgs::PointCloud result;
         result.header.frame_id = cloud.header.frame_id;
         result.header.stamp = cloud.header.stamp;
         int xchan = -1;
@@ -2333,12 +2333,12 @@ public:
   	    float *fM,*fnM;
   	    int jumpby = subsample*4;
   	    int cols = color_depth->width;
-		vector<Vector3 > coef;
-		PointCloud points;
+		vector<geometry_msgs::Vector3 > coef;
+		sensor_msgs::PointCloud points;
 		points.header.frame_id = cloud.header.frame_id;
 		points.header.stamp = cloud.header.stamp;
-		Vector3 v3;
-		Point32 p3;
+		geometry_msgs::Vector3 v3;
+		geometry_msgs::Point32 p3;
 
 		//Send normals to rviz
 		for (int y=ry;y<rh;y+=subsample)

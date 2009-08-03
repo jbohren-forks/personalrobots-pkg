@@ -176,7 +176,7 @@ namespace sample_consensus
     */
   void
     SACModelCylinder::projectPoints (const std::vector<int> &inliers, const std::vector<double> &model_coefficients,
-                                     robot_msgs::PointCloud &projected_points)
+                                     sensor_msgs::PointCloud &projected_points)
   {
     std::cerr << "[SACModelCylinder::projecPoints] Not implemented yet." << std::endl;
     projected_points = *cloud_;
@@ -221,7 +221,7 @@ namespace sample_consensus
       if (nz_idx_ == -1) return (false);
     }
 
-    robot_msgs::Point32 u, v, w;
+    geometry_msgs::Point32 u, v, w;
 
     u.x = cloud_->chan[nx_idx_].vals.at (samples.at (0));
     u.y = cloud_->chan[ny_idx_].vals.at (samples.at (0));

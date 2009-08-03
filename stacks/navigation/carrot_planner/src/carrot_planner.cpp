@@ -65,15 +65,15 @@ namespace carrot_planner {
     //build the oriented footprint
     double cos_th = cos(theta_i);
     double sin_th = sin(theta_i);
-    std::vector<robot_msgs::Point> oriented_footprint;
+    std::vector<geometry_msgs::Point> oriented_footprint;
     for(unsigned int i = 0; i < footprint_spec_.size(); ++i){
-      robot_msgs::Point new_pt;
+      geometry_msgs::Point new_pt;
       new_pt.x = x_i + (footprint_spec_[i].x * cos_th - footprint_spec_[i].y * sin_th);
       new_pt.y = y_i + (footprint_spec_[i].x * sin_th + footprint_spec_[i].y * cos_th);
       oriented_footprint.push_back(new_pt);
     }
 
-    robot_msgs::Point robot_position;
+    geometry_msgs::Point robot_position;
     robot_position.x = x_i;
     robot_position.y = y_i;
 
@@ -83,8 +83,8 @@ namespace carrot_planner {
   }
 
 
-  bool CarrotPlanner::makePlan(const robot_msgs::PoseStamped& start, 
-      const robot_msgs::PoseStamped& goal, std::vector<robot_msgs::PoseStamped>& plan){
+  bool CarrotPlanner::makePlan(const geometry_msgs::PoseStamped& start, 
+      const geometry_msgs::PoseStamped& goal, std::vector<geometry_msgs::PoseStamped>& plan){
 
     ROS_DEBUG("Got a start: %.2f, %.2f, and a goal: %.2f, %.2f", start.pose.position.x, start.pose.position.y, goal.pose.position.x, goal.pose.position.y);
 
@@ -148,7 +148,7 @@ namespace carrot_planner {
     }
 
     plan.push_back(start);
-    robot_msgs::PoseStamped new_goal = goal;
+    geometry_msgs::PoseStamped new_goal = goal;
     tf::Quaternion goal_quat = tf::Quaternion(target_yaw,0,0);
 
     new_goal.pose.position.x = target_x;

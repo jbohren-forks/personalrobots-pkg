@@ -79,9 +79,9 @@ void SpectralAnalysis::clearSpectral()
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-int SpectralAnalysis::analyzeInterestPoints(const robot_msgs::PointCloud& data,
+int SpectralAnalysis::analyzeInterestPoints(const sensor_msgs::PointCloud& data,
                                             cloud_kdtree::KdTree& data_kdtree,
-                                            const cv::Vector<const robot_msgs::Point32*>& interest_pts)
+                                            const cv::Vector<const geometry_msgs::Point32*>& interest_pts)
 {
   if (spectral_computed_)
   {
@@ -116,7 +116,7 @@ int SpectralAnalysis::analyzeInterestPoints(const robot_msgs::PointCloud& data,
   {
     // ---------------------
     // Retrieve next interest point
-    const robot_msgs::Point32* curr_interest_pt = interest_pts[static_cast<size_t> (i)];
+    const geometry_msgs::Point32* curr_interest_pt = interest_pts[static_cast<size_t> (i)];
     if (curr_interest_pt == NULL)
     {
       ROS_WARN("SpectralAnalysis::analyzeInterestPoints() passed NULL interest point");
@@ -143,7 +143,7 @@ int SpectralAnalysis::analyzeInterestPoints(const robot_msgs::PointCloud& data,
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-int SpectralAnalysis::analyzeInterestRegions(const robot_msgs::PointCloud& data,
+int SpectralAnalysis::analyzeInterestRegions(const sensor_msgs::PointCloud& data,
                                              cloud_kdtree::KdTree& data_kdtree,
                                              const cv::Vector<const vector<int>*>& interest_region_indices)
 {
@@ -212,7 +212,7 @@ int SpectralAnalysis::analyzeInterestRegions(const robot_msgs::PointCloud& data,
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-void SpectralAnalysis::computeSpectralInfo(const robot_msgs::PointCloud& data,
+void SpectralAnalysis::computeSpectralInfo(const sensor_msgs::PointCloud& data,
                                            const vector<int>& support_volume_indices,
                                            const size_t idx)
 {
@@ -234,7 +234,7 @@ void SpectralAnalysis::computeSpectralInfo(const robot_msgs::PointCloud& data,
   // ----------------------------------------
   // Eigen-analysis of support volume
   // smallest eigenvalue = index 0
-  robot_msgs::Point32 centroid;
+  geometry_msgs::Point32 centroid;
   Eigen::Matrix3d eigen_vectors;
   cloud_geometry::nearest::computePatchEigenNormalized(data, support_volume_indices, eigen_vectors,
       *(new_eig_vals), centroid);

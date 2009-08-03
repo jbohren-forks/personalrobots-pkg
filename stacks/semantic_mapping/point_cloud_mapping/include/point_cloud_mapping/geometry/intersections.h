@@ -34,7 +34,7 @@
 #define _CLOUD_GEOMETRY_INTERSECTIONS_H_
 
 // ROS includes
-#include <robot_msgs/Point32.h>
+#include <geometry_msgs/Point32.h>
 #include <robot_msgs/Polygon3D.h>
 
 namespace cloud_geometry
@@ -44,8 +44,8 @@ namespace cloud_geometry
   {
 
     bool planeWithPlaneIntersection (const std::vector<double> &plane_a, const std::vector<double> &plane_b, std::vector<double> &line);
-    bool lineWithPlaneIntersection (const std::vector<double> &plane, const std::vector<double> &line, robot_msgs::Point32 &point);
-    bool lineWithLineIntersection (const std::vector<double> &line_a, const std::vector<double> &line_b, robot_msgs::Point32 &point, double sqr_eps);
+    bool lineWithPlaneIntersection (const std::vector<double> &plane, const std::vector<double> &line, geometry_msgs::Point32 &point);
+    bool lineWithLineIntersection (const std::vector<double> &line_a, const std::vector<double> &line_b, geometry_msgs::Point32 &point, double sqr_eps);
     bool planeWithCubeIntersection (const std::vector<double> &plane, const std::vector<double> &cube, robot_msgs::Polygon3D &polygon);
     bool lineToBoxIntersection (const std::vector<double> &line, const std::vector<double> &cube);
   }

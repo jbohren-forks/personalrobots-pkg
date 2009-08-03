@@ -76,7 +76,7 @@ bool RobotStatePublisher::publishTransforms(const map<string, double>& joint_pos
   solver_->JntToCart(joint_positions, link_poses);
 
   // publish the transforms to tf, converting the transforms from "root" to the 'real' root 
-  robot_msgs::TransformStamped trans; 
+  geometry_msgs::TransformStamped trans; 
   map<string, Frame>::const_iterator root = link_poses.find(root_);
   if (root == link_poses.end()){
     ROS_ERROR("Did not find root of tree");

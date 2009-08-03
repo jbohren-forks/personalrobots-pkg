@@ -353,7 +353,7 @@ public:
         }
     }
 
-    robot_msgs::Pose FindTransformation(const vector<CvPoint2D32f> &imgpts, const vector<Vector> &objpts, const Transform& tlocal)
+    geometry_msgs::Pose FindTransformation(const vector<CvPoint2D32f> &imgpts, const vector<Vector> &objpts, const Transform& tlocal)
     {
         CvMat *objpoints = cvCreateMat(3,objpts.size(),CV_32FC1);
         for(size_t i=0; i<objpts.size(); ++i) {
@@ -362,7 +362,7 @@ public:
             cvSetReal2D(objpoints, 2,i, objpts[i].z);
         }
         
-        robot_msgs::Pose pose;
+        geometry_msgs::Pose pose;
         Transform tchecker;
         assert(sizeof(tchecker.trans.x)==sizeof(float));
         float fR3[3];

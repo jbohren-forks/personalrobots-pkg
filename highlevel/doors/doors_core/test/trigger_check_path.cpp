@@ -54,7 +54,7 @@ int
 {
   ros::init(argc, argv, "trigger_check_path");
 
-  robot_msgs::PoseStamped pose;
+  geometry_msgs::PoseStamped pose;
   pose.header.frame_id = "base_footprint";
   pose.pose.position.x = 2.0;
   pose.pose.position.y = -0.5;
@@ -67,7 +67,7 @@ int
   tf::TransformListener tf;
   door_handle_detector::CheckPathAction check_path(tf);
   robot_actions::ActionRunner runner(10.0);
-  runner.connect<robot_msgs::PoseStamped, pr2_robot_actions::CheckPathState, int8_t>(check_path);
+  runner.connect<geometry_msgs::PoseStamped, pr2_robot_actions::CheckPathState, int8_t>(check_path);
   runner.run();
 
   int8_t feedback;

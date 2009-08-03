@@ -11,6 +11,7 @@
   
   <depend package="std_msgs"/>
   <depend package="robot_msgs"/>
+  <depend package="geometry_msgs"/>
   <depend package="tabletop_msgs"/>
 
   <export>

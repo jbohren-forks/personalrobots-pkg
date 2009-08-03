@@ -50,7 +50,7 @@
 #include <tf/tf.h>
 
 // msgs
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 
 // log files
 #include <fstream>
@@ -92,7 +92,7 @@ public:
   virtual void getEstimate(people::PositionMeasurement& est) const;
 
   // get evenly spaced particle cloud
-  void getParticleCloud(const tf::Vector3& step, double threshold, robot_msgs::PointCloud& cloud) const;
+  void getParticleCloud(const tf::Vector3& step, double threshold, sensor_msgs::PointCloud& cloud) const;
 
   /// Get histogram from certain area
   MatrixWrapper::Matrix getHistogramPos(const tf::Vector3& min, const tf::Vector3& max, const tf::Vector3& step) const;

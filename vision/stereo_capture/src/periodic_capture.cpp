@@ -58,9 +58,9 @@
 #include "sensor_msgs/DisparityInfo.h"
 #include "sensor_msgs/CameraInfo.h"
 #include "sensor_msgs/Image.h"
-#include "robot_msgs/PointCloud.h"
-#include "robot_msgs/Point32.h"
-#include "robot_msgs/PoseStamped.h"
+#include "sensor_msgs/PointCloud.h"
+#include "geometry_msgs/Point32.h"
+#include "geometry_msgs/PoseStamped.h"
 
 #include <point_cloud_mapping/cloud_io.h>
 
@@ -69,7 +69,6 @@
 #include "topic_synchronizer/topic_synchronizer.h"
 
 using namespace std;
-using namespace robot_msgs;
 
 
 #define CV_PIXEL(type,img,x,y) (((type*)(img->imageData+y*img->widthStep))+x*img->nChannels)
@@ -90,11 +89,11 @@ public:
 	sensor_msgs::CvBridge rbridge_;
 	sensor_msgs::CvBridge dbridge_;
 
-	robot_msgs::PointCloud cloud_;
-	robot_msgs::PointCloud cloud_fetch_;
+	sensor_msgs::PointCloud cloud_;
+	sensor_msgs::PointCloud cloud_fetch_;
 
-	robot_msgs::PointCloud base_cloud_;
-	robot_msgs::PointCloud base_cloud_fetch_;
+	sensor_msgs::PointCloud base_cloud_;
+	sensor_msgs::PointCloud base_cloud_fetch_;
 
 	IplImage* left_;
 	IplImage* right_;
@@ -274,7 +273,7 @@ private:
 			}
 
 			// transfrom base_cloud to stereo frame
-			PointCloud base_cloud_in_stereo_frame;
+			sensor_msgs::PointCloud base_cloud_in_stereo_frame;
 			tf_->transformPointCloud(cloud_.header.frame_id, base_cloud_, base_cloud_in_stereo_frame);
 
 			char name[1024];

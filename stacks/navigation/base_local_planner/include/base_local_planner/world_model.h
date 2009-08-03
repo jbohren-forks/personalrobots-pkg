@@ -39,7 +39,7 @@
 
 #include <vector>
 #include <costmap_2d/observation.h>
-#include <robot_msgs/Point.h>
+#include <geometry_msgs/Point.h>
 #include <base_local_planner/planar_laser_scan.h>
 
 namespace base_local_planner {
@@ -58,7 +58,7 @@ namespace base_local_planner {
        * @param  circumscribed_radius The radius of the circumscribed circle of the robot
        * @return Positive if all the points lie outside the footprint, negative otherwise
        */
-      virtual double footprintCost(const robot_msgs::Point& position, const std::vector<robot_msgs::Point>& footprint,
+      virtual double footprintCost(const geometry_msgs::Point& position, const std::vector<geometry_msgs::Point>& footprint,
           double inscribed_radius, double circumscribed_radius) = 0;
 
       /**

@@ -35,7 +35,7 @@
 #include "tf/transform_listener.h"
 #include "voxel3d/voxel3d.h"
 
-#include "robot_msgs/PointCloud.h"
+#include "sensor_msgs/PointCloud.h"
 
 #include <voxel3d/GetDistanceField.h>
 
@@ -111,13 +111,13 @@ private:
 
   boost::scoped_ptr<Voxel3d> voxel_;
 
-  void cloudCB(const robot_msgs::PointCloudConstPtr &msg_orig)
+  void cloudCB(const sensor_msgs::PointCloudConstPtr &msg_orig)
   {
     try
     {
       ros::WallTime start = ros::WallTime::now();
 
-      robot_msgs::PointCloud msg;
+      sensor_msgs::PointCloud msg;
       TF.transformPointCloud(frame_, *msg_orig, msg);
       ROS_INFO("TF Transform took %lf seconds", (ros::WallTime::now() - start).toSec());
       printf("%d points\n", msg.pts.size());

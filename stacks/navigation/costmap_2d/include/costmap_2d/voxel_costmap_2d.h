@@ -45,7 +45,7 @@
 #include <costmap_2d/cost_values.h>
 #include <voxel_grid/voxel_grid.h>
 #include <costmap_2d/VoxelGrid.h>
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 #include <boost/thread.hpp>
 
 namespace costmap_2d {
@@ -108,7 +108,7 @@ namespace costmap_2d {
        * @brief Returns a point cloud for visualizing the voxel grid
        * @param cloud The point cloud to fill
        */
-      void getPoints(robot_msgs::PointCloud& cloud);
+      void getPoints(sensor_msgs::PointCloud& cloud);
 
       void getVoxelGridMessage(VoxelGrid& grid);
 

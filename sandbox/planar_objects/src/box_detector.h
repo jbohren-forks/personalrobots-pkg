@@ -11,7 +11,7 @@
 #include "ros/ros.h"
 #include "topic_synchronizer2/topic_synchronizer.h"
 
-#include "robot_msgs/PointCloud.h"
+#include "sensor_msgs/PointCloud.h"
 
 #include "visualization_msgs/Marker.h"
 
@@ -72,7 +72,7 @@ public:
 
   // MESSAGES - INCOMING
   ros::Subscriber cloud_sub_;
-  robot_msgs::PointCloudConstPtr cloud_;
+  sensor_msgs::PointCloudConstPtr cloud_;
 
   ros::Subscriber disp_sub_;
   sensor_msgs::ImageConstPtr dimage_;
@@ -112,7 +112,7 @@ public:
   BoxDetector();
 
   // Callbacks
-  void cloudCallback(const robot_msgs::PointCloud::ConstPtr& point_cloud);
+  void cloudCallback(const sensor_msgs::PointCloud::ConstPtr& point_cloud);
   void dispCallback(const sensor_msgs::Image::ConstPtr& disp_img);
   void dinfoCallback(const sensor_msgs::DisparityInfo::ConstPtr& disp_img);
   void limageCallback(const sensor_msgs::Image::ConstPtr& left_img);
@@ -133,12 +133,12 @@ public:
                             std::vector<double> & plane_coeff, std::vector<CornerCandidate> &corner,int id);
   std::vector<CornerCandidate> groupCorners(std::vector<CornerCandidate> &corner, double group_dist = 20);
   void visualizeCorners(std::vector<CornerCandidate> &corner, int id = 0);
-  void visualizeFrontAndBackPlane(int frontplane, int backplane, const robot_msgs::PointCloud& cloud, std::vector<
-      std::vector<int> >& plane_indices, std::vector<robot_msgs::PointCloud>& plane_cloud, std::vector<std::vector<
-      double> >& plane_coeff, robot_msgs::PointCloud& outside, bool showConvexHull = false);
-  void visualizePlanes(const robot_msgs::PointCloud& cloud, std::vector<
-      std::vector<int> >& plane_indices, std::vector<robot_msgs::PointCloud>& plane_cloud, std::vector<std::vector<
-      double> >& plane_coeff, robot_msgs::PointCloud& outside, bool showConvexHull = false);
+  void visualizeFrontAndBackPlane(int frontplane, int backplane, const sensor_msgs::PointCloud& cloud, std::vector<
+      std::vector<int> >& plane_indices, std::vector<sensor_msgs::PointCloud>& plane_cloud, std::vector<std::vector<
+      double> >& plane_coeff, sensor_msgs::PointCloud& outside, bool showConvexHull = false);
+  void visualizePlanes(const sensor_msgs::PointCloud& cloud, std::vector<
+      std::vector<int> >& plane_indices, std::vector<sensor_msgs::PointCloud>& plane_cloud, std::vector<std::vector<
+      double> >& plane_coeff, sensor_msgs::PointCloud& outside, bool showConvexHull = false);
 
   void visualizeRectangles3d(std::vector<CornerCandidate> &corner, int id = 0);
   void visualizeRectangles2d(std::vector<CornerCandidate> &corner);
@@ -147,7 +147,7 @@ public:
   std::vector<CornerCandidate> filterRectanglesBySupport2d(std::vector<CornerCandidate> &corner, IplImage* pixOccupied,
                                                            double min_support = 0.8);
   std::vector<CornerCandidate> filterRectanglesBySupport3d(std::vector<CornerCandidate> &corner,
-                                                           const robot_msgs::PointCloud& cloud,
+                                                           const sensor_msgs::PointCloud& cloud,
                                                            std::vector<int> & plane_indices, double min_support = 0.8);
   void initializeRectangle(CornerCandidate &corner, IplImage* pixDist);
 };

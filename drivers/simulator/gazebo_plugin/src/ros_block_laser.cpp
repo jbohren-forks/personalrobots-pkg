@@ -76,7 +76,7 @@ void RosBlockLaser::LoadChild(XMLConfigNode *node)
 {
   this->topicName = node->GetString("topicName","default_ros_laser",0); //read from xml file
   ROS_DEBUG("================= %s", this->topicName.c_str());
-  this->pub_ = this->rosnode_->advertise<robot_msgs::PointCloud>(this->topicName,10);
+  this->pub_ = this->rosnode_->advertise<sensor_msgs::PointCloud>(this->topicName,10);
   this->frameName = node->GetString("frameName","default_ros_laser",0); //read from xml file
   this->gaussianNoise = node->GetDouble("gaussianNoise",0.0,0); //read from xml file
 

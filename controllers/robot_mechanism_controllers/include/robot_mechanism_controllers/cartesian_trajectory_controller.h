@@ -42,7 +42,7 @@
 #include <tf/transform_listener.h>
 #include <tf/message_notifier.h>
 #include <ros/node.h>
-#include <robot_msgs/PoseStamped.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <mechanism_control/controller.h>
 #include <robot_mechanism_controllers/cartesian_pose_controller.h>
 #include <deprecated_srvs/MoveToPose.h>
@@ -62,8 +62,8 @@ public:
 
   bool starting();
   void update();
-  bool moveTo(const robot_msgs::PoseStamped& pose, 
-              const robot_msgs::Twist& tolerance=robot_msgs::Twist(), double duration=0);
+  bool moveTo(const geometry_msgs::PoseStamped& pose, 
+              const geometry_msgs::Twist& tolerance=geometry_msgs::Twist(), double duration=0);
 
 
 private:
@@ -71,7 +71,7 @@ private:
   void TransformToFrame(const tf::Transform& trans, KDL::Frame& frame);
 
   // topic
-  void command(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr& pose_msg);
+  void command(const tf::MessageNotifier<geometry_msgs::PoseStamped>::MessagePtr& pose_msg);
 
   // service calls
   bool moveTo(deprecated_srvs::MoveToPose::Request &req, deprecated_srvs::MoveToPose::Response &resp);
@@ -103,7 +103,7 @@ private:
   CartesianPoseController* pose_controller_;
 
   tf::TransformListener tf_;
-  boost::scoped_ptr<tf::MessageNotifier<robot_msgs::PoseStamped> > command_notifier_;
+  boost::scoped_ptr<tf::MessageNotifier<geometry_msgs::PoseStamped> > command_notifier_;
 
   std::string root_name_;
 };

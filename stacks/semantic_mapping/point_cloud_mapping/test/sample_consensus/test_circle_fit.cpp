@@ -31,7 +31,7 @@
 /** \author Radu Bogdan Rusu */
 
 #include <gtest/gtest.h>
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 
 #include <point_cloud_mapping/sample_consensus/sac.h>
 #include <point_cloud_mapping/sample_consensus/lmeds.h>
@@ -47,7 +47,7 @@ using namespace sample_consensus;
 
 TEST (LMedS, SACModelCircle2D)
 {
-  robot_msgs::PointCloud points;
+  sensor_msgs::PointCloud points;
   points.pts.resize (18);
 
   points.pts[0].x = 3.587751;  points.pts[0].y = -4.190982;  points.pts[0].z = 0;
@@ -105,7 +105,7 @@ TEST (LMedS, SACModelCircle2D)
 
 TEST (RANSAC, SACModelCircle2D)
 {
-  robot_msgs::PointCloud points;
+  sensor_msgs::PointCloud points;
   points.pts.resize (18);
 
   points.pts[0].x = 3.587751;  points.pts[0].y = -4.190982;  points.pts[0].z = 0;
@@ -163,7 +163,7 @@ TEST (RANSAC, SACModelCircle2D)
 
 TEST (MSAC, SACModelCircle2D)
 {
-  robot_msgs::PointCloud points;
+  sensor_msgs::PointCloud points;
   points.pts.resize (18);
 
   points.pts[0].x = 3.587751;  points.pts[0].y = -4.190982;  points.pts[0].z = 0;
@@ -221,7 +221,7 @@ TEST (MSAC, SACModelCircle2D)
 
 TEST (MLESAC, SACModelCircle2D)
 {
-  robot_msgs::PointCloud points;
+  sensor_msgs::PointCloud points;
   points.pts.resize (18);
 
   points.pts[0].x = 3.587751;  points.pts[0].y = -4.190982;  points.pts[0].z = 0;
@@ -279,7 +279,7 @@ TEST (MLESAC, SACModelCircle2D)
 
 TEST (RRANSAC, SACModelCircle2D)
 {
-  robot_msgs::PointCloud points;
+  sensor_msgs::PointCloud points;
   points.pts.resize (18);
 
   points.pts[0].x = 3.587751;  points.pts[0].y = -4.190982;  points.pts[0].z = 0;
@@ -337,7 +337,7 @@ TEST (RRANSAC, SACModelCircle2D)
 
 TEST (RMSAC, SACModelCircle2D)
 {
-  robot_msgs::PointCloud points;
+  sensor_msgs::PointCloud points;
   points.pts.resize (18);
 
   points.pts[0].x = 3.587751;  points.pts[0].y = -4.190982;  points.pts[0].z = 0;

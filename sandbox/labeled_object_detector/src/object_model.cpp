@@ -46,7 +46,7 @@ using namespace labeled_object_detector;
 
 
 
-robot_msgs::PointStamped ObjectModel::getCenter()
+geometry_msgs::PointStamped ObjectModel::getCenter()
 {
   return center_;
 }

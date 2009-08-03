@@ -44,7 +44,7 @@
 #include "sensor_msgs/FillImage.h"
 #include "sensor_msgs/CameraInfo.h"
 #include "sensor_msgs/StereoInfo.h"
-#include "robot_msgs/PointCloud.h"
+#include "sensor_msgs/PointCloud.h"
 
 #include "diagnostic_msgs/DiagnosticStatus.h"
 #include "diagnostic_updater/diagnostic_updater.h"
@@ -63,7 +63,7 @@ class StereoProc : public ros::Node
   sensor_msgs::RawStereo    raw_stereo_;
 
   sensor_msgs::Image         img_;
-  robot_msgs::PointCloud      cloud_;
+  sensor_msgs::PointCloud      cloud_;
   sensor_msgs::CameraInfo       cam_info_;
   sensor_msgs::DisparityInfo disparity_info_;
   sensor_msgs::StereoInfo    stereo_info_;
@@ -398,7 +398,7 @@ public:
     }
 
     if (do_calc_points_)
-      advertise<robot_msgs::PointCloud>("cloud",1);
+      advertise<sensor_msgs::PointCloud>("cloud",1);
   }
 
 

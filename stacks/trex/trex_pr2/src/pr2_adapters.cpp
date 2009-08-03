@@ -75,22 +75,22 @@ namespace TREX {
   /***********************************************************************
    * @brief MoveBase actions with a pose message for goal and feedback
    **********************************************************************/
-  class MoveBaseAdapter: public ROSActionAdapter<robot_msgs::PoseStamped, nav_robot_actions::MoveBaseState, robot_msgs::PoseStamped> {
+  class MoveBaseAdapter: public ROSActionAdapter<geometry_msgs::PoseStamped, nav_robot_actions::MoveBaseState, geometry_msgs::PoseStamped> {
   public:
 
     MoveBaseAdapter(const LabelStr& agentName, const TiXmlElement& configData)
-      : ROSActionAdapter<robot_msgs::PoseStamped, nav_robot_actions::MoveBaseState,  robot_msgs::PoseStamped>(agentName, configData){
+      : ROSActionAdapter<geometry_msgs::PoseStamped, nav_robot_actions::MoveBaseState,  geometry_msgs::PoseStamped>(agentName, configData){
     }
 
-    virtual void fillDispatchParameters(robot_msgs::PoseStamped& msg, const TokenId& goalToken){
+    virtual void fillDispatchParameters(geometry_msgs::PoseStamped& msg, const TokenId& goalToken){
       AdapterUtilities::write(goalToken, msg);
     }
 
-    virtual void fillActiveObservationParameters(const robot_msgs::PoseStamped& msg, ObservationByValue* obs){
+    virtual void fillActiveObservationParameters(const geometry_msgs::PoseStamped& msg, ObservationByValue* obs){
       AdapterUtilities::read(*obs, msg);
     }
 
-    virtual void fillInactiveObservationParameters(const robot_msgs::PoseStamped& msg, ObservationByValue* obs){
+    virtual void fillInactiveObservationParameters(const geometry_msgs::PoseStamped& msg, ObservationByValue* obs){
       AdapterUtilities::read(*obs, msg);
     }
 
@@ -102,18 +102,18 @@ namespace TREX {
   /***********************************************************************
    * @brief CheckPath
    **********************************************************************/
-  class CheckPathAdapter: public ROSActionAdapter<robot_msgs::PoseStamped, pr2_robot_actions::CheckPathState, int8_t> {
+  class CheckPathAdapter: public ROSActionAdapter<geometry_msgs::PoseStamped, pr2_robot_actions::CheckPathState, int8_t> {
   public:
 
     CheckPathAdapter(const LabelStr& agentName, const TiXmlElement& configData)
-      : ROSActionAdapter<robot_msgs::PoseStamped, pr2_robot_actions::CheckPathState, int8_t>(agentName, configData){
+      : ROSActionAdapter<geometry_msgs::PoseStamped, pr2_robot_actions::CheckPathState, int8_t>(agentName, configData){
     }
 
-    virtual void fillDispatchParameters(robot_msgs::PoseStamped& msg, const TokenId& goalToken){
+    virtual void fillDispatchParameters(geometry_msgs::PoseStamped& msg, const TokenId& goalToken){
       AdapterUtilities::write(goalToken, msg);
     }
 
-    virtual void fillActiveObservationParameters(const robot_msgs::PoseStamped& msg, ObservationByValue* obs){
+    virtual void fillActiveObservationParameters(const geometry_msgs::PoseStamped& msg, ObservationByValue* obs){
       AdapterUtilities::read(*obs, msg);
     }
 
@@ -176,10 +176,10 @@ namespace TREX {
   /***********************************************************************
    * @brief 
    **********************************************************************/
-  class BaseStateAdapter: public ROSStateAdapter<robot_msgs::PoseStamped> {
+  class BaseStateAdapter: public ROSStateAdapter<geometry_msgs::PoseStamped> {
   public:
     BaseStateAdapter(const LabelStr& agentName, const TiXmlElement& configData)
-      : ROSStateAdapter<robot_msgs::PoseStamped> ( agentName, configData) {
+      : ROSStateAdapter<geometry_msgs::PoseStamped> ( agentName, configData) {
     }
 
   private:
@@ -308,22 +308,22 @@ namespace TREX {
   /***********************************************************************
    * @brief DetectOutletAdapter
    **********************************************************************/
-  class DetectOutletAdapter: public ROSActionAdapter<robot_msgs::PointStamped, pr2_robot_actions::DetectOutletState, robot_msgs::PoseStamped> {
+  class DetectOutletAdapter: public ROSActionAdapter<geometry_msgs::PointStamped, pr2_robot_actions::DetectOutletState, geometry_msgs::PoseStamped> {
   public:
 
     DetectOutletAdapter(const LabelStr& agentName, const TiXmlElement& configData)
-      : ROSActionAdapter<robot_msgs::PointStamped, pr2_robot_actions::DetectOutletState, robot_msgs::PoseStamped>(agentName, configData){
+      : ROSActionAdapter<geometry_msgs::PointStamped, pr2_robot_actions::DetectOutletState, geometry_msgs::PoseStamped>(agentName, configData){
     }
 
-    virtual void fillDispatchParameters(robot_msgs::PointStamped& msg, const TokenId& goalToken){
+    virtual void fillDispatchParameters(geometry_msgs::PointStamped& msg, const TokenId& goalToken){
       AdapterUtilities::write(goalToken, msg);
     }
 
-    virtual void fillActiveObservationParameters(const robot_msgs::PointStamped& msg, ObservationByValue* obs){
+    virtual void fillActiveObservationParameters(const geometry_msgs::PointStamped& msg, ObservationByValue* obs){
       AdapterUtilities::read(*obs, msg);
     }
 
-    virtual void fillInactiveObservationParameters(const robot_msgs::PoseStamped& msg, ObservationByValue* obs){
+    virtual void fillInactiveObservationParameters(const geometry_msgs::PoseStamped& msg, ObservationByValue* obs){
       AdapterUtilities::read(*obs, msg);
     }
   };

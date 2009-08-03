@@ -6,12 +6,12 @@
 #include "Observer.hh"
 
 // Message types of interest
-#include <robot_msgs/Pose.h>
-#include <robot_msgs/Point32.h>
+#include <geometry_msgs/Pose.h>
+#include <geometry_msgs/Point32.h>
 #include <std_msgs/String.h>
 //#include <pr2_robot_actions/ServoToOutlet.h> //Not used?
-#include <robot_msgs/PointStamped.h>
-#include <robot_msgs/PoseStamped.h>
+#include <geometry_msgs/PointStamped.h>
+#include <geometry_msgs/PoseStamped.h>
 
 using namespace EUROPA;
 using namespace TREX;
@@ -37,22 +37,22 @@ namespace trex_ros {
     /**
      * @brief Read point stamped message
      */
-    static void read(ObservationByValue& obs, const robot_msgs::PointStamped& msg);
+    static void read(ObservationByValue& obs, const geometry_msgs::PointStamped& msg);
 
     /**
      * @brief Read pose stamped message
      */
-    static void read(ObservationByValue& obs, const robot_msgs::PoseStamped& msg);
+    static void read(ObservationByValue& obs, const geometry_msgs::PoseStamped& msg);
 
     /**
      * @brief Stuff token data into a point stamped message
      */
-    static void write(const TokenId& token, robot_msgs::PointStamped& msg);
+    static void write(const TokenId& token, geometry_msgs::PointStamped& msg);
 
     /**
      * @brief Stuff token data into a pose stamped message
      */
-    static void write(const TokenId& token, robot_msgs::PoseStamped& msg);
+    static void write(const TokenId& token, geometry_msgs::PoseStamped& msg);
 
     /**
      * @brief Bind intervals to the singleton, or the domain midpoint
@@ -164,7 +164,7 @@ namespace trex_ros {
      * @param y The y position
      * @param th The yaw angle
      */
-    static void get2DPose(const robot_msgs::Pose& pose, double& x, double& y, double& th);
+    static void get2DPose(const geometry_msgs::Pose& pose, double& x, double& y, double& th);
 
   private:
     static unsigned int getEpoch() {

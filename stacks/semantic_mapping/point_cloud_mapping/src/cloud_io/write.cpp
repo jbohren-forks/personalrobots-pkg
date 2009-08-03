@@ -37,7 +37,7 @@ namespace cloud_io
   ////////////////////////////////////////////////////////////////////////////////
   // Create the rest of the needed string values from the given header
   std::string
-    addCurrentHeader (const robot_msgs::PointCloud &points, bool binary_type)
+    addCurrentHeader (const sensor_msgs::PointCloud &points, bool binary_type)
   {
     // Must have a non-null number of points
     if (points.pts.size () == 0)
@@ -66,7 +66,7 @@ namespace cloud_io
     * \param precision the specified output numeric stream precision
     */
   int
-    savePCDFileASCII (const char* file_name, const robot_msgs::PointCloud &points, int precision)
+    savePCDFileASCII (const char* file_name, const sensor_msgs::PointCloud &points, int precision)
   {
     std::ofstream fs;
     fs.precision (precision);
@@ -101,7 +101,7 @@ namespace cloud_io
     * \param points the point cloud data message
     */
   int
-    savePCDFileBinary (const char* file_name, const robot_msgs::PointCloud &points)
+    savePCDFileBinary (const char* file_name, const sensor_msgs::PointCloud &points)
   {
     int data_idx = 0;
     std::ofstream fs;
@@ -220,7 +220,7 @@ namespace cloud_io
     * \param binary_mode true for binary mode, false for ascii
     */
   int
-    savePCDFile (const char* file_name, const robot_msgs::PointCloud &points, bool binary_mode)
+    savePCDFile (const char* file_name, const sensor_msgs::PointCloud &points, bool binary_mode)
   {
     if (binary_mode)
       return (savePCDFileBinary (file_name, points));

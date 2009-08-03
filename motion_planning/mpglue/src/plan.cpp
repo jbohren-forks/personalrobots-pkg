@@ -34,7 +34,7 @@
 
 #include <mpglue/plan.h>
 #include <mpglue/sbpl_environment.h>
-#include <robot_msgs/Pose.h>
+#include <geometry_msgs/Pose.h>
 #include <manipulation_msgs/JointTraj.h>
 #include <sfl/util/numeric.hpp>
 
@@ -54,15 +54,15 @@ namespace mpglue {
   waypoint_s::waypoint_s(waypoint_s const & orig)
     : x(orig.x), y(orig.y), theta(orig.theta), dr(orig.dr), dtheta(orig.dtheta) {}
 
-  waypoint_s::waypoint_s(robot_msgs::Pose const & pose, double _dr, double _dtheta)
+  waypoint_s::waypoint_s(geometry_msgs::Pose const & pose, double _dr, double _dtheta)
     : dr(_dr), dtheta(_dtheta)
   { *this = pose; }
   
-  waypoint_s::waypoint_s(robot_msgs::Pose const & pose)
+  waypoint_s::waypoint_s(geometry_msgs::Pose const & pose)
     : dr(default_dr), dtheta(default_dtheta)
   { *this = pose; }
   
-  void waypoint_s::toPose(robot_msgs::Pose & pose) const
+  void waypoint_s::toPose(geometry_msgs::Pose & pose) const
   {
     pose.position.x = x;
     pose.position.y = y;
@@ -74,7 +74,7 @@ namespace mpglue {
   }
   
   waypoint_s & waypoint_s::
-  operator = (robot_msgs::Pose const & pose)
+  operator = (geometry_msgs::Pose const & pose)
   {
     x = pose.position.x;
     y = pose.position.y;

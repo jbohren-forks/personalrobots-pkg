@@ -54,9 +54,9 @@
 #include "sensor_msgs/CameraInfo.h"
 #include "sensor_msgs/Image.h"
 #include "sensor_msgs/RawStereo.h"
-#include "robot_msgs/PointCloud.h"
-#include "robot_msgs/Point32.h"
-#include "robot_msgs/PoseStamped.h"
+#include "sensor_msgs/PointCloud.h"
+#include "geometry_msgs/Point32.h"
+#include "geometry_msgs/PoseStamped.h"
 #include "visualization_msgs/Marker.h"
 
 
@@ -141,13 +141,13 @@ public:
 //	sensor_msgs::CvBridge rbridge;
 	sensor_msgs::CvBridge dbridge;
 
-	robot_msgs::PointCloud cloud;
-	robot_msgs::PointCloud cloud_fetch;
+	sensor_msgs::PointCloud cloud;
+	sensor_msgs::PointCloud cloud_fetch;
 
-	robot_msgs::PointCloud base_cloud_;
-//	robot_msgs::PointCloud base_cloud_fetch_;
+	sensor_msgs::PointCloud base_cloud_;
+//	sensor_msgs::PointCloud base_cloud_fetch_;
 
-//	robot_msgs::PoseStamped outlet_pose;
+//	geometry_msgs::PoseStamped outlet_pose;
 
 	IplImage* left;
 //	IplImage* right;
@@ -159,7 +159,7 @@ public:
 	bool save_patches;
 
 	TopicSynchronizer<OutletSpotting> sync;
-	tf::MessageNotifier<robot_msgs::PointCloud>* cloud_notifier_;
+	tf::MessageNotifier<sensor_msgs::PointCloud>* cloud_notifier_;
 
 	boost::mutex clound_point_mutex;
 	boost::condition_variable cloud_point_cv;
@@ -204,7 +204,7 @@ public:
 		}
 
         advertise<visualization_msgs::Marker>("visualization_marker", 1);
-    	  advertise<robot_msgs::PointStamped>(head_controller_ + "/point_head",10);
+    	  advertise<geometry_msgs::PointStamped>(head_controller_ + "/point_head",10);
         advertiseService("~coarse_outlet_detect", &OutletSpotting::outletSpottingService, this);
 
         if (debug) {
@@ -255,7 +255,7 @@ private:
 
 		sync.ready();
 
-		cloud_notifier_ = new tf::MessageNotifier<robot_msgs::PointCloud> (tf_, this,
+		cloud_notifier_ = new tf::MessageNotifier<sensor_msgs::PointCloud> (tf_, this,
 		               boost::bind(&OutletSpotting::laser_callback, this, _1),
 		               base_scan_topic_, "stereo_optical_frame", 100);
 
@@ -574,7 +574,7 @@ private:
 	}
 
 
-	bool find3DPoint(const robot_msgs::PointCloud& pc, const CvPoint& p, robot_msgs::Point32& center_point)
+	bool find3DPoint(const sensor_msgs::PointCloud& pc, const CvPoint& p, geometry_msgs::Point32& center_point)
 	{
 		int xchan = -1;
 		int ychan = -1;
@@ -608,7 +608,7 @@ private:
      * \brief Publishes a visualization marker for a point.
      * @param p
      */
-    void showMarkers(robot_msgs::PoseStamped pose)
+    void showMarkers(geometry_msgs::PoseStamped pose)
     {
         visualization_msgs::Marker marker;
         marker.header.frame_id = pose.header.frame_id;
@@ -701,7 +701,7 @@ private:
 //      */
 //    bool
 //      fitSACPlane (PointCloud &points, vector<int> indices, vector<int> &inliers, vector<double> &coeff,
-//                   const robot_msgs::PointStamped &viewpoint_cloud, double dist_thresh, int min_pts)
+//                   const geometry_msgs::PointStamped &viewpoint_cloud, double dist_thresh, int min_pts)
 //    {
 //      if ((int)indices.size () < min_pts)
 //      {
@@ -859,8 +859,8 @@ private:
 			return false;
 		}
 
-		robot_msgs::PointCloud outlet_cloud = filterPointCloud(r);
-		robot_msgs::Point32 center_point;
+		sensor_msgs::PointCloud outlet_cloud = filterPointCloud(r);
+		geometry_msgs::Point32 center_point;
 		found = find3DPoint(outlet_cloud, cp, center_point);
 		if (!found) {
 			ROS_INFO("OutletSpotter: Cannot find 3D point for patch");
@@ -1102,9 +1102,9 @@ private:
 
 
 
-	robot_msgs::PointCloud filterPointCloud(const CvRect& rect)
+	sensor_msgs::PointCloud filterPointCloud(const CvRect& rect)
 	{
-		robot_msgs::PointCloud result;
+		sensor_msgs::PointCloud result;
 
 		int xchan = -1;
 		int ychan = -1;
@@ -1155,7 +1155,7 @@ private:
     /**
      *
      */
-	void laser_callback(const tf::MessageNotifier<robot_msgs::PointCloud>::MessagePtr& cloud)
+	void laser_callback(const tf::MessageNotifier<sensor_msgs::PointCloud>::MessagePtr& cloud)
 	{
 		boost::lock_guard<boost::mutex> lock(clound_point_mutex);
 		have_cloud_point_ = true;
@@ -1258,7 +1258,7 @@ public:
 	}
 
 
-	bool runDetectLoop(robot_msgs::PoseStamped& pose)
+	bool runDetectLoop(geometry_msgs::PoseStamped& pose)
 	{
 		boost::unique_lock<boost::mutex> images_lock(cv_mutex);
 		for (int i=0;i<frames_number_;++i) {
@@ -1287,7 +1287,7 @@ public:
 
 
 
-	bool runOutletSpotter(const robot_msgs::PointStamped& request, robot_msgs::PoseStamped& pose)
+	bool runOutletSpotter(const geometry_msgs::PointStamped& request, geometry_msgs::PoseStamped& pose)
   {
     bool found = false;
     subscribeToData();

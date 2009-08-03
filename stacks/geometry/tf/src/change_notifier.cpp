@@ -57,10 +57,10 @@ int main(int argc, char** argv)
   tf::TransformListener tfl(node);
 
   //Advertise the service
-  node.advertise<robot_msgs::PoseStamped>(topic_name, 1);
+  node.advertise<geometry_msgs::PoseStamped>(topic_name, 1);
   
 
-  robot_msgs::PoseStamped msg;
+  geometry_msgs::PoseStamped msg;
   tf::Stamped<tf::Pose> pose_in, pose_out, last_sent_pose;
   pose_in = tf::Stamped<tf::Pose> (tf::Pose(tf::Quaternion(0,0,0), 
                                             tf::Vector3(0,0,0)),

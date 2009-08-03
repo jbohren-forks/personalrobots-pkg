@@ -3,7 +3,7 @@
 
 string target_frame
 time   target_time 
-robot_msgs/Vector3Stamped vin
+geometry_msgs/Vector3Stamped vin
 string fixed_frame
 ---
-robot_msgs/Vector3Stamped vout
+geometry_msgs/Vector3Stamped vout

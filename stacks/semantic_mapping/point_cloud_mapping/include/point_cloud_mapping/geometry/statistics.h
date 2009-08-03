@@ -34,8 +34,8 @@
 #define _CLOUD_GEOMETRY_STATISTICS_H_
 
 // ROS includes
-#include <robot_msgs/PointCloud.h>
-#include <robot_msgs/Point32.h>
+#include <sensor_msgs/PointCloud.h>
+#include <geometry_msgs/Point32.h>
 #include <robot_msgs/Polygon3D.h>
 #include <cfloat>
 
@@ -80,7 +80,7 @@ namespace cloud_geometry
       * \param max_idx the resultant index of the 'maximum' point
       */
     inline void
-      getLargestDiagonalIndices (const robot_msgs::PointCloud &points, int &min_idx, int &max_idx)
+      getLargestDiagonalIndices (const sensor_msgs::PointCloud &points, int &min_idx, int &max_idx)
     {
       double largest_diagonal = -FLT_MAX;
       for (unsigned int i = 0; i < points.pts.size (); i++)
@@ -109,7 +109,7 @@ namespace cloud_geometry
       * \param max_idx the resultant index of the 'maximum' point
       */
     inline void
-      getLargestDiagonalIndices (const robot_msgs::PointCloud &points, const std::vector<int> &indices, int &min_idx, int &max_idx)
+      getLargestDiagonalIndices (const sensor_msgs::PointCloud &points, const std::vector<int> &indices, int &min_idx, int &max_idx)
     {
       double largest_diagonal = -FLT_MAX;
       for (unsigned int i = 0; i < indices.size (); i++)
@@ -137,7 +137,7 @@ namespace cloud_geometry
       * \param maxP the resultant maximum point in the set
       */
     inline void
-      getLargestDiagonalPoints (const robot_msgs::Polygon3D &poly, robot_msgs::Point32 &min_p, robot_msgs::Point32 &max_p)
+      getLargestDiagonalPoints (const robot_msgs::Polygon3D &poly, geometry_msgs::Point32 &min_p, geometry_msgs::Point32 &max_p)
     {
       double largest_diagonal = -FLT_MAX;
       for (unsigned int i = 0; i < poly.points.size (); i++)
@@ -165,7 +165,7 @@ namespace cloud_geometry
       * \param maxP the resultant maximum point in the set
       */
     inline void
-      getLargestDiagonalPoints (const robot_msgs::PointCloud &points, robot_msgs::Point32 &min_p, robot_msgs::Point32 &max_p)
+      getLargestDiagonalPoints (const sensor_msgs::PointCloud &points, geometry_msgs::Point32 &min_p, geometry_msgs::Point32 &max_p)
     {
       double largest_diagonal = -FLT_MAX;
       for (unsigned int i = 0; i < points.pts.size (); i++)
@@ -194,7 +194,7 @@ namespace cloud_geometry
       * \param maxP the resultant maximum point in the set
       */
     inline void
-      getLargestDiagonalPoints (const robot_msgs::PointCloud &points, const std::vector<int> &indices, robot_msgs::Point32 &min_p, robot_msgs::Point32 &max_p)
+      getLargestDiagonalPoints (const sensor_msgs::PointCloud &points, const std::vector<int> &indices, geometry_msgs::Point32 &min_p, geometry_msgs::Point32 &max_p)
     {
       double largest_diagonal = -FLT_MAX;
       for (unsigned int i = 0; i < indices.size (); i++)
@@ -215,11 +215,11 @@ namespace cloud_geometry
       }
     }
 
-    robot_msgs::Point32 computeMedian (const robot_msgs::PointCloud &points);
-    robot_msgs::Point32 computeMedian (const robot_msgs::PointCloud &points, const std::vector<int> &indices);
+    geometry_msgs::Point32 computeMedian (const sensor_msgs::PointCloud &points);
+    geometry_msgs::Point32 computeMedian (const sensor_msgs::PointCloud &points, const std::vector<int> &indices);
 
-    double computeMedianAbsoluteDeviation (const robot_msgs::PointCloud &points, double sigma);
-    double computeMedianAbsoluteDeviation (const robot_msgs::PointCloud &points, const std::vector<int> &indices, double sigma);
+    double computeMedianAbsoluteDeviation (const sensor_msgs::PointCloud &points, double sigma);
+    double computeMedianAbsoluteDeviation (const sensor_msgs::PointCloud &points, const std::vector<int> &indices, double sigma);
 
 
 
@@ -230,7 +230,7 @@ namespace cloud_geometry
       * \param maxP the resultant maximum point in the set
       */
     inline void
-      getLargestXYPoints (const robot_msgs::Polygon3D &poly, robot_msgs::Point32 &min_p, robot_msgs::Point32 &max_p)
+      getLargestXYPoints (const robot_msgs::Polygon3D &poly, geometry_msgs::Point32 &min_p, geometry_msgs::Point32 &max_p)
     {
       double largest_xy = -FLT_MAX;
       for (unsigned int i = 0; i < poly.points.size (); i++)
@@ -259,7 +259,7 @@ namespace cloud_geometry
       * \param maxP the resultant maximum point in the set
       */
     inline void
-      getLargestXYPoints (const robot_msgs::PointCloud &points, const std::vector<int> &indices, robot_msgs::Point32 &min_p, robot_msgs::Point32 &max_p)
+      getLargestXYPoints (const sensor_msgs::PointCloud &points, const std::vector<int> &indices, geometry_msgs::Point32 &min_p, geometry_msgs::Point32 &max_p)
     {
       double largest_xy = -FLT_MAX;
       for (unsigned int i = 0; i < indices.size (); i++)
@@ -294,7 +294,7 @@ namespace cloud_geometry
       * \param r the r-dimension
       */
     inline double
-      computeCentralizedMoment (const robot_msgs::PointCloud &points, double p, double q, double r)
+      computeCentralizedMoment (const sensor_msgs::PointCloud &points, double p, double q, double r)
     {
       double result = 0.0;
       for (unsigned int cp = 0; cp < points.pts.size (); cp++)
@@ -312,7 +312,7 @@ namespace cloud_geometry
       * \param r the r-dimension
       */
     inline double
-      computeCentralizedMoment (const robot_msgs::PointCloud &points, const std::vector<int> &indices, double p, double q, double r)
+      computeCentralizedMoment (const sensor_msgs::PointCloud &points, const std::vector<int> &indices, double p, double q, double r)
     {
       double result = 0.0;
       for (unsigned int cp = 0; cp < indices.size (); cp++)
@@ -328,7 +328,7 @@ namespace cloud_geometry
       * \param maxP the resultant maximum bounding box coordinates
       */
     inline void
-      getMinMax (const robot_msgs::PointCloud &points, robot_msgs::Point32 &minP, robot_msgs::Point32 &maxP)
+      getMinMax (const sensor_msgs::PointCloud &points, geometry_msgs::Point32 &minP, geometry_msgs::Point32 &maxP)
     {
       minP.x = minP.y = minP.z = FLT_MAX;
       maxP.x = maxP.y = maxP.z = -FLT_MAX;
@@ -353,7 +353,7 @@ namespace cloud_geometry
       * \param max_p the resultant maximum bounding box coordinates
       */
     inline void
-      getMinMax (const robot_msgs::Polygon3D &poly, robot_msgs::Point32 &min_p, robot_msgs::Point32 &max_p)
+      getMinMax (const robot_msgs::Polygon3D &poly, geometry_msgs::Point32 &min_p, geometry_msgs::Point32 &max_p)
     {
       min_p.x = min_p.y = min_p.z = FLT_MAX;
       max_p.x = max_p.y = max_p.z = -FLT_MAX;
@@ -378,7 +378,7 @@ namespace cloud_geometry
       * \param max_p the resultant maximum bounding box coordinates
       */
     inline void
-      getMinMax (const robot_msgs::PointCloud &points, const std::vector<int> &indices, robot_msgs::Point32 &min_p, robot_msgs::Point32 &max_p)
+      getMinMax (const sensor_msgs::PointCloud &points, const std::vector<int> &indices, geometry_msgs::Point32 &min_p, geometry_msgs::Point32 &max_p)
     {
       min_p.x = min_p.y = min_p.z = FLT_MAX;
       max_p.x = max_p.y = max_p.z = -FLT_MAX;
@@ -405,7 +405,7 @@ namespace cloud_geometry
       * \param cut_distance a maximum admissible distance threshold for points from the laser origin
       */
     inline void
-      getMinMax (const robot_msgs::PointCloud &points, robot_msgs::Point32 &min_pt, robot_msgs::Point32 &max_pt,
+      getMinMax (const sensor_msgs::PointCloud &points, geometry_msgs::Point32 &min_pt, geometry_msgs::Point32 &max_pt,
                  int c_idx, double cut_distance)
     {
       min_pt.x = min_pt.y = min_pt.z = FLT_MAX;
@@ -435,7 +435,7 @@ namespace cloud_geometry
       * \param cut_distance a maximum admissible distance threshold for points from the laser origin
       */
     inline void
-      getMinMax (robot_msgs::PointCloudConstPtr points, robot_msgs::Point32 &min_pt, robot_msgs::Point32 &max_pt,
+      getMinMax (sensor_msgs::PointCloudConstPtr points, geometry_msgs::Point32 &min_pt, geometry_msgs::Point32 &max_pt,
                  int c_idx, double cut_distance)
     {
       min_pt.x = min_pt.y = min_pt.z = FLT_MAX;
@@ -466,7 +466,7 @@ namespace cloud_geometry
       * \param cut_distance a maximum admissible distance threshold for points from the laser origin
       */
     inline void
-      getMinMax (const robot_msgs::PointCloud &points, const std::vector<int> &indices, robot_msgs::Point32 &min_pt, robot_msgs::Point32 &max_pt,
+      getMinMax (const sensor_msgs::PointCloud &points, const std::vector<int> &indices, geometry_msgs::Point32 &min_pt, geometry_msgs::Point32 &max_pt,
                  int c_idx, double cut_distance)
     {
       min_pt.x = min_pt.y = min_pt.z = FLT_MAX;
@@ -497,7 +497,7 @@ namespace cloud_geometry
       * \param cut_distance a maximum admissible distance threshold for points from the laser origin
       */
     inline void
-      getMinMax (robot_msgs::PointCloudConstPtr points, const std::vector<int> &indices, robot_msgs::Point32 &min_pt, robot_msgs::Point32 &max_pt,
+      getMinMax (sensor_msgs::PointCloudConstPtr points, const std::vector<int> &indices, geometry_msgs::Point32 &min_pt, geometry_msgs::Point32 &max_pt,
                  int c_idx, double cut_distance)
     {
       min_pt.x = min_pt.y = min_pt.z = FLT_MAX;
@@ -517,12 +517,12 @@ namespace cloud_geometry
       }
     }
 
-    void getChannelMeanStd (const robot_msgs::PointCloud &points, int d_idx, double &mean, double &stddev);
-    void getChannelMeanStd (const robot_msgs::PointCloud &points, const std::vector<int> &indices, int d_idx, double &mean, double &stddev);
+    void getChannelMeanStd (const sensor_msgs::PointCloud &points, int d_idx, double &mean, double &stddev);
+    void getChannelMeanStd (const sensor_msgs::PointCloud &points, const std::vector<int> &indices, int d_idx, double &mean, double &stddev);
 
-    void selectPointsOutsideDistribution (const robot_msgs::PointCloud &points, const std::vector<int> &indices, int d_idx,
+    void selectPointsOutsideDistribution (const sensor_msgs::PointCloud &points, const std::vector<int> &indices, int d_idx,
                                           double mean, double stddev, double alpha, std::vector<int> &inliers);
-    void selectPointsInsideDistribution (const robot_msgs::PointCloud &points, const std::vector<int> &indices, int d_idx,
+    void selectPointsInsideDistribution (const sensor_msgs::PointCloud &points, const std::vector<int> &indices, int d_idx,
                                          double mean, double stddev, double alpha, std::vector<int> &inliers);
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////

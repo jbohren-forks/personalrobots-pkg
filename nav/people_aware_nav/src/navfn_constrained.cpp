@@ -40,10 +40,10 @@
 
 namespace people_aware_nav {
 
-using robot_msgs::PoseStamped;
+using geometry_msgs::PoseStamped;
 using std::vector;
-using robot_msgs::Point;
-using robot_msgs::Point32;
+using geometry_msgs::Point;
+using geometry_msgs::Point32;
 
 namespace vm=visualization_msgs;
 

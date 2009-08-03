@@ -31,7 +31,7 @@
 #include <sys/time.h>
 
 #include "laser_scan/laser_scan.h"
-#include "robot_msgs/PointCloud.h"
+#include "sensor_msgs/PointCloud.h"
 #include <math.h>
 
 
@@ -208,7 +208,7 @@ TEST(laser_scan, projectLaser)
       //printf("%f %f %f %f %f %f\n", range, intensity, min_angle, max_angle, angle_increment, scan_time.toSec());
   sensor_msgs::LaserScan scan = build_constant_scan(range, intensity, min_angle, max_angle, angle_increment, scan_time);
 
-  robot_msgs::PointCloud cloud_out;
+  sensor_msgs::PointCloud cloud_out;
   projector.projectLaser(scan, cloud_out, -1.0, false, laser_scan::MASK_INDEX);
   EXPECT_EQ(cloud_out.chan.size(), (unsigned int)1);
   projector.projectLaser(scan, cloud_out, -1.0, false, laser_scan::MASK_INTENSITY);
@@ -323,7 +323,7 @@ TEST(laser_scan, transformLaserScanToPointCloud)
   sensor_msgs::LaserScan scan = build_constant_scan(range, intensity, min_angle, max_angle, angle_increment, scan_time);
   scan.header.frame_id = "laser_frame";
 
-  robot_msgs::PointCloud cloud_out;
+  sensor_msgs::PointCloud cloud_out;
   projector.transformLaserScanToPointCloud(scan.header.frame_id, cloud_out, scan, tf, laser_scan::MASK_INDEX);
   EXPECT_EQ(cloud_out.chan.size(), (unsigned int)1);
   projector.transformLaserScanToPointCloud(scan.header.frame_id, cloud_out, scan, tf, laser_scan::MASK_INTENSITY);

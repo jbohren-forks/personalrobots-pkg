@@ -55,7 +55,7 @@
 #include <manipulation_msgs/JointTraj.h>
 
 // message to interact with the cartesian trajectory controller
-#include <robot_msgs/PoseStamped.h>
+#include <geometry_msgs/PoseStamped.h>
 
 static const std::string GROUPNAME = "right_arm";
 
@@ -74,7 +74,7 @@ public:
 	
 	// we use the topic for sending commands to the controller, so we need to advertise it
 	jointCommandPublisher_ = nh_.advertise<manipulation_msgs::JointTraj>("right_arm/trajectory_controller/trajectory_command", 1);
-	cartesianCommandPublisher_ = nh_.advertise<robot_msgs::PoseStamped>("right_arm/?/command", 1);
+	cartesianCommandPublisher_ = nh_.advertise<geometry_msgs::PoseStamped>("right_arm/?/command", 1);
 
 	// advertise the topic for displaying kinematic plans
 	displayKinematicPathPublisher_ = nh_.advertise<motion_planning_msgs::DisplayKinematicPath>("display_kinematic_path", 10);
@@ -177,7 +177,7 @@ public:
 
     void runRightArmToCoordinates(void)
     {
-	robot_msgs::PoseStamped ps;
+	geometry_msgs::PoseStamped ps;
 	ps.header.frame_id = "base_link"; // make sure this is true; this should be take from input header
 	ps.header.stamp = ros::Time::now(); // again, should be taken from input header
 	ps.pose.position.x = 0.8;

@@ -42,8 +42,8 @@
 #include "opencv/cv.h"
 #include "opencv_latest/CvBridge.h"
 
-#include "robot_msgs/Pose.h"
-#include "robot_msgs/Point.h"
+#include "geometry_msgs/Pose.h"
+#include "geometry_msgs/Point.h"
 #include "tf/transform_datatypes.h"
 
 namespace stereo_checkerboard_detector

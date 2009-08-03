@@ -39,12 +39,11 @@
 
  **/
 
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 #include <point_cloud_mapping/cloud_io.h>
 
 using namespace std;
 using namespace cloud_io;
-using namespace robot_msgs;
 
 /* ---[ */
 int
@@ -56,7 +55,7 @@ int
     return (-1);
   }
 
-  PointCloud msg_cloud;
+  sensor_msgs::PointCloud msg_cloud;
   int res = loadPCDFile (argv[1], msg_cloud);
   if (res == -1)
   {

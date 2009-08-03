@@ -42,7 +42,7 @@
 #include <tf/tf.h>
 
 /** Messages needed for trajectory control and collision map**/
-#include <robot_msgs/Pose.h>
+#include <geometry_msgs/Pose.h>
 #include <manipulation_msgs/JointTraj.h>
 #include <manipulation_msgs/JointTrajPoint.h>
 #include <mapping_msgs/CollisionMap.h>
@@ -104,7 +104,7 @@ class SBPLPlannerNode
   bool replan(const manipulation_msgs::JointTrajPoint &start, const manipulation_msgs::JointTrajPoint &goal, manipulation_msgs::JointTraj &path);
   bool planPath(sbpl_planner_node::PlanPathSrv::Request &req, sbpl_planner_node::PlanPathSrv::Response &resp);
 
- std::vector<robot_msgs::Point> footprint_;
+ std::vector<geometry_msgs::Point> footprint_;
 
  boost::recursive_mutex lock_; /*!< Lock for access to class members in callbacks */
 };

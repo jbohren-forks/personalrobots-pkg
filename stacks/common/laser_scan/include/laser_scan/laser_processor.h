@@ -46,8 +46,8 @@
 #include <math.h>
 #include "ros/node.h"
 #include "sensor_msgs/LaserScan.h"
-#include "robot_msgs/PointCloud.h"
-#include "robot_msgs/Point.h"
+#include "sensor_msgs/PointCloud.h"
+#include "geometry_msgs/Point.h"
 
 #include <list>
 #include <set>
@@ -95,7 +95,7 @@ namespace laser_scan
 
     void clear();
 
-    void appendToCloud(robot_msgs::PointCloud& cloud, int r = 0, int g = 0, int b = 0);
+    void appendToCloud(sensor_msgs::PointCloud& cloud, int r = 0, int g = 0, int b = 0);
 
     tf::Point center();
   };

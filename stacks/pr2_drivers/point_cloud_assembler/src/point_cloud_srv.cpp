@@ -39,13 +39,11 @@
 #include "pr2_srvs/SetPeriodicCmd.h"
 
 // Messages
-#include "robot_msgs/PointCloud.h"
+#include "sensor_msgs/PointCloud.h"
 #include "pr2_msgs/LaserScannerSignal.h"
 
 #include <boost/thread/mutex.hpp>
 
-
-using namespace robot_msgs ;
 
 /***
  * This uses the point_cloud_assembler's build_cloud service call to grab all the scans/clouds between two tilt-laser shutters

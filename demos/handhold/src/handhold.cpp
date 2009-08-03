@@ -36,7 +36,7 @@
 #include "ros/node_handle.h"
 
 #include "tf/transform_datatypes.h"
-#include "robot_msgs/Twist.h"
+#include "geometry_msgs/Twist.h"
 #include "robot_msgs/PoseDot.h"
 
 const char *TIP_FRAME = "";
@@ -73,13 +73,13 @@ public:
     sub_error.shutdown();
   }
 
-  void stateCB(const robot_msgs::TwistConstPtr &msg)
+  void stateCB(const geometry_msgs::TwistConstPtr &msg)
   {
     robot_msgs::PoseDot base_vel;
-    //ROS_ERROR("%lf  %lf  %lf -- %lf  %lf", msg->vel.x, dead_zone, apply_dead_zone(msg->vel.x, dead_zone), k_trans, k_trans * apply_dead_zone(msg->vel.x, dead_zone));
-    base_vel.vel.vx = k_trans * apply_dead_zone(msg->vel.x, dead_zone);
-    base_vel.vel.vy = k_trans * apply_dead_zone(msg->vel.y, dead_zone);
-    base_vel.ang_vel.vz = k_rot * apply_dead_zone(msg->rot.z, dead_zone);
+    //ROS_ERROR("%lf  %lf  %lf -- %lf  %lf", msg->linear.x, dead_zone, apply_dead_zone(msg->linear.x, dead_zone), k_trans, k_trans * apply_dead_zone(msg->linear.x, dead_zone));
+    base_vel.vel.vx = k_trans * apply_dead_zone(msg->linear.x, dead_zone);
+    base_vel.vel.vy = k_trans * apply_dead_zone(msg->linear.y, dead_zone);
+    base_vel.ang_vel.vz = k_rot * apply_dead_zone(msg->angular.z, dead_zone);
     pub_drive.publish(base_vel);
   }
 
@@ -87,7 +87,7 @@ public:
   ros::Publisher pub_drive;
   ros::Subscriber sub_error;
 
-  robot_msgs::Twist error_msg;
+  geometry_msgs::Twist error_msg;
 
   double dead_zone;
   double k_trans;
@@ -99,7 +99,7 @@ int main(int argc, char** argv)
   ros::init(argc, argv, "handhold");
   ros::NodeHandle node("handhold");
 
-  robot_msgs::PoseStamped cmd;
+  geometry_msgs::PoseStamped cmd;
   node.param("~pose_frame", cmd.header.frame_id, std::string("base_link"));
   node.param("~pose_x", cmd.pose.position.x, 0.6);
   node.param("~pose_y", cmd.pose.position.y, -0.1);
@@ -109,7 +109,7 @@ int main(int argc, char** argv)
   node.param("~pose_qz", cmd.pose.orientation.z, 0.0);
   node.param("~pose_qw", cmd.pose.orientation.w, 1.0);
 
-  ros::Publisher pub_cmd = node.advertise<robot_msgs::PoseStamped>(CONTROLLER + "/command", 2);
+  ros::Publisher pub_cmd = node.advertise<geometry_msgs::PoseStamped>(CONTROLLER + "/command", 2);
   ROS_ERROR("Publishing to controller on %s (%d)", pub_cmd.getTopic().c_str(), (void*)pub_cmd);
 
   X x(node);

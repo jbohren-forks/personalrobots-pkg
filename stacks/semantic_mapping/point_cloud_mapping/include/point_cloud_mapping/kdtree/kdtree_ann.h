@@ -49,7 +49,7 @@ namespace cloud_kdtree
       /** \brief Constructor for KdTree.
         * \param points the ROS point cloud data array
         */
-      KdTreeANN (const robot_msgs::PointCloud &points)
+      KdTreeANN (const sensor_msgs::PointCloud &points)
       {
         ann_kd_tree_ = NULL; // To avoid a bad delete in the destructor.
         epsilon_     = 0.0;   // default error bound value
@@ -78,7 +78,7 @@ namespace cloud_kdtree
         * \param points the ROS point cloud data array
         * \param indices the point cloud indices
         */
-      KdTreeANN (const robot_msgs::PointCloud &points, const std::vector<int> &indices)
+      KdTreeANN (const sensor_msgs::PointCloud &points, const std::vector<int> &indices)
       {
         ann_kd_tree_ = NULL; // To avoid a bad delete in the destructor.
         epsilon_     = 0.0;   // default error bound value
@@ -117,8 +117,8 @@ namespace cloud_kdtree
         m_lock_.unlock ();
       }
 
-      virtual void nearestKSearch (const robot_msgs::Point32 &p_q, int k, std::vector<int> &k_indices, std::vector<float> &k_distances);
-      virtual void nearestKSearch (const robot_msgs::PointCloud &points, int index, int k, std::vector<int> &k_indices, std::vector<float> &k_distances);
+      virtual void nearestKSearch (const geometry_msgs::Point32 &p_q, int k, std::vector<int> &k_indices, std::vector<float> &k_distances);
+      virtual void nearestKSearch (const sensor_msgs::PointCloud &points, int index, int k, std::vector<int> &k_indices, std::vector<float> &k_distances);
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Search for k-nearest neighbors for the given query point.
@@ -142,8 +142,8 @@ namespace cloud_kdtree
         return;
       }
 
-      virtual bool radiusSearch (const robot_msgs::Point32 &p_q, double radius, std::vector<int> &k_indices, std::vector<float> &k_distances, int max_nn = INT_MAX);
-      virtual bool radiusSearch (const robot_msgs::PointCloud &points, int index, double radius, std::vector<int> &k_indices, std::vector<float> &k_distances, int max_nn = INT_MAX);
+      virtual bool radiusSearch (const geometry_msgs::Point32 &p_q, double radius, std::vector<int> &k_indices, std::vector<float> &k_distances, int max_nn = INT_MAX);
+      virtual bool radiusSearch (const sensor_msgs::PointCloud &points, int index, double radius, std::vector<int> &k_indices, std::vector<float> &k_distances, int max_nn = INT_MAX);
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Search for all the nearest neighbors of the query point in a given radius.
@@ -180,8 +180,8 @@ namespace cloud_kdtree
 
     private:
 
-      int convertCloudToArray (const robot_msgs::PointCloud &ros_cloud);
-      int convertCloudToArray (const robot_msgs::PointCloud &ros_cloud, const std::vector<int> &indices);
+      int convertCloudToArray (const sensor_msgs::PointCloud &ros_cloud);
+      int convertCloudToArray (const sensor_msgs::PointCloud &ros_cloud, const std::vector<int> &indices);
 
     private:
 

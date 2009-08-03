@@ -105,7 +105,7 @@ class DoorCheckerboardDetectorNode : public ros::Node
       }
     }
 
-    void pointTFToMsg32(const tf::Vector3 &in, robot_msgs::Point32 &out)
+    void pointTFToMsg32(const tf::Vector3 &in, geometry_msgs::Point32 &out)
     {
       out.x = in.x();
       out.y = in.y();

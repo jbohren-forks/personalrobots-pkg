@@ -263,7 +263,7 @@ bool detectOutletService(outlet_detection::OutletDetection::Request &od_req,
                          outlet_detection::OutletDetection::Response &od_res)
 {
   // Transform coarse estimate to high-def camera frame
-  robot_msgs::PointStamped highdef_pt;
+  geometry_msgs::PointStamped highdef_pt;
   try {
     tf_listener_.transformPoint("high_def_frame", od_req.point, highdef_pt);
   }

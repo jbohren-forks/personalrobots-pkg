@@ -49,7 +49,7 @@ namespace cloud_io
   * \param points the resulting point array
   */
   int
-    loadPCDFile (const char* file_name, robot_msgs::PointCloud &points)
+    loadPCDFile (const char* file_name, sensor_msgs::PointCloud &points)
   {
     bool binary_data = false;
     int nr_points = 0;

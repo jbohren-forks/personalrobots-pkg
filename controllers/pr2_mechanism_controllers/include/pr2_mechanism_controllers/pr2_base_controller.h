@@ -40,7 +40,7 @@
 #include <pr2_msgs/BaseControllerState.h>
 #include <robot_mechanism_controllers/joint_velocity_controller.h>
 #include <pr2_mechanism_controllers/base_kinematics.h>
-#include <robot_msgs/PoseDDot.h>
+#include <geometry_msgs/Twist.h>
 #include <angles/angles.h>
 
 namespace controller
@@ -169,7 +169,7 @@ namespace controller
       /*!
        * \brief acceleration limits specified externally
        */
-      robot_msgs::PoseDDot max_accel_;
+      geometry_msgs::Twist max_accel_;
 
       /*!
        * \brief gain specifying the amount of help given by the wheels to the caster steer degree of freedom
@@ -264,7 +264,7 @@ namespace controller
       /*!
        * \brief interpolates velocities within a given time based on maximum accelerations
        */
-      robot_msgs::PoseDot interpolateCommand(robot_msgs::PoseDot start, robot_msgs::PoseDot end, robot_msgs::PoseDDot max_rate, double dT);
+      robot_msgs::PoseDot interpolateCommand(robot_msgs::PoseDot start, robot_msgs::PoseDot end, geometry_msgs::Twist max_rate, double dT);
 
       /*!
        * \brief deal with cmd_vel command from 2dnav stack

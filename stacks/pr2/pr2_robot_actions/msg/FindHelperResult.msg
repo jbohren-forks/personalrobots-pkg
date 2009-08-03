@@ -1,2 +1,2 @@
-robot_msgs/PoseStamped helper_head
-robot_msgs/PoseStamped helper_zone
+geometry_msgs/PoseStamped helper_head
+geometry_msgs/PoseStamped helper_zone

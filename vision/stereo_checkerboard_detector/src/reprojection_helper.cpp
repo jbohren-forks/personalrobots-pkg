@@ -40,9 +40,9 @@ using namespace stereo_checkerboard_detector ;
 using namespace std ;
 
 
-void ReprojectionHelper::computeDisparity(const vector<robot_msgs::Point>& left_pts,
-                                          const vector<robot_msgs::Point>& right_pts,
-                                          std::vector<robot_msgs::Point>& result)
+void ReprojectionHelper::computeDisparity(const vector<geometry_msgs::Point>& left_pts,
+                                          const vector<geometry_msgs::Point>& right_pts,
+                                          std::vector<geometry_msgs::Point>& result)
 {
   ROS_ERROR("Not Yet Implemented") ;
 }
@@ -88,10 +88,10 @@ void ReprojectionHelper::computeDisparity(const vector<CvPoint2D32f>& left_pts,
 
 }
 
-void ReprojectionHelper::reproject(const std::vector<robot_msgs::Point>& ros_uvd,
+void ReprojectionHelper::reproject(const std::vector<geometry_msgs::Point>& ros_uvd,
                                    const sensor_msgs::CameraInfo& left_info,
                                    const sensor_msgs::CameraInfo& right_info,
-                                   std::vector<robot_msgs::Point>& ros_xyz)
+                                   std::vector<geometry_msgs::Point>& ros_xyz)
 {
   const unsigned int N = ros_uvd.size() ;
 

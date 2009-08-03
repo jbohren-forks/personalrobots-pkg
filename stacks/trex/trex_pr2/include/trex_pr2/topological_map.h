@@ -20,7 +20,7 @@
 #include <topological_map/topological_map.h>
 #include <trex_ros/logger.h>
 #include <door_msgs/Door.h>
-#include <robot_msgs/Pose.h>
+#include <geometry_msgs/Pose.h>
 
 using namespace EUROPA;
 using namespace TREX;
@@ -509,17 +509,17 @@ namespace trex_pr2 {
     /**
      * @brief Query detailed outlet data. Might want to think about adding and OutletState msg
      */
-    virtual void getOutletState(unsigned int outlet_id, robot_msgs::Pose& outlet_pose);
+    virtual void getOutletState(unsigned int outlet_id, geometry_msgs::Pose& outlet_pose);
 
     /**
      * @brief Get the pose to navigate to in order to begin the recharge process
      */
-    virtual void getOutletApproachPose(unsigned int outlet_id, robot_msgs::Pose& approach_pose);
+    virtual void getOutletApproachPose(unsigned int outlet_id, geometry_msgs::Pose& approach_pose);
 
     /**
      * @brief Get the pose to navigate to in order to traverse a doorway starting from a given connector
      */
-    virtual void getDoorApproachPose(unsigned int connector_id, robot_msgs::Pose& approach_pose);
+    virtual void getDoorApproachPose(unsigned int connector_id, geometry_msgs::Pose& approach_pose);
 
     /**
      * @brief Outlet blocked

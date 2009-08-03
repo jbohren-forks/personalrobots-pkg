@@ -3,14 +3,14 @@
 #include "ros/node.h"
 #include "ros/publisher.h"
 #include "nav_robot_actions/MoveBaseState.h"
-#include "robot_msgs/PoseStamped.h"
+#include "geometry_msgs/PoseStamped.h"
 #include "tf/tf.h"
 
 class WavefrontCLI : public ros::Node
 {
 public:
   nav_robot_actions::MoveBaseState wf_state;
-  robot_msgs::PoseStamped wf_goal;
+  geometry_msgs::PoseStamped wf_goal;
   enum { WF_IDLE, WF_SEEKING_GOAL, WF_DONE } state;
 
   WavefrontCLI(double x, double y, double th)

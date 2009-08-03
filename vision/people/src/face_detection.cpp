@@ -55,8 +55,8 @@
 #include "tf/transform_listener.h"
 #include "visualization_msgs/Marker.h"
 #include "visualization_msgs/MarkerArray.h"
-#include "robot_msgs/PointCloud.h"
-#include "robot_msgs/Point32.h"
+#include "sensor_msgs/PointCloud.h"
+#include "geometry_msgs/Point32.h"
 #include "people/StartDetection.h"
 #include "people/StopDetection.h"
 
@@ -202,7 +202,7 @@ public:
 
     //vis_pub_add_ = nh_.advertise<visualization_msgs::MarkerArray>("visualization_marker_array",0);
     //vis_pub_sub_ = nh_.advertise<visualization_msgs::MarkerArray>("visualization_marker_array",0);
-    cloud_pub_ = nh_.advertise<robot_msgs::PointCloud>("~people_cloud",0);
+    cloud_pub_ = nh_.advertise<sensor_msgs::PointCloud>("~people_cloud",0);
 
     // Advertise the rectangles to draw if stereo_view is running.
     if (do_display_ == "remote") {
@@ -378,7 +378,7 @@ public:
 
 
     int ngood = 0;
-    robot_msgs::PointCloud cloud;
+    sensor_msgs::PointCloud cloud;
     cloud.header.stamp = limage->header.stamp;
     cloud.header.frame_id = limage->header.frame_id;
 
@@ -513,7 +513,7 @@ public:
 	  markers_add_.markers.push_back(m);
 
 
-	  robot_msgs::Point32 p;
+	  geometry_msgs::Point32 p;
 	  p.x = one_face->center3d.val[0];
 	  p.y = one_face->center3d.val[1];
 	  p.z = one_face->center3d.val[2];

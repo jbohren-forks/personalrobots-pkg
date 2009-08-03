@@ -30,7 +30,7 @@
 #ifndef ROBOT_SELF_FILTER_SELF_MASK_
 #define ROBOT_SELF_FILTER_SELF_MASK_
 
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 #include <planning_environment/models/robot_models.h>
 #include <geometric_shapes/bodies.h>
 #include <tf/transform_listener.h>
@@ -103,7 +103,7 @@ namespace robot_self_filter
 	/** \brief Compute the containment mask (INSIDE or OUTSIDE) for a given pointcloud. If a mask element is 1, the point
 	    is outside the robot. The point is outside if the mask element is 0.
 	 */
-	void maskContainment(const robot_msgs::PointCloud& data_in, std::vector<int> &mask);
+	void maskContainment(const sensor_msgs::PointCloud& data_in, std::vector<int> &mask);
 
 	/** \brief Compute the intersection mask for a given
 	    pointcloud. If a mask element can have one of the values
@@ -114,7 +114,7 @@ namespace robot_self_filter
 	    the origin of the sensor. A callback can be registered for
 	    the first intersection point on each body.
 	 */
-	void maskIntersection(const robot_msgs::PointCloud& data_in, const std::string &sensor_frame, std::vector<int> &mask,
+	void maskIntersection(const sensor_msgs::PointCloud& data_in, const std::string &sensor_frame, std::vector<int> &mask,
 			      const boost::function<void(const btVector3&)> &intersectionCallback = NULL);
 
 	/** \brief Compute the intersection mask for a given pointcloud. If a mask
@@ -123,7 +123,7 @@ namespace robot_self_filter
 	    been seen. If the mask element is INSIDE, the point is inside
 	    the robot. The origin of the sensor is specified as well.
 	 */
-	void maskIntersection(const robot_msgs::PointCloud& data_in, const btVector3 &sensor, std::vector<int> &mask,
+	void maskIntersection(const sensor_msgs::PointCloud& data_in, const btVector3 &sensor, std::vector<int> &mask,
 			      const boost::function<void(const btVector3&)> &intersectionCallback = NULL);
 	
 	/** \brief Assume subsequent calls to getMaskX() will be in the frame passed to this function.
@@ -173,10 +173,10 @@ namespace robot_self_filter
 	void computeBoundingSpheres(void);
 	
 	/** \brief Perform the actual mask computation. */
-	void maskAuxContainment(const robot_msgs::PointCloud& data_in, std::vector<int> &mask);
+	void maskAuxContainment(const sensor_msgs::PointCloud& data_in, std::vector<int> &mask);
 
 	/** \brief Perform the actual mask computation. */
-	void maskAuxIntersection(const robot_msgs::PointCloud& data_in, std::vector<int> &mask, const boost::function<void(const btVector3&)> &callback);
+	void maskAuxIntersection(const sensor_msgs::PointCloud& data_in, std::vector<int> &mask, const boost::function<void(const btVector3&)> &callback);
 	
 	planning_environment::RobotModels   rm_;
 	tf::TransformListener              &tf_;

@@ -105,7 +105,7 @@ int
   robot_actions::ActionClient<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty> release_handle("release_handle");
   robot_actions::ActionClient<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door> move_base_door("move_base_door");
   robot_actions::ActionClient<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door> sbpl_door_planner("sbpl_door_planner");
-  robot_actions::ActionClient<robot_msgs::PoseStamped, nav_robot_actions::MoveBaseState, robot_msgs::PoseStamped> move_base_local("move_base_local");
+  robot_actions::ActionClient<geometry_msgs::PoseStamped, nav_robot_actions::MoveBaseState, geometry_msgs::PoseStamped> move_base_local("move_base_local");
   robot_actions::ActionClient<pr2_robot_actions::MoveArmGoal, pr2_robot_actions::MoveArmState, int32_t> move_arm("move_arm");
 
   door_msgs::Door tmp_door;
@@ -143,7 +143,7 @@ int
   }
 
   // approach door
-  robot_msgs::PoseStamped goal_msg;
+  geometry_msgs::PoseStamped goal_msg;
   tf::poseStampedTFToMsg(getRobotPose(door, -0.6), goal_msg);
   cout << "move to pose " << goal_msg.pose.position.x << ", " << goal_msg.pose.position.y << ", "<< goal_msg.pose.position.z << endl;
   switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
@@ -256,7 +256,7 @@ int
     if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
 
     tf::Stamped<tf::Pose> handle_pose = getHandlePose(tmp_door,-1);
-    robot_msgs::PoseStamped handle_msg;
+    geometry_msgs::PoseStamped handle_msg;
     handle_pose.stamp_ = ros::Time::now();
     poseStampedTFToMsg(handle_pose, handle_msg);
 

@@ -345,7 +345,7 @@ private:
      canonical_polygon.resize(num_poly);
      canonical_polygon_output_id.resize(num_poly);
 
-     robot_msgs::PointCloud centers;
+     sensor_msgs::PointCloud centers;
      centers.pts.resize(num_poly);
 
      for(unsigned int iPoly=0;iPoly<num_poly;iPoly++){

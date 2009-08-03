@@ -57,11 +57,11 @@ namespace navfn {
     inflation_radius_ = costmap_ros_.inflationRadius();
   }
 
-  bool NavfnROS::validPointPotential(const robot_msgs::Point& world_point){
+  bool NavfnROS::validPointPotential(const geometry_msgs::Point& world_point){
     return getPointPotential(world_point) < COST_OBS_ROS;
   }
 
-  double NavfnROS::getPointPotential(const robot_msgs::Point& world_point){
+  double NavfnROS::getPointPotential(const geometry_msgs::Point& world_point){
     unsigned int mx, my;
     if(!costmap_.worldToMap(world_point.x, world_point.y, mx, my))
       return DBL_MAX;
@@ -70,7 +70,7 @@ namespace navfn {
     return planner_->potarr[index];
   }
 
-  bool NavfnROS::computePotential(const robot_msgs::Point& world_point){
+  bool NavfnROS::computePotential(const geometry_msgs::Point& world_point){
     //make sure that we have the latest copy of the costmap and that we clear the footprint of obstacles
     costmap_ros_.clearRobotFootprint();
     costmap_ros_.getCostmapCopy(costmap_);
@@ -118,8 +118,8 @@ namespace navfn {
     costmap_ros_.getCostmapCopy(costmap);
   }
 
-  bool NavfnROS::makePlan(const robot_msgs::PoseStamped& start, 
-      const robot_msgs::PoseStamped& goal, std::vector<robot_msgs::PoseStamped>& plan){
+  bool NavfnROS::makePlan(const geometry_msgs::PoseStamped& start, 
+      const geometry_msgs::PoseStamped& goal, std::vector<geometry_msgs::PoseStamped>& plan){
     //clear the plan, just in case
     plan.clear();
 
@@ -194,7 +194,7 @@ namespace navfn {
         double world_x, world_y;
         costmap_.mapToWorld(cell_x, cell_y, world_x, world_y);
 
-        robot_msgs::PoseStamped pose;
+        geometry_msgs::PoseStamped pose;
         pose.header.stamp = plan_time;
         pose.header.frame_id = global_frame_;
         pose.pose.position.x = world_x;
@@ -205,7 +205,7 @@ namespace navfn {
       //also make sure that we push the goal pose onto the end of the plan if its not empty
       if(!plan.empty()){
         //make sure the goal we push on has the same timestamp as the rest of the plan
-        robot_msgs::PoseStamped goal_copy = goal;
+        geometry_msgs::PoseStamped goal_copy = goal;
         goal_copy.header.stamp = plan_time;
         plan.push_back(goal_copy);
       }
@@ -216,7 +216,7 @@ namespace navfn {
     return success;
   }
 
-  void NavfnROS::publishPlan(const std::vector<robot_msgs::PoseStamped>& path, double r, double g, double b, double a){
+  void NavfnROS::publishPlan(const std::vector<geometry_msgs::PoseStamped>& path, double r, double g, double b, double a){
     //given an empty path we won't do anything
     if(path.empty())
       return;

@@ -84,7 +84,7 @@ bool ArmTrajectoryController::initXml(mechanism::RobotState * robot, TiXmlElemen
       joint_velocity_limits_.push_back(joint->velocity_limit_*velocity_scaling_factor_);
       joint_type_.push_back(joint->type_);
       if(joint->type_ == mechanism::JOINT_CONTINUOUS)
-        ROS_INFO("Pushing back joint of type: continuous joint: %s",joint->name_.c_str()); 
+        ROS_INFO("Pushing back joint of type: continuous joint: %s",joint->name_.c_str());
     }
 
     elt = elt->NextSiblingElement("controller");
@@ -236,16 +236,16 @@ void ArmTrajectoryController::update(void)
     joint_pd_controllers_[i]->setCommand(joint_cmd_rt_[i],joint_cmd_dot_rt_[i]);
 
   updateJointControllers();
-  
+
 #ifdef PUBLISH_MAX_TIME
   double end_time = realtime_gettime();
   max_update_time_ = std::max(max_update_time_,end_time-start_time);
 
   if (controller_state_publisher_->trylock())
   {
-    controller_state_publisher_->msg_.update_time = end_time - start_time; 
-    controller_state_publisher_->msg_.max_update_time = max_update_time_; 
-    controller_state_publisher_->unlockAndPublish();      
+    controller_state_publisher_->msg_.update_time = end_time - start_time;
+    controller_state_publisher_->msg_.max_update_time = max_update_time_;
+    controller_state_publisher_->unlockAndPublish();
   }
 #endif
 
@@ -405,7 +405,7 @@ bool ArmTrajectoryControllerNode::initXml(mechanism::RobotState * robot, TiXmlEl
 
   if (c_->controller_state_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
     delete c_->controller_state_publisher_ ;
-  c_->controller_state_publisher_ = new realtime_tools::RealtimePublisher <robot_msgs::ControllerState> (service_prefix_+"/controller_state", 1) ;
+  c_->controller_state_publisher_ = new realtime_tools::RealtimePublisher <pr2_mechanism_controllers::ControllerState> (service_prefix_+"/controller_state", 1) ;
 
   if (diagnostics_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
     delete diagnostics_publisher_ ;
@@ -416,7 +416,7 @@ bool ArmTrajectoryControllerNode::initXml(mechanism::RobotState * robot, TiXmlEl
 
   ROS_DEBUG("Initialized publisher");
 
-  c_->controller_state_publisher_->msg_.name = std::string(service_prefix_); 
+  c_->controller_state_publisher_->msg_.name = std::string(service_prefix_);
 
     ROS_INFO("Initialized controller");
     return true;

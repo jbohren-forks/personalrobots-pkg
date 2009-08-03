@@ -49,6 +49,7 @@ import rospy, rostest
 from robot_msgs.msg import *
 from std_msgs.msg import *
 from pr2_mechanism_controllers.msg import *
+from geometry_msgs.msg import PoseWithRatesStamped
 
 
 CMD_POS_1      =  0.0

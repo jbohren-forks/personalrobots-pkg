@@ -8,7 +8,8 @@
   <url>http://pr.willowgarage.com/wiki/point_cloud_assembler</url>
   <depend package="roscpp"/>
   <depend package="std_msgs"/>
-  <depend package="robot_msgs"/>
+  <depend package="sensor_msgs"/>
+  <depend package="geometry_msgs"/>
   <depend package="laser_scan"/>
   <depend package="sensor_msgs"/>
   <depend package="tf"/>

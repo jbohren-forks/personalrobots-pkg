@@ -41,7 +41,6 @@ using namespace BFL;
 using namespace tf;
 using namespace std;
 using namespace ros;
-using namespace robot_msgs;
 
 
 const static double damping_velocity = 0.9;

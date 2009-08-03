@@ -87,7 +87,7 @@ using tf::Vector3;
 using tf::Quaternion;
 using tf::Pose;
 using tf::Point;
-using robot_msgs::Point32;
+using geometry_msgs::Point32;
 
 namespace topological_map
 {

@@ -68,10 +68,10 @@ using namespace std;
 // -----------------------------------
 
 
-robot_msgs::Pose transformOutletPose(robot_msgs::Pose outletPose, float value)
+geometry_msgs::Pose transformOutletPose(geometry_msgs::Pose outletPose, float value)
 {
     tf::Pose tf_pose;
-    robot_msgs::Pose final_pose;
+    geometry_msgs::Pose final_pose;
 
     tf::poseMsgToTF(outletPose,tf_pose);
     tf::Point point(-value,0,0);
@@ -98,9 +98,9 @@ int
   pr2_robot_actions::SwitchControllers switchlist;
   std_msgs::Empty empty;
   plugs_msgs::PlugStow plug_stow; 
-  robot_msgs::PointStamped point;
-  robot_msgs::PointStamped fine_outlet_point;
-  robot_msgs::PoseStamped pose;
+  geometry_msgs::PointStamped point;
+  geometry_msgs::PointStamped fine_outlet_point;
+  geometry_msgs::PoseStamped pose;
   
   point.header.frame_id = "odom_combined";
   point.point.x=3.373;
@@ -116,13 +116,13 @@ int
   robot_actions::ActionClient<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty> untuck_arm("plugs_untuck_arms");
   robot_actions::ActionClient<std_msgs::Empty, pr2_robot_actions::DetectPlugOnBaseState, plugs_msgs::PlugStow> detect_plug_on_base("detect_plug_on_base");
   robot_actions::ActionClient<plugs_msgs::PlugStow, pr2_robot_actions::MoveAndGraspPlugState, std_msgs::Empty> move_and_grasp_plug("move_and_grasp_plug");
-  robot_actions::ActionClient<robot_msgs::PointStamped, pr2_robot_actions::DetectOutletState, robot_msgs::PoseStamped> detect_outlet_fine("detect_outlet_fine");
-  robot_actions::ActionClient<robot_msgs::PointStamped, pr2_robot_actions::DetectOutletState, robot_msgs::PoseStamped> detect_outlet_coarse("detect_outlet_coarse");
+  robot_actions::ActionClient<geometry_msgs::PointStamped, pr2_robot_actions::DetectOutletState, geometry_msgs::PoseStamped> detect_outlet_fine("detect_outlet_fine");
+  robot_actions::ActionClient<geometry_msgs::PointStamped, pr2_robot_actions::DetectOutletState, geometry_msgs::PoseStamped> detect_outlet_coarse("detect_outlet_coarse");
   robot_actions::ActionClient<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty> localize_plug_in_gripper("localize_plug_in_gripper");
   robot_actions::ActionClient<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty> plug_in("plug_in");
   robot_actions::ActionClient<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty> unplug("unplug");
   robot_actions::ActionClient< plugs_msgs::PlugStow, pr2_robot_actions::StowPlugState, std_msgs::Empty> stow_plug("stow_plug");
-  robot_actions::ActionClient<robot_msgs::PoseStamped, nav_robot_actions::MoveBaseState, robot_msgs::PoseStamped> move_base_local("move_base_local");
+  robot_actions::ActionClient<geometry_msgs::PoseStamped, nav_robot_actions::MoveBaseState, geometry_msgs::PoseStamped> move_base_local("move_base_local");
 
 
   timeout_medium.sleep();

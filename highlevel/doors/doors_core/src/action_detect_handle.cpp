@@ -63,7 +63,7 @@ DetectHandleAction::DetectHandleAction(tf::TransformListener& tf):
   tf_(tf)
 {
   NodeHandle node;
-  pub_ = node.advertise<robot_msgs::PointStamped>("head_controller/point_head",10);
+  pub_ = node.advertise<geometry_msgs::PointStamped>("head_controller/point_head",10);
 };
 
 
@@ -147,13 +147,13 @@ robot_actions::ResultStatus DetectHandleAction::execute(const door_msgs::Door& g
       feedback.handle.z = (result_laser.handle.z + result_camera.handle.z)/2.0;
       
       // take detection angle into account
-      robot_msgs::Point32 handle_robot_point;
+      geometry_msgs::Point32 handle_robot_point;
       if (!transformPointTo(tf_, feedback.header.frame_id, "base_footprint", feedback.header.stamp,  feedback.handle, handle_robot_point, fixed_frame, feedback.header.stamp)){
 	ROS_ERROR ("Could not transform handle from frame %s to frame %s.",
 		   feedback.header.frame_id.c_str (), string("base_footprint").c_str ());
 	return robot_actions::ABORTED;
       }
-      robot_msgs::Vector3 handle_robot_vec;
+      geometry_msgs::Vector3 handle_robot_vec;
       handle_robot_vec.x = handle_robot_point.x;
       handle_robot_vec.y = handle_robot_point.y;
       handle_robot_vec.z = handle_robot_point.z;
@@ -263,7 +263,7 @@ bool DetectHandleAction::cameraDetection(const door_msgs::Door& door_in,
   // make the head point towards the door
   if (isPreemptRequested()) return false;
   ROS_INFO("point head towards door");
-  robot_msgs::PointStamped door_pnt;
+  geometry_msgs::PointStamped door_pnt;
   door_pnt.point.z = 0.9;
   door_pnt.header.frame_id = door_in.header.frame_id;
   if (door_in.hinge == door_in.HINGE_P1){

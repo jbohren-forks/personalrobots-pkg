@@ -8,7 +8,7 @@ import unittest
 import sys
 
 import tf.transformations
-import robot_msgs.msg
+import geometry_msgs.msg
 
 import tf
 
@@ -50,11 +50,11 @@ class TestPython(unittest.TestCase):
         pass
 
     def common(self, t):
-        m = robot_msgs.msg.TransformStamped()
+        m = geometry_msgs.msg.TransformStamped()
         m.header.frame_id = "THISFRAME"
         m.parent_id = "PARENT"
         m.transform.translation.y = 5.0
-        m.transform.rotation = robot_msgs.msg.Quaternion(*tf.transformations.quaternion_from_euler(0, 0, 0))
+        m.transform.rotation = geometry_msgs.msg.Quaternion(*tf.transformations.quaternion_from_euler(0, 0, 0))
         t.setTransform(m)
         afs = t.allFramesAsString()
         self.assert_(len(afs) != 0)

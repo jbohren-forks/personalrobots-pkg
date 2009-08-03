@@ -49,16 +49,16 @@ namespace sample_consensus
    * \param point The point
    */
   double
-    SACModelParallelLines::pointToLineSquareDistance (const robot_msgs::Point32 &line_point1, const robot_msgs::Point32 &line_point2, const robot_msgs::Point32 &point)
+    SACModelParallelLines::pointToLineSquareDistance (const geometry_msgs::Point32 &line_point1, const geometry_msgs::Point32 &line_point2, const geometry_msgs::Point32 &point)
   {
-    robot_msgs::Point32 v12, v1p;
+    geometry_msgs::Point32 v12, v1p;
     v12.x = line_point2.x - line_point1.x;
     v12.y = line_point2.y - line_point1.y;
     v12.z = line_point2.z - line_point1.z;
     v1p.x = point.x - line_point1.x;
     v1p.y = point.y - line_point1.y;
     v1p.z = point.z - line_point1.z;
-    robot_msgs::Point32 c = cloud_geometry::cross (v12, v1p);
+    geometry_msgs::Point32 c = cloud_geometry::cross (v12, v1p);
     double sqr_distance = (c.x * c.x + c.y * c.y + c.z * c.z) / (v12.x * v12.x + v12.y * v12.y + v12.z * v12.z);
     return (sqr_distance);
   }
@@ -77,7 +77,7 @@ namespace sample_consensus
                                         std::vector<int> *closest_line, std::vector<double> *closest_dist)
   {
     int end = indices.size ();
-    robot_msgs::Point32 d1, d2, l1, c1, c2;
+    geometry_msgs::Point32 d1, d2, l1, c1, c2;
     l1.x = model_coefficients[3] - model_coefficients[0];
     l1.y = model_coefficients[4] - model_coefficients[1];
     l1.z = model_coefficients[5] - model_coefficients[2];
@@ -116,7 +116,7 @@ namespace sample_consensus
                                         std::vector<int> *closest_line, std::vector<double> *closest_dist)
   {
     std::set<int>::iterator end = indices.end ();
-    robot_msgs::Point32 d1, d2, l1, c1, c2;
+    geometry_msgs::Point32 d1, d2, l1, c1, c2;
     l1.x = model_coefficients[3] - model_coefficients[0];
     l1.y = model_coefficients[4] - model_coefficients[1];
     l1.z = model_coefficients[5] - model_coefficients[2];
@@ -285,7 +285,7 @@ namespace sample_consensus
     */
   void
     SACModelParallelLines::projectPoints (const std::vector<int> &inliers, const std::vector<double> &model_coefficients,
-                                          robot_msgs::PointCloud &projected_points)
+                                          sensor_msgs::PointCloud &projected_points)
   {
     // Allocate enough space
     projected_points.pts.resize (inliers.size ());
@@ -303,7 +303,7 @@ namespace sample_consensus
     std::vector<double> closest_dist (inliers.size ());
     closestLine (inliers, model_coefficients, &closest_line, &closest_dist);
 
-    robot_msgs::Point32 l1;
+    geometry_msgs::Point32 l1;
     l1.x = model_coefficients[3] - model_coefficients[0];
     l1.y = model_coefficients[4] - model_coefficients[1];
     l1.z = model_coefficients[5] - model_coefficients[2];
@@ -354,7 +354,7 @@ namespace sample_consensus
     std::vector<double> closest_dist (inliers.size ());
     closestLine (inliers, model_coefficients, &closest_line, &closest_dist);
 
-    robot_msgs::Point32 l1;
+    geometry_msgs::Point32 l1;
     l1.x = model_coefficients[3] - model_coefficients[0];
     l1.y = model_coefficients[4] - model_coefficients[1];
     l1.z = model_coefficients[5] - model_coefficients[2];
@@ -435,7 +435,7 @@ namespace sample_consensus
     refit_coefficients.resize (9);
 
     // Compute the centroids of the two sets of samples
-    robot_msgs::Point32 centroid1, centroid2, centroid;
+    geometry_msgs::Point32 centroid1, centroid2, centroid;
     std::vector<int> inliers1, inliers2;
     int end = inliers.size ();
     for (int i=0; i < end; ++i)
@@ -446,9 +446,9 @@ namespace sample_consensus
     cloud_geometry::nearest::computeCentroid (*cloud_, inliers2, centroid2);
 
     // Remove the centroids from the two sets of inlier samples to center everything at (0,0)
-    robot_msgs::PointCloud zero_cloud;
+    sensor_msgs::PointCloud zero_cloud;
     zero_cloud.pts.resize (inliers.size ());
-    robot_msgs::Point32 tpoint;
+    geometry_msgs::Point32 tpoint;
     for (unsigned int i = 0; i < inliers1.size (); i++)
     {
       tpoint.x = cloud_->pts[inliers1[i]].x - centroid1.x;

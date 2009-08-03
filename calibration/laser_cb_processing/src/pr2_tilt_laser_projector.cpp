@@ -33,7 +33,7 @@
 
 #include "ros/node.h"
 #include "ros/node_handle.h"
-#include "robot_msgs/PointCloud.h"
+#include "sensor_msgs/PointCloud.h"
 
 #include "mechanism_model/robot.h"
 #include "mechanism_model/chain.h"
@@ -127,14 +127,14 @@ public:
       ROS_ERROR("Num joints doesn't seem right") ;
     else
       printf("Num joints correct\n") ;
-    node_->advertise<robot_msgs::PointCloud>("dense_tilt_scan/projected_corners", 1) ;
+    node_->advertise<sensor_msgs::PointCloud>("dense_tilt_scan/projected_corners", 1) ;
     node_->subscribe("dense_tilt_scan/measured_corners", in_, &PR2TiltLaserProjector::callback, this, 1) ;
   }
 
   void callback()
   {
     unsigned int C = in_.pts.size() ;
-    robot_msgs::PointCloud cloud_out ;
+    sensor_msgs::PointCloud cloud_out ;
     cloud_out.pts.resize(C) ;
 
     KDL::ChainFkSolverPos_recursive solver(chain_) ;
@@ -167,7 +167,7 @@ private:
 
   KDL::Chain chain_ ;
 
-  robot_msgs::PointCloud in_ ;
+  sensor_msgs::PointCloud in_ ;
 
 
 };

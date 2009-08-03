@@ -39,7 +39,7 @@
 // ROS core
 #include <ros/ros.h>
 // ROS messages
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/CameraInfo.h>
 
@@ -60,7 +60,7 @@ namespace mturk_grab_object
 class GraspTask
 {
  public:
-  robot_msgs::PointCloudConstPtr cloud_;
+  sensor_msgs::PointCloudConstPtr cloud_;
   sensor_msgs::CameraInfoConstPtr cam_info_;
   sensor_msgs::ImageConstPtr image_;
 
@@ -91,7 +91,7 @@ protected:
   std::map<int,boost::shared_ptr<GraspTask> > grab_tasks;
 
   boost::shared_ptr<GraspTask> active_task;
-  robot_msgs::Pose default_arm_pose;
+  geometry_msgs::Pose default_arm_pose;
   
   ros::ServiceClient detect_object_client_;
 
@@ -114,7 +114,7 @@ public:
 
   void imageCallback(const sensor_msgs::ImageConstPtr& the_image);
 
-  void computeGraspPose(const tabletop_msgs::ObjectOnTable& object_on_table, robot_msgs::Pose& output_pose);
+  void computeGraspPose(const tabletop_msgs::ObjectOnTable& object_on_table, geometry_msgs::Pose& output_pose);
 
   int num_attempts;
   int num_success;

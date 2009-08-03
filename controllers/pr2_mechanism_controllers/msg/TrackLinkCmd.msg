@@ -1,3 +1,3 @@
 int8 enable
 string link_name
-robot_msgs/Point point
+geometry_msgs/Point point

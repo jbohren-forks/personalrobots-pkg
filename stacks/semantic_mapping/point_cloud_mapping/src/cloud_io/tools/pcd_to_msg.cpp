@@ -42,14 +42,13 @@
 // ROS core
 #include <ros/node.h>
 
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 
 #include <point_cloud_mapping/cloud_io.h>
 
 #include <tf/transform_broadcaster.h>
 
 using namespace std;
-using namespace robot_msgs;
 
 class PCDGenerator
 {
@@ -62,7 +61,7 @@ class PCDGenerator
   public:
 
     // ROS messages
-    PointCloud msg_cloud_;
+    sensor_msgs::PointCloud msg_cloud_;
 
     string file_name_, cloud_topic_;
     double rate_;
@@ -74,7 +73,7 @@ class PCDGenerator
     {
       // Maximum number of outgoing messages to be queued for delivery to subscribers = 1
       cloud_topic_ = "cloud_pcd";
-      cloud_pub_ = nh_.advertise<PointCloud> (cloud_topic_.c_str (), 1);
+      cloud_pub_ = nh_.advertise<sensor_msgs::PointCloud> (cloud_topic_.c_str (), 1);
       ROS_INFO ("Publishing data on topic %s.", nh_.resolveName (cloud_topic_).c_str ());
     }
 

@@ -49,21 +49,21 @@ namespace controller {
 
 ROS_REGISTER_CONTROLLER(CartesianHybridController)
 
-void TransformKDLToMsg(const KDL::Frame &k, robot_msgs::Pose &m)
+void TransformKDLToMsg(const KDL::Frame &k, geometry_msgs::Pose &m)
 {
   tf::Transform tf;
   tf::TransformKDLToTF(k, tf);
   tf::poseTFToMsg(tf, m);
 }
 
-void TwistKDLToMsg(const KDL::Twist &k, robot_msgs::Twist &m)
+void TwistKDLToMsg(const KDL::Twist &k, geometry_msgs::Twist &m)
 {
-  m.vel.x = k.vel.x();
-  m.vel.y = k.vel.y();
-  m.vel.z = k.vel.z();
-  m.rot.x = k.rot.x();
-  m.rot.y = k.rot.y();
-  m.rot.z = k.rot.z();
+  m.linear.x = k.vel.x();
+  m.linear.y = k.vel.y();
+  m.linear.z = k.vel.z();
+  m.angular.x = k.rot.x();
+  m.angular.y = k.rot.y();
+  m.angular.z = k.rot.z();
 }
 
 void WrenchKDLToMsg(const KDL::Wrench &k, robot_msgs::Wrench &m)
@@ -617,18 +617,18 @@ void CartesianHybridControllerNode::command(
   for (int i =0 ; i < 6; i++){
     old_modes[i] = c_.mode_[i];
   }
-  c_.mode_[0] = (int)tff_msg->mode.vel.x;
-  c_.mode_[1] = (int)tff_msg->mode.vel.y;
-  c_.mode_[2] = (int)tff_msg->mode.vel.z;
-  c_.mode_[3] = (int)tff_msg->mode.rot.x;
-  c_.mode_[4] = (int)tff_msg->mode.rot.y;
-  c_.mode_[5] = (int)tff_msg->mode.rot.z;
-  c_.setpoint_[0] = tff_msg->value.vel.x;
-  c_.setpoint_[1] = tff_msg->value.vel.y;
-  c_.setpoint_[2] = tff_msg->value.vel.z;
-  c_.setpoint_[3] = tff_msg->value.rot.x;
-  c_.setpoint_[4] = tff_msg->value.rot.y;
-  c_.setpoint_[5] = tff_msg->value.rot.z;
+  c_.mode_[0] = (int)tff_msg->mode.linear.x;
+  c_.mode_[1] = (int)tff_msg->mode.linear.y;
+  c_.mode_[2] = (int)tff_msg->mode.linear.z;
+  c_.mode_[3] = (int)tff_msg->mode.angular.x;
+  c_.mode_[4] = (int)tff_msg->mode.angular.y;
+  c_.mode_[5] = (int)tff_msg->mode.angular.z;
+  c_.setpoint_[0] = tff_msg->value.linear.x;
+  c_.setpoint_[1] = tff_msg->value.linear.y;
+  c_.setpoint_[2] = tff_msg->value.linear.z;
+  c_.setpoint_[3] = tff_msg->value.angular.x;
+  c_.setpoint_[4] = tff_msg->value.angular.y;
+  c_.setpoint_[5] = tff_msg->value.angular.z;
 
   for(int i = 0; i < 6; i++){
     if(old_modes[i] != c_.mode_[i]){
@@ -650,7 +650,7 @@ bool CartesianHybridControllerNode::setToolFrame(
     return false;
   }
 
-  robot_msgs::PoseStamped tool_in_tip_msg;
+  geometry_msgs::PoseStamped tool_in_tip_msg;
   tf::Transform tool_in_tip;
   TF.transformPose(c_.kdl_chain_.getSegment(c_.kdl_chain_.getNrOfSegments()-1).getName(), req.p, tool_in_tip_msg);
   tf::poseMsgToTF(tool_in_tip_msg.pose, tool_in_tip);

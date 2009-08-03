@@ -365,7 +365,7 @@ TEST(data, Vector3Conversions)
   {
     btVector3 btv = btVector3(xvalues[i], yvalues[i], zvalues[i]);
     btVector3 btv_out = btVector3(0,0,0);
-    robot_msgs::Vector3 msgv;
+    geometry_msgs::Vector3 msgv;
     vector3TFToMsg(btv, msgv);
     vector3MsgToTF(msgv, btv_out);
     EXPECT_NEAR(btv.x(), btv_out.x(), epsilon);
@@ -388,7 +388,7 @@ TEST(data, Vector3StampedConversions)
   {
     Stamped<btVector3> btv = Stamped<btVector3>(btVector3(xvalues[i], yvalues[i], zvalues[i]), ros::Time().fromNSec(1), "no frame");
     Stamped<btVector3> btv_out;
-    robot_msgs::Vector3Stamped msgv;
+    geometry_msgs::Vector3Stamped msgv;
     vector3StampedTFToMsg(btv, msgv);
     vector3StampedMsgToTF(msgv, btv_out);
     EXPECT_NEAR(btv.x(), btv_out.x(), epsilon);
@@ -412,7 +412,7 @@ TEST(data, QuaternionConversions)
   {
     btQuaternion btv = btQuaternion(xvalues[i], yvalues[i], zvalues[i]);
     btQuaternion btv_out = btQuaternion(0,0,0);
-    robot_msgs::Quaternion msgv;
+    geometry_msgs::Quaternion msgv;
     quaternionTFToMsg(btv, msgv);
     quaternionMsgToTF(msgv, btv_out);
     EXPECT_NEAR(btv.x(), btv_out.x(), epsilon);
@@ -436,7 +436,7 @@ TEST(data, QuaternionStampedConversions)
   {
     Stamped<btQuaternion> btv = Stamped<btQuaternion>(btQuaternion(xvalues[i], yvalues[i], zvalues[i]), ros::Time().fromNSec(1), "no frame");
     Stamped<btQuaternion> btv_out;
-    robot_msgs::QuaternionStamped msgv;
+    geometry_msgs::QuaternionStamped msgv;
     quaternionStampedTFToMsg(btv, msgv);
     quaternionStampedMsgToTF(msgv, btv_out);
     EXPECT_NEAR(btv.x(), btv_out.x(), epsilon);
@@ -463,7 +463,7 @@ TEST(data, TransformConversions)
   {
     btTransform btv = btTransform(btQuaternion(xvalues2[i], yvalues2[i], zvalues2[i]), btVector3(xvalues[i], yvalues[i], zvalues[i]));
     btTransform btv_out;
-    robot_msgs::Transform msgv;
+    geometry_msgs::Transform msgv;
     transformTFToMsg(btv, msgv);
     transformMsgToTF(msgv, btv_out);
     EXPECT_NEAR(btv.getOrigin().x(), btv_out.getOrigin().x(), epsilon);
@@ -492,7 +492,7 @@ TEST(data, TransformStampedConversions)
   {
     Stamped<btTransform> btv = Stamped<btTransform>(btTransform(btQuaternion(xvalues2[i], yvalues2[i], zvalues2[i]), btVector3(xvalues[i], yvalues[i], zvalues[i])), ros::Time().fromNSec(1), "no frame");
     Stamped<btTransform> btv_out;
-    robot_msgs::TransformStamped msgv;
+    geometry_msgs::TransformStamped msgv;
     transformStampedTFToMsg(btv, msgv);
     transformStampedMsgToTF(msgv, btv_out);
     EXPECT_NEAR(btv.getOrigin().x(), btv_out.getOrigin().x(), epsilon);

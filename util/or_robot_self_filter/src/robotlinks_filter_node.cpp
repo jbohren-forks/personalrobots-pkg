@@ -30,7 +30,7 @@
 #include <cstdio>
 
 #include <ros/node.h>
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 #include <tf/transform_listener.h>
 #include <tf/message_notifier.h>
 
@@ -116,7 +116,7 @@ public:
             extrap_limit.fromSec(tf_extrap_limit_secs);
             _tf->setExtrapolationLimit(extrap_limit);
             ROS_INFO("RobotLinksFilter: tf extrapolation Limit: %f Seconds", tf_extrap_limit_secs);
-            _pointcloudnotifier.reset(new tf::MessageNotifier<robot_msgs::PointCloud>
+            _pointcloudnotifier.reset(new tf::MessageNotifier<sensor_msgs::PointCloud>
                                       (_tf.get(), ros::Node::instance(),  
                                        boost::bind(&RobotLinksFilter::PointCloudCallback, this, _1), 
                                        "tilt_laser_cloud_filtered", "base_link", 50));
@@ -125,7 +125,7 @@ public:
             ROS_ERROR("failed to init robot %s", robotname.c_str());
 
         //s_pmasternode->subscribe("tilt_laser_cloud_filtered", _pointcloudin,  &RobotLinksFilter::PointCloudCallback, this, 2);
-        s_pmasternode->advertise<robot_msgs::PointCloud> ("robotlinks_cloud_filtered", 10);
+        s_pmasternode->advertise<sensor_msgs::PointCloud> ("robotlinks_cloud_filtered", 10);
     }
     virtual ~RobotLinksFilter()
     {
@@ -196,7 +196,7 @@ public:
 
 private:
 
-    void PointCloudCallback(const tf::MessageNotifier<robot_msgs::PointCloud>::MessagePtr& _pointcloudin)
+    void PointCloudCallback(const tf::MessageNotifier<sensor_msgs::PointCloud>::MessagePtr& _pointcloudin)
     {
         if( _vLinkHulls.size() == 0 || !_tf) {
             // just pass the data
@@ -242,7 +242,7 @@ private:
 
     /// prune all the points that are inside the convex hulls of the robot links
     /// Uses a different timestamp for every laser point cloud
-    void PruneWithAccurateTiming(const robot_msgs::PointCloud& pointcloudin, vector<LASERPOINT>& vlaserpoints)
+    void PruneWithAccurateTiming(const sensor_msgs::PointCloud& pointcloudin, vector<LASERPOINT>& vlaserpoints)
     {
         int istampchan = 0;
         while(istampchan < (int)pointcloudin.chan.size()) {
@@ -319,7 +319,7 @@ private:
 
     /// prune all the points that are inside the convex hulls of the robot links
     /// Uses the header timestamp for all laser point clouds
-    void PruneWithSimpleTiming(const robot_msgs::PointCloud& pointcloudin, vector<LASERPOINT>& vlaserpoints)
+    void PruneWithSimpleTiming(const sensor_msgs::PointCloud& pointcloudin, vector<LASERPOINT>& vlaserpoints)
     {
         tf::Stamped<btTransform> bttransform;
         vlaserpoints.resize(0);
@@ -429,13 +429,13 @@ private:
 
     vector<LINK> _vLinkHulls;
     boost::shared_ptr<tf::TransformListener> _tf;
-    //robot_msgs::PointCloud _pointcloudin, _pointcloudout;
-    robot_msgs::PointCloud _pointcloudout;
+    //sensor_msgs::PointCloud _pointcloudin, _pointcloudout;
+    sensor_msgs::PointCloud _pointcloudout;
     vector<LASERPOINT> _vlaserpoints;
     string _robotname;
     dReal _convexpadding;
     bool _bAccurateTiming; ///< if true, will interpolate the convex hulls for every time stamp
-    boost::shared_ptr<tf::MessageNotifier<robot_msgs::PointCloud> > _pointcloudnotifier;
+    boost::shared_ptr<tf::MessageNotifier<sensor_msgs::PointCloud> > _pointcloudnotifier;
 };
 
 int main(int argc, char ** argv)
