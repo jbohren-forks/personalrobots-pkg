@@ -7,7 +7,7 @@ SVN_PATCH =
 INSTALL_DIR = bfl-boost
 CMAKE = cmake
 BOOST_INCLUDE =$(shell rosboost-cfg --include_dirs)
-CMAKE_ARGS = -DCMAKE_INSTALL_PREFIX=$(PWD)/$(INSTALL_DIR)/ \
+CMAKE_ARGS = -DCMAKE_INSTALL_PREFIX=`rospack find blf`/$(INSTALL_DIR)/ \
  	-DCMAKE_INCLUDE_PATH=$(BOOST_INCLUDE) -DMATRIX_LIB=boost -DRNG_LIB=boost
 
 include $(shell rospack find mk)/svn_checkout.mk
