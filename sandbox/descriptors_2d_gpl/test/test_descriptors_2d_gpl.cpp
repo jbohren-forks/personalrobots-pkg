@@ -30,7 +30,7 @@ Vector<KeyPoint> getPoints() {
 
 
 TEST(descriptors, Daisy) {
-  SurfWrapper desc;
+  Daisy desc;
   string name = "daisy.txt";
 
   IplImage* img = cvLoadImage("test/frame0000.jpg");
