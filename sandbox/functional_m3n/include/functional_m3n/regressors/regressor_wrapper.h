@@ -35,7 +35,7 @@
  *********************************************************************/
 #include <string>
 
-using namespace std;
+#include <boost/shared_array.hpp>
 
 // --------------------------------------------------------------
 /*!
@@ -115,7 +115,7 @@ class RegressorWrapper
      * \return 0 on success, otherwise negative value on error
      */
     // --------------------------------------------------------------
-    virtual int saveToFile(const string& basename) = 0;
+    virtual int saveToFile(const std::string& basename) = 0;
 
     // --------------------------------------------------------------
     /**
@@ -126,7 +126,7 @@ class RegressorWrapper
      * \return 0 on success, otherwise negative value on error
      */
     // --------------------------------------------------------------
-    virtual int loadFromFile(const string& basename) = 0;
+    virtual int loadFromFile(const std::string& basename) = 0;
 
     // --------------------------------------------------------------
     /**
@@ -184,7 +184,7 @@ class RegressorWrapper
                         float& predicted_val) = 0;
 
   protected:
-    algorithm_t algorithm_type_;
+    RegressorWrapper::algorithm_t algorithm_type_;
     unsigned int stacked_feature_dim_;
     bool trained_;
 };

@@ -38,16 +38,16 @@
 #include <iostream>
 #include <fstream>
 
-#include <ros/ros.h>
+#include <boost/shared_array.hpp>
 
 #include <opencv/ml.h>
 #include <opencv/cv.h>
 #include <opencv/cxcore.h>
 
+#include <ros/ros.h>
+
 #include <functional_m3n/regressors/regressor_wrapper.h>
 #include <functional_m3n/regressors/regressor_params.h>
-
-using namespace std;
 
 // --------------------------------------------------------------
 /*!
@@ -101,14 +101,14 @@ class RegressionTreeWrapper: public RegressorWrapper
      * \brief See RegressorWrapper::saveToFile()
      */
     // --------------------------------------------------------------
-    virtual int saveToFile(const string& basename);
+    virtual int saveToFile(const std::string& basename);
 
     // --------------------------------------------------------------
     /**
      * \brief See RegressorWrapper::loadFromFile()
      */
     // --------------------------------------------------------------
-    virtual int loadFromFile(const string& basename);
+    virtual int loadFromFile(const std::string& basename);
 
     // --------------------------------------------------------------
     /**
@@ -143,10 +143,10 @@ class RegressionTreeWrapper: public RegressorWrapper
     CvDTree* rtree_;
 
     // Intermediate containers used by addTrainingSample
-    vector<const float*> interm_feature_vals_;
-    vector<unsigned int> interm_start_idx_;
-    vector<unsigned int> interm_lengths_;
-    vector<float> interm_target_;
+    std::vector<const float*> interm_feature_vals_;
+    std::vector<unsigned int> interm_start_idx_;
+    std::vector<unsigned int> interm_lengths_;
+    std::vector<float> interm_target_;
 };
 
 #endif
