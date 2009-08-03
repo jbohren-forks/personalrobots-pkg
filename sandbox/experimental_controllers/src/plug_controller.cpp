@@ -160,7 +160,7 @@ void PlugController::update()
     initialized_ = true;
   }
 
-  Jacobian jacobian(kdl_chain_.getNrOfJoints(), kdl_chain_.getNrOfSegments());
+  Jacobian jacobian(kdl_chain_.getNrOfJoints());
   jnt_to_jac_solver_->JntToJac(jnt_pos, jacobian);
 
   // TODO: Write a function for doing this conversion
