@@ -289,7 +289,7 @@ private:
 
 	void cloudCallback(const robot_msgs::PointCloud::ConstPtr& point_cloud)
 	{
-	    //		ROS_INFO("Cloud callback");
+//		ROS_INFO("Cloud callback");
 		if (got_data_) {
 //			ROS_INFO("Discarding point cloud");
 			return;
@@ -317,17 +317,33 @@ private:
 		// transform all poses to the target frame
 		for (size_t i=0;i<resp.objects.size();++i) {
 			PoseStamped& object_pose = resp.objects[i].object_pose;
-	        if (!tf_.canTransform(target_frame_, object_pose.header.frame_id, object_pose.header.stamp, ros::Duration(0.1))){
-	          ROS_ERROR("Cannot transform from %s to %s", object_pose.header.frame_id.c_str(), target_frame_.c_str());
-	          return false;
-	        }
-			tf_.transformPose(target_frame_, object_pose, object_pose);
 			PoseStamped& grasp_pose = resp.objects[i].grasp_pose;
-	        if (!tf_.canTransform(target_frame_, grasp_pose.header.frame_id, grasp_pose.header.stamp, ros::Duration(0.1))){
-	          ROS_ERROR("Cannot transform from %s to %s", grasp_pose.header.frame_id.c_str(), target_frame_.c_str());
-	          return false;
-	        }
-			tf_.transformPose(target_frame_, grasp_pose, grasp_pose);
+
+
+			ros::Time common_time;
+			string error;
+			if (tf_.getLatestCommonTime(object_pose.header.frame_id, target_frame_, common_time, &error)==tf::NO_ERROR) {
+				object_pose.header.stamp = common_time;
+				grasp_pose.header.stamp = common_time;
+				tf_.transformPose(target_frame_, object_pose, object_pose);
+				tf_.transformPose(target_frame_, grasp_pose, grasp_pose);
+
+			}
+			else {
+				ROS_ERROR("Cannot transform pose from %s to %s", object_pose.header.frame_id.c_str(), target_frame_.c_str());
+			}
+
+//	        if (!tf_.canTransform(target_frame_, object_pose.header.frame_id, object_pose.header.stamp, ros::Duration(5.0))){
+//	          ROS_ERROR("Cannot transform from %s to %s", object_pose.header.frame_id.c_str(), target_frame_.c_str());
+//	          return false;
+//	        }
+//			tf_.transformPose(target_frame_, object_pose, object_pose);
+//			PoseStamped& grasp_pose = resp.objects[i].grasp_pose;
+//	        if (!tf_.canTransform(target_frame_, grasp_pose.header.frame_id, grasp_pose.header.stamp, ros::Duration(5.0))){
+//	          ROS_ERROR("Cannot transform from %s to %s", grasp_pose.header.frame_id.c_str(), target_frame_.c_str());
+//	          return false;
+//	        }
+//			tf_.transformPose(target_frame_, grasp_pose, grasp_pose);
 		}
 		return true;
 	}
