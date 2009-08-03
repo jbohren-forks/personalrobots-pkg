@@ -198,17 +198,21 @@ void CommStateMachine<ActionSpec>::updateStatus(GoalHandleT& gh, const GoalStatu
         case GoalStatus::PENDING:
           break;
         case GoalStatus::ACTIVE:
-          transitionToState(gh, CommState::ACTIVE); break;
+          transitionToState(gh, CommState::ACTIVE);
+          break;
         case GoalStatus::PREEMPTED:
         case GoalStatus::SUCCEEDED:
         case GoalStatus::ABORTED:
         case GoalStatus::REJECTED:
         case GoalStatus::RECALLED:
-          transitionToState(gh, CommState::WAITING_FOR_RESULT); break;
+          transitionToState(gh, CommState::WAITING_FOR_RESULT);
+          break;
         case GoalStatus::PREEMPTING:
           transitionToState(gh, CommState::PREEMPTING);
+          break;
         case GoalStatus::RECALLING:
           transitionToState(gh, CommState::RECALLING);
+          break;
         default:
           ROS_ERROR("BUG: Got an unknown goal status from the ActionServer. status = %u", goal_status->status);
           break;
