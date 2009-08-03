@@ -175,7 +175,6 @@ namespace bodies
     public:
 	Sphere(void) : Body()
 	{
-	    m_radius = 0.0;
 	    m_type = shapes::SPHERE;
 	}
 	
@@ -211,7 +210,6 @@ namespace bodies
     public:
 	Cylinder(void) : Body()
 	{
-	    m_length = m_radius = 0.0;
 	    m_type = shapes::CYLINDER;
 	}
 	
@@ -240,15 +238,15 @@ namespace bodies
 	btVector3 m_normalB1;
 	btVector3 m_normalB2;
 	
-	btVector3 m_corner1;
-	btVector3 m_corner2;
-
 	double    m_length;
 	double    m_length2;	
 	double    m_radius;
 	double    m_radiusU;
 	double    m_radiusB;
+	double    m_radiusBSqr;
 	double    m_radius2;
+	double    m_d1;
+	double    m_d2;
     };
     
     /** \brief Definition of a box */
@@ -257,7 +255,6 @@ namespace bodies
     public: 
 	Box(void) : Body()
 	{
-	    m_length = m_width = m_height = 0.0;
 	    m_type = shapes::BOX;
 	}
 	
@@ -296,6 +293,7 @@ namespace bodies
 	double    m_width2;
 	double    m_height2;	
 	double    m_radiusB;
+	double    m_radius2;
     };
 
     class Mesh : public Body
@@ -307,11 +305,6 @@ namespace bodies
 	    m_type = shapes::MESH;
 	    m_btMeshShape = NULL;
 	    m_btMesh = NULL;
-	    m_center.setValue(0, 0, 0);	    
-	    m_aabbMin.setValue(0, 0, 0);	    
-	    m_aabbMax.setValue(0, 0, 0);
-	    m_radiusB = 0.0;
-	    m_radiusBSqr = 0.0;
 	}
 	
 	Mesh(const shapes::Shape *shape) : Body()
@@ -319,11 +312,6 @@ namespace bodies
 	    m_type = shapes::MESH;	
 	    m_btMeshShape = NULL;
 	    m_btMesh = NULL;
-	    m_center.setValue(0, 0, 0);
-	    m_aabbMin.setValue(0, 0, 0);	    
-	    m_aabbMax.setValue(0, 0, 0);	    
-	    m_radiusB = 0.0;
-	    m_radiusBSqr = 0.0;
 	    setDimensions(shape);
 	}
 	
@@ -368,15 +356,11 @@ namespace bodies
 	ConvexMesh(void) : Body()
 	{	    
 	    m_type = shapes::MESH;
-	    m_meshCenter.setValue(0, 0, 0);
-	    m_boxOffset.setValue(0, 0, 0);
 	}
 	
 	ConvexMesh(const shapes::Shape *shape) : Body()
 	{	  
 	    m_type = shapes::MESH;
-	    m_meshCenter.setValue(0, 0, 0);
-	    m_boxOffset.setValue(0, 0, 0);
 	    setDimensions(shape);
 	}
 	

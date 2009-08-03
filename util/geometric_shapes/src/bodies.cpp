@@ -111,6 +111,28 @@ namespace bodies
 	double d = dir.dot(a);
 	return a.length2() - d * d;
     }
+    
+    namespace detail
+    {
+	
+	// temp structure for intersection points (used for ordering them)
+	struct intersc
+	{
+	    intersc(const btVector3 &_pt, const double _tm) : pt(_pt), time(_tm) {}
+	    
+	    btVector3 pt;
+	    double    time;
+	};
+	
+	// define order on intersection points
+	struct interscOrder
+	{
+	    bool operator()(const intersc &a, const intersc &b) const
+	    {
+		return a.time < b.time;
+	    }
+	};
+    }
 }
 
 bool bodies::Sphere::containsPoint(const btVector3 &p) const 
@@ -229,21 +251,22 @@ void bodies::Cylinder::updateInternalData(void)
     m_radius2 = m_radiusU * m_radiusU;
     m_length2 = m_scale * m_length / 2.0 + m_padding;
     m_center = m_pose.getOrigin();
-    m_radiusB = sqrt(m_length2 * m_length2 + m_radius2);
+    m_radiusBSqr = m_length2 * m_length2 + m_radius2;
+    m_radiusB = sqrt(m_radiusBSqr);
     
     const btMatrix3x3& basis = m_pose.getBasis();
     m_normalB1 = basis.getColumn(0);
     m_normalB2 = basis.getColumn(1);
     m_normalH  = basis.getColumn(2);
     
-    btVector3 tmp = (m_normalB1 + m_normalB2) * m_radiusU;    
-    m_corner1 = m_center - tmp - m_normalH * m_length2;
-    m_corner2 = m_center + tmp + m_normalH * m_length2;
+    double tmp = -m_normalH.dot(m_center);
+    m_d1 = tmp + m_length2;
+    m_d2 = tmp - m_length2;
 }
 
 double bodies::Cylinder::computeVolume(void) const
 {
-    return 2.0 * M_PI * m_radiusU * m_radiusU * m_length2;
+    return 2.0 * M_PI * m_radius2 * m_length2;
 }
 
 void bodies::Cylinder::computeBoundingSphere(BoundingSphere &sphere) const
@@ -254,80 +277,90 @@ void bodies::Cylinder::computeBoundingSphere(BoundingSphere &sphere) const
 
 bool bodies::Cylinder::intersectsRay(const btVector3& origin, const btVector3& dir, std::vector<btVector3> *intersections, unsigned int count) const
 {
-    if (distanceSQR(m_center, origin, dir) > m_radiusB) return false;
+    if (distanceSQR(m_center, origin, dir) > m_radiusBSqr) return false;
 
-    double t_near = -INFINITY;
-    double t_far  = INFINITY;
+    std::vector<detail::intersc> ipts;
     
-    for (int i = 0; i < 3; i++)
+    // intersect bases
+    double tmp = m_normalH.dot(dir);
+    if (fabs(tmp) > ZERO)
     {
-	const btVector3 &vN = i == 0 ? m_normalB1 : (i == 1 ? m_normalB2 : m_normalH);
-	double dp = vN.dot(dir);
+	double tmp2 = -m_normalH.dot(origin);
+	double t1 = (tmp2 - m_d1) / tmp;
+	double t2 = (tmp2 - m_d2) / tmp;
 	
-	if (fabs(dp) > ZERO)
+	btVector3 p1(origin + dir * t1);
+	btVector3 p2(origin + dir * t2);
+	
+	btVector3 v1(p1 - m_center);
+	v1 = v1 - m_normalH.dot(v1) * m_normalH;
+	if (v1.length2() < m_radius2 + ZERO)
 	{
-	    double t1 = vN.dot(m_corner1 - origin) / dp;
-	    double t2 = vN.dot(m_corner2 - origin) / dp;
+	    if (intersections == NULL)
+		return true;
 	    
-	    if (t1 > t2)
-		std::swap(t1, t2);
-	    
-	    if (t1 > t_near)
-		t_near = t1;
-	    
-	    if (t2 < t_far)
-		t_far = t2;
-	    
-	    if (t_near > t_far)
-		return false;
-	    
-	    if (t_far < 0.0)
-		return false;
+	    detail::intersc ip(p1, t1);
+	    ipts.push_back(ip);
 	}
-	else
+	btVector3 v2(p2 - m_center);
+	v2 = v2 - m_normalH.dot(v2) * m_normalH;
+	if (v2.length2() < m_radius2 + ZERO)
 	{
-	    if (i == 0)
-	    {
-		if ((std::min(m_corner1.y(), m_corner2.y()) > origin.y() ||
-		     std::max(m_corner1.y(), m_corner2.y()) < origin.y()) && 
-		    (std::min(m_corner1.z(), m_corner2.z()) > origin.z() ||
-		     std::max(m_corner1.z(), m_corner2.z()) < origin.z()))
-		    return false;
-	    }
-	    else
-	    {
-		if (i == 1)
-		{
-		    if ((std::min(m_corner1.x(), m_corner2.x()) > origin.x() ||
-			 std::max(m_corner1.x(), m_corner2.x()) < origin.x()) && 
-			(std::min(m_corner1.z(), m_corner2.z()) > origin.z() ||
-			 std::max(m_corner1.z(), m_corner2.z()) < origin.z()))
-			return false;
-		}
-		else
-		    if ((std::min(m_corner1.x(), m_corner2.x()) > origin.x() ||
-			 std::max(m_corner1.x(), m_corner2.x()) < origin.x()) && 
-			(std::min(m_corner1.y(), m_corner2.y()) > origin.y() ||
-			 std::max(m_corner1.y(), m_corner2.y()) < origin.y()))
-			return false;
-	    }
+	    if (intersections == NULL)
+		return true;
+	    
+	    detail::intersc ip(p2, t2);
+	    ipts.push_back(ip);
 	}
     }
     
-    // at this point we know there is intersection with the box around the cylinder
-    // \todo we need to figure out if this intersection is on the cylinder as well
-    
-    if (intersections)
+    if (ipts.size() < 2)
     {
-	if (t_far - t_near > ZERO)
+	// intersect with infinite cylinder
+	btVector3 VD(m_normalH.cross(dir));
+	btVector3 ROD(m_normalH.cross(origin - m_center));
+	double a = VD.length2();
+	double b = 2.0 * ROD.dot(VD);
+	double c = ROD.length2() - m_radius2;
+	double d = b * b - 4.0 * a * c;
+	if (d > 0.0)
 	{
-	    intersections->push_back(t_near * dir + origin);
-	    if (count > 1)
-		intersections->push_back(t_far  * dir + origin);
+	    d = sqrt(d);
+	    double e = -a * 2.0;
+	    double t1 = (b + d) / e;
+	    double t2 = (b - d) / e;
+	    
+	    btVector3 p1(origin + dir * t1);
+	    btVector3 p2(origin + dir * t2);
+	    
+	    btVector3 v1(m_center - p1);
+	    btVector3 v2(m_center - p2);
+	    
+	    if (fabs(m_normalH.dot(v1)) < m_length2 + ZERO)
+	    {
+		if (intersections == NULL)
+		    return true;
+		
+		detail::intersc ip(p1, t1);
+		ipts.push_back(ip);
+	    }
+	    if (fabs(m_normalH.dot(v2)) < m_length2 + ZERO)
+	    {
+		if (intersections == NULL)
+		    return true;
+		detail::intersc ip(p2, t2);
+		ipts.push_back(ip);
+	    }
 	}
-	else
-	    intersections->push_back(t_far * dir + origin);
     }
+    
+    if (ipts.empty())
+	return false;
+
+    std::sort(ipts.begin(), ipts.end(), detail::interscOrder());
+    const unsigned int n = count > 0 ? std::min<unsigned int>(count, ipts.size()) : ipts.size();
+    for (unsigned int i = 0 ; i < n ; ++i)
+	intersections->push_back(ipts[i].pt);
     
     return true;
 }
@@ -370,7 +403,8 @@ void bodies::Box::updateInternalData(void)
     
     m_center  = m_pose.getOrigin();
     
-    m_radiusB = sqrt(m_length2 * m_length2 + m_width2 * m_width2 + m_height2 * m_height2);
+    m_radius2 = m_length2 * m_length2 + m_width2 * m_width2 + m_height2 * m_height2;
+    m_radiusB = sqrt(m_radius2);
 
     const btMatrix3x3& basis = m_pose.getBasis();
     m_normalL = basis.getColumn(0);
@@ -395,7 +429,7 @@ void bodies::Box::computeBoundingSphere(BoundingSphere &sphere) const
 
 bool bodies::Box::intersectsRay(const btVector3& origin, const btVector3& dir, std::vector<btVector3> *intersections, unsigned int count) const
 {  
-    if (distanceSQR(m_center, origin, dir) > m_radiusB) return false;
+    if (distanceSQR(m_center, origin, dir) > m_radius2) return false;
 
     double t_near = -INFINITY;
     double t_far  = INFINITY;
@@ -510,24 +544,6 @@ namespace bodies
 	    bool                         keep_triangles_;
 	};
 
-	
-	// temp structure for intersection points (used for ordering them)
-	struct intersc
-	{
-	    intersc(const btVector3 &_pt, const double _tm) : pt(_pt), time(_tm) {}
-	    
-	    btVector3 pt;
-	    double    time;
-	};
-	
-	// define order on intersection points
-	struct interscOrder
-	{
-	    bool operator()(const intersc &a, const intersc &b) const
-	    {
-		return a.time < b.time;
-	    }
-	};
     }
 }
 
@@ -672,13 +688,13 @@ void bodies::Mesh::computeBoundingSphere(BoundingSphere &sphere) const
 
 bool bodies::ConvexMesh::containsPoint(const btVector3 &p) const
 {
-    //    if (m_boundingBox.containsPoint(p))
-    //    {
+    if (m_boundingBox.containsPoint(p))
+    {
 	btVector3 ip = (m_iPose * p) / m_scale;
 	return isPointInsidePlanes(ip);
-	//    }
-	//    else
-	//	return false;
+    }
+    else
+	return false;
 }
 
 void bodies::ConvexMesh::useDimensions(const shapes::Shape *shape)
@@ -712,7 +728,6 @@ void bodies::ConvexMesh::useDimensions(const shapes::Shape *shape)
     delete box_shape;
     
     m_boxOffset.setValue((minX + maxX) / 2.0, (minY + maxY) / 2.0, (minZ + maxZ) / 2.0);
-    
     
     m_planes.clear();
     m_triangles.clear();
@@ -813,7 +828,6 @@ void bodies::ConvexMesh::updateInternalData(void)
     m_boundingBox.setPose(pose);
     m_boundingBox.setPadding(m_padding);
     m_boundingBox.setScale(m_scale);
-
     
     m_iPose = m_pose.inverse();
     m_center = m_pose.getOrigin() + m_meshCenter;
@@ -860,7 +874,7 @@ double bodies::ConvexMesh::computeVolume(void) const
 	const btVector3 &v1 = m_vertices[m_triangles[3*i + 0]];
         const btVector3 &v2 = m_vertices[m_triangles[3*i + 1]];
 	const btVector3 &v3 = m_vertices[m_triangles[3*i + 2]];
-	volume += v1.x()*v2.y()*v3.z() + v2.x()*v3.y()*v1.z() + v3.x()*v1.y()*v2.z() -v1.x()*v3.y()*v2.z() - v2.x()*v1.y()*v3.z() - v3.x()*v2.y()*v1.z();
+	volume += v1.x()*v2.y()*v3.z() + v2.x()*v3.y()*v1.z() + v3.x()*v1.y()*v2.z() - v1.x()*v3.y()*v2.z() - v2.x()*v1.y()*v3.z() - v3.x()*v2.y()*v1.z();
     }
     return fabs(volume)/6.0;
 }
@@ -868,7 +882,7 @@ double bodies::ConvexMesh::computeVolume(void) const
 bool bodies::ConvexMesh::intersectsRay(const btVector3& origin, const btVector3& dir, std::vector<btVector3> *intersections, unsigned int count) const
 {
     if (distanceSQR(m_center, origin, dir) > m_radiusB * m_radiusB) return false;
-    //    if (!m_boundingBox.intersectsRay(origin, dir)) return false;
+    if (!m_boundingBox.intersectsRay(origin, dir)) return false;
     
     // transform the ray into the coordinate frame of the mesh
     btVector3 orig(m_iPose * origin);
