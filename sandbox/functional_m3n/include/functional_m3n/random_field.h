@@ -121,14 +121,12 @@ class RandomField
      * This RandomField will generate a unique id for the Node.
      * The coordinates of the Node are not used in any way by this library.
      *
-     * \warning This RandomField will free all features upon its destruction
-     *
      * \param feature_vals An array of feature values that describe the node
      * \param nbr_feature_vals The number of values in the feature array
-     * \param label (Optional) The label of the node
-     * \param x (Optional) The x-coordinate the node
-     * \param y (Optional) The y-coordinate the node
-     * \param z (Optional) The z-coordinate the node
+     * \param label (Optional) The label of the Node
+     * \param x (Optional) The x-coordinate the Node
+     * \param y (Optional) The y-coordinate the Node
+     * \param z (Optional) The z-coordinate the Node
      *
      * \return a pointer to the newly created Node on success, otherwise NULL
      *         on failure
@@ -148,15 +146,13 @@ class RandomField
      * This call will fail if there exists another Node in this RandomField with the requested id.
      * The coordinates of the Node are not used in any way by this library.
      *
-     * \warning This RandomField will free all features upon its destruction
-     *
      * \param node_id The desired id for the Node
      * \param feature_vals An array of feature values that describe the node
      * \param nbr_feature_vals The number of values in the feature array
-     * \param label (Optional) The label of the node
-     * \param x (Optional) The x-coordinate the node
-     * \param y (Optional) The y-coordinate the node
-     * \param z (Optional) The z-coordinate the node
+     * \param label (Optional) The label of the Node
+     * \param x (Optional) The x-coordinate the Node
+     * \param y (Optional) The y-coordinate the Node
+     * \param z (Optional) The z-coordinate the Node
      *
      * \return a pointer to the newly created Node on success, otherwise NULL
      *         on failure
@@ -170,7 +166,28 @@ class RandomField
                            float y = 0.0,
                            float z = 0.0);
 
-    // TODO comment this
+    // --------------------------------------------------------------
+    /*!
+     * \brief Creates a new Clique with the given features and adds it
+     *        to the specified clique-set in this RandomField
+     *
+     * This RandomField will generate a unique id for the Clique in its
+     * specified clique-set.
+     * The coordinates of the Clique are not used in any way by this library.
+     *
+     * \param clique_set_idx The index of the clique-set the Clique should belong
+     *                       to (starting from 0)
+     * \param nodes The list of Nodes contained in the Clique
+     * \param feature_vals An array of feature values that describe the clique
+     * \param nbr_feature_vals The number of values in the feature array
+     * \param x (Optional) The x-coordinate the Clique
+     * \param y (Optional) The y-coordinate the Clique
+     * \param z (Optional) The z-coordinate the Clique
+     *
+     * \return a pointer to the newly created Clique on success, otherwise NULL
+     *         on failure
+     */
+    // --------------------------------------------------------------
     const Clique* createClique(const unsigned int clique_set_idx,
                                const list<const Node*>& nodes,
                                const boost::shared_array<const float> feature_vals,
@@ -179,7 +196,29 @@ class RandomField
                                float y = 0.0,
                                float z = 0.0);
 
-    // TODO comment this
+    // --------------------------------------------------------------
+    /*!
+     * \brief Creates a new Clique with the given features and id, and
+     *        then adds it to the specified clique-set in this RandomField
+     *
+     * This call will fail if there exists another Clique in the specified
+     * clique-set with the requested id.
+     * The coordinates of the Clique are not used in any way by this library.
+     *
+     * \param clique_id The desired id of the Clique in the clique-set
+     * \param clique_set_idx The index of the clique-set the Clique should belong
+     *                       to (starting from 0)
+     * \param nodes The list of Nodes contained in the Clique
+     * \param feature_vals An array of feature values that describe the clique
+     * \param nbr_feature_vals The number of values in the feature array
+     * \param x (Optional) The x-coordinate the Clique
+     * \param y (Optional) The y-coordinate the Clique
+     * \param z (Optional) The z-coordinate the Clique
+     *
+     * \return a pointer to the newly created Clique on success, otherwise NULL
+     *         on failure
+     */
+    // --------------------------------------------------------------
     const Clique* createClique(const unsigned int clique_id,
                                const unsigned int clique_set_idx,
                                const list<const Node*>& nodes,
@@ -332,7 +371,7 @@ class RandomField
          * \brief Returns the values of the features contained in the descriptors in vector format
          */
         // --------------------------------------------------------------
-        inline boost::shared_array<const float> getFeatureVals() const
+        inline const boost::shared_array<const float> getFeatureVals() const
         {
           return feature_vals_;
         }
@@ -407,7 +446,8 @@ class RandomField
          * \param nbr_feature_vals The number of values in feature_vals
          */
         // --------------------------------------------------------------
-        inline void setFeatures(const boost::shared_array<const float> feature_vals, unsigned int nbr_feature_vals)
+        inline void setFeatures(const boost::shared_array<const float> feature_vals,
+                                unsigned int nbr_feature_vals)
         {
           feature_vals_ = feature_vals;
           nbr_feature_vals_ = nbr_feature_vals;

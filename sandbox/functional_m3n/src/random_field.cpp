@@ -293,7 +293,7 @@ int RandomField::saveNodeFeatures(string filename) const
         << curr_node->getRandomFieldID() << " " << curr_node->getLabel();
 
     // [features]
-    boost::shared_array<const float> curr_feats = curr_node->getFeatureVals();
+    const boost::shared_array<const float> curr_feats = curr_node->getFeatureVals();
     for (unsigned int i = 0 ; i < curr_node->getNumberFeatureVals() ; i++)
     {
       file_out << " " << curr_feats[i];
@@ -339,7 +339,7 @@ int RandomField::saveCliqueFeatures(string basename) const
           << " " << curr_clique_id;
 
       // [features]
-      boost::shared_array<const float> curr_feats = curr_clique->getFeatureVals();
+      const boost::shared_array<const float> curr_feats = curr_clique->getFeatureVals();
       for (unsigned int i = 0 ; i < curr_clique->getNumberFeatureVals() ; i++)
       {
         file_out << " " << curr_feats[i];
@@ -363,7 +363,6 @@ int RandomField::saveCliqueFeatures(string basename) const
 RandomField::GenericClique::GenericClique()
 {
   id_ = 0;
-  //feature_vals_ = NULL;
   nbr_feature_vals_ = 0;
 }
 
@@ -372,7 +371,6 @@ RandomField::GenericClique::GenericClique()
 // --------------------------------------------------------------
 RandomField::GenericClique::~GenericClique()
 {
-  //delete feature_vals_;
 }
 
 // --------------------------------------------------------------
