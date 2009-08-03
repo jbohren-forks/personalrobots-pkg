@@ -27,7 +27,7 @@
           <interface:bumper name="${side}_shoulder_pan_ros_bumper_iface" />
         </controller:ros_bumper>
       </sensor:contact>
-    <gazebo>
+    </gazebo>
     <gazebo name="${side}_shoulder_pan_gravity" reference="${side}_shoulder_pan_link">
       <turnGravityOff>true</turnGravityOff>
     </gazebo>
