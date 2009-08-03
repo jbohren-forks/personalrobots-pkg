@@ -51,7 +51,7 @@
 
 // --------------------------------------------------------------
 /*!
- * \file spin_image_generic.h
+ * \file neighborhood_feature.h
  *
  * \brief A NeighborhoodFeature descriptor is a generic descriptor
  *        uses a neighborhood of points to compute features
