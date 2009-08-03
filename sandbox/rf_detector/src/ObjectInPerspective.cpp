@@ -576,7 +576,7 @@ static double dist2D(const T& a, const T& b)
 		return camera_height;
 	}
 
-    Point project3DPointIntoImage(const sensor_msgs::CameraInfo& cam_info, geometry_msgs::PointStamped point, tf::TransformListener& tf_)
+    geometry_msgs::Point project3DPointIntoImage(const sensor_msgs::CameraInfo& cam_info, geometry_msgs::PointStamped point, tf::TransformListener& tf_)
 	{
 		geometry_msgs::PointStamped image_point;
 		tf_.transformPoint(cam_info.header.frame_id, point, image_point);
