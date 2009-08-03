@@ -11,7 +11,7 @@ PATCH=soqt_qt4.patch
 
 installed: wiped $(SOURCE_DIR)/unpacked
 	cd $(SOURCE_DIR) && patch -s -N -p1 < ../../$(PATCH) || echo
-	cd $(SOURCE_DIR) && autoconf && ./configure --prefix=$(PWD)
+	cd $(SOURCE_DIR) && autoconf && ./configure --prefix=`rospack find soqt`
 	cd $(SOURCE_DIR) && make && make install
 	touch installed
 
