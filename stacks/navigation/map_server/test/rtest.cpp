@@ -43,13 +43,13 @@ class MapClientTest : public testing::Test
 {
   private:
     // A node is needed to make a service call
-    ros::Node* n;
+    ros::NodeHandle* n;
 
   protected:
     virtual void SetUp()
     {
-      ros::init(g_argc, g_argv);
-      n = new ros::Node("map_client_test");
+      ros::init(g_argc, g_argv, "map_client_test");
+      n = new ros::NodeHandle();
     }
     virtual void TearDown()
     {

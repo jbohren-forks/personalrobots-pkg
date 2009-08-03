@@ -1,5 +1,5 @@
 /*
- * map_generator
+ * map_saver
  * Copyright (c) 2008, Willow Garage, Inc.
  * All rights reserved.
  * 
@@ -81,14 +81,14 @@ class MapGenerator
      */
     MapGenerator(const std::string& mapname) 
     {
-      ros::Node n("map_generator");
+      ros::NodeHandle n;
       const static std::string servname = "static_map";
-      ROS_INFO("Requesting the map from %s...", n.mapName(servname).c_str());
+      ROS_INFO("Requesting the map from %s...", n.resolveName(servname).c_str());
       nav_msgs::GetMap::Request  req;
       nav_msgs::GetMap::Response resp;
       while(n.ok() && !ros::service::call(servname, req, resp))
       {
-        ROS_WARN("request to %s failed; trying again...", n.mapName(servname).c_str());
+        ROS_WARN("request to %s failed; trying again...", n.resolveName(servname).c_str());
         usleep(1000000);
       }
       ROS_INFO("Received a %d X %d map @ %.3f m/pix",
@@ -154,7 +154,7 @@ unknown: [129]
 
 int main(int argc, char** argv) 
 {
-  ros::init(argc, argv);
+  ros::init(argc, argv, "map_saver");
   std::string mapname = "map";
 
   for(int i=1; i<argc; i++)
