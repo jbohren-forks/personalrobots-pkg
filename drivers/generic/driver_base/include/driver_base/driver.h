@@ -113,22 +113,33 @@ private:
   {
     boost::mutex::scoped_lock(device_.mutex_);
     
-    dev_state_t orig_state;
+    dev_state_t orig_state = device_.getState();
   
     if ((level | dynamic_reconfigure::SensorLevels::RECONFIGURE_STOP) == level)
+    {
       stop();
+      if (!is_stopped())
+        ROS_ERROR("Failed to stop streaming before reconfiguring. Reconfiguration may fail.");
+    }
   
     if ((level | dynamic_reconfigure::SensorLevels::RECONFIGURE_CLOSE) == level)
+    {
       close();
+      if (!is_closed())
+        ROS_ERROR("Failed to close device before reconfiguring. Reconfiguration may fail.");
+    }
   
-// FIXME set state.
-
-    reconfigurator_.get_config(device_.config);
+    reconfigurator_.get_config(device_.config_);
     device_.config_update();
     reconfigure_hook(level);
-    reconfigurator_.set_config(device_.config);
+    reconfigurator_.set_config(device_.config_);
   
     go_state(orig_state);
+
+    if (device_.getState() != orig_state)
+    {
+      ROS_ERROR("Failed to resume original device state after reconfiguring. The requested configuration may contain errors.");
+    }
   }
 
   virtual void reconfigure_hook(int level) {}
@@ -190,7 +201,7 @@ protected:
   bool try_transition(dev_state_t target, void (Device::*transition)())
   {
     boost::mutex::scoped_lock(device_.mutex_);
-    device_ .* transition();
+    (device_.*transition)();
     return device_.getState() == target;
   }
 
@@ -289,6 +300,12 @@ protected:
   {
     return device_.getState() == Device::CLOSED;
   }
+  
+  bool is_stopped()
+  {
+    dev_state_t s = device_.getState();
+    return s == Device::CLOSED || s == Device::OPENED;
+  }
 
 private:
 /*  void connectCallback(const ros::PublisherPtr &pub)
@@ -311,28 +328,33 @@ private:
 
   void prepare_diagnostics()
   {
-    diagnostic_.add(node_handle_.getName() + ": Driver Status", &Driver::status_diagnostic, this);
+    diagnostic_.add(ros::this_node::getName() + ": Driver Status", this, &Driver::status_diagnostic);
     add_diagnostics();
+  }
+
+  void status_diagnostic(diagnostic_updater::DiagnosticStatusWrapper& stat)
+  {
+    stat.summary(1, "Driver is okay.");
+    
+    stat.adds("Device state:", device_.getStateName());
+    /// @fixme need to put something more useful here.
   }
 
   void prepare_self_tests()
   {
-    self_test_.addTest( &Driver::interruptionTest );
-    self_test_.addTest( &Driver::stopForTest );
+    self_test_.add( "Interruption Test", &Driver::interruptionTest );
     add_stopped_tests();
-    self_test_.addTest( &Driver::openTest );
-    device_.add_open_test();
-    self_test_.addTest( &Driver::runTest );
+    self_test_.add( "Connection Test", &Driver::openTest );
+    add_opened_tests();
+    self_test_.add( "Start Streaming Test", &Driver::runTest );
     add_running_tests();
-    self_test_.addTest( &Driver::stopTest );
-    self_test_.addTest( &Driver::closeTest );
-    self_test_.addTest( &Driver::resumeTest );
+    self_test_.add( "Stop Streaming Test", &Driver::stopTest );
+    self_test_.add( "Disconnection Test", &Driver::closeTest );
+    self_test_.add( "Resume Activity", &Driver::resumeTest );
   } 
 
   void interruptionTest(diagnostic_updater::DiagnosticStatusWrapper& status)
   {
-    status.name = "Interruption Test";
-    
     pre_self_test_device_state_ = device_.getState();
     go_closed();
     
@@ -346,20 +368,16 @@ private:
     
   void openTest(diagnostic_updater::DiagnosticStatusWrapper& status)
   {
-    status.name = "Connection Test";
-    
     open();
 
     if (is_opened())
-      status.summaryf(0, "Successfully opened device %s", device_.getID());
+      status.summaryf(0, "Successfully opened device %s", device_.getID().c_str());
     else
       status.summary(2, "Failed to open.");
   }
 
   void runTest(diagnostic_updater::DiagnosticStatusWrapper& status)
   {
-    status.name = "Start Streaming Test";
-    
     start();
     
     if (is_running())      
@@ -370,8 +388,6 @@ private:
 
   void stopTest(diagnostic_updater::DiagnosticStatusWrapper& status)
   {
-    status.name = "Stop Streaming Test";
-    
     stop();
     
     if (is_opened())      
@@ -382,8 +398,6 @@ private:
   
   void closeTest(diagnostic_updater::DiagnosticStatusWrapper& status)
   {
-    status.name = "Disconnection Test";
-    
     close();
     
     if (is_closed())      
@@ -394,18 +408,16 @@ private:
   
   void resumeTest(diagnostic_updater::DiagnosticStatusWrapper& status)
   {
-    status.name = "Resume Activity";
-
-    go_device_state(pre_self_test_device_state_);
+    go_state(pre_self_test_device_state_);
   
     dev_state_t currentState = device_.getState();
     std::string desired_state_name = Device::getStateName(pre_self_test_device_state_);
     std::string current_state_name = Device::getStateName(currentState);
    
     if (currentState == pre_self_test_device_state_)
-      status.summaryf(0, "Successfully returned to %s state.", desired_state_name);
+      status.summaryf(0, "Successfully returned to %s state.", desired_state_name.c_str());
     else
-      status.summaryf(2, "Failed to return to %s state, now in state %s.", desired_state_name, current_state_name);
+      status.summaryf(2, "Failed to return to %s state, now in state %s.", desired_state_name.c_str(), current_state_name.c_str());
   }
   
 public:
@@ -445,7 +457,7 @@ public:
     exit_status_ = 0;
     prepare_diagnostics();
     prepare_self_tests();
-    reconfigurator_.set_callback(boost::bind<void>(&Driver::reconfigure, this, _1));
+    reconfigurator_.set_callback(boost::bind(&Driver::reconfigure, this, _1));
   }
 };
 

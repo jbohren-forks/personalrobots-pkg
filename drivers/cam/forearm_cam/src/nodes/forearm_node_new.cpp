@@ -184,10 +184,13 @@ private:
 class ForearmCamDevice : public driver_base::Device
 {
   friend class ForearmCamDriver;
+
+public:
+  forearm_cam::ForearmCamConfig config_;
+
 private:
   // Driver classes
   ros::NodeHandle node_handle_; /// @todo this should end up being eliminated.
-  forearm_cam::ForearmCamConfig config_;
   
   // Services
   ros::ServiceClient trig_service_;
@@ -555,6 +558,11 @@ public:
     }
     
     return 0;
+  }
+
+  std::string getID()
+  {
+    return (boost::format("FCAM%05u") % serial_number_).str();
   }
 
 private:
@@ -979,7 +987,7 @@ private:
   
   virtual void add_running_tests()
   {
-    self_test_.add( "", boost::bind(&ForearmCamDriver::streamingTest, this) );
+    self_test_.add( "Streaming Test", this, &ForearmCamDriver::streamingTest);
   }
   
   virtual void add_stopped_tests(SelfTest<ForearmCamDevice> st)
@@ -997,8 +1005,6 @@ private:
     sleep(5);
 
     cam_pub_.run(status);
-
-    status.name = "Streaming Test";
   }
 
   class VideoModeTestFrameHandler

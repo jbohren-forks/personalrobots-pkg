@@ -14,6 +14,8 @@ rospack_add_boost_directories()
 rospack_add_rostest(test/test_with_sim_hztest.xml)
 
 gencfg()
+genmsg()
+gensrv()
 
 # The selftest fails on 64-bit, #1494
 include(CMakeDetermineSystem)

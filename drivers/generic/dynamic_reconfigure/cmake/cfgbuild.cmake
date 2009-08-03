@@ -146,8 +146,6 @@ macro(gencfg)
   add_dependencies(rospack_genmsg rospack_gencfg)
   add_dependencies(rospack_gensrv rospack_genmsg)
   include_directories(${PROJECT_SOURCE_DIR}/cfg/cpp)
-  genmsg()
-  gensrv()
 endmacro(gencfg)
 
 find_ros_package(dynamic_reconfigure)

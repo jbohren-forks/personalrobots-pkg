@@ -83,6 +83,28 @@ public:
     return state_;
   }
 
+  const std::string getStateName()
+  {
+    return getStateName(state_);
+  }
+  
+  static const std::string getStateName(state_t s)
+  {
+    std::string name[4] = {
+      std::string("CLOSED"),
+      std::string("OPENED"),
+      std::string("RUNNING"),
+      std::string("Unknown")
+    };
+
+    if (s >= 0 && s <= 2)
+      return name[(int) s];
+    else
+      return name[3];
+  }
+
+  virtual std::string getID() = 0;
+
   virtual ~Device() {}
 };
 
