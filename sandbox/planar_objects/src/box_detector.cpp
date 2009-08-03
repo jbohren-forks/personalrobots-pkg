@@ -96,8 +96,8 @@ BoxDetector::BoxDetector() :
 
   // advertise topics
   cloud_planes_pub_ = nh_.advertise<PointCloud> ("~planes", 1);
-  visualization_pub_ = nh_.advertise<visualization_msgs::Marker> ("visualization_marker", 1);
-  observations_pub_ = nh_.advertise<BoxObservations> ("~observations", 1);
+  visualization_pub_ = nh_.advertise<visualization_msgs::Marker> ("visualization_marker", 100);
+  observations_pub_ = nh_.advertise<BoxObservations> ("~observations", 100);
 
   currentTime = Time::now();
   lastTime = Time::now();
@@ -114,12 +114,12 @@ void BoxDetector::dinfoCallback(const sensor_msgs::DisparityInfo::ConstPtr& dinf
   dinfo_ = dinfo;
 }
 
-void BoxDetector::linfoCallback(const sensor_msgs::CameraInfo::ConstPtr& linfo)
+void BoxDetector::linfoCallback(const sensor_msgs::CamInfo::ConstPtr& linfo)
 {
   linfo_ = linfo;
 }
 
-void BoxDetector::rinfoCallback(const sensor_msgs::CameraInfo::ConstPtr& rinfo)
+void BoxDetector::rinfoCallback(const sensor_msgs::CamInfo::ConstPtr& rinfo)
 {
   rinfo_ = rinfo;
 }
