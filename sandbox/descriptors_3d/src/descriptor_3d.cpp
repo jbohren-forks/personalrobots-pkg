@@ -124,7 +124,9 @@ void Descriptor3D::concatenateFeatures(const vector<cv::Vector<cv::Vector<float>
   // ----------------------------------------------
   // Iterate over each interest point and compute all feature descriptors
   // If all descriptor computations are successful, then concatenate all values into 1 array
-  for (size_t i = 0 ; i < nbr_samples ; i++)
+  int int_nbr_samples = static_cast<int> (nbr_samples);
+#pragma omp parallel for
+  for (int i = 0 ; i < int_nbr_samples ; i++)
   {
     // --------------------------------
     // Verify all features for the point were computed successfully
@@ -135,7 +137,7 @@ void Descriptor3D::concatenateFeatures(const vector<cv::Vector<cv::Vector<float>
       const cv::Vector<cv::Vector<float> >& curr_descriptor_for_cloud = all_descriptor_results[j];
 
       // Get the computed feature for current sample
-      const cv::Vector<float>& curr_feature_vals = curr_descriptor_for_cloud[i];
+      const cv::Vector<float>& curr_feature_vals = curr_descriptor_for_cloud[static_cast<size_t> (i)];
 
       // non-zero descriptor length indicates computed successfully
       unsigned int curr_nbr_feature_vals = curr_feature_vals.size();
@@ -155,7 +157,7 @@ void Descriptor3D::concatenateFeatures(const vector<cv::Vector<cv::Vector<float>
       {
         // retrieve descriptor values for current point
         const cv::Vector<cv::Vector<float> >& curr_descriptor_for_cloud = all_descriptor_results[j];
-        const cv::Vector<float>& curr_feature_vals = curr_descriptor_for_cloud[i];
+        const cv::Vector<float>& curr_feature_vals = curr_descriptor_for_cloud[static_cast<size_t> (i)];
         unsigned int curr_nbr_feature_vals = curr_feature_vals.size();
 
         // copy descriptor values into concatenated vector at correct location
@@ -168,7 +170,10 @@ void Descriptor3D::concatenateFeatures(const vector<cv::Vector<cv::Vector<float>
 
       // Save it
       concatenated_features[i].reset(static_cast<const float*> (curr_concat_feats));
-      successful_indices.insert(i);
+#pragma omp critical
+      {
+        successful_indices.insert(i);
+      }
     }
     // Otherwise features not successful
     else
