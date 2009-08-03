@@ -43,6 +43,7 @@
 using sfl::minval;
 using sfl::maxval;
 using sfl::to_string;
+using namespace mpglue;
 using namespace boost;
 using namespace std;
 
@@ -222,7 +223,7 @@ namespace mpbench {
   getCostmap(size_t task_id) const
   {
     if (task_episode_map_.find(task_id) == task_episode_map_.end())
-      const_cast<World*>(this)->select(task_id, 0);
+      const_cast<World*>(this)->select(task_id, 0, 0);
     return getCostmapper(task_id)->getAccessor();
   }
   
@@ -292,7 +293,8 @@ namespace mpbench {
   
   
   bool World::
-  select(size_t task_id, size_t episode_id) throw(std::exception)
+  select(size_t task_id, size_t episode_id,
+	 cost_delta_map_t * cost_delta) throw(std::exception)
   {
     task_episode_map_t::iterator item(task_episode_map_.find(task_id));
     size_t delta_id(0);
@@ -323,6 +325,19 @@ namespace mpbench {
 	cm->updateObstacles(*od, debug_os_);
       }
       ++delta_id;
+    }
+
+    // XXXX to do: bit of a hack, just pretend all cells have
+    // changed. This should work but probably wastes a lot of
+    // computations...
+    if (costs_changed && cost_delta) {
+      shared_ptr<mpglue::CostmapAccessor const> cma(cm->getAccessor());
+      for (index_t ix(cma->getXBegin()); ix < cma->getXEnd(); ++ix)
+	for (index_t iy(cma->getYBegin()); iy < cma->getYEnd(); ++iy) {
+	  cost_t cost;
+	  if (cma->getCost(ix, iy, &cost))
+	    cost_delta->insert(make_pair(index_pair(ix, iy), cost));
+	}
     }
     
     if (task_episode_map_.end() != item)
