@@ -12,7 +12,7 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 rospack(descriptors_2d_gpl)
 
 #set the default path for built executables to the "bin" directory
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
+set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR})
 #set the default path for built libraries to the "lib" directory
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
@@ -31,3 +31,10 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 
 rospack_add_library(descriptors_2d_gpl descriptors_2d_gpl.cpp)
+
+
+rospack_download_test_data(http://pr.willowgarage.com/data/descriptors_2d/frame0000.jpg test/frame0000.jpg)
+rospack_download_test_data(http://pr.willowgarage.com/data/descriptors_2d/correct-output/daisy.txt test/correct-output/daisy.txt)
+
+rospack_add_gtest(test/test_descriptors_2d_gpl test/test_descriptors_2d_gpl.cpp)
+target_link_libraries(test/test_descriptors_2d_gpl descriptors_2d_gpl)
