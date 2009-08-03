@@ -18,7 +18,7 @@ include $(shell rospack find mk)/svn_checkout.mk
 installed: $(SVN_DIR) patched
 	cd $(SVN_DIR) && ./bootstrap-buildsystem.sh
 	test -d $(BUILD_DIR) || mkdir -p $(BUILD_DIR)
-	cd $(BUILD_DIR) && $(SVN_DIR)/configure --prefix=`rospack find nepmunk`/$(INST_DIR) \
+	cd $(BUILD_DIR) && `rospack find nepumuk`/$(SVN_DIR)/configure --prefix=`rospack find nepumuk`/$(INST_DIR) \
                                                 --with-sfl=$(SFL_DIR) \
                                                 --with-boost=$(BOOST_DIR)
 	$(MAKE) -C $(BUILD_DIR) install
