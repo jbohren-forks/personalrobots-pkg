@@ -26,7 +26,7 @@ int wgSendUDPBcast(int s, const char *ifName, const void *data, size_t dataSize)
 int wgArpAdd(IpCamList *camInfo);
 int wgArpDel(IpCamList *camInfo);
 
-int wgWaitForPacket( int s, uint32_t type, size_t pktLen, uint32_t *wait_us );
+int wgWaitForPacket( int *s, int nums, uint32_t type, size_t pktLen, uint32_t *wait_us );
 
 #define SEC_TO_USEC(sec) (1000*1000*sec)
 

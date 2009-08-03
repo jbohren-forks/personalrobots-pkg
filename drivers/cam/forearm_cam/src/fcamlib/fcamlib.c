@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <stdbool.h>
 #include <net/if.h>
+#include <ifaddrs.h>
 
 #include "host_netutil.h"
 #include "ipcam_packet.h"
@@ -54,7 +55,7 @@ int fcamlibVersion() {
  * @return Returns 0 if no system errors occured. -1 with errno set otherwise.
  */
 int fcamStatusWait( int s, uint32_t wait_us, uint32_t *type, uint32_t *code ) {
-	if( !wgWaitForPacket(s, PKTT_STATUS, sizeof(PacketStatus), &wait_us) && (wait_us != 0) ) {
+	if( wgWaitForPacket(&s, 1, PKTT_STATUS, sizeof(PacketStatus), &wait_us) != -1 && (wait_us != 0) ) {
 		PacketStatus sPkt;
 		if( recvfrom( s, &sPkt, sizeof(PacketStatus), 0, NULL, NULL )  == -1 ) {
 			perror("fcamStatusWait unable to receive from socket");
@@ -74,19 +75,8 @@ int fcamStatusWait( int s, uint32_t wait_us, uint32_t *type, uint32_t *code ) {
 }
 
 
-
-/**
- * Discovers all FCAM cameras that are connected to the 'ifName' ethernet interface and
- * adds new ones to the 'ipCamList' list.
- *
- * @param ifName 		The ethernet interface name to use. Null terminated string (e.g., "eth0").
- * @param ipCamList 	The list to which the new cameras should be added
- * @param wait_us		The number of microseconds to wait for replies
- *
- * @return	Returns -1 with errno set for system call errors. Otherwise returns number of new
- * 			cameras found.
- */
-int fcamDiscover(const char *ifName, IpCamList *ipCamList, const char *ipAddress, unsigned wait_us) {
+static int fcamDiscoverSend(const char *ifName, const char *ipAddress, unsigned wait_us)
+{
 	// Create and initialize a new Discover packet
 	PacketDiscover dPkt;
 	dPkt.hdr.magic_no = htonl(WG_MAGIC_NO);
@@ -98,7 +88,7 @@ int fcamDiscover(const char *ifName, IpCamList *ipCamList, const char *ipAddress
 	 */
 	int s = wgCmdSocketCreate(ifName, &dPkt.hdr.reply_to);
 	if(s == -1) {
-		perror("Unable to create socket\n");
+		//perror("Unable to create socket\n");
 		return -1;
 	}
   
@@ -111,7 +101,7 @@ int fcamDiscover(const char *ifName, IpCamList *ipCamList, const char *ipAddress
     inet_aton(ipAddress, &newIP);
     dPkt.ip_addr = newIP.s_addr;
   }
-  else // We guess an IP by flipping the host bits of the local IP.
+  else /// @todo We guess an IP by flipping the host bits of the local IP. Horrible, but won't usually be a problem even if we hit an IP that is already in use.
   {
     struct in_addr localip;
     struct in_addr netmask;
@@ -129,11 +119,94 @@ int fcamDiscover(const char *ifName, IpCamList *ipCamList, const char *ipAddress
 		perror("Unable to send broadcast\n");
 	}
 
+  return s;
+}
+
+/**
+ * Discovers all FCAM cameras that are connected to the 'ifName' ethernet interface and
+ * adds new ones to the 'ipCamList' list.
+ *
+ * @param ifName 		The ethernet interface name to use. Null terminated string (e.g., "eth0"). Empty means to query all interfaces.
+ * @param ipCamList 	The list to which the new cameras should be added
+ * @param wait_us		The number of microseconds to wait for replies
+ *
+ * @return	Returns -1 with errno set for system call errors. Otherwise returns number of new
+ * 			cameras found.
+ */
+int fcamDiscover(const char *ifName, IpCamList *ipCamList, const char *ipAddress, unsigned wait_us) {
+  int retval = -1;
+  int *s = NULL; // Sockets to receive from
+  int numif = 1;
+  int nums = 0; // Number of sockets to receive from
+  int i;
+  const char **ifNames = NULL;
+  struct ifaddrs *ifaces = NULL;
+  struct ifaddrs *curif;
+  int autoif = 0;
+
 	// Count the number of new cameras found
 	int newCamCount = 0;
+
+  if (!ifName || !ifName[0]) // The interface has been specified.
+  {
+    autoif = 1;
+    if (getifaddrs(&ifaces))
+    {
+      perror("getifaddrs failed");
+      goto err;
+    }
+
+    numif = 0;
+    for (curif = ifaces; curif; curif = curif->ifa_next)
+      numif++;
+    //fprintf(stderr, "There are %i interfaces.\n", numif);
+  }
+
+  ifNames = calloc(numif, sizeof(char *));
+  if (!ifNames)
+  {
+    perror("allocating interfaces memory");
+    goto err; // Okay because nums == 0 and s and ifNames are allocated or NULL.
+  }
+
+  if (!autoif)
+    ifNames[0] = ifName;
+  else
+  {
+    for (i = 0, curif = ifaces; curif; i++, curif = curif->ifa_next)
+    {
+      //fprintf(stderr, "Adding %s to discover list.\n", curif->ifa_name);
+      ifNames[i] = curif->ifa_name;
+    }
+  }
+
+  s = calloc(numif, sizeof(int));
+  if (!s)
+  {
+    perror("allocating socket memory");
+    goto err; // Okay because nums == 0 and s and ifNames are allocated or NULL.
+  }
+
+  for (nums = 0; nums < numif; nums++)
+  {
+    s[nums] = fcamDiscoverSend(ifNames[nums], ipAddress, wait_us);
+    if (s[nums] == -1)
+    {
+      //fprintf(stderr, "Removing interface %s.\n", ifNames[nums]);
+      // Delete this interface as discovery has failed on it.
+      numif--;
+      for (i = nums; i < numif; i++)
+      {
+        ifNames[i] = ifNames[i+1];
+      }
+      nums--;
+    }
+  }
+
 	do {
 		// Wait in the loop for replies. wait_us is updated each time through the loop.
-		if( !wgWaitForPacket(s, PKTT_ANNOUNCE, sizeof(PacketAnnounce) - CAMERA_NAME_LEN - sizeof(IPAddress), &wait_us)  && (wait_us != 0) ) {
+    int curs = wgWaitForPacket(s, nums, PKTT_ANNOUNCE, sizeof(PacketAnnounce) - CAMERA_NAME_LEN - sizeof(IPAddress), &wait_us);
+		if( curs != -1  && wait_us != 0 ) {
 			// We've received an Announce packet, so pull it out of the receive queue
 			PacketAnnounce aPkt;
       struct sockaddr_in fromaddr;
@@ -141,11 +214,10 @@ int fcamDiscover(const char *ifName, IpCamList *ipCamList, const char *ipAddress
       socklen_t fromlen = sizeof(fromaddr);
       ssize_t packet_len;
 
-			packet_len = recvfrom( s, &aPkt, sizeof(PacketAnnounce), 0, (struct sockaddr *) &fromaddr, &fromlen);
+			packet_len = recvfrom( s[curs], &aPkt, sizeof(PacketAnnounce), 0, (struct sockaddr *) &fromaddr, &fromlen);
       if(packet_len == -1 ) {
 				perror("wgDiscover unable to receive from socket");
-        close(s);
-				return -1;
+        goto err;
 			}
 
       if (packet_len != sizeof(PacketAnnounce))
@@ -163,9 +235,8 @@ int fcamDiscover(const char *ifName, IpCamList *ipCamList, const char *ipAddress
 			IpCamList *tmpListItem;
 			if( (tmpListItem = (IpCamList *)malloc(sizeof(IpCamList))) == NULL ) {
 				perror("Malloc failed");
-				close(s);
-				return -1;
-			}
+        goto err;
+      }
 			fcamCamListInit( tmpListItem );
 
 			// Initialize the new list item's data fields (byte order corrected)
@@ -176,7 +247,7 @@ int fcamDiscover(const char *ifName, IpCamList *ipCamList, const char *ipAddress
 			memcpy(&tmpListItem->mac, aPkt.mac, sizeof(aPkt.mac));
       memcpy(tmpListItem->cam_name, aPkt.camera_name, sizeof(aPkt.camera_name));
       aPkt.camera_name[sizeof(aPkt.camera_name) - 1] = 0;
-      strncpy(tmpListItem->ifName, ifName, sizeof(tmpListItem->ifName));
+      strncpy(tmpListItem->ifName, ifNames[curs], sizeof(tmpListItem->ifName));
 			tmpListItem->status = CamStatusDiscovered;
 			char pcb_rev = 0x0A + (0x0000000F & ntohl(aPkt.hw_version));
 			int hdl_rev = 0x00000FFF & (ntohl(aPkt.hw_version)>>4);
@@ -193,9 +264,16 @@ int fcamDiscover(const char *ifName, IpCamList *ipCamList, const char *ipAddress
 			}
 		}
 	} while(wait_us > 0);
+  retval = newCamCount;
 
-	close(s);
-	return newCamCount;
+err:
+  if (ifaces)
+    freeifaddrs(ifaces);
+  for (i = 0; i < nums; i++)
+    close(s[i]);
+  free(s);
+  free(ifNames);
+	return retval;
 }
 
 
@@ -257,7 +335,7 @@ int fcamConfigure( IpCamList *camInfo, const char *ipAddress, unsigned wait_us) 
 
 	// Wait up to wait_us for a valid packet to be received on s
 	do {
-		if( !wgWaitForPacket(s, PKTT_ANNOUNCE, sizeof(PacketAnnounce) - CAMERA_NAME_LEN - sizeof(IPAddress), &wait_us)  && (wait_us != 0) ) {
+		if( wgWaitForPacket(&s, 1, PKTT_ANNOUNCE, sizeof(PacketAnnounce) - CAMERA_NAME_LEN - sizeof(IPAddress), &wait_us) != -1  && (wait_us != 0) ) {
 			PacketAnnounce aPkt;
 
 			if( recvfrom( s, &aPkt, sizeof(PacketAnnounce), 0, NULL, NULL )  == -1 ) {
@@ -524,7 +602,7 @@ int fcamGetTimer( const IpCamList *camInfo, uint64_t *time_us ) {
 
 	uint32_t wait_us = STD_REPLY_TIMEOUT;
 	do {
-		if( !wgWaitForPacket(s, PKTT_TIMEREPLY, sizeof(PacketTimer), &wait_us)  && (wait_us != 0) ) {
+		if( wgWaitForPacket(&s, 1, PKTT_TIMEREPLY, sizeof(PacketTimer), &wait_us) != -1 && (wait_us != 0) ) {
 			PacketTimer tPkt;
 			if( recvfrom( s, &tPkt, sizeof(PacketTimer), 0, NULL, NULL )  == -1 ) {
 				perror("GetTime unable to receive from socket");
@@ -638,7 +716,7 @@ int fcamFlashRead( const IpCamList *camInfo, uint32_t address, uint8_t *pageData
 
 	uint32_t wait_us = STD_REPLY_TIMEOUT;
 	do {
-		if( !wgWaitForPacket(s, PKTT_FLASHDATA, sizeof(PacketFlashPayload), &wait_us)  && (wait_us != 0) ) {
+		if( wgWaitForPacket(&s, 1, PKTT_FLASHDATA, sizeof(PacketFlashPayload), &wait_us) != -1 && (wait_us != 0) ) {
 			PacketFlashPayload fPkt;
 			if( recvfrom( s, &fPkt, sizeof(PacketFlashPayload), 0, NULL, NULL )  == -1 ) {
 				perror("GetTime unable to receive from socket");
@@ -1053,7 +1131,7 @@ int fcamSensorRead( const IpCamList *camInfo, uint8_t reg, uint16_t *data ) {
 
 	uint32_t wait_us = STD_REPLY_TIMEOUT;
 	do {
-		if( !wgWaitForPacket(s, PKTT_SENSORDATA, sizeof(PacketSensorData), &wait_us)  && (wait_us != 0) ) {
+		if( wgWaitForPacket(&s, 1, PKTT_SENSORDATA, sizeof(PacketSensorData), &wait_us) != -1 && (wait_us != 0) ) {
 			PacketSensorData sPkt;
 			if( recvfrom( s, &sPkt, sizeof(PacketSensorData), 0, NULL, NULL )  == -1 ) {
 				perror("SensorRead unable to receive from socket");

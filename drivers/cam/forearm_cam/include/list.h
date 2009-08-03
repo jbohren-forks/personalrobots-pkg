@@ -290,6 +290,7 @@ int fcamCamListFind( IpCamList *ipCamList, uint32_t serial);
 int fcamCamListNumEntries( const IpCamList *ipCamList );
 IpCamList *fcamCamListGetEntry( const IpCamList *ipCamList, int index );
 int fcamCamListDelEntry( IpCamList *ipCamList, int index );
+void fcamCamListDelAll( IpCamList *ipCamList );
 
 #define CAMLIST_ADD_OK 	0
 #define CAMLIST_ADD_DUP 1

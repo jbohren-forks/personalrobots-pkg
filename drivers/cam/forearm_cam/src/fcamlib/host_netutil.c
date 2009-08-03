@@ -168,7 +168,7 @@ int wgIpGetLocalBcast(const char *ifName, struct in_addr *bcast) {
 
 	// Use socket ioctl to get broadcast address for this interface
 	if( ioctl(s,SIOCGIFBRDADDR , &ifr) == -1 ) {
-		perror("wgIpGetLocalBcast ioctl failed");
+		//perror("wgIpGetLocalBcast ioctl failed");
 		return -1;
 	}
 
@@ -205,7 +205,7 @@ int wgIpGetLocalAddr(const char *ifName, struct in_addr *addr) {
 
 	// Use socket ioctl to get the IP address for this interface
 	if( ioctl(s,SIOCGIFADDR , &ifr) == -1 ) {
-		perror("wgIpGetLocalAddr ioctl failed");
+		//perror("wgIpGetLocalAddr ioctl failed");
 		return -1;
 	}
 
@@ -242,7 +242,7 @@ int wgIpGetLocalNetmask(const char *ifName, struct in_addr *addr) {
 
 	// Use socket ioctl to get the netmask for this interface
 	if( ioctl(s,SIOCGIFNETMASK , &ifr) == -1 ) {
-		perror("wgIpGetLocalNetmask ioctl failed");
+		//perror("wgIpGetLocalNetmask ioctl failed");
 		return -1;
 	}
 
@@ -281,7 +281,7 @@ int wgSocketCreate(const struct in_addr *addr, uint16_t port) {
 
 	// Bind the socket to the requested port
 	if( bind(s, (struct sockaddr *)&si_host, sizeof(si_host)) == -1 ) {
-		perror("wgSocketCreate unable to bind");
+		//perror("wgSocketCreate unable to bind");
 		return -1;
 	}
 
@@ -341,7 +341,7 @@ int wgCmdSocketCreate(const char *ifName, NetHost *localHost) {
 	// We specify a port of 0 to have bind choose an available host port
 	int s;
 	if( (s=wgSocketCreate(&host_addr, 0)) == -1 ) {
-		perror("Unable to create socket");
+		//perror("Unable to create socket");
 		return -1;
 	}
 
@@ -424,7 +424,8 @@ int wgSendUDPBcast(int s, const char *ifName, const void *data, size_t dataSize)
  *	On return, the wait_us argument is updated to reflect the amount of time still remaining
  *	in the original timeout. This can be useful when calling wgWaitForPacket() in a loop.
  *
- * @param s		The datagram socket to listen on. It must be opened, bound, and connected.
+ * @param s		The datagram sockets to listen on. It must be opened, bound, and connected.
+ * @param nums The number of sockets to listen on.
  * @param type	The FCAM packet type to listen for. Packets that do not match this type will
  * 				be discarded
  * @param pktLen The length of FCAM packet to listen for. Packets that do not match this length
@@ -432,10 +433,11 @@ int wgSendUDPBcast(int s, const char *ifName, const void *data, size_t dataSize)
  * @param wait_us The duration of time to wait before timing out. Is adjusted upon return to
  * 					reflect actual time remaning on the timeout.
  *
- * @return Returns -1 with errno set for system call failures. 0 otherwise. If wait_us is set
- * 			to zero, then the wait has timed out.
+ * @return Returns -1 with errno set for system call failures, index of socket that is ready 
+ *       otherwise. If wait_us is set to zero, then the wait has timed out.
  */
-int wgWaitForPacket( int s, uint32_t type, size_t pktLen, uint32_t *wait_us ) {
+int wgWaitForPacket( int *s, int nums, uint32_t type, size_t pktLen, uint32_t *wait_us ) {
+  int i;
 	// Convert wait_us argument into a struct timeval
 	struct timeval timeout;
 	timeout.tv_sec = *wait_us / 1000000UL;
@@ -451,57 +453,65 @@ int wgWaitForPacket( int s, uint32_t type, size_t pktLen, uint32_t *wait_us ) {
 
 	struct timeval looptimeout;
 	fd_set set;
-	while( timercmp( &timeout, &timenow, >= ) ) {
+  while( timercmp( &timeout, &timenow, >= ) ) {
+    int maxs = 0;
 		// Since we could receive multiple packets, we need to decrease the timeout
 		// to select() as we go. (Multiple packets should be an unlikely event, but
 		// UDP provides no guarantees)
 		timersub(&timeout, &timestarted, &looptimeout);
 
 		FD_ZERO(&set);
-		FD_SET(s, &set);
+    for (i = 0; i < nums; i++)
+    {
+      FD_SET(s[i], &set);
+      if (s[i] > maxs)
+        maxs = s[i];
+    }
 
 		// Wait for either a packet to be received or for timeout
-		if( select(s+1, &set, NULL, NULL, &looptimeout) == -1 ) {
+		if( select(maxs+1, &set, NULL, NULL, &looptimeout) == -1 ) {
 			perror("wgWaitForPacket select failed");
 			return -1;
 		}
 
-		// If we received a packet
-		if( FD_ISSET(s, &set) ) {
-			PacketGeneric gPkt;
-			int r;
-			// Inspect the packet in the buffer without removing it
-			if( (r=recvfrom( s, &gPkt, sizeof(PacketGeneric), MSG_PEEK|MSG_TRUNC, NULL, NULL ))  == -1 ) {
-				perror("wgWaitForPacket unable to receive from socket");
-				return -1;
-			}
-
-			// All valid WG command packets have magic_no == WG_MAGIC NO
-			// We also know the minimum packet size we're looking for
-			// So we can drop short or invalid packets at this stage
-			if( ((unsigned int) r < pktLen) ||
-						gPkt.magic_no != htonl(WG_MAGIC_NO) ||
-						gPkt.type != htonl(type) ) {
-				debug("Dropping packet with magic #%08X, type 0x%02X (looking for 0x%02X), length %d (looking for %d)\n", ntohl(gPkt.magic_no), ntohl(gPkt.type), type, r, pktLen);
-				// Pull it out of the buffer (we used MSG_PEEK before, so it's still in there)
-				if( recvfrom( s, &gPkt, sizeof(PacketGeneric), 0, NULL, NULL ) == -1 ) {
-					perror("wgWaitForPacket unable to receive from socket");
-					return -1;
-				}
-			} else {	// The packet appears to be valid and correct
-				// Compute the amount of time left on the timeout in case the calling function
-				// decides this is not the packet we're looking for
-				struct timeval timeleft;
-				gettimeofday(&timenow, NULL);
-				timersub(&timeout, &timenow, &timeleft);
-
-				*wait_us = timeleft.tv_usec+timeleft.tv_sec*1000000UL;
-				return 0;
-			}
-
-		}
-		gettimeofday(&timenow, NULL);
-	}
+    for (i = 0; i < nums; i++) {
+      // If we received a packet
+  		if( FD_ISSET(s[i], &set) ) {
+  			PacketGeneric gPkt;
+  			int r;
+  			// Inspect the packet in the buffer without removing it
+  			if( (r=recvfrom( s[i], &gPkt, sizeof(PacketGeneric), MSG_PEEK|MSG_TRUNC, NULL, NULL ))  == -1 ) {
+  				perror("wgWaitForPacket unable to receive from socket");
+  				return -1;
+  			}
+  
+  			// All valid WG command packets have magic_no == WG_MAGIC NO
+  			// We also know the minimum packet size we're looking for
+  			// So we can drop short or invalid packets at this stage
+  			if( ((unsigned int) r < pktLen) ||
+  						gPkt.magic_no != htonl(WG_MAGIC_NO) ||
+  						gPkt.type != htonl(type) ) {
+  				debug("Dropping packet with magic #%08X, type 0x%02X (looking for 0x%02X), length %d (looking for %d)\n", ntohl(gPkt.magic_no), ntohl(gPkt.type), type, r, pktLen);
+  				// Pull it out of the buffer (we used MSG_PEEK before, so it's still in there)
+  				if( recvfrom( s[i], &gPkt, sizeof(PacketGeneric), 0, NULL, NULL ) == -1 ) {
+  					perror("wgWaitForPacket unable to receive from socket");
+  					return -1;
+  				}
+  			} else {	// The packet appears to be valid and correct
+  				// Compute the amount of time left on the timeout in case the calling function
+  				// decides this is not the packet we're looking for
+  				struct timeval timeleft;
+  				gettimeofday(&timenow, NULL);
+  				timersub(&timeout, &timenow, &timeleft);
+  
+  				*wait_us = timeleft.tv_usec+timeleft.tv_sec*1000000UL;
+  				return i;
+  			}
+  
+  		}
+    }
+    gettimeofday(&timenow, NULL);
+  } 
 	// If we reach here, we've timed out
 	*wait_us = 0;
 	return 0;
