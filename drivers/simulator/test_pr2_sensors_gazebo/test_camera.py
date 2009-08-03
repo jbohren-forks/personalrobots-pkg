@@ -46,7 +46,7 @@ import sys, unittest
 import os, os.path, threading, time
 import rospy, rostest
 from sensor_msgs.msg import Image as image_msg
-from sensor_msgs.msg import CamInfo as caminfo_msg
+from sensor_msgs.msg import CameraInfo as camerainfo_msg
 from PIL import Image      as pili
 from PIL import ImageChops as pilic
 
@@ -77,9 +77,9 @@ class TestCameras(unittest.TestCase):
     def __init__(self, *args):
         super(TestCameras, self).__init__(*args)
         self.success = False
-        self.got_caminfo = False
-        self.caminfo_height = 0
-        self.caminfo_width = 0
+        self.got_camerainfo = False
+        self.camerainfo_height = 0
+        self.camerainfo_width = 0
 
     def onTargetFrame(self):
         time.sleep(0.5) #Safety, to make sure the image is really done being written.
@@ -134,18 +134,18 @@ class TestCameras(unittest.TestCase):
         else:
           return True
 
-    def caminfoInput(self,caminfo):
-      self.got_caminfo = True
-      self.caminfo_width = caminfo.width
-      self.caminfo_height = caminfo.height
-      print " got cam info (",caminfo.width,"X",caminfo.height,")"
+    def camerainfoInput(self,camerainfo):
+      self.got_camerainfo = True
+      self.camerainfo_width = camerainfo.width
+      self.camerainfo_height = camerainfo.height
+      print " got cam info (",camerainfo.width,"X",camerainfo.height,")"
 
     def imageInput(self,image):
 
-      if (self.got_caminfo):
-        print " got image and caminfo from ROS, begin comparing images."
+      if (self.got_camerainfo):
+        print " got image and camerainfo from ROS, begin comparing images."
       else:
-        print " got image but no caminfo."
+        print " got image but no camerainfo."
         return
 
       print "  - load validation image from file test_camera.valid.ppm "
@@ -158,7 +158,7 @@ class TestCameras(unittest.TestCase):
         return
 
       print "  - load image from ROS "
-      size = self.caminfo_width,self.caminfo_height
+      size = self.camerainfo_width,self.camerainfo_height
       im1 = pili.new("L",size)
       im1 = pili.frombuffer("L",size,str(image.uint8_data.data));
       im1 = im1.transpose(pili.FLIP_LEFT_RIGHT).rotate(180);
@@ -188,7 +188,7 @@ class TestCameras(unittest.TestCase):
         time.sleep(TEST_INIT_WAIT)
         print " subscribe stereo left image from ROS "
         rospy.Subscriber("/wide_stereo/left/image", image_msg, self.imageInput) # this is a camera mounted on PR2 head (left stereo camera)
-        rospy.Subscriber("/wide_stereo/left/cam_info", caminfo_msg, self.caminfoInput) # this is a camera mounted on PR2 head (left stereo camera)
+        rospy.Subscriber("/wide_stereo/left/cam_info", camerainfo_msg, self.camerainfoInput) # this is a camera mounted on PR2 head (left stereo camera)
         rospy.init_node(NAME, anonymous=True)
         timeout_t = time.time() + TEST_DURATION
         while not rospy.is_shutdown() and not self.success and time.time() < timeout_t:
