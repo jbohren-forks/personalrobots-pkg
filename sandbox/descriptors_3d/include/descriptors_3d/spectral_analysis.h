@@ -189,7 +189,10 @@ class SpectralAnalysis
                              const std::vector<int>& curr_region_indices,
                              const size_t idx);
 
+    /*! \brief The radius used to define the local neighborhood */
     double support_radius_;
+
+    /*! \brief Flag indicating if eigen-decomposition has been performed */
     bool spectral_computed_;
 
     /*! \brief The smallest extracted eigenvectors */

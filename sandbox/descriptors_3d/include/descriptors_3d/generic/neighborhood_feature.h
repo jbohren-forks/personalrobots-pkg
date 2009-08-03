@@ -50,21 +50,11 @@
 #include <descriptors_3d/descriptor_3d.h>
 
 // --------------------------------------------------------------
-//* BoundingBox
 /*!
- * \brief A BoundingBox descriptor computes the dimensions of the
- *        3-D box that encloses a group of points.
+ * \file spin_image_generic.h
  *
- * When computing the feature for an interest point, the bounding box
- * is defined by the neighboring points within some specified radius.
- *
- * When computing the feature for an interest region of points, the
- * bounding box can either be the box that encloses the given region of
- * points, or from the neighboring points within some specified radius
- * from the region's centroid.
- *
- * The bounding box can be computed in the given coordinate frame
- * and/or in the projected principle component space.
+ * \brief A NeighborhoodFeature descriptor is a generic descriptor
+ *        uses a neighborhood of points to compute features
  */
 // --------------------------------------------------------------
 class NeighborhoodFeature: public Descriptor3D
@@ -72,24 +62,10 @@ class NeighborhoodFeature: public Descriptor3D
   public:
     // --------------------------------------------------------------
     /*!
-     * \brief Instantiates the BoundingBox descriptor with specified parameters
+     * \brief A NeighborhoodFeature is an abstract base class for descriptors
+     *        that use a local neighborhood of points to compute features.
      *
-     * If computing the bounding box in principle component space, then features are
-     * in order: [a,b,c] where a is the length along the principle eigenvector, b
-     * is the length along the middle eigenvector, and c is the length along the
-     * smallest eigenvector.
-     *
-     * If computing the bounding box in the given coordinate frame, then the
-     * features are in order: [x,y,z] where x is the length along the first dimension,
-     * y is the length along the second dimension, z is the length along the third
-     * dimension.
-     *
-     * If computing both bounding boxes, the values are in order: [a b c x y z]
-     *
-     * \param use_pca_bbox Flag to compute the bounding box in the principle
-     *                     component space
-     * \param use_raw_bbox Flag to compute the bounding box in the given
-     *                     coordinate xyz space
+     * Example: spin images
      */
     // --------------------------------------------------------------
     NeighborhoodFeature();
@@ -99,11 +75,8 @@ class NeighborhoodFeature: public Descriptor3D
   protected:
     // --------------------------------------------------------------
     /*!
-     * \brief Computes the bounding box dimensions around each interest point
-     *
-     * \warning setBoundingBoxRadius() must be called first
-     * \warning If computing the bounding box in principle component space, then
-     *          setSpectralRadius() or useSpectralInformation() must be called first
+     * \brief Retrieves the local neighborhood around each interest point
+     *        and then computes features
      *
      * \see Descriptor3D::compute
      */
@@ -115,11 +88,8 @@ class NeighborhoodFeature: public Descriptor3D
 
     // --------------------------------------------------------------
     /*!
-     * \brief Computes the bounding box dimensions around/for each interest region
-     *
-     * \warning setBoundingBoxRadius() must be called first
-     * \warning If computing the bounding box in principle component space, then
-     *          setSpectralRadius() or useSpectralInformation() must be called first
+     * \brief Retrieves the local neighborhood around each interest region
+     *        and then computes features
      *
      * \see Descriptor3D::compute
      */
@@ -131,11 +101,13 @@ class NeighborhoodFeature: public Descriptor3D
 
     // --------------------------------------------------------------
     /*!
-     * \brief Computes the bounding box information of the given neighborhood
+     * \brief The prototype of the method that computes the features as
+     *        defined in the inheriting class.
      *
      * \param data The overall point cloud data
      * \param neighbor_indices List of indices in data that constitute the neighborhood
-     * \param result The vector to hold the computed bounding box dimensions
+     * \param interest_sample_idx The interest point/region that is being processed.
+     * \param result The vector to hold the resulting spin image feature vector
      */
     // --------------------------------------------------------------
     virtual void computeNeighborhoodFeature(const robot_msgs::PointCloud& data,
@@ -145,6 +117,7 @@ class NeighborhoodFeature: public Descriptor3D
 
     /*! \brief The radius to define the bounding box */
     float neighborhood_radius_;
+
     /*! \brief Flag if neighborhood_radius_ has been defined */
     bool neighborhood_radius_defined_;
 };
