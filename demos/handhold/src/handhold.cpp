@@ -36,7 +36,7 @@
 #include "ros/node_handle.h"
 
 #include "tf/transform_datatypes.h"
-#include "robot_msgs/Twist.h"
+#include "geometry_msgs/Twist.h"
 #include "robot_msgs/PoseDot.h"
 
 const char *TIP_FRAME = "";
@@ -73,13 +73,13 @@ public:
     sub_error.shutdown();
   }
 
-  void stateCB(const robot_msgs::TwistConstPtr &msg)
+  void stateCB(const geometry_msgs::TwistConstPtr &msg)
   {
     robot_msgs::PoseDot base_vel;
-    //ROS_ERROR("%lf  %lf  %lf -- %lf  %lf", msg->vel.x, dead_zone, apply_dead_zone(msg->vel.x, dead_zone), k_trans, k_trans * apply_dead_zone(msg->vel.x, dead_zone));
-    base_vel.vel.vx = k_trans * apply_dead_zone(msg->vel.x, dead_zone);
-    base_vel.vel.vy = k_trans * apply_dead_zone(msg->vel.y, dead_zone);
-    base_vel.ang_vel.vz = k_rot * apply_dead_zone(msg->rot.z, dead_zone);
+    //ROS_ERROR("%lf  %lf  %lf -- %lf  %lf", msg->linear.x, dead_zone, apply_dead_zone(msg->linear.x, dead_zone), k_trans, k_trans * apply_dead_zone(msg->linear.x, dead_zone));
+    base_vel.vel.vx = k_trans * apply_dead_zone(msg->linear.x, dead_zone);
+    base_vel.vel.vy = k_trans * apply_dead_zone(msg->linear.y, dead_zone);
+    base_vel.ang_vel.vz = k_rot * apply_dead_zone(msg->angular.z, dead_zone);
     pub_drive.publish(base_vel);
   }
 
@@ -87,7 +87,7 @@ public:
   ros::Publisher pub_drive;
   ros::Subscriber sub_error;
 
-  robot_msgs::Twist error_msg;
+  geometry_msgs::Twist error_msg;
 
   double dead_zone;
   double k_trans;
