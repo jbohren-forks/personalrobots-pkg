@@ -40,8 +40,12 @@ TEST(descriptors, Daisy) {
 
   mkdir("test/output", S_IRWXO | S_IRWXU);
   writeResultsToFile(results, "test/output/" + name);
+  string verbose_command = "diff test/correct-output/" + name + " test/output/";
   string command = "diff test/correct-output/" + name + " test/output/" + name + " > /dev/null";
   EXPECT_TRUE(system(command.c_str()) == 0);
+
+  if(system(command.c_str()) != 0) 
+    system(verbose_command.c_str());
 }
 
 int main(int argc, char **argv){
