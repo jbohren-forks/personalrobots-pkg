@@ -40,7 +40,7 @@
         <safety_controller k_velocity="10" />
         <joint_properties damping="0.0" friction="0.0" />
         <parent name="${parent}_rotation_link">
-          <joint name="${parent}_${suffix}_wheel_joint" type="revolute">
+          <joint name="${parent}_${suffix}_wheel_joint" type="revolute"/>
         </parent>
       </joint>
       <origin xyz="0 ${reflect*caster_wheel_offset_y} 0" rpy="0 0 0" />
@@ -112,7 +112,7 @@
         <safety_controller k_velocity="10" />
         <joint_properties damping="0.0" friction="0.0" />
         <parent name="${parent}">
-          <insert_block name="origin">
+          <insert_block name="origin"/>
         </parent>
       </joint>
 
@@ -502,7 +502,7 @@
       <joint name="base_laser_joint" type="fixed">
         <origin xyz="0 0 0" rpy="0 0 0" />
         <axis xyz="0 1 0" />
-        <parent name="${name}_link" />
+        <parent name="${name}_link">
           <origin xyz="${base_laser_x} ${base_laser_y} ${base_height_offset+base_laser_z}" rpy="0 0 0" />
         </parent>
       </joint>
@@ -566,7 +566,7 @@
         <origin xyz="0 0 0" rpy="0 0 0" />
         <axis xyz="0 1 0" />
         <anchor xyz="0 0 0" />
-        <parent name="${name}_link" />
+        <parent name="${name}_link">
           <origin xyz="0.18 0 ${base_height_offset+0.235}" rpy="0 0 0" />
         </parent>
       </joint>

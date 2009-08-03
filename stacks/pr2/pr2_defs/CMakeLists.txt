@@ -9,13 +9,22 @@ rospack_add_gtest(test_prg_update test/test_prg_update.cpp)
 
 find_ros_package(pr2_defs)
 
-file(GLOB def_files ${CMAKE_CURRENT_SOURCE_DIR}/defs/*.xml 
-                    ${CMAKE_CURRENT_SOURCE_DIR}/robots/*groups*.xml)
+file(GLOB def_files ${CMAKE_CURRENT_SOURCE_DIR}/defs/*.xml)
+file(GLOB urdf_xacro_files ${CMAKE_CURRENT_SOURCE_DIR}/defs/*.urdf.xacro)
 
 # xacro file generation
 find_ros_package(xacro)
 find_ros_package(ivcon)
 find_ros_package(convex_decomposition)
+
+#TODO: following files are needed by openrave
+set(pr2xacro "${CMAKE_CURRENT_SOURCE_DIR}/robots/pr2.urdf.xacro")
+set(pr2urdf  "${CMAKE_CURRENT_SOURCE_DIR}/robots/pr2.urdf")
+add_custom_command(
+  OUTPUT ${pr2urdf}
+  COMMAND ${xacro_PACKAGE_PATH}/xacro.py
+  ARGS ${pr2xacro} > ${pr2urdf}
+  DEPENDS ${pr2xacro} ${urdf_xacro_files})
 
 #TODO: following files are needed by openrave
 set(pr2robot "${CMAKE_CURRENT_SOURCE_DIR}/robots/pr2.xacro.xml")
@@ -169,6 +178,6 @@ set(pr2_gen_files ${pr2_gen_files} ${basepath}/${basename}.iv ${basepath}/convex
 
 endforeach(it)
 
-add_custom_target(media_files ALL DEPENDS ${pr2robot_expanded} ${prfrobot_expanded} ${prgrobot_expanded} ${pr2prototype1_expanded} ${pr2larm_expanded} ${pr2rarm_expanded} ${pr2lgripper_expanded} ${pr2rgripper_expanded} ${pr2_gen_files})
+add_custom_target(media_files ALL DEPENDS ${pr2urdf} ${pr2robot_expanded} ${prfrobot_expanded} ${prgrobot_expanded} ${pr2prototype1_expanded} ${pr2larm_expanded} ${pr2rarm_expanded} ${pr2lgripper_expanded} ${pr2rgripper_expanded} ${pr2_gen_files})
 
 #TODO; stop bin and lib from being generated

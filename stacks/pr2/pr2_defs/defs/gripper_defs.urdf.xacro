@@ -112,7 +112,7 @@
       <initialAngle value="${gripper_min_angle}"/>
     </gazebo>
 
-    <ogre reference="${prefix}_l_finger_collision" name="mesh" reference="${prefix}_l_finger_collision">
+    <ogre name="mesh" reference="${prefix}_l_finger_collision">
       <type value="visual"/>
     </ogre>
     <ogre name="${prefix}_l_finger_collision_mesh" reference="${prefix}_l_finger_collision">
@@ -246,7 +246,7 @@
       </collision>
     </link>
     <gazebo name="${prefix}_l_finger_tip_gravity" reference="${prefix}_l_finger_tip_link">
-      <turnGravityOff>true</mimicKp>
+      <turnGravityOff>true</turnGravityOff>
       <selfCollide value="false" />
     </gazebo>
     <gazebo name="${prefix}_l_finger_tip_sensor" reference="${prefix}_l_finger_tip_link">
@@ -511,7 +511,6 @@
           <anchor>${side}_gripper_l_finger_tip_link</anchor>
           <axis>0 1 0</axis>
           <anchorOffset>0 0 0</anchorOffset>
-          </anchorOffset>
       </joint:slider>
       <joint:slider name="${side}_gripper_r_finger_tip_slider_joint">
           <body1>${side}_gripper_r_finger_tip_link</body1>
