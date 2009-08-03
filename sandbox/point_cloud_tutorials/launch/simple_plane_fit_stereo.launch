@@ -1,0 +1,9 @@
+<launch>
+  <node pkg="point_cloud_tutorials" type="plane_fit" name="plane_fit" respawn="true" output="screen" >
+    <param name="cloud_topic" value="narrow_stereo/cloud" />
+    <param name="sac_distance_threshold" value="0.02" />
+    <param name="sac_maximum_iterations" value="500" />
+  </node>
+    <node pkg="rviz" type="rviz" args="-d $(find point_cloud_tutorials)/launch/stereo_plane_fit.vcg" />
+</launch>
+
