@@ -171,7 +171,7 @@ SlamGMapping::initMapper(const sensor_msgs::LaserScan& scan)
   tf::Stamped<tf::Pose> ident;
   tf::Stamped<btTransform> laser_pose;
   ident.setIdentity();
-  ident.frame_id_ = laser_frame_;
+  ident.frame_id_ = scan.header.frame_id;
   ident.stamp_ = scan.header.stamp;
   try
   {
