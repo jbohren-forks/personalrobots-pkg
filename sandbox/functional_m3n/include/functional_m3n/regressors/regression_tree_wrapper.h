@@ -115,7 +115,7 @@ class RegressionTreeWrapper: public RegressorWrapper
      * \brief See RegressorWrapper::addTrainingSample()
      */
     // --------------------------------------------------------------
-    virtual int addTrainingSample(const float* const feature_vals,
+    virtual int addTrainingSample(const boost::shared_array<const float> feature_vals,
                                   const unsigned int length,
                                   const unsigned int start_idx,
                                   const float target);
@@ -132,7 +132,7 @@ class RegressionTreeWrapper: public RegressorWrapper
      * \brief See RegressorWrapper::predict()
      */
     // --------------------------------------------------------------
-    virtual int predict(const float* const feature_vals,
+    virtual int predict(const boost::shared_array<const float> feature_vals,
                         const unsigned int length,
                         const unsigned int start_idx,
                         float& predicted_val);
@@ -143,7 +143,7 @@ class RegressionTreeWrapper: public RegressorWrapper
     CvDTree* rtree_;
 
     // Intermediate containers used by addTrainingSample
-    std::vector<const float*> interm_feature_vals_;
+    std::vector<boost::shared_array<const float> > interm_feature_vals_;
     std::vector<unsigned int> interm_start_idx_;
     std::vector<unsigned int> interm_lengths_;
     std::vector<float> interm_target_;
