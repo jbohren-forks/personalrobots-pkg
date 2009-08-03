@@ -1311,7 +1311,7 @@ HaarDescriptor::HaarDescriptor(Vector<CvRect> rects, Vector<int> weights, Integr
 
   for(size_t i=0; i<rects_.size(); ++i) {
     CvRect& r = rects[i];
-    sprintf(buf, "_rect%d_weight%d_x%d_y%d_w%d_h%d", i, weights_[i], r.x, r.y, r.width, r.height);
+    sprintf(buf, "_rect%zd_weight%d_x%d_y%d_w%d_h%d", i, weights_[i], r.x, r.y, r.width, r.height);
     name_.append(buf);
   }
 
