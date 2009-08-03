@@ -40,6 +40,7 @@
 #include <navfn/MakeNavPlan.h>
 #include <costmap_2d/cost_values.h>
 #include <gtest/gtest.h>
+#include <sstream>
 
 #define PREFIX "/costmap_planner_node/"
 
@@ -47,6 +48,7 @@ using navfn::SetCostmap;
 using mpglue::SetIndexTransform;
 using mpglue::SelectPlanner;
 using navfn::MakeNavPlan;
+using namespace std;
 
 
 namespace mpglue_test {
@@ -160,7 +162,17 @@ TEST_F (CostmapPlannerNodeTest, make_nav_plan)
   ASSERT_TRUE (make_nav_plan_client.call(make_nav_plan_srv))
     << "failed to call make_nav_plan service";
   ASSERT_EQ (make_nav_plan_srv.response.plan_found, 1)
-    << "ADStar should have found a path";
+    << "ADStar should have found a path (error message: "
+    << make_nav_plan_srv.response.error_message << ")";
+  {
+    ostringstream os;
+    os << "  ADStar path has " << make_nav_plan_srv.response.path.size() << " poses:";
+    for (size_t ii(0); ii < make_nav_plan_srv.response.path.size(); ++ii) {
+      mpglue::waypoint_s const wpt(make_nav_plan_srv.response.path[ii].pose);
+      os << "(" << wpt.x << " " << wpt.y << " " << wpt.theta << ")";
+    }
+    ROS_INFO("%s", os.str().c_str());
+  }
   
   start.x = 1.1 * xmax;
   start.toPose(make_nav_plan_srv.request.start.pose);
@@ -210,7 +222,17 @@ TEST_F (CostmapPlannerNodeTest, make_nav_plan)
   ASSERT_TRUE (make_nav_plan_client.call(make_nav_plan_srv))
     << "failed to call make_nav_plan service";
   ASSERT_EQ (make_nav_plan_srv.response.plan_found, 1)
-    << "NavFn should have found a path";
+    << "NavFn should have found a path (error message: "
+    << make_nav_plan_srv.response.error_message << ")";
+  {
+    ostringstream os;
+    os << "  NavFn path has " << make_nav_plan_srv.response.path.size() << " poses:";
+    for (size_t ii(0); ii < make_nav_plan_srv.response.path.size(); ++ii) {
+      mpglue::waypoint_s const wpt(make_nav_plan_srv.response.path[ii].pose);
+      os << "(" << wpt.x << " " << wpt.y << " " << wpt.theta << ")";
+    }
+    ROS_INFO("%s", os.str().c_str());
+  }
 }
 
 

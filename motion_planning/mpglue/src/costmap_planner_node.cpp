@@ -281,16 +281,14 @@ namespace mpglue_node {
     resp.plan_found = 0;
     
     if ( ! costmap_->raw) {
-      ROS_ERROR("CostmapPlannerNode::makeNavPlan():"
-		" no costmap - use set_costmap service!");
-      // XXXX to do: add an error message to the reply
+      resp.error_message = "no costmap - use set_costmap service!";
+      ROS_ERROR("CostmapPlannerNode::makeNavPlan(): %s", resp.error_message.c_str());
       return true; // if we return false, the resp does not get sent to the caller
     }
     
     if ( ! planner_) {
-      ROS_ERROR("CostmapPlannerNode::makeNavPlan():"
-		" no planner - use select_planner service!");
-      // XXXX to do: add an error message to the reply
+      resp.error_message = "no planner - use select_planner service!";
+      ROS_ERROR("CostmapPlannerNode::makeNavPlan(): %s", resp.error_message.c_str());
       return true; // if we return false, the resp does not get sent to the caller
     }
     
@@ -307,6 +305,7 @@ namespace mpglue_node {
       planner_->setStart(start.x, start.y, start.theta);
       planner_->forcePlanningFromScratch(force_from_scratch);
       planner_->flushCostChanges(&cost_delta_map_);
+      cost_delta_map_.clear();
       
       // XXXX to do: should treat SBPL planners specially, because they are
       // capable of incremental planning...
@@ -316,8 +315,8 @@ namespace mpglue_node {
       plan = planner_->createPlan();
     }
     catch (std::exception const & ee) {
-      ROS_ERROR("CostmapPlannerNode::makeNavPlan(): createPlan() EXCEPTION %s", ee.what());
-      // XXXX to do: add an error message to the reply
+      resp.error_message = string("createPlan() EXCEPTION ") + ee.what();
+      ROS_ERROR("CostmapPlannerNode::makeNavPlan(): %s", resp.error_message.c_str());
       return true; // if we return false, the resp does not get sent to the caller
     }
     
@@ -332,7 +331,21 @@ namespace mpglue_node {
       planner_->getStats().logStream(os, "  planning FAILURE", "    ");
     ROS_INFO("%s", os.str().c_str());
     
-    // XXXX to do: convert path into response message
+    if ( ! plan) {
+      resp.error_message = "mpglue::CostmapPlanner::createPlan() failed [but did not throw]";
+      ROS_ERROR("CostmapPlannerNode::makeNavPlan(): %s", resp.error_message.c_str());
+      return true; // if we return false, the resp does not get sent to the caller
+    }
+    
+    for (waypoint_plan_t::const_iterator iwpt(plan->begin()); iwpt != plan->end(); ++iwpt) {
+      robot_msgs::PoseStamped ps;
+      // XXXX to do: what shall we do with ps.header???
+      (*iwpt)->toPose(ps.pose);
+      resp.path.push_back(ps);
+    }
+    ROS_INFO("  path contains %zu poses", resp.path.size());
+    
+    resp.error_message = "success";
     return true;
   }
   
