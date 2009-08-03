@@ -16,7 +16,7 @@ set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES stage-svn)
 
 
 # Find the build flags for Stage
-set(ENV{PKG_CONFIG_PATH} "${PROJECT_SOURCE_DIR}/stage/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
+set(ENV{PKG_CONFIG_PATH} "${PROJECT_SOURCE_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
 pkg_check_modules(STAGE REQUIRED stage)
 
 include_directories(${STAGE_INCLUDE_DIRS})

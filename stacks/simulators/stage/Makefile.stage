@@ -1,13 +1,13 @@
 all: installed
 
-SVN_DIR = stage-svn
+SVN_DIR = build/stage-svn
 SVN_URL = https://playerstage.svn.sourceforge.net/svnroot/playerstage/code/stage/branches/stage-ros
 SVN_REVISION = -r 7668
 include $(shell rospack find mk)/svn_checkout.mk
 
 installed: $(SVN_DIR) patched Makefile.stage
 	cd $(SVN_DIR) && autoreconf -i -s
-	cd $(SVN_DIR) && ./configure --prefix=`pwd`/../stage
+	cd $(SVN_DIR) && ./configure --prefix=`pwd`/../..
 	cd $(SVN_DIR) && make install
 	touch installed
 
