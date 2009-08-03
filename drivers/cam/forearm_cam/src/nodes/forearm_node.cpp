@@ -301,7 +301,7 @@ public:
     self_test_.addTest( &ForearmNode::resumeTest );
     
     // Set up reconfiguration
-    reconfigurator_.set_callback(boost::bind<void>(&ForearmNode::reconfigure, this, _1));
+    reconfigurator_.setCallback(boost::bind<void>(&ForearmNode::reconfigure, this, _1));
     
     // Start up the 
     diagnostic_thread_ = new boost::thread(boost::bind(&ForearmNode::diagnosticsLoop, this));
@@ -318,9 +318,9 @@ public:
     if ((level | dynamic_reconfigure::SensorLevels::RECONFIGURE_CLOSE) == level)
       close();
 
-    reconfigurator_.get_config(config_);
+    reconfigurator_.getConfig(config_);
     config_update();
-    reconfigurator_.set_config(config_);
+    reconfigurator_.setConfig(config_);
 
     if (was_open_)
       open();
@@ -1080,7 +1080,7 @@ stop_video:
   {
     status.name = "Interruption Test";
 
-    if (node_handle_.getNode()->numSubscribers("~image_raw") == 0)
+    if (cam_pub_.publisher().getNumSubscribers() == 0)
     {
       status.level = 0;
       status.message = "No operation interrupted.";

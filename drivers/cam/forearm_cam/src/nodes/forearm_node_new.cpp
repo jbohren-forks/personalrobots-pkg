@@ -61,7 +61,7 @@
 #include <boost/tokenizer.hpp>
 #include <boost/format.hpp>
 #include <driver_base/driver.h>
-#include <driver_base/device.h>
+#include <driver_base/driver_node.h>
 
 #include "fcamlib.h"
 #include "host_netutil.h"
@@ -181,9 +181,9 @@ private:
   double frame_period_;
 };
 
-class ForearmCamDevice : public driver_base::Device
+class ForearmCamDriver : public driver_base::Driver
 {
-  friend class ForearmCamDriver;
+  friend class ForearmCamNode;
 
 public:
   forearm_cam::ForearmCamConfig config_;
@@ -239,7 +239,7 @@ private:
 public:
   typedef forearm_cam::ForearmCamReconfigurator Reconfigurator;
   
-  ForearmCamDevice() :
+  ForearmCamDriver() :
     camera_(NULL) 
   {
     misfire_blank_ = 0;
@@ -289,13 +289,13 @@ public:
     }
   }
 
-  ~ForearmCamDevice()
+  ~ForearmCamDriver()
   {
     close();
 
   }
 
-  void open()
+  void doOpen()
   {
     assert(state_ == CLOSED);
     ROS_DEBUG("open()");
@@ -487,12 +487,12 @@ public:
     // Initialize frame time filter.
     frameTimeFilter_ = FrameTimeFilter(desired_freq_, 0.001, 0.5 / imager_freq_); 
     
-    config_bord_service_ = node_handle_.advertiseService("~board_config", &ForearmCamDevice::boardConfig, this);
+    config_bord_service_ = node_handle_.advertiseService("~board_config", &ForearmCamDriver::boardConfig, this);
     
     state_ = OPENED;
   }
 
-  void close()
+  void doClose()
   {
     ROS_DEBUG("close()");
     assert(state_ == OPENED);
@@ -500,18 +500,20 @@ public:
     state_ = CLOSED;
   }
 
-  void start()
+  void doStart()
   {
     ROS_DEBUG("start()");
     assert(state_ == OPENED);
-    image_thread_.reset(new boost::thread(boost::bind(&ForearmCamDevice::imageThread, this, config_.port)));
+    image_thread_.reset(new boost::thread(boost::bind(&ForearmCamDriver::imageThread, this, config_.port)));
     state_ = RUNNING;   
   }
 
-  void stop()
+  void doStop()
   {
     ROS_DEBUG("stop()");
     assert(state_ == RUNNING);
+    
+    state_ = OPENED;
 
     if (image_thread_ && !image_thread_->timed_join((boost::posix_time::milliseconds) 2000))
     {
@@ -519,8 +521,6 @@ public:
       lost_image_thread_count_++;
     }
     image_thread_.reset();
-    
-    state_ = OPENED;
   }
   
   int setTestMode(uint16_t mode, diagnostic_updater::DiagnosticStatusWrapper &status)
@@ -592,10 +592,10 @@ private:
       }
     }
     frameTimeFilter_.reset_filter();
-    ROS_INFO("Camera running.");
+    ROS_INFO("Camera streaming.");
   
     // Receive video
-    fcamVidReceive(camera_->ifName, port, height_, width_, &ForearmCamDevice::frameHandler, this);
+    fcamVidReceive(camera_->ifName, port, height_, width_, &ForearmCamDriver::frameHandler, this);
     
     // Stop Triggering
     if (!trig_controller_cmd_.empty())
@@ -798,7 +798,7 @@ stop_video:
 
   static int frameHandler(fcamFrameInfo *frameInfo, void *userData)
   {
-    ForearmCamDevice &fa_node = *(ForearmCamDevice*)userData;
+    ForearmCamDriver &fa_node = *(ForearmCamDriver*)userData;
     return fa_node.frameHandler(frameInfo);
   }
 
@@ -913,21 +913,22 @@ stop_video:
   
 };
 
-class ForearmCamDriver : public driver_base::Driver<ForearmCamDevice>
+class ForearmCamNode : public driver_base::DriverNode<ForearmCamDriver>
 {
 public:
-  ForearmCamDriver(ros::NodeHandle &nh) :
-    driver_base::Driver<ForearmCamDevice>(nh),
+  ForearmCamNode(ros::NodeHandle &nh) :
+    driver_base::DriverNode<ForearmCamDriver>(nh),
     cam_pub_(node_handle_.advertise<sensor_msgs::Image>("~image_raw", 1), 
         diagnostic_,
-        diagnostic_updater::FrequencyStatusParam(&device_.desired_freq_, &device_.desired_freq_, 0.05), 
+        diagnostic_updater::FrequencyStatusParam(&driver_.desired_freq_, &driver_.desired_freq_, 0.05), 
         diagnostic_updater::TimeStampStatusParam()),
     cam_info_pub_(ros::Publisher(), 
         diagnostic_,
-        diagnostic_updater::FrequencyStatusParam(&device_.desired_freq_, &device_.desired_freq_, 0.05), 
-        diagnostic_updater::TimeStampStatusParam())
+        diagnostic_updater::FrequencyStatusParam(&driver_.desired_freq_, &driver_.desired_freq_, 0.05), 
+        diagnostic_updater::TimeStampStatusParam()),
+    calibrated_(false)
   {
-    device_.useFrame_ = boost::bind(&ForearmCamDriver::publishImage, this, _1, _2, _3, _4);
+    driver_.useFrame_ = boost::bind(&ForearmCamNode::publishImage, this, _1, _2, _3, _4);
   }
   
 private:  
@@ -954,17 +955,18 @@ private:
     return 0;
   }
   
-  virtual void reconfigure_hook(int level)
+  virtual void reconfigureHook(int level)
   {
+    ROS_DEBUG("ForearmCamNode::reconfigureHook called at level %x", level);
     if ((level | dynamic_reconfigure::SensorLevels::RECONFIGURE_CLOSE) == level)
     {
-      cam_info_.width = device_.width_;
-      cam_info_.height = device_.height_;
-      image_.header.frame_id = device_.config_.frame_id;
-      cam_info_.header.frame_id = device_.config_.frame_id;
+      cam_info_.width = driver_.width_;
+      cam_info_.height = driver_.height_;
+      image_.header.frame_id = driver_.config_.frame_id;
+      cam_info_.header.frame_id = driver_.config_.frame_id;
     
       // Try to load camera intrinsics from flash memory
-      calibrated_ = device_.loadIntrinsics(&cam_info_.D[0], &cam_info_.K[0],
+      calibrated_ = driver_.loadIntrinsics(&cam_info_.D[0], &cam_info_.K[0],
                                  &cam_info_.R[0], &cam_info_.P[0]);
       if (calibrated_)
         ROS_INFO("Loaded intrinsics from camera");
@@ -979,26 +981,31 @@ private:
     }
   }
 
-  virtual void add_diagnostics()
+  virtual void addDiagnostics()
   {
     // Set up diagnostics
-    diagnostic_.add("Link Status", &device_, &ForearmCamDevice::linkStatus );
+    diagnostic_.add("Link Status", &driver_, &ForearmCamDriver::linkStatus );
   }
   
-  virtual void add_running_tests()
+  virtual void addRunningTests()
   {
-    self_test_.add( "Streaming Test", this, &ForearmCamDriver::streamingTest);
+    self_test_.add( "Streaming Test", this, &ForearmCamNode::streamingTest);
   }
   
-  virtual void add_stopped_tests(SelfTest<ForearmCamDevice> st)
+  virtual void addOpenedTests()
   {
+  }
+  
+  virtual void addStoppedTests()
+  {
+    ROS_DEBUG("Adding forearm camera video mode tests.");
     for (int i = 0; i < MT9V_NUM_MODES; i++)
     {
-      diagnostic_updater::TaskFunction f = boost::bind(&ForearmCamDriver::videoModeTest, this, MT9VModes[i].name, _1);
+      diagnostic_updater::TaskFunction f = boost::bind(&ForearmCamNode::videoModeTest, this, MT9VModes[i].name, _1);
       self_test_.add( str(boost::format("Test Pattern in mode %s")%MT9VModes[i].name), f );
     }
   }
-
+  
   void streamingTest(diagnostic_updater::DiagnosticStatusWrapper& status)
   {
     cam_pub_.clear_window();
@@ -1052,46 +1059,46 @@ private:
 
   void videoModeTest(const std::string mode, diagnostic_updater::DiagnosticStatusWrapper& status) 
   {
-    const std::string oldmode = device_.config_.video_mode;
-    ForearmCamDevice::UseFrameFunction oldUseFrame = device_.useFrame_;
+    const std::string oldmode = driver_.config_.video_mode;
+    ForearmCamDriver::UseFrameFunction oldUseFrame = driver_.useFrame_;
 
-    device_.config_.video_mode = mode;
-    device_.config_update();
+    driver_.config_.video_mode = mode;
+    driver_.config_update();
     VideoModeTestFrameHandler callback(status);
-    device_.useFrame_ = boost::bind(&VideoModeTestFrameHandler::run, boost::ref(callback), _1, _2, _3, _4);
+    driver_.useFrame_ = boost::bind(&VideoModeTestFrameHandler::run, boost::ref(callback), _1, _2, _3, _4);
 
     status.name = mode + " Pattern Test";
     status.summary(0, "Passed"); // If nobody else fills this, then the test passed.
 
-    open();
+    driver_.open();
 
-    if (device_.setTestMode(0x3800, status))
+    if (driver_.setTestMode(0x3800, status))
       goto reset_state;
 
-    start();  
+    driver_.start();  
     {
-      int oldcount = device_.lost_image_thread_count_;
-      stop();
-      if (oldcount < device_.lost_image_thread_count_)
+      int oldcount = driver_.lost_image_thread_count_;
+      driver_.stop();
+      if (oldcount < driver_.lost_image_thread_count_)
       {
         ROS_ERROR("Lost the image_thread. This should never happen.");
         status.summary(2, "Lost the image_thread. This should never happen.");
       }
     }
-    close();
+    driver_.close();
 
-    if (device_.setTestMode(0x0000, status))
+    if (driver_.setTestMode(0x0000, status))
       goto reset_state;
 
 reset_state:
-    close();
-    device_.useFrame_ = oldUseFrame;
-    device_.config_.video_mode = oldmode;
-    device_.config_update();
+    driver_.close();
+    driver_.useFrame_ = oldUseFrame;
+    driver_.config_.video_mode = oldmode;
+    driver_.config_update();
   }
 };
 
 int main(int argc, char **argv)
 { 
-  return driver_base::main<ForearmCamDriver>(argc, argv, "forearm_camera");
+  return driver_base::main<ForearmCamNode>(argc, argv, "forearm_camera");
 }
