@@ -158,7 +158,7 @@ const RandomField::Node* RandomField::createNode(const unsigned int node_id,
 {
 #if DEBUG
   // verify features are valid
-  if (nbr_feature_vals == 0)
+  if (feature_vals.get() == NULL || nbr_feature_vals == 0)
   {
     ROS_ERROR("Invalid features for node");
     return NULL;
@@ -225,7 +225,7 @@ const RandomField::Clique* RandomField::createClique(const unsigned int clique_i
 
 #if DEBUG
   // verify features are valid
-  if (nbr_feature_vals == 0)
+  if (feature_vals.get() == NULL || nbr_feature_vals == 0)
   {
     ROS_ERROR("Invalid features for clique %u", clique_id);
     return NULL;
