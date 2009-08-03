@@ -1,19 +1,25 @@
 <package>
 <description brief="GMapping">
-
-This package contains GMapping, from OpenSlam.
-This package includes a patch that fixes several build-related problem in
-the SVN version of GMapping, and also removes its GSL dependency.
-
+This package contains GMapping, from OpenSlam, with a ROS wrapper.  This
+package builds a binary, slam_gmapping, which can be used in a ROS system
+to provide a running pose estimate and an occupany grid map, given
+pose-stamped laser scans.
 </description>
-<author>Giorgio Grisetti, Cyrill Stachniss, Wolfram Burgard</author>
+<author>Giorgio Grisetti, Cyrill Stachniss, Wolfram Burgard; ROS wrapper by
+Brian Gerkey</author>
 <license>CreativeCommons-by-nc-sa-2.0</license>
 <review status="3rdparty" notes=""/>
 <url>http://openslam.org/</url>
 <export>
   <cpp lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lgridfastslam -lsensor_odometry -lsensor_range -lutils -lscanmatcher" cflags="-I${prefix}/include -I${prefix}/include/gmapping"/>
-  <doxymaker external="http://openslam.org"/>
+  <!--doxymaker external="http://openslam.org"/-->
 </export>
+  <depend package="roscpp"/>
+  <depend package="rosconsole"/>
+  <depend package="std_msgs"/>
+  <depend package="laser_scan"/>
+  <depend package="nav_msgs"/>
+  <depend package="tf"/>
 
 </package>
 

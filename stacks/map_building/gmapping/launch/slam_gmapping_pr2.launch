@@ -1,6 +1,6 @@
 <launch>
-  <group name="wg">
-    <node pkg="slam_gmapping" type="slam_gmapping" name="slam_gmapping" output="screen">
+    <param name="use_sim_time" value="true"/>
+    <node pkg="gmapping" type="slam_gmapping" name="slam_gmapping" output="screen">
       <remap from="scan" to="base_scan"/>
       <param name="map_udpate_interval" value="5.0"/>
       <param name="maxUrange" value="16.0"/>
@@ -30,5 +30,4 @@
       <param name="lasamplerange" value="0.005"/>
       <param name="lasamplestep" value="0.005"/>
     </node>
-  </group>
 </launch>
