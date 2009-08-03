@@ -1,3 +1,39 @@
+/*********************************************************************
+*
+* Software License Agreement (BSD License)
+*
+*  Copyright (c) 2008, Willow Garage, Inc.
+*  All rights reserved.
+*
+*  Redistribution and use in source and binary forms, with or without
+*  modification, are permitted provided that the following conditions
+*  are met:
+*
+*   * Redistributions of source code must retain the above copyright
+*     notice, this list of conditions and the following disclaimer.
+*   * Redistributions in binary form must reproduce the above
+*     copyright notice, this list of conditions and the following
+*     disclaimer in the documentation and/or other materials provided
+*     with the distribution.
+*   * Neither the name of the Willow Garage nor the names of its
+*     contributors may be used to endorse or promote products derived
+*     from this software without specific prior written permission.
+*
+*  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+*  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+*  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+*  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+*  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+*  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+*  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+*  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+*  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+*  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+*  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+*  POSSIBILITY OF SUCH DAMAGE.
+*
+* Author: Alex Teichman
+*********************************************************************/
 
 #include <dorylus.h>
 #include <iostream>
@@ -68,7 +104,7 @@ Stanleyi::Stanleyi()
       descriptor_[i]->debug_ = true;
     }
   }
-  srand ( time(NULL) ); //For randomly selecting points.
+  srand(time(NULL)); //For randomly selecting points.
 }
 
 Stanleyi::~Stanleyi() {
@@ -118,6 +154,7 @@ DorylusDataset* Stanleyi::collectDataset(string bagfile, int samples_per_img, st
   return dd;
 }
 
+// TODO: Make this not copy data.  
 MatrixXf* cvVector2Eigen(const Vector<float>& v) {
   MatrixXf* m = new MatrixXf(v.size(), 1);
   for(size_t i=0; i<v.size(); i++) {
@@ -155,7 +192,7 @@ void Stanleyi::collectObjectsFromImageVectorized(int samples_per_img, vector<obj
       
   }
   
-  // -- Call all criptors, get vectorized results.
+  // -- Call all descriptors, get vectorized results.
   for(size_t i=0; i<descriptor_.size(); i++) {
     descriptor_[i]->compute(img_, desired, results[i]);
   }
@@ -165,11 +202,9 @@ void Stanleyi::collectObjectsFromImageVectorized(int samples_per_img, vector<obj
     object* obj = new object;
     obj->label = labels[i];
 
+    // -- Only accept those that have all valid descriptors. 
     bool success = true;
-    //cout << descriptor_.size() << " descriptors.  " << results.size() << endl;
     for(size_t j=0; j<descriptor_.size(); j++) {
-      //cout << samples_per_img << " objects.  " << results[j].size() << endl;
-      //cout << descriptor_[j]->result_size_ << " elem.  " << results[j][i].size() << endl;
 
       if(results[j][i].empty()) {
 	success = false;
@@ -187,6 +222,8 @@ void Stanleyi::collectObjectsFromImageVectorized(int samples_per_img, vector<obj
   }
 }
 
+//! Train and make predictions on a single labeled image.  
+//! This is mostly to make sure nothing totally wrong is happening, as almost any feature should make this task work perfectly. 
 void Stanleyi::sanityCheck(string bagfile, string results_dir) {
 
   int samples_per_img = 1000;
@@ -653,48 +690,31 @@ int main(int argc, char** argv)
 vector<ImageDescriptor*> setupImageDescriptors() {
   vector<ImageDescriptor*> d;
 
-// Size winSize, Size blockSize, Size blockStride, Size cellSize,
-//   int nbins, int derivAperture=1, double winSigma=-1,
-// //   int histogramNormType=L2Hys, double L2HysThreshold=0.2, bool gammaCorrection=false)
-//  d.push_back(new HogWrapper());
-  d.push_back(new HogWrapper(Size(16,16), Size(16,16), Size(8,8), Size(8,8), 7, 1, -1, 0, 0.2, true));
-  d.push_back(new HogWrapper(Size(32,32), Size(16,16), Size(8,8), Size(8,8), 7, 1, -1, 0, 0.2, true));
-  d.push_back(new HogWrapper(Size(64,64), Size(32,32), Size(16,16), Size(16,16), 7, 1, -1, 0, 0.2, true));
-  d.push_back(new HogWrapper(Size(128,128), Size(64,64), Size(32,32), Size(32,32), 7, 1, -1, 0, 0.2, true));
+//   d.push_back(new HogWrapper(Size(16,16), Size(16,16), Size(8,8), Size(8,8), 7, 1, -1, 0, 0.2, true));
+//   d.push_back(new HogWrapper(Size(32,32), Size(16,16), Size(8,8), Size(8,8), 7, 1, -1, 0, 0.2, true));
+//   d.push_back(new HogWrapper(Size(64,64), Size(32,32), Size(16,16), Size(16,16), 7, 1, -1, 0, 0.2, true));
+//   d.push_back(new HogWrapper(Size(128,128), Size(64,64), Size(32,32), Size(32,32), 7, 1, -1, 0, 0.2, true));
 
-  SuperpixelColorHistogram* sch1 = new SuperpixelColorHistogram(20, 0.5, 10);
-  SuperpixelColorHistogram* sch2 = new SuperpixelColorHistogram(5, 0.5, 10, NULL, sch1);
-  SuperpixelColorHistogram* sch3 = new SuperpixelColorHistogram(5, 1, 10, NULL, sch1);
-  SuperpixelColorHistogram* sch4 = new SuperpixelColorHistogram(5, .25, 10, NULL, sch1);
-  d.push_back(sch1);
-  d.push_back(sch2);
-  d.push_back(sch3);
-  d.push_back(sch4);
+//   SuperpixelColorHistogram* sch1 = new SuperpixelColorHistogram(20, 0.5, 10);
+//   SuperpixelColorHistogram* sch2 = new SuperpixelColorHistogram(5, 0.5, 10, NULL, sch1);
+//   SuperpixelColorHistogram* sch3 = new SuperpixelColorHistogram(5, 1, 10, NULL, sch1);
+//   SuperpixelColorHistogram* sch4 = new SuperpixelColorHistogram(5, .25, 10, NULL, sch1);
+//   d.push_back(sch1);
+//   d.push_back(sch2);
+//   d.push_back(sch3);
+//   d.push_back(sch4);
  
+//   d.push_back(new SurfWrapper(true, 150));
+//   d.push_back(new SurfWrapper(true, 100));
+//   d.push_back(new SurfWrapper(true, 50));
+//   d.push_back(new SurfWrapper(true, 25));
+//   d.push_back(new SurfWrapper(true, 10));
   
-// // //  d.push_back(new ContourFragmentDescriptor(0, "contour_fragments"));
-// // //   IntegralImageTexture* iit = new IntegralImageTexture(1);
-// // //   d.push_back(iit);
-// // //   d.push_back(new IntegralImageTexture(2, iit));
-// // //   d.push_back(new IntegralImageTexture(3, iit));
-
-// // // -- SURF.
-  d.push_back(new SurfWrapper(true, 150));
-  d.push_back(new SurfWrapper(true, 100));
-  d.push_back(new SurfWrapper(true, 50));
-  d.push_back(new SurfWrapper(true, 25));
-  d.push_back(new SurfWrapper(true, 10));
-  
-//   //-- Haar.
-// //   vector<ImageDescriptor*> haar = setupDefaultHaarDescriptors();
-// //   d.insert(d.end(), haar.begin(), haar.end());
-
-  // -- Daisy.
   Daisy* base_daisy = new Daisy(25, 3, 8, 8, NULL);
   d.push_back(base_daisy);
-  d.push_back(new Daisy(50, 3, 8, 8, base_daisy));
-  d.push_back(new Daisy(75, 3, 8, 8, base_daisy));
-  d.push_back(new Daisy(100, 3, 8, 8, base_daisy));
+//   d.push_back(new Daisy(50, 3, 8, 8, base_daisy));
+//   d.push_back(new Daisy(75, 3, 8, 8, base_daisy));
+//   d.push_back(new Daisy(100, 3, 8, 8, base_daisy));
   d.push_back(new Daisy(150, 3, 8, 8, base_daisy));
 
   return d;
