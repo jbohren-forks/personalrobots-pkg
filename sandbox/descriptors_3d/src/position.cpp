@@ -73,6 +73,7 @@ void Position::doComputation(const robot_msgs::PointCloud& data,
                              const cv::Vector<const robot_msgs::Point32*>& interest_pts,
                              cv::Vector<cv::Vector<float> >& results)
 {
+  // Record the z-coordinate for each interest point
   size_t nbr_interest_pts = interest_pts.size();
   for (size_t i = 0 ; i < nbr_interest_pts ; i++)
   {
@@ -89,6 +90,7 @@ void Position::doComputation(const robot_msgs::PointCloud& data,
                              const cv::Vector<const vector<int>*>& interest_region_indices,
                              cv::Vector<cv::Vector<float> >& results)
 {
+  // Record the z-coordinate for each interest region's centroid
   robot_msgs::Point32 region_centroid;
   size_t nbr_interest_regions = interest_region_indices.size();
   for (size_t i = 0 ; i < nbr_interest_regions ; i++)

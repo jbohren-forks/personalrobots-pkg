@@ -58,8 +58,7 @@ void OrientationGeneric::doComputation(const robot_msgs::PointCloud& data,
                                        cv::Vector<cv::Vector<float> >& results)
 {
   // ----------------------------------------
-  // Iterate over each interest point, grab neighbors within bbox radius,
-  // then compute bounding box
+  // Compute orientation feature for each interest point
   int nbr_interest_pts = interest_pts.size();
 #pragma omp parallel for
   for (int i = 0 ; i < nbr_interest_pts ; i++)
@@ -77,8 +76,7 @@ void OrientationGeneric::doComputation(const robot_msgs::PointCloud& data,
                                        cv::Vector<cv::Vector<float> >& results)
 {
   // ----------------------------------------
-  // Iterate over each interest point, grab neighbors within bbox radius,
-  // then compute bounding box
+  // Compute orientation feature for each interest region
   int nbr_interest_regions = interest_region_indices.size();
 #pragma omp parallel for
   for (int i = 0 ; i < nbr_interest_regions ; i++)
@@ -93,10 +91,13 @@ void OrientationGeneric::doComputation(const robot_msgs::PointCloud& data,
 inline void OrientationGeneric::computeOrientation(const unsigned int interest_sample_idx,
                                                    cv::Vector<float>& result) const
 {
+  // Retrieve local direction for current interest point/region
   const Eigen::Vector3d* curr_local_direction = (*local_directions_)[interest_sample_idx];
+
+  // NULL indicates could not extract local direction
   if (curr_local_direction != NULL)
   {
-    // Invariant: local and reference directions are both unit
+    // Invariant: local and reference directions are both unit length
     float cos_theta = curr_local_direction->dot(reference_direction_);
     if (cos_theta < 0.0)
     {

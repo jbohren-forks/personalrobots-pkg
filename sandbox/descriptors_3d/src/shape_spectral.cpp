@@ -149,6 +149,7 @@ void ShapeSpectral::doComputation(const robot_msgs::PointCloud& data,
 // --------------------------------------------------------------
 void ShapeSpectral::computeShapeFeatures(const unsigned int interest_sample_idx, cv::Vector<float>& result) const
 {
+  // Retrieve the eigenvalues for current interest point/region
   const Eigen::Vector3d* curr_eigen_vals = (*eig_vals_)[interest_sample_idx];
 
   // NULL indicates couldnt compute spectral information for interest sample

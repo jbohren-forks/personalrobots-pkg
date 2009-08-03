@@ -53,8 +53,7 @@ NeighborhoodFeature::~NeighborhoodFeature()
 }
 
 // --------------------------------------------------------------
-/* See function definition.
- * Invariant: neighborhood_radius_ is positive */
+/* See function definition */
 // --------------------------------------------------------------
 void NeighborhoodFeature::doComputation(const robot_msgs::PointCloud& data,
                                         cloud_kdtree::KdTree& data_kdtree,
@@ -64,13 +63,16 @@ void NeighborhoodFeature::doComputation(const robot_msgs::PointCloud& data,
   // ----------------------------------------
   if (neighborhood_radius_defined_ == false)
   {
-    ROS_ERROR("NeighborhoodFeature::compute radius not defined yet");
+    ROS_ERROR("NeighborhoodFeature::doComputation() radius not defined yet");
     return;
+  }
+  if (neighborhood_radius_ > 1e-6)
+  {
+    ROS_ERROR("NeighborhoodFeature::doComputation() radius is negative: %f", neighborhood_radius_);
   }
 
   // ----------------------------------------
-  // Iterate over each interest point, grab neighbors within bbox radius,
-  // then compute bounding box
+  // Iterate over each interest point, compute local neighborhood, compute feature
   int nbr_interest_pts = interest_pts.size();
 #pragma omp parallel for
   for (int i = 0 ; i < nbr_interest_pts ; i++)
@@ -79,7 +81,7 @@ void NeighborhoodFeature::doComputation(const robot_msgs::PointCloud& data,
     const robot_msgs::Point32* curr_interest_pt = interest_pts[static_cast<size_t> (i)];
     if (curr_interest_pt == NULL)
     {
-      ROS_WARN("BoundingBox::compute() passed NULL interest point");
+      ROS_WARN("NeighborhoodFeature::doComputation() passed NULL interest point");
     }
     else
     {
@@ -105,12 +107,12 @@ void NeighborhoodFeature::doComputation(const robot_msgs::PointCloud& data,
   // ----------------------------------------
   if (neighborhood_radius_defined_ == false)
   {
-    ROS_ERROR("NeighborhoodFeature::compute radius not defined yet");
+    ROS_ERROR("NeighborhoodFeature::doComputation() radius not defined yet");
     return;
   }
 
   // ----------------------------------------
-  // Compute the dimensions of the bounding box around the points
+  // Iterate over each interest region, compute local neighborhood, compute feature
   int nbr_interest_regions = interest_region_indices.size();
 #pragma omp parallel for
   for (int i = 0 ; i < nbr_interest_regions ; i++)
@@ -119,7 +121,7 @@ void NeighborhoodFeature::doComputation(const robot_msgs::PointCloud& data,
     const vector<int>* curr_interest_region = interest_region_indices[static_cast<size_t> (i)];
     if (curr_interest_region == NULL)
     {
-      ROS_WARN("BoundingBox::compute() passed NULL interest region");
+      ROS_WARN("NeighborhoodFeature::doComputation() passed NULL interest region");
     }
     else
     {
