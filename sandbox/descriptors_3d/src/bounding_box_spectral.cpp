@@ -77,7 +77,7 @@ int BoundingBoxSpectral::precompute(const robot_msgs::PointCloud& data,
   // verify the eigenvectors are for the interest points
   if (eig_vecs_min_->size() != interest_pts.size())
   {
-    ROS_ERROR("BoundingBoxSpectral::initDescriptor inconsistent number of points and spectral info");
+    ROS_ERROR("BoundingBoxSpectral::precompute() inconsistent number of points and spectral info");
     eig_vecs_min_ = NULL;
     eig_vecs_mid_ = NULL;
     eig_vecs_max_ = NULL;
@@ -111,7 +111,7 @@ int BoundingBoxSpectral::precompute(const robot_msgs::PointCloud& data,
   // Verify the eigenvectors are for the interest regions
   if (eig_vecs_min_->size() != interest_region_indices.size())
   {
-    ROS_ERROR("BoundingBoxSpectral::initDescriptor inconsistent number of regions and spectral info");
+    ROS_ERROR("BoundingBoxSpectral::precompute() inconsistent number of regions and spectral info");
     eig_vecs_min_ = NULL;
     eig_vecs_mid_ = NULL;
     eig_vecs_max_ = NULL;
@@ -152,7 +152,7 @@ void BoundingBoxSpectral::computeNeighborhoodFeature(const robot_msgs::PointClou
   // NULL indicates no eigenvector could be extracted
   if (eig_vec_max == NULL)
   {
-    ROS_WARN("BoundingBox::computeBoundingBoxFeatures() No spectral information...skipping it");
+    ROS_WARN("BoundingBoxSpectral::computeNeighborhoodFeature() No spectral information...skipping it");
     result.clear();
     return;
   }

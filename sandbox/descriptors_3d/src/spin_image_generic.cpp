@@ -59,17 +59,18 @@ void SpinImageGeneric::computeNeighborhoodFeature(const robot_msgs::PointCloud& 
                                                   const unsigned int interest_sample_idx,
                                                   cv::Vector<float>& result) const
 {
-  const Eigen::Vector3d* curr_spin_axis = (*spin_axes_)[interest_sample_idx];
-  if (curr_spin_axis == NULL)
+  // Clear out result for counting
+  result.resize(result_size_);
+  for (size_t i = 0 ; i < result_size_ ; i++)
   {
-    ROS_WARN("SKIPPING b/c im cool");
-    return;
+    result[i] = 0.0;
   }
 
-  result.resize(result_size_);
-
-  const unsigned int row_offset = nbr_rows_ / 2;
+  const Eigen::Vector3d* curr_spin_axis = (*spin_axes_)[interest_sample_idx];
   const Eigen::Vector3d& curr_center_pt = spin_image_centers_[interest_sample_idx];
+
+  // Offset into row number (center point is middle of the spin image)
+  const unsigned int row_offset = nbr_rows_ / 2;
 
   float max_bin_count = 1.0; // init to 1.0 so avoid divide by 0 if no neighbor points
   unsigned int nbr_neighbors = neighbor_indices.size();

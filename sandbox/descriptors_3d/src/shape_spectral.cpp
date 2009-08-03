@@ -70,7 +70,7 @@ int ShapeSpectral::precompute(const robot_msgs::PointCloud& data,
   // verify the eigenvectors are for the interest points
   if (eig_vals_->size() != interest_pts.size())
   {
-    ROS_ERROR("ShapeSpectral::initDescriptor inconsistent number of points and spectral info");
+    ROS_ERROR("ShapeSpectral::precompute() inconsistent number of points and spectral info");
     eig_vals_ = NULL;
     return -1;
   }
@@ -100,7 +100,7 @@ int ShapeSpectral::precompute(const robot_msgs::PointCloud& data,
   // verify the eigenvectors are for the interest regions
   if (eig_vals_->size() != interest_region_indices.size())
   {
-    ROS_ERROR("ShapeSpectral::initDescriptor inconsistent number of regions and spectral info");
+    ROS_ERROR("ShapeSpectral::precompute() inconsistent number of regions and spectral info");
     eig_vals_ = NULL;
     return -1;
   }

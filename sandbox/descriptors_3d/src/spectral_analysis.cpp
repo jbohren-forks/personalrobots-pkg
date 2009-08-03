@@ -97,7 +97,7 @@ int SpectralAnalysis::analyzeInterestPoints(const robot_msgs::PointCloud& data,
   // Ensure radius is valid
   if (support_radius_ < 1e-6)
   {
-    ROS_ERROR("SpectralAnalysis::compute() support radius must be set to a positive value");
+    ROS_ERROR("SpectralAnalysis::analyzeInterestPoints() support radius must be set to a positive value");
     return -1;
   }
 
@@ -178,7 +178,7 @@ int SpectralAnalysis::analyzeInterestRegions(const robot_msgs::PointCloud& data,
     const vector<int>* curr_interest_region = interest_region_indices[static_cast<size_t> (i)];
     if (curr_interest_region == NULL)
     {
-      ROS_WARN("SpectralAnalysis::analyzeInterestPoints() passed NULL interest region");
+      ROS_WARN("SpectralAnalysis::analyzeInterestRegions() passed NULL interest region");
     }
     else
     {

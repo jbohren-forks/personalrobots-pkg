@@ -89,7 +89,7 @@ int SpinImageNormal::precompute(const robot_msgs::PointCloud& data,
   size_t nbr_interest_pts = interest_pts.size();
   if (spin_axes_->size() != nbr_interest_pts)
   {
-    ROS_ERROR("SpinImageNormal::initDescriptor inconsistent number of points and spectral info");
+    ROS_ERROR("SpinImageNormal::precompute() inconsistent number of points and spectral info");
     spin_axes_ = NULL;
     return -1;
   }
@@ -133,7 +133,7 @@ int SpinImageNormal::precompute(const robot_msgs::PointCloud& data,
   size_t nbr_interest_regions = interest_region_indices.size();
   if (spin_axes_->size() != nbr_interest_regions)
   {
-    ROS_ERROR("SpinImageNormal::initDescriptor inconsistent number of regions and spectral info");
+    ROS_ERROR("SpinImageNormal::precompute() inconsistent number of regions and spectral info");
     spin_axes_ = NULL;
     return -1;
   }
