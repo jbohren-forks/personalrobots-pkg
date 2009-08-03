@@ -64,7 +64,7 @@ void planning_environment::CollisionSpaceMonitor::setupCSM(void)
     haveMap_ = false;
 
     collisionSpace_ = cm_->getODECollisionModel().get();
-    nh_.param<double>("~pointcloud_padd", pointcloud_padd_, 0.01);
+    nh_.param<double>("~pointcloud_padd", pointcloud_padd_, 0.02);
     
     startEnvironmentMonitor();
 }

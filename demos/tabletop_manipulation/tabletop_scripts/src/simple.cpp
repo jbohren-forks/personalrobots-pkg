@@ -40,6 +40,7 @@
 #include <robot_actions/action_client.h>
 #include <mapping_msgs/ObjectInMap.h>
 #include <mapping_msgs/AttachedObject.h>
+#include <pr2_mechanism_controllers/TrajectoryStart.h>
 
 #include <pr2_robot_actions/MoveArmGoal.h>
 #include <pr2_robot_actions/MoveArmState.h>
@@ -50,6 +51,7 @@
 #include <recognition_lambertian/FindObjectPoses.h>
 #include <visualization_msgs/Marker.h>
 
+
 class CleanTable
 {
 
@@ -58,7 +60,7 @@ public:
     CleanTable(void) :  move_arm("move_right_arm"), gripper("actuate_gripper_right_arm")
     {    
 	pubObj = nh.advertise<mapping_msgs::ObjectInMap>("object_in_map", 1);
-	pubAttach = nh.advertise<mapping_msgs::AttachedObject>("attach_map", 1);
+	pubAttach = nh.advertise<mapping_msgs::AttachedObject>("attach_object", 1);
 	
 	vmPub = nh.advertise<visualization_msgs::Marker>("visualization_marker", 10240);    
     }
@@ -109,7 +111,7 @@ public:
 	    // hack for stereo error
 	    double dx = 0.055;
 	    double dy = 0.02;
-	    double dz = -0.04;
+	    double dz = -0.0;
 	    
 	    obj.object_pose.pose.position.x += dx;
 	    obj.object_pose.pose.position.y += dy;
@@ -132,6 +134,14 @@ public:
 	    
 	    ROS_INFO("pose of object: %f %f %f", obj.object_pose.pose.position.x, obj.object_pose.pose.position.y, obj.object_pose.pose.position.z);
 	    ROS_INFO("point to grasp: %f %f %f", obj.grasp_pose.pose.position.x, obj.grasp_pose.pose.position.y, obj.grasp_pose.pose.position.z);
+
+	    mapping_msgs::ObjectInMap o;
+	    o.header = obj.object_pose.header;
+	    o.id = "ID";
+	    o.action = mapping_msgs::ObjectInMap::ADD;
+	    o.object = obj.object;
+	    o.pose = obj.object_pose.pose;
+	    pubObj.publish(o);
 	    
 	    return true;	
 	}
@@ -154,11 +164,11 @@ public:
 	goal.goal_constraints.pose_constraint[0].position_tolerance_above.x = 0.005;
 	goal.goal_constraints.pose_constraint[0].position_tolerance_below.x = 0.005;
 	
-	goal.goal_constraints.pose_constraint[0].position_tolerance_above.y = 0.01;
-	goal.goal_constraints.pose_constraint[0].position_tolerance_below.y = 0.01;
+	goal.goal_constraints.pose_constraint[0].position_tolerance_above.y = 0.02;
+	goal.goal_constraints.pose_constraint[0].position_tolerance_below.y = 0.02;
 	
-	goal.goal_constraints.pose_constraint[0].position_tolerance_above.z = 0.02;
-	goal.goal_constraints.pose_constraint[0].position_tolerance_below.z = 0.02;
+	goal.goal_constraints.pose_constraint[0].position_tolerance_above.z = 0.03;
+	goal.goal_constraints.pose_constraint[0].position_tolerance_below.z = 0.03;
 	
 	goal.goal_constraints.pose_constraint[0].orientation_tolerance_above.x = 0.1;
 	goal.goal_constraints.pose_constraint[0].orientation_tolerance_below.x = 0.1;
@@ -187,7 +197,7 @@ public:
     {	
 	std_msgs::Float64 g, fb;
 	g.data = -80;
-	if (gripper.execute(g, fb, ros::Duration(5.0)) != robot_actions::SUCCESS)
+	if (gripper.execute(g, fb, ros::Duration(15.0)) != robot_actions::SUCCESS)
 	    return true;
 	else
 	{
@@ -200,7 +210,7 @@ public:
     {
 	std_msgs::Float64 g, fb;
 	g.data = 80;
-	if (gripper.execute(g, fb, ros::Duration(5.0)) != robot_actions::SUCCESS)
+	if (gripper.execute(g, fb, ros::Duration(15.0)) != robot_actions::SUCCESS)
 	    return true;
 	else
 	{
@@ -213,12 +223,20 @@ public:
     {
 	if (gripClose())
 	{
+	    mapping_msgs::ObjectInMap o;
+	    o.header.frame_id = obj.object_pose.header.frame_id;
+	    o.header.stamp = ros::Time::now();
+	    o.id = "ID";
+	    o.action = mapping_msgs::ObjectInMap::REMOVE;
+	    pubObj.publish(o);
+	    
 	    mapping_msgs::AttachedObject ao;
 	    ao.header = obj.object_pose.header;
 	    ao.link_name = "r_wrist_roll_link";
 	    ao.objects.push_back(obj.object);
 	    ao.poses.push_back(obj.object_pose.pose);
 	    pubAttach.publish(ao);
+	    
 	    return true;
 	}
 	else return false;
@@ -244,6 +262,7 @@ private:
     robot_actions::ActionClient<std_msgs::Float64, pr2_robot_actions::ActuateGripperState, std_msgs::Float64> gripper;
     
     ros::NodeHandle nh;
+    
     ros::Publisher  pubObj;
     ros::Publisher  pubAttach;
     ros::Publisher  vmPub;

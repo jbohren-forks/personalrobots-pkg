@@ -6,6 +6,7 @@
   <url>http://pr.willowgarage.com/wiki</url>
 
   <depend package="3dnav_pr2"/>
+  <depend package="planning_environment"/>
 
 <!--
   <depend package="2dnav_pr2"/>
