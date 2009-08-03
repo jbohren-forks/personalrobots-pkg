@@ -70,7 +70,7 @@ map_server mymap.png 0.1
 @section services ROS services
 
 Offers (name/type):
-- @b "static_map"/nav_msgs::GetMap : Retrieve the map via this service
+- @b "map"/nav_msgs::GetMap : Retrieve the map via this service
 
 @section parameters ROS parameters
 
@@ -133,7 +133,7 @@ class MapServer
                map_resp_.map.info.resolution);
       meta_data_message_ = map_resp_.map.info;
 
-      service = n.advertiseService("static_map", &MapServer::mapCallback, this);
+      service = n.advertiseService("map", &MapServer::mapCallback, this);
       pub = n.advertise<nav_msgs::MapMetaData>("map_metadata", 1,
                                                  boost::bind(&MapServer::metadataSubscriptionCallback, *this, _1));
     }
