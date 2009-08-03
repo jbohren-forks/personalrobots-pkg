@@ -10,7 +10,7 @@ CMAKE = cmake
 BOOST_INCLUDE =$(shell rosboost-cfg --include_dirs)
 EIGEN2_INCLUDE_DIR=`rospack find eigen`/build/eigen2/
 TINYXML_INCLUDE_DIR=`rospack find tinyxml`/include/
-CMAKE_ARGS = -DCMAKE_INSTALL_PREFIX=$(PWD)/$(INSTALL_DIR)/ \
+CMAKE_ARGS = -DCMAKE_INSTALL_PREFIX=`rospack find kdl`/$(INSTALL_DIR)/ \
 		-DPYTHON_BINDINGS=ON \
 		-DBUILD_MODELS=OFF \
 		-DENABLE_TESTS=ON \
