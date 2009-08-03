@@ -12,6 +12,8 @@ set(ROS_BUILD_TYPE Release)
 
 rospack(robot_self_filter)
 
+rospack_add_boost_directories()
+
 rospack_add_library(robot_self_filter src/self_mask.cpp)
 rospack_add_openmp_flags(robot_self_filter)
 

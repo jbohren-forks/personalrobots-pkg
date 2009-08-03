@@ -116,7 +116,8 @@ void robot_self_filter::SelfMask::maskContainment(const robot_msgs::PointCloud& 
     }
 }
 
-void robot_self_filter::SelfMask::maskIntersection(const robot_msgs::PointCloud& data_in, const std::string &sensor_frame, std::vector<int> &mask)
+void robot_self_filter::SelfMask::maskIntersection(const robot_msgs::PointCloud& data_in, const std::string &sensor_frame, std::vector<int> &mask,
+						   const boost::function<void(const btVector3&)> &callback)
 {
     mask.resize(data_in.pts.size());
     if (bodies_.empty())
@@ -127,11 +128,12 @@ void robot_self_filter::SelfMask::maskIntersection(const robot_msgs::PointCloud&
 	if (sensor_frame.empty())
 	    maskAuxContainment(data_in, mask);
 	else
-	    maskAuxIntersection(data_in, mask);
+	    maskAuxIntersection(data_in, mask, callback);
     }
 }
 
-void robot_self_filter::SelfMask::maskIntersection(const robot_msgs::PointCloud& data_in, const btVector3 &sensor, std::vector<int> &mask)
+void robot_self_filter::SelfMask::maskIntersection(const robot_msgs::PointCloud& data_in, const btVector3 &sensor, std::vector<int> &mask,
+						   const boost::function<void(const btVector3&)> &callback)
 {
     mask.resize(data_in.pts.size());
     if (bodies_.empty())
@@ -139,7 +141,7 @@ void robot_self_filter::SelfMask::maskIntersection(const robot_msgs::PointCloud&
     else
     {
 	assumeFrame(data_in.header, sensor);
-	maskAuxIntersection(data_in, mask);
+	maskAuxIntersection(data_in, mask, callback);
     }
 }
 
@@ -226,7 +228,7 @@ void robot_self_filter::SelfMask::maskAuxContainment(const robot_msgs::PointClou
     }
 }
 
-void robot_self_filter::SelfMask::maskAuxIntersection(const robot_msgs::PointCloud& data_in, std::vector<int> &mask)
+void robot_self_filter::SelfMask::maskAuxIntersection(const robot_msgs::PointCloud& data_in, std::vector<int> &mask, const boost::function<void(const btVector3&)> &callback)
 {
     const unsigned int bs = bodies_.size();
     const unsigned int np = data_in.pts.size();
@@ -250,9 +252,22 @@ void robot_self_filter::SelfMask::maskAuxIntersection(const robot_msgs::PointClo
 	{
 	    btVector3 dir(sensor_pos_ - pt);
 	    dir.normalize();
-	    for (unsigned int j = 0 ; out == OUTSIDE && j < bs ; ++j)
-		if (bodies_[j].body->intersectsRay(pt, dir))
-		    out = SHADOW;
+	    if (callback)
+	    {
+		std::vector<btVector3> intersections;
+		for (unsigned int j = 0 ; out == OUTSIDE && j < bs ; ++j)
+		    if (bodies_[j].body->intersectsRay(pt, dir, &intersections, 1))
+		    {
+			callback(intersections[0]);
+			out = SHADOW;
+		    }
+	    }
+	    else
+	    {
+		for (unsigned int j = 0 ; out == OUTSIDE && j < bs ; ++j)
+		    if (bodies_[j].body->intersectsRay(pt, dir))
+			out = SHADOW;
+	    }
 	}
 	
 	mask[i] = out;
@@ -274,7 +289,7 @@ int robot_self_filter::SelfMask::getMaskContainment(double x, double y, double z
     return getMaskContainment(btVector3(x, y, z));
 }
 
-int robot_self_filter::SelfMask::getMaskIntersection(const btVector3 &pt) const
+int robot_self_filter::SelfMask::getMaskIntersection(const btVector3 &pt, const boost::function<void(const btVector3&)> &callback) const
 {  
     int out = getMaskContainment(pt);
     if (out == OUTSIDE)
@@ -282,14 +297,27 @@ int robot_self_filter::SelfMask::getMaskIntersection(const btVector3 &pt) const
 	const unsigned int bs = bodies_.size();
 	btVector3 dir(sensor_pos_ - pt);
 	dir.normalize();
-	for (unsigned int j = 0 ; out == OUTSIDE && j < bs ; ++j)
-	    if (bodies_[j].body->intersectsRay(pt, dir))
-		out = SHADOW;
+	if (callback)
+	{
+	    for (unsigned int j = 0 ; out == OUTSIDE && j < bs ; ++j)
+		if (bodies_[j].body->intersectsRay(pt, dir))
+		    out = SHADOW;
+	}
+	else
+	{
+	    std::vector<btVector3> intersections;
+	    for (unsigned int j = 0 ; out == OUTSIDE && j < bs ; ++j)
+		if (bodies_[j].body->intersectsRay(pt, dir, &intersections, 1))
+		{
+		    callback(intersections[0]);
+		    out = SHADOW;
+		}
+	}
     }
     return out;
 }
 
-int robot_self_filter::SelfMask::getMaskIntersection(double x, double y, double z) const
+int robot_self_filter::SelfMask::getMaskIntersection(double x, double y, double z, const boost::function<void(const btVector3&)> &callback) const
 {
-    return getMaskIntersection(btVector3(x, y, z));
+    return getMaskIntersection(btVector3(x, y, z), callback);
 }

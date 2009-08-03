@@ -46,13 +46,18 @@ public:
     {
 	id_ = 1;
 	vmPub_ = nodeHandle_.advertise<visualization_msgs::Marker>("visualization_marker", 10240);
-	std::vector<std::string> links = rm_.getCollisionCheckLinks();
-	sf_ = new robot_self_filter::SelfMask(tf_, links, 1.0, 0.0);
+	//	std::vector<std::string> links = rm_.getCollisionCheckLinks();
+	sf_ = new robot_self_filter::SelfMask(tf_, 1.0, 0.0);
     }
 
     ~TestSelfFilter(void)
     {
 	delete sf_;
+    }
+    
+    void gotIntersection(const btVector3 &pt)
+    {
+	sendPoint(pt.x(), pt.y(), pt.z());
     }
     
     void sendPoint(double x, double y, double z)
@@ -112,9 +117,11 @@ public:
 	
 	ros::WallTime tm = ros::WallTime::now();
 	std::vector<int> mask;
-	sf_->maskIntersection(in, "laser_tilt_mount_link", mask);
+	sf_->maskIntersection(in, "laser_tilt_mount_link", mask, boost::bind(&TestSelfFilter::gotIntersection, this, _1));
+	//	sf_->maskContainment(in, mask);
 	printf("%f points per second\n", (double)N/(ros::WallTime::now() - tm).toSec());
-	
+
+	/*
 	sf_->assumeFrame(in.header);	
 	int k = 0;
 	for (unsigned int i = 0 ; i < mask.size() ; ++i)
@@ -122,11 +129,11 @@ public:
 	    //	    bool v = sf_->getMaskContainment(in.pts[i].x, in.pts[i].y, in.pts[i].z);
 	    //	    if (v != mask[i]) 
 	    //		ROS_ERROR("Mask does not match");	    
-	    if (mask[i] != robot_self_filter::SHADOW) continue;
+	    if (mask[i] != robot_self_filter::INSIDE) continue;
 	    sendPoint(in.pts[i].x, in.pts[i].y, in.pts[i].z);
 	    k++;
 	}
-	
+	*/
 	ros::spin();	
     }
 

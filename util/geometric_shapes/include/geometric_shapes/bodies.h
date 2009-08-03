@@ -300,6 +300,7 @@ namespace bodies
 
     class Mesh : public Body
     {	
+    public:
 	/// \todo When this class is tested, make ConvexMesh depend on it and use the ray intersection function
 	Mesh(void) : Body()
 	{
@@ -308,7 +309,9 @@ namespace bodies
 	    m_btMesh = NULL;
 	    m_center.setValue(0, 0, 0);	    
 	    m_aabbMin.setValue(0, 0, 0);	    
-	    m_aabbMax.setValue(0, 0, 0);	    
+	    m_aabbMax.setValue(0, 0, 0);
+	    m_radiusB = 0.0;
+	    m_radiusBSqr = 0.0;
 	}
 	
 	Mesh(const shapes::Shape *shape) : Body()
@@ -319,6 +322,8 @@ namespace bodies
 	    m_center.setValue(0, 0, 0);
 	    m_aabbMin.setValue(0, 0, 0);	    
 	    m_aabbMax.setValue(0, 0, 0);	    
+	    m_radiusB = 0.0;
+	    m_radiusBSqr = 0.0;
 	    setDimensions(shape);
 	}
 	
@@ -349,6 +354,8 @@ namespace bodies
 	btVector3                m_center;
 	btVector3                m_aabbMin;
 	btVector3                m_aabbMax;
+	double                   m_radiusB;
+	double                   m_radiusBSqr;
 	
     };
     

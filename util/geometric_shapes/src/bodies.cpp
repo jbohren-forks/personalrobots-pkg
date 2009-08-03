@@ -535,6 +535,9 @@ bool bodies::Mesh::intersectsRay(const btVector3& origin, const btVector3& dir, 
 {
     if (m_btMeshShape)
     {
+	
+	if (distanceSQR(m_center, origin, dir) > m_radiusBSqr) return false;
+	
 	// transform the ray into the coordinate frame of the mesh
 	btVector3 orig(m_iPose * origin);
 	btVector3 dr(m_iPose.getBasis() * dir);
@@ -581,9 +584,9 @@ bool bodies::Mesh::intersectsRay(const btVector3& origin, const btVector3& dir, 
 		    btVector3 normal;
 		    cb.triangles[i].calcNormal(normal);
 		    btScalar dv = normal.dot(dr);
-		    if (fabs(dv) > ZERO)
+		    if (fabs(dv) > 1e-3)
 		    {
-			double t = (normal.dot(cb.triangles[i].getVertexPtr(0)) - normal.dot(orig)) / dv;
+			double t = (normal.dot(cb.triangles[i].getVertexPtr(0)) - normal.dot(orig)) / dv;			
 			// here we use the input origin & direction, since the transform is linear
 			detail::intersc ip(origin + dir * t, t);
 			intpt.push_back(ip);
@@ -635,11 +638,17 @@ void bodies::Mesh::updateInternalData(void)
 	m_btMeshShape->setMargin(m_padding);
     }
     m_iPose = m_pose.inverse();
-    m_center = m_pose.getOrigin();
-
+    
     btTransform id;
     id.setIdentity();
     m_btMeshShape->getAabb(id, m_aabbMin, m_aabbMax);
+
+    btVector3 d = (m_aabbMax - m_aabbMin) / 2.0;
+
+    m_center = m_pose.getOrigin() + d;
+    m_radiusBSqr = d.length2();
+    m_radiusB = sqrt(m_radiusBSqr);
+    
     /// \todo check if the AABB computation includes padding & scaling; if not, include it
 }
 
@@ -657,17 +666,8 @@ double bodies::Mesh::computeVolume(void) const
 
 void bodies::Mesh::computeBoundingSphere(BoundingSphere &sphere) const
 {
-    if (m_btMeshShape)
-    {
-	sphere.center = m_center + (m_aabbMax + m_aabbMin) / 2.0;
-	btVector3 d = (m_aabbMax - m_aabbMin) / 2.0;
-	sphere.radius = d.length();
-    }
-    else
-    {
-	sphere.center = m_center;
-	sphere.radius = 0.0;
-    }
+    sphere.center = m_center;
+    sphere.radius = m_radiusB;
 }
 
 bool bodies::ConvexMesh::containsPoint(const btVector3 &p) const
@@ -928,7 +928,7 @@ bool bodies::ConvexMesh::intersectsRay(const btVector3& origin, const btVector3&
 		result = true;
 		if (intersections)
 		{
-		    detail::intersc ip(P, t);
+		    detail::intersc ip(origin + dir * t, t);
 		    ipts.push_back(ip);
 		}
 		else

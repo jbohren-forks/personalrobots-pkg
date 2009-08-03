@@ -34,6 +34,7 @@
 #include <planning_environment/models/robot_models.h>
 #include <geometric_shapes/bodies.h>
 #include <tf/transform_listener.h>
+#include <boost/bind.hpp>
 #include <string>
 #include <vector>
 
@@ -104,13 +105,17 @@ namespace robot_self_filter
 	 */
 	void maskContainment(const robot_msgs::PointCloud& data_in, std::vector<int> &mask);
 
-	/** \brief Compute the intersection mask for a given pointcloud. If a mask
-	    element can have one of the values INSIDE, OUTSIDE or SHADOW. If the value is SHADOW,
-	    the point is on a ray behind the robot and should not have
-	    been seen. If the mask element is INSIDE, the point is inside
-	    the robot. The sensor frame is specified to obtain the origin of the sensor.
+	/** \brief Compute the intersection mask for a given
+	    pointcloud. If a mask element can have one of the values
+	    INSIDE, OUTSIDE or SHADOW. If the value is SHADOW, the
+	    point is on a ray behind the robot and should not have
+	    been seen. If the mask element is INSIDE, the point is
+	    inside the robot. The sensor frame is specified to obtain
+	    the origin of the sensor. A callback can be registered for
+	    the first intersection point on each body.
 	 */
-	void maskIntersection(const robot_msgs::PointCloud& data_in, const std::string &sensor_frame, std::vector<int> &mask);
+	void maskIntersection(const robot_msgs::PointCloud& data_in, const std::string &sensor_frame, std::vector<int> &mask,
+			      const boost::function<void(const btVector3&)> &intersectionCallback = NULL);
 
 	/** \brief Compute the intersection mask for a given pointcloud. If a mask
 	    element can have one of the values INSIDE, OUTSIDE or SHADOW. If the value is SHADOW,
@@ -118,7 +123,8 @@ namespace robot_self_filter
 	    been seen. If the mask element is INSIDE, the point is inside
 	    the robot. The origin of the sensor is specified as well.
 	 */
-	void maskIntersection(const robot_msgs::PointCloud& data_in, const btVector3 &sensor, std::vector<int> &mask);
+	void maskIntersection(const robot_msgs::PointCloud& data_in, const btVector3 &sensor, std::vector<int> &mask,
+			      const boost::function<void(const btVector3&)> &intersectionCallback = NULL);
 	
 	/** \brief Assume subsequent calls to getMaskX() will be in the frame passed to this function.
 	 *   The frame in which the sensor is located is optional */
@@ -139,12 +145,12 @@ namespace robot_self_filter
 	/** \brief Get the intersection mask (INSIDE, OUTSIDE or
 	    SHADOW) value for an individual point. No setup is
 	    performed, assumeFrame() should be called before use */
-	int  getMaskIntersection(double x, double y, double z) const;
+	int  getMaskIntersection(double x, double y, double z, const boost::function<void(const btVector3&)> &intersectionCallback = NULL) const;
 	
 	/** \brief Get the intersection mask (INSIDE, OUTSIDE or
 	    SHADOW) value for an individual point. No setup is
 	    performed, assumeFrame() should be called before use */
-	int  getMaskIntersection(const btVector3 &pt) const;
+	int  getMaskIntersection(const btVector3 &pt, const boost::function<void(const btVector3&)> &intersectionCallback = NULL) const;
 	
 	/** \brief Get the set of link names that have been instantiated for self filtering */
 	void getLinkNames(std::vector<std::string> &frames) const;
@@ -170,7 +176,7 @@ namespace robot_self_filter
 	void maskAuxContainment(const robot_msgs::PointCloud& data_in, std::vector<int> &mask);
 
 	/** \brief Perform the actual mask computation. */
-	void maskAuxIntersection(const robot_msgs::PointCloud& data_in, std::vector<int> &mask);
+	void maskAuxIntersection(const robot_msgs::PointCloud& data_in, std::vector<int> &mask, const boost::function<void(const btVector3&)> &callback);
 	
 	planning_environment::RobotModels   rm_;
 	tf::TransformListener              &tf_;
