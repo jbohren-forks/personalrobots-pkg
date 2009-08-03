@@ -327,12 +327,6 @@ int robot_self_filter::SelfMask::getMaskIntersection(const btVector3 &pt, const 
 	dir.normalize();
 	if (callback)
 	{
-	    for (unsigned int j = 0 ; out == OUTSIDE && j < bs ; ++j)
-		if (bodies_[j].body->intersectsRay(pt, dir))
-		    out = SHADOW;
-	}
-	else
-	{
 	    std::vector<btVector3> intersections;
 	    for (unsigned int j = 0 ; out == OUTSIDE && j < bs ; ++j)
 		if (bodies_[j].body->intersectsRay(pt, dir, &intersections, 1))
@@ -340,6 +334,12 @@ int robot_self_filter::SelfMask::getMaskIntersection(const btVector3 &pt, const 
 		    callback(intersections[0]);
 		    out = SHADOW;
 		}
+	}
+	else
+	{
+	    for (unsigned int j = 0 ; out == OUTSIDE && j < bs ; ++j)
+		if (bodies_[j].body->intersectsRay(pt, dir))
+		    out = SHADOW;
 	}
 
 	// if it is not a shadow point, we check if it is inside the scaled body
