@@ -10,10 +10,6 @@ Brian Gerkey</author>
 <license>CreativeCommons-by-nc-sa-2.0</license>
 <review status="3rdparty" notes=""/>
 <url>http://openslam.org/</url>
-<export>
-  <cpp lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lgridfastslam -lsensor_odometry -lsensor_range -lutils -lscanmatcher" cflags="-I${prefix}/include -I${prefix}/include/gmapping"/>
-  <!--doxymaker external="http://openslam.org"/-->
-</export>
   <depend package="roscpp"/>
   <depend package="rosconsole"/>
   <depend package="std_msgs"/>
