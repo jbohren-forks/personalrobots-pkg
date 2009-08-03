@@ -829,8 +829,9 @@ private:
     	boost::unique_lock<boost::mutex> lock(data_lock_);
 
         for (int i=0;i<frames_no_;++i) {
-
-//        	printf("Waiting for images\n");
+        	ROS_INFO("OutletSpotter: Waiting for stereo data");
+        	got_images_ = false;
+        	preempted_ = false;
         	// block until images are available to process
         	start_image_wait_ = ros::Time::now();
         	while (!got_images_ && !preempted_) {
@@ -845,7 +846,7 @@ private:
         		// show original disparity
         		cvShowImage("disparity_original", disp_);
         	}
-        	ROS_INFO("handle_detector_vision: Running handle detection");
+        	ROS_INFO("OutletSpotter: Running handle detection");
         	// eliminate from disparity locations that cannot contain a handle
         	applyPositionPrior();
         	// run cascade classifier
@@ -857,8 +858,6 @@ private:
         		cvShowImage("left", left_);
         		cvWaitKey(100);
         	}
-        	got_images_ = false;
-        	preempted_ = false;
         }
 
         bool found = decideHandlePosition(handle_rect, handle);
