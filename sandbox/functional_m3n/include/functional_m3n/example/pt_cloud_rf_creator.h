@@ -70,7 +70,7 @@ class PtCloudRFCreator
                      const robot_msgs::PointCloud& pt_cloud,
                      cloud_kdtree::KdTree& pt_cloud_kdtree,
                      const std::vector<float>& labels,
-                     std::set<unsigned int>& failed_indices);
+                     std::set<unsigned int>& successful_indices);
 
     void createCliqueSet(RandomField& rf,
                          const robot_msgs::PointCloud& pt_cloud,
