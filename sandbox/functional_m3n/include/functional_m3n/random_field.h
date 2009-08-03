@@ -39,6 +39,8 @@
 #include <map>
 #include <fstream>
 
+#include <boost/shared_array.hpp>
+
 #include <ros/ros.h>
 
 // TODO turn this off when on the robot
@@ -132,7 +134,7 @@ class RandomField
      *         on failure
      */
     // --------------------------------------------------------------
-    const Node* createNode(const float* feature_vals,
+    const Node* createNode(const boost::shared_array<const float>,
                            const unsigned int nbr_feature_vals,
                            unsigned int label = UNKNOWN_LABEL,
                            float x = 0.0,
@@ -161,7 +163,7 @@ class RandomField
      */
     // --------------------------------------------------------------
     const Node* createNode(const unsigned int node_id,
-                           const float* feature_vals,
+                           const boost::shared_array<const float> feature_vals,
                            const unsigned int nbr_feature_vals,
                            unsigned int label = UNKNOWN_LABEL,
                            float x = 0.0,
@@ -171,7 +173,7 @@ class RandomField
     // TODO comment this
     const Clique* createClique(const unsigned int clique_set_idx,
                                const list<const Node*>& nodes,
-                               const float* feature_vals,
+                               const boost::shared_array<const float> feature_vals,
                                unsigned int nbr_feature_vals,
                                float x = 0.0,
                                float y = 0.0,
@@ -181,7 +183,7 @@ class RandomField
     const Clique* createClique(const unsigned int clique_id,
                                const unsigned int clique_set_idx,
                                const list<const Node*>& nodes,
-                               const float* feature_vals,
+                               const boost::shared_array<const float> feature_vals,
                                const unsigned int nbr_feature_vals,
                                float x = 0.0,
                                float y = 0.0,
@@ -330,7 +332,7 @@ class RandomField
          * \brief Returns the values of the features contained in the descriptors in vector format
          */
         // --------------------------------------------------------------
-        inline const float* getFeatureVals() const
+        inline boost::shared_array<const float> getFeatureVals() const
         {
           return feature_vals_;
         }
@@ -405,14 +407,14 @@ class RandomField
          * \param nbr_feature_vals The number of values in feature_vals
          */
         // --------------------------------------------------------------
-        inline void setFeatures(const float* feature_vals, unsigned int nbr_feature_vals)
+        inline void setFeatures(const boost::shared_array<const float> feature_vals, unsigned int nbr_feature_vals)
         {
           feature_vals_ = feature_vals;
           nbr_feature_vals_ = nbr_feature_vals;
         }
 
         unsigned int id_;
-        const float* feature_vals_;
+        boost::shared_array<const float> feature_vals_;
         unsigned int nbr_feature_vals_;
 
         float x_;

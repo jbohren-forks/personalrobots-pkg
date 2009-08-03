@@ -114,11 +114,13 @@ void Descriptor3D::compute(const robot_msgs::PointCloud& data,
 void Descriptor3D::concatenateFeatures(const vector<cv::Vector<cv::Vector<float> > >& all_descriptor_results,
                                        const unsigned int nbr_samples,
                                        const unsigned int nbr_concatenated_vals,
-                                       vector<float*>& concatenated_features,
+                                       vector<boost::shared_array<const float> >& concatenated_features,
                                        set<unsigned int>& failed_indices)
 {
   failed_indices.clear();
-  concatenated_features.assign(nbr_samples, NULL);
+  concatenated_features.clear();
+  concatenated_features.resize(nbr_samples);
+  //concatenated_features.assign(nbr_samples, NULL);
   unsigned int nbr_descriptors = all_descriptor_results.size();
 
   // ----------------------------------------------
@@ -147,7 +149,8 @@ void Descriptor3D::concatenateFeatures(const vector<cv::Vector<cv::Vector<float>
     if (all_features_success)
     {
       // allocate
-      float* curr_concat_feats = static_cast<float*> (malloc(sizeof(float) * nbr_concatenated_vals));
+      //float* curr_concat_feats = static_cast<float*> (malloc(sizeof(float) * nbr_concatenated_vals));
+      float* curr_concat_feats = new float[nbr_concatenated_vals];
 
       unsigned int prev_val_idx = 0; // offset when copying into concat_features
       for (unsigned int j = 0 ; j < nbr_descriptors ; j++)
@@ -166,7 +169,8 @@ void Descriptor3D::concatenateFeatures(const vector<cv::Vector<cv::Vector<float>
       }
 
       // Save it
-      concatenated_features[i] = curr_concat_feats;
+      //concatenated_features[i] = curr_concat_feats;
+      concatenated_features[i].reset(static_cast<const float*>(curr_concat_feats));
     }
     // Otherwise features not successful, so note them
     else
@@ -186,7 +190,7 @@ unsigned int Descriptor3D::computeAndConcatFeatures(const robot_msgs::PointCloud
                                                     cloud_kdtree::KdTree& data_kdtree,
                                                     const cv::Vector<const robot_msgs::Point32*>& interest_pts,
                                                     vector<Descriptor3D*>& descriptors_3d,
-                                                    vector<float*>& concatenated_features,
+                                                    vector<boost::shared_array<const float> >& concatenated_features,
                                                     set<unsigned int>& failed_indices)
 
 {
@@ -221,7 +225,7 @@ unsigned int Descriptor3D::computeAndConcatFeatures(const robot_msgs::PointCloud
                                                     cloud_kdtree::KdTree& data_kdtree,
                                                     const cv::Vector<const vector<int>*>& interest_region_indices,
                                                     vector<Descriptor3D*>& descriptors_3d,
-                                                    vector<float*>& concatenated_features,
+                                                    vector<boost::shared_array<const float> >& concatenated_features,
                                                     set<unsigned int>& failed_indices)
 
 {

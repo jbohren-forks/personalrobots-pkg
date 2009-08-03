@@ -130,7 +130,7 @@ int RandomField::updateLabelings(const map<unsigned int, unsigned int>& new_labe
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-const RandomField::Node* RandomField::createNode(const float* feature_vals,
+const RandomField::Node* RandomField::createNode(const boost::shared_array<const float> feature_vals,
                                                  const unsigned int nbr_feature_vals,
                                                  unsigned int label,
                                                  float x,
@@ -149,7 +149,7 @@ const RandomField::Node* RandomField::createNode(const float* feature_vals,
 /* See function definition */
 // --------------------------------------------------------------
 const RandomField::Node* RandomField::createNode(const unsigned int node_id,
-                                                 const float* feature_vals,
+                                                 const boost::shared_array<const float> feature_vals,
                                                  const unsigned int nbr_feature_vals,
                                                  unsigned int label,
                                                  float x,
@@ -158,9 +158,9 @@ const RandomField::Node* RandomField::createNode(const unsigned int node_id,
 {
 #if DEBUG
   // verify features are valid
-  if (feature_vals == NULL || nbr_feature_vals == 0)
+  if (nbr_feature_vals == 0)
   {
-    ROS_ERROR("Invalid features for clique");
+    ROS_ERROR("Invalid features for node");
     return NULL;
   }
 
@@ -184,7 +184,7 @@ const RandomField::Node* RandomField::createNode(const unsigned int node_id,
 // --------------------------------------------------------------
 const RandomField::Clique* RandomField::createClique(const unsigned int clique_set_idx,
                                                      const list<const RandomField::Node*>& nodes,
-                                                     const float* feature_vals,
+                                                     const boost::shared_array<const float> feature_vals,
                                                      const unsigned int nbr_feature_vals,
                                                      float x,
                                                      float y,
@@ -215,7 +215,7 @@ const RandomField::Clique* RandomField::createClique(const unsigned int clique_s
 const RandomField::Clique* RandomField::createClique(const unsigned int clique_id,
                                                      const unsigned int clique_set_idx,
                                                      const list<const RandomField::Node*>& nodes,
-                                                     const float* feature_vals,
+                                                     const boost::shared_array<const float> feature_vals,
                                                      const unsigned int nbr_feature_vals,
                                                      float x,
                                                      float y,
@@ -225,9 +225,9 @@ const RandomField::Clique* RandomField::createClique(const unsigned int clique_i
 
 #if DEBUG
   // verify features are valid
-  if (feature_vals == NULL || nbr_feature_vals == 0)
+  if (nbr_feature_vals == 0)
   {
-    ROS_ERROR("Invalid features for clique");
+    ROS_ERROR("Invalid features for clique %u", clique_id);
     return NULL;
   }
 
@@ -293,7 +293,7 @@ int RandomField::saveNodeFeatures(string filename) const
         << curr_node->getRandomFieldID() << " " << curr_node->getLabel();
 
     // [features]
-    const float* curr_feats = curr_node->getFeatureVals();
+    boost::shared_array<const float> curr_feats = curr_node->getFeatureVals();
     for (unsigned int i = 0 ; i < curr_node->getNumberFeatureVals() ; i++)
     {
       file_out << " " << curr_feats[i];
@@ -339,7 +339,7 @@ int RandomField::saveCliqueFeatures(string basename) const
           << " " << curr_clique_id;
 
       // [features]
-      const float* curr_feats = curr_clique->getFeatureVals();
+      boost::shared_array<const float> curr_feats = curr_clique->getFeatureVals();
       for (unsigned int i = 0 ; i < curr_clique->getNumberFeatureVals() ; i++)
       {
         file_out << " " << curr_feats[i];
@@ -363,7 +363,7 @@ int RandomField::saveCliqueFeatures(string basename) const
 RandomField::GenericClique::GenericClique()
 {
   id_ = 0;
-  feature_vals_ = NULL;
+  //feature_vals_ = NULL;
   nbr_feature_vals_ = 0;
 }
 
@@ -372,7 +372,7 @@ RandomField::GenericClique::GenericClique()
 // --------------------------------------------------------------
 RandomField::GenericClique::~GenericClique()
 {
-  delete feature_vals_;
+  //delete feature_vals_;
 }
 
 // --------------------------------------------------------------

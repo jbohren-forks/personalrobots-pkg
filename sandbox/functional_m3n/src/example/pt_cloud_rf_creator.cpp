@@ -292,7 +292,8 @@ void PtCloudRFCreator::createNodes(RandomField& rf,
 
   // ----------------------------------------------
   // Compute features over all point cloud
-  vector<float*> concatenated_features(nbr_pts, NULL);
+  //vector<float*> concatenated_features(nbr_pts, NULL);
+  vector<boost::shared_array<const float> > concatenated_features;
   unsigned int nbr_concatenated_vals = Descriptor3D::computeAndConcatFeatures(pt_cloud, pt_cloud_kdtree,
       interest_pts, node_feature_descriptors_, concatenated_features, failed_indices);
   if (nbr_concatenated_vals == 0)
@@ -307,7 +308,8 @@ void PtCloudRFCreator::createNodes(RandomField& rf,
   for (unsigned int i = 0 ; i < nbr_pts ; i++)
   {
     // NULL indicates couldnt compute features for interest point
-    if (concatenated_features[i] != NULL)
+    //if (concatenated_features[i] != NULL)
+    if (failed_indices.count(i) == 0)
     {
       const RandomField::Node* created_node = NULL;
       if (use_labels)
@@ -402,7 +404,8 @@ void PtCloudRFCreator::createCliqueSet(RandomField& rf,
     }
     // ----------------------------------------------
     // Compute features over clusters
-    vector<float*> concatenated_features(curr_nbr_clusters, NULL);
+    //vector<float*> concatenated_features(curr_nbr_clusters, NULL);
+    vector<boost::shared_array<const float> > concatenated_features;
     set<unsigned int> failed_region_indices; // unused
     unsigned int nbr_concatenated_vals = Descriptor3D::computeAndConcatFeatures(pt_cloud, pt_cloud_kdtree,
         interest_region_indices, clique_set_feature_descriptors_[clique_set_idx], concatenated_features,
@@ -421,10 +424,11 @@ void PtCloudRFCreator::createCliqueSet(RandomField& rf,
     for (map<unsigned int, vector<int> >::iterator iter_created_clusters = created_clusters.begin() ; iter_created_clusters
         != created_clusters.end() ; iter_created_clusters++)
     {
-      float* curr_cluster_features = concatenated_features[cluster_idx++];
+      boost::shared_array<const float> curr_cluster_features = concatenated_features[cluster_idx++];
 
       // Only create cliques where could compute cluster features
-      if (curr_cluster_features != NULL)
+      //if (curr_cluster_features != NULL)
+      if (failed_region_indices.count(cluster_idx-1) == 0)
       {
         // Retrieve point cloud indices within the cluster.
         const vector<int>& curr_cluster_pt_indices = iter_created_clusters->second;
@@ -447,7 +451,7 @@ void PtCloudRFCreator::createCliqueSet(RandomField& rf,
         // Ensure the clique has at least two nodes
         if (nbr_nodes_in_clique < 2)
         {
-          free(curr_cluster_features);
+          //free(curr_cluster_features);
           ROS_DEBUG("Skipping clique of size less than 2");
         }
         else
@@ -486,7 +490,7 @@ boost::shared_ptr<RandomField> PtCloudRFCreator::createRandomField(const robot_m
   unsigned int nbr_clique_sets = clique_set_clusterings_.size();
 
   cloud_kdtree::KdTreeANN pt_cloud_kdtree(pt_cloud);
-  boost::shared_ptr<RandomField> rf = boost::shared_ptr<RandomField>(new RandomField(nbr_clique_sets));
+  boost::shared_ptr<RandomField> rf(new RandomField(nbr_clique_sets));
 
   ROS_INFO("=============== CREATING RANDOM FIELD =================");
 

@@ -37,6 +37,8 @@
 #include <vector>
 #include <set>
 
+#include <boost/shared_array.hpp>
+
 #include <opencv/cxcore.h>
 #include <opencv/cv.h>
 #include <opencv/cvaux.hpp>
@@ -148,7 +150,7 @@ class Descriptor3D
                                                  cloud_kdtree::KdTree& data_kdtree,
                                                  const cv::Vector<const robot_msgs::Point32*>& interest_pts,
                                                  std::vector<Descriptor3D*>& descriptors_3d,
-                                                 std::vector<float*>& concatenated_features,
+                                                 std::vector<boost::shared_array<const float> >& concatenated_features,
                                                  std::set<unsigned int>& failed_indices);
 
     // --------------------------------------------------------------
@@ -175,7 +177,7 @@ class Descriptor3D
                              cloud_kdtree::KdTree& data_kdtree,
                              const cv::Vector<const std::vector<int>*>& interest_region_indices,
                              std::vector<Descriptor3D*>& descriptors_3d,
-                             std::vector<float*>& concatenated_features,
+                             std::vector<boost::shared_array<const float> >& concatenated_features,
                              std::set<unsigned int>& failed_indices);
     //@}
 
@@ -262,7 +264,7 @@ class Descriptor3D
     concatenateFeatures(const std::vector<cv::Vector<cv::Vector<float> > >& all_descriptor_results,
                         const unsigned int nbr_samples,
                         const unsigned int nbr_concatenated_vals,
-                        std::vector<float*>& concatenated_features,
+                        std::vector<boost::shared_array<const float> >& concatenated_features,
                         std::set<unsigned int>& failed_indices);
 };
 
