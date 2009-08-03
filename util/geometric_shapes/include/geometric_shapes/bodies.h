@@ -366,8 +366,7 @@ namespace bodies
 	
 	virtual ~ConvexMesh(void)
 	{
-	}
-	
+	}	
 
 	virtual bool containsPoint(const btVector3 &p) const;
 	virtual double computeVolume(void) const;
@@ -385,13 +384,14 @@ namespace bodies
 	
 	std::vector<btVector4>    m_planes;
 	std::vector<btVector3>    m_vertices;
-	std::vector<btScalar>     m_vertDists;
+	std::vector<btVector3>    m_scaledVertices;
 	std::vector<unsigned int> m_triangles;
 	btTransform               m_iPose;
 	
 	btVector3                 m_center;
 	btVector3                 m_meshCenter;
 	double                    m_radiusB;
+	double                    m_radiusBSqr;
 	double                    m_meshRadiusB;
 	
 	btVector3                 m_boxOffset;

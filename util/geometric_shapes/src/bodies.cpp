@@ -745,7 +745,6 @@ void bodies::ConvexMesh::useDimensions(const shapes::Shape *shape)
     m_planes.clear();
     m_triangles.clear();
     m_vertices.clear();
-    m_vertDists.clear();
     m_meshRadiusB = 0.0;
     m_meshCenter.setValue(btScalar(0), btScalar(0), btScalar(0));
 
@@ -770,7 +769,6 @@ void bodies::ConvexMesh::useDimensions(const shapes::Shape *shape)
 	for (int j = 0 ; j < hr.m_OutputVertices.size() ; ++j)
 	{
 	    m_vertices.push_back(hr.m_OutputVertices[j]);
-	    m_vertDists.push_back(hr.m_OutputVertices[j].length());
 	    sum = sum + hr.m_OutputVertices[j];
 	}
 	
@@ -844,7 +842,16 @@ void bodies::ConvexMesh::updateInternalData(void)
     
     m_iPose = m_pose.inverse();
     m_center = m_pose.getOrigin() + m_meshCenter;
-    m_radiusB = m_meshRadiusB * m_scale + m_padding;    
+    m_radiusB = m_meshRadiusB * m_scale + m_padding;
+    m_radiusBSqr = m_radiusB * m_radiusB;
+
+    m_scaledVertices.resize(m_vertices.size());
+    for (unsigned int i = 0 ; i < m_vertices.size() ; ++i)
+    {
+	btVector3 v(m_vertices[i] - m_meshCenter);
+	btScalar l = v.length();
+	m_scaledVertices[i] = m_meshCenter + v * (m_scale + (l > ZERO ? m_padding / l : 0.0));
+    }
 }
 
 void bodies::ConvexMesh::computeBoundingSphere(BoundingSphere &sphere) const
@@ -894,7 +901,7 @@ double bodies::ConvexMesh::computeVolume(void) const
 
 bool bodies::ConvexMesh::intersectsRay(const btVector3& origin, const btVector3& dir, std::vector<btVector3> *intersections, unsigned int count) const
 {
-    if (distanceSQR(m_center, origin, dir) > m_radiusB * m_radiusB) return false;
+    if (distanceSQR(m_center, origin, dir) > m_radiusBSqr) return false;
     if (!m_boundingBox.intersectsRay(origin, dir)) return false;
     
     // transform the ray into the coordinate frame of the mesh
@@ -915,15 +922,14 @@ bool bodies::ConvexMesh::intersectsRay(const btVector3& origin, const btVector3&
 	    double t = -(m_planes[i].dot(orig) + m_planes[i].getW()) / tmp;
 	    if (t > 0.0)
 	    {
-		const int i3 = 3*i;
+		const int i3 = 3 * i;
 		const int v1 = m_triangles[i3 + 0];
 		const int v2 = m_triangles[i3 + 1];
 		const int v3 = m_triangles[i3 + 2];
-
-		// this is not the best way to do scaling ....
-		const btVector3 a = m_vertices[v1] * (m_scale + (m_vertDists[v1] > ZERO ? m_padding / m_vertDists[v1] : 0.0));
-		const btVector3 b = m_vertices[v2] * (m_scale + (m_vertDists[v2] > ZERO ? m_padding / m_vertDists[v2] : 0.0));
-		const btVector3 c = m_vertices[v3] * (m_scale + (m_vertDists[v3] > ZERO ? m_padding / m_vertDists[v3] : 0.0));
+		
+		const btVector3 &a = m_scaledVertices[v1];
+		const btVector3 &b = m_scaledVertices[v2];
+		const btVector3 &c = m_scaledVertices[v3];
 		
 		btVector3 cb(c - b);
 		btVector3 ab(a - b);
@@ -937,6 +943,7 @@ bool bodies::ConvexMesh::intersectsRay(const btVector3& origin, const btVector3&
 		btVector3 c2(cb.cross(ab));
 		if (c1.dot(c2) < 0.0)
 		    continue;
+		
 		btVector3 ca(c - a);
 		btVector3 pa(P - a);
 		btVector3 ba(-ab);
