@@ -38,6 +38,7 @@
 #define MPGLUE_PLANNER_HPP
 
 #include <mpglue/plan.h>
+#include <mpglue/costmap.h>
 #include <boost/shared_ptr.hpp>
 #include <stdexcept>
 
@@ -70,7 +71,8 @@ namespace mpglue {
     double goal_tol_angle;   /**< maximum heading error at which to stop planning */
     
     bool plan_from_scratch;  /**< whether to discard any previous solutions */
-    bool flush_cost_changes; /**< whether costs have changed since previous createPlan() */
+    size_t cost_delta_count; /**< number of cells that changed costs (see
+				  CostmapPlanner::flushCostChanges()). */
     
     bool success;             /**< whether planning was successfull */
     double actual_time_wall;  /**< duration actually used for planning (wallclock) */
@@ -144,9 +146,18 @@ namespace mpglue {
 	field. */
     virtual void forcePlanningFromScratch(bool flag);
     
-    /** Default implementation just sets a flag in the stats__
-	field. */
-    virtual void flushCostChanges(bool flag);
+    /** Sets the CostmapPlannerStats::cost_delta_count field to the
+	size of the given cost_delta_map_t, and then calls
+	doFlushCostChanges() where subclasses can implement the actual
+	handling of the cost changes.
+	
+	\note If opt_cost_delta_map is NULL, then the cost_delta_count
+	is set to zero and doFlushCostChanges() does NOT get
+	called. On the other hand, if the pointer opt_cost_delta_map
+	is non-NULL, but the opt_cost_delta_map has size zero,
+	doFlushCostChanges() DOES get called.
+    */
+    void flushCostChanges(cost_delta_map_t const * opt_cost_delta_map);
     
     /** Calls preCreatePlan(), doCreatePlan(), and postCreatePlan() in
 	that order. If any of them throw an exception, the following
@@ -180,6 +191,8 @@ namespace mpglue {
     CostmapPlanner(CostmapPlannerStats & stats,
 		   boost::shared_ptr<CostmapAccessor const> costmap,
 		   boost::shared_ptr<IndexTransform const> itransform);
+    
+    virtual void doFlushCostChanges(cost_delta_map_t const & delta) = 0;
     
     /** Hook for subclasses. Called by createPlan() before calling
 	doCreatePlan(). Subclasses must call their superclass'

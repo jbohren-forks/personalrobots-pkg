@@ -492,7 +492,7 @@ void run_tasks()
 	
 	planner->setStart(start.px, start.py, start.pth);
 	planner->forcePlanningFromScratch(start.from_scratch);
-	planner->flushCostChanges(costs_changed);
+	planner->flushCostChanges_(costs_changed);
 	
 	// not all planners can be run iteratively...
 	if ( ! sbpl_planner)

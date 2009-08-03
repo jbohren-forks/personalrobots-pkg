@@ -117,6 +117,14 @@ namespace mpglue {
   
   
   void SBPLPlannerWrap::
+  doFlushCostChanges(cost_delta_map_t const & delta)
+  {
+    for (cost_delta_map_t::const_iterator ic(delta.begin()); ic != delta.end(); ++ic)
+      environment_->UpdateCost(ic->first.ix, ic->first.iy, ic->second);
+  }
+  
+  
+  void SBPLPlannerWrap::
   preCreatePlan() throw(std::exception)
   {
     if (start_changed_) {
@@ -176,12 +184,8 @@ namespace mpglue {
     if (stats_.plan_from_scratch)
       planner_->force_planning_from_scratch();
     
-    if (stats_.flush_cost_changes) {
-      if (environment_->HavePendingCostUpdates())
-	environment_->FlushCostUpdates(planner_.get());
-      else
-	stats_.flush_cost_changes = false;
-    }
+    if (environment_->HavePendingCostUpdates())
+      environment_->FlushCostUpdates(planner_.get());
     
     if (stats_.stop_at_first_solution)
       planner_->set_search_mode(true);

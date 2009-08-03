@@ -51,21 +51,6 @@ namespace costmap_2d {
 
 namespace mpglue {
   
-  
-  /** Container for a grid index, consisting of an index for both X and Y. */
-  struct index_pair {
-    inline index_pair(index_t _ix, index_t _iy): ix(_ix), iy(_iy) {}
-    
-    /** Grid indices are ordered by their X-coordinate, or by their
-	Y-coordinate in case of equal X-coordinates.  Useful mainly
-	for stuffing grid indices into e.g. a std::list<> or using
-	them as key type of e.g. a std::map<>. */
-    inline bool operator < (index_pair const & rhs) const
-    { return (ix < rhs.ix) || ((ix == rhs.ix) && (iy < rhs.iy)); }
-    
-    index_t ix, iy;
-  };
-  
   /** Container for a collection of grid indices. */
   typedef std::set<index_pair> index_collection_t;
   

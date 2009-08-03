@@ -38,9 +38,12 @@
 #include <sfl/gplan/GridFrame.hpp>
 #include <math.h>
 
+using namespace std;
+
 
 namespace {
   
+  using namespace mpglue;
   
   class cm2dCostmapAccessor: public mpglue::CostmapAccessor {
   public:
@@ -101,6 +104,19 @@ namespace {
       if ( ! isValidIndex(index_x, index_y))
 	return false;
       *cost = (*get_costmap_)()->getCost(index_x, index_y);
+      return true;
+    }
+    
+    virtual bool setCost(index_t index_x, index_t index_y, cost_t cost,
+			 cost_delta_map_t * opt_delta_map) throw(set_cost_not_implemented) {
+      if ( ! isValidIndex(index_x, index_y))
+	return false;
+      costmap_2d::Costmap2D * cm2d((*get_costmap_)());
+      if (cost == cm2d->getCost(index_x, index_y))
+	return false;
+      cm2d->setCost(index_x, index_y, cost);
+      if (opt_delta_map)
+	opt_delta_map->insert(make_pair(index_pair(index_x, index_y), cost));
       return true;
     }
     
@@ -226,17 +242,24 @@ namespace {
     
     virtual bool getCost(ssize_t index_x, ssize_t index_y, mpglue::cost_t * cost) const
     { return rdt_->GetValue(index_x, index_y, *cost); }
+    
+    virtual bool setCost(index_t index_x, index_t index_y, cost_t cost,
+			 cost_delta_map_t * opt_delta_map) throw(set_cost_not_implemented) {
+      throw set_cost_not_implemented("sfl::RDTravmap does not support setting costs");
+      return false;
+    }
+    
   };
   
   
   class sflTravmapAccessor: public mpglue::CostmapAccessor {
   public:
-    sfl::TraversabilityMap const * travmap_;
+    sfl::TraversabilityMap * travmap_;
     int const wobstCost_;
     int const cobstCost_;
     int const possibly_circumscribed_cost_;
     
-    sflTravmapAccessor(sfl::TraversabilityMap const * travmap,
+    sflTravmapAccessor(sfl::TraversabilityMap * travmap,
 		       int possibly_circumscribed_cost)
       : travmap_(travmap), wobstCost_(travmap->obstacle + 1), cobstCost_(travmap->obstacle),
 	possibly_circumscribed_cost_(possibly_circumscribed_cost) {}
@@ -284,6 +307,20 @@ namespace {
     
     virtual bool getCost(ssize_t index_x, ssize_t index_y, mpglue::cost_t * cost) const
     { return travmap_->GetValue(index_x, index_y, *cost); }
+
+    
+    virtual bool setCost(index_t index_x, index_t index_y, cost_t cost,
+			 cost_delta_map_t * opt_delta_map) throw(set_cost_not_implemented) {
+      cost_t old_cost;
+      if ( ! travmap_->GetValue(index_x, index_y, old_cost))
+	return false;
+      if (old_cost == cost)
+	return false;
+      travmap_->SetValue(index_x, index_y, cost, 0);
+      if (opt_delta_map)
+	opt_delta_map->insert(make_pair(index_pair(index_x, index_y), cost));
+      return true;
+    }
   };
   
   
@@ -459,10 +496,10 @@ namespace mpglue {
   }
   
   
-  CostmapAccessor * createCostmapAccessor(sfl::TraversabilityMap const * rdt,
+  CostmapAccessor * createCostmapAccessor(sfl::TraversabilityMap * travmap,
 					  int possibly_circumscribed_cost)
   {
-    return new sflTravmapAccessor(rdt, possibly_circumscribed_cost);
+    return new sflTravmapAccessor(travmap, possibly_circumscribed_cost);
   }
   
   
