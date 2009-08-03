@@ -287,30 +287,36 @@ bool bodies::Cylinder::intersectsRay(const btVector3& origin, const btVector3& d
     {
 	double tmp2 = -m_normalH.dot(origin);
 	double t1 = (tmp2 - m_d1) / tmp;
-	double t2 = (tmp2 - m_d2) / tmp;
 	
-	btVector3 p1(origin + dir * t1);
-	btVector3 p2(origin + dir * t2);
-	
-	btVector3 v1(p1 - m_center);
-	v1 = v1 - m_normalH.dot(v1) * m_normalH;
-	if (v1.length2() < m_radius2 + ZERO)
+	if (t1 > 0.0)
 	{
-	    if (intersections == NULL)
-		return true;
-	    
-	    detail::intersc ip(p1, t1);
-	    ipts.push_back(ip);
+	    btVector3 p1(origin + dir * t1);
+	    btVector3 v1(p1 - m_center);
+	    v1 = v1 - m_normalH.dot(v1) * m_normalH;
+	    if (v1.length2() < m_radius2 + ZERO)
+	    {
+		if (intersections == NULL)
+		    return true;
+		
+		detail::intersc ip(p1, t1);
+		ipts.push_back(ip);
+	    }
 	}
-	btVector3 v2(p2 - m_center);
-	v2 = v2 - m_normalH.dot(v2) * m_normalH;
-	if (v2.length2() < m_radius2 + ZERO)
+	
+	double t2 = (tmp2 - m_d2) / tmp;
+	if (t2 > 0.0)
 	{
-	    if (intersections == NULL)
-		return true;
-	    
-	    detail::intersc ip(p2, t2);
-	    ipts.push_back(ip);
+	    btVector3 p2(origin + dir * t2);
+	    btVector3 v2(p2 - m_center);
+	    v2 = v2 - m_normalH.dot(v2) * m_normalH;
+	    if (v2.length2() < m_radius2 + ZERO)
+	    {
+		if (intersections == NULL)
+		    return true;
+		
+		detail::intersc ip(p2, t2);
+		ipts.push_back(ip);
+	    }
 	}
     }
     
@@ -323,33 +329,40 @@ bool bodies::Cylinder::intersectsRay(const btVector3& origin, const btVector3& d
 	double b = 2.0 * ROD.dot(VD);
 	double c = ROD.length2() - m_radius2;
 	double d = b * b - 4.0 * a * c;
-	if (d > 0.0)
+	if (d > 0.0 && fabs(a) > ZERO)
 	{
 	    d = sqrt(d);
 	    double e = -a * 2.0;
 	    double t1 = (b + d) / e;
 	    double t2 = (b - d) / e;
 	    
-	    btVector3 p1(origin + dir * t1);
-	    btVector3 p2(origin + dir * t2);
-	    
-	    btVector3 v1(m_center - p1);
-	    btVector3 v2(m_center - p2);
-	    
-	    if (fabs(m_normalH.dot(v1)) < m_length2 + ZERO)
+	    if (t1 > 0.0)
 	    {
-		if (intersections == NULL)
-		    return true;
+		btVector3 p1(origin + dir * t1);
+		btVector3 v1(m_center - p1);
 		
-		detail::intersc ip(p1, t1);
-		ipts.push_back(ip);
+		if (fabs(m_normalH.dot(v1)) < m_length2 + ZERO)
+		{
+		    if (intersections == NULL)
+			return true;
+		    
+		    detail::intersc ip(p1, t1);
+		    ipts.push_back(ip);
+		}
 	    }
-	    if (fabs(m_normalH.dot(v2)) < m_length2 + ZERO)
+	    
+	    if (t2 > 0.0)
 	    {
-		if (intersections == NULL)
-		    return true;
-		detail::intersc ip(p2, t2);
-		ipts.push_back(ip);
+		btVector3 p2(origin + dir * t2);    
+		btVector3 v2(m_center - p2);
+		
+		if (fabs(m_normalH.dot(v2)) < m_length2 + ZERO)
+		{
+		    if (intersections == NULL)
+			return true;
+		    detail::intersc ip(p2, t2);
+		    ipts.push_back(ip);
+		}
 	    }
 	}
     }
