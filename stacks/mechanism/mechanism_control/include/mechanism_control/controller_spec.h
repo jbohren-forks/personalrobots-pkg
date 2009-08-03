@@ -32,6 +32,8 @@
 #ifndef MECHANISM_CONTROL_CONTROL_SPEC_H
 #define MECHANISM_CONTROL_CONTROL_SPEC_H
 
+#pragma GCC diagnostic ignored "-Wextra"
+
 #include <map>
 #include <string>
 #include <vector>
