@@ -40,7 +40,7 @@
 #include "boost/thread.hpp"
 
 using namespace actionlib;
-using namespace robot_msgs;
+using namespace geometry_msgs;
 using namespace move_base;
 
 typedef ActionClient<MoveBaseAction> MoveBaseClient;
