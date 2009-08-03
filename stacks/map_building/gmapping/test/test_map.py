@@ -46,29 +46,7 @@ import rostest
 class TestGmapping(unittest.TestCase):
 
   # Test that 2 map files are approximately the same
-  def test_cmp_maps(self):
-    subprocess.call(['pwd'])
-    if sys.argv > 1:
-      target_time = float(sys.argv[1])
-
-      import time
-      import rospy
-      rospy.init_node('test', anonymous=True)
-      while(rospy.rostime.get_time() == 0.0):
-        print 'Waiting for initial time publication'
-        time.sleep(0.1)
-      start_time = rospy.rostime.get_time()
-
-      while (rospy.rostime.get_time() - start_time) < target_time:
-        print 'Waiting for end time %.6f (current: %.6f)'%(target_time,(rospy.rostime.get_time() - start_time))
-        time.sleep(0.1)
-
-    f0 = os.path.join(roslib.packages.get_pkg_dir('gmapping'),'test','basic_localization_stage_ground_truth')
-    f1 = os.path.join(roslib.packages.get_pkg_dir('gmapping'),'test','basic_localization_stage_generated')
-
-    cmd = ['rosrun', 'map_server', 'map_saver', 'map:=dynamic_map', '-f', f1]
-    self.assertTrue(subprocess.call(cmd) == 0)
-
+  def cmp_maps(self, f0, f1):
     im0 = PIL.Image.open(f0+'.pgm')
     im1 = PIL.Image.open(f1+'.pgm')
   
@@ -97,6 +75,30 @@ class TestGmapping(unittest.TestCase):
     error_avg = float(error_total)/float(len(im0d))
     print '%d / %d = %.6f (%.6f)'%(error_total,len(im0d),error_avg,total_error_tol)
     self.assertTrue(error_avg <= total_error_tol)
+
+  def test_basic_localization_stage(self):
+    if sys.argv > 1:
+      target_time = float(sys.argv[1])
+
+      import time
+      import rospy
+      rospy.init_node('test', anonymous=True)
+      while(rospy.rostime.get_time() == 0.0):
+        print 'Waiting for initial time publication'
+        time.sleep(0.1)
+      start_time = rospy.rostime.get_time()
+
+      while (rospy.rostime.get_time() - start_time) < target_time:
+        print 'Waiting for end time %.6f (current: %.6f)'%(target_time,(rospy.rostime.get_time() - start_time))
+        time.sleep(0.1)
+
+    f0 = os.path.join(roslib.packages.get_pkg_dir('gmapping'),'test','basic_localization_stage_groundtruth')
+    f1 = os.path.join(roslib.packages.get_pkg_dir('gmapping'),'test','basic_localization_stage_generated')
+
+    cmd = ['rosrun', 'map_server', 'map_saver', 'map:=dynamic_map', '-f', f1]
+    self.assertTrue(subprocess.call(cmd) == 0)
+
+    self.cmp_maps(f0,f1)
 
 if __name__ == '__main__':
   rostest.run('gmapping', 'gmapping_slam', TestGmapping, sys.argv)

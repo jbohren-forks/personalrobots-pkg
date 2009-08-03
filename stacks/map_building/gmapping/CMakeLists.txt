@@ -16,5 +16,6 @@ target_link_libraries(bin/slam_gmapping gridfastslam sensor_odometry sensor_rang
 #rosbuild_add_executable(tftest src/tftest.cpp)
 
 #rosbuild_download_test_data(http://pr.willowgarage.com/data/gmapping/small_loop_prf.bag test/small_loop_prf.bag)
-rosbuild_download_test_data(http://pr.willowgarage.com/data/gmapping/basic_localization_stage_ground_truth.pgm test/basic_localization_stage_ground_truth.pgm)
+rosbuild_download_test_data(http://pr.willowgarage.com/data/gmapping/basic_localization_stage.bag test/basic_localization_stage.bag)
+rosbuild_download_test_data(http://pr.willowgarage.com/data/gmapping/basic_localization_stage_groundtruth.pgm test/basic_localization_stage_groundtruth.pgm)
 rosbuild_add_rostest(test/basic_localization_stage.launch)
