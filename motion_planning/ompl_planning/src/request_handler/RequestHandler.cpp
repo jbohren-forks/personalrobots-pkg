@@ -643,7 +643,7 @@ void ompl_planning::RequestHandler::display(PlannerSetup *psetup)
 	return;
     
     visualization_msgs::Marker mk;        
-    mk.header.stamp = psetup->model->planningMonitor->lastMechanismStateUpdate();
+    mk.header.stamp = psetup->model->planningMonitor->lastJointStateUpdate();
     mk.header.frame_id = psetup->model->planningMonitor->getFrameId();
     mk.ns = ros::this_node::getName();
     mk.id = 1;    

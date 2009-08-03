@@ -176,7 +176,7 @@ The model classes are:
 <hr>
 
 The monitor classes are:
-- \b planning_environment::KinematicModelStateMonitor : monitors the kinematic state of the robot. Optionally, monitors the base location. It uses the 'mechanism_state' topic.
+- \b planning_environment::KinematicModelStateMonitor : monitors the kinematic state of the robot. Optionally, monitors the base location. It uses the 'joint_states' topic.
 - \b planning_environment::CollisionSpaceMonitor : same as \b planning_environment::KinematicModelStateMonitor except it also monitors the state of the collision environment. It uses the 'collision_map' topic to receive new full maps and the 'collision_map_update' to receive updates. Attaching objects to robot links is possible using the 'attach_object' topic. 
 - \b planning_environment::PlanningMonitor : same as \b planning_environment::CollisionSpaceMonitor except it also offers the ability to evaluate kinematic constraints and check paths and states for validity.
 
@@ -185,7 +185,7 @@ The monitor classes are:
 \subsection topics ROS topics
 
 Subscribes to:
- - @b "mechanism_state"/MechanismState : the parameters describing the robot's current state
+ - @b "joint_states"/JointStates : the parameters describing the robot's current state
  - @b "collision_map"/CollisionMap : data describing the 3D environment
  - @b "collision_map_update"/CollisionMap : updates (additive) to data describing the 3D environment
  - @b "object_in_map"/ObjectInMap : definition of an object identified in the environment (to be used for collision checking)

@@ -542,7 +542,7 @@ namespace move_arm
 	for (unsigned int i = 0 ; i < joints.size() ; ++i)
 	{
 	    start_state[i].header.frame_id = planningMonitor_->getFrameId();
-	    start_state[i].header.stamp = planningMonitor_->lastMechanismStateUpdate();
+	    start_state[i].header.stamp = planningMonitor_->lastJointStateUpdate();
 	    start_state[i].joint_name = joints[i]->name;
 	    st.copyParamsJoint(start_state[i].value, joints[i]->name);
 	}
@@ -591,7 +591,7 @@ namespace move_arm
 			    motion_planning_msgs::JointConstraint jc;
 			    jc.joint_name = arm_joint_names_[i];
 			    jc.header.frame_id = req.goal_constraints.pose_constraint[0].pose.header.frame_id;
-			    jc.header.stamp = planningMonitor_->lastMechanismStateUpdate();
+			    jc.header.stamp = planningMonitor_->lastJointStateUpdate();
 			    unsigned int u = planningMonitor_->getKinematicModel()->getJoint(arm_joint_names_[i])->usedParams;
 			    for (unsigned int j = 0 ; j < u ; ++j)
 			    {

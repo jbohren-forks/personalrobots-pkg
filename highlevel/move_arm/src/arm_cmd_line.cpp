@@ -219,7 +219,7 @@ void viewState(ros::Publisher &view, const planning_environment::KinematicModelS
     motion_planning_msgs::KinematicPath kp;	
     
     kp.header.frame_id = km.getFrameId();
-    kp.header.stamp = km.lastMechanismStateUpdate();
+    kp.header.stamp = km.lastJointStateUpdate();
     
     // fill in start state with current one
     std::vector<planning_models::KinematicModel::Joint*> joints;
@@ -229,7 +229,7 @@ void viewState(ros::Publisher &view, const planning_environment::KinematicModelS
     for (unsigned int i = 0 ; i < joints.size() ; ++i)
     {
 	kp.start_state[i].header.frame_id = km.getFrameId();
-	kp.start_state[i].header.stamp = km.lastMechanismStateUpdate();
+	kp.start_state[i].header.stamp = km.lastJointStateUpdate();
 	kp.start_state[i].joint_name = joints[i]->name;
 	st.copyParamsJoint(kp.start_state[i].value, joints[i]->name);
     }

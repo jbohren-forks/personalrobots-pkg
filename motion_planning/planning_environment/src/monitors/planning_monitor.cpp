@@ -53,7 +53,7 @@ bool planning_environment::PlanningMonitor::isEnvironmentSafe(void) const
         return false;
     }
   
-    if (!isMechanismStateUpdated(intervalState_))
+    if (!isJointStateUpdated(intervalState_))
     {
         ROS_WARN("Planning is not safe: robot state not updated in the last %f seconds", intervalState_);
         return false;

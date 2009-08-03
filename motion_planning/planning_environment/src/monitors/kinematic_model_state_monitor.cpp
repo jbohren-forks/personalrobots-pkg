@@ -48,7 +48,7 @@ void planning_environment::KinematicModelStateMonitor::setupRSM(void)
     onStateUpdate_ = NULL;
     onAfterAttachBody_ = NULL;
     attachedBodyNotifier_ = NULL;
-    havePose_ = haveMechanismState_ = false;
+    havePose_ = haveJointState_ = false;
 
     if (rm_->loadedModels())
     {
@@ -88,8 +88,8 @@ void planning_environment::KinematicModelStateMonitor::startStateMonitor(void)
     
     if (rm_->loadedModels())
     {
-	mechanismStateSubscriber_ = nh_.subscribe("mechanism_state", 1, &KinematicModelStateMonitor::mechanismStateCallback, this);
-	ROS_DEBUG("Listening to mechanism state");
+	jointStateSubscriber_ = nh_.subscribe("joint_states", 1, &KinematicModelStateMonitor::jointStateCallback, this);
+	ROS_DEBUG("Listening to joint states");
 	
 	attachedBodyNotifier_ = new tf::MessageNotifier<mapping_msgs::AttachedObject>(*tf_, boost::bind(&KinematicModelStateMonitor::attachObjectCallback, this, _1), "attach_object", "", 1);
 	attachedBodyNotifier_->setTargetFrame(rm_->getCollisionCheckLinks());
@@ -106,53 +106,53 @@ void planning_environment::KinematicModelStateMonitor::stopStateMonitor(void)
     delete attachedBodyNotifier_;
     attachedBodyNotifier_ = NULL;
     
-    mechanismStateSubscriber_.shutdown();
+    jointStateSubscriber_.shutdown();
     
     ROS_DEBUG("Kinematic state is no longer being monitored");
     
     stateMonitorStarted_ = false;
 }
 
-void planning_environment::KinematicModelStateMonitor::mechanismStateCallback(const mechanism_msgs::MechanismStateConstPtr &mechanismState)
+void planning_environment::KinematicModelStateMonitor::jointStateCallback(const mechanism_msgs::JointStatesConstPtr &jointState)
 {
-    bool change = !haveMechanismState_;
+    bool change = !haveJointState_;
 
     static bool first_time = true;
 
-    unsigned int n = mechanismState->get_joint_states_size();
+    unsigned int n = jointState->get_joints_size();
     for (unsigned int i = 0 ; i < n ; ++i)
     {
-	planning_models::KinematicModel::Joint* joint = kmodel_->getJoint(mechanismState->joint_states[i].name);
+	planning_models::KinematicModel::Joint* joint = kmodel_->getJoint(jointState->joints[i].name);
 	if (joint)
 	{
 	    if (joint->usedParams == 1)
 	    {
-		double pos = mechanismState->joint_states[i].position;
+		double pos = jointState->joints[i].position;
 		planning_models::KinematicModel::RevoluteJoint* rjoint = dynamic_cast<planning_models::KinematicModel::RevoluteJoint*>(joint);
 		if (rjoint)
 		    if (rjoint->continuous)
 			pos = angles::normalize_angle(pos);
-		bool this_changed = robotState_->setParamsJoint(&pos, mechanismState->joint_states[i].name);
+		bool this_changed = robotState_->setParamsJoint(&pos, jointState->joints[i].name);
 		change = change || this_changed;
 	    }
 	    else
 	    {
 		if (first_time)
-		    ROS_WARN("Incorrect number of parameters: %s (expected %d, had 1)", mechanismState->joint_states[i].name.c_str(), joint->usedParams);
+		    ROS_WARN("Incorrect number of parameters: %s (expected %d, had 1)", jointState->joints[i].name.c_str(), joint->usedParams);
 	    }
 	}
 	else
 	{
 	    if (first_time)
-		ROS_ERROR("Unknown joint: %s", mechanismState->joint_states[i].name.c_str());
+		ROS_ERROR("Unknown joint: %s", jointState->joints[i].name.c_str());
 	}
     }
 
     first_time = false;
 
-    lastMechanismStateUpdate_ = mechanismState->header.stamp;
-    if (!haveMechanismState_)
-	haveMechanismState_ = robotState_->seenAll();
+    lastJointStateUpdate_ = jointState->header.stamp;
+    if (!haveJointState_)
+	haveJointState_ = robotState_->seenAll();
 
     if (includePose_)
     {
@@ -301,13 +301,13 @@ void planning_environment::KinematicModelStateMonitor::waitForState(void) const
 	ROS_INFO("Robot state received!");
 }
 
-bool planning_environment::KinematicModelStateMonitor::isMechanismStateUpdated(double sec) const
+bool planning_environment::KinematicModelStateMonitor::isJointStateUpdated(double sec) const
 {  
-    if (!haveMechanismState_)
+    if (!haveJointState_)
 	return false;
     
     // less than 10us is considered 0 
-    if (sec > 1e-5 && lastMechanismStateUpdate_ < ros::Time::now() - ros::Duration(sec))
+    if (sec > 1e-5 && lastJointStateUpdate_ < ros::Time::now() - ros::Duration(sec))
 	return false;
     else
 	return true;
