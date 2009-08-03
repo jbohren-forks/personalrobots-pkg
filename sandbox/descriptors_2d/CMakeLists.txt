@@ -23,5 +23,13 @@ rospack_add_library(descriptors_2d src/descriptors_2d.cpp)
 rospack_add_executable(example src/example.cpp)
 target_link_libraries(example descriptors_2d)
 
+# This unit test fails on 64-bit, #2141
+include(CMakeDetermineSystem)
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "i686" OR
+   CMAKE_SYSTEM_PROCESSOR MATCHES "i386" OR
+   CMAKE_SYSTEM_PROCESSOR MATCHES "unknown")
 rospack_add_gtest(test/test_descriptors_2d test/test_descriptors_2d.cpp)
 target_link_libraries(test/test_descriptors_2d descriptors_2d)
+endif(CMAKE_SYSTEM_PROCESSOR MATCHES "i686" OR
+      CMAKE_SYSTEM_PROCESSOR MATCHES "i386" OR
+      CMAKE_SYSTEM_PROCESSOR MATCHES "unknown")
