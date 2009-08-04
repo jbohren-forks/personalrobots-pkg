@@ -1,0 +1,26 @@
+<package>
+  <description brief="pr2_ik_with_collision">
+
+     pr2_ik_with_collision
+
+  </description>
+  <author>Sachin Chitta</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/pr2_ik_with_collision</url>
+
+<depend package="roscpp"/>
+<depend package="eigen"/>
+<depend package="angles"/>
+<depend package="tf_conversions"/>
+<depend package="robot_msgs"/>
+<depend package="mechanism_model"/>
+<depend package="wg_robot_description_parser"/>
+<depend package="manipulation_srvs"/>
+<depend package="manipulation_msgs"/>
+<depend package="chomp_motion_planner"/>
+<depend package="pr2_ik"/>
+
+</package>
+
+
