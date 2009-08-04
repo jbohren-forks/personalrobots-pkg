@@ -1,0 +1,5 @@
+<launch>
+  <include file="$(find pr2_alpha)/$(env ROBOT).launch"/>
+  <include file="$(find pr2_alpha)/teleop_joystick.launch"/>
+  <node pkg="rosrecord" type="rosrecord" args="-f 2dmapping_pr2"/>
+</launch>

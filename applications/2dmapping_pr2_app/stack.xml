@@ -1,0 +1,12 @@
+<stack name="2dmapping_pr2_app" version="0.1">
+  <description brief="A 2D mapping application for the PR2 robot platform.">
+  </description>
+  <author>Brian Gerkey gerkey@willowgarage.com</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/2dmapping_pr2_app</url>
+  
+  <depend stack="ros" version="0.7.0"/>
+  <!-- TODO: put proper stack dependencies in here -->
+</stack>
+
