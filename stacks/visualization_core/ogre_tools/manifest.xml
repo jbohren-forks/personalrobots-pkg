@@ -1,7 +1,7 @@
 <package>
     <description brief="Ogre Tools">
     
-    A set of visualization tools for rendering things using Ogre3D.
+    Internal package, shared code for use by the visualization stack, nav_view, and the simulation stack.  No supported/stable API is exported.
     
     </description>
     <author>Josh Faust</author>
