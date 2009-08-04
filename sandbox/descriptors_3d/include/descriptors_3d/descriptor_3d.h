@@ -148,7 +148,7 @@ class Descriptor3D
     static unsigned int 
     computeAndConcatFeatures(const sensor_msgs::PointCloud& data,
                              cloud_kdtree::KdTree& data_kdtree,
-                             const cv::Vector<const robot_msgs::Point32*>& interest_pts,
+                             const cv::Vector<const geometry_msgs::Point32*>& interest_pts,
                              std::vector<Descriptor3D*>& descriptors_3d,
                              std::vector<boost::shared_array<const float> >& concatenated_features,
                              std::set<unsigned int>& successful_indices);
