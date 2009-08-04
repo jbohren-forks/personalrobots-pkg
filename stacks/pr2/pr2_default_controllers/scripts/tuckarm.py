@@ -64,6 +64,7 @@ def go(side, positions):
 USAGE = 'tuckarm.py <arms> ; <arms> is \'(r)ight\', \'(l)eft\', or \'(b)oth\' arms'
 
 def set_params_right():
+  rospy.set_param("r_arm_joint_trajectory_controller/type", "JointTrajectoryController")
   rospy.set_param("r_arm_joint_trajectory_controller/velocity_scaling_factor", 0.5)
   rospy.set_param("r_arm_joint_trajectory_controller/trajectory_wait_timeout", 0.25)
 
@@ -76,6 +77,7 @@ def set_params_right():
   rospy.set_param("r_arm_joint_trajectory_controller/r_wrist_roll_joint/goal_reached_threshold", 0.1)
 
 def set_params_left():
+  rospy.set_param("l_arm_joint_trajectory_controller/type", "JointTrajectoryController")
   rospy.set_param("l_arm_joint_trajectory_controller/velocity_scaling_factor", 0.5)
   rospy.set_param("l_arm_joint_trajectory_controller/trajectory_wait_timeout", 0.25)
 
@@ -103,13 +105,16 @@ if __name__ == '__main__':
 
   xml_for_left = open(os.path.join(path, 'l_arm_joint_trajectory_controller.xml'))
   xml_for_right = open(os.path.join(path, 'r_arm_joint_trajectory_controller.xml'))
-
+  set_params_left()
+  rospy.set_param('l_arm_joint_trajectory_controller/xml', xml_for_left.read())
+  set_params_right()
+  rospy.set_param('r_arm_joint_trajectory_controller/xml', xml_for_right.read())
+  
   controllers = []
   try:
     if side == 'l' or side == 'left':
       # tuck traj for left arm
-      set_params_left()
-      mechanism.spawn_controller(xml_for_left.read(), 1)
+      mechanism.spawn_controller('l_arm_joint_trajectory_controller', True)
       controllers.append('l_arm_joint_trajectory_controller')
 
       positions = [[0.4,0.0,0.0,-2.25,0.0,0.0,0.0], [0.0,1.57,1.57,-2.25,0.0,0.0,0.0]]  
@@ -119,8 +124,7 @@ if __name__ == '__main__':
 
     elif side == 'r' or side == 'right':
       # tuck traj for right arm
-      set_params_right()
-      resp = mechanism.spawn_controller(xml_for_right.read(), 1)
+      mechanism.spawn_controller('r_arm_joint_trajectory_controller', True)
       controllers.append('r_arm_joint_trajectory_controller')
       positions = [[-0.4,0.0,0.0,-1.57,0.0,0.0,0.0], [0.0,1.57,-1.57,-1.57,0.0,0.0,0.0]]    
       go('r', positions)
@@ -130,11 +134,8 @@ if __name__ == '__main__':
     elif side == 'b' or side == 'both':
       # Both arms
       # Holds left arm up at shoulder lift
-      set_params_left()
-      resp = mechanism.spawn_controller(xml_for_left.read(), 1)
-
-      set_params_right()
-      resp = mechanism.spawn_controller(xml_for_right.read(), 1)
+      mechanism.spawn_controller('r_arm_joint_trajectory_controller', True)
+      mechanism.spawn_controller('l_arm_joint_trajectory_controller', True)
 
       controllers.append('r_arm_joint_trajectory_controller')
       controllers.append('l_arm_joint_trajectory_controller')

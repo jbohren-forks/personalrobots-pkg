@@ -88,9 +88,15 @@ bool JointTrajectoryController::init(mechanism::RobotState *robot, const ros::No
 
   TiXmlDocument xml_doc;
   xml_doc.Parse(xml_string.c_str());
+  if (xml_doc.Error())
+  {
+    ROS_ERROR("Error when parsing XML: %d (%d,%d)  %s\n%s", xml_doc.ErrorId(),
+              xml_doc.ErrorRow(), xml_doc.ErrorCol(), xml_doc.ErrorDesc(), xml_string.c_str());
+    return false;
+  }
   TiXmlElement *xml = xml_doc.FirstChildElement("controller");
   if (!xml){
-    ROS_ERROR("could not parse xml %s",xml_string.c_str());
+    ROS_ERROR("could not parse xml: %s\n %s", xml_doc.ErrorDesc(),xml_string.c_str());
     return false;
   }
 
