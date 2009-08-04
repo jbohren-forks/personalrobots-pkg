@@ -1,0 +1,12 @@
+<launch>
+
+  <node pkg="object_names" type="simple_name_server.py" name="name_server" output="screen">
+    <param name="index_name" value="$(find object_names)/launch/names.txt"/>
+  </node>
+
+  <node pkg="object_names" type="simple_color_server.py" name="color_server" output="screen">
+    <param name="index_name" value="$(find object_names)/launch/colors.txt"/>
+  </node>
+
+
+</launch>

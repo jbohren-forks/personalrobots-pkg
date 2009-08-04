@@ -1,0 +1,15 @@
+<launch>
+
+  <node pkg="functional_m3n_ros" type="m3n_learning_node" name="fm3n_learner" output="screen"
+     launch-prefix="xterm -e gdb -args"
+        >
+
+<!--    launch-prefix="xterm -e gdb -args" -->
+
+    <param name="model_file_path" value="$(find functional_m3n_ros)/test_data/test_model_root/"/>
+  </node>
+
+
+
+
+</launch>

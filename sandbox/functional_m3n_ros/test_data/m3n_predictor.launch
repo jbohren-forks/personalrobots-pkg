@@ -1,0 +1,20 @@
+<launch>
+
+  <node pkg="functional_m3n_ros" type="m3n_prediction_node" name="fm3n_learner" output="screen"
+     launch-prefix="xterm -e gdb -args"
+        >
+
+<!--    launch-prefix="xterm -e gdb -args" -->
+    <param name="use_color" value="True"/>
+
+    <param name="model_file" value="$(find functional_m3n_ros)/test_data/test_model_root/test_model_1248938712259804010/f_m3n"/>
+    <!--param name="model_file" value="$(find functional_m3n_ros)/test_data/test_model_root/test_model_1248824163850214958/f_m3n" -->
+
+    <!--param name="model_file" value="$(find functional_m3n_ros)/test_data/test_model_root/test_model_1248845007846792936/f_m3n"-->
+    <remap from="cloud" to="snapshot_cloud"/>
+  </node>
+
+
+
+
+</launch>
