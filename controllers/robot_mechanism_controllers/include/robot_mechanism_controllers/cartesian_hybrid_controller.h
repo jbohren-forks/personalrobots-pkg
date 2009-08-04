@@ -43,7 +43,7 @@
 #include "filters/filter_chain.h"
 #include "control_toolbox/pid_gains_setter.h"
 
-#include "robot_srvs/SetPoseStamped.h"
+#include "robot_mechanism_controllers/SetPoseStamped.h"
 #include "manipulation_msgs/TaskFrameFormalism.h"
 #include "robot_mechanism_controllers/CartesianHybridState.h"
 
@@ -113,8 +113,8 @@ public:
 
   void command(const tf::MessageNotifier<manipulation_msgs::TaskFrameFormalism>::MessagePtr& tff_msg);
 
-  bool setToolFrame(robot_srvs::SetPoseStamped::Request &req,
-                    robot_srvs::SetPoseStamped::Response &resp);
+  bool setToolFrame(robot_mechanism_controllers::SetPoseStamped::Request &req,
+                    robot_mechanism_controllers::SetPoseStamped::Response &resp);
 
 private:
   ros::NodeHandle node_;

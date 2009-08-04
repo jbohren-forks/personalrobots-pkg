@@ -23,7 +23,6 @@ gensrv()
 
 rospack_add_library(experimental_controllers
   src/joint_trajectory_controller2.cpp
-  src/plug_controller.cpp
   src/trajectory_controller.cpp
   src/pid_position_velocity_controller.cpp
 )

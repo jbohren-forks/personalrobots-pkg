@@ -46,9 +46,9 @@
 #include <std_msgs/Empty.h>
 #include <std_msgs/Float64.h>
 
-// Srvs 
+// Srvs
 #include <deprecated_srvs/MoveToPose.h>
-#include "robot_srvs/SetPoseStamped.h"
+#include "robot_mechanism_controllers/SetPoseStamped.h"
 //TF
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
@@ -74,10 +74,10 @@ public:
   virtual robot_actions::ResultStatus execute(const std_msgs::Empty& empty, std_msgs::Empty&);
 
 private:
-  
+
   void reset();
   void moveToStage();
-  void setToolFrame();  
+  void setToolFrame();
 
   std::string action_name_;
 
@@ -85,7 +85,7 @@ private:
 
   std::string arm_controller_;
   std::string servoing_controller_;
-  
+
   PlugTracker::PlugTracker* detector_;
 
   tf::TransformListener TF;
@@ -94,11 +94,11 @@ private:
   geometry_msgs::PoseStamped outlet_pose_;
   geometry_msgs::PoseStamped plug_pose_msg_;
   tf::Stamped<tf::Pose> plug_pose_;
- 
-  
+
+
   deprecated_srvs::MoveToPose::Request req_pose_;
   deprecated_srvs::MoveToPose::Response res_pose_;
-   
+
 };
 
 }

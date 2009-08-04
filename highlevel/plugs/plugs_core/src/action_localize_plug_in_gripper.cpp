@@ -204,9 +204,9 @@ void LocalizePlugInGripperAction::setToolFrame()
     node_.unsubscribe("/plug_detector/plug_pose");
     return;
   }
-  robot_srvs::SetPoseStamped::Request req_tool;
+  robot_mechanism_controllers::SetPoseStamped::Request req_tool;
   req_tool.p = plug_pose_msg_;
-  robot_srvs::SetPoseStamped::Response res_tool;
+  robot_mechanism_controllers::SetPoseStamped::Response res_tool;
   if (!ros::service::call(servoing_controller_ + "/set_tool_frame", req_tool, res_tool))
   {
     ROS_ERROR("%s: Failed to set tool frame.", action_name_.c_str());
