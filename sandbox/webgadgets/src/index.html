@@ -2,6 +2,7 @@
 <html>
   <head>
     <link rel='stylesheet' type='text/css' href='style.css'/>
+    <script type="text/javascript" src="http://www.google.com/jsapi"></script>
     <script type="text/javascript" src="3rdparty/curvycorners.js"></script>
     <script type="text/javascript" src="3rdparty/prototype.js"></script>
     <script type="text/javascript" src="3rdparty/wz_jsgraphics.js"></script>
@@ -59,7 +60,9 @@
         var gadget = new ROSStartupGadget();
       }
 
-      window.onload = init;
+      google.load('visualization', '1', {packages:['gauge']});
+      google.setOnLoadCallback(init);
+      //window.onload = init;
     </script>
   </head>
 
@@ -127,7 +130,9 @@
 
     </div>
 
+    <!--<div id='debug'></div>-->
     <div id='maincontent'> </div>
+
 
   </body>
 </html>

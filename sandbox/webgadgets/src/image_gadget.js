@@ -13,11 +13,6 @@ var ROSImageGadget = Class.create(ROSGadget, {
 
     this.titleSpan.appendChild(this.subscribeButton);
 
-    if (this.run)
-      this.stop();
-
-    this.run = false;
-
     this.img = document.createElement('img');
     this.img.style.height='240';
     this.img.style.width='320';
@@ -70,47 +65,25 @@ var ROSImageGadget = Class.create(ROSGadget, {
 
   start: function(e)
   {
-    this.run = true;
-
     topic = this.topicSelect.options[this.topicSelect.selectedIndex].text;
 
     if (this.ros != null)
       delete this.ros;
 
     this.ros = new ROSTopic(topic);
-    this.ros.subscribe(this, this.subscribed);
+    this.ros.setCallback(this, this.imageCB);
   },
   
   stop: function()
   {
     this.ros.unsubscribe(null, null);
-    this.run = false;
   },
-
-  subscribed: function(myself, pump)
-  {
-    myself.getImages();
-  },
-  
-  responseCB: function (myself, pump)
+ 
+  imageCB: function (myself, pump)
   {
     jsonData = eval( '(' + pump.response + ')' );
 
     myself.img.src = jsonData.data;
-
-    if (myself.run)
-    {
-      setTimeout( function () {myself.getImages();} , 100);
-    }
   },
   
-  getImages: function ()
-  {
-    if (this.run)
-      this.ros.getMessage(this, this.responseCB);
-  }
-
 });
-
-
-

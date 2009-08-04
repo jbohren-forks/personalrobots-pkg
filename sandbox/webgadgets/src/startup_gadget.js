@@ -31,7 +31,7 @@ var ROSStartupGadget = Class.create(ROSGadget, {
     this.titleSpan.appendChild (label);
 
     statusDiv = document.createElement('div');
-    statusDiv.innerHTML = '<div style="height:25px;line-height:15px;vertical-align:middle;font-size:120%;"><img id="robotStatusIcon"src="images/redbutton.png" width="15" style="border:0;float:left; display:inline; margin-right: 10px;"/> <b>Robot</b>: <span id="robotstatus"></span> </div>';
+    statusDiv.innerHTML = '<span style="height:25px;line-height:15px;vertical-align:middle;font-size:120%;"><img id="robotStatusIcon"src="images/redbutton.png" width="15" style="border:0;float:left; display:inline; margin-right: 10px;"/> <b>Robot</b>: <span id="robotstatus"></span> </span>';
 
     this.contentDiv.appendChild(statusDiv);
 
@@ -46,6 +46,44 @@ var ROSStartupGadget = Class.create(ROSGadget, {
 
     var helpTxt="<dl><dt>Purpose:</dt><dd>This gadget is used to bring up the robot</dd><dt>Overview:</dt><dd>The <Start> button located in this gadget's title bar will start the ROS core, and run the selected robot launch file. The content of this gadget displays the current status of the robot. A Red light indicates that the robot is not running, a yellow light indicates the robot is starting up, and a green light inidicates the robot is running.</dd></dl>";
     this.setHelpText(helpTxt);
+
+    var gaugeWidth = 100;
+    var gaugeHeight = 100;
+
+    this.gaugeDiv = document.createElement("div");
+    this.gaugeDiv.style.border = "0px solid black";
+    this.gaugeDiv.style.width = gaugeWidth + "px";
+    this.gaugeDiv.style.height = gaugeHeight + "px";
+
+    this.gauge = new google.visualization.Gauge(this.gaugeDiv);
+
+    this.gaugeOptions = {width: gaugeWidth, height: gaugeHeight, 
+                         redFrom: 0, redTo: 15, yellowFrom:15, 
+                         yellowTo: 30, minorTicks: 5};
+
+    this.gaugeData = new google.visualization.DataTable();
+    this.gaugeData.addColumn('string', 'Label');
+    this.gaugeData.addColumn('number', 'Value');
+    this.gaugeData.addRows(1);
+    this.gaugeData.setValue(0, 0, "% Battery");
+    this.gaugeData.setValue(0, 1, 0);
+
+    this.gauge.draw(this.gaugeData, this.gaugeOptions);
+
+    this.contentDiv.appendChild(this.gaugeDiv);
+
+  },
+
+  batteryStateChange: function(myself, pump)
+  {
+    jsonData = eval('(' + pump.response + ')');
+
+    remaining = parseFloat(jsonData.energy_remaining);
+    capacity = parseFloat(jsonData.energy_capacity);
+
+    percent = (remaining / capacity) * 100.0;
+    myself.gaugeData.setValue(0,1,percent|0);
+    myself.gauge.draw(myself.gaugeData, myself.gaugeOptions);
   },
 
   start: function()
@@ -77,6 +115,9 @@ var ROSStartupGadget = Class.create(ROSGadget, {
 
     //myself.startButton.observe('click', Event.stop );
     myself.startButton.observe('click', myself.stop.bind(myself) );
+
+    myself.batteryTopic = new ROSTopic("/battery_state");
+    myself.batteryTopic.setCallback(myself, myself.batteryStateChange);
   },
   
   stopped: function (myself, pump)

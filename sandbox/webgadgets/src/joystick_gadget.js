@@ -104,35 +104,32 @@ var ROSJoystickGadget = Class.create(ROSGadget, {
 
   start: function()
   {
-    /*this.run = true;
-    this.pump.sendAJAX('/ros/startup', this, this.started);
-    this.robotStatus.innerHTML = 'processing...';
-    this.robotStatusIcon.src = 'images/yellowbutton.png';
-    */
+    this.run = true;
+    this.pump.sendAJAX('/ros/launch/ps3.launch', this, this.started);
+    this.joyStatus.innerHTML = 'starting...';
+    this.joyStatusIcon.src = 'images/yellowbutton.png';
   },
   
   stop: function()
   {
-    /*this.pump.sendAJAX('/ros/shutdown', this, this.stopped);
+    this.pump.sendAJAX('/ros/stop/ps2.launch', this, this.stopped);
     this.run = false;
-    */
   },
 
   started: function(myself, pump)
   {
-    /*myself.robotStatus.innerHTML = 'started';
-    myself.robotStatusIcon.src = 'images/greenbutton.png';
-    myself.startButton.value = 'Stop';
-    myself.startButton.observe('click', this.stopt.bind(this) );
-    */
+    myself.joyStatus.innerHTML = 'started';
+    myself.joyStatusIcon.src = 'images/greenbutton.png';
+
+    this.startButton.value = 'Stop';
+    this.startButton.observe('click', this.stop.bind(this) );
   },
   
   stopped: function (myself, pump)
   {
-    /*myself.robotStatus.innerHTML = 'stopped';
+    myself.joyStatus.innerHTML = 'stopped';
     myself.startButton.value = 'Start';
-    myself.startButton.observe('click', this.stopt.bind(this) );
-    */
+    myself.startButton.observe('click', this.start.bind(this) );
   },
   
 });

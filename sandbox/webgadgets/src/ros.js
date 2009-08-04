@@ -43,19 +43,47 @@ var ROSTF = Class.create({
   initialize: function(_tf)
   {
     this.tf = _tf
+    this.pump = new MessagePump();
+    this.objCB = null;
+    this.funcCB = null;
+    this.timeout = 100;
   },
+
 
   subscribe: function (obj, callback)
   {
-    pump = new MessagePump();
-    pump.sendAJAX('/ros/tfsub' + this.tf, obj, callback);
+    this.pump.sendAJAX('/ros/tfsub' + this.tf, obj, callback);
   },
 
   getMessage: function(obj, callback)
   {
-    pump = new MessagePump();
-    pump.sendAJAX('/ros/tfget' + this.tf, obj, callback);
-  }
+    this.pump.sendAJAX('/ros/tfget' + this.tf, obj, callback);
+  },
+
+  setCallback: function(obj, callback, _timeout)
+  {
+    this.objCB = obj;
+    this.funcCB  = callback;
+    this.timeout = _timeout;
+    this.subscribe(this, this.subscribed);
+  },
+
+  subscribed: function(myself, pump)
+  {
+    myself.getMessage(myself, myself.gotMessage);
+  },
+
+  gotMessage: function(myself, pump)
+  {
+    if (myself.funcCB != null)
+    {
+      myself.funcCB(myself.objCB, pump);
+    }
+
+    setTimeout( function () 
+        {myself.getMessage(myself, myself.gotMessage);} , myself.timeout);
+
+  },
 
 });
 
@@ -65,37 +93,58 @@ var ROSTF = Class.create({
 var ROSTopic = Class.create({
   initialize: function(_topic)
   {
+    this.objCB = null;
+    this.funcCB = null;
     this.topic = _topic
+    this.pump = new MessagePump();
+  },
+
+  setCallback: function(obj, callback)
+  {
+    this.objCB = obj;
+    this.funcCB  = callback;
+    this.subscribe(this, this.subscribed);
+  },
+
+  subscribed: function(myself, pump)
+  {
+    myself.getMessage(myself, myself.gotMessage);
   },
 
   subscribe: function (obj, callback)
   {
-    pump = new MessagePump();
-    pump.sendAJAX('/ros/subscribe' + this.topic, obj, callback);
+    this.pump.sendAJAX('/ros/subscribe' + this.topic, obj, callback);
   },
 
   announce: function (obj, callback)
   {
-    pump = new MessagePump();
-    pump.sendAJAX('/ros/announce' + this.topic, obj, callback);
+    this.pump.sendAJAX('/ros/announce' + this.topic, obj, callback);
   },
 
   unsubscribe: function (obj, callback)
   {
-    pump = new MessagePump();
-    pump.sendAJAX('/ros/unsubscribe' + this.topic, obj, callback);
+    this.pump.sendAJAX('/ros/unsubscribe' + this.topic, obj, callback);
+    this.funcCB = null;
+    this.objCB = null;
   },
 
   getMessage: function(obj, callback)
   {
-    pump = new MessagePump();
-    pump.sendAJAX('/ros/get' + this.topic, obj, callback);
+    this.pump.sendAJAX('/ros/get' + this.topic, obj, callback);
+  },
+
+  gotMessage: function(myself, pump)
+  {
+    if (myself.funcCB != null)
+    {
+      myself.funcCB(myself.objCB, pump);
+      myself.getMessage(myself, myself.gotMessage);
+    }
   },
 
   publish: function(msg, obj, callback)
   {
-    pump = new MessagePump();
-    pump.sendAJAX('/ros/pub' + this.topic + msg, obj, callback);
+    this.pump.sendAJAX('/ros/pub' + this.topic + msg, obj, callback);
   },
 
 });

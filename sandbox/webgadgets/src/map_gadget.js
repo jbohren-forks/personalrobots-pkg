@@ -97,12 +97,12 @@ var ROSMapGadget = Class.create(ROSGadget, {
     this.goalPoseTopic.announce(null, null);
 
     this.pathTopic = new ROSTopic('/move_base/TrajectoryPlannerROS/global_plan');
-    this.pathTopic.subscribe(this, this.pathSubscribedCB);
+    this.pathTopic.setCallback(this, this.getPathCB);
 
     this.path = [];
 
     this.poseTF = new ROSTF("/base_link");
-    this.poseTF.subscribe(this, this.poseSubscribed);
+    this.poseTF.setCallback(this, this.poseCB, 1000);
 
     this.activeDiv.observe('mouseup', this.mouseup.bind(this));
     this.activeDiv.observe('mousedown', this.mousedown.bind(this));
@@ -237,11 +237,6 @@ var ROSMapGadget = Class.create(ROSGadget, {
 
   },
 
-  poseSubscribed: function(myself, pump)
-  {
-    myself.getPose();
-  },
-
   drawRobot: function()
   {
     if (this.settingPose)
@@ -336,8 +331,6 @@ var ROSMapGadget = Class.create(ROSGadget, {
     }
 
     myself.drawPath();
-
-    setTimeout( function () {myself.getPath();}, 1000);
   },
 
   drawPath: function()
@@ -360,17 +353,7 @@ var ROSMapGadget = Class.create(ROSGadget, {
     this.pathJG.paint();
   },
 
-  pathSubscribedCB: function(myself, pump)
-  {
-    myself.getPath();
-  },
-
-  getPath : function()
-  {
-    this.pathTopic.getMessage(this, this.getPathCB );
-  },
-
-  poseResponseCB: function(myself, pump)
+  poseCB: function(myself, pump)
   {
     if (pump.response != "")
     {
@@ -385,13 +368,6 @@ var ROSMapGadget = Class.create(ROSGadget, {
 
       myself.drawRobot();
     }
-
-    setTimeout( function () {myself.getPose();}, 500);
-  },
-
-  getPose: function()
-  {
-    this.poseTF.getMessage(this, this.poseResponseCB);
   },
 
 
