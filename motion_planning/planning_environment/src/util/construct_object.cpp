@@ -37,7 +37,7 @@
 #include "planning_environment/util/construct_object.h"
 #include <ros/console.h>
 
-shapes::Shape* planning_environment::construct_object(const mapping_msgs::Object &obj)
+shapes::Shape* planning_environment::constructObject(const mapping_msgs::Object &obj)
 {
     shapes::Shape *shape = NULL;
     if (obj.type == mapping_msgs::Object::SPHERE)
@@ -95,4 +95,59 @@ shapes::Shape* planning_environment::construct_object(const mapping_msgs::Object
     
     return shape;
 }
+
+bool planning_environment::constructObjectMsg(const shapes::Shape* shape, mapping_msgs::Object &obj)
+{
+    obj.dimensions.clear();
+    obj.vertices.clear();
+    obj.triangles.clear();
+    if (shape->type == shapes::SPHERE)
+    {
+	obj.type = mapping_msgs::Object::SPHERE;
+	obj.dimensions.push_back(static_cast<const shapes::Sphere*>(shape)->radius);
+    }
+    else
+    if (shape->type == shapes::BOX)
+    {
+	obj.type = mapping_msgs::Object::BOX;
+	const double* sz = static_cast<const shapes::Box*>(shape)->size;	
+	obj.dimensions.push_back(sz[0]);
+	obj.dimensions.push_back(sz[1]);
+	obj.dimensions.push_back(sz[2]);
+    }
+    else
+    if (shape->type == shapes::CYLINDER)
+    {	
+	obj.type = mapping_msgs::Object::CYLINDER;
+	obj.dimensions.push_back(static_cast<const shapes::Cylinder*>(shape)->radius);
+	obj.dimensions.push_back(static_cast<const shapes::Cylinder*>(shape)->length);
+    }
+    else
+    if (shape->type == shapes::MESH)
+    {
+	const shapes::Mesh *mesh = static_cast<const shapes::Mesh*>(shape);
+	const unsigned int t3 = mesh->triangleCount * 3;
+
+	obj.vertices.resize(mesh->vertexCount);
+	obj.triangles.resize(t3);
+	
+	for (unsigned int i = 0 ; i < mesh->vertexCount ; ++i)
+	{
+	    obj.vertices[i].x = mesh->vertices[3 * i    ];
+	    obj.vertices[i].y = mesh->vertices[3 * i + 1];
+	    obj.vertices[i].z = mesh->vertices[3 * i + 2];
+	}
+	
+	for (unsigned int i = 0 ; i < t3  ; ++i)
+	    obj.triangles[i] = mesh->triangles[i];
+    }
+    else
+    {
+	ROS_ERROR("Unable to construct object message for shape of type %d", (int)shape->type);
+	return false;
+    }
+    
+    return true;
+}
+
 

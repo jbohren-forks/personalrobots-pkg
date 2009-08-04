@@ -145,6 +145,12 @@ namespace planning_environment
 	/** \brief If the used modified some instance of an environment model, this function provides the means to obtain a collision map (the set of boxes)
 	 *  from that environment model */
 	void recoverCollisionMap(const collision_space::EnvironmentModel *env, mapping_msgs::CollisionMap &cmap);
+
+	/** \brief If the used modified some instance of an
+	    environment model, this function provides the means to
+	    obtain a set of objects in map (all objects that are not
+	    in the namespace the collision map was added to) */
+	void recoverObjectsInMap(const collision_space::EnvironmentModel *env, std::vector<mapping_msgs::ObjectInMap> &omap);
 	
     protected:
 	

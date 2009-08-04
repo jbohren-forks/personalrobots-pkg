@@ -40,6 +40,7 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <boost/bind.hpp>
 #include <climits>
+#include <sstream>
 
 namespace planning_environment
 {
@@ -296,7 +297,7 @@ void planning_environment::CollisionSpaceMonitor::objectInMapCallback(const mapp
     if (objectInMap->action == mapping_msgs::ObjectInMap::ADD)
     {
 	// add the object to the map
-	shapes::Shape *shape = construct_object(objectInMap->object);
+	shapes::Shape *shape = constructObject(objectInMap->object);
 	if (shape)
 	{
 	    bool err = false;
@@ -395,4 +396,41 @@ void planning_environment::CollisionSpaceMonitor::recoverCollisionMap(const coll
 	    obb.axis.z = axis.z();
 	    cmap.boxes.push_back(obb);
 	}
+}
+
+void planning_environment::CollisionSpaceMonitor::recoverObjectsInMap(const collision_space::EnvironmentModel *env, std::vector<mapping_msgs::ObjectInMap> &omap)
+{
+    omap.clear();
+    const collision_space::EnvironmentObjects *eo = env->getObjects();
+    std::vector<std::string> ns = eo->getNamespaces();
+    for (unsigned int i = 0 ; i < ns.size() ; ++i)
+    {
+	if (ns[i] == "points")
+	    continue;
+	const collision_space::EnvironmentObjects::NamespaceObjects &no = eo->getObjects(ns[i]);
+	const unsigned int n = no.shape.size();
+	
+	for (unsigned int j = 0 ; j < n ; ++j)
+	{
+	    mapping_msgs::Object obj;
+	    if (constructObjectMsg(no.shape[j], obj))
+	    {
+		mapping_msgs::ObjectInMap o;
+		o.header.frame_id = getFrameId();
+		o.header.stamp = lastMapUpdate();
+		if (n == 1)
+		    o.id = ns[i];
+		else
+		{
+		    std::stringstream ss(ns[i]);
+		    ss << "-" << j;
+		    o.id = ss.str();
+		}
+		o.action = mapping_msgs::ObjectInMap::ADD;
+		o.object = obj;
+		tf::poseTFToMsg(no.shapePose[j], o.pose);
+		omap.push_back(o);
+	    }
+	}
+    }
 }

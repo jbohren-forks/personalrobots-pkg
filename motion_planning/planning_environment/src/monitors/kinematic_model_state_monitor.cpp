@@ -257,7 +257,7 @@ bool planning_environment::KinematicModelStateMonitor::attachObject(const mappin
 		if (err)
 		    continue;
 		
-		shapes::Shape *shape = construct_object(attachedObject->objects[i]);
+		shapes::Shape *shape = constructObject(attachedObject->objects[i]);
 		if (!shape)
 		    continue;
 		

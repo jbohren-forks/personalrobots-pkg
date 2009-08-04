@@ -43,7 +43,8 @@
 namespace planning_environment
 {
     
-    shapes::Shape* construct_object(const mapping_msgs::Object &obj);
+    shapes::Shape* constructObject(const mapping_msgs::Object &obj);
+    bool constructObjectMsg(const shapes::Shape* shape, mapping_msgs::Object &obj);
     
 }
 

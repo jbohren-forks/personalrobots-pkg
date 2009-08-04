@@ -268,7 +268,7 @@ private:
 	if (objectInMap->action == mapping_msgs::ObjectInMap::ADD)
 	{
 	    // add the object to the map
-	    shapes::Shape *shape = planning_environment::construct_object(objectInMap->object);
+	    shapes::Shape *shape = planning_environment::constructObject(objectInMap->object);
 	    if (shape)
 	    {
 		bool err = false;
