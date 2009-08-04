@@ -2,8 +2,9 @@
 <description brief="Stage">
 
 This package contains the Stage robot simulator, from the Player Project
-(http://playerstage.sf.net). This package does not modify Stage in any
-way, but uses a pre-3.0, unreleased version of Stage.
+(http://playerstage.sf.net). This package does not modify Stage in any way,
+but uses a pre-3.0, unreleased version of Stage.  This package will
+eventually be updated to a newer version of Stage.
 
 This package also provides stageros, a ROS node that uses Stage.
 
