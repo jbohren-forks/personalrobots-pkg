@@ -183,7 +183,11 @@ namespace TREX {
     // Terminate the agent
     ROS_INFO("Terminating agent...\n");
     TREX::Agent::terminate();
-    TREX::Clock::sleep(5);
+    TREX::Clock::sleep(1);
+    while (!TREX::Agent::terminated()) {
+      TREX::Clock::sleep(1);
+      ROS_INFO("Wating for agent to terminate...\n");
+    }
     ROS_INFO("Cleaning up log...\n");
     TREX::Agent::cleanupLog();
     ROS_INFO("Resetting agent...\n");
@@ -255,6 +259,11 @@ namespace TREX {
       pub.publish(pingMsg);
       usleep((unsigned int) rint(watchDogCycleTime_ * 1e6));
     }
+  }
+
+
+  bool Executive::isExecutiveActive(){
+    return s_id.isId();
   }
 }
 
