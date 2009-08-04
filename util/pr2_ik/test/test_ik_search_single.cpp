@@ -85,6 +85,8 @@ int main(int argc, char **argv)
    KDL::Frame p_out;
    KDL::Frame p_ik;
 
+   KDL::Frame p_out_test;
+
    srand ( time(NULL) );
 
    ik.chain_.toKDL(kdl_chain);

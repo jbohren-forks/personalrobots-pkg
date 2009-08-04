@@ -40,6 +40,7 @@
 #include <gtest/gtest.h>
 
 #define IK_NEAR 1e-4
+#define IK_NEAR_TRANSLATE 1e-5
 using namespace pr2_ik;
 using namespace KDL;
 
@@ -112,7 +113,7 @@ srand ( time(NULL) ); // initialize random seed:
           EXPECT_NEAR(p_ik.M(j,0),p_out.M(j,0),IK_NEAR);
           EXPECT_NEAR(p_ik.M(j,1),p_out.M(j,1),IK_NEAR); 
           EXPECT_NEAR(p_ik.M(j,2),p_out.M(j,2),IK_NEAR); 
-          EXPECT_NEAR(p_ik.p(j),p_out.p(j),IK_NEAR);
+          EXPECT_NEAR(p_ik.p(j),p_out.p(j),IK_NEAR_TRANSLATE);
         }
       }
     }
@@ -167,13 +168,16 @@ TEST(PR2IK, inverseKinematicsSearch)
       if(ik_valid)
       {
         num_solutions++;
-        jnt_to_pose_solver->JntToCart(jnt_pos_out[0],p_ik);
-        for(int j=0; j< 3; j++)
+        for(int k=0; k < jnt_pos_out.size(); k++)
         {
-          EXPECT_NEAR(p_ik.M(j,0),p_out.M(j,0),IK_NEAR);
-          EXPECT_NEAR(p_ik.M(j,1),p_out.M(j,1),IK_NEAR); 
-          EXPECT_NEAR(p_ik.M(j,2),p_out.M(j,2),IK_NEAR); 
-          EXPECT_NEAR(p_ik.p(j),p_out.p(j),IK_NEAR);
+          jnt_to_pose_solver->JntToCart(jnt_pos_out[k],p_ik);
+          for(int j=0; j< 3; j++)
+          {
+            EXPECT_NEAR(p_ik.M(j,0),p_out.M(j,0),IK_NEAR);
+            EXPECT_NEAR(p_ik.M(j,1),p_out.M(j,1),IK_NEAR); 
+            EXPECT_NEAR(p_ik.M(j,2),p_out.M(j,2),IK_NEAR); 
+            EXPECT_NEAR(p_ik.p(j),p_out.p(j),IK_NEAR_TRANSLATE);
+          }
         }
       }
       else

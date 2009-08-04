@@ -191,7 +191,7 @@ namespace pr2_ik {
   {
     KDL::Frame p_out;
     KDL::JntArray jnt_pos_in;
-    robot_msgs::PoseStamped pose;
+    geometry_msgs::PoseStamped pose;
     tf::Stamped<tf::Pose> tf_pose;
 
     jnt_pos_in.resize(request.angles.size());

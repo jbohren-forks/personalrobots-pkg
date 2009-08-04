@@ -46,14 +46,16 @@ using namespace KDL;
 int main(int argc, char **argv)
 {
    ros::init (argc, argv);
-   ros::Node n("pr2_ik_node");
+   ros::Node n("pr2_ik_right_arm");
    KDL::JntArray input;
    input.resize(7);
 
 //   const double ja[7] = {-0.087379,1.225220,-2.439131,-1.610891,-2.395076,1.585149,0.031105};
 //   const double ja[7] = {0.566087,1.358282,-2.673285,-0.969307,-1.835188,1.585149,1.648559};
-   const double ja[7] = {0.684899,1.149184,-2.907439,-1.420792,1.835188,2.177228,1.461929};
-   double init =  -0.917129;
+   const double ja[7] = {-0.164957,-0.523278,-2.10147,-1.62735,2.76902,1.22155,-1.05196};
+   double init = -2.10147;
+//   const double ja[7] = {0.684899,1.149184,-2.907439,-1.420792,1.835188,2.177228,1.461929};
+//   double init =  -0.917129;
 
    input(0) = ja[0];
    input(1) = ja[1];

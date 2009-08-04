@@ -126,7 +126,7 @@ namespace pr2_ik {
     }
     else
     {
-      ROS_ERROR("IK invalid");   
+      ROS_ERROR("IK controller solution invalid");   
     }
   }
 
