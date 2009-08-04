@@ -121,6 +121,13 @@ void CaptureHandLED::checkStationary()
     ROS_DEBUG("Not stationary");
 }
 
+int main(int argc, char** argv)
+{
+  ros::init(argc, argv, "capture_hand_led_node");
+  ros::NodeHandle nh;
+  CaptureHandLED hand_led(nh);
 
+  ros::spin();
+}
 
 
