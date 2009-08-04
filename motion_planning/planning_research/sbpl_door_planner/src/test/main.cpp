@@ -168,7 +168,7 @@ int planxythetadoor(int argc, char *argv[])
   environment_navxythetadoor.db_.door_angle_discretization_interval_ = 0.0175;
 
 
-//   robot_msgs::Point32 robot_global;
+//   geometry_msgs::Point32 robot_global;
 //   robot_global.x = 2.5;
 //   robot_global.y = 1.5;
 //   robot_global.z = 0;

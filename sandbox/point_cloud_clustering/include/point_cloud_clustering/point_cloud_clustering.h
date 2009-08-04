@@ -40,7 +40,7 @@
 
 #include <ros/ros.h>
 
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 
 #include <point_cloud_mapping/kdtree/kdtree.h>
 
@@ -49,7 +49,7 @@ namespace point_cloud_clustering
   class PointCloudClustering
   {
     public:
-      static int computeClusterCentroids(const robot_msgs::PointCloud& pt_cloud, const std::map<unsigned int,
+      static int computeClusterCentroids(const sensor_msgs::PointCloud& pt_cloud, const std::map<unsigned int,
           std::vector<int> >& clusters, std::map<unsigned int, std::vector<float> >& cluster_centroids);
 
       PointCloudClustering();
@@ -61,10 +61,10 @@ namespace point_cloud_clustering
         starting_label_ = starting_label;
       }
 
-      int cluster(const robot_msgs::PointCloud& pt_cloud, cloud_kdtree::KdTree& pt_cloud_kdtree, std::map<
+      int cluster(const sensor_msgs::PointCloud& pt_cloud, cloud_kdtree::KdTree& pt_cloud_kdtree, std::map<
           unsigned int, std::vector<int> >& created_clusters);
 
-      virtual int cluster(const robot_msgs::PointCloud& pt_cloud,
+      virtual int cluster(const sensor_msgs::PointCloud& pt_cloud,
                           cloud_kdtree::KdTree& pt_cloud_kdtree,
                           const std::set<unsigned int>& indices_to_cluster,
                           std::map<unsigned int, std::vector<int> >& created_clusters) = 0;

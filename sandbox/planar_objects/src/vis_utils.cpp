@@ -70,16 +70,16 @@ float mix_color( float mix, float a, float b ) {
 }
 
 
-void visualizePlanes2(const robot_msgs::PointCloud& cloud,
+void visualizePlanes2(const sensor_msgs::PointCloud& cloud,
                                   std::vector<std::vector<int> >& plane_indices,
-                                  std::vector<robot_msgs::PointCloud>& plane_cloud,
+                                  std::vector<sensor_msgs::PointCloud>& plane_cloud,
                                   std::vector<std::vector<double> >& plane_coeff,
                                   std::vector<float>& plane_color,
-                                  robot_msgs::PointCloud& outside,
+                                  sensor_msgs::PointCloud& outside,
                                   ros::Publisher& cloud_planes_pub,ros::Publisher& visualization_pub,
                                   bool convexHull)
 {
-  PointCloud colored_cloud = cloud;
+  sensor_msgs::PointCloud colored_cloud = cloud;
 
   int rgb_chann=-1;
   for(size_t i=0;i<cloud.chan.size();i++)
@@ -121,7 +121,7 @@ void visualizePlanes2(const robot_msgs::PointCloud& cloud,
 }
 
 
-void visualizePolygon(const robot_msgs::PointCloud& cloud,robot_msgs::Polygon3D &polygon, int rgb, int id, ros::Publisher& visualization_pub ) {
+void visualizePolygon(const sensor_msgs::PointCloud& cloud,robot_msgs::Polygon3D &polygon, int rgb, int id, ros::Publisher& visualization_pub ) {
   visualization_msgs::Marker marker;
   marker.header.frame_id = cloud.header.frame_id;
   marker.header.stamp = ros::Time((uint64_t)0ULL);

@@ -113,7 +113,7 @@ class TestDoorDetectionNode : public PR2ArmNode
       }
     }
 
-    void pointTFToMsg32(const tf::Vector3 &in, robot_msgs::Point32 &out)
+    void pointTFToMsg32(const tf::Vector3 &in, geometry_msgs::Point32 &out)
     {
       out.x = in.x();
       out.y = in.y();
@@ -159,7 +159,7 @@ class TestDoorDetectionNode : public PR2ArmNode
       }
       if(joy_msg_.data == std::string("open_door"))
       {
-        robot_msgs::PoseStamped pose_msg;
+        geometry_msgs::PoseStamped pose_msg;
         robot_msgs::JointTraj traj;
 
         pose_msg.pose = RPYToTransform(0.0,0.0,0.0,door_msg_from_detector_.handle.x, door_msg_from_detector_.handle.y, door_msg_from_detector_.handle.z);
@@ -170,11 +170,11 @@ class TestDoorDetectionNode : public PR2ArmNode
       return;          
     }
 
-    double distancePoints(robot_msgs::Point32 p1, robot_msgs::Point32 p2)
+    double distancePoints(geometry_msgs::Point32 p1, geometry_msgs::Point32 p2)
     {
       return(sqrt(pow((p1.x-p2.x),2) + pow((p1.y-p2.y),2) + pow((p1.z-p2.z),2)));
     }
-    double distancePointsXY(robot_msgs::Point32 p1, robot_msgs::Point32 p2)
+    double distancePointsXY(geometry_msgs::Point32 p1, geometry_msgs::Point32 p2)
     {
       return(sqrt(pow((p1.x-p2.x),2) + pow((p1.y-p2.y),2)));
     }

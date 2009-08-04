@@ -39,10 +39,10 @@
 
 #include <vector>
 
-#include "robot_msgs/PointCloud.h"
-#include "robot_msgs/PointStamped.h"
-#include "robot_msgs/PoseStamped.h"
-#include "robot_msgs/Point32.h"
+#include "sensor_msgs/PointCloud.h"
+#include "geometry_msgs/PointStamped.h"
+#include "geometry_msgs/PoseStamped.h"
+#include "geometry_msgs/Point32.h"
 
 
 template <typename T, typename U>
@@ -64,7 +64,7 @@ double squaredPointDistance(T p1, U p2)
 *
 * PRECONDITION: pc and near_point are in the same frame
 */
-bool getWallPoseFromBaseLaser(const robot_msgs::PointCloud& pc, const robot_msgs::PointStamped& near_point, double distance, robot_msgs::PoseStamped& wall_pose);
+bool getWallPoseFromBaseLaser(const sensor_msgs::PointCloud& pc, const geometry_msgs::PointStamped& near_point, double distance, geometry_msgs::PoseStamped& wall_pose);
 
 
 
@@ -80,7 +80,7 @@ bool getWallPoseFromBaseLaser(const robot_msgs::PointCloud& pc, const robot_msgs
 * @param line_segment The extremities of the segment
 * @return True if a line can be fitted in the point cloud
 */
-bool fitSACLine(robot_msgs::PointCloud& points, std::vector<int> indices, std::vector<double> &coeff, double dist_thresh, int min_pts, std::vector<robot_msgs::Point32> &line_segment);
+bool fitSACLine(sensor_msgs::PointCloud& points, std::vector<int> indices, std::vector<double> &coeff, double dist_thresh, int min_pts, std::vector<geometry_msgs::Point32> &line_segment);
 
 
 /** \brief Find a plane model in a point cloud with SAmple Consensus method
@@ -92,9 +92,9 @@ bool fitSACLine(robot_msgs::PointCloud& points, std::vector<int> indices, std::v
 * \param dist_thresh the maximum allowed distance threshold of an inlier to the model
 * \param min_points_per_model the minimum number of points allowed for a planar model (default: 100)
 */
-bool fitSACOrientedPlane (const robot_msgs::PointCloud& points, const std::vector<int> &indices,
+bool fitSACOrientedPlane (const sensor_msgs::PointCloud& points, const std::vector<int> &indices,
 		std::vector<int> &inliers, std::vector<double> &coeff,
-		const robot_msgs::Point32& orientation, double dist_thresh, double eps_angle, int min_points_per_model);
+		const geometry_msgs::Point32& orientation, double dist_thresh, double eps_angle, int min_points_per_model);
 
 
 #endif /* OUTLET_UTIL_H_ */

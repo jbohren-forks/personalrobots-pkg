@@ -38,7 +38,7 @@
 #include <actionlib/action_server.h>
 #include <actionlib/single_goal_action_server.h>
 #include <boost/thread.hpp>
-#include <robot_msgs/PoseStamped.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <actionlib/MoveBaseAction.h>
 
 typedef actionlib::ActionServer<actionlib::MoveBaseAction> MoveBaseActionServer;

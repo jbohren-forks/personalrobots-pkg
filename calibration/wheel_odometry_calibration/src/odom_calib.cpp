@@ -91,7 +91,7 @@ namespace calibration
   {
     _imu_mutex.lock();
     double tmp, yaw;  Transform tf;
-    poseMsgToTF(_imu.pos, tf);
+    poseMsgToTF(_imu.pose_with_rates.pose, tf);
     tf.getBasis().getEulerZYX(yaw, tmp, tmp);
 
     if (!_imu_active){

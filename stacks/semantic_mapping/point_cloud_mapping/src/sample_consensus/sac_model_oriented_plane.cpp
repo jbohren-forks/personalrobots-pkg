@@ -51,7 +51,7 @@ namespace sample_consensus
     int nr_p = 0;
 
     // Obtain the plane normal
-    robot_msgs::Point32 n;
+    geometry_msgs::Point32 n;
     n.x = model_coefficients.at (0);
     n.y = model_coefficients.at (1);
     n.z = model_coefficients.at (2);
@@ -94,7 +94,7 @@ namespace sample_consensus
     SACModelOrientedPlane::getDistancesToModel (const std::vector<double> &model_coefficients, std::vector<double> &distances)
   {
     // Obtain the plane normal
-    robot_msgs::Point32 n;
+    geometry_msgs::Point32 n;
     n.x = model_coefficients.at (0);
     n.y = model_coefficients.at (1);
     n.z = model_coefficients.at (2);

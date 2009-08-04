@@ -4,12 +4,12 @@ namespace trex_ros {
 			     
 
 
-  void AdapterUtilities::read(ObservationByValue& obs, const robot_msgs::PointStamped& msg){
+  void AdapterUtilities::read(ObservationByValue& obs, const geometry_msgs::PointStamped& msg){
     setHeader(msg, obs);
     readPoint(obs, msg.point.x, msg.point.y, msg.point.z);
   }
 
-  void AdapterUtilities::write(const TokenId& token, robot_msgs::PointStamped& msg){
+  void AdapterUtilities::write(const TokenId& token, geometry_msgs::PointStamped& msg){
     getHeader(msg, token);
 
     write<double>("x", token, msg.point.x);
@@ -17,7 +17,7 @@ namespace trex_ros {
     write<double>("z", token, msg.point.z);
   }
 
-  void AdapterUtilities::read(ObservationByValue& obs, const robot_msgs::PoseStamped& msg){
+  void AdapterUtilities::read(ObservationByValue& obs, const geometry_msgs::PoseStamped& msg){
     setHeader(msg, obs);
 
     readPoint(obs, msg.pose.position.x, msg.pose.position.y, msg.pose.position.z);
@@ -28,7 +28,7 @@ namespace trex_ros {
   }
 
 
-  void AdapterUtilities::write(const TokenId& token, robot_msgs::PoseStamped& msg) {
+  void AdapterUtilities::write(const TokenId& token, geometry_msgs::PoseStamped& msg) {
     getHeader(msg, token);
 
     writePoint(token, msg.pose.position.x, msg.pose.position.y, msg.pose.position.z);

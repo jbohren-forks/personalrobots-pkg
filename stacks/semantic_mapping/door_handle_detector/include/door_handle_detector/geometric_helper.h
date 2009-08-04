@@ -39,10 +39,10 @@
 // ROS includes
 #include "ros/node.h" //\todo Switch to node handle API
 
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 #include <robot_msgs/Polygon3D.h>
-#include <robot_msgs/Point32.h>
-#include <robot_msgs/PointStamped.h>
+#include <geometry_msgs/Point32.h>
+#include <geometry_msgs/PointStamped.h>
 #include <visualization_msgs/Marker.h>
 #include <door_msgs/Door.h>
 
@@ -79,7 +79,7 @@
   */
 inline void
   transformPoint (const tf::TransformListener *tf, const std::string &target_frame,
-                  const tf::Stamped< robot_msgs::Point32 > &stamped_in, tf::Stamped< robot_msgs::Point32 > &stamped_out)
+                  const tf::Stamped< geometry_msgs::Point32 > &stamped_in, tf::Stamped< geometry_msgs::Point32 > &stamped_out)
 {
   tf::Stamped<tf::Point> tmp;
   tmp.stamp_ = stamped_in.stamp_;
@@ -108,10 +108,10 @@ inline void
 inline double
   transformDoubleValueTF (double val, std::string src_frame, std::string tgt_frame, ros::Time stamp, tf::TransformListener *tf)
 {
-  robot_msgs::Point32 temp;
+  geometry_msgs::Point32 temp;
   temp.x = temp.y = 0;
   temp.z = val;
-  tf::Stamped<robot_msgs::Point32> temp_stamped (temp, stamp, src_frame);
+  tf::Stamped<geometry_msgs::Point32> temp_stamped (temp, stamp, src_frame);
   transformPoint (tf, tgt_frame, temp_stamped, temp_stamped);
   return (temp_stamped.z);
 }
@@ -179,37 +179,37 @@ inline void
   anode->publish ("visualization_marker", mk);
 }
 
-void obtainCloudIndicesSet (robot_msgs::PointCloud *points, std::vector<int> &indices, door_msgs::Door& door,
+void obtainCloudIndicesSet (sensor_msgs::PointCloud *points, std::vector<int> &indices, door_msgs::Door& door,
                             tf::TransformListener *tf, std::string fixed_param_frame, double min_z_bounds, double max_z_bounds, double frame_multiplier);
 
 
-int fitSACOrientedLine (robot_msgs::PointCloud &points, const std::vector<int> &indices, double dist_thresh, const robot_msgs::Point32 &axis, double eps_angle, std::vector<int> &line_inliers);
-int fitSACOrientedLine (robot_msgs::PointCloud &points, double dist_thresh, const robot_msgs::Point32 &axis, double eps_angle, std::vector<int> &line_inliers);
+int fitSACOrientedLine (sensor_msgs::PointCloud &points, const std::vector<int> &indices, double dist_thresh, const geometry_msgs::Point32 &axis, double eps_angle, std::vector<int> &line_inliers);
+int fitSACOrientedLine (sensor_msgs::PointCloud &points, double dist_thresh, const geometry_msgs::Point32 &axis, double eps_angle, std::vector<int> &line_inliers);
 
-void get3DBounds (robot_msgs::Point32 *p1, robot_msgs::Point32 *p2, robot_msgs::Point32 &min_b, robot_msgs::Point32 &max_b,
+void get3DBounds (geometry_msgs::Point32 *p1, geometry_msgs::Point32 *p2, geometry_msgs::Point32 &min_b, geometry_msgs::Point32 &max_b,
                   double min_z_bounds, double max_z_bounds, int multiplier);
 
-void getCloudViewPoint (const std::string cloud_frame, robot_msgs::PointStamped &viewpoint_cloud, const tf::TransformListener *tf);
+void getCloudViewPoint (const std::string cloud_frame, geometry_msgs::PointStamped &viewpoint_cloud, const tf::TransformListener *tf);
 
-bool checkDoorEdges (const robot_msgs::Polygon3D &poly, const robot_msgs::Point32 &z_axis, double min_height, double eps_angle,
+bool checkDoorEdges (const robot_msgs::Polygon3D &poly, const geometry_msgs::Point32 &z_axis, double min_height, double eps_angle,
                      double &door_frame1, double &door_frame2);
 
-void selectBestDistributionStatistics (const robot_msgs::PointCloud &points, const std::vector<int> &indices, int d_idx, std::vector<int> &inliers);
-void selectBestDualDistributionStatistics (const robot_msgs::PointCloud &points, const std::vector<int> &indices, int d_idx_1, int d_idx_2, std::vector<int> &inliers);
+void selectBestDistributionStatistics (const sensor_msgs::PointCloud &points, const std::vector<int> &indices, int d_idx, std::vector<int> &inliers);
+void selectBestDualDistributionStatistics (const sensor_msgs::PointCloud &points, const std::vector<int> &indices, int d_idx_1, int d_idx_2, std::vector<int> &inliers);
 
-bool checkIfClusterPerpendicular (robot_msgs::PointCloud *points, std::vector<int> *indices, robot_msgs::PointStamped *viewpoint,
+bool checkIfClusterPerpendicular (sensor_msgs::PointCloud *points, std::vector<int> *indices, geometry_msgs::PointStamped *viewpoint,
                                   std::vector<double> *coeff, double eps_angle);
-void findClusters (const robot_msgs::PointCloud &points, const std::vector<int> &indices, double tolerance, std::vector<std::vector<int> > &clusters,
+void findClusters (const sensor_msgs::PointCloud &points, const std::vector<int> &indices, double tolerance, std::vector<std::vector<int> > &clusters,
                    int nx_idx, int ny_idx, int nz_idx, double eps_angle, unsigned int min_pts_per_cluster = 1);
 
-bool fitSACPlane (robot_msgs::PointCloud &points, std::vector<int> indices, std::vector<int> &inliers, std::vector<double> &coeff,
-                  const robot_msgs::PointStamped &viewpoint_cloud, double dist_thresh, int min_pts);
+bool fitSACPlane (sensor_msgs::PointCloud &points, std::vector<int> indices, std::vector<int> &inliers, std::vector<double> &coeff,
+                  const geometry_msgs::PointStamped &viewpoint_cloud, double dist_thresh, int min_pts);
 
-void estimatePointNormals (const robot_msgs::PointCloud &points, const std::vector<int> &point_indices, robot_msgs::PointCloud &points_down, int k, const robot_msgs::PointStamped &viewpoint_cloud);
-void estimatePointNormals (const robot_msgs::PointCloud &points, robot_msgs::PointCloud &points_down, int k, const robot_msgs::PointStamped &viewpoint_cloud);
-void estimatePointNormals (robot_msgs::PointCloud &points, const std::vector<int> &point_indices, int k, const robot_msgs::PointStamped &viewpoint_cloud);
+void estimatePointNormals (const sensor_msgs::PointCloud &points, const std::vector<int> &point_indices, sensor_msgs::PointCloud &points_down, int k, const geometry_msgs::PointStamped &viewpoint_cloud);
+void estimatePointNormals (const sensor_msgs::PointCloud &points, sensor_msgs::PointCloud &points_down, int k, const geometry_msgs::PointStamped &viewpoint_cloud);
+void estimatePointNormals (sensor_msgs::PointCloud &points, const std::vector<int> &point_indices, int k, const geometry_msgs::PointStamped &viewpoint_cloud);
 
-void growCurrentCluster (const robot_msgs::PointCloud &points, const std::vector<int> &indices, const std::vector<int> &cluster,
+void growCurrentCluster (const sensor_msgs::PointCloud &points, const std::vector<int> &indices, const std::vector<int> &cluster,
                          std::vector<int> &inliers, double dist_thresh);
 
 #endif

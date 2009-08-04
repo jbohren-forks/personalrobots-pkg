@@ -40,7 +40,7 @@
 // ROS core
 #include <ros/ros.h>
 // ROS messages
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 
 
 // Cloud kd-tree
@@ -94,7 +94,7 @@ protected:
   std::string local_frame_;
   std::string fixed_frame_;
 
-  robot_msgs::PointCloud filtered_cloud_;
+  sensor_msgs::PointCloud filtered_cloud_;
   
   std::vector<int> cluster_ids_;
   unsigned int num_clusters_;
@@ -117,25 +117,25 @@ public:
   void setTFListener(  boost::shared_ptr<tf::TransformListener> tf_listener);
 
 
-  void detectObjects(const robot_msgs::PointCloud& point_cloud,ObjectModelDeque& objects);
+  void detectObjects(const sensor_msgs::PointCloud& point_cloud,ObjectModelDeque& objects);
 
-  bool fitSACPlane (const robot_msgs::PointCloud& points, const std::vector<int> &indices, 
+  bool fitSACPlane (const sensor_msgs::PointCloud& points, const std::vector<int> &indices, 
                     std::vector<int> &inliers, std::vector<double> &coeff, // output
                     boost::shared_ptr<sample_consensus::SACModelPlane> &model_output, // output
                     double dist_thresh, int min_points_per_model);
 
   bool fitObjectModel2Cloud(const unsigned int model_id,
-                            const robot_msgs::PointCloud& global_cloud,
-                            const robot_msgs::PointCloud& local_cloud,
+                            const sensor_msgs::PointCloud& global_cloud,
+                            const sensor_msgs::PointCloud& local_cloud,
                             const std::vector<int> observation_ids,
                             PlanarObjectModelPtr& out_object);
 
 
 
 
-  void makeObjectFrame(const robot_msgs::PointStamped origin, const std::vector<double>& plane, const std::string object_frame,PlanarObjectModelPtr object);
+  void makeObjectFrame(const geometry_msgs::PointStamped origin, const std::vector<double>& plane, const std::string object_frame,PlanarObjectModelPtr object);
 
-  void makeObjectMarker(const robot_msgs::Point pt1,const robot_msgs::Point pt2,const unsigned int model_id,PlanarObjectModelPtr object);
+  void makeObjectMarker(const geometry_msgs::Point pt1,const geometry_msgs::Point pt2,const unsigned int model_id,PlanarObjectModelPtr object);
 
 };
 

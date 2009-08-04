@@ -51,9 +51,9 @@ BoundingBoxRaw::BoundingBoxRaw(double bbox_radius)
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-int BoundingBoxRaw::precompute(const robot_msgs::PointCloud& data,
+int BoundingBoxRaw::precompute(const sensor_msgs::PointCloud& data,
                                cloud_kdtree::KdTree& data_kdtree,
-                               const cv::Vector<const robot_msgs::Point32*>& interest_pts)
+                               const cv::Vector<const geometry_msgs::Point32*>& interest_pts)
 {
   return 0;
 }
@@ -61,7 +61,7 @@ int BoundingBoxRaw::precompute(const robot_msgs::PointCloud& data,
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-int BoundingBoxRaw::precompute(const robot_msgs::PointCloud& data,
+int BoundingBoxRaw::precompute(const sensor_msgs::PointCloud& data,
                                cloud_kdtree::KdTree& data_kdtree,
                                const cv::Vector<const std::vector<int>*>& interest_region_indices)
 {
@@ -71,7 +71,7 @@ int BoundingBoxRaw::precompute(const robot_msgs::PointCloud& data,
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-void BoundingBoxRaw::computeNeighborhoodFeature(const robot_msgs::PointCloud& data,
+void BoundingBoxRaw::computeNeighborhoodFeature(const sensor_msgs::PointCloud& data,
                                                 const vector<int>& neighbor_indices,
                                                 const unsigned int interest_sample_idx,
                                                 cv::Vector<float>& result) const

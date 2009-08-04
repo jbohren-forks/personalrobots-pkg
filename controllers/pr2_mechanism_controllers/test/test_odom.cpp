@@ -36,7 +36,7 @@
 #include <ros/node.h>
 #include <robot_msgs/PoseDot.h>
 #include <deprecated_msgs/RobotBase2DOdom.h>
-#include <robot_msgs/Quaternion.h>
+#include <geometry_msgs/Quaternion.h>
 #include <iostream>
 #include <fstream>
 
@@ -50,7 +50,7 @@ void finalize(int donecare)
 
 ////////////////////////////////////////////////////////////////////////////////
 // Return the rotation in Euler angles
-libTF::Vector GetAsEuler(robot_msgs::Quaternion quat)
+libTF::Vector GetAsEuler(geometry_msgs::Quaternion quat)
 {
   libTF::Vector vec;
 

@@ -1,5 +1,5 @@
 #include "ros/node.h"
-#include "robot_msgs/PoseStamped.h"
+#include "geometry_msgs/PoseStamped.h"
 #include "tf/tf.h"
 #include <LinearMath/btTransform.h>
 #include <boost/thread.hpp>
@@ -8,8 +8,8 @@ class PoseTracker
 {
 private:
   boost::mutex cb_mutex_;
-  robot_msgs::PoseStamped plug_msg_;
-  robot_msgs::PoseStamped outlet_msg_;
+  geometry_msgs::PoseStamped plug_msg_;
+  geometry_msgs::PoseStamped outlet_msg_;
   tf::Transform plug_pose_; // raw board in CV camera frame transform
   tf::Transform outlet_pose_; // in high-def camera frame
   tf::Transform camera_in_cvcam_;

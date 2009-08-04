@@ -338,7 +338,7 @@ namespace mpglue_node {
     }
     
     for (waypoint_plan_t::const_iterator iwpt(plan->begin()); iwpt != plan->end(); ++iwpt) {
-      robot_msgs::PoseStamped ps;
+      geometry_msgs::PoseStamped ps;
       // XXXX to do: what shall we do with ps.header???
       (*iwpt)->toPose(ps.pose);
       resp.path.push_back(ps);

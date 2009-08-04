@@ -43,7 +43,7 @@
 
 #include <nav_robot_actions/base_local_planner.h>
 #include <nav_robot_actions/base_global_planner.h>
-#include <robot_msgs/PoseStamped.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <costmap_2d/costmap_2d_ros.h>
 #include <costmap_2d/costmap_2d.h>
 #include <vector>
@@ -95,7 +95,7 @@ namespace move_base {
        * @param goal A reference to the goal to pursue
        * @param global_plan A reference to the global plan being used
        */
-      void executeCycle(robot_msgs::PoseStamped& goal, std::vector<robot_msgs::PoseStamped>& global_plan);
+      void executeCycle(geometry_msgs::PoseStamped& goal, std::vector<geometry_msgs::PoseStamped>& global_plan);
 
       /**
        * @brief  The main loop of the MoveBase action
@@ -117,13 +117,13 @@ namespace move_base {
        * @param  plan Will be filled in with the plan made by the planner
        * @return  True if planning succeeds, false otherwise
        */
-      bool makePlan(const robot_msgs::PoseStamped& goal, std::vector<robot_msgs::PoseStamped>& plan);
+      bool makePlan(const geometry_msgs::PoseStamped& goal, std::vector<geometry_msgs::PoseStamped>& plan);
 
       /**
        * @brief  Publish a goal to the visualizer
        * @param  goal The goal to visualize
        */
-      void publishGoal(const robot_msgs::PoseStamped& goal);
+      void publishGoal(const geometry_msgs::PoseStamped& goal);
 
       /**
        * @brief  Resets the costmaps to the static map outside a given window
@@ -156,9 +156,9 @@ namespace move_base {
        */
       void resetState();
 
-      void goalCB(const robot_msgs::PoseStamped::ConstPtr& goal);
+      void goalCB(const geometry_msgs::PoseStamped::ConstPtr& goal);
 
-      robot_msgs::PoseStamped goalToGlobalFrame(const robot_msgs::PoseStamped& goal_pose_msg);
+      geometry_msgs::PoseStamped goalToGlobalFrame(const geometry_msgs::PoseStamped& goal_pose_msg);
 
       ros::NodeHandle ros_node_;
       tf::TransformListener& tf_;

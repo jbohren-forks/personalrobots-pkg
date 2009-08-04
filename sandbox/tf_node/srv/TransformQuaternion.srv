@@ -3,7 +3,7 @@
 
 string target_frame
 time   target_time 
-robot_msgs/QuaternionStamped qin
+geometry_msgs/QuaternionStamped qin
 string fixed_frame
 ---
-robot_msgs/QuaternionStamped qout
+geometry_msgs/QuaternionStamped qout

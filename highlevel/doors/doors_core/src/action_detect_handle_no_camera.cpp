@@ -58,7 +58,7 @@ DetectHandleNoCameraAction::DetectHandleNoCameraAction(tf::TransformListener& tf
   tf_(tf)
 {
   NodeHandle node;
-  pub_ = node.advertise<robot_msgs::PointStamped>("head_controller/point_head",10);
+  pub_ = node.advertise<geometry_msgs::PointStamped>("head_controller/point_head",10);
 };
 
 
@@ -231,7 +231,7 @@ bool DetectHandleNoCameraAction::cameraDetection(const door_msgs::Door& door_in,
   // make the head point towards the door
   if (isPreemptRequested()) return false;
   ROS_INFO("point head towards door");
-  robot_msgs::PointStamped door_pnt;
+  geometry_msgs::PointStamped door_pnt;
   door_pnt.header.frame_id = door_in.header.frame_id;
   door_pnt.point.x = (door_in.door_p1.x+door_in.door_p2.x)/2.0;
   door_pnt.point.y = (door_in.door_p1.y+door_in.door_p2.y)/2.0;

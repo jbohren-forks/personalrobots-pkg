@@ -74,7 +74,7 @@ namespace estimation
     timer_ = node_.createTimer(ros::Duration(1.0/max(freq,1.0)), &OdomEstimationNode::spin, this);
 
     // advertise our estimation
-    pose_pub_ = node_.advertise<robot_msgs::PoseWithCovariance>("~"+publish_name, 10);
+    pose_pub_ = node_.advertise<geometry_msgs::PoseWithCovariance>("~"+publish_name, 10);
 
     // initialize
     filter_stamp_ = Time::now();
@@ -201,7 +201,7 @@ namespace estimation
     boost::mutex::scoped_lock lock(imu_mutex_);
     imu_stamp_ = imu->header.stamp;
     imu_time_  = Time::now();
-    poseMsgToTF(imu->pos, imu_meas_);
+    poseMsgToTF(imu->pose_with_rates.pose, imu_meas_);
     my_filter_.addMeasurement(Stamped<Transform>(imu_meas_, imu_stamp_, "imu", "base_footprint"));
     
     // activate imu

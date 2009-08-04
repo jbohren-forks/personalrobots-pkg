@@ -33,8 +33,8 @@
 #define COSTMAP_OBSERVATION_H_
 
 
-#include <robot_msgs/Point.h>
-#include <robot_msgs/PointCloud.h>
+#include <geometry_msgs/Point.h>
+#include <sensor_msgs/PointCloud.h>
 
 namespace costmap_2d {
 
@@ -49,14 +49,13 @@ namespace costmap_2d {
      * @brief  Creates an empty observation
      */
     Observation() : cloud_(), raytrace_range_(0.0){}
-
     /**
      * @brief  Creates an observation from an origin point and a point cloud
      * @param origin The origin point of the observation
      * @param cloud The point cloud of the observation
      * @param raytrace_range The range out to which an observation should be able to clear via raytracing
      */
-    Observation(robot_msgs::Point& origin, robot_msgs::PointCloud cloud, double raytrace_range): origin_(origin), 
+    Observation(geometry_msgs::Point& origin, sensor_msgs::PointCloud cloud, double raytrace_range): origin_(origin), 
     cloud_(cloud), raytrace_range_(raytrace_range) {}
 
     /**
@@ -69,10 +68,10 @@ namespace costmap_2d {
      * @brief  Creates an observation from a point cloud
      * @param cloud The point cloud of the observation
      */
-    Observation(robot_msgs::PointCloud cloud): cloud_(cloud), raytrace_range_(0.0){}
+    Observation(sensor_msgs::PointCloud cloud): cloud_(cloud), raytrace_range_(0.0){}
 
-    robot_msgs::Point origin_;
-    robot_msgs::PointCloud cloud_;
+    geometry_msgs::Point origin_;
+    sensor_msgs::PointCloud cloud_;
     double raytrace_range_;
   };
 

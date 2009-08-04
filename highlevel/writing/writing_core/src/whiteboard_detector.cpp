@@ -29,7 +29,7 @@
 // ROS core
 #include <ros/ros.h>
 // ROS messages
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 
 
 // Cloud kd-tree
@@ -53,16 +53,13 @@
 #include <tf/transform_broadcaster.h>
 
 using namespace std;
-using namespace robot_msgs;
-
-
 
 
 class WhiteboardDetector
 {
 	ros::NodeHandle nh_;
 
-	PointCloudConstPtr cloud_;
+	sensor_msgs::PointCloudConstPtr cloud_;
 
 	ros::Subscriber cloud_sub_;
 	ros::Publisher cloud_pub_;
@@ -81,12 +78,12 @@ public:
 		ROS_INFO("Topic name: %s", topic_name.c_str());
 		cloud_sub_ = nh_.subscribe(topic_name, 1, &WhiteboardDetector::cloudCallback, this);
 
-		cloud_pub_ = nh_.advertise<PointCloud>("whiteboard_cloud",1);
+		cloud_pub_ = nh_.advertise<sensor_msgs::PointCloud>("whiteboard_cloud",1);
 	}
 
 private:
 
-	void cloudCallback(const PointCloudConstPtr& the_cloud)
+	void cloudCallback(const sensor_msgs::PointCloudConstPtr& the_cloud)
 	{
 		ROS_INFO("Received point cloud, starting detection");
 		cloud_ = the_cloud;
@@ -94,7 +91,7 @@ private:
 	}
 
 
-	void filterPointCloud(const PointCloud& in, PointCloud& out)
+	void filterPointCloud(const sensor_msgs::PointCloud& in, sensor_msgs::PointCloud& out)
 	{
 		out.header.stamp = in.header.stamp;
 		out.header.frame_id = in.header.frame_id;
@@ -114,12 +111,12 @@ private:
 		}
 	}
 
-	void detectWhiteboard(const PointCloud& point_cloud)
+	void detectWhiteboard(const sensor_msgs::PointCloud& point_cloud)
 	{
-		PointCloud odom_cloud;
+		sensor_msgs::PointCloud odom_cloud;
 		tf_.transformPointCloud("odom_combined",point_cloud,odom_cloud);
 
-		PointCloud cloud;
+		sensor_msgs::PointCloud cloud;
 		filterPointCloud(odom_cloud,cloud);
 
 		cloud_pub_.publish(cloud);
@@ -128,7 +125,7 @@ private:
 		for (size_t i=0;i<cloud.get_pts_size();++i) {
 			indices[i] = i;
 		}
-		Point32 viewpoint;
+		geometry_msgs::Point32 viewpoint;
 		viewpoint.x = viewpoint.y = viewpoint.z = 0;
 
 		// Use the entire data to estimate the plane equation.
@@ -141,7 +138,7 @@ private:
 		fitSACPlane(cloud, indices, viewpoint, inliers, model, 0.005, 1000);
 
 
-		PointStamped laser_origin;
+		geometry_msgs::PointStamped laser_origin;
 		laser_origin.header.frame_id = point_cloud.header.frame_id;
 		laser_origin.header.stamp = point_cloud.header.stamp;
 		laser_origin.point.x = 0;
@@ -149,18 +146,18 @@ private:
 		laser_origin.point.z = 0;
 
 
-		PointStamped odom_laser_origin;
+		geometry_msgs::PointStamped odom_laser_origin;
 		tf_.transformPoint("odom_combined", laser_origin, odom_laser_origin);
 
-		Point32 before_projection;
+		geometry_msgs::Point32 before_projection;
 		before_projection.x = odom_laser_origin.point.x;
 		before_projection.y = odom_laser_origin.point.y;
 		before_projection.z = odom_laser_origin.point.z;
-		Point32 origin_projection;
+		geometry_msgs::Point32 origin_projection;
 
 		cloud_geometry::projections::pointToPlane(before_projection, origin_projection, model);
 
-		PointStamped origin;
+		geometry_msgs::PointStamped origin;
 		origin.header.stamp = odom_laser_origin.header.stamp;
 		origin.header.frame_id = odom_laser_origin.header.frame_id;
 		origin.point.x = origin_projection.x;
@@ -172,7 +169,7 @@ private:
 	}
 
 
-	void addWhiteboardFrame(PointStamped origin, const vector<double>& plane)
+	void addWhiteboardFrame(geometry_msgs::PointStamped origin, const vector<double>& plane)
 	{
 
 		btVector3 position(origin.point.x,origin.point.y,origin.point.z);
@@ -199,7 +196,7 @@ private:
 	}
 
 
-	bool fitSACPlane (const PointCloud& points, const vector<int> &indices, Point32 viewpoint, // input
+	bool fitSACPlane (const sensor_msgs::PointCloud& points, const vector<int> &indices, geometry_msgs::Point32 viewpoint, // input
 			vector<int> &inliers, vector<double> &coeff,  // output
 			double dist_thresh, int min_points_per_model)
 	{
@@ -207,7 +204,7 @@ private:
 		sample_consensus::SACModelPlane *model = new sample_consensus::SACModelPlane ();
 		sample_consensus::SAC *sac             = new sample_consensus::RANSAC (model, dist_thresh);
 		sac->setMaxIterations (100);
-		model->setDataSet ((PointCloud*)&points, indices);
+		model->setDataSet ((sensor_msgs::PointCloud*)&points, indices);
 
 		// Search for the best plane
 		if (sac->computeModel ()) {

@@ -393,7 +393,7 @@ bool PlugControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *con
 
   if (current_frame_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
     delete current_frame_publisher_ ;
-  current_frame_publisher_ = new realtime_tools::RealtimePublisher <robot_msgs::Transform> (topic_ + "/transform", 1) ;
+  current_frame_publisher_ = new realtime_tools::RealtimePublisher <geometry_msgs::Transform> (topic_ + "/transform", 1) ;
 
   if (internal_state_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
     delete internal_state_publisher_ ;
@@ -438,7 +438,7 @@ void PlugControllerNode::update()
 
 void PlugControllerNode::outletPose()
 {
-  robot_msgs::PoseStamped outlet_in_root_;
+  geometry_msgs::PoseStamped outlet_in_root_;
   try
   {
     TF.transformPose(controller_.root_name_, outlet_pose_msg_, outlet_in_root_);
@@ -478,7 +478,7 @@ void PlugControllerNode::command()
 bool PlugControllerNode::setToolFrame(robot_srvs::SetPoseStamped::Request &req,
                                       robot_srvs::SetPoseStamped::Response &resp)
 {
-  robot_msgs::PoseStamped tool_offset_msg;
+  geometry_msgs::PoseStamped tool_offset_msg;
   try
   {
     //TF.transformPose(controller_.chain_.getLinkName(), req.p, tool_offset_msg);

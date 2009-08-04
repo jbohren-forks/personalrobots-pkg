@@ -31,7 +31,7 @@
 /** \author Radu Bogdan Rusu */
 
 #include <gtest/gtest.h>
-#include "robot_msgs/PointCloud.h"
+#include "sensor_msgs/PointCloud.h"
 
 #include "point_cloud_mapping/kdtree/kdtree.h"
 #include "point_cloud_mapping/kdtree/kdtree_ann.h"
@@ -43,7 +43,7 @@ using namespace cloud_kdtree;
 
 TEST (CloudKdTreeANN, CreateDestroy)
 {
-  robot_msgs::PointCloud points;
+  sensor_msgs::PointCloud points;
 
   // Get a point cloud dataset
   cloud_kdtree_tests::getBunnyModel (points);
@@ -58,7 +58,7 @@ TEST (CloudKdTreeANN, CreateDestroy)
 
 TEST (CloudKdTreeFLANN, CreateDestroy)
 {
-  robot_msgs::PointCloud points;
+  sensor_msgs::PointCloud points;
 
   //Get a point cloud dataset
   cloud_kdtree_tests::getBunnyModel (points);
@@ -74,7 +74,7 @@ TEST (CloudKdTreeFLANN, CreateDestroy)
 TEST (CloudKdTreeANN, Search)
 {
   bool state;
-  robot_msgs::PointCloud points;
+  sensor_msgs::PointCloud points;
   std::vector<int> indices;
   std::vector<float> distances;
 
@@ -167,7 +167,7 @@ TEST (CloudKdTreeANN, Search)
 }
 
 
-//void save_points(robot_msgs::PointCloud& points)
+//void save_points(sensor_msgs::PointCloud& points)
 //{
 //	FILE* f = fopen("points.dat","w");
 //	for (int i=0;i<points.pts.size();++i) {
@@ -181,7 +181,7 @@ TEST (CloudKdTreeANN, Search)
 TEST (CloudKdTreeFLANN, Search)
 {
 //   bool state;
-//   robot_msgs::PointCloud points;
+//   sensor_msgs::PointCloud points;
 //   std::vector<int> indices;
 //   std::vector<float> distances;
 // 

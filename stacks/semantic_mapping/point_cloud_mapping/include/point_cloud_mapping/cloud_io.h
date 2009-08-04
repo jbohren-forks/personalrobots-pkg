@@ -34,7 +34,7 @@
 #define _CLOUD_IO_CLOUDIO_H_
 
 // ROS includes
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 
 #include <vector>
 #include <fstream>
@@ -43,16 +43,16 @@
 
 namespace cloud_io
 {
-  int loadPCDFile (const char* file_name, robot_msgs::PointCloud &points);
+  int loadPCDFile (const char* file_name, sensor_msgs::PointCloud &points);
 
-  int savePCDFile (const char* file_name, const robot_msgs::PointCloud &points, bool binary_mode = false);
+  int savePCDFile (const char* file_name, const sensor_msgs::PointCloud &points, bool binary_mode = false);
 
-  int savePCDFileASCII (const char* file_name, const robot_msgs::PointCloud &points, int precision);
-  int savePCDFileBinary (const char* file_name, const robot_msgs::PointCloud &points);
+  int savePCDFileASCII (const char* file_name, const sensor_msgs::PointCloud &points, int precision);
+  int savePCDFileBinary (const char* file_name, const sensor_msgs::PointCloud &points);
 
-  int getIndex (robot_msgs::PointCloud *points, std::string value);
+  int getIndex (sensor_msgs::PointCloud *points, std::string value);
 
-  std::string addCurrentHeader (const robot_msgs::PointCloud &points, bool binary_type);
+  std::string addCurrentHeader (const sensor_msgs::PointCloud &points, bool binary_type);
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /** \brief Create the PCD header comments */
@@ -84,7 +84,7 @@ namespace cloud_io
     * \param points a pointer to the PointCloud message
     */
   inline std::string
-    getAvailableDimensions (const robot_msgs::PointCloud &points)
+    getAvailableDimensions (const sensor_msgs::PointCloud &points)
   {
     std::string result = "x y z";
     unsigned int i;

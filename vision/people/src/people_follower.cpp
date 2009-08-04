@@ -40,7 +40,6 @@
 using namespace std;
 using namespace ros;
 using namespace tf;
-using namespace robot_msgs;
 
 
 
@@ -64,7 +63,7 @@ namespace estimation
     advertise<people::PositionMeasurement>("people_tracker_filter",10);
 
     // advertise visualization
-    advertise<robot_msgs::PointCloud>("goal_pos",10);
+    advertise<sensor_msgs::PointCloud>("goal_pos",10);
 
     // register message sequencer
     people_notifier_ = new MessageNotifier<people::PositionMeasurement>(&robot_state_, this,  boost::bind(&PeopleFollower::callback, this, _1), 
@@ -82,7 +81,7 @@ namespace estimation
     time_last_publish_ = Time::now();
 
     // visualization
-    robot_goal_cloud_.pts = vector<robot_msgs::Point32>(1);
+    robot_goal_cloud_.pts = vector<geometry_msgs::Point32>(1);
     robot_goal_cloud_.pts[0].x = 0;
     robot_goal_cloud_.pts[0].y = 0;
     robot_goal_cloud_.pts[0].z = 0;

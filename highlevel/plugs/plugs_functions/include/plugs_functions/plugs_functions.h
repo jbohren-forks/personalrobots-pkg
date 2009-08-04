@@ -36,9 +36,9 @@
 #define OUTLET_EXECUTIVE_FUNCTIONS_H
 
 
-#include <robot_msgs/Pose.h>
+#include <geometry_msgs/Pose.h>
 
-robot_msgs::Pose transformOutletPose(robot_msgs::Pose outletPose, float value);
+geometry_msgs::Pose transformOutletPose(geometry_msgs::Pose outletPose, float value);
 
 
 #endif   // OUTLET_EXECUTIVE_FUNCTIONS_H

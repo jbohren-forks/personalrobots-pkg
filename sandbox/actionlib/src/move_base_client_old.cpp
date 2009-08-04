@@ -37,7 +37,7 @@
 #include "action_tools/MoveBaseGoal.h"
 #include "action_tools/MoveBaseResult.h"
 #include "action_tools/GoalStatus.h"
-#include "robot_msgs/PoseStamped.h"
+#include "geometry_msgs/PoseStamped.h"
 
 using namespace action_tools;
 using namespace robot_msgs;

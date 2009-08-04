@@ -111,7 +111,7 @@ DoorDetector::DoorDetector (ros::Node* anode)
   node_->advertiseService ("doors_detector_cloud", &DoorDetector::detectDoorCloudSrv, this);
   node_->advertise<visualization_msgs::Marker> ("visualization_marker", 100);
   node_->advertise<PolygonalMap> ("~door_frames", 1);
-  node_->advertise<PointCloud> ("~door_regions", 1);
+  node_->advertise<sensor_msgs::PointCloud> ("~door_regions", 1);
 
   global_marker_id_ = 1;
 }
@@ -122,7 +122,7 @@ DoorDetector::DoorDetector (ros::Node* anode)
 /** \brief This is the main door detection function */
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 bool
-  DoorDetector::detectDoors(const door_msgs::Door& door, PointCloud pointcloud, std::vector<door_msgs::Door>& result) const
+  DoorDetector::detectDoors(const door_msgs::Door& door, sensor_msgs::PointCloud pointcloud, std::vector<door_msgs::Door>& result) const
 {
   ROS_INFO ("Start detecting doors in a point cloud of size %i", (int)pointcloud.pts.size ());
 
@@ -159,7 +159,7 @@ bool
    ROS_INFO("door message transformed to parameter frame");
 
   // Get the cloud viewpoint in the parameter frame
-  PointStamped viewpoint_cloud_;
+  geometry_msgs::PointStamped viewpoint_cloud_;
   getCloudViewPoint (parameter_frame_, viewpoint_cloud_, &tf_);
 
   // ---[ Optimization: select a subset of the points for faster processing
@@ -175,11 +175,11 @@ bool
   indices_in_bounds.resize (nr_p);
 
   // NOTE: <leaves_> gets allocated internally in downsamplePointCloud() and is not deallocated on exit
-  PointCloud cloud_down;
+  sensor_msgs::PointCloud cloud_down;
   vector<cloud_geometry::Leaf> leaves;
   try
   {
-    Point leaf_width_xyz;
+    geometry_msgs::Point leaf_width_xyz;
     leaf_width_xyz.x = leaf_width_xyz.y = leaf_width_xyz.z = leaf_width_;
     cloud_geometry::downsamplePointCloud (pointcloud, indices_in_bounds, cloud_down, leaf_width_xyz, leaves, -1);
     ROS_INFO ("Number of points after downsampling with a leaf of size [%f,%f,%f]: %d.", leaf_width_xyz.x, leaf_width_xyz.y, leaf_width_xyz.z, (int)cloud_down.pts.size ());
@@ -217,7 +217,7 @@ bool
   }
 
   // Output the point regions
-  PointCloud cloud_regions;
+  sensor_msgs::PointCloud cloud_regions;
   cloud_regions.chan.resize (1);
   cloud_regions.chan[0].name = "rgb";
   cloud_regions.header = cloud_down.header;
@@ -298,7 +298,7 @@ bool
 
       goodness_factor[cc] = 0;
 #if DEBUG_FAILURES
-      Point32 centroid;
+      geometry_msgs::Point32 centroid;
       cloud_geometry::nearest::computeCentroid (&pmap_.polygons[cc], centroid);
       sendMarker (centroid.x, centroid.y, centroid.z, parameter_frame_, &node_, global_marker_id_, 255, 0, 0);
 #endif
@@ -310,7 +310,7 @@ bool
     if (bad_candidate) continue;
 
     // Filter the region based on its height and width
-    robot_msgs::Point32 min_p, max_p;
+    geometry_msgs::Point32 min_p, max_p;
     cloud_geometry::statistics::getMinMax (pmap_.polygons[cc], min_p, max_p);
 
     // ---[ Quick test for min_p.z (!)
@@ -318,7 +318,7 @@ bool
     {
       goodness_factor[cc] = 0;
 #if DEBUG_FAILURES
-      Point32 centroid;
+      geometry_msgs::Point32 centroid;
       cloud_geometry::nearest::computeCentroid (&pmap_.polygons[cc], centroid);
       sendMarker (centroid.x, centroid.y, centroid.z, parameter_frame_, &node_, global_marker_id_, 0, 255, 0);
 #endif
@@ -346,7 +346,7 @@ bool
     {
       goodness_factor[cc] = 0;
 #if DEBUG_FAILURES
-      Point32 centroid;
+      geometry_msgs::Point32 centroid;
       cloud_geometry::nearest::computeCentroid (&pmap_.polygons[cc], centroid);
       sendMarker (centroid.x, centroid.y, centroid.z, parameter_frame_, &node_, global_marker_id_, 0, 0, 255);
 #endif
@@ -363,7 +363,7 @@ bool
     {
       goodness_factor[cc] = 0;
 #if DEBUG_FAILURES
-      Point32 centroid;
+      geometry_msgs::Point32 centroid;
       cloud_geometry::nearest::computeCentroid (&pmap_.polygons[cc], centroid);
       sendMarker (centroid.x, centroid.y, centroid.z, parameter_frame_, &node_, global_marker_id_, 255, 255, 255);
 #endif
@@ -382,7 +382,7 @@ bool
 
   // Merge clusters with the same or similar door frame
   double similar_door_eps = 0.1;
-  Point32 min_pcc, max_pcc, min_pdd, max_pdd;
+  geometry_msgs::Point32 min_pcc, max_pcc, min_pdd, max_pdd;
   for (unsigned int cc = 0; cc < clusters.size (); cc++)
   {
     if (goodness_factor[cc] == 0)
@@ -431,7 +431,7 @@ bool
 
   // Copy all clusters
   int nr_d = 0;
-  robot_msgs::Point32 min_p, max_p;
+  geometry_msgs::Point32 min_p, max_p;
   for (int cc = 0; cc < (int)clusters.size (); cc++)
   {
     if (goodness_factor[cc] == 0)
@@ -480,7 +480,7 @@ bool
     }
 
     // get frame p1 and p2 from detected door, keeping the orientation of the door frame
-    Point32 frame_vec;
+    geometry_msgs::Point32 frame_vec;
     double door_width = cloud_geometry::distances::pointToPointXYDistance( result[nr_d].door_p1,  result[nr_d].door_p2);
     double frame_width = cloud_geometry::distances::pointToPointXYDistance( result[nr_d].frame_p1,  result[nr_d].frame_p2);
     frame_vec.x = (result[nr_d].frame_p1.x - result[nr_d].frame_p2.x)*door_width/frame_width;
@@ -574,8 +574,8 @@ bool  DoorDetector::detectDoorSrv (door_handle_detector::DoorsDetector::Request 
   ROS_INFO("Door detection waiting for pointcloud to come in on topic %s", input_cloud_topic_.c_str());
   // receive a new laser scan
   num_clouds_received_ = 0;
-  tf::MessageNotifier<robot_msgs::PointCloud>* message_notifier =
-    new tf::MessageNotifier<robot_msgs::PointCloud> (&tf_, node_,  boost::bind (&DoorDetector::cloud_cb, this, _1),
+  tf::MessageNotifier<sensor_msgs::PointCloud>* message_notifier =
+    new tf::MessageNotifier<sensor_msgs::PointCloud> (&tf_, node_,  boost::bind (&DoorDetector::cloud_cb, this, _1),
                                                      input_cloud_topic_, parameter_frame_, 1);
   ros::Duration tictoc = ros::Duration ().fromSec (0.1);
   while ((int)num_clouds_received_ < 1)
@@ -600,7 +600,7 @@ bool DoorDetector::detectDoorCloudSrv (door_handle_detector::DoorsDetectorCloud:
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /** \brief Main point cloud callback.                                                                           */
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void DoorDetector::cloud_cb (const tf::MessageNotifier<robot_msgs::PointCloud>::MessagePtr& cloud)
+void DoorDetector::cloud_cb (const tf::MessageNotifier<sensor_msgs::PointCloud>::MessagePtr& cloud)
 {
   pointcloud_ = *cloud;
   ROS_INFO ("Received %d data points in frame %s with %d channels (%s).", (int)pointcloud_.pts.size (), pointcloud_.header.frame_id.c_str (),
@@ -609,7 +609,7 @@ void DoorDetector::cloud_cb (const tf::MessageNotifier<robot_msgs::PointCloud>::
 }
 
 
-double DoorDetector::distToHinge(const door_msgs::Door& door, robot_msgs::Point32& pnt) const
+double DoorDetector::distToHinge(const door_msgs::Door& door, geometry_msgs::Point32& pnt) const
 {
   double dist=-1;
   if (door.hinge == Door::HINGE_P1)

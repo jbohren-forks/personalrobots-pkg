@@ -65,7 +65,7 @@ int point_cloud_clustering::PairwiseNeighbors::setParameters(double radius, unsi
  * Important: if you change indices_to_cluster from a set to anything else,
  *            must modify adjacency list construction below */
 // --------------------------------------------------------------
-int point_cloud_clustering::PairwiseNeighbors::cluster(const robot_msgs::PointCloud& pt_cloud,
+int point_cloud_clustering::PairwiseNeighbors::cluster(const sensor_msgs::PointCloud& pt_cloud,
                                                        cloud_kdtree::KdTree& pt_cloud_kdtree,
                                                        const set<unsigned int>& indices_to_cluster,
                                                        map<unsigned int, vector<int> >& created_clusters)

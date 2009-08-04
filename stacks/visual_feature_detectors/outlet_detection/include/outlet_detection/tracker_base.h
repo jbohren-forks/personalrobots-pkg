@@ -71,7 +71,7 @@ protected:
   CvRect fitToFrame(CvRect roi);
   void setRoi(CvRect roi);
   void setRoiToTargetFrame();
-  robot_msgs::Pose getTargetInHighDef();
+  geometry_msgs::Pose getTargetInHighDef();
 
   void saveImage(bool success = false);
 

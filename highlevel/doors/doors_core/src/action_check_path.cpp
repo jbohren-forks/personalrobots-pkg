@@ -48,7 +48,7 @@ static const string fixed_frame = "map";
 
 
 CheckPathAction::CheckPathAction(tf::TransformListener& tf) : 
-  robot_actions::Action<robot_msgs::PoseStamped, int8_t>("check_path"), 
+  robot_actions::Action<geometry_msgs::PoseStamped, int8_t>("check_path"), 
   tf_(tf)
 {};
 
@@ -58,12 +58,12 @@ CheckPathAction::~CheckPathAction()
 
 
 
-robot_actions::ResultStatus CheckPathAction::execute(const robot_msgs::PoseStamped& goal, int8_t& feedback)
+robot_actions::ResultStatus CheckPathAction::execute(const geometry_msgs::PoseStamped& goal, int8_t& feedback)
 {
   ROS_INFO("CheckPathAction: execute");
 
   // transform goal message to map frame
-  robot_msgs::PoseStamped goal_tr;
+  geometry_msgs::PoseStamped goal_tr;
   ros::Duration timeout(3.0);
   if (!tf_.canTransform(goal.header.frame_id, fixed_frame, goal.header.stamp, timeout)){
     ROS_ERROR("cannot transform goal from %s to %s at time %f", goal.header.frame_id.c_str(), fixed_frame.c_str(), goal.header.stamp.toSec());

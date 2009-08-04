@@ -44,7 +44,7 @@
 // Msgs
 #include <std_msgs/Empty.h>
 #include <std_msgs/Int32.h>
-#include "robot_msgs/PoseStamped.h"
+#include "geometry_msgs/PoseStamped.h"
 #include "manipulation_msgs/TaskFrameFormalism.h"
 #include "plugs_core/PlugInState.h"
 
@@ -70,7 +70,7 @@ public:
 private:
 
   void reset();
-  void plugMeasurementCallback(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr &msg);
+  void plugMeasurementCallback(const tf::MessageNotifier<geometry_msgs::PoseStamped>::MessagePtr &msg);
   void measure();
   void move();
   void hold();
@@ -87,7 +87,7 @@ private:
 
   std_msgs::Empty empty_;
 
-  boost::scoped_ptr<tf::MessageNotifier<robot_msgs::PoseStamped> > notifier_;
+  boost::scoped_ptr<tf::MessageNotifier<geometry_msgs::PoseStamped> > notifier_;
   boost::scoped_ptr<tf::TransformListener> TF_;
 
 

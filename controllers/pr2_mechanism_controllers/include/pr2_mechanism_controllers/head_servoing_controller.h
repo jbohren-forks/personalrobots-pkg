@@ -48,7 +48,7 @@
 // Services
 #include <robot_msgs/JointCmd.h>
 #include <robot_srvs/GetJointCmd.h>
-#include <robot_msgs/PointStamped.h>
+#include <geometry_msgs/PointStamped.h>
 #include <visualization_msgs/Marker.h>
 
 // Math utils
@@ -213,8 +213,8 @@ class HeadServoingControllerNode : public Controller
     SubscriptionGuard guard_frame_track_point_;           /**< Makes sure the subscription goes down neatly. */
 
     //msgs
-    robot_msgs::PointStamped head_track_point_;          /**< The point from the subscription. */
-    robot_msgs::PointStamped frame_track_point_;         /**< The point from the subscription. */
+    geometry_msgs::PointStamped head_track_point_;          /**< The point from the subscription. */
+    geometry_msgs::PointStamped frame_track_point_;         /**< The point from the subscription. */
     robot_msgs::JointCmd joint_cmds_;                  /**< The joint commands from the subscription.*/
 
     //controller

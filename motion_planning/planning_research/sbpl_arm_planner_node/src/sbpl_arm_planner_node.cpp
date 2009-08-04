@@ -360,7 +360,7 @@ void SBPLArmPlannerNode::collisionMapCallback(const mapping_msgs::CollisionMapCo
 }
 
 /** \brief Callback function that updates the voxel when a new point cloud is published */
-void SBPLArmPlannerNode::pointCloudCallback(const robot_msgs::PointCloudConstPtr &point_cloud)
+void SBPLArmPlannerNode::pointCloudCallback(const sensor_msgs::PointCloudConstPtr &point_cloud)
 {
   if(mPlanning_.try_lock())
   {
@@ -539,12 +539,12 @@ bool SBPLArmPlannerNode::setGoalPosition(const std::vector<motion_planning_msgs:
     sbpl_goal[i][5] = yaw;
 
 // # The acceptable tolerance
-// robot_msgs/Point position_tolerance_above
-// robot_msgs/Point position_tolerance_below
+// geometry_msgs/Point position_tolerance_above
+// geometry_msgs/Point position_tolerance_below
 // 
 // # The acceptable tolerance (roll pitch yaw)
-// robot_msgs/Point orientation_tolerance_above
-// robot_msgs/Point orientation_tolerance_below
+// geometry_msgs/Point orientation_tolerance_above
+// geometry_msgs/Point orientation_tolerance_below
 
     sbpl_tolerance[i][0]  = goals[i].position_tolerance_above.x;
     sbpl_tolerance[i][1]  = goals[i].orientation_tolerance_above.x;
@@ -1156,7 +1156,7 @@ void SBPLArmPlannerNode::getCurrentJointAngles(const std::vector <std::string> &
 }
 
 /** \brief Publish a visualization marker to display the goal end effector position in rviz */
-void SBPLArmPlannerNode::visualizeGoalPosition(robot_msgs::PoseStamped pose)
+void SBPLArmPlannerNode::visualizeGoalPosition(geometry_msgs::PoseStamped pose)
 {
   goal_marker_.header.stamp = pose.header.stamp;
   goal_marker_.header.frame_id = pose.header.frame_id;
@@ -1310,7 +1310,7 @@ void SBPLArmPlannerNode::finishPath(motion_planning_msgs::KinematicPath &arm_pat
 }
 
 /** \brief Compute IK using pr2_ik service */
-bool SBPLArmPlannerNode::computeIK(const robot_msgs::PoseStamped &pose_stamped_msg, std::vector<double> jnt_pos, std::vector<double> &solution)
+bool SBPLArmPlannerNode::computeIK(const geometry_msgs::PoseStamped &pose_stamped_msg, std::vector<double> jnt_pos, std::vector<double> &solution)
 {
   manipulation_srvs::IKService::Request request;
   manipulation_srvs::IKService::Response response;

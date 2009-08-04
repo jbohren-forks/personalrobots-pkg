@@ -38,8 +38,8 @@
 
 //messages
 #include <pr2_robot_actions/Pose2D.h>
-#include <robot_msgs/Vector3.h>
-#include <robot_msgs/Point.h>
+#include <geometry_msgs/Vector3.h>
+#include <geometry_msgs/Point.h>
 #include <diagnostic_msgs/DiagnosticStatus.h>
 #include <door_msgs/Door.h>
 
@@ -95,9 +95,9 @@ namespace door_reactive_planner
      * @param footprint_spec The footprint of the robot
      * @param oriented_footprint The oriented footprint of the robot
      */
-    bool computeOrientedFootprint(const pr2_robot_actions::Pose2D &position, const std::vector<robot_msgs::Point>& footprint_spec, std::vector<robot_msgs::Point>& oriented_footprint); 
+    bool computeOrientedFootprint(const pr2_robot_actions::Pose2D &position, const std::vector<geometry_msgs::Point>& footprint_spec, std::vector<geometry_msgs::Point>& oriented_footprint); 
 
-    std::vector<robot_msgs::Point> footprint_; /**< The footprint of the robot */
+    std::vector<geometry_msgs::Point> footprint_; /**< The footprint of the robot */
 
     /**
      * @brief Get the goal position from the planner
@@ -154,7 +154,7 @@ namespace door_reactive_planner
 
     int cell_distance_robot_center_from_obstacles_;
 
-    robot_msgs::Vector3 vector_along_door_; /**< A unit vector along the doorway*/
+    geometry_msgs::Vector3 vector_along_door_; /**< A unit vector along the doorway*/
 
     double centerline_angle_; /**< Angle that the normal to the door makes in the path_frame when the door is closed */
 
@@ -206,7 +206,7 @@ namespace door_reactive_planner
      * @param cost cost of the input position
      * @return returns true if robot is not in collision when center of the robot is on the point, false otherwise
      */
-    bool getPointCost(const robot_msgs::Point &position, const std::vector<robot_msgs::Point> &oriented_footprint, double &cost);
+    bool getPointCost(const geometry_msgs::Point &position, const std::vector<geometry_msgs::Point> &oriented_footprint, double &cost);
 
     /**
      * @brief Check for collisions along a path and remove all points beyond the first detected collision point

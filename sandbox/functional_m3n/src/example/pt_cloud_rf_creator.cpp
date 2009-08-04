@@ -202,7 +202,7 @@ void PtCloudRFCreator::createDescriptors()
  */
 // --------------------------------------------------------------
 void PtCloudRFCreator::createNodes(RandomField& rf,
-                                   const robot_msgs::PointCloud& pt_cloud,
+                                   const sensor_msgs::PointCloud& pt_cloud,
                                    cloud_kdtree::KdTree& pt_cloud_kdtree,
                                    const vector<float>& labels,
                                    set<unsigned int>& successful_indices)
@@ -213,7 +213,7 @@ void PtCloudRFCreator::createNodes(RandomField& rf,
   // ----------------------------------------------
   // Create interests points over the whole point cloud
   unsigned int nbr_pts = pt_cloud.pts.size();
-  cv::Vector<const robot_msgs::Point32*> interest_pts(nbr_pts, NULL);
+  cv::Vector<const geometry_msgs::Point32*> interest_pts(nbr_pts, NULL);
   for (unsigned int i = 0 ; i < nbr_pts ; i++)
   {
     interest_pts[(size_t) i] = &(pt_cloud.pts[i]);
@@ -276,7 +276,7 @@ void PtCloudRFCreator::createNodes(RandomField& rf,
  */
 // --------------------------------------------------------------
 void PtCloudRFCreator::createCliqueSet(RandomField& rf,
-                                       const robot_msgs::PointCloud& pt_cloud,
+                                       const sensor_msgs::PointCloud& pt_cloud,
                                        cloud_kdtree::KdTree& pt_cloud_kdtree,
                                        const set<unsigned int>& node_indices,
                                        const unsigned int clique_set_idx)
@@ -409,7 +409,7 @@ void PtCloudRFCreator::createCliqueSet(RandomField& rf,
 // --------------------------------------------------------------
 /*! See function definition */
 // --------------------------------------------------------------
-boost::shared_ptr<RandomField> PtCloudRFCreator::createRandomField(const robot_msgs::PointCloud& pt_cloud,
+boost::shared_ptr<RandomField> PtCloudRFCreator::createRandomField(const sensor_msgs::PointCloud& pt_cloud,
                                                                    const vector<float>& labels)
 {
   createDescriptors();
@@ -436,7 +436,7 @@ boost::shared_ptr<RandomField> PtCloudRFCreator::createRandomField(const robot_m
   return rf;
 }
 
-boost::shared_ptr<RandomField> PtCloudRFCreator::createRandomField(const robot_msgs::PointCloud& pt_cloud)
+boost::shared_ptr<RandomField> PtCloudRFCreator::createRandomField(const sensor_msgs::PointCloud& pt_cloud)
 {
   std::vector<float> labels;
   return createRandomField(pt_cloud, labels);

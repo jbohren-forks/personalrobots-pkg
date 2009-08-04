@@ -40,7 +40,7 @@
 
 #include "opencv/cv.h"
 #include "opencv_latest/CvBridge.h"
-#include "robot_msgs/PointCloud.h"
+#include "sensor_msgs/PointCloud.h"
 #include "sensor_msgs/CameraInfo.h"
 #include "topic_synchronizer/topic_synchronizer.h"
 
@@ -77,7 +77,7 @@ public:
     // Project 3D points onto camera plane (assume that frame_ids match)
     for (unsigned int i=0; i<pc_msg_.pts.size(); i++)
     {
-      const robot_msgs::Point32& pt = pc_msg_.pts[i] ;
+      const geometry_msgs::Point32& pt = pc_msg_.pts[i] ;
       double u = P[0]*pt.x + P[1]*pt.y + P[2]*pt.z + P[3] ;
       double v = P[4]*pt.x + P[5]*pt.y + P[6]*pt.z + P[7] ;
       double w = P[8]*pt.x + P[9]*pt.y + P[10]*pt.z + P[11] ;
@@ -134,7 +134,7 @@ private:
 
   sensor_msgs::Image image_msg_ ;
   sensor_msgs::CameraInfo info_msg_ ;
-  robot_msgs::PointCloud pc_msg_ ;
+  sensor_msgs::PointCloud pc_msg_ ;
 
 
 

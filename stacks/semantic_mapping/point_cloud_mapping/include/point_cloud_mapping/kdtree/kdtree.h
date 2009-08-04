@@ -34,8 +34,8 @@
 #define _CLOUD_KDTREE_KDTREE_H_
 
 // ROS includes
-#include <robot_msgs/PointCloud.h>
-#include <robot_msgs/Point32.h>
+#include <sensor_msgs/PointCloud.h>
+#include <geometry_msgs/Point32.h>
 
 namespace cloud_kdtree
 {
@@ -55,7 +55,7 @@ namespace cloud_kdtree
       /** \brief Constructor for KdTree.
         * \param points the ROS point cloud data array
         */
-      KdTree (const robot_msgs::PointCloud &points);
+      KdTree (const sensor_msgs::PointCloud &points);
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Constructor for KdTree.
@@ -65,19 +65,19 @@ namespace cloud_kdtree
         * \param points the ROS point cloud data array
         * \param indices the point cloud indices
         */
-      KdTree (const robot_msgs::PointCloud &points, const std::vector<int> &indices);
+      KdTree (const sensor_msgs::PointCloud &points, const std::vector<int> &indices);
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Destructor for KdTree. Deletes all allocated data arrays and destroys the kd-tree structures. */
       virtual ~KdTree () { }
 
-      virtual void nearestKSearch (const robot_msgs::Point32 &p_q, int k, std::vector<int> &k_indices, std::vector<float> &k_distances) = 0;
-      virtual void nearestKSearch (const robot_msgs::PointCloud &points, int index, int k, std::vector<int> &k_indices, std::vector<float> &k_distances) = 0;
+      virtual void nearestKSearch (const geometry_msgs::Point32 &p_q, int k, std::vector<int> &k_indices, std::vector<float> &k_distances) = 0;
+      virtual void nearestKSearch (const sensor_msgs::PointCloud &points, int index, int k, std::vector<int> &k_indices, std::vector<float> &k_distances) = 0;
       virtual void nearestKSearch (int index, int k, std::vector<int> &k_indices, std::vector<float> &k_distances) = 0;
 
-      virtual bool radiusSearch (const robot_msgs::Point32 &p_q, double radius, std::vector<int> &k_indices, std::vector<float> &k_distances,
+      virtual bool radiusSearch (const geometry_msgs::Point32 &p_q, double radius, std::vector<int> &k_indices, std::vector<float> &k_distances,
                                  int max_nn = INT_MAX) = 0;
-      virtual bool radiusSearch (const robot_msgs::PointCloud &points, int index, double radius, std::vector<int> &k_indices, std::vector<float> &k_distances,
+      virtual bool radiusSearch (const sensor_msgs::PointCloud &points, int index, double radius, std::vector<int> &k_indices, std::vector<float> &k_distances,
                                  int max_nn = INT_MAX) = 0;
       virtual bool radiusSearch (int index, double radius, std::vector<int> &k_indices, std::vector<float> &k_distances,
 				 int max_nn = INT_MAX) = 0;

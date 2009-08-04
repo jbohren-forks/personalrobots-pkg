@@ -10,7 +10,7 @@
 
 #include "ros/ros.h"
 
-#include "robot_msgs/PointCloud.h"
+#include "sensor_msgs/PointCloud.h"
 #include <robot_msgs/Polygon3D.h>
 #include <visualization_msgs/Marker.h>
 // transform library
@@ -28,12 +28,15 @@ float HSV_to_RGBf(float h, float s, float v);
 
 float mix_color(float mix, float a, float b);
 
-void visualizePlanes2(const robot_msgs::PointCloud& cloud, std::vector<std::vector<int> >& plane_indices, std::vector<
-    robot_msgs::PointCloud>& plane_cloud, std::vector<std::vector<double> >& plane_coeff,
-                     std::vector<float>& plane_color, robot_msgs::PointCloud& outside,
-                     ros::Publisher& cloud_planes_pub, ros::Publisher& visualization_pub_, bool convexHull = false);
+void visualizePlanes2(const sensor_msgs::PointCloud& cloud,
+                     std::vector<std::vector<int> >& plane_indices,
+                     std::vector<sensor_msgs::PointCloud>& plane_cloud,
+                     std::vector<std::vector<double> >& plane_coeff,
+                     std::vector<float>& plane_color,
+                     sensor_msgs::PointCloud& outside,
+                     ros::Publisher& cloud_planes_pub,ros::Publisher& visualization_pub_,bool convexHull=false);
 
-void visualizePolygon(const robot_msgs::PointCloud& cloud, robot_msgs::Polygon3D &polygon, int rgb, int id,
+void visualizePolygon(const sensor_msgs::PointCloud& cloud, robot_msgs::Polygon3D &polygon, int rgb, int id,
                       ros::Publisher& visualization_pub);
 
 void visualizeLines(ros::Publisher& visualization_pub_, std::string frame_id, std::vector<std::pair<btVector3,

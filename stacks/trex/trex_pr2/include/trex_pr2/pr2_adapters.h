@@ -43,7 +43,7 @@
 #include <std_msgs/Int32.h>
 #include <std_msgs/Empty.h>
 #include <deprecated_msgs/RobotBase2DOdom.h>
-#include <robot_msgs/Pose.h>
+#include <geometry_msgs/Pose.h>
 #include <door_msgs/Door.h>
 #include <robot_msgs/BatteryState.h>
 #include <plugs_msgs/PlugStow.h>

@@ -80,7 +80,7 @@ void DoorReactivePlanner::getParams()
 
   ROS_INFO("Cell distance from obstacles is %d",cell_distance_from_obstacles_);
   ROS_INFO("Max inflated cost: %f for a distance of %d (cells in costmap)",max_inflated_cost_,(int) (min_distance_from_obstacles_/resolution)); 
-  robot_msgs::Point pt;
+  geometry_msgs::Point pt;
   //create a square footprint
   pt.x = inscribed_radius_;
   pt.y = -1 * (inscribed_radius_);
@@ -147,7 +147,7 @@ bool DoorReactivePlanner::getGoal(pr2_robot_actions::Pose2D &goal)
   return true;
 }
 
-bool DoorReactivePlanner::computeOrientedFootprint(const pr2_robot_actions::Pose2D &position, const std::vector<robot_msgs::Point>& footprint_spec, std::vector<robot_msgs::Point>& oriented_footprint)
+bool DoorReactivePlanner::computeOrientedFootprint(const pr2_robot_actions::Pose2D &position, const std::vector<geometry_msgs::Point>& footprint_spec, std::vector<geometry_msgs::Point>& oriented_footprint)
 {
   if(footprint_spec.size() < 3)//if we have no footprint... do nothing
   {
@@ -158,7 +158,7 @@ bool DoorReactivePlanner::computeOrientedFootprint(const pr2_robot_actions::Pose
   double sin_th = sin(position.th);
   for(unsigned int i = 0; i < footprint_spec.size(); ++i) //build the oriented footprint
   {
-    robot_msgs::Point new_pt;
+    geometry_msgs::Point new_pt;
     new_pt.x = position.x + (footprint_spec[i].x * cos_th - footprint_spec[i].y * sin_th);
     new_pt.y = position.y + (footprint_spec[i].x * sin_th + footprint_spec[i].y * cos_th);
     oriented_footprint.push_back(new_pt);
@@ -432,14 +432,14 @@ void DoorReactivePlanner::checkPath(const std::vector<pr2_robot_actions::Pose2D>
   double theta;
   double cost;
   int last_valid_point;
-  robot_msgs::Point position;
+  geometry_msgs::Point position;
 
   return_path = path;
 
   for(int i=0; i < (int) path.size(); i++)
   {
     index = i;
-    std::vector<robot_msgs::Point> oriented_footprint;
+    std::vector<geometry_msgs::Point> oriented_footprint;
     oriented_footprint.clear();
     pr2_robot_actions::Pose2D out_pose;
 
@@ -486,7 +486,7 @@ void DoorReactivePlanner::checkPath(const std::vector<pr2_robot_actions::Pose2D>
   ROS_DEBUG("Return path has %d points",return_path.size());
 }
 
-bool DoorReactivePlanner::getPointCost(const robot_msgs::Point &position, const std::vector<robot_msgs::Point> &oriented_footprint, double &cost)
+bool DoorReactivePlanner::getPointCost(const geometry_msgs::Point &position, const std::vector<geometry_msgs::Point> &oriented_footprint, double &cost)
 {
   if(cost_map_model_->footprintCost(position,oriented_footprint,inscribed_radius_,circumscribed_radius_) < 0)
   {

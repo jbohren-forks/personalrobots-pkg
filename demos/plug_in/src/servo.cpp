@@ -32,7 +32,7 @@
 #include "tf/transform_listener.h"
 #include "tf/message_notifier.h"
 
-#include "robot_msgs/PoseStamped.h"
+#include "geometry_msgs/PoseStamped.h"
 #include "manipulation_msgs/TaskFrameFormalism.h"
 
 const double MIN_STANDOFF = 0.035;
@@ -46,7 +46,7 @@ ros::Time g_started_pushing = ros::Time::now(),
   g_stopped_forcing = ros::Time::now(),
   g_started_holding = ros::Time::now();
 
-boost::scoped_ptr<tf::MessageNotifier<robot_msgs::PoseStamped> > g_mn;
+boost::scoped_ptr<tf::MessageNotifier<geometry_msgs::PoseStamped> > g_mn;
 boost::scoped_ptr<tf::TransformListener> TF;
 
 void printTransform(const tf::Transform &t, const std::string &prefix = "")
@@ -62,7 +62,7 @@ void printTransform(const tf::Transform &t, const std::string &prefix = "")
          t.getRotation().w());
 }
 
-void plug_cb(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr &msg)
+void plug_cb(const tf::MessageNotifier<geometry_msgs::PoseStamped>::MessagePtr &msg)
 {
   if (msg->header.stamp < g_stopped_forcing + ros::Duration(5.0)) {
     printf("too soon after forcing\n");
@@ -70,7 +70,7 @@ void plug_cb(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr &msg
   }
 
   // Both are transforms from the outlet to the estimated plug pose
-  robot_msgs::PoseStamped viz_offset_msg;
+  geometry_msgs::PoseStamped viz_offset_msg;
   tf::Stamped<tf::Transform> mech_offset;
   try {
     TF->transformPose("outlet_pose", *(msg.get()), viz_offset_msg);
@@ -173,16 +173,16 @@ void plug_cb(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr &msg
         manipulation_msgs::TaskFrameFormalism tff;
         tff.header.frame_id = "outlet_pose";
         tff.header.stamp = msg->header.stamp;
-        tff.mode.vel.x = 3;
-        tff.mode.vel.y = 3;
-        tff.mode.vel.z = 3;
-        tff.mode.rot.x = 3;
-        tff.mode.rot.y = 3;
-        tff.mode.rot.z = 3;
-        tff.value.vel.x = mech_offset.getOrigin().x() - 0.05;  // backs off 5cm
-        tff.value.vel.y = mech_offset.getOrigin().y() + 0.007;
-        tff.value.vel.z = mech_offset.getOrigin().z() - 0.008;
-        mech_offset.getBasis().getEulerZYX(tff.value.rot.z, tff.value.rot.y, tff.value.rot.x);
+        tff.mode.linear.x = 3;
+        tff.mode.linear.y = 3;
+        tff.mode.linear.z = 3;
+        tff.mode.angular.x = 3;
+        tff.mode.angular.y = 3;
+        tff.mode.angular.z = 3;
+        tff.value.linear.x = mech_offset.getOrigin().x() - 0.05;  // backs off 5cm
+        tff.value.linear.y = mech_offset.getOrigin().y() + 0.007;
+        tff.value.linear.z = mech_offset.getOrigin().z() - 0.008;
+        mech_offset.getBasis().getEulerZYX(tff.value.angular.z, tff.value.angular.y, tff.value.angular.x);
         ros::Node::instance()->publish("/arm_hybrid/command", tff);
         g_stopped_forcing = ros::Time::now();
         last_standoff = 0.05;
@@ -195,16 +195,16 @@ void plug_cb(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr &msg
       manipulation_msgs::TaskFrameFormalism tff;
       tff.header.frame_id = "outlet_pose";
       tff.header.stamp = msg->header.stamp;
-      tff.mode.vel.x = 3;
-      tff.mode.vel.y = 3;
-      tff.mode.vel.z = 3;
-      tff.mode.rot.x = 3;
-      tff.mode.rot.y = 3;
-      tff.mode.rot.z = 3;
-      tff.value.vel.x = mech_offset_desi.getOrigin().x();
-      tff.value.vel.y = mech_offset_desi.getOrigin().y();
-      tff.value.vel.z = mech_offset_desi.getOrigin().z();
-      mech_offset_desi.getBasis().getEulerZYX(tff.value.rot.z, tff.value.rot.y, tff.value.rot.x);
+      tff.mode.linear.x = 3;
+      tff.mode.linear.y = 3;
+      tff.mode.linear.z = 3;
+      tff.mode.angular.x = 3;
+      tff.mode.angular.y = 3;
+      tff.mode.angular.z = 3;
+      tff.value.linear.x = mech_offset_desi.getOrigin().x();
+      tff.value.linear.y = mech_offset_desi.getOrigin().y();
+      tff.value.linear.z = mech_offset_desi.getOrigin().z();
+      mech_offset_desi.getBasis().getEulerZYX(tff.value.angular.z, tff.value.angular.y, tff.value.angular.x);
       ros::Node::instance()->publish("/arm_hybrid/command", tff);
       break;
     }
@@ -215,16 +215,16 @@ void plug_cb(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr &msg
       manipulation_msgs::TaskFrameFormalism tff;
       tff.header.frame_id = "outlet_pose";
       tff.header.stamp = msg->header.stamp;
-      tff.mode.vel.x = 2;
-      tff.mode.vel.y = 3;
-      tff.mode.vel.z = 3;
-      tff.mode.rot.x = 3;
-      tff.mode.rot.y = 3;
-      tff.mode.rot.z = 3;
-      tff.value.vel.x = 0.3;
-      tff.value.vel.y = mech_offset_desi.getOrigin().y();
-      tff.value.vel.z = mech_offset_desi.getOrigin().z();
-      mech_offset_desi.getBasis().getEulerZYX(tff.value.rot.z, tff.value.rot.y, tff.value.rot.x);
+      tff.mode.linear.x = 2;
+      tff.mode.linear.y = 3;
+      tff.mode.linear.z = 3;
+      tff.mode.angular.x = 3;
+      tff.mode.angular.y = 3;
+      tff.mode.angular.z = 3;
+      tff.value.linear.x = 0.3;
+      tff.value.linear.y = mech_offset_desi.getOrigin().y();
+      tff.value.linear.z = mech_offset_desi.getOrigin().z();
+      mech_offset_desi.getBasis().getEulerZYX(tff.value.angular.z, tff.value.angular.y, tff.value.angular.x);
       ros::Node::instance()->publish("/arm_hybrid/command", tff);
       break;
     }
@@ -235,24 +235,24 @@ void plug_cb(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr &msg
       manipulation_msgs::TaskFrameFormalism tff;
       tff.header.frame_id = "outlet_pose";
       tff.header.stamp = msg->header.stamp;
-      tff.mode.vel.x = 1;
-      tff.mode.vel.y = 3;
-      tff.mode.vel.z = 3;
-      tff.mode.rot.x = 2;
-      tff.mode.rot.y = 2;
-      tff.mode.rot.z = 2;
-      tff.value.vel.x = 50;
-      tff.value.vel.y = mech_offset.getOrigin().y();
-      tff.value.vel.z = mech_offset.getOrigin().z();
-      tff.value.rot.x = 0.0;
-      tff.value.rot.y = 0.0;
-      tff.value.rot.z = 0.0;
+      tff.mode.linear.x = 1;
+      tff.mode.linear.y = 3;
+      tff.mode.linear.z = 3;
+      tff.mode.angular.x = 2;
+      tff.mode.angular.y = 2;
+      tff.mode.angular.z = 2;
+      tff.value.linear.x = 50;
+      tff.value.linear.y = mech_offset.getOrigin().y();
+      tff.value.linear.z = mech_offset.getOrigin().z();
+      tff.value.angular.x = 0.0;
+      tff.value.angular.y = 0.0;
+      tff.value.angular.z = 0.0;
 
 
-      tff.mode.vel.y = 2;
-      tff.mode.vel.z = 2;
-      tff.value.vel.y = 0.0;
-      tff.value.vel.z = 0.0;
+      tff.mode.linear.y = 2;
+      tff.mode.linear.z = 2;
+      tff.value.linear.y = 0.0;
+      tff.value.linear.z = 0.0;
       ros::Node::instance()->publish("/arm_hybrid/command", tff);
       break;
     }
@@ -263,16 +263,16 @@ void plug_cb(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr &msg
       manipulation_msgs::TaskFrameFormalism tff;
       tff.header.frame_id = "outlet_pose";
       tff.header.stamp = msg->header.stamp;
-      tff.mode.vel.x = 1;
-      tff.mode.vel.y = 3;
-      tff.mode.vel.z = 3;
-      tff.mode.rot.x = 3;
-      tff.mode.rot.y = 3;
-      tff.mode.rot.z = 3;
-      tff.value.vel.x = 4;
-      tff.value.vel.y = mech_offset.getOrigin().y();
-      tff.value.vel.z = mech_offset.getOrigin().z();
-      mech_offset.getBasis().getEulerZYX(tff.value.rot.z, tff.value.rot.y, tff.value.rot.x);
+      tff.mode.linear.x = 1;
+      tff.mode.linear.y = 3;
+      tff.mode.linear.z = 3;
+      tff.mode.angular.x = 3;
+      tff.mode.angular.y = 3;
+      tff.mode.angular.z = 3;
+      tff.value.linear.x = 4;
+      tff.value.linear.y = mech_offset.getOrigin().y();
+      tff.value.linear.z = mech_offset.getOrigin().z();
+      mech_offset.getBasis().getEulerZYX(tff.value.angular.z, tff.value.angular.y, tff.value.angular.x);
       ros::Node::instance()->publish("/arm_hybrid/command", tff);
       break;
     }
@@ -291,7 +291,7 @@ int main(int argc, char** argv)
   node.advertise<manipulation_msgs::TaskFrameFormalism>("/arm_hybrid/command", 2);
 
   TF.reset(new tf::TransformListener(node));
-  g_mn.reset(new tf::MessageNotifier<robot_msgs::PoseStamped>(
+  g_mn.reset(new tf::MessageNotifier<geometry_msgs::PoseStamped>(
                TF.get(), &node, plug_cb, "/plug_detector/pose", "outlet_pose", 100));
   node.spin();
 

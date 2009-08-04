@@ -9,6 +9,7 @@ Utility for annotating laser scans with pose information
 <depend package="sensor_msgs"/>
 <depend package="std_msgs"/>
 <depend package="robot_msgs"/>
+<depend package="geometry_msgs"/>
 <depend package="roscpp"/>
 <depend package="tf"/>
 <export>

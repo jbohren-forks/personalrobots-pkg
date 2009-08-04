@@ -31,7 +31,7 @@
 /** \author Radu Bogdan Rusu */
 
 #include <gtest/gtest.h>
-#include <robot_msgs/Point32.h>
+#include <geometry_msgs/Point32.h>
 
 #include <point_cloud_mapping/geometry/angles.h>
 
@@ -39,7 +39,7 @@ using namespace cloud_geometry::angles;
 
 TEST (Geometry, Angles3D)
 {
-  robot_msgs::Point32 p1, p2;
+  geometry_msgs::Point32 p1, p2;
   double angle = 0.0;
   
   p1.x = 1;

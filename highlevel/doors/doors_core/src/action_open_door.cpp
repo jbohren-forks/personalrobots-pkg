@@ -70,19 +70,19 @@ robot_actions::ResultStatus OpenDoorAction::execute(const door_msgs::Door& goal,
 
 
   // open door
-  tff_door_.mode.vel.x = tff_door_.VELOCITY;
-  tff_door_.mode.vel.y = tff_door_.FORCE;
-  tff_door_.mode.vel.z = tff_door_.FORCE;
-  tff_door_.mode.rot.x = tff_door_.FORCE;
-  tff_door_.mode.rot.y = tff_door_.FORCE;
-  tff_door_.mode.rot.z = tff_door_.POSITION;
+  tff_door_.mode.linear.x = tff_door_.VELOCITY;
+  tff_door_.mode.linear.y = tff_door_.FORCE;
+  tff_door_.mode.linear.z = tff_door_.FORCE;
+  tff_door_.mode.angular.x = tff_door_.FORCE;
+  tff_door_.mode.angular.y = tff_door_.FORCE;
+  tff_door_.mode.angular.z = tff_door_.POSITION;
   
-  tff_door_.value.vel.x = getDoorDir(goal) * 0.45;
-  tff_door_.value.vel.y = 0.0;
-  tff_door_.value.vel.z = 0.0;
-  tff_door_.value.rot.x = 0.0;
-  tff_door_.value.rot.y = 0.0;
-  tff_door_.value.rot.z = 0.0;
+  tff_door_.value.linear.x = getDoorDir(goal) * 0.45;
+  tff_door_.value.linear.y = 0.0;
+  tff_door_.value.linear.z = 0.0;
+  tff_door_.value.angular.x = 0.0;
+  tff_door_.value.angular.y = 0.0;
+  tff_door_.value.angular.z = 0.0;
   
   // open door
   while (!isPreemptRequested()){

@@ -31,7 +31,7 @@
 /** \author Alex Sorokin */
 
 #include <gtest/gtest.h>
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 
 #include <novelty_estimator.h>
 
@@ -40,7 +40,7 @@ using namespace pcd_novelty;
 
 TEST (PcdNovelty, NoveltyEstimator)
 {
-  PointCloud points;
+  sensor_msgs::PointCloud points;
   points.pts.resize (18);
 
   points.pts[0].x = 3.587751;  points.pts[0].y = -4.190982;  points.pts[0].z = 0;

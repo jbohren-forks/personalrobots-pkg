@@ -34,7 +34,7 @@
 
 #include <ros/ros.h>
 // ROS messages
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 #include <mapping_msgs/PolygonalMap.h>
 
 
@@ -49,7 +49,6 @@
 #include <point_cloud_mapping/sample_consensus/sac_model_plane.h>
 
 using namespace std;
-using namespace robot_msgs;
 
 class PlanarFit
 {
@@ -64,7 +63,7 @@ class PlanarFit
 	int sac_maximum_iterations_;
 	double sac_distance_threshold_;
 
-	PointCloud cloud_;
+	sensor_msgs::PointCloud cloud_;
 
 public:
 	PlanarFit()
@@ -75,7 +74,7 @@ public:
 
 		cloud_sub_ = nh_.subscribe(cloud_topic_name_, 1, &PlanarFit::cloudCallback, this);
 		pm_pub_ = nh_.advertise<mapping_msgs::PolygonalMap>("~convex_hull",1);
-		plane_pub_ = nh_.advertise<robot_msgs::PointCloud>("~plane",1);
+		plane_pub_ = nh_.advertise<sensor_msgs::PointCloud>("~plane",1);
 	}
 
 
@@ -84,7 +83,7 @@ public:
 	 *
 	 * @param cloud
 	 */
-	void cloudCallback(const PointCloud::ConstPtr& cloud)
+	void cloudCallback(const sensor_msgs::PointCloud::ConstPtr& cloud)
 	{
 		cloud_ = *cloud;
 		ROS_INFO("Received new point cloud with %d points", cloud_.get_pts_size());
@@ -103,7 +102,7 @@ public:
 	* \param dist_thresh the maximum allowed distance threshold of an inlier to the model
 	* \param min_pts the minimum number of points allowed as inliers for a plane model
 	*/
-	bool fitSACPlane (PointCloud &points, vector<double> &coeff)
+	bool fitSACPlane (sensor_msgs::PointCloud &points, vector<double> &coeff)
 	{
 		vector<int> inliers;
 		// Create and initialize the SAC model
@@ -121,7 +120,7 @@ public:
 			model->selectWithinDistance (coeff, sac_distance_threshold_, inliers);
 
 			// make plane normal point towards origin
-			Point32 viewpoint;
+			geometry_msgs::Point32 viewpoint;
 			viewpoint.x = 0; viewpoint.y = 0; viewpoint.z = 0;
 			cloud_geometry::angles::flipNormalTowardsViewpoint (coeff, points.pts.at (inliers[0]), viewpoint);
 
@@ -139,7 +138,7 @@ public:
 			cloud_geometry::areas::convexHull2D (points, inliers, coeff, pmap.polygons[0]);
 			pm_pub_.publish(pmap);
 
-			PointCloud cloud_plane;
+                        sensor_msgs::PointCloud cloud_plane;
 			cloud_geometry::getPointCloud (cloud_, inliers, cloud_plane);
 			plane_pub_.publish(cloud_plane);
 

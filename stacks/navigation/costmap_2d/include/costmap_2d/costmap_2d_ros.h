@@ -59,7 +59,7 @@
 #include <sensor_msgs/LaserScan.h>
 #include <laser_scan/laser_scan.h>
 
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 
 // Thread suppport
 #include <boost/thread.hpp>
@@ -125,7 +125,7 @@ namespace costmap_2d {
        * @param  theta The orientation of the robot
        * @param  oriented_footprint Will be filled with the points in the oriented footprint of the robot
        */
-      void getOrientedFootprint(double x, double y, double theta, std::vector<robot_msgs::Point>& oriented_footprint);
+      void getOrientedFootprint(double x, double y, double theta, std::vector<geometry_msgs::Point>& oriented_footprint);
 
       /**
        * @brief Get the pose of the robot in the global frame of the costmap
@@ -151,7 +151,7 @@ namespace costmap_2d {
        * @param cost_value The cost to apply
        * @return True if the operation was successful, false otherwise
        */
-      bool setConvexPolygonCost(const std::vector<robot_msgs::Point>& polygon, unsigned char cost_value);
+      bool setConvexPolygonCost(const std::vector<geometry_msgs::Point>& polygon, unsigned char cost_value);
 
       /**
        * @brief  Reset to the static map outside of a window around the robot specified by the user
@@ -225,7 +225,7 @@ namespace costmap_2d {
        * @brief  Returns the footprint of the robot in the robot_base_frame. To get the footprint in the global_frame use getOrientedFootprint
        * @return The footprint of the robot in the robot_base_frame
        */
-      std::vector<robot_msgs::Point> getRobotFootprint();
+      std::vector<geometry_msgs::Point> getRobotFootprint();
 
       /**
        * @brief  Check if the observation buffers for the cost map are current
@@ -280,7 +280,7 @@ namespace costmap_2d {
        * @param message The message returned from a message notifier 
        * @param buffer A pointer to the observation buffer to update
        */
-      void pointCloudCallback(const tf::MessageNotifier<robot_msgs::PointCloud>::MessagePtr& message, const boost::shared_ptr<ObservationBuffer>& buffer);
+      void pointCloudCallback(const tf::MessageNotifier<sensor_msgs::PointCloud>::MessagePtr& message, const boost::shared_ptr<ObservationBuffer>& buffer);
 
       /**
        * @brief  The loop that handles updating the costmap
@@ -291,7 +291,7 @@ namespace costmap_2d {
       /**
        * @brief  Grab the footprint of the robot from the parameter server if available
        */
-      std::vector<robot_msgs::Point> loadRobotFootprint(ros::NodeHandle node, double inscribed_radius, double circumscribed_radius);
+      std::vector<geometry_msgs::Point> loadRobotFootprint(ros::NodeHandle node, double inscribed_radius, double circumscribed_radius);
 
       ros::NodeHandle ros_node_; ///< @brief The ros node to use
       tf::TransformListener& tf_; ///< @brief Used for transforming point clouds
@@ -311,7 +311,7 @@ namespace costmap_2d {
       Costmap2DPublisher* costmap_publisher_;
       bool stop_updates_, initialized_, stopped_;
       bool publish_voxel_;
-      std::vector<robot_msgs::Point> footprint_spec_;
+      std::vector<geometry_msgs::Point> footprint_spec_;
       ros::Publisher voxel_pub_;
       boost::recursive_mutex lock_;
 

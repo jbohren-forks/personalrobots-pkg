@@ -40,7 +40,7 @@
 #include <boost/shared_ptr.hpp>
 
 namespace cm=costmap_2d;
-namespace rm=robot_msgs;
+namespace rm=geometry_msgs;
 
 using std::vector;
 using rm::PoseStamped;

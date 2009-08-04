@@ -7,7 +7,7 @@
 
 #include <boost/shared_ptr.hpp>
 
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 
 #include <functional_m3n/example/pt_cloud_rf_creator.h>
 
@@ -24,7 +24,7 @@
 // --------------------------------------------------------------
 int loadPointCloud(string filename,
                    unsigned int nbr_cols,
-                   robot_msgs::PointCloud& pt_cloud,
+                   sensor_msgs::PointCloud& pt_cloud,
                    vector<float>& labels)
 {
   // ----------------------------------------------
@@ -79,7 +79,7 @@ int main()
 {
   // ----------------------------------------------------------
   // Load point cloud from file
-  robot_msgs::PointCloud pt_cloud;
+  sensor_msgs::PointCloud pt_cloud;
   unsigned int nbr_cols = 5;
   vector<float> labels;
   loadPointCloud("pt_cloud_260.xyz_label_conf", nbr_cols, pt_cloud, labels);

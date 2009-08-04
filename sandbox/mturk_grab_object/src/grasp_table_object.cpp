@@ -37,7 +37,6 @@
 #include "motion_planning_msgs/PoseConstraint.h"
 
 using namespace std;
-using namespace robot_msgs;
 using namespace mturk_grab_object;
 
 GraspObjectNode::GraspObjectNode():move_arm("move_right_arm"){}
@@ -67,7 +66,7 @@ void GraspObjectNode::setup()
 }
 
 
-void setupGoal(const std::string &link, const robot_msgs::Pose &pz, pr2_robot_actions::MoveArmGoal &goal)
+void setupGoal(const std::string &link, const geometry_msgs::Pose &pz, pr2_robot_actions::MoveArmGoal &goal)
 {
   goal.goal_constraints.pose_constraint.resize(1);
   goal.goal_constraints.pose_constraint[0].type = motion_planning_msgs::PoseConstraint::POSITION_X + motion_planning_msgs::PoseConstraint::POSITION_Y + motion_planning_msgs::PoseConstraint::POSITION_Z +
@@ -130,11 +129,11 @@ void GraspObjectNode::imageCallback(const sensor_msgs::ImageConstPtr& the_image)
       active_task->state = GraspTask::CREATED; 
       active_task->active_object_=resp.table.objects[0];
 
-      Pose grasp_pose;
+      geometry_msgs::Pose grasp_pose;
       computeGraspPose(active_task->active_object_,grasp_pose);
 
-      Point32 minBnd=active_task->active_object_.min_bound;
-      Point32 maxBnd=active_task->active_object_.max_bound;
+      geometry_msgs::Point32 minBnd=active_task->active_object_.min_bound;
+      geometry_msgs::Point32 maxBnd=active_task->active_object_.max_bound;
       ROS_INFO_STREAM("dX: "<< maxBnd.x-minBnd.x << ", dY: " << maxBnd.y-minBnd.y <<", dZ: "<<maxBnd.z-minBnd.z);
       std::string link_name("r_wrist_roll_link");
 
@@ -183,11 +182,11 @@ void GraspObjectNode::imageCallback(const sensor_msgs::ImageConstPtr& the_image)
 
 
 
-void GraspObjectNode::computeGraspPose(const tabletop_msgs::ObjectOnTable& object_on_table, robot_msgs::Pose& grasp_pose)
+void GraspObjectNode::computeGraspPose(const tabletop_msgs::ObjectOnTable& object_on_table, geometry_msgs::Pose& grasp_pose)
 {
-  Point32 center=object_on_table.center;
-  Point32 minBnd=object_on_table.min_bound;
-  Point32 maxBnd=object_on_table.max_bound;
+  geometry_msgs::Point32 center=object_on_table.center;
+  geometry_msgs::Point32 minBnd=object_on_table.min_bound;
+  geometry_msgs::Point32 maxBnd=object_on_table.max_bound;
 
   grasp_pose.position.x =  center.x;
   grasp_pose.position.y =  minBnd.y-0.30;

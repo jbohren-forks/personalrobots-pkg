@@ -43,9 +43,9 @@ dimension, orientation) useful for collision detection.
 // ROS core
 #include <ros/node.h>
 // ROS messages
-#include <robot_msgs/Point.h>
-#include <robot_msgs/PointCloud.h>
-#include <robot_msgs/PoseStamped.h>
+#include <geometry_msgs/Point.h>
+#include <sensor_msgs/PointCloud.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <visualization_msgs/Marker.h>
 
 #include <Eigen/Core>
@@ -100,7 +100,7 @@ class CollisionMapperBuffer
   public:
 
     // ROS messages
-    PointCloud cloud_;
+    sensor_msgs::PointCloud cloud_;
     CollisionMap final_collision_map_;
 
     // Internal map representations
@@ -111,7 +111,7 @@ class CollisionMapperBuffer
     tf::TransformListener tf_;
 
     // Parameters
-    robot_msgs::Point leaf_width_, robot_max_;
+    geometry_msgs::Point leaf_width_, robot_max_;
     int min_nr_points_;
     string end_effector_frame_l_, end_effector_frame_r_;
 
@@ -125,8 +125,8 @@ class CollisionMapperBuffer
 
     // Internal parameters
     string cloud_frame_;
-    PoseStamped gripper_orientation_link_;
-    robot_msgs::Point32 min_object_b_, max_object_b_;
+    geometry_msgs::PoseStamped gripper_orientation_link_;
+    geometry_msgs::Point32 min_object_b_, max_object_b_;
     bool subtract_object_;
     int m_id_;
 
@@ -263,9 +263,9 @@ class CollisionMapperBuffer
       * \param centers a resultant PointCloud message containing the centers of the leaves
       */
     void
-      computeLeaves (PointCloud *points, vector<Leaf> &leaves, PointCloud &centers)
+      computeLeaves (sensor_msgs::PointCloud *points, vector<Leaf> &leaves, sensor_msgs::PointCloud &centers)
     {
-      PointStamped base_origin, torso_lift_origin;
+      geometry_msgs::PointStamped base_origin, torso_lift_origin;
       base_origin.point.x = base_origin.point.y = base_origin.point.z = 0.0;
       base_origin.header.frame_id = "torso_lift_link";
       base_origin.header.stamp = ros::Time ();
@@ -284,7 +284,7 @@ class CollisionMapperBuffer
       vector<int> indices (cloud_.pts.size ());
       int nr_p = 0;
 
-      Point32 minP, maxP;
+      geometry_msgs::Point32 minP, maxP;
       minP.x = minP.y = minP.z = FLT_MAX;
       maxP.x = maxP.y = maxP.z = FLT_MIN;
       double distance_sqr_x, distance_sqr_y, distance_sqr_z;
@@ -312,7 +312,7 @@ class CollisionMapperBuffer
       indices.resize (nr_p);
 
       // Compute the minimum and maximum bounding box values
-      Point32 minB, maxB, divB;
+      geometry_msgs::Point32 minB, maxB, divB;
 
       minB.x = (int)(floor (minP.x / leaf_width_.x));
       maxB.x = (int)(floor (maxP.x / leaf_width_.x));
@@ -373,7 +373,7 @@ class CollisionMapperBuffer
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void
-      sendMarker (Point32 pt, const std::string &frame_id, double radius = 0.02)
+      sendMarker (geometry_msgs::Point32 pt, const std::string &frame_id, double radius = 0.02)
     {
       Marker mk;
       mk.header.stamp = ros::Time::now();
@@ -407,9 +407,9 @@ class CollisionMapperBuffer
       * \param center the resultant center position
       */
     inline bool
-      getEndEffectorPosition (string tgt_frame, ros::Time stamp, Point32 &center)
+      getEndEffectorPosition (string tgt_frame, ros::Time stamp, geometry_msgs::Point32 &center)
     {
-      PointStamped src, tgt;
+      geometry_msgs::PointStamped src, tgt;
       src.header.frame_id = end_effector_frame_l_;
       src.header.stamp    = stamp;
 
@@ -462,10 +462,10 @@ class CollisionMapperBuffer
       * \param max_b the maximum bounds of the box
       */
     void
-      pruneLeaves (vector<Leaf> &leaves, PointCloud *points, Point32 *center, string source_frame, string target_frame,
-                   Point32 *min_b, Point32 *max_b)
+      pruneLeaves (vector<Leaf> &leaves, sensor_msgs::PointCloud *points, geometry_msgs::Point32 *center, string source_frame, string target_frame,
+                   geometry_msgs::Point32 *min_b, geometry_msgs::Point32 *max_b)
     {
-      PointCloud points_tgt;
+      sensor_msgs::PointCloud points_tgt;
 
       // Transform the entire cloud at once
       try
@@ -501,7 +501,7 @@ class CollisionMapperBuffer
       object_indices.resize (nr_p);
 
       // Copy the indices from object_indices into a temporary cloud
-      PointCloud object_points;
+      sensor_msgs::PointCloud object_points;
       object_points.header = points_tgt.header;
       object_points.pts.resize (object_indices.size ());
       for (unsigned int i = 0; i < object_indices.size (); i++)
@@ -511,13 +511,13 @@ class CollisionMapperBuffer
         object_points.pts[i].z = points_tgt.pts[object_indices.at (i)].z;
       }
 
-      PointStamped ee_local, ee_global;      // Transform the end effector position in global (source frame)
+      geometry_msgs::PointStamped ee_local, ee_global;      // Transform the end effector position in global (source frame)
       ee_local.point.x = ee_local.point.y = ee_local.point.z = 0.0;
       ee_local.header.frame_id = target_frame;
       ee_local.header.stamp = points->header.stamp;
 
       // Transform the points back into the source frrame
-      PointCloud points_src;
+      sensor_msgs::PointCloud points_src;
       try
       {
         tf_.transformPointCloud (source_frame, object_points, points_src);
@@ -559,7 +559,7 @@ class CollisionMapperBuffer
       double time_spent;
 
       // Get the position of the end effector
-      Point32 ee_center;
+      geometry_msgs::Point32 ee_center;
       if (!getEndEffectorPosition (cloud_.header.frame_id, cloud_.header.stamp, ee_center))
         return;
 
@@ -580,7 +580,7 @@ class CollisionMapperBuffer
         t1 = ros::Time::now ();
 
         // We do not subtract anything when we compute the static map
-        PointCloud centers;
+        sensor_msgs::PointCloud centers;
         computeLeaves (&cloud_, static_leaves_, centers);
 
         // Clear the static map flag
@@ -603,7 +603,7 @@ class CollisionMapperBuffer
         t1 = ros::Time::now ();
 
         // Compute the leaves for the current dataset
-        PointCloud centers;
+        sensor_msgs::PointCloud centers;
         m_lock_.lock ();
         computeLeaves (&cloud_, cur_leaves_, centers);
         m_lock_.unlock ();
@@ -681,7 +681,7 @@ class CollisionMapperBuffer
       subtractObject (SubtractObjectFromCollisionMap::Request &req, SubtractObjectFromCollisionMap::Response &resp)
     {
       ROS_INFO ("Got request to subtract object.");
-      Point32 center;
+      geometry_msgs::Point32 center;
       center.x = (req.object.min_bound.x + req.object.max_bound.x) / 2.0;
       center.y = (req.object.min_bound.y + req.object.max_bound.y) / 2.0;
       center.z = (req.object.min_bound.z + req.object.max_bound.z) / 2.0;

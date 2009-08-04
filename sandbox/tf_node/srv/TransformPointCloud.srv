@@ -3,7 +3,7 @@
 
 string target_frame
 time   target_time 
-robot_msgs/PointCloud pcin
+sensor_msgs/PointCloud pcin
 string fixed_frame
 ---
-robot_msgs/PointCloud pcout
+sensor_msgs/PointCloud pcout

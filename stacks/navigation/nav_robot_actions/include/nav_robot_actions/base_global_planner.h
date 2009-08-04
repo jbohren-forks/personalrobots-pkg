@@ -37,7 +37,7 @@
 #ifndef NAV_ROBOT_ACTIONS_BASE_GLOBAL_PLANNER_
 #define NAV_ROBOT_ACTIONS_BASE_GLOBAL_PLANNER_
 
-#include <robot_msgs/PoseStamped.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <costmap_2d/costmap_2d_ros.h>
 #include <loki/Factory.h>
 #include <loki/Sequence.h>
@@ -45,8 +45,8 @@
 namespace nav_robot_actions {
   class BaseGlobalPlanner{
     public:
-      virtual bool makePlan(const robot_msgs::PoseStamped& start, 
-          const robot_msgs::PoseStamped& goal, std::vector<robot_msgs::PoseStamped>& plan) = 0;
+      virtual bool makePlan(const geometry_msgs::PoseStamped& start, 
+          const geometry_msgs::PoseStamped& goal, std::vector<geometry_msgs::PoseStamped>& plan) = 0;
 
     protected:
       BaseGlobalPlanner(){}

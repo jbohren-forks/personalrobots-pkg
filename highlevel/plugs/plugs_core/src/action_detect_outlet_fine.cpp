@@ -39,7 +39,7 @@ namespace plugs_core
 {
 
 DetectOutletFineAction::DetectOutletFineAction(ros::Node& node)
-  : robot_actions::Action<robot_msgs::PointStamped, robot_msgs::PoseStamped>("detect_outlet_fine"),
+  : robot_actions::Action<geometry_msgs::PointStamped, geometry_msgs::PoseStamped>("detect_outlet_fine"),
     node_(node),
     action_name_("detect_outlet_fine"),
     head_controller_("head_controller"),
@@ -53,7 +53,7 @@ DetectOutletFineAction::DetectOutletFineAction(ros::Node& node)
       terminate();
       return;
     }
-  node_.advertise<robot_msgs::PointStamped>(head_controller_ + "/point_head",10);
+  node_.advertise<geometry_msgs::PointStamped>(head_controller_ + "/point_head",10);
   node_.setParam("~save_failures", 1);
   detector_ = new OutletTracker::OutletTracker(node);
   detector_->deactivate();  
@@ -67,7 +67,7 @@ DetectOutletFineAction::~DetectOutletFineAction()
   node_.unadvertise(head_controller_ + "/point_head");
 };
 
-robot_actions::ResultStatus DetectOutletFineAction::execute(const robot_msgs::PointStamped& outlet_estimate, robot_msgs::PoseStamped& feedback)
+robot_actions::ResultStatus DetectOutletFineAction::execute(const geometry_msgs::PointStamped& outlet_estimate, geometry_msgs::PoseStamped& feedback)
 {
   ros::Time started = ros::Time::now();
   ROS_DEBUG("%s: executing.", action_name_.c_str());

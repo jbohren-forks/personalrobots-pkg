@@ -51,7 +51,7 @@ int main(int argc, char** argv)
 
   ros::NodeHandle nh ;
 
-  //TopicSynchronizerFilter<robot_msgs::PointStamped, robot_msgs::PointCloud> filter ;
+  //TopicSynchronizerFilter<geometry_msgs::PointStamped, sensor_msgs::PointCloud> filter ;
 
   // Define the source 'node'
   Subscriber<std_msgs::String> sub(nh, "chatter", 10);

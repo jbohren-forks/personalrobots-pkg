@@ -152,13 +152,13 @@ namespace trex_pr2 {
     ros::Publisher _pub;
   };
 
-  class StubBaseStatePublisher: public StatePublisher<robot_msgs::PoseStamped>{
+  class StubBaseStatePublisher: public StatePublisher<geometry_msgs::PoseStamped>{
   public:
     StubBaseStatePublisher(const std::string& update_topic, double update_rate)
-      : StatePublisher<robot_msgs::PoseStamped>(robot_msgs::PoseStamped(), update_topic, update_rate){
+      : StatePublisher<geometry_msgs::PoseStamped>(geometry_msgs::PoseStamped(), update_topic, update_rate){
     }
 
-    virtual void update(robot_msgs::PoseStamped& s){
+    virtual void update(geometry_msgs::PoseStamped& s){
       s.header.frame_id = "map";
       //s.header.stamp = 0.0;
       s.pose.position.x = 16.25;
@@ -171,16 +171,16 @@ namespace trex_pr2 {
     }
   };
 
-  class BaseStatePublisher: public StatePublisher<robot_msgs::PoseStamped>{
+  class BaseStatePublisher: public StatePublisher<geometry_msgs::PoseStamped>{
   public:
     BaseStatePublisher(const std::string& update_topic, double update_rate)
-      : StatePublisher<robot_msgs::PoseStamped>(robot_msgs::PoseStamped(), update_topic, update_rate), 
+      : StatePublisher<geometry_msgs::PoseStamped>(geometry_msgs::PoseStamped(), update_topic, update_rate), 
 	_tf(ros::Duration(10)){
     }
 
   protected:
 
-    virtual void update(robot_msgs::PoseStamped& s){
+    virtual void update(geometry_msgs::PoseStamped& s){
       tf::Stamped<tf::Pose> stamped_pose;
       tf::Stamped<tf::Pose> robot_pose;
       robot_pose.setIdentity();
@@ -234,7 +234,7 @@ int main(int argc, char** argv){
   ros::NodeHandle node_handle;
 
   // Create state publishers, if parameters are set
-  trex_pr2::StatePublisher<robot_msgs::PoseStamped>* base_state_publisher = NULL;
+  trex_pr2::StatePublisher<geometry_msgs::PoseStamped>* base_state_publisher = NULL;
   if (getComponentParam("/trex/enable_base_state_publisher"))
     base_state_publisher = new trex_pr2::StubBaseStatePublisher("localizedpose", 10.0);
   else
@@ -246,9 +246,9 @@ int main(int argc, char** argv){
   
   /* Add action stubs for doors */
 
-  trex_pr2::StubAction<robot_msgs::PoseStamped, int8_t> check_path("check_path", 0); //Note: this zero here means that all doors are shut.
+  trex_pr2::StubAction<geometry_msgs::PoseStamped, int8_t> check_path("check_path", 0); //Note: this zero here means that all doors are shut.
   if (getComponentParam("/trex/enable_check_path"))
-    runner.connect<robot_msgs::PoseStamped, pr2_robot_actions::CheckPathState, int8_t>(check_path);
+    runner.connect<geometry_msgs::PoseStamped, pr2_robot_actions::CheckPathState, int8_t>(check_path);
 
   // Feedback Variable for latch state
   door_msgs::Door feedback_with_latch_state;
@@ -323,15 +323,15 @@ int main(int argc, char** argv){
   if (getComponentParam("/trex/enable_plug_in"))
     runner.connect<std_msgs::Int32, pr2_robot_actions::PlugInState, std_msgs::Empty>(plug_in);
   
-  trex_pr2::StubAction<robot_msgs::PointStamped, robot_msgs::PoseStamped> detect_outlet_fine("detect_outlet_fine");
+  trex_pr2::StubAction<geometry_msgs::PointStamped, geometry_msgs::PoseStamped> detect_outlet_fine("detect_outlet_fine");
   if (getComponentParam("/trex/enable_detect_outlet_fine"))
-    runner.connect<robot_msgs::PointStamped, pr2_robot_actions::DetectOutletState, robot_msgs::PoseStamped>(detect_outlet_fine);
+    runner.connect<geometry_msgs::PointStamped, pr2_robot_actions::DetectOutletState, geometry_msgs::PoseStamped>(detect_outlet_fine);
 
-  robot_msgs::PoseStamped outlet_feedback;
+  geometry_msgs::PoseStamped outlet_feedback;
   outlet_feedback.pose.orientation.x = 1.0;
-  trex_pr2::StubAction<robot_msgs::PointStamped, robot_msgs::PoseStamped> detect_outlet_coarse("detect_outlet_coarse", outlet_feedback);
+  trex_pr2::StubAction<geometry_msgs::PointStamped, geometry_msgs::PoseStamped> detect_outlet_coarse("detect_outlet_coarse", outlet_feedback);
   if (getComponentParam("/trex/enable_detect_outlet_coarse"))
-    runner.connect<robot_msgs::PointStamped, pr2_robot_actions::DetectOutletState, robot_msgs::PoseStamped>(detect_outlet_coarse);
+    runner.connect<geometry_msgs::PointStamped, pr2_robot_actions::DetectOutletState, geometry_msgs::PoseStamped>(detect_outlet_coarse);
 
   /* Action stubs for resource management */
   trex_pr2::StubAction<pr2_robot_actions::SwitchControllers, std_msgs::Empty> switch_controllers("switch_controllers");
@@ -339,13 +339,13 @@ int main(int argc, char** argv){
     runner.connect<pr2_robot_actions::SwitchControllers, pr2_robot_actions::SwitchControllersState, std_msgs::Empty>(switch_controllers);
 
   // Navigation actions
-  trex_pr2::SimpleStubAction<robot_msgs::PoseStamped> move_base("move_base");
+  trex_pr2::SimpleStubAction<geometry_msgs::PoseStamped> move_base("move_base");
   if (getComponentParam("/trex/enable_move_base"))
-    runner.connect<robot_msgs::PoseStamped, nav_robot_actions::MoveBaseState, robot_msgs::PoseStamped>(move_base);
+    runner.connect<geometry_msgs::PoseStamped, nav_robot_actions::MoveBaseState, geometry_msgs::PoseStamped>(move_base);
 
-  trex_pr2::SimpleStubAction<robot_msgs::PoseStamped> move_base_local("move_base_local");
+  trex_pr2::SimpleStubAction<geometry_msgs::PoseStamped> move_base_local("move_base_local");
   if (getComponentParam("/trex/enable_move_base_local"))
-    runner.connect<robot_msgs::PoseStamped, nav_robot_actions::MoveBaseState, robot_msgs::PoseStamped>(move_base_local);
+    runner.connect<geometry_msgs::PoseStamped, nav_robot_actions::MoveBaseState, geometry_msgs::PoseStamped>(move_base_local);
 
   // Misc.
   trex_pr2::SimpleStubAction<std_msgs::Float32> recharge("recharge_controller");

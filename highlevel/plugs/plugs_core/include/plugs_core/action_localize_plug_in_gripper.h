@@ -91,8 +91,8 @@ private:
   tf::TransformListener TF;
 
   std_msgs::Empty empty_;
-  robot_msgs::PoseStamped outlet_pose_;
-  robot_msgs::PoseStamped plug_pose_msg_;
+  geometry_msgs::PoseStamped outlet_pose_;
+  geometry_msgs::PoseStamped plug_pose_msg_;
   tf::Stamped<tf::Pose> plug_pose_;
  
   

@@ -53,7 +53,7 @@
 
 namespace door_handle_detector{
 
-typedef boost::shared_ptr<robot_msgs::PoseStamped const> PoseConstPtr;
+typedef boost::shared_ptr<geometry_msgs::PoseStamped const> PoseConstPtr;
 
 class PushDoorAction: public robot_actions::Action<door_msgs::Door, door_msgs::Door>
 {

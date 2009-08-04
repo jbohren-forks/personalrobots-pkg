@@ -37,8 +37,8 @@
 #ifndef TRAJECTORY_ROLLOUT_PLANAR_LASER_SCAN_H_
 #define TRAJECTORY_ROLLOUT_PLANAR_LASER_SCAN_H_
 
-#include <robot_msgs/Point32.h>
-#include <robot_msgs/PointCloud.h>
+#include <geometry_msgs/Point32.h>
+#include <sensor_msgs/PointCloud.h>
 
 namespace base_local_planner {
   /**
@@ -48,8 +48,8 @@ namespace base_local_planner {
   class PlanarLaserScan {
     public:
       PlanarLaserScan() {}
-      robot_msgs::Point32 origin;
-      robot_msgs::PointCloud cloud;
+      geometry_msgs::Point32 origin;
+      sensor_msgs::PointCloud cloud;
       double angle_min, angle_max, angle_increment;
   };
 };

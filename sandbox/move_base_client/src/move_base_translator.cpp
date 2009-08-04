@@ -34,7 +34,7 @@
 
 #include "ros/ros.h"
 
-#include "robot_msgs/PoseStamped.h"
+#include "geometry_msgs/PoseStamped.h"
 #include "nav_robot_actions/MoveBaseState.h"
 
 #include "move_base/MoveBaseAction.h"
@@ -43,7 +43,7 @@
 #include "robot_actions/action_runner.h"
 #include "boost/thread.hpp"
 
-using namespace robot_msgs;
+using namespace geometry_msgs;
 
 move_base::MoveBaseGoal fromOldGoal(const PoseStamped& old_goal)
 {
@@ -72,7 +72,7 @@ int main(int argc, char** argv)
                               translator("move_base", &fromOldGoal, &fromActionFeedback, &fromActionResult);
 
   robot_actions::ActionRunner runner(10.0);
-  runner.connect<robot_msgs::PoseStamped, nav_robot_actions::MoveBaseState, robot_msgs::PoseStamped>(translator);
+  runner.connect<geometry_msgs::PoseStamped, nav_robot_actions::MoveBaseState, geometry_msgs::PoseStamped>(translator);
 
   runner.run();
 

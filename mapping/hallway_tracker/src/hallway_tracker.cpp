@@ -47,11 +47,11 @@
 // ROS core
 #include <ros/node.h>
 // ROS messages
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 #include <robot_msgs/Polygon3D.h>
 #include <mapping_msgs/PolygonalMap.h>
 
-#include <robot_msgs/Point32.h>
+#include <geometry_msgs/Point32.h>
 //#include <robot_msgs/Hallway.h>
 #include <visualization_msgs/Marker.h>
 
@@ -74,7 +74,7 @@
 #include <tf/message_notifier.h>
 
 // Clouds and scans
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 #include <sensor_msgs/LaserScan.h>
 #include <laser_scan/laser_scan.h>
 
@@ -101,7 +101,7 @@ public:
 
   ros::Node *node_;
 
-  PointCloud cloud_;
+  sensor_msgs::PointCloud cloud_;
   laser_scan::LaserProjection projector_; // Used to project laser scans into point clouds
 
   tf::TransformListener *tf_;
@@ -151,10 +151,10 @@ public:
     // The visualization markers are the two lines. The start/end points are arbitrary.
     node_->advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
     // A point cloud of model inliers.
-    node_->advertise<robot_msgs::PointCloud>("parallel_lines_inliers",10);
+    node_->advertise<sensor_msgs::PointCloud>("parallel_lines_inliers",10);
 
     // Output: a point cloud with 3 points. The first two points lie on the first line, and the third point lies on the second line.
-    node_->advertise<robot_msgs::PointCloud>("parallel_lines_model",0);
+    node_->advertise<sensor_msgs::PointCloud>("parallel_lines_model",0);
 
     // Subscribe to the scans.
     message_notifier_ = new tf::MessageNotifier<sensor_msgs::LaserScan> (tf_, node_, boost::bind(&HallwayTracker::laserCallBack, this, _1), base_laser_topic_.c_str(), fixed_frame_, 1);
@@ -245,7 +245,7 @@ public:
       sac->computeCoefficients (coeffs);
       visualization(coeffs, inliers);
       // Publish the result
-      robot_msgs::PointCloud model_cloud;
+      sensor_msgs::PointCloud model_cloud;
       model_cloud.pts.resize(3);
       model_cloud.header.stamp = cloud_.header.stamp;
       model_cloud.header.frame_id = fixed_frame_;
@@ -287,7 +287,7 @@ public:
     marker.color.g = 1.0;
     marker.set_points_size(2);
 
-    robot_msgs::Point32 d;
+    geometry_msgs::Point32 d;
     d.x = coeffs[3] - coeffs[0];
     d.y = coeffs[4] - coeffs[1];
     d.z = coeffs[5] - coeffs[2];
@@ -320,7 +320,7 @@ public:
     node_->publish( "visualization_marker", marker );
 
     // Inlier cloud
-    robot_msgs::PointCloud  inlier_cloud;
+    sensor_msgs::PointCloud  inlier_cloud;
     inlier_cloud.header.frame_id = fixed_frame_;
     inlier_cloud.header.stamp = cloud_.header.stamp;
     inlier_cloud.pts.resize(inliers.size());

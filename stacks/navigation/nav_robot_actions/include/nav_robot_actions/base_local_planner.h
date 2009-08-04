@@ -37,7 +37,7 @@
 #ifndef NAV_ROBOT_ACTIONS_BASE_LOCAL_PLANNER_
 #define NAV_ROBOT_ACTIONS_BASE_LOCAL_PLANNER_
 
-#include <robot_msgs/PoseStamped.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <robot_msgs/PoseDot.h>
 #include <costmap_2d/costmap_2d_ros.h>
 #include <loki/Factory.h>
@@ -48,7 +48,7 @@ namespace nav_robot_actions {
     public:
       virtual bool computeVelocityCommands(robot_msgs::PoseDot& cmd_vel) = 0;
       virtual bool goalReached() = 0;
-      virtual bool updatePlan(const std::vector<robot_msgs::PoseStamped>& plan) = 0;
+      virtual bool updatePlan(const std::vector<geometry_msgs::PoseStamped>& plan) = 0;
 
     protected:
       BaseLocalPlanner(){}

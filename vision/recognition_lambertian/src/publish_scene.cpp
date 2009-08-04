@@ -45,7 +45,7 @@
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
 
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/CameraInfo.h>
@@ -88,7 +88,7 @@ protected:
 public:
 
 	// ROS messages
-	robot_msgs::PointCloud msg_cloud_;
+	sensor_msgs::PointCloud msg_cloud_;
 
 	string prefix_;
 	string cloud_topic_;
@@ -112,7 +112,7 @@ public:
 		disp_topic_ = "stereo/disparity";
 		left_caminfo_topic_ = "stereo/left/cam_info";
 		dispinfo_topic_ = "stereo/disparity_info";
-		node_.advertise<robot_msgs::PointCloud> (cloud_topic_.c_str (), 1);
+		node_.advertise<sensor_msgs::PointCloud> (cloud_topic_.c_str (), 1);
 		node_.advertise<sensor_msgs::Image> (left_topic_.c_str (), 1);
 		node_.advertise<sensor_msgs::Image> (right_topic_.c_str (), 1);
 		node_.advertise<sensor_msgs::Image> (disp_topic_.c_str (), 1);

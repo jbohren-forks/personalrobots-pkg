@@ -38,7 +38,6 @@
 
 using namespace std;
 using namespace tf;
-using namespace robot_msgs;
 
 namespace costmap_2d {
   ObservationBuffer::ObservationBuffer(string topic_name, double observation_keep_time, double expected_update_rate, 
@@ -52,7 +51,7 @@ namespace costmap_2d {
 
   ObservationBuffer::~ObservationBuffer(){}
 
-  void ObservationBuffer::bufferCloud(const PointCloud& cloud){
+  void ObservationBuffer::bufferCloud(const sensor_msgs::PointCloud& cloud){
     Stamped<btVector3> global_origin;
 
     //create a new observation on the list to be populated
@@ -72,14 +71,14 @@ namespace costmap_2d {
       //make sure to pass on the raytrace range of the observation buffer to the observations the costmap will see
       observation_list_.front().raytrace_range_ = raytrace_range_;
 
-      PointCloud global_frame_cloud;
+      sensor_msgs::PointCloud global_frame_cloud;
 
       //transform the point cloud
       tf_.transformPointCloud(global_frame_, cloud, global_frame_cloud);
       global_frame_cloud.header.stamp = cloud.header.stamp;
 
       //now we need to remove observations from the cloud that are below or above our height thresholds
-      PointCloud& observation_cloud = observation_list_.front().cloud_;
+      sensor_msgs::PointCloud& observation_cloud = observation_list_.front().cloud_;
       unsigned int cloud_size = global_frame_cloud.pts.size();
       observation_cloud.set_pts_size(cloud_size);
       unsigned int point_count = 0;

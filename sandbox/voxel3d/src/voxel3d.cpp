@@ -98,7 +98,7 @@ void Voxel3d::reset()
   memset(&data_[0], CLEAR, data_.size());
 }
 
-void Voxel3d::updateWorld(const robot_msgs::PointCloud &cloud)
+void Voxel3d::updateWorld(const sensor_msgs::PointCloud &cloud)
 {
   int x, y, z;
   for (size_t i = 0; i < cloud.pts.size(); ++i)

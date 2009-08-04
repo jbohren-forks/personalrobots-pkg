@@ -75,7 +75,7 @@ int
     tuck_arm("safety_tuck_arms");
   robot_actions::ActionClient<std_msgs::Empty, pr2_robot_actions::FindHelperState, pr2_robot_actions::FindHelperResult> 
     find_helper("find_helper");
-  robot_actions::ActionClient<robot_msgs::PoseStamped, nav_robot_actions::MoveBaseState, robot_msgs::PoseStamped>
+  robot_actions::ActionClient<geometry_msgs::PoseStamped, nav_robot_actions::MoveBaseState, geometry_msgs::PoseStamped>
     move_base_local("move_base_local");
   robot_actions::ActionClient<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>
     start_tilt_laser("set_laser_tilt");
@@ -118,7 +118,7 @@ int
   //tf::Pose desi_offset(tf::Quaternion(0,0,0), tf::Vector3(-1.5, 0.0, 0.0));
   //tf::Pose target = coarse_outlet_pose * desi_offset;
 
-  //robot_msgs::PoseStamped target_msg;
+  //geometry_msgs::PoseStamped target_msg;
   //target_msg.header.frame_id = find_helper_pose_msg.header.frame_id;
   //tf::poseTFToMsg(target, target_msg.pose);
 

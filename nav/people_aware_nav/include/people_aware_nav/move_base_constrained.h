@@ -40,7 +40,7 @@
 #include <robot_actions/action_runner.h>
 #include <people_aware_nav/ConstrainedMoveBaseState.h>
 #include <people_aware_nav/ConstrainedGoal.h>
-#include <robot_msgs/PoseStamped.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <ros/ros.h>
 #include <costmap_2d/costmap_2d_ros.h>
 #include <costmap_2d/costmap_2d.h>
@@ -56,7 +56,7 @@ namespace people_aware_nav {
    * @class MoveBaseConstrained
    * @brief Like nav::MoveBase, but allows constraints on where robot can move
    */
-  class MoveBaseConstrained : public robot_actions::Action<ConstrainedGoal, robot_msgs::PoseStamped> {
+  class MoveBaseConstrained : public robot_actions::Action<ConstrainedGoal, geometry_msgs::PoseStamped> {
     public:
       /**
        * @brief  Constructor for the actions
@@ -77,7 +77,7 @@ namespace people_aware_nav {
        * @param feedback Feedback that the action gives to a higher-level monitor, in this case, the position of the robot
        * @return The result of the execution, ie: Success, Preempted, Aborted, etc.
        */
-      virtual robot_actions::ResultStatus execute(const ConstrainedGoal& goal, robot_msgs::PoseStamped& feedback);
+      virtual robot_actions::ResultStatus execute(const ConstrainedGoal& goal, geometry_msgs::PoseStamped& feedback);
 
     private:
       /**
@@ -92,7 +92,7 @@ namespace people_aware_nav {
        * @brief  Make a new global plan
        * @param  goal The goal to plan to
        */
-    void makePlan(const robot_msgs::PoseStamped& goal, const robot_msgs::Polygon3D& forbidden);
+    void makePlan(const geometry_msgs::PoseStamped& goal, const robot_msgs::Polygon3D& forbidden);
 
       /**
        * @brief  Get the current pose of the robot in the specified frame
@@ -108,7 +108,7 @@ namespace people_aware_nav {
 
       void resetState();
 
-    bool tryPlan(robot_msgs::PoseStamped goal, const robot_msgs::Polygon3D& forbidden);
+    bool tryPlan(geometry_msgs::PoseStamped goal, const robot_msgs::Polygon3D& forbidden);
 
       ros::Node& ros_node_;
       tf::TransformListener& tf_;
@@ -118,12 +118,12 @@ namespace people_aware_nav {
       costmap_2d::Costmap2D planner_costmap_, controller_costmap_;
 
       navfn::NavfnROS* planner_;
-      std::vector<robot_msgs::PoseStamped> global_plan_;
-      std::vector<robot_msgs::Point> footprint_;
+      std::vector<geometry_msgs::PoseStamped> global_plan_;
+      std::vector<geometry_msgs::Point> footprint_;
       std::string robot_base_frame_, global_frame_;
       bool valid_plan_, new_plan_;
       boost::recursive_mutex lock_;
-      robot_msgs::PoseStamped goal_;
+      geometry_msgs::PoseStamped goal_;
 
       tf::Stamped<tf::Pose> global_pose_;
       double controller_frequency_, inscribed_radius_, circumscribed_radius_, planner_patience_, controller_patience_;

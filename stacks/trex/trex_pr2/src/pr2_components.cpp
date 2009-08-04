@@ -143,7 +143,7 @@ namespace TREX {
 
   void PlugsGetOffsetPose::handleExecute()
   {
-    using robot_msgs::Pose;
+    using geometry_msgs::Pose;
     debugMsg("trex:debug:propagation:world_model:plugs_get_offset_pose", "BEFORE: " << toString());
     if (x.isSingleton() && y.isSingleton() && z.isSingleton() && qx.isSingleton() &&
         qy.isSingleton() && qz.isSingleton() && qw.isSingleton() && dist.isSingleton()) {

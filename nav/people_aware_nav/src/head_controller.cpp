@@ -34,9 +34,9 @@
 #include <ros/assert.h>
 #include <ros/time.h>
 #include <people/PositionMeasurement.h>
-#include <robot_msgs/Point.h>
-#include <robot_msgs/PointStamped.h>
-#include <robot_msgs/PoseStamped.h>
+#include <geometry_msgs/Point.h>
+#include <geometry_msgs/PointStamped.h>
+#include <geometry_msgs/PoseStamped.h>
 #include "people_aware_nav/LookStraightAhead.h"
 #include "people_aware_nav/GlanceAt.h"
 #include "people_aware_nav/StartHeadTrack.h"
@@ -44,9 +44,9 @@
 namespace people_aware_nav
 {
 
-using robot_msgs::Point;
-using robot_msgs::PointStamped;
-using robot_msgs::PoseStamped;
+using geometry_msgs::Point;
+using geometry_msgs::PointStamped;
+using geometry_msgs::PoseStamped;
 using ros::Node;
 using ros::Time;
 using ros::Duration;
@@ -146,7 +146,7 @@ private:
   Node node_;
   string head_control_type_;
   double default_speed_;
-  robot_msgs::PoseStamped goal_pose_;
+  geometry_msgs::PoseStamped goal_pose_;
   bool do_continuous_, have_goal_;
 
   enum {NONE=0, TRACK=1, STRAIGHT=2};

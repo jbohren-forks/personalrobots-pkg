@@ -6,7 +6,7 @@
 #include <tf/transform_listener.h>
 #include <tf/message_notifier.h>
 
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 #include <sensor_msgs/LaserScan.h>
 #include <visualization_msgs/Marker.h>
 #include <costmap_2d/VoxelGrid.h>
@@ -24,16 +24,16 @@ class Follower {
   ros::Publisher vis_pub_;
   ros::Subscriber leg_detection_cloud_sub_;
   ros::Subscriber voxel_sub_;
-  tf::MessageNotifier<robot_msgs::PoseStamped> transformed_goal_note_;
-  tf::MessageNotifier<robot_msgs::PointCloud> transformed_cloud_note_;
-  //tf::MessageNotifier<robot_msgs::PointCloud> transformed_scan_note_;
+  tf::MessageNotifier<geometry_msgs::PoseStamped> transformed_goal_note_;
+  tf::MessageNotifier<sensor_msgs::PointCloud> transformed_cloud_note_;
+  //tf::MessageNotifier<sensor_msgs::PointCloud> transformed_scan_note_;
   string global_frame_id;
   ros::Rate goalRate;
   //boost::shared_ptr<Follower> follower_object;
   //costmap_2d::Costmap2DROS cmROS;
 
   //Adds or modifies a visualization marker for the goal pose
-  void visualizeGoalPose(const robot_msgs::PoseStamped* const  msg)
+  void visualizeGoalPose(const geometry_msgs::PoseStamped* const  msg)
   {
       cout<<"Sending vizualization message!"<<endl;
     visualization_msgs::Marker marker;
@@ -72,12 +72,12 @@ class Follower {
   }
 
   static const double freeSpaceThresh = 0.25;
-  void cloudCallback(const robot_msgs::PointCloud::ConstPtr& cloud)
+  void cloudCallback(const sensor_msgs::PointCloud::ConstPtr& cloud)
   {
     cout<<"I heard a cloud with: "<<cloud->pts.size()<<" points."<<endl;
     double closestDistSq = 99999.0;
     int closestIdx = -1;
-    robot_msgs::PointCloud robotRelativeCloud;
+    sensor_msgs::PointCloud robotRelativeCloud;
     tf_client_.transformPointCloud("/base_footprint", *cloud, robotRelativeCloud);
     updateFreeSpaceVoxels();
     for(unsigned int i=0; i<robotRelativeCloud.pts.size(); i++)
@@ -114,11 +114,11 @@ class Follower {
     const double &x = cloud->pts[closestIdx].x;
     const double &y = cloud->pts[closestIdx].y;
     //cout<<"\t\tLeg cloud is in: "<<cloud->header.frame_id<<endl;
-    robot_msgs::PointStamped in;
+    geometry_msgs::PointStamped in;
     in.header.frame_id = "/base_footprint";
     in.header.stamp = cloud->header.stamp;
     in.point.x = in.point.y = in.point.z = 0;
-    robot_msgs::PointStamped out;
+    geometry_msgs::PointStamped out;
     tf_client_.transformPoint("/odom_combined", in, out);
     cout<<"Zero is at: "<<out.point.x<<","<<out.point.y<<endl;
     setGoal(x, y, atan2(y-out.point.y,x-out.point.x), cloud->header.stamp);
@@ -133,7 +133,7 @@ class Follower {
       receivedVoxels = true;
   }
 
-  robot_msgs::PointCloud lastTiltScan;
+  sensor_msgs::PointCloud lastTiltScan;
   bool receivedTiltCloud;
   boost::mutex tiltMutex;
   void tiltCloudCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
@@ -150,9 +150,9 @@ class Follower {
 
   }
 
-  void transformedGoalCallback(const robot_msgs::PoseStamped::ConstPtr& goal)
+  void transformedGoalCallback(const geometry_msgs::PoseStamped::ConstPtr& goal)
   {
-    robot_msgs::PoseStamped tgoal;
+    geometry_msgs::PoseStamped tgoal;
     tf_client_.transformPose("/odom_combined", *goal, tgoal);
     cout<<"Received transformed goal: "<<endl;//<<tgoal<<endl;
     goalRate.sleep();
@@ -168,8 +168,8 @@ public:
           goalRate(0.1)//,
 	  //          cmROS("follower_costmap", tf_client_)
   {
-    goal_pub_ = node_.advertise<robot_msgs::PoseStamped>("/move_base_local/activate", 1);
-    base_scan_goal_pub_ = node_.advertise<robot_msgs::PoseStamped>("base_scan_goal", 1);
+    goal_pub_ = node_.advertise<geometry_msgs::PoseStamped>("/move_base_local/activate", 1);
+    base_scan_goal_pub_ = node_.advertise<geometry_msgs::PoseStamped>("base_scan_goal", 1);
     vis_pub_ = node_.advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
     receivedVoxels = false;
     //leg_detection_cloud_sub_ = node_.subscribe("particle_filt_cloud", 1, &Follower::cloudCallback, this);//follower_object);
@@ -196,7 +196,7 @@ private:
     //tf::Stamped<tf::Pose> p;
     //tf_client_.transformPose(global_frame_id, pRobot, p);
     
-    robot_msgs::PoseStamped goal;
+    geometry_msgs::PoseStamped goal;
     //goal.header.frame_id = "/odom_combined";
     goal.pose.position.x = posRobot.getOrigin().getX();
     goal.pose.position.y = posRobot.getOrigin().getY();

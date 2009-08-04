@@ -47,8 +47,8 @@ collision map.
 
 #include <geometric_shapes/bodies.h>
 #include <tf/message_notifier.h>
-#include <robot_msgs/PointCloud.h>
-#include <robot_msgs/PoseStamped.h>
+#include <sensor_msgs/PointCloud.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <mapping_msgs/AttachedObject.h>
 #include <mapping_msgs/ObjectInMap.h>
 
@@ -68,9 +68,9 @@ public:
 	    
 	    ROS_INFO("Clearing points on known objects using '%s' as fixed frame, %f padding and %f scaling", fixed_frame_.c_str(), padd_, scale_);
 	    
-	    cloudPublisher_ = nh_.advertise<robot_msgs::PointCloud>("cloud_out", 1);	    
+	    cloudPublisher_ = nh_.advertise<sensor_msgs::PointCloud>("cloud_out", 1);	    
 	    kmsm_->setOnAfterAttachBodyCallback(boost::bind(&ClearKnownObjects::attachObjectEvent, this, _1));
-	    cloudNotifier_ = new tf::MessageNotifier<robot_msgs::PointCloud>(tf_, boost::bind(&ClearKnownObjects::cloudCallback, this, _1), "cloud_in", fixed_frame_, 1);
+	    cloudNotifier_ = new tf::MessageNotifier<sensor_msgs::PointCloud>(tf_, boost::bind(&ClearKnownObjects::cloudCallback, this, _1), "cloud_in", fixed_frame_, 1);
 	    objectInMapNotifier_ = new tf::MessageNotifier<mapping_msgs::ObjectInMap>(tf_, boost::bind(&ClearKnownObjects::objectInMapCallback, this, _1), "object_in_map", fixed_frame_, 1024);
 	}
 	else
@@ -127,7 +127,7 @@ private:
 	double                  rsquare;
     };
     
-    void computeMask(const robot_msgs::PointCloud &cloud, std::vector<int> &mask)
+    void computeMask(const sensor_msgs::PointCloud &cloud, std::vector<int> &mask)
     {
 	// check if we have attached bodies
 	if (attachedObjects_.size() > 0)
@@ -175,8 +175,8 @@ private:
 	}
 	
 	// transform pointcloud into fixed frame, if needed
-	robot_msgs::PointCloud temp;
-	const robot_msgs::PointCloud *cloudTransf = &cloud;
+	sensor_msgs::PointCloud temp;
+	const sensor_msgs::PointCloud *cloudTransf = &cloud;
 	if (fixed_frame_ != cloud.header.frame_id)
 	{
 	    tf_.transformPointCloud(fixed_frame_, cloud, temp);
@@ -207,7 +207,7 @@ private:
 	}
     }
     
-    void cloudCallback(const robot_msgs::PointCloudConstPtr &cloud)
+    void cloudCallback(const sensor_msgs::PointCloudConstPtr &cloud)
     {
 	ROS_DEBUG("Got pointcloud that is %f seconds old", (ros::Time::now() - cloud->header.stamp).toSec());
 	
@@ -228,7 +228,7 @@ private:
 	{
 	    // publish new cloud
 	    const unsigned int np = cloud->pts.size();
-	    robot_msgs::PointCloud data_out;
+	    sensor_msgs::PointCloud data_out;
 	    
 	    // fill in output data with points that are NOT in the known objects
 	    data_out.header = cloud->header;	  
@@ -272,8 +272,8 @@ private:
 	    if (shape)
 	    {
 		bool err = false;
-		robot_msgs::PoseStamped psi;
-		robot_msgs::PoseStamped pso;
+		geometry_msgs::PoseStamped psi;
+		geometry_msgs::PoseStamped pso;
 		psi.pose = objectInMap->pose;
 		psi.header = objectInMap->header;
 		try
@@ -340,7 +340,7 @@ private:
     tf::TransformListener                                        tf_;
     planning_environment::RobotModels                           *rm_;
     planning_environment::KinematicModelStateMonitor            *kmsm_;
-    tf::MessageNotifier<robot_msgs::PointCloud>                 *cloudNotifier_;
+    tf::MessageNotifier<sensor_msgs::PointCloud>                 *cloudNotifier_;
     tf::MessageNotifier<mapping_msgs::ObjectInMap>              *objectInMapNotifier_;
     std::string                                                  fixed_frame_;
     boost::mutex                                                 updateObjects_;

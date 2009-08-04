@@ -304,9 +304,9 @@ double annotated_map_lib::getMapAreaWithTagsMatchAny(const annotated_map_msgs::T
 
 
  
-robot_msgs::Point32 annotated_map_lib::computeMean (const robot_msgs::Polygon3D& poly)
+geometry_msgs::Point32 annotated_map_lib::computeMean (const robot_msgs::Polygon3D& poly)
 {
-  robot_msgs::Point32 mean;
+  geometry_msgs::Point32 mean;
   mean.x=0;mean.y=0;mean.z=0;
   
   unsigned int sz= poly.points.size();;

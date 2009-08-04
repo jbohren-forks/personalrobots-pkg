@@ -11,14 +11,14 @@
 #include "ros/ros.h"
 #include "topic_synchronizer2/topic_synchronizer.h"
 
-#include "robot_msgs/PointCloud.h"
+#include "sensor_msgs/PointCloud.h"
 
 #include "visualization_msgs/Marker.h"
 
 #include "sensor_msgs/Image.h"
 #include "sensor_msgs/StereoInfo.h"
 #include "sensor_msgs/DisparityInfo.h"
-#include "sensor_msgs/CamInfo.h"
+#include "sensor_msgs/CameraInfo.h"
 
 #include "opencv_latest/CvBridge.h"
 #include "opencv/cxcore.h"
@@ -63,7 +63,7 @@ public:
   void updatePoints2d();
   double computeDistance(IplImage* distImage);
   double computeSupport2d(IplImage* pixOccupied, IplImage* pixDebug = NULL);
-  double computeSupport3d(const robot_msgs::PointCloud& cloud,
+  double computeSupport3d(const sensor_msgs::PointCloud& cloud,
                           std::vector<int> & plane_indices);
   void optimizeWidth(IplImage* distImage, double a = -0.5, double b = +0.5, int steps = 20);
   void optimizeHeight(IplImage* distImage, double a = -0.5, double b = +0.5, int steps = 20);

@@ -39,7 +39,7 @@
 
 #include <vector>
 #include "opencv/cv.h"
-#include "robot_msgs/Point.h"
+#include "geometry_msgs/Point.h"
 #include "sensor_msgs/CameraInfo.h"
 
 namespace stereo_checkerboard_detector
@@ -63,9 +63,9 @@ public:
    * \param result Output: Each point stores a xyd tuple, with xy being the left
    *                       cam point, and d being the disparity
    */
-  void computeDisparity(const std::vector<robot_msgs::Point>& left_pts,
-                        const std::vector<robot_msgs::Point>& right_pts,
-                        std::vector<robot_msgs::Point>& result) ;
+  void computeDisparity(const std::vector<geometry_msgs::Point>& left_pts,
+                        const std::vector<geometry_msgs::Point>& right_pts,
+                        std::vector<geometry_msgs::Point>& result) ;
 
   /**
    * Computes the disparty for the lists of left and right Points, using
@@ -85,10 +85,10 @@ public:
    * \param right_info CameraInfo message holding intrinsics for the right camera, using ROS messages
    * \param ros_xyz Output vector with reprojected points from uvd, using ROS messages
    */
-  void reproject(const std::vector<robot_msgs::Point>& uvd,
+  void reproject(const std::vector<geometry_msgs::Point>& uvd,
                  const sensor_msgs::CameraInfo& left_info,
                  const sensor_msgs::CameraInfo& right_info,
-                 std::vector<robot_msgs::Point>& xyz) ;
+                 std::vector<geometry_msgs::Point>& xyz) ;
 
 
   void reproject(const CvMat* uvd,

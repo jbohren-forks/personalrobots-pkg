@@ -523,7 +523,7 @@ void EnvironmentNAVXYTHETADOORLAT::setRobotProperties(const double &min_workspac
     const double &max_workspace_radius,
     const double &min_workspace_angle,
     const double &max_workspace_angle,
-    const robot_msgs::Point32 &robot_shoulder_position)
+    const geometry_msgs::Point32 &robot_shoulder_position)
 {
   db_.arm_min_workspace_radius_ = min_workspace_radius;
   db_.arm_max_workspace_radius_ = max_workspace_radius;
@@ -763,7 +763,7 @@ void EnvironmentNAVXYTHETADOORLAT::GetValidDoorAngles(EnvNAVXYTHETALAT3Dpt_t wor
   dooranglecostV->push_back(3);
 */
 
-  robot_msgs::Point32 robot_global_pose;
+  geometry_msgs::Point32 robot_global_pose;
   double robot_global_yaw;
 
   robot_global_pose.x = worldrobotpose3D.x;

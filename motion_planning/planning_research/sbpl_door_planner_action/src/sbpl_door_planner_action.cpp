@@ -97,11 +97,11 @@ SBPLDoorPlanner::SBPLDoorPlanner(ros::Node& ros_node, tf::TransformListener& tf)
   ros_node_.advertise<visualization_msgs::Polyline>("~door/door", 1);
   ros_node_.advertise<visualization_msgs::Marker>( "visualization_marker",1);
 
-//  ros_node_.advertise<robot_msgs::PoseStamped>(arm_control_topic_name_,1);
+//  ros_node_.advertise<geometry_msgs::PoseStamped>(arm_control_topic_name_,1);
   ros_node_.advertise<pr2_ik::PoseCmd>(arm_control_topic_name_,1);
   ros_node_.advertise<manipulation_msgs::JointTraj>(base_control_topic_name_,1);
 
-  robot_msgs::Point pt;
+  geometry_msgs::Point pt;
   //create a square footprint
   pt.x = inscribed_radius_;
   pt.y = -1 * (inscribed_radius_);
@@ -186,7 +186,7 @@ bool SBPLDoorPlanner::initializePlannerAndEnvironment(const door_msgs::Door &doo
 
 bool SBPLDoorPlanner::removeDoor()
 {
-  const std::vector<robot_msgs::Point> door_polygon = door_functions::getPolygon(door_env_.door,door_env_.door_thickness); 
+  const std::vector<geometry_msgs::Point> door_polygon = door_functions::getPolygon(door_env_.door,door_env_.door_thickness); 
   for(int i=0; i < (int) door_polygon.size(); i++)
   {
     ROS_INFO("DOOR POLYGON %d:: %f, %f",i,door_polygon[i].x,door_polygon[i].y);
@@ -439,7 +439,7 @@ void SBPLDoorPlanner::dispatchControl(const manipulation_msgs::JointTraj &path, 
     tf::Pose gripper_rotate(tf::Quaternion(0.0,0.0,M_PI/2.0),tf::Vector3(0.0,0.0,0.0));
     gripper_pose.mult(gripper_pose,gripper_rotate);
 
-    robot_msgs::PoseStamped gripper_msg;
+    geometry_msgs::PoseStamped gripper_msg;
     gripper_pose.stamp_ = ros::Time::now();
     poseStampedTFToMsg(gripper_pose, gripper_msg);
 
@@ -507,7 +507,7 @@ void SBPLDoorPlanner::processPlan(const manipulation_msgs::JointTraj &path, mani
 
 bool SBPLDoorPlanner::checkArmDoorCollide(const manipulation_msgs::JointTrajPoint &waypoint)
 {
-  robot_msgs::Point32 global_shoulder_position;
+  geometry_msgs::Point32 global_shoulder_position;
 
   // rotate the door
   door_msgs::Door rotated_door = door_functions::rotateDoor(door_env_.door, waypoint.positions[3]-getFrameAngle(door_env_.door));
@@ -515,8 +515,8 @@ bool SBPLDoorPlanner::checkArmDoorCollide(const manipulation_msgs::JointTrajPoin
   //global handle position
   tf::Stamped<tf::Pose>  global_handle_position_tf = getGlobalHandlePosition(door_env_.door, waypoint.positions[3]);
 
-  robot_msgs::PoseStamped handle_msg;
-  robot_msgs::Point32 handle_position;
+  geometry_msgs::PoseStamped handle_msg;
+  geometry_msgs::Point32 handle_position;
   global_handle_position_tf.stamp_ = ros::Time::now();
   poseStampedTFToMsg(global_handle_position_tf, handle_msg);
   //get shoulder in global frame
@@ -536,7 +536,7 @@ bool SBPLDoorPlanner::checkArmDoorCollide(const manipulation_msgs::JointTrajPoin
   return doLineSegsIntersect(rotated_door.door_p1, rotated_door.door_p2, global_shoulder_position, handle_position);
 }
 
-bool SBPLDoorPlanner::doLineSegsIntersect(robot_msgs::Point32 a, robot_msgs::Point32 b, robot_msgs::Point32 c, robot_msgs::Point32 d)
+bool SBPLDoorPlanner::doLineSegsIntersect(geometry_msgs::Point32 a, geometry_msgs::Point32 b, geometry_msgs::Point32 c, geometry_msgs::Point32 d)
 {
   double b_a[2], c_d[2], c_a[2];
   b_a[0] = b.x-a.x;
@@ -581,7 +581,7 @@ void SBPLDoorPlanner::animate(const manipulation_msgs::JointTraj &path)
 void SBPLDoorPlanner::publishGripper(const double &angle)
 {
   door_msgs::Door result = rotateDoor(door_env_.door,angle);
-  robot_msgs::PoseStamped gripper_msg;
+  geometry_msgs::PoseStamped gripper_msg;
   double yaw = getDoorAngle(result);
   tf::Stamped<tf::Pose> gripper_pose = getGlobalHandlePosition(door_env_.door,angle);
   gripper_pose.stamp_ = ros::Time::now();
@@ -614,7 +614,7 @@ tf::Stamped<tf::Pose> SBPLDoorPlanner::getGlobalHandlePosition(const door_msgs::
 
 double SBPLDoorPlanner::getHandleHingeDistance(const door_msgs::Door &door)
 {
-  robot_msgs::Point32 hinge;
+  geometry_msgs::Point32 hinge;
   if(door.hinge == door.HINGE_P1)
     hinge = door.frame_p1;
   else
@@ -687,7 +687,7 @@ pr2_robot_actions::Pose2D SBPLDoorPlanner::getPose2D(const tf::Stamped<tf::Pose>
   return tmp_pose;
 }
 
-bool SBPLDoorPlanner::computeOrientedFootprint(const pr2_robot_actions::Pose2D &position, const std::vector<robot_msgs::Point>& footprint_spec, std::vector<robot_msgs::Point>& oriented_footprint)
+bool SBPLDoorPlanner::computeOrientedFootprint(const pr2_robot_actions::Pose2D &position, const std::vector<geometry_msgs::Point>& footprint_spec, std::vector<geometry_msgs::Point>& oriented_footprint)
 {
   if(footprint_spec.size() < 3)//if we have no footprint... do nothing
   {
@@ -699,7 +699,7 @@ bool SBPLDoorPlanner::computeOrientedFootprint(const pr2_robot_actions::Pose2D &
   double sin_th = sin(position.th);
   for(unsigned int i = 0; i < footprint_spec.size(); ++i) //build the oriented footprint
   {
-    robot_msgs::Point new_pt;
+    geometry_msgs::Point new_pt;
     new_pt.x = position.x + (footprint_spec[i].x * cos_th - footprint_spec[i].y * sin_th);
     new_pt.y = position.y + (footprint_spec[i].x * sin_th + footprint_spec[i].y * cos_th);
     oriented_footprint.push_back(new_pt);
@@ -711,7 +711,7 @@ bool SBPLDoorPlanner::computeOrientedFootprint(const pr2_robot_actions::Pose2D &
 
 bool SBPLDoorPlanner::clearRobotFootprint(costmap_2d::Costmap2D& cost_map)
 {
-  std::vector<robot_msgs::Point> oriented_footprint;
+  std::vector<geometry_msgs::Point> oriented_footprint;
   computeOrientedFootprint(global_pose_2D_,footprint_,oriented_footprint);
 
   //set the associated costs in the cost map to be free
@@ -728,7 +728,7 @@ bool SBPLDoorPlanner::clearRobotFootprint(costmap_2d::Costmap2D& cost_map)
 
 void SBPLDoorPlanner::publishFootprint(const pr2_robot_actions::Pose2D &position, std::string topic, double r, double g, double b)
 {
-  std::vector<robot_msgs::Point> oriented_footprint;
+  std::vector<geometry_msgs::Point> oriented_footprint;
   computeOrientedFootprint(position,footprint_,oriented_footprint);
 
   visualization_msgs::Polyline robot_polygon;

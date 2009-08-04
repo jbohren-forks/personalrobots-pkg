@@ -80,7 +80,7 @@ void RosBumper::LoadChild(XMLConfigNode *node)
   //std::cout << " publishing contact/collisions to topic name: " << this->bumperTopicName << std::endl;
 
   this->info_pub_ = this->rosnode_->advertise<std_msgs::String>(this->bumperTopicName+std::string("/info"),100);
-  this->force_pub_ = this->rosnode_->advertise<robot_msgs::Vector3Stamped>(this->bumperTopicName+std::string("/force"),100);
+  this->force_pub_ = this->rosnode_->advertise<geometry_msgs::Vector3Stamped>(this->bumperTopicName+std::string("/force"),100);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

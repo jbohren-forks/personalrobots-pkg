@@ -99,7 +99,7 @@ TEST(CHECKERBOARD_DETECTOR, reprojection_easy)
   }
 
   // Define some easy uvd testpoints
-  vector<robot_msgs::Point> uvd(2) ;
+  vector<geometry_msgs::Point> uvd(2) ;
   uvd[0].x = 330 ;      // u
   uvd[0].y = 250 ;      // v
   uvd[0].z =  2 ;      // Disparity
@@ -108,7 +108,7 @@ TEST(CHECKERBOARD_DETECTOR, reprojection_easy)
   uvd[1].y = 240 ;      // v
   uvd[1].z =  4 ;      // Disparity
 
-  vector<robot_msgs::Point> xyz(2) ;
+  vector<geometry_msgs::Point> xyz(2) ;
   helper.reproject(uvd, left_info, right_info, xyz) ;
 
   EXPECT_GT(xyz[0].x, 0.0) ;

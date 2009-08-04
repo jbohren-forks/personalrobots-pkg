@@ -59,9 +59,9 @@
 #include <point_cloud_mapping/geometry/projections.h>
 
 #include "sensor_msgs/CameraInfo.h"
-#include "robot_msgs/PointCloud.h"
-#include "robot_msgs/Point32.h"
-#include "robot_msgs/PointStamped.h"
+#include "sensor_msgs/PointCloud.h"
+#include "geometry_msgs/Point32.h"
+#include "geometry_msgs/PointStamped.h"
 
 // transform library
 #include <tf/transform_listener.h>
@@ -112,7 +112,7 @@ public:
     ros::Subscriber left_caminfo_image_sub_;
     ros::Subscriber cloud_sub_;
 
-    robot_msgs::PointCloudConstPtr cloud;
+    sensor_msgs::PointCloudConstPtr cloud;
     float camera_height;
     float horizontal_line_row;
 
@@ -252,7 +252,7 @@ private:
 		lcinfo_ = info;
 	}
 
-    void cloudCallback(const robot_msgs::PointCloud::ConstPtr& point_cloud)
+    void cloudCallback(const sensor_msgs::PointCloud::ConstPtr& point_cloud)
 	{
 		cloud = point_cloud;
 	}

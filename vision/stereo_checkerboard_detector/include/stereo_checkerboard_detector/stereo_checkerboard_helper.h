@@ -39,7 +39,7 @@
 
 #include <vector>
 
-#include "robot_msgs/PoseStamped.h"
+#include "geometry_msgs/PoseStamped.h"
 
 #include "opencv/cv.h"
 #include "opencv_latest/CvBridge.h"
@@ -89,19 +89,19 @@ public:
   /**
    *
    */
-  void getCorners(std::vector<robot_msgs::Point>& xyz)
+  void getCorners(std::vector<geometry_msgs::Point>& xyz)
   {
     xyz.clear() ;
     xyz = xyz_ ;
   }
 
-  void getCornersLeft(std::vector<robot_msgs::Point>& left_xy)
+  void getCornersLeft(std::vector<geometry_msgs::Point>& left_xy)
   {
     left_xy.clear() ;
     left_xy = left_xy_ ;
   }
 
-  void getCornersRight(std::vector<robot_msgs::Point>& right_xy)
+  void getCornersRight(std::vector<geometry_msgs::Point>& right_xy)
   {
     right_xy.clear() ;
     right_xy = right_xy_ ;
@@ -136,11 +136,11 @@ private:
   sensor_msgs::Image right_ros_debug_ ;
 
   //! Stores 2D corner locations in pixel coordinates
-  std::vector<robot_msgs::Point> left_xy_ ;
-  std::vector<robot_msgs::Point> right_xy_ ;
+  std::vector<geometry_msgs::Point> left_xy_ ;
+  std::vector<geometry_msgs::Point> right_xy_ ;
 
   //! Stores corner locations cartesian coordinates
-  std::vector<robot_msgs::Point> xyz_ ;
+  std::vector<geometry_msgs::Point> xyz_ ;
 
   //! Stores the calculated pose of the checkerboard
   tf::Pose pose_ ;

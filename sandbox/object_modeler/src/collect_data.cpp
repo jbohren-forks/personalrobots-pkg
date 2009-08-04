@@ -35,7 +35,7 @@
 // Author Romain Thibaux (thibaux@willowgarage.com)
 
 #include <ros/ros.h>
-#include <robot_msgs/PoseStamped.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <robot_actions/action_client.h>
 #include <nav_robot_actions/MoveBaseState.h>
 #include <fstream>
@@ -64,15 +64,15 @@ void print_usage() {
 }
 
 
-void read_poses_from_file(vector<robot_msgs::Point> &result, const string &filename) {
+void read_poses_from_file(vector<geometry_msgs::Point> &result, const string &filename) {
   std::ifstream goal_file(filename.c_str());
   if (goal_file.is_open()) {
     string line;
     while (!goal_file.eof()) {
       getline(goal_file, line);
       istringstream line_stream(line);
-      robot_msgs::Point p;
-      robot_msgs::Quaternion q;
+      geometry_msgs::Point p;
+      geometry_msgs::Quaternion q;
       line_stream >> p.x >> p.y >> p.z >> q.x >> q.y >> q.z >> q.w;
       result.push_back(p);
     }
@@ -80,7 +80,7 @@ void read_poses_from_file(vector<robot_msgs::Point> &result, const string &filen
   }
 }
 
-robot_msgs::Quaternion direction(robot_msgs::Point position, robot_msgs::Point target) {
+geometry_msgs::Quaternion direction(geometry_msgs::Point position, geometry_msgs::Point target) {
   // By default bullet uses the 'XYZ' convention where rotation around Z is
   // called 'roll', but we compiled the bullet library with the
   // BT_EULER_DEFAULT_ZYX parameter set, so the 'ZYX' convention is used
@@ -92,7 +92,7 @@ robot_msgs::Quaternion direction(robot_msgs::Point position, robot_msgs::Point t
   double vec_x = target.x - position.x;
   double vec_y = target.y - position.y;
   double yaw = atan2(vec_y, vec_x);
-  robot_msgs::Quaternion result;
+  geometry_msgs::Quaternion result;
   btQuaternion dir(yaw, 0, 0);
   result.x = dir.getX();
   result.y = dir.getY();
@@ -110,26 +110,26 @@ int main(int argc, char** argv)
   ros::NodeHandle n;
   
   ROS_DEBUG("Declaring action clients");
-  typedef robot_msgs::PoseStamped PS;
+  typedef geometry_msgs::PoseStamped PS;
   robot_actions::ActionClient<PS, nav_robot_actions::MoveBaseState, PS> move_client("move_base");
   //typedef annotated_map_builder::WaitActionState WaitState;
   //typedef annotated_map_builder::WaitActionGoal WaitGoal;
   //robot_actions::ActionClient<WaitGoal, WaitState, WaitState> wait_client("wait_k_messages_action");
   
   ROS_DEBUG("Reading way points");
-  vector<robot_msgs::Point> goal_points;
+  vector<geometry_msgs::Point> goal_points;
   read_poses_from_file(goal_points, "poses.txt");
   if (goal_points.size() < 2) {
     print_usage();
     exit(0);
   }
 
-  robot_msgs::Point target = goal_points[0];
+  geometry_msgs::Point target = goal_points[0];
 
   ROS_DEBUG("Reading way points");
-  typedef vector<robot_msgs::Point>::const_iterator I;
+  typedef vector<geometry_msgs::Point>::const_iterator I;
   for (I i = goal_points.begin() + 1; i != goal_points.end(); i++) {
-    robot_msgs::Pose goal_pose;
+    geometry_msgs::Pose goal_pose;
     goal_pose.position = *i;
     goal_pose.orientation = direction(*i, target);
     PS goal_pose_stamped;

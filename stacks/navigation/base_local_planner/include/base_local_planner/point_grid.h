@@ -39,9 +39,9 @@
 #include <vector>
 #include <list>
 #include <cfloat>
-#include <robot_msgs/Point.h>
-#include <robot_msgs/PointCloud.h>
-#include <robot_msgs/Point32.h>
+#include <geometry_msgs/Point.h>
+#include <sensor_msgs/PointCloud.h>
+#include <geometry_msgs/Point32.h>
 #include <costmap_2d/observation.h>
 #include <base_local_planner/world_model.h>
 
@@ -66,7 +66,7 @@ namespace base_local_planner {
        * @param  obstacle_range The maximum distance for obstacles to be added to the grid
        * @param  min_separation The minimum distance between points in the grid
        */
-      PointGrid(double width, double height, double resolution, robot_msgs::Point origin, 
+      PointGrid(double width, double height, double resolution, geometry_msgs::Point origin, 
           double max_z, double obstacle_range, double min_separation);
 
       /**
@@ -80,7 +80,7 @@ namespace base_local_planner {
        * @param  upper_right The upper right corner of the range search
        * @param points A vector of pointers to lists of the relevant points
        */
-      void getPointsInRange(const robot_msgs::Point& lower_left, const robot_msgs::Point& upper_right, std::vector< std::list<robot_msgs::Point32>* >& points);
+      void getPointsInRange(const geometry_msgs::Point& lower_left, const geometry_msgs::Point& upper_right, std::vector< std::list<geometry_msgs::Point32>* >& points);
 
       /**
        * @brief  Checks if any points in the grid lie inside a convex footprint
@@ -90,7 +90,7 @@ namespace base_local_planner {
        * @param  circumscribed_radius The radius of the circumscribed circle of the robot
        * @return Positive if all the points lie outside the footprint, negative otherwise
        */
-      virtual double footprintCost(const robot_msgs::Point& position, const std::vector<robot_msgs::Point>& footprint,
+      virtual double footprintCost(const geometry_msgs::Point& position, const std::vector<geometry_msgs::Point>& footprint,
           double inscribed_radius, double circumscribed_radius);
 
       /**
@@ -99,7 +99,7 @@ namespace base_local_planner {
        * @param observations The observations from various sensors 
        * @param laser_scans The laser scans used to clear freespace (the point grid only uses the first scan which is assumed to be the base laser)
        */
-      void updateWorld(const std::vector<robot_msgs::Point>& footprint, 
+      void updateWorld(const std::vector<geometry_msgs::Point>& footprint, 
           const std::vector<costmap_2d::Observation>& observations, const std::vector<PlanarLaserScan>& laser_scans);
 
       /**
@@ -109,7 +109,7 @@ namespace base_local_planner {
        * @param  gy The y coordinate of the corresponding grid cell to be set by the function
        * @return True if the conversion was successful, false otherwise
        */
-      inline bool gridCoords(robot_msgs::Point pt, unsigned int& gx, unsigned int& gy) const {
+      inline bool gridCoords(geometry_msgs::Point pt, unsigned int& gx, unsigned int& gy) const {
         if(pt.x < origin_.x || pt.y < origin_.y){
           gx = 0;
           gy = 0;
@@ -134,7 +134,7 @@ namespace base_local_planner {
        * @param  lower_left The lower left bounds of the cell in world coordinates to be filled in
        * @param  upper_right The upper right bounds of the cell in world coordinates to be filled in
        */
-      inline void getCellBounds(unsigned int gx, unsigned int gy, robot_msgs::Point& lower_left, robot_msgs::Point& upper_right) const {
+      inline void getCellBounds(unsigned int gx, unsigned int gy, geometry_msgs::Point& lower_left, geometry_msgs::Point& upper_right) const {
         lower_left.x = gx * resolution_ + origin_.x;
         lower_left.y = gy * resolution_ + origin_.y;
 
@@ -149,7 +149,7 @@ namespace base_local_planner {
        * @param pt2 The second point 
        * @return The squared distance between the two points
        */
-      inline double sq_distance(robot_msgs::Point32& pt1, robot_msgs::Point32& pt2){
+      inline double sq_distance(geometry_msgs::Point32& pt1, geometry_msgs::Point32& pt2){
         return (pt1.x - pt2.x) * (pt1.x - pt2.x) + (pt1.y - pt2.y) * (pt1.y - pt2.y);
       }
 
@@ -160,7 +160,7 @@ namespace base_local_planner {
        * @param  gy The y coordinate of the corresponding grid cell to be set by the function
        * @return True if the conversion was successful, false otherwise
        */
-      inline bool gridCoords(robot_msgs::Point32 pt, unsigned int& gx, unsigned int& gy) const {
+      inline bool gridCoords(geometry_msgs::Point32 pt, unsigned int& gx, unsigned int& gy) const {
         if(pt.x < origin_.x || pt.y < origin_.y){
           gx = 0;
           gy = 0;
@@ -204,7 +204,7 @@ namespace base_local_planner {
        * @param c The point to compute orientation for
        * @return orient(a, b, c) < 0 ----> Right, orient(a, b, c) > 0 ----> Left 
        */
-      inline double orient(const robot_msgs::Point& a, const robot_msgs::Point& b, const robot_msgs::Point32& c){
+      inline double orient(const geometry_msgs::Point& a, const geometry_msgs::Point& b, const geometry_msgs::Point32& c){
         double acx = a.x - c.x;
         double bcx = b.x - c.x;
         double acy = a.y - c.y;
@@ -219,8 +219,8 @@ namespace base_local_planner {
        * @param c The point to compute orientation for
        * @return orient(a, b, c) < 0 ----> Right, orient(a, b, c) > 0 ----> Left 
        */
-      inline double orient(const robot_msgs::Point& a, const robot_msgs::Point& b, 
-          const robot_msgs::Point& c){
+      inline double orient(const geometry_msgs::Point& a, const geometry_msgs::Point& b, 
+          const geometry_msgs::Point& c){
         double acx = a.x - c.x;
         double bcx = b.x - c.x;
         double acy = a.y - c.y;
@@ -235,7 +235,7 @@ namespace base_local_planner {
        * @param c The point to compute orientation for
        * @return orient(a, b, c) < 0 ----> Right, orient(a, b, c) > 0 ----> Left 
        */
-      inline double orient(const robot_msgs::Point32& a, const robot_msgs::Point32& b, const robot_msgs::Point32& c){
+      inline double orient(const geometry_msgs::Point32& a, const geometry_msgs::Point32& b, const geometry_msgs::Point32& c){
         double acx = a.x - c.x;
         double bcx = b.x - c.x;
         double acy = a.y - c.y;
@@ -251,8 +251,8 @@ namespace base_local_planner {
        * @param u2 The second point of the second segment 
        * @return True if the segments intersect, false otherwise
        */
-      inline bool segIntersect(const robot_msgs::Point32& v1, const robot_msgs::Point32& v2, 
-          const robot_msgs::Point32& u1, const robot_msgs::Point32& u2){
+      inline bool segIntersect(const geometry_msgs::Point32& v1, const geometry_msgs::Point32& v2, 
+          const geometry_msgs::Point32& u1, const geometry_msgs::Point32& u2){
         return (orient(v1, v2, u1) * orient(v1, v2, u2) < 0) && (orient(u1, u2, v1) * orient(u1, u2, v2) < 0);
       }
 
@@ -264,9 +264,9 @@ namespace base_local_planner {
        * @param u2 The second point of the second segment 
        * @param result The point to be filled in
        */
-      void intersectionPoint(const robot_msgs::Point& v1, const robot_msgs::Point& v2, 
-          const robot_msgs::Point& u1, const robot_msgs::Point& u2, 
-          robot_msgs::Point& result);
+      void intersectionPoint(const geometry_msgs::Point& v1, const geometry_msgs::Point& v2, 
+          const geometry_msgs::Point& u1, const geometry_msgs::Point& u2, 
+          geometry_msgs::Point& result);
 
       /**
        * @brief  Check if a point is in a polygon
@@ -274,20 +274,20 @@ namespace base_local_planner {
        * @param poly The polygon to check against
        * @return True if the point is in the polygon, false otherwise
        */
-      bool ptInPolygon(const robot_msgs::Point32& pt, const std::vector<robot_msgs::Point>& poly);
+      bool ptInPolygon(const geometry_msgs::Point32& pt, const std::vector<geometry_msgs::Point>& poly);
 
       /**
        * @brief  Insert a point into the point grid
        * @param pt The point to be inserted 
        */
-      void insert(robot_msgs::Point32 pt);
+      void insert(geometry_msgs::Point32 pt);
 
       /**
        * @brief  Find the distance between a point and its nearest neighbor in the grid
        * @param pt The point used for comparison 
        * @return  The distance between the point passed in and its nearest neighbor in the point grid
        */
-      double nearestNeighborDistance(robot_msgs::Point32& pt);
+      double nearestNeighborDistance(geometry_msgs::Point32& pt);
 
       /**
        * @brief  Find the distance between a point and its nearest neighbor in a cell
@@ -296,13 +296,13 @@ namespace base_local_planner {
        * @param gy The y coordinate of the cell
        * @return  The distance between the point passed in and its nearest neighbor in the cell
        */
-      double getNearestInCell(robot_msgs::Point32& pt, unsigned int gx, unsigned int gy); 
+      double getNearestInCell(geometry_msgs::Point32& pt, unsigned int gx, unsigned int gy); 
 
       /**
        * @brief  Removes points from the grid that lie within the polygon
        * @param poly A specification of the polygon to clear from the grid 
        */
-      void removePointsInPolygon(const std::vector<robot_msgs::Point> poly);
+      void removePointsInPolygon(const std::vector<geometry_msgs::Point> poly);
 
       /**
        * @brief  Removes points from the grid that lie within a laser scan
@@ -316,24 +316,24 @@ namespace base_local_planner {
        * @param  laser_scan The specification of the scan to check against
        * @return True if the point is contained within the scan, false otherwise
        */
-      bool ptInScan(const robot_msgs::Point32& pt, const PlanarLaserScan& laser_scan);
+      bool ptInScan(const geometry_msgs::Point32& pt, const PlanarLaserScan& laser_scan);
 
       /**
        * @brief  Get the points in the point grid
        * @param  cloud The point cloud to insert the points into
        */
-      void getPoints(robot_msgs::PointCloud& cloud);
+      void getPoints(sensor_msgs::PointCloud& cloud);
 
     private:
       double resolution_; ///< @brief The resolution of the grid in meters/cell
-      robot_msgs::Point origin_; ///< @brief The origin point of the grid
+      geometry_msgs::Point origin_; ///< @brief The origin point of the grid
       unsigned int width_; ///< @brief The width of the grid in cells
       unsigned int height_; ///< @brief The height of the grid in cells
-      std::vector< std::list<robot_msgs::Point32> > cells_; ///< @brief Storage for the cells in the grid
+      std::vector< std::list<geometry_msgs::Point32> > cells_; ///< @brief Storage for the cells in the grid
       double max_z_;  ///< @brief The height cutoff for adding points as obstacles
       double sq_obstacle_range_;  ///< @brief The square distance at which we no longer add obstacles to the grid
       double sq_min_separation_;  ///< @brief The minimum square distance required between points in the grid
-      std::vector< std::list<robot_msgs::Point32>* > points_;  ///< @brief The lists of points returned by a range search, made a member to save on memory allocation
+      std::vector< std::list<geometry_msgs::Point32>* > points_;  ///< @brief The lists of points returned by a range search, made a member to save on memory allocation
   };
 };
 #endif

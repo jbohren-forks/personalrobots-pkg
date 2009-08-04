@@ -33,7 +33,7 @@
 #ifndef _CLOUD_KDTREE_BUNNYMODEL_H
 #define _CLOUD_KDTREE_BUNNYMODEL_H_
 
-#include "robot_msgs/PointCloud.h"
+#include "sensor_msgs/PointCloud.h"
 
 namespace cloud_kdtree_tests
 {
@@ -43,7 +43,7 @@ namespace cloud_kdtree_tests
     * \param points the cloud data
     */
   void
-    getBunnyModel (robot_msgs::PointCloud &points)
+    getBunnyModel (sensor_msgs::PointCloud &points)
   {
     points.pts.resize (397);
 

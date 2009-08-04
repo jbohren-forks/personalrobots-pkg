@@ -41,8 +41,8 @@
 #include <costmap_2d/costmap_2d.h>
 #include <nav_robot_actions/base_global_planner.h>
 
-#include <robot_msgs/PoseStamped.h>
-#include <robot_msgs/Point.h>
+#include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/Point.h>
 
 #include <angles/angles.h>
 
@@ -57,8 +57,8 @@ namespace carrot_planner{
     public:
     CarrotPlanner(std::string name, costmap_2d::Costmap2DROS& costmap_ros);
 
-    bool makePlan(const robot_msgs::PoseStamped& start, 
-                  const robot_msgs::PoseStamped& goal, std::vector<robot_msgs::PoseStamped>& plan);
+    bool makePlan(const geometry_msgs::PoseStamped& start, 
+                  const geometry_msgs::PoseStamped& goal, std::vector<geometry_msgs::PoseStamped>& plan);
 
     private:
     costmap_2d::Costmap2DROS& costmap_ros_;
@@ -78,7 +78,7 @@ namespace carrot_planner{
        */
       double footprintCost(double x_i, double y_i, double theta_i);
 
-      std::vector<robot_msgs::Point> footprint_spec_; ///< @brief The footprint specification of the robot
+      std::vector<geometry_msgs::Point> footprint_spec_; ///< @brief The footprint specification of the robot
   };
 };  
 #endif

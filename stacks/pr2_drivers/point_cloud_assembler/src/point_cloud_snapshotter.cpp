@@ -38,10 +38,8 @@
 #include "point_cloud_assembler/BuildCloud.h"
 
 // Messages
-#include "robot_msgs/PointCloud.h"
+#include "sensor_msgs/PointCloud.h"
 #include "pr2_msgs/LaserScannerSignal.h"
-
-using namespace robot_msgs ;
 
 /***
  * This uses the point_cloud_assembler's build_cloud service call to grab all the scans/clouds between two tilt-laser shutters
@@ -76,7 +74,7 @@ public:
   {
     prev_signal_.header.stamp.fromNSec(0) ;
 
-    ros::Node::instance()->advertise<PointCloud> ("full_cloud", 1) ;
+    ros::Node::instance()->advertise<sensor_msgs::PointCloud> ("full_cloud", 1) ;
     ros::Node::instance()->subscribe("laser_scanner_signal", cur_signal_, &PointCloudSnapshotter::scannerSignalCallback, this, 40) ;
 
     ros::Node::instance()->param("~num_skips", num_skips_, 0) ;

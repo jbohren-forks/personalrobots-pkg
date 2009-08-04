@@ -86,7 +86,7 @@ namespace pr2_ik {
     pr2_ik::PoseCmd pose_msg_in = *pose_msg;
     // convert message to transform
     Stamped<Pose> pose_stamped;
-    robot_msgs::PoseStamped pose_stamped_msg;
+    geometry_msgs::PoseStamped pose_stamped_msg;
     pose_stamped_msg.pose = pose_msg_in.pose;
     pose_stamped_msg.header = pose_msg_in.header;
 

@@ -38,7 +38,7 @@
 #include <boost/shared_ptr.hpp>
 #include <vector>
 
-namespace robot_msgs {
+namespace geometry_msgs {
   class Pose;
 }
 namespace manipulation_msgs {
@@ -60,13 +60,13 @@ namespace mpglue {
     waypoint_s(double x, double y, double theta, double dr, double dtheta);
     waypoint_s(double x, double y, double theta);
     waypoint_s(waypoint_s const & orig);
-    waypoint_s(robot_msgs::Pose const & pose, double dr, double dtheta);
-    explicit waypoint_s(robot_msgs::Pose const & pose);
+    waypoint_s(geometry_msgs::Pose const & pose, double dr, double dtheta);
+    explicit waypoint_s(geometry_msgs::Pose const & pose);
     
     virtual ~waypoint_s() {}
     
-    void toPose(robot_msgs::Pose & pose) const;
-    waypoint_s & operator = (robot_msgs::Pose const & pose);
+    void toPose(geometry_msgs::Pose & pose) const;
+    waypoint_s & operator = (geometry_msgs::Pose const & pose);
     bool ignoreTheta() const;
     
     double x, y, theta, dr, dtheta;
