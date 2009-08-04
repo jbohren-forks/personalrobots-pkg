@@ -1,1 +1,0 @@
-robot_msgs/PoseStamped final_pose
