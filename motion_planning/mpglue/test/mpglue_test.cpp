@@ -36,7 +36,7 @@
 #include <costmap_2d/costmap_2d.h>
 #include <mpglue/costmapper.h>
 #include <mpglue/plan.h>
-#include <robot_msgs/Pose.h>
+#include <geometry_msgs/Pose.h>
 #include <sfl/util/numeric.hpp>
 
 using namespace std;
@@ -338,10 +338,10 @@ TEST (plan, waypoint_conversion)
     for (double yy(89); yy <= 102; yy += 1.1)
       for (double theta(-M_PI / 2); theta <= 2 * M_PI; theta += 0.1) {
 	mpglue::waypoint_s const wp0(xx, yy, theta);
-	robot_msgs::Pose pp0;
+	geometry_msgs::Pose pp0;
 	wp0.toPose(pp0);
 	mpglue::waypoint_s const wp1(pp0);
-	// 	robot_msgs::Pose pp1;
+	// 	geometry_msgs::Pose pp1;
 	// 	wp1.toPose(pp1);
 	double const dx(wp1.x - wp0.x);
 	double const dy(wp1.y - wp0.y);

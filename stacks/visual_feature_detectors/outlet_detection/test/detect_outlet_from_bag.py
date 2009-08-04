@@ -50,7 +50,7 @@ import math
 
 # imports the handle detector service
 from outlet_detection.srv import *
-from robot_msgs.msg import PointStamped, PoseStamped, Quaternion
+from geometry_msgs.msg import PointStamped, PoseStamped, Quaternion
 
 class TestOutletDetector(unittest.TestCase):
     def setUp(self):
