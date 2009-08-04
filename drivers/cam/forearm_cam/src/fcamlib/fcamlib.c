@@ -14,6 +14,7 @@
 
 /// Amount of time in microseconds that the host should wait for packet replies
 #define STD_REPLY_TIMEOUT SEC_TO_USEC(0.2)
+#define STOP_REPLY_TIMEOUT SEC_TO_USEC(0.001)
 
 #define VMODEDEF(width, height, fps, hblank, vblank) { #width"x"#height"x"#fps, width, height, fps, hblank, vblank }  
 const struct MT9VMode MT9VModes[MT9V_NUM_MODES] = {
@@ -373,7 +374,7 @@ int fcamConfigure( IpCamList *camInfo, const char *ipAddress, unsigned wait_us) 
  * @param mac		Contains the MAC address of the host that will receive the video
  * @param ipAddress An ASCII string in dotted quad form containing the IP address of the host
  * 						that will receive the video (e.g., "192.168.0.5")
- * @param port		The port number that the video should be sent to. Host byte order.
+ * @param port		The port number that the video should be sent to. Host byte order. 
  *
  * @return 	Returns -1 with errno set for system call failures
  * 			Returns 0 for success
@@ -404,7 +405,7 @@ int fcamStartVid( const IpCamList *camInfo, const uint8_t mac[6], const char *ip
 	if( s == -1 ) {
 		return -1;
 	}
-
+  
 	if(wgSendUDP(s, &camInfo->ip, &vPkt, sizeof(vPkt)) == -1) {
     goto err_out;
 	}
@@ -467,7 +468,7 @@ int fcamStopVid( const IpCamList *camInfo ) {
 	}
 
 	uint32_t type, code;
-	if(fcamStatusWait( s, STD_REPLY_TIMEOUT, &type, &code ) == -1) {
+	if(fcamStatusWait( s, STOP_REPLY_TIMEOUT, &type, &code ) == -1) {
     goto err_out;
 	}
 
@@ -1315,27 +1316,10 @@ int fcamImagerSetRes( const IpCamList *camInfo, uint16_t horizontal, uint16_t ve
 	}
 }
 
-
 #define MAX_HORIZ_RESOLUTION 752
 #define LINE_NUMBER_MASK 0x3FF
 
-
-int fcamVidReceive( const char *ifName, uint16_t port, size_t height, size_t width, FrameHandler frameHandler, void *userData ) {
-	struct in_addr host_addr;
-	wgIpGetLocalAddr( ifName, &host_addr );
-
-	if( frameHandler == NULL ) {
-		debug("Invalid frame handler, aborting.\n");
-		return 1;
-	}
-
-	debug("fcamVidReceive ready to receive on %s (%s:%u)\n", ifName, inet_ntoa(host_addr), port);
-
-	int s = wgSocketCreate( &host_addr, port );
-	if( s == -1 ) {
-		return -1;
-	}
-
+int fcamVidReceiveSocket( int s, size_t height, size_t width, FrameHandler frameHandler, void *userData ) {
 	/*
 	 * The default receive buffer size on a 32-bit Linux machine is only 128kB.
 	 * At a burst data rate of ~ 82.6Mbit/s in the 640x480 @30fps, this buffer will fill in ~12.6ms.
@@ -1582,3 +1566,79 @@ int fcamVidReceive( const char *ifName, uint16_t port, size_t height, size_t wid
 	close(s);
 	return 0;
 }
+
+int fcamVidReceive( const char *ifName, uint16_t port, size_t height, size_t width, FrameHandler frameHandler, void *userData ) {
+	struct in_addr host_addr;
+	wgIpGetLocalAddr( ifName, &host_addr );
+
+	if( frameHandler == NULL ) {
+		debug("Invalid frame handler, aborting.\n");
+		return 1;
+	}
+
+	debug("fcamVidReceive ready to receive on %s (%s:%u)\n", ifName, inet_ntoa(host_addr), port);
+
+	int s = wgSocketCreate( &host_addr, port );
+	if( s == -1 ) {
+		return -1;
+	}
+
+  fcamVidReceiveSocket( s, height, width, frameHandler, userData);
+}
+
+int fcamVidReceiveAuto( IpCamList *camera, size_t height, size_t width, FrameHandler frameHandler, void *userData ) {
+  struct sockaddr localMac;
+  struct in_addr localIp;
+  struct sockaddr localPort;
+  socklen_t localPortLen;
+  int s;
+  int retval;
+  int port;
+
+  if ( wgIpGetLocalAddr(camera->ifName, &localIp) != 0) {
+    fprintf(stderr, "Unable to get local IP address for interface %s", camera->ifName);
+    return -1;
+  }
+    
+  if ( wgEthGetLocalMac(camera->ifName, &localMac) != 0 ) {
+    fprintf(stderr, "Unable to get local MAC address for interface %s", camera->ifName);
+    return -1;
+  }
+      
+  if( frameHandler == NULL ) {
+		debug("Invalid frame handler, aborting.\n");
+		return 1;
+	}
+
+	debug("fcamVidReceive ready to receive on %s (%s:%u)\n", ifName, inet_ntoa(localIp), port);
+
+  s = wgSocketCreate( &localIp, 0 );
+	if( s == -1 ) {
+		return -1;
+	}
+
+  localPortLen = sizeof(localPort);
+  if (getsockname(s, &localPort, &localPortLen) == -1)
+  {
+    fprintf(stderr, "Unable to get local port for socket.");
+    close(s);
+    return -1;
+  }
+
+  port = ntohs(((struct sockaddr_in *)&localPort)->sin_port);
+  fprintf(stderr, "Streaming to port %i.\n", port);
+
+  if ( fcamStartVid( camera, (uint8_t *)&(localMac.sa_data[0]), inet_ntoa(localIp), port) != 0 ) 
+  {
+    debug("Could not start camera streaming.");
+    close (s);
+    return -1;
+  }
+
+  retval = fcamVidReceiveSocket( s, height, width, frameHandler, userData);
+      
+  close(s);
+  fcamStopVid(camera);
+  return retval;
+}
+

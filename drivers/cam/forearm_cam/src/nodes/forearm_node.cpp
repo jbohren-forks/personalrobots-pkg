@@ -574,13 +574,6 @@ private:
   void imageThread(int port)
   {
     // Start video
-    if ( fcamStartVid( camera_, (uint8_t *)&(localMac_.sa_data[0]), inet_ntoa(localIp_), config_.port) != 0 ) 
-    {
-      ROS_FATAL("Could not start camera streaming.");
-      boost::mutex::scoped_lock lock(mutex_);
-      state_ = OPENED;
-      return;
-    }
     if (!trig_controller_cmd_.empty())
     {
       trig_req_.running = 1;
@@ -592,15 +585,24 @@ private:
         {
           ROS_ERROR("Unable to set trigger controller.");
           //node_handle_.shutdown();
-          goto stop_video;
+          goto end_image_thread;
         }
       }
     }
     frameTimeFilter_.reset_filter();
     ROS_INFO("Camera streaming.");
   
+/*    if ( fcamStartVid( camera_, (uint8_t *)&(localMac_.sa_data[0]), inet_ntoa(localIp_), port) != 0 ) 
+    {
+      ROS_FATAL("Could not start camera streaming.");
+      boost::mutex::scoped_lock lock(mutex_);
+      state_ = OPENED;
+      return;
+    }
     // Receive video
-    fcamVidReceive(camera_->ifName, port, height_, width_, &ForearmCamDriver::frameHandler, this);
+    fcamVidReceive(camera_->ifName, port, height_, width_, &ForearmCamDriver::frameHandler, this);*/
+    
+    fcamVidReceiveAuto(camera_, height_, width_, &ForearmCamDriver::frameHandler, this);
     
     // Stop Triggering
     if (!trig_controller_cmd_.empty())
@@ -616,7 +618,7 @@ private:
         ROS_DEBUG("Was not able to stop triggering.");
       }
     }
-stop_video:
+/*stop_video:
     // Stop video
     boost::mutex::scoped_lock lock(mutex_);
     if (state_ == RUNNING)
@@ -629,8 +631,10 @@ stop_video:
     }
     else // Exited expectedly.
       if ( fcamStopVid(camera_) != 0)
-        ROS_ERROR("Video Stop error");
+        ROS_ERROR("Video Stop error");*/
     
+end_image_thread:
+    state_ = OPENED; // FIXME This should be done with a held lock.
     ROS_DEBUG("Image thread exiting.");
   }
 
