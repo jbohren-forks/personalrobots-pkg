@@ -39,7 +39,6 @@
 #include <ros/ros.h>
 #include <ros/console.h>
 #include <costmap_2d/costmap_2d.h>
-#include <costmap_2d/rate.h>
 #include <visualization_msgs/Polyline.h>
 #include <boost/thread.hpp>
 

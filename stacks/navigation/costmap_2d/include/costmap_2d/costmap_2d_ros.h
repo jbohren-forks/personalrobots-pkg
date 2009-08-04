@@ -65,9 +65,6 @@
 #include <boost/thread.hpp>
 #include <boost/shared_ptr.hpp>
 
-#include <costmap_2d/rate.h>
-
-
 namespace costmap_2d {
 
   /**
@@ -262,7 +259,7 @@ namespace costmap_2d {
         stop_updates_ = false;
 
         //block until the costmap is re-initialized.. meaning one update cycle has run
-        costmap_2d::Rate r(100.0);
+        ros::Rate r(100.0);
         while(!initialized_)
           r.sleep();
       }

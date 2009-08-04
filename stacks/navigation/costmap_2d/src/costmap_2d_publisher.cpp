@@ -58,7 +58,7 @@ namespace costmap_2d {
       return;
 
     active_ = true;
-    costmap_2d::Rate r(frequency);
+    ros::Rate r(frequency);
     while(ros_node_.ok()){
       //check if we have new data to publish
       if(new_data_){
