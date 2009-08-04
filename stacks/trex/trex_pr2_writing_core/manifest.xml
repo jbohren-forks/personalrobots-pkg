@@ -1,10 +1,13 @@
 <package>
-  <description>A ROS node to encapsulate the TeleoReactive Executive for task level planning and control.</description>
-  <author>TREX User</author>
+  <description>
+    This is the TREX executive for performing writing on whiteboards.
+  </description>
+  <author>Melonee Wise</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <depend package="trex_pr2" />
   <depend package="trex_ros" />
+  <depend package="trex" />
 
   <export>
     <nddl iflags="-I${prefix}/nddl -I${prefix}"/>
