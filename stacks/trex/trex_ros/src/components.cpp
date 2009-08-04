@@ -35,15 +35,6 @@ namespace TREX{
     return !found_non_singleton;
   }
 
-
-  /**
-   * @brief Handle cleanup on process termination signals.
-   */
-  void signalHandler(int signalNo){
-    std::cout << "Handling signal..." << signalNo << std::endl;
-    exit(0);
-  }
-
   ParamEqConstraint::ParamEqConstraint(const LabelStr& name,
 				       const LabelStr& propagatorName,
 				       const ConstraintEngineId& constraintEngine,

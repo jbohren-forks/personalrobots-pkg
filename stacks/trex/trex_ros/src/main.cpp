@@ -114,7 +114,7 @@ Publishes to (name/type):
 #include <stdlib.h>
 #include <unistd.h>
 
-TREX::ExecutiveId executive;
+TREX::ExecutiveId g_executive;
 
 namespace trex_ros {
 
@@ -201,10 +201,10 @@ namespace trex_ros {
 	    std::cout << "Doing a rewind." << std::endl;
 
 	    // Reset the executive
-	    executive->reset();
+	    g_executive->reset();
 
 	    // Re-initialize the executive with the initial arguments
-	    executive = TREX::Executive::request(g_playback, g_hyper);
+	    g_executive = TREX::Executive::request(g_playback, g_hyper);
 	  } else if (currentTick == consoleStopTick) {
 	    cmdValid = false;
 	    std::cout << "Already at that tick." << std::endl;
@@ -262,7 +262,7 @@ namespace trex_ros {
       }
 
       // Step agent forward
-      if (!executive->step()) {
+      if (!g_executive->step()) {
 	// Mission complete
 	std::cout << "Agent has completed its mission." << std::endl;
 	printConsolePopup();
@@ -271,13 +271,15 @@ namespace trex_ros {
   }
 }
 
+
+
 /**
  * @brief Handle cleanup on exit
  */
 void cleanup(){
-  if(executive.isId()){
-    delete (TREX::Executive*) executive;
-    executive = TREX::ExecutiveId::noId();
+  if(g_executive.isId()){
+    delete (TREX::Executive*) g_executive;
+    g_executive = TREX::ExecutiveId::noId();
   }
   exit(0);
 }
@@ -294,17 +296,80 @@ TEST(trex, validateOutput){
   ASSERT_EQ(success, true);
 }
 
+bool g_signal_wait = true, g_executive_created = false;
+
+void signalHandler() {
+  sigset_t signal_set;
+  ROS_INFO("Starting signal handler");
+  while(g_signal_wait) {
+    // Wait for any signals
+    sigfillset(&signal_set);
+    
+    struct timespec ts = {0, 100000000};
+    int sig = sigtimedwait(&signal_set, NULL, &ts);
+
+    if (sig != -1) {
+      ROS_INFO("Recived signal %d", sig);
+    }
+    
+    switch(sig) {
+    case SIGKILL:
+    case SIGTERM:
+    case SIGQUIT:
+    case SIGINT: {
+      if (!g_executive_created) {
+	ROS_INFO("Agent is not created yet - exiting.");
+	ros::shutdown();
+	if(g_executive.isId()){
+	  delete (TREX::Executive*) g_executive;
+	  g_executive = TREX::ExecutiveId::noId();
+	}
+	exit(0);
+      } else if (!TREX::Agent::terminated()) {
+	ROS_INFO("Attempting to terminate the agent.");
+	TREX::Agent::terminate();
+      } else {
+	ROS_INFO("We are already exiting - doing nothing with signal");
+      }
+
+      return;
+    }
+      break;
+    default:
+      break;
+    }
+  }
+  ROS_ERROR("Signal handler exited");
+}
+
+void stopSignalHandlers() {
+  // block kill signals on all threads, since this also disables signals in threads
+  // created by this one (the main thread)
+  sigset_t sig_set;
+  sigemptyset(&sig_set);
+  sigaddset(&sig_set, SIGKILL);
+  sigaddset(&sig_set, SIGTERM);
+  sigaddset(&sig_set, SIGQUIT);
+  sigaddset(&sig_set, SIGINT);
+  pthread_sigmask(SIG_BLOCK, &sig_set, NULL);
+}
+
 int trexMain(int argc, char **argv)
 {
   using namespace trex_ros;
 
-  signal(SIGINT,  &TREX::signalHandler);
-  signal(SIGTERM, &TREX::signalHandler);
-  signal(SIGQUIT, &TREX::signalHandler);
-  signal(SIGKILL, &TREX::signalHandler);
 
-  ros::init(argc, argv, "trex");
+  stopSignalHandlers();
+
+  //Start the signal handler thread.
+  boost::thread signal_handler_thread = boost::thread(signalHandler);
+
+  ros::init(argc, argv, "trex", ros::init_options::NoSigintHandler);
   ros::NodeHandle node_handle;
+
+
+
+
 
   // Display help if requested
   if(trex_ros::isArg(argc, argv, "--help")){
@@ -342,15 +407,18 @@ int trexMain(int argc, char **argv)
 
   try{
     // Get executive singleton
-    executive = TREX::Executive::request(g_playback, g_hyper);
+    g_executive = TREX::Executive::request(g_playback, g_hyper);
+
+    g_executive_created = true;
+    ROS_INFO("Finished creating executive");
 
     if(g_console) {
       // Run with interactive stepping
-      executive->interactiveInit();
+      g_executive->interactiveInit();
       interactiveRun();
     } else {
       // Run in nonstop mode
-      executive->run();
+      g_executive->run();
     }
   }
   catch(char* e){
@@ -370,8 +438,15 @@ int trexMain(int argc, char **argv)
     ROS_ERROR("You can also grep for trex:error and trex:warn in logs/latest directory");
   }
 
-  delete (TREX::Executive*) executive;
-  executive = TREX::ExecutiveId::noId();
+  delete (TREX::Executive*) g_executive;
+  g_executive = TREX::ExecutiveId::noId();
+
+  ros::shutdown();
+
+  g_signal_wait = false;
+
+
+  signal_handler_thread.join();
 
   // Parse command line arguments to see if we must apply test case validation
   if(trex_ros::isArg(argc, argv, "--gtest")){

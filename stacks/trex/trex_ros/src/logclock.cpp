@@ -45,10 +45,6 @@ namespace TREX {
   }
 
   void* LogClock::threadRunner(void* clk){
-    signal(SIGINT,  &TREX::signalHandler);
-    signal(SIGTERM, &TREX::signalHandler);
-    signal(SIGQUIT, &TREX::signalHandler);
-    signal(SIGKILL, &TREX::signalHandler);
 
     LogClock* This = (LogClock*) clk;
 

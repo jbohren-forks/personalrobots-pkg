@@ -35,6 +35,11 @@ namespace TREX{
      */
     static void release();
 
+    /**
+     * Returns true if the executive exists.
+     */
+    static bool isExecutiveActive();
+
     Executive(bool playback, bool hyper);
 
     ~Executive();
