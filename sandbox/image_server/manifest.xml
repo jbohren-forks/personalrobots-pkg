@@ -1,0 +1,21 @@
+<package>
+  <description brief="image_server">
+    A simple server to store and retrieve specific images.
+  </description>
+  <author>Alex Sorokin</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/image_server</url>
+
+  <depend package="roscpp" />
+  <depend package="std_msgs" />
+  <depend package="sensor_msgs" />
+  <depend package="lifelong_mapping" />
+
+  <export>
+    <cpp cflags="-I${prefix}/srv/cpp -I${prefix}/include" />
+  </export>
+
+</package>
+
+

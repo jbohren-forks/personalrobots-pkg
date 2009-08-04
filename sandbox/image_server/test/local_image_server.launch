@@ -1,0 +1,5 @@
+<launch>
+  <node pkg="image_server" type="image_server" name="image_server" >
+    <param name="db_path" value="/home/sorokin/ros/data/images2" />
+  </node>
+</launch>
