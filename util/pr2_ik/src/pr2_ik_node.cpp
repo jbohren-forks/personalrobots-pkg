@@ -51,6 +51,7 @@ namespace pr2_ik {
     node_handle_.param<bool>("~free_angle_constraint",free_angle_constraint_,false);
     node_handle_.param<int>("~dimension",dimension_,7);
     node_handle_.param<std::string>("~ik_service_name",ik_service_name_,"~ik_service");
+    node_handle_.param<std::string>("~fk_service_name",fk_service_name_,"~fk_service");
     node_handle_.param<std::string>("~ik_query_name",ik_query_name_,"~ik_query");
     root_name_ = "/" + root_name_;
     
@@ -63,6 +64,7 @@ namespace pr2_ik {
       pr2_ik_solver_.pr2_ik_->max_angles_[pr2_ik_solver_.pr2_ik_->free_angle_] = free_angle_constraint_max;
     }
     this->init();
+    fk_service_ = node_handle_.advertiseService(fk_service_name_,&PR2IKNode::fkService,this);
     ik_service_ = node_handle_.advertiseService(ik_service_name_,&PR2IKNode::ikService,this);
     ik_query_ = node_handle_.advertiseService(ik_query_name_,&PR2IKNode::ikQuery,this);
   }
@@ -73,8 +75,15 @@ namespace pr2_ik {
 
   bool PR2IKNode::init()
   {
+    initFK();
     ROS_DEBUG("Initialized IK controller");
     return true;
+  }
+
+  void PR2IKNode::initFK()
+  {
+    pr2_ik_solver_.chain_.toKDL(kdl_chain_);
+    jnt_to_pose_solver_.reset(new KDL::ChainFkSolverPos_recursive(kdl_chain_));
   }
 
   //  void PR2IKNode::command(const tf::MessageNotifier<pr2_ik::PoseCmd>::MessagePtr& pose_msg)
@@ -105,6 +114,7 @@ namespace pr2_ik {
 
   bool PR2IKNode::ikService(manipulation_srvs::IKService::Request &request, manipulation_srvs::IKService::Response &response)
   {
+    ROS_DEBUG("PR2IKNode:: received service request");
     tf::Stamped<tf::Pose> pose_stamped;
     if(!checkJointNames(request))
       {
@@ -177,10 +187,38 @@ namespace pr2_ik {
     return true;
   }
 
+  bool PR2IKNode::fkService(pr2_ik::FKService::Request &request, pr2_ik::FKService::Response &response)
+  {
+    KDL::Frame p_out;
+    KDL::JntArray jnt_pos_in;
+    robot_msgs::PoseStamped pose;
+    tf::Stamped<tf::Pose> tf_pose;
+
+    jnt_pos_in.resize(request.angles.size());
+    for(unsigned int i=0; i < request.angles.size(); i++)
+    {
+      jnt_pos_in(i) = request.angles[i];
+    }
+    if(jnt_to_pose_solver_->JntToCart(jnt_pos_in,p_out) >=0)
+    {
+      tf_pose.frame_id_ = root_name_;
+      tf_pose.stamp_ = ros::Time();
+      tf::PoseKDLToTF(p_out,tf_pose);
+      tf_.transformPose(request.header.frame_id,tf_pose,tf_pose);
+      tf::poseStampedTFToMsg(tf_pose,pose);
+      response.pose = pose;
+      return true;
+    }
+    else
+    {
+      return false;
+    }
+  }
 } // namespace
 
-int main(int argc, char** argv){
-    ros::init(argc, argv, "pr2_ik_node");
+int main(int argc, char** argv)
+{
+  ros::init(argc, argv, "pr2_ik_node");
   pr2_ik::PR2IKNode pr2_ik_node;
   ros::spin();
   return(0);
