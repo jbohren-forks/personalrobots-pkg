@@ -28,9 +28,9 @@
 For detailed documentation,
 consult the <a href="http://playerstage.sourceforge.net/doc/stage-cvs">Stage manual</a>.
 
-This node finds the first Stage model of type @b laser, and the first model
-of type @b position, and maps these models to the ROS topics given below.
-If a laser and a position model are not found, stageros exits.
+This node finds the Stage models of type @b laser and @b position, and maps
+these models to the ROS topics given below.  If a laser and a position
+model are not found, stageros exits.
 
 @todo Define a more general method for mapping Stage models onto ROS topics
 / services.  Something like the Player/Stage model, in which a Player .cfg
@@ -74,7 +74,8 @@ Publishes to (name / type):
 
 @section parameters ROS parameters
 
-- None
+- @b ~base_watchdog_timeout (default: 0.2) : time (in seconds) after
+  receiving the last command on @b cmd_vel before stopping a position model
 
 
  **/
@@ -251,14 +252,14 @@ StageNode::SubscribeModels()
       this->lasermodels[r]->Subscribe();
     else
     {
-      puts("no laser");
+      ROS_ERROR("no laser");
       return(-1);
     }
     if(this->positionmodels[r])
       this->positionmodels[r]->Subscribe();
     else
     {
-      puts("no position");
+      ROS_ERROR("no position");
       return(-1);
     }
     advertise<sensor_msgs::LaserScan>(mapName(BASE_SCAN,r), 10);
