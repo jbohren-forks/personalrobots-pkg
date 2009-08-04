@@ -29,11 +29,9 @@ gensrv()
 #rospack_add_executable(example examples/example.cpp)
 #target_link_libraries(example ${PROJECT_NAME})
 
-rospack_add_library(${PROJECT_NAME} src/random_field_creator.cpp)
-
 rospack_add_executable (m3n_prediction_node src/m3n_prediction_node.cpp)
-target_link_libraries (m3n_prediction_node ${PROJECT_NAME})
+target_link_libraries (m3n_prediction_node functional_m3n)
 
 rospack_add_executable (m3n_learning_node src/m3n_learning_node.cpp)
-target_link_libraries (m3n_learning_node ${PROJECT_NAME} )
+target_link_libraries (m3n_learning_node functional_m3n)
 rospack_link_boost(m3n_learning_node filesystem)

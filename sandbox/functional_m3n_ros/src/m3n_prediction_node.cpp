@@ -46,7 +46,7 @@ using namespace m3n;
 PredictionNode::PredictionNode()
 {
 
-  rf_creator_ = boost::shared_ptr<RandomFieldCreator>(new  RandomFieldCreator());
+  rf_creator_ = boost::shared_ptr<PtCloudRFCreator>(new  PtCloudRFCreator());
 
   cloud_sub_ = n_.subscribe<PointCloud>("cloud",100,boost::bind(&PredictionNode::cloudCallback, this, _1));
 

@@ -62,7 +62,7 @@ using namespace m3n;
 
 LearningNode::LearningNode()
 {
-  rf_creator_ = boost::shared_ptr<RandomFieldCreator>(new  RandomFieldCreator());
+  rf_creator_ = boost::shared_ptr<PtCloudRFCreator>(new  PtCloudRFCreator());
 
   cloud_sub_ = n_.subscribe<PointCloud>("training_cloud",100,boost::bind(&LearningNode::cloudCallback, this, _1));
 

@@ -53,7 +53,7 @@
 
 #include <functional_m3n/m3n_model.h>
 
-#include <functional_m3n_ros/random_field_creator.h>
+#include <functional_m3n/example/pt_cloud_rf_creator.h>
 
 #include <functional_m3n_ros/Learn.h>
 
@@ -74,7 +74,7 @@ public:
   bool learn(functional_m3n_ros::Learn::Request  &req,
              functional_m3n_ros::Learn::Response &res );
 
-  boost::shared_ptr<RandomFieldCreator> rf_creator_;
+  boost::shared_ptr<PtCloudRFCreator> rf_creator_;
 
   M3NModel m3n_model2;
 

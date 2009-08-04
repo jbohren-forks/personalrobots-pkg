@@ -51,7 +51,7 @@
 #include <point_cloud_mapping/geometry/point.h>
 #include <point_cloud_mapping/geometry/areas.h>
 
-#include <functional_m3n_ros/random_field_creator.h>
+#include <functional_m3n/example/pt_cloud_rf_creator.h>
 
 #include <functional_m3n/m3n_model.h>
 
@@ -69,7 +69,7 @@ public:
   void cloudCallback(const robot_msgs::PointCloudConstPtr& the_cloud);
 
 
-  boost::shared_ptr<RandomFieldCreator> rf_creator_;
+  boost::shared_ptr<PtCloudRFCreator> rf_creator_;
   bool use_colors_;
 
   unsigned int nbr_clique_sets;
