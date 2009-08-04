@@ -42,8 +42,8 @@
 
 #include "sensor_msgs/Image.h"
 #include "sensor_msgs/CameraInfo.h"
-#include "kinematic_calibration/ImagePoint.h"
 #include "geometry_msgs/Pose.h"
+#include "calibration_msgs/ImagePoint.h"
 
 namespace led_detection
 {
@@ -67,7 +67,7 @@ public:
    */
   bool findLed(sensor_msgs::Image& image, const sensor_msgs::CameraInfo& info,
                const geometry_msgs::Pose* led_pose,
-               kinematic_calibration::ImagePoint& led_pix, sensor_msgs::Image& debug_image) ;
+               calibration_msgs::ImagePoint& led_pix, sensor_msgs::Image& debug_image) ;
 
   /**
    * \brief Does the 'heavy lifting' and openCV calls for finding the LED in an image.
@@ -82,7 +82,7 @@ public:
    */
   bool findLed(const IplImage* image, const sensor_msgs::CameraInfo& info,
                const geometry_msgs::Pose* led_pose,
-               kinematic_calibration::ImagePoint& led_pix, IplImage* debug_image) ;
+               calibration_msgs::ImagePoint& led_pix, IplImage* debug_image) ;
 
 private:
 

@@ -1,0 +1,14 @@
+<package>
+  <description>Message filters that are especially useful for performing robot calibration tasks</description>
+  <author>Vijay Pradeep (vpradeep@willowgarage.com)</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <depend package="roscpp" />
+  <depend package="message_filters" />
+  <depend package="mechanism_msgs" />
+  
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lcalibration_message_filters" />
+  </export>
+  <url>http://pr.willowgarage.com/wiki/message_filters</url>
+</package>

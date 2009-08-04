@@ -13,5 +13,5 @@
   <depend package="robot_msgs" />
   <depend package="topic_synchronizer" />
   <depend package="kinematic_calibration" />
-  
+  <depend package="calibration_msgs" />  
 </package>

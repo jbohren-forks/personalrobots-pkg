@@ -38,7 +38,7 @@
 
 #include "geometry_msgs/PoseStamped.h"
 #include "geometry_msgs/PointStamped.h"
-#include "kinematic_calibration/ImagePointStamped.h"
+#include "calibration_msgs/ImagePointStamped.h"
 
 using namespace led_detection ;
 
@@ -75,7 +75,7 @@ LedDetectionNode::LedDetectionNode(ros::Node* node) : node_(node),
   sync_.subscribe("image",    image_msg_,    1) ;
   sync_.subscribe("cam_info", cam_info_msg_, 1) ;
 
-  node_->advertise<kinematic_calibration::ImagePointStamped>("~led", 10) ; //!todo Magic #
+  node_->advertise<calibration_msgs::ImagePointStamped>("~led", 10) ; //!todo Magic #
   node_->advertise<sensor_msgs::Image>("~debug_image", 1) ;
 
   sync_.ready() ;
@@ -97,7 +97,7 @@ void LedDetectionNode::msgCallback(ros::Time t)
   led_world.pose.orientation.z = 0.0 ;
   led_world.pose.orientation.w = 1.0 ;
 
-  kinematic_calibration::ImagePointStamped led_pix ;
+  calibration_msgs::ImagePointStamped led_pix ;
   bool found ;
   if (use_led_pose_)
   {
