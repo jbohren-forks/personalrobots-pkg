@@ -63,7 +63,6 @@
 #include <robot_mechanism_controllers/GetPDActual.h>
 #include <robot_mechanism_controllers/GetPDCommand.h>
 #include <robot_msgs/JointCmd.h>
-#include <robot_srvs/GetJointCmd.h>
 
 namespace controller
 {
@@ -111,7 +110,7 @@ namespace controller
     /*!
      * \brief Reset the internal PID controllers
      */
-    void reset(); 
+    void reset();
 
   private:
 
@@ -152,17 +151,12 @@ namespace controller
 
     // Topics
     void setCommand();
-    //Sevices
-    bool getCommand(robot_srvs::GetJointCmd::Request &req,
-		    robot_srvs::GetJointCmd::Response &resp);
-
 
     private:
 
     //node stuff
     std::string service_prefix_;                 /**< The name of the controller. */
     ros::Node *node_;
-    AdvertisedServiceGuard guard_get_command_;   /**< Makes sure the advertise goes down neatly. */
     SubscriptionGuard guard_set_command_;        /**< Makes sure the subscription goes down neatly. */
 
     //msgs

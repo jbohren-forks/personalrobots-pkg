@@ -201,9 +201,6 @@ bool JointPDControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *
   //subscriptions
   node_->subscribe(service_prefix_ + "/set_command", cmd_, &JointPDControllerNode::setCommand, this, 1);
   guard_set_command_.set(service_prefix_ + "/set_command");
-  //services
-  node_->advertiseService(service_prefix_ + "/get_command", &JointPDControllerNode::getCommand, this);
-  guard_get_command_.set(service_prefix_ + "/get_command");
 
   return true;
 }
@@ -212,15 +209,4 @@ void JointPDControllerNode::setCommand()
 {
   c_->setCommand(cmd_.positions[0],cmd_.velocity[0]);
 }
-
-bool JointPDControllerNode::getCommand(robot_srvs::GetJointCmd::Request &req,
-                                             robot_srvs::GetJointCmd::Response &resp)
-{
-  robot_msgs::JointCmd cmd;
-  c_->getCommand(cmd);
-  resp.command = cmd;
-  return true;
-}
-
-
 
