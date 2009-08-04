@@ -157,7 +157,7 @@ private:
 	
 	ROS_INFO("Maintaining occlusion map in frame '%s', with origin at (%f, %f, %f) and dimension (%f, %f, %f), resolution of %f; "
 		 "sensor is in frame '%s', fixed fame is '%s'.",
-		 robotFrame_.c_str(), bi_.dimensionX, bi_.dimensionY, bi_.dimensionZ, bi_.originX, bi_.originY, bi_.originZ,
+		 robotFrame_.c_str(), bi_.originX, bi_.originY, bi_.originZ, bi_.dimensionX, bi_.dimensionY, bi_.dimensionZ, 
 		 bi_.resolution, bi_.sensor_frame.c_str(), fixedFrame_.c_str());
 
 	nh_.param<bool>("~publish_occlusion", publishOcclusion_, false);
