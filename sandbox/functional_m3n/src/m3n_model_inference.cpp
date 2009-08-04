@@ -66,9 +66,39 @@ int M3NModel::cachePotentials(const RandomField& random_field)
   cache_clique_set_potentials_.clear();
   cache_clique_set_potentials_.resize(clique_set_feature_dims_.size());
 
+  // Fill map: [label -> value]
+  int nbr_training_labels = training_labels_.size();
+  map<unsigned int, double> label_place_holders;
+  for (int i = 0 ; i < nbr_training_labels ; i++)
+  {
+    label_place_holders[training_labels_[i]] = 0.0;
+  }
+
+  // Retrieve random field info
+  const map<unsigned int, RandomField::Node*>& nodes = random_field.getNodesRandomFieldIDs();
+  const vector<map<unsigned int, RandomField::Clique*> >& clique_sets = random_field.getCliqueSets();
+
+  // node->[label->value]
+  for (map<unsigned int, RandomField::Node*>::const_iterator iter_nodes = nodes.begin() ; iter_nodes
+      != nodes.end() ; iter_nodes++)
+  {
+    cache_node_potentials_[iter_nodes->first] = label_place_holders;
+  }
+
+  // clique_set_idx->clique->[label->value]
+  const unsigned int nbr_clique_sets = clique_sets.size();
+  for (unsigned int cs_idx = 0 ; cs_idx < nbr_clique_sets ; cs_idx++)
+  {
+    const map<unsigned int, RandomField::Clique*>& curr_clique_set = clique_sets[cs_idx];
+    for (map<unsigned int, RandomField::Clique*>::const_iterator iter_cliques = curr_clique_set.begin() ; iter_cliques
+        != curr_clique_set.end() ; iter_cliques++)
+    {
+      cache_clique_set_potentials_[cs_idx][iter_cliques->first] = label_place_holders;
+    }
+  }
+
   // -------------------------------------------
   // Populate node scores
-  const map<unsigned int, RandomField::Node*>& nodes = random_field.getNodesRandomFieldIDs();
   for (map<unsigned int, RandomField::Node*>::const_iterator iter_nodes = nodes.begin() ; iter_nodes
       != nodes.end() ; iter_nodes++)
   {
@@ -77,7 +107,6 @@ int M3NModel::cachePotentials(const RandomField& random_field)
     const RandomField::Node* curr_node = iter_nodes->second;
 
     // Compute scores for each label
-    int nbr_training_labels = training_labels_.size();
 #pragma omp parallel for
     for (int i = 0 ; i < nbr_training_labels ; i++)
     {
@@ -89,10 +118,8 @@ int M3NModel::cachePotentials(const RandomField& random_field)
         ret_val = -1;
       }
 
-#pragma omp critical
-      {
-        cache_node_potentials_[curr_node_id][curr_label] = potential_value;
-      }
+      cache_node_potentials_.find(curr_node_id)->second.find(curr_label)->second = potential_value;
+      //cache_node_potentials_[curr_node_id][curr_label] = potential_value;
     }
   }
 
@@ -100,10 +127,7 @@ int M3NModel::cachePotentials(const RandomField& random_field)
   {
     // -------------------------------------------
     // Populate clique scores
-    const vector<map<unsigned int, RandomField::Clique*> >& clique_sets = random_field.getCliqueSets();
-    const int nbr_clique_sets = clique_sets.size();
-#pragma omp parallel for
-    for (int cs_idx = 0 ; cs_idx < nbr_clique_sets ; cs_idx++)
+    for (unsigned int cs_idx = 0 ; cs_idx < nbr_clique_sets ; cs_idx++)
     {
       // Iterate over the cliques in each clique set
       const map<unsigned int, RandomField::Clique*>& curr_clique_set = clique_sets[cs_idx];
@@ -115,7 +139,7 @@ int M3NModel::cachePotentials(const RandomField& random_field)
         const RandomField::Clique* curr_clique = iter_cliques->second;
 
         // Compute scores for each label
-        int nbr_training_labels = training_labels_.size();
+        //int nbr_training_labels = training_labels_.size();
 #pragma omp parallel for
         for (int i = 0 ; i < nbr_training_labels ; i++)
         {
@@ -127,10 +151,9 @@ int M3NModel::cachePotentials(const RandomField& random_field)
             ret_val = -1;
           }
 
-#pragma omp critical
-          {
-            cache_clique_set_potentials_[cs_idx][curr_clique_id][curr_label] = potential_value;
-          }
+          cache_clique_set_potentials_[cs_idx].find(curr_clique_id)->second.find(curr_label)->second
+              = potential_value;
+          //cache_clique_set_potentials_[cs_idx][curr_clique_id][curr_label] = potential_value;
         }
       }
     }
