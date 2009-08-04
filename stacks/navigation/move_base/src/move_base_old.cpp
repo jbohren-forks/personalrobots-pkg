@@ -368,7 +368,7 @@ namespace move_base {
     last_valid_control = ros::Time::now();
     last_valid_plan = ros::Time::now();
 
-    costmap_2d::Rate r(controller_frequency_);
+    ros::Rate r(controller_frequency_);
 
     ROS_DEBUG("move_base has received a goal of x: %.2f, y: %.2f", goal.pose.position.x, goal.pose.position.y);
 

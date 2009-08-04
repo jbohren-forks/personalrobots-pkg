@@ -45,7 +45,6 @@
 #include <ros/ros.h>
 #include <costmap_2d/costmap_2d_ros.h>
 #include <costmap_2d/costmap_2d.h>
-#include <costmap_2d/rate.h>
 #include <vector>
 #include <string>
 #include <nav_msgs/GetPlan.h>
