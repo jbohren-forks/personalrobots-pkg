@@ -22,63 +22,7 @@
 @mainpage
 
 @htmlinclude manifest.html
-
-@b stageros wraps the Stage 2-D multi-robot simulator, via @b libstage.
-
-For detailed documentation,
-consult the <a href="http://playerstage.sourceforge.net/doc/stage-cvs">Stage manual</a>.
-
-This node finds the Stage models of type @b laser and @b position, and maps
-these models to the ROS topics given below.  If a laser and a position
-model are not found, stageros exits.
-
-@todo Define a more general method for mapping Stage models onto ROS topics
-/ services.  Something like the Player/Stage model, in which a Player .cfg
-file is used to map named Stage models onto Player devices, is probably the
-way to go.  The same technique can be used for rosgazebo.
-
-<hr>
-
-@section usage Usage
-@verbatim
-$ stageros <world> [standard ROS args]
-@endverbatim
-
-@param world The Stage .world file to load.
-
-@par Example
-
-@verbatim
-$ stageros willow-erratic.world
-@endverbatim
-
-<hr>
-
-@section topic ROS topics
-
-If there is only one position model defined in the world file, all of these
-topics appear at the top namespace. However, if >1 position models exist,
-these topics are pushed down into their own namespaces, by prefixing the
-topics with "robot_<i>/" , e.g., "robot_0/cmd_vel", etc.
-
-Subscribes to (name/type):
-- @b "cmd_vel"/PoseDot : velocity commands to differentially drive the 
-                         position model of the robot
-
-Publishes to (name / type):
-- @b "odom"/RobotBase2DOdom : odometry data from the position model.
-- @b "base_scan"/LaserScan :   scans from the laser model
-- @b "base_pose_ground_truth"/PoseWithRatesStamped : ground truth pos 
-
-<hr>
-
-@section parameters ROS parameters
-
-- @b ~base_watchdog_timeout (default: 0.2) : time (in seconds) after
-  receiving the last command on @b cmd_vel before stopping a position model
-
-
- **/
+**/
 
 #include <stdio.h>
 #include <stdlib.h>
