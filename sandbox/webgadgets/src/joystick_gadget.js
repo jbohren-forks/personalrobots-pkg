@@ -121,15 +121,15 @@ var ROSJoystickGadget = Class.create(ROSGadget, {
     myself.joyStatus.innerHTML = 'started';
     myself.joyStatusIcon.src = 'images/greenbutton.png';
 
-    this.startButton.value = 'Stop';
-    this.startButton.observe('click', this.stop.bind(this) );
+    myself.startButton.value = 'Stop';
+    myself.startButton.observe('click', myself.stop.bind(myself) );
   },
   
   stopped: function (myself, pump)
   {
     myself.joyStatus.innerHTML = 'stopped';
     myself.startButton.value = 'Start';
-    myself.startButton.observe('click', this.start.bind(this) );
+    myself.startButton.observe('click', myself.start.bind(myself) );
   },
   
 });

@@ -2,15 +2,16 @@ var ROSStartupGadget = Class.create(ROSGadget, {
 
   initialize: function()
   {
-    this.create("Robot Startup", 500);
+    this.create("Robot Status", 500);
 
-    this.robotSelect = document.createElement('select');
+    /*this.robotSelect = document.createElement('select');
     this.robotSelect.id = 'robotSelect';
     this.robotSelect.style.cssFloat = 'right';
     this.robotSelect.style.margin = '2px 0 0 0';
     this.robotSelect.add(new Option("Sim",""), null);
     this.robotSelect.add(new Option("PRF",""), null);
     this.robotSelect.add(new Option("PRG",""), null);
+    */
 
     this.startButton = document.createElement('input');
     this.startButton.type = 'button';
@@ -21,7 +22,7 @@ var ROSStartupGadget = Class.create(ROSGadget, {
     this.startButton.observe('click', this.start.bind(this) );
 
     this.titleSpan.appendChild(this.startButton);
-    this.titleSpan.appendChild(this.robotSelect);
+    //this.titleSpan.appendChild(this.robotSelect);
 
     label = document.createElement('label');
     label.style.cssFloat  = 'right';
@@ -88,10 +89,8 @@ var ROSStartupGadget = Class.create(ROSGadget, {
 
   start: function()
   {
-    robot = this.robotSelect.options[this.robotSelect.selectedIndex].text;
-
     this.run = true;
-    this.pump.sendAJAX('/ros/startup/'+robot, this, this.started);
+    this.pump.sendAJAX('/ros/startup', this, this.started);
     this.robotStatus.innerHTML = 'starting...';
     this.robotStatusIcon.src = 'images/yellowbutton.png';
 
