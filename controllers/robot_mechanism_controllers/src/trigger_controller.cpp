@@ -110,24 +110,20 @@ void TriggerController::update()
   prev_tick_ = tick;  
 }
 
-bool TriggerController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+bool TriggerController::init(mechanism::RobotState *robot, const ros::NodeHandle& n)
 {
   assert(robot);
   robot_=robot;
   
-  ROS_DEBUG("TriggerController::initXml starting");
+  ROS_DEBUG("TriggerController::init starting");
   
   // Get the actuator name.
-  
-  TiXmlElement *a = config->FirstChildElement("actuator");
-  if (!a)
-  {
+ 
+  if (!n.getParam("actuator", actuator_name_)){
     ROS_ERROR("TriggerController was not given an actuator.");
     return false;
   }
 
-  actuator_name_ = a->Attribute("name") ? a->Attribute("name") : "";
-  
   Actuator *actuator = robot_->model_->getActuator(actuator_name_);
   if (!actuator)
   {
@@ -147,22 +143,16 @@ bool TriggerController::initXml(mechanism::RobotState *robot, TiXmlElement *conf
   config_.pulsed = true;
   config_.duty_cycle = .5;
 
-  TiXmlElement *w = config->FirstChildElement("waveform");
-  if (w)
-  {
-    ROS_DEBUG("TriggerController::initXml reading pulsed configuration.");
-    if (w->Attribute("rep_rate"))   config_.rep_rate   = atof(w->Attribute("rep_rate"));
-    if (w->Attribute("phase"))      config_.phase      = atof(w->Attribute("phase"));
-    if (w->Attribute("duty_cycle")) config_.duty_cycle = atof(w->Attribute("duty_cycle"));
-    if (w->Attribute("active_low")) config_.active_low = atoi(w->Attribute("active_low"));
-    if (w->Attribute("running"))    config_.running    = atoi(w->Attribute("running"));
-    if (w->Attribute("pulsed"))     config_.pulsed     = atoi(w->Attribute("pulsed"));
-    // FIXME Could I handle the booleans better?
-  }
+  n.getParam("rep_rate", config_.rep_rate);
+  n.getParam("phase", config_.phase);
+  n.getParam("duty_cycle", config_.duty_cycle);
+  n.getParam("active_low", config_.active_low);
+  n.getParam("running", config_.running);
+  n.getParam("pulsed", config_.pulsed);
 
   prev_tick_ = getTick();
   
-  ROS_DEBUG("TriggerController::initXml completed successfully"
+  ROS_DEBUG("TriggerController::init completed successfully"
       " rr=%f ph=%f al=%i r=%i p=%i dc=%f.",
       config_.rep_rate, config_.phase, config_.active_low, config_.running, config_.pulsed, config_.duty_cycle);
 
@@ -211,20 +201,19 @@ bool TriggerControllerNode::setWaveformSrv(
   return true;
 }
 
-bool TriggerControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+bool TriggerControllerNode::init(mechanism::RobotState *robot, const ros::NodeHandle& n)
 {
+  node_handle_ = n;
   //Init the model.
-
+  
   ROS_DEBUG("LOADING TRIGGER CONTROLLER NODE");
-  ros::Node * const node = ros::Node::instance();
-  string prefix = config->Attribute("name");
-  ROS_DEBUG_STREAM("the prefix is "<<prefix);
-
+  //string prefix = config->Attribute("name");
+  //ROS_DEBUG_STREAM("the prefix is "<<prefix);
 
   // Parses subcontroller configuration
-  if(c_->initXml(robot, config))
+  if(c_->init(robot, node_handle_))
   {
-    node->advertiseService(prefix + "/set_waveform", &TriggerControllerNode::setWaveformSrv, this);
+    set_waveform_handle_ = node_handle_.advertiseService("set_waveform", &TriggerControllerNode::setWaveformSrv, this);
 
     // Default parameters
 

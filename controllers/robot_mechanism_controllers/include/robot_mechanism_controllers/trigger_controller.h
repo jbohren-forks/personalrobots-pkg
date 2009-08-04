@@ -64,7 +64,7 @@ public:
   
   void update();
   
-  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
+  bool init(mechanism::RobotState *robot, const ros::NodeHandle &n);
   
   /**
    * \brief Convert time to an unrolled phase (in cycles).
@@ -243,12 +243,14 @@ public:
 
   void update();
   
-  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
+  bool init(mechanism::RobotState *robot, const ros::NodeHandle &n);
   
 private:
   bool setWaveformSrv(trigger_configuration &req,
       robot_mechanism_controllers::SetWaveform::Response &resp);
-  
+ 
+  ros::ServiceServer set_waveform_handle_;
+  ros::NodeHandle node_handle_;
   TriggerController * c_;
 };
 
