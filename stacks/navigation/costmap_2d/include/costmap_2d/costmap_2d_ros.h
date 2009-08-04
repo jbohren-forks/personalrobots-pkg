@@ -280,7 +280,7 @@ namespace costmap_2d {
        * @param message The message returned from a message notifier 
        * @param buffer A pointer to the observation buffer to update
        */
-      void pointCloudCallback(const tf::MessageNotifier<robot_msgs::PointCloud>::MessagePtr& message, const boost::shared_ptr<ObservationBuffer>& buffer);
+      void pointCloudCallback(const tf::MessageNotifier<sensor_msgs::PointCloud>::MessagePtr& message, const boost::shared_ptr<ObservationBuffer>& buffer);
 
       /**
        * @brief  The loop that handles updating the costmap
