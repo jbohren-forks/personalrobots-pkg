@@ -108,7 +108,6 @@ void StationaryChecker::computeChannelRange(const std::vector<DeflatedConstPtr>&
                                             std::vector<double>& ranges)
 {
   ROS_ERROR_COND(channel.size() == 0, "Tried to preprocess a deflated channel of size 0");
-  return;
 
   std::vector<double> min_val;
   std::vector<double> max_val;
@@ -117,6 +116,8 @@ void StationaryChecker::computeChannelRange(const std::vector<DeflatedConstPtr>&
   max_val = channel[0]->deflated_;
 
   const unsigned int N = channel[0]->deflated_.size();
+
+  //ROS_INFO("channel[0]->deflated_.size() = %u", N);
 
   // Find the min and max for each sub-channel
   for (unsigned int i=0; i<channel.size(); i++)
@@ -138,7 +139,7 @@ void StationaryChecker::computeChannelRange(const std::vector<DeflatedConstPtr>&
 bool StationaryChecker::isChannelStationary(const std::vector<double>& ranges,
                                             const ChannelTolerance& tol)
 {
-  ROS_ERROR_COND(ranges.size() != tol.tol_.size(), "ranges.size() should match tol.tol_.size()");
+  ROS_ERROR_COND(ranges.size() != tol.tol_.size(), "ranges.size() [%u] should match tol.tol_.size() [%u]", ranges.size(), tol.tol_.size());
   const unsigned int N = ranges.size();
   // Success Check
   for (unsigned int i=0; i<N; i++)

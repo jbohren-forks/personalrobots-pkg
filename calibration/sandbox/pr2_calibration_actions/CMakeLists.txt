@@ -16,7 +16,7 @@ genmsg()
 #target_link_libraries(run_action_stereo_cb ${PROJECT_NAME})
 
 rospack_add_executable(test_stereo_cb src/test_stereo_cb.cpp)
-target_link_libraries(test_stereo_cb ${PROJECT_NAME})
+#target_link_libraries(test_stereo_cb ${PROJECT_NAME})
 
 rospack_add_executable(capture_hand_led src/capture_hand_led.cpp)
 

@@ -58,7 +58,7 @@ CaptureHandLED::CaptureHandLED(ros::NodeHandle nh) :
   vector<string> joint_names;
   joint_names.push_back("r_shoulder_pan_joint");
   joint_names.push_back("r_shoulder_lift_joint");
-  joint_names.push_back("r_upperarm_roll_joint");
+  joint_names.push_back("r_upper_arm_roll_joint");
   joint_states_deflater_.setDeflationJointNames(joint_names);
 
   // Configure the stationary checker
@@ -118,7 +118,7 @@ void CaptureHandLED::checkStationary()
   if (stationary_time != ros::Time(0,0))
     ROS_INFO("Found a stationary elem");
   else
-    ROS_DEBUG("Not stationary");
+    ROS_INFO("Not stationary");
 }
 
 int main(int argc, char** argv)
