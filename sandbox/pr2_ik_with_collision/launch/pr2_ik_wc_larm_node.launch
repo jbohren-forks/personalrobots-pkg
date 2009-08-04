@@ -1,5 +1,5 @@
 <launch>
-  <node pkg="pr2_ik" type="pr2_ik_with_collision" name="pr2_ik_wc_left_arm" output="screen" >
+  <node pkg="pr2_ik_with_collision" type="pr2_ik_with_collision" name="pr2_ik_wc_left_arm" output="screen" >
     <remap from="arm_ik" to="pr2_ik_left_arm/ik_service" />	
     <remap from="arm_ik_query" to="pr2_ik_left_arm/ik_query" />	
     <remap from="chomp_collision_service" to="/chomp_cost_server/get_chomp_collision_cost" />
