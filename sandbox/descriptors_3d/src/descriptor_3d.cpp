@@ -149,7 +149,7 @@ void Descriptor3D::concatenateFeatures(const vector<cv::Vector<cv::Vector<float>
     if (all_features_success)
     {
       // allocate
-      float* curr_concat_feats = new float[nbr_concatenated_vals];
+      float* curr_sample_concat_feats = new float[nbr_concatenated_vals];
 
       // concatenate each descriptors' values together
       unsigned int prev_val_idx = 0; // offset when copying into concat_features
@@ -157,11 +157,11 @@ void Descriptor3D::concatenateFeatures(const vector<cv::Vector<cv::Vector<float>
       {
         // retrieve descriptor values for current point
         const cv::Vector<cv::Vector<float> >& curr_descriptor_for_cloud = all_descriptor_results[j];
-        const cv::Vector<float>& curr_feature_vals = curr_descriptor_for_cloud[static_cast<size_t> (i)];
-        unsigned int curr_nbr_feature_vals = curr_feature_vals.size();
+        const cv::Vector<float>& curr_sample_descriptor_vals = curr_descriptor_for_cloud[static_cast<size_t> (i)];
+        unsigned int curr_nbr_feature_vals = curr_sample_descriptor_vals.size();
 
         // copy descriptor values into concatenated vector at correct location
-        memcpy(curr_concat_feats + prev_val_idx, curr_feature_vals.begin(), sizeof(float)
+        memcpy(curr_sample_concat_feats + prev_val_idx, curr_sample_descriptor_vals.begin(), sizeof(float)
             * curr_nbr_feature_vals);
 
         // skip over all computed features so far
@@ -169,7 +169,7 @@ void Descriptor3D::concatenateFeatures(const vector<cv::Vector<cv::Vector<float>
       }
 
       // Save it
-      concatenated_features[i].reset(static_cast<const float*> (curr_concat_feats));
+      concatenated_features[i].reset(static_cast<const float*> (curr_sample_concat_feats));
 #pragma omp critical
       {
         successful_indices.insert(i);
