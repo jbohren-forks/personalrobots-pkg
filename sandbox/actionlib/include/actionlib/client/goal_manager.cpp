@@ -60,7 +60,6 @@ GoalHandle<ActionSpec> GoalManager<ActionSpec>::initGoal(const Goal& goal,
   ActionGoalPtr action_goal(new ActionGoal);
   action_goal->goal_id = id_generator_.generateID();
   action_goal->goal = goal;
-  action_goal->request_type.type = RequestType::GOAL_REQUEST;
 
   if (send_goal_func_)
     send_goal_func_(action_goal);
