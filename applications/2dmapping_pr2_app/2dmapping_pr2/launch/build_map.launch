@@ -1,5 +1,8 @@
 <launch>
-  <include file="$(find pr2_alpha)/$(env ROBOT).launch"/>
-  <include file="$(find pr2_alpha)/teleop_joystick.launch"/>
-  <node pkg="rosrecord" type="rosrecord" args="-f 2dmapping_pr2"/>
+  <param name="use_sim_time" value="true"/>
+  <node pkg="rosrecord" type="rosplay" 
+        args="-s 5 -r 1 -b 10 /bags/2dmapping_pr2_2009-08-03-19-08-13-topic.bag"/>
+  <node pkg="gmapping" type="slam_gmapping" name="slam_gmapping" output="screen">
+    <remap from="scan" to="base_scan"/>
+  </node>
 </launch>
