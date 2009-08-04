@@ -710,12 +710,14 @@ vector<ImageDescriptor*> setupImageDescriptors() {
 //   d.push_back(new SurfWrapper(true, 25));
 //   d.push_back(new SurfWrapper(true, 10));
   
-  Daisy* base_daisy = new Daisy(25, 3, 8, 8, NULL);
-  d.push_back(base_daisy);
+//   Daisy* base_daisy = new Daisy(25, 3, 8, 8, NULL);
+//   d.push_back(base_daisy);
 //   d.push_back(new Daisy(50, 3, 8, 8, base_daisy));
 //   d.push_back(new Daisy(75, 3, 8, 8, base_daisy));
 //   d.push_back(new Daisy(100, 3, 8, 8, base_daisy));
-  d.push_back(new Daisy(150, 3, 8, 8, base_daisy));
+//  d.push_back(new Daisy(150, 3, 8, 8, base_daisy));
+
+  d.push_back(new ContourFragmentDescriptor(0, "contour_fragments"));
 
   return d;
 }
