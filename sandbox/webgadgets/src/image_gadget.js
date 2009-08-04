@@ -43,8 +43,7 @@ var ROSImageGadget = Class.create(ROSGadget, {
     pump = new MessagePump();
     pump.sendAJAX("/ros/topics", this, this.initCB);
 
-    var helpTxt="<dl><dt>Purpose:</dt><dd>This gadget is used to view an image stream from a camera.</dd><dt>Overview:</dt><dd>The <Topic:> pull-down menu lists all the camera topics that this viewer can subscribe to. In order to start streaming images, select a topic and press the <Subscribe> button.</dd></dl>";
-    this.setHelpText(helpTxt);
+    this.setHelpText('image_gadget_help.html');
 
   },
 

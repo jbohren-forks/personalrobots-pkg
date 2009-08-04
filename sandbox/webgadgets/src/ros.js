@@ -225,7 +225,7 @@ var ROSGadget = Class.create({
 
     this.helpButton.observe('click', this.showHelp.bind(this) );
 
-    this.help = new HelpGadget(titleName);
+    this.help = new HelpGadget(this.mainDiv, titleName);
   },
 
   setHelpText : function(txt)

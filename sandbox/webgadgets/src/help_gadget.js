@@ -1,7 +1,9 @@
 
 var HelpGadget = Class.create({
-  initialize : function(titleName)
+  initialize : function(gadget, titleName)
   {
+    this.gadget = gadget;
+
     // The help DIV
     this.helpDiv = document.createElement("div");
     this.helpDiv.id = "helpbox";
@@ -21,10 +23,19 @@ var HelpGadget = Class.create({
     this.helpDiv.appendChild(this.helpDivContent);
   
     document.body.appendChild(this.helpDiv);
+
+    this.pump = new MessagePump();
+  },
+
+  gotHelp: function(myself, pump)
+  {
+    myself.helpDivContent.innerHTML = pump.response;
   },
 
   showHelp : function(e)
   {
+    left = parseInt(this.gadget.offsetLeft) + parseInt(this.gadget.clientWidth) + 10;
+    this.helpDiv.style.left = left + "px";
     this.helpDiv.style.display = "";
   },
 
@@ -33,9 +44,9 @@ var HelpGadget = Class.create({
     this.helpDiv.style.display = "none";
   },
 
-  setContent : function (txt)
+  setContent : function (file)
   {
-    this.helpDivContent.innerHTML = txt;
+    this.pump.sendAJAX(file, this, this.gotHelp);
   }
 
 });

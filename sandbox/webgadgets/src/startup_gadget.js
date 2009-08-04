@@ -4,55 +4,73 @@ var ROSStartupGadget = Class.create(ROSGadget, {
   {
     this.create("Robot Status", 500);
 
-    /*this.robotSelect = document.createElement('select');
-    this.robotSelect.id = 'robotSelect';
-    this.robotSelect.style.cssFloat = 'right';
-    this.robotSelect.style.margin = '2px 0 0 0';
-    this.robotSelect.add(new Option("Sim",""), null);
-    this.robotSelect.add(new Option("PRF",""), null);
-    this.robotSelect.add(new Option("PRG",""), null);
-    */
+    this.contentDiv.style.height = "140px";
 
     this.startButton = document.createElement('input');
     this.startButton.type = 'button';
     this.startButton.id = 'startbutton';
     this.startButton.value = 'Start';
-    this.startButton.style.cssFloat = 'right';
-    this.startButton.style.margin = '2px 0 0 0';
+    this.startButton.style.cssFloat = 'left';
+    this.startButton.style.margin = '0 10px 0 0';
     this.startButton.observe('click', this.start.bind(this) );
-
-    this.titleSpan.appendChild(this.startButton);
-    //this.titleSpan.appendChild(this.robotSelect);
 
     label = document.createElement('label');
     label.style.cssFloat  = 'right';
     label.style.margin = '0 0 0 5px';
-    label.innerHTML = "Robot:";
 
     this.titleSpan.appendChild (label);
 
-    statusDiv = document.createElement('div');
-    statusDiv.innerHTML = '<span style="height:25px;line-height:15px;vertical-align:middle;font-size:120%;"><img id="robotStatusIcon"src="images/redbutton.png" width="15" style="border:0;float:left; display:inline; margin-right: 10px;"/> <b>Robot</b>: <span id="robotstatus"></span> </span>';
+    this.statusDiv = document.createElement('div');
+    this.statusDiv.style.width = '100%';
+    this.statusDiv.style.height = "30px";
+    this.statusDiv.style.borderBottom = '4px dotted black';
+    this.statusDiv.style.marginBottom = '10px';
 
-    this.contentDiv.appendChild(statusDiv);
+    this.robotLabel = document.createElement("span");
+    this.robotLabel.style.lineHeight = '20px';
+    this.robotLabel.style.verticalAlign = 'middle';
+    this.robotLabel.style.fontSize = '130%';
+    this.robotLabel.style.cssFloat = 'left';
+    this.robotLabel.style.fontWeight = 'bold';
+    this.robotLabel.innerHTML = 'Robot: ';
 
-    this.robotStatusIcon = document.getElementById("robotStatusIcon");
-    this.robotStatus = document.getElementById('robotstatus');
+    this.robotStatus = document.createElement('span');
+    this.robotStatus.id = 'robotstatus';
+    this.robotStatus.style.lineHeight = '20px';
+    this.robotStatus.style.verticalAlign = 'middle';
+    this.robotStatus.style.fontSize = '120%';
+    this.robotStatus.style.marginLeft = '5px';
+    this.robotStatus.style.marginTop = '1px';
+    this.robotStatus.style.cssFloat = 'left';
     this.robotStatus.innerHTML = 'stopped';
+
+    this.robotStatusIcon = document.createElement('img');
+    this.robotStatusIcon.id = 'robotStatusIcon';
+    this.robotStatusIcon.src = 'images/redbutton.png';
+    this.robotStatusIcon.style.width = '20px';
+    this.robotStatusIcon.style.cssFloat = 'right';
+
+    this.statusDiv.appendChild(this.startButton);
+    this.statusDiv.appendChild(this.robotLabel);
+    this.statusDiv.appendChild(this.robotStatus);
+    this.statusDiv.appendChild(this.robotStatusIcon);
+    
+    this.contentDiv.appendChild(this.statusDiv);
 
     if (this.pump != null)
       delete this.pump;
 
     this.pump = new MessagePump();
 
-    var helpTxt="<dl><dt>Purpose:</dt><dd>This gadget is used to bring up the robot</dd><dt>Overview:</dt><dd>The <Start> button located in this gadget's title bar will start the ROS core, and run the selected robot launch file. The content of this gadget displays the current status of the robot. A Red light indicates that the robot is not running, a yellow light indicates the robot is starting up, and a green light inidicates the robot is running.</dd></dl>";
-    this.setHelpText(helpTxt);
+    this.setHelpText('startup_gadget_help.html');
 
     var gaugeWidth = 100;
     var gaugeHeight = 100;
 
     this.gaugeDiv = document.createElement("div");
     this.gaugeDiv.style.border = "0px solid black";
+    this.gaugeDiv.style.display = "inline";
+    this.gaugeDiv.style.cssFloat = "left";
     this.gaugeDiv.style.width = gaugeWidth + "px";
     this.gaugeDiv.style.height = gaugeHeight + "px";
 
@@ -72,6 +90,13 @@ var ROSStartupGadget = Class.create(ROSGadget, {
     this.gauge.draw(this.gaugeData, this.gaugeOptions);
 
     this.contentDiv.appendChild(this.gaugeDiv);
+
+    this.plugIcon = document.createElement("img");
+    this.plugIcon.src = 'images/unplugged.png';
+    this.plugIcon.style.display = "inline";
+    this.plugIcon.style.cssFloat = "left";
+    this.plugIcon.style.width = "80px";
+    this.contentDiv.appendChild(this.plugIcon);
 
   },
 
@@ -93,8 +118,6 @@ var ROSStartupGadget = Class.create(ROSGadget, {
     this.pump.sendAJAX('/ros/startup', this, this.started);
     this.robotStatus.innerHTML = 'starting...';
     this.robotStatusIcon.src = 'images/yellowbutton.png';
-
-    this.robotSelect.disabled = true;
   },
   
   stop: function()
@@ -123,7 +146,6 @@ var ROSStartupGadget = Class.create(ROSGadget, {
   {
     myself.robotStatus.innerHTML = 'stopped';
     myself.startButton.value = 'Start';
-    myself.robotSelect.disabled = false;
     myself.robotStatusIcon.src = 'images/redbutton.png';
 
     myself.startButton.observe('click', myself.start.bind(myself) );

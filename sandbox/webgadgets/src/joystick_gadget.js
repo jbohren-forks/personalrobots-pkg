@@ -8,22 +8,46 @@ var ROSJoystickGadget = Class.create(ROSGadget, {
     this.startButton.type = 'button';
     this.startButton.id = 'startbutton';
     this.startButton.value = 'Start';
-    this.startButton.style.cssFloat = 'right';
-    this.startButton.style.margin = '2px 0 0 0';
+    this.startButton.style.cssFloat = 'left';
+    this.startButton.style.margin = '0 10px 0 0';
     this.startButton.observe('click', this.start.bind(this) );
 
-    this.titleSpan.appendChild(this.startButton);
+    this.statusDiv = document.createElement('div');
+    this.statusDiv.style.width = '100%';
+    this.statusDiv.style.height = "30px";
 
-    statusDiv = document.createElement('div');
-    statusDiv.innerHTML = '<div style="height:25px;line-height:15px;vertical-align:middle;font-size:120%;"><img id="joyStatusIcon"src="images/redbutton.png" width="15" style="border:0;float:left; display:inline; margin-right: 10px;"/> <b>Joystick</b>: <span id="joystatus"></span> </div>';
+    this.joyLabel = document.createElement("span");
+    this.joyLabel.style.lineHeight = '20px';
+    this.joyLabel.style.verticalAlign = 'middle';
+    this.joyLabel.style.fontSize = '130%';
+    this.joyLabel.style.cssFloat = 'left';
+    this.joyLabel.style.fontWeight = 'bold';
+    this.joyLabel.innerHTML = 'Joystick: ';
 
-    this.contentDiv.appendChild(statusDiv);
-
-    this.joyStatusIcon = document.getElementById("joyStatusIcon");
-    this.joyStatus = document.getElementById('joystatus');
+    this.joyStatus = document.createElement('span');
+    this.joyStatus.id = 'joystatus';
+    this.joyStatus.style.lineHeight = '20px';
+    this.joyStatus.style.verticalAlign = 'middle';
+    this.joyStatus.style.fontSize = '120%';
+    this.joyStatus.style.marginLeft = '5px';
+    this.joyStatus.style.marginTop = '1px';
+    this.joyStatus.style.cssFloat = 'left';
     this.joyStatus.innerHTML = 'stopped';
 
-    buttonsDiv = document.createElement("div");
+    this.joyStatusIcon = document.createElement('img');
+    this.joyStatusIcon.id = 'robotStatusIcon';
+    this.joyStatusIcon.src = 'images/redbutton.png';
+    this.joyStatusIcon.style.width = '20px';
+    this.joyStatusIcon.style.cssFloat = 'right';
+
+    this.statusDiv.appendChild(this.startButton);
+    this.statusDiv.appendChild(this.joyLabel);
+    this.statusDiv.appendChild(this.joyStatus);
+    this.statusDiv.appendChild(this.joyStatusIcon);
+ 
+    this.contentDiv.appendChild(this.statusDiv);
+
+    /*buttonsDiv = document.createElement("div");
     buttonsDiv.align='center';
     buttonsDiv.style.margin='auto';
     buttonsDiv.style.width = "180px";
@@ -88,18 +112,17 @@ var ROSJoystickGadget = Class.create(ROSGadget, {
     buttonsDiv.appendChild(rightButtonDiv);
     buttonsDiv.appendChild(downButtonDiv);
 
+
     // Put this line back in to add in joystick GUI buttons
     //this.contentDiv.appendChild(buttonsDiv);
-
+    */
 
     if (this.pump != null)
       delete this.pump;
 
     this.pump = new MessagePump();
 
-    var helpTxt="<dl><dt>Purpose:</dt><dd>This gadget is used to enable joystick control of the robot.</dd><dt>Overview:</dt><dd>The <Start> button located in this gadget's title bar will start the joystick controller.</dd> <dt>Driving the Robot with a Joystick Controller</dt><dd>To drive the robot, hold down the “dead man's switch” with your left index finger. The button is located at the top of the left hand grip. This switch helps prevent accidental operation of the robot. To drive the robot around, hold down the button while using the two joysticks to move the base of the robot. The right joystick moves the base to the right, left, forward, and backward, while the left joystick rotates the base clockwise and counterclockwise. The 4 button moves the spine up, while the 2 button moves the spine down.<br><img src='images/joystickimg.jpg'></dd></dl>";
-    this.setHelpText(helpTxt);
-
+    this.setHelpText('joystick_gadget_help.html');
   },
 
   start: function()
