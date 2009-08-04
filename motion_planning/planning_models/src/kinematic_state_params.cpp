@@ -482,6 +482,18 @@ void planning_models::StateParams::copyParams(std::vector<double> &params) const
 	params[i] = m_params[i];
 }
 
+void planning_models::StateParams::copyParamsJoints(std::vector<double> &params, const std::vector<std::string> &names) const
+{
+    params.clear();
+    for (unsigned int j = 0 ; j < names.size() ; ++j)
+    {
+	std::vector<double> p;
+	copyParamsJoint(p, names[j]);
+	for (unsigned int i = 0 ; i < p.size() ; ++i)
+	    params.push_back(p[i]);
+    }
+}
+
 void planning_models::StateParams::copyParamsGroup(double *params, const std::string &group) const
 {
     copyParamsGroup(params, m_owner->getGroupID(group));

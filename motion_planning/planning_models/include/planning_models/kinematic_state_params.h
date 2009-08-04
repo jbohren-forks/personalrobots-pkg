@@ -189,6 +189,12 @@ namespace planning_models
 	/** \brief Copy the parameters describing a given joint */
 	void copyParamsJoint(std::vector<double> &params, const std::string &name) const;
 	
+	/** \brief Copy the parameters describing a given set of joints */
+	void copyParamsJoints(double *params, const std::vector<std::string> &names) const;
+
+	/** \brief Copy the parameters describing a given set of joints */
+	void copyParamsJoints(std::vector<double> &params, const std::vector<std::string> &names) const;
+	
 	/** \brief Check if all params for a joint were seen */
 	bool seenJoint(const std::string &name) const;
 	
