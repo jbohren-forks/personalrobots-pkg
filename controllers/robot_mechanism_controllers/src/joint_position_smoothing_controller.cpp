@@ -60,8 +60,8 @@ bool JointPositionSmoothController::init(mechanism::RobotState *robot, const std
   joint_state_ = robot_->getJointState(joint_name);
   if (!joint_state_)
   {
-    fprintf(stderr, "JointPositionSmoothController could not find joint named \"%s\"\n",
-            joint_name.c_str());
+    ROS_ERROR("JointPositionSmoothController could not find joint named \"%s\"\n",
+              joint_name.c_str());
     return false;
   }
 
@@ -77,7 +77,7 @@ bool JointPositionSmoothController::initXml(mechanism::RobotState *robot, TiXmlE
   TiXmlElement *j = config->FirstChildElement("joint");
   if (!j)
   {
-    fprintf(stderr, "JointPositionSmoothController was not given a joint\n");
+    ROS_ERROR("JointPositionSmoothController was not given a joint\n");
     return false;
   }
 
@@ -89,7 +89,7 @@ bool JointPositionSmoothController::initXml(mechanism::RobotState *robot, TiXmlE
   if (p)
     pid.initXml(p);
   else
-    fprintf(stderr, "JointPositionSmoothController's config did not specify the default pid parameters.\n");
+    ROS_ERROR("JointPositionSmoothController's config did not specify the default pid parameters.\n");
 
   TiXmlElement *s = config->FirstChildElement("filter");
   if(s)
@@ -156,7 +156,7 @@ void JointPositionSmoothController::update()
   {
     error = joint_state_->position_ - command_;
   }
-  
+
   smoothed_error_ = smoothing_factor_*error + (1-smoothing_factor_)*smoothed_error_;
   joint_state_->commanded_effort_ = pid_controller_.updatePid(smoothed_error_, time - last_time_);
   last_time_ = time;

@@ -61,8 +61,8 @@ bool JointPositionController::init(mechanism::RobotState *robot, const std::stri
   joint_state_ = robot_->getJointState(joint_name);
   if (!joint_state_)
   {
-    fprintf(stderr, "JointPositionController could not find joint named \"%s\"\n",
-            joint_name.c_str());
+    ROS_ERROR("JointPositionController could not find joint named \"%s\"\n",
+              joint_name.c_str());
     return false;
   }
 
@@ -79,7 +79,7 @@ bool JointPositionController::initXml(mechanism::RobotState *robot, TiXmlElement
   TiXmlElement *j = config->FirstChildElement("joint");
   if (!j)
   {
-    fprintf(stderr, "JointPositionController was not given a joint\n");
+    ROS_ERROR("JointPositionController was not given a joint\n");
     return false;
   }
 
@@ -93,7 +93,7 @@ bool JointPositionController::initXml(mechanism::RobotState *robot, TiXmlElement
     pid.initXml(p);
   }
   else
-    fprintf(stderr, "JointPositionController's config did not specify the default pid parameters.\n");
+    ROS_ERROR("JointPositionController's config did not specify the default pid parameters.\n");
 
   return init(robot, joint_name, pid);
 }
