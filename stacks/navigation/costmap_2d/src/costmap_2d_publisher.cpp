@@ -40,8 +40,8 @@ namespace costmap_2d {
   Costmap2DPublisher::Costmap2DPublisher(ros::NodeHandle& ros_node, double publish_frequency, std::string global_frame) 
     : ros_node_(ros_node), global_frame_(global_frame), 
     visualizer_thread_(NULL), active_(false), new_data_(false){
-    raw_obs_pub_ = ros_node_.advertise<visualization_msgs::Polyline>("~raw_obstacles", 1);
-    inf_obs_pub_ = ros_node_.advertise<visualization_msgs::Polyline>("~inflated_obstacles", 1);
+    raw_obs_pub_ = ros_node_.advertise<visualization_msgs::Polyline>("raw_obstacles", 1);
+    inf_obs_pub_ = ros_node_.advertise<visualization_msgs::Polyline>("inflated_obstacles", 1);
     visualizer_thread_ = new boost::thread(boost::bind(&Costmap2DPublisher::mapPublishLoop, this, publish_frequency));
   }
 
@@ -73,8 +73,8 @@ namespace costmap_2d {
 
   void Costmap2DPublisher::updateCostmapData(const Costmap2D& costmap){
     std::vector< std::pair<double, double> > raw_obstacles, inflated_obstacles;
-    for(unsigned int i = 0; i < costmap.cellSizeX(); i++){
-      for(unsigned int j = 0; j < costmap.cellSizeY(); j++){
+    for(unsigned int i = 0; i < costmap.getSizeInCellsX(); i++){
+      for(unsigned int j = 0; j < costmap.getSizeInCellsY(); j++){
         double wx, wy;
         costmap.mapToWorld(i, j, wx, wy);
         std::pair<double, double> p(wx, wy);

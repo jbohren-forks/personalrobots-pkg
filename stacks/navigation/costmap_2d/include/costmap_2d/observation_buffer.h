@@ -62,12 +62,13 @@ namespace costmap_2d {
        * @param  expected_update_rate How often this buffer is expected to be updated, 0 means there is no limit
        * @param  min_obstacle_height The minimum height of a hitpoint to be considered legal
        * @param  max_obstacle_height The minimum height of a hitpoint to be considered legal
+       * @param  raytrace_range The range to which the sensor should be trusted for raytracing to clear out space
        * @param  tf A reference to a TransformListener
        * @param  global_frame The frame to transform PointClouds into
-       * @param  sensor_frame The frame of the origin of the sensor, special value frame_from_message means use the incoming message frame
+       * @param  sensor_frame The frame of the origin of the sensor, can be left blank to be read from the messages
        */
       ObservationBuffer(std::string topic_name, double observation_keep_time, double expected_update_rate, 
-          double min_obstacle_height, double max_obstacle_height,
+          double min_obstacle_height, double max_obstacle_height, double raytrace_range,
           tf::TransformListener& tf, std::string global_frame, std::string sensor_frame);
 
       /**
@@ -120,6 +121,7 @@ namespace costmap_2d {
       std::string topic_name_;
       double min_obstacle_height_, max_obstacle_height_;
       boost::recursive_mutex lock_; ///< @brief A lock for accessing data in callbacks safely
+      double raytrace_range_;
   };
 };
 #endif

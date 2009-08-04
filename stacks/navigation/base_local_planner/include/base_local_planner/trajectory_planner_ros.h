@@ -212,6 +212,7 @@ namespace base_local_planner {
       bool prune_plan_;
       ros::Publisher footprint_pub_, g_plan_pub_, l_plan_pub_;
       ros::Subscriber odom_sub_;
+      boost::recursive_mutex odom_lock_;
   };
 
 };

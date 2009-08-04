@@ -112,8 +112,8 @@ bool NavfnWithLocalCostmap::setCostmap(SetCostmap::Request& req, SetCostmap::Res
     for (unsigned x=0; x<req.width; x++) 
       ROS_DEBUG_NAMED ("node", "Cost of %u, %u is %u", x, y, cmap_->getCost(x,y));
 
-  planner_.reset(new NavFn(cmap_->cellSizeX(), cmap_->cellSizeY()));
-  ROS_DEBUG_STREAM_NAMED ("node", "Resetting planner object to have size " << cmap_->cellSizeX() << ", " << cmap_->cellSizeY());
+  planner_.reset(new NavFn(cmap_->getSizeInCellsX(), cmap_->getSizeInCellsY()));
+  ROS_DEBUG_STREAM_NAMED ("node", "Resetting planner object to have size " << cmap_->getSizeInCellsX() << ", " << cmap_->getSizeInCellsY());
 
   return true;
 }
@@ -138,7 +138,7 @@ int main (int argc, char** argv)
   n.setParam("~dummy_costmap/global_frame", "/map");
   n.setParam("~dummy_costmap/robot_base_frame", "/map"); // Do this so it doesn't complain about unavailable transform 
   n.setParam("~dummy_costmap/publish_frequency", 0.0);
-  n.setParam("~dummy_costmap/observation_topics", string(""));
+  n.setParam("~dummy_costmap/observation_sources", string(""));
   n.setParam("~dummy_costmap/static_map", false);
 
   

@@ -70,8 +70,8 @@ namespace base_local_planner {
     g_plan_pub_ = ros_node_.advertise<visualization_msgs::Polyline>("~global_plan", 1);
     l_plan_pub_ = ros_node_.advertise<visualization_msgs::Polyline>("~local_plan", 1);
 
-    global_frame_ = costmap_ros_.globalFrame();
-    robot_base_frame_ = costmap_ros_.baseFrame();
+    global_frame_ = costmap_ros_.getGlobalFrameID();
+    robot_base_frame_ = costmap_ros_.getBaseFrameID();
     ros_node_.param("~prune_plan", prune_plan_, true);
 
     ros_node_.param("~yaw_goal_tolerance", yaw_goal_tolerance_, 0.05);
@@ -86,9 +86,9 @@ namespace base_local_planner {
     odom_sub_ = global_node.subscribe<deprecated_msgs::RobotBase2DOdom>(odom_topic, 1, boost::bind(&TrajectoryPlannerROS::odomCallback, this, _1));
 
     //we'll get the parameters for the robot radius from the costmap we're associated with
-    inscribed_radius_ = costmap_ros_.inscribedRadius();
-    circumscribed_radius_ = costmap_ros_.circumscribedRadius();
-    inflation_radius_ = costmap_ros_.inflationRadius();
+    inscribed_radius_ = costmap_ros_.getInscribedRadius();
+    circumscribed_radius_ = costmap_ros_.getCircumscribedRadius();
+    inflation_radius_ = costmap_ros_.getInflationRadius();
     
     ros_node_.param("~acc_lim_x", acc_lim_x, 2.5);
     ros_node_.param("~acc_lim_y", acc_lim_y, 2.5);
@@ -127,7 +127,7 @@ namespace base_local_planner {
     ROS_ASSERT_MSG(world_model_type == "costmap", "At this time, only costmap world models are supported by this controller");
     world_model_ = new CostmapModel(costmap_); 
 
-    tc_ = new TrajectoryPlanner(*world_model_, costmap_, costmap_ros_.robotFootprint(), inscribed_radius_, circumscribed_radius_,
+    tc_ = new TrajectoryPlanner(*world_model_, costmap_, costmap_ros_.getRobotFootprint(), inscribed_radius_, circumscribed_radius_,
         acc_lim_x, acc_lim_y, acc_lim_theta, sim_time, sim_granularity, vx_samples, vtheta_samples, pdist_scale,
         gdist_scale, occdist_scale, heading_lookahead, oscillation_reset_dist, escape_reset_dist, escape_reset_theta, holonomic_robot,
         max_vel_x, min_vel_x, max_vel_th, min_vel_th, min_in_place_vel_th_, backup_vel,
@@ -147,6 +147,7 @@ namespace base_local_planner {
   }
 
   bool TrajectoryPlannerROS::stopped(){
+    boost::recursive_mutex::scoped_lock(odom_lock_);
     return abs(base_odom_.vel.th) <= rot_stopped_velocity_ 
       && abs(base_odom_.vel.x) <= trans_stopped_velocity_
       && abs(base_odom_.vel.y) <= trans_stopped_velocity_;
@@ -193,8 +194,7 @@ namespace base_local_planner {
   }
 
   void TrajectoryPlannerROS::odomCallback(const deprecated_msgs::RobotBase2DOdom::ConstPtr& msg){
-    base_odom_.lock();
-
+    boost::recursive_mutex::scoped_lock(odom_lock_);
     try
     {
       tf::Stamped<btVector3> v_in(btVector3(msg->vel.x, msg->vel.y, 0), ros::Time(), msg->header.frame_id), v_out;
@@ -215,8 +215,6 @@ namespace base_local_planner {
     {
       ROS_DEBUG("Extrapolation exception");
     }
-
-    base_odom_.unlock();
   }
 
   bool TrajectoryPlannerROS::goalReached(){
@@ -313,7 +311,7 @@ namespace base_local_planner {
       robot_msgs::PoseStamped newer_pose;
 
       //we'll look ahead on the path the size of our window
-      unsigned int needed_path_length = std::max(costmap_.cellSizeX(), costmap_.cellSizeY());
+      unsigned int needed_path_length = std::max(costmap_.getSizeInCellsX(), costmap_.getSizeInCellsY());
 
       for(unsigned int i = 0; i < std::min((unsigned int)global_plan_.size(), needed_path_length); ++i){
         const robot_msgs::PoseStamped& new_pose = global_plan_[i];
@@ -371,9 +369,12 @@ namespace base_local_planner {
 
     // Set current velocities from odometry
     robot_msgs::PoseDot global_vel;
+
+    odom_lock_.lock();
     global_vel.vel.vx = base_odom_.vel.x;
     global_vel.vel.vy = base_odom_.vel.y;
     global_vel.ang_vel.vz = base_odom_.vel.th;
+    odom_lock_.unlock();
 
     tf::Stamped<tf::Pose> drive_cmds;
     drive_cmds.frame_id_ = robot_base_frame_;

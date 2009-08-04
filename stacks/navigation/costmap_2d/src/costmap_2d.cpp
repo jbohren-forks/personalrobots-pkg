@@ -217,12 +217,6 @@ namespace costmap_2d{
     return (unsigned int) cells_dist;
   }
 
-  unsigned char* Costmap2D::getCharMapCopy() const {
-    unsigned char* map_copy = new unsigned char[size_x_ * size_y_];
-    memcpy(map_copy, costmap_, size_x_ * size_y_ * sizeof(unsigned char));
-    return map_copy;
-  }
-
   const unsigned char* Costmap2D::getCharMap() const {
     return costmap_;
   }
@@ -273,8 +267,8 @@ namespace costmap_2d{
     start_point_y = max(origin_y_, start_point_y);
 
     //check end bounds
-    end_point_x = min(origin_x_ + metersSizeX(), end_point_x);
-    end_point_y = min(origin_y_ + metersSizeY(), end_point_y);
+    end_point_x = min(origin_x_ + getSizeInMetersX(), end_point_x);
+    end_point_y = min(origin_y_ + getSizeInMetersY(), end_point_y);
 
     unsigned int start_x, start_y, end_x, end_y;
 
@@ -365,10 +359,13 @@ namespace costmap_2d{
 
       const PointCloud& cloud =obs.cloud_;
 
+
       for(unsigned int i = 0; i < cloud.pts.size(); ++i){
         //if the obstacle is too high or too far away from the robot we won't add it
-        if(cloud.pts[i].z > max_obstacle_height_)
+        if(cloud.pts[i].z > max_obstacle_height_){
+          ROS_DEBUG("The point is too high");
           continue;
+        }
 
         //compute the squared distance from the hitpoint to the pointcloud's origin
         double sq_dist = (cloud.pts[i].x - obs.origin_.x) * (cloud.pts[i].x - obs.origin_.x)
@@ -376,13 +373,17 @@ namespace costmap_2d{
           + (cloud.pts[i].z - obs.origin_.z) * (cloud.pts[i].z - obs.origin_.z);
 
         //if the point is far enough away... we won't consider it
-        if(sq_dist >= sq_obstacle_range_)
+        if(sq_dist >= sq_obstacle_range_){
+          ROS_DEBUG("The point is too far away");
           continue;
+        }
 
         //now we need to compute the map coordinates for the observation
         unsigned int mx, my;
-        if(!worldToMap(cloud.pts[i].x, cloud.pts[i].y, mx, my))
+        if(!worldToMap(cloud.pts[i].x, cloud.pts[i].y, mx, my)){
+          ROS_DEBUG("Computing map coords failed");
           continue;
+        }
 
         unsigned int index = getIndex(mx, my);
 
@@ -439,8 +440,8 @@ namespace costmap_2d{
       return;
 
     //we can pre-compute the enpoints of the map outside of the inner loop... we'll need these later
-    double map_end_x = origin_x_ + metersSizeX();
-    double map_end_y = origin_y_ + metersSizeY();
+    double map_end_x = origin_x_ + getSizeInMetersX();
+    double map_end_y = origin_y_ + getSizeInMetersY();
 
     //for each point in the cloud, we want to trace a line from the origin and clear obstacles along it
     for(unsigned int i = 0; i < cloud.pts.size(); ++i){
@@ -483,7 +484,7 @@ namespace costmap_2d{
       if(!worldToMap(wx, wy, x1, y1))
         continue;
 
-      unsigned int cell_raytrace_range = cellDistance(raytrace_range_);
+      unsigned int cell_raytrace_range = cellDistance(clearing_observation.raytrace_range_);
 
       //and finally... we can execute our trace to clear obstacles along that line
       raytraceLine(clearer, x0, y0, x1, y1, cell_raytrace_range);
@@ -506,8 +507,8 @@ namespace costmap_2d{
     start_x = max(origin_x_, start_x);
     start_y = max(origin_y_, start_y);
 
-    end_x = min(origin_x_ + metersSizeX(), end_x);
-    end_y = min(origin_y_ + metersSizeY(), end_y);
+    end_x = min(origin_x_ + getSizeInMetersX(), end_x);
+    end_y = min(origin_y_ + getSizeInMetersY(), end_y);
 
     //get the map coordinates of the bounds of the window
     unsigned int map_sx, map_sy, map_ex, map_ey;
@@ -551,8 +552,8 @@ namespace costmap_2d{
     start_x = max(origin_x_, start_x);
     start_y = max(origin_y_, start_y);
 
-    end_x = min(origin_x_ + metersSizeX(), end_x);
-    end_y = min(origin_y_ + metersSizeY(), end_y);
+    end_x = min(origin_x_ + getSizeInMetersX(), end_x);
+    end_y = min(origin_y_ + getSizeInMetersY(), end_y);
 
     //get the map coordinates of the bounds of the window
     unsigned int map_sx, map_sy, map_ex, map_ey;
@@ -749,35 +750,35 @@ namespace costmap_2d{
     }
   }
 
-  unsigned int Costmap2D::cellSizeX() const{
+  unsigned int Costmap2D::getSizeInCellsX() const{
     return size_x_;
   }
 
-  unsigned int Costmap2D::cellSizeY() const{
+  unsigned int Costmap2D::getSizeInCellsY() const{
     return size_y_;
   }
 
-  double Costmap2D::metersSizeX() const{
+  double Costmap2D::getSizeInMetersX() const{
     return (size_x_ - 1 + 0.5) * resolution_;
   }
 
-  double Costmap2D::metersSizeY() const{
+  double Costmap2D::getSizeInMetersY() const{
     return (size_y_ - 1 + 0.5) * resolution_;
   }
 
-  double Costmap2D::originX() const{
+  double Costmap2D::getOriginX() const{
     return origin_x_;
   }
 
-  double Costmap2D::originY() const{
+  double Costmap2D::getOriginY() const{
     return origin_y_;
   }
 
-  double Costmap2D::resolution() const{
+  double Costmap2D::getResolution() const{
     return resolution_;
   }
 
-  bool Costmap2D::circumscribedCell(unsigned int x, unsigned int y) const {
+  bool Costmap2D::isCircumscribedCell(unsigned int x, unsigned int y) const {
     unsigned char cost = getCost(x, y);
     if(cost < INSCRIBED_INFLATED_OBSTACLE && cost >= circumscribed_cost_lb_)
       return true;

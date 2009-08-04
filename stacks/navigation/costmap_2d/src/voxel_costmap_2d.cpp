@@ -67,8 +67,8 @@ namespace costmap_2d{
     start_point_y = max(origin_y_, start_point_y);
 
     //check end bounds
-    end_point_x = min(origin_x_ + metersSizeX(), end_point_x);
-    end_point_y = min(origin_y_ + metersSizeY(), end_point_y);
+    end_point_x = min(origin_x_ + getSizeInMetersX(), end_point_x);
+    end_point_y = min(origin_y_ + getSizeInMetersY(), end_point_y);
 
     unsigned int start_x, start_y, end_x, end_y;
 
@@ -176,6 +176,7 @@ namespace costmap_2d{
     if(clearing_observation.cloud_.pts.size() == 0)
       return;
 
+
     double sensor_x, sensor_y, sensor_z;
     double ox = clearing_observation.origin_.x;
     double oy = clearing_observation.origin_.y;
@@ -185,8 +186,8 @@ namespace costmap_2d{
       return;
 
     //we can pre-compute the enpoints of the map outside of the inner loop... we'll need these later
-    double map_end_x = origin_x_ + metersSizeX();
-    double map_end_y = origin_y_ + metersSizeY();
+    double map_end_x = origin_x_ + getSizeInMetersX();
+    double map_end_y = origin_y_ + getSizeInMetersY();
 
     for(unsigned int i = 0; i < clearing_observation.cloud_.pts.size(); ++i){
       double wpx = clearing_observation.cloud_.pts[i].x;
@@ -238,7 +239,8 @@ namespace costmap_2d{
 
       double point_x, point_y, point_z;
       if(worldToMap3DFloat(wpx, wpy, wpz, point_x, point_y, point_z)){
-        unsigned int cell_raytrace_range = cellDistance(raytrace_range_);
+        unsigned int cell_raytrace_range = cellDistance(clearing_observation.raytrace_range_);
+        
         //voxel_grid_.markVoxelLine(sensor_x, sensor_y, sensor_z, point_x, point_y, point_z);
         voxel_grid_.clearVoxelLineInMap(sensor_x, sensor_y, sensor_z, point_x, point_y, point_z, costmap_, unknown_threshold_, mark_threshold_, cell_raytrace_range);
       }

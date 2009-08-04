@@ -42,14 +42,14 @@ namespace carrot_planner {
   CarrotPlanner::CarrotPlanner(std::string name, costmap_2d::Costmap2DROS& costmap_ros)
   : costmap_ros_(costmap_ros){
     ros::NodeHandle n(name);
-    n.param("~step_size", step_size_, costmap_ros_.resolution());
+    n.param("~step_size", step_size_, costmap_ros_.getResolution());
     n.param("~min_dist_from_robot", min_dist_from_robot_, 0.10);
     costmap_ros_.getCostmapCopy(costmap_);
     world_model_ = new base_local_planner::CostmapModel(costmap_); 
     //we'll get the parameters for the robot radius from the costmap we're associated with
-    inscribed_radius_ = costmap_ros_.inscribedRadius();
-    circumscribed_radius_ = costmap_ros_.circumscribedRadius();
-    footprint_spec_ = costmap_ros_.robotFootprint();
+    inscribed_radius_ = costmap_ros_.getInscribedRadius();
+    circumscribed_radius_ = costmap_ros_.getCircumscribedRadius();
+    footprint_spec_ = costmap_ros_.getRobotFootprint();
   }
 
 
@@ -91,9 +91,9 @@ namespace carrot_planner {
     plan.clear();
     costmap_ros_.getCostmapCopy(costmap_);
 
-    if(goal.header.frame_id != costmap_ros_.globalFrame()){
+    if(goal.header.frame_id != costmap_ros_.getGlobalFrameID()){
       ROS_ERROR("This planner as configured will only accept goals in the %s frame, but a goal was sent in the %s frame.", 
-          costmap_ros_.globalFrame().c_str(), goal.header.frame_id.c_str());
+          costmap_ros_.getGlobalFrameID().c_str(), goal.header.frame_id.c_str());
       return false;
     }
 

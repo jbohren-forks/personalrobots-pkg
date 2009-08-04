@@ -63,6 +63,7 @@
 
 // Thread suppport
 #include <boost/thread.hpp>
+#include <boost/shared_ptr.hpp>
 
 #include <costmap_2d/rate.h>
 
@@ -90,12 +91,12 @@ namespace costmap_2d {
       ~Costmap2DROS();
 
       /**
-       * @brief  If you want to manage your own observation buffer you can add it to the costmap 
-       * <B>(NOTE: The buffer will be deleted on destruction of the costmap... 
-       * perhaps a boost shared pointer should go here eventually)</B>
-       * @param  buffer A pointer to your observation buffer
+       * @brief  If you want to manage your own observation buffer you can add
+       * it to the costmap. Note, this is somewhat experimental as this feature
+       * has not been used enough to have been proven reliable.
+       * @param  buffer A shared pointer to your observation buffer
        */
-      void addObservationBuffer(ObservationBuffer* buffer);
+      void addObservationBuffer(const boost::shared_ptr<ObservationBuffer>& buffer);
 
       /**
        * @brief  Get the observations used to mark space
@@ -110,20 +111,6 @@ namespace costmap_2d {
        * @return True if all the observation buffers are current, false otherwise
        */
       bool getClearingObservations(std::vector<Observation>& clearing_observations);
-
-      /**
-       * @brief  A callback to handle buffering LaserScan messages
-       * @param message The message returned from a message notifier 
-       * @param buffer A pointer to the observation buffer to update
-       */
-      void laserScanCallback(const tf::MessageNotifier<sensor_msgs::LaserScan>::MessagePtr& message, ObservationBuffer* buffer);
-
-      /**
-       * @brief  A callback to handle buffering PointCloud messages
-       * @param message The message returned from a message notifier 
-       * @param buffer A pointer to the observation buffer to update
-       */
-      void pointCloudCallback(const tf::MessageNotifier<robot_msgs::PointCloud>::MessagePtr& message, ObservationBuffer* buffer);
 
       /**
        * @brief  Update the underlying costmap with new sensor data. 
@@ -187,64 +174,58 @@ namespace costmap_2d {
       void getCostmapCopy(Costmap2D& costmap);
 
       /**
-       * @brief  Returns a copy of the underlying unsigned character array <B>(NOTE: THE USER IS RESPONSIBLE FOR DELETION)</B>
-       * @return A copy of the underlying unsigned character character array used for the costmap
-       */
-      unsigned char* getCharMapCopy();
-
-      /**
        * @brief  Returns the x size of the costmap in cells
        * @return The x size of the costmap in cells
        */
-      unsigned int cellSizeX();
+      unsigned int getSizeInCellsX();
 
       /**
        * @brief  Returns the y size of the costmap in cells
        * @return The y size of the costmap in cells
        */
-      unsigned int cellSizeY();
+      unsigned int getSizeInCellsY();
 
       /**
        * @brief  Returns the resolution of the costmap in meters
        * @return The resolution of the costmap in meters
        */
-      double resolution();
+      double getResolution();
 
       /**
        * @brief  Returns the global frame of the costmap
        * @return The global frame of the costmap
        */
-      std::string globalFrame();
+      std::string getGlobalFrameID();
 
       /**
        * @brief  Returns the local frame of the costmap
        * @return The local frame of the costmap
        */
-      std::string baseFrame();
+      std::string getBaseFrameID();
 
       /**
        * @brief  Returns the inscribed radius of the costmap
        * @return The inscribed radius of the costmap
        */
-      double inscribedRadius();
+      double getInscribedRadius();
 
       /**
        * @brief  Returns the circumscribed radius of the costmap
        * @return The circumscribed radius of the costmap
        */
-      double circumscribedRadius();
+      double getCircumscribedRadius();
 
       /**
        * @brief  Returns the inflation radius of the costmap
        * @return The inflation radius of the costmap
        */
-      double inflationRadius();
+      double getInflationRadius();
 
       /**
        * @brief  Returns the footprint of the robot in the robot_base_frame. To get the footprint in the global_frame use getOrientedFootprint
        * @return The footprint of the robot in the robot_base_frame
        */
-      std::vector<robot_msgs::Point> robotFootprint();
+      std::vector<robot_msgs::Point> getRobotFootprint();
 
       /**
        * @brief  Check if the observation buffers for the cost map are current
@@ -253,7 +234,9 @@ namespace costmap_2d {
       bool isCurrent() {return current_;}
 
       /**
-       * @brief  Subscribes to sensor topics and starts costmap updates
+       * @brief  Subscribes to sensor topics if necessary and starts costmap
+       * updates, can be called to restart the costmap after calls to either
+       * stop() or pause()
        */
       void start();
 
@@ -286,6 +269,20 @@ namespace costmap_2d {
 
     private:
       /**
+       * @brief  A callback to handle buffering LaserScan messages
+       * @param message The message returned from a message notifier 
+       * @param buffer A pointer to the observation buffer to update
+       */
+      void laserScanCallback(const tf::MessageNotifier<sensor_msgs::LaserScan>::MessagePtr& message, const boost::shared_ptr<ObservationBuffer>& buffer);
+
+      /**
+       * @brief  A callback to handle buffering PointCloud messages
+       * @param message The message returned from a message notifier 
+       * @param buffer A pointer to the observation buffer to update
+       */
+      void pointCloudCallback(const tf::MessageNotifier<robot_msgs::PointCloud>::MessagePtr& message, const boost::shared_ptr<ObservationBuffer>& buffer);
+
+      /**
        * @brief  The loop that handles updating the costmap
        * @param  frequency The rate at which to run the loop
        */
@@ -304,18 +301,19 @@ namespace costmap_2d {
       std::string robot_base_frame_; ///< @brief The frame_id of the robot base
       boost::thread* map_update_thread_; ///< @brief A thread for updating the map
 
-      std::vector<tf::MessageNotifierBase*> observation_notifiers_; ///< @brief Used to make sure that transforms are available for each sensor
-      std::vector<ObservationBuffer*> observation_buffers_; ///< @brief Used to store observations from various sensors
-      std::vector<ObservationBuffer*> marking_buffers_; ///< @brief Used to store observation buffers used for marking obstacles
-      std::vector<ObservationBuffer*> clearing_buffers_; ///< @brief Used to store observation buffers used for clearing obstacles
+      std::vector<boost::shared_ptr<tf::MessageNotifierBase> > observation_notifiers_; ///< @brief Used to make sure that transforms are available for each sensor
+      std::vector<boost::shared_ptr<ObservationBuffer> > observation_buffers_; ///< @brief Used to store observations from various sensors
+      std::vector<boost::shared_ptr<ObservationBuffer> > marking_buffers_; ///< @brief Used to store observation buffers used for marking obstacles
+      std::vector<boost::shared_ptr<ObservationBuffer> > clearing_buffers_; ///< @brief Used to store observation buffers used for clearing obstacles
       bool rolling_window_; ///< @brief Whether or not the costmap should roll with the robot
       bool current_; ///< @brief Whether or not all the observation buffers are updating at the desired rate
       double transform_tolerance_; // timeout before transform errors
       Costmap2DPublisher* costmap_publisher_;
-      bool stop_updates_, initialized_;
+      bool stop_updates_, initialized_, stopped_;
       bool publish_voxel_;
       std::vector<robot_msgs::Point> footprint_spec_;
       ros::Publisher voxel_pub_;
+      boost::recursive_mutex lock_;
 
   };
 };

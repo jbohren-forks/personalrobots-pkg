@@ -208,13 +208,6 @@ namespace costmap_2d {
       }
 
       /**
-       * @brief  Will return a copy of the underlying unsigned char array used as the costmap 
-       * <b>(NOTE: THE BURDEN IS ON THE USER TO DELETE THE ARRAY RETURNED)</b>
-       * @return A copy of the underlying unsigned char array storing cost values
-       */
-      unsigned char* getCharMapCopy() const;
-
-      /**
        * @brief  Will return a immutable pointer to the underlying unsigned char array used as the costmap
        * @return A pointer to the underlying unsigned char array storing cost values
        */
@@ -224,71 +217,61 @@ namespace costmap_2d {
        * @brief  Accessor for the x size of the costmap in cells
        * @return The x size of the costmap
        */
-      unsigned int cellSizeX() const;
+      unsigned int getSizeInCellsX() const;
 
       /**
        * @brief  Accessor for the y size of the costmap in cells
        * @return The y size of the costmap
        */
-      unsigned int cellSizeY() const;
+      unsigned int getSizeInCellsY() const;
 
       /**
        * @brief  Accessor for the x size of the costmap in meters
        * @return The x size of the costmap (returns the centerpoint of the last legal cell in the map)
        */
-      double metersSizeX() const;
+      double getSizeInMetersX() const;
 
       /**
        * @brief  Accessor for the y size of the costmap in meters
        * @return The y size of the costmap (returns the centerpoint of the last legal cell in the map)
        */
-      double metersSizeY() const;
+      double getSizeInMetersY() const;
 
       /**
        * @brief  Accessor for the x origin of the costmap
        * @return The x origin of the costmap
        */
-      double originX() const;
+      double getOriginX() const;
 
       /**
        * @brief  Accessor for the y origin of the costmap
        * @return The y origin of the costmap
        */
-      double originY() const;
+      double getOriginY() const;
 
       /**
        * @brief  Accessor for the resolution of the costmap
        * @return The resolution of the costmap
        */
-      double resolution() const;
+      double getResolution() const;
     
       /**
        * @brief  Accessor for the inscribed radius of the robot
        * @return The inscribed radius
        */
-      double inscribedRadius() const { return inscribed_radius_; }
+      double getInscribedRadius() const { return inscribed_radius_; }
     
       /**
        * @brief  Accessor for the circumscribed radius of the robot
        * @return The circumscribed radius
        */
-      double circumscribedRadius() const { return circumscribed_radius_; }
+      double getCircumscribedRadius() const { return circumscribed_radius_; }
     
       /**
        * @brief  Accessor for the inflation radius of the robot
        * @return The inflation radius
        */
-      double inflationRadius() const { return inflation_radius_; }
-
-      /**
-       * @brief  Locks the costmap
-       */
-      void lock() { lock_.lock(); }
-
-      /**
-       * @brief  Unlocks the costmap
-       */
-      void unlock() { lock_.unlock(); }
+      double getInflationRadius() const { return inflation_radius_; }
 
       /**
        * @brief  Sets the cost of a convex polygon to a desired value
@@ -321,12 +304,13 @@ namespace costmap_2d {
       virtual void updateOrigin(double new_origin_x, double new_origin_y);
 
       /**
-       * @brief  Check if a cell falls within the circumscribed radius of the robot
+       * @brief  Check if a cell falls within the circumscribed radius of the
+       * robot but outside the inscribed radius of the robot
        * @param The x coordinate of the cell
        * @param The y coordinate of the cell
-       * @return True if the cell is inside the circumscribed radius, false otherwise
+       * @return True if the cell is inside the circumscribed radius but outside the inscribed radius, false otherwise
        */
-      bool circumscribedCell(unsigned int x, unsigned int y) const;
+      bool isCircumscribedCell(unsigned int x, unsigned int y) const;
 
       /**
        * @brief  Given a distance... compute a cost
@@ -356,6 +340,7 @@ namespace costmap_2d {
         return circumscribed_cost_lb_;
       }
 
+    protected:
       /**
        * @brief  Given an index of a cell in the costmap, place it into a priority queue for obstacle inflation
        * @param  index The index of the cell
@@ -388,7 +373,6 @@ namespace costmap_2d {
       }
 
     private:
-
       /**
        * @brief  Insert new obstacles into the cost map
        * @param obstacles The point clouds of obstacles to insert into the map 
@@ -555,7 +539,6 @@ namespace costmap_2d {
       double weight_;
       unsigned char circumscribed_cost_lb_;
       std::priority_queue<CellData> inflation_queue_;
-      boost::recursive_mutex lock_; ///< @brief A lock for accessing data in callbacks safely
 
       //functors for raytracing actions
       class ClearCell {

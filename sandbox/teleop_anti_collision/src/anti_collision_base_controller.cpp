@@ -50,12 +50,12 @@ namespace anti_collision_base_controller
     costmap_ros_ = new costmap_2d::Costmap2DROS("", tf_);
 
     //we'll get the parameters for the robot radius from the costmap we're associated with
-    inscribed_radius_ = costmap_ros_->inscribedRadius();
-    circumscribed_radius_ = costmap_ros_->circumscribedRadius();
-    inflation_radius_ = costmap_ros_->inflationRadius();
-    global_frame_ = costmap_ros_->globalFrame();
-    robot_base_frame_ = costmap_ros_->baseFrame();
-    footprint_spec_ = costmap_ros_->robotFootprint();
+    inscribed_radius_ = costmap_ros_->getInscribedRadius();
+    circumscribed_radius_ = costmap_ros_->getCircumscribedRadius();
+    inflation_radius_ = costmap_ros_->getInflationRadius();
+    global_frame_ = costmap_ros_->getGlobalFrameID();
+    robot_base_frame_ = costmap_ros_->getBaseFrameID();
+    footprint_spec_ = costmap_ros_->getRobotFootprint();
 
     ros_node_.param("~controller_frequency", controller_frequency_, 10.0);
 

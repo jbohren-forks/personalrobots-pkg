@@ -58,7 +58,7 @@ namespace base_local_planner{
       double backup_vel,
       bool dwa, bool heading_scoring, double heading_scoring_timestep, bool simple_attractor,
       vector<double> y_vels)
-    : map_(costmap.cellSizeX(), costmap.cellSizeY()), costmap_(costmap), 
+    : map_(costmap.getSizeInCellsX(), costmap.getSizeInCellsY()), costmap_(costmap), 
     world_model_(world_model), footprint_spec_(footprint_spec),
     inscribed_radius_(inscribed_radius), circumscribed_radius_(circumscribed_radius),
     goal_x_(0), goal_y_(0),
