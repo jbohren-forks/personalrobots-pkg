@@ -1,0 +1,3 @@
+<launch>
+  <node pkg="map_server" type="map_saver" args="-f 2dmapping_pr2"/>
+</launch>

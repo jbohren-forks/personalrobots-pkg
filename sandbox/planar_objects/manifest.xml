@@ -18,6 +18,7 @@
   <depend package="topic_synchronizer2" />
   <depend package="opencv_latest"/>
   <depend package="tf"/>
+  <depend package="eigen"/>
 
 </package>
 

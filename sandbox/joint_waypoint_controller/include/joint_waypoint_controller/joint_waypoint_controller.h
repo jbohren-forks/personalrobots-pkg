@@ -105,7 +105,7 @@ private:
     TRAJECTORY_TYPE_QUINTIC
   } trajectory_type_;
 
-  void jointTrajToWaypointTrajWithLimits(const manipulation_msgs::JointTraj& joint_traj, manipulation_msgs::WaypointTrajWithLimits& waypoint_traj) const;
+  void jointTrajToWaypointTraj(const manipulation_msgs::JointTraj& joint_traj, manipulation_msgs::WaypointTrajWithLimits& waypoint_traj) const;
   void waypointTrajToSplineTraj(const manipulation_msgs::WaypointTrajWithLimits& waypoint_traj, manipulation_msgs::SplineTraj& spline_traj) const;
 };
 

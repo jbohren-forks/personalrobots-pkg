@@ -112,7 +112,7 @@ bool JointWaypointController::trajectoryStart(pr2_mechanism_controllers::Traject
   // first convert the input into a "WaypointTrajWithLimits" message
   manipulation_msgs::WaypointTrajWithLimits trajectory;
   manipulation_msgs::WaypointTrajWithLimits trajectory_out;
-  jointTrajToWaypointTrajWithLimits(req.traj, trajectory);
+  jointTrajToWaypointTraj(req.traj, trajectory);
 
   // run the filters on it:
   if (!filter_chain_.update(trajectory, trajectory_out))
@@ -174,7 +174,7 @@ bool JointWaypointController::trajectoryCancel(pr2_mechanism_controllers::Trajec
   return result;
 }
 
-void JointWaypointController::jointTrajToWaypointTrajWithLimits(const manipulation_msgs::JointTraj& joint_traj, manipulation_msgs::WaypointTrajWithLimits& waypoint_traj) const
+void JointWaypointController::jointTrajToWaypointTraj(const manipulation_msgs::JointTraj& joint_traj, manipulation_msgs::WaypointTrajWithLimits& waypoint_traj) const
 {
   waypoint_traj.names = joint_traj.names;
   int size = joint_traj.points.size();

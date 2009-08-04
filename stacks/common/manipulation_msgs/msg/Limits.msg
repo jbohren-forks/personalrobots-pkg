@@ -6,5 +6,5 @@ float64 min_position
 float64 max_position
 
 uint8 has_velocity_limits
-float64 min_velocity
 float64 max_velocity
+# min_velocity is assumed to be -max_velocity
