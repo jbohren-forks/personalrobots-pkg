@@ -82,6 +82,13 @@ int read_mcs(std::string fname)
   std::auto_ptr<std::vector<uint8_t> > data;
   int curseg = -1; // This will work for the forearm camera, but will break for larger address spaces.
   int linenum = 0;
+  
+  if (!file.is_open())
+  {
+    ROS_FATAL("Failed to open file %s", fname.c_str());
+    return -1;
+  }
+
   while (!file.eof())
   {
     linenum++;

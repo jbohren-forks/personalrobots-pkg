@@ -76,6 +76,7 @@ int fcamFindByUrl(const char *url, IpCamList *camera, unsigned wait_us, const ch
   static const char *multiinterface = "Multiple #-prefixed host interfaces found.";
   static const char *discoverfailed = "Discover failed. The specified address or interface may be bad.";
   static const char *badserial = "serial:// may only be followed by an integer.";
+  static const char *badany = "Unexpected characters after any://.";
   static const char *badip = "@ must be followed by a valid IP address.";
   const char *name = "name://"; int namelen = strlen(name);
   const char *serial = "serial://"; int seriallen = strlen(serial);
@@ -152,6 +153,13 @@ int fcamFindByUrl(const char *url, IpCamList *camera, unsigned wait_us, const ch
     *curpos = 0;
   }
   // Now idstart, address and interface are set.
+
+  if (mode == 3 && *idstart)
+  {
+    if (errmsg)
+      *errmsg = badany;
+    goto bailout;
+  }
 
   if (mode == 2) // serial:// convert the number to integer.
   {
