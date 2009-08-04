@@ -298,7 +298,7 @@ bool planning_environment::PlanningMonitor::isStateCollisionFree(const planning_
 
     // check for collision
     std::vector<collision_space::EnvironmentModel::Contact> contacts;
-    bool valid = !getEnvironmentModel()->getCollisionContacts(contacts, 1);
+    bool valid = !getEnvironmentModel()->getCollisionContacts(contacts, maxCollisionContacts_);
     
     getKinematicModel()->unlock();
     getEnvironmentModel()->unlock();
