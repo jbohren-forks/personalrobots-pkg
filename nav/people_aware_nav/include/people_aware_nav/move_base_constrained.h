@@ -44,7 +44,6 @@
 #include <ros/ros.h>
 #include <costmap_2d/costmap_2d_ros.h>
 #include <costmap_2d/costmap_2d.h>
-#include <costmap_2d/rate.h>
 #include <navfn/navfn_ros.h>
 #include <base_local_planner/trajectory_planner_ros.h>
 #include <vector>

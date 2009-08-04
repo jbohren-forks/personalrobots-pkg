@@ -206,7 +206,7 @@ void MoveBaseConstrained::makePlan(const PoseStamped& goal, const Polygon3D& for
 
     ROS_INFO ("Made plan");
 
-    costmap_2d::Rate r(controller_frequency_);
+    ros::Rate r(controller_frequency_);
     last_valid_control_ = ros::Time::now();
     robot_msgs::PoseDot cmd_vel;
     while(!isPreemptRequested() && ros_node_.ok()){
@@ -393,7 +393,7 @@ void MoveBaseConstrained::makePlan(const PoseStamped& goal, const Polygon3D& for
 bool MoveBaseConstrained::tryPlan(geometry_msgs::PoseStamped goal, const Polygon3D& forbidden){
     ros::Duration patience = ros::Duration(planner_patience_);
     ros::Time attempt_end = ros::Time::now() + patience;
-    costmap_2d::Rate r(controller_frequency_);
+    ros::Rate r(controller_frequency_);
     while(ros::Time::now() < attempt_end && !isPreemptRequested() && ros_node_.ok()){
       makePlan(goal, forbidden);
 
