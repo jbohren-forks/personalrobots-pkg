@@ -1,0 +1,15 @@
+<launch>
+  <node pkg="pr2_ik" type="pr2_ik_with_collision" name="pr2_ik_wc_left_arm" output="screen" >
+    <remap from="arm_ik" to="pr2_ik_left_arm/ik_service" />	
+    <remap from="arm_ik_query" to="pr2_ik_left_arm/ik_query" />	
+    <remap from="chomp_collision_service" to="/chomp_cost_server/get_chomp_collision_cost" />
+    <remap from="arm_ik_with_collision" to="pr2_ik_wc_left_arm/ik_service" />	
+    <remap from="arm_ik_with_collision_query" to="pr2_ik_wc_left_arm/ik_query" />	
+    <param name="root_name" value="torso_lift_link"/>
+    <param name="free_angle_min" value="-3.7" type="double"/>
+    <param name="free_angle_max" value="0.6" type="double"/>
+    <param name="free_angle" value="2" type="int"/>
+    <param name="max_search_intervals" value="100" type="int"/>
+    <param name="collision_link_names" value="l_gripper_l_finger_link l_gripper_r_finger_link l_gripper_palm_link l_forearm_link l_upper_arm_link"/>
+  </node>
+</launch>
