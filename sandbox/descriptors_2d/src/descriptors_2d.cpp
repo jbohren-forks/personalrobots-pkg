@@ -676,6 +676,9 @@ ContourFragmentDescriptor::ContourFragmentDescriptor(int cf_id, string dir) :
 //     cvWaitKey(0);
     chamfer_->addTemplateFromImage(cfc_.contours_[i]);
   }
+
+  result_size_ = 2;
+  name_ = "temp";
 }
 
 ContourFragmentDescriptor::ContourFragmentDescriptor(int cf_id, ContourFragmentDescriptor* chamfer_provider) :
