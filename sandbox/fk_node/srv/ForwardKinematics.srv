@@ -1,6 +1,6 @@
 motion_planning_msgs/KinematicJoint[] joints
 ---
 string[] link_names
-robot_msgs/Pose[] link_poses
+geometry_msgs/Pose[] link_poses
 string base_frame
 byte in_collision
