@@ -1,12 +1,12 @@
 /*
- * box_tracker.h
+ * articulation_learner.h
  *
- *  Created on: Jul 28, 2009
+ *  Created on: Aug 3, 2009
  *      Author: sturm
  */
 
-#ifndef BOX_TRACKER_H_
-#define BOX_TRACKER_H_
+#ifndef ARTICULATED_OBJECTS_H_
+#define ARTICULATED_OBJECTS_H_
 
 #include "ros/ros.h"
 #include "topic_synchronizer2/topic_synchronizer.h"
@@ -20,51 +20,47 @@
 
 #include "vis_utils.h"
 #include "track_utils.h"
+#include "articulation_models.h"
 
 namespace planar_objects
 {
 
-class BoxTracker
+class ArticulationLearner
 {
 public:
   ros::NodeHandle nh;
   TopicSynchronizer sync;
 
-  int oldLines;
-  int newLines;
-  int track_ids;
+  std::vector<ManifoldModel*> models;
 
   // PARAMETERS
-  bool show_boxes;
+  bool visualize;
   bool verbose;
-  TrackParameters params;
 
   // MESSAGES - INCOMING
-  ros::Subscriber observations_sub;
-  BoxObservationsConstPtr observations_msg;
-  std::vector<btBoxObservation> observations;
+  ros::Subscriber tracks_sub;
+  BoxTracksConstPtr tracks_msg;
   std::vector<btBoxTrack> tracks;
 
   // MESSAGES - OUTGOING
-  ros::Publisher tracks_pub;
   ros::Publisher visualization_pub;
 
   // Constructor
-  BoxTracker();
+  ArticulationLearner();
 
   // Callbacks
-  void observationsCallback(const BoxObservations::ConstPtr& observations);
+  void tracksCallback(const BoxTracks::ConstPtr& tracks);
   void syncCallback();
 
-  void visualizeObservations();
-  void visualizeTracks();
-  void removeOldLines();
-  void removeOldTracks(ros::Duration timeout = ros::Duration(5.00) );
-  void sendTracks();
+  void releaseModels();
+  void createModels();
+  void updateModels();
+  void filterModels();
 };
 
 }
 
 int main(int argc, char** argv);
 
-#endif /* BOX_TRACKER_H_ */
+
+#endif /* ARTICULATED_OBJECTS_H_ */

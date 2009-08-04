@@ -752,8 +752,8 @@ std::vector<CornerCandidate> BoxDetector::groupCorners(std::vector<CornerCandida
 
     for (size_t j = 1; j < grouped_corners[i].size(); j++)
     {
-      o = o.slerp(grouped_corners[i][j].tf.getRotation(), 1 / (double)grouped_corners[i].size());
-      t = t.lerp(grouped_corners[i][j].tf.getOrigin(), 1 / (double)grouped_corners[i].size());
+      o = o.slerp(grouped_corners[i][j].tf.getRotation(), 1 / (j+1.0));
+      t = t.lerp(grouped_corners[i][j].tf.getOrigin(), 1 / (j+1.0));
     }
 
     result[i].tf = btTransform(o, t);
