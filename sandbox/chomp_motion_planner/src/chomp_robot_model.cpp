@@ -226,6 +226,8 @@ bool ChompRobotModel::init()
   ROS_INFO("100000 FK calls in %f wall-seconds.", (ros::WallTime::now() - start_time).toSec());
 */
 
+  ROS_INFO("Initialized chomp robot model in %s reference frame.", reference_frame_.c_str());
+
   return true;
 }
 

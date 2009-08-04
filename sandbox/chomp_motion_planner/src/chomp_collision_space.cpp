@@ -93,6 +93,7 @@ bool ChompCollisionSpace::init()
   collision_map_notifier_ = new tf::MessageNotifier<mapping_msgs::CollisionMap>(tf_,
       boost::bind(&ChompCollisionSpace::collisionMapCallback, this, _1),
       "collision_map", reference_frame_, 1);
+  ROS_INFO("Initialized chomp collision space in %s reference frame.", reference_frame_.c_str());
   return true;
 }
 

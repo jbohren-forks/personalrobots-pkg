@@ -44,6 +44,7 @@
 #include <boost/thread/mutex.hpp>
 #include <kdl/jntarray.hpp>
 #include <mechanism_msgs/MechanismState.h>
+#include <visualization_msgs/MarkerArray.h>
 
 namespace chomp
 {
@@ -69,6 +70,7 @@ private:
   ros::NodeHandle node_;
   ros::ServiceServer get_chomp_collision_cost_server_;
   ros::Subscriber mechanism_state_subscriber_;
+  ros::Publisher vis_marker_array_publisher_;
 
   ChompRobotModel chomp_robot_model_;
   ChompCollisionSpace chomp_collision_space_;
