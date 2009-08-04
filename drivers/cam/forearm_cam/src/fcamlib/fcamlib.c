@@ -93,7 +93,8 @@ int fcamFindByUrl(const char *url, IpCamList *camera, unsigned wait_us, const ch
   
   fcamCamListInit(&camList); // Must happen before any potential failures.
 
-  errmsg = NULL;
+  if (errmsg)
+    *errmsg = NULL;
 
   if (!copy)
     return -1;
@@ -118,7 +119,8 @@ int fcamFindByUrl(const char *url, IpCamList *camera, unsigned wait_us, const ch
   }
   else
   {
-    *errmsg = badprefix;
+    if (errmsg)
+      *errmsg = badprefix;
     goto bailout;
   }
 
@@ -129,7 +131,8 @@ int fcamFindByUrl(const char *url, IpCamList *camera, unsigned wait_us, const ch
     {
       if (address)
       {
-        *errmsg = multiaddress;
+        if (errmsg)
+          *errmsg = multiaddress;
         goto bailout;
       }
       address = curpos + 1;
@@ -138,7 +141,8 @@ int fcamFindByUrl(const char *url, IpCamList *camera, unsigned wait_us, const ch
     {
       if (interface)
       {
-        *errmsg = multiinterface;
+        if (errmsg)
+          *errmsg = multiinterface;
         goto bailout;
       }
       interface = curpos + 1;
@@ -155,7 +159,8 @@ int fcamFindByUrl(const char *url, IpCamList *camera, unsigned wait_us, const ch
     serialnum = strtol(idstart, &endpos, 10);
     if (*idstart == 0 || *endpos != 0)
     {
-      *errmsg = badserial;
+      if (errmsg)
+        *errmsg = badserial;
       goto bailout;
     }
   }
@@ -165,7 +170,8 @@ int fcamFindByUrl(const char *url, IpCamList *camera, unsigned wait_us, const ch
   // address (if specified) will end up in the list.
   if (fcamDiscover(interface, &camList, address, wait_us) == -1)
   {
-    *errmsg = discoverfailed;
+    if (errmsg)
+      *errmsg = discoverfailed;
     goto bailout;
   }
 
@@ -191,7 +197,8 @@ int fcamFindByUrl(const char *url, IpCamList *camera, unsigned wait_us, const ch
         else
         {
           fprintf(stderr, "Camera IP address is %s.", address);
-          *errmsg = badip;
+          if (errmsg)
+            *errmsg = badip;
           retval = -1;
           goto bailout;
         }

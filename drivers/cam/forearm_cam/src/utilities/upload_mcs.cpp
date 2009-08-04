@@ -48,6 +48,8 @@
 #include <ipcam_packet.h>
 #include <host_netutil.h>
 #include <fcamlib.h>
+
+#include <boost/format.hpp>
   
 // We are assuming that the firmware will fit in the first half of the
 // pages. This may not turn out to be true later...
@@ -211,33 +213,38 @@ void bitswap()
     firmware[i] = swapped[firmware[i]];
 }
 
-int write_flash(char *if_name, char *ip_address, int sn)
+int write_flash(char *camera_url)
 {
-  // Create a new IpCamList to hold the camera list
-  IpCamList camList;
-  fcamCamListInit(&camList);
+  IpCamList camera;
+  std::string ip_address;
+  const char *errmsg;
+  int outval = fcamFindByUrl(camera_url, &camera, SEC_TO_USEC(0.1), &errmsg);
+  uint8_t *ip = (uint8_t *) &camera.ip;
 
-  // Discover any connected cameras, wait for 0.5 second for replies
-  if( fcamDiscover(if_name, &camList, NULL, SEC_TO_USEC(0.5)) == -1) {
-    fprintf(stderr, "Discover error\n");
-    return -1;
-  }
+  switch (outval)
+  {
+    case 0:
+      ROS_ERROR("No camera matching %s was found.", camera_url);
+      return -1;
 
-  if (fcamCamListNumEntries(&camList) == 0) {
-    fprintf(stderr, "No cameras found\n");
-    return -1;
-  }
+    case 1:
+      ip_address = (boost::format("%i.%i.%i.%i")%(int)ip[0]%(int)ip[1]%(int)ip[2]%(int)ip[3]).str();
+      break;
 
-  // Open camera with requested serial number
-  int index = fcamCamListFind(&camList, sn);
-  if (index == -1) {
-    fprintf(stderr, "Couldn't find camera with S/N %i\n", sn);
-    return -1;
+    case 2:
+      ROS_ERROR("More than one camera matched %s. Use the discover tool to determine a non-unique url for the camera.", camera_url);
+      return -1;
+
+    case -1:
+      ROS_ERROR("Camera search failed: %s", errmsg);
+      return -1;
+
+    default:
+      ROS_ERROR("fcamFindByUrl returned illegal return value. This should never happen and is a bug.");
   }
-  IpCamList* camera = fcamCamListGetEntry(&camList, index);
 
   // Configure the camera with its IP address, wait up to 500ms for completion
-  int retval = fcamConfigure(camera, ip_address, SEC_TO_USEC(0.5));
+  int retval = fcamConfigure(&camera, ip_address.c_str(), SEC_TO_USEC(0.5));
   if (retval != 0) {
     if (retval == ERR_CONFIG_ARPFAIL) {
       fprintf(stderr, "Unable to create ARP entry (are you root?), continuing anyway\n");
@@ -247,8 +254,8 @@ int write_flash(char *if_name, char *ip_address, int sn)
     }
   }
 
-  if ( fcamTriggerControl( camera, TRIG_STATE_INTERNAL ) != 0) {
-    ROS_FATAL("Could not communicate with camera after configuring IP. Is ARP set? Is %s accessible from %s?", ip_address, if_name);
+  if ( fcamTriggerControl( &camera, TRIG_STATE_INTERNAL ) != 0) {
+    ROS_FATAL("Could not communicate with camera after configuring IP. Is ARP set? Is %s accessible from %s?", ip_address.c_str(), camera.ifName);
     return -1;
   }
   
@@ -275,7 +282,7 @@ int write_flash(char *if_name, char *ip_address, int sn)
     int startretries = 1;
     int retries = startretries;
 
-    if (fcamReliableFlashWrite(camera, page, (uint8_t *) firmware + addr, &retries) != 0)
+    if (fcamReliableFlashWrite(&camera, page, (uint8_t *) firmware + addr, &retries) != 0)
     {
       ROS_FATAL("Flash write error on page %i.", page);
       ROS_FATAL("If you reset the camera it will probably not come up.");
@@ -303,7 +310,7 @@ int write_flash(char *if_name, char *ip_address, int sn)
       fflush(stderr);
     }
 
-    if (fcamReliableFlashRead(camera, page, (uint8_t *) buff, NULL) != 0)
+    if (fcamReliableFlashRead(&camera, page, (uint8_t *) buff, NULL) != 0)
     {
       ROS_FATAL("Flash read error on page %i.", page);
       ROS_FATAL("If you reset the camera it will probably not come up.");
@@ -323,15 +330,15 @@ int write_flash(char *if_name, char *ip_address, int sn)
   
   ROS_INFO("Success! Restarting camera, should take about 10 seconds to come back up after this.");
 
-  fcamReconfigureFPGA(camera);
+  fcamReconfigureFPGA(&camera);
 
   return 0;
 }
 
 int main(int argc, char **argv)
 {
-  if (argc != 5 && argc != 2) {
-    fprintf(stderr, "Usage: %s <file.mcs> <Interface> <IP address> <Serial number>\n", argv[0]);
+  if (argc != 3 && argc != 2) {
+    fprintf(stderr, "Usage: %s <file.mcs> <camera_url>\n", argv[0]);
     fprintf(stderr, "       %s <file.mcs> > dump.bin\n", argv[0]);
     return -1;
   }
@@ -353,10 +360,7 @@ int main(int argc, char **argv)
     return 0;
   }
 
-  char* if_name = argv[2];
-  char* ip_address = argv[3];
-  int sn = atoi(argv[4]);
+  char* camera_url = argv[2];
 
-  write_flash(if_name, ip_address, sn);  
-  
+  write_flash(camera_url);  
 }
