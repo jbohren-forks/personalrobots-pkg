@@ -8,16 +8,16 @@
     <include file="$(find pr2_gazebo)/prototype1.launch"/>
 
     <!-- load map -->
-    <node pkg="map_server" type="map_server" args="$(find gazebo_worlds)/Media/materials/textures/willowMap25mm.png 0.025" respawn="false" output="screen" />
+    <node pkg="map_server" type="map_server" args="$(find gazebo_worlds)/Media/materials/textures/willowMap25mm.png 0.025" respawn="false" />
     <!--
-    <node pkg="map_server" type="map_server" args="$(find gazebo_worlds)/Media/materials/textures/willowMap.png 0.1" respawn="false" output="screen" />
+    <node pkg="map_server" type="map_server" args="$(find gazebo_worlds)/Media/materials/textures/willowMap.png 0.1" respawn="false" />
     -->
 
     <!-- nav-stack -->
     <include file="$(find 2dnav_gazebo)/2dnav-stack-fake_localization.launch"/>
 
     <include file="$(find 2dnav_pr2)/rviz/rviz_move_base.launch"/>
-    <node pkg="rxtools" type="rxconsole" respawn="false" output="screen" />
+    <node pkg="rxtools" type="rxconsole" respawn="false" />
     <!--
     <param name="/trex/ping_frequency" value="1"/>
     <node pkg="highlevel_controllers" type="recharge_controller" args="" respawn="false" />

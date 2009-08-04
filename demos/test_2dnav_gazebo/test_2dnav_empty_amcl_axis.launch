@@ -7,16 +7,16 @@
     <include file="$(find pr2_gazebo)/prototype1.launch"/>
 
     <!-- load map -->
-    <node pkg="map_server" type="map_server" args="$(find gazebo_worlds)/Media/materials/textures/map_blank.png 0.1" respawn="false" output="screen" />
+    <node pkg="map_server" type="map_server" args="$(find gazebo_worlds)/Media/materials/textures/map_blank.png 0.1" respawn="false" />
 
     <!-- nav-stack -->
     <include file="$(find 2dnav_gazebo)/2dnav-stack-amcl.launch"/>
 
     <!-- for visualization -->
     <!--
-    <node pkg="nav_view" type="nav_view" respawn="false" output="screen" />
-    <node pkg="rviz" type="rviz" respawn="false" output="screen" />
-    <node pkg="rosviz" type="rxplot" respawn="false" output="screen" args="-m. -p10 /state/pos/x,/state/pos/y,/state/pos/th" />
+    <node pkg="nav_view" type="nav_view" respawn="false" />
+    <node pkg="rviz" type="rviz" respawn="false" />
+    <node pkg="rosviz" type="rxplot" respawn="false" args="-m. -p10 /state/pos/x,/state/pos/y,/state/pos/th" />
     -->
 
     <!--
