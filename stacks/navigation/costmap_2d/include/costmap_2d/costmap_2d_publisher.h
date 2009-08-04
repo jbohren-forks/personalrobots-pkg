@@ -44,13 +44,39 @@
 #include <boost/thread.hpp>
 
 namespace costmap_2d {
+  /**
+   * @class Costmap2DPublisher
+   * @brief A tool to periodically publish visualization data from a Costmap2D
+   */
   class Costmap2DPublisher {
     public:
+      /**
+       * @brief  Constructor for the Costmap2DPublisher
+       * @param  ros_node The node under which to publish the visualization output
+       * @param  global_frame The frame in which to publish the visualization output
+       */
       Costmap2DPublisher(ros::NodeHandle& ros_node, double publish_frequency, std::string global_frame);
+
+      /**
+       * @brief  Destructor
+       */
       ~Costmap2DPublisher();
 
+      /**
+       * @brief  Publishes the visualization data over ROS
+       */
       void publishCostmap();
+
+      /**
+       * @brief  Update the visualization data from a Costmap2D
+       * @param costmap The Costmap2D object to create visualization messages from 
+       */
       void updateCostmapData(const Costmap2D& costmap);
+
+      /**
+       * @brief Check if the publisher is active
+       * @return True if the frequency for the publisher is non-zero, false otherwise
+       */
       bool active() {return active_;}
 
     private:
