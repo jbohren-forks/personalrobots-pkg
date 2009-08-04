@@ -230,7 +230,7 @@ bool getComponentParam(std::string name) {
 
 
 int main(int argc, char** argv){ 
-  ros::init(argc, argv, "trex_pr2/action_container");
+  ros::init(argc, argv, "trex_pr2/stub_ros_container");
   ros::NodeHandle node_handle;
 
   // Create state publishers, if parameters are set
@@ -373,6 +373,34 @@ int main(int argc, char** argv){
   runner.run();
 
   ros::spin();
+
+  check_path.terminate();
+  detect_door.terminate();
+  detect_handle.terminate();
+  grasp_handle.terminate();
+  unlatch_handle.terminate();
+  open_door.terminate();
+  move_base_door.terminate();
+  touch_door.terminate();
+  push_door.terminate();
+  release_handle.terminate();
+  detect_plug_on_base.terminate();
+  move_and_grasp_plug.terminate();
+  stow_plug.terminate();
+  plugs_untuck_arms.terminate();
+  localize_plug_in_gripper.terminate();
+  unplug.terminate();
+  plug_in.terminate();
+  detect_outlet_fine.terminate();
+  detect_outlet_coarse.terminate();
+  switch_controllers.terminate();
+  move_base.terminate();
+  move_base_local.terminate();
+  recharge.terminate();
+  shell_command.terminate();
+  notify_door_blocked.terminate();
+  safety_tuck_arms.terminate();
+  set_laser_tilt.terminate();
 
   if (base_state_publisher)
     delete base_state_publisher;
