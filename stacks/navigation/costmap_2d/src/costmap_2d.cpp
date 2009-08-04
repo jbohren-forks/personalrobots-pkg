@@ -41,12 +41,12 @@ using namespace std;
 namespace costmap_2d{
   Costmap2D::Costmap2D(unsigned int cells_size_x, unsigned int cells_size_y, 
       double resolution, double origin_x, double origin_y, double inscribed_radius,
-      double circumscribed_radius, double inflation_radius, double obstacle_range,
-      double max_obstacle_height, double raytrace_range, double weight,
+      double circumscribed_radius, double inflation_radius, double max_obstacle_range,
+      double max_obstacle_height, double max_raytrace_range, double weight,
       const std::vector<unsigned char>& static_data, unsigned char lethal_threshold) : size_x_(cells_size_x),
   size_y_(cells_size_y), resolution_(resolution), origin_x_(origin_x), origin_y_(origin_y), static_map_(NULL),
-  costmap_(NULL), markers_(NULL), sq_obstacle_range_(obstacle_range * obstacle_range), 
-  max_obstacle_height_(max_obstacle_height), raytrace_range_(raytrace_range), cached_costs_(NULL), cached_distances_(NULL), 
+  costmap_(NULL), markers_(NULL), max_obstacle_range_(max_obstacle_range), 
+  max_obstacle_height_(max_obstacle_height), max_raytrace_range_(max_raytrace_range), cached_costs_(NULL), cached_distances_(NULL), 
   inscribed_radius_(inscribed_radius), circumscribed_radius_(circumscribed_radius), inflation_radius_(inflation_radius),
   weight_(weight), inflation_queue_(){
     //creat the costmap, static_map, and markers
@@ -151,9 +151,9 @@ namespace costmap_2d{
     //copy the cost map
     memcpy(costmap_, map.costmap_, size_x_ * size_y_ * sizeof(unsigned char));
 
-    sq_obstacle_range_ = map.sq_obstacle_range_;
+    max_obstacle_range_ = map.max_obstacle_range_;
     max_obstacle_height_ = map.max_obstacle_height_;
-    raytrace_range_ = map.raytrace_range_;
+    max_raytrace_range_ = map.max_raytrace_range_;
 
     inscribed_radius_ = map.inscribed_radius_;
     circumscribed_radius_ = map.circumscribed_radius_;
@@ -325,7 +325,7 @@ namespace costmap_2d{
     raytraceFreespace(clearing_observations);
 
     //if we raytrace X meters out... we must re-inflate obstacles within the containing square of that circle
-    double inflation_window_size = 2 * (raytrace_range_ + inflation_radius_);
+    double inflation_window_size = 2 * (max_raytrace_range_ + inflation_radius_);
 
     //reset the inflation window.. clears all costs except lethal costs and adds them to the queue for re-propagation
     resetInflationWindow(robot_x, robot_y, inflation_window_size, inflation_window_size, inflation_queue_);
@@ -358,6 +358,8 @@ namespace costmap_2d{
 
       const sensor_msgs::PointCloud& cloud =obs.cloud_;
 
+      double sq_obstacle_range = obs.obstacle_range_ * obs.obstacle_range_;
+
 
       for(unsigned int i = 0; i < cloud.pts.size(); ++i){
         //if the obstacle is too high or too far away from the robot we won't add it
@@ -372,7 +374,7 @@ namespace costmap_2d{
           + (cloud.pts[i].z - obs.origin_.z) * (cloud.pts[i].z - obs.origin_.z);
 
         //if the point is far enough away... we won't consider it
-        if(sq_dist >= sq_obstacle_range_){
+        if(sq_dist >= sq_obstacle_range){
           ROS_DEBUG("The point is too far away");
           continue;
         }

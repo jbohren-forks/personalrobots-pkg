@@ -84,6 +84,7 @@ namespace costmap_2d {
     std::stringstream ss(topics_string);
 
     double raytrace_range = 3.0;
+    double obstacle_range = 2.5;
 
     std::string source;
     while(ss >> source){
@@ -106,21 +107,31 @@ namespace costmap_2d {
       source_node.param("clearing", clearing, false);
       source_node.param("marking", marking, true);
 
-      std::string raytrace_range_param_name;
-      double source_raytrace_range;
+      std::string raytrace_range_param_name, obstacle_range_param_name;
+      double source_raytrace_range, source_obstacle_range;
+
+      //get the obstacle range for the sensor
+      if(!source_node.searchParam("obstacle_range", obstacle_range_param_name))
+        source_obstacle_range = 2.5;
+      else
+        source_node.param(obstacle_range_param_name, source_obstacle_range, 2.5);
+
+      //get the raytrace range for the sensor
       if(!source_node.searchParam("raytrace_range", raytrace_range_param_name))
         source_raytrace_range = 3.0;
       else
         source_node.param(raytrace_range_param_name, source_raytrace_range, 3.0);
 
+
       //keep track of the maximum raytrace range for the costmap to be able to inflate efficiently
       raytrace_range = std::max(raytrace_range, source_raytrace_range);
+      obstacle_range = std::max(obstacle_range, source_obstacle_range);
 
       ROS_DEBUG("Creating an observation buffer for source %s, topic %s, frame %s", source.c_str(), topic.c_str(), sensor_frame.c_str());
 
       //create an observation buffer
       observation_buffers_.push_back(boost::shared_ptr<ObservationBuffer>(new ObservationBuffer(topic, observation_keep_time, 
-              expected_update_rate, min_obstacle_height, max_obstacle_height, source_raytrace_range, tf_, global_frame_, sensor_frame)));
+              expected_update_rate, min_obstacle_height, max_obstacle_height, source_obstacle_range, source_raytrace_range, tf_, global_frame_, sensor_frame)));
 
       //check if we'll add this buffer to our marking observation buffers
       if(marking)
@@ -220,8 +231,7 @@ namespace costmap_2d {
     ros::NodeHandle n;
     footprint_spec_ = loadRobotFootprint(n, inscribed_radius, circumscribed_radius);
 
-    double obstacle_range, max_obstacle_height;
-    ros_node_.param("obstacle_range", obstacle_range, 2.5);
+    double max_obstacle_height;
     ros_node_.param("max_obstacle_height", max_obstacle_height, 2.0);
 
     double cost_scale;

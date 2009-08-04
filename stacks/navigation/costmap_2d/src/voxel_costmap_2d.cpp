@@ -137,6 +137,8 @@ namespace costmap_2d{
 
       const sensor_msgs::PointCloud& cloud =obs.cloud_;
 
+      double sq_obstacle_range = obs.obstacle_range_ * obs.obstacle_range_;
+
       for(unsigned int i = 0; i < cloud.pts.size(); ++i){
         //if the obstacle is too high or too far away from the robot we won't add it
         if(cloud.pts[i].z > max_obstacle_height_)
@@ -148,7 +150,7 @@ namespace costmap_2d{
           + (cloud.pts[i].z - obs.origin_.z) * (cloud.pts[i].z - obs.origin_.z);
 
         //if the point is far enough away... we won't consider it
-        if(sq_dist >= sq_obstacle_range_)
+        if(sq_dist >= sq_obstacle_range)
           continue;
 
         //now we need to compute the map coordinates for the observation

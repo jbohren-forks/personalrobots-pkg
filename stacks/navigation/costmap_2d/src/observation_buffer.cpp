@@ -41,11 +41,11 @@ using namespace tf;
 
 namespace costmap_2d {
   ObservationBuffer::ObservationBuffer(string topic_name, double observation_keep_time, double expected_update_rate, 
-      double min_obstacle_height, double max_obstacle_height, double raytrace_range,
+      double min_obstacle_height, double max_obstacle_height, double obstacle_range, double raytrace_range,
       TransformListener& tf, string global_frame, string sensor_frame) : tf_(tf),
   observation_keep_time_(observation_keep_time), expected_update_rate_(expected_update_rate), last_updated_(ros::Time::now()),
   global_frame_(global_frame), sensor_frame_(sensor_frame), topic_name_(topic_name), min_obstacle_height_(min_obstacle_height),
-  max_obstacle_height_(max_obstacle_height), raytrace_range_(raytrace_range)
+  max_obstacle_height_(max_obstacle_height), obstacle_range_(obstacle_range), raytrace_range_(raytrace_range)
   {
   }
 
@@ -68,8 +68,9 @@ namespace costmap_2d {
       observation_list_.front().origin_.y = global_origin.getY();
       observation_list_.front().origin_.z = global_origin.getZ();
 
-      //make sure to pass on the raytrace range of the observation buffer to the observations the costmap will see
+      //make sure to pass on the raytrace/obstacle range of the observation buffer to the observations the costmap will see
       observation_list_.front().raytrace_range_ = raytrace_range_;
+      observation_list_.front().obstacle_range_ = obstacle_range_;
 
       sensor_msgs::PointCloud global_frame_cloud;
 

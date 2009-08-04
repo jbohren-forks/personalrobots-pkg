@@ -68,17 +68,17 @@ namespace costmap_2d {
        * @param  inscribed_radius The inscribed radius of the robot
        * @param  circumscribed_radius The circumscribed radius of the robot
        * @param  inflation_radius How far out to inflate obstacles
-       * @param  obstacle_range The maximum range at which obstacles will be put into the costmap
+       * @param  max_obstacle_range The maximum range at which obstacles will be put into the costmap from any sensor
        * @param  max_obstacle_height The maximum height of obstacles that will be considered
-       * @param  raytrace_range The maximum distance we'll raytrace out to
+       * @param  max_raytrace_range The maximum distance we'll raytrace out to with any sensor
        * @param  weight The scaling factor for the cost function. 
        * @param  static_data Data used to initialize the costmap
        * @param  lethal_threshold The cost threshold at which a point in the static data is considered a lethal obstacle
        */
       Costmap2D(unsigned int cells_size_x, unsigned int cells_size_y, 
           double resolution, double origin_x, double origin_y, double inscribed_radius = 0.0,
-          double circumscribed_radius = 0.0, double inflation_radius = 0.0, double obstacle_range = 0.0,
-          double max_obstacle_height = 0.0, double raytrace_range = 0.0, double weight = 25.0,
+          double circumscribed_radius = 0.0, double inflation_radius = 0.0, double max_obstacle_range = 0.0,
+          double max_obstacle_height = 0.0, double max_raytrace_range = 0.0, double weight = 25.0,
           const std::vector<unsigned char>& static_data = std::vector<unsigned char>(0), unsigned char lethal_threshold = 0);
 
       /**
@@ -529,9 +529,9 @@ namespace costmap_2d {
       unsigned char* static_map_;
       unsigned char* costmap_;
       unsigned char* markers_;
-      double sq_obstacle_range_;
+      double max_obstacle_range_;
       double max_obstacle_height_;
-      double raytrace_range_;
+      double max_raytrace_range_;
       unsigned char** cached_costs_;
       double** cached_distances_;
       double inscribed_radius_, circumscribed_radius_, inflation_radius_;
