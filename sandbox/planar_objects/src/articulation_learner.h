@@ -36,6 +36,13 @@ public:
   // PARAMETERS
   bool visualize;
   bool verbose;
+  double dist_vis;
+
+  double thres_trans;
+  double thres_rot;
+
+  int oldLines;
+  int newLines;
 
   // MESSAGES - INCOMING
   ros::Subscriber tracks_sub;
@@ -56,6 +63,10 @@ public:
   void createModels();
   void updateModels();
   void filterModels();
+  void visualizeModels();
+  void visualizeTracks();
+
+  void removeOldLines();
 };
 
 }

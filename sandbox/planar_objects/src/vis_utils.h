@@ -37,10 +37,10 @@ void visualizePolygon(const robot_msgs::PointCloud& cloud, robot_msgs::Polygon3D
                       ros::Publisher& visualization_pub);
 
 void visualizeLines(ros::Publisher& visualization_pub_, std::string frame_id, std::vector<std::pair<btVector3,
-    btVector3> > lines, int id, double r, double b , double g );
+    btVector3> > lines, int id, double r, double b , double g,double scale=0.002 );
 
 void visualizeLines(ros::Publisher& visualization_pub_, std::string frame_id, std::vector<std::pair<btVector3,
-    btVector3> > lines, int id, int rgb);
+    btVector3> > lines, int id, int rgb,double scale=0.002);
 
 }
 
