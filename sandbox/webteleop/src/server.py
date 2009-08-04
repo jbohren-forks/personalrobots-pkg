@@ -30,6 +30,7 @@ from nav_msgs import *
 from nav_msgs.msg import *
 from std_msgs.msg import *
 from robot_msgs.msg import *
+from geometry_msgs.msg import *
 
 tfclient = None
 CALLER_ID = '/webteleop'
@@ -38,8 +39,8 @@ core_launcher = None
 running = False
 rosCoreUp = False
 
-msgClasses = { '/initialpose' : robot_msgs.msg.PoseWithCovariance,
-               '/move_base/activate' : robot_msgs.msg.PoseStamped
+msgClasses = { '/initialpose' : geometry_msgs.msg.PoseWithCovariance,
+               '/move_base/activate' : geometry_msgs.msg.PoseStamped
              }
 
 ################################################################################
@@ -234,7 +235,7 @@ class ROSWebTopic(object):
         frameId = self.last_message.header.frame_id
         msg = '{ "points" : ['
         for i in range( len(self.last_message.points) ):
-          point = robot_msgs.msg.PointStamped()
+          point = geometry_msgs.msg.PointStamped()
           point.header.stamp = self.last_message.header.stamp
           point.header.frame_id = frameId
           point.point.x = self.last_message.points[i].x
@@ -437,21 +438,21 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     if cmd == "startup":
       print "Startup[%s]" % topic
+      robot = commands.getoutput('hostname')
 
       if rosCoreUp == False:
         core_launcher = roslaunch_caller.launch_core()
         
         script = commands.getoutput('rospack find webteleop') + '/launch/'
-        if topic == "/Sim":
-          script += 'gazebo.launch'
-          launchScript(script)
-        elif topic == "/PRF":
+
+        if robot.startswith('prf'):
           script += 'prf.launch'
-          launchScript(script)
-        elif topic == "/PRG":
-          print "PRG STARTUP"
+        elif robot.startswith('prg'):
           script += 'prg.launch'
-          launchScript(script)
+        else:
+          script += 'gazebo.launch'
+
+        launchScript(script)
 
       time.sleep(3)
       rospy.init_node(CALLER_ID, disable_signals=True)

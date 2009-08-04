@@ -10,14 +10,14 @@
   <depend package="rosjson"/>
   <depend package="std_msgs"/>
   <depend package="robot_msgs"/>
+  <depend package="geometry_msgs"/>
   <depend package="robot_srvs"/>
   <depend package="nav_msgs"/>
   <depend package="bullet_python"/>
   <depend package="tf"/>
-  <depend package="wg_hardware_roslaunch" />
+  <depend package="wg_hardware_roslaunch"/>
   <depend package="pr2_default_controllers" />
   <depend package="joy" />
-
 
 </package>
 
