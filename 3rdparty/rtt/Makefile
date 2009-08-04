@@ -6,7 +6,7 @@ SVN_URL = http://svn.mech.kuleuven.be/repos/orocos/trunk/rtt
 INSTALL_DIR = rtt
 CMAKE = cmake
 BOOST_INCLUDE =$(shell rosboost-cfg --include_dirs)
-CMAKE_ARGS = -DCMAKE_INSTALL_PREFIX=$(PWD)/$(INSTALL_DIR)/ \
+CMAKE_ARGS = -DCMAKE_INSTALL_PREFIX=`rospack find rtt`/$(INSTALL_DIR)/ \
 		-DOROCOS_TARGET=gnulinux \
 		-DBOOST_DIR=$(BOOST_INCLUDE)\
 		-DHAS_BOOST_SPIRIT=$(BOOST_INCLUDE)\

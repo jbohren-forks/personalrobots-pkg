@@ -23,13 +23,13 @@ SVN_REVISION=    -r 1053
 
 TARBALL=     build/libsunflower-$(TARBALL_VERSION).tar.gz
 TARBALL_URL= http://pr.willowgarage.com/downloads/libsunflower-$(TARBALL_VERSION).tar.gz
-SOURCE_DIR=  $(PWD)/build/libsunflower-$(TARBALL_VERSION)
+SOURCE_DIR=  build/libsunflower-$(TARBALL_VERSION)
 UNPACK_CMD=  tar xfz
-BUILD_DIR=   $(PWD)/build
-INST_DIR=    $(PWD)/local
+BUILD_DIR=   build
+INST_DIR=    local
 BOOST_DIR=   `rosboost-cfg --include_dirs`
 
-SVN_DIR=     $(PWD)/build/sunflower-svn
+SVN_DIR=     build/sunflower-svn
 SVN_URL=     https://libsunflower.svn.sourceforge.net/svnroot/libsunflower/trunk/sunflower
 
 #include $(shell rospack find mk)/download_unpack_build.mk
@@ -38,8 +38,8 @@ include $(shell rospack find mk)/svn_checkout.mk
 installed: $(SVN_DIR) patched Makefile
 	cd $(SVN_DIR) && ./bootstrap-buildsystem.sh
 	test -d $(BUILD_DIR) || mkdir -p $(BUILD_DIR)
-	cd $(BUILD_DIR) && $(SVN_DIR)/configure --with-pic \
-	                                        --prefix=$(INST_DIR) \
+	cd $(BUILD_DIR) && `rospack find libsunflower`/$(SVN_DIR)/configure --with-pic \
+	                                        --prefix=`rospack find libsunflower`/$(INST_DIR) \
                                                 --with-boost=$(BOOST_DIR)
 	$(MAKE) -C $(BUILD_DIR) install
 	touch installed

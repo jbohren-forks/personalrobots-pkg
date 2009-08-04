@@ -13,7 +13,7 @@ OROCOS_INSTALL=`rospack find rtt`/rtt
 KDL_INSTALL=`rospack find kdl`/kdl
 BFL_INSTALL=`rospack find bfl`/bfl-boost
 
-CMAKE_ARGS = -DCMAKE_INSTALL_PREFIX=$(PWD)/$(INSTALL_DIR)/ \
+CMAKE_ARGS = -DCMAKE_INSTALL_PREFIX=`rospack find ocl`/$(INSTALL_DIR)/ \
 		-DOROCOS_TARGET=gnulinux \
 		-DCMAKE_BUILD_TYPE="RTT" \
 		-DOROCOS_INSTALL=$(OROCOS_INSTALL) \

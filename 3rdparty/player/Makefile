@@ -18,7 +18,7 @@ include $(shell rospack find mk)/download_unpack_build.mk
 
 CMAKE = cmake 
 CMAKE_ARGS = -D CMAKE_BUILD_TYPE=RELEASE \
-             -D CMAKE_INSTALL_PREFIX=$(PWD)/player \
+             -D CMAKE_INSTALL_PREFIX=`rospack find player`/player \
 	     -D INCLUDE_RTK=OFF \
 	     -D BUILD_PLAYERCC=OFF \
 	     -D BUILD_UTILS=OFF \
