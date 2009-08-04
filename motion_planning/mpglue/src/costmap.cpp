@@ -59,14 +59,14 @@ namespace {
     { return (*get_costmap_)()->getCircumscribedCost(); }
     
     virtual ssize_t getXBegin() const { return 0; }
-    virtual ssize_t getXEnd() const { return (*get_costmap_)()->cellSizeX(); }
+    virtual ssize_t getXEnd() const { return (*get_costmap_)()->getSizeInCellsX(); }
     virtual ssize_t getYBegin() const { return 0; }
-    virtual ssize_t getYEnd() const { return (*get_costmap_)()->cellSizeY(); }
+    virtual ssize_t getYEnd() const { return (*get_costmap_)()->getSizeInCellsY(); }
     
     virtual bool isValidIndex(ssize_t index_x, ssize_t index_y) const {
       costmap_2d::Costmap2D const * cm((*get_costmap_)());
-      return (index_x >= 0) && (static_cast<size_t>(index_x) < cm->cellSizeX())
-	&&   (index_y >= 0) && (static_cast<size_t>(index_y) < cm->cellSizeY()); }
+      return (index_x >= 0) && (static_cast<size_t>(index_x) < cm->getSizeInCellsX())
+	&&   (index_y >= 0) && (static_cast<size_t>(index_y) < cm->getSizeInCellsY()); }
     
     virtual bool isLethal(ssize_t index_x, ssize_t index_y,
 			  bool out_of_bounds_reply) const {
@@ -143,8 +143,8 @@ namespace {
     
     virtual void globalToLocal(double global_x, double global_y, double global_th,
 			       double * local_x, double * local_y, double * local_th) const {
-      *local_x = global_x - (*get_costmap_)()->originX();
-      *local_y = global_y - (*get_costmap_)()->originY();
+      *local_x = global_x - (*get_costmap_)()->getOriginX();
+      *local_y = global_y - (*get_costmap_)()->getOriginY();
       *local_th = global_th;
     }
     
@@ -166,18 +166,18 @@ namespace {
     
     virtual void localToGlobal(double local_x, double local_y, double local_th,
 			       double * global_x, double * global_y, double * global_th) const {
-      *global_x = local_x + (*get_costmap_)()->originX();
-      *global_y = local_y + (*get_costmap_)()->originY();
+      *global_x = local_x + (*get_costmap_)()->getOriginX();
+      *global_y = local_y + (*get_costmap_)()->getOriginY();
       *global_th = local_th;
     }
     
     virtual void getOrigin(double * ox, double * oy, double * oth) const {
-      *ox = (*get_costmap_)()->originX();
-      *oy = (*get_costmap_)()->originY();
+      *ox = (*get_costmap_)()->getOriginX();
+      *oy = (*get_costmap_)()->getOriginY();
       *oth = 0;
     }
     
-    virtual double getResolution() const { return (*get_costmap_)()->resolution(); }
+    virtual double getResolution() const { return (*get_costmap_)()->getResolution(); }
     
     mpglue::costmap_2d_getter * get_costmap_;
   };

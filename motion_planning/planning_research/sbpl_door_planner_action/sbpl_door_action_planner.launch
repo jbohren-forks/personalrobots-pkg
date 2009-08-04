@@ -15,9 +15,8 @@
       <param name="costmap/max_obstacle_height" value="2.0" />
       <param name="costmap/raytrace_range" value="3.0" />
 
-      <param name="costmap/observation_topics" value="base_scan" />
+      <param name="costmap/observation_sources" value="base_scan" />
 
-      <param name="costmap/base_scan/sensor_frame" value="frame_from_message" />
       <param name="costmap/base_scan/observation_persistence" value="0.0" />
       <param name="costmap/base_scan/expected_update_rate" value="0.2" />
       <param name="costmap/base_scan/data_type" value="LaserScan" />

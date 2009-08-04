@@ -42,20 +42,20 @@ inscribed_radius: 0.325
 circumscribed_radius: 0.46
 inflation_radius: 0.55
 
-#The observation_topics list allows users of a Costmap2DROS object to specify what topics should be used
+#The observation_sources list allows users of a Costmap2DROS object to specify what topics should be used
 #in conjunction with the underlying Costmap2D object. Topics should be listed here, separated by spaces and
 #should be configured in their individual namespaces as shown below. Each topic in this list will be subscribed
 #to and managed by the Costmap2DROS object subject to its configuration settings.
-observation_topics: base_scan
+observation_sources: base_scan
 
-#This is an example of topic configuration for the base_scan topic listed in the observation_topics list above.
+#This is an example of topic configuration for the base_scan topic listed in the observation_sources list above.
 #Notice that the base scan receives its own namespace to read its configuration from. 
 base_scan: 
 #The sensor_frame parameter specifies what frame the origin of the sensor is
-#assumed to be in. The special value "frame_from_message" infers the origin
+#assumed to be in. Leaving this blank infers the origin
 #frame from the frame_id sent in each message over the base_scan topic. Any
 #other string will override the frame_id sent in the message.
-  sensor_frame: frame_from_message
+  sensor_frame: base_laser
 
 #The data_type parameter specifies what message type to expect for the topic. The
 #two supported message types at this point are LaserScan and PointCloud.

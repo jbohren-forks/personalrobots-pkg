@@ -41,7 +41,7 @@ namespace navfn {
   ROS_REGISTER_BGP(NavfnROS);
 
   NavfnROS::NavfnROS(std::string name, costmap_2d::Costmap2DROS& costmap_ros) 
-    : costmap_ros_(costmap_ros),  planner_(new NavFn(costmap_ros.cellSizeX(), costmap_ros.cellSizeY())), ros_node_(name) {
+    : costmap_ros_(costmap_ros),  planner_(new NavFn(costmap_ros.getSizeInCellsX(), costmap_ros.getSizeInCellsY())), ros_node_(name) {
     //get an initial copy of the costmap
     costmap_ros_.getCostmapCopy(costmap_);
 
@@ -49,12 +49,12 @@ namespace navfn {
     plan_pub_ = ros_node_.advertise<visualization_msgs::Polyline>("~plan", 1);
 
     //read parameters for the planner
-    global_frame_ = costmap_ros_.globalFrame();
+    global_frame_ = costmap_ros_.getGlobalFrameID();
     
     //we'll get the parameters for the robot radius from the costmap we're associated with
-    inscribed_radius_ = costmap_ros_.inscribedRadius();
-    circumscribed_radius_ = costmap_ros_.circumscribedRadius();
-    inflation_radius_ = costmap_ros_.inflationRadius();
+    inscribed_radius_ = costmap_ros_.getInscribedRadius();
+    circumscribed_radius_ = costmap_ros_.getCircumscribedRadius();
+    inflation_radius_ = costmap_ros_.getInflationRadius();
   }
 
   bool NavfnROS::validPointPotential(const geometry_msgs::Point& world_point){

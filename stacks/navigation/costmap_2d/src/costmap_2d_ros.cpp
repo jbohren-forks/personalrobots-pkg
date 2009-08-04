@@ -45,13 +45,13 @@ namespace costmap_2d {
     return x < 0.0 ? -1.0 : 1.0;
   }
 
-  Costmap2DROS::Costmap2DROS(std::string name, tf::TransformListener& tf) : ros_node_(name),
-  tf_(tf), costmap_(NULL), map_update_thread_(NULL), costmap_publisher_(NULL), stop_updates_(false), initialized_(true) {
+  Costmap2DROS::Costmap2DROS(std::string name, tf::TransformListener& tf) : ros_node_("~/" + name),
+  tf_(tf), costmap_(NULL), map_update_thread_(NULL), costmap_publisher_(NULL), stop_updates_(false), initialized_(true), stopped_(false) {
 
     std::string map_type;
-    ros_node_.param("~map_type", map_type, std::string("costmap"));
+    ros_node_.param("map_type", map_type, std::string("costmap"));
 
-    ros_node_.param("~publish_voxel_map", publish_voxel_, false);
+    ros_node_.param("publish_voxel_map", publish_voxel_, false);
 
     if(publish_voxel_ && map_type == "voxel")
       voxel_pub_ = ros_node_.advertise<costmap_2d::VoxelGrid>("~/voxel_grid", 1);
@@ -60,48 +60,67 @@ namespace costmap_2d {
 
     std::string topics_string;
     //get the topics that we'll subscribe to from the parameter server
-    ros_node_.param("~observation_topics", topics_string, std::string(""));
+    ros_node_.param("observation_sources", topics_string, std::string(""));
     ROS_INFO("Subscribed to Topics: %s", topics_string.c_str());
 
-    ros_node_.param("~global_frame", global_frame_, std::string("/map"));
-    ros_node_.param("~robot_base_frame", robot_base_frame_, std::string("base_link"));
+    ros_node_.param("global_frame", global_frame_, std::string("/map"));
+    ros_node_.param("robot_base_frame", robot_base_frame_, std::string("base_link"));
 
     ros::Time last_error = ros::Time::now();
+    std::string tf_error;
     //we need to make sure that the transform between the robot base frame and the global frame is available
-    while(!tf_.canTransform(global_frame_, robot_base_frame_, ros::Time(), ros::Duration(0.1))){
+    while(!tf_.waitForTransform(global_frame_, robot_base_frame_, ros::Time(), ros::Duration(0.1), ros::Duration(0.01), &tf_error)){
       ros::spinOnce();
       if(last_error + ros::Duration(5.0) < ros::Time::now()){
-        ROS_ERROR("Waiting on transform from %s to %s to become available before running costmap", robot_base_frame_.c_str(), global_frame_.c_str());
+        ROS_ERROR("Waiting on transform from %s to %s to become available before running costmap, tf error: %s", 
+            robot_base_frame_.c_str(), global_frame_.c_str(), tf_error.c_str());
         last_error = ros::Time::now();
       }
     }
 
-    ros_node_.param("~transform_tolerance", transform_tolerance_, 0.2);
+    ros_node_.param("transform_tolerance", transform_tolerance_, 0.2);
 
     //now we need to split the topics based on whitespace which we can use a stringstream for
     std::stringstream ss(topics_string);
 
-    std::string topic;
-    while(ss >> topic){
+    double raytrace_range = 3.0;
+
+    std::string source;
+    while(ss >> source){
+      ros::NodeHandle source_node(ros_node_, source);
       //get the parameters for the specific topic
       double observation_keep_time, expected_update_rate, min_obstacle_height, max_obstacle_height;
-      std::string sensor_frame, data_type;
-      ros_node_.param("~" + topic + "/sensor_frame", sensor_frame, std::string("frame_from_message"));
-      ros_node_.param("~" + topic + "/observation_persistence", observation_keep_time, 0.0);
-      ros_node_.param("~" + topic + "/expected_update_rate", expected_update_rate, 0.0);
-      ros_node_.param("~" + topic + "/data_type", data_type, std::string("PointCloud"));
-      ros_node_.param("~" + topic + "/min_obstacle_height", min_obstacle_height, 0.05);
-      ros_node_.param("~" + topic + "/max_obstacle_height", max_obstacle_height, 2.0);
+      std::string topic, sensor_frame, data_type;
+      source_node.param("topic", topic, source);
+      source_node.param("sensor_frame", sensor_frame, std::string(""));
+      source_node.param("observation_persistence", observation_keep_time, 0.0);
+      source_node.param("expected_update_rate", expected_update_rate, 0.0);
+      source_node.param("data_type", data_type, std::string("PointCloud"));
+      source_node.param("min_obstacle_height", min_obstacle_height, 0.05);
+      source_node.param("max_obstacle_height", max_obstacle_height, 2.0);
 
       ROS_ASSERT_MSG(data_type == "PointCloud" || data_type == "LaserScan", "Only topics that use point clouds or laser scans are currently supported");
 
 
       bool clearing, marking;
-      ros_node_.param("~" + topic + "/clearing", clearing, false);
-      ros_node_.param("~" + topic + "/marking", marking, true);
+      source_node.param("clearing", clearing, false);
+      source_node.param("marking", marking, true);
+
+      std::string raytrace_range_param_name;
+      double source_raytrace_range;
+      if(!source_node.searchParam("raytrace_range", raytrace_range_param_name))
+        source_raytrace_range = 3.0;
+      else
+        source_node.param(raytrace_range_param_name, source_raytrace_range, 3.0);
+
+      //keep track of the maximum raytrace range for the costmap to be able to inflate efficiently
+      raytrace_range = std::max(raytrace_range, source_raytrace_range);
+
+      ROS_DEBUG("Creating an observation buffer for source %s, topic %s, frame %s", source.c_str(), topic.c_str(), sensor_frame.c_str());
 
       //create an observation buffer
-      observation_buffers_.push_back(new ObservationBuffer(topic, observation_keep_time, expected_update_rate, min_obstacle_height, max_obstacle_height, tf_, global_frame_, sensor_frame));
+      observation_buffers_.push_back(boost::shared_ptr<ObservationBuffer>(new ObservationBuffer(topic, observation_keep_time, 
+              expected_update_rate, min_obstacle_height, max_obstacle_height, source_raytrace_range, tf_, global_frame_, sensor_frame)));
 
       //check if we'll add this buffer to our marking observation buffers
       if(marking)
@@ -111,20 +130,21 @@ namespace costmap_2d {
       if(clearing)
         clearing_buffers_.push_back(observation_buffers_.back());
 
-      ROS_DEBUG("Created an observation buffer for topic %s, expected update rate: %.2f, observation persistence: %.2f", topic.c_str(), expected_update_rate, observation_keep_time);
+      ROS_DEBUG("Created an observation buffer for source %s, topic %s, global frame: %s, expected update rate: %.2f, observation persistence: %.2f", 
+          source.c_str(), topic.c_str(), global_frame_.c_str(), expected_update_rate, observation_keep_time);
 
       //create a callback for the topic
       if(data_type == "LaserScan"){
-        observation_notifiers_.push_back(new tf::MessageNotifier<sensor_msgs::LaserScan>(tf_, 
-              boost::bind(&Costmap2DROS::laserScanCallback, this, _1, observation_buffers_.back()), topic, global_frame_, 50));
+        observation_notifiers_.push_back(boost::shared_ptr<tf::MessageNotifierBase>(new tf::MessageNotifier<sensor_msgs::LaserScan>(tf_, 
+              boost::bind(&Costmap2DROS::laserScanCallback, this, _1, observation_buffers_.back()), topic, global_frame_, 50)));
         observation_notifiers_.back()->setTolerance(ros::Duration(0.05));
       }
       else{
-        observation_notifiers_.push_back(new tf::MessageNotifier<sensor_msgs::PointCloud>(tf_,
-              boost::bind(&Costmap2DROS::pointCloudCallback, this, _1, observation_buffers_.back()), topic, global_frame_, 50));
+        observation_notifiers_.push_back(boost::shared_ptr<tf::MessageNotifierBase>(new tf::MessageNotifier<sensor_msgs::PointCloud>(tf_,
+              boost::bind(&Costmap2DROS::pointCloudCallback, this, _1, observation_buffers_.back()), topic, global_frame_, 50)));
       }
 
-      if(sensor_frame != "frame_from_message"){
+      if(sensor_frame != ""){
         std::vector<std::string> target_frames;
         target_frames.push_back(global_frame_);
         target_frames.push_back(sensor_frame);
@@ -133,24 +153,23 @@ namespace costmap_2d {
 
     }
 
-
     bool static_map;
     unsigned int map_width, map_height;
     double map_resolution;
     double map_origin_x, map_origin_y;
 
-    ros_node_.param("~static_map", static_map, true);
+    ros_node_.param("static_map", static_map, true);
     std::vector<unsigned char> input_data;
 
     //check if we want a rolling window version of the costmap
-    ros_node_.param("~rolling_window", rolling_window_, false);
+    ros_node_.param("rolling_window", rolling_window_, false);
 
     double map_width_meters, map_height_meters;
-    ros_node_.param("~width", map_width_meters, 10.0);
-    ros_node_.param("~height", map_height_meters, 10.0);
-    ros_node_.param("~resolution", map_resolution, 0.05);
-    ros_node_.param("~origin_x", map_origin_x, 0.0);
-    ros_node_.param("~origin_y", map_origin_y, 0.0);
+    ros_node_.param("width", map_width_meters, 10.0);
+    ros_node_.param("height", map_height_meters, 10.0);
+    ros_node_.param("resolution", map_resolution, 0.05);
+    ros_node_.param("origin_x", map_origin_x, 0.0);
+    ros_node_.param("origin_y", map_origin_y, 0.0);
     map_width = (unsigned int)(map_width_meters / map_resolution);
     map_height = (unsigned int)(map_height_meters / map_resolution);
 
@@ -193,24 +212,23 @@ namespace costmap_2d {
     }
 
     double inscribed_radius, circumscribed_radius, inflation_radius;
-    ros_node_.param("~inscribed_radius", inscribed_radius, 0.325);
-    ros_node_.param("~circumscribed_radius", circumscribed_radius, 0.46);
-    ros_node_.param("~inflation_radius", inflation_radius, 0.55);
+    ros_node_.param("inscribed_radius", inscribed_radius, 0.325);
+    ros_node_.param("circumscribed_radius", circumscribed_radius, 0.46);
+    ros_node_.param("inflation_radius", inflation_radius, 0.55);
 
     //load the robot footprint from the parameter server if its available in the global namespace
     ros::NodeHandle n;
     footprint_spec_ = loadRobotFootprint(n, inscribed_radius, circumscribed_radius);
 
-    double obstacle_range, max_obstacle_height, raytrace_range;
-    ros_node_.param("~obstacle_range", obstacle_range, 2.5);
-    ros_node_.param("~max_obstacle_height", max_obstacle_height, 2.0);
-    ros_node_.param("~raytrace_range", raytrace_range, 3.0);
+    double obstacle_range, max_obstacle_height;
+    ros_node_.param("obstacle_range", obstacle_range, 2.5);
+    ros_node_.param("max_obstacle_height", max_obstacle_height, 2.0);
 
     double cost_scale;
-    ros_node_.param("~cost_scaling_factor", cost_scale, 1.0);
+    ros_node_.param("cost_scaling_factor", cost_scale, 1.0);
 
     int temp_lethal_threshold;
-    ros_node_.param("~lethal_cost_threshold", temp_lethal_threshold, int(100));
+    ros_node_.param("lethal_cost_threshold", temp_lethal_threshold, int(100));
 
     unsigned char lethal_threshold = std::max(std::min(temp_lethal_threshold, 255), 0);
 
@@ -225,15 +243,15 @@ namespace costmap_2d {
     else if(map_type == "voxel"){
 
       int z_voxels;
-      ros_node_.param("~z_voxels", z_voxels, 10);
+      ros_node_.param("z_voxels", z_voxels, 10);
 
       double z_resolution, map_origin_z;
-      ros_node_.param("~z_resolution", z_resolution, 0.2);
-      ros_node_.param("~origin_z", map_origin_z, 0.0);
+      ros_node_.param("z_resolution", z_resolution, 0.2);
+      ros_node_.param("origin_z", map_origin_z, 0.0);
 
       int unknown_threshold, mark_threshold;
-      ros_node_.param("~unknown_threshold", unknown_threshold, 0);
-      ros_node_.param("~mark_threshold", mark_threshold, 0);
+      ros_node_.param("unknown_threshold", unknown_threshold, 0);
+      ros_node_.param("mark_threshold", mark_threshold, 0);
 
       ROS_ASSERT(z_voxels >= 0 && unknown_threshold >= 0 && mark_threshold >= 0);
 
@@ -251,7 +269,7 @@ namespace costmap_2d {
     ROS_DEBUG("New map construction time: %.9f", t_diff);
 
     double map_publish_frequency;
-    ros_node_.param("~publish_frequency", map_publish_frequency, 0.0);
+    ros_node_.param("publish_frequency", map_publish_frequency, 0.0);
 
     //create a publisher for the costmap if desired
     costmap_publisher_ = new Costmap2DPublisher(ros_node_, map_publish_frequency, global_frame_);
@@ -260,7 +278,7 @@ namespace costmap_2d {
 
     //create a thread to handle updating the map
     double map_update_frequency;
-    ros_node_.param("~update_frequency", map_update_frequency, 5.0);
+    ros_node_.param("update_frequency", map_update_frequency, 5.0);
     map_update_thread_ = new boost::thread(boost::bind(&Costmap2DROS::mapUpdateLoop, this, map_update_frequency));
 
   }
@@ -332,30 +350,22 @@ namespace costmap_2d {
 
     if(costmap_ != NULL)
       delete costmap_;
-
-    //clean up message notifiers
-    for(unsigned int i = 0; i < observation_notifiers_.size(); ++i){
-      if(observation_notifiers_[i] != NULL)
-        delete observation_notifiers_[i];
-    }
-
-    //clean up observation buffers
-    for(unsigned int i = 0; i < observation_buffers_.size(); ++i){
-      if(observation_buffers_[i] != NULL)
-        delete observation_buffers_[i];
-    }
   }
 
   void Costmap2DROS::start(){
-    //unsubscribe from topics
-    for(unsigned int i = 0; i < observation_notifiers_.size(); ++i){
-      if(observation_notifiers_[i] != NULL)
-        observation_notifiers_[i]->subscribeToMessage();
+    //check if we're stopped or just paused
+    if(stopped_){
+      //if we're stopped we need to re-subscribe to topics
+      for(unsigned int i = 0; i < observation_notifiers_.size(); ++i){
+        if(observation_notifiers_[i] != NULL)
+          observation_notifiers_[i]->subscribeToMessage();
+      }
+      stopped_ = false;
     }
     stop_updates_ = false;
 
     //block until the costmap is re-initialized.. meaning one update cycle has run
-    costmap_2d::Rate r(100.0);
+    ros::Rate r(100.0);
     while(!initialized_)
       r.sleep();
   }
@@ -368,14 +378,15 @@ namespace costmap_2d {
         observation_notifiers_[i]->unsubscribeFromMessage();
     }
     initialized_ = false;
+    stopped_ = true;
   }
 
-  void Costmap2DROS::addObservationBuffer(ObservationBuffer* buffer){
-    if(buffer != NULL)
+  void Costmap2DROS::addObservationBuffer(const boost::shared_ptr<ObservationBuffer>& buffer){
+    if(buffer)
       observation_buffers_.push_back(buffer);
   }
 
-  void Costmap2DROS::laserScanCallback(const tf::MessageNotifier<sensor_msgs::LaserScan>::MessagePtr& message, ObservationBuffer* buffer){
+  void Costmap2DROS::laserScanCallback(const tf::MessageNotifier<sensor_msgs::LaserScan>::MessagePtr& message, const boost::shared_ptr<ObservationBuffer>& buffer){
     //project the laser into a point cloud
     sensor_msgs::PointCloud base_cloud;
     base_cloud.header = message->header;
@@ -397,7 +408,7 @@ namespace costmap_2d {
     buffer->unlock();
   }
 
-  void Costmap2DROS::pointCloudCallback(const tf::MessageNotifier<sensor_msgs::PointCloud>::MessagePtr& message, ObservationBuffer* buffer){
+  void Costmap2DROS::pointCloudCallback(const tf::MessageNotifier<sensor_msgs::PointCloud>::MessagePtr& message, const boost::shared_ptr<ObservationBuffer>& buffer){
     //buffer the point cloud
     buffer->lock();
     buffer->bufferCloud(*message);
@@ -409,7 +420,7 @@ namespace costmap_2d {
     if(frequency == 0.0)
       return;
 
-    costmap_2d::Rate r(frequency);
+    ros::Rate r(frequency);
     while(ros_node_.ok()){
       struct timeval start, end;
       double start_t, end_t, t_diff;
@@ -473,11 +484,11 @@ namespace costmap_2d {
     //update the global current status
     current_ = current;
 
-    costmap_->lock();
+    lock_.lock();
     //if we're using a rolling buffer costmap... we need to update the origin using the robot's position
     if(rolling_window_){
-      double origin_x = wx - costmap_->metersSizeX() / 2;
-      double origin_y = wy - costmap_->metersSizeY() / 2;
+      double origin_x = wx - costmap_->getSizeInMetersX() / 2;
+      double origin_y = wy - costmap_->getSizeInMetersY() / 2;
       costmap_->updateOrigin(origin_x, origin_y);
     }
     costmap_->updateWorld(wx, wy, observations, clearing_observations);
@@ -494,7 +505,7 @@ namespace costmap_2d {
       voxel_pub_.publish(voxel_grid);
     }
 
-    costmap_->unlock();
+    lock_.unlock();
 
   }
 
@@ -505,10 +516,10 @@ namespace costmap_2d {
 
     double wx = global_pose.getOrigin().x();
     double wy = global_pose.getOrigin().y();
-    costmap_->lock();
+    lock_.lock();
     ROS_DEBUG("Clearing map in window");
     costmap_->clearNonLethal(wx, wy, size_x, size_y, true);
-    costmap_->unlock();
+    lock_.unlock();
 
     //make sure to force an update of the map to take in the latest sensor data
     updateMap();
@@ -521,10 +532,10 @@ namespace costmap_2d {
 
     double wx = global_pose.getOrigin().x();
     double wy = global_pose.getOrigin().y();
-    costmap_->lock();
+    lock_.lock();
     ROS_DEBUG("Resetting map outside window");
     costmap_->resetMapOutsideWindow(wx, wy, size_x, size_y);
-    costmap_->unlock();
+    lock_.unlock();
 
     //make sure to force an update of the map to take in the latest sensor data
     updateMap();
@@ -532,38 +543,29 @@ namespace costmap_2d {
   }
 
   void Costmap2DROS::getCostmapCopy(Costmap2D& costmap){
-    costmap.lock();
-    costmap_->lock();
+    lock_.lock();
     costmap = *costmap_;
-    costmap_->unlock();
-    costmap.unlock();
+    lock_.unlock();
   }
 
-  unsigned char* Costmap2DROS::getCharMapCopy(){
-    costmap_->lock();
-    unsigned char* new_map = costmap_->getCharMapCopy();
-    costmap_->unlock();
-    return new_map;
-  }
-
-  unsigned int Costmap2DROS::cellSizeX() {
-    costmap_->lock();
-    unsigned int size_x = costmap_->cellSizeX();
-    costmap_->unlock();
+  unsigned int Costmap2DROS::getSizeInCellsX() {
+    lock_.lock();
+    unsigned int size_x = costmap_->getSizeInCellsX();
+    lock_.unlock();
     return size_x;
   }
 
-  unsigned int Costmap2DROS::cellSizeY() {
-    costmap_->lock();
-    unsigned int size_y = costmap_->cellSizeY();
-    costmap_->unlock();
+  unsigned int Costmap2DROS::getSizeInCellsY() {
+    lock_.lock();
+    unsigned int size_y = costmap_->getSizeInCellsY();
+    lock_.unlock();
     return size_y;
   }
 
-  double Costmap2DROS::resolution() {
-    costmap_->lock();
-    double resolution = costmap_->resolution();
-    costmap_->unlock();
+  double Costmap2DROS::getResolution() {
+    lock_.lock();
+    double resolution = costmap_->getResolution();
+    lock_.unlock();
     return resolution;
   }
 
@@ -609,7 +611,7 @@ namespace costmap_2d {
     clearRobotFootprint(global_pose);
   }
 
-  std::vector<geometry_msgs::Point> Costmap2DROS::robotFootprint(){
+  std::vector<geometry_msgs::Point> Costmap2DROS::getRobotFootprint(){
     return footprint_spec_;
   }
 
@@ -626,9 +628,9 @@ namespace costmap_2d {
   }
 
   bool Costmap2DROS::setConvexPolygonCost(const std::vector<geometry_msgs::Point>& polygon, unsigned char cost_value){
-    costmap_->lock();
+    lock_.lock();
     bool success = costmap_->setConvexPolygonCost(polygon, costmap_2d::FREE_SPACE);
-    costmap_->unlock();
+    lock_.unlock();
 
     //make sure to take our active sensor data into account
     updateMap();
@@ -636,32 +638,32 @@ namespace costmap_2d {
     return success;
   }
 
-  std::string Costmap2DROS::globalFrame(){
+  std::string Costmap2DROS::getGlobalFrameID(){
     return global_frame_;
   }
 
-  std::string Costmap2DROS::baseFrame(){
+  std::string Costmap2DROS::getBaseFrameID(){
     return robot_base_frame_;
   }
 
-  double Costmap2DROS::inscribedRadius(){
-    costmap_->lock();
-    double rad = costmap_->inscribedRadius();
-    costmap_->unlock();
+  double Costmap2DROS::getInscribedRadius(){
+    lock_.lock();
+    double rad = costmap_->getInscribedRadius();
+    lock_.unlock();
     return rad;
   }
 
-  double Costmap2DROS::circumscribedRadius(){
-    costmap_->lock();
-    double rad = costmap_->circumscribedRadius();
-    costmap_->unlock();
+  double Costmap2DROS::getCircumscribedRadius(){
+    lock_.lock();
+    double rad = costmap_->getCircumscribedRadius();
+    lock_.unlock();
     return rad;
   }
 
-  double Costmap2DROS::inflationRadius(){
-    costmap_->lock();
-    double rad = costmap_->inflationRadius();
-    costmap_->unlock();
+  double Costmap2DROS::getInflationRadius(){
+    lock_.lock();
+    double rad = costmap_->getInflationRadius();
+    lock_.unlock();
     return rad;
   }
 
@@ -682,20 +684,20 @@ namespace costmap_2d {
     std::vector<geometry_msgs::Point> oriented_footprint;
     getOrientedFootprint(x, y, theta, oriented_footprint);
 
-    costmap_->lock();
+    lock_.lock();
     //set the associated costs in the cost map to be free
     if(!costmap_->setConvexPolygonCost(oriented_footprint, costmap_2d::FREE_SPACE))
       return;
 
-    double max_inflation_dist = costmap_->inflationRadius() + costmap_->circumscribedRadius();
+    double max_inflation_dist = costmap_->getInflationRadius() + costmap_->getCircumscribedRadius();
 
     //clear all non-lethal obstacles out to the maximum inflation distance of an obstacle in the robot footprint
     costmap_->clearNonLethal(global_pose.getOrigin().x(), global_pose.getOrigin().y(), max_inflation_dist, max_inflation_dist);
 
     //make sure to re-inflate obstacles in the affected region... plus those obstalces that could inflate to have costs in the footprint
     costmap_->reinflateWindow(global_pose.getOrigin().x(), global_pose.getOrigin().y(), 
-        max_inflation_dist + costmap_->inflationRadius(), max_inflation_dist + costmap_->inflationRadius(), false);
-    costmap_->unlock();
+        max_inflation_dist + costmap_->getInflationRadius(), max_inflation_dist + costmap_->getInflationRadius(), false);
+    lock_.unlock();
 
   }
 

@@ -33,8 +33,10 @@ namespace planar_objects
 BoxTracker::BoxTracker() :
   sync(&BoxTracker::syncCallback, this)
 {
-  nh.param("~visualize", show_boxes, true);
+  nh.param("~visualize", show_boxes, false);
   nh.param("~verbose", verbose, true);
+
+  nh.param("~timeout", timeout, 3.0);
 
   nh.param("~translation_tolerance", params.translation_tolerance, 0.1);
   nh.param("~rotation_tolerance", params.rotation_tolerance, M_PI/8);
@@ -109,10 +111,12 @@ void BoxTracker::syncCallback()
 
   ///observations = observations[0].listAmbiguity();
 
-  removeOldTracks(ros::Duration(1.00));
-  visualizeObservations();
-  visualizeTracks();
-  removeOldLines();
+  removeOldTracks(ros::Duration(timeout));
+  if(show_boxes) {
+    visualizeObservations();
+    visualizeTracks();
+    removeOldLines();
+  }
   sendTracks();
 }
 
@@ -130,6 +134,7 @@ void BoxTracker::removeOldTracks(ros::Duration timeout) {
 
 void BoxTracker::sendTracks() {
   BoxTracks tracks_msg;
+  tracks_msg.header = observations_msg->header;
   tracks_msg.set_tracks_size(tracks.size());
   for(size_t j=0; j<tracks.size(); j++) {
     tracks_msg.tracks[j] = tracks[j].getTrackMessage();

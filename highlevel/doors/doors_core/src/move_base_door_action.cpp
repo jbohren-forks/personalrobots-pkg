@@ -98,7 +98,7 @@ namespace nav
 
     //initialize the door opening planner
     planner_ = new DoorReactivePlanner(ros_node_, tf_,&planner_cost_map_,control_frame_,global_frame_);
-    ROS_INFO("MAP SIZE: %d, %d", planner_cost_map_.cellSizeX(), planner_cost_map_.cellSizeY());
+    ROS_INFO("MAP SIZE: %d, %d", planner_cost_map_.getSizeInCellsX(), planner_cost_map_.getSizeInCellsY());
 
     ros_node_.advertise<manipulation_msgs::JointTraj>(control_topic_name_, 1);
     last_diagnostics_publish_time_ = ros::Time::now();

@@ -15,8 +15,10 @@ namespace planar_objects {
 class ManifoldModel {
 public:
   btBoxTrack* track;
+  double w;
+  double h;
   ManifoldModel(btBoxTrack* track): track(track) {}
-  virtual void findParameters() {}
+  virtual void findParameters();
   virtual double getRotationalError();
   virtual double getTranslationalError();
   virtual void getError(double &err_trans,double &err_rot);
@@ -24,6 +26,8 @@ public:
   virtual std::vector< std::pair<double,double> > getRange();
   virtual std::vector<double> getConfiguration( btTransform transform) = 0;
   virtual btTransform getPrediction( std::vector<double> q ) = 0;
+  virtual btBoxObservation getPredictedObservation( std::vector<double> q );
+  virtual bool isValid();
 };
 
 class PrismaticModel:public ManifoldModel {
@@ -36,6 +40,7 @@ public:
   size_t getDOFs();
   std::vector<double> getConfiguration( btTransform transform);
   btTransform getPrediction( std::vector<double> configuration );
+  bool isValid();
 };
 
 }

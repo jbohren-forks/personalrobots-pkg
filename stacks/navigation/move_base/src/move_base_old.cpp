@@ -82,7 +82,7 @@ namespace move_base {
       exit(0);
     }
 
-    ROS_INFO("MAP SIZE: %d, %d", planner_costmap_ros_->cellSizeX(), planner_costmap_ros_->cellSizeY());
+    ROS_INFO("MAP SIZE: %d, %d", planner_costmap_ros_->getSizeInCellsX(), planner_costmap_ros_->getSizeInCellsY());
 
     //create the ros wrapper for the controller's costmap... and initializer a pointer we'll use with the underlying map
     controller_costmap_ros_ = new Costmap2DROS("local_costmap", tf_);
@@ -199,7 +199,7 @@ namespace move_base {
 
     //if we have a tolerance on the goal point that is greater 
     //than the resolution of the map... compute the full potential function
-    double resolution = planner_costmap_ros_->resolution();
+    double resolution = planner_costmap_ros_->getResolution();
     std::vector<geometry_msgs::PoseStamped> global_plan;
     geometry_msgs::PoseStamped p;
     p = req.goal;

@@ -174,8 +174,8 @@ namespace {
       unsigned int bbx1(std::numeric_limits<unsigned int>::min());
       unsigned int bby0(std::numeric_limits<unsigned int>::max());
       unsigned int bby1(std::numeric_limits<unsigned int>::min());
-      unsigned int const sizex(cm_->cellSizeX());
-      unsigned int const sizey(cm_->cellSizeY());
+      unsigned int const sizex(cm_->getSizeInCellsX());
+      unsigned int const sizey(cm_->getSizeInCellsY());
       
       if (removed_obstacle_indices) {
 	for (index_collection_t::const_iterator irem(removed_obstacle_indices->begin());
@@ -255,8 +255,8 @@ namespace {
 	// wastes some operations, but if you want efficiency you
 	// probably want to use costmap_2d::Costmap2D directly anyway,
 	// without passing through mpglue.
-	double const resolution(cm_->resolution());
-	double const inflation2(2 * cm_->inflationRadius());
+	double const resolution(cm_->getResolution());
+	double const inflation2(2 * cm_->getInflationRadius());
 	double const wx(resolution * 0.5 * (bbx0 + bbx1));
 	double const wy(resolution * 0.5 * (bby0 + bby1));
 	double const w_size_x(resolution * (bbx1 - bbx0) + inflation2);

@@ -38,6 +38,7 @@ public:
   bool show_boxes;
   bool verbose;
   TrackParameters params;
+  double timeout;
 
   // MESSAGES - INCOMING
   ros::Subscriber observations_sub;

@@ -57,7 +57,7 @@ There are a number of parameters that can be used to configure the costmap_2d::C
 <br><br>
 <li><b>~inflation_radius</b>, <i>double</i> <br>The radius to which the map inflates obstacle cost values</li>
 <br><br>
-<li><b>~observation_topics</b>, <i>string</i> <br>A list of topics to subscribe to separated by spaces</li>
+<li><b>~observation_sources</b>, <i>string</i> <br>A list of topics to subscribe to separated by spaces</li>
 <br><br>
 <li>
   <b>Each topic can also have parameters set on it</b><br><br>

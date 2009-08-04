@@ -45,13 +45,34 @@ namespace costmap_2d {
    */
   class Observation {
   public:
-    // Structors
-    Observation() : cloud_(){}
-    Observation(geometry_msgs::Point& p, sensor_msgs::PointCloud cloud): origin_(p), cloud_(cloud) {}
-    Observation(const Observation& org): origin_(org.origin_), cloud_(org.cloud_){}
+    /**
+     * @brief  Creates an empty observation
+     */
+    Observation() : cloud_(), raytrace_range_(0.0){}
+    /**
+     * @brief  Creates an observation from an origin point and a point cloud
+     * @param origin The origin point of the observation
+     * @param cloud The point cloud of the observation
+     * @param raytrace_range The range out to which an observation should be able to clear via raytracing
+     */
+    Observation(geometry_msgs::Point& origin, sensor_msgs::PointCloud cloud, double raytrace_range): origin_(origin), 
+    cloud_(cloud), raytrace_range_(raytrace_range) {}
+
+    /**
+     * @brief  Copy constructor
+     * @param obs The observation to copy
+     */
+    Observation(const Observation& obs): origin_(obs.origin_), cloud_(obs.cloud_), raytrace_range_(obs.raytrace_range_){}
+
+    /**
+     * @brief  Creates an observation from a point cloud
+     * @param cloud The point cloud of the observation
+     */
+    Observation(sensor_msgs::PointCloud cloud): cloud_(cloud), raytrace_range_(0.0){}
 
     geometry_msgs::Point origin_;
     sensor_msgs::PointCloud cloud_;
+    double raytrace_range_;
   };
 
 }

@@ -44,7 +44,7 @@ void doSomething(const ros::TimerEvent& e, costmap_2d::Costmap2DROS& costmap_ros
   costmap_ros.getCostmapCopy(costmap);
 
   //do whatever you want with the map here
-  ROS_INFO("The size of the map in meters is: (%.2f, %.2f)", costmap.metersSizeX(), costmap.metersSizeY());
+  ROS_INFO("The size of the map in meters is: (%.2f, %.2f)", costmap.getSizeInMetersX(), costmap.getSizeInMetersY());
 }
 
 int main(int argc, char** argv){

@@ -148,7 +148,7 @@ void visualizePolygon(const sensor_msgs::PointCloud& cloud,robot_msgs::Polygon3D
 }
 
 void visualizeLines(ros::Publisher& visualization_pub_,std::string frame_id,std::vector<std::pair<btVector3, btVector3> > lines, int id, double r, double g,
-                                double b)
+                                double b,double scale)
 {
   // visualize edges in 3D
   visualization_msgs::Marker marker;
@@ -159,7 +159,7 @@ void visualizeLines(ros::Publisher& visualization_pub_,std::string frame_id,std:
   marker.type = visualization_msgs::Marker::LINE_LIST;
   marker.action = lines.size() == 0 ? visualization_msgs::Marker::DELETE : visualization_msgs::Marker::ADD;
   marker.pose.orientation.w = 1.0;
-  marker.scale.x = 0.002;
+  marker.scale.x = scale;
   marker.color.a = 1.0;
   marker.color.r = r;
   marker.color.g = g;
@@ -179,8 +179,8 @@ void visualizeLines(ros::Publisher& visualization_pub_,std::string frame_id,std:
 }
 
 void visualizeLines(ros::Publisher& visualization_pub_, std::string frame_id, std::vector<std::pair<btVector3,
-    btVector3> > lines, int id, int rgb) {
-  visualizeLines(visualization_pub_, frame_id, lines, id, (rgb&0xff)/255.0,((rgb>>8)&0xff)/255.0,((rgb>>16)&0xff)/255.0);
+    btVector3> > lines, int id, int rgb,double scale) {
+  visualizeLines(visualization_pub_, frame_id, lines, id, (rgb&0xff)/255.0,((rgb>>8)&0xff)/255.0,((rgb>>16)&0xff)/255.0,scale);
 }
 
 }
