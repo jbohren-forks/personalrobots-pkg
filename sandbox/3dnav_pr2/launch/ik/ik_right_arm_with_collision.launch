@@ -1,0 +1,5 @@
+<launch>
+
+  <include file="$(find chomp_motion_planner)/launch/chomp_cost_server.launch"/>
+  <include file="$(find pr2_ik_with_collision)/launch/pr2_ik_wc_rarm_node.launch"/>
+</launch>
