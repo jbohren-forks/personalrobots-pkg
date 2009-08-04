@@ -166,5 +166,4 @@ void fcamCamListDelAll( IpCamList *ipCamList ) {
     list_del(pos);
     free(tmpListItem);
 	}
-	return 0;
 }

@@ -50,7 +50,7 @@ int wgArpAdd(IpCamList *camInfo) {
 	strncpy(arp.arp_dev, camInfo->ifName, sizeof(arp.arp_dev));
 
 	if( ioctl(s, SIOCSARP, &arp) == -1 ) {
-		perror("Warning, was unable to create ARP entry (are you root?)");
+		//perror("Warning, was unable to create ARP entry (are you root?)");
 		return -1;
 	} else {
 		debug("Camera %u successfully configured\n", camInfo->serial);

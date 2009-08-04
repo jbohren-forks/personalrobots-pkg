@@ -74,6 +74,7 @@ typedef struct
 
 int fcamLibVersion( void );
 
+int fcamFindByUrl(const char *url, IpCamList *camera, unsigned wait_us, const char **errmsg);
 int fcamDiscover(const char *ifName, IpCamList *ipCamList, const char *ipAddress, unsigned wait_us);
 int fcamConfigure( IpCamList *camInfo, const char *ipAddress, unsigned wait_us);
 int fcamStartVid( const IpCamList *camInfo, const uint8_t mac[6], const char *ipAddress, uint16_t port );

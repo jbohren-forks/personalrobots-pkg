@@ -221,9 +221,10 @@ private:
   
   // Camera information
   std::string hwinfo_;
-  int serial_number_;
-  IpCamList* camera_;
-  IpCamList camList;
+  IpCamList camera_;
+  std::string interface_;
+  std::string address_;
+//  IpCamList camList;
 
   // Trigger information
   std::string trig_controller_cmd_;
@@ -240,13 +241,12 @@ private:
 public:
   typedef forearm_cam::ForearmCamReconfigurator Reconfigurator;
   
-  ForearmCamDriver() :
-    camera_(NULL) 
+  ForearmCamDriver()
   {
     misfire_blank_ = 0;
     
     // Create a new IpCamList to hold the camera list
-    fcamCamListInit(&camList);
+//    fcamCamListInit(&camList);
     
     // Clear statistics
     last_image_time_ = 0;
@@ -272,12 +272,10 @@ public:
     height_ = MT9VModes[video_mode_].height;
     imager_freq_ = MT9VModes[video_mode_].fps;
 
-    // Distinguish between serial_number_ and config_.serial_number_ so
+    // Distinguish between camera_.serial and config_.camera_.serial so
     // that when auto is selected, we will try to restart the previous
     // camera before probing again.
 
-    serial_number_ = config_.serial_number;
-    
     desired_freq_ = config_.ext_trig ? config_.trig_rate : imager_freq_;
     
     if (!config_.auto_exposure && config_.exposure > 1 / desired_freq_)
@@ -295,7 +293,7 @@ public:
 
   ~ForearmCamDriver()
   {
-    fcamCamListDelAll(&camList);
+//    fcamCamListDelAll(&camList);
     close();
   }
 
@@ -318,10 +316,10 @@ public:
     }
 
     // Forget results of previous discovery.
-    camera_ = NULL;
-    fcamCamListDelAll(&camList);
+//    camera_ = NULL;
+//    fcamCamListDelAll(&camList);
     
-    // Discover any connected cameras, wait for 0.5 second for replies
+/*    // Discover any connected cameras, wait for 0.5 second for replies
     if( fcamDiscover(config_.if_name.c_str(), &camList, config_.ip_address.c_str(), SEC_TO_USEC(0.5)) == -1) {
       ROS_FATAL("Discover error");
       //node_handle_.shutdown();
@@ -335,7 +333,7 @@ public:
 
     // Open camera with requested serial number.
     int index = -1;
-    if (serial_number_ == -1) // Auto
+    if (camera_.serial == -1) // Auto
     {
       if (fcamCamListNumEntries(&camList) == 1)
       {
@@ -346,15 +344,15 @@ public:
         ROS_FATAL("Camera autodetection only works when exactly one camera is discoverable. Unfortunately, we found %i cameras.", fcamCamListNumEntries(&camList));
       }
     }
-    else if (serial_number_ == -2) // Nothing specified
+    else if (camera_.serial == -2) // Nothing specified
     {
       ROS_FATAL("No camera serial_number was specified. Specifying a serial number is now mandatory to avoid accidentally configuring a random camera elsewhere in the building. You can specify -1 for autodetection.");
     }
     else
     {
-      index = fcamCamListFind(&camList, serial_number_);
+      index = fcamCamListFind(&camList, camera_.serial);
       if (index == -1) {
-        ROS_FATAL("Couldn't find camera with S/N %i", serial_number_);
+        ROS_FATAL("Couldn't find camera with S/N %i", camera_.serial);
       }
     }
 
@@ -365,14 +363,40 @@ public:
       for (int i = 0; i < fcamCamListNumEntries(&camList); i++)
       {
         camera_ = fcamCamListGetEntry(&camList, i);
-        ROS_FATAL("Found camera with S/N #%u", camera_->serial);
+        ROS_FATAL("Found camera with S/N #%u", camera_.serial);
       }
       return;
+    }*/
+
+    const char *errmsg;
+    int findResult = fcamFindByUrl(config_.camera_url.c_str(), &camera_, SEC_TO_USEC(0.1), &errmsg);
+    uint8_t *ip = (uint8_t *) &camera_.ip;
+    switch (findResult)
+    {
+      case 0:
+        ROS_ERROR("No camera matching %s was found.", config_.camera_url.c_str());
+        return;
+
+      case 1:
+        interface_ = camera_.ifName;
+        address_ = (boost::format("%i.%i.%i.%i")%(int)ip[0]%(int)ip[1]%(int)ip[2]%(int)ip[3]).str();
+        break;
+
+      case 2:
+        ROS_ERROR("More than one camera matched %s. Use the discover tool to determine a non-unique url for the camera.", config_.camera_url.c_str());
+        return;
+
+      case -1:
+        ROS_ERROR("Camera search failed: %s", errmsg);
+        return;
+
+      default:
+        ROS_ERROR("fcamFindByUrl returned illegal return value. This should never happen and is a bug.");
     }
 
     // Configure the camera with its IP address, wait up to 500ms for completion
-    camera_ = fcamCamListGetEntry(&camList, index);
-    retval = fcamConfigure(camera_, config_.ip_address.c_str(), SEC_TO_USEC(0.5));
+//    camera_ = fcamCamListGetEntry(&camList, index);
+    retval = fcamConfigure(&camera_, address_.c_str(), SEC_TO_USEC(0.5));
     if (retval != 0) {
       if (retval == ERR_CONFIG_ARPFAIL) {
         ROS_WARN("Unable to create ARP entry (are you root?), continuing anyway");
@@ -381,27 +405,27 @@ public:
         return;
       }
     }
-    ROS_INFO("Configured camera, S/N #%u, IP address %s, name %s",
-             camera_->serial, config_.ip_address.c_str(), camera_->cam_name);
-      
-    serial_number_ = camera_->serial;
-    hwinfo_ = camera_->hwinfo;
+    camera_.serial = camera_.serial;
+    hwinfo_ = camera_.hwinfo;
 
+    ROS_INFO("Configured camera. Complete URLs: serial://%u@%s#%s name://%s@%s#%s",
+             camera_.serial, address_.c_str(), interface_.c_str(), camera_.cam_name, address_.c_str(), interface_.c_str());
+      
     // We are going to receive the video on this host, so we need our own MAC address
-    if ( wgEthGetLocalMac(camera_->ifName, &localMac_) != 0 ) {
-      ROS_FATAL("Unable to get local MAC address for interface %s", camera_->ifName);
+    if ( wgEthGetLocalMac(camera_.ifName, &localMac_) != 0 ) {
+      ROS_FATAL("Unable to get local MAC address for interface %s", camera_.ifName);
       return;
     }
 
     // We also need our local IP address
-    if ( wgIpGetLocalAddr(camera_->ifName, &localIp_) != 0) {
-      ROS_FATAL("Unable to get local IP address for interface %s", camera_->ifName);
+    if ( wgIpGetLocalAddr(camera_.ifName, &localIp_) != 0) {
+      ROS_FATAL("Unable to get local IP address for interface %s", camera_.ifName);
       return;
     }
       
     // Select trigger mode.
-    if ( fcamTriggerControl( camera_, config_.ext_trig ? TRIG_STATE_EXTERNAL : TRIG_STATE_INTERNAL ) != 0) {
-      ROS_FATAL("Trigger mode set error. Is %s accessible from interface %s? (Try running route to check.)", config_.ip_address.c_str(), config_.if_name.c_str());
+    if ( fcamTriggerControl( &camera_, config_.ext_trig ? TRIG_STATE_EXTERNAL : TRIG_STATE_INTERNAL ) != 0) {
+      ROS_FATAL("Trigger mode set error. Is %s accessible from interface %s? (Try running route to check.)", address_.c_str(), interface_.c_str());
       return;
     }
 
@@ -431,7 +455,7 @@ public:
     }
 
     // Select a video mode
-    if ( fcamImagerModeSelect( camera_, video_mode_ ) != 0) {
+    if ( fcamImagerModeSelect( &camera_, video_mode_ ) != 0) {
       ROS_FATAL("Mode select error");
       //node_handle_.shutdown();
       return;
@@ -439,12 +463,12 @@ public:
 
     int bin_size = width_ > 320 ? 1 : 2;
     // Set horizontal blanking
-    if ( fcamReliableSensorWrite( camera_, MT9V_REG_HORIZONTAL_BLANKING, MT9VModes[video_mode_].hblank * bin_size, NULL ) != 0)
+    if ( fcamReliableSensorWrite( &camera_, MT9V_REG_HORIZONTAL_BLANKING, MT9VModes[video_mode_].hblank * bin_size, NULL ) != 0)
     {
       ROS_WARN("Error setting horizontal blanking.");
     }
 
-    if ( fcamReliableSensorWrite( camera_, MT9V_REG_VERTICAL_BLANKING, MT9VModes[video_mode_].vblank, NULL) != 0)
+    if ( fcamReliableSensorWrite( &camera_, MT9V_REG_VERTICAL_BLANKING, MT9VModes[video_mode_].vblank, NULL) != 0)
     {
       ROS_WARN("Error setting vertical blanking.");
     }
@@ -458,14 +482,14 @@ public:
     }
     */
 
-    if (fcamReliableSensorWrite(camera_, MT9V_REG_AGC_AEC_ENABLE, config_.auto_gain * 2 + config_.auto_exposure, NULL) != 0)
+    if (fcamReliableSensorWrite(&camera_, MT9V_REG_AGC_AEC_ENABLE, config_.auto_gain * 2 + config_.auto_exposure, NULL) != 0)
     {
       ROS_WARN("Error setting AGC/AEC mode. Exposure and gain may be incorrect.");
     }
 
     if (!config_.auto_gain)
     {
-      if ( fcamReliableSensorWrite( camera_, MT9V_REG_ANALOG_GAIN, config_.gain, NULL) != 0)
+      if ( fcamReliableSensorWrite( &camera_, MT9V_REG_ANALOG_GAIN, config_.gain, NULL) != 0)
       {
         ROS_WARN("Error setting analog gain.");
       }
@@ -483,7 +507,7 @@ public:
       if (explines > 32767) /// @TODO warning here?
         explines = 32767;
       ROS_DEBUG("Setting exposure lines to %i.", explines);
-      if ( fcamReliableSensorWrite( camera_, MT9V_REG_TOTAL_SHUTTER_WIDTH, explines, NULL) != 0)
+      if ( fcamReliableSensorWrite( &camera_, MT9V_REG_TOTAL_SHUTTER_WIDTH, explines, NULL) != 0)
       {
         ROS_WARN("Error setting exposure.");
       }
@@ -509,7 +533,7 @@ public:
   {
     ROS_DEBUG("start()");
     assert(state_ == OPENED);
-    image_thread_.reset(new boost::thread(boost::bind(&ForearmCamDriver::imageThread, this, config_.port)));
+    image_thread_.reset(new boost::thread(boost::bind(&ForearmCamDriver::imageThread, this)));
     state_ = RUNNING;   
   }
 
@@ -530,7 +554,7 @@ public:
   
   int setTestMode(uint16_t mode, diagnostic_updater::DiagnosticStatusWrapper &status)
   {
-    if ( fcamReliableSensorWrite( camera_, 0x7F, mode, NULL ) != 0) {
+    if ( fcamReliableSensorWrite( &camera_, 0x7F, mode, NULL ) != 0) {
       status.summary(2, "Could not set imager into test mode.");
       status.adds("Writing imager test mode", "Fail");
       return 1;
@@ -542,7 +566,7 @@ public:
 
     usleep(100000);
     uint16_t inmode;
-    if ( fcamReliableSensorRead( camera_, 0x7F, &inmode, NULL ) != 0) {
+    if ( fcamReliableSensorRead( &camera_, 0x7F, &inmode, NULL ) != 0) {
       status.summary(2, "Could not read imager mode back.");
       status.adds("Reading imager test mode", "Fail");
       return 1;
@@ -567,11 +591,11 @@ public:
 
   std::string getID()
   {
-    return (boost::format("FCAM%05u") % serial_number_).str();
+    return (boost::format("FCAM%05u") % camera_.serial).str();
   }
 
 private:
-  void imageThread(int port)
+  void imageThread()
   {
     // Start video
     if (!trig_controller_cmd_.empty())
@@ -600,9 +624,9 @@ private:
       return;
     }
     // Receive video
-    fcamVidReceive(camera_->ifName, port, height_, width_, &ForearmCamDriver::frameHandler, this);*/
+    fcamVidReceive(camera_.ifName, port, height_, width_, &ForearmCamDriver::frameHandler, this);*/
     
-    fcamVidReceiveAuto(camera_, height_, width_, &ForearmCamDriver::frameHandler, this);
+    fcamVidReceiveAuto( &camera_, height_, width_, &ForearmCamDriver::frameHandler, this);
     
     // Stop Triggering
     if (!trig_controller_cmd_.empty())
@@ -657,21 +681,24 @@ end_image_thread:
     stat.addv("Missing EOF frames", missed_eof_count_);
     stat.addv("Losses of image thread", lost_image_thread_count_);
     stat.addv("First packet offset", config_.first_packet_offset);
-    stat.adds("Interface", config_.if_name);
-    stat.adds("Camera IP", config_.ip_address);
     if (isClosed())
     {
-      stat.adds("Camera Serial #", "<not opened>");
-      stat.adds("Camera Name", "<not opened>");
-      stat.adds("Camera Hardware", "<not opened>");
-      stat.adds("Camera MAC", "<not opened>");
+      static const std::string not_opened = "not_opened";
+      stat.adds("Camera Serial #", not_opened);
+      stat.adds("Camera Name", not_opened);
+      stat.adds("Camera Hardware", not_opened);
+      stat.adds("Camera MAC", not_opened);
+      stat.adds("Interface", not_opened);
+      stat.adds("Camera IP", not_opened);
     }
     else
     {
-      stat.adds("Camera Serial #", serial_number_);
-      stat.adds("Camera Name", camera_->cam_name);
+      stat.adds("Camera Serial #", camera_.serial);
+      stat.adds("Camera Name", camera_.cam_name);
       stat.adds("Camera Hardware", hwinfo_);
-      stat.addsf("Camera MAC", "%02X:%02X:%02X:%02X:%02X:%02X", camera_->mac[0], camera_->mac[1], camera_->mac[2], camera_->mac[3], camera_->mac[4], camera_->mac[5]);
+      stat.addsf("Camera MAC", "%02X:%02X:%02X:%02X:%02X:%02X", camera_.mac[0], camera_.mac[1], camera_.mac[2], camera_.mac[3], camera_.mac[4], camera_.mac[5]);
+      stat.adds("Interface", interface_);
+      stat.adds("Camera IP", address_);
     }
     stat.adds("Image mode", config_.video_mode);
     stat.addsf("Latest frame time", "%f", last_image_time_);
@@ -920,7 +947,7 @@ end_image_thread:
       mac[i] = req.mac[i];
     ROS_INFO("board_config called s/n #%i, and MAC %02x:%02x:%02x:%02x:%02x:%02x.", req.serial, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
     stop();
-    rsp.success = !fcamConfigureBoard(camera_, req.serial, &mac);
+    rsp.success = !fcamConfigureBoard( &camera_, req.serial, &mac);
 
     if (rsp.success)
       ROS_INFO("board_config succeeded.");

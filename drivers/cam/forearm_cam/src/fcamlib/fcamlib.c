@@ -42,6 +42,170 @@ int fcamlibVersion() {
 
 
 /**
+ * Finds a camera matching the given name
+ *
+ * Names are of the form:
+\verbatim
+name://camera_name[@camera_ip][#local_interface]
+serial://serial_number[@camera_ip][#local_interface]
+any://[@camera_ip][#local_interface] 
+\endverbatim
+ *
+ * A name URL indicates the name of the camera to be found. A serial URL
+ * indicates the serial number of the camera to be found. An any URL will
+ * match any camera, but if more than one camera is found, it will fail.
+ *
+ * Optionally, the ip address that the camera should be set to can be
+ * specified by prefixing it with a @ sign, and the interface through
+ * which to access the camera can be specified by prefixing it with a #
+ * sign.
+ *
+ * @param url			The url of the camera to find
+ * @param camera	The structure to fill the camera information into
+ * @param wait_us	The number of microseconds to wait before timing out
+ * @param errmsg  String containing a descriptive parse error message
+ *
+ * @return Returns 1 if a camera was found, 2 if multiple cameras were found, 
+ * 0 if no cameras were found
+ * and -1 with errno set if a system errors occured.
+ */
+int fcamFindByUrl(const char *url, IpCamList *camera, unsigned wait_us, const char **errmsg)
+{
+  static const char *badprefix = "Bad URL prefix, expected name://, serial:// or any://.";
+  static const char *multiaddress = "Multiple @-prefixed camera addresses found.";
+  static const char *multiinterface = "Multiple #-prefixed host interfaces found.";
+  static const char *discoverfailed = "Discover failed. The specified address or interface may be bad.";
+  static const char *badserial = "serial:// may only be followed by an integer.";
+  static const char *badip = "@ must be followed by a valid IP address.";
+  const char *name = "name://"; int namelen = strlen(name);
+  const char *serial = "serial://"; int seriallen = strlen(serial);
+  const char *any = "any://"; int anylen = strlen(any);
+  char *idstart;
+  char *curpos;
+  char *address = NULL;
+  char *interface = NULL;
+  char *copy = malloc(strlen(url));
+  int retval = -1;
+  int mode = 0;
+  unsigned int serialnum = -1;
+  IpCamList camList;
+  IpCamList *curEntry;
+  
+  fcamCamListInit(&camList); // Must happen before any potential failures.
+
+  errmsg = NULL;
+
+  if (!copy)
+    return -1;
+
+  strcpy(copy, url);
+
+  // Decypher the prefix.
+  if (!strncmp(copy, name, namelen))
+  {
+    idstart = copy + namelen;
+    mode = 1;
+  }
+  else if (!strncmp(copy, serial, seriallen))
+  {
+    idstart = copy + seriallen;
+    mode = 2;
+  }
+  else if (!strncmp(copy, any, anylen))
+  {
+    idstart = copy + anylen;
+    mode = 3;
+  }
+  else
+  {
+    *errmsg = badprefix;
+    goto bailout;
+  }
+
+  // Find any # or @ words.
+  for (curpos = idstart; *curpos; curpos++)
+  {
+    if (*curpos == '@')
+    {
+      if (address)
+      {
+        *errmsg = multiaddress;
+        goto bailout;
+      }
+      address = curpos + 1;
+    }
+    else if (*curpos == '#')
+    {
+      if (interface)
+      {
+        *errmsg = multiinterface;
+        goto bailout;
+      }
+      interface = curpos + 1;
+    }
+    else
+      continue; // Didn't find anything, don't terminate the string.
+    *curpos = 0;
+  }
+  // Now idstart, address and interface are set.
+
+  if (mode == 2) // serial:// convert the number to integer.
+  {
+    char *endpos;
+    serialnum = strtol(idstart, &endpos, 10);
+    if (*idstart == 0 || *endpos != 0)
+    {
+      *errmsg = badserial;
+      goto bailout;
+    }
+  }
+
+  // Build up a list of cameras. Only ones that are on the specified
+  // interface (if specified), and that can reply from the specified
+  // address (if specified) will end up in the list.
+  if (fcamDiscover(interface, &camList, address, wait_us) == -1)
+  {
+    *errmsg = discoverfailed;
+    goto bailout;
+  }
+
+  // Now search through the list for a match.
+  retval = 0; // From now on retval is the number of matches.
+  list_for_each_entry(curEntry, &(camList.list), list)
+  {
+    if ((mode == 1 && strcmp(idstart, curEntry->cam_name) == 0) ||
+        (mode == 2 && serialnum == curEntry->serial) ||
+        mode == 3)
+    {
+      retval++;
+      if (retval == 2)
+      {
+        goto bailout;
+      }
+      memcpy(camera, curEntry, sizeof(IpCamList));
+      if (address) // If an address has been specified, we fill it into the camera info.
+      {
+        struct in_addr ip;
+        if (inet_aton(address, &ip))
+          camera->ip = ip.s_addr;
+        else
+        {
+          fprintf(stderr, "Camera IP address is %s.", address);
+          *errmsg = badip;
+          retval = -1;
+          goto bailout;
+        }
+      }
+    }
+  }
+
+bailout:
+  fcamCamListDelAll(&camList);
+  free(copy);
+  return retval;
+}
+
+/**
  * Waits for a FCAM StatusPacket on the specified socket for a specified duration.
  *
  * The Status type and code will be reported back to the called via the 'type' & 'code'
@@ -1583,7 +1747,7 @@ int fcamVidReceive( const char *ifName, uint16_t port, size_t height, size_t wid
 		return -1;
 	}
 
-  fcamVidReceiveSocket( s, height, width, frameHandler, userData);
+  return fcamVidReceiveSocket( s, height, width, frameHandler, userData);
 }
 
 int fcamVidReceiveAuto( IpCamList *camera, size_t height, size_t width, FrameHandler frameHandler, void *userData ) {
@@ -1626,7 +1790,7 @@ int fcamVidReceiveAuto( IpCamList *camera, size_t height, size_t width, FrameHan
   }
 
   port = ntohs(((struct sockaddr_in *)&localPort)->sin_port);
-  fprintf(stderr, "Streaming to port %i.\n", port);
+//  fprintf(stderr, "Streaming to port %i.\n", port);
 
   if ( fcamStartVid( camera, (uint8_t *)&(localMac.sa_data[0]), inet_ntoa(localIp), port) != 0 ) 
   {

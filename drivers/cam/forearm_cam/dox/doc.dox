@@ -1,0 +1,118 @@
+/**
+
+
+@section topic Forearm Camera ROS Topics 
+ - forearm_node
+
+ */
+
+
+/**
+\mainpage
+\htmlinclude manifest.html
+             
+The forearm camera is an ethernet camera located in the forearm of the PR2.
+This page describes the API of the camera.
+
+A detailed specification of the camera can be found here:
+http://pr.willowgarage.com/wiki/Ethernet_Forearm_Camera
+
+The forearm_cam package documentation with tutorials and background
+information can be found here:
+http://pr.willowgarage.com/wiki/forearm_cam
+
+The foream camera can be used in triggered mode. Detailed documentation of
+the triggered mode can be found here:
+http://pr.willowgarage.com/wiki/camera_synchronization
+
+\subsection urls Forearm Camera URLs
+
+Forearm cameras and their network configuration are described by URLs in
+the following form:
+
+\verbatim
+name://camera_name[@camera_ip][#local_interface]
+serial://serial_number[@camera_ip][#local_interface]
+any://[@camera_ip][#local_interface] 
+\endverbatim
+
+A \b name URL indicates the name of the camera to be found. A \b serial URL
+indicates the serial number of the camera to be found. An \b any URL will
+match any camera. If a URL matches more than one camera, the node will 
+refuse to start the camera.
+
+Optionally, the ip address that the camera should be set to can be
+specified by prefixing it with a @ sign, and the interface through
+which to access the camera can be specified by prefixing it with a #
+sign.
+
+Some example URLs:
+
+\verbatim
+any://                             // Matches any camera
+serial://15#eth2                   // Matches the camera with s/n 15, and only looks for it on interface eth2
+name://left_forearm@10.68.0.210    // Matches the \b left_forearm camera, and sets its IP to 10.68.0.210
+\endverbatim
+
+\subsection forearm_node forearm_node
+
+The forearm camera driver. Connects to the camera and streams out images.
+
+\include ForearmCamConfig-usage.dox
+
+\subsubsection topics ROS topics
+
+Subscribes to:
+- none
+
+Publishes to:
+- \b "~image_raw": [sensor_msgs/Image] The raw image stream from the
+  camera.
+
+- \b "~cam_info": [sensor_msgs/CameraInfo] The camera's calibration
+  information.
+
+\include ForearmCamConfig.dox
+
+\section commandline Command-line tools
+
+- discover Finding cameras on the network
+
+\subsection discover discover
+
+A tool to \b discover cameras that are visible from the computer on which it
+is run.
+
+The \b discover tool broadcasts on one or all interfaces to discover
+cameras that are reachable. Its output indicates the camera's serial
+number, name (if it has one), MAC address, interface, currently configured
+IP address, and revision information.
+
+Notes:
+
+* If a camera is visible from multiple network interfaces, only the first one
+that responds will be shown.
+
+* The IP address returned by the discover tool is the camera's currently
+configured address. This may not be a legal address on the current
+network. This may not be the address stored in the camera's flash. This
+is in order of precedence: the last address that the camera was
+configured with, the address stored in the camera's flash memory the last
+time the camera was rebooted, the default address 167.254.0.1.
+
+* Cameras on a network interface that is not properly configured for 
+IPv4 traffic will not be seen by the discover tool.
+
+\subsubsection Usage
+
+To discover all cameras that are visible:
+\verbatim
+rosrun forearm_cam discover
+\endverbatim
+
+To discover all cameras that are visible on interface \b eth1:
+\verbatim
+rosrun forearm_cam discover eth1
+\endverbatim
+
+*/
