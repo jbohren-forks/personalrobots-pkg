@@ -50,6 +50,8 @@ import rospy
 from robot_msgs.msg import BatteryState
 from diagnostic_msgs.msg import DiagnosticMessage, DiagnosticStatus, DiagnosticValue, DiagnosticString
 
+import socket
+
 NAME = 'monitor'
 
 def usage(stdout, progname):
@@ -165,6 +167,8 @@ class RobotPower(object):
         self.full_charge_energy = 0
         self.last_battery_warn = 0
 
+        self.robot = socket.gethostname()[:-1].upper()
+
     def print_remaining(self):
         print """___________________________________
 Battery Controller Information:
@@ -198,13 +202,9 @@ time remaining per battery pack in minutes"""
 
     ## Send out the state of the controller on a diagnostic message
     def broadcast_diagnostic(self):
-        stat = []
-        timeout = 0
-        try:
-            timeout = rospy.get_param("timeout")
-        except KeyError:
-            timeout = 10.0
-
+        stats = []
+        timeout = rospy.get_param("timeout", 10)
+        
         for ci in range(0,len(self.controllers)):
             c = self.controllers[ci]
             sval = [(c.time_remaining, "Time Remaining (min)"),
@@ -224,7 +224,18 @@ time remaining per battery pack in minutes"""
             if c.time_remaining < 5:
                 controller_status_string = " Extremely Low Battery %f Minutes Remaining"%(c.time_remaining)
                 controller_status_value = 2
-            stat.append(DiagnosticStatus(controller_status_value, "IBPS %d"%ci, controller_status_string, sval, []))
+
+            ##
+            stat = DiagnosticStatus()
+            stat.level = controller_status_value
+            stat.name = "IBPS %d" % (ci)
+            stat.message = controller_status_string
+            ##@todo Add HW id
+            stat.hardware_id = "%s IBPS %d" % (self.robot, ci)
+            stat.values = sval
+            stat.strings = []
+
+            stats.append(stat)
             ## @todo make the status string represent errors etc
 
             for bi in range(0,len(c.batteries)):
@@ -274,10 +285,18 @@ time remaining per battery pack in minutes"""
                     status_string = "OK" 
                     status_value = 0     
 
-                stat.append(DiagnosticStatus(status_value, "Smart Battery %d.%d"%(ci,bi), status_string, bval, stringval))
-                ## @todo make the status string represent errors etc
+                stat = DiagnosticStatus()
+                stat.level = status_value
+                stat.name = "Smart Battery %d.%d" % (ci, bi)
+                stat.message = status_string
+                ##@todo Add HW id
+                stat.hardware_id = "%s Smart Battery %d.%d" % (self.robot, ci, bi)
+                stat.values = bval
+                stat.strings = stringval
+                stats.append(stat)
+
             
-        self.pub.publish(DiagnosticMessage(None, stat))
+        self.pub.publish(DiagnosticMessage(None, stats))
 
         
     ## Send out the state of the battery charge
