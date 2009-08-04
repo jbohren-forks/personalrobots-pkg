@@ -10,7 +10,7 @@
   <depend package="move_base" />
   <depend package="actionlib" />
   <depend package="action_translator" />
-
+  <depend package="geometry_msgs" />
 </package>
 
 

@@ -21,9 +21,9 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #uncomment if you have defined services
 #gensrv()
 
-#rospack_add_executable(move_base_client src/move_base_client.cpp)
-#rospack_add_executable(simple_move_base_client src/simple_move_base_client.cpp)
-#rospack_add_executable(move_base_translator src/move_base_translator.cpp)
+rospack_add_executable(move_base_client src/move_base_client.cpp)
+rospack_add_executable(simple_move_base_client src/simple_move_base_client.cpp)
+rospack_add_executable(move_base_translator src/move_base_translator.cpp)
 
 #common commands for building c++ executables and libraries
 #rospack_add_library(${PROJECT_NAME} src/example.cpp)

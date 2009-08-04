@@ -52,10 +52,10 @@ move_base::MoveBaseGoal fromOldGoal(const PoseStamped& old_goal)
   return new_goal;
 }
 
-PoseStamped fromActionFeedback(const move_base::MoveBaseFeedback& action_feedback)
+/*PoseStamped fromActionFeedback(const move_base::MoveBaseFeedback& action_feedback)
 {
   return action_feedback.cur_pose;
-}
+}*/
 
 PoseStamped fromActionResult(const move_base::MoveBaseResult& action_result)
 {
@@ -69,7 +69,7 @@ int main(int argc, char** argv)
   ros::NodeHandle n;
 
   action_translator::ActionTranslator<move_base::MoveBaseAction, PoseStamped, PoseStamped>
-                              translator("move_base", &fromOldGoal, &fromActionFeedback, &fromActionResult);
+                              translator("move_base", &fromOldGoal, NULL, &fromActionResult);
 
   robot_actions::ActionRunner runner(10.0);
   runner.connect<geometry_msgs::PoseStamped, nav_robot_actions::MoveBaseState, geometry_msgs::PoseStamped>(translator);
