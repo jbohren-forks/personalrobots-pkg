@@ -92,12 +92,10 @@ public:
    * \param queue_size The number of messages to queue up before throwing away old ones.  0 means infinite (dangerous).
    * \param nh The NodeHandle to use for any necessary operations
    * \param max_rate The maximum rate to check for newly transformable messages
-   * \param min_rate The minimum time between checks for newly transformable messages, in case a previous check that would have succeeded was skipped because of max_rate.  A duration of 0 here means no minimum.
    */
-  MessageFilter(Transformer& tf, const std::string& target_frame, uint32_t queue_size, ros::NodeHandle nh = ros::NodeHandle(), ros::Duration max_rate = ros::Duration(0.01), ros::Duration min_rate = ros::Duration(0.1))
+  MessageFilter(Transformer& tf, const std::string& target_frame, uint32_t queue_size, ros::NodeHandle nh = ros::NodeHandle(), ros::Duration max_rate = ros::Duration(0.01))
   : tf_(tf)
   , nh_(nh)
-  , min_rate_(min_rate)
   , max_rate_(max_rate)
   , queue_size_(queue_size)
   {
@@ -115,13 +113,11 @@ public:
    * \param queue_size The number of messages to queue up before throwing away old ones.  0 means infinite (dangerous).
    * \param nh The NodeHandle to use for any necessary operations
    * \param max_rate The maximum rate to check for newly transformable messages
-   * \param min_rate The minimum time between checks for newly transformable messages, in case a previous check that would have succeeded was skipped because of max_rate.  A duration of 0 here means no minimum.
    */
   template<class F>
-  MessageFilter(F& f, Transformer& tf, const std::string& target_frame, uint32_t queue_size, ros::NodeHandle nh = ros::NodeHandle(), ros::Duration max_rate = ros::Duration(0.01), ros::Duration min_rate = ros::Duration(0.1))
+  MessageFilter(F& f, Transformer& tf, const std::string& target_frame, uint32_t queue_size, ros::NodeHandle nh = ros::NodeHandle(), ros::Duration max_rate = ros::Duration(0.01))
   : tf_(tf)
   , nh_(nh)
-  , min_rate_(min_rate)
   , max_rate_(max_rate)
   , queue_size_(queue_size)
   {
@@ -259,10 +255,7 @@ private:
 
     tf_connection_ = tf_.addTransformsChangedListener(boost::bind(&MessageFilter::transformsChanged, this));
 
-    if (min_rate_ > ros::Duration(0))
-    {
-      min_rate_timer_ = nh_.createTimer(min_rate_, &MessageFilter::minRateTimerCallback, this);
-    }
+    max_rate_timer_ = nh_.createTimer(max_rate_, &MessageFilter::maxRateTimerCallback, this);
   }
 
   typedef std::list<MConstPtr> L_Message;
@@ -328,8 +321,6 @@ private:
 
   void testMessages()
   {
-    last_test_time_ = ros::Time::now();
-
     if (!messages_.empty() && getTargetFramesString() == " ")
     {
       ROS_WARN_NAMED("message_notifier", "MessageFilter [target=%s]: empty target frame", getTargetFramesString().c_str());
@@ -354,7 +345,7 @@ private:
     }
   }
 
-  void minRateTimerCallback(const ros::TimerEvent&)
+  void maxRateTimerCallback(const ros::TimerEvent&)
   {
     boost::mutex::scoped_lock list_lock(messages_mutex_);
     if (new_transforms_)
@@ -376,15 +367,7 @@ private:
 
   void transformsChanged()
   {
-    boost::mutex::scoped_lock list_lock(messages_mutex_);
-    if (ros::Time::now() - last_test_time_ >= max_rate_)
-    {
-      testMessages();
-    }
-    else
-    {
-      new_transforms_ = true;
-    }
+    new_transforms_ = true;
 
     ++transform_message_count_;
   }
@@ -419,10 +402,8 @@ private:
 
   Transformer& tf_; ///< The Transformer used to determine if transformation data is available
   ros::NodeHandle nh_; ///< The node used to subscribe to the topic
-  ros::Duration min_rate_;
   ros::Duration max_rate_;
-  ros::Timer min_rate_timer_;
-  ros::Time last_test_time_;
+  ros::Timer max_rate_timer_;
   std::vector<std::string> target_frames_; ///< The frames we need to be able to transform to before a message is ready
   std::string target_frames_string_;
   boost::mutex target_frames_string_mutex_;
