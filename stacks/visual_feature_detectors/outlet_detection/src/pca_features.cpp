@@ -93,7 +93,6 @@ void loadPCAFeatures(const char* path, vector<IplImage*>& patches)
         IplImage* img = loadImageRed(buf);
         
         vector<feature_t> features;
-        const float default_hole_contrast = 1.1f;
         GetHoleFeatures(img, features);
         
         for(int j = 0; j < (int)features.size(); j++)
@@ -122,24 +121,6 @@ void loadPCAFeatures(const char* path, vector<IplImage*>& patches)
         
         cvReleaseImage(&img);
     }
-}
-
-IplImage* loadImageRed(const char* filename)
-{
-    IplImage* temp = cvLoadImage(filename);
-    IplImage* red = cvCreateImage(cvSize(temp->width, temp->height), IPL_DEPTH_8U, 1);
-    cvSetImageCOI(temp, 3);
-    cvCopy(temp, red);
-    cvReleaseImage(&temp);
-    
-#if defined(_SCALE_IMAGE_2)
-    IplImage* red2 = cvCreateImage(cvSize(red->width/2, red->height/2), IPL_DEPTH_8U, 1);
-    cvResize(red, red2);
-    cvReleaseImage(&red);
-    red = red2;
-#endif //_SCALE_IMAGE_2
-    
-    return red;
 }
 
 void readPCAFeatures(const char* filename, CvMat** avg, CvMat** eigenvectors)

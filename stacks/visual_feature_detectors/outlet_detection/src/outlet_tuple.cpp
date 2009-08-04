@@ -1124,3 +1124,70 @@ void outlet_template_t::get_holes_2d(CvPoint2D32f* holes) const
         holes[3*i + 2] = cvPoint2D32f(center.x, center.y - outlet_ysize); // ground
     }
 }
+
+void writeCvPoint(CvFileStorage* fs, const char* name, CvPoint pt)
+{
+    cvStartWriteStruct(fs, name, CV_NODE_SEQ);
+    cvWriteRawData(fs, &pt, 1, "ii");
+    cvEndWriteStruct(fs);
+}
+
+void readCvPointByName(CvFileStorage* fs, CvFileNode* parent, const char* name, CvPoint& pt)
+{
+    CvFileNode* node = cvGetFileNodeByName(fs, parent, name);
+	if (node)
+	{
+		cvReadRawData(fs, node, &pt, "ii");
+#if defined(_SCALE_IMAGE_2)
+		pt.x /= 2;
+		pt.y /= 2;
+#endif //_SCALE_IMAGE_2
+	}
+	else
+	{
+		pt.x = -1;
+		pt.y = -1;
+	}
+}
+
+void readTrainingBase(const char* config_filename, char* outlet_filename, 
+                      char* nonoutlet_filename, vector<feature_t>& train_features)
+{
+    CvMemStorage* storage = cvCreateMemStorage();
+    
+    CvFileStorage* fs = cvOpenFileStorage(config_filename, storage, CV_STORAGE_READ);
+    
+    CvFileNode* outlet_node = cvGetFileNodeByName(fs, 0, "outlet");
+    const char* str = cvReadStringByName(fs, outlet_node, "outlet filename");
+    strcpy(outlet_filename, str);
+    
+    CvFileNode* nonoutlet_node = cvGetFileNodeByName(fs, 0, "nonoutlet");
+    str = cvReadStringByName(fs, nonoutlet_node, "nonoutlet filename");
+    strcpy(nonoutlet_filename, str);
+    
+    CvPoint pt;
+    
+	int index = 1;
+	char feature_name[10];
+	while (1)
+	{		
+		sprintf(feature_name, "power%d", index++);
+		readCvPointByName(fs, outlet_node, feature_name, pt);
+		if ((pt.x == -1)&&(pt.y==-1))
+			break;
+		train_features.push_back(feature_t(pt, 1, 0));
+	}
+    
+	index = 1;
+	while (1)
+	{		
+		sprintf(feature_name, "ground%d", index++);
+		readCvPointByName(fs, outlet_node, feature_name, pt);
+		if ((pt.x == -1)&&(pt.y==-1))
+			break;
+		train_features.push_back(feature_t(pt, 1, 1));
+	}
+    cvReleaseFileStorage(&fs);
+    
+    cvReleaseMemStorage(&storage);
+}

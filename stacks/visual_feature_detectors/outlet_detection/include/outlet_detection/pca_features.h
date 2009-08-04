@@ -20,7 +20,6 @@ void readPCAFeatures(const char* filename, CvMat** avg, CvMat** eigenvectors);
 void eigenvector2image(CvMat* eigenvector, IplImage* img);
 
 
-IplImage* loadImageRed(const char* filename);
 
 
 #endif //_PCA_FEATURES_H

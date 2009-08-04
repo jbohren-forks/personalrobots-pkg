@@ -94,4 +94,14 @@ void FilterFeatures(vector<feature_t>& features, float min_scale, float max_scal
 
 void SelectNeighborFeatures(vector<feature_t>& features, const vector<feature_t>& voc);
 
+namespace cv
+{
+template<> inline void Ptr<IplImage>::delete_obj()
+{ cvReleaseImage(&obj); }
+}
+
+int LoadFeatures(const char* filename, vector<vector<feature_t> >& features, vector<Ptr<IplImage> >& images);
+IplImage* loadImageRed(const char* filename);
+
+
 #endif // _FEATURES_H

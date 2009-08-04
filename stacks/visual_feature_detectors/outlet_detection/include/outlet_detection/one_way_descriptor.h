@@ -18,9 +18,6 @@ using namespace std;
 
 #include "outlet_detection/features.h"
 
-static int pca_dim = 100;
-static int pca_dim_small = 100;
-
 inline int round(float value)
 {
     if(value > 0)
@@ -244,6 +241,9 @@ public:
     
     // GetCenter: returns the center of the feature
     CvPoint GetCenter() const;
+    
+    void SetPCADimHigh(int pca_dim_high) {m_pca_dim_high = pca_dim_high;};
+    void SetPCADimLow(int pca_dim_low) {m_pca_dim_low = pca_dim_low;};
 
 protected:
     int m_pose_count; // the number of poses
@@ -255,6 +255,9 @@ protected:
     
     string m_feature_name; // the name of the feature associated with the descriptor
     CvPoint m_center; // the coordinates of the feature (the center of the input image ROI)
+    
+    int m_pca_dim_high; // the number of descriptor pca components to use for generating affine poses
+    int m_pca_dim_low; // the number of pca components to use for comparison
 };
 
 void FindOneWayDescriptor(int desc_count, const CvOneWayDescriptor* descriptors, IplImage* patch, int& desc_idx, int& pose_idx, float& distance, 

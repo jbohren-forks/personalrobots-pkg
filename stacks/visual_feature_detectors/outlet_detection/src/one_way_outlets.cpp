@@ -26,7 +26,7 @@ void drawLine(IplImage* image, CvPoint p1, CvPoint p2, CvScalar color, int thick
     cvLine(image, p1, p2, color, thickness);
 }
 
-void detect_outlets_2x1_one_way(IplImage* test_image, const CvOneWayDescriptorBase* descriptors, 
+void detect_outlets_2x1_one_way(IplImage* test_image, const CvOneWayDescriptorObject* descriptors, 
                                 vector<feature_t>& holes, IplImage* color_image, 
                                 const char* output_path, const char* output_filename)
 {
@@ -274,7 +274,7 @@ void detect_outlets_one_way(IplImage* test_image, const outlet_template_t& outle
     cvCvtColor(test_image, test_image_features, CV_GRAY2RGB);
     DrawFeatures(test_image_features, features);
     
-    const CvOneWayDescriptorBase* descriptors = outlet_template.get_one_way_descriptor_base();
+    const CvOneWayDescriptorObject* descriptors = outlet_template.get_one_way_descriptor_base();
     vector<feature_t> hole_candidates;
     int patch_width = descriptors->GetPatchSize().width/2;
     int patch_height = descriptors->GetPatchSize().height/2; 
@@ -523,3 +523,4 @@ void ScaleFeatures(const vector<feature_t>& src, vector<feature_t>& dst, float s
         dst[i] = feature_t(cvPoint(src[i].pt.x*scale, src[i].pt.y*scale), src[i].size, src[i].class_id);
     }
 }
+

@@ -62,6 +62,10 @@ inline float length(const CvPoint3D32f& p)
 	return sqrt(p.x*p.x + p.y*p.y + p.z*p.z);
 }
 
+void readTrainingBase(const char* config_filename, char* outlet_filename, 
+                      char* nonoutlet_filename, vector<feature_t>& train_features);
+void readCvPointByName(CvFileStorage* fs, CvFileNode* parent, const char* name, CvPoint& pt);
+
 struct outlet_tuple_t
 {
 	CvPoint2D32f centers[4];
@@ -157,12 +161,27 @@ public:
 
     void create_one_way_descriptor_base()
     {
-        m_base = new CvOneWayDescriptorBase(m_patch_size, m_pose_count, m_train_path.c_str(), 
-                                            m_train_config.c_str(), m_pca_config.c_str(), m_pca_hr_config.c_str(), 
+        m_base = new CvOneWayDescriptorObject(m_patch_size, m_pose_count, m_train_path.c_str(), 
+                                            m_pca_config.c_str(), m_pca_hr_config.c_str(), 
                                             m_pca_desc_config.c_str());
+        char outlet_filename[1024];
+        char nonoutlet_filename[1024];
+        char train_config_filename[1024];
+        vector<feature_t> train_features;
+        sprintf(train_config_filename, "%s/%s", m_train_path.c_str(), m_train_config.c_str());
+        readTrainingBase(train_config_filename, outlet_filename, nonoutlet_filename, train_features);
+        m_base->SetLabeledFeatures(train_features);
+        
+        char train_image_filename[1024];
+        char train_image_filename1[1024];
+        sprintf(train_image_filename, "%s/%s", m_train_path.c_str(), outlet_filename);
+        sprintf(train_image_filename1, "%s/%s", m_train_path.c_str(), nonoutlet_filename);   
+        
+        m_base->LoadTrainingFeatures(train_image_filename, train_image_filename1);
+        
     }
 
-    const CvOneWayDescriptorBase* get_one_way_descriptor_base() const {return m_base;};
+    const CvOneWayDescriptorObject* get_one_way_descriptor_base() const {return m_base;};
     
     outlet_color_t get_color() const {return m_outlet_color;};
     void get_holes_3d(CvPoint3D32f* holes) const;
@@ -176,7 +195,7 @@ public:
 protected:
 	int outlet_count;
 	CvPoint2D32f* centers;
-    CvOneWayDescriptorBase* m_base;
+    CvOneWayDescriptorObject* m_base;
     
     string m_train_path;
     string m_train_config;

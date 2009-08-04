@@ -115,7 +115,7 @@ void CvOneWayDescriptor::Allocate(int pose_count, CvSize size, int nChannels)
         m_affine_poses = new CvAffinePose[m_pose_count];
     }
     
-    int length = pca_dim_small;//roi.width*roi.height;
+    int length = m_pca_dim_low;//roi.width*roi.height;
     for(int i = 0; i < m_pose_count; i++)
     {
         m_samples[i] = cvCreateImage(cvSize(size.width/2, size.height/2), IPL_DEPTH_32F, nChannels);
@@ -270,7 +270,7 @@ void CvOneWayDescriptor::GenerateSamplesFast(IplImage* frontal, CvMat* pca_hr_av
     for(int i = 0; i < m_pose_count; i++)
     {
         cvSetZero(m_samples[i]);
-        for(int j = 0; j < pca_dim; j++)
+        for(int j = 0; j < m_pca_dim_high; j++)
         {
             float coeff = cvmGet(pca_coeffs, 0, j);
             IplImage* patch = pca_descriptors[j + 1].GetPatch(i);
@@ -375,7 +375,7 @@ void CvOneWayDescriptor::ProjectPCASample(IplImage* patch, CvMat* avg, CvMat* ei
 void CvOneWayDescriptor::EstimatePosePCA(IplImage* patch, int& pose_idx, float& distance, CvMat* avg, CvMat* eigenvectors) const
 {
     CvRect roi = cvGetImageROI(patch);
-    CvMat* pca_coeffs = cvCreateMat(1, pca_dim_small, CV_32FC1);
+    CvMat* pca_coeffs = cvCreateMat(1, m_pca_dim_low, CV_32FC1);
     
     IplImage* patch_32f = cvCreateImage(cvSize(roi.width, roi.height), IPL_DEPTH_32F, 1);
     float sum = cvSum(patch).val[0];

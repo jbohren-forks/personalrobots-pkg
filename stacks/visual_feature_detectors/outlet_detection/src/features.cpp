@@ -9,6 +9,7 @@
 
 #include "outlet_detection/features.h"
 #include "outlet_detection/outlet_model.h"
+#include <highgui.h>
 
 void GetSURFFeatures(IplImage* src, vector<feature_t>& features)
 {
@@ -120,4 +121,50 @@ void SelectNeighborFeatures(vector<feature_t>& features, const vector<feature_t>
     }
     
     features = filtered;
+}
+
+int LoadFeatures(const char* filename, vector<vector<feature_t> >& features, vector<Ptr<IplImage> >& images)
+{
+    IplImage* train_image = loadImageRed(filename);
+    
+    size_t pyr_levels = features.size();
+    images.resize(pyr_levels);
+    IplImage* image_features = cvCloneImage(train_image);
+    for(size_t i = 0; i < features.size(); i++)
+    {
+        images[i] = image_features;
+        GetHoleFeatures(image_features, features[i]);
+        IplImage* temp_image = cvCreateImage(cvSize(image_features->width/2, image_features->height/2), IPL_DEPTH_8U, 1);
+        cvPyrDown(image_features, temp_image);
+        image_features = temp_image;
+    }
+    cvReleaseImage(&image_features);
+    
+    int feature_count = 0;
+    for(size_t i = 0; i < pyr_levels; i++)
+    {
+        feature_count += features[i].size();
+    }
+    
+    cvReleaseImage(&train_image);
+    
+    return feature_count;
+}
+
+IplImage* loadImageRed(const char* filename)
+{
+    IplImage* temp = cvLoadImage(filename);
+    IplImage* red = cvCreateImage(cvSize(temp->width, temp->height), IPL_DEPTH_8U, 1);
+    cvSetImageCOI(temp, 3);
+    cvCopy(temp, red);
+    cvReleaseImage(&temp);
+    
+#if defined(_SCALE_IMAGE_2)
+    IplImage* red2 = cvCreateImage(cvSize(red->width/2, red->height/2), IPL_DEPTH_8U, 1);
+    cvResize(red, red2);
+    cvReleaseImage(&red);
+    red = red2;
+#endif //_SCALE_IMAGE_2
+    
+    return red;
 }

@@ -25,14 +25,13 @@ class CvOneWayDescriptorBase
         // - patch_size: size of the input (large) patch
         // - pose_count: the number of poses to generate for each descriptor
         // - train_path: path to training files
-        // - train_config: configuration filename
         // - pca_config: the name of the file that contains PCA for small patches (2 times smaller
         // than patch_size each dimension
         // - pca_hr_config: the name of the file that contains PCA for large patches (of patch_size size)
         // - pca_desc_config: the name of the file that contains descriptors of PCA components
-        CvOneWayDescriptorBase(CvSize patch_size, int pose_count, const char* train_path, const char* train_config, 
-                               const char* pca_config, const char* pca_hr_config = 0, const char* pca_desc_config = 0, 
-                                int pyr_levels = 2);
+        CvOneWayDescriptorBase(CvSize patch_size, int pose_count, const char* train_path, const char* pca_config, 
+                               const char* pca_hr_config = 0, const char* pca_desc_config = 0, int pyr_levels = 2, 
+                                int pca_dim_high = 100, int pca_dim_low = 100);
         
         ~CvOneWayDescriptorBase();
         
@@ -44,10 +43,9 @@ class CvOneWayDescriptorBase
         // returns the number of pyramid levels
         int GetPyrLevels() const {return m_pyr_levels;};
         
-        // LoadTrainingFeatures: loads positive and negative features from images
-        // - train_image_filename: positive image
-        // - train_image_filename1: negative image
-        void LoadTrainingFeatures(const char* train_image_filename, const char* train_image_filename1);
+        // CreateDescriptorsFromImage: loads features from an image and create descriptors for each of them
+        // - image_filename: image filename
+        void CreateDescriptorsFromImage(const char* image_filename);
         
         // CreatePCADescriptors: generates descriptors for PCA components, needed for fast generation of feature descriptors
         void CreatePCADescriptors();
@@ -71,18 +69,15 @@ class CvOneWayDescriptorBase
         // InitializePoseTransforms: subsequently calls InitializePoses and InitializeTransformsFromPoses
         void InitializePoseTransforms();
         
-        // IsDescriptorObject: returns 1 if descriptor with specified index is positive, otherwise 0
-        int IsDescriptorObject(int desc_idx) const;
-        
-        // MatchPointToPart: returns the part number of a feature if it matches one of the object parts, otherwise -1
-        int MatchPointToPart(CvPoint pt) const;
-        
-        // GetDescriptorPart: returns the part number of the feature corresponding to a specified descriptor  
+        // InitializeDescriptor: initializes a descriptor
         // - desc_idx: descriptor index
-        int GetDescriptorPart(int desc_idx) const;
+        // - train_image: image patch (ROI is supported)
+        // - feature_label: feature textual label
+        void InitializeDescriptor(int desc_idx, IplImage* train_image, const char* feature_label);
         
-        // GetTrainFeatures: returns a set of training features
-        const vector<feature_t>& GetTrainFeatures() const {return m_train_features;};
+        // InitializeDescriptors: load features from an image and create descriptors for each of them 
+        void InitializeDescriptors(IplImage* train_image, const vector<feature_t>& features, 
+                              const char* feature_label, int desc_start_idx);
         
         // LoadPCADescriptors: loads PCA descriptors from a file
         // - filename: input filename
@@ -92,9 +87,6 @@ class CvOneWayDescriptorBase
         // - filename: output filename
         void SavePCADescriptors(const char* filename);
         
-    protected:
-        void BuildDescriptors(IplImage* train_image, const vector<feature_t>& features, 
-                         const char* feature_label, CvOneWayDescriptor* descriptors, int* part_id = 0, float scale = 1.0f);
         
         
         
@@ -102,26 +94,70 @@ class CvOneWayDescriptorBase
         CvSize m_patch_size; // patch size
         int m_pose_count; // the number of poses for each descriptor
         int m_train_feature_count; // the number of the training features
-        int m_object_feature_count; // the number of the positive features
         CvOneWayDescriptor* m_descriptors; // array of train feature descriptors
         CvMat* m_pca_avg; // PCA average vector for small patches
         CvMat* m_pca_eigenvectors; // PCA eigenvectors for small patches
         CvMat* m_pca_hr_avg; // PCA average vector for large patches
         CvMat* m_pca_hr_eigenvectors; // PCA eigenvectors for large patches
         CvOneWayDescriptor* m_pca_descriptors; // an array of PCA descriptors
-        vector<feature_t> m_train_features; // train features
         
         CvAffinePose* m_poses; // array of poses
         CvMat** m_transforms; // array of affine transformations corresponding to poses
         
-        int* m_part_id; // contains part id for each of object descriptors
+        int m_pca_dim_high;
+        int m_pca_dim_low;
+        
         int m_pyr_levels;
-    };
+};
 
-void readTrainingBase(const char* config_filename, char* outlet_filename, 
-                      char* nonoutlet_filename, vector<feature_t>& train_features);
-void readCvPointByName(CvFileStorage* fs, CvFileNode* parent, const char* name, CvPoint& pt);
+class CvOneWayDescriptorObject : public CvOneWayDescriptorBase
+{
+public:
+    // creates an instance of CvOneWayDescriptorObject from a set of training files
+    // - patch_size: size of the input (large) patch
+    // - pose_count: the number of poses to generate for each descriptor
+    // - train_path: path to training files
+    // - pca_config: the name of the file that contains PCA for small patches (2 times smaller
+    // than patch_size each dimension
+    // - pca_hr_config: the name of the file that contains PCA for large patches (of patch_size size)
+    // - pca_desc_config: the name of the file that contains descriptors of PCA components
+    CvOneWayDescriptorObject(CvSize patch_size, int pose_count, const char* train_path, const char* pca_config, 
+                             const char* pca_hr_config = 0, const char* pca_desc_config = 0, int pyr_levels = 2);
+    
+    ~CvOneWayDescriptorObject();
+    
+    void SetLabeledFeatures(const vector<feature_t>& features) {m_train_features = features;};
+    vector<feature_t>& GetLabeledFeatures() {return m_train_features;};
+    const vector<feature_t>& GetLabeledFeatures() const {return m_train_features;};
+    
+    // LoadTrainingFeatures: loads positive and negative features from images
+    // - train_image_filename: positive image
+    // - train_image_filename1: negative image
+    void LoadTrainingFeatures(const char* train_image_filename, const char* train_image_filename1);
+    
+    // IsDescriptorObject: returns 1 if descriptor with specified index is positive, otherwise 0
+    int IsDescriptorObject(int desc_idx) const;
+    
+    // MatchPointToPart: returns the part number of a feature if it matches one of the object parts, otherwise -1
+    int MatchPointToPart(CvPoint pt) const;
+    
+    // GetDescriptorPart: returns the part number of the feature corresponding to a specified descriptor  
+    // - desc_idx: descriptor index
+    int GetDescriptorPart(int desc_idx) const;
+    
+    // GetTrainFeatures: returns a set of training features
+    const vector<feature_t>& GetTrainFeatures() const {return m_train_features;};
+    
+protected:
+    void InitializeObjectDescriptors(IplImage* train_image, const vector<feature_t>& features, 
+                                               const char* feature_label, int desc_start_idx = 0, int* part_id = 0, float scale = 1.0f);
 
+protected:
+    int* m_part_id; // contains part id for each of object descriptors
+    vector<feature_t> m_train_features; // train features
+    int m_object_feature_count; // the number of the positive features
+
+};
 
 
 #endif // _ONE_WAY_DESCRIPTOR_BASE
