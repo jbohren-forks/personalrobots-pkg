@@ -53,6 +53,9 @@
 
 #include <manipulation_msgs/IKRequest.h>
 
+#include <pr2_ik/FKService.h>
+#include <kdl/chainfksolverpos_recursive.hpp>
+
 namespace pr2_ik
 {
   class PR2IKNode
@@ -70,6 +73,8 @@ namespace pr2_ik
     ros::NodeHandle node_handle_;
 
     ros::ServiceServer ik_service_;
+
+    ros::ServiceServer fk_service_;
 
     ros::ServiceServer ik_query_;
 
@@ -97,6 +102,16 @@ namespace pr2_ik
 
     std::string ik_service_name_;
 
+    std::string fk_service_name_;
+
     std::string ik_query_name_;
+
+    bool fkService(pr2_ik::FKService::Request &request, pr2_ik::FKService::Response &response);
+
+    void initFK();
+
+    boost::shared_ptr<KDL::ChainFkSolverPos_recursive> jnt_to_pose_solver_;
+
+    KDL::Chain kdl_chain_;
   };
 }
