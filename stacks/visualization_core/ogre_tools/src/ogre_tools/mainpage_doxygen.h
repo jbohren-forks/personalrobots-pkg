@@ -32,5 +32,5 @@
  *
  * @htmlinclude manifest.html
  *
- * @b ogre_tools is a set of utility classes and binaries dealing with the Ogre3D graphics engine (http://www.ogre3d.org/).
+ * Internal package, shared code for use by the visualization stack, nav_view, and the simulation stack.  No supported/stable API is exported.
  */

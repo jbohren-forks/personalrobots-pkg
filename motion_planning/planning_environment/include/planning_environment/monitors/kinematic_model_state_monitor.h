@@ -41,7 +41,7 @@
 #include <tf/transform_datatypes.h>
 #include <tf/transform_listener.h>
 #include <tf/message_notifier.h>
-#include <mechanism_msgs/MechanismState.h>
+#include <mechanism_msgs/JointStates.h>
 #include <mapping_msgs/AttachedObject.h>
 #include <boost/bind.hpp>
 #include <vector>
@@ -143,16 +143,16 @@ namespace planning_environment
 	    return robot_frame_;
 	}
 
-	/** \brief Return true if a full mechanism state has been received (including pose, if pose inclusion is enabled) */
+	/** \brief Return true if a full joint state has been received (including pose, if pose inclusion is enabled) */
 	bool haveState(void) const
 	{
-	    return haveMechanismState_ && (!includePose_ || (includePose_ && havePose_));
+	    return haveJointState_ && (!includePose_ || (includePose_ && havePose_));
 	}
 	
 	/** \brief Return the time of the last state update */
-	const ros::Time& lastMechanismStateUpdate(void) const
+	const ros::Time& lastJointStateUpdate(void) const
 	{
-	    return lastMechanismStateUpdate_;
+	    return lastJointStateUpdate_;
 	}
 
 	/** \brief Return the time of the last pose update */
@@ -161,11 +161,11 @@ namespace planning_environment
 	    return lastPoseUpdate_;
 	}
 	
-	/** \brief Wait until a full mechanism state is received (including pose, if pose inclusion is enabled) */
+	/** \brief Wait until a full joint state is received (including pose, if pose inclusion is enabled) */
 	void waitForState(void) const;
 
-	/** \brief Return true if a mechanism state has been received in the last sec seconds. If sec < 10us, this function always returns true. */
-	bool isMechanismStateUpdated(double sec) const;
+	/** \brief Return true if a joint state has been received in the last sec seconds. If sec < 10us, this function always returns true. */
+	bool isJointStateUpdated(double sec) const;
 
 	/** \brief Return true if a pose has been received in the last
 	    sec seconds. If sec < 10us, this function always returns
@@ -184,7 +184,7 @@ namespace planning_environment
     protected:
 
 	void setupRSM(void);
-	void mechanismStateCallback(const mechanism_msgs::MechanismStateConstPtr &mechanismState);
+	void jointStateCallback(const mechanism_msgs::JointStatesConstPtr &jointState);
 	void attachObjectCallback(const mapping_msgs::AttachedObjectConstPtr &attachedObject);
 	virtual bool attachObject(const mapping_msgs::AttachedObjectConstPtr &attachedObject);
 
@@ -197,7 +197,7 @@ namespace planning_environment
 	bool                             stateMonitorStarted_;
 	
 	ros::NodeHandle                  nh_;
-	ros::Subscriber                  mechanismStateSubscriber_;
+	ros::Subscriber                  jointStateSubscriber_;
 	tf::TransformListener           *tf_;
 
 	tf::MessageNotifier<mapping_msgs::AttachedObject>
@@ -213,8 +213,8 @@ namespace planning_environment
 	                                 onAfterAttachBody_;
 
 	bool                             havePose_;
-	bool                             haveMechanismState_;
-	ros::Time                        lastMechanismStateUpdate_;
+	bool                             haveJointState_;
+	ros::Time                        lastJointStateUpdate_;
 	ros::Time                        lastPoseUpdate_;
     };
 

@@ -14,6 +14,7 @@
 #include "visualization_msgs/Marker.h"
 
 #include "planar_objects/BoxObservations.h"
+#include "planar_objects/BoxTracks.h"
 #include <tf/transform_listener.h>
 #include <tf/transform_broadcaster.h>
 
@@ -32,7 +33,9 @@ public:
   double recall;
 
   void setObservation(const BoxObservation &obs , const ros::Time stamp );
+  std::vector<btBoxObservation> listAmbiguity();
   LineVector visualize();
+  BoxObservation getBoxObservation();
 };
 
 class TrackParameters {
@@ -45,12 +48,14 @@ public:
 class btBoxTrack {
 public:
   TrackParameters *param;
+  int id;
   std::vector<btBoxObservation> obs_history;
 
-  btBoxTrack(TrackParameters *param, btBoxObservation &obs);
+  btBoxTrack(TrackParameters *param, btBoxObservation &obs, int id);
   bool withinTolerance(btBoxObservation &obs);
   void updateTrack(std::vector<btBoxObservation> &obs);
   void updateTrack(btBoxObservation &obs);
+  BoxTrack getTrackMessage();
 };
 
 class BoxTracker
@@ -61,6 +66,7 @@ public:
 
   int oldLines;
   int newLines;
+  int track_ids;
 
   // PARAMETERS
   bool show_boxes;
@@ -74,7 +80,7 @@ public:
   std::vector<btBoxTrack> tracks;
 
   // MESSAGES - OUTGOING
-  ros::Publisher filtered_observations_pub;
+  ros::Publisher tracks_pub;
   ros::Publisher visualization_pub;
 
   // Constructor
@@ -87,6 +93,8 @@ public:
   void visualizeObservations();
   void visualizeTracks();
   void removeOldLines();
+  void removeOldTracks(ros::Duration timeout = ros::Duration(5.00) );
+  void sendTracks();
 };
 
 }

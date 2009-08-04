@@ -308,7 +308,7 @@ public:
 	}
 
 
-	void show(const ros::Publisher& publisher, const geometry_msgs::Point32& location, float fit_score);
+	void show(const ros::Publisher& publisher,const ros::Time& time, const geometry_msgs::Point32& location, float fit_score);
 
 	bool in_bounds(int x, int y, int z)
 	{
@@ -442,12 +442,12 @@ void TemplateModel::load(const string& file, const string& name)
 }
 
 
-void TemplateModel::show(const ros::Publisher& publisher, const geometry_msgs::Point32& location, float fit_score)
+void TemplateModel::show(const ros::Publisher& publisher, const ros::Time& time, const geometry_msgs::Point32& location, float fit_score)
 {
 	static int model_id = 0;
 
 	visualization_msgs::Marker marker;
-	marker.header.stamp = ros::Time::now();
+	marker.header.stamp = time;
 	marker.header.frame_id = "table_frame";
 	marker.ns = "voxel_grid";
 	marker.id = model_id++;
@@ -630,7 +630,7 @@ public:
 
 		ROS_INFO("Best score: %g, time:%g", mfs.best_fit_[0].score(), duration);
 
-		mfs.best_fit_[0].model_->show(marker_pub_,  mfs.best_fit_[0].location_,  mfs.best_fit_[0].score());
+		mfs.best_fit_[0].model_->show(marker_pub_, req.cloud.header.stamp,  mfs.best_fit_[0].location_,  mfs.best_fit_[0].score());
 
 		resp.object.grasp_pose.pose = mfs.best_fit_[0].graspPose();
 		resp.object.grasp_pose.header.stamp = req.cloud.header.stamp;

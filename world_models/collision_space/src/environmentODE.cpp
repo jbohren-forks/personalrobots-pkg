@@ -514,7 +514,7 @@ namespace collision_space
 		cdata->collides = true;
 		for (int i = 0 ; i < numc ; ++i)
 		{
-		    if (cdata->contacts->size() < cdata->max_contacts)
+		    if (cdata->max_contacts == 0 || cdata->contacts->size() < cdata->max_contacts)
 		    {
 			collision_space::EnvironmentModelODE::Contact add;
 			
@@ -537,7 +537,7 @@ namespace collision_space
 			break;
 		}
 	    }
-	    if (cdata->contacts->size() >= cdata->max_contacts)
+	    if (cdata->max_contacts > 0 && cdata->contacts->size() >= cdata->max_contacts)
 		cdata->done = true;
 	}
 	else

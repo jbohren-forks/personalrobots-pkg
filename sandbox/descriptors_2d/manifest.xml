@@ -12,6 +12,7 @@
   <depend package="opencv_latest"/>
   <depend package="rosconsole"/>
   <depend package="chamfer_matching"/>
+  <depend package="gtest"/>
 
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -ldescriptors_2d"/>

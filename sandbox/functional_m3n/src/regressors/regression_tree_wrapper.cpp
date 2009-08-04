@@ -219,7 +219,7 @@ int RegressionTreeWrapper::loadFromFile(const string& basename)
 // --------------------------------------------------------------
 /*! See function definition */
 // --------------------------------------------------------------
-int RegressionTreeWrapper::addTrainingSample(const float* const feature_vals,
+int RegressionTreeWrapper::addTrainingSample(const boost::shared_array<const float> feature_vals,
                                              const unsigned int length,
                                              const unsigned int start_idx,
                                              const float target)
@@ -301,14 +301,14 @@ int RegressionTreeWrapper::train()
 
     // Place the feature values at location sparse_feature_matrix[i][interm_start_idx_[i]
     memcpy((sparse_feature_matrix + (i * stacked_feature_dim_) + interm_start_idx_[i]),
-        (interm_feature_vals_[i]), (interm_lengths_[i] * sizeof(float)));
+        (interm_feature_vals_[i]).get(), (interm_lengths_[i] * sizeof(float)));
   }
 
   // -------------------------------------------
   // Create OpenCV data structures to train regression tree
   CvMat train_data;
   cvInitMatHeader(&train_data, nbr_samples, stacked_feature_dim_, CV_32F, sparse_feature_matrix);
-  CvMat* var_type = cvCreateMat(stacked_feature_dim_ + 1, 1, CV_8U); // TODO is this correct??
+  CvMat* var_type = cvCreateMat(stacked_feature_dim_ + 1, 1, CV_8U);
   cvSet(var_type, cvScalarAll(CV_VAR_ORDERED)); // indicates using numbers and not categories
 
   rtree_ = new CvDTree;
@@ -350,7 +350,7 @@ int RegressionTreeWrapper::train()
 // --------------------------------------------------------------
 /*! See function definition */
 // --------------------------------------------------------------
-int RegressionTreeWrapper::predict(const float* const feature_vals,
+int RegressionTreeWrapper::predict(const boost::shared_array<const float> feature_vals,
                                    const unsigned int length,
                                    const unsigned int start_idx,
                                    float& predicted_val)
@@ -365,7 +365,7 @@ int RegressionTreeWrapper::predict(const float* const feature_vals,
   // Create feature vec
   float big_feature_vec[stacked_feature_dim_];
   memset(big_feature_vec, 0.0, sizeof(float) * stacked_feature_dim_);
-  memcpy((big_feature_vec + start_idx), feature_vals, sizeof(float) * length);
+  memcpy((big_feature_vec + start_idx), feature_vals.get(), sizeof(float) * length);
 
   // Wrap with OpenCV data structure
   CvMat cv_feature_vec;

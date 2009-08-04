@@ -53,7 +53,7 @@ bool FixWraparoundJoints::configure()
   return true;
 }
 
-bool FixWraparoundJoints::update(const std::vector<manipulation_msgs::WaypointTraj>& data_in, std::vector<manipulation_msgs::WaypointTraj>& data_out)
+bool FixWraparoundJoints::update(const std::vector<manipulation_msgs::WaypointTrajWithLimits>& data_in, std::vector<manipulation_msgs::WaypointTrajWithLimits>& data_out)
 {
   data_out = data_in;
   return true;

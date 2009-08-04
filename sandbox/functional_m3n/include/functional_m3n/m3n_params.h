@@ -123,14 +123,14 @@ class M3NParams
      *                            Each value must be in the range [0, 0.5[
      */
     // --------------------------------------------------------------
-    int setInferenceRobustPotts(const vector<float>& robust_potts_params);
+    int setInferenceRobustPotts(const std::vector<float>& robust_potts_params);
 
     // --------------------------------------------------------------
     /**
      * \brief
      */
     // --------------------------------------------------------------
-    const vector<float>& getRobustPottsParams() const;
+    const std::vector<float>& getRobustPottsParams() const;
 
     //@}
 
@@ -167,7 +167,7 @@ class M3NParams
     unsigned int nbr_iterations_;
 
     // Inference related
-    vector<float> robust_potts_params_;
+    std::vector<float> robust_potts_params_;
 
     // Regressor related
     RegressorWrapper::algorithm_t regressor_algorithm_;

@@ -65,7 +65,7 @@ namespace mpglue {
       goal_tol_distance(0),
       goal_tol_angle(0),
       plan_from_scratch(false),
-      flush_cost_changes(false),
+      cost_delta_count(0),
       success(false),
       actual_time_wall(0),
       actual_time_user(0),
@@ -115,7 +115,7 @@ namespace mpglue {
        << "\n"
        << prefix << "start costmap:             " << start_ix << "  " << start_iy << "\n"
        << prefix << "plan_from_scratch:         " << sfl::to_string(plan_from_scratch) << "\n"
-       << prefix << "flush_cost_changes:        " << sfl::to_string(flush_cost_changes) << "\n"
+       << prefix << "cost_delta_count:          " << cost_delta_count << "\n"
        << prefix << "success:                   " << sfl::to_string(success) << "\n"
        << prefix << "time actual (wall) [ms]:   " << 1.0e3 * actual_time_wall << "\n"
        << prefix << "time actual (user) [ms]:   " << 1.0e3 * actual_time_user << "\n"
@@ -141,8 +141,7 @@ namespace mpglue {
        << prefix << "  </start>\n"
        << prefix << "  <plan_from_scratch>" << sfl::to_string(plan_from_scratch)
        << "</plan_from_scratch>\n"
-       << prefix << "  <flush_cost_changes>" << sfl::to_string(flush_cost_changes)
-       << "</flush_cost_changes>\n"
+       << prefix << "  <cost_delta_count>" << cost_delta_count << "</cost_delta_count>\n"
        << prefix << "  <success>" << sfl::to_string(success) << "</success>\n"
        << prefix << "  <actual_time_wall unit=\"s\">" << actual_time_wall
        << "</actual_time_wall>\n"
@@ -315,11 +314,13 @@ namespace mpglue {
   
   
   void CostmapPlanner::
-  flushCostChanges(bool flag)
+  flushCostChanges(cost_delta_map_t const * opt_cost_delta_map)
   {
-    if (flag != stats__.flush_cost_changes) {
-      stats__.flush_cost_changes = flag;
-      flush_cost_changes_changed_ = true;
+    if ( ! opt_cost_delta_map)
+      stats__.cost_delta_count = 0;
+    else {
+      stats__.cost_delta_count = opt_cost_delta_map->size();
+      doFlushCostChanges(*opt_cost_delta_map);
     }
   }
   

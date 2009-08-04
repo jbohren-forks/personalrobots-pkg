@@ -40,6 +40,7 @@
 #include <navfn/MakeNavPlan.h>
 #include <costmap_2d/cost_values.h>
 #include <gtest/gtest.h>
+#include <sstream>
 
 #define PREFIX "/costmap_planner_node/"
 
@@ -47,6 +48,7 @@ using navfn::SetCostmap;
 using mpglue::SetIndexTransform;
 using mpglue::SelectPlanner;
 using navfn::MakeNavPlan;
+using namespace std;
 
 
 namespace mpglue_test {
@@ -110,7 +112,7 @@ TEST_F (CostmapPlannerNodeTest, select_planner)
   EXPECT_EQ (select_planner_srv.response.ok, 1)
     << "error_message " << select_planner_srv.response.error_message;
 
-  select_planner_srv.request.planner_spec = "ad:3dkin";
+  select_planner_srv.request.planner_spec = "ara:3dkin";
   select_planner_srv.request.robot_spec = "pr2:100:150:55:34";
   EXPECT_TRUE (select_planner_client.call(select_planner_srv));
   EXPECT_EQ (select_planner_srv.response.ok, 1)
@@ -143,7 +145,7 @@ TEST_F (CostmapPlannerNodeTest, make_nav_plan)
   set_index_transform_srv.request.resolution =  0.05;
   ASSERT_TRUE (set_index_transform_client.call(set_index_transform_srv));
   
-  select_planner_srv.request.planner_spec = "ad:2d";
+  select_planner_srv.request.planner_spec = "ara:2d";
   select_planner_srv.request.robot_spec = "";
   ASSERT_TRUE (select_planner_client.call(select_planner_srv))
     << "failed to call select_planner service";
@@ -160,14 +162,24 @@ TEST_F (CostmapPlannerNodeTest, make_nav_plan)
   ASSERT_TRUE (make_nav_plan_client.call(make_nav_plan_srv))
     << "failed to call make_nav_plan service";
   ASSERT_EQ (make_nav_plan_srv.response.plan_found, 1)
-    << "ADStar should have found a path";
+    << "ARAStar should have found a path (error message: "
+    << make_nav_plan_srv.response.error_message << ")";
+  {
+    ostringstream os;
+    os << "  ARAStar path has " << make_nav_plan_srv.response.path.size() << " poses:";
+    for (size_t ii(0); ii < make_nav_plan_srv.response.path.size(); ++ii) {
+      mpglue::waypoint_s const wpt(make_nav_plan_srv.response.path[ii].pose);
+      os << "(" << wpt.x << " " << wpt.y << " " << wpt.theta << ")";
+    }
+    ROS_INFO("%s", os.str().c_str());
+  }
   
   start.x = 1.1 * xmax;
   start.toPose(make_nav_plan_srv.request.start.pose);
   ASSERT_TRUE (make_nav_plan_client.call(make_nav_plan_srv))
     << "failed to call make_nav_plan service";
   ASSERT_NE (make_nav_plan_srv.response.plan_found, 1)
-    << "ADStar should have failed to find a path (start outside of costmap)";
+    << "ARAStar should have failed to find a path (start outside of costmap)";
 
   start.x = 0.1 * xmax;
   goal.y = 1.1 * ymax;
@@ -176,7 +188,7 @@ TEST_F (CostmapPlannerNodeTest, make_nav_plan)
   ASSERT_TRUE (make_nav_plan_client.call(make_nav_plan_srv))
     << "failed to call make_nav_plan service";
   ASSERT_NE (make_nav_plan_srv.response.plan_found, 1)
-    << "ADStar should have failed to find a path (goal outside of costmap)";
+    << "ARAStar should have failed to find a path (goal outside of costmap)";
   
   for (uint16_t ii(0); ii < tt; ++ii)
     set_costmap_srv.request.costs[ii] = costmap_2d::INSCRIBED_INFLATED_OBSTACLE;
@@ -188,7 +200,7 @@ TEST_F (CostmapPlannerNodeTest, make_nav_plan)
   ASSERT_TRUE (make_nav_plan_client.call(make_nav_plan_srv))
     << "failed to call make_nav_plan service";
   ASSERT_NE (make_nav_plan_srv.response.plan_found, 1)
-    << "ADStar should have failed to find a path (costmap filled with obstacles)";
+    << "ARAStar should have failed to find a path (costmap filled with obstacles)";
   
   select_planner_srv.request.planner_spec = "NavFn";
   select_planner_srv.request.robot_spec = "";
@@ -210,7 +222,17 @@ TEST_F (CostmapPlannerNodeTest, make_nav_plan)
   ASSERT_TRUE (make_nav_plan_client.call(make_nav_plan_srv))
     << "failed to call make_nav_plan service";
   ASSERT_EQ (make_nav_plan_srv.response.plan_found, 1)
-    << "NavFn should have found a path";
+    << "NavFn should have found a path (error message: "
+    << make_nav_plan_srv.response.error_message << ")";
+  {
+    ostringstream os;
+    os << "  NavFn path has " << make_nav_plan_srv.response.path.size() << " poses:";
+    for (size_t ii(0); ii < make_nav_plan_srv.response.path.size(); ++ii) {
+      mpglue::waypoint_s const wpt(make_nav_plan_srv.response.path[ii].pose);
+      os << "(" << wpt.x << " " << wpt.y << " " << wpt.theta << ")";
+    }
+    ROS_INFO("%s", os.str().c_str());
+  }
 }
 
 

@@ -690,7 +690,7 @@ int M3NModel::computePotential(const RandomField::Node& node, const unsigned int
     RegressorWrapper* curr_regressor = regressors_[i].second;
 
     float curr_predicted_val = 0.0;
-    if (curr_regressor->predict(node.getFeatureVals().get(), node_feature_dim_,
+    if (curr_regressor->predict(node.getFeatureVals(), node_feature_dim_,
         node_stacked_feature_start_idx_[label], curr_predicted_val) < 0)
     {
       return -1;
@@ -722,7 +722,7 @@ int M3NModel::computePotential(const RandomField::Clique& clique,
     RegressorWrapper* curr_regressor = regressors_[i].second;
 
     float curr_predicted_val = 0.0;
-    if (curr_regressor->predict(clique.getFeatureVals().get(), clique_set_feature_dims_[clique_set_idx],
+    if (curr_regressor->predict(clique.getFeatureVals(), clique_set_feature_dims_[clique_set_idx],
         clique_set_stacked_feature_start_idx_[clique_set_idx][label], curr_predicted_val) < 0)
     {
       return -1;

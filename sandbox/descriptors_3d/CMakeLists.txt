@@ -16,10 +16,9 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 #set the default path for built libraries to the "lib" directory
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
-#uncomment if you have defined messages
-#genmsg()
-#uncomment if you have defined services
-#gensrv()
+add_definitions(-msse -msse2)
+add_definitions(-DEIGEN_NO_DEBUG)
+rospack_add_boost_directories()
 
 #common commands for building c++ executables and libraries
 rospack_add_library(${PROJECT_NAME} 
@@ -40,12 +39,7 @@ rospack_add_library(${PROJECT_NAME}
 rospack_add_openmp_flags (${PROJECT_NAME})
 			
 
-#target_link_libraries(${PROJECT_NAME} another_library)
-rospack_add_boost_directories()
-#rospack_link_boost(${PROJECT_NAME} thread)
-
 rospack_add_executable(interest_point_example examples/interest_point_example.cpp)
 target_link_libraries(interest_point_example ${PROJECT_NAME})
 rospack_add_openmp_flags (interest_point_example)
-
 

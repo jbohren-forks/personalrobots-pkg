@@ -162,14 +162,14 @@ int M3NModel::train(const vector<const RandomField*>& training_rfs, const M3NPar
         if (curr_node_gt_label != curr_node_infer_label)
         {
           // +1 features with ground truth label
-          if (curr_regressor->addTrainingSample(iter_nodes->second->getFeatureVals().get(), node_feature_dim_,
+          if (curr_regressor->addTrainingSample(iter_nodes->second->getFeatureVals(), node_feature_dim_,
               node_stacked_feature_start_idx_[curr_node_gt_label], 1.0) < 0)
           {
             abort();
           }
 
           // -1 features with wrong inferred label
-          if (curr_regressor->addTrainingSample(iter_nodes->second->getFeatureVals().get(), node_feature_dim_,
+          if (curr_regressor->addTrainingSample(iter_nodes->second->getFeatureVals(), node_feature_dim_,
               node_stacked_feature_start_idx_[curr_node_infer_label], -1.0) < 0)
           {
             abort();
@@ -224,7 +224,7 @@ int M3NModel::train(const vector<const RandomField*>& training_rfs, const M3NPar
             if (gt_residual > 1e-5)
             {
               // +1 features with ground truth label
-              if (curr_regressor->addTrainingSample(iter_cliques->second->getFeatureVals().get(),
+              if (curr_regressor->addTrainingSample(iter_cliques->second->getFeatureVals(),
                   clique_set_feature_dims_[clique_set_idx],
                   clique_set_stacked_feature_start_idx_[clique_set_idx][curr_clique_gt_mode1_label],
                   gt_residual) < 0)
@@ -241,7 +241,7 @@ int M3NModel::train(const vector<const RandomField*>& training_rfs, const M3NPar
             if (infer_residual > 1e-5)
             {
               // -1 features with wrong inferred label
-              if (curr_regressor->addTrainingSample(iter_cliques->second->getFeatureVals().get(),
+              if (curr_regressor->addTrainingSample(iter_cliques->second->getFeatureVals(),
                   clique_set_feature_dims_[clique_set_idx],
                   clique_set_stacked_feature_start_idx_[clique_set_idx][curr_clique_infer_mode1_label],
                   -infer_residual) < 0)

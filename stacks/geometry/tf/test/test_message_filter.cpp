@@ -133,6 +133,9 @@ TEST(MessageFilter, postTransforms)
 	tf::Stamped<tf::Transform> transform(btTransform(btQuaternion(0,0,0), btVector3(1,2,3)), stamp, "frame1", "frame2");
 	tf_client.setTransform(transform);
 
+	ros::WallDuration(0.1).sleep();
+	ros::spinOnce();
+
 	EXPECT_EQ(1, n.count_);
 }
 
@@ -158,6 +161,9 @@ TEST(MessageFilter, queueSize)
 
 	tf::Stamped<tf::Transform> transform(btTransform(btQuaternion(0,0,0), btVector3(1,2,3)), stamp, "frame1", "frame2");
 	tf_client.setTransform(transform);
+
+	ros::WallDuration(0.1).sleep();
+	ros::spinOnce();
 
 	EXPECT_EQ(10, n.count_);
 }
@@ -212,6 +218,9 @@ TEST(MessageFilter, multipleTargetFrames)
 	transform.frame_id_ = "frame2";
 	tf_client.setTransform(transform);
 
+	ros::WallDuration(0.1).sleep();
+	ros::spinOnce();
+
 	EXPECT_EQ(1, n.count_);  // frame2->frame3 now exists
 }
 
@@ -240,6 +249,9 @@ TEST(MessageFilter, tolerance)
 	transform.stamp_ += offset*1.1;
 	tf_client.setTransform(transform);
 
+	ros::WallDuration(0.1).sleep();
+	ros::spinOnce();
+
 	EXPECT_EQ(1, n.count_); // Now have data for the message published earlier
 
 	msg->header.stamp = stamp + offset;
@@ -252,7 +264,7 @@ TEST(MessageFilter, maxRate)
 {
   tf::TransformListener tf_client;
   Notification n(1);
-  MessageFilter<geometry_msgs::PointStamped> filter(tf_client, "frame1", 1, ros::NodeHandle(), ros::Duration(1.0), ros::Duration());
+  MessageFilter<geometry_msgs::PointStamped> filter(tf_client, "frame1", 1, ros::NodeHandle(), ros::Duration(1.0));
   filter.registerCallback(boost::bind(&Notification::notify, &n, _1));
 
   ros::Time stamp = ros::Time::now();
@@ -270,10 +282,16 @@ TEST(MessageFilter, maxRate)
   transform.stamp_ = stamp;
   tf_client.setTransform(transform);
 
+  ros::WallDuration(0.1).sleep();
+  ros::spinOnce();
+
   EXPECT_EQ(0, n.count_);
 
   ros::Time::setNow(ros::Time::now() + ros::Duration(1.0));
   tf_client.setTransform(transform);
+
+  ros::WallDuration(0.1).sleep();
+  ros::spinOnce();
 
   EXPECT_EQ(1, n.count_);
 }

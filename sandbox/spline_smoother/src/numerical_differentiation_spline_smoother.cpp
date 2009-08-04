@@ -48,7 +48,7 @@ NumericalDifferentiationSplineSmoother::~NumericalDifferentiationSplineSmoother(
 {
 }
 
-bool NumericalDifferentiationSplineSmoother::smooth(const manipulation_msgs::WaypointTraj& trajectory_in, manipulation_msgs::WaypointTraj& trajectory_out) const
+bool NumericalDifferentiationSplineSmoother::smooth(const manipulation_msgs::WaypointTrajWithLimits& trajectory_in, manipulation_msgs::WaypointTrajWithLimits& trajectory_out) const
 {
   bool success = true;
   int size = trajectory_in.points.size();

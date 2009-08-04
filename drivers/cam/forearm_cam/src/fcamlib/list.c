@@ -146,3 +146,25 @@ int fcamCamListNumEntries( const IpCamList *ipCamList ) {
 
 	return count;
 }
+
+/**
+ * Utility function to remove all entries from a camera list.
+ *
+ * @param ipCamList 	Pointer to the camera list head
+ *
+ * @return Returns 0 if successful.
+ */
+void fcamCamListDelAll( IpCamList *ipCamList ) {
+	int count;
+
+	IpCamList *tmpListItem;
+	struct list_head *pos, *q;
+	count = 0;
+
+	list_for_each_safe(pos, q,&(ipCamList->list)) {
+    tmpListItem = list_entry(pos, IpCamList, list);
+    list_del(pos);
+    free(tmpListItem);
+	}
+	return 0;
+}

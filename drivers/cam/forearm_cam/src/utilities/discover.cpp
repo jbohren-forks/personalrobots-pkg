@@ -54,12 +54,12 @@ int discover(const std::string &if_name, bool verbose, bool report_rp_filter)
   // the first reply from the camera from being filtered out.
   // @todo Should we be setting rp_filter to zero here? This may violate
   // the user's secutity preferences?
-  std::string rp_str = "sysctl net.ipv4.conf."+if_name+".rp_filter|grep -q 0||sysctl -q -w net.ipv4.conf."+if_name+".rp_filter=0 2> /dev/null";
-  int retval = system(rp_str.c_str());
-  if ((retval == -1 || !WIFEXITED(retval) || WEXITSTATUS(retval)) && report_rp_filter)
-  {
-    fprintf(stderr, "Unable to set rp_filter to 0 on interface %s. Camera discovery is likely to fail.\n", if_name.c_str());
-  }
+//  std::string rp_str = "sysctl net.ipv4.conf."+if_name+".rp_filter|grep -q 0||sysctl -q -w net.ipv4.conf."+if_name+".rp_filter=0 2> /dev/null";
+//  int retval = system(rp_str.c_str());
+//  if ((retval == -1 || !WIFEXITED(retval) || WEXITSTATUS(retval)) && report_rp_filter)
+//  {
+//    fprintf(stderr, "Unable to set rp_filter to 0 on interface %s. Camera discovery is likely to fail.\n", if_name.c_str());
+//  }
 
   // Discover any connected cameras, wait for 0.5 second for replies
   if( fcamDiscover(if_name.c_str(), &camList, NULL, SEC_TO_USEC(0.5)) == -1) {
@@ -81,42 +81,17 @@ int discover(const std::string &if_name, bool verbose, bool report_rp_filter)
     uint8_t *ip = (uint8_t *) &camera->ip;
     char pcb_rev = 0x0A + (0x0000000F & camera->hw_version);
     int hdl_rev = 0x00000FFF & (camera->hw_version>>4);
-    printf("Found camera with S/N #%u, MAC: %02x:%02x:%02x:%02x:%02x:%02x, iface: %s IP: %i.%i.%i.%i, PCB rev %X : HDL rev %3X : FW rev %3X, name: %s\n", 
-        camera->serial, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5], if_name.c_str(), ip[0], ip[1], ip[2], ip[3], 
-        pcb_rev, hdl_rev, camera->fw_version, camera->cam_name);
+    printf("Found camera serial://%u ", camera->serial);
+    if (camera->cam_name[0])
+      printf("name://%s ", camera->cam_name);
+    else
+      printf("<unnamed> ");
+    printf("MAC: %02x:%02x:%02x:%02x:%02x:%02x iface: %s current IP: %i.%i.%i.%i, PCB rev: %X HDL rev: %3X FW rev: %3X\n", 
+        mac[0], mac[1], mac[2], mac[3], mac[4], mac[5], camera->ifName, ip[0], ip[1], ip[2], ip[3], 
+        pcb_rev, hdl_rev, camera->fw_version);
   }
 
   return 0;
-}
-
-std::vector<std::string> getInterfaces()
-{
-  std::vector<std::string> ifaces;
-
-  struct if_nameindex *if_list = if_nameindex();
-  
-  if(if_list == NULL)
-    return ifaces;
-
-  for(int i = 0; if_list[i].if_index != 0; i++)
-  {
-    ifaces.push_back(if_list[i].if_name);
-  }
-
-  return ifaces;
-}
-
-int discoverall()
-{
-  int ret = 0;
-  
-  std::vector<std::string> interfaces = getInterfaces();
-
-  for (std::vector<std::string>::iterator iface = interfaces.begin(); iface != interfaces.end(); iface++)
-    if (discover(*iface, false, iface == interfaces.begin()))
-      ret = -1;
-  
-  return ret;
 }
 
 int main(int argc, char **argv)
@@ -124,7 +99,7 @@ int main(int argc, char **argv)
   if (argc == 2)
     return discover(argv[1], true, true);
   else if (argc == 1)
-    return discoverall();
+    return discover("", true, true);
     
   fprintf(stderr, "usage: discover <interface>\n");
   return 1;

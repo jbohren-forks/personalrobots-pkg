@@ -175,19 +175,16 @@ bool SBPLPlannerNode::replan(const manipulation_msgs::JointTrajPoint &start, con
 	  // Note that ompl::EnvironmentWrapper::UpdateCost() will
 	  // check if the cost has actually changed, and do nothing
 	  // if it hasn't.  It internally maintains a list of the
-	  // cells that have actually changed, and this list is what
-	  // gets "flushed" to the planner (a couple of lines
-	  // further down).
+	  // cells that have actually changed
 	  env_->UpdateCost(ix, iy, cost);
 	}
       }
     }
+    // NOTE we do not have to call pWrap_->flushCostChanges() here
+    // because this node only uses sbpl_planner which always checks
+    // directly with its SBPLEnvironment, and that got fed in the
+    // preceding loop.
     
-    // Tell the planner about the changed costs. Again, the called
-    // code checks whether anything has really changed before
-    // embarking on expensive computations.
-    pWrap_->flushCostChanges(true);
-		
     // Assume the robot is constantly moving, so always set start.
     // Maybe a bit inefficient, but not as bad as "changing" the
     // goal when it hasn't actually changed.

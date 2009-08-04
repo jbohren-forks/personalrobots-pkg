@@ -80,6 +80,8 @@ namespace mpglue_node {
     shared_ptr<mpglue::IndexTransform> indexTransform_;
     requestspec spec_;
     shared_ptr<CostmapPlanner> planner_;
+    cost_delta_map_t cost_delta_map_;
+    bool costmap_reinit_;
   };
   
 }
@@ -104,7 +106,8 @@ namespace mpglue_node {
 				 inscribed_cost,
 				 circumscribed_cost)),
       gridframe_(0, 0, 0, 1),
-      spec_(default_planner_spec, default_robot_spec)
+      spec_(default_planner_spec, default_robot_spec),
+      costmap_reinit_(false)
   {
     services_.push_back(node_.advertiseService("~set_costmap",
 					       &CostmapPlannerNode::setCostmap,
@@ -136,7 +139,7 @@ namespace mpglue_node {
     
     // XXXX to do: some planners can cope with changing costmap
     // dimensions, others cannot... express this in the CostmapPlanner
-    // interface and handle it here.
+    // interface and handle it here and/or in makeNavPlan().
     
     // if we have a costmap with different size, just ditch it
     if ((costmap_->raw) && ((size_t) costmap_->ncells_x * costmap_->ncells_y != ttncells)) {
@@ -144,6 +147,10 @@ namespace mpglue_node {
       delete[] costmap_->raw;
       costmap_->raw = 0;
     }
+    if ((costmap_->ncells_x != req.width) || (costmap_->ncells_y != req.height))
+      costmap_reinit_ = true;
+    else
+      costmap_reinit_ = false;
     costmap_->ncells_x = req.width;
     costmap_->ncells_y = req.height;
     
@@ -162,7 +169,21 @@ namespace mpglue_node {
       return false;		// alloc error
     }
     
-    memcpy(costmap_->raw, &req.costs[0], sizeof(*costmap_->raw) * ttncells);
+    if (costmap_reinit_) {
+      ROS_INFO("  (re)initializing costmap values");
+      cost_delta_map_.clear();
+      memcpy(costmap_->raw, &req.costs[0], sizeof(*costmap_->raw) * ttncells);
+    }
+    else {
+      index_pair idx(0, 0);
+      for (idx.ix = 0; idx.ix < costmap_->ncells_x; ++idx.ix)
+	for (idx.iy = 0; idx.iy < costmap_->ncells_y; ++idx.iy)
+	  costmap_->setCost(idx.ix, idx.iy,
+			    req.costs[costmap_->indexToRaw(idx.ix, idx.iy)],
+			    &cost_delta_map_);
+      ROS_INFO("  updated costmap values, size of cost_delta_map is %zu", cost_delta_map_.size());
+    }
+    
     return true;
   }
   
@@ -260,16 +281,14 @@ namespace mpglue_node {
     resp.plan_found = 0;
     
     if ( ! costmap_->raw) {
-      ROS_ERROR("CostmapPlannerNode::makeNavPlan():"
-		" no costmap - use set_costmap service!");
-      // XXXX to do: add an error message to the reply
+      resp.error_message = "no costmap - use set_costmap service!";
+      ROS_ERROR("CostmapPlannerNode::makeNavPlan(): %s", resp.error_message.c_str());
       return true; // if we return false, the resp does not get sent to the caller
     }
     
     if ( ! planner_) {
-      ROS_ERROR("CostmapPlannerNode::makeNavPlan():"
-		" no planner - use select_planner service!");
-      // XXXX to do: add an error message to the reply
+      resp.error_message = "no planner - use select_planner service!";
+      ROS_ERROR("CostmapPlannerNode::makeNavPlan(): %s", resp.error_message.c_str());
       return true; // if we return false, the resp does not get sent to the caller
     }
     
@@ -279,18 +298,14 @@ namespace mpglue_node {
     // changed.
     bool force_from_scratch(true);
     
-    // XXXX to do: this should only be true if costs have really
-    // changed, but maybe also if planner spec got changed since last
-    // time this service was called.
-    bool flush_cost_changes(true);
-    
     shared_ptr<waypoint_plan_t> plan;
     try {
       planner_->setGoal(goal.x, goal.y, goal.theta);
       planner_->setGoalTolerance(goal.dr, goal.dtheta);
       planner_->setStart(start.x, start.y, start.theta);
       planner_->forcePlanningFromScratch(force_from_scratch);
-      planner_->flushCostChanges(flush_cost_changes);
+      planner_->flushCostChanges(&cost_delta_map_);
+      cost_delta_map_.clear();
       
       // XXXX to do: should treat SBPL planners specially, because they are
       // capable of incremental planning...
@@ -300,8 +315,8 @@ namespace mpglue_node {
       plan = planner_->createPlan();
     }
     catch (std::exception const & ee) {
-      ROS_ERROR("CostmapPlannerNode::makeNavPlan(): createPlan() EXCEPTION %s", ee.what());
-      // XXXX to do: add an error message to the reply
+      resp.error_message = string("createPlan() EXCEPTION ") + ee.what();
+      ROS_ERROR("CostmapPlannerNode::makeNavPlan(): %s", resp.error_message.c_str());
       return true; // if we return false, the resp does not get sent to the caller
     }
     
@@ -316,7 +331,21 @@ namespace mpglue_node {
       planner_->getStats().logStream(os, "  planning FAILURE", "    ");
     ROS_INFO("%s", os.str().c_str());
     
-    // XXXX to do: convert path into response message
+    if ( ! plan) {
+      resp.error_message = "mpglue::CostmapPlanner::createPlan() failed [but did not throw]";
+      ROS_ERROR("CostmapPlannerNode::makeNavPlan(): %s", resp.error_message.c_str());
+      return true; // if we return false, the resp does not get sent to the caller
+    }
+    
+    for (waypoint_plan_t::const_iterator iwpt(plan->begin()); iwpt != plan->end(); ++iwpt) {
+      robot_msgs::PoseStamped ps;
+      // XXXX to do: what shall we do with ps.header???
+      (*iwpt)->toPose(ps.pose);
+      resp.path.push_back(ps);
+    }
+    ROS_INFO("  path contains %zu poses", resp.path.size());
+    
+    resp.error_message = "success";
     return true;
   }
   

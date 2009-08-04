@@ -38,20 +38,20 @@
 #ifndef SPLINE_SMOOTHER_UTILS_H_
 #define SPLINE_SMOOTHER_UTILS_H_
 
-#include <manipulation_msgs/WaypointTraj.h>
+#include <manipulation_msgs/WaypointTrajWithLimits.h>
 #include <ros/ros.h>
 
 namespace spline_smoother
 {
 
 /**
- * \brief Ensures the consistency of a WaypointTraj message, and resizes vel and acc arrays
+ * \brief Ensures the consistency of a WaypointTrajWithLimits message, and resizes vel and acc arrays
  *
  * Ensures that the number of (joint) names matches the number of positions in each waypoint
  * Resizes the velocities and accelerations for every waypoint, filling in zeros if necessary
  * Ensures that time is strictly increasing
  */
-bool checkTrajectoryConsistency(manipulation_msgs::WaypointTraj& waypoint_traj);
+bool checkTrajectoryConsistency(manipulation_msgs::WaypointTrajWithLimits& waypoint_traj);
 
 template <typename T>
 void differentiate(const std::vector<T>& x, std::vector<T>& xd);
@@ -114,7 +114,7 @@ void tridiagonalSolve(std::vector<T>& a,
   }
 }
 
-inline bool checkTrajectoryConsistency(manipulation_msgs::WaypointTraj& waypoint_traj)
+inline bool checkTrajectoryConsistency(manipulation_msgs::WaypointTrajWithLimits& waypoint_traj)
 {
   unsigned int length = waypoint_traj.points.size();
   unsigned int num_joints = waypoint_traj.names.size();

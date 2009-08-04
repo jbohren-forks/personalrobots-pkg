@@ -48,7 +48,7 @@ ClampedCubicSplineSmoother::~ClampedCubicSplineSmoother()
 {
 }
 
-bool ClampedCubicSplineSmoother::smooth(const manipulation_msgs::WaypointTraj& trajectory_in, manipulation_msgs::WaypointTraj& trajectory_out) const
+bool ClampedCubicSplineSmoother::smooth(const manipulation_msgs::WaypointTrajWithLimits& trajectory_in, manipulation_msgs::WaypointTrajWithLimits& trajectory_out) const
 {
   int length = trajectory_in.points.size();
   trajectory_out = trajectory_in;

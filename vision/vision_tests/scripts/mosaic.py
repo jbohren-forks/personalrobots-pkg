@@ -38,8 +38,9 @@ pictures = sys.argv[1:]
 w,h = Image.open(pictures[0]).size
 w /= 8
 h /= 8
-o = Image.new("RGB", (10 * w, ((len(pictures) + 9) / 10) * h))
+columns = 20
+o = Image.new("RGB", (columns * w, ((len(pictures) + (columns-1)) / columns) * h))
 for i,f in enumerate(sys.argv[1:]):
   im = Image.open(f).resize((w, h))
-  o.paste(im, ((i % 10) * w, (i / 10) * h))
+  o.paste(im, ((i % columns) * w, (i / columns) * h))
 o.save("mosaic.png")

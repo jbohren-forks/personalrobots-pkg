@@ -41,40 +41,24 @@ using namespace std;
 // --------------------------------------------------------------
 vector<Descriptor3D*> initNodeFeatures()
 {
-/*
   //
-  SpectralShape* spectral_shape = new SpectralShape();
-  spectral_shape->setSpectralRadius(0.15);
-
+  SpectralAnalysis* sa = new SpectralAnalysis(0.15);
   //
-  Orientation* orientation = new Orientation();
-  orientation->useSpectralInformation(spectral_shape);
-  orientation->useNormalOrientation(0.0, 0.0, 1.0);
-  orientation->useTangentOrientation(0.0, 0.0, 1.0);
-
+  ShapeSpectral* spectral_shape = new ShapeSpectral(*sa);
+  //
+  OrientationTangent* o_tangent = new OrientationTangent(0, 0, 1.0, *sa);
+  //
+  OrientationNormal* o_normal = new OrientationNormal(0, 0, 1.0, *sa);
+  //
   Position* position = new Position();
 
+  // ---------------
   vector<Descriptor3D*> node_feature_descriptors;
   node_feature_descriptors.push_back(spectral_shape);
-  node_feature_descriptors.push_back(orientation);
+  node_feature_descriptors.push_back(o_tangent);
+  node_feature_descriptors.push_back(o_normal);
   node_feature_descriptors.push_back(position);
-*/
-//  /*
-   //
-   Position* position = new Position();
-
-   SpectralAnalysis* sa = new SpectralAnalysis(0.15);
-   ShapeSpectral* spectral_shape = new ShapeSpectral(*sa);
-   OrientationTangent* o_tangent = new OrientationTangent(0, 0, 1.0, *sa);
-   OrientationNormal* o_normal = new OrientationNormal(0, 0, 1.0, *sa);
-
-   // ---------------
-   vector<Descriptor3D*> node_feature_descriptors;
-   node_feature_descriptors.push_back(spectral_shape);
-   node_feature_descriptors.push_back(o_tangent);
-   node_feature_descriptors.push_back(o_normal);
-   node_feature_descriptors.push_back(position);
-//   */
+  //   */
   return node_feature_descriptors;
 }
 
@@ -83,56 +67,29 @@ vector<Descriptor3D*> initNodeFeatures()
 // --------------------------------------------------------------
 vector<Descriptor3D*> initCS0Features()
 {
-/*
   //
-  SpectralShape* spectral_shape = new SpectralShape();
-  spectral_shape->setSpectralRadius(0.2286);
-
+  SpectralAnalysis* sa = new SpectralAnalysis(0.2286);
   //
-  Orientation* orientation = new Orientation();
-  orientation->useSpectralInformation(spectral_shape);
-  orientation->useNormalOrientation(0.0, 0.0, 1.0);
-  orientation->useTangentOrientation(0.0, 0.0, 1.0);
-
+  ShapeSpectral* spectral_shape = new ShapeSpectral(*sa);
+  //
+  OrientationTangent* o_tangent = new OrientationTangent(0, 0, 1.0, *sa);
+  //
+  OrientationNormal* o_normal = new OrientationNormal(0, 0, 1.0, *sa);
   //
   Position* position = new Position();
-
   //
-  SpinImage* spin_image = new SpinImage();
-  spin_image->setAxisCustom(0.0, 0.0, 1.0);
-  spin_image->setImageDimensions(0.0762, 0.0762, 5, 4);
-
+  SpinImageCustom* spin_image = new SpinImageCustom(0, 0, 1.0, 0.0762, 0.0762, 5, 4, false);
   //
-  BoundingBox* bounding_box = new BoundingBox(true, false);
-  bounding_box->useSpectralInformation(spectral_shape);
-  bounding_box->setBoundingBoxRadius(-1.0);
+  BoundingBoxSpectral* bbox_spectral = new BoundingBoxSpectral(-1.0, *sa);
 
+  // ---------------
   vector<Descriptor3D*> cs0_feature_descriptors;
   cs0_feature_descriptors.push_back(spectral_shape);
-  cs0_feature_descriptors.push_back(orientation);
+  cs0_feature_descriptors.push_back(o_tangent);
+  cs0_feature_descriptors.push_back(o_normal);
   cs0_feature_descriptors.push_back(position);
   cs0_feature_descriptors.push_back(spin_image);
-  cs0_feature_descriptors.push_back(bounding_box);
-*/
-
-  ///*
-   SpectralAnalysis* sa = new SpectralAnalysis(0.2286);
-   ShapeSpectral* spectral_shape = new ShapeSpectral(*sa);
-   OrientationTangent* o_tangent = new OrientationTangent(0, 0, 1.0, *sa);
-   OrientationNormal* o_normal = new OrientationNormal(0, 0, 1.0, *sa);
-   Position* position = new Position();
-   SpinImageCustom* spin_image = new SpinImageCustom(0, 0, 1.0, 0.0762, 0.0762, 5, 4, false);
-   BoundingBoxSpectral* bbox_spectral = new BoundingBoxSpectral(-1.0, *sa);
-
-   // ---------------
-   vector<Descriptor3D*> cs0_feature_descriptors;
-   cs0_feature_descriptors.push_back(spectral_shape);
-   cs0_feature_descriptors.push_back(o_tangent);
-   cs0_feature_descriptors.push_back(o_normal);
-   cs0_feature_descriptors.push_back(position);
-   cs0_feature_descriptors.push_back(spin_image);
-   cs0_feature_descriptors.push_back(bbox_spectral);
-   //*/
+  cs0_feature_descriptors.push_back(bbox_spectral);
 
   return cs0_feature_descriptors;
 }
@@ -142,57 +99,29 @@ vector<Descriptor3D*> initCS0Features()
 // --------------------------------------------------------------
 vector<Descriptor3D*> initCS1Features()
 {
-/*
   //
-  SpectralShape* spectral_shape = new SpectralShape();
-  spectral_shape->setSpectralRadius(-1);
-
+  SpectralAnalysis* sa = new SpectralAnalysis(-1);
   //
-  Orientation* orientation = new Orientation();
-  orientation->useSpectralInformation(spectral_shape);
-  orientation->useNormalOrientation(0.0, 0.0, 1.0);
-  orientation->useTangentOrientation(0.0, 0.0, 1.0);
-
+  ShapeSpectral* spectral_shape = new ShapeSpectral(*sa);
+  //
+  OrientationTangent* o_tangent = new OrientationTangent(0, 0, 1.0, *sa);
+  //
+  OrientationNormal* o_normal = new OrientationNormal(0, 0, 1.0, *sa);
   //
   Position* position = new Position();
-
   //
-  SpinImage* spin_image = new SpinImage();
-  spin_image->useSpectralInformation(spectral_shape);
-  spin_image->setAxisNormal();
-  spin_image->setImageDimensions(0.0762, 0.0762, 7, 5);
-
+  SpinImageNormal* spin_image = new SpinImageNormal(0.0762, 0.0762, 7, 5, false, *sa);
   //
-  BoundingBox* bounding_box = new BoundingBox(true, false);
-  bounding_box->useSpectralInformation(spectral_shape);
-  bounding_box->setBoundingBoxRadius(-1.0);
+  BoundingBoxSpectral* bbox_spectral = new BoundingBoxSpectral(-1.0, *sa);
 
+  // ---------------
   vector<Descriptor3D*> cs1_feature_descriptors;
   cs1_feature_descriptors.push_back(spectral_shape);
-  cs1_feature_descriptors.push_back(orientation);
+  cs1_feature_descriptors.push_back(o_tangent);
+  cs1_feature_descriptors.push_back(o_normal);
   cs1_feature_descriptors.push_back(position);
   cs1_feature_descriptors.push_back(spin_image);
-  cs1_feature_descriptors.push_back(bounding_box);
-*/
-
-//  /*
-   SpectralAnalysis* sa = new SpectralAnalysis(-1);
-   ShapeSpectral* spectral_shape = new ShapeSpectral(*sa);
-   OrientationTangent* o_tangent = new OrientationTangent(0, 0, 1.0, *sa);
-   OrientationNormal* o_normal = new OrientationNormal(0, 0, 1.0, *sa);
-   Position* position = new Position();
-   SpinImageNormal* spin_image = new SpinImageNormal(0.0762, 0.0762, 7, 5, false, *sa);
-   BoundingBoxSpectral* bbox_spectral = new BoundingBoxSpectral(-1.0, *sa);
-
-   // ---------------
-   vector<Descriptor3D*> cs1_feature_descriptors;
-   cs1_feature_descriptors.push_back(spectral_shape);
-   cs1_feature_descriptors.push_back(o_tangent);
-   cs1_feature_descriptors.push_back(o_normal);
-   cs1_feature_descriptors.push_back(position);
-   cs1_feature_descriptors.push_back(spin_image);
-   cs1_feature_descriptors.push_back(bbox_spectral);
-//   */
+  cs1_feature_descriptors.push_back(bbox_spectral);
   return cs1_feature_descriptors;
 }
 
@@ -276,7 +205,7 @@ void PtCloudRFCreator::createNodes(RandomField& rf,
                                    const sensor_msgs::PointCloud& pt_cloud,
                                    cloud_kdtree::KdTree& pt_cloud_kdtree,
                                    const vector<float>& labels,
-                                   set<unsigned int>& failed_indices)
+                                   set<unsigned int>& successful_indices)
 
 {
   bool use_labels = labels.size() != 0;
@@ -295,7 +224,7 @@ void PtCloudRFCreator::createNodes(RandomField& rf,
   //vector<float*> concatenated_features(nbr_pts, NULL);
   vector<boost::shared_array<const float> > concatenated_features;
   unsigned int nbr_concatenated_vals = Descriptor3D::computeAndConcatFeatures(pt_cloud, pt_cloud_kdtree,
-      interest_pts, node_feature_descriptors_, concatenated_features, failed_indices);
+      interest_pts, node_feature_descriptors_, concatenated_features, successful_indices);
   if (nbr_concatenated_vals == 0)
   {
     ROS_FATAL("Could not compute node features at all. This should never happen");
@@ -308,8 +237,7 @@ void PtCloudRFCreator::createNodes(RandomField& rf,
   for (unsigned int i = 0 ; i < nbr_pts ; i++)
   {
     // NULL indicates couldnt compute features for interest point
-    //if (concatenated_features[i] != NULL)
-    if (failed_indices.count(i) == 0)
+    if (concatenated_features[i].get() != NULL)
     {
       const RandomField::Node* created_node = NULL;
       if (use_labels)
@@ -398,18 +326,17 @@ void PtCloudRFCreator::createCliqueSet(RandomField& rf,
     cv::Vector<const vector<int>*> interest_region_indices(curr_nbr_clusters, NULL);
     size_t cluster_idx = 0;
     for (map<unsigned int, vector<int> >::iterator iter_created_clusters = created_clusters.begin() ; iter_created_clusters
-        != created_clusters.end() ; iter_created_clusters++)
+        != created_clusters.end() ; iter_created_clusters++, cluster_idx++)
     {
-      interest_region_indices[cluster_idx++] = (&iter_created_clusters->second);
+      interest_region_indices[cluster_idx] = (&iter_created_clusters->second);
     }
     // ----------------------------------------------
     // Compute features over clusters
-    //vector<float*> concatenated_features(curr_nbr_clusters, NULL);
     vector<boost::shared_array<const float> > concatenated_features;
-    set<unsigned int> failed_region_indices; // unused
+    set<unsigned int> successful_region_indices; // unused
     unsigned int nbr_concatenated_vals = Descriptor3D::computeAndConcatFeatures(pt_cloud, pt_cloud_kdtree,
         interest_region_indices, clique_set_feature_descriptors_[clique_set_idx], concatenated_features,
-        failed_region_indices);
+        successful_region_indices);
     if (nbr_concatenated_vals == 0)
     {
       ROS_FATAL("Could not compute cluster features at all. This should never happen");
@@ -422,13 +349,12 @@ void PtCloudRFCreator::createCliqueSet(RandomField& rf,
     // ----------------------------------------------
     cluster_idx = 0;
     for (map<unsigned int, vector<int> >::iterator iter_created_clusters = created_clusters.begin() ; iter_created_clusters
-        != created_clusters.end() ; iter_created_clusters++)
+        != created_clusters.end() ; iter_created_clusters++, cluster_idx++)
     {
-      boost::shared_array<const float> curr_cluster_features = concatenated_features[cluster_idx++];
+      boost::shared_array<const float> curr_cluster_features = concatenated_features[cluster_idx];
 
       // Only create cliques where could compute cluster features
-      //if (curr_cluster_features != NULL)
-      if (failed_region_indices.count(cluster_idx-1) == 0)
+      if (curr_cluster_features.get() != NULL)
       {
         // Retrieve point cloud indices within the cluster.
         const vector<int>& curr_cluster_pt_indices = iter_created_clusters->second;
@@ -484,7 +410,7 @@ void PtCloudRFCreator::createCliqueSet(RandomField& rf,
 /*! See function definition */
 // --------------------------------------------------------------
 boost::shared_ptr<RandomField> PtCloudRFCreator::createRandomField(const sensor_msgs::PointCloud& pt_cloud,
-                                                 const vector<float>& labels)
+                                                                   const vector<float>& labels)
 {
   createDescriptors();
   unsigned int nbr_clique_sets = clique_set_clusterings_.size();
@@ -496,23 +422,14 @@ boost::shared_ptr<RandomField> PtCloudRFCreator::createRandomField(const sensor_
 
   // ----------------------------------------------------------
   // Create nodes
-  set<unsigned int> failed_indices;
-  createNodes(*rf, pt_cloud, pt_cloud_kdtree, labels, failed_indices);
-  set<unsigned int> node_indices;
-  const unsigned int nbr_pts = pt_cloud.pts.size();
-  for (unsigned int i = 0 ; i < nbr_pts ; i++)
-  {
-    if (failed_indices.count(i) == 0)
-    {
-      node_indices.insert(i);
-    }
-  }
+  set<unsigned int> successful_indices;
+  createNodes(*rf, pt_cloud, pt_cloud_kdtree, labels, successful_indices);
 
   // ----------------------------------------------------------
   // Create clique sets
   for (unsigned int i = 0 ; i < nbr_clique_sets ; i++)
   {
-    createCliqueSet(*rf, pt_cloud, pt_cloud_kdtree, node_indices, i);
+    createCliqueSet(*rf, pt_cloud, pt_cloud_kdtree, successful_indices, i);
   }
 
   ROS_INFO("=============== FINISHED RANDOM FIELD =================\n");

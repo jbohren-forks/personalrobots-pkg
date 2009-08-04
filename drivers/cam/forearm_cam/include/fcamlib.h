@@ -76,7 +76,7 @@ int fcamLibVersion( void );
 
 int fcamDiscover(const char *ifName, IpCamList *ipCamList, const char *ipAddress, unsigned wait_us);
 int fcamConfigure( IpCamList *camInfo, const char *ipAddress, unsigned wait_us);
-int fcamStartVid( const IpCamList *camInfo, const uint8_t mac[6], const char *ipAddress, unsigned short port );
+int fcamStartVid( const IpCamList *camInfo, const uint8_t mac[6], const char *ipAddress, uint16_t port );
 int fcamStopVid( const IpCamList *camInfo );
 int fcamReset( IpCamList *camInfo );
 int fcamReconfigureFPGA( IpCamList *camInfo );
@@ -98,6 +98,7 @@ int fcamImagerModeSelect( const IpCamList *camInfo, uint32_t mode );
 /// A FrameHandler function returns zero to continue to receive data, non-zero otherwise
 typedef int (*FrameHandler)(fcamFrameInfo *frame_info, void *userData);
 int fcamVidReceive( const char *ifName, uint16_t port, size_t height, size_t width, FrameHandler frameHandler, void *userData );
+int fcamVidReceiveAuto( IpCamList *camera, size_t height, size_t width, FrameHandler frameHandler, void *userData );
 
 #define CONFIG_PRODUCT_ID 6805018
 #define ERR_TIMEOUT 100

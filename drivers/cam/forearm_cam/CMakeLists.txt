@@ -13,6 +13,9 @@ rospack_add_boost_directories()
 
 rospack_add_rostest(test/test_with_sim_hztest.xml)
 
+#FIXME Remove next line at some point
+#rospack_remove_compile_flags(forearm_cam -W) 
+
 gencfg()
 genmsg()
 gensrv()

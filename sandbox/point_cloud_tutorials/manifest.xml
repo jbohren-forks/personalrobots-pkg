@@ -1,0 +1,21 @@
+<package>
+  <description brief="point_cloud_tutorials">
+
+      This package contains examples of how to work with point clouds in ROS.
+
+  </description>
+  <author>Marius Muja</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/point_cloud_tutorials</url>
+  <depend package="roscpp" />
+  <depend package="std_msgs" />
+  <depend package="angles" />
+  <depend package="point_cloud_mapping" />
+  <depend package="robot_msgs" />
+  <depend package="mapping_msgs" />
+
+
+</package>
+
+

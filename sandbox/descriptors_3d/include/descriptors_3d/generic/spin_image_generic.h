@@ -61,7 +61,9 @@ class SpinImageGeneric: public NeighborhoodFeature
     // --------------------------------------------------------------
     /*!
      * \brief SpinImageGeneric is the base class for descriptors that
-     *        compute spin images.
+     *        compute spin images as described in: \n
+     *        Johnson and Hebert, "Using Spin-Images for Efficient Object
+     *        Recognition in Cluttered 3-D Scenes", PAMI 1999.
      *
      * See the inheriting class' description
      */

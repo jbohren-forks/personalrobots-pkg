@@ -47,9 +47,9 @@
 
 // --------------------------------------------------------------
 /*!
- * \file bounding_box_raw.h
+ * \file bounding_box_spectral.h
  *
- * \brief A BoundingBox descriptor computes the dimensions of the
+ * \brief A BoundingBoxSpectral descriptor computes the dimensions of the
  *        3-D box that encloses a group of points in the neighborhood's
  *        principle component space
  */
@@ -59,7 +59,7 @@ class BoundingBoxSpectral: public NeighborhoodFeature
   public:
     // --------------------------------------------------------------
     /*!
-     * \brief Instantiates the descriptor to compute the dimensions
+     * \brief A BoundingBoxSpectral descriptor to compute the dimensions
      *        of the bounding box in principle component space that
      *        encloses a neighborhood of points within a radius of
      *        the interest point/region.

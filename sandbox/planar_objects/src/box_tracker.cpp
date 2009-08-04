@@ -33,23 +33,24 @@ namespace planar_objects
 BoxTracker::BoxTracker() :
   sync(&BoxTracker::syncCallback, this)
 {
-  nh.param("~show_boxes", show_boxes, true);
+  nh.param("~visualize", show_boxes, true);
   nh.param("~verbose", verbose, true);
 
-  nh.param("~translation_tolerance", params.translation_tolerance, 0.2);
-  nh.param("~rotation_tolerance", params.translation_tolerance, M_PI/4);
-  nh.param("~size_tolerance", params.size_tolerance, 0.10);
+  nh.param("~translation_tolerance", params.translation_tolerance, 0.1);
+  nh.param("~rotation_tolerance", params.rotation_tolerance, M_PI/8);
+  nh.param("~size_tolerance", params.size_tolerance, 0.03);
 
   newLines = 0;
   oldLines = 0;
+  track_ids = 0;
 
   // subscribe to topics
   observations_sub = nh.subscribe("box_detector/observations", 1, sync.synchronize(&BoxTracker::observationsCallback,
                                                                                   this));
 
   // advertise topics
-  filtered_observations_pub = nh.advertise<BoxObservations> ("~filtered_observations", 1);
-  visualization_pub = nh.advertise<visualization_msgs::Marker> ("visualization_marker", 1);
+  tracks_pub = nh.advertise<BoxTracks> ("~tracks", 100);
+  visualization_pub = nh.advertise<visualization_msgs::Marker> ("visualization_marker", 100);
 }
 
 void BoxTracker::observationsCallback(const BoxObservations::ConstPtr& observations)
@@ -74,43 +75,72 @@ void BoxTracker::syncCallback()
   data_assoc_batch.resize(tracks.size());
 
   for(size_t i=0;i<observations.size();i++) {
+    std::vector<btBoxObservation> ambiguity = observations[i].listAmbiguity();
+//    std::vector<btBoxObservation> ambiguity;
+//    ambiguity.push_back( observations[i] );
+
     // associate observation to tracks
-    std::vector< size_t > data_assoc;
+    std::vector< std::pair<size_t,btBoxObservation> > data_assoc;
     for(size_t j=0;j<tracks.size();j++) {
-      if(tracks[j].withinTolerance(observations[i])) {
-//        cout << "assigning obs "<<i<<" to track "<< j << endl;
-        data_assoc.push_back( j );
+      for(size_t k=0;k<ambiguity.size();k++) {
+        if(tracks[j].withinTolerance(ambiguity[k])) {
+          //        cout << "assigning obs "<<i<<" to track "<< j << endl;
+          data_assoc.push_back( std::pair<size_t,btBoxObservation>(j,ambiguity[k]) );
+        }
       }
     }
 
     if(data_assoc.size()==0) {
       // start new track
 //      cout << "starting new track for obs "<<i << endl;
-      tracks.push_back( btBoxTrack(&params, observations[i]) );
+      tracks.push_back( btBoxTrack(&params, observations[i], track_ids++) );
       data_assoc_batch.push_back(std::vector< btBoxObservation >());
     } else {
       // first come first serve..?
 //      cout << "putting obs "<< i<<" in batch for update in track "<<data_assoc[0] << endl;
-      data_assoc_batch[ data_assoc[0] ].push_back( observations[i] );
+      data_assoc_batch[ data_assoc[0].first ].push_back( data_assoc[0].second );
     }
   }
 
   // now run batch update (this allows a tracker to incorporate several "corners" at the same time)
   for(size_t j=0;j<tracks.size();j++) {
-    cout << "batch updating track "<<j<<" with n="<<data_assoc_batch[j].size()<<" observations" << endl;
+//    cout << "batch updating track "<<j<<" with n="<<data_assoc_batch[j].size()<<" observations" << endl;
     tracks[j].updateTrack(data_assoc_batch[j]);
-    cout <<"  w="<<tracks[j].obs_history.rbegin()->w<< " h="<<tracks[j].obs_history.rbegin()->h<<endl;
+//    cout <<"  w="<<tracks[j].obs_history.rbegin()->w<< " h="<<tracks[j].obs_history.rbegin()->h<<endl;
   }
 
+  ///observations = observations[0].listAmbiguity();
+
+  removeOldTracks(ros::Duration(1.00));
   visualizeObservations();
   visualizeTracks();
   removeOldLines();
+  sendTracks();
+}
+
+void BoxTracker::removeOldTracks(ros::Duration timeout) {
+  size_t j = 0;
+  while (j<tracks.size()) {
+    if( observations_msg->header.stamp > tracks[j].obs_history.rbegin()->stamp + timeout ) {
+      tracks.erase(tracks.begin() + j);
+    } else {
+      j++;
+    }
+  }
+}
+
+void BoxTracker::sendTracks() {
+  BoxTracks tracks_msg;
+  tracks_msg.set_tracks_size(tracks.size());
+  for(size_t j=0; j<tracks.size(); j++) {
+    tracks_msg.tracks[j] = tracks[j].getTrackMessage();
+  }
+  tracks_pub.publish(tracks_msg);
 }
 
 void BoxTracker::removeOldLines() {
   LineVector lines;
   for(int l = newLines; l<oldLines; l++) {
-    for(size_t i=tracks.size();i<10; i++)
       visualizeLines(visualization_pub, observations_msg->header.frame_id, lines,
                      l,0,0,0);
   }
@@ -120,13 +150,17 @@ void BoxTracker::removeOldLines() {
 
 void BoxTracker::visualizeObservations() {
   for(size_t i=0; i<observations.size(); i++) {
+//    cout << "drawing line "<<newLines << endl;
     visualizeLines(visualization_pub, observations_msg->header.frame_id, observations[i].visualize(),
-                   newLines++,HSV_to_RGB(0.0,0.0,1.0));
+                   newLines++,HSV_to_RGB(0.0 * i,0.0,1.0));
   }
 }
 
 void BoxTracker::visualizeTracks() {
+//  cout << "observations_msg->header.stamp="<<(long)observations_msg->header.stamp.toSec() << endl;
   for(size_t j=0; j<tracks.size(); j++) {
+//    cout << "tracks[j].obs_history.rbegin()->stamp="<<(long)tracks[j].obs_history.rbegin()->stamp.toSec() << endl;
+//    if( observations_msg->header.stamp > tracks[j].obs_history.rbegin()->stamp + ros::Duration(1.00) ) continue;
     for(size_t i=0; i<tracks[j].obs_history.size(); i++) {
         visualizeLines(visualization_pub, observations_msg->header.frame_id, tracks[j].obs_history[i].visualize(),
                        newLines++,
@@ -185,10 +219,73 @@ LineVector btBoxObservation::visualize() {
   return(lines);
 }
 
+std::vector<btBoxObservation> btBoxObservation::listAmbiguity() {
+  std::vector<btBoxObservation> allCorners;
+  btBoxObservation alt = *this;
+
+  alt.w = w; alt.h = h;
+  alt.tf =  tf * btTransform(btQuaternion(btVector3(0,0,1),0 * M_PI/2),btVector3(0,0,0));
+  allCorners.push_back(alt);
+
+  alt.w = w; alt.h = h;
+  alt.tf =  tf * btTransform(btQuaternion(btVector3(0,0,1),2 * M_PI/2),btVector3(w,h,0));
+  allCorners.push_back(alt);
+
+  alt.w = h; alt.h = w;
+  alt.tf =  tf * btTransform(btQuaternion(btVector3(0,0,1),1 * M_PI/2),btVector3(w,0,0));
+  allCorners.push_back(alt);
+
+  alt.w = h; alt.h = w;
+  alt.tf =  tf * btTransform(btQuaternion(btVector3(0,0,1),3 * M_PI/2),btVector3(0,h,0));
+  allCorners.push_back(alt);
+
+  btTransform tfinv = tf *
+      btTransform(btQuaternion(btVector3(1,1,0),2 * M_PI/2),btVector3(0,0,0));
+
+  alt.w = h; alt.h = w;
+  alt.tf =  tfinv * btTransform(btQuaternion(btVector3(0,0,1),0 * M_PI/2),btVector3(0,0,0));
+  allCorners.push_back(alt);
+
+  alt.w = h; alt.h = w;
+  alt.tf =  tfinv * btTransform(btQuaternion(btVector3(0,0,1),2 * M_PI/2),btVector3(h,w,0));
+  allCorners.push_back(alt);
+
+  alt.w = w; alt.h = h;
+  alt.tf =  tfinv * btTransform(btQuaternion(btVector3(0,0,1),1 * M_PI/2),btVector3(h,0,0));
+  allCorners.push_back(alt);
+
+  alt.w = w; alt.h = h;
+  alt.tf =  tfinv * btTransform(btQuaternion(btVector3(0,0,1),3 * M_PI/2),btVector3(0,w,0));
+  allCorners.push_back(alt);
+
+// cout << "ambiguities:"<<allCorners.size()<<endl;
+
+  return(allCorners);
+}
+
+BoxObservation btBoxObservation::getBoxObservation() {
+  BoxObservation obs;
+  obs.transform.translation.x = tf.getOrigin().x();
+  obs.transform.translation.y = tf.getOrigin().y();
+  obs.transform.translation.z = tf.getOrigin().z();
+
+  obs.transform.rotation.x = tf.getRotation().x();
+  obs.transform.rotation.y = tf.getRotation().y();
+  obs.transform.rotation.z = tf.getRotation().z();
+  obs.transform.rotation.w = tf.getRotation().w();
+
+  obs.w = w;
+  obs.h = h;
+  obs.precision = precision;
+  obs.recall = recall;
+
+  return(obs);
+}
+
 // ***************************************************************************** btBoxTrack
 
-btBoxTrack::btBoxTrack(TrackParameters *param, btBoxObservation &obs)
-:param(param) {
+btBoxTrack::btBoxTrack(TrackParameters *param, btBoxObservation &obs, int id)
+:param(param),id(id) {
   obs_history.push_back(obs);
 }
 
@@ -199,6 +296,18 @@ bool btBoxTrack::withinTolerance(btBoxObservation &obs) {
   }
   if( fabs(obs.w - obs_history.rbegin()->w ) > param->size_tolerance) return false;
   if( fabs(obs.h - obs_history.rbegin()->h ) > param->size_tolerance) return false;
+
+  btTransform dist = obs_history.rbegin()->tf.inverseTimes(obs.tf);
+
+  double phi = dist.getRotation().getAngle();
+  double d = dist.getOrigin().length();
+
+
+  if(phi > param->rotation_tolerance) return false;
+  if(d > param->translation_tolerance) return false;
+
+//  cout << " d= "<<d<<" phi= "<<phi/M_PI*180.0<<endl;
+
   return true;
 }
 
@@ -212,7 +321,16 @@ void btBoxTrack::updateTrack(std::vector<btBoxObservation> &obs) {
 
 void btBoxTrack::updateTrack(btBoxObservation &obs) {
   obs_history.push_back(obs);
+}
 
+BoxTrack btBoxTrack::getTrackMessage() {
+  BoxTrack result;
+  result.id = id;
+  result.set_obs_size( obs_history.size() );
+  for(size_t i=0;i<obs_history.size();i++) {
+    result.obs[i] = obs_history[i].getBoxObservation();
+  }
+  return(result);
 }
 
 }

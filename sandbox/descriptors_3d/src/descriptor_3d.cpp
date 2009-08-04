@@ -115,18 +115,18 @@ void Descriptor3D::concatenateFeatures(const vector<cv::Vector<cv::Vector<float>
                                        const unsigned int nbr_samples,
                                        const unsigned int nbr_concatenated_vals,
                                        vector<boost::shared_array<const float> >& concatenated_features,
-                                       set<unsigned int>& failed_indices)
+                                       set<unsigned int>& successful_indices)
 {
-  failed_indices.clear();
-  concatenated_features.clear();
-  concatenated_features.resize(nbr_samples);
-  //concatenated_features.assign(nbr_samples, NULL);
+  successful_indices.clear();
+  concatenated_features.assign(nbr_samples, boost::shared_array<const float>(NULL));
   unsigned int nbr_descriptors = all_descriptor_results.size();
 
   // ----------------------------------------------
   // Iterate over each interest point and compute all feature descriptors
   // If all descriptor computations are successful, then concatenate all values into 1 array
-  for (size_t i = 0 ; i < nbr_samples ; i++)
+  int int_nbr_samples = static_cast<int> (nbr_samples);
+#pragma omp parallel for
+  for (int i = 0 ; i < int_nbr_samples ; i++)
   {
     // --------------------------------
     // Verify all features for the point were computed successfully
@@ -137,7 +137,7 @@ void Descriptor3D::concatenateFeatures(const vector<cv::Vector<cv::Vector<float>
       const cv::Vector<cv::Vector<float> >& curr_descriptor_for_cloud = all_descriptor_results[j];
 
       // Get the computed feature for current sample
-      const cv::Vector<float>& curr_feature_vals = curr_descriptor_for_cloud[i];
+      const cv::Vector<float>& curr_feature_vals = curr_descriptor_for_cloud[static_cast<size_t> (i)];
 
       // non-zero descriptor length indicates computed successfully
       unsigned int curr_nbr_feature_vals = curr_feature_vals.size();
@@ -149,19 +149,19 @@ void Descriptor3D::concatenateFeatures(const vector<cv::Vector<cv::Vector<float>
     if (all_features_success)
     {
       // allocate
-      //float* curr_concat_feats = static_cast<float*> (malloc(sizeof(float) * nbr_concatenated_vals));
-      float* curr_concat_feats = new float[nbr_concatenated_vals];
+      float* curr_sample_concat_feats = new float[nbr_concatenated_vals];
 
+      // concatenate each descriptors' values together
       unsigned int prev_val_idx = 0; // offset when copying into concat_features
       for (unsigned int j = 0 ; j < nbr_descriptors ; j++)
       {
         // retrieve descriptor values for current point
         const cv::Vector<cv::Vector<float> >& curr_descriptor_for_cloud = all_descriptor_results[j];
-        const cv::Vector<float>& curr_feature_vals = curr_descriptor_for_cloud[i];
-        unsigned int curr_nbr_feature_vals = curr_feature_vals.size();
+        const cv::Vector<float>& curr_sample_descriptor_vals = curr_descriptor_for_cloud[static_cast<size_t> (i)];
+        unsigned int curr_nbr_feature_vals = curr_sample_descriptor_vals.size();
 
         // copy descriptor values into concatenated vector at correct location
-        memcpy(curr_concat_feats + prev_val_idx, curr_feature_vals.begin(), sizeof(float)
+        memcpy(curr_sample_concat_feats + prev_val_idx, curr_sample_descriptor_vals.begin(), sizeof(float)
             * curr_nbr_feature_vals);
 
         // skip over all computed features so far
@@ -169,14 +169,16 @@ void Descriptor3D::concatenateFeatures(const vector<cv::Vector<cv::Vector<float>
       }
 
       // Save it
-      //concatenated_features[i] = curr_concat_feats;
-      concatenated_features[i].reset(static_cast<const float*>(curr_concat_feats));
+      concatenated_features[i].reset(static_cast<const float*> (curr_sample_concat_feats));
+#pragma omp critical
+      {
+        successful_indices.insert(i);
+      }
     }
-    // Otherwise features not successful, so note them
+    // Otherwise features not successful
     else
     {
-      ROS_DEBUG("skipping concatenation of sample %u", i);
-      failed_indices.insert(i);
+      ROS_DEBUG("Descriptor3D::concatenateFeatures() skipping sample %u", i);
     }
   }
 
@@ -191,7 +193,7 @@ unsigned int Descriptor3D::computeAndConcatFeatures(const sensor_msgs::PointClou
                                                     const cv::Vector<const geometry_msgs::Point32*>& interest_pts,
                                                     vector<Descriptor3D*>& descriptors_3d,
                                                     vector<boost::shared_array<const float> >& concatenated_features,
-                                                    set<unsigned int>& failed_indices)
+                                                    set<unsigned int>& successful_indices)
 
 {
   // Allocate feature computation for each descriptor
@@ -205,16 +207,17 @@ unsigned int Descriptor3D::computeAndConcatFeatures(const sensor_msgs::PointClou
   {
     if (descriptors_3d[i] == NULL)
     {
+      ROS_ERROR("Descriptor3D::computeAndConcatFeatures() gave NULL descriptor for interest points");
       return 0;
     }
 
     descriptors_3d[i]->compute(data, data_kdtree, interest_pts, all_descriptor_results[i]);
     nbr_concatenated_vals += (descriptors_3d[i])->getResultSize();
-    ROS_DEBUG("Descriptor will have this many features: %u", descriptors_3d[i]->getResultSize());
+    ROS_DEBUG("Interest point descriptor has %u values", descriptors_3d[i]->getResultSize());
   }
 
   concatenateFeatures(all_descriptor_results, interest_pts.size(), nbr_concatenated_vals,
-      concatenated_features, failed_indices);
+      concatenated_features, successful_indices);
   return nbr_concatenated_vals;
 }
 
@@ -226,7 +229,7 @@ unsigned int Descriptor3D::computeAndConcatFeatures(const sensor_msgs::PointClou
                                                     const cv::Vector<const vector<int>*>& interest_region_indices,
                                                     vector<Descriptor3D*>& descriptors_3d,
                                                     vector<boost::shared_array<const float> >& concatenated_features,
-                                                    set<unsigned int>& failed_indices)
+                                                    set<unsigned int>& successful_indices)
 
 {
   // Allocate feature computation for each descriptor
@@ -240,16 +243,17 @@ unsigned int Descriptor3D::computeAndConcatFeatures(const sensor_msgs::PointClou
   {
     if (descriptors_3d[i] == NULL)
     {
+      ROS_ERROR("Descriptor3D::computeAndConcatFeatures() gave NULL descriptor for interest regions");
       return 0;
     }
 
     descriptors_3d[i]->compute(data, data_kdtree, interest_region_indices, all_descriptor_results[i]);
     nbr_concatenated_vals += (descriptors_3d[i])->getResultSize();
-    ROS_DEBUG("Descriptor will have this many features: %u", descriptors_3d[i]->getResultSize());
+    ROS_DEBUG("Interest region descriptor has %u values", descriptors_3d[i]->getResultSize());
   }
 
   concatenateFeatures(all_descriptor_results, interest_region_indices.size(), nbr_concatenated_vals,
-      concatenated_features, failed_indices);
+      concatenated_features, successful_indices);
   return nbr_concatenated_vals;
 }
 

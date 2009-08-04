@@ -37,6 +37,8 @@
 #ifndef MPGLUE_COSTMAP_HPP
 #define MPGLUE_COSTMAP_HPP
 
+#include <map>
+#include <stdexcept>
 #include <iosfwd>
 #include <unistd.h>
 
@@ -54,7 +56,24 @@ namespace mpglue {
   
   typedef ssize_t index_t;
   typedef int cost_t;
+    
   
+  /** Container for a grid index, consisting of an index for both X and Y. */
+  struct index_pair {
+    inline index_pair(index_t _ix, index_t _iy): ix(_ix), iy(_iy) {}
+    
+    /** Grid indices are ordered by their X-coordinate, or by their
+	Y-coordinate in case of equal X-coordinates.  Useful mainly
+	for stuffing grid indices into e.g. a std::list<> or using
+	them as key type of e.g. a std::map<>. */
+    inline bool operator < (index_pair const & rhs) const
+    { return (ix < rhs.ix) || ((ix == rhs.ix) && (iy < rhs.iy)); }
+    
+    index_t ix, iy;
+  };
+  
+  
+  typedef std::map<index_pair, cost_t> cost_delta_map_t;
   
   /**
      \note There is no getFreespaceCost() because that is implicitly
@@ -104,6 +123,26 @@ namespace mpglue {
 	with a more efficient method. */
     virtual bool isFreespace(index_t index_x, index_t index_y,
 			     bool out_of_bounds_reply) const;
+    
+    
+    class set_cost_not_implemented: public std::runtime_error {
+    public:
+      set_cost_not_implemented(char const * what): std::runtime_error(what) {}
+    };
+    
+    /** Check if the index is valid, checks if the old cost is
+	different from the new cost, and then stores the new cost in
+	the costmap. The optional delta map parameter lets callers
+	accumulate "patches" of cost updates, for example to
+	synchronize their planner representations.
+	
+	\note Not available in all subclasses. Those implementations
+	just throw the corresponding exception.
+	
+	\return true if the index was valid AND the cost changed.
+    */
+    virtual bool setCost(index_t index_x, index_t index_y, cost_t cost,
+			 cost_delta_map_t * opt_delta_map) throw(set_cost_not_implemented) = 0;
     
     void dumpHistogram(char const * prefix, std::ostream & os) const;
   };
@@ -272,7 +311,7 @@ namespace mpglue {
   */
   struct costmap_2d_getter {
     virtual ~costmap_2d_getter() {}
-    virtual costmap_2d::Costmap2D const * operator () () = 0;
+    virtual costmap_2d::Costmap2D * operator () () = 0;
   };
   
   
@@ -289,7 +328,7 @@ namespace mpglue {
   CostmapAccessor * createCostmapAccessor(sfl::RDTravmap const * rdt,
 					  int possibly_circumscribed_cost);
 
-  CostmapAccessor * createCostmapAccessor(sfl::TraversabilityMap const * rdt,
+  CostmapAccessor * createCostmapAccessor(sfl::TraversabilityMap * travmap,
 					  int possibly_circumscribed_cost);
   
   
@@ -365,6 +404,19 @@ namespace mpglue {
 	return true;
       }
       return false;
+    }
+    
+    virtual bool setCost(index_t index_x, index_t index_y, cost_t cost,
+			 cost_delta_map_t * opt_delta_map) throw(set_cost_not_implemented) {
+      if ( ! checkIndex(index_x, index_y))
+	return false;
+      index_t const raw_index(indexToRaw(index_x, index_y));
+      if (cost == raw[raw_index])
+	return false;
+      raw[raw_index] = cost;
+      if (opt_delta_map)
+	opt_delta_map->insert(std::make_pair(index_pair(index_x, index_y), cost));
+      return true;
     }
     
     template<typename other_index_t>

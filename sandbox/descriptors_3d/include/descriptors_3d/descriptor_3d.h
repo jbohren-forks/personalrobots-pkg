@@ -138,20 +138,20 @@ class Descriptor3D
      * \param descriptors_3d List of various feature descriptors to compute on each interest point
      * \param concatenated_features List containing the concatenated features from the descriptors if
      *                              they were ALL successful for the interest point.  If one descriptor
-     *                              failed for interest point i, then concatenated_features[i] == NULL
-     * \param failed_indices The set of indices in concatenated_features that are NULL
-     *
-     * \warning It is up to the user to free the concatenated features
+     *                              failed for interest point i, then concatenated_features[i].get() == NULL
+     * \param successful_indices The indices into interest_region_indices where features were
+     *                           successfully computed
      *
      * \return The total number of concatenated feature values
      */
     // --------------------------------------------------------------
-    static unsigned int computeAndConcatFeatures(const sensor_msgs::PointCloud& data,
-                                                 cloud_kdtree::KdTree& data_kdtree,
-                                                 const cv::Vector<const geometry_msgs::Point32*>& interest_pts,
-                                                 std::vector<Descriptor3D*>& descriptors_3d,
-                                                 std::vector<boost::shared_array<const float> >& concatenated_features,
-                                                 std::set<unsigned int>& failed_indices);
+    static unsigned int 
+    computeAndConcatFeatures(const sensor_msgs::PointCloud& data,
+                             cloud_kdtree::KdTree& data_kdtree,
+                             const cv::Vector<const robot_msgs::Point32*>& interest_pts,
+                             std::vector<Descriptor3D*>& descriptors_3d,
+                             std::vector<boost::shared_array<const float> >& concatenated_features,
+                             std::set<unsigned int>& successful_indices);
 
     // --------------------------------------------------------------
     /*!
@@ -164,10 +164,9 @@ class Descriptor3D
      * \param descriptors_3d List of various feature descriptors to compute on each interest point
      * \param concatenated_features List containing the concatenated features from the descriptors if
      *                              they were ALL successful for the interest region.  If one descriptor
-     *                              failed for interest region i, then concatenated_features[i] == NULL
-     * \param failed_indices The set of indices in concatenated_features that are NULL
-     *
-     * \warning It is up to the user to free the concatenated features
+     *                              failed for interest region i, then concatenated_features[i].get() == NULL
+     * \param successful_indices The indices into interest_region_indices where features were
+     *                           successfully computed
      *
      * \return The total number of concatenated feature values
      */
@@ -178,7 +177,7 @@ class Descriptor3D
                              const cv::Vector<const std::vector<int>*>& interest_region_indices,
                              std::vector<Descriptor3D*>& descriptors_3d,
                              std::vector<boost::shared_array<const float> >& concatenated_features,
-                             std::set<unsigned int>& failed_indices);
+                             std::set<unsigned int>& successful_indices);
     //@}
 
   protected:
@@ -257,7 +256,8 @@ class Descriptor3D
      *                              each descriptor
      * \param concatenated_features The concatenated features.  NULL indicates could not
      *                              successfully compute descriptor for sample
-     * \param failed_indices The indices in concatenated_features that are NULL
+     * \param successful_indices The indices in concatenated_features that contain
+     *                           computed features
      */
     // --------------------------------------------------------------
     static void
@@ -265,7 +265,7 @@ class Descriptor3D
                         const unsigned int nbr_samples,
                         const unsigned int nbr_concatenated_vals,
                         std::vector<boost::shared_array<const float> >& concatenated_features,
-                        std::set<unsigned int>& failed_indices);
+                        std::set<unsigned int>& successful_indices);
 };
 
 #endif

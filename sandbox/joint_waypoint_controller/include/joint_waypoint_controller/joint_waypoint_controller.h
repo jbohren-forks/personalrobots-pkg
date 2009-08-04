@@ -42,7 +42,7 @@
 #include <pr2_mechanism_controllers/TrajectoryQuery.h>
 #include <ros/ros.h>
 #include <filters/filter_chain.h>
-#include <manipulation_msgs/WaypointTraj.h>
+#include <manipulation_msgs/WaypointTrajWithLimits.h>
 #include <manipulation_msgs/JointTraj.h>
 #include <manipulation_msgs/SplineTraj.h>
 
@@ -99,14 +99,14 @@ private:
   ros::ServiceClient query_spline_traj_client_;
   ros::ServiceClient cancel_spline_traj_client_;
 
-  filters::FilterChain<manipulation_msgs::WaypointTraj> filter_chain_;
+  filters::FilterChain<manipulation_msgs::WaypointTrajWithLimits> filter_chain_;
   enum {
     TRAJECTORY_TYPE_CUBIC,
     TRAJECTORY_TYPE_QUINTIC
   } trajectory_type_;
 
-  void jointTrajToWaypointTraj(const manipulation_msgs::JointTraj& joint_traj, manipulation_msgs::WaypointTraj& waypoint_traj) const;
-  void waypointTrajToSplineTraj(const manipulation_msgs::WaypointTraj& waypoint_traj, manipulation_msgs::SplineTraj& spline_traj) const;
+  void jointTrajToWaypointTrajWithLimits(const manipulation_msgs::JointTraj& joint_traj, manipulation_msgs::WaypointTrajWithLimits& waypoint_traj) const;
+  void waypointTrajToSplineTraj(const manipulation_msgs::WaypointTrajWithLimits& waypoint_traj, manipulation_msgs::SplineTraj& spline_traj) const;
 };
 
 }

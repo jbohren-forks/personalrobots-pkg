@@ -1,0 +1,33 @@
+<launch>
+
+
+    <node pkg="point_cloud_tutorials" type="planar_fit" name="planar_fit" output="screen" respawn="true">
+        <remap from="tilt_laser_cloud" to="full_cloud_annotated" />
+        <!-- If search_radius_or_knn is different than 0, we estimate point normals using either a radius (1) or k (2) -->
+        <param name="search_radius_or_knn" value="2" />
+        <param name="search_radius"        value="0.02" />
+        <param name="search_k_closest"     value="40" />
+
+        <!-- Use downsampling if the data is too dense and the nearest neighborhood searches for normal estimation take too long -->
+        <param name="downsample"              value="1" />
+        <param name="downsample_leaf_width_x" value="0.02" />
+        <param name="downsample_leaf_width_y" value="0.02" />
+        <param name="downsample_leaf_width_z" value="0.02" />
+        <!-- Use the original data for normal estimation -->
+        <param name="normals_high_fidelity"   value="0" />
+
+        <!-- Euclidean (with normal checks) clustering parameters -->
+        <param name="use_clustering"                       value="1" />
+        <param name="euclidean_cluster_angle_tolerance"    value="30" />
+        <param name="euclidean_cluster_min_pts"            value="500" />
+        <param name="euclidean_cluster_distance_tolerance" value="0.1" />
+
+        <!-- Planar fitting parameters -->
+        <param name="sac_distance_threshold" value="0.02" />
+        <param name="sac_maximum_iterations" value="100" />
+
+        <!-- Display normal lines as markers -->
+        <param name="display_normal_lines_as_markers" value = "1" />
+    </node>
+    <node pkg="rviz" type="rviz" args="-d $(find point_cloud_tutorials)/launch/tilt_laser_planar_fit.vcg" />
+</launch>

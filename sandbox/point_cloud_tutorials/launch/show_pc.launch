@@ -1,0 +1,3 @@
+<launch>
+    <node pkg="rviz" type="rviz" args="-d $(find point_cloud_tutorials)/launch/both_pc.vcg" />
+</launch>

@@ -40,6 +40,7 @@
 #include "kdl/chain.hpp"
 #include "kdl/frames.hpp"
 #include "kdl/chainfksolver.hpp"
+#include "kdl/chainjnttojacsolver.hpp"
 #include "ros/node.h"
 #include "robot_msgs/Wrench.h"
 #include "geometry_msgs/PoseStamped.h"

@@ -246,7 +246,7 @@ bool collision_space::EnvironmentModelBullet::getCollisionContacts(std::vector<C
 	if (nc > 0)
 	{
 	    collision = true;
-	    for (int j = 0 ; j < nc && contacts.size() < max_count ; ++j)
+	    for (int j = 0 ; j < nc && (contacts.size() < max_count || max_count == 0) ; ++j)
 	    {
 		btManifoldPoint& pt = contactManifold->getContactPoint(j);
 		collision_space::EnvironmentModelBullet::Contact add;
@@ -268,7 +268,7 @@ bool collision_space::EnvironmentModelBullet::getCollisionContacts(std::vector<C
 		}
 		contacts.push_back(add);
 	    }
-	    if (contacts.size() >= max_count)
+	    if (max_count > 0 && contacts.size() >= max_count)
 		break;
 	}
     }

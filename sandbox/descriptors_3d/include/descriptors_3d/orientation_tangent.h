@@ -93,7 +93,7 @@ class OrientationTangent: public OrientationGeneric
 
     // --------------------------------------------------------------
     /*!
-     * \brief Extracts the tangents around each interest point
+     * \brief Extracts the tangents around each interest region
      *
      * \see Descriptor3D::precompute()
      */

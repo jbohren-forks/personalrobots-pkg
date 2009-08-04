@@ -38,16 +38,16 @@
 #include <iostream>
 #include <fstream>
 
-#include <ros/ros.h>
+#include <boost/shared_array.hpp>
 
 #include <opencv/ml.h>
 #include <opencv/cv.h>
 #include <opencv/cxcore.h>
 
+#include <ros/ros.h>
+
 #include <functional_m3n/regressors/regressor_wrapper.h>
 #include <functional_m3n/regressors/regressor_params.h>
-
-using namespace std;
 
 // --------------------------------------------------------------
 /*!
@@ -101,21 +101,21 @@ class RegressionTreeWrapper: public RegressorWrapper
      * \brief See RegressorWrapper::saveToFile()
      */
     // --------------------------------------------------------------
-    virtual int saveToFile(const string& basename);
+    virtual int saveToFile(const std::string& basename);
 
     // --------------------------------------------------------------
     /**
      * \brief See RegressorWrapper::loadFromFile()
      */
     // --------------------------------------------------------------
-    virtual int loadFromFile(const string& basename);
+    virtual int loadFromFile(const std::string& basename);
 
     // --------------------------------------------------------------
     /**
      * \brief See RegressorWrapper::addTrainingSample()
      */
     // --------------------------------------------------------------
-    virtual int addTrainingSample(const float* const feature_vals,
+    virtual int addTrainingSample(const boost::shared_array<const float> feature_vals,
                                   const unsigned int length,
                                   const unsigned int start_idx,
                                   const float target);
@@ -132,7 +132,7 @@ class RegressionTreeWrapper: public RegressorWrapper
      * \brief See RegressorWrapper::predict()
      */
     // --------------------------------------------------------------
-    virtual int predict(const float* const feature_vals,
+    virtual int predict(const boost::shared_array<const float> feature_vals,
                         const unsigned int length,
                         const unsigned int start_idx,
                         float& predicted_val);
@@ -143,10 +143,10 @@ class RegressionTreeWrapper: public RegressorWrapper
     CvDTree* rtree_;
 
     // Intermediate containers used by addTrainingSample
-    vector<const float*> interm_feature_vals_;
-    vector<unsigned int> interm_start_idx_;
-    vector<unsigned int> interm_lengths_;
-    vector<float> interm_target_;
+    std::vector<boost::shared_array<const float> > interm_feature_vals_;
+    std::vector<unsigned int> interm_start_idx_;
+    std::vector<unsigned int> interm_lengths_;
+    std::vector<float> interm_target_;
 };
 
 #endif

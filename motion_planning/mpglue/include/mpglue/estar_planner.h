@@ -59,6 +59,7 @@ namespace mpglue {
 		 std::ostream * erros);
     
   protected:
+    virtual void doFlushCostChanges(cost_delta_map_t const & delta);
     virtual void preCreatePlan() throw(std::exception);
     virtual boost::shared_ptr<waypoint_plan_t> doCreatePlan() throw(std::exception);
     

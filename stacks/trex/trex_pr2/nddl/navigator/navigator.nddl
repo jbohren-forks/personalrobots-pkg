@@ -18,6 +18,9 @@ class NavController extends AgentTimeline {
   NavController(){
     super(Internal, "Holds");
   }
+  NavController(Mode _mode){
+    super(_mode, "Holds");
+  }
 };
 
 Navigator navigator = new Navigator(Internal);

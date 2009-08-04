@@ -40,7 +40,7 @@ TrackerBase::TrackerBase(ros::Node &node, std::string prefix)
     return;
   }
 
-  ROS_ERROR("ROI policy: %d", roi_policy_);
+  ROS_INFO("ROI policy: %d", roi_policy_);
 
   req_.timeout_ms = 500; // TODO: magic number
 
@@ -52,7 +52,7 @@ TrackerBase::TrackerBase(ros::Node &node, std::string prefix)
 
   node_.param("~stay_active", stay_active_, true);
   node_.subscribe("~activate_tracker", activate_msg_, &TrackerBase::activateCB, this, 2);
-  ROS_ERROR("Stay active = %d", stay_active_);
+  ROS_INFO("Stay active = %d", stay_active_);
 }
 
 TrackerBase::~TrackerBase()

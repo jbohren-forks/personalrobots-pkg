@@ -11,7 +11,6 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 rospack_add_boost_directories()
 
 rospack_add_library( pr2_mechanism_controllers
-  src/laser_scanner_controller.cpp
   src/laser_scanner_traj_controller.cpp 
   src/head_position_controller.cpp
   src/head_servoing_controller.cpp

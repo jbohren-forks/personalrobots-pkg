@@ -60,7 +60,7 @@ class Position: public Descriptor3D
   public:
     // --------------------------------------------------------------
     /*!
-     * \brief Position descriptor defines the value to be the z-coordinate
+     * \brief A Position descriptor defines the value to be the z-coordinate
      *        of the interest point or the interest region's centroid
      *
      * TODO: use sensor location so height is relative and dont assume flat groudn

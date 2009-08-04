@@ -48,9 +48,14 @@ namespace mpglue {
   }
   
   
-  /**
-     \todo find a way to handle cost changes
-  */
+  void NavFnPlanner::
+  doFlushCostChanges(cost_delta_map_t const & delta)
+  {
+    // Gets implicitly handled through the stats_.cost_delta_count
+    // field, which gets set by the CostmapPlanner superclass.
+  }
+  
+  
   void NavFnPlanner::
   preCreatePlan() throw(std::exception)
   {
@@ -73,7 +78,7 @@ namespace mpglue {
       planner_->setGoal(foo);
     }
     
-    if (stats_.flush_cost_changes || init_costs) {
+    if ((stats_.cost_delta_count > 0) || init_costs) {
       int const nx(costmap_->getXEnd());
       int const ny(costmap_->getYEnd());
       COSTTYPE * cm(planner_->costarr);

@@ -129,7 +129,7 @@ namespace {
   public:
     struct cm2dgetter: public mpglue::costmap_2d_getter {
       cm2dgetter(costmap_2d::Costmap2D * cm): cm_(cm) {}
-      virtual costmap_2d::Costmap2D const * operator () () { return cm_; }
+      virtual costmap_2d::Costmap2D * operator () () { return cm_; }
       costmap_2d::Costmap2D * cm_;
     };
     

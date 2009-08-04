@@ -55,13 +55,15 @@ namespace planning_environment
 	
 	PlanningMonitor(CollisionModels *cm, tf::TransformListener *tf, std::string frame_id) : CollisionSpaceMonitor(static_cast<CollisionModels*>(cm), tf, frame_id)
 	{
-	    onCollisionContact_ = NULL;	    
+	    onCollisionContact_ = NULL;
+	    maxCollisionContacts_ = 1;
 	    loadParams();
 	}
 	
 	PlanningMonitor(CollisionModels *cm, tf::TransformListener *tf) : CollisionSpaceMonitor(static_cast<CollisionModels*>(cm), tf)
 	{
 	    onCollisionContact_ = NULL;	    
+	    maxCollisionContacts_ = 1;
 	    loadParams();
 	}
 	
@@ -124,9 +126,10 @@ namespace planning_environment
 	bool transformJointToFrame(motion_planning_msgs::KinematicJoint &kj, const std::string &target) const;
 	
 	/** \brief Set a callback to be called when a collision is found */
-	void setOnCollisionContactCallback(const boost::function<void(collision_space::EnvironmentModel::Contact&)> &callback) 
+	void setOnCollisionContactCallback(const boost::function<void(collision_space::EnvironmentModel::Contact&)> &callback, unsigned int maxContacts = 1)
 	{
 	    onCollisionContact_ = callback;
+	    maxCollisionContacts_ = maxContacts;
 	}
 	
     protected:
@@ -145,6 +148,7 @@ namespace planning_environment
 	
 	/** \brief User callback when a collision is found */
 	boost::function<void(collision_space::EnvironmentModel::Contact&)> onCollisionContact_;
+	unsigned int                                                       maxCollisionContacts_;
 	
 	motion_planning_msgs::KinematicConstraints kcPath_;
 	motion_planning_msgs::KinematicConstraints kcGoal_;

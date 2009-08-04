@@ -43,6 +43,8 @@ using namespace estar;
 using namespace std;
 
 namespace {
+
+  using namespace mpglue;
   
   typedef enum {
     NO_GOAL,
@@ -101,20 +103,23 @@ namespace {
   
   
   struct get_meta: public Grid::get_meta {
-    mpglue::CostmapAccessor const & cm;
-    double const power;
-    double const obstcost;
-    double const delta;
+    mpglue::CostmapAccessor const & cm_;
+    double const power_;
+    double const obstcost_;
+    double const delta_;
     
-    get_meta(mpglue::CostmapAccessor const & _cm, double _power)
-      : cm(_cm), power(_power), obstcost(cm.getInscribedCost()),
-	delta(obstcost /* - cm.getFreespaceCost() but that is implicitly always zero */) {}
+    get_meta(mpglue::CostmapAccessor const & cm, double power)
+      : cm_(cm), power_(power), obstcost_(cm.getInscribedCost()),
+	delta_(obstcost_ /* - cm.getFreespaceCost() but that is implicitly always zero */) {}
+    
+    static inline double compute(double power, double obstcost, double delta, cost_t cost)
+    { return sfl::boundval(0.0, pow((obstcost - cost) / delta, power), 1.0); }
     
     virtual double operator () (ssize_t ix, ssize_t iy) const {
       int cost;
-      if ( ! cm.getCost(ix, iy, &cost))
+      if ( ! cm_.getCost(ix, iy, &cost))
 	return 1;
-      return sfl::boundval(0.0, pow((obstcost - cost) / delta, power), 1.0);
+      return compute(power_, obstcost_, delta_, cost);
     }
   };
   
@@ -133,15 +138,25 @@ namespace mpglue {
   }
   
   
-  /**
-     \todo find a way to handle cost changes
-  */
+  void EstarPlanner::
+  doFlushCostChanges(cost_delta_map_t const & delta)
+  {
+    if ( ! planner_)
+      return;
+    static double const power(2);
+    double const obstcost(costmap_->getInscribedCost());
+    for (cost_delta_map_t::const_iterator ic(delta.begin()); ic != delta.end(); ++ic)
+      planner_->SetMeta(ic->first.ix, ic->first.iy,
+			get_meta::compute(power, obstcost, obstcost, ic->second));
+  }
+  
+  
   void EstarPlanner::
   preCreatePlan() throw(std::exception)
   {
     if ( ! planner_) {
       planner_.reset(estar::Facade::CreateDefault(0, 0, itransform_->getResolution()));
-      get_meta gm(*costmap_, 2); // XXXX hardcoded quadratic, should be parameter
+      get_meta const gm(*costmap_, 2); // XXXX hardcoded quadratic, should be parameter
       planner_->AddRange(costmap_->getXBegin(), costmap_->getXEnd(),
 			 costmap_->getYBegin(), costmap_->getYEnd(),
 			 &gm);

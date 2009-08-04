@@ -42,7 +42,6 @@ void Daisy::clearImageCache() {
 }
 
 void Daisy::doComputation(IplImage* img, const cv::Vector<KeyPoint>& points, vvf& results) {
-
   // -- Stupid way to pass img to daisy.
   if(im_provider_) {
     im_ = im_provider_->im_;
@@ -61,7 +60,7 @@ void Daisy::doComputation(IplImage* img, const cv::Vector<KeyPoint>& points, vvf
 
 
   int nValid = 0;
-  START_TIMER();
+  //START_TIMER();
   for(size_t i=0; i<points.size(); ++i) {
     // -- Get the descriptor.
     assert((int)result_size_ == dai_.descriptor_size());
@@ -88,7 +87,7 @@ void Daisy::doComputation(IplImage* img, const cv::Vector<KeyPoint>& points, vvf
     results[i] = Vector<float>(thor, result_size_, false); //Don't copy the data.
     nValid++;
   }
-  STOP_TIMER();
+  //STOP_TIMER();
 
   if(debug_) {
     cout << "Debugging " << name_ << endl;

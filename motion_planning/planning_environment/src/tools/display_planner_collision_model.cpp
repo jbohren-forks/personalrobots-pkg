@@ -131,7 +131,7 @@ protected:
     void afterAttachBody(planning_models::KinematicModel::Link *link, const mapping_msgs::AttachedObjectConstPtr &attachedObject)
     {
 	roslib::Header header;
-	header.stamp = collisionSpaceMonitor_->lastMechanismStateUpdate();
+	header.stamp = collisionSpaceMonitor_->lastJointStateUpdate();
 	header.frame_id = link->name;
 	for (unsigned int i = 0 ; i < link->attachedBodies.size() ; ++i)
         {

@@ -48,7 +48,7 @@
 /*!
  * \file bounding_box_raw.h
  *
- * \brief A BoundingBox descriptor computes the dimensions of the
+ * \brief A BoundingBoxRaw descriptor computes the dimensions of the
  *        3-D box that encloses a group of points in given xyz space.
  */
 // --------------------------------------------------------------
@@ -57,7 +57,7 @@ class BoundingBoxRaw: public NeighborhoodFeature
   public:
     // --------------------------------------------------------------
     /*!
-     * \brief Instantiates the descriptor to compute the dimensions
+     * \brief A BoundingBoxRaw descriptor to compute the dimensions
      *        of the bounding box that encloses a neighborhood of points
      *        within a radius of the interest point/region.
      *

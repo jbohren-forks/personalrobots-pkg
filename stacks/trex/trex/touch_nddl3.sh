@@ -5,3 +5,4 @@ echo "Touching the NDDL3*.g files."
 touch `rospack find trex`/PLASMA/src/PLASMA/NDDL/base/antlr/NDDL3.g 
 touch `rospack find trex`/PLASMA/src/PLASMA/NDDL/base/antlr/NDDL3Tree.g 
 
+

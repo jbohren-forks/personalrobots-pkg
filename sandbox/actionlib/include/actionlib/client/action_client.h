@@ -96,10 +96,6 @@ public:
     GoalHandle<ActionSpec> gh = manager_.initGoal(goal, transition_cb, feedback_cb);
     ROS_DEBUG("Done with initGoal()");
 
-    ROS_DEBUG("Preemptively going to create a handle");
-    typename ManagedList< boost::shared_ptr<CommStateMachine<ActionSpec> > >::Handle h = manager_.list_.begin().createHandle();
-    ROS_DEBUG("Done");
-
     return gh;
   }
 

@@ -47,7 +47,7 @@
 
 // --------------------------------------------------------------
 /*!
- * \file spin_image_normal.h
+ * \file spin_image_tangent.h
  *
  * \brief A spin image descriptor using local tangent as the
  *        spinning axis

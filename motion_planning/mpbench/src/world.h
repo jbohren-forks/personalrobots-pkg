@@ -76,7 +76,8 @@ namespace mpbench {
        
        \return true if the costmap has changed, false otherwise.
     */
-    bool select(size_t task_id, size_t episode_id) throw(std::exception);
+    bool select(size_t task_id, size_t episode_id,
+		mpglue::cost_delta_map_t * cost_delta) throw(std::exception);
     
     boost::shared_ptr<mpglue::CostmapAccessor const> getCostmap(size_t task_id) const;
     //future//boost::shared_ptr<mpglue::CostmapAccessor const> getSnapshot(size_t episode_id) const;

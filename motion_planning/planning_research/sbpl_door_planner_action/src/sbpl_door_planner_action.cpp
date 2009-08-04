@@ -276,13 +276,13 @@ bool SBPLDoorPlanner::makePlan(const pr2_robot_actions::Pose2D &start, const pr2
 	}
       }
     }
+    // NOTE we do not have to call pWrap_->flushCostChanges() here
+    // because this node only uses sbpl_planner which always checks
+    // directly with its SBPLEnvironment, and that got fed in the
+    // preceding loop.
+    
     ROS_DEBUG("Max cost: %d, Min cost: %d",max_cost,min_cost);
     
-    // Tell the planner about the changed costs. Again, the called
-    // code checks whether anything has really changed before
-    // embarking on expensive computations.
-    pWrap_->flushCostChanges(true);
-		
     // Assume the robot is constantly moving, so always set start.
     // Maybe a bit inefficient, but not as bad as "changing" the
     // goal when it hasn't actually changed.

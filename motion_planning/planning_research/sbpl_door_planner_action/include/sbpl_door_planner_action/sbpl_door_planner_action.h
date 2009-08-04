@@ -122,7 +122,7 @@ class SBPLDoorPlanner : public robot_actions::Action<door_msgs::Door, door_msgs:
   friend struct cm_getter;
   struct cm_getter: public mpglue::costmap_2d_getter {
       cm_getter(SBPLDoorPlanner * spn): spn_(spn) {}
-      virtual costmap_2d::Costmap2D const * operator () () { return &spn_->cost_map_; }
+      virtual costmap_2d::Costmap2D * operator () () { return &spn_->cost_map_; }
       SBPLDoorPlanner * spn_;
   };
   cm_getter cm_getter_;	                   /**< for mpglue to get at our costmap instance */

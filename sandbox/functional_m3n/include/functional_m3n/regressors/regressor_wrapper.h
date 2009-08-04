@@ -35,7 +35,7 @@
  *********************************************************************/
 #include <string>
 
-using namespace std;
+#include <boost/shared_array.hpp>
 
 // --------------------------------------------------------------
 /*!
@@ -115,7 +115,7 @@ class RegressorWrapper
      * \return 0 on success, otherwise negative value on error
      */
     // --------------------------------------------------------------
-    virtual int saveToFile(const string& basename) = 0;
+    virtual int saveToFile(const std::string& basename) = 0;
 
     // --------------------------------------------------------------
     /**
@@ -126,13 +126,13 @@ class RegressorWrapper
      * \return 0 on success, otherwise negative value on error
      */
     // --------------------------------------------------------------
-    virtual int loadFromFile(const string& basename) = 0;
+    virtual int loadFromFile(const std::string& basename) = 0;
 
     // --------------------------------------------------------------
     /**
      * \brief Adds a (feature,target) data sample to train on
      *
-     * \param feature_vec Pointer to array of features
+     * \param feature_vals Array of features to train on
      * \param length The number of values in feature_vec (should be equal to
      *               stacked_feature_dim_ if NOT using "stacked" representation)
      * \param start_idx The dimension to place the features in the "stacked"
@@ -140,12 +140,10 @@ class RegressorWrapper
      *                  "stacked" representation)
      * \param target The target response of the features
      *
-     * \warning feature_vec should not be freed until train() has been called
-     *
      * \return 0 on success, otherwise negative value on error
      */
     // --------------------------------------------------------------
-    virtual int addTrainingSample(const float* const feature_vec,
+    virtual int addTrainingSample(const boost::shared_array<const float> feature_vals,
                                   const unsigned int length,
                                   const unsigned int start_idx,
                                   const float target) = 0;
@@ -165,7 +163,7 @@ class RegressorWrapper
     /**
      * \brief Predicts the value of the feature with this trained regressor/classifier
      *
-     * \param feature_vec Pointer to array of features
+     * \param feature_vals Array of features to train on
      * \param length The number of values in feature_vec (should be equal to
      *               stacked_feature_dim_ if NOT using "stacked" representation)
      * \param start_idx The dimension to place the features in the "stacked"
@@ -178,13 +176,13 @@ class RegressorWrapper
      * \return 0 on success, otherwise negative value on error
      */
     // --------------------------------------------------------------
-    virtual int predict(const float* const feature_vec,
+    virtual int predict(const boost::shared_array<const float> feature_vals,
                         const unsigned int length,
                         const unsigned int start_idx,
                         float& predicted_val) = 0;
 
   protected:
-    algorithm_t algorithm_type_;
+    RegressorWrapper::algorithm_t algorithm_type_;
     unsigned int stacked_feature_dim_;
     bool trained_;
 };

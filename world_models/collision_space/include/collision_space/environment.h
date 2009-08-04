@@ -139,7 +139,7 @@ namespace collision_space
 	/** \brief Check for self collision. Contacts are not computed */
 	virtual bool isSelfCollision(void) = 0;
 	
-	/** \brief Get the list of contacts (collisions) */
+	/** \brief Get the list of contacts (collisions). The maximum number of contacts to be returned can be specified. If the value is 0, all found contacts are returned. */
 	virtual bool getCollisionContacts(std::vector<Contact> &contacts, unsigned int max_count = 1) = 0;
 
 	

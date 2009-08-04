@@ -93,7 +93,7 @@ class SBPLPlannerNode
   friend struct cm_getter;
   struct cm_getter: public mpglue::costmap_2d_getter {
     cm_getter(SBPLPlannerNode * spn): spn_(spn) {}
-    virtual costmap_2d::Costmap2D const * operator () () { return &spn_->cost_map_; }
+    virtual costmap_2d::Costmap2D * operator () () { return &spn_->cost_map_; }
     SBPLPlannerNode * spn_;
   };
   cm_getter cm_getter_;	                   /**< for mpglue to get at our costmap instance */

@@ -676,6 +676,9 @@ ContourFragmentDescriptor::ContourFragmentDescriptor(int cf_id, string dir) :
 //     cvWaitKey(0);
     chamfer_->addTemplateFromImage(cfc_.contours_[i]);
   }
+
+  result_size_ = 2;
+  name_ = "temp";
 }
 
 ContourFragmentDescriptor::ContourFragmentDescriptor(int cf_id, ContourFragmentDescriptor* chamfer_provider) :
@@ -1311,7 +1314,7 @@ HaarDescriptor::HaarDescriptor(Vector<CvRect> rects, Vector<int> weights, Integr
 
   for(size_t i=0; i<rects_.size(); ++i) {
     CvRect& r = rects[i];
-    sprintf(buf, "_rect%d_weight%d_x%d_y%d_w%d_h%d", i, weights_[i], r.x, r.y, r.width, r.height);
+    sprintf(buf, "_rect%zd_weight%d_x%d_y%d_w%d_h%d", i, weights_[i], r.x, r.y, r.width, r.height);
     name_.append(buf);
   }
 
