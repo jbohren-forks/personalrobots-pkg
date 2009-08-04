@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import commands
 import signal
 import cStringIO
 import time
@@ -439,15 +440,18 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
 
       if rosCoreUp == False:
         core_launcher = roslaunch_caller.launch_core()
+        
+        script = commands.getoutput('rospack find webteleop') + '/launch/'
         if topic == "/Sim":
-          print "SIMULATION STARTUP"
-          launchScript('../launch/gazebo.launch')
+          script += 'gazebo.launch'
+          launchScript(script)
         elif topic == "/PRF":
-          print "PRF STARTUP"
-          #launchScript('../launch/prf.launch')
+          script += 'prf.launch'
+          launchScript(script)
         elif topic == "/PRG":
           print "PRG STARTUP"
-          #launchScript('../launch/prg.launch')
+          script += 'prg.launch'
+          launchScript(script)
 
       time.sleep(3)
       rospy.init_node(CALLER_ID, disable_signals=True)
@@ -477,7 +481,8 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
     elif cmd == "launch":
       print "Launch[%s]" % topic
 
-      launchScript(topic)
+      script = commands.getoutput('rospack find webteleop') + '/launch/' + topic
+      launchScript(script)
 
       self.send_response(200)
       self.send_header( "Content-type", "text/html" )
