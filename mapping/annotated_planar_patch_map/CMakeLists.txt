@@ -13,7 +13,7 @@ set(ROS_BUILD_TYPE Debug)
 rospack(annotated_planar_patch_map)
 
 #set the default path for built executables to the "bin" directory
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
+#set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 #set the default path for built libraries to the "lib" directory
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
@@ -70,12 +70,15 @@ target_link_libraries(pcd_assembler_srv)
 rospack_add_executable(empty_annotated_map src/empty_annotated_map.cpp)
 target_link_libraries(empty_annotated_map annotated_map_lib)
 
-#rospack_add_gtest(test/projection_test test/projection_test.cpp)
-#target_link_libraries(test/projection_test annotated_map_lib)
+rospack_add_gtest(test/projection_test test/projection_test.cpp)
+target_link_libraries(test/projection_test annotated_map_lib)
 
 
 #The data is currently in /u/prdata/annotated_maps/prg_jun_10/test/
-#rospack_download_test_data(http://pr.willowgarage.com/data/${PROJECT_NAME}/full_2009-06-22-15-40-19-topic.bag test_data/full_2009-06-22-15-40-19-topic.bag)
+rospack_download_test_data(http://pr.willowgarage.com/data/${PROJECT_NAME}/full_2009-06-22-15-40-19-topic.bag test_data/full_2009-06-22-15-40-19-topic.bag)
+rospack_download_test_data(http://pr.willowgarage.com/data/${PROJECT_NAME}/ann_pcd__2009-06-29-21-00-51-topic.bag test_data/ann_pcd__2009-06-29-21-00-51-topic.bag)
+
 #The test is commented out because the data can't be downloaded
-#rospack_add_rostest_future(test/test_content.launch)
+rospack_add_rostest_future(test/test_content.launch)
+
 

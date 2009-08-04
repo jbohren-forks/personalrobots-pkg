@@ -37,7 +37,6 @@
 
 #include "angles/angles.h"
 
-#include "tf/option_permutations.h"
 #include "annotated_planar_patch_map/projection.h"
 
 

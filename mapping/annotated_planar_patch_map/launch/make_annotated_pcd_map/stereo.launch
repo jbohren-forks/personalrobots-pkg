@@ -1,7 +1,6 @@
 <launch>
 
-  <group ns="stereoproc">
-    <!-- videre_mode should be one of the following:
+   <!-- videre_mode should be one of the following:
          disparity:     Disparity and rectification done on chip.
                         Provides: Disparity and left mono image
          disparity_raw: Disparity done on chip (debayer and rectification in software).
@@ -11,14 +10,7 @@
          rectified:     Rectification on chip
                         Provides: all 3 images available but no color
           -->
-    <param name="videre_mode" type="str" value="none"/>
-    <param name="do_colorize" type="bool" value="True"/>
-    <param name="do_rectify" type="bool" value="True"/>
-    <param name="do_stereo" type="bool" value="True"/>
-    <param name="do_calc_points" type="bool" value="True"/>
-    <param name="do_keep_coords" type="bool" value="True"/>
-    
-    <!-- stereo processing parameters
+  <!-- stereo processing parameters
        texture_thresh:  Threshold for removing bad disparities based on texture
                         Default value: 30
        unique_thresh:   Threshold for removing bad disparities based on ambiguity
@@ -34,21 +26,18 @@
        num_disp:        Number of disparities (pixels)
                         Default value: 64
        -->
+  <group ns="stereo">
+    <node pkg="stereo_image_proc" type="stereoproc" respawn="false" output="screen" name="stereoproc">
 
-    <param name="num_disp" type="int" value="64"/>
-    
-    <node pkg="stereo_image_proc" type="stereoproc" respawn="false" output="screen">
-      <remap from="raw_stereo" to="/stereo/raw_stereo_throttled" />
+    <remap from="raw_stereo" to="/stereo/raw_stereo_throttled"/>
 
-          <param name="do_colorize" type="bool" value="True"/>
-	  <param name="do_rectify" type="bool" value="True"/>
-	  <param name="do_stereo" type="bool" value="False"/>
-	  <param name="do_calc_points" type="bool" value="False"/>
-	  <param name="do_keep_coords" type="bool" value="False"/>
+      <param name="videre_mode" type="str" value="none"/>
+      <param name="do_colorize" type="bool" value="True"/>
+      <param name="do_rectify" type="bool" value="True"/>
+      <param name="do_stereo" type="bool" value="False"/>
+      <param name="do_calc_points" type="bool" value="False"/>
+      <param name="do_keep_coords" type="bool" value="False"/>
+      <param name="num_disp" type="int" value="64"/>
     </node>
-
   </group>
-
-
 </launch>
-

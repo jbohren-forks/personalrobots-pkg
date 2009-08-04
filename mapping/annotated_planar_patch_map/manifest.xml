@@ -27,6 +27,8 @@
   <depend package="bagserver" />
   <depend package="object_names"/>
 
+  <depend package="image_server"/>
+
 
   <export>
     <cpp cflags="-I${prefix}/srv/cpp -I${prefix}/include" />

@@ -55,6 +55,7 @@
 #include <mapping_msgs/PolygonalMap.h>
 #include <sensor_msgs/StereoInfo.h>
 #include <sensor_msgs/CameraInfo.h>
+#include <sensor_msgs/Image.h>
 #include <std_msgs/ColorRGBA.h>
 #include "tf/message_notifier.h"
 
@@ -76,6 +77,8 @@
 #include "point_cloud_assembler/BuildCloud.h"
 
 #include "point_cloud_mapping/normal_estimation_in_proc.h"
+
+#include "image_server/SaveImage.h"
 
 
 using namespace std;
@@ -142,9 +145,10 @@ public:
       ROS_ERROR("Parameter tf_tolerance_secs<0 (%f)", tf_tolerance_secs) ;
       ROS_INFO("tf Tolerance: %f seconds", tf_tolerance_secs) ;    */
 
-    tf_ = boost::shared_ptr<tf::TransformListener>(new tf::TransformListener());
+    tf_ = boost::shared_ptr<tf::TransformListener>(new tf::TransformListener(lifting_delay_*2+ros::Duration(12)));
 
     lifted_pub_=n_.advertise<sensor_msgs::PointCloud>(out_topic_name_,1);
+    //original_pub_=n_.advertise<robot_msgs::PointCloud>(out_topic_name_,1);
     
     annotation_notifier_=new tf::MessageNotifier<cv_mech_turk::ExternalAnnotation>(*tf_,
                                                                                    boost::bind(&AnnotationLifterToPcdViaService::handleAnnotation, this,_1),
@@ -156,9 +160,19 @@ public:
 
     typedef annotated_planar_patch_map::RollingHistory<sensor_msgs::CameraInfo> cam_hist_type;
 
-
     boost::shared_ptr<cam_hist_type> cam_hist_lookup(new cam_hist_type("cam_info","~cam_info_hist/"));
     cam_hist_ = cam_hist_lookup;
+
+    if(annotate_image_id_)
+    {
+      typedef annotated_planar_patch_map::RollingHistory<sensor_msgs::Image> image_hist_type;
+
+      boost::shared_ptr<image_hist_type> image_hist_lookup(new image_hist_type("image","~image_hist/"));
+      image_hist_ = image_hist_lookup;
+
+      save_image_client_ = n_.serviceClient<image_server::SaveImage>("save_image");
+
+    }
 
 
   };
@@ -176,6 +190,30 @@ public:
     {
       ROS_WARN_STREAM("Ignoring annotation at "<< annotation->header.stamp << ". Failed to get cam info. ");
       return;
+    }
+
+    sensor_msgs::ImageConstPtr image;
+
+    if(annotate_image_id_)
+    {
+      image = image_hist_->getMsgNearTime(annotation->header.stamp,ros::Duration(0.01));
+
+      if(image==NULL)
+      {
+        ROS_WARN_STREAM("Ignoring annotation at "<< annotation->header.stamp << ". Failed to get image. ");
+        return;
+      }
+
+      image_server::SaveImage srv;
+      srv.request.reference="?";
+      srv.request.image=*image;
+      if(! save_image_client_.call(srv))
+      {
+        ROS_WARN_STREAM("Ignoring annotation at "<< annotation->header.stamp << ". Failed to save image to image server. ");
+        return;
+      }
+      active_image_id_=srv.response.id;
+      
     }
 
     point_cloud_assembler::BuildCloud::Request req;
@@ -246,7 +284,7 @@ public:
     // Initialize it to 0 - no correspondence
     for(unsigned int iPt = 0; iPt<num_3D_pts; iPt++)
     {
-      overlap[iPt]=0;
+      overlap[iPt]=-1;
     }
 
     // Go over all annotated polygons and assign points to polygons on first-come-first-served basis
@@ -259,8 +297,14 @@ public:
     std::vector<std_msgs::ColorRGBA> object_colors;
     if(use_colors_)
     {
-      object_colors.reserve(num_poly);
+      object_colors.reserve(num_poly+1);
+      std_msgs::ColorRGBA blank_color;
+      blank_color.r=70;
+      blank_color.g=70;
+      blank_color.b=0;
+      object_colors[0]=blank_color;
     }
+
 
     int num_in=0;
     for(unsigned int iAnnotatedPolygon=0;iAnnotatedPolygon<num_poly;iAnnotatedPolygon++)
@@ -296,7 +340,7 @@ public:
         req.name=poly.object_name;
         
         ros::service::call("name_to_color",req,resp);
-        object_colors[iAnnotatedPolygon]=resp.color;
+        object_colors[iAnnotatedPolygon+1]=resp.color;
       }
 
 
@@ -314,7 +358,7 @@ public:
       //Test each point, whether it's inside the polygon or not.
       for(unsigned int iPt = 0; iPt<num_3D_pts; iPt++)
       {
-        if(overlap[iPt])
+        if(overlap[iPt]>0)
           continue;
 
         bool in_depth=(map_2D.pts[iPt].z <= max_depth_) && (map_2D.pts[iPt].z >= min_depth_);
@@ -325,8 +369,8 @@ public:
         CvPoint2D32f pt;
         pt.x=map_2D.pts[iPt].x;
         pt.y=map_2D.pts[iPt].y;
-        ROS_DEBUG_STREAM("cvPointPolygonTest");
-        double dist = cvPointPolygonTest( poly_annotation, pt, 1 );
+
+        double dist = cvPointPolygonTest( poly_annotation, pt, 0 );
         
         if(dist>dist_tolerance_)
         {
@@ -337,7 +381,25 @@ public:
       }      
       cvReleaseMat( &poly_annotation );
     }
+    for(unsigned int iPt = 0; iPt<num_3D_pts; iPt++)
+    {
+      if(overlap[iPt]>0)
+        continue;
+      
+      bool in_depth=(map_2D.pts[iPt].z <= max_depth_) && (map_2D.pts[iPt].z >= min_depth_);
+      if(! in_depth)
+      {
+        continue;
+      }
+      CvPoint2D32f pt;
+      pt.x=map_2D.pts[iPt].x;
+      pt.y=map_2D.pts[iPt].y;
+      if(pt.x<0 || pt.y<0 || pt.x>=640 || pt.y>=480)
+         continue;
 
+      overlap[iPt]=0;
+      num_in++;
+    }
 
     map_final.header=map_3D.header;
     map_final.pts.resize(num_in);
@@ -421,14 +483,18 @@ public:
     unsigned int iOut=0;
     for(unsigned int iPt = 0; iPt<num_3D_pts; iPt++)
     {
-        if(overlap[iPt]==0)
+        if(overlap[iPt]<0)
           continue;
 
         for(unsigned int iC=0;iC<nC;iC++)
         {
           map_final.chan[iC].vals[iOut]=map_3D.chan[iC].vals[iPt];
         }        
-        map_final.chan[new_channel_id].vals[iOut] = object_labels[overlap[iPt]-1];
+        if(overlap[iPt]>0)
+          map_final.chan[new_channel_id].vals[iOut] = object_labels[overlap[iPt]-1];
+        else
+          map_final.chan[new_channel_id].vals[iOut] = 0;
+
         if(annotate_reprojection_)
         {        
           map_final.chan[chan_X_id].vals[iOut] = map_2D.pts[iPt].x;
@@ -437,7 +503,8 @@ public:
         }
         if(use_colors_)
         {
-          const std_msgs::ColorRGBA& color=object_colors[overlap[iPt]-1];
+          const std_msgs::ColorRGBA &color=object_colors[overlap[iPt]];
+
           int r=int(round(color.r*255));
           int g=int(round(color.g*255));
           int b=int(round(color.b*255));
@@ -447,7 +514,7 @@ public:
         }
         if(annotate_image_id_)
         {
-          ROS_ERROR("Image IDs are not supported yet");
+          map_final.chan[chan_IMG_id].vals[iOut] = active_image_id_;
         }
         map_final.pts[iOut] = map_3D.pts[iPt];
         iOut++;
@@ -464,9 +531,9 @@ protected:
   boost::shared_ptr<tf::TransformListener> tf_;
   tf::MessageNotifier<cv_mech_turk::ExternalAnnotation>* annotation_notifier_ ;
   boost::shared_ptr<annotated_planar_patch_map::RollingHistory<sensor_msgs::CameraInfo> > cam_hist_;
+  boost::shared_ptr<annotated_planar_patch_map::RollingHistory<sensor_msgs::Image> > image_hist_;
 
   boost::mutex lift_mutex_;
-
 
 
   point_cloud_mapping::NormalEstimationInProc normal_estimator_;
@@ -495,10 +562,13 @@ protected:
   double min_depth_; //in meters?
   double max_depth_; //in meters?
 
-
   double dist_tolerance_; //in pixels
   int min_num_indist_tolerance_; //in vertices
   int max_allowed_num_outdist_tolerance_; //in vertices
+
+
+  ros::ServiceClient save_image_client_;
+  float active_image_id_;
 
 };
 

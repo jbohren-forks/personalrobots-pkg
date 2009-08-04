@@ -38,7 +38,6 @@ import roslib
 roslib.load_manifest('annotated_planar_patch_map')
 import rospy
 import random
-from sensor_msgs.msg import RawStereo
 from std_msgs.msg import Empty
 
 from sensor_msgs.msg import *;
@@ -48,16 +47,18 @@ from cv_mech_turk.msg import *
 class SendAnnotation:
   def __init__(self):
 
-    self.sub_ = rospy.Subscriber("/stereo/stereo_info",StereoInfo, self.onStereo)
+    self.sub_ = rospy.Subscriber("/stereoproc/left/cam_info",CamInfo, self.onInfo)
     self.message_topic_ = "/annotations_2d"
 
     self.pub_ = rospy.Publisher(self.message_topic_, ExternalAnnotation)
 
   
-  def onStereo(self,msg_in):
+  def onInfo(self,msg_in):
       msg=ExternalAnnotation();
       msg.reference_time=msg_in.header.stamp;
-      msg.reference_frame="stereo_l_stereo_camera_frame";
+      msg.reference_frame="/stereo_l_stereo_camera_frame";
+      msg.header.stamp=msg_in.header.stamp;
+      msg.header.frame_id="/stereo_l_stereo_camera_frame";
       poly=AnnotationPolygon();
       poly.object_name="wall";
       poly.control_points.append(AnnotationPt2D(0,0))
