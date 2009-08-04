@@ -322,7 +322,7 @@ bool planning_environment::PlanningMonitor::isStateValidOnPath(const planning_mo
 
     // check for collision
     std::vector<collision_space::EnvironmentModel::Contact> contacts;
-    bool valid = !getEnvironmentModel()->getCollisionContacts(contacts, 1);
+    bool valid = !getEnvironmentModel()->getCollisionContacts(contacts, maxCollisionContacts_);
     
     if (valid)
     {	    
@@ -354,7 +354,7 @@ bool planning_environment::PlanningMonitor::isStateValidAtGoal(const planning_mo
     
     // check for collision
     std::vector<collision_space::EnvironmentModel::Contact> contacts;
-    bool valid = !getEnvironmentModel()->getCollisionContacts(contacts, 1);
+    bool valid = !getEnvironmentModel()->getCollisionContacts(contacts, maxCollisionContacts_);
     
     if (valid)
     {	    
@@ -515,9 +515,10 @@ bool planning_environment::PlanningMonitor::isPathValidAux(const motion_planning
     }
 
     unsigned int sdim = getKinematicModel()->getJointsDimension(path.names);
+    unsigned int remainingContacts = maxCollisionContacts_;
     
     // check every state
-    for (unsigned int i = start ; valid && i <= end ; ++i)
+    for (unsigned int i = start ; i <= end ; ++i)
     {
 	if (path.states[i].vals.size() != sdim)
 	{
@@ -532,7 +533,7 @@ bool planning_environment::PlanningMonitor::isPathValidAux(const motion_planning
 	
 	// check for collision
 	std::vector<collision_space::EnvironmentModel::Contact> contacts;
-	valid = !getEnvironmentModel()->getCollisionContacts(contacts, 1);
+	valid = !getEnvironmentModel()->getCollisionContacts(contacts, remainingContacts);
 	
 	if (onCollisionContact_)
 	    for (unsigned int i = 0 ; i < contacts.size() ; ++i)
@@ -540,7 +541,15 @@ bool planning_environment::PlanningMonitor::isPathValidAux(const motion_planning
 	
 	if (verbose && !valid)
 	    ROS_INFO("isPathValid: State %d is in collision", i);
-
+	
+	if (maxCollisionContacts_ > 0)
+	{
+	    if (remainingContacts <= contacts.size())
+		break;
+	    else
+		remainingContacts -= contacts.size();
+	}
+	
 	// check for validity
 	if (valid)
 	{
