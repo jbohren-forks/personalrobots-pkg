@@ -35,6 +35,7 @@
 #include <ros/node.h>
 #include <pr2_mechanism_controllers/TrajectoryStart.h>
 #include <pr2_mechanism_controllers/TrajectoryQuery.h>
+#include <pr2_mechanism_controllers/TrajectoryCancel.h>
 
 static int done = 0;
 
@@ -59,6 +60,9 @@ int main( int argc, char** argv )
 
   pr2_mechanism_controllers::TrajectoryQuery::Request  req_q;
   pr2_mechanism_controllers::TrajectoryQuery::Response res_q;
+
+  pr2_mechanism_controllers::TrajectoryCancel::Request  rec_req;
+  pr2_mechanism_controllers::TrajectoryCancel::Response rec_res;
 
   int num_points = 3;
   int num_joints = 7;
@@ -104,27 +108,30 @@ int main( int argc, char** argv )
   {
     ROS_INFO("Done");
   }
-  sleep(0.1);
-  req_q.trajectoryid = res.trajectoryid;
+//  sleep(0.1);
 
-  if(ros::service::call("r_arm_joint_trajectory_controller/TrajectoryQuery", req_q, res_q))  
+  req_q.trajectoryid = res.trajectoryid;
+  rec_req.trajectoryid = res.trajectoryid;
+  
+  if(ros::service::call("r_arm_joint_trajectory_controller/TrajectoryCancel", rec_req, rec_res))  
   {
-    while(res_q.done != 1 && num_tries < 1000)
-    {
-      num_tries++;
-      ros::service::call("r_arm_joint_trajectory_controller/TrajectoryQuery", req_q, res_q);
-      ROS_INFO("response:: id::%d, %f, %d",res.trajectoryid,res_q.trajectorytime,res_q.done);
-      usleep(1e5);
-    }
   }
   else
   {
     ROS_INFO("service call failed");
   }
+
+
   usleep(1e4);
   if(ros::service::call("r_arm_joint_trajectory_controller/TrajectoryQuery", req_q, res_q))  
   {
-    ROS_INFO("response:: %f, %d",res_q.trajectorytime,res_q.done);
+    while(res_q.done != res_q.State_Deleted && res_q.done != res_q.State_Canceled)
+    {
+      ros::service::call("r_arm_joint_trajectory_controller/TrajectoryQuery", req_q, res_q);
+      usleep(1e5);
+    }
+  
+    ROS_INFO("response 1:: id:%d, time:%f, response:%d",req_q.trajectoryid,res_q.trajectorytime,res_q.done);
   }
   else
   {
@@ -136,7 +143,7 @@ int main( int argc, char** argv )
 
   if(ros::service::call("r_arm_joint_trajectory_controller/TrajectoryQuery", req_q, res_q))  
   {
-    ROS_INFO("response:: %f, %d",res_q.trajectorytime,res_q.done);
+    ROS_INFO("response 2:: %f, %d",res_q.trajectorytime,res_q.done);
   }
   else
   {
@@ -147,5 +154,35 @@ int main( int argc, char** argv )
     }      
   }
 
+  if (ros::service::call("r_arm_joint_trajectory_controller/TrajectoryStart", req, res))
+  {
+    ROS_INFO("Done");
+  }
 
+  req_q.trajectoryid = res.trajectoryid;
+  rec_req.trajectoryid = res.trajectoryid;
+
+  sleep(4.0);
+  
+  if(ros::service::call("r_arm_joint_trajectory_controller/TrajectoryCancel", rec_req, rec_res))  
+  {
+  }
+  else
+  {
+    ROS_INFO("service call failed");
+  }
+
+  if(ros::service::call("r_arm_joint_trajectory_controller/TrajectoryQuery", req_q, res_q))  
+  {
+    while(res_q.done != res_q.State_Deleted && res_q.done != res_q.State_Canceled)
+    {
+      ros::service::call("r_arm_joint_trajectory_controller/TrajectoryQuery", req_q, res_q);
+      usleep(1e5);
+    }  
+    ROS_INFO("response 3:: id:%d, time:%f, response:%d",req_q.trajectoryid,res_q.trajectorytime,res_q.done);
+  }
+  else
+  {
+    ROS_INFO("service call failed");
+  }
 }
