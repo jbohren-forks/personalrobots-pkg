@@ -187,7 +187,7 @@ int SpectralAnalysis::analyzeInterestRegions(const sensor_msgs::PointCloud& data
       if (support_radius_ > 1e-6)
       {
         // Compute centroid of interest region
-        robot_msgs::Point32 region_centroid;
+        geometry_msgs::Point32 region_centroid;
         cloud_geometry::nearest::computeCentroid(data, *curr_interest_region, region_centroid);
 
         vector<float> neighbor_distances; // unused
