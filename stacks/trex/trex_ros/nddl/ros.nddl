@@ -19,6 +19,14 @@ class ROSStateVariable extends AgentTimeline {
   ROSStateVariable(Mode _mode){
     super(_mode, "Holds");
   }
+
+  ROSStateVariable(Mode _mode, string _pred){
+    super(_mode, _pred);
+  }
+
+  ROSStateVariable(Mode _mode, string _pred, bool _opt){
+    super(_mode, _pred, _opt);
+  }
 };
 
 /**
