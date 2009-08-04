@@ -31,16 +31,12 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-import Image
-import sys
+import random
+import os
+import time
 
-pictures = sys.argv[1:]
-w,h = Image.open(pictures[0]).size
-w /= 8
-h /= 8
-columns = 20
-o = Image.new("RGB", (columns * w, ((len(pictures) + (columns-1)) / columns) * h))
-for i,f in enumerate(sys.argv[1:]):
-  im = Image.open(f).resize((w, h))
-  o.paste(im, ((i % columns) * w, (i / columns) * h))
-o.save("mosaic.png")
+for i in range(1000):
+  time.sleep(5)
+  os.system("roslaunch forearm_cam_hcb.launch")
+  os.system("mv /tmp/snapshot.png forearm-%04d.png" % i)
+  os.system("killall forearm_node")

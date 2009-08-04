@@ -31,16 +31,62 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-import Image
-import sys
+import roslib
+roslib.load_manifest('vision_tests')
 
-pictures = sys.argv[1:]
-w,h = Image.open(pictures[0]).size
-w /= 8
-h /= 8
-columns = 20
-o = Image.new("RGB", (columns * w, ((len(pictures) + (columns-1)) / columns) * h))
-for i,f in enumerate(sys.argv[1:]):
-  im = Image.open(f).resize((w, h))
-  o.paste(im, ((i % columns) * w, (i / columns) * h))
-o.save("mosaic.png")
+import sys
+import time
+import getopt
+import math
+import Queue
+import threading
+import random
+import os
+
+import rospy
+import cv
+
+import sensor_msgs.msg
+
+def msg2rgb(msg):
+    ma = msg.uint8_data # MultiArray
+    dim = dict([ (d.label,d.size) for d in ma.layout.dim ])
+    (w,h) = (dim['width'], dim['height'])
+    im = cv.CreateImageHeader((w,h), cv.IPL_DEPTH_8U, dim['channel'])
+    cv.SetData(im, ma.data, w)
+
+    rgb = cv.CreateImage((w,h), cv.IPL_DEPTH_8U, 3)
+    cv.CvtColor(im, rgb, cv.CV_BayerBG2RGB)
+    return rgb
+
+class snapshot:
+
+  def __init__(self):
+    rospy.Subscriber('/forearm/image_raw', sensor_msgs.msg.Image, self.handle_image_raw)
+    self.counter = 0
+    cv.NamedWindow("snap")
+
+  def handle_image_raw(self, msg):
+
+    print os.getcwd()
+    if 1:
+        self.counter += 1
+        if self.counter > 0:
+            rgb = msg2rgb(msg)
+            cv.SaveImage("/tmp/snapshot.png", rgb)
+            os.system("rosrun vision_tests killmaster.sh")
+            rospy.core.signal_shutdown('completed')
+    else:
+        rgb = msg2rgb(msg)
+        cv.ShowImage("snap", rgb)
+        cv.WaitKey(10)
+
+
+def main(args):
+  time.sleep(3)
+  s = snapshot()
+  rospy.init_node('snapshot')
+  rospy.spin()
+
+if __name__ == '__main__':
+  main(sys.argv)
