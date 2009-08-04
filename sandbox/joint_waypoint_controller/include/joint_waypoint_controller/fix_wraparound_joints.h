@@ -45,14 +45,14 @@ namespace joint_waypoint_controller
 /**
  * \brief This class converts a trajectory to remove all wrap-arounds, so that spline processing is easier
  */
-class FixWraparoundJoints: public filters::FilterBase<manipulation_msgs::WaypointTraj>
+class FixWraparoundJoints: public filters::FilterBase<manipulation_msgs::WaypointTrajWithLimits>
 {
 public:
   FixWraparoundJoints();
   virtual ~FixWraparoundJoints();
 
   virtual bool configure();
-  virtual bool update(const std::vector<manipulation_msgs::WaypointTraj>& data_in, std::vector<manipulation_msgs::WaypointTraj>& data_out);
+  virtual bool update(const std::vector<manipulation_msgs::WaypointTrajWithLimits>& data_in, std::vector<manipulation_msgs::WaypointTrajWithLimits>& data_out);
 
 };
 

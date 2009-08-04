@@ -37,12 +37,12 @@
 #ifndef WAYPOINT_TRAJ_FILTERS_H_
 #define WAYPOINT_TRAJ_FILTERS_H_
 
-#include <manipulation_msgs/WaypointTraj.h>
+#include <manipulation_msgs/WaypointTrajWithLimits.h>
 #include <filters/filter_base.h>
 
-typedef manipulation_msgs::WaypointTraj manipulation_msgs__WaypointTraj;
+typedef manipulation_msgs::WaypointTrajWithLimits manipulation_msgs__WaypointTrajWithLimits;
 
 #define REGISTER_WAYPOINTTRAJ_FILTER(c) \
-  FILTERS_REGISTER_FILTER_NONTEMPLATE(c, manipulation_msgs__WaypointTraj)
+  FILTERS_REGISTER_FILTER_NONTEMPLATE(c, manipulation_msgs__WaypointTrajWithLimits)
 
 #endif /* WAYPOINT_TRAJ_FILTERS_H_ */

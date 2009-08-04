@@ -48,7 +48,7 @@ public:
   NumericalDifferentiationSplineSmoother();
   virtual ~NumericalDifferentiationSplineSmoother();
 
-  virtual bool smooth(const manipulation_msgs::WaypointTraj& trajectory_in, manipulation_msgs::WaypointTraj& trajectory_out) const;
+  virtual bool smooth(const manipulation_msgs::WaypointTrajWithLimits& trajectory_in, manipulation_msgs::WaypointTrajWithLimits& trajectory_out) const;
 };
 
 }

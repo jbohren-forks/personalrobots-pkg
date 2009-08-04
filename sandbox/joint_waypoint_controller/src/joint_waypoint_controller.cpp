@@ -38,7 +38,7 @@
 #include <manipulation_srvs/SetSplineTraj.h>
 #include <manipulation_srvs/QuerySplineTraj.h>
 #include <manipulation_srvs/CancelSplineTraj.h>
-#include <manipulation_msgs/WaypointTraj.h>
+#include <manipulation_msgs/WaypointTrajWithLimits.h>
 #include <spline_smoother/splines.h>
 #include <algorithm>
 #include <string>
@@ -109,10 +109,10 @@ int JointWaypointController::run()
 bool JointWaypointController::trajectoryStart(pr2_mechanism_controllers::TrajectoryStart::Request &req,
                                             pr2_mechanism_controllers::TrajectoryStart::Response &resp)
 {
-  // first convert the input into a "WaypointTraj" message
-  manipulation_msgs::WaypointTraj trajectory;
-  manipulation_msgs::WaypointTraj trajectory_out;
-  jointTrajToWaypointTraj(req.traj, trajectory);
+  // first convert the input into a "WaypointTrajWithLimits" message
+  manipulation_msgs::WaypointTrajWithLimits trajectory;
+  manipulation_msgs::WaypointTrajWithLimits trajectory_out;
+  jointTrajToWaypointTrajWithLimits(req.traj, trajectory);
 
   // run the filters on it:
   if (!filter_chain_.update(trajectory, trajectory_out))
@@ -174,7 +174,7 @@ bool JointWaypointController::trajectoryCancel(pr2_mechanism_controllers::Trajec
   return result;
 }
 
-void JointWaypointController::jointTrajToWaypointTraj(const manipulation_msgs::JointTraj& joint_traj, manipulation_msgs::WaypointTraj& waypoint_traj) const
+void JointWaypointController::jointTrajToWaypointTrajWithLimits(const manipulation_msgs::JointTraj& joint_traj, manipulation_msgs::WaypointTrajWithLimits& waypoint_traj) const
 {
   waypoint_traj.names = joint_traj.names;
   int size = joint_traj.points.size();
@@ -190,7 +190,7 @@ void JointWaypointController::jointTrajToWaypointTraj(const manipulation_msgs::J
   }
 }
 
-void JointWaypointController::waypointTrajToSplineTraj(const manipulation_msgs::WaypointTraj& waypoint_traj, manipulation_msgs::SplineTraj& spline_traj) const
+void JointWaypointController::waypointTrajToSplineTraj(const manipulation_msgs::WaypointTrajWithLimits& waypoint_traj, manipulation_msgs::SplineTraj& spline_traj) const
 {
   spline_traj.names = waypoint_traj.names;
   int num_joints = waypoint_traj.names.size();

@@ -54,7 +54,7 @@ bool SplineSmoother::configure()
   return true;
 }
 
-bool SplineSmoother::update(const std::vector<manipulation_msgs::WaypointTraj>& data_in, std::vector<manipulation_msgs::WaypointTraj>& data_out)
+bool SplineSmoother::update(const std::vector<manipulation_msgs::WaypointTrajWithLimits>& data_in, std::vector<manipulation_msgs::WaypointTrajWithLimits>& data_out)
 {
   int length = data_in.size();
   data_out.resize(length);
