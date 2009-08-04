@@ -1,0 +1,12 @@
+https://prdev.willowgarage.com/trac/personalrobots/ticket/2163
+
+make[3]: Entering directory `/home/tfoote/stable_ros/ros-pkg/sandbox/descriptors_3d/build'
+[  6%] [ 13%] Building CXX object CMakeFiles/descriptors_3d.dir/src/descriptor_3d.o
+Building CXX object CMakeFiles/descriptors_3d.dir/src/neighborhood_feature.o
+[ 20%] Building CXX object CMakeFiles/descriptors_3d.dir/src/bounding_box_raw.o
+/home/tfoote/stable_ros/ros-pkg/sandbox/descriptors_3d/src/descriptor_3d.cpp: In function ‘(static initializers for /home/tfoote/stable_ros/ros-pkg/sandbox/descriptors_3d/src/descriptor_3d.cpp)’:
+/home/tfoote/stable_ros/ros-pkg/sandbox/descriptors_3d/src/descriptor_3d.cpp:258: internal compiler error: in copy_body_r, at tree-inline.c:748
+Please submit a full bug report,
+with preprocessed source if appropriate.
+See <file:///usr/share/doc/gcc-4.3/README.Bugs> for instructions.
+make[3]: *** [CMakeFiles/descriptors_3d.dir/src/descriptor_3d.o] Error 1
