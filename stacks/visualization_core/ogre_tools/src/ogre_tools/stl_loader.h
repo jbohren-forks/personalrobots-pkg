@@ -31,6 +31,7 @@
 #define OGRE_TOOLS_STL_LOADER_H
 
 #include <OGRE/OgreVector3.h>
+#include <OGRE/OgreMesh.h>
 
 #include <vector>
 
@@ -44,6 +45,8 @@ public:
   ~STLLoader();
 
   bool load(const std::string& path);
+
+  Ogre::MeshPtr toMesh(const std::string& name);
 
   struct Triangle
   {

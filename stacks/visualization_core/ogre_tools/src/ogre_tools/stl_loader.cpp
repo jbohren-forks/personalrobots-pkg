@@ -30,6 +30,8 @@
 #include "stl_loader.h"
 #include <ros/console.h>
 
+#include <OGRE/OgreManualObject.h>
+
 namespace ogre_tools
 {
 
@@ -48,7 +50,7 @@ bool STLLoader::load(const std::string& path)
   FILE* input = fopen( path.c_str(), "r" );
   if ( !input )
   {
-    ROS_ERROR( "Could not open '%s' for read\n", path.c_str() );
+    ROS_ERROR( "Could not open '%s' for read", path.c_str() );
     return false;
   }
 
@@ -132,6 +134,64 @@ bool STLLoader::load(const std::string& path)
   }
 
   return true;
+}
+
+void calculateUV(const Ogre::Vector3& vec, float& u, float& v)
+{
+  Ogre::Vector3 pos(vec);
+  pos.normalise();
+  u = acos( pos.y / pos.length() );
+
+  float val = pos.x / ( sin( u ) );
+  v = acos( val );
+
+  u /= Ogre::Math::PI;
+  v /= Ogre::Math::PI;
+}
+
+
+Ogre::MeshPtr STLLoader::toMesh(const std::string& name)
+{
+  Ogre::ManualObject* object = new Ogre::ManualObject( "the one and only" );
+  object->begin( "BaseWhiteNoLighting", Ogre::RenderOperation::OT_TRIANGLE_LIST );
+
+  unsigned int vertexCount = 0;
+  V_Triangle::const_iterator it = triangles_.begin();
+  V_Triangle::const_iterator end = triangles_.end();
+  for (; it != end; ++it )
+  {
+    const STLLoader::Triangle& tri = *it;
+
+    float u, v;
+    u = v = 0.0f;
+    object->position( tri.vertices_[0] );
+    object->normal( tri.normal_);
+    calculateUV( tri.vertices_[0], u, v );
+    object->textureCoord( u, v );
+
+    object->position( tri.vertices_[1] );
+    object->normal( tri.normal_);
+    calculateUV( tri.vertices_[1], u, v );
+    object->textureCoord( u, v );
+
+    object->position( tri.vertices_[2] );
+    object->normal( tri.normal_);
+    calculateUV( tri.vertices_[2], u, v );
+    object->textureCoord( u, v );
+
+    object->triangle( vertexCount + 0, vertexCount + 1, vertexCount + 2 );
+
+    vertexCount += 3;
+  }
+
+  object->end();
+
+  Ogre::MeshPtr mesh = object->convertToMesh( name, Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME );
+  mesh->buildEdgeList();
+
+  delete object;
+
+  return mesh;
 }
 
 }
