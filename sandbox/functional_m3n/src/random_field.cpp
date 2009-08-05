@@ -283,6 +283,8 @@ int RandomField::saveNodeFeatures(string filename) const
     return -1;
   }
 
+  file_out << "# File format: x y z node_id label [features]" << endl;
+
   for (map<unsigned int, RandomField::Node*>::const_iterator iter_nodes = rf_nodes_.begin() ; iter_nodes
       != rf_nodes_.end() ; iter_nodes++)
   {
@@ -326,6 +328,8 @@ int RandomField::saveCliqueFeatures(string basename) const
       return -1;
     }
 
+    file_out << "# File format: x y z clique_set_idx clique_id [features]" << endl;
+
     // Write to file: x y z clique_set_idx clique_id [features]
     const map<unsigned int, Clique*>& cliques = clique_sets_[i];
     for (map<unsigned int, Clique*>::const_iterator iter_cliques = cliques.begin() ; iter_cliques
@@ -350,6 +354,73 @@ int RandomField::saveCliqueFeatures(string basename) const
 
     file_out.close();
   }
+  return 0;
+}
+
+// --------------------------------------------------------------
+/* See function definition */
+// --------------------------------------------------------------
+int RandomField::saveRandomField(string basename) const
+{
+  string rf_fname = basename;
+  rf_fname.append(".random_field");
+  ofstream file_out(rf_fname.c_str());
+  if (file_out.is_open() == false)
+  {
+    ROS_ERROR("Could not open requested %s to save node features to", rf_fname.c_str());
+    return -1;
+  }
+
+  string node_features_fname = basename;
+  node_features_fname.append(".node_features");
+  if (saveNodeFeatures(node_features_fname) < 0)
+  {
+    file_out.close();
+    return -1;
+  }
+
+  if (saveCliqueFeatures(basename) < 0)
+  {
+    file_out.close();
+    return -1;
+  }
+
+  file_out << node_features_fname << endl;
+  file_out << basename << endl;
+  file_out << endl;
+  file_out << clique_sets_.size() << endl;
+
+  for (unsigned int i = 0 ; i < clique_sets_.size() ; i++)
+  {
+    const map<unsigned int, Clique*>& cliques = clique_sets_[i];
+
+    file_out << i << " " << cliques.size() << endl;
+
+    for (map<unsigned int, Clique*>::const_iterator iter_cliques = cliques.begin() ; iter_cliques
+        != cliques.end() ; iter_cliques++)
+    {
+      const list<unsigned int>& node_ids = iter_cliques->second->getNodeIDs();
+      file_out << i << " " << iter_cliques->first << " " << node_ids.size();
+      for (list<unsigned int>::const_iterator iter_node_ids = node_ids.begin() ; iter_node_ids
+          != node_ids.end() ; iter_node_ids++)
+      {
+        file_out << " " << *iter_node_ids;
+      }
+      file_out << endl;
+    }
+    file_out << endl;
+  }
+
+  // node features filename
+  // clique features filename
+
+  // <S = number of clique-sets>
+  // 0 <nbr_cliques in clique-set 0>
+  // 0 clique-id nbr-nodes [node0 .... nodeS]
+  // clique-set-features filename
+  // ...
+
+  file_out.close();
   return 0;
 }
 

@@ -324,6 +324,11 @@ class RandomField
      */
     // --------------------------------------------------------------
     int saveCliqueFeatures(string basename) const;
+
+    int saveRandomField(string basename) const;
+
+    int loadRandomField(string basename);
+
     //@}
 
   private:
