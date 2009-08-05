@@ -34,8 +34,8 @@
 
 /** \author Mrinal Kalakrishnan */
 
-#ifndef NUMERICAL_DIFFERENTIATION_SPLINE_SMOOTHER_H_
-#define NUMERICAL_DIFFERENTIATION_SPLINE_SMOOTHER_H_
+#ifndef FRITSCH_BUTLAND_SPLINE_SMOOTHER_H_
+#define FRITSCH_BUTLAND_SPLINE_SMOOTHER_H_
 
 #include <spline_smoother/spline_smoother.h>
 
@@ -43,17 +43,23 @@ namespace spline_smoother
 {
 
 /**
- * \brief Generates velocities at waypoints by finite differencing.
+ * \brief Implements the Fritsch-Butland algorithm for monotonic cubic spline interpolation.
+ *
+ * Outputs cubic splines with continuous velocities at the waypoints, but not accelerations.
+ *
+ * Reference: F.N. Fritsch and J. Butland. A method for constructing local monotone piecewise
+ * cubic interpolants. SIAM J. Sci. Stst. Comput., 5(2), 1984.
  */
-class NumericalDifferentiationSplineSmoother: public SplineSmoother
+class FritschButlandSplineSmoother: public SplineSmoother
 {
 public:
-  NumericalDifferentiationSplineSmoother();
-  virtual ~NumericalDifferentiationSplineSmoother();
+  FritschButlandSplineSmoother();
+  virtual ~FritschButlandSplineSmoother();
 
   virtual bool smooth(const manipulation_msgs::WaypointTrajWithLimits& trajectory_in, manipulation_msgs::WaypointTrajWithLimits& trajectory_out) const;
+
 };
 
 }
 
-#endif /* NUMERICAL_DIFFERENTIATION_SPLINE_SMOOTHER_H_ */
+#endif /* FRITSCH_BUTLAND_SPLINE_SMOOTHER_H_ */

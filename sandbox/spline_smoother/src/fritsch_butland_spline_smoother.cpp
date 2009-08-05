@@ -34,26 +34,58 @@
 
 /** \author Mrinal Kalakrishnan */
 
-#ifndef NUMERICAL_DIFFERENTIATION_SPLINE_SMOOTHER_H_
-#define NUMERICAL_DIFFERENTIATION_SPLINE_SMOOTHER_H_
-
-#include <spline_smoother/spline_smoother.h>
+#include <spline_smoother/fritsch_butland_spline_smoother.h>
+#include <spline_smoother/spline_smoother_utils.h>
 
 namespace spline_smoother
 {
 
-/**
- * \brief Generates velocities at waypoints by finite differencing.
- */
-class NumericalDifferentiationSplineSmoother: public SplineSmoother
+FritschButlandSplineSmoother::FritschButlandSplineSmoother()
 {
-public:
-  NumericalDifferentiationSplineSmoother();
-  virtual ~NumericalDifferentiationSplineSmoother();
-
-  virtual bool smooth(const manipulation_msgs::WaypointTrajWithLimits& trajectory_in, manipulation_msgs::WaypointTrajWithLimits& trajectory_out) const;
-};
-
 }
 
-#endif /* NUMERICAL_DIFFERENTIATION_SPLINE_SMOOTHER_H_ */
+FritschButlandSplineSmoother::~FritschButlandSplineSmoother()
+{
+}
+
+bool FritschButlandSplineSmoother::smooth(const manipulation_msgs::WaypointTrajWithLimits& trajectory_in, manipulation_msgs::WaypointTrajWithLimits& trajectory_out) const
+{
+  bool success = true;
+
+  int size = trajectory_in.points.size();
+  int num_traj = trajectory_in.names.size();
+  trajectory_out = trajectory_in;
+
+  if (!checkTrajectoryConsistency(trajectory_out))
+    return false;
+
+  // keep the first and last velocities intact
+
+  // for every point in time:
+  for (int i=1; i<size-1; ++i)
+  {
+    double h1 = trajectory_in.points[i].time - trajectory_in.points[i-1].time;
+    double h2 = trajectory_in.points[i+1].time - trajectory_in.points[i].time;
+
+    // for every (joint) trajectory
+    for (int j=0; j<num_traj; ++j)
+    {
+      double s1 = (trajectory_in.points[i].positions[j] - trajectory_in.points[i-1].positions[j])/h1;
+      double s2 = (trajectory_in.points[i+1].positions[j] - trajectory_in.points[i].positions[j])/h2;
+
+      double alpha = (1 + h2/(h1+h2))/3.0;
+
+      double vel = 0.0;
+      if (s1*s2 > 0)
+      {
+        vel = (s1*s2)/(alpha*s2 + (1.0-alpha)*s1);
+      }
+      trajectory_out.points[i].velocities[j] = vel;
+      trajectory_out.points[i].accelerations[j] = 0.0;
+    }
+  }
+  return success;
+}
+
+
+}

@@ -31,6 +31,7 @@ genmsg()
 
 rospack_add_library(spline_smoother
 	src/clamped_cubic_spline_smoother.cpp
+	src/fritsch_butland_spline_smoother.cpp
 	src/numerical_differentiation_spline_smoother.cpp
 	src/spline_smoother.cpp
 )
