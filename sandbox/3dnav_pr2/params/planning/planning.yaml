@@ -2,10 +2,7 @@
 
 ## the list of groups for which motion planning can be performed
 group_list:
-  base
-  left_arm
   right_arm
-  arms
 
 ## the definition of each group
 groups:
