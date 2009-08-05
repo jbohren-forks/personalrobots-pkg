@@ -19,7 +19,7 @@
   <depend package="voxel_grid" />
   <depend package="angles" />
   <depend package="visualization_msgs"/>
-  <depend package="nav_robot_actions"/>
+  <depend package="nav_core"/>
   <repository>http://pr.willowgarage.com/repos</repository>
   <export>
     <cpp cflags="-I${prefix}/include -I${prefix}/msg/cpp" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lbase_local_planner" />

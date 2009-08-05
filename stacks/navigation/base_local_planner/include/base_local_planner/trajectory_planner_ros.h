@@ -65,23 +65,39 @@
 
 #include <angles/angles.h>
 
-#include <nav_robot_actions/base_local_planner.h>
+#include <nav_core/base_local_planner.h>
+
+#include <Poco/ClassLibrary.h>
 
 namespace base_local_planner {
   /**
    * @class TrajectoryPlannerROS
    * @brief A ROS wrapper for the trajectory controller that queries the param server to construct a controller
    */
-  class TrajectoryPlannerROS : public nav_robot_actions::BaseLocalPlanner {
+  class TrajectoryPlannerROS : public nav_core::BaseLocalPlanner {
     public:
+      /**
+       * @brief  Default constructor for the ros wrapper
+       */
+      TrajectoryPlannerROS();
+
       /**
        * @brief  Constructs the ros wrapper
        * @param name The name to give this instance of the trajectory planner
-       * @param tf A reference to a transform listener
+       * @param tf A pointer to a transform listener
        * @param costmap The cost map to use for assigning costs to trajectories
        */
-      TrajectoryPlannerROS(std::string name, tf::TransformListener& tf,
-          costmap_2d::Costmap2DROS& costmap_ros);
+      TrajectoryPlannerROS(std::string name, tf::TransformListener* tf,
+          costmap_2d::Costmap2DROS* costmap_ros);
+
+      /**
+       * @brief  Constructs the ros wrapper
+       * @param name The name to give this instance of the trajectory planner
+       * @param tf A pointer to a transform listener
+       * @param costmap The cost map to use for assigning costs to trajectories
+       */
+      void initialize(std::string name, tf::TransformListener* tf,
+          costmap_2d::Costmap2DROS* costmap_ros);
 
       /**
        * @brief  Destructor for the wrapper
@@ -197,10 +213,9 @@ namespace base_local_planner {
 
       WorldModel* world_model_; ///< @brief The world model that the controller will use
       TrajectoryPlanner* tc_; ///< @brief The trajectory controller
-      costmap_2d::Costmap2DROS& costmap_ros_; ///< @brief The ROS wrapper for the costmap the controller will use
+      costmap_2d::Costmap2DROS* costmap_ros_; ///< @brief The ROS wrapper for the costmap the controller will use
       costmap_2d::Costmap2D costmap_; ///< @brief The costmap the controller will use
-      tf::TransformListener& tf_; ///< @brief Used for transforming point clouds
-      ros::NodeHandle ros_node_; ///< @brief The ros node we're running under
+      tf::TransformListener* tf_; ///< @brief Used for transforming point clouds
       std::string global_frame_; ///< @brief The frame in which the controller will run
       double max_sensor_range_; ///< @brief Keep track of the effective maximum range of our sensors
       deprecated_msgs::RobotBase2DOdom base_odom_; ///< @brief Used to get the velocity of the robot
@@ -213,6 +228,7 @@ namespace base_local_planner {
       ros::Publisher footprint_pub_, g_plan_pub_, l_plan_pub_;
       ros::Subscriber odom_sub_;
       boost::recursive_mutex odom_lock_;
+      bool initialized_;
   };
 
 };
