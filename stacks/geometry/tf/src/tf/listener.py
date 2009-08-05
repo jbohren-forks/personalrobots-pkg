@@ -41,7 +41,7 @@ from tf import transformations
 import numpy
 
 from tf.msg import tfMessage
-import robot_msgs.msg
+import geometry_msgs.msg
 from tf.srv import FrameGraph,FrameGraphResponse
 
 def xyz_to_mat44(pos):
@@ -77,10 +77,10 @@ class TransformerROS(TFX.Transformer):
     def transformPoint(self, target_frame, ps):
         mat44 = self.asMatrix(target_frame, ps.header)
         xyz = tuple(numpy.dot(mat44, numpy.array([ps.point.x, ps.point.y, ps.point.z, 1.0])))[:3]
-        r = robot_msgs.msg.PointStamped()
+        r = geometry_msgs.msg.PointStamped()
         r.header.stamp = ps.header.stamp
         r.header.frame_id = target_frame
-        r.point = robot_msgs.msg.Point(*xyz)
+        r.point = geometry_msgs.msg.Point(*xyz)
         return r
 
     ## Transforms a robot_msgs QuaternionStamped message to frame target_frame, returns the resulting QuaternionStamped.
@@ -101,10 +101,10 @@ class TransformerROS(TFX.Transformer):
         quat = tuple(transformations.quaternion_from_matrix(txpose))
 
         # assemble return value QuaternionStamped
-        r = robot_msgs.msg.QuaternionStamped()
+        r = geometry_msgs.msg.QuaternionStamped()
         r.header.stamp = ps.header.stamp
         r.header.frame_id = target_frame
-        r.quaternion = robot_msgs.msg.Quaternion(*quat)
+        r.quaternion = geometry_msgs.msg.Quaternion(*quat)
         return r
 
     ## Transforms a robot_msgs PoseStamped message to frame target_frame, returns the resulting PoseStamped.
@@ -126,10 +126,10 @@ class TransformerROS(TFX.Transformer):
         quat = tuple(transformations.quaternion_from_matrix(txpose))
 
         # assemble return value PoseStamped
-        r = robot_msgs.msg.PoseStamped()
+        r = geometry_msgs.msg.PoseStamped()
         r.header.stamp = ps.header.stamp
         r.header.frame_id = target_frame
-        r.pose = robot_msgs.msg.Pose(robot_msgs.msg.Point(*xyz), robot_msgs.msg.Quaternion(*quat))
+        r.pose = geometry_msgs.msg.Pose(geometry_msgs.msg.Point(*xyz), geometry_msgs.msg.Quaternion(*quat))
         return r
 
 ## Extends TransformerROS, subscribes to the /tf_message topic and
