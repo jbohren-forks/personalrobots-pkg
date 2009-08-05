@@ -167,20 +167,20 @@ class NavStackTest(unittest.TestCase):
         # initialize ground truth
         if self.odom_initialized == False or self.p3d_initialized == False:
             self.p3d_initialized = True
-            self.p3d_xi = p3d.pos.position.x
-            self.p3d_yi = p3d.pos.position.y
-            self.p3d_qi =[ p3d.pos.orientation.x \
-                          ,p3d.pos.orientation.y \
-                          ,p3d.pos.orientation.z \
-                          ,p3d.pos.orientation.w]
+            self.p3d_xi =  p3d.pose_with_rates.pose.position.x
+            self.p3d_yi =  p3d.pose_with_rates.pose.position.y
+            self.p3d_qi =[ p3d.pose_with_rates.pose.orientation.x \
+                          ,p3d.pose_with_rates.pose.orientation.y \
+                          ,p3d.pose_with_rates.pose.orientation.z \
+                          ,p3d.pose_with_rates.pose.orientation.w]
         else:
             # update ground truth
-            self.p3d_x = p3d.pose.position.x
-            self.p3d_y = p3d.pose.position.y
-            self.p3d_q =[ p3d.pose.orientation.x \
-                         ,p3d.pose.orientation.y \
-                         ,p3d.pose.orientation.z \
-                         ,p3d.pose.orientation.w]
+            self.p3d_x  =  p3d.pose_with_rates.pose.position.x
+            self.p3d_y  =  p3d.pose_with_rates.pose.position.y
+            self.p3d_q  =[ p3d.pose_with_rates.pose.orientation.x \
+                          ,p3d.pose_with_rates.pose.orientation.y \
+                          ,p3d.pose_with_rates.pose.orientation.z \
+                          ,p3d.pose_with_rates.pose.orientation.w]
 
     def bumpedInput(self, bumpString):
         print "robot touched something! ", bumpString.data
