@@ -15,6 +15,7 @@
 //   Variable Definitions
 //
 std::string pose_name;		// Name of the pose (to be visualized)
+double      arrow_len;		// Length of the frame arrows
 
 ros::Publisher  pub;		// Published (to visualizer)
 ros::Subscriber sub;		// Pose message
@@ -38,9 +39,9 @@ void receive_and_retransmit(const geometry_msgs::PoseStampedConstPtr &msg)
   marker.ns = pose_name ;
   marker.type = visualization_msgs::Marker::ARROW ;
   marker.action = visualization_msgs::Marker::ADD ;
-  marker.scale.x = .1 ;
-  marker.scale.y = .1 ;
-  marker.scale.z = .1 ;
+  marker.scale.x = arrow_len ;
+  marker.scale.y = arrow_len ;
+  marker.scale.z = arrow_len ;
   marker.lifetime = ros::Duration().fromSec(0.0) ;
 
   // Publish the X axis
@@ -115,8 +116,9 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "poseviz");
   ros::NodeHandle n;
 
-  // Get the name for the visualized pose.
-  n.param("pose_name", pose_name, std::string("poseviz_pose"));
+  // Get the parameters.
+  n.param("~pose_name", pose_name, std::string("poseviz_pose"));
+  n.param("~arrow_len", arrow_len, 0.1);
 
   // Initialize the publisher and then the subscriber.
   pub = n.advertise<visualization_msgs::Marker>("visualization_marker", 3);
