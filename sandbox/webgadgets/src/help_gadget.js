@@ -1,47 +1,45 @@
 
-var HelpGadget = Class.create({
-  initialize : function(gadget, titleName)
+var HelpGadget = Class.create( Gadget, {
+  initialize : function($super, titleName, gadget)
   {
+    titleName = "Help: " + titleName;
+    $super(titleName);
+
     this.gadget = gadget;
 
-    // The help DIV
-    this.helpDiv = document.createElement("div");
-    this.helpDiv.id = "helpbox";
-    this.helpDiv.name = "help";
-    this.helpDiv.style.display = "none";
+    this.mainDiv.style.display = "none";
+    this.mainDiv.style.width = "500px";
+    this.mainDiv.style.zIndex = "2000";
 
-    this.helpDivHeader = document.createElement("div");
-    this.helpDivHeader.id = "header";
+    title = document.createElement("b");
+    title.style.id = "gadgetTitle";
+    title.style.cssFloat = "left";
+    title.style.margin= "0 0 0 10px";
+    title.innerHTML = titleName;
 
-    // This is not the cleanest way to close the help gadgets 
-    this.helpDivHeader.innerHTML += "<a href='#' onclick='hideHelp();' id='xbutton'><img src='images/xicon.png'></a>Help:"+titleName;
-    
-    this.helpDivContent = document.createElement("div");
-    this.helpDivContent.id = "content";
-  
-    this.helpDiv.appendChild(this.helpDivHeader);
-    this.helpDiv.appendChild(this.helpDivContent);
-  
-    document.body.appendChild(this.helpDiv);
+    this.titleSpan.appendChild(title);
 
+    this.closeButton.stopObserving('click');
+    this.closeButton.observe('click', this.hideHelp.bind(this) );
     this.pump = new MessagePump();
   },
 
   gotHelp: function(myself, pump)
   {
-    myself.helpDivContent.innerHTML = pump.response;
+    myself.contentDiv.innerHTML = pump.response;
   },
 
   showHelp : function(e)
   {
     left = parseInt(this.gadget.offsetLeft) + parseInt(this.gadget.clientWidth) + 10;
-    this.helpDiv.style.left = left + "px";
-    this.helpDiv.style.display = "";
+    this.mainDiv.style.left = left + "px";
+    this.mainDiv.style.top = parseInt(this.gadget.offsetTop) + "px";
+    this.mainDiv.style.display = "";
   },
 
   hideHelp : function(e)
   {
-    this.helpDiv.style.display = "none";
+    this.mainDiv.style.display = "none";
   },
 
   setContent : function (file)

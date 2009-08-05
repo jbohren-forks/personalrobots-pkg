@@ -1,8 +1,9 @@
 var ROSJoystickGadget = Class.create(ROSGadget, {
 
-  initialize: function()
+  initialize: function($super)
   {
-    this.create("Joystick", 500);
+
+    $super("Joystick", 500);
 
     this.startButton = document.createElement('input');
     this.startButton.type = 'button';

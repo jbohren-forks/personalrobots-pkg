@@ -2,7 +2,7 @@ var ROSStartupGadget = Class.create(ROSGadget, {
 
   initialize: function($super)
   {
-    $super("Robot Status", 500);
+    $super("Demos", 500);
 
     this.contentDiv.style.height = "140px";
 

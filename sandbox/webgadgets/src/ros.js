@@ -151,48 +151,23 @@ var ROSTopic = Class.create({
 
 
 ////////////////////////////////////////////////////////////////////////////////
-// A ROS Gadget. This will load a ros gadget
-var ROSGadget = Class.create({
-  create: function(titleName, width)
+// A generic gadget
+var Gadget = Class.create({
+  initialize : function(titleName)
   {
-    var maxY = 70;
-    allGadgets = document.getElementById('maincontent').getElementsByTagName('div');
-
-    for (i=0; i<allGadgets.length; i++)
-    {
-      if (allGadgets[i].id == 'gadget')
-      {
-        y = parseInt(allGadgets[i].style.top);
-        h = allGadgets[i].clientHeight;
-
-        if (y + h > maxY)
-        {
-          maxY = y+h;
-        }
-      }
-    }
-
     var d = new Date();
 
     this.mainDiv = document.createElement('div');
     this.mainDiv.id = 'gadget';
     this.mainDiv.name = titleName + d.getTime();
-    this.mainDiv.style.width = width + 'px';
-    this.mainDiv.style.left = "10px";
-    this.mainDiv.style.top = maxY + "px";
-
-    this.headerDiv = document.createElement('div');
-    this.headerDiv.id = 'header';
 
     this.contentDiv = document.createElement('div');
     this.contentDiv.id = 'content';
-    
+ 
+    this.headerDiv = document.createElement('div');
+    this.headerDiv.id = 'header';
+
     this.titleSpan = document.createElement("span");
-    title = document.createElement("b");
-    title.style.id = "gadgetTitle";
-    title.style.cssFloat = "left";
-    title.style.margin= "0 0 0 10px";
-    title.innerHTML = titleName;
 
     this.closeButton = document.createElement('a');
     this.closeButton.id = 'closeButton';
@@ -200,37 +175,21 @@ var ROSGadget = Class.create({
     this.closeButton.id ='xbutton';
     this.closeButton.innerHTML = "<img src='images/xicon.png' style='margin-top:2px;' height='20px'>";
 
-    this.helpButton = document.createElement('a');
-    this.helpButton.href='#';
-    this.helpButton.id ='xbutton';
-    this.helpButton.innerHTML = "<img src='images/questionicon.png' style='margin-top:2px;'  height='20px'>";
-
     this.titleSpan.appendChild(this.closeButton);
-    this.titleSpan.appendChild(this.helpButton);
-    this.titleSpan.appendChild(title);
-
     this.headerDiv.appendChild(this.titleSpan);
-
-    this.mainDiv.appendChild(this.headerDiv);
-    this.mainDiv.appendChild(this.contentDiv);
-    document.getElementById('maincontent').appendChild(this.mainDiv);
-
-
-    this.dragging = false;
-    this.divDragStart = {'x': 0, 'y':0};
-    this.mainDivStart = {'x': 0, 'y':0};
 
     this.headerDiv.observe('mousedown', this.dragDivStart.bind(this));
     this.closeButton.observe('click', this.closeGadget.bind(this) );
 
-    this.helpButton.observe('click', this.showHelp.bind(this) );
+    this.dragging = false;
 
-    this.help = new HelpGadget(this.mainDiv, titleName);
-  },
+    this.divDragStart = {'x': 0, 'y':0};
+    this.mainDivStart = {'x': 0, 'y':0};
 
-  setHelpText : function(txt)
-  {
-    this.help.setContent(txt);
+    this.mainDiv.appendChild(this.headerDiv);
+    this.mainDiv.appendChild(this.contentDiv);
+
+    document.getElementById('maincontent').appendChild(this.mainDiv);
   },
 
   closeGadget : function(e)
@@ -238,10 +197,6 @@ var ROSGadget = Class.create({
     this.mainDiv.remove();
   },
 
-  showHelp : function(e)
-  {
-    this.help.showHelp();
-  },
 
   dragDivStart : function(e)
   {
@@ -295,6 +250,66 @@ var ROSGadget = Class.create({
       this.mainDiv.style.top = newY + "px";
     }
   }
+
+});
+
+////////////////////////////////////////////////////////////////////////////////
+// A ROS Gadget. This will load a ros gadget
+var ROSGadget = Class.create( Gadget, {
+  initialize: function($super, titleName, width)
+  {
+    $super(titleName);
+
+    var maxY = 70;
+    allGadgets = document.getElementById('maincontent').getElementsByTagName('div');
+
+    for (i=0; i<allGadgets.length; i++)
+    {
+      if (allGadgets[i].id == 'gadget')
+      {
+        y = parseInt(allGadgets[i].style.top);
+        h = allGadgets[i].clientHeight;
+
+        if (y + h > maxY)
+        {
+          maxY = y+h;
+        }
+      }
+    }
+
+    this.mainDiv.style.width = width + 'px';
+    this.mainDiv.style.left = "10px";
+    this.mainDiv.style.top = maxY + "px";
+
+    this.helpButton = document.createElement('a');
+    this.helpButton.href='#';
+    this.helpButton.id ='xbutton';
+    this.helpButton.innerHTML = "<img src='images/questionicon.png' style='margin-top:2px;'  height='20px'>";
+
+    this.titleSpan.appendChild(this.helpButton);
+
+    title = document.createElement("b");
+    title.style.id = "gadgetTitle";
+    title.style.cssFloat = "left";
+    title.style.margin= "0 0 0 10px";
+    title.innerHTML = titleName;
+
+    this.titleSpan.appendChild(title);
+
+    this.helpButton.observe('click', this.showHelp.bind(this) );
+
+    this.help = new HelpGadget(titleName, this.mainDiv);
+  },
+
+  setHelpText : function(txt)
+  {
+    this.help.setContent(txt);
+  },
+
+  showHelp : function(e)
+  {
+    this.help.showHelp();
+  },
 
 });
 
