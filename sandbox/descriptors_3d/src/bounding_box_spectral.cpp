@@ -129,6 +129,16 @@ void BoundingBoxSpectral::computeNeighborhoodFeature(const sensor_msgs::PointClo
                                                      const unsigned int interest_sample_idx,
                                                      cv::Vector<float>& result) const
 {
+  // Verify the principle components were extracted
+  const Eigen::Vector3d* eig_vec_max = (*eig_vecs_max_)[interest_sample_idx];
+  const Eigen::Vector3d* eig_vec_mid = (*eig_vecs_mid_)[interest_sample_idx];
+  const Eigen::Vector3d* eig_vec_min = (*eig_vecs_min_)[interest_sample_idx];
+  if (eig_vec_max == NULL)
+  {
+    ROS_DEBUG("BoundingBoxSpectral::computeNeighborhoodFeature() No spectral information for sample %u", interest_sample_idx);
+    return;
+  }
+
   result.resize(result_size_);
   const unsigned int nbr_pts = neighbor_indices.size();
 
@@ -142,18 +152,6 @@ void BoundingBoxSpectral::computeNeighborhoodFeature(const sensor_msgs::PointClo
     {
       result[i] = 0.0;
     }
-    return;
-  }
-
-  const Eigen::Vector3d* eig_vec_max = (*eig_vecs_max_)[interest_sample_idx];
-  const Eigen::Vector3d* eig_vec_mid = (*eig_vecs_mid_)[interest_sample_idx];
-  const Eigen::Vector3d* eig_vec_min = (*eig_vecs_min_)[interest_sample_idx];
-
-  // NULL indicates no eigenvector could be extracted
-  if (eig_vec_max == NULL)
-  {
-    ROS_WARN("BoundingBoxSpectral::computeNeighborhoodFeature() No spectral information...skipping it");
-    result.clear();
     return;
   }
 
