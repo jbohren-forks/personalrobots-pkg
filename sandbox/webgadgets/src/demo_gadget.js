@@ -32,15 +32,11 @@ var ROSDemoGadget = Class.create(ROSGadget, {
     this.stopButton.style.margin = '0 10px 0 0';
     this.stopButton.observe('click', this.start.bind(this) );
 
-
     this.contentDiv.appendChild(this.demoSelect);
     this.contentDiv.appendChild(this.startButton);
     this.contentDiv.appendChild(this.stopButton);
 
-    if (this.pump != null)
-      delete this.pump;
-
-
+    this.setHelpText('demo_gadget_help.html');
   },
 
   start: function()

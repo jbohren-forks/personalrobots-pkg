@@ -1,4 +1,4 @@
-var ROSMapGadget = Class.create(ROSGadget, {
+var ROSNavGadget = Class.create(ROSGadget, {
   initialize: function($super, service)
   {
     // Create the ros gadget 
