@@ -29,7 +29,7 @@
 import sys, time
 import roslib; roslib.load_manifest('plug_in')
 import rospy
-from robot_msgs.msg import PoseStamped, TransformStamped
+from geometry_msgs.msg import PoseStamped, TransformStamped
 import tf.msg
 from std_srvs.srv import Empty
 
