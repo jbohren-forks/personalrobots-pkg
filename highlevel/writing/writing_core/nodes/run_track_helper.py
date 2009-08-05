@@ -46,7 +46,7 @@ import math
 from std_msgs.msg import Empty
 
 import pr2_robot_actions.msg
-import robot_msgs
+import geometry_msgs
 import python_actions
 
 class TrackHelperAction(python_actions.Action):
@@ -60,12 +60,12 @@ class TrackHelperAction(python_actions.Action):
       self.head_controller = "head_controller"
       rospy.set_param(self.name + "/head_controller", self.head_controller)
 
-    self.head_controller_publisher = rospy.Publisher(self.head_controller + "/point_head", robot_msgs.msg.PointStamped)
+    self.head_controller_publisher = rospy.Publisher(self.head_controller + "/point_head", geometry_msgs.msg.PointStamped)
 
   def execute(self, goal):
 
     rospy.logdebug("%s: executing.", self.name)
-    htp = robot_msgs.msg.PointStamped()
+    htp = geometry_msgs.msg.PointStamped()
     htp.header = goal.header
     htp.point = goal.pose.position
 
@@ -90,7 +90,7 @@ if __name__ == '__main__':
   try:
 
     rospy.init_node("track_helper",  log_level=roslib.msg.Log.DEBUG)
-    w = TrackHelperAction("track_helper", robot_msgs.msg.PoseStamped, pr2_robot_actions.msg.TrackHelperState, Empty)
+    w = TrackHelperAction("track_helper", geometry_msgs.msg.PoseStamped, pr2_robot_actions.msg.TrackHelperState, Empty)
     w.run()
     rospy.spin();
 
