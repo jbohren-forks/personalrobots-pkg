@@ -98,6 +98,11 @@ int ChompPlannerNode::run()
 
 bool ChompPlannerNode::planKinematicPath(motion_planning_msgs::GetMotionPlan::Request &req, motion_planning_msgs::GetMotionPlan::Response &res)
 {
+  if (!req.goal_constraints.pose_constraint.empty())
+  {
+    ROS_ERROR("CHOMP cannot handle pose contraints yet.");
+    return false;
+  }
   ros::WallTime start_time = ros::WallTime::now();
   ROS_INFO("Received planning request...");
   // get the planning group:
