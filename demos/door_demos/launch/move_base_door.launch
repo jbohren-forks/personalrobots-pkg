@@ -3,7 +3,7 @@
   <include file="$(find pr2_alpha)/$(env ROBOT).machine" /> 
 
   <master auto="start"/>
-  <group name="wg">
+  <group ns="wg">
     <node machine="three" pkg="doors_core" type="move_base_door" respawn="false" name="door_reactive_planner">
 
       <param name="action_max_allowed_time" value="10.0" />
