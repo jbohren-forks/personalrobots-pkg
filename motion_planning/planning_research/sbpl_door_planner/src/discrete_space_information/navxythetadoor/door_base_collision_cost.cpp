@@ -28,7 +28,6 @@
  */
 
 #include <sbpl_door_planner/door_base_collision_cost.h>
-#include <geometry_msgs/Point32.h>
 #include <angles/angles.h>
 
 

@@ -33,6 +33,7 @@
 #include <algorithm>
 
 #include <geometry_msgs/Point32.h>
+#include <geometry_msgs/Point.h>
 #include <door_msgs/Door.h>
 #include <door_functions/door_functions.h>
 

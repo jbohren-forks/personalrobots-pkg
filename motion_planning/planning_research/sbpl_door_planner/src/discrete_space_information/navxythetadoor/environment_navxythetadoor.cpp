@@ -296,7 +296,7 @@ void EnvironmentNAVXYTHETADOORLAT::ConvertStateIDPathintoXYThetaPath(vector<int>
           }
         }
       }
-      door_intervalindPath->push_back(currentintervalind);		  
+      door_intervalindPath->push_back(currentintervalind);
     }
   }//over pind
 }
@@ -311,7 +311,8 @@ void EnvironmentNAVXYTHETADOORLAT::ReadConfiguration(FILE* fCfg)
   int x, y;
 
   //discretization(cells)
-  fscanf(fCfg, "%s", sTemp);
+  if(fscanf(fCfg, "%s", sTemp) < 1)
+		printf("fscanf didn't read in anything\n");
   strcpy(sTemp1, "discretization(cells):");
   if(strcmp(sTemp1, sTemp) != 0)
   {
@@ -319,13 +320,16 @@ void EnvironmentNAVXYTHETADOORLAT::ReadConfiguration(FILE* fCfg)
     printf("Expected %s got %s\n", sTemp1, sTemp);
     exit(1);
   }
-  fscanf(fCfg, "%s", sTemp);
+  if(fscanf(fCfg, "%s", sTemp) < 1)
+		printf("fscanf didn't read in anything\n");
   EnvNAVXYTHETALATCfg.EnvWidth_c = atoi(sTemp);
-  fscanf(fCfg, "%s", sTemp);
+  if(fscanf(fCfg, "%s", sTemp) < 1)
+		printf("fscanf didn't read in anything\n");
   EnvNAVXYTHETALATCfg.EnvHeight_c = atoi(sTemp);
 
   //cellsize
-  fscanf(fCfg, "%s", sTemp);
+	if(fscanf(fCfg, "%s", sTemp) < 1)
+		printf("fscanf didn't read in anything\n");
   strcpy(sTemp1, "cellsize(meters):");
   if(strcmp(sTemp1, sTemp) != 0)
   {
@@ -333,11 +337,13 @@ void EnvironmentNAVXYTHETADOORLAT::ReadConfiguration(FILE* fCfg)
     printf("Expected %s got %s\n", sTemp1, sTemp);
     exit(1);
   }
-  fscanf(fCfg, "%s", sTemp);
+  if(fscanf(fCfg, "%s", sTemp) < 1)
+		printf("fscanf didn't read in anything\n");
   EnvNAVXYTHETALATCfg.cellsize_m = atof(sTemp);
 	
   //speeds
-  fscanf(fCfg, "%s", sTemp);
+  if(fscanf(fCfg, "%s", sTemp) < 1)
+		printf("fscanf didn't read in anything\n");
   strcpy(sTemp1, "nominalvel(mpersecs):");
   if(strcmp(sTemp1, sTemp) != 0)
   {
@@ -345,9 +351,11 @@ void EnvironmentNAVXYTHETADOORLAT::ReadConfiguration(FILE* fCfg)
     printf("Expected %s got %s\n", sTemp1, sTemp);
     exit(1);
   }
-  fscanf(fCfg, "%s", sTemp);
+  if(fscanf(fCfg, "%s", sTemp) < 1)
+		printf("fscanf didn't read in anything\n");
   EnvNAVXYTHETALATCfg.nominalvel_mpersecs = atof(sTemp);
-  fscanf(fCfg, "%s", sTemp);
+  if(fscanf(fCfg, "%s", sTemp) < 1)
+		printf("fscanf didn't read in anything\n");
   strcpy(sTemp1, "timetoturn45degsinplace(secs):");
   if(strcmp(sTemp1, sTemp) != 0)
   {
@@ -355,22 +363,27 @@ void EnvironmentNAVXYTHETADOORLAT::ReadConfiguration(FILE* fCfg)
     printf("Expected %s got %s\n", sTemp1, sTemp);
     exit(1);
   }
-  fscanf(fCfg, "%s", sTemp);
+  if(fscanf(fCfg, "%s", sTemp) < 1)
+		printf("fscanf didn't read in anything\n");
   EnvNAVXYTHETALATCfg.timetoturn45degsinplace_secs = atof(sTemp);
 
 
-  //start(meters,rads): 
-  fscanf(fCfg, "%s", sTemp);
-  fscanf(fCfg, "%s", sTemp);
+  //start(meters,rads):
+	if(fscanf(fCfg, "%s", sTemp) < 1)	// start(meters,rads):
+		printf("fscanf didn't read in anything\n");
+  if(fscanf(fCfg, "%s", sTemp) < 1) // x
+		printf("fscanf didn't read in anything\n");
   EnvNAVXYTHETALATCfg.StartX_c = CONTXY2DISC(atof(sTemp),EnvNAVXYTHETALATCfg.cellsize_m);
-  fscanf(fCfg, "%s", sTemp);
+  if(fscanf(fCfg, "%s", sTemp) < 1) // y
+		printf("fscanf didn't read in anything\n");
   EnvNAVXYTHETALATCfg.StartY_c = CONTXY2DISC(atof(sTemp),EnvNAVXYTHETALATCfg.cellsize_m);
-  fscanf(fCfg, "%s", sTemp);
+  if(fscanf(fCfg, "%s", sTemp) < 1) // theta
+		printf("fscanf didn't read in anything\n");
   EnvNAVXYTHETALATCfg.StartTheta = ContTheta2Disc(atof(sTemp), NAVXYTHETALAT_THETADIRS);
-  fscanf(fCfg, "%s", sTemp);
-  EnvNAVXYTHETALATCfg.StartTheta = ContTheta2Disc(atof(sTemp), NAVXYTHETALAT_THETADIRS);
-//   fscanf(fCfg, "%s", sTemp);
-//   start_door_intervalindex = sTemp;
+  
+	if(fscanf(fCfg, "%s", sTemp) < 1) // door interval
+		printf("fscanf didn't read in anything\n");
+  start_door_intervalindex = atoi(sTemp);
 
   if(EnvNAVXYTHETALATCfg.StartX_c < 0 || EnvNAVXYTHETALATCfg.StartX_c >= EnvNAVXYTHETALATCfg.EnvWidth_c)
   {
@@ -388,15 +401,21 @@ void EnvironmentNAVXYTHETADOORLAT::ReadConfiguration(FILE* fCfg)
   }
 
   //end(meters,rads): 
-  fscanf(fCfg, "%s", sTemp);
-  fscanf(fCfg, "%s", sTemp);
+	if(fscanf(fCfg, "%s", sTemp) < 1) // end(meters,rads): 
+		printf("fscanf didn't read in anything\n");
+  if(fscanf(fCfg, "%s", sTemp) < 1) // x
+		printf("fscanf didn't read in anything\n");
   EnvNAVXYTHETALATCfg.EndX_c = CONTXY2DISC(atof(sTemp),EnvNAVXYTHETALATCfg.cellsize_m);
-  fscanf(fCfg, "%s", sTemp);
+  if(fscanf(fCfg, "%s", sTemp) < 1) // y
+		printf("fscanf didn't read in anything\n");
   EnvNAVXYTHETALATCfg.EndY_c = CONTXY2DISC(atof(sTemp),EnvNAVXYTHETALATCfg.cellsize_m);
-  fscanf(fCfg, "%s", sTemp);
+  if(fscanf(fCfg, "%s", sTemp) < 1) // theta
+		printf("fscanf didn't read in anything\n");
   EnvNAVXYTHETALATCfg.EndTheta = ContTheta2Disc(atof(sTemp), NAVXYTHETALAT_THETADIRS);
-  fscanf(fCfg, "%s", sTemp);
-//   desired_door_intervalindex = sTemp;
+	
+  if(fscanf(fCfg, "%s", sTemp) < 1) // door interval
+		printf("fscanf didn't read in anything\n");
+  desired_door_intervalindex = atoi(sTemp);
 
   if(EnvNAVXYTHETALATCfg.EndX_c < 0 || EnvNAVXYTHETALATCfg.EndX_c >= EnvNAVXYTHETALATCfg.EnvWidth_c)
   {
@@ -413,7 +432,6 @@ void EnvironmentNAVXYTHETADOORLAT::ReadConfiguration(FILE* fCfg)
     exit(1);
   }
 
-
   //allocate the 2D environment
   EnvNAVXYTHETALATCfg.Grid2D = new unsigned char* [EnvNAVXYTHETALATCfg.EnvWidth_c];
   for (x = 0; x < EnvNAVXYTHETALATCfg.EnvWidth_c; x++)
@@ -422,7 +440,8 @@ void EnvironmentNAVXYTHETADOORLAT::ReadConfiguration(FILE* fCfg)
   }
 
   //environment:
-  fscanf(fCfg, "%s", sTemp);
+  if(fscanf(fCfg, "%s", sTemp) < 1)
+		printf("fscanf didn't read in anything\n");
   for (y = 0; y < EnvNAVXYTHETALATCfg.EnvHeight_c; y++)
     for (x = 0; x < EnvNAVXYTHETALATCfg.EnvWidth_c; x++)
   {
@@ -434,6 +453,7 @@ void EnvironmentNAVXYTHETADOORLAT::ReadConfiguration(FILE* fCfg)
     EnvNAVXYTHETALATCfg.Grid2D[x][y] = dTemp;
   }
 
+/*
   FILE* fEnv = fopen("grid_right_after_loaded.txt", "w");
   printf("height: %i width: %i\n",EnvNAVXYTHETALATCfg.EnvHeight_c,EnvNAVXYTHETALATCfg.EnvWidth_c);
 
@@ -446,7 +466,9 @@ void EnvironmentNAVXYTHETADOORLAT::ReadConfiguration(FILE* fCfg)
     fprintf(fEnv,"\n");
   }
   fclose(fEnv);
+*/
 
+	printf("***successfully read in configuration file***\n");
 }
 
 void EnvironmentNAVXYTHETADOORLAT::setDoorProperties(const door_msgs::Door &door, 
