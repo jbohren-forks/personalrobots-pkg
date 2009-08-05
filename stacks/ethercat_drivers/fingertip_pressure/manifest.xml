@@ -6,7 +6,7 @@ Package for publishing fingertip pressure sensor information.
 <license>BSD</license>
 <review status="unreviewed" notes=""/>
 <url>http://pr.willowgarage.com</url>
-<depend package='ethercat_hardware'/>
+<depend package='pr2_msgs'/>
 <depend package='rospy' />
 <depend package='robot_msgs' />
 <depend package='geometry_msgs' />

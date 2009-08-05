@@ -87,7 +87,7 @@ $ view_fingertip_pressure
 \subsubsection topics ROS topics
 
 Subscribes to:
-- \b "/pressure/&lt;gripper_motor_name&gt;" "in": [ethercat_hardware/PressureState] Raw
+- \b "/pressure/&lt;gripper_motor_name&gt;" "in": [pr2_msgs/PressureState] Raw
 	data from the pressure sensor
 
 - \b "/pressure/&lt;gripper_motor_name&gt;_info" "in": [fingertip_pressure/PressureInfo] Sensor calibration, geometry and tf frame.
