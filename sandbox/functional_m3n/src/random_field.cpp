@@ -283,16 +283,17 @@ int RandomField::saveNodeFeatures(string filename) const
     return -1;
   }
 
-  file_out << "# File format: x y z node_id label [features]" << endl;
+  file_out << "# File format: x y z node_id label nbr_features [features]" << endl;
 
   for (map<unsigned int, RandomField::Node*>::const_iterator iter_nodes = rf_nodes_.begin() ; iter_nodes
       != rf_nodes_.end() ; iter_nodes++)
   {
     const RandomField::Node* curr_node = iter_nodes->second;
 
-    // x y z node_id label
+    // x y z node_id label nbr_features
     file_out << curr_node->getX() << " " << curr_node->getY() << " " << curr_node->getZ() << " "
-        << curr_node->getRandomFieldID() << " " << curr_node->getLabel();
+        << curr_node->getRandomFieldID() << " " << curr_node->getLabel() << " "
+        << curr_node->getNumberFeatureVals();
 
     // [features]
     const boost::shared_array<const float> curr_feats = curr_node->getFeatureVals();
@@ -317,7 +318,7 @@ int RandomField::saveCliqueFeatures(string basename) const
   {
     // Generate filename for current clique set's features
     stringstream ss_curr_filename;
-    ss_curr_filename << basename << "_cs_" << i << ".features";
+    ss_curr_filename << basename << ".cs_" << i << "_features";
     string curr_filename = ss_curr_filename.str();
 
     // Open file
@@ -328,9 +329,9 @@ int RandomField::saveCliqueFeatures(string basename) const
       return -1;
     }
 
-    file_out << "# File format: x y z clique_set_idx clique_id [features]" << endl;
+    file_out << "# File format: x y z clique_set_idx clique_id nbr_features [features]" << endl;
 
-    // Write to file: x y z clique_set_idx clique_id [features]
+    // Write to file: x y z clique_set_idx clique_id nbr_features [features]
     const map<unsigned int, Clique*>& cliques = clique_sets_[i];
     for (map<unsigned int, Clique*>::const_iterator iter_cliques = cliques.begin() ; iter_cliques
         != cliques.end() ; iter_cliques++)
@@ -338,9 +339,9 @@ int RandomField::saveCliqueFeatures(string basename) const
       const unsigned int curr_clique_id = iter_cliques->first;
       const RandomField::Clique* curr_clique = iter_cliques->second;
 
-      // x y z clique_set_idx clique_id
+      // x y z clique_set_idx clique_id nbr_features
       file_out << curr_clique->getX() << " " << curr_clique->getY() << " " << curr_clique->getZ() << " " << i
-          << " " << curr_clique_id;
+          << " " << curr_clique_id << " " << curr_clique->getNumberFeatureVals();
 
       // [features]
       const boost::shared_array<const float> curr_feats = curr_clique->getFeatureVals();

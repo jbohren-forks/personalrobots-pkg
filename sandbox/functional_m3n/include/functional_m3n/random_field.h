@@ -300,7 +300,7 @@ class RandomField
     /*!
      * \brief Saves the features of all Nodes in this RandomField to file
      *
-     * File format: x y z node_id label [features]
+     * File format: x y z node_id label nbr_features [features]
      *
      * \param filename The filename to save to
      *
@@ -316,7 +316,7 @@ class RandomField
      * The Cliques from clique-set i written in separate files with filename
      * suffix <basename>_cs_i.features
      *
-     * File format: x y z clique_set_idx clique_id [features]
+     * File format: x y z clique_set_idx clique_id nbr_features [features]
      *
      * \param The basename of the output files
      *
