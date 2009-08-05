@@ -61,7 +61,7 @@ namespace fs = boost::filesystem;
 namespace ros
 {
 template <class T>
-class ClassLoader : public Poco::ClassLoader<T>
+class ClassLoader 
 {
 public:
   ClassLoader(std::string package, std::string plugin_type)
@@ -152,9 +152,9 @@ public:
     std::cout << "Loading library " << library_path << std::endl;
     try
     {
-      this->loadLibrary(library_path);
-      //poco_assert (this->isLibraryLoaded(library_path));
-      //zpoco_check_ptr (this->findManifest(library_path)); 
+      loadPluginLibrary(library_path);
+      //poco_assert (poco_class_loader_.isLibraryLoaded(library_path));
+      //zpoco_check_ptr (poco_class_loader_.findManifest(library_path)); 
       loaded_libraries_.push_back(library_path);  //for correct destruction and access
     }
     catch (Poco::LibraryLoadException &ex)
@@ -174,23 +174,119 @@ public:
   {
     for (std::vector<std::string>::iterator it = loaded_libraries_.begin(); it != loaded_libraries_.end(); ++it)
     {
-      this->unloadLibrary(*it);
+      unloadPluginLibrary(*it);
     }
   };
 
 
-  bool canCreate(const std::string& name)
+  bool isPluginLoaded(const std::string& name)
   {
-    try 
+    try
     {
-      return ((Poco::ClassLoader<T>*)this )->canCreate(name);
+      return poco_class_loader_.canCreate(name);
     }
     catch (Poco::RuntimeException &ex)
     {
       return false;
     }
   };
+
+  std::vector<std::string> getDeclaredPlugins()
+  {
+    std::vector<std::string> plugin_names;
+    for (std::map<std::string, Plugin>::iterator it = plugins_available_.begin(); it != plugins_available_.end(); ++it)
+    {
+      plugin_names.push_back(it->first);
+    }    
+    return plugin_names;
+  };
   
+  std::string getPluginDescription(const std::string& plugin_name)
+  {
+    std::map<std::string, Plugin>::iterator it = plugins_available_.find(plugin_name);
+    if (it != plugins_available_.end())
+      return it->second.description_;
+    return "";
+  };
+
+  std::string getPluginType(const std::string& plugin_name)
+  {
+    std::map<std::string, Plugin>::iterator it = plugins_available_.find(plugin_name);
+    if (it != plugins_available_.end())
+      return it->second.type_;
+    return "";
+  };
+
+  std::string getPluginLibraryPath(const std::string& plugin_name)
+  {
+    std::map<std::string, Plugin>::iterator it = plugins_available_.find(plugin_name);
+    if (it != plugins_available_.end())
+      return it->second.library_path_;
+    return "";
+  };
+
+  std::string getPluginPackage(const std::string& plugin_name)
+  {
+    std::map<std::string, Plugin>::iterator it = plugins_available_.find(plugin_name);
+    if (it != plugins_available_.end())
+      return it->second.package_;
+    return "";
+  };
+
+  T* createPluginInstance(const std::string& name, bool auto_load_plugin = true)
+  {
+    if ( auto_load_plugin && !isPluginLoaded(name))
+      if(!loadPlugin(name))
+      {
+        //\todo THROW HERE
+        std::cerr <<"Failed to auto load library" << std::endl;
+        return NULL;
+      }
+
+    //\todo rethrow with non poco Exceptions
+    return poco_class_loader_.create(name);
+  };
+
+  void unloadPluginLibrary(const std::string& library_path)
+  {
+    poco_class_loader_.unloadLibrary(library_path);
+  }
+  
+  void loadPluginLibrary(const std::string& library_path)
+  {
+    poco_class_loader_.loadLibrary(library_path);
+  }
+
+  std::vector<std::string> getPluginsInLibrary(const std::string & library_path)
+  {
+    std::vector<std::string> plugin_names;
+
+
+    const Poco::Manifest<T> * manifest = poco_class_loader_.findManifest(library_path);
+    if (manifest == NULL)
+      return plugin_names;
+
+    for (typename Poco::Manifest<T>::Iterator it = manifest->begin(); it != manifest->end(); ++it)
+    {
+      plugin_names.push_back(it->name());
+    }
+    return plugin_names;
+  };
+
+  std::vector<std::string> getLoadedLibraries()
+  {
+
+    /*
+      \todo find a way to get ths out of poco 
+      std::vector<std::string> library_names;
+    for (typename Poco::ClassLoader<T>::Iterator it = poco_class_loader_.begin(); it != poco_class_loader_.end(); ++it)
+    {
+      library_names.push_back(it->second->className());
+    }
+    return library_names;
+    */
+    return loaded_libraries_;
+  };
   
 private:
 
@@ -202,7 +298,7 @@ private:
   // This is all available plugins found in xml
   std::map<std::string, Plugin> plugins_available_;
            
-  
+  Poco::ClassLoader<T> poco_class_loader_;  
 };
 
 }

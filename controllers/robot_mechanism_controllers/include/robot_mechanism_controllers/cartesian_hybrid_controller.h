@@ -118,6 +118,7 @@ public:
 
 private:
   ros::NodeHandle node_;
+  ros::ServiceServer serve_set_tool_frame_;
   std::string name_;
   tf::TransformListener TF;
   CartesianHybridController c_;

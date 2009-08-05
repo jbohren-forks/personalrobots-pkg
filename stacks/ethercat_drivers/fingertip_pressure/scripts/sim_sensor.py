@@ -44,7 +44,7 @@ import rospy
 from math import sin, cos
 import threading
 
-from ethercat_hardware.msg import PressureState
+from pr2_msgs.msg import PressureState
 
 class pressureSimulator:
     def callback(self, pressurestate):

@@ -38,8 +38,8 @@
 #include <ethercat_hardware/ethercat_device.h>
 
 #include <realtime_tools/realtime_publisher.h>
-#include <ethercat_hardware/PressureState.h>
-#include <ethercat_hardware/AccelerometerState.h>
+#include <pr2_msgs/PressureState.h>
+#include <pr2_msgs/AccelerometerState.h>
 
 struct WG0XMbxHdr
 {
@@ -353,8 +353,8 @@ public:
   bool use_ros_;
 private:
   uint32_t last_pressure_time_;
-  realtime_tools::RealtimePublisher<ethercat_hardware::PressureState> *pressure_publisher_;
-  realtime_tools::RealtimePublisher<ethercat_hardware::AccelerometerState> *accel_publisher_;
+  realtime_tools::RealtimePublisher<pr2_msgs::PressureState> *pressure_publisher_;
+  realtime_tools::RealtimePublisher<pr2_msgs::AccelerometerState> *accel_publisher_;
 };
 
 #endif /* WG0X_H */

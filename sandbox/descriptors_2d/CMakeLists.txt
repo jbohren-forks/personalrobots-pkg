@@ -15,9 +15,9 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR})
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 rospack_download_test_data(http://pr.willowgarage.com/data/descriptors_2d/frame0000.jpg test/frame0000.jpg)
-rospack_download_test_data(http://pr.willowgarage.com/data/descriptors_2d/correct-output/hog.txt test/correct-output/hog.txt)
-rospack_download_test_data(http://pr.willowgarage.com/data/descriptors_2d/correct-output/surf.txt test/correct-output/surf.txt)
-rospack_download_test_data(http://pr.willowgarage.com/data/descriptors_2d/correct-output/sch.txt test/correct-output/sch.txt)
+rospack_download_test_data(http://pr.willowgarage.com/data/descriptors_2d/correct-output/hog.results test/correct-output/hog.results)
+rospack_download_test_data(http://pr.willowgarage.com/data/descriptors_2d/correct-output/surf.results test/correct-output/surf.results)
+rospack_download_test_data(http://pr.willowgarage.com/data/descriptors_2d/correct-output/sch.results test/correct-output/sch.results)
 
 rospack_add_library(descriptors_2d src/descriptors_2d.cpp)
 rospack_add_executable(example src/example.cpp)

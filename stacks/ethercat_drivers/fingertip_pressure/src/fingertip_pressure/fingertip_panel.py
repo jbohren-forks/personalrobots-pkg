@@ -39,7 +39,7 @@ roslib.load_manifest(PKG)
 
 import sys
 import rospy
-from ethercat_hardware.msg import PressureState
+from pr2_msgs.msg import PressureState
 import math
 
 from fingertip_pressure.colormap import color255

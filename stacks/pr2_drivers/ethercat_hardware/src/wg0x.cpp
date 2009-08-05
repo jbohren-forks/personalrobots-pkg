@@ -222,14 +222,14 @@ int WG06::initialize(Actuator *actuator, bool allow_unprogrammed)
     string topic = "pressure";
     if (!actuator->name_.empty())
       topic = topic + "/" + string(actuator->name_);
-    pressure_publisher_ = new realtime_tools::RealtimePublisher<ethercat_hardware::PressureState>(ros::NodeHandle(), topic, 1);
+    pressure_publisher_ = new realtime_tools::RealtimePublisher<pr2_msgs::PressureState>(ros::NodeHandle(), topic, 1);
 
     if (fw_major_ >= 1)
     {
       topic = "/accelerometer/";
       if (!actuator->name_.empty())
         topic += actuator->name_;
-      accel_publisher_ = new realtime_tools::RealtimePublisher<ethercat_hardware::AccelerometerState>(ros::NodeHandle(), topic, 1);
+      accel_publisher_ = new realtime_tools::RealtimePublisher<pr2_msgs::AccelerometerState>(ros::NodeHandle(), topic, 1);
     }
 
   }

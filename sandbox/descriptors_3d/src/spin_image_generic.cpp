@@ -59,6 +59,13 @@ void SpinImageGeneric::computeNeighborhoodFeature(const sensor_msgs::PointCloud&
                                                   const unsigned int interest_sample_idx,
                                                   cv::Vector<float>& result) const
 {
+  const Eigen::Vector3d* curr_spin_axis = (*spin_axes_)[interest_sample_idx];
+  if (curr_spin_axis == NULL)
+  {
+    ROS_DEBUG("SpinImageGeneric::computeNeighborhoodFeature() no spin axis for sample %u", interest_sample_idx);
+    return;
+  }
+
   // Clear out result for counting
   result.resize(result_size_);
   for (size_t i = 0 ; i < result_size_ ; i++)
@@ -66,7 +73,6 @@ void SpinImageGeneric::computeNeighborhoodFeature(const sensor_msgs::PointCloud&
     result[i] = 0.0;
   }
 
-  const Eigen::Vector3d* curr_spin_axis = (*spin_axes_)[interest_sample_idx];
   const Eigen::Vector3d& curr_center_pt = spin_image_centers_[interest_sample_idx];
 
   // Offset into row number (center point is middle of the spin image)

@@ -9,7 +9,7 @@
     <script type="text/javascript" src="ros.js"></script>
     <script type="text/javascript" src="help_gadget.js"></script>
     <script type="text/javascript" src="image_gadget.js"></script>
-    <script type="text/javascript" src="map_gadget.js"></script>
+    <script type="text/javascript" src="nav_gadget.js"></script>
     <script type="text/javascript" src="startup_gadget.js"></script>
     <script type="text/javascript" src="joystick_gadget.js"></script>
     <script type="text/javascript" src="demo_gadget.js"></script>
@@ -50,8 +50,8 @@
       {
         if (name == "image_gadget")
           gadget = new ROSImageGadget();
-        else if (name == "map_gadget")
-          gadget = new ROSMapGadget();
+        else if (name == "nav_gadget")
+          gadget = new ROSNavGadget();
         else if (name == "joystick_gadget")
           gadget = new ROSJoystickGadget();
         else if (name == "demo_gadget")
@@ -73,6 +73,18 @@
 
   <body>
 
+    <?php
+      $gadgets = array(
+      "image_gadget"=>array("image_gadget.png", "Image Viewer", "The image viewer gadget displays and image from a topic that publishes messages of type sensor_msgs/CompressedImage or sensor_msgs/Image."),
+
+      "nav_gadget"=>array("nav_gadget.png", "Navigation Viewer", "The navigation viewer gadget displays the static map, the pose of the robot, and it's planned path. It is possible to set the robot's pose, and assign a goal pose.  The map can be panned by clicking the left mouse button and dragging.  The map can be zoomed using the middle scroll wheel."),
+
+      "joystick_gadget"=>array("joystick_gadget.png","Joystick", "The joystick gadget is capable of starting the joystick controller for the robot. Once started the external PS3 jostick can be used to drive the robot."),
+
+      "demo_gadget"=>array("demo_gadget.png", "Demo", "The demo gadget is capable of running a number of pre-defined demo scripts."),
+      );
+    ?>
+
     <div id="mainheader">
       <div id="title"><object data='images/maintitle.svg' width="100%" height="100%" type='image/svg+xml'></div>
       <div style="width:100%; text-align: right;"><a href='#' onclick='showGadgets();'>+ Add Gadget</a></div>
@@ -86,72 +98,24 @@
         <b style="color: #ffffff;font-size:180%;vertical-align:middle;">Add Gadget</b>
       </div>
 
-      <div id="gadgetdesc">
-        <div id="imgbox">
-          <a href="#" style="display: block;" onclick="addGadget('image_gadget');">
-            <img src="images/imageview.png" style="margin-bottom:10px;display:block;border:1px solid black;" height="100px">
-          <b>Add Now</b></a>
-        </div>
+      <?php 
+      foreach ($gadgets as $name=>$data)
+      {
+        $img = $data[0];
+        $title = $data[1];
+        $desc = $data[2];
 
-        <p>
-          <h2>Image Viewer</h2>
-          The image viewer gadget displays and image from a topic that
-          publishes messages of type sensor_msgs/CompressedImage or
-          sensor_msgs/Image.
-        </p>
-      </div>
+        print "<div id='gadgetdesc'> <div id='imgbox'>";
 
-      <div id="gadgetdesc">
-        <div id="imgbox">
-          <a href="#" style="display:block;" onclick="addGadget('map_gadget');">
-            <img src="images/navview.png" style="margin-bottom:10px;display:block; border: 1px solid bloack;" height ="100px">
-          <b>Add Now</b></a>
-        </div>
+        print "<a href='#' style='display:block;' onclick='addGadget(\"$name\");'>";
+        print "<img src='images/$img' style='margin-bottom:10px;display:block;width:200px'> <b>Add Now</b></a> </div>";
 
-        <p>
-          <h2>Navigation Viewer</h2>
-          The navigation viewer gadget displays the static map, the pose of
-          the robot, and it's planned path. It is possible to set the robot's
-          pose, and assign a goal pose.
-          The map can be panned by clicking the left mouse button and dragging.
-          The map can be zoomed using the middle scroll wheel.
-        </p>
-      </div>
-
-      <div id="gadgetdesc">
-        <div id="imgbox">
-          <a href="#" style="display:block;" onclick="addGadget('joystick_gadget');">
-            <img src="images/joystick.png" style="margin-bottom:10px;display:block; border: 1px solid bloack;" width ="200px">
-          <b>Add Now</b></a>
-        </div>
-
-        <p>
-          <h2>Joystick</h2>
-          The joystick gadget is capable of starting the joystick controller
-          for the robot. Once started the external PS3 jostick can be used
-          to drive the robot.
-        </p>
-      </div>
-
-      <div id="gadgetdesc">
-        <div id="imgbox">
-          <a href="#" style="display:block;" onclick="addGadget('demo_gadget');">
-            <img src="images/joystick.png" style="margin-bottom:10px;display:block; border: 1px solid bloack;" width ="200px">
-          <b>Add Now</b></a>
-        </div>
-
-        <p>
-          <h2>Demo</h2>
-          The demo gadget is capable of running a number of pre-defined demo scripts. 
-        </p>
-      </div>
-
+        print "<p> <h2>$title</h2> $desc </p> </div>";
+      }
+      ?>
 
     </div>
 
-    <!--<div id='debug'></div>-->
     <div id='maincontent'> </div>
-
-
   </body>
 </html>

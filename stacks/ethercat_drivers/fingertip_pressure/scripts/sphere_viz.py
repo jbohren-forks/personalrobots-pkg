@@ -45,7 +45,7 @@ import rospy
 import threading
 
 from fingertip_pressure.msg import PressureInfo, PressureInfoElement
-from ethercat_hardware.msg import PressureState
+from pr2_msgs.msg import PressureState
 from visualization_msgs.msg import Marker
 from fingertip_pressure.colormap import color
 from robot_msgs.msg import Vector3

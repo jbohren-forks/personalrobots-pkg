@@ -1,0 +1,8 @@
+<library path="lib/libline">
+  <plugin name="line" type="shape">
+    <description>
+      this is a line plugin
+    </description>
+  </plugin>
+  
+</library>

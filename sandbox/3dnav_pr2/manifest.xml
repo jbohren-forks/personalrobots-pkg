@@ -21,10 +21,10 @@
   <depend package="visualization_msgs" />
   
   <!-- controllers -->
-  <depent package="pr2_default_controllers" />
-  <depent package="pr2_mechanism_controllers" />
-  <depent package="pr2_experimental_controllers" />
-  <depent package="joint_waypoint_controller" />
+  <depend package="pr2_default_controllers" />
+  <depend package="pr2_mechanism_controllers" />
+  <depend package="pr2_experimental_controllers" />
+  <depend package="joint_waypoint_controller" />
 
   <!-- mapping -->
   <depend package="laser_scan"/>
@@ -45,5 +45,6 @@
   <depend package="fake_motion_planning" />
   <depend package="pr2_ik" />
   <depend package="move_arm" />
+  <depend package="chomp_motion_planner" />
   
 </package>

@@ -30,18 +30,6 @@
 using namespace Ogre;
 using namespace ogre_tools;
 
-void calculateUV(const Ogre::Vector3& vec, float& u, float& v)
-{
-  Ogre::Vector3 pos(vec);
-  pos.normalise();
-  u = acos( pos.y / pos.length() );
-
-  float val = pos.x / ( sin( u ) );
-  v = acos( val );
-
-  u /= Ogre::Math::PI;
-  v /= Ogre::Math::PI;
-}
 
 int main( int argc, char** argv )
 {
@@ -137,45 +125,9 @@ int main( int argc, char** argv )
 
       ROS_INFO( "Converting %s to %s...", inputFile.c_str(), outputFile.c_str() );
       ROS_INFO( "%d triangles", loader.triangles_.size() );
-
-      ManualObject* object = new ManualObject( "the one and only" );
-      object->begin( "BaseWhiteNoLighting", RenderOperation::OT_TRIANGLE_LIST );
-
-      unsigned int vertexCount = 0;
-      STLLoader::V_Triangle::const_iterator it = loader.triangles_.begin();
-      STLLoader::V_Triangle::const_iterator end = loader.triangles_.end();
-      for (; it != end; ++it )
-      {
-        const STLLoader::Triangle& tri = *it;
-
-        float u, v;
-        u = v = 0.0f;
-        object->position( tri.vertices_[0] );
-        object->normal( tri.normal_);
-        calculateUV( tri.vertices_[0], u, v );
-        object->textureCoord( u, v );
-
-        object->position( tri.vertices_[1] );
-        object->normal( tri.normal_);
-        calculateUV( tri.vertices_[1], u, v );
-        object->textureCoord( u, v );
-
-        object->position( tri.vertices_[2] );
-        object->normal( tri.normal_);
-        calculateUV( tri.vertices_[2], u, v );
-        object->textureCoord( u, v );
-
-        object->triangle( vertexCount + 0, vertexCount + 1, vertexCount + 2 );
-
-        vertexCount += 3;
-      }
-
-      object->end();
-
       std::stringstream ss;
       ss << "converted" << i;
-      MeshPtr mesh = object->convertToMesh( ss.str(), ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME );
-      mesh->buildEdgeList();
+      Ogre::MeshPtr mesh = loader.toMesh(ss.str());
       meshSerializer->exportMesh( mesh.get(), outputFile, Serializer::ENDIAN_LITTLE );
     }
   }

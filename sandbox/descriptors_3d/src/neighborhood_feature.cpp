@@ -66,7 +66,7 @@ void NeighborhoodFeature::doComputation(const sensor_msgs::PointCloud& data,
     ROS_ERROR("NeighborhoodFeature::doComputation() radius not defined yet");
     return;
   }
-  if (neighborhood_radius_ > 1e-6)
+  if (neighborhood_radius_ < 1e-6)
   {
     ROS_ERROR("NeighborhoodFeature::doComputation() radius is negative: %f", neighborhood_radius_);
   }

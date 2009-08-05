@@ -409,8 +409,9 @@ int M3NModel::extractVerifyLabelsFeatures(const vector<const RandomField*>& trai
     // Ensure the node feature dimensions are defined by the presence of one node
     if (node_feature_dim_ == 0)
     {
-      ROS_ERROR("Did not find any nodes from the RandomField %u  (%u)", i, nodes.size());
-      return -1;
+      ROS_WARN("Did NOT find any nodes from the RandomField %u  (%u)", i, nodes.size());
+      invalid_training_indices.insert(i);
+      continue;
     }
 
     // ---------------------------------------------------
@@ -463,25 +464,29 @@ int M3NModel::extractVerifyLabelsFeatures(const vector<const RandomField*>& trai
       {
         ROS_WARN("Did not find any cliques in clique-set %u from RandomField %u; skipping.", j, i);
         invalid_training_indices.insert(i);
+        break;
       }
     } // end iteration over clique sets
   } // end iteration over random fields
 
+  // Cannot train model with 1 label
   if (training_labels_.size() == 1)
   {
-    if (!trained_)
-    {
-      training_labels_.clear();
-    }
+    training_labels_.clear();
+    node_feature_dim_ = 0;
+    clique_set_feature_dims_.assign(clique_set_feature_dims_.size(), 0);
     ROS_ERROR("Cannot train with data containing only 1 label");
     return -1;
   }
 
+  // Verify found at least 1 valid random field
   if (invalid_training_indices.size() == training_rfs.size())
   {
     if (!trained_)
     {
       training_labels_.clear();
+      node_feature_dim_ = 0;
+      clique_set_feature_dims_.assign(clique_set_feature_dims_.size(), 0);
     }
     ROS_ERROR("Could not find any valid random fields to train on");
     return -1;

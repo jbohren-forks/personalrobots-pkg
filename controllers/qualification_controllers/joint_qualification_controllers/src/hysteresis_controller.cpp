@@ -92,7 +92,7 @@ bool HysteresisController::init( mechanism::RobotState *robot, const ros::NodeHa
   robot_ = robot;
 
   std::string name;
-  if (!n.getParam("name", name)){
+  if (!n.getParam("velocity_controller/joint", name)){
     ROS_ERROR("Hysteresis Controller: No joint name found on parameter namespace: %s)",
               n.getNamespace().c_str());
     return false;
@@ -162,7 +162,7 @@ bool HysteresisController::init( mechanism::RobotState *robot, const ros::NodeHa
 
   
   velocity_controller_ = new JointVelocityController();
-  if (!velocity_controller_->init(robot, ros::NodeHandle(n, "vel_control"))) return false;
+  if (!velocity_controller_->init(robot, ros::NodeHandle(n, "velocity_controller"))) return false;
 
   // Get the gains, add them to test data
   double p, i, d, iClamp, imin;

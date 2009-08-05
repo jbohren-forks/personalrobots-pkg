@@ -739,6 +739,8 @@ IplImage* SuperpixelStatistic::createSegmentMask(int label, CvRect* rect) {
     return NULL;
   }
    
+  assert(sizeof(uchar) == 1);
+
   IplImage* mask = cvCreateImage(cvGetSize(img_), IPL_DEPTH_8U, 1);
   cvZero(mask);
 
@@ -782,6 +784,7 @@ void SuperpixelStatistic::segment() {
   cvResize(img_, img_small, CV_INTER_AREA);
 
   // -- Create a grid of seed points.
+  assert(sizeof(int) == 4);
   IplImage* seg_small = cvCreateImage( cvGetSize(img_small), IPL_DEPTH_32S, 1 );
   cvZero(seg_small);
   int label = 1;

@@ -116,18 +116,18 @@ a:hover
 {
   text-align: left;
   border-bottom: 1px dotted black;
-  min-height: 140px;
+  min-height: 160px;
   margin-left: 10px;
   margin-right: 10px;
 }
 
 #displaybox #gadgetdesc #imgbox
 {
-  float:left; 
-  display:inline; 
-  padding-right: 20px;
+  margin-right: 20px;
   text-align:center; 
   min-width: 200px;
+  display: inline;
+  float: left;
 }
 
 #displaybox a

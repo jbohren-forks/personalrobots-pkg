@@ -79,6 +79,8 @@ int point_cloud_clustering::KMeans::cluster(const sensor_msgs::PointCloud& pt_cl
     return -1;
   }
 
+  created_clusters.clear();
+
   // ----------------------------------------------------------
   // Calculate clustering information
   const unsigned int nbr_total_pts = pt_cloud.pts.size();
@@ -132,7 +134,6 @@ int point_cloud_clustering::KMeans::cluster(const sensor_msgs::PointCloud& pt_cl
 
   // ----------------------------------------------------------
   // Associate each point with its cluster label
-  created_clusters.clear();
   curr_sample_idx = 0;
   for (set<unsigned int>::const_iterator iter_indices_to_cluster = indices_to_cluster.begin() ; iter_indices_to_cluster
       != indices_to_cluster.end() ; iter_indices_to_cluster++)

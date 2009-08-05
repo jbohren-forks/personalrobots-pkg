@@ -1,0 +1,23 @@
+<stack name="visual_feature_detectors" version="0.1.0">
+  <description brief="visual_feature_detectors">
+
+     Visual feature and object detectors.
+
+  </description>
+  <author>Patrick Mihelich</author>
+  <license>BSD</license>  
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/visual_feature_detectors</url>
+  <depend stack="stereo"/> <!-- stereo_image_proc, stereo_utils --> 
+  <depend stack="camera_drivers"/> <!-- prosilica_cam --> 
+  <depend stack="geometry"/> <!-- bullet, tf, eigen --> 
+  <depend stack="semantic_mapping"/> <!-- point_cloud_mapping --> 
+  <depend stack="ros"/> <!-- roscpp, rospy, rostest, roscpp, rostest, rospy, roscpp, rospy, rostest, roscpp, std_msgs --> 
+  <depend stack="util"/> <!-- topic_synchronizer --> 
+  <depend stack="opencv"/> <!-- opencv_latest, opencv_latest, opencv_latest, opencv_latest --> 
+  <depend stack="common"/> <!-- robot_actions --> 
+  <depend stack="pr2"/> <!-- pr2_robot_actions --> 
+  <depend stack="visualization_core"/> <!-- visualization_msgs --> 
+  <depend stack="common_msgs"/> <!-- sensor_msgs, geometry_msgs, geometry_msgs, sensor_msgs --> 
+
+</stack>
