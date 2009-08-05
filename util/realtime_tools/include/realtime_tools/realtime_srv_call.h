@@ -52,9 +52,9 @@ class RealtimeSrvCall
 {
 public:
   RealtimeSrvCall(const ros::NodeHandle &node, const std::string &topic)
-    : topic_(topic), node_(node), is_running_(false), keep_running_(false), turn_(REALTIME)
+    : node_(node), is_running_(false), keep_running_(false), turn_(REALTIME)
   {
-    client_ = node_.serviceClient<SrvReq, SrvRes>(topic_);
+    client_ = node_.serviceClient<SrvReq, SrvRes>(topic);
 
     if (0 != realtime_cond_create(&updated_cond_))
     {
@@ -69,9 +69,9 @@ public:
 
     // Makes the trylock() fail until the service is ready
     lock();
-    ROS_INFO("RealtimeSrvCall is waiting for %s", topic_.c_str() );
-    ros::service::waitForService(topic_);
-    ROS_INFO("RealtimeSrvCall is finished waiting for %s", topic_.c_str());
+    ROS_INFO("RealtimeSrvCall is waiting for %s", topic.c_str() );
+    ros::service::waitForService(topic);
+    ROS_INFO("RealtimeSrvCall is finished waiting for %s", topic.c_str());
     unlock();
 
     keep_running_ = true;
@@ -83,9 +83,8 @@ public:
     stop();
     while (is_running())
       usleep(100);
-
-    if (client_ != NULL)
-      client_.shutdown();
+    
+    client_.shutdown();
 
     // Destroy thread resources
     realtime_cond_delete(&updated_cond_);
@@ -172,7 +171,6 @@ public:
     is_running_ = false;
   }
 
-  std::string topic_;
 
 private:
 
