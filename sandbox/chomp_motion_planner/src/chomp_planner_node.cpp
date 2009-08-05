@@ -79,7 +79,7 @@ bool ChompPlannerNode::init()
   vis_marker_array_publisher_ = node_handle_.advertise<visualization_msgs::MarkerArray>( "visualization_marker_array", 0 );
 
   // advertise the planning service
-  plan_kinematic_path_service_ = node_handle_.advertiseService("plan_kinematic_path", &ChompPlannerNode::planKinematicPath, this);
+  plan_kinematic_path_service_ = node_handle_.advertiseService("~plan_kinematic_path", &ChompPlannerNode::planKinematicPath, this);
 
   ROS_INFO("Initalized CHOMP planning service...");
 
