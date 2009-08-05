@@ -386,22 +386,46 @@ int RandomField::saveRandomField(string basename) const
     return -1;
   }
 
+  file_out << "# File format:" << endl;
+  file_out << "# node_features_filename" << endl;
+  file_out << "# " << endl;
+  file_out << "# S=nbr_clique_sets" << endl;
+  file_out << "# clique_set_0_features_filename" << endl;
+  file_out << "# 0 P=nbr_cliques_in_set" << endl;
+  file_out << "# 0 clique_id_0 nbr_nodes_in_clique [node ids]" << endl;
+  file_out << "#    ..." << endl;
+  file_out << "# 0 clique_id_P nbr_nodes_in_clique [node ids]" << endl;
+  file_out << "#" << endl;
+  file_out << "# ..." << endl;
+  file_out << "# clique_set_(S-1)_features_filename" << endl;
+  file_out << "# (S-1) P=nbr_cliques" << endl;
+  file_out << "# (S-1) clique_id_0 nbr_nodes_in_clique [node ids]" << endl;
+  file_out << "#    ..." << endl;
+  file_out << "# (S-1) clique_id_P nbr_nodes_in_clique [node ids]" << endl;
+
   file_out << node_features_fname << endl;
-  file_out << basename << endl;
   file_out << endl;
   file_out << clique_sets_.size() << endl;
-
   for (unsigned int i = 0 ; i < clique_sets_.size() ; i++)
   {
     const map<unsigned int, Clique*>& cliques = clique_sets_[i];
 
+    // print clique-set feature filename
+    stringstream ss_cs_fname;
+    ss_cs_fname << basename << ".cs_" << i << "_features";
+    file_out << ss_cs_fname.str() << endl;
+
+    // clique-set-idx and number of cliques
     file_out << i << " " << cliques.size() << endl;
 
+    // print each clique in the clique set
     for (map<unsigned int, Clique*>::const_iterator iter_cliques = cliques.begin() ; iter_cliques
         != cliques.end() ; iter_cliques++)
     {
       const list<unsigned int>& node_ids = iter_cliques->second->getNodeIDs();
       file_out << i << " " << iter_cliques->first << " " << node_ids.size();
+
+      // print node ids in the clique
       for (list<unsigned int>::const_iterator iter_node_ids = node_ids.begin() ; iter_node_ids
           != node_ids.end() ; iter_node_ids++)
       {
@@ -409,17 +433,9 @@ int RandomField::saveRandomField(string basename) const
       }
       file_out << endl;
     }
+
     file_out << endl;
   }
-
-  // node features filename
-  // clique features filename
-
-  // <S = number of clique-sets>
-  // 0 <nbr_cliques in clique-set 0>
-  // 0 clique-id nbr-nodes [node0 .... nodeS]
-  // clique-set-features filename
-  // ...
 
   file_out.close();
   return 0;
