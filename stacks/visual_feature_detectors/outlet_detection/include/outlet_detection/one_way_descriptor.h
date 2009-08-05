@@ -32,7 +32,7 @@ inline int round(float value)
 
 inline CvRect resize_rect(CvRect rect, float alpha)
 {
-	return cvRect(rect.x + round(0.5*(1 - alpha)*rect.width), rect.y + round(0.5*(1 - alpha)*rect.height), 
+	return cvRect(rect.x + round((float)(0.5*(1 - alpha)*rect.width)), rect.y + round((float)(0.5*(1 - alpha)*rect.height)), 
 				  round(rect.width*alpha), round(rect.height*alpha));
 }
 

@@ -67,8 +67,8 @@ CvPoint* getOutletCenter(feature_t feature, const vector<feature_t>& train_featu
 	outlet_center.y = 0;
 	for (int i=0;i<train_length;i++)
 	{
-		outlet_center.x += train_features[i].pt.x;
-		outlet_center.y += train_features[i].pt.y;
+		outlet_center.x += (int)train_features[i].pt.x;
+		outlet_center.y += (int)train_features[i].pt.y;
 	}
 	outlet_center.x /= train_length;
 	outlet_center.y /= train_length;
@@ -83,8 +83,8 @@ CvPoint* getOutletCenter(feature_t feature, const vector<feature_t>& train_featu
 	t2 = - rel_center_x * sin(angle2) + rel_center_y * cos(angle2); 
 
 	result = new CvPoint();
-	result->x = feature.pt.x-t1;
-	result->y = feature.pt.y-t2;
+	result->x = (int)(feature.pt.x-t1);
+	result->y = (int)(feature.pt.y-t2);
 
 	return result;
 
@@ -147,7 +147,7 @@ CvSparseMat* buildHoughHist(vector<feature_t>& input, const vector<feature_t>& t
 								if (isOK)
 								{
 
-									float value = cvGetRealND(hist,idx);
+									float value = (float)cvGetRealND(hist,idx);
 									cvSetRealND(hist,idx,++value);
 
 									// Fast blur
@@ -175,7 +175,7 @@ CvSparseMat* buildHoughHist(vector<feature_t>& input, const vector<feature_t>& t
 
 									if ((move_x != 0) || (move_y !=0))
 									{
-										float value2 = cvGetRealND(hist,idx2);
+										float value2 = (float)cvGetRealND(hist,idx2);
 										//if (value2 > value)
 											cvSetRealND(hist,idx2,++value2);
 										//else 
@@ -423,12 +423,12 @@ void getMaxHistValues(const CvSparseMat* hist, int* hist_size, float** ranges, f
 																		  (assume that the type is CV_32FC1) */
 			if (val >= MIN_VOTES)
 			{
-				maxs[i][0] = ranges[0][0]+(ranges[0][1]-ranges[0][0])/hist_size[0]*(idx[0]+0.5);
-				maxs[i][1] = ranges[1][0]+(ranges[1][1]-ranges[1][0])/hist_size[1]*(idx[1]+0.5);
-				maxs[i][2] = ranges[2][0]+(ranges[2][1]-ranges[2][0])/hist_size[2]*(idx[2]+0.5);
-				maxs[i][3] = ranges[3][0]+(ranges[3][1]-ranges[3][0])/hist_size[3]*(idx[3]+0.5);
-				maxs[i][4] = ranges[4][0]+(ranges[4][1]-ranges[4][0])/hist_size[4]*(idx[4]+0.5);
-				maxs[i][5] = ranges[5][0]+(ranges[5][1]-ranges[5][0])/hist_size[5]*(idx[5]+0.5);
+				maxs[i][0] = (float)(ranges[0][0]+(ranges[0][1]-ranges[0][0])/hist_size[0]*(idx[0]+0.5));
+				maxs[i][1] = (float)(ranges[1][0]+(ranges[1][1]-ranges[1][0])/hist_size[1]*(idx[1]+0.5));
+				maxs[i][2] = (float)(ranges[2][0]+(ranges[2][1]-ranges[2][0])/hist_size[2]*(idx[2]+0.5));
+				maxs[i][3] = (float)(ranges[3][0]+(ranges[3][1]-ranges[3][0])/hist_size[3]*(idx[3]+0.5));
+				maxs[i][4] = (float)(ranges[4][0]+(ranges[4][1]-ranges[4][0])/hist_size[4]*(idx[4]+0.5));
+				maxs[i][5] = (float)(ranges[5][0]+(ranges[5][1]-ranges[5][0])/hist_size[5]*(idx[5]+0.5));
 				i++;
 			}
 
@@ -518,12 +518,12 @@ int getMaxHistValues(const CvSparseMat* hist, int* hist_size, float** ranges, fl
 															(assume that the type is CV_32FC1) */
 			if (val == MIN_VOTES)
 			{
-				maxs[i][0] = ranges[0][0]+(ranges[0][1]-ranges[0][0])/hist_size[0]*(idx[0]+0.5);
-				maxs[i][1] = ranges[1][0]+(ranges[1][1]-ranges[1][0])/hist_size[1]*(idx[1]+0.5);
-				maxs[i][2] = ranges[2][0]+(ranges[2][1]-ranges[2][0])/hist_size[2]*(idx[2]+0.5);
-				maxs[i][3] = ranges[3][0]+(ranges[3][1]-ranges[3][0])/hist_size[3]*(idx[3]+0.5);
-				maxs[i][4] = ranges[4][0]+(ranges[4][1]-ranges[4][0])/hist_size[4]*(idx[4]+0.5);
-				maxs[i][5] = ranges[5][0]+(ranges[5][1]-ranges[5][0])/hist_size[5]*(idx[5]+0.5);
+				maxs[i][0] = (float)(ranges[0][0]+(ranges[0][1]-ranges[0][0])/hist_size[0]*(idx[0]+0.5));
+				maxs[i][1] = (float)(ranges[1][0]+(ranges[1][1]-ranges[1][0])/hist_size[1]*(idx[1]+0.5));
+				maxs[i][2] = (float)(ranges[2][0]+(ranges[2][1]-ranges[2][0])/hist_size[2]*(idx[2]+0.5));
+				maxs[i][3] = (float)(ranges[3][0]+(ranges[3][1]-ranges[3][0])/hist_size[3]*(idx[3]+0.5));
+				maxs[i][4] = (float)(ranges[4][0]+(ranges[4][1]-ranges[4][0])/hist_size[4]*(idx[4]+0.5));
+				maxs[i][5] = (float)(ranges[5][0]+(ranges[5][1]-ranges[5][0])/hist_size[5]*(idx[5]+0.5));
 				i++;
 			}
 
@@ -606,12 +606,12 @@ void getMaxSparseHistValues(const CvMatND* hist, int* hist_size, float** ranges,
 																							  (assume that the type is CV_32FC1) */
 										if (val >= MIN_VOTES)
 										{
-											maxs[i][0] = ranges[0][0]+(ranges[0][1]-ranges[0][0])/hist_size[0]*(idx_xy[0]+0.5);
-											maxs[i][1] = ranges[1][0]+(ranges[1][1]-ranges[1][0])/hist_size[1]*(idx_xy[1]+0.5);
-											maxs[i][2] = ranges[2][0]+(ranges[2][1]-ranges[2][0])/hist_size[2]*(idx[0]+0.5);
-											maxs[i][3] = ranges[3][0]+(ranges[3][1]-ranges[3][0])/hist_size[3]*(idx[1]+0.5);
-											maxs[i][4] = ranges[4][0]+(ranges[4][1]-ranges[4][0])/hist_size[4]*(idx[2]+0.5);
-											maxs[i][5] = ranges[5][0]+(ranges[5][1]-ranges[5][0])/hist_size[5]*(idx[3]+0.5);
+											maxs[i][0] = (float)(ranges[0][0]+(ranges[0][1]-ranges[0][0])/hist_size[0]*(idx_xy[0]+0.5));
+											maxs[i][1] = (float)(ranges[1][0]+(ranges[1][1]-ranges[1][0])/hist_size[1]*(idx_xy[1]+0.5));
+											maxs[i][2] = (float)(ranges[2][0]+(ranges[2][1]-ranges[2][0])/hist_size[2]*(idx[0]+0.5));
+											maxs[i][3] = (float)(ranges[3][0]+(ranges[3][1]-ranges[3][0])/hist_size[3]*(idx[1]+0.5));
+											maxs[i][4] = (float)(ranges[4][0]+(ranges[4][1]-ranges[4][0])/hist_size[4]*(idx[2]+0.5));
+											maxs[i][5] = (float)(ranges[5][0]+(ranges[5][1]-ranges[5][0])/hist_size[5]*(idx[3]+0.5));
 											i++;
 										}
 
@@ -719,12 +719,12 @@ void getMaxSparseHistValues(const CvMatND* hist, int* hist_size, float** ranges,
 																										  (assume that the type is CV_32FC1) */
 													if (val == MIN_VOTES)
 													{
-														maxs[i][0] = ranges[0][0]+(ranges[0][1]-ranges[0][0])/hist_size[0]*(idx_xy[0]+0.5);
-														maxs[i][1] = ranges[1][0]+(ranges[1][1]-ranges[1][0])/hist_size[1]*(idx_xy[1]+0.5);
-														maxs[i][2] = ranges[2][0]+(ranges[2][1]-ranges[2][0])/hist_size[2]*(idx[0]+0.5);
-														maxs[i][3] = ranges[3][0]+(ranges[3][1]-ranges[3][0])/hist_size[3]*(idx[1]+0.5);
-														maxs[i][4] = ranges[4][0]+(ranges[4][1]-ranges[4][0])/hist_size[4]*(idx[2]+0.5);
-														maxs[i][5] = ranges[5][0]+(ranges[5][1]-ranges[5][0])/hist_size[5]*(idx[3]+0.5);
+														maxs[i][0] = (float)(ranges[0][0]+(ranges[0][1]-ranges[0][0])/hist_size[0]*(idx_xy[0]+0.5));
+														maxs[i][1] = (float)(ranges[1][0]+(ranges[1][1]-ranges[1][0])/hist_size[1]*(idx_xy[1]+0.5));
+														maxs[i][2] = (float)(ranges[2][0]+(ranges[2][1]-ranges[2][0])/hist_size[2]*(idx[0]+0.5));
+														maxs[i][3] = (float)(ranges[3][0]+(ranges[3][1]-ranges[3][0])/hist_size[3]*(idx[1]+0.5));
+														maxs[i][4] = (float)(ranges[4][0]+(ranges[4][1]-ranges[4][0])/hist_size[4]*(idx[2]+0.5));
+														maxs[i][5] = (float)(ranges[5][0]+(ranges[5][1]-ranges[5][0])/hist_size[5]*(idx[3]+0.5));
 														i++;
 													}
 
@@ -745,7 +745,7 @@ void getMaxSparseHistValues(const CvMatND* hist, int* hist_size, float** ranges,
 // Affine transform is array [center x, center y, rotation angle1, x scale, y scale, rotation angle 2]
 void calcOutletPosition(const vector<feature_t>& train_features, float* affine_transform, vector<feature_t>& features)
 {
-	CvPoint center = cvPoint(affine_transform[0],affine_transform[1]);
+	CvPoint center = cvPoint((int)(affine_transform[0]),(int)(affine_transform[1]));
 	float angle1 = affine_transform[2];
 	float x_scale = affine_transform[3];
 	float y_scale = affine_transform[4];
@@ -758,8 +758,8 @@ void calcOutletPosition(const vector<feature_t>& train_features, float* affine_t
 	outlet_center.y = 0;
 	for (int i=0;i<train_length;i++)
 	{
-		outlet_center.x += train_features[i].pt.x;
-		outlet_center.y += train_features[i].pt.y;
+		outlet_center.x += (int)train_features[i].pt.x;
+		outlet_center.y += (int)train_features[i].pt.y;
 	}
 	outlet_center.x /= train_length;
 	outlet_center.y /= train_length;
@@ -776,8 +776,8 @@ void calcOutletPosition(const vector<feature_t>& train_features, float* affine_t
 		t2 = - rel_center_x * sin(angle2) + rel_center_y * cos(angle2); 
 
 		CvPoint result_point;
-		result_point.x = center.x+t1;
-		result_point.y = center.y+t2;
+		result_point.x = (int)(center.x+t1);
+		result_point.y = (int)(center.y+t2);
 		feature_t feature;
 		feature.size = train_features[i].size;
 		feature.pt = result_point;
@@ -800,7 +800,7 @@ void calcExactLocation1(vector<feature_t>& features, vector<feature_t>& outlet)
 	for (int i=0;i<outlet_length;i++)
 	{
 		int min_index = 0;
-		float min_distance = 1e30;
+		float min_distance = (float)1e30;
 		for (int j=0;j<features_length;j++)
 		{
 			if (features[j].class_id == outlet[i].class_id)
@@ -824,7 +824,7 @@ void calcExactLocation1(vector<feature_t>& features, vector<feature_t>& outlet)
 				}
 				else 
 				{
-					angles[i] = acos(distance_vectors[i].x/sqrt(distances[i])) + CV_PI;
+					angles[i] = (float)(acos((float)(distance_vectors[i].x/sqrt(distances[i]))) + CV_PI);
 				}
 			}
 		}
@@ -840,8 +840,8 @@ void calcExactLocation1(vector<feature_t>& features, vector<feature_t>& outlet)
 	// move = distance_vectors[index];
 	int nsegm = 16;
 	float maxd = 0;
-	float mind = 1e38;
-	float mina = CV_PI*2;
+	float mind = (float)1e38;
+	float mina = (float)CV_PI*2;
 	float maxa = 0;
 	for (int i=0; i <outlet_length; i++)
 	{
@@ -965,45 +965,45 @@ void calcExactLocation2(vector<feature_t>& features, vector<feature_t>& outlet, 
 	int features_length = (int)(features.size());
 	int outlet_length = (int)(outlet.size());
 	//int accuracy = 2;
-	CvRect outlet_rect = cvRect(outlet[0].pt.x,outlet[0].pt.y,0,0);
+	CvRect outlet_rect = cvRect((int)outlet[0].pt.x,(int)outlet[0].pt.y,0,0);
 	for (int i=1;i<(int)(outlet.size());i++)
 	{
 		if (outlet[i].pt.x < outlet_rect.x)
 		{
-			outlet_rect.width += (outlet_rect.x - outlet[i].pt.x);
-			outlet_rect.x = outlet[i].pt.x;
+			outlet_rect.width += (outlet_rect.x - (int)outlet[i].pt.x);
+			outlet_rect.x = (int)outlet[i].pt.x;
 		}
 
 		if (outlet[i].pt.x > (outlet_rect.x+outlet_rect.width))
 		{
-			outlet_rect.width = outlet[i].pt.x - outlet_rect.x;
+			outlet_rect.width = (int)outlet[i].pt.x - outlet_rect.x;
 		}
 
 		if (outlet[i].pt.y < outlet_rect.y)
 		{
-			outlet_rect.height += (outlet_rect.y - outlet[i].pt.y);
-			outlet_rect.y = outlet[i].pt.y;
+			outlet_rect.height += (outlet_rect.y - (int)outlet[i].pt.y);
+			outlet_rect.y = (int)outlet[i].pt.y;
 		}
 
 		if (outlet[i].pt.y > (outlet_rect.x+outlet_rect.height))
 		{
-			outlet_rect.height = outlet[i].pt.y - outlet_rect.y;
+			outlet_rect.height = (int)outlet[i].pt.y - outlet_rect.y;
 		}
 	}
 
 	//	float x_ranges[2] = {outlet_rect.x - outlet_rect.width/2 , outlet_rect.x + 3*outlet_rect.width/2};
 	//  float y_ranges[2] = {outlet_rect.y - outlet_rect.height/2 , outlet_rect.y + 4*outlet_rect.height/2};
-	float x_ranges[2] = {-outlet_rect.width , outlet_rect.width};
-	float y_ranges[2] = {-outlet_rect.height ,outlet_rect.height};
+	float x_ranges[2] = {(float)-outlet_rect.width , (float)outlet_rect.width};
+	float y_ranges[2] = {(float)-outlet_rect.height ,(float)outlet_rect.height};
 
 	CvPoint movement;
-	movement.x = x_ranges[0];
-	movement.y = y_ranges[0];
+	movement.x = (int)(x_ranges[0]);
+	movement.y = (int)(y_ranges[0]);
 	int votes = 0;
 
-	for (int x = x_ranges[0]; x<=x_ranges[1];x+=accuracy)
+	for (int x = (int)(x_ranges[0]); x<=(int)(x_ranges[1]); x += accuracy)
 	{
-		for (int y = y_ranges[0]; y<=y_ranges[1];y+=accuracy)
+		for (int y = (int)(y_ranges[0]); y <= (int)(y_ranges[1]); y+=accuracy)
 		{
 			int nvotes = 0;
 			for (int i = 0; i< outlet_length; i++)
@@ -1053,7 +1053,7 @@ void calcExactLocation3(vector<feature_t>& features, vector<feature_t>& outlet, 
 	{
 		votes[i]=0;
 		int min_index = 0;
-		float min_distance = 1e30;
+		float min_distance = (float)1e30;
 		for (int j=0;j<features_length;j++)
 		{
 			if (features[j].class_id == outlet[i].class_id)
@@ -1134,7 +1134,7 @@ void calcExactLocation4(vector<feature_t>& features, vector<feature_t>& outlet)
 	for (int i=0;i<outlet_length;i++)
 	{
 		int min_index = 0;
-		float min_distance = 1e30;
+		float min_distance = (float)1e30;
 		for (int j=0;j<features_length;j++)
 		{
 			if (features[j].class_id == outlet[i].class_id)
@@ -1158,7 +1158,7 @@ void calcExactLocation4(vector<feature_t>& features, vector<feature_t>& outlet)
 				}
 				else 
 				{
-					angles[i] = acos(distance_vectors[i].x/sqrt(distances[i])) + CV_PI;
+					angles[i] = (float)(acos(distance_vectors[i].x/sqrt(distances[i])) + CV_PI);
 				}
 			}
 		}
@@ -1175,8 +1175,8 @@ void calcExactLocation4(vector<feature_t>& features, vector<feature_t>& outlet)
 	// move = distance_vectors[index];
 	int nsegm = 16;
 	float maxd = 0;
-	float mind = 1e38;
-	float mina = CV_PI*2;
+	float mind = (float)1e38;
+	float mina = (float)CV_PI*2;
 	float maxa = 0;
 	for (int i=0; i <outlet_length; i++)
 	{
@@ -1324,7 +1324,7 @@ void calcExactLocation(vector<feature_t>& features,const vector<feature_t>& trai
 		for (int i=0;i<(int)src_outlet.size();i++)
 		{
 			int min_index = -1;
-			float min_distance = 1e30;
+			float min_distance = (float)1e30;
 			float last_min_distance;
 			for (int j=0;j<(int)features.size();j++)
 			{
@@ -1405,7 +1405,7 @@ void calcExactLocation(vector<feature_t>& features,const vector<feature_t>& trai
 					// The second attraction
 					//Temp
 				int min_index = -1;
-				float min_distance = 1e38;
+				float min_distance = (float)1e38;
 				float last_min_distance;
 				for (int j=0;j<(int)features.size();j++)
 				{				
@@ -1469,7 +1469,7 @@ void calcExactLocation(vector<feature_t>& features,const vector<feature_t>& trai
 		else
 		{
 			dst_outlet.clear();
-			reprojectionError = 1e38;
+			reprojectionError = (float)1e38;
 		}
 
 
@@ -1478,7 +1478,7 @@ void calcExactLocation(vector<feature_t>& features,const vector<feature_t>& trai
 	else
 	{
 		dst_outlet.clear();
-		reprojectionError = 1e38;
+		reprojectionError = (float)1e38;
 	}
 
 
@@ -1516,7 +1516,7 @@ void calcExactLocation_(vector<feature_t>& features,const vector<feature_t>& tra
 						(features[j].pt.y - src_outlet[i].pt.y)*(features[j].pt.y - src_outlet[i].pt.y);
 					if ( (distance < accuracy*accuracy))
 					{
-						elem.x = j;
+						elem.x = (float)j;
 						elem.y = distance;
 						cvSeqPush(seq[i],&elem);
 					}		
@@ -1529,7 +1529,7 @@ void calcExactLocation_(vector<feature_t>& features,const vector<feature_t>& tra
 
 		int* seq_indexes = new int[src_outlet.size()];
 		int* seq_indexes_min = new int[src_outlet.size()];
-		float min_distance = 1e38;
+		float min_distance = (float)1e38;
 		for (size_t i=0;i<src_outlet.size(); i++)
 		{
 			seq_indexes[i] = 0;
@@ -1644,7 +1644,7 @@ void calcExactLocation_(vector<feature_t>& features,const vector<feature_t>& tra
 
 				//Temp
 				int min_index = -1;
-				float min_distance = 1e38;
+				float min_distance = (float)1e38;
 				for (int j=0;j<(int)features.size();j++)
 				{
 					if (features[j].class_id == dst_outlet[i].class_id)
@@ -1681,7 +1681,7 @@ void calcExactLocation_(vector<feature_t>& features,const vector<feature_t>& tra
 		else
 		{
 			dst_outlet.clear();
-			reprojectionError = 1e38;
+			reprojectionError = (float)1e38;
 		}
 
 
@@ -1699,7 +1699,7 @@ void calcExactLocation_(vector<feature_t>& features,const vector<feature_t>& tra
 	else
 	{
 		dst_outlet.clear();
-		reprojectionError = 1e38;
+		reprojectionError = (float)1e38;
 	}
 }
 
@@ -1758,7 +1758,7 @@ float generalizedHoughTransform(vector<feature_t>& hole_candidates, const vector
   
 	float accuracy = sqrt((float)((train_features[1].pt.x -train_features[0].pt.x)*(train_features[1].pt.x -train_features[0].pt.x)+
 			(train_features[1].pt.y -train_features[0].pt.y)*(train_features[1].pt.y -train_features[0].pt.y)));
-	float error = 1e38;
+	float error = (float)1e38;
 	int index = -1;
 	for (int j=0;j<count;j++)
 	{
@@ -1770,15 +1770,15 @@ if (ghtImage)
 		for(int i = 0; i < (int)hole_features.size(); i++)
 		{
 			CvScalar pointColor = hole_features[i].class_id == 0 ? cvScalar(0,255,50) : cvScalar(255,0,50);	
-			cvLine(ghtImage, cvPoint(hole_features[i].pt.x+7, hole_features[i].pt.y), cvPoint(hole_features[i].pt.x-7, hole_features[i].pt.y),pointColor,2); 
-			cvLine(ghtImage, cvPoint(hole_features[i].pt.x, hole_features[i].pt.y+7), cvPoint(hole_features[i].pt.x, hole_features[i].pt.y-7),pointColor,2); 
+			cvLine(ghtImage, cvPoint((int)(hole_features[i].pt.x+7), (int)(hole_features[i].pt.y)), cvPoint((int)(hole_features[i].pt.x-7),(int)(hole_features[i].pt.y)),pointColor,2); 
+			cvLine(ghtImage, cvPoint((int)(hole_features[i].pt.x), (int)(hole_features[i].pt.y+7)), cvPoint((int)(hole_features[i].pt.x), (int)(hole_features[i].pt.y-7)),pointColor,2); 
             
 		}
 }
 
 
 		//accuracy = 21;
-		calcExactLocation(hole_candidates,train_features,hole_features,hole_features_corrected,currError,accuracy);
+		calcExactLocation(hole_candidates,train_features,hole_features,hole_features_corrected,currError,(int)accuracy);
 		//calcExactLocation_(hole_candidates,train_features,hole_features,hole_features_corrected,currError,image->width/x_size+1);
 		if (currError < error)
 		{
@@ -1812,9 +1812,9 @@ if (resImage)
 		for(int i = 0; i < (int)res_features.size(); i++)
 		{
 			
-			CvScalar pointColor = res_features[i].class_id == 0 ? cvScalar(0,255,50) : cvScalar(255,0,50);	
-			cvLine(resImage, cvPoint(res_features[i].pt.x+7, res_features[i].pt.y), cvPoint(res_features[i].pt.x-7, res_features[i].pt.y),pointColor,2); 
-			cvLine(resImage, cvPoint(res_features[i].pt.x, res_features[i].pt.y+7), cvPoint(res_features[i].pt.x, res_features[i].pt.y-7),pointColor,2); 
+			CvScalar pointColor = res_features[i].class_id == 0 ? cvScalar(0,255,50) : cvScalar(255,0,50);
+			cvLine(ghtImage, cvPoint((int)(hole_features[i].pt.x+7), (int)(hole_features[i].pt.y)), cvPoint((int)(hole_features[i].pt.x-7),(int)(hole_features[i].pt.y)),pointColor,2); 
+			cvLine(ghtImage, cvPoint((int)(hole_features[i].pt.x), (int)(hole_features[i].pt.y+7)), cvPoint((int)(hole_features[i].pt.x), (int)(hole_features[i].pt.y-7)),pointColor,2); 
 		}
 }
 
