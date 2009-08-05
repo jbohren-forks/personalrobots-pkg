@@ -40,7 +40,7 @@
 // ROS core
 #include <ros/ros.h>
 // ROS messages
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 
 
 // Cloud kd-tree
@@ -70,7 +70,7 @@ protected:
 public:
   LearningNode();
 
-  void cloudCallback(const robot_msgs::PointCloudConstPtr& the_cloud);
+  void cloudCallback(const sensor_msgs::PointCloudConstPtr& the_cloud);
   bool learn(functional_m3n_ros::Learn::Request  &req,
              functional_m3n_ros::Learn::Response &res );
 
@@ -84,7 +84,7 @@ public:
   ros::Subscriber cloud_sub_;
   ros::ServiceServer learn_svc_;
 
-  std::deque<robot_msgs::PointCloudConstPtr> training_clouds_;
+  std::deque<sensor_msgs::PointCloudConstPtr> training_clouds_;
 
   M3NParams learning_parameters_;
 };

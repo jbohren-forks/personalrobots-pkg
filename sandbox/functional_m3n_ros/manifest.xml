@@ -6,7 +6,7 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/functional_m3n_ros</url>
-  <depend package="robot_msgs"/>
+  <depend package="sensor_msgs"/>
 
 
   <depend package="functional_m3n"/>

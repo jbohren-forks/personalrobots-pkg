@@ -36,7 +36,7 @@
 #include <functional_m3n_ros/m3n_prediction_node.h>
 
 using namespace std;
-using namespace robot_msgs;
+using namespace sensor_msgs;
 using namespace m3n;
 
 #include "object_names/Float2Name.h"

@@ -31,14 +31,14 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-PKG = 'functional_m3n'
+PKG = 'functional_m3n_ros'
 import roslib; roslib.load_manifest(PKG)
 
 import rospy
 
 import unittest
 
-from functional_m3n.srv import *
+from functional_m3n_ros.srv import *
 
 class TestLearningBasic(unittest.TestCase):
 
@@ -61,5 +61,5 @@ if __name__ == "__main__":
     import rostest
     rospy.init_node("test_content");
 
-    rostest.rosrun('functional_m3n','test_learning_basics',TestLearningBasic)
+    rostest.rosrun('functional_m3n_ros','test_learning_basics',TestLearningBasic)
 

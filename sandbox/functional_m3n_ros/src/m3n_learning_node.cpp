@@ -56,7 +56,7 @@ M3NParams& getM3NParameters(unsigned int nbr_clique_sets)
 }
 
 using namespace std;
-using namespace robot_msgs;
+using namespace sensor_msgs;
 using namespace m3n;
 
 
@@ -91,13 +91,13 @@ void LearningNode::cloudCallback(const PointCloudConstPtr& the_cloud)
 
 
 
-int getAnnotationsChannel(const robot_msgs::PointCloud& pt_cloud)
+int getAnnotationsChannel(const sensor_msgs::PointCloud& pt_cloud)
 {
   int chan_annotation_idx=-1;
   for(unsigned int iC=0;iC<pt_cloud.chan.size();iC++)
   {
 
-    const robot_msgs::ChannelFloat32& chan = pt_cloud.chan[iC];
+    const sensor_msgs::ChannelFloat32& chan = pt_cloud.chan[iC];
 
     //if (chan.name == "predictions" || ( (  chan.name.at(0)=='a'  ) && (  chan.name.at(1)=='n'  ) && chan.name.at(2)=='n'  ) ))
     if (( (  chan.name.at(0)=='a'  ) && (  chan.name.at(1)=='n'  ) && (  chan.name.at(2)=='n'  ) ))
@@ -141,7 +141,7 @@ bool LearningNode::learn(functional_m3n_ros::Learn::Request  &req,
     training_rfs.resize(num_clouds);
 
     int iCloud=0;
-    for(std::deque<robot_msgs::PointCloudConstPtr>::iterator cloud_it=training_clouds_.begin();cloud_it!=training_clouds_.end();cloud_it++,iCloud++)
+    for(std::deque<sensor_msgs::PointCloudConstPtr>::iterator cloud_it=training_clouds_.begin();cloud_it!=training_clouds_.end();cloud_it++,iCloud++)
     {
 
       ROS_INFO("Extracting cloud features");

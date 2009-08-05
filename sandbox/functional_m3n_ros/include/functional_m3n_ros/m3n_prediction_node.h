@@ -40,7 +40,7 @@
 // ROS core
 #include <ros/ros.h>
 // ROS messages
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 
 
 // Cloud kd-tree
@@ -66,7 +66,7 @@ protected:
 public:
   PredictionNode();
 
-  void cloudCallback(const robot_msgs::PointCloudConstPtr& the_cloud);
+  void cloudCallback(const sensor_msgs::PointCloudConstPtr& the_cloud);
 
 
   boost::shared_ptr<PtCloudRFCreator> rf_creator_;
