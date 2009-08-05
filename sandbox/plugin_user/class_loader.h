@@ -97,41 +97,6 @@ public:
   };
   
 private:
-  std::set<std::string> findPlugins(const std::string & package, const std::string& plugin_style, const std::string& type)
-  {
-    std::set<std::string> output;
-    //\todo make this portable    
-    std::string cmd = "rospack depends-on1 plugin_user | xargs -L1 rospack export --lang=" + plugin_style + " --attrib=" + type;
-    //std::cout << cmd << std::endl;
-    FILE* pipe = popen(cmd.c_str(), "r");
-    std::string output_str;
-    
-    if (pipe)
-    {
-      char rospack_output[1024];
-      while (fgets(rospack_output, 1024, pipe))
-      {
-        output_str += rospack_output;
-      }
-      
-      pclose(pipe);
-    }
-
-    //    std::cout << output_str << std::endl;
-  
-    std::vector<std::string> output_vec;
-  
-    boost::split(output_vec, output_str, boost::is_any_of("\n "));
-  
-    for (std::vector<std::string>::iterator it = output_vec.begin(); it != output_vec.end() ; it++)
-    {
-      if (it->size() == 0) continue;
-      output.insert(*it);
-      //std::cout << "adding " << *it << std::endl;
-    };
-    return output;
-
-  };
 
   //used for proper unloading of automatically loaded libraries
   std::vector<std::string> loaded_libraries_;
