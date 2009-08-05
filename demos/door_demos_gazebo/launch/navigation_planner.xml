@@ -32,7 +32,7 @@
   <!--include file="$(find 2dnav_pr2)/move_base_local/move_base_local_voxel.xml" /-->
 
 <!-- IK controller -->
-  <include file="$(find pr2_ik)/pr2_ik_controller.launch" />
+  <include file="$(find pr2_ik)/launch/pr2_ik_controller.launch" />
 
 
 <!-- Navstack in map-->
