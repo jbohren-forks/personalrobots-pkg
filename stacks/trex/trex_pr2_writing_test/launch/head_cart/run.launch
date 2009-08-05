@@ -1,0 +1,19 @@
+<launch>
+
+  <include file="$(find pr2_head_cart)/$(env ROBOT).machine" />
+
+<!-- controllers-->
+  <include file="$(find trex_pr2_writing_test)/launch/head_cart/controllers.launch" />
+
+<!-- perception-->
+  <include file="$(find trex_pr2_writing_test)/launch/head_cart/perception.launch" />
+
+<!-- writing_core actions -->
+  <include file="$(find writing_core)/launch/writing_actions.launch" />
+
+<!-- writing related nodes -->
+<!--  <include file="$(find writing_core)/launch/whiteboard_detector.launch" />-->
+
+  <include file="$(find writing_core)/launch/face_detector.launch" />
+
+</launch>
