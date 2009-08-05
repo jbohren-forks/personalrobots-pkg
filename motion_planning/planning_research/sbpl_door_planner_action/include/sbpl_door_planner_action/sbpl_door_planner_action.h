@@ -44,7 +44,6 @@
 #include <tf/transform_datatypes.h>
 
 /** Messages needed for trajectory control and collision map**/
-#include <robot_msgs/Pose.h>
 #include <manipulation_msgs/JointTraj.h>
 #include <manipulation_msgs/JointTrajPoint.h>
 #include <mapping_msgs/CollisionMap.h>
