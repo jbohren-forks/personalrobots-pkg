@@ -145,7 +145,6 @@ RollingHistory<T>::RollingHistory(  const std::string topic_name, const std::str
 template <class T>
 void RollingHistory<T>::msgCallback(const boost::shared_ptr<T const>& msg_ptr)
 {
-  ROS_DEBUG("got msg") ;
 
   // Add the current msg into our history
   boost::mutex::scoped_lock lock( msg_hist_mutex_);
@@ -170,14 +169,8 @@ const boost::shared_ptr<T const> RollingHistory<T>::getMsgAtExactTime(ros::Time 
   while ( i < msg_hist_.size() &&                                                    // Don't go past end of deque
           msg_hist_[i]->header.stamp < stamp )                                    // Keep stepping until we've exceeded the start time
   {
-    ROS_DEBUG_STREAM("\tPrev message " << msg_hist_[i]->header.stamp);
     i++ ;
   }
-  ROS_DEBUG_STREAM("i="<<i);
-  if(i>0)
-    ROS_DEBUG_STREAM( "Last msg before the interval\t" << msg_hist_[i-1]->header.stamp<<"\n" );
-  else
-    ROS_DEBUG_STREAM( "No msg before the interval\n");
 
   if(i >= msg_hist_.size() )
   {
@@ -206,7 +199,6 @@ const boost::shared_ptr<T const> RollingHistory<T>::getMsgNearTime(ros::Time sta
   while ( i < msg_hist_.size() &&                                                    // Don't go past end of deque
           msg_hist_[i]->header.stamp < stamp )                                    // Keep stepping until we've exceeded the start time
   {
-    ROS_INFO_STREAM("\tPrev message " << msg_hist_[i]->header.stamp);
     i++ ;
   }
 

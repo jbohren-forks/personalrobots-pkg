@@ -1,0 +1,14 @@
+<launch>
+
+  <node pkg="image_server" type="image_server" name="image_server" >
+    <param name="db_path" value="$(find annotated_planar_patch_map)/test_data/image_db" />
+  </node>
+
+<include file="$(find annotated_planar_patch_map)/launch/make_annotated_pcd_map/full_lifter.launch"/>
+
+<include file="$(find annotated_planar_patch_map)/launch/make_annotated_pcd_map/full_lifter_only.launch"/>
+
+<node pkg="rosrecord" type="rosplay" args="-s 1 $(find annotated_planar_patch_map)/test_data/test_lift_2009-08-04-16-02-16-topic.bag" output="screen"/>
+
+
+</launch>

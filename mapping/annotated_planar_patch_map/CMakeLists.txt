@@ -81,4 +81,5 @@ rospack_download_test_data(http://pr.willowgarage.com/data/${PROJECT_NAME}/ann_p
 #The test is commented out because the data can't be downloaded
 rospack_add_rostest_future(test/test_content.launch)
 
-
+rospack_download_test_data(http://pr.willowgarage.com/data/${PROJECT_NAME}/test_lift_2009-08-04-16-02-16-topic.bag test_data/test_lift_2009-08-04-16-02-16-topic.bag)
+test_data/
