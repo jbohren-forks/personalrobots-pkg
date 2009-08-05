@@ -179,9 +179,9 @@ public:
   };
 
 
-  bool canCreate(const std::string& name)
+  bool isPluginLoaded(const std::string& name)
   {
-    try 
+    try
     {
       return ((Poco::ClassLoader<T>*)this )->canCreate(name);
     }

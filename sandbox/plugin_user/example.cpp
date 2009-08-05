@@ -51,7 +51,7 @@ int main() {
     std::cout << "asdf Failed to load library with plugin square inside" << std::endl;
   }
   
-  if (cl.canCreate("square"))
+  if (cl.isPluginLoaded("square"))
   { 
     std::cout << "Can create square";
     polygon * poly = cl.create("square");
@@ -62,7 +62,7 @@ int main() {
   else std::cout << "Square Plugin not loaded" << std::endl;
   
   std::cout << "Created square, trying triangle next" << std::endl;
-  if (cl.canCreate("triangle"))
+  if (cl.isPluginLoaded("triangle"))
   { 
     polygon * tri = cl.create("triangle");
 
@@ -73,10 +73,15 @@ int main() {
   else std::cout << "Triangle Plugin not loaded" << std::endl;
   
   
+  if (!cl.loadPlugin("line"))
+    std::cerr<< "Correctly failed to load line in polygon loader" << std::endl;
+
   ros::ClassLoader<shape> ph("plugin_user", "shape");
 
+  if (!ph.loadPlugin("line"))
+    std::cerr<<"Failed to load line" << std::endl;
 
-  if ( ph.canCreate("line"))
+  if ( ph.isPluginLoaded("line"))
     {
       shape * sh = ph.create("line");
       // use the class
