@@ -191,8 +191,16 @@ public:
     }
   };
   
-  T* createPluginInstance(const std::string& name)
+  T* createPluginInstance(const std::string& name, bool auto_load_plugin = true)
   {
+    if ( auto_load_plugin && !isPluginLoaded(name))
+      if(!loadPlugin(name))
+      {
+        //\todo THROW HERE
+        std::cerr <<"Failed to auto load library" << std::endl;
+        return NULL;
+      }
+
     //\todo rethrow with non poco Exceptions
     return poco_class_loader_.create(name);
   };
