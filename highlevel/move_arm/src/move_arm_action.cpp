@@ -897,7 +897,9 @@ private:
 	    collisionLinks_[contact.link1->name]++;
 	if (contact.link2)
 	    collisionLinks_[contact.link2->name]++;
-	collisionCost_ += contact.depth;
+	double depth = fabs(contact.depth);
+	if (collisionCost_ < depth)
+	    collisionCost_ = depth;
 	
 	if (validatingPath_ && core_.show_collisions_)
 	{
