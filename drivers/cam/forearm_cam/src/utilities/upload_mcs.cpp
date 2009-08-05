@@ -42,12 +42,11 @@
 #include <string.h> // for memset(3)
 #include <stdlib.h> // for atoi(3)
 
-#include <ros/console.h>
 #include <ros/time.h>
 
-#include <ipcam_packet.h>
-#include <host_netutil.h>
-#include <fcamlib.h>
+#include <forearm_cam/ipcam_packet.h>
+#include <forearm_cam/host_netutil.h>
+#include <forearm_cam/fcamlib.h>
 
 #include <boost/format.hpp>
   
@@ -85,7 +84,7 @@ int read_mcs(std::string fname)
   
   if (!file.is_open())
   {
-    ROS_FATAL("Failed to open file %s", fname.c_str());
+    fprintf(stderr, "Failed to open file %s\n", fname.c_str());
     return -1;
   }
 
@@ -98,7 +97,7 @@ int read_mcs(std::string fname)
     
     if (*curchar++ != ':')
     {
-      ROS_FATAL("Line %i did not start with a colon.", linenum);
+      fprintf(stderr, "Line %i did not start with a colon.\n", linenum);
       return -1;
     }
   
@@ -119,7 +118,7 @@ int read_mcs(std::string fname)
 
     if (*curchar)
     {
-      ROS_FATAL("Unexpected character 0x%02X at end of line %i.", 
+      fprintf(stderr, "Unexpected character 0x%02X at end of line %i.\n", 
           (int) *curchar, linenum);
       return -1;
     }
@@ -130,7 +129,7 @@ int read_mcs(std::string fname)
 
     if (bytecount < 5)
     {
-      ROS_FATAL("Line %i was too short (%i < 5).", linenum, bytecount); 
+      fprintf(stderr, "Line %i was too short (%i < 5).\n", linenum, bytecount); 
       return -1;
     }
 
@@ -138,7 +137,7 @@ int read_mcs(std::string fname)
 
     if (len != bytecount - 5)
     {
-      ROS_FATAL("Line %i contained %i bytes, but reported %i bytes.", 
+      fprintf(stderr, "Line %i contained %i bytes, but reported %i bytes.\n", 
           linenum, bytecount, bytes[0]);
       return -1;
     }
@@ -150,13 +149,13 @@ int read_mcs(std::string fname)
       case 0: // Data
         if (curseg + addr != firmwarelen)
         {
-          ROS_FATAL("Non contiguous address (%08x != %08x), line %i",
+          fprintf(stderr, "Non contiguous address (%08x != %08x), line %i\n",
               curseg + addr, firmwarelen, linenum);
           return -1;
         }
         if (curseg + addr + len >= FLASH_SIZE)
         {
-          ROS_FATAL("Exceeded reserved flash size (note: upload_mcs code can be edited to allow larger values) at line %i.", linenum);
+          fprintf(stderr, "Exceeded reserved flash size (note: upload_mcs code can be edited to allow larger values) at line %i.\n", linenum);
           return -1;
         }
         for (int i = 0; i < len; i++)
@@ -172,7 +171,7 @@ int read_mcs(std::string fname)
             return 0;
           if (!isspace(c))
           {
-            ROS_FATAL("EOF record on line %i was followed by character %02X.", 
+            fprintf(stderr, "EOF record on line %i was followed by character %02X.\n", 
                 linenum, (int) c);
             return -1;
           }
@@ -181,7 +180,7 @@ int read_mcs(std::string fname)
       case 4: // Extended address record
         if (len != 2)
         {
-          ROS_FATAL("Extended record had wrong length (%i != 2) on line %i", 
+          fprintf(stderr, "Extended record had wrong length (%i != 2) on line %i\n", 
               len, linenum);
           return -1;
         }
@@ -189,12 +188,12 @@ int read_mcs(std::string fname)
         break;
 
       default:
-        ROS_FATAL("Unknown record type %i at line %i.", bytes[3], linenum);
+        fprintf(stderr, "Unknown record type %i at line %i.\n", bytes[3], linenum);
         return -1;
     }
   }
 
-  ROS_FATAL("Unexpected EOF after line %i.", linenum);
+  fprintf(stderr, "Unexpected EOF after line %i.\n", linenum);
   return -1;
 }
 
@@ -223,35 +222,17 @@ void bitswap()
 int write_flash(char *camera_url)
 {
   IpCamList camera;
-  std::string ip_address;
   const char *errmsg;
+  
   int outval = fcamFindByUrl(camera_url, &camera, SEC_TO_USEC(0.1), &errmsg);
-  uint8_t *ip = (uint8_t *) &camera.ip;
-
-  switch (outval)
+  if (outval)
   {
-    case 0:
-      ROS_ERROR("No camera matching %s was found.", camera_url);
-      return -1;
-
-    case 1:
-      ip_address = (boost::format("%i.%i.%i.%i")%(int)ip[0]%(int)ip[1]%(int)ip[2]%(int)ip[3]).str();
-      break;
-
-    case 2:
-      ROS_ERROR("More than one camera matched %s. Use the discover tool to determine a non-unique url for the camera.", camera_url);
-      return -1;
-
-    case -1:
-      ROS_ERROR("Camera search failed: %s", errmsg);
-      return -1;
-
-    default:
-      ROS_ERROR("fcamFindByUrl returned illegal return value. This should never happen and is a bug.");
+    fprintf(stderr, "Matching URL %s : %s\n", camera_url, errmsg);
+    return -1;
   }
 
   // Configure the camera with its IP address, wait up to 500ms for completion
-  int retval = fcamConfigure(&camera, ip_address.c_str(), SEC_TO_USEC(0.5));
+  int retval = fcamConfigure(&camera, camera.ip_str, SEC_TO_USEC(0.5));
   if (retval != 0) {
     if (retval == ERR_CONFIG_ARPFAIL) {
       fprintf(stderr, "Unable to create ARP entry (are you root?), continuing anyway\n");
@@ -262,17 +243,17 @@ int write_flash(char *camera_url)
   }
 
   if ( fcamTriggerControl( &camera, TRIG_STATE_INTERNAL ) != 0) {
-    ROS_FATAL("Could not communicate with camera after configuring IP. Is ARP set? Is %s accessible from %s?", ip_address.c_str(), camera.ifName);
+    fprintf(stderr, "Could not communicate with camera after configuring IP. Is ARP set? Is %s accessible from %s?\n", camera.ip_str, camera.ifName);
     return -1;
   }
   
-  ROS_INFO("******************************************************************");
-  ROS_INFO("Firmware file parsed successfully. Will start writing to flash in 5 seconds.");
-  ROS_INFO("Hit CTRL+C to abort now.");
-  ROS_INFO("******************************************************************");
+  fprintf(stderr, "******************************************************************\n");
+  fprintf(stderr, "Firmware file parsed successfully. Will start writing to flash in 5 seconds.\n");
+  fprintf(stderr, "Hit CTRL+C to abort now.\n");
+  fprintf(stderr, "******************************************************************\n");
   sleep(5);
   
-  ROS_INFO("Writing to flash. DO NOT ABORT OR TURN OFF CAMERA!!");
+  fprintf(stderr, "Writing to flash. DO NOT ABORT OR TURN OFF CAMERA!!\n");
   
   unsigned char buff[FLASH_PAGE_SIZE];
 
@@ -291,21 +272,21 @@ int write_flash(char *camera_url)
 
     if (fcamReliableFlashWrite(&camera, page, (uint8_t *) firmware + addr, &retries) != 0)
     {
-      ROS_FATAL("Flash write error on page %i.", page);
-      ROS_FATAL("If you reset the camera it will probably not come up.");
-      ROS_FATAL("Try reflashing NOW, to possibly avoid a hard JTAG reflash.");
+      fprintf(stderr, "\nFlash write error on page %i.\n", page);
+      fprintf(stderr, "If you reset the camera it will probably not come up.\n");
+      fprintf(stderr, "Try reflashing NOW, to possibly avoid a hard JTAG reflash.\n");
       return -2;
     }
 
     if (retries < startretries)
     {
-      fprintf(stderr, "x(%i)", startretries - retries);
+      fprintf(stderr, "x(%i)\n", startretries - retries);
     }
   }
   
   fprintf(stderr, "\n");
 
-  ROS_INFO("Verifying flash.");
+  fprintf(stderr, "Verifying flash.\n");
   
   for (int page = 0; page < (firmwarelen + FLASH_PAGE_SIZE - 1) / FLASH_PAGE_SIZE; 
       page++)
@@ -319,23 +300,23 @@ int write_flash(char *camera_url)
 
     if (fcamReliableFlashRead(&camera, page, (uint8_t *) buff, NULL) != 0)
     {
-      ROS_FATAL("Flash read error on page %i.", page);
-      ROS_FATAL("If you reset the camera it will probably not come up.");
-      ROS_FATAL("Try reflashing NOW, to possibly avoid a hard JTAG reflash.");
+      fprintf(stderr, "\nFlash read error on page %i.\n", page);
+      fprintf(stderr, "If you reset the camera it will probably not come up.\n");
+      fprintf(stderr, "Try reflashing NOW, to possibly avoid a hard JTAG reflash.\n");
       return -2;
     }
 
     if (memcmp(buff, (uint8_t *) firmware + addr, FLASH_PAGE_SIZE))
     {
-      ROS_FATAL("Flash compare error on page %i.", page);
-      ROS_FATAL("If you reset the camera it will probably not come up.");
-      ROS_FATAL("Try reflashing NOW, to possibly avoid a hard JTAG reflash.");
+      fprintf(stderr, "\nFlash compare error on page %i.\n", page);
+      fprintf(stderr, "If you reset the camera it will probably not come up.\n");
+      fprintf(stderr, "Try reflashing NOW, to possibly avoid a hard JTAG reflash.\n");
     //  return -2;
     }
   }
   fprintf(stderr, "\n");
   
-  ROS_INFO("Success! Restarting camera, should take about 10 seconds to come back up after this.");
+  fprintf(stderr, "Success! Restarting camera, should take about 10 seconds to come back up after this.\n");
 
   fcamReconfigureFPGA(&camera);
 
@@ -347,6 +328,7 @@ int main(int argc, char **argv)
   if (argc != 3 && argc != 2) {
     fprintf(stderr, "Usage: %s <file.mcs> <camera_url>\n", argv[0]);
     fprintf(stderr, "       %s <file.mcs> > dump.bin\n", argv[0]);
+    fprintf(stderr, "Reads a .mcs file and uploads it to the camera or dumps it as binary to stdout.\n");
     return -1;
   }
 
@@ -357,7 +339,7 @@ int main(int argc, char **argv)
     bitswap();
   else if (firmware[4] != 0xaa)
   {
-    ROS_FATAL("Unexpected value at position 4. Don't know whether to bit-swap.");
+    fprintf(stderr, "Unexpected value at position 4. Don't know whether to bit-swap.\n");
     return -1;
   }
 

@@ -49,9 +49,9 @@
 #include <ros/console.h>
 #include <ros/time.h>
 
-#include <ipcam_packet.h>
-#include <host_netutil.h>
-#include <fcamlib.h>
+#include <forearm_cam/ipcam_packet.h>
+#include <forearm_cam/host_netutil.h>
+#include <forearm_cam/fcamlib.h>
 
 class ForearmCameraSimulator
 {

@@ -271,9 +271,10 @@ typedef struct {
    */
   uint32_t fw_version;
 
-	char ifName[9];
+	char ifName[128]; // FIXME This is so long that we will never hit the limit. (famous last words)
 	uint8_t mac[6];
 	IPAddress ip;
+  char ip_str[16];
 
 	IpCamStatus status;
 

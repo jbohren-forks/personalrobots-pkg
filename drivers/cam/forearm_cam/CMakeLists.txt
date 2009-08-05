@@ -31,3 +31,4 @@ endif(CMAKE_SYSTEM_PROCESSOR MATCHES "i686" OR
       CMAKE_SYSTEM_PROCESSOR MATCHES "unknown")
 
 add_subdirectory(src)
+add_subdirectory(test)

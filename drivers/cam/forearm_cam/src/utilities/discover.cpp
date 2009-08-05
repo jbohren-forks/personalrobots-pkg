@@ -41,8 +41,8 @@
 
 #include <net/if.h>
 
-#include "fcamlib.h"
-#include "host_netutil.h"
+#include "forearm_cam/fcamlib.h"
+#include "forearm_cam/host_netutil.h"
 
 int discover(const std::string &if_name, bool verbose, bool report_rp_filter)
 {
@@ -101,6 +101,6 @@ int main(int argc, char **argv)
   else if (argc == 1)
     return discover("", true, true);
     
-  fprintf(stderr, "usage: discover <interface>\n");
+  fprintf(stderr, "usage: discover [<interface>]\n");
   return 1;
 } 

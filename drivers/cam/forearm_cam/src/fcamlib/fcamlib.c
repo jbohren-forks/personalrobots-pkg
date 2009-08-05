@@ -1,4 +1,4 @@
-#include "fcamlib.h"
+#include "forearm_cam/fcamlib.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,8 +9,8 @@
 #include <net/if.h>
 #include <ifaddrs.h>
 
-#include "host_netutil.h"
-#include "ipcam_packet.h"
+#include "forearm_cam/host_netutil.h"
+#include "forearm_cam/ipcam_packet.h"
 
 /// Amount of time in microseconds that the host should wait for packet replies
 #define STD_REPLY_TIMEOUT SEC_TO_USEC(0.2)
@@ -60,15 +60,17 @@ any://[@camera_ip][#local_interface]
  * which to access the camera can be specified by prefixing it with a #
  * sign.
  *
+ * When an ip address is specified, it will be copied into the camera
+ * struct.
+ *
  * @param url			The url of the camera to find
  * @param camera	The structure to fill the camera information into
  * @param wait_us	The number of microseconds to wait before timing out
  * @param errmsg  String containing a descriptive parse error message
  *
- * @return Returns 1 if a camera was found, 2 if multiple cameras were found, 
- * 0 if no cameras were found
- * and -1 with errno set if a system errors occured.
+ * @return Returns 0 if a camera was found, -1 and sets errmsg if an error occurred.
  */
+
 int fcamFindByUrl(const char *url, IpCamList *camera, unsigned wait_us, const char **errmsg)
 {
   static const char *badprefix = "Bad URL prefix, expected name://, serial:// or any://.";
@@ -78,6 +80,10 @@ int fcamFindByUrl(const char *url, IpCamList *camera, unsigned wait_us, const ch
   static const char *badserial = "serial:// may only be followed by an integer.";
   static const char *badany = "Unexpected characters after any://.";
   static const char *badip = "@ must be followed by a valid IP address.";
+  static const char *nomatch = "No cameras matched the URL.";
+  static const char *multimatch = "More than one camera matched the URL.";
+  static const char *illegalcase = "Illegal case, this is a bug.";
+  static const char *nomem = "malloc failed";
   const char *name = "name://"; int namelen = strlen(name);
   const char *serial = "serial://"; int seriallen = strlen(serial);
   const char *any = "any://"; int anylen = strlen(any);
@@ -85,8 +91,9 @@ int fcamFindByUrl(const char *url, IpCamList *camera, unsigned wait_us, const ch
   char *curpos;
   char *address = NULL;
   char *interface = NULL;
-  char *copy = malloc(strlen(url));
+  char *copy = malloc(strlen(url) + 1);
   int retval = -1;
+  int camcount = 0;
   int mode = 0;
   unsigned int serialnum = -1;
   IpCamList camList;
@@ -95,11 +102,13 @@ int fcamFindByUrl(const char *url, IpCamList *camera, unsigned wait_us, const ch
   fcamCamListInit(&camList); // Must happen before any potential failures.
 
   if (errmsg)
-    *errmsg = NULL;
+    *errmsg = illegalcase; // If we return an error
 
-  if (!copy)
+  if (!copy) // malloc is above.
+  {
+    *errmsg = nomem;
     return -1;
-
+  }
   strcpy(copy, url);
 
   // Decypher the prefix.
@@ -184,16 +193,18 @@ int fcamFindByUrl(const char *url, IpCamList *camera, unsigned wait_us, const ch
   }
 
   // Now search through the list for a match.
-  retval = 0; // From now on retval is the number of matches.
+  camcount = 0;
   list_for_each_entry(curEntry, &(camList.list), list)
   {
     if ((mode == 1 && strcmp(idstart, curEntry->cam_name) == 0) ||
         (mode == 2 && serialnum == curEntry->serial) ||
         mode == 3)
     {
-      retval++;
-      if (retval == 2)
+      camcount++;
+      if (camcount > 1)
       {
+        if (errmsg)
+          *errmsg = multimatch;
         goto bailout;
       }
       memcpy(camera, curEntry, sizeof(IpCamList));
@@ -201,17 +212,36 @@ int fcamFindByUrl(const char *url, IpCamList *camera, unsigned wait_us, const ch
       {
         struct in_addr ip;
         if (inet_aton(address, &ip))
+        {
+          uint8_t *ipbytes = (uint8_t *) &ip.s_addr; // Reconstruct the address, we don't want any funny stuff with the user-provided string.
+          snprintf(camera->ip_str, sizeof(camera->ip_str), "%i.%i.%i.%i", ipbytes[0], ipbytes[1], ipbytes[2], ipbytes[3]);
           camera->ip = ip.s_addr;
+        }
         else
         {
-          fprintf(stderr, "Camera IP address is %s.", address);
           if (errmsg)
             *errmsg = badip;
-          retval = -1;
           goto bailout;
         }
       }
     }
+  }
+
+  switch (camcount)
+  {
+    case 1: // Found exactly one camera, we're good!
+      retval = 0;
+      break;
+
+    case 0: // Found no cameras
+      if (errmsg)
+        *errmsg = nomatch;
+      break;
+
+    default:
+      if (errmsg)
+        *errmsg = illegalcase;
+      break;
   }
 
 bailout:
@@ -423,11 +453,14 @@ int fcamDiscover(const char *ifName, IpCamList *ipCamList, const char *ipAddress
       tmpListItem->hw_version = ntohl(aPkt.hw_version);
       tmpListItem->fw_version = ntohl(aPkt.fw_version);
       tmpListItem->ip = aPkt.camera_ip;
-			tmpListItem->serial = ntohl(aPkt.ser_no);
+      uint8_t *ipbytes = (uint8_t *) &aPkt.camera_ip;
+			snprintf(tmpListItem->ip_str, sizeof(tmpListItem->ip_str), "%i.%i.%i.%i", ipbytes[0], ipbytes[1], ipbytes[2], ipbytes[3]);
+      tmpListItem->serial = ntohl(aPkt.ser_no);
 			memcpy(&tmpListItem->mac, aPkt.mac, sizeof(aPkt.mac));
       memcpy(tmpListItem->cam_name, aPkt.camera_name, sizeof(aPkt.camera_name));
       aPkt.camera_name[sizeof(aPkt.camera_name) - 1] = 0;
       strncpy(tmpListItem->ifName, ifNames[curs], sizeof(tmpListItem->ifName));
+      tmpListItem->ifName[sizeof(tmpListItem->ifName) - 1] = 0;
 			tmpListItem->status = CamStatusDiscovered;
 			char pcb_rev = 0x0A + (0x0000000F & ntohl(aPkt.hw_version));
 			int hdl_rev = 0x00000FFF & (ntohl(aPkt.hw_version)>>4);

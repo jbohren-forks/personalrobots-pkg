@@ -63,9 +63,9 @@
 #include <driver_base/driver.h>
 #include <driver_base/driver_node.h>
 
-#include "fcamlib.h"
-#include "host_netutil.h"
-#include "mt9v.h"
+#include "forearm_cam/fcamlib.h"
+#include "forearm_cam/host_netutil.h"
+#include "forearm_cam/mt9v.h"
 
 // The FrameTimeFilter class takes a stream of image arrival times that
 // include time due to system load and network asynchrony, and generates a
@@ -96,6 +96,8 @@
 //
 // Finally, if the filter misses too many frames in a row, it assumes that
 // its anticipated_time is invalid and immediately resets the filter.
+
+#define RMEM_MAX_RECOMMENDED 20000000
 
 class FrameTimeFilter
 {
@@ -205,6 +207,7 @@ private:
   double desired_freq_;
   
   // Statistics
+  int rmem_max_;
   int missed_eof_count_;
   int missed_line_count_;
   double last_image_time_;
@@ -222,9 +225,6 @@ private:
   // Camera information
   std::string hwinfo_;
   IpCamList camera_;
-  std::string interface_;
-  std::string address_;
-//  IpCamList camList;
 
   // Trigger information
   std::string trig_controller_cmd_;
@@ -297,6 +297,16 @@ public:
     close();
   }
 
+  int get_rmem_max()
+  {
+    int rmem_max;
+    {
+      std::ifstream f("/proc/sys/net/core/rmem_max");
+      f >> rmem_max;
+    }
+    return rmem_max;
+  }
+
   void doOpen()
   {
     assert(state_ == CLOSED);
@@ -305,98 +315,22 @@ public:
     int retval;
     
     // Check that rmem_max is large enough.
-    int rmem_max;
+    rmem_max_ = get_rmem_max();
+    if (rmem_max_ < RMEM_MAX_RECOMMENDED)
     {
-      std::ifstream f("/proc/sys/net/core/rmem_max");
-      f >> rmem_max;
+      ROS_WARN("rmem_max is %i. Buffer overflows and packet loss may occur. Minimum recommended value is 20000000. Updates may not take effect until the driver is restarted. See http://pr.willowgarage.com/wiki/errors/Dropped_Frames_and_rmem_max for details.", rmem_max_);
     }
-    if (rmem_max < 10000000)
-    {
-      ROS_WARN("rmem_max is %i. Buffer overflows and packet loss may occur. Minimum recommended value is 10000000. Updates may not take effect until the driver is restarted. See http://pr.willowgarage.com/wiki/errors/Dropped_Frames_and_rmem_max for details.", rmem_max);
-    }
-
-    // Forget results of previous discovery.
-//    camera_ = NULL;
-//    fcamCamListDelAll(&camList);
-    
-/*    // Discover any connected cameras, wait for 0.5 second for replies
-    if( fcamDiscover(config_.if_name.c_str(), &camList, config_.ip_address.c_str(), SEC_TO_USEC(0.5)) == -1) {
-      ROS_FATAL("Discover error");
-      //node_handle_.shutdown();
-      return;
-    }
-
-    if (fcamCamListNumEntries(&camList) == 0) {
-      ROS_FATAL("No cameras found");
-      return;
-    }
-
-    // Open camera with requested serial number.
-    int index = -1;
-    if (camera_.serial == -1) // Auto
-    {
-      if (fcamCamListNumEntries(&camList) == 1)
-      {
-        index = 0;
-      }
-      else
-      {
-        ROS_FATAL("Camera autodetection only works when exactly one camera is discoverable. Unfortunately, we found %i cameras.", fcamCamListNumEntries(&camList));
-      }
-    }
-    else if (camera_.serial == -2) // Nothing specified
-    {
-      ROS_FATAL("No camera serial_number was specified. Specifying a serial number is now mandatory to avoid accidentally configuring a random camera elsewhere in the building. You can specify -1 for autodetection.");
-    }
-    else
-    {
-      index = fcamCamListFind(&camList, camera_.serial);
-      if (index == -1) {
-        ROS_FATAL("Couldn't find camera with S/N %i", camera_.serial);
-      }
-    }
-
-    // List found cameras if we were unable to open the requested one or
-    // none was specified. 
-    if (index == -1)
-    {
-      for (int i = 0; i < fcamCamListNumEntries(&camList); i++)
-      {
-        camera_ = fcamCamListGetEntry(&camList, i);
-        ROS_FATAL("Found camera with S/N #%u", camera_.serial);
-      }
-      return;
-    }*/
 
     const char *errmsg;
-    int findResult = fcamFindByUrl(config_.camera_url.c_str(), &camera_, SEC_TO_USEC(0.1), &errmsg);
-    uint8_t *ip = (uint8_t *) &camera_.ip;
-    switch (findResult)
+    int findResult = fcamFindByUrl(config_.camera_url.c_str(), &camera_, SEC_TO_USEC(0.2), &errmsg);
+
+    if (findResult)
     {
-      case 0:
-        ROS_ERROR("No camera matching %s was found.", config_.camera_url.c_str());
-        return;
-
-      case 1:
-        interface_ = camera_.ifName;
-        address_ = (boost::format("%i.%i.%i.%i")%(int)ip[0]%(int)ip[1]%(int)ip[2]%(int)ip[3]).str();
-        break;
-
-      case 2:
-        ROS_ERROR("More than one camera matched %s. Use the discover tool to determine a non-unique url for the camera.", config_.camera_url.c_str());
-        return;
-
-      case -1:
-        ROS_ERROR("Camera search failed: %s", errmsg);
-        return;
-
-      default:
-        ROS_ERROR("fcamFindByUrl returned illegal return value. This should never happen and is a bug.");
+      ROS_ERROR("Matching URL %s : %s", config_.camera_url.c_str(), errmsg);
+      return;
     }
 
-    // Configure the camera with its IP address, wait up to 500ms for completion
-//    camera_ = fcamCamListGetEntry(&camList, index);
-    retval = fcamConfigure(&camera_, address_.c_str(), SEC_TO_USEC(0.5));
+    retval = fcamConfigure(&camera_, camera_.ip_str, SEC_TO_USEC(0.5));
     if (retval != 0) {
       if (retval == ERR_CONFIG_ARPFAIL) {
         ROS_WARN("Unable to create ARP entry (are you root?), continuing anyway");
@@ -409,7 +343,7 @@ public:
     hwinfo_ = camera_.hwinfo;
 
     ROS_INFO("Configured camera. Complete URLs: serial://%u@%s#%s name://%s@%s#%s",
-             camera_.serial, address_.c_str(), interface_.c_str(), camera_.cam_name, address_.c_str(), interface_.c_str());
+             camera_.serial, camera_.ip_str, camera_.ifName, camera_.cam_name, camera_.ip_str, camera_.ifName);
       
     // We are going to receive the video on this host, so we need our own MAC address
     if ( wgEthGetLocalMac(camera_.ifName, &localMac_) != 0 ) {
@@ -425,7 +359,7 @@ public:
       
     // Select trigger mode.
     if ( fcamTriggerControl( &camera_, config_.ext_trig ? TRIG_STATE_EXTERNAL : TRIG_STATE_INTERNAL ) != 0) {
-      ROS_FATAL("Trigger mode set error. Is %s accessible from interface %s? (Try running route to check.)", address_.c_str(), interface_.c_str());
+      ROS_FATAL("Trigger mode set error. Is %s accessible from interface %s? (Try running route to check.)", camera_.ip_str, camera_.ifName);
       return;
     }
 
@@ -668,13 +602,17 @@ end_image_thread:
     {
       stat.summary(2, "Next frame is past due.");
     }
-    else if (state_ == RUNNING)
+    else if (state_ != RUNNING)
     {
-      stat.summary(0, "Frames are streaming.");
+      stat.summary(1, "Frames are not streaming.");
+    }
+    else if (rmem_max_ < RMEM_MAX_RECOMMENDED)
+    {
+      stat.summaryf(1, "Frames are streaming, but the receive buffer is small (rmem_max=%u). Please increase rmem_max to %u to avoid dropped frames. For details: http://pr.willowgarage.com/wiki/errors/Dropped_Frames_and_rmem_max", rmem_max_, RMEM_MAX_RECOMMENDED);
     }
     else
     {
-      stat.summary(1, "Frames are not streaming.");
+      stat.summary(0, "Frames are streaming.");
     }
     
     stat.addv("Missing image line frames", missed_line_count_);
@@ -697,8 +635,8 @@ end_image_thread:
       stat.adds("Camera Name", camera_.cam_name);
       stat.adds("Camera Hardware", hwinfo_);
       stat.addsf("Camera MAC", "%02X:%02X:%02X:%02X:%02X:%02X", camera_.mac[0], camera_.mac[1], camera_.mac[2], camera_.mac[3], camera_.mac[4], camera_.mac[5]);
-      stat.adds("Interface", interface_);
-      stat.adds("Camera IP", address_);
+      stat.adds("Interface", camera_.ifName);
+      stat.adds("Camera IP", camera_.ip_str);
     }
     stat.adds("Image mode", config_.video_mode);
     stat.addsf("Latest frame time", "%f", last_image_time_);

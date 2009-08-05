@@ -9,8 +9,8 @@
 #include <unistd.h>
 #include <net/if_arp.h>
 
-#include "list.h"
-#include "host_netutil.h"
+#include "forearm_cam/list.h"
+#include "forearm_cam/host_netutil.h"
 
 
 /**

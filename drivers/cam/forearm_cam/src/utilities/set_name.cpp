@@ -44,9 +44,9 @@
 #include <ros/console.h>
 #include <ros/time.h>
 
-#include <ipcam_packet.h>
-#include <host_netutil.h>
-#include <fcamlib.h>
+#include <forearm_cam/ipcam_packet.h>
+#include <forearm_cam/host_netutil.h>
+#include <forearm_cam/fcamlib.h>
   
 uint16_t checksum(uint16_t *data)
 {
@@ -56,55 +56,21 @@ uint16_t checksum(uint16_t *data)
  return htons(0xFFFF - sum);
 }
 
-int write_name(char *if_name, char *ip_address, int sn, char *name, char *new_ip)
+int read_name(IpCamList *camera)
 {
-  // Create a new IpCamList to hold the camera list
-  IpCamList camList;
-  fcamCamListInit(&camList);
-
-  // Discover any connected cameras, wait for 0.5 second for replies
-  if( fcamDiscover(if_name, &camList, NULL, SEC_TO_USEC(0.5)) == -1) {
-    fprintf(stderr, "Discover error\n");
-    return -1;
-  }
-
-  if (fcamCamListNumEntries(&camList) == 0) {
-    fprintf(stderr, "No cameras found\n");
-    return -1;
-  }
-
-  // Open camera with requested serial number
-  int index = fcamCamListFind(&camList, sn);
-  if (index == -1) {
-    fprintf(stderr, "Couldn't find camera with S/N %i\n", sn);
-    return -1;
-  }
-  IpCamList* camera = fcamCamListGetEntry(&camList, index);
-
-  // Configure the camera with its IP address, wait up to 500ms for completion
-  int retval = fcamConfigure(camera, ip_address, SEC_TO_USEC(0.5));
-  if (retval != 0) {
-    if (retval == ERR_CONFIG_ARPFAIL) {
-      fprintf(stderr, "Unable to create ARP entry (are you root?), continuing anyway\n");
-    } else {
-      fprintf(stderr, "IP address configuration failed\n");
-      return -1;
-    }
-  }
-
   unsigned char namebuff[FLASH_PAGE_SIZE];
   IdentityFlashPage *id = (IdentityFlashPage *) &namebuff;
 
   if(fcamReliableFlashRead(camera, FLASH_NAME_PAGENO, (uint8_t *) namebuff, NULL) != 0)
   {
-    ROS_FATAL("Flash read error. Aborting.");
+    fprintf(stderr, "Flash read error. Aborting.\n");
     return -2;
   }
  
   uint16_t chk = checksum((uint16_t *) namebuff);
   if (chk)
   {
-    ROS_ERROR("Previous camera name had bad checksum. Error: %04x", chk);
+    fprintf(stderr, "Previous camera name had bad checksum. Error: %04x\n", chk);
   }
   
   id->cam_name[sizeof(id->cam_name) - 1] = 0;
@@ -112,9 +78,17 @@ int write_name(char *if_name, char *ip_address, int sn, char *name, char *new_ip
   uint8_t *oldip = (uint8_t *) &id->cam_addr;
   printf("Previous camera IP: %i.%i.%i.%i.\n", oldip[0], oldip[1], oldip[2], oldip[3]);
 
+  return 0;
+}
+
+int write_name(IpCamList *camera, char *name, char *new_ip)
+{
+  unsigned char namebuff[FLASH_PAGE_SIZE];
+  IdentityFlashPage *id = (IdentityFlashPage *) &namebuff;
+  
   if (strlen(name) > sizeof(id->cam_name) - 1)
   {
-    ROS_FATAL("Name is too long, the maximum number of characters is %i.", sizeof(id->cam_name) - 1);
+    fprintf(stderr, "Name is too long, the maximum number of characters is %i.\n", sizeof(id->cam_name) - 1);
     return -2;
   }
   bzero(namebuff, FLASH_PAGE_SIZE);
@@ -123,7 +97,7 @@ int write_name(char *if_name, char *ip_address, int sn, char *name, char *new_ip
   struct in_addr cam_ip;
   if (!inet_aton(new_ip, &cam_ip))
   {
-    ROS_FATAL("This is not a valid IP address: %s", new_ip);
+    fprintf(stderr, "This is not a valid IP address: %s\n", new_ip);
     return -2;
   }
   id->cam_addr = cam_ip.s_addr;
@@ -131,11 +105,11 @@ int write_name(char *if_name, char *ip_address, int sn, char *name, char *new_ip
 
   if (fcamReliableFlashWrite(camera, FLASH_NAME_PAGENO, (uint8_t *) namebuff, NULL) != 0)
   {    
-    ROS_FATAL("Flash write error. The camera name is an undetermined state.");
+    fprintf(stderr, "Flash write error. The camera name is an undetermined state.\n");
     return -2;
   }
   
-  ROS_INFO("Success! Restarting camera, should take about 10 seconds to come back up after this.");
+  fprintf(stderr, "Success! Restarting camera, should take about 10 seconds to come back up after this.\n");
 
   fcamReconfigureFPGA(camera);
 
@@ -144,16 +118,45 @@ int write_name(char *if_name, char *ip_address, int sn, char *name, char *new_ip
 
 int main(int argc, char **argv)
 {
-  if (argc != 6) {
-    fprintf(stderr, "Usage: %s <Name> <SetIP> <Interface> <Current IP address> <Serial number>\n", argv[0]);
+  if (argc != 4 && argc != 2) {
+    fprintf(stderr, "Usage: %s <camera_url> <new_name> <new_default_ip>   # Sets the camera name and default IP\n", argv[0]);
+    fprintf(stderr, "       %s <camera_url>                               # Reads the camera name and default IP\n", argv[0]);
+    fprintf(stderr, "\nReads or writes the camera name and default IP address stored on the camera's flash.\n");
     return -1;
   }
 
-  char* name = argv[1];
-  char* new_ip = argv[2];
-  char* if_name = argv[3];
-  char* ip_address = argv[4];
-  int sn = atoi(argv[5]);
+  char *camera_url = argv[1];
 
-  write_name(if_name, ip_address, sn, name, new_ip);
+  // Find the camera matching the URL
+  IpCamList camera;
+  const char *errmsg;
+  int outval = fcamFindByUrl(camera_url, &camera, SEC_TO_USEC(0.1), &errmsg);
+  if (outval)
+  {
+    fprintf(stderr, "Matching URL %s : %s\n", camera_url, errmsg);
+    return -1;
+  }
+
+  // Configure the camera with its IP address, wait up to 500ms for completion
+  outval = fcamConfigure(&camera, camera.ip_str, SEC_TO_USEC(0.5));
+  if (outval != 0) {
+    if (outval == ERR_CONFIG_ARPFAIL) {
+      fprintf(stderr, "Unable to create ARP entry (are you root?), continuing anyway\n");
+    } else {
+      fprintf(stderr, "IP address configuration failed\n");
+      return -1;
+    }
+  }
+
+  outval = read_name(&camera);
+  if (outval)
+    return outval;
+
+  if (argc != 4)
+    return 0;
+
+  char *name = argv[2];
+  char *new_ip = argv[3];
+
+  return write_name(&camera, name, new_ip);
 }
