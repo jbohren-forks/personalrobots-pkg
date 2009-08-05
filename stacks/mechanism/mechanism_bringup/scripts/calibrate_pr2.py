@@ -134,8 +134,10 @@ def hold(joint, command):
             except Exception, ex:
                 rospy.logerr("Failed to spawn holding controller %s on try %d: %s" % (controller, i+1, str(ex)))
 
-    rospy.Publisher("%s/set_command" % controller, Float64,
-                    SendMessageOnSubscribe(Float64(command)))
+    print "SENDING HOLD", controller, command
+    pub = rospy.Publisher("%s/set_command" % controller, Float64,
+                          SendMessageOnSubscribe(Float64(command)))
+    pub.publish(Float64(command))
 
 
 def calibrate_imu():
