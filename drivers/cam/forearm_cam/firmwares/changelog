@@ -1,0 +1,2 @@
+Firmware 118: Added name and default IP in flash.
+Firmware 119: Changed announce to send default IP instead of current IP.
