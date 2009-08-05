@@ -38,6 +38,8 @@
 #include <vector>
 #include <map>
 #include <fstream>
+#include <sstream>
+#include <string>
 
 #include <boost/shared_array.hpp>
 

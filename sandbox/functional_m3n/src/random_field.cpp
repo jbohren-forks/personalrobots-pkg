@@ -368,7 +368,7 @@ int RandomField::saveRandomField(string basename) const
   ofstream file_out(rf_fname.c_str());
   if (file_out.is_open() == false)
   {
-    ROS_ERROR("Could not open requested %s to save node features to", rf_fname.c_str());
+    ROS_ERROR("Could not open requested %s to save random field to", rf_fname.c_str());
     return -1;
   }
 
@@ -441,6 +441,202 @@ int RandomField::saveRandomField(string basename) const
   return 0;
 }
 
+// --------------------------------------------------------------
+/* See function definition */
+// --------------------------------------------------------------
+int RandomField::loadRandomField(string basename)
+{
+  string rf_fname = basename;
+  rf_fname.append(".random_field");
+  ifstream file_rf(rf_fname.c_str());
+  if (file_rf.is_open() == false)
+  {
+    ROS_ERROR("Could not open requested %s to load random field from", rf_fname.c_str());
+    return -1;
+  }
+
+  clear();
+
+  // skip header
+  for (int i = 0 ; i < 16 ; i++)
+  {
+    file_rf.ignore(std::numeric_limits<int>::max(), '\n');
+  }
+
+  // ------------------------------------------
+  // Load node features file
+  // format: x y z node_id label nbr_features [features]
+  char node_features_fname[512];
+  file_rf.getline(node_features_fname, 512);
+  ifstream file_node_features(node_features_fname);
+  if (file_node_features.is_open() == false)
+  {
+    ROS_ERROR("Could not open node features to load: %s", node_features_fname);
+    file_rf.close();
+    return -1;
+  }
+  // skip header
+  file_node_features.ignore(std::numeric_limits<int>::max(), '\n');
+  string line;
+  while (getline(file_node_features, line))
+  {
+    float x = 0.0;
+    float y = 0.0;
+    float z = 0.0;
+    unsigned int node_id = 0;
+    unsigned int node_label = RandomField::UNKNOWN_LABEL;
+    unsigned int nbr_feature_vals = 0;
+
+    istringstream iss(line);
+    iss >> x;
+    iss >> y;
+    iss >> z;
+    iss >> node_id;
+    iss >> node_label;
+    iss >> nbr_feature_vals;
+
+    float* feature_vals = new float[nbr_feature_vals];
+    for (unsigned int i = 0 ; i < nbr_feature_vals ; i++)
+    {
+      iss >> feature_vals[i];
+    }
+    boost::shared_array<const float> const_feature_vals(static_cast<const float*> (feature_vals));
+
+    Node* new_node = new Node(node_id, node_label);
+    new_node->setXYZ(x, y, z);
+    new_node->setFeatures(const_feature_vals, nbr_feature_vals);
+    rf_nodes_[node_id] = new_node;
+  }
+  file_node_features.close();
+
+  // ------------------------------------------
+  // Load clique set info
+  unsigned int nbr_clique_sets = 0;
+  file_rf >> nbr_clique_sets;
+  cout << "read nbr clique sets: " << nbr_clique_sets << endl;
+  file_rf.ignore(std::numeric_limits<int>::max(), '\n'); // finish the line
+
+  clique_sets_.resize(nbr_clique_sets);
+  for (unsigned int cs_idx = 0 ; cs_idx < nbr_clique_sets ; cs_idx++)
+  {
+    // --------------------------
+    // Load clique features
+    // format: x y z clique_set_idx clique_id nbr_features [features]
+    char clique_features_fname[512];
+    file_rf.getline(clique_features_fname, 512);
+    cout << "read clique features filename: " << clique_features_fname << endl;
+    ifstream file_clique_features(clique_features_fname);
+    if (file_clique_features.is_open() == false)
+    {
+      ROS_ERROR("Could not open clique features to load: %s", clique_features_fname);
+      file_rf.close();
+      return -1;
+    }
+
+    // skip header
+    file_clique_features.ignore(std::numeric_limits<int>::max(), '\n');
+    string line;
+    while (getline(file_clique_features, line))
+    {
+      float x = 0.0;
+      float y = 0.0;
+      float z = 0.0;
+      unsigned int read_cs_idx = 0;
+      unsigned int clique_id = 0;
+      unsigned int nbr_feature_vals = 0;
+
+      istringstream iss(line);
+      iss >> x;
+      iss >> y;
+      iss >> z;
+      iss >> read_cs_idx;
+      iss >> clique_id;
+      iss >> nbr_feature_vals;
+
+      float* feature_vals = new float[nbr_feature_vals];
+      for (unsigned int i = 0 ; i < nbr_feature_vals ; i++)
+      {
+        iss >> feature_vals[i];
+      }
+      boost::shared_array<const float> const_feature_vals(static_cast<const float*> (feature_vals));
+
+      if (cs_idx != read_cs_idx)
+      {
+        abort();
+      }
+
+      Clique* new_clique = new Clique(clique_id);
+      new_clique->setXYZ(x, y, z);
+      new_clique->setFeatures(const_feature_vals, nbr_feature_vals);
+      clique_sets_[cs_idx][clique_id] = new_clique;
+    }
+    file_clique_features.close();
+
+    // --------------------------
+    // Read node membership for each clique
+    // Format:
+    //   cs_idx_i P=nbr_cliques_in_set
+    //     ... loop over j < P...
+    //   cs_idx_i clique_j_id nbr_nodes_in_clique [node ids]
+    unsigned int read_cs_idx = 0;
+    unsigned int read_nbr_cliques = 0;
+    file_rf >> read_cs_idx;
+    file_rf >> read_nbr_cliques;
+
+    // verify reading the clique for the correct clique-set
+    if (cs_idx != read_cs_idx)
+    {
+      abort();
+    }
+    // verify the read number of cliques matches what was read from feature file
+    if (clique_sets_[cs_idx].size() != read_nbr_cliques)
+    {
+      abort();
+    }
+
+    // Iterate over each clique in the clique-set
+    for (unsigned int i = 0 ; i < clique_sets_[cs_idx].size() ; i++)
+    {
+      unsigned int read_cs_idx2 = 0;
+      unsigned int clique_id = 0;
+      unsigned int clique_order = 0;
+
+      file_rf >> read_cs_idx2;
+      file_rf >> clique_id;
+      file_rf >> clique_order;
+
+      // verify the read clique-set index and clique id exist
+      if (cs_idx != read_cs_idx2)
+      {
+        abort();
+      }
+      if (clique_sets_[cs_idx].count(clique_id) == 0)
+      {
+        abort();
+      }
+
+      cout << "read idx id order: " << read_cs_idx2 << " " << clique_id << " " << clique_order << endl;
+
+      // read the node ids contained in each clique
+      Clique* curr_clique = clique_sets_[cs_idx][clique_id];
+      for (unsigned int j = 0 ; j < clique_order ; j++)
+      {
+        unsigned int node_id = 0;
+        file_rf >> node_id;
+
+        // verify it exists
+        if (rf_nodes_.count(node_id) == 0)
+        {
+          abort();
+        }
+        curr_clique->addNode(*(rf_nodes_[node_id]));
+      }
+    }
+    file_rf.ignore(std::numeric_limits<int>::max(), '\n'); // finish the line
+    file_rf.ignore(std::numeric_limits<int>::max(), '\n'); // skip blank line
+  }
+  return 0;
+}
 // -----------------------------------------------------------------------------------------------------------
 // RandomField::GenericClique, RandomField::Node, RandomField::Clique definitions below
 // -----------------------------------------------------------------------------------------------------------
