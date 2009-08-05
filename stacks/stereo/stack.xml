@@ -1,0 +1,17 @@
+<stack name="stereo" version="0.1.0">
+  <description brief="stereo">
+
+     stereo
+
+  </description>
+  <author>Kurt Konolige</author>
+  <license>BSD</license>  
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/stereo</url>
+  <depend stack="opencv"/> <!-- opencvpython, opencv_latest, opencv_latest --> 
+  <depend stack="hardware_test"/> <!-- diagnostic_updater --> 
+  <depend stack="ros"/> <!-- roscpp, rostest, rosrecord, roscpp --> 
+  <depend stack="common_msgs"/> <!-- sensor_msgs, robot_msgs --> 
+  <depend stack="camera_drivers"/> <!-- libdc1394v2 --> 
+
+</stack>
