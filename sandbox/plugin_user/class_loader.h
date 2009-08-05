@@ -190,7 +190,49 @@ public:
       return false;
     }
   };
+
+  std::vector<std::string> getDeclaredPlugins()
+  {
+    std::vector<std::string> plugin_names;
+    for (std::map<std::string, Plugin>::iterator it = plugins_available_.begin(); it != plugins_available_.end(); ++it)
+    {
+      plugin_names.push_back(it->first);
+    }    
+    return plugin_names;
+  };
   
+  std::string getPluginDescription(const std::string& plugin_name)
+  {
+    std::map<std::string, Plugin>::iterator it = plugins_available_.find(plugin_name);
+    if (it != plugins_available_.end())
+      return it->second.description_;
+    return "";
+  };
+
+  std::string getPluginType(const std::string& plugin_name)
+  {
+    std::map<std::string, Plugin>::iterator it = plugins_available_.find(plugin_name);
+    if (it != plugins_available_.end())
+      return it->second.type_;
+    return "";
+  };
+
+  std::string getPluginLibraryPath(const std::string& plugin_name)
+  {
+    std::map<std::string, Plugin>::iterator it = plugins_available_.find(plugin_name);
+    if (it != plugins_available_.end())
+      return it->second.library_path_;
+    return "";
+  };
+
+  std::string getPluginPackage(const std::string& plugin_name)
+  {
+    std::map<std::string, Plugin>::iterator it = plugins_available_.find(plugin_name);
+    if (it != plugins_available_.end())
+      return it->second.package_;
+    return "";
+  };
+
   T* createPluginInstance(const std::string& name, bool auto_load_plugin = true)
   {
     if ( auto_load_plugin && !isPluginLoaded(name))

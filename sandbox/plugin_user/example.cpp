@@ -40,8 +40,17 @@ int main() {
   
   ros::ClassLoader<polygon> cl("plugin_user", "polygon");
 
-  std::cout << "Created" << std::endl;
-  
+  std::cout << "Created Class Loader of polygon" << std::endl;
+  std::cout << "Available plugins are:" << std::endl;
+  std::vector<std::string> plugins = cl.getDeclaredPlugins();
+  for (std::vector<std::string>::iterator it = plugins.begin(); it != plugins.end() ; ++it)
+  {
+    std::cout << *it << " is in package " << cl.getPluginPackage(*it) << " and is of type " << cl.getPluginType(*it) << std::endl
+              << "It does \"" << cl.getPluginDescription(*it) << "\"" <<std::endl
+              << "It is found in library " << cl.getPluginLibraryPath(*it) << std::endl;
+  }
+
+
   if (cl.loadPlugin("square"))
   {
     std::cout << "asdf Loaded library with plugin square inside" << std::endl;
