@@ -1,0 +1,16 @@
+<stack name="imu_drivers" version="0.1.0">
+  <description brief="imu_drivers">
+
+     imu_drivers
+
+  </description>
+  <author>Blaise Gassend</author>
+  <license>BSD,LGPL</license>  
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/imu_drivers</url>
+  <depend stack="geometry"/> <!-- tf --> 
+  <depend stack="hardware_test"/> <!-- self_test, diagnostic_updater --> 
+  <depend stack="ros"/> <!-- roscpp, std_msgs, std_srvs, rosconsole --> 
+  <depend stack="common_msgs"/> <!-- robot_srvs --> 
+
+</stack>

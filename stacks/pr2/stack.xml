@@ -1,0 +1,26 @@
+<stack name="pr2" version="0.1.0">
+  <description brief="pr2">
+
+     pr2
+
+  </description>
+  <author>Eric Berger</author>
+  <license>BSD</license>  
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/pr2</url>
+  <depend stack="util"/> <!-- realtime_tools --> 
+  <depend stack="camera_drivers"/> <!-- dcam, prosilica_cam --> 
+  <depend stack="calibration"/> <!-- joint_calibration_monitor --> 
+  <depend stack="visualization_core"/> <!-- ogre_tools --> 
+  <depend stack="drivers"/> <!-- forearm_cam --> 
+  <depend stack="mechanism"/> <!-- mechanism_control, hardware_interface, mechanism_control, mechanism_model, convex_decomposition, ivcon, robot_state_publisher, mechanism_bringup, convex_decomposition, ivcon --> 
+  <depend stack="controllers"/> <!-- robot_mechanism_controllers, pr2_mechanism_controllers, joint_qualification_controllers, dynamic_verification_controllers, pr2_mechanism_controllers, robot_mechanism_controllers --> 
+  <depend stack="common"/> <!-- robot_actions, xacro --> 
+  <depend stack="sound_drivers"/> <!-- sound_play --> 
+  <depend stack="estimation"/> <!-- robot_pose_ekf --> 
+  <depend stack="ros"/> <!-- std_msgs, roscpp, std_srvs, std_msgs, rxtools, rospy, roslib, std_srvs --> 
+  <depend stack="common_msgs"/> <!-- robot_msgs, geometry_msgs, diagnostic_msgs --> 
+  <depend stack="hardware_test"/> <!-- runtime_monitor --> 
+  <depend stack="highlevel"/> <!-- door_msgs, plugs_msgs --> 
+
+</stack>

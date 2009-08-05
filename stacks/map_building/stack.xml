@@ -1,0 +1,17 @@
+<stack name="map_building" version="0.1.0">
+  <description brief="map_building">
+
+     map_building
+
+  </description>
+  <author>Brian Gerkey</author>
+  <license>CreativeCommons-by-nc-sa-2.0</license>  
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/map_building</url>
+  <depend stack="geometry"/> <!-- tf --> 
+  <depend stack="ros"/> <!-- roscpp, rosconsole, std_msgs --> 
+  <depend stack="navigation"/> <!-- map_server --> 
+  <depend stack="common"/> <!-- laser_scan --> 
+  <depend stack="common_msgs"/> <!-- nav_msgs --> 
+
+</stack>
