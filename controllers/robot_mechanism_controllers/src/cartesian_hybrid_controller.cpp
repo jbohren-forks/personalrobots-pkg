@@ -471,15 +471,16 @@ bool CartesianHybridController::starting()
 ROS_REGISTER_CONTROLLER(CartesianHybridControllerNode)
 
 CartesianHybridControllerNode::CartesianHybridControllerNode()
-: TF(*ros::Node::instance(), false, ros::Duration(10.0)), loop_count_(0)
+//: TF(*ros::Node::instance(), false, ros::Duration(10.0)), loop_count_(0)
+: loop_count_(0)
 {
 }
 
 CartesianHybridControllerNode::~CartesianHybridControllerNode()
 {
   ros::Node *node = ros::Node::instance();
-  node->unsubscribe(name_ + "/command");
-  node->unadvertiseService(name_ + "/set_tool_frame");
+  //node->unsubscribe(name_ + "/command");
+  //node->unadvertiseService(name_ + "/set_tool_frame");
 }
 
 bool CartesianHybridControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
@@ -519,7 +520,7 @@ bool CartesianHybridControllerNode::initXml(mechanism::RobotState *robot, TiXmlE
 bool CartesianHybridControllerNode::init(mechanism::RobotState *robot, const ros::NodeHandle &n)
 {
   node_ = n;
-  if (c_.init(robot, n))
+  if (!c_.init(robot, n))
     return false;
 
   task_frame_name_ = c_.kdl_chain_.getSegment(0).getName();
@@ -536,7 +537,7 @@ bool CartesianHybridControllerNode::init(mechanism::RobotState *robot, const ros
   pub_tf_.reset(new realtime_tools::RealtimePublisher<tf::tfMessage>("/tf_message", 5));
   pub_tf_->msg_.transforms.resize(1);
 
-  node_.advertiseService("set_tool_frame",&CartesianHybridControllerNode::setToolFrame, this);
+  serve_set_tool_frame_ = node_.advertiseService("set_tool_frame",&CartesianHybridControllerNode::setToolFrame, this);
 
   // allocate vector in non-realtime
   pub_state_->msg_.measured_torque.resize(c_.kdl_chain_.getNrOfJoints());
