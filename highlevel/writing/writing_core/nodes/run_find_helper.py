@@ -51,7 +51,8 @@ import visualization_msgs.msg
 import tf
 import pr2_robot_actions.msg
 from tf.listener import TransformListener
-import robot_msgs
+import mechanism_msgs
+import geometry_msgs
 import python_actions
 
 class FindHelperAction(python_actions.Action, TransformListener):
@@ -66,8 +67,8 @@ class FindHelperAction(python_actions.Action, TransformListener):
       self.head_controller = "head_controller"
       rospy.set_param(self.name + "/head_controller", self.head_controller)
 
-    self.head_controller_publisher = rospy.Publisher(self.head_controller + "/set_command_array", robot_msgs.msg.JointCmd)
-    self.people_sub = rospy.Subscriber("/face_detection/people_tracker_measurements", PositionMeasurement, self.people_position_measurement)
+    self.head_controller_publisher = rospy.Publisher(self.head_controller + "/command", mechanism_msgs.msg.JointStates)
+    self.people_sub = rospy.Subscriber("/face_detector/people_tracker_measurements", PositionMeasurement, self.people_position_measurement)
     self.face_det = rospy.ServiceProxy('/start_detection', StartDetection)
 
   def people_position_measurement(self, msg):
@@ -81,13 +82,16 @@ class FindHelperAction(python_actions.Action, TransformListener):
     for angle in search_pattern:
       for timer in range(60): # in tenths
         time.sleep(0.1)
-        jc = robot_msgs.msg.JointCmd()
-        jc.names = [ "head_pan_joint", "head_tilt_joint" ]
-        jc.efforts = [ 0.0, 0.0 ]
-        jc.velocity = [ 0.0, 0.0 ]
-        jc.acc = [ 0.0, 0.0 ]
-        jc.positions = [ angle, 0.0 ]
-        self.head_controller_publisher.publish(jc)
+        ps = mechanism_msgs.msg.JointState()
+        ps.name = 'head_pan_joint'
+        ps.position = angle
+        ts = mechanism_msgs.msg.JointState()
+        ts.name ='head_tilt_joint'
+        ts.position = 0.0
+        js = mechanism_msgs.msg.JointStates()
+        js.joints = [ps, ts]
+
+        self.head_controller_publisher.publish(js)
 
         if timer == 10:
           rospy.logdebug("%s: detecting face.", self.name)
@@ -99,7 +103,7 @@ class FindHelperAction(python_actions.Action, TransformListener):
           return python_actions.PREEMPTED
         self.update()
         if self.found:
-          ps0 = robot_msgs.msg.PoseStamped()
+          ps0 = geometry_msgs.msg.PoseStamped()
           ps0.header = self.found.header
           ps0.pose.position.x = self.found.pos.x
           ps0.pose.position.y = self.found.pos.y
@@ -110,7 +114,7 @@ class FindHelperAction(python_actions.Action, TransformListener):
           ps0.pose.orientation.z = 0.5
           ps0.pose.orientation.w = 0.5
 
-          ps1 = robot_msgs.msg.PoseStamped()
+          ps1 = geometry_msgs.msg.PoseStamped()
           ps1.header = self.found.header
           ps1.pose.position.x = self.found.pos.x
           ps1.pose.position.y = self.found.pos.y
@@ -140,8 +144,8 @@ class FindHelperAction(python_actions.Action, TransformListener):
             m.color.b = 1.0;
             markerpub.publish(m)
 
-          ps0 = self.transformPose("odom_combined", ps0)
-          ps1 = self.transformPose("odom_combined", ps1)
+          ps0 = self.transformPose("base_link", ps0)
+          ps1 = self.transformPose("base_link", ps1)
           ps1.pose.position.z = 0                             # make sure that the goal is on the ground
           self.feedback.helper_head=ps0
           self.feedback.helper_zone=ps1
