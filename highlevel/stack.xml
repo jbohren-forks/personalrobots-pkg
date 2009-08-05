@@ -5,13 +5,25 @@
    map" or "open the door in front of you" or "pick up the stapler in
    front of you."
   </description>
-  <version>0.1</version>
   <author>Conor McGann mcgann@willowgarage.com</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/highlevel</url>
   
-  <depend stack="ros" version="0.5"/>
+
+
+  <depend stack="util"/> <!-- or_robot_self_filter --> 
+  <depend stack="estimation"/> <!-- robot_pose_ekf --> 
+  <depend stack="geometry"/> <!-- kdl, tf, kdl, tf, tf, tf, tf --> 
+  <depend stack="navigation"/> <!-- nav_robot_actions, nav_robot_actions, costmap_2d, base_local_planner, fake_localization, map_server, nav_view, move_base, amcl, map_server, fake_localization, nav_view, nav_robot_actions --> 
+  <depend stack="semantic_mapping"/> <!-- plug_onbase_detector, door_handle_detector, point_cloud_mapping --> 
+  <depend stack="mechanism"/> <!-- mechanism_msgs --> 
+  <depend stack="controllers"/> <!-- pr2_mechanism_controllers, pr2_mechanism_controllers, robot_mechanism_controllers, pr2_mechanism_controllers --> 
+  <depend stack="simulators"/> <!-- stage, stage --> 
+  <depend stack="common"/> <!-- robot_actions, manipulation_srvs, robot_actions, robot_actions, manipulation_msgs, robot_actions, laser_scan, robot_actions, robot_actions, robot_actions, python_actions --> 
+  <depend stack="ros"/> <!-- rospy, roslib, roscpp, rosconsole, std_msgs, roslisp, std_msgs, std_srvs, roscpp, std_msgs, rospy, std_msgs, roscpp, std_msgs, roscpp, gtest, rosrecord, roscpp, std_msgs, roscpp, roscpp, std_msgs, roscpp, roslib --> 
+  <depend stack="visualization_core"/> <!-- visualization_msgs, visualization_msgs --> 
+  <depend stack="vision"/> <!-- people --> 
+  <depend stack="common_msgs"/> <!-- robot_msgs, robot_msgs, robot_srvs, robot_msgs, robot_msgs, diagnostic_msgs, robot_srvs, nav_msgs, geometry_msgs, geometry_msgs, robot_msgs, robot_srvs, robot_msgs, geometry_msgs, robot_msgs, robot_srvs --> 
+
 </stack>
-
-

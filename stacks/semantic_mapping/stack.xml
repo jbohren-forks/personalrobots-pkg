@@ -2,7 +2,6 @@
   <description brief="laser-based sensing packages from ros-pkg">
     These are packages that primarily process laser / range data.
   </description>
-  <version>0.1</version>
   <author>Radu Bogdan Rusu rusu@willowgarage.com,
           Marius Muja mariusm@willowgarage.com
   </author>
@@ -10,6 +9,13 @@
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/mapping</url>
   
-  <depend stack="ros" version="0.5"/>
-</stack>
 
+  <depend stack="geometry"/> <!-- angles, eigen, tf, tf, kdl, angles, angles, tf --> 
+  <depend stack="common_msgs"/> <!-- robot_msgs, sensor_msgs, sensor_msgs, geometry_msgs, mapping_msgs, robot_msgs, geometry_msgs, mapping_msgs, sensor_msgs, robot_srvs, robot_msgs, mapping_msgs --> 
+  <depend stack="opencv"/> <!-- opencv_latest --> 
+  <depend stack="common"/> <!-- robot_actions --> 
+  <depend stack="ros"/> <!-- roscpp, roscpp, std_msgs, roscpp, std_msgs, std_srvs, roscpp --> 
+  <depend stack="visualization_core"/> <!-- visualization_msgs, visualization_msgs --> 
+  <depend stack="highlevel"/> <!-- plugs_msgs, door_msgs, door_functions --> 
+
+</stack>

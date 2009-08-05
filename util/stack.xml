@@ -2,12 +2,23 @@
   <description brief="utility packages from ros-pkg">
     These are utility package.
   </description>
-  <version>0.1</version>
   <author>Morgan Quigley mquigley@cs.stanford.edu</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/util</url>
   
-  <depend stack="ros" version="0.5"/>
-</stack>
 
+  <depend stack="3rdparty"/> <!-- python-twitter, ijg_libjpeg, octave_forge --> 
+  <depend stack="openrave_planning"/> <!-- openrave --> 
+  <depend stack="geometry"/> <!-- angles, tf, tf, kdl, eigen, angles, bullet, tf, eigen --> 
+  <depend stack="semantic_mapping"/> <!-- point_cloud_mapping --> 
+  <depend stack="mechanism"/> <!-- mechanism_model --> 
+  <depend stack="opencv"/> <!-- opencv_latest, opencv_latest --> 
+  <depend stack="camera_drivers"/> <!-- prosilica_cam --> 
+  <depend stack="common"/> <!-- filters, tinyxml, filters, manipulation_srvs, manipulation_msgs --> 
+  <depend stack="ros"/> <!-- rosconsole, rospy, std_msgs, std_msgs, roscpp, roscpp, roscpp, rospy, rosrecord, std_msgs, roscpp, rospy, rosconsole, rosoct, roscpp, rosconsole, roscpp, std_msgs, roscpp, std_msgs, rosrecord, roscpp, roscpp, roscpp, std_msgs --> 
+  <depend stack="visualization_core"/> <!-- visualization_msgs --> 
+  <depend stack="vision"/> <!-- cv_mech_turk --> 
+  <depend stack="common_msgs"/> <!-- robot_msgs, robot_msgs, sensor_msgs, geometry_msgs, robot_msgs, robot_msgs, sensor_msgs, robot_msgs, sensor_msgs, robot_msgs, geometry_msgs, geometry_msgs, geometry_msgs, robot_msgs, sensor_msgs --> 
+
+</stack>

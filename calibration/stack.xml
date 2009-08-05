@@ -2,12 +2,21 @@
   <description brief="calibration packages from ros-pkg">
     These are calibration-related packages.
   </description>
-  <version>0.1</version>
   <author>Vijay Pradeep vpradeep@willowgarage.com</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/calibration</url>
   
-  <depend stack="ros" version="0.5"/>
-</stack>
 
+  <depend stack="controllers"/> <!-- pr2_mechanism_controllers, pr2_mechanism_controllers, pr2_mechanism_controllers, pr2_mechanism_controllers --> 
+  <depend stack="opencv"/> <!-- opencv_latest --> 
+  <depend stack="geometry"/> <!-- kdl, tf, kdl, tf --> 
+  <depend stack="drivers"/> <!-- dense_laser_assembler, phase_space --> 
+  <depend stack="mechanism"/> <!-- mechanism_model, hardware_interface, mechanism_msgs, mechanism_msgs, mechanism_msgs, mechanism_msgs, mechanism_msgs --> 
+  <depend stack="util"/> <!-- topic_synchronizer, topic_synchronizer --> 
+  <depend stack="openrave_planning"/> <!-- openraveros --> 
+  <depend stack="common"/> <!-- tinyxml, robot_actions, laser_scan, robot_actions, manipulation_msgs, manipulation_msgs --> 
+  <depend stack="ros"/> <!-- std_msgs, rospy, rosoct, std_msgs, std_msgs, message_filters, roscpp, message_filters, std_msgs, std_msgs, std_msgs, rosrecord, roscpp, std_msgs, std_msgs, rospy --> 
+  <depend stack="common_msgs"/> <!-- geometry_msgs, robot_msgs, sensor_msgs, robot_msgs, sensor_msgs, robot_msgs, sensor_msgs, robot_msgs, sensor_msgs, robot_msgs, sensor_msgs, robot_msgs, geometry_msgs, sensor_msgs, robot_msgs, robot_msgs, robot_msgs, diagnostic_msgs --> 
+
+</stack>

@@ -2,14 +2,19 @@
   <description brief="openrave packages from cmu-ros-pkg">
     These are OpenRAVE-related packages.
   </description>
-  <version>0.1</version>
   <author>Rosen Diankov rdiankov@cs.cmu.edu</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/openrave</url>
   
-  <depend stack="ros" version="0.5"/>
-  <depend stack="common" version="0.1"/>
-  <depend stack="simulators" version="0.1"/>
-</stack>
 
+  <depend stack="calibration"/> <!-- mocap_msgs --> 
+  <depend stack="geometry"/> <!-- bullet, tf --> 
+  <depend stack="mechanism"/> <!-- mechanism_msgs --> 
+  <depend stack="util"/> <!-- or_robot_self_filter --> 
+  <depend stack="simulators"/> <!-- opende --> 
+  <depend stack="common"/> <!-- manipulation_msgs, laser_scan --> 
+  <depend stack="ros"/> <!-- std_msgs, roscpp, roscpp, roscpp, roscpp_sessions, std_msgs, rosoct, roscpp, roslaunch --> 
+  <depend stack="common_msgs"/> <!-- sensor_msgs, robot_msgs, mapping_msgs --> 
+
+</stack>

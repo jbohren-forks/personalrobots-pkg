@@ -7,5 +7,7 @@
   <author>Maintained by Blaise Gassend</author>
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/sound_drivers</url>
-  <depend stack="ros" version="0.7"/>
+  <depend stack="ros"/> <!-- rospy, roscpp, roslib --> 
+  <depend stack="common_msgs"/> <!-- robot_msgs --> 
+
 </stack>

@@ -2,12 +2,14 @@
   <description brief="audio packages from ros-pkg">
     These are audio-related packages.
   </description>
-  <version>0.1</version>
   <author>Blaise Gassend blaise@willowgarage.com</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/audio</url>
   
-  <depend stack="ros" version="0.5"/>
-</stack>
 
+  <depend stack="sound_drivers"/> <!-- sound_play --> 
+  <depend stack="ros"/> <!-- rospy, roscpp --> 
+  <depend stack="common_msgs"/> <!-- robot_msgs --> 
+
+</stack>

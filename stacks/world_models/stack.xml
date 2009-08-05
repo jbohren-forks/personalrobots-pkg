@@ -2,14 +2,18 @@
   <description brief="world models">
     Packages for modeling states of the world.
   </description>
-  <version>0.1</version>
   <author>Eitan eitan@willowgarage.com</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/world_models</url>
   
-  <depend stack="ros" version="0.5"/>
-  <depend stack="ros-pkg_common" version="0.1"/>
-  <depend stack="ros-pkg_visualization_core" version="0.1"/>
-</stack>
 
+  <depend stack="geometry"/> <!-- tf, eigen, bullet --> 
+  <depend stack="motion_planning"/> <!-- sbpl --> 
+  <depend stack="common"/> <!-- tinyxml, tinyxml --> 
+  <depend stack="highlevel"/> <!-- door_msgs --> 
+  <depend stack="ros"/> <!-- roscpp, rosconsole, roslib --> 
+  <depend stack="navigation"/> <!-- navfn --> 
+  <depend stack="common_msgs"/> <!-- robot_srvs --> 
+
+</stack>

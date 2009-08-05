@@ -2,12 +2,18 @@
   <description brief="controller packages from ros-pkg">
     These are robot controllers.
   </description>
-  <version>0.1</version>
   <author>Melonee Wise mwise@willowgarage.com</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/controllers</url>
   
-  <depend stack="ros" version="0.5"/>
-</stack>
 
+  <depend stack="geometry"/> <!-- tf, kdl, angles, eigen, eigen, tf, angles, angles --> 
+  <depend stack="mechanism"/> <!-- mechanism_model, mechanism_model, kdl_parser, mechanism_model, mechanism_control, hardware_interface, mechanism_control, mechanism_model, mechanism_msgs --> 
+  <depend stack="util"/> <!-- realtime_tools, realtime_tools, realtime_tools, realtime_tools, trajectory --> 
+  <depend stack="common"/> <!-- tinyxml, manipulation_msgs, filters, tinyxml, robot_actions, filters, manipulation_msgs --> 
+  <depend stack="ros"/> <!-- rospy, rospy, rospy, roscpp, std_msgs, rosconsole, roscpp, roscpp, roscpp, rospy, std_msgs, rosconsole --> 
+  <depend stack="visualization_core"/> <!-- visualization_msgs, visualization_msgs --> 
+  <depend stack="common_msgs"/> <!-- robot_msgs, robot_srvs, robot_msgs, robot_msgs, robot_srvs, robot_srvs, robot_msgs, geometry_msgs, robot_msgs, geometry_msgs --> 
+
+</stack>

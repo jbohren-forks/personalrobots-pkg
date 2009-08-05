@@ -6,7 +6,7 @@
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/2dmapping_pr2_app</url>
   
-  <depend stack="ros" version="0.7.0"/>
-  <!-- TODO: put proper stack dependencies in here -->
-</stack>
 
+  <depend stack="ros"/> <!-- rosrecord --> 
+
+</stack>

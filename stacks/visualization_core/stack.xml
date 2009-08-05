@@ -2,13 +2,13 @@
   <description brief="Visualization Core">
     Tools used for visualization
   </description>
-  <version>0.1</version>
   <author>Josh Faust jfaust@willowgarage.com</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/visualization_core</url>
   
-  <depend stack="ros" version="0.5"/>
-  <depend stack="common" version="0.1"/>
-</stack>
 
+  <depend stack="ros"/> <!-- wxswig, rosconsole, roslib, std_msgs --> 
+  <depend stack="common_msgs"/> <!-- robot_msgs, geometry_msgs --> 
+
+</stack>

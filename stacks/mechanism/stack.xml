@@ -2,12 +2,17 @@
   <description brief="mechanism packages from ros-pkg">
     These are mechanism-related packages.
   </description>
-  <version>0.1</version>
   <author>Stu Glaser sglaser@willowgarage.com</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/mechanism</url>
   
-  <depend stack="ros" version="0.5"/>
-</stack>
 
+  <depend stack="util"/> <!-- realtime_tools --> 
+  <depend stack="geometry"/> <!-- kdl, tf, bullet, angles, kdl, tf, tf --> 
+  <depend stack="controllers"/> <!-- control_toolbox, robot_mechanism_controllers, pr2_mechanism_controllers --> 
+  <depend stack="common"/> <!-- tinyxml, tinyxml, loki, tinyxml, robot_actions --> 
+  <depend stack="ros"/> <!-- gtest, roscpp, roscpp, std_srvs, roscpp, roscpp, rospy, std_srvs, rosconsole, std_msgs --> 
+  <depend stack="common_msgs"/> <!-- robot_msgs, robot_msgs, robot_srvs, diagnostic_msgs, robot_msgs, robot_srvs --> 
+
+</stack>

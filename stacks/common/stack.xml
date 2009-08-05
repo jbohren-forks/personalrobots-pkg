@@ -8,6 +8,9 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/ROS</url>
-  <depend stack="ros" version="0.5"/>
-</stack>
 
+  <depend stack="geometry"/> <!-- tf, angles --> 
+  <depend stack="ros"/> <!-- rosconsole, rospy, std_msgs, roslaunch, rostest, roscpp, std_msgs, rospy, rostopic, roscpp --> 
+  <depend stack="common_msgs"/> <!-- robot_msgs, geometry_msgs, robot_msgs, robot_msgs, geometry_msgs, robot_msgs, diagnostic_msgs, sensor_msgs --> 
+
+</stack>
