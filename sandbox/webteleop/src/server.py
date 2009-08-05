@@ -148,16 +148,21 @@ class ROSWebTopic(object):
 
       self.pubsub = _pubsub
 
-      m = roslib.scriptutil.get_master()
-      code, _, topics = m.getPublishedTopics(CALLER_ID, '/')
+      found = False
+      while not found:
+        print "\n\n\n\nAttempting to connect to[%s]\n\n\n\n" % self.topic
+        found = False
+        m = roslib.scriptutil.get_master()
+        code, _, topics = m.getPublishedTopics(CALLER_ID, '/')
 
-      if code != 1:
-        raise WebException("unable to communicate with master")
+        if code != 1:
+          raise WebException("unable to communicate with master")
 
-      for t, self.topic_type in topics:
-        if t == self.topic:
-          break;
-
+        for t, self.topic_type in topics:
+          if t == self.topic:
+            found = True
+            break;
+        time.sleep(1)
 
       if self.pubsub == "subscriber":
         msg_class = roslib.scriptutil.get_message_class(self.topic_type)
@@ -767,7 +772,7 @@ if __name__ == '__main__':
 
   signal.signal(signal.SIGINT, signal_handler)
 
-  port = 8081
+  port = 8080
 
   print 'starting web server on port %s' % port
 
