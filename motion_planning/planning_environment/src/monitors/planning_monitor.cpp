@@ -286,86 +286,55 @@ bool planning_environment::PlanningMonitor::transformJoint(const std::string &na
     return true;
 }
 
-bool planning_environment::PlanningMonitor::isStateCollisionFree(const planning_models::StateParams *state) const
+bool planning_environment::PlanningMonitor::isStateValidOnPath(const planning_models::StateParams *state, bool verbose) const
 {
-    getEnvironmentModel()->lock();
-    getKinematicModel()->lock();
-    
-    // figure out the poses of the robot model
-    getKinematicModel()->computeTransforms(state->getParams());
-    // update the collision space
-    getEnvironmentModel()->updateRobotModel();
-
-    // check for collision
-    std::vector<collision_space::EnvironmentModel::Contact> contacts;
-    bool valid = !getEnvironmentModel()->getCollisionContacts(contacts, maxCollisionContacts_);
-    
-    getKinematicModel()->unlock();
-    getEnvironmentModel()->unlock();
-    
-    if (onCollisionContact_)
-	for (unsigned int i = 0 ; i < contacts.size() ; ++i)
-	    onCollisionContact_(contacts[i]);
-    
-    return valid;
+    return isStateValid(state, COLLISION_TEST | PATH_CONSTRAINTS_TEST, verbose);    
 }
 
-bool planning_environment::PlanningMonitor::isStateValidOnPath(const planning_models::StateParams *state) const
+bool planning_environment::PlanningMonitor::isStateValidAtGoal(const planning_models::StateParams *state, bool verbose) const
 {
-    getEnvironmentModel()->lock();
-    getKinematicModel()->lock();
-    
-    // figure out the poses of the robot model
-    getKinematicModel()->computeTransforms(state->getParams());
-    // update the collision space
-    getEnvironmentModel()->updateRobotModel();
-
-    // check for collision
-    std::vector<collision_space::EnvironmentModel::Contact> contacts;
-    bool valid = !getEnvironmentModel()->getCollisionContacts(contacts, maxCollisionContacts_);
-    
-    if (valid)
-    {	    
-	KinematicConstraintEvaluatorSet ks;
-	ks.add(getKinematicModel(), kcPath_.joint_constraint);
-	ks.add(getKinematicModel(), kcPath_.pose_constraint);
-	valid = ks.decide(state->getParams());
-    }
-    
-    getKinematicModel()->unlock();
-    getEnvironmentModel()->unlock();
-
-    if (onCollisionContact_)
-	for (unsigned int i = 0 ; i < contacts.size() ; ++i)
-	    onCollisionContact_(contacts[i]);
-
-    return valid;
+    return isStateValid(state, COLLISION_TEST | PATH_CONSTRAINTS_TEST | GOAL_CONSTRAINTS_TEST, verbose);    
 }
 
-bool planning_environment::PlanningMonitor::isStateValidAtGoal(const planning_models::StateParams *state) const
+bool planning_environment::PlanningMonitor::isStateValid(const planning_models::StateParams *state, const int test, bool verbose) const
 {   
     getEnvironmentModel()->lock();
     getKinematicModel()->lock();
     
+    bool vlevel = getEnvironmentModel()->getVerbose();
+    getEnvironmentModel()->setVerbose(verbose);
+
     // figure out the poses of the robot model
     getKinematicModel()->computeTransforms(state->getParams());
     // update the collision space
     getEnvironmentModel()->updateRobotModel();
     
+    
+    bool valid = true;
+    
     // check for collision
     std::vector<collision_space::EnvironmentModel::Contact> contacts;
-    bool valid = !getEnvironmentModel()->getCollisionContacts(contacts, maxCollisionContacts_);
+    if (test & COLLISION_TEST)
+	valid = !getEnvironmentModel()->getCollisionContacts(contacts, maxCollisionContacts_);
     
-    if (valid)
+    if (valid && (test & (PATH_CONSTRAINTS_TEST | GOAL_CONSTRAINTS_TEST)))
     {	    
 	KinematicConstraintEvaluatorSet ks;
-	ks.add(getKinematicModel(), kcPath_.joint_constraint);
-	ks.add(getKinematicModel(), kcPath_.pose_constraint);
-	ks.add(getKinematicModel(), kcGoal_.joint_constraint);
-	ks.add(getKinematicModel(), kcGoal_.pose_constraint);
+	if (test & PATH_CONSTRAINTS_TEST)
+	{
+	    ks.add(getKinematicModel(), kcPath_.joint_constraint);
+	    ks.add(getKinematicModel(), kcPath_.pose_constraint);
+	}
+	if (test & GOAL_CONSTRAINTS_TEST)
+	{
+	    ks.add(getKinematicModel(), kcGoal_.joint_constraint);
+	    ks.add(getKinematicModel(), kcGoal_.pose_constraint);
+	}
+	
 	valid = ks.decide(state->getParams());
     }
     
+    getEnvironmentModel()->setVerbose(vlevel);
     getKinematicModel()->unlock();
     getEnvironmentModel()->unlock();
     
@@ -448,12 +417,12 @@ int planning_environment::PlanningMonitor::closestStateOnPathAux(const motion_pl
     return pos;
 }
 
-bool planning_environment::PlanningMonitor::isPathValid(const motion_planning_msgs::KinematicPath &path, bool verbose) const
+bool planning_environment::PlanningMonitor::isPathValid(const motion_planning_msgs::KinematicPath &path, const int test, bool verbose) const
 {
-    return isPathValid(path, 0, path.states.size() - 1, verbose);
+    return isPathValid(path, 0, path.states.size() - 1, test, verbose);
 }
 
-bool planning_environment::PlanningMonitor::isPathValid(const motion_planning_msgs::KinematicPath &path, unsigned int start, unsigned int end, bool verbose) const
+bool planning_environment::PlanningMonitor::isPathValid(const motion_planning_msgs::KinematicPath &path, unsigned int start, unsigned int end, const int test, bool verbose) const
 {
     if (end >= path.states.size())
 	end = path.states.size() - 1;
@@ -463,15 +432,15 @@ bool planning_environment::PlanningMonitor::isPathValid(const motion_planning_ms
     {
 	motion_planning_msgs::KinematicPath pathT = path;
 	if (transformPathToFrame(pathT, getFrameId()))
-	    return isPathValidAux(pathT, start, end, verbose);
+	    return isPathValidAux(pathT, start, end, test, verbose);
 	else
 	    return false;
     }
     else
-	return isPathValidAux(path, start, end, verbose); 
+	return isPathValidAux(path, start, end, test, verbose); 
 }
 
-bool planning_environment::PlanningMonitor::isPathValidAux(const motion_planning_msgs::KinematicPath &path, unsigned int start, unsigned int end, bool verbose) const
+bool planning_environment::PlanningMonitor::isPathValidAux(const motion_planning_msgs::KinematicPath &path, unsigned int start, unsigned int end, const int test, bool verbose) const
 {    
     boost::scoped_ptr<planning_models::StateParams> sp(getKinematicModel()->newStateParams());
     
@@ -485,8 +454,11 @@ bool planning_environment::PlanningMonitor::isPathValidAux(const motion_planning
     }
     
     KinematicConstraintEvaluatorSet ks;
-    ks.add(getKinematicModel(), kcPath_.joint_constraint);
-    ks.add(getKinematicModel(), kcPath_.pose_constraint);
+    if (test & PATH_CONSTRAINTS_TEST)
+    {
+	ks.add(getKinematicModel(), kcPath_.joint_constraint);
+	ks.add(getKinematicModel(), kcPath_.pose_constraint);
+    }
     
     getEnvironmentModel()->lock();
     getKinematicModel()->lock();
@@ -533,7 +505,8 @@ bool planning_environment::PlanningMonitor::isPathValidAux(const motion_planning
 	
 	// check for collision
 	std::vector<collision_space::EnvironmentModel::Contact> contacts;
-	valid = !getEnvironmentModel()->getCollisionContacts(contacts, remainingContacts);
+	if (test & COLLISION_TEST)
+	    valid = !getEnvironmentModel()->getCollisionContacts(contacts, remainingContacts);
 	
 	if (onCollisionContact_)
 	    for (unsigned int i = 0 ; i < contacts.size() ; ++i)
@@ -551,12 +524,22 @@ bool planning_environment::PlanningMonitor::isPathValidAux(const motion_planning
 	}
 	
 	// check for validity
-	if (valid)
+	if (valid && (test & PATH_CONSTRAINTS_TEST))
 	{
 	    valid = ks.decide(sp->getParams());
 	    if (verbose && !valid)
-	        ROS_INFO("isPathValid: State %d does not satisfy constraints", i);
+	        ROS_INFO("isPathValid: State %d does not satisfy path constraints", i);
 	}
+    }
+    
+    // check for validity
+    if (valid && (test & GOAL_CONSTRAINTS_TEST))
+    {
+	ks.add(getKinematicModel(), kcGoal_.joint_constraint);
+	ks.add(getKinematicModel(), kcGoal_.pose_constraint);
+	valid = ks.decide(sp->getParams());
+	if (verbose && !valid)
+	    ROS_INFO("isPathValid: Last state does not satisfy goal constraints");
     }
 
     getEnvironmentModel()->setVerbose(vlevel);

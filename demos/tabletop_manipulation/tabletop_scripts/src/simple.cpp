@@ -202,7 +202,7 @@ public:
 	else
 	{
 	    ROS_ERROR("Gripper close failed");
-	    return false;
+	    return true;
 	}
     }
     
@@ -215,7 +215,7 @@ public:
 	else
 	{
 	    ROS_ERROR("Gripper open failed");
-	    return false;
+	    return true;
 	}	
     }
 
@@ -231,7 +231,8 @@ public:
 	    pubObj.publish(o);
 	    
 	    mapping_msgs::AttachedObject ao;
-	    ao.header = obj.object_pose.header;
+	    ao.header.frame_id = obj.object_pose.header.frame_id;
+	    ao.header.stamp = ros::Time::now();
 	    ao.link_name = "r_wrist_roll_link";
 	    ao.objects.push_back(obj.object);
 	    ao.poses.push_back(obj.object_pose.pose);
@@ -286,6 +287,7 @@ int main(int argc, char **argv)
     
     if (ct.findObject(obj))
     {
+	sleep(10);	
 	if (ct.moveTo(obj))
 	{
 	    ct.graspObject(obj);

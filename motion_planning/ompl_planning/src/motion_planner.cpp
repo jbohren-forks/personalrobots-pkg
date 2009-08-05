@@ -58,7 +58,7 @@ public:
 	else
 	    planningMonitor_ = new planning_environment::PlanningMonitor(collisionModels_, &tf_);
 	
-	planKinematicPathService_ = nodeHandle_.advertiseService("plan_kinematic_path", &OMPLPlanning::planToGoal, this);
+	planKinematicPathService_ = nodeHandle_.advertiseService("~plan_kinematic_path", &OMPLPlanning::planToGoal, this);
 	findValidStateService_    = nodeHandle_.advertiseService("find_valid_state", &OMPLPlanning::findValidState, this);
     }
     
@@ -169,7 +169,7 @@ private:
 	    ROS_DEBUG("Complete starting state:\n%s", ss.str().c_str());
 	    st = requestHandler_.computePlan(models_, startState, req, res);
 	    if (st && !res.path.states.empty())
-	        if (!planningMonitor_->isPathValid(res.path, true))
+	        if (!planningMonitor_->isPathValid(res.path, planning_environment::PlanningMonitor::COLLISION_TEST, true))
 		    ROS_ERROR("Reported solution appears to have already become invalidated");
 	    delete startState;
 	}

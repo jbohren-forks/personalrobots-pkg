@@ -35,145 +35,596 @@
 *
 * Authors: Sachin Chitta, Ioan Sucan
 *********************************************************************/
-#include <move_arm/move_arm.h>
+
+#include <ros/ros.h>
+
+#include <robot_actions/action.h>
+#include <robot_actions/action_runner.h>
+#include <pr2_robot_actions/MoveArmState.h>
+#include <pr2_robot_actions/MoveArmGoal.h>
+
+#include <manipulation_msgs/JointTraj.h>
+#include <manipulation_srvs/IKService.h>
+
 
 #include <pr2_mechanism_controllers/TrajectoryStart.h>
 #include <pr2_mechanism_controllers/TrajectoryQuery.h>
 #include <pr2_mechanism_controllers/TrajectoryCancel.h>
 
-#include <manipulation_srvs/IKService.h>
+#include <motion_planning_msgs/GetMotionPlan.h>
 #include <motion_planning_msgs/ConvertToJointConstraint.h>
 
 #include <visualization_msgs/Marker.h>
+
+#include <planning_environment/monitors/planning_monitor.h>
+#include <algorithm>
 #include <cstdlib>
 
 using namespace robot_actions;
 
-namespace move_arm 
-{
-    // these are the strings used internally to access services
-    // they should be remaped in the launch file
-    static const std::string CONTROL_START_NAME      = "controller_start";
-    static const std::string CONTROL_QUERY_NAME      = "controller_query";
-    static const std::string CONTROL_CANCEL_NAME     = "controller_cancel";
-    static const std::string MOTION_PLAN_NAME        = "get_motion_plan";
-    static const std::string SEARCH_VALID_STATE_NAME = "get_valid_state";
-    static const std::string ARM_IK_NAME             = "arm_ik";
+/// the string used internally to access control starting service; this should be remaped in the launch file
+static const std::string CONTROL_START_NAME      = "controller_start";
 
-    MoveArm::MoveArm(const::std::string &arm_name) : Action<pr2_robot_actions::MoveArmGoal, int32_t>("move_" + arm_name)
-    {	
-	valid_ = true;
-	arm_ = arm_name;
+/// the string used internally to access control querying service; this should be remaped in the launch file
+static const std::string CONTROL_QUERY_NAME      = "controller_query";
+
+/// the string used internally to access control canceling service; this should be remaped in the launch file
+static const std::string CONTROL_CANCEL_NAME     = "controller_cancel";
+
+/// the string used internally to access the long range motion planning service; this should be remaped in the launch file
+static const std::string LR_MOTION_PLAN_NAME     = "get_motion_plan_lr";
+
+/// the string used internally to access the short range motion planning service; this should be remaped in the launch file
+static const std::string SR_MOTION_PLAN_NAME     = "get_motion_plan_sr";
+
+/// the string used internally to access valid state searching service; this should be remaped in the launch file
+static const std::string SEARCH_VALID_STATE_NAME = "get_valid_state";
+
+/// the string used internally to access inverse kinematics service; this should be remaped in the launch file
+static const std::string ARM_IK_NAME             = "arm_ik";
+
+
+/** \brief Configuration of actions that need to actuate parts of the robot */
+class MoveBodyCore
+{
+    friend class MoveArm;
+    
+public:
+    
+    MoveBodyCore(void)
+    {  
+	collisionModels_ = NULL;
+	planningMonitor_ = NULL;
+    }
+    
+    virtual ~MoveBodyCore(void)
+    {
+	if (planningMonitor_)
+	    delete planningMonitor_;
+	if (collisionModels_)
+	    delete collisionModels_;
+    }
+    
+    
+    bool configure(void)
+    {
+	nodeHandle_.param<std::string>("~group", group_, std::string());
 	
-	node_handle_.param<bool>("~perform_ik", perform_ik_, true);
-	node_handle_.param<bool>("~show_collisions", show_collisions_, false);
-	node_handle_.param<bool>("~unsafe_paths", unsafe_paths_, false);
-	
+	if (group_.empty())
+	{
+	    ROS_ERROR("No '~group' parameter specified. Without the name of the group of joints to plan for, action cannot start");
+	    return false;
+	}
+
 	// monitor robot
 	collisionModels_ = new planning_environment::CollisionModels("robot_description");
 	planningMonitor_ = new planning_environment::PlanningMonitor(collisionModels_, &tf_);
-
-	if (collisionModels_->getKinematicModel()->getGroupID(arm_) < 0)
+	
+	if (!collisionModels_->loadedModels())
+	    return false;
+	
+	nodeHandle_.param<bool>("~perform_ik", perform_ik_, true);
+	
+	if (collisionModels_->getKinematicModel()->getGroupID(group_) < 0)
 	{
-	    valid_ = false;
-	    ROS_ERROR("Arm '%s' is not known", arm_.c_str());
+	    ROS_ERROR("Group '%s' is not known", group_.c_str());
+	    return false;
 	}
 	else
-	    ROS_INFO("Starting move_arm for '%s' (IK is %senabled)", arm_.c_str(), perform_ik_ ? "" : "not ");
+	    ROS_INFO("Configuring action core for '%s' (IK is %senabled)", group_.c_str(), perform_ik_ ? "" : "not ");
 	
-	if (valid_)
-	    valid_ = collisionModels_->loadedModels();
+	planningMonitor_->waitForState();
+	planningMonitor_->waitForMap();
 	
-	if (valid_)
+	if (!getControlJointNames(groupJointNames_))
+	    return false;
+	
+	nodeHandle_.param<bool>("~show_collisions", show_collisions_, false);
+	nodeHandle_.param<bool>("~unsafe_paths",    unsafe_paths_, false);
+	if (show_collisions_)
+	    ROS_INFO("Found collisions will be displayed as visualization markers");
+	
+	if (unsafe_paths_)
+	    ROS_WARN("Paths will NOT be monitored for collision once they have been sent to the controller");
+	
+	std::string touch;
+	nodeHandle_.param<std::string>("~allowed_touch", touch, std::string());
+	std::stringstream ss(touch);
+	while (ss.good() & !ss.eof())
 	{
-	    if (show_collisions_)
-	    {
-		ROS_INFO("Found collisions will be displayed as visualization markers");
-		visMarkerPublisher_ = node_handle_.advertise<visualization_msgs::Marker>("visualization_marker", 128);
-		planningMonitor_->setOnCollisionContactCallback(boost::bind(&MoveArm::contactFound, this, _1));
-	    }
-	    planningMonitor_->getEnvironmentModel()->setVerbose(true);
-	    planningMonitor_->waitForState();
-	    planningMonitor_->waitForMap();
-	    valid_ = getControlJointNames(arm_joint_names_);
+	    std::string link; ss >> link;
+	    allowedTouch_[link] = true;
 	}
 	
-	if (!valid_)
-	    ROS_ERROR("Move arm action is invalid");
+	if (!touch.empty())
+	    ROS_INFO("Touching is allowed for links: %s", touch.c_str());
+	else
+	    ROS_INFO("No link is allowed to touch objects");
 	
-	// advertise the topic for displaying kinematic plans
-	displayPathPublisher_ = node_handle_.advertise<motion_planning_msgs::KinematicPath>("display_kinematic_path", 10);
+	nodeHandle_.param<double>("~max_penetration_depth", maxPenetrationDepth_, 0.0);
+	if (!touch.empty())
+	    ROS_INFO("Maximum penetration depth is %f", maxPenetrationDepth_);
+	
+	return true;
+    }
+
+protected:
+
+    bool getControlJointNames(std::vector<std::string> &joint_names)
+    {
+	ros::ServiceClient client_query = nodeHandle_.serviceClient<pr2_mechanism_controllers::TrajectoryQuery>(CONTROL_QUERY_NAME);
+	pr2_mechanism_controllers::TrajectoryQuery::Request  req_query;
+	pr2_mechanism_controllers::TrajectoryQuery::Response res_query;
+	req_query.trajectoryid = pr2_mechanism_controllers::TrajectoryQuery::Request::Query_Joint_Names;
+	
+	bool result = client_query.call(req_query, res_query);
+	
+	if (!result)
+	{
+	    ROS_INFO("Querying controller for joint names ...");
+	    ros::Duration(5.0).sleep();
+	    result = client_query.call(req_query, res_query);
+	    if (result)
+		ROS_INFO("Joint names received");
+	}
+	
+	if (!result)
+	{
+	    ROS_ERROR("Unable to retrieve controller joint names from control query service");
+	    return false;
+	}
+	
+	joint_names = res_query.jointnames;
+	
+	// make sure we have the right joint names
+	for(unsigned int i = 0; i < joint_names.size() ; ++i)
+	{
+	    if (planning_models::KinematicModel::Joint *j = planningMonitor_->getKinematicModel()->getJoint(joint_names[i]))
+	    {
+		ROS_DEBUG("Using joing '%s' with %u parameters", j->name.c_str(), j->usedParams);
+		if (planningMonitor_->getKinematicModel()->getJointIndexInGroup(j->name, group_) < 0)
+		    return false;
+	    }
+	    else
+	    {
+		ROS_ERROR("Joint '%s' is not known", joint_names[i].c_str());
+		return false;
+	    }
+	}
+	
+	std::vector<std::string> groupNames;
+	planningMonitor_->getKinematicModel()->getJointsInGroup(groupNames, group_);
+	if (groupNames.size() != joint_names.size())
+	{
+	    ROS_ERROR("The group '%s' does not have the same number of joints as the controller can handle", group_.c_str());
+	    return false;	    
+	}
+	
+	return true;
     }
     
-    MoveArm::~MoveArm()
+    ros::NodeHandle                        nodeHandle_;    
+    tf::TransformListener                  tf_;
+    planning_environment::CollisionModels *collisionModels_;
+    planning_environment::PlanningMonitor *planningMonitor_;
+    
+    std::string                            group_;
+    std::vector<std::string>               groupJointNames_;
+    bool                                   perform_ik_;
+    bool                                   unsafe_paths_;
+    bool                                   show_collisions_;
+
+    /// the set of links that are allowed to touch objects
+    std::map<std::string, bool>            allowedTouch_;
+    
+    /// the maximum penetration allowed when touching objects
+    double                                 maxPenetrationDepth_;
+    
+};
+
+    
+class MoveArm : public robot_actions::Action<pr2_robot_actions::MoveArmGoal, int32_t> 
+{
+public:
+    
+    MoveArm(MoveBodyCore &core) : Action<pr2_robot_actions::MoveArmGoal, int32_t>("move_" + core.group_), core_(core)
+    {	
+	if (core_.show_collisions_)
+	    visMarkerPublisher_ = core_.nodeHandle_.advertise<visualization_msgs::Marker>("visualization_marker", 128);
+
+	// advertise the topic for displaying kinematic plans
+	displayPathPublisher_ = core_.nodeHandle_.advertise<motion_planning_msgs::KinematicPath>("display_kinematic_path", 10);
+	
+	validatingPath_ = false;
+	planningMonitor_ = core_.planningMonitor_;
+	planningMonitor_->setOnCollisionContactCallback(boost::bind(&MoveArm::contactFound, this, _1), 0);
+	planningMonitor_->getEnvironmentModel()->setVerbose(false);
+    }
+    
+    virtual ~MoveArm()
     {
-	delete planningMonitor_;
-	delete collisionModels_;
+    }
+    
+private:
+    
+    /** \brief Evaluate the cost of a state, in terms of collisions */
+    double computeStateCollisionCost(const planning_models::StateParams *sp)
+    {
+	// clear collision data where callback adds to
+	collisionCost_ = 0.0;
+	collisionLinks_.clear();
+
+	// check for collision, getting all contacts
+	planningMonitor_->isStateValid(sp, planning_environment::PlanningMonitor::COLLISION_TEST);
+	
+	return evaluateLastCollisionCost();
     }
 
-    robot_actions::ResultStatus MoveArm::execute(const pr2_robot_actions::MoveArmGoal& goal, int32_t& feedback)
-    { 
-	if (!valid_)
+    /** \brief Evaluate the cost of the last set of collision checks */
+    double evaluateLastCollisionCost(void)
+    {
+	// check we are only touching with allowed links 
+	for (std::map<std::string, int>::iterator it = collisionLinks_.begin() ; it != collisionLinks_.end() ; ++it)
+	    if (core_.allowedTouch_.find(it->first) == core_.allowedTouch_.end())
+		return INFINITY;
+	return collisionCost_;
+    }
+    
+    /** \brief If we have a complex goal for which we have not yet found a valid goal state, we use this function*/
+    robot_actions::ResultStatus solveGoalComplex(std::vector< boost::shared_ptr<planning_models::StateParams> > &states,
+						 motion_planning_msgs::GetMotionPlan::Request &req, int32_t& feedback)
+    {
+	ROS_DEBUG("Acting on goal with unknown valid goal state ...");
+	
+
+	// we make a request to a service that attempts to find a valid state close to the goal
+	motion_planning_msgs::ConvertToJointConstraint::Request c_req;
+	c_req.params = req.params;
+	c_req.start_state = req.start_state;
+	c_req.constraints = req.goal_constraints;
+	c_req.names = core_.groupJointNames_;
+	c_req.states.resize(states.size());
+	c_req.allowed_time = 1.0;
+	
+	// if we have hints about where the goal might be, we set them here
+	for (unsigned int i = 0 ; i < states.size() ; ++i)
+	    states[i]->copyParamsJoints(c_req.states[i].vals, core_.groupJointNames_);
+	
+	motion_planning_msgs::ConvertToJointConstraint::Response c_res;
+	ros::ServiceClient s_client = core_.nodeHandle_.serviceClient<motion_planning_msgs::ConvertToJointConstraint>(SEARCH_VALID_STATE_NAME);
+	if (s_client.call(c_req, c_res))
 	{
-	    ROS_ERROR("Move arm action has not been initialized properly");
-	    return robot_actions::ABORTED;
+	    // if we found a valid state
+	    if (!c_res.joint_constraint.empty())
+	    {
+		
+		// construct a state representation from our goal joint
+		boost::shared_ptr<planning_models::StateParams> sp(new planning_models::StateParams(*planningMonitor_->getRobotState()));
+		
+		for (unsigned int i = 0 ; i < c_res.joint_constraint.size() ; ++i)
+		{	
+		    const motion_planning_msgs::JointConstraint &kj = c_res.joint_constraint[i];
+		    sp->setParamsJoint(kj.value, kj.joint_name);
+		}
+		sp->enforceBounds();
+		
+		// if the state is in fact in the goal region, simply run the LR planner 
+		if (planningMonitor_->isStateValidAtGoal(sp.get()))
+		{
+		    ROS_DEBUG("Found valid goal state ...");
+		    
+		    req.goal_constraints.joint_constraint = c_res.joint_constraint;
+		    req.goal_constraints.pose_constraint.clear();
+		    
+		    // update the goal constraints for the planning monitor as well
+		    planningMonitor_->setGoalConstraints(req.goal_constraints);
+		    
+		    return runLRplanner(req, feedback);
+		}
+		else
+		{
+		    // if the state is valid but not in the goal region, 
+		    // we plan in two steps: first to this intermediate state
+		    // that we hope is close to the goal and second to the final goal position
+		    // using the SR planner
+		    ROS_DEBUG("Found intermediate state ...");
+
+		    motion_planning_msgs::KinematicConstraints kc = req.goal_constraints;
+		    
+		    req.goal_constraints.joint_constraint = c_res.joint_constraint;
+		    req.goal_constraints.pose_constraint.clear();
+		    
+		    // update the goal constraints for the planning monitor as well
+		    planningMonitor_->setGoalConstraints(req.goal_constraints);
+
+		    robot_actions::ResultStatus result = runLRplanner(req, feedback);
+		    
+		    req.goal_constraints = kc;
+		    planningMonitor_->setGoalConstraints(req.goal_constraints);
+		    
+		    // if reaching the intermediate state was succesful
+		    if (result == robot_actions::SUCCESS)
+		    {
+			// run the short range planner to the original goal
+			robot_actions::ResultStatus temp = runSRplanner(req, feedback);
+
+			// if the planner aborted and we have an idea about an invalid state that
+			// may be in the goal region, we make one last try using the short range planner
+			if (temp == robot_actions::ABORTED && !states.empty())
+			{
+			    // set the goal to be a state
+			    updateRequest(req, states[0].get());
+			    temp = runSRplanner(req, feedback);
+
+			    // restore the input received from the user
+			    req.goal_constraints = kc;
+			    planningMonitor_->setGoalConstraints(req.goal_constraints);
+			    
+			    return temp;
+			}
+			else
+			    return temp;
+		    }
+		    else
+			return result;
+		}
+	    }
+	    else
+		return runLRplanner(req, feedback);
+	}
+	else
+	{
+	    ROS_ERROR("Service for searching for valid states failed");
+	    return runLRplanner(req, feedback);
 	}
 	
-	motion_planning_msgs::GetMotionPlan::Request  req;
-	motion_planning_msgs::GetMotionPlan::Response res;
-	
-	
-	req.params.model_id = arm_;              // the model to plan for (should be defined in planning.yaml)
-	req.params.distance_metric = "L2Square"; // the metric to be used in the robot's state space
-		
-	// forward the goal & path constraints
-	req.goal_constraints = goal.goal_constraints;
-	req.path_constraints = goal.path_constraints;
-	
-	// compute the path once
-	req.times = 1;
+    }
+    
+    /** \brief Extract the state specified by the goal and run a planner towards it, if it is valid */
+    robot_actions::ResultStatus solveGoalJoints(motion_planning_msgs::GetMotionPlan::Request &req, int32_t& feedback)
+    {
+	ROS_DEBUG("Acting on goal to set of joints ...");
 
-	// do not spend more than this amount of time
-	req.allowed_time = 1.0;
-
-	// tell the planning monitor about the constraints we will be following
-	planningMonitor_->setPathConstraints(req.path_constraints);
+	// construct a state representation from our goal joint
+	boost::shared_ptr<planning_models::StateParams> sp(new planning_models::StateParams(*planningMonitor_->getRobotState()));
+	
+	for (unsigned int i = 0 ; i < req.goal_constraints.joint_constraint.size() ; ++i)
+	{	
+	    const motion_planning_msgs::JointConstraint &kj = req.goal_constraints.joint_constraint[i];
+	    sp->setParamsJoint(kj.value, kj.joint_name);
+	}
+	sp->enforceBounds();
+	
+	// try to skip straight to planning
+	if (planningMonitor_->isStateValidAtGoal(sp.get()))
+	    return runLRplanner(req, feedback);
+	else
+	{
+	    // if we can't, go to the more generic joint solver
+	    std::vector< boost::shared_ptr<planning_models::StateParams> > states;
+	    states.push_back(sp);
+	    return solveGoalJoints(states, req, feedback);
+	}
+    }	
+    
+    // construct a list of states with cost
+    struct myState
+    {
+	planning_models::StateParams *state;
+	double                        cost;
+	unsigned int                  index;
+    };
+    
+    struct myStateComp
+    {
+	bool operator()(const myState& a, const myState& b) const
+	{
+	    return a.cost < b.cost;
+	}	    
+    };
+    
+    void updateRequest(motion_planning_msgs::GetMotionPlan::Request &req, const planning_models::StateParams *sp)
+    {
+	// update request
+	for (unsigned int i = 0 ; i < core_.groupJointNames_.size() ; ++i)
+	{
+	    motion_planning_msgs::JointConstraint jc;
+	    jc.joint_name = core_.groupJointNames_[i];
+	    jc.header.frame_id = planningMonitor_->getFrameId();
+	    jc.header.stamp = planningMonitor_->lastJointStateUpdate();
+	    sp->copyParamsJoint(jc.value, core_.groupJointNames_[i]);
+	    jc.tolerance_above.resize(jc.value.size(), 0.0);
+	    jc.tolerance_below.resize(jc.value.size(), 0.0);
+	    req.goal_constraints.joint_constraint.push_back(jc);
+	}
+	req.goal_constraints.pose_constraint.clear();
+	
+	// update the goal constraints for the planning monitor as well
 	planningMonitor_->setGoalConstraints(req.goal_constraints);
+    }
+    
+    /** \brief Find a plan to given request, given a set of hint states in the goal region */
+    robot_actions::ResultStatus solveGoalJoints(std::vector< boost::shared_ptr<planning_models::StateParams> > &states,
+						motion_planning_msgs::GetMotionPlan::Request &req, int32_t& feedback)
+    {
+	ROS_DEBUG("Acting on goal to set of joints pointing to potentially invalid state ...");
 	
-	// fill the staring state
-	fillStartState(req.start_state);
+	// just in case we received no states (this should not happen)
+	if (states.empty())
+	    return solveGoalComplex(states, req, feedback);
+	
+	std::vector<myState> cstates(states.size());
+	
+	for (unsigned int i = 0 ; i < states.size() ; ++i)
+	{
+	    cstates[i].state = states[i].get();
+	    cstates[i].cost = computeStateCollisionCost(states[i].get());
+	    cstates[i].index = i;
+	}
+	
+	// find the state with minimal cost
+	std::sort(cstates.begin(), cstates.end(), myStateComp());
+	
+	for (unsigned int i = 0 ; i < cstates.size() ; ++i)
+	    ROS_DEBUG("Cost of hint state %d is %f", i, cstates[i].cost);
 
-	if (perform_ik_)
-	    alterRequestUsingIK(req);
+	if (planningMonitor_->isStateValidAtGoal(cstates[0].state))
+	{
+	    updateRequest(req, cstates[0].state);
+	    return runLRplanner(req, feedback);
+	}
+	else
+	{
+	    // order the states by cost before passing them forward
+	    std::vector< boost::shared_ptr<planning_models::StateParams> > backup = states;
+	    for (unsigned int i = 0 ; i < cstates.size() ; ++i)
+		states[i] = backup[cstates[i].index];
+	    return solveGoalComplex(states, req, feedback);
+	}
+    }
+    
+    double uniformDouble(double lower_bound, double upper_bound)
+    {
+	return (upper_bound - lower_bound) * drand48() + lower_bound;     
+    }
+    
+    /** \brief We generate IK solutions in the goal region. We stop
+	generating possible solutions when we find a valid one or we
+	reach a maximal number of steps. If we have candidate
+	solutions, we forward this to the joint-goal solver. If not,
+	the complex goal solver is to be used. */
+    robot_actions::ResultStatus solveGoalPose(motion_planning_msgs::GetMotionPlan::Request &req, int32_t& feedback)
+    {
+	ROS_DEBUG("Acting on goal to pose ...");
+
+	// we do IK to find corresponding states
+	ros::ServiceClient ik_client = core_.nodeHandle_.serviceClient<manipulation_srvs::IKService>(ARM_IK_NAME, true);
+	std::vector< boost::shared_ptr<planning_models::StateParams> > states;
 	
+	// find an IK solution
+	for (int step = 0 ; step < 10 ; ++step)
+	{
+	    std::vector<double> solution;
+	    
+	    geometry_msgs::PoseStamped tpose = req.goal_constraints.pose_constraint[0].pose;
+	    
+	    if (step > 0)
+	    {
+		tpose.pose.position.x = uniformDouble(tpose.pose.position.x - req.goal_constraints.pose_constraint[0].position_tolerance_below.x,
+						      tpose.pose.position.x + req.goal_constraints.pose_constraint[0].position_tolerance_above.x);
+		tpose.pose.position.y = uniformDouble(tpose.pose.position.y - req.goal_constraints.pose_constraint[0].position_tolerance_below.y,
+						      tpose.pose.position.y + req.goal_constraints.pose_constraint[0].position_tolerance_above.y);
+		tpose.pose.position.z = uniformDouble(tpose.pose.position.z - req.goal_constraints.pose_constraint[0].position_tolerance_below.z,
+						      tpose.pose.position.z + req.goal_constraints.pose_constraint[0].position_tolerance_above.z);
+	    }
+	    
+	    if (computeIK(ik_client, tpose, solution))
+	    {
+		// check if it is a valid state
+		boost::shared_ptr<planning_models::StateParams> spTest(new planning_models::StateParams(*planningMonitor_->getRobotState()));
+		spTest->setParamsJoints(solution, core_.groupJointNames_);
+		spTest->enforceBounds();
+		
+		states.push_back(spTest);
+		if (planningMonitor_->isStateValidAtGoal(spTest.get()))
+		    break;
+	    }
+	    else
+		break;
+	}
+	
+	if (states.empty())
+	    return solveGoalComplex(states, req, feedback);
+	else
+	    return solveGoalJoints(states, req, feedback);
+    }
+    
+    /** \brief Depending on the type of constraint, decide whether or not to use IK, decide which planners to use */
+    robot_actions::ResultStatus solveGoal(motion_planning_msgs::GetMotionPlan::Request &req, int32_t& feedback)
+    {
+	ROS_DEBUG("Acting on goal...");
+	
+	// change pose constraints to joint constraints, if possible and so desired
+	if (core_.perform_ik_ && req.goal_constraints.joint_constraint.empty() &&         // we have no joint constraints on the goal,
+	    req.goal_constraints.pose_constraint.size() == 1 &&      // we have a single pose constraint on the goal
+	    req.goal_constraints.pose_constraint[0].type == 
+	    motion_planning_msgs::PoseConstraint::POSITION_X + motion_planning_msgs::PoseConstraint::POSITION_Y + motion_planning_msgs::PoseConstraint::POSITION_Z +
+	    motion_planning_msgs::PoseConstraint::ORIENTATION_R + motion_planning_msgs::PoseConstraint::ORIENTATION_P + motion_planning_msgs::PoseConstraint::ORIENTATION_Y)  // that is active on all 6 DOFs
+	    return solveGoalPose(req, feedback);
+	
+	// if we have only joint constraints, we call the method that gets us to a goal state
+	if (req.goal_constraints.pose_constraint.empty())
+	    return solveGoalJoints(req, feedback);
+	
+	// otherwise, more complex constraints, run a generic method; we have no hint states
+	std::vector< boost::shared_ptr<planning_models::StateParams> > states;
+	return solveGoalComplex(states, req, feedback);
+    }
+    
+    robot_actions::ResultStatus runLRplanner(motion_planning_msgs::GetMotionPlan::Request &req, int32_t& feedback)
+    {
+	ROS_DEBUG("Running long range planner...");
+	ros::ServiceClient clientPlan = core_.nodeHandle_.serviceClient<motion_planning_msgs::GetMotionPlan>(LR_MOTION_PLAN_NAME, true);
+	return runPlanner(clientPlan, req, feedback);	
+    }
+
+    robot_actions::ResultStatus runSRplanner(motion_planning_msgs::GetMotionPlan::Request &req, int32_t& feedback)
+    {
+	ROS_DEBUG("Running short range planner...");
+	ros::ServiceClient clientPlan = core_.nodeHandle_.serviceClient<motion_planning_msgs::GetMotionPlan>(SR_MOTION_PLAN_NAME, true);
+	return runPlanner(clientPlan, req, feedback);
+    }
+
+    robot_actions::ResultStatus runPlanner(ros::ServiceClient &clientPlan, motion_planning_msgs::GetMotionPlan::Request &req, int32_t& feedback)
+    {
 	ResultStatus result = robot_actions::SUCCESS;
 	
 	feedback = pr2_robot_actions::MoveArmState::PLANNING;
 	update(feedback);
-	
-	ros::ServiceClient clientPlan   = node_handle_.serviceClient<motion_planning_msgs::GetMotionPlan>(MOTION_PLAN_NAME, true);
-	ros::ServiceClient clientStart  = node_handle_.serviceClient<pr2_mechanism_controllers::TrajectoryStart>(CONTROL_START_NAME, true);
-	ros::ServiceClient clientQuery  = node_handle_.serviceClient<pr2_mechanism_controllers::TrajectoryQuery>(CONTROL_QUERY_NAME, true);
-	ros::ServiceClient clientCancel = node_handle_.serviceClient<pr2_mechanism_controllers::TrajectoryCancel>(CONTROL_CANCEL_NAME, true);
 
+	motion_planning_msgs::GetMotionPlan::Response res;
+
+	ros::ServiceClient clientStart  = core_.nodeHandle_.serviceClient<pr2_mechanism_controllers::TrajectoryStart>(CONTROL_START_NAME, true);
+	ros::ServiceClient clientQuery  = core_.nodeHandle_.serviceClient<pr2_mechanism_controllers::TrajectoryQuery>(CONTROL_QUERY_NAME, true);
+	ros::ServiceClient clientCancel = core_.nodeHandle_.serviceClient<pr2_mechanism_controllers::TrajectoryCancel>(CONTROL_CANCEL_NAME, true);
+	
 	motion_planning_msgs::KinematicPath currentPath;
 	int                                 currentPos   = 0;
 	bool                                approx       = false;
 	int                                 trajectoryId = -1;
 	ros::Duration                       eps(0.01);
 	ros::Duration                       epsLong(0.1);
-
+	
 	while (true)
 	{
 	    // if we have to stop, do so
-	    if (isPreemptRequested() || !node_handle_.ok())
+	    if (isPreemptRequested() || !core_.nodeHandle_.ok())
 		result = robot_actions::PREEMPTED;
 	    
 	    // if we have to plan, do so
 	    if (result == robot_actions::SUCCESS && feedback == pr2_robot_actions::MoveArmState::PLANNING)
 	    {
-
-	        if (!planningMonitor_->isEnvironmentSafe())
+		if (!planningMonitor_->isEnvironmentSafe())
 		{
 		    ROS_WARN("Environment is not safe. Will not issue request for planning");
 		    epsLong.sleep();
@@ -228,20 +679,20 @@ namespace move_arm
 	    }
 	    
 	    // if we have to stop, do so
-	    if (isPreemptRequested() || !node_handle_.ok())
+	    if (isPreemptRequested() || !core_.nodeHandle_.ok())
 		result = robot_actions::PREEMPTED;
-
+	    
 	    // if preeemt was requested while we are planning, terminate
 	    if (result != robot_actions::SUCCESS && feedback == pr2_robot_actions::MoveArmState::PLANNING)
 	        break;
-
+	    
 	    // stop the robot if we need to
 	    if (feedback == pr2_robot_actions::MoveArmState::MOVING)
 	    {
 		bool safe = planningMonitor_->isEnvironmentSafe();
 		bool valid = true;
 		// we need to check if the path is still valid
-		if (!unsafe_paths_ || (unsafe_paths_ && trajectoryId == -1))
+		if (!core_.unsafe_paths_ || (core_.unsafe_paths_ && trajectoryId == -1))
 		{
 		    // we don't want to check the part of the path that was already executed
 		    currentPos = planningMonitor_->closestStateOnPath(currentPath, currentPos, currentPath.states.size() - 1, planningMonitor_->getRobotState());
@@ -250,7 +701,20 @@ namespace move_arm
 			ROS_WARN("Unable to identify current state in path");
 			currentPos = 0;
 		    }
-		    valid = planningMonitor_->isPathValid(currentPath, currentPos, currentPath.states.size() - 1, true);
+		    
+		    validatingPath_ = true;
+		    collisionCost_ = 0.0;
+		    collisionLinks_.clear();
+		    valid = planningMonitor_->isPathValid(currentPath, currentPos, currentPath.states.size() - 1, planning_environment::PlanningMonitor::COLLISION_TEST, true);
+		    validatingPath_ = false;
+
+		    if (!valid)
+		    {
+			if (evaluateLastCollisionCost() < core_.maxPenetrationDepth_)
+			    valid = true;
+		    }
+		    if (valid)
+			valid = planningMonitor_->isPathValid(currentPath, currentPos, currentPath.states.size() - 1, planning_environment::PlanningMonitor::PATH_CONSTRAINTS_TEST, true);
 		}
 		
 		if (result == robot_actions::PREEMPTED || !safe || !valid)
@@ -262,7 +726,7 @@ namespace move_arm
 			    ROS_WARN("Environment is no longer safe. Cannot decide if path is valid. Stopping & replanning...");
 			else
 			    ROS_INFO("Current path is no longer valid. Stopping & replanning...");
-
+		    
 		    if (trajectoryId != -1)
 		    {
 			// we are already executing the path; we need to stop it
@@ -300,7 +764,7 @@ namespace move_arm
 		    fillTrajectoryPath(currentPath, send_traj_start_req.traj);
 		    send_traj_start_req.hastiming = 0;
 		    send_traj_start_req.requesttiming = 0;
-
+		    
 		    if (clientStart.call(send_traj_start_req, send_traj_start_res))
 		    {
 			trajectoryId = send_traj_start_res.trajectoryid;
@@ -321,7 +785,7 @@ namespace move_arm
 		}
 		
 		// monitor controller execution by calling trajectory query
-
+		
 		pr2_mechanism_controllers::TrajectoryQuery::Request  send_traj_query_req;
 		pr2_mechanism_controllers::TrajectoryQuery::Response send_traj_query_res;
 		send_traj_query_req.trajectoryid = trajectoryId;
@@ -360,37 +824,63 @@ namespace move_arm
 	    eps.sleep();	
 	}
 	
+	return result; 	
+    }
+    
+    robot_actions::ResultStatus execute(const pr2_robot_actions::MoveArmGoal& goal, int32_t& feedback)
+    { 
+	
+	motion_planning_msgs::GetMotionPlan::Request req;
+	
+	req.params.model_id = core_.group_;      // the model to plan for (should be defined in planning.yaml)
+	req.params.distance_metric = "L2Square"; // the metric to be used in the robot's state space
+	
+	// forward the goal & path constraints
+	req.goal_constraints = goal.goal_constraints;
+	req.path_constraints = goal.path_constraints;
+	
+	// transform them to the local coordinate frame since we may be updating this request later on
+	planningMonitor_->transformConstraintsToFrame(req.goal_constraints, planningMonitor_->getFrameId());
+	planningMonitor_->transformConstraintsToFrame(req.path_constraints, planningMonitor_->getFrameId());
+	
+	// compute the path once
+	req.times = 1;
+	
+	// do not spend more than this amount of time
+	req.allowed_time = 1.0;
+	
+	// tell the planning monitor about the constraints we will be following
+	planningMonitor_->setPathConstraints(req.path_constraints);
+	planningMonitor_->setGoalConstraints(req.goal_constraints);
+	
+	// fill the starting state
+	fillStartState(req.start_state);
+	
+	robot_actions::ResultStatus result = solveGoal(req, feedback);
+
 	if (result == robot_actions::SUCCESS)
 	    ROS_INFO("Goal was reached");
 	else
 	    ROS_INFO("Goal was not reached");
-
+	
 	return result;
     }
-
-    void MoveArm::fillTrajectoryPath(const motion_planning_msgs::KinematicPath &path, manipulation_msgs::JointTraj &traj)
+    
+    void fillTrajectoryPath(const motion_planning_msgs::KinematicPath &path, manipulation_msgs::JointTraj &traj)
     {
-        traj.names = arm_joint_names_;
+        traj.names = core_.groupJointNames_;
 	traj.points.resize(path.states.size());
 	planning_models::StateParams *sp = planningMonitor_->getKinematicModel()->newStateParams();
 	for (unsigned int i = 0 ; i < path.states.size() ; ++i)
 	{
 	    traj.points[i].time = path.times[i];
-	    traj.points[i].positions.reserve(path.states[i].vals.size());
-	    
-	    sp->setParamsGroup(path.states[i].vals, arm_);	    
-	    for (unsigned int j = 0 ; j < arm_joint_names_.size() ; ++j)
-	    {
-		planning_models::KinematicModel::Joint *joint = planningMonitor_->getKinematicModel()->getJoint(arm_joint_names_[j]);
-		const double *params = sp->getParamsJoint(arm_joint_names_[j]);
-		for (unsigned int k = 0 ; k < joint->usedParams ; ++k)
-		    traj.points[i].positions.push_back(params[k]);
-	    }
+	    sp->setParamsGroup(path.states[i].vals, core_.group_);
+	    sp->copyParamsJoints(traj.points[i].positions, core_.groupJointNames_);
 	}
 	delete sp;
     }
     
-    void MoveArm::printPath(const motion_planning_msgs::KinematicPath &path)
+    void printPath(const motion_planning_msgs::KinematicPath &path)
     {
 	for (unsigned int i = 0 ; i < path.states.size() ; ++i)
 	{
@@ -401,90 +891,43 @@ namespace move_arm
 	}
     }
     
-    void MoveArm::contactFound(collision_space::EnvironmentModel::Contact &contact)
+    void contactFound(collision_space::EnvironmentModel::Contact &contact)
     {
-	if (!planningMonitor_->getEnvironmentModel()->getVerbose())
-	    return;
+	if (contact.link1)
+	    collisionLinks_[contact.link1->name]++;
+	if (contact.link2)
+	    collisionLinks_[contact.link2->name]++;
+	collisionCost_ += contact.depth;
 	
-	static int count = 0;
-	visualization_msgs::Marker mk;
-	mk.header.stamp = planningMonitor_->lastMapUpdate();
-	mk.header.frame_id = planningMonitor_->getFrameId();
-	mk.ns = ros::this_node::getName();
-	mk.id = count++;
-	mk.type = visualization_msgs::Marker::SPHERE;
-	mk.action = visualization_msgs::Marker::ADD;
-	mk.pose.position.x = contact.pos.x();
-	mk.pose.position.y = contact.pos.y();
-	mk.pose.position.z = contact.pos.z();
-	mk.pose.orientation.w = 1.0;
-	
-	mk.scale.x = mk.scale.y = mk.scale.z = 0.03;
-
-	mk.color.a = 0.6;
-	mk.color.r = 1.0;
-	mk.color.g = 0.04;
-	mk.color.b = 0.04;
-	
-	mk.lifetime = ros::Duration(30.0);
-	
-	visMarkerPublisher_.publish(mk);
+	if (validatingPath_ && core_.show_collisions_)
+	{
+	    static int count = 0;
+	    visualization_msgs::Marker mk;
+	    mk.header.stamp = planningMonitor_->lastMapUpdate();
+	    mk.header.frame_id = planningMonitor_->getFrameId();
+	    mk.ns = ros::this_node::getName();
+	    mk.id = count++;
+	    mk.type = visualization_msgs::Marker::SPHERE;
+	    mk.action = visualization_msgs::Marker::ADD;
+	    mk.pose.position.x = contact.pos.x();
+	    mk.pose.position.y = contact.pos.y();
+	    mk.pose.position.z = contact.pos.z();
+	    mk.pose.orientation.w = 1.0;
+	    
+	    mk.scale.x = mk.scale.y = mk.scale.z = 0.03;
+	    
+	    mk.color.a = 0.6;
+	    mk.color.r = 1.0;
+	    mk.color.g = 0.04;
+	    mk.color.b = 0.04;
+	    
+	    mk.lifetime = ros::Duration(30.0);
+	    
+	    visMarkerPublisher_.publish(mk);
+	}
     }
     
-    bool MoveArm::getControlJointNames(std::vector<std::string> &joint_names)
-    {
-	ros::ServiceClient client_query = node_handle_.serviceClient<pr2_mechanism_controllers::TrajectoryQuery>(CONTROL_QUERY_NAME);
-	pr2_mechanism_controllers::TrajectoryQuery::Request  req_query;
-	pr2_mechanism_controllers::TrajectoryQuery::Response res_query;
-	req_query.trajectoryid = pr2_mechanism_controllers::TrajectoryQuery::Request::Query_Joint_Names;
-	
-	bool result = client_query.call(req_query, res_query);
-	
-	if (!result)
-	{
-	    ROS_INFO("Querying controller for joint names ...");
-	    ros::Duration(5.0).sleep();
-	    result = client_query.call(req_query, res_query);
-	    if (result)
-		ROS_INFO("Joint names received");
-	}
-	
-	if (!result)
-	{
-	    ROS_ERROR("Unable to retrieve controller joint names from control query service");
-	    return false;
-	}
-	
-	joint_names = res_query.jointnames;
-	
-	// make sure we have the right joint names
-	for(unsigned int i = 0; i < joint_names.size() ; ++i)
-	{
-	    if (planning_models::KinematicModel::Joint *j = planningMonitor_->getKinematicModel()->getJoint(joint_names[i]))
-	    {
-		ROS_DEBUG("Using joing '%s' with %u parameters", j->name.c_str(), j->usedParams);
-		if (planningMonitor_->getKinematicModel()->getJointIndexInGroup(j->name, arm_) < 0)
-		    return false;
-	    }
-	    else
-	    {
-		ROS_ERROR("Joint '%s' is not known", joint_names[i].c_str());
-		return false;
-	    }
-	}
-	
-	std::vector<std::string> groupNames;
-	planningMonitor_->getKinematicModel()->getJointsInGroup(groupNames, arm_);
-	if (groupNames.size() != joint_names.size())
-	{
-	    ROS_ERROR("The group '%s' does not have the same number of joints as the controller can handle", arm_.c_str());
-	    return false;	    
-	}
-	
-	return true;
-    }
-    
-    bool MoveArm::fixState(planning_models::StateParams &st, bool atGoal)
+    bool fixStartState(planning_models::StateParams &st)
     {
 	bool result = true;
 	
@@ -492,7 +935,7 @@ namespace move_arm
 	st.enforceBounds();
 	
 	// if the state is not valid, we try to fix it
-	if (atGoal ? !planningMonitor_->isStateValidAtGoal(&st) : !planningMonitor_->isStateValidOnPath(&st))
+	if (!planningMonitor_->isStateValidOnPath(&st))
 	{
 	    // try 2% change in each component
 	    planning_models::StateParams temp(st);
@@ -500,23 +943,23 @@ namespace move_arm
 	    do 
 	    {
 		temp = st;
-		temp.perturbStateGroup(0.02, arm_);
+		temp.perturbStateGroup(0.02, core_.group_);
 		count++;
-	    } while ((atGoal ? !planningMonitor_->isStateValidAtGoal(&temp) : !planningMonitor_->isStateValidOnPath(&temp)) && count < 50);
+	    } while (!planningMonitor_->isStateValidOnPath(&temp) && count < 50);
 	    
 	    // try 10% change in each component
-	    if (atGoal ? !planningMonitor_->isStateValidAtGoal(&temp) : !planningMonitor_->isStateValidOnPath(&temp))
+	    if (!planningMonitor_->isStateValidOnPath(&temp))
 	    {
 		count = 0;
 		do 
 		{
 		    temp = st;
-		    temp.perturbStateGroup(0.1, arm_);
+		    temp.perturbStateGroup(0.1, core_.group_);
 		    count++;
-		} while ((atGoal ? !planningMonitor_->isStateValidAtGoal(&temp) : !planningMonitor_->isStateValidOnPath(&temp)) && count < 50);
+		} while (!planningMonitor_->isStateValidOnPath(&temp) && count < 50);
 	    }
 	    
-	    if (atGoal ? !planningMonitor_->isStateValidAtGoal(&temp) : !planningMonitor_->isStateValidOnPath(&temp))
+	    if (!planningMonitor_->isStateValidOnPath(&temp))
 		st = temp;
 	    else
 		result = false;
@@ -524,12 +967,11 @@ namespace move_arm
 	return result;
     }
     
-    bool MoveArm::fillStartState(std::vector<motion_planning_msgs::KinematicJoint> &start_state)
+    bool fillStartState(std::vector<motion_planning_msgs::KinematicJoint> &start_state)
     {
 	// get the current state
 	planning_models::StateParams st(*planningMonitor_->getRobotState());
-	
-	bool result = fixState(st, false);
+	bool result = fixStartState(st);
 	
 	if (!result)
 	    ROS_ERROR("Starting state for the robot is in collision and attempting to fix it failed");
@@ -549,160 +991,22 @@ namespace move_arm
 	
 	return result;
     }
-
-    inline double uniformDouble(double lower_bound, double upper_bound)
-    {
-	return (upper_bound - lower_bound) * drand48() + lower_bound;     
-    }
     
-    bool MoveArm::alterRequestUsingIK(motion_planning_msgs::GetMotionPlan::Request &req)
-    {
-	bool result = false;
-	
-	// change pose constraints to joint constraints, if possible and so desired
-	if (req.goal_constraints.joint_constraint.empty() &&         // we have no joint constraints on the goal,
-	    req.goal_constraints.pose_constraint.size() == 1 &&      // we have a single pose constraint on the goal
-	    req.goal_constraints.pose_constraint[0].type == 
-	    motion_planning_msgs::PoseConstraint::POSITION_X + motion_planning_msgs::PoseConstraint::POSITION_Y + motion_planning_msgs::PoseConstraint::POSITION_Z +
-	    motion_planning_msgs::PoseConstraint::ORIENTATION_R + motion_planning_msgs::PoseConstraint::ORIENTATION_P + motion_planning_msgs::PoseConstraint::ORIENTATION_Y)  // that is active on all 6 DOFs
-	{
-	    planning_models::KinematicModel::Link *link = planningMonitor_->getKinematicModel()->getLink(req.goal_constraints.pose_constraint[0].link_name);
-	    if (link && link->before && link->before->name == arm_joint_names_.back())
-	    {
-		// we can do ik can turn the pose constraint into a joint one
-		ROS_INFO("Converting pose constraint to joint constraint using IK...");
-		
-		planningMonitor_->getEnvironmentModel()->setVerbose(false);
-		ros::ServiceClient ik_client = node_handle_.serviceClient<manipulation_srvs::IKService>(ARM_IK_NAME, true);
-		
-		// find an IK solution
-		std::vector<double> solution;
-		if (computeIK(ik_client, req.goal_constraints.pose_constraint[0].pose, solution))
-		{
-		    // check if it is a valid state
-		    planning_models::StateParams spTest(*planningMonitor_->getRobotState());
-		    spTest.setParamsJoints(solution, arm_joint_names_);
-		    
-		    if (planningMonitor_->isStateValidAtGoal(&spTest))
-		    {
-			unsigned int n = 0;
-			for (unsigned int i = 0 ; i < arm_joint_names_.size() ; ++i)
-			{
-			    motion_planning_msgs::JointConstraint jc;
-			    jc.joint_name = arm_joint_names_[i];
-			    jc.header.frame_id = req.goal_constraints.pose_constraint[0].pose.header.frame_id;
-			    jc.header.stamp = planningMonitor_->lastJointStateUpdate();
-			    unsigned int u = planningMonitor_->getKinematicModel()->getJoint(arm_joint_names_[i])->usedParams;
-			    for (unsigned int j = 0 ; j < u ; ++j)
-			    {
-				jc.value.push_back(solution[n + j]);
-				jc.tolerance_above.push_back(0.0);
-				jc.tolerance_below.push_back(0.0);
-			    }
-			    n += u;			
-			    req.goal_constraints.joint_constraint.push_back(jc);
-			}
-			req.goal_constraints.pose_constraint.clear();
-			
-			// update the goal constraints for the planning monitor as well
-			planningMonitor_->setGoalConstraints(req.goal_constraints);
-			
-			result = true;
-		    }
-		    else
-		    {
-			// if it is not, we try to fix it
-			motion_planning_msgs::ConvertToJointConstraint::Request c_req;
-			c_req.params = req.params;
-			c_req.start_state = req.start_state;
-			c_req.constraints = req.goal_constraints;
-			c_req.names = arm_joint_names_;
-			c_req.states.resize(1);
-			c_req.states[0].vals = solution;
-			c_req.allowed_time = 1.0;
-
-			// add a few more guesses
-			for (int t = 0 ; t < 9 ; ++t)
-			{
-                          geometry_msgs::PoseStamped tpose = req.goal_constraints.pose_constraint[0].pose;
-			    tpose.pose.position.x = uniformDouble(tpose.pose.position.x - req.goal_constraints.pose_constraint[0].position_tolerance_below.x,
-								  tpose.pose.position.x + req.goal_constraints.pose_constraint[0].position_tolerance_above.x);
-			    tpose.pose.position.y = uniformDouble(tpose.pose.position.y - req.goal_constraints.pose_constraint[0].position_tolerance_below.y,
-								  tpose.pose.position.y + req.goal_constraints.pose_constraint[0].position_tolerance_above.y);
-			    tpose.pose.position.z = uniformDouble(tpose.pose.position.z - req.goal_constraints.pose_constraint[0].position_tolerance_below.z,
-								  tpose.pose.position.z + req.goal_constraints.pose_constraint[0].position_tolerance_above.z);
-			    std::vector<double> sol;
-			    if (computeIK(ik_client, tpose, sol))
-			    {
-				unsigned int sz = c_req.states.size();				
-				c_req.states.resize(sz + 1);
-				c_req.states[sz].vals = sol;	
-			    }
-			}
-			
-			motion_planning_msgs::ConvertToJointConstraint::Response c_res;
-			ros::ServiceClient s_client = node_handle_.serviceClient<motion_planning_msgs::ConvertToJointConstraint>(SEARCH_VALID_STATE_NAME);
-			if (s_client.call(c_req, c_res))
-			{
-			    if (!c_res.joint_constraint.empty())
-			    {
-				req.goal_constraints.joint_constraint = c_res.joint_constraint;
-				req.goal_constraints.pose_constraint.clear();
-				
-				// update the goal constraints for the planning monitor as well
-				planningMonitor_->setGoalConstraints(req.goal_constraints);
-				result = true;
-			    }
-			}
-			else
-			    ROS_ERROR("Service for searching for valid states failed");
-		    }
-		}
-		else
-		{
-		    motion_planning_msgs::ConvertToJointConstraint::Request c_req;
-		    c_req.params = req.params;
-		    c_req.start_state = req.start_state;
-		    c_req.constraints = req.goal_constraints;
-		    c_req.names = arm_joint_names_;
-		    c_req.allowed_time = 1.0;
-		    motion_planning_msgs::ConvertToJointConstraint::Response c_res;
-		    ros::ServiceClient s_client = node_handle_.serviceClient<motion_planning_msgs::ConvertToJointConstraint>(SEARCH_VALID_STATE_NAME);
-		    if (s_client.call(c_req, c_res))
-		    {
-			if (!c_res.joint_constraint.empty())
-			{
-			    req.goal_constraints.joint_constraint = c_res.joint_constraint;
-			    req.goal_constraints.pose_constraint.clear();
-			    
-			    // update the goal constraints for the planning monitor as well
-			    planningMonitor_->setGoalConstraints(req.goal_constraints);
-			    result = true;
-			}
-		    }
-		    else
-			ROS_ERROR("Service for searching for valid states failed");
-		}
-	    }
-	}
-	return result;
-    }
-
-    bool MoveArm::computeIK(ros::ServiceClient &client, const geometry_msgs::PoseStamped &pose_stamped_msg, std::vector<double> &solution)
+    bool computeIK(ros::ServiceClient &client, const geometry_msgs::PoseStamped &pose_stamped_msg, std::vector<double> &solution)
     {
 	// define the service messages
 	manipulation_srvs::IKService::Request request;
 	manipulation_srvs::IKService::Response response;
 	
 	request.data.pose_stamped = pose_stamped_msg;
-	request.data.joint_names = arm_joint_names_;
-
+	request.data.joint_names = core_.groupJointNames_;
+	
 	planning_models::StateParams *sp = planningMonitor_->getKinematicModel()->newStateParams();
-	sp->randomStateGroup(arm_);
-	for(unsigned int i = 0; i < arm_joint_names_.size() ; ++i)
+	sp->randomStateGroup(core_.group_);
+	for(unsigned int i = 0; i < core_.groupJointNames_.size() ; ++i)
 	{
-	    const double *params = sp->getParamsJoint(arm_joint_names_[i]);
-	    const unsigned int u = planningMonitor_->getKinematicModel()->getJoint(arm_joint_names_[i])->usedParams;
+	    const double *params = sp->getParamsJoint(core_.groupJointNames_[i]);
+	    const unsigned int u = planningMonitor_->getKinematicModel()->getJoint(core_.groupJointNames_[i])->usedParams;
 	    for (unsigned int j = 0 ; j < u ; ++j)
 		request.data.positions.push_back(params[j]);
 	}
@@ -725,25 +1029,37 @@ namespace move_arm
 	    ROS_ERROR("IK service failed");
 	    return false;
 	}
-	    
+	
 	return true;
     }
     
-}
+    
+private:
+    
+    MoveBodyCore                          &core_;
+    planning_environment::PlanningMonitor *planningMonitor_;
+    
+    ros::Publisher                         displayPathPublisher_;
+    ros::Publisher                         visMarkerPublisher_;
+    
+    double                                 collisionCost_;
+    std::map<std::string, int>             collisionLinks_;
+
+    bool                                   validatingPath_;    
+};
+
+
 
 int main(int argc, char** argv)
 {
     ros::init(argc, argv, "move_arm", ros::init_options::AnonymousName);  
     
-    ros::NodeHandle nh;
-    std::string arm_name;    
-    nh.param<std::string>("~arm", arm_name, std::string());
+    MoveBodyCore core;
     
-    if (arm_name.empty())
-	ROS_ERROR("No '~arm' parameter specified");
-    else
+    if (core.configure())
     {
-	move_arm::MoveArm move_arm(arm_name);
+	MoveArm move_arm(core);
+	
 	robot_actions::ActionRunner runner(20.0);
 	runner.connect<pr2_robot_actions::MoveArmGoal, pr2_robot_actions::MoveArmState, int32_t>(move_arm);
 	runner.run();

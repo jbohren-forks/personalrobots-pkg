@@ -42,6 +42,7 @@
 
   <depend package="planning_environment" />
   <depend package="ompl_planning" />
+  <depend package="fake_motion_planning" />
   <depend package="pr2_ik" />
   <depend package="move_arm" />
   

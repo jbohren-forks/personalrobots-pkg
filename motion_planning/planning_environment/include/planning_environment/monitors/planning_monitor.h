@@ -70,24 +70,32 @@ namespace planning_environment
 	virtual ~PlanningMonitor(void)
 	{
 	}
-
+	
+	/** \brief Mask for validity testing functions */
+	enum 
+	{
+	    COLLISION_TEST        = 1,
+	    PATH_CONSTRAINTS_TEST = 2,
+	    GOAL_CONSTRAINTS_TEST = 4
+	};	
+	    
 	/** \brief Return true if recent enough data is available so that planning is considered safe */
 	bool isEnvironmentSafe(void) const;
 	
-	/** \brief Check if the full state of the robot is valid (ignoring constraints) */
-	bool isStateCollisionFree(const planning_models::StateParams *state) const;
+	/** \brief Check if the full state of the robot is valid */
+	bool isStateValid(const planning_models::StateParams *state, const int test, bool verbose = false) const;
 
-	/** \brief Check if the full state of the robot is valid (including path constraints) */
-	bool isStateValidOnPath(const planning_models::StateParams *state) const;
+	/** \brief Check if the full state of the robot is valid including path constraints (wrapper for isStateValid) */
+	bool isStateValidOnPath(const planning_models::StateParams *state, bool verbose = false) const;
 
-	/** \brief Check if the full state of the robot is valid (including path and goal constraints) */
-	bool isStateValidAtGoal(const planning_models::StateParams *state) const;
-	
+	/** \brief Check if the full state of the robot is valid including path constraints (wrapper for isStateValid) */
+	bool isStateValidAtGoal(const planning_models::StateParams *state, bool verbose = false) const;
+
 	/** \brief Check if the path is valid. Path constraints are considered, but goal constraints are not  */
-	bool isPathValid(const motion_planning_msgs::KinematicPath &path, bool verbose) const;
+	bool isPathValid(const motion_planning_msgs::KinematicPath &path, const int test, bool verbose = false) const;
 
 	/** \brief Check if a segment of the path is valid. Path constraints are considered, but goal constraints are not  */
-	bool isPathValid(const motion_planning_msgs::KinematicPath &path, unsigned int start, unsigned int end, bool verbose) const;
+	bool isPathValid(const motion_planning_msgs::KinematicPath &path, unsigned int start, unsigned int end, const int test, bool verbose = false) const;
 	
 	/** \brief Find the index of the state on the path that is closest to a given state */
 	int  closestStateOnPath(const motion_planning_msgs::KinematicPath &path, const planning_models::StateParams *state) const;
@@ -141,7 +149,7 @@ namespace planning_environment
 	bool transformJoint(const std::string &name, unsigned int index, std::vector<double> &params, roslib::Header &header, const std::string& target) const;
 	
 	/** \brief Check the path assuming it is in the frame of the model */
-	bool isPathValidAux(const motion_planning_msgs::KinematicPath &path, unsigned int start, unsigned int end, bool verbose) const;
+	bool isPathValidAux(const motion_planning_msgs::KinematicPath &path, unsigned int start, unsigned int end, const int test, bool verbose) const;
 
 	/** \brief Find the index of the state on the path that is closest to a given state assuming the path is in the frame of the model */
 	int closestStateOnPathAux(const motion_planning_msgs::KinematicPath &path, unsigned int start, unsigned int end, const planning_models::StateParams *state) const;

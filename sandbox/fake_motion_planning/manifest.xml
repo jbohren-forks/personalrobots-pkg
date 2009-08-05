@@ -1,0 +1,18 @@
+<package>
+  <description brief="fake_motion_planning">
+
+     fake_motion_planning
+
+  </description>
+  <author>Ioan Sucan</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/fake_motion_planning</url>
+
+  <depend package="roscpp" />
+  <depend package="motion_planning_msgs" />
+  <depend package="planning_environment" />
+
+</package>
+
+

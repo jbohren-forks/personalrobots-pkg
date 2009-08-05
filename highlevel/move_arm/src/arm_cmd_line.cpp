@@ -163,12 +163,12 @@ void setupGoalEEf(const std::string &link, const std::vector<double> &pz, pr2_ro
     goal.goal_constraints.pose_constraint[0].pose.pose.orientation.z = pz[5];
     goal.goal_constraints.pose_constraint[0].pose.pose.orientation.w = pz[6];
     
-    goal.goal_constraints.pose_constraint[0].position_tolerance_above.x = 0.001;
-    goal.goal_constraints.pose_constraint[0].position_tolerance_above.y = 0.001;
-    goal.goal_constraints.pose_constraint[0].position_tolerance_above.z = 0.002;
-    goal.goal_constraints.pose_constraint[0].position_tolerance_below.x = 0.001;
-    goal.goal_constraints.pose_constraint[0].position_tolerance_below.y = 0.001;
-    goal.goal_constraints.pose_constraint[0].position_tolerance_below.z = 0.002;
+    goal.goal_constraints.pose_constraint[0].position_tolerance_above.x = 0.005;
+    goal.goal_constraints.pose_constraint[0].position_tolerance_above.y = 0.005;
+    goal.goal_constraints.pose_constraint[0].position_tolerance_above.z = 0.01;
+    goal.goal_constraints.pose_constraint[0].position_tolerance_below.x = 0.005;
+    goal.goal_constraints.pose_constraint[0].position_tolerance_below.y = 0.01;
+    goal.goal_constraints.pose_constraint[0].position_tolerance_below.z = 0.005;
     
     goal.goal_constraints.pose_constraint[0].orientation_tolerance_above.x = 0.005;
     goal.goal_constraints.pose_constraint[0].orientation_tolerance_above.y = 0.005;
