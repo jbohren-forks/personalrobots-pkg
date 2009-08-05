@@ -11,8 +11,7 @@
   <depend package="plugin_user"/>
 
   <export>
-    <!--plugin_user polygon="${prefix}/polygon_plugins.xml" shape="${prefix}/shape_plugins.xml"/-->
-    <plugin_user polygon="${prefix}/polygon_plugins.xml" />
+    <plugin_user polygon="${prefix}/polygon_plugins.xml" shape="${prefix}/shape_plugins.xml"/>
   </export>
 
 </package>
