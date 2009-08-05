@@ -251,6 +251,15 @@ robot_msgs::PoseDot Pr2BaseController::getCommand()// Return the current velocit
 
 bool Pr2BaseController::starting()
 {
+  for(int i = 0; i < base_kin_.num_casters_; ++i)
+  {
+    if(!base_kin_.caster_[i].joint_->calibrated_)
+    {
+      ROS_ERROR("The Base controller could not start because the casters were not calibrated. Relaunch the base controller after you see the caster calibration finish.");
+      return false; // Casters are not calibrated
+    }
+  }
+
   last_time_ = base_kin_.robot_state_->hw_->current_time_;
   cmd_received_timestamp_ = base_kin_.robot_state_->hw_->current_time_;
   for(int i = 0; i < base_kin_.num_casters_; i++)
@@ -266,14 +275,6 @@ bool Pr2BaseController::starting()
 
 void Pr2BaseController::update()
 {
-  for(int i = 0; i < base_kin_.num_casters_; ++i)
-  {
-    if(!base_kin_.caster_[i].joint_->calibrated_)
-    {
-      ROS_ERROR("Joints are not calibrated");
-      return; // Casters are not calibrated
-    }
-  }
 
   double current_time = base_kin_.robot_state_->hw_->current_time_;
   double dT = std::min<double>(current_time - last_time_, base_kin_.MAX_DT_);
