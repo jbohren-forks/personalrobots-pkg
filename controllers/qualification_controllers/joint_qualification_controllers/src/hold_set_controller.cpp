@@ -34,6 +34,8 @@
 
 /* Author: Kevin Watts */
 
+///\todo Rename to CounterbalanceTestController
+
 #include <joint_qualification_controllers/hold_set_controller.h>
 
 using namespace std;
