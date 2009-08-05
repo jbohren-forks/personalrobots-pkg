@@ -92,11 +92,6 @@ int write_name(char *if_name, char *ip_address, int sn, char *name, char *new_ip
     }
   }
 
-  if ( fcamTriggerControl( camera, TRIG_STATE_INTERNAL ) != 0) {
-    ROS_FATAL("Could not communicate with camera after configuring IP. Is ARP set? Is %s accessible from %s?", ip_address, if_name);
-    return -1;
-  }
-  
   unsigned char namebuff[FLASH_PAGE_SIZE];
   IdentityFlashPage *id = (IdentityFlashPage *) &namebuff;
 
