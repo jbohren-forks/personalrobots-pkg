@@ -67,6 +67,9 @@ void EK1122::diagnostics(diagnostic_msgs::DiagnosticStatus &d, unsigned char *)
   str << "EtherCAT Device #" << setw(2) << setfill('0') << sh_->get_ring_position() << " (EK1122)";
   d.name = str.str();
   d.message = "OK";
+  char serial[32];
+  snprintf(serial, sizeof(serial), "%d-%05d-%05d", sh_->get_product_code()/ 100000 , sh_->get_product_code() % 100000, sh_->get_serial());
+  d.hardware_id = serial;
   d.level = 0;
 
   s.label = "Product code";

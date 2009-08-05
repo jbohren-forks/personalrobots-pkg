@@ -255,7 +255,7 @@ int WG0X::initialize(Actuator *actuator, bool allow_unprogrammed)
   }
   else
   {
-    if ((fw_major_ == 0 && fw_minor_ < 4) || (fw_major_ == 1 && fw_minor_ < 0))
+    if ((fw_major_ == 0 && fw_minor_ < 4) /*|| (fw_major_ == 1 && fw_minor_ < 0)*/)
     {
       ROS_FATAL("Unsupported firmware revision %d.%02d\n", fw_major_, fw_minor_);
       ROS_BREAK();
@@ -889,23 +889,23 @@ void WG0X::diagnostics(diagnostic_msgs::DiagnosticStatus &d, unsigned char *buff
   str << "EtherCAT Device (" << actuator_info_.name_ << ")";
   d.name = str.str();
   d.message = reason_;
+  char serial[32];
+  snprintf(serial, sizeof(serial), "%d-%05d-%05d", config_info_.product_id_ / 100000 , config_info_.product_id_ % 100000, config_info_.device_serial_number_);
+  d.hardware_id = serial;
   d.level = level_;
 
   ADD_STRING("Configuration", config_info_.configuration_status_ ? "good" : "error loading configuration");
   ADD_STRING("Name", actuator_info_.name_);
   ADD_STRING_FMT("Position", "%02d", sh_->get_ring_position());
-  unsigned int revision = sh_->get_revision();
-  unsigned int major = (revision >> 8) & 0xff;
-  unsigned int minor = revision & 0xff;
   ADD_STRING_FMT("Product code",
         "WG0%d (%d) Firmware Revision %d.%02d, PCB Revision %c.%02d",
         sh_->get_product_code() == WG05::PRODUCT_CODE ? 5 : 6,
-        sh_->get_product_code(), major, minor,
-        'A' + ((revision >> 24) & 0xff) - 1, (revision >> 16) & 0xff);
+        sh_->get_product_code(), fw_major_, fw_minor_,
+        'A' + board_major_, board_minor_);
 
   ADD_STRING("Robot", actuator_info_.robot_name_);
   ADD_STRING_FMT("Motor", "%s %s", actuator_info_.motor_make_, actuator_info_.motor_model_);
-  ADD_STRING_FMT("Serial Number", "%d-%05d-%05d", config_info_.product_id_ / 100000 , config_info_.product_id_ % 100000, config_info_.device_serial_number_);
+  ADD_STRING("Serial Number", serial);
   ADD_STRING_FMT("Nominal Current Scale", "%f",  config_info_.nominal_current_scale_);
   ADD_STRING_FMT("Nominal Voltage Scale",  "%f", config_info_.nominal_voltage_scale_);
   ADD_STRING_FMT("HW Max Current", "%f", config_info_.absolute_current_limit_ * config_info_.nominal_current_scale_);
