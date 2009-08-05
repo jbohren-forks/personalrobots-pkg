@@ -4,8 +4,8 @@
   <node pkg="topic_tools" type="mux" args="/wide_stereo/raw_stereo_muxed /wide_stereo/raw_stereo" machine="four"/>
   <node pkg="rosrecord" type="rosrecord" machine="four" args="-f /bags/person_data/wide_stereo_ /wide_stereo/raw_stereo_muxed"/>
 
-  <node pkg="topic_tools" type="mux" args="/narrow_stereo/raw_stereo_muxed /narrow_stereo/raw_stereo" machine="four"/>
-  <node pkg="rosrecord" type="rosrecord" machine="four" args="-f /bags/person_data/narrow_stereo_ /narrow_stereo/raw_stereo_muxed"/>
+  <node pkg="topic_tools" type="mux" args="/narrow_stereo/raw_stereo_muxed /narrow_stereo/raw_stereo" machine="three"/>
+  <node pkg="rosrecord" type="rosrecord" machine="three" args="-f /bags/person_data/narrow_stereo_ /narrow_stereo/raw_stereo_muxed"/>
   
 <node pkg="topic_tools" type="mux" args="/tf_message_muxed /tf_message" machine="two"/>
 <node pkg="rosrecord" type="rosrecord" machine="two" args="-f /bags/person_data/tf_ /tf_message_muxed"/>

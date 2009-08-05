@@ -1,7 +1,7 @@
 <launch>
 <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
 <node pkg="topic_tools" type="switch_mux" args="/wide_stereo/raw_stereo_muxed /wide_stereo/raw_stereo" machine="four"/>
-<node pkg="topic_tools" type="switch_mux" args="/narrow_stereo/raw_stereo_muxed /narrow_stereo/raw_stereo" machine="four"/>
+<node pkg="topic_tools" type="switch_mux" args="/narrow_stereo/raw_stereo_muxed /narrow_stereo/raw_stereo" machine="three"/>
 <node pkg="topic_tools" type="switch_mux" args="/tf_message_muxed /tf_message" machine="two"/>
 <node pkg="topic_tools" type="switch_mux" machine="two" args="/mechanism_state_muxed /mechanism_state"/>
 <node pkg="topic_tools" type="switch_mux" machine="two" args="/base_scan_muxed  /base_scan"/>
