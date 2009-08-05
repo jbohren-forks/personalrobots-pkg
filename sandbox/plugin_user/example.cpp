@@ -100,5 +100,18 @@ int main() {
     else
       std::cerr << "Cloudn't find line lib" << std::endl;
 
+  std::vector<std::string> libs = cl.getLoadedLibraries();
+  std::cout <<"Libraries in cl are:" << std::endl;
+  for (std::vector<std::string>::iterator it = libs.begin(); it != libs.end() ; ++it)
+  {
+    std::cout << "Library name " << *it << std::endl;
+    std::vector<std::string> plugins = cl.getPluginsInLibrary(*it);
+    std::cout << "  With plugins:" << std::endl;
+    for (std::vector<std::string>::iterator it2 = plugins.begin(); it2 != plugins.end() ; ++it2)
+    {
+      std::cout << "   " << *it2 << std::endl;
+    }
+  }
+
   return 0;
 }

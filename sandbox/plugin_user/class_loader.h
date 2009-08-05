@@ -256,6 +256,38 @@ public:
   {
     poco_class_loader_.loadLibrary(library_path);
   }
+
+  std::vector<std::string> getPluginsInLibrary(const std::string & library_path)
+  {
+    std::vector<std::string> plugin_names;
+
+
+    const Poco::Manifest<T> * manifest = poco_class_loader_.findManifest(library_path);
+    if (manifest == NULL)
+      return plugin_names;
+
+    for (typename Poco::Manifest<T>::Iterator it = manifest->begin(); it != manifest->end(); ++it)
+    {
+      plugin_names.push_back(it->name());
+    }
+    return plugin_names;
+  };
+
+  std::vector<std::string> getLoadedLibraries()
+  {
+
+    /*
+      \todo find a way to get ths out of poco 
+      std::vector<std::string> library_names;
+    for (typename Poco::ClassLoader<T>::Iterator it = poco_class_loader_.begin(); it != poco_class_loader_.end(); ++it)
+    {
+      library_names.push_back(it->second->className());
+    }
+    return library_names;
+    */
+    return loaded_libraries_;
+  };
+  
 private:
 
   //used for proper unloading of automatically loaded libraries
