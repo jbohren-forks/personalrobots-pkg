@@ -45,17 +45,31 @@
 #include <visualization_msgs/Polyline.h>
 #include <tf/transform_datatypes.h>
 #include <vector>
-#include <nav_robot_actions/base_global_planner.h>
+#include <nav_core/base_global_planner.h>
+
+#include <Poco/ClassLibrary.h>
 
 namespace navfn {
-  class NavfnROS : public nav_robot_actions::BaseGlobalPlanner {
+  class NavfnROS : public nav_core::BaseGlobalPlanner {
     public:
+      /**
+       * @brief  Default constructor for the NavFnROS object
+       */
+      NavfnROS();
+
       /**
        * @brief  Constructor for the NavFnROS object
        * @param  name The name of this planner
-       * @param  costmap_ros A reference to the ROS wrapper of the costmap to use
+       * @param  costmap_ros A pointer to the ROS wrapper of the costmap to use
        */
-      NavfnROS(std::string name, costmap_2d::Costmap2DROS& costmap_ros);
+      NavfnROS(std::string name, costmap_2d::Costmap2DROS* costmap_ros);
+
+      /**
+       * @brief  Initialization function for the NavFnROS object
+       * @param  name The name of this planner
+       * @param  costmap_ros A pointer to the ROS wrapper of the costmap to use
+       */
+      void initialize(std::string name, costmap_2d::Costmap2DROS* costmap_ros);
 
       /**
        * @brief Given a goal pose in the world, compute a plan
@@ -101,7 +115,7 @@ namespace navfn {
        * @brief Store a copy of the current costmap in \a costmap.  Called by makePlan.
        */
       virtual void getCostmap(costmap_2d::Costmap2D& costmap); 
-      costmap_2d::Costmap2DROS& costmap_ros_;
+      costmap_2d::Costmap2DROS* costmap_ros_;
       boost::shared_ptr<NavFn> planner_;
       double inscribed_radius_, circumscribed_radius_, inflation_radius_;
       ros::Publisher plan_pub_;
@@ -110,9 +124,9 @@ namespace navfn {
     private:
       void clearRobotCell(const tf::Stamped<tf::Pose>& global_pose, unsigned int mx, unsigned int my);
       ros::NodeHandle ros_node_;
-        costmap_2d::Costmap2D costmap_;
+      costmap_2d::Costmap2D costmap_;
       std::string global_frame_;
-
+      bool initialized_;
   };
 };
 

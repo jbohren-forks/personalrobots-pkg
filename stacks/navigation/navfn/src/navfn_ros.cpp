@@ -37,31 +37,60 @@
 #include <navfn/navfn_ros.h>
 
 namespace navfn {
-  //register this factory with the ros BaseGlobalPlanner factory
-  ROS_REGISTER_BGP(NavfnROS);
+  //register this planner as a BaseGlobalPlanner plugin
+  POCO_BEGIN_MANIFEST(nav_core::BaseGlobalPlanner)
+  POCO_EXPORT_CLASS(NavfnROS)
+  POCO_END_MANIFEST
 
-  NavfnROS::NavfnROS(std::string name, costmap_2d::Costmap2DROS& costmap_ros) 
-    : costmap_ros_(costmap_ros),  planner_(new NavFn(costmap_ros.getSizeInCellsX(), costmap_ros.getSizeInCellsY())), ros_node_(name) {
-    //get an initial copy of the costmap
-    costmap_ros_.getCostmapCopy(costmap_);
+  NavfnROS::NavfnROS() 
+    : costmap_ros_(NULL),  planner_(), initialized_(false) {}
 
-    //advertise our plan visualization
-    plan_pub_ = ros_node_.advertise<visualization_msgs::Polyline>("~plan", 1);
+  NavfnROS::NavfnROS(std::string name, costmap_2d::Costmap2DROS* costmap_ros) 
+    : costmap_ros_(NULL),  planner_(), initialized_(false) {
+      //initialize the planner
+      initialize(name, costmap_ros);
+  }
 
-    //read parameters for the planner
-    global_frame_ = costmap_ros_.getGlobalFrameID();
-    
-    //we'll get the parameters for the robot radius from the costmap we're associated with
-    inscribed_radius_ = costmap_ros_.getInscribedRadius();
-    circumscribed_radius_ = costmap_ros_.getCircumscribedRadius();
-    inflation_radius_ = costmap_ros_.getInflationRadius();
+  void NavfnROS::initialize(std::string name, costmap_2d::Costmap2DROS* costmap_ros){
+    if(!initialized_){
+      costmap_ros_ = costmap_ros;
+      planner_ = boost::shared_ptr<NavFn>(new NavFn(costmap_ros->getSizeInCellsX(), costmap_ros->getSizeInCellsY()));
+
+      //get an initial copy of the costmap
+      costmap_ros_->getCostmapCopy(costmap_);
+
+      //advertise our plan visualization
+      plan_pub_ = ros_node_.advertise<visualization_msgs::Polyline>("~plan", 1);
+
+      //read parameters for the planner
+      global_frame_ = costmap_ros_->getGlobalFrameID();
+
+      //we'll get the parameters for the robot radius from the costmap we're associated with
+      inscribed_radius_ = costmap_ros_->getInscribedRadius();
+      circumscribed_radius_ = costmap_ros_->getCircumscribedRadius();
+      inflation_radius_ = costmap_ros_->getInflationRadius();
+
+      initialized_ = true;
+    }
+    else
+      ROS_WARN("This planner has already been initialized, you can't call it twice, doing nothing");
   }
 
   bool NavfnROS::validPointPotential(const geometry_msgs::Point& world_point){
+    if(!initialized_){
+      ROS_ERROR("This planner has not been initialized yet, but it is being used, please call initialize() before use");
+      return false;
+    }
+
     return getPointPotential(world_point) < COST_OBS_ROS;
   }
 
   double NavfnROS::getPointPotential(const geometry_msgs::Point& world_point){
+    if(!initialized_){
+      ROS_ERROR("This planner has not been initialized yet, but it is being used, please call initialize() before use");
+      return -1.0;
+    }
+
     unsigned int mx, my;
     if(!costmap_.worldToMap(world_point.x, world_point.y, mx, my))
       return DBL_MAX;
@@ -71,9 +100,14 @@ namespace navfn {
   }
 
   bool NavfnROS::computePotential(const geometry_msgs::Point& world_point){
+    if(!initialized_){
+      ROS_ERROR("This planner has not been initialized yet, but it is being used, please call initialize() before use");
+      return false;
+    }
+
     //make sure that we have the latest copy of the costmap and that we clear the footprint of obstacles
-    costmap_ros_.clearRobotFootprint();
-    costmap_ros_.getCostmapCopy(costmap_);
+    costmap_ros_->clearRobotFootprint();
+    costmap_ros_->getCostmapCopy(costmap_);
 
     planner_->setCostmap(costmap_.getCharMap());
 
@@ -96,6 +130,11 @@ namespace navfn {
   }
 
   void NavfnROS::clearRobotCell(const tf::Stamped<tf::Pose>& global_pose, unsigned int mx, unsigned int my){
+    if(!initialized_){
+      ROS_ERROR("This planner has not been initialized yet, but it is being used, please call initialize() before use");
+      return;
+    }
+
     double useless_pitch, useless_roll, yaw;
     global_pose.getBasis().getEulerZYX(yaw, useless_pitch, useless_roll);
 
@@ -114,12 +153,22 @@ namespace navfn {
 
   void NavfnROS::getCostmap(costmap_2d::Costmap2D& costmap)
   {
-    costmap_ros_.clearRobotFootprint();
-    costmap_ros_.getCostmapCopy(costmap);
+    if(!initialized_){
+      ROS_ERROR("This planner has not been initialized yet, but it is being used, please call initialize() before use");
+      return;
+    }
+
+    costmap_ros_->clearRobotFootprint();
+    costmap_ros_->getCostmapCopy(costmap);
   }
 
   bool NavfnROS::makePlan(const geometry_msgs::PoseStamped& start, 
       const geometry_msgs::PoseStamped& goal, std::vector<geometry_msgs::PoseStamped>& plan){
+    if(!initialized_){
+      ROS_ERROR("This planner has not been initialized yet, but it is being used, please call initialize() before use");
+      return false;
+    }
+
     //clear the plan, just in case
     plan.clear();
 
@@ -217,6 +266,11 @@ namespace navfn {
   }
 
   void NavfnROS::publishPlan(const std::vector<geometry_msgs::PoseStamped>& path, double r, double g, double b, double a){
+    if(!initialized_){
+      ROS_ERROR("This planner has not been initialized yet, but it is being used, please call initialize() before use");
+      return;
+    }
+
     //given an empty path we won't do anything
     if(path.empty())
       return;
