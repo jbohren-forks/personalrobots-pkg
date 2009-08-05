@@ -54,7 +54,7 @@ int main() {
   if (cl.isPluginLoaded("square"))
   { 
     std::cout << "Can create square";
-    polygon * poly = cl.create("square");
+    polygon * poly = cl.createPluginInstance("square");
     // use the class
     poly->set_side_length(7);
     std::cout << "The square area is: " << poly->area() << '\n';
@@ -64,7 +64,7 @@ int main() {
   std::cout << "Created square, trying triangle next" << std::endl;
   if (cl.isPluginLoaded("triangle"))
   { 
-    polygon * tri = cl.create("triangle");
+    polygon * tri = cl.createPluginInstance("triangle");
 
   // use the class
   tri->set_side_length(7);
@@ -83,7 +83,7 @@ int main() {
 
   if ( ph.isPluginLoaded("line"))
     {
-      shape * sh = ph.create("line");
+      shape * sh = ph.createPluginInstance("line");
       // use the class
       sh->set_side_length(7);
       std::cout << "The line area is: " << sh->area() << '\n';

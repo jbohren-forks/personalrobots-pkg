@@ -61,7 +61,7 @@ namespace fs = boost::filesystem;
 namespace ros
 {
 template <class T>
-class ClassLoader : public Poco::ClassLoader<T>
+class ClassLoader 
 {
 public:
   ClassLoader(std::string package, std::string plugin_type)
@@ -152,9 +152,9 @@ public:
     std::cout << "Loading library " << library_path << std::endl;
     try
     {
-      this->loadLibrary(library_path);
-      //poco_assert (this->isLibraryLoaded(library_path));
-      //zpoco_check_ptr (this->findManifest(library_path)); 
+      poco_class_loader_.loadLibrary(library_path);
+      //poco_assert (poco_class_loader_.isLibraryLoaded(library_path));
+      //zpoco_check_ptr (poco_class_loader_.findManifest(library_path)); 
       loaded_libraries_.push_back(library_path);  //for correct destruction and access
     }
     catch (Poco::LibraryLoadException &ex)
@@ -174,7 +174,7 @@ public:
   {
     for (std::vector<std::string>::iterator it = loaded_libraries_.begin(); it != loaded_libraries_.end(); ++it)
     {
-      this->unloadLibrary(*it);
+      poco_class_loader_.unloadLibrary(*it);
     }
   };
 
@@ -183,7 +183,7 @@ public:
   {
     try
     {
-      return ((Poco::ClassLoader<T>*)this )->canCreate(name);
+      return poco_class_loader_.canCreate(name);
     }
     catch (Poco::RuntimeException &ex)
     {
@@ -191,6 +191,11 @@ public:
     }
   };
   
+  T* createPluginInstance(const std::string& name)
+  {
+    //\todo rethrow with non poco Exceptions
+    return poco_class_loader_.create(name);
+  };
   
 private:
 
@@ -202,7 +207,7 @@ private:
   // This is all available plugins found in xml
   std::map<std::string, Plugin> plugins_available_;
            
-  
+  Poco::ClassLoader<T> poco_class_loader_;  
 };
 
 }
