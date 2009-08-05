@@ -513,9 +513,9 @@ int RandomField::loadRandomField(string basename)
   // Load clique set info
   unsigned int nbr_clique_sets = 0;
   file_rf >> nbr_clique_sets;
-  cout << "read nbr clique sets: " << nbr_clique_sets << endl;
   file_rf.ignore(std::numeric_limits<int>::max(), '\n'); // finish the line
 
+  // For each clique-set, read its features and clique<->node membership info
   clique_sets_.resize(nbr_clique_sets);
   for (unsigned int cs_idx = 0 ; cs_idx < nbr_clique_sets ; cs_idx++)
   {
@@ -524,7 +524,6 @@ int RandomField::loadRandomField(string basename)
     // format: x y z clique_set_idx clique_id nbr_features [features]
     char clique_features_fname[512];
     file_rf.getline(clique_features_fname, 512);
-    cout << "read clique features filename: " << clique_features_fname << endl;
     ifstream file_clique_features(clique_features_fname);
     if (file_clique_features.is_open() == false)
     {
@@ -614,8 +613,6 @@ int RandomField::loadRandomField(string basename)
       {
         abort();
       }
-
-      cout << "read idx id order: " << read_cs_idx2 << " " << clique_id << " " << clique_order << endl;
 
       // read the node ids contained in each clique
       Clique* curr_clique = clique_sets_[cs_idx][clique_id];
