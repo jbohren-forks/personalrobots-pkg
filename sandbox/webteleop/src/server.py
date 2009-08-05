@@ -81,8 +81,6 @@ def img2json(msg, topic_type):
 
 class WebException(Exception): pass
 
-
-
 ################################################################################
 # Ros Web Topic Factory
 class RWTFactory(object):
@@ -90,12 +88,13 @@ class RWTFactory(object):
     self.map = {}
     self.lock = threading.Lock()
 
-  def get(self, topic):
+  def get(self, topic, params):
+    topicKey = topic + params
     try:
       self.lock.acquire()
-      if topic in self.map:
-        return self.map[topic]
-      self.map[topic] = t = ROSWebTopic(topic)
+      if topicKey in self.map:
+        return self.map[topicKey]
+      self.map[topicKey] = t = ROSWebTopic(topic, params)
     finally:
       self.lock.release()
     return t
@@ -127,7 +126,7 @@ tffactory = RWTFFactory()
 ################################################################################
 # Ros Web Topic
 class ROSWebTopic(object):
-  def __init__(self, topic):
+  def __init__(self, topic, params):
     self.topic = topic
     self.topic_type = ""
     self.cond = threading.Condition()
@@ -136,18 +135,17 @@ class ROSWebTopic(object):
     self.sub = None
     self.last_message = ""
     self.pubsub = "subscriber"
-    self.qdict = None
+    self.qdict = params
 
   ##############################################################################
   # Init the topic subscriber
-  def init(self, _pubsub, _qdict):
+  def init(self, _pubsub):
     try:
       self.cond.acquire()
 
       if self.initialized:
         return
 
-      self.qdict = _qdict
       self.pubsub = _pubsub
 
       found = False
@@ -517,12 +515,11 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
      
     elif cmd == "subscribe":
       print "Subscribe[%s]\n" % topic
-      print qdict
 
-      rwt = factory.get(topic)
+      rwt = factory.get(topic, qdict)
 
       try:
-        rwt.init("subscriber", qdict)
+        rwt.init("subscriber")
       except WebException, e:
         traceback.print_exc()
         self.send_response(404)
@@ -536,7 +533,7 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
     elif cmd == "announce":
       print "Announce[%s]\n" % topic
 
-      rwt = factory.get(topic)
+      rwt = factory.get(topic, qdict)
 
       try:
         rwt.init("publisher")
@@ -573,7 +570,7 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     elif cmd == "unsubscribe":
       print "Unsubscribe[%s]" % topic
-      rwt = factory.get(topic)
+      rwt = factory.get(topic, qdict)
       rwt.unsubscribe()
 
       self.send_response(200)
@@ -583,7 +580,7 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     elif cmd == "get":
 
-      rwt = factory.get(topic)
+      rwt = factory.get(topic, qdict)
       msg = rwt.getData()
 
       print "Get[%s]" % topic
@@ -594,7 +591,7 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
       self.wfile.write(msg)
 
     elif cmd == "pub":
-      rwt = factory.get(topic)
+      rwt = factory.get(topic, qdict)
       print "Pub[%s]" % topic
 
       if msgClasses.has_key(topic):
