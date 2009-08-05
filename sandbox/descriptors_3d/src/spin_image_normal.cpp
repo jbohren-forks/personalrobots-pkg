@@ -142,10 +142,10 @@ int SpinImageNormal::precompute(const sensor_msgs::PointCloud& data,
   spin_image_centers_.resize(nbr_interest_regions);
   for (size_t i = 0 ; i < nbr_interest_regions ; i++)
   {
-    geometry_msgs::Point32 region_centroid;
     // Will be handled in compute() if region indices are NULL
     if (interest_region_indices[i] != NULL && (*spin_axes_)[i] != NULL)
     {
+      geometry_msgs::Point32 region_centroid;
       cloud_geometry::nearest::computeCentroid(data, *(interest_region_indices[i]), region_centroid);
       spin_image_centers_[i][0] = region_centroid.x;
       spin_image_centers_[i][1] = region_centroid.y;

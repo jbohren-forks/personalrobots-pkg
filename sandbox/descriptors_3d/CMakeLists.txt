@@ -16,7 +16,6 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 #set the default path for built libraries to the "lib" directory
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
-add_definitions(-msse -msse2)
 add_definitions(-DEIGEN_NO_DEBUG)
 rospack_add_boost_directories()
 
