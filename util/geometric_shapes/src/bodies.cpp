@@ -703,7 +703,8 @@ bool bodies::ConvexMesh::containsPoint(const btVector3 &p) const
 {
     if (m_boundingBox.containsPoint(p))
     {
-	btVector3 ip = (m_iPose * p) / m_scale;
+	btVector3 ip(m_iPose * p);
+	ip = m_meshCenter + (ip - m_meshCenter) * m_scale;
 	return isPointInsidePlanes(ip);
     }
     else
@@ -835,13 +836,13 @@ void bodies::ConvexMesh::useDimensions(const shapes::Shape *shape)
 void bodies::ConvexMesh::updateInternalData(void) 
 {
     btTransform pose = m_pose;
-    pose.setOrigin(pose.getOrigin() + m_boxOffset);
+    pose.setOrigin(m_pose * m_boxOffset);
     m_boundingBox.setPose(pose);
     m_boundingBox.setPadding(m_padding);
     m_boundingBox.setScale(m_scale);
     
     m_iPose = m_pose.inverse();
-    m_center = m_pose.getOrigin() + m_meshCenter;
+    m_center = m_pose * m_meshCenter;
     m_radiusB = m_meshRadiusB * m_scale + m_padding;
     m_radiusBSqr = m_radiusB * m_radiusB;
 
