@@ -325,8 +325,30 @@ class RandomField
     // --------------------------------------------------------------
     int saveCliqueFeatures(string basename) const;
 
+    // --------------------------------------------------------------
+    /*!
+     * \brief Saves the contents of this RandomField to file
+     *
+     * The RandomField is distributed across multiple files.  See the
+     * header of the file for the file format.
+     *
+     * \param The basename of the output files
+     *
+     * \return 0 on success, otherwise negative value on error
+     */
+    // --------------------------------------------------------------
     int saveRandomField(string basename) const;
 
+    // --------------------------------------------------------------
+    /*!
+     * \brief Clears this RandomField and then loads the contents of
+     *        the previously saved RandomField into this RandomField
+     *
+     * \param The basename used during saveRandomField()
+     *
+     * \return 0 on success, otherwise negative value on error
+     */
+    // --------------------------------------------------------------
     int loadRandomField(string basename);
 
     //@}
