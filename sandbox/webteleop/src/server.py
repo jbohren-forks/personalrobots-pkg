@@ -136,16 +136,18 @@ class ROSWebTopic(object):
     self.sub = None
     self.last_message = ""
     self.pubsub = "subscriber"
+    self.qdict = None
 
   ##############################################################################
   # Init the topic subscriber
-  def init(self, _pubsub):
+  def init(self, _pubsub, _qdict):
     try:
       self.cond.acquire()
 
       if self.initialized:
         return
 
+      self.qdict = _qdict
       self.pubsub = _pubsub
 
       found = False
@@ -197,7 +199,17 @@ class ROSWebTopic(object):
   def topic_callback(self, data):
     try:
       self.cond.acquire()
-      self.last_message = data
+
+      # Handle diagnostic messages
+      if self.topic_type == "diagnostic_msgs/DiagnosticMessage":
+        for status in data.status:
+          if status.name.startswith(self.qdict['name'][0]):
+            for value in status.values:
+              if value.label == self.qdict['label'][0]:
+                self.last_message = value.value
+      else:
+        self.last_message = data
+
       self.cond.notifyAll()
     finally:
       self.cond.release()
@@ -254,6 +266,11 @@ class ROSWebTopic(object):
 
         msg += ']}'
 
+      elif self.topic_type == "diagnostic_msgs/DiagnosticMessage":
+        msg = '{ "name": "%s",' % self.qdict['name'][0]
+        msg += '"label": "%s",' % self.qdict['label'][0]
+        msg += '"value": "%s"}' % self.last_message
+        print msg
       else:
         msg = rosjson.ros_message_to_json(self.last_message)
 
@@ -443,10 +460,18 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     if cmd == "startup":
       print "Startup[%s]" % topic
+
+      self.send_response(200)
+      self.send_header( "Content-type", "text/html" )
+      self.end_headers()
+      self.wfile.write("started")
+
+
       robot = commands.getoutput('hostname')
 
       if rosCoreUp == False:
         core_launcher = roslaunch_caller.launch_core()
+        time.sleep(5)
         
         script = commands.getoutput('rospack find webteleop') + '/launch/'
 
@@ -458,18 +483,13 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
           script += 'gazebo.launch'
 
         launchScript(script)
+        time.sleep(10)
 
-      time.sleep(3)
       rospy.init_node(CALLER_ID, disable_signals=True)
       time.sleep(1)
 
       if tfclient == None:
         tfclient = TransformListener()
-
-      self.send_response(200)
-      self.send_header( "Content-type", "text/html" )
-      self.end_headers()
-      self.wfile.write("started")
 
     elif cmd == "shutdown":
       print "Shutdown[%s]" % topic
@@ -497,11 +517,12 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
      
     elif cmd == "subscribe":
       print "Subscribe[%s]\n" % topic
+      print qdict
 
       rwt = factory.get(topic)
 
       try:
-        rwt.init("subscriber")
+        rwt.init("subscriber", qdict)
       except WebException, e:
         traceback.print_exc()
         self.send_response(404)
