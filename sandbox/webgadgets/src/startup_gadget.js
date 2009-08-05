@@ -98,6 +98,14 @@ var ROSStartupGadget = Class.create(ROSGadget, {
     this.plugIcon.style.width = "80px";
     this.contentDiv.appendChild(this.plugIcon);
 
+    this.estopIcon = document.createElement("img");
+    this.estopIcon.src = 'images/estop.png';
+    this.estopIcon.style.display = "inline";
+    this.estopIcon.style.cssFloat = "left";
+    this.estopIcon.style.width = "80px";
+    this.estopIcon.style.marginLeft = "10px";
+    this.estopIcon.style.display = "none";
+    this.contentDiv.appendChild(this.estopIcon);
   },
 
   batteryStateChange: function(myself, pump)
@@ -110,6 +118,30 @@ var ROSStartupGadget = Class.create(ROSGadget, {
     percent = (remaining / capacity) * 100.0;
     myself.gaugeData.setValue(0,1,percent|0);
     myself.gauge.draw(myself.gaugeData, myself.gaugeOptions);
+  },
+
+  powerStateChange: function(myself, pump)
+  {
+    jsonData = eval('(' + pump.response + ')');
+
+    if (jsonData.value < 69.0)
+    {
+      myself.plugIcon.src = 'images/unplugged.png';
+    }
+    else
+    {
+      myself.plugIcon.src = 'images/plugged.png';
+    }
+  },
+
+  estopStateChange: function(myself, pump)
+  {
+    jsonData = eval('(' + pump.response +')');
+
+    if (jsonData.value < 0.5)
+      myself.estopIcon.style.display = "";
+    else
+      myself.estopIcon.style.display = "none";
   },
 
   start: function()
@@ -135,12 +167,20 @@ var ROSStartupGadget = Class.create(ROSGadget, {
     myself.robotStatusIcon.src = 'images/greenbutton.png';
     myself.startButton.value = 'Stop';
 
-    //myself.startButton.observe('click', Event.stop );
+    myself.startButton.stopObserving('click');
     myself.startButton.observe('click', myself.stop.bind(myself) );
 
     myself.batteryTopic = new ROSTopic("/battery_state");
     myself.batteryTopic.setCallback(myself, myself.batteryStateChange);
+
+    myself.plugTopic = new ROSTopic("/diagnostics?name=Power%20board&label=Breaker%200%20Voltage");
+    myself.plugTopic.setCallback(myself, myself.powerStateChange);
+
+    myself.estopTopic = new ROSTopic("/diagnostics?name=Power%20board&label=RunStop%20Button%20Status");
+    myself.estopTopic.setCallback(myself, myself.estopStateChange);
+
   },
+
   
   stopped: function (myself, pump)
   {
@@ -148,6 +188,7 @@ var ROSStartupGadget = Class.create(ROSGadget, {
     myself.startButton.value = 'Start';
     myself.robotStatusIcon.src = 'images/redbutton.png';
 
+    myself.startButton.stopObserving('click');
     myself.startButton.observe('click', myself.start.bind(myself) );
   },
 
