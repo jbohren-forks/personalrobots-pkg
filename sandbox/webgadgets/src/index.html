@@ -12,6 +12,7 @@
     <script type="text/javascript" src="map_gadget.js"></script>
     <script type="text/javascript" src="startup_gadget.js"></script>
     <script type="text/javascript" src="joystick_gadget.js"></script>
+    <script type="text/javascript" src="demo_gadget.js"></script>
     <script type="text/javascript">
 
       function showGadgets()
@@ -53,6 +54,9 @@
           gadget = new ROSMapGadget();
         else if (name == "joystick_gadget")
           gadget = new ROSJoystickGadget();
+        else if (name == "demo_gadget")
+          gadget = new ROSDemoGadget();
+
       }
 
       function init()
