@@ -52,9 +52,13 @@ SineSweep::~SineSweep()
 {
 }
 
-void SineSweep::init(double start_freq, double end_freq, double duration, double amplitude)
+bool SineSweep::init(double start_freq, double end_freq, double duration, double amplitude)
 {
-  //keep the amplitude around
+  if (start_freq > end_freq)
+    return false;
+  if (duration < 0 || amplitude < 0)
+    return false;
+  
   amplitude_ = amplitude;
   duration_ = duration;
   //calculate the angular fequencies
@@ -67,6 +71,8 @@ void SineSweep::init(double start_freq, double end_freq, double duration, double
   
   //zero out the command
   cmd_ = 0.0;
+
+  return true;
 }
 
 double SineSweep::update( double dt)

@@ -39,8 +39,10 @@ using namespace controller;
 
 ROS_REGISTER_CONTROLLER(CheckoutController)
 
-CheckoutController::CheckoutController():
-  robot_(NULL)
+CheckoutController::CheckoutController()
+: robot_(NULL), 
+  data_sent_(false),
+  call_service_(NULL)
 {
   robot_data_.test_time = 0;
   robot_data_.num_joints = 0;
@@ -57,7 +59,7 @@ CheckoutController::~CheckoutController()
 {
 }
 
-void CheckoutController::init( double timeout, mechanism::RobotState *robot)
+bool CheckoutController::init(mechanism::RobotState *robot, const ros::NodeHandle &n)
 {
   assert(robot);
   robot_ = robot;
@@ -121,28 +123,21 @@ void CheckoutController::init( double timeout, mechanism::RobotState *robot)
     robot_data_.actuator_data[i].enabled = 0;
   }
 
-  timeout_ = timeout;
+  n.param("timeout", timeout_, 30.0);
 
   initial_time_ = robot_->hw_->current_time_;
+
+  call_service_.reset(new realtime_tools::RealtimeSrvCall<joint_qualification_controllers::RobotData::Request, joint_qualification_controllers::RobotData::Response>(n, "/robot_checkout"));
+
+  return true;
 }
 
-bool CheckoutController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+bool CheckoutController::starting()
 {
-  assert(robot);
-  
-  TiXmlElement *cd = config->FirstChildElement("controller_defaults");
-  if (cd)
-  {
-    // Pull timeout attribute if it exists
-    const char *time_char = cd->Attribute("timeout");
-    double timeout = time_char ? atof(cd->Attribute("timeout")) : timeout_;
+  initial_time_ = robot_->hw_->current_time_;
 
-    init(timeout, robot);
-  }
-  else
-  {
-    init(timeout_, robot);
-  }
+  data_sent_ = false;
+
   return true;
 }
 
@@ -168,34 +163,21 @@ void CheckoutController::update()
   case LISTENING:
     {
     cal = true;
-    for (int i = 0; i < joint_count_; i++)
+    for (int i = 0; i < joint_count_; ++i)
     {
       // Check for caster wheel joints and fingers
       // Wheel joints and fingers don't calibrate, so don't wait for them
       if (cal && (robot_->joint_states_[i].joint_->name_.find("wheel_joint") != string::npos))
-      {     
-        //cal = true;
         continue;
-      }
+
 
       if (cal && (robot_->joint_states_[i].joint_->name_.find("finger") != string::npos))
-      {
-        //cal = true;
         continue;
-      }
+      
 
       // Base joint is a dummy joint used to set up visualization
       if (cal && robot_->joint_states_[i].joint_->name_ == "base_joint")
-      {
-        //cal = true;
         continue;
-      }
-
-      //if (cal && robot_->joint_states_[i].calibrated_)
-      //  cal = true;
-      //else
-      //  cal = false;
-      // break;
       
       if (!robot_->joint_states_[i].calibrated_)
       {     
@@ -207,11 +189,11 @@ void CheckoutController::update()
     enabled = true;
     for (int i = 0; i < actuator_count_; i++)
     {
-      if (robot_->hw_->actuators_[i]->state_.is_enabled_ && enabled)
-        enabled = true;
-      else
+      if (!robot_->hw_->actuators_[i]->state_.is_enabled_)
+      {
         enabled = false;
         break;
+      }
     }
 
     if (cal && enabled)
@@ -224,9 +206,49 @@ void CheckoutController::update()
     state_ = DONE;
     break;
   case DONE:
+    if (!data_sent_)
+      data_sent_ = sendData();
+    
+
     break;
   }
 
+}
+
+bool CheckoutController::sendData()
+{
+  if (call_service_->trylock())
+  {
+    joint_qualification_controllers::RobotData::Request *out = &call_service_->srv_req_;
+    out->test_time     = robot_data_.test_time;
+    out->num_joints    = robot_data_.num_joints;
+    out->num_actuators = robot_data_.num_actuators;
+    
+    out->joint_data.resize(robot_data_.num_joints);
+    out->actuator_data.resize(robot_data_.num_actuators);
+    
+    for (int i = 0; i < joint_count_; i++)
+    {
+      out->joint_data[i].index      = robot_data_.joint_data[i].index;
+      out->joint_data[i].name       = robot_data_.joint_data[i].name;
+      out->joint_data[i].is_cal     = robot_data_.joint_data[i].is_cal;
+      out->joint_data[i].has_safety = robot_data_.joint_data[i].has_safety;
+      out->joint_data[i].type       = robot_data_.joint_data[i].type;
+    }
+    
+    for (int i = 0; i < actuator_count_; i++)
+    {
+      out->actuator_data[i].index   = robot_data_.actuator_data[i].index;
+      out->actuator_data[i].name    = robot_data_.actuator_data[i].name;
+      out->actuator_data[i].id      = robot_data_.actuator_data[i].id;
+      out->actuator_data[i].enabled = robot_data_.actuator_data[i].enabled;
+    }
+    
+    call_service_->unlockAndCall();
+    
+    return true;
+  }
+  return false;
 }
 
 void CheckoutController::analysis(double time)
@@ -242,68 +264,4 @@ void CheckoutController::analysis(double time)
   return; 
 }
 
-ROS_REGISTER_CONTROLLER(CheckoutControllerNode)
-CheckoutControllerNode::CheckoutControllerNode()
-: data_sent_(false), last_publish_time_(0), call_service_("/robot_checkout")
-{
-  c_ = new CheckoutController();
-}
-
-CheckoutControllerNode::~CheckoutControllerNode()
-{
-  delete c_;
-}
-
-void CheckoutControllerNode::update()
-{
-  c_->update();
-
-  if (c_->done())
-  {
-    if(!data_sent_)
-    {
-      if (call_service_.trylock())
-      {
-        joint_qualification_controllers::RobotData::Request *out = &call_service_.srv_req_;
-        out->test_time     = c_->robot_data_.test_time;
-        out->num_joints    = c_->robot_data_.num_joints;
-        out->num_actuators = c_->robot_data_.num_actuators;
-        
-        out->joint_data.resize(c_->robot_data_.num_joints);
-        out->actuator_data.resize(c_->robot_data_.num_actuators);
-
-        for (int i = 0; i < c_->joint_count_; i++)
-        {
-          out->joint_data[i].index      = c_->robot_data_.joint_data[i].index;
-          out->joint_data[i].name       = c_->robot_data_.joint_data[i].name;
-          out->joint_data[i].is_cal     = c_->robot_data_.joint_data[i].is_cal;
-          out->joint_data[i].has_safety = c_->robot_data_.joint_data[i].has_safety;
-          out->joint_data[i].type       = c_->robot_data_.joint_data[i].type;
-        }
-
-        for (int i = 0; i < c_->actuator_count_; i++)
-        {
-          out->actuator_data[i].index    = c_->robot_data_.actuator_data[i].index;
-          out->actuator_data[i].name     = c_->robot_data_.actuator_data[i].name;
-          out->actuator_data[i].id       = c_->robot_data_.actuator_data[i].id;
-          out->actuator_data[i].enabled  = c_->robot_data_.actuator_data[i].enabled;
-        }
-          
-        call_service_.unlockAndCall();
-        data_sent_ = true;
-      }
-    }
-  }
-}
-
-bool CheckoutControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
-{
-  assert(robot);
-  robot_ = robot;
-  
-  if (!c_->initXml(robot, config))
-    return false;
-    
-  return true;
-}
 

@@ -44,16 +44,14 @@
 */
 /***************************************************/
 
-
-#include <ros/node.h>
+#include <ros/ros.h>
+#include <string>
 #include <math.h>
-#include <sstream>
-#include <diagnostic_msgs/DiagnosticMessage.h>
 #include <joint_qualification_controllers/TestData.h>
-#include <realtime_tools/realtime_publisher.h>
 #include <realtime_tools/realtime_srv_call.h>
 #include <mechanism_control/controller.h>
 #include <robot_mechanism_controllers/joint_velocity_controller.h>
+#include <boost/scoped_ptr.hpp>
 
 namespace controller
 {
@@ -69,13 +67,15 @@ public:
 
   /*!
    * \brief Functional way to initialize.
-   * \param velocity Target velocity for the velocity controller.
-   * \param max_effort Effort to limit the controller at.
    * \param *robot The robot that is being controlled.
+   * \param &n NodeHandle of mechanism control
    */
-  void init( double velocity, double max_effort, double max_expected_effort, double min_expected_effort, double min_pos, double max_pos, double time, double timeout, double slope, std::string name, mechanism::RobotState *robot);
-  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
+  bool init(mechanism::RobotState *robot, const ros::NodeHandle &n);
 
+  /*!
+   * \brief Called when controller is started
+   */
+  bool starting();
 
   /*!
    * \brief Perform the test analysis
@@ -83,17 +83,20 @@ public:
   void analysis();
 
   /*!
-   * \brief Issues commands to the joint. Should be called at regular intervals
+   * \brief Issues commands to the joint to perform hysteresis test.
    */
+  void update();
 
-  virtual void update();
+  /*! 
+   * \brief Sends data, returns true if sent
+   */
+  bool sendData();
   
   bool done() { return state_ == DONE; }
   
-  diagnostic_msgs::DiagnosticMessage diagnostic_message_;
-  joint_qualification_controllers::TestData::Request test_data_;
 
 private:
+  joint_qualification_controllers::TestData::Request test_data_;
 
   mechanism::JointState *joint_;     /**< Joint we're controlling. */
   mechanism::RobotState *robot_;     /**< Pointer to robot structure. */
@@ -112,36 +115,12 @@ private:
   int state_;
   int starting_count;
 
-};
-
-/***************************************************/
-/*! \class controller::HysteresisControllerNode
-    \brief Hystersis Controller Node
-
-    This tests the hysteresis of a joint using a
-    velocity controller.
-
-*/
-/***************************************************/
-
-class HysteresisControllerNode : public Controller
-{
-public:
-
-  HysteresisControllerNode();
-  ~HysteresisControllerNode();
-
-  void update();
-  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
-
-private:
-  HysteresisController *c_;
-  mechanism::RobotState *robot_;
-  
   bool data_sent_;
   
   double last_publish_time_;
-  realtime_tools::RealtimeSrvCall<joint_qualification_controllers::TestData::Request, joint_qualification_controllers::TestData::Response> call_service_;
+
+  // RT service call
+  boost::scoped_ptr<realtime_tools::RealtimeSrvCall<joint_qualification_controllers::TestData::Request, joint_qualification_controllers::TestData::Response> > call_service_;
 
 };
 }

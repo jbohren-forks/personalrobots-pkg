@@ -34,7 +34,6 @@
 
 // Original version: Kevin Watts <watts@willowgarage.com>
 
-#include <math.h>
 #include <control_toolbox/dither.h>
 
 
@@ -62,10 +61,15 @@ Dither::~Dither()
 {
 }
 
-void Dither::init(double amplitude)
+bool Dither::init(const ros::NodeHandle &n)
 {
-  //keep the amplitude around
-  amplitude_ = amplitude;
+  if (!n.getParam("amplitude", amplitude_) || amplitude_ < 0.0)
+  {
+    ROS_ERROR("Dither amplitude not set properly.");
+    return false;
+  }
+  
+  return true;
 }
 
 double Dither::update()

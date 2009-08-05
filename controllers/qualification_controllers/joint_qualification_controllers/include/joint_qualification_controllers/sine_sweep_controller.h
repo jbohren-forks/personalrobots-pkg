@@ -43,13 +43,13 @@
 /***************************************************/
 
 
-#include <ros/node.h>
+#include <ros/ros.h>
 #include <math.h>
 #include <joint_qualification_controllers/TestData.h>
-#include <realtime_tools/realtime_publisher.h>
 #include <realtime_tools/realtime_srv_call.h>
 #include <mechanism_control/controller.h>
 #include <control_toolbox/sine_sweep.h>
+#include <boost/scoped_ptr.hpp>
 
 
 namespace controller
@@ -71,20 +71,20 @@ public:
 
   /*!
    * \brief Functional way to initialize.
-   * \param start_freq The start value of the sweep (Hz).
-   * \param end_freq  The end value of the sweep (Hz).
-   * \param amplitude The amplitude of the sweep (N).
-   * \param duration The duration in seconds from start to finish (s).
-   * \param time The current hardware time.
    * \param *robot The robot that is being controlled.
+   * \param &n NodeHandle of mechanism control
    */
-  void init(double start_freq, double end_freq, double duration, double amplitude, double first_mode, double second_mode, double error_tolerance, double time, std::string name,mechanism::RobotState *robot);
-  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
+  bool init(mechanism::RobotState *robot, const ros::NodeHandle &n);
+
+  bool starting();
 
   void analysis();
-  virtual void update();
+  void update();
+
+  bool sendData();
   
   bool done() { return done_ == 1; }
+
   joint_qualification_controllers::TestData::Request test_data_;
 
 private:
@@ -95,34 +95,10 @@ private:
   double initial_time_;                     /**< Start time of the sweep. */
   int count_;
   bool done_;
- 
-};
-
-/***************************************************/
-/*! \class controller::SineSweepControllerNode
-    \brief Sine Sweep Controller ROS Node
-
-*/
-/***************************************************/
-
-class SineSweepControllerNode : public Controller
-{
-public:
- 
-  SineSweepControllerNode();
-  ~SineSweepControllerNode();
-
-  void update();
-  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
-
-private:
-  SineSweepController *c_;
-  mechanism::RobotState *robot_;
   
   bool data_sent_;
   
-  double last_publish_time_;
-  realtime_tools::RealtimeSrvCall<joint_qualification_controllers::TestData::Request, joint_qualification_controllers::TestData::Response> call_service_;
+  boost::scoped_ptr<realtime_tools::RealtimeSrvCall<joint_qualification_controllers::TestData::Request, joint_qualification_controllers::TestData::Response>  >call_service_;
 
 };
 }

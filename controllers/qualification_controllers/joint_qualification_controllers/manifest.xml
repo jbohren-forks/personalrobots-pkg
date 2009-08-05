@@ -1,17 +1,16 @@
 <package>
   <description brief='Joint Qualification Controllers'>
   </description>
-  <author> Melonee Wise</author>
+  <author> Melonee Wise, Kevin Watts</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <depend package="mechanism_model" />
   <depend package="wg_robot_description_parser" />
   <depend package="realtime_tools" />
   <depend package="robot_msgs" />
-
+  <depend package="control_toolbox" />
+  <depend package="roscpp" />
   <depend package="robot_mechanism_controllers" />
-  <depend package="rospy" />
-  <depend package="robot_msgs" />
   <depend package="robot_srvs" />
   <url>http://pr.willowgarage.com</url>
   <rosdep name="wxwidgets"/>

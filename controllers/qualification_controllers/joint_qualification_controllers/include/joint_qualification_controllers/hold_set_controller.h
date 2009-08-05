@@ -46,10 +46,9 @@
 
 
 #include <vector>
-#include <ros/node.h>
+#include <ros/ros.h>
 #include <math.h>
 #include <joint_qualification_controllers/HoldSetData.h>
-#include <realtime_tools/realtime_publisher.h>
 #include <realtime_tools/realtime_srv_call.h>
 #include <mechanism_control/controller.h>
 #include <robot_mechanism_controllers/joint_position_controller.h>
@@ -73,54 +72,70 @@ public:
 
   /*!
    * \brief Functional way to initialize.
-   * \param velocity Target velocity for the velocity controller.
-   * \param max_effort Effort to limit the controller at.
    * \param *robot The robot that is being controlled.
+   * \param &n Node handle for parameters and services
    */
-  void init( double test_duration, double time, std::string name, mechanism::RobotState *robot);
-  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
+  bool init( mechanism::RobotState *robot, const ros::NodeHandle &n);
 
 
   /*!
    * \brief Issues commands to the joint. Should be called at regular intervals
    */
+  void update();
 
-  virtual void update();
-  
+  bool starting();
+
+  bool sendData();
+    
   bool done() { return state_ == DONE; }
   
   joint_qualification_controllers::HoldSetData::Request hold_set_data_;
 
 private:
+  control_toolbox::Dither* lift_dither_;
+  control_toolbox::Dither* flex_dither_;
 
-  std::vector<control_toolbox::Dither*> dithers_;
+  controller::JointPositionController* lift_controller_;
+  controller::JointPositionController* flex_controller_;
 
-  std::vector<controller::JointPositionController*> joint_position_controllers_;
-  std::vector<std::vector<double> > hold_set_;
+  mechanism::JointState* flex_state_;    
+  mechanism::JointState* lift_state_;    
 
-  std::vector<mechanism::JointState*> joint_states_;      /**< Joint we're controlling. */
   mechanism::RobotState *robot_;            /**< Pointer to robot structure. */
-
-  uint num_joints_;
 
   int starting_count_;
 
   int state_;
-  uint current_position_;
+
+  double lift_cmd_, flex_cmd_;
+
 
   double initial_time_;
 
   double settle_time_;
   double start_time_;
   double dither_time_;
+  double timeout_;
+  double lift_min_, lift_max_, lift_delta_;
+  double flex_min_, flex_max_, flex_delta_;
 
   int dither_count_;
-  double timeout_;
+
+  uint lift_index_;
+  uint flex_index_;
+
+  bool data_sent_;
+
+  boost::scoped_ptr<realtime_tools::RealtimeSrvCall<joint_qualification_controllers::HoldSetData::Request, joint_qualification_controllers::HoldSetData::Response> > call_service_;
+
 
 };
 
+}
+
+
 /***************************************************/
-/*! \class controller::HoldSetControllerNode
+/*! \class controller::HoldSetController
     \brief Hold Set Controller
 
     This holds a joint at a set of positions, measuring effort
@@ -183,26 +198,5 @@ private:
 
 */
 /***************************************************/
-
-class HoldSetControllerNode : public Controller
-{
-public:
-
-  HoldSetControllerNode();
-  ~HoldSetControllerNode();
-  
-  void update();
-  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
-
-private:
-  HoldSetController *c_;
-  mechanism::RobotState *robot_;
-  
-  bool data_sent_;
-  
-  double last_publish_time_;
-  realtime_tools::RealtimeSrvCall<joint_qualification_controllers::HoldSetData::Request, joint_qualification_controllers::HoldSetData::Response> call_service_;
-};
-}
 
 

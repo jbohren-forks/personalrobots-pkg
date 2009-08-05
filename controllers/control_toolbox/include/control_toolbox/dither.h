@@ -35,6 +35,8 @@
 
 #include <cstdlib>
 #include <ctime>
+#include <math.h>
+#include <ros/ros.h>
 
 namespace control_toolbox {
 /***************************************************/
@@ -69,7 +71,7 @@ public:
    *
     * \param amplitude The amplitude of the dither, \f$A\f$.
    */
-  void init(double amplitude);
+  bool init(const ros::NodeHandle &n);
 
 private:
   double amplitude_;                        /**< Amplitude of the sweep. */

@@ -40,8 +40,11 @@ using namespace controller;
 
 ROS_REGISTER_CONTROLLER(HysteresisController)
 
-HysteresisController::HysteresisController():
-  joint_(NULL), robot_(NULL)
+HysteresisController::HysteresisController()
+: joint_(NULL), 
+  robot_(NULL),
+  data_sent_(false), 
+  call_service_(NULL)
 {
   test_data_.test_name ="hysteresis";
   test_data_.joint_name = "default joint";
@@ -52,20 +55,19 @@ HysteresisController::HysteresisController():
   test_data_.velocity.resize(MAX_DATA_POINTS);
 
   test_data_.arg_name.resize(11);
+  test_data_.arg_value.resize(11);
   test_data_.arg_name[0] = "min_expected_effort";
   test_data_.arg_name[1] = "max_expected_effort";
   test_data_.arg_name[2] = "min_pos";
   test_data_.arg_name[3] = "max_pos";
   test_data_.arg_name[4] = "search_vel";
   test_data_.arg_name[5] = "timeout";
-  test_data_.arg_name[6] = "slope";
+  test_data_.arg_name[6] = "max_effort";
   test_data_.arg_name[7] = "p_gain";
   test_data_.arg_name[8] = "i_gain";
   test_data_.arg_name[9] = "d_gain";
   test_data_.arg_name[10] = "iClamp";
 
-  test_data_.arg_value.resize(11);
-  
   state_         = STOPPED;
   starting_count = 0;
   velocity_      = 0;
@@ -76,6 +78,7 @@ HysteresisController::HysteresisController():
   loop_count_    = 0;
   count_         = 0;
   
+  // Assume 1KHz update rate
   timeout_ = MAX_DATA_POINTS / 1000;
 }
 
@@ -83,31 +86,86 @@ HysteresisController::~HysteresisController()
 {
 }
 
-void HysteresisController::init( double velocity, double max_effort, double max_expected_effort, double min_expected_effort, double min_pos, double max_pos, double time, double timeout, double slope, std::string name, mechanism::RobotState *robot)
+bool HysteresisController::init( mechanism::RobotState *robot, const ros::NodeHandle &n)
 {
   assert(robot);
   robot_ = robot;
-  joint_ = robot->getJointState(name);
 
-  velocity_ = velocity;
-  max_effort_ = max_effort;
-  initial_time_ = time;
+  std::string name;
+  if (!n.getParam("name", name)){
+    ROS_ERROR("Hysteresis Controller: No joint name found on parameter namespace: %s)",
+              n.getNamespace().c_str());
+    return false;
+  }
+  if (!(joint_ = robot->getJointState(name)))
+  {
+    ROS_ERROR("HysteresisController could not find joint named \"%s\"\n", name.c_str());
+    return false;
+  }
+
+  if (!n.getParam("velocity", velocity_)){
+    ROS_ERROR("Hysteresis Controller: No velocity found on parameter namespace: %s)",
+              n.getNamespace().c_str());
+    return false;
+  }
+
+  if (!n.getParam("max_effort", max_effort_)){
+    ROS_ERROR("Hysteresis Controller: No max effort found on parameter namespace: %s)",
+              n.getNamespace().c_str());
+    return false;
+  }
+
+  double min_expected, max_expected, max_pos, min_pos;
+  
+    if (!n.getParam("min_expected", min_expected)){
+    ROS_ERROR("Hysteresis Controller: No min expected effort found on parameter namespace: %s)",
+              n.getNamespace().c_str());
+    return false;
+  }
+
+  if (!n.getParam("max_expected", max_expected)){
+    ROS_ERROR("Hysteresis Controller: No max expected effort found on parameter namespace: %s)",
+              n.getNamespace().c_str());
+    return false;
+  }
+
+  if (!n.getParam("max_position", max_pos)){
+    ROS_ERROR("Hysteresis Controller: No max position found on parameter namespace: %s)",
+              n.getNamespace().c_str());
+    return false;
+  }
+
+  if (!n.getParam("min_position", min_pos)){
+    ROS_ERROR("Hysteresis Controller: No min position found on parameter namespace: %s)",
+              n.getNamespace().c_str());
+    return false;
+  }
+
+  if (!n.getParam("timeout", timeout_)){
+    ROS_ERROR("Hysteresis Controller: No timeout found on parameter namespace: %s)",
+              n.getNamespace().c_str());
+    return false;
+  }
+
+  initial_time_ = robot_->hw_->current_time_;
   initial_position_ = joint_->position_;
-  timeout_ = timeout;
 
   // Set values in test data output
   test_data_.joint_name = name;
-  test_data_.arg_value[0] = min_expected_effort;
-  test_data_.arg_value[1] = max_expected_effort;
+  test_data_.arg_value[0] = min_expected;
+  test_data_.arg_value[1] = max_expected;
   test_data_.arg_value[2] = min_pos;
   test_data_.arg_value[3] = max_pos;
-  test_data_.arg_value[4] = velocity;
-  test_data_.arg_value[5] = timeout;
-  test_data_.arg_value[6] = slope;
+  test_data_.arg_value[4] = velocity_;
+  test_data_.arg_value[5] = timeout_;
+  test_data_.arg_value[6] = max_effort_;
+
+  
+  velocity_controller_ = new JointVelocityController();
+  if (!velocity_controller_->init(robot, ros::NodeHandle(n, "vel_control"))) return false;
 
   // Get the gains, add them to test data
   double p, i, d, iClamp, imin;
-
   velocity_controller_->getGains(p, i, d, iClamp, imin);
 
   test_data_.arg_value[7] = p;
@@ -115,64 +173,26 @@ void HysteresisController::init( double velocity, double max_effort, double max_
   test_data_.arg_value[9] = d;
   test_data_.arg_value[10] = iClamp;
 
-  
+  call_service_.reset(new realtime_tools::RealtimeSrvCall<joint_qualification_controllers::TestData::Request, joint_qualification_controllers::TestData::Response>(n, "/test_data"));
+
+  return true;
 }
 
-bool HysteresisController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+bool HysteresisController::starting()
 {
-  assert(robot);
+  velocity_controller_->starting();
   
-  TiXmlElement *j = config->FirstChildElement("joint");
-  if (!j)
-  {
-    fprintf(stderr, "HysteresisController was not given a joint\n");
-    return false;
-  }
+  initial_time_ = robot_->hw_->current_time_;
+  initial_position_ = joint_->position_;
 
-  const char *joint_name = j->Attribute("name");
-  joint_ = joint_name ? robot->getJointState(joint_name) : NULL;
-  if (!joint_)
-  {
-    fprintf(stderr, "HysteresisController could not find joint named \"%s\"\n", joint_name);
-    return false;
-  }
-  ///\todo check velocity controller comes up
-  velocity_controller_ = new JointVelocityController();
-  velocity_controller_->initXml(robot, config);
-
-  TiXmlElement *cd = j->FirstChildElement("controller_defaults");
-  if (cd)
-  {
-    double velocity = atof(cd->Attribute("velocity"));
-    double max_effort = atof(cd->Attribute("max_effort"));
-    double max_expected_effort = atof(cd->Attribute("max_expected_effort"));
-    double min_expected_effort = atof(cd->Attribute("min_expected_effort"));
-    double min_pos = atof(cd->Attribute("min_pos"));
-    double max_pos = atof(cd->Attribute("max_pos"));
-    
-    // Pull timeout attribute if it exists
-    const char *time_char = cd->Attribute("timeout");
-    double timeout = time_char ? atof(cd->Attribute("timeout")) : timeout_;
-
-    const char *slope_char = cd->Attribute("slope");
-    double slope = slope_char ? atof(cd->Attribute("slope")) : 0;
-
-
-
-    init(velocity, max_effort, max_expected_effort, min_expected_effort, min_pos, max_pos, robot->hw_->current_time_, timeout, slope, j->Attribute("name"), robot);
-  }
-  else
-  {
-    fprintf(stderr, "HysteresisController's config did not specify the default control parameters.\n");
-    return false;
-  }
+  count_ = 0;
   return true;
 }
 
 void HysteresisController::update()
 {
-  // wait until the joint is calibrated if it has limits
-  if(!joint_->calibrated_ && joint_->joint_->type_!=mechanism::JOINT_CONTINUOUS)
+  // wait until the joint is calibrated if its not a wheel
+  if(!joint_->calibrated_ && joint_->joint_->name_.find("wheel_joint") != string::npos)
   {
     return;
   }
@@ -245,6 +265,8 @@ void HysteresisController::update()
     break;
   case DONE:
     velocity_controller_->setCommand(0.0);
+    if (!data_sent_)
+      data_sent_ = sendData();
     break;
   }
 
@@ -265,56 +287,27 @@ void HysteresisController::analysis()
   return; 
 }
 
-ROS_REGISTER_CONTROLLER(HysteresisControllerNode)
-HysteresisControllerNode::HysteresisControllerNode()
-: data_sent_(false), last_publish_time_(0), call_service_("/test_data")
+bool HysteresisController::sendData()
 {
-  c_ = new HysteresisController();
-}
-
-HysteresisControllerNode::~HysteresisControllerNode()
-{
-  delete c_;
-}
-
-void HysteresisControllerNode::update()
-{
-  c_->update();
-  if (c_->done())
+  if (call_service_->trylock())
   {
-    if(!data_sent_)
-    {
-      if (call_service_.trylock())
-      {
-        joint_qualification_controllers::TestData::Request *out = &call_service_.srv_req_;
-        out->test_name = c_->test_data_.test_name;
-        out->joint_name = c_->test_data_.joint_name;
-
-        out->time = c_->test_data_.time;
-        out->cmd = c_->test_data_.cmd;
-        out->effort = c_->test_data_.effort;
-        out->position = c_->test_data_.position;
-        out->velocity = c_->test_data_.velocity;
-
-        out->arg_name = c_->test_data_.arg_name;
-        out->arg_value = c_->test_data_.arg_value;
-        call_service_.unlockAndCall();
-        data_sent_ = true;
-      }
-    }
-  }
-
-  
-}
-
-bool HysteresisControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
-{
-  assert(robot);
-  robot_ = robot;
-  
-  if (!c_->initXml(robot, config))
-    return false;
+    joint_qualification_controllers::TestData::Request *out = &call_service_->srv_req_;
+    out->test_name = test_data_.test_name;
+    out->joint_name = test_data_.joint_name;
     
-  return true;
+    out->time = test_data_.time;
+    out->cmd = test_data_.cmd;
+    out->effort = test_data_.effort;
+    out->position = test_data_.position;
+    out->velocity = test_data_.velocity;
+    
+    out->arg_name = test_data_.arg_name;
+    out->arg_value = test_data_.arg_value;
+    call_service_->unlockAndCall();
+    return true;
+  }
+  return false;
 }
+
+
 

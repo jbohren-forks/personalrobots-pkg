@@ -47,19 +47,24 @@
 */
 /***************************************************/
 
-
-#include <ros/node.h>
+#include <ros/ros.h>
 #include <string>
 #include <math.h>
 #include <joint_qualification_controllers/RobotData.h>
-#include <realtime_tools/realtime_publisher.h>
 #include <realtime_tools/realtime_srv_call.h>
 #include <mechanism_control/controller.h>
-
-
+#include <boost/scoped_ptr.hpp>
 
 namespace controller
 {
+
+
+/***************************************************/
+/*! \class controller::CheckoutControllerNode
+    \brief Checkout Controller
+
+  */
+/***************************************************/
 
 class CheckoutController : public Controller
 {
@@ -73,66 +78,56 @@ public:
   /*!
    * \brief Functional way to initialize.
    * \param *robot The robot that is being controlled.
+   * \param &n NodeHandle of mechanism control
    */
-  void init( double timeout, mechanism::RobotState *robot);
-  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
+  bool init( mechanism::RobotState *robot, const ros::NodeHandle &n);
 
+  /*!
+   * \brief Called when controller is started or restarted
+   */
+  bool starting();
+  
+  /*!
+   * \brief Checks joint, actuator status for calibrated and enabled.
+   */
+  void update();
+
+  /*! 
+   * \brief Sends data, returns true if sent
+   */
+  bool sendData();
 
   /*!
    * \brief Perform the test analysis
    */
   void analysis(double time);
 
-  /*!
-   * \brief Checks joint, actuator status for calibrated and enabled.
-   */
-  virtual void update();
-  
-  bool done() { return state_ == DONE; }
-
-  int joint_count_;
-  int actuator_count_;
-  
-  joint_qualification_controllers::RobotData::Request robot_data_;
 
 private:
-
   mechanism::RobotState *robot_;          /**< Pointer to robot structure. */
   double initial_time_;                   /**< Start time of the test. */
  
   double timeout_;
+
+  joint_qualification_controllers::RobotData::Request robot_data_;
   
   int state_;
 
-};
+  int joint_count_;
+  int actuator_count_;
 
-/***************************************************/
-/*! \class controller::CheckoutControllerNode
-    \brief Checkout Controller
+  bool done() { return state_ == DONE; }
 
-  */
-/***************************************************/
-
-class CheckoutControllerNode : public Controller
-{
-public:
-
-  CheckoutControllerNode();
-  ~CheckoutControllerNode();
-
-  void update();
-  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
-
-private:
-  CheckoutController *c_;
-  mechanism::RobotState *robot_;
-  
   bool data_sent_;
-  
-  double last_publish_time_;
-  realtime_tools::RealtimeSrvCall<joint_qualification_controllers::RobotData::Request, joint_qualification_controllers::RobotData::Response> call_service_;
 
+  double last_publish_time_;
+
+  // RT service call
+  boost::scoped_ptr<realtime_tools::RealtimeSrvCall<joint_qualification_controllers::RobotData::Request, joint_qualification_controllers::RobotData::Response> > call_service_;
 };
+
+
+
 }
 
 

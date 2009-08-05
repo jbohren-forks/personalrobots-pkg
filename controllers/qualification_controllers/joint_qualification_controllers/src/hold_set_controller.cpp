@@ -39,191 +39,214 @@
 using namespace std;
 using namespace controller;
 
-
 ROS_REGISTER_CONTROLLER(HoldSetController)
 
-HoldSetController::HoldSetController():
-  robot_(NULL)
+HoldSetController::HoldSetController()
+: robot_(NULL), 
+  initial_time_(0.0), 
+  start_time_(0.0), 
+  lift_min_(0.0),
+  lift_max_(0.0),
+  flex_min_(0.0),
+  flex_max_(0.0),
+  flex_delta_(0.0)
 {
-  
-  hold_set_data_.test_name = "hold_set";
-  
-  state_ = STARTING;
-  
-  current_position_ = 0;
-  starting_count_ = 0;
- 
-  initial_time_ = 0.0;
-  start_time_ = 0.0;
   dither_time_ = 0.0;
-  dither_count_  = 0.0;
-  timeout_ = 120.0;
+  lift_cmd_ = 0.0;
+  lift_delta_ = 0.0;
+  flex_cmd_ = 0.0;
+  timeout_ = 120;
+  lift_index_ = 0;
+  flex_index_ = 0;
 
+  hold_set_data_.arg_name.resize(10);
+  hold_set_data_.arg_value.resize(10);
+  hold_set_data_.arg_name[0] = "Settle Time";
+  hold_set_data_.arg_name[1] = "Start Time";
+  hold_set_data_.arg_name[2] = "Dither Time";
+  hold_set_data_.arg_name[3] = "Timeout";
+  hold_set_data_.arg_name[4] = "Lift Min";
+  hold_set_data_.arg_name[5] = "Lift Max";
+  hold_set_data_.arg_name[6] = "Lift Delta";
+  hold_set_data_.arg_name[7] = "Flex Min";
+  hold_set_data_.arg_name[8] = "Flex Max";
+  hold_set_data_.arg_name[9] = "Flex Delta";
+
+  ///\todo Need PID's for lift, flex
+
+  state_ = STARTING;
 }
 
 HoldSetController::~HoldSetController()
 {
 }
 
-bool HoldSetController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+bool HoldSetController::init(mechanism::RobotState *robot, const ros::NodeHandle &n)
 {
   assert(robot);
   robot_ = robot;
  
-  initial_time_ = robot_->hw_->current_time_;
-  
-  // Adding Joint Position Controllers
-  TiXmlElement *elt = config->FirstChildElement("controller");
-  if (!elt)
+  // Lift joint
+  std::string lift_name;
+  if (!n.getParam("lift_name", lift_name)){
+    ROS_ERROR("CounterbalanceTestController: No lift joint name found on parameter namespace: %s)",
+              n.getNamespace().c_str());
+    return false;
+  }
+  if (!(lift_state_ = robot->getJointState(lift_name)))
   {
-    fprintf(stderr, "HoldSetController's config did not give the required joint position controllers.\n");
+    ROS_ERROR("CounterbalanceTestController could not find lift joint named \"%s\"\n", lift_name.c_str());
+    return false;
+  }
+  hold_set_data_.lift_name = lift_name;
+
+  lift_controller_ = new JointPositionController();
+  if (!lift_controller_->init(robot, ros::NodeHandle(n, "lift"))) return false;
+
+  // Flex joint
+  std::string flex_name;
+  if (!n.getParam("flex_name", flex_name)){
+    ROS_ERROR("CounterbalanceTestController: No flex joint name found on parameter namespace: %s)",
+              n.getNamespace().c_str());
+    return false;
+  }
+  if (!(flex_state_ = robot->getJointState(flex_name)))
+  {
+    ROS_ERROR("CounterbalanceTestController could not find flex joint named \"%s\"\n", flex_name.c_str());
+    return false;
+  }
+  hold_set_data_.flex_name = flex_name;
+
+  flex_controller_ = new JointPositionController();
+  if (!flex_controller_->init(robot, ros::NodeHandle(n, "flex"))) return false;
+
+  // Initialize dithers
+  lift_dither_ = new control_toolbox::Dither(100.0);
+  if (!lift_dither_->init(ros::NodeHandle(n, "lift")))
+    return false;
+
+  flex_dither_ = new control_toolbox::Dither(200.0);
+  if (!flex_dither_->init(ros::NodeHandle(n, "flex")))
+    return false;
+
+  // Lift range
+  if (!n.getParam("lift/min", lift_min_)){
+    ROS_ERROR("CounterbalanceTestController: No min lift position found on parameter namespace: %s)",
+              n.getNamespace().c_str());
+    return false;
+  }
+  if (!n.getParam("lift/max", lift_max_)){
+    ROS_ERROR("CounterbalanceTestController: No max lift position found on parameter namespace: %s)",
+              n.getNamespace().c_str());
+    return false;
+  }
+  if (!n.getParam("lift/delta", lift_delta_)){
+    ROS_ERROR("CounterbalanceTestController: No lift delta found on parameter namespace: %s)",
+              n.getNamespace().c_str());
+    return false;
+  }
+  
+  // Flex range
+  if (!n.getParam("flex/min", flex_max_)){
+    ROS_ERROR("CounterbalanceTestController: No min flex position found on parameter namespace: %s)",
+              n.getNamespace().c_str());
+    return false;
+  }
+  if (!n.getParam("flex/max", flex_min_)){
+    ROS_ERROR("CounterbalanceTestController: No max flex position found on parameter namespace: %s)",
+              n.getNamespace().c_str());
+    return false;
+  }
+  if (!n.getParam("flex/delta", flex_delta_)){
+    ROS_ERROR("CounterbalanceTestController: No flex delta found on parameter namespace: %s)",
+              n.getNamespace().c_str());
     return false;
   }
 
-  ROS_INFO("Setting up joint position controllers!");
-  while (elt)
-  {
-    ROS_INFO("Making JPC");
-    JointPositionController * jpc = new JointPositionController();
-    //std::cout<<elt->Attribute("type")<<elt->Attribute("name")<<std::endl;
-    assert(static_cast<std::string>(elt->Attribute("type")) == std::string("JointPositionController"));
-    //ROS_INFO("Passed assert");
-
-    ROS_INFO("Pushing back JPC, joint states");
-
-    // Store controller, joint state, name
-    joint_position_controllers_.push_back(jpc);
-
-    if (!jpc->initXml(robot, elt))
-      return false;
-
-    hold_set_data_.joint_names.push_back(jpc->getJointName());
-    joint_states_.push_back(robot->getJointState(jpc->getJointName()));
-
-    TiXmlElement *dith = elt->FirstChildElement("dither");
-    double dither_amp = atof(dith->Attribute("dither_amp"));
-    control_toolbox::Dither *dither = new control_toolbox::Dither::Dither(100.0);
-    dither->init(dither_amp);
-    dithers_.push_back(dither);
-
-    hold_set_data_.dither_amps.push_back(dither_amp);
-
-    ROS_INFO("Next controller!");
-    elt = elt->NextSiblingElement("controller");
-  }
-
-  num_joints_ = joint_position_controllers_.size();
-    
-  hold_set_data_.joint_names.resize(num_joints_);
-  hold_set_data_.dither_amps.resize(num_joints_);
-  
   // Setting controller defaults
-  TiXmlElement *cd = config->FirstChildElement("controller_defaults");
-  if (cd)
-  {
-    settle_time_ = atof(cd->Attribute("settle_time"));
-    dither_time_ = atof(cd->Attribute("dither_time"));
-    timeout_ = atof(cd->Attribute("timeout"));
-   }
-  else
-  {
-    fprintf(stderr, "HoldSetController was not given required controller defaults\n");
+  if (!n.getParam("settle_time", settle_time_)){
+    ROS_ERROR("CounterbalanceTestController: No settle time found on parameter namespace: %s)",
+              n.getNamespace().c_str());
+    return false;
+  }
+  if (!n.getParam("dither_time", dither_time_)){
+    ROS_ERROR("CounterbalanceTestController: No dither time found on parameter namespace: %s)",
+              n.getNamespace().c_str());
+    return false;
+  }
+  if (!n.getParam("timeout", timeout_)){
+    ROS_ERROR("CounterbalanceTestController: No timeout found on parameter namespace: %s)",
+              n.getNamespace().c_str());
     return false;
   }
 
-  // Setting holding points
-  // Need to pass in a list of points here
-  // Store as vector of vectors...
-  TiXmlElement *hs = config->FirstChildElement("hold_pt");
-  if (!hs)
-  {
-    fprintf(stderr, "HoldSetController's config did not give the required holding set.\n");
-    return false;
-  }
+  lift_cmd_ = lift_min_;
+  flex_cmd_ = flex_min_ - flex_delta_;
 
-  ROS_INFO("Storing Hold Points");
+  return true;
+}
 
-  while (hs)
-  {
-    std::vector<double> position;
-    
-    TiXmlElement *jnt_pt = hs->FirstChildElement("joint");
-    
-    while (jnt_pt)
-    {
-      
-      double point = atof(jnt_pt->Attribute("position"));
-
-      position.push_back(point);
-
-      jnt_pt = jnt_pt->NextSiblingElement("joint");
-    }
-
-    if (position.size() != num_joints_)
-    {
-      ROS_ERROR("Incorrect number of points for joint");
-      fprintf(stderr, "HoldSetController's points did not have the correct number of joints.\n");
-      return false;
-    }
-
-    hold_set_.push_back(position);
-
-    hs = hs->NextSiblingElement("hold_pt");
-  }
-
-  // Set up correct number of holding points
-  hold_set_data_.hold_data.resize(hold_set_.size()); 
-  
+bool HoldSetController::starting()
+{
+  initial_time_ = robot_->hw_->current_time_;
   return true;
 }
 
 void HoldSetController::update()
 {
   // wait until the joints are calibrated to start
-  for (unsigned int i = 0; i < num_joints_; i++)
-  {
-    if (!joint_states_[i]->calibrated_)
-    {
-      ROS_INFO("Not calibrated!");
-      return;
-    }
-  }
-    
+  if (!flex_state_->calibrated_ || !lift_state_->calibrated_)
+    return;
+      
   double time = robot_->hw_->current_time_;
   
   if (time - initial_time_ > timeout_ && state_ != DONE) 
   {
-    ROS_INFO("Timeout!");
+    ROS_ERROR("CounterbalanceTestController timed out during test. Timeout: %f.", timeout_);
     state_ = DONE;
   }
 
-  for (unsigned int i = 0; i < num_joints_; ++i)
-  {
-    joint_position_controllers_[i]->update();
-  }
-
+  lift_controller_->update();
+  flex_controller_->update();
+  
   switch (state_)
   {
   case STARTING:
     {
-      ROS_INFO("Starting!");
+      ROS_INFO("Starting");
 
-      std::vector<double> current = hold_set_[current_position_];
-      assert(current.size() == num_joints_);
-                                                        
-      hold_set_data_.hold_data[current_position_].joint_data.resize(num_joints_);
-
-      for (unsigned int i = 0; i < num_joints_; ++i)
+      // Set the flex and lift commands
+      // If 
+      flex_cmd_ += flex_delta_;
+      flex_index_++;
+      // Move to next lift position, reset flex
+      if (flex_cmd_ > flex_max_)
       {
-        double cmd = current[i];
+        flex_cmd_ = flex_min_ - flex_delta_;
+        lift_cmd_ += lift_delta_;
+        lift_index_++;
 
-        joint_position_controllers_[i]->setCommand(cmd);
-        hold_set_data_.hold_data[current_position_].joint_data[i].desired = cmd;
+        // We're done after we finished the lifts
+        if (lift_cmd_ > lift_max_)
+        {
+          state_ = DONE;
+          break;
+        }
+        hold_set_data_.lift_data.resize(lift_index_ + 1);   
+        hold_set_data_.lift_data[lift_index_].lift_position = lift_cmd_;
       }
+      else
+      {
+        hold_set_data_.lift_data[lift_index_].flex_data.resize(flex_index_ + 1);
+        hold_set_data_.lift_data[lift_index_].flex_data[flex_index_].flex_position = flex_cmd_;
+      }
+      
+      // Set controllers
+      lift_controller_->setCommand(lift_cmd_);
+      flex_controller_->setCommand(flex_cmd_);
 
       start_time_ = time;
       state_ = SETTLING;
-      ROS_INFO("Settling");
       break;
     }
   case SETTLING:
@@ -239,113 +262,62 @@ void HoldSetController::update()
     }
   case DITHERING:
     {
-      joint_qualification_controllers::HoldPositionData *data = &hold_set_data_.hold_data[current_position_];  
-
+      // Add dither
+      lift_state_->commanded_effort_ += lift_dither_->update();
+      flex_state_->commanded_effort_ += flex_dither_->update();
       
-      for (unsigned int i = 0; i < num_joints_; ++i)
-      {
-        // Add dither
-        joint_states_[i]->commanded_effort_ += dithers_[i]->update();
-
-        // Record state
-        data->joint_data[i].time.push_back(time - start_time_);
-        data->joint_data[i].position.push_back(joint_states_[i]->position_);
-        data->joint_data[i].velocity.push_back(joint_states_[i]->velocity_);
-        data->joint_data[i].cmd.push_back(joint_states_[i]->commanded_effort_);
-        data->joint_data[i].effort.push_back(joint_states_[i]->applied_effort_);
-      }
+      // Lift
+      hold_set_data_.lift_data[lift_index_].flex_data[flex_index_].lift_hold.time.push_back(time - start_time_);
+      hold_set_data_.lift_data[lift_index_].flex_data[flex_index_].lift_hold.position.push_back(lift_state_->position_);
+      hold_set_data_.lift_data[lift_index_].flex_data[flex_index_].lift_hold.velocity.push_back(lift_state_->velocity_);
+      hold_set_data_.lift_data[lift_index_].flex_data[flex_index_].lift_hold.cmd.push_back(lift_state_->commanded_effort_);
+      hold_set_data_.lift_data[lift_index_].flex_data[flex_index_].lift_hold.effort.push_back(lift_state_->applied_effort_);
       
+      // Flex
+      hold_set_data_.lift_data[lift_index_].flex_data[flex_index_].flex_hold.time.push_back(time - start_time_);
+      hold_set_data_.lift_data[lift_index_].flex_data[flex_index_].flex_hold.position.push_back(flex_state_->position_);
+      hold_set_data_.lift_data[lift_index_].flex_data[flex_index_].flex_hold.velocity.push_back(flex_state_->velocity_);
+      hold_set_data_.lift_data[lift_index_].flex_data[flex_index_].flex_hold.cmd.push_back(flex_state_->commanded_effort_);
+      hold_set_data_.lift_data[lift_index_].flex_data[flex_index_].flex_hold.effort.push_back(flex_state_->applied_effort_);
+        
       if (time - start_time_ > dither_time_)
       {
-        state_ = PAUSING;
+        state_ = STARTING;
       }
       break;
     }
-  case PAUSING:
-    {
-    if (++current_position_ >= hold_set_.size())
-    {     
-      state_ = DONE;
-      ROS_INFO("Done!");
-    }
-    else
-    {
-      state_ = STARTING;
-      ROS_INFO("Next point!");
-    }
-    break;
-    }  
   case DONE:
-    break;
-  }
-
-
-}
-
-
-
-ROS_REGISTER_CONTROLLER(HoldSetControllerNode)
-HoldSetControllerNode::HoldSetControllerNode()
-: data_sent_(false), call_service_("hold_set_data")
-{
-  c_ = new HoldSetController();
-}
-
-HoldSetControllerNode::~HoldSetControllerNode()
-{
-  delete c_;
-}
-
-void HoldSetControllerNode::update()
-{
-  c_->update();
-  if (c_->done())
-  {
-    if(!data_sent_)
     {
-      if (call_service_.trylock())
-      {
-        ROS_INFO("Calling results service!");
-        joint_qualification_controllers::HoldSetData::Request *out = &call_service_.srv_req_;
-        out->test_name   = c_->hold_set_data_.test_name;
-        out->joint_names = c_->hold_set_data_.joint_names;
-        out->dither_amps = c_->hold_set_data_.dither_amps;
-
-        out->hold_data.resize(c_->hold_set_data_.hold_data.size());
-
-        for (uint i = 0; i < c_->hold_set_data_.hold_data.size(); ++i)
-        {
-          out->hold_data[i].joint_data.resize(c_->hold_set_data_.hold_data[i].joint_data.size());
-
-          for (unsigned int j = 0; j < c_->hold_set_data_.hold_data[i].joint_data.size(); ++j)
-          {
-            out->hold_data[i].joint_data[j].desired  = c_->hold_set_data_.hold_data[i].joint_data[j].desired;
-            out->hold_data[i].joint_data[j].time     = c_->hold_set_data_.hold_data[i].joint_data[j].time;
-            out->hold_data[i].joint_data[j].position = c_->hold_set_data_.hold_data[i].joint_data[j].position;
-            out->hold_data[i].joint_data[j].velocity = c_->hold_set_data_.hold_data[i].joint_data[j].velocity;
-            out->hold_data[i].joint_data[j].cmd      = c_->hold_set_data_.hold_data[i].joint_data[j].cmd;
-            out->hold_data[i].joint_data[j].effort   = c_->hold_set_data_.hold_data[i].joint_data[j].effort;
+      if (!data_sent_)
+        data_sent_ = sendData();
             
-          }
-        }
-        call_service_.unlockAndCall();
-        data_sent_ = true;
-      }
+      break;
     }
- 
+    
   }
 }
 
-bool HoldSetControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+bool HoldSetController::sendData()
 {
-  assert(robot);
-  robot_ = robot;
-
-  ROS_INFO("Initing hold set controller");
-  if (!c_->initXml(robot, config))
-    return false;
+  if (call_service_->trylock())
+  {
+    ROS_INFO("Calling results service!");
     
-  ROS_INFO("Hold set controller initialized");
-  return true;
+    // Copy data and send
+    joint_qualification_controllers::HoldSetData::Request *out = &call_service_->srv_req_;
+    
+    out->lift_name = hold_set_data_.lift_name;
+    out->flex_name = hold_set_data_.flex_name;
+    out->lift_amplitude = hold_set_data_.lift_amplitude;
+    out->flex_amplitude = hold_set_data_.flex_amplitude;
+
+    out->arg_name = hold_set_data_.arg_name;
+    out->arg_value = hold_set_data_.arg_value;
+
+    out->lift_data = hold_set_data_.lift_data;
+    call_service_->unlockAndCall();
+    return true;
+  }
+  return false;
 }
 

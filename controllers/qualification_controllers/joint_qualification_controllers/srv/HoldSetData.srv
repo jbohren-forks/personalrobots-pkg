@@ -1,5 +1,8 @@
-string test_name
-string[] joint_names
-float32[] dither_amps
-HoldPositionData[] hold_data # Data for each hold
+string lift_name
+string flex_name
+float32 lift_amplitude
+float32 flex_amplitude
+string[] arg_name
+float32[] arg_value
+HoldRunData[] lift_data # Data for each hold
 ---

@@ -40,7 +40,7 @@
 #define REALTIME_SRV_CALL_H
 
 #include <string>
-#include <ros/node.h>
+#include <ros/ros.h> 
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/thread.hpp>
 #include <realtime_tools/realtime_tools.h>
@@ -51,15 +51,10 @@ template <class SrvReq, class SrvRes>
 class RealtimeSrvCall
 {
 public:
-  RealtimeSrvCall(const std::string &topic)
-    : topic_(topic), node_(NULL), is_running_(false), keep_running_(false), turn_(REALTIME)
+  RealtimeSrvCall(const ros::NodeHandle &node, const std::string &topic)
+    : topic_(topic), node_(node), is_running_(false), keep_running_(false), turn_(REALTIME)
   {
-    if ((node_ = ros::Node::instance()) == NULL)
-    {
-      int argc = 0;  char **argv = NULL;
-      ros::init(argc, argv);
-      node_ = new ros::Node("realtime_srv_call", ros::Node::DONT_HANDLE_SIGINT);
-    }
+    client_ = node_.serviceClient<SrvReq, SrvRes>(topic_);
 
     if (0 != realtime_cond_create(&updated_cond_))
     {
@@ -74,9 +69,9 @@ public:
 
     // Makes the trylock() fail until the service is ready
     lock();
-    ROS_INFO("RealtimeSrvCall is waiting for %s", topic.c_str() );
-    ros::service::waitForService(topic); 
-    ROS_INFO("RealtimeSrvCall is finished waiting for %s", topic.c_str());
+    ROS_INFO("RealtimeSrvCall is waiting for %s", topic_.c_str() );
+    ros::service::waitForService(topic_);
+    ROS_INFO("RealtimeSrvCall is finished waiting for %s", topic_.c_str());
     unlock();
 
     keep_running_ = true;
@@ -88,6 +83,9 @@ public:
     stop();
     while (is_running())
       usleep(100);
+
+    if (client_ != NULL)
+      client_.shutdown();
 
     // Destroy thread resources
     realtime_cond_delete(&updated_cond_);
@@ -168,7 +166,8 @@ public:
       
       // Sends the outgoing message
       if (keep_running_)
-        ros::service::call(topic_, outgoing, incoming); // ignoring incoming response for now....
+        client_.call(srv_req_, srv_res_);
+               
     }
     is_running_ = false;
   }
@@ -177,7 +176,8 @@ public:
 
 private:
 
-  ros::Node *node_;
+  ros::NodeHandle node_;
+  ros::ServiceClient client_;
   bool is_running_;
   bool keep_running_;
 

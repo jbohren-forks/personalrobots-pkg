@@ -81,7 +81,7 @@ public:
    * \param duration  The duration of the sweep, \f$T\f$.
    * \param amplitude The amplitude of the sweep, \f$A\f$.
    */
-  void init(double start_freq, double end_freq, double duration, double amplitude);
+  bool init(double start_freq, double end_freq, double duration, double amplitude);
 
 private:
   double amplitude_;                        /**< Amplitude of the sweep. */
