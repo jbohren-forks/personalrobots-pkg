@@ -46,6 +46,7 @@ public:
     {
     }
     virtual ~ObjectTransformSystem() {
+        _tf.reset();
         stopsubscriptions(); // need to stop the subscriptions because the virtual destructor will not call the overridden stopsubscriptions
         ROSSensorSystem<checkerboard_detector::ObjectDetection, ObjectTransformXMLID>::Destroy();
     }

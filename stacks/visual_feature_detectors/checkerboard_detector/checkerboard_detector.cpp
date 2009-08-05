@@ -166,7 +166,7 @@ public:
 
         lasttime = ros::Time::now();
         s_pmasternode->advertise<checkerboard_detector::ObjectDetection>("ObjectDetection",1);
-        s_pmasternode->subscribe("CamInfo", _caminfomsg, &CheckerboardDetector::caminfo_cb,this,1);
+        s_pmasternode->subscribe("CameraInfo", _caminfomsg, &CheckerboardDetector::caminfo_cb,this,1);
         s_pmasternode->subscribe("Image", _imagemsg, &CheckerboardDetector::image_cb,this,1);
     }
     ~CheckerboardDetector()
@@ -176,7 +176,7 @@ public:
         if( intrinsic_matrix )
             cvReleaseMat(&intrinsic_matrix);
 
-        s_pmasternode->unsubscribe("CamInfo");
+        s_pmasternode->unsubscribe("CameraInfo");
         s_pmasternode->unsubscribe("Image");
         s_pmasternode->unadvertise("ObjectDetection");
     }
