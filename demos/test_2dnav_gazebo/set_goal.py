@@ -46,14 +46,13 @@ roslib.load_manifest('rostest')
 import sys, unittest
 import os, os.path, threading, time
 import rospy, rostest
-from std_msgs.msg import *
-from robot_actions.msg import *
-from nav_robot_actions.msg import *
+from std_msgs.msg import String
+from nav_robot_actions.msg import MoveBaseState
+from geometry_msgs.msg import Pose,Quaternion,Point, PoseWithRatesStamped, PoseStamped, PoseWithCovariance
 from robot_msgs.msg import PoseDot
-from geometry_msgs.msg import PoseWithRatesStamped, PoseStamped
-from deprecated_msgs.msg import *
-from tf.transformations import *
-from numpy import *
+from deprecated_msgs.msg import RobotBase2DOdom
+import tf.transformations as tft
+from numpy import float64
 
 FLOAT_TOL = 0.0001
 AMCL_TOL  = 0.5
@@ -117,6 +116,8 @@ class NavStackTest(unittest.TestCase):
         self.target_y =  25.70
         self.target_t =  0.0
 
+        self.target_q =  [0,0,0,1]
+
         self.args = sys.argv
         
 
@@ -154,12 +155,12 @@ class NavStackTest(unittest.TestCase):
             self.odom_initialized = True
             self.odom_xi = odom.pos.x
             self.odom_yi = odom.pos.y
-            self.odom_qi = quaternion_from_euler(0,0,odom.pos.th,'rxyz')
+            self.odom_qi = tft.quaternion_from_euler(0,0,odom.pos.th,'rxyz')
         else:
             # update odom
             self.odom_x = odom.pos.x
             self.odom_y = odom.pos.y
-            self.odom_q = quaternion_from_euler(0,0,odom.pos.th,'rxyz')
+            self.odom_q = tft.quaternion_from_euler(0,0,odom.pos.th,'rxyz')
 
     def p3dInput(self, p3d):
         #self.printBaseP3D(p3d)
@@ -187,7 +188,7 @@ class NavStackTest(unittest.TestCase):
     
     def stateInput(self, state):
         if self.publish_goal:
-          state_eul = euler_from_quaternion([state.goal.pose.orientation.x,state.goal.pose.orientation.y,state.goal.pose.orientation.z,state.goal.pose.orientation.w])
+          state_eul = tft.euler_from_quaternion([state.goal.pose.orientation.x,state.goal.pose.orientation.y,state.goal.pose.orientation.z,state.goal.pose.orientation.w])
           print "target: ", self.target_x, ",", self.target_y, ",", self.target_t
           print "state.goal: (", state.goal.pose.position.x, ",", state.goal.pose.position.y, ",", state.goal.pose.position.z \
                            ,",", state_eul[0], ",", state_eul[1], ",", state_eul[2] \
@@ -202,7 +203,7 @@ class NavStackTest(unittest.TestCase):
     def amclInput(self, amcl_pose):
         if self.publish_initialpose:
           print "/amcl_pose received, ",amcl_pose
-          amcl_eul = euler_from_quaternion([amcl_pose.pose.orientation.x,amcl_pose.pose.orientation.y,amcl_pose.pose.orientation.z,amcl_pose.pose.orientation.w])
+          amcl_eul = tft.euler_from_quaternion([amcl_pose.pose.orientation.x,amcl_pose.pose.orientation.y,amcl_pose.pose.orientation.z,amcl_pose.pose.orientation.w])
           if abs(amcl_pose.pose.position.x    - self.initialpose[0]) < AMCL_TOL and \
              abs(amcl_pose.pose.position.y    - self.initialpose[1]) < AMCL_TOL and \
              abs(amcl_eul[2]                  - self.initialpose[2]) < AMCL_TOL:
@@ -248,7 +249,7 @@ class NavStackTest(unittest.TestCase):
           if self.args[i] == '-t':
             if len(self.args) > i+1:
               self.target_t = float(self.args[i+1])
-              self.target_q =  quaternion_from_euler(0,0,self.target_t,'rxyz')
+              self.target_q =  tft.quaternion_from_euler(0,0,self.target_t,'rxyz')
               print "target t set to:",self.target_t
           if self.args[i] == '-nav_t_tol':
             if len(self.args) > i+1:
@@ -306,7 +307,7 @@ class NavStackTest(unittest.TestCase):
             # publish initial pose until /amcl_pose is same as intialpose
             if self.publish_initialpose:
               p = Point(self.initialpose[0], self.initialpose[1], 0)
-              tmpq = quaternion_from_euler(0,0,self.initialpose[2],'rxyz')
+              tmpq = tft.quaternion_from_euler(0,0,self.initialpose[2],'rxyz')
               q = Quaternion(tmpq[0],tmpq[1],tmpq[2],tmpq[3])
               pose = Pose(p,q)
               print "publishing initialpose",h,p,COV[0]
@@ -314,7 +315,7 @@ class NavStackTest(unittest.TestCase):
             else:
               # send goal until state /move_base/feedback indicates goal is received
               p = Point(self.target_x, self.target_y, 0)
-              tmpq = quaternion_from_euler(0,0,self.target_t,'rxyz')
+              tmpq = tft.quaternion_from_euler(0,0,self.target_t,'rxyz')
               q = Quaternion(tmpq[0],tmpq[1],tmpq[2],tmpq[3])
               pose = Pose(p,q)
               print "publishing goal",self.publish_goal
@@ -326,27 +327,27 @@ class NavStackTest(unittest.TestCase):
             # compute angular error between deltas in odom and p3d
             # compute delta in odom from initial pose
             print "========================"
-            tmpoqi = quaternion_inverse(self.odom_qi)
-            odom_q_delta = quaternion_multiply(tmpoqi,self.odom_q)
+            tmpoqi = tft.quaternion_inverse(self.odom_qi)
+            odom_q_delta = tft.quaternion_multiply(tmpoqi,self.odom_q)
             print "debug odom_qi:" , self.odom_qi
             print "debug tmpoqi:" ,  tmpoqi
             print "debug odom_q_delta:" ,  odom_q_delta
-            print "odom delta:" , euler_from_quaternion(odom_q_delta)
+            print "odom delta:" , tft.euler_from_quaternion(odom_q_delta)
             # compute delta in p3d from initial pose
-            tmppqi = quaternion_inverse(self.p3d_qi)
-            p3d_q_delta = quaternion_multiply(tmppqi,self.p3d_q)
-            print "p3d delta:" , euler_from_quaternion(p3d_q_delta)
+            tmppqi = tft.quaternion_inverse(self.p3d_qi)
+            p3d_q_delta = tft.quaternion_multiply(tmppqi,self.p3d_q)
+            print "p3d delta:" , tft.euler_from_quaternion(p3d_q_delta)
             # compute delta between odom and p3d
-            tmpdqi = quaternion_inverse(p3d_q_delta)
-            delta = quaternion_multiply(tmpdqi,odom_q_delta)
-            delta_euler = euler_from_quaternion(delta)
+            tmpdqi = tft.quaternion_inverse(p3d_q_delta)
+            delta = tft.quaternion_multiply(tmpdqi,odom_q_delta)
+            delta_euler = tft.euler_from_quaternion(delta)
             odom_drift_dyaw = delta_euler[2]
-            print "odom drift from p3d:" , euler_from_quaternion(delta)
+            print "odom drift from p3d:" , tft.euler_from_quaternion(delta)
 
             # compute delta between target and p3d
-            tmptqi = quaternion_inverse(self.target_q)
-            navdq = quaternion_multiply(tmptqi,self.p3d_q)
-            navde = euler_from_quaternion(navdq)
+            tmptqi = tft.quaternion_inverse(self.target_q)
+            navdq = tft.quaternion_multiply(tmptqi,self.p3d_q)
+            navde = tft.euler_from_quaternion(navdq)
             nav_dyaw = navde[2]
             print "nav euler off target:" , navde
 
