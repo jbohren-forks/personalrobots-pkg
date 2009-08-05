@@ -65,11 +65,11 @@ class Switcher:
     self.update(set())
 
   def turn_on(self, controllers):
-    assert set(controllers) < self.all, "Unknown controller"
+    #assert set(controllers) < self.all, "Unknown controller"
     self.update(self.on | set(controllers))
 
   def turn_off(self, controllers):
-    assert set(controllers) < self.all, "Unknown controller"
+    #assert set(controllers) < self.all, "Unknown controller"
     self.update(self.on - set(controllers))
 
   # Sugar
