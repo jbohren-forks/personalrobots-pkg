@@ -1,6 +1,7 @@
 <filters>
 	<filter type="FixWraparoundJoints" name="fix_wraparound_joints"/>
-	<filter type="ClampedCubicSplineSmoother" name="clamped_cubic_spline_smoother"/>
-<!--	<filter type="NumericalDifferentiationSplineSmoother" name="clamped_cubic_spline_smoother"/> -->
+<!--	<filter type="ClampedCubicSplineSmoother" name="clamped_cubic_spline_smoother"/> -->
+<!--	<filter type="NumericalDifferentiationSplineSmoother" name="numerical_differentiation_spline_smoother"/> -->
+	<filter type="FritschButlandSplineSmoother" name="fritsch_butland_spline_smoother"/>
 </filters>
 
