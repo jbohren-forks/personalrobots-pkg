@@ -152,7 +152,7 @@ public:
     std::cout << "Loading library " << library_path << std::endl;
     try
     {
-      poco_class_loader_.loadLibrary(library_path);
+      loadPluginLibrary(library_path);
       //poco_assert (poco_class_loader_.isLibraryLoaded(library_path));
       //zpoco_check_ptr (poco_class_loader_.findManifest(library_path)); 
       loaded_libraries_.push_back(library_path);  //for correct destruction and access
@@ -174,7 +174,7 @@ public:
   {
     for (std::vector<std::string>::iterator it = loaded_libraries_.begin(); it != loaded_libraries_.end(); ++it)
     {
-      poco_class_loader_.unloadLibrary(*it);
+      unloadPluginLibrary(*it);
     }
   };
 
@@ -196,7 +196,16 @@ public:
     //\todo rethrow with non poco Exceptions
     return poco_class_loader_.create(name);
   };
+
+  void unloadPluginLibrary(const std::string& library_path)
+  {
+    poco_class_loader_.unloadLibrary(library_path);
+  }
   
+  void loadPluginLibrary(const std::string& library_path)
+  {
+    poco_class_loader_.loadLibrary(library_path);
+  }
 private:
 
   //used for proper unloading of automatically loaded libraries
