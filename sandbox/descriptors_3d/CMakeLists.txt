@@ -40,5 +40,4 @@ rospack_add_library(${PROJECT_NAME}
 
 rospack_add_executable(interest_point_example examples/interest_point_example.cpp)
 target_link_libraries(interest_point_example ${PROJECT_NAME})
-#rospack_add_openmp_flags (interest_point_example)
 
