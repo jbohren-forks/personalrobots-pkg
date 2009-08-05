@@ -41,6 +41,16 @@ int main() {
   ros::ClassLoader<polygon> cl("plugin_user", "polygon");
 
   std::cout << "Created" << std::endl;
+  
+  if (cl.loadPlugin("square"))
+  {
+    std::cout << "asdf Loaded library with plugin square inside" << std::endl;
+  }
+  else
+  {
+    std::cout << "asdf Failed to load library with plugin square inside" << std::endl;
+  }
+  
   if (cl.canCreate("square"))
   { 
     std::cout << "Can create square";

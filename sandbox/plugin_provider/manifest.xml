@@ -12,7 +12,7 @@
 
   <export>
     <!--plugin_user polygon="${prefix}/polygon_plugins.xml" shape="${prefix}/shape_plugins.xml"/-->
-    <plugin_user polygon="${prefix}/lib/libsquare" shape="${prefix}/lib/libline"/>
+    <plugin_user polygon="${prefix}/polygon_plugins.xml" />
   </export>
 
 </package>

@@ -10,6 +10,7 @@
   <url>http://pr.willowgarage.com/wiki/plugin_user</url>
 
   <depend package="roslib"/>
+  <depend package="tinyxml"/>
 
   <export>
     <cpp cflags="-I${prefix}"/>
