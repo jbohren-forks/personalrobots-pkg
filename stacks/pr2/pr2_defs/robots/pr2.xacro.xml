@@ -11,6 +11,7 @@
   <include filename="$(find pr2_defs)/defs/arm_defs.xml" />
   <include filename="$(find pr2_defs)/defs/gripper_defs.xml" />
   <include filename="$(find pr2_defs)/defs/head_defs.xml" />
+  <include filename="$(find pr2_defs)/defs/mono_cam_defs.xml" />
   <include filename="$(find pr2_defs)/defs/body_defs.xml" />
   <include filename="$(find pr2_defs)/defs/base_defs.xml" />
   <include filename="$(find pr2_defs)/defs/prosilica_defs.xml" />
@@ -55,6 +56,17 @@
   <pr2_gripper screw_reduction="${2.0/1000.0}" gear_ratio="${29.16}" side="l" parent="l_wrist_roll_link" >
     <origin xyz="0 0 0" rpy="0 0 0" />
   </pr2_gripper>
+
+  <!-- Forearm Cameras (Hand approximated values) -->
+  <mono_cam name="r_forearm_cam" parent="r_forearm_roll_link">
+    <origin xyz=".15 0 .07"
+            rpy="${-M_PI/2} ${-45*M_PI/180} 0" />
+  </mono_cam>
+  <mono_cam name="l_forearm_cam" parent="l_forearm_roll_link">
+    <origin xyz=".15 0 .07"
+            rpy="${-M_PI/2} ${-45*M_PI/180} 0" />
+  </mono_cam>
+
 
   <!-- Kinematic chains -->
   <chain root="torso_lift_link" tip="l_wrist_roll_link" />
