@@ -1,9 +1,13 @@
 #ifndef TEST_DESCRIPTORS_2D_H
 #define TEST_DESCRIPTORS_2D_H
 
+#include <descriptors_2d/descriptors_2d.h>
+
 #define MAX_INF_DIST 1e-3
 #define MAX_L2_DIST 1e-3
 
+using namespace cv;
+using namespace std;
 
 void writeResultsToFile(vvf results, string name) {
   ofstream f(name.c_str(), ios::out);
