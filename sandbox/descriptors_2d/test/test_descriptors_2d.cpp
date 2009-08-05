@@ -9,8 +9,8 @@ using namespace std;
 using namespace cv;
 
 
-#define MAX_INF_DIST 1
-#define MAX_L2_DIST 1
+#define MAX_INF_DIST 1e-3
+#define MAX_L2_DIST 1e-3
 
 void writeResultsToFile(vvf results, string name) {
   ofstream f(name.c_str(), ios::out);
@@ -104,58 +104,39 @@ bool compareResults(const Vector<float>& v1, const Vector<float>& v2) {
 }
 
 
-TEST(descriptors, SuperpixelColorHistogram) {
-  SuperpixelColorHistogram desc(20, 0.5, 10);
-  string name = "sch.results";
-
+bool descriptorTest(ImageDescriptor* desc, string name) {
   IplImage* img = cvLoadImage("test/frame0000.jpg");
   vvf results;
   Vector<KeyPoint> points = getPoints();
-  desc.compute(img, points, results);
-
+  desc->compute(img, points, results);
+  
   mkdir("test/output", S_IRWXO | S_IRWXU);
-  writeResultsToFileBinary(results, desc.getSize(), "test/output/" + name);
+  writeResultsToFileBinary(results, desc->getSize(), "test/output/" + name);
   vvf results2;
   readResultsFromFileBinary("test/correct-output/" + name, results2);
+  bool success = true;
   for(size_t i=0; i<results.size(); ++i) {
-    EXPECT_TRUE(compareResults(results[i], results2[i]));
+    success &= compareResults(results[i], results2[i]);
   }
+  return success;
+}
+
+TEST(descriptors, SuperpixelColorHistogram) {
+  SuperpixelColorHistogram desc(20, 0.5, 10);
+  string name = "sch.results";
+  EXPECT_TRUE(descriptorTest(&desc, name));
 }
 
 TEST(descriptors, Hog) {
   HogWrapper desc;
   string name = "hog.results";
-
-  IplImage* img = cvLoadImage("test/frame0000.jpg");
-  vvf results;
-  Vector<KeyPoint> points = getPoints();
-  desc.compute(img, points, results);
-
-  mkdir("test/output", S_IRWXO | S_IRWXU);
-  writeResultsToFileBinary(results, desc.getSize(), "test/output/" + name);
-  vvf results2;
-  readResultsFromFileBinary("test/correct-output/" + name, results2);
-  for(size_t i=0; i<results.size(); ++i) {
-    EXPECT_TRUE(compareResults(results[i], results2[i]));
-  }
+  EXPECT_TRUE(descriptorTest(&desc, name));
 }
 
 TEST(descriptors, SURF) {
   SurfWrapper desc;
   string name = "surf.results";
-
-  IplImage* img = cvLoadImage("test/frame0000.jpg");
-  vvf results;
-  Vector<KeyPoint> points = getPoints();
-  desc.compute(img, points, results);
-
-  mkdir("test/output", S_IRWXO | S_IRWXU);
-  writeResultsToFileBinary(results, desc.getSize(), "test/output/" + name);
-  vvf results2;
-  readResultsFromFileBinary("test/correct-output/" + name, results2);
-  for(size_t i=0; i<results.size(); ++i) {
-    EXPECT_TRUE(compareResults(results[i], results2[i]));
-  }
+  EXPECT_TRUE(descriptorTest(&desc, name));
 }
 
 int main(int argc, char **argv){
