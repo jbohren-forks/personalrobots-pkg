@@ -264,7 +264,7 @@ public:
 	bool bNeedtoRecomputeStartHeuristics;
 	SBPL2DGridSearch* grid2Dsearch;
 
- 	void ReadConfiguration(FILE* fCfg);
+ 	virtual void ReadConfiguration(FILE* fCfg);
 
 	void InitializeEnvConfig(vector<SBPL_xytheta_mprimitive>* motionprimitiveV);
 
