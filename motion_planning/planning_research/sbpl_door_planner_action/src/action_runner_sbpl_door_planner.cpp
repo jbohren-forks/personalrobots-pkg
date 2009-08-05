@@ -49,12 +49,8 @@
 
 int main(int argc, char** argv)
 {
-  ros::init(argc,argv); 
-
-  ros::Node node("sbpl_door_planner");
-  tf::TransformListener tf(node, true, ros::Duration(10));
-
-  SBPLDoorPlanner open(node,tf);
+  ros::init(argc,argv,"sbpl_door_planner"); 
+	SBPLDoorPlanner open;
 
 /*  door_msgs::Door door;
   door_msgs::Door feedback;
@@ -84,7 +80,7 @@ int main(int argc, char** argv)
   robot_actions::ActionRunner runner(10.0);
   runner.connect<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door>(open);
   runner.run();
-  node.spin();
+	ros::spin();
 
   return 0;
 }

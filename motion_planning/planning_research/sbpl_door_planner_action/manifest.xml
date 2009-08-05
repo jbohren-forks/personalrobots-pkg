@@ -10,6 +10,7 @@
     <depend package="rosconsole"/>
     <depend package="std_msgs"/>
     <depend package="robot_msgs"/>
+		<depend package="geometry_msgs"/>
     <depend package="angles"/>
     <depend package="tf"/>
     <depend package="robot_actions" />
@@ -20,6 +21,8 @@
     <depend package="door_functions"/>
     <depend package="door_msgs"/>
     <depend package="mapping_msgs"/>
+		<depend package="motion_planning_msgs"/>
+		<depend package="mechanism_msgs"/>
     <depend package="pr2_ik"/>
   <url></url>
 

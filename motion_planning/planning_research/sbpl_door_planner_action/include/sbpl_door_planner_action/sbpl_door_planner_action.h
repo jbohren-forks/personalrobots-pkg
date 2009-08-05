@@ -36,6 +36,7 @@
 
 /** ROS **/
 #include <ros/node.h>
+#include <ros/node_handle.h>
 #include <boost/thread.hpp>
 
 /** TF **/
@@ -43,10 +44,13 @@
 #include <tf/transform_datatypes.h>
 
 /** Messages needed for trajectory control and collision map**/
-#include <geometry_msgs/Pose.h>
+#include <robot_msgs/Pose.h>
 #include <manipulation_msgs/JointTraj.h>
 #include <manipulation_msgs/JointTrajPoint.h>
 #include <mapping_msgs/CollisionMap.h>
+#include <motion_planning_msgs/KinematicPath.h>
+#include <mechanism_msgs/MechanismState.h>
+#include <mechanism_msgs/JointStates.h>
 
 // Costmap used for the map representation
 #include <costmap_2d/costmap_2d_ros.h>
@@ -82,8 +86,8 @@ class SBPLDoorPlanner : public robot_actions::Action<door_msgs::Door, door_msgs:
 {
   public:
 
-  SBPLDoorPlanner(ros::Node& ros_node, tf::TransformListener& tf);
-
+  SBPLDoorPlanner();
+	
   virtual ~SBPLDoorPlanner();
       
   /**
@@ -96,8 +100,24 @@ class SBPLDoorPlanner : public robot_actions::Action<door_msgs::Door, door_msgs:
 
   private:
 
-  ros::Node &ros_node_;
-  tf::TransformListener &tf_;  
+	ros::NodeHandle ros_node_;
+	ros::Subscriber joints_subscriber_;
+	ros::Publisher display_path_pub_;
+	ros::Publisher start_footprint_pub_;
+  ros::Publisher goal_footprint_pub_;
+  ros::Publisher robot_footprint_pub_;
+  ros::Publisher global_plan_pub_;
+  ros::Publisher door_frame_pub_;
+  ros::Publisher door_pub_;
+  ros::Publisher viz_markers_;
+	ros::Publisher pr2_ik_pub_;
+	ros::Publisher base_control_pub_;
+	tf::TransformListener tf_;
+	mechanism_msgs::JointStates joint_states_;
+
+	void jointsCallback(const mechanism_msgs::JointStatesConstPtr &joint_states);
+
+//   tf::TransformListener &tf_;  
   boost::shared_ptr<mpglue::CostmapAccessor> cm_access_;
   boost::shared_ptr<mpglue::IndexTransform> cm_index_;
   boost::shared_ptr<mpglue::SBPLEnvironment> env_;
@@ -119,6 +139,11 @@ class SBPLDoorPlanner : public robot_actions::Action<door_msgs::Door, door_msgs:
 
   costmap_2d::Costmap2D cost_map_;        /**< local copy of the costmap underlying cost_map_ros_ */
   
+	/** arm planner variables */
+	int num_joints_;
+	std::vector<std::string> joint_names_;
+	motion_planning_msgs::KinematicPath arm_path_;
+	
   friend struct cm_getter;
   struct cm_getter: public mpglue::costmap_2d_getter {
       cm_getter(SBPLDoorPlanner * spn): spn_(spn) {}
@@ -151,7 +176,7 @@ class SBPLDoorPlanner : public robot_actions::Action<door_msgs::Door, door_msgs:
 
   bool removeDoor();
 
-  void publishPath(const manipulation_msgs::JointTraj &path, std::string topic, double r, double g, double b, double a);
+  void publishPath(const manipulation_msgs::JointTraj &path, const ros::Publisher &pub, double r, double g, double b, double a);
 
   bool computeOrientedFootprint(const pr2_robot_actions::Pose2D &position, const std::vector<geometry_msgs::Point>& footprint_spec, std::vector<geometry_msgs::Point>& oriented_footprint);
 
@@ -161,7 +186,7 @@ class SBPLDoorPlanner : public robot_actions::Action<door_msgs::Door, door_msgs:
 
   double inscribed_radius_;
 
-  void publishFootprint(const pr2_robot_actions::Pose2D &position, std::string topic, double r, double g, double b);
+  void publishFootprint(const pr2_robot_actions::Pose2D &position, const ros::Publisher &pub, double r, double g, double b);
 
   void publishDoor(const door_msgs::Door &door_in, const double &angle);
 
@@ -205,4 +230,9 @@ class SBPLDoorPlanner : public robot_actions::Action<door_msgs::Door, door_msgs:
 
   bool doLineSegsIntersect(geometry_msgs::Point32 a, geometry_msgs::Point32 b, geometry_msgs::Point32 c, geometry_msgs::Point32 d);
 
+	void printPoint(std::string name, geometry_msgs::Point32 point);
+	
+	void publishArmPathViz(const std::vector<std::string> &joint_names, const std::vector<std::vector<double> > &values);
+	
+	void getCurrentJointAngles(const std::vector <std::string> &joint_names, std::vector <double> *joint_angles);
 };
