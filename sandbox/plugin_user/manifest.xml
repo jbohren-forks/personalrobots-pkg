@@ -13,7 +13,6 @@
 
   <export>
     <cpp cflags="-I${prefix}"/>
-    <filters polygon="${prefix}/lib/libtriangle"/>
   </export>
 
   <rosdep name="libpoco"/>

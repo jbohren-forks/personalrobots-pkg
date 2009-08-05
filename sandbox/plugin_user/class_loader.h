@@ -40,20 +40,22 @@ template <class T>
 class ClassLoader : public Poco::ClassLoader<T>
 {
 public:
-  ClassLoader(std::string package, std::string plugin_type, std::string base_class_name)
+  ClassLoader(std::string package, std::string plugin_type)
   {
     //Pull possible files from manifests of packages which depend on this package and export plugin
-    std::set<std::string> paths = findPlugins(package, plugin_type, base_class_name);
+    std::vector<std::string> paths;
+    
+    ros::package::getPlugins(package, plugin_type, paths);
     
     //The poco factory for base class T
-    for (std::set<std::string>::iterator it = paths.begin(); it != paths.end(); ++it)
+    for (std::vector<std::string>::iterator it = paths.begin(); it != paths.end(); ++it)
     {
       
       
       std::string path = *it;
       
       path.append(Poco::SharedLibrary::suffix());
-      //std::cout << "Loading library " << full_path << std::endl;
+      std::cout << "Loading library " << path << std::endl;
       try
       {
         this->loadLibrary(path);

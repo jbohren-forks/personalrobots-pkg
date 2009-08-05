@@ -38,7 +38,7 @@
 
 int main() {
   
-  ros::ClassLoader<polygon> cl("plugin_user", "filters", "polygon");
+  ros::ClassLoader<polygon> cl("plugin_user", "polygon");
 
   std::cout << "Created" << std::endl;
   if (cl.canCreate("square"))
@@ -63,7 +63,7 @@ int main() {
   else std::cout << "Triangle Plugin not loaded" << std::endl;
   
   
-  ros::ClassLoader<shape> ph("plugin_user", "filters", "shape");
+  ros::ClassLoader<shape> ph("plugin_user", "shape");
 
 
   if ( ph.canCreate("line"))
