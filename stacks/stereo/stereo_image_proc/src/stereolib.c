@@ -183,7 +183,7 @@ do_prefilter_xsobel(uint8_t *im, // input image
       impc = im+xim;
       impn = im+xim+xim;
       ftimp = ftim;
-      for (i=1; i<xim-1; i++, impp+=4, impc+=4, impn+=4) // loop over line
+      for (i=1; i<xim-1; i+=4, impp+=4, impc+=4, impn+=4) // loop over line
 	    {
 	      // xsobel filter is -1 -2 -1; 0 0 0; 1 2 1
 	      v = *(impc+2)*2 - *(impc)*2 + *(impp+2) -
