@@ -45,5 +45,6 @@
   <depend package="fake_motion_planning" />
   <depend package="pr2_ik" />
   <depend package="move_arm" />
+  <depend package="chomp_motion_planner" />
   
 </package>
