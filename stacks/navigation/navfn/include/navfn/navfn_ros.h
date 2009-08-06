@@ -123,7 +123,6 @@ namespace navfn {
 
     private:
       void clearRobotCell(const tf::Stamped<tf::Pose>& global_pose, unsigned int mx, unsigned int my);
-      ros::NodeHandle ros_node_;
       costmap_2d::Costmap2D costmap_;
       std::string global_frame_;
       bool initialized_;

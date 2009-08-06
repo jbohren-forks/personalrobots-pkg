@@ -36,11 +36,12 @@
 *********************************************************************/
 #include <navfn/navfn_ros.h>
 
+//register this planner as a BaseGlobalPlanner plugin
+POCO_BEGIN_MANIFEST(nav_core::BaseGlobalPlanner)
+POCO_EXPORT_CLASS(navfn::NavfnROS)
+POCO_END_MANIFEST
+
 namespace navfn {
-  //register this planner as a BaseGlobalPlanner plugin
-  POCO_BEGIN_MANIFEST(nav_core::BaseGlobalPlanner)
-  POCO_EXPORT_CLASS(NavfnROS)
-  POCO_END_MANIFEST
 
   NavfnROS::NavfnROS() 
     : costmap_ros_(NULL),  planner_(), initialized_(false) {}
@@ -59,8 +60,10 @@ namespace navfn {
       //get an initial copy of the costmap
       costmap_ros_->getCostmapCopy(costmap_);
 
+      ros::NodeHandle ros_node("~/" + name);
+
       //advertise our plan visualization
-      plan_pub_ = ros_node_.advertise<visualization_msgs::Polyline>("~plan", 1);
+      plan_pub_ = ros_node.advertise<visualization_msgs::Polyline>("plan", 1);
 
       //read parameters for the planner
       global_frame_ = costmap_ros_->getGlobalFrameID();

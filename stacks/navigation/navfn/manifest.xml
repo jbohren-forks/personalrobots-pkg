@@ -21,5 +21,6 @@
  <rosdep name="libpoco"/>
  <export>
   <cpp cflags="-I${prefix}/include -I${prefix}/srv/cpp -I${prefix}/msg/cpp" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lnavfn"/>
+  <nav_core BaseGlobalPlanner="${prefix}/bgp_plugin.xml" />
  </export>
 </package>
