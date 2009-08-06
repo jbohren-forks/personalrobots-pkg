@@ -42,16 +42,20 @@
 #include <math.h>
 #include <boost/algorithm/string.hpp>
 
-using namespace std;
-
 namespace robot_model{
 
 class Vector3
 {
 public:
-  Vector3() {this->x_=this->y_=this->z_=0.0;};
+  Vector3() {this->clear();};
+  double x_;
+  double y_;
+  double z_;
+protected:
+  void clear() {this->x_=this->y_=this->z_=0.0;};
   bool init(const std::string &vector_str)
   {
+    this->clear();
     std::vector<std::string> pieces;
     std::vector<double> xyz;
     boost::split( pieces, vector_str, boost::is_any_of(" "));
@@ -63,9 +67,9 @@ public:
     }
 
     if (xyz.size() != 3) {
-      cerr << "Vector did not contain 3 pieces:" << endl; 
+      std::cerr << "Vector did not contain 3 pieces:" << std::endl; 
       for (unsigned int i = 0; i < xyz.size(); ++i)
-        cerr << "  " << i << ": '" << xyz[i] << "'" << endl;
+        std::cerr << "  " << i << ": '" << xyz[i] << "'" << std::endl;
       return false;
     }
 
@@ -75,31 +79,19 @@ public:
 
     return true;
   };
-  double x_;
-  double y_;
-  double z_;
-private:
+  friend class Geometry;
+  friend class Rotation;
+  friend class Pose;
+  friend class Joint;
+  friend class Box;
+  friend class Mesh;
 
 };
 
 class Rotation
 {
 public:
-  Rotation() {this->w_=1.0;this->x_=this->y_=this->z_=0.0;};
-  bool init(const std::string &rotation_str)
-  {
-    Vector3 rpy;
-    
-    if (!rpy.init(rotation_str))
-      return false;
-    else
-    {
-      this->setFromRPY(rpy.x_,rpy.y_,rpy.z_);
-      return true;
-    }
-      
-  };
-
+  Rotation() {this->clear();};
   void getQuaternion(double &w,double &x,double &y,double &z)
   {
     w = this->w_;
@@ -148,8 +140,26 @@ public:
     this->normalize();
   };
 
-private:
   double w_,x_,y_,z_;
+protected:
+  bool init(const std::string &rotation_str)
+  {
+    this->clear();
+
+    Vector3 rpy;
+    
+    if (!rpy.init(rotation_str))
+      return false;
+    else
+    {
+      this->setFromRPY(rpy.x_,rpy.y_,rpy.z_);
+      return true;
+    }
+      
+  };
+  friend class Pose;
+private:
+  void clear() { this->w_=1.0;this->x_=this->y_=this->z_=0.0; }
 
   void normalize()
   {
@@ -167,9 +177,19 @@ private:
 class Pose
 {
 public:
-  Pose() {};
+  Pose() { this->clear(); };
+
+  boost::shared_ptr<Vector3>  pos_;
+  boost::shared_ptr<Rotation> rot_;
+protected:
+  void clear()
+  {
+    this->pos_.reset();
+    this->rot_.reset();
+  };
   bool initXml(TiXmlElement* xml)
   {
+    this->clear();
     if (!xml)
     {
       std::cout << "parsing pose: xml empty" << std::endl;
@@ -178,36 +198,47 @@ public:
     else
     {
       const char* xyz_str = xml->Attribute("xyz");
+      this->pos_.reset(new Vector3());
       if (xyz_str == NULL)
       {
         std::cout << "INFO: parsing pose: no xyz, using default values." << std::endl;
         return true;
       }
       else
-        if (!this->pos_.init(xyz_str))
+      {
+        if (!this->pos_->init(xyz_str))
         {
           std::cerr << "ERROR: malformed xyz" << std::endl;
+          this->pos_.reset();
           return false;
         }
+      }
 
       const char* rpy_str = xml->Attribute("rpy");
+      this->rot_.reset(new Rotation());
       if (rpy_str == NULL)
       {
         std::cout << "INFO: parsing pose: no rpy, using default values." << std::endl;
         return true;
       }
       else
-        if (!this->rot_.init(rpy_str))
+      {
+        if (!this->rot_->init(rpy_str))
         {
           std::cerr << "ERROR: malformed rpy" << std::endl;
           return false;
+          this->rot_.reset();
         }
+      }
 
       return true;
     }
   };
-  Vector3  pos_;
-  Rotation rot_;
+  friend class Link;
+  friend class Joint;
+  friend class Inertial;
+  friend class Visual;
+  friend class Collision;
 };
 
 }

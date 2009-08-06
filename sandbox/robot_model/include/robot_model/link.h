@@ -40,154 +40,186 @@
 #include <string>
 #include <vector>
 #include <tinyxml/tinyxml.h>
-#include <boost/scoped_ptr.hpp>
+#include <boost/shared_ptr.hpp>
 
 #include <robot_model/joint.h>
-
-using namespace std;
 
 namespace robot_model{
 
 class Geometry
 {
 public:
+  enum {SPHERE, BOX, CYLINDER, MESH} type_;
+
   virtual bool initXml(TiXmlElement *) = 0;
 
-  enum {SPHERE, BOX, CYLINDER, MESH} type_;
 };
 
 class Sphere : public Geometry
 {
 public:
-  Sphere() { type_ = SPHERE; }
-  bool initXml(TiXmlElement *);
+  Sphere() { this->clear(); };
   double radius_;
+protected:
+  void clear()
+  {
+    radius_ = 0;
+  };
+  bool initXml(TiXmlElement *);
+
+  friend class Link;
 };
 
 class Box : public Geometry
 {
 public:
-  Box() { type_ = BOX; }
+  Box() { this->clear(); };
+  boost::shared_ptr<Vector3> dim_;
+protected:
+  void clear()
+  {
+    dim_.reset();
+  };
   bool initXml(TiXmlElement *);
-  Vector3 dim_;
+
+  friend class Link;
 };
 
 class Cylinder : public Geometry
 {
 public:
-  Cylinder() { type_ = CYLINDER; }
-  bool initXml(TiXmlElement *);
+  Cylinder() { this->clear(); };
   double length_;
   double radius_;
+protected:
+  void clear()
+  {
+    length_ = 0;
+    radius_ = 0;
+  };
+  bool initXml(TiXmlElement *);
+
+  friend class Link;
 };
 
 class Mesh : public Geometry
 {
 public:
-  Mesh() { type_ = MESH; }
-  bool initXml(TiXmlElement *);
+  Mesh() { this->clear(); };
   std::string filename_;
-  Vector3 scale_;
+  boost::shared_ptr<Vector3> scale_;
+protected:
+  void clear()
+  {
+    filename_.clear();
+    scale_.reset();
+  };
+  bool initXml(TiXmlElement *);
+
+  friend class Link;
 };
 
 class Inertial
 {
 public:
-  bool initXml(TiXmlElement* config);
-  double getMass() {return this->mass_;};///make variables public instead?
-private:
-  Pose origin_;
+  Inertial() { this->clear(); };
+  boost::shared_ptr<Pose> origin_;
   double mass_;
   double ixx_,ixy_,ixz_,iyy_,iyz_,izz_;
+protected:
+  void clear()
+  {
+    origin_.reset();
+    mass_ = 0;
+    ixx_ = ixy_ = ixz_ = iyy_ = iyz_ = izz_ = 0;
+  };
+  bool initXml(TiXmlElement* config);
+
+  friend class Link;
 };
 
 class Visual
 {
 public:
-  Visual(void) {};
+  Visual() { this->clear(); };
+  boost::shared_ptr<Pose> origin_;
+  boost::shared_ptr<Geometry> geometry_;
+protected:
+  void clear()
+  {
+    origin_.reset();
+    geometry_.reset();
+  };
   bool initXml(TiXmlElement* config);
-private:
-  Pose origin_;
-  boost::scoped_ptr<Geometry> geometry_;
 
+  friend class Link;
 };
 
 class Collision
 {
 public:
+  Collision() { this->clear(); };
+  boost::shared_ptr<Pose> origin_;
+  boost::shared_ptr<Geometry> geometry_;
+protected:
+  void clear()
+  {
+    origin_.reset();
+    geometry_.reset();
+  };
   bool initXml(TiXmlElement* config);
-private:
-  Pose origin_;
-  boost::scoped_ptr<Geometry> geometry_;
 
+  friend class Link;
 };
 
 
 class Link
 {
 public:
+  Link() { this->clear(); };
 
-  bool initXml(TiXmlElement* config);
-
-  /// returns the name of the link
-  const std::string& getName() const;
-
-  /// returns the parent link. The root link does not have a parent
-  Link* getParent();
-
-  /// returns the parent link name
-  const std::string& getParentName() {return parent_name_;};
-
-  /// returns the origin xml for parent link -> parent joint transform
-  TiXmlElement* getOriginXml() {return origin_xml_;};
-
-  /// returns the parent joint name
-  const std::string& getParentJointName();
-
-  /// returns children of the link
-  std::vector<Link*>* getChildren();
-
-  /// returns joints attaching link to children
-  std::vector<Joint*>* getChildrenJoint();
+  std::string name_;
 
   /// inertial element
-  boost::scoped_ptr<Inertial> inertial_;
+  boost::shared_ptr<Inertial> inertial_;
 
   /// visual element
-  boost::scoped_ptr<Visual> visual_;
+  boost::shared_ptr<Visual> visual_;
 
   /// collision element
-  boost::scoped_ptr<Collision> collision_;
+  boost::shared_ptr<Collision> collision_;
 
   /// Parent Joint element
   ///   explicitly stating "parent" because we want directional-ness for tree structure
   ///   every link can have one parent
-  Joint* parent_joint_;
+  boost::shared_ptr<Joint> parent_joint_;
+
+  /// Get Parent Link throught the Parent Joint
+  boost::shared_ptr<Link> parent_link_;
+
+  std::vector<boost::shared_ptr<Joint> > child_joints_;
+  std::vector<boost::shared_ptr<Link> > child_links_;
+
+protected:
+  bool initXml(TiXmlElement* config);
+  void setParent(boost::shared_ptr<Link> parent);
 
 private:
-  std::string name_;
+  void clear()
+  {
+    this->name_.clear();
+    this->inertial_.reset();
+    this->visual_.reset();
+    this->collision_.reset();
+    this->parent_joint_.reset();
+    this->parent_link_.reset();
+    this->child_joints_.clear();
+    this->child_links_.clear();
+  };
+  void addChild(boost::shared_ptr<Link> child);
+  void addChildJoint(boost::shared_ptr<Joint> child);
 
-  Link* parent_;
-  std::vector<Link*> children_;
-
-  std::vector<Joint*> child_joints_;
-
-  // FOR CURRENT URobotModel --> NEW DOM COMPATIBILITY
-  // store parent Link, Joint and origin as raw string/TiXmlElement
-  // the relationship goes like this for the current urdf definition -> RobotModel:
-  //   * origin_xml_ defines the parent_joint_pose == the pose transform from parent_link to parent_joint
-  //   * assumes transform from current_link to current_joint IS Identity
-  //   * joint angle IS the pose difference between parent_joint_pose and current_joint_pose
-  std::string parent_joint_name_;
-  std::string parent_name_;
-  TiXmlElement* origin_xml_;
-
-public:
-  void setParent(Link* parent);
-  void addChild(Link* child);
-
-  void setParentJoint(Joint* parent);
-  void addChildJoint(Joint* child);
+  friend class RobotModel;
 };
 
 

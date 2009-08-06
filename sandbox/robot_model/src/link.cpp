@@ -37,9 +37,6 @@
 
 #include "robot_model/link.h"
 
-using namespace std;
-
-
 namespace robot_model{
 
 Geometry *parseGeometry(TiXmlElement *g)
@@ -77,11 +74,13 @@ Geometry *parseGeometry(TiXmlElement *g)
 
 bool Inertial::initXml(TiXmlElement *config)
 {
+  this->clear();
+
   // Origin
   TiXmlElement *o = config->FirstChildElement("origin");
   if (!o)
   {
-    std::cout << "WARN: origin tag not present for inertial element, checking old URobotModel format com: " << std::endl;
+    std::cout << "WARN: origin tag not present for inertial element, checking old RobotModel format com: " << std::endl;
     o = config->FirstChildElement("com");
     if (!o)
     {
@@ -89,9 +88,11 @@ bool Inertial::initXml(TiXmlElement *config)
       return false;
     }
   }
-  if (!this->origin_.initXml(o))
+  this->origin_.reset(new Pose());
+  if (!this->origin_->initXml(o))
   {
     std::cerr << "ERROR: Inertial has a malformed origin tag" << std::endl;
+    this->origin_.reset();
     return false;
   }
 
@@ -133,11 +134,15 @@ bool Inertial::initXml(TiXmlElement *config)
 
 bool Visual::initXml(TiXmlElement *config)
 {
+  this->clear();
+
   // Origin
   TiXmlElement *o = config->FirstChildElement("origin");
-  if (!this->origin_.initXml(o))
+  this->origin_.reset(new Pose());
+  if (!this->origin_->initXml(o))
   {
     std::cerr << "ERROR: Visual has a malformed origin tag" << std::endl;
+    this->origin_.reset();
     return false;
   }
 
@@ -155,11 +160,15 @@ bool Visual::initXml(TiXmlElement *config)
 
 bool Collision::initXml(TiXmlElement* config)
 {
+  this->clear();
+
   // Origin
   TiXmlElement *o = config->FirstChildElement("origin");
-  if (!this->origin_.initXml(o))
+  this->origin_.reset(new Pose());
+  if (!this->origin_->initXml(o))
   {
     std::cerr << "ERROR: Collision has a malformed origin tag" << std::endl;
+    this->origin_.reset();
     return false;
   }
 
@@ -177,6 +186,9 @@ bool Collision::initXml(TiXmlElement* config)
 
 bool Sphere::initXml(TiXmlElement *c)
 {
+  this->clear();
+
+  this->type_ = SPHERE;
   if (!c->Attribute("radius"))
   {
     std::cerr << "ERROR: Sphere shape must have a radius attribute" << std::endl;
@@ -189,14 +201,19 @@ bool Sphere::initXml(TiXmlElement *c)
 
 bool Box::initXml(TiXmlElement *c)
 {
+  this->clear();
+
+  this->type_ = BOX;
   if (!c->Attribute("size"))
   {
     std::cerr << "ERROR: Box shape has no size attribute" << std::endl;
     return false;
   }
-  if (!dim_.init(c->Attribute("size")))
+  dim_.reset(new Vector3());
+  if (!dim_->init(c->Attribute("size")))
   {
     std::cerr << "ERROR: Box shape has malformed size attribute" << std::endl;
+    dim_.reset();
     return false;
   }
   return true;
@@ -204,6 +221,9 @@ bool Box::initXml(TiXmlElement *c)
 
 bool Cylinder::initXml(TiXmlElement *c)
 {
+  this->clear();
+
+  this->type_ = CYLINDER;
   if (!c->Attribute("length") ||
       !c->Attribute("radius"))
   {
@@ -218,6 +238,9 @@ bool Cylinder::initXml(TiXmlElement *c)
 
 bool Mesh::initXml(TiXmlElement *c)
 {
+  this->clear();
+
+  this->type_ = MESH;
   if (!c->Attribute("filename"))
   {
     std::cerr << "ERROR: Mesh must contain a filename attribute" << std::endl;
@@ -228,9 +251,11 @@ bool Mesh::initXml(TiXmlElement *c)
 
   if (c->Attribute("scale"))
   {
-    if (!this->scale_.init(c->Attribute("scale")))
+    this->scale_.reset(new Vector3());
+    if (!this->scale_->init(c->Attribute("scale")))
     {
       std::cerr << "ERROR: Mesh scale was specified, but could not be parsed" << std::endl;
+      this->scale_.reset();
       return false;
     }
   }
@@ -241,11 +266,7 @@ bool Mesh::initXml(TiXmlElement *c)
 
 bool Link::initXml(TiXmlElement* config)
 {
-  this->name_.clear();
-  this->parent_joint_ = NULL;
-  this->parent_ = NULL;
-  this->children_.clear();
-  this->child_joints_.clear();
+  this->clear();
 
   const char *name = config->Attribute("name");
   if (!name)
@@ -254,42 +275,6 @@ bool Link::initXml(TiXmlElement* config)
     return false;
   }
   name_ = std::string(name);
-
-  // set parent Joint name
-  TiXmlElement *j = config->FirstChildElement("joint");
-  const char *parent_joint_name = j ? j->Attribute("name") : NULL;
-  if (!parent_joint_name)
-  {
-    // in proposed new URobotModel links are to have no joints, but the other way around
-    std::cerr << "ERROR: Invalid parent joint name: " << parent_joint_name << " for Link:"
-              << this->name_ << std::endl;
-    return false;
-  }
-  parent_joint_name_ = std::string(parent_joint_name);
-
-  // Parent - this is to be moved to Joint
-  //   fill in parent_name_ and parent_
-  TiXmlElement *p = config->FirstChildElement("parent");
-  const char *parent_name = p ? p->Attribute("name") : NULL;
-  if (!parent_name)
-  {
-    // in proposed new URobotModel, parent is specified in joint, joints connect to parent and child links
-    std::cerr << "ERROR: No parent name given for Link:"
-              << this->name_ << std::endl;
-    return false;
-  }
-  parent_name_ = std::string(parent_name);
-
-  // Origin - this is to be moved to Joint
-  //   fill in origin_xml_
-  origin_xml_ = config->FirstChildElement("origin");
-  if (!origin_xml_)
-  {
-    // in proposed new URobotModel, origin is specified in joint, for both parent and child
-    std::cerr << "ERROR: No origin tag for Link:"
-              << this->name_ << std::endl;
-    return false;
-  }
 
   // Inertial
   TiXmlElement *i = config->FirstChildElement("inertial");
@@ -330,57 +315,43 @@ bool Link::initXml(TiXmlElement* config)
     }
   }
 
+  // Joint
+  TiXmlElement *joi = config->FirstChildElement("joint");
+  if (joi)
+  {
+    parent_joint_.reset(new Joint);
+    if (!parent_joint_->initXml(joi))
+    {
+      std::cerr << "ERROR: Could not parse joint element for Link:"
+                << this->name_ << std::endl;
+      parent_joint_.reset();
+    }
+    else
+    {
+      parent_joint_->link_ = (boost::shared_ptr<Link>)this;
+      parent_joint_->link_name_ = name_;
+    }
+  }
+
   return true;
 }
 
-
-const std::string& Link::getName() const
+void Link::setParent(boost::shared_ptr<Link> parent)
 {
-  return name_;
+  this->parent_link_ = parent;
+  std::cout << "INFO: set parent Link: " << parent->name_ << " for Link: " << this->name_ << std::endl;
 }
 
-Link* Link::getParent()
+void Link::addChild(boost::shared_ptr<Link> child)
 {
-  return parent_;
+  this->child_links_.push_back(child);
+  std::cout << "INFO: added child Link: " << child->name_ << " to Link: " << this->name_ << std::endl;
 }
 
-std::vector<Link*>* Link::getChildren()
-{
-  return &this->children_;
-}
-
-std::vector<Joint*>* Link::getChildrenJoint()
-{
-  return &this->child_joints_;
-}
-
-void Link::setParent(Link* parent)
-{
-  this->parent_ = parent;
-  cout << "INFO: set parent Link: " << parent->getName() << " for Link: " << getName() << endl;
-}
-
-void Link::addChild(Link* child)
-{
-  this->children_.push_back(child);
-  cout << "INFO: added child Link: " << child->getName() << " to Link: " << getName() << endl;
-}
-
-const std::string& Link::getParentJointName()
-{
-  return this->parent_joint_name_;
-}
-
-void Link::setParentJoint(Joint* parent)
-{
-  this->parent_joint_ = parent;
-  cout << "INFO: set parent Joint " << parent->getName() << " for Link: " << getName() << endl;
-}
-
-void Link::addChildJoint(Joint* child)
+void Link::addChildJoint(boost::shared_ptr<Joint> child)
 {
   this->child_joints_.push_back(child);
-  cout << "INFO: added child Joint " << child->getName() << " to Link: " << getName() << endl;
+  std::cout << "INFO: added child Joint " << child->name_ << " to Link: " << this->name_ << std::endl;
 }
 
 

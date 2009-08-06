@@ -38,86 +38,52 @@
 #include <vector>
 #include "robot_model/robot_model.h"
 
-using namespace std;
-
 namespace robot_model{
 
 
 RobotModel::RobotModel()
 {
+  this->clear();
+}
+
+void RobotModel::clear()
+{
+  name_.clear();
   links_.clear();
-  joints_.clear();
-  root_link_ = NULL;
+  root_link_.reset();
   link_parent_.clear();
+}
+
+
+bool RobotModel::initFile(const std::string& filename)
+{
+  TiXmlDocument urdf_xml;
+  urdf_xml.LoadFile(filename);
+  TiXmlElement *robot_xml = urdf_xml.FirstChildElement("robot");
+  if (!robot_xml)
+  {std::cerr << "Could not parse the xml" << std::endl; return false;}
+
+  return initXml(robot_xml);
 }
 
 
 bool RobotModel::initXml(TiXmlElement *robot_xml)
 {
   links_.clear();
-  joints_.clear();
-  root_link_ = NULL;
+  root_link_.reset();
   link_parent_.clear();
 
-  cout << "INFO: Parsing robot xml" << endl;
+  std::cout << "INFO: Parsing robot xml" << std::endl;
   if (!robot_xml) return false;
 
-
-  /// current parsing strategy:
-  ///   1.  get all Joint elements, store in map<name,Joint*>
-  ///   2.  get all Link elements, store in map<name,Link*>
-  ///   3.  build tree - fill in pointers for parents, children, etc
-  ///
-  ///
-  /// When we switch to the new RobotModel structure, we'll have to change the steps to below:
-  ///   1.  get all Link elements, store in map<nam,Link*>
-  ///   2.  get all Joint elements, store in map<nam,Joint*> AND
-  ///         fill in parent/child information in Joint::initXml() for both Joint and Link elements.
-  ///
-
-
-
-  /// Because old URobotModel allows us to define Joint elements inside/outside of Link elements, we have to do this
-  /// @todo: give deprecation warning and phase out defining Joint elements inside Link elements
-  // Get Joint elements defined outside of Link elements
-  for (TiXmlElement* joint_xml = robot_xml->FirstChildElement("joint"); joint_xml; joint_xml = joint_xml->NextSiblingElement("joint"))
+  // Get robot name
+  const char *name = robot_xml->Attribute("name");
+  if (!name)
   {
-    Joint* joint = new Joint();
-    if (joint->initXml(joint_xml))
-    {
-      joints_.insert(make_pair(joint->getName(),joint));
-      std::cout << "INFO: successfully added a new joint (" << joint->getName() << ")" << std::endl;
-    }
-    else
-    {
-      std::cerr << "ERROR: Joint element is a malformed xml" << std::endl;
-      delete joint;
-    }
+    std::cerr << "ERROR: No name given for the robot." << std::endl;
+    return false;
   }
-  // Get Joint elements defined inside Link elements
-  for (TiXmlElement* link_xml = robot_xml->FirstChildElement("link"); link_xml; link_xml = link_xml->NextSiblingElement("link"))
-    for (TiXmlElement* joint_xml = link_xml->FirstChildElement("joint"); joint_xml; joint_xml = joint_xml->NextSiblingElement("joint"))
-    {
-      Joint* joint = new Joint();
-      if (joint->initXml(joint_xml))
-      {
-        joints_.insert(make_pair(joint->getName(),joint));
-        std::cout << "INFO: successfully added a new joint (" << joint->getName() << ")" << std::endl;
-      }
-      else
-      {
-        if (this->joints_.find(joint->getName()) == this->joints_.end())
-        {
-          const char* link_name = link_xml->Attribute("name");
-          std::cerr << "ERROR: Joint: " << joint->getName() << " is not defined anywhere, only referenced by name by Link: " << link_name << std::endl;
-        }
-        else
-        {
-          std::cout << "INFO: Joint: " << joint->getName() << " is already loaded." << std::endl;
-        }
-        delete joint;
-      }
-    }
+  this->name_ = std::string(name);
 
   // Get all Link elements, connectivity information stored as
   //   parent link name
@@ -125,118 +91,123 @@ bool RobotModel::initXml(TiXmlElement *robot_xml)
   //   parent link origin
   for (TiXmlElement* link_xml = robot_xml->FirstChildElement("link"); link_xml; link_xml = link_xml->NextSiblingElement("link"))
   {
-    Link* link = new Link();
+    boost::shared_ptr<Link> link(new Link());
+
     if (link->initXml(link_xml))
     {
-      links_.insert(make_pair(link->getName(),link));
-      std::cout << "INFO: successfully added a new link (" << link->getName() << ")" << std::endl;
+      links_.insert(make_pair(link->name_,link));
+      std::cout << "INFO: successfully added a new link (" << link->name_ << ")" << std::endl;
     }
     else
     {
       std::cout << "INFO: link xml is not initialized correctly" << std::endl;
-      delete link;
+      link.reset();
     }
   }
 
 
-  // Start building tree
-  // find link/parent mapping
-  for (std::map<std::string,Link*>::iterator link = this->links_.begin();link != this->links_.end(); link++)
+  // building tree: name mapping
+  if (!this->initTree())
   {
-    std::string parent_name = link->second->getParentName();
-    std::cout << "INFO: build tree: " << link->first << " is a child of " << parent_name << std::endl;
-
-    Link* parent_link = this->getLink(parent_name);
-    if (!parent_link)
-    {
-      if (parent_name == "world")
-        std::cout << "INFO: parent link: " << parent_name << " is a special case." << std::endl;
-      else
-      {
-        std::cerr << "ERROR: parent link: " << parent_name << " is not found!" << std::endl;
-        return false;
-      }
-    }
-    else
-    {
-      // fill in child/parent string map
-      this->link_parent_[link->second->getName()] = parent_name;
-
-      // set parent_ link for child Link element
-      link->second->setParent( parent_link);
-
-      // add child link in parent Link element
-      parent_link->addChild(link->second);
-      //std::cout << "INFO: now Link: " << parent_link->getName() << " has " << parent_link->getChildren()->size() << " children" << std::endl;
-
-
-      //--------------------------------------------
-      // setup parent Joint element for Link element
-      //--------------------------------------------
-      std::map<std::string,Joint*>::iterator parent_joint = this->joints_.find(link->second->getParentJointName());
-      if (parent_joint == this->joints_.end())
-      {
-        std::cerr << "ERROR: link: " << link->first << " parent joint: " << link->second->getParentJointName()<< " not found in joint list" << std::endl;
-        return false;
-      }
-      else
-      {
-        // set parent Joint for Link element
-        link->second->setParentJoint(parent_joint->second);
-
-
-        //-------------------------------------------------------
-        // setup connectivity information for parent Link element
-        //-------------------------------------------------------
-        // add links to parent Link element for Joint elements
-        parent_joint->second->setParentLink(parent_link);
-
-        // set transform from parent Link to parent Joint frame for Link element
-        Pose parent_pose;
-
-        parent_pose.initXml(link->second->getOriginXml());
-        parent_joint->second->setParentPose(parent_pose);
-
-        // since we're using old URobotModel format, set origins for Joint elements using origin_xml_ in links
-        parent_joint->second->setChildLink(link->second);
-
-        parent_joint->second->setChildPose(Pose());
-      }
-    }
-
+    std::cerr << "failed to find build tree" << std::endl;
+    return false;
   }
       
   // find the root link
-  std::string* root_name = NULL;
-  for (map<string, string>::const_iterator p=link_parent_.begin(); p!=link_parent_.end(); p++)
+  if (!this->initRoot())
   {
-    if (link_parent_.find(p->second) == link_parent_.end())
-    {
-      if (root_name)
-      {
-        std::cout << "INFO: child: " << p->first << " parent: " << p->second << " root: " << *root_name << std::endl;
-        if (*root_name != p->second)
-        {
-          cerr << "ERROR: Two root links found: " << *root_name << " and " << p->second << endl;
-          return false;
-        }
-      }
-      else
-        root_name = &(std::string)(p->second);
-    }
+    std::cerr << "failed to find root link" << std::endl;
+    return false;
   }
-  if (root_name == NULL)
-  {cerr << "ERROR: No root link found. The robot xml contains a graph instead of a tree." << endl; return false;}
-  cout << "INFO: Link: " << *root_name << " is the root Link " << endl;
-  this->root_link_ = getLink(*root_name); // set root link
 
   return true;
 }
 
-Link* RobotModel::getLink(const std::string& name)
+bool RobotModel::initTree()
+{
+  // find link/parent mapping
+  for (std::map<std::string,boost::shared_ptr<Link> >::iterator link = this->links_.begin();link != this->links_.end(); link++)
+  {
+    std::string parent_link_name = link->second->parent_joint_->parent_link_name_;
+    std::cout << "INFO: build tree: " << link->first << " is a child of " << parent_link_name << std::endl;
+
+    if (parent_link_name.c_str() == NULL)
+    {
+        std::cerr << "ERROR: parent link name is not valid!" << std::endl;
+        return false;
+    }
+    else
+    {
+
+      boost::shared_ptr<Link> parent_link = this->getLink(parent_link_name);
+
+      if (!parent_link)
+      {
+        if (parent_link_name == "world")
+        {
+          std::cout << "INFO: parent link: " << parent_link_name << " is a special case." << std::endl;
+        }
+        else
+        {
+          std::cerr << "ERROR: parent link: " << parent_link_name << " is not found!" << std::endl;
+          return false;
+        }
+      }
+      else
+      {
+        // fill in child/parent string map
+        this->link_parent_[link->second->name_] = parent_link_name;
+
+        // set parent_ link for child Link element
+        link->second->setParent(parent_link);
+
+        // add child link in parent Link element
+        parent_link->addChild(link->second);
+        std::cout << "INFO: now Link: " << parent_link->name_ << " has " << parent_link->child_links_.size() << " children" << std::endl;
+
+
+      }
+    }
+
+  }
+
+  return true;
+}
+
+
+
+bool RobotModel::initRoot()
+{
+  std::string root_name = "NoRootSpecified";
+  for (std::map<std::string, std::string>::const_iterator p=link_parent_.begin(); p!=link_parent_.end(); p++)
+  {
+    if (link_parent_.find(p->second) == link_parent_.end())
+    {
+      if (root_name != "NoRootSpecified")
+      {
+        std::cout << "INFO: child: " << p->first << " parent: " << p->second << " root: " << root_name << std::endl;
+        if (root_name != p->second)
+        {
+          std::cerr << "ERROR: Two root links found: " << root_name << " and " << p->second << std::endl;
+          return false;
+        }
+      }
+      else
+        root_name = p->second;
+    }
+  }
+  if (root_name == "NoRootSpecified")
+  {std::cerr << "ERROR: No root link found. The robot xml contains a graph instead of a tree." << std::endl; return false;}
+  std::cout << "INFO: Link: " << root_name << " is the root Link " << std::endl;
+  this->root_link_ = getLink(root_name); // set root link
+
+  return true;
+}
+
+const boost::shared_ptr<Link> RobotModel::getLink(const std::string& name) const
 {
   if (this->links_.find(name) == this->links_.end())
-    return NULL;
+    return boost::shared_ptr<Link>();
   else
     return this->links_.find(name)->second;
 }

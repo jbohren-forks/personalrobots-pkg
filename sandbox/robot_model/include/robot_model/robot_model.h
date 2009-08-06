@@ -43,7 +43,6 @@
 #include <boost/function.hpp>
 #include "robot_model/link.h"
 
-using namespace std;
 
 namespace robot_model{
 
@@ -90,8 +89,26 @@ namespace robot_model{
 ///     </joint>
 ///   </link>
 ///
-/// NEW PROPOSED RobotModel XML that corresponds to the new RobotModel data structure:
+/// NEW URDF XML that corresponds to the current RobotModel data structure:
 ///   <link name="C">
+///     <joint name="J" type="revolute">
+///       <!-- transform from link to joint frame -->
+///       <!-- in old URDF, this is undefined and assumed to be identity transform -->
+///       <origin xyz="0 0 0" rpy="0 0 0"/> 
+///
+///       <!-- joint properties -->
+///       <axis xyz="0 1 0"/>  <!--in the joint frame-->
+///       <joint_properties damping="1" friction="0"/>
+///       <limit lower="0.9" upper="2.1" effort="1000" velocity="1"/>
+///       <safety_controller soft_lower_limit="0.7" soft_upper_limit="2.1" k_position="1" k_velocity="1" />
+///       <calibration reference_position="0.7" />
+///       <parent name="P"/>  <!-- in old URDF, this is in <link> not in <joint> -->
+///         <!-- <origin> is the transform from parent Link to this Joint in parent Link frame -->
+///         <!-- in old URDF, this is in <link> not in <joint><parent> -->
+///         <origin xyz="0 0 0" rpy="0 0 0"/> 
+///       </parent>
+///     </joint>
+///
 ///     <inertial>
 ///       <mass value="10"/>
 ///       <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -113,23 +130,6 @@ namespace robot_model{
 ///       </geometry>
 ///       <contact_coefficient mu="0"  resitution="0"  k_p="0"  k_d="0" />
 ///     </collision>
-///
-///     <joint name="J" type="revolute">
-///       <!-- transform from link to joint frame -->
-///       <!-- in old URDF, this is undefined and assumed to be identity transform -->
-///       <origin xyz="0 0 0" rpy="0 0 0"/> 
-///
-///       <!-- joint properties -->
-///       <axis xyz="0 1 0"/>  <!--in the joint frame-->
-///       <joint_properties damping="1" friction="0"/>
-///       <limit hard_min="0.9" hard_max="2.1" soft_min="1.0" soft_max="2.0" effort="1000" velocity="1"/>
-///
-///       <parent name="P"/>  <!-- in old URDF, this is in <link> not in <joint> -->
-///         <!-- <origin> is the transform from parent Link to this Joint in parent Link frame -->
-///         <!-- in old URDF, this is in <link> not in <joint><parent> -->
-///         <origin xyz="0 0 0" rpy="0 0 0"/> 
-///       </parent>
-///     </joint>
 ///   </link>
 
 class RobotModel
@@ -138,27 +138,40 @@ public:
   RobotModel();
 
   bool initXml(TiXmlElement *xml);
-  Link* getRoot() {return this->root_link_;};
+  bool initFile(const std::string& filename);
+
+  const boost::shared_ptr<Link> getRoot(void) const{return (const boost::shared_ptr<Link>)this->root_link_;};
+  const boost::shared_ptr<Link> getLink(const std::string& name) const;
+  const std::string& getName() const {return name_;};
 
 private:
-  Link* getLink(const std::string& name);
+  void clear();
+
+  std::string name_;
+
+  /// in initXml(), onece all links are loaded,
+  /// it's time to build a tree
+  bool initTree();
+
+  /// in initXml(), onece tree is built,
+  /// it's time to find the root Link
+  bool initRoot();
 
   /// Every Robot Description File can be described as a
   ///   list of Links and Joints
   /// The connection between links(nodes) and joints(edges)
   ///   should define a tree (i.e. 1 parent link, 0+ children links)
   /// RobotModel currently do not support 
-  std::map<std::string, Link*> links_;
-  std::map<std::string, Joint*> joints_;
+  std::map<std::string, boost::shared_ptr<Link> > links_;
 
   /// RobotModel is restricted to a tree for now, which means there exists one root link
   ///  typically, root link is the world(inertial).  Where world is a special link
   /// or is the root_link_ the link attached to the world by PLANAR/FLOATING joint?
   ///  hmm...
-  Link* root_link_;
+  boost::shared_ptr<Link> root_link_;
 
   /// for convenience keep a map of link names and their parent names
-  map<string, string> link_parent_;
+  std::map<std::string, std::string> link_parent_;
 
 };
 

@@ -40,11 +40,9 @@
 #include <string>
 #include <vector>
 #include <tinyxml/tinyxml.h>
-#include <boost/scoped_ptr.hpp>
+#include <boost/shared_ptr.hpp>
 
 #include <robot_model/pose.h>
-
-using namespace std;
 
 namespace robot_model{
 
@@ -53,91 +51,146 @@ class Link;
 class JointProperties
 {
 public:
-  JointProperties()
+  JointProperties() { this->clear(); };
+  double damping_;
+  double friction_;
+protected:
+  void clear()
   {
     damping_ = 0;
     friction_ = 0;
   };
-  virtual ~JointProperties(void) {};
   bool initXml(TiXmlElement* config);
-  double damping_;
-  double friction_;
+
+  friend class Joint;
 };
 
 class JointLimits
 {
 public:
-  JointLimits()
+  JointLimits() { this->clear(); };
+  double lower_;
+  double upper_;
+  double effort_;
+  double velocity_;
+protected:
+  void clear()
   {
-    min_ = 0;
-    max_ = 0;
+    lower_ = 0;
+    upper_ = 0;
     effort_ = 0;
     velocity_ = 0;
   };
-  virtual ~JointLimits(void) {};
   bool initXml(TiXmlElement* config);
-  double min_;
-  double max_;
-  double effort_;
-  double velocity_;
 
+  friend class Joint;
+};
+
+class JointSafety
+{
+public:
+  JointSafety() { this->clear(); };
+  double soft_upper_limit_;
+  double soft_lower_limit_;
+  double k_p_;
+  double k_v_;
+protected:
+  void clear()
+  {
+    soft_upper_limit_ = 0;
+    soft_lower_limit_ = 0;
+    k_p_ = 0;
+    k_v_ = 0;
+  };
+  bool initXml(TiXmlElement* config);
+
+  friend class Joint;
+};
+
+class JointCalibration
+{
+public:
+  JointCalibration() { this->clear(); };
+  double reference_position_;
+protected:
+  void clear()
+  {
+    reference_position_ = 0;
+  };
+  bool initXml(TiXmlElement* config);
+
+  friend class Joint;
 };
 
 class Joint
 {
 public:
-  virtual ~Joint(void) {};
-  bool initXml(TiXmlElement* xml);
 
-  /// returns the name of the joint
-  const std::string& getName() const;
+  Joint() { this->clear(); };
 
-  Link* getParentLink() {return this->parent_link_;};
-  Link* getChildLink() {return this->child_link_;};
-
-private:
   std::string name_;
-
   enum
   {
-    REVOLUTE, PRISMATIC, FLOATING, PLANAR, FIXED
+    UNKNOWN, REVOLUTE, CONTINUOUS, PRISMATIC, FLOATING, PLANAR, FIXED
   } type_;
 
   /// \brief     type_       meaning of axis_
   /// ------------------------------------------------------
+  ///            UNKNOWN     unknown type
   ///            REVOLUTE    rotation axis
   ///            PRISMATIC   translation axis
   ///            FLOATING    N/A
   ///            PLANAR      plane normal axis
   ///            FIXED       N/A
-  Vector3 axis_;
-
-  /// parent Link element
-  Link* parent_link_;
-
-  /// parent_pose_
-  ///   transform from parent Link to Joint frame in parent
-  Pose  parent_pose_;
+  boost::shared_ptr<Vector3> axis_;
 
   /// child Link element
-  Link* child_link_;
+  boost::shared_ptr<Link> link_;
+  std::string link_name_;
+  ///   transform from Link frame to Joint frame
+  boost::shared_ptr<Pose>  origin_;
 
-  /// child_pose_
-  ///   transform from child Link to Joint frame in parent
-  Pose  child_pose_;
+  /// parent Link element
+  boost::shared_ptr<Link> parent_link_;
+  std::string parent_link_name_;
+  ///   transform from parent Link to Joint frame
+  boost::shared_ptr<Pose>  parent_origin_;
 
   /// Joint Properties
-  boost::scoped_ptr<JointProperties> joint_properties_;
+  boost::shared_ptr<JointProperties> joint_properties_;
 
   /// Joint Limits
-  boost::scoped_ptr<JointLimits> joint_limits_;
+  boost::shared_ptr<JointLimits> joint_limits_;
 
-public:
+  /// Unsupported Hidden Feature
+  boost::shared_ptr<JointSafety> joint_safety_;
+
+  /// Unsupported Hidden Feature
+  boost::shared_ptr<JointCalibration> joint_calibration_;
+
   // Joint element has one parent and one child Link
-  void setParentLink(Link* parent) {this->parent_link_ = parent;};
-  void setParentPose(Pose pose) {this->parent_pose_ = pose;};
-  void setChildLink(Link* child) {this->child_link_ = child;};
-  void setChildPose(Pose pose) {this->child_pose_ = pose;};
+  void setParentLink(boost::shared_ptr<Link> parent) {this->parent_link_ = parent;};
+  void setParentPose(boost::shared_ptr<Pose> pose) {this->parent_origin_ = pose;};
+
+protected:
+  bool initXml(TiXmlElement* xml);
+
+private:
+  void clear()
+  {
+    this->name_.clear();
+    this->parent_link_.reset();
+    this->axis_.reset();
+    this->origin_.reset();
+    this->parent_link_name_.clear();
+    this->parent_origin_.reset();
+    this->link_.reset();
+    this->joint_properties_.reset();
+    this->joint_limits_.reset();
+    type_ = UNKNOWN;
+  };
+
+  friend class Link;
 };
 
 }
