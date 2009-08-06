@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+
+<robot xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor"
+       xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
+       xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface">
+
+  <!--                    Calibration                            -->
+
+  <macro name="torso_calibrator">
+    <controller type="JointCalibrationControllerNode"
+                name="cal_torso_lift" topic="cal_torso">
+      <calibrate joint="torso_lift_joint"
+                 actuator="torso_lift_motor"
+                 transmission="torso_lift_trans"
+                 velocity="-2.0" />
+      <pid p="20000.0" i="10" d="0" iClamp="1000" />
+    </controller>
+  </macro>
+
+<!-- Calibrates the torso by moving to the upper limit -->
+<macro name="torso_limit_calibrator">
+ <controller type="JointLimitCalibrationControllerNode"
+    name="cal_torso_lift" topic="cal_torso">
+   <calibrate joint="torso_lift_joint"
+              actuator="torso_lift_motor"
+              transmission="torso_lift_trans"
+              velocity="2.0" />
+   <pid p="20000" i="25" d="0" iClamp="1000" />
+ </controller>
+</macro>
+
+</robot>

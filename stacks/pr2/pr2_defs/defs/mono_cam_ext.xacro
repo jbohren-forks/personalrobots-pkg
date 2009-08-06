@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<root>
+  
+  <macro name="mono_cam_ext" params="name">
+    <ogre name="gazebo_material" reference="${name}_visual">
+      <material value="PR2/Blue" />
+    </ogre>
+    <ogre name="gazebo_material" reference="${name}_optical_visual">
+      <material value="PR2/Blue" />
+    </ogre>
+  </macro>
+
+</root>

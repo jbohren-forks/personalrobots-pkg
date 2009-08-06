@@ -44,17 +44,22 @@
         <!-- transform from link to joint frame -->
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <axis xyz="0 0 1" />
-        <limit min="${reflect*M_PI/4-1.5}"  max="${reflect*M_PI/4+1.5}"
-               effort="30" velocity="${VELOCITY_LIMIT_SCALE*3.48}" />
-
-        <safety_controller k_position="100" k_velocity="10"
-                           lower="${reflect*M_PI/4-1.5+0.15}" upper="${reflect*M_PI/4+1.5-0.15}" />
-
-        <joint_properties damping="10.0" />
         <parent name="${parent}">
           <!-- transform from parent link to this joint frame -->
           <insert_block name="origin" />
         </parent>
+        <limit lower="${reflect*M_PI/4-1.5}"  upper="${reflect*M_PI/4+1.5}"
+               effort="30" velocity="${VELOCITY_LIMIT_SCALE*3.48}" />
+
+        <joint_properties damping="10.0" />
+
+        <safety_controller k_position="100" k_velocity="10"
+                           soft_lower_limit="${reflect*M_PI/4-1.5+0.15}"
+                           soft_upper_limit="${reflect*M_PI/4+1.5-0.15}" />
+
+        <!-- joint angle when the rising or the falling flag is activated on PR2 -->
+        <calibration  reference_position="${(reflect*M_PI/4)*cal_r_shoulder_pan_gearing+cal_r_shoulder_pan_flag}" />
+
       </joint>
 
       <inertial>
@@ -68,7 +73,7 @@
       <visual name="${side}_shoulder_pan_visual">
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${side}_shoulder_pan_visual_geom">
-          <mesh filename="shoulder_yaw.stlb" />
+          <mesh filename="$(find pr2_defs)/meshes/shoulder_yaw.stl" />
         </geometry>
         <texture name="PR2/Blue" />
       </visual>
@@ -76,7 +81,7 @@
       <collision name="${side}_shoulder_pan_collision">
         <origin xyz="0.0 0 0.0" rpy="0 0 0" />
         <geometry name="${side}_shoulder_pan_collision_geom">
-          <mesh filename="convex/shoulder_yaw_convex.stlb" />
+          <mesh filename="$(find pr2_defs)/meshes/convex/shoulder_yaw_convex.stlb" />
         </geometry>
       </collision>
     </link>
@@ -88,11 +93,12 @@
         <axis xyz="0 1 0"/>
 
         <!-- Limits updated from Function's CAD values as of 2009_02_24 (link_data.xls) -->
-        <limit min="-0.5236" max="1.3963"
+        <limit lower="-0.5236" upper="1.3963"
                effort="30" velocity="${VELOCITY_LIMIT_SCALE*3.47}" />
                
         <safety_controller k_position="100" k_velocity="10"
-                           soft_min="${-0.5236+0.17}" soft_max="${1.3963-0.05}" />
+                           soft_lower="${-0.5236+0.17}" soft_upper="${1.3963-0.05}" />
+        <calibration reference_position="${cal_r_shoulder_lift_flag}" />
         <joint_properties damping="10.0" />
         <parent name="${side}_shoulder_pan_link">
           <origin xyz="0.1 0 0" rpy="0 0 0" />
@@ -110,7 +116,7 @@
       <visual name="${side}_shoulder_lift_visual">
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${side}_shoulder_lift_visual_geom">
-          <mesh filename="shoulder_lift.stlb" />
+          <mesh filename="$(find pr2_defs)/meshes/shoulder_lift.stl" />
         </geometry>
         <texture name="PR2/Grey" />
       </visual>
@@ -118,7 +124,7 @@
       <collision name="${side}_shoulder_lift_collision">
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${side}_shoulder_lift_collision_geom">
-          <mesh filename="convex/shoulder_lift_convex.stlb" />
+          <mesh filename="$(find pr2_defs)/meshes/convex/shoulder_lift_convex.stlb" />
         </geometry>
       </collision>
     </link>
@@ -133,8 +139,9 @@
         <parent name="${side}_shoulder_lift_link" >
           <origin xyz="0 0 0" rpy="0 0 0" />
         </parent>
-        <limit min="${reflect*1.55-2.35}" max="${reflect*1.55+2.35}" effort="30" velocity="${VELOCITY_LIMIT_SCALE*5.45}" />
-        <safety_controller k_position="100" k_velocity="2" lower="${reflect*1.55-2.35+0.15}" upper="${reflect*1.55+2.35-0.15}" />
+        <limit lower="${reflect*1.55-2.35}" upper="${reflect*1.55+2.35}" effort="30" velocity="${VELOCITY_LIMIT_SCALE*5.45}" />
+        <safety_controller k_position="100" k_velocity="2" soft_lower_limit="${reflect*1.55-2.35+0.15}" soft_upper_limit="${reflect*1.55+2.35-0.15}" />
+        <calibration reference_position="${(reflect*M_PI/2)*cal_r_upper_arm_roll_gearing + cal_r_upper_arm_roll_flag}" />
         <joint_properties damping="0.1" />
       </joint>
 
@@ -150,7 +157,7 @@
         <!-- TODO: This component doesn't actually have a mesh -->
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${side}_upper_arm_roll_visual_geom">
-          <mesh filename="upper_arm_roll.stlb" />
+          <mesh filename="$(find pr2_defs)/meshes/upper_arm_roll.stl" />
         </geometry>
       </visual>
       <collision name="${side}_upper_arm_roll_collision">
@@ -194,14 +201,14 @@
       <visual name="{side}_upper_arm_visual">
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${side}_upper_arm_visual_geom">
-          <mesh filename="upper_arm.stlb" />
+          <mesh filename="$(find pr2_defs)/meshes/upper_arm.stl" />
         </geometry>
       </visual>
 
       <collision name="${side}_upper_arm_collision">
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${side}_upper_arm_collision_geom">
-          <mesh filename="convex/upper_arm_convex.stlb" />
+          <mesh filename="$(find pr2_defs)/meshes/convex/upper_arm_convex.stlb" />
         </geometry>
       </collision>
 
@@ -214,8 +221,9 @@
       <joint name="${side}_elbow_flex_joint" type="revolute">
         <origin xyz="0 0 0" rpy="0 0 0" />
         <axis xyz="0 1 0" />
-        <limit min="-2.3" max="0.1" effort="30" velocity="${VELOCITY_LIMIT_SCALE*5.5}" />
-        <safety_controller k_position="100" k_velocity="3" lower="${-2.3+0.25}" upper="${0.1-0.1}" />
+        <limit lower="-2.3" upper="0.1" effort="30" velocity="${VELOCITY_LIMIT_SCALE*5.5}" />
+        <safety_controller k_position="100" k_velocity="3" soft_lower_limit="${-2.3+0.25}" soft_upper_limit="${0.1-0.1}" />
+        <calibration reference_position="${-1.1606 + cal_r_elbow_flex_flag}"/>
         <joint_properties damping="1.0" />
         <parent name="${side}_upper_arm_link">
           <origin xyz="0.4 0 0" rpy="0 0 0" />
@@ -233,14 +241,14 @@
       <visual name="${side}_elbow_flex_visual">
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${side}_elbow_flex_visual_geom">
-          <mesh filename="elbow_flex.stlb" />
+          <mesh filename="$(find pr2_defs)/meshes/elbow_flex.stl" />
         </geometry>
       </visual>
 
       <collision name="${side}_elbow_flex_collision">
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${side}_elbow_flex_collision_geom">
-          <mesh filename="convex/elbow_flex_convex.stlb" />
+          <mesh filename="$(find pr2_defs)/meshes/convex/elbow_flex_convex.stlb" />
         </geometry>
       </collision>
     </link>
@@ -248,12 +256,13 @@
     <!-- Forearm roll -->
 
     <link name="${side}_forearm_roll_link">
-      <joint name="${side}_forearm_roll_joint" type="revolute">
+      <joint name="${side}_forearm_roll_joint" type="continuous">
         <origin xyz="0 0 0" rpy="0 0 0" />
         <axis xyz="-1 0 0" />
 
         <limit effort="30" velocity="${VELOCITY_LIMIT_SCALE*6}" />
         <safety_controller k_velocity="1" />
+        <calibration reference_position="${cal_r_forearm_roll_flag}" />
 
         <joint_properties damping="0.1" />
         <parent name="${side}_elbow_flex_link">
@@ -272,7 +281,7 @@
       <visual name="${side}_forearm_roll_visual"><!-- TODO: need a mesh for this -->
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${side}_forearm_roll_visual_geom">
-          <mesh filename="forearm_roll.stlb" />
+          <mesh filename="$(find pr2_defs)/meshes/forearm_roll.stl" />
         </geometry>
       </visual>
       <collision name="${side}_forearm_roll_collision"> <!-- TODO: collision tag should be optional -->
@@ -309,14 +318,14 @@
       <visual name="${side}_forearm_visual">
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${side}_forearm_visual_geom">
-          <mesh filename="forearm.stlb" />
+          <mesh filename="$(find pr2_defs)/meshes/forearm.stl" />
         </geometry>
       </visual>
 
       <collision name="${side}_forearm_collision">
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${side}_forearm_collision_geom">
-          <mesh filename="convex/forearm_convex.stlb" />
+          <mesh filename="$(find pr2_defs)/meshes/convex/forearm_convex.stlb" />
         </geometry>
       </collision>
     </link>
@@ -327,9 +336,10 @@
       <joint name="${side}_wrist_flex_joint" type="revolute">
         <origin xyz="0 0 0" rpy="0 0 0" />
         <axis xyz="0 -1 0" />
-        <limit min="-0.1" max="2.2" effort="200" velocity="${VELOCITY_LIMIT_SCALE*5.13}" />
-        <safety_controller k_position="20" k_velocity="4" lower="${-0.1+0.2}" upper="${2.2-0.2}" />
+        <limit lower="-0.1" upper="2.2" effort="200" velocity="${VELOCITY_LIMIT_SCALE*5.13}" />
+        <safety_controller k_position="20" k_velocity="4" soft_lower_limit="${-0.1+0.2}" soft_upper_limit="${2.2-0.2}" />
         <joint_properties damping="0.1" />
+        <calibration reference_position="${0.4363+cal_r_wrist_flex_flag}" />
         <parent name="${side}_forearm_link">
           <origin xyz="0.32025 0 0" rpy="0 0 0" />
         </parent>
@@ -346,25 +356,26 @@
       <visual name="${side}_wrist_flex_visual">
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${side}_wrist_flex_visual_geom">
-          <mesh filename="wrist_flex.stlb" />
+          <mesh filename="$(find pr2_defs)/meshes/wrist_flex.stl" />
         </geometry>
       </visual>
 
       <collision name="${side}_wrist_flex_collision">
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${side}_wrist_flex_collision_geom">
-          <mesh filename="convex/wrist_flex_convex.stlb" />
+          <mesh filename="$(find pr2_defs)/meshes/convex/wrist_flex_convex.stlb" />
         </geometry>
       </collision>
     </link>
 
     <!-- Wrist roll -->
     <link name="${side}_wrist_roll_link">
-      <joint name="${side}_wrist_roll_joint" type="revolute">
+      <joint name="${side}_wrist_roll_joint" type="continuous">
         <origin xyz="0 0 0" rpy="0 0 0" />
         <axis xyz="1 0 0" />
         <limit effort="10" velocity="${VELOCITY_LIMIT_SCALE*6}" k_velocity="2" />
         <joint_properties damping="0.1" />
+        <calibration reference_position="${1.27+cal_r_wrist_roll_flag}" values="1.5 -1" />
         <parent name="${side}_wrist_flex_link">
           <origin xyz="0 0 0" rpy="0 0 0" />
         </parent>
@@ -380,7 +391,7 @@
       <visual name="${side}_wrist_roll_visual">
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${side}_wrist_roll_visual_geom">
-          <mesh filename="wrist_roll.stlb" />
+          <mesh filename="$(find pr2_defs)/meshes/wrist_roll.stl" />
         </geometry>
       </visual>
       <collision name="${side}_wrist_roll_collision">
