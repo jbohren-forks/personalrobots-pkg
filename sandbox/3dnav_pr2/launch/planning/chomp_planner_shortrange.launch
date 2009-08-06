@@ -29,10 +29,10 @@
 		<param name="collision_space/origin_z" value="-2.0" />
 		<param name="collision_space/resolution" value="0.02" />
 		
-		<param name="trajectory_duration" value="2.0"/>
-		<param name="trajectory_discretization" value="0.02"/>
+		<param name="trajectory_duration" value="4.0"/>
+		<param name="trajectory_discretization" value="0.04"/>
 		<param name="learning_rate" value="1.0" />
-		<param name="max_iterations" value="250" />
+		<param name="max_iterations" value="500" />
 		<param name="max_iterations_after_collision_free" value="100" />
 		<param name="smoothness_cost_weight" value="0.000005"/>
 		<param name="obstacle_cost_weight" value="1.0" />
