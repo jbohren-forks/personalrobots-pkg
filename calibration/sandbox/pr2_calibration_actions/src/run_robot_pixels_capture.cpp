@@ -51,7 +51,7 @@ int main(int argc, char** argv)
   config.joint_states_config.joint_names[5] = "r_elbow_flex_joint";
   config.joint_states_config.joint_names[6] = "r_forearm_roll_joint";
   config.joint_states_config.joint_names[7] = "r_wrist_flex_joint";
-  config.joint_states_config.joint_names[8] = "r_writst_roll_joint";
+  config.joint_states_config.joint_names[8] = "r_wrist_roll_joint";
 
   config.joint_states_config.tolerances.resize(9);
   config.joint_states_config.tolerances[0] = 0.0;
@@ -66,7 +66,7 @@ int main(int argc, char** argv)
 
   config.joint_states_config.padding = ros::Duration(1,0);
   config.joint_states_config.min_samples = 30;
-  config.joint_states_config.cache_size = 150;
+  config.joint_states_config.cache_size = 450;
 
   // *************************************
 

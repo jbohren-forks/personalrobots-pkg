@@ -80,6 +80,7 @@ private:
   ChannelTolerance tol_;
   ros::Duration padding_;
   unsigned int min_samples_;
+  std::string channel_name_;
 
   void syncCallback(const calibration_msgs::ImagePointStampedConstPtr& led,
                     const sensor_msgs::ImageConstPtr& led_image);

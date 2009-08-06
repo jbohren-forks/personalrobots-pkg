@@ -79,6 +79,7 @@ void JointStatesChannel::jointStatesCallback(const mechanism_msgs::JointStatesCo
   DeflatedJointStates deflated;
   deflater_.deflate(msg, deflated);
   cache_.add(deflated);
+  ROS_DEBUG("Adding to jointStates");
   need_to_process_.add(deflated);
   processElems();
 }
@@ -92,26 +93,38 @@ void JointStatesChannel::processElems()
   }
 
   // Remove the old stuff in the cache
-  if (need_to_process_.front().header.stamp > ros::Time().fromSec(padding_.toSec()))
+  if (need_to_process_.front().header.stamp < ros::Time().fromSec(padding_.toSec()))
   {
     ROS_WARN("oldest time is %.3f. Padding is %.3f. Funny stuff might happen",
              need_to_process_.front().header.stamp.toSec(), padding_.toSec());
   }
-  cache_.removeAllBeforeTime( need_to_process_.front().header.stamp - padding_);
-  SortedDeque<DeflatedJointStates>::iterator it = need_to_process_.begin();
+  cache_.removeAllBeforeTime( need_to_process_.front().header.stamp - padding_*2);
 
   vector<DeflatedJointStates> interval_elems;
-  while (it != need_to_process_.end())
+  while (need_to_process_.size() > 0)
   {
-    ros::Time start = it->header.stamp - padding_;
-    ros::Time end   = it->header.stamp + padding_;
+    const DeflatedJointStates& first = need_to_process_.front();
+
+    ros::Time start = first.header.stamp - padding_;
+    ros::Time end   = first.header.stamp + padding_;
     if (start < cache_.front().header.stamp)
-      need_to_process_.erase(it++);
+    {   
+      ROS_DEBUG("neg_padded elem is older than oldest cache elem by [%.3fs]. We can delete it",
+                (cache_.front().header.stamp - start).toSec() );
+      ROS_DEBUG("First Time:  %u, %u", first.header.stamp.sec, first.header.stamp.nsec);
+      ROS_DEBUG("cache.front: %u, %u", cache_.front().header.stamp.sec, cache_.front().header.stamp.nsec);
+      need_to_process_.pop_front();
+    }
     else
     {
+      ROS_DEBUG("Not immeadiately deleting");
       interval_elems = cache_.getSurroundingInterval(start, end);
-      if (interval_elems.back().header.stamp < end)
-        ++it;
+      if (cache_.back().header.stamp < end)
+      {
+        ROS_DEBUG("end:         %u, %u", end.sec, end.nsec);
+        ROS_DEBUG("cache.back:  %u, %u", cache_.back().header.stamp.sec, cache_.back().header.stamp.nsec);
+        break;
+      }
       else
       {
         if(interval_elems.size() >= min_samples_)
@@ -119,9 +132,13 @@ void JointStatesChannel::processElems()
           vector<double> range;
           StationaryUtils::computeChannelRange<DeflatedJointStates>(interval_elems, range);
           if (StationaryUtils::isChannelStationary(range, tol_))
-            processStationary(*it);
+	  {
+	    ROS_DEBUG("Is stationary. About to processStationary");
+            processStationary(first);
+	  }
         }
-        need_to_process_.erase(it++);
+	ROS_DEBUG("Done with this elem. About to delete it");
+        need_to_process_.pop_front();
       }
     }
   }

@@ -92,6 +92,7 @@ void RobotPixelsCapture::jointStatesCb(const DeflatedJointStates& deflated)
     stationary_joint_states_->add(deflated);
   }
 
+  ROS_INFO("Got a stationary joint state");
   searchForMatch(deflated.header.stamp);
 }
 
@@ -117,7 +118,7 @@ void RobotPixelsCapture::searchForMatch(const ros::Time& time)
     boost::mutex::scoped_lock lock(joint_states_mutex_);
     if (stationary_joint_states_->size() == 0)
     {
-      ROS_DEBUG("Haven't received data from JointStates yet");
+      ROS_INFO("Haven't received data from JointStates yet");
       return;
     }
     success = stationary_joint_states_->getClosestElem(time, joint_states);
@@ -133,7 +134,7 @@ void RobotPixelsCapture::searchForMatch(const ros::Time& time)
     {
       if (stationary_pixels_[i]->size() == 0)
       {
-        ROS_DEBUG("Haven't received data for PixelChannel[%u] yet", i);
+        ROS_INFO("Haven't received data for PixelChannel[%u] yet", i);
         return;
       }
       success = stationary_pixels_[i]->getClosestElem(time, pixel_vec[i]);
@@ -151,12 +152,19 @@ void RobotPixelsCapture::searchForMatch(const ros::Time& time)
       double time_diff = fabs((joint_states.header.stamp - pixel_vec[i].header.stamp).toSec());
       if (time_diff > joint_states_timeshift_.toSec())
       {
-        ROS_DEBUG("Difference between joint_states and PixelChannel[%u] is [%.2fs]. Bigger than [%.2fs]",
+        ROS_INFO("Difference between joint_states and PixelChannel[%u] is [%.2fs]. Bigger than [%.2fs]",
                   i, time_diff, joint_states_timeshift_.toSec());
         return;
       }
+      else
+      {
+        ROS_INFO("Difference between joint_states and PixelChannel[%u] is [%.2fs]. Smaller than [%.2fs]",
+                  i, time_diff, joint_states_timeshift_.toSec());
+      }
     }
   }
+  else
+    ROS_INFO("Ignote joint states timeshift");
 
   // Verify all cross pixel timeshifts are within bounds
   for (unsigned int i=0; i<pixel_timeshifts_.size(); i++)
@@ -165,7 +173,7 @@ void RobotPixelsCapture::searchForMatch(const ros::Time& time)
                               pixel_vec[pixel_timeshifts_[i].chan2].header.stamp).toSec() );
     if (time_diff > pixel_timeshifts_[i].max_timeshift.toSec())
     {
-      ROS_DEBUG("Difference PixelChannel[%u] & PixelChannel[%u] is [%.2fs]. Bigger than [%.2fs]",
+      ROS_INFO("Difference PixelChannel[%u] & PixelChannel[%u] is [%.2fs]. Bigger than [%.2fs]",
                 pixel_timeshifts_[i].chan1, pixel_timeshifts_[i].chan2, time_diff,
                 pixel_timeshifts_[i].max_timeshift.toSec() );
       return;
@@ -179,6 +187,8 @@ void RobotPixelsCapture::searchForMatch(const ros::Time& time)
       match_found_ = true;
       ROS_INFO("Found a match!");
     }
+    else
+      ROS_INFO("Found 'another' match!");
   }
 }
 

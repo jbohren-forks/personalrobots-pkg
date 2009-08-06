@@ -51,6 +51,7 @@ class SortedDeque : public std::deque<M>
 public:
 
   using std::deque<M>::size;
+  using std::deque<M>::front;
   using std::deque<M>::pop_front;
   using std::deque<M>::begin;
   using std::deque<M>::end;
@@ -58,6 +59,7 @@ public:
   using std::deque<M>::rend;
   using std::deque<M>::insert;
   using std::deque<M>::at;
+  using std::deque<M>::erase;
 
   SortedDeque(std::string logger = "deque") : std::deque<M>(), logger_(logger)
   {
@@ -78,14 +80,14 @@ public:
 
   void add(const M& msg)
   {
-    ROS_DEBUG(logger_.c_str(), "Called add()");
+    ROS_DEBUG("Called add()");
     ROS_DEBUG_STATS("   ");
     if (max_size_ != 0)
     {
       while (size() >= max_size_)                // Keep popping off old data until we have space for a new msg
       {
         pop_front() ;                            // The front of the deque has the oldest elem, so we can get rid of it
-        ROS_DEBUG(logger_.c_str(), "   Popping element");
+        ROS_DEBUG("   Popping element");
         ROS_DEBUG_STATS("   ");
       }
     }
@@ -99,7 +101,7 @@ public:
 
     // Add msg to the cache
     insert(rev_it.base(), msg);
-    ROS_DEBUG(logger_.c_str(), "   Done inserting");
+    ROS_DEBUG("   Done inserting");
     ROS_DEBUG_STATS("   ");
   }
 
@@ -235,15 +237,18 @@ public:
 
   void removeAllBeforeTime(const ros::Time& time)
   {
-    ROS_DEBUG(logger_.c_str(), "Called removeAllBeforeTime()");
+    ROS_DEBUG("Called removeAllBeforeTime()");
+    ROS_DEBUG("   Erasing all elems before time: %u %u", time.sec, time.nsec);
     typename std::deque<M>::iterator it = begin();
 
-    while (it != end() && getStamp(*it) < time)
+    while (size() > 0 && getStamp(front()) < time)
     {
-      erase(it++);
-      ROS_DEBUG(logger_.c_str(), "   Erased an elem");
+      ROS_DEBUG("   Erasing elem at time: %u, %u", getStamp(front()).sec, getStamp(front()).nsec);
+      pop_front();
+      ROS_DEBUG("   Erased an elem");
       ROS_DEBUG_STATS("   ");
     }
+    ROS_DEBUG("   Done erasing elems");
   }
 
   static const ros::Time& getPtrStamp(const M& m)
@@ -274,7 +279,7 @@ private:
 
   inline void ROS_DEBUG_STATS(const std::string& prefix)
   {
-    ROS_DEBUG(logger_.c_str(), "%sdeque.size(): %u   max_size: %u", prefix.c_str(), size(), max_size_);
+    ROS_DEBUG("%sdeque.size(): %u   max_size: %u", prefix.c_str(), size(), max_size_);
   }
 };
 
