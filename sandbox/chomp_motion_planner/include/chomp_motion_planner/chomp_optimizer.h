@@ -97,6 +97,7 @@ private:
   Eigen::MatrixXd group_trajectory_backup_;
 
   std::vector<int> state_is_in_collision_;      /**< Array containing a boolean about collision info for each point in the trajectory */
+  std::vector<std::vector<int> > point_is_in_collision_;
   bool is_collision_free_;
 
   Eigen::MatrixXd smoothness_increments_;

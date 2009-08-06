@@ -36,7 +36,7 @@
 
 #include <chomp_motion_planner/chomp_cost_server.h>
 
-#define ANIMATE 1
+//#define ANIMATE 1
 
 namespace chomp
 {
@@ -122,12 +122,6 @@ namespace chomp
 #ifdef ANIMATE
     visualization_msgs::MarkerArray msg;
     msg.markers.resize(num_collision_points);
-    for (int i=0; i<num_collision_points; i++)
-    {
-      msg.markers[i].action = visualization_msgs::Marker::DELETE;
-    }
-    vis_marker_array_publisher_.publish(msg);
-    ros::WallDuration(0.1).sleep();
     int i=0;
     for (unsigned int l=0; l<request.links.size(); ++l)
     {
