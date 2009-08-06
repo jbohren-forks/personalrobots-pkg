@@ -276,6 +276,7 @@ StereoData::StereoData()
   wbuf = NULL;
   rbuf = NULL;
   lbuf = NULL;
+  maxyim = maxxim = maxdlen = maxcorr = 0;
 
   // nominal values
   imWidth = 640;
@@ -534,12 +535,16 @@ StereoData::doDisparity(stereo_algorithm_t alg)
   if (!imDisp)
     imDisp = (int16_t *)MEMALIGN(xim*yim*2);
 
-  if (!buf)
+  if (!buf || yim*dlen*(corr+5) > maxyim*maxdlen*(maxcorr+5))
     buf  = (uint8_t *)MEMALIGN(yim*2*dlen*(corr+5)); // local storage for the algorithm
-  if (!flim)
+  if (!flim || xim*yim > maxxim*maxyim)
     flim = (uint8_t *)MEMALIGN(xim*yim); // feature image
-  if (!frim)
+  if (!frim || xim*yim > maxxim*maxyim)
     frim = (uint8_t *)MEMALIGN(xim*yim); // feature image
+  if (xim > maxxim) maxxim = xim;
+  if (yim > maxyim) maxyim = yim;
+  if (dlen > maxdlen) maxdlen = dlen;
+  if (corr > maxcorr) maxcorr = corr;
 
   // prefilter
   do_prefilter(lim, flim, xim, yim, ftzero, buf);
