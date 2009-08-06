@@ -13,7 +13,7 @@
 #include "forearm_cam/ipcam_packet.h"
 
 /// Amount of time in microseconds that the host should wait for packet replies
-#define STD_REPLY_TIMEOUT SEC_TO_USEC(0.2)
+#define STD_REPLY_TIMEOUT SEC_TO_USEC(0.5)
 #define STOP_REPLY_TIMEOUT SEC_TO_USEC(0.001)
 
 #define VMODEDEF(width, height, fps, hblank, vblank) { #width"x"#height"x"#fps, width, height, fps, hblank, vblank }  
@@ -515,9 +515,6 @@ int fcamConfigure( IpCamList *camInfo, const char *ipAddress, unsigned wait_us) 
 
 	cPkt.ser_no = htonl(camInfo->serial);
 
-	struct in_addr newIP;
-	inet_aton(ipAddress, &newIP);
-	cPkt.ip_addr = newIP.s_addr;
 
 
 	// Create and send the Configure broadcast packet. It is sent broadcast
@@ -531,16 +528,33 @@ int fcamConfigure( IpCamList *camInfo, const char *ipAddress, unsigned wait_us) 
 		perror("fcamConfigure socket creation failed");
 		return -1;
 	}
+	
+  if (!ipAddress)
+  {
+    cPkt.ip_addr = camInfo->ip;
+    
+    if(wgSendUDP(s, &camInfo->ip, &cPkt, sizeof(cPkt)) == -1) {
+      debug("Unable to send packet\n");
+      close(s);
+      return -1;
+    }
+  }
+  else
+  {
+    struct in_addr newIP;
+    inet_aton(ipAddress, &newIP);
+    cPkt.ip_addr = newIP.s_addr;
 
-	if(wgSendUDPBcast(s, camInfo->ifName, &cPkt, sizeof(cPkt)) == -1) {
-	  debug("Unable to send broadcast\n");
-    close(s);
-		return -1;
-	}
+    if(wgSendUDPBcast(s, camInfo->ifName, &cPkt, sizeof(cPkt)) == -1) {
+      debug("Unable to send broadcast\n");
+      close(s);
+      return -1;
+    }
+  }
 
 
 	// 'Connect' insures we will only receive datagram replies from the camera's new IP
-	IPAddress camIP = newIP.s_addr;
+	IPAddress camIP = cPkt.ip_addr;
 	if( wgSocketConnect(s, &camIP) ) {
     close(s);
 		return -1;
@@ -873,6 +887,8 @@ int fcamReliableFlashRead( const IpCamList *camInfo, uint32_t address, uint8_t *
 
     if (!retval)
       return 0;
+
+    debug("Flash read failed.");
   }
 
   return retval;
@@ -979,6 +995,7 @@ int fcamReliableFlashWrite( const IpCamList *camInfo, uint32_t address, const ui
     retval = fcamFlashWrite( camInfo, address, pageDataIn );
     if (retval)
     {
+      debug("Failed write, retries left: %i.", *retries);
       //printf("Failed compare write.\n");
       continue;
     }
@@ -986,12 +1003,14 @@ int fcamReliableFlashWrite( const IpCamList *camInfo, uint32_t address, const ui
     retval = fcamReliableFlashRead( camInfo, address, buffer, retries );
     if (retval)
     {
+      debug("Failed compare read.");
       //printf("Failed compare read.\n");
       continue;
     }
 
     if (!memcmp(buffer, pageDataIn, FLASH_PAGE_SIZE))
       return 0;
+    debug("Failed compare.");
     //printf("Failed compare.\n");
     
     if (*retries == 0) // In case retries ran out during the read.
@@ -1822,7 +1841,7 @@ int fcamVidReceiveAuto( IpCamList *camera, size_t height, size_t width, FrameHan
 		return 1;
 	}
 
-	debug("fcamVidReceive ready to receive on %s (%s:%u)\n", ifName, inet_ntoa(localIp), port);
+	debug("fcamVidReceive ready to receive on %s (%s:%u)\n", camera->ifName, inet_ntoa(localIp), port);
 
   s = wgSocketCreate( &localIp, 0 );
 	if( s == -1 ) {

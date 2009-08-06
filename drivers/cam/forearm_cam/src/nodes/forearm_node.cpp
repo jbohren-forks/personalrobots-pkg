@@ -199,7 +199,6 @@ private:
   ros::ServiceServer config_bord_service_;
 
   // Video mode
-
   int video_mode_;
   int width_;
   int height_;
@@ -225,6 +224,7 @@ private:
   // Camera information
   std::string hwinfo_;
   IpCamList camera_;
+  double last_camera_ok_time_;
 
   // Trigger information
   std::string trig_controller_cmd_;
@@ -249,6 +249,7 @@ public:
 //    fcamCamListInit(&camList);
     
     // Clear statistics
+    last_camera_ok_time_ = 0;
     last_image_time_ = 0;
     missed_line_count_ = 0;
     missed_eof_count_ = 0;
@@ -321,14 +322,24 @@ public:
       ROS_WARN("rmem_max is %i. Buffer overflows and packet loss may occur. Minimum recommended value is 20000000. Updates may not take effect until the driver is restarted. See http://pr.willowgarage.com/wiki/errors/Dropped_Frames_and_rmem_max for details.", rmem_max_);
     }
 
-    const char *errmsg;
-    int findResult = fcamFindByUrl(config_.camera_url.c_str(), &camera_, SEC_TO_USEC(0.2), &errmsg);
+    double thresh_time = ros::Time::now().toSec() - 10;
+    double last_time = last_image_time_ < last_camera_ok_time_ ? 
+      last_camera_ok_time_ : last_image_time_;
+    if (last_time < thresh_time)
+    { // Haven't heard from the camera in a while, redo discovery.
+      ROS_DEBUG("Redoing discovery.");
+      const char *errmsg;
+      int findResult = fcamFindByUrl(config_.camera_url.c_str(), &camera_, SEC_TO_USEC(0.2), &errmsg);
 
-    if (findResult)
-    {
-      ROS_ERROR("Matching URL %s : %s", config_.camera_url.c_str(), errmsg);
-      return;
+      if (findResult)
+      {
+        ROS_ERROR("Matching URL %s : %s", config_.camera_url.c_str(), errmsg);
+        return;
+      }
+      retval = fcamConfigure(&camera_, camera_.ip_str, SEC_TO_USEC(0.5));
     }
+    else
+      retval = fcamConfigure(&camera_, NULL, SEC_TO_USEC(0.5));
 
     retval = fcamConfigure(&camera_, camera_.ip_str, SEC_TO_USEC(0.5));
     if (retval != 0) {
@@ -453,6 +464,7 @@ public:
     config_bord_service_ = node_handle_.advertiseService("~board_config", &ForearmCamDriver::boardConfig, this);
     
     state_ = OPENED;
+    last_camera_ok_time_ = ros::Time::now().toSec(); // If we get here we are communicating with the camera well.
   }
 
   void doClose()
@@ -562,7 +574,7 @@ private:
     
     fcamVidReceiveAuto( &camera_, height_, width_, &ForearmCamDriver::frameHandler, this);
     
-    // Stop Triggering
+    /*// Stop Triggering
     if (!trig_controller_cmd_.empty())
     {   
       ROS_DEBUG("Stopping triggering.");
@@ -575,7 +587,7 @@ private:
         // so we don't really care.
         ROS_DEBUG("Was not able to stop triggering.");
       }
-    }
+    }  */
 /*stop_video:
     // Stop video
     boost::mutex::scoped_lock lock(mutex_);
