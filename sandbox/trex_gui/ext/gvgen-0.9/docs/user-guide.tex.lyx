@@ -1,0 +1,138 @@
+#LyX 1.5.1 created this file. For more info see http://www.lyx.org/
+\lyxformat 276
+\begin_document
+\begin_header
+\textclass article
+\language english
+\inputencoding auto
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_default_family default
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+\graphics default
+\paperfontsize default
+\papersize default
+\use_geometry false
+\use_amsmath 1
+\use_esint 1
+\cite_engine basic
+\use_bibtopic false
+\paperorientation portrait
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\defskip medskip
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\author "" 
+\end_header
+
+\begin_body
+
+\begin_layout Title
+GvGen User Documentation
+\end_layout
+
+\begin_layout Author
+Sebastien Tricaud
+\end_layout
+
+\begin_layout Section*
+Introduction
+\end_layout
+
+\begin_layout Standard
+GvGen is a python class to produce dot language for easy scripting.
+ It is not a replacement for existing Graphviz bindings, but a dot language
+ generator, that you must then process with graphviz tools to get you graph
+ as a pixmap.
+\end_layout
+
+\begin_layout Section*
+Getting started
+\end_layout
+
+\begin_layout Standard
+First of all, you must get the latest stable release from INL software repositor
+y
+\begin_inset Foot
+status open
+
+\begin_layout Standard
+http://software.inl.fr/releases/GvGen/
+\end_layout
+
+\end_inset
+
+.
+ After that you need to uncompress the file and install it:
+\end_layout
+
+\begin_layout LyX-Code
+$ tar xfz gvgen-1.0.tar.gz
+\end_layout
+
+\begin_layout LyX-Code
+$ cd gvgen-1.0
+\end_layout
+
+\begin_layout LyX-Code
+# python ./setup.py install
+\end_layout
+
+\begin_layout Standard
+Congratulations! You can now start using GvGen.
+ To test if you installation is working, you can run the following:
+\end_layout
+
+\begin_layout LyX-Code
+$ python
+\end_layout
+
+\begin_layout LyX-Code
+>>> import gvgen 
+\end_layout
+
+\begin_layout LyX-Code
+>>> graph = gvgen.GvGen() 
+\end_layout
+
+\begin_layout LyX-Code
+>>> graph.dot()
+\end_layout
+
+\begin_layout LyX-Code
+digraph G { 
+\end_layout
+
+\begin_layout LyX-Code
+} 
+\end_layout
+
+\begin_layout LyX-Code
+>>>
+\end_layout
+
+\begin_layout Standard
+As you can see, the output 
+\begin_inset Quotes eld
+\end_inset
+
+digraph G { }
+\begin_inset Quotes erd
+\end_inset
+
+ acknowledges the fact GvGen is working, we can now move on and start using
+ it.
+\end_layout
+
+\end_body
+\end_document

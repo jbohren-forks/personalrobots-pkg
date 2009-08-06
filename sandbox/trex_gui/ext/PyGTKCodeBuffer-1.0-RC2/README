@@ -1,0 +1,26 @@
+
+    === PyGTKCodeBuffer is a lightweight syntax-highlighting engine ===
+    === depending only on PyGTK!                                    ===
+    
+    
+    
+About:
+    PyGTKCodeBuffer is written in pure Python to provide a maximum portability. 
+    It depends only on PyGTK and the Python standard library. No Gnome nor 
+    Scintilla libraries are needed it should run perfectly under all platforms
+    supported by PyGTK! 
+
+
+Usage:
+    To keep this project lightweight the PyGTKCodeBuffer only provides you a 
+    model/buffer for code-viewing/editing. To view a code-buffer simply use the
+    default gtk.TextView widget. This buffer provides you a simple way to build
+    a editor with syntax-highlight support.   
+    
+    All the code for PyGTKCodeBuffer is located in one source-file to allow you
+    to ship PyGTKCodeBuffer along with your application so your costumers do not
+    have to care about having PyGTKCodeBuffer installed. 
+    Note: In this case you have to tell PyGTKCodeBuffer where to find the 
+          syntax-definitions. Or you "hard-code" the language-grammar.
+          
+    

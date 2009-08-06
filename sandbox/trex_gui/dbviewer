@@ -1,0 +1,816 @@
+#!/usr/bin/env python
+##############################################################################
+# dbviewer
+# This program allows a user to view and search a EUROPA token network.
+##############################################################################
+
+import sys
+import csv
+import copy
+import re
+import os
+import StringIO
+
+import gtk
+import gtk.gdk
+
+# Add local python path
+sys.path.insert(0, os.path.abspath("./ext"))
+
+# GvGen for generating graphviz dot files
+from gvgen import *
+
+# XDot for rendering graphviz dot files
+import xdot
+
+# GTKCodeBuffer for doing syntax hilighting for NDDL file display
+from gtkcodebuffer import CodeBuffer, SyntaxLoader, add_syntax_path
+
+# Initialize dictionaries
+slots = {}
+tokens = {}
+rules = {}
+vars = {}
+rule_src = {}
+
+# Gui dictionaries
+prop_windows = {}
+srccode_windows = {}
+search_window = None
+step_window = None
+window = {}
+
+# Graph structures
+graph = GvGen() 
+
+# Global status
+output_path = ""
+tick = 0
+
+# Precompiled regex
+number_bound_regex = re.compile("\[*([^\]]+)\]*")
+
+##############################################################################
+# MyDotWindow
+#   This window allows the user to browse and interact with the token network.
+##############################################################################
+
+class MyDotWindow(xdot.DotWindow):
+  def __init__(self):
+    xdot.DotWindow.__init__(self)
+    self.set_title("EUROPA DbViewer")
+    self.widget.connect('clicked', self.on_node_clicked)
+    self.set_size_request(1500,500)
+    self.set_position(gtk.WIN_POS_CENTER)
+
+  def on_node_clicked(self, widget, userdata, event):
+    if prop_windows.has_key(userdata):
+      prop_win = prop_windows[userdata]
+      prop_win.present()	
+    else:
+      prop_win = PropertyWindow(userdata)
+      prop_windows[userdata] = prop_win
+      prop_win.show()
+
+    return True
+
+##############################################################################
+# SrccodeWindow
+#   This window provides a user with a source code view.
+##############################################################################
+
+class SrccodeWindow(gtk.Window):
+  def __init__(self,rule_name):
+    super(SrccodeWindow,self).__init__()
+
+    # Store the rule name
+    self.rule_name = rule_name
+
+    # Create the syntax hilighter and code buffer
+    lang = SyntaxLoader("cpp")
+    buff = CodeBuffer(lang=lang)
+
+    scr = gtk.ScrolledWindow()
+    self.add(scr)
+    scr.add(gtk.TextView(buff))
+	    
+    # Get the source file path, and start line
+    src_path = rule_src[rule_name][0]
+    src_line_start = int(rule_src[rule_name][1])-1
+
+    # Open the source file
+    src_file = open(src_path,'r')
+    src_file_lines = src_file.readlines()
+    src_line_end = len(src_file_lines)
+    
+    # Find the line on which the next rule is defined
+    for line in range(src_line_start+1,len(src_file_lines)):
+      if src_file_lines[line].find("::") != -1:
+	src_line_end = line;
+	break
+
+    # Display the source code of just this rule
+    srccode = "".join(src_file_lines[src_line_start:src_line_end])
+
+    buff.set_text(srccode)
+    self.set_title(src_path)
+    self.set_default_size(400,400)
+    self.set_position(gtk.WIN_POS_CENTER)
+
+    self.connect("destroy", self.on_destroy)
+
+    self.show_all()
+
+  def on_destroy(self,widget):
+    del srccode_windows[self.rule_name]
+
+##############################################################################
+# PropertyWindow
+#   This window provides a user with a list of token or rule variables.
+#   If available, it has a button which will spawn a code view window with
+#   the source code that produced this rule or token.
+##############################################################################
+
+class PropertyWindow(gtk.Window):
+  def __init__(self,userdata):
+    super(PropertyWindow,self).__init__()
+
+    self.userdata = userdata
+    self.key = 0
+
+    self.set_size_request(500, 400)
+    self.set_position(gtk.WIN_POS_CENTER)
+
+    self.connect("destroy", self.on_destroy)
+
+    self.entity_type = (userdata.split(':')[0])
+    self.key = int(userdata.split(':')[1])
+
+    if self.entity_type == "Token":
+      self.entity = tokens[self.key]
+    else:
+      self.entity = rules[self.key]
+
+    self.set_title(str(self.entity))
+    vbox = gtk.VBox(False, 8)
+
+    sw = gtk.ScrolledWindow()
+    sw.set_shadow_type(gtk.SHADOW_ETCHED_IN)
+    sw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+
+    vbox.pack_start(sw, True, True, 0)
+
+    store = self.create_model()
+
+    treeView = gtk.TreeView(store)
+    treeView.connect("row-activated", self.on_activated)
+    treeView.set_rules_hint(True)
+    sw.add(treeView)
+
+    self.create_columns(treeView)
+
+    ###################################################
+    hbox = gtk.HBox(False, 8)
+    srccode_but = gtk.Button("View NDDL Source")
+    srccode_but.connect("clicked",self.on_srccode_clicked)
+
+    if not rule_src.has_key(self.entity.name):
+      srccode_but.set_sensitive(False)
+
+    hbox.pack_start(srccode_but, False, False, 0)
+    vbox.pack_start(hbox, False, False, 0)
+    ###################################################
+
+    self.statusbar = gtk.Statusbar()
+    vbox.pack_start(self.statusbar, False, False, 0)
+
+    self.add(vbox)
+    self.show_all()
+
+  def on_destroy(self,widget):
+    del prop_windows[self.userdata]
+
+  def create_model(self):
+    store = gtk.ListStore(str, str, str, str)
+
+    for vid in self.entity.vars:
+      var = vars[vid]
+      store.append([ vid, var.type, var.name, var.values])
+    return store
+
+  def create_columns(self, treeView):
+    rendererText = gtk.CellRendererText()
+    column = gtk.TreeViewColumn("Key", rendererText, text=0)
+    column.set_sort_column_id(0)    
+    treeView.append_column(column)
+    
+    rendererText = gtk.CellRendererText()
+    column = gtk.TreeViewColumn("Type", rendererText, text=1)
+    column.set_sort_column_id(1)
+    treeView.append_column(column)
+
+    rendererText = gtk.CellRendererText()
+    column = gtk.TreeViewColumn("Name", rendererText, text=2)
+    column.set_sort_column_id(2)
+    treeView.append_column(column)
+
+    rendererText = gtk.CellRendererText()
+    column = gtk.TreeViewColumn("Value", rendererText, text=3)
+    column.set_sort_column_id(3)
+    treeView.append_column(column)
+
+  def on_activated(self, widget, row, col):
+    model = widget.get_model()
+    text = model[row][0] + ", " + model[row][1] + ", " + model[row][2]
+    self.statusbar.push(0, text)
+
+  def on_srccode_clicked(self, widget):
+    if srccode_windows.has_key(self.entity.name):
+      srccode_win = srccode_windows[self.entity.name]
+      srccode_win.present()	
+    else:
+      srccode_win = SrccodeWindow(self.entity.name)
+      srccode_windows[self.entity.name] = srccode_win
+      srccode_win.show()
+
+##############################################################################
+# SearchWindow
+#   This window provides a user with a search field that can be used to either
+#   string or regex match across the graph.
+##############################################################################
+
+class SearchWindow(gtk.Window):
+  def __init__(self):
+    super(SearchWindow, self).__init__()
+    self.set_title("Search")
+    self.set_size_request(400, 50)
+    #self.set_position(gtk.WIN_POS_CENTER)
+
+    vbox = gtk.VBox(False, 8)
+
+    ################################################
+    self.search_entry = gtk.Entry()
+    self.search_entry.set_activates_default(True)
+    search_but = gtk.Button("String")
+    search_but.set_flags(gtk.CAN_DEFAULT)
+    self.set_default(search_but)
+
+    search_regex_but = gtk.Button("REGEX")
+    search_regex_but.set_flags(gtk.CAN_DEFAULT)
+
+    search_but.connect("clicked",self.search_string)
+    search_regex_but.connect("clicked",self.search_regex)
+    
+    search_hbox = gtk.HBox(False,4)
+    search_hbox.pack_start(self.search_entry, True, True, 0)
+
+    search_hbox.pack_end(search_but, False, False, 0)
+    search_hbox.pack_end(search_regex_but, False, False, 0)
+
+    vbox.pack_start(search_hbox, False, False, 4)
+    
+    ################################################
+    timeline_check = gtk.CheckButton("Timelines")
+    token_check = gtk.CheckButton("Tokens")
+    rule_check = gtk.CheckButton("Rules")
+    variable_check = gtk.CheckButton("Variables")
+
+    timeline_check.connect("clicked",self.toggle_timeline)
+    token_check.connect("clicked",self.toggle_timeline)
+    rule_check.connect("clicked",self.toggle_timeline)
+    variable_check.connect("clicked",self.toggle_timeline)
+
+    scope_frame = gtk.Frame("Scope")
+
+    scope_vbox = gtk.HBox(True,2)
+
+    scope_vbox.pack_end(timeline_check,False,False,0)
+    scope_vbox.pack_end(token_check,False,False,0)
+    scope_vbox.pack_end(rule_check,False,False,0)
+    scope_vbox.pack_end(variable_check,False,False,0)
+
+    scope_frame.add(scope_vbox)
+    #vbox.pack_start(scope_frame,False,False,0)
+    #################################################
+
+    self.add(vbox)
+
+    self.connect("destroy", self.on_destroy)
+    self.show_all()
+  
+  def on_destroy(self,widget):
+    # If we don't make a new one here, you can't anywhere else
+    search_window = SearchWindow()
+
+  def toggle_timeline(self, widget):
+    search_timeline = widget.get_active()
+
+  def toggle_token(self, widget):
+    search_token = widget.get_active()
+
+  def toggle_rule(self, widget):
+    search_rule = widget.get_active()
+
+  def toggle_variable(self, widget):
+    search_variable = widget.get_active()
+
+  def search_string(self, widget):
+    # Crete a string stream
+    dotfile = StringIO.StringIO()
+
+    # Search the graph
+    search_graph(dotfile,search=self.search_entry.get_text())
+
+    # Set the dotcode
+    window.set_dotcode(dotfile.getvalue())
+
+    # Close the string stream
+    dotfile.close()
+
+  def search_regex(self, widget):
+    # Compile the regular expression
+    try:
+      regex = re.compile(self.search_entry.get_text())
+    except:
+      print "ERROR: Cound not parse regular expression: \"%s\"" % self.search_entry.get_text()
+      return
+
+    # Crete a string stream
+    dotfile = StringIO.StringIO()
+
+    # Search the graph
+    search_graph(dotfile,regex=regex)
+
+    # Set the dotcode
+    window.set_dotcode(dotfile.getvalue())
+
+    # Close the string stream
+    dotfile.close()
+
+##############################################################################
+# StepWindow
+#   This window provides a user with controls to step to any tick and re-run
+#   the data loader.
+##############################################################################
+
+class StepWindow(gtk.Window):
+  def __init__(self):
+    super(StepWindow, self).__init__()
+    self.set_title("Step")
+    self.set_size_request(400, 50)
+    #self.set_position(gtk.WIN_POS_CENTER)
+
+    vbox = gtk.VBox(False, 8)
+
+    ################################################
+    self.tick_entry = gtk.Entry()
+    self.tick_entry.set_activates_default(True)
+    self.tick_entry.set_text(str(tick))
+    go_but = gtk.Button("Go!")
+    go_but.set_flags(gtk.CAN_DEFAULT)
+    self.set_default(go_but)
+    go_but.connect("clicked",self.go_tick)
+
+    search_regex_but = gtk.Button("REGEX")
+    fw_but = gtk.Button("Forward >>")
+    bk_but = gtk.Button("<< Back")
+
+    fw_but.connect("clicked",self.step_forward)
+    bk_but.connect("clicked",self.step_back)
+    
+    search_hbox = gtk.HBox(False,4)
+
+    search_hbox.pack_end(fw_but, False, False, 0)
+    search_hbox.pack_end(bk_but, False, False, 0)
+    search_hbox.pack_end(go_but, False, False, 0)
+    search_hbox.pack_end(self.tick_entry, True, True, 0)
+
+    vbox.pack_start(search_hbox, False, False, 4)
+    
+    ################################################
+
+    self.add(vbox)
+
+    self.connect("destroy", self.on_destroy)
+    self.show_all()
+
+  def on_destroy(self,widget):
+    # If we don't make a new one here, you can't anywhere else
+    search_window = StepWindow()
+
+  def go_tick(self, widget):
+    global tick
+    tick = int(self.tick_entry.get_text())
+    run()
+
+  def step_forward(self, widget):
+    global tick
+    tick = tick + 1
+    self.tick_entry.set_text(str(tick))
+    run()
+
+  def step_back(self, widget):
+    global tick
+    tick = tick - 1
+    self.tick_entry.set_text(str(tick))
+    run()
+
+##############################################################################
+# Model Classes
+#   These are used to represent the different entities inside of EUROPA
+##############################################################################
+
+class Variable():
+  def __init__(self,key, token, name, domain, values, type):
+    self.key = key
+    self.token = token 
+    self.name = name 
+    self.domain = domain
+    self.values = values 
+    self.type = type
+
+  def __str__(self):
+    return "%s = %s (%s)" % (self.name, self.values, self.key)
+
+  def matches(self,search=None,regex=None):
+    if search:
+      return str(self).find(search) != -1
+    if regex:
+      match = False
+      match = match or regex.match(self.name)
+      match = match or regex.match(str(self.token))
+      match = match or regex.match(self.values)
+      return match
+
+class Slot():
+  def __init__(self,id,tokens = []):
+    self.id = id
+    self.tokens = tokens
+
+    self.node = None
+
+  def __str__(self):
+    return "Slot (%d)" % (self.id)
+
+class Token():
+  def __init__(self,key,slot_id,name,start_key,end_key,slot_index,token_vars):
+    self.key = key
+    self.name = name
+    self.slot_id = slot_id
+    self.slot_index = slot_index
+    self.start_key = start_key
+    self.end_key = end_key
+
+    self.node = None
+    self.vars = token_vars
+
+  def __str__(self):
+    return "%s (%d)" % (self.name, self.key)
+
+  def matches(self,search=None,regex=None):
+    if search:
+      return str(self).find(search) != -1
+    if regex:
+      match = False
+      match = match or regex.match(self.name)
+      match = match or regex.match(str(self.key))
+      return match
+
+class Rule():
+  def __init__(self,key,name,token,filename,line,slaves=[],vars=[]):
+    self.key = key
+    self.name = name
+    self.token = token
+    self.slaves = slaves
+    self.vars = vars
+    self.filename = filename
+    self.line = line
+
+    self.node = None
+
+  def __str__(self):
+    return "%s (%d)" % (self.name, self.key)
+
+  def matches(self,search=None,regex=None):
+    if search:
+      return str(self).find(search) != -1
+    if regex:
+      match = False
+      match = match or regex.match(self.name)
+      match = match or regex.match(str(self.key))
+      match = match or regex.match(str(self.token))
+      return match
+
+##############################################################################
+# Hilight Functions
+#   These set a given entity a style based on it's properties
+##############################################################################
+
+def hilight_token(tid):
+  graph.styleApply("TokenHilight", tokens[tid].node)
+
+def lolight_token(tid):
+  global tick
+  if tokens[tid].slot_id != -1:
+    if tokens[tid].slot_index == 0:
+      graph.styleApply("Token", tokens[tid].node)
+    else:
+      graph.styleApply("MergedToken", tokens[tid].node)
+  else:
+    graph.styleApply("InactiveToken", tokens[tid].node)
+
+  start_bounds = number_bound_regex.findall(vars[tokens[tid].start_key].values)
+  bounds = start_bounds[0].split(" ")
+
+  if float(bounds[0]) > tick and (not len(bounds) == 1 and float(bounds[1]) > tick):
+    graph.styleApply("PlannedToken", tokens[tid].node)
+
+def hilight_rule(rid):
+  graph.styleApply("RuleHilight", rules[rid].node)
+
+def lolight_rule(rid):
+  graph.styleApply("Rule", rules[rid].node)
+
+##############################################################################
+# Graph Functions
+# 
+# hilight_graph(search=None,regex=None)
+#   This iterates over all tokens anr rules, and applies the correct styles
+#   to both of them, based on search criterion and object properties.
+#   This accesses the global graph. Styles can be applied and re-applied in
+#   GvGen without having to create a new graph
+#
+# search_graph(dotfile,search=None,regex=None)
+#   This calls hilight_graph with the given search criteria, and then performs
+#   a deep copy on the graph for generating a dot file.
+#   Note that when GvGen creates a dotfile, it is actually destructive to the
+#   internal structure of the graph.
+#   "dotfile" is a file handle or virtual file handle to which the dotcode is
+#   to be written.
+# 
+# populate_graph(dotfile)
+#   This iterates over all structures that model the EUROPA db and
+#   instantiates node in the GvGen graph for them. It then calls search_graph
+#   with no search criterion and the dotfile handle that was passed to it.
+#
+# define_graph_styles()
+#   This defines all of the relevant styles used by hilight_graph and
+#   populate graph. It accesses the global GvGen graph.
+##############################################################################
+
+def hilight_graph(search=None,regex=None):
+  # Search over tokens
+  for tid in tokens:
+    if (search and search != "" and tokens[tid].matches(search=search)) or (regex and regex != "" and tokens[tid].matches(regex=regex)):
+      hilight_token(tid)
+    else:
+      lolight_token(tid)
+
+      # Search token variables
+      for vid in tokens[tid].vars:
+	if (search and search != "" and vars[vid].matches(search=search)) or (regex and regex != "" and vars[vid].matches(regex=regex)):
+	  hilight_token(tid)
+
+  # Search over rules
+  for rid in rules:
+    if (search and rules[rid].matches(search=search)) or (regex and rules[rid].matches(regex=regex)):
+      hilight_rule(rid)
+    else:
+      lolight_rule(rid)
+
+def search_graph(dotfile,search=None,regex=None):
+  hilight_graph(search,regex)
+
+  # Copy the graph for drawing
+  graph_to_draw = copy.deepcopy(graph)
+
+  # Generate dotfile
+  graph_to_draw.dot(dotfile)
+
+def populate_graph(dotfile):
+  for sid in slots:
+    if sid != -1:
+      slots[sid].node = graph.newItem(slots[sid]);
+      graph.styleApply("Slot", slots[sid].node)
+
+  for tid in tokens:
+    if tokens[tid].slot_id != -1:
+      tokens[tid].node = graph.newItem(tokens[tid],slots[tokens[tid].slot_id].node);
+    else:
+      tokens[tid].node = graph.newItem(tokens[tid]);
+
+    # Set the user data to link up clickthroughs
+    graph.propertyAppend(tokens[tid].node,"URL","Token:%d" % tid)
+
+  for rid in rules:
+    rules[rid].node = graph.newItem(rules[rid]);
+    graph.newLink(tokens[rules[rid].token].node,rules[rid].node)
+    for tid in rules[rid].slaves:
+      graph.newLink(rules[rid].node,tokens[tid].node)
+
+    # Set the user data to link up clickthroughs
+    graph.propertyAppend(rules[rid].node,"URL","Rule:%d" % rid)
+
+  # Generate the GvGen graph
+  search_graph(dotfile)
+
+def define_graph_styles():
+  graph.styleAppend("Token", "shape", "rectangle")
+  graph.styleAppend("Token", "style", "filled")
+  graph.styleAppend("Token", "fillcolor", "#EEEEEE")
+
+  graph.styleAppend("TokenHilight", "shape", "rectangle")
+  graph.styleAppend("TokenHilight", "style", "filled")
+  graph.styleAppend("TokenHilight", "color", "#8F5E03")
+  graph.styleAppend("TokenHilight", "fillcolor", "#FFB223")
+  graph.styleAppend("TokenHilight", "fontcolor", "#000000")
+
+  graph.styleAppend("PlannedToken", "shape", "rectangle")
+  graph.styleAppend("PlannedToken", "style", "filled")
+  graph.styleAppend("PlannedToken", "fillcolor", "#666666")
+  graph.styleAppend("PlannedToken", "fontcolor", "#CCCCCC")
+
+  graph.styleAppend("MergedToken", "shape", "rectangle")
+  graph.styleAppend("MergedToken", "style", "filled")
+  graph.styleAppend("MergedToken", "fillcolor", "#CCCCCC")
+  graph.styleAppend("MergedToken", "fontcolor", "#444444")
+
+  graph.styleAppend("InactiveToken", "shape", "rectangle")
+  graph.styleAppend("InactiveToken", "style", "filled")
+  graph.styleAppend("InactiveToken", "fillcolor", "#FFFFFF")
+  graph.styleAppend("InactiveToken", "fontcolor", "#444444")
+
+  graph.styleAppend("Rule", "shape", "diamond")
+  graph.styleAppend("Rule", "style", "rounded,filled")
+  graph.styleAppend("Rule", "fillcolor", "#95AEBC")
+  graph.styleAppend("Rule", "color", "#476170")
+
+  graph.styleAppend("RuleHilight", "shape", "diamond")
+  graph.styleAppend("RuleHilight", "style", "rounded,filled")
+  graph.styleAppend("RuleHilight", "color", "#8F5E03")
+  graph.styleAppend("RuleHilight", "fillcolor", "#FFB223")
+  graph.styleAppend("RuleHilight", "fontcolor", "#000000")
+
+  graph.styleAppend("Slot", "shape", "rectangle")
+  graph.styleAppend("Slot", "style", "rounded,filled")
+  graph.styleAppend("Slot", "color", "#CCCCCC")
+  graph.styleAppend("Slot", "fontcolor", "#444444")
+
+
+##############################################################################
+# load_data()
+#   This reads in the data from the global output_path and tick. It populates
+#   the model dictionaries.
+##############################################################################
+
+def load_data():
+  global slots
+  global tokens
+  global rules
+  global vars
+  global rule_src
+
+  slots = {}
+  tokens = {}
+  rules = {}
+  vars = {}
+  rule_src = {}
+
+  # Generate the step path
+  step_path = os.path.join(output_path, "step%s" % tick, "step%s" % tick)
+
+  # Read in rule source code paths
+  rule_src_reader = csv.reader(open(os.path.join(output_path,"rules")),delimiter='\t')
+
+  line_regex = re.compile("^(.+)\,([0-9]+)$")
+  for row in rule_src_reader:
+    rule_name = row[1]
+    rule_path_line_str = row[2]
+
+    rule_path_line = line_regex.findall(rule_path_line_str)
+
+    rule_src[rule_name] = rule_path_line[0]
+
+  # Read in tokens
+  tokens_reader = csv.reader(open("%s.tokens" % step_path),delimiter='\t')
+  for row in tokens_reader:
+    token_key = int(row[0])
+    slot_id = int(["-1",row[2]][row[2]!='\N'])
+    start_key = int(row[7])
+    end_key = int(row[8])
+    predicate_name = row[11]
+    variable_keys = row[15]
+    slot_index = int(row[16])
+
+    # Append variable keys
+    #token_vars = [int(var) for var in variable_keys.split(':') if var != '' and var != '\N'];
+
+    tokens[token_key] = Token(token_key,slot_id,predicate_name,start_key,end_key,slot_index,[])
+
+    # Append token key to slot
+    if slots.has_key(slot_id):
+      slots[slot_id].tokens.append(token_key)
+    else:
+      slots[slot_id] = Slot(slot_id,[token_key])
+
+  # Read in rule instances
+  rule_instances_reader = csv.reader(open("%s.ruleInstances" % step_path),delimiter='\t')
+  
+  for row in rule_instances_reader:
+    rule_key = int(row[0])
+    rule_name = row[3]
+    rule_token_key = int(row[4])
+    slave_token_keys = row[5]
+    variable_keys = row[6]
+
+    rule_filename = rule_src[rule_name][0]
+    rule_line = rule_src[rule_name][1]
+    
+    # Get rule slaves
+    rule_slaves = [int(slave) for slave in slave_token_keys.split(',') if slave != '' and slave != '\N'];
+    #rule_vars = [int(var) for var in variable_keys.split(',') if var != '' and var != '\N'];
+
+    rules[rule_key] = Rule(rule_key, rule_name, rule_token_key, rule_filename, rule_line, rule_slaves, [])
+
+  # Read in variables
+  vars_reader = csv.reader(open("%s.variables" % step_path),delimiter='\t')
+  for row in vars_reader:
+    var_key = int(row[0])
+    var_token = int(row[2])
+    var_name = row[3]
+    var_domain = row[4]
+    var_values = row[5]
+    if var_values == '\N':
+      var_values = "[%s %s]" % (row[7], row[8])
+    var_type = row[9]
+
+    vars[var_key] = Variable(var_key,var_token,var_name,var_domain, var_values, var_type)
+
+    # Add variable reference to token
+    if var_type != "MEMBER_VAR":
+      if var_type == "RULE_VAR":
+	rules[var_token].vars.append(var_key)
+      else:
+	tokens[var_token].vars.append(var_key)
+
+##############################################################################
+# run()
+#   This loads the data, creates a new graph, defines the styles, populates
+#   it, and then passes the graph to the XDot window.
+#   
+#   This function can be used repeatedly to reload different datasets.
+##############################################################################
+def run():
+  # load data
+  load_data()
+
+  # Create a new graph with GvGen
+  global graph
+  graph = GvGen()
+
+  # Create graph styles
+  define_graph_styles()
+
+  # Populate graph
+  dotfile = StringIO.StringIO()
+  populate_graph(dotfile)
+
+  # Pass the graph to XDot
+  window.set_dotcode(dotfile.getvalue())
+  dotfile.close()
+
+##############################################################################
+# main()
+#   This instantiates all of the GUI windows, and loads the data from command
+#   line arguments.
+##############################################################################
+def main():
+  global output_path
+  global tick
+
+  # Read in arguments
+  output_path = sys.argv[1]
+  tick = int(sys.argv[2])
+
+  # Spawn a search window
+  global search_window
+  search_window = SearchWindow()
+
+  # Spawn a step window
+  global step_window
+  step_window = StepWindow()
+
+  # Spawn the dot window
+  global window
+  window = MyDotWindow()
+  window.set_filter('dot')
+
+  # Run the loader
+  run()
+
+  # Run gtk
+  window.connect('destroy', gtk.main_quit)
+  gtk.main()
+
+if __name__ == '__main__':
+  main()
