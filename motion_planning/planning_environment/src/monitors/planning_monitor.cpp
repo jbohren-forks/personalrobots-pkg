@@ -315,7 +315,7 @@ bool planning_environment::PlanningMonitor::isStateValid(const planning_models::
     // check for collision
     std::vector<collision_space::EnvironmentModel::Contact> contacts;
     if (test & COLLISION_TEST)
-	valid = !getEnvironmentModel()->getCollisionContacts(contacts, maxCollisionContacts_);
+	valid = !getEnvironmentModel()->getCollisionContacts(allowedContacts_, contacts, maxCollisionContacts_);
     
     if (valid && (test & (PATH_CONSTRAINTS_TEST | GOAL_CONSTRAINTS_TEST)))
     {	    
@@ -506,7 +506,7 @@ bool planning_environment::PlanningMonitor::isPathValidAux(const motion_planning
 	// check for collision
 	std::vector<collision_space::EnvironmentModel::Contact> contacts;
 	if (test & COLLISION_TEST)
-	    valid = !getEnvironmentModel()->getCollisionContacts(contacts, remainingContacts);
+	    valid = !getEnvironmentModel()->getCollisionContacts(allowedContacts_, contacts, remainingContacts);
 	
 	if (onCollisionContact_)
 	    for (unsigned int i = 0 ; i < contacts.size() ; ++i)
@@ -548,3 +548,31 @@ bool planning_environment::PlanningMonitor::isPathValidAux(const motion_planning
     
     return valid;
 }
+
+void planning_environment::PlanningMonitor::setAllowedContacts(const std::vector<collision_space::EnvironmentModel::AllowedContact> &allowedContacts)
+{
+    allowedContacts_ = allowedContacts;
+}
+
+void planning_environment::PlanningMonitor::setAllowedContacts(const std::vector<motion_planning_msgs::AcceptableContact> &allowedContacts)
+{  
+    allowedContacts_.clear();
+    for (unsigned int i = 0 ; i < allowedContacts.size() ; ++i)
+    {
+	collision_space::EnvironmentModel::AllowedContact ac;
+	if (computeAllowedContact(allowedContacts[i], ac))
+	    allowedContacts_.push_back(ac);
+    }
+}
+
+const std::vector<collision_space::EnvironmentModel::AllowedContact>& planning_environment::PlanningMonitor::getAllowedContacts(void) const
+{
+    return allowedContacts_;
+}
+
+void planning_environment::PlanningMonitor::clearAllowedContacts(void)
+{
+    allowedContacts_.clear();
+}
+
+	

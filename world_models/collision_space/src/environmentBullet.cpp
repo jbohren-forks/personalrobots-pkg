@@ -231,7 +231,7 @@ bool collision_space::EnvironmentModelBullet::isCollision(void)
     return false;
 }
 
-bool collision_space::EnvironmentModelBullet::getCollisionContacts(std::vector<Contact> &contacts, unsigned int max_count)
+bool collision_space::EnvironmentModelBullet::getCollisionContacts(const std::vector<AllowedContact> &allowedContacts, std::vector<Contact> &contacts, unsigned int max_count)
 {        
     m_world->getPairCache()->setOverlapFilterCallback(&m_genericCollisionFilterCallback);
     m_world->performDiscreteCollisionDetection();

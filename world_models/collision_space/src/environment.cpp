@@ -36,6 +36,12 @@
 
 #include "collision_space/environment.h"
 
+bool collision_space::EnvironmentModel::getCollisionContacts(std::vector<Contact> &contacts, unsigned int max_count)
+{
+    std::vector<AllowedContact> allowed;
+    return getCollisionContacts(allowed, contacts, max_count);
+}
+
 bool collision_space::EnvironmentModel::getVerbose(void) const
 {
     return m_verbose;

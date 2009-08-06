@@ -66,7 +66,7 @@ namespace collision_space
 	}
 	
 	/** \brief Get the list of contacts (collisions) */
-	virtual bool getCollisionContacts(std::vector<Contact> &contacts, unsigned int max_count = 1);
+	virtual bool getCollisionContacts(const std::vector<AllowedContact> &allowedContacts, std::vector<Contact> &contacts, unsigned int max_count = 1);
 
 	/** \brief Check if a model is in collision */
 	virtual bool isCollision(void);

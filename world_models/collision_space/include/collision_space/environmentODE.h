@@ -56,7 +56,7 @@ namespace collision_space
 	virtual ~EnvironmentModelODE(void);
 
 	/** \brief Get the list of contacts (collisions) */
-	virtual bool getCollisionContacts(std::vector<Contact> &contacts, unsigned int max_count = 1);
+	virtual bool getCollisionContacts(const std::vector<AllowedContact> &allowedContacts, std::vector<Contact> &contacts, unsigned int max_count = 1);
 
 	/** \brief Check if a model is in collision */
 	virtual bool isCollision(void);
@@ -296,6 +296,7 @@ namespace collision_space
 		contacts = NULL;
 		selfCollisionTest = NULL;
 		link1 = link2 = NULL;
+		allowed = NULL;
 	    }
 	    
 	    bool                                       done;
@@ -303,8 +304,10 @@ namespace collision_space
 	    bool                                       collides;
 	    unsigned int                               max_contacts;
 	    std::vector<EnvironmentModelODE::Contact> *contacts;
-	    std::vector< std::vector<bool> >          *selfCollisionTest;
+	    const std::vector< std::vector<bool> >    *selfCollisionTest;
 	    dSpaceID                                   selfSpace;
+	    
+	    const std::vector<AllowedContact>         *allowed;
 	    
 	    planning_models::KinematicModel::Link     *link1;
 	    planning_models::KinematicModel::Link     *link2;
