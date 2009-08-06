@@ -42,8 +42,8 @@
 #include <planning_environment/monitors/kinematic_model_state_monitor.h>
 #include <motion_planning_msgs/KinematicPath.h>
 #include <manipulation_srvs/IKService.h>
-#include <pr2_robot_actions/MoveArmGoal.h>
-#include <pr2_robot_actions/MoveArmState.h>
+#include <move_arm/MoveArmGoal.h>
+#include <move_arm/MoveArmState.h>
 #include <pr2_robot_actions/ActuateGripperState.h>
 #include <std_msgs/Float64.h>
 
@@ -100,7 +100,7 @@ void printPose(const btTransform &p)
     std::cout << "  -rotation [x, y, z, w] = [" << q.x() << ", " << q.y() << ", " << q.z() << ", " << q.w() << "]" << std::endl;
 }
 
-void goalToState(const pr2_robot_actions::MoveArmGoal &goal, planning_models::StateParams &sp)
+void goalToState(const move_arm::MoveArmGoal &goal, planning_models::StateParams &sp)
 {  
     for (unsigned int i = 0 ; i < goal.goal_constraints.joint_constraint.size() ; ++i)
     {
@@ -109,7 +109,7 @@ void goalToState(const pr2_robot_actions::MoveArmGoal &goal, planning_models::St
     }
 }
 
-btTransform effPosition(const planning_environment::KinematicModelStateMonitor &km, const pr2_robot_actions::MoveArmGoal &goal)
+btTransform effPosition(const planning_environment::KinematicModelStateMonitor &km, const move_arm::MoveArmGoal &goal)
 {
     planning_models::StateParams sp(*km.getRobotState());
     goalToState(goal, sp);
@@ -117,19 +117,19 @@ btTransform effPosition(const planning_environment::KinematicModelStateMonitor &
     return km.getKinematicModel()->getJoint(goal.goal_constraints.joint_constraint.back().joint_name)->after->globalTrans;
 }
 
-void printConfig(const pr2_robot_actions::MoveArmGoal &goal)
+void printConfig(const move_arm::MoveArmGoal &goal)
 {
     for (unsigned int i = 0 ; i < goal.goal_constraints.joint_constraint.size(); ++i)
 	std::cout << "  " << goal.goal_constraints.joint_constraint[i].joint_name << " = " << goal.goal_constraints.joint_constraint[i].value[0] << std::endl;
 }
 
-void printConfigs(const std::map<std::string, pr2_robot_actions::MoveArmGoal> &goals)
+void printConfigs(const std::map<std::string, move_arm::MoveArmGoal> &goals)
 {
-    for (std::map<std::string, pr2_robot_actions::MoveArmGoal>::const_iterator it = goals.begin() ; it != goals.end() ; ++it)
+    for (std::map<std::string, move_arm::MoveArmGoal>::const_iterator it = goals.begin() ; it != goals.end() ; ++it)
 	std::cout << "  " << it->first << std::endl;
 }
 
-void setupGoal(const std::vector<std::string> &names, pr2_robot_actions::MoveArmGoal &goal)
+void setupGoal(const std::vector<std::string> &names, move_arm::MoveArmGoal &goal)
 {
     goal.goal_constraints.joint_constraint.resize(names.size());
     for (unsigned int i = 0 ; i < goal.goal_constraints.joint_constraint.size(); ++i)
@@ -146,7 +146,7 @@ void setupGoal(const std::vector<std::string> &names, pr2_robot_actions::MoveArm
     }
 }
 
-void setupGoalEEf(const std::string &link, const std::vector<double> &pz, pr2_robot_actions::MoveArmGoal &goal)
+void setupGoalEEf(const std::string &link, const std::vector<double> &pz, move_arm::MoveArmGoal &goal)
 {
     goal.goal_constraints.pose_constraint.resize(1);
     goal.goal_constraints.pose_constraint[0].type = motion_planning_msgs::PoseConstraint::POSITION_X + motion_planning_msgs::PoseConstraint::POSITION_Y + motion_planning_msgs::PoseConstraint::POSITION_Z + 
@@ -167,7 +167,7 @@ void setupGoalEEf(const std::string &link, const std::vector<double> &pz, pr2_ro
     goal.goal_constraints.pose_constraint[0].position_tolerance_above.y = 0.005;
     goal.goal_constraints.pose_constraint[0].position_tolerance_above.z = 0.01;
     goal.goal_constraints.pose_constraint[0].position_tolerance_below.x = 0.005;
-    goal.goal_constraints.pose_constraint[0].position_tolerance_below.y = 0.01;
+    goal.goal_constraints.pose_constraint[0].position_tolerance_below.y = 0.005;
     goal.goal_constraints.pose_constraint[0].position_tolerance_below.z = 0.005;
     
     goal.goal_constraints.pose_constraint[0].orientation_tolerance_above.x = 0.005;
@@ -177,10 +177,10 @@ void setupGoalEEf(const std::string &link, const std::vector<double> &pz, pr2_ro
     goal.goal_constraints.pose_constraint[0].orientation_tolerance_below.y = 0.005;
     goal.goal_constraints.pose_constraint[0].orientation_tolerance_below.z = 0.005;    
 
-    goal.goal_constraints.pose_constraint[0].orientation_importance = 0.01;
+    goal.goal_constraints.pose_constraint[0].orientation_importance = 0.2;
 }
 
-void setConfig(const planning_models::StateParams *_sp, const std::vector<std::string> &names, pr2_robot_actions::MoveArmGoal &goal)
+void setConfig(const planning_models::StateParams *_sp, const std::vector<std::string> &names, move_arm::MoveArmGoal &goal)
 {
     setupGoal(names, goal);
     planning_models::StateParams sp(*_sp);
@@ -192,7 +192,7 @@ void setConfig(const planning_models::StateParams *_sp, const std::vector<std::s
     }
 }
 
-void diffConfig(const planning_environment::KinematicModelStateMonitor &km, pr2_robot_actions::MoveArmGoal &goal)
+void diffConfig(const planning_environment::KinematicModelStateMonitor &km, move_arm::MoveArmGoal &goal)
 {
     std::vector<std::string> names;
     for (unsigned int i = 0 ; i < goal.goal_constraints.joint_constraint.size(); ++i)
@@ -204,7 +204,7 @@ void diffConfig(const planning_environment::KinematicModelStateMonitor &km, pr2_
     }
 
     btTransform pose1 = effPosition(km, goal);
-    pr2_robot_actions::MoveArmGoal temp;
+    move_arm::MoveArmGoal temp;
     setConfig(km.getRobotState(), names, temp);
     btTransform pose2 = effPosition(km, temp);
     std::cout << std::endl;    
@@ -236,7 +236,7 @@ void viewState(ros::Publisher &view, const planning_environment::KinematicModelS
     view.publish(kp);
 }
 
-void setConfigJoint(const unsigned int pos, const double value, pr2_robot_actions::MoveArmGoal &goal)
+void setConfigJoint(const unsigned int pos, const double value, move_arm::MoveArmGoal &goal)
 {
     goal.goal_constraints.joint_constraint[pos].value[0] = value;
 }
@@ -256,12 +256,12 @@ int main(int argc, char **argv)
 	    arm = "l";
     
     ros::NodeHandle nh;
-    robot_actions::ActionClient<pr2_robot_actions::MoveArmGoal, pr2_robot_actions::MoveArmState, int32_t> move_arm(arm == "r" ? "move_right_arm" : "move_left_arm");
+    robot_actions::ActionClient<move_arm::MoveArmGoal, move_arm::MoveArmState, int32_t> move_arm(arm == "r" ? "move_right_arm" : "move_left_arm");
     robot_actions::ActionClient<std_msgs::Float64, pr2_robot_actions::ActuateGripperState, std_msgs::Float64> gripper(arm == "r" ? "actuate_gripper_right_arm" : "actuate_gripper_left_arm");
     ros::Publisher view = nh.advertise<motion_planning_msgs::KinematicPath>("display_kinematic_path", 1);
     
     int32_t                                               feedback;
-    std::map<std::string, pr2_robot_actions::MoveArmGoal> goals;
+    std::map<std::string, move_arm::MoveArmGoal> goals;
     
     std::vector<std::string> names(7);
     names[0] = arm + "_shoulder_pan_joint";
@@ -315,7 +315,7 @@ int main(int argc, char **argv)
 	else
 	if (cmd == "current")
 	{
-	    pr2_robot_actions::MoveArmGoal temp;
+	    move_arm::MoveArmGoal temp;
 	    setConfig(km.getRobotState(), names, temp);
 	    printConfig(temp);
 	    std::cout << std::endl;
@@ -525,7 +525,7 @@ int main(int argc, char **argv)
 		std::string link = km.getKinematicModel()->getJoint(names.back())->after->name;
 		std::cout << "Moving " << link << " to " << nrs[0] << ", " << nrs[1] << ", " << nrs[2] << ", " <<
 		  nrs[3] << ", " << nrs[4] << ", " << nrs[5] << ", " << nrs[6] << "..." << std::endl;
-		pr2_robot_actions::MoveArmGoal g;
+		move_arm::MoveArmGoal g;
 		setupGoalEEf(link, nrs, g);
 		if (move_arm.execute(g, feedback, ros::Duration(allowed_time)) != robot_actions::SUCCESS)
 		  std::cerr << "Failed achieving goal" << std::endl;

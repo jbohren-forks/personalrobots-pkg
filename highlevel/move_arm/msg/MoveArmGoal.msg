@@ -5,3 +5,6 @@ motion_planning_msgs/KinematicConstraints goal_constraints
 
 # The set of constraints that need to be satisfied by the entire solution path.
 motion_planning_msgs/KinematicConstraints path_constraints
+
+# The set of allowed contacts
+AcceptableContact[] contacts

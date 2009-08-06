@@ -6,6 +6,8 @@ rospack(move_arm)
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
+genmsg()
+
 # main executable 
 rospack_add_executable(move_arm_action src/move_arm_action.cpp)
 rospack_link_boost(move_arm_action thread)
