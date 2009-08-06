@@ -1027,6 +1027,7 @@ void SuperpixelColorHistogram::doComputation(IplImage* img, const Vector<KeyPoin
     hists_reserved_ = true;
   }
 
+  
   // -- Compute at each point.
   for(size_t i=0; i<points.size(); i++) {
     doComputation(img, points[i], results[i]);
@@ -1039,6 +1040,8 @@ void SuperpixelColorHistogram::doComputation(IplImage* img, const KeyPoint& poin
   // -- Get the label at this point.
   int label = CV_IMAGE_ELEM(seg_, int, (size_t)point.pt.y, (size_t)point.pt.x);
   assert(label != -1);
+
+  cout << "lbl " << label << endl;
 
   // -- Compute the histogram.
   computeHistogramCV(label);
