@@ -1,0 +1,14 @@
+<launch>
+
+
+  <!-- Detector -->
+  <node pkg="led_detection" type="led_detector_node" name="stereo_right_detector" output="screen">
+    <remap from="image"    to="/stereo/right/image_rect" />
+    <remap from="cam_info" to="/stereo/right/cam_info" />
+    <param name="use_led_pose" type="bool" value="true" />
+    <param name="led_frame" type="string" value="r_gripper_tool_frame" />
+    <remap from="~led"  to="stereo/right/led" />
+    <remap from="~debug_image"  to="stereo/right/led_debug_image" />
+  </node>
+
+</launch>
