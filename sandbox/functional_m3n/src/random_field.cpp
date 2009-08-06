@@ -299,6 +299,7 @@ int RandomField::saveNodeFeatures(string filename) const
     const boost::shared_array<const float> curr_feats = curr_node->getFeatureVals();
     for (unsigned int feature_idx = 0 ; feature_idx < curr_node->getNumberFeatureVals() ; feature_idx++)
     {
+      // TODO set precision
       file_out << " " << curr_feats[feature_idx];
     }
     file_out << endl;
@@ -346,6 +347,7 @@ int RandomField::saveCliqueFeatures(string basename) const
       const boost::shared_array<const float> curr_feats = curr_clique->getFeatureVals();
       for (unsigned int feature_idx = 0 ; feature_idx < curr_clique->getNumberFeatureVals() ; feature_idx++)
       {
+        // TODO set precision
         file_out << " " << curr_feats[feature_idx];
       }
       file_out << endl;
