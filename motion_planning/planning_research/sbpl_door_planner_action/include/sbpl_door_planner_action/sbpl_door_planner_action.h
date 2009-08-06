@@ -113,6 +113,7 @@ class SBPLDoorPlanner : public robot_actions::Action<door_msgs::Door, door_msgs:
 	ros::Publisher base_control_pub_;
 	tf::TransformListener tf_;
 	mechanism_msgs::JointStates joint_states_;
+	motion_planning_msgs::KinematicPath robot_path_;
 
 	void jointsCallback(const mechanism_msgs::JointStatesConstPtr &joint_states);
 
@@ -231,7 +232,16 @@ class SBPLDoorPlanner : public robot_actions::Action<door_msgs::Door, door_msgs:
 
 	void printPoint(std::string name, geometry_msgs::Point32 point);
 	
-	void publishArmPathViz(const std::vector<std::string> &joint_names, const std::vector<std::vector<double> > &values);
+	/**
+	 * @brief  Updates the kinematic path visualization that is then published to display_kinematic_path
+	 * @param frame_id the frame of the path
+	 * @param joints is a vector of strings representing the joint names in the path 
+	 * @param joint_vals is a 2D vector of joint waypoints with size: {number of waypoints} x {number of joints}  (joint angles in radians)
+	 * @param planar_links is a vector of strings representing the planar link names in the path
+	 * @param planar_vals is a 2D vector of planar link waypoints with size: {number of waypoints} x {number of planar links x 3 {x,y,theta}}
+	*/
+	void updatePathVizualization(std::string frame_id, std::vector<std::string> &joints, std::vector<std::vector<double> > &joint_vals,
+															std::vector<std::string> &planar_links, std::vector<std::vector<double> > &planar_vals);
 	
 	void getCurrentJointAngles(const std::vector <std::string> &joint_names, std::vector <double> *joint_angles);
 };

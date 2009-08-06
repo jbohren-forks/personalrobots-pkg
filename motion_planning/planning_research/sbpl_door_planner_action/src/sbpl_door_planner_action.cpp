@@ -83,9 +83,9 @@ SBPLDoorPlanner::SBPLDoorPlanner() :  Action<door_msgs::Door, door_msgs::Door>(r
 	ros_node_.param<double>("~arm/discretization_angle",  door_env_.door_angle_discretization_interval, 0.01);
 
 	double shoulder_x, shoulder_y;
-	ros_node_.param<double>("~arm/shoulder/y",shoulder_x, 0.0);
+	ros_node_.param<double>("~arm/shoulder/x",shoulder_x, 0.0);
 	ros_node_.param<double>("~arm/shoulder/y",shoulder_y, -0.188);
-	door_env_.shoulder.y = shoulder_x;
+	door_env_.shoulder.x = shoulder_x;	// changed from shoulder.y to shoulder.x
 	door_env_.shoulder.y = shoulder_y;
 
 	/** publishers */
@@ -469,7 +469,7 @@ void SBPLDoorPlanner::dispatchControl(const manipulation_msgs::JointTraj &path, 
 		cmd.pose = gripper_msg.pose;
 		cmd.header = gripper_msg.header;
 		cmd.free_angle_value = -0.2;
-
+		
 //     ros_node_.publish(base_control_topic_name_,base_plan);
 		base_control_pub_.publish(base_plan);
 		
@@ -909,44 +909,84 @@ bool SBPLDoorPlanner::checkArmDoorCollide(const manipulation_msgs::JointTrajPoin
 }
 */
 
-//remove after testing
+// remove after testing
 void SBPLDoorPlanner::printPoint(std::string name, geometry_msgs::Point32 point)
 {
 	printf("%s: y: %.3f y: %.3f z: %.3f\n", name.c_str(), point.y, point.y, point.z);
 }
 
-void SBPLDoorPlanner::publishArmPathViz(const std::vector<std::string> &joint_names, const std::vector<std::vector<double> > &traj)
+void SBPLDoorPlanner::updatePathVizualization(std::string frame_id, std::vector<std::string> &joints, std::vector<std::vector<double> > &joint_vals,
+																						  std::vector<std::string> &planar_links, std::vector<std::vector<double> > &planar_vals)
 {
-	unsigned int i;
-	motion_planning_msgs::KinematicPath arm_path;
-	std::vector <double> joint_angles;
+	unsigned int i, j, path_length;	
  
-	arm_path.header.frame_id = "base_link";
-	arm_path.header.stamp = ros::Time::now();
+	robot_path_.header.frame_id = frame_id;
+	robot_path_.header.stamp = ros::Time::now();
 	
-	// get start_state
+	if(joint_vals.size() != planar_vals.size())
+		ROS_INFO("The joint path and planar link path are not the same length.");
+
+	// set length of path
+	if(joint_vals.size() > planar_vals.size())
+		path_length = joint_vals.size();
+	else
+		path_length = planar_vals.size();
+	
+	robot_path_.set_names_size(joints.size()+planar_links.size());
+	robot_path_.set_states_size(path_length);
+
+	// get start_state of the robot from joint_states topic
 	for(i = 0; i < joint_states_.get_joints_size(); ++i)
 	{
-		arm_path.start_state[i].header = joint_states_.header;
-		arm_path.start_state[i].joint_name = joint_states_.joints[i].name;
-		arm_path.start_state[i].value[0] = joint_states_.joints[i].position;
+		robot_path_.start_state[i].header = joint_states_.header;
+		robot_path_.start_state[i].joint_name = joint_states_.joints[i].name;
+		robot_path_.start_state[i].value[0] = joint_states_.joints[i].position;
 	}
 
-	// joint_names of joints in path
-	for(i = 0; i < joint_names_.size(); ++i)
-		arm_path.names[i] = joint_names_[i];
-
-	// path
-	for(i = 0; i < traj.size(); ++i)
+	// set names of arm joints in path
+	for(i = 0; i < joints.size(); ++i)
+		robot_path_.names[i] = joints[i];
+	
+	// set names of planar links in path
+	for(i = 0; i < planar_links.size(); ++i)
+		robot_path_.names[joints.size()+i] = planar_links[i];
+	
+	// add joint path values {theta}
+	for(i = 0; i < path_length; ++i)
 	{
-		for(int j = 0; j < num_joints_; ++j)
-			arm_path.states[i].vals[j] = traj[i][j];
+		robot_path_.states[i].set_vals_size(joint_vals[i].size());
+		
+		if(i <= joint_vals.size())
+		{
+			for(j = 0; j < joint_vals[i].size(); ++j)
+				robot_path_.states[i].vals[j] = joint_vals[i][j];
+		}
+		else
+		{
+			for(j = 0; j < joint_vals[joint_vals.size()-1].size(); ++j)
+				robot_path_.states[i].vals[j] = joint_vals[joint_vals.size()-1][j];
+		}			
 	}
 	
-	display_path_pub_.publish(arm_path);
+	// add planar links path {x,y,theta} 
+	for(i = 0; i < path_length; ++i)
+	{
+		if(i <= planar_vals.size())
+		{
+			for(j = 0; j < planar_vals[i].size(); ++j)
+				robot_path_.states[i].vals.push_back(planar_vals[i][j]);
+		}
+		else
+		{
+			for(j = 0; j < planar_vals[planar_vals.size()-1].size(); ++j)
+				robot_path_.states[i].vals.push_back(planar_vals[planar_vals.size()-1][j]);
+		}
+	}
+	
+	display_path_pub_.publish(robot_path_);
 }
 
-/** \brief Check mechanism_state for current joint angles */
+/** \brief Check /joint_state for current joint angles */
 void SBPLDoorPlanner::getCurrentJointAngles(const std::vector <std::string> &joint_names, std::vector <double> *joint_angles)
 {
 	int nind = 0;
