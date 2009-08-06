@@ -29,15 +29,15 @@
 
 #include "polygon.hpp"
 #include "Poco/ClassLibrary.h"
+#include "square.h"
 
 #include <cmath>
 
-class square : public polygon {
-public:
-  virtual double area() const {
-    return side_length_ * side_length_;
-  }
-};
+square::square() : name_("my_square") {}
+
+double square::area() const {
+  return side_length_ * side_length_;
+}
 
 class triangle : public polygon {
 public:
@@ -45,12 +45,3 @@ public:
     return side_length_ * side_length_ * sqrt(3) / 2;
   }
 };
-
-
-
-POCO_BEGIN_MANIFEST(polygon)
-
-POCO_EXPORT_CLASS(square)
-POCO_EXPORT_CLASS(triangle)
-
-POCO_END_MANIFEST 
