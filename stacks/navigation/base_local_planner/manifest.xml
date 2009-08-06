@@ -23,5 +23,6 @@
   <repository>http://pr.willowgarage.com/repos</repository>
   <export>
     <cpp cflags="-I${prefix}/include -I${prefix}/msg/cpp" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lbase_local_planner" />
+    <nav_core BaseLocalPlanner="${prefix}/blp_plugin.xml" />
   </export>
 </package>

@@ -1,0 +1,7 @@
+<library path="lib/libbase_local_planner">
+  <plugin name="TrajectoryPlannerROS" class="base_local_planner::TrajectoryPlannerROS" type="nav_core::BaseLocalPlanner">
+    <description>
+      A implementation of a local planner using either a DWA or Trajectory Rollout approach based on configuration parameters.
+    </description>
+  </plugin>
+</library>
