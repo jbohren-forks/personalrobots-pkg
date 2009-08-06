@@ -7,4 +7,4 @@ motion_planning_msgs/KinematicConstraints goal_constraints
 motion_planning_msgs/KinematicConstraints path_constraints
 
 # The set of allowed contacts
-AcceptableContact[] contacts
+motion_planning_msgs/AcceptableContact[] contacts

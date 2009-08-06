@@ -16,3 +16,6 @@ geometry_msgs/PointStamped volumeMin
 
 # Higher coordinate for the box described above
 geometry_msgs/PointStamped volumeMax
+
+# A list of allowed contacts
+AcceptableContact[] contacts
