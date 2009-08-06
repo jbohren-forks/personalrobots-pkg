@@ -88,7 +88,7 @@ bool ChompCollisionSpace::init()
   size_z_int = int(size_z/resolution);
 
   voxel3d_ = new Voxel3d(size_x_int, size_y_int, size_z_int, resolution,
-      tf::Vector3(origin_x, origin_y, origin_z), true);
+      tf::Vector3(origin_x, origin_y, origin_z), false);
 
   collision_map_notifier_ = new tf::MessageNotifier<mapping_msgs::CollisionMap>(tf_,
       boost::bind(&ChompCollisionSpace::collisionMapCallback, this, _1),

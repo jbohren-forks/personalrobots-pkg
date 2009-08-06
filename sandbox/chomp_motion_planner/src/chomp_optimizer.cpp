@@ -180,6 +180,12 @@ void ChompOptimizer::optimize()
 
     }
 
+    if (parameters_->getAnimatePath() && iteration_%10 == 0)
+    {
+    //  ROS_INFO("Animating iteration %d", iteration_);
+    //  animatePath();
+    }
+
   }
   ROS_INFO("Terminated after %d iterations", iteration_);
   ROS_INFO("Optimization core finished in %f sec", (ros::WallTime::now() - start_time).toSec());
@@ -420,8 +426,6 @@ void ChompOptimizer::performForwardKinematics()
     if (state_is_in_collision_[i])
     {
       is_collision_free_ = false;
-      collision_free_iteration_ = 0;
-      break;
     }
   }
 
@@ -446,6 +450,8 @@ void ChompOptimizer::performForwardKinematics()
 
   if (is_collision_free_)
     collision_free_iteration_++;
+  else
+    collision_free_iteration_ = 0;
 
 }
 
