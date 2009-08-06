@@ -95,6 +95,9 @@ private:
   std::vector<std::vector<double> > collision_point_vel_mag_;
   std::vector<std::vector<Eigen::Vector3d> > collision_point_potential_gradient_;
   Eigen::MatrixXd group_trajectory_backup_;
+  Eigen::MatrixXd best_group_trajectory_;
+  double best_group_trajectory_cost_;
+  int last_improvement_iteration_;
 
   std::vector<int> state_is_in_collision_;      /**< Array containing a boolean about collision info for each point in the trajectory */
   std::vector<std::vector<int> > point_is_in_collision_;

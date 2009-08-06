@@ -106,6 +106,7 @@ void ChompOptimizer::initialize()
   joint_state_velocities_ = Eigen::VectorXd::Zero(num_joints_);
 
   group_trajectory_backup_ = group_trajectory_.getTrajectory();
+  best_group_trajectory_ = group_trajectory_.getTrajectory();
 
   joint_axis_.resize(num_vars_all_, std::vector<KDL::Vector>(robot_model_->getKDLTree()->getNrOfJoints()));
   joint_pos_.resize(num_vars_all_, std::vector<KDL::Vector>(robot_model_->getKDLTree()->getNrOfJoints()));
@@ -130,6 +131,8 @@ void ChompOptimizer::initialize()
   state_is_in_collision_.resize(num_vars_all_);
   point_is_in_collision_.resize(num_vars_all_, std::vector<int>(num_collision_points_));
 
+  last_improvement_iteration_ = -1;
+
 }
 
 ChompOptimizer::~ChompOptimizer()
@@ -144,8 +147,24 @@ void ChompOptimizer::optimize()
   // iterate
   for (iteration_=0; iteration_<parameters_->getMaxIterations(); iteration_++)
   {
-
     performForwardKinematics();
+    double cost = getTrajectoryCost();
+
+    if (iteration_==0)
+    {
+      best_group_trajectory_ = group_trajectory_.getTrajectory();
+      best_group_trajectory_cost_ = cost;
+    }
+    else
+    {
+      if (cost < best_group_trajectory_cost_)
+      {
+        best_group_trajectory_ = group_trajectory_.getTrajectory();
+        best_group_trajectory_cost_ = cost;
+        last_improvement_iteration_ = iteration_;
+      }
+    }
+
     calculateSmoothnessIncrements();
     calculateCollisionIncrements();
     addIncrementsToTrajectory();
@@ -187,8 +206,16 @@ void ChompOptimizer::optimize()
       ROS_INFO("Animating iteration %d", iteration_);
       animatePath();
     }
+    
+    if (iteration_ - last_improvement_iteration_ > 50)
+    {
+      ROS_INFO("Aborting due to lack of improvements...");
+      break;
+    }
 
   }
+  group_trajectory_.getTrajectory() = best_group_trajectory_;
+  updateFullTrajectory();
   ROS_INFO("Terminated after %d iterations", iteration_);
   ROS_INFO("Optimization core finished in %f sec", (ros::WallTime::now() - start_time).toSec());
 
