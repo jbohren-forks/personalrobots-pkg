@@ -61,15 +61,52 @@ PredictionNode::PredictionNode()
 
   cloud_pub_ = n_.advertise<PointCloud>("predictions_cloud",100);
 
+  n_.param(std::string("~ground_truth_channel"),ground_truth_channel_name_,std::string("NONE"));
+
 
   if (m3n_model2.loadFromFile(model_file_name_) < 0)  
   {
     ROS_ERROR("couldnt load model");
     throw "ERR";
   }
+
+  set_model_svc_ = n_.advertiseService(std::string("SetModel"), &PredictionNode::setModel,this);
+
+  query_perf_stats_svc_  = n_.advertiseService(std::string("Performance"), &PredictionNode::queryPerformanceStats,this);
+
+  nbr_correct=0;
+  nbr_gt=0;
+  total_accuracy=0.0;
+
   ROS_INFO("Init done.");
+
+}
+bool PredictionNode::queryPerformanceStats(
+					   functional_m3n_ros::QueryPerformanceStats::Request  &req,
+					   functional_m3n_ros::QueryPerformanceStats::Response &res )
+{
+  res.accuracy = total_accuracy;
+  res.correct_weight = (double)nbr_correct;
+  res.checked_weight = (double)nbr_gt;
+
+  return true;
 }
 
+bool PredictionNode::setModel(functional_m3n_ros::SetModel::Request  &req,
+			      functional_m3n_ros::SetModel::Response &res )
+{
+  model_file_name_=req.model_reference;
+  ROS_INFO_STREAM("Loading new model "<<model_file_name_);
+  if (m3n_model2.loadFromFile(model_file_name_) < 0)  
+    {
+      ROS_ERROR("couldnt load model");
+    }
+  nbr_correct=0;
+  nbr_gt=0;
+  total_accuracy=0.0;
+
+  return true;
+}
 
 
 void PredictionNode::cloudCallback(const PointCloudConstPtr& the_cloud)
@@ -154,10 +191,113 @@ void PredictionNode::cloudCallback(const PointCloudConstPtr& the_cloud)
 
       }
     }        
+    
+    int chan_gt=cloud_geometry::getChannelIndex(the_cloud,ground_truth_channel_name_);
+    if(chan_gt!=-1)
+      {
+	unsigned int nbr_correct_in_pcd;
+	unsigned int nbr_gt_in_pcd;
+	double accuracy;	
+	computeClassificationRates( cloud_out.chan[chan_predictions_id].vals, 
+				    the_cloud->chan[chan_gt].vals,
+				    m3n_model2.getTrainingLabels(),
+				    nbr_correct_in_pcd,
+				    nbr_gt_in_pcd,
+				    accuracy);
+	nbr_correct += nbr_correct_in_pcd;
+	nbr_gt += nbr_gt_in_pcd;
+	if(nbr_gt==0)
+	  {
+	    total_accuracy=0.0;
+	  }
+	else
+	  {
+	    total_accuracy = static_cast<double>(nbr_correct)/static_cast<double>(nbr_gt);
+	  }
+
+	ROS_INFO("Total correct: %u / %u = %f", nbr_correct, nbr_gt, total_accuracy);
+    
+      }
+    
 
     cloud_pub_.publish(cloud_out);
 }
 
+
+
+void  PredictionNode::computeClassificationRates(const vector<float>& inferred_labels, const vector<float>& gt_labels, 
+				    const vector<unsigned int>& labels,
+				    unsigned int& nbr_correct,
+				    unsigned int& nbr_gt,
+				    double& accuracy)
+    {
+      // Initialize counters for each label
+      // (map: label -> counter)
+      std::map<unsigned int, unsigned int> total_label_count; // how many nodes with gt label
+      std::map<unsigned int, unsigned int> correct_label_count; // how many correctly classified
+      std::map<unsigned int, unsigned int> false_pos_label_count; // how many wrongly classified
+      for (unsigned int i = 0 ; i < labels.size() ; i++)
+      {
+        total_label_count[labels[i]] = 0;
+        correct_label_count[labels[i]] = 0;
+        false_pos_label_count[labels[i]] = 0;
+      }
+
+      // Holds the total number of nodes correctly classified
+      nbr_correct = 0;
+      nbr_gt = 0;
+
+      // Count the total and per-label number correctly classified
+      unsigned int curr_node_id = 0;
+      unsigned int curr_gt_label = 0;
+      unsigned int curr_infer_label = 0;
+      vector<unsigned int>::const_iterator iter_predictions;
+      for (unsigned int i=0;i<inferred_labels.size();i++)
+      {
+	curr_gt_label = (unsigned int)gt_labels[i];
+        curr_infer_label = (unsigned int)inferred_labels[i];
+
+        total_label_count[curr_gt_label]++;
+	if(curr_gt_label==0)
+	  {
+	    continue;
+	  }
+
+	nbr_gt++;
+        if (curr_gt_label == curr_infer_label)
+        {
+          nbr_correct++;
+          correct_label_count[curr_gt_label]++;
+        }
+        else
+        {
+          false_pos_label_count[curr_infer_label]++;
+        }
+      }
+
+      // Print statistics
+      if(nbr_gt==0)
+	{
+	  accuracy=0.0;
+	}
+      else
+	{
+	  accuracy = static_cast<double>(nbr_correct)/static_cast<double>(nbr_gt);
+	}
+    
+      
+      ROS_INFO("Total correct: %u / %u = %f", nbr_correct, nbr_gt, accuracy);
+      stringstream ss;
+      ss << "Label distribution: ";
+      unsigned int curr_label = 0;
+      for (unsigned int i = 0 ; i < labels.size() ; i++)
+      {
+        curr_label = labels[i];
+        ss << "[" << curr_label << ": " << correct_label_count[curr_label] << "/"
+            << total_label_count[curr_label] << " (" << false_pos_label_count[curr_label] << ")]  ";
+      }
+      ROS_INFO("%s", ss.str().c_str());
+    }
 
 
 

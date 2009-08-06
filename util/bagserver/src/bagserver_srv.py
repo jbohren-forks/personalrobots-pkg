@@ -61,6 +61,7 @@ class BagServerSrv:
 
         self.out_namespace=rospy.get_param("~namespace");
         self.index_name_=rospy.get_param("~index");
+        self.pub_delay_=rospy.get_param("~message_publishing_delay",0);
 
         self.setup_hist();
 
@@ -185,7 +186,7 @@ class BagServerSrv:
         self.active_topics={};
 
         if not req.topic == "":
-            if req.topic =="*":
+            if req.topic =="*" or req.topic =="ALL":
                 topic_filter_dict=None;
             else:
                 topic_filter_dict={};
@@ -223,7 +224,7 @@ class BagServerSrv:
 
         
     def handle_query(self,req):
-        rospy.logdebug(" Query %s - %s " % (req.begin,req.end))
+        rospy.loginfo(" Query %s - %s " % (req.begin,req.end))
 
         self.setll(req);
 
@@ -234,6 +235,7 @@ class BagServerSrv:
             if rospy.is_shutdown():
                 break
             nextT=self.pick_next_topic();
+
             if nextT is None:
                 break
             (sec,nsec,idx,file_pos,topic,iBag)=self.active_topics[nextT]
@@ -252,7 +254,10 @@ class BagServerSrv:
             sim_time.rostime.secs=sec;
             sim_time.rostime.nsecs=nsec;
             self.time_pub_.publish(sim_time)
-            rospy.sleep(0.00001)
+            if self.pub_delay_>0:
+                rospy.sleep(self.pub_delay_);
+            else:
+                rospy.sleep(0.00001)
 
 
             self.advance_topic(nextT,req.end)

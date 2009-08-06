@@ -55,6 +55,9 @@
 
 #include <functional_m3n/m3n_model.h>
 
+#include <functional_m3n_ros/SetModel.h>
+#include <functional_m3n_ros/QueryPerformanceStats.h>
+
 namespace m3n
 {
 
@@ -67,7 +70,12 @@ public:
   PredictionNode();
 
   void cloudCallback(const sensor_msgs::PointCloudConstPtr& the_cloud);
+  bool setModel(functional_m3n_ros::SetModel::Request  &req,
+		functional_m3n_ros::SetModel::Response &res );
 
+  bool queryPerformanceStats(
+			     functional_m3n_ros::QueryPerformanceStats::Request  &req,
+			     functional_m3n_ros::QueryPerformanceStats::Response &res );
 
   boost::shared_ptr<PtCloudRFCreator> rf_creator_;
   bool use_colors_;
@@ -76,9 +84,25 @@ public:
   M3NModel m3n_model2;
 
   std::string model_file_name_;
+  std::string ground_truth_channel_name_;
+
   ros::Subscriber cloud_sub_;
   ros::Publisher cloud_pub_;
 
+  ros::ServiceServer set_model_svc_;
+  ros::ServiceServer query_perf_stats_svc_;
+
+  unsigned int nbr_correct;
+  unsigned int nbr_gt;
+  double total_accuracy;
+
+  void computeClassificationRates(const vector<float>& inferred_labels, const vector<float>& gt_labels, 
+				  const vector<unsigned int>& labels,
+				  unsigned int& nbr_correct,
+				  unsigned int& nbr_gt,
+				  double& accuracy);
+
+    
 };
 
 

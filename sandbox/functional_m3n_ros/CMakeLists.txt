@@ -35,3 +35,13 @@ target_link_libraries (m3n_prediction_node functional_m3n)
 rospack_add_executable (m3n_learning_node src/m3n_learning_node.cpp)
 target_link_libraries (m3n_learning_node functional_m3n)
 rospack_link_boost(m3n_learning_node filesystem)
+
+
+rospack_download_test_data(http://pr.willowgarage.com/data/${PROJECT_NAME}/pcd_all_1.bag test_data/pcd_all_1.bag)
+rospack_download_test_data(http://pr.willowgarage.com/data/${PROJECT_NAME}/pcd_all_1.index test_data/pcd_all_1.index)
+rospack_download_test_data(http://pr.willowgarage.com/data/${PROJECT_NAME}/pcd_test_1.bag test_data/pcd_test_1.bag)
+rospack_download_test_data(http://pr.willowgarage.com/data/${PROJECT_NAME}/pcd_train_1.bag test_data/pcd_train_1.bag)
+
+#rospack_add_rostest(test/test_full_training.xml)
+
+

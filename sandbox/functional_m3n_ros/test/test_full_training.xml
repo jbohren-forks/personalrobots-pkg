@@ -1,0 +1,24 @@
+<launch>
+
+
+	<node pkg="functional_m3n_ros" type="m3n_learning_node" name="fm3n_training" output="screen">
+	  <param name="model_file_path" value="$(find functional_m3n_ros)/test_data/test_model_root/"/>
+	</node>
+
+	<node pkg="functional_m3n_ros" type="m3n_prediction_node" name="fm3n_predictor" output="screen">
+	  <remap from="cloud" to="/hist/training_cloud"/>
+	</node>
+	<node pkg="bagserver" type="bagserver_srv.py" name="hist_server" output="screen">
+	  <param name="namespace" value="hist"/>
+	  <param name="index" value="$(find functional_m3n_ros)/test_data/pcd_all_1.index"/>
+	  <param name="message_publishing_delay" value="0.5"/>
+	</node>
+
+
+	<node pkg="rosrecord" type="rosplay" args="-s 1 $(find functional_m3n_ros)/test_data/pcd_train_1.bag" output="screen"/>
+
+	<test test-name="functional_m3n_basic" pkg="functional_m3n_ros" type="test_full_training_1.py" name="test_executive" time-limit="600"/>
+
+
+
+</launch>

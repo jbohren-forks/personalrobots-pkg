@@ -114,7 +114,6 @@ bool LearningNode::learn(functional_m3n_ros::Learn::Request  &req,
 {
     ROS_INFO("Received learning command, starting to learn");
 
-
     boost::filesystem::path model_base_path(model_file_path_);
     if(~boost::filesystem::exists(model_base_path))
     {

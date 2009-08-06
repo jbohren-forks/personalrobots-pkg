@@ -1,13 +1,13 @@
 <launch>
 
-  <node pkg="functional_m3n_ros" type="m3n_prediction_node" name="fm3n_learner" output="screen"
-     launch-prefix="xterm -e gdb -args"
+  <node pkg="functional_m3n_ros" type="m3n_prediction_node" name="fm3n_predictor" output="screen"
         >
 
 <!--    launch-prefix="xterm -e gdb -args" -->
     <param name="use_color" value="True"/>
+    <param name="ground_truth_channel" value="ann-w-env-layer-1p"/>
 
-    <param name="model_file" value="$(find functional_m3n_ros)/test_data/test_model_root/test_model_1248938712259804010/f_m3n"/>
+    <param name="model_file" value="$(find functional_m3n_ros)/test_data/test_model_root/test_model_1249495947974724054/f_m3n"/>
     <!--param name="model_file" value="$(find functional_m3n_ros)/test_data/test_model_root/test_model_1248824163850214958/f_m3n" -->
 
     <!--param name="model_file" value="$(find functional_m3n_ros)/test_data/test_model_root/test_model_1248845007846792936/f_m3n"-->

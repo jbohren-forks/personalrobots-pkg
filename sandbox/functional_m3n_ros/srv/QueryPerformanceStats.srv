@@ -1,0 +1,4 @@
+---
+float64 accuracy
+float64 correct_weight
+float64 checked_weight
