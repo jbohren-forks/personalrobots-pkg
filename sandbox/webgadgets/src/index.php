@@ -63,6 +63,7 @@
       {
         gadget = new ROSStartupGadget();
         gadget = new ROSJoystickGadget();
+        gadget = new ROSDemoGadget();
       }
 
       google.load('visualization', '1', {packages:['gauge']});
