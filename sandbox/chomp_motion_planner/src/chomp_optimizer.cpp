@@ -207,12 +207,6 @@ void ChompOptimizer::optimize()
       animatePath();
     }
     
-    if (iteration_ - last_improvement_iteration_ > 50)
-    {
-      ROS_INFO("Aborting due to lack of improvements...");
-      break;
-    }
-
   }
   group_trajectory_.getTrajectory() = best_group_trajectory_;
   updateFullTrajectory();
