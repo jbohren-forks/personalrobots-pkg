@@ -30,7 +30,7 @@
   </metadata>
   <sodipodi:namedview
      inkscape:window-height="1290"
-     inkscape:window-width="1905"
+     inkscape:window-width="1904"
      inkscape:pageshadow="2"
      inkscape:pageopacity="0.0"
      guidetolerance="10.0"
@@ -41,10 +41,10 @@
      pagecolor="#ffffff"
      id="base"
      inkscape:zoom="0.3395"
-     inkscape:cx="481.12168"
+     inkscape:cx="126.18795"
      inkscape:cy="-173.34555"
-     inkscape:window-x="190"
-     inkscape:window-y="51"
+     inkscape:window-x="196"
+     inkscape:window-y="75"
      inkscape:current-layer="svg2"
      width="200px"
      height="200px"
@@ -70,14 +70,38 @@
      style="fill: rgb(212, 0, 0); fill-opacity: 1; fill-rule: nonzero; stroke: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; stroke-miterlimit: 2; stroke-dasharray: none; stroke-dashoffset: 0pt; stroke-opacity: 1;" />
   <text
      xml:space="preserve"
-     style="font-size:281.70236206px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Bitstream Vera Sans"
-     x="53.421341"
-     y="456.24274"
-     id="text2447"
-     transform="scale(0.7842824,1.2750509)"><tspan
+     style="font-size:40px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Bitstream Vera Sans"
+     x="562.59204"
+     y="661.41382"
+     id="text2462"><tspan
        sodipodi:role="line"
-       id="tspan2449"
-       x="53.421341"
-       y="456.24274"
-       style="fill:#ffffff;fill-opacity:1">E-STOP</tspan></text>
+       id="tspan2464"></tspan></text>
+  <g
+     id="g2470"
+     transform="translate(0,47.960951)">
+    <text
+       transform="scale(0.7842824,1.2750509)"
+       id="text2447"
+       y="278.94562"
+       x="304.36502"
+       style="font-size:247.6424408px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Bitstream Vera Sans"
+       xml:space="preserve"><tspan
+         id="tspan2458"
+         style="fill:#ffffff;fill-opacity:1"
+         y="278.94562"
+         x="304.36502"
+         sodipodi:role="line">RUN</tspan></text>
+    <text
+       transform="scale(0.7842824,1.2750509)"
+       id="text2466"
+       y="528.70435"
+       x="243.42177"
+       style="font-size:247.6424408px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Bitstream Vera Sans"
+       xml:space="preserve"><tspan
+         id="tspan2468"
+         style="fill:#ffffff;fill-opacity:1"
+         y="528.70435"
+         x="243.42177"
+         sodipodi:role="line">STOP</tspan></text>
+  </g>
 </svg>
