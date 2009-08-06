@@ -83,9 +83,9 @@ int
   door.travel_dir.x = 1.0;
   door.travel_dir.y = 0.0;
   door.travel_dir.z = 0.0;
-  door.rot_dir = door_msgs::Door::ROT_DIR_COUNTERCLOCKWISE;
-//  door.rot_dir = door_msgs::Door::ROT_DIR_CLOCKWISE;
-  door.hinge = door_msgs::Door::HINGE_P1;
+//  door.rot_dir = door_msgs::Door::ROT_DIR_COUNTERCLOCKWISE;
+  door.rot_dir = door_msgs::Door::ROT_DIR_CLOCKWISE;
+  door.hinge = door_msgs::Door::HINGE_P2;
   door.header.frame_id = "base_footprint";
     
   pr2_robot_actions::SwitchControllers switchlist;
@@ -240,7 +240,7 @@ int
 
 
     if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
-    if (release_handle.execute(door, door, timeout_long) != robot_actions::SUCCESS) return -1;
+    if (release_handle.execute(empty, empty, timeout_long) != robot_actions::SUCCESS) return -1;
   }
 
   ROS_INFO("Door angle is now : %f",getDoorAngle(tmp_door));
