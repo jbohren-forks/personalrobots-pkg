@@ -38,6 +38,7 @@ index = 0
 core_launcher = None
 running = False
 rosCoreUp = False
+launchers = {}
 
 msgClasses = { '/initialpose' : geometry_msgs.msg.PoseWithCovariance,
                '/move_base/activate' : geometry_msgs.msg.PoseStamped
@@ -88,8 +89,15 @@ class RWTFactory(object):
     self.map = {}
     self.lock = threading.Lock()
 
+  def shutdown(self):
+    for key in self.map:
+      self.map[key].unsubscribe()
+
   def get(self, topic, params):
-    topicKey = topic + params
+    topicKey = topic
+    for key in params:
+      topicKey += key + params[key][0]
+
     try:
       self.lock.acquire()
       if topicKey in self.map:
@@ -186,8 +194,15 @@ class ROSWebTopic(object):
   # Unsubscribe from a topic
   def unsubscribe(self):
     self.cond.acquire()
-    self.sub.unregister()
-    self.pub.unregister()
+
+    print "Unsubscribe[%s]" % self.topic 
+
+    if self.sub != None:
+      self.sub.unregister()
+
+    if self.pub != None:
+      self.pub.unregister()
+
     self.initialized = False
     self.cond.release()
   #-----------------------------------------------------------------------------
@@ -268,7 +283,6 @@ class ROSWebTopic(object):
         msg = '{ "name": "%s",' % self.qdict['name'][0]
         msg += '"label": "%s",' % self.qdict['label'][0]
         msg += '"value": "%s"}' % self.last_message
-        print msg
       else:
         msg = rosjson.ros_message_to_json(self.last_message)
 
@@ -412,7 +426,6 @@ def launchScript(script, process_listener_object = None):
     launch.start()
   except roslaunch.RLException, e:
     traceback.print_exc()
-    return None
 
   return launch
 
@@ -449,6 +462,7 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
     global factory
     global core_launcher
     global tfclient
+    global launchers
 
     path_parts = path.split('/')
 
@@ -471,16 +485,22 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
         core_launcher = roslaunch_caller.launch_core()
         time.sleep(5)
         
-        script = commands.getoutput('rospack find webteleop') + '/launch/'
+        scriptDir = commands.getoutput('rospack find webteleop') + '/launch/'
+        startupScript = ''
 
         if robot.startswith('prf'):
-          script += 'prf.launch'
+          startupScript = 'prf.launch'
         elif robot.startswith('prg'):
-          script += 'prg.launch'
+          startupScript = 'prg.launch'
         else:
-          script += 'gazebo.launch'
+          startupScript = 'gazebo.launch'
 
-        launchScript(script)
+        launch = launchScript(scriptDir + startupScript)
+        launchers[startupScript] = launch
+        time.sleep(20)
+
+        launch = launchScript(scriptDir + '2dnav_pr2.launch')
+        launchers['2dnav_pr2.launch'] = launch
         time.sleep(10)
 
       rospy.init_node(CALLER_ID, disable_signals=True)
@@ -492,6 +512,16 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
     elif cmd == "shutdown":
       print "Shutdown[%s]" % topic
 
+      # Stop all the launch scripts
+      for key in launchers:
+        if launchers[key] != None:
+          launchers[key].shutdown()
+          launchers[key] = None
+          time.sleep(10)
+
+      launchers = {}
+
+      # Stop the core
       if core_launcher != None:
         core_launcher.stop()
 
@@ -505,14 +535,33 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
     elif cmd == "launch":
       print "Launch[%s]" % topic
 
-      script = commands.getoutput('rospack find webteleop') + '/launch/' + topic
-      launchScript(script)
+      script = commands.getoutput('rospack find webteleop') + '/launch' + topic
+      launch = launchScript(script)
+
+      launchers[topic] = launch
+      if launchers.has_key(topic):
+        print "HAS KEY!!!!"
 
       self.send_response(200)
       self.send_header( "Content-type", "text/html" )
       self.end_headers()
       self.wfile.write("launched")
-     
+
+    elif cmd == "stop":
+      print "\n\n\n\n\nStop[%s]" % topic
+
+      if launchers.has_key(topic):
+        launchers[topic].shutdown()
+        time.sleep(10)
+        launchers[topic] = None
+      else:
+        print "\n\n\n\n\nDOESNT HAVE KEY"
+
+      self.send_response(200)
+      self.send_header( "Content-type", "text/html" )
+      self.end_headers()
+      self.wfile.write("stopped")
+    
     elif cmd == "subscribe":
       print "Subscribe[%s]\n" % topic
 
@@ -790,7 +839,7 @@ if __name__ == '__main__':
 
   signal.signal(signal.SIGINT, signal_handler)
 
-  port = 8080
+  port = 8081
 
   print 'starting web server on port %s' % port
 
