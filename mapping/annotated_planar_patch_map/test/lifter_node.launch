@@ -1,13 +1,5 @@
 <launch>
 
-  <node pkg="object_names" type="simple_name_server.py" name="name_server" output="screen">
-    <param name="index_name" value="$(find object_names)/launch/names.txt"/>
-  </node>
-
-  <node pkg="object_names" type="simple_color_server.py" name="color_server" output="screen">
-    <param name="index_name" value="$(find object_names)/launch/colors.txt"/>
-  </node>
-
   <node pkg="annotated_planar_patch_map" type="annotation_pcd_lifter_node" 
      	   name="annotation_lifter" respawn="false" output="screen" 
 	>
@@ -15,15 +7,15 @@
 <!--	launch-prefix="xterm -e gdb -args" -->
 
 
-	   <param name="fixed_frame" value="/map"/>
+	   <param name="fixed_frame" value="/stereo_optical_frame"/>
 	   <param name="local_fixed_frame" value="/odom_combined"/>
 
 	   <param name="dist_tolerance" value="0.0"/>
 
-	   <param name="lifting_delay" value="3.1"/>
+	   <param name="lifting_delay" value="1.1"/>
 
-	   <param name="interval_before" value="3.0"/>
-	   <param name="interval_after" value="3.0"/>
+	   <param name="interval_before" value="1.0"/>
+	   <param name="interval_after" value="1.0"/>
 
 	   
 	   <param name="dist_tolerance" value="0.0"/>
@@ -33,7 +25,7 @@
 
 	   <param name="use_color" value="True" type="bool"/>
 	   <param name="annotate_reprojection" value="True" type="bool"/>
-	   <param name="annotate_image_id" value="False" type="bool"/>
+	   <param name="annotate_image_id" value="True" type="bool"/>
 
 	   <param name="downsample" value="0"/>
 

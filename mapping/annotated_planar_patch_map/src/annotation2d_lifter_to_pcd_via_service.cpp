@@ -246,7 +246,7 @@ public:
     ROS_INFO_STREAM("\t cam_info "<< cam_info->header.frame_id);
     ROS_INFO_STREAM("\t cloud "<< cloud.header.frame_id);
     //tf_->transformPointCloud(annotation->reference_frame,annotation->reference_time,cloud,local_fixed_frame_,transformed_map_3D);
-    tf_->transformPointCloud("stereo_l_stereo_camera_frame",annotation->reference_time,cloud,local_fixed_frame_,transformed_map_3D);
+    tf_->transformPointCloud(cam_info->header.frame_id,annotation->reference_time,cloud,local_fixed_frame_,transformed_map_3D);
 
     tf_->transformPointCloud(fixed_frame_,annotation->reference_time,cloud,local_fixed_frame_,transformed_map_3D_fixed);
 

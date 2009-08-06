@@ -152,9 +152,12 @@ void annotated_planar_patch_map::projection::projectAnyObject(const sensor_msgs:
 
   for (unsigned int iP=0;iP<num_pts;iP++){
     CvPoint3D64f pt;
-    pt.x=-source_3D.pts[iP].y;
-    pt.y=-source_3D.pts[iP].z;
-    pt.z= source_3D.pts[iP].x;
+    //pt.x=-source_3D.pts[iP].y;
+    //pt.y=-source_3D.pts[iP].z;
+    //pt.z= source_3D.pts[iP].x;
+    pt.x= source_3D.pts[iP].x;
+    pt.y= source_3D.pts[iP].y;
+    pt.z= source_3D.pts[iP].z;
     
     CV_MAT_ELEM( *object_points, CvPoint3D64f, 0, iP ) = pt;
 
@@ -172,7 +175,7 @@ void annotated_planar_patch_map::projection::projectAnyObject(const sensor_msgs:
     geometry_msgs::Point32 &new_pt=target_2D.pts[iPt];
     new_pt.x=img_pt.x;
     new_pt.y=img_pt.y;
-    new_pt.z=old_pt.x; //I mean, this is the "z" - distance from the image
+    new_pt.z=old_pt.z; //I mean, this is the "z" - distance from the image
   }
 
   cvReleaseMat(&K_);
