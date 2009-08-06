@@ -51,77 +51,80 @@
 uint16_t checksum(uint16_t *data)
 {
   uint16_t sum = 0;
-  for (int i = 0; i < FLASH_PAGE_SIZE / 2; i++)
+  for (int i = 0; i < FLASH_PAGE_SIZE; i++)
     sum += htons(data[i]);
  return htons(0xFFFF - sum);
 }
 
-int read_name(IpCamList *camera)
+int read_calibration(IpCamList *camera)
 {
-  uint8_t namebuff[FLASH_PAGE_SIZE];
-  IdentityFlashPage *id = (IdentityFlashPage *) &namebuff;
+  uint8_t calbuff[2 * FLASH_PAGE_SIZE];
 
-  if(fcamReliableFlashRead(camera, FLASH_NAME_PAGENO, (uint8_t *) namebuff, NULL) != 0)
+  printf("Reading old calibration...\n");
+  if(fcamReliableFlashRead(camera, FLASH_CALIBRATION_PAGENO, (uint8_t *) calbuff, NULL) != 0 ||
+     fcamReliableFlashRead(camera, FLASH_CALIBRATION_PAGENO+1, (uint8_t *) calbuff+FLASH_PAGE_SIZE, NULL) != 0)
   {
     fprintf(stderr, "Flash read error. Aborting.\n");
     return -2;
   }
  
-  uint16_t chk = checksum((uint16_t *) namebuff);
+  uint16_t chk = checksum((uint16_t *) calbuff);
   if (chk)
   {
-    fprintf(stderr, "Previous camera name had bad checksum.\n");
+    fprintf(stderr, "Previous camera calibration had bad checksum.\n");
+  }                                             
+  else
+  {
+    calbuff[sizeof(calbuff) - 2] = 0; // Make sure it is zero-terminated.
+    printf("%s\n", calbuff);
   }
-  
-  id->cam_name[sizeof(id->cam_name) - 1] = 0;
-  printf("Previous camera name was: %s.\n", id->cam_name);
-  uint8_t *oldip = (uint8_t *) &id->cam_addr;
-  printf("Previous camera IP: %i.%i.%i.%i.\n", oldip[0], oldip[1], oldip[2], oldip[3]);
 
   return 0;
 }
 
-int write_name(IpCamList *camera, char *name, char *new_ip)
+int write_calibration(IpCamList *camera, char *filename)
 {
-  uint8_t namebuff[FLASH_PAGE_SIZE];
-  IdentityFlashPage *id = (IdentityFlashPage *) &namebuff;
+  uint8_t calbuff[FLASH_PAGE_SIZE * 2];
+  bzero(calbuff, sizeof(calbuff));
   
-  if (strlen(name) > sizeof(id->cam_name) - 1)
+  fprintf(stderr, "\nWriting new calibration...\n");
+  
+  FILE *f = fopen(filename, "r");
+  if (!f)
   {
-    fprintf(stderr, "Name is too long, the maximum number of characters is %i.\n", sizeof(id->cam_name) - 1);
-    return -2;
+    fprintf(stderr, "Unable to open file %s.\n", filename);
+    return -1;
   }
-  bzero(namebuff, FLASH_PAGE_SIZE);
-  strncpy(id->cam_name, name, sizeof(id->cam_name) - 1);
-  id->cam_name[sizeof(id->cam_name) - 1] = 0;
-  struct in_addr cam_ip;
-  if (!inet_aton(new_ip, &cam_ip))
+  int maxsize = sizeof(calbuff) - sizeof(uint16_t) - 1;
+  int bytesread = fread(calbuff, 1, maxsize + 1, f);
+  fclose(f);
+  if (bytesread > maxsize)
   {
-    fprintf(stderr, "This is not a valid IP address: %s\n", new_ip);
-    return -2;
+    fprintf(stderr, "File %s is too long. At most %i bytes can be stored.\n", filename, maxsize);
+    return -1;
   }
-  id->cam_addr = cam_ip.s_addr;
-  id->checksum = checksum((uint16_t *) namebuff);
+  calbuff[bytesread] = 0; // Make sure we zero-terminate the data.
 
-  if (fcamReliableFlashWrite(camera, FLASH_NAME_PAGENO, (uint8_t *) namebuff, NULL) != 0)
+  ((uint16_t *) calbuff)[FLASH_PAGE_SIZE - 1] = 0;
+  ((uint16_t *) calbuff)[FLASH_PAGE_SIZE - 1] = checksum((uint16_t *) calbuff);
+
+  if (fcamReliableFlashWrite(camera, FLASH_CALIBRATION_PAGENO, (uint8_t *) calbuff, NULL) != 0 ||
+      fcamReliableFlashWrite(camera, FLASH_CALIBRATION_PAGENO+1, (uint8_t *) calbuff+FLASH_PAGE_SIZE, NULL) != 0)
   {    
-    fprintf(stderr, "Flash write error. The camera name is an undetermined state.\n");
+    fprintf(stderr, "Flash write error. The camera calibration is an undetermined state.\n");
     return -2;
   }
   
-  fprintf(stderr, "Success! Restarting camera, should take about 10 seconds to come back up after this.\n");
-
-  fcamReset(camera);
-
+  fprintf(stderr, "Success!\n");
   return 0;
 }
 
 int main(int argc, char **argv)
 {
-  if (argc != 4 && argc != 2) {
-    fprintf(stderr, "Usage: %s <camera_url> <new_name> <new_default_ip>   # Sets the camera name and default IP\n", argv[0]);
-    fprintf(stderr, "       %s <camera_url>                               # Reads the camera name and default IP\n", argv[0]);
-    fprintf(stderr, "\nReads or writes the camera name and default IP address stored on the camera's flash.\n");
+  if (argc != 3 && argc != 2) {
+    fprintf(stderr, "Usage: %s <camera_url> <calibration_file>    # Sets the camera calibration information\n", argv[0]);
+    fprintf(stderr, "       %s <camera_url>                       # Reads the camera calibration information\n", argv[0]);
+    fprintf(stderr, "\nReads or writes the camera calibration information stored on the camera's flash.\n");
     return -1;
   }
 
@@ -148,15 +151,14 @@ int main(int argc, char **argv)
     }
   }
 
-  outval = read_name(&camera);
+  outval = read_calibration(&camera);
   if (outval)
     return outval;
 
-  if (argc != 4)
+  if (argc != 3)
     return 0;
 
-  char *name = argv[2];
-  char *new_ip = argv[3];
+  char *filename = argv[2];
 
-  return write_name(&camera, name, new_ip);
+  return write_calibration(&camera, filename);
 }

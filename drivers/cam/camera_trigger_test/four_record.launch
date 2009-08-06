@@ -1,0 +1,26 @@
+<launch>
+  <node name="rec1" pkg="camera_trigger_test" type="led_flash_record" respawn="false" output="screen">
+    <param name="rate" type="double" value="27.01"/>
+    <param name="skip" type="int" value="100"/>
+    <param name="file" type="string" value="cam1.txt"/>
+    <remap from="image" to="/fc1/image_raw"/>
+  </node>
+  <node name="rec2" pkg="camera_trigger_test" type="led_flash_record" respawn="false" output="screen">
+    <param name="rate" type="double" value="27.01"/>
+    <param name="skip" type="int" value="100"/>
+    <param name="file" type="string" value="cam2.txt"/>
+    <remap from="image" to="/fc2/image_raw"/>
+  </node>
+  <node name="rec3" pkg="camera_trigger_test" type="led_flash_record" respawn="false" output="screen">
+    <param name="rate" type="double" value="27.01"/>
+    <param name="skip" type="int" value="100"/>
+    <param name="file" type="string" value="cam3.txt"/>
+    <remap from="image" to="/fc3/image_raw"/>
+  </node>
+  <node name="rec4" pkg="camera_trigger_test" type="led_flash_record" respawn="false" output="screen">
+    <param name="rate" type="double" value="27.01"/>
+    <param name="skip" type="int" value="100"/>
+    <param name="file" type="string" value="cam4.txt"/>
+    <remap from="image" to="/fc4/image_raw"/>
+  </node>
+</launch>
