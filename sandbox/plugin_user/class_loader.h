@@ -42,14 +42,16 @@
 class Plugin
 {
 public:
-  Plugin(const std::string& name, const std::string& type, const std::string& package, 
+  Plugin(const std::string& name, const std::string& class_name, const std::string& type, const std::string& package, 
          const std::string& description, const std::string& library_path):
     name_(name), 
+    class_name_(class_name),
     type_(type),
     package_(package),
     description_(description), 
     library_path_ (library_path){};
   std::string name_;
+  std::string class_name_;
   std::string type_;
   std::string package_;
   std::string description_;
@@ -128,8 +130,9 @@ public:
           std::string description_str = description->GetText();
 
           std::string plugin_name = plugin->Attribute("name");
+          std::string plugin_class_name = plugin->Attribute("class");
           
-          plugins_available_.insert(std::pair<std::string, Plugin>(plugin_name, Plugin(plugin_name, plugin_type, package_name, description_str, full_library_path.string())));
+          plugins_available_.insert(std::pair<std::string, Plugin>(plugin_name, Plugin(plugin_name, plugin_class_name, plugin_type, package_name, description_str, full_library_path.string())));
           
 
           //step to next plugin
@@ -188,7 +191,7 @@ public:
   {
     try
     {
-      return poco_class_loader_.canCreate(name);
+      return poco_class_loader_.canCreate(getPluginClass(name));
     }
     catch (Poco::RuntimeException &ex)
     {
@@ -205,6 +208,13 @@ public:
     }    
     return plugin_names;
   };
+
+  std::string getPluginClass(const std::string& plugin_name){
+    std::map<std::string, Plugin>::iterator it = plugins_available_.find(plugin_name);
+    if (it != plugins_available_.end())
+      return it->second.class_name_;
+    return "";
+  }
   
   std::string getPluginDescription(const std::string& plugin_name)
   {
@@ -249,7 +259,7 @@ public:
       }
 
     //\todo rethrow with non poco Exceptions
-    return poco_class_loader_.create(name);
+    return poco_class_loader_.create(getPluginClass(name));
   };
 
   void unloadPluginLibrary(const std::string& library_path)
