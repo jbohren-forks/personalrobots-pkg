@@ -10,7 +10,7 @@
   <!-- Calibration -->
   <rosparam command="load" file="$(find pr2_default_controllers)/pr2_calibration_controllers.yaml" />
   <node pkg="mechanism_bringup" type="calibrate.py" output="screen"
-        args="cal_head_pan_alpha2 cal_head_tilt_alpha2 cal_laser_tilt" />
+        args="cal_head_pan_alpha2 cal_head_tilt_alpha2b cal_laser_tilt" />
 
   <!-- Robot state publisher -->
   <node machine="two" pkg="robot_state_publisher" type="state_publisher" name="robot_state_publisher">
