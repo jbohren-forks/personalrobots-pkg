@@ -79,11 +79,12 @@ int main()
   // Create random field
   PtCloudRFCreator rf_creator;
   const boost::shared_ptr<RandomField> training_rf = rf_creator.createRandomField(pt_cloud, labels);
-  training_rf->saveNodeFeatures("tempo/train_node_unknown.txt");
-  training_rf->saveCliqueFeatures("tempo/train_rf_unknown");
-  training_rf->saveRandomField("rf_saved1/poooop");
-  training_rf->loadRandomField("rf_saved1/poooop");
-  training_rf->saveRandomField("rf_saved2/poooop");
+  training_rf->saveRandomField("rf_from_memory/train_rf");
+
+  //const boost::shared_ptr<RandomField> loaded_rf(new RandomField(2));
+  //loaded_rf->loadRandomField("rf_from_memory/train_rf");
+  //loaded_rf->saveRandomField("rf_from_file/train_rf");
+
   // ----------------------------------------------
   // Define learning parameters
   vector<float> robust_potts_params(training_rf->getNumberOfCliqueSets(), -1.0);
