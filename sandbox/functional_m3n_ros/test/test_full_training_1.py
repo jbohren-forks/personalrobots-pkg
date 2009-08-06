@@ -47,6 +47,9 @@ class FullTestLearningBasic(unittest.TestCase):
     def testLearningSimple(self):
         rospy.sleep(5);
         rospy.wait_for_service('/learn')
+        rospy.wait_for_service('/hist')
+        rospy.wait_for_service('/SetModel')
+
 
         learn_proxy = rospy.ServiceProxy('learn', Learn)
         model_name="test_model_%s" % str(rospy.get_rostime());
@@ -66,7 +69,7 @@ class FullTestLearningBasic(unittest.TestCase):
         begin=rospy.Time(1247098041,895116000); 
         end  =rospy.Time(1247098087,908848000);
         play_history(begin,end,"ALL")
-        rospy.sleep(10);
+        rospy.sleep(20);
 
         perf1=predictor_performance();
 
@@ -83,7 +86,7 @@ class FullTestLearningBasic(unittest.TestCase):
 
         play_history(begin,end,"ALL")
 
-        rospy.sleep(10);
+        rospy.sleep(20);
         perf2=predictor_performance();
         rospy.loginfo("Accuracy %f (%f of %f )" %(perf2.accuracy,perf2.correct_weight,perf2.checked_weight))
 

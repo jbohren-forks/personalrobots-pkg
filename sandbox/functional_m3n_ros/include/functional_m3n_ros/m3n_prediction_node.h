@@ -82,6 +82,7 @@ public:
 
   unsigned int nbr_clique_sets;
   M3NModel m3n_model2;
+  bool has_model_;
 
   std::string model_file_name_;
   std::string ground_truth_channel_name_;

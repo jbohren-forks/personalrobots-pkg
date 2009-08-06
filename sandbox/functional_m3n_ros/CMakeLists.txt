@@ -42,6 +42,6 @@ rospack_download_test_data(http://pr.willowgarage.com/data/${PROJECT_NAME}/pcd_a
 rospack_download_test_data(http://pr.willowgarage.com/data/${PROJECT_NAME}/pcd_test_1.bag test_data/pcd_test_1.bag)
 rospack_download_test_data(http://pr.willowgarage.com/data/${PROJECT_NAME}/pcd_train_1.bag test_data/pcd_train_1.bag)
 
-#rospack_add_rostest(test/test_full_training.xml)
+rospack_add_rostest(test/test_full_training.xml)
 
 

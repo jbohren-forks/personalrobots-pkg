@@ -51,11 +51,6 @@ PredictionNode::PredictionNode()
   cloud_sub_ = n_.subscribe<PointCloud>("cloud",100,boost::bind(&PredictionNode::cloudCallback, this, _1));
 
   n_.param(std::string("~model_file"),model_file_name_,std::string("NONE"));
-  if(model_file_name_=="NONE")
-  {
-    ROS_ERROR("Model file is not specified");
-    throw "ERR";
-  }
 
   n_.param( std::string("~use_color"), use_colors_, false);
 
@@ -64,12 +59,6 @@ PredictionNode::PredictionNode()
   n_.param(std::string("~ground_truth_channel"),ground_truth_channel_name_,std::string("NONE"));
 
 
-  if (m3n_model2.loadFromFile(model_file_name_) < 0)  
-  {
-    ROS_ERROR("couldnt load model");
-    throw "ERR";
-  }
-
   set_model_svc_ = n_.advertiseService(std::string("SetModel"), &PredictionNode::setModel,this);
 
   query_perf_stats_svc_  = n_.advertiseService(std::string("Performance"), &PredictionNode::queryPerformanceStats,this);
@@ -77,6 +66,20 @@ PredictionNode::PredictionNode()
   nbr_correct=0;
   nbr_gt=0;
   total_accuracy=0.0;
+
+  if(model_file_name_=="NONE")
+  {
+    has_model_=false;
+    ROS_WARN("Model file is not specified. No predictions will be made.");
+  }else if (m3n_model2.loadFromFile(model_file_name_) < 0)  
+  {
+    has_model_=false;
+    ROS_ERROR("couldnt load model");
+  }else{
+    has_model_=true;
+
+  }
+
 
   ROS_INFO("Init done.");
 
@@ -100,6 +103,11 @@ bool PredictionNode::setModel(functional_m3n_ros::SetModel::Request  &req,
   if (m3n_model2.loadFromFile(model_file_name_) < 0)  
     {
       ROS_ERROR("couldnt load model");
+      has_model_=false;
+    }
+  else
+    {
+      has_model_=true;
     }
   nbr_correct=0;
   nbr_gt=0;
@@ -111,7 +119,11 @@ bool PredictionNode::setModel(functional_m3n_ros::SetModel::Request  &req,
 
 void PredictionNode::cloudCallback(const PointCloudConstPtr& the_cloud)
 {
-
+  if(! has_model_)
+    {
+      ROS_ERROR("No model has been loaded. Call SetModel service or specify a valid model_file .");
+      return;
+    }
     ROS_INFO("Received point cloud, starting detection");
     //cloud_ = the_cloud;
 
