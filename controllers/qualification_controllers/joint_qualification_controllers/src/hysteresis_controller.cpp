@@ -56,17 +56,17 @@ HysteresisController::HysteresisController()
 
   test_data_.arg_name.resize(11);
   test_data_.arg_value.resize(11);
-  test_data_.arg_name[0] = "min_expected_effort";
-  test_data_.arg_name[1] = "max_expected_effort";
-  test_data_.arg_name[2] = "min_pos";
-  test_data_.arg_name[3] = "max_pos";
-  test_data_.arg_name[4] = "search_vel";
-  test_data_.arg_name[5] = "timeout";
-  test_data_.arg_name[6] = "max_effort";
-  test_data_.arg_name[7] = "p_gain";
-  test_data_.arg_name[8] = "i_gain";
-  test_data_.arg_name[9] = "d_gain";
-  test_data_.arg_name[10] = "iClamp";
+  test_data_.arg_name[0] = "Min. Expected Effort";
+  test_data_.arg_name[1] = "Max. Expected Effort";
+  test_data_.arg_name[2] = "Minimum Position";
+  test_data_.arg_name[3] = "Minimum Position";
+  test_data_.arg_name[4] = "Velocity";
+  test_data_.arg_name[5] = "Timeout";
+  test_data_.arg_name[6] = "Max. Allowed Effort";
+  test_data_.arg_name[7] = "P Gain";
+  test_data_.arg_name[8] = "I Gain";
+  test_data_.arg_name[9] = "D Gain";
+  test_data_.arg_name[10] = "I-Clamp";
 
   state_         = STOPPED;
   starting_count = 0;
