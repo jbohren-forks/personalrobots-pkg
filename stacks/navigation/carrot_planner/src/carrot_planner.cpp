@@ -36,20 +36,33 @@
 *********************************************************************/
 #include <carrot_planner/carrot_planner.h>
 
-namespace carrot_planner {
-  ROS_REGISTER_BGP(CarrotPlanner);
+//register this planner as a BaseGlobalPlanner plugin
+POCO_BEGIN_MANIFEST(nav_core::BaseGlobalPlanner)
+POCO_EXPORT_CLASS(carrot_planner::CarrotPlanner)
+POCO_END_MANIFEST
 
-  CarrotPlanner::CarrotPlanner(std::string name, costmap_2d::Costmap2DROS& costmap_ros)
-  : costmap_ros_(costmap_ros){
+namespace carrot_planner {
+
+  CarrotPlanner::CarrotPlanner()
+  : costmap_ros_(NULL), initialized_(false){}
+
+  CarrotPlanner::CarrotPlanner(std::string name, costmap_2d::Costmap2DROS* costmap_ros)
+  : costmap_ros_(NULL), initialized_(false){
+    initialize(name, costmap_ros);
+  }
+  
+  void CarrotPlanner::initialize(std::string name, costmap_2d::Costmap2DROS* costmap_ros){
     ros::NodeHandle n(name);
-    n.param("~step_size", step_size_, costmap_ros_.getResolution());
+    n.param("~step_size", step_size_, costmap_ros_->getResolution());
     n.param("~min_dist_from_robot", min_dist_from_robot_, 0.10);
-    costmap_ros_.getCostmapCopy(costmap_);
+    costmap_ros_->getCostmapCopy(costmap_);
     world_model_ = new base_local_planner::CostmapModel(costmap_); 
     //we'll get the parameters for the robot radius from the costmap we're associated with
-    inscribed_radius_ = costmap_ros_.getInscribedRadius();
-    circumscribed_radius_ = costmap_ros_.getCircumscribedRadius();
-    footprint_spec_ = costmap_ros_.getRobotFootprint();
+    inscribed_radius_ = costmap_ros_->getInscribedRadius();
+    circumscribed_radius_ = costmap_ros_->getCircumscribedRadius();
+    footprint_spec_ = costmap_ros_->getRobotFootprint();
+
+    initialized_ = true;
   }
 
 
@@ -58,6 +71,10 @@ namespace carrot_planner {
 
   //we need to take the footprint of the robot into account when we calculate cost to obstacles
   double CarrotPlanner::footprintCost(double x_i, double y_i, double theta_i){
+    if(!initialized_){
+      ROS_ERROR("The planner has not been initialized, please call initialize() to use the planner");
+      return -1.0;
+    }
     //if we have no footprint... do nothing
     if(footprint_spec_.size() < 3)
       return -1.0;
@@ -86,14 +103,19 @@ namespace carrot_planner {
   bool CarrotPlanner::makePlan(const geometry_msgs::PoseStamped& start, 
       const geometry_msgs::PoseStamped& goal, std::vector<geometry_msgs::PoseStamped>& plan){
 
+    if(!initialized_){
+      ROS_ERROR("The planner has not been initialized, please call initialize() to use the planner");
+      return false;
+    }
+
     ROS_DEBUG("Got a start: %.2f, %.2f, and a goal: %.2f, %.2f", start.pose.position.x, start.pose.position.y, goal.pose.position.x, goal.pose.position.y);
 
     plan.clear();
-    costmap_ros_.getCostmapCopy(costmap_);
+    costmap_ros_->getCostmapCopy(costmap_);
 
-    if(goal.header.frame_id != costmap_ros_.getGlobalFrameID()){
+    if(goal.header.frame_id != costmap_ros_->getGlobalFrameID()){
       ROS_ERROR("This planner as configured will only accept goals in the %s frame, but a goal was sent in the %s frame.", 
-          costmap_ros_.getGlobalFrameID().c_str(), goal.header.frame_id.c_str());
+          costmap_ros_->getGlobalFrameID().c_str(), goal.header.frame_id.c_str());
       return false;
     }
 
