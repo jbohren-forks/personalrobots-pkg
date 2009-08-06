@@ -38,7 +38,9 @@ SlamGMapping::SlamGMapping():
 {
   // log4cxx::Logger::getLogger(ROSCONSOLE_DEFAULT_NAME)->setLevel(ros::console::g_level_lookup[ros::console::levels::Debug]);
 
-  gsp_ = new GMapping::GridSlamProcessor(std::cerr);
+  // The library is pretty chatty
+  //gsp_ = new GMapping::GridSlamProcessor(std::cerr);
+  gsp_ = new GMapping::GridSlamProcessor();
   ROS_ASSERT(gsp_);
 
   tfB_ = new tf::TransformBroadcaster();
