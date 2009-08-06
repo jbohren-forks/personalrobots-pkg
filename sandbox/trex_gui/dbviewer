@@ -677,7 +677,7 @@ def load_data():
   rule_src = {}
 
   # Generate the step path
-  step_path = os.path.join(output_path, "step%s" % tick, "step%s" % tick)
+  step_path = os.path.join(output_path, "tick%s" % tick, "tick%s" % tick)
 
   # Read in rule source code paths
   rule_src_reader = csv.reader(open(os.path.join(output_path,"rules")),delimiter='\t')
