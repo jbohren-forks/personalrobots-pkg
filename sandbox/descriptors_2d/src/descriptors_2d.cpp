@@ -1041,10 +1041,9 @@ void SuperpixelColorHistogram::doComputation(IplImage* img, const KeyPoint& poin
   int label = CV_IMAGE_ELEM(seg_, int, (size_t)point.pt.y, (size_t)point.pt.x);
   assert(label != -1);
 
-  cout << "lbl " << label << endl;
-
   // -- Compute the histogram.
   computeHistogramCV(label);
+  assert(sizeof(float) == sizeof(int));
 
   // -- Copy into result.
   result.resize(result_size_);
@@ -1081,6 +1080,8 @@ void SuperpixelColorHistogram::computeHistogramCV(int label) {
     CvHistogram* hist = cvCreateHist(2, sizes, CV_HIST_ARRAY, ranges, 1);
     CvRect rect;
     IplImage* mask = createSegmentMask(label, &rect);
+    CVSHOW("mask", mask);
+    cvWaitKey(0);
 
     //For efficiency, set the ROI's and compute the histogram.
     cvSetImageROI(hue_, rect);
@@ -1092,8 +1093,38 @@ void SuperpixelColorHistogram::computeHistogramCV(int label) {
     cvResetImageROI(hue_);
     cvResetImageROI(sat_);
 
+    //Debugging
+    cout << "cv hist (before norm): " << endl;
+    for(int i=0; i<num_bins_; i++) {
+      for(int j=0; j<num_bins_; j++) {
+      cout << cvQueryHistValue_2D(hist, i, j) << " ";
+      }
+    }
+    cout << endl;
+
+
     cvNormalizeHist(hist, 1);
     histograms_cv_[label] = hist;
+
+
+    //Debugging
+    cout << "cv hist (after norm): " << endl;
+    for(int i=0; i<num_bins_; i++) {
+      for(int j=0; j<num_bins_; j++) {
+      cout << cvQueryHistValue_2D(hist, i, j) << " ";
+      }
+    }
+    cout << endl;
+
+    //Debugging
+    cout << "cv hist (after norm) in vector: " << endl;
+    for(int i=0; i<num_bins_; i++) {
+      for(int j=0; j<num_bins_; j++) {
+      cout << cvQueryHistValue_2D(histograms_cv_[label], i, j) << " ";
+      }
+    }
+    cout << endl;
+
   }
 }
 
