@@ -364,38 +364,19 @@ private:
 		    
 		    // if reaching the intermediate state was succesful
 		    if (result == robot_actions::SUCCESS)
-		    {
 			// run the short range planner to the original goal
-			robot_actions::ResultStatus temp = runSRplanner(req, feedback);
-
-			// if the planner aborted and we have an idea about an invalid state that
-			// may be in the goal region, we make one last try using the short range planner
-			if (temp == robot_actions::ABORTED && !states.empty())
-			{
-			    // set the goal to be a state
-			    updateRequest(req, states[0].get());
-			    temp = runSRplanner(req, feedback);
-
-			    // restore the input received from the user
-			    req.goal_constraints = kc;
-			    planningMonitor_->setGoalConstraints(req.goal_constraints);
-			    
-			    return temp;
-			}
-			else
-			    return temp;
-		    }
+			return runSRplanner(states, req, feedback);
 		    else
 			return result;
 		}
-	    }
+	    }	    
 	    else
-		return runLRplanner(req, feedback);
+		return runLRplanner(states, req, feedback);
 	}
 	else
 	{
 	    ROS_ERROR("Service for searching for valid states failed");
-	    return runLRplanner(req, feedback);
+	    return runLRplanner(states, req, feedback);
 	}
 	
     }
@@ -583,16 +564,56 @@ private:
     
     robot_actions::ResultStatus runLRplanner(motion_planning_msgs::GetMotionPlan::Request &req, int32_t& feedback)
     {
+	std::vector< boost::shared_ptr<planning_models::StateParams> > states;
+	return runLRplanner(states, req, feedback);	
+    }
+    
+    robot_actions::ResultStatus runLRplanner(std::vector< boost::shared_ptr<planning_models::StateParams> > &states,
+					     motion_planning_msgs::GetMotionPlan::Request &req, int32_t& feedback)
+    {
 	ROS_DEBUG("Running long range planner...");
 	ros::ServiceClient clientPlan = core_.nodeHandle_.serviceClient<motion_planning_msgs::GetMotionPlan>(LR_MOTION_PLAN_NAME, true);
-	return runPlanner(clientPlan, req, feedback);	
-    }
 
+	robot_actions::ResultStatus result = runPlanner(clientPlan, req, feedback);
+	
+	// if the planner aborted and we have an idea about an invalid state that
+	// may be in the goal region, we make one last try using the short range planner
+	if (result == robot_actions::ABORTED && !states.empty())
+	{
+	    // set the goal to be a state
+	    ROS_INFO("Trying again with a state in the goal region (although the state is invalid)...");
+	    updateRequest(req, states[0].get());
+	    result = runPlanner(clientPlan, req, feedback);
+	}
+	
+	return result;
+    }
+    
     robot_actions::ResultStatus runSRplanner(motion_planning_msgs::GetMotionPlan::Request &req, int32_t& feedback)
+    {
+	std::vector< boost::shared_ptr<planning_models::StateParams> > states;
+	return runSRplanner(states, req, feedback);
+    }
+    
+    robot_actions::ResultStatus runSRplanner(std::vector< boost::shared_ptr<planning_models::StateParams> > &states,
+					     motion_planning_msgs::GetMotionPlan::Request &req, int32_t& feedback)
     {
 	ROS_DEBUG("Running short range planner...");
 	ros::ServiceClient clientPlan = core_.nodeHandle_.serviceClient<motion_planning_msgs::GetMotionPlan>(SR_MOTION_PLAN_NAME, true);
-	return runPlanner(clientPlan, req, feedback);
+
+	robot_actions::ResultStatus result = runPlanner(clientPlan, req, feedback);
+	
+	// if the planner aborted and we have an idea about an invalid state that
+	// may be in the goal region, we make one last try using the short range planner
+	if (result == robot_actions::ABORTED && !states.empty())
+	{
+	    // set the goal to be a state
+	    ROS_INFO("Trying again with a state in the goal region (although the state is invalid)...");
+	    updateRequest(req, states[0].get());
+	    result = runPlanner(clientPlan, req, feedback);
+	}
+	
+	return result;
     }
 
     robot_actions::ResultStatus runPlanner(ros::ServiceClient &clientPlan, motion_planning_msgs::GetMotionPlan::Request &req, int32_t& feedback)
@@ -705,16 +726,18 @@ private:
 		    validatingPath_ = true;
 		    collisionCost_ = 0.0;
 		    collisionLinks_.clear();
-		    valid = planningMonitor_->isPathValid(currentPath, currentPos, currentPath.states.size() - 1, planning_environment::PlanningMonitor::COLLISION_TEST, true);
+		    valid = planningMonitor_->isPathValid(currentPath, currentPos, currentPath.states.size() - 1, planning_environment::PlanningMonitor::COLLISION_TEST, false);
 		    validatingPath_ = false;
 
 		    if (!valid)
 		    {
-			if (evaluateLastCollisionCost() < core_.maxPenetrationDepth_)
+			double cost = evaluateLastCollisionCost();
+			ROS_INFO("Path contact penetration depth: %f", cost);
+			if (cost < core_.maxPenetrationDepth_)
 			    valid = true;
 		    }
 		    if (valid)
-			valid = planningMonitor_->isPathValid(currentPath, currentPos, currentPath.states.size() - 1, planning_environment::PlanningMonitor::PATH_CONSTRAINTS_TEST, true);
+			valid = planningMonitor_->isPathValid(currentPath, currentPos, currentPath.states.size() - 1, planning_environment::PlanningMonitor::PATH_CONSTRAINTS_TEST, false);
 		}
 		
 		if (result == robot_actions::PREEMPTED || !safe || !valid)
@@ -882,6 +905,8 @@ private:
     
     void printPath(const motion_planning_msgs::KinematicPath &path)
     {
+//	return;
+	
 	for (unsigned int i = 0 ; i < path.states.size() ; ++i)
 	{
 	    std::stringstream ss;
