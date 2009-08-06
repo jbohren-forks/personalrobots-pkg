@@ -34,7 +34,8 @@
 #include "Poco/ClassLoader.h"
 #include "ros/package.h"
 #include "tinyxml/tinyxml.h"
-
+#include <vector>
+#include <map>
 
 #include "boost/filesystem.hpp"
 
@@ -58,12 +59,16 @@ public:
 
 namespace fs = boost::filesystem;
 
+typedef std::map<std::string, unsigned int> LibraryCountMap;
+
 namespace ros
 {
+
 template <class T>
 class ClassLoader 
 {
 public:
+
   ClassLoader(std::string package, std::string plugin_type)
   {
     //Pull possible files from manifests of packages which depend on this package and export plugin
@@ -155,7 +160,6 @@ public:
       loadPluginLibrary(library_path);
       //poco_assert (poco_class_loader_.isLibraryLoaded(library_path));
       //zpoco_check_ptr (poco_class_loader_.findManifest(library_path)); 
-      loaded_libraries_.push_back(library_path);  //for correct destruction and access
     }
     catch (Poco::LibraryLoadException &ex)
     {
@@ -172,9 +176,10 @@ public:
   
   ~ClassLoader()
   {
-    for (std::vector<std::string>::iterator it = loaded_libraries_.begin(); it != loaded_libraries_.end(); ++it)
+    for (LibraryCountMap::iterator it = loaded_libraries_.begin(); it != loaded_libraries_.end(); ++it)
     {
-      unloadPluginLibrary(*it);
+      if ( it->second > 0)
+        unloadPluginLibrary(it->first);
     }
   };
 
@@ -249,12 +254,27 @@ public:
 
   void unloadPluginLibrary(const std::string& library_path)
   {
-    poco_class_loader_.unloadLibrary(library_path);
+    LibraryCountMap::iterator it = loaded_libraries_.find(library_path);
+    if (it == loaded_libraries_.end())
+    {
+      std::cerr << "unable to unload library which is not loaded" << std::endl;
+      return;
+    }
+    else if (it-> second > 1)
+      (it->second)--;
+    else 
+      poco_class_loader_.unloadLibrary(library_path);
+    
   }
   
   void loadPluginLibrary(const std::string& library_path)
   {
     poco_class_loader_.loadLibrary(library_path);
+    LibraryCountMap::iterator it = loaded_libraries_.find(library_path);
+    if (it == loaded_libraries_.end())
+      loaded_libraries_[library_path] = 1;  //for correct destruction and access
+    else 
+      loaded_libraries_[library_path] = loaded_libraries_[library_path] + 1;
   }
 
   std::vector<std::string> getPluginsInLibrary(const std::string & library_path)
@@ -275,23 +295,29 @@ public:
 
   std::vector<std::string> getLoadedLibraries()
   {
+    std::vector<std::string> library_names;
 
     /*
       \todo find a way to get ths out of poco 
-      std::vector<std::string> library_names;
     for (typename Poco::ClassLoader<T>::Iterator it = poco_class_loader_.begin(); it != poco_class_loader_.end(); ++it)
     {
       library_names.push_back(it->second->className());
     }
     return library_names;
     */
-    return loaded_libraries_;
+    LibraryCountMap::iterator it;
+    for (it = loaded_libraries_.begin(); it != loaded_libraries_.end(); it++)
+    { 
+      if (it->second > 0)
+        library_names.push_back(it->first);
+    }
+    return library_names;
   };
   
 private:
 
   //used for proper unloading of automatically loaded libraries
-  std::vector<std::string> loaded_libraries_;
+  LibraryCountMap loaded_libraries_;
 
   
   // map from library to plugin's descriptions  

@@ -75,8 +75,8 @@ extern "C" {
 // prefilter
 
 //#define do_prefilter do_prefilter_norm
-#define do_prefilter do_prefilter_fast
-//#define do_prefilter do_prefilter_xsobel
+//#define do_prefilter do_prefilter_fast
+#define do_prefilter do_prefilter_xsobel
 
 void
 do_prefilter_norm(uint8_t *im,	// input image
