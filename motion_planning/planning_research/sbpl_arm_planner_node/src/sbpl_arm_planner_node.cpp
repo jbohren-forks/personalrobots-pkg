@@ -419,17 +419,17 @@ void SBPLArmPlannerNode::pointCloudCallback(const sensor_msgs::PointCloudConstPt
 
 void SBPLArmPlannerNode::dummyCallback(const mechanism_msgs::MechanismStateConstPtr &mechanism_state)
 {
-  if(mPlanning_.try_lock())
-  {
-    if(bPlanning_)
-    {
-      mPlanning_.unlock();
-      return;
-    }
-    mPlanning_.unlock();
-  }
-  else
-    return;
+//   if(mPlanning_.try_lock())
+//   {
+//     if(bPlanning_)
+//     {
+//       mPlanning_.unlock();
+//       return;
+//     }
+//     mPlanning_.unlock();
+//   }
+//   else
+//     return;
 //   double xyz_m[3], rpy_r[3], angles_r[7];
 //   std::vector <double> joint_angles;
 //   getCurrentJointAngles(joint_names_, &joint_angles);
