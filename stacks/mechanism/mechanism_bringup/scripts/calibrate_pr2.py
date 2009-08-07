@@ -41,6 +41,7 @@ import copy
 import threading
 import sys, os
 from time import sleep
+import getopt
 
 # Loads interface with the robot.
 roslib.load_manifest('mechanism_bringup')
@@ -50,7 +51,6 @@ from mechanism_msgs.srv import SpawnController, KillController, SwitchController
 from imu_node.srv import GetBoolStatus
 
 from robot_mechanism_controllers.srv import *
-from robot_mechanism_controllers import controllers
 
 
 class SendMessageOnSubscribe(rospy.SubscribeListener):
@@ -158,11 +158,27 @@ def calibrate_imu():
         return False
 
 def main():
-    rospy.wait_for_service('spawn_controller')
-
     rospy.init_node('calibration', anonymous=True)
 
-    holding = [] # Tracks which controllers are holding joints by name
+
+    allowed_flags = ['alpha-casters', 'alpha-head']
+    opts, args = getopt.gnu_getopt(rospy.myargv(), 'h', allowed_flags)
+    flags = [o[0] for o in opts]
+
+    if '-h' in flags:
+        print "Flags:", ' '.join(['--'+f for f in allowed_flags])
+        sys.exit(0)
+    
+    if '--alpha-casters' in flags:
+        casters = ['caster_fl_alpha2', 'caster_fr_alpha2', 'caster_bl_alpha2', 'caster_br_alpha2']
+    else:
+        casters = ['caster_fl', 'caster_fr', 'caster_bl', 'caster_br']
+    if '--alpha-head' in flags:
+        head = ['head_pan_alpha2', 'head_tilt_alpha2']
+    else:
+        head = ['head_pan', 'head_tilt']
+
+    rospy.wait_for_service('spawn_controller')
 
     # Calibrate all joints sequentially
     # Hold joints after they're calibrated.
@@ -198,19 +214,15 @@ def main():
     hold('torso_lift', 0.0)
 
     # Everything else
-    calibrate(['r_forearm_roll',
-               'l_forearm_roll',
-               'r_wrist',
-               'r_gripper',
-               'l_wrist',
-               'l_gripper',
-               'laser_tilt',
-               'head_pan',
-               'head_tilt',
-               'caster_fl',
-               'caster_fr',
-               'caster_bl',
-               'caster_br'])
+
+    common = ['r_forearm_roll',
+              'l_forearm_roll',
+              'r_wrist',
+              'r_gripper',
+              'l_wrist',
+              'l_gripper',
+              'laser_tilt']
+    calibrate(common + head + casters)
 
 
     # Kill all holding controllers
