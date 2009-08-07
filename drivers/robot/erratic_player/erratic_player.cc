@@ -58,7 +58,7 @@ $ erratic_player
 @section topic ROS topics
 
 Subscribes to (name/type):
-- @b "cmd_vel"/PoseDot : velocity commands to differentially drive the robot.
+- @b "cmd_vel"/Twist : velocity commands to differentially drive the robot.
 
 Publishes to (name / type):
 - @b "odom"/Odometry : odometry data from the robot.
@@ -88,7 +88,7 @@ Publishes to (name / type):
 // Messages that I need
 #include <nav_msgs/Odometry.h>
 //#include <std_msgs/RobotBase2DCmdVel.h>
-#include <robot_msgs/PoseDot.h>
+#include <geometry_msgs/Twist.h>
 #include <pr2_msgs/BatteryState.h>
 
 #define PLAYER_QUEUE_LEN 32
@@ -103,7 +103,7 @@ class ErraticNode: public ros::Node
     QueuePointer q;
 
     nav_msgs::Odometry odom;
-    robot_msgs::PoseDot cmdvel;
+    geometry_msgs::Twist cmdvel;
 
     tf::TransformBroadcaster tf;
   
@@ -256,9 +256,9 @@ class ErraticNode: public ros::Node
       //cmd.vel.px = this->cmdvel.vel.x;
       //cmd.vel.py = this->cmdvel.vel.y;
       //cmd.vel.pa = this->cmdvel.vel.th;
-      cmd.vel.px = this->cmdvel.vel.vx;
+      cmd.vel.px = this->cmdvel.linear.x;
       cmd.vel.py = 0.0;
-      cmd.vel.pa = this->cmdvel.ang_vel.vz;
+      cmd.vel.pa = this->cmdvel.angular.z;
       cmd.state = 1;
 
 
