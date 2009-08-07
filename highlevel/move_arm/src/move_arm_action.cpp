@@ -645,6 +645,10 @@ private:
 
     robot_actions::ResultStatus runPlanner(ros::ServiceClient &clientPlan, motion_planning_msgs::GetMotionPlan::Request &req, int32_t& feedback)
     {
+        planningMonitor_->setAllowedContacts(req.params.contacts);
+	std::vector<collision_space::EnvironmentModel::AllowedContact> allowed_contacts = planningMonitor_->getAllowedContacts();
+	planningMonitor_->clearAllowedContacts();
+
 	ResultStatus result = robot_actions::SUCCESS;
 	
 	feedback = move_arm::MoveArmState::PLANNING;
@@ -753,8 +757,10 @@ private:
 		    
 		    CollisionCost ccost;
 		    planningMonitor_->setOnCollisionContactCallback(boost::bind(&MoveArm::contactFound, this, &ccost, true, _1), 0);
+		    planningMonitor_->setAllowedContacts(allowed_contacts);
 		    valid = planningMonitor_->isPathValid(currentPath, currentPos, currentPath.states.size() - 1, planning_environment::PlanningMonitor::COLLISION_TEST + 
 							  planning_environment::PlanningMonitor::PATH_CONSTRAINTS_TEST, false);
+		    planningMonitor_->clearAllowedContacts();
 		    planningMonitor_->setOnCollisionContactCallback(NULL);
 		    
 		    if (!valid)
@@ -873,10 +879,7 @@ private:
     
 
     robot_actions::ResultStatus execute(const move_arm::MoveArmGoal& goal, int32_t& feedback)
-    { 
-
-        planningMonitor_->setAllowedContacts(goal.contacts);
-	
+    { 	
 	motion_planning_msgs::GetMotionPlan::Request req;
 	
 	req.params.model_id = core_.group_;      // the model to plan for (should be defined in planning.yaml)
