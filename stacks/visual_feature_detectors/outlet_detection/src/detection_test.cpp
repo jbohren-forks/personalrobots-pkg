@@ -21,7 +21,7 @@
 #include "outlet_detection/outlet_detector_test.h"
 
 
-int LoadCameraParams(char* filename, CvMat** intrinsic_matrix, CvMat** distortion_coeffs)
+int _LoadCameraParams(char* filename, CvMat** intrinsic_matrix, CvMat** distortion_coeffs)
 {
 
 	CvFileStorage* fs = cvOpenFileStorage( filename, 0, CV_STORAGE_READ );
@@ -81,7 +81,7 @@ int main(int argc,char** argv)
 		// reading camera params
 	CvMat* intrinsic_matrix = 0;
 	CvMat* distortion_params = 0; 
-	LoadCameraParams(camera_filename, &intrinsic_matrix, &distortion_params);
+	_LoadCameraParams(camera_filename, &intrinsic_matrix, &distortion_params);
 
 	vector<outlet_test_elem> test_data;
 
@@ -172,8 +172,19 @@ int main(int argc,char** argv)
 			sprintf(pathname, "mkdir %s/warped", output_path);
 			system(pathname);
 	#else
+#if defined(_L_DETECTOR)
+			sprintf(pathname, "mkdir %s/correspondence", output_path);
+			system(pathname);
+
+			sprintf(pathname, "mkdir %s/outlets", output_path);
+			system(pathname);
+	        
+			sprintf(pathname, "mkdir %s/features", output_path);
+			system(pathname);
+
+#else
 			sprintf(pathname, "mkdir %s/output_filt", output_path);
-		system(pathname);
+			system(pathname);
 
 			sprintf(pathname, "mkdir %s/outlets", output_path);
 			system(pathname);
@@ -183,14 +194,17 @@ int main(int argc,char** argv)
 	        
 			sprintf(pathname, "mkdir %s/features_filtered", output_path);
 			system(pathname);
+#endif // _L_DETECTOR
 	#endif
 	#endif //_VERBOSE
 			
-		
+#if !defined(_L_DETECTOR)		
 		if ((argc !=7) && (strcmp(mode,"modify")!=0))
 		{
+
 			outlet_template.load(train_config);
 		}
+#endif
 
 		//Running the test
 		if (strcmp(mode,"modify")==0)
@@ -199,7 +213,11 @@ int main(int argc,char** argv)
 			printf("New test config was successfully generated into %s\n",output_test_config);
 		}
 		else
+#if defined(_L_DETECTOR)
+			runLOutletDetectorTest(intrinsic_matrix, distortion_params, train_config, test_data, output_path);
+#else
 			runOutletDetectorTest(intrinsic_matrix, distortion_params, outlet_template, test_data, output_path);
+#endif
 
 		if (strcmp(mode,"generate")==0)
 		{

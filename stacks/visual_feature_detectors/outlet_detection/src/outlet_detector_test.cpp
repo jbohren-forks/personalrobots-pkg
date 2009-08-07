@@ -6,6 +6,7 @@ Created by: Alexey Latyshev
 #include <vector>
 
 #include "outlet_detection/outlet_detector_test.h"
+#include "outlet_detection/l_detector_outlets.h"
 
 #define DETECT_NA -1
 #define DETECT_SKIP -2
@@ -634,11 +635,85 @@ void runOutletDetectorTest(CvMat* intrinsic_matrix, CvMat* distortion_params,
 		}
 		printf("%s\n",filename);
 		if (output_path)
+		{
 			detect_outlet_tuple(img,intrinsic_matrix,distortion_params,test_data[i].test_outlet,outlet_templ,output_path,filename);
+
+		}
 		else
 			detect_outlet_tuple(img,intrinsic_matrix,distortion_params,test_data[i].test_outlet,outlet_templ);
+
+		if (((int)test_data[i].test_outlet.size() > 0)&&((int)test_data[i].real_outlet.size() > 0))
+		{
+			printf("Detected %d outlets, origin %d,%d, real origin %d,%d\n", (int)test_data[i].test_outlet.size(), test_data[i].test_outlet[0].ground_hole.x, 
+				test_data[i].test_outlet[0].ground_hole.y, test_data[i].real_outlet[0].ground_hole.x, test_data[i].real_outlet[0].ground_hole.y);
+		}
+
+		cvReleaseImage(&img);
+	}	
+}
+
+//----------------------------
+//run L Detector test
+void runLOutletDetectorTest(CvMat* intrinsic_matrix, CvMat* distortion_params, 
+							const char* config_path, vector<outlet_test_elem>& test_data, char* output_path)
+{
+	char filename[1024];
+
+	vector<feature_t> train_features;
+	char object_filename[1024];
+	char scene_filename[1024];
+	char outlet_filename[1024];
+	read_training_base(config_path,outlet_filename,train_features);	
+
+	sprintf(object_filename,"%s/%s",config_path,outlet_filename);
+
+	
+    Mat object = imread( object_filename, CV_LOAD_IMAGE_GRAYSCALE );
+	Mat intrinsic(intrinsic_matrix,true);
+	Mat distortion(distortion_params,true);
+
+
+	PlanarObjectDetector detector;
+    Size patchSize(32, 32);
+    LDetector ldetector(7, 20, 2, 2000, patchSize.width, 2);
+    ldetector.setVerbose(true);
+	l_detector_initialize(detector,ldetector,config_path,object, patchSize);
+
+	for (int i=0;i<(size_t)test_data.size();i++)
+	{
+		if (test_data[i].n_matches == DETECT_SKIP)
+			continue;
+		if (output_path)
+		{
+			char* name = strrchr(test_data[i].filename,'/');
+			name++;
+			sprintf(filename,"%s",name);
+		}
+		//sprintf(scene_filename,"%s","D:/work/Argus/DATA/forearm_2009_06_17/cracked/frame0001.jpg");
+		
+		Mat image = imread( test_data[i].filename);
+
+		if((!image.data) || (!object.data))
+		{
+			printf("Unable to load image %s\n",test_data[i].filename);
+			continue;
+		}
+		printf("%s\n",filename);
+		Mat undistortedImg;
+		undistort(image,undistortedImg,intrinsic,distortion);
+		if (output_path)
+		{
+			l_detect_outlets(undistortedImg, object, config_path, detector,ldetector,train_features,
+				test_data[i].test_outlet, output_path, filename);
+
+		}
+		else
+		{
+			l_detect_outlets(undistortedImg, object, config_path, detector,ldetector,train_features,
+				test_data[i].test_outlet);
+		}
+			//detect_outlet_tuple(img,intrinsic_matrix,distortion_params,test_data[i].test_outlet,outlet_templ);
         printf("Detected %d outlets, origin %d,%d, real origin %d,%d\n", (int)test_data[i].test_outlet.size(), test_data[i].test_outlet[0].ground_hole.x, 
             test_data[i].test_outlet[0].ground_hole.y, test_data[i].real_outlet[0].ground_hole.x, test_data[i].real_outlet[0].ground_hole.y);
-		cvReleaseImage(&img);
 	}	
 }
