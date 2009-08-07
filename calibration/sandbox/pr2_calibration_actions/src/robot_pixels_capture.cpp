@@ -38,8 +38,10 @@ using namespace calibration_message_filters;
 using namespace pr2_calibration_actions;
 using namespace std;
 
-RobotPixelsCapture::RobotPixelsCapture(const RobotPixelsConfig& config)
+RobotPixelsCapture::RobotPixelsCapture(const RobotPixelsConfig& config, CompletionCallback completion_cb)
 {
+  completion_cb_ = completion_cb;
+
   match_found_ = false;
 
   joint_states_channel_.reset( new JointStatesChannel(config.joint_states_config));
@@ -89,6 +91,7 @@ void RobotPixelsCapture::jointStatesCb(const DeflatedJointStates& deflated)
 {
   {
     boost::mutex::scoped_lock lock(joint_states_mutex_);
+    ROS_DEBUG("About to add to the statioanry_joint_states list...");
     stationary_joint_states_->add(deflated);
   }
 
@@ -186,12 +189,38 @@ void RobotPixelsCapture::searchForMatch(const ros::Time& time)
     {
       match_found_ = true;
       ROS_INFO("Found a match!");
+      processMatch(joint_states, pixel_vec);
     }
     else
       ROS_INFO("Found 'another' match!");
   }
 }
 
+void RobotPixelsCapture::processMatch(const DeflatedJointStates& deflated_joint_states,
+                                      const std::vector<DeflatedImage>& deflated_images)
+{
+  RobotPixelsResult result;
+  joint_states_channel_->buildResult(deflated_joint_states, result.joint_states_result);
 
+  const unsigned int N = deflated_images.size();
 
+  assert(pixel_channels_.size() == N);
 
+  result.pixel_results.resize(N);
+
+  for (unsigned int i=0; i<N; i++)
+    pixel_channels_[i]->buildResult(deflated_images[i], result.pixel_results[i]);
+
+  if (completion_cb_)
+    completion_cb_(result);
+}
+
+void RobotPixelsCapture::shutdown()
+{
+  joint_states_channel_->shutdown();
+
+  for(unsigned int i=0; i<pixel_channels_.size(); i++)
+  {
+    pixel_channels_[i]->shutdown();
+  }
+}

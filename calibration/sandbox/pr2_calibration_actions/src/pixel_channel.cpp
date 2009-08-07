@@ -90,81 +90,25 @@ void PixelChannel::syncCallback(const calibration_msgs::ImagePointStampedConstPt
   deflated.msg = image;
   cache_.add(deflated);
   need_to_process_.add(deflated);
-  processElems();
+  processElems<DeflatedImage>(cache_, need_to_process_, stationary_callback_);
 }
 
-void PixelChannel::processElems()
+void PixelChannel::buildResult(const DeflatedImage& deflated, PixelChannelResult& result)
 {
-  if (cache_.size() == 0)
-  {
-    ROS_DEBUG("Cache is empty. Going to skip processElems()");
-    return;
-  }
+  result.channel_name = channel_name_;
 
-  // Remove the old stuff in the cache
-  if (need_to_process_.front().header.stamp < ros::Time().fromSec(padding_.toSec()))
-  {
-    ROS_WARN("oldest time is %.3f. Padding is %.3f. Funny stuff might happen",
-             need_to_process_.front().header.stamp.toSec(), padding_.toSec());
-  }
-  cache_.removeAllBeforeTime( need_to_process_.front().header.stamp - padding_*2);
+  assert(deflated.deflated_.size() == 2);
+  result.pixel.header = deflated.header;
+  result.pixel.image_point.x = deflated.deflated_[0];
+  result.pixel.image_point.y = deflated.deflated_[1];
 
-  vector<DeflatedImage> interval_elems;
-  while (need_to_process_.size() > 0)
-  {
-    const DeflatedImage& first = need_to_process_.front();
-
-    ros::Time start = first.header.stamp - padding_;
-    ros::Time end   = first.header.stamp + padding_;
-    if (start < cache_.front().header.stamp)
-    {   
-      ROS_DEBUG("neg_padded elem is older than oldest cache elem by [%.3fs]. We can delete it",
-                (cache_.front().header.stamp - start).toSec() );
-      ROS_DEBUG("First Time:  %u, %u", first.header.stamp.sec, first.header.stamp.nsec);
-      ROS_DEBUG("cache.front: %u, %u", cache_.front().header.stamp.sec, cache_.front().header.stamp.nsec);
-      need_to_process_.pop_front();
-    }
-    else
-    {
-      ROS_DEBUG("Not immeadiately deleting");
-      interval_elems = cache_.getSurroundingInterval(start, end);
-      if (cache_.back().header.stamp < end)
-      {
-        ROS_DEBUG("end:         %u, %u", end.sec, end.nsec);
-        ROS_DEBUG("cache.back:  %u, %u", cache_.back().header.stamp.sec, cache_.back().header.stamp.nsec);
-        break;
-      }
-      else
-      {
-        if(interval_elems.size() >= min_samples_)
-        {
-          vector<double> range;
-          StationaryUtils::computeChannelRange<DeflatedImage>(interval_elems, range);
-          if (StationaryUtils::isChannelStationary(range, tol_))
-	  {
-	    ROS_DEBUG("Is stationary. About to processStationary");
-            processStationary(first);
-	  }
-        }
-	ROS_DEBUG("Done with this elem. About to delete it");
-        need_to_process_.pop_front();
-      }
-    }
-  }
+  result.image = *(deflated.msg);
 }
 
-void PixelChannel::processStationary(const DeflatedImage& deflated)
+void PixelChannel::shutdown()
 {
-  //stationary_list_.add(deflated);
-
-  ROS_INFO("%s: Stationary Image: time: %u, %u", channel_name_.c_str(), deflated.header.stamp.sec, deflated.header.stamp.nsec);
-
-  if (stationary_callback_)
-    stationary_callback_(deflated);
+  nh_.shutdown();
 }
-
-
-
 
 
 

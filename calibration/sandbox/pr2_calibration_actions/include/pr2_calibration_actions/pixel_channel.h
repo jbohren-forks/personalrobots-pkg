@@ -43,17 +43,18 @@
 #include <message_filters/time_synchronizer.h>
 
 #include "sorted_deque.h"
-
+#include "generic_channel.h"
 
 // Messages
 #include "pr2_calibration_actions/PixelChannelConfig.h"
+#include "pr2_calibration_actions/PixelChannelResult.h"
 #include "sensor_msgs/Image.h"
 #include "calibration_msgs/ImagePointStamped.h"
 
 namespace pr2_calibration_actions
 {
 
-class PixelChannel
+class PixelChannel : public GenericChannel
 {
 public:
   typedef calibration_message_filters::DeflatedMsg<sensor_msgs::Image> DeflatedImage;
@@ -63,7 +64,10 @@ public:
 
   void registerStationaryCallback(StationaryCallback cb);
 
-  SortedDeque<DeflatedImage> stationary_list_;
+  void buildResult(const DeflatedImage& deflated, PixelChannelResult& result);
+
+  void shutdown();
+
 private:
   typedef boost::shared_ptr<DeflatedImage> DeflatedImagePtr;
   typedef boost::shared_ptr<const DeflatedImage> DeflatedImageConstPtr;
@@ -77,16 +81,9 @@ private:
   SortedDeque<DeflatedImage> need_to_process_;
   StationaryCallback stationary_callback_;
 
-  ChannelTolerance tol_;
-  ros::Duration padding_;
-  unsigned int min_samples_;
-  std::string channel_name_;
-
   void syncCallback(const calibration_msgs::ImagePointStampedConstPtr& led,
                     const sensor_msgs::ImageConstPtr& led_image);
-  void processElems();
 
-  void processStationary(const DeflatedImage& deflated);
 };
 
 

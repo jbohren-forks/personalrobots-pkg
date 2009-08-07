@@ -41,15 +41,18 @@
 #include <calibration_message_filters/joint_states_deflater.h>
 #include <message_filters/subscriber.h>
 #include "sorted_deque.h"
+#include "generic_channel.h"
 
 // Messages
 #include "pr2_calibration_actions/JointStatesChannelConfig.h"
+#include "pr2_calibration_actions/JointStatesChannelResult.h"
+#include "pr2_calibration_actions/ChannelFeedback.h"
 #include "mechanism_msgs/JointStates.h"
 
 namespace pr2_calibration_actions
 {
 
-class JointStatesChannel
+class JointStatesChannel : public GenericChannel
 {
 public:
   typedef calibration_message_filters::DeflatedMsg<mechanism_msgs::JointStates> DeflatedJointStates;
@@ -58,7 +61,10 @@ public:
 
   void registerStationaryCallback(StationaryCallback cb);
 
-  SortedDeque<DeflatedJointStates> stationary_list_;
+  void buildResult(const DeflatedJointStates& deflated, JointStatesChannelResult& result);
+
+  void shutdown();
+
 private:
 
   ros::NodeHandle nh_;
@@ -69,14 +75,7 @@ private:
   StationaryCallback stationary_callback_;
   calibration_message_filters::JointStatesDeflater deflater_;
 
-  ChannelTolerance tol_;
-  ros::Duration padding_;
-  unsigned int min_samples_;
-
   void jointStatesCallback(const mechanism_msgs::JointStatesConstPtr& msg);
-  void processElems();
-
-  void processStationary(const DeflatedJointStates& deflated);
 };
 
 

@@ -1,0 +1,2 @@
+JointStatesChannelResult joint_states_result
+PixelChannelResult[] pixel_results

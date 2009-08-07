@@ -40,6 +40,7 @@
 
 // messages
 #include "pr2_calibration_actions/RobotPixelsConfig.h"
+#include "pr2_calibration_actions/RobotPixelsResult.h"
 
 namespace pr2_calibration_actions
 {
@@ -47,14 +48,17 @@ namespace pr2_calibration_actions
 class RobotPixelsCapture
 {
 public:
-  RobotPixelsCapture(const RobotPixelsConfig& config);
-
-
-
-private:
   typedef calibration_message_filters::DeflatedMsg<mechanism_msgs::JointStates> DeflatedJointStates;
   typedef calibration_message_filters::DeflatedMsg<sensor_msgs::Image> DeflatedImage;
+  typedef boost::function<void(const RobotPixelsResult&)> CompletionCallback;
 
+  RobotPixelsCapture(const RobotPixelsConfig& config, CompletionCallback completion_cb = NULL);
+
+  void shutdown();
+
+private:
+  void processMatch(const DeflatedJointStates& deflated_joint_states,
+               const std::vector<DeflatedImage>& deflated_image);
   void jointStatesCb(const DeflatedJointStates& deflated);
   void pixelCb(unsigned int channel, const DeflatedImage& deflated);
   void searchForMatch(const ros::Time& time);
@@ -67,6 +71,8 @@ private:
 
   ros::Duration joint_states_timeshift_;
   std::vector<CrossPixelTimeshift> pixel_timeshifts_;
+
+  CompletionCallback completion_cb_;
 
   // Mutexes
   boost::mutex joint_states_mutex_;
