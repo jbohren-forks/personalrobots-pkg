@@ -9,10 +9,11 @@ int main(int argc, char** argv)
   //ImagePublisher image_pub("raw_image", n);
   ros::Publisher image_pub = n.advertise<sensor_msgs::Image>("raw_image", 1);
   
-  cv::WImageBuffer3_b image( cvLoadImage(argv[1], CV_LOAD_IMAGE_COLOR) );
+  //cv::WImageBuffer3_b image( cvLoadImage(argv[1], CV_LOAD_IMAGE_COLOR) );
+  cv::WImageBuffer1_b image( cvLoadImage(argv[1], CV_LOAD_IMAGE_GRAYSCALE) );
   sensor_msgs::Image msg;
   sensor_msgs::CvBridge::fromIpltoRosImage(image.Ipl(), msg);
-  msg.encoding = "bgr";
+  //msg.encoding = "bgr";
   msg.header.frame_id = "base_link";
   
   ros::Rate loop_rate(5);

@@ -41,8 +41,11 @@ int main(int argc, char** argv)
 
   std::string topic = n.resolveName("image");
   ImagePublisher image_pub(topic, n, true);
-  ros::Subscriber raw_sub = n.subscribe(topic, 1, &ImagePublisher::publish, &image_pub);
-
+  
+  typedef void (ImagePublisher::*PublishMemFn)(const sensor_msgs::ImageConstPtr& message) const;
+  PublishMemFn pub_mem_fn = &ImagePublisher::publish;
+  ros::Subscriber raw_sub = n.subscribe<sensor_msgs::Image>(topic, 1,
+                                                            boost::bind(pub_mem_fn, &image_pub, _1));
   ros::spin();
 
   return 0;

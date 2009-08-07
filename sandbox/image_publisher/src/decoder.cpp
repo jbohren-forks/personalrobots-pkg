@@ -43,13 +43,22 @@ ros::Publisher g_decompressed_pub;
 
 void imageCB(const sensor_msgs::CompressedImageConstPtr &msg)
 {
-  const CvMat compressed = cvMat(1, msg->uint8_data.data.size(), CV_8UC1,
-                                 const_cast<unsigned char*>(&msg->uint8_data.data[0]));
+  const CvMat compressed = cvMat(1, msg->data.size(), CV_8UC1,
+                                 const_cast<unsigned char*>(&msg->data[0]));
   cv::WImageBuffer_b decompressed( cvDecodeImage(&compressed, CV_LOAD_IMAGE_ANYCOLOR) );
   sensor_msgs::Image image;
   if ( sensor_msgs::CvBridge::fromIpltoRosImage(decompressed.Ipl(), image) ) {
     image.header = msg->header;
-    image.encoding = msg->encoding;
+    if (decompressed.Channels() == 1) {
+      image.encoding = "mono";
+    }
+    else if (decompressed.Channels() == 3) {
+      image.encoding = "rgb";
+    }
+    else {
+      ROS_ERROR("Unsupported number of channels: %i", decompressed.Channels());
+      return;
+    }
     g_decompressed_pub.publish(image);
   }
   else {

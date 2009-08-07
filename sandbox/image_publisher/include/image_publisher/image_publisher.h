@@ -81,35 +81,35 @@ public:
    *
    * Returns the total number of subscribers to the raw, thumbnail and compressed topics.
    */
-  uint32_t getNumSubscribers() /*const*/;
+  uint32_t getNumSubscribers() const;
 
   /*!
    * \brief Returns the topic that this ImagePublisher will publish the raw
    * image on.
    */
-  std::string getTopic() /*const*/;
+  std::string getTopic() const;
 
   /*!
    * \brief Returns the topic that this ImagePublisher will publish the thumbnail
    * image on.
    */
-  std::string getTopicThumbnail() /*const*/;
+  std::string getTopicThumbnail() const;
 
   /*!
    * \brief Returns the topic that this ImagePublisher will publish the compressed
    * image on.
    */
-  std::string getTopicCompressed() /*const*/;
+  std::string getTopicCompressed() const;
 
   /*!
    * \brief Publish an image on the topics associated with this ImagePublisher.
    */
-  void publish(const sensor_msgs::Image& message) /*const*/;
+  void publish(const sensor_msgs::Image& message) const;
 
   /*!
    * \brief Publish an image on the topics associated with this ImagePublisher.
    */
-  void publish(const sensor_msgs::ImageConstPtr& message) /*const*/;
+  void publish(const sensor_msgs::ImageConstPtr& message) const;
 
   /*!
    * \brief Shutdown the advertisements associated with this ImagePublisher.
@@ -117,8 +117,8 @@ public:
   void shutdown();
 
 private:
-  void publishThumbnailImage(sensor_msgs::Image& thumbnail) /*const*/;
-  void publishCompressedImage(sensor_msgs::CompressedImage& compressed) /*const*/;
+  void publishThumbnailImage(sensor_msgs::Image& thumbnail) const;
+  void publishCompressedImage(sensor_msgs::CompressedImage& compressed) const;
   
   ros::NodeHandle node_handle_;
   ros::Publisher image_pub_;

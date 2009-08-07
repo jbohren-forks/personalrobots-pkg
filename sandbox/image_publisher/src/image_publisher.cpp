@@ -62,28 +62,28 @@ void ImagePublisher::advertise(const std::string& topic, bool republishing)
   compressed_pub_ = node_handle_.advertise<sensor_msgs::CompressedImage>(topic + "_compressed", 1);
 }
 
-uint32_t ImagePublisher::getNumSubscribers() //const
+uint32_t ImagePublisher::getNumSubscribers() const
 {
   return image_pub_.getNumSubscribers() + thumbnail_pub_.getNumSubscribers()
     + compressed_pub_.getNumSubscribers();
 }
 
-std::string ImagePublisher::getTopic() //const
+std::string ImagePublisher::getTopic() const
 {
   return image_pub_.getTopic();
 }
 
-std::string ImagePublisher::getTopicThumbnail() //const
+std::string ImagePublisher::getTopicThumbnail() const
 {
   return thumbnail_pub_.getTopic();
 }
 
-std::string ImagePublisher::getTopicCompressed() //const
+std::string ImagePublisher::getTopicCompressed() const
 {
   return compressed_pub_.getTopic();
 }
 
-void ImagePublisher::publish(const sensor_msgs::Image& message) //const
+void ImagePublisher::publish(const sensor_msgs::Image& message) const
 {
   if (!republishing_)
     image_pub_.publish(message);
@@ -105,7 +105,7 @@ void ImagePublisher::publish(const sensor_msgs::Image& message) //const
   if (channels == 1)
     encoding = "mono";
   else if (channels == 3)
-    encoding = "rgb"; /** @todo: avoid BGR->RGB conversion? */
+    encoding = "rgb";
   else {
     /** @todo: RGBA, BGRA. Can we do anything with other encodings? */
     ROS_ERROR("Unsupported number of image channels: %d", channels);
@@ -127,13 +127,11 @@ void ImagePublisher::publish(const sensor_msgs::Image& message) //const
   if (compressed_subscribers > 0) {
     sensor_msgs::CompressedImage compressed;
     compressed.header = message.header;
-    compressed.label = message.label;
-    compressed.encoding = encoding;
     publishCompressedImage(compressed);
   }
 }
 
-void ImagePublisher::publish(const sensor_msgs::ImageConstPtr& message) //const
+void ImagePublisher::publish(const sensor_msgs::ImageConstPtr& message) const
 {
   publish(*message);
 }
@@ -145,7 +143,7 @@ void ImagePublisher::shutdown()
   compressed_pub_.shutdown();
 }
 
-void ImagePublisher::publishThumbnailImage(sensor_msgs::Image& thumbnail) //const
+void ImagePublisher::publishThumbnailImage(sensor_msgs::Image& thumbnail) const
 {
   // Update settings from parameter server
   int thumbnail_size = 128;
@@ -170,7 +168,7 @@ void ImagePublisher::publishThumbnailImage(sensor_msgs::Image& thumbnail) //cons
   }
 }
 
-void ImagePublisher::publishCompressedImage(sensor_msgs::CompressedImage& compressed) //const
+void ImagePublisher::publishCompressedImage(sensor_msgs::CompressedImage& compressed) const
 {
   // Update settings from parameter server
   int params[3] = {0};
@@ -198,18 +196,8 @@ void ImagePublisher::publishCompressedImage(sensor_msgs::CompressedImage& compre
   CvMat* buf = cvEncodeImage(extension.c_str(), image, params);
 
   // Set up message and publish
-  compressed.format = format;
-  compressed.uint8_data.layout.dim.resize(2);
-  compressed.uint8_data.layout.dim[0].label = "height";
-  compressed.uint8_data.layout.dim[0].size = image->height;
-  compressed.uint8_data.layout.dim[0].stride = 0;
-
-  compressed.uint8_data.layout.dim[1].label = "width";
-  compressed.uint8_data.layout.dim[1].size = image->width;
-  compressed.uint8_data.layout.dim[1].stride = 0;
-
-  compressed.uint8_data.data.resize(buf->width);
-  memcpy(&compressed.uint8_data.data[0], buf->data.ptr, buf->width);
+  compressed.data.resize(buf->width);
+  memcpy(&compressed.data[0], buf->data.ptr, buf->width);
   cvReleaseMat(&buf);
 
   compressed_pub_.publish(compressed);
