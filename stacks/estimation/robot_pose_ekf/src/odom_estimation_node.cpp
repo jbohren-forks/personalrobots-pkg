@@ -149,17 +149,25 @@ namespace estimation
     boost::mutex::scoped_lock lock(odom_mutex_);
     odom_stamp_ = odom->header.stamp;
     odom_time_  = Time::now();
-    odom_meas_  = Transform(Quaternion(odom->pos.th,0,0), Vector3(odom->pos.x, odom->pos.y, 0));
+    Quaternion q;
+    tf::quaternionMsgToTF(odom->pose_with_covariance.pose.orientation, q);
+    odom_meas_  = Transform(q, Vector3(odom->pose_with_covariance.pose.position.x, odom->pose_with_covariance.pose.position.y, 0));
+
+#warning Until the robot_pose_ekf moves to taking covariances from odometry sources instead of a residual the robot_pose_ekf will not work
+
+    //@todo TODO: Use a covariance instead of a residual
+    //double odom_residual = odom->residual;
+    double odom_residual = 1.0;
     
     // multiplier to scale covariance
     // the smaller the residual, the more reliable odom
     double odom_multiplier;
-    if (odom->residual < 0.05)
+    if (odom_residual < 0.05)
       // residu=0.00001 --> multiplier=0.00001     residu=0.05 --> multiplier=1.0
-      odom_multiplier = ((odom->residual-0.00001)*(0.99999/0.04999))+0.00001;  
+      odom_multiplier = ((odom_residual-0.00001)*(0.99999/0.04999))+0.00001;  
     else
       // residu=0.05 --> multiplier=1.0     residu=0.2 --> multiplier=20.0
-      odom_multiplier = ((odom->residual-0.05)*(19.0/0.15))+1.0; 
+      odom_multiplier = ((odom_residual-0.05)*(19.0/0.15))+1.0; 
     odom_multiplier = fmax(0.00001, fmin(100.0, odom_multiplier));
     odom_multiplier *= 2.0;
     //cout << "odom_multiplier = " << odom_multiplier << endl;

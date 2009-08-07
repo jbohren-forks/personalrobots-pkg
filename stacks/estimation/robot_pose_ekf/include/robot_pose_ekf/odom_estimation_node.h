@@ -45,7 +45,7 @@
 #include "odom_estimation.h"
 
 // messages
-#include "deprecated_msgs/RobotBase2DOdom.h"
+#include "nav_msgs/Odometry.h"
 #include "robot_msgs/PoseDot.h"
 #include "geometry_msgs/PoseWithRatesStamped.h"
 #include "geometry_msgs/PoseStamped.h"
@@ -69,7 +69,7 @@ namespace estimation
  *  2) OdomEstimationNode provides a ROS wrapper around OdomEstimation
 */
 
-typedef boost::shared_ptr<deprecated_msgs::RobotBase2DOdom const> OdomConstPtr;
+typedef boost::shared_ptr<nav_msgs::Odometry const> OdomConstPtr;
 typedef boost::shared_ptr<geometry_msgs::PoseWithRatesStamped const> ImuConstPtr;
 typedef boost::shared_ptr<robot_msgs::PoseDot const> VelConstPtr;
 
