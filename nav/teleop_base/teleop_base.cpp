@@ -34,12 +34,12 @@
 #include <math.h>
 #include "ros/ros.h"
 #include "joy/Joy.h"
-#include "robot_msgs/PoseDot.h"
+#include "geometry_msgs/Twist.h"
 
 class TeleopBase 
 {
    public:
-  robot_msgs::PoseDot cmd;
+  geometry_msgs::Twist cmd;
   double req_vx, req_vy, req_vw;
   double max_vx, max_vy, max_vw, max_vx_run, max_vy_run, max_vw_run;
   int axis_vx, axis_vy, axis_vw;
@@ -59,7 +59,7 @@ class TeleopBase
 
   void init()
       {
-        cmd.vel.vx = cmd.vel.vy = cmd.ang_vel.vz = 0;
+        cmd.linear.x = cmd.linear.y = cmd.angular.z = 0;
         n_.param("max_vx", max_vx, max_vx);
         n_.param("max_vy", max_vy, max_vy);
         n_.param("max_vw", max_vw, max_vw);
@@ -106,7 +106,7 @@ class TeleopBase
         ROS_DEBUG("run_button: %d\n", run_button);
         ROS_DEBUG("joy_msg_timeout: %f\n", joy_msg_timeout);
         
-        vel_pub_ = n_.advertise<robot_msgs::PoseDot>("cmd_vel", 1);
+        vel_pub_ = n_.advertise<geometry_msgs::Twist>("cmd_vel", 1);
 
         joy_sub_ = n_.subscribe("joy", 10, &TeleopBase::joy_cb, this);
 
@@ -151,16 +151,16 @@ class TeleopBase
         if(deadman_ &&
 	    last_recieved_joy_message_time_ + joy_msg_timeout_ > ros::Time::now())
          {
-           cmd.vel.vx = req_vx;
-           cmd.vel.vy = req_vy;
-           cmd.ang_vel.vz = req_vw;
+           cmd.linear.x = req_vx;
+           cmd.linear.y = req_vy;
+           cmd.angular.z = req_vw;
            vel_pub_.publish(cmd);
            
-           fprintf(stdout,"teleop_base:: %f, %f, %f\n",cmd.vel.vx,cmd.vel.vy,cmd.ang_vel.vz);
+           fprintf(stdout,"teleop_base:: %f, %f, %f\n",cmd.linear.x,cmd.linear.y,cmd.angular.z);
          }
          else
          {
-           cmd.vel.vx = cmd.vel.vy = cmd.ang_vel.vz = 0;
+           cmd.linear.x = cmd.linear.y = cmd.angular.z = 0;
            if (!deadman_no_publish_)
            {
              vel_pub_.publish(cmd);//Only publish if deadman_no_publish is enabled

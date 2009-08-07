@@ -36,7 +36,7 @@
 #include <ros/node.h>
 #include <ros/time.h>
 #include <geometry_msgs/PoseWithRatesStamped.h>
-#include <robot_msgs/PoseDot.h>
+#include <geometry_msgs/Twist.h>
 #include "control_toolbox/base_position_pid.h"
 #include "tf/transform_datatypes.h"
 
@@ -73,7 +73,7 @@ public:
     subscribe("base_pose_ground_truth", m_ground_truth_, &GroundTruthController::updateControl, 1) ;
     subscribe("~set_cmd", cmd_, &GroundTruthController::setCommandCallback, this, 10) ;
 
-    advertise<robot_msgs::PoseDot>("cmd_vel", 1) ;
+    advertise<geometry_msgs::Twist>("cmd_vel", 1) ;
     
     // Initialize the BasePositionPid util via xml
     TiXmlDocument xml ;
@@ -130,10 +130,10 @@ public:
     tf::Vector3 vel_cmd ;
     vel_cmd = base_position_pid_.updateControl(xyt_target_, xyt_current, time_elapsed.toSec()) ;
 
-    robot_msgs::PoseDot base_vel ;
-    base_vel.vel.vx = vel_cmd.x() ;
-    base_vel.vel.vy = vel_cmd.y() ;
-    base_vel.ang_vel.vz = vel_cmd.z() ;
+    geometry_msgs::Twist base_vel ;
+    base_vel.linear.x = vel_cmd.x() ;
+    base_vel.linear.y = vel_cmd.y() ;
+    base_vel.angular.z = vel_cmd.z() ;
     
     publish("cmd_vel", base_vel) ;
     

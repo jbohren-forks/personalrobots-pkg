@@ -34,7 +34,7 @@
 #include <stdlib.h>
 
 #include <ros/node.h>
-#include <robot_msgs/PoseDot.h>
+#include <geometry_msgs/Twist.h>
 
 #define KEYCODE_I 0x69
 #define KEYCODE_J 0x6a
@@ -69,18 +69,18 @@ bool always_command = false;
 class TBK_Node
 {
   private:
-    robot_msgs::PoseDot cmdvel;
+    geometry_msgs::Twist cmdvel;
 
   public:
     TBK_Node()
     {
-      ros::Node::instance()->advertise<robot_msgs::PoseDot>("cmd_vel",1);
+      ros::Node::instance()->advertise<geometry_msgs::Twist>("cmd_vel",1);
     }
     ~TBK_Node() { }
     void keyboardLoop();
     void stopRobot()
     {
-      cmdvel.vel.vx = cmdvel.ang_vel.vz = 0.0;
+      cmdvel.linear.x = cmdvel.angular.z = 0.0;
       ros::Node::instance()->publish("cmd_vel", cmdvel);
     }
 };
@@ -240,8 +240,8 @@ TBK_Node::keyboardLoop()
     }
     if (dirty == true)
     {
-      cmdvel.vel.vx = speed * max_tv;
-      cmdvel.ang_vel.vz = turn * max_rv;
+      cmdvel.linear.x = speed * max_tv;
+      cmdvel.angular.z = turn * max_rv;
 
       ros::Node::instance()->publish("cmd_vel",cmdvel);
     }
