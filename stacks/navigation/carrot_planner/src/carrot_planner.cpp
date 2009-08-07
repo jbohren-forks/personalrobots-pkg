@@ -35,11 +35,12 @@
 * Authors: Eitan Marder-Eppstein, Sachin Chitta
 *********************************************************************/
 #include <carrot_planner/carrot_planner.h>
+#include <pluginlib/plugin_macros.h>
 
 //register this planner as a BaseGlobalPlanner plugin
-POCO_BEGIN_MANIFEST(nav_core::BaseGlobalPlanner)
-POCO_EXPORT_CLASS(carrot_planner::CarrotPlanner)
-POCO_END_MANIFEST
+BEGIN_PLUGIN_LIST(nav_core::BaseGlobalPlanner)
+REGISTER_PLUGIN(carrot_planner::CarrotPlanner)
+END_PLUGIN_LIST
 
 namespace carrot_planner {
 

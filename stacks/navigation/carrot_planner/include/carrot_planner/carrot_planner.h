@@ -52,8 +52,6 @@
 #include <base_local_planner/world_model.h>
 #include <base_local_planner/costmap_model.h>
 
-#include <Poco/ClassLibrary.h>
-
 namespace carrot_planner{
   class CarrotPlanner : public nav_core::BaseGlobalPlanner {
     public:
