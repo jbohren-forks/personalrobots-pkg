@@ -16,7 +16,7 @@ void rgbTest(IplImage* img) {
 
   // -- Setup hist.
   int num_bins = 8;
-  float range[] = {0, 255}; 
+  float range[] = {0, 256}; 
   float* ranges[] = {range, range};
   int sizes[] = {num_bins, num_bins};
   CvHistogram* hist = cvCreateHist(2, sizes, CV_HIST_ARRAY, ranges, 1);
