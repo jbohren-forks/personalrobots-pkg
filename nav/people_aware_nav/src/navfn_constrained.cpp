@@ -62,13 +62,22 @@ NavfnROSConstrained::NavfnROSConstrained (std::string name, costmap_2d::Costmap2
 
 void NavfnROSConstrained::initialize (std::string name, costmap_2d::Costmap2DROS* cmap)
 {
+  if(!initialized_){
   navfn::NavfnROS::initialize(name, cmap);
   service_ = node_.advertiseService("~set_nav_constraint", &NavfnROSConstrained::setConstraint, this);
   vis_pub_add_ = node_.advertise<visualization_msgs::Marker>("visualization_marker", 0);
+  }
+  else
+    ROS_WARN("You are attempting to initialize a planner that has already been initialized, doing nothing");
 }
 
 bool NavfnROSConstrained::setConstraint (SetNavConstraint::Request& req, SetNavConstraint::Response& resp)
 {
+  if(!initialized_){
+    ROS_ERROR("This planner has not been initialized, please call initialize() before attempting to use it.");
+    return false;
+  }
+
   forbidden_ = req.forbidden;
   ROS_DEBUG_STREAM_NAMED("navfn", "Setting constraint polygon with " << forbidden_.points.size() << " points");
   return true;
@@ -77,6 +86,11 @@ bool NavfnROSConstrained::setConstraint (SetNavConstraint::Request& req, SetNavC
 
 void NavfnROSConstrained::getCostmap (costmap_2d::Costmap2D& cmap)
 {
+  if(!initialized_){
+    ROS_ERROR("This planner has not been initialized, please call initialize() before attempting to use it.");
+    return;
+  }
+
   costmap_ros_->clearRobotFootprint();
   costmap_ros_->getCostmapCopy(cmap);
 
