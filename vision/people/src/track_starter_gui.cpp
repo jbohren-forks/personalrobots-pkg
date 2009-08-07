@@ -188,7 +188,7 @@ public:
     sel_lock.unlock();
 
     bool do_calib = false;
-    if (limage_.encoding != "mono") {
+    if (CV_MAT_CN(limage_.type) != 1) {
       // If this is a color image, set the calibration and convert it.
       if (calib_color_ && lcolor_cal_.getFromParam("stereo/left/image_rect_color")) {
 	do_calib = true;      
