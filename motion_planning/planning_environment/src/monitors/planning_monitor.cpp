@@ -575,6 +575,34 @@ const std::vector<collision_space::EnvironmentModel::AllowedContact>& planning_e
     return allowedContacts_;
 }
 
+void planning_environment::PlanningMonitor::printAllowedContacts(std::ostream &out)
+{
+    out << allowedContacts_.size() << " allowed contacts" << std::endl;
+    for (unsigned int i = 0 ; i < allowedContacts_.size() ; ++i)
+    {
+        out << "  - allowing contacts up to depth " << allowedContacts_[i].depth << " between links: [";
+	for (unsigned int j = 0 ; j < allowedContacts_[i].links.size() ; ++j)
+	    out << allowedContacts_[i].links[j];
+	out << "] and bound " << allowedContacts_[i].bound.get() << std::endl;
+    }
+}
+
+void planning_environment::PlanningMonitor::printConstraints(std::ostream &out)
+{
+    out << "Path constraints:" << std::endl;
+
+    KinematicConstraintEvaluatorSet ks;
+    ks.add(getKinematicModel(), kcPath_.joint_constraint);
+    ks.add(getKinematicModel(), kcPath_.pose_constraint);
+    ks.print(out);
+
+    out << "Goal constraints:" << std::endl;
+    ks.clear();
+    ks.add(getKinematicModel(), kcGoal_.joint_constraint);
+    ks.add(getKinematicModel(), kcGoal_.pose_constraint);
+    ks.print(out);
+}
+
 void planning_environment::PlanningMonitor::clearAllowedContacts(void)
 {
     allowedContacts_.clear();

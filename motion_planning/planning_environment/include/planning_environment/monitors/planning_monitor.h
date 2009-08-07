@@ -41,6 +41,7 @@
 #include <motion_planning_msgs/KinematicJoint.h>
 #include <motion_planning_msgs/KinematicPath.h>
 #include <motion_planning_msgs/KinematicConstraints.h>
+#include <iostream>
 
 namespace planning_environment
 {
@@ -121,6 +122,9 @@ namespace planning_environment
 	    return kcGoal_;
 	}
 
+	/** \brief Print active constraints */
+	void printConstraints(std::ostream &out = std::cout);
+
 	/** \brief Clear previously set constraints */
 	void clearConstraints(void);
 	
@@ -141,6 +145,9 @@ namespace planning_environment
 	
 	/** \brief Get the set of contacts allowed when collision checking */
 	const std::vector<collision_space::EnvironmentModel::AllowedContact>& getAllowedContacts(void) const;
+
+	/** \brief Print allowed contacts */
+	void printAllowedContacts(std::ostream &out = std::cout);
 	
 	/** \brief Clear the set of allowed contacts */
 	void clearAllowedContacts(void);
