@@ -1073,8 +1073,8 @@ void SuperpixelColorHistogram::computeHistogramCV(int label) {
     ROS_FATAL("Trying to compute cv hist when hue_ is null");
 
   if(histograms_cv_[label] == NULL) {
-    float huerange[] = {0, 180}; //hsv
-    float satrange[] = {0, 255}; //hsv
+    float huerange[] = {0, 181}; //hsv
+    float satrange[] = {0, 256}; //hsv
     float* ranges[] = {huerange, satrange}; //hue and sat.
     int sizes[] = {num_bins_, num_bins_};
     CvHistogram* hist = cvCreateHist(2, sizes, CV_HIST_ARRAY, ranges, 1);
@@ -1082,9 +1082,9 @@ void SuperpixelColorHistogram::computeHistogramCV(int label) {
     IplImage* mask = createSegmentMask(label, &rect);
 
     //Debugging
-    CVSHOW("mask", mask);
-    cvWaitKey(0);
-    cout << "x " << rect.x << ", y " << rect.y << ", w " << rect.width << ", h " << rect.height << endl;
+//     CVSHOW("mask", mask);
+//     cvWaitKey(0);
+//     cout << "x " << rect.x << ", y " << rect.y << ", w " << rect.width << ", h " << rect.height << endl;
 
 
     //For efficiency, set the ROI's and compute the histogram.
@@ -1097,26 +1097,26 @@ void SuperpixelColorHistogram::computeHistogramCV(int label) {
     cvResetImageROI(sat_);
     cvResetImageROI(mask);
 
-    // -- Make sure it works without the ROI. 
-    CvHistogram* hist2 = cvCreateHist(2, sizes, CV_HIST_ARRAY, ranges, 1);
-    cvCalcHist(imgs, hist2, 0, mask);
-    for(int i=0; i<num_bins_; i++) {
-      for(int j=0; j<num_bins_; j++) {
-	assert(cvQueryHistValue_2D(hist2, i, j) == cvQueryHistValue_2D(hist, i, j));
-      }
-    }
+//     // -- Make sure it works without the ROI. 
+//     CvHistogram* hist2 = cvCreateHist(2, sizes, CV_HIST_ARRAY, ranges, 1);
+//     cvCalcHist(imgs, hist2, 0, mask);
+//     for(int i=0; i<num_bins_; i++) {
+//       for(int j=0; j<num_bins_; j++) {
+// 	assert(cvQueryHistValue_2D(hist2, i, j) == cvQueryHistValue_2D(hist, i, j));
+//       }
+//     }
 
 
     cvReleaseImage(&mask);
 
     //Debugging
-    cout << "cv hist (before norm): " << endl;
-    for(int i=0; i<num_bins_; i++) {
-      for(int j=0; j<num_bins_; j++) {
-      cout << cvQueryHistValue_2D(hist, i, j) << " ";
-      }
-    }
-    cout << endl;
+//     cout << "cv hist (before norm): " << endl;
+//     for(int i=0; i<num_bins_; i++) {
+//       for(int j=0; j<num_bins_; j++) {
+//       cout << cvQueryHistValue_2D(hist, i, j) << " ";
+//       }
+//     }
+//     cout << endl;
 
     cvNormalizeHist(hist, 1);
     histograms_cv_[label] = hist;
