@@ -53,17 +53,21 @@ namespace carrot_planner {
   }
   
   void CarrotPlanner::initialize(std::string name, costmap_2d::Costmap2DROS* costmap_ros){
-    ros::NodeHandle n(name);
-    n.param("~step_size", step_size_, costmap_ros_->getResolution());
-    n.param("~min_dist_from_robot", min_dist_from_robot_, 0.10);
-    costmap_ros_->getCostmapCopy(costmap_);
-    world_model_ = new base_local_planner::CostmapModel(costmap_); 
-    //we'll get the parameters for the robot radius from the costmap we're associated with
-    inscribed_radius_ = costmap_ros_->getInscribedRadius();
-    circumscribed_radius_ = costmap_ros_->getCircumscribedRadius();
-    footprint_spec_ = costmap_ros_->getRobotFootprint();
+    if(!initialized_){
+      ros::NodeHandle n(name);
+      n.param("~step_size", step_size_, costmap_ros_->getResolution());
+      n.param("~min_dist_from_robot", min_dist_from_robot_, 0.10);
+      costmap_ros_->getCostmapCopy(costmap_);
+      world_model_ = new base_local_planner::CostmapModel(costmap_); 
+      //we'll get the parameters for the robot radius from the costmap we're associated with
+      inscribed_radius_ = costmap_ros_->getInscribedRadius();
+      circumscribed_radius_ = costmap_ros_->getCircumscribedRadius();
+      footprint_spec_ = costmap_ros_->getRobotFootprint();
 
-    initialized_ = true;
+      initialized_ = true;
+    }
+    else
+      ROS_WARN("This planner has already been initialized... doing nothing");
   }
 
 
