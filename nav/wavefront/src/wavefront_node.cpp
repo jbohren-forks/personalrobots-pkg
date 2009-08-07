@@ -195,11 +195,11 @@ class WavefrontNode: public ros::Node
 
     // incoming/outgoing messages
     geometry_msgs::PoseStamped goalMsg;
-    //MsgRobotBase2DOdom odomMsg;
+    //Odometry odomMsg;
     visualization_msgs::Polyline polylineMsg;
     visualization_msgs::Polyline pointcloudMsg;
     nav_robot_actions::MoveBaseState pstate;
-    //MsgRobotBase2DOdom prevOdom;
+    //Odometry prevOdom;
     bool firstodom;
 
     tf::MessageNotifier<sensor_msgs::LaserScan>* scan_notifier;
