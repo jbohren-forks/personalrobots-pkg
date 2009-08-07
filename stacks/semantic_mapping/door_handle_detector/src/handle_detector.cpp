@@ -34,7 +34,6 @@
 
 using namespace std;
 using namespace ros;
-using namespace robot_msgs;
 using namespace mapping_msgs;
 using namespace door_msgs;
 using namespace door_handle_detector;
@@ -303,7 +302,7 @@ bool HandleDetector::detectHandle (const door_msgs::Door& door, sensor_msgs::Poi
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void HandleDetector::refineHandleCandidatesWithDoorOutliers (vector<int> &handle_indices, vector<int> &outliers,
-                                                             const Polygon3D &polygon,
+                                                             const geometry_msgs::Polygon &polygon,
                                                              const vector<double> &coeff, const geometry_msgs::Point32 &door_axis,
                                                              const Door& door_prior,
                                                              sensor_msgs::PointCloud& pointcloud) const
@@ -377,7 +376,7 @@ void HandleDetector::refineHandleCandidatesWithDoorOutliers (vector<int> &handle
     else
       score /= fmin(0.0001, dist_to_side);
     ROS_INFO ("  Handle is found at %f [m] from the door side", dist_to_side);
-    
+
     if (score > best_score)
     {
       best_score = score;
@@ -423,7 +422,7 @@ void HandleDetector::refineHandleCandidatesWithDoorOutliers (vector<int> &handle
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void  HandleDetector::getHandleCandidates (const vector<int> &indices, const vector<double> &coeff,
-                                           const Polygon3D &polygon, const Polygon3D &polygon_tr,
+                                           const geometry_msgs::Polygon &polygon, const geometry_msgs::Polygon &polygon_tr,
                                            Eigen::Matrix4d transformation, vector<int> &handle_indices,
                                            sensor_msgs::PointCloud& pointcloud, geometry_msgs::PointStamped& viewpoint_cloud) const
 {
@@ -490,8 +489,8 @@ void  HandleDetector::getHandleCandidates (const vector<int> &indices, const vec
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void HandleDetector::getDoorOutliers (const vector<int> &indices, const vector<int> &inliers,
-                                      const vector<double> &coeff, const Polygon3D &polygon,
-                                      const Polygon3D &polygon_tr, Eigen::Matrix4d transformation,
+                                      const vector<double> &coeff, const geometry_msgs::Polygon &polygon,
+                                      const geometry_msgs::Polygon &polygon_tr, Eigen::Matrix4d transformation,
                                       vector<int> &outliers, sensor_msgs::PointCloud& pointcloud) const
 {
   vector<int> tmp_indices;    // Used as a temporary indices array

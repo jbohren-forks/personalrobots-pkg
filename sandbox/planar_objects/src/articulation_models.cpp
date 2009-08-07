@@ -8,7 +8,6 @@
 #include "articulation_models.h"
 #include "Eigen/Core"
 #include <Eigen/SVD>
-#include <Eigen/Eigen>
 #include "opencv/cv.h"
 
 using namespace Eigen;

@@ -48,7 +48,6 @@
 #include <angles/angles.h>
 
 using namespace std;
-using namespace robot_msgs;
 
 class PlanarFit
 {
@@ -104,7 +103,7 @@ class PlanarFit
     {
       // Compute the convex hull of the area
       // NOTE: this is faster than computing the concave (alpha) hull, so let's see how this works out
-      Polygon3D polygon;
+      geometry_msgs::Polygon polygon;
       cloud_geometry::areas::convexHull2D (points, indices[i], models[i], polygon);
 
       // Compute the area of the polygon

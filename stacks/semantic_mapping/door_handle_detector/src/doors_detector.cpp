@@ -33,7 +33,6 @@
 
 
 using namespace std;
-using namespace robot_msgs;
 using namespace door_msgs;
 using namespace mapping_msgs;
 using namespace ros;

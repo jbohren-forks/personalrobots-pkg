@@ -52,8 +52,6 @@
 #include <point_cloud_mapping/cloud_io.h>
 #include <point_cloud_mapping/geometry/point.h>
 
-using namespace robot_msgs;
-
 class BagToPcd
 {
   protected:

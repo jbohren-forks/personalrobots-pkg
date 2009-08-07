@@ -68,7 +68,6 @@
 #include <boost/thread.hpp>
 
 using namespace std;
-using namespace robot_msgs;
 using namespace mapping_msgs;
 
 class IncGroundRemoval
@@ -281,7 +280,7 @@ class IncGroundRemoval
       {
         all_indices[cp] = cp;
         if (fabs (cloud_.pts[cp].z) < z_threshold_ || // max height for ground
-            cloud_.pts[cp].z*cloud_.pts[cp].z < ground_slope_threshold_ * (cloud_.pts[cp].x*cloud_.pts[cp].x + cloud_.pts[cp].y*cloud_.pts[cp].y)) // max slope for ground 
+            cloud_.pts[cp].z*cloud_.pts[cp].z < ground_slope_threshold_ * (cloud_.pts[cp].x*cloud_.pts[cp].x + cloud_.pts[cp].y*cloud_.pts[cp].y)) // max slope for ground
         {
           possible_ground_indices[nr_p] = cp;
           nr_p++;

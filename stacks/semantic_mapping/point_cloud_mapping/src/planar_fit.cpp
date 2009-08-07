@@ -71,7 +71,6 @@ This node should be used for testing different planar segmentation strategies.
 #include <angles/angles.h>
 
 using namespace std;
-using namespace robot_msgs;
 
 class PlanarFit
 {
@@ -82,7 +81,7 @@ class PlanarFit
 
     // ROS messages
     sensor_msgs::PointCloud cloud_, cloud_down_, cloud_plane_, cloud_outliers_;
-    
+
 
     tf::TransformListener tf_;
 
@@ -163,7 +162,7 @@ class PlanarFit
       node_.advertise<sensor_msgs::PointCloud> ("~plane", 1);
       node_.advertise<sensor_msgs::PointCloud> ("~outliers", 1);
 
-      // A channel to visualize the normals as cute little lines 
+      // A channel to visualize the normals as cute little lines
       //node_.advertise<PolyLine> ("~normal_lines", 1);
       node_.advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
     }
@@ -514,7 +513,7 @@ class PlanarFit
       marker.color.b = 1.0;
 
       int nr_points = points.pts.size ();
-      
+
       marker.points.resize (2 * nr_points);
       for (int i = 0; i < nr_points; i++)
       {

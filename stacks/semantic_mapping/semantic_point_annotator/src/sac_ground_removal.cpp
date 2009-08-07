@@ -65,7 +65,6 @@
 #include <sys/time.h>
 
 using namespace std;
-using namespace robot_msgs;
 using namespace mapping_msgs;
 
 class GroundRemoval

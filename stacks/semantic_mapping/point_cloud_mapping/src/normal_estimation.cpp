@@ -62,7 +62,6 @@
 #include <sys/time.h>
 
 using namespace std;
-using namespace robot_msgs;
 
 class NormalEstimation
 {

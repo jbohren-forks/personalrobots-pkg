@@ -10,7 +10,6 @@
 
 using namespace ros;
 using namespace std;
-using namespace robot_msgs;
 
 namespace planar_objects {
 
@@ -109,7 +108,7 @@ void visualizePlanes2(const sensor_msgs::PointCloud& cloud,
 
       rgb=HSV_to_RGB( i/(float)plane_indices.size(),0.5,1);
       if(convexHull) {
-        Polygon3D polygon;
+        geometry_msgs::Polygon polygon;
         cloud_geometry::areas::convexHull2D(cloud, plane_indices[i], plane_coeff[i],
                         polygon);
         visualizePolygon(cloud, polygon,rgb,i,visualization_pub);

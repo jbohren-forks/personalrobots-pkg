@@ -9,7 +9,6 @@
 
 using namespace ros;
 using namespace std;
-using namespace robot_msgs;
 
 #include <point_cloud_mapping/sample_consensus/sac_model_plane.h>
 #include <point_cloud_mapping/sample_consensus/sac.h>
@@ -147,7 +146,7 @@ void segmentPlanes(const sensor_msgs::PointCloud &const_points, double sac_dista
   {
     // Compute the convex hull of the area
     // NOTE: this is faster than computing the concave (alpha) hull, so let's see how this works out
-    Polygon3D polygon;
+    geometry_msgs::Polygon polygon;
     cloud_geometry::areas::convexHull2D(points, indices[i], models[i], polygon);
 
     // Compute the area of the polygon

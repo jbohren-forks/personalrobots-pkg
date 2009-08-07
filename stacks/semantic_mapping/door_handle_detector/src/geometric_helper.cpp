@@ -33,7 +33,6 @@
 #include <door_handle_detector/geometric_helper.h>
 
 using namespace std;
-using namespace robot_msgs;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /** \brief Get a set of point indices between some specified bounds
