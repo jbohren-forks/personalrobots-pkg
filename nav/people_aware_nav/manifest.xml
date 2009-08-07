@@ -6,6 +6,7 @@
 <depend package="roslisp" />
 <depend package="roslib" />
 <depend package="people" />
+<depend package="pluginlib" />
 <depend package="hallway_tracker" />
 <depend package="topic_synchronizer" />
 <depend package="tf" />
@@ -13,6 +14,7 @@
 <depend package="base_local_planner"/>
 <depend package="costmap_2d"/>
 <depend package="angles"/>
+<depend package="nav_core"/>
 <depend package="navfn"/>
 <depend package="nav_msgs"/>
 <depend package="robot_msgs" />
@@ -24,6 +26,7 @@
 <depend package="visualization_msgs"/>
 <export>
   <cpp cflags="-I${prefix}/include -I${prefix}/srv/cpp -I${prefix}/msg/cpp" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lnavfn_constrained"/>
+  <nav_core BaseGlobalPlanner="${prefix}/bgp_plugin.xml" />
 </export>
 
 </package>

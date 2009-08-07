@@ -73,14 +73,14 @@ namespace people_aware_nav {
     planner_costmap_ros_->getCostmapCopy(planner_costmap_);
 
     //initialize the NavFn planner
-    planner_ = new NavfnROS("NavfnROS", *planner_costmap_ros_);
+    planner_ = new NavfnROS("NavfnROS", planner_costmap_ros_);
     ROS_INFO("MAP SIZE: %d, %d", planner_costmap_.getSizeInCellsX(), planner_costmap_.getSizeInCellsY());
 
     //create the ros wrapper for the controller's costmap... and initializer a pointer we'll use with the underlying map
     controller_costmap_ros_ = new Costmap2DROS("local_costmap", tf_);
 
     //create a trajectory controller
-    tc_ = new TrajectoryPlannerROS("TrajectoryPlannerROS", tf_, *controller_costmap_ros_);
+    tc_ = new TrajectoryPlannerROS("TrajectoryPlannerROS", &tf_, controller_costmap_ros_);
 
     //initially clear any unknown space around the robot
     planner_costmap_ros_->clearNonLethalWindow(circumscribed_radius_ * 2, circumscribed_radius_ * 2);
