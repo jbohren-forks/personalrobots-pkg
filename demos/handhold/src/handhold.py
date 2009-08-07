@@ -4,7 +4,7 @@ import roslib; roslib.load_manifest('handhold')
 import rospy
 from tf import TransformListener
 from robot_msgs.msg import PoseStamped
-from robot_msgs.msg import PoseDot
+from geometry_msgs.msg import Twist
 #import numpy
 
 rospy.init_node("handhold")
@@ -14,9 +14,9 @@ rate = rospy.Rate(100)
 
 q_target = None
 
-base_pub = rospy.Publisher('/cmd_vel', PoseDot);
+base_pub = rospy.Publisher('/cmd_vel', Twist);
 
-cmd_vel = PoseDot()
+cmd_vel = Twist()
 
 error_x = 0
 error_y = 0
@@ -34,9 +34,9 @@ while not rospy.is_shutdown():
     error_rotation = q_target.pose.orientation.z - q.pose.orientation.z
     print (error_rotation)
 
-  cmd_vel.vel.vx = -10.0 * error_x
-  cmd_vel.ang_vel.vz = -10.0 * error_y + error_rotation * -5.0
-  cmd_vel.vel.vy = error_rotation * 2.0
+  cmd_vel.linear.x = -10.0 * error_x
+  cmd_vel.angular.z = -10.0 * error_y + error_rotation * -5.0
+  cmd_vel.linear.y = error_rotation * 2.0
   base_pub.publish(cmd_vel)
 
   rate.sleep();

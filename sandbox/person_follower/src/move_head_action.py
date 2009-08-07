@@ -50,7 +50,7 @@ from annotated_map_builder import *
 from annotated_map_builder.wait_for_k_messages_adapter import WaitForKMessagesAdapter 
 
 from pr2_msgs.msg import BaseControllerState
-from robot_msgs.msg import PoseDot
+from geometry_msgs.msg import Twist
 from mechanism_msgs.msg import JointStates, JointState
 
 

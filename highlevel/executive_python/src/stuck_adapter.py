@@ -39,12 +39,12 @@ roslib.load_manifest('executive_python')
 import rospy
 import random
 from pr2_msgs.msg import BaseControllerState
-from robot_msgs.msg import PoseDot
+from geometry_msgs.msg import Twist,Vector3
 
 class StuckAdapter:
   def __init__(self, state_topic, vel_topic, timeout):
     rospy.Subscriber(state_topic, BaseControllerState, self.update)
-    self.pub = rospy.Publisher(vel_topic, PoseDot)
+    self.pub = rospy.Publisher(vel_topic, Twist)
     self.state = None
     self.state_topic = state_topic
     self.goal_topic = vel_topic
@@ -67,10 +67,10 @@ class StuckAdapter:
     #to get unstuck... we're going to try to go at max speed forward until we are unstuck
     while self.stuck() and (begin + self.timeout) < rospy.get_time():
       start = rospy.get_time()
-      vel = PoseDot()
-      vel.vel.vx = 1.0
-      vel.vel.vy = 0.0
-      vel.ang_vel.vz = 0.0
+      vel = Twist()
+      vel.linear.x = 1.0
+      vel.linear.y = 0.0
+      vel.angular.z = 0.0
       #publish the command to the base... hope we don't hit anything
       self.pub.publish(vel)
       end = rospy.get_time()
@@ -79,9 +79,9 @@ class StuckAdapter:
         rospy.sleep(sleep_time)
 
     #make sure to publish zeros when we're done
-    vel = PoseDot()
-    vel.vel.vx = 0.0
-    vel.vel.vy = 0.0
-    vel.ang_vel.vz = 0.0
+    vel = Twist()
+    vel.linear.x = 0.0
+    vel.linear.y = 0.0
+    vel.angular.z = 0.0
     #publish the command to the base... hope we don't hit anything
     self.pub.publish(vel)

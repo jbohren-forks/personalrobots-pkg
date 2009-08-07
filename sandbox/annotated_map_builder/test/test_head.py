@@ -50,7 +50,7 @@ from annotated_map_builder import *
 from annotated_map_builder.move_head_adapter import *
 
 from pr2_msgs.msg import BaseControllerState
-from robot_msgs.msg import PoseDot
+from geometry_msgs.msg import Twist
 from robot_msgs.msg import JointCmd
 
 from python_actions import *

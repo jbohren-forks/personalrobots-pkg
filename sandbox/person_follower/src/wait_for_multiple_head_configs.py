@@ -39,7 +39,7 @@ roslib.load_manifest('annotated_map_builder')
 import rospy
 import random
 from pr2_msgs.msg import BaseControllerState
-from robot_msgs.msg import PoseDot
+from geometry_msgs.msg import Twist
 from mechanism_msgs.msg import JointStates, JointState
 
 class WaitForMultipleHeadConfigsAdapter:

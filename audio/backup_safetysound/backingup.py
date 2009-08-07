@@ -3,7 +3,7 @@ import roslib; roslib.load_manifest('backup_safetysound')
 
 import rospy
 import threading
-from robot_msgs.msg import PoseDot
+from geometry_msgs.msg import Twist
 from sound_play.msg import SoundRequest
 
 import os
@@ -11,7 +11,7 @@ import os
 
 # if robot base receives a command to move backwards in the x-axis,
 # then play sound file (TruckBackUp.wav) from Logitech USB speaker (hw:1,0).
-# data is an instance of a PoseDot extracted from the cmd_vel topic.
+# data is an instance of a Twist extracted from the cmd_vel topic.
 class backingup:
     def start(self):
         msg = SoundRequest()
@@ -27,16 +27,16 @@ class backingup:
         self.pub.publish(msg)
         self.state = self.STOPPED
 
-    def callback(self,data):
+    def callback(self,twist):
         self.mutex.acquire()
         
         try:
-            if data.vel.vx < 0:
+            if twist.linear.x < 0:
                 if self.state == self.STOPPED:
                     self.start()
                 self.state = self.PLAYING
     
-            if data.vel.vx >= 0 and self.state == self.PLAYING:
+            if twist.linear.x >= 0 and self.state == self.PLAYING:
                 self.state = self.STOPPING
                 self.targettime = rospy.get_time() + 0.5
 
@@ -57,7 +57,7 @@ class backingup:
         self.state = self.STOPPED
         self.targettime = 0
         self.pub = rospy.Publisher('robotsound', SoundRequest)
-        rospy.Subscriber("cmd_vel", PoseDot, self.callback)
+        rospy.Subscriber("cmd_vel", Twist, self.callback)
     
         while not rospy.is_shutdown():
             self.mutex.acquire()

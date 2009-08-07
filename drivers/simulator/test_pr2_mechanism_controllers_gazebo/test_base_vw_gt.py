@@ -48,8 +48,8 @@ roslib.load_manifest('rostest')
 import sys, unittest
 import os, time
 import rospy, rostest
-from robot_msgs.msg import *
-from nav_msgs.msg import *
+from geometry_msgs.msg import Twist,Vector3
+from nav_msgs.msg import Odometry
 
 TEST_DURATION   = 60.0
 
@@ -121,13 +121,13 @@ class BaseTest(unittest.TestCase):
     
     def test_base(self):
         print "LNK\n"
-        pub = rospy.Publisher("/cmd_vel", PoseDot)
+        pub = rospy.Publisher("/cmd_vel", Twist)
         rospy.Subscriber("/base_pose_ground_truth", PoseWithRatesStamped, self.p3dInput)
         rospy.Subscriber("/odom",                   Odometry,      self.odomInput)
         rospy.init_node(NAME, anonymous=True)
         timeout_t = time.time() + TEST_DURATION
         while not rospy.is_shutdown() and not self.success and time.time() < timeout_t:
-            pub.publish(PoseDot(Velocity(0.0,0.0,0),AngularVelocity(0,0,TARGET_VW)))
+            pub.publish(Twist(Vector3(0.0,0.0,0), Vector3(0,0,TARGET_VW)))
             time.sleep(0.1)
         self.assert_(self.success)
         

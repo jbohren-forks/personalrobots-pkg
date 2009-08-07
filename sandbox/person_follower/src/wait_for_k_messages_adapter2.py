@@ -39,8 +39,7 @@ roslib.load_manifest('annotated_map_builder')
 import rospy
 import random
 from pr2_msgs.msg import BaseControllerState
-from robot_msgs.msg import PoseDot
-from robot_msgs.msg import PoseDot
+from geometry_msgs.msg import Twist
 
 class WaitForKMessagesAdapter:
   def __init__(self, message_topic,msgType, count, timeout):
