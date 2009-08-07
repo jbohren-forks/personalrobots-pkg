@@ -42,8 +42,8 @@
 #include <mapping_msgs/AttachedObject.h>
 #include <pr2_mechanism_controllers/TrajectoryStart.h>
 
-#include <pr2_robot_actions/MoveArmGoal.h>
-#include <pr2_robot_actions/MoveArmState.h>
+#include <move_arm/MoveArmGoal.h>
+#include <move_arm/MoveArmState.h>
 #include <pr2_robot_actions/ActuateGripperState.h>
 #include <std_msgs/Float64.h>
 
@@ -154,7 +154,7 @@ public:
     
     bool moveTo(recognition_lambertian::TableTopObject &obj)
     {
-	pr2_robot_actions::MoveArmGoal goal;
+	move_arm::MoveArmGoal goal;
 	int32_t                        feedback;
 	
 	goal.goal_constraints.set_pose_constraint_size(1);
@@ -259,7 +259,7 @@ public:
     
 private:
     
-    robot_actions::ActionClient<pr2_robot_actions::MoveArmGoal, pr2_robot_actions::MoveArmState, int32_t> move_arm;
+    robot_actions::ActionClient<move_arm::MoveArmGoal, move_arm::MoveArmState, int32_t> move_arm;
     robot_actions::ActionClient<std_msgs::Float64, pr2_robot_actions::ActuateGripperState, std_msgs::Float64> gripper;
     
     ros::NodeHandle nh;
