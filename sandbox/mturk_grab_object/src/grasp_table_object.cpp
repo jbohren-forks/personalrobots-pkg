@@ -66,7 +66,7 @@ void GraspObjectNode::setup()
 }
 
 
-void setupGoal(const std::string &link, const geometry_msgs::Pose &pz, pr2_robot_actions::MoveArmGoal &goal)
+void setupGoal(const std::string &link, const geometry_msgs::Pose &pz, move_arm::MoveArmGoal &goal)
 {
   goal.goal_constraints.pose_constraint.resize(1);
   goal.goal_constraints.pose_constraint[0].type = motion_planning_msgs::PoseConstraint::POSITION_X + motion_planning_msgs::PoseConstraint::POSITION_Y + motion_planning_msgs::PoseConstraint::POSITION_Z +
@@ -140,7 +140,7 @@ void GraspObjectNode::imageCallback(const sensor_msgs::ImageConstPtr& the_image)
 
       num_attempts++;
 
-      pr2_robot_actions::MoveArmGoal g;
+      move_arm::MoveArmGoal g;
       double allowed_time=30.0;
       int32_t                         feedback;
 

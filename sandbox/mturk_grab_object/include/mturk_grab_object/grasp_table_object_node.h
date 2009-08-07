@@ -51,8 +51,8 @@
 #include <tabletop_msgs/ObjectOnTable.h>
 
 #include <robot_actions/action_client.h>
-#include <pr2_robot_actions/MoveArmGoal.h>
-#include <pr2_robot_actions/MoveArmState.h>
+#include <move_arm/MoveArmGoal.h>
+#include <move_arm/MoveArmState.h>
 
 namespace mturk_grab_object
 {
@@ -105,7 +105,7 @@ protected:
   
 public:
 
-  robot_actions::ActionClient<pr2_robot_actions::MoveArmGoal, pr2_robot_actions::MoveArmState, int32_t> move_arm;
+  robot_actions::ActionClient<move_arm::MoveArmGoal, move_arm::MoveArmState, int32_t> move_arm;
 
 public:
   GraspObjectNode();
