@@ -124,13 +124,14 @@ public:
   mechanism::JointState *joint_state_;           /**< Joint we're controlling. */
   double dt_;
 
+  double command_;                                /**< Last commanded position. */
 private:
   ros::NodeHandle node_;
   mechanism::RobotState *robot_;                  /**< Pointer to robot structure. */
   control_toolbox::Pid pid_controller_;           /**< Internal PID controller. */
   double last_time_;                              /**< Last time stamp of update. */
   int loop_count_;
-  double command_;                                /**< Last commanded position. */
+  
   friend class JointVelocityControllerNode;
 
   boost::scoped_ptr<
