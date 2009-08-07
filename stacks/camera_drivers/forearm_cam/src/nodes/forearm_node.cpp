@@ -479,8 +479,8 @@ public:
   {
     ROS_DEBUG("start()");
     assert(state_ == OPENED);
-    image_thread_.reset(new boost::thread(boost::bind(&ForearmCamDriver::imageThread, this)));
     state_ = RUNNING;   
+    image_thread_.reset(new boost::thread(boost::bind(&ForearmCamDriver::imageThread, this)));
   }
 
   void doStop()

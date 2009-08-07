@@ -13,7 +13,7 @@
 #include "forearm_cam/ipcam_packet.h"
 
 /// Amount of time in microseconds that the host should wait for packet replies
-#define STD_REPLY_TIMEOUT SEC_TO_USEC(0.5)
+#define STD_REPLY_TIMEOUT SEC_TO_USEC(0.01)
 #define STOP_REPLY_TIMEOUT SEC_TO_USEC(0.001)
 
 #define VMODEDEF(width, height, fps, hblank, vblank) { #width"x"#height"x"#fps, width, height, fps, hblank, vblank }  
