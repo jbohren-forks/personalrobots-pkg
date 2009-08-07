@@ -58,22 +58,10 @@ HeadPositionController::~HeadPositionController()
 
 }
 
-bool HeadPositionController::initXml(mechanism::RobotState *robot_state, TiXmlElement *config)
-{
-  // get the controller name from xml file
-  std::string controller_name = config->Attribute("name") ? config->Attribute("name") : "";
-  if (controller_name == ""){
-    ROS_ERROR("HeadPositionController: No controller name given in xml file");
-    return false;
-  }
-
-  return init(robot_state, ros::NodeHandle(controller_name));
-}
-
 bool HeadPositionController::init(mechanism::RobotState *robot_state, const ros::NodeHandle &n)
 {
   node_ = n;
-
+ 
 // get name link names from the param server
   if (!node_.getParam("pan_link_name", pan_link_name_)){
     ROS_ERROR("HeadPositionController: No pan link name found on parameter server (namespace: %s)",
@@ -85,39 +73,16 @@ bool HeadPositionController::init(mechanism::RobotState *robot_state, const ros:
               node_.getNamespace().c_str());
     return false;
   }
-
+ 
   // test if we got robot pointer
   assert(robot_state);
   robot_state_ = robot_state;
 
-  // get a pointer to the wrench controller
-  std::string pan_output;
-  if (!node_.getParam("pan_output", pan_output))
-  {
-    ROS_ERROR("HeadPositionController: No ouptut name found on parameter server (namespace: %s)",
-              node_.getNamespace().c_str());
-    return false;
-  }
-  if (!getController<JointPositionController>(pan_output, AFTER_ME, head_pan_controller_))
-  {
-    ROS_ERROR("HeadPositionController: could not connect to the pan joint controller %s (namespace: %s)",
-              pan_output.c_str(), node_.getNamespace().c_str());
-    return false;
-  }
+  //initialize the joint position controllers
 
-  std::string tilt_output;
-  if (!node_.getParam("tilt_output", tilt_output))
-  {
-    ROS_ERROR("HeadPositionController: No ouptut name found on parameter server (namespace: %s)",
-              node_.getNamespace().c_str());
-    return false;
-  }
-  if (!getController<JointPositionController>(tilt_output, AFTER_ME, head_tilt_controller_))
-  {
-    ROS_ERROR("HeadPositionController: could not connect to the tilt joint controller %s (namespace: %s)",
-              tilt_output.c_str(), node_.getNamespace().c_str());
-    return false;
-  }
+  head_pan_controller_.init(robot_state, ros::NodeHandle(node_, "pan_controller"));
+  head_tilt_controller_.init(robot_state, ros::NodeHandle(node_, "tilt_controller"));
+
 
   // subscribe to head commands
   sub_command_ = node_.subscribe<mechanism_msgs::JointStates>("command", 1, &HeadPositionController::command, this);
@@ -134,8 +99,8 @@ bool HeadPositionController::init(mechanism::RobotState *robot_state, const ros:
 
 bool HeadPositionController::starting()
 {
-  pan_out_ = head_pan_controller_->joint_state_->position_;
-  tilt_out_ = head_tilt_controller_->joint_state_->position_;
+  pan_out_ = head_pan_controller_.joint_state_->position_;
+  tilt_out_ = head_tilt_controller_.joint_state_->position_;
 
   return true;
 }
@@ -143,15 +108,17 @@ bool HeadPositionController::starting()
 void HeadPositionController::update()
 {
   // set position controller commands
-  head_pan_controller_->command_ = pan_out_;
-  head_tilt_controller_->command_ = tilt_out_;
+  head_pan_controller_.command_ = pan_out_;
+  head_tilt_controller_.command_ = tilt_out_;
+  head_pan_controller_.update();
+  head_tilt_controller_.update();
 }
 
 void HeadPositionController::command(const mechanism_msgs::JointStatesConstPtr& command_msg)
 {
 
   assert(command_msg->joints.size() == 2); 
-  if(command_msg->joints[0].name == head_pan_controller_->joint_state_->joint_->name_)
+  if(command_msg->joints[0].name == head_pan_controller_.joint_state_->joint_->name_)
   {
     pan_out_ = command_msg->joints[0].position;
     tilt_out_ = command_msg->joints[1].position;
@@ -168,20 +135,20 @@ void HeadPositionController::pointHead(const tf::MessageNotifier<geometry_msgs::
 {
   std::string pan_parent;
   tf_.getParent( pan_link_name_, ros::Time(), pan_parent);
- 
   // convert message to transform
   Stamped<Point> pan_point;
   pointStampedMsgToTF(*point_msg, pan_point);
 
-  // convert to reference frame of pan link 
+  // convert to reference frame of pan link parent
   tf_.transformPoint(pan_parent, pan_point, pan_point);
-
+  //calculate the pan angle 
   pan_out_ = atan2(pan_point.y(), pan_point.x());
 
   Stamped<Point> tilt_point;
   pointStampedMsgToTF(*point_msg, tilt_point);
+  // convert to reference frame of pan link
   tf_.transformPoint(pan_link_name_, tilt_point, tilt_point);
-  
+  //calculate the tilt angle
   tilt_out_ = atan2(-tilt_point.z(), sqrt(tilt_point.x()*tilt_point.x() + tilt_point.y()*tilt_point.y()));
  
 
@@ -209,7 +176,7 @@ void HeadPositionController::pointFrameOnHead(const tf::MessageNotifier<geometry
   double radius = pow(pan_point.x(),2)+pow(pan_point.y(),2);
   double x_intercept = sqrt(fabs(radius-pow(frame.getOrigin().y(),2)));
   double delta_theta = atan2(pan_point.y(), pan_point.x())-atan2(frame.getOrigin().y(),x_intercept);
-  pan_out_ = head_pan_controller_->joint_state_->position_ + delta_theta;
+  pan_out_ = head_pan_controller_.joint_state_->position_ + delta_theta;
 
   // convert message to transform
   Stamped<Point> tilt_point;

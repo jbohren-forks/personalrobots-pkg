@@ -58,7 +58,6 @@ public:
   HeadPositionController();
   ~HeadPositionController();
 
-  bool initXml(mechanism::RobotState *robot_state, TiXmlElement *config);
   bool init(mechanism::RobotState *robot, const ros::NodeHandle &n);
 
   bool starting();
@@ -84,8 +83,8 @@ private:
   boost::scoped_ptr<tf::MessageNotifier<geometry_msgs::PointStamped> > point_frame_on_head_notifier_;  
 
   // position controller
-  JointPositionController* head_pan_controller_;
-  JointPositionController* head_tilt_controller_;
+  JointPositionController head_pan_controller_;
+  JointPositionController head_tilt_controller_;
 
 
 };
