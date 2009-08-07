@@ -17,7 +17,8 @@
  <depend package="robot_actions"/>
  <depend package="actionlib"/>
  <depend package="nav_core"/>
- <depend package="plugin_user"/>
+ <depend package="nav_robot_actions"/>
+ <depend package="pluginlib"/>
  <depend package="costmap_2d"/>
  <depend package="tf"/>
  <depend package="roslib"/>

@@ -85,9 +85,9 @@ namespace move_base {
     try {
       planner_ = bgp_loader_.createPluginInstance(global_planner);
       planner_->initialize(global_planner, planner_costmap_ros_);
-    } catch (const Poco::RuntimeException& ex)
+    } catch (const std::runtime_error& ex)
     {
-      ROS_FATAL("Failed to create the %s planner, are you sure it is properly registered and that the containing library is built?", global_planner.c_str());
+      ROS_FATAL("Failed to create the %s planner, are you sure it is properly registered and that the containing library is built? Exception: %s", global_planner.c_str(), ex.what());
       exit(0);
     }
 
@@ -100,9 +100,9 @@ namespace move_base {
     try {
       tc_ = blp_loader_.createPluginInstance(local_planner);
       tc_->initialize(local_planner, &tf_, controller_costmap_ros_);
-    } catch (const Poco::RuntimeException& ex)
+    } catch (const std::runtime_error& ex)
     {
-      ROS_FATAL("Failed to create the %s planner, are you sure it is properly registered and that the containing library is built?", local_planner.c_str());
+      ROS_FATAL("Failed to create the %s planner, are you sure it is properly registered and that the containing library is built? Exception: %s", local_planner.c_str(), ex.what());
       exit(0);
     }
 
