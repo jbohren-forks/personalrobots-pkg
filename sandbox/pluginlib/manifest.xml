@@ -1,10 +1,10 @@
 <package>
-  <description brief="a package to experiment with plugin use">
+  <description brief="Tools for creating and using plugins with ROS">
 
-     a package to experiment with plugin use
+     Tools for creating and using plugins with ROS, leveraging ROS manifests for automatic discovery of plugins.
 
   </description>
-  <author>Tully Foote</author>
+  <author>Tully Foote and Eitan Marder-Eppstein</author>
   <license>BSD</license>
   <review status="experimental" notes=""/>
   <url>http://pr.willowgarage.com/wiki/plugin_user</url>
@@ -13,7 +13,7 @@
   <depend package="tinyxml"/>
 
   <export>
-    <cpp cflags="-I${prefix} `rosboost-cfg --cflags`" lflags="-lPocoUtil `rosboost-cfg -l filesystem`"/>
+    <cpp cflags="-I${prefix}/include -I${prefix} `rosboost-cfg --cflags`" lflags="-lPocoUtil `rosboost-cfg -l filesystem`"/>
   </export>
 
   <rosdep name="libpoco"/>
