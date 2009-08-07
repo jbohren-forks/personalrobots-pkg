@@ -27,8 +27,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "polygon.hpp"
-#include "Poco/ClassLibrary.h"
 #include "square.h"
 
 #include <cmath>
@@ -39,9 +37,3 @@ double square::area() const {
   return side_length_ * side_length_;
 }
 
-class triangle : public polygon {
-public:
-  virtual double area() const {
-    return side_length_ * side_length_ * sqrt(3) / 2;
-  }
-};
