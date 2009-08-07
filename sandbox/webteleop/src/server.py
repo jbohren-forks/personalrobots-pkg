@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import getopt
 import commands
 import signal
 import cStringIO
@@ -473,25 +474,35 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
     if cmd == "startup":
       print "Startup[%s]" % topic
 
-      self.send_response(200)
-      self.send_header( "Content-type", "text/html" )
-      self.end_headers()
-      self.wfile.write("started")
-
-
       robot = commands.getoutput('hostname')
 
       if rosCoreUp == False:
+        print "***************************************************************"
+        print "***************************************************************"
+        print "***************************************************************"
+        print "Launching core..."
+        print "***************************************************************"
+        print "***************************************************************"
+        print "***************************************************************"
+
         core_launcher = roslaunch_caller.launch_core()
+
+        print "***************************************************************"
+        print "***************************************************************"
+        print "***************************************************************"
+        print "done"
+        print "***************************************************************"
+        print "***************************************************************"
+        print "***************************************************************"
+
+
         time.sleep(5)
         
         scriptDir = commands.getoutput('rospack find webteleop') + '/launch/'
         startupScript = ''
 
-        if robot.startswith('prf'):
-          startupScript = 'prf.launch'
-        elif robot.startswith('prg'):
-          startupScript = 'prg.launch'
+        if robot.startswith('pr'):
+          startupScript = robot + ".launch"
         else:
           startupScript = 'gazebo.launch'
 
@@ -508,6 +519,11 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
 
       if tfclient == None:
         tfclient = TransformListener()
+
+      self.send_response(200)
+      self.send_header( "Content-type", "text/html" )
+      self.end_headers()
+      self.wfile.write("started")
 
     elif cmd == "shutdown":
       print "Shutdown[%s]" % topic
@@ -836,10 +852,18 @@ def signal_handler(signal, frame):
 ################################################################################
 # Main
 if __name__ == '__main__':
+  port = 8080
+
+  try:
+    opts, args = getopt.getopt(sys.argv[1:], 'p:', ['port'])
+    for o,a in opts:
+      if o == '-p':
+        port = int(a)
+  except getopt.GetoptError:
+    usage()
+    sys.exit(2)
 
   signal.signal(signal.SIGINT, signal_handler)
-
-  port = 8081
 
   print 'starting web server on port %s' % port
 
