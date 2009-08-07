@@ -38,7 +38,7 @@ import string
 from time import sleep
 
 import rospy
-from robot_msgs.msg import PointStamped, Point
+from geometry_msgs.msg import PointStamped, Point
 from mechanism_msgs.msg import JointStates, JointState
 
 def point_head_client(pan, tilt):
