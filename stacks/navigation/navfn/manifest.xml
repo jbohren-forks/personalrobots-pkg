@@ -10,7 +10,8 @@
  <depend package="roscpp"/>
  <depend package="geometry_msgs"/>
  <depend package="costmap_2d"/>
- <depend package="nav_robot_actions"/>
+ <depend package="nav_core"/>
+ <depend package="pluginlib"/>
  <depend package="nav_msgs"/>
  <depend package="tf"/>
  <depend package="visualization_msgs"/>
@@ -19,5 +20,6 @@
  <rosdep name="netpbm"/>
  <export>
   <cpp cflags="-I${prefix}/include -I${prefix}/srv/cpp -I${prefix}/msg/cpp" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lnavfn"/>
+  <nav_core BaseGlobalPlanner="${prefix}/bgp_plugin.xml" />
  </export>
 </package>

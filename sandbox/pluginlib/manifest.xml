@@ -1,0 +1,22 @@
+<package>
+  <description brief="Tools for creating and using plugins with ROS">
+
+     Tools for creating and using plugins with ROS, leveraging ROS manifests for automatic discovery of plugins.
+
+  </description>
+  <author>Tully Foote and Eitan Marder-Eppstein</author>
+  <license>BSD</license>
+  <review status="experimental" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/plugin_user</url>
+
+  <depend package="roslib"/>
+  <depend package="tinyxml"/>
+
+  <export>
+    <cpp cflags="-I${prefix}/include -I${prefix} `rosboost-cfg --cflags`" lflags="-lPocoUtil `rosboost-cfg -l filesystem`"/>
+  </export>
+
+  <rosdep name="libpoco"/>
+</package>
+
+

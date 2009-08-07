@@ -44,7 +44,8 @@ namespace move_base {
     tf_(tf),
     as_(ros::NodeHandle(), name),
     tc_(NULL), planner_costmap_ros_(NULL), controller_costmap_ros_(NULL), 
-    planner_(NULL){
+    planner_(NULL), bgp_loader_("nav_core", "BaseGlobalPlanner"),
+    blp_loader_("nav_core", "BaseLocalPlanner"){
 
     //get some parameters that will be global to the move base node
     std::string global_planner, local_planner;
@@ -82,10 +83,11 @@ namespace move_base {
 
     //initialize the global planner
     try {
-      planner_ = nav_robot_actions::BGPFactory::Instance().CreateObject(global_planner, global_planner, *planner_costmap_ros_);
-    } catch (Loki::DefaultFactoryError<std::string, nav_robot_actions::BaseGlobalPlanner>::Exception)
+      planner_ = bgp_loader_.createPluginInstance(global_planner);
+      planner_->initialize(global_planner, planner_costmap_ros_);
+    } catch (const std::runtime_error& ex)
     {
-      ROS_FATAL("Failed to create the %s planner, are you sure it is properly registered?", global_planner.c_str());
+      ROS_FATAL("Failed to create the %s planner, are you sure it is properly registered and that the containing library is built? Exception: %s", global_planner.c_str(), ex.what());
       exit(0);
     }
 
@@ -96,11 +98,11 @@ namespace move_base {
 
     //create a local planner
     try {
-      tc_ = nav_robot_actions::BLPFactory::Instance().CreateObject(local_planner, 
-          local_planner, tf_, *controller_costmap_ros_);
-    } catch (Loki::DefaultFactoryError<std::string, nav_robot_actions::BaseLocalPlanner>::Exception)
+      tc_ = blp_loader_.createPluginInstance(local_planner);
+      tc_->initialize(local_planner, &tf_, controller_costmap_ros_);
+    } catch (const std::runtime_error& ex)
     {
-      ROS_FATAL("Failed to create the %s planner, are you sure it is properly registered?", local_planner.c_str());
+      ROS_FATAL("Failed to create the %s planner, are you sure it is properly registered and that the containing library is built? Exception: %s", local_planner.c_str(), ex.what());
       exit(0);
     }
 

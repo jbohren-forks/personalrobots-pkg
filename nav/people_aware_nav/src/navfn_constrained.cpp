@@ -37,6 +37,11 @@
 #include <people_aware_nav/navfn_constrained.h>
 #include <visualization_msgs/Marker.h>
 #include <ros/ros.h>
+#include <pluginlib/plugin_macros.h>
+
+BEGIN_PLUGIN_LIST(nav_core::BaseGlobalPlanner);
+REGISTER_PLUGIN(people_aware_nav::NavfnROSConstrained);
+END_PLUGIN_LIST
 
 namespace people_aware_nav {
 
@@ -48,17 +53,31 @@ using geometry_msgs::Point32;
 namespace vm=visualization_msgs;
 
 
-ROS_REGISTER_BGP(NavfnROSConstrained);
+NavfnROSConstrained::NavfnROSConstrained (){}
 
-NavfnROSConstrained::NavfnROSConstrained (std::string name, costmap_2d::Costmap2DROS& cmap) :
-  navfn::NavfnROS(name, cmap)
+NavfnROSConstrained::NavfnROSConstrained (std::string name, costmap_2d::Costmap2DROS* cmap)
 {
+  initialize(name, cmap);
+}
+
+void NavfnROSConstrained::initialize (std::string name, costmap_2d::Costmap2DROS* cmap)
+{
+  if(!initialized_){
+  navfn::NavfnROS::initialize(name, cmap);
   service_ = node_.advertiseService("~set_nav_constraint", &NavfnROSConstrained::setConstraint, this);
   vis_pub_add_ = node_.advertise<visualization_msgs::Marker>("visualization_marker", 0);
+  }
+  else
+    ROS_WARN("You are attempting to initialize a planner that has already been initialized, doing nothing");
 }
 
 bool NavfnROSConstrained::setConstraint (SetNavConstraint::Request& req, SetNavConstraint::Response& resp)
 {
+  if(!initialized_){
+    ROS_ERROR("This planner has not been initialized, please call initialize() before attempting to use it.");
+    return false;
+  }
+
   forbidden_ = req.forbidden;
   ROS_DEBUG_STREAM_NAMED("navfn", "Setting constraint polygon with " << forbidden_.points.size() << " points");
   return true;
@@ -67,8 +86,13 @@ bool NavfnROSConstrained::setConstraint (SetNavConstraint::Request& req, SetNavC
 
 void NavfnROSConstrained::getCostmap (costmap_2d::Costmap2D& cmap)
 {
-  costmap_ros_.clearRobotFootprint();
-  costmap_ros_.getCostmapCopy(cmap);
+  if(!initialized_){
+    ROS_ERROR("This planner has not been initialized, please call initialize() before attempting to use it.");
+    return;
+  }
+
+  costmap_ros_->clearRobotFootprint();
+  costmap_ros_->getCostmapCopy(cmap);
 
   // Set cost of forbidden region
   vector<Point> polygon;

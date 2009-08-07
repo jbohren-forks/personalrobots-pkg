@@ -55,7 +55,7 @@ namespace navfn {
 class NavfnWithLocalCostmap : public NavfnROS
 {
 public:
-  NavfnWithLocalCostmap(string name, Costmap2DROS& cmap);
+  NavfnWithLocalCostmap(string name, Costmap2DROS* cmap);
   bool setCostmap(SetCostmap::Request& req, SetCostmap::Response& resp);
   bool makePlanService(MakeNavPlan::Request& req, MakeNavPlan::Response& resp);
 
@@ -88,7 +88,7 @@ bool NavfnWithLocalCostmap::makePlanService(MakeNavPlan::Request& req, MakeNavPl
 }
 
 
-NavfnWithLocalCostmap::NavfnWithLocalCostmap(string name, Costmap2DROS& cmap) : NavfnROS(name, cmap)
+NavfnWithLocalCostmap::NavfnWithLocalCostmap(string name, Costmap2DROS* cmap) : NavfnROS(name, cmap)
 {
   inscribed_radius_ = 0.0;
   circumscribed_radius_ = 0.0;
@@ -143,7 +143,7 @@ int main (int argc, char** argv)
 
   
   Costmap2DROS dummy_costmap("dummy_costmap", tf);
-  navfn::NavfnWithLocalCostmap navfn("navfn_planner", dummy_costmap);
+  navfn::NavfnWithLocalCostmap navfn("navfn_planner", &dummy_costmap);
 
   ros::spin();
   return 0;

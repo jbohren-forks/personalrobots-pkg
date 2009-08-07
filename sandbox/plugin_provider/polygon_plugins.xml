@@ -1,11 +1,11 @@
 <library path="lib/libsquare">
-  <plugin name="square" type="polygon">
+  <plugin name="square" class="square" type="polygon">
     <description>
       this is a square plugin
     </description>
   </plugin>
   
-  <plugin name="triangle" type="polygon">
+  <plugin name="triangle" class="triangle" type="polygon">
     <description>
       this is a triangle plugin
     </description>

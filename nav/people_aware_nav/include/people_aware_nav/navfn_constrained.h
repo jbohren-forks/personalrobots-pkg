@@ -46,7 +46,9 @@ class NavfnROSConstrained : public navfn::NavfnROS {
 
 public:
   
-  NavfnROSConstrained (std::string name, costmap_2d::Costmap2DROS& cmap);
+  NavfnROSConstrained ();
+  NavfnROSConstrained (std::string name, costmap_2d::Costmap2DROS* cmap);
+  void initialize (std::string name, costmap_2d::Costmap2DROS* cmap);
   bool setConstraint (SetNavConstraint::Request& req, SetNavConstraint::Response& resp);
 
 protected:

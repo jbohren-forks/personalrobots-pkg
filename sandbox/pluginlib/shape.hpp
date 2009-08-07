@@ -27,11 +27,39 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "line.h"
+#ifndef SHAPE_HPP
+#define SHAPE_HPP
 
-#include <cmath>
+#include <string>
+#include <set>
+#include <vector>
+#include <iostream>
 
-double line::area() const {
-  return 0;
-}
+#include "boost/algorithm/string.hpp"
 
+template<class T>
+class base_shape
+{
+public:
+  base_shape(): side_length_(0) {};
+protected:
+  T side_length_;
+};
+
+class shape : public base_shape<double>{
+
+public:
+  shape(){}
+
+  virtual ~shape() {}
+
+  void set_side_length(double side_length) {
+    side_length_ = side_length;
+  }
+
+  virtual double area() const = 0;
+};
+
+
+
+#endif
