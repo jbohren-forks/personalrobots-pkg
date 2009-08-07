@@ -304,9 +304,6 @@ bool JointPositionControllerNode::initXml(mechanism::RobotState *robot, TiXmlEle
   //subscriptions
   node_->subscribe(service_prefix_ + "/set_command", cmd_, &JointPositionControllerNode::setCommand, this, 1);
   guard_set_command_.set(service_prefix_ + "/set_command");
-  //services
-  node_->advertiseService(service_prefix_ + "/get_command", &JointPositionControllerNode::getCommand, this);
-  guard_get_command_.set(service_prefix_ + "/get_command");
 
 
   pid_tuner_.add(&c_->pid_controller_);
@@ -318,15 +315,6 @@ bool JointPositionControllerNode::initXml(mechanism::RobotState *robot, TiXmlEle
 void JointPositionControllerNode::setCommand()
 {
   c_->setCommand(cmd_.data);
-}
-
-bool JointPositionControllerNode::getCommand(robot_srvs::GetValue::Request &req,
-                                             robot_srvs::GetValue::Response &resp)
-{
-  double cmd;
-  c_->getCommand(cmd);
-  resp.v = cmd;
-  return true;
 }
 
 }

@@ -71,7 +71,6 @@
 
 // Services
 #include <std_msgs/Float64.h>
-#include <robot_srvs/GetValue.h>
 
 //Realtime publisher
 #include <robot_mechanism_controllers/JointControllerState.h>

@@ -60,7 +60,6 @@
 
 // Services
 #include <std_msgs/Float64.h>
-#include <robot_srvs/GetValue.h>
 
 namespace controller
 {
@@ -110,7 +109,7 @@ private:
   control_toolbox::Pid pid_controller_;       /**< Internal PID controller. */
   double last_time_;                          /**< Last time stamp of update. */
   double command_;                            /**< Last commanded position. */
-  double smoothed_error_; 
+  double smoothed_error_;
   double smoothing_factor_;
 };
 
@@ -133,19 +132,13 @@ public:
   void update();
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
-  // Topics
   void setCommand();
-  //Sevices
-  bool getCommand(robot_srvs::GetValue::Request &req,
-		  robot_srvs::GetValue::Response &resp);
-
 
 private:
 
   //node stuff
   std::string service_prefix_;                 /**< The name of the controller. */
   ros::Node *node_;
-  AdvertisedServiceGuard guard_get_command_;   /**< Makes sure the advertise goes down neatly. */
   SubscriptionGuard guard_set_command_;        /**< Makes sure the subscription goes down neatly. */
 
   //msgs

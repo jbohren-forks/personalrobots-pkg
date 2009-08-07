@@ -71,7 +71,6 @@
 
 // Services
 #include <std_msgs/Float64.h>
-#include <robot_srvs/GetValue.h>
 
 //Realtime publisher
 #include <robot_mechanism_controllers/JointControllerState.h>
@@ -131,7 +130,7 @@ private:
   control_toolbox::Pid pid_controller_;           /**< Internal PID controller. */
   double last_time_;                              /**< Last time stamp of update. */
   int loop_count_;
-  
+
   friend class JointVelocityControllerNode;
 
   boost::scoped_ptr<
@@ -161,18 +160,13 @@ public:
   void update();
   bool initXml(mechanism::RobotState *robot_state, TiXmlElement *config);
 
-  // Topics
   void setCommand();
-  //Services
-  bool getCommand(robot_srvs::GetValue::Request &req,
-		  robot_srvs::GetValue::Response &resp);
 
 private:
 
   //node stuff
   std::string service_prefix_;                 /**< The name of the controller. */
   ros::Node *node_;
-  AdvertisedServiceGuard guard_get_command_;   /**< Makes sure the advertise goes down neatly. */
   SubscriptionGuard guard_set_command_;        /**< Makes sure the subscription goes down neatly. */
 
   //msgs

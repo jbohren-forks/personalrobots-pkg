@@ -56,9 +56,7 @@
 #include "misc_utils/advertised_service_guard.h"
 #include "misc_utils/subscription_guard.h"
 
-// Services
 #include <std_msgs/Float64.h>
-#include <robot_srvs/GetValue.h>
 
 
 namespace controller
