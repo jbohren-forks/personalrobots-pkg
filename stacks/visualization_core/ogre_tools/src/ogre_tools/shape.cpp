@@ -41,14 +41,8 @@
 namespace ogre_tools
 {
 
-Shape::Shape( Type type, Ogre::SceneManager* scene_manager, Ogre::SceneNode* parent_node )
-: Object( scene_manager )
-, type_(type)
+Ogre::Entity* Shape::createEntity(const std::string& name, Type type, Ogre::SceneManager* scene_manager)
 {
-  static uint32_t count = 0;
-  std::stringstream ss;
-  ss << "ogre_tools::Shape" << count++;
-
   std::string mesh_name;
   switch (type)
   {
@@ -72,7 +66,18 @@ Shape::Shape( Type type, Ogre::SceneManager* scene_manager, Ogre::SceneNode* par
     ROS_BREAK();
   }
 
-  entity_ = scene_manager_->createEntity(ss.str(), mesh_name);
+  return scene_manager->createEntity(name, mesh_name);
+}
+
+Shape::Shape( Type type, Ogre::SceneManager* scene_manager, Ogre::SceneNode* parent_node )
+: Object( scene_manager )
+, type_(type)
+{
+  static uint32_t count = 0;
+  std::stringstream ss;
+  ss << "ogre_tools::Shape" << count++;
+
+  entity_ = createEntity(ss.str(), type, scene_manager);
 
   if ( !parent_node )
   {

@@ -100,6 +100,8 @@ public:
 
   Ogre::Entity* getEntity() { return entity_; }
 
+  static Ogre::Entity* createEntity(const std::string& name, Type shape_type, Ogre::SceneManager* scene_manager);
+
 private:
   Ogre::SceneNode* scene_node_;
   Ogre::SceneNode* offset_node_;
