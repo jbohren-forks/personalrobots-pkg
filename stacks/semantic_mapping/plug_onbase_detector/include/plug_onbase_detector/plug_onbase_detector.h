@@ -80,7 +80,6 @@
 
 using namespace std;
 using namespace std_msgs;
-using namespace robot_msgs;
 using namespace mapping_msgs;
 
 // Comparison operator for a vector of vectors
