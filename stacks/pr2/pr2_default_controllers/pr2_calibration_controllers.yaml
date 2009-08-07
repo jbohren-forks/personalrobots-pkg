@@ -58,7 +58,7 @@ cal_r_upper_arm_roll:
   joint: r_upper_arm_roll_joint
   actuator: r_upper_arm_roll_motor
   transmission: r_upper_arm_roll_trans
-  velocity: 1.0
+  velocity: 1.5
   pid:
     p: 6
     i: 0.2
@@ -69,7 +69,7 @@ cal_l_upper_arm_roll:
   joint: l_upper_arm_roll_joint
   actuator: l_upper_arm_roll_motor
   transmission: l_upper_arm_roll_trans
-  velocity: 1.0
+  velocity: 1.5
   pid:
     p: 6
     i: 0.2
@@ -319,7 +319,7 @@ cal_head_tilt_alpha2a:
 cal_head_tilt_alpha2b:
   type: JointUDCalibrationController
   joint: head_tilt_joint
-  actuator: head_tilt_motor_alpha2b
+  actuator: head_tilt_motor
   transmission: head_tilt_trans
   velocity: -1.0
   pid:

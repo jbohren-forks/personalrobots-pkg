@@ -174,7 +174,7 @@ def main():
     else:
         casters = ['caster_fl', 'caster_fr', 'caster_bl', 'caster_br']
     if '--alpha-head' in flags:
-        head = ['head_pan_alpha2', 'head_tilt_alpha2']
+        head = ['head_pan_alpha2', 'head_tilt_alpha2b']
     else:
         head = ['head_pan', 'head_tilt']
 
