@@ -48,7 +48,7 @@ from fingertip_pressure.msg import PressureInfo, PressureInfoElement
 from pr2_msgs.msg import PressureState
 from visualization_msgs.msg import Marker
 from fingertip_pressure.colormap import color
-from robot_msgs.msg import Vector3
+from geometry_msgs.msg import Vector3
 
 positions = [ # x, y, z, xscale, yscale, zscale 
         ( 0.026, 0.007, 0.000, 0.010, 0.010, 0.015),
