@@ -15,7 +15,6 @@ rospack_add_boost_directories()
 rospack_add_library(base_local_planner src/map_cell.cpp src/map_grid.cpp src/point_grid.cpp src/costmap_model.cpp src/voxel_grid_model.cpp src/trajectory_planner.cpp 
     src/trajectory.cpp src/trajectory_planner_ros.cpp)
 rospack_link_boost(base_local_planner thread)
-target_link_libraries (base_local_planner PocoUtil)
 
 rospack_add_executable(point_grid src/point_grid.cpp)
 

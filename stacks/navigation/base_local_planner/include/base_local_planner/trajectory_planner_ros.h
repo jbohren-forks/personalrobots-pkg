@@ -67,8 +67,6 @@
 
 #include <nav_core/base_local_planner.h>
 
-#include <Poco/ClassLibrary.h>
-
 namespace base_local_planner {
   /**
    * @class TrajectoryPlannerROS

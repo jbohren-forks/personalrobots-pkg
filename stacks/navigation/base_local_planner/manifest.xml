@@ -15,6 +15,7 @@
   <depend package="tf" />
   <depend package="roslib" />
   <depend package="rospy" />
+  <depend package="pluginlib" />
   <depend package="costmap_2d" />
   <depend package="voxel_grid" />
   <depend package="angles" />

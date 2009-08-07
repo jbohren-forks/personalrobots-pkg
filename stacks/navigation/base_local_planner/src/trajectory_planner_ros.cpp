@@ -38,6 +38,7 @@
 #include <base_local_planner/trajectory_planner_ros.h>
 #include <ros/console.h>
 #include <sys/time.h>
+#include <pluginlib/plugin_macros.h>
 
 #include "visualization_msgs/Polyline.h"
 
@@ -46,9 +47,9 @@ using namespace robot_msgs;
 using namespace costmap_2d;
 
 //register this planner as a BaseLocalPlanner plugin
-POCO_BEGIN_MANIFEST(nav_core::BaseLocalPlanner)
-POCO_EXPORT_CLASS(base_local_planner::TrajectoryPlannerROS)
-POCO_END_MANIFEST
+BEGIN_PLUGIN_LIST(nav_core::BaseLocalPlanner)
+REGISTER_PLUGIN(base_local_planner::TrajectoryPlannerROS)
+END_PLUGIN_LIST
 
 namespace base_local_planner {
 
