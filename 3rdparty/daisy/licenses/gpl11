@@ -1,0 +1,16 @@
+Source code is available under the GNU General Public License. In short, if you
+distribute a software that uses DAISY, you have to distribute it under GPL with
+the source code. Another option is to contact us to purchase a commercial
+license. For a copy of the GPL: http://www.gnu.org/copyleft/gpl.html
+
+If you use this code in your research please give a reference to
+
+Engin Tola, Vincent Lepetit, Pascal Fua, "DAISY: An Efficient Dense Descriptor
+Applied to Wide Baseline Stereo," IEEE Transactions on Pattern Analysis and
+Machine Intelligence, 31 Mar. 2009. IEEE computer Society Digital Library. IEEE
+Computer Society, <http://doi.ieeecomputersociety.org/10.1109/TPAMI.2009.77>
+
+AND
+
+"A fast local descriptor for dense matching" by Engin Tola, Vincent Lepetit, and
+Pascal Fua. Computer Vision and Pattern Recognition, Alaska, USA, June 2008

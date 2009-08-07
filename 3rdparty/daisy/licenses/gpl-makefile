@@ -1,0 +1,17 @@
+	@echo "#=============================================================================#" > ${commentfile}
+	@echo "# This program is free software; you can redistribute it and/or modify it     #" >> ${commentfile}
+	@echo "# under the terms of the GNU General Public License version 2 (or higher) as  #" >> ${commentfile}
+	@echo "# published by the Free Software Foundation.                                  #" >> ${commentfile}
+	@echo "#                                                                             #" >> ${commentfile}
+	@echo "# This program is distributed in the hope that it will be useful, but WITHOUT #" >> ${commentfile}
+	@echo "# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or       #" >> ${commentfile}
+	@echo "# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public Licence for   #" >> ${commentfile}
+	@echo "# more details.                                                               #" >> ${commentfile}
+	@echo "#                                                                             #" >> ${commentfile}
+	@echo "# Written and (C) by                                                          #" >> ${commentfile}
+	@echo "# Engin Tola                                                                  #" >> ${commentfile}
+	@echo "#                                                                             #" >> ${commentfile}
+	@echo "# web   : http://cvlab.epfl.ch/~tola                                          #" >> ${commentfile}
+	@echo "# email : engin.tola@epfl.ch                                                  #" >> ${commentfile}
+	@echo "#                                                                             #" >> ${commentfile}
+	@echo "#=============================================================================#" >> ${commentfile}

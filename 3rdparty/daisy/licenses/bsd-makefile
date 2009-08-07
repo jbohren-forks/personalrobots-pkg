@@ -1,0 +1,48 @@
+	@echo "/********************************************************************* " >> ${commentfile}
+	@echo " * Software License Agreement (BSD License)" >> ${commentfile}
+	@echo " *   " >> ${commentfile}
+	@echo " *  Copyright (c) 2009, Engin Tola - EPFL CVLAB   " >> ${commentfile}
+	@echo " *  All rights reserved.   " >> ${commentfile}
+	@echo "  *   " >> ${commentfile}
+	@echo "  *  Redistribution and use in source and binary forms, with or without   " >> ${commentfile}
+	@echo "  *  modification, are permitted provided that the following conditions   " >> ${commentfile}
+	@echo "  *  are met:   " >> ${commentfile}
+	@echo "  *   " >> ${commentfile}
+	@echo "  *   * Redistributions of source code must retain the above copyright   " >> ${commentfile}
+	@echo "  *     notice, this list of conditions and the following disclaimer.   " >> ${commentfile}
+	@echo "  *   * Redistributions in binary form must reproduce the above   " >> ${commentfile}
+	@echo "  *     copyright notice, this list of conditions and the following   " >> ${commentfile}
+	@echo "  *     disclaimer in the documentation and/or other materials provided   " >> ${commentfile}
+	@echo "  *     with the distribution.   " >> ${commentfile}
+	@echo "  *   * Neither the name of the EPFL nor the names of its   " >> ${commentfile}
+	@echo "  *     contributors may be used to endorse or promote products derived   " >> ${commentfile}
+	@echo "  *     from this software without specific prior written permission.   " >> ${commentfile}
+	@echo "  *   " >> ${commentfile}
+	@echo "  *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS   " >> ${commentfile}
+	@echo "  *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT   " >> ${commentfile}
+	@echo "  *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS   " >> ${commentfile}
+	@echo "  *  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE   " >> ${commentfile}
+	@echo "  *  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,   " >> ${commentfile}
+	@echo "  *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,   " >> ${commentfile}
+	@echo "  *  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;   " >> ${commentfile}
+	@echo "  *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER   " >> ${commentfile}
+	@echo "  *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT   " >> ${commentfile}
+	@echo "  *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN   " >> ${commentfile}
+	@echo "  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE   " >> ${commentfile}
+	@echo "  *  POSSIBILITY OF SUCH DAMAGE.   " >> ${commentfile}
+	@echo "  *********************************************************************/   " >> ${commentfile}
+	@echo " //   " >> ${commentfile}
+	@echo " // Author: Engin Tola - http://cvlab.epfl.ch/~tola   " >> ${commentfile}
+	@echo " //   " >> ${commentfile}
+	@echo " // Implementation of the 'DAISY' algorithm presented in:   " >> ${commentfile}
+	@echo " //   " >> ${commentfile}
+	@echo " // Engin Tola, Vincent Lepetit, Pascal Fua, "DAISY: An Efficient Dense Descriptor   " >> ${commentfile}
+	@echo " // Applied to Wide Baseline Stereo," IEEE Transactions on Pattern Analysis and   " >> ${commentfile}
+	@echo " // Machine Intelligence, 31 Mar. 2009. IEEE computer Society Digital Library. IEEE   " >> ${commentfile}
+	@echo " // Computer Society, <http://doi.ieeecomputersociety.org/10.1109/TPAMI.2009.77>   " >> ${commentfile}
+	@echo " //   " >> ${commentfile}
+	@echo " // AND   " >> ${commentfile}
+	@echo " //   " >> ${commentfile}
+	@echo " // "A fast local descriptor for dense matching" by Engin Tola, Vincent Lepetit, and   " >> ${commentfile}
+	@echo " // Pascal Fua. Intl. Conf. on Computer Vision and Pattern Recognition, Alaska, USA,   " >> ${commentfile}
+	@echo " // June 2008   " >> ${commentfile}

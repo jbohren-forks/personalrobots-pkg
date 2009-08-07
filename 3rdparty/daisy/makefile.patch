@@ -1,6 +1,43 @@
---- makefile.old	2009-07-23 22:19:38.000000000 -0700
-+++ makefile	2009-07-23 23:03:29.000000000 -0700
-@@ -25,7 +25,7 @@
+--- makefile.in.old	2009-08-07 00:47:40.000000000 -0700
++++ makefile.in	2009-08-07 00:47:49.000000000 -0700
+@@ -7,7 +7,7 @@
+ minor_version := 0
+ # version := major_version . minor_version # depracated
+ author := Engin Tola
+-licence := GPL v2.0 or higher distributed by FSF
++licence := BSD
+ #
+ # add you cpp cc files here
+ #
+--- makefile.old	2009-07-13 05:23:32.000000000 -0700
++++ makefile	2009-08-06 14:54:23.000000000 -0700
+@@ -4,7 +4,7 @@
+ minor_version := 0
+ author := Engin Tola
+ description := daisy descriptor
+-licence := GPL v2.0 or higher distributed by FSF
++licence := BSD
+ #........................................
+ installdir := /home/tola/usr
+ external_sources :=
+@@ -8,12 +8,13 @@
+ #........................................
+ installdir := /home/tola/usr
+ external_sources :=
+-# external_libraries := opencv
++#external_libraries := opencv
++use_opencv := true
+ libdir := lib
+ srcdir := .
+ includedir:= include
+-# define_flags := -DWITH_OPENCV -DWITH_OPENCV_EXTRAS
+-# define_flags += -DUSE_OPENMP
++define_flags := -DWITH_OPENCV -DWITH_OPENCV_EXTRAS
++#define_flags += -DUSE_OPENMP
+ #........................................
+ optimize := true
+ f77 := false
+@@ -25,7 +26,7 @@
  specialize := false
  platform := native
  #........................................
@@ -9,16 +46,30 @@
  
  ################################################################################
  ################# - MAKEFILE STATIC VARIABLES - ################################
-@@ -163,9 +163,11 @@
+@@ -89,6 +90,11 @@
+  LDFLAGS  += `pkg-config --cflags-only-other --libs ${external_libraries}`
+ endif
+ 
++ifeq ($(use_opencv),true)
++  CXXFLAGS += `rospack export --lang=cpp --attrib=cflags opencv_latest`
++  LDFLAGS  += `rospack export --lang=cpp --attrib=lflags opencv_latest`
++endif
++
+ ifeq ($(f77),true)
+  LDFLAGS += -lg2c
+ endif
+@@ -163,8 +169,13 @@
  .PHONY  : slib
  slib   : $(objects)
  	g++ -shared -Wl,-soname,$(libsoname) -o $(librealname)  $^
 -	ldconfig -v -n $(libdir)
 +#	ldconfig -v -n $(libdir)
++ifeq ($(wildcard lib/libdaisy.so.1.7),)
 +	ln -s $(libname).so.$(version) $(libdir)/$(libsoname)
++endif
++ifeq ($(wildcard lib/libdaisy.so),)
  	ln -s $(libsoname) $(libdir)/$(libname).so
++endif
  
-+
  .PHONY  : library
  library : $(libtarget) tags
- 	@echo
