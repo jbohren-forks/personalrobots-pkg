@@ -35,7 +35,7 @@
 #include <ros/node.h>
 #include "boost/thread/mutex.hpp"
 #include <sensor_msgs/LaserScan.h>
-#include <deprecated_msgs/RobotBase2DOdom.h>
+#include <nav_msgs/Odometry.h>
 #include <geometry_msgs/PoseWithRatesStamped.h>
 #include <robot_msgs/PoseDot.h>
 #include <roslib/Time.h>
@@ -55,7 +55,7 @@ class StageNode : public ros::Node
     // Messages that we'll send or receive
     robot_msgs::PoseDot *velMsgs;
     sensor_msgs::LaserScan *laserMsgs;
-    deprecated_msgs::RobotBase2DOdom *odomMsgs;
+    nav_msgs::Odometry *odomMsgs;
     geometry_msgs::PoseWithRatesStamped *groundTruthMsgs;
     roslib::Time timeMsg;
 
@@ -174,7 +174,7 @@ StageNode::StageNode(int argc, char** argv, bool gui, const char* fname) :
 
   this->velMsgs = new robot_msgs::PoseDot[numRobots];
   this->laserMsgs = new sensor_msgs::LaserScan[numRobots];
-  this->odomMsgs = new deprecated_msgs::RobotBase2DOdom[numRobots];
+  this->odomMsgs = new nav_msgs::Odometry[numRobots];
   this->groundTruthMsgs = new geometry_msgs::PoseWithRatesStamped[numRobots];
 }
 
@@ -207,7 +207,7 @@ StageNode::SubscribeModels()
       return(-1);
     }
     advertise<sensor_msgs::LaserScan>(mapName(BASE_SCAN,r), 10);
-    advertise<deprecated_msgs::RobotBase2DOdom>(mapName(ODOM,r), 10);
+    advertise<nav_msgs::Odometry>(mapName(ODOM,r), 10);
     advertise<geometry_msgs::PoseWithRatesStamped>(
                                         mapName(BASE_POSE_GROUND_TRUTH,r), 10);
     subscribe(mapName(CMD_VEL,r), velMsgs[r], &StageNode::cmdvelReceived, 10);
@@ -284,23 +284,28 @@ StageNode::Update()
          sim_time, mapName("base_link", r), mapName("base_footprint", r)));
     // Get latest odometry data
     // Translate into ROS message format and publish
-    this->odomMsgs[r].pos.x = this->positionmodels[r]->est_pose.x;
-    this->odomMsgs[r].pos.y = this->positionmodels[r]->est_pose.y;
-    this->odomMsgs[r].pos.th = this->positionmodels[r]->est_pose.a;
+    this->odomMsgs[r].pose_with_covariance.pose.position.x = this->positionmodels[r]->est_pose.x;
+    this->odomMsgs[r].pose_with_covariance.pose.position.y = this->positionmodels[r]->est_pose.y;
+    this->odomMsgs[r].pose_with_covariance.pose.orientation = tf::createQuaternionMsgFromYaw(this->positionmodels[r]->est_pose.a);
     Stg::stg_velocity_t v = this->positionmodels[r]->GetVelocity();
-    this->odomMsgs[r].vel.x = v.x;
-    this->odomMsgs[r].vel.y = v.y;
-    this->odomMsgs[r].vel.th = v.a;
-    this->odomMsgs[r].stall = this->positionmodels[r]->Stall();
+    this->odomMsgs[r].twist_with_covariance.twist.linear.x = v.x;
+    this->odomMsgs[r].twist_with_covariance.twist.linear.y = v.y;
+    this->odomMsgs[r].twist_with_covariance.twist.angular.z = v.a;
+
+    //@todo Publish stall on a separate topic when one becomes available
+    //this->odomMsgs[r].stall = this->positionmodels[r]->Stall();
+    //
     this->odomMsgs[r].header.frame_id = mapName("odom", r);
     this->odomMsgs[r].header.stamp = sim_time;
 
     publish(mapName(ODOM,r),this->odomMsgs[r]);
 
+    tf::Quaternion q;
+    tf::quaternionMsgToTF(odomMsgs[r].pose_with_covariance.pose.orientation, q);
     tf::Stamped<tf::Transform> tx(
         tf::Transform(
-          tf::Quaternion(odomMsgs[r].pos.th, 0, 0), 
-          tf::Point(odomMsgs[r].pos.x, odomMsgs[r].pos.y, 0.0)),
+          q, 
+          tf::Point(odomMsgs[r].pose_with_covariance.pose.position.x, odomMsgs[r].pose_with_covariance.pose.position.y, 0.0)),
         sim_time, mapName("base_footprint", r), mapName("odom", r));
     this->tf.sendTransform(tx);
       
