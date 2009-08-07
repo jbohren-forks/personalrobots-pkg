@@ -100,7 +100,7 @@ namespace base_local_planner {
 
       //to get odometery information, we need to get a handle to the topic in the global namespace of the node
       ros::NodeHandle global_node;
-      odom_sub_ = global_node.subscribe<deprecated_msgs::RobotBase2DOdom>(odom_topic, 1, boost::bind(&TrajectoryPlannerROS::odomCallback, this, _1));
+      odom_sub_ = global_node.subscribe<nav_msgs::Odometry>(odom_topic, 1, boost::bind(&TrajectoryPlannerROS::odomCallback, this, _1));
 
       //we'll get the parameters for the robot radius from the costmap we're associated with
       inscribed_radius_ = costmap_ros_->getInscribedRadius();
@@ -174,9 +174,9 @@ namespace base_local_planner {
 
   bool TrajectoryPlannerROS::stopped(){
     boost::recursive_mutex::scoped_lock(odom_lock_);
-    return abs(base_odom_.vel.th) <= rot_stopped_velocity_ 
-      && abs(base_odom_.vel.x) <= trans_stopped_velocity_
-      && abs(base_odom_.vel.y) <= trans_stopped_velocity_;
+    return abs(base_odom_.twist_with_covariance.twist.angular.z) <= rot_stopped_velocity_ 
+      && abs(base_odom_.twist_with_covariance.twist.linear.x) <= trans_stopped_velocity_
+      && abs(base_odom_.twist_with_covariance.twist.linear.y) <= trans_stopped_velocity_;
   }
 
   double TrajectoryPlannerROS::distance(double x1, double y1, double x2, double y2){
@@ -219,15 +219,15 @@ namespace base_local_planner {
 
   }
 
-  void TrajectoryPlannerROS::odomCallback(const deprecated_msgs::RobotBase2DOdom::ConstPtr& msg){
+  void TrajectoryPlannerROS::odomCallback(const nav_msgs::Odometry::ConstPtr& msg){
     boost::recursive_mutex::scoped_lock(odom_lock_);
     try
     {
-      tf::Stamped<btVector3> v_in(btVector3(msg->vel.x, msg->vel.y, 0), ros::Time(), msg->header.frame_id), v_out;
+      tf::Stamped<btVector3> v_in(btVector3(msg->twist_with_covariance.twist.linear.x, msg->twist_with_covariance.twist.linear.y, 0), ros::Time(), msg->header.frame_id), v_out;
       tf_->transformVector(robot_base_frame_, ros::Time(), v_in, msg->header.frame_id, v_out);
-      base_odom_.vel.x = v_in.x();
-      base_odom_.vel.y = v_in.y();
-      base_odom_.vel.th = msg->vel.th;
+      base_odom_.twist_with_covariance.twist.linear.x = v_in.x();
+      base_odom_.twist_with_covariance.twist.linear.y = v_in.y();
+      base_odom_.twist_with_covariance.twist.angular.z = msg->twist_with_covariance.twist.angular.z;
     }
     catch(tf::LookupException& ex)
     {
@@ -412,9 +412,9 @@ namespace base_local_planner {
     robot_msgs::PoseDot global_vel;
 
     odom_lock_.lock();
-    global_vel.vel.vx = base_odom_.vel.x;
-    global_vel.vel.vy = base_odom_.vel.y;
-    global_vel.ang_vel.vz = base_odom_.vel.th;
+    global_vel.vel.vx = base_odom_.twist_with_covariance.twist.linear.x;
+    global_vel.vel.vy = base_odom_.twist_with_covariance.twist.linear.y;
+    global_vel.ang_vel.vz = base_odom_.twist_with_covariance.twist.angular.z;
     odom_lock_.unlock();
 
     tf::Stamped<tf::Pose> drive_cmds;
