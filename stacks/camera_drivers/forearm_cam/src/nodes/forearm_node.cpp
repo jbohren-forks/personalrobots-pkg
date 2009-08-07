@@ -199,7 +199,6 @@ private:
   ros::ServiceServer config_bord_service_;
 
   // Video mode
-
   int video_mode_;
   int width_;
   int height_;
@@ -225,6 +224,7 @@ private:
   // Camera information
   std::string hwinfo_;
   IpCamList camera_;
+  double last_camera_ok_time_;
 
   // Trigger information
   std::string trig_controller_cmd_;
@@ -249,6 +249,7 @@ public:
 //    fcamCamListInit(&camList);
     
     // Clear statistics
+    last_camera_ok_time_ = 0;
     last_image_time_ = 0;
     missed_line_count_ = 0;
     missed_eof_count_ = 0;
@@ -321,14 +322,24 @@ public:
       ROS_WARN("rmem_max is %i. Buffer overflows and packet loss may occur. Minimum recommended value is 20000000. Updates may not take effect until the driver is restarted. See http://pr.willowgarage.com/wiki/errors/Dropped_Frames_and_rmem_max for details.", rmem_max_);
     }
 
-    const char *errmsg;
-    int findResult = fcamFindByUrl(config_.camera_url.c_str(), &camera_, SEC_TO_USEC(0.2), &errmsg);
+    double thresh_time = ros::Time::now().toSec() - 10;
+    double last_time = last_image_time_ < last_camera_ok_time_ ? 
+      last_camera_ok_time_ : last_image_time_;
+    if (last_time < thresh_time)
+    { // Haven't heard from the camera in a while, redo discovery.
+      ROS_DEBUG("Redoing discovery.");
+      const char *errmsg;
+      int findResult = fcamFindByUrl(config_.camera_url.c_str(), &camera_, SEC_TO_USEC(0.2), &errmsg);
 
-    if (findResult)
-    {
-      ROS_ERROR("Matching URL %s : %s", config_.camera_url.c_str(), errmsg);
-      return;
+      if (findResult)
+      {
+        ROS_ERROR("Matching URL %s : %s", config_.camera_url.c_str(), errmsg);
+        return;
+      }
+      retval = fcamConfigure(&camera_, camera_.ip_str, SEC_TO_USEC(0.5));
     }
+    else
+      retval = fcamConfigure(&camera_, NULL, SEC_TO_USEC(0.5));
 
     retval = fcamConfigure(&camera_, camera_.ip_str, SEC_TO_USEC(0.5));
     if (retval != 0) {
@@ -453,6 +464,7 @@ public:
     config_bord_service_ = node_handle_.advertiseService("~board_config", &ForearmCamDriver::boardConfig, this);
     
     state_ = OPENED;
+    last_camera_ok_time_ = ros::Time::now().toSec(); // If we get here we are communicating with the camera well.
   }
 
   void doClose()
@@ -562,7 +574,7 @@ private:
     
     fcamVidReceiveAuto( &camera_, height_, width_, &ForearmCamDriver::frameHandler, this);
     
-    // Stop Triggering
+    /*// Stop Triggering
     if (!trig_controller_cmd_.empty())
     {   
       ROS_DEBUG("Stopping triggering.");
@@ -575,7 +587,7 @@ private:
         // so we don't really care.
         ROS_DEBUG("Was not able to stop triggering.");
       }
-    }
+    }  */
 /*stop_video:
     // Stop video
     boost::mutex::scoped_lock lock(mutex_);
@@ -786,12 +798,18 @@ end_image_thread:
     return fa_node.frameHandler(frameInfo);
   }
 
+  uint16_t intrinsicsChecksum(uint16_t *data, int words)
+  {
+    uint16_t sum = 0;
+    for (int i = 0; i < words; i++)
+      sum += htons(data[i]);
+    return htons(0xFFFF - sum);
+  }
+
   // TODO: parsing is basically duplicated in prosilica_node
   bool loadIntrinsics(double* D, double* K, double* R, double* P)
   {
-    // FIXME: Hardcoding these until we get a response on flash read/write bug.
-    //        These values are good for PRF and possibly OK for the other cameras.
-#define FOREARM_FLASH_IS_BUGGY
+//#define FOREARM_FLASH_IS_BUGGY
 #ifdef FOREARM_FLASH_IS_BUGGY
     static const double D_[] = {-0.34949, 0.13668, 0.00039, -0.00110, 0.00000};
     static const double K_[] = {427.31441, 0.00000, 275.80804,
@@ -810,17 +828,25 @@ end_image_thread:
     return true;
 #else
     // Retrieve contents of user memory
-    static const int CALIBRATION_PAGE = 0;
-    std::string buffer(FLASH_PAGE_SIZE, '\0');
-    if (fcamReliableFlashRead(camera_, CALIBRATION_PAGE, (uint8_t*)&buffer[0], NULL) != 0) {
-      ROS_WARN("Flash read error");
+    std::string calbuff(2 * FLASH_PAGE_SIZE, 0);
+
+    if(fcamReliableFlashRead(&camera_, FLASH_CALIBRATION_PAGENO, (uint8_t *) &calbuff[0], NULL) != 0 ||
+        fcamReliableFlashRead(&camera_, FLASH_CALIBRATION_PAGENO+1, (uint8_t *) &calbuff[FLASH_PAGE_SIZE], NULL) != 0)
+    {
+      ROS_ERROR("Error reading camera intrinsics.\n");
       return false;
     }
+
+    uint16_t chk = intrinsicsChecksum((uint16_t *) &calbuff[0], calbuff.length() / 2);
+    if (chk)
+    {
+      ROS_WARN("Camera intrinsics have a bad checksum. They have probably never been set.\n");
+    }                                             
 
     // Separate into lines
     typedef boost::tokenizer<boost::char_separator<char> > Tok;
     boost::char_separator<char> sep("\n");
-    Tok tok(buffer, sep);
+    Tok tok(calbuff, sep);
 
     // Check "header"
     Tok::iterator iter = tok.begin();
@@ -913,6 +939,7 @@ public:
     calibrated_(false)
   {
     driver_.useFrame_ = boost::bind(&ForearmCamNode::publishImage, this, _1, _2, _3, _4);
+    driver_.setPostOpenHook(boost::bind(&ForearmCamNode::postOpenHook, this));
   }
   
 private:  
@@ -948,21 +975,24 @@ private:
       cam_info_.height = driver_.height_;
       image_.header.frame_id = driver_.config_.frame_id;
       cam_info_.header.frame_id = driver_.config_.frame_id;
-    
-      // Try to load camera intrinsics from flash memory
-      calibrated_ = driver_.loadIntrinsics(&cam_info_.D[0], &cam_info_.K[0],
-                                 &cam_info_.R[0], &cam_info_.P[0]);
-      if (calibrated_)
-        ROS_INFO("Loaded intrinsics from camera");
-      else
-        ROS_WARN("Failed to load intrinsics from camera");
-
-      // Receive frames through callback
-      if (calibrated_)
-        cam_info_pub_.set_publisher(node_handle_.advertise<sensor_msgs::CameraInfo>("~cam_info", 1));
-      else
-        cam_info_pub_.set_publisher(ros::Publisher());
     }
+  }
+
+  void postOpenHook()
+  {
+    // Try to load camera intrinsics from flash memory
+    calibrated_ = driver_.loadIntrinsics(&cam_info_.D[0], &cam_info_.K[0],
+        &cam_info_.R[0], &cam_info_.P[0]);
+    if (calibrated_)
+      ROS_INFO("Loaded intrinsics from camera");
+    else
+      ROS_WARN("Failed to load intrinsics from camera");
+
+    // Receive frames through callback
+    if (calibrated_)
+      cam_info_pub_.set_publisher(node_handle_.advertise<sensor_msgs::CameraInfo>("~cam_info", 1));
+    else
+      cam_info_pub_.set_publisher(ros::Publisher());
   }
 
   virtual void addDiagnostics()
