@@ -53,7 +53,7 @@ namespace calibration
       _completed(false)
   {
     // advertise the velocity commands
-    advertise<robot_msgs::PoseDot>("cmd_vel",10);
+    advertise<geometry_msgs::Twist>("cmd_vel",10);
 
     // subscribe to messages
     subscribe("odom",            _odom, &odom_calib::odom_callback, 10);
@@ -134,8 +134,8 @@ namespace calibration
 
     // wait for sensor measurements from odom and imu
     while (!(_odom_active && _imu_active)){
-      _vel.vel.vx = 0; _vel.vel.vy = 0; _vel.vel.vz = 0;
-      _vel.ang_vel.vx = 0; _vel.ang_vel.vy = 0; _vel.ang_vel.vz = 0;
+      _vel.linear.x = 0; _vel.linear.y = 0; _vel.linear.z = 0;
+      _vel.angular.x = 0; _vel.angular.y = 0; _vel.angular.z = 0;
       publish("cmd_vel", _vel);
       if (!_odom_active)
 	ROS_INFO("Waiting for wheel odometry to start");
@@ -158,14 +158,14 @@ namespace calibration
       // still moving
       Duration duration = Time::now() - _time_begin;
       if (duration.toSec() <= _duration){
-	_vel.vel.vx = _trans_vel;
-	_vel.ang_vel.vz = _rot_vel;
+	_vel.linear.x = _trans_vel;
+	_vel.angular.z = _rot_vel;
       }
       // finished turning
       else{
 	_completed = true;
-	_vel.vel.vx = 0;
-	_vel.ang_vel.vz = 0;
+	_vel.linear.x = 0;
+	_vel.angular.z = 0;
       }
       publish("cmd_vel", _vel);
       usleep(50000);
@@ -177,8 +177,8 @@ namespace calibration
   {
     // give robot time to stop
     for (unsigned int i=0; i<10; i++){
-      _vel.vel.vx = 0;
-      _vel.ang_vel.vz = 0;
+      _vel.linear.x = 0;
+      _vel.angular.z = 0;
       publish("cmd_vel", _vel);
       usleep(50000);
     }
