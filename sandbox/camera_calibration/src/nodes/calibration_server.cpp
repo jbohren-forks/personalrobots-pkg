@@ -70,7 +70,7 @@ public:
     }
 
     if (!bridge.fromImage(*msg, "mono")) {
-      ROS_WARN("Unable to convert from %s to mono", msg->encoding.c_str());
+      ROS_WARN("Unable to convert from %d to mono", msg->type);
       pattern_pub.publish(pattern_msg);
       return;
     }

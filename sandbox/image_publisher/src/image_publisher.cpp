@@ -95,12 +95,12 @@ void ImagePublisher::publish(const sensor_msgs::Image& message) const
 
   // Convert to IPL image
   /** @todo: support depths other than 8-bit */
-  if (message.depth != "uint8" && message.depth != "int8") {
-    ROS_ERROR("Unsupported image depth: %s", message.depth.c_str());
+  if (message.type != sensor_msgs::Image::TYPE_8UC1) {
+    ROS_ERROR("Unsupported image depth: %d", message.type);
     return;
   }
 
-  int channels = message.uint8_data.layout.dim[2].size;
+  int channels = CV_MAT_CN(message.type);
   std::string encoding;
   if (channels == 1)
     encoding = "mono";
@@ -113,14 +113,13 @@ void ImagePublisher::publish(const sensor_msgs::Image& message) const
   }
   
   if (!cv_bridge_.fromImage(message, encoding)) {
-    ROS_ERROR("Could not convert from %s to %s", message.encoding.c_str(), encoding.c_str());
+    ROS_ERROR("Could not convert from %d to %s", message.type, encoding.c_str());
     return;
   }
   
   if (thumb_subscribers > 0) {
     sensor_msgs::Image thumbnail;
     thumbnail.header = message.header;
-    thumbnail.label = message.label;
     publishThumbnailImage(thumbnail);
   }
 

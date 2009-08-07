@@ -68,7 +68,7 @@ public:
     image = msg;
 
     if (!bridge.fromImage(*image, "bgr")) {
-      ROS_WARN("Unable to convert from %s to bgr", msg->encoding.c_str());
+      ROS_WARN("Unable to convert from %d to bgr", msg->type);
       return;
     }
 

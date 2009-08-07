@@ -50,10 +50,10 @@ void imageCB(const sensor_msgs::CompressedImageConstPtr &msg)
   if ( sensor_msgs::CvBridge::fromIpltoRosImage(decompressed.Ipl(), image) ) {
     image.header = msg->header;
     if (decompressed.Channels() == 1) {
-      image.encoding = "mono";
+      // image.encoding = "mono"; XXX JCB - there is no encoding field in changed image message
     }
     else if (decompressed.Channels() == 3) {
-      image.encoding = "rgb";
+      // image.encoding = "rgb"; XXX JCB - there is no encoding field in changed image message
     }
     else {
       ROS_ERROR("Unsupported number of channels: %i", decompressed.Channels());
