@@ -473,7 +473,6 @@ void collision_space::EnvironmentModelODE::ODECollide2::collide(dGeomID geom, vo
 
 namespace collision_space
 {
-    
 
     void nearCallbackFn(void *data, dGeomID o1, dGeomID o2)
     {
@@ -516,7 +515,7 @@ namespace collision_space
 		    if (cdata->max_contacts == 0 || cdata->contacts->size() < cdata->max_contacts)
 		    {
 			btVector3 pos(contact[i].geom.pos[0], contact[i].geom.pos[1], contact[i].geom.pos[2]);
-			
+
 			if (cdata->allowed)
 			{
 			    dSpaceID s1 = dGeomGetSpace(o1);
@@ -538,11 +537,11 @@ namespace collision_space
 				    EnvironmentModelODE::kGeom* kg2 = reinterpret_cast<EnvironmentModelODE::kGeom*>(dGeomGetData(o2));
 				    link_name = kg2->link->name;
 				}
-				
+
 				bool allow = false;
 				for (unsigned int j = 0 ; !allow && j < cdata->allowed->size() ; ++j)
 				{
-				    if (cdata->allowed->at(j).bound->containsPoint(pos) && cdata->allowed->at(j).depth < fabs(contact[i].geom.depth))
+				    if (cdata->allowed->at(j).bound->containsPoint(pos) && cdata->allowed->at(j).depth > fabs(contact[i].geom.depth))
 				    {
 					for (unsigned int k = 0 ; k < cdata->allowed->at(j).links.size() ; ++k)
 					    if (cdata->allowed->at(j).links[k] == link_name)
