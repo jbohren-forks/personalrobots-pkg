@@ -37,7 +37,6 @@
 #include <mechanism_control/mechanism_control.h>
 #include<cmath>
 
-using namespace KDL;
 using namespace tf;
 using namespace std;
 
@@ -101,7 +100,8 @@ bool HeadPositionController::starting()
 {
   pan_out_ = head_pan_controller_.joint_state_->position_;
   tilt_out_ = head_tilt_controller_.joint_state_->position_;
-
+  head_pan_controller_.starting();
+  head_tilt_controller_.starting();
   return true;
 }
 

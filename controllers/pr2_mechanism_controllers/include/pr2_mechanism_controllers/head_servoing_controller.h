@@ -34,196 +34,67 @@
 
 // Original version: Melonee Wise <mwise@willowgarage.com>
 
-#pragma once
+#ifndef HEAD_SERVOING_CONTROLLER_H
+#define HEAD_SERVOING_CONTROLLER_H
 
-// ROS stuff
 #include <ros/node.h>
-#include <boost/thread/mutex.hpp>
-
-// Controllers
+#include <ros/node_handle.h>
 #include <mechanism_control/controller.h>
-#include <mechanism_model/joint.h>
-#include <robot_mechanism_controllers/joint_velocity_controller.h>
-
-// Services
-#include <robot_msgs/JointCmd.h>
-#include <robot_srvs/GetJointCmd.h>
-#include <geometry_msgs/PointStamped.h>
-#include <visualization_msgs/Marker.h>
-
-// Math utils
-#include <math.h>
 #include <tf/transform_listener.h>
+#include <tf/message_notifier.h>
+#include <tf/transform_datatypes.h>
+#include <robot_mechanism_controllers/joint_velocity_controller.h>
+#include <mechanism_msgs/JointStates.h>
+#include <geometry_msgs/PointStamped.h>
+#include <boost/scoped_ptr.hpp>
+#include <math.h>
+
 
 namespace controller
 {
-// The maximum number of joints expected in a head.
-static const int MAX_HEAD_JOINTS = 2;
-
-/***************************************************/
-/*! \class controller::HeadServoingController
-    \brief Head Pan Tilt Controller
-
-    This class closes the loop around the joint angles.
-
-    Example config:<br>
-
-    <controller name="head_controller" type="HeadServoingControllerNode"><br>
-      <listen_topic name="head_commands" /><br>
-
-      <controller name="head_pan_controller" topic="head_pan_controller" type="JointVelocityController"><br>
-        <joint name="head_pan_joint" ><br>
-          <pid p="1.5" d="0.1" i="0.3" iClamp="0.2" /><br>
-        </joint><br>
-      </controller><br>
-
-      <controller name="head_tilt_controller" topic="head_tilt_controller" type="JointVelocityController"><br>
-        <joint name="head_tilt_joint" ><br>
-          <pid p="0.8" d="0.05" i="0.1" iClamp="0.1" /><br>
-        </joint><br>
-      </controller><br>
-    </controller> <br>
-*/
-/***************************************************/
 
 class HeadServoingController : public Controller
 {
 public:
 
-  /*!
-   * \brief Default Constructor of the HeadServoingController class.
-   *
-   */
   HeadServoingController();
+  ~HeadServoingController();
 
-  /*!
-   * \brief Destructor of the HeadServoingController class.
-   */
-  virtual ~HeadServoingController();
+  bool init(mechanism::RobotState *robot, const ros::NodeHandle &n);
 
-  /*!
-   * \brief Functional way to initialize limits and gains.
-   *
-   */
-  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
+  bool starting();
+  void update();
 
-  /*!
-   * \brief Sets goals for some joint, specified as a pair of (joint values, joint names).
-   *
-   * \param j_values the positions of the joints.
-   * \param j_names the names of the joints.
-   */
-  void setJointCmd(const std::vector<double> &j_values, const std::vector<std::string> & j_names);
-
-  /*!
-   * \brief Returns the commanded joint poisitions, specified as a pair of (joint values, joint names).
-   *
-   * \param cmd names and positions.
-   */
-  void getJointCmd(robot_msgs::JointCmd & cmd) const;
-
-  /*!
-   * \brief Returns the position of the controller in the vector.
-   *
-   * \param name the name of the joint being controlled by the controller (i.e. head_pan_joint).
-   */
-  int getJointControllerByName(std::string name);
-
-  /*!
-   * \brief Issues commands to the joint.
-   */
-  virtual void update(void); // Real time safe.
-
-  unsigned int num_joints_; /**< Number of joints. */
-  controller::JointVelocityController* getJointVelocityControllerByName(std::string name); /**< Joints we're controlling. */
-  std::vector<JointVelocityController *> joint_velocity_controllers_; /**< Vector of the joint controllers. */
-
+  // input of the controller
+  double pan_out_, tilt_out_;
 
 private:
 
-  double last_time_;            /**< The last time. */
+  mechanism::Robot* robot_;     
+  ros::NodeHandle node_;
+  std::string pan_link_name_, tilt_link_name_;
+  mechanism::RobotState *robot_state_;
+  
   double max_velocity_;
-  double gain_;
-  std::vector<double> set_pts_; /**< The vector of joint set_pts. */
-  mechanism::Robot* robot_;     /**< The robot we're controlling. */
+  double servo_gain_;
+  ros::Subscriber sub_command_;
+    
 
-  /*!
-   * \brief Issues commands to the joint.
-   */
-  void updateJointControllers(void);
+  void command(const mechanism_msgs::JointStatesConstPtr& command_msg);
+  
+  void pointHead(const tf::MessageNotifier<geometry_msgs::PointStamped>::MessagePtr& point_msg);
+  void pointFrameOnHead(const tf::MessageNotifier<geometry_msgs::PointStamped>::MessagePtr& point_msg);
 
-};
+  
 
-/***************************************************/
-/*! \class controller::HeadServoingControllerNode
-    \brief Head Pan Tilt Controller Node
+  tf::TransformListener tf_;
+  boost::scoped_ptr<tf::MessageNotifier<geometry_msgs::PointStamped> > point_head_notifier_;
+  boost::scoped_ptr<tf::MessageNotifier<geometry_msgs::PointStamped> > point_frame_on_head_notifier_;  
 
-    This class sets the joint angles given a point or
-    joint angles.
-
-*/
-/***************************************************/
-
-class HeadServoingControllerNode : public Controller
-{
-  public:
-
-    HeadServoingControllerNode();
-    ~HeadServoingControllerNode();
-
-    void update();
-    bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
-
-    /*!
-     * \brief Sets a command for all the joints managed by the controller at once.
-     *
-     * \param joint_cmds_ (names, positions)
-     */
-    void setJointCmd();
-
-    /*!
-     * \brief Gets the commands for all the joints managed by the controller at once.
-     *
-     * \param req
-     * \param resp (positions)
-     */
-    bool getJointCmd(robot_srvs::GetJointCmd::Request &req,
-                     robot_srvs::GetJointCmd::Response &resp);
-    /*!
-     * \brief This points the head at a specified point from a given frame.
-     *
-     * \param head_track_point_ (header, point)
-     */
-    void headTrackPoint();
-    /*!
-     * \brief This points the given frame at a specified point from the given frame.
-     *
-     * \param frame_track_point_ (header, point)
-     */
-    void frameTrackPoint();
-
-  private:
-
-    //node stuff
-    std::string service_prefix_;                         /**< The service name. */
-    ros::Node *node_;                                    /**< The node. */
-    AdvertisedServiceGuard guard_get_command_array_;     /**< Makes sure the advertise goes down neatly. */
-    SubscriptionGuard guard_set_command_array_;          /**< Makes sure the subscription goes down neatly. */
-    SubscriptionGuard guard_head_track_point_;           /**< Makes sure the subscription goes down neatly. */
-    SubscriptionGuard guard_frame_track_point_;           /**< Makes sure the subscription goes down neatly. */
-
-    //msgs
-    geometry_msgs::PointStamped head_track_point_;          /**< The point from the subscription. */
-    geometry_msgs::PointStamped frame_track_point_;         /**< The point from the subscription. */
-    robot_msgs::JointCmd joint_cmds_;                  /**< The joint commands from the subscription.*/
-
-    //controller
-    HeadServoingController *c_;                   /**< The controller. */
-
-    //tf
-    tf::TransformListener TF;                    /**< The transform for converting from point to head and tilt frames. */
+  // position controller
+  JointVelocityController head_pan_controller_;
+  JointVelocityController head_tilt_controller_;
 
 };
 }
-
-
+#endif
