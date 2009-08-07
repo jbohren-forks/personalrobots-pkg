@@ -59,8 +59,8 @@ int main(int argc, char** argv) {
 
   // -- Setup hist.
   int num_bins = 8;
-  float huerange[] = {0, 180}; 
-  float satrange[] = {0, 255}; 
+  float huerange[] = {0, 181}; 
+  float satrange[] = {0, 256}; 
   float* ranges[] = {huerange, satrange};
   int sizes[] = {num_bins, num_bins};
   CvHistogram* hist = cvCreateHist(2, sizes, CV_HIST_ARRAY, ranges, 1);
