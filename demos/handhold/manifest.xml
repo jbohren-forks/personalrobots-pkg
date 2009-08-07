@@ -8,6 +8,7 @@
   <depend package="tf" />
   <depend package="pr2_default_controllers" />
   <depend package="geometry_msgs" />
+  <depend package="robot_msgs" />
   <url>http://pr.willowgarage.com</url>
   <export>
   </export>

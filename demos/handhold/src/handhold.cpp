@@ -37,7 +37,7 @@
 
 #include "tf/transform_datatypes.h"
 #include "geometry_msgs/Twist.h"
-#include "robot_msgs/PoseDot.h"
+#include "geometry_msgs/Twist.h"
 
 const char *TIP_FRAME = "";
 const char *ROOT_FRAME = "base_link";
@@ -59,7 +59,7 @@ class X {
 public:
   X(ros::NodeHandle &node_) : node(node_)
   {
-    pub_drive = node.advertise<robot_msgs::PoseDot>(DRIVE_TOPIC, 1);
+    pub_drive = node.advertise<geometry_msgs::Twist>(DRIVE_TOPIC, 1);
     sub_error = node.subscribe(CONTROLLER + "/state/error", 1, &X::stateCB, this);
 
     node.param("~dead_zone", dead_zone, 0.01);
@@ -75,11 +75,11 @@ public:
 
   void stateCB(const geometry_msgs::TwistConstPtr &msg)
   {
-    robot_msgs::PoseDot base_vel;
+    geometry_msgs::Twist base_vel;
     //ROS_ERROR("%lf  %lf  %lf -- %lf  %lf", msg->linear.x, dead_zone, apply_dead_zone(msg->linear.x, dead_zone), k_trans, k_trans * apply_dead_zone(msg->linear.x, dead_zone));
-    base_vel.vel.vx = k_trans * apply_dead_zone(msg->linear.x, dead_zone);
-    base_vel.vel.vy = k_trans * apply_dead_zone(msg->linear.y, dead_zone);
-    base_vel.ang_vel.vz = k_rot * apply_dead_zone(msg->angular.z, dead_zone);
+    base_vel.linear.x = k_trans * apply_dead_zone(msg->linear.x, dead_zone);
+    base_vel.linear.y = k_trans * apply_dead_zone(msg->linear.y, dead_zone);
+    base_vel.angular.z = k_rot * apply_dead_zone(msg->angular.z, dead_zone);
     pub_drive.publish(base_vel);
   }
 
