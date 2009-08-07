@@ -42,7 +42,10 @@ namespace control_toolbox {
 /***************************************************/
 /*! \class Dither
 
+  \brief Gives white noise at specified amplitude.
 
+  This class gives white noise at the given amplitude when 
+  update() is called. Gets parameter "~amplitude".
 
 */
 /***************************************************/
@@ -68,8 +71,7 @@ public:
 
   /*!
    * \brief Intializes everything and calculates the constants for the sweep.
-   *
-    * \param amplitude The amplitude of the dither, \f$A\f$.
+   * \param n NodeHandle to look for parameters with
    */
   bool init(const ros::NodeHandle &n);
 
@@ -79,6 +81,9 @@ private:
   double x_;
   long idum; // Random seed
 
+  /*
+   *\brief Returns uniform deviate between 0.0 and 1.0.
+   */
   double uni();
 };
 }
