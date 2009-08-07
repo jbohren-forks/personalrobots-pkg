@@ -491,51 +491,51 @@ bool planning_environment::PlanningMonitor::isPathValidAux(const motion_planning
     
     // check every state
     if (valid)
-    for (unsigned int i = start ; i <= end ; ++i)
-    {
-	if (path.states[i].vals.size() != sdim)
+	for (unsigned int i = start ; i <= end ; ++i)
 	{
-	    ROS_ERROR("Incorrect state specification on path");
-	    valid = false;
-	    break;
-	}
-	sp->setParamsJoints(path.states[i].vals, path.names);	
-
-	getKinematicModel()->computeTransforms(sp->getParams());
-	getEnvironmentModel()->updateRobotModel();
-	
-	bool this_valid = true;
-	
-	// check for collision
-	std::vector<collision_space::EnvironmentModel::Contact> contacts;
-	if (test & COLLISION_TEST)
-	    this_valid = !getEnvironmentModel()->getCollisionContacts(allowedContacts_, contacts, remainingContacts);
-	
-	if (onCollisionContact_)
-	    for (unsigned int i = 0 ; i < contacts.size() ; ++i)
-		onCollisionContact_(contacts[i]);
-	
-	if (verbose && !this_valid)
-	    ROS_INFO("isPathValid: State %d is in collision", i);
-	
-	if (maxCollisionContacts_ > 0)
-	{
-	    if (remainingContacts <= contacts.size())
+	    if (path.states[i].vals.size() != sdim)
+	    {
+		ROS_ERROR("Incorrect state specification on path");
+		valid = false;
 		break;
-	    else
-		remainingContacts -= contacts.size();
-	}
-	
-	// check for validity
-	if (this_valid && (test & PATH_CONSTRAINTS_TEST))
-	{
-	    this_valid = ks.decide(sp->getParams());
+	    }
+	    sp->setParamsJoints(path.states[i].vals, path.names);	
+	    
+	    getKinematicModel()->computeTransforms(sp->getParams());
+	    getEnvironmentModel()->updateRobotModel();
+	    
+	    bool this_valid = true;
+	    
+	    // check for collision
+	    std::vector<collision_space::EnvironmentModel::Contact> contacts;
+	    if (test & COLLISION_TEST)
+		this_valid = !getEnvironmentModel()->getCollisionContacts(allowedContacts_, contacts, remainingContacts);
+	    
+	    if (onCollisionContact_)
+		for (unsigned int i = 0 ; i < contacts.size() ; ++i)
+		    onCollisionContact_(contacts[i]);
+	    
 	    if (verbose && !this_valid)
-	        ROS_INFO("isPathValid: State %d does not satisfy path constraints", i);
+		ROS_INFO("isPathValid: State %d is in collision", i);
+	    
+	    if (maxCollisionContacts_ > 0)
+	    {
+		if (remainingContacts <= contacts.size())
+		    break;
+		else
+		    remainingContacts -= contacts.size();
+	    }
+	    
+	    // check for validity
+	    if (this_valid && (test & PATH_CONSTRAINTS_TEST))
+	    {
+		this_valid = ks.decide(sp->getParams());
+		if (verbose && !this_valid)
+		    ROS_INFO("isPathValid: State %d does not satisfy path constraints", i);
+	    }
+	    
+	    valid = valid && this_valid;
 	}
-
-	valid = valid && this_valid;
-    }
     
     // check for validity
     if (valid && (test & GOAL_CONSTRAINTS_TEST))
@@ -546,7 +546,7 @@ bool planning_environment::PlanningMonitor::isPathValidAux(const motion_planning
 	if (verbose && !valid)
 	    ROS_INFO("isPathValid: Last state does not satisfy goal constraints");
     }
-
+    
     getEnvironmentModel()->setVerbose(vlevel);
     getKinematicModel()->unlock();
     getEnvironmentModel()->unlock();
