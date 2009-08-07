@@ -109,46 +109,41 @@ public:
     
     if (img_data_.imType != COLOR_CODING_NONE)
     {
-      fillImage(img_,  "image",
-                img_data_.imHeight, img_data_.imWidth, 1,
-                "mono", "uint8",
+      fillImage(img_, sensor_msgs::Image::TYPE_8UC1,
+                img_data_.imHeight, img_data_.imWidth, img_data_.imWidth,
                 img_data_.im );
       node_.publish(cam_name_ + "image", img_);
     }
 
     if (img_data_.imColorType == COLOR_CODING_RGB8)
     {
-      fillImage(img_,  "image_color",
-                img_data_.imHeight, img_data_.imWidth, 3,
-                "rgb", "uint8",
+      fillImage(img_,sensor_msgs::Image::TYPE_8UC3,
+                img_data_.imHeight, img_data_.imWidth, 3 * img_data_.imWidth,
                 img_data_.imColor );
       node_.publish(cam_name_ + "image_color", img_);
     }
 
     if (img_data_.imRectType != COLOR_CODING_NONE)
     {
-      fillImage(img_,  "image_rect",
-                img_data_.imHeight, img_data_.imWidth, 1,
-                "mono", "uint8",
+      fillImage(img_,  sensor_msgs::Image::TYPE_8UC1,
+                img_data_.imHeight, img_data_.imWidth, img_data_.imWidth,
                 img_data_.imRect );
       node_.publish(cam_name_ + "image_rect", img_);
     }
 
     if (img_data_.imRectColorType == COLOR_CODING_RGB8)
     {
-      fillImage(img_,  "image_rect_color",
-                img_data_.imHeight, img_data_.imWidth, 3,
-                "rgb", "uint8",
+      fillImage(img_,  sensor_msgs::Image::TYPE_8UC3,
+                img_data_.imHeight, img_data_.imWidth, 3 * img_data_.imWidth,
                 img_data_.imRectColor );
       node_.publish(cam_name_ + "image_rect_color", img_);
     }
 
     if (img_data_.imRectColorType == COLOR_CODING_RGBA8)
     {
-      fillImage(img_,  "image_rect_color",
-                img_data_.imHeight, img_data_.imWidth, 4,
-                "rgba", "uint8",
-                img_data_.imRectColor );
+      fillImage(img_, sensor_msgs::Image::TYPE_8UC4,
+                img_data_.imHeight, img_data_.imWidth, 4 * img_data_.imWidth,
+                img_data_.imRectColor);
       node_.publish(cam_name_ + "image_rect_color", img_);
     }
   }

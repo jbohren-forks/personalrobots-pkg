@@ -203,10 +203,9 @@ public:
   {
     if (img_data->imRawType != COLOR_CODING_NONE)
     {
-      fillImage(img_,  "image_raw",
-                img_data->imHeight, img_data->imWidth, 1,
-                "mono", "uint8",
-                img_data->imRaw );
+      fillImage(img_,  sensor_msgs::Image::TYPE_8UC1,
+                img_data->imHeight, img_data->imWidth, img_data->imWidth,
+                img_data->imRaw);
 
       img_.header.stamp = ros::Time().fromNSec(cam_->camIm->im_time * 1000);
       timestamp_diag_.tick(img_.header.stamp);
@@ -215,10 +214,9 @@ public:
 
     if (img_data->imType != COLOR_CODING_NONE)
     {
-      fillImage(img_,  "image",
-                img_data->imHeight, img_data->imWidth, 1,
-                "mono", "uint8",
-                img_data->im );
+      fillImage(img_,  sensor_msgs::Image::TYPE_8UC1,
+                img_data->imHeight, img_data->imWidth, img_data->imWidth,
+                img_data->im);
       img_.header.stamp = ros::Time().fromNSec(cam_->camIm->im_time * 1000);
       timestamp_diag_.tick(img_.header.stamp);
       publish(base_name + std::string("image"), img_);
@@ -226,9 +224,8 @@ public:
 
     if (img_data->imColorType != COLOR_CODING_NONE && img_data->imColorType == COLOR_CODING_RGB8)
     {
-      fillImage(img_,  "image_color",
-                img_data->imHeight, img_data->imWidth, 3,
-                "rgb", "uint8",
+      fillImage(img_,  sensor_msgs::Image::TYPE_8UC3,
+                img_data->imHeight, img_data->imWidth, 3 * img_data->imWidth,
                 img_data->imColor );
 
       img_.header.stamp = ros::Time().fromNSec(cam_->camIm->im_time * 1000);
@@ -238,9 +235,8 @@ public:
 
     if (img_data->imRectType != COLOR_CODING_NONE)
     {
-      fillImage(img_,  "image_rect",
-                img_data->imHeight, img_data->imWidth, 1,
-                "mono", "uint8",
+      fillImage(img_,  sensor_msgs::Image::TYPE_8UC1,
+                img_data->imHeight, img_data->imWidth,  img_data->imWidth,
                 img_data->imRect );
       img_.header.stamp = ros::Time().fromNSec(cam_->camIm->im_time * 1000);
       timestamp_diag_.tick(img_.header.stamp);
@@ -249,9 +245,8 @@ public:
 
     if (img_data->imRectColorType != COLOR_CODING_NONE && img_data->imRectColorType == COLOR_CODING_RGB8)
     {
-      fillImage(img_,  "image_rect_color",
-                img_data->imHeight, img_data->imWidth, 3,
-                "rgb", "uint8",
+      fillImage(img_,  sensor_msgs::Image::TYPE_8UC3,
+                img_data->imHeight, img_data->imWidth, 3 * img_data->imWidth,
                 img_data->imRectColor );
       img_.header.stamp = ros::Time().fromNSec(cam_->camIm->im_time * 1000);
       timestamp_diag_.tick(img_.header.stamp);
@@ -260,9 +255,8 @@ public:
 
     if (img_data->imRectColorType != COLOR_CODING_NONE && img_data->imRectColorType == COLOR_CODING_RGBA8)
     {
-      fillImage(img_,  "image_rect_color",
-                img_data->imHeight, img_data->imWidth, 4,
-                "rgba", "uint8",
+      fillImage(img_,sensor_msgs::Image::TYPE_8UC4,
+                img_data->imHeight, img_data->imWidth, 4 * img_data->imWidth,
                 img_data->imRectColor );
       img_.header.stamp = ros::Time().fromNSec(cam_->camIm->im_time * 1000);
       timestamp_diag_.tick(img_.header.stamp);

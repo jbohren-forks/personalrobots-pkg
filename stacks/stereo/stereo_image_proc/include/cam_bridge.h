@@ -45,58 +45,37 @@ namespace cam_bridge
   {
     if (im->imRawType != COLOR_CODING_NONE)
     {
-      fillImage(im_msg,  "image_raw",
-                im->imHeight, im->imWidth, 1,
-                "mono", "uint8",
-                im->imRaw );
+      fillImage(im_msg, sensor_msgs::Image::TYPE_8UC1, im->imHeight, im->imWidth, im->imWidth, im->imRaw);
       type = sensor_msgs::RawStereo::IMAGE_RAW;
     }
     else if (im->imType != COLOR_CODING_NONE)
     {
-      fillImage(im_msg,  "image",
-                im->imHeight, im->imWidth, 1,
-                "mono", "uint8",
-                im->im );
+      fillImage(im_msg, sensor_msgs::Image::TYPE_8UC1, im->imHeight, im->imWidth, im->imWidth, im->im);
       type = sensor_msgs::RawStereo::IMAGE;
     }
     else if (im->imColorType != COLOR_CODING_NONE && im->imColorType == COLOR_CODING_RGBA8)
     {
-      fillImage(im_msg,  "image_color",
-                im->imHeight, im->imWidth, 4,
-                "rgba", "uint8",
-                im->imColor );
+      fillImage(im_msg, sensor_msgs::Image::TYPE_8UC4, im->imHeight, im->imWidth, 4 * im->imWidth, im->imColor);
       type = sensor_msgs::RawStereo::IMAGE_COLOR;
     }
     else if (im->imColorType != COLOR_CODING_NONE && im->imColorType == COLOR_CODING_RGB8)
     {
-      fillImage(im_msg,  "image_color",
-                im->imHeight, im->imWidth, 3,
-                "rgb", "uint8",
-                im->imColor );
+      fillImage(im_msg, sensor_msgs::Image::TYPE_8UC3, im->imHeight, im->imWidth, 3 * im->imWidth, im->imColor);
       type = sensor_msgs::RawStereo::IMAGE_COLOR;
     }
     else if (im->imRectType != COLOR_CODING_NONE)
     {
-      fillImage(im_msg,  "image_rect",
-                im->imHeight, im->imWidth, 1,
-                "mono", "uint8",
-                im->imRect );
+      fillImage(im_msg, sensor_msgs::Image::TYPE_8UC1, im->imHeight, im->imWidth, im->imWidth, im->imRect);
       type = sensor_msgs::RawStereo::IMAGE_RECT;
     }
     else if (im->imRectColorType != COLOR_CODING_NONE && im->imRectColorType == COLOR_CODING_RGBA8)
     {
-      fillImage(im_msg,  "image_rect_color",
-                im->imHeight, im->imWidth, 4,
-                "rgba", "uint8",
-                im->imRectColor );
+      fillImage(im_msg, sensor_msgs::Image::TYPE_8UC4, im->imHeight, im->imWidth, 4 * im->imWidth, im->imRectColor);
       type = sensor_msgs::RawStereo::IMAGE_RECT_COLOR;
     }
     else if (im->imRectColorType != COLOR_CODING_NONE && im->imRectColorType == COLOR_CODING_RGB8)
     {
-      fillImage(im_msg,  "image_rect_color",
-                im->imHeight, im->imWidth, 3,
-                "rgb", "uint8",
-                im->imRectColor );
+      fillImage(im_msg, sensor_msgs::Image::TYPE_8UC3, im->imHeight, im->imWidth, 3 * im->imWidth, im->imRectColor);
       type = sensor_msgs::RawStereo::IMAGE_RECT_COLOR;
     }
 
@@ -115,9 +94,11 @@ namespace cam_bridge
 
     if (stIm->hasDisparity)
     {
-      fillImage(raw_stereo.disparity_image,  "disparity",
-                stIm->imHeight, stIm->imWidth, 1,
-                "mono", "int16",
+      fillImage(raw_stereo.disparity_image,
+                sensor_msgs::Image::TYPE_16SC1,
+                stIm->imWidth,
+                stIm->imHeight,
+                2 * stIm->imWidth,
                 stIm->imDisp );
       
       raw_stereo.has_disparity = true;
@@ -157,9 +138,9 @@ namespace cam_bridge
   }
 
 
-  void extractImage(std_msgs::UInt8MultiArray& arr, size_t* sz, uint8_t **d)
+  void extractImage(std::vector<uint8_t> data, size_t* sz, uint8_t **d)
   {
-    size_t new_size = arr.layout.dim[0].stride;
+    size_t new_size = data.size();
 
     if (*sz < new_size)
     {
@@ -167,12 +148,11 @@ namespace cam_bridge
       *d = (uint8_t *)MEMALIGN(new_size);
       *sz = new_size;
     }
-    memcpy((char*)(*d), (char*)(&arr.data[0]), new_size);
+    memcpy((char*)(*d), (char*)(&data[0]), new_size);
   }
-
-  void extractImage(std_msgs::Int16MultiArray& arr, size_t* sz, int16_t **d)
+  void extractImage(std::vector<uint8_t> data, size_t* sz, int16_t **d)
   {
-    size_t new_size = arr.layout.dim[0].stride*2;
+    size_t new_size = data.size();
 
     if (*sz < new_size)
     {
@@ -180,7 +160,7 @@ namespace cam_bridge
       *d = (int16_t *)MEMALIGN(new_size);
       *sz = new_size;
     }
-    memcpy((char*)(*d), (char*)(&arr.data[0]), new_size);
+    memcpy((char*)(*d), (char*)(&data[0]), new_size);
   }
 
   void RawStereoToCamData(sensor_msgs::Image& im_msg, sensor_msgs::CameraInfo& info_msg, uint8_t type, cam::ImageData* im)
@@ -194,45 +174,45 @@ namespace cam_bridge
 
     if (type == sensor_msgs::RawStereo::IMAGE_RAW)
     {
-      extractImage(im_msg.uint8_data, &im->imRawSize, &im->imRaw);
+      extractImage(im_msg.data, &im->imRawSize, &im->imRaw);
       im->imRawType = COLOR_CODING_BAYER8_GRBG;
     }
     else if (type == sensor_msgs::RawStereo::IMAGE)
     {
-      extractImage(im_msg.uint8_data, &im->imSize, &im->im);
+      extractImage(im_msg.data, &im->imSize, &im->im);
       im->imType = COLOR_CODING_MONO8;
     }
-    else if (type == sensor_msgs::RawStereo::IMAGE_COLOR && im_msg.encoding == "rgba")
+    else if (type == sensor_msgs::RawStereo::IMAGE_COLOR && im_msg.type == sensor_msgs::Image::TYPE_8UC4)
     {
-      extractImage(im_msg.uint8_data, &im->imColorSize, &im->imColor);
+      extractImage(im_msg.data, &im->imColorSize, &im->imColor);
       im->imColorType = COLOR_CODING_RGBA8;
     }
-    else if (type == sensor_msgs::RawStereo::IMAGE_COLOR && im_msg.encoding == "rgb")
+    else if (type == sensor_msgs::RawStereo::IMAGE_COLOR && im_msg.type == sensor_msgs::Image::TYPE_8UC3)
     {
-      extractImage(im_msg.uint8_data, &im->imColorSize, &im->imColor);
+      extractImage(im_msg.data, &im->imColorSize, &im->imColor);
       im->imColorType = COLOR_CODING_RGB8;
     }
     else if (type == sensor_msgs::RawStereo::IMAGE_RECT)
     {
-      extractImage(im_msg.uint8_data, &im->imRectSize, &im->imRect);
+      extractImage(im_msg.data, &im->imRectSize, &im->imRect);
       im->imRectType = COLOR_CODING_MONO8;
     }
-    else if (type == sensor_msgs::RawStereo::IMAGE_RECT_COLOR && im_msg.encoding == "rgba")
+    else if (type == sensor_msgs::RawStereo::IMAGE_RECT_COLOR && im_msg.type == sensor_msgs::Image::TYPE_8UC4)
     {
-      extractImage(im_msg.uint8_data, &im->imRectColorSize, &im->imRectColor);
+      extractImage(im_msg.data, &im->imRectColorSize, &im->imRectColor);
       im->imRectColorType = COLOR_CODING_RGBA8;
     }
-    else if (type == sensor_msgs::RawStereo::IMAGE_RECT_COLOR && im_msg.encoding == "rgb")
+    else if (type == sensor_msgs::RawStereo::IMAGE_RECT_COLOR && im_msg.type == sensor_msgs::Image::TYPE_8UC3)
     {
-      extractImage(im_msg.uint8_data, &im->imRectColorSize, &im->imRectColor);
+      extractImage(im_msg.data, &im->imRectColorSize, &im->imRectColor);
       im->imRectColorType = COLOR_CODING_RGB8;
     }
 
     // FIXME: this to avoid segfault when right image empty (disparity image requested instead).
     //        this all seems kind of hacky
-    if (im_msg.depth == "uint8") {
-      im->imHeight = im_msg.uint8_data.layout.dim[0].size;
-      im->imWidth  = im_msg.uint8_data.layout.dim[1].size;
+    if (im_msg.type == sensor_msgs::Image::TYPE_8UC1) {
+      im->imHeight = im_msg.rows;
+      im->imWidth  = im_msg.cols;
     } else {
       im->imHeight = info_msg.height;
       im->imWidth  = info_msg.width;
@@ -255,7 +235,7 @@ namespace cam_bridge
  
     if (raw_stereo.has_disparity)
     {
-      extractImage(raw_stereo.disparity_image.int16_data, &stIm->imDispSize, &stIm->imDisp);
+      extractImage(raw_stereo.disparity_image.data, &stIm->imDispSize, &stIm->imDisp);
       stIm->hasDisparity = true;
 
       stIm->dpp                 =     raw_stereo.disparity_info.dpp;

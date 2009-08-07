@@ -954,7 +954,7 @@ private:
 
   int publishImage(size_t width, size_t height, uint8_t *frameData, ros::Time t)
   {
-    fillImage(image_, "image", height, width, 1, "bayer_bggr", "uint8", frameData);
+    fillImage(image_, sensor_msgs::Image::TYPE_8UC1, height, width, width, frameData);
     
     image_.header.stamp = t;
     cam_pub_.publish(image_);

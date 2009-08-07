@@ -543,20 +543,11 @@ private:
 
   static void setBgrLayout(sensor_msgs::Image &image, int width, int height)
   {
-    image.label = "image";
-    image.encoding = "bgr";
-    image.depth = "uint8";
-    image.uint8_data.layout.dim.resize(3);
-    image.uint8_data.layout.dim[0].label = "height";
-    image.uint8_data.layout.dim[0].size = height;
-    image.uint8_data.layout.dim[0].stride = height * (width * 3);
-    image.uint8_data.layout.dim[1].label = "width";
-    image.uint8_data.layout.dim[1].size = width;
-    image.uint8_data.layout.dim[1].stride = width * 3;
-    image.uint8_data.layout.dim[2].label = "channel";
-    image.uint8_data.layout.dim[2].size = 3;
-    image.uint8_data.layout.dim[2].stride = 3;
-    image.uint8_data.data.resize(height * (width * 3));
+    image.type = sensor_msgs::Image::TYPE_8UC3;
+    image.rows = height;
+    image.cols = width;
+    image.step = width * 3;
+    image.data.resize(height * (width * 3));
   }
   
   static bool frameToImage(tPvFrame* frame, sensor_msgs::Image &image)
@@ -564,41 +555,42 @@ private:
     // NOTE: 16-bit formats and Yuv444 not supported
     switch (frame->Format)
     {
+
       case ePvFmtMono8:
-        fillImage(image, "image", frame->Height, frame->Width, 1,
-                  "mono", "uint8", frame->ImageBuffer);
+        fillImage(image, sensor_msgs::Image::TYPE_8UC1, frame->Height, frame->Width, frame->Width, frame->ImageBuffer);
         break;
+
       case ePvFmtBayer8:
         // Debayer to bgr format so CvBridge can handle it
         setBgrLayout(image, frame->Width, frame->Height);
-        PvUtilityColorInterpolate(frame, &image.uint8_data.data[2],
-                                  &image.uint8_data.data[1], &image.uint8_data.data[0],
+        PvUtilityColorInterpolate(frame, &image.data[2],
+                                  &image.data[1], &image.data[0],
                                   2, 0);
         break;
+
+      case ePvFmtBgr24:
+        fillImage(image, sensor_msgs::Image::TYPE_8UC3, frame->Height, frame->Width, 3 * frame->Width, frame->ImageBuffer);
+        break;
+
+      case ePvFmtRgba32:
+        fillImage(image, sensor_msgs::Image::TYPE_8UC4, frame->Height, frame->Width, 4 * frame->Width, frame->ImageBuffer);
+        break;
+
+      case ePvFmtBgra32:
+        fillImage(image, sensor_msgs::Image::TYPE_8UC4, frame->Height, frame->Width, 4 * frame->Width, frame->ImageBuffer);
+        break;
+     
+#if 0   // XXX JCB - these cannot be represented in a CvMat
       case ePvFmtRgb24:
-        fillImage(image, "image", frame->Height, frame->Width, 3,
-                  "rgb", "uint8", frame->ImageBuffer);
+        // fillImage(image, sensor_msgs::Image::TYPE_8UC3, frame->Height, frame->Width, 3 * frame->Width, frame->ImageBuffer);
         break;
       case ePvFmtYuv411:
-        fillImage(image, "image", frame->Height, frame->Width, 6,
-                  "yuv411", "uint8", frame->ImageBuffer);
+        // fillImage(image, "image", frame->Height, frame->Width, 6, "yuv411", "uint8", frame->ImageBuffer);
         break;
       case ePvFmtYuv422:
-        fillImage(image, "image", frame->Height, frame->Width, 4,
-                  "yuv422", "uint8", frame->ImageBuffer);
+        // fillImage(image, "image", frame->Height, frame->Width, 4, "yuv422", "uint8", frame->ImageBuffer);
         break;
-      case ePvFmtBgr24:
-        fillImage(image, "image", frame->Height, frame->Width, 3,
-                  "bgr", "uint8", frame->ImageBuffer);
-        break;
-      case ePvFmtRgba32:
-        fillImage(image, "image", frame->Height, frame->Width, 4,
-                  "rgba", "uint8", frame->ImageBuffer);
-        break;
-      case ePvFmtBgra32:
-        fillImage(image, "image", frame->Height, frame->Width, 4,
-                  "bgra", "uint8", frame->ImageBuffer);
-        break;
+#endif
       default:        
         ROS_WARN("Received frame with unsupported pixel format %d", frame->Format);
         return false;
@@ -611,8 +603,8 @@ private:
                     sensor_msgs::CameraInfo &cam_info)
   {
     // Currently assume BGR format so bridge.toIpl() image points to msg data buffer
-    if (img.encoding != "bgr") {
-      ROS_WARN("Couldn't rectify frame, unsupported encoding %s", img.encoding.c_str());
+    if (img.type != sensor_msgs::Image::TYPE_8UC1) {
+      ROS_WARN("Couldn't rectify frame, unsupported encoding %d", img.type);
       return false;
     }
     
