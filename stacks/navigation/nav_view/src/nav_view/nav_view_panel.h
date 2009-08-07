@@ -32,7 +32,7 @@
 
 #include "nav_view_panel_generated.h"
 
-#include "nav_msgs/PoseArray.h"
+#include "geometry_msgs/PoseArray.h"
 #include "geometry_msgs/PoseStamped.h"
 #include "visualization_msgs/Polyline.h"
 #include "geometry_msgs/PoseWithCovariance.h"
@@ -89,7 +89,7 @@ Mouse controls:
 @section topic ROS topics
 
 Subscribes to (name/type):
-- @b "particlecloud"nav_msgs/PoseArray : a set particles from a probabilistic localization system.  Rendered is a set of small arrows.
+- @b "particlecloud"geometry_msgs/PoseArray : a set particles from a probabilistic localization system.  Rendered is a set of small arrows.
 - @b "gui_path"/Polyline : a path from a planner.  Rendered as a dashed line.
 - @b "gui_laser"/Polyline : re-projected laser scan from a planner.  Rendered as a set of points.
 - @b "local_path"/Polyline : local path from a planner.  Rendered as a dashed line.
@@ -164,7 +164,7 @@ protected:
 
   void loadMap();
   void clearMap();
-  void incomingPoseArray(const nav_msgs::PoseArray::ConstPtr& msg);
+  void incomingPoseArray(const geometry_msgs::PoseArray::ConstPtr& msg);
   void incomingGuiPath(const visualization_msgs::Polyline::ConstPtr& msg);
   void incomingLocalPath(const visualization_msgs::Polyline::ConstPtr& msg);
   void incomingRobotFootprint(const visualization_msgs::Polyline::ConstPtr& msg);

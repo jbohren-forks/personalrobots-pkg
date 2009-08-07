@@ -38,7 +38,7 @@
 // Messages that I need
 #include "sensor_msgs/LaserScan.h"
 #include "geometry_msgs/PoseWithCovariance.h"
-#include "nav_msgs/PoseArray.h"
+#include "geometry_msgs/PoseArray.h"
 #include "geometry_msgs/Pose.h"
 #include "nav_msgs/GetMap.h"
 #include "std_srvs/Empty.h"
@@ -320,7 +320,7 @@ AmclNode::AmclNode() :
                                     laser_likelihood_max_dist);
 
   ros::Node::instance()->advertise<geometry_msgs::PoseWithCovariance>("amcl_pose",2);
-  ros::Node::instance()->advertise<nav_msgs::PoseArray>("particlecloud",2);
+  ros::Node::instance()->advertise<geometry_msgs::PoseArray>("particlecloud",2);
   ros::Node::instance()->advertise<visualization_msgs::Polyline>("gui_laser",2);
   ros::Node::instance()->advertiseService("global_localization",
                                           &AmclNode::globalLocalizationCallback,
@@ -606,7 +606,7 @@ AmclNode::laserReceived(const tf::MessageNotifier<sensor_msgs::LaserScan>::Messa
 
     // Publish the resulting cloud
     // TODO: set maximum rate for publishing
-    nav_msgs::PoseArray cloud_msg;
+    geometry_msgs::PoseArray cloud_msg;
     cloud_msg.header.stamp = ros::Time::now();
     cloud_msg.header.frame_id = "map";
     cloud_msg.set_poses_size(set->sample_count);

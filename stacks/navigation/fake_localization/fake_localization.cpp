@@ -60,7 +60,7 @@ Subscribes to (name/type):
 
 Publishes to (name / type):
 - @b "amcl_pose" geometry_msgs/PoseWithCovariance : robot's estimated pose in the map, with covariance
-- @b "particlecloud" nav_msgs/PoseArray : fake set of poses being maintained by the filter (one paricle only).
+- @b "particlecloud" geometry_msgs/PoseArray : fake set of poses being maintained by the filter (one paricle only).
 
 <hr>
 
@@ -74,7 +74,7 @@ Publishes to (name / type):
 #include <ros/time.h>
 
 #include <geometry_msgs/PoseWithRatesStamped.h>
-#include <nav_msgs/PoseArray.h>
+#include <geometry_msgs/PoseArray.h>
 #include <geometry_msgs/PoseWithCovariance.h>
 
 #include <angles/angles.h>
@@ -92,7 +92,7 @@ public:
     FakeOdomNode(void) : ros::Node("fake_localization")
     {
       advertise<geometry_msgs::PoseWithCovariance>("amcl_pose",1);
-      advertise<nav_msgs::PoseArray>("particlecloud",1);
+      advertise<geometry_msgs::PoseArray>("particlecloud",1);
       m_tfServer = new tf::TransformBroadcaster();	
       m_tfListener = new tf::TransformListener(*this);
       m_lastUpdate = ros::Time::now();
@@ -140,7 +140,7 @@ private:
     bool                           m_base_pos_received;
     
     geometry_msgs::PoseWithRatesStamped  m_basePosMsg;
-    nav_msgs::PoseArray      m_particleCloud;
+    geometry_msgs::PoseArray      m_particleCloud;
     geometry_msgs::PoseWithCovariance      m_currentPos;
 
     //parameter for what odom to use

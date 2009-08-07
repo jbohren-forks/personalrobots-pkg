@@ -32,7 +32,7 @@
 #include "ogre_tools/wx_ogre_render_window.h"
 
 #include "nav_msgs/GetMap.h"
-#include "nav_msgs/PoseArray.h"
+#include "geometry_msgs/PoseArray.h"
 
 #include <tf/transform_listener.h>
 
@@ -474,7 +474,7 @@ void NavViewPanel::createObjectFromPolyLine( Ogre::ManualObject*& object, const 
   queueRender();
 }
 
-void NavViewPanel::incomingPoseArray(const nav_msgs::PoseArray::ConstPtr& msg)
+void NavViewPanel::incomingPoseArray(const geometry_msgs::PoseArray::ConstPtr& msg)
 {
   if ( !cloud_object_ )
   {
