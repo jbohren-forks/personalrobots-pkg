@@ -332,7 +332,7 @@ namespace cloud_geometry
       * \param poly the polygon
       */
     inline double
-      pointToPolygonDistanceSqr (const geometry_msgs::Point32 &p, const robot_msgs::Polygon3D &poly)
+      pointToPolygonDistanceSqr (const geometry_msgs::Point32 &p, const geometry_msgs::Polygon &poly)
     {
       double min_distance = FLT_MAX;
       geometry_msgs::Point32 dir, p_t;
@@ -383,7 +383,7 @@ namespace cloud_geometry
       * \param poly the polygon
       */
     inline double
-      pointToPolygonDistance (const geometry_msgs::Point32 &p, const robot_msgs::Polygon3D &poly)
+      pointToPolygonDistance (const geometry_msgs::Point32 &p, const geometry_msgs::Polygon &poly)
     {
       return (sqrt (pointToPolygonDistanceSqr (p, poly)));
     }

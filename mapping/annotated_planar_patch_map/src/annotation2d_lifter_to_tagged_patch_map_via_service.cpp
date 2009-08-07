@@ -277,7 +277,7 @@ public:
       for(unsigned int iPoly = 0; iPoly<num_3D_poly; iPoly++)
       {
         //we're checking this one
-        robot_msgs::Polygon3D &map_poly=transformed_map_2D.polygons[iPoly].polygon;
+        geometry_msgs::Polygon &map_poly=transformed_map_2D.polygons[iPoly].polygon;
         int num_in=0,num_out=0;
         for(unsigned int iPt=0;iPt<map_poly.get_points_size();iPt++)
         {
@@ -401,7 +401,7 @@ public:
     for(unsigned int iPoly = 0; iPoly<num_3D_poly; iPoly++)
     {
       //we're checking this one
-      robot_msgs::Polygon3D &map_poly=transformed_map.polygons[iPoly].polygon;
+      geometry_msgs::Polygon &map_poly=transformed_map.polygons[iPoly].polygon;
       for(unsigned int iPt=0;iPt<map_poly.get_points_size();iPt++){
         fprintf(fOut,"%f %f %f\n",map_poly.points[iPt].x,
                 map_poly.points[iPt].y,

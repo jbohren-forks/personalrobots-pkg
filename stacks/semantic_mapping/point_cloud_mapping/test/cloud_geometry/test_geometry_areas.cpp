@@ -32,7 +32,7 @@
 
 #include <gtest/gtest.h>
 #include <geometry_msgs/Point32.h>
-#include <robot_msgs/Polygon3D.h>
+#include <geometry_msgs/Polygon.h>
 
 #include <point_cloud_mapping/geometry/areas.h>
 
@@ -41,7 +41,7 @@ using namespace cloud_geometry::areas;
 TEST (Geometry, PolygonAreas)
 {
   geometry_msgs::Point32 p1, p2, p3, p4;
-  robot_msgs::Polygon3D poly;
+  geometry_msgs::Polygon poly;
 
   std::vector<double> normal;
   double area;

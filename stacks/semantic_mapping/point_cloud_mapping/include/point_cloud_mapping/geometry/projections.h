@@ -35,7 +35,7 @@
 
 // ROS includes
 #include <geometry_msgs/Point32.h>
-#include <robot_msgs/Polygon3D.h>
+#include <geometry_msgs/Polygon.h>
 
 namespace cloud_geometry
 {
@@ -69,7 +69,7 @@ namespace cloud_geometry
       * \param plane_coefficients the normalized coefficients (a, b, c, d) of a plane
       */
     inline void
-      pointsToPlane (const robot_msgs::Polygon3D &p, robot_msgs::Polygon3D &q, const std::vector<double> &plane_coefficients)
+      pointsToPlane (const geometry_msgs::Polygon &p, geometry_msgs::Polygon &q, const std::vector<double> &plane_coefficients)
     {
       q.points.resize (p.points.size ());
       for (unsigned int i = 0; i < p.points.size (); i++)

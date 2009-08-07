@@ -91,7 +91,7 @@ namespace people_aware_nav {
        * @brief  Make a new global plan
        * @param  goal The goal to plan to
        */
-    void makePlan(const geometry_msgs::PoseStamped& goal, const robot_msgs::Polygon3D& forbidden);
+    void makePlan(const geometry_msgs::PoseStamped& goal, const geometry_msgs::Polygon& forbidden);
 
       /**
        * @brief  Get the current pose of the robot in the specified frame
@@ -107,7 +107,7 @@ namespace people_aware_nav {
 
       void resetState();
 
-    bool tryPlan(geometry_msgs::PoseStamped goal, const robot_msgs::Polygon3D& forbidden);
+    bool tryPlan(geometry_msgs::PoseStamped goal, const geometry_msgs::Polygon& forbidden);
 
       ros::Node& ros_node_;
       tf::TransformListener& tf_;

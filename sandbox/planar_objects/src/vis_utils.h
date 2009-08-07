@@ -11,7 +11,7 @@
 #include "ros/ros.h"
 
 #include "sensor_msgs/PointCloud.h"
-#include <robot_msgs/Polygon3D.h>
+#include <geometry_msgs/Polygon.h>
 #include <visualization_msgs/Marker.h>
 // transform library
 #include <tf/transform_listener.h>
@@ -36,7 +36,7 @@ void visualizePlanes2(const sensor_msgs::PointCloud& cloud,
                      sensor_msgs::PointCloud& outside,
                      ros::Publisher& cloud_planes_pub,ros::Publisher& visualization_pub_,bool convexHull=false);
 
-void visualizePolygon(const sensor_msgs::PointCloud& cloud, robot_msgs::Polygon3D &polygon, int rgb, int id,
+void visualizePolygon(const sensor_msgs::PointCloud& cloud, geometry_msgs::Polygon &polygon, int rgb, int id,
                       ros::Publisher& visualization_pub);
 
 void visualizeLines(ros::Publisher& visualization_pub_, std::string frame_id, std::vector<std::pair<btVector3,

@@ -36,7 +36,7 @@
 // ROS includes
 #include <sensor_msgs/PointCloud.h>
 #include <geometry_msgs/Point32.h>
-#include <robot_msgs/Polygon3D.h>
+#include <geometry_msgs/Polygon.h>
 #include <cfloat>
 
 namespace cloud_geometry
@@ -52,7 +52,7 @@ namespace cloud_geometry
       * \param max_idx the resultant index of the 'maximum' point
       */
     inline void
-      getLargestDiagonalIndices (const robot_msgs::Polygon3D &poly, int &min_idx, int &max_idx)
+      getLargestDiagonalIndices (const geometry_msgs::Polygon &poly, int &min_idx, int &max_idx)
     {
       double largest_diagonal = -FLT_MAX;
       for (unsigned int i = 0; i < poly.points.size (); i++)
@@ -137,7 +137,7 @@ namespace cloud_geometry
       * \param maxP the resultant maximum point in the set
       */
     inline void
-      getLargestDiagonalPoints (const robot_msgs::Polygon3D &poly, geometry_msgs::Point32 &min_p, geometry_msgs::Point32 &max_p)
+      getLargestDiagonalPoints (const geometry_msgs::Polygon &poly, geometry_msgs::Point32 &min_p, geometry_msgs::Point32 &max_p)
     {
       double largest_diagonal = -FLT_MAX;
       for (unsigned int i = 0; i < poly.points.size (); i++)
@@ -230,7 +230,7 @@ namespace cloud_geometry
       * \param maxP the resultant maximum point in the set
       */
     inline void
-      getLargestXYPoints (const robot_msgs::Polygon3D &poly, geometry_msgs::Point32 &min_p, geometry_msgs::Point32 &max_p)
+      getLargestXYPoints (const geometry_msgs::Polygon &poly, geometry_msgs::Point32 &min_p, geometry_msgs::Point32 &max_p)
     {
       double largest_xy = -FLT_MAX;
       for (unsigned int i = 0; i < poly.points.size (); i++)
@@ -353,7 +353,7 @@ namespace cloud_geometry
       * \param max_p the resultant maximum bounding box coordinates
       */
     inline void
-      getMinMax (const robot_msgs::Polygon3D &poly, geometry_msgs::Point32 &min_p, geometry_msgs::Point32 &max_p)
+      getMinMax (const geometry_msgs::Polygon &poly, geometry_msgs::Point32 &min_p, geometry_msgs::Point32 &max_p)
     {
       min_p.x = min_p.y = min_p.z = FLT_MAX;
       max_p.x = max_p.y = max_p.z = -FLT_MAX;

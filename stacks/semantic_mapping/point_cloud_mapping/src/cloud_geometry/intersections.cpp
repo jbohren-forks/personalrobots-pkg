@@ -151,7 +151,7 @@ namespace cloud_geometry
       * \param polygon the resulting polygon
       */
     bool
-      planeWithCubeIntersection (const std::vector<double> &plane, const std::vector<double> &cube, robot_msgs::Polygon3D &polygon)
+      planeWithCubeIntersection (const std::vector<double> &plane, const std::vector<double> &cube, geometry_msgs::Polygon &polygon)
     {
       double width[3];
       for (int d = 0; d < 3; d++)

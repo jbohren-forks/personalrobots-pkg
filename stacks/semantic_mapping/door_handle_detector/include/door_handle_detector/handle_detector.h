@@ -85,7 +85,7 @@ private:
    *       distance_from_door_margin_, euclidean_cluster_distance_tolerance_, euclidean_cluster_min_pts_
    */
   void refineHandleCandidatesWithDoorOutliers (std::vector<int> &handle_indices, std::vector<int> &outliers,
-                                               const robot_msgs::Polygon3D &polygon,
+                                               const geometry_msgs::Polygon &polygon,
                                                const std::vector<double> &coeff, const geometry_msgs::Point32 &door_axis,
                                                const door_msgs::Door& door_prior,
                                                sensor_msgs::PointCloud& pointcloud) const;
@@ -106,7 +106,7 @@ private:
    *       cloud_tr_, viewpoint_cloud_
    */
   void getHandleCandidates (const std::vector<int> &indices, const std::vector<double> &coeff,
-                            const robot_msgs::Polygon3D &polygon, const robot_msgs::Polygon3D &polygon_tr,
+                            const geometry_msgs::Polygon &polygon, const geometry_msgs::Polygon &polygon_tr,
                             Eigen::Matrix4d transformation, std::vector<int> &handle_indices,
                             sensor_msgs::PointCloud& pointcloud, geometry_msgs::PointStamped& viewpoint_cloud) const;
 
@@ -126,8 +126,8 @@ private:
    *       distance_from_door_margin_, euclidean_cluster_distance_tolerance_, euclidean_cluster_min_pts_
    */
   void getDoorOutliers (const std::vector<int> &indices, const std::vector<int> &inliers,
-                        const std::vector<double> &coeff, const robot_msgs::Polygon3D &polygon,
-                        const robot_msgs::Polygon3D &polygon_tr, Eigen::Matrix4d transformation,
+                        const std::vector<double> &coeff, const geometry_msgs::Polygon &polygon,
+                        const geometry_msgs::Polygon &polygon_tr, Eigen::Matrix4d transformation,
                         std::vector<int> &outliers, sensor_msgs::PointCloud& pointcloud) const;
 
   /** \brief Main point cloud callback. */

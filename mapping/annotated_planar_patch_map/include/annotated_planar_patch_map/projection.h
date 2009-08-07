@@ -62,7 +62,7 @@ namespace annotated_planar_patch_map
 namespace projection
 {
 
-void projectAnyObject(const sensor_msgs::CameraInfo& cam_info,robot_msgs::Polygon3D polyIn,robot_msgs::Polygon3D& polyOut);
+void projectAnyObject(const sensor_msgs::CameraInfo& cam_info,geometry_msgs::Polygon polyIn,geometry_msgs::Polygon& polyOut);
 
 void projectAnyObject(const sensor_msgs::StereoInfo& stereo_info_, const annotated_map_msgs::TaggedPolygonalMap& transformed_map_3D, annotated_map_msgs::TaggedPolygonalMap &transformed_map_2D);
 
@@ -76,8 +76,8 @@ void projectAnyObject(const sensor_msgs::CameraInfo& cam_info_, const sensor_msg
 void projectPolygonalMap(const sensor_msgs::StereoInfo& stereo_info_, const mapping_msgs::PolygonalMap& transformed_map_3D, mapping_msgs::PolygonalMap &transformed_map_2D);
 
 
-void projectPolygonPoints(double* projection,double img_w, double img_h, robot_msgs::Polygon3D polyIn,robot_msgs::Polygon3D& polyOut);
-void projectPolygonPointsNOP(double* projection,double img_w, double img_h, robot_msgs::Polygon3D polyIn,robot_msgs::Polygon3D& polyOut);
+void projectPolygonPoints(double* projection,double img_w, double img_h, geometry_msgs::Polygon polyIn,geometry_msgs::Polygon& polyOut);
+void projectPolygonPointsNOP(double* projection,double img_w, double img_h, geometry_msgs::Polygon polyIn,geometry_msgs::Polygon& polyOut);
 
 
 
@@ -95,7 +95,7 @@ std::vector<int> getVisibleProjectedPolygons(const annotated_map_msgs::TaggedPol
                                              const std::vector<double>& viewport); 
 
 
-bool checkPolyInside(const robot_msgs::Polygon3D& poly,const std::vector<double>& viewport);
+bool checkPolyInside(const geometry_msgs::Polygon& poly,const std::vector<double>& viewport);
 
 } 
 } //end namespace

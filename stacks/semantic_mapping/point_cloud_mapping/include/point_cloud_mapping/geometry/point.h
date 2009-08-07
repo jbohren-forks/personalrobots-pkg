@@ -35,7 +35,7 @@
 
 // ROS includes
 #include <sensor_msgs/PointCloud.h>
-#include <robot_msgs/Polygon3D.h>
+#include <geometry_msgs/Polygon.h>
 #include <geometry_msgs/Point32.h>
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/Vector3.h>
@@ -420,7 +420,7 @@ namespace cloud_geometry
     * \param poly the polygon
     */
   inline void
-    cerr_poly (const robot_msgs::Polygon3D &poly)
+    cerr_poly (const geometry_msgs::Polygon &poly)
   {
     for (unsigned int i = 0; i < poly.points.size (); i++)
     {

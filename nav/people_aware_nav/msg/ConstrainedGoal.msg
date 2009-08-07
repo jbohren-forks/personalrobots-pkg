@@ -8,4 +8,4 @@ float32 z
 float32 th
 
 # Region where robot can't go
-robot_msgs/Polygon3D forbidden
+geometry_msgs/Polygon forbidden

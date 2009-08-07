@@ -60,7 +60,7 @@
 #include "geometry_msgs/Point32.h"
 #include "geometry_msgs/Vector3.h"
 #include "geometry_msgs/PointStamped.h"
-#include <robot_msgs/Polygon3D.h>
+#include <geometry_msgs/Polygon.h>
 #include "door_msgs/Door.h"
 //#include "robot_msgs/VisualizationMarker.h"
 

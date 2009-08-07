@@ -36,7 +36,7 @@
 // ROS includes
 #include <geometry_msgs/Point32.h>
 #include <sensor_msgs/PointCloud.h>
-#include <robot_msgs/Polygon3D.h>
+#include <geometry_msgs/Polygon.h>
 #include <visualization_msgs/Polyline.h>
 
 #include <point_cloud_mapping/geometry/nearest.h>
@@ -77,14 +77,14 @@ namespace cloud_geometry
       else                  return (false);
     }
 
-    bool compute2DPolygonNormal(const robot_msgs::Polygon3D &poly, std::vector<double> &normal);
+    bool compute2DPolygonNormal(const geometry_msgs::Polygon &poly, std::vector<double> &normal);
     double compute2DPolygonalArea (const sensor_msgs::PointCloud &points, const std::vector<double> &normal);
-    double compute2DPolygonalArea (const robot_msgs::Polygon3D &polygon, const std::vector<double> &normal);
-    double compute2DPolygonalArea (const robot_msgs::Polygon3D &polygon);
-    void convexHull2D (const sensor_msgs::PointCloud &points, const std::vector<int> &indices, const std::vector<double> &coeff, robot_msgs::Polygon3D &hull);
+    double compute2DPolygonalArea (const geometry_msgs::Polygon &polygon, const std::vector<double> &normal);
+    double compute2DPolygonalArea (const geometry_msgs::Polygon &polygon);
+    void convexHull2D (const sensor_msgs::PointCloud &points, const std::vector<int> &indices, const std::vector<double> &coeff, geometry_msgs::Polygon &hull);
     void convexHull2D (const std::vector<geometry_msgs::Point32> &points, visualization_msgs::Polyline &hull);
 
-    bool isPointIn2DPolygon (const geometry_msgs::Point32 &point, const robot_msgs::Polygon3D &polygon);
+    bool isPointIn2DPolygon (const geometry_msgs::Point32 &point, const geometry_msgs::Polygon &polygon);
   }
 }
 

@@ -30,7 +30,7 @@
 #include <gtest/gtest.h>
 #include <sys/time.h>
 
-#include "robot_msgs/Polygon3D.h"
+#include "geometry_msgs/Polygon.h"
 #include "geometry_msgs/Point32.h"
 #include <math.h>
 
@@ -42,8 +42,8 @@
 
 TEST(annotated_map, projectPolygon)
 {
-  robot_msgs::Polygon3D input_polygon;  
-  robot_msgs::Polygon3D projected_polygon;  
+  geometry_msgs::Polygon input_polygon;  
+  geometry_msgs::Polygon projected_polygon;  
 
   sensor_msgs::CameraInfo cam_info;
 

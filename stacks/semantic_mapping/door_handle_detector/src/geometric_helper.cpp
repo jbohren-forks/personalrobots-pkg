@@ -110,7 +110,7 @@ void
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 bool
-  checkDoorEdges (const robot_msgs::Polygon3D &poly, const geometry_msgs::Point32 &z_axis, double min_height, double eps_angle,
+  checkDoorEdges (const geometry_msgs::Polygon &poly, const geometry_msgs::Point32 &z_axis, double min_height, double eps_angle,
                   double &door_frame1, double &door_frame2)
 {
   // Compute the centroid of the polygon

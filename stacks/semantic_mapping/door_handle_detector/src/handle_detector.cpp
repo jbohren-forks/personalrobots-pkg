@@ -166,7 +166,7 @@ bool HandleDetector::detectHandle (const door_msgs::Door& door, sensor_msgs::Poi
     return (false);
   }
   // Compute the convex hull of the door
-  robot_msgs::Polygon3D polygon, polygon_tr;
+  geometry_msgs::Polygon polygon, polygon_tr;
   cloud_geometry::areas::convexHull2D (pointcloud, inliers, coeff, polygon);
 
   // Create a polygonal representation on the X-Y plane (makes all isPointIn2DPolygon computations easier)

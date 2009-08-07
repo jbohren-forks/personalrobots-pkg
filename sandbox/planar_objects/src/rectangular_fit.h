@@ -5,7 +5,7 @@
 #include <ros/node.h>
 // ROS messages
 #include <sensor_msgs/PointCloud.h>
-#include <robot_msgs/Polygon3D.h>
+#include <geometry_msgs/Polygon.h>
 
 // Cloud geometry
 #include <point_cloud_mapping/geometry/angles.h>
@@ -47,7 +47,7 @@ class PlanarFit {
 			std::vector<std::vector<int> > &indices, std::vector<std::vector<
 					double> > &models,int number);
 	void publishNormals(sensor_msgs::PointCloud points, std::vector<geometry_msgs::Vector3> coeff, float length=0.1);
-	void publishPolygon(sensor_msgs::PointCloud pointcloud,robot_msgs::Polygon3D points,int number);
+	void publishPolygon(sensor_msgs::PointCloud pointcloud,geometry_msgs::Polygon points,int number);
 protected:
 	ros::Node& node_;
 

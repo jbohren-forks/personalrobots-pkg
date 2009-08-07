@@ -38,7 +38,7 @@
 #include <geometry_msgs/Point32.h>
 #include <geometry_msgs/PointStamped.h>
 #include <sensor_msgs/PointCloud.h>
-#include <robot_msgs/Polygon3D.h>
+#include <geometry_msgs/Polygon.h>
 #include <visualization_msgs/Polyline.h>
 
 #include <point_cloud_mapping/geometry/point.h>

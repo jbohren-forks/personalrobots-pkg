@@ -71,7 +71,7 @@ void annotated_planar_patch_map::projection::projectPolygonalMap(const sensor_ms
   for(unsigned int iPoly = 0; iPoly<num_polygons; iPoly++)
   {
     //create new polygon 2D (z=1)
-    robot_msgs::Polygon3D newPoly;
+    geometry_msgs::Polygon newPoly;
     projectPolygonPoints(projection,double(stereo_info.width),double(stereo_info.height),transformed_map_3D.polygons[iPoly],newPoly);
 
     //put the polygon into 2D map
@@ -79,7 +79,7 @@ void annotated_planar_patch_map::projection::projectPolygonalMap(const sensor_ms
   }
 }
 
-void annotated_planar_patch_map::projection::projectAnyObject(const sensor_msgs::CameraInfo& cam_info,robot_msgs::Polygon3D polyIn,robot_msgs::Polygon3D& polyOut)  
+void annotated_planar_patch_map::projection::projectAnyObject(const sensor_msgs::CameraInfo& cam_info,geometry_msgs::Polygon polyIn,geometry_msgs::Polygon& polyOut)  
 {
   //Projection setup
   CvMat *K_ = cvCreateMat(3, 3, CV_64FC1);
@@ -194,7 +194,7 @@ void annotated_planar_patch_map::projection::projectAnyObject(const sensor_msgs:
 
 
 
-void annotated_planar_patch_map::projection::projectPolygonPoints(double* projection,double img_w,double img_h,robot_msgs::Polygon3D polyIn,robot_msgs::Polygon3D& polyOut)
+void annotated_planar_patch_map::projection::projectPolygonPoints(double* projection,double img_w,double img_h,geometry_msgs::Polygon polyIn,geometry_msgs::Polygon& polyOut)
 {
   //Project all points of all polygons
   unsigned int num_pts = polyIn.get_points_size();
@@ -240,7 +240,7 @@ void annotated_planar_patch_map::projection::projectPolygonPoints(double* projec
   }
 }
 
-void annotated_planar_patch_map::projection::projectPolygonPointsNOP(double* projection,double img_w,double img_h,robot_msgs::Polygon3D polyIn,robot_msgs::Polygon3D& polyOut)
+void annotated_planar_patch_map::projection::projectPolygonPointsNOP(double* projection,double img_w,double img_h,geometry_msgs::Polygon polyIn,geometry_msgs::Polygon& polyOut)
 {
   //Project all points of all polygons
   unsigned int num_pts = polyIn.get_points_size();
@@ -309,7 +309,7 @@ void annotated_planar_patch_map::projection::projectAnyObject(const sensor_msgs:
   for(unsigned int iPoly = 0; iPoly<num_polygons; iPoly++)
   {
     //create new polygon 2D (z=1)
-    robot_msgs::Polygon3D newPoly;
+    geometry_msgs::Polygon newPoly;
     projectPolygonPoints(projection,double(stereo_info.width),double(stereo_info.height),transformed_map_3D.polygons[iPoly].polygon,newPoly);
 
     //put the polygon into 2D map
@@ -357,7 +357,7 @@ void annotated_planar_patch_map::projection::projectAnyObjectNOP(const sensor_ms
   for(unsigned int iPoly = 0; iPoly<num_polygons; iPoly++)
   {
     //create new polygon 2D (z=1)
-    robot_msgs::Polygon3D newPoly;
+    geometry_msgs::Polygon newPoly;
     projectPolygonPointsNOP(projection,double(stereo_info.width),double(stereo_info.height),transformed_map_3D.polygons[iPoly].polygon,newPoly);
 
     //put the polygon into 2D map
@@ -386,7 +386,7 @@ void annotated_planar_patch_map::projection::projectAnyObject(const sensor_msgs:
   for(unsigned int iPoly = 0; iPoly<num_polygons; iPoly++)
   {
     //create new polygon 2D (z=1)
-    robot_msgs::Polygon3D newPoly;
+    geometry_msgs::Polygon newPoly;
 
     projectAnyObject(cam_info,transformed_map_3D.polygons[iPoly].polygon,newPoly);
 
@@ -410,7 +410,7 @@ void annotated_planar_patch_map::projection::projectAnyObject(const sensor_msgs:
 
 
 
-bool annotated_planar_patch_map::projection::checkPolyInside(const robot_msgs::Polygon3D& poly,const std::vector<double>& viewport)
+bool annotated_planar_patch_map::projection::checkPolyInside(const geometry_msgs::Polygon& poly,const std::vector<double>& viewport)
 {
   unsigned int num_pts = poly.get_points_size();
   for(unsigned int iPt = 0; iPt<num_pts; iPt++)

@@ -106,7 +106,7 @@ void transformPolygonalMap(const std::string& target_frame, const ros::Time& tar
   boost::numeric::ublas::matrix<double> transform = transformAsMatrix(net_transform);
 
 
-  typedef std::vector<robot_msgs::Polygon3D> poly_vec;
+  typedef std::vector<geometry_msgs::Polygon> poly_vec;
 
   bool bSame = (&polymapIn == &polymapOut);
   unsigned int num_polygons = polymapIn.get_polygons_size();
@@ -117,7 +117,7 @@ void transformPolygonalMap(const std::string& target_frame, const ros::Time& tar
 
   for(unsigned int iPoly=0;iPoly<num_polygons;iPoly++)  
   {    
-    const robot_msgs::Polygon3D* p=&polymapIn.polygons[iPoly];
+    const geometry_msgs::Polygon* p=&polymapIn.polygons[iPoly];
 
     unsigned int length = p->get_points_size();
 
@@ -135,7 +135,7 @@ void transformPolygonalMap(const std::string& target_frame, const ros::Time& tar
 
     boost::numeric::ublas::matrix<double> matOut = prod(transform, matIn);
 
-    robot_msgs::Polygon3D *polyOut;
+    geometry_msgs::Polygon *polyOut;
     if (!bSame)
     {
       polyOut = &(polymapOut.polygons[iPoly]);

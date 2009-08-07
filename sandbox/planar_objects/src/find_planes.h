@@ -11,7 +11,7 @@
 #include "ros/ros.h"
 
 #include "sensor_msgs/PointCloud.h"
-#include <robot_msgs/Polygon3D.h>
+#include <geometry_msgs/Polygon.h>
 #include <visualization_msgs/Marker.h>
 
 #include "opencv/cxcore.h"

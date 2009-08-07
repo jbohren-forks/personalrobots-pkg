@@ -45,7 +45,7 @@ using std::vector;
 using geometry_msgs::Point;
 using geometry_msgs::Point32;
 using geometry_msgs::PoseStamped;
-using robot_msgs::Polygon3D;
+using geometry_msgs::Polygon;
 
 namespace people_aware_nav {
   MoveBaseConstrained::MoveBaseConstrained(ros::Node& ros_node, tf::TransformListener& tf) : 

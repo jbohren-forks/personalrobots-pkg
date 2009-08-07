@@ -43,7 +43,7 @@
 #include <ros/node.h>
 // ROS messages
 #include <sensor_msgs/PointCloud.h>
-#include <robot_msgs/Polygon3D.h>
+#include <geometry_msgs/Polygon.h>
 #include <mapping_msgs/PolygonalMap.h>
 
 // Sample Consensus
@@ -250,7 +250,7 @@ class SemanticPointAnnotator
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void
-    sortConcaveHull2D (const sensor_msgs::PointCloud &points, const vector<int> &indices, robot_msgs::Polygon3D &poly)
+    sortConcaveHull2D (const sensor_msgs::PointCloud &points, const vector<int> &indices, geometry_msgs::Polygon &poly)
     {
       // Create a tree for these points
       cloud_kdtree::KdTree* tree = new cloud_kdtree::KdTreeANN (points, indices);
@@ -425,7 +425,7 @@ class SemanticPointAnnotator
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void
       computeConcaveHull (const sensor_msgs::PointCloud &points, const vector<int> &indices, const vector<double> &coeff,
-                          const vector<vector<int> > &neighbors, robot_msgs::Polygon3D &poly)
+                          const vector<vector<int> > &neighbors, geometry_msgs::Polygon &poly)
     {
       Eigen::Vector3d u, v;
       cloud_geometry::getCoordinateSystemOnPlane (coeff, u, v);

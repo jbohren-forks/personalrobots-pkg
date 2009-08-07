@@ -30,7 +30,7 @@
 #include <ros/node.h>
 // ROS messages
 #include <sensor_msgs/PointCloud.h>
-#include <robot_msgs/Polygon3D.h>
+#include <geometry_msgs/Polygon.h>
 
 // Cloud kd-tree
 #include <point_cloud_mapping/kdtree/kdtree_ann.h>

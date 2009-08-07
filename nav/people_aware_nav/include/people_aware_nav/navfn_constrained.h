@@ -55,7 +55,7 @@ protected:
   virtual void getCostmap (costmap_2d::Costmap2D& cmap);
 
 private:
-  robot_msgs::Polygon3D forbidden_;
+  geometry_msgs::Polygon forbidden_;
   ros::NodeHandle node_;
   ros::ServiceServer service_;
   ros::Publisher vis_pub_add_;

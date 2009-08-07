@@ -121,7 +121,7 @@ void visualizePlanes2(const sensor_msgs::PointCloud& cloud,
 }
 
 
-void visualizePolygon(const sensor_msgs::PointCloud& cloud,robot_msgs::Polygon3D &polygon, int rgb, int id, ros::Publisher& visualization_pub ) {
+void visualizePolygon(const sensor_msgs::PointCloud& cloud,geometry_msgs::Polygon &polygon, int rgb, int id, ros::Publisher& visualization_pub ) {
   visualization_msgs::Marker marker;
   marker.header.frame_id = cloud.header.frame_id;
   marker.header.stamp = ros::Time((uint64_t)0ULL);

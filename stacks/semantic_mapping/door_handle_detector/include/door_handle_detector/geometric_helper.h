@@ -40,7 +40,7 @@
 #include "ros/node.h" //\todo Switch to node handle API
 
 #include <sensor_msgs/PointCloud.h>
-#include <robot_msgs/Polygon3D.h>
+#include <geometry_msgs/Polygon.h>
 #include <geometry_msgs/Point32.h>
 #include <geometry_msgs/PointStamped.h>
 #include <visualization_msgs/Marker.h>
@@ -191,7 +191,7 @@ void get3DBounds (geometry_msgs::Point32 *p1, geometry_msgs::Point32 *p2, geomet
 
 void getCloudViewPoint (const std::string cloud_frame, geometry_msgs::PointStamped &viewpoint_cloud, const tf::TransformListener *tf);
 
-bool checkDoorEdges (const robot_msgs::Polygon3D &poly, const geometry_msgs::Point32 &z_axis, double min_height, double eps_angle,
+bool checkDoorEdges (const geometry_msgs::Polygon &poly, const geometry_msgs::Point32 &z_axis, double min_height, double eps_angle,
                      double &door_frame1, double &door_frame2);
 
 void selectBestDistributionStatistics (const sensor_msgs::PointCloud &points, const std::vector<int> &indices, int d_idx, std::vector<int> &inliers);

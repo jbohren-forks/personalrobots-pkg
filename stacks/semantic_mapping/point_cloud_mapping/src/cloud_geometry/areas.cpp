@@ -88,7 +88,7 @@ namespace cloud_geometry
       * \param normal the plane normal
       */
     double
-      compute2DPolygonalArea (const robot_msgs::Polygon3D &polygon, const std::vector<double> &normal)
+      compute2DPolygonalArea (const geometry_msgs::Polygon &polygon, const std::vector<double> &normal)
     {
       int k0, k1, k2;
 
@@ -118,7 +118,7 @@ namespace cloud_geometry
     }
 
 
-    bool compute2DPolygonNormal(const robot_msgs::Polygon3D &poly, std::vector<double> &normal)
+    bool compute2DPolygonNormal(const geometry_msgs::Polygon &poly, std::vector<double> &normal)
     {
       int k0,k1,k2;
       int sz=poly.points.size();
@@ -159,7 +159,7 @@ namespace cloud_geometry
       * \param normal the plane normal
       */
     double
-      compute2DPolygonalArea (const robot_msgs::Polygon3D &polygon)
+      compute2DPolygonalArea (const geometry_msgs::Polygon &polygon)
     {
       std::vector<double> normal;
       if(!compute2DPolygonNormal(polygon,normal))
@@ -178,7 +178,7 @@ namespace cloud_geometry
       */
     void
       convexHull2D (const sensor_msgs::PointCloud &points, const std::vector<int> &indices, const std::vector<double> &coeff,
-                    robot_msgs::Polygon3D &hull)
+                    geometry_msgs::Polygon &hull)
     {
       // Copy the point data to a local Eigen::Matrix. This is slow and should be replaced by extending geometry_msgs::Point32
       // to allow []/() accessors.
@@ -403,7 +403,7 @@ namespace cloud_geometry
       * \param polygon a polygon
       */
     bool
-      isPointIn2DPolygon (const geometry_msgs::Point32 &point, const robot_msgs::Polygon3D &polygon)
+      isPointIn2DPolygon (const geometry_msgs::Point32 &point, const geometry_msgs::Polygon &polygon)
     {
       bool in_poly = false;
       double x1, x2, y1, y2;

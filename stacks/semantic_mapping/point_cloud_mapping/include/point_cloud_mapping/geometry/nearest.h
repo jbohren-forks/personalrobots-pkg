@@ -37,7 +37,7 @@
 #include <sensor_msgs/PointCloud.h>
 #include <geometry_msgs/PointStamped.h>
 #include <geometry_msgs/Point32.h>
-#include <robot_msgs/Polygon3D.h>
+#include <geometry_msgs/Polygon.h>
 
 #include <Eigen/Core>
 #include <Eigen/QR>
@@ -77,7 +77,7 @@ namespace cloud_geometry
       * \param centroid the output centroid
       */
     inline void
-      computeCentroid (const robot_msgs::Polygon3D &poly, geometry_msgs::Point32 &centroid)
+      computeCentroid (const geometry_msgs::Polygon &poly, geometry_msgs::Point32 &centroid)
     {
       centroid.x = centroid.y = centroid.z = 0;
       // For each point in the cloud

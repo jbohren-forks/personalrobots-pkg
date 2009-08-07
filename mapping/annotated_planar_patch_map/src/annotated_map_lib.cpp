@@ -59,7 +59,7 @@ void annotated_map_lib::transformAnyObject(const std::string & target_frame,
   
   for(unsigned int iPoly=0;iPoly<num_polygons;iPoly++)  
   {    
-    const robot_msgs::Polygon3D* p=&polymapIn.polygons[iPoly];
+    const geometry_msgs::Polygon* p=&polymapIn.polygons[iPoly];
     
     unsigned int length = p->get_points_size();
     
@@ -77,7 +77,7 @@ void annotated_map_lib::transformAnyObject(const std::string & target_frame,
     
     boost::numeric::ublas::matrix<double> matOut = prod(transform, matIn);
     
-    robot_msgs::Polygon3D *polyOut;
+    geometry_msgs::Polygon *polyOut;
     if (!bSame)
     {
       polyOut = &(polymapOut.polygons[iPoly]);
@@ -304,7 +304,7 @@ double annotated_map_lib::getMapAreaWithTagsMatchAny(const annotated_map_msgs::T
 
 
  
-geometry_msgs::Point32 annotated_map_lib::computeMean (const robot_msgs::Polygon3D& poly)
+geometry_msgs::Point32 annotated_map_lib::computeMean (const geometry_msgs::Polygon& poly)
 {
   geometry_msgs::Point32 mean;
   mean.x=0;mean.y=0;mean.z=0;
