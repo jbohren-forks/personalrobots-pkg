@@ -39,6 +39,9 @@
 
 #ifndef PLUGINLIB_PLUGIN_LOADER_IMP_H_
 #define PLUGINLIB_PLUGIN_LOADER_IMP_H_
+
+#include <stdexcept>
+
 namespace pluginlib {
   template <class T>
   PluginLoader<T>::PluginLoader(std::string package, std::string plugin_type)
@@ -237,10 +240,16 @@ namespace pluginlib {
         //\todo THROW HERE
         std::cerr <<"Failed to auto load library" << std::endl;
         return NULL;
+        throw std::runtime_error("Failed to auto load library for plugin " + name + ".");
       }
 
     //\todo rethrow with non poco Exceptions
+    try{
     return poco_class_loader_.create(getPluginClass(name));
+    }
+    catch(const Poco::RuntimeException& ex){
+      throw std::runtime_error(ex.what());
+    }
   } 
 
   template <class T>
