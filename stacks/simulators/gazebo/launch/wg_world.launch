@@ -11,6 +11,6 @@
 
   <!-- wg walls-->
   <param name="wg_walls"      textfile="$(find gazebo_worlds)/objects/wg_walls.model" />
-  <node pkg="gazebo_plugin" type="xml2factory" args="wg_walls -25.65 -25.65 0 0 0 0 wg_walls" respawn="false" output="screen" />
+  <node pkg="gazebo_tools" type="xml2factory" args="wg_walls -25.65 -25.65 0 0 0 0 wg_walls" respawn="false" output="screen" />
 
 </launch>
