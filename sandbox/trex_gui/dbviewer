@@ -37,18 +37,43 @@ rule_src = {}
 prop_windows = {}
 srccode_windows = {}
 search_window = None
-step_window = None
+control_window = None
 window = {}
 
 # Graph structures
-graph = GvGen() 
+graph = None
 
 # Global status
-output_path = ""
+log_path = ""
+data_path = ""
 tick = 0
+progress = None
 
 # Precompiled regex
 number_bound_regex = re.compile("\[*([^\]]+)\]*")
+
+##############################################################################
+# ProgressTracker
+#   This class tracks the prorgess of the currently active task.
+##############################################################################
+
+class ProgressTracker():
+  def __init__(self):
+    self.total_steps = 0.0
+    self.current_step = 0.0
+
+  def reset(self):
+    self.current_step = 0.0
+
+  def total(self,total_steps):
+    self.total_steps = float(total_steps)
+
+  def step(self):
+    self.current_step = self.current_step + 1.0
+
+  def status(self):
+    return self.current_step/self.total_steps
+
 
 ##############################################################################
 # MyDotWindow
@@ -58,7 +83,7 @@ number_bound_regex = re.compile("\[*([^\]]+)\]*")
 class MyDotWindow(xdot.DotWindow):
   def __init__(self):
     xdot.DotWindow.__init__(self)
-    self.set_title("EUROPA DbViewer")
+    self.set_title("TREX DbViewer")
     self.widget.connect('clicked', self.on_node_clicked)
     self.set_size_request(1500,500)
     self.set_position(gtk.WIN_POS_CENTER)
@@ -348,72 +373,234 @@ class SearchWindow(gtk.Window):
     dotfile.close()
 
 ##############################################################################
-# StepWindow
+# ControlWindow
 #   This window provides a user with controls to step to any tick and re-run
 #   the data loader.
 ##############################################################################
 
-class StepWindow(gtk.Window):
+class ControlWindow(gtk.Window):
   def __init__(self):
-    super(StepWindow, self).__init__()
-    self.set_title("Step")
-    self.set_size_request(400, 50)
-    #self.set_position(gtk.WIN_POS_CENTER)
+    super(ControlWindow, self).__init__()
+    self.set_title("Assembly Navigator Control")
+    #self.set_size_request(300, 200)
+    self.set_position(gtk.WIN_POS_CENTER)
+
+    self.reactor_paths = []
+    self.ticks = []
 
     vbox = gtk.VBox(False, 8)
 
     ################################################
+    source_frame = gtk.Frame("Source: ")
+    source_table = gtk.Table(2,2,homogeneous=False)
+
+    self.path_chooser = gtk.Entry()
+    self.path_chooser.connect("changed",self.on_path_change)
+    path_label = gtk.Label("Path: ")
+
+    halign = gtk.Alignment(1,0.5,0,0.5)
+    halign.add(path_label)
+
+    source_table.attach(halign, 0,1,0,1, gtk.FILL, gtk.FILL,0,0)
+    source_table.attach(self.path_chooser, 1,2,0,1, gtk.FILL|gtk.EXPAND, gtk.SHRINK)
+
+    self.reactor_chooser = gtk.combo_box_new_text()
+
+    reactor_label = gtk.Label("Reactor: ")
+
+    source_table.attach(reactor_label, 0,1,1,2, gtk.SHRINK, gtk.SHRINK)
+    source_table.attach(self.reactor_chooser, 1,2,1,2, gtk.FILL|gtk.EXPAND, gtk.SHRINK)
+
+    padding = gtk.Alignment(1.0,0.5,1,1)
+    padding.set_padding(4,4,4,4)
+    padding.add(source_table)
+
+    source_frame.add(padding)
+    vbox.pack_start(source_frame, False, False, 4)
+
+    ################################################
+
+    tick_frame = gtk.Frame("Tick Control")
+
     self.tick_entry = gtk.Entry()
     self.tick_entry.set_activates_default(True)
     self.tick_entry.set_text(str(tick))
-    go_but = gtk.Button("Go!")
-    go_but.set_flags(gtk.CAN_DEFAULT)
-    self.set_default(go_but)
-    go_but.connect("clicked",self.go_tick)
+    self.go_but = gtk.Button("go:")
+    self.go_but.set_flags(gtk.CAN_DEFAULT)
+    self.set_default(self.go_but)
+    self.go_but.connect("clicked",self.go_tick)
 
-    search_regex_but = gtk.Button("REGEX")
-    fw_but = gtk.Button("Forward >>")
-    bk_but = gtk.Button("<< Back")
+    self.en_but = gtk.Button(">|")
+    self.fw_but = gtk.Button(">")
+    self.bk_but = gtk.Button("<")
+    self.st_but = gtk.Button("|<")
 
-    fw_but.connect("clicked",self.step_forward)
-    bk_but.connect("clicked",self.step_back)
+    self.latest_but = gtk.ToggleButton("Latest")
+
+    self.st_but.connect("clicked",self.go_first)
+    self.fw_but.connect("clicked",self.step_forward)
+    self.bk_but.connect("clicked",self.step_back)
+    self.en_but.connect("clicked",self.go_last)
     
     search_hbox = gtk.HBox(False,4)
 
-    search_hbox.pack_end(fw_but, False, False, 0)
-    search_hbox.pack_end(bk_but, False, False, 0)
-    search_hbox.pack_end(go_but, False, False, 0)
+    search_hbox.pack_end(self.latest_but, False, False, 0)
+    search_hbox.pack_end(self.en_but, False, False, 0)
+    search_hbox.pack_end(self.fw_but, False, False, 0)
     search_hbox.pack_end(self.tick_entry, True, True, 0)
+    search_hbox.pack_end(self.go_but, False, False, 0)
+    search_hbox.pack_end(self.bk_but, False, False, 0)
+    search_hbox.pack_end(self.st_but, False, False, 0)
 
-    vbox.pack_start(search_hbox, False, False, 4)
+    padding = gtk.Alignment(1.0,0.5,1,1)
+    padding.set_padding(4,4,4,4)
+    padding.add(search_hbox)
+
+    tick_frame.add(padding)
+    vbox.pack_start(tick_frame, False, False, 4)
     
     ################################################
 
+    self.statusbar = gtk.Statusbar()
+    vbox.pack_end(self.statusbar, False, False, 0)
+
     self.add(vbox)
 
+    self.load_log_path()
+    self.load_data_path()
+    self.load_ticks_path()
+
+    self.load(self.ticks[-1])
+
+    self.reactor_chooser.connect("changed",self.on_reactor_change)
     self.connect("destroy", self.on_destroy)
+    self.connect("enter_notify_event", self.load_ticks_path)
     self.show_all()
 
   def on_destroy(self,widget):
     # If we don't make a new one here, you can't anywhere else
-    search_window = StepWindow()
+    control_window = ControlWindow()
+
+  def load_log_path(self):
+    global log_path
+
+    self.path_chooser.set_text(log_path)
+
+    # Try to load the reactors at the given log path
+    try:
+      assembly_dumps_path = os.path.join(log_path,"assembly_dumps")
+
+      for p in self.reactor_paths:
+	self.reactor_chooser.remove_text(0)
+
+      self.reactor_paths = os.listdir(assembly_dumps_path)
+      for reactor_name in self.reactor_paths:
+	self.reactor_chooser.append_text(reactor_name)
+
+      self.reactor_chooser.set_active(0)
+    except:
+      self.statusbar.push(0,"Failed to load reactor list from log path.")
+
+    # Try to load the available ticks
+    try:
+      self.load_ticks_path()
+    except:
+      self.statusbar.push(0,"Failed to load any ticks from log path.")
+
+
+  def load_data_path(self):
+    global data_path
+    try:
+      data_path = os.path.join(log_path,"assembly_dumps",self.reactor_chooser.get_active_text())
+    except:
+      pass
+
+  def load_ticks_path(self, widget=None, event = None):
+    tick_paths = os.listdir(data_path)
+    self.ticks = [int(os.path.basename(s)[4:]) for s in tick_paths if s[0:4] == "tick"]
+    self.ticks.sort()
+    self.update_available_buttons()
+
+  def on_path_change(self,widget):
+    global log_path
+    log_path = self.path_chooser.get_text()
+    self.load_log_path()
+
+  def on_reactor_change(self,widget):
+    self.load_data_path()
+    self.load(tick)
+
+  def tick_increment(self, index_inc):
+    new_tick = 0
+    try:
+      cur_index = self.ticks.index(tick)
+      new_tick = self.ticks[cur_index + index_inc]
+    except:
+      self.statusbar.push(0,"Tick %d not available." % (new_tick))
+
+    return new_tick
+
+  def go_first(self, widget):
+    self.load_ticks_path()
+    self.load(self.ticks[0])
+
+  def go_last(self, widget):
+    self.load_ticks_path()
+    self.load(self.ticks[-1])
 
   def go_tick(self, widget):
-    global tick
-    tick = int(self.tick_entry.get_text())
-    run()
+    # Reload the ticks path
+    self.load_ticks_path()
+    self.load(self.tick_entry.get_text())
 
   def step_forward(self, widget):
-    global tick
-    tick = tick + 1
-    self.tick_entry.set_text(str(tick))
-    run()
+    self.load_ticks_path()
+    self.load(self.tick_increment(1))
 
   def step_back(self, widget):
-    global tick
-    tick = tick - 1
+    self.load_ticks_path()
+    self.load(self.tick_increment(-1))
+
+  def update_text(self):
     self.tick_entry.set_text(str(tick))
-    run()
+
+  def load(self,new_tick):
+    global tick
+
+    try:
+      new_tick = int(new_tick)
+
+      # Check if this tick exists
+      if new_tick not in self.ticks:
+	self.statusbar.push(0,"Tick %d not available." % (new_tick))
+	return
+
+      tick = new_tick
+      self.update_text()
+      run()
+      self.statusbar.push(0,"Loaded Tick [%d] from \"%s\"" % (tick,self.reactor_chooser.get_active_text()))
+    except ValueError:
+      self.statusbar.push(0,"Invalid tick entry!")
+    except:
+      self.statusbar.push(0,"Could not load Tick [%d] from \"%s\"" % (tick,self.reactor_chooser.get_active_text()))
+
+  def update_available_buttons(self):
+    try:
+      if self.ticks.index(tick) == 0:
+	self.bk_but.set_sensitive(False)
+	self.st_but.set_sensitive(False)
+      else:
+	self.bk_but.set_sensitive(True)
+	self.st_but.set_sensitive(True)
+
+      if self.ticks.index(tick) == len(self.ticks)-1:
+	self.en_but.set_sensitive(False) 
+	self.fw_but.set_sensitive(False)
+      else:
+	self.en_but.set_sensitive(True) 
+	self.fw_but.set_sensitive(True)
+    except:
+      pass
 
 ##############################################################################
 # Model Classes
@@ -520,9 +707,12 @@ def lolight_token(tid):
     graph.styleApply("InactiveToken", tokens[tid].node)
 
   start_bounds = number_bound_regex.findall(vars[tokens[tid].start_key].values)
-  bounds = start_bounds[0].split(" ")
+  start_bounds = start_bounds[0].split(" ")
 
-  if float(bounds[0]) > tick and (not len(bounds) == 1 and float(bounds[1]) > tick):
+  end_bounds = number_bound_regex.findall(vars[tokens[tid].end_key].values)
+  end_bounds = end_bounds[0].split(" ")
+
+  if len(start_bounds) != 1 and float(start_bounds[1]) > tick:
     graph.styleApply("PlannedToken", tokens[tid].node)
 
 def hilight_rule(rid):
@@ -659,7 +849,7 @@ def define_graph_styles():
 
 ##############################################################################
 # load_data()
-#   This reads in the data from the global output_path and tick. It populates
+#   This reads in the data from the global data_path and tick. It populates
 #   the model dictionaries.
 ##############################################################################
 
@@ -677,10 +867,10 @@ def load_data():
   rule_src = {}
 
   # Generate the step path
-  step_path = os.path.join(output_path, "tick%s" % tick, "tick%s" % tick)
+  step_path = os.path.join(data_path, "tick%s" % tick, "tick%s" % tick)
 
   # Read in rule source code paths
-  rule_src_reader = csv.reader(open(os.path.join(output_path,"rules")),delimiter='\t')
+  rule_src_reader = csv.reader(open(os.path.join(data_path,"rules")),delimiter='\t')
 
   line_regex = re.compile("^(.+)\,([0-9]+)$")
   for row in rule_src_reader:
@@ -761,23 +951,33 @@ def load_data():
 #   This function can be used repeatedly to reload different datasets.
 ##############################################################################
 def run():
+  # set task progress
+  global progress
+  progress.reset()
+  progress.total(5)
+
   # load data
   load_data()
+  progress.step()
 
   # Create a new graph with GvGen
   global graph
   graph = GvGen()
+  progress.step()
 
   # Create graph styles
   define_graph_styles()
+  progress.step()
 
   # Populate graph
   dotfile = StringIO.StringIO()
   populate_graph(dotfile)
+  progress.step()
 
   # Pass the graph to XDot
   window.set_dotcode(dotfile.getvalue())
   dotfile.close()
+  progress.step()
 
 ##############################################################################
 # main()
@@ -785,31 +985,45 @@ def run():
 #   line arguments.
 ##############################################################################
 def main():
-  global output_path
+  global log_path
   global tick
 
+  usagestr = """Usage: dbviewer path [tick]
+    path: a path to a TREX log file
+    tick: a tick during which the assemblies were dumped to disk"""
+
+  # Check arguments
+  if len(sys.argv) < 2:
+    print usagestr
+    return
+
   # Read in arguments
-  output_path = sys.argv[1]
-  tick = int(sys.argv[2])
+  log_path = sys.argv[1]
+
+  if len(sys.argv) == 3:
+    tick = int(sys.argv[2])
+  else:
+    tick = 0
+
+  # Spawn the progress tracked
+  global progress
+  progress = ProgressTracker()
 
   # Spawn a search window
   global search_window
   search_window = SearchWindow()
 
-  # Spawn a step window
-  global step_window
-  step_window = StepWindow()
-
   # Spawn the dot window
   global window
   window = MyDotWindow()
   window.set_filter('dot')
+  window.connect('destroy', gtk.main_quit)
 
-  # Run the loader
-  run()
+  # Spawn a control window
+  global control_window
+  control_window = ControlWindow()
 
   # Run gtk
-  window.connect('destroy', gtk.main_quit)
   gtk.main()
 
 if __name__ == '__main__':
