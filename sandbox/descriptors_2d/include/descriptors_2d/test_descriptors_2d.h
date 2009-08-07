@@ -85,17 +85,22 @@ bool compareResults(const Vector<float>& v1, const Vector<float>& v2) {
   double linf = 0;
 
   double sum_squares = 0;
+  double mag1 = 0, mag2 = 0;
   for(size_t i=0; i<v1.size(); ++i) {
     if(fabs(v1[i] - v2[i]) > linf) 
       linf = fabs(v1[i] - v2[i]);
     sum_squares += pow(v1[i] - v2[i], 2);
+    mag1 += pow(v1[i], 2);
+    mag2 += pow(v2[i], 2);
   }
   l2 = sqrt(sum_squares);
+  mag1 = sqrt(mag1);
+  mag2 = sqrt(mag2);
 
+  cout << "linf: " << linf << ", l2 distance: " << l2 << ".  Magnitudes of features: " << mag1 << ", " << mag2 << ".  MAX_L2_DIST = " << MAX_L2_DIST << " and MAX_INF_DIST = " << MAX_INF_DIST << endl;
   if(linf < MAX_INF_DIST && l2 < MAX_L2_DIST)
     return true;
   else {
-    cout << "linf: " << linf << ", l2: " << l2 << ".  MAX_L2_DIST = " << MAX_L2_DIST << " and MAX_INF_DIST = " << MAX_INF_DIST << endl;
     return false;
   }
 }

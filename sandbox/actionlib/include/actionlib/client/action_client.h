@@ -123,7 +123,6 @@ public:
     ActionGoal cancel_msg;
     cancel_msg.goal_id.stamp = time;
     cancel_msg.goal_id.id = ros::Time(0,0);
-    cancel_msg.request_type.type = RequestType::PREEMPT_REQUEST;
     goal_pub_.publish(cancel_msg);
   }
 

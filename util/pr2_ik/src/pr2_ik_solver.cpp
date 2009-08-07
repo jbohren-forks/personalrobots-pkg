@@ -123,8 +123,8 @@ PR2IKSolver::PR2IKSolver():ChainIkSolverPos()
       ROS_DEBUG("Joint axis: %d, %f, %f, %f",6-num_joints,joint->axis_[0],joint->axis_[1],joint->axis_[2]);
       if(joint->type_ != mechanism::JOINT_CONTINUOUS)
       {
-        min_angles.push_back(joint->joint_limit_min_);
-        max_angles.push_back(joint->joint_limit_max_);
+        min_angles.push_back(joint->joint_limit_min_-joint->safety_length_min_);
+        max_angles.push_back(joint->joint_limit_max_+joint->safety_length_max_);
       }
       else
       {

@@ -40,7 +40,8 @@
 
 #include <boost/thread/thread.hpp>
 #include <door_msgs/Door.h>
-#include <ros/node.h>
+// #include <ros/node.h>
+#include <ros/ros.h>
 #include <robot_actions/action_client.h>
 #include <pr2_robot_actions/Pose2D.h>
 #include <pr2_robot_actions/DoorActionState.h>
@@ -64,9 +65,10 @@ using namespace door_functions;
 int
   main (int argc, char **argv)
 {
-  ros::init(argc, argv);
-
-  ros::Node node("test_planner");
+/*  ros::init(argc, argv);
+  ros::Node node("test_planner");*/
+	ros::init(argc, argv,"test_planner");
+	
   boost::thread* thread;
 
   door_msgs::Door door;
@@ -81,9 +83,9 @@ int
   door.travel_dir.x = 1.0;
   door.travel_dir.y = 0.0;
   door.travel_dir.z = 0.0;
-  door.rot_dir = door_msgs::Door::ROT_DIR_COUNTERCLOCKWISE;
-//  door.rot_dir = door_msgs::Door::ROT_DIR_CLOCKWISE;
-  door.hinge = door_msgs::Door::HINGE_P1;
+//  door.rot_dir = door_msgs::Door::ROT_DIR_COUNTERCLOCKWISE;
+  door.rot_dir = door_msgs::Door::ROT_DIR_CLOCKWISE;
+  door.hinge = door_msgs::Door::HINGE_P2;
   door.header.frame_id = "base_footprint";
     
   pr2_robot_actions::SwitchControllers switchlist;
@@ -238,7 +240,7 @@ int
 
 
     if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
-    if (release_handle.execute(door, door, timeout_long) != robot_actions::SUCCESS) return -1;
+    if (release_handle.execute(empty, empty, timeout_long) != robot_actions::SUCCESS) return -1;
   }
 
   ROS_INFO("Door angle is now : %f",getDoorAngle(tmp_door));
@@ -263,21 +265,32 @@ int
     int32_t feedback_move_arm;
     pr2_robot_actions::MoveArmGoal goal_move_arm;
     pr2_robot_actions::MoveArmState state;
-    
+
     goal_move_arm.goal_constraints.set_pose_constraint_size(1);
 
     goal_move_arm.goal_constraints.pose_constraint[0].pose = handle_msg;
     goal_move_arm.goal_constraints.pose_constraint[0].pose.header.stamp = ros::Time::now();
     goal_move_arm.goal_constraints.pose_constraint[0].pose.header.frame_id = "torso_lift_link";
-    
-    goal_move_arm.goal_constraints.pose_constraint[0].link_name = "r_wrist_roll_link";
-    goal_move_arm.goal_constraints.pose_constraint[0].position_distance = 0.01;
-    goal_move_arm.goal_constraints.pose_constraint[0].orientation_distance = 0.01;
-    goal_move_arm.goal_constraints.pose_constraint[0].orientation_importance = 0.1;
-    goal_move_arm.goal_constraints.pose_constraint[0].type = motion_planning_msgs::PoseConstraint::POSITION_XYZ + 
-      motion_planning_msgs::PoseConstraint::ORIENTATION_RPY;    
-    if(move_arm.execute(goal_move_arm,feedback_move_arm,timeout_long) != robot_actions::SUCCESS) return -1;    
 
+    goal_move_arm.goal_constraints.pose_constraint[0].link_name = "r_wrist_roll_link";
+		goal_move_arm.goal_constraints.pose_constraint[0].position_tolerance_above.x = 0.005;
+		goal_move_arm.goal_constraints.pose_constraint[0].position_tolerance_below.x = 0.005;
+		goal_move_arm.goal_constraints.pose_constraint[0].position_tolerance_above.y = 0.005;
+		goal_move_arm.goal_constraints.pose_constraint[0].position_tolerance_below.y = 0.005;
+		goal_move_arm.goal_constraints.pose_constraint[0].position_tolerance_above.z = 0.005;
+		goal_move_arm.goal_constraints.pose_constraint[0].position_tolerance_below.z = 0.005;
+
+		goal_move_arm.goal_constraints.pose_constraint[0].orientation_tolerance_above.x = 0.01;
+		goal_move_arm.goal_constraints.pose_constraint[0].orientation_tolerance_below.x = 0.01;
+		goal_move_arm.goal_constraints.pose_constraint[0].orientation_tolerance_above.y = 0.01;
+		goal_move_arm.goal_constraints.pose_constraint[0].orientation_tolerance_below.y = 0.01;
+		goal_move_arm.goal_constraints.pose_constraint[0].orientation_tolerance_above.z = 0.01;
+		goal_move_arm.goal_constraints.pose_constraint[0].orientation_tolerance_below.z = 0.01;
+
+    goal_move_arm.goal_constraints.pose_constraint[0].orientation_importance = 0.1;
+		goal_move_arm.goal_constraints.pose_constraint[0].type = motion_planning_msgs::PoseConstraint::POSITION_X + motion_planning_msgs::PoseConstraint::POSITION_Y + motion_planning_msgs::PoseConstraint::POSITION_Z + 
+				+ motion_planning_msgs::PoseConstraint::ORIENTATION_R + motion_planning_msgs::PoseConstraint::ORIENTATION_P + motion_planning_msgs::PoseConstraint::ORIENTATION_Y;   
+    if(move_arm.execute(goal_move_arm,feedback_move_arm,timeout_long) != robot_actions::SUCCESS) return -1;    
 
     // grasp handle
     switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();

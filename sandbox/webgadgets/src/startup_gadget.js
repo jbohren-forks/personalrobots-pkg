@@ -154,6 +154,10 @@ var ROSStartupGadget = Class.create(ROSGadget, {
   
   stop: function()
   {
+    this.batteryTopic.unsubscribe();
+    this.plugTopic.unsubscribe();
+    this.estopTopic.unsubscribe();
+
     this.pump.sendAJAX('/ros/shutdown', this, this.stopped);
     this.run = false;
 

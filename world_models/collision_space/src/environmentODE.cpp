@@ -511,16 +511,58 @@ namespace collision_space
 				 &contact[0].geom, sizeof(dContact));
 	    if (numc)
 	    {
-		cdata->collides = true;
 		for (int i = 0 ; i < numc ; ++i)
 		{
 		    if (cdata->max_contacts == 0 || cdata->contacts->size() < cdata->max_contacts)
 		    {
+			btVector3 pos(contact[i].geom.pos[0], contact[i].geom.pos[1], contact[i].geom.pos[2]);
+			
+			if (cdata->allowed)
+			{
+			    dSpaceID s1 = dGeomGetSpace(o1);
+			    dSpaceID s2 = dGeomGetSpace(o2);
+			    
+			    bool b1 = s1 == cdata->selfSpace;
+			    bool b2 = s2 == cdata->selfSpace;
+			    
+			    if (b1 != b2)
+			    {
+				std::string link_name;
+				if (b1)
+				{
+				    EnvironmentModelODE::kGeom* kg1 = reinterpret_cast<EnvironmentModelODE::kGeom*>(dGeomGetData(o1));
+				    link_name = kg1->link->name;
+				}
+				else
+				{
+				    EnvironmentModelODE::kGeom* kg2 = reinterpret_cast<EnvironmentModelODE::kGeom*>(dGeomGetData(o2));
+				    link_name = kg2->link->name;
+				}
+				
+				bool allow = false;
+				for (unsigned int j = 0 ; !allow && j < cdata->allowed->size() ; ++j)
+				{
+				    if (cdata->allowed->at(j).bound->containsPoint(pos) && cdata->allowed->at(j).depth < fabs(contact[i].geom.depth))
+				    {
+					for (unsigned int k = 0 ; k < cdata->allowed->at(j).links.size() ; ++k)
+					    if (cdata->allowed->at(j).links[k] == link_name)
+					    {
+						allow = true;
+						break;
+					    }					
+				    }
+				}
+				
+				if (allow)
+				    continue;
+			    }
+			}
+			
+			cdata->collides = true;
+
 			collision_space::EnvironmentModelODE::Contact add;
 			
-			add.pos.setX(contact[i].geom.pos[0]);
-			add.pos.setY(contact[i].geom.pos[1]);
-			add.pos.setZ(contact[i].geom.pos[2]);
+			add.pos = pos;
 			
 			add.normal.setX(contact[i].geom.normal[0]);
 			add.normal.setY(contact[i].geom.normal[1]);
@@ -555,11 +597,14 @@ namespace collision_space
     }
 }
 
-bool collision_space::EnvironmentModelODE::getCollisionContacts(std::vector<Contact> &contacts, unsigned int max_count)
+bool collision_space::EnvironmentModelODE::getCollisionContacts(const std::vector<AllowedContact> &allowedContacts, std::vector<Contact> &contacts, unsigned int max_count)
 {
     CollisionData cdata;
     cdata.contacts = &contacts;
     cdata.max_contacts = max_count;
+    if (!allowedContacts.empty())
+	cdata.allowed = &allowedContacts;
+    cdata.selfSpace = m_modelGeom.space;
     contacts.clear();
     checkThreadInit();
     testCollision(&cdata);
@@ -569,6 +614,7 @@ bool collision_space::EnvironmentModelODE::getCollisionContacts(std::vector<Cont
 bool collision_space::EnvironmentModelODE::isCollision(void)
 {
     CollisionData cdata;
+    cdata.selfSpace = m_modelGeom.space;
     checkThreadInit();
     testCollision(&cdata);
     return cdata.collides;
@@ -576,7 +622,8 @@ bool collision_space::EnvironmentModelODE::isCollision(void)
 
 bool collision_space::EnvironmentModelODE::isSelfCollision(void)
 {
-    CollisionData cdata;
+    CollisionData cdata;    
+    cdata.selfSpace = m_modelGeom.space;
     checkThreadInit();
     testSelfCollision(&cdata);
     return cdata.collides;
@@ -585,7 +632,6 @@ bool collision_space::EnvironmentModelODE::isSelfCollision(void)
 void collision_space::EnvironmentModelODE::testSelfCollision(CollisionData *cdata)
 {     
     cdata->selfCollisionTest = &m_selfCollisionTest;
-    cdata->selfSpace = m_modelGeom.space;
     dSpaceCollide(m_modelGeom.space, cdata, nearCallbackFn);
 }
 

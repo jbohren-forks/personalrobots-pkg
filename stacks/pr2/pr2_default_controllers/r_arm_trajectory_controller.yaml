@@ -13,8 +13,8 @@ r_shoulder_pan_joint:
 r_shoulder_lift_joint:
   joint: r_shoulder_lift_joint
   p: 70.0
-  d: 20.0
-  i: 700.0
+  d: 30.0
+  i: 100.0
   i_clamp: 5.0
   goal_reached_threshold: 0.01
 

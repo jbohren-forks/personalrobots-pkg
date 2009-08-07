@@ -9,6 +9,8 @@
   <depend package="roslib" />
   <depend package="robot_msgs" />
   <rosdep name="python-pygame" />
+  <rosdep name="festival" />
+  <rosdep name="festvox-kallpc16k" />
   <export>
     <cpp cflags="-I${prefix}/msg/cpp" />
   </export>

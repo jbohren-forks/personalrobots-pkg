@@ -297,10 +297,10 @@ int RandomField::saveNodeFeatures(string filename) const
 
     // [features]
     const boost::shared_array<const float> curr_feats = curr_node->getFeatureVals();
-    for (unsigned int i = 0 ; i < curr_node->getNumberFeatureVals() ; i++)
+    for (unsigned int feature_idx = 0 ; feature_idx < curr_node->getNumberFeatureVals() ; feature_idx++)
     {
-      file_out << " " << curr_feats[i];
-
+      // TODO set precision
+      file_out << " " << curr_feats[feature_idx];
     }
     file_out << endl;
   }
@@ -314,11 +314,11 @@ int RandomField::saveNodeFeatures(string filename) const
 int RandomField::saveCliqueFeatures(string basename) const
 {
   const unsigned int nbr_clique_sets = clique_sets_.size();
-  for (unsigned int i = 0 ; i < nbr_clique_sets ; i++)
+  for (unsigned int cs_idx = 0 ; cs_idx < nbr_clique_sets ; cs_idx++)
   {
     // Generate filename for current clique set's features
     stringstream ss_curr_filename;
-    ss_curr_filename << basename << ".cs_" << i << "_features";
+    ss_curr_filename << basename << ".cs_" << cs_idx << "_features";
     string curr_filename = ss_curr_filename.str();
 
     // Open file
@@ -332,7 +332,7 @@ int RandomField::saveCliqueFeatures(string basename) const
     file_out << "# File format: x y z clique_set_idx clique_id nbr_features [features]" << endl;
 
     // Write to file: x y z clique_set_idx clique_id nbr_features [features]
-    const map<unsigned int, Clique*>& cliques = clique_sets_[i];
+    const map<unsigned int, Clique*>& cliques = clique_sets_[cs_idx];
     for (map<unsigned int, Clique*>::const_iterator iter_cliques = cliques.begin() ; iter_cliques
         != cliques.end() ; iter_cliques++)
     {
@@ -340,15 +340,15 @@ int RandomField::saveCliqueFeatures(string basename) const
       const RandomField::Clique* curr_clique = iter_cliques->second;
 
       // x y z clique_set_idx clique_id nbr_features
-      file_out << curr_clique->getX() << " " << curr_clique->getY() << " " << curr_clique->getZ() << " " << i
-          << " " << curr_clique_id << " " << curr_clique->getNumberFeatureVals();
+      file_out << curr_clique->getX() << " " << curr_clique->getY() << " " << curr_clique->getZ() << " "
+          << cs_idx << " " << curr_clique_id << " " << curr_clique->getNumberFeatureVals();
 
       // [features]
       const boost::shared_array<const float> curr_feats = curr_clique->getFeatureVals();
-      for (unsigned int i = 0 ; i < curr_clique->getNumberFeatureVals() ; i++)
+      for (unsigned int feature_idx = 0 ; feature_idx < curr_clique->getNumberFeatureVals() ; feature_idx++)
       {
-        file_out << " " << curr_feats[i];
-
+        // TODO set precision
+        file_out << " " << curr_feats[feature_idx];
       }
       file_out << endl;
     }
@@ -502,10 +502,10 @@ int RandomField::loadRandomField(string basename)
     }
     boost::shared_array<const float> const_feature_vals(static_cast<const float*> (feature_vals));
 
-    Node* new_node = new Node(node_id, node_label);
-    new_node->setXYZ(x, y, z);
-    new_node->setFeatures(const_feature_vals, nbr_feature_vals);
-    rf_nodes_[node_id] = new_node;
+    if (createNode(node_id, const_feature_vals, nbr_feature_vals, node_label, x, y, z) == NULL)
+    {
+      abort();
+    }
   }
   file_node_features.close();
 
@@ -594,7 +594,7 @@ int RandomField::loadRandomField(string basename)
     }
 
     // Iterate over each clique in the clique-set
-    for (unsigned int i = 0 ; i < clique_sets_[cs_idx].size() ; i++)
+    for (unsigned int clique_index = 0 ; clique_index < clique_sets_[cs_idx].size() ; clique_index++)
     {
       unsigned int read_cs_idx2 = 0;
       unsigned int clique_id = 0;
@@ -616,7 +616,7 @@ int RandomField::loadRandomField(string basename)
 
       // read the node ids contained in each clique
       Clique* curr_clique = clique_sets_[cs_idx][clique_id];
-      for (unsigned int j = 0 ; j < clique_order ; j++)
+      for (unsigned int node_index = 0 ; node_index < clique_order ; node_index++)
       {
         unsigned int node_id = 0;
         file_rf >> node_id;

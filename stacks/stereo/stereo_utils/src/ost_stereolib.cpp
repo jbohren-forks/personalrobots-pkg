@@ -707,5 +707,3 @@ ost_do_stereo_sparse(uint8_t *refpat, uint8_t *rim, // input feature images
   v = (float)(dlen-ind-1) + (p-n)/(2*(p+n-2*c));
   return (int)(0.5 + 16*v);
 }
-
-

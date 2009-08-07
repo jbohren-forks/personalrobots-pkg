@@ -1,0 +1,121 @@
+2008-02-25  Sebastien Tricaud <toady@inl.fr>
+
+	* gvgen.py: * Removed deprecated functions for GvGlue
+		    * Add version banner in generated dot
+		    * Have smart mode working the way I wanted to
+
+	* Release 0.9 "25 ways to use it!"
+
+2008-02-07  Sebastien Tricaud <toady@inl.fr>
+	* gvgen.py: put locks at the right place to fix a regression bug
+	            introduced in 0.8.
+
+	* examples/ex3.py: Added
+
+	* examples/ex4.py: Added
+
+	* examples/ex5.py: Added
+
+	* examples/ex6.py: Added
+
+	* examples/ex7.py: Added
+
+2008-01-11  Sebastien Tricaud <toady@inl.fr>
+
+	* Release 0.8
+
+2008-01-10  Sebastien Tricaud <toady@inl.fr>
+
+	* gvgen.py: * Fixed a bug shown when dealing with multiple parents and
+	              children.
+		    * Add a serious tricky-working way to deal with graphviz
+		      and a legend. This is a great feature graphviz does not
+		      have natively!
+
+	* examples/legend.py: Alerted to reflect the reality
+
+	* examples/legendin.py: Added
+
+	* examples/multiples-parents-children-simple.py: Added to avoid
+	                                                 regressions
+
+2008-01-09  Sebastien Tricaud <toady@inl.fr>
+
+	* gvgen.py: s/edge/node/
+
+2007-12-31  Sebastien Tricaud  <toady@inl.fr>
+
+	* gvgen.py: Added the LegendAppend() function to easily create legends
+
+	* examples/legend.py: Added
+
+2007-12-13  Sebastien Tricaud  <toady@inl.fr>
+
+	* gvgen.py: Applied patch from LDiracDelta <ldiracdelta@gmail.com> that fix
+	            the multiple call graph generation issue
+
+2007-12-13 Sebastien Tricaud <toady@inl.fr>
+
+	* examples/unix-family.py: Added
+	* gvgen.py: fixed the ';' for the compound mode
+	* setup.py: Build for 0.8
+
+2007-12-12 Sebastien Tricaud <toady@inl.fr>
+
+	* Release 0.7
+
+2007-12-06 Laurent Defert <ldefert@inl.fr>
+
+	* gvgen.py: Patch from Walther Zwart
+
+2007-11-26  Sebastien Tricaud  <toady@inl.fr>
+
+	* gvgen.py: Added patch from Laurent Defert <laurent_defert@yahoo.fr> which allows
+	            links between clusters and nodes regarless their nature
+
+2007-11-19  Sebastien Tricaud  <toady@inl.fr>
+
+	* examples/parents.py: Added
+
+	* examples/build.sh: Added
+
+	* gvgen.py: Fixed the bug of not closing a parent when we've got several (!)
+
+2007-11-12  Sebastien Tricaud  <toady@inl.fr>
+
+	* gvgen.py: Add propertyGet() function
+
+2007-11-09  Sebastien Tricaud  <toady@inl.fr>
+
+	* gvgen.py: * Use python objects for nodes instead of id, styleApplyToLink() got removed,
+	              enhancement provided by the patch sent by Walther Zwart <walther.zwart@gmail.com>
+		    * Add propertyRemove() function
+		    * Smart mode: deactivated by default (changes default graphviz behavior), to ease some
+	              operations, such as double arrows instead of doing links in both ways
+
+2007-11-08  Sebastien Tricaud  <toady@inl.fr>
+
+	* gvgen.py: Add the capability to apply styles to links with styleApplyToLink(),
+	            feature added by the patch sent by Walther Zwart <walther.zwart@gmail.com>
+
+2007-10-18  Sebastien Tricaud <toady@inl.fr>
+
+	* gvgen.py: Can define a style as default to be applied everywhere (styleDefaultAppend())
+
+2007-10-18  Sebastien Tricaud  <toady@inl.fr>
+
+	* gvgen.py: Support for distinct use of edges
+	* setup.py: Creation
+	* examples/ex1.py: Creation
+
+2007-10-17  Victor Stinner  <haypo@inl.fr>
+
+	* gvgen.py: remove reference to file descriptor on exit (always)
+	            Fix/Improve some code (using pychecker)
+		    Fix dotLinks(): replace print with self.fd.write
+		    Remove trailing spaces
+
+2007-10-16  Sebastien Tricaud  <toady@inl.fr>
+
+	* gvgen.py: Initial release (0.5)
+

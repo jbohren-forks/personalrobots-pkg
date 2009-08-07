@@ -2,6 +2,6 @@
 
   <!-- nav-stack -->
   <include file="$(find pr2_alpha)/prg.launch"/>
-  <include file="$(find 2dnav_pr2)/move_base/2dnav_pr2.launch"/>
+  <!--<include file="$(find 2dnav_pr2)/move_base/2dnav_pr2.launch"/>-->
 
 </launch>

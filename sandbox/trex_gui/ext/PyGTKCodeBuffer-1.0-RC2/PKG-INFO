@@ -1,0 +1,23 @@
+Metadata-Version: 1.0
+Name: PyGTKCodeBuffer
+Version: 1.0-RC2
+Summary: PyGTKCodeBuffer - Lightweight syntax-highlighting for PyGTK's TextView-widget.
+Home-page: http://pygtkcodebuffer.googlecode.com
+Author: Hannes Matuschek
+Author-email: hmatuschek@gmail.com
+License: UNKNOWN
+Download-URL: http://pygtkcodebuffer.googlecode.com/files/PyGTKCodeBuffer-1.0-RC1.tar.bz2
+Description: PyGTKCodeBuffer is a syntax-highlighting engine written in pure
+        Python to provide maximum portability. It depends only on PyGTK and the Python
+        standard library. No Gnome nor Scintilla libraries are needed so it should run
+        perfectly under all platforms supported by PyGTK!
+Platform: UNKNOWN
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Environment :: X11 Applications :: GTK
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: GNU Library or Lesser General Public License (LGPL)
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Classifier: Topic :: Software Development :: Widget Sets
+Classifier: Topic :: Text Editors

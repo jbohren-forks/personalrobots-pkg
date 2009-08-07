@@ -15,7 +15,8 @@ rosbuild_add_executable(bin/slam_gmapping src/slam_gmapping.cpp src/main.cpp)
 target_link_libraries(bin/slam_gmapping gridfastslam sensor_odometry sensor_range utils scanmatcher)
 #rosbuild_add_executable(tftest src/tftest.cpp)
 
-#rosbuild_download_test_data(http://pr.willowgarage.com/data/gmapping/small_loop_prf.bag test/small_loop_prf.bag)
-rosbuild_download_test_data(http://pr.willowgarage.com/data/gmapping/basic_localization_stage.bag test/basic_localization_stage.bag)
-rosbuild_download_test_data(http://pr.willowgarage.com/data/gmapping/basic_localization_stage_groundtruth.pgm test/basic_localization_stage_groundtruth.pgm)
-rosbuild_add_rostest(test/basic_localization_stage.launch)
+# Need to make the tests more robust; currently the output map can differ
+# substantially between runs.
+#rosbuild_download_test_data(http://pr.willowgarage.com/data/gmapping/basic_localization_stage.bag test/basic_localization_stage.bag)
+#rosbuild_download_test_data(http://pr.willowgarage.com/data/gmapping/basic_localization_stage_groundtruth.pgm test/basic_localization_stage_groundtruth.pgm)
+#rosbuild_add_rostest(test/basic_localization_stage.launch)

@@ -4,11 +4,22 @@
     <param name="db_path" value="$(find annotated_planar_patch_map)/test_data/image_db" />
   </node>
 
-<include file="$(find annotated_planar_patch_map)/launch/make_annotated_pcd_map/full_lifter.launch"/>
+  <node pkg="object_names" type="simple_name_server.py" name="name_server" output="screen">
+    <param name="index_name" value="$(find object_names)/launch/names.txt"/>
+  </node>
 
-<include file="$(find annotated_planar_patch_map)/launch/make_annotated_pcd_map/full_lifter_only.launch"/>
+  <node pkg="object_names" type="simple_color_server.py" name="color_server" output="screen">
+    <param name="index_name" value="$(find object_names)/launch/colors.txt"/>
+  </node>
 
-<node pkg="rosrecord" type="rosplay" args="-s 1 $(find annotated_planar_patch_map)/test_data/test_lift_2009-08-04-16-02-16-topic.bag" output="screen"/>
+
+
+
+  <include file="$(find annotated_planar_patch_map)/test/lifter_preprocessing.launch"/>
+
+  <include file="$(find annotated_planar_patch_map)/test/lifter_node.launch"/>
+
+  <node pkg="rosrecord" type="rosplay" args="-s 1 $(find annotated_planar_patch_map)/test_data/test_lift_2009-08-05-08-27-58-topic.bag" output="screen"/>
 
 
 </launch>

@@ -4,16 +4,20 @@
        xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
        xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface">
 
+  <include filename="$(find pr2_defs)/defs/head_ext.xacro" />
+  <include filename="$(find pr2_defs)/defs/head_cal.xacro" />
+
   <property name="M_PI" value="3.1415926535897931" />
 
   <macro name="pr2_tilting_laser" params="name parent *origin">
 
     <link name="${name}_mount_link">
       <joint name="${name}_mount_joint" type="revolute">
+        <origin xyz="0 0 0" rpy="0 0 0" />
         <axis xyz="0 1 0" />
-        <anchor xyz="0 0 0" />
-        <limit min="-0.785" max="1.57" effort="0.5292" velocity="100" />
-        <safety_controller k_position="100" k_velocity="0.05" lower="${-0.785+0.0}" upper="${1.57-0.0}" />
+        <limit lower="-0.785" upper="1.57" effort="0.5292" velocity="100" />
+        <safety_controller k_position="100" k_velocity="0.05" soft_lower_limit="${-0.785+0.0}" soft_upper_limit="${1.57-0.0}" />
+        <calibration reference_position="-0.35" />
         <joint_properties damping="0.008" />
         <parent name="${parent}">
           <insert_block name="origin" />
@@ -31,7 +35,7 @@
       <visual name="${name}_mount_visual">
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${name}_mount_visual_geom">
-          <mesh filename="hok_tilt.stlb" />
+          <mesh filename="$(find pr2_defs)/meshes/hok_tilt.stl" />
         </geometry>
       </visual>
 
@@ -43,24 +47,10 @@
       </collision>
     </link>
 
-    <gazebo name="gazebo_material" reference="${name}_mount_visual">
-      <material value="PR2/Red" />
-    </gazebo>
-    <ogre name="${name}_mount_visual_mesh" reference="${name}_mount_visual">
-      <mesh value="hok_tilt.mesh" />
-    </ogre>
-
-    <transmission type="SimpleTransmission" name="${name}_mount_trans">
-      <actuator name="${name}_mount_motor" />
-      <joint name="${name}_mount_joint" />
-      <mechanicalReduction>6.0</mechanicalReduction>
-      <calibration reference_position="-0.35" values="0 0" />
-    </transmission>
-
     <link name="${name}_link" type="laser">
       <joint name="${name}_joint" type="fixed">
+        <origin xyz="0 0 0" rpy="0 0 0" />
         <axis xyz="0 1 0" />
-        <anchor xyz="0 0 0" />
         <parent name="${name}_mount_link">
           <origin xyz="0 0 0.03" rpy="0 0 0" />
         </parent>
@@ -88,33 +78,9 @@
 
     </link>
 
-    <gazebo name="sensor" reference="${name}_link">
-      <sensor:ray name="${name}">
-        <rayCount>640</rayCount>
-        <rangeCount>640</rangeCount>
-        <laserCount>1</laserCount>
-
-        <origin>0.0 0.0 0.0</origin>
-        <displayRays>false</displayRays>
-
-        <minAngle>-80</minAngle>
-        <maxAngle> 80</maxAngle>
-
-        <minRange>0.05</minRange>
-        <maxRange>10.0</maxRange>
-        <resRange>0.01</resRange>
-        <updateRate>20.0</updateRate>
-        <controller:ros_laser name="ros_${name}_controller" plugin="libros_laser.so">
-          <gaussianNoise>0.005</gaussianNoise>
-          <alwaysOn>true</alwaysOn>
-          <updateRate>20.0</updateRate>
-          <topicName>tilt_scan</topicName>
-          <frameName>${name}_link</frameName>
-          <interface:laser name="ros_${name}_iface" />
-        </controller:ros_laser>
-      </sensor:ray>
-    </gazebo>
-
+    <pr2_tilting_laser_ext name="${name}" parent="${parent}">
+      <insert_block name="origin"/>
+    </pr2_tilting_laser_ext>
   </macro>
 
 
@@ -136,6 +102,7 @@
   <macro name="pr2_head_sensor_package" params="name hd_name stereo_name parent *origin">
     <link name="${name}_link" >
       <joint name="${name}_fixed_joint" type="fixed">
+        <origin xyz="0 0 0" rpy="0 0 0" />
         <parent name="${parent}">
           <insert_block name="origin" />
         </parent>
@@ -165,9 +132,8 @@
       </collision>
     </link>
 
-    <gazebo name="gazebo_material" reference="${name}_sensor_visual">
-      <material value="PR2/Blue" />
-    </gazebo>
+    <!-- extensions -->
+    <pr2_head_sensor_package_ext name="${name}" />
 
     <!-- Prosilica Camera -->
     <prosilica_cam name="${hd_name}" parent="${name}_link" >
@@ -188,6 +154,7 @@
     <!-- Define link to stereo cameras, set origin relative to that -->
     <link name="${name}_link">
       <joint name="${name}_fixed_joint" type="fixed">
+        <origin xyz="0 0 0" rpy="0 0 0" />
         <parent name="${parent}">
           <insert_block name="origin" />
         </parent>
@@ -217,9 +184,8 @@
       </collision>
     </link>
 
-    <gazebo name="gazebo_material" reference="${name}_double_stereo_visual">
-      <material value="PR2/Blue" />
-    </gazebo>
+    <!-- extensions -->
+    <double_stereo_camera_ext name="${name}" />
     
     <!-- Wide camera is on robot right (hca1), narrow on left (hca2)? -->
     <!-- 15mm offset from center needs check with CAD -->
@@ -236,6 +202,7 @@
     
     <link name="${name}_link">
       <joint name="${name}_fixed_joint" type="fixed">
+        <origin xyz="0 0 0" rpy="0 0 0" />
         <parent name="${parent}">
           <insert_block name="origin" />
         </parent>
@@ -264,12 +231,9 @@
       
     </link>
 
-    <gazebo name="gazebo_material" reference="${name}_visual">
-      <material value="PR2/Blue" />
-    </gazebo>
-
     <link name="${name}_optical_frame" type="camera">
       <joint name="${name}_optical_fixed_joint" type="fixed">
+        <origin xyz="0 0 0" rpy="0 0 0" />
         <parent name="${name}_link">
           <origin xyz="${cal_stereo_x}            ${0.045+cal_stereo_y}   ${.0305+cal_stereo_z}"
                   rpy="${-M_PI/2+cal_stereo_roll} ${0.0+cal_stereo_pitch} ${-M_PI/2+cal_stereo_yaw}" />
@@ -300,12 +264,9 @@
 
     </link>
 
-    <gazebo name="gazebo_material" reference="${name}_optical_fixed_visual">
-      <material value="PR2/Blue" />
-    </gazebo>
-
     <link name="${name}_l_stereo_camera_frame">
       <joint name="${name}_l_stereo_camera_fixed_joint" type="fixed">
+        <origin xyz="0 0 0" rpy="0 0 0" />
         <parent name="${name}_optical_frame">
           <origin xyz="0 0 0" rpy="0 ${-M_PI/2} ${M_PI/2}" />
         </parent>
@@ -335,29 +296,9 @@
       
     </link>
 
-    <gazebo name="sensor" reference="${name}_l_stereo_camera_frame">
-      <sensor:camera name="${name}_l_sensor">
-        <imageSize>640 480</imageSize>
-        <imageFormat>L8</imageFormat>
-        <hfov>90</hfov>
-        <nearClip>0.1</nearClip>
-        <farClip>100</farClip>
-        <updateRate>20.0</updateRate>
-        <controller:ros_camera name="${name}_l_controller" plugin="libros_camera.so">
-          <alwaysOn>true</alwaysOn>
-          <updateRate>20.0</updateRate>
-          <topicName>${name}/left_image</topicName>
-          <frameName>${name}_l_stereo_camera_frame</frameName>
-          <interface:camera name="${name}_l_iface" />
-        </controller:ros_camera>
-      </sensor:camera>
-    </gazebo>
-    <gazebo name="gazebo_material" reference="${name}_l_stereo_camera_visual">
-      <material value="PR2/Blue" />
-    </gazebo>
-
     <link name="${name}_r_stereo_camera_frame">
       <joint name="${name}_r_stereo_camera_fixed_joint" type="fixed">
+        <origin xyz="0 0 0" rpy="0 0 0" />
         <parent name="${name}_l_stereo_camera_frame">
           <origin xyz="${stereo_dx} ${stereo_dy} ${stereo_dz}"
                   rpy="${stereo_rx} ${stereo_ry} ${stereo_rz}" />
@@ -388,52 +329,8 @@
       
     </link>
 
-    <gazebo name="sensor" reference="${name}_r_stereo_camera_frame">
-      <sensor:camera name="${name}_r_sensor">
-        <imageSize>640 480</imageSize>
-        <imageFormat>L8</imageFormat>
-        <hfov>90</hfov>
-        <nearClip>0.1</nearClip>
-        <farClip>100</farClip>
-        <updateRate>20.0</updateRate>
-        <controller:ros_camera name="${name}_r_controller" plugin="libros_camera.so">
-          <alwaysOn>true</alwaysOn>
-          <updateRate>20.0</updateRate>
-          <topicName>${name}/right_image</topicName>
-          <frameName>${name}_r_stereo_camera_frame</frameName>
-          <interface:camera name="${name}_r_iface" />
-        </controller:ros_camera>
-      </sensor:camera>
-    </gazebo>
-    <gazebo name="gazebo_material" reference="${name}_r_stereo_camera_visual">
-      <material value="PR2/Blue" />
-    </gazebo>
-
-
-    <!-- stereo plugin that produces a raw_stereo message
-    -->
-    <gazebo name="sensor">
-      <controller:ros_stereo_camera name="${name}_controller" plugin="libros_stereo_camera.so">
-        <alwaysOn>true</alwaysOn>
-        <updateRate>20.0</updateRate>
-        <leftCamera>${name}_l_sensor</leftCamera>
-        <rightCamera>${name}_r_sensor</rightCamera>
-        <topicName>${name}/raw_stereo</topicName>
-        <frameName>${name}_optical_frame</frameName>
-        <CxPrime>320</CxPrime>
-        <Cx>320</Cx>
-        <Cy>240</Cy>
-        <focal_length>320</focal_length> <!-- image_width / (2*tan(hfov_radian /2)) -->
-        <distortion_k1>0</distortion_k1>
-        <distortion_k2>0</distortion_k2>
-        <distortion_k3>0</distortion_k3>
-        <distortion_t1>0</distortion_t1>
-        <distortion_t2>0</distortion_t2>
-        <baseline>${stereo_dy}</baseline> <!-- home pos. of robot has +x forward, +y left -->
-        <interface:stereocamera name="${name}_iface" />
-      </controller:ros_stereo_camera>
-    </gazebo>
-
+    <!-- extensions -->
+    <stereo_camera_ext name="${name}" />
   </macro>
 
 
@@ -441,9 +338,11 @@
 
     <link name="${name}_link">
       <joint name="${name}_joint" type="revolute">
+        <origin xyz="0 0 0" rpy="0 0 0" />
         <axis xyz="0 0 1" />
-        <limit min="-2.92" max="2.92" effort="2.645" velocity="6" />
-        <safety_controller k_velocity="1.5" lower="${-2.92+0.15}" upper="${2.92-0.15}" k_position="100" />
+        <limit lower="-2.92" upper="2.92" effort="2.645" velocity="6" />
+        <safety_controller k_velocity="1.5" soft_lower_limit="${-2.92+0.15}" soft_upper_limit="${2.92-0.15}" k_position="100" />
+        <calibration reference_position="${-2.79+cal_head_pan_flag}" />
         <joint_properties damping="1.0" />
         <parent name="${parent}">
           <insert_block name="origin" />
@@ -461,7 +360,7 @@
       <visual name="${name}_visual">
         <origin xyz="0 0 0.0" rpy="0 0 0 " />
         <geometry name="${name}_visual_geom">
-          <mesh filename="head_pan.stlb" />
+          <mesh filename="$(find pr2_defs)/meshes/head_pan.stl" />
         </geometry>
       </visual>
 
@@ -474,21 +373,8 @@
 
     </link>
 
-    <gazebo name="gazebo_material" reference="${name}_visual">
-      <material value="PR2/Blue" />
-    </gazebo>
-    <ogre name="${name}_visual_mesh" reference="${name}_visual">
-      <mesh value="head_pan.mesh" />
-    </ogre>
-
-
-    <transmission type="SimpleTransmission" name="${name}_trans">
-      <actuator name="${name}_motor" />
-      <joint name="${name}_joint" />
-      <mechanicalReduction>6.0</mechanicalReduction>
-      <calibration reference_position="${-2.79+cal_head_pan_flag}" values="0 0" />
-    </transmission>
-
+    <!-- extensions -->
+    <pr2_head_pan_ext name="${name}" />
   </macro>
 
 
@@ -497,9 +383,11 @@
 
     <link name="${name}_link">
       <joint name="${name}_joint" type="revolute">
+        <origin xyz="0 0 0" rpy="0 0 0" />
         <axis xyz="0 1 0" />
-        <limit min="-0.55" max="1.047" effort="12.21" velocity="100" />
-        <safety_controller k_velocity="1.5" lower="${-0.55+0.02}" upper="${1.047-0.002}" k_position="100" />
+        <limit lower="-0.55" upper="1.047" effort="12.21" velocity="100" />
+        <safety_controller k_velocity="1.5" soft_lower_limit="${-0.55+0.02}" soft_upper_limit="${1.047-0.002}" k_position="100" />
+        <calibration reference_position="${-0.195+cal_head_tilt_flag}" />
         <joint_properties damping="1.0" />
         <parent name="${parent}">
           <insert_block name="origin" />
@@ -518,7 +406,7 @@
       <visual name="${name}_visual">
         <origin xyz="0 0 0" rpy="0.0 0.0 0.0 " />
         <geometry name="${name}_visual_geom">
-          <mesh filename="head_tilt.stlb" />
+          <mesh filename="$(find pr2_defs)/meshes/head_tilt.stl" />
         </geometry>
       </visual>
 
@@ -530,21 +418,8 @@
       </collision>
     </link>
 
-    <gazebo name="gazebo_material" reference="${name}_visual">
-      <material value="PR2/Green" />
-    </gazebo>
-    <ogre name="${name}_visual_mesh" reference="${name}_visual">
-      <mesh value="head_tilt.mesh" />
-    </ogre>
-
-
-    <transmission type="SimpleTransmission" name="${name}_trans">
-      <actuator name="${name}_motor" />
-      <joint name="${name}_joint" />
-      <mechanicalReduction>6.0</mechanicalReduction>
-      <calibration reference_position="${-0.195+cal_head_tilt_flag}" values="0 0" />
-    </transmission>
-
+    <!-- extensions -->
+    <pr2_head_tilt_ext name="${name}" />
   </macro>
 
 
@@ -561,6 +436,7 @@
     <!-- Head plate frame -->
     <link name="${name}_plate_frame">
       <joint name="${name}_plate_fixed_joint" type="fixed">
+        <origin xyz="0 0 0" rpy="0 0 0" />
         <parent name="${name}_tilt_link">
           <origin xyz="0.0232 0 0.0645" rpy="0 0 0" />     
         </parent>
@@ -589,9 +465,8 @@
       </collision>
     </link>
 
-    <gazebo name="gazebo_material" reference="${name}_plate_frame_visual">
-      <material value="PR2/Blue" />
-    </gazebo>
+    <!-- extensions -->
+    <pr2_head_ext name="${name}" />
     
   </macro>
 
@@ -602,10 +477,11 @@
 
     <link name="${name}_mount_link">
       <joint name="${name}_mount_joint" type="revolute">
+        <origin xyz="0 0 0" rpy="0 0 0" />
         <axis xyz="0 1 0" />
-        <anchor xyz="0 0 0" />
-        <limit min="-0.785" max="1.57" effort="0.5292" velocity="10.0" />
-        <safety_controller k_position="100" k_velocity="0.05" lower="${-0.785+0.0}" upper="${1.57-0.0}" />
+        <limit lower="-0.785" upper="1.57" effort="0.5292" velocity="10.0" />
+        <safety_controller k_position="100" k_velocity="0.05" soft_lower_limit="${-0.785+0.0}" soft_upper_limit="${1.57-0.0}" />
+        <calibration reference_position="0.0" />
         <joint_properties damping="1.0" />
         <parent name="${parent}">
           <insert_block name="origin" />
@@ -623,7 +499,7 @@
       <visual name="${name}_mount_visual">
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${name}_mount_visual_geom">
-          <mesh filename="hok_tilt.stlb" />
+          <mesh filename="$(find pr2_defs)/meshes/hok_tilt.stl" />
         </geometry>
       </visual>
 
@@ -635,24 +511,10 @@
       </collision>
     </link>
 
-    <gazebo name="gazebo_material" reference="${name}_mount_visual">
-      <material value="PR2/Red" />
-    </gazebo>
-    <ogre name="${name}_mount_visual_mesh" reference="${name}_mount_visual">
-      <mesh value="hok_tilt.mesh" />
-    </ogre>
-
-    <transmission type="SimpleTransmission" name="${name}_mount_trans">
-      <actuator name="${name}_mount_motor" />
-      <joint name="${name}_mount_joint" />
-      <mechanicalReduction>6.0</mechanicalReduction>
-      <calibration reference_position="0.0" values="0 0" />
-    </transmission>
-
     <link name="${name}_link" type="laser">
       <joint name="${name}_joint" type="fixed">
+        <origin xyz="0 0 0" rpy="0 0 0" />
         <axis xyz="0 1 0" />
-        <anchor xyz="0 0 0" />
         <parent name="${name}_mount_link">
           <origin xyz="0 0 0.03" rpy="0 0 0" />
         </parent>
@@ -681,33 +543,8 @@
 
     </link>
 
-    <gazebo name="sensor" reference="${name}_link">
-      <sensor:ray name="${name}">
-        <rayCount>640</rayCount>
-        <rangeCount>640</rangeCount>
-        <laserCount>1</laserCount>
-
-        <origin>0.0 0.0 0.0</origin>
-        <displayRays>false</displayRays>
-
-        <minAngle>-80</minAngle>
-        <maxAngle> 80</maxAngle>
-
-        <minRange>0.05</minRange>
-        <maxRange>10.0</maxRange>
-        <resRange>0.01</resRange>
-        <updateRate>20.0</updateRate>
-        <controller:ros_laser name="ros_${name}_controller" plugin="libros_laser.so">
-          <gaussianNoise>0.005</gaussianNoise>
-          <alwaysOn>true</alwaysOn>
-          <updateRate>20.0</updateRate>
-          <topicName>tilt_scan</topicName>
-          <frameName>${name}_link</frameName>
-          <interface:laser name="ros_${name}_iface" />
-        </controller:ros_laser>
-      </sensor:ray>
-    </gazebo>
-
+    <!-- extensions -->
+    <pr2_tilting_laser_alpha2_ext name="${name}" />
   </macro>
 
 
@@ -716,9 +553,11 @@
 
     <link name="${name}_link">
       <joint name="${name}_joint" type="revolute">
+        <origin xyz="0 0 0" rpy="0 0 0" />
         <axis xyz="0 0 1" />
-        <limit min="-2.92" max="2.92" effort="2.645" velocity="6" />
-        <safety_controller k_velocity="1.5" lower="${-2.92+0.15}" upper="${2.92-0.15}" k_position="100" />
+        <limit lower="-2.92" upper="2.92" effort="2.645" velocity="6" />
+        <safety_controller k_velocity="1.5" soft_lower_limit="${-2.92+0.15}" soft_upper_limit="${2.92-0.15}" k_position="100" />
+        <calibration reference_position="${0.0+cal_head_pan_flag_alpha2}" />
         <joint_properties damping="1.0" />
         <parent name="${parent}">
           <insert_block name="origin" />
@@ -736,7 +575,7 @@
       <visual name="${name}_visual">
         <origin xyz="0 0 0.0" rpy="0 0 0 " />
         <geometry name="${name}_visual_geom">
-          <mesh filename="head_pan.stlb" />
+          <mesh filename="$(find pr2_defs)/meshes/head_pan.stl" />
         </geometry>
       </visual>
 
@@ -749,19 +588,8 @@
 
     </link>
 
-    <gazebo name="gazebo_material" reference="${name}_visual">
-      <material value="PR2/Blue" />
-    </gazebo>
-    <ogre name="${name}_visual_mesh" reference="${name}_visual">
-      <mesh value="head_pan.mesh" />
-    </ogre>
-
-    <transmission type="SimpleTransmission" name="${name}_trans">
-      <actuator name="${name}_motor" />
-      <joint name="${name}_joint" />
-      <mechanicalReduction>6.0</mechanicalReduction>
-      <calibration reference_position="${0.0+cal_head_pan_flag_alpha2}" values="0 0" />
-    </transmission>
+    <!-- extensions -->
+    <pr2_head_pan_alpha2_ext name="${name}" />
   </macro>
 
   <!-- Reverts to small tilt motor, still has same cal flags and limits -->
@@ -769,9 +597,11 @@
 
     <link name="${name}_link">
       <joint name="${name}_joint" type="revolute">
+        <origin xyz="0 0 0" rpy="0 0 0" />
         <axis xyz="0 1 0" />
-        <limit min="-0.45" max="1.37" effort="12" velocity="5" />
-        <safety_controller k_velocity="100" lower="${-0.45+0.02}" upper="${1.37-0.02}" k_position="100" />
+        <limit lower="-0.45" upper="1.37" effort="12" velocity="5" />
+        <safety_controller k_velocity="100" soft_lower_limit="${-0.45+0.02}" soft_upper_limit="${1.37-0.02}" k_position="100" />
+        <calibration reference_position="${0.0+cal_head_tilt_flag}" />
         <joint_properties damping="1.0" />
         <parent name="${parent}">
           <insert_block name="origin" />
@@ -788,7 +618,7 @@
       <visual name="${name}_visual">
         <origin xyz="0 0 0" rpy="0.0 0.0 0.0 " />
         <geometry name="${name}_visual_geom">
-          <mesh filename="head_tilt.stlb" />
+          <mesh filename="$(find pr2_defs)/meshes/head_tilt.stl" />
         </geometry>
       </visual>
 
@@ -800,19 +630,8 @@
       </collision>
     </link>
 
-    <gazebo name="gazebo_material" reference="${name}_visual">
-      <material value="PR2/Green" />
-    </gazebo>
-    <ogre name="${name}_visual_mesh" reference="${name}_visual">
-      <mesh value="head_tilt.mesh" />
-    </ogre>
-
-    <transmission type="SimpleTransmission" name="${name}_trans">
-      <actuator name="${name}_motor" /> <!-- Alpha 1.0 motor -->
-      <joint name="${name}_joint" />
-      <mechanicalReduction>6.0</mechanicalReduction>
-      <calibration reference_position="${0.0+cal_head_tilt_flag}" values="0 0" />
-    </transmission>
+    <!-- extensions -->
+    <pr2_head_tilt_alpha2_ext name="${name}" />
   </macro>
 
 
@@ -820,9 +639,11 @@
   <!-- Motor must be configured with 148877 motor -->
     <link name="${name}_link">
       <joint name="${name}_joint" type="revolute">
+        <origin xyz="0 0 0" rpy="0 0 0" />
         <axis xyz="0 1 0" />
-        <limit min="-0.45" max="1.37" effort="12.0" velocity="5" />
-        <safety_controller k_velocity="10" lower="${-0.45+0.02}" upper="${1.37-0.02}" k_position="100" />
+        <limit lower="-0.45" upper="1.37" effort="12.0" velocity="5" />
+        <safety_controller k_velocity="10" soft_lower_limit="${-0.45+0.02}" soft_upper_limit="${1.37-0.02}" k_position="100" />
+        <calibration reference_position="${0.0+cal_head_tilt_flag_alpha2}" />
         <joint_properties damping="1.0" />
         <parent name="${parent}">
           <insert_block name="origin" />
@@ -839,7 +660,7 @@
       <visual name="${name}_visual">
         <origin xyz="0 0 0" rpy="0.0 0.0 0.0" />
         <geometry name="${name}_visual_geom">
-          <mesh filename="head_tilt.stlb" />
+          <mesh filename="$(find pr2_defs)/meshes/head_tilt.stl" />
         </geometry>
       </visual>
 
@@ -851,27 +672,18 @@
       </collision>
     </link>
 
-    <gazebo name="gazebo_material" reference="${name}_visual">
-      <material value="PR2/Green" />
-    </gazebo>
-    <ogre name="${name}_visual_mesh" reference="${name}_visual">
-      <mesh value="head_tilt.mesh" />
-    </ogre>
-
-    <transmission type="SimpleTransmission" name="${name}_trans">
-      <actuator name="${name}_motor_alpha2a" />
-      <joint name="${name}_joint" />
-      <mechanicalReduction>6.0</mechanicalReduction>
-      <calibration reference_position="${0.0+cal_head_tilt_flag_alpha2}" values="0 0" />
-    </transmission>
+    <!-- extensions -->
+    <pr2_head_tilt_alpha2a_ext name="${name}"/>
   </macro>
 
  <macro name="pr2_head_tilt_alpha2b" params="name parent *origin">
     <link name="${name}_link">
       <joint name="${name}_joint" type="revolute">
+        <origin xyz="0 0 0" rpy="0 0 0" />
         <axis xyz="0 1 0" />
-        <limit min="-0.45" max="1.37" effort="12.0" velocity="5" />
-        <safety_controller k_velocity="10" lower="${-0.45+0.02}" upper="${1.37-0.02}" k_position="100" />
+        <limit lower="-0.45" upper="1.37" effort="12.0" velocity="5" />
+        <safety_controller k_velocity="10" soft_lower_limit="${-0.45+0.02}" soft_upper_limit="${1.37-0.02}" k_position="100" />
+        <calibration reference_position="${0.0+cal_head_tilt_flag_alpha2}" />
         <joint_properties damping="1.0" />
         <parent name="${parent}">
           <insert_block name="origin" />
@@ -890,7 +702,7 @@
       <visual name="${name}_visual">
         <origin xyz="0 0 0" rpy="0.0 0.0 0.0 " />
         <geometry name="${name}_visual_geom">
-          <mesh filename="head_tilt.stlb" />
+          <mesh filename="$(find pr2_defs)/meshes/head_tilt.stl" />
         </geometry>
       </visual>
 
@@ -902,20 +714,8 @@
       </collision>
     </link>
 
-    <gazebo name="gazebo_material" reference="${name}_visual">
-      <material value="PR2/Green" />
-    </gazebo>
-    <ogre name="${name}_visual_mesh" reference="${name}_visual">
-      <mesh value="head_tilt.mesh" />
-    </ogre>
-
-    <transmission type="SimpleTransmission" name="${name}_trans">
-      <!-- Motor must be configured with 310009 motor with large gearhead -->
-      <actuator name="${name}_motor_alpha2b" />
-      <joint name="${name}_joint" />
-      <mechanicalReduction>6.0</mechanicalReduction>
-      <calibration reference_position="${0.0+cal_head_tilt_flag_alpha2}" values="0 0" />
-    </transmission>
+    <!-- extensions -->
+    <pr2_head_tilt_alpha2b_ext name="${name}"/>
   </macro>
 
  <macro name="pr2_head_alpha2" params="name parent *origin">
@@ -931,6 +731,7 @@
     <!-- Head plate frame -->
     <link name="${name}_plate_frame">
       <joint name="${name}_plate_fixed_joint" type="fixed">
+        <origin xyz="0 0 0" rpy="0 0 0" />
         <parent name="${name}_tilt_link">
           <origin xyz="0.0232 0 0.0645" rpy="0 0 0" />
         </parent>
@@ -959,13 +760,8 @@
       </collision>
     </link>
 
-    <gazebo name="gazebo_material" reference="${name}_plate_frame_visual">
-      <material value="PR2/Blue" />
-    </gazebo>
-    <ogre name="${name}_plate_frame_collision_mesh" reference="${name}_plate_frame_collision">
-      <mesh>unit_box</mesh>
-    </ogre>
-
+    <!-- extensions -->
+    <pr2_head_alpha2_ext name="${name}"/>
   </macro>
 
 
@@ -1011,9 +807,8 @@
       </collision>
     </link>
 
-    <gazebo name="gazebo_material" reference="${name}_plate_frame_visual">
-      <material value="PR2/Blue" />
-    </gazebo>
+    <!-- extensions -->
+    <pr2_head_alpha2a_ext name="${name}"/>
     
   </macro>
 
@@ -1030,6 +825,7 @@
     <!-- Head plate frame -->
     <link name="${name}_plate_frame">
       <joint name="${name}_plate_fixed_joint" type="fixed">
+        <origin xyz="0 0 0" rpy="0 0 0" />
         <parent name="${name}_tilt_link">
           <origin xyz="0.0232 0 0.0645" rpy="0 0 0" />     
         </parent>
@@ -1058,106 +854,10 @@
       </collision>
     </link>
 
-    <gazebo name="gazebo_material" reference="${name}_plate_frame_visual">
-      <material value="PR2/Blue" />
-    </gazebo>
+    <!-- extensions -->
+    <pr2_head_alpha2b_ext name="${name}"/>
     
   </macro>
 
-
-  <!--                    Calibration                            -->
- 
-  <macro name="head_calibrator">
-    <controller name="cal_head_pan" topic="cal_head_pan"
-                type="JointUDCalibrationControllerNode">
-      <calibrate joint="head_pan_joint"
-                 actuator="head_pan_motor"
-                 transmission="head_pan_trans"
-                 velocity="-1.5" />
-      <pid p="2.0" i="0.0" d="0" iClamp="1.0" />
-    </controller>
-
-    <controller name="cal_head_tilt" topic="cal_head_tilt"
-                type="JointUDCalibrationControllerNode">
-      <calibrate joint="head_tilt_joint"
-                 actuator="head_tilt_motor"
-                 transmission="head_tilt_trans"
-                 velocity="-0.7" />
-      <pid p="4.0" i="0.0" d="0" iClamp="5.0" />
-    </controller>
-  </macro>
-
-  <macro name="head_calibrator_alpha2">
-    <controller name="cal_head_pan" topic="cal_head_pan"
-                type="JointUDCalibrationControllerNode">
-      <calibrate joint="head_pan_joint"
-                 actuator="head_pan_motor"
-                 transmission="head_pan_trans"
-                 velocity="1.5" />
-      <pid p="2.0" i="0.1" d="0" iClamp="1.0" />
-    </controller>
-
-    <controller name="cal_head_tilt" topic="cal_head_tilt"
-                type="JointUDCalibrationControllerNode">
-      <calibrate joint="head_tilt_joint"
-                 actuator="head_tilt_motor"
-                 transmission="head_tilt_trans"
-                 velocity="-1.0" />
-      <pid p="20.0" i="5.0" d="0" iClamp="1.0" />
-    </controller>
-  </macro>
-
-
-  <macro name="head_calibrator_alpha2a">
-    <controller name="cal_head_pan" topic="cal_head_pan"
-                type="JointUDCalibrationControllerNode">
-      <calibrate joint="head_pan_joint"
-                 actuator="head_pan_motor"
-                 transmission="head_pan_trans"
-                 velocity="1.5" />
-      <pid p="3.0" i="0.0" d="0" iClamp="1.0" />
-    </controller>
-
-    <controller name="cal_head_tilt" topic="cal_head_tilt"
-                type="JointUDCalibrationControllerNode">
-      <calibrate joint="head_tilt_joint"
-                 actuator="head_tilt_motor_alpha2a"
-                 transmission="head_tilt_trans"
-                 velocity="-1.0" />
-      <pid p="20.0" i="5.0" d="0" iClamp="1.0" />
-    </controller>
-  </macro>
-
-  <macro name="head_calibrator_alpha2b">
-    <controller name="cal_head_pan" topic="cal_head_pan"
-                type="JointUDCalibrationControllerNode">
-      <calibrate joint="head_pan_joint"
-                 actuator="head_pan_motor"
-                 transmission="head_pan_trans"
-                 velocity="1.5" />
-      <pid p="3.0" i="0.0" d="0" iClamp="1.0" />
-    </controller>
-
-    <controller name="cal_head_tilt" topic="cal_head_tilt"
-                type="JointUDCalibrationControllerNode">
-      <calibrate joint="head_tilt_joint"
-                 actuator="head_tilt_motor_alpha2b"
-                 transmission="head_tilt_trans"
-                 velocity="-1.0" />
-      <pid p="20.0" i="5.0" d="0" iClamp="1.0" />
-    </controller>
-  </macro>
-
-
-
-  <macro name="tilting_laser_calibrator" params="name">
-    <controller name="cal_${name}" topic="cal_${name}" type="JointUDCalibrationControllerNode">
-      <calibrate joint="${name}_mount_joint"
-                 actuator="${name}_mount_motor"
-                 transmission="${name}_mount_trans"
-                 velocity="-1.5" />
-      <pid p=".3" i="0.1" d="0" iClamp="1.0" />
-    </controller>
-  </macro>
 
 </robot>

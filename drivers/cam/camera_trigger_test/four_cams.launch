@@ -1,0 +1,90 @@
+<launch>
+  <group ns="fc1">
+    <param name="camera_url" type="str" value="serial://11"/>
+    <param name="video_mode" type="str" value="640x480x30"/>
+    <param name="do_colorize" type="bool" value="True"/>
+    <param name="do_rectify" type="bool" value="True"/>
+    <param name="ext_trig" type="bool" value="True"/>
+    <param name="trig_rate" type="double" value="25"/>
+    <param name="trig_controller" type="string" value="trig_controller"/>
+    <param name="auto_gain" type="bool" value="False" />
+    <param name="gain" type="int" value="64" />
+    <param name="auto_exposure" type="bool" value="False" />
+    <param name="exposure" type="double" value="0.0001" />
+  </group>
+  <node name="fc1" pkg="forearm_cam" type="forearm_node" respawn="false" output="screen"/>
+
+  <group ns="fc2">
+    <param name="camera_url" type="str" value="serial://13"/>
+    <param name="video_mode" type="str" value="640x480x30"/>
+    <param name="do_colorize" type="bool" value="True"/>
+    <param name="do_rectify" type="bool" value="True"/>
+    <param name="ext_trig" type="bool" value="True"/>
+    <param name="trig_rate" type="double" value="25"/>
+    <param name="trig_controller" type="string" value="trig_controller"/>
+    <param name="auto_gain" type="bool" value="False" />
+    <param name="gain" type="int" value="64" />
+    <param name="auto_exposure" type="bool" value="False" />
+    <param name="exposure" type="double" value="0.0001" />
+  </group>
+  <node name="fc2" pkg="forearm_cam" type="forearm_node" respawn="false" output="screen"/>
+  
+  <group ns="fc3">
+    <param name="camera_url" type="str" value="serial://14"/>
+    <param name="video_mode" type="str" value="640x480x30"/>
+    <param name="do_colorize" type="bool" value="True"/>
+    <param name="do_rectify" type="bool" value="True"/>
+    <param name="ext_trig" type="bool" value="True"/>
+    <param name="trig_rate" type="double" value="25"/>
+    <param name="trig_controller" type="string" value="trig_controller"/>
+    <param name="auto_gain" type="bool" value="False" />
+    <param name="gain" type="int" value="16" />
+    <param name="auto_exposure" type="bool" value="False" />
+    <param name="exposure" type="double" value="0.0001" />
+  </group>
+  <node name="fc3" pkg="forearm_cam" type="forearm_node" respawn="false" output="screen"/>
+  
+  <group ns="fc4">
+    <param name="camera_url" type="str" value="serial://15"/>
+    <param name="video_mode" type="str" value="640x480x30"/>
+    <param name="do_colorize" type="bool" value="True"/>
+    <param name="do_rectify" type="bool" value="True"/>
+    <param name="ext_trig" type="bool" value="True"/>
+    <param name="trig_rate" type="double" value="25"/>
+    <param name="trig_controller" type="string" value="trig_controller"/>
+    <param name="auto_gain" type="bool" value="False" />
+    <param name="gain" type="int" value="16" />
+    <param name="auto_exposure" type="bool" value="False" />
+    <param name="exposure" type="double" value="0.0001" />
+  </group>
+  <node name="fc4" pkg="forearm_cam" type="forearm_node" respawn="false" output="screen"/>
+  
+  <!--node name="fp1" pkg="stereo_image_proc" type="imageproc" respawn="false" output="screen">
+    <remap from="camera" to="fc1"/>
+  </node-->
+  <!--node name="fp2" pkg="stereo_image_proc" type="imageproc" respawn="false" output="screen">
+    <remap from="camera" to="fc2"/>
+  </node-->
+  <!--node name="fp3" pkg="stereo_image_proc" type="imageproc" respawn="false" output="screen">
+    <remap from="camera" to="fc3"/>
+  </node-->
+  <!--node name="fp4" pkg="stereo_image_proc" type="imageproc" respawn="false" output="screen">
+    <remap from="camera" to="fc4"/>
+  </node-->
+
+  <!-- Loads realtime machine and PR2_etherCAT -->
+  <machine name="realtime" user="root" address="localhost" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" default="never"/>   
+  <node machine="realtime" pkg="pr2_etherCAT" type="pr2_etherCAT" args="-i eth0 -x $(find camera_trigger_test)/test_configuration.xml"/>
+  
+  <!-- Spwns the controllers -->
+  <node name="spawner" pkg="mechanism_control" type="spawner.py" output="screen" args="trig_controller led_controller" />
+  <group ns="trig_controller">
+    <param name="type" type="string" value="TriggerControllerNode" />
+    <param name="actuator" type="string" value="trig_controller" />
+  </group>
+  <group ns="led_controller">
+    <param name="type" type="string" value="TriggerControllerNode" />
+    <param name="actuator" type="string" value="led_controller" />
+  </group>
+  
+</launch>

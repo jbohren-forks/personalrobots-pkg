@@ -1,0 +1,19 @@
+<package>
+  <description brief="new_point_cloud">
+
+     New version of PointCloud message and deserializer class for SSE-aligned point data.
+
+  </description>
+  <author>Patrick Mihelich</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/new_point_cloud</url>
+  <depend package="std_msgs"/>
+  <depend package="geometry_msgs"/>
+  <depend package="sensor_msgs"/>
+  <depend package="eigen"/>
+  <depend package="opencv_latest"/>
+
+</package>
+
+

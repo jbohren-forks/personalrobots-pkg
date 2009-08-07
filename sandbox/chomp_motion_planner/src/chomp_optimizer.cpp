@@ -106,6 +106,7 @@ void ChompOptimizer::initialize()
   joint_state_velocities_ = Eigen::VectorXd::Zero(num_joints_);
 
   group_trajectory_backup_ = group_trajectory_.getTrajectory();
+  best_group_trajectory_ = group_trajectory_.getTrajectory();
 
   joint_axis_.resize(num_vars_all_, std::vector<KDL::Vector>(robot_model_->getKDLTree()->getNrOfJoints()));
   joint_pos_.resize(num_vars_all_, std::vector<KDL::Vector>(robot_model_->getKDLTree()->getNrOfJoints()));
@@ -128,6 +129,9 @@ void ChompOptimizer::initialize()
   collision_free_iteration_ = 0;
   is_collision_free_ = false;
   state_is_in_collision_.resize(num_vars_all_);
+  point_is_in_collision_.resize(num_vars_all_, std::vector<int>(num_collision_points_));
+
+  last_improvement_iteration_ = -1;
 
 }
 
@@ -143,13 +147,30 @@ void ChompOptimizer::optimize()
   // iterate
   for (iteration_=0; iteration_<parameters_->getMaxIterations(); iteration_++)
   {
-
     performForwardKinematics();
+    double cost = getTrajectoryCost();
+
+    if (iteration_==0)
+    {
+      best_group_trajectory_ = group_trajectory_.getTrajectory();
+      best_group_trajectory_cost_ = cost;
+    }
+    else
+    {
+      if (cost < best_group_trajectory_cost_)
+      {
+        best_group_trajectory_ = group_trajectory_.getTrajectory();
+        best_group_trajectory_cost_ = cost;
+        last_improvement_iteration_ = iteration_;
+      }
+    }
+
     calculateSmoothnessIncrements();
     calculateCollisionIncrements();
     addIncrementsToTrajectory();
     handleJointLimits();
     updateFullTrajectory();
+    ROS_INFO("Trajectory cost: %f", getTrajectoryCost());
     if (collision_free_iteration_ >= parameters_->getMaxIterationsAfterCollisionFree())
     {
       iteration_++;
@@ -180,7 +201,15 @@ void ChompOptimizer::optimize()
 
     }
 
+    if (parameters_->getAnimatePath() && iteration_%10 == 0)
+    {
+      ROS_INFO("Animating iteration %d", iteration_);
+      animatePath();
+    }
+    
   }
+  group_trajectory_.getTrajectory() = best_group_trajectory_;
+  updateFullTrajectory();
   ROS_INFO("Terminated after %d iterations", iteration_);
   ROS_INFO("Optimization core finished in %f sec", (ros::WallTime::now() - start_time).toSec());
 
@@ -238,6 +267,8 @@ void ChompOptimizer::calculateCollisionIncrements()
       collision_increments_.row(i-free_vars_start_).transpose() -=
           jacobian_.transpose() * cartesian_gradient;
 
+      if (point_is_in_collision_[i][j])
+        break;
     }
   }
   //cout << collision_increments_ << endl;
@@ -248,7 +279,7 @@ void ChompOptimizer::addIncrementsToTrajectory()
   double scale = 1.0;
   for (int i=0; i<num_joints_; i++)
   {
-    scale = 1.0;
+    //scale = 1.0;
     final_increments_.col(i) = parameters_->getLearningRate() *
         (
             joint_costs_[i].getQuadraticCostInverse() *
@@ -266,11 +297,11 @@ void ChompOptimizer::addIncrementsToTrajectory()
     if (min_scale < scale)
       scale = min_scale;
 
-    group_trajectory_.getFreeJointTrajectoryBlock(i) += scale * final_increments_.col(i);
+    //group_trajectory_.getFreeJointTrajectoryBlock(i) += scale * final_increments_.col(i);
   }
   for (int i=0; i<num_joints_; i++)
   {
-    //group_trajectory_.getFreeJointTrajectoryBlock(i) += scale * final_increments_.col(i);
+    group_trajectory_.getFreeJointTrajectoryBlock(i) += scale * final_increments_.col(i);
   }
 }
 
@@ -413,6 +444,8 @@ void ChompOptimizer::performForwardKinematics()
           collision_point_potential_[i][j],
           collision_point_potential_gradient_[i][j]);
 
+      point_is_in_collision_[i][j] = colliding;
+
       if (colliding)
         state_is_in_collision_[i] = true;
     }
@@ -420,8 +453,6 @@ void ChompOptimizer::performForwardKinematics()
     if (state_is_in_collision_[i])
     {
       is_collision_free_ = false;
-      collision_free_iteration_ = 0;
-      break;
     }
   }
 
@@ -446,6 +477,8 @@ void ChompOptimizer::performForwardKinematics()
 
   if (is_collision_free_)
     collision_free_iteration_++;
+  else
+    collision_free_iteration_ = 0;
 
 }
 
@@ -511,7 +544,8 @@ void ChompOptimizer::animatePath()
   for (int i=free_vars_start_; i<=free_vars_end_; i++)
   {
     visualizeState(i);
-    ros::WallDuration(group_trajectory_.getDiscretization()).sleep();
+    //ros::WallDuration(group_trajectory_.getDiscretization()).sleep();
+    ros::WallDuration(0.01).sleep();
   }
 }
 
@@ -519,6 +553,8 @@ void ChompOptimizer::visualizeState(int index)
 {
   visualization_msgs::MarkerArray msg;
   msg.markers.resize(num_collision_points_);
+  int num_arrows = 0;
+  double potential_threshold = 1e-10;
   for (int i=0; i<num_collision_points_; i++)
   {
     msg.markers[i].header.frame_id = robot_model_->getReferenceFrame();
@@ -538,10 +574,43 @@ void ChompOptimizer::visualizeState(int index)
     msg.markers[i].scale.x = scale;
     msg.markers[i].scale.y = scale;
     msg.markers[i].scale.z = scale;
-    msg.markers[i].color.a = 0.9;
+    msg.markers[i].color.a = 0.6;
     msg.markers[i].color.r = 0.5;
     msg.markers[i].color.g = 1.0;
     msg.markers[i].color.b = 0.3;
+    if (collision_point_potential_[index][i] > potential_threshold)
+      num_arrows++;
+  }
+  vis_pub_.publish(msg);
+
+  // publish arrows for distance field:
+  msg.markers.resize(0);
+  msg.markers.resize(num_collision_points_);
+  for (int i=0; i<num_collision_points_; i++)
+  {
+      msg.markers[i].header.frame_id = robot_model_->getReferenceFrame();
+      msg.markers[i].header.stamp = ros::Time();
+      msg.markers[i].ns = "chomp_arrows";
+      msg.markers[i].id = i;
+      msg.markers[i].type = visualization_msgs::Marker::ARROW;
+      msg.markers[i].action = visualization_msgs::Marker::ADD;
+      msg.markers[i].points.resize(2);
+      msg.markers[i].points[0].x = collision_point_pos_[index][i].x();
+      msg.markers[i].points[0].y = collision_point_pos_[index][i].y();
+      msg.markers[i].points[0].z = collision_point_pos_[index][i].z();
+      msg.markers[i].points[1] = msg.markers[i].points[0];
+      double scale = planning_group_->collision_points_[i].getRadius()*3;
+      if (collision_point_potential_[index][i] <= potential_threshold)
+        scale = 0.0;
+      msg.markers[i].points[1].x -= scale*collision_point_potential_gradient_[index][i].x();
+      msg.markers[i].points[1].y -= scale*collision_point_potential_gradient_[index][i].y();
+      msg.markers[i].points[1].z -= scale*collision_point_potential_gradient_[index][i].z();
+      msg.markers[i].scale.x = 0.01;
+      msg.markers[i].scale.y = 0.03;
+      msg.markers[i].color.a = 1.0;
+      msg.markers[i].color.r = 0.2;
+      msg.markers[i].color.g = 0.2;
+      msg.markers[i].color.b = 1.0;
   }
   vis_pub_.publish(msg);
 }

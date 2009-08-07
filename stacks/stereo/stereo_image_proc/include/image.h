@@ -349,6 +349,7 @@ namespace cam
 
     // buffers for stereo
     uint8_t *buf, *flim, *frim;
+    int maxxim, maxyim, maxdlen, maxcorr; // for changing buffer sizes
 
   private:
     // buffers for speckle filter

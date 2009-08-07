@@ -1,0 +1,8 @@
+include README
+include MANIFEST.in
+include LICENSE
+include setup.py
+include examples/*.glade
+recursive-include examples *.py
+recursive-include syntax   *.xml
+

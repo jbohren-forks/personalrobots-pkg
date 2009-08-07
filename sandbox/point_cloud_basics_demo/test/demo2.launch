@@ -26,5 +26,5 @@
        <remap from="/tilt_laser_cloud" to="/snapshot_cloud"/>
    </node>
 
-  <node pkg="rosviz" type="rxgraph"/>
+  <node pkg="rosgraph" type="rxgraph"/>
 </launch>

@@ -5,6 +5,7 @@
 
 import stereo_utils.lowlevel as LO
 import Image as Image
+import time
 
 scratch,_ = LO.buffer(640 * 480)
 
@@ -57,17 +58,22 @@ class Frame:
     return self.descriptor_scheme.match0(self.features(), self.descriptors(), other.features(), other.descriptors())
 
 class ComputedDenseStereoFrame(Frame):
-  """ Dense stereo computed from left and right images.  *lf* is the
+  """
+  Dense stereo computed from left and right images.  *lf* is the
   left frame, *rf* is the right frame.
   """
-  def __init__(self, lf, rf):
+  def __init__(self, lf, rf, **kwargs):
+    Frame.__init__(self, **kwargs)
     self.rawdata = lf.tostring()
     self.size = lf.size
 
     # initialize buffer with 'illegal' because dense_stereo leaves pixel
     # untouched it cannot compute - e.g. non-overlapping parts of image
     disp = chr(255) * (2 * self.size[0] * self.size[1])
-    LO.dense_stereo(self.rawdata, rf.tostring(), self.size[0], self.size[1], disp)
+    rfs = rf.tostring()
+    started = time.time()
+    LO.dense_stereo(self.rawdata, rfs, self.size[0], self.size[1], disp)
+    print "took", time.time() - started
     self.disp_values = [ord(hi) * 256 + ord(lo) for (lo,hi) in zip(disp[::2], disp[1::2])]
 
   def lookup_disparity(self, x, y):

@@ -58,7 +58,7 @@ uint16_t checksum(uint16_t *data)
 
 int read_name(IpCamList *camera)
 {
-  unsigned char namebuff[FLASH_PAGE_SIZE];
+  uint8_t namebuff[FLASH_PAGE_SIZE];
   IdentityFlashPage *id = (IdentityFlashPage *) &namebuff;
 
   if(fcamReliableFlashRead(camera, FLASH_NAME_PAGENO, (uint8_t *) namebuff, NULL) != 0)
@@ -70,7 +70,7 @@ int read_name(IpCamList *camera)
   uint16_t chk = checksum((uint16_t *) namebuff);
   if (chk)
   {
-    fprintf(stderr, "Previous camera name had bad checksum. Error: %04x\n", chk);
+    fprintf(stderr, "Previous camera name had bad checksum.\n");
   }
   
   id->cam_name[sizeof(id->cam_name) - 1] = 0;
@@ -83,7 +83,7 @@ int read_name(IpCamList *camera)
 
 int write_name(IpCamList *camera, char *name, char *new_ip)
 {
-  unsigned char namebuff[FLASH_PAGE_SIZE];
+  uint8_t namebuff[FLASH_PAGE_SIZE];
   IdentityFlashPage *id = (IdentityFlashPage *) &namebuff;
   
   if (strlen(name) > sizeof(id->cam_name) - 1)
@@ -111,7 +111,7 @@ int write_name(IpCamList *camera, char *name, char *new_ip)
   
   fprintf(stderr, "Success! Restarting camera, should take about 10 seconds to come back up after this.\n");
 
-  fcamReconfigureFPGA(camera);
+  fcamReset(camera);
 
   return 0;
 }

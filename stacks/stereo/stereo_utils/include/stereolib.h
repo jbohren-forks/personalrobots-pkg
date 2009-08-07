@@ -69,7 +69,7 @@ do_prefilter_fast(uint8_t *im,	// input image
 // algorithm requires buffers to be passed in
 
 //#define do_stereo do_stereo_y
-#define do_stereo do_stereo_d
+#define do_stereo do_stereo_d_fast
 //#define do_stereo do_stereo_d_fast
 
 // inner loop over disparities

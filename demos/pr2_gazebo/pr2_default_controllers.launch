@@ -7,5 +7,8 @@
   <include file="$(find arm_gazebo)/controllers/l_arm_position_controller.launch" output="screen"/>
   <include file="$(find arm_gazebo)/controllers/r_arm_position_controller.launch" output="screen"/>
 
+  <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/torso_lift_vel_controller.xml" output="screen" />
+
+
 </launch>
 

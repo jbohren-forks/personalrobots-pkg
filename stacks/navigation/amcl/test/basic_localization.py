@@ -26,9 +26,9 @@ class TestBasicLocalization(unittest.TestCase):
     for t in msg.transforms:
       if t.parent_id == '/map':
         self.tf = t.transform
-        print 'Curr:\t %16.6f %16.6f' % (self.tf.translation.x, self.tf.translation.y)
-        print 'Target:\t %16.6f %16.6f' % (self.target_x, self.target_y)
-        print 'Diff:\t %16.6f %16.6f' % (abs(self.tf.translation.x-self.target_x),abs(self.tf.translation.y - self.target_y))
+        #print 'Curr:\t %16.6f %16.6f' % (self.tf.translation.x, self.tf.translation.y)
+        #print 'Target:\t %16.6f %16.6f' % (self.target_x, self.target_y)
+        #print 'Diff:\t %16.6f %16.6f' % (abs(self.tf.translation.x-self.target_x),abs(self.tf.translation.y - self.target_y))
 
   def test_basic_localization(self):
     global_localization = int(sys.argv[1])
@@ -40,22 +40,25 @@ class TestBasicLocalization(unittest.TestCase):
     target_time = float(sys.argv[7])
 
     if global_localization == 1:
-      print 'Waiting for service global_localization'
+      #print 'Waiting for service global_localization'
       rospy.wait_for_service('global_localization')
       global_localization = rospy.ServiceProxy('global_localization', Empty)
       resp = global_localization()
 
     rospy.init_node('test', anonymous=True)
     while(rospy.rostime.get_time() == 0.0):
-      print 'Waiting for initial time publication'
+      #print 'Waiting for initial time publication'
       time.sleep(0.1)
     start_time = rospy.rostime.get_time()
     # TODO: This should be replace by a pytf listener
     rospy.Subscriber('tf_message', tfMessage, self.tf_cb)
 
     while (rospy.rostime.get_time() - start_time) < target_time:
-      print 'Waiting for end time %.6f (current: %.6f)'%(target_time,(rospy.rostime.get_time() - start_time))
+      #print 'Waiting for end time %.6f (current: %.6f)'%(target_time,(rospy.rostime.get_time() - start_time))
       time.sleep(0.1)
+    print 'Curr:\t %16.6f %16.6f' % (self.tf.translation.x, self.tf.translation.y)
+    print 'Target:\t %16.6f %16.6f' % (self.target_x, self.target_y)
+    print 'Diff:\t %16.6f %16.6f' % (abs(self.tf.translation.x-self.target_x),abs(self.tf.translation.y - self.target_y))
     self.assertNotEquals(self.tf, None)
     self.assertTrue(abs(self.tf.translation.x - self.target_x) <= tolerance_d)
     self.assertTrue(abs(self.tf.translation.y - self.target_y) <= tolerance_d)

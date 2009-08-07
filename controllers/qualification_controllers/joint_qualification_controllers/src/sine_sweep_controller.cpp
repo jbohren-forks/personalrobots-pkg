@@ -44,7 +44,7 @@ namespace controller {
 ROS_REGISTER_CONTROLLER(SineSweepController)
 
 SineSweepController::SineSweepController():
-joint_state_(NULL), robot_(NULL), sweep_(NULL)
+joint_state_(NULL), robot_(NULL), sweep_(NULL), data_sent_(false)
 {
   test_data_.test_name = "sinesweep";
   test_data_.joint_name = "default joint";
@@ -55,13 +55,13 @@ joint_state_(NULL), robot_(NULL), sweep_(NULL)
   test_data_.velocity.resize(MAX_DATA_POINTS);
   test_data_.arg_name.resize(7);
   test_data_.arg_value.resize(7);
-  test_data_.arg_name[0] = "first_mode";
-  test_data_.arg_name[1] = "second_mode";
-  test_data_.arg_name[2] = "error_tolerance";
-  test_data_.arg_name[3] = "start_freq";
-  test_data_.arg_name[4] = "end_freq";
-  test_data_.arg_name[5] = "amplitude";
-  test_data_.arg_name[6] = "duration";
+  test_data_.arg_name[0] = "First Mode";
+  test_data_.arg_name[1] = "Second Mode";
+  test_data_.arg_name[2] = "Error Tolerance";
+  test_data_.arg_name[3] = "Start Freq";
+  test_data_.arg_name[4] = "End Freq";
+  test_data_.arg_name[5] = "Amplitude";
+  test_data_.arg_name[6] = "Duration";
   
   duration_     = 0.0;
   initial_time_ = 0;
@@ -80,8 +80,8 @@ bool SineSweepController::init(mechanism::RobotState *robot, const ros::NodeHand
   robot_ = robot;
 
   std::string name;
-  if (!n.getParam("name", name)){
-    ROS_ERROR("SineSweepController: No joint name found on parameter namespace: %s)",
+  if (!n.getParam("joint_name", name)){
+    ROS_ERROR("SineSweepController: No 'joint name' found on parameter namespace: %s)",
               n.getNamespace().c_str());
     return false;
   }
@@ -104,7 +104,7 @@ bool SineSweepController::init(mechanism::RobotState *robot, const ros::NodeHand
               n.getNamespace().c_str());
     return false;
   }
-  if (!n.getParam("error_tolearance", error_tolerance)){
+  if (!n.getParam("error_tolerance", error_tolerance)){
     ROS_ERROR("SineSweepController: No error tolerance found on parameter namespace: %s)",
               n.getNamespace().c_str());
     return false;
@@ -151,6 +151,8 @@ bool SineSweepController::init(mechanism::RobotState *robot, const ros::NodeHand
 
   initial_time_ = robot_->hw_->current_time_;
 
+  call_service_.reset(new realtime_tools::RealtimeSrvCall<joint_qualification_controllers::TestData::Request, joint_qualification_controllers::TestData::Response>(n, "/test_data"));
+
   return true;
 }
 
@@ -192,7 +194,7 @@ void SineSweepController::update()
     analysis();
     done_ = true;
   }
-  else
+  else // Done
   {
     joint_state_->commanded_effort_ = 0;
     if (!data_sent_)

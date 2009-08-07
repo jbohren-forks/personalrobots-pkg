@@ -36,6 +36,9 @@
         <box size="0.01 0.01 0.01" />
       </geometry>
     </collision>
+    <map name="${name}_frame_gravity" flag="gazebo">
+      <elem key="turnGravityOff">true</elem>
+    </map>
   </link>
 
   <joint name="${name}_optical_fixed_joint" type="fixed" />
@@ -91,6 +94,9 @@
       </verbatim>
     </map>
 
+    <map name="${name}_optical_frame_gravity" flag="gazebo">
+      <elem key="turnGravityOff">true</elem>
+    </map>
   </link>
 </macro>
 </root>

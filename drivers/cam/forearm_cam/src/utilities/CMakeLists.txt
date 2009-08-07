@@ -1,6 +1,9 @@
 rospack_add_executable(access_register access_register.cpp)
 target_link_libraries(access_register forearmcam)
 
+rospack_add_executable(set_calibration set_calibration.cpp)
+target_link_libraries(set_calibration forearmcam)
+
 rospack_add_executable(set_name set_name.cpp)
 target_link_libraries(set_name forearmcam)
 

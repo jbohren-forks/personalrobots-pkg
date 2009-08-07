@@ -228,6 +228,49 @@ cal_caster_br:
     wheel_r: br_caster_r_wheel_joint
 
 
+
+cal_caster_fl_alpha2:
+  type: CasterCalibrationController
+  <<: *caster_calibration
+  actuator: fl_caster_rotation_motor_alpha2
+  joint: fl_caster_rotation_joint
+  transmission: fl_caster_rotation_trans
+  joints:
+    caster: fl_caster_rotation_joint
+    wheel_l: fl_caster_l_wheel_joint
+    wheel_r: fl_caster_r_wheel_joint
+cal_caster_fr_alpha2:
+  type: CasterCalibrationController
+  <<: *caster_calibration
+  actuator: fr_caster_rotation_motor_alpha2
+  joint: fr_caster_rotation_joint
+  transmission: fr_caster_rotation_trans
+  joints:
+    caster: fr_caster_rotation_joint
+    wheel_l: fr_caster_l_wheel_joint
+    wheel_r: fr_caster_r_wheel_joint
+cal_caster_bl_alpha2:
+  type: CasterCalibrationController
+  <<: *caster_calibration
+  actuator: bl_caster_rotation_motor_alpha2
+  joint: bl_caster_rotation_joint
+  transmission: bl_caster_rotation_trans
+  joints:
+    caster: bl_caster_rotation_joint
+    wheel_l: bl_caster_l_wheel_joint
+    wheel_r: bl_caster_r_wheel_joint
+cal_caster_br_alpha2:
+  type: CasterCalibrationController
+  <<: *caster_calibration
+  actuator: br_caster_rotation_motor_alpha2
+  joint: br_caster_rotation_joint
+  transmission: br_caster_rotation_trans
+  joints:
+    caster: br_caster_rotation_joint
+    wheel_l: br_caster_l_wheel_joint
+    wheel_r: br_caster_r_wheel_joint
+
+
 cal_head_pan:
   type: JointUDCalibrationController
   actuator: head_pan_motor
@@ -239,19 +282,6 @@ cal_head_pan:
     d: 0
     i: 0.0
     i_clamp: 1.0
-cal_head_tilt:
-  type: JointUDCalibrationController
-  actuator: head_tilt_motor
-  joint: head_tilt_joint
-  transmission: head_tilt_trans
-  velocity: -0.7
-  pid:
-    p: 4.0
-    d: 0
-    i: 0.0
-    i_clamp: 5.0
-
-
 cal_head_pan_alpha2:
   type: JointUDCalibrationController
   joint: head_pan_joint
@@ -263,7 +293,30 @@ cal_head_pan_alpha2:
     i: 0.0
     d: 0
     i_clamp: 1.0
-cal_head_tilt_alpha2:
+
+cal_head_tilt:
+  type: JointUDCalibrationController
+  actuator: head_tilt_motor
+  joint: head_tilt_joint
+  transmission: head_tilt_trans
+  velocity: -0.7
+  pid:
+    p: 4.0
+    d: 0
+    i: 0.0
+    i_clamp: 5.0
+cal_head_tilt_alpha2a:
+  type: JointUDCalibrationController
+  joint: head_tilt_joint
+  actuator: head_tilt_motor_alpha2a
+  transmission: head_tilt_trans
+  velocity: -1.0
+  pid:
+    p: 20.0
+    i: 5.0
+    d: 0
+    i_clamp: 1.0
+cal_head_tilt_alpha2b:
   type: JointUDCalibrationController
   joint: head_tilt_joint
   actuator: head_tilt_motor_alpha2b

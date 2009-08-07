@@ -1,18 +1,17 @@
 <?xml version="1.0" ?>
 
 <robot name="pr2">
-    <joint name="fl_caster_rotation_joint" type="revolute">
-      <axis xyz="0 0 1"/>
-      <anchor xyz="0 0 0"/>
-      <limit effort="100" k_velocity="10" velocity="100"/>
-      <calibration reference_position="0.0" values="1.5 -1"/>
-      <joint_properties damping="0.0" friction="0.0"/>
-    </joint>
-  
     <link name="fl_caster_rotation_link">
-      <parent name="base_link"/>
-      <origin rpy="0 0 1" xyz="0.2225 0.2225 0.0282"/>
-      <joint name="fl_caster_rotation_joint"/>
+      <joint name="fl_caster_rotation_joint" type="revolute">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="100" k_velocity="10" velocity="100"/>
+        <calibration reference_position="0.0" values="1.5 -1"/>
+        <joint_properties damping="0.0" friction="0.0"/>
+        <parent name="base_link">
+          <origin rpy="0 0 1" xyz="0.2225 0.2225 0.0282"/>
+        </parent>
+      </joint>
 
       <inertial>
         <mass value="3.473082"/>
@@ -21,18 +20,17 @@
       </inertial>
     </link>
 
-    <joint name="fr_caster_rotation_joint" type="revolute">
-      <axis xyz="0 0 1"/>
-      <anchor xyz="0 0 0"/>
-      <limit effort="100" k_velocity="10" velocity="100"/>
-      <calibration reference_position="0.0" values="1.5 -1"/>
-      <joint_properties damping="0.0" friction="0.0"/>
-    </joint>
-  
     <link name="fr_caster_rotation_link">
-      <parent name="world"/>
-      <origin rpy="0 0 1" xyz="0.2225 0.2225 0.0282"/>
-      <joint name="fr_caster_rotation_joint"/>
+      <joint name="fr_caster_rotation_joint" type="revolute">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="100" k_velocity="10" velocity="100"/>
+        <calibration reference_position="0.0" values="1.5 -1"/>
+        <joint_properties damping="0.0" friction="0.0"/>
+        <parent name="world">
+          <origin rpy="0 0 1" xyz="0.2225 0.2225 0.0282"/>
+        </parent>
+      </joint>
 
       <inertial>
         <mass value="3.473082"/>

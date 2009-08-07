@@ -2,8 +2,6 @@
 
 <robot name="pr2">
     <link name="fl_caster_rotation_link">
-      <parent name="base_link"/>
-      <origin rpy="0 0 1" xyz="0.2225 0.2225 0.0282"/>
       <joint name="fl_caster_rotation_joint"/>
 
       <inertial>

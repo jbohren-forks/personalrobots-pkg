@@ -9,7 +9,6 @@
 using namespace std;
 using namespace cv;
 
-
 TEST(descriptors, SuperpixelColorHistogram) {
   SuperpixelColorHistogram desc(20, 0.5, 10);
   string name = "sch.results";

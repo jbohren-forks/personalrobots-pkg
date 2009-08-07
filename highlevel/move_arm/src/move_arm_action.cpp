@@ -40,8 +40,8 @@
 
 #include <robot_actions/action.h>
 #include <robot_actions/action_runner.h>
-#include <pr2_robot_actions/MoveArmState.h>
-#include <pr2_robot_actions/MoveArmGoal.h>
+#include <move_arm/MoveArmState.h>
+#include <move_arm/MoveArmGoal.h>
 
 #include <manipulation_msgs/JointTraj.h>
 #include <manipulation_srvs/IKService.h>
@@ -57,6 +57,9 @@
 #include <visualization_msgs/Marker.h>
 
 #include <planning_environment/monitors/planning_monitor.h>
+#include <planning_environment/util/construct_object.h>
+#include <geometric_shapes/bodies.h>
+
 #include <algorithm>
 #include <cstdlib>
 
@@ -141,33 +144,16 @@ public:
 	
 	nodeHandle_.param<bool>("~show_collisions", show_collisions_, false);
 	nodeHandle_.param<bool>("~unsafe_paths",    unsafe_paths_, false);
+
 	if (show_collisions_)
 	    ROS_INFO("Found collisions will be displayed as visualization markers");
 	
 	if (unsafe_paths_)
 	    ROS_WARN("Paths will NOT be monitored for collision once they have been sent to the controller");
 	
-	std::string touch;
-	nodeHandle_.param<std::string>("~allowed_touch", touch, std::string());
-	std::stringstream ss(touch);
-	while (ss.good() & !ss.eof())
-	{
-	    std::string link; ss >> link;
-	    allowedTouch_[link] = true;
-	}
-	
-	if (!touch.empty())
-	    ROS_INFO("Touching is allowed for links: %s", touch.c_str());
-	else
-	    ROS_INFO("No link is allowed to touch objects");
-	
-	nodeHandle_.param<double>("~max_penetration_depth", maxPenetrationDepth_, 0.0);
-	if (!touch.empty())
-	    ROS_INFO("Maximum penetration depth is %f", maxPenetrationDepth_);
-	
 	return true;
     }
-
+    
 protected:
 
     bool getControlJointNames(std::vector<std::string> &joint_names)
@@ -234,30 +220,24 @@ protected:
     bool                                   unsafe_paths_;
     bool                                   show_collisions_;
 
-    /// the set of links that are allowed to touch objects
-    std::map<std::string, bool>            allowedTouch_;
-    
-    /// the maximum penetration allowed when touching objects
-    double                                 maxPenetrationDepth_;
-    
 };
 
     
-class MoveArm : public robot_actions::Action<pr2_robot_actions::MoveArmGoal, int32_t> 
+class MoveArm : public robot_actions::Action<move_arm::MoveArmGoal, int32_t> 
 {
 public:
     
-    MoveArm(MoveBodyCore &core) : Action<pr2_robot_actions::MoveArmGoal, int32_t>("move_" + core.group_), core_(core)
+    MoveArm(MoveBodyCore &core) : Action<move_arm::MoveArmGoal, int32_t>("move_" + core.group_), core_(core)
     {	
 	if (core_.show_collisions_)
 	    visMarkerPublisher_ = core_.nodeHandle_.advertise<visualization_msgs::Marker>("visualization_marker", 128);
 
 	// advertise the topic for displaying kinematic plans
-	displayPathPublisher_ = core_.nodeHandle_.advertise<motion_planning_msgs::KinematicPath>("display_kinematic_path", 10);
+	displayPathPublisher_ = core_.nodeHandle_.advertise<motion_planning_msgs::KinematicPath>("executing_kinematic_path", 10);
 	
-	validatingPath_ = false;
 	planningMonitor_ = core_.planningMonitor_;
-	planningMonitor_->setOnCollisionContactCallback(boost::bind(&MoveArm::contactFound, this, _1), 0);
+	tf_              = &core_.tf_;
+	
 	planningMonitor_->getEnvironmentModel()->setVerbose(false);
     }
     
@@ -266,29 +246,91 @@ public:
     }
     
 private:
+
+    // construct a list of states with cost
+    struct CostState
+    {
+	planning_models::StateParams *state;
+	double                        cost;
+	unsigned int                  index;
+    };
+    
+    struct CostStateOrder
+    {
+	bool operator()(const CostState& a, const CostState& b) const
+	{
+	    return a.cost < b.cost;
+	}	    
+    };
+    
+    struct CollisionCost
+    {
+	CollisionCost(void)
+	{
+	    cost = 0.0;
+	    sum  = 0.0;
+	}
+	
+	double cost;
+	double sum;
+    };
+    
+	
+    /** \brief The ccost and display arguments should be bound by the caller. This is a callback function that gets called by the planning
+     * environment when a collision is found */
+    void contactFound(CollisionCost &ccost, bool display, collision_space::EnvironmentModel::Contact &contact)
+    {
+	double cdepth = fabs(contact.depth);
+	if (ccost.cost < cdepth)
+	    ccost.cost = cdepth;
+	ccost.sum += cdepth;
+
+	if (display)
+	{
+	    static int count = 0;
+	    visualization_msgs::Marker mk;
+	    mk.header.stamp = planningMonitor_->lastMapUpdate();
+	    mk.header.frame_id = planningMonitor_->getFrameId();
+	    mk.ns = ros::this_node::getName();
+	    mk.id = count++;
+	    mk.type = visualization_msgs::Marker::SPHERE;
+	    mk.action = visualization_msgs::Marker::ADD;
+	    mk.pose.position.x = contact.pos.x();
+	    mk.pose.position.y = contact.pos.y();
+	    mk.pose.position.z = contact.pos.z();
+	    mk.pose.orientation.w = 1.0;
+	    
+	    mk.scale.x = mk.scale.y = mk.scale.z = 0.03;
+	    
+	    mk.color.a = 0.6;
+	    mk.color.r = 1.0;
+	    mk.color.g = 0.04;
+	    mk.color.b = 0.04;
+	    
+	    mk.lifetime = ros::Duration(30.0);
+	    
+	    visMarkerPublisher_.publish(mk);
+	}
+    }
     
     /** \brief Evaluate the cost of a state, in terms of collisions */
     double computeStateCollisionCost(const planning_models::StateParams *sp)
     {
-	// clear collision data where callback adds to
-	collisionCost_ = 0.0;
-	collisionLinks_.clear();
-
+	CollisionCost ccost;
+	
+	std::vector<collision_space::EnvironmentModel::AllowedContact> ac = planningMonitor_->getAllowedContacts();
+	planningMonitor_->clearAllowedContacts();
+	planningMonitor_->setOnCollisionContactCallback(boost::bind(&MoveArm::contactFound, this, ccost, false, _1), 0);
+	
 	// check for collision, getting all contacts
 	planningMonitor_->isStateValid(sp, planning_environment::PlanningMonitor::COLLISION_TEST);
 	
-	return evaluateLastCollisionCost();
-    }
+	planningMonitor_->setOnCollisionContactCallback(NULL);
+	planningMonitor_->setAllowedContacts(ac);
 
-    /** \brief Evaluate the cost of the last set of collision checks */
-    double evaluateLastCollisionCost(void)
-    {
-	// check we are only touching with allowed links 
-	for (std::map<std::string, int>::iterator it = collisionLinks_.begin() ; it != collisionLinks_.end() ; ++it)
-	    if (core_.allowedTouch_.find(it->first) == core_.allowedTouch_.end())
-		return INFINITY;
-	return collisionCost_;
+	return ccost.sum;
     }
+    
     
     /** \brief If we have a complex goal for which we have not yet found a valid goal state, we use this function*/
     robot_actions::ResultStatus solveGoalComplex(std::vector< boost::shared_ptr<planning_models::StateParams> > &states,
@@ -364,38 +406,19 @@ private:
 		    
 		    // if reaching the intermediate state was succesful
 		    if (result == robot_actions::SUCCESS)
-		    {
 			// run the short range planner to the original goal
-			robot_actions::ResultStatus temp = runSRplanner(req, feedback);
-
-			// if the planner aborted and we have an idea about an invalid state that
-			// may be in the goal region, we make one last try using the short range planner
-			if (temp == robot_actions::ABORTED && !states.empty())
-			{
-			    // set the goal to be a state
-			    updateRequest(req, states[0].get());
-			    temp = runSRplanner(req, feedback);
-
-			    // restore the input received from the user
-			    req.goal_constraints = kc;
-			    planningMonitor_->setGoalConstraints(req.goal_constraints);
-			    
-			    return temp;
-			}
-			else
-			    return temp;
-		    }
+			return runSRplanner(states, req, feedback);
 		    else
 			return result;
 		}
-	    }
+	    }	    
 	    else
-		return runLRplanner(req, feedback);
+		return runLRplanner(states, req, feedback);
 	}
 	else
 	{
 	    ROS_ERROR("Service for searching for valid states failed");
-	    return runLRplanner(req, feedback);
+	    return runLRplanner(states, req, feedback);
 	}
 	
     }
@@ -426,23 +449,7 @@ private:
 	    return solveGoalJoints(states, req, feedback);
 	}
     }	
-    
-    // construct a list of states with cost
-    struct myState
-    {
-	planning_models::StateParams *state;
-	double                        cost;
-	unsigned int                  index;
-    };
-    
-    struct myStateComp
-    {
-	bool operator()(const myState& a, const myState& b) const
-	{
-	    return a.cost < b.cost;
-	}	    
-    };
-    
+
     void updateRequest(motion_planning_msgs::GetMotionPlan::Request &req, const planning_models::StateParams *sp)
     {
 	// update request
@@ -473,7 +480,7 @@ private:
 	if (states.empty())
 	    return solveGoalComplex(states, req, feedback);
 	
-	std::vector<myState> cstates(states.size());
+	std::vector<CostState> cstates(states.size());
 	
 	for (unsigned int i = 0 ; i < states.size() ; ++i)
 	{
@@ -483,7 +490,7 @@ private:
 	}
 	
 	// find the state with minimal cost
-	std::sort(cstates.begin(), cstates.end(), myStateComp());
+	std::sort(cstates.begin(), cstates.end(), CostStateOrder());
 	
 	for (unsigned int i = 0 ; i < cstates.size() ; ++i)
 	    ROS_DEBUG("Cost of hint state %d is %f", i, cstates[i].cost);
@@ -583,23 +590,63 @@ private:
     
     robot_actions::ResultStatus runLRplanner(motion_planning_msgs::GetMotionPlan::Request &req, int32_t& feedback)
     {
+	std::vector< boost::shared_ptr<planning_models::StateParams> > states;
+	return runLRplanner(states, req, feedback);	
+    }
+    
+    robot_actions::ResultStatus runLRplanner(std::vector< boost::shared_ptr<planning_models::StateParams> > &states,
+					     motion_planning_msgs::GetMotionPlan::Request &req, int32_t& feedback)
+    {
 	ROS_DEBUG("Running long range planner...");
 	ros::ServiceClient clientPlan = core_.nodeHandle_.serviceClient<motion_planning_msgs::GetMotionPlan>(LR_MOTION_PLAN_NAME, true);
-	return runPlanner(clientPlan, req, feedback);	
-    }
 
+	robot_actions::ResultStatus result = runPlanner(clientPlan, req, feedback);
+	
+	// if the planner aborted and we have an idea about an invalid state that
+	// may be in the goal region, we make one last try using the short range planner
+	if (result == robot_actions::ABORTED && !states.empty())
+	{
+	    // set the goal to be a state
+	    ROS_INFO("Trying again with a state in the goal region (although the state is invalid)...");
+	    updateRequest(req, states[0].get());
+	    result = runPlanner(clientPlan, req, feedback);
+	}
+	
+	return result;
+    }
+    
     robot_actions::ResultStatus runSRplanner(motion_planning_msgs::GetMotionPlan::Request &req, int32_t& feedback)
+    {
+	std::vector< boost::shared_ptr<planning_models::StateParams> > states;
+	return runSRplanner(states, req, feedback);
+    }
+    
+    robot_actions::ResultStatus runSRplanner(std::vector< boost::shared_ptr<planning_models::StateParams> > &states,
+					     motion_planning_msgs::GetMotionPlan::Request &req, int32_t& feedback)
     {
 	ROS_DEBUG("Running short range planner...");
 	ros::ServiceClient clientPlan = core_.nodeHandle_.serviceClient<motion_planning_msgs::GetMotionPlan>(SR_MOTION_PLAN_NAME, true);
-	return runPlanner(clientPlan, req, feedback);
+
+	robot_actions::ResultStatus result = runPlanner(clientPlan, req, feedback);
+	
+	// if the planner aborted and we have an idea about an invalid state that
+	// may be in the goal region, we make one last try using the short range planner
+	if (result == robot_actions::ABORTED && !states.empty())
+	{
+	    // set the goal to be a state
+	    ROS_INFO("Trying again with a state in the goal region (although the state is invalid)...");
+	    updateRequest(req, states[0].get());
+	    result = runPlanner(clientPlan, req, feedback);
+	}
+	
+	return result;
     }
 
     robot_actions::ResultStatus runPlanner(ros::ServiceClient &clientPlan, motion_planning_msgs::GetMotionPlan::Request &req, int32_t& feedback)
     {
 	ResultStatus result = robot_actions::SUCCESS;
 	
-	feedback = pr2_robot_actions::MoveArmState::PLANNING;
+	feedback = move_arm::MoveArmState::PLANNING;
 	update(feedback);
 
 	motion_planning_msgs::GetMotionPlan::Response res;
@@ -622,7 +669,7 @@ private:
 		result = robot_actions::PREEMPTED;
 	    
 	    // if we have to plan, do so
-	    if (result == robot_actions::SUCCESS && feedback == pr2_robot_actions::MoveArmState::PLANNING)
+	    if (result == robot_actions::SUCCESS && feedback == move_arm::MoveArmState::PLANNING)
 	    {
 		if (!planningMonitor_->isEnvironmentSafe())
 		{
@@ -662,8 +709,15 @@ private:
 				if (planningMonitor_->transformPathToFrame(currentPath, planningMonitor_->getFrameId()))
 				{
 				    displayPathPublisher_.publish(currentPath);
-				    printPath(currentPath);
-				    feedback = pr2_robot_actions::MoveArmState::MOVING;	
+				    //				    printPath(currentPath);
+				    
+				    CollisionCost ccost;
+				    planningMonitor_->setOnCollisionContactCallback(boost::bind(&MoveArm::contactFound, this, ccost, true, _1), 0);
+				    bool valid = planningMonitor_->isPathValid(currentPath, 0, currentPath.states.size() - 1, planning_environment::PlanningMonitor::COLLISION_TEST + 
+									       planning_environment::PlanningMonitor::PATH_CONSTRAINTS_TEST, false);
+				    planningMonitor_->setOnCollisionContactCallback(NULL);
+				    
+				    feedback = move_arm::MoveArmState::MOVING;	
 				    update(feedback);
 				}
 			    }
@@ -683,11 +737,11 @@ private:
 		result = robot_actions::PREEMPTED;
 	    
 	    // if preeemt was requested while we are planning, terminate
-	    if (result != robot_actions::SUCCESS && feedback == pr2_robot_actions::MoveArmState::PLANNING)
+	    if (result != robot_actions::SUCCESS && feedback == move_arm::MoveArmState::PLANNING)
 	        break;
 	    
 	    // stop the robot if we need to
-	    if (feedback == pr2_robot_actions::MoveArmState::MOVING)
+	    if (feedback == move_arm::MoveArmState::MOVING)
 	    {
 		bool safe = planningMonitor_->isEnvironmentSafe();
 		bool valid = true;
@@ -702,19 +756,15 @@ private:
 			currentPos = 0;
 		    }
 		    
-		    validatingPath_ = true;
-		    collisionCost_ = 0.0;
-		    collisionLinks_.clear();
-		    valid = planningMonitor_->isPathValid(currentPath, currentPos, currentPath.states.size() - 1, planning_environment::PlanningMonitor::COLLISION_TEST, true);
-		    validatingPath_ = false;
-
+		    CollisionCost ccost;
+		    planningMonitor_->setOnCollisionContactCallback(boost::bind(&MoveArm::contactFound, this, ccost, true, _1), 0);
+		    valid = planningMonitor_->isPathValid(currentPath, currentPos, currentPath.states.size() - 1, planning_environment::PlanningMonitor::COLLISION_TEST + 
+							  planning_environment::PlanningMonitor::PATH_CONSTRAINTS_TEST, false);
+		    planningMonitor_->setOnCollisionContactCallback(NULL);
+		    
 		    if (!valid)
-		    {
-			if (evaluateLastCollisionCost() < core_.maxPenetrationDepth_)
-			    valid = true;
-		    }
-		    if (valid)
-			valid = planningMonitor_->isPathValid(currentPath, currentPos, currentPath.states.size() - 1, planning_environment::PlanningMonitor::PATH_CONSTRAINTS_TEST, true);
+			ROS_INFO("Path contact penetration depth: %f", ccost.cost);
+		    
 		}
 		
 		if (result == robot_actions::PREEMPTED || !safe || !valid)
@@ -743,7 +793,7 @@ private:
 		    if (result != robot_actions::PREEMPTED)
 		    {
 			// if we were not preempted
-			feedback = pr2_robot_actions::MoveArmState::PLANNING;	
+			feedback = move_arm::MoveArmState::PLANNING;	
 			update(feedback);
 			continue;
 		    }
@@ -753,7 +803,7 @@ private:
 	    }
 	    
 	    // execute & monitor a path if we need to 
-	    if (result == robot_actions::SUCCESS && feedback == pr2_robot_actions::MoveArmState::MOVING)
+	    if (result == robot_actions::SUCCESS && feedback == move_arm::MoveArmState::MOVING)
 	    {
 		// start the controller if we have to, using trajectory start
 		if (trajectoryId == -1)
@@ -797,7 +847,7 @@ private:
 		        if (approx && !planningMonitor_->isStateValidAtGoal(planningMonitor_->getRobotState()))
 			{
 			    ROS_INFO("Completed approximate path (trajectory %d). Trying again to reach goal...", trajectoryId);
-			    feedback = pr2_robot_actions::MoveArmState::PLANNING;	
+			    feedback = move_arm::MoveArmState::PLANNING;	
 			    update(feedback);
 			    trajectoryId = -1;
 			    continue;
@@ -827,18 +877,22 @@ private:
 	return result; 	
     }
     
-    robot_actions::ResultStatus execute(const pr2_robot_actions::MoveArmGoal& goal, int32_t& feedback)
+
+    robot_actions::ResultStatus execute(const move_arm::MoveArmGoal& goal, int32_t& feedback)
     { 
+
+        planningMonitor_->setAllowedContacts(goal.contacts);
 	
 	motion_planning_msgs::GetMotionPlan::Request req;
 	
 	req.params.model_id = core_.group_;      // the model to plan for (should be defined in planning.yaml)
 	req.params.distance_metric = "L2Square"; // the metric to be used in the robot's state space
+	req.params.contacts = goal.contacts;
 	
 	// forward the goal & path constraints
 	req.goal_constraints = goal.goal_constraints;
 	req.path_constraints = goal.path_constraints;
-	
+
 	// transform them to the local coordinate frame since we may be updating this request later on
 	planningMonitor_->transformConstraintsToFrame(req.goal_constraints, planningMonitor_->getFrameId());
 	planningMonitor_->transformConstraintsToFrame(req.path_constraints, planningMonitor_->getFrameId());
@@ -853,6 +907,12 @@ private:
 	planningMonitor_->setPathConstraints(req.path_constraints);
 	planningMonitor_->setGoalConstraints(req.goal_constraints);
 	
+	ROS_INFO("Received planning request");
+	std::stringstream ss;
+	planningMonitor_->printConstraints(ss);
+	planningMonitor_->printAllowedContacts(ss);
+	ROS_DEBUG("%s", ss.str().c_str());
+
 	// fill the starting state
 	fillStartState(req.start_state);
 	
@@ -888,44 +948,6 @@ private:
 	    for (unsigned int j = 0 ; j < path.states[i].vals.size() ; ++j)
 		ss << path.states[i].vals[j] << " ";
 	    ROS_DEBUG(ss.str().c_str());
-	}
-    }
-    
-    void contactFound(collision_space::EnvironmentModel::Contact &contact)
-    {
-	if (contact.link1)
-	    collisionLinks_[contact.link1->name]++;
-	if (contact.link2)
-	    collisionLinks_[contact.link2->name]++;
-	double depth = fabs(contact.depth);
-	if (collisionCost_ < depth)
-	    collisionCost_ = depth;
-	
-	if (validatingPath_ && core_.show_collisions_)
-	{
-	    static int count = 0;
-	    visualization_msgs::Marker mk;
-	    mk.header.stamp = planningMonitor_->lastMapUpdate();
-	    mk.header.frame_id = planningMonitor_->getFrameId();
-	    mk.ns = ros::this_node::getName();
-	    mk.id = count++;
-	    mk.type = visualization_msgs::Marker::SPHERE;
-	    mk.action = visualization_msgs::Marker::ADD;
-	    mk.pose.position.x = contact.pos.x();
-	    mk.pose.position.y = contact.pos.y();
-	    mk.pose.position.z = contact.pos.z();
-	    mk.pose.orientation.w = 1.0;
-	    
-	    mk.scale.x = mk.scale.y = mk.scale.z = 0.03;
-	    
-	    mk.color.a = 0.6;
-	    mk.color.r = 1.0;
-	    mk.color.g = 0.04;
-	    mk.color.b = 0.04;
-	    
-	    mk.lifetime = ros::Duration(30.0);
-	    
-	    visMarkerPublisher_.publish(mk);
 	}
     }
     
@@ -1038,16 +1060,13 @@ private:
     
 private:
     
-    MoveBodyCore                          &core_;
-    planning_environment::PlanningMonitor *planningMonitor_;
+    MoveBodyCore                                  &core_;
+    planning_environment::PlanningMonitor         *planningMonitor_;
+    tf::TransformListener                         *tf_;
     
-    ros::Publisher                         displayPathPublisher_;
-    ros::Publisher                         visMarkerPublisher_;
+    ros::Publisher                                 displayPathPublisher_;
+    ros::Publisher                                 visMarkerPublisher_;
     
-    double                                 collisionCost_;
-    std::map<std::string, int>             collisionLinks_;
-
-    bool                                   validatingPath_;    
 };
 
 
@@ -1057,14 +1076,18 @@ int main(int argc, char** argv)
     ros::init(argc, argv, "move_arm", ros::init_options::AnonymousName);  
     
     MoveBodyCore core;
+    ROS_INFO("Starting action...");
     
     if (core.configure())
     {
 	MoveArm move_arm(core);
 	
 	robot_actions::ActionRunner runner(20.0);
-	runner.connect<pr2_robot_actions::MoveArmGoal, pr2_robot_actions::MoveArmState, int32_t>(move_arm);
+	runner.connect<move_arm::MoveArmGoal, move_arm::MoveArmState, int32_t>(move_arm);
 	runner.run();
+
+	ROS_INFO("Action started");
+
 	ros::spin();
     }
     

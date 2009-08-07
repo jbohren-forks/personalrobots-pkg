@@ -1,0 +1,4 @@
+<launch>
+  <!-- nav-stack -->
+  <include file="$(find 2dnav_pr2)/move_base/2dnav_pr2.launch"/>
+</launch>

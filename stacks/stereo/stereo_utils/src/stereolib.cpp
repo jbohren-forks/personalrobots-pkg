@@ -564,4 +564,471 @@ do_stereo_d(uint8_t *lim, uint8_t *rim, // input feature images
 
 }
 
+//
+// fast version using SSE intrinsics
+//
+
+static inline void
+memclr_si128(__m128i *buf, int n)
+{
+  int i;
+  __m128i zz;
+  zz = _mm_setzero_si128();
+  n = n>>4;			// divide by 16
+  for (i=0; i<n; i++, buf++)
+    _mm_storeu_si128(buf,zz);
+}
+
+#define EXACTUNIQ   // set this to do exact uniqueness values
+
+void
+do_stereo_d_fast(uint8_t *lim, uint8_t *rim, // input feature images
+	    int16_t *disp,	// disparity output
+	    int16_t *text,	// texture output
+	    int xim, int yim,	// size of images
+	    uint8_t ftzero,	// feature offset from zero
+	    int xwin, int ywin,	// size of corr window, usually square
+	    int dlen,		// size of disparity search, multiple of 8
+	    int tfilter_thresh,	// texture filter threshold
+	    int ufilter_thresh,	// uniqueness filter threshold, percent
+	    uint8_t *buf	// buffer storage
+	    )
+{
+  int i,j,k,d;			// iteration indices
+  int16_t *accp, *accpp;	// acc buffer ptrs
+  int8_t *limp, *rimp, *limpp, *rimpp, *limp2, *limpp2;	// feature image ptrs
+  int8_t *corrend, *corrp, *corrpp; // corr buffer ptrs
+  int16_t *intp, *intpp;	// integration buffer pointers
+  int16_t *textpp;		// texture buffer pointer
+  int16_t *dispp, *disppp;	// disparity output pointer
+  int16_t *textp;		// texture output pointer
+  int16_t acc;
+  int dval;			// disparity value
+  int uniqthresh;		// fractional 16-bit threshold
+  
+  // xmm variables
+  __m128i limpix, rimpix, newpix, tempix, oldpix;
+  __m128i newval, temval;
+  __m128i minv, indv, indtop, indd, indm, temv, nexv;
+  __m128i cval, pval, nval, ival; // correlation values for subpixel disparity interpolation
+  __m128i denv, numv, intv, sgnv; // numerator, denominator, interpolation, sign of subpixel interp
+  __m128i uniqcnt, uniqth, uniqinit, unim, uval; // uniqueness count, uniqueness threshold
+
+  // xmm constants, remember the 64-bit values are backwards
+#ifdef WIN32
+  const __m128i p0xfffffff0 = {0x0, 0x0, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+			       0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+  const __m128i p0x0000000f = {0xff, 0xff, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
+			       0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
+  const __m128i zeros = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
+			 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
+  const __m128i val_epi16_7fff = {0xff, 0x7f, 0xff, 0x7f, 0xff, 0x7f, 0xff, 0x7f, 
+				  0xff, 0x7f, 0xff, 0x7f, 0xff, 0x7f, 0xff, 0x7f};
+  const __m128i val_epi16_8    = {0x08, 0x0, 0x08, 0x0, 0x08, 0x0, 0x08, 0x0, 
+				  0x08, 0x0, 0x08, 0x0, 0x08, 0x0, 0x08, 0x0};
+  const __m128i val_epi16_1    = {0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00,
+				  0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00};
+  const __m128i val_epi16_2    = {0x02, 0x00, 0x02, 0x00, 0x02, 0x00, 0x02, 0x00,
+				  0x02, 0x00, 0x02, 0x00, 0x02, 0x00, 0x02, 0x00};
+  const __m128i val_epi16_3    = {0x03, 0x00, 0x03, 0x00, 0x03, 0x00, 0x03, 0x00,
+				  0x03, 0x00, 0x03, 0x00, 0x03, 0x00, 0x03, 0x00};
+#else
+  const __m128i p0xfffffff0 = {0xffffffffffff0000LL, 0xffffffffffffffffLL};
+  const __m128i p0x0000000f = {0xffffLL, 0x0LL};
+  const __m128i zeros = {0x0LL, 0x0LL};
+  const __m128i val_epi16_7fff = {0x7fff7fff7fff7fffLL, 0x7fff7fff7fff7fffLL};
+  const __m128i val_epi16_8    = {0x0008000800080008LL, 0x0008000800080008LL};
+  const __m128i val_epi16_1    = {0x0001000100010001LL, 0x0001000100010001LL};
+  const __m128i val_epi16_2    = {0x0002000200020002LL, 0x0002000200020002LL};
+  const __m128i val_epi16_3    = {0x0003000300030003LL, 0x0003000300030003LL};
+#endif
+
+  // set up buffers, first align to 16 bytes
+  uintptr_t bufp = (uintptr_t)buf;
+  int16_t *intbuf, *textbuf, *accbuf, temp;
+  int8_t *corrbuf;
+
+  if (bufp & 0xF)
+    bufp = (bufp+15) & ~(uintptr_t)0xF;
+  buf = (uint8_t *)bufp;
+
+#define INTEBUFSIZE ((yim+16+ywin)*dlen)
+  intbuf  = (int16_t *)buf;	// integration buffer
+  bufp = (uintptr_t)intbuf;
+  if (bufp & 0xF)
+    bufp = (bufp+15) & ~(uintptr_t)0xF;
+  intbuf = (int16_t *)bufp;  
+
+#define TXTBUFSIZE (yim + 64)
+  textbuf = (int16_t *)&buf[INTEBUFSIZE*sizeof(int16_t)];	// texture buffer
+  bufp = (uintptr_t)textbuf;
+  if (bufp & 0xF)
+    bufp = (bufp+15) & ~(uintptr_t)0xF;
+  textbuf = (int16_t *)bufp;  
+
+
+#define ACCBUFSIZE (yim*dlen + 64)
+  accbuf  = (int16_t *)&buf[(INTEBUFSIZE+TXTBUFSIZE)*sizeof(int16_t)]; // accumulator buffer
+  bufp = (uintptr_t)accbuf;
+  if (bufp & 0xF)
+    bufp = (bufp+15) & ~(uintptr_t)0xF;
+  accbuf = (int16_t *)bufp;  
+
+
+  corrbuf = (int8_t *)&buf[(INTEBUFSIZE+TXTBUFSIZE+ACCBUFSIZE)*sizeof(int16_t)]; // correlation buffer
+  bufp = (uintptr_t)corrbuf;
+  if (bufp & 0xF)
+    bufp = (bufp+15) & ~(uintptr_t)0xF;
+  corrbuf = (int8_t *)bufp;  
+
+  // clear out buffers
+  memclr_si128((__m128i *)intbuf, dlen*yim*sizeof(int16_t));
+  memclr_si128((__m128i *)corrbuf, dlen*yim*xwin*sizeof(int8_t));
+  memclr_si128((__m128i *)accbuf, dlen*yim*sizeof(int16_t));
+  memclr_si128((__m128i *)textbuf, yim*sizeof(int16_t));
+
+  // set up corrbuf pointers
+  corrend = corrbuf + dlen*yim*xwin;
+  corrp = corrbuf;
+
+  // start further out on line to take care of disparity offsets
+  limp = (int8_t *)lim + dlen - 1;
+  limp2 = limp;
+  rimp = (int8_t *)rim;
+  dispp = disp + xim*(ywin+YKERN-2)/2 + dlen + (xwin+XKERN-2)/2; 
+  textp = NULL;
+  if (text != NULL)		// optional texture buffer output
+    textp = text + dlen;
+
+  // normalize texture threshold
+  tfilter_thresh = tfilter_thresh * xwin * ywin * ftzero;
+  tfilter_thresh = tfilter_thresh / 100; // now at percent of max
+  //  tfilter_thresh = tfilter_thresh / 10;
+
+  // set up some constants
+  //  indtop = _mm_set_epi16(dlen+7, dlen+6, dlen+5, dlen+4, dlen+3, dlen+2, dlen+1, dlen);
+  indtop = _mm_set_epi16(dlen+0, dlen+1, dlen+2, dlen+3, dlen+4, dlen+5, dlen+6, dlen+7);
+  uniqthresh = (0x8000 * ufilter_thresh)/100; // fractional multiplication factor
+                                              // for uniqueness test
+  uniqinit = _mm_set1_epi16(uniqthresh);
+  // init variables so compiler doesn't complain
+  intv = zeros;
+  ival = zeros;
+  nval = zeros;
+  pval = zeros;
+  cval = zeros;
+  uval = zeros;
+
+  // iterate over columns first
+  // acc buffer is column-oriented, not line-oriented
+  // at each iteration, move across one column
+  for (i=0; i<xim-XKERN-dlen+2; i++, limp++, rimp++, corrp+=yim*dlen)
+    {    
+      accp = accbuf;
+      if (corrp >= corrend) corrp = corrbuf;
+      limpp = limp;
+      rimpp = rimp;
+      corrpp = corrp;
+      intp = intbuf+(ywin-1)*dlen; // intbuf current ptr
+      intpp = intbuf;	// intbuf old ptr
+          
+      // iterate over rows
+      for (j=0; j<yim-YKERN+1; j++, limpp+=xim, rimpp+=xim-dlen)
+	{
+	  // replicate left image pixel
+	  // could replace this with unpacklo_epi8, shufflelo_epi16, pshuffle_epi32
+	  limpix = _mm_set1_epi8(*limpp);
+
+	  // iterate over disparities
+	  // have to use an intbuf column for each disparity
+	  for (d=0; d<dlen; d+=16, intp+=16, intpp+=16, accp+=16, corrpp+=16, rimpp+=16)    
+	    {
+	      // do SAD calculation
+	      //	      newc = abs(*limpp - rimpp[d]); // new corr val
+	      rimpix = _mm_loadu_si128((__m128i *)rimpp);
+	      newpix = _mm_subs_epu8(limpix,rimpix); // subtract pixel values, saturate
+	      tempix = _mm_subs_epu8(rimpix,limpix); // subtract pixel values the other way, saturate
+	      newpix = _mm_add_epi8(newpix,tempix); // holds abs value
+//	      newpix = _mm_sub_epi8(limpix,rimpix); // subtract pixel values, alternate for SSSE3
+//	      newpix = _mm_abs_epi8(newpix); // absolute value
+
+	      // calculate new acc values, 8 at a time
+	      //	      newv = newc - *corrpp + *intp; // new acc val
+	      oldpix = _mm_load_si128((__m128i *)corrpp);	      
+	      newval = _mm_unpacklo_epi8(newpix,zeros); // unpack into words
+	      temval = _mm_load_si128((__m128i *)intp);	// get acc values
+	      newval = _mm_add_epi16(newval,temval);
+	      temval = _mm_unpacklo_epi8(oldpix,zeros); // unpack into words
+	      newval = _mm_sub_epi16(newval,temval); // subtract out old corr vals
+
+	      // save new corr value
+	      //	      *corrpp++ = newc;	// save new corr val
+	      _mm_store_si128((__m128i *)corrpp,newpix);
+
+	      // save new acc values
+	      //	      *(intp+dlen) = newv; // save new acc val
+	      _mm_store_si128((__m128i *)(intp+dlen),newval);	      
+
+	      // update windowed sum
+	      //	      *accp++ += newv - *intpp++; // update window sum
+	      temval = _mm_load_si128((__m128i *)intpp); // get old acc values
+	      newval = _mm_sub_epi16(newval,temval);
+	      temval = _mm_load_si128((__m128i *)accp); // get window sum values
+	      newval = _mm_add_epi16(newval,temval);
+	      _mm_store_si128((__m128i *)accp,newval);
+
+	      // next set of 8 values
+	      // calculate new acc values, 8 at a time
+	      //	      newv = newc - *corrpp + *intp; // new acc val
+	      newval = _mm_unpackhi_epi8(newpix,zeros); // unpack into words
+	      temval = _mm_load_si128((__m128i *)(intp+8));	// get acc values
+	      newval = _mm_add_epi16(newval,temval);
+	      temval = _mm_unpackhi_epi8(oldpix,zeros); // unpack into words
+	      newval = _mm_sub_epi16(newval,temval); // subtract out old corr vals
+
+	      // save new acc values
+	      //	      *(intp+dlen) = newv; // save new acc val
+	      _mm_store_si128((__m128i *)(intp+dlen+8),newval);	      
+
+	      // update windowed sum
+	      //	      *accp++ += newv - *intpp++; // update window sum
+	      temval = _mm_load_si128((__m128i *)(intpp+8)); // get old acc values
+	      newval = _mm_sub_epi16(newval,temval);
+	      temval = _mm_load_si128((__m128i *)(accp+8)); // get window sum values
+	      newval = _mm_add_epi16(newval,temval);
+	      _mm_store_si128((__m128i *)(accp+8),newval);
+	    }
+	} 
+
+      // average texture computation
+      // use full corr window
+      memclr_si128((__m128i *)intbuf, yim*sizeof(int16_t));
+      limpp = limp;
+      limpp2 = limp2;
+      intp = intbuf+ywin-1;
+      intpp = intbuf;
+      accpp = textbuf;
+      acc = 0;
+	  
+#if 1				// this should be optimized
+      // iterate over rows
+      // have to skip down a row each time...
+      // check for initial period
+      if (i < xwin)
+	{
+	  for (j=0; j<yim-YKERN+1; j++, limpp+=xim)
+	    {
+	      temp = abs(*limpp- ftzero); 
+	      *intp = temp;
+	      acc += *intp++ - *intpp++;
+	      *accpp++ += acc;
+	    }
+	}
+      else
+	{
+	  for (j=0; j<yim-YKERN+1; j++, limpp+=xim, limpp2+=xim)
+	    {
+	      temp = abs(*limpp-ftzero); 
+	      *intp = temp - abs(*limpp2-ftzero);
+	      acc += *intp++ - *intpp++;
+	      *accpp++ += acc;
+	    }
+          limp2++;
+	}
+#endif
+          
+      // disparity extraction, find min of correlations
+      if (i >= xwin)		// far enough along...
+	{
+	  disppp = dispp;
+	  accp   = accbuf + (ywin-1)*dlen; // results within initial corr window are partial
+	  textpp = textbuf + (ywin-1); // texture measure
+
+	  // start the minimum calc
+	  accpp = accp;
+	  nexv = val_epi16_7fff;
+	  for (d=0; d<dlen; d+=8, accpp+=8)
+	    nexv = _mm_min_epi16(nexv,*(__m128i *)accpp); // get window sum values
+
+	  // iterate over rows
+	  for (j=0; j<yim-ywin-YKERN+2; j+=8) 
+	    {
+	      //	      if (*textpp < tfilter_thresh && tfilter_thresh > 0)
+	      //		{
+	      //		  *disppp = FILTERED;
+	      //		  continue;
+	      //		}
+
+	      // 8 rows at a time
+	      for (k=0; k<8; k++, textpp++) // do 8 values at a time
+		{
+		  // shift all values left 2 bytes for next entry
+		  cval = _mm_slli_si128(cval,2);
+		  pval = _mm_slli_si128(pval,2);
+		  nval = _mm_slli_si128(nval,2);
+		  uval = _mm_slli_si128(uval,2);
+		  ival = _mm_slli_si128(ival,2);
+
+		  // propagate minimum value
+		  // could use _mm_minpos_epu16 if available, still need two shuffles
+		  temv = _mm_shufflelo_epi16(nexv,0xb1); // shuffle words
+		  temv = _mm_shufflehi_epi16(temv,0xb1); // shuffle words
+		  minv = _mm_min_epi16(nexv,temv); // word mins propagated
+		  minv = _mm_min_epi16(minv,_mm_shuffle_epi32(minv,0xb1)); // shuffle dwords
+		  minv = _mm_min_epi16(minv,_mm_shuffle_epi32(minv,0x4e)); // shuffle dwords
+		  // save center value
+		  cval = _mm_or_si128(_mm_and_si128(cval,p0xfffffff0),_mm_and_si128(minv,p0x0000000f)); 
+		  // uniqueness threshold
+		  uniqth = _mm_mulhi_epu16(uniqinit,minv);
+		  uniqth = _mm_add_epi16(uniqth,minv);
+
+		  // find index of min, and uniqueness count
+		  // also do next min
+		  indv = indtop;
+		  indd = val_epi16_8;
+		  uniqcnt = zeros;
+		  nexv = val_epi16_7fff; // initial min value for next 8 rows
+		  for (d=0; d<dlen; d+=8, accp+=8)
+		    {
+		      indm = _mm_cmpgt_epi16(*(__m128i *)accp,minv); // compare to min
+		      indv = _mm_subs_epu16(indv,indd); // decrement indices
+		      indd = _mm_and_si128(indd,indm); // wipe out decrement at min
+		      unim = _mm_cmpgt_epi16(uniqth,*(__m128i *)accp); // compare to unique thresh		      
+		      nexv = _mm_min_epi16(nexv,*(__m128i *)(accp+dlen)); // get min for next 8 rows
+		      uniqcnt = _mm_sub_epi16(uniqcnt,unim); // add in uniq count
+		    } 
+		  indv = _mm_subs_epu16(indv,indd); // decrement indices to saturate at 0
+		  // propagate max value
+		  temv = _mm_shufflelo_epi16(indv,0xb1); // shuffle words
+		  temv = _mm_shufflehi_epi16(temv,0xb1); // shuffle words
+		  indv = _mm_max_epi16(indv,temv); // word maxs propagated
+		  indv = _mm_max_epi16(indv,_mm_shuffle_epi32(indv,0xb1)); // shuffle dwords
+		  indv = _mm_max_epi16(indv,_mm_shuffle_epi32(indv,0x4e)); // shuffle dwords
+
+		  // set up subpixel interpolation (center, previous, next correlation sums)
+		  dval = _mm_extract_epi16(indv,0);	// index of minimum
+		  nval = _mm_insert_epi16(nval,*(accp-dval),0);
+		  pval = _mm_insert_epi16(pval,*(accp-dval-2),0);
+		  // save disparity
+		  ival = _mm_or_si128(_mm_and_si128(ival,p0xfffffff0),_mm_and_si128(indv,p0x0000000f)); 
+
+		  // finish up uniqueness count
+		  uniqcnt = _mm_sad_epu8(uniqcnt,zeros); // add up each half
+		  uniqcnt = _mm_add_epi32(uniqcnt, _mm_srli_si128(uniqcnt,8)); // add two halves
+#ifdef EXACTUNIQ
+		  unim = _mm_cmpgt_epi16(uniqth,nval); // compare to unique thresh
+		  uniqcnt = _mm_add_epi16(uniqcnt,unim); // subtract from uniq count
+		  unim = _mm_cmpgt_epi16(uniqth,pval); // compare to unique thresh
+		  uniqcnt = _mm_add_epi16(uniqcnt,unim); // subtract from uniq count
+#endif
+		  if (*textpp < tfilter_thresh)
+		    uniqcnt = val_epi16_8; // cancel out this value
+		  uval = _mm_or_si128(_mm_and_si128(uval,p0xfffffff0),
+				      _mm_and_si128(uniqcnt,p0x0000000f));
+		}
+
+	      // disparity interpolation (to 1/16 pixel)
+	      // use 16*|p-n| / 2*(p+n-2c)  [p = previous, c = center, n = next]
+	      // sign determined by p-n, add increment if positive
+	      // denominator is always positive
+	      // division done by subtraction and comparison
+	      //   computes successive bits of the interpolation
+	      // NB: need to check disparities 0 and d-1, skip interpolation
+
+	      // numerator
+	      numv = _mm_sub_epi16(pval,nval);
+	      sgnv = _mm_cmpgt_epi16(nval,pval); // sign, 0xffff for n>p
+	      numv = _mm_xor_si128(numv,sgnv);
+	      numv = _mm_sub_epi16(numv,sgnv);	// abs val here
+	      
+	      // denominator
+	      denv = _mm_add_epi16(pval,nval);
+	      denv = _mm_sub_epi16(denv,cval);
+	      denv = _mm_sub_epi16(denv,cval); // p+n-2c
+
+
+	      // first bit is always zero unless c = p or c = n, but
+	      //   for this case we'll get all 1's in the code below, which will round up
+	      // multiply num by 2 for second bit
+	      numv = _mm_add_epi16(numv,numv);	
+	      // second bit
+	      temv = _mm_cmpgt_epi16(numv,denv); // 0xffff if n>d
+	      intv = _mm_srli_epi16(temv,15); // add 1 where n>d; use shift because subtraction kills gcc 4.1.x
+	      intv = _mm_slli_epi16(intv,1); // shift left
+	      numv = _mm_subs_epu16(numv,_mm_and_si128(temv,denv)); // sub out denominator
+	      numv = _mm_slli_epi16(numv,1); // shift left (x2)
+
+	      // third bit
+	      temv = _mm_cmpgt_epi16(numv,denv); // 0xffff if n>d
+	      intv = _mm_sub_epi16(intv,temv); // add 1 where n>d
+	      intv = _mm_slli_epi16(intv,1); // shift left
+	      numv = _mm_subs_epu16(numv,_mm_and_si128(temv,denv)); // sub out denominator
+	      numv = _mm_slli_epi16(numv,1); // shift left (x2)
+
+	      // fourth bit
+	      temv = _mm_cmpgt_epi16(numv,denv); // 0xffff if n>d
+	      intv = _mm_sub_epi16(intv,temv); // add 1 where n>d
+	      intv = _mm_slli_epi16(intv,1); // shift left
+	      numv = _mm_subs_epu16(numv,_mm_and_si128(temv,denv)); // sub out denominator
+	      numv = _mm_slli_epi16(numv,1); // shift left (x2)
+
+	      // fifth bit
+	      temv = _mm_cmpgt_epi16(numv,denv); // 0xffff if n>d
+	      intv = _mm_sub_epi16(intv,temv); // add 1 where n>d
+
+	      // round and do sign
+	      intv = _mm_add_epi16(intv,val_epi16_1);	// add in 1 to round
+	      intv = _mm_srli_epi16(intv,1);	// shift back
+	      intv = _mm_xor_si128(intv,sgnv); // get sign back
+	      intv = _mm_sub_epi16(intv,sgnv); // signed val here
+
+	      // add in increment, should be max +-8
+	      ival = _mm_slli_epi16(ival,4);
+	      ival = _mm_sub_epi16(ival,intv);
+	      
+	      // check uniq count
+	      // null out pval and nval mins
+	      //	      unim = _mm_cmpgt_epi16(uniqth,nval); // compare to unique thresh
+	      //	      uval = _mm_add_epi16(uval,unim); // sub out
+	      //	      unim = _mm_cmpgt_epi16(uniqth,pval); // compare to unique thresh
+	      //	      uval = _mm_add_epi16(uval,unim); // sub out
+#ifdef EXACTUNIQ
+	      uval = _mm_cmplt_epi16(uval,val_epi16_2);	// 0s where uniqcnt > 1
+#else
+	      uval = _mm_cmplt_epi16(uval,val_epi16_3);	// 0s where uniqcnt > 2
+#endif
+	      ival = _mm_and_si128(uval,ival); // set to bad values to 0
+
+	      // store in output array
+	      *disppp = _mm_extract_epi16(ival,7);
+	      disppp += xim;
+	      *disppp = _mm_extract_epi16(ival,6);
+	      disppp += xim;
+	      *disppp = _mm_extract_epi16(ival,5);
+	      disppp += xim;
+	      *disppp = _mm_extract_epi16(ival,4);
+	      disppp += xim;
+	      *disppp = _mm_extract_epi16(ival,3);
+	      disppp += xim;
+	      *disppp = _mm_extract_epi16(ival,2);
+	      disppp += xim;
+	      *disppp = _mm_extract_epi16(ival,1);
+	      disppp += xim;
+	      *disppp = _mm_extract_epi16(ival,0);
+	      disppp += xim;
+
+	    } // end of row loop
+
+	  dispp++;		// go to next column of disparity output
+	}
+
+    } // end of outer column loop
+
+  // clean up last few rows in case of overrun
+  dispp = disp + (yim - YKERN/2 - ywin/2)*xim;
+  for (i=0; i<7; i++, dispp+=xim)
+    memclr_si128((__m128i *)dispp, xim*sizeof(int16_t));
+
+}
+
 

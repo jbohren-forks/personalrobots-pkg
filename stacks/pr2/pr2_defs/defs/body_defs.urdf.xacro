@@ -4,6 +4,9 @@
        xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
        xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface">
 
+  <include filename="$(find pr2_defs)/defs/body_ext.xacro" />
+  <include filename="$(find pr2_defs)/defs/body_cal.xacro" />
+
   <macro name="pr2_torso" params="name parent *origin">
 
 
@@ -13,8 +16,9 @@
         <axis xyz="0 0 1" />
         <!-- KWatts: Max should be 0.31, changed to 0.20 to prevent jamming -->
         <!-- HW ticket 481, will examine spine to determine failures -->
-        <limit min="0.0" max="0.20" effort="10000" velocity="0.015"/>
-        <safety_controller  k_velocity="400000" lower="${0.0+0.005}" upper="${0.20-0.005}" k_position="1000" />
+        <limit lower="0.0" upper="0.20" effort="10000" velocity="0.015"/>
+        <safety_controller  k_velocity="400000" soft_lower_limit="${0.0+0.005}" soft_upper_limit="${0.20-0.005}" k_position="1000" />
+        <calibration reference_position="0.00536" />
         <joint_properties damping="10.0" />
         <parent name="${parent}">
           <insert_block name="origin" />
@@ -31,7 +35,7 @@
       <visual name="${name}_visual">
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${name}_visual_geom">
-          <mesh filename="torso.stlb" />
+          <mesh filename="$(find pr2_defs)/meshes/torso.stl" />
         </geometry>
       </visual>
 
@@ -43,60 +47,11 @@
       </collision>
     </link>
 
-
-    <gazebo name="${name}_sensor" reference="${name}_link">
-      <sensor:contact name="${name}_contact_sensor">
-        <geom>${name}_collision</geom>
-        <updateRate>100.0</updateRate>
-        <controller:ros_bumper name="${name}_ros_bumper_controller" plugin="libros_bumper.so">
-          <alwaysOn>true</alwaysOn>
-          <updateRate>100.0</updateRate>
-          <bumperTopicName>${name}_bumper</bumperTopicName>
-          <interface:bumper name="${name}_ros_bumper_iface" />
-        </controller:ros_bumper>
-      </sensor:contact>
-    </gazebo>
-    <gazebo name="gazebo_material" reference="${name}_visual">
-      <material value="PR2/Grey2" />
-    </gazebo>
-
-    <ogre name="${name}_visual_mesh" reference="${name}_visual">
-      <mesh value="torso.mesh" />
-    </ogre>
-
-    <transmission type="SimpleTransmission" name="${name}_trans">
-      <actuator name="${name}_motor" />
-      <joint name="${name}_joint" />
-      <mechanicalReduction>-52143.33</mechanicalReduction>
-      <calibration reference_position="0.00536" values="0 0" />
-    </transmission>
+    <pr2_torso_ext name="${name}" parent="${parent}">
+      <insert_block name="origin"/>
+    </pr2_torso_ext>
 
   </macro>
 
-
-  <!--                    Calibration                            -->
-
-  <macro name="torso_calibrator">
-    <controller type="JointCalibrationControllerNode"
-                name="cal_torso_lift" topic="cal_torso">
-      <calibrate joint="torso_lift_joint"
-                 actuator="torso_lift_motor"
-                 transmission="torso_lift_trans"
-                 velocity="-2.0" />
-      <pid p="20000.0" i="10" d="0" iClamp="1000" />
-    </controller>
-  </macro>
-
-<!-- Calibrates the torso by moving to the upper limit -->
-<macro name="torso_limit_calibrator">
- <controller type="JointLimitCalibrationControllerNode"
-    name="cal_torso_lift" topic="cal_torso">
-   <calibrate joint="torso_lift_joint"
-              actuator="torso_lift_motor"
-              transmission="torso_lift_trans"
-              velocity="2.0" />
-   <pid p="20000" i="25" d="0" iClamp="1000" />
- </controller>
-</macro>
 
 </robot>

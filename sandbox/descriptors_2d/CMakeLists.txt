@@ -22,6 +22,7 @@ rospack_download_test_data(http://pr.willowgarage.com/data/descriptors_2d/correc
 rospack_add_library(descriptors_2d src/descriptors_2d.cpp)
 rospack_add_executable(example src/example.cpp)
 target_link_libraries(example descriptors_2d)
+rospack_add_executable(hist_test src/hist_test.cpp)
 
 # This unit test fails on 64-bit, #2141
 include(CMakeDetermineSystem)

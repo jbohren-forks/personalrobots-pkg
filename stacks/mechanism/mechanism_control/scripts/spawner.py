@@ -42,6 +42,7 @@ from mechanism_msgs.srv import SpawnController, KillController, SwitchController
 
 from xml.dom.minidom import parse, parseString
 import xml.dom
+import signal
 
 def print_usage(exit_code = 0):
     print 'spawner.py [--stopped] <controller names>'
@@ -86,7 +87,6 @@ if __name__ == '__main__':
 
     # Override rospy's signal handling.  We'll invoke rospy's handler after
     # we're done shutting down.
-    import signal
     prev_handler = signal.getsignal(signal.SIGINT)
     signal.signal(signal.SIGINT, shutdown)
 

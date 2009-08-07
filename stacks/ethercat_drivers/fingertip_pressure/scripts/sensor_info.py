@@ -45,7 +45,7 @@ roslib.load_manifest('fingertip_pressure')
 import rospy
 
 from fingertip_pressure.msg import PressureInfo, PressureInfoElement
-from robot_msgs.msg import Vector3
+from geometry_msgs.msg import Vector3
 
 force_per_unit_table = [ 
         600, # 0 bottom

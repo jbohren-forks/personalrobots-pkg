@@ -40,6 +40,7 @@
 #include "collision_space/environment_objects.h"
 #include <planning_models/kinematic.h>
 #include <planning_models/output.h>
+#include <geometric_shapes/bodies.h>
 #include <LinearMath/btVector3.h>
 #include <boost/thread/mutex.hpp>
 #include <boost/shared_ptr.hpp>
@@ -75,7 +76,20 @@ namespace collision_space
 	    /** \brief if the contact is between two links, this is not NULL */
 	    planning_models::KinematicModel::Link *link2; 
 	};
-	
+
+	/** \brief Definition of a contact that is allowed */
+	struct AllowedContact
+	{
+	    /// the bound where the contact is allowed 
+	    boost::shared_ptr<bodies::Body> bound;
+	    
+	    /// the set of link names that are allowed to make contact
+	    std::vector<std::string>        links;
+
+	    /// tha maximum depth for the contact
+	    double                          depth;
+	};
+    
 	EnvironmentModel(void)
 	{
 	    m_selfCollision = true;
@@ -140,8 +154,8 @@ namespace collision_space
 	virtual bool isSelfCollision(void) = 0;
 	
 	/** \brief Get the list of contacts (collisions). The maximum number of contacts to be returned can be specified. If the value is 0, all found contacts are returned. */
-	virtual bool getCollisionContacts(std::vector<Contact> &contacts, unsigned int max_count = 1) = 0;
-
+	virtual bool getCollisionContacts(const std::vector<AllowedContact> &allowedContacts, std::vector<Contact> &contacts, unsigned int max_count = 1) = 0;
+	bool getCollisionContacts(std::vector<Contact> &contacts, unsigned int max_count = 1);
 	
 	/**********************************************************************/
 	/* Collision Bodies                                                   */

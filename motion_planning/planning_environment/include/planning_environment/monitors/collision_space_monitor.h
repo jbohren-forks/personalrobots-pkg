@@ -40,6 +40,7 @@
 #include "planning_environment/models/collision_models.h"
 #include "planning_environment/monitors/kinematic_model_state_monitor.h"
 
+#include <motion_planning_msgs/AcceptableContact.h>
 #include <mapping_msgs/CollisionMap.h>
 #include <mapping_msgs/ObjectInMap.h>
 #include <boost/thread/mutex.hpp>
@@ -142,11 +143,24 @@ namespace planning_environment
 	    return pointcloud_padd_;
 	}
 	
-	/** \brief If the used modified some instance of an environment model, this function provides the means to obtain a collision map (the set of boxes)
+	/** \brief Convert an allowed contact message into the structure accepted by the collision space */
+	bool computeAllowedContact(const motion_planning_msgs::AcceptableContact &allowedContactMsg, collision_space::EnvironmentModel::AllowedContact &allowedContact) const;
+	
+	/** \brief This function provides the means to obtain a collision map (the set of boxes)
+	 *  from the current environment model */
+	void recoverCollisionMap(mapping_msgs::CollisionMap &cmap);
+
+	/** \brief If the user modified some instance of an environment model, this function provides the means to obtain a collision map (the set of boxes)
 	 *  from that environment model */
 	void recoverCollisionMap(const collision_space::EnvironmentModel *env, mapping_msgs::CollisionMap &cmap);
 
-	/** \brief If the used modified some instance of an
+	
+	/** \brief This function provides the means to
+	    obtain a set of objects in map (all objects that are not
+	    in the namespace the collision map was added to) from the current environment */
+	void recoverObjectsInMap(std::vector<mapping_msgs::ObjectInMap> &omap);
+	
+	/** \brief If the user modified some instance of an
 	    environment model, this function provides the means to
 	    obtain a set of objects in map (all objects that are not
 	    in the namespace the collision map was added to) */

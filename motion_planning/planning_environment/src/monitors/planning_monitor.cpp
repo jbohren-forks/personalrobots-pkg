@@ -315,7 +315,7 @@ bool planning_environment::PlanningMonitor::isStateValid(const planning_models::
     // check for collision
     std::vector<collision_space::EnvironmentModel::Contact> contacts;
     if (test & COLLISION_TEST)
-	valid = !getEnvironmentModel()->getCollisionContacts(contacts, maxCollisionContacts_);
+	valid = !getEnvironmentModel()->getCollisionContacts(allowedContacts_, contacts, maxCollisionContacts_);
     
     if (valid && (test & (PATH_CONSTRAINTS_TEST | GOAL_CONSTRAINTS_TEST)))
     {	    
@@ -490,6 +490,7 @@ bool planning_environment::PlanningMonitor::isPathValidAux(const motion_planning
     unsigned int remainingContacts = maxCollisionContacts_;
     
     // check every state
+    if (valid)
     for (unsigned int i = start ; i <= end ; ++i)
     {
 	if (path.states[i].vals.size() != sdim)
@@ -503,16 +504,18 @@ bool planning_environment::PlanningMonitor::isPathValidAux(const motion_planning
 	getKinematicModel()->computeTransforms(sp->getParams());
 	getEnvironmentModel()->updateRobotModel();
 	
+	bool this_valid = true;
+	
 	// check for collision
 	std::vector<collision_space::EnvironmentModel::Contact> contacts;
 	if (test & COLLISION_TEST)
-	    valid = !getEnvironmentModel()->getCollisionContacts(contacts, remainingContacts);
+	    this_valid = !getEnvironmentModel()->getCollisionContacts(allowedContacts_, contacts, remainingContacts);
 	
 	if (onCollisionContact_)
 	    for (unsigned int i = 0 ; i < contacts.size() ; ++i)
 		onCollisionContact_(contacts[i]);
 	
-	if (verbose && !valid)
+	if (verbose && !this_valid)
 	    ROS_INFO("isPathValid: State %d is in collision", i);
 	
 	if (maxCollisionContacts_ > 0)
@@ -524,12 +527,14 @@ bool planning_environment::PlanningMonitor::isPathValidAux(const motion_planning
 	}
 	
 	// check for validity
-	if (valid && (test & PATH_CONSTRAINTS_TEST))
+	if (this_valid && (test & PATH_CONSTRAINTS_TEST))
 	{
-	    valid = ks.decide(sp->getParams());
-	    if (verbose && !valid)
+	    this_valid = ks.decide(sp->getParams());
+	    if (verbose && !this_valid)
 	        ROS_INFO("isPathValid: State %d does not satisfy path constraints", i);
 	}
+
+	valid = valid && this_valid;
     }
     
     // check for validity
@@ -548,3 +553,59 @@ bool planning_environment::PlanningMonitor::isPathValidAux(const motion_planning
     
     return valid;
 }
+
+void planning_environment::PlanningMonitor::setAllowedContacts(const std::vector<collision_space::EnvironmentModel::AllowedContact> &allowedContacts)
+{
+    allowedContacts_ = allowedContacts;
+}
+
+void planning_environment::PlanningMonitor::setAllowedContacts(const std::vector<motion_planning_msgs::AcceptableContact> &allowedContacts)
+{  
+    allowedContacts_.clear();
+    for (unsigned int i = 0 ; i < allowedContacts.size() ; ++i)
+    {
+	collision_space::EnvironmentModel::AllowedContact ac;
+	if (computeAllowedContact(allowedContacts[i], ac))
+	    allowedContacts_.push_back(ac);
+    }
+}
+
+const std::vector<collision_space::EnvironmentModel::AllowedContact>& planning_environment::PlanningMonitor::getAllowedContacts(void) const
+{
+    return allowedContacts_;
+}
+
+void planning_environment::PlanningMonitor::printAllowedContacts(std::ostream &out)
+{
+    out << allowedContacts_.size() << " allowed contacts" << std::endl;
+    for (unsigned int i = 0 ; i < allowedContacts_.size() ; ++i)
+    {
+        out << "  - allowing contacts up to depth " << allowedContacts_[i].depth << " between links: [";
+	for (unsigned int j = 0 ; j < allowedContacts_[i].links.size() ; ++j)
+	    out << allowedContacts_[i].links[j];
+	out << "] and bound " << allowedContacts_[i].bound.get() << std::endl;
+    }
+}
+
+void planning_environment::PlanningMonitor::printConstraints(std::ostream &out)
+{
+    out << "Path constraints:" << std::endl;
+
+    KinematicConstraintEvaluatorSet ks;
+    ks.add(getKinematicModel(), kcPath_.joint_constraint);
+    ks.add(getKinematicModel(), kcPath_.pose_constraint);
+    ks.print(out);
+
+    out << "Goal constraints:" << std::endl;
+    ks.clear();
+    ks.add(getKinematicModel(), kcGoal_.joint_constraint);
+    ks.add(getKinematicModel(), kcGoal_.pose_constraint);
+    ks.print(out);
+}
+
+void planning_environment::PlanningMonitor::clearAllowedContacts(void)
+{
+    allowedContacts_.clear();
+}
+
+	

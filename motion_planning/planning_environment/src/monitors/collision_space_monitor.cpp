@@ -367,6 +367,35 @@ bool planning_environment::CollisionSpaceMonitor::attachObject(const mapping_msg
     return result;
 }
 
+bool planning_environment::CollisionSpaceMonitor::computeAllowedContact(const motion_planning_msgs::AcceptableContact &allowedContactMsg,
+									collision_space::EnvironmentModel::AllowedContact &allowedContact) const
+{
+    shapes::Shape *shape = constructObject(allowedContactMsg.bound);
+    if (shape)
+    {
+	boost::shared_ptr<bodies::Body> body(bodies::createBodyFromShape(shape));
+	geometry_msgs::PoseStamped pose;
+	tf_->transformPose(getFrameId(), allowedContactMsg.pose, pose);
+	btTransform tr;
+	tf::poseMsgToTF(pose.pose, tr);
+	body->setPose(tr);
+	allowedContact.bound = body;
+	allowedContact.links = allowedContactMsg.links;
+	allowedContact.depth = allowedContactMsg.depth;
+	delete shape;
+	return true;
+    }
+    else
+	return false;
+}
+
+void planning_environment::CollisionSpaceMonitor::recoverCollisionMap(mapping_msgs::CollisionMap &cmap)
+{   
+    getEnvironmentModel()->lock();
+    recoverCollisionMap(getEnvironmentModel(), cmap);
+    getEnvironmentModel()->unlock();
+}
+
 void planning_environment::CollisionSpaceMonitor::recoverCollisionMap(const collision_space::EnvironmentModel *env, mapping_msgs::CollisionMap &cmap)
 {
     cmap.header.frame_id = getFrameId();
@@ -396,6 +425,13 @@ void planning_environment::CollisionSpaceMonitor::recoverCollisionMap(const coll
 	    obb.axis.z = axis.z();
 	    cmap.boxes.push_back(obb);
 	}
+}
+
+void planning_environment::CollisionSpaceMonitor::recoverObjectsInMap(std::vector<mapping_msgs::ObjectInMap> &omap)
+{
+    getEnvironmentModel()->lock();
+    recoverObjectsInMap(getEnvironmentModel(), omap);
+    getEnvironmentModel()->unlock();
 }
 
 void planning_environment::CollisionSpaceMonitor::recoverObjectsInMap(const collision_space::EnvironmentModel *env, std::vector<mapping_msgs::ObjectInMap> &omap)

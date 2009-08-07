@@ -1,0 +1,4 @@
+JointStatesChannelConfig joint_states_config
+PixelChannelConfig[] pixel_configs
+duration joint_states_timeshift
+CrossPixelTimeshift[] pixel_timeshifts

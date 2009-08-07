@@ -428,8 +428,8 @@ class ReactorPanel(wx.Panel):
 
       # Create new timeline with name and row index
       if len(tl_match) is 0:
-	print "NEW TIMELINE: " + tl_desc.name
-	print [t.name for t in self.plan.timelines]
+	#DEBUG print "NEW TIMELINE: " + tl_desc.name
+	#DEBUG print [t.name for t in self.plan.timelines]
 	tl = Timeline(tl_desc.name, len(self.plan.timelines), color='#FFFFFF')
 	self.plan.timelines.append(tl)
       else:

@@ -44,6 +44,7 @@ rospack_add_library(chomp
 	src/chomp_robot_model.cpp
 	src/chomp_trajectory.cpp
 	src/treefksolverjointposaxis.cpp
+	src/treefksolverjointposaxis_partial.cpp
 )	
 
 rospack_add_executable(chomp_planner_node

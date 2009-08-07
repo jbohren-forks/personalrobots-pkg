@@ -39,8 +39,8 @@
 #include <ros/ros.h>
 #include <robot_actions/action_client.h>
 
-#include <pr2_robot_actions/MoveArmGoal.h>
-#include <pr2_robot_actions/MoveArmState.h>
+#include <move_arm/MoveArmGoal.h>
+#include <move_arm/MoveArmState.h>
 
 #include <vector>
 #include <string>
@@ -50,11 +50,11 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "test_move_right_arm");
     ros::NodeHandle nh;
 
-    robot_actions::ActionClient<pr2_robot_actions::MoveArmGoal, pr2_robot_actions::MoveArmState, int32_t> move_arm("move_right_arm");
+    robot_actions::ActionClient<move_arm::MoveArmGoal, move_arm::MoveArmState, int32_t> move_arm("move_right_arm");
     
     int32_t                         feedback;
-    pr2_robot_actions::MoveArmGoal  goalA;
-    pr2_robot_actions::MoveArmGoal  goalB;
+    move_arm::MoveArmGoal  goalA;
+    move_arm::MoveArmGoal  goalB;
     
     goalA.goal_constraints.set_pose_constraint_size(1);
     goalA.goal_constraints.pose_constraint[0].pose.header.stamp = ros::Time::now();

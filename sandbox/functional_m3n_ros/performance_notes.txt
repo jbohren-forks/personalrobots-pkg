@@ -1,0 +1,4 @@
+Train: pcd_train_1.bag
+Train acc:  0.892634
+Test acc: 0.709794
+

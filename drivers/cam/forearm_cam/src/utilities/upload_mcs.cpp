@@ -267,7 +267,7 @@ int write_flash(char *camera_url)
     }
 
     int addr = page * FLASH_PAGE_SIZE;
-    int startretries = 1;
+    int startretries = 10;
     int retries = startretries;
 
     if (fcamReliableFlashWrite(&camera, page, (uint8_t *) firmware + addr, &retries) != 0)

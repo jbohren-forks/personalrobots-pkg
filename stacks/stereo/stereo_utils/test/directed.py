@@ -78,10 +78,17 @@ class TestDirected(unittest.TestCase):
         print error
         self.assert_(abs(error) < 0.25) 
 
+  def test_computed_dense_stereo(self):
+    fd = FeatureDetectorStar(300)
+    ds = DescriptorSchemeSAD()
+    lf = Image.open("f0-left.png").convert("L")
+    rf = Image.open("f0-right.png").convert("L")
+    af = ComputedDenseStereoFrame(lf, rf, feature_detector = fd, descriptor_scheme = ds)
+
 if __name__ == '__main__':
   if 0:
     rostest.unitrun('stereo_utils', 'directed', TestDirected)
   else:
     suite = unittest.TestSuite()
-    suite.addTest(TestDirected('test_feature_detectors'))
+    suite.addTest(TestDirected('test_computed_dense_stereo'))
     unittest.TextTestRunner(verbosity=2).run(suite)

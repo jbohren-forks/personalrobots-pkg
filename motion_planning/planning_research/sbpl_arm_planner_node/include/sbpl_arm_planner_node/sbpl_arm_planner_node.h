@@ -38,40 +38,34 @@
 #include <ros/ros.h>
 #include "ros/node_handle.h"
 
-/** TF **/
+/** stuffZ **/
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
 #include <tf/message_notifier.h>
 #include <tf/transform_datatypes.h>
+#include <boost/thread/mutex.hpp>
+#include <boost/shared_ptr.hpp>
+#include <kdl/chain.hpp>
+#include <kdl/frames.hpp>
+#include <kdl/chainjnttojacsolver.hpp>
 
-/** Messages needed for trajectory control and collision map**/
+/** Messages **/
+#include <robot_msgs/Wrench.h>
 #include <geometry_msgs/Pose.h>
 #include <manipulation_msgs/JointTraj.h>
 #include <mapping_msgs/CollisionMap.h>
-// #include <manipulation_msgs/JointTrajPoint.h>
+#include <motion_planning_msgs/GetMotionPlan.h>
 #include <motion_planning_msgs/KinematicPath.h>
 #include <motion_planning_msgs/KinematicState.h>
 #include <motion_planning_msgs/PoseConstraint.h>
 #include <mechanism_msgs/MechanismState.h>
 #include <visualization_msgs/Marker.h>
 
-/** sbpl planner include files **/
-#include <sbpl_arm_planner/headers.h>
-
-/** services **/
-#include <sbpl_arm_planner_node/PlanPathSrv.h>
-#include <motion_planning_msgs/GetMotionPlan.h>
-
-#include <boost/thread/mutex.hpp>
-#include "boost/shared_ptr.hpp"
-
-// #include <sbpl_pm_wrapper/pm_wrapper.h>
-
-#include <kdl/chain.hpp>
-#include <kdl/frames.hpp>
-#include <kdl/chainjnttojacsolver.hpp>
-#include <robot_msgs/Wrench.h>
+/** Services **/
 #include <manipulation_srvs/IKService.h>
+
+/** Planner **/
+#include <sbpl_arm_planner/headers.h>
 
 
 namespace sbpl_arm_planner_node
@@ -214,8 +208,6 @@ class SBPLArmPlannerNode
       KDL::JntArray jnt_pos_;
 
       visualization_msgs::Marker goal_marker_;
-
-//       visualization_msgs::MarkerArray goal_marker_array_;
 
       bool initializePlannerAndEnvironment();
 

@@ -47,7 +47,7 @@ import threading
 from fingertip_pressure.msg import PressureInfo, PressureInfoElement
 from pr2_msgs.msg import PressureState
 from visualization_msgs.msg import Marker
-from robot_msgs.msg import Vector3
+from geometry_msgs.msg import Vector3
 from fingertip_pressure.colormap import color
 
 #def norm(v):

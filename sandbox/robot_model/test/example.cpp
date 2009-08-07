@@ -37,21 +37,20 @@
 #include "robot_model/robot_model.h"
 #include <iostream>
 
-using namespace std;
 using namespace robot_model;
 
-void printTree(Link* link,int level = 0)
+void printTree(boost::shared_ptr<Link> link,int level = 0)
 {
   level+=2;
   int count = 0;
-  for (std::vector<Link*>::iterator child = link->getChildren()->begin(); child != link->getChildren()->end(); child++)
+  for (std::vector<boost::shared_ptr<Link> >::iterator child = link->child_links_.begin(); child != link->child_links_.end(); child++)
   {
     if (*child)
     {
       for(int j=0;j<level;j++) std::cout << " "; //indent
-      std::cout << "child(" << count++ << "):  " << (*child)->getName()
-                << " with parent joint: " << (*child)->parent_joint_->getName()
-                << " with mass: " << (*child)->inertial_->getMass()
+      std::cout << "child(" << count++ << "):  " << (*child)->name_
+                << " with parent joint: " << (*child)->parent_joint_->name_
+                << " with mass: " << (*child)->inertial_->mass_
                 << std::endl;
       // first grandchild
       printTree(*child,level);
@@ -59,7 +58,7 @@ void printTree(Link* link,int level = 0)
     else
     {
       for(int j=0;j<level;j++) std::cout << " "; //indent
-      std::cout << "root link: " << link->getName() << " has a null child!" << *child << std::endl;
+      std::cout << "root link: " << link->name_ << " has a null child!" << *child << std::endl;
     }
   }
 
@@ -69,30 +68,33 @@ void printTree(Link* link,int level = 0)
 int main(int argc, char** argv)
 {
   if (argc < 2){
-    cerr << "Expect xml file to parse" << std::endl;
+    std::cerr << "Expect xml file to parse" << std::endl;
     return -1;
   }
   TiXmlDocument robot_model_xml;
   robot_model_xml.LoadFile(argv[1]);
   TiXmlElement *robot_xml = robot_model_xml.FirstChildElement("robot");
   if (!robot_xml){
-    cerr << "ERROR: Could not load the xml into TiXmlElement" << std::endl;
+    std::cerr << "ERROR: Could not load the xml into TiXmlElement" << std::endl;
     return -1;
   }
 
   RobotModel robot;
   if (!robot.initXml(robot_xml)){
-    cerr << "ERROR: RobotModel Parsing the xml failed" << std::endl;
+    std::cerr << "ERROR: RobotModel Parsing the xml failed" << std::endl;
     return -1;
   }
+
+  std::cout << "robot name is: " << robot.getName() << std::endl;
 
   // get info from parser
   std::cout << "---------- Finished Loading from RobotModel XML, Now Checking RobotModel structure ------------" << std::endl;
   // get root link
-  Link* root_link=robot.getRoot();
-  std::cout << "root Link: " << root_link->getName() << " has " << root_link->getChildren()->size() << " children" << std::endl;
-  std::cout << "root Link: " << root_link->getName() << " has parent joint: " << root_link->getParentJointName() << std::endl;
-  std::cout << "root Link: " << root_link->getName() << " has parent Link: " << root_link->getParentName() << std::endl << std::endl;
+  boost::shared_ptr<Link> root_link=robot.getRoot();
+  std::cout << "root Link: " << root_link->name_ << " has " << root_link->child_links_.size() << " children" << std::endl;
+  std::cout << "root Link: " << root_link->name_ << " has parent joint: " << root_link->parent_joint_->name_ << std::endl;
+  if (root_link->parent_link_)
+    std::cout << "root Link: " << root_link->name_ << " has parent Link: " << root_link->parent_link_->name_ << std::endl << std::endl;
   if (!root_link) return -1;
 
 

@@ -48,6 +48,7 @@ ChompCollisionSpace::~ChompCollisionSpace()
 {
   if (voxel3d_)
     delete voxel3d_;
+  delete collision_map_notifier_;
 }
 
 void ChompCollisionSpace::collisionMapCallback(const mapping_msgs::CollisionMapConstPtr& collision_map)

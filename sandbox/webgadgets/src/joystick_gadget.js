@@ -128,7 +128,6 @@ var ROSJoystickGadget = Class.create(ROSGadget, {
 
   start: function()
   {
-    this.run = true;
     this.pump.sendAJAX('/ros/launch/ps3.launch', this, this.started);
     this.joyStatus.innerHTML = 'starting...';
     this.joyStatusIcon.src = 'images/yellowbutton.png';
@@ -136,16 +135,17 @@ var ROSJoystickGadget = Class.create(ROSGadget, {
   
   stop: function()
   {
-    this.pump.sendAJAX('/ros/stop/ps2.launch', this, this.stopped);
-    this.run = false;
+    this.pump.sendAJAX('/ros/stop/ps3.launch', this, this.stopped);
   },
 
   started: function(myself, pump)
   {
     myself.joyStatus.innerHTML = 'started';
     myself.joyStatusIcon.src = 'images/greenbutton.png';
+    myself.run = true;
 
     myself.startButton.value = 'Stop';
+    myself.startButton.stopObserving('click');
     myself.startButton.observe('click', myself.stop.bind(myself) );
   },
   
@@ -153,6 +153,10 @@ var ROSJoystickGadget = Class.create(ROSGadget, {
   {
     myself.joyStatus.innerHTML = 'stopped';
     myself.startButton.value = 'Start';
+    myself.joyStatusIcon.src = 'images/redbutton.png';
+    myself.run = false;
+
+    myself.startButton.stopObserving('click');
     myself.startButton.observe('click', myself.start.bind(myself) );
   },
   
