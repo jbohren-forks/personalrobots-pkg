@@ -61,7 +61,7 @@ Subscribes to (name/type):
 - @b "cmd_vel"/PoseDot : velocity commands to differentially drive the robot.
 
 Publishes to (name / type):
-- @b "odom"/RobotBase2DOdom : odometry data from the robot.
+- @b "odom"/Odometry : odometry data from the robot.
 - @b "battery_state"/BatteryState : battery data. Since the robot does not have any charge detector, it uses the empirical result that the robot is charging if V>12.98
 
 <hr>
@@ -86,7 +86,7 @@ Publishes to (name / type):
 //rosTF
 #include "tf/transform_broadcaster.h"
 // Messages that I need
-#include <deprecated_msgs/RobotBase2DOdom.h>
+#include <nav_msgs/Odometry.h>
 //#include <std_msgs/RobotBase2DCmdVel.h>
 #include <robot_msgs/PoseDot.h>
 #include <pr2_msgs/BatteryState.h>
@@ -102,7 +102,7 @@ class ErraticNode: public ros::Node
   public:
     QueuePointer q;
 
-    deprecated_msgs::RobotBase2DOdom odom;
+    nav_msgs::Odometry odom;
     robot_msgs::PoseDot cmdvel;
 
     tf::TransformBroadcaster tf;
@@ -118,7 +118,7 @@ class ErraticNode: public ros::Node
       // TODO: remove XDR dependency
       playerxdr_ftable_init();
 
-      advertise<deprecated_msgs::RobotBase2DOdom>("odom", 1);
+      advertise<nav_msgs::Odometry>("odom", 1);
       advertise<pr2_msgs::BatteryState>("battery_state", 1);
 
       // The Player address that will be assigned to this device.  The format
@@ -288,13 +288,15 @@ class ErraticNode: public ros::Node
 	player_position2d_data_t* pdata = (player_position2d_data_t*)msg->GetPayload(); 
 	
 	// Translate from Player data to ROS data 
-	odom.pos.x = pdata->pos.px; 
-	odom.pos.y = pdata->pos.py; 
-	odom.pos.th = pdata->pos.pa; 
-	odom.vel.x = pdata->vel.px; 
-	odom.vel.y = pdata->vel.py; 
-	odom.vel.th = pdata->vel.pa; 
-	odom.stall = pdata->stall; 
+	odom.pose_with_covariance.pose.position.x = pdata->pos.px; 
+	odom.pose_with_covariance.pose.position.y = pdata->pos.py; 
+	odom.pose_with_covariance.pose.orientation = tf::createQuaternionMsgFromYaw(pdata->pos.pa); 
+	odom.twist_with_covariance.twist.linear.x = pdata->vel.px; 
+	odom.twist_with_covariance.twist.linear.y = pdata->vel.py; 
+	odom.twist_with_covariance.twist.angular.z = pdata->vel.pa; 
+
+  //@todo TODO: Think about publishing stall information with odometry or on a separate topic
+	//odom.stall = pdata->stall; 
 	
 	odom.header.frame_id = "odom"; 
 	
@@ -330,7 +332,7 @@ class ErraticNode: public ros::Node
 	
 	
 	//printf("Published new odom: (%.3f,%.3f,%.3f)\n",  
-	//odom.pos.x, odom.pos.y, odom.pos.th); 
+	//odom.pose_with_covariance.pose.position.x, odom.pose_with_covariance.pose.position.y, odom.pose_with_covariance.pose.position.th); 
       } 
       else if((hdr->type == PLAYER_MSGTYPE_DATA) &&   
 	      (hdr->subtype == PLAYER_POWER_DATA_STATE) &&  
