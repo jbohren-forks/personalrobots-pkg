@@ -1,12 +1,12 @@
 all: ogre
 
-OGRE_VERSION = ogre-v1-6-1
+OGRE_VERSION = ogre-v1-6-3
 TARBALL = build/$(OGRE_VERSION).tar.bz2
 #TARBALL_URL = http://superb-west.dl.sourceforge.net/sourceforge/ogre/$(OGRE_VERSION).tar.bz2
 TARBALL_URL = http://pr.willowgarage.com/downloads/$(OGRE_VERSION).tar.bz2
 SOURCE_DIR = build/$(OGRE_VERSION)
 UNPACK_CMD = tar xf
-TARBALL_PATCH = resize.diff
+#TARBALL_PATCH = resize.diff
 INITIAL_DIR = build/ogre
 include $(shell rospack find mk)/download_unpack_build.mk
 
@@ -14,13 +14,9 @@ ROOT = $(shell rospack find ogre)
 OGREROOT = $(shell rospack find ogre)/ogre
 
 CFLAGS = -g -O3 \
-	 $(shell rospack export --lang=cpp --attrib=cflags freeimage) \
-         $(shell rospack export --lang=cpp --attrib=cflags Cg) \
          $(shell rosboost-cfg --cflags)
 
-LFLAGS = $(shell rospack export --lang=cpp --attrib=lflags freeimage) \
-         $(shell rospack export --lang=cpp --attrib=lflags Cg) \
-         $(shell rosboost-cfg --lflags thread) \
+LFLAGS = $(shell rosboost-cfg --lflags thread) \
          -lpthread
 
 CONFIGURE_FLAGS = --prefix=$(OGREROOT) --with-pic --with-platform=GLX --with-gui=gtk  --disable-ogre-demos --with-arch=nocona --enable-release
@@ -71,8 +67,8 @@ ogre/lib/pkgconfig/OGRE.pc: $(SOURCE_DIR)/Makefile $(SOURCE_DIR)
 	# building OGRE
 	if test `uname` = Darwin ; then \
 	  cd $(ROOT)/$(SOURCE_DIR)/Mac/Ogre && \
-	  export CPATH=Developer/SDKs/MacOSX10.5.sdk/usr/X11/include:/Developer/SDKs/MacOSX10.5.sdk/usr/X11/include/freetype2:`rospack find freeimage`/freeimage/include:/opt/local/include && \
-	  export LIBRARY_PATH=`rospack find freeimage`/freeimage/lib:/opt/local/lib && \
+	  export CPATH=Developer/SDKs/MacOSX10.5.sdk/usr/X11/include:/Developer/SDKs/MacOSX10.5.sdk/usr/X11/include/freetype2:/opt/local/include && \
+	  export LIBRARY_PATH=/opt/local/lib && \
 	  xcodebuild ARCHS=i386 -target Ogre && \
 	  xcodebuild ARCHS=i386 -target "GL Render System" && \
 	  xcodebuild ARCHS=i386 -target "ParticleFX Plugin" && \
@@ -85,8 +81,8 @@ ogre/lib/pkgconfig/OGRE.pc: $(SOURCE_DIR)/Makefile $(SOURCE_DIR)
 	fi
 	@echo "patch OGRE.pc to pass -Wl,-rpath,-L{libdir}"
 	-mv ogre/lib/pkgconfig/OGRE.pc ogre/lib/pkgconfig/OGRE.bak
-	sed 's%exec_prefix=$${prefix}%exec_prefix=$${prefix}\ncglibdir=$${prefix}/../../Cg/Cg/lib%g' ogre/lib/pkgconfig/OGRE.bak > ogre/lib/pkgconfig/OGRE.tmp
-	sed 's%Libs: -L$${libdir} -lOgreMain%Libs: -Wl,-rpath,$${libdir},-rpath,$${libdir}/OGRE,-rpath,$${cglibdir} -L$${libdir} -lOgreMain%g' ogre/lib/pkgconfig/OGRE.tmp > ogre/lib/pkgconfig/OGRE.pc
+#	sed 's%exec_prefix=$${prefix}%exec_prefix=$${prefix}\n' ogre/lib/pkgconfig/OGRE.bak > ogre/lib/pkgconfig/OGRE.tmp
+	sed 's%Libs: -L$${libdir} -lOgreMain%Libs: -Wl,-rpath,$${libdir},-rpath,$${libdir}/OGRE -L$${libdir} -lOgreMain%g' ogre/lib/pkgconfig/OGRE.bak > ogre/lib/pkgconfig/OGRE.pc
 	@echo "done"
 
 .PHONY: clean wipe
