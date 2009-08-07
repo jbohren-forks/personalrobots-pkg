@@ -114,20 +114,4 @@ torso_lift_position_controller:
     i: 0.0
     d: 10000
     i_clamp: 0.0
-    
-head_pan_position_controller:
-  type: JointPositionController
-  joint: head_pan_joint
-  pid:
-    p: 10.0
-    i: 12.0
-    d: 0.5
-    i_clamp: 0.5
-head_tilt_position_controller:
-  type: JointPositionController
-  joint: head_tilt_joint
-  pid:
-    p: 12.4
-    i: 2.0
-    d: 0.4
-    i_clamp: 0.1
+
