@@ -1,13 +1,13 @@
 #include "trex_ros/ros_state_adapter.h"
 #include "Domains.hh"
-#include <robot_msgs/BatteryState.h>
+#include <pr2_msgs/BatteryState.h>
 
 namespace TREX {
 
-  class BatteryStateAdapter: public ROSStateAdapter<robot_msgs::BatteryState> {
+  class BatteryStateAdapter: public ROSStateAdapter<pr2_msgs::BatteryState> {
   public:
     BatteryStateAdapter(const LabelStr& agentName, const TiXmlElement& configData)
-      : ROSStateAdapter<robot_msgs::BatteryState> ( agentName, configData) {
+      : ROSStateAdapter<pr2_msgs::BatteryState> ( agentName, configData) {
     }
 
     virtual ~BatteryStateAdapter(){}

@@ -35,7 +35,7 @@
 #include <gazebo/Controller.hh>
 #include <gazebo/Entity.hh>
 #include <gazebo/Model.hh>
-#include <robot_msgs/BatteryState.h>
+#include <pr2_msgs/BatteryState.h>
 #include <diagnostic_msgs/DiagnosticMessage.h>
 #include <diagnostic_msgs/DiagnosticStatus.h>
 #include <gazebo_plugin/PlugCommand.h>
@@ -108,7 +108,7 @@ private:
   Model *parent_model_;
 
   /// \brief ros message for battery state
-  robot_msgs::BatteryState battery_state_;
+  pr2_msgs::BatteryState battery_state_;
 
   /// \brief ros message for diagnostic messages
   diagnostic_msgs::DiagnosticMessage diagnostic_message_;

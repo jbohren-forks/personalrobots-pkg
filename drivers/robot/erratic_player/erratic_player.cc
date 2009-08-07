@@ -89,7 +89,7 @@ Publishes to (name / type):
 #include <deprecated_msgs/RobotBase2DOdom.h>
 //#include <std_msgs/RobotBase2DCmdVel.h>
 #include <robot_msgs/PoseDot.h>
-#include <robot_msgs/BatteryState.h>
+#include <pr2_msgs/BatteryState.h>
 
 #define PLAYER_QUEUE_LEN 32
 
@@ -119,7 +119,7 @@ class ErraticNode: public ros::Node
       playerxdr_ftable_init();
 
       advertise<deprecated_msgs::RobotBase2DOdom>("odom", 1);
-      advertise<robot_msgs::BatteryState>("battery_state", 1);
+      advertise<pr2_msgs::BatteryState>("battery_state", 1);
 
       // The Player address that will be assigned to this device.  The format
       // is interface:index.  The interface must match what the driver is
@@ -337,7 +337,7 @@ class ErraticNode: public ros::Node
 	      (hdr->addr.interf == PLAYER_POWER_CODE))  
       {
 	player_power_data_t* pdata = (player_power_data_t*)msg->GetPayload();  
-	robot_msgs::BatteryState state;
+	pr2_msgs::BatteryState state;
 	state.header.stamp = ros::Time::now();
 	state.energy_remaining = pdata->volts; //Not Correct, in volts
 	state.energy_capacity = pdata->volts / pdata->percent * 100; //Returns max number of volts.

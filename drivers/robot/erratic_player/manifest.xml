@@ -7,6 +7,7 @@
   <depend package="player" />
   <depend package="std_msgs" />
   <depend package="robot_msgs" /> 
+  <depend package="pr2_msgs" /> 
   <depend package="deprecated_msgs" />
   <depend package="tf" />
 </package>

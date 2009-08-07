@@ -69,7 +69,7 @@ namespace gazebo {
   void GazeboBattery::LoadChild(XMLConfigNode *node)
   {
     this->stateTopicName_ = node->GetString("stateTopicName","battery_state",0);
-    this->pub_ = this->rosnode_->advertise<robot_msgs::BatteryState>(this->stateTopicName_,10);
+    this->pub_ = this->rosnode_->advertise<pr2_msgs::BatteryState>(this->stateTopicName_,10);
     //this->diagnosticMessageTopicName_ = node->GetString("diagnosticMessageTopicName","diagnostic",0);
     //this->diag_pub_ = this->rosnode_->advertise<diagnostic_msgs::DiagnosticMessage>(this->diagnosticMessageTopicName_,10);
 
