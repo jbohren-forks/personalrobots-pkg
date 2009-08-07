@@ -27,21 +27,11 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "shape.hpp"
-#include "Poco/ClassLibrary.h"
+#include "line.h"
 
 #include <cmath>
 
-class line : public shape {
-public:
-  virtual double area() const {
-    return 0;
-  }
-};
+double line::area() const {
+  return 0;
+}
 
-
-POCO_BEGIN_MANIFEST(shape)
-
-POCO_EXPORT_CLASS(line)
-
-POCO_END_MANIFEST 

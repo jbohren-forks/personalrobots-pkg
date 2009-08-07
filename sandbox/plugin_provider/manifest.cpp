@@ -39,9 +39,10 @@
 #include "square.h"
 #include "triangle.h"
 
+//polygon plugin list 
 BEGIN_PLUGIN_LIST(polygon)
 
-REGISTER_PLUGIN(square)
 REGISTER_PLUGIN(triangle)
+REGISTER_PLUGIN(square)
 
 END_PLUGIN_LIST 

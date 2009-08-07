@@ -37,6 +37,8 @@
 #include "triangle.h"
 #include <cmath>
 
+triangle::triangle(){}
+
 double triangle::area() const {
   return side_length_ * side_length_ * sqrt(3) / 2;
 }
