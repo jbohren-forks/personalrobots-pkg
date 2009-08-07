@@ -29,7 +29,7 @@
 #include <gazebo/GazeboError.hh>
 #include <ros/ros.h>
 #include "tf/transform_broadcaster.h"
-#include <robot_msgs/PoseDot.h>
+#include <geometry_msgs/Twist.h>
 #include <nav_msgs/Odometry.h>
 
 #include <boost/bind.hpp>
@@ -41,18 +41,18 @@ public:
   ros::Subscriber  sub_;
   ros::Publisher   pub_;
   
-  void cmdVelCallBack(const robot_msgs::PoseDot::ConstPtr& cmd_msg) {
+  void cmdVelCallBack(const geometry_msgs::Twist::ConstPtr& cmd_msg) {
         std::cout << " pos " << this->posIface
-                  <<    " x " << cmd_msg->vel.vx
-                  <<    " y " << cmd_msg->vel.vy
-                  <<    " z " << cmd_msg->ang_vel.vz
+                  <<    " x " << cmd_msg->linear.x
+                  <<    " y " << cmd_msg->linear.y
+                  <<    " z " << cmd_msg->angular.z
                   << std::endl;
         
     if (this->posIface) {
       this->posIface->Lock(1);
-      this->posIface->data->cmdVelocity.pos.x = cmd_msg->vel.vx;
-      this->posIface->data->cmdVelocity.pos.y = cmd_msg->vel.vy;
-      this->posIface->data->cmdVelocity.yaw = cmd_msg->ang_vel.vz;
+      this->posIface->data->cmdVelocity.pos.x = cmd_msg->linear.x;
+      this->posIface->data->cmdVelocity.pos.y = cmd_msg->linear.y;
+      this->posIface->data->cmdVelocity.yaw = cmd_msg->angular.z;
       this->posIface->Unlock();
     }
   }
@@ -94,8 +94,8 @@ public:
     this->posIface->Unlock();
 
     this->rnh_ = new ros::NodeHandle();
-    //this->sub_ = rnh_->subscribe<geometry_msgs::PoseDot>("/cmd_vel", 100, boost::bind(&DiffDrive::cmdVelCallBack,this,_1));
-    this->sub_ = rnh_->subscribe<robot_msgs::PoseDot>("/cmd_vel", 100, &DiffDrive::cmdVelCallBack,this);
+    //this->sub_ = rnh_->subscribe<geometry_msgs::Twist>("/cmd_vel", 100, boost::bind(&DiffDrive::cmdVelCallBack,this,_1));
+    this->sub_ = rnh_->subscribe<geometry_msgs::Twist>("/cmd_vel", 100, &DiffDrive::cmdVelCallBack,this);
     this->pub_ = rnh_->advertise<nav_msgs::Odometry>("/odom", 1);
    
     // spawn 2 threads by default, ///@todo: make this a parameter
