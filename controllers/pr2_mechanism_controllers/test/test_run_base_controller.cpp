@@ -35,7 +35,7 @@
 #include <pr2_mechanism_controllers/Pose3D.h>
 #include <ros/node.h>
 #include <geometry_msgs/PoseWithRatesStamped.h>
-#include <robot_msgs/PoseDot.h>
+#include <geometry_msgs/Twist.h>
 #include <nav_msgs/Odometry.h>
 #include <geometry_msgs/Quaternion.h>
 
@@ -131,33 +131,33 @@ int main( int argc, char** argv )
 
 
   /*********** Start moving the robot ************/
-  robot_msgs::PoseDot cmd;
-  cmd.vel.vx = 0;
-  cmd.vel.vy = 0;
-  cmd.vel.vz = 0;
-  cmd.ang_vel.vx = 0;
-  cmd.ang_vel.vy = 0;
-  cmd.ang_vel.vz = 0;
+  geometry_msgs::Twist cmd;
+  cmd.linear.x = 0;
+  cmd.linear.y = 0;
+  cmd.linear.z = 0;
+  cmd.angular.x = 0;
+  cmd.angular.y = 0;
+  cmd.angular.z = 0;
 
   double run_time = 0;
   bool run_time_set = false;
   int file_num = 0;
 
   if(argc >= 2)
-    cmd.vel.vx = atof(argv[1]);
+    cmd.linear.x = atof(argv[1]);
 
   if(argc >= 3)
-    cmd.vel.vy = atof(argv[2]);
+    cmd.linear.y = atof(argv[2]);
 
   if(argc >= 4)
-    cmd.ang_vel.vz = atof(argv[3]);
+    cmd.angular.z = atof(argv[3]);
 
   if(argc ==5)
   { 
      run_time = atof(argv[4]);
      run_time_set = true;
   }
-  node->advertise<robot_msgs::PoseDot>("cmd_vel",1);
+  node->advertise<geometry_msgs::Twist>("cmd_vel",1);
   sleep(1);
   node->publish("cmd_vel",cmd);
   sleep(1);
@@ -168,12 +168,12 @@ int main( int argc, char** argv )
   while(!done)
   {
      ros::Duration delta_time = ros::Time::now() - start_time;
-     cout << "Sending out command " << cmd.vel.vx << " " << cmd.vel.vy << " " << cmd.ang_vel.vz  << endl;
+     cout << "Sending out command " << cmd.linear.x << " " << cmd.linear.y << " " << cmd.angular.z  << endl;
      if(run_time_set && delta_time.toSec() > run_time)
         break;
     //   ang_rates = GetAsEuler(tb.ground_truth.vel.ang_vel);
      ground_truth_angles = GetAsEuler(tb.ground_truth.pos.orientation);
-     cout << "g:: " << tb.ground_truth.vel.vel.vx <<  " " << tb.ground_truth.vel.vel.vy << " "  << tb.ground_truth.vel.ang_vel.vz  << " " << tb.ground_truth.pos.position.x << " " << tb.ground_truth.pos.position.y <<  " " << ground_truth_angles.z << " " <<  tb.ground_truth.header.stamp.sec + tb.ground_truth.header.stamp.nsec/1.0e9 << std::endl;
+     cout << "g:: " << tb.ground_truth.vel.linear.x <<  " " << tb.ground_truth.vel.linear.y << " "  << tb.ground_truth.vel.angular.z  << " " << tb.ground_truth.pos.position.x << " " << tb.ground_truth.pos.position.y <<  " " << ground_truth_angles.z << " " <<  tb.ground_truth.header.stamp.sec + tb.ground_truth.header.stamp.nsec/1.0e9 << std::endl;
     cout << "o:: " << tb.odom.twist_with_covariance.twist.linear.x <<  " " << tb.odom.twist_with_covariance.twist.linear.y << " " << tb.odom.twist_with_covariance.twist.angular.z << " " << tb.odom.pose_with_covariance.pose.position.x <<  " " << tb.odom.pose_with_covariance.pose.position.y << " " << tf::getYaw(tb.odom.pose_with_covariance.pose.orientation) << " " << tb.odom.header.stamp.sec + tb.odom.header.stamp.nsec/1.0e9 << std::endl;
     //    cout << delta_time.toSec() << "  " << run_time << endl;
     node->publish("cmd_vel",cmd);

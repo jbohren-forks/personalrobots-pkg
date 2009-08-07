@@ -83,7 +83,7 @@ namespace pr2_mechanism_controllers
     ros_node_.param("~max_update_time", max_update_time_, 0.2);
 
 
-    ros_node_.advertise<robot_msgs::PoseDot>(control_topic_name_, 1);
+    ros_node_.advertise<geometry_msgs::Twist>(control_topic_name_, 1);
     ros_node_.subscribe(path_input_topic_name_,path_msg_in_, &BaseTrajectoryController::pathCallback, this, 1);
     ros_node_.advertise<diagnostic_msgs::DiagnosticMessage> ("/diagnostics", 1) ;
 
@@ -355,16 +355,16 @@ namespace pr2_mechanism_controllers
 
   void BaseTrajectoryController::updateControl()
   {
-    robot_msgs::PoseDot cmd_vel;
+    geometry_msgs::Twist cmd_vel;
     if(stop_motion_)
     {
       ROS_DEBUG("updateControl:: stopping motion");
       if(stop_motion_count_ < 3)
       {
         stop_motion_count_++;
-        cmd_vel.vel.vx = 0.0;
-        cmd_vel.vel.vy = 0.0;
-        cmd_vel.ang_vel.vz = 0.0;
+        cmd_vel.linear.x = 0.0;
+        cmd_vel.linear.y = 0.0;
+        cmd_vel.angular.z = 0.0;
         ros_node_.publish(control_topic_name_,cmd_vel);
         ROS_DEBUG("updateControl:: stop motion count: %d",stop_motion_count_);
       }
@@ -375,14 +375,14 @@ namespace pr2_mechanism_controllers
       stop_motion_count_ = 0;
       cmd_vel = getCommand();
       ros_node_.publish(control_topic_name_,cmd_vel);
-      ROS_DEBUG("updateControl:: Publishing command: %f, %f, %f",cmd_vel.vel.vx,cmd_vel.vel.vy,cmd_vel.ang_vel.vz);
+      ROS_DEBUG("updateControl:: Publishing command: %f, %f, %f",cmd_vel.linear.x,cmd_vel.linear.y,cmd_vel.angular.z);
     }
   }
 
-  robot_msgs::PoseDot BaseTrajectoryController::getCommand()
+  geometry_msgs::Twist BaseTrajectoryController::getCommand()
   {
     double cmd[3];
-    robot_msgs::PoseDot cmd_vel;
+    geometry_msgs::Twist cmd_vel;
     trajectory::Trajectory::TPoint desired_position;
     desired_position.setDimension(dimension_);
     double sample_time =  current_time_ - trajectory_start_time_;
@@ -398,9 +398,9 @@ namespace pr2_mechanism_controllers
     cmd[2] = pid_[2].updatePid(error_theta, current_time_ - last_update_time_) + desired_position.qdot_[2];
 
     //Transform the cmd back into the base frame
-    cmd_vel.vel.vx = cmd[0]*cos(theta) + cmd[1]*sin(theta);
-    cmd_vel.vel.vy = -cmd[0]*sin(theta) + cmd[1]*cos(theta);
-    cmd_vel.ang_vel.vz = cmd[2];
+    cmd_vel.linear.x = cmd[0]*cos(theta) + cmd[1]*sin(theta);
+    cmd_vel.linear.y = -cmd[0]*sin(theta) + cmd[1]*cos(theta);
+    cmd_vel.angular.z = cmd[2];
 
     cmd_vel = checkCmd(cmd_vel);
 
@@ -408,30 +408,30 @@ namespace pr2_mechanism_controllers
     error_y_ = error_y;
     error_th_ = error_theta;
 
-    cmd_vel_.vel.vx = cmd_vel.vel.vx;
-    cmd_vel_.vel.vy = cmd_vel.vel.vy;
-    cmd_vel_.ang_vel.vz = cmd_vel.ang_vel.vz;
+    cmd_vel_.linear.x = cmd_vel.linear.x;
+    cmd_vel_.linear.y = cmd_vel.linear.y;
+    cmd_vel_.angular.z = cmd_vel.angular.z;
 
     return cmd_vel;
   }
 
-  robot_msgs::PoseDot BaseTrajectoryController::checkCmd(const robot_msgs::PoseDot &cmd)
+  geometry_msgs::Twist BaseTrajectoryController::checkCmd(const geometry_msgs::Twist &cmd)
   {
-    robot_msgs::PoseDot return_cmd = cmd;
-    if(return_cmd.vel.vx > velocity_limits_[0])
-      return_cmd.vel.vx = velocity_limits_[0];
-    else if(return_cmd.vel.vx < -velocity_limits_[0])
-      return_cmd.vel.vx = -velocity_limits_[0];
+    geometry_msgs::Twist return_cmd = cmd;
+    if(return_cmd.linear.x > velocity_limits_[0])
+      return_cmd.linear.x = velocity_limits_[0];
+    else if(return_cmd.linear.x < -velocity_limits_[0])
+      return_cmd.linear.x = -velocity_limits_[0];
 
-    if(return_cmd.vel.vy > velocity_limits_[1])
-      return_cmd.vel.vy = velocity_limits_[1];
-    else if(return_cmd.vel.vy < -velocity_limits_[1])
-      return_cmd.vel.vy = -velocity_limits_[1];
+    if(return_cmd.linear.y > velocity_limits_[1])
+      return_cmd.linear.y = velocity_limits_[1];
+    else if(return_cmd.linear.y < -velocity_limits_[1])
+      return_cmd.linear.y = -velocity_limits_[1];
 
-    if(return_cmd.ang_vel.vz > velocity_limits_[2])
-      return_cmd.ang_vel.vz = velocity_limits_[2];
-    else if(return_cmd.ang_vel.vz < -velocity_limits_[2])
-      return_cmd.ang_vel.vz = -velocity_limits_[2];
+    if(return_cmd.angular.z > velocity_limits_[2])
+      return_cmd.angular.z = velocity_limits_[2];
+    else if(return_cmd.angular.z < -velocity_limits_[2])
+      return_cmd.angular.z = -velocity_limits_[2];
 
     return return_cmd;
   }

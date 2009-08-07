@@ -34,7 +34,7 @@
 
 #include <pr2_mechanism_controllers/Pose3D.h>
 #include <ros/node.h>
-#include <robot_msgs/PoseDot.h>
+#include <geometry_msgs/Twist.h>
 #include <nav_msgs/Odometry.h>
 #include <geometry_msgs/Quaternion.h>
 #include <iostream>
@@ -112,26 +112,26 @@ int main( int argc, char** argv )
 
 
   /*********** Start moving the robot ************/
-  robot_msgs::PoseDot cmd;
-  cmd.vel.vx = 0;
-  cmd.vel.vy = 0;
-  cmd.vel.vz = 0;
-  cmd.ang_vel.vx = 0;
-  cmd.ang_vel.vy = 0;
-  cmd.ang_vel.vz = 0;
+  geometry_msgs::Twist cmd;
+  cmd.linear.x = 0;
+  cmd.linear.y = 0;
+  cmd.linear.z = 0;
+  cmd.angular.x = 0;
+  cmd.angular.y = 0;
+  cmd.angular.z = 0;
 
   double run_time = 0;
   bool run_time_set = false;
   int file_num = 0;
 
   if(argc >= 2)
-    cmd.vel.vx = atof(argv[1]);
+    cmd.linear.x = atof(argv[1]);
 
   if(argc >= 3)
-    cmd.vel.vy = atof(argv[2]);
+    cmd.linear.y = atof(argv[2]);
 
   if(argc >= 4)
-    cmd.ang_vel.vz = atof(argv[3]);
+    cmd.angular.z = atof(argv[3]);
 
   if(argc >=5)
   { 
@@ -144,7 +144,7 @@ int main( int argc, char** argv )
      file_num = atoi(argv[5]);
   }
 
-  node->advertise<robot_msgs::PoseDot>("cmd_vel",10);
+  node->advertise<geometry_msgs::Twist>("cmd_vel",10);
   sleep(1);
 
   libTF::Vector ang_rates;
