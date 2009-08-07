@@ -23,7 +23,6 @@
   <depend package="sensor_msgs"/>
   <depend package="visualization_msgs" />
 
-  <depend package="robot_srvs" />
   <depend package="std_srvs" />
 
   <depend package="robot_actions" />

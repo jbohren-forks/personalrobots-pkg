@@ -14,7 +14,6 @@
   <depend package="realtime_tools" />
   <depend package="roscpp" />
   <depend package="std_msgs" />
-  <depend package="robot_srvs" />
   <depend package="deprecated_srvs" />
   <depend package="robot_msgs" />
   <depend package="geometry_msgs" />

@@ -12,7 +12,6 @@
   <depend package="diagnostic_updater"/>
   <depend package="tf"/>
   <depend package="std_srvs"/>
-  <depend package="robot_srvs"/>
   <export>
     <cpp cflags="-I${prefix}/msg/cpp -I${prefix}/srv/cpp" />
   </export>

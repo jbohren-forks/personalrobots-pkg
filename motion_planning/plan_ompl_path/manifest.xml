@@ -10,7 +10,6 @@
   <depend package="std_srvs" />
 
   <depend package="robot_msgs" />
-  <depend package="robot_srvs" />
 
   <depend package="motion_planning_msgs" />
 

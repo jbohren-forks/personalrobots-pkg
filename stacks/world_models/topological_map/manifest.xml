@@ -7,7 +7,6 @@
 <depend package="door_msgs" />
 <depend package="tinyxml" />
 <depend package="deprecated_msgs" />
-<depend package="robot_srvs" />
 <depend package="rosconsole" />
 <depend package="tinyxml" />
 <depend package="tf" />

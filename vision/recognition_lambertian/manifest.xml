@@ -12,7 +12,6 @@
   <depend package="robot_msgs" />
   <depend package="geometry_msgs" />
   <depend package="door_msgs" />
-  <depend package="robot_srvs" />
   <depend package="robot_actions" />
   <depend package="kdl" />
   <depend package="angles" />

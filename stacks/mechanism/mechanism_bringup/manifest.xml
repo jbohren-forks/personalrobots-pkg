@@ -5,6 +5,5 @@
   <review status="unreviewed" notes=""/>
   <depend package="robot_mechanism_controllers"/>
   <depend package="pr2_mechanism_controllers"/>
-  <depend package="robot_srvs"/>
   <depend package="imu_node"/>
 </package>

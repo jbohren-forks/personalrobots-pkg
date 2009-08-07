@@ -12,7 +12,6 @@
   <depend package="std_msgs" />
   <depend package="tf" />
   <depend package="robot_msgs" />
-  <depend package="robot_srvs" />
   <depend package="visualization_msgs" />
   <depend package="tabletop_msgs" />
   <depend package="tabletop_srvs" />

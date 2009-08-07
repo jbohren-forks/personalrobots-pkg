@@ -5,7 +5,6 @@
   <review status="unreviewed" notes=""/>
   <depend package="rospy" />
   <depend package="roscpp" />
-  <depend package="robot_srvs" />
   <depend package="tf" />
   <depend package="nav_robot_actions" />
   <depend package="std_msgs" />
