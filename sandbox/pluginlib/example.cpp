@@ -27,18 +27,17 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "polygon.hpp"
-#include "shape.hpp"
+#include "polygon.h"
+#include "shape.h"
 #include <iostream>
 
-#include "Poco/ClassLoader.h"
 #include "ros/package.h"
 
-#include "class_loader.h"
+#include "pluginlib/plugin_loader.h"
 
 int main() {
   
-  ros::ClassLoader<polygon> cl("plugin_user", "polygon");
+  pluginlib::PluginLoader<polygon> cl("pluginlib", "polygon");
 
   std::cout << "Created Class Loader of polygon" << std::endl;
   std::cout << "Available plugins are:" << std::endl;
@@ -85,7 +84,7 @@ int main() {
   if (!cl.loadPlugin("line"))
     std::cerr<< "Correctly failed to load line in polygon loader" << std::endl;
 
-  ros::ClassLoader<shape> ph("plugin_user", "shape");
+  pluginlib::PluginLoader<shape> ph("pluginlib", "shape");
 
   if (!ph.loadPlugin("line"))
     std::cerr<<"Failed to load line" << std::endl;
