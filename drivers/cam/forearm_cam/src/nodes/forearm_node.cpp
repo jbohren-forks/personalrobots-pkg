@@ -809,8 +809,6 @@ end_image_thread:
   // TODO: parsing is basically duplicated in prosilica_node
   bool loadIntrinsics(double* D, double* K, double* R, double* P)
   {
-    // FIXME: Hardcoding these until we get a response on flash read/write bug.
-    //        These values are good for PRF and possibly OK for the other cameras.
 //#define FOREARM_FLASH_IS_BUGGY
 #ifdef FOREARM_FLASH_IS_BUGGY
     static const double D_[] = {-0.34949, 0.13668, 0.00039, -0.00110, 0.00000};
