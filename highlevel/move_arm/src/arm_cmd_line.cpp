@@ -144,6 +144,27 @@ void setupGoal(const std::vector<std::string> &names, move_arm::MoveArmGoal &goa
 	goal.goal_constraints.joint_constraint[i].tolerance_below[0] = 0.0;
 	goal.goal_constraints.joint_constraint[i].tolerance_above[0] = 0.0;
     }
+
+    goal.contacts.resize(1);
+    goal.contacts[0].links.push_back("r_gripper_l_finger_link");
+    goal.contacts[0].links.push_back("r_gripper_r_finger_link");
+    goal.contacts[0].links.push_back("r_gripper_l_finger_tip_link");
+    goal.contacts[0].links.push_back("r_gripper_r_finger_tip_link"); 
+    goal.contacts[0].links.push_back("r_gripper_palm_link");
+    goal.contacts[0].depth = 0.025;
+    goal.contacts[0].bound.type = mapping_msgs::Object::SPHERE;
+    goal.contacts[0].bound.dimensions.push_back(0.5);
+
+    goal.contacts[0].pose.header.stamp = ros::Time::now();
+    goal.contacts[0].pose.header.frame_id = "/base_link";
+    goal.contacts[0].pose.pose.position.x = 1;
+    goal.contacts[0].pose.pose.position.y = 0;	
+    goal.contacts[0].pose.pose.position.z = 0.5;	
+    
+    goal.contacts[0].pose.pose.orientation.x = 0;
+    goal.contacts[0].pose.pose.orientation.y = 0;
+    goal.contacts[0].pose.pose.orientation.z = 0;
+    goal.contacts[0].pose.pose.orientation.w = 1;
 }
 
 void setupGoalEEf(const std::string &link, const std::vector<double> &pz, move_arm::MoveArmGoal &goal)
@@ -269,7 +290,7 @@ int main(int argc, char **argv)
     ros::NodeHandle nh;
     robot_actions::ActionClient<move_arm::MoveArmGoal, move_arm::MoveArmState, int32_t> move_arm(arm == "r" ? "move_right_arm" : "move_left_arm");
     robot_actions::ActionClient<std_msgs::Float64, pr2_robot_actions::ActuateGripperState, std_msgs::Float64> gripper(arm == "r" ? "actuate_gripper_right_arm" : "actuate_gripper_left_arm");
-    ros::Publisher view = nh.advertise<motion_planning_msgs::KinematicPath>("display_kinematic_path", 1);
+    ros::Publisher view = nh.advertise<motion_planning_msgs::KinematicPath>("executing_kinematic_path", 1);
     
     int32_t                                               feedback;
     std::map<std::string, move_arm::MoveArmGoal> goals;

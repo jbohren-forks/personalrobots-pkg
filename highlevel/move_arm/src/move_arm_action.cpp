@@ -144,6 +144,7 @@ public:
 	
 	nodeHandle_.param<bool>("~show_collisions", show_collisions_, false);
 	nodeHandle_.param<bool>("~unsafe_paths",    unsafe_paths_, false);
+
 	if (show_collisions_)
 	    ROS_INFO("Found collisions will be displayed as visualization markers");
 	
@@ -283,7 +284,7 @@ private:
 	if (ccost.cost < cdepth)
 	    ccost.cost = cdepth;
 	ccost.sum += cdepth;
-	
+
 	if (display)
 	{
 	    static int count = 0;
@@ -709,6 +710,13 @@ private:
 				{
 				    displayPathPublisher_.publish(currentPath);
 				    //				    printPath(currentPath);
+				    
+				    CollisionCost ccost;
+				    planningMonitor_->setOnCollisionContactCallback(boost::bind(&MoveArm::contactFound, this, ccost, true, _1), 0);
+				    bool valid = planningMonitor_->isPathValid(currentPath, 0, currentPath.states.size() - 1, planning_environment::PlanningMonitor::COLLISION_TEST + 
+									       planning_environment::PlanningMonitor::PATH_CONSTRAINTS_TEST, false);
+				    planningMonitor_->setOnCollisionContactCallback(NULL);
+				    
 				    feedback = move_arm::MoveArmState::MOVING;	
 				    update(feedback);
 				}
@@ -872,7 +880,8 @@ private:
 
     robot_actions::ResultStatus execute(const move_arm::MoveArmGoal& goal, int32_t& feedback)
     { 
-	planningMonitor_->setAllowedContacts(goal.contacts);
+
+        planningMonitor_->setAllowedContacts(goal.contacts);
 	
 	motion_planning_msgs::GetMotionPlan::Request req;
 	
@@ -898,6 +907,12 @@ private:
 	planningMonitor_->setPathConstraints(req.path_constraints);
 	planningMonitor_->setGoalConstraints(req.goal_constraints);
 	
+	ROS_INFO("Received planning request");
+	std::stringstream ss;
+	planningMonitor_->printConstraints(ss);
+	planningMonitor_->printAllowedContacts(ss);
+	ROS_DEBUG("%s", ss.str().c_str());
+
 	// fill the starting state
 	fillStartState(req.start_state);
 	
@@ -1061,6 +1076,7 @@ int main(int argc, char** argv)
     ros::init(argc, argv, "move_arm", ros::init_options::AnonymousName);  
     
     MoveBodyCore core;
+    ROS_INFO("Starting action...");
     
     if (core.configure())
     {
@@ -1069,6 +1085,9 @@ int main(int argc, char** argv)
 	robot_actions::ActionRunner runner(20.0);
 	runner.connect<move_arm::MoveArmGoal, move_arm::MoveArmState, int32_t>(move_arm);
 	runner.run();
+
+	ROS_INFO("Action started");
+
 	ros::spin();
     }
     
