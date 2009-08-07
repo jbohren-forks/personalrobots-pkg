@@ -278,12 +278,13 @@ private:
 	
     /** \brief The ccost and display arguments should be bound by the caller. This is a callback function that gets called by the planning
      * environment when a collision is found */
-    void contactFound(CollisionCost &ccost, bool display, collision_space::EnvironmentModel::Contact &contact)
+    void contactFound(CollisionCost *ccost, bool display, collision_space::EnvironmentModel::Contact &contact)
     {
 	double cdepth = fabs(contact.depth);
-	if (ccost.cost < cdepth)
-	    ccost.cost = cdepth;
-	ccost.sum += cdepth;
+
+	if (ccost->cost < cdepth)
+	    ccost->cost = cdepth;
+	ccost->sum += cdepth;
 
 	if (display)
 	{
@@ -320,7 +321,7 @@ private:
 	
 	std::vector<collision_space::EnvironmentModel::AllowedContact> ac = planningMonitor_->getAllowedContacts();
 	planningMonitor_->clearAllowedContacts();
-	planningMonitor_->setOnCollisionContactCallback(boost::bind(&MoveArm::contactFound, this, ccost, false, _1), 0);
+	planningMonitor_->setOnCollisionContactCallback(boost::bind(&MoveArm::contactFound, this, &ccost, false, _1), 0);
 	
 	// check for collision, getting all contacts
 	planningMonitor_->isStateValid(sp, planning_environment::PlanningMonitor::COLLISION_TEST);
@@ -711,12 +712,6 @@ private:
 				    displayPathPublisher_.publish(currentPath);
 				    //				    printPath(currentPath);
 				    
-				    CollisionCost ccost;
-				    planningMonitor_->setOnCollisionContactCallback(boost::bind(&MoveArm::contactFound, this, ccost, true, _1), 0);
-				    bool valid = planningMonitor_->isPathValid(currentPath, 0, currentPath.states.size() - 1, planning_environment::PlanningMonitor::COLLISION_TEST + 
-									       planning_environment::PlanningMonitor::PATH_CONSTRAINTS_TEST, false);
-				    planningMonitor_->setOnCollisionContactCallback(NULL);
-				    
 				    feedback = move_arm::MoveArmState::MOVING;	
 				    update(feedback);
 				}
@@ -757,14 +752,13 @@ private:
 		    }
 		    
 		    CollisionCost ccost;
-		    planningMonitor_->setOnCollisionContactCallback(boost::bind(&MoveArm::contactFound, this, ccost, true, _1), 0);
+		    planningMonitor_->setOnCollisionContactCallback(boost::bind(&MoveArm::contactFound, this, &ccost, true, _1), 0);
 		    valid = planningMonitor_->isPathValid(currentPath, currentPos, currentPath.states.size() - 1, planning_environment::PlanningMonitor::COLLISION_TEST + 
 							  planning_environment::PlanningMonitor::PATH_CONSTRAINTS_TEST, false);
 		    planningMonitor_->setOnCollisionContactCallback(NULL);
 		    
 		    if (!valid)
-			ROS_INFO("Path contact penetration depth: %f", ccost.cost);
-		    
+		      ROS_INFO("Maximum path contact penetration depth is %f, sum of all contact depths is %f", ccost.cost, ccost.sum);
 		}
 		
 		if (result == robot_actions::PREEMPTED || !safe || !valid)
