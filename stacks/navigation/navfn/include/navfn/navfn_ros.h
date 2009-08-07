@@ -117,13 +117,13 @@ namespace navfn {
       boost::shared_ptr<NavFn> planner_;
       double inscribed_radius_, circumscribed_radius_, inflation_radius_;
       ros::Publisher plan_pub_;
+      bool initialized_;
 
 
     private:
       void clearRobotCell(const tf::Stamped<tf::Pose>& global_pose, unsigned int mx, unsigned int my);
       costmap_2d::Costmap2D costmap_;
       std::string global_frame_;
-      bool initialized_;
   };
 };
 
