@@ -1,6 +1,6 @@
 /*
- *  homography_transform.h
- *  online_patch
+ *  one_way_descriptor.cpp
+ *  
  *
  *  Created by Victor  Eruhimov on 4/19/09.
  *  Copyright 2009 Argus Corp. All rights reserved.
@@ -11,8 +11,6 @@
 static const float pi = 3.1415926;
 
 #include <stdio.h>
-#include <vector>
-using namespace std;
 
 #include "outlet_detection/one_way_descriptor.h"
 
@@ -53,6 +51,7 @@ void generate_mean_patch(IplImage* frontal, IplImage* result, CvAffinePose pose,
     for(int i = 0; i < pose_count; i++)
     {
         CvAffinePose pose_pert = perturbate_pose(pose, noise);
+        
         AffineTransformPatch(frontal, workspace, pose_pert);
         cvConvertScale(workspace, workspace_float);
         cvAdd(sum, workspace_float, sum);
@@ -188,18 +187,20 @@ void AffineTransformPatch(IplImage* src, IplImage* dst, CvAffinePose pose)
     IplImage* temp = cvCreateImage(cvSize(src_large_roi.width, src_large_roi.height), IPL_DEPTH_32F, src->nChannels);
     cvSetZero(temp);
     IplImage* temp2 = cvCloneImage(temp);
+    CvMat* rotation_phi = cvCreateMat(2, 3, CV_32FC1);
     
+    CvSize new_size = cvSize(temp->width*pose.lambda1, temp->height*pose.lambda2);
+    IplImage* temp3 = cvCreateImage(new_size, IPL_DEPTH_32F, src->nChannels);
+
     cvConvertScale(src, temp);
     cvResetImageROI(temp);
     
-    CvMat* rotation_phi = cvCreateMat(2, 3, CV_32FC1);
     
     cv2DRotationMatrix(cvPoint2D32f(temp->width/2, temp->height/2), pose.phi, 1.0, rotation_phi);
     cvWarpAffine(temp, temp2, rotation_phi);
     
     cvSetZero(temp);
-    CvSize new_size = cvSize(temp->width*pose.lambda1, temp->height*pose.lambda2);
-    IplImage* temp3 = cvCreateImage(new_size, IPL_DEPTH_32F, src->nChannels);
+    
     cvResize(temp2, temp3);
     
     cv2DRotationMatrix(cvPoint2D32f(temp3->width/2, temp3->height/2), pose.theta - pose.phi, 1.0, rotation_phi);
@@ -208,12 +209,11 @@ void AffineTransformPatch(IplImage* src, IplImage* dst, CvAffinePose pose)
     cvSetImageROI(temp, cvRect(temp->width/2 - src_large_roi.width/4, temp->height/2 - src_large_roi.height/4, 
                                src_large_roi.width/2, src_large_roi.height/2));
     cvConvertScale(temp, dst);   
-    
     cvReleaseMat(&rotation_phi);
     
-    cvReleaseImage(&temp);
-    cvReleaseImage(&temp2);
     cvReleaseImage(&temp3);
+    cvReleaseImage(&temp2);
+    cvReleaseImage(&temp);
 }
 
 void CvOneWayDescriptor::GenerateSamples(int pose_count, IplImage* frontal, int norm)
@@ -328,7 +328,7 @@ void CvOneWayDescriptor::SetTransforms(CvAffinePose* poses, CvMat** transforms)
 
 void CvOneWayDescriptor::Initialize(int pose_count, IplImage* frontal, const char* feature_name, int norm)
 {
-    m_feature_name = string(feature_name);
+    m_feature_name = String(feature_name);
     CvRect roi = cvGetImageROI(frontal);
     m_center = rect_center(roi);
     
@@ -340,6 +340,11 @@ void CvOneWayDescriptor::Initialize(int pose_count, IplImage* frontal, const cha
 void CvOneWayDescriptor::InitializeFast(int pose_count, IplImage* frontal, const char* feature_name, 
                     CvMat* pca_hr_avg, CvMat* pca_hr_eigenvectors, CvOneWayDescriptor* pca_descriptors)
 {
+    if(pca_hr_avg == 0)
+    {
+        Initialize(pose_count, frontal, feature_name, 1);
+        return;
+    }
     m_feature_name = string(feature_name);
     CvRect roi = cvGetImageROI(frontal);
     m_center = rect_center(roi);
@@ -374,6 +379,13 @@ void CvOneWayDescriptor::ProjectPCASample(IplImage* patch, CvMat* avg, CvMat* ei
 
 void CvOneWayDescriptor::EstimatePosePCA(IplImage* patch, int& pose_idx, float& distance, CvMat* avg, CvMat* eigenvectors) const
 {
+    if(avg == 0)
+    {
+        // do not use pca
+        EstimatePose(patch, pose_idx, distance);
+        return;
+    }
+    
     CvRect roi = cvGetImageROI(patch);
     CvMat* pca_coeffs = cvCreateMat(1, m_pca_dim_low, CV_32FC1);
     

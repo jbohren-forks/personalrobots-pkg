@@ -21,6 +21,7 @@ using namespace std;
 
 #include "one_way_descriptor.h"
 #include "one_way_descriptor_base.h"
+#include "features.h"
 
 inline CvPoint cvPoint(CvPoint2D32f point)
 {
@@ -177,7 +178,7 @@ public:
         sprintf(train_image_filename, "%s/%s", m_train_path.c_str(), outlet_filename);
         sprintf(train_image_filename1, "%s/%s", m_train_path.c_str(), nonoutlet_filename);   
         
-        m_base->LoadTrainingFeatures(train_image_filename, train_image_filename1);
+        LoadTrainingFeatures(*m_base, train_image_filename, train_image_filename1);
         
     }
 

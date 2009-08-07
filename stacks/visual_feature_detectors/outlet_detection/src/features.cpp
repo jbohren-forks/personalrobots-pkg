@@ -83,6 +83,16 @@ void GetHoleFeatures(IplImage* src, vector<feature_t>& features, float hole_cont
     }
 }
 
+void GetHoleFeatures(IplImage* src, Vector<feature_t>& features, float hole_contrast)
+{
+    vector<outlet_feature_t> outlet_features;
+    find_outlet_features_fast(src, outlet_features, hole_contrast, 0, 0);
+    for(size_t i = 0; i < outlet_features.size(); i++)
+    {
+        features.push_back(feature_t(feature_center(outlet_features[i]), outlet_features[i].bbox.width));
+    }
+}
+
 void DrawFeatures(IplImage* img, const vector<feature_t>& features)
 {
     for(size_t i = 0; i < features.size(); i++)
@@ -123,13 +133,11 @@ void SelectNeighborFeatures(vector<feature_t>& features, const vector<feature_t>
     features = filtered;
 }
 
-int LoadFeatures(const char* filename, vector<vector<feature_t> >& features, vector<Ptr<IplImage> >& images)
-{
-    IplImage* train_image = loadImageRed(filename);
-    
+int CalcFeatures(IplImage* image, Vector<Vector<feature_t> >& features, Vector<Ptr<IplImage> >& images)
+{    
     size_t pyr_levels = features.size();
     images.resize(pyr_levels);
-    IplImage* image_features = cvCloneImage(train_image);
+    IplImage* image_features = cvCloneImage(image);
     for(size_t i = 0; i < features.size(); i++)
     {
         images[i] = image_features;
@@ -141,12 +149,22 @@ int LoadFeatures(const char* filename, vector<vector<feature_t> >& features, vec
     cvReleaseImage(&image_features);
     
     int feature_count = 0;
+    
     for(size_t i = 0; i < pyr_levels; i++)
     {
         feature_count += features[i].size();
     }
     
-    cvReleaseImage(&train_image);
+    cvReleaseImage(&image);
+    
+    return feature_count;
+}
+
+int LoadFeatures(const char* filename, Vector<Vector<feature_t> >& features, Vector<Ptr<IplImage> >& images)
+{
+    IplImage* image = loadImageRed(filename);
+
+    int feature_count = CalcFeatures(image, features, images);
     
     return feature_count;
 }
@@ -167,4 +185,50 @@ IplImage* loadImageRed(const char* filename)
 #endif //_SCALE_IMAGE_2
     
     return red;
+}
+
+void LoadTrainingFeatures(CvOneWayDescriptorObject& descriptors, const char* train_image_filename_object, const char* train_image_filename_background)
+{
+    
+    IplImage* train_image_object = loadImageRed(train_image_filename_object);
+    IplImage* train_image_background = loadImageRed(train_image_filename_background);
+    
+    Vector<Vector<feature_t> > object_features;
+    object_features.resize(descriptors.GetPyrLevels());
+    Vector<Ptr<IplImage> > images;
+    int object_feature_count = LoadFeatures(train_image_filename_object, object_features, images);
+    
+    Vector<Vector<feature_t> > background_features;
+    Vector<Ptr<IplImage> > background_images;
+    background_features.resize(1);
+    int background_feature_count = LoadFeatures(train_image_filename_background, background_features, background_images);
+    
+    int train_feature_count = object_feature_count + background_feature_count;
+    printf("Found %d train points...\n", train_feature_count);
+    
+    descriptors.Allocate(train_feature_count, object_feature_count);
+    
+    int descriptor_count = 0;
+    for(int i = 0; i < descriptors.GetPyrLevels(); i++)
+    {
+        char feature_label[1024];
+        sprintf(feature_label, "%s_%d", train_image_filename_object, i);
+        IplImage* img = images[i];
+        descriptors.InitializeObjectDescriptors(img, object_features[i], feature_label, descriptor_count, (float)(1<<i));
+        descriptor_count += object_features[i].size();
+    }
+    
+    descriptors.InitializeObjectDescriptors(background_images[0], background_features[0], train_image_filename_background, object_feature_count);
+    
+    cvReleaseImage(&train_image_object);
+    cvReleaseImage(&train_image_background);
+}
+
+void ScaleFeatures(const vector<feature_t>& src, vector<feature_t>& dst, float scale)
+{
+    dst.resize(src.size());
+    for(size_t i = 0; i < src.size(); i++)
+    {
+        dst[i] = feature_t(cvPoint(src[i].pt.x*scale, src[i].pt.y*scale), src[i].size, src[i].class_id);
+    }
 }

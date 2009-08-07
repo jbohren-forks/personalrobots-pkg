@@ -18,6 +18,7 @@ using namespace std;
 using namespace cv;
 
 #include "outlet_detection/features.h"
+#include "outlet_detection/one_way_descriptor_base.h"
 
 void FindAffineTransform(const vector<CvPoint>& p1, const vector<CvPoint>& p2, CvMat* affine);
 void MapVectorAffine(const vector<CvPoint>& p1, vector<CvPoint>& p2, CvMat* transform);

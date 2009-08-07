@@ -16,10 +16,5 @@
 void savePCAFeatures(const char* filename, CvMat* avg, CvMat* eigenvectors);
 void calcPCAFeatures(vector<IplImage*>& patches, const char* filename);
 void loadPCAFeatures(const char* path, vector<IplImage*>& patches);
-void readPCAFeatures(const char* filename, CvMat** avg, CvMat** eigenvectors);
-void eigenvector2image(CvMat* eigenvector, IplImage* img);
-
-
-
 
 #endif //_PCA_FEATURES_H

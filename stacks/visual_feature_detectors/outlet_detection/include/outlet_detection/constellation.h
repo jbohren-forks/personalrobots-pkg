@@ -15,6 +15,7 @@ using namespace std;
 
 #include <cv.h>
 #include "features.h"
+#include "one_way_descriptor_base.h"
 
 float calc_set_std(const vector<feature_t>& features, const vector<int>& indices = vector<int>());
 void DetectObjectConstellation(const vector<feature_t>& train, const vector<feature_t>& input, CvMat* homography, vector<int>& indices);

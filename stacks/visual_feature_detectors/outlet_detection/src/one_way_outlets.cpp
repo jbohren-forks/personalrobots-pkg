@@ -147,7 +147,7 @@ void detect_outlets_2x1_one_way(IplImage* test_image, const CvOneWayDescriptorOb
     
     //        printf("%d features before filtering\n", (int)hole_candidates.size());
     vector<feature_t> hole_candidates_filtered;
-    float dist = calc_set_std(descriptors->GetTrainFeatures());
+    float dist = calc_set_std(descriptors->_GetTrainFeatures());
     FilterOutletFeatures(hole_candidates, hole_candidates_filtered, dist*4);
     hole_candidates = hole_candidates_filtered;
     //        printf("Set size is %f\n", dist);
@@ -172,7 +172,7 @@ void detect_outlets_2x1_one_way(IplImage* test_image, const CvOneWayDescriptorOb
         vector<feature_t> clustered_features;
         SelectNeighborFeatures(hole_candidates, clusters[k].pt, clustered_features, dist*4);
         
-        DetectObjectConstellation(descriptors->GetTrainFeatures(), clustered_features, homography, indices);
+        DetectObjectConstellation(descriptors->_GetTrainFeatures(), clustered_features, homography, indices);
         
         // print statistics
         int parts = 0;
@@ -189,7 +189,7 @@ void detect_outlets_2x1_one_way(IplImage* test_image, const CvOneWayDescriptorOb
         if(parts > 0)
         {
             holes.clear();
-            InferMissingObjects(descriptors->GetTrainFeatures(), clustered_features, homography, indices, holes);
+            InferMissingObjects(descriptors->_GetTrainFeatures(), clustered_features, homography, indices, holes);
         }
     }
     
@@ -375,7 +375,7 @@ void detect_outlets_one_way(IplImage* test_image, const outlet_template_t& outle
     
     //        printf("%d features before filtering\n", (int)hole_candidates.size());
     vector<feature_t> hole_candidates_filtered;
-    float dist = calc_set_std(descriptors->GetTrainFeatures());
+    float dist = calc_set_std(descriptors->_GetTrainFeatures());
     FilterOutletFeatures(hole_candidates, hole_candidates_filtered, dist*4);
     hole_candidates = hole_candidates_filtered;
     //        printf("Set size is %f\n", dist);
@@ -417,7 +417,7 @@ void detect_outlets_one_way(IplImage* test_image, const outlet_template_t& outle
     for(int i = 0; i < descriptors->GetPyrLevels(); i++)
     {
         vector<feature_t> train_features;
-        ScaleFeatures(descriptors->GetTrainFeatures(), train_features, 1.0f/(1<<i));
+        ScaleFeatures(descriptors->_GetTrainFeatures(), train_features, 1.0f/(1<<i));
         
         vector<outlet_t> _holes;
                 
@@ -513,14 +513,5 @@ void detect_outlets_one_way(IplImage* test_image, const outlet_template_t& outle
     cvReleaseImage(&image);
     cvReleaseImage(&image1);
     cvReleaseImage(&image2);
-}
-
-void ScaleFeatures(const vector<feature_t>& src, vector<feature_t>& dst, float scale)
-{
-    dst.resize(src.size());
-    for(size_t i = 0; i < src.size(); i++)
-    {
-        dst[i] = feature_t(cvPoint(src[i].pt.x*scale, src[i].pt.y*scale), src[i].size, src[i].class_id);
-    }
 }
 

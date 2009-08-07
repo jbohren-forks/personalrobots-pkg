@@ -8,6 +8,7 @@
  */
 
 #include "outlet_detection/affine_transform.h"
+#include "outlet_detection/one_way_descriptor_base.h"
 
 
 void cvmSet6(CvMat* m, int row, int col, float val1, float val2, float val3, float val4, float val5, float val6)

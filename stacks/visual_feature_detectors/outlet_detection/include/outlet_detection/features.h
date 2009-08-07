@@ -16,6 +16,8 @@ using namespace std;
 #include <cv.h>
 using namespace cv;
 
+#include "one_way_descriptor_base.h"
+
 inline CvPoint operator -(CvPoint p1, CvPoint p2)
 {
     return cvPoint(p1.x - p2.x, p1.y - p2.y);
@@ -46,6 +48,7 @@ inline float length(Point2f p)
     return sqrt(float(p.x*p.x) + p.y*p.y);
 };
 
+
 #if 0
 struct feature_t
 {
@@ -62,21 +65,6 @@ struct feature_t
     };
 };
 #else
-class CV_EXPORTS KeyPointEx : public KeyPoint
-{
-public:
-    KeyPointEx(CvPoint _center = cvPoint(-1, -1), float _scale = 1, int _class_id = -1) : 
-        KeyPoint(_center.x, _center.y, _scale, 0.0f, 0.0f, 0)
-    {
-        class_id = _class_id;
-    };
-    
-    ~KeyPointEx() {};
-    
-    int class_id;
-};
-
-typedef KeyPointEx feature_t;
 
 /*void operator =(const Point2f& src, CvPoint& dst)
 {
@@ -88,6 +76,7 @@ void GetSURFFeatures(IplImage* src, vector<feature_t>& features);
 void GetStarFeatures(IplImage* src, vector<feature_t>& features);
 void GetHarrisFeatures(IplImage* src, vector<feature_t>& features);
 void GetHoleFeatures(IplImage* src, vector<feature_t>& features, float hole_contrast = 1.1f);
+void GetHoleFeatures(IplImage* src, Vector<feature_t>& features, float hole_contrast = 1.1f);
 
 void DrawFeatures(IplImage* img, const vector<feature_t>& features);
 void FilterFeatures(vector<feature_t>& features, float min_scale, float max_scale);
@@ -100,8 +89,13 @@ template<> inline void Ptr<IplImage>::delete_obj()
 { cvReleaseImage(&obj); }
 }
 
-int LoadFeatures(const char* filename, vector<vector<feature_t> >& features, vector<Ptr<IplImage> >& images);
+int LoadFeatures(const char* filename, Vector<Vector<feature_t> >& features, Vector<Ptr<IplImage> >& images);
+void LoadTrainingFeatures(CvOneWayDescriptorObject& descriptors, const char* train_image_filename_object, const char* train_image_filename_background);
+
 IplImage* loadImageRed(const char* filename);
+
+// helper function for running hough transform over several scales
+void ScaleFeatures(const vector<feature_t>& src, vector<feature_t>& dst, float scale);
 
 
 #endif // _FEATURES_H

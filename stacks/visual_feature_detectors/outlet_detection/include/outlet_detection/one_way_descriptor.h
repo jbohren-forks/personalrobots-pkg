@@ -1,6 +1,6 @@
 /*
- *  homography_transform.cpp
- *  online_patch
+ *  one_way_desctiptor.h
+ *  
  *
  *  Created by Victor  Eruhimov on 4/19/09.
  *  Copyright 2009 Argus Corp. All rights reserved.
@@ -10,13 +10,11 @@
 #if !defined(_ONE_WAY_DESCRIPTOR)
 #define _ONE_WAY_DESCRIPTOR
 
-#include <cv.h>
-
-#include <vector>
 #include <string>
 using namespace std;
 
-#include "outlet_detection/features.h"
+#include <cv.h>
+using namespace cv;
 
 inline int round(float value)
 {
@@ -253,7 +251,7 @@ protected:
     CvAffinePose* m_affine_poses; // an array of poses
     CvMat** m_transforms; // an array of affine transforms corresponding to poses
     
-    string m_feature_name; // the name of the feature associated with the descriptor
+    String m_feature_name; // the name of the feature associated with the descriptor
     CvPoint m_center; // the coordinates of the feature (the center of the input image ROI)
     
     int m_pca_dim_high; // the number of descriptor pca components to use for generating affine poses
