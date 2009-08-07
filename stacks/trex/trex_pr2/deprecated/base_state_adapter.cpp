@@ -1,13 +1,13 @@
 #include "trex_ros/ros_state_adapter.h"
 #include "Domains.hh"
-#include <deprecated_msgs/RobotBase2DOdom.h>
+#include <nav_msgs/Odometry.h>
 
 namespace TREX {
   namespace deprecated {
-    class BaseStateAdapter: public ROSStateAdapter<deprecated_msgs::RobotBase2DOdom> {
+    class BaseStateAdapter: public ROSStateAdapter<nav_msgs::Odometry> {
     public:
       BaseStateAdapter(const LabelStr& agentName, const TiXmlElement& configData)
-	: ROSStateAdapter<deprecated_msgs::RobotBase2DOdom> ( agentName, configData) {
+	: ROSStateAdapter<nav_msgs::Odometry> ( agentName, configData) {
       }
 
       virtual ~BaseStateAdapter(){}
