@@ -460,7 +460,7 @@ bool JointTrajectoryController::trajectoryDone()
 void JointTrajectoryController::update(void)
 {
 #ifdef PUBLISH_MAX_TIME
-  double start_time = realtime_gettime();
+  double start_time = ros::Time::now().toSec();
 #endif
   current_time_ = robot_->hw_->current_time_;
   updateJointValues();
@@ -531,7 +531,7 @@ void JointTrajectoryController::update(void)
 
 
 #ifdef PUBLISH_MAX_TIME
-  double end_time = realtime_gettime();
+  double end_time = ros::Time::now().toSec();
   max_update_time_ = std::max(max_update_time_,end_time-start_time);
 
   if (controller_state_publisher_->trylock())

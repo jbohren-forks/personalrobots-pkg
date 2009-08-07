@@ -59,8 +59,8 @@ MechanismControl::MechanismControl(HardwareInterface *hw) :
   pub_diagnostics_(node_, "/diagnostics", 1),
   pub_joints_(node_, "joint_states", 1),
   pub_mech_state_(node_, "mechanism_state", 1),
-  last_published_state_(realtime_gettime()),
-  last_published_diagnostics_(realtime_gettime())
+  last_published_state_(ros::Time::now().toSec()),
+  last_published_diagnostics_(ros::Time::now().toSec())
 {
   model_.hw_ = hw;
 }
@@ -125,25 +125,25 @@ void MechanismControl::update()
   std::vector<ControllerSpec> &controllers = controllers_lists_[used_by_realtime_];
   std::vector<size_t> &scheduling = controllers_scheduling_[used_by_realtime_];
 
-  double start = realtime_gettime();
+  double start = ros::Time::now().toSec();
   state_->propagateState();
   state_->zeroCommands();
-  double start_update = realtime_gettime();
+  double start_update = ros::Time::now().toSec();
   pre_update_stats_.acc(start_update - start);
 
   // Update all controllers in scheduling order
   for (size_t i=0; i<controllers.size(); i++){
-    double start = realtime_gettime();
+    double start = ros::Time::now().toSec();
     controllers[scheduling[i]].c->updateRequest();
-    double end = realtime_gettime();
+    double end = ros::Time::now().toSec();
     controllers[scheduling[i]].stats->acc(end - start);
   }
-  double end_update = realtime_gettime();
+  double end_update = ros::Time::now().toSec();
   update_stats_.acc(end_update - start_update);
 
   state_->enforceSafety();
   state_->propagateEffort();
-  double end = realtime_gettime();
+  double end = ros::Time::now().toSec();
   post_update_stats_.acc(end - end_update);
 
   // publish diagnostics and state 
@@ -441,9 +441,9 @@ bool MechanismControl::switchController(const std::vector<std::string>& start_co
 
 void MechanismControl::publishDiagnostics()
 {
-  if (round ((realtime_gettime() - last_published_diagnostics_ - publish_period_diagnostics_)/ (0.000001)) >= 0)
+  if (round ((ros::Time::now().toSec() - last_published_diagnostics_ - publish_period_diagnostics_)/ (0.000001)) >= 0)
   {
-    last_published_diagnostics_ = realtime_gettime();
+    last_published_diagnostics_ = ros::Time::now().toSec();
     if (pub_diagnostics_.trylock())
     {
       std::vector<ControllerSpec> &controllers = controllers_lists_[used_by_realtime_];
@@ -516,9 +516,9 @@ void MechanismControl::publishDiagnostics()
 
 void MechanismControl::publishState()
 {
-  if (round ((realtime_gettime() - last_published_state_ - publish_period_state_)/ (0.000001)) >= 0)
+  if (round ((ros::Time::now().toSec() - last_published_state_ - publish_period_state_)/ (0.000001)) >= 0)
   {
-    last_published_state_ = realtime_gettime();
+    last_published_state_ = ros::Time::now().toSec();
     if (pub_mech_state_.trylock())
     {
       unsigned int j = 0;
@@ -566,8 +566,8 @@ void MechanismControl::publishState()
         out->motor_voltage = in->motor_voltage_;
         out->num_encoder_errors = in->num_encoder_errors_;
       }
-      pub_mech_state_.msg_.header.stamp.fromSec(realtime_gettime());
-      pub_mech_state_.msg_.time = realtime_gettime();
+      pub_mech_state_.msg_.header.stamp = ros::Time::now();
+      pub_mech_state_.msg_.time = ros::Time::now().toSec();
 
       pub_mech_state_.unlockAndPublish();
     }
@@ -592,7 +592,7 @@ void MechanismControl::publishState()
         }
       }
 
-      pub_joints_.msg_.header.stamp.fromSec(realtime_gettime());
+      pub_joints_.msg_.header.stamp = ros::Time::now();
 
       pub_joints_.unlockAndPublish();
     }

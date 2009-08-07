@@ -54,7 +54,6 @@
 #include <pr2_mechanism_controllers/ControllerState.h>
 
 #include <realtime_tools/realtime_publisher.h>
-#include <realtime_tools/realtime_tools.h>
 #include <std_msgs/String.h>
 
 #include <angles/angles.h>

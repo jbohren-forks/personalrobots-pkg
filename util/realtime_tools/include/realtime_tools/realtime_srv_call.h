@@ -43,7 +43,6 @@
 #include <ros/ros.h> 
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/thread.hpp>
-#include <realtime_tools/realtime_tools.h>
 
 namespace realtime_tools {
 
@@ -55,17 +54,6 @@ public:
     : node_(node), is_running_(false), keep_running_(false), turn_(REALTIME)
   {
     client_ = node_.serviceClient<SrvReq, SrvRes>(topic);
-
-    if (0 != realtime_cond_create(&updated_cond_))
-    {
-      perror("realtime_cond_create");
-      abort();
-    }
-    if (0 != realtime_mutex_create(&srv_lock_))
-    {
-      perror("realtime_mutex_create");
-      abort();
-    }
 
     // Makes the trylock() fail until the service is ready
     lock();
@@ -85,29 +73,25 @@ public:
       usleep(100);
     
     client_.shutdown();
-
-    // Destroy thread resources
-    realtime_cond_delete(&updated_cond_);
-    realtime_mutex_delete(&srv_lock_);
   }
 
   void stop()
   {
     keep_running_ = false;
-    realtime_cond_signal(&updated_cond_);  // So the call loop can exit
+    updated_cond_.notify_one();  // So the call loop can exit
   }
 
   SrvReq srv_req_;
   SrvRes srv_res_;
 
-  int lock()
+  void lock()
   {
-    return realtime_mutex_lock(&srv_lock_);
+    srv_mutex_.lock();
   }
 
   bool trylock()
   {
-    if (0 == realtime_mutex_trylock(&srv_lock_))
+    if (srv_mutex_.try_lock())
     {
       if (turn_ == REALTIME)
       {
@@ -115,7 +99,7 @@ public:
       }
       else
       {
-        realtime_mutex_unlock(&srv_lock_);
+        srv_mutex_.unlock();
         return false;
       }
     }
@@ -125,43 +109,40 @@ public:
 
   void unlock()
   {
-    realtime_mutex_unlock(&srv_lock_);
+    srv_mutex_.unlock();
   }
 
   void unlockAndCall()
   {
     turn_ = NON_REALTIME;
-    realtime_mutex_unlock(&srv_lock_);
-    realtime_cond_signal(&updated_cond_);
+    srv_mutex_.unlock();
+    updated_cond_.notify_one();
   }
 
   bool is_running() const { return is_running_; }
 
   void callLoop()
   {
-    RealtimeTask task;
-
-    int err = realtime_shadow_task(&task);
-    if (err)
-      ROS_WARN("Unable to shadow task: %d\n", err);
-
     is_running_ = true;
     turn_ = REALTIME;
     while (keep_running_)
     {
+      SrvReq outgoing;
+      SrvRes incoming;
       // Locks Srv_ and copies it
-      realtime_mutex_lock(&srv_lock_);
-      while (turn_ != NON_REALTIME)
       {
-	if (!keep_running_)
-	  break;
-        realtime_cond_wait(&updated_cond_, &srv_lock_);
-      }
+        boost::unique_lock<boost::mutex> lock(srv_mutex_);
+        while (turn_ != NON_REALTIME)
+        {
+          if (!keep_running_)
+            break;
+          updated_cond_.wait(lock);
+        }
 
-      SrvReq outgoing(srv_req_);
-      SrvRes incoming(srv_res_);
-      turn_ = REALTIME;
-      realtime_mutex_unlock(&srv_lock_);
+        outgoing = srv_req_;
+        incoming = srv_res_;
+        turn_ = REALTIME;
+      }
       
       // Sends the outgoing message
       if (keep_running_)
@@ -181,8 +162,8 @@ private:
 
   boost::thread thread_;
 
-  RealtimeMutex srv_lock_;  // Protects srv_
-  RealtimeCond updated_cond_;
+  boost::mutex srv_mutex_;  // Protects srv_
+  boost::condition_variable updated_cond_;
 
   enum {REALTIME, NON_REALTIME};
   int turn_;  // Who's turn is it to use srv_?

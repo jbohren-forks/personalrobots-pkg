@@ -67,7 +67,6 @@
 #include <robot_mechanism_controllers/JointControllerState.h>
 #include <robot_mechanism_controllers/JointTuningMsg.h>
 #include <realtime_tools/realtime_publisher.h>
-#include <realtime_tools/realtime_tools.h>
 
 namespace controller
 {

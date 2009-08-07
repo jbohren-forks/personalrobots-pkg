@@ -37,7 +37,6 @@
 
 #include "ros/node_handle.h"
 #include "mechanism_model/robot.h"
-#include "realtime_tools/realtime_tools.h"
 
 #include "mechanism_msgs/BufferedData.h"
 

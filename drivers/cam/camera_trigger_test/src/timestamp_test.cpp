@@ -38,7 +38,6 @@
 #include <stdio.h>
 #include <signal.h>
 #include <robot_mechanism_controllers/SetWaveform.h>
-#include <realtime_tools/realtime_tools.h>
 #include <robot_mechanism_controllers/trigger_controller.h>
 
 class TimestampTest

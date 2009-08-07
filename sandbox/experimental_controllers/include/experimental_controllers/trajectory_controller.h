@@ -47,7 +47,6 @@
 #include <manipulation_srvs/QuerySplineTraj.h>
 #include <manipulation_srvs/CancelSplineTraj.h>
 
-#include <realtime_tools/realtime_tools.h>
 #include <realtime_tools/realtime_publisher.h>
 
 #include <experimental_controllers/pid_position_velocity_controller.h>

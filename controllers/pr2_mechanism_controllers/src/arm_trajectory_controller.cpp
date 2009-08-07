@@ -191,7 +191,7 @@ void ArmTrajectoryController::update(void)
 {
 
 #ifdef PUBLISH_MAX_TIME
-  double start_time = realtime_gettime();
+  double start_time = ros::Time::now().toSec();
 #endif
 
   double sample_time(0.0);
@@ -238,7 +238,7 @@ void ArmTrajectoryController::update(void)
   updateJointControllers();
 
 #ifdef PUBLISH_MAX_TIME
-  double end_time = realtime_gettime();
+  double end_time = ros::Time::now().toSec();
   max_update_time_ = std::max(max_update_time_,end_time-start_time);
 
   if (controller_state_publisher_->trylock())

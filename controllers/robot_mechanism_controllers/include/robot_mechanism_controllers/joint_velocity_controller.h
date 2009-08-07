@@ -75,7 +75,6 @@
 //Realtime publisher
 #include <robot_mechanism_controllers/JointControllerState.h>
 #include <realtime_tools/realtime_publisher.h>
-#include <realtime_tools/realtime_tools.h>
 
 namespace controller
 {

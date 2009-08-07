@@ -42,7 +42,6 @@
 #include <ros/node_handle.h>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/thread.hpp>
-#include <realtime_tools/realtime_tools.h>
 
 namespace realtime_tools {
 
@@ -53,17 +52,6 @@ private:
   void construct(int queue_size)
   {
     publisher_ = node_.advertise<Msg>(topic_, queue_size);
-
-    if (0 != realtime_cond_create(&updated_cond_))
-    {
-      perror("realtime_cond_create");
-      abort();
-    }
-    if (0 != realtime_mutex_create(&msg_lock_))
-    {
-      perror("realtime_mutex_create");
-      abort();
-    }
     keep_running_ = true;
     thread_ = boost::thread(&RealtimePublisher::publishingLoop, this);
   }
@@ -89,28 +77,24 @@ public:
       usleep(100);
 
     publisher_.shutdown();
-
-    // Destroy thread resources
-    realtime_cond_delete(&updated_cond_);
-    realtime_mutex_delete(&msg_lock_);
   }
 
   void stop()
   {
     keep_running_ = false;
-    realtime_cond_signal(&updated_cond_);  // So the publishing loop can exit
+    updated_cond_.notify_one();  // So the publishing loop can exit
   }
 
   Msg msg_;
 
-  int lock()
+  void lock()
   {
-    return realtime_mutex_lock(&msg_lock_);
+    msg_mutex_.lock();
   }
 
   bool trylock()
   {
-    if (0 == realtime_mutex_trylock(&msg_lock_))
+    if (msg_mutex_.try_lock())
     {
       if (turn_ == REALTIME)
       {
@@ -118,7 +102,7 @@ public:
       }
       else
       {
-        realtime_mutex_unlock(&msg_lock_);
+        msg_mutex_.unlock();
         return false;
       }
     }
@@ -128,42 +112,38 @@ public:
 
   void unlock()
   {
-    realtime_mutex_unlock(&msg_lock_);
+    msg_mutex_.unlock();
   }
 
   void unlockAndPublish()
   {
     turn_ = NON_REALTIME;
-    realtime_mutex_unlock(&msg_lock_);
-    realtime_cond_signal(&updated_cond_);
+    msg_mutex_.unlock();
+    updated_cond_.notify_one();
   }
 
   bool is_running() const { return is_running_; }
 
   void publishingLoop()
   {
-    RealtimeTask task;
-
-    int err = realtime_shadow_task(&task);
-    if (err)
-      ROS_WARN("Unable to shadow task: %d\n", err);
-
     is_running_ = true;
     turn_ = REALTIME;
     while (keep_running_)
     {
+      Msg outgoing;
       // Locks msg_ and copies it
-      realtime_mutex_lock(&msg_lock_);
-      while (turn_ != NON_REALTIME)
       {
-        if (!keep_running_)
-          break;
-        realtime_cond_wait(&updated_cond_, &msg_lock_);
-      }
+        boost::unique_lock<boost::mutex> lock(msg_mutex_);
+        while (turn_ != NON_REALTIME)
+        {
+          if (!keep_running_)
+            break;
+          updated_cond_.wait(lock);
+        }
 
-      Msg outgoing(msg_);
-      turn_ = REALTIME;
-      realtime_mutex_unlock(&msg_lock_);
+        outgoing = msg_;
+        turn_ = REALTIME;
+      }
 
       // Sends the outgoing message
       if (keep_running_)
@@ -183,8 +163,8 @@ private:
 
   boost::thread thread_;
 
-  RealtimeMutex msg_lock_;  // Protects msg_
-  RealtimeCond updated_cond_;
+  boost::mutex msg_mutex_;  // Protects msg_
+  boost::condition_variable updated_cond_;
 
   enum {REALTIME, NON_REALTIME};
   int turn_;  // Who's turn is it to use msg_?

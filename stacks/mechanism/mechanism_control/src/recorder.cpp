@@ -100,11 +100,6 @@ void Recorder::record(unsigned int index, float value)
 
 void Recorder::publishingLoop()
 {
-  RealtimeTask task;
-  int err = realtime_shadow_task(&task);
-  if (err)
-    ROS_WARN("Unable to shadow task: %d\n", err);
-
   ROS_DEBUG("Entering publishing loop (namespace: %s)", node_.getNamespace().c_str());
   is_running_ = true;
   while (keep_running_)

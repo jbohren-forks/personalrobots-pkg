@@ -38,7 +38,6 @@
 #include <stdio.h>
 #include <signal.h>
 #include <robot_mechanism_controllers/SetWaveform.h>
-#include <realtime_tools/realtime_tools.h>
 
 class TriggerTest
 {
@@ -208,7 +207,7 @@ public:
           break;
 
         case 1:
-          double curtime = realtime_gettime();
+          double curtime = ros::Time::now().toSec();
           double curphase = fmod(curtime * led_config_.rep_rate - led_config_.phase, 1);
           fprintf(outfile_, "delay: %f intensity: %f led: %i\n", curphase / led_config_.rep_rate, 
               intensity, curphase < led_config_.duty_cycle);
