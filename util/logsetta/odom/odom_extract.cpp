@@ -32,24 +32,27 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#include "deprecated_msgs/RobotBase2DOdom.h"
+#include "nav_msgs/Odometry.h"
 #include <string>
 #include "rosrecord/Player.h"
+#include "tf/tf.h"
 
-void odom_callback(std::string name, deprecated_msgs::RobotBase2DOdom* odom, ros::Time t, ros::Time t_no_use, void* f)
+void odom_callback(std::string name, nav_msgs::Odometry* odom, ros::Time t, ros::Time t_no_use, void* f)
 {
   FILE* file = (FILE*)f;
 
   fprintf(file, "%.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f %d\n",
           t.toSec(),
           odom->header.stamp.toSec(),
-          odom->pos.x,
-          odom->pos.y,
-          odom->pos.th,
-          odom->vel.x,
-          odom->vel.y,
-          odom->vel.th,
-          odom->stall);
+          odom->pose_with_covariance.pose.position.x,
+          odom->pose_with_covariance.pose.position.y,
+          tf::getYaw(odom->pose_with_covariance.pose.orientation),
+          odom->twist_with_covariance.twist.linear.x,
+          odom->twist_with_covariance.twist.linear.y,
+          odom->twist_with_covariance.twist.angular.z,
+          0);
+          //@todo TODO: Decide whether or not its important to get stall from another topic since the odometry message doesn't contain that information anymore
+          //odom->stall);
 }
 
 int main(int argc, char **argv)
@@ -68,7 +71,7 @@ int main(int argc, char **argv)
 
   FILE* file = fopen((std::string(argv[2])+".txt").c_str() , "w");
 
-  player.addHandler<deprecated_msgs::RobotBase2DOdom>(std::string(argv[2]), &odom_callback, file);
+  player.addHandler<nav_msgs::Odometry>(std::string(argv[2]), &odom_callback, file);
 
   while(player.nextMsg())  {}
 

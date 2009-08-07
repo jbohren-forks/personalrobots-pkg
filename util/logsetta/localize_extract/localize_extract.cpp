@@ -32,17 +32,23 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#include "deprecated_msgs/RobotBase2DOdom.h"
+#include "nav_msgs/Odometry.h"
 #include <string>
 #include "rosrecord/Player.h"
+#include "tf/tf.h"
 
-void localize_callback(std::string name, deprecated_msgs::RobotBase2DOdom* bL, ros::Time t, ros::Time t_no_use, void* f)
+void localize_callback(std::string name, nav_msgs::Odometry* bL, ros::Time t, ros::Time t_no_use, void* f)
 {
   FILE* file = (FILE*)f;
 
   fprintf(file, "%.5f ",t.toSec());
 
-  fprintf(file, "%0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %d", bL->pos.x, bL->pos.y, bL->pos.th, bL->vel.x, bL->vel.y, bL->vel.th, bL->stall);
+  fprintf(file, "%0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %d", bL->pose_with_covariance.pose.position.x, bL->pose_with_covariance.pose.position.y, 
+      tf::getYaw(bL->pose_with_covariance.pose.orientation), 
+      bL->twist_with_covariance.twist.linear.x, bL->twist_with_covariance.twist.linear.y, bL->twist_with_covariance.twist.angular.z, 
+      0);
+      //@todo TODO: Decide if we should be getting stall information from a separate channel or not now that the Odometry message doesn't contain it
+      //bL->stall);
 
   fprintf(file, "\n");
 }
@@ -63,7 +69,7 @@ int main(int argc, char **argv)
 
   FILE* file = fopen("localize_actual.txt", "w");
 
-  player.addHandler<deprecated_msgs::RobotBase2DOdom>(std::string("localizedPose"), &localize_callback, file);
+  player.addHandler<nav_msgs::Odometry>(std::string("localizedPose"), &localize_callback, file);
 
   while(player.nextMsg())  {}
 

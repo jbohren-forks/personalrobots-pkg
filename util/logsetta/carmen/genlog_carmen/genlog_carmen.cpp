@@ -32,7 +32,7 @@
 #include "ros/node.h"
 #include "sensor_msgs/LaserScan.h"
 //#include "geometry_msgs/PoseStamped.h"
-#include "deprecated_msgs/RobotBase2DOdom.h"
+#include "nav_msgs/Odometry.h"
 #include <vector>
 #include <string>
 #include "rosrecord/Player.h"
@@ -44,7 +44,7 @@ FILE *clog = NULL;
 FILE *test_log = NULL;
 double prev_x = 0, prev_y = 0, prev_th = 0, dumb_rv = 0, dumb_tv = 0, prev_time;
 
-void odom_callback(string name, deprecated_msgs::RobotBase2DOdom * odom, ros::Time t, ros::Time t_no_use, void* n)
+void odom_callback(string name, nav_msgs::Odometry * odom, ros::Time t, ros::Time t_no_use, void* n)
 {
   double rel_time = t.toSec();
 
@@ -59,9 +59,9 @@ void odom_callback(string name, deprecated_msgs::RobotBase2DOdom * odom, ros::Ti
   double x = odom->pose.position.x;
   double y = odom->pose.position.y;
   */
-  double x  = odom->pos.x;
-  double y  = odom->pos.y;
-  double th = odom->pos.th;
+  double x  = odom->pose_with_covariance.pose.position.x;
+  double y  = odom->pose_with_covariance.pose.position.y;
+  double th = tf::getYaw(odom->pose_with_covariance.pose.orientation);
 
   if (!vel_init)
   {
@@ -142,7 +142,7 @@ int main(int argc, char **argv)
 
   player.open(files, ros::Time());
 
-  player.addHandler<deprecated_msgs::RobotBase2DOdom>(string("odom"), &odom_callback, NULL);
+  player.addHandler<nav_msgs::Odometry>(string("odom"), &odom_callback, NULL);
   player.addHandler<sensor_msgs::LaserScan>(string("scan"), &scan_callback, NULL);
 
   clog = fopen("carmen.txt", "w");

@@ -30,13 +30,13 @@
 
 #include "ros/node.h"
 #include "sensor_msgs/LaserScan.h"
-#include "deprecated_msgs/RobotBase2DOdom.h"
+#include "nav_msgs/Odometry.h"
 
 class CarmenLogger : public ros::Node
 {
 public:
   sensor_msgs::LaserScan laserMsg;
-  deprecated_msgs::RobotBase2DOdom odomMsg;
+  nav_msgs::Odometry odomMsg;
   double robot_x, robot_y, robot_th, robot_tv, robot_rv;
   double start_time;
   FILE *f;
