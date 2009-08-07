@@ -87,12 +87,12 @@ public:
 
   void pointVecToCloud(const vector<geometry_msgs::Point>& vec, sensor_msgs::PointCloud& cloud)
   {
-    cloud.pts.resize(vec.size()) ;
+    cloud.points.resize(vec.size()) ;
     for (unsigned int i=0; i<vec.size(); i++)
     {
-      cloud.pts[i].x = vec[i].x ;
-      cloud.pts[i].y = vec[i].y ;
-      cloud.pts[i].z = vec[i].z ;
+      cloud.points[i].x = vec[i].x ;
+      cloud.points[i].y = vec[i].y ;
+      cloud.points[i].z = vec[i].z ;
     }
   }
 
@@ -176,7 +176,7 @@ public:
     }
     else
     {
-      cloud.pts.clear() ;
+      cloud.points.clear() ;
       node_->publish("cb_corners_left", cloud) ;
       node_->publish("cb_corners_right", cloud) ;
 

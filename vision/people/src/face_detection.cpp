@@ -517,7 +517,7 @@ public:
 	  p.x = one_face->center3d.val[0];
 	  p.y = one_face->center3d.val[1];
 	  p.z = one_face->center3d.val[2];
-	  cloud.pts.push_back(p);
+	  cloud.points.push_back(p);
 
 	  ngood ++;
 	}
@@ -592,7 +592,7 @@ public:
 
     //vis_pub_sub_.publish(markers_sub_);
     //vis_pub_add_.publish(markers_add_);
-    if (cloud.pts.size() > 0) 
+    if (cloud.points.size() > 0) 
       cloud_pub_.publish(cloud);
 
     // Display

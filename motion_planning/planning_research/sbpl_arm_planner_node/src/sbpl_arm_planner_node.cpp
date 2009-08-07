@@ -487,11 +487,11 @@ void SBPLArmPlannerNode::getSBPLCollisionMap()
 bool SBPLArmPlannerNode::setStart(const motion_planning_msgs::KinematicState &start_state)
 {
   double* sbpl_start;
-  sbpl_start = new double[start_state.get_vals_size()];
+  sbpl_start = new double[start_state.get_values_size()];
 
-  for(unsigned int i=0; i< start_state.get_vals_size(); i++)
+  for(unsigned int i=0; i< start_state.get_values_size(); i++)
   {
-    sbpl_start[i] = (double)(start_state.vals[i]);
+    sbpl_start[i] = (double)(start_state.values[i]);
   }
 
   ROS_INFO("[setStart] start: %1.2f %1.2f %1.2f %1.2f %1.2f %1.2f %1.2f", sbpl_start[0],sbpl_start[1],sbpl_start[2],sbpl_start[3],sbpl_start[4],sbpl_start[5],sbpl_start[6]);
@@ -672,13 +672,13 @@ bool SBPLArmPlannerNode::planToState(motion_planning_msgs::GetMotionPlan::Reques
   updatePMWrapper(req);
 
   // get the starting position of the arm joints the planner will be planning for
-  start.set_vals_size(num_joints_);
+  start.set_values_size(num_joints_);
   for(i = 0; i < req.get_start_state_size(); i++)
   {
     ROS_DEBUG("%s: %.3f",req.start_state[i].joint_name.c_str(),req.start_state[i].value[0]);
     if(joint_names_[nind].compare(req.start_state[i].joint_name) == 0)
     {
-      start.vals[nind] = req.start_state[i].value[0];
+      start.values[nind] = req.start_state[i].value[0];
       nind++;
     }
     if(nind == num_joints_)
@@ -808,13 +808,13 @@ bool SBPLArmPlannerNode::planToPosition(motion_planning_msgs::GetMotionPlan::Req
   }
 
   // get the starting position of the specific arm joints the planner will be planning for
-  start.set_vals_size(num_joints_);
+  start.set_values_size(num_joints_);
   for(i = 0; i < req.get_start_state_size(); i++)
   {
     ROS_DEBUG("%s: %.3f",req.start_state[i].joint_name.c_str(),req.start_state[i].value[0]);
     if(joint_names_[nind].compare(req.start_state[i].joint_name) == 0)
     {
-      start.vals[nind] = req.start_state[i].value[0];
+      start.values[nind] = req.start_state[i].value[0];
       nind++;
     }
     if(nind == num_joints_)
@@ -963,20 +963,20 @@ bool SBPLArmPlannerNode::plan(motion_planning_msgs::KinematicPath &arm_path)
 
     arm_path.set_states_size(solution_state_ids_v.size());
     for(i = 0; i < solution_state_ids_v.size(); i++)
-      arm_path.states[i].set_vals_size(num_joints_);
+      arm_path.states[i].set_values_size(num_joints_);
 
     for(i = 0; i < arm_path.get_states_size(); i++)
     {
       sbpl_arm_env_.StateID2Angles(solution_state_ids_v[i], angles_r);
       for (unsigned int p = 0; p < (unsigned int) num_joints_; ++p)
-				arm_path.states[i].vals[p] = angles_r[p];
+				arm_path.states[i].values[p] = angles_r[p];
     }
 
     if(bCartesianPlanner_)
     {
       std::vector<double> jnt_pos(num_joints_,0);
       for(int j=0; j<num_joints_; ++j)
-				jnt_pos[j] = arm_path.states[arm_path.get_states_size()-1].vals[j];
+				jnt_pos[j] = arm_path.states[arm_path.get_states_size()-1].values[j];
 
 			bool invalid_ik = true;
 			unsigned int ik_attempts = 0;
@@ -1002,7 +1002,7 @@ bool SBPLArmPlannerNode::plan(motion_planning_msgs::KinematicPath &arm_path)
 				{
 					for(int b = 0; b < num_joints_; ++b)
 					{
-						path[0][b] = arm_path.states[arm_path.get_states_size()-1].vals[b];
+						path[0][b] = arm_path.states[arm_path.get_states_size()-1].values[b];
 						path[1][b] = final_waypoint[b];
 					}
 
@@ -1020,29 +1020,29 @@ bool SBPLArmPlannerNode::plan(motion_planning_msgs::KinematicPath &arm_path)
 			{
 				// append final waypoint to path
 				arm_path.set_states_size(arm_path.get_states_size()+1);
-				arm_path.states[arm_path.get_states_size()-1].set_vals_size(num_joints_);
+				arm_path.states[arm_path.get_states_size()-1].set_values_size(num_joints_);
 				for(int j = 0; j < num_joints_; j++)
 				{
-					arm_path.states[arm_path.get_states_size()-1].vals[j] = final_waypoint[j];
-					angles_r[j] = arm_path.states[arm_path.get_states_size()-1].vals[j];
+					arm_path.states[arm_path.get_states_size()-1].values[j] = final_waypoint[j];
+					angles_r[j] = arm_path.states[arm_path.get_states_size()-1].values[j];
 				}
 
 				i = arm_path.get_states_size() - 1;
 				ROS_INFO("IK Solution:");
 				ROS_INFO("state %d: %.3f %.3f %.3f %.3f %.3f %.3f %.3f",
-								 i,arm_path.states[i].vals[0],arm_path.states[i].vals[1],arm_path.states[i].vals[2],arm_path.states[i].vals[3],
-        				 arm_path.states[i].vals[4],arm_path.states[i].vals[5],arm_path.states[i].vals[6]);
+								 i,arm_path.states[i].values[0],arm_path.states[i].values[1],arm_path.states[i].values[2],arm_path.states[i].values[3],
+        				 arm_path.states[i].values[4],arm_path.states[i].values[5],arm_path.states[i].values[6]);
 				ROS_INFO("    diff: %.3f %.3f %.3f %.3f %.3f %.3f %.3f",
-									angles::shortest_angular_distance(arm_path.states[i].vals[0], arm_path.states[i-1].vals[0]),
-									angles::shortest_angular_distance(arm_path.states[i].vals[1], arm_path.states[i-1].vals[1]),
-									angles::shortest_angular_distance(arm_path.states[i].vals[2], arm_path.states[i-1].vals[2]),
-									angles::shortest_angular_distance(arm_path.states[i].vals[3], arm_path.states[i-1].vals[3]),
-									angles::shortest_angular_distance(arm_path.states[i].vals[4], arm_path.states[i-1].vals[4]),
-									angles::shortest_angular_distance(arm_path.states[i].vals[5], arm_path.states[i-1].vals[5]),
-									angles::shortest_angular_distance(arm_path.states[i].vals[6], arm_path.states[i-1].vals[6]));
+									angles::shortest_angular_distance(arm_path.states[i].values[0], arm_path.states[i-1].values[0]),
+									angles::shortest_angular_distance(arm_path.states[i].values[1], arm_path.states[i-1].values[1]),
+									angles::shortest_angular_distance(arm_path.states[i].values[2], arm_path.states[i-1].values[2]),
+									angles::shortest_angular_distance(arm_path.states[i].values[3], arm_path.states[i-1].values[3]),
+									angles::shortest_angular_distance(arm_path.states[i].values[4], arm_path.states[i-1].values[4]),
+									angles::shortest_angular_distance(arm_path.states[i].values[5], arm_path.states[i-1].values[5]),
+									angles::shortest_angular_distance(arm_path.states[i].values[6], arm_path.states[i-1].values[6]));
 
 				for(int j = 0; j < num_joints_; j++)
-					angles_r[j] = arm_path.states[i].vals[j];
+					angles_r[j] = arm_path.states[i].values[j];
 
 				sbpl_arm_env_.ComputeEndEffectorPos(angles_r, xyz_m, rpy_r);
 				ROS_INFO("        xyz: %.3f %.3f %.3f   rpy: %.3f %.3f %.3f",
@@ -1076,15 +1076,15 @@ bool SBPLArmPlannerNode::plan(motion_planning_msgs::KinematicPath &arm_path)
 
 			// append actual goal to path
 			arm_path.set_states_size(arm_path.get_states_size()+1);
-			arm_path.states[arm_path.get_states_size()-1].set_vals_size(num_joints_);
+			arm_path.states[arm_path.get_states_size()-1].set_values_size(num_joints_);
 			for(int j = 0; j < num_joints_; j++)
 			{
-				arm_path.states[arm_path.get_states_size()-1].vals[j] = final_waypoint[j];
-				angles_r[j] = arm_path.states[arm_path.get_states_size()-1].vals[j];
+				arm_path.states[arm_path.get_states_size()-1].values[j] = final_waypoint[j];
+				angles_r[j] = arm_path.states[arm_path.get_states_size()-1].values[j];
 			}
 
 			for(int j = 0; j < num_joints_; j++)
-				angles_r[j] = arm_path.states[i].vals[j];
+				angles_r[j] = arm_path.states[i].values[j];
 
 // 			sbpl_arm_env_.ComputeEndEffectorPos(angles_r, xyz_m, rpy_r);
 // 			ROS_INFO("        xyz: %.3f %.3f %.3f   rpy: %.3f %.3f %.3f",
@@ -1092,8 +1092,8 @@ bool SBPLArmPlannerNode::plan(motion_planning_msgs::KinematicPath &arm_path)
 
 			for(int b=0; b < num_joints_; ++b)
 			{
-				path[0][b] = arm_path.states[arm_path.get_states_size()-2].vals[b];
-				path[1][b] = arm_path.states[arm_path.get_states_size()-1].vals[b];
+				path[0][b] = arm_path.states[arm_path.get_states_size()-2].values[b];
+				path[1][b] = arm_path.states[arm_path.get_states_size()-1].values[b];
 			}
 
 			if(!interpolatePathToGoal(path, 0.1))
@@ -1256,7 +1256,7 @@ void SBPLArmPlannerNode::finishPath(motion_planning_msgs::KinematicPath &arm_pat
 
   for (unsigned int p = 0; p < (unsigned int) num_joints_; p++)
   {
-    jnt_pos(p) = arm_path.states[arm_path.get_states_size()-1].vals[p];
+    jnt_pos(p) = arm_path.states[arm_path.get_states_size()-1].values[p];
 //     ROS_INFO("%i: %f", p, jnt_pos(p));
   }
 
@@ -1288,7 +1288,7 @@ void SBPLArmPlannerNode::finishPath(motion_planning_msgs::KinematicPath &arm_pat
   ROS_INFO("vel: %f %f %f    rot: %f %f %f", twist.vel(0),twist.vel(1),twist.vel(2),twist.rot(0),twist.rot(1),twist.rot(2));
 
   arm_path.set_states_size(arm_path.get_states_size()+1);
-  arm_path.states[arm_path.get_states_size()-1].set_vals_size(num_joints_);
+  arm_path.states[arm_path.get_states_size()-1].set_values_size(num_joints_);
 
     // Determines the desired wrench from the pose error.
 //   KDL::Wrench wrench_desi;
@@ -1303,7 +1303,7 @@ void SBPLArmPlannerNode::finishPath(motion_planning_msgs::KinematicPath &arm_pat
       jnt_eff(i) += (jacobian(j,i) * twist(j));
 
     ROS_INFO("jnt_eff[%i] = %f",i,jnt_eff(i));
-    arm_path.states[arm_path.get_states_size()-1].vals[i] = jnt_eff(i) + jnt_pos(i);
+    arm_path.states[arm_path.get_states_size()-1].values[i] = jnt_eff(i) + jnt_pos(i);
   }
 
 
@@ -1470,8 +1470,8 @@ void SBPLArmPlannerNode::printPath(const motion_planning_msgs::KinematicPath &ar
 	for(unsigned int i = 0; i < arm_path.get_states_size(); i++)
 	{
 		ROS_INFO("state %d: %.3f %.3f %.3f %.3f %.3f %.3f %.3f",
-						 i,arm_path.states[i].vals[0],arm_path.states[i].vals[1],arm_path.states[i].vals[2],arm_path.states[i].vals[3],
-			 arm_path.states[i].vals[4],arm_path.states[i].vals[5],arm_path.states[i].vals[6]);
+						 i,arm_path.states[i].values[0],arm_path.states[i].values[1],arm_path.states[i].values[2],arm_path.states[i].values[3],
+			 arm_path.states[i].values[4],arm_path.states[i].values[5],arm_path.states[i].values[6]);
 
 		sbpl_arm_env_.ComputeEndEffectorPos(angles_r, xyz_m, rpy_r);
 		ROS_INFO("        xyz: %.3f %.3f %.3f   rpy: %.3f %.3f %.3f", xyz_m[0],xyz_m[1],xyz_m[2],rpy_r[0],rpy_r[1],rpy_r[2]);

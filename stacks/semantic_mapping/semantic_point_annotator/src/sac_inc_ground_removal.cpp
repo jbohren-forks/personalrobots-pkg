@@ -43,7 +43,7 @@
 #include <ros/node.h>
 // ROS messages
 #include <sensor_msgs/PointCloud.h>
-#include <geometry_msgs/Polygon.h>
+#include <robot_msgs/Polygon3D.h>
 #include <mapping_msgs/PolygonalMap.h>
 
 // Sample Consensus
@@ -68,6 +68,7 @@
 #include <boost/thread.hpp>
 
 using namespace std;
+using namespace robot_msgs;
 using namespace mapping_msgs;
 
 class IncGroundRemoval
@@ -157,7 +158,7 @@ class IncGroundRemoval
       for (unsigned int i = 0; i < indices->size (); i++)
       {
         // Get the current laser scan measurement index
-        int cur_idx = points->chan[idx].vals.at (indices->at (i));
+        int cur_idx = points->channels[idx].values.at (indices->at (i));
 
         if (cur_idx > prev_idx)   // Still the same laser scan ?
         {
@@ -236,7 +237,7 @@ class IncGroundRemoval
     {
       laser_cloud_ = *msg;
       //check to see if the point cloud is empty
-      if(laser_cloud_.pts.empty()){
+      if(laser_cloud_.points.empty()){
         ROS_WARN("Received an empty point cloud");
         return;
       }
@@ -249,14 +250,14 @@ class IncGroundRemoval
         return;
       }
 
-      ROS_DEBUG ("Received %d data points with %d channels (%s).", (int)cloud_.pts.size (), (int)cloud_.chan.size (), cloud_geometry::getAvailableChannels (cloud_).c_str ());
+      ROS_DEBUG ("Received %d data points with %d channels (%s).", (int)cloud_.points.size (), (int)cloud_.channels.size (), cloud_geometry::getAvailableChannels (cloud_).c_str ());
       int idx_idx = cloud_geometry::getChannelIndex (cloud_, "index");
       if (idx_idx == -1)
       {
         ROS_ERROR ("Channel 'index' missing in input PointCloud message!");
         return;
       }
-      if (cloud_.pts.size () == 0)
+      if (cloud_.points.size () == 0)
         return;
 
       updateParametersFromServer ();
@@ -273,14 +274,14 @@ class IncGroundRemoval
       z_threshold_ = transformDoubleValueTF (z_threshold_, robot_footprint_frame_, cloud_.header.frame_id, cloud_.header.stamp, &tf_);
 
       // Select points whose Z dimension is close to the ground (0,0,0 in base_footprint) or under a gentle slope (allowing for pitch/roll error)
-      vector<int> possible_ground_indices (cloud_.pts.size ());
-      vector<int> all_indices (cloud_.pts.size ());
+      vector<int> possible_ground_indices (cloud_.points.size ());
+      vector<int> all_indices (cloud_.points.size ());
       int nr_p = 0;
-      for (unsigned int cp = 0; cp < cloud_.pts.size (); cp++)
+      for (unsigned int cp = 0; cp < cloud_.points.size (); cp++)
       {
         all_indices[cp] = cp;
-        if (fabs (cloud_.pts[cp].z) < z_threshold_ || // max height for ground
-            cloud_.pts[cp].z*cloud_.pts[cp].z < ground_slope_threshold_ * (cloud_.pts[cp].x*cloud_.pts[cp].x + cloud_.pts[cp].y*cloud_.pts[cp].y)) // max slope for ground
+        if (fabs (cloud_.points[cp].z) < z_threshold_ || // max height for ground
+            cloud_.points[cp].z*cloud_.points[cp].z < ground_slope_threshold_ * (cloud_.points[cp].x*cloud_.points[cp].x + cloud_.points[cp].y*cloud_.points[cp].y)) // max slope for ground 
         {
           possible_ground_indices[nr_p] = cp;
           nr_p++;
@@ -318,12 +319,12 @@ class IncGroundRemoval
         //make sure that there are inliers to refine
         if (!ground_inliers.empty ())
         {
-          cloud_geometry::angles::flipNormalTowardsViewpoint (plane_parameters, cloud_.pts.at (ground_inliers[0]), viewpoint_cloud_);
+          cloud_geometry::angles::flipNormalTowardsViewpoint (plane_parameters, cloud_.points.at (ground_inliers[0]), viewpoint_cloud_);
 
           // Compute the distance from the remaining points to the model plane, and add to the inliers list if they are below
           for (unsigned int i = 0; i < remaining_possible_ground_indices.size (); i++)
           {
-            double distance_to_ground  = cloud_geometry::distances::pointToPlaneDistanceSigned (cloud_.pts.at (remaining_possible_ground_indices[i]), plane_parameters);
+            double distance_to_ground  = cloud_geometry::distances::pointToPlaneDistanceSigned (cloud_.points.at (remaining_possible_ground_indices[i]), plane_parameters);
             if (distance_to_ground > 0)
               continue;
             ground_inliers.push_back (remaining_possible_ground_indices[i]);
@@ -334,23 +335,23 @@ class IncGroundRemoval
 
 #if DEBUG
       // Prepare new arrays
-      cloud_noground_.pts.resize (possible_ground_indices.size ());
-      cloud_noground_.chan.resize (1);
-      cloud_noground_.chan[0].name = "rgb";
-      cloud_noground_.chan[0].vals.resize (possible_ground_indices.size ());
+      cloud_noground_.points.resize (possible_ground_indices.size ());
+      cloud_noground_.channels.resize (1);
+      cloud_noground_.channels[0].name = "rgb";
+      cloud_noground_.channels[0].values.resize (possible_ground_indices.size ());
 
-      cloud_noground_.pts.resize (ground_inliers.size ());
-      cloud_noground_.chan[0].vals.resize (ground_inliers.size ());
+      cloud_noground_.points.resize (ground_inliers.size ());
+      cloud_noground_.channels[0].values.resize (ground_inliers.size ());
       float r = rand () / (RAND_MAX + 1.0);
       float g = rand () / (RAND_MAX + 1.0);
       float b = rand () / (RAND_MAX + 1.0);
 
       for (unsigned int i = 0; i < ground_inliers.size (); i++)
       {
-        cloud_noground_.pts[i].x = cloud_.pts.at (ground_inliers[i]).x;
-        cloud_noground_.pts[i].y = cloud_.pts.at (ground_inliers[i]).y;
-        cloud_noground_.pts[i].z = cloud_.pts.at (ground_inliers[i]).z;
-        cloud_noground_.chan[0].vals[i] = getRGB (r, g, b);
+        cloud_noground_.points[i].x = cloud_.points.at (ground_inliers[i]).x;
+        cloud_noground_.points[i].y = cloud_.points.at (ground_inliers[i]).y;
+        cloud_noground_.points[i].z = cloud_.points.at (ground_inliers[i]).z;
+        cloud_noground_.channels[0].values[i] = getRGB (r, g, b);
       }
       node_.publish ("cloud_ground_filtered", cloud_noground_);
 
@@ -366,21 +367,21 @@ class IncGroundRemoval
 
       // Prepare new arrays
       int nr_remaining_pts = remaining_indices.size ();
-      cloud_noground_.pts.resize (nr_remaining_pts);
-      cloud_noground_.chan.resize (cloud_.chan.size ());
-      for (unsigned int d = 0; d < cloud_.chan.size (); d++)
+      cloud_noground_.points.resize (nr_remaining_pts);
+      cloud_noground_.channels.resize (cloud_.channels.size ());
+      for (unsigned int d = 0; d < cloud_.channels.size (); d++)
       {
-        cloud_noground_.chan[d].name = cloud_.chan[d].name;
-        cloud_noground_.chan[d].vals.resize (nr_remaining_pts);
+        cloud_noground_.channels[d].name = cloud_.channels[d].name;
+        cloud_noground_.channels[d].values.resize (nr_remaining_pts);
       }
 
       for (unsigned int i = 0; i < remaining_indices.size (); i++)
       {
-        cloud_noground_.pts[i].x = cloud_.pts.at (remaining_indices[i]).x;
-        cloud_noground_.pts[i].y = cloud_.pts.at (remaining_indices[i]).y;
-        cloud_noground_.pts[i].z = cloud_.pts.at (remaining_indices[i]).z;
-        for (unsigned int d = 0; d < cloud_.chan.size (); d++)
-          cloud_noground_.chan[d].vals[i] = cloud_.chan[d].vals.at (remaining_indices[i]);
+        cloud_noground_.points[i].x = cloud_.points.at (remaining_indices[i]).x;
+        cloud_noground_.points[i].y = cloud_.points.at (remaining_indices[i]).y;
+        cloud_noground_.points[i].z = cloud_.points.at (remaining_indices[i]).z;
+        for (unsigned int d = 0; d < cloud_.channels.size (); d++)
+          cloud_noground_.channels[d].values[i] = cloud_.channels[d].values.at (remaining_indices[i]);
       }
 
       gettimeofday (&t2, NULL);

@@ -69,14 +69,14 @@ namespace cloud_kdtree
   void
     KdTreeANN::nearestKSearch (const sensor_msgs::PointCloud &points, int index, int k, std::vector<int> &k_indices, std::vector<float> &k_distances)
   {
-    if (index >= (int)points.pts.size ())
+    if (index >= (int)points.points.size ())
       return;
 
     k_indices.resize (k);
     k_distances.resize (k);
 
     ANNpoint p = annAllocPt (3);
-    p[0] = points.pts.at (index).x; p[1] = points.pts.at (index).y; p[2] = points.pts.at (index).z;
+    p[0] = points.points.at (index).x; p[1] = points.points.at (index).y; p[2] = points.points.at (index).z;
 
     m_lock_.lock ();
     ann_kd_tree_->annkSearch (p, k, &k_indices[0], &k_distances[0], epsilon_);
@@ -139,7 +139,7 @@ namespace cloud_kdtree
                              int max_nn)
   {
     ANNpoint p = annAllocPt (3);
-    p[0] = points.pts.at (index).x; p[1] = points.pts.at (index).y; p[2] = points.pts.at (index).z;
+    p[0] = points.points.at (index).x; p[1] = points.points.at (index).y; p[2] = points.points.at (index).z;
     radius *= radius;
 
     m_lock_.lock ();
@@ -174,7 +174,7 @@ namespace cloud_kdtree
     KdTreeANN::convertCloudToArray (const sensor_msgs::PointCloud &ros_cloud)
   {
     // No point in doing anything if the array is empty
-    if (ros_cloud.pts.size () == 0)
+    if (ros_cloud.points.size () == 0)
     {
       m_lock_.lock ();
       points_ = NULL;
@@ -183,17 +183,17 @@ namespace cloud_kdtree
     }
 
     m_lock_.lock ();
-    points_ = annAllocPts (ros_cloud.pts.size (), 3);       // default number of dimensions (3 = xyz)
+    points_ = annAllocPts (ros_cloud.points.size (), 3);       // default number of dimensions (3 = xyz)
 
-    for (unsigned int cp = 0; cp < ros_cloud.pts.size (); cp++)
+    for (unsigned int cp = 0; cp < ros_cloud.points.size (); cp++)
     {
-      points_[cp][0] = ros_cloud.pts[cp].x;
-      points_[cp][1] = ros_cloud.pts[cp].y;
-      points_[cp][2] = ros_cloud.pts[cp].z;
+      points_[cp][0] = ros_cloud.points[cp].x;
+      points_[cp][1] = ros_cloud.points[cp].y;
+      points_[cp][2] = ros_cloud.points[cp].z;
     }
     m_lock_.unlock ();
 
-    return (ros_cloud.pts.size ());
+    return (ros_cloud.points.size ());
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -209,7 +209,7 @@ namespace cloud_kdtree
     KdTreeANN::convertCloudToArray (const sensor_msgs::PointCloud &ros_cloud, const std::vector<int> &indices)
   {
     // No point in doing anything if the array is empty
-    if (ros_cloud.pts.size () == 0 || indices.size () > ros_cloud.pts.size ())
+    if (ros_cloud.points.size () == 0 || indices.size () > ros_cloud.points.size ())
     {
       m_lock_.lock ();
       points_ = NULL;
@@ -222,9 +222,9 @@ namespace cloud_kdtree
 
     for (unsigned int cp = 0; cp < indices.size (); cp++)
     {
-      points_[cp][0] = ros_cloud.pts[indices.at (cp)].x;
-      points_[cp][1] = ros_cloud.pts[indices.at (cp)].y;
-      points_[cp][2] = ros_cloud.pts[indices.at (cp)].z;
+      points_[cp][0] = ros_cloud.points[indices.at (cp)].x;
+      points_[cp][1] = ros_cloud.points[indices.at (cp)].y;
+      points_[cp][2] = ros_cloud.points[indices.at (cp)].z;
     }
     m_lock_.unlock ();
 

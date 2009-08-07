@@ -63,10 +63,10 @@ namespace estimation
       tracker_counter_(0)
   {
     // initialize
-    meas_cloud_.pts = vector<geometry_msgs::Point32>(1);
-    meas_cloud_.pts[0].x = 0;
-    meas_cloud_.pts[0].y = 0;
-    meas_cloud_.pts[0].z = 0;
+    meas_cloud_.points = vector<geometry_msgs::Point32>(1);
+    meas_cloud_.points[0].x = 0;
+    meas_cloud_.points[0].y = 0;
+    meas_cloud_.points[0].z = 0;
 
     // get parameters
     param("~/fixed_frame", fixed_frame_, string("default"));
@@ -176,9 +176,9 @@ namespace estimation
 
     
     // visualize measurement
-    meas_cloud_.pts[0].x = meas[0];
-    meas_cloud_.pts[0].y = meas[1];
-    meas_cloud_.pts[0].z = meas[2];
+    meas_cloud_.points[0].x = meas[0];
+    meas_cloud_.points[0].y = meas[1];
+    meas_cloud_.points[0].z = meas[2];
     meas_cloud_.header.frame_id = meas.frame_id_;
     publish("people_tracker_measurements_visualization", meas_cloud_);
   }
@@ -245,11 +245,11 @@ namespace estimation
 
       // visualize all trackers
       channel.name = "rgb";
-      channel.vals = weights;
+      channel.values = weights;
       sensor_msgs::PointCloud  people_cloud; 
-      people_cloud.chan.push_back(channel);
+      people_cloud.channels.push_back(channel);
       people_cloud.header.frame_id = fixed_frame_;
-      people_cloud.pts  = filter_visualize;
+      people_cloud.points  = filter_visualize;
       publish("people_tracker_filter_visualization", people_cloud);
 
       // sleep

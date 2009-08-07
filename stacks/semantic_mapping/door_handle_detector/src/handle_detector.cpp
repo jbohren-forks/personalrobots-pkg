@@ -86,7 +86,7 @@ HandleDetector::HandleDetector (ros::Node* anode) : node_ (anode), tf_ (*anode)
 bool HandleDetector::detectHandle (const door_msgs::Door& door, sensor_msgs::PointCloud pointcloud,
                                    std::vector<door_msgs::Door>& result) const
 {
-  ROS_INFO ("HandleDetector: Start detecting handle in a point cloud of size %i", (int)pointcloud.pts.size ());
+  ROS_INFO ("HandleDetector: Start detecting handle in a point cloud of size %i", (int)pointcloud.points.size ());
 
   Time ts = Time::now();
   Duration duration;
@@ -138,15 +138,15 @@ bool HandleDetector::detectHandle (const door_msgs::Door& door, sensor_msgs::Poi
   // ---[ Optimization: select a subset of the points for faster processing
   // Select points close to the door plane (assumes door did not move since detection !)
   int nr_p = 0;
-  vector<int> indices_in_bounds (pointcloud.pts.size ());
+  vector<int> indices_in_bounds (pointcloud.points.size ());
   double dist_p1p2 = cloud_geometry::distances::pointToPointXYDistanceSqr (door_tr.door_p1, door_tr.door_p2);
-  for (int i = pointcloud.pts.size () - 1; i >= 0; --i)
+  for (int i = pointcloud.points.size () - 1; i >= 0; --i)
   {
-    if (pointcloud.pts[i].z > handle_min_height_ && pointcloud.pts[i].z < handle_max_height_ &&
-        cloud_geometry::distances::pointToPlaneDistance (pointcloud.pts[i], coeff) < handle_distance_door_max_threshold_)
+    if (pointcloud.points[i].z > handle_min_height_ && pointcloud.points[i].z < handle_max_height_ &&
+        cloud_geometry::distances::pointToPlaneDistance (pointcloud.points[i], coeff) < handle_distance_door_max_threshold_)
     {
-      double dist_p1 = cloud_geometry::distances::pointToPointXYDistanceSqr (pointcloud.pts[i], door_tr.door_p1);
-      double dist_p2 = cloud_geometry::distances::pointToPointXYDistanceSqr (pointcloud.pts[i], door_tr.door_p2);
+      double dist_p1 = cloud_geometry::distances::pointToPointXYDistanceSqr (pointcloud.points[i], door_tr.door_p1);
+      double dist_p2 = cloud_geometry::distances::pointToPointXYDistanceSqr (pointcloud.points[i], door_tr.door_p2);
       if (dist_p1 < dist_p1p2 && dist_p1 > distance_from_door_margin_ && dist_p2 < dist_p1p2 && dist_p2 > distance_from_door_margin_)
       {
         indices_in_bounds[nr_p] = i;
@@ -232,42 +232,42 @@ bool HandleDetector::detectHandle (const door_msgs::Door& door, sensor_msgs::Poi
 
   // Output the point regions
   sensor_msgs::PointCloud cloud_regions;
-  cloud_regions.chan.resize (1); cloud_regions.chan[0].name = "intensities";
+  cloud_regions.channels.resize (1); cloud_regions.channels[0].name = "intensities";
 
   cloud_regions.header = pointcloud.header;
-  cloud_regions.pts.resize (0);
-  cloud_regions.chan[0].vals.resize (0);
+  cloud_regions.points.resize (0);
+  cloud_regions.channels[0].values.resize (0);
 
   bool show_cluster = true;
   if (show_cluster)
   {
     for (unsigned int i = 0; i < handle_indices.size (); i++)
     {
-      cloud_regions.pts.push_back ( pointcloud.pts[handle_indices[i]] );
-      cloud_regions.chan[0].vals.push_back ( pointcloud.chan[curvature_idx].vals[handle_indices[i]] );
+      cloud_regions.points.push_back ( pointcloud.points[handle_indices[i]] );
+      cloud_regions.channels[0].values.push_back ( pointcloud.channels[curvature_idx].values[handle_indices[i]] );
     }
   }
   else
   {
-    cloud_regions.pts.push_back (handle_center);
-    cloud_regions.chan[0].vals.push_back (9999);
+    cloud_regions.points.push_back (handle_center);
+    cloud_regions.channels[0].values.push_back (9999);
   }
 
-  //cloud_regions.pts.push_back (door_tr.door_p1);
-  //cloud_regions.chan[0].vals.push_back (9999);
-  //cloud_regions.pts.push_back (door_tr.door_p2);
-  //cloud_regions.chan[0].vals.push_back (9999);
+  //cloud_regions.points.push_back (door_tr.door_p1);
+  //cloud_regions.channels[0].values.push_back (9999);
+  //cloud_regions.points.push_back (door_tr.door_p2);
+  //cloud_regions.channels[0].values.push_back (9999);
 
   node_->publish ("~handle_regions", cloud_regions);
 
   // Publish the outliers
   handle_indices = outliers;
-  cloud_regions.pts.resize (0);
-  cloud_regions.chan[0].vals.resize (0);
+  cloud_regions.points.resize (0);
+  cloud_regions.channels[0].values.resize (0);
   for (unsigned int i = 0; i < handle_indices.size (); i++)
   {
-    cloud_regions.pts.push_back ( pointcloud.pts[handle_indices[i]] );
-    cloud_regions.chan[0].vals.push_back ( pointcloud.chan[curvature_idx].vals[handle_indices[i]] );
+    cloud_regions.points.push_back ( pointcloud.points[handle_indices[i]] );
+    cloud_regions.channels[0].values.push_back ( pointcloud.channels[curvature_idx].values[handle_indices[i]] );
   }
   node_->publish ("~door_outliers", cloud_regions);
 
@@ -443,7 +443,7 @@ void  HandleDetector::getHandleCandidates (const vector<int> &indices, const vec
   {
     // Transform the point onto X-Y for faster checking inside the polygonal bounds
     double distance_to_plane;
-    cloud_geometry::projections::pointToPlane (pointcloud.pts.at (indices.at (i)), pt, coeff, distance_to_plane);
+    cloud_geometry::projections::pointToPlane (pointcloud.points.at (indices.at (i)), pt, coeff, distance_to_plane);
     if (distance_to_plane < 0)
       continue;
     cloud_geometry::transforms::transformPoint (pt, tmp_p, transformation);
@@ -455,9 +455,9 @@ void  HandleDetector::getHandleCandidates (const vector<int> &indices, const vec
       continue;
 
     // Check whether the line viewpoint->point intersects the polygon
-    viewpoint_pt_line[3] = pointcloud.pts.at (indices.at (i)).x - viewpoint_cloud.point.x;
-    viewpoint_pt_line[4] = pointcloud.pts.at (indices.at (i)).y - viewpoint_cloud.point.y;
-    viewpoint_pt_line[5] = pointcloud.pts.at (indices.at (i)).z - viewpoint_cloud.point.z;
+    viewpoint_pt_line[3] = pointcloud.points.at (indices.at (i)).x - viewpoint_cloud.point.x;
+    viewpoint_pt_line[4] = pointcloud.points.at (indices.at (i)).y - viewpoint_cloud.point.y;
+    viewpoint_pt_line[5] = pointcloud.points.at (indices.at (i)).z - viewpoint_cloud.point.z;
     // Normalize direction
     double n_norm = sqrt (viewpoint_pt_line[3] * viewpoint_pt_line[3] +
                           viewpoint_pt_line[4] * viewpoint_pt_line[4] +
@@ -512,7 +512,7 @@ void HandleDetector::getDoorOutliers (const vector<int> &indices, const vector<i
   {
     // Compute a projection on the plane
     double distance_to_plane;
-    cloud_geometry::projections::pointToPlane (pointcloud.pts.at (outliers[i]), pt, coeff, distance_to_plane);
+    cloud_geometry::projections::pointToPlane (pointcloud.points.at (outliers[i]), pt, coeff, distance_to_plane);
     if (distance_to_plane < 0)
       continue;
     cloud_geometry::transforms::transformPoint (pt, tmp_p, transformation);
@@ -581,8 +581,8 @@ bool HandleDetector::detectHandleCloudSrv (door_handle_detector::DoorsDetectorCl
 void HandleDetector::cloud_cb (const tf::MessageNotifier<sensor_msgs::PointCloud>::MessagePtr& cloud)
 {
   pointcloud_ = *cloud;
-  ROS_INFO ("Received %d data points in frame %s with %d channels (%s).", (int)pointcloud_.pts.size (), pointcloud_.header.frame_id.c_str (),
-            (int)pointcloud_.chan.size (), cloud_geometry::getAvailableChannels (pointcloud_).c_str ());
+  ROS_INFO ("Received %d data points in frame %s with %d channels (%s).", (int)pointcloud_.points.size (), pointcloud_.header.frame_id.c_str (),
+            (int)pointcloud_.channels.size (), cloud_geometry::getAvailableChannels (pointcloud_).c_str ());
   num_clouds_received_++;
 }
 

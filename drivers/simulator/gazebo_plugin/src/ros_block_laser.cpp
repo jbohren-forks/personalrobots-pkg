@@ -90,9 +90,9 @@ void RosBlockLaser::LoadChild(XMLConfigNode *node)
   Angle verticalMinAngle = this->myParent->GetVerticalMinAngle();
 
   int r_size = rangeCount * verticalRangeCount;
-  this->cloudMsg.set_pts_size(r_size);
-  this->cloudMsg.set_chan_size(1);
-  this->cloudMsg.chan[0].set_vals_size(r_size);
+  this->cloudMsg.set_points_size(r_size);
+  this->cloudMsg.set_channels_size(1);
+  this->cloudMsg.channels[0].set_values_size(r_size);
 
 }
 
@@ -146,9 +146,9 @@ void RosBlockLaser::PutLaserData()
 
   // set size of cloud message everytime!
   int r_size = rangeCount * verticalRangeCount;
-  this->cloudMsg.set_pts_size(r_size);
-  this->cloudMsg.set_chan_size(1);
-  this->cloudMsg.chan[0].set_vals_size(r_size);
+  this->cloudMsg.set_points_size(r_size);
+  this->cloudMsg.set_channels_size(1);
+  this->cloudMsg.channels[0].set_values_size(r_size);
 
   /***************************************************************/
   /*                                                             */
@@ -222,17 +222,17 @@ void RosBlockLaser::PutLaserData()
       if (r == maxRange - minRange)
       {
         // no noise if at max range
-        this->cloudMsg.pts[n].x      = (r+minRange) * cos(pAngle)*cos(yAngle);
-        this->cloudMsg.pts[n].y      = (r+minRange) *             sin(yAngle);
-        this->cloudMsg.pts[n].z      = (r+minRange) * sin(pAngle)*cos(yAngle);
+        this->cloudMsg.points[n].x      = (r+minRange) * cos(pAngle)*cos(yAngle);
+        this->cloudMsg.points[n].y      = (r+minRange) *             sin(yAngle);
+        this->cloudMsg.points[n].z      = (r+minRange) * sin(pAngle)*cos(yAngle);
       }
       else
       {
-        this->cloudMsg.pts[n].x      = (r+minRange) * cos(pAngle)*cos(yAngle) + this->GaussianKernel(0,this->gaussianNoise) ;
-        this->cloudMsg.pts[n].y      = (r+minRange) *             sin(yAngle) + this->GaussianKernel(0,this->gaussianNoise) ;
-        this->cloudMsg.pts[n].z      = (r+minRange) * sin(pAngle)*cos(yAngle) + this->GaussianKernel(0,this->gaussianNoise) ;
+        this->cloudMsg.points[n].x      = (r+minRange) * cos(pAngle)*cos(yAngle) + this->GaussianKernel(0,this->gaussianNoise) ;
+        this->cloudMsg.points[n].y      = (r+minRange) *             sin(yAngle) + this->GaussianKernel(0,this->gaussianNoise) ;
+        this->cloudMsg.points[n].z      = (r+minRange) * sin(pAngle)*cos(yAngle) + this->GaussianKernel(0,this->gaussianNoise) ;
       }
-      this->cloudMsg.chan[0].vals[n] = intensity + this->GaussianKernel(0,this->gaussianNoise) ;
+      this->cloudMsg.channels[0].values[n] = intensity + this->GaussianKernel(0,this->gaussianNoise) ;
     }
   }
 

@@ -225,7 +225,7 @@ bool sortCornersByAngle(const CornerCandidate& d1, const CornerCandidate& d2)
 
 void BoxDetector::syncCallback()
 {
-  ROS_INFO("BoxDetector::syncCallback(), %d points in cloud",cloud_->get_pts_size());
+  ROS_INFO("BoxDetector::syncCallback(), %d points in cloud",cloud_->get_points_size());
 
   Time timeStamp = Time::now();
 

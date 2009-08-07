@@ -64,9 +64,9 @@ int
   }
   
   if (res == 0)
-    ROS_INFO ("Loaded (%d points, ASCII format) with: %s", (int)msg_cloud.pts.size (), getAvailableDimensions (msg_cloud).c_str ());
+    ROS_INFO ("Loaded (%d points, ASCII format) with: %s", (int)msg_cloud.points.size (), getAvailableDimensions (msg_cloud).c_str ());
   else
-    ROS_INFO ("Loaded (%d points, binary format) with: %s", (int)msg_cloud.pts.size (), getAvailableDimensions (msg_cloud).c_str ());
+    ROS_INFO ("Loaded (%d points, binary format) with: %s", (int)msg_cloud.points.size (), getAvailableDimensions (msg_cloud).c_str ());
   
   res = !res;
   if (res)

@@ -498,10 +498,10 @@ void TemplateModel::fitPointCloud(const sensor_msgs::PointCloud& cloud, const ge
 {
 	float score = 0;
 	float max_dist = 0;
-	for (size_t i=0;i<cloud.pts.size();i++) {
-		int x = int(((cloud.pts[i].x-location.x)-x_min)/x_d);
-		int y = int(((cloud.pts[i].y-location.y)-y_min)/y_d);
-		int z = int(((cloud.pts[i].z-location.z)-z_min)/z_d);
+	for (size_t i=0;i<cloud.points.size();i++) {
+		int x = int(((cloud.points[i].x-location.x)-x_min)/x_d);
+		int y = int(((cloud.points[i].y-location.y)-y_min)/y_d);
+		int z = int(((cloud.points[i].z-location.z)-z_min)/z_d);
 
 		float val;
 		if (in_bounds(x,y,z)) {
@@ -513,7 +513,7 @@ void TemplateModel::fitPointCloud(const sensor_msgs::PointCloud& cloud, const ge
 		max_dist = max(max_dist,val);
 		score += val;
 	}
-	score /= (cloud.pts.size());
+	score /= (cloud.points.size());
 
 	mfs.add(this, location, score, max_dist);
 }
@@ -523,12 +523,12 @@ void TemplateModel::findBestFit(const sensor_msgs::PointCloud& cloud, ModelFitSe
 	// compute center of point cloud
 	geometry_msgs::Point32 center;
 	center.x =0; center.y = 0; center.z = 0;
-	int count = cloud.pts.size();
+	int count = cloud.points.size();
 
 	for (int i=0;i<count;++i) {
-		center.x += cloud.pts[i].x;
-		center.y += cloud.pts[i].y;
-		//			center.z += cloud.pts[i].z;
+		center.x += cloud.points[i].x;
+		center.y += cloud.points[i].y;
+		//			center.z += cloud.points[i].z;
 	}
 
 	center.x /=count;

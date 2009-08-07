@@ -85,13 +85,13 @@ void SampleSet::appendToCloud(sensor_msgs::PointCloud& cloud, int r, int g, int 
     point.y = (*sample_iter)->y;
     point.z = 0;
 
-    cloud.pts.push_back(point);
+    cloud.points.push_back(point);
 
-    if (cloud.chan[0].name == "rgb")
-      cloud.chan[0].vals.push_back(color_val);
+    if (cloud.channels[0].name == "rgb")
+      cloud.channels[0].values.push_back(color_val);
 
-    if (cloud.chan[0].name == "intensity")
-      cloud.chan[0].vals.push_back((*sample_iter)->intensity);
+    if (cloud.channels[0].name == "intensity")
+      cloud.channels[0].values.push_back((*sample_iter)->intensity);
   }
 }
 

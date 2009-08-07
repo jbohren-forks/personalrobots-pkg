@@ -41,26 +41,26 @@ using namespace pcd_novelty;
 TEST (PcdNovelty, NoveltyEstimator)
 {
   sensor_msgs::PointCloud points;
-  points.pts.resize (18);
+  points.points.resize (18);
 
-  points.pts[0].x = 3.587751;  points.pts[0].y = -4.190982;  points.pts[0].z = 0;
-  points.pts[1].x = 3.808883;  points.pts[1].y = -4.412265;  points.pts[1].z = 0;
-  points.pts[2].x = 3.587525;  points.pts[2].y = -5.809143;  points.pts[2].z = 0;
-  points.pts[3].x = 2.999913;  points.pts[3].y = -5.999980;  points.pts[3].z = 0;
-  points.pts[4].x = 2.412224;  points.pts[4].y = -5.809090;  points.pts[4].z = 0;
-  points.pts[5].x = 2.191080;  points.pts[5].y = -5.587682;  points.pts[5].z = 0;
-  points.pts[6].x = 2.048941;  points.pts[6].y = -5.309003;  points.pts[6].z = 0;
-  points.pts[7].x = 2.000397;  points.pts[7].y = -4.999944;  points.pts[7].z = 0;
-  points.pts[8].x = 2.999953;  points.pts[8].y = -6.000056;  points.pts[8].z = 0;
-  points.pts[9].x = 2.691127;  points.pts[9].y = -5.951136;  points.pts[9].z = 0;
-  points.pts[10].x = 2.190892; points.pts[10].y = -5.587838; points.pts[10].z = 0;
-  points.pts[11].x = 2.048874; points.pts[11].y = -5.309052; points.pts[11].z = 0;
-  points.pts[12].x = 1.999990; points.pts[12].y = -5.000147; points.pts[12].z = 0;
-  points.pts[13].x = 2.049026; points.pts[13].y = -4.690918; points.pts[13].z = 0;
-  points.pts[14].x = 2.190956; points.pts[14].y = -4.412162; points.pts[14].z = 0;
-  points.pts[15].x = 2.412231; points.pts[15].y = -4.190918; points.pts[15].z = 0;
-  points.pts[16].x = 2.691027; points.pts[16].y = -4.049060; points.pts[16].z = 0;
-  points.pts[17].x = 2;        points.pts[17].y = -3;        points.pts[17].z = 0;
+  points.points[0].x = 3.587751;  points.points[0].y = -4.190982;  points.points[0].z = 0;
+  points.points[1].x = 3.808883;  points.points[1].y = -4.412265;  points.points[1].z = 0;
+  points.points[2].x = 3.587525;  points.points[2].y = -5.809143;  points.points[2].z = 0;
+  points.points[3].x = 2.999913;  points.points[3].y = -5.999980;  points.points[3].z = 0;
+  points.points[4].x = 2.412224;  points.points[4].y = -5.809090;  points.points[4].z = 0;
+  points.points[5].x = 2.191080;  points.points[5].y = -5.587682;  points.points[5].z = 0;
+  points.points[6].x = 2.048941;  points.points[6].y = -5.309003;  points.points[6].z = 0;
+  points.points[7].x = 2.000397;  points.points[7].y = -4.999944;  points.points[7].z = 0;
+  points.points[8].x = 2.999953;  points.points[8].y = -6.000056;  points.points[8].z = 0;
+  points.points[9].x = 2.691127;  points.points[9].y = -5.951136;  points.points[9].z = 0;
+  points.points[10].x = 2.190892; points.points[10].y = -5.587838; points.points[10].z = 0;
+  points.points[11].x = 2.048874; points.points[11].y = -5.309052; points.points[11].z = 0;
+  points.points[12].x = 1.999990; points.points[12].y = -5.000147; points.points[12].z = 0;
+  points.points[13].x = 2.049026; points.points[13].y = -4.690918; points.points[13].z = 0;
+  points.points[14].x = 2.190956; points.points[14].y = -4.412162; points.points[14].z = 0;
+  points.points[15].x = 2.412231; points.points[15].y = -4.190918; points.points[15].z = 0;
+  points.points[16].x = 2.691027; points.points[16].y = -4.049060; points.points[16].z = 0;
+  points.points[17].x = 2;        points.points[17].y = -3;        points.points[17].z = 0;
 
   NoveltyEstimator ne;
 
@@ -76,24 +76,24 @@ TEST (PcdNovelty, NoveltyEstimator)
   ASSERT_EQ((*ptr_channel)[0],0); //one miss out of one.
 
 
-  points.pts[0].x = 3.587751;  points.pts[0].y = -4.190982;  points.pts[0].z = 0;
-  points.pts[1].x = 3.808883;  points.pts[1].y = -4.412265;  points.pts[1].z = 0;
-  points.pts[2].x = 3.587525;  points.pts[2].y = -5.809143;  points.pts[2].z = 3;
-  points.pts[3].x = 2.999913;  points.pts[3].y = -5.999980;  points.pts[3].z = 0;
-  points.pts[4].x = 2.412224;  points.pts[4].y = -5.809090;  points.pts[4].z = 0;
-  points.pts[5].x = 2.191080;  points.pts[5].y = -5.587682;  points.pts[5].z = 0;
-  points.pts[6].x = 2.048941;  points.pts[6].y = -5.309003;  points.pts[6].z = 0;
-  points.pts[7].x = 2.000397;  points.pts[7].y = -4.999944;  points.pts[7].z = 0;
-  points.pts[8].x = 2.999953;  points.pts[8].y = -6.000056;  points.pts[8].z = 0;
-  points.pts[9].x = 2.691127;  points.pts[9].y = -5.951136;  points.pts[9].z = 0;
-  points.pts[10].x = 2.190892; points.pts[10].y = -5.587838; points.pts[10].z = 0;
-  points.pts[11].x = 2.048874; points.pts[11].y = -5.309052; points.pts[11].z = 0;
-  points.pts[12].x = 1.999990; points.pts[12].y = -5.000147; points.pts[12].z = 0;
-  points.pts[13].x = 2.049026; points.pts[13].y = -4.690918; points.pts[13].z = 0;
-  points.pts[14].x = 2.190956; points.pts[14].y = -4.412162; points.pts[14].z = 0;
-  points.pts[15].x = 2.412231; points.pts[15].y = -4.190918; points.pts[15].z = 0;
-  points.pts[16].x = 2.691027; points.pts[16].y = -4.049060; points.pts[16].z = 0;
-  points.pts[17].x = 2;        points.pts[17].y = -3;        points.pts[17].z = 0;
+  points.points[0].x = 3.587751;  points.points[0].y = -4.190982;  points.points[0].z = 0;
+  points.points[1].x = 3.808883;  points.points[1].y = -4.412265;  points.points[1].z = 0;
+  points.points[2].x = 3.587525;  points.points[2].y = -5.809143;  points.points[2].z = 3;
+  points.points[3].x = 2.999913;  points.points[3].y = -5.999980;  points.points[3].z = 0;
+  points.points[4].x = 2.412224;  points.points[4].y = -5.809090;  points.points[4].z = 0;
+  points.points[5].x = 2.191080;  points.points[5].y = -5.587682;  points.points[5].z = 0;
+  points.points[6].x = 2.048941;  points.points[6].y = -5.309003;  points.points[6].z = 0;
+  points.points[7].x = 2.000397;  points.points[7].y = -4.999944;  points.points[7].z = 0;
+  points.points[8].x = 2.999953;  points.points[8].y = -6.000056;  points.points[8].z = 0;
+  points.points[9].x = 2.691127;  points.points[9].y = -5.951136;  points.points[9].z = 0;
+  points.points[10].x = 2.190892; points.points[10].y = -5.587838; points.points[10].z = 0;
+  points.points[11].x = 2.048874; points.points[11].y = -5.309052; points.points[11].z = 0;
+  points.points[12].x = 1.999990; points.points[12].y = -5.000147; points.points[12].z = 0;
+  points.points[13].x = 2.049026; points.points[13].y = -4.690918; points.points[13].z = 0;
+  points.points[14].x = 2.190956; points.points[14].y = -4.412162; points.points[14].z = 0;
+  points.points[15].x = 2.412231; points.points[15].y = -4.190918; points.points[15].z = 0;
+  points.points[16].x = 2.691027; points.points[16].y = -4.049060; points.points[16].z = 0;
+  points.points[17].x = 2;        points.points[17].y = -3;        points.points[17].z = 0;
 
 
   ne.computeNovelty(points,*ptr_channel);

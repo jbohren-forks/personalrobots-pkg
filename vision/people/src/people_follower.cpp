@@ -81,10 +81,10 @@ namespace estimation
     time_last_publish_ = Time::now();
 
     // visualization
-    robot_goal_cloud_.pts = vector<geometry_msgs::Point32>(1);
-    robot_goal_cloud_.pts[0].x = 0;
-    robot_goal_cloud_.pts[0].y = 0;
-    robot_goal_cloud_.pts[0].z = 0;
+    robot_goal_cloud_.points = vector<geometry_msgs::Point32>(1);
+    robot_goal_cloud_.points[0].x = 0;
+    robot_goal_cloud_.points[0].y = 0;
+    robot_goal_cloud_.points[0].z = 0;
   }
 
 
@@ -159,9 +159,9 @@ namespace estimation
       }
 
       // visualize goal
-      robot_goal_cloud_.pts[0].x = robot_pos_.x;
-      robot_goal_cloud_.pts[0].y = robot_pos_.y;
-      robot_goal_cloud_.pts[0].z = 0.0;
+      robot_goal_cloud_.points[0].x = robot_pos_.x;
+      robot_goal_cloud_.points[0].y = robot_pos_.y;
+      robot_goal_cloud_.points[0].z = 0.0;
       robot_goal_cloud_.header.frame_id = fixed_frame_;
       publish("goal_pos",robot_goal_cloud_);
     }

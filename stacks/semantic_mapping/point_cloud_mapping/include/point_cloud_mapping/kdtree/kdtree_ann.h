@@ -54,7 +54,7 @@ namespace cloud_kdtree
         ann_kd_tree_ = NULL; // To avoid a bad delete in the destructor.
         epsilon_     = 0.0;   // default error bound value
         dim_         = 3;     // default number of dimensions (3 = xyz)
-        bucket_size_ = std::min (30, (int)points.pts.size ());    // default bucket size value
+        bucket_size_ = std::min (30, (int)points.points.size ());    // default bucket size value
 
         // Allocate enough data
         nr_points_ = convertCloudToArray (points);

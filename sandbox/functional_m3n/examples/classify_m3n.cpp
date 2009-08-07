@@ -50,7 +50,7 @@ int loadPointCloud(string filename,
 
   // ----------------------------------------------
   // Resize containers appropriately
-  pt_cloud.pts.resize(nbr_samples);
+  pt_cloud.points.resize(nbr_samples);
   labels.resize(nbr_samples);
 
   // ----------------------------------------------
@@ -59,9 +59,9 @@ int loadPointCloud(string filename,
   int tempo;
   for (unsigned int i = 0 ; i < nbr_samples ; i++)
   {
-    infile >> pt_cloud.pts[i].x;
-    infile >> pt_cloud.pts[i].y;
-    infile >> pt_cloud.pts[i].z;
+    infile >> pt_cloud.points[i].x;
+    infile >> pt_cloud.points[i].y;
+    infile >> pt_cloud.points[i].z;
     unsigned int col = 3;
     if (col < nbr_cols)
     {

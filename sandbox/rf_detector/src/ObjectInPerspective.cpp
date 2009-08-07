@@ -46,8 +46,8 @@ static double dist2D(const T& a, const T& b)
     void filterByZBounds( const sensor_msgs::PointCloud& pc, double zmin, double zmax, sensor_msgs::PointCloud& filtered_pc, sensor_msgs::PointCloud& filtered_outside)
 	{
 		vector<int> indices_remove;
-		for (size_t i = 0;i<pc.get_pts_size();++i) {
-			if (pc.pts[i].z>zmax || pc.pts[i].z<zmin) {
+		for (size_t i = 0;i<pc.get_points_size();++i) {
+			if (pc.points[i].z>zmax || pc.points[i].z<zmin) {
 				indices_remove.push_back(i);
 			}
 		}
@@ -59,11 +59,11 @@ static double dist2D(const T& a, const T& b)
 //	{
 //		int xchan = -1;
 //		int ychan = -1;
-//		for(size_t i = 0;i < pc.chan.size();++i){
-//			if(pc.chan[i].name == "x"){
+//		for(size_t i = 0;i < pc.channels.size();++i){
+//			if(pc.channels[i].name == "x"){
 //				xchan = i;
 //			}
-//			if(pc.chan[i].name == "y"){
+//			if(pc.channels[i].name == "y"){
 //				ychan = i;
 //			}
 //		}
@@ -74,9 +74,9 @@ static double dist2D(const T& a, const T& b)
 //		}
 //
 //		// remove plane points from disparity image
-//		for (size_t i=0;i<pc.get_pts_size();++i) {
-//			int x = pc.chan[xchan].vals[i];
-//			int y = pc.chan[ychan].vals[i];
+//		for (size_t i=0;i<pc.get_points_size();++i) {
+//			int x = pc.channels[xchan].values[i];
+//			int y = pc.channels[ychan].values[i];
 //			//			printf("(%d,%d)\n", x, y);
 //			CV_PIXEL(unsigned char, disp_img, x, y)[0] = 0;
 //		}
@@ -109,7 +109,7 @@ static double dist2D(const T& a, const T& b)
 			viewpoint.y = 0;
 			viewpoint.z = 0;
 			// Flip the plane normal towards the viewpoint
-			cloud_geometry::angles::flipNormalTowardsViewpoint (coeff, points.pts.at(inliers[0]), viewpoint);
+			cloud_geometry::angles::flipNormalTowardsViewpoint (coeff, points.points.at(inliers[0]), viewpoint);
 
 			ROS_INFO ("Found a planar model supported by %d inliers: [%g, %g, %g, %g]", (int)inliers.size (), coeff[0], coeff[1], coeff[2], coeff[3]);
 		}
@@ -126,8 +126,8 @@ static double dist2D(const T& a, const T& b)
     sensor_msgs::PointCloud projectToPlane(const sensor_msgs::PointCloud& objects, const vector<double>& coefficients)
 	{
 		// clear "under the table" points
-		vector<int> object_indices(objects.pts.size());
-		for (size_t i=0;i<objects.get_pts_size();++i) {
+		vector<int> object_indices(objects.points.size());
+		for (size_t i=0;i<objects.get_points_size();++i) {
 			object_indices[i] = i;
 		}
 
@@ -153,8 +153,8 @@ static double dist2D(const T& a, const T& b)
 
 //		clearFromImage(disp, filtered_outside);
 
-		vector<int> indices(filtered_cloud.get_pts_size());
-		for (size_t i = 0;i<filtered_cloud.get_pts_size();++i) {
+		vector<int> indices(filtered_cloud.get_points_size());
+		for (size_t i = 0;i<filtered_cloud.get_points_size();++i) {
 			indices[i] = i;
 		}
 
@@ -201,23 +201,23 @@ static double dist2D(const T& a, const T& b)
         sensor_msgs::PointCloud camera_center;
         sensor_msgs::PointCloud camera_center_table_frame;
         camera_center.header = pc.header;
-        camera_center.chan.resize(pc.chan.size ());
-        camera_center.pts.resize(1);
-        for (unsigned int d = 0; d < camera_center.chan.size (); d++)
+        camera_center.channels.resize(pc.channels.size ());
+        camera_center.points.resize(1);
+        for (unsigned int d = 0; d < camera_center.channels.size (); d++)
         {
-            camera_center.chan[d].name = pc.chan[d].name;
-            camera_center.chan[d].vals.resize(1);
+            camera_center.channels[d].name = pc.channels[d].name;
+            camera_center.channels[d].values.resize(1);
         }
-        camera_center.pts[0].x = 0;
-        camera_center.pts[0].y = 0;
-        camera_center.pts[0].z = 0;
-        for (unsigned int d = 0; d < camera_center.chan.size (); d++)
+        camera_center.points[0].x = 0;
+        camera_center.points[0].y = 0;
+        camera_center.points[0].z = 0;
+        for (unsigned int d = 0; d < camera_center.channels.size (); d++)
         {
-            camera_center.chan[d].vals[0] = pc.chan[d].vals[0];
+            camera_center.channels[d].values[0] = pc.channels[d].values[0];
         }
         tf_.transformPointCloud("table_frame", camera_center, camera_center_table_frame);
 
-        return camera_center_table_frame.pts[0].z;
+        return camera_center_table_frame.points[0].z;
     }
 
     float CalHorizontalLine( const sensor_msgs::PointCloud& cloud, vector<double> plane_coeff, const sensor_msgs::CameraInfo& lcinfo, tf::TransformListener& tf_){
@@ -254,15 +254,15 @@ static double dist2D(const T& a, const T& b)
 	public:
 		NNGridIndexer(const sensor_msgs::PointCloud& cloud) : cloud_(cloud)
 		{
-			xmin = cloud.pts[0].x;
-			xmax = cloud.pts[0].x;
-			ymin = cloud.pts[0].y;
-			ymax = cloud.pts[0].y;
-			for (size_t i=1;i<cloud.get_pts_size();++i) {
-				if (cloud.pts[i].x<xmin) xmin = cloud.pts[i].x;
-				if (cloud.pts[i].x>xmax) xmax = cloud.pts[i].x;
-				if (cloud.pts[i].y<ymin) ymin = cloud.pts[i].y;
-				if (cloud.pts[i].y>ymax) ymax = cloud.pts[i].y;
+			xmin = cloud.points[0].x;
+			xmax = cloud.points[0].x;
+			ymin = cloud.points[0].y;
+			ymax = cloud.points[0].y;
+			for (size_t i=1;i<cloud.get_points_size();++i) {
+				if (cloud.points[i].x<xmin) xmin = cloud.points[i].x;
+				if (cloud.points[i].x>xmax) xmax = cloud.points[i].x;
+				if (cloud.points[i].y<ymin) ymin = cloud.points[i].y;
+				if (cloud.points[i].y>ymax) ymax = cloud.points[i].y;
 			}
 
 			resolution = 600;
@@ -272,8 +272,8 @@ static double dist2D(const T& a, const T& b)
 			grid = new float[resolution*resolution];
 			memset(grid,0,resolution*resolution*sizeof(float));
 
-			for (size_t i=0;i<cloud.get_pts_size();++i) {
-				geometry_msgs::Point32 p = cloud.pts[i];
+			for (size_t i=0;i<cloud.get_points_size();++i) {
+				geometry_msgs::Point32 p = cloud.points[i];
 
 				int x = int((p.x-xmin)/xd+0.5);
 				int y = int((p.y-ymin)/yd+0.5);
@@ -356,10 +356,10 @@ static double dist2D(const T& a, const T& b)
 		printf("Number of centers: %d\n", centers.size());
 
 		// compute cluster heights
-		for(size_t i=0;i<cloud.get_pts_size();++i) {
+		for(size_t i=0;i<cloud.get_points_size();++i) {
 			for (size_t j=0;j<centers.size();++j) {
-				if (dist2D(cloud.pts[i], centers[j])<CLUSTER_RADIUS*CLUSTER_RADIUS) {
-					cluster_heights[j] = max(cluster_heights[j], (double)cloud.pts[i].z);
+				if (dist2D(cloud.points[i], centers[j])<CLUSTER_RADIUS*CLUSTER_RADIUS) {
+					cluster_heights[j] = max(cluster_heights[j], (double)cloud.points[i].z);
 //					cluster_center_depth[j] = cluster_center_depth[j]+;
 				}
 			}
@@ -387,21 +387,21 @@ static double dist2D(const T& a, const T& b)
 
     void findClusters2(const sensor_msgs::PointCloud& cloud, vector<geometry_msgs::Point32>& clusters)
 	{
-		if (cloud.get_pts_size()==0) return;
+		if (cloud.get_points_size()==0) return;
 
 #ifdef KMEANS_INIT
 		// initialize clusters using kmeans
 		const int NUM_CLUSTERS = 30;
 
-		int count = cloud.get_pts_size();
+		int count = cloud.get_points_size();
 		CvMat* points = cvCreateMat( count, 2, CV_32FC1 );
 		CvMat* labels = cvCreateMat( count, 1, CV_32SC1 );
 		CvMat* centers_ = cvCreateMat( NUM_CLUSTERS, 2, CV_32FC1 );
 
 		for (int i=0;i<count;++i) {
 			float* ptr = (float*)(points->data.ptr + i * points->step);
-			ptr[0] = cloud.pts[i].x;
-			ptr[1] = cloud.pts[i].y;
+			ptr[0] = cloud.points[i].x;
+			ptr[1] = cloud.points[i].y;
 		}
 
 		cvKMeans2(points, NUM_CLUSTERS, labels, cvTermCriteria( CV_TERMCRIT_EPS+CV_TERMCRIT_ITER, 10, 0.005 ),5,0,0,centers_);
@@ -409,7 +409,7 @@ static double dist2D(const T& a, const T& b)
 
 		float step = CLUSTER_RADIUS;
 		NNGridIndexer index(cloud);
-//		vector<int> indices(cloud.get_pts_size());
+//		vector<int> indices(cloud.get_points_size());
 		vector<geometry_msgs::Point32> centers(NUM_CLUSTERS);
 		vector<geometry_msgs::Point32> means(NUM_CLUSTERS);
 		geometry_msgs::Point32 p;
@@ -430,22 +430,22 @@ static double dist2D(const T& a, const T& b)
 		cvReleaseMat(&centers_);
 
 #else
-		float xmin = cloud.pts[0].x;
-		float xmax = cloud.pts[0].x;
-		float ymin = cloud.pts[0].y;
-		float ymax = cloud.pts[0].y;
+		float xmin = cloud.points[0].x;
+		float xmax = cloud.points[0].x;
+		float ymin = cloud.points[0].y;
+		float ymax = cloud.points[0].y;
 
-		for (size_t i=1;i<cloud.get_pts_size();++i) {
-			if (cloud.pts[i].x<xmin) xmin = cloud.pts[i].x;
-			if (cloud.pts[i].x>xmax) xmax = cloud.pts[i].x;
-			if (cloud.pts[i].y<ymin) ymin = cloud.pts[i].y;
-			if (cloud.pts[i].y>ymax) ymax = cloud.pts[i].y;
+		for (size_t i=1;i<cloud.get_points_size();++i) {
+			if (cloud.points[i].x<xmin) xmin = cloud.points[i].x;
+			if (cloud.points[i].x>xmax) xmax = cloud.points[i].x;
+			if (cloud.points[i].y<ymin) ymin = cloud.points[i].y;
+			if (cloud.points[i].y>ymax) ymax = cloud.points[i].y;
 		}
 
 		float step = CLUSTER_RADIUS;
 
 		NNGridIndexer index(cloud);
-//		vector<int> indices(cloud.get_pts_size());
+//		vector<int> indices(cloud.get_points_size());
 
 		// getting the initial centers
 		vector<geometry_msgs::Point32> centers;
@@ -514,9 +514,9 @@ static double dist2D(const T& a, const T& b)
 		geometry_msgs::PointStamped table_point;
 		table_point.header.frame_id = projected_objects.header.frame_id;
 		table_point.header.stamp = projected_objects.header.stamp;
-		table_point.point.x = projected_objects.pts[0].x;
-		table_point.point.y = projected_objects.pts[0].y;
-		table_point.point.z = projected_objects.pts[0].z;
+		table_point.point.x = projected_objects.points[0].x;
+		table_point.point.y = projected_objects.points[0].y;
+		table_point.point.z = projected_objects.points[0].z;
 
 		addTableFrame(table_point,plane, tf_, broadcaster_);
 

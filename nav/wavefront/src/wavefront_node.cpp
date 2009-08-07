@@ -452,14 +452,14 @@ WavefrontNode::laserReceived(const tf::MessageNotifier<sensor_msgs::LaserScan>::
 	// Convert from point cloud to array of doubles formatted XYXYXY...
 	// TODO: increase efficiency by reducing number of data transformations
 	laser_pts_t pts;
-	pts.pts_num = global_cloud.get_pts_size();
+	pts.pts_num = global_cloud.points.size();
 	pts.pts = new double[pts.pts_num*2];
 	assert(pts.pts);
 	pts.ts = global_cloud.header.stamp;
-	for(unsigned int i=0;i<global_cloud.get_pts_size();i++)
+	for(unsigned int i=0;i<global_cloud.points.size();i++)
 	{
-		pts.pts[2*i] = global_cloud.pts[i].x;
-		pts.pts[2*i+1] = global_cloud.pts[i].y;
+		pts.pts[2*i] = global_cloud.points[i].x;
+		pts.pts[2*i+1] = global_cloud.points[i].y;
 	}
 
 	// Add the new point set to our list

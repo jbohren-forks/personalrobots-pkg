@@ -226,8 +226,8 @@ private:
 	else
 	{
 	    int c = -1;
-	    for (unsigned int i = 0 ; i < cloud.chan.size() ; ++i)
-		if (cloud.chan[i].name == cloud_annotation_)
+	    for (unsigned int i = 0 ; i < cloud.channels.size() ; ++i)
+		if (cloud.channels[i].name == cloud_annotation_)
 		{
 		    c = i;
 		    break;
@@ -239,10 +239,10 @@ private:
 	    }
 	    else
 	    {
-		ROS_ASSERT(cloud.chan[c].vals.size() == cloud.pts.size());
-		mask.resize(cloud.pts.size());
+		ROS_ASSERT(cloud.channels[c].values.size() == cloud.points.size());
+		mask.resize(cloud.points.size());
 		for (unsigned int i = 0 ; i < mask.size() ; ++i)
-		    mask[i] = cloud.chan[c].vals[i] > 0.0;
+		    mask[i] = cloud.channels[c].values[i] > 0.0;
 	    }
 	}
     }
@@ -619,13 +619,13 @@ private:
     /** Construct an axis-aligned collision map from a point cloud assumed to be in the robot frame */
     void constructCollisionMap(const sensor_msgs::PointCloud &cloud, const std::vector<int> &mask, int keep, CMap &map)
     {
-	const unsigned int n = cloud.pts.size();
+	const unsigned int n = cloud.points.size();
 	CollisionPoint c;
 	
 	for (unsigned int i = 0 ; i < n ; ++i)
 	    if (mask[i] == keep)
 	    {
-		const geometry_msgs::Point32 &p = cloud.pts[i];
+		const geometry_msgs::Point32 &p = cloud.points[i];
 		if (p.x > bi_.real_minX && p.x < bi_.real_maxX && p.y > bi_.real_minY && p.y < bi_.real_maxY && p.z > bi_.real_minZ && p.z < bi_.real_maxZ)
 		{
 		    c.x = (int)(0.5 + (p.x - bi_.originX) / bi_.resolution);

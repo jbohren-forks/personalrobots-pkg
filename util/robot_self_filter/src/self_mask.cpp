@@ -112,7 +112,7 @@ void robot_self_filter::SelfMask::getLinkNames(std::vector<std::string> &frames)
 
 void robot_self_filter::SelfMask::maskContainment(const sensor_msgs::PointCloud& data_in, std::vector<int> &mask)
 {
-    mask.resize(data_in.pts.size());
+    mask.resize(data_in.points.size());
     if (bodies_.empty())
 	std::fill(mask.begin(), mask.end(), (int)OUTSIDE);
     else
@@ -125,7 +125,7 @@ void robot_self_filter::SelfMask::maskContainment(const sensor_msgs::PointCloud&
 void robot_self_filter::SelfMask::maskIntersection(const sensor_msgs::PointCloud& data_in, const std::string &sensor_frame, std::vector<int> &mask,
 						   const boost::function<void(const btVector3&)> &callback)
 {
-    mask.resize(data_in.pts.size());
+    mask.resize(data_in.points.size());
     if (bodies_.empty())
 	std::fill(mask.begin(), mask.end(), (int)OUTSIDE);
     else
@@ -141,7 +141,7 @@ void robot_self_filter::SelfMask::maskIntersection(const sensor_msgs::PointCloud
 void robot_self_filter::SelfMask::maskIntersection(const sensor_msgs::PointCloud& data_in, const btVector3 &sensor, std::vector<int> &mask,
 						   const boost::function<void(const btVector3&)> &callback)
 {
-    mask.resize(data_in.pts.size());
+    mask.resize(data_in.points.size());
     if (bodies_.empty())
 	std::fill(mask.begin(), mask.end(), (int)OUTSIDE);
     else
@@ -213,7 +213,7 @@ void robot_self_filter::SelfMask::assumeFrame(const roslib::Header& header, cons
 void robot_self_filter::SelfMask::maskAuxContainment(const sensor_msgs::PointCloud& data_in, std::vector<int> &mask)
 {
     const unsigned int bs = bodies_.size();
-    const unsigned int np = data_in.pts.size();
+    const unsigned int np = data_in.points.size();
     
     // compute a sphere that bounds the entire robot
     bodies::BoundingSphere bound;
@@ -224,7 +224,7 @@ void robot_self_filter::SelfMask::maskAuxContainment(const sensor_msgs::PointClo
 #pragma omp parallel for schedule(dynamic) 
     for (int i = 0 ; i < (int)np ; ++i)
     {
-	btVector3 pt = btVector3(data_in.pts[i].x, data_in.pts[i].y, data_in.pts[i].z);
+	btVector3 pt = btVector3(data_in.points[i].x, data_in.points[i].y, data_in.points[i].z);
 	int out = OUTSIDE;
 	if (bound.center.distance2(pt) < radiusSquared)
 	    for (unsigned int j = 0 ; out == OUTSIDE && j < bs ; ++j)
@@ -238,7 +238,7 @@ void robot_self_filter::SelfMask::maskAuxContainment(const sensor_msgs::PointClo
 void robot_self_filter::SelfMask::maskAuxIntersection(const sensor_msgs::PointCloud& data_in, std::vector<int> &mask, const boost::function<void(const btVector3&)> &callback)
 {
     const unsigned int bs = bodies_.size();
-    const unsigned int np = data_in.pts.size();
+    const unsigned int np = data_in.points.size();
     
     // compute a sphere that bounds the entire robot
     bodies::BoundingSphere bound;
@@ -249,7 +249,7 @@ void robot_self_filter::SelfMask::maskAuxIntersection(const sensor_msgs::PointCl
 #pragma omp parallel for schedule(dynamic) 
     for (int i = 0 ; i < (int)np ; ++i)
     {
-	btVector3 pt = btVector3(data_in.pts[i].x, data_in.pts[i].y, data_in.pts[i].z);
+	btVector3 pt = btVector3(data_in.points[i].x, data_in.points[i].y, data_in.points[i].z);
 	int out = OUTSIDE;
 
 	// we first check is the point is in the unscaled body. 

@@ -91,7 +91,7 @@ public:
         printf("Done with service call\n") ;
 
         publish("full_cloud", resp.cloud) ;
-        printf("Published Cloud size=%u\n", resp.cloud.get_pts_size()) ;
+        printf("Published Cloud size=%u\n", resp.cloud.get_points_size()) ;
       }
     }
     return true ;

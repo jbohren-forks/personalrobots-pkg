@@ -237,7 +237,7 @@ public:
 			broadcaster_.sendTransform (transform_);
 
 			// point cloud
-			ROS_INFO ("Publishing data (%d points) on topic %s in frame %s.", (int)msg_cloud_.pts.size (), node_.mapName (cloud_topic_).c_str (), msg_cloud_.header.frame_id.c_str ());
+			ROS_INFO ("Publishing data (%d points) on topic %s in frame %s.", (int)msg_cloud_.points.size (), node_.mapName (cloud_topic_).c_str (), msg_cloud_.header.frame_id.c_str ());
 			msg_cloud_.header.stamp = stamp;
 			msg_cloud_.header.frame_id = tf_frame_;
 			node_.publish (cloud_topic_.c_str(), msg_cloud_);

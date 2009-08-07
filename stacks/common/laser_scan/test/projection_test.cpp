@@ -210,36 +210,36 @@ TEST(laser_scan, projectLaser)
 
   sensor_msgs::PointCloud cloud_out;
   projector.projectLaser(scan, cloud_out, -1.0, false, laser_scan::MASK_INDEX);
-  EXPECT_EQ(cloud_out.chan.size(), (unsigned int)1);
+  EXPECT_EQ(cloud_out.channels.size(), (unsigned int)1);
   projector.projectLaser(scan, cloud_out, -1.0, false, laser_scan::MASK_INTENSITY);
-  EXPECT_EQ(cloud_out.chan.size(), (unsigned int)1);
+  EXPECT_EQ(cloud_out.channels.size(), (unsigned int)1);
 
   projector.projectLaser(scan, cloud_out, -1.0, false);
-  EXPECT_EQ(cloud_out.chan.size(), (unsigned int)2);
+  EXPECT_EQ(cloud_out.channels.size(), (unsigned int)2);
   projector.projectLaser(scan, cloud_out, -1.0, false, laser_scan::MASK_INTENSITY | laser_scan::MASK_INDEX);
-  EXPECT_EQ(cloud_out.chan.size(), (unsigned int)2);
+  EXPECT_EQ(cloud_out.channels.size(), (unsigned int)2);
 
   projector.projectLaser(scan, cloud_out, -1.0, false, laser_scan::MASK_INTENSITY | laser_scan::MASK_INDEX | laser_scan::MASK_DISTANCE);
-  EXPECT_EQ(cloud_out.chan.size(), (unsigned int)3);
+  EXPECT_EQ(cloud_out.channels.size(), (unsigned int)3);
 
   projector.projectLaser(scan, cloud_out, -1.0, false, laser_scan::MASK_INTENSITY | laser_scan::MASK_INDEX | laser_scan::MASK_DISTANCE | laser_scan::MASK_TIMESTAMP);
-  EXPECT_EQ(cloud_out.chan.size(), (unsigned int)4);
+  EXPECT_EQ(cloud_out.channels.size(), (unsigned int)4);
 
   unsigned int valid_points = 0;
   for (unsigned int i = 0; i < scan.ranges.size(); i++)
     if (scan.ranges[i] <= PROJECTION_TEST_RANGE_MAX && scan.ranges[i] >= PROJECTION_TEST_RANGE_MIN)
       valid_points ++;    
-  EXPECT_EQ(valid_points, cloud_out.get_pts_size());
+  EXPECT_EQ(valid_points, cloud_out.get_points_size());
 
-  for (unsigned int i = 0; i < cloud_out.pts.size(); i++)
+  for (unsigned int i = 0; i < cloud_out.points.size(); i++)
   {
-    EXPECT_NEAR(cloud_out.pts[i].x , scan.ranges[i] * cos(scan.angle_min + i * scan.angle_increment), tolerance);
-    EXPECT_NEAR(cloud_out.pts[i].y , scan.ranges[i] * sin(scan.angle_min + i * scan.angle_increment), tolerance);
-    EXPECT_NEAR(cloud_out.pts[i].z, 0, tolerance);
-    EXPECT_NEAR(cloud_out.chan[0].vals[i], scan.intensities[i], tolerance);//intensity \todo determine this by lookup not hard coded order
-    EXPECT_NEAR(cloud_out.chan[1].vals[i], i, tolerance);//index
-    EXPECT_NEAR(cloud_out.chan[2].vals[i], scan.ranges[i], tolerance);//ranges
-    EXPECT_NEAR(cloud_out.chan[3].vals[i], (float)i * scan.time_increment, tolerance);//timestamps
+    EXPECT_NEAR(cloud_out.points[i].x , scan.ranges[i] * cos(scan.angle_min + i * scan.angle_increment), tolerance);
+    EXPECT_NEAR(cloud_out.points[i].y , scan.ranges[i] * sin(scan.angle_min + i * scan.angle_increment), tolerance);
+    EXPECT_NEAR(cloud_out.points[i].z, 0, tolerance);
+    EXPECT_NEAR(cloud_out.channels[0].values[i], scan.intensities[i], tolerance);//intensity \todo determine this by lookup not hard coded order
+    EXPECT_NEAR(cloud_out.channels[1].values[i], i, tolerance);//index
+    EXPECT_NEAR(cloud_out.channels[2].values[i], scan.ranges[i], tolerance);//ranges
+    EXPECT_NEAR(cloud_out.channels[3].values[i], (float)i * scan.time_increment, tolerance);//timestamps
   };
     }
     catch (std::runtime_error &ex)
@@ -325,36 +325,36 @@ TEST(laser_scan, transformLaserScanToPointCloud)
 
   sensor_msgs::PointCloud cloud_out;
   projector.transformLaserScanToPointCloud(scan.header.frame_id, cloud_out, scan, tf, laser_scan::MASK_INDEX);
-  EXPECT_EQ(cloud_out.chan.size(), (unsigned int)1);
+  EXPECT_EQ(cloud_out.channels.size(), (unsigned int)1);
   projector.transformLaserScanToPointCloud(scan.header.frame_id, cloud_out, scan, tf, laser_scan::MASK_INTENSITY);
-  EXPECT_EQ(cloud_out.chan.size(), (unsigned int)1);
+  EXPECT_EQ(cloud_out.channels.size(), (unsigned int)1);
 
   projector.transformLaserScanToPointCloud(scan.header.frame_id, cloud_out, scan, tf);
-  EXPECT_EQ(cloud_out.chan.size(), (unsigned int)2);
+  EXPECT_EQ(cloud_out.channels.size(), (unsigned int)2);
   projector.transformLaserScanToPointCloud(scan.header.frame_id, cloud_out, scan, tf, laser_scan::MASK_INTENSITY | laser_scan::MASK_INDEX);
-  EXPECT_EQ(cloud_out.chan.size(), (unsigned int)2);
+  EXPECT_EQ(cloud_out.channels.size(), (unsigned int)2);
 
   projector.transformLaserScanToPointCloud(scan.header.frame_id, cloud_out, scan, tf, laser_scan::MASK_INTENSITY | laser_scan::MASK_INDEX | laser_scan::MASK_DISTANCE);
-  EXPECT_EQ(cloud_out.chan.size(), (unsigned int)3);
+  EXPECT_EQ(cloud_out.channels.size(), (unsigned int)3);
 
   projector.transformLaserScanToPointCloud(scan.header.frame_id, cloud_out, scan, tf, laser_scan::MASK_INTENSITY | laser_scan::MASK_INDEX | laser_scan::MASK_DISTANCE | laser_scan::MASK_TIMESTAMP);
-  EXPECT_EQ(cloud_out.chan.size(), (unsigned int)4);
+  EXPECT_EQ(cloud_out.channels.size(), (unsigned int)4);
 
   unsigned int valid_points = 0;
   for (unsigned int i = 0; i < scan.ranges.size(); i++)
     if (scan.ranges[i] <= PROJECTION_TEST_RANGE_MAX && scan.ranges[i] >= PROJECTION_TEST_RANGE_MIN)
       valid_points ++;    
-  EXPECT_EQ(valid_points, cloud_out.get_pts_size());
+  EXPECT_EQ(valid_points, cloud_out.get_points_size());
 
-  for (unsigned int i = 0; i < cloud_out.pts.size(); i++)
+  for (unsigned int i = 0; i < cloud_out.points.size(); i++)
   {
-    EXPECT_NEAR(cloud_out.pts[i].x , scan.ranges[i] * cos(scan.angle_min + i * scan.angle_increment), tolerance);
-    EXPECT_NEAR(cloud_out.pts[i].y , scan.ranges[i] * sin(scan.angle_min + i * scan.angle_increment), tolerance);
-    EXPECT_NEAR(cloud_out.pts[i].z, 0, tolerance);
-    EXPECT_NEAR(cloud_out.chan[0].vals[i], scan.intensities[i], tolerance);//intensity \todo determine this by lookup not hard coded order
-    EXPECT_NEAR(cloud_out.chan[1].vals[i], i, tolerance);//index
-    EXPECT_NEAR(cloud_out.chan[2].vals[i], scan.ranges[i], tolerance);//ranges
-    EXPECT_NEAR(cloud_out.chan[3].vals[i], (float)i * scan.time_increment, tolerance);//timestamps
+    EXPECT_NEAR(cloud_out.points[i].x , scan.ranges[i] * cos(scan.angle_min + i * scan.angle_increment), tolerance);
+    EXPECT_NEAR(cloud_out.points[i].y , scan.ranges[i] * sin(scan.angle_min + i * scan.angle_increment), tolerance);
+    EXPECT_NEAR(cloud_out.points[i].z, 0, tolerance);
+    EXPECT_NEAR(cloud_out.channels[0].values[i], scan.intensities[i], tolerance);//intensity \todo determine this by lookup not hard coded order
+    EXPECT_NEAR(cloud_out.channels[1].values[i], i, tolerance);//index
+    EXPECT_NEAR(cloud_out.channels[2].values[i], scan.ranges[i], tolerance);//ranges
+    EXPECT_NEAR(cloud_out.channels[3].values[i], (float)i * scan.time_increment, tolerance);//timestamps
   };
     }
     catch (std::runtime_error &ex)

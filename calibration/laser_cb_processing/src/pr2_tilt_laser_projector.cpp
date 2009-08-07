@@ -133,9 +133,9 @@ public:
 
   void callback()
   {
-    unsigned int C = in_.pts.size() ;
+    unsigned int C = in_.points.size() ;
     sensor_msgs::PointCloud cloud_out ;
-    cloud_out.pts.resize(C) ;
+    cloud_out.points.resize(C) ;
 
     KDL::ChainFkSolverPos_recursive solver(chain_) ;
     KDL::Frame loc ;
@@ -144,13 +144,13 @@ public:
 
     for (unsigned int i=0; i<C; i++)
     {
-      joint_vals(0) = in_.pts[i].x ;
-      joint_vals(1) = in_.pts[i].y ;
-      joint_vals(2) = in_.pts[i].z ;
+      joint_vals(0) = in_.points[i].x ;
+      joint_vals(1) = in_.points[i].y ;
+      joint_vals(2) = in_.points[i].z ;
       solver.JntToCart(joint_vals, loc) ;
-      cloud_out.pts[i].x = loc.p.x() ;
-      cloud_out.pts[i].y = loc.p.y() ;
-      cloud_out.pts[i].z = loc.p.z() ;
+      cloud_out.points[i].x = loc.p.x() ;
+      cloud_out.points[i].y = loc.p.y() ;
+      cloud_out.points[i].z = loc.p.z() ;
     }
     cloud_out.header.stamp = in_.header.stamp ;
     cloud_out.header.frame_id = "torso_lift_link" ;

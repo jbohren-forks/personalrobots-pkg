@@ -69,14 +69,14 @@ PointCloud pointCloudVicinity(PointCloud laser_cloud, PointStamped ps_cloud, dou
 	result.header.stamp = laser_cloud.header.stamp;
 
 	double d = distance*distance;
-	for (size_t i=0; i<laser_cloud.get_pts_size(); ++i) {
-		double crt_dist =squaredPointDistance(laser_cloud.pts[i],ps_cloud.point);
+	for (size_t i=0; i<laser_cloud.get_points_size(); ++i) {
+		double crt_dist =squaredPointDistance(laser_cloud.points[i],ps_cloud.point);
 		if (crt_dist<dist) {
-			closest = laser_cloud.pts[i];
+			closest = laser_cloud.points[i];
 			dist = crt_dist;
 		}
 		if (crt_dist<d) {
-			result.pts.push_back(laser_cloud.pts[i]);
+			result.points.push_back(laser_cloud.points[i]);
 		}
 	}
 
@@ -157,12 +157,12 @@ bool getWallPoseFromBaseLaser(const PointCloud& pc, const PointStamped& near_poi
 	PointCloud filtered_pc = pointCloudVicinity(pc, near_point, distance, closest_base_laser);
 	// if no points from base laser scan are found in the vicinity of the outlet center
 	// then ignore the current blob
-	if (filtered_pc.get_pts_size()==0) {
+	if (filtered_pc.get_points_size()==0) {
 		return false;
 	}
 	// fit a line in the outlet cloud
-	vector<int> indices(filtered_pc.get_pts_size());
-	for (size_t j=0;j<filtered_pc.get_pts_size();++j) {
+	vector<int> indices(filtered_pc.get_points_size());
+	for (size_t j=0;j<filtered_pc.get_points_size();++j) {
 		indices[j] = j;
 	}
 	vector<double> coeff(6);	// line coefficients
@@ -234,7 +234,7 @@ bool fitSACOrientedPlane (const PointCloud& points, const vector<int> &indices, 
 		}
 
 //    		// Flip the plane normal towards the viewpoint
-//    		cloud_geometry::angles::flipNormalTowardsViewpoint (coeff, points.pts.at(inliers[0]), viewpoint_cloud);
+//    		cloud_geometry::angles::flipNormalTowardsViewpoint (coeff, points.points.at(inliers[0]), viewpoint_cloud);
 //
 		ROS_INFO ("Found a planar model supported by %d inliers: [%g, %g, %g, %g]", (int)inliers.size (), coeff[0], coeff[1], coeff[2], coeff[3]);
 	}

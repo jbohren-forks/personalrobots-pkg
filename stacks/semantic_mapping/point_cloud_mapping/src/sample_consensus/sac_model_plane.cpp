@@ -63,9 +63,9 @@ namespace sample_consensus
 
     double Dx1, Dy1, Dz1, Dx2, Dy2, Dz2, Dy1Dy2;
     // Compute the segment values (in 3d) between XY
-    Dx1 = cloud_->pts[samples[1]].x - cloud_->pts[samples[0]].x;
-    Dy1 = cloud_->pts[samples[1]].y - cloud_->pts[samples[0]].y;
-    Dz1 = cloud_->pts[samples[1]].z - cloud_->pts[samples[0]].z;
+    Dx1 = cloud_->points[samples[1]].x - cloud_->points[samples[0]].x;
+    Dy1 = cloud_->points[samples[1]].y - cloud_->points[samples[0]].y;
+    Dz1 = cloud_->points[samples[1]].z - cloud_->points[samples[0]].z;
 
     int iter = 0;
     do
@@ -80,9 +80,9 @@ namespace sample_consensus
       iterations--;
 
       // Compute the segment values (in 3d) between XZ
-      Dx2 = cloud_->pts[samples[2]].x - cloud_->pts[samples[0]].x;
-      Dy2 = cloud_->pts[samples[2]].y - cloud_->pts[samples[0]].y;
-      Dz2 = cloud_->pts[samples[2]].z - cloud_->pts[samples[0]].z;
+      Dx2 = cloud_->points[samples[2]].x - cloud_->points[samples[0]].x;
+      Dy2 = cloud_->points[samples[2]].y - cloud_->points[samples[0]].y;
+      Dz2 = cloud_->points[samples[2]].z - cloud_->points[samples[0]].z;
 
       Dy1Dy2 = Dy1 / Dy2;
       iter++;
@@ -121,9 +121,9 @@ namespace sample_consensus
     {
       // Calculate the distance from the point to the plane normal as the dot product
       // D = (P-A).N/|N|
-      if (fabs (model_coefficients.at (0) * cloud_->pts.at (indices_.at (i)).x +
-                model_coefficients.at (1) * cloud_->pts.at (indices_.at (i)).y +
-                model_coefficients.at (2) * cloud_->pts.at (indices_.at (i)).z +
+      if (fabs (model_coefficients.at (0) * cloud_->points.at (indices_.at (i)).x +
+                model_coefficients.at (1) * cloud_->points.at (indices_.at (i)).y +
+                model_coefficients.at (2) * cloud_->points.at (indices_.at (i)).z +
                 model_coefficients.at (3)) < threshold)
       {
         // Returns the indices of the points whose distances are smaller than the threshold
@@ -149,9 +149,9 @@ namespace sample_consensus
     for (unsigned int i = 0; i < indices_.size (); i++)
       // Calculate the distance from the point to the plane normal as the dot product
       // D = (P-A).N/|N|
-      distances[i] = fabs (model_coefficients.at (0) * cloud_->pts.at (indices_[i]).x +
-                           model_coefficients.at (1) * cloud_->pts.at (indices_[i]).y +
-                           model_coefficients.at (2) * cloud_->pts.at (indices_[i]).z +
+      distances[i] = fabs (model_coefficients.at (0) * cloud_->points.at (indices_[i]).x +
+                           model_coefficients.at (1) * cloud_->points.at (indices_[i]).y +
+                           model_coefficients.at (2) * cloud_->points.at (indices_[i]).z +
                            model_coefficients.at (3));
     return;
   }
@@ -167,14 +167,14 @@ namespace sample_consensus
                                   sensor_msgs::PointCloud &projected_points)
   {
     // Allocate enough space
-    projected_points.pts.resize (inliers.size ());
-    projected_points.set_chan_size (cloud_->get_chan_size ());
+    projected_points.points.resize (inliers.size ());
+    projected_points.set_channels_size (cloud_->get_channels_size ());
 
     // Create the channels
-    for (unsigned int d = 0; d < projected_points.get_chan_size (); d++)
+    for (unsigned int d = 0; d < projected_points.get_channels_size (); d++)
     {
-      projected_points.chan[d].name = cloud_->chan[d].name;
-      projected_points.chan[d].vals.resize (inliers.size ());
+      projected_points.channels[d].name = cloud_->channels[d].name;
+      projected_points.channels[d].values.resize (inliers.size ());
     }
 
     // Get the plane normal
@@ -191,17 +191,17 @@ namespace sample_consensus
     for (unsigned int i = 0; i < inliers.size (); i++)
     {
       // Calculate the distance from the point to the plane
-      double distance_to_plane = model_coefficients.at (0) * cloud_->pts.at (inliers.at (i)).x +
-                                 model_coefficients.at (1) * cloud_->pts.at (inliers.at (i)).y +
-                                 model_coefficients.at (2) * cloud_->pts.at (inliers.at (i)).z +
+      double distance_to_plane = model_coefficients.at (0) * cloud_->points.at (inliers.at (i)).x +
+                                 model_coefficients.at (1) * cloud_->points.at (inliers.at (i)).y +
+                                 model_coefficients.at (2) * cloud_->points.at (inliers.at (i)).z +
                                  model_coefficients.at (3) * 1;
       // Calculate the projection of the point on the plane
-      projected_points.pts[i].x = cloud_->pts.at (inliers.at (i)).x - distance_to_plane * model_coefficients.at (0);
-      projected_points.pts[i].y = cloud_->pts.at (inliers.at (i)).y - distance_to_plane * model_coefficients.at (1);
-      projected_points.pts[i].z = cloud_->pts.at (inliers.at (i)).z - distance_to_plane * model_coefficients.at (2);
+      projected_points.points[i].x = cloud_->points.at (inliers.at (i)).x - distance_to_plane * model_coefficients.at (0);
+      projected_points.points[i].y = cloud_->points.at (inliers.at (i)).y - distance_to_plane * model_coefficients.at (1);
+      projected_points.points[i].z = cloud_->points.at (inliers.at (i)).z - distance_to_plane * model_coefficients.at (2);
       // Copy the other attributes
-      for (unsigned int d = 0; d < projected_points.get_chan_size (); d++)
-        projected_points.chan[d].vals[i] = cloud_->chan[d].vals[inliers.at (i)];
+      for (unsigned int d = 0; d < projected_points.get_channels_size (); d++)
+        projected_points.channels[d].values[i] = cloud_->channels[d].values[inliers.at (i)];
     }
   }
 
@@ -227,14 +227,14 @@ namespace sample_consensus
     for (unsigned int i = 0; i < inliers.size (); i++)
     {
       // Calculate the distance from the point to the plane
-      double distance_to_plane = model_coefficients.at (0) * cloud_->pts.at (inliers.at (i)).x +
-                                 model_coefficients.at (1) * cloud_->pts.at (inliers.at (i)).y +
-                                 model_coefficients.at (2) * cloud_->pts.at (inliers.at (i)).z +
+      double distance_to_plane = model_coefficients.at (0) * cloud_->points.at (inliers.at (i)).x +
+                                 model_coefficients.at (1) * cloud_->points.at (inliers.at (i)).y +
+                                 model_coefficients.at (2) * cloud_->points.at (inliers.at (i)).z +
                                  model_coefficients.at (3) * 1;
       // Calculate the projection of the point on the plane
-      cloud_->pts.at (inliers.at (i)).x = cloud_->pts.at (inliers.at (i)).x - distance_to_plane * model_coefficients.at (0);
-      cloud_->pts.at (inliers.at (i)).y = cloud_->pts.at (inliers.at (i)).y - distance_to_plane * model_coefficients.at (1);
-      cloud_->pts.at (inliers.at (i)).z = cloud_->pts.at (inliers.at (i)).z - distance_to_plane * model_coefficients.at (2);
+      cloud_->points.at (inliers.at (i)).x = cloud_->points.at (inliers.at (i)).x - distance_to_plane * model_coefficients.at (0);
+      cloud_->points.at (inliers.at (i)).y = cloud_->points.at (inliers.at (i)).y - distance_to_plane * model_coefficients.at (1);
+      cloud_->points.at (inliers.at (i)).z = cloud_->points.at (inliers.at (i)).z - distance_to_plane * model_coefficients.at (2);
     }
   }
 
@@ -250,14 +250,14 @@ namespace sample_consensus
     model_coefficients_.resize (4);
     double Dx1, Dy1, Dz1, Dx2, Dy2, Dz2, Dy1Dy2;
     // Compute the segment values (in 3d) between XY
-    Dx1 = cloud_->pts.at (samples.at (1)).x - cloud_->pts.at (samples.at (0)).x;
-    Dy1 = cloud_->pts.at (samples.at (1)).y - cloud_->pts.at (samples.at (0)).y;
-    Dz1 = cloud_->pts.at (samples.at (1)).z - cloud_->pts.at (samples.at (0)).z;
+    Dx1 = cloud_->points.at (samples.at (1)).x - cloud_->points.at (samples.at (0)).x;
+    Dy1 = cloud_->points.at (samples.at (1)).y - cloud_->points.at (samples.at (0)).y;
+    Dz1 = cloud_->points.at (samples.at (1)).z - cloud_->points.at (samples.at (0)).z;
 
     // Compute the segment values (in 3d) between XZ
-    Dx2 = cloud_->pts.at (samples.at (2)).x - cloud_->pts.at (samples.at (0)).x;
-    Dy2 = cloud_->pts.at (samples.at (2)).y - cloud_->pts.at (samples.at (0)).y;
-    Dz2 = cloud_->pts.at (samples.at (2)).z - cloud_->pts.at (samples.at (0)).z;
+    Dx2 = cloud_->points.at (samples.at (2)).x - cloud_->points.at (samples.at (0)).x;
+    Dy2 = cloud_->points.at (samples.at (2)).y - cloud_->points.at (samples.at (0)).y;
+    Dz2 = cloud_->points.at (samples.at (2)).z - cloud_->points.at (samples.at (0)).z;
 
     Dy1Dy2 = Dy1 / Dy2;
     if (((Dx1 / Dx2) == Dy1Dy2) && (Dy1Dy2 == (Dz1 / Dz2)))     // Check for collinearity
@@ -265,20 +265,20 @@ namespace sample_consensus
 
     // Compute the plane coefficients from the 3 given points in a straightforward manner
     // calculate the plane normal n = (p2-p1) x (p3-p1) = cross (p2-p1, p3-p1)
-    model_coefficients_[0] = (cloud_->pts.at (samples.at (1)).y - cloud_->pts.at (samples.at (0)).y) *
-                             (cloud_->pts.at (samples.at (2)).z - cloud_->pts.at (samples.at (0)).z) -
-                             (cloud_->pts.at (samples.at (1)).z - cloud_->pts.at (samples.at (0)).z) *
-                             (cloud_->pts.at (samples.at (2)).y - cloud_->pts.at (samples.at (0)).y);
+    model_coefficients_[0] = (cloud_->points.at (samples.at (1)).y - cloud_->points.at (samples.at (0)).y) *
+                             (cloud_->points.at (samples.at (2)).z - cloud_->points.at (samples.at (0)).z) -
+                             (cloud_->points.at (samples.at (1)).z - cloud_->points.at (samples.at (0)).z) *
+                             (cloud_->points.at (samples.at (2)).y - cloud_->points.at (samples.at (0)).y);
 
-    model_coefficients_[1] = (cloud_->pts.at (samples.at (1)).z - cloud_->pts.at (samples.at (0)).z) *
-                             (cloud_->pts.at (samples.at (2)).x - cloud_->pts.at (samples.at (0)).x) -
-                             (cloud_->pts.at (samples.at (1)).x - cloud_->pts.at (samples.at (0)).x) *
-                             (cloud_->pts.at (samples.at (2)).z - cloud_->pts.at (samples.at (0)).z);
+    model_coefficients_[1] = (cloud_->points.at (samples.at (1)).z - cloud_->points.at (samples.at (0)).z) *
+                             (cloud_->points.at (samples.at (2)).x - cloud_->points.at (samples.at (0)).x) -
+                             (cloud_->points.at (samples.at (1)).x - cloud_->points.at (samples.at (0)).x) *
+                             (cloud_->points.at (samples.at (2)).z - cloud_->points.at (samples.at (0)).z);
 
-    model_coefficients_[2] = (cloud_->pts.at (samples.at (1)).x - cloud_->pts.at (samples.at (0)).x) *
-                             (cloud_->pts.at (samples.at (2)).y - cloud_->pts.at (samples.at (0)).y) -
-                             (cloud_->pts.at (samples.at (1)).y - cloud_->pts.at (samples.at (0)).y) *
-                             (cloud_->pts.at (samples.at (2)).x - cloud_->pts.at (samples.at (0)).x);
+    model_coefficients_[2] = (cloud_->points.at (samples.at (1)).x - cloud_->points.at (samples.at (0)).x) *
+                             (cloud_->points.at (samples.at (2)).y - cloud_->points.at (samples.at (0)).y) -
+                             (cloud_->points.at (samples.at (1)).y - cloud_->points.at (samples.at (0)).y) *
+                             (cloud_->points.at (samples.at (2)).x - cloud_->points.at (samples.at (0)).x);
     // calculate the 2-norm: norm (x) = sqrt (sum (abs (v)^2))
     // nx ny nz (aka: ax + by + cz ...
     double n_norm = sqrt (model_coefficients_[0] * model_coefficients_[0] +
@@ -289,9 +289,9 @@ namespace sample_consensus
     model_coefficients_[2] /= n_norm;
 
     // ... + d = 0
-    model_coefficients_[3] = -1 * (model_coefficients_[0] * cloud_->pts.at (samples.at (0)).x +
-                                   model_coefficients_[1] * cloud_->pts.at (samples.at (0)).y +
-                                   model_coefficients_[2] * cloud_->pts.at (samples.at (0)).z);
+    model_coefficients_[3] = -1 * (model_coefficients_[0] * cloud_->points.at (samples.at (0)).x +
+                                   model_coefficients_[1] * cloud_->points.at (samples.at (0)).y +
+                                   model_coefficients_[2] * cloud_->points.at (samples.at (0)).z);
 
     return (true);
   }
@@ -332,9 +332,9 @@ namespace sample_consensus
     SACModelPlane::doSamplesVerifyModel (const std::set<int> &indices, double threshold)
   {
     for (std::set<int>::iterator it = indices.begin (); it != indices.end (); ++it)
-      if (fabs (model_coefficients_.at (0) * cloud_->pts.at (*it).x +
-                model_coefficients_.at (1) * cloud_->pts.at (*it).y +
-                model_coefficients_.at (2) * cloud_->pts.at (*it).z +
+      if (fabs (model_coefficients_.at (0) * cloud_->points.at (*it).x +
+                model_coefficients_.at (1) * cloud_->points.at (*it).y +
+                model_coefficients_.at (2) * cloud_->points.at (*it).z +
                 model_coefficients_.at (3)) > threshold)
         return (false);
 

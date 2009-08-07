@@ -86,7 +86,7 @@ public:
 	void cloudCallback(const sensor_msgs::PointCloud::ConstPtr& cloud)
 	{
 		cloud_ = *cloud;
-		ROS_INFO("Received new point cloud with %d points", cloud_.get_pts_size());
+		ROS_INFO("Received new point cloud with %d points", cloud_.get_points_size());
 
 		vector<double> coeff(4);
 		fitSACPlane(cloud_, coeff);
@@ -122,7 +122,7 @@ public:
 			// make plane normal point towards origin
 			geometry_msgs::Point32 viewpoint;
 			viewpoint.x = 0; viewpoint.y = 0; viewpoint.z = 0;
-			cloud_geometry::angles::flipNormalTowardsViewpoint (coeff, points.pts.at (inliers[0]), viewpoint);
+			cloud_geometry::angles::flipNormalTowardsViewpoint (coeff, points.points.at (inliers[0]), viewpoint);
 
 			ROS_INFO ("Found a planar model supported by %d inliers: [%g, %g, %g, %g]", (int)inliers.size (),
 					coeff[0], coeff[1], coeff[2], coeff[3]);

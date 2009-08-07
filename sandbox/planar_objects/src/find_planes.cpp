@@ -32,9 +32,9 @@ bool fitSACPlanes(sensor_msgs::PointCloud *points, vector<int> &indices, vector<
 
   vector<int> indices_reduced;
   if(downsample>0) {
-    size_t n_reduced = MIN(10000, points->get_pts_size());
-    size_t stepSize = points->get_pts_size() / n_reduced;
-    n_reduced = points->get_pts_size() / stepSize;
+    size_t n_reduced = MIN(10000, points->get_points_size());
+    size_t stepSize = points->get_points_size() / n_reduced;
+    n_reduced = points->get_points_size() / stepSize;
     indices_reduced.resize(n_reduced);
     for(size_t i=0;i<n_reduced;i++) {
       indices_reduced[i] = indices[i*stepSize];
@@ -62,7 +62,7 @@ bool fitSACPlanes(sensor_msgs::PointCloud *points, vector<int> &indices, vector<
       inliers.push_back(model_inliers);
 
       // Flip the plane normal towards the viewpoint
-      cloud_geometry::angles::flipNormalTowardsViewpoint(model_coeff, points->pts.at(model_inliers[0]), viewpoint_cloud);
+      cloud_geometry::angles::flipNormalTowardsViewpoint(model_coeff, points->points.at(model_inliers[0]), viewpoint_cloud);
       coeff.push_back(model_coeff);
 
 //      ROS_INFO ("Found a planar model supported by %d inliers: [%g, %g, %g, %g]", (int)model_inliers.size (),
@@ -89,9 +89,9 @@ void filterByZBounds(const sensor_msgs::PointCloud& pc, double zmin, double zmax
                                   sensor_msgs::PointCloud& filtered_outside)
 {
   vector<int> indices_remove;
-  for (size_t i = 0; i < pc.get_pts_size(); ++i)
+  for (size_t i = 0; i < pc.get_points_size(); ++i)
   {
-    if (pc.pts[i].z > zmax || pc.pts[i].z < zmin)
+    if (pc.points[i].z > zmax || pc.points[i].z < zmin)
     {
       indices_remove.push_back(i);
     }
@@ -102,11 +102,11 @@ void filterByZBounds(const sensor_msgs::PointCloud& pc, double zmin, double zmax
 
 void getPointIndicesInZBounds(const sensor_msgs::PointCloud &points, double z_min, double z_max, vector<int> &indices)
 {
-  indices.resize(points.pts.size());
+  indices.resize(points.points.size());
   int nr_p = 0;
-  for (unsigned int i = 0; i < points.pts.size(); i++)
+  for (unsigned int i = 0; i < points.points.size(); i++)
   {
-    if ((points.pts[i].z >= z_min && points.pts[i].z <= z_max))
+    if ((points.points[i].z >= z_min && points.points[i].z <= z_max))
     {
       indices[nr_p] = i;
       nr_p++;
@@ -126,7 +126,7 @@ void segmentPlanes(const sensor_msgs::PointCloud &const_points, double sac_dista
   vector<int> indices_in_bounds;
   // Get the point indices within z_min <-> z_max
   getPointIndicesInZBounds(points, z_min, z_max, indices_in_bounds);
-  //  ROS_INFO("segmentPlanes #%d running on %d/%d points",number,points.get_pts_size(),indices_in_bounds.size());
+  //  ROS_INFO("segmentPlanes #%d running on %d/%d points",number,points.get_points_size(),indices_in_bounds.size());
 
   // We need to know the viewpoint where the data was acquired
   // For simplicity, assuming 0,0,0 for stereo data in the stereo frame - however if this is not true, use TF to get
@@ -192,9 +192,9 @@ void createPlaneImage(const sensor_msgs::PointCloud& cloud, std::vector<int> &in
 
   int x_chann=-1;
   int y_chann=-1;
-  for(size_t i=0;i<cloud.chan.size();i++) {
-    if(cloud.chan[i].name=="x") x_chann=i;
-    if(cloud.chan[i].name=="y") y_chann=i;
+  for(size_t i=0;i<cloud.channels.size();i++) {
+    if(cloud.channels[i].name=="x") x_chann=i;
+    if(cloud.channels[i].name=="y") y_chann=i;
   }
   if(x_chann<0 || y_chann<0) {
       ROS_ERROR("point cloud contains no x/y channels!!!");
@@ -205,12 +205,12 @@ void createPlaneImage(const sensor_msgs::PointCloud& cloud, std::vector<int> &in
 //  cvSetZero(pixFree);
   cvSet(pixUnknown,cvRealScalar(255) );
 
-  for (size_t i = 0; i < cloud.get_pts_size(); i++)
+  for (size_t i = 0; i < cloud.get_points_size(); i++)
   {
-    int x = cloud.chan[x_chann].vals[ i ];
-    int y = cloud.chan[y_chann].vals[ i ];
+    int x = cloud.channels[x_chann].values[ i ];
+    int y = cloud.channels[y_chann].values[ i ];
 
-    bool behindPlane = ( plane_coeff[0]*cloud.pts[i].x + plane_coeff[1]*cloud.pts[i].y + plane_coeff[2]*cloud.pts[i].z + plane_coeff[3] <0);
+    bool behindPlane = ( plane_coeff[0]*cloud.points[i].x + plane_coeff[1]*cloud.points[i].y + plane_coeff[2]*cloud.points[i].z + plane_coeff[3] <0);
 
     // if this point is behind our plane --> pixFree = 255 and pixUndefined = 0
     if( behindPlane ) {
@@ -222,8 +222,8 @@ void createPlaneImage(const sensor_msgs::PointCloud& cloud, std::vector<int> &in
 
   for (size_t i = 0; i < inliers.size(); i++)
   {
-    int x = cloud.chan[x_chann].vals[ inliers[i] ];
-    int y = cloud.chan[y_chann].vals[ inliers[i] ];
+    int x = cloud.channels[x_chann].values[ inliers[i] ];
+    int y = cloud.channels[y_chann].values[ inliers[i] ];
 //    ROS_INFO("%d, %d ",x,y);
     ((uchar *)(pixOccupied->imageData + y*pixOccupied->widthStep))[x] = 255;
     ((uchar *)(pixFree->imageData + y*pixFree->widthStep))[x] = 0;

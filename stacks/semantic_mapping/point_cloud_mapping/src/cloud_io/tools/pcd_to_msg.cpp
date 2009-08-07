@@ -98,7 +98,7 @@ class PCDGenerator
         transform_.stamp_ = ros::Time::now ();
         broadcaster_.sendTransform (transform_);
 
-        ROS_INFO ("Publishing data (%d points) on topic %s in frame %s.", (int)msg_cloud_.pts.size (), nh_.resolveName (cloud_topic_).c_str (), msg_cloud_.header.frame_id.c_str ());
+        ROS_INFO ("Publishing data (%d points) on topic %s in frame %s.", (int)msg_cloud_.points.size (), nh_.resolveName (cloud_topic_).c_str (), msg_cloud_.header.frame_id.c_str ());
         msg_cloud_.header.stamp = ros::Time::now ();
         cloud_pub_.publish (msg_cloud_);
 

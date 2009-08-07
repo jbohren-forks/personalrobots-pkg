@@ -103,11 +103,11 @@ class OrganizedNormalEstimation
       cloud_sub_ = nh_.subscribe (cloud_topic, 1, &OrganizedNormalEstimation::cloud_cb, this);
       cloud_norm_pub_ = nh_.advertise<sensor_msgs::PointCloud> ("cloud_normals", 1);
       
-      cloud_normals_.chan.resize (4);   // Reserve space for 4 channels: nx, ny, nz, curvature
-      cloud_normals_.chan[0].name = "nx";
-      cloud_normals_.chan[1].name = "ny";
-      cloud_normals_.chan[2].name = "nz";
-      cloud_normals_.chan[3].name = "curvatures";
+      cloud_normals_.channels.resize (4);   // Reserve space for 4 channels: nx, ny, nz, curvature
+      cloud_normals_.channels[0].name = "nx";
+      cloud_normals_.channels[1].name = "ny";
+      cloud_normals_.channels[2].name = "nz";
+      cloud_normals_.channels[3].name = "curvatures";
       
       // Reserve enough space for the neighborhood
       nn_indices_.resize ((k_ + k_ + 1) * (k_ + k_ + 1));
@@ -115,10 +115,10 @@ class OrganizedNormalEstimation
       // Reduce by a factor of N
       nr_points_ = lrint (ceil (nr_cols_ / (double)downsample_factor_)) *
                    lrint (ceil (nr_rows_ / (double)downsample_factor_));
-      cloud_normals_.pts.resize (nr_points_);
+      cloud_normals_.points.resize (nr_points_);
       // Reserve space for 4 channels: nx, ny, nz, curvature
-      for (unsigned int d = 0; d < cloud_normals_.chan.size (); d++)
-        cloud_normals_.chan[d].vals.resize (nr_points_);
+      for (unsigned int d = 0; d < cloud_normals_.channels.size (); d++)
+        cloud_normals_.channels[d].values.resize (nr_points_);
 
       
     }
@@ -138,10 +138,10 @@ class OrganizedNormalEstimation
         downsample_factor_ = downsample_new;
         nr_points_ = lrint (ceil (nr_cols_ / (double)downsample_factor_)) *
                      lrint (ceil (nr_rows_ / (double)downsample_factor_));
-        cloud_normals_.pts.resize (nr_points_);
+        cloud_normals_.points.resize (nr_points_);
         // Reserve space for 4 channels: nx, ny, nz, curvature
-        for (unsigned int d = 0; d < cloud_normals_.chan.size (); d++)
-          cloud_normals_.chan[d].vals.resize (nr_points_);
+        for (unsigned int d = 0; d < cloud_normals_.channels.size (); d++)
+          cloud_normals_.channels[d].values.resize (nr_points_);
       }
       
       // Update the number of neighbors
@@ -162,9 +162,9 @@ class OrganizedNormalEstimation
     {
       updateParametersFromServer ();
 
-      ROS_DEBUG ("Received %d data points in frame %s with %d channels (%s).", (int)cloud->pts.size (), cloud->header.frame_id.c_str (),
-                 (int)cloud->chan.size (), cloud_geometry::getAvailableChannels (cloud).c_str ());
-      if (cloud->pts.size () == 0)
+      ROS_DEBUG ("Received %d data points in frame %s with %d channels (%s).", (int)cloud->points.size (), cloud->header.frame_id.c_str (),
+                 (int)cloud->channels.size (), cloud_geometry::getAvailableChannels (cloud).c_str ());
+      if (cloud->points.size () == 0)
       {
         ROS_ERROR ("No data points found. Exiting...");
         return;
@@ -187,7 +187,7 @@ class OrganizedNormalEstimation
 
       int j = 0;
 #pragma omp parallel for schedule(dynamic)
-      for (int i = 0; i < (int)cloud->pts.size (); i++)
+      for (int i = 0; i < (int)cloud->points.size (); i++)
       {
         // Obtain the <u,v> pixel values
         int u = i / nr_cols_;
@@ -198,7 +198,7 @@ class OrganizedNormalEstimation
           continue;
 
         // Copy the data
-        cloud_normals_.pts[j] = cloud->pts[i];
+        cloud_normals_.points[j] = cloud->points[i];
 
         // Get all point neighbors in a k x k window
         int l = 0;
@@ -210,12 +210,12 @@ class OrganizedNormalEstimation
             if (idx == i)
               continue;
             // If the index is not in the point cloud, continue
-            if (idx < 0 || idx >= (int)cloud->pts.size ())
+            if (idx < 0 || idx >= (int)cloud->points.size ())
               continue;
             // If the difference in Z (depth) between the query point and the current neighbor is smaller than max_z
             if (max_z_ != -1)
             {
-              if ( fabs (cloud_normals_.pts[j].z - cloud->pts[idx].z) <  max_z_ )
+              if ( fabs (cloud_normals_.points[j].z - cloud->points[idx].z) <  max_z_ )
                 nn_indices_[l++] = idx;
             }
             else
@@ -225,18 +225,18 @@ class OrganizedNormalEstimation
         nn_indices_.resize (l);
         if (nn_indices_.size () < 4)
         {
-          //ROS_ERROR ("Not enough neighboring indices found for point %d (%f, %f, %f).", i, cloud->pts[i].x, cloud->pts[i].y, cloud->pts[i].z);
+          //ROS_ERROR ("Not enough neighboring indices found for point %d (%f, %f, %f).", i, cloud->points[i].x, cloud->points[i].y, cloud->points[i].z);
           continue;
         }
 
         // Compute the point normals (nx, ny, nz), cloud curvature estimates (c)
         cloud_geometry::nearest::computePointNormal (cloud, nn_indices_, plane_parameters, curvature);
-        cloud_geometry::angles::flipNormalTowardsViewpoint (plane_parameters, cloud->pts[i], viewpoint_cloud);
+        cloud_geometry::angles::flipNormalTowardsViewpoint (plane_parameters, cloud->points[i], viewpoint_cloud);
 
-        cloud_normals_.chan[0].vals[j] = plane_parameters (0);
-        cloud_normals_.chan[1].vals[j] = plane_parameters (1);
-        cloud_normals_.chan[2].vals[j] = plane_parameters (2);
-        cloud_normals_.chan[3].vals[j] = curvature;
+        cloud_normals_.channels[0].values[j] = plane_parameters (0);
+        cloud_normals_.channels[1].values[j] = plane_parameters (1);
+        cloud_normals_.channels[2].values[j] = plane_parameters (2);
+        cloud_normals_.channels[3].values[j] = curvature;
         j++;
       }
       

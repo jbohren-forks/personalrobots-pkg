@@ -415,8 +415,7 @@ void RosVisualNavigator::baseScanCallback(const Notifier::MessagePtr& message)
       sensor_msgs::PointCloud point_cloud;
       projector_.transformLaserScanToPointCloud (vslam_frame_, point_cloud, *message, tf_listener_);
 
-      vector<Point32> point_vec;
-      point_cloud.get_pts_vec(point_vec);
+      vector<Point32> point_vec = point_cloud.points;
       PointsPtr points(new PointSet());
       transform(point_vec.begin(), point_vec.end(), inserter(*points, points->begin()), convertPoint);
 

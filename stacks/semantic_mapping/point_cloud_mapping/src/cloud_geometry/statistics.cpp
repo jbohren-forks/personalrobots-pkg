@@ -49,21 +49,21 @@ namespace cloud_geometry
       geometry_msgs::Point32 median;
 
       // Copy the values to vectors for faster sorting
-      std::vector<double> x (points.pts.size ());
-      std::vector<double> y (points.pts.size ());
-      std::vector<double> z (points.pts.size ());
-      for (unsigned int i = 0; i < points.pts.size (); i++)
+      std::vector<double> x (points.points.size ());
+      std::vector<double> y (points.points.size ());
+      std::vector<double> z (points.points.size ());
+      for (unsigned int i = 0; i < points.points.size (); i++)
       {
-        x[i] = points.pts[i].x;
-        y[i] = points.pts[i].y;
-        z[i] = points.pts[i].z;
+        x[i] = points.points[i].x;
+        y[i] = points.points[i].y;
+        z[i] = points.points[i].z;
       }
       std::sort (x.begin (), x.end ());
       std::sort (y.begin (), y.end ());
       std::sort (z.begin (), z.end ());
 
-      int mid = points.pts.size () / 2;
-      if (points.pts.size () % 2 == 0)
+      int mid = points.points.size () / 2;
+      if (points.points.size () % 2 == 0)
       {
         median.x = (x[mid-1] + x[mid]) / 2;
         median.y = (y[mid-1] + y[mid]) / 2;
@@ -95,9 +95,9 @@ namespace cloud_geometry
       std::vector<double> z (indices.size ());
       for (unsigned int i = 0; i < indices.size (); i++)
       {
-        x[i] = points.pts.at (indices.at (i)).x;
-        y[i] = points.pts.at (indices.at (i)).y;
-        z[i] = points.pts.at (indices.at (i)).z;
+        x[i] = points.points.at (indices.at (i)).x;
+        y[i] = points.points.at (indices.at (i)).y;
+        z[i] = points.points.at (indices.at (i)).z;
       }
       std::sort (x.begin (), x.end ());
       std::sort (y.begin (), y.end ());
@@ -134,19 +134,19 @@ namespace cloud_geometry
       // median (dist (x - median (x)))
       geometry_msgs::Point32 median = computeMedian (points);
 
-      std::vector<double> distances (points.pts.size ());
+      std::vector<double> distances (points.points.size ());
 
-      for (unsigned int i = 0; i < points.pts.size (); i++)
-        distances[i] = (points.pts[i].x - median.x) * (points.pts[i].x - median.x) +
-                       (points.pts[i].y - median.y) * (points.pts[i].y - median.y) +
-                       (points.pts[i].z - median.z) * (points.pts[i].z - median.z);
+      for (unsigned int i = 0; i < points.points.size (); i++)
+        distances[i] = (points.points[i].x - median.x) * (points.points[i].x - median.x) +
+                       (points.points[i].y - median.y) * (points.points[i].y - median.y) +
+                       (points.points[i].z - median.z) * (points.points[i].z - median.z);
 
       std::sort (distances.begin (), distances.end ());
 
       double result;
-      int mid = points.pts.size () / 2;
+      int mid = points.points.size () / 2;
       // Do we have a "middle" point or should we "estimate" one ?
-      if (points.pts.size () % 2 == 0)
+      if (points.points.size () % 2 == 0)
         result = (sqrt (distances[mid-1]) + sqrt (distances[mid])) / 2;
       else
         result = sqrt (distances[mid]);
@@ -171,9 +171,9 @@ namespace cloud_geometry
       std::vector<double> distances (indices.size ());
 
       for (unsigned int i = 0; i < indices.size (); i++)
-        distances[i] = (points.pts.at (indices.at (i)).x - median.x) * (points.pts.at (indices.at (i)).x - median.x) +
-                       (points.pts.at (indices.at (i)).y - median.y) * (points.pts.at (indices.at (i)).y - median.y) +
-                       (points.pts.at (indices.at (i)).z - median.z) * (points.pts.at (indices.at (i)).z - median.z);
+        distances[i] = (points.points.at (indices.at (i)).x - median.x) * (points.points.at (indices.at (i)).x - median.x) +
+                       (points.points.at (indices.at (i)).y - median.y) * (points.points.at (indices.at (i)).y - median.y) +
+                       (points.points.at (indices.at (i)).z - median.z) * (points.points.at (indices.at (i)).z - median.z);
 
       std::sort (distances.begin (), distances.end ());
 
@@ -200,13 +200,13 @@ namespace cloud_geometry
     {
       double sum = 0, sq_sum = 0;
 
-      for (unsigned int i = 0; i < points.pts.size (); i++)
+      for (unsigned int i = 0; i < points.points.size (); i++)
       {
-        sum += points.chan.at (d_idx).vals.at (i);
-        sq_sum += points.chan.at (d_idx).vals.at (i) * points.chan.at (d_idx).vals.at (i);
+        sum += points.channels.at (d_idx).values.at (i);
+        sq_sum += points.channels.at (d_idx).values.at (i) * points.channels.at (d_idx).values.at (i);
       }
-      mean = sum / points.pts.size ();
-      double variance = (double)(sq_sum - sum * sum / points.pts.size ()) / (points.pts.size () - 1);
+      mean = sum / points.points.size ();
+      double variance = (double)(sq_sum - sum * sum / points.points.size ()) / (points.points.size () - 1);
       stddev = sqrt (variance);
     }
 
@@ -225,8 +225,8 @@ namespace cloud_geometry
 
       for (unsigned int i = 0; i < indices.size (); i++)
       {
-        sum += points.chan.at (d_idx).vals.at (indices.at (i));
-        sq_sum += points.chan.at (d_idx).vals.at (indices.at (i)) * points.chan.at (d_idx).vals.at (indices.at (i));
+        sum += points.channels.at (d_idx).values.at (indices.at (i));
+        sq_sum += points.channels.at (d_idx).values.at (indices.at (i)) * points.channels.at (d_idx).values.at (indices.at (i));
       }
       mean = sum / indices.size ();
       double variance = (double)(sq_sum - sum * sum / indices.size ()) / (indices.size () - 1);
@@ -252,8 +252,8 @@ namespace cloud_geometry
       int nr_i = 0;
       for (unsigned int i = 0; i < indices.size (); i++)
       {
-        if ( (points.chan.at (d_idx).vals.at (indices.at (i)) > (mean + alpha * stddev)) ||
-             (points.chan.at (d_idx).vals.at (indices.at (i)) < (mean - alpha * stddev))
+        if ( (points.channels.at (d_idx).values.at (indices.at (i)) > (mean + alpha * stddev)) ||
+             (points.channels.at (d_idx).values.at (indices.at (i)) < (mean - alpha * stddev))
            )
         {
           inliers[nr_i] = indices.at (i);
@@ -282,8 +282,8 @@ namespace cloud_geometry
       int nr_i = 0;
       for (unsigned int i = 0; i < indices.size (); i++)
       {
-        if ( (points.chan.at (d_idx).vals.at (indices.at (i)) < (mean + alpha * stddev)) &&
-             (points.chan.at (d_idx).vals.at (indices.at (i)) > (mean - alpha * stddev))
+        if ( (points.channels.at (d_idx).values.at (indices.at (i)) < (mean + alpha * stddev)) &&
+             (points.channels.at (d_idx).values.at (indices.at (i)) > (mean - alpha * stddev))
            )
         {
           inliers[nr_i] = indices.at (i);

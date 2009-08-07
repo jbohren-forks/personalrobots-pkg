@@ -221,11 +221,11 @@ GenericMapBaseAssemblerSrv<T,F>::~GenericMapBaseAssemblerSrv()
   scan_hist_mutex_.lock() ;
   if (scan_hist_.size() == max_scans_)                           // Is our deque full?
   {
-    //total_pts_ -= scan_hist_.front().get_pts_size() ;            // We're removing an elem, so this reduces our total point count
+    //total_pts_ -= scan_hist_.front().get_points_size() ;            // We're removing an elem, so this reduces our total point count
     scan_hist_.pop_front() ;                                     // The front of the deque has the oldest elem, so we can get rid of it
   }
   scan_hist_.push_back(cur_cloud) ;                              // Add the newest scan to the back of the deque
-  //total_pts_ += cur_cloud.get_pts_size() ;                       // Add the new scan to the running total of points
+  //total_pts_ += cur_cloud.get_points_size() ;                       // Add the new scan to the running total of points
 
   //printf("Scans: %4u  Points: %10u\n", scan_hist_.size(), total_pts_) ;
 

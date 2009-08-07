@@ -224,7 +224,7 @@ struct DrawConnectors
     Point32 p2;
     p2.x=p.x;
     p2.y=p.y;
-    cloud.pts.push_back(p2);
+    cloud.points.push_back(p2);
 
   }
   ~DrawConnectors ()

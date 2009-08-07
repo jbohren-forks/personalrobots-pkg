@@ -114,8 +114,8 @@ public:
         newPoly.tags[0]="dup";
         newPoly.set_tags_chan_size(1);
         newPoly.tags_chan[0].name="hits";
-        newPoly.tags_chan[0].set_vals_size(1);
-        newPoly.tags_chan[0].vals[0]=1;
+        newPoly.tags_chan[0].set_values_size(1);
+        newPoly.tags_chan[0].values[0]=1;
         newPoly.polygon=transformed_map_3D.polygons[iPoly];
 	    
         //append polygon to the map

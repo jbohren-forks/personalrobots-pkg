@@ -40,14 +40,14 @@ namespace cloud_io
     addCurrentHeader (const sensor_msgs::PointCloud &points, bool binary_type)
   {
     // Must have a non-null number of points
-    if (points.pts.size () == 0)
+    if (points.points.size () == 0)
       return ("");
 
     std::string result = "COLUMNS ";
     result += getAvailableDimensions (points);
 
     std::ostringstream oss;
-    oss << result << "\nPOINTS " << points.pts.size () << "\n";
+    oss << result << "\nPOINTS " << points.points.size () << "\n";
 
     oss << "DATA ";
     if (binary_type)
@@ -84,11 +84,11 @@ namespace cloud_io
     fs << header_values;
 
     // Iterate through the points
-    for (unsigned int i = 0; i < points.pts.size (); i++)
+    for (unsigned int i = 0; i < points.points.size (); i++)
     {
-      fs << points.pts[i].x << " " << points.pts[i].y << " " << points.pts[i].z;
-      for (unsigned int d = 0; d < points.chan.size (); d++)
-        fs << " " << points.chan[d].vals[i];
+      fs << points.points[i].x << " " << points.points[i].y << " " << points.points[i].z;
+      for (unsigned int d = 0; d < points.channels.size (); d++)
+        fs << " " << points.channels[d].values[i];
       fs << std::endl;
     }
     fs.close ();              // Close file
@@ -146,7 +146,7 @@ namespace cloud_io
     }
 
     // Compute how much a point (with it's N-dimensions) occupies in terms of bytes
-    int point_size = sizeof (float) * (3 + points.chan.size ());
+    int point_size = sizeof (float) * (3 + points.channels.size ());
 
     // Open for writing
     int fd = open (file_name, O_RDWR);
@@ -157,7 +157,7 @@ namespace cloud_io
     }
 
     // Stretch the file size to the size of the data
-    int result = lseek (fd, getpagesize () + (points.pts.size () * point_size) - 1, SEEK_SET);
+    int result = lseek (fd, getpagesize () + (points.points.size () * point_size) - 1, SEEK_SET);
     if (result == -1)
     {
       close (fd);
@@ -174,7 +174,7 @@ namespace cloud_io
     }
 
     // Prepare the map
-    char *map = (char*)mmap (0, points.pts.size () * point_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, getpagesize ());
+    char *map = (char*)mmap (0, points.points.size () * point_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, getpagesize ());
     if (map == MAP_FAILED)
     {
       close (fd);
@@ -183,25 +183,25 @@ namespace cloud_io
     }
 
     // Write the data
-    for (unsigned int i = 0; i < points.pts.size (); i++)
+    for (unsigned int i = 0; i < points.points.size (); i++)
     {
       int idx_j = 0;
-      memcpy ((char*)&map[i * point_size + idx_j], &points.pts[i].x, sizeof (float));
+      memcpy ((char*)&map[i * point_size + idx_j], &points.points[i].x, sizeof (float));
       idx_j += sizeof (float);
-      memcpy ((char*)&map[i * point_size + idx_j], &points.pts[i].y, sizeof (float));
+      memcpy ((char*)&map[i * point_size + idx_j], &points.points[i].y, sizeof (float));
       idx_j += sizeof (float);
-      memcpy ((char*)&map[i * point_size + idx_j], &points.pts[i].z, sizeof (float));
+      memcpy ((char*)&map[i * point_size + idx_j], &points.points[i].z, sizeof (float));
       idx_j += sizeof (float);
 
-      for (unsigned int j = 0; j < points.chan.size (); j++)
+      for (unsigned int j = 0; j < points.channels.size (); j++)
       {
-        memcpy ((char*)&map[i * point_size + idx_j], &points.chan[j].vals[i], sizeof (float));
+        memcpy ((char*)&map[i * point_size + idx_j], &points.channels[j].values[i], sizeof (float));
         idx_j += sizeof (float);
       }
     }
 
     // Unmap the pages of memory
-    if (munmap (map, (points.pts.size () * point_size)) == -1)
+    if (munmap (map, (points.points.size () * point_size)) == -1)
     {
       close (fd);
       ROS_ERROR ("[savePCDFileBinary] Error during munmap ()!");

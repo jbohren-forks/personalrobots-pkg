@@ -71,9 +71,9 @@ namespace sample_consensus
 
     double Dx1, Dy1, Dz1, Dx2, Dy2, Dz2, Dy1Dy2;
     // Compute the segment values (in 3d) between XY
-    Dx1 = cloud_->pts[samples[1]].x - cloud_->pts[samples[0]].x;
-    Dy1 = cloud_->pts[samples[1]].y - cloud_->pts[samples[0]].y;
-    Dz1 = cloud_->pts[samples[1]].z - cloud_->pts[samples[0]].z;
+    Dx1 = cloud_->points[samples[1]].x - cloud_->points[samples[0]].x;
+    Dy1 = cloud_->points[samples[1]].y - cloud_->points[samples[0]].y;
+    Dz1 = cloud_->points[samples[1]].z - cloud_->points[samples[0]].z;
 
     int iter = 0;
     do
@@ -88,9 +88,9 @@ namespace sample_consensus
       iterations--;
 
       // Compute the segment values (in 3d) between XZ
-      Dx2 = cloud_->pts[samples[2]].x - cloud_->pts[samples[0]].x;
-      Dy2 = cloud_->pts[samples[2]].y - cloud_->pts[samples[0]].y;
-      Dz2 = cloud_->pts[samples[2]].z - cloud_->pts[samples[0]].z;
+      Dx2 = cloud_->points[samples[2]].x - cloud_->points[samples[0]].x;
+      Dy2 = cloud_->points[samples[2]].y - cloud_->points[samples[0]].y;
+      Dz2 = cloud_->points[samples[2]].z - cloud_->points[samples[0]].z;
 
       Dy1Dy2 = Dy1 / Dy2;
       iter++;
@@ -138,14 +138,14 @@ namespace sample_consensus
       // Calculate the distance from the point to the sphere as the difference between
       //dist(point,sphere_origin) and sphere_radius
       if (fabs (sqrt (
-                      ( cloud_->pts.at (indices_[i]).x - model_coefficients.at (0) ) *
-                      ( cloud_->pts.at (indices_[i]).x - model_coefficients.at (0) ) +
+                      ( cloud_->points.at (indices_[i]).x - model_coefficients.at (0) ) *
+                      ( cloud_->points.at (indices_[i]).x - model_coefficients.at (0) ) +
 
-                      ( cloud_->pts.at (indices_[i]).y - model_coefficients.at (1) ) *
-                      ( cloud_->pts.at (indices_[i]).y - model_coefficients.at (1) ) +
+                      ( cloud_->points.at (indices_[i]).y - model_coefficients.at (1) ) *
+                      ( cloud_->points.at (indices_[i]).y - model_coefficients.at (1) ) +
 
-                      ( cloud_->pts.at (indices_[i]).z - model_coefficients.at (2) ) *
-                      ( cloud_->pts.at (indices_[i]).z - model_coefficients.at (2) )
+                      ( cloud_->points.at (indices_[i]).z - model_coefficients.at (2) ) *
+                      ( cloud_->points.at (indices_[i]).z - model_coefficients.at (2) )
                      ) - model_coefficients.at (3)) < threshold)
       {
         // Returns the indices of the points whose distances are smaller than the threshold
@@ -172,14 +172,14 @@ namespace sample_consensus
       // Calculate the distance from the point to the sphere as the difference between
       //dist(point,sphere_origin) and sphere_radius
       distances[i] = fabs (sqrt (
-                                 ( cloud_->pts.at (indices_[i]).x - model_coefficients.at (0) ) *
-                                 ( cloud_->pts.at (indices_[i]).x - model_coefficients.at (0) ) +
+                                 ( cloud_->points.at (indices_[i]).x - model_coefficients.at (0) ) *
+                                 ( cloud_->points.at (indices_[i]).x - model_coefficients.at (0) ) +
 
-                                 ( cloud_->pts.at (indices_[i]).y - model_coefficients.at (1) ) *
-                                 ( cloud_->pts.at (indices_[i]).y - model_coefficients.at (1) ) +
+                                 ( cloud_->points.at (indices_[i]).y - model_coefficients.at (1) ) *
+                                 ( cloud_->points.at (indices_[i]).y - model_coefficients.at (1) ) +
 
-                                 ( cloud_->pts.at (indices_[i]).z - model_coefficients.at (2) ) *
-                                 ( cloud_->pts.at (indices_[i]).z - model_coefficients.at (2) )
+                                 ( cloud_->points.at (indices_[i]).z - model_coefficients.at (2) ) *
+                                 ( cloud_->points.at (indices_[i]).z - model_coefficients.at (2) )
                                 ) - model_coefficients.at (3));
     return;
   }
@@ -224,9 +224,9 @@ namespace sample_consensus
     Eigen::Matrix4d temp;
     for (int i = 0; i < 4; i++)
     {
-      temp (i, 0) = cloud_->pts.at (samples.at (i)).x;
-      temp (i, 1) = cloud_->pts.at (samples.at (i)).y;
-      temp (i, 2) = cloud_->pts.at (samples.at (i)).z;
+      temp (i, 0) = cloud_->points.at (samples.at (i)).x;
+      temp (i, 1) = cloud_->points.at (samples.at (i)).y;
+      temp (i, 2) = cloud_->points.at (samples.at (i)).z;
       temp (i, 3) = 1;
     }
     double m11 = temp.determinant ();
@@ -234,31 +234,31 @@ namespace sample_consensus
       return (false);             // the points don't define a sphere!
 
     for (int i = 0; i < 4; i++)
-      temp (i, 0) = (cloud_->pts.at (samples.at (i)).x) * (cloud_->pts.at (samples.at (i)).x) +
-                    (cloud_->pts.at (samples.at (i)).y) * (cloud_->pts.at (samples.at (i)).y) +
-                    (cloud_->pts.at (samples.at (i)).z) * (cloud_->pts.at (samples.at (i)).z);
+      temp (i, 0) = (cloud_->points.at (samples.at (i)).x) * (cloud_->points.at (samples.at (i)).x) +
+                    (cloud_->points.at (samples.at (i)).y) * (cloud_->points.at (samples.at (i)).y) +
+                    (cloud_->points.at (samples.at (i)).z) * (cloud_->points.at (samples.at (i)).z);
     double m12 = temp.determinant ();
 
     for (int i = 0; i < 4; i++)
     {
       temp (i, 1) = temp (i, 0);
-      temp (i, 0) = cloud_->pts.at (samples.at (i)).x;
+      temp (i, 0) = cloud_->points.at (samples.at (i)).x;
     }
     double m13 = temp.determinant ();
 
     for (int i = 0; i < 4; i++)
     {
       temp (i, 2) = temp (i, 1);
-      temp (i, 1) = cloud_->pts.at (samples.at (i)).y;
+      temp (i, 1) = cloud_->points.at (samples.at (i)).y;
     }
     double m14 = temp.determinant ();
 
     for (int i = 0; i < 4; i++)
     {
       temp (i, 0) = temp (i, 2);
-      temp (i, 1) = cloud_->pts.at (samples.at (i)).x;
-      temp (i, 2) = cloud_->pts.at (samples.at (i)).y;
-      temp (i, 3) = cloud_->pts.at (samples.at (i)).z;
+      temp (i, 1) = cloud_->points.at (samples.at (i)).x;
+      temp (i, 2) = cloud_->points.at (samples.at (i)).y;
+      temp (i, 3) = cloud_->points.at (samples.at (i)).z;
     }
     double m15 = temp.determinant ();
 
@@ -349,9 +349,9 @@ namespace sample_consensus
     for (int i = 0; i < m; i ++)
     {
       // Compute the difference between the center of the sphere and the datapoint X_i
-      double xt = model->cloud_->pts[model->tmp_inliers_->at (i)].x - x[0];
-      double yt = model->cloud_->pts[model->tmp_inliers_->at (i)].y - x[1];
-      double zt = model->cloud_->pts[model->tmp_inliers_->at (i)].z - x[2];
+      double xt = model->cloud_->points[model->tmp_inliers_->at (i)].x - x[0];
+      double yt = model->cloud_->points[model->tmp_inliers_->at (i)].y - x[1];
+      double zt = model->cloud_->points[model->tmp_inliers_->at (i)].z - x[2];
 
       // g = sqrt ((x-a)^2 + (y-b)^2 + (z-c)^2) - R
       fvec[i] = sqrt (xt * xt + yt * yt + zt * zt) - x[3];
@@ -371,14 +371,14 @@ namespace sample_consensus
       // Calculate the distance from the point to the sphere as the difference between
       //dist(point,sphere_origin) and sphere_radius
       if (fabs (sqrt (
-                      ( cloud_->pts.at (*it).x - model_coefficients_.at (0) ) *
-                      ( cloud_->pts.at (*it).x - model_coefficients_.at (0) ) +
+                      ( cloud_->points.at (*it).x - model_coefficients_.at (0) ) *
+                      ( cloud_->points.at (*it).x - model_coefficients_.at (0) ) +
 
-                      ( cloud_->pts.at (*it).y - model_coefficients_.at (1) ) *
-                      ( cloud_->pts.at (*it).y - model_coefficients_.at (1) ) +
+                      ( cloud_->points.at (*it).y - model_coefficients_.at (1) ) *
+                      ( cloud_->points.at (*it).y - model_coefficients_.at (1) ) +
 
-                      ( cloud_->pts.at (*it).z - model_coefficients_.at (2) ) *
-                      ( cloud_->pts.at (*it).z - model_coefficients_.at (2) )
+                      ( cloud_->points.at (*it).z - model_coefficients_.at (2) ) *
+                      ( cloud_->points.at (*it).z - model_coefficients_.at (2) )
                      ) - model_coefficients_.at (3)) > threshold)
         return (false);
 

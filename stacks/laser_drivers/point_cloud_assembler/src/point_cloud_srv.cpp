@@ -123,7 +123,7 @@ public:
     if (!ros::service::call("laser_scan_assembler/build_cloud", assembler_req, assembler_res))
       ROS_ERROR("PointCloudSrv: error receiving point cloud from point cloud assembler");
     else
-      ROS_INFO("PointCloudSrv: received point cloud of size %i from point cloud assembler", assembler_res.cloud.pts.size());
+      ROS_INFO("PointCloudSrv: received point cloud of size %i from point cloud assembler", assembler_res.cloud.points.size());
 
     res.cloud = assembler_res.cloud;
     return true;

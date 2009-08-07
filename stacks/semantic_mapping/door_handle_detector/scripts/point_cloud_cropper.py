@@ -61,22 +61,22 @@ class Cropper:
     rospy.init_node('cropper', anonymous=True)
 
   def cloud_cb(self, msg):
-    print 'Received message with %d points'%(len(msg.pts))
+    print 'Received message with %d points'%(len(msg.points))
     newmsg = PointCloud(msg.header,[],[])
     for c in msg.chan:
-      newmsg.chan.append(ChannelFloat32(c.name,[]))
-    for i in range(0,len(msg.pts)):
+      newmsg.channels.append(ChannelFloat32(c.name,[]))
+    for i in range(0,len(msg.points)):
       if self.frame is None:
-        p = msg.pts[i]
+        p = msg.points[i]
       else:
-        tfp = tf.PointStamped(bullet.Vector3(msg.pts[i].x, msg.pts[i].y, msg.pts[i].z), 0, 0, msg.header.frame_id)
+        tfp = tf.PointStamped(bullet.Vector3(msg.points[i].x, msg.points[i].y, msg.points[i].z), 0, 0, msg.header.frame_id)
         tfpprime = self.tf.transform_point(self.frame, tfp)
         p = Point32(tfpprime.point.x(), tfpprime.point.y(), tfpprime.point.z())
       if p.z >= self.zmin and p.z <= self.zmax:
-        newmsg.pts.append(p)
+        newmsg.points.append(p)
         for j in range(0,len(msg.chan)):
-          newmsg.chan[j].vals.append(msg.chan[j].vals[i])
-    print 'Publishing message with %d points'%(len(newmsg.pts))
+          newmsg.channels[j].values.append(msg.channels[j].values[i])
+    print 'Publishing message with %d points'%(len(newmsg.points))
     self.pub.publish(newmsg)
 
 if __name__ == "__main__":

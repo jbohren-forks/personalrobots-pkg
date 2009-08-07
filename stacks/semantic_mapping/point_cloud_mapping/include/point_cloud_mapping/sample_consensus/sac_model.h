@@ -128,8 +128,8 @@ namespace sample_consensus
       {
         this->cloud_ = cloud;
         indices_.clear ();
-        indices_.resize (cloud_->pts.size ());
-        for (unsigned int i = 0; i < cloud_->pts.size (); i++)
+        indices_.resize (cloud_->points.size ());
+        for (unsigned int i = 0; i < cloud_->points.size (); i++)
           indices_[i] = i;
       }
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////

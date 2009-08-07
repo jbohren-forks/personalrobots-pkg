@@ -190,21 +190,21 @@ namespace base_local_planner {
     for(vector<Observation>::const_iterator it = observations.begin(); it != observations.end(); ++it){
       const Observation& obs = *it;
       const sensor_msgs::PointCloud& cloud = obs.cloud_;
-      for(unsigned int i = 0; i < cloud.get_pts_size(); ++i){
+      for(unsigned int i = 0; i < cloud.get_points_size(); ++i){
         //filter out points that are too high
-        if(cloud.pts[i].z > max_z_)
+        if(cloud.points[i].z > max_z_)
           continue;
 
         //compute the squared distance from the hitpoint to the pointcloud's origin
-        double sq_dist = (cloud.pts[i].x - obs.origin_.x) * (cloud.pts[i].x - obs.origin_.x)
-          + (cloud.pts[i].y - obs.origin_.y) * (cloud.pts[i].y - obs.origin_.y) 
-          + (cloud.pts[i].z - obs.origin_.z) * (cloud.pts[i].z - obs.origin_.z);
+        double sq_dist = (cloud.points[i].x - obs.origin_.x) * (cloud.points[i].x - obs.origin_.x)
+          + (cloud.points[i].y - obs.origin_.y) * (cloud.points[i].y - obs.origin_.y) 
+          + (cloud.points[i].z - obs.origin_.z) * (cloud.points[i].z - obs.origin_.z);
 
         if(sq_dist >= sq_obstacle_range_)
           continue;
 
         //insert the point
-        insert(cloud.pts[i]);
+        insert(cloud.points[i]);
       }
     }
 
@@ -213,7 +213,7 @@ namespace base_local_planner {
   }
 
   void VoxelGridModel::removePointsInScanBoundry(const PlanarLaserScan& laser_scan, double raytrace_range){
-    if(laser_scan.cloud.pts.size() == 0)
+    if(laser_scan.cloud.points.size() == 0)
       return;
 
     unsigned int sensor_x, sensor_y, sensor_z;
@@ -224,10 +224,10 @@ namespace base_local_planner {
     if(!worldToMap3D(ox, oy, oz, sensor_x, sensor_y, sensor_z))
       return;
 
-    for(unsigned int i = 0; i < laser_scan.cloud.pts.size(); ++i){
-      double wpx = laser_scan.cloud.pts[i].x;
-      double wpy = laser_scan.cloud.pts[i].y;
-      double wpz = laser_scan.cloud.pts[i].z;
+    for(unsigned int i = 0; i < laser_scan.cloud.points.size(); ++i){
+      double wpx = laser_scan.cloud.points[i].x;
+      double wpy = laser_scan.cloud.points[i].y;
+      double wpz = laser_scan.cloud.points[i].z;
 
       double distance = dist(ox, oy, oz, wpx, wpy, wpz);
       double scaling_fact = raytrace_range / distance;
@@ -277,7 +277,7 @@ namespace base_local_planner {
             pt.x = wx;
             pt.y = wy;
             pt.z = wz;
-            cloud.pts.push_back(pt);
+            cloud.points.push_back(pt);
           }
         }
       }

@@ -184,13 +184,13 @@ private:
 	}
 	
 	// compute mask for cloud
-	int n = cloud.pts.size();
+	int n = cloud.points.size();
 	mask.resize(n);
 	
 #pragma omp parallel for
 	for (int i = 0 ; i < n ; ++i)
 	{
-	    btVector3 pt = btVector3(cloudTransf->pts[i].x, cloudTransf->pts[i].y, cloudTransf->pts[i].z);
+	    btVector3 pt = btVector3(cloudTransf->points[i].x, cloudTransf->points[i].y, cloudTransf->points[i].z);
 	    int out = 1;
 	    
 	    for (unsigned int j = 0 ; out && j < attachedObjects_.size() ; ++j)
@@ -227,32 +227,32 @@ private:
 	if (filter)
 	{
 	    // publish new cloud
-	    const unsigned int np = cloud->pts.size();
+	    const unsigned int np = cloud->points.size();
 	    sensor_msgs::PointCloud data_out;
 	    
 	    // fill in output data with points that are NOT in the known objects
 	    data_out.header = cloud->header;	  
 	    
-	    data_out.pts.resize(0);
-	    data_out.pts.reserve(np);
+	    data_out.points.resize(0);
+	    data_out.points.reserve(np);
 	    
-	    data_out.chan.resize(cloud->chan.size());
-	    for (unsigned int i = 0 ; i < data_out.chan.size() ; ++i)
+	    data_out.channels.resize(cloud->channels.size());
+	    for (unsigned int i = 0 ; i < data_out.channels.size() ; ++i)
 	    {
-		ROS_ASSERT(cloud->chan[i].vals.size() == cloud->pts.size());
-		data_out.chan[i].name = cloud->chan[i].name;
-		data_out.chan[i].vals.reserve(cloud->chan[i].vals.size());
+		ROS_ASSERT(cloud->channels[i].values.size() == cloud->points.size());
+		data_out.channels[i].name = cloud->channels[i].name;
+		data_out.channels[i].values.reserve(cloud->channels[i].values.size());
 	    }
 	    
 	    for (unsigned int i = 0 ; i < np ; ++i)
 		if (mask[i])
 		{
-		    data_out.pts.push_back(cloud->pts[i]);
-		    for (unsigned int j = 0 ; j < data_out.chan.size() ; ++j)
-			data_out.chan[j].vals.push_back(cloud->chan[j].vals[i]);
+		    data_out.points.push_back(cloud->points[i]);
+		    for (unsigned int j = 0 ; j < data_out.channels.size() ; ++j)
+			data_out.channels[j].values.push_back(cloud->channels[j].values[i]);
 		}
 
-	    ROS_DEBUG("Published filtered cloud (%d points out of %d)", data_out.pts.size(), cloud->pts.size());
+	    ROS_DEBUG("Published filtered cloud (%d points out of %d)", data_out.points.size(), cloud->points.size());
 	    cloudPublisher_.publish(data_out);
 	}
 	else

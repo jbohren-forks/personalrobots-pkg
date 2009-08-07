@@ -182,8 +182,8 @@ public:
 	    std::cout << "Path with " << res.path.get_states_size() << " states";
 	    for (unsigned int i = 0 ; i < res.path.get_states_size() ; ++i)
 	    {	    
-		for (unsigned int j = 0 ; j < res.path.states[i].get_vals_size() ; ++j)
-		    std::cout << " " << res.path.states[i].vals[j];
+		for (unsigned int j = 0 ; j < res.path.states[i].get_values_size() ; ++j)
+		    std::cout << " " << res.path.states[i].values[j];
 		std::cout << std::endl;
 	    }
 	}
@@ -210,9 +210,9 @@ protected:
         traj.set_points_size(path.get_states_size());	
 	for (unsigned int i = 0 ; i < path.get_states_size() ; ++i)
         {	    
-            traj.points[i].set_positions_size(path.states[i].get_vals_size());	    
-            for (unsigned int j = 0 ; j < path.states[i].get_vals_size() ; ++j)
-                traj.points[i].positions[j] = path.states[i].vals[j];
+            traj.points[i].set_positions_size(path.states[i].get_values_size());	    
+            for (unsigned int j = 0 ; j < path.states[i].get_values_size() ; ++j)
+                traj.points[i].positions[j] = path.states[i].values[j];
             traj.points[i].time = path.times[i];	    
         }	
     }

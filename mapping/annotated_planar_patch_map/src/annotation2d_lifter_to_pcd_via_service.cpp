@@ -254,12 +254,12 @@ public:
 
     normal_estimator_.process_cloud(transformed_map_3D_fixed,transformed_map_3D_fixed_w_normals);
 
-    ROS_INFO("\t cloud sizes %d/%d/%d/%d ",cloud.pts.size(),transformed_map_3D.pts.size(),transformed_map_3D.pts.size(),transformed_map_3D_fixed.pts.size());
+    ROS_INFO("\t cloud sizes %d/%d/%d/%d ",cloud.points.size(),transformed_map_3D.points.size(),transformed_map_3D.points.size(),transformed_map_3D_fixed.points.size());
     bindAnnotations(annotation,transformed_map_2D,transformed_map_3D_fixed_w_normals,map_final);
 
-    if(map_final.pts.size()>0)
+    if(map_final.points.size()>0)
     {
-      ROS_INFO("Lifting produced point cloud with %d points", map_final.pts.size());
+      ROS_INFO("Lifting produced point cloud with %d points", map_final.points.size());
       lifted_pub_.publish(map_final);
     }
     else
@@ -275,7 +275,7 @@ public:
   {
 
     // Allocate overlap buffer to store 1-1 correspondence
-    unsigned int num_3D_pts=map_3D.pts.size();
+    unsigned int num_3D_pts=map_3D.points.size();
     printf("%d n3dp\n",num_3D_pts);	
 
 
@@ -361,14 +361,14 @@ public:
         if(overlap[iPt]>0)
           continue;
 
-        bool in_depth=(map_2D.pts[iPt].z <= max_depth_) && (map_2D.pts[iPt].z >= min_depth_);
+        bool in_depth=(map_2D.points[iPt].z <= max_depth_) && (map_2D.points[iPt].z >= min_depth_);
         if(! in_depth)
         {
           continue;
         }
         CvPoint2D32f pt;
-        pt.x=map_2D.pts[iPt].x;
-        pt.y=map_2D.pts[iPt].y;
+        pt.x=map_2D.points[iPt].x;
+        pt.y=map_2D.points[iPt].y;
 
         double dist = cvPointPolygonTest( poly_annotation, pt, 0 );
         
@@ -386,14 +386,14 @@ public:
       if(overlap[iPt]>0)
         continue;
       
-      bool in_depth=(map_2D.pts[iPt].z <= max_depth_) && (map_2D.pts[iPt].z >= min_depth_);
+      bool in_depth=(map_2D.points[iPt].z <= max_depth_) && (map_2D.points[iPt].z >= min_depth_);
       if(! in_depth)
       {
         continue;
       }
       CvPoint2D32f pt;
-      pt.x=map_2D.pts[iPt].x;
-      pt.y=map_2D.pts[iPt].y;
+      pt.x=map_2D.points[iPt].x;
+      pt.y=map_2D.points[iPt].y;
       if(pt.x<0 || pt.y<0 || pt.x>=640 || pt.y>=480)
          continue;
 
@@ -402,9 +402,9 @@ public:
     }
 
     map_final.header=map_3D.header;
-    map_final.pts.resize(num_in);
+    map_final.points.resize(num_in);
     std::string new_channel_name=std::string("ann-")+annotation->task;
-    unsigned int nC=map_3D.chan.size();
+    unsigned int nC=map_3D.channels.size();
     unsigned int nCout=nC+1;
     if(annotate_reprojection_)
     {
@@ -418,12 +418,12 @@ public:
     {
       nCout+=1;
     }
-    map_final.chan.resize(nCout);
+    map_final.channels.resize(nCout);
 
     for(unsigned int iC=0;iC<nC;iC++)
     {
-      map_final.chan[iC].vals.resize(num_in);
-      map_final.chan[iC].name=map_3D.chan[iC].name;
+      map_final.channels[iC].values.resize(num_in);
+      map_final.channels[iC].name=map_3D.channels[iC].name;
     }
 
     unsigned int free_channel=nC;
@@ -456,28 +456,28 @@ public:
 
 
 
-    map_final.chan[new_channel_id].name=new_channel_name;
-    map_final.chan[new_channel_id].vals.resize(num_in);
+    map_final.channels[new_channel_id].name=new_channel_name;
+    map_final.channels[new_channel_id].values.resize(num_in);
 
     if(annotate_reprojection_)
     {
-      map_final.chan[chan_X_id].name="imgX";
-      map_final.chan[chan_X_id].vals.resize(num_in);
-      map_final.chan[chan_Y_id].name="imgY";
-      map_final.chan[chan_Y_id].vals.resize(num_in);
-      map_final.chan[chan_Z_id].name="imgZ";
-      map_final.chan[chan_Z_id].vals.resize(num_in);
+      map_final.channels[chan_X_id].name="imgX";
+      map_final.channels[chan_X_id].values.resize(num_in);
+      map_final.channels[chan_Y_id].name="imgY";
+      map_final.channels[chan_Y_id].values.resize(num_in);
+      map_final.channels[chan_Z_id].name="imgZ";
+      map_final.channels[chan_Z_id].values.resize(num_in);
     }
     if(use_colors_)
     {
-      map_final.chan[chan_RGB_id].name="rgb";
-      map_final.chan[chan_RGB_id].vals.resize(num_in);
+      map_final.channels[chan_RGB_id].name="rgb";
+      map_final.channels[chan_RGB_id].values.resize(num_in);
     }
 
     if(annotate_image_id_)
     {
-      map_final.chan[chan_IMG_id].name="img_id";
-      map_final.chan[chan_IMG_id].vals.resize(num_in);
+      map_final.channels[chan_IMG_id].name="img_id";
+      map_final.channels[chan_IMG_id].values.resize(num_in);
     }
 
     unsigned int iOut=0;
@@ -488,18 +488,18 @@ public:
 
         for(unsigned int iC=0;iC<nC;iC++)
         {
-          map_final.chan[iC].vals[iOut]=map_3D.chan[iC].vals[iPt];
+          map_final.channels[iC].values[iOut]=map_3D.channels[iC].values[iPt];
         }        
         if(overlap[iPt]>0)
-          map_final.chan[new_channel_id].vals[iOut] = object_labels[overlap[iPt]-1];
+          map_final.channels[new_channel_id].values[iOut] = object_labels[overlap[iPt]-1];
         else
-          map_final.chan[new_channel_id].vals[iOut] = 0;
+          map_final.channels[new_channel_id].values[iOut] = 0;
 
         if(annotate_reprojection_)
         {        
-          map_final.chan[chan_X_id].vals[iOut] = map_2D.pts[iPt].x;
-          map_final.chan[chan_Y_id].vals[iOut] = map_2D.pts[iPt].y;
-          map_final.chan[chan_Z_id].vals[iOut] = map_2D.pts[iPt].z;
+          map_final.channels[chan_X_id].values[iOut] = map_2D.points[iPt].x;
+          map_final.channels[chan_Y_id].values[iOut] = map_2D.points[iPt].y;
+          map_final.channels[chan_Z_id].values[iOut] = map_2D.points[iPt].z;
         }
         if(use_colors_)
         {
@@ -509,14 +509,14 @@ public:
           int g=int(round(color.g*255));
           int b=int(round(color.b*255));
           int rgb = (r << 16) | (g << 8) | b;
-          map_final.chan[chan_RGB_id].vals[iOut] = *reinterpret_cast<float*>(&rgb);
+          map_final.channels[chan_RGB_id].values[iOut] = *reinterpret_cast<float*>(&rgb);
 
         }
         if(annotate_image_id_)
         {
-          map_final.chan[chan_IMG_id].vals[iOut] = active_image_id_;
+          map_final.channels[chan_IMG_id].values[iOut] = active_image_id_;
         }
-        map_final.pts[iOut] = map_3D.pts[iPt];
+        map_final.points[iOut] = map_3D.points[iPt];
         iOut++;
     }
   }

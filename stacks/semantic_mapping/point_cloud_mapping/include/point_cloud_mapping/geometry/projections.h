@@ -86,7 +86,7 @@ namespace cloud_geometry
       pointsToPlane (sensor_msgs::PointCloud &p, const std::vector<int> &indices, const std::vector<double> &plane_coefficients)
     {
       for (unsigned int i = 0; i < indices.size (); i++)
-        pointToPlane (p.pts[indices.at (i)], p.pts[indices.at (i)], plane_coefficients);
+        pointToPlane (p.points[indices.at (i)], p.points[indices.at (i)], plane_coefficients);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -99,9 +99,9 @@ namespace cloud_geometry
     inline void
       pointsToPlane (const sensor_msgs::PointCloud &p, const std::vector<int> &indices, sensor_msgs::PointCloud &q, const std::vector<double> &plane_coefficients)
     {
-      q.pts.resize (indices.size ());
+      q.points.resize (indices.size ());
       for (unsigned int i = 0; i < indices.size (); i++)
-        pointToPlane (p.pts[indices.at (i)], q.pts[i], plane_coefficients);
+        pointToPlane (p.points[indices.at (i)], q.points[i], plane_coefficients);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////

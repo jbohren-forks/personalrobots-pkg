@@ -56,26 +56,26 @@ int
   }
 
   fprintf (stdout, "sensor_msgs::PointCloud points;\n");
-  fprintf (stdout, "points.pts.resize (%i);\n", (int)points.pts.size ());
+  fprintf (stdout, "points.points.resize (%i);\n", (int)points.points.size ());
 
-  if (points.chan.size () > 0)
+  if (points.channels.size () > 0)
   {
-    fprintf (stdout, "points.chan.resize (%i);\n", (int)points.chan.size ());
-    for (unsigned int d = 0; d < points.chan.size (); d++)
+    fprintf (stdout, "points.channels.resize (%i);\n", (int)points.channels.size ());
+    for (unsigned int d = 0; d < points.channels.size (); d++)
     {
-      fprintf (stdout, "points.chan[%i].name = %s;\n", d, points.chan[d].name.c_str ());
-      fprintf (stdout, "points.chan[%i].vals.resize (%i);", d, (int)points.chan.size ());
+      fprintf (stdout, "points.channels[%i].name = %s;\n", d, points.channels[d].name.c_str ());
+      fprintf (stdout, "points.channels[%i].values.resize (%i);", d, (int)points.channels.size ());
     }
   }
 
   fprintf (stdout, "\n");
-  for (unsigned int i = 0; i < points.pts.size (); i++)
-    fprintf (stdout, "points.pts[%5i].x = %f; points.pts[%5i].y = %f; points.pts[%5i].z = %f;\n", i, points.pts[i].x, i, points.pts[i].y, i, points.pts[i].z);
+  for (unsigned int i = 0; i < points.points.size (); i++)
+    fprintf (stdout, "points.points[%5i].x = %f; points.points[%5i].y = %f; points.points[%5i].z = %f;\n", i, points.points[i].x, i, points.points[i].y, i, points.points[i].z);
 
   fprintf (stdout, "\n");
-  for (unsigned int d = 0; d < points.chan.size (); d++)
-    for (unsigned int i = 0; i < points.pts.size (); i++)
-      fprintf (stdout, "points.chan[%i].vals[%5i] = %f;\n", d, i, points.chan[d].vals[i]);
+  for (unsigned int d = 0; d < points.channels.size (); d++)
+    for (unsigned int i = 0; i < points.points.size (); i++)
+      fprintf (stdout, "points.channels[%i].values[%5i] = %f;\n", d, i, points.channels[d].values[i]);
 
   return (0);
 }

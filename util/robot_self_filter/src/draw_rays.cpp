@@ -70,8 +70,8 @@ public:
 	    sensor_pos.setValue(0, 0, 0);
 	    ROS_ERROR("Unable to lookup transform from %s to %s", sensor_frame_.c_str(), cloud->header.frame_id.c_str());
 	}
-	for (unsigned int i = 0 ; i < cloud->pts.size() ; ++i)
-	    sendLine(cloud->header, cloud->pts[i].x, cloud->pts[i].y, cloud->pts[i].z, sensor_pos.x(), sensor_pos.y(), sensor_pos.z());
+	for (unsigned int i = 0 ; i < cloud->points.size() ; ++i)
+	    sendLine(cloud->header, cloud->points[i].x, cloud->points[i].y, cloud->points[i].z, sensor_pos.x(), sensor_pos.y(), sensor_pos.z());
 	id_ = 1;
     }
     

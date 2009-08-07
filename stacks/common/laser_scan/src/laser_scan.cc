@@ -53,49 +53,49 @@ namespace laser_scan
 
     //Stuff the output cloud
     cloud_out.header = scan_in.header;
-    cloud_out.set_pts_size (scan_in.get_ranges_size ());
+    cloud_out.set_points_size (scan_in.get_ranges_size ());
 
     // Define 4 indices in the channel array for each possible value type
     int idx_intensity = -1, idx_index = -1, idx_distance = -1, idx_timestamp = -1;
 
-    cloud_out.set_chan_size(0);    
+    cloud_out.set_channels_size(0);    
 
     // Check if the intensity bit is set
     if ((mask & MASK_INTENSITY) && scan_in.get_intensities_size () > 0)
     {
-      int chan_size = cloud_out.get_chan_size ();
-      cloud_out.set_chan_size (chan_size + 1);
-      cloud_out.chan[0].name = "intensities";
-      cloud_out.chan[0].set_vals_size (scan_in.get_intensities_size ());
+      int chan_size = cloud_out.get_channels_size ();
+      cloud_out.set_channels_size (chan_size + 1);
+      cloud_out.channels[0].name = "intensities";
+      cloud_out.channels[0].set_values_size (scan_in.get_intensities_size ());
       idx_intensity = 0;
     }
     
     // Check if the index bit is set
     if (mask & MASK_INDEX)
     {
-      int chan_size = cloud_out.get_chan_size ();
-      cloud_out.set_chan_size (chan_size +1);
-      cloud_out.chan[chan_size].name = "index";
-      cloud_out.chan[chan_size].set_vals_size (scan_in.get_ranges_size ());
+      int chan_size = cloud_out.get_channels_size ();
+      cloud_out.set_channels_size (chan_size +1);
+      cloud_out.channels[chan_size].name = "index";
+      cloud_out.channels[chan_size].set_values_size (scan_in.get_ranges_size ());
       idx_index = chan_size;
     }
 
     // Check if the distance bit is set
     if (mask & MASK_DISTANCE)
     {
-      int chan_size = cloud_out.get_chan_size ();
-      cloud_out.set_chan_size (chan_size + 1);
-      cloud_out.chan[chan_size].name = "distances";
-      cloud_out.chan[chan_size].set_vals_size (scan_in.get_ranges_size ());
+      int chan_size = cloud_out.get_channels_size ();
+      cloud_out.set_channels_size (chan_size + 1);
+      cloud_out.channels[chan_size].name = "distances";
+      cloud_out.channels[chan_size].set_values_size (scan_in.get_ranges_size ());
       idx_distance = chan_size;
     }
 
     if (mask & MASK_TIMESTAMP)
     {
-      int chan_size = cloud_out.get_chan_size ();
-      cloud_out.set_chan_size (chan_size + 1);
-      cloud_out.chan[chan_size].name = "stamps";
-      cloud_out.chan[chan_size].set_vals_size (scan_in.get_ranges_size ());
+      int chan_size = cloud_out.get_channels_size ();
+      cloud_out.set_channels_size (chan_size + 1);
+      cloud_out.channels[chan_size].name = "stamps";
+      cloud_out.channels[chan_size].set_values_size (scan_in.get_ranges_size ());
       idx_timestamp = chan_size;
     }
 
@@ -110,34 +110,34 @@ namespace laser_scan
       if (preservative || ((ranges(0,index) < range_cutoff) && (ranges(0,index) >= scan_in.range_min))) //if valid or preservative
       {
 	  
-        cloud_out.pts[count].x = output(0,index);
-        cloud_out.pts[count].y = output(1,index);
-        cloud_out.pts[count].z = 0.0;
+        cloud_out.points[count].x = output(0,index);
+        cloud_out.points[count].y = output(1,index);
+        cloud_out.points[count].z = 0.0;
 	  
-        //double x = cloud_out.pts[count].x;
-        //double y = cloud_out.pts[count].y;
+        //double x = cloud_out.points[count].x;
+        //double y = cloud_out.points[count].y;
         //if(x*x + y*y < scan_in.range_min * scan_in.range_min){
-        //  ROS_INFO("(%.2f, %.2f)", cloud_out.pts[count].x, cloud_out.pts[count].y);
+        //  ROS_INFO("(%.2f, %.2f)", cloud_out.points[count].x, cloud_out.points[count].y);
         //}
 
         // Save the original point index
         if (idx_index != -1)
-          cloud_out.chan[idx_index].vals[count] = index;
+          cloud_out.channels[idx_index].values[count] = index;
 
         // Save the original point distance
         if (idx_distance != -1)
-          cloud_out.chan[idx_distance].vals[count] = ranges (0, index);
+          cloud_out.channels[idx_distance].values[count] = ranges (0, index);
 
         // Save intensities channel
         if (scan_in.get_intensities_size() >= index)
         { /// \todo optimize and catch length difference better
           if (idx_intensity != -1)
-            cloud_out.chan[idx_intensity].vals[count] = scan_in.intensities[index];
+            cloud_out.channels[idx_intensity].values[count] = scan_in.intensities[index];
         }
 
         // Save timestamps to seperate channel if asked for
         if( idx_timestamp != -1)
-                  cloud_out.chan[idx_timestamp].vals[count] = (float)index*scan_in.time_increment;
+                  cloud_out.channels[idx_timestamp].values[count] = (float)index*scan_in.time_increment;
 
         count++;
       }
@@ -145,9 +145,9 @@ namespace laser_scan
    
 
     //downsize if necessary
-    cloud_out.set_pts_size (count);
-    for (unsigned int d = 0; d < cloud_out.get_chan_size (); d++)
-      cloud_out.chan[d].set_vals_size(count);
+    cloud_out.set_points_size (count);
+    for (unsigned int d = 0; d < cloud_out.get_channels_size (); d++)
+      cloud_out.channels[d].set_values_size(count);
   };
 
   const boost::numeric::ublas::matrix<double>& LaserProjection::getUnitVectors(float angle_min, float angle_max, float angle_increment)
@@ -199,50 +199,50 @@ namespace laser_scan
   {
     cloud_out.header = scan_in.header;
     cloud_out.header.frame_id = target_frame;
-    cloud_out.set_pts_size (scan_in.get_ranges_size());
+    cloud_out.set_points_size (scan_in.get_ranges_size());
     
     // Define 4 indices in the channel array for each possible value type
     int idx_intensity = -1, idx_index = -1, idx_distance = -1, idx_timestamp = -1;
 
 
-    cloud_out.set_chan_size(0);
+    cloud_out.set_channels_size(0);
 
     // Check if the intensity bit is set
     if ((mask & MASK_INTENSITY) && scan_in.get_intensities_size () > 0)
     {
-      int chan_size = cloud_out.get_chan_size ();
-      cloud_out.set_chan_size (chan_size + 1);
-      cloud_out.chan[0].name = "intensities";
-      cloud_out.chan[0].set_vals_size (scan_in.get_intensities_size ());
+      int chan_size = cloud_out.get_channels_size ();
+      cloud_out.set_channels_size (chan_size + 1);
+      cloud_out.channels[0].name = "intensities";
+      cloud_out.channels[0].set_values_size (scan_in.get_intensities_size ());
       idx_intensity = 0;
     }
     
     // Check if the index bit is set
     if (mask & MASK_INDEX)
     {
-      int chan_size = cloud_out.get_chan_size ();
-      cloud_out.set_chan_size (chan_size + 1);
-      cloud_out.chan[chan_size].name = "index";
-      cloud_out.chan[chan_size].set_vals_size (scan_in.get_ranges_size ());
+      int chan_size = cloud_out.get_channels_size ();
+      cloud_out.set_channels_size (chan_size + 1);
+      cloud_out.channels[chan_size].name = "index";
+      cloud_out.channels[chan_size].set_values_size (scan_in.get_ranges_size ());
       idx_index = chan_size;
     }
 
     // Check if the distance bit is set
     if (mask & MASK_DISTANCE)
     {
-      int chan_size = cloud_out.get_chan_size ();
-      cloud_out.set_chan_size (chan_size + 1);
-      cloud_out.chan[chan_size].name = "distances";
-      cloud_out.chan[chan_size].set_vals_size (scan_in.get_ranges_size ());
+      int chan_size = cloud_out.get_channels_size ();
+      cloud_out.set_channels_size (chan_size + 1);
+      cloud_out.channels[chan_size].name = "distances";
+      cloud_out.channels[chan_size].set_values_size (scan_in.get_ranges_size ());
       idx_distance = chan_size;
     }
 
     if (mask & MASK_TIMESTAMP)
     {
-      int chan_size = cloud_out.get_chan_size ();
-      cloud_out.set_chan_size (chan_size + 1);
-      cloud_out.chan[chan_size].name = "stamps";
-      cloud_out.chan[chan_size].set_vals_size (scan_in.get_ranges_size ());
+      int chan_size = cloud_out.get_channels_size ();
+      cloud_out.set_channels_size (chan_size + 1);
+      cloud_out.channels[chan_size].name = "stamps";
+      cloud_out.channels[chan_size].set_values_size (scan_in.get_ranges_size ());
       idx_timestamp = chan_size;
     }
 
@@ -274,7 +274,7 @@ namespace laser_scan
       {
         // Looking up transforms in tree is too expensive. Need more optimized way
         /*
-           pointIn = tf::Stamped<tf::Point>(btVector3(intermediate.pts[i].x, intermediate.pts[i].y, intermediate.pts[i].z), 
+           pointIn = tf::Stamped<tf::Point>(btVector3(intermediate.points[i].x, intermediate.points[i].y, intermediate.points[i].z), 
            ros::Time(scan_in.header.stamp.to_ull() + (uint64_t) (scan_in.time_increment * 1000000000)),
            pointIn.frame_id_ = scan_in.header.frame_id);///\todo optimize to no copy
            transformPoint(target_frame, pointIn, pointOut);
@@ -299,39 +299,39 @@ namespace laser_scan
         cur_transform.setRotation( slerp( q1, q2 , ratio) ) ;
 
         // Apply the transform to the current point
-        btVector3 pointIn(intermediate.pts[i].x, intermediate.pts[i].y, intermediate.pts[i].z) ;
+        btVector3 pointIn(intermediate.points[i].x, intermediate.points[i].y, intermediate.points[i].z) ;
         btVector3 pointOut = cur_transform * pointIn ;
 
         // Copy transformed point into cloud
-        cloud_out.pts[count].x  = pointOut.x();
-        cloud_out.pts[count].y  = pointOut.y();
-        cloud_out.pts[count].z  = pointOut.z();
+        cloud_out.points[count].x  = pointOut.x();
+        cloud_out.points[count].y  = pointOut.y();
+        cloud_out.points[count].z  = pointOut.z();
 
         // Copy index over from projected point cloud
         if (idx_index != -1)
-          cloud_out.chan[idx_index].vals[count] = intermediate.chan[idx_index].vals[i];
+          cloud_out.channels[idx_index].values[count] = intermediate.channels[idx_index].values[i];
         
         // Save the original point distance
         if (idx_distance != -1)
-          cloud_out.chan[idx_distance].vals[count] = scan_in.ranges[i];
+          cloud_out.channels[idx_distance].values[count] = scan_in.ranges[i];
 
         if (scan_in.get_intensities_size() >= i)
         { /// \todo optimize and catch length difference better
           if (idx_intensity != -1)
-            cloud_out.chan[idx_intensity].vals[count] = scan_in.intensities[i];
+            cloud_out.channels[idx_intensity].values[count] = scan_in.intensities[i];
         }
 
         if (idx_timestamp != -1)
-          cloud_out.chan[idx_timestamp].vals[count] = (float)i * scan_in.time_increment;
+          cloud_out.channels[idx_timestamp].values[count] = (float)i * scan_in.time_increment;
 
         count++;
       }
 
     }
     //downsize if necessary
-    cloud_out.set_pts_size (count);
-    for (unsigned int d = 0; d < cloud_out.get_chan_size (); d++)
-      cloud_out.chan[d].set_vals_size (count);
+    cloud_out.set_points_size (count);
+    for (unsigned int d = 0; d < cloud_out.get_channels_size (); d++)
+      cloud_out.channels[d].set_values_size (count);
   }
 
 

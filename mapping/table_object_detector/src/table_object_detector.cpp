@@ -225,11 +225,11 @@ class TableObjectDetector
 
       ros::Time ts = ros::Time::now ();
       // We have a pointcloud, estimate the true point bounds
-      vector<int> indices_in_bounds (cloud_in_.pts.size ());
+      vector<int> indices_in_bounds (cloud_in_.points.size ());
       int nr_p = 0;
-      for (unsigned int i = 0; i < cloud_in_.pts.size (); i++)
+      for (unsigned int i = 0; i < cloud_in_.points.size (); i++)
       {
-        if (cloud_in_.pts[i].z >= table_min_height_ && cloud_in_.pts[i].z <= table_max_height_)
+        if (cloud_in_.points[i].z >= table_min_height_ && cloud_in_.points[i].z <= table_max_height_)
         {
           indices_in_bounds[nr_p] = i;
           nr_p++;
@@ -237,7 +237,7 @@ class TableObjectDetector
       }
       indices_in_bounds.resize (nr_p);
       ROS_DEBUG ("%d of %d points are within the table height bounds of [%.2lf,%.2lf]",
-                 nr_p, (int)cloud_in_.pts.size (), table_min_height_, table_max_height_);
+                 nr_p, (int)cloud_in_.points.size (), table_min_height_, table_max_height_);
 
       // Downsample the cloud in the bounding box for faster processing
       // NOTE: <leaves_> gets allocated internally in downsamplePointCloud() and is not deallocated on exit
@@ -252,15 +252,15 @@ class TableObjectDetector
         return (false);
       }
 
-      ROS_DEBUG ("Number of points after downsampling with a leaf of size [%f,%f,%f]: %d.", leaf_width_.x, leaf_width_.y, leaf_width_.z, (int)cloud_down_.pts.size ());
+      ROS_DEBUG ("Number of points after downsampling with a leaf of size [%f,%f,%f]: %d.", leaf_width_.x, leaf_width_.y, leaf_width_.z, (int)cloud_down_.points.size ());
 
       // Reserve space for 3 channels: nx, ny, nz
-      cloud_down_.chan.resize (3);
-      cloud_down_.chan[0].name = "nx";
-      cloud_down_.chan[1].name = "ny";
-      cloud_down_.chan[2].name = "nz";
-      for (unsigned int d = 0; d < cloud_down_.chan.size (); d++)
-        cloud_down_.chan[d].vals.resize (cloud_down_.pts.size ());
+      cloud_down_.channels.resize (3);
+      cloud_down_.channels[0].name = "nx";
+      cloud_down_.channels[1].name = "ny";
+      cloud_down_.channels[2].name = "nz";
+      for (unsigned int d = 0; d < cloud_down_.channels.size (); d++)
+        cloud_down_.channels[d].values.resize (cloud_down_.points.size ());
 
       // Create Kd-Tree
       estimatePointNormals (cloud_down_);
@@ -382,17 +382,17 @@ class TableObjectDetector
           total_nr_pts += objects[i].size ();
 
         cloud_annotated_.header = cloud_down_.header;
-        cloud_annotated_.pts.resize (total_nr_pts);
+        cloud_annotated_.points.resize (total_nr_pts);
 
         // Copy all the channels from the original pointcloud
-        cloud_annotated_.chan.resize (cloud_in_.chan.size () + 1);
-        for (unsigned int d = 0; d < cloud_in_.chan.size (); d++)
+        cloud_annotated_.channels.resize (cloud_in_.channels.size () + 1);
+        for (unsigned int d = 0; d < cloud_in_.channels.size (); d++)
         {
-          cloud_annotated_.chan[d].name = cloud_in_.chan[d].name;
-          cloud_annotated_.chan[d].vals.resize (total_nr_pts);
+          cloud_annotated_.channels[d].name = cloud_in_.channels[d].name;
+          cloud_annotated_.channels[d].values.resize (total_nr_pts);
         }
-        cloud_annotated_.chan[cloud_in_.chan.size ()].name = "rgb";
-        cloud_annotated_.chan[cloud_in_.chan.size ()].vals.resize (total_nr_pts);
+        cloud_annotated_.channels[cloud_in_.channels.size ()].name = "rgb";
+        cloud_annotated_.channels[cloud_in_.channels.size ()].values.resize (total_nr_pts);
 
         // For each object in the set
         int nr_p = 0;
@@ -402,10 +402,10 @@ class TableObjectDetector
           // Get its points
           for (unsigned int j = 0; j < objects[i].size (); j++)
           {
-            cloud_annotated_.pts[nr_p] = cloud_in_.pts.at (objects[i][j]);
-            for (unsigned int d = 0; d < cloud_in_.chan.size (); d++)
-              cloud_annotated_.chan[d].vals[nr_p] = cloud_in_.chan[d].vals.at (objects[i][j]);
-            cloud_annotated_.chan[cloud_in_.chan.size ()].vals[nr_p] = rgb;
+            cloud_annotated_.points[nr_p] = cloud_in_.points.at (objects[i][j]);
+            for (unsigned int d = 0; d < cloud_in_.channels.size (); d++)
+              cloud_annotated_.channels[d].values[nr_p] = cloud_in_.channels[d].values.at (objects[i][j]);
+            cloud_annotated_.channels[cloud_in_.channels.size ()].values[nr_p] = rgb;
             nr_p++;
           }
         }
@@ -423,26 +423,26 @@ class TableObjectDetector
     {
       int nr_p = 0;
       geometry_msgs::Point32 pt;
-      object_indices.resize (points.pts.size ());
-      for (unsigned int i = 0; i < points.pts.size (); i++)
+      object_indices.resize (points.points.size ());
+      for (unsigned int i = 0; i < points.points.size (); i++)
       {
         // Select all the points in the given bounds
-        if ( points.pts.at (i).x > minP.x &&
-             points.pts.at (i).x < maxP.x &&
-             points.pts.at (i).y > minP.y &&
-             points.pts.at (i).y < maxP.y &&
-             points.pts.at (i).z > (maxP.z + delta_z_)
+        if ( points.points.at (i).x > minP.x &&
+             points.points.at (i).x < maxP.x &&
+             points.points.at (i).y > minP.y &&
+             points.points.at (i).y < maxP.y &&
+             points.points.at (i).z > (maxP.z + delta_z_)
            )
         {
           // Calculate the distance from the point to the plane
-          double distance_to_plane = coeff.at (0) * points.pts.at (i).x +
-                                     coeff.at (1) * points.pts.at (i).y +
-                                     coeff.at (2) * points.pts.at (i).z +
+          double distance_to_plane = coeff.at (0) * points.points.at (i).x +
+                                     coeff.at (1) * points.points.at (i).y +
+                                     coeff.at (2) * points.points.at (i).z +
                                      coeff.at (3) * 1;
           // Calculate the projection of the point on the plane
-          pt.x = points.pts.at (i).x - distance_to_plane * coeff.at (0);
-          pt.y = points.pts.at (i).y - distance_to_plane * coeff.at (1);
-          pt.z = points.pts.at (i).z - distance_to_plane * coeff.at (2);
+          pt.x = points.points.at (i).x - distance_to_plane * coeff.at (0);
+          pt.y = points.points.at (i).y - distance_to_plane * coeff.at (1);
+          pt.z = points.points.at (i).z - distance_to_plane * coeff.at (2);
 
           if (cloud_geometry::areas::isPointIn2DPolygon (pt, poly))
           {
@@ -540,12 +540,12 @@ class TableObjectDetector
       cloud_kdtree::KdTree *kdtree = new cloud_kdtree::KdTreeANN (cloud);
       vector<vector<int> > points_k_indices;
       // Allocate enough space for point indices
-      points_k_indices.resize (cloud.pts.size ());
-      for (int i = 0; i < (int)cloud.pts.size (); i++)
+      points_k_indices.resize (cloud.points.size ());
+      for (int i = 0; i < (int)cloud.points.size (); i++)
         points_k_indices[i].resize (k_);
       // Get the nerest neighbors for all the point indices in the bounds
       vector<float> distances;
-      for (int i = 0; i < (int)cloud.pts.size (); i++)
+      for (int i = 0; i < (int)cloud.points.size (); i++)
         kdtree->nearestKSearch (i, k_, points_k_indices[i], distances);
 
       // Figure out the viewpoint value in the point cloud frame
@@ -564,18 +564,18 @@ class TableObjectDetector
       }
 
 #pragma omp parallel for schedule(dynamic)
-      for (int i = 0; i < (int)cloud.pts.size (); i++)
+      for (int i = 0; i < (int)cloud.points.size (); i++)
       {
         // Compute the point normals (nx, ny, nz), surface curvature estimates (c)
         Eigen::Vector4d plane_parameters;
         double curvature;
         cloud_geometry::nearest::computePointNormal (cloud, points_k_indices[i], plane_parameters, curvature);
 
-        cloud_geometry::angles::flipNormalTowardsViewpoint (plane_parameters, cloud_down_.pts[i], viewpoint_cloud);
+        cloud_geometry::angles::flipNormalTowardsViewpoint (plane_parameters, cloud_down_.points[i], viewpoint_cloud);
 
-        cloud.chan[0].vals[i] = plane_parameters (0);
-        cloud.chan[1].vals[i] = plane_parameters (1);
-        cloud.chan[2].vals[i] = plane_parameters (2);
+        cloud.channels[0].values[i] = plane_parameters (0);
+        cloud.channels[1].values[i] = plane_parameters (1);
+        cloud.channels[2].values[i] = plane_parameters (2);
       }
       // Delete the kd-tree
       delete kdtree;

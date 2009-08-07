@@ -81,16 +81,16 @@ void visualizePlanes2(const sensor_msgs::PointCloud& cloud,
   sensor_msgs::PointCloud colored_cloud = cloud;
 
   int rgb_chann=-1;
-  for(size_t i=0;i<cloud.chan.size();i++)
-    if(cloud.chan[i].name=="rgb") rgb_chann=i;
+  for(size_t i=0;i<cloud.channels.size();i++)
+    if(cloud.channels[i].name=="rgb") rgb_chann=i;
 
   int rgb;
   if(rgb_chann!=-1) {
     rgb=HSV_to_RGB(0.7,0,0.3);
-    for(size_t i=0;i<cloud.pts.size();i++) {
-      colored_cloud.chan[rgb_chann].vals[i] =
+    for(size_t i=0;i<cloud.points.size();i++) {
+      colored_cloud.channels[rgb_chann].values[i] =
           mix_color(0.7,
-                    cloud.chan[rgb_chann].vals[i],
+                    cloud.channels[rgb_chann].values[i],
                     *(float*)&rgb);
     }
 
@@ -100,9 +100,9 @@ void visualizePlanes2(const sensor_msgs::PointCloud& cloud,
       else
         rgb=HSV_to_RGB( i/(float)plane_indices.size(),0.3,1);
       for(size_t j=0;j<plane_indices[i].size();j++) {
-        colored_cloud.chan[rgb_chann].vals[plane_indices[i][j]] =
+        colored_cloud.channels[rgb_chann].values[plane_indices[i][j]] =
             mix_color(0.7,
-                      cloud.chan[rgb_chann].vals[plane_indices[i][j]],
+                      cloud.channels[rgb_chann].values[plane_indices[i][j]],
                       *(float*)&rgb);
       }
 

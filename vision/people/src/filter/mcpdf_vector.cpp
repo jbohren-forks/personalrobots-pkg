@@ -121,10 +121,10 @@
 	}
     cout << "points size " << points.size() << endl;
     cloud.header.frame_id = "base_link";
-    cloud.pts  = points;
+    cloud.points  = points;
     channel.name = "rgb";
-    channel.vals = weights;
-    cloud.chan.push_back(channel);
+    channel.values = weights;
+    cloud.channels.push_back(channel);
   }
 
 

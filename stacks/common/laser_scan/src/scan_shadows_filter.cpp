@@ -151,25 +151,25 @@ class ScanShadowsFilter
     {
       // Use the index to revert to a full laser scan cloud (inefficient locally, but efficient globally)
       int idx = 0;
-      for (unsigned int i = 0; i < cloud_out.pts.size (); i++)
+      for (unsigned int i = 0; i < cloud_out.points.size (); i++)
       {
-        unsigned int j = (int)cloud_in.chan[c_idx].vals[idx];  // Find out the true index value
+        unsigned int j = (int)cloud_in.channels[c_idx].values[idx];  // Find out the true index value
         if (i == j)
         {
           // Copy relevant data
-          cloud_out.pts[i].x = cloud_in.pts[idx].x;
-          cloud_out.pts[i].y = cloud_in.pts[idx].y;
-          cloud_out.pts[i].z = cloud_in.pts[idx].z;
-          for (unsigned int d = 0; d < cloud_out.get_chan_size (); d++)
-            cloud_out.chan[d].vals[i] = cloud_in.chan[d].vals[idx];
+          cloud_out.points[i].x = cloud_in.points[idx].x;
+          cloud_out.points[i].y = cloud_in.points[idx].y;
+          cloud_out.points[i].z = cloud_in.points[idx].z;
+          for (unsigned int d = 0; d < cloud_out.get_channels_size (); d++)
+            cloud_out.channels[d].values[i] = cloud_in.channels[d].values[idx];
 
           idx++;                                        // Assume chan['index'] is sorted (which should be true)
-          if (idx >= (int)cloud_in.chan[c_idx].vals.size ()) idx = cloud_in.chan[c_idx].vals.size () - 1;
+          if (idx >= (int)cloud_in.channels[c_idx].values.size ()) idx = cloud_in.channels[c_idx].values.size () - 1;
         }
         else
         {
           // Bogus XYZ entry. No need to copy channels.
-          cloud_out.pts[i].x = cloud_out.pts[i].y = cloud_out.pts[i].z = 0.0;
+          cloud_out.points[i].x = cloud_out.points[i].y = cloud_out.points[i].z = 0.0;
         }
       }
     }
@@ -187,17 +187,17 @@ class ScanShadowsFilter
     {
       // For each point in the current line scan
       int n_pts_filtered = 0;
-      for (unsigned int i = 0; i < cloud_in.pts.size (); i++)
+      for (unsigned int i = 0; i < cloud_in.points.size (); i++)
       {
         bool valid_point = true;
         for (int y = -window_; y < window_ + 1; y++)
         {
           int j = i + y;
-          if ( j < 0 || j >= (int)cloud_in.pts.size () || (int)i == j ) // Out of scan bounds or itself
+          if ( j < 0 || j >= (int)cloud_in.points.size () || (int)i == j ) // Out of scan bounds or itself
             continue;
 
-          double angle = getAngleWithViewpoint (cloud_in.pts[i].x, cloud_in.pts[i].y, cloud_in.pts[i].z,
-                                                cloud_in.pts[j].x, cloud_in.pts[j].y, cloud_in.pts[j].z);
+          double angle = getAngleWithViewpoint (cloud_in.points[i].x, cloud_in.points[i].y, cloud_in.points[i].z,
+                                                cloud_in.points[j].x, cloud_in.points[j].y, cloud_in.points[j].z);
           if (angle < min_angle_ || angle > max_angle_)
             valid_point = false;
         }
@@ -205,21 +205,21 @@ class ScanShadowsFilter
         // If point found as 'ok', copy the relevant data
         if (valid_point)
         {
-          cloud_out.pts[n_pts_filtered].x = cloud_in.pts[i].x;
-          cloud_out.pts[n_pts_filtered].y = cloud_in.pts[i].y;
-          cloud_out.pts[n_pts_filtered].z = cloud_in.pts[i].z;
+          cloud_out.points[n_pts_filtered].x = cloud_in.points[i].x;
+          cloud_out.points[n_pts_filtered].y = cloud_in.points[i].y;
+          cloud_out.points[n_pts_filtered].z = cloud_in.points[i].z;
 
-          for (unsigned int d = 0; d < cloud_out.get_chan_size (); d++)
-            cloud_out.chan[d].vals[n_pts_filtered] = cloud_in.chan[d].vals[i];
+          for (unsigned int d = 0; d < cloud_out.get_channels_size (); d++)
+            cloud_out.channels[d].values[n_pts_filtered] = cloud_in.channels[d].values[i];
 
           n_pts_filtered++;
         }
       }
 
       // Resize output vectors
-      cloud_out.pts.resize (n_pts_filtered);
-      for (unsigned int d = 0; d < cloud_out.get_chan_size (); d++)
-        cloud_out.chan[d].vals.resize (n_pts_filtered);
+      cloud_out.points.resize (n_pts_filtered);
+      for (unsigned int d = 0; d < cloud_out.get_channels_size (); d++)
+        cloud_out.channels[d].values.resize (n_pts_filtered);
     }
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -264,28 +264,28 @@ class ScanShadowsFilter
 
       /// ---[ Perhaps unnecessary, but find out which channel contains the index
       int c_idx = -1;
-      for (unsigned int d = 0; d < scan_cloud.get_chan_size (); d++)
+      for (unsigned int d = 0; d < scan_cloud.get_channels_size (); d++)
       {
-        if (scan_cloud.chan[d].name == "index")
+        if (scan_cloud.channels[d].name == "index")
         {
           c_idx = d;
           break;
         }
       }
-      if (c_idx == -1 || scan_cloud.chan[c_idx].vals.size () == 0) return;
+      if (c_idx == -1 || scan_cloud.channels[c_idx].values.size () == 0) return;
       /// ]--
 
       // Prepare the storage for the temporary array ([] and resize are faster than push_back)
       sensor_msgs::PointCloud scan_full_cloud (scan_cloud);
-      scan_full_cloud.pts.resize (n_scan);
-      for (unsigned int d = 0; d < scan_cloud.get_chan_size (); d++)
-        scan_full_cloud.chan[d].vals.resize (n_scan);
+      scan_full_cloud.points.resize (n_scan);
+      for (unsigned int d = 0; d < scan_cloud.get_channels_size (); d++)
+        scan_full_cloud.channels[d].values.resize (n_scan);
 
       // Prepare data storage for the output array ([] and resize are faster than push_back)
       sensor_msgs::PointCloud filtered_cloud (scan_cloud);
-      filtered_cloud.pts.resize (n_scan);
-      for (unsigned int d = 0; d < scan_cloud.get_chan_size (); d++)
-        filtered_cloud.chan[d].vals.resize  (n_scan);
+      filtered_cloud.points.resize (n_scan);
+      for (unsigned int d = 0; d < scan_cloud.get_channels_size (); d++)
+        filtered_cloud.channels[d].values.resize  (n_scan);
 
       // Construct a complete laser cloud resembling the original LaserScan (0..LASER_MAX measurements)
       constructCompleteLaserScanCloud (c_idx, scan_cloud, scan_full_cloud);

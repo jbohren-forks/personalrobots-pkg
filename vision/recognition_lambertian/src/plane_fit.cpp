@@ -175,9 +175,9 @@ class PlanarFit
     // Callback
     void cloud_cb ()
     {
-      ROS_INFO ("Received %d data points in frame %s with %d channels (%s).", (int)cloud_.pts.size (), cloud_.header.frame_id.c_str (),
-                (int)cloud_.chan.size (), cloud_geometry::getAvailableChannels (cloud_).c_str ());
-      if (cloud_.pts.size () == 0)
+      ROS_INFO ("Received %d data points in frame %s with %d channels (%s).", (int)cloud_.points.size (), cloud_.header.frame_id.c_str (),
+                (int)cloud_.channels.size (), cloud_geometry::getAvailableChannels (cloud_).c_str ());
+      if (cloud_.points.size () == 0)
       {
         ROS_ERROR ("No data points found. Exiting...");
         return;
@@ -192,7 +192,7 @@ class PlanarFit
       if((int)indices.size() > 0){
       cloud_geometry::getPointCloud (cloud_, indices[0], cloud_plane_);
       cloud_geometry::getPointCloudOutside (cloud_, indices[0], cloud_outliers_);
-      ROS_INFO ("Planar model found with %d / %d inliers in %g seconds.\n", (int)indices[0].size (), (int)cloud_.pts.size (), (ros::Time::now () - ts).toSec ());
+      ROS_INFO ("Planar model found with %d / %d inliers in %g seconds.\n", (int)indices[0].size (), (int)cloud_.points.size (), (ros::Time::now () - ts).toSec ());
       }
 
       node_.publish ("~plane", cloud_plane_);
@@ -209,11 +209,11 @@ class PlanarFit
 void
   PlanarFit::getPointIndicesInZBounds (const sensor_msgs::PointCloud &points, double z_min, double z_max, vector<int> &indices)
 {
-  indices.resize (points.pts.size ());
+  indices.resize (points.points.size ());
   int nr_p = 0;
-  for (unsigned int i = 0; i < points.pts.size (); i++)
+  for (unsigned int i = 0; i < points.points.size (); i++)
   {
-    if ((points.pts[i].z >= z_min && points.pts[i].z <= z_max))
+    if ((points.points[i].z >= z_min && points.points[i].z <= z_max))
     {
       indices[nr_p] = i;
       nr_p++;
@@ -260,7 +260,7 @@ bool
       inliers.push_back (model_inliers);
 
       // Flip the plane normal towards the viewpoint
-      cloud_geometry::angles::flipNormalTowardsViewpoint (model_coeff, points->pts.at (model_inliers[0]), viewpoint_cloud);
+      cloud_geometry::angles::flipNormalTowardsViewpoint (model_coeff, points->points.at (model_inliers[0]), viewpoint_cloud);
 
       ROS_INFO ("Found a planar model supported by %d inliers: [%g, %g, %g, %g]", (int)model_inliers.size (),
                 model_coeff[0], model_coeff[1], model_coeff[2], model_coeff[3]);

@@ -108,11 +108,11 @@ class SemanticPointAnnotator
 
       z_axis_.x = 0; z_axis_.y = 0; z_axis_.z = 1;
 
-      cloud_annotated_.chan.resize (3);
-      //cloud_annotated_.chan[0].name = "intensities";
-      cloud_annotated_.chan[0].name = "r";
-      cloud_annotated_.chan[1].name = "g";
-      cloud_annotated_.chan[2].name = "b";
+      cloud_annotated_.channels.resize (3);
+      //cloud_annotated_.channels[0].name = "intensities";
+      cloud_annotated_.channels[0].name = "r";
+      cloud_annotated_.channels[1].name = "g";
+      cloud_annotated_.channels[2].name = "b";
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -163,7 +163,7 @@ class SemanticPointAnnotator
 
       tf_.transformPoint ("base_link", base_link_origin, map_origin);
 
-      ROS_INFO ("Received %d data points. Current robot pose is %g, %g, %g", cloud_.pts.size (), map_origin.point.x, map_origin.point.y, map_origin.point.z);
+      ROS_INFO ("Received %d data points. Current robot pose is %g, %g, %g", cloud_.points.size (), map_origin.point.x, map_origin.point.y, map_origin.point.z);
 
       cloud_annotated_.header = cloud_.header;
 
@@ -171,7 +171,7 @@ class SemanticPointAnnotator
       int ny = cloud_geometry::getChannelIndex (&cloud_, "ny");
       int nz = cloud_geometry::getChannelIndex (&cloud_, "nz");
 
-      if ( (cloud_.chan.size () < 3) || (nx == -1) || (ny == -1) || (nz == -1) )
+      if ( (cloud_.channels.size () < 3) || (nx == -1) || (ny == -1) || (nz == -1) )
       {
         ROS_ERROR ("This PointCloud message does not contain normal information!");
         return;
@@ -200,10 +200,10 @@ class SemanticPointAnnotator
       for (unsigned int i = 0; i < inliers_perpendicular.size (); i++)
         total_p += inliers_perpendicular[i].size ();
 
-      cloud_annotated_.pts.resize (total_p);
-      cloud_annotated_.chan[0].vals.resize (total_p);
-      cloud_annotated_.chan[1].vals.resize (total_p);
-      cloud_annotated_.chan[2].vals.resize (total_p);
+      cloud_annotated_.points.resize (total_p);
+      cloud_annotated_.channels[0].values.resize (total_p);
+      cloud_annotated_.channels[1].values.resize (total_p);
+      cloud_annotated_.channels[2].values.resize (total_p);
 
       // Get all planes parallel to the floor (perpendicular to Z)
       Point32 robot_origin;
@@ -234,13 +234,13 @@ class SemanticPointAnnotator
 
         for (unsigned int j = 0; j < inliers_parallel[i].size (); j++)
         {
-          cloud_annotated_.pts[nr_p].x = cloud_.pts.at (inliers_parallel[i].at (j)).x;
-          cloud_annotated_.pts[nr_p].y = cloud_.pts.at (inliers_parallel[i].at (j)).y;
-          cloud_annotated_.pts[nr_p].z = cloud_.pts.at (inliers_parallel[i].at (j)).z;
-          //cloud_annotated_.chan[0].vals[i] = intensity_value;
-          cloud_annotated_.chan[0].vals[nr_p] = r;
-          cloud_annotated_.chan[1].vals[nr_p] = g;
-          cloud_annotated_.chan[2].vals[nr_p] = b;
+          cloud_annotated_.points[nr_p].x = cloud_.points.at (inliers_parallel[i].at (j)).x;
+          cloud_annotated_.points[nr_p].y = cloud_.points.at (inliers_parallel[i].at (j)).y;
+          cloud_annotated_.points[nr_p].z = cloud_.points.at (inliers_parallel[i].at (j)).z;
+          //cloud_annotated_.channels[0].values[i] = intensity_value;
+          cloud_annotated_.channels[0].values[nr_p] = r;
+          cloud_annotated_.channels[1].values[nr_p] = g;
+          cloud_annotated_.channels[2].values[nr_p] = b;
           nr_p++;
         }
       }
@@ -267,13 +267,13 @@ class SemanticPointAnnotator
         }
         for (unsigned int j = 0; j < inliers_perpendicular[i].size (); j++)
         {
-          cloud_annotated_.pts[nr_p].x = cloud_.pts.at (inliers_perpendicular[i].at (j)).x;
-          cloud_annotated_.pts[nr_p].y = cloud_.pts.at (inliers_perpendicular[i].at (j)).y;
-          cloud_annotated_.pts[nr_p].z = cloud_.pts.at (inliers_perpendicular[i].at (j)).z;
-          //cloud_annotated_.chan[0].vals[i] = intensity_value;
-          cloud_annotated_.chan[0].vals[nr_p] = r;
-          cloud_annotated_.chan[1].vals[nr_p] = g;
-          cloud_annotated_.chan[2].vals[nr_p] = b;
+          cloud_annotated_.points[nr_p].x = cloud_.points.at (inliers_perpendicular[i].at (j)).x;
+          cloud_annotated_.points[nr_p].y = cloud_.points.at (inliers_perpendicular[i].at (j)).y;
+          cloud_annotated_.points[nr_p].z = cloud_.points.at (inliers_perpendicular[i].at (j)).z;
+          //cloud_annotated_.channels[0].values[i] = intensity_value;
+          cloud_annotated_.channels[0].values[nr_p] = r;
+          cloud_annotated_.channels[1].values[nr_p] = g;
+          cloud_annotated_.channels[2].values[nr_p] = b;
           nr_p++;
         }
       }

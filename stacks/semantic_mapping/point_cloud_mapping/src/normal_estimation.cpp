@@ -129,8 +129,8 @@ class NormalEstimation
       cloud_norm_pub_ = nh_.advertise<sensor_msgs::PointCloud> ("cloud_normals", 1);
 
 #ifdef DEBUG
-      cloud_normals_.chan.resize (1);
-      cloud_normals_.chan[0].name = "intensities";
+      cloud_normals_.channels.resize (1);
+      cloud_normals_.channels[0].name = "intensities";
 #endif
     }
 
@@ -202,9 +202,9 @@ class NormalEstimation
     {
       updateParametersFromServer ();
 
-      ROS_INFO ("Received %d data points in frame %s with %d channels (%s).", (int)cloud->pts.size (), cloud->header.frame_id.c_str (),
-                (int)cloud->chan.size (), cloud_geometry::getAvailableChannels (cloud).c_str ());
-      if (cloud->pts.size () == 0)
+      ROS_INFO ("Received %d data points in frame %s with %d channels (%s).", (int)cloud->points.size (), cloud->header.frame_id.c_str (),
+                (int)cloud->channels.size (), cloud_geometry::getAvailableChannels (cloud).c_str ());
+      if (cloud->points.size () == 0)
       {
         ROS_ERROR ("No data points found. Exiting...");
         return;
@@ -231,14 +231,14 @@ class NormalEstimation
           return;
         }
 
-        ROS_INFO ("Downsampling enabled. Number of points left: %d / %d in %g seconds.", (int)cloud_down_.pts.size (), (int)cloud->pts.size (), (ros::Time::now () - ts1).toSec ());
+        ROS_INFO ("Downsampling enabled. Number of points left: %d / %d in %g seconds.", (int)cloud_down_.points.size (), (int)cloud->points.size (), (ros::Time::now () - ts1).toSec ());
       }
 
       // Resize
 #ifdef DEBUG
       cloud_normals_.header = cloud->header;
-      cloud_normals_.pts.resize (cloud->pts.size ());
-      cloud_normals_.chan[0].vals.resize (cloud->pts.size ());
+      cloud_normals_.points.resize (cloud->points.size ());
+      cloud_normals_.channels[0].values.resize (cloud->points.size ());
 #else
       // We need to copy the original point cloud data, and this looks like a good way to do it
       int original_chan_size;
@@ -251,32 +251,32 @@ class NormalEstimation
       else
       {
         cloud_normals_.header = cloud->header;
-        cloud_normals_.pts    = cloud->pts;
-        cloud_normals_.chan   = cloud->chan;
-        original_chan_size = cloud->chan.size ();
+        cloud_normals_.points    = cloud->points;
+        cloud_normals_.channels   = cloud->channels;
+        original_chan_size = cloud->channels.size ();
       }
 
       // Allocate the extra needed channels
       if (compute_moments_)
-        cloud_normals_.chan.resize (original_chan_size + 7);     // Allocate 7 more channels
+        cloud_normals_.channels.resize (original_chan_size + 7);     // Allocate 7 more channels
       else
-        cloud_normals_.chan.resize (original_chan_size + 4);     // Allocate 4 more channels
-      cloud_normals_.chan[original_chan_size + 0].name = "nx";
-      cloud_normals_.chan[original_chan_size + 1].name = "ny";
-      cloud_normals_.chan[original_chan_size + 2].name = "nz";
-      cloud_normals_.chan[original_chan_size + 3].name = "curvature";
+        cloud_normals_.channels.resize (original_chan_size + 4);     // Allocate 4 more channels
+      cloud_normals_.channels[original_chan_size + 0].name = "nx";
+      cloud_normals_.channels[original_chan_size + 1].name = "ny";
+      cloud_normals_.channels[original_chan_size + 2].name = "nz";
+      cloud_normals_.channels[original_chan_size + 3].name = "curvature";
       if (compute_moments_)
       {
-        cloud_normals_.chan[original_chan_size + 4].name = "j1";
-        cloud_normals_.chan[original_chan_size + 5].name = "j2";
-        cloud_normals_.chan[original_chan_size + 6].name = "j3";
+        cloud_normals_.channels[original_chan_size + 4].name = "j1";
+        cloud_normals_.channels[original_chan_size + 5].name = "j2";
+        cloud_normals_.channels[original_chan_size + 6].name = "j3";
       }
-      for (unsigned int d = original_chan_size; d < cloud_normals_.chan.size (); d++)
+      for (unsigned int d = original_chan_size; d < cloud_normals_.channels.size (); d++)
       {
         if (downsample_ != 0)
-          cloud_normals_.chan[d].vals.resize (cloud_down_.pts.size ());
+          cloud_normals_.channels[d].values.resize (cloud_down_.points.size ());
         else
-          cloud_normals_.chan[d].vals.resize (cloud->pts.size ());
+          cloud_normals_.channels[d].values.resize (cloud->points.size ());
       }
 #endif
 
@@ -284,15 +284,15 @@ class NormalEstimation
       kdtree_ = new cloud_kdtree::KdTreeANN (cloud_normals_);
 
       // Allocate enough space for point indices
-      points_indices_.resize (cloud_normals_.pts.size ());
-      for (int i = 0; i < (int)cloud_normals_.pts.size (); i++)
+      points_indices_.resize (cloud_normals_.points.size ());
+      for (int i = 0; i < (int)cloud_normals_.points.size (); i++)
         points_indices_[i].resize (k_);
 
       ROS_INFO ("Kd-tree created in %g seconds.", (ros::Time::now () - ts).toSec ());
 
       ts = ros::Time::now ();
       // Get the nearest neighbors for all points
-      for (int i = 0; i < (int)cloud_normals_.pts.size (); i++)
+      for (int i = 0; i < (int)cloud_normals_.points.size (); i++)
       {
         vector<float> distances;
         kdtree_->nearestKSearch (i, k_, points_indices_[i], distances);
@@ -300,7 +300,7 @@ class NormalEstimation
       ROS_INFO ("Nearest neighbors found in %g seconds.\n", (ros::Time::now () - ts).toSec ());
 
 #pragma omp parallel for schedule(dynamic)
-      for (int i = 0; i < (int)cloud_normals_.pts.size (); i++)
+      for (int i = 0; i < (int)cloud_normals_.points.size (); i++)
       {
         // Compute the point normals (nx, ny, nz), surface curvature estimates (c), and moment invariants (j1, j2, j3)
         Eigen::Vector4d plane_parameters;
@@ -310,23 +310,23 @@ class NormalEstimation
         if (compute_moments_)
           cloud_geometry::nearest::computeMomentInvariants (cloud_normals_, points_indices_[i], j1, j2, j3);
 
-        cloud_geometry::angles::flipNormalTowardsViewpoint (plane_parameters, cloud_normals_.pts[i], viewpoint_cloud);
+        cloud_geometry::angles::flipNormalTowardsViewpoint (plane_parameters, cloud_normals_.points[i], viewpoint_cloud);
 
 #ifdef  DEBUG
-        cloud_normals_.pts[i].x = plane_parameters (0);
-        cloud_normals_.pts[i].y = plane_parameters (1);
-        cloud_normals_.pts[i].z = plane_parameters (2);
-        cloud_normals_.chan[0].vals[i] = curvature;
+        cloud_normals_.points[i].x = plane_parameters (0);
+        cloud_normals_.points[i].y = plane_parameters (1);
+        cloud_normals_.points[i].z = plane_parameters (2);
+        cloud_normals_.channels[0].values[i] = curvature;
 #else
-        cloud_normals_.chan[original_chan_size + 0].vals[i] = plane_parameters (0);
-        cloud_normals_.chan[original_chan_size + 1].vals[i] = plane_parameters (1);
-        cloud_normals_.chan[original_chan_size + 2].vals[i] = plane_parameters (2);
-        cloud_normals_.chan[original_chan_size + 3].vals[i] = curvature;
+        cloud_normals_.channels[original_chan_size + 0].values[i] = plane_parameters (0);
+        cloud_normals_.channels[original_chan_size + 1].values[i] = plane_parameters (1);
+        cloud_normals_.channels[original_chan_size + 2].values[i] = plane_parameters (2);
+        cloud_normals_.channels[original_chan_size + 3].values[i] = curvature;
         if (compute_moments_)
         {
-          cloud_normals_.chan[original_chan_size + 4].vals[i] = j1;
-          cloud_normals_.chan[original_chan_size + 5].vals[i] = j2;
-          cloud_normals_.chan[original_chan_size + 6].vals[i] = j3;
+          cloud_normals_.channels[original_chan_size + 4].values[i] = j1;
+          cloud_normals_.channels[original_chan_size + 5].values[i] = j2;
+          cloud_normals_.channels[original_chan_size + 6].values[i] = j3;
         }
 #endif
       }

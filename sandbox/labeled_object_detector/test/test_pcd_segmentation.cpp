@@ -54,11 +54,11 @@ Point32 mk_pt(float x,float y,float z)
 TEST(labeled_object_detector, pcdSegmentationUF)
 {
   PointCloud cloud_in;  
-  cloud_in.pts.resize(3);
+  cloud_in.points.resize(3);
 
-  cloud_in.pts[0]=mk_pt(0.0,0.0,0.0); //cluster 0
-  cloud_in.pts[1]=mk_pt(0.1,0.0,0.0); //cluster 0
-  cloud_in.pts[2]=mk_pt(1.0,0.0,0.0); //cluster 1
+  cloud_in.points[0]=mk_pt(0.0,0.0,0.0); //cluster 0
+  cloud_in.points[1]=mk_pt(0.1,0.0,0.0); //cluster 0
+  cloud_in.points[2]=mk_pt(1.0,0.0,0.0); //cluster 1
 
 
   std::vector<int> cluster_ids;
@@ -86,18 +86,18 @@ TEST(labeled_object_detector, pcdSegmentationUF)
 TEST(labeled_object_detector, pcdVariationAlongLine)
 {
   PointCloud cloud_in;  
-  cloud_in.pts.resize(3);
+  cloud_in.points.resize(3);
 
-  cloud_in.pts[0]=mk_pt(0.0,2.0,0.0); //cluster 0
-  cloud_in.pts[1]=mk_pt(0.1,1.0,0.0); //cluster 0
-  cloud_in.pts[2]=mk_pt(1.0,0.0,0.0); //cluster 1
+  cloud_in.points[0]=mk_pt(0.0,2.0,0.0); //cluster 0
+  cloud_in.points[1]=mk_pt(0.1,1.0,0.0); //cluster 0
+  cloud_in.points[2]=mk_pt(1.0,0.0,0.0); //cluster 1
 
   Point32 dir_line=mk_pt(1,0,0);
   Point32 offset=mk_pt(0,0,0);
 
   std::vector<int> indices;
-  indices.resize(cloud_in.pts.size());
-  for(unsigned int i=0;i<cloud_in.pts.size();i++)
+  indices.resize(cloud_in.points.size());
+  for(unsigned int i=0;i<cloud_in.points.size();i++)
     indices[i]=i;
 
   float min_v,max_v;

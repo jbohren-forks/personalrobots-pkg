@@ -197,11 +197,11 @@ void RandomFieldCreator::createNodes(RandomField& rf,
 
   // ----------------------------------------------
   // Create interests points over the whole point cloud
-  unsigned int nbr_pts = pt_cloud.pts.size();
+  unsigned int nbr_pts = pt_cloud.points.size();
   cv::Vector<const robot_msgs::Point32*> interest_pts(nbr_pts, NULL);
   for (unsigned int i = 0 ; i < nbr_pts ; i++)
   {
-    interest_pts[(size_t) i] = &(pt_cloud.pts[i]);
+    interest_pts[(size_t) i] = &(pt_cloud.points[i]);
   }
 
   // ----------------------------------------------
@@ -231,12 +231,12 @@ void RandomFieldCreator::createNodes(RandomField& rf,
           continue;
         }
         created_node = rf.createNode(i, concatenated_features[i], nbr_concatenated_vals,
-            static_cast<unsigned int> (labels[i]), pt_cloud.pts[i].x, pt_cloud.pts[i].y, pt_cloud.pts[i].z);
+            static_cast<unsigned int> (labels[i]), pt_cloud.points[i].x, pt_cloud.points[i].y, pt_cloud.points[i].z);
       }
       else
       {
         created_node = rf.createNode(i, concatenated_features[i], nbr_concatenated_vals,
-            RandomField::UNKNOWN_LABEL, pt_cloud.pts[i].x, pt_cloud.pts[i].y, pt_cloud.pts[i].z);
+            RandomField::UNKNOWN_LABEL, pt_cloud.points[i].x, pt_cloud.points[i].y, pt_cloud.points[i].z);
       }
 
       if (created_node == NULL)
@@ -407,7 +407,7 @@ boost::shared_ptr<RandomField> RandomFieldCreator::createRandomField(const robot
   set<unsigned int> failed_indices;
   createNodes(*rf, pt_cloud, pt_cloud_kdtree, labels, failed_indices);
   set<unsigned int> node_indices;
-  const unsigned int nbr_pts = pt_cloud.pts.size();
+  const unsigned int nbr_pts = pt_cloud.points.size();
   for (unsigned int i = 0 ; i < nbr_pts ; i++)
   {
     if (failed_indices.count(i) == 0)

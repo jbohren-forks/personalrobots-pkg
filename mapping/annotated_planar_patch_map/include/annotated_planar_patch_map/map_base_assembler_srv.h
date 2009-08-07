@@ -241,11 +241,11 @@ private:
   scan_hist_mutex_.lock() ;
   if (scan_hist_.size() == max_scans_)                           // Is our deque full?
   {
-    //total_pts_ -= scan_hist_.front().get_pts_size() ;            // We're removing an elem, so this reduces our total point count
+    //total_pts_ -= scan_hist_.front().get_points_size() ;            // We're removing an elem, so this reduces our total point count
     scan_hist_.pop_front() ;                                     // The front of the deque has the oldest elem, so we can get rid of it
   }
   scan_hist_.push_back(cur_cloud) ;                              // Add the newest scan to the back of the deque
-  //total_pts_ += cur_cloud.get_pts_size() ;                       // Add the new scan to the running total of points
+  //total_pts_ += cur_cloud.get_points_size() ;                       // Add the new scan to the running total of points
 
   //printf("Scans: %4u  Points: %10u\n", scan_hist_.size(), total_pts_) ;
 
@@ -346,10 +346,10 @@ private:
      canonical_polygon_output_id.resize(num_poly);
 
      sensor_msgs::PointCloud centers;
-     centers.pts.resize(num_poly);
+     centers.points.resize(num_poly);
 
      for(unsigned int iPoly=0;iPoly<num_poly;iPoly++){
-       centers.pts[iPoly]=annotated_map_lib::computeMean(map_in.polygons[iPoly].polygon);
+       centers.points[iPoly]=annotated_map_lib::computeMean(map_in.polygons[iPoly].polygon);
      }
 
      ROS_DEBUG("Building KDtree");
@@ -449,7 +449,7 @@ private:
 	     if(polyIn.tags[iT]==polyOut.tags[iT])
 	       {
 		 //FIXME: assume that count is #0 . No merging for others
-		 polyOut.tags_chan[iHitsChannelOut].vals[outT]+=polyIn.tags_chan[iHitsChannelIn].vals[iT];		 
+		 polyOut.tags_chan[iHitsChannelOut].values[outT]+=polyIn.tags_chan[iHitsChannelIn].values[iT];		 
 		 bMerged=true;
 		 break;
 	       }
@@ -466,7 +466,7 @@ private:
 	 polyOut.set_tags_size(num_tags_new);
 	 for(unsigned int iC=0;iC<polyOut.get_tags_chan_size();iC++)
 	   {
-	     polyOut.tags_chan[iC].set_vals_size(num_tags_new);
+	     polyOut.tags_chan[iC].set_values_size(num_tags_new);
 	   }
 	 unsigned int iOut=num_tags_out;
 	 for(unsigned int iT=0;iT<num_tags_in;iT++)
@@ -476,8 +476,8 @@ private:
 	     polyOut.tags[iOut] = polyIn.tags[iT];
 	     for(unsigned int iC=0;iC<polyOut.get_tags_chan_size();iC++)
 	       {
-		 polyOut.tags_chan[iC].vals[iOut]=
-		   polyIn.tags_chan[iC].vals[iT];
+		 polyOut.tags_chan[iC].values[iOut]=
+		   polyIn.tags_chan[iC].values[iT];
 	       }
 	     iOut++;
 	   }

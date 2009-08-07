@@ -45,7 +45,7 @@ int point_cloud_clustering::PointCloudClustering::computeClusterCentroids(const 
 {
   cluster_centroids.clear();
 
-  const unsigned int nbr_total_pts = pt_cloud.pts.size();
+  const unsigned int nbr_total_pts = pt_cloud.points.size();
 
   // Iterate over clusters (cluster_label --> [point cloud indices]
   for (map<unsigned int, vector<int> >::const_iterator iter_clusters = clusters.begin() ; iter_clusters
@@ -67,9 +67,9 @@ int point_cloud_clustering::PointCloudClustering::computeClusterCentroids(const 
         return -1;
       }
 
-      curr_centroid[0] += pt_cloud.pts[curr_pt_cloud_idx].x;
-      curr_centroid[1] += pt_cloud.pts[curr_pt_cloud_idx].y;
-      curr_centroid[2] += pt_cloud.pts[curr_pt_cloud_idx].z;
+      curr_centroid[0] += pt_cloud.points[curr_pt_cloud_idx].x;
+      curr_centroid[1] += pt_cloud.points[curr_pt_cloud_idx].y;
+      curr_centroid[2] += pt_cloud.points[curr_pt_cloud_idx].z;
     }
 
     // normalize by number of points
@@ -114,7 +114,7 @@ int point_cloud_clustering::PointCloudClustering::cluster(const sensor_msgs::Poi
 {
   // Create set of all indices in the point cloud
   set<unsigned int> all_indices;
-  const unsigned int nbr_pts = pt_cloud.pts.size();
+  const unsigned int nbr_pts = pt_cloud.points.size();
   pair<set<unsigned int>::iterator, bool> ret = all_indices.insert(0);
   for (unsigned int i = 1 ; i < nbr_pts ; i++)
   {

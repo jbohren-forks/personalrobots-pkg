@@ -658,12 +658,12 @@ public:
 
     // visualize all trackers
     channel.name = "rgb";
-    channel.vals = weights;
+    channel.values = weights;
     sensor_msgs::PointCloud  people_cloud; 
-    people_cloud.chan.push_back(channel);
+    people_cloud.channels.push_back(channel);
     people_cloud.header.frame_id = fixed_frame;//scan_.header.frame_id;
     people_cloud.header.stamp = scan->header.stamp;
-    people_cloud.pts  = filter_visualize;
+    people_cloud.points  = filter_visualize;
     publish("kalman_filt_cloud", people_cloud);
 
   }

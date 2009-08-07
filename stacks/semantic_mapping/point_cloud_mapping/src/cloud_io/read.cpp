@@ -87,11 +87,11 @@ namespace cloud_io
       {
         int remaining_tokens = st.size () - (1 + 3);
         specified_channel_count = st.size () - 1; // need this to make ARRAY work
-        points.set_chan_size (remaining_tokens);
+        points.set_channels_size (remaining_tokens);
         for (int i = 0; i < remaining_tokens; i++)
         {
           std::string col_type = st.at (i + 4);
-          points.chan[i].name = col_type;
+          points.channels[i].name = col_type;
         }
 
         continue;
@@ -100,10 +100,10 @@ namespace cloud_io
       if (line_type.substr (0, 6) == "POINTS")
       {
         nr_points = atoi (st.at (1).c_str ());
-        points.set_pts_size (nr_points);
+        points.set_points_size (nr_points);
 
-        for (unsigned int d = 0; d < points.get_chan_size (); d++)
-          points.chan[d].set_vals_size (nr_points);
+        for (unsigned int d = 0; d < points.get_channels_size (); d++)
+          points.channels[d].set_values_size (nr_points);
 
         continue;
       }
@@ -125,13 +125,13 @@ namespace cloud_io
       {
         array_width = atoi (st.at (1).c_str ());
         array_height = atoi (st.at (2).c_str ());
-        points.set_chan_size (specified_channel_count + 2);
-        points.chan[specified_channel_count].name = "array_width";
-        points.chan[specified_channel_count+1].name = "array_height";
-        points.chan[specified_channel_count].set_vals_size (1);
-        points.chan[specified_channel_count+1].set_vals_size (1);
-        points.chan[specified_channel_count].vals[0] = array_width;
-        points.chan[specified_channel_count+1].vals[0] = array_height;
+        points.set_channels_size (specified_channel_count + 2);
+        points.channels[specified_channel_count].name = "array_width";
+        points.channels[specified_channel_count+1].name = "array_height";
+        points.channels[specified_channel_count].set_values_size (1);
+        points.channels[specified_channel_count+1].set_values_size (1);
+        points.channels[specified_channel_count].values[0] = array_width;
+        points.channels[specified_channel_count+1].values[0] = array_height;
         continue;
       }
 
@@ -144,11 +144,11 @@ namespace cloud_io
       }
 
       // Assume x-y-z to be the first dimensions in the file
-      points.pts[idx].x = atof (st.at (0).c_str ());
-      points.pts[idx].y = atof (st.at (1).c_str ());
-      points.pts[idx].z = atof (st.at (2).c_str ());
+      points.points[idx].x = atof (st.at (0).c_str ());
+      points.points[idx].y = atof (st.at (1).c_str ());
+      points.points[idx].z = atof (st.at (2).c_str ());
       for (int i = 0; i < specified_channel_count-3; i++)
-        points.chan[i].vals[idx] = atof (st.at (i+3).c_str ());
+        points.channels[i].values[idx] = atof (st.at (i+3).c_str ());
 
       idx++;
     }
@@ -165,10 +165,10 @@ namespace cloud_io
         return (-1);
 
       // Compute how much a point (with it's N-dimensions) occupies in terms of bytes
-      int point_size = sizeof (float) * (points.chan.size () + 3);
+      int point_size = sizeof (float) * (points.channels.size () + 3);
 
       // Prepare the map
-      char *map = (char*)mmap (0, points.pts.size () * point_size, PROT_READ, MAP_SHARED, fd, getpagesize ());
+      char *map = (char*)mmap (0, points.points.size () * point_size, PROT_READ, MAP_SHARED, fd, getpagesize ());
       if (map == MAP_FAILED)
       {
         close (fd);
@@ -176,27 +176,27 @@ namespace cloud_io
       }
 
       // Read the data
-      for (unsigned int i = 0; i < points.pts.size (); i++)
+      for (unsigned int i = 0; i < points.points.size (); i++)
       {
         int idx_j = 0;
 
         // Copy the x-y-z point coordinates
-        memcpy (&points.pts[i].x, (char*)&map[i * point_size + idx_j], sizeof (float));
+        memcpy (&points.points[i].x, (char*)&map[i * point_size + idx_j], sizeof (float));
         idx_j += sizeof (float);
-        memcpy (&points.pts[i].y, (char*)&map[i * point_size + idx_j], sizeof (float));
+        memcpy (&points.points[i].y, (char*)&map[i * point_size + idx_j], sizeof (float));
         idx_j += sizeof (float);
-        memcpy (&points.pts[i].z, (char*)&map[i * point_size + idx_j], sizeof (float));
+        memcpy (&points.points[i].z, (char*)&map[i * point_size + idx_j], sizeof (float));
         idx_j += sizeof (float);
 
-        for (unsigned int j = 0; j < points.chan.size (); j++)
+        for (unsigned int j = 0; j < points.channels.size (); j++)
         {
-          memcpy (&points.chan[j].vals[i], (char*)&map[i * point_size + idx_j], sizeof (float));
+          memcpy (&points.channels[j].values[i], (char*)&map[i * point_size + idx_j], sizeof (float));
           idx_j += sizeof (float);
         }
       }
 
       // Unmap the pages of memory
-      if (munmap (map, points.pts.size () * point_size) == -1)
+      if (munmap (map, points.points.size () * point_size) == -1)
       {
         close (fd);
         return (-1);

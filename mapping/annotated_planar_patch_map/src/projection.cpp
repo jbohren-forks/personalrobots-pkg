@@ -144,20 +144,20 @@ void annotated_planar_patch_map::projection::projectAnyObject(const sensor_msgs:
 
 
   //Input/output points
-  unsigned int num_pts = source_3D.pts.size();
-  target_2D.set_pts_size(num_pts);
+  unsigned int num_pts = source_3D.points.size();
+  target_2D.set_points_size(num_pts);
 
   CvMat* object_points = cvCreateMat( 1, num_pts , CV_64FC3 );
   CvMat* image_points = cvCreateMat( 1, num_pts , CV_64FC2 );
 
   for (unsigned int iP=0;iP<num_pts;iP++){
     CvPoint3D64f pt;
-    //pt.x=-source_3D.pts[iP].y;
-    //pt.y=-source_3D.pts[iP].z;
-    //pt.z= source_3D.pts[iP].x;
-    pt.x= source_3D.pts[iP].x;
-    pt.y= source_3D.pts[iP].y;
-    pt.z= source_3D.pts[iP].z;
+    //pt.x=-source_3D.points[iP].y;
+    //pt.y=-source_3D.points[iP].z;
+    //pt.z= source_3D.points[iP].x;
+    pt.x= source_3D.points[iP].x;
+    pt.y= source_3D.points[iP].y;
+    pt.z= source_3D.points[iP].z;
     
     CV_MAT_ELEM( *object_points, CvPoint3D64f, 0, iP ) = pt;
 
@@ -171,8 +171,8 @@ void annotated_planar_patch_map::projection::projectAnyObject(const sensor_msgs:
   {
     CvPoint2D64f &img_pt=CV_MAT_ELEM( *image_points, CvPoint2D64f, 0, iPt );
 
-    const geometry_msgs::Point32 &old_pt=source_3D.pts[iPt];
-    geometry_msgs::Point32 &new_pt=target_2D.pts[iPt];
+    const geometry_msgs::Point32 &old_pt=source_3D.points[iPt];
+    geometry_msgs::Point32 &new_pt=target_2D.points[iPt];
     new_pt.x=img_pt.x;
     new_pt.y=img_pt.y;
     new_pt.z=old_pt.z; //I mean, this is the "z" - distance from the image

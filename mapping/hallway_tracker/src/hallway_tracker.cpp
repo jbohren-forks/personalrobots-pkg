@@ -188,18 +188,18 @@ public:
     }
 
     // Check that the cloud is large enough.
-    if(cloud_.pts.empty())
+    if(cloud_.points.empty())
     {
       ROS_WARN("Received an empty point cloud");
       return;
     }
-    if ((int)cloud_.pts.size() < sac_min_points_per_model_)
+    if ((int)cloud_.points.size() < sac_min_points_per_model_)
     {
       ROS_WARN("Insufficient points in the scan for the parallel lines model.");
       return;
     }
 
-    int cloud_size = cloud_.pts.size();
+    int cloud_size = cloud_.points.size();
     vector<int> possible_hallway_points;
     possible_hallway_points.resize(cloud_size);
 
@@ -209,9 +209,9 @@ public:
     tmp_pt_in.stamp_ = cloud_.header.stamp;
     tmp_pt_in.frame_id_ = cloud_.header.frame_id;
     for (int i=0; i<cloud_size; ++i) {
-      tmp_pt_in[0] = cloud_.pts[i].x;
-      tmp_pt_in[1] = cloud_.pts[i].y;
-      tmp_pt_in[2] = cloud_.pts[i].z;
+      tmp_pt_in[0] = cloud_.points[i].x;
+      tmp_pt_in[1] = cloud_.points[i].y;
+      tmp_pt_in[2] = cloud_.points[i].z;
       try {
       tf_->transformPoint("base_laser", tmp_pt_in, tmp_pt_out); // Get distance from the robot.
       }
@@ -246,18 +246,18 @@ public:
       visualization(coeffs, inliers);
       // Publish the result
       sensor_msgs::PointCloud model_cloud;
-      model_cloud.pts.resize(3);
+      model_cloud.points.resize(3);
       model_cloud.header.stamp = cloud_.header.stamp;
       model_cloud.header.frame_id = fixed_frame_;
-      model_cloud.pts[0].x = coeffs[0];
-      model_cloud.pts[0].y = coeffs[1];
-      model_cloud.pts[0].z = coeffs[2];
-      model_cloud.pts[1].x = coeffs[3];
-      model_cloud.pts[1].y = coeffs[4];
-      model_cloud.pts[1].z = coeffs[5];
-      model_cloud.pts[2].x = coeffs[6];
-      model_cloud.pts[2].y = coeffs[7];
-      model_cloud.pts[2].z = coeffs[8];
+      model_cloud.points[0].x = coeffs[0];
+      model_cloud.points[0].y = coeffs[1];
+      model_cloud.points[0].z = coeffs[2];
+      model_cloud.points[1].x = coeffs[3];
+      model_cloud.points[1].y = coeffs[4];
+      model_cloud.points[1].z = coeffs[5];
+      model_cloud.points[2].x = coeffs[6];
+      model_cloud.points[2].y = coeffs[7];
+      model_cloud.points[2].z = coeffs[8];
       node_->publish("parallel_lines_model", model_cloud);
     }
     else {
@@ -323,9 +323,9 @@ public:
     sensor_msgs::PointCloud  inlier_cloud;
     inlier_cloud.header.frame_id = fixed_frame_;
     inlier_cloud.header.stamp = cloud_.header.stamp;
-    inlier_cloud.pts.resize(inliers.size());
+    inlier_cloud.points.resize(inliers.size());
     for (unsigned int i=0; i<inliers.size(); ++i) {
-      inlier_cloud.pts[i]  = cloud_.pts[inliers[i]];
+      inlier_cloud.points[i]  = cloud_.points[inliers[i]];
     }
     node_->publish("parallel_lines_inliers", inlier_cloud);
   }

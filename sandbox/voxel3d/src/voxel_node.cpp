@@ -120,7 +120,7 @@ private:
       sensor_msgs::PointCloud msg;
       TF.transformPointCloud(frame_, *msg_orig, msg);
       ROS_INFO("TF Transform took %lf seconds", (ros::WallTime::now() - start).toSec());
-      printf("%d points\n", msg.pts.size());
+      printf("%d points\n", msg.points.size());
       start = ros::WallTime::now();
 
       voxel_->reset();

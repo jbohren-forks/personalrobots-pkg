@@ -140,9 +140,9 @@ void PredictionNode::cloudCallback(const PointCloudConstPtr& the_cloud)
 
     PointCloud cloud_out=*the_cloud;
 
-    unsigned int num_in=the_cloud->pts.size();
-    unsigned int nC_in=the_cloud->chan.size();
-    unsigned int free_channel=the_cloud->chan.size();
+    unsigned int num_in=the_cloud->points.size();
+    unsigned int nC_in=the_cloud->channels.size();
+    unsigned int free_channel=the_cloud->channels.size();
 
     int chan_RGB_id;
     map<int, std_msgs::ColorRGBA> label_colors;
@@ -176,21 +176,21 @@ void PredictionNode::cloudCallback(const PointCloudConstPtr& the_cloud)
     unsigned int chan_predictions_id=free_channel;
     free_channel++;
     unsigned int nCout=free_channel;
-    cloud_out.chan.resize(nCout);
+    cloud_out.channels.resize(nCout);
 
-    cloud_out.chan[chan_predictions_id].name="predicted_label";
-    cloud_out.chan[chan_predictions_id].vals.resize(num_in);
+    cloud_out.channels[chan_predictions_id].name="predicted_label";
+    cloud_out.channels[chan_predictions_id].values.resize(num_in);
 
     if(use_colors_ && chan_RGB_id>=nC_in)
     {
-      cloud_out.chan[chan_RGB_id].name="rgb";
-      cloud_out.chan[chan_RGB_id].vals.resize(num_in);
+      cloud_out.channels[chan_RGB_id].name="rgb";
+      cloud_out.channels[chan_RGB_id].values.resize(num_in);
     }
 
 
     for(unsigned int iPt=0;iPt<num_in;iPt++)
     {
-      cloud_out.chan[chan_predictions_id].vals[iPt]=inferred_labels[iPt];
+      cloud_out.channels[chan_predictions_id].values[iPt]=inferred_labels[iPt];
 
       if(use_colors_)
       {
@@ -199,7 +199,7 @@ void PredictionNode::cloudCallback(const PointCloudConstPtr& the_cloud)
         int g=int(round(color.g*255));
         int b=int(round(color.b*255));
         int rgb = (r << 16) | (g << 8) | b;
-        cloud_out.chan[chan_RGB_id].vals[iPt] = *reinterpret_cast<float*>(&rgb);
+        cloud_out.channels[chan_RGB_id].values[iPt] = *reinterpret_cast<float*>(&rgb);
 
       }
     }        
@@ -210,8 +210,8 @@ void PredictionNode::cloudCallback(const PointCloudConstPtr& the_cloud)
 	unsigned int nbr_correct_in_pcd;
 	unsigned int nbr_gt_in_pcd;
 	double accuracy;	
-	computeClassificationRates( cloud_out.chan[chan_predictions_id].vals, 
-				    the_cloud->chan[chan_gt].vals,
+	computeClassificationRates( cloud_out.channels[chan_predictions_id].values, 
+				    the_cloud->channels[chan_gt].values,
 				    m3n_model2.getTrainingLabels(),
 				    nbr_correct_in_pcd,
 				    nbr_gt_in_pcd,

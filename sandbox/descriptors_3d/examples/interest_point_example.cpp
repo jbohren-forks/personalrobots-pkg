@@ -59,10 +59,10 @@ int main()
   sensor_msgs::PointCloud data;
   createPointCloud(data);
   cloud_kdtree::KdTreeANN data_kdtree(data);
-  cv::Vector<const geometry_msgs::Point32*> interest_pts(data.pts.size());
-  for (size_t i = 0 ; i < data.pts.size() ; i++)
+  cv::Vector<const geometry_msgs::Point32*> interest_pts(data.points.size());
+  for (size_t i = 0 ; i < data.points.size() ; i++)
   {
-    interest_pts[i] = &(data.pts[i]);
+    interest_pts[i] = &(data.points[i]);
   }
 
   // ----------------------------------------------
@@ -155,13 +155,13 @@ int main()
 void createPointCloud(sensor_msgs::PointCloud& data)
 {
   unsigned int nbr_pts = 5000;
-  data.pts.resize(nbr_pts);
+  data.points.resize(nbr_pts);
 
   for (unsigned int i = 0 ; i < nbr_pts ; i++)
   {
-    data.pts[i].x = rand() % 50;
-    data.pts[i].y = rand() % 50;
-    data.pts[i].z = rand() % 50;
+    data.points[i].x = rand() % 50;
+    data.points[i].y = rand() % 50;
+    data.points[i].z = rand() % 50;
   }
 }
 

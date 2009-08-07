@@ -111,18 +111,18 @@ void voxelCallback(const ros::Publisher& pub_marked, const ros::Publisher& pub_u
 
   {
     sensor_msgs::PointCloud cloud;
-    cloud.pts.resize(num_marked);
-    cloud.chan.resize(1);
-    cloud.chan[0].vals.resize(num_marked);
-    cloud.chan[0].name = "rgb";
+    cloud.points.resize(num_marked);
+    cloud.channels.resize(1);
+    cloud.channels[0].values.resize(num_marked);
+    cloud.channels[0].name = "rgb";
     cloud.header.frame_id = frame_id;
     cloud.header.stamp = stamp;
 
-    sensor_msgs::ChannelFloat32& chan = cloud.chan[0];
+    sensor_msgs::ChannelFloat32& chan = cloud.channels[0];
     for (uint32_t i = 0; i < num_marked; ++i)
     {
-      geometry_msgs::Point32& p = cloud.pts[i];
-      float& cval = chan.vals[i];
+      geometry_msgs::Point32& p = cloud.points[i];
+      float& cval = chan.values[i];
       Cell& c = g_marked[i];
 
       p.x = c.x;
@@ -143,18 +143,18 @@ void voxelCallback(const ros::Publisher& pub_marked, const ros::Publisher& pub_u
 
   {
     sensor_msgs::PointCloud cloud;
-    cloud.pts.resize(num_unknown);
-    cloud.chan.resize(1);
-    cloud.chan[0].vals.resize(num_unknown);
-    cloud.chan[0].name = "rgb";
+    cloud.points.resize(num_unknown);
+    cloud.channels.resize(1);
+    cloud.channels[0].values.resize(num_unknown);
+    cloud.channels[0].name = "rgb";
     cloud.header.frame_id = frame_id;
     cloud.header.stamp = stamp;
 
-    sensor_msgs::ChannelFloat32& chan = cloud.chan[0];
+    sensor_msgs::ChannelFloat32& chan = cloud.channels[0];
     for (uint32_t i = 0; i < num_unknown; ++i)
     {
-      geometry_msgs::Point32& p = cloud.pts[i];
-      float& cval = chan.vals[i];
+      geometry_msgs::Point32& p = cloud.points[i];
+      float& cval = chan.values[i];
       Cell& c = g_unknown[i];
 
       p.x = c.x;

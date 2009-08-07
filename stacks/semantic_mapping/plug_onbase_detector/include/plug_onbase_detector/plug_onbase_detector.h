@@ -153,8 +153,8 @@ class PlugOnBaseDetector
       {
         node_.advertise<sensor_msgs::PointCloud> ("~plug_stow_cloud_debug", 1);
 
-        cloud_annotated_.chan.resize (1);
-        cloud_annotated_.chan[0].name = "rgb";
+        cloud_annotated_.channels.resize (1);
+        cloud_annotated_.channels[0].name = "rgb";
       }
     }
 
@@ -170,7 +170,7 @@ class PlugOnBaseDetector
       }
 
 
-      ROS_DEBUG ("Received %u data points in frame %s.", (unsigned int)cloud_.pts.size (), cloud_.header.frame_id.c_str ());
+      ROS_DEBUG ("Received %u data points in frame %s.", (unsigned int)cloud_.points.size (), cloud_.header.frame_id.c_str ());
 
       if (cloud_.header.frame_id != "base_link")
       {
@@ -190,14 +190,14 @@ class PlugOnBaseDetector
       t1 = ros::Time::now ();
 
       // Trim the point cloud to the base of the robot + base_plane_height
-      vector<int> indices_in_bounds (cloud_tr_.pts.size ());
+      vector<int> indices_in_bounds (cloud_tr_.points.size ());
       int nr_p = 0;
-      for (unsigned int i = 0; i < cloud_tr_.pts.size (); i++)
+      for (unsigned int i = 0; i < cloud_tr_.points.size (); i++)
       {
-        if (cloud_tr_.pts[i].z >= base_z_min_  && cloud_tr_.pts[i].z <= (base_z_min_ + base_plane_height_))
+        if (cloud_tr_.points[i].z >= base_z_min_  && cloud_tr_.points[i].z <= (base_z_min_ + base_plane_height_))
         {
-          double dist = (cloud_.pts[i].x) * (cloud_.pts[i].x) +
-                        (cloud_.pts[i].y) * (cloud_.pts[i].y);
+          double dist = (cloud_.points[i].x) * (cloud_.points[i].x) +
+                        (cloud_.points[i].y) * (cloud_.points[i].y);
           if (dist < base_xy_max_)
           {
             indices_in_bounds[nr_p] = i;
@@ -222,8 +222,8 @@ class PlugOnBaseDetector
       // Remove points below the plane
       for (unsigned int i = 0; i < indices_in_bounds.size (); i++)
       {
-        assert(int(cloud_tr_.pts.size()) > indices_in_bounds[i]);
-        if (cloud_geometry::distances::pointToPlaneDistanceSigned (cloud_tr_.pts[indices_in_bounds.at (i)], coeff) < 0)
+        assert(int(cloud_tr_.points.size()) > indices_in_bounds[i]);
+        if (cloud_geometry::distances::pointToPlaneDistanceSigned (cloud_tr_.points[indices_in_bounds.at (i)], coeff) < 0)
           inliers.push_back (indices_in_bounds.at (i));
       }
 
@@ -275,28 +275,28 @@ class PlugOnBaseDetector
 #if DEBUG
 //        indices_in_bounds = inliers;
         indices_in_bounds = remaining_indices;
-        cloud_annotated_.pts.resize (indices_in_bounds.size ());
-        cloud_annotated_.chan[0].vals.resize (indices_in_bounds.size ());
+        cloud_annotated_.points.resize (indices_in_bounds.size ());
+        cloud_annotated_.channels[0].values.resize (indices_in_bounds.size ());
         for (unsigned int i = 0; i < indices_in_bounds.size (); i++)
         {
-          cloud_annotated_.pts[i].x = cloud_.pts[indices_in_bounds.at (i)].x;
-          cloud_annotated_.pts[i].y = cloud_.pts[indices_in_bounds.at (i)].y;
-          cloud_annotated_.pts[i].z = cloud_.pts[indices_in_bounds.at (i)].z;
-          cloud_annotated_.chan[0].vals[i] = 0;
+          cloud_annotated_.points[i].x = cloud_.points[indices_in_bounds.at (i)].x;
+          cloud_annotated_.points[i].y = cloud_.points[indices_in_bounds.at (i)].y;
+          cloud_annotated_.points[i].z = cloud_.points[indices_in_bounds.at (i)].z;
+          cloud_annotated_.channels[0].values[i] = 0;
         }
 #endif
         if (p_stow_.stowed)
         {
-          cloud_annotated_.pts.resize (1); cloud_annotated_.chan[0].vals.resize (1);
-          cloud_annotated_.pts[0].x = p_stow_.plug_centroid.x;
-          cloud_annotated_.pts[0].y = p_stow_.plug_centroid.y;
-          cloud_annotated_.pts[0].z = p_stow_.plug_centroid.z;
-          cloud_annotated_.chan[0].vals[0] = 255;
-          ROS_INFO ("Debug publishing enabled with %d points.", (int)cloud_annotated_.pts.size ());
+          cloud_annotated_.points.resize (1); cloud_annotated_.channels[0].values.resize (1);
+          cloud_annotated_.points[0].x = p_stow_.plug_centroid.x;
+          cloud_annotated_.points[0].y = p_stow_.plug_centroid.y;
+          cloud_annotated_.points[0].z = p_stow_.plug_centroid.z;
+          cloud_annotated_.channels[0].values[0] = 255;
+          ROS_INFO ("Debug publishing enabled with %d points.", (int)cloud_annotated_.points.size ());
         }
         else
         {
-          cloud_annotated_.pts.resize (0); cloud_annotated_.chan[0].vals.resize (0);
+          cloud_annotated_.points.resize (0); cloud_annotated_.channels[0].values.resize (0);
         }
 
         node_.publish ("~plug_stow_cloud_debug", cloud_annotated_);
@@ -424,7 +424,7 @@ class PlugOnBaseDetector
         model->selectWithinDistance (coeff, dist_thresh, inliers);
 
         // Flip plane normal according to the viewpoint information
-        cloud_geometry::angles::flipNormalTowardsViewpoint (coeff, points.pts.at (inliers[0]), viewpoint_cloud);
+        cloud_geometry::angles::flipNormalTowardsViewpoint (coeff, points.points.at (inliers[0]), viewpoint_cloud);
         //ROS_INFO ("Found a model supported by %d inliers: [%g, %g, %g, %g]\n", sac->getInliers ().size (),
         //          coeff[0], coeff[1], coeff[2], coeff[3]);
       }

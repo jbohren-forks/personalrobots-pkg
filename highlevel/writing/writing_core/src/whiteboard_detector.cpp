@@ -96,16 +96,16 @@ private:
 		out.header.stamp = in.header.stamp;
 		out.header.frame_id = in.header.frame_id;
 
-		out.chan.resize(in.chan.size());
-		for (size_t c=0;c<in.chan.size();++c) {
-			out.chan[c].name = in.chan[c].name;
+		out.channels.resize(in.channels.size());
+		for (size_t c=0;c<in.channels.size();++c) {
+			out.channels[c].name = in.channels[c].name;
 		}
 
-		for (size_t i=0;i<in.get_pts_size();++i) {
-			if (in.pts[i].z>min_height_) {
-				out.pts.push_back(in.pts[i]);
-				for (size_t c=0;c<in.chan.size();++c) {
-					out.chan[c].vals.push_back(in.chan[c].vals[i]);
+		for (size_t i=0;i<in.get_points_size();++i) {
+			if (in.points[i].z>min_height_) {
+				out.points.push_back(in.points[i]);
+				for (size_t c=0;c<in.channels.size();++c) {
+					out.channels[c].values.push_back(in.channels[c].values[i]);
 				}
 			}
 		}
@@ -121,8 +121,8 @@ private:
 
 		cloud_pub_.publish(cloud);
 
-		vector<int> indices(cloud.get_pts_size());
-		for (size_t i=0;i<cloud.get_pts_size();++i) {
+		vector<int> indices(cloud.get_points_size());
+		for (size_t i=0;i<cloud.get_points_size();++i) {
 			indices[i] = i;
 		}
 		geometry_msgs::Point32 viewpoint;
@@ -219,7 +219,7 @@ private:
 			}
 
 			// Flip the plane normal towards the viewpoint
-			cloud_geometry::angles::flipNormalTowardsViewpoint (coeff, points.pts.at(inliers[0]), viewpoint);
+			cloud_geometry::angles::flipNormalTowardsViewpoint (coeff, points.points.at(inliers[0]), viewpoint);
 
 			ROS_INFO ("Found a planar model supported by %d inliers: [%g, %g, %g, %g]", (int)inliers.size (), coeff[0], coeff[1], coeff[2], coeff[3]);
 		}

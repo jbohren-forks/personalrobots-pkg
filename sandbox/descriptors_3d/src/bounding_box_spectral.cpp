@@ -164,9 +164,9 @@ void BoundingBoxSpectral::computeNeighborhoodFeature(const sensor_msgs::PointClo
   // Initialize extrema values of the first point's scalar projections
   // onto the principle components
   Eigen::Vector3d curr_pt;
-  curr_pt[0] = data.pts[neighbor_indices[0]].x;
-  curr_pt[1] = data.pts[neighbor_indices[0]].y;
-  curr_pt[2] = data.pts[neighbor_indices[0]].z;
+  curr_pt[0] = data.points[neighbor_indices[0]].x;
+  curr_pt[1] = data.points[neighbor_indices[0]].y;
+  curr_pt[2] = data.points[neighbor_indices[0]].z;
   float min_v1 = curr_pt.dot(*eig_vec_max) / norm_ev_max;
   float min_v2 = curr_pt.dot(*eig_vec_mid) / norm_ev_mid;
   float min_v3 = curr_pt.dot(*eig_vec_min) / norm_ev_min;
@@ -177,9 +177,9 @@ void BoundingBoxSpectral::computeNeighborhoodFeature(const sensor_msgs::PointClo
   // Loop over remaining points in region and update projection extremas
   for (unsigned int i = 1 ; i < nbr_pts ; i++)
   {
-    curr_pt[0] = data.pts[neighbor_indices[i]].x;
-    curr_pt[1] = data.pts[neighbor_indices[i]].y;
-    curr_pt[2] = data.pts[neighbor_indices[i]].z;
+    curr_pt[0] = data.points[neighbor_indices[i]].x;
+    curr_pt[1] = data.points[neighbor_indices[i]].y;
+    curr_pt[2] = data.points[neighbor_indices[i]].z;
 
     // biggest eigenvector
     float curr_projection = curr_pt.dot(*eig_vec_max) / norm_ev_max;

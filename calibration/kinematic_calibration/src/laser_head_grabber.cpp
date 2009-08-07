@@ -321,12 +321,12 @@ public:
 
     // Build Laser Measurement Vector (Tilt angle, pointing angle, dist)
     SensorSample laser_sample ;
-    laser_sample.m.resize(safe_laser_measurement_.pts.size()*3) ;
-    for(unsigned int i=0; i<safe_laser_measurement_.pts.size(); i++)
+    laser_sample.m.resize(safe_laser_measurement_.points.size()*3) ;
+    for(unsigned int i=0; i<safe_laser_measurement_.points.size(); i++)
     {
-      laser_sample.m[3*i+0] = safe_laser_measurement_.pts[i].x ;
-      laser_sample.m[3*i+1] = safe_laser_measurement_.pts[i].y ;
-      laser_sample.m[3*i+2] = safe_laser_measurement_.pts[i].z ;
+      laser_sample.m[3*i+0] = safe_laser_measurement_.points[i].x ;
+      laser_sample.m[3*i+1] = safe_laser_measurement_.points[i].y ;
+      laser_sample.m[3*i+2] = safe_laser_measurement_.points[i].z ;
     }
     laser_sample.sensor = "tilt_laser" ;
     laser_sample.target = "6x8_cb" ;
@@ -382,11 +382,11 @@ public:
     SensorSample sample ;
     sample.sensor = sensor ;
     sample.target = target ;
-    sample.m.resize(2*corners.pts.size()) ;
-    for(unsigned int i=0; i<corners.pts.size(); i++)
+    sample.m.resize(2*corners.points.size()) ;
+    for(unsigned int i=0; i<corners.points.size(); i++)
     {
-      sample.m[2*i+0] = corners.pts[i].x ;
-      sample.m[2*i+1] = corners.pts[i].y ;
+      sample.m[2*i+0] = corners.points[i].x ;
+      sample.m[2*i+1] = corners.points[i].y ;
     }
     return sample ;
   }

@@ -162,7 +162,7 @@ namespace sample_consensus
       {
         std::set<int> random_idx;
         for (int i = 0; i < nr_samples; i++)
-          random_idx.insert ((int) (points.pts.size () * (rand () / (RAND_MAX + 1.0))));
+          random_idx.insert ((int) (points.points.size () * (rand () / (RAND_MAX + 1.0))));
         return (random_idx);
       }
 

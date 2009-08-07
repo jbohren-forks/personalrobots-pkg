@@ -156,9 +156,9 @@ void transformPolygonalMap(const std::string& target_frame, const ros::Time& tar
   if (! bSame )
   {
     polymapOut.header = polymapIn.header;
-    polymapOut.set_chan_size(polymapIn.get_chan_size());
-    for (unsigned int i = 0 ; i < polymapIn.get_chan_size() ; ++i)
-      polymapOut.chan[i] = polymapIn.chan[i];
+    polymapOut.set_channels_size(polymapIn.get_channels_size());
+    for (unsigned int i = 0 ; i < polymapIn.get_channels_size() ; ++i)
+      polymapOut.channels[i] = polymapIn.channels[i];
   }
 
   //Override the positions

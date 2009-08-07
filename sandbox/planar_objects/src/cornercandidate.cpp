@@ -236,7 +236,7 @@ double CornerCandidate::computeSupport3d(const sensor_msgs::PointCloud& cloud, s
   btTransform tf_inv = tf.inverse();
   for (size_t i = 0; i < plane_indices.size(); i++)
   {
-    geometry_msgs::Point32 point = cloud.pts[plane_indices[i]];
+    geometry_msgs::Point32 point = cloud.points[plane_indices[i]];
     btVector3 vec = tf_inv * btVector3(point.x, point.y, point.z);
     if (vec.x() >= 0 && vec.x() <= w && vec.y() >= 0 && vec.y() <= h)
     {

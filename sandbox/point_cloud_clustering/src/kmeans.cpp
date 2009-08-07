@@ -83,7 +83,7 @@ int point_cloud_clustering::KMeans::cluster(const sensor_msgs::PointCloud& pt_cl
 
   // ----------------------------------------------------------
   // Calculate clustering information
-  const unsigned int nbr_total_pts = pt_cloud.pts.size();
+  const unsigned int nbr_total_pts = pt_cloud.points.size();
   const unsigned int nbr_cluster_samples = indices_to_cluster.size();
   const unsigned int cluster_feature_dim = 3; // x y z
 
@@ -117,9 +117,9 @@ int point_cloud_clustering::KMeans::cluster(const sensor_msgs::PointCloud& pt_cl
     const unsigned int curr_offset = curr_sample_idx * cluster_feature_dim;
 
     // copy xyz coordinates
-    feature_matrix[curr_offset] = pt_cloud.pts[curr_pt_cloud_idx].x;
-    feature_matrix[curr_offset + 1] = pt_cloud.pts[curr_pt_cloud_idx].y;
-    feature_matrix[curr_offset + 2] = pt_cloud.pts[curr_pt_cloud_idx].z;
+    feature_matrix[curr_offset] = pt_cloud.points[curr_pt_cloud_idx].x;
+    feature_matrix[curr_offset + 1] = pt_cloud.points[curr_pt_cloud_idx].y;
+    feature_matrix[curr_offset + 2] = pt_cloud.points[curr_pt_cloud_idx].z;
 
     curr_sample_idx++;
   }

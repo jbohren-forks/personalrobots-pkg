@@ -55,7 +55,7 @@ void
   string door_frame  = door.header.frame_id;
 
   // Resize the resultant indices to accomodate all data
-  indices.resize (points.pts.size ());
+  indices.resize (points.points.size ());
 
   // Transform the X-Y bounds from the door request service into the cloud TF frame
   tf::Stamped<geometry_msgs::Point32> frame_p1 (door.frame_p1, points.header.stamp, door_frame);
@@ -74,7 +74,7 @@ void
     ROS_INFO ("Door frame multiplier set to -1. Using the entire point cloud data.");
     // Use the complete bounds of the point cloud
     cloud_geometry::statistics::getMinMax (points, min_bbox, max_bbox);
-    for (unsigned int i = 0; i < points.pts.size (); i++)
+    for (unsigned int i = 0; i < points.points.size (); i++)
       indices[i] = i;
   }
   else
@@ -89,11 +89,11 @@ void
     get3DBounds (&frame_p1, &frame_p2, min_bbox, max_bbox, min_z_bounds, max_z_bounds, frame_multiplier);
 
     int nr_p = 0;
-    for (unsigned int i = 0; i < points.pts.size (); i++)
+    for (unsigned int i = 0; i < points.points.size (); i++)
     {
-      if ((points.pts[i].x >= min_bbox.x && points.pts[i].x <= max_bbox.x) &&
-          (points.pts[i].y >= min_bbox.y && points.pts[i].y <= max_bbox.y) &&
-          (points.pts[i].z >= min_bbox.z && points.pts[i].z <= max_bbox.z))
+      if ((points.points[i].x >= min_bbox.x && points.points[i].x <= max_bbox.x) &&
+          (points.points[i].y >= min_bbox.y && points.points[i].y <= max_bbox.y) &&
+          (points.points[i].z >= min_bbox.z && points.points[i].z <= max_bbox.z))
       {
         indices[nr_p] = i;
         nr_p++;
@@ -287,7 +287,7 @@ selectBestDistributionStatistics (const sensor_msgs::PointCloud &points, const v
   double mean, stddev;
   // Compute the mean and standard deviation of the distribution
   cloud_geometry::statistics::getChannelMeanStd (points, indices, d_idx, mean, stddev);
-  //ROS_INFO ("Mean and standard deviation of the %s channel (%d) distribution: %g / %g.", points->chan[d_idx].name.c_str (), d_idx, mean, stddev);
+  //ROS_INFO ("Mean and standard deviation of the %s channel (%d) distribution: %g / %g.", points->channels[d_idx].name.c_str (), d_idx, mean, stddev);
 
   // (Chebyshev's inequality: at least 98% of the values are within 7 standard deviations from the mean)
   vector<int> alpha_vals (71);
@@ -348,7 +348,7 @@ void
   cloud_geometry::statistics::getChannelMeanStd (points, indices, d_idx_2, mean_2, stddev_2);
 
   //for (int i = 0; i < indices->size (); i++)
-  //  std::cout << points->chan[d_idx_1].vals[indices->at (i)] << " " << points->chan[d_idx_2].vals[indices->at (i)] << std::endl;
+  //  std::cout << points->channels[d_idx_1].values[indices->at (i)] << " " << points->channels[d_idx_2].values[indices->at (i)] << std::endl;
 
   // (Chebyshev's inequality: at least 98% of the values are within 7 standard deviations from the mean)
   vector<int> alpha_vals_1 (71), alpha_vals_2 (71);
@@ -489,9 +489,9 @@ void
 
 //    double norm_a = 0.0;
 //    if (nx_idx != -1)         // If we use normal indices...
-//      norm_a = sqrt (points->chan[nx_idx].vals[indices->at (i)] * points->chan[nx_idx].vals[indices->at (i)] +
-//                     points->chan[ny_idx].vals[indices->at (i)] * points->chan[ny_idx].vals[indices->at (i)] +
-//                     points->chan[nz_idx].vals[indices->at (i)] * points->chan[nz_idx].vals[indices->at (i)]);
+//      norm_a = sqrt (points->channels[nx_idx].values[indices->at (i)] * points->channels[nx_idx].values[indices->at (i)] +
+//                     points->channels[ny_idx].values[indices->at (i)] * points->channels[ny_idx].values[indices->at (i)] +
+//                     points->channels[nz_idx].values[indices->at (i)] * points->channels[nz_idx].values[indices->at (i)]);
 
     processed[i] = true;
 
@@ -508,13 +508,13 @@ void
         processed[nn_indices[j]] = true;
         if (nx_idx != -1)                                         // Are point normals present ?
         {
-//          double norm_b = sqrt (points.chan[nx_idx].vals[indices.at (nn_indices[j])] * points.chan[nx_idx].vals[indices.at (nn_indices[j])] +
-//                                points.chan[ny_idx].vals[indices.at (nn_indices[j])] * points.chan[ny_idx].vals[indices.at (nn_indices[j])] +
-//                                points.chan[nz_idx].vals[indices.at (nn_indices[j])] * points.chan[nz_idx].vals[indices.at (nn_indices[j])]);
+//          double norm_b = sqrt (points.channels[nx_idx].values[indices.at (nn_indices[j])] * points.channels[nx_idx].values[indices.at (nn_indices[j])] +
+//                                points.channels[ny_idx].values[indices.at (nn_indices[j])] * points.channels[ny_idx].values[indices.at (nn_indices[j])] +
+//                                points.channels[nz_idx].values[indices.at (nn_indices[j])] * points.channels[nz_idx].values[indices.at (nn_indices[j])]);
           // [-1;1]
-          double dot_p = points.chan[nx_idx].vals[indices.at (i)] * points.chan[nx_idx].vals[indices.at (nn_indices[j])] +
-                         points.chan[ny_idx].vals[indices.at (i)] * points.chan[ny_idx].vals[indices.at (nn_indices[j])] +
-                         points.chan[nz_idx].vals[indices.at (i)] * points.chan[nz_idx].vals[indices.at (nn_indices[j])];
+          double dot_p = points.channels[nx_idx].values[indices.at (i)] * points.channels[nx_idx].values[indices.at (nn_indices[j])] +
+                         points.channels[ny_idx].values[indices.at (i)] * points.channels[ny_idx].values[indices.at (nn_indices[j])] +
+                         points.channels[nz_idx].values[indices.at (i)] * points.channels[nz_idx].values[indices.at (nn_indices[j])];
 //          if ( acos (dot_p / (norm_a * norm_b)) < eps_angle)
           if ( fabs (acos (dot_p)) < eps_angle )
           {
@@ -595,7 +595,7 @@ bool
     model->selectWithinDistance (coeff, dist_thresh, inliers);
     //inliers = sac->getInliers ();
 
-    cloud_geometry::angles::flipNormalTowardsViewpoint (coeff, points.pts.at (inliers[0]), viewpoint_cloud);
+    cloud_geometry::angles::flipNormalTowardsViewpoint (coeff, points.points.at (inliers[0]), viewpoint_cloud);
 
     //ROS_DEBUG ("Found a model supported by %d inliers: [%g, %g, %g, %g]\n", sac->getInliers ().size (),
     //           coeff[0], coeff[1], coeff[2], coeff[3]);
@@ -627,30 +627,30 @@ void
 estimatePointNormals (const sensor_msgs::PointCloud &points, const vector<int> &point_indices, sensor_msgs::PointCloud &points_down, int k, const geometry_msgs::PointStamped &viewpoint_cloud)
 {
   // Reserve space for 4 channels: nx, ny, nz, curvature
-  points_down.chan.resize (4);
-  points_down.chan[0].name = "nx";
-  points_down.chan[1].name = "ny";
-  points_down.chan[2].name = "nz";
-  points_down.chan[3].name = "curvatures";
-  for (unsigned int d = 0; d < points_down.chan.size (); d++)
-    points_down.chan[d].vals.resize (points_down.pts.size ());
+  points_down.channels.resize (4);
+  points_down.channels[0].name = "nx";
+  points_down.channels[1].name = "ny";
+  points_down.channels[2].name = "nz";
+  points_down.channels[3].name = "curvatures";
+  for (unsigned int d = 0; d < points_down.channels.size (); d++)
+    points_down.channels[d].values.resize (points_down.points.size ());
 
   // Create a Kd-Tree for the original cloud
   cloud_kdtree::KdTree *kdtree = new cloud_kdtree::KdTreeANN (points, point_indices);
 
   // Allocate enough space for point indices
-  vector<vector<int> > points_k_indices (points_down.pts.size ());
+  vector<vector<int> > points_k_indices (points_down.points.size ());
   vector<float> distances;
 
   // Get the nearest neighbors for all the point indices in the bounds
-  for (int i = 0; i < (int)points_down.pts.size (); i++)
+  for (int i = 0; i < (int)points_down.points.size (); i++)
   {
     //kdtree->nearestKSearch (i, k, points_k_indices[i], distances);
-    kdtree->radiusSearch (points_down.pts[i], 0.025, points_k_indices[i], distances);
+    kdtree->radiusSearch (points_down.points[i], 0.025, points_k_indices[i], distances);
   }
 
 #pragma omp parallel for schedule(dynamic)
-  for (int i = 0; i < (int)points_down.pts.size (); i++)
+  for (int i = 0; i < (int)points_down.points.size (); i++)
   {
     // Compute the point normals (nx, ny, nz), surface curvature estimates (c)
     Eigen::Vector4d plane_parameters;
@@ -659,12 +659,12 @@ estimatePointNormals (const sensor_msgs::PointCloud &points, const vector<int> &
       points_k_indices[i][j] = point_indices.at (points_k_indices[i][j]);
     cloud_geometry::nearest::computePointNormal (points, points_k_indices[i], plane_parameters, curvature);
 
-    cloud_geometry::angles::flipNormalTowardsViewpoint (plane_parameters, points_down.pts[i], viewpoint_cloud);
+    cloud_geometry::angles::flipNormalTowardsViewpoint (plane_parameters, points_down.points[i], viewpoint_cloud);
 
-    points_down.chan[0].vals[i] = plane_parameters (0);
-    points_down.chan[1].vals[i] = plane_parameters (1);
-    points_down.chan[2].vals[i] = plane_parameters (2);
-    points_down.chan[3].vals[i] = curvature;//fabs (plane_parameters (3));
+    points_down.channels[0].values[i] = plane_parameters (0);
+    points_down.channels[1].values[i] = plane_parameters (1);
+    points_down.channels[2].values[i] = plane_parameters (2);
+    points_down.channels[3].values[i] = curvature;//fabs (plane_parameters (3));
   }
   // Delete the kd-tree
   delete kdtree;
@@ -680,15 +680,15 @@ estimatePointNormals (const sensor_msgs::PointCloud &points, const vector<int> &
 void
   estimatePointNormals (sensor_msgs::PointCloud &points, const vector<int> &point_indices, int k, const geometry_msgs::PointStamped &viewpoint_cloud)
 {
-  int old_channel_size = points.chan.size ();
+  int old_channel_size = points.channels.size ();
   // Reserve space for 4 channels: nx, ny, nz, curvature
-  points.chan.resize (old_channel_size + 4);
-  points.chan[old_channel_size + 0].name = "nx";
-  points.chan[old_channel_size + 1].name = "ny";
-  points.chan[old_channel_size + 2].name = "nz";
-  points.chan[old_channel_size + 3].name = "curvatures";
-  for (unsigned int d = old_channel_size; d < points.chan.size (); d++)
-    points.chan[d].vals.resize (points.pts.size ());
+  points.channels.resize (old_channel_size + 4);
+  points.channels[old_channel_size + 0].name = "nx";
+  points.channels[old_channel_size + 1].name = "ny";
+  points.channels[old_channel_size + 2].name = "nz";
+  points.channels[old_channel_size + 3].name = "curvatures";
+  for (unsigned int d = old_channel_size; d < points.channels.size (); d++)
+    points.channels[d].values.resize (points.points.size ());
 
   // Create a Kd-Tree for the original cloud
   cloud_kdtree::KdTree *kdtree = new cloud_kdtree::KdTreeANN (points, point_indices);
@@ -701,7 +701,7 @@ void
   for (unsigned int i = 0; i < point_indices.size (); i++)
   {
     //kdtree->nearestKSearch (i, k, points_k_indices[i], distances);
-    kdtree->radiusSearch (points.pts[point_indices.at (i)], 0.025, points_k_indices[i], distances);
+    kdtree->radiusSearch (points.points[point_indices.at (i)], 0.025, points_k_indices[i], distances);
   }
 
 #pragma omp parallel for schedule(dynamic)
@@ -716,12 +716,12 @@ void
 
     cloud_geometry::nearest::computePointNormal (points, points_k_indices[i], plane_parameters, curvature);
 
-    cloud_geometry::angles::flipNormalTowardsViewpoint (plane_parameters, points.pts[point_indices.at (i)], viewpoint_cloud);
+    cloud_geometry::angles::flipNormalTowardsViewpoint (plane_parameters, points.points[point_indices.at (i)], viewpoint_cloud);
 
-    points.chan[old_channel_size + 0].vals[point_indices.at (i)] = plane_parameters (0);
-    points.chan[old_channel_size + 1].vals[point_indices.at (i)] = plane_parameters (1);
-    points.chan[old_channel_size + 2].vals[point_indices.at (i)] = plane_parameters (2);
-    points.chan[old_channel_size + 3].vals[point_indices.at (i)] = curvature; //fabs (plane_parameters (3));
+    points.channels[old_channel_size + 0].values[point_indices.at (i)] = plane_parameters (0);
+    points.channels[old_channel_size + 1].values[point_indices.at (i)] = plane_parameters (1);
+    points.channels[old_channel_size + 2].values[point_indices.at (i)] = plane_parameters (2);
+    points.channels[old_channel_size + 3].values[point_indices.at (i)] = curvature; //fabs (plane_parameters (3));
   }
   // Delete the kd-tree
   delete kdtree;
@@ -737,15 +737,15 @@ void
 void
   estimatePointNormals (const sensor_msgs::PointCloud &points, sensor_msgs::PointCloud &points_down, int k, const geometry_msgs::PointStamped &viewpoint_cloud)
 {
-  int nr_points = points_down.pts.size ();
+  int nr_points = points_down.points.size ();
   // Reserve space for 4 channels: nx, ny, nz, curvature
-  points_down.chan.resize (4);
-  points_down.chan[0].name = "nx";
-  points_down.chan[1].name = "ny";
-  points_down.chan[2].name = "nz";
-  points_down.chan[3].name = "curvatures";
-  for (unsigned int d = 0; d < points_down.chan.size (); d++)
-    points_down.chan[d].vals.resize (nr_points);
+  points_down.channels.resize (4);
+  points_down.channels[0].name = "nx";
+  points_down.channels[1].name = "ny";
+  points_down.channels[2].name = "nz";
+  points_down.channels[3].name = "curvatures";
+  for (unsigned int d = 0; d < points_down.channels.size (); d++)
+    points_down.channels[d].values.resize (nr_points);
 
   cloud_kdtree::KdTree *kdtree = new cloud_kdtree::KdTreeANN (points);
 
@@ -757,9 +757,9 @@ void
   for (int i = 0; i < nr_points; i++)
   {
     //points_k_indices[i].resize (k);
-    //kdtree->nearestKSearch (&points_down.pts[i], k, points_k_indices[i], distances);
-    //kdtree->radiusSearch (&points_down.pts[i], 0.05, points_k_indices[i], distances);
-    kdtree->radiusSearch (points_down.pts[i], 0.025, points_k_indices[i], distances);
+    //kdtree->nearestKSearch (&points_down.points[i], k, points_k_indices[i], distances);
+    //kdtree->radiusSearch (&points_down.points[i], 0.05, points_k_indices[i], distances);
+    kdtree->radiusSearch (points_down.points[i], 0.025, points_k_indices[i], distances);
   }
 
 //#pragma omp parallel for schedule(dynamic)
@@ -770,12 +770,12 @@ void
     double curvature;
     cloud_geometry::nearest::computePointNormal (points, points_k_indices[i], plane_parameters, curvature);
 
-    cloud_geometry::angles::flipNormalTowardsViewpoint (plane_parameters, points_down.pts[i], viewpoint_cloud);
+    cloud_geometry::angles::flipNormalTowardsViewpoint (plane_parameters, points_down.points[i], viewpoint_cloud);
 
-    points_down.chan[0].vals[i] = plane_parameters (0);
-    points_down.chan[1].vals[i] = plane_parameters (1);
-    points_down.chan[2].vals[i] = plane_parameters (2);
-    points_down.chan[3].vals[i] = curvature;//fabs (plane_parameters (3));
+    points_down.channels[0].values[i] = plane_parameters (0);
+    points_down.channels[1].values[i] = plane_parameters (1);
+    points_down.channels[2].values[i] = plane_parameters (2);
+    points_down.channels[3].values[i] = curvature;//fabs (plane_parameters (3));
   }
   // Delete the kd-tree
   delete kdtree;
@@ -840,7 +840,7 @@ int
   fitSACOrientedLine (sensor_msgs::PointCloud &points,
                       double dist_thresh, const geometry_msgs::Point32 &axis, double eps_angle, std::vector<int> &line_inliers)
 {
-  if (points.pts.size () < 2)
+  if (points.points.size () < 2)
   {
     line_inliers.resize (0);
     return (-1);
@@ -905,7 +905,7 @@ void
   {
     vector<int> points_k_indices;
 
-    kdtree->radiusSearch (points.pts[cluster.at (i)], dist_thresh, points_k_indices, distances);
+    kdtree->radiusSearch (points.points[cluster.at (i)], dist_thresh, points_k_indices, distances);
     // Copy the inliers
     if (points_k_indices.size () == 0)
       continue;

@@ -361,17 +361,17 @@ namespace costmap_2d{
       double sq_obstacle_range = obs.obstacle_range_ * obs.obstacle_range_;
 
 
-      for(unsigned int i = 0; i < cloud.pts.size(); ++i){
+      for(unsigned int i = 0; i < cloud.points.size(); ++i){
         //if the obstacle is too high or too far away from the robot we won't add it
-        if(cloud.pts[i].z > max_obstacle_height_){
+        if(cloud.points[i].z > max_obstacle_height_){
           ROS_DEBUG("The point is too high");
           continue;
         }
 
         //compute the squared distance from the hitpoint to the pointcloud's origin
-        double sq_dist = (cloud.pts[i].x - obs.origin_.x) * (cloud.pts[i].x - obs.origin_.x)
-          + (cloud.pts[i].y - obs.origin_.y) * (cloud.pts[i].y - obs.origin_.y)
-          + (cloud.pts[i].z - obs.origin_.z) * (cloud.pts[i].z - obs.origin_.z);
+        double sq_dist = (cloud.points[i].x - obs.origin_.x) * (cloud.points[i].x - obs.origin_.x)
+          + (cloud.points[i].y - obs.origin_.y) * (cloud.points[i].y - obs.origin_.y)
+          + (cloud.points[i].z - obs.origin_.z) * (cloud.points[i].z - obs.origin_.z);
 
         //if the point is far enough away... we won't consider it
         if(sq_dist >= sq_obstacle_range){
@@ -381,7 +381,7 @@ namespace costmap_2d{
 
         //now we need to compute the map coordinates for the observation
         unsigned int mx, my;
-        if(!worldToMap(cloud.pts[i].x, cloud.pts[i].y, mx, my)){
+        if(!worldToMap(cloud.points[i].x, cloud.points[i].y, mx, my)){
           ROS_DEBUG("Computing map coords failed");
           continue;
         }
@@ -445,9 +445,9 @@ namespace costmap_2d{
     double map_end_y = origin_y_ + getSizeInMetersY();
 
     //for each point in the cloud, we want to trace a line from the origin and clear obstacles along it
-    for(unsigned int i = 0; i < cloud.pts.size(); ++i){
-      double wx = cloud.pts[i].x;
-      double wy = cloud.pts[i].y;
+    for(unsigned int i = 0; i < cloud.points.size(); ++i){
+      double wx = cloud.points[i].x;
+      double wy = cloud.points[i].y;
 
       //now we also need to make sure that the enpoint we're raytracing 
       //to isn't off the costmap and scale if necessary

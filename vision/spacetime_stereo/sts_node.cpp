@@ -591,8 +591,8 @@ printf("\nReading Parameters: tx: %f, u0: %f, v0: %f, fx:%f, fy:%f\n", cpar.tx, 
 
 sensor_msgs::PointCloud ros_cloud;
 
-ros_cloud.set_chan_size(1);
-ros_cloud.chan[0].name = "intensities";
+ros_cloud.set_channels_size(1);
+ros_cloud.channels[0].name = "intensities";
 
 int i,j;
 float xf,yf,zf;
@@ -603,8 +603,8 @@ for(i=0; i<w; i++)
 if( disp[j*w+i] > 0) 
 	tot_points ++;
 
-ros_cloud.set_pts_size(tot_points);
-ros_cloud.chan[0].set_vals_size(tot_points);
+ros_cloud.set_points_size(tot_points);
+ros_cloud.channels[0].set_values_size(tot_points);
 
 for(j=0; j<h; j++)
 for(i=0; i<w; i++)
@@ -619,16 +619,16 @@ if( disp[j*w+i] > 0) {
 	yf = ((j - cpar.v0) * zf) / cpar.fy;
 	
 	#ifdef DEMO_PR2
-	ros_cloud.pts[point_count].x = -1.42 +zf/300;//xf/1000; //from millimiters to decimiters
-	ros_cloud.pts[point_count].y = xf/300;//yf/1000; //Why does this need to be flipped?
-	ros_cloud.pts[point_count].z = .75-yf/300;//zf/1000; //Why does this need to be flipped?
+	ros_cloud.points[point_count].x = -1.42 +zf/300;//xf/1000; //from millimiters to decimiters
+	ros_cloud.points[point_count].y = xf/300;//yf/1000; //Why does this need to be flipped?
+	ros_cloud.points[point_count].z = .75-yf/300;//zf/1000; //Why does this need to be flipped?
 	#else
-	ros_cloud.pts[point_count].x = xf/1000; //from millimiters to decimiters
-	ros_cloud.pts[point_count].y = yf/1000; //Why does this need to be flipped?
-	ros_cloud.pts[point_count].z = zf/1000; //Why does this need to be flipped?
+	ros_cloud.points[point_count].x = xf/1000; //from millimiters to decimiters
+	ros_cloud.points[point_count].y = yf/1000; //Why does this need to be flipped?
+	ros_cloud.points[point_count].z = zf/1000; //Why does this need to be flipped?
 	#endif
 
-	ros_cloud.chan[0].vals[point_count] = 16*255;
+	ros_cloud.channels[0].values[point_count] = 16*255;
 	point_count++;
 }
 

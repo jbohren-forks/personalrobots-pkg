@@ -101,9 +101,9 @@ void Voxel3d::reset()
 void Voxel3d::updateWorld(const sensor_msgs::PointCloud &cloud)
 {
   int x, y, z;
-  for (size_t i = 0; i < cloud.pts.size(); ++i)
+  for (size_t i = 0; i < cloud.points.size(); ++i)
   {
-    worldToGrid(cloud.pts[i].x, cloud.pts[i].y, cloud.pts[i].z, x, y, z);
+    worldToGrid(cloud.points[i].x, cloud.points[i].y, cloud.points[i].z, x, y, z);
     putObstacle(x, y, z);
   }
 

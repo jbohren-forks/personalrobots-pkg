@@ -78,44 +78,44 @@ private:
 
 	fillResult(*cloud, mask, out);
 	pointCloudPublisher_.publish(out);
-	ROS_DEBUG("Self filter: reduced %d points to %d points in %f seconds", (int)cloud->pts.size(), (int)out.pts.size(), sec);
+	ROS_DEBUG("Self filter: reduced %d points to %d points in %f seconds", (int)cloud->points.size(), (int)out.points.size(), sec);
     }
 
     void fillResult(const sensor_msgs::PointCloud& data_in, const std::vector<int> &keep, sensor_msgs::PointCloud& data_out)
     {
-	const unsigned int np = data_in.pts.size();
+	const unsigned int np = data_in.points.size();
 
 	// fill in output data with points that are NOT on the robot
 	data_out.header = data_in.header;	  
 	
-	data_out.pts.resize(0);
-	data_out.pts.reserve(np);
+	data_out.points.resize(0);
+	data_out.points.reserve(np);
 	
-	data_out.chan.resize(data_in.chan.size());
-	for (unsigned int i = 0 ; i < data_out.chan.size() ; ++i)
+	data_out.channels.resize(data_in.channels.size());
+	for (unsigned int i = 0 ; i < data_out.channels.size() ; ++i)
 	{
-	    ROS_ASSERT(data_in.chan[i].vals.size() == data_in.pts.size());
-	    data_out.chan[i].name = data_in.chan[i].name;
-	    data_out.chan[i].vals.reserve(data_in.chan[i].vals.size());
+	    ROS_ASSERT(data_in.channels[i].values.size() == data_in.points.size());
+	    data_out.channels[i].name = data_in.channels[i].name;
+	    data_out.channels[i].values.reserve(data_in.channels[i].values.size());
 	}
 	
 	int c = -1;
 	if (!annotate_.empty())
 	{
 	    // add annotation for points
-	    for (unsigned int i = 0 ; i < data_out.chan.size() ; ++i)
-		if (data_out.chan[i].name == annotate_)
+	    for (unsigned int i = 0 ; i < data_out.channels.size() ; ++i)
+		if (data_out.channels[i].name == annotate_)
 		{
 		    c = i;
 		    break;
 		}
 	    if (c < 0)
 	    {
-		c = data_out.chan.size();
-		data_out.chan.resize(c + 1);
-		data_out.chan[c].name = annotate_;
+		c = data_out.channels.size();
+		data_out.channels.resize(c + 1);
+		data_out.channels[c].name = annotate_;
 	    }
-	    data_out.chan[c].vals.reserve(np);
+	    data_out.channels[c].values.reserve(np);
 	}
 
 	for (unsigned int i = 0 ; i < np ; ++i)
@@ -125,20 +125,20 @@ private:
 		{
 		    if (keep[i] == robot_self_filter::OUTSIDE)
 		    {
-			data_out.pts.push_back(data_in.pts[i]);
-			for (unsigned int j = 0 ; j < data_out.chan.size() ; ++j)
-			    data_out.chan[j].vals.push_back(data_in.chan[j].vals[i]);
+			data_out.points.push_back(data_in.points[i]);
+			for (unsigned int j = 0 ; j < data_out.channels.size() ; ++j)
+			    data_out.channels[j].values.push_back(data_in.channels[j].values[i]);
 		    }
 		}
 		else
 		{
-		    data_out.pts.push_back(data_in.pts[i]);
-		    for (unsigned int j = 0 ; j < data_out.chan.size() ; ++j)
+		    data_out.points.push_back(data_in.points[i]);
+		    for (unsigned int j = 0 ; j < data_out.channels.size() ; ++j)
 		    {
 			if ((int)j == c)
-			    data_out.chan[c].vals.push_back(keep[i] == robot_self_filter::OUTSIDE ? 1.0f : -1.0f);
+			    data_out.channels[c].values.push_back(keep[i] == robot_self_filter::OUTSIDE ? 1.0f : -1.0f);
 			else
-			    data_out.chan[j].vals.push_back(data_in.chan[j].vals[i]);
+			    data_out.channels[j].values.push_back(data_in.channels[j].values[i]);
 		    }
 		}
 	    }

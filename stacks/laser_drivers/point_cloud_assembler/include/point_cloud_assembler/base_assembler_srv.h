@@ -237,11 +237,11 @@ void BaseAssemblerSrv<T>::scansCallback(const boost::shared_ptr<T>& scan_ptr)
   scan_hist_mutex_.lock() ;
   if (scan_hist_.size() == max_scans_)                           // Is our deque full?
   {
-    total_pts_ -= scan_hist_.front().get_pts_size() ;            // We're removing an elem, so this reduces our total point count
+    total_pts_ -= scan_hist_.front().get_points_size() ;            // We're removing an elem, so this reduces our total point count
     scan_hist_.pop_front() ;                                     // The front of the deque has the oldest elem, so we can get rid of it
   }
   scan_hist_.push_back(cur_cloud) ;                              // Add the newest scan to the back of the deque
-  total_pts_ += cur_cloud.get_pts_size() ;                       // Add the new scan to the running total of points
+  total_pts_ += cur_cloud.get_points_size() ;                       // Add the new scan to the running total of points
 
   //printf("Scans: %4u  Points: %10u\n", scan_hist_.size(), total_pts_) ;
 
@@ -270,7 +270,7 @@ bool BaseAssemblerSrv<T>::buildCloud(BuildCloud::Request& req, BuildCloud::Respo
   while ( i < scan_hist_.size() &&                                                    // Don't go past end of deque
           scan_hist_[i].header.stamp < req.end )                                      // Don't go past the end-time of the request
   {
-    req_pts += (scan_hist_[i].get_pts_size()+downsample_factor_-1)/downsample_factor_ ;
+    req_pts += (scan_hist_[i].get_points_size()+downsample_factor_-1)/downsample_factor_ ;
     i += downsample_factor_ ;
   }
   unsigned int past_end_index = i ;
@@ -279,33 +279,33 @@ bool BaseAssemblerSrv<T>::buildCloud(BuildCloud::Request& req, BuildCloud::Respo
   {
     resp.cloud.header.frame_id = fixed_frame_ ;
     resp.cloud.header.stamp = req.end ;
-    resp.cloud.set_pts_size(0) ;
-    resp.cloud.set_chan_size(0) ;
+    resp.cloud.set_points_size(0) ;
+    resp.cloud.set_channels_size(0) ;
   }
   else
   {
     // Note: We are assuming that channel information is consistent across multiple scans. If not, then bad things (segfaulting) will happen
     // Allocate space for the cloud
-    resp.cloud.set_pts_size( req_pts ) ;
-    const unsigned int num_channels = scan_hist_[start_index].get_chan_size() ;
-    resp.cloud.set_chan_size(num_channels) ;
+    resp.cloud.set_points_size( req_pts ) ;
+    const unsigned int num_channels = scan_hist_[start_index].get_channels_size() ;
+    resp.cloud.set_channels_size(num_channels) ;
     for (i = 0; i<num_channels; i++)
     {
-      resp.cloud.chan[i].name = scan_hist_[start_index].chan[i].name ;
-      resp.cloud.chan[i].set_vals_size(req_pts) ;
+      resp.cloud.channels[i].name = scan_hist_[start_index].channels[i].name ;
+      resp.cloud.channels[i].set_values_size(req_pts) ;
     }
     //resp.cloud.header.stamp = req.end ;
     resp.cloud.header.frame_id = fixed_frame_ ;
     unsigned int cloud_count = 0 ;
     for (i=start_index; i<past_end_index; i+=downsample_factor_)
     {
-      for(unsigned int j=0; j<scan_hist_[i].get_pts_size(); j+=downsample_factor_)
+      for(unsigned int j=0; j<scan_hist_[i].get_points_size(); j+=downsample_factor_)
       {
-        resp.cloud.pts[cloud_count].x = scan_hist_[i].pts[j].x ;
-        resp.cloud.pts[cloud_count].y = scan_hist_[i].pts[j].y ;
-        resp.cloud.pts[cloud_count].z = scan_hist_[i].pts[j].z ;
+        resp.cloud.points[cloud_count].x = scan_hist_[i].points[j].x ;
+        resp.cloud.points[cloud_count].y = scan_hist_[i].points[j].y ;
+        resp.cloud.points[cloud_count].z = scan_hist_[i].points[j].z ;
         for (unsigned int k=0; k<num_channels; k++)
-          resp.cloud.chan[k].vals[cloud_count] = scan_hist_[i].chan[k].vals[j] ;
+          resp.cloud.channels[k].values[cloud_count] = scan_hist_[i].channels[k].values[j] ;
 
         cloud_count++ ;
       }

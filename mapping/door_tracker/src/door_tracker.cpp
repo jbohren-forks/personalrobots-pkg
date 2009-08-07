@@ -225,9 +225,9 @@ class DoorTracker
 
 //    double norm_a = 0.0;
 //    if (nx_idx != -1)         // If we use normal indices...
-//      norm_a = sqrt (points->chan[nx_idx].vals[indices->at (i)] * points->chan[nx_idx].vals[indices->at (i)] +
-//                     points->chan[ny_idx].vals[indices->at (i)] * points->chan[ny_idx].vals[indices->at (i)] +
-//                     points->chan[nz_idx].vals[indices->at (i)] * points->chan[nz_idx].vals[indices->at (i)]);
+//      norm_a = sqrt (points->channels[nx_idx].values[indices->at (i)] * points->channels[nx_idx].values[indices->at (i)] +
+//                     points->channels[ny_idx].values[indices->at (i)] * points->channels[ny_idx].values[indices->at (i)] +
+//                     points->channels[nz_idx].values[indices->at (i)] * points->channels[nz_idx].values[indices->at (i)]);
 
         processed[i] = true;
 
@@ -244,13 +244,13 @@ class DoorTracker
             processed[nn_indices[j]] = true;
             if (nx_idx != -1)                                         // Are point normals present ?
             {
-//          double norm_b = sqrt (points.chan[nx_idx].vals[indices.at (nn_indices[j])] * points.chan[nx_idx].vals[indices.at (nn_indices[j])] +
-//                                points.chan[ny_idx].vals[indices.at (nn_indices[j])] * points.chan[ny_idx].vals[indices.at (nn_indices[j])] +
-//                                points.chan[nz_idx].vals[indices.at (nn_indices[j])] * points.chan[nz_idx].vals[indices.at (nn_indices[j])]);
+//          double norm_b = sqrt (points.channels[nx_idx].values[indices.at (nn_indices[j])] * points.channels[nx_idx].values[indices.at (nn_indices[j])] +
+//                                points.channels[ny_idx].values[indices.at (nn_indices[j])] * points.channels[ny_idx].values[indices.at (nn_indices[j])] +
+//                                points.channels[nz_idx].values[indices.at (nn_indices[j])] * points.channels[nz_idx].values[indices.at (nn_indices[j])]);
               // [-1;1]
-              double dot_p = points.chan[nx_idx].vals[indices.at (i)] * points.chan[nx_idx].vals[indices.at (nn_indices[j])] +
-                points.chan[ny_idx].vals[indices.at (i)] * points.chan[ny_idx].vals[indices.at (nn_indices[j])] +
-                points.chan[nz_idx].vals[indices.at (i)] * points.chan[nz_idx].vals[indices.at (nn_indices[j])];
+              double dot_p = points.channels[nx_idx].values[indices.at (i)] * points.channels[nx_idx].values[indices.at (nn_indices[j])] +
+                points.channels[ny_idx].values[indices.at (i)] * points.channels[ny_idx].values[indices.at (nn_indices[j])] +
+                points.channels[nz_idx].values[indices.at (i)] * points.channels[nz_idx].values[indices.at (nn_indices[j])];
 //          if ( acos (dot_p / (norm_a * norm_b)) < eps_angle)
               if ( fabs (acos (dot_p)) < eps_angle )
               {
@@ -435,14 +435,14 @@ class DoorTracker
 
 //      cloud_msg_mutex_.lock();
 //      cloud_ = *cloud;
-      ROS_DEBUG("Received a point cloud with %d points in frame: %s",(int) cloud_.pts.size(),cloud_.header.frame_id.c_str());
-      if(cloud_.pts.empty())
+      ROS_DEBUG("Received a point cloud with %d points in frame: %s",(int) cloud_.points.size(),cloud_.header.frame_id.c_str());
+      if(cloud_.points.empty())
       {
         ROS_WARN("Received an empty point cloud");
         cloud_msg_mutex_.unlock();
         return;
       }
-      if ((int)cloud_.pts.size() < sac_min_points_per_model_)
+      if ((int)cloud_.points.size() < sac_min_points_per_model_)
       {
         cloud_msg_mutex_.unlock();
         return;
@@ -509,9 +509,9 @@ class DoorTracker
       int inliers_size_max = 0;
       int inliers_size_max_index = -1;
 
-      indices.resize(cloud.pts.size());
+      indices.resize(cloud.points.size());
 
-      for(unsigned int i=0; i < cloud.pts.size(); i++)      //Use all the indices
+      for(unsigned int i=0; i < cloud.points.size(); i++)      //Use all the indices
       {
         indices[i] = i;
       }
@@ -647,8 +647,8 @@ class DoorTracker
       // int number_remaining_points = possible_door_points.size();
 
       vector<int> indices_l;
-      indices_l.resize(points->pts.size());
-      for(unsigned int i=0; i < points->pts.size(); i++)      //Use all the indices
+      indices_l.resize(points->points.size());
+      for(unsigned int i=0; i < points->points.size(); i++)      //Use all the indices
       {
         indices_l[i] = i;
       }
@@ -718,7 +718,7 @@ class DoorTracker
       string door_frame   = door_msg.header.frame_id;
 
       // Resize the resultant indices to accomodate all data
-      indices.resize (points->pts.size ());
+      indices.resize (points->points.size ());
 
       // Transform the X-Y bounds from the door request service into the cloud TF frame
       tf::Stamped<geometry_msgs::Point32> frame_p1 (door_msg.frame_p1, points->header.stamp, door_frame);
@@ -737,7 +737,7 @@ class DoorTracker
         ROS_DEBUG ("Door frame multiplier set to -1. Using the entire point cloud data.");
         // Use the complete bounds of the point cloud
         cloud_geometry::statistics::getMinMax (*points, min_bbox, max_bbox);
-        for (unsigned int i = 0; i < points->pts.size (); i++)
+        for (unsigned int i = 0; i < points->points.size (); i++)
           indices[i] = i;
       }
       else
@@ -746,11 +746,11 @@ class DoorTracker
         get3DBounds (&frame_p1, &frame_p2, min_bbox, max_bbox, frame_multiplier);
 
         int nr_p = 0;
-        for (unsigned int i = 0; i < points->pts.size (); i++)
+        for (unsigned int i = 0; i < points->points.size (); i++)
         {
-          if ((points->pts[i].x >= min_bbox.x && points->pts[i].x <= max_bbox.x) &&
-              (points->pts[i].y >= min_bbox.y && points->pts[i].y <= max_bbox.y) &&
-              (points->pts[i].z >= min_bbox.z && points->pts[i].z <= max_bbox.z))
+          if ((points->points[i].x >= min_bbox.x && points->points[i].x <= max_bbox.x) &&
+              (points->points[i].y >= min_bbox.y && points->points[i].y <= max_bbox.y) &&
+              (points->points[i].z >= min_bbox.z && points->points[i].z <= max_bbox.z))
           {
             indices[nr_p] = i;
             nr_p++;

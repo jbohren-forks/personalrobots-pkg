@@ -228,36 +228,36 @@ public:
     {
       cloud_.header.stamp = raw_stereo_.header.stamp;
       cloud_.header.frame_id = raw_stereo_.header.frame_id;
-      cloud_.pts.resize(stdata_->numPts);
+      cloud_.points.resize(stdata_->numPts);
       if (do_keep_coords_) {
-    	  cloud_.chan.resize(3);
+    	  cloud_.channels.resize(3);
       }
       else {
-    	  cloud_.chan.resize(1);
+    	  cloud_.channels.resize(1);
       }
-      cloud_.chan[0].name = "rgb";
-      cloud_.chan[0].vals.resize(stdata_->numPts);
+      cloud_.channels[0].name = "rgb";
+      cloud_.channels[0].values.resize(stdata_->numPts);
       if (do_keep_coords_) {
-          cloud_.chan[1].name = "x";
-          cloud_.chan[1].vals.resize(stdata_->numPts);
-          cloud_.chan[2].name = "y";
-          cloud_.chan[2].vals.resize(stdata_->numPts);
+          cloud_.channels[1].name = "x";
+          cloud_.channels[1].values.resize(stdata_->numPts);
+          cloud_.channels[2].name = "y";
+          cloud_.channels[2].values.resize(stdata_->numPts);
       }
 
       for (int i = 0; i < stdata_->numPts; i++)
       {
-        cloud_.pts[i].x = stdata_->imPts[3*i + 0];
-        cloud_.pts[i].y = stdata_->imPts[3*i + 1];
-        cloud_.pts[i].z = stdata_->imPts[3*i + 2];
+        cloud_.points[i].x = stdata_->imPts[3*i + 0];
+        cloud_.points[i].y = stdata_->imPts[3*i + 1];
+        cloud_.points[i].z = stdata_->imPts[3*i + 2];
       }
 
       for (int i = 0; i < stdata_->numPts; i++)
       {
         int rgb = (stdata_->imPtsColor[3*i] << 16) | (stdata_->imPtsColor[3*i + 1] << 8) | stdata_->imPtsColor[3*i + 2];
-        cloud_.chan[0].vals[i] = *(float*)(&rgb);
+        cloud_.channels[0].values[i] = *(float*)(&rgb);
         if (do_keep_coords_) {
-        	cloud_.chan[1].vals[i] = stdata_->imCoords[2*i+0];
-        	cloud_.chan[2].vals[i] = stdata_->imCoords[2*i+1];
+        	cloud_.channels[1].values[i] = stdata_->imCoords[2*i+0];
+        	cloud_.channels[2].values[i] = stdata_->imCoords[2*i+1];
         }
       }
 

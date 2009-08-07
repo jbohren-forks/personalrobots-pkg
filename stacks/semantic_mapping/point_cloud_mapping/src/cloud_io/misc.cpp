@@ -43,8 +43,8 @@ namespace cloud_io
     getIndex (const sensor_msgs::PointCloud &points, std::string value)
   {
     // Get the index we need
-    for (unsigned int d = 0; d < points.get_chan_size (); d++)
-      if (points.chan[d].name == value)
+    for (unsigned int d = 0; d < points.get_channels_size (); d++)
+      if (points.channels[d].name == value)
         return (d);
 
     return (-1);

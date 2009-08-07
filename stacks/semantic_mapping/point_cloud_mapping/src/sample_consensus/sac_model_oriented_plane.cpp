@@ -71,9 +71,9 @@ namespace sample_consensus
     {
       // Calculate the distance from the point to the plane normal as the dot product
       // D = (P-A).N/|N|
-      if (fabs (model_coefficients.at (0) * cloud_->pts.at (indices_.at (i)).x +
-                model_coefficients.at (1) * cloud_->pts.at (indices_.at (i)).y +
-                model_coefficients.at (2) * cloud_->pts.at (indices_.at (i)).z +
+      if (fabs (model_coefficients.at (0) * cloud_->points.at (indices_.at (i)).x +
+                model_coefficients.at (1) * cloud_->points.at (indices_.at (i)).y +
+                model_coefficients.at (2) * cloud_->points.at (indices_.at (i)).z +
                 model_coefficients.at (3)) < threshold)
       {
         // Returns the indices of the points whose distances are smaller than the threshold
@@ -114,9 +114,9 @@ namespace sample_consensus
     for (unsigned int i = 0; i < indices_.size (); i++)
       // Calculate the distance from the point to the plane normal as the dot product
       // D = (P-A).N/|N|
-      distances[i] = fabs (model_coefficients.at (0) * cloud_->pts.at (indices_[i]).x +
-                           model_coefficients.at (1) * cloud_->pts.at (indices_[i]).y +
-                           model_coefficients.at (2) * cloud_->pts.at (indices_[i]).z +
+      distances[i] = fabs (model_coefficients.at (0) * cloud_->points.at (indices_[i]).x +
+                           model_coefficients.at (1) * cloud_->points.at (indices_[i]).y +
+                           model_coefficients.at (2) * cloud_->points.at (indices_[i]).z +
                            model_coefficients.at (3));
     return;
   }

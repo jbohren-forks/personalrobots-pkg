@@ -77,7 +77,7 @@ public:
      */
     virtual bool update(const sensor_msgs::PointCloud& data_in, sensor_msgs::PointCloud& data_out)
     {
-	std::vector<bool> keep(data_in.pts.size());	
+	std::vector<bool> keep(data_in.points.size());	
 	sm_.maskContainment(data_in, keep);
 	fillResult(data_in, keep, data_out);
 	return true;
@@ -85,28 +85,28 @@ public:
 
     void fillResult(const sensor_msgs::PointCloud& data_in, const std::vector<bool> &keep, sensor_msgs::PointCloud& data_out)
     {
-	const unsigned int np = data_in.pts.size();
+	const unsigned int np = data_in.points.size();
 	
 	// fill in output data 
 	data_out.header = data_in.header;	  
 	
-	data_out.pts.resize(0);
-	data_out.pts.reserve(np);
+	data_out.points.resize(0);
+	data_out.points.reserve(np);
 	
-	data_out.chan.resize(data_in.chan.size());
-	for (unsigned int i = 0 ; i < data_out.chan.size() ; ++i)
+	data_out.channels.resize(data_in.channels.size());
+	for (unsigned int i = 0 ; i < data_out.channels.size() ; ++i)
 	{
-	    ROS_ASSERT(data_in.chan[i].vals.size() == data_in.pts.size());
-	    data_out.chan[i].name = data_in.chan[i].name;
-	    data_out.chan[i].vals.reserve(data_in.chan[i].vals.size());
+	    ROS_ASSERT(data_in.channels[i].values.size() == data_in.points.size());
+	    data_out.channels[i].name = data_in.channels[i].name;
+	    data_out.channels[i].values.reserve(data_in.channels[i].values.size());
 	}
 	
 	for (unsigned int i = 0 ; i < np ; ++i)
 	    if ((keep[i] && !invert_) || (!keep[i] && invert_))
 	    {
-		data_out.pts.push_back(data_in.pts[i]);
-		for (unsigned int j = 0 ; j < data_out.chan.size() ; ++j)
-		    data_out.chan[j].vals.push_back(data_in.chan[j].vals[i]);
+		data_out.points.push_back(data_in.points[i]);
+		for (unsigned int j = 0 ; j < data_out.channels.size() ; ++j)
+		    data_out.channels[j].values.push_back(data_in.channels[j].values[i]);
 	    }
     }
     

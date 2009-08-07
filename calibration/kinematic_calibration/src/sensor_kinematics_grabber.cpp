@@ -287,7 +287,7 @@ public:
     printf("     Mechanism State:  %lf   %u Joints\n", lag.toSec(), data.mechanism_state.get_joint_states_size()) ;
 
     lag = data.laser_cloud.header.stamp-cur_time ;
-    printf("     Laser Cloud:      %lf   %u points\n", lag.toSec(), data.laser_cloud.get_pts_size() ) ;
+    printf("     Laser Cloud:      %lf   %u points\n", lag.toSec(), data.laser_cloud.get_points_size() ) ;
 
     lag = data.mocap_snapshot.header.stamp-cur_time ;
     printf("     MoCap:       %lf   %u Markers | %u Bodies\n", lag.toSec(), data.mocap_snapshot.get_markers_size(),

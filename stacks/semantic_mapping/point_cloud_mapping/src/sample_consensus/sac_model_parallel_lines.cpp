@@ -86,12 +86,12 @@ namespace sample_consensus
     for (int i = 0; i < end; i++)
     {
       // Calculate the distance from the point to both lines
-      d1.x = cloud_->pts[indices[i]].x - model_coefficients[0];
-      d1.y = cloud_->pts[indices[i]].y - model_coefficients[1];
-      d1.z = cloud_->pts[indices[i]].z - model_coefficients[2];
-      d2.x = cloud_->pts[indices[i]].x - model_coefficients[6];
-      d2.y = cloud_->pts[indices[i]].y - model_coefficients[7];
-      d2.z = cloud_->pts[indices[i]].z - model_coefficients[8];
+      d1.x = cloud_->points[indices[i]].x - model_coefficients[0];
+      d1.y = cloud_->points[indices[i]].y - model_coefficients[1];
+      d1.z = cloud_->points[indices[i]].z - model_coefficients[2];
+      d2.x = cloud_->points[indices[i]].x - model_coefficients[6];
+      d2.y = cloud_->points[indices[i]].y - model_coefficients[7];
+      d2.z = cloud_->points[indices[i]].z - model_coefficients[8];
 
       c1 = cloud_geometry::cross (l1, d1);
       sqr_distance1 = (c1.x * c1.x + c1.y * c1.y + c1.z * c1.z);
@@ -126,12 +126,12 @@ namespace sample_consensus
     for (std::set<int>::iterator it = indices.begin (); it != end; ++it)
     {
       // Calculate the distance from the point to the line
-      d1.x = cloud_->pts[*it].x - model_coefficients[0];
-      d1.y = cloud_->pts[*it].y - model_coefficients[1];
-      d1.z = cloud_->pts[*it].z - model_coefficients[2];
-      d2.x = cloud_->pts[*it].x - model_coefficients[6];
-      d2.y = cloud_->pts[*it].y - model_coefficients[7];
-      d2.z = cloud_->pts[*it].z - model_coefficients[8];
+      d1.x = cloud_->points[*it].x - model_coefficients[0];
+      d1.y = cloud_->points[*it].y - model_coefficients[1];
+      d1.z = cloud_->points[*it].z - model_coefficients[2];
+      d2.x = cloud_->points[*it].x - model_coefficients[6];
+      d2.y = cloud_->points[*it].y - model_coefficients[7];
+      d2.z = cloud_->points[*it].z - model_coefficients[8];
 
       c1 = cloud_geometry::cross (l1, d1);
       sqr_distance1 = (c1.x * c1.x + c1.y * c1.y + c1.z * c1.z);
@@ -205,7 +205,7 @@ namespace sample_consensus
         {
           r1 = (r0+1)%3;
           r2 = (r1+1)%3;
-          sqr_distance = pointToLineSquareDistance (cloud_->pts[random_idx[r0]], cloud_->pts[random_idx[r1]], cloud_->pts[random_idx[r2]]);
+          sqr_distance = pointToLineSquareDistance (cloud_->points[random_idx[r0]], cloud_->points[random_idx[r1]], cloud_->points[random_idx[r2]]);
 
           if (sqr_distance == 0.0 || sqr_distance < sqr_min_line_sep_m || sqr_distance > sqr_max_line_sep_m)
             continue;
@@ -288,14 +288,14 @@ namespace sample_consensus
                                           sensor_msgs::PointCloud &projected_points)
   {
     // Allocate enough space
-    projected_points.pts.resize (inliers.size ());
+    projected_points.points.resize (inliers.size ());
 
     // Create the channels
-    projected_points.set_chan_size (cloud_->get_chan_size ());
-    for (unsigned int d = 0; d < projected_points.get_chan_size (); d++)
+    projected_points.set_channels_size (cloud_->get_channels_size ());
+    for (unsigned int d = 0; d < projected_points.get_channels_size (); d++)
     {
-      projected_points.chan[d].name = cloud_->chan[d].name;
-      projected_points.chan[d].vals.resize (inliers.size ());
+      projected_points.channels[d].name = cloud_->channels[d].name;
+      projected_points.channels[d].values.resize (inliers.size ());
     }
 
     // Compute the closest distances from the pts to the lines.
@@ -326,17 +326,17 @@ namespace sample_consensus
         mz = model_coefficients[8];
       }
       double k = (
-                  ( cloud_->pts[inliers[i]].x * l1.x + cloud_->pts[inliers[i]].y * l1.y + cloud_->pts[inliers[i]].z * l1.z ) -
+                  ( cloud_->points[inliers[i]].x * l1.x + cloud_->points[inliers[i]].y * l1.y + cloud_->points[inliers[i]].z * l1.z ) -
                   ( mx * l1.x + my * l1.y + mz * l1.z )
                  ) / l_sqr_length;
       // Calculate the projection of the point on the line (pointProj = A + k * B)
-      projected_points.pts[i].x = mx + k * l1.x;
-      projected_points.pts[i].y = my + k * l1.y;
-      projected_points.pts[i].z = mz + k * l1.z;
+      projected_points.points[i].x = mx + k * l1.x;
+      projected_points.points[i].y = my + k * l1.y;
+      projected_points.points[i].z = mz + k * l1.z;
 
       // Copy the other attributes
-      for (unsigned int d = 0; d < projected_points.get_chan_size (); d++)
-        projected_points.chan[d].vals[i] = cloud_->chan[d].vals[inliers[i]];
+      for (unsigned int d = 0; d < projected_points.get_channels_size (); d++)
+        projected_points.channels[d].values[i] = cloud_->channels[d].values[inliers[i]];
     }
   }
 
@@ -377,13 +377,13 @@ namespace sample_consensus
         mz = model_coefficients[8];
       }
       double k = (
-                  ( cloud_->pts[inliers[i]].x * l1.x + cloud_->pts[inliers[i]].y * l1.y + cloud_->pts[inliers[i]].z * l1.z ) -
+                  ( cloud_->points[inliers[i]].x * l1.x + cloud_->points[inliers[i]].y * l1.y + cloud_->points[inliers[i]].z * l1.z ) -
                   ( mx * l1.x + my * l1.y + mz * l1.z )
                  ) / l_sqr_length;
       // Calculate the projection of the point on the line (pointProj = A + k * B)
-      cloud_->pts[inliers[i]].x = mx + k * l1.x;
-      cloud_->pts[inliers[i]].y = my + k * l1.y;
-      cloud_->pts[inliers[i]].z = mz + k * l1.z;
+      cloud_->points[inliers[i]].x = mx + k * l1.x;
+      cloud_->points[inliers[i]].y = my + k * l1.y;
+      cloud_->points[inliers[i]].z = mz + k * l1.z;
     }
   }
 
@@ -397,15 +397,15 @@ namespace sample_consensus
     SACModelParallelLines::computeModelCoefficients (const std::vector<int> &samples)
   {
     model_coefficients_.resize (9);
-    model_coefficients_[0] = cloud_->pts[samples[0]].x;
-    model_coefficients_[1] = cloud_->pts[samples[0]].y;
-    model_coefficients_[2] = cloud_->pts[samples[0]].z;
-    model_coefficients_[3] = cloud_->pts[samples[1]].x;
-    model_coefficients_[4] = cloud_->pts[samples[1]].y;
-    model_coefficients_[5] = cloud_->pts[samples[1]].z;
-    model_coefficients_[6] = cloud_->pts[samples[2]].x;
-    model_coefficients_[7] = cloud_->pts[samples[2]].y;
-    model_coefficients_[8] = cloud_->pts[samples[2]].z;
+    model_coefficients_[0] = cloud_->points[samples[0]].x;
+    model_coefficients_[1] = cloud_->points[samples[0]].y;
+    model_coefficients_[2] = cloud_->points[samples[0]].z;
+    model_coefficients_[3] = cloud_->points[samples[1]].x;
+    model_coefficients_[4] = cloud_->points[samples[1]].y;
+    model_coefficients_[5] = cloud_->points[samples[1]].z;
+    model_coefficients_[6] = cloud_->points[samples[2]].x;
+    model_coefficients_[7] = cloud_->points[samples[2]].y;
+    model_coefficients_[8] = cloud_->points[samples[2]].z;
 
     return (true);
   }
@@ -447,27 +447,27 @@ namespace sample_consensus
 
     // Remove the centroids from the two sets of inlier samples to center everything at (0,0)
     sensor_msgs::PointCloud zero_cloud;
-    zero_cloud.pts.resize (inliers.size ());
+    zero_cloud.points.resize (inliers.size ());
     geometry_msgs::Point32 tpoint;
     for (unsigned int i = 0; i < inliers1.size (); i++)
     {
-      tpoint.x = cloud_->pts[inliers1[i]].x - centroid1.x;
-      tpoint.y = cloud_->pts[inliers1[i]].y - centroid1.y;
-      tpoint.z = cloud_->pts[inliers1[i]].z - centroid1.z;
-      zero_cloud.pts.push_back (tpoint);
+      tpoint.x = cloud_->points[inliers1[i]].x - centroid1.x;
+      tpoint.y = cloud_->points[inliers1[i]].y - centroid1.y;
+      tpoint.z = cloud_->points[inliers1[i]].z - centroid1.z;
+      zero_cloud.points.push_back (tpoint);
     }
     for (unsigned int i = 0; i < inliers2.size (); i++)
     {
-      tpoint.x = cloud_->pts[inliers2[i]].x - centroid2.x;
-      tpoint.y = cloud_->pts[inliers2[i]].y - centroid2.y;
-      tpoint.z = cloud_->pts[inliers2[i]].z - centroid2.z;
-      zero_cloud.pts.push_back (tpoint);
+      tpoint.x = cloud_->points[inliers2[i]].x - centroid2.x;
+      tpoint.y = cloud_->points[inliers2[i]].y - centroid2.y;
+      tpoint.z = cloud_->points[inliers2[i]].z - centroid2.z;
+      zero_cloud.points.push_back (tpoint);
     }
 
     // Compute the 3x3 covariance matrix
     Eigen::Matrix3d covariance_matrix;
-    std::vector<int> zero_inliers (zero_cloud.pts.size ());
-    for (unsigned int i = 0; i < zero_cloud.pts.size (); i++)
+    std::vector<int> zero_inliers (zero_cloud.points.size ());
+    for (unsigned int i = 0; i < zero_cloud.points.size (); i++)
     {
       zero_inliers[i] = i;
     }

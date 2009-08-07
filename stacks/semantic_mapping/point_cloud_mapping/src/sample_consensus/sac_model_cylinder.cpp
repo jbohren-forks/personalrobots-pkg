@@ -67,9 +67,9 @@ namespace sample_consensus
 
     double Dx1, Dy1, Dz1, Dx2, Dy2, Dz2, Dy1Dy2;
     // Compute the segment values (in 3d) between XY
-    Dx1 = cloud_->pts[samples[1]].x - cloud_->pts[samples[0]].x;
-    Dy1 = cloud_->pts[samples[1]].y - cloud_->pts[samples[0]].y;
-    Dz1 = cloud_->pts[samples[1]].z - cloud_->pts[samples[0]].z;
+    Dx1 = cloud_->points[samples[1]].x - cloud_->points[samples[0]].x;
+    Dy1 = cloud_->points[samples[1]].y - cloud_->points[samples[0]].y;
+    Dz1 = cloud_->points[samples[1]].z - cloud_->points[samples[0]].z;
 
     int iter = 0;
     do
@@ -84,9 +84,9 @@ namespace sample_consensus
       iterations--;
 
       // Compute the segment values (in 3d) between XZ
-      Dx2 = cloud_->pts[samples[2]].x - cloud_->pts[samples[0]].x;
-      Dy2 = cloud_->pts[samples[2]].y - cloud_->pts[samples[0]].y;
-      Dz2 = cloud_->pts[samples[2]].z - cloud_->pts[samples[0]].z;
+      Dx2 = cloud_->points[samples[2]].x - cloud_->points[samples[0]].x;
+      Dy2 = cloud_->points[samples[2]].y - cloud_->points[samples[0]].y;
+      Dz2 = cloud_->points[samples[2]].z - cloud_->points[samples[0]].z;
 
       Dy1Dy2 = Dy1 / Dy2;
       iter++;
@@ -136,7 +136,7 @@ namespace sample_consensus
       //dist(point,cylinder_axis) and cylinder radius
       // NOTE: need to revise this.
       if (fabs (
-                cloud_geometry::distances::pointToLineDistance (cloud_->pts.at (indices_[i]), model_coefficients) - model_coefficients[6]
+                cloud_geometry::distances::pointToLineDistance (cloud_->points.at (indices_[i]), model_coefficients) - model_coefficients[6]
                ) < threshold)
       {
         // Returns the indices of the points whose distances are smaller than the threshold
@@ -163,7 +163,7 @@ namespace sample_consensus
       // Aproximate the distance from the point to the cylinder as the difference between
       //dist(point,cylinder_axis) and cylinder radius
       // NOTE: need to revise this.
-      distances[i] = fabs (cloud_geometry::distances::pointToLineDistance (cloud_->pts.at (indices_[i]), model_coefficients) - model_coefficients[6]);
+      distances[i] = fabs (cloud_geometry::distances::pointToLineDistance (cloud_->points.at (indices_[i]), model_coefficients) - model_coefficients[6]);
     return;
   }
 
@@ -223,17 +223,17 @@ namespace sample_consensus
 
     geometry_msgs::Point32 u, v, w;
 
-    u.x = cloud_->chan[nx_idx_].vals.at (samples.at (0));
-    u.y = cloud_->chan[ny_idx_].vals.at (samples.at (0));
-    u.z = cloud_->chan[nz_idx_].vals.at (samples.at (0));
+    u.x = cloud_->channels[nx_idx_].values.at (samples.at (0));
+    u.y = cloud_->channels[ny_idx_].values.at (samples.at (0));
+    u.z = cloud_->channels[nz_idx_].values.at (samples.at (0));
 
-    v.x = cloud_->chan[nx_idx_].vals.at (samples.at (1));
-    v.y = cloud_->chan[ny_idx_].vals.at (samples.at (1));
-    v.z = cloud_->chan[nz_idx_].vals.at (samples.at (1));
+    v.x = cloud_->channels[nx_idx_].values.at (samples.at (1));
+    v.y = cloud_->channels[ny_idx_].values.at (samples.at (1));
+    v.z = cloud_->channels[nz_idx_].values.at (samples.at (1));
 
-    w.x = (u.x + cloud_->pts.at (samples.at (0)).x) - cloud_->pts.at (samples.at (1)).x;
-    w.y = (u.y + cloud_->pts.at (samples.at (0)).y) - cloud_->pts.at (samples.at (1)).y;
-    w.z = (u.z + cloud_->pts.at (samples.at (0)).z) - cloud_->pts.at (samples.at (1)).z;
+    w.x = (u.x + cloud_->points.at (samples.at (0)).x) - cloud_->points.at (samples.at (1)).x;
+    w.y = (u.y + cloud_->points.at (samples.at (0)).y) - cloud_->points.at (samples.at (1)).y;
+    w.z = (u.z + cloud_->points.at (samples.at (0)).z) - cloud_->points.at (samples.at (1)).z;
 
     double a = cloud_geometry::dot (u, u);
     double b = cloud_geometry::dot (u, v);
@@ -255,12 +255,12 @@ namespace sample_consensus
     }
 
     // point_on_axis, axis_direction
-    model_coefficients_[0] = cloud_->pts.at (samples.at (0)).x + cloud_->chan[nx_idx_].vals.at (samples.at (0)) + (sc * u.x);
-    model_coefficients_[1] = cloud_->pts.at (samples.at (0)).y + cloud_->chan[ny_idx_].vals.at (samples.at (0)) + (sc * u.y);
-    model_coefficients_[2] = cloud_->pts.at (samples.at (0)).z + cloud_->chan[nz_idx_].vals.at (samples.at (0)) + (sc * u.z);
-    model_coefficients_[3] = cloud_->pts.at (samples.at (1)).x + (tc * v.x) - model_coefficients_[0];
-    model_coefficients_[4] = cloud_->pts.at (samples.at (1)).y + (tc * v.y) - model_coefficients_[1];
-    model_coefficients_[5] = cloud_->pts.at (samples.at (1)).z + (tc * v.z) - model_coefficients_[2];
+    model_coefficients_[0] = cloud_->points.at (samples.at (0)).x + cloud_->channels[nx_idx_].values.at (samples.at (0)) + (sc * u.x);
+    model_coefficients_[1] = cloud_->points.at (samples.at (0)).y + cloud_->channels[ny_idx_].values.at (samples.at (0)) + (sc * u.y);
+    model_coefficients_[2] = cloud_->points.at (samples.at (0)).z + cloud_->channels[nz_idx_].values.at (samples.at (0)) + (sc * u.z);
+    model_coefficients_[3] = cloud_->points.at (samples.at (1)).x + (tc * v.x) - model_coefficients_[0];
+    model_coefficients_[4] = cloud_->points.at (samples.at (1)).y + (tc * v.y) - model_coefficients_[1];
+    model_coefficients_[5] = cloud_->points.at (samples.at (1)).z + (tc * v.z) - model_coefficients_[2];
 
     double norm = sqrt (
                         (model_coefficients_[3] * model_coefficients_[3]) +
@@ -272,7 +272,7 @@ namespace sample_consensus
     model_coefficients_[5] /= norm;
 
     // cylinder radius
-    model_coefficients_[6] = cloud_geometry::distances::pointToLineDistance (cloud_->pts.at (samples.at (0)), model_coefficients_);
+    model_coefficients_[6] = cloud_geometry::distances::pointToLineDistance (cloud_->points.at (samples.at (0)), model_coefficients_);
 
     return (true);
   }
@@ -354,7 +354,7 @@ namespace sample_consensus
 
     for (int i = 0; i < m; i++)
       // dist = f - r
-      fvec[i] = cloud_geometry::distances::pointToLineDistance (model->cloud_->pts[model->tmp_inliers_->at (i)], line_coefficients) - x[6];
+      fvec[i] = cloud_geometry::distances::pointToLineDistance (model->cloud_->points[model->tmp_inliers_->at (i)], line_coefficients) - x[6];
 
     return (0);
   }
@@ -372,7 +372,7 @@ namespace sample_consensus
       //dist(point,cylinder_axis) and cylinder radius
       // NOTE: need to revise this.
       if (fabs (
-                cloud_geometry::distances::pointToLineDistance (cloud_->pts.at (*it), model_coefficients_) - model_coefficients_[6]
+                cloud_geometry::distances::pointToLineDistance (cloud_->points.at (*it), model_coefficients_) - model_coefficients_[6]
                ) > threshold)
         return (false);
 

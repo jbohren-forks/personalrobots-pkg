@@ -95,18 +95,18 @@ public:
 	
 	in.header.stamp = ros::Time::now();
 	in.header.frame_id = "base_link";
-	in.chan.resize(1);
-	in.chan[0].name = "stamps";
+	in.channels.resize(1);
+	in.channels[0].name = "stamps";
 	
 	const unsigned int N = 500000;	
-	in.pts.resize(N);
-	in.chan[0].vals.resize(N);
+	in.points.resize(N);
+	in.channels[0].values.resize(N);
 	for (unsigned int i = 0 ; i < N ; ++i)
 	{
-	    in.pts[i].x = uniform(1.5);
-	    in.pts[i].y = uniform(1.5);
-	    in.pts[i].z = uniform(1.5);
-	    in.chan[0].vals[i] = (double)i/(double)N;
+	    in.points[i].x = uniform(1.5);
+	    in.points[i].y = uniform(1.5);
+	    in.points[i].z = uniform(1.5);
+	    in.channels[0].values[i] = (double)i/(double)N;
 	}
 	
 	for (unsigned int i = 0 ; i < 1000 ; ++i)
@@ -125,11 +125,11 @@ public:
 	int k = 0;
 	for (unsigned int i = 0 ; i < mask.size() ; ++i)
 	{
-	    //	    bool v = sf_->getMaskContainment(in.pts[i].x, in.pts[i].y, in.pts[i].z);
+	    //	    bool v = sf_->getMaskContainment(in.points[i].x, in.points[i].y, in.points[i].z);
 	    //	    if (v != mask[i]) 
 	    //		ROS_ERROR("Mask does not match");	    
 	    if (mask[i] != robot_self_filter::INSIDE) continue;
-	    //	    sendPoint(in.pts[i].x, in.pts[i].y, in.pts[i].z);
+	    //	    sendPoint(in.points[i].x, in.points[i].y, in.points[i].z);
 	    k++;
 	}
 	

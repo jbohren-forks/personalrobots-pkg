@@ -166,18 +166,18 @@ class PlanarPatchMap
       filterCloudBasedOnDistance (sensor_msgs::PointCloud *cloud_in, sensor_msgs::PointCloud &cloud_out,
                                   int d_idx, double d_min, double d_max)
     {
-      cloud_out.pts.resize (cloud_in->pts.size ());
+      cloud_out.points.resize (cloud_in->points.size ());
       int nr_p = 0;
 
-      for (unsigned int i = 0; i < cloud_out.pts.size (); i++)
+      for (unsigned int i = 0; i < cloud_out.points.size (); i++)
       {
-        if (cloud_in->chan[d_idx].vals[i] >= d_min && cloud_in->chan[d_idx].vals[i] <= d_max)
+        if (cloud_in->channels[d_idx].values[i] >= d_min && cloud_in->channels[d_idx].values[i] <= d_max)
         {
-          cloud_out.pts[nr_p] = cloud_in->pts[i];
+          cloud_out.points[nr_p] = cloud_in->points[i];
           nr_p++;
         }
       }
-      cloud_out.pts.resize (nr_p);
+      cloud_out.points.resize (nr_p);
     }
 
 
@@ -185,14 +185,14 @@ class PlanarPatchMap
     // Callback
     void cloud_cb ()
     {
-      ROS_INFO ("Received %d data points.", (int)cloud_.pts.size ());
+      ROS_INFO ("Received %d data points.", (int)cloud_.points.size ());
 
       int d_idx = cloud_geometry::getChannelIndex (cloud_, "distances");
       if (d_idx != -1)
       {
         filterCloudBasedOnDistance (&cloud_, cloud_f_, d_idx, d_min_, d_max_);
         ROS_INFO ("Distance information present. Filtering points between %g and %g : %d / %d left.", d_min_, d_max_,
-                  (int)cloud_f_.pts.size (), (int)cloud_.pts.size ());
+                  (int)cloud_f_.points.size (), (int)cloud_.points.size ());
       }
       else
         cloud_f_ = cloud_;
@@ -202,8 +202,8 @@ class PlanarPatchMap
 
       octree_ = new cloud_octree::Octree (0.0f, 0.0f, 0.0f, leaf_width_, leaf_width_, leaf_width_, 0);
       // Insert all data points into the octree
-      for (unsigned int i = 0; i < cloud_f_.pts.size (); i++)
-        octree_->insert (cloud_f_.pts[i].x, cloud_f_.pts[i].y, cloud_f_.pts[i].z, i);
+      for (unsigned int i = 0; i < cloud_f_.points.size (); i++)
+        octree_->insert (cloud_f_.points[i].x, cloud_f_.points[i].y, cloud_f_.points[i].z, i);
 
       gettimeofday (&t2, NULL);
       double time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
@@ -248,7 +248,7 @@ class PlanarPatchMap
 
       gettimeofday (&t2, NULL);
       time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
-      ROS_INFO ("Number of: [total points / points inserted / difference] : [%d / %d / %d] in %g seconds.", (int)cloud_f_.pts.size (), total_pts, (int)fabs (cloud_f_.pts.size () - total_pts), time_spent);
+      ROS_INFO ("Number of: [total points / points inserted / difference] : [%d / %d / %d] in %g seconds.", (int)cloud_f_.points.size (), total_pts, (int)fabs (cloud_f_.points.size () - total_pts), time_spent);
       pmap.header = cloud_.header;
       node_.publish ("planar_map", pmap);
 

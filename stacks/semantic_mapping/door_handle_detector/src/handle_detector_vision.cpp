@@ -383,7 +383,7 @@ private:
 
   void pointCloudStatistics(const sensor_msgs::PointCloud& pc, Stats& x_stats, Stats& y_stats, Stats& z_stats)
 	{
-		uint32_t size = pc.get_pts_size();
+		uint32_t size = pc.get_points_size();
 		if (size==0) {
 			return;
 		}
@@ -394,27 +394,27 @@ private:
 		z_stats.mean = 0;
 		z_stats.stdev = 0;
 
-		x_stats.min = pc.pts[0].x;
-		x_stats.max = pc.pts[0].x;
-		y_stats.min = pc.pts[0].y;
-		y_stats.max = pc.pts[0].y;
-		z_stats.min = pc.pts[0].z;
-		z_stats.max = pc.pts[0].z;
+		x_stats.min = pc.points[0].x;
+		x_stats.max = pc.points[0].x;
+		y_stats.min = pc.points[0].y;
+		y_stats.max = pc.points[0].y;
+		z_stats.min = pc.points[0].z;
+		z_stats.max = pc.points[0].z;
 
 		for (uint32_t i=0;i<size;++i) {
-			x_stats.mean += pc.pts[i].x;
-			y_stats.mean += pc.pts[i].y;
-			z_stats.mean += pc.pts[i].z;
-			x_stats.stdev += (pc.pts[i].x*pc.pts[i].x);
-			y_stats.stdev += (pc.pts[i].y*pc.pts[i].y);
-			z_stats.stdev += (pc.pts[i].z*pc.pts[i].z);
+			x_stats.mean += pc.points[i].x;
+			y_stats.mean += pc.points[i].y;
+			z_stats.mean += pc.points[i].z;
+			x_stats.stdev += (pc.points[i].x*pc.points[i].x);
+			y_stats.stdev += (pc.points[i].y*pc.points[i].y);
+			z_stats.stdev += (pc.points[i].z*pc.points[i].z);
 
-			if (x_stats.min>pc.pts[i].x) x_stats.min = pc.pts[i].x;
-			if (x_stats.max<pc.pts[i].x) x_stats.max = pc.pts[i].x;
-			if (y_stats.min>pc.pts[i].y) y_stats.min = pc.pts[i].y;
-			if (y_stats.max<pc.pts[i].y) y_stats.max = pc.pts[i].y;
-			if (z_stats.min>pc.pts[i].z) z_stats.min = pc.pts[i].z;
-			if (z_stats.max<pc.pts[i].z) z_stats.max = pc.pts[i].z;
+			if (x_stats.min>pc.points[i].x) x_stats.min = pc.points[i].x;
+			if (x_stats.max<pc.points[i].x) x_stats.max = pc.points[i].x;
+			if (y_stats.min>pc.points[i].y) y_stats.min = pc.points[i].y;
+			if (y_stats.max<pc.points[i].y) y_stats.max = pc.points[i].y;
+			if (z_stats.min>pc.points[i].z) z_stats.min = pc.points[i].z;
+			if (z_stats.max<pc.points[i].z) z_stats.max = pc.points[i].z;
 		}
 
 		x_stats.mean /= size;
@@ -443,29 +443,29 @@ private:
 		int xchan = -1;
 		int ychan = -1;
 
-		for (size_t i=0;i<pc.chan.size();++i) {
-			if (pc.chan[i].name == "x") {
+		for (size_t i=0;i<pc.channels.size();++i) {
+			if (pc.channels[i].name == "x") {
 				xchan = i;
 			}
-			if (pc.chan[i].name == "y") {
+			if (pc.channels[i].name == "y") {
 				ychan = i;
 			}
 		}
 
-		int chan_size = pc.get_chan_size();
-		result.chan.resize(chan_size);
+		int chan_size = pc.get_channels_size();
+		result.channels.resize(chan_size);
 		for (int j=0;j<chan_size;++j) {
-			result.chan[j].name = pc.chan[j].name;
+			result.channels[j].name = pc.channels[j].name;
 		}
 
 		if (xchan!=-1 && ychan!=-1) {
-			for (size_t i=0;i<pc.pts.size();++i) {
-				int x = (int)pc.chan[xchan].vals[i];
-				int y = (int)pc.chan[ychan].vals[i];
+			for (size_t i=0;i<pc.points.size();++i) {
+				int x = (int)pc.channels[xchan].values[i];
+				int y = (int)pc.channels[ychan].values[i];
 				if (x>=rect.x && x<rect.x+rect.width && y>=rect.y && y<rect.y+rect.height) {
-					result.pts.push_back(pc.pts[i]);
+					result.points.push_back(pc.points[i]);
 					for (int j=0;j<chan_size;++j) {
-						result.chan[j].vals.push_back(pc.chan[j].vals[i]);
+						result.channels[j].values.push_back(pc.channels[j].values[i]);
 					}
 				}
 			}
@@ -605,8 +605,8 @@ private:
     	cnt = 0;
     	double avg = 0;
     	double max_dist = 0;
-    	for(size_t i = 0;i < pc.pts.size();++i){
-    		geometry_msgs::Point32 p = pc.pts[i];
+    	for(size_t i = 0;i < pc.points.size();++i){
+    		geometry_msgs::Point32 p = pc.points[i];
     		double dist = fabs(plane.val[0] * p.x + plane.val[1] * p.y + plane.val[2] * p.z + plane.val[3]);
     		max_dist = max(max_dist, dist);
     		avg += dist;
@@ -923,14 +923,14 @@ private:
     CvScalar estimatePlaneLS(sensor_msgs::PointCloud points)
     {
         CvScalar plane;
-        int cnt = points.pts.size();
+        int cnt = points.points.size();
         if (cnt==0) {
             plane.val[0] = plane.val[1] = plane.val[2] = plane.val[3] = -1;
             return plane;
         }
         CvMat *A = cvCreateMat(cnt, 3, CV_32FC1);
         for(int i = 0;i < cnt;++i){
-            geometry_msgs::Point32 p = points.pts[i];
+            geometry_msgs::Point32 p = points.points[i];
             cvmSet(A, i, 0, p.x);
             cvmSet(A, i, 1, p.y);
             cvmSet(A, i, 2, p.z);
@@ -967,11 +967,11 @@ private:
         tf_.transformPointCloud("base_footprint", *cloud_, base_cloud);
         int xchan = -1;
         int ychan = -1;
-        for(size_t i = 0;i < base_cloud.chan.size();++i){
-            if(base_cloud.chan[i].name == "x"){
+        for(size_t i = 0;i < base_cloud.channels.size();++i){
+            if(base_cloud.channels[i].name == "x"){
                 xchan = i;
             }
-            if(base_cloud.chan[i].name == "y"){
+            if(base_cloud.channels[i].name == "y"){
                 ychan = i;
             }
         }
@@ -979,10 +979,10 @@ private:
         if(xchan != -1 && ychan != -1){
             unsigned char *pd = (unsigned char*)(disp_->imageData);
             int ws = disp_->widthStep;
-            for(size_t i = 0;i < base_cloud.get_pts_size();++i){
-                geometry_msgs::Point32 crt_point = base_cloud.pts[i];
-                int x = (int)(base_cloud.chan[xchan].vals[i]);
-                int y = (int)(base_cloud.chan[ychan].vals[i]);
+            for(size_t i = 0;i < base_cloud.get_points_size();++i){
+                geometry_msgs::Point32 crt_point = base_cloud.points[i];
+                int x = (int)(base_cloud.channels[xchan].values[i]);
+                int y = (int)(base_cloud.channels[ychan].values[i]);
 
 				// pointer to the current pixel
 				unsigned char* crt_pd = pd+y*ws+x;

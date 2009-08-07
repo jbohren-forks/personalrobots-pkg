@@ -111,17 +111,17 @@ public:
     cloud.header.stamp = msg->header.stamp ;
     if (found)
     {
-      cloud.pts.resize( cv_corners.size() ) ;
+      cloud.points.resize( cv_corners.size() ) ;
 
       for (unsigned int i=0; i<cv_corners.size(); i++)
       {
-        cloud.pts[i].x = cv_corners[i].x ;
-        cloud.pts[i].y = cv_corners[i].y ;
-        cloud.pts[i].z = 1.0 ;
+        cloud.points[i].x = cv_corners[i].x ;
+        cloud.points[i].y = cv_corners[i].y ;
+        cloud.points[i].z = 1.0 ;
       }
     }
     else
-      cloud.pts.resize(0) ;
+      cloud.points.resize(0) ;
 
     corners_pub_.publish(cloud) ;
 

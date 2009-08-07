@@ -91,7 +91,7 @@ void pcd_misc::cluster_pcd_points(const sensor_msgs::PointCloud& centers,
                                   std::vector<int>& cluster_ids_final, 
                                   unsigned int& num_clusters)
 {
-  unsigned int num_pts=centers.pts.size();
+  unsigned int num_pts=centers.points.size();
   
 
   std::vector<int> cluster_ids;
@@ -205,7 +205,7 @@ void pcd_misc::variationAlongLine(Point32 dir_line,geometry_msgs::Point32 pt_lin
   max_v=-1e15;
   for(unsigned int iPt=0;iPt<indices.size();iPt++)
   {
-    Point32 &pt=cloud.pts[indices[iPt]];
+    Point32 &pt=cloud.points[indices[iPt]];
     float new_v=(pt.x-pt_line.x)*dir_line.x+(pt.y-pt_line.y)*dir_line.y+(pt.z-pt_line.z)*dir_line.z;
 
     if(min_v>new_v)

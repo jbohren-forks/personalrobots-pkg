@@ -84,7 +84,7 @@ TEST (CloudKdTreeANN, Search)
   // Create a KdTree object
   KdTree* tree = new KdTreeANN (points);
 
-  tree->nearestKSearch (points.pts[0], 10, indices, distances);
+  tree->nearestKSearch (points.points[0], 10, indices, distances);
 
   EXPECT_EQ (indices[0], 0);
   EXPECT_EQ (indices[1], 12);
@@ -130,7 +130,7 @@ TEST (CloudKdTreeANN, Search)
   EXPECT_NEAR (distances[8], 0.000198955, 1e-7);
   EXPECT_NEAR (distances[9], 0.000214294, 1e-7);
 
-  state = tree->radiusSearch (points.pts[0], 0.01, indices, distances);
+  state = tree->radiusSearch (points.points[0], 0.01, indices, distances);
   EXPECT_EQ (state, true);
 
   EXPECT_EQ (indices[0], 0);
@@ -170,8 +170,8 @@ TEST (CloudKdTreeANN, Search)
 //void save_points(sensor_msgs::PointCloud& points)
 //{
 //	FILE* f = fopen("points.dat","w");
-//	for (int i=0;i<points.pts.size();++i) {
-//		fprintf(f,"%f %f %f\n", points.pts[i].x,points.pts[i].y,points.pts[i].z);
+//	for (int i=0;i<points.points.size();++i) {
+//		fprintf(f,"%f %f %f\n", points.points[i].x,points.points[i].y,points.points[i].z);
 //	}
 //	fclose(f);
 //}
@@ -193,9 +193,9 @@ TEST (CloudKdTreeFLANN, Search)
 //   //Create a KdTree object
 //   KdTree* tree = new KdTreeFLANN (points);
 // 
-//   std::cerr << points.pts[0].x <<  " " << points.pts[0].y << " " << points.pts[0].z << std::endl;
+//   std::cerr << points.points[0].x <<  " " << points.points[0].y << " " << points.points[0].z << std::endl;
 // 
-//   tree->nearestKSearch (points.pts[0], 10, indices, distances);
+//   tree->nearestKSearch (points.points[0], 10, indices, distances);
 // 
 //   EXPECT_EQ (indices[0], 0);
 //   EXPECT_EQ (indices[1], 12);
@@ -241,7 +241,7 @@ TEST (CloudKdTreeFLANN, Search)
 //    EXPECT_NEAR (distances[8], 0.000198955, 1e-7);
 //    EXPECT_NEAR (distances[9], 0.000214294, 1e-7);
 //
-//   state = tree->radiusSearch (points.pts[0], 0.01, indices, distances);
+//   state = tree->radiusSearch (points.points[0], 0.01, indices, distances);
 //   EXPECT_EQ (state, true);
 //
 //   EXPECT_EQ (indices[0], 0);

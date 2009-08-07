@@ -48,23 +48,23 @@ using namespace sample_consensus;
 TEST (LMedS, SACModelSphere)
 {
   sensor_msgs::PointCloud points;
-  points.pts.resize (10);
+  points.points.resize (10);
 
-  points.pts[0].x = 1.7068; points.pts[0].y = 1.0684; points.pts[0].z = 2.2147;
-  points.pts[1].x = 2.4708; points.pts[1].y = 2.3081; points.pts[1].z = 1.1736;
-  points.pts[2].x = 2.7609; points.pts[2].y = 1.9095; points.pts[2].z = 1.3574;
-  points.pts[3].x = 2.8016; points.pts[3].y = 1.6704; points.pts[3].z = 1.5009;
-  points.pts[4].x = 1.8517; points.pts[4].y = 2.0276; points.pts[4].z = 1.0112;
-  points.pts[5].x = 1.8726; points.pts[5].y = 1.3539; points.pts[5].z = 2.7523;
-  points.pts[6].x = 2.5179; points.pts[6].y = 2.3218; points.pts[6].z = 1.2074;
-  points.pts[7].x = 2.4026; points.pts[7].y = 2.5114; points.pts[7].z = 2.7588;
-  points.pts[8].x = 2.6999; points.pts[8].y = 2.5606; points.pts[8].z = 1.5571;
-  points.pts[9].x = 0;      points.pts[9].y = 0;      points.pts[9].z = 0;
+  points.points[0].x = 1.7068; points.points[0].y = 1.0684; points.points[0].z = 2.2147;
+  points.points[1].x = 2.4708; points.points[1].y = 2.3081; points.points[1].z = 1.1736;
+  points.points[2].x = 2.7609; points.points[2].y = 1.9095; points.points[2].z = 1.3574;
+  points.points[3].x = 2.8016; points.points[3].y = 1.6704; points.points[3].z = 1.5009;
+  points.points[4].x = 1.8517; points.points[4].y = 2.0276; points.points[4].z = 1.0112;
+  points.points[5].x = 1.8726; points.points[5].y = 1.3539; points.points[5].z = 2.7523;
+  points.points[6].x = 2.5179; points.points[6].y = 2.3218; points.points[6].z = 1.2074;
+  points.points[7].x = 2.4026; points.points[7].y = 2.5114; points.points[7].z = 2.7588;
+  points.points[8].x = 2.6999; points.points[8].y = 2.5606; points.points[8].z = 1.5571;
+  points.points[9].x = 0;      points.points[9].y = 0;      points.points[9].z = 0;
 
   SACModel *model = new SACModelSphere ();
   SAC *sac        = new LMedS (model, 0.2);
   model->setDataSet (&points);
-  EXPECT_EQ ((int)model->getCloud ()->pts.size (), 10);
+  EXPECT_EQ ((int)model->getCloud ()->points.size (), 10);
 
   bool result = sac->computeModel ();
   EXPECT_EQ (result, true);
@@ -99,23 +99,23 @@ TEST (LMedS, SACModelSphere)
 TEST (RANSAC, SACModelSphere)
 {
   sensor_msgs::PointCloud points;
-  points.pts.resize (10);
+  points.points.resize (10);
 
-  points.pts[0].x = 1.7068; points.pts[0].y = 1.0684; points.pts[0].z = 2.2147;
-  points.pts[1].x = 2.4708; points.pts[1].y = 2.3081; points.pts[1].z = 1.1736;
-  points.pts[2].x = 2.7609; points.pts[2].y = 1.9095; points.pts[2].z = 1.3574;
-  points.pts[3].x = 2.8016; points.pts[3].y = 1.6704; points.pts[3].z = 1.5009;
-  points.pts[4].x = 1.8517; points.pts[4].y = 2.0276; points.pts[4].z = 1.0112;
-  points.pts[5].x = 1.8726; points.pts[5].y = 1.3539; points.pts[5].z = 2.7523;
-  points.pts[6].x = 2.5179; points.pts[6].y = 2.3218; points.pts[6].z = 1.2074;
-  points.pts[7].x = 2.4026; points.pts[7].y = 2.5114; points.pts[7].z = 2.7588;
-  points.pts[8].x = 2.6999; points.pts[8].y = 2.5606; points.pts[8].z = 1.5571;
-  points.pts[9].x = 0;      points.pts[9].y = 0;      points.pts[9].z = 0;
+  points.points[0].x = 1.7068; points.points[0].y = 1.0684; points.points[0].z = 2.2147;
+  points.points[1].x = 2.4708; points.points[1].y = 2.3081; points.points[1].z = 1.1736;
+  points.points[2].x = 2.7609; points.points[2].y = 1.9095; points.points[2].z = 1.3574;
+  points.points[3].x = 2.8016; points.points[3].y = 1.6704; points.points[3].z = 1.5009;
+  points.points[4].x = 1.8517; points.points[4].y = 2.0276; points.points[4].z = 1.0112;
+  points.points[5].x = 1.8726; points.points[5].y = 1.3539; points.points[5].z = 2.7523;
+  points.points[6].x = 2.5179; points.points[6].y = 2.3218; points.points[6].z = 1.2074;
+  points.points[7].x = 2.4026; points.points[7].y = 2.5114; points.points[7].z = 2.7588;
+  points.points[8].x = 2.6999; points.points[8].y = 2.5606; points.points[8].z = 1.5571;
+  points.points[9].x = 0;      points.points[9].y = 0;      points.points[9].z = 0;
 
   SACModel *model = new SACModelSphere ();
   SAC *sac        = new RANSAC (model, 0.2);
   model->setDataSet (&points);
-  EXPECT_EQ ((int)model->getCloud ()->pts.size (), 10);
+  EXPECT_EQ ((int)model->getCloud ()->points.size (), 10);
 
   bool result = sac->computeModel ();
   EXPECT_EQ (result, true);
@@ -150,23 +150,23 @@ TEST (RANSAC, SACModelSphere)
 TEST (MSAC, SACModelSphere)
 {
   sensor_msgs::PointCloud points;
-  points.pts.resize (10);
+  points.points.resize (10);
 
-  points.pts[0].x = 1.7068; points.pts[0].y = 1.0684; points.pts[0].z = 2.2147;
-  points.pts[1].x = 2.4708; points.pts[1].y = 2.3081; points.pts[1].z = 1.1736;
-  points.pts[2].x = 2.7609; points.pts[2].y = 1.9095; points.pts[2].z = 1.3574;
-  points.pts[3].x = 2.8016; points.pts[3].y = 1.6704; points.pts[3].z = 1.5009;
-  points.pts[4].x = 1.8517; points.pts[4].y = 2.0276; points.pts[4].z = 1.0112;
-  points.pts[5].x = 1.8726; points.pts[5].y = 1.3539; points.pts[5].z = 2.7523;
-  points.pts[6].x = 2.5179; points.pts[6].y = 2.3218; points.pts[6].z = 1.2074;
-  points.pts[7].x = 2.4026; points.pts[7].y = 2.5114; points.pts[7].z = 2.7588;
-  points.pts[8].x = 2.6999; points.pts[8].y = 2.5606; points.pts[8].z = 1.5571;
-  points.pts[9].x = 0;      points.pts[9].y = 0;      points.pts[9].z = 0;
+  points.points[0].x = 1.7068; points.points[0].y = 1.0684; points.points[0].z = 2.2147;
+  points.points[1].x = 2.4708; points.points[1].y = 2.3081; points.points[1].z = 1.1736;
+  points.points[2].x = 2.7609; points.points[2].y = 1.9095; points.points[2].z = 1.3574;
+  points.points[3].x = 2.8016; points.points[3].y = 1.6704; points.points[3].z = 1.5009;
+  points.points[4].x = 1.8517; points.points[4].y = 2.0276; points.points[4].z = 1.0112;
+  points.points[5].x = 1.8726; points.points[5].y = 1.3539; points.points[5].z = 2.7523;
+  points.points[6].x = 2.5179; points.points[6].y = 2.3218; points.points[6].z = 1.2074;
+  points.points[7].x = 2.4026; points.points[7].y = 2.5114; points.points[7].z = 2.7588;
+  points.points[8].x = 2.6999; points.points[8].y = 2.5606; points.points[8].z = 1.5571;
+  points.points[9].x = 0;      points.points[9].y = 0;      points.points[9].z = 0;
 
   SACModel *model = new SACModelSphere ();
   SAC *sac        = new MSAC (model, 0.2);
   model->setDataSet (&points);
-  EXPECT_EQ ((int)model->getCloud ()->pts.size (), 10);
+  EXPECT_EQ ((int)model->getCloud ()->points.size (), 10);
 
   bool result = sac->computeModel ();
   EXPECT_EQ (result, true);
@@ -201,25 +201,25 @@ TEST (MSAC, SACModelSphere)
 TEST (RRANSAC, SACModelSphere)
 {
   sensor_msgs::PointCloud points;
-  points.pts.resize (10);
+  points.points.resize (10);
 
-  points.pts[0].x = 1.7068; points.pts[0].y = 1.0684; points.pts[0].z = 2.2147;
-  points.pts[1].x = 2.4708; points.pts[1].y = 2.3081; points.pts[1].z = 1.1736;
-  points.pts[2].x = 2.7609; points.pts[2].y = 1.9095; points.pts[2].z = 1.3574;
-  points.pts[3].x = 2.8016; points.pts[3].y = 1.6704; points.pts[3].z = 1.5009;
-  points.pts[4].x = 1.8517; points.pts[4].y = 2.0276; points.pts[4].z = 1.0112;
-  points.pts[5].x = 1.8726; points.pts[5].y = 1.3539; points.pts[5].z = 2.7523;
-  points.pts[6].x = 2.5179; points.pts[6].y = 2.3218; points.pts[6].z = 1.2074;
-  points.pts[7].x = 2.4026; points.pts[7].y = 2.5114; points.pts[7].z = 2.7588;
-  points.pts[8].x = 2.6999; points.pts[8].y = 2.5606; points.pts[8].z = 1.5571;
-  points.pts[9].x = 0;      points.pts[9].y = 0;      points.pts[9].z = 0;
+  points.points[0].x = 1.7068; points.points[0].y = 1.0684; points.points[0].z = 2.2147;
+  points.points[1].x = 2.4708; points.points[1].y = 2.3081; points.points[1].z = 1.1736;
+  points.points[2].x = 2.7609; points.points[2].y = 1.9095; points.points[2].z = 1.3574;
+  points.points[3].x = 2.8016; points.points[3].y = 1.6704; points.points[3].z = 1.5009;
+  points.points[4].x = 1.8517; points.points[4].y = 2.0276; points.points[4].z = 1.0112;
+  points.points[5].x = 1.8726; points.points[5].y = 1.3539; points.points[5].z = 2.7523;
+  points.points[6].x = 2.5179; points.points[6].y = 2.3218; points.points[6].z = 1.2074;
+  points.points[7].x = 2.4026; points.points[7].y = 2.5114; points.points[7].z = 2.7588;
+  points.points[8].x = 2.6999; points.points[8].y = 2.5606; points.points[8].z = 1.5571;
+  points.points[9].x = 0;      points.points[9].y = 0;      points.points[9].z = 0;
 
   SACModel *model = new SACModelSphere ();
   SAC *sac        = new RRANSAC (model, 0.2);
   reinterpret_cast<RRANSAC*>(sac)->setFractionNrPretest (50);
 
   model->setDataSet (&points);
-  EXPECT_EQ ((int)model->getCloud ()->pts.size (), 10);
+  EXPECT_EQ ((int)model->getCloud ()->points.size (), 10);
 
   bool result = sac->computeModel ();
   EXPECT_EQ (result, true);
@@ -254,25 +254,25 @@ TEST (RRANSAC, SACModelSphere)
 TEST (RMSAC, SACModelSphere)
 {
   sensor_msgs::PointCloud points;
-  points.pts.resize (10);
+  points.points.resize (10);
 
-  points.pts[0].x = 1.7068; points.pts[0].y = 1.0684; points.pts[0].z = 2.2147;
-  points.pts[1].x = 2.4708; points.pts[1].y = 2.3081; points.pts[1].z = 1.1736;
-  points.pts[2].x = 2.7609; points.pts[2].y = 1.9095; points.pts[2].z = 1.3574;
-  points.pts[3].x = 2.8016; points.pts[3].y = 1.6704; points.pts[3].z = 1.5009;
-  points.pts[4].x = 1.8517; points.pts[4].y = 2.0276; points.pts[4].z = 1.0112;
-  points.pts[5].x = 1.8726; points.pts[5].y = 1.3539; points.pts[5].z = 2.7523;
-  points.pts[6].x = 2.5179; points.pts[6].y = 2.3218; points.pts[6].z = 1.2074;
-  points.pts[7].x = 2.4026; points.pts[7].y = 2.5114; points.pts[7].z = 2.7588;
-  points.pts[8].x = 2.6999; points.pts[8].y = 2.5606; points.pts[8].z = 1.5571;
-  points.pts[9].x = 0;      points.pts[9].y = 0;      points.pts[9].z = 0;
+  points.points[0].x = 1.7068; points.points[0].y = 1.0684; points.points[0].z = 2.2147;
+  points.points[1].x = 2.4708; points.points[1].y = 2.3081; points.points[1].z = 1.1736;
+  points.points[2].x = 2.7609; points.points[2].y = 1.9095; points.points[2].z = 1.3574;
+  points.points[3].x = 2.8016; points.points[3].y = 1.6704; points.points[3].z = 1.5009;
+  points.points[4].x = 1.8517; points.points[4].y = 2.0276; points.points[4].z = 1.0112;
+  points.points[5].x = 1.8726; points.points[5].y = 1.3539; points.points[5].z = 2.7523;
+  points.points[6].x = 2.5179; points.points[6].y = 2.3218; points.points[6].z = 1.2074;
+  points.points[7].x = 2.4026; points.points[7].y = 2.5114; points.points[7].z = 2.7588;
+  points.points[8].x = 2.6999; points.points[8].y = 2.5606; points.points[8].z = 1.5571;
+  points.points[9].x = 0;      points.points[9].y = 0;      points.points[9].z = 0;
 
   SACModel *model = new SACModelSphere ();
   SAC *sac        = new RMSAC (model, 0.2);
   reinterpret_cast<RMSAC*>(sac)->setFractionNrPretest (50);
 
   model->setDataSet (&points);
-  EXPECT_EQ ((int)model->getCloud ()->pts.size (), 10);
+  EXPECT_EQ ((int)model->getCloud ()->points.size (), 10);
 
   bool result = sac->computeModel ();
   EXPECT_EQ (result, true);

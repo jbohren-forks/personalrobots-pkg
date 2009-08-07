@@ -48,9 +48,9 @@ PlanarFit::PlanarFit(ros::Node& anode) :
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Callback
 void PlanarFit::cloud_cb() {
-	ROS_INFO ("Received %d data points in frame %s with %d channels (%s).", (int)cloud_.pts.size (), cloud_.header.frame_id.c_str (),
-			(int)cloud_.chan.size (), cloud_geometry::getAvailableChannels (cloud_).c_str ());
-	if (cloud_.pts.size() == 0) {
+	ROS_INFO ("Received %d data points in frame %s with %d channels (%s).", (int)cloud_.points.size (), cloud_.header.frame_id.c_str (),
+			(int)cloud_.channels.size (), cloud_geometry::getAvailableChannels (cloud_).c_str ());
+	if (cloud_.points.size() == 0) {
 		ROS_ERROR ("No data points found. Exiting...");
 		return;
 	}
@@ -73,16 +73,16 @@ void PlanarFit::cloud_cb() {
 
 		ROS_INFO("coeff[0] %f, %f, %f, %f; %d, %d ",models[0][0],models[0][1],models[0][2],models[0][3],models[0].size(),models.size());
 		vector<geometry_msgs::Vector3> normals;
-		normals.resize(cloud_plane_.get_pts_size());
+		normals.resize(cloud_plane_.get_points_size());
 
-//		for (size_t i=0;i<cloud_plane_.get_pts_size();++i) {
+//		for (size_t i=0;i<cloud_plane_.get_points_size();++i) {
 //			normals[i].x = models[0][0];
 //			normals[i].y = models[0][1];
 //			normals[i].z = models[0][2];
 //		}
 //		publishNormals(cloud_plane_,normals,0.1);
 
-		ROS_INFO ("Planar model found with %d / %d inliers in %g seconds.\n", (int)indices[0].size (), (int)cloud_.pts.size (), (ros::Time::now () - ts).toSec ());
+		ROS_INFO ("Planar model found with %d / %d inliers in %g seconds.\n", (int)indices[0].size (), (int)cloud_.points.size (), (ros::Time::now () - ts).toSec ());
 	}
 
 	node_.publish("~plane", cloud_plane_);
@@ -99,7 +99,7 @@ void PlanarFit::segmentPlanes(PointCloud &points, double z_min, double z_max,
 	vector<int> indices_in_bounds;
 	// Get the point indices within z_min <-> z_max
 	getPointIndicesInZBounds(points, z_min, z_max, indices_in_bounds);
-	ROS_INFO("segmentPlanes #%d running on %d/%d points",number,points.get_pts_size(),indices_in_bounds.size());
+	ROS_INFO("segmentPlanes #%d running on %d/%d points",number,points.get_points_size(),indices_in_bounds.size());
 
 	// We need to know the viewpoint where the data was acquired
 	// For simplicity, assuming 0,0,0 for stereo data in the stereo frame - however if this is not true, use TF to get
@@ -158,10 +158,10 @@ void PlanarFit::segmentPlanes(PointCloud &points, double z_min, double z_max,
  */
 void PlanarFit::getPointIndicesInZBounds(const PointCloud &points,
 		double z_min, double z_max, vector<int> &indices) {
-	indices.resize(points.pts.size());
+	indices.resize(points.points.size());
 	int nr_p = 0;
-	for (unsigned int i = 0; i < points.pts.size(); i++) {
-		if ((points.pts[i].z >= z_min && points.pts[i].z <= z_max)) {
+	for (unsigned int i = 0; i < points.points.size(); i++) {
+		if ((points.points[i].z >= z_min && points.points[i].z <= z_max)) {
 			indices[nr_p] = i;
 			nr_p++;
 		}
@@ -208,7 +208,7 @@ bool PlanarFit::fitSACPlanes(PointCloud *points, vector<int> &indices, vector<
 
 			// Flip the plane normal towards the viewpoint
 			cloud_geometry::angles::flipNormalTowardsViewpoint(model_coeff,
-					points->pts.at(model_inliers[0]), viewpoint_cloud);
+					points->points.at(model_inliers[0]), viewpoint_cloud);
 
 			ROS_INFO ("Found a planar model supported by %d inliers: [%g, %g, %g, %g]", (int)model_inliers.size (),
 					model_coeff[0], model_coeff[1], model_coeff[2], model_coeff[3]);
@@ -244,22 +244,22 @@ void PlanarFit::publishNormals(sensor_msgs::PointCloud points, vector<geometry_m
 	marker.color.g = 0.2;
 	marker.color.b = 1.0;
 
-	size_t N = MIN(100,points.get_pts_size());
+	size_t N = MIN(100,points.get_points_size());
 	if(N==0) return;
-	size_t STEP = points.get_pts_size()/N;
-//	N = points.get_pts_size();
+	size_t STEP = points.get_points_size()/N;
+//	N = points.get_points_size();
 	marker.set_points_size(2*N);
 //	marker.set_points_size(2);
 
 	for (size_t i=0;i<N;++i) {
 
-		marker.points[2*i].x = points.pts[i*STEP].x;
-		marker.points[2*i].y = points.pts[i*STEP].y;
-		marker.points[2*i].z = points.pts[i*STEP].z;
+		marker.points[2*i].x = points.points[i*STEP].x;
+		marker.points[2*i].y = points.points[i*STEP].y;
+		marker.points[2*i].z = points.points[i*STEP].z;
 
-		marker.points[2*i+1].x = points.pts[i*STEP].x+length*coeff[i*STEP].x;
-		marker.points[2*i+1].y = points.pts[i*STEP].y+length*coeff[i*STEP].y;
-		marker.points[2*i+1].z = points.pts[i*STEP].z+length*coeff[i*STEP].z;
+		marker.points[2*i+1].x = points.points[i*STEP].x+length*coeff[i*STEP].x;
+		marker.points[2*i+1].y = points.points[i*STEP].y+length*coeff[i*STEP].y;
+		marker.points[2*i+1].z = points.points[i*STEP].z+length*coeff[i*STEP].z;
 //		ROS_INFO("line %f,%f,%f --> %f,%f,%f",marker.points[2*i].x,marker.points[2*i].y,marker.points[2*i].z,marker.points[2*i+1].x,marker.points[2*i+1].y,marker.points[2*i+1].z);
 	}
 	ROS_INFO("visualization_marker normals with n=%d points",N);

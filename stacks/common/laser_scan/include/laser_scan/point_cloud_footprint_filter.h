@@ -93,28 +93,28 @@ public:
     }
 
     filtered_scan.header = input_scan.header;
-    filtered_scan.pts.resize (input_scan.pts.size());
-    filtered_scan.chan.resize (input_scan.chan.size());
-    for (unsigned int d = 0; d < input_scan.get_chan_size (); d++){
-      filtered_scan.chan[d].vals.resize  (input_scan.pts.size());
-      filtered_scan.chan[d].name = input_scan.chan[d].name;
+    filtered_scan.points.resize (input_scan.points.size());
+    filtered_scan.channels.resize (input_scan.channels.size());
+    for (unsigned int d = 0; d < input_scan.get_channels_size (); d++){
+      filtered_scan.channels[d].values.resize  (input_scan.points.size());
+      filtered_scan.channels[d].name = input_scan.channels[d].name;
     }
 
     int num_pts = 0;
-    for (unsigned int i=0; i < laser_cloud.pts.size(); i++)  
+    for (unsigned int i=0; i < laser_cloud.points.size(); i++)  
     {
-      if (!inFootprint(laser_cloud.pts[i])){
-        filtered_scan.pts[num_pts] = input_scan.pts[i];
-        for (unsigned int d = 0; d < filtered_scan.get_chan_size (); d++)
-          filtered_scan.chan[d].vals[num_pts] = input_scan.chan[d].vals[i];
+      if (!inFootprint(laser_cloud.points[i])){
+        filtered_scan.points[num_pts] = input_scan.points[i];
+        for (unsigned int d = 0; d < filtered_scan.get_channels_size (); d++)
+          filtered_scan.channels[d].values[num_pts] = input_scan.channels[d].values[i];
         num_pts++;
       }
     }
 
     // Resize output vectors
-    filtered_scan.pts.resize (num_pts);
-    for (unsigned int d = 0; d < filtered_scan.get_chan_size (); d++)
-      filtered_scan.chan[d].vals.resize (num_pts);
+    filtered_scan.points.resize (num_pts);
+    for (unsigned int d = 0; d < filtered_scan.get_channels_size (); d++)
+      filtered_scan.channels[d].values.resize (num_pts);
 
     return true;
   }

@@ -84,14 +84,14 @@ namespace cloud_geometry
     getPointAsFloatArray (const sensor_msgs::PointCloud &points, int index, std::vector<float> &array)
   {
     // Resize for XYZ (3) + NR_CHANNELS
-    if (array.size () != 3 + points.get_chan_size ())
-      array.resize (3 + points.get_chan_size ());
-    array[0] = points.pts[index].x;
-    array[1] = points.pts[index].y;
-    array[2] = points.pts[index].z;
+    if (array.size () != 3 + points.get_channels_size ())
+      array.resize (3 + points.get_channels_size ());
+    array[0] = points.points[index].x;
+    array[1] = points.points[index].y;
+    array[2] = points.points[index].z;
 
-    for (unsigned int d = 0; d < points.get_chan_size (); d++)
-      array[3 + d] = points.chan[d].vals[index];
+    for (unsigned int d = 0; d < points.get_channels_size (); d++)
+      array[3 + d] = points.channels[d].values[index];
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -107,12 +107,12 @@ namespace cloud_geometry
     // Resize for XYZ (3) + NR_CHANNELS
     if ((int)array.size () != 3 + nr_channels)
       array.resize (3 + nr_channels);
-    array[0] = points.pts[index].x;
-    array[1] = points.pts[index].y;
-    array[2] = points.pts[index].z;
+    array[0] = points.points[index].x;
+    array[1] = points.points[index].y;
+    array[2] = points.points[index].z;
 
     for (int d = 0; d < nr_channels; d++)
-      array[3 + d] = points.chan[d].vals[index];
+      array[3 + d] = points.channels[d].values[index];
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -129,12 +129,12 @@ namespace cloud_geometry
     // Resize for XYZ (3) + NR_CHANNELS
     if ((int)array.size () != 3 + end_channel - start_channel)
       array.resize (3 + end_channel - start_channel);
-    array[0] = points.pts[index].x;
-    array[1] = points.pts[index].y;
-    array[2] = points.pts[index].z;
+    array[0] = points.points[index].x;
+    array[1] = points.points[index].y;
+    array[2] = points.points[index].z;
 
     for (int d = start_channel; d < end_channel; d++)
-      array[3 + d - start_channel] = points.chan[d].vals[index];
+      array[3 + d - start_channel] = points.channels[d].values[index];
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -148,17 +148,17 @@ namespace cloud_geometry
   inline void
     getPointAsFloatArray (const sensor_msgs::PointCloud &points, int index, std::vector<float> &array, std::vector<int> channels)
   {
-    if (channels.size () > points.get_chan_size ())
+    if (channels.size () > points.get_channels_size ())
       return;
     // Resize for XYZ (3) + NR_CHANNELS
     if (array.size () != 3 + channels.size ())
       array.resize (3 + channels.size ());
-    array[0] = points.pts[index].x;
-    array[1] = points.pts[index].y;
-    array[2] = points.pts[index].z;
+    array[0] = points.points[index].x;
+    array[1] = points.points[index].y;
+    array[2] = points.points[index].z;
 
     for (unsigned int d = 0; d < channels.size (); d++)
-      array[3 + d] = points.chan[channels.at (d)].vals[index];
+      array[3 + d] = points.channels[channels.at (d)].values[index];
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////

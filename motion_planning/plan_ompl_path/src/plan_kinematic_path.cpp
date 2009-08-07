@@ -248,9 +248,9 @@ protected:
 	
 	motion_planning_msgs::KinematicPath stop_path;	
 	stop_path.set_states_size(1);
-	stop_path.states[0].set_vals_size(7);
+	stop_path.states[0].set_values_size(7);
 	for (unsigned int i = 0 ; i < 7 ; ++i)
-	    stop_path.states[0].vals[i] = cmd[i];
+	    stop_path.states[0].values[i] = cmd[i];
 	
 	sendArmCommand(stop_path, GROUPNAME);
     }
@@ -261,9 +261,9 @@ protected:
         traj.set_points_size(path.get_states_size());	
 	for (unsigned int i = 0 ; i < path.get_states_size() ; ++i)
         {	    
-            traj.points[i].set_positions_size(path.states[i].get_vals_size());	    
-            for (unsigned int j = 0 ; j < path.states[i].get_vals_size() ; ++j)
-		traj.points[i].positions[j] = path.states[i].vals[j];
+            traj.points[i].set_positions_size(path.states[i].get_values_size());	    
+            for (unsigned int j = 0 ; j < path.states[i].get_values_size() ; ++j)
+		traj.points[i].positions[j] = path.states[i].values[j];
 	    traj.points[i].time = path.times[i];
 	}	
     }
@@ -283,7 +283,7 @@ protected:
 	motion_planning_msgs::DisplayKinematicPath dpath;
 	dpath.frame_id = kmsm_->getFrameId();
 	dpath.model_name = model;
-	kmsm_->getRobotState()->copyParamsGroup(dpath.start_state.vals, kmsm_->getKinematicModel()->getGroupID(GROUPNAME));
+	kmsm_->getRobotState()->copyParamsGroup(dpath.start_state.values, kmsm_->getKinematicModel()->getGroupID(GROUPNAME));
 	dpath.path = path;
 	displayKinematicPathPublisher_.publish(dpath);
 	ROS_INFO("Sent planned path to display");
@@ -294,8 +294,8 @@ protected:
 	printf("Path with %d states\n", (int)path.states.size());	
 	for (unsigned int i = 0 ; i < path.states.size() ; ++i)
 	{
-	    for (unsigned int j = 0 ; j < path.states[i].vals.size() ; ++j)
-		printf("%f ", path.states[i].vals[j]);	    
+	    for (unsigned int j = 0 ; j < path.states[i].values.size() ; ++j)
+		printf("%f ", path.states[i].values[j]);	    
 	    printf("\n");
 	}
 	printf("\n");

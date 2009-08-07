@@ -104,8 +104,8 @@ class CloudDownsampler
     void
     cloud_cb (const sensor_msgs::PointCloudConstPtr& cloud)
     {
-      ROS_INFO ("Received %d data points.", (int)cloud->pts.size ());
-      if (cloud->pts.size () == 0)
+      ROS_INFO ("Received %d data points.", (int)cloud->points.size ());
+      if (cloud->points.size () == 0)
         return;
       sensor_msgs::PointCloudConstPtr cloud_in = cloud;
 
@@ -114,7 +114,7 @@ class CloudDownsampler
       int d_idx = cloud_geometry::getChannelIndex (cloud_in, "distances");
       cloud_geometry::downsamplePointCloud (cloud_in, cloud_down_, leaf_width_, leaves_, d_idx, cut_distance_);
 
-      ROS_INFO ("Cloud downsampled in %g seconds. Number of points left: %d.", (ros::Time::now () - ts).toSec (), (int)cloud_down_.pts.size ());
+      ROS_INFO ("Cloud downsampled in %g seconds. Number of points left: %d.", (ros::Time::now () - ts).toSec (), (int)cloud_down_.points.size ());
 
       cloud_down_pub_.publish (cloud_down_);
     }

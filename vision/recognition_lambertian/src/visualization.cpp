@@ -54,17 +54,17 @@ void publishNormals(ros::Node* node, sensor_msgs::PointCloud points, vector<geom
 	marker.color.a = 1.0;
 	marker.color.g = 1.0;
 
-	marker.set_points_size(2*points.get_pts_size());
+	marker.set_points_size(2*points.get_points_size());
 
-	for (size_t i=0;i<points.get_pts_size();++i) {
+	for (size_t i=0;i<points.get_points_size();++i) {
 
-		marker.points[2*i].x = points.pts[i].x;
-		marker.points[2*i].y = points.pts[i].y;
-		marker.points[2*i].z = points.pts[i].z;
+		marker.points[2*i].x = points.points[i].x;
+		marker.points[2*i].y = points.points[i].y;
+		marker.points[2*i].z = points.points[i].z;
 
-		marker.points[2*i+1].x = points.pts[i].x+length*coeff[i].x;
-		marker.points[2*i+1].y = points.pts[i].y+length*coeff[i].y;
-		marker.points[2*i+1].z = points.pts[i].z+length*coeff[i].z;
+		marker.points[2*i+1].x = points.points[i].x+length*coeff[i].x;
+		marker.points[2*i+1].y = points.points[i].y+length*coeff[i].y;
+		marker.points[2*i+1].z = points.points[i].z+length*coeff[i].z;
 
 	}
 	node->publish( "visualization_marker", marker );

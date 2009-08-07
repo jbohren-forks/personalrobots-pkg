@@ -81,7 +81,7 @@ class BagToPcd
     void
     cloud_cb (const sensor_msgs::PointCloudConstPtr& cloud)
     {
-      if (cloud->pts.size () == 0)
+      if (cloud->points.size () == 0)
         return;
       geometry_msgs::PointStamped pin, pout;
       pin.header.frame_id = "laser_tilt_mount_link";
@@ -95,8 +95,8 @@ class BagToPcd
       {
         ROS_ERROR ("TF::ConectivityException caught while trying to transform a point from frame %s into %s!", cloud->header.frame_id.c_str (), pin.header.frame_id.c_str ());
       }
-      ROS_INFO ("Received %d data points in frame %s with %d channels (%s). Viewpoint is <%.3f, %.3f, %.3f>", (int)cloud->pts.size (), cloud->header.frame_id.c_str (),
-                (int)cloud->chan.size (), cloud_geometry::getAvailableChannels (cloud).c_str (), pout.point.x, pout.point.y, pout.point.z);
+      ROS_INFO ("Received %d data points in frame %s with %d channels (%s). Viewpoint is <%.3f, %.3f, %.3f>", (int)cloud->points.size (), cloud->header.frame_id.c_str (),
+                (int)cloud->channels.size (), cloud_geometry::getAvailableChannels (cloud).c_str (), pout.point.x, pout.point.y, pout.point.z);
 
       double c_time = cloud->header.stamp.sec * 1e3 + cloud->header.stamp.nsec;
       sprintf (fn_, "%.0f.pcd", c_time);
@@ -106,23 +106,23 @@ class BagToPcd
         {
           sensor_msgs::PointCloud cloud_out;
           cloud_out.header = cloud->header;
-          cloud_out.pts    = cloud->pts;
-          cloud_out.chan   = cloud->chan;
+          cloud_out.points    = cloud->points;
+          cloud_out.channels   = cloud->channels;
           // Add information about the viewpoint - rudimentary stuff
           if (cloud_geometry::getChannelIndex (cloud_out, "vx") == -1)
           {
-            cloud_out.chan.resize (cloud->chan.size () + 3);
-            cloud_out.chan[cloud->chan.size () - 3].name = "vx";
-            cloud_out.chan[cloud->chan.size () - 2].name = "vy";
-            cloud_out.chan[cloud->chan.size () - 1].name = "vz";
-            cloud_out.chan[cloud->chan.size () - 3].vals.resize (cloud->pts.size ());
-            cloud_out.chan[cloud->chan.size () - 2].vals.resize (cloud->pts.size ());
-            cloud_out.chan[cloud->chan.size () - 1].vals.resize (cloud->pts.size ());
-            for (unsigned int i = 0; i < cloud->pts.size (); i++)
+            cloud_out.channels.resize (cloud->channels.size () + 3);
+            cloud_out.channels[cloud->channels.size () - 3].name = "vx";
+            cloud_out.channels[cloud->channels.size () - 2].name = "vy";
+            cloud_out.channels[cloud->channels.size () - 1].name = "vz";
+            cloud_out.channels[cloud->channels.size () - 3].values.resize (cloud->points.size ());
+            cloud_out.channels[cloud->channels.size () - 2].values.resize (cloud->points.size ());
+            cloud_out.channels[cloud->channels.size () - 1].values.resize (cloud->points.size ());
+            for (unsigned int i = 0; i < cloud->points.size (); i++)
             {
-              cloud_out.chan[cloud->chan.size () - 3].vals[i] = pout.point.x;
-              cloud_out.chan[cloud->chan.size () - 2].vals[i] = pout.point.y;
-              cloud_out.chan[cloud->chan.size () - 1].vals[i] = pout.point.z;
+              cloud_out.channels[cloud->channels.size () - 3].values[i] = pout.point.x;
+              cloud_out.channels[cloud->channels.size () - 2].values[i] = pout.point.y;
+              cloud_out.channels[cloud->channels.size () - 1].values[i] = pout.point.z;
             }
           }
           cloud_io::savePCDFileASCII (fn_, cloud_out, 5);

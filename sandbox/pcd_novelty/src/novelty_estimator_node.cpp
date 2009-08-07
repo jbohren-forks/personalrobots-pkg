@@ -75,9 +75,9 @@ void NoveltyEstimatorNode::observed_cloudCallback(const sensor_msgs::PointCloudC
   estimator_.computeNovelty(pcd_out,*ptr_channel);
 
   int intensity_idx=cloud_geometry::getChannelIndex(pcd_out,"intensities");
-  for(unsigned int iPt=0;iPt<pcd_out.pts.size();iPt++)
+  for(unsigned int iPt=0;iPt<pcd_out.points.size();iPt++)
   {
-    pcd_out.chan[intensity_idx].vals[iPt]=(*ptr_channel)[iPt];
+    pcd_out.channels[intensity_idx].values[iPt]=(*ptr_channel)[iPt];
   }
 
   cloud_pub_.publish(pcd_out);

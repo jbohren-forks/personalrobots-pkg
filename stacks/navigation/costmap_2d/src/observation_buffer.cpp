@@ -80,19 +80,19 @@ namespace costmap_2d {
 
       //now we need to remove observations from the cloud that are below or above our height thresholds
       sensor_msgs::PointCloud& observation_cloud = observation_list_.front().cloud_;
-      unsigned int cloud_size = global_frame_cloud.pts.size();
-      observation_cloud.set_pts_size(cloud_size);
+      unsigned int cloud_size = global_frame_cloud.points.size();
+      observation_cloud.set_points_size(cloud_size);
       unsigned int point_count = 0;
       
       //copy over the points that are within our height bounds
       for(unsigned int i = 0; i < cloud_size; ++i){
-        if(global_frame_cloud.pts[i].z <= max_obstacle_height_ && global_frame_cloud.pts[i].z >= min_obstacle_height_){
-          observation_cloud.pts[point_count++] = global_frame_cloud.pts[i];
+        if(global_frame_cloud.points[i].z <= max_obstacle_height_ && global_frame_cloud.points[i].z >= min_obstacle_height_){
+          observation_cloud.points[point_count++] = global_frame_cloud.points[i];
         }
       }
 
       //resize the cloud for the number of legal points
-      observation_cloud.set_pts_size(point_count);
+      observation_cloud.set_points_size(point_count);
       observation_cloud.header.stamp = cloud.header.stamp;
     }
     catch(TransformException& ex){

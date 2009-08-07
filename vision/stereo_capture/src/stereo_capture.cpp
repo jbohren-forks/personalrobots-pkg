@@ -576,13 +576,13 @@ void image_cb_all(ros::Time t)
   {
     int c_idx = -1;
     int cx_idx = -1, cy_idx = -1;
-    for (unsigned int d = 0; d < cloud_.chan.size (); d++)
+    for (unsigned int d = 0; d < cloud_.channels.size (); d++)
     {
-      if (cloud_.chan[d].name == "rgb")
+      if (cloud_.channels[d].name == "rgb")
         c_idx = d;
-      if (cloud_.chan[d].name == "x")
+      if (cloud_.channels[d].name == "x")
        cx_idx = d;
-      if (cloud_.chan[d].name == "y")
+      if (cloud_.channels[d].name == "y")
        cy_idx = d;
     }
      
@@ -593,21 +593,21 @@ void image_cb_all(ros::Time t)
     if(c_idx != -1)
     {
 		 if((cx_idx >= 0)&&(cy_idx >=0)){
-			 for (unsigned int i=0; i<cloud_.pts.size(); i++)
+			 for (unsigned int i=0; i<cloud_.points.size(); i++)
 			 {
-			  transformRGB (cloud_.chan[c_idx].vals[i], r, g, b);
-			  x = (int)(cloud_.chan[cx_idx].vals[i]);
-			  y = (int)(cloud_.chan[cy_idx].vals[i]);
+			  transformRGB (cloud_.channels[c_idx].values[i], r, g, b);
+			  x = (int)(cloud_.channels[cx_idx].values[i]);
+			  y = (int)(cloud_.channels[cy_idx].values[i]);
 				//-Y,-Z,X); //X,Y,Z,A); Warning, these points are rotated to head coords, thus I unrotate here
-				fout << -cloud_.pts[i].y << " " << -cloud_.pts[i].z << " " << cloud_.pts[i].x << " " << r << " " << g << " " << b << " " << x << " " << y << endl;
+				fout << -cloud_.points[i].y << " " << -cloud_.points[i].z << " " << cloud_.points[i].x << " " << r << " " << g << " " << b << " " << x << " " << y << endl;
 			 }
 		 }
 		 else{
-			for (unsigned int i=0; i<cloud_.pts.size(); i++)
+			for (unsigned int i=0; i<cloud_.points.size(); i++)
 			 {
-				transformRGB (cloud_.chan[c_idx].vals[i], r, g, b);
+				transformRGB (cloud_.channels[c_idx].values[i], r, g, b);
 				//-Y,-Z,X); //X,Y,Z,A); Warning, these points are rotated to head coords, thus I unrotate here
-				fout << -cloud_.pts[i].y << " " << -cloud_.pts[i].z << " " << cloud_.pts[i].x << " " << r << " " << g << " " << b << endl;
+				fout << -cloud_.points[i].y << " " << -cloud_.points[i].z << " " << cloud_.points[i].x << " " << r << " " << g << " " << b << endl;
 			 }   
 		 } 
 	 }
@@ -629,13 +629,13 @@ void image_cb_all(ros::Time t)
     }
     W.assign(maxElems,-1.0); //Clear 
     //FIND THE CORRECT CHANNEL INDICES
-    for (unsigned int d = 0; d < cloud_.chan.size (); d++)
+    for (unsigned int d = 0; d < cloud_.channels.size (); d++)
     {
-      if (cloud_.chan[d].name == "rgb")
+      if (cloud_.channels[d].name == "rgb")
         c_idx = d;
-      if (cloud_.chan[d].name == "x")
+      if (cloud_.channels[d].name == "x")
        cx_idx = d;
-      if (cloud_.chan[d].name == "y")
+      if (cloud_.channels[d].name == "y")
        cy_idx = d;
     }  
     //MAKE SURE WE ACTUALL FOUND THE CHANNELS
@@ -646,14 +646,14 @@ void image_cb_all(ros::Time t)
     }
 	//FILL W
     int x,y,idx;
-	 for (unsigned int i=0; i<cloud_.pts.size(); i++)
+	 for (unsigned int i=0; i<cloud_.points.size(); i++)
 	 {
-	     x = (int)(cloud_.chan[cx_idx].vals[i]);
-	     y = (int)(cloud_.chan[cy_idx].vals[i]); 
+	     x = (int)(cloud_.channels[cx_idx].values[i]);
+	     y = (int)(cloud_.channels[cy_idx].values[i]); 
 	     idx = (width*y + x)*4;
-	     W[idx++] = -cloud_.pts[i].y;//-Y,-Z,X); //X,Y,Z,A); Warning, these points are rotated to head coords, thus I unrotate here
-	     W[idx++] = -cloud_.pts[i].z;
-	     W[idx++] = cloud_.pts[i].x;
+	     W[idx++] = -cloud_.points[i].y;//-Y,-Z,X); //X,Y,Z,A); Warning, these points are rotated to head coords, thus I unrotate here
+	     W[idx++] = -cloud_.points[i].z;
+	     W[idx++] = cloud_.points[i].x;
 	     W[idx] = 0.0;
 	 }
   }

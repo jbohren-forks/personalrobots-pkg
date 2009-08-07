@@ -80,9 +80,9 @@ namespace sample_consensus
       // P1P0 = < x-x1,  y-y1, z-z1 > = <x4, y4, z4>
       // P1P2 x P1P0 = < y3*z4 - z3*y4, -(x3*z4 - x4*z3), x3*y4 - x4*y3 >
       //             = < (y2-y1)*(z-z1) - (z2-z1)*(y-y1), -[(x2-x1)*(z-z1) - (x-x1)*(z2-z1)], (x2-x1)*(y-y1) - (x-x1)*(y2-y1) >
-      p4.x = model_coefficients.at (3) - cloud_->pts.at (indices_.at (i)).x;
-      p4.y = model_coefficients.at (4) - cloud_->pts.at (indices_.at (i)).y;
-      p4.z = model_coefficients.at (5) - cloud_->pts.at (indices_.at (i)).z;
+      p4.x = model_coefficients.at (3) - cloud_->points.at (indices_.at (i)).x;
+      p4.y = model_coefficients.at (4) - cloud_->points.at (indices_.at (i)).y;
+      p4.z = model_coefficients.at (5) - cloud_->points.at (indices_.at (i)).z;
 
       // P1P2 = sqrt (x3^2 + y3^2 + z3^2)
       // a = sqrt [(y3*z4 - z3*y4)^2 + (x3*z4 - x4*z3)^2 + (x3*y4 - x4*y3)^2]
@@ -130,9 +130,9 @@ namespace sample_consensus
     {
       // Calculate the distance from the point to the line
       // D = ||(P2-P1) x (P1-P0)|| / ||P2-P1|| = norm (cross (p2-p1, p2-p0)) / norm(p2-p1)
-      p4.x = model_coefficients.at (3) - cloud_->pts.at (indices_.at (i)).x;
-      p4.y = model_coefficients.at (4) - cloud_->pts.at (indices_.at (i)).y;
-      p4.z = model_coefficients.at (5) - cloud_->pts.at (indices_.at (i)).z;
+      p4.x = model_coefficients.at (3) - cloud_->points.at (indices_.at (i)).x;
+      p4.y = model_coefficients.at (4) - cloud_->points.at (indices_.at (i)).y;
+      p4.z = model_coefficients.at (5) - cloud_->points.at (indices_.at (i)).z;
 
       geometry_msgs::Point32 c = cloud_geometry::cross (p4, p3);
       distances[i] = sqrt (c.x * c.x + c.y * c.y + c.z * c.z) / (p3.x * p3.x + p3.y * p3.y + p3.z * p3.z);

@@ -76,7 +76,7 @@ public:
 
   unsigned int GetPointsInCloud(const sensor_msgs::PointCloud& scan)
   {
-    return scan.pts.size();
+    return scan.points.size();
   }
 
   void ConvertScanToCloud(const string& fixed_frame_id, const sensor_msgs::PointCloud& scan_in, sensor_msgs::PointCloud& cloud_out)
@@ -128,37 +128,37 @@ public:
     {
       resp.cloud.header.frame_id = fixed_frame_ ;
       resp.cloud.header.stamp = req.end ;
-      resp.cloud.set_pts_size(0) ;
-      resp.cloud.set_chan_size(0) ;
+      resp.cloud.set_points_size(0) ;
+      resp.cloud.set_channels_size(0) ;
     }
     else
     {
       // Note: We are assuming that channel information is consistent across multiple scans. If not, then bad things (segfaulting) will happen
       // Allocate space for the cloud
-      unsigned int nC=scan_hist_[start_index].chan.size();
+      unsigned int nC=scan_hist_[start_index].channels.size();
 
       sensor_msgs::PointCloud& map=resp.cloud;
 
       map.header.frame_id = fixed_frame_ ;
       map.header.stamp = req.end ;
-      map.set_pts_size(req_pts) ;
-      map.set_chan_size(nC) ;
+      map.set_points_size(req_pts) ;
+      map.set_channels_size(nC) ;
 
       for(unsigned int iC=0;iC<nC;iC++)
       {
-        map.chan[iC].vals.resize(req_pts);
-        map.chan[iC].name=scan_hist_[start_index].chan[iC].name;
+        map.channels[iC].values.resize(req_pts);
+        map.channels[iC].name=scan_hist_[start_index].channels[iC].name;
       }
     
       unsigned int cloud_count = 0 ;
       for (i=start_index; i<past_end_index; i+=downsample_factor_)
       {
-        for(unsigned int j=0; j<scan_hist_[i].pts.size(); j+=1)
+        for(unsigned int j=0; j<scan_hist_[i].points.size(); j+=1)
         {
-          map.pts[cloud_count] = scan_hist_[i].pts[j] ;
+          map.points[cloud_count] = scan_hist_[i].points[j] ;
           for(unsigned int iC=0;iC<nC;iC++)
           {
-            map.chan[iC].vals[cloud_count]=scan_hist_[i].chan[iC].vals[j];
+            map.channels[iC].values[cloud_count]=scan_hist_[i].channels[iC].values[j];
           }
           cloud_count++ ;
       }

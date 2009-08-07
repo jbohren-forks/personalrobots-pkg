@@ -281,30 +281,30 @@ class CollisionMapperBuffer
         torso_lift_origin = base_origin;
       }
       // Get a set of point indices that respect our bounding limits around the robot
-      vector<int> indices (cloud_.pts.size ());
+      vector<int> indices (cloud_.points.size ());
       int nr_p = 0;
 
       geometry_msgs::Point32 minP, maxP;
       minP.x = minP.y = minP.z = FLT_MAX;
       maxP.x = maxP.y = maxP.z = FLT_MIN;
       double distance_sqr_x, distance_sqr_y, distance_sqr_z;
-      for (unsigned int i = 0; i < points->pts.size (); i++)
+      for (unsigned int i = 0; i < points->points.size (); i++)
       {
         // We split the "distance" on all 3 dimensions to allow greater flexibility
-        distance_sqr_x = fabs ((points->pts[i].x - torso_lift_origin.point.x) * (points->pts[i].x - torso_lift_origin.point.x));
-        distance_sqr_y = fabs ((points->pts[i].y - torso_lift_origin.point.y) * (points->pts[i].y - torso_lift_origin.point.y));
-        distance_sqr_z = fabs ((points->pts[i].z - torso_lift_origin.point.z) * (points->pts[i].z - torso_lift_origin.point.z));
+        distance_sqr_x = fabs ((points->points[i].x - torso_lift_origin.point.x) * (points->points[i].x - torso_lift_origin.point.x));
+        distance_sqr_y = fabs ((points->points[i].y - torso_lift_origin.point.y) * (points->points[i].y - torso_lift_origin.point.y));
+        distance_sqr_z = fabs ((points->points[i].z - torso_lift_origin.point.z) * (points->points[i].z - torso_lift_origin.point.z));
 
         // If the point is within the bounds, use it for minP/maxP calculations
         if (distance_sqr_x < robot_max_.x && distance_sqr_y < robot_max_.y && distance_sqr_z < robot_max_.z)
         {
-          minP.x = (points->pts[i].x < minP.x) ? points->pts[i].x : minP.x;
-          minP.y = (points->pts[i].y < minP.y) ? points->pts[i].y : minP.y;
-          minP.z = (points->pts[i].z < minP.z) ? points->pts[i].z : minP.z;
+          minP.x = (points->points[i].x < minP.x) ? points->points[i].x : minP.x;
+          minP.y = (points->points[i].y < minP.y) ? points->points[i].y : minP.y;
+          minP.z = (points->points[i].z < minP.z) ? points->points[i].z : minP.z;
 
-          maxP.x = (points->pts[i].x > maxP.x) ? points->pts[i].x : maxP.x;
-          maxP.y = (points->pts[i].y > maxP.y) ? points->pts[i].y : maxP.y;
-          maxP.z = (points->pts[i].z > maxP.z) ? points->pts[i].z : maxP.z;
+          maxP.x = (points->points[i].x > maxP.x) ? points->points[i].x : maxP.x;
+          maxP.y = (points->points[i].y > maxP.y) ? points->points[i].y : maxP.y;
+          maxP.z = (points->points[i].z > maxP.z) ? points->points[i].z : maxP.z;
           indices[nr_p] = i;
           nr_p++;
         }
@@ -342,7 +342,7 @@ class CollisionMapperBuffer
 
       // Return a point cloud message containing the centers of the leaves as well
       centers.header = points->header;
-      centers.pts.resize (indices.size ());
+      centers.points.resize (indices.size ());
       float extents[3];
       extents[0] = leaf_width_.x / 2.0;
       extents[1] = leaf_width_.y / 2.0;
@@ -352,9 +352,9 @@ class CollisionMapperBuffer
       int i = 0, j = 0, k = 0;
       for (unsigned int cp = 0; cp < indices.size (); cp++)
       {
-        i = (int)(floor (points->pts[indices.at (cp)].x / leaf_width_.x));
-        j = (int)(floor (points->pts[indices.at (cp)].y / leaf_width_.y));
-        k = (int)(floor (points->pts[indices.at (cp)].z / leaf_width_.z));
+        i = (int)(floor (points->points[indices.at (cp)].x / leaf_width_.x));
+        j = (int)(floor (points->points[indices.at (cp)].y / leaf_width_.y));
+        k = (int)(floor (points->points[indices.at (cp)].z / leaf_width_.z));
 
         int idx = ( (k - minB.z) * divB.y * divB.x ) + ( (j - minB.y) * divB.x ) + (i - minB.x);
         leaves[idx].i_ = i;
@@ -363,9 +363,9 @@ class CollisionMapperBuffer
         leaves[idx].nr_points_++;
 
         // Get the point
-        centers.pts[cp].x = (i + 1) * leaf_width_.x - extents[0];
-        centers.pts[cp].y = (j + 1) * leaf_width_.y - extents[1];
-        centers.pts[cp].z = (k + 1) * leaf_width_.z - extents[2];
+        centers.points[cp].x = (i + 1) * leaf_width_.x - extents[0];
+        centers.points[cp].y = (j + 1) * leaf_width_.y - extents[1];
+        centers.points[cp].z = (k + 1) * leaf_width_.z - extents[2];
       }
 
       sort (leaves.begin (), leaves.end (), compareLeaf);
@@ -482,17 +482,17 @@ class CollisionMapperBuffer
         ROS_ERROR("Extrapolation exception from %s to %s.", target_frame.c_str(), points->header.frame_id.c_str());
       }
 
-      vector<int> object_indices (points_tgt.pts.size ());
+      vector<int> object_indices (points_tgt.points.size ());
       int nr_p = 0;
       // Check and mark point indices in the bounds of the objects
-      for (unsigned int i = 0; i < points_tgt.pts.size (); i++)
+      for (unsigned int i = 0; i < points_tgt.points.size (); i++)
       {
-        if (points_tgt.pts[i].x > min_b->x &&
-            points_tgt.pts[i].x < max_b->x &&
-            points_tgt.pts[i].y > min_b->y &&
-            points_tgt.pts[i].y < max_b->y &&
-            points_tgt.pts[i].z > min_b->z &&
-            points_tgt.pts[i].z < max_b->z)
+        if (points_tgt.points[i].x > min_b->x &&
+            points_tgt.points[i].x < max_b->x &&
+            points_tgt.points[i].y > min_b->y &&
+            points_tgt.points[i].y < max_b->y &&
+            points_tgt.points[i].z > min_b->z &&
+            points_tgt.points[i].z < max_b->z)
         {
           object_indices[nr_p] = i;
           nr_p++;
@@ -503,12 +503,12 @@ class CollisionMapperBuffer
       // Copy the indices from object_indices into a temporary cloud
       sensor_msgs::PointCloud object_points;
       object_points.header = points_tgt.header;
-      object_points.pts.resize (object_indices.size ());
+      object_points.points.resize (object_indices.size ());
       for (unsigned int i = 0; i < object_indices.size (); i++)
       {
-        object_points.pts[i].x = points_tgt.pts[object_indices.at (i)].x;
-        object_points.pts[i].y = points_tgt.pts[object_indices.at (i)].y;
-        object_points.pts[i].z = points_tgt.pts[object_indices.at (i)].z;
+        object_points.points[i].x = points_tgt.points[object_indices.at (i)].x;
+        object_points.points[i].y = points_tgt.points[object_indices.at (i)].y;
+        object_points.points[i].z = points_tgt.points[object_indices.at (i)].z;
       }
 
       geometry_msgs::PointStamped ee_local, ee_global;      // Transform the end effector position in global (source frame)
@@ -547,7 +547,7 @@ class CollisionMapperBuffer
     void
       cloud_cb ()
     {
-      ROS_DEBUG ("Received %u data points.", (unsigned int)cloud_.pts.size ());
+      ROS_DEBUG ("Received %u data points.", (unsigned int)cloud_.points.size ());
 
       // Get the new parameters from the server
       m_lock_.lock ();

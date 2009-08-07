@@ -88,12 +88,12 @@ namespace cloud_io
   {
     std::string result = "x y z";
     unsigned int i;
-    for (i = 0; i < points.chan.size (); i++)
+    for (i = 0; i < points.channels.size (); i++)
     {
-      if (points.chan[i].vals.size () == 0)
+      if (points.channels[i].values.size () == 0)
         continue;
 
-      result = result + " " + points.chan[i].name;
+      result = result + " " + points.channels[i].name;
     }
     return (result);
   }

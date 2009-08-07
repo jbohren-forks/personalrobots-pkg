@@ -74,24 +74,24 @@ class Follower {
   static const double freeSpaceThresh = 0.25;
   void cloudCallback(const sensor_msgs::PointCloud::ConstPtr& cloud)
   {
-    cout<<"I heard a cloud with: "<<cloud->pts.size()<<" points."<<endl;
+    cout<<"I heard a cloud with: "<<cloud->points.size()<<" points."<<endl;
     double closestDistSq = 99999.0;
     int closestIdx = -1;
     sensor_msgs::PointCloud robotRelativeCloud;
     tf_client_.transformPointCloud("/base_footprint", *cloud, robotRelativeCloud);
     updateFreeSpaceVoxels();
-    for(unsigned int i=0; i<robotRelativeCloud.pts.size(); i++)
+    for(unsigned int i=0; i<robotRelativeCloud.points.size(); i++)
       {
-	const double &x = robotRelativeCloud.pts[i].x;
-	const double &y = robotRelativeCloud.pts[i].y;
+	const double &x = robotRelativeCloud.points[i].x;
+	const double &y = robotRelativeCloud.points[i].y;
         if(true)//!isBelowFreeSpace(x,y))
         {
 	    if(receivedTiltCloud)
 	      {
 			boost::mutex::scoped_lock lock(tiltMutex);
-			for(unsigned int j=0; j<lastTiltScan.pts.size(); j++)
+			for(unsigned int j=0; j<lastTiltScan.points.size(); j++)
 			  {
-				if(pointLineDist(0,0,lastTiltScan.pts[j].x,lastTiltScan.pts[j].y,x,y) < freeSpaceThresh)
+				if(pointLineDist(0,0,lastTiltScan.points[j].x,lastTiltScan.points[j].y,x,y) < freeSpaceThresh)
 				  goto continueOuter; //As a rule GOTO considered harmful, however I like the ability to continue to arbitrary loops like java, since c++ lacks this syntax, I have this slight ugliness
 			  }
 	      }
@@ -105,14 +105,14 @@ class Follower {
         else
 
         cout<<"\tFREE SPACE PT:";
-        cout<<"\t["<<cloud->pts[i].x<<","<<cloud->pts[i].y<<","<<cloud->pts[i].z<<"]"<<endl;
+        cout<<"\t["<<cloud->points[i].x<<","<<cloud->points[i].y<<","<<cloud->points[i].z<<"]"<<endl;
 
         continueOuter: ;
       }
 
     cout<<"\tClosest is point #"<<closestIdx<<", heading towards it!"<<endl;
-    const double &x = cloud->pts[closestIdx].x;
-    const double &y = cloud->pts[closestIdx].y;
+    const double &x = cloud->points[closestIdx].x;
+    const double &y = cloud->points[closestIdx].y;
     //cout<<"\t\tLeg cloud is in: "<<cloud->header.frame_id<<endl;
     geometry_msgs::PointStamped in;
     in.header.frame_id = "/base_footprint";

@@ -69,11 +69,11 @@ namespace cloud_geometry
       double area = 0;
       float p_i[3], p_j[3];
 
-      for (unsigned int i = 0; i < points.pts.size (); i++)
+      for (unsigned int i = 0; i < points.points.size (); i++)
       {
-        p_i[0] = points.pts[i].x; p_i[1] = points.pts[i].y; p_i[2] = points.pts[i].z;
-        int j = (i + 1) % points.pts.size ();
-        p_j[0] = points.pts[j].x; p_j[1] = points.pts[j].y; p_j[2] = points.pts[j].z;
+        p_i[0] = points.points[i].x; p_i[1] = points.points[i].y; p_i[2] = points.points[i].z;
+        int j = (i + 1) % points.points.size ();
+        p_j[0] = points.points[j].x; p_j[1] = points.points[j].y; p_j[2] = points.points[j].z;
 
         area += p_i[k1] * p_j[k2] - p_i[k2] * p_j[k1];
       }
@@ -185,9 +185,9 @@ namespace cloud_geometry
       std::vector<Eigen::Vector3f> epoints (indices.size ());
       for (unsigned int cp = 0; cp < indices.size (); cp++)
       {
-        epoints[cp](0) = points.pts[indices.at (cp)].x;
-        epoints[cp](1) = points.pts[indices.at (cp)].y;
-        epoints[cp](2) = points.pts[indices.at (cp)].z;
+        epoints[cp](0) = points.points[indices.at (cp)].x;
+        epoints[cp](1) = points.points[indices.at (cp)].y;
+        epoints[cp](2) = points.points[indices.at (cp)].z;
       }
 
       // Determine the best plane to project points onto

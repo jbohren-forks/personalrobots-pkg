@@ -202,7 +202,7 @@ class CollisionMapper
     {
       // Copy the header (and implicitly the frame_id)
       cmap.header = cloud_.header;
-      cmap.boxes.resize (cloud_.pts.size ());
+      cmap.boxes.resize (cloud_.points.size ());
 
       geometry_msgs::PointStamped base_origin, torso_lift_origin;
       base_origin.point.x = base_origin.point.y = base_origin.point.z = 0.0;
@@ -220,30 +220,30 @@ class CollisionMapper
         torso_lift_origin = base_origin;
       }
       // Get a set of point indices that respect our bounding limits around the robot
-      vector<int> indices (cloud_.pts.size ());
+      vector<int> indices (cloud_.points.size ());
       int nr_p = 0;
 
       geometry_msgs::Point32 minP, maxP;
       minP.x = minP.y = minP.z = FLT_MAX;
       maxP.x = maxP.y = maxP.z = FLT_MIN;
       double distance_sqr_x, distance_sqr_y, distance_sqr_z;
-      for (unsigned int i = 0; i < cloud_.pts.size (); i++)
+      for (unsigned int i = 0; i < cloud_.points.size (); i++)
       {
         // We split the "distance" on all 3 dimensions to allow greater flexibility
-        distance_sqr_x = fabs ((cloud_.pts[i].x - torso_lift_origin.point.x) * (cloud_.pts[i].x - torso_lift_origin.point.x));
-        distance_sqr_y = fabs ((cloud_.pts[i].y - torso_lift_origin.point.y) * (cloud_.pts[i].y - torso_lift_origin.point.y));
-        distance_sqr_z = fabs ((cloud_.pts[i].z - torso_lift_origin.point.z) * (cloud_.pts[i].z - torso_lift_origin.point.z));
+        distance_sqr_x = fabs ((cloud_.points[i].x - torso_lift_origin.point.x) * (cloud_.points[i].x - torso_lift_origin.point.x));
+        distance_sqr_y = fabs ((cloud_.points[i].y - torso_lift_origin.point.y) * (cloud_.points[i].y - torso_lift_origin.point.y));
+        distance_sqr_z = fabs ((cloud_.points[i].z - torso_lift_origin.point.z) * (cloud_.points[i].z - torso_lift_origin.point.z));
 
         // If the point is within the bounds, use it for minP/maxP calculations
         if (distance_sqr_x < robot_max_.x && distance_sqr_y < robot_max_.y && distance_sqr_z < robot_max_.z)
         {
-          minP.x = (cloud_.pts[i].x < minP.x) ? cloud_.pts[i].x : minP.x;
-          minP.y = (cloud_.pts[i].y < minP.y) ? cloud_.pts[i].y : minP.y;
-          minP.z = (cloud_.pts[i].z < minP.z) ? cloud_.pts[i].z : minP.z;
+          minP.x = (cloud_.points[i].x < minP.x) ? cloud_.points[i].x : minP.x;
+          minP.y = (cloud_.points[i].y < minP.y) ? cloud_.points[i].y : minP.y;
+          minP.z = (cloud_.points[i].z < minP.z) ? cloud_.points[i].z : minP.z;
 
-          maxP.x = (cloud_.pts[i].x > maxP.x) ? cloud_.pts[i].x : maxP.x;
-          maxP.y = (cloud_.pts[i].y > maxP.y) ? cloud_.pts[i].y : maxP.y;
-          maxP.z = (cloud_.pts[i].z > maxP.z) ? cloud_.pts[i].z : maxP.z;
+          maxP.x = (cloud_.points[i].x > maxP.x) ? cloud_.points[i].x : maxP.x;
+          maxP.y = (cloud_.points[i].y > maxP.y) ? cloud_.points[i].y : maxP.y;
+          maxP.z = (cloud_.points[i].z > maxP.z) ? cloud_.points[i].z : maxP.z;
           indices[nr_p] = i;
           nr_p++;
         }
@@ -283,9 +283,9 @@ class CollisionMapper
       int i = 0, j = 0, k = 0;
       for (unsigned int cp = 0; cp < indices.size (); cp++)
       {
-        i = (int)(floor (cloud_.pts[indices.at (cp)].x / leaf_width_.x));
-        j = (int)(floor (cloud_.pts[indices.at (cp)].y / leaf_width_.y));
-        k = (int)(floor (cloud_.pts[indices.at (cp)].z / leaf_width_.z));
+        i = (int)(floor (cloud_.points[indices.at (cp)].x / leaf_width_.x));
+        j = (int)(floor (cloud_.points[indices.at (cp)].y / leaf_width_.y));
+        k = (int)(floor (cloud_.points[indices.at (cp)].z / leaf_width_.z));
 
         int idx = ( (k - minB.z) * divB.y * divB.x ) + ( (j - minB.y) * divB.x ) + (i - minB.x);
         leaves[idx].i_ = i;
@@ -351,7 +351,7 @@ class CollisionMapper
     void
       cloud_cb ()
     {
-      ROS_INFO ("Received %u data points.", (unsigned int)cloud_.pts.size ());
+      ROS_INFO ("Received %u data points.", (unsigned int)cloud_.points.size ());
 
       m_lock_.lock ();
       updateParametersFromServer ();

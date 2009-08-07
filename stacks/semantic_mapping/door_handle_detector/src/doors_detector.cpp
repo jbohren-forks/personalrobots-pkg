@@ -123,7 +123,7 @@ DoorDetector::DoorDetector (ros::Node* anode)
 bool
   DoorDetector::detectDoors(const door_msgs::Door& door, sensor_msgs::PointCloud pointcloud, std::vector<door_msgs::Door>& result) const
 {
-  ROS_INFO ("Start detecting doors in a point cloud of size %i", (int)pointcloud.pts.size ());
+  ROS_INFO ("Start detecting doors in a point cloud of size %i", (int)pointcloud.points.size ());
 
   // check if door message specifies hinge side and rot dir
   if (door.rot_dir == door_msgs::Door::UNKNOWN){
@@ -164,11 +164,11 @@ bool
   // ---[ Optimization: select a subset of the points for faster processing
   // Select points whose distances are up to Xm from the robot
   int nr_p = 0;
-  vector<int> indices_in_bounds (pointcloud.pts.size ());
-  for (unsigned int i = 0; i < pointcloud.pts.size (); i++)
+  vector<int> indices_in_bounds (pointcloud.points.size ());
+  for (unsigned int i = 0; i < pointcloud.points.size (); i++)
   {
-    double dist = cloud_geometry::distances::pointToPointDistanceSqr (viewpoint_cloud_.point, pointcloud.pts[i]);
-    if (dist < maximum_search_radius_ && pointcloud.pts[i].z > minimum_z_ && pointcloud.pts[i].z < maximum_z_)
+    double dist = cloud_geometry::distances::pointToPointDistanceSqr (viewpoint_cloud_.point, pointcloud.points[i]);
+    if (dist < maximum_search_radius_ && pointcloud.points[i].z > minimum_z_ && pointcloud.points[i].z < maximum_z_)
       indices_in_bounds[nr_p++] = i;
   }
   indices_in_bounds.resize (nr_p);
@@ -181,7 +181,7 @@ bool
     geometry_msgs::Point leaf_width_xyz;
     leaf_width_xyz.x = leaf_width_xyz.y = leaf_width_xyz.z = leaf_width_;
     cloud_geometry::downsamplePointCloud (pointcloud, indices_in_bounds, cloud_down, leaf_width_xyz, leaves, -1);
-    ROS_INFO ("Number of points after downsampling with a leaf of size [%f,%f,%f]: %d.", leaf_width_xyz.x, leaf_width_xyz.y, leaf_width_xyz.z, (int)cloud_down.pts.size ());
+    ROS_INFO ("Number of points after downsampling with a leaf of size [%f,%f,%f]: %d.", leaf_width_xyz.x, leaf_width_xyz.y, leaf_width_xyz.z, (int)cloud_down.points.size ());
   }
   catch (std::bad_alloc)
   {
@@ -217,11 +217,11 @@ bool
 
   // Output the point regions
   sensor_msgs::PointCloud cloud_regions;
-  cloud_regions.chan.resize (1);
-  cloud_regions.chan[0].name = "rgb";
+  cloud_regions.channels.resize (1);
+  cloud_regions.channels[0].name = "rgb";
   cloud_regions.header = cloud_down.header;
-  cloud_regions.pts.resize (0);
-  cloud_regions.chan[0].vals.resize (0);
+  cloud_regions.points.resize (0);
+  cloud_regions.channels[0].values.resize (0);
   for (unsigned int cc = 0; cc < clusters.size (); cc++)
   {
     float r = rand () / (RAND_MAX + 1.0);
@@ -229,8 +229,8 @@ bool
     float b = rand () / (RAND_MAX + 1.0);
     for (unsigned int j = 0; j < clusters[cc].size (); j++)
     {
-      cloud_regions.pts.push_back (cloud_down.pts[clusters[cc][j]]);
-      cloud_regions.chan[0].vals.push_back (getRGB (r, g, b));
+      cloud_regions.points.push_back (cloud_down.points[clusters[cc][j]]);
+      cloud_regions.channels[0].values.push_back (getRGB (r, g, b));
     }
   }
   node_->publish ("~door_regions", cloud_regions);
@@ -602,8 +602,8 @@ bool DoorDetector::detectDoorCloudSrv (door_handle_detector::DoorsDetectorCloud:
 void DoorDetector::cloud_cb (const tf::MessageNotifier<sensor_msgs::PointCloud>::MessagePtr& cloud)
 {
   pointcloud_ = *cloud;
-  ROS_INFO ("Received %d data points in frame %s with %d channels (%s).", (int)pointcloud_.pts.size (), pointcloud_.header.frame_id.c_str (),
-            (int)pointcloud_.chan.size (), cloud_geometry::getAvailableChannels (pointcloud_).c_str ());
+  ROS_INFO ("Received %d data points in frame %s with %d channels (%s).", (int)pointcloud_.points.size (), pointcloud_.header.frame_id.c_str (),
+            (int)pointcloud_.channels.size (), cloud_geometry::getAvailableChannels (pointcloud_).c_str ());
   num_clouds_received_++;
 }
 

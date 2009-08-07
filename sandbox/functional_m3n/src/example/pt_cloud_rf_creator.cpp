@@ -212,11 +212,11 @@ void PtCloudRFCreator::createNodes(RandomField& rf,
 
   // ----------------------------------------------
   // Create interests points over the whole point cloud
-  unsigned int nbr_pts = pt_cloud.pts.size();
+  unsigned int nbr_pts = pt_cloud.points.size();
   cv::Vector<const geometry_msgs::Point32*> interest_pts(nbr_pts, NULL);
   for (unsigned int i = 0 ; i < nbr_pts ; i++)
   {
-    interest_pts[(size_t) i] = &(pt_cloud.pts[i]);
+    interest_pts[(size_t) i] = &(pt_cloud.points[i]);
   }
 
   // ----------------------------------------------
@@ -247,12 +247,12 @@ void PtCloudRFCreator::createNodes(RandomField& rf,
           continue;
         }
         created_node = rf.createNode(i, concatenated_features[i], nbr_concatenated_vals,
-            static_cast<unsigned int> (labels[i]), pt_cloud.pts[i].x, pt_cloud.pts[i].y, pt_cloud.pts[i].z);
+            static_cast<unsigned int> (labels[i]), pt_cloud.points[i].x, pt_cloud.points[i].y, pt_cloud.points[i].z);
       }
       else
       {
         created_node = rf.createNode(i, concatenated_features[i], nbr_concatenated_vals,
-            RandomField::UNKNOWN_LABEL, pt_cloud.pts[i].x, pt_cloud.pts[i].y, pt_cloud.pts[i].z);
+            RandomField::UNKNOWN_LABEL, pt_cloud.points[i].x, pt_cloud.points[i].y, pt_cloud.points[i].z);
       }
 
       if (created_node == NULL)

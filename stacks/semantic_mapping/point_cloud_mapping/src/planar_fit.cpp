@@ -237,18 +237,18 @@ class PlanarFit
     {
       updateParametersFromServer ();
 
-      ROS_INFO ("Received %d data points in frame %s with %d channels (%s).", (int)cloud_.pts.size (), cloud_.header.frame_id.c_str (),
-                (int)cloud_.chan.size (), cloud_geometry::getAvailableChannels (cloud_).c_str ());
-      if (cloud_.pts.size () == 0)
+      ROS_INFO ("Received %d data points in frame %s with %d channels (%s).", (int)cloud_.points.size (), cloud_.header.frame_id.c_str (),
+                (int)cloud_.channels.size (), cloud_geometry::getAvailableChannels (cloud_).c_str ());
+      if (cloud_.points.size () == 0)
       {
         ROS_ERROR ("No data points found. Exiting...");
         return;
       }
 
       cloud_down_.header = cloud_.header;
-      cloud_down_.chan.clear();
+      cloud_down_.channels.clear();
 
-      //ROS_INFO ("Original: %d channels, Downsampled: %d channels", cloud_.chan.size(), cloud_down_.chan.size());
+      //ROS_INFO ("Original: %d channels, Downsampled: %d channels", cloud_.channels.size(), cloud_down_.channels.size());
 
       ros::Time ts = ros::Time::now ();
       // Figure out the viewpoint value in the cloud_frame frame
@@ -271,7 +271,7 @@ class PlanarFit
           ROS_ERROR ("Not enough memory to create a simple downsampled representation. Change the downsample_leaf_width parameters.");
           return;
         }
-        ROS_INFO ("Downsampling enabled. Number of points left: %d / %d in %g seconds.", (int)cloud_down_.pts.size (), (int)cloud_.pts.size (), (ros::Time::now () - ts1).toSec ());
+        ROS_INFO ("Downsampling enabled. Number of points left: %d / %d in %g seconds.", (int)cloud_down_.points.size (), (int)cloud_.points.size (), (ros::Time::now () - ts1).toSec ());
 
         if (radius_or_knn_ == 1)             // Use a radius search
         {
@@ -295,7 +295,7 @@ class PlanarFit
       } // if (downsample)
       else
       {
-	int first_normal_index = cloud_.chan.size();
+	int first_normal_index = cloud_.channels.size();
         if (radius_or_knn_ == 1)             // Use a radius search
           cloud_geometry::nearest::computePointCloudNormals (cloud_, radius_, viewpoint_cloud);    // Estimate point normals using a fixed radius search
         else if (radius_or_knn_ == 2)        // Use a k-nearest neighbors search
@@ -317,7 +317,7 @@ class PlanarFit
       ts = ros::Time::now ();
       if (downsample_ != 0)
       {
-        total_nr_points = cloud_down_.pts.size ();
+        total_nr_points = cloud_down_.points.size ();
 
         // Break into clusters
         if (use_clustering_)
@@ -342,7 +342,7 @@ class PlanarFit
       }
       else
       {
-        total_nr_points = cloud_.pts.size ();
+        total_nr_points = cloud_.points.size ();
 
         // Break into clusters
         if (use_clustering_)
@@ -405,7 +405,7 @@ class PlanarFit
         sac->refineCoefficients (coeff);      // Refine them using least-squares
         model->selectWithinDistance (coeff, dist_thresh, inliers);
 
-        cloud_geometry::angles::flipNormalTowardsViewpoint (coeff, points->pts.at (inliers[0]), viewpoint_cloud);
+        cloud_geometry::angles::flipNormalTowardsViewpoint (coeff, points->points.at (inliers[0]), viewpoint_cloud);
 
         //ROS_INFO ("Found a planar model supported by %d inliers: [%g, %g, %g, %g]", (int)inliers.size (),
         //           coeff[0], coeff[1], coeff[2], coeff[3]);
@@ -458,7 +458,7 @@ class PlanarFit
         sac->refineCoefficients (coeff);      // Refine them using least-squares
         model->selectWithinDistance (coeff, dist_thresh, inliers);
 
-        cloud_geometry::angles::flipNormalTowardsViewpoint (coeff, points->pts.at (inliers[0]), viewpoint_cloud);
+        cloud_geometry::angles::flipNormalTowardsViewpoint (coeff, points->points.at (inliers[0]), viewpoint_cloud);
 
         //ROS_INFO ("Found a planar model supported by %d inliers: [%g, %g, %g, %g]", (int)inliers.size (),
         //           coeff[0], coeff[1], coeff[2], coeff[3]);
@@ -512,17 +512,17 @@ class PlanarFit
       marker.color.g = 1.0;
       marker.color.b = 1.0;
 
-      int nr_points = points.pts.size ();
+      int nr_points = points.points.size ();
 
       marker.points.resize (2 * nr_points);
       for (int i = 0; i < nr_points; i++)
       {
-        marker.points[2*i].x = points.pts[i].x;
-        marker.points[2*i].y = points.pts[i].y;
-        marker.points[2*i].z = points.pts[i].z;
-        marker.points[2*i+1].x = points.pts[i].x + points.chan[nx_idx].vals[i] * length;
-        marker.points[2*i+1].y = points.pts[i].y + points.chan[ny_idx].vals[i] * length;
-        marker.points[2*i+1].z = points.pts[i].z + points.chan[nz_idx].vals[i] * length;
+        marker.points[2*i].x = points.points[i].x;
+        marker.points[2*i].y = points.points[i].y;
+        marker.points[2*i].z = points.points[i].z;
+        marker.points[2*i+1].x = points.points[i].x + points.channels[nx_idx].values[i] * length;
+        marker.points[2*i+1].y = points.points[i].y + points.channels[ny_idx].values[i] * length;
+        marker.points[2*i+1].z = points.points[i].z + points.channels[nz_idx].values[i] * length;
       }
 
       node_.publish ("visualization_marker", marker);

@@ -124,14 +124,14 @@ class ConvexPatchHistogram
       cloud_kdtree::KdTree* tree = new cloud_kdtree::KdTreeANN (points);
 
       vector<bool> processed;
-      processed.resize (points.pts.size (), false);
+      processed.resize (points.points.size (), false);
 
-      vector<int> indices (points.pts.size ());
+      vector<int> indices (points.points.size ());
       int nr_p = 0;
       for (unsigned int i = 0; i < indices.size (); i++)
       {
         // Compute a distance from each point to the plane
-        double distance = cloud_geometry::distances::pointToPlaneDistance (points.pts[i], coeff);
+        double distance = cloud_geometry::distances::pointToPlaneDistance (points.points[i], coeff);
         if (distance < 3 * sac_distance_threshold_)
         {
           indices[nr_p] = i;
@@ -204,9 +204,9 @@ class ConvexPatchHistogram
 
       for (unsigned int i = 0; i < indices->size (); i++)
       {
-        int mean = (points->chan[c_idx + 0].vals[indices->at (i)] +
-                    points->chan[c_idx + 1].vals[indices->at (i)] +
-                    points->chan[c_idx + 2].vals[indices->at (i)]) / 3;
+        int mean = (points->channels[c_idx + 0].values[indices->at (i)] +
+                    points->channels[c_idx + 1].values[indices->at (i)] +
+                    points->channels[c_idx + 2].values[indices->at (i)]) / 3;
         histogram[mean]++;
       }
 
@@ -231,14 +231,14 @@ class ConvexPatchHistogram
     // Callback
     void cloud_cb ()
     {
-      if (cloud_.pts.size () == 0 || cloud_textured_.pts.size () == 0)
+      if (cloud_.points.size () == 0 || cloud_textured_.points.size () == 0)
         return;
 
       cloud_annotated_.header = cloud_textured_.header;
-      cloud_annotated_.pts.resize (cloud_.pts.size ());
+      cloud_annotated_.points.resize (cloud_.points.size ());
 
-      ROS_INFO ("Received %d data points.", (int)cloud_.pts.size ());
-      ROS_INFO ("Received %d data points.", (int)cloud_textured_.pts.size ());
+      ROS_INFO ("Received %d data points.", (int)cloud_.points.size ());
+      ROS_INFO ("Received %d data points.", (int)cloud_textured_.points.size ());
 
       int c_idx = cloud_geometry::getChannelIndex (cloud_, "r");
 
@@ -285,15 +285,15 @@ class ConvexPatchHistogram
 
           for (unsigned int i = 0; i < clusters[cc].size (); i++)
           {
-            cloud_annotated_.pts[nr_p].x = cloud_.pts[clusters[cc].at (i)].x;
-            cloud_annotated_.pts[nr_p].y = cloud_.pts[clusters[cc].at (i)].y;
-            cloud_annotated_.pts[nr_p].z = cloud_.pts[clusters[cc].at (i)].z;
+            cloud_annotated_.points[nr_p].x = cloud_.points[clusters[cc].at (i)].x;
+            cloud_annotated_.points[nr_p].y = cloud_.points[clusters[cc].at (i)].y;
+            cloud_annotated_.points[nr_p].z = cloud_.points[clusters[cc].at (i)].z;
             nr_p++;
           }
         }
       }
 
-      cloud_annotated_.pts.resize (nr_p);
+      cloud_annotated_.points.resize (nr_p);
       node_.publish ("cloud_annotated", cloud_annotated_);
     }
 };

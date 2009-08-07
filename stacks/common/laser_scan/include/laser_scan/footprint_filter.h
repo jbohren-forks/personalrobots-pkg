@@ -94,15 +94,15 @@ public:
 
     int c_idx = indexChannel(laser_cloud);
 
-    if (c_idx == -1 || laser_cloud.chan[c_idx].vals.size () == 0){
+    if (c_idx == -1 || laser_cloud.channels[c_idx].values.size () == 0){
       ROS_ERROR("We need an index channel to be able to filter out the footprint");
       return false;
     }
     
-    for (unsigned int i=0; i < laser_cloud.pts.size(); i++)  
+    for (unsigned int i=0; i < laser_cloud.points.size(); i++)  
     {
-      if (inFootprint(laser_cloud.pts[i])){
-        int index = laser_cloud.chan[c_idx].vals[i];
+      if (inFootprint(laser_cloud.points[i])){
+        int index = laser_cloud.channels[c_idx].values[i];
         filtered_scan.ranges[index] = filtered_scan.range_max + 1.0 ; // If so, then make it a value bigger than the max range
       }
     }
@@ -111,9 +111,9 @@ public:
 
   int indexChannel(const sensor_msgs::PointCloud& scan_cloud){
       int c_idx = -1;
-      for (unsigned int d = 0; d < scan_cloud.get_chan_size (); d++)
+      for (unsigned int d = 0; d < scan_cloud.get_channels_size (); d++)
       {
-        if (scan_cloud.chan[d].name == "index")
+        if (scan_cloud.channels[d].name == "index")
         {
           c_idx = d;
           break;

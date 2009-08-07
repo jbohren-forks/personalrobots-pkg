@@ -643,18 +643,18 @@ class PeopleTracker:
             cloud = PointCloud()
             cloud.header.frame_id = "stereo"
             cloud.header.stamp = imarray.header.stamp
-            cloud.pts = []
-            cloud.pts.append(Point())
-            (cloud.pts[0].x, cloud.pts[0].y, cloud.pts[0].z) = self.face_centers_3d[iface][:3]
+            cloud.points = []
+            cloud.points.append(Point())
+            (cloud.points[0].x, cloud.points[0].y, cloud.points[0].z) = self.face_centers_3d[iface][:3]
             for (i,kp3d) in enumerate(ia.kp3d):
-              cloud.pts.append(Point())
-              (cloud.pts[i].x,cloud.pts[i].y,cloud.pts[i].z) = kp3d
+              cloud.points.append(Point())
+              (cloud.points[i].x,cloud.points[i].y,cloud.points[i].z) = kp3d
 
-            lp = len(cloud.pts)
+            lp = len(cloud.points)
             if self.seq > 0:
               for (i, (u,v)) in enumerate(sparse_pred_list):
-                cloud.pts[lp+i].append(Point())
-                (cloud.pts[lp+i].x,cloud.pts[lp+i].y,cloud.pts[lp+i].z) = sparse_pred_list[i][:3]
+                cloud.points[lp+i].append(Point())
+                (cloud.points[lp+i].x,cloud.points[lp+i].y,cloud.points[lp+i].z) = sparse_pred_list[i][:3]
                         
             self.pub.publish(cloud)
 

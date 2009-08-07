@@ -73,7 +73,7 @@ public:
     cloud_counter_++ ;
     safe_cloud_ = cloud_msg_ ;
     cloud_mutex_.unlock() ;
-    ROS_INFO("Got Cloud with %u points", cloud_msg_.get_pts_size()) ;
+    ROS_INFO("Got Cloud with %u points", cloud_msg_.get_points_size()) ;
   }
 
   void ScanCallback()
@@ -138,7 +138,7 @@ TEST_F(TestAssembler, test)
 
   unsigned int cloud_size ;
   cloud_mutex_.lock() ;
-  cloud_size = safe_cloud_.get_pts_size() ;
+  cloud_size = safe_cloud_.get_points_size() ;
   cloud_mutex_.unlock() ;
 
   ASSERT_TRUE(cloud_size > 0) ;

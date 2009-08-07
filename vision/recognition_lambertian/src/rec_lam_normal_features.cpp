@@ -296,9 +296,9 @@ public:
     // Callback
     void cloud_cb ()
     {
-      ROS_INFO ("Received %d data points in frame %s with %d channels (%s).", (int)cloud_.pts.size (), cloud_.header.frame_id.c_str (),
-                (int)cloud_.chan.size (), cloud_geometry::getAvailableChannels (cloud_).c_str ());
-      if (cloud_.pts.size () == 0)
+      ROS_INFO ("Received %d data points in frame %s with %d channels (%s).", (int)cloud_.points.size (), cloud_.header.frame_id.c_str (),
+                (int)cloud_.channels.size (), cloud_geometry::getAvailableChannels (cloud_).c_str ());
+      if (cloud_.points.size () == 0)
       {
         ROS_ERROR ("No data points found. Exiting...");
         return;
@@ -313,7 +313,7 @@ public:
       if((int)indices.size() > 0){
       cloud_geometry::getPointCloud (cloud_, indices[0], cloud_plane_);
       cloud_geometry::getPointCloudOutside (cloud_, indices[0], cloud_outliers_);
-      ROS_INFO ("Planar model found with %d / %d inliers in %g seconds.\n", (int)indices[0].size (), (int)cloud_.pts.size (), (ros::Time::now () - ts).toSec ());
+      ROS_INFO ("Planar model found with %d / %d inliers in %g seconds.\n", (int)indices[0].size (), (int)cloud_.points.size (), (ros::Time::now () - ts).toSec ());
       }
 
       node_.publish ("~plane", cloud_plane_);
@@ -331,11 +331,11 @@ public:
 void
   PlanarFit::getPointIndicesInZBounds (const sensor_msgs::PointCloud &points, double z_min, double z_max, vector<int> &indices)
 {
-  indices.resize (points.pts.size ());
+  indices.resize (points.points.size ());
   int nr_p = 0;
-  for (unsigned int i = 0; i < points.pts.size (); i++)
+  for (unsigned int i = 0; i < points.points.size (); i++)
   {
-    if ((points.pts[i].z >= z_min && points.pts[i].z <= z_max))
+    if ((points.points[i].z >= z_min && points.points[i].z <= z_max))
     {
       indices[nr_p] = i;
       nr_p++;
@@ -382,7 +382,7 @@ bool
       inliers.push_back (model_inliers);
 
       // Flip the plane normal towards the viewpoint
-      cloud_geometry::angles::flipNormalTowardsViewpoint (model_coeff, points->pts.at (model_inliers[0]), viewpoint_cloud);
+      cloud_geometry::angles::flipNormalTowardsViewpoint (model_coeff, points->points.at (model_inliers[0]), viewpoint_cloud);
 
       ROS_INFO ("Found a planar model supported by %d inliers: [%g, %g, %g, %g]", (int)model_inliers.size (),
                 model_coeff[0], model_coeff[1], model_coeff[2], model_coeff[3]);
@@ -701,13 +701,13 @@ public:
 				  pt3d.x = *fptr;
 				  pt3d.y = *(fptr+1);
 				  pt3d.z = *(fptr+2);
-				  pc.pts.push_back(pt3d);
+				  pc.points.push_back(pt3d);
 				  indices_in_bounds.push_back(ptcnt++);
 				  offsets.push_back((int)(fptr - xyza->data.fl));
 			  }
 //			  printf("\n");
 		  }
-//		  printf("\n");//Points pushed back = %d = %d = %d\n",(int)pc.pts.size(),(int)indices_in_bounds.size(),offsets.size());
+//		  printf("\n");//Points pushed back = %d = %d = %d\n",(int)pc.points.size(),(int)indices_in_bounds.size(),offsets.size());
 
 		  //FIND THE PLANES
 		  vector<vector<int> > indices;
@@ -1252,11 +1252,11 @@ public:
           //FIND IF WE HAVE ARRAY INDICES (x,y) from original pixel locations
           int xchan = -1;
           int ychan = -1;
-          for(size_t i = 0;i < cloud.chan.size();++i){
-             if(cloud.chan[i].name == "x"){
+          for(size_t i = 0;i < cloud.channels.size();++i){
+             if(cloud.channels[i].name == "x"){
                  xchan = i;
              }
-             if(cloud.chan[i].name == "y"){
+             if(cloud.channels[i].name == "y"){
                 ychan = i;
              }
              if((xchan >= 0)&&(ychan >= 0))
@@ -1270,21 +1270,21 @@ public:
           int ry = rect.y;
           int rh = rect.y + rect.height;
           if(xchan != -1 && ychan != -1){
-              for(size_t i = 0;i < cloud.pts.size();++i)
+              for(size_t i = 0;i < cloud.points.size();++i)
               {
-                  int x   = (int)(cloud.chan[xchan].vals[i]);
+                  int x   = (int)(cloud.channels[xchan].values[i]);
                   if((x<0)||(x>=cols)){//xxx
                       ROS_INFO("x(%d)=%d out of bounds(%d)\n",i,x,cols);
                       x = rows - 1;
                   }
-                  int y   = (int)(cloud.chan[ychan].vals[i]);
+                  int y   = (int)(cloud.channels[ychan].values[i]);
                   if((y<0)||(y>=rows)){
                       ROS_INFO("y(%d)=%d out of bounds(%d)\n",i,y,rows);
                       y = cols - 1;
                   }
-                  float X = (float)(cloud.pts[i].x);
-                  float Y = (float)(cloud.pts[i].y);
-                  float Z = (float)(cloud.pts[i].z);
+                  float X = (float)(cloud.points[i].x);
+                  float Y = (float)(cloud.points[i].y);
+                  float Z = (float)(cloud.points[i].z);
  //                 if(!(y%96)&&!(x%128))
  //               	  printf("pt2mat (%f, %f, %f\n",X,Y,Z);
                   //Put this value into the image if it's inside the ROI
@@ -1319,11 +1319,11 @@ public:
 		//FIND IF WE HAVE ARRAY INDICES (x,y) from original pixel locations
 		int xchan = -1;
 		int ychan = -1;
-		for(size_t i = 0;i < cloud.chan.size();++i){
-		   if(cloud.chan[i].name == "x"){
+		for(size_t i = 0;i < cloud.channels.size();++i){
+		   if(cloud.channels[i].name == "x"){
 			   xchan = i;
 		   }
-		   if(cloud.chan[i].name == "y"){
+		   if(cloud.channels[i].name == "y"){
 			  ychan = i;
 		   }
 		   if((xchan >= 0)&&(ychan >= 0))
@@ -1337,20 +1337,20 @@ public:
 		int ry = rect.y;
 		int rh = rect.y + rect.height;
 		if(xchan != -1 && ychan != -1){
-			for(size_t i = 0;i < cloud.pts.size();++i){
-				int x   = (int)(cloud.chan[xchan].vals[i]);
+			for(size_t i = 0;i < cloud.points.size();++i){
+				int x   = (int)(cloud.channels[xchan].values[i]);
 				if((x<0)||(x>=width)){
 					ROS_INFO("x(%d)=%d out of bounds(%d)\n",i,x,width);
 					x = width - 1;
 				}
-				int y   = (int)(cloud.chan[ychan].vals[i]);
+				int y   = (int)(cloud.channels[ychan].values[i]);
 				if((y<0)||(y>=height)){
 					ROS_INFO("y(%d)=%d out of bounds(%d)\n",i,y,height);
 					y = height - 1;
 				}
-				float X = (float)(cloud.pts[i].x);
-				float Y = (float)(cloud.pts[i].y);
-				float Z = (float)(cloud.pts[i].z);
+				float X = (float)(cloud.points[i].x);
+				float Y = (float)(cloud.points[i].y);
+				float Z = (float)(cloud.points[i].z);
 				//Put this value into the image if it's inside the ROI
 				if(x >= rx && x < rw && y >= ry && y < rh){
 					cvSet2D( I, y, x, cvScalar(X,Y,Z) );
@@ -2017,11 +2017,11 @@ private:
         result.header.stamp = cloud.header.stamp;
         int xchan = -1;
         int ychan = -1;
-        for(size_t i = 0;i < cloud.chan.size();++i){
-            if(cloud.chan[i].name == "x"){
+        for(size_t i = 0;i < cloud.channels.size();++i){
+            if(cloud.channels[i].name == "x"){
                 xchan = i;
             }
-            if(cloud.chan[i].name == "y"){
+            if(cloud.channels[i].name == "y"){
                 ychan = i;
             }
             if((xchan >= 0)&&(ychan >= 0))
@@ -2029,11 +2029,11 @@ private:
         }
 
         if(xchan != -1 && ychan != -1){
-            for(size_t i = 0;i < cloud.pts.size();++i){
-                int x = (int)(cloud.chan[xchan].vals[i]);
-                int y = (int)(cloud.chan[ychan].vals[i]);
+            for(size_t i = 0;i < cloud.points.size();++i){
+                int x = (int)(cloud.channels[xchan].values[i]);
+                int y = (int)(cloud.channels[ychan].values[i]);
                 if(x >= rect.x && x < rect.x + rect.width && y >= rect.y && y < rect.y + rect.height){
-                    result.pts.push_back(cloud.pts[i]);
+                    result.points.push_back(cloud.points[i]);
                 }
             }
 
@@ -2062,11 +2062,11 @@ private:
     		return -3;
         int xchan = -1;
         int ychan = -1;
-        for(size_t i = 0;i < cloud.chan.size();++i){
-           if(cloud.chan[i].name == "x"){
+        for(size_t i = 0;i < cloud.channels.size();++i){
+           if(cloud.channels[i].name == "x"){
                xchan = i;
            }
-           if(cloud.chan[i].name == "y"){
+           if(cloud.channels[i].name == "y"){
               ychan = i;
            }
            if((xchan >= 0)&&(ychan >= 0))
@@ -2077,18 +2077,18 @@ private:
         int height = I->height;
         float zfrac = 768.0/(stop_depth - start_depth); //768 = 3*256 to divide up pixel color into R,G,B
         if(xchan != -1 && ychan != -1){
-            for(size_t i = 0;i < cloud.pts.size();++i){
-                int x   = (int)(cloud.chan[xchan].vals[i]);
+            for(size_t i = 0;i < cloud.points.size();++i){
+                int x   = (int)(cloud.channels[xchan].values[i]);
                 if((x<0)||(x>=width)){
                 	ROS_INFO("x(%d)=%d out of bounds(%d)\n",i,x,width);
                 	x = width - 1;
                 }
-                int y   = (int)(cloud.chan[ychan].vals[i]);
+                int y   = (int)(cloud.channels[ychan].values[i]);
                 if((y<0)||(y>=height)){
                 	ROS_INFO("y(%d)=%d out of bounds(%d)\n",i,y,height);
                 	y = height - 1;
                 }
-                float z = (float)(cloud.pts[i].z);
+                float z = (float)(cloud.points[i].z);
                 //Put this value into the image
                 if(x >= rect.x && x < rect.x + rect.width && y >= rect.y && y < rect.y + rect.height){
                 	z -= start_depth;
@@ -2356,7 +2356,7 @@ public:
 					v3.x = *fnM;
 					v3.y = *(fnM + 1);
 					v3.z = *(fnM + 2);
-					points.pts.push_back(p3);
+					points.points.push_back(p3);
 					coef.push_back(v3);
 				}
 			}

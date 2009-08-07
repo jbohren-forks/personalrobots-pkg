@@ -60,20 +60,20 @@ std::vector<int> computeCorrespondence(const annotated_map_msgs::TaggedPolygonal
 
 
   sensor_msgs::PointCloud centers_from;
-  centers_from.pts.resize(num_poly_from);
+  centers_from.points.resize(num_poly_from);
   result.resize(num_poly_from);
   
   for(unsigned int iPoly=0;iPoly<num_poly_from;iPoly++){
-    centers_from.pts[iPoly]=annotated_map_lib::computeMean(map_from.polygons[iPoly].polygon);
+    centers_from.points[iPoly]=annotated_map_lib::computeMean(map_from.polygons[iPoly].polygon);
     result[iPoly]=-1;
   }
 
   unsigned int num_poly_to=map_to.polygons.size();
   sensor_msgs::PointCloud centers_to;
-  centers_to.pts.resize(num_poly_to);
+  centers_to.points.resize(num_poly_to);
   
   for(unsigned int iPoly=0;iPoly<num_poly_to;iPoly++){
-    centers_to.pts[iPoly]=annotated_map_lib::computeMean(map_to.polygons[iPoly].polygon);
+    centers_to.points[iPoly]=annotated_map_lib::computeMean(map_to.polygons[iPoly].polygon);
   }
 
   ROS_DEBUG("Building KDtree");

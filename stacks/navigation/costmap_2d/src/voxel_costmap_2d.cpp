@@ -139,15 +139,15 @@ namespace costmap_2d{
 
       double sq_obstacle_range = obs.obstacle_range_ * obs.obstacle_range_;
 
-      for(unsigned int i = 0; i < cloud.pts.size(); ++i){
+      for(unsigned int i = 0; i < cloud.points.size(); ++i){
         //if the obstacle is too high or too far away from the robot we won't add it
-        if(cloud.pts[i].z > max_obstacle_height_)
+        if(cloud.points[i].z > max_obstacle_height_)
           continue;
 
         //compute the squared distance from the hitpoint to the pointcloud's origin
-        double sq_dist = (cloud.pts[i].x - obs.origin_.x) * (cloud.pts[i].x - obs.origin_.x)
-          + (cloud.pts[i].y - obs.origin_.y) * (cloud.pts[i].y - obs.origin_.y)
-          + (cloud.pts[i].z - obs.origin_.z) * (cloud.pts[i].z - obs.origin_.z);
+        double sq_dist = (cloud.points[i].x - obs.origin_.x) * (cloud.points[i].x - obs.origin_.x)
+          + (cloud.points[i].y - obs.origin_.y) * (cloud.points[i].y - obs.origin_.y)
+          + (cloud.points[i].z - obs.origin_.z) * (cloud.points[i].z - obs.origin_.z);
 
         //if the point is far enough away... we won't consider it
         if(sq_dist >= sq_obstacle_range)
@@ -155,11 +155,11 @@ namespace costmap_2d{
 
         //now we need to compute the map coordinates for the observation
         unsigned int mx, my, mz;
-        if(cloud.pts[i].z < origin_z_){
-          if(!worldToMap3D(cloud.pts[i].x, cloud.pts[i].y, origin_z_, mx, my, mz))
+        if(cloud.points[i].z < origin_z_){
+          if(!worldToMap3D(cloud.points[i].x, cloud.points[i].y, origin_z_, mx, my, mz))
             continue;
         }
-        else if(!worldToMap3D(cloud.pts[i].x, cloud.pts[i].y, cloud.pts[i].z, mx, my, mz)){
+        else if(!worldToMap3D(cloud.points[i].x, cloud.points[i].y, cloud.points[i].z, mx, my, mz)){
           continue;
         }
 
@@ -174,7 +174,7 @@ namespace costmap_2d{
   }
 
   void VoxelCostmap2D::raytraceFreespace(const Observation& clearing_observation){
-    if(clearing_observation.cloud_.pts.size() == 0)
+    if(clearing_observation.cloud_.points.size() == 0)
       return;
 
 
@@ -190,10 +190,10 @@ namespace costmap_2d{
     double map_end_x = origin_x_ + getSizeInMetersX();
     double map_end_y = origin_y_ + getSizeInMetersY();
 
-    for(unsigned int i = 0; i < clearing_observation.cloud_.pts.size(); ++i){
-      double wpx = clearing_observation.cloud_.pts[i].x;
-      double wpy = clearing_observation.cloud_.pts[i].y;
-      double wpz = clearing_observation.cloud_.pts[i].z;
+    for(unsigned int i = 0; i < clearing_observation.cloud_.points.size(); ++i){
+      double wpx = clearing_observation.cloud_.points[i].x;
+      double wpy = clearing_observation.cloud_.points[i].y;
+      double wpz = clearing_observation.cloud_.points[i].z;
 
       double distance = dist(ox, oy, oz, wpx, wpy, wpz);
       double scaling_fact = 1.0;
@@ -363,7 +363,7 @@ namespace costmap_2d{
             pt.x = wx;
             pt.y = wy;
             pt.z = wz;
-            cloud.pts.push_back(pt);
+            cloud.points.push_back(pt);
           }
         }
       }

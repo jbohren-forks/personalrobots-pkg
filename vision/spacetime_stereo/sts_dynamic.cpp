@@ -1074,8 +1074,8 @@ void SpacetimeStereoNode::spacetime_stereo(std::vector<IplImage*> left_frames, s
 	//printf("\nReading Parameters: tx: %f, u0: %f, v0: %f, fx:%f, fy:%f\n", cpar.tx, cpar.u0, cpar.v0, cpar.fx, cpar.fy);
 	sensor_msgs::PointCloud ros_cloud;
 	
-	ros_cloud.set_chan_size(1);
-	ros_cloud.chan[0].name = "intensities";
+	ros_cloud.set_channels_size(1);
+	ros_cloud.channels[0].name = "intensities";
 	
 	int i,j;
 	float xf,yf,zf;
@@ -1086,8 +1086,8 @@ void SpacetimeStereoNode::spacetime_stereo(std::vector<IplImage*> left_frames, s
 	if( disp[j*w+i] > 0) 
 		tot_points ++;
 	
-	ros_cloud.set_pts_size(tot_points);
-	ros_cloud.chan[0].set_vals_size(tot_points);
+	ros_cloud.set_points_size(tot_points);
+	ros_cloud.channels[0].set_values_size(tot_points);
 	int intens = 16*255;	
 
 	for(j=0; j<h; j++)
@@ -1097,11 +1097,11 @@ void SpacetimeStereoNode::spacetime_stereo(std::vector<IplImage*> left_frames, s
 		xf = ((i - cpar.u0) * zf) / cpar.fx;
 		yf = ((j - cpar.v0) * zf) / cpar.fy;
 		
-		ros_cloud.pts[point_count].x = xf/1000; //from millimiters to decimiters
-		ros_cloud.pts[point_count].y = yf/1000; //Why does this need to be flipped?
-		ros_cloud.pts[point_count].z = zf/1000; //Why does this need to be flipped?
+		ros_cloud.points[point_count].x = xf/1000; //from millimiters to decimiters
+		ros_cloud.points[point_count].y = yf/1000; //Why does this need to be flipped?
+		ros_cloud.points[point_count].z = zf/1000; //Why does this need to be flipped?
 	
-		ros_cloud.chan[0].vals[point_count] = intens;
+		ros_cloud.channels[0].values[point_count] = intens;
 		point_count++;
 	}
 	

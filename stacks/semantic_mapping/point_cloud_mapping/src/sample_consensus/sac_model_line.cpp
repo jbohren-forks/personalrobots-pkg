@@ -107,9 +107,9 @@ namespace sample_consensus
       // P1P0 = < x-x1,  y-y1, z-z1 > = <x4, y4, z4>
       // P1P2 x P1P0 = < y3*z4 - z3*y4, -(x3*z4 - x4*z3), x3*y4 - x4*y3 >
       //             = < (y2-y1)*(z-z1) - (z2-z1)*(y-y1), -[(x2-x1)*(z-z1) - (x-x1)*(z2-z1)], (x2-x1)*(y-y1) - (x-x1)*(y2-y1) >
-      p4.x = model_coefficients.at (3) - cloud_->pts.at (indices_.at (i)).x;
-      p4.y = model_coefficients.at (4) - cloud_->pts.at (indices_.at (i)).y;
-      p4.z = model_coefficients.at (5) - cloud_->pts.at (indices_.at (i)).z;
+      p4.x = model_coefficients.at (3) - cloud_->points.at (indices_.at (i)).x;
+      p4.y = model_coefficients.at (4) - cloud_->points.at (indices_.at (i)).y;
+      p4.z = model_coefficients.at (5) - cloud_->points.at (indices_.at (i)).z;
 
       // P1P2 = sqrt (x3^2 + y3^2 + z3^2)
       // a = sqrt [(y3*z4 - z3*y4)^2 + (x3*z4 - x4*z3)^2 + (x3*y4 - x4*y3)^2]
@@ -149,9 +149,9 @@ namespace sample_consensus
     {
       // Calculate the distance from the point to the line
       // D = ||(P2-P1) x (P1-P0)|| / ||P2-P1|| = norm (cross (p2-p1, p2-p0)) / norm(p2-p1)
-      p4.x = model_coefficients.at (3) - cloud_->pts.at (indices_.at (i)).x;
-      p4.y = model_coefficients.at (4) - cloud_->pts.at (indices_.at (i)).y;
-      p4.z = model_coefficients.at (5) - cloud_->pts.at (indices_.at (i)).z;
+      p4.x = model_coefficients.at (3) - cloud_->points.at (indices_.at (i)).x;
+      p4.y = model_coefficients.at (4) - cloud_->points.at (indices_.at (i)).y;
+      p4.z = model_coefficients.at (5) - cloud_->points.at (indices_.at (i)).z;
 
       geometry_msgs::Point32 c = cloud_geometry::cross (p4, p3);
       distances[i] = sqrt (c.x * c.x + c.y * c.y + c.z * c.z) / (p3.x * p3.x + p3.y * p3.y + p3.z * p3.z);
@@ -170,14 +170,14 @@ namespace sample_consensus
                                  sensor_msgs::PointCloud &projected_points)
   {
     // Allocate enough space
-    projected_points.pts.resize (inliers.size ());
-    projected_points.set_chan_size (cloud_->get_chan_size ());
+    projected_points.points.resize (inliers.size ());
+    projected_points.set_channels_size (cloud_->get_channels_size ());
 
     // Create the channels
-    for (unsigned int d = 0; d < projected_points.get_chan_size (); d++)
+    for (unsigned int d = 0; d < projected_points.get_channels_size (); d++)
     {
-      projected_points.chan[d].name = cloud_->chan[d].name;
-      projected_points.chan[d].vals.resize (inliers.size ());
+      projected_points.channels[d].name = cloud_->channels[d].name;
+      projected_points.channels[d].values.resize (inliers.size ());
     }
 
     // Compute the line direction (P2 - P1)
@@ -190,16 +190,16 @@ namespace sample_consensus
     for (unsigned int i = 0; i < inliers.size (); i++)
     {
       // double k = (DOT_PROD_3D (points[i], p21) - dotA_B) / dotB_B;
-      double k = ( cloud_->pts.at (inliers.at (i)).x * p21.x + cloud_->pts.at (inliers.at (i)).y * p21.y + cloud_->pts.at (inliers.at (i)).z * p21.z -
+      double k = ( cloud_->points.at (inliers.at (i)).x * p21.x + cloud_->points.at (inliers.at (i)).y * p21.y + cloud_->points.at (inliers.at (i)).z * p21.z -
                    (model_coefficients_[0] * p21.x + model_coefficients_[1] * p21.y + model_coefficients_[2] * p21.z)
                  ) / (p21.x * p21.x + p21.y * p21.y + p21.z * p21.z);
       // Calculate the projection of the point on the line (pointProj = A + k * B)
-      projected_points.pts[i].x = model_coefficients_.at (0) + k * p21.x;
-      projected_points.pts[i].y = model_coefficients_.at (1) + k * p21.y;
-      projected_points.pts[i].z = model_coefficients_.at (2) + k * p21.z;
+      projected_points.points[i].x = model_coefficients_.at (0) + k * p21.x;
+      projected_points.points[i].y = model_coefficients_.at (1) + k * p21.y;
+      projected_points.points[i].z = model_coefficients_.at (2) + k * p21.z;
       // Copy the other attributes
-      for (unsigned int d = 0; d < projected_points.get_chan_size (); d++)
-        projected_points.chan[d].vals[i] = cloud_->chan[d].vals[inliers.at (i)];
+      for (unsigned int d = 0; d < projected_points.get_channels_size (); d++)
+        projected_points.channels[d].values[i] = cloud_->channels[d].values[inliers.at (i)];
     }
   }
 
@@ -221,13 +221,13 @@ namespace sample_consensus
     for (unsigned int i = 0; i < inliers.size (); i++)
     {
       // double k = (DOT_PROD_3D (points[i], p21) - dotA_B) / dotB_B;
-      double k = ( cloud_->pts.at (inliers.at (i)).x * p21.x + cloud_->pts.at (inliers.at (i)).y * p21.y + cloud_->pts.at (inliers.at (i)).z * p21.z -
+      double k = ( cloud_->points.at (inliers.at (i)).x * p21.x + cloud_->points.at (inliers.at (i)).y * p21.y + cloud_->points.at (inliers.at (i)).z * p21.z -
                    (model_coefficients_[0] * p21.x + model_coefficients_[1] * p21.y + model_coefficients_[2] * p21.z)
                  ) / (p21.x * p21.x + p21.y * p21.y + p21.z * p21.z);
       // Calculate the projection of the point on the line (pointProj = A + k * B)
-      cloud_->pts.at (inliers.at (i)).x = model_coefficients_.at (0) + k * p21.x;
-      cloud_->pts.at (inliers.at (i)).y = model_coefficients_.at (1) + k * p21.y;
-      cloud_->pts.at (inliers.at (i)).z = model_coefficients_.at (2) + k * p21.z;
+      cloud_->points.at (inliers.at (i)).x = model_coefficients_.at (0) + k * p21.x;
+      cloud_->points.at (inliers.at (i)).y = model_coefficients_.at (1) + k * p21.y;
+      cloud_->points.at (inliers.at (i)).z = model_coefficients_.at (2) + k * p21.z;
     }
   }
 
@@ -241,12 +241,12 @@ namespace sample_consensus
     SACModelLine::computeModelCoefficients (const std::vector<int> &samples)
   {
     model_coefficients_.resize (6);
-    model_coefficients_[0] = cloud_->pts.at (samples.at (0)).x;
-    model_coefficients_[1] = cloud_->pts.at (samples.at (0)).y;
-    model_coefficients_[2] = cloud_->pts.at (samples.at (0)).z;
-    model_coefficients_[3] = cloud_->pts.at (samples.at (1)).x;
-    model_coefficients_[4] = cloud_->pts.at (samples.at (1)).y;
-    model_coefficients_[5] = cloud_->pts.at (samples.at (1)).z;
+    model_coefficients_[0] = cloud_->points.at (samples.at (0)).x;
+    model_coefficients_[1] = cloud_->points.at (samples.at (0)).y;
+    model_coefficients_[2] = cloud_->points.at (samples.at (0)).z;
+    model_coefficients_[3] = cloud_->points.at (samples.at (1)).x;
+    model_coefficients_[4] = cloud_->points.at (samples.at (1)).y;
+    model_coefficients_[5] = cloud_->points.at (samples.at (1)).z;
 
     return (true);
   }
@@ -306,9 +306,9 @@ namespace sample_consensus
       p3.y = model_coefficients_.at (4) - model_coefficients_.at (1);
       p3.z = model_coefficients_.at (5) - model_coefficients_.at (2);
 
-      p4.x = model_coefficients_.at (3) - cloud_->pts.at (*it).x;
-      p4.y = model_coefficients_.at (4) - cloud_->pts.at (*it).y;
-      p4.z = model_coefficients_.at (5) - cloud_->pts.at (*it).z;
+      p4.x = model_coefficients_.at (3) - cloud_->points.at (*it).x;
+      p4.y = model_coefficients_.at (4) - cloud_->points.at (*it).y;
+      p4.z = model_coefficients_.at (5) - cloud_->points.at (*it).z;
 
       geometry_msgs::Point32 c = cloud_geometry::cross (p4, p3);
       double sqr_distance = (c.x * c.x + c.y * c.y + c.z * c.z) / (p3.x * p3.x + p3.y * p3.y + p3.z * p3.z);

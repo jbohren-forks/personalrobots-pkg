@@ -367,21 +367,21 @@ PointGrid::PointGrid(double size_x, double size_y, double resolution, geometry_m
     for(vector<Observation>::const_iterator it = observations.begin(); it != observations.end(); ++it){
       const Observation& obs = *it;
       const sensor_msgs::PointCloud& cloud = (obs.cloud_);
-      for(unsigned int i = 0; i < cloud.get_pts_size(); ++i){
+      for(unsigned int i = 0; i < cloud.get_points_size(); ++i){
         //filter out points that are too high
-        if(cloud.pts[i].z > max_z_)
+        if(cloud.points[i].z > max_z_)
           continue;
 
         //compute the squared distance from the hitpoint to the pointcloud's origin
-        double sq_dist = (cloud.pts[i].x - obs.origin_.x) * (cloud.pts[i].x - obs.origin_.x)
-          + (cloud.pts[i].y - obs.origin_.y) * (cloud.pts[i].y - obs.origin_.y) 
-          + (cloud.pts[i].z - obs.origin_.z) * (cloud.pts[i].z - obs.origin_.z);
+        double sq_dist = (cloud.points[i].x - obs.origin_.x) * (cloud.points[i].x - obs.origin_.x)
+          + (cloud.points[i].y - obs.origin_.y) * (cloud.points[i].y - obs.origin_.y) 
+          + (cloud.points[i].z - obs.origin_.z) * (cloud.points[i].z - obs.origin_.z);
 
         if(sq_dist >= sq_obstacle_range_)
           continue;
 
         //insert the point
-        insert(cloud.pts[i]);
+        insert(cloud.points[i]);
       }
     }
 
@@ -390,7 +390,7 @@ PointGrid::PointGrid(double size_x, double size_y, double resolution, geometry_m
   }
 
   void PointGrid::removePointsInScanBoundry(const PlanarLaserScan& laser_scan){
-    if(laser_scan.cloud.pts.size() == 0)
+    if(laser_scan.cloud.points.size() == 0)
       return;
 
     //compute the containing square of the scan
@@ -400,11 +400,11 @@ PointGrid::PointGrid(double size_x, double size_y, double resolution, geometry_m
     upper_right.x = laser_scan.origin.x;
     upper_right.y = laser_scan.origin.y;
 
-    for(unsigned int i = 0; i < laser_scan.cloud.pts.size(); ++i){
-      lower_left.x = min(lower_left.x, (double)laser_scan.cloud.pts[i].x);
-      lower_left.y = min(lower_left.y, (double)laser_scan.cloud.pts[i].y);
-      upper_right.x = max(upper_right.x, (double)laser_scan.cloud.pts[i].x);
-      upper_right.y = max(upper_right.y, (double)laser_scan.cloud.pts[i].y);
+    for(unsigned int i = 0; i < laser_scan.cloud.points.size(); ++i){
+      lower_left.x = min(lower_left.x, (double)laser_scan.cloud.points[i].x);
+      lower_left.y = min(lower_left.y, (double)laser_scan.cloud.points[i].y);
+      upper_right.x = max(upper_right.x, (double)laser_scan.cloud.points[i].x);
+      upper_right.y = max(upper_right.y, (double)laser_scan.cloud.points[i].y);
     }
 
     getPointsInRange(lower_left, upper_right, points_);
@@ -433,10 +433,10 @@ PointGrid::PointGrid(double size_x, double size_y, double resolution, geometry_m
   }
 
   bool PointGrid::ptInScan(const geometry_msgs::Point32& pt, const PlanarLaserScan& laser_scan){
-    if(!laser_scan.cloud.pts.empty()){
+    if(!laser_scan.cloud.points.empty()){
       //compute the angle of the point relative to that of the scan
-      double v1_x = laser_scan.cloud.pts[0].x - laser_scan.origin.x;
-      double v1_y = laser_scan.cloud.pts[0].y - laser_scan.origin.y;
+      double v1_x = laser_scan.cloud.points[0].x - laser_scan.origin.x;
+      double v1_y = laser_scan.cloud.points[0].y - laser_scan.origin.y;
       double v2_x = pt.x - laser_scan.origin.x;
       double v2_y = pt.y - laser_scan.origin.y;
 
@@ -460,12 +460,12 @@ PointGrid::PointGrid(double size_x, double size_y, double resolution, geometry_m
       unsigned int index = (unsigned int) (vector_angle / laser_scan.angle_increment);
 
       //make sure we have a legal index... we always should at this point, but just in case
-      if(index >= laser_scan.cloud.pts.size() - 1){
+      if(index >= laser_scan.cloud.points.size() - 1){
         return false;
       }
 
       //if the point lies to the left of the line between the two scan points bounding it, it is within the scan
-      if(orient(laser_scan.cloud.pts[index], laser_scan.cloud.pts[index + 1], pt) > 0){
+      if(orient(laser_scan.cloud.points[index], laser_scan.cloud.points[index + 1], pt) > 0){
         return true;
       }
 
@@ -479,7 +479,7 @@ PointGrid::PointGrid(double size_x, double size_y, double resolution, geometry_m
   void PointGrid::getPoints(sensor_msgs::PointCloud& cloud){
     for(unsigned int i = 0; i < cells_.size(); ++i){
       for(list<geometry_msgs::Point32>::iterator it = cells_[i].begin(); it != cells_[i].end(); ++it){
-        cloud.pts.push_back(*it);
+        cloud.points.push_back(*it);
       }
     }
   }

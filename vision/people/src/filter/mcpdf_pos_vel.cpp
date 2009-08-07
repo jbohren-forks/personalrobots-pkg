@@ -118,10 +118,10 @@
 	  t++;
 	}
     cloud.header.frame_id = "odom";
-    cloud.pts  = points;
+    cloud.points  = points;
     channel.name = "rgb";
-    channel.vals = weights;
-    cloud.chan.push_back(channel);
+    channel.values = weights;
+    cloud.channels.push_back(channel);
   }
 
 

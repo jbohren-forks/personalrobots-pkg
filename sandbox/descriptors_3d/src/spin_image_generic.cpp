@@ -84,9 +84,9 @@ void SpinImageGeneric::computeNeighborhoodFeature(const sensor_msgs::PointCloud&
   {
     // Create vector from center point to neighboring point
     Eigen::Vector3d neighbor_vec;
-    neighbor_vec[0] = data.pts[neighbor_indices[i]].x - curr_center_pt[0];
-    neighbor_vec[1] = data.pts[neighbor_indices[i]].y - curr_center_pt[1];
-    neighbor_vec[2] = data.pts[neighbor_indices[i]].z - curr_center_pt[2];
+    neighbor_vec[0] = data.points[neighbor_indices[i]].x - curr_center_pt[0];
+    neighbor_vec[1] = data.points[neighbor_indices[i]].y - curr_center_pt[1];
+    neighbor_vec[2] = data.points[neighbor_indices[i]].z - curr_center_pt[2];
     const double neighbor_vec_norm = neighbor_vec.norm();
 
     // ----------------------------------------

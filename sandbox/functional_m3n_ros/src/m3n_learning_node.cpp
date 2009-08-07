@@ -94,10 +94,10 @@ void LearningNode::cloudCallback(const PointCloudConstPtr& the_cloud)
 int getAnnotationsChannel(const sensor_msgs::PointCloud& pt_cloud)
 {
   int chan_annotation_idx=-1;
-  for(unsigned int iC=0;iC<pt_cloud.chan.size();iC++)
+  for(unsigned int iC=0;iC<pt_cloud.channels.size();iC++)
   {
 
-    const sensor_msgs::ChannelFloat32& chan = pt_cloud.chan[iC];
+    const sensor_msgs::ChannelFloat32& chan = pt_cloud.channels[iC];
 
     //if (chan.name == "predictions" || ( (  chan.name.at(0)=='a'  ) && (  chan.name.at(1)=='n'  ) && chan.name.at(2)=='n'  ) ))
     if (( (  chan.name.at(0)=='a'  ) && (  chan.name.at(1)=='n'  ) && (  chan.name.at(2)=='n'  ) ))
@@ -152,7 +152,7 @@ bool LearningNode::learn(functional_m3n_ros::Learn::Request  &req,
         iCloud--;
         continue;
       }
-      boost::shared_ptr<RandomField> rf=rf_creator_->createRandomField(*(*cloud_it),(*cloud_it)->chan[chan_annotation_idx].vals);
+      boost::shared_ptr<RandomField> rf=rf_creator_->createRandomField(*(*cloud_it),(*cloud_it)->channels[chan_annotation_idx].values);
       rf_all[iCloud]=rf; //mem management
       training_rfs[iCloud]=rf.get(); //for training
     }

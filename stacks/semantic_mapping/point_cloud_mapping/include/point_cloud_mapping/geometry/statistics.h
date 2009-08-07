@@ -83,14 +83,14 @@ namespace cloud_geometry
       getLargestDiagonalIndices (const sensor_msgs::PointCloud &points, int &min_idx, int &max_idx)
     {
       double largest_diagonal = -FLT_MAX;
-      for (unsigned int i = 0; i < points.pts.size (); i++)
+      for (unsigned int i = 0; i < points.points.size (); i++)
       {
-        for (unsigned int j = i; j < points.pts.size (); j++)
+        for (unsigned int j = i; j < points.points.size (); j++)
         {
           double current_diagonal =
-                                    (points.pts.at (i).x - points.pts.at (j).x) * (points.pts.at (i).x - points.pts.at (j).x) +
-                                    (points.pts.at (i).y - points.pts.at (j).y) * (points.pts.at (i).y - points.pts.at (j).y) +
-                                    (points.pts.at (i).z - points.pts.at (j).z) * (points.pts.at (i).z - points.pts.at (j).z);
+                                    (points.points.at (i).x - points.points.at (j).x) * (points.points.at (i).x - points.points.at (j).x) +
+                                    (points.points.at (i).y - points.points.at (j).y) * (points.points.at (i).y - points.points.at (j).y) +
+                                    (points.points.at (i).z - points.points.at (j).z) * (points.points.at (i).z - points.points.at (j).z);
           if (current_diagonal > largest_diagonal)
           {
             min_idx = i;
@@ -117,9 +117,9 @@ namespace cloud_geometry
         for (unsigned int j = i; j < indices.size (); j++)
         {
           double current_diagonal =
-                                    (points.pts.at (indices.at (i)).x - points.pts.at (indices.at (j)).x) * (points.pts.at (indices.at (i)).x - points.pts.at (indices.at (j)).x) +
-                                    (points.pts.at (indices.at (i)).y - points.pts.at (indices.at (j)).y) * (points.pts.at (indices.at (i)).y - points.pts.at (indices.at (j)).y) +
-                                    (points.pts.at (indices.at (i)).z - points.pts.at (indices.at (j)).z) * (points.pts.at (indices.at (i)).z - points.pts.at (indices.at (j)).z);
+                                    (points.points.at (indices.at (i)).x - points.points.at (indices.at (j)).x) * (points.points.at (indices.at (i)).x - points.points.at (indices.at (j)).x) +
+                                    (points.points.at (indices.at (i)).y - points.points.at (indices.at (j)).y) * (points.points.at (indices.at (i)).y - points.points.at (indices.at (j)).y) +
+                                    (points.points.at (indices.at (i)).z - points.points.at (indices.at (j)).z) * (points.points.at (indices.at (i)).z - points.points.at (indices.at (j)).z);
           if (current_diagonal > largest_diagonal)
           {
             min_idx = i;
@@ -168,18 +168,18 @@ namespace cloud_geometry
       getLargestDiagonalPoints (const sensor_msgs::PointCloud &points, geometry_msgs::Point32 &min_p, geometry_msgs::Point32 &max_p)
     {
       double largest_diagonal = -FLT_MAX;
-      for (unsigned int i = 0; i < points.pts.size (); i++)
+      for (unsigned int i = 0; i < points.points.size (); i++)
       {
-        for (unsigned int j = i; j < points.pts.size (); j++)
+        for (unsigned int j = i; j < points.points.size (); j++)
         {
           double current_diagonal =
-                                    (points.pts.at (i).x - points.pts.at (j).x) * (points.pts.at (i).x - points.pts.at (j).x) +
-                                    (points.pts.at (i).y - points.pts.at (j).y) * (points.pts.at (i).y - points.pts.at (j).y) +
-                                    (points.pts.at (i).z - points.pts.at (j).z) * (points.pts.at (i).z - points.pts.at (j).z);
+                                    (points.points.at (i).x - points.points.at (j).x) * (points.points.at (i).x - points.points.at (j).x) +
+                                    (points.points.at (i).y - points.points.at (j).y) * (points.points.at (i).y - points.points.at (j).y) +
+                                    (points.points.at (i).z - points.points.at (j).z) * (points.points.at (i).z - points.points.at (j).z);
           if (current_diagonal > largest_diagonal)
           {
-            min_p.x = points.pts.at (i).x; min_p.y = points.pts.at (i).y; min_p.z = points.pts.at (i).z;
-            max_p.x = points.pts.at (j).x; max_p.y = points.pts.at (j).y; max_p.z = points.pts.at (j).z;
+            min_p.x = points.points.at (i).x; min_p.y = points.points.at (i).y; min_p.z = points.points.at (i).z;
+            max_p.x = points.points.at (j).x; max_p.y = points.points.at (j).y; max_p.z = points.points.at (j).z;
             largest_diagonal = current_diagonal;
           }
         }
@@ -202,13 +202,13 @@ namespace cloud_geometry
         for (unsigned int j = i; j < indices.size (); j++)
         {
           double current_diagonal =
-                                    (points.pts.at (indices.at (i)).x - points.pts.at (indices.at (j)).x) * (points.pts.at (indices.at (i)).x - points.pts.at (indices.at (j)).x) +
-                                    (points.pts.at (indices.at (i)).y - points.pts.at (indices.at (j)).y) * (points.pts.at (indices.at (i)).y - points.pts.at (indices.at (j)).y) +
-                                    (points.pts.at (indices.at (i)).z - points.pts.at (indices.at (j)).z) * (points.pts.at (indices.at (i)).z - points.pts.at (indices.at (j)).z);
+                                    (points.points.at (indices.at (i)).x - points.points.at (indices.at (j)).x) * (points.points.at (indices.at (i)).x - points.points.at (indices.at (j)).x) +
+                                    (points.points.at (indices.at (i)).y - points.points.at (indices.at (j)).y) * (points.points.at (indices.at (i)).y - points.points.at (indices.at (j)).y) +
+                                    (points.points.at (indices.at (i)).z - points.points.at (indices.at (j)).z) * (points.points.at (indices.at (i)).z - points.points.at (indices.at (j)).z);
           if (current_diagonal > largest_diagonal)
           {
-            min_p.x = points.pts.at (indices.at (i)).x; min_p.y = points.pts.at (indices.at (i)).y; min_p.z = points.pts.at (indices.at (i)).z;
-            max_p.x = points.pts.at (indices.at (j)).x; max_p.y = points.pts.at (indices.at (j)).y; max_p.z = points.pts.at (indices.at (j)).z;
+            min_p.x = points.points.at (indices.at (i)).x; min_p.y = points.points.at (indices.at (i)).y; min_p.z = points.points.at (indices.at (i)).z;
+            max_p.x = points.points.at (indices.at (j)).x; max_p.y = points.points.at (indices.at (j)).y; max_p.z = points.points.at (indices.at (j)).z;
             largest_diagonal = current_diagonal;
           }
         }
@@ -266,17 +266,17 @@ namespace cloud_geometry
       {
         for (unsigned int j = i; j < indices.size (); j++)
         {
-          double current_xy = (points.pts.at (indices.at (i)).x - points.pts.at (indices.at (j)).x) *
-                              (points.pts.at (indices.at (i)).x - points.pts.at (indices.at (j)).x) +
-                              (points.pts.at (indices.at (i)).y - points.pts.at (indices.at (j)).y) *
-                              (points.pts.at (indices.at (i)).y - points.pts.at (indices.at (j)).y);
+          double current_xy = (points.points.at (indices.at (i)).x - points.points.at (indices.at (j)).x) *
+                              (points.points.at (indices.at (i)).x - points.points.at (indices.at (j)).x) +
+                              (points.points.at (indices.at (i)).y - points.points.at (indices.at (j)).y) *
+                              (points.points.at (indices.at (i)).y - points.points.at (indices.at (j)).y);
           if (current_xy > largest_xy )
           {
-            min_p.x = points.pts.at (indices.at (i)).x;
-            min_p.y = points.pts.at (indices.at (i)).y;
+            min_p.x = points.points.at (indices.at (i)).x;
+            min_p.y = points.points.at (indices.at (i)).y;
             min_p.z = 0;
-            max_p.x = points.pts.at (indices.at (j)).x;
-            max_p.y = points.pts.at (indices.at (j)).y;
+            max_p.x = points.points.at (indices.at (j)).x;
+            max_p.y = points.points.at (indices.at (j)).y;
             max_p.z = 0;
             largest_xy = current_xy;
           }
@@ -297,8 +297,8 @@ namespace cloud_geometry
       computeCentralizedMoment (const sensor_msgs::PointCloud &points, double p, double q, double r)
     {
       double result = 0.0;
-      for (unsigned int cp = 0; cp < points.pts.size (); cp++)
-        result += pow (points.pts[cp].x, p) * pow (points.pts[cp].y, q) * pow (points.pts[cp].z, r);
+      for (unsigned int cp = 0; cp < points.points.size (); cp++)
+        result += pow (points.points[cp].x, p) * pow (points.points[cp].y, q) * pow (points.points[cp].z, r);
 
       return (result);
     }
@@ -316,7 +316,7 @@ namespace cloud_geometry
     {
       double result = 0.0;
       for (unsigned int cp = 0; cp < indices.size (); cp++)
-        result += pow (points.pts.at (indices.at (cp)).x, p) * pow (points.pts.at (indices.at (cp)).y, q) * pow (points.pts.at (indices.at (cp)).z, r);
+        result += pow (points.points.at (indices.at (cp)).x, p) * pow (points.points.at (indices.at (cp)).y, q) * pow (points.points.at (indices.at (cp)).z, r);
 
       return (result);
     }
@@ -333,15 +333,15 @@ namespace cloud_geometry
       minP.x = minP.y = minP.z = FLT_MAX;
       maxP.x = maxP.y = maxP.z = -FLT_MAX;
 
-      for (unsigned int i = 0; i < points.pts.size (); i++)
+      for (unsigned int i = 0; i < points.points.size (); i++)
       {
-        minP.x = (points.pts[i].x < minP.x) ? points.pts[i].x : minP.x;
-        minP.y = (points.pts[i].y < minP.y) ? points.pts[i].y : minP.y;
-        minP.z = (points.pts[i].z < minP.z) ? points.pts[i].z : minP.z;
+        minP.x = (points.points[i].x < minP.x) ? points.points[i].x : minP.x;
+        minP.y = (points.points[i].y < minP.y) ? points.points[i].y : minP.y;
+        minP.z = (points.points[i].z < minP.z) ? points.points[i].z : minP.z;
 
-        maxP.x = (points.pts[i].x > maxP.x) ? points.pts[i].x : maxP.x;
-        maxP.y = (points.pts[i].y > maxP.y) ? points.pts[i].y : maxP.y;
-        maxP.z = (points.pts[i].z > maxP.z) ? points.pts[i].z : maxP.z;
+        maxP.x = (points.points[i].x > maxP.x) ? points.points[i].x : maxP.x;
+        maxP.y = (points.points[i].y > maxP.y) ? points.points[i].y : maxP.y;
+        maxP.z = (points.points[i].z > maxP.z) ? points.points[i].z : maxP.z;
       }
     }
 
@@ -385,13 +385,13 @@ namespace cloud_geometry
 
       for (unsigned int i = 0; i < indices.size (); i++)
       {
-        min_p.x = (points.pts.at (indices.at (i)).x < min_p.x) ? points.pts.at (indices.at (i)).x : min_p.x;
-        min_p.y = (points.pts.at (indices.at (i)).y < min_p.y) ? points.pts.at (indices.at (i)).y : min_p.y;
-        min_p.z = (points.pts.at (indices.at (i)).z < min_p.z) ? points.pts.at (indices.at (i)).z : min_p.z;
+        min_p.x = (points.points.at (indices.at (i)).x < min_p.x) ? points.points.at (indices.at (i)).x : min_p.x;
+        min_p.y = (points.points.at (indices.at (i)).y < min_p.y) ? points.points.at (indices.at (i)).y : min_p.y;
+        min_p.z = (points.points.at (indices.at (i)).z < min_p.z) ? points.points.at (indices.at (i)).z : min_p.z;
 
-        max_p.x = (points.pts.at (indices.at (i)).x > max_p.x) ? points.pts.at (indices.at (i)).x : max_p.x;
-        max_p.y = (points.pts.at (indices.at (i)).y > max_p.y) ? points.pts.at (indices.at (i)).y : max_p.y;
-        max_p.z = (points.pts.at (indices.at (i)).z > max_p.z) ? points.pts.at (indices.at (i)).z : max_p.z;
+        max_p.x = (points.points.at (indices.at (i)).x > max_p.x) ? points.points.at (indices.at (i)).x : max_p.x;
+        max_p.y = (points.points.at (indices.at (i)).y > max_p.y) ? points.points.at (indices.at (i)).y : max_p.y;
+        max_p.z = (points.points.at (indices.at (i)).z > max_p.z) ? points.points.at (indices.at (i)).z : max_p.z;
       }
     }
 
@@ -411,17 +411,17 @@ namespace cloud_geometry
       min_pt.x = min_pt.y = min_pt.z = FLT_MAX;
       max_pt.x = max_pt.y = max_pt.z = -FLT_MAX;
 
-      for (unsigned int i = 0; i < points.pts.size (); i++)
+      for (unsigned int i = 0; i < points.points.size (); i++)
       {
-        if (c_idx != -1 && points.chan[c_idx].vals[i] > cut_distance)
+        if (c_idx != -1 && points.channels[c_idx].values[i] > cut_distance)
           continue;
-        min_pt.x = (points.pts[i].x < min_pt.x) ? points.pts[i].x : min_pt.x;
-        min_pt.y = (points.pts[i].y < min_pt.y) ? points.pts[i].y : min_pt.y;
-        min_pt.z = (points.pts[i].z < min_pt.z) ? points.pts[i].z : min_pt.z;
+        min_pt.x = (points.points[i].x < min_pt.x) ? points.points[i].x : min_pt.x;
+        min_pt.y = (points.points[i].y < min_pt.y) ? points.points[i].y : min_pt.y;
+        min_pt.z = (points.points[i].z < min_pt.z) ? points.points[i].z : min_pt.z;
 
-        max_pt.x = (points.pts[i].x > max_pt.x) ? points.pts[i].x : max_pt.x;
-        max_pt.y = (points.pts[i].y > max_pt.y) ? points.pts[i].y : max_pt.y;
-        max_pt.z = (points.pts[i].z > max_pt.z) ? points.pts[i].z : max_pt.z;
+        max_pt.x = (points.points[i].x > max_pt.x) ? points.points[i].x : max_pt.x;
+        max_pt.y = (points.points[i].y > max_pt.y) ? points.points[i].y : max_pt.y;
+        max_pt.z = (points.points[i].z > max_pt.z) ? points.points[i].z : max_pt.z;
       }
     }
 
@@ -441,17 +441,17 @@ namespace cloud_geometry
       min_pt.x = min_pt.y = min_pt.z = FLT_MAX;
       max_pt.x = max_pt.y = max_pt.z = -FLT_MAX;
 
-      for (unsigned int i = 0; i < points->pts.size (); i++)
+      for (unsigned int i = 0; i < points->points.size (); i++)
       {
-        if (c_idx != -1 && points->chan[c_idx].vals[i] > cut_distance)
+        if (c_idx != -1 && points->channels[c_idx].values[i] > cut_distance)
           continue;
-        min_pt.x = (points->pts[i].x < min_pt.x) ? points->pts[i].x : min_pt.x;
-        min_pt.y = (points->pts[i].y < min_pt.y) ? points->pts[i].y : min_pt.y;
-        min_pt.z = (points->pts[i].z < min_pt.z) ? points->pts[i].z : min_pt.z;
+        min_pt.x = (points->points[i].x < min_pt.x) ? points->points[i].x : min_pt.x;
+        min_pt.y = (points->points[i].y < min_pt.y) ? points->points[i].y : min_pt.y;
+        min_pt.z = (points->points[i].z < min_pt.z) ? points->points[i].z : min_pt.z;
 
-        max_pt.x = (points->pts[i].x > max_pt.x) ? points->pts[i].x : max_pt.x;
-        max_pt.y = (points->pts[i].y > max_pt.y) ? points->pts[i].y : max_pt.y;
-        max_pt.z = (points->pts[i].z > max_pt.z) ? points->pts[i].z : max_pt.z;
+        max_pt.x = (points->points[i].x > max_pt.x) ? points->points[i].x : max_pt.x;
+        max_pt.y = (points->points[i].y > max_pt.y) ? points->points[i].y : max_pt.y;
+        max_pt.z = (points->points[i].z > max_pt.z) ? points->points[i].z : max_pt.z;
       }
     }
 
@@ -474,15 +474,15 @@ namespace cloud_geometry
 
       for (unsigned int i = 0; i < indices.size (); i++)
       {
-        if (c_idx != -1 && points.chan[c_idx].vals[indices.at (i)] > cut_distance)
+        if (c_idx != -1 && points.channels[c_idx].values[indices.at (i)] > cut_distance)
           continue;
-        min_pt.x = (points.pts[indices.at (i)].x < min_pt.x) ? points.pts[indices.at (i)].x : min_pt.x;
-        min_pt.y = (points.pts[indices.at (i)].y < min_pt.y) ? points.pts[indices.at (i)].y : min_pt.y;
-        min_pt.z = (points.pts[indices.at (i)].z < min_pt.z) ? points.pts[indices.at (i)].z : min_pt.z;
+        min_pt.x = (points.points[indices.at (i)].x < min_pt.x) ? points.points[indices.at (i)].x : min_pt.x;
+        min_pt.y = (points.points[indices.at (i)].y < min_pt.y) ? points.points[indices.at (i)].y : min_pt.y;
+        min_pt.z = (points.points[indices.at (i)].z < min_pt.z) ? points.points[indices.at (i)].z : min_pt.z;
 
-        max_pt.x = (points.pts[indices.at (i)].x > max_pt.x) ? points.pts[indices.at (i)].x : max_pt.x;
-        max_pt.y = (points.pts[indices.at (i)].y > max_pt.y) ? points.pts[indices.at (i)].y : max_pt.y;
-        max_pt.z = (points.pts[indices.at (i)].z > max_pt.z) ? points.pts[indices.at (i)].z : max_pt.z;
+        max_pt.x = (points.points[indices.at (i)].x > max_pt.x) ? points.points[indices.at (i)].x : max_pt.x;
+        max_pt.y = (points.points[indices.at (i)].y > max_pt.y) ? points.points[indices.at (i)].y : max_pt.y;
+        max_pt.z = (points.points[indices.at (i)].z > max_pt.z) ? points.points[indices.at (i)].z : max_pt.z;
       }
     }
 
@@ -505,15 +505,15 @@ namespace cloud_geometry
 
       for (unsigned int i = 0; i < indices.size (); i++)
       {
-        if (c_idx != -1 && points->chan[c_idx].vals[indices.at (i)] > cut_distance)
+        if (c_idx != -1 && points->channels[c_idx].values[indices.at (i)] > cut_distance)
           continue;
-        min_pt.x = (points->pts[indices.at (i)].x < min_pt.x) ? points->pts[indices.at (i)].x : min_pt.x;
-        min_pt.y = (points->pts[indices.at (i)].y < min_pt.y) ? points->pts[indices.at (i)].y : min_pt.y;
-        min_pt.z = (points->pts[indices.at (i)].z < min_pt.z) ? points->pts[indices.at (i)].z : min_pt.z;
+        min_pt.x = (points->points[indices.at (i)].x < min_pt.x) ? points->points[indices.at (i)].x : min_pt.x;
+        min_pt.y = (points->points[indices.at (i)].y < min_pt.y) ? points->points[indices.at (i)].y : min_pt.y;
+        min_pt.z = (points->points[indices.at (i)].z < min_pt.z) ? points->points[indices.at (i)].z : min_pt.z;
 
-        max_pt.x = (points->pts[indices.at (i)].x > max_pt.x) ? points->pts[indices.at (i)].x : max_pt.x;
-        max_pt.y = (points->pts[indices.at (i)].y > max_pt.y) ? points->pts[indices.at (i)].y : max_pt.y;
-        max_pt.z = (points->pts[indices.at (i)].z > max_pt.z) ? points->pts[indices.at (i)].z : max_pt.z;
+        max_pt.x = (points->points[indices.at (i)].x > max_pt.x) ? points->points[indices.at (i)].x : max_pt.x;
+        max_pt.y = (points->points[indices.at (i)].y > max_pt.y) ? points->points[indices.at (i)].y : max_pt.y;
+        max_pt.z = (points->points[indices.at (i)].z > max_pt.z) ? points->points[indices.at (i)].z : max_pt.z;
       }
     }
 

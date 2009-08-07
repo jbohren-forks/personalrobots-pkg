@@ -46,8 +46,8 @@ namespace cloud_geometry
   int
     getChannelIndex (const sensor_msgs::PointCloud &points, std::string channel_name)
   {
-    for (unsigned int d = 0; d < points.chan.size (); d++)
-      if (points.chan[d].name == channel_name)
+    for (unsigned int d = 0; d < points.channels.size (); d++)
+      if (points.channels[d].name == channel_name)
         return (d);
     return (-1);
   }
@@ -60,8 +60,8 @@ namespace cloud_geometry
   int
     getChannelIndex (sensor_msgs::PointCloudConstPtr points, std::string channel_name)
   {
-    for (unsigned int d = 0; d < points->chan.size (); d++)
-      if (points->chan[d].name == channel_name)
+    for (unsigned int d = 0; d < points->channels.size (); d++)
+      if (points->channels[d].name == channel_name)
         return (d);
     return (-1);
   }
@@ -74,15 +74,15 @@ namespace cloud_geometry
     getAvailableChannels (const sensor_msgs::PointCloud &cloud)
   {
     std::string result;
-    if (cloud.chan.size () == 0)
+    if (cloud.channels.size () == 0)
       return (result);
     unsigned int i;
-    for (i = 0; i < cloud.chan.size () - 1; i++)
+    for (i = 0; i < cloud.channels.size () - 1; i++)
     {
-      std::string index = cloud.chan[i].name + " ";
+      std::string index = cloud.channels[i].name + " ";
       result += index;
     }
-    std::string index = cloud.chan[i].name;
+    std::string index = cloud.channels[i].name;
     result += index;
     return (result);
   }
@@ -95,15 +95,15 @@ namespace cloud_geometry
     getAvailableChannels (const sensor_msgs::PointCloudConstPtr& cloud)
   {
     std::string result;
-    if (cloud->chan.size () == 0)
+    if (cloud->channels.size () == 0)
       return (result);
     unsigned int i;
-    for (i = 0; i < cloud->chan.size () - 1; i++)
+    for (i = 0; i < cloud->channels.size () - 1; i++)
     {
-      std::string index = cloud->chan[i].name + " ";
+      std::string index = cloud->channels[i].name + " ";
       result += index;
     }
-    std::string index = cloud->chan[i].name;
+    std::string index = cloud->channels[i].name;
     result += index;
     return (result);
   }
@@ -123,12 +123,12 @@ namespace cloud_geometry
                                         const geometry_msgs::Point32 &axis, std::vector<int> &indices)
   {
     // Check all points
-    for (unsigned int i = 0; i < points.pts.size (); i++)
+    for (unsigned int i = 0; i < points.points.size (); i++)
     {
       geometry_msgs::Point32 p;
-      p.x = points.chan[nx].vals[i];
-      p.y = points.chan[ny].vals[i];
-      p.z = points.chan[nz].vals[i];
+      p.x = points.channels[nx].values[i];
+      p.y = points.channels[ny].values[i];
+      p.z = points.channels[nz].values[i];
       // Compute the angle between their normal and the given axis
       double angle = acos (dot (p, axis));
       if ( (angle < eps_angle) || ( (M_PI - angle) < eps_angle ) )
@@ -151,12 +151,12 @@ namespace cloud_geometry
                                              const geometry_msgs::Point32 &axis, std::vector<int> &indices)
   {
     // Check all points
-    for (unsigned int i = 0; i < points.pts.size (); i++)
+    for (unsigned int i = 0; i < points.points.size (); i++)
     {
       geometry_msgs::Point32 p;
-      p.x = points.chan[nx].vals[i];
-      p.y = points.chan[ny].vals[i];
-      p.z = points.chan[nz].vals[i];
+      p.x = points.channels[nx].values[i];
+      p.y = points.channels[ny].values[i];
+      p.z = points.channels[nz].values[i];
       // Compute the angle between their normal and the given axis
       double angle = acos (dot (p, axis));
       if (fabs (M_PI / 2.0 - angle) < eps_angle)
@@ -181,7 +181,7 @@ namespace cloud_geometry
       cut_distance = DBL_MAX;
     // Copy the header (and thus the frame_id) + allocate enough space for points
     points_down.header = points.header;
-    points_down.pts.resize (points.pts.size ());
+    points_down.points.resize (points.points.size ());
 
     geometry_msgs::Point32 min_p, max_p, min_b, max_b, div_b;
     cloud_geometry::statistics::getMinMax (points, indices, min_p, max_p, d_idx, cut_distance);
@@ -229,17 +229,17 @@ namespace cloud_geometry
     // First pass: go over all points and insert them into the right leaf
     for (unsigned int cp = 0; cp < indices.size (); cp++)
     {
-      if (d_idx != -1 && points.chan[d_idx].vals[indices.at (cp)] > cut_distance)        // Use a threshold for cutting out points which are too far away
+      if (d_idx != -1 && points.channels[d_idx].values[indices.at (cp)] > cut_distance)        // Use a threshold for cutting out points which are too far away
         continue;
 
-      int i = (int)(floor (points.pts[indices.at (cp)].x / leaf_size.x));
-      int j = (int)(floor (points.pts[indices.at (cp)].y / leaf_size.y));
-      int k = (int)(floor (points.pts[indices.at (cp)].z / leaf_size.z));
+      int i = (int)(floor (points.points[indices.at (cp)].x / leaf_size.x));
+      int j = (int)(floor (points.points[indices.at (cp)].y / leaf_size.y));
+      int k = (int)(floor (points.points[indices.at (cp)].z / leaf_size.z));
 
       int idx = ( (k - min_b.z) * div_b.y * div_b.x ) + ( (j - min_b.y) * div_b.x ) + (i - min_b.x);
-      leaves[idx].centroid_x += points.pts[indices.at (cp)].x;
-      leaves[idx].centroid_y += points.pts[indices.at (cp)].y;
-      leaves[idx].centroid_z += points.pts[indices.at (cp)].z;
+      leaves[idx].centroid_x += points.points[indices.at (cp)].x;
+      leaves[idx].centroid_y += points.points[indices.at (cp)].y;
+      leaves[idx].centroid_z += points.points[indices.at (cp)].z;
       leaves[idx].nr_points++;
     }
 
@@ -249,13 +249,13 @@ namespace cloud_geometry
     {
       if (leaves[cl].nr_points > 0)
       {
-        points_down.pts[nr_p].x = leaves[cl].centroid_x / leaves[cl].nr_points;
-        points_down.pts[nr_p].y = leaves[cl].centroid_y / leaves[cl].nr_points;
-        points_down.pts[nr_p].z = leaves[cl].centroid_z / leaves[cl].nr_points;
+        points_down.points[nr_p].x = leaves[cl].centroid_x / leaves[cl].nr_points;
+        points_down.points[nr_p].y = leaves[cl].centroid_y / leaves[cl].nr_points;
+        points_down.points[nr_p].z = leaves[cl].centroid_z / leaves[cl].nr_points;
         nr_p++;
       }
     }
-    points_down.pts.resize (nr_p);
+    points_down.points.resize (nr_p);
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -276,7 +276,7 @@ namespace cloud_geometry
       cut_distance = DBL_MAX;
     // Copy the header (and thus the frame_id) + allocate enough space for points
     points_down.header = points.header;
-    points_down.pts.resize (points.pts.size ());
+    points_down.points.resize (points.points.size ());
 
     geometry_msgs::Point32 min_p, max_p, min_b, max_b, div_b;
     cloud_geometry::statistics::getMinMax (points, min_p, max_p, d_idx, cut_distance);
@@ -319,19 +319,19 @@ namespace cloud_geometry
     }
 
     // First pass: go over all points and insert them into the right leaf
-    for (unsigned int cp = 0; cp < points.pts.size (); cp++)
+    for (unsigned int cp = 0; cp < points.points.size (); cp++)
     {
-      if (d_idx != -1 && points.chan[d_idx].vals[cp] > cut_distance)        // Use a threshold for cutting out points which are too far away
+      if (d_idx != -1 && points.channels[d_idx].values[cp] > cut_distance)        // Use a threshold for cutting out points which are too far away
         continue;
 
-      int i = (int)(floor (points.pts[cp].x / leaf_size.x));
-      int j = (int)(floor (points.pts[cp].y / leaf_size.y));
-      int k = (int)(floor (points.pts[cp].z / leaf_size.z));
+      int i = (int)(floor (points.points[cp].x / leaf_size.x));
+      int j = (int)(floor (points.points[cp].y / leaf_size.y));
+      int k = (int)(floor (points.points[cp].z / leaf_size.z));
 
       int idx = ( (k - min_b.z) * div_b.y * div_b.x ) + ( (j - min_b.y) * div_b.x ) + (i - min_b.x);
-      leaves[idx].centroid_x += points.pts[cp].x;
-      leaves[idx].centroid_y += points.pts[cp].y;
-      leaves[idx].centroid_z += points.pts[cp].z;
+      leaves[idx].centroid_x += points.points[cp].x;
+      leaves[idx].centroid_y += points.points[cp].y;
+      leaves[idx].centroid_z += points.points[cp].z;
       leaves[idx].nr_points++;
     }
 
@@ -341,13 +341,13 @@ namespace cloud_geometry
     {
       if (leaves[cl].nr_points > 0)
       {
-        points_down.pts[nr_p].x = leaves[cl].centroid_x / leaves[cl].nr_points;
-        points_down.pts[nr_p].y = leaves[cl].centroid_y / leaves[cl].nr_points;
-        points_down.pts[nr_p].z = leaves[cl].centroid_z / leaves[cl].nr_points;
+        points_down.points[nr_p].x = leaves[cl].centroid_x / leaves[cl].nr_points;
+        points_down.points[nr_p].y = leaves[cl].centroid_y / leaves[cl].nr_points;
+        points_down.points[nr_p].z = leaves[cl].centroid_z / leaves[cl].nr_points;
         nr_p++;
       }
     }
-    points_down.pts.resize (nr_p);
+    points_down.points.resize (nr_p);
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -368,7 +368,7 @@ namespace cloud_geometry
       cut_distance = DBL_MAX;
     // Copy the header (and thus the frame_id) + allocate enough space for points
     points_down.header = points->header;
-    points_down.pts.resize (points->pts.size ());
+    points_down.points.resize (points->points.size ());
 
     geometry_msgs::Point32 min_p, max_p, min_b, max_b, div_b;
     cloud_geometry::statistics::getMinMax (points, min_p, max_p, d_idx, cut_distance);
@@ -411,19 +411,19 @@ namespace cloud_geometry
     }
 
     // First pass: go over all points and insert them into the right leaf
-    for (unsigned int cp = 0; cp < points->pts.size (); cp++)
+    for (unsigned int cp = 0; cp < points->points.size (); cp++)
     {
-      if (d_idx != -1 && points->chan[d_idx].vals[cp] > cut_distance)        // Use a threshold for cutting out points which are too far away
+      if (d_idx != -1 && points->channels[d_idx].values[cp] > cut_distance)        // Use a threshold for cutting out points which are too far away
         continue;
 
-      int i = (int)(floor (points->pts[cp].x / leaf_size.x));
-      int j = (int)(floor (points->pts[cp].y / leaf_size.y));
-      int k = (int)(floor (points->pts[cp].z / leaf_size.z));
+      int i = (int)(floor (points->points[cp].x / leaf_size.x));
+      int j = (int)(floor (points->points[cp].y / leaf_size.y));
+      int k = (int)(floor (points->points[cp].z / leaf_size.z));
 
       int idx = ( (k - min_b.z) * div_b.y * div_b.x ) + ( (j - min_b.y) * div_b.x ) + (i - min_b.x);
-      leaves[idx].centroid_x += points->pts[cp].x;
-      leaves[idx].centroid_y += points->pts[cp].y;
-      leaves[idx].centroid_z += points->pts[cp].z;
+      leaves[idx].centroid_x += points->points[cp].x;
+      leaves[idx].centroid_y += points->points[cp].y;
+      leaves[idx].centroid_z += points->points[cp].z;
       leaves[idx].nr_points++;
     }
 
@@ -433,13 +433,13 @@ namespace cloud_geometry
     {
       if (leaves[cl].nr_points > 0)
       {
-        points_down.pts[nr_p].x = leaves[cl].centroid_x / leaves[cl].nr_points;
-        points_down.pts[nr_p].y = leaves[cl].centroid_y / leaves[cl].nr_points;
-        points_down.pts[nr_p].z = leaves[cl].centroid_z / leaves[cl].nr_points;
+        points_down.points[nr_p].x = leaves[cl].centroid_x / leaves[cl].nr_points;
+        points_down.points[nr_p].y = leaves[cl].centroid_y / leaves[cl].nr_points;
+        points_down.points[nr_p].z = leaves[cl].centroid_z / leaves[cl].nr_points;
         nr_p++;
       }
     }
-    points_down.pts.resize (nr_p);
+    points_down.points.resize (nr_p);
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -466,23 +466,23 @@ namespace cloud_geometry
     getPointCloud (const sensor_msgs::PointCloud &input, const std::vector<int> &indices, sensor_msgs::PointCloud &output)
   {
     output.header = input.header;
-    output.pts.resize (indices.size ());
-    output.chan.resize (input.chan.size ());
+    output.points.resize (indices.size ());
+    output.channels.resize (input.channels.size ());
 
-    for (unsigned int d = 0; d < output.chan.size (); d++)
+    for (unsigned int d = 0; d < output.channels.size (); d++)
     {
-      output.chan[d].name = input.chan[d].name;
-      output.chan[d].vals.resize (indices.size ());
+      output.channels[d].name = input.channels[d].name;
+      output.channels[d].values.resize (indices.size ());
     }
 
     // Copy the data
     for (unsigned int i = 0; i < indices.size (); i++)
     {
-      output.pts[i].x = input.pts[indices.at (i)].x;
-      output.pts[i].y = input.pts[indices.at (i)].y;
-      output.pts[i].z = input.pts[indices.at (i)].z;
-      for (unsigned int d = 0; d < output.chan.size (); d++)
-        output.chan[d].vals[i] = input.chan[d].vals[indices.at (i)];
+      output.points[i].x = input.points[indices.at (i)].x;
+      output.points[i].y = input.points[indices.at (i)].y;
+      output.points[i].z = input.points[indices.at (i)].z;
+      for (unsigned int d = 0; d < output.channels.size (); d++)
+        output.channels[d].values[i] = input.channels[d].values[indices.at (i)];
     }
   }
 
@@ -497,7 +497,7 @@ namespace cloud_geometry
   {
     std::vector<int> indices_outside;
     // Create the entire index list
-    std::vector<int> all_indices (input.pts.size ());
+    std::vector<int> all_indices (input.points.size ());
     for (unsigned int i = 0; i < all_indices.size (); i++)
       all_indices[i] = i;
 
@@ -510,24 +510,24 @@ namespace cloud_geometry
       return;
 
     output.header = input.header;
-    output.chan.resize (input.chan.size ());
+    output.channels.resize (input.channels.size ());
 
-    output.pts.resize (indices_outside.size ());
+    output.points.resize (indices_outside.size ());
 
-    for (unsigned int d = 0; d < output.chan.size (); d++)
+    for (unsigned int d = 0; d < output.channels.size (); d++)
     {
-      output.chan[d].name = input.chan[d].name;
-      output.chan[d].vals.resize (indices_outside.size ());
+      output.channels[d].name = input.channels[d].name;
+      output.channels[d].values.resize (indices_outside.size ());
     }
 
     // Copy the data
     for (unsigned int i = 0; i < indices_outside.size (); i++)
     {
-      output.pts[i].x = input.pts[indices_outside.at (i)].x;
-      output.pts[i].y = input.pts[indices_outside.at (i)].y;
-      output.pts[i].z = input.pts[indices_outside.at (i)].z;
-      for (unsigned int d = 0; d < output.chan.size (); d++)
-        output.chan[d].vals[i] = input.chan[d].vals[indices_outside.at (i)];
+      output.points[i].x = input.points[indices_outside.at (i)].x;
+      output.points[i].y = input.points[indices_outside.at (i)].y;
+      output.points[i].z = input.points[indices_outside.at (i)].z;
+      for (unsigned int d = 0; d < output.channels.size (); d++)
+        output.channels[d].values[i] = input.channels[d].values[indices_outside.at (i)];
     }
   }
 }

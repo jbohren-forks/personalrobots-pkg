@@ -346,12 +346,12 @@ private:
     /** Construct an axis-aligned collision map from a point cloud assumed to be in the robot frame */
     void constructCollisionMap(const sensor_msgs::PointCloud &cloud, CMap &map)
     {
-	const unsigned int n = cloud.pts.size();
+	const unsigned int n = cloud.points.size();
 	CollisionPoint c;
 	
 	for (unsigned int i = 0 ; i < n ; ++i)
 	{
-	    const geometry_msgs::Point32 &p = cloud.pts[i];
+	    const geometry_msgs::Point32 &p = cloud.points[i];
 	    if (p.x > bi_.real_minX && p.x < bi_.real_maxX && p.y > bi_.real_minY && p.y < bi_.real_maxY && p.z > bi_.real_minZ && p.z < bi_.real_maxZ)
 	    {
 		c.x = (int)(0.5 + (p.x - bi_.originX) / bi_.resolution);

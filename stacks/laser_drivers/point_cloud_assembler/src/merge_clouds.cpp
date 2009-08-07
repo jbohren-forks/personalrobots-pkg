@@ -107,25 +107,25 @@ private:
 	else
 	    out.header = cloud2_.header;
 	
-	out.pts.resize(cloud1_.pts.size() + cloud2_.pts.size());
+	out.points.resize(cloud1_.points.size() + cloud2_.points.size());
 	
 	// copy points
-	std::copy(cloud1_.pts.begin(), cloud1_.pts.end(), out.pts.begin());
-	std::copy(cloud2_.pts.begin(), cloud2_.pts.end(), out.pts.begin() + cloud1_.pts.size());
+	std::copy(cloud1_.points.begin(), cloud1_.points.end(), out.points.begin());
+	std::copy(cloud2_.points.begin(), cloud2_.points.end(), out.points.begin() + cloud1_.points.size());
 	
 	// copy common channels
-	for (unsigned int i = 0 ; i < cloud1_.chan.size() ; ++i)
-	    for (unsigned int j = 0 ; j < cloud2_.chan.size() ; ++j)
-		if (cloud1_.chan[i].name == cloud2_.chan[j].name)
+	for (unsigned int i = 0 ; i < cloud1_.channels.size() ; ++i)
+	    for (unsigned int j = 0 ; j < cloud2_.channels.size() ; ++j)
+		if (cloud1_.channels[i].name == cloud2_.channels[j].name)
 		{
-		    ROS_ASSERT(cloud1_.chan[i].vals.size() == cloud1_.pts.size());
-		    ROS_ASSERT(cloud2_.chan[j].vals.size() == cloud2_.pts.size());
-		    unsigned int oc = out.chan.size();
-		    out.chan.resize(oc + 1);
-		    out.chan[oc].name = cloud1_.chan[i].name;
-		    out.chan[oc].vals.resize(cloud1_.chan[i].vals.size() + cloud2_.chan[j].vals.size());
-		    std::copy(cloud1_.chan[i].vals.begin(), cloud1_.chan[i].vals.end(), out.chan[oc].vals.begin());
-		    std::copy(cloud2_.chan[j].vals.begin(), cloud2_.chan[j].vals.end(), out.chan[oc].vals.begin() + cloud1_.chan[i].vals.size());
+		    ROS_ASSERT(cloud1_.channels[i].values.size() == cloud1_.points.size());
+		    ROS_ASSERT(cloud2_.channels[j].values.size() == cloud2_.points.size());
+		    unsigned int oc = out.channels.size();
+		    out.channels.resize(oc + 1);
+		    out.channels[oc].name = cloud1_.channels[i].name;
+		    out.channels[oc].values.resize(cloud1_.channels[i].values.size() + cloud2_.channels[j].values.size());
+		    std::copy(cloud1_.channels[i].values.begin(), cloud1_.channels[i].values.end(), out.channels[oc].values.begin());
+		    std::copy(cloud2_.channels[j].values.begin(), cloud2_.channels[j].values.end(), out.channels[oc].values.begin() + cloud1_.channels[i].values.size());
 		    break;
 		}
 	

@@ -75,7 +75,7 @@ private:
 
     void cloudCallback(const sensor_msgs::PointCloudConstPtr &cloud)
     {
-	ROS_INFO("Received %f second old pointcloud with %d points", (ros::Time::now() - cloud->header.stamp).toSec(), cloud->pts.size());
+	ROS_INFO("Received %f second old pointcloud with %d points", (ros::Time::now() - cloud->header.stamp).toSec(), cloud->points.size());
 	
 	sensor_msgs::PointCloud transformed;
 	tf_.transformPointCloud("torso_lift_link", *cloud, transformed);
@@ -94,38 +94,38 @@ private:
 	pointCloudPublisherMax_.publish(outMax);
 	pointCloudPublisherMin_.publish(outMin);
 	
-	if (outMax.pts.size() > 0.1 * close.pts.size())
-	    ROS_ERROR("%f%% of points are seen closer to the sensor (as compared to where they should be)", 100.0 * (double)outMax.pts.size() / (double)close.pts.size());
+	if (outMax.points.size() > 0.1 * close.points.size())
+	    ROS_ERROR("%f%% of points are seen closer to the sensor (as compared to where they should be)", 100.0 * (double)outMax.points.size() / (double)close.points.size());
 	
-	if (outMin.pts.size() < 0.9 * close.pts.size())
-	    ROS_ERROR("%f%% of points are seen further to the sensor (as compared to where they should be)", 100.0 - 100.0 * (double)outMin.pts.size() / (double)close.pts.size());
+	if (outMin.points.size() < 0.9 * close.points.size())
+	    ROS_ERROR("%f%% of points are seen further to the sensor (as compared to where they should be)", 100.0 - 100.0 * (double)outMin.points.size() / (double)close.points.size());
     }
     
     void fillResult(const sensor_msgs::PointCloud& data_in, const std::vector<int> &keep, sensor_msgs::PointCloud& data_out)
     {
-	const unsigned int np = data_in.pts.size();
+	const unsigned int np = data_in.points.size();
 	
 	// fill in output data with points that are NOT on the robot
 	data_out.header = data_in.header;	  
 	
-	data_out.pts.resize(0);
-	data_out.pts.reserve(np);
+	data_out.points.resize(0);
+	data_out.points.reserve(np);
 	
-	data_out.chan.resize(data_in.chan.size());
-	for (unsigned int i = 0 ; i < data_out.chan.size() ; ++i)
+	data_out.channels.resize(data_in.channels.size());
+	for (unsigned int i = 0 ; i < data_out.channels.size() ; ++i)
 	{
-	    ROS_ASSERT(data_in.chan[i].vals.size() == data_in.pts.size());
-	    data_out.chan[i].name = data_in.chan[i].name;
-	    data_out.chan[i].vals.reserve(data_in.chan[i].vals.size());
+	    ROS_ASSERT(data_in.channels[i].values.size() == data_in.points.size());
+	    data_out.channels[i].name = data_in.channels[i].name;
+	    data_out.channels[i].values.reserve(data_in.channels[i].values.size());
 	}
 	
 	for (unsigned int i = 0 ; i < np ; ++i)
 	{
 	    if (keep[i] == robot_self_filter::OUTSIDE)
 	    {
-		data_out.pts.push_back(data_in.pts[i]);
-		for (unsigned int j = 0 ; j < data_out.chan.size() ; ++j)
-		    data_out.chan[j].vals.push_back(data_in.chan[j].vals[i]);
+		data_out.points.push_back(data_in.points[i]);
+		for (unsigned int j = 0 ; j < data_out.channels.size() ; ++j)
+		    data_out.channels[j].values.push_back(data_in.channels[j].values[i]);
 	    }
 	}
     }
@@ -133,29 +133,29 @@ private:
     // keep points in a bounding box around robot
     void keepClose(const sensor_msgs::PointCloud& data_in, sensor_msgs::PointCloud& data_out)
     {	
-	const unsigned int np = data_in.pts.size();
+	const unsigned int np = data_in.points.size();
 	
 	// fill in output data with points that are NOT on the robot
 	data_out.header = data_in.header;	  
 	
-	data_out.pts.resize(0);
-	data_out.pts.reserve(np);
+	data_out.points.resize(0);
+	data_out.points.reserve(np);
 	
-	data_out.chan.resize(data_in.chan.size());
-	for (unsigned int i = 0 ; i < data_out.chan.size() ; ++i)
+	data_out.channels.resize(data_in.channels.size());
+	for (unsigned int i = 0 ; i < data_out.channels.size() ; ++i)
 	{
-	    ROS_ASSERT(data_in.chan[i].vals.size() == data_in.pts.size());
-	    data_out.chan[i].name = data_in.chan[i].name;
-	    data_out.chan[i].vals.reserve(data_in.chan[i].vals.size());
+	    ROS_ASSERT(data_in.channels[i].values.size() == data_in.points.size());
+	    data_out.channels[i].name = data_in.channels[i].name;
+	    data_out.channels[i].values.reserve(data_in.channels[i].values.size());
 	}
 	
 	for (unsigned int i = 0 ; i < np ; ++i)
 	{
-	    if (fabs(data_in.pts[i].x) < d_.x && fabs(data_in.pts[i].y) < d_.y && fabs(data_in.pts[i].z) < d_.z)
+	    if (fabs(data_in.points[i].x) < d_.x && fabs(data_in.points[i].y) < d_.y && fabs(data_in.points[i].z) < d_.z)
 	    {
-		data_out.pts.push_back(data_in.pts[i]);
-		for (unsigned int j = 0 ; j < data_out.chan.size() ; ++j)
-		    data_out.chan[j].vals.push_back(data_in.chan[j].vals[i]);
+		data_out.points.push_back(data_in.points[i]);
+		for (unsigned int j = 0 ; j < data_out.channels.size() ; ++j)
+		    data_out.channels[j].values.push_back(data_in.channels[j].values[i]);
 	    }
 	}
     }

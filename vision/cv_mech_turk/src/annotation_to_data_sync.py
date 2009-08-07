@@ -88,7 +88,7 @@ class AnnotationToDataSync:
     if annotation.reference_time.nsecs == stereo_msg.header.stamp.nsecs:
       self.annotation_count=self.annotation_count+1;
       #HACK - efficient dumping
-      fn="/tmp/%d.%d.pts.tgz" %(annotation.reference_time.secs,annotation.reference_time.nsecs)
+      fn="/tmp/%d.%d.points.tgz" %(annotation.reference_time.secs,annotation.reference_time.nsecs)
       if os.path.exists(fn):
         print "Skipping; File exists: ",fn
         return

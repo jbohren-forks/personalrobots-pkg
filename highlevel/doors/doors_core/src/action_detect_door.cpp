@@ -148,7 +148,7 @@ bool DetectDoorAction::laserDetection(const door_msgs::Door& door_in, door_msgs:
   // detect door
   if (isPreemptRequested()) return false;
 
-  ROS_INFO("DetectDoorAction: detect the door in a pointcloud of size %i", res_pointcloud.cloud.pts.size());
+  ROS_INFO("DetectDoorAction: detect the door in a pointcloud of size %i", res_pointcloud.cloud.points.size());
   door_handle_detector::DoorsDetectorCloud::Request  req_doordetect;
   door_handle_detector::DoorsDetectorCloud::Response res_doordetect;
   req_doordetect.door = door_in;

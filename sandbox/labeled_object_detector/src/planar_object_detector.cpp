@@ -77,9 +77,9 @@ void PlanarObjectDetector::setup()
   
   client.call(build_cloud);
   
-  ROS_INFO_STREAM("Got cloud with " <<build_cloud.response.cloud.pts.size() <<" points");
+  ROS_INFO_STREAM("Got cloud with " <<build_cloud.response.cloud.points.size() <<" points");
   
-  unsigned int num_pts=build_cloud.response.cloud.pts.size();
+  unsigned int num_pts=build_cloud.response.cloud.points.size();
   // Filter objects that are a whiteboard
   
   int lbl_idx=cloud_geometry::getChannelIndex(build_cloud.response.cloud,annotation_channel_);
@@ -102,7 +102,7 @@ void PlanarObjectDetector::setup()
   int num_keep=0;
   for(unsigned int iPt=0;iPt<num_pts;iPt++)
   {
-    float v=build_cloud.response.cloud.chan[lbl_idx].vals[iPt];
+    float v=build_cloud.response.cloud.channels[lbl_idx].values[iPt];
     if(fabs(v-target_label_)<0.1)
     {
       num_keep++;
@@ -128,7 +128,7 @@ void PlanarObjectDetector::setup()
 
   cloud_geometry::getPointCloud(build_cloud.response.cloud, keep_indices, filtered_cloud_);
   
-  ROS_INFO_STREAM("Filtered cloud has " <<filtered_cloud_.pts.size() <<" points");
+  ROS_INFO_STREAM("Filtered cloud has " <<filtered_cloud_.points.size() <<" points");
   // Cluster objects using sinlge-link clustering
   
   
@@ -191,9 +191,9 @@ void pointNormal(const sensor_msgs::PointCloud pcd,const unsigned int point_id,
                  const unsigned int nz_idx, 
                  geometry_msgs::Point32 &n)
 {
-  n.x=pcd.chan[nx_idx].vals[point_id];
-  n.y=pcd.chan[ny_idx].vals[point_id];
-  n.z=pcd.chan[nz_idx].vals[point_id];
+  n.x=pcd.channels[nx_idx].values[point_id];
+  n.y=pcd.channels[ny_idx].values[point_id];
+  n.z=pcd.channels[nz_idx].values[point_id];
 }
 
 void PlanarObjectDetector::detectObjects(const PointCloud& point_cloud,ObjectModelDeque& objects)
@@ -212,7 +212,7 @@ void PlanarObjectDetector::detectObjects(const PointCloud& point_cloud,ObjectMod
   int g_ny_idx=cloud_geometry::getChannelIndex(global_cloud,"ny");
   int g_nz_idx=cloud_geometry::getChannelIndex(global_cloud,"nz");
 
-  unsigned int num_pts=point_cloud.pts.size();
+  unsigned int num_pts=point_cloud.points.size();
   for(unsigned int iPt=0;iPt<num_pts;iPt++)
   {
 
@@ -278,8 +278,8 @@ bool PlanarObjectDetector::fitObjectModel2Cloud(const unsigned int model_id,cons
 
 
   vector<int> full_model_indices;
-  full_model_indices.resize(model_cloud_local.pts.size());
-  for(unsigned int i=0;i<model_cloud_local.pts.size();i++)
+  full_model_indices.resize(model_cloud_local.points.size());
+  for(unsigned int i=0;i<model_cloud_local.points.size();i++)
     full_model_indices[i]=i;
 
 
@@ -446,7 +446,7 @@ bool PlanarObjectDetector::fitSACPlane (const PointCloud& points, const vector<i
     }
     
     // Flip the plane normal towards the viewpoint
-    //cloud_geometry::angles::flipNormalTowardsViewpoint (coeff, points.pts.at(inliers[0]), viewpoint);
+    //cloud_geometry::angles::flipNormalTowardsViewpoint (coeff, points.points.at(inliers[0]), viewpoint);
     
     ROS_INFO ("Found a planar model supported by %d inliers: [%g, %g, %g, %g]", (int)inliers.size (), coeff[0], coeff[1], coeff[2], coeff[3]);
   }

@@ -161,8 +161,8 @@ class SemanticPointAnnotator
 
       z_axis_.x = 0; z_axis_.y = 0; z_axis_.z = 1;
 
-      cloud_annotated_.chan.resize (1);
-      cloud_annotated_.chan[0].name = "rgb";
+      cloud_annotated_.channels.resize (1);
+      cloud_annotated_.channels[0].name = "rgb";
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -200,9 +200,9 @@ class SemanticPointAnnotator
         int sq_idx = 0;
         seed_queue.push_back (i);
 
-        double norm_a = sqrt (points.chan[nx_idx].vals[indices.at (i)] * points.chan[nx_idx].vals[indices.at (i)] +
-                              points.chan[ny_idx].vals[indices.at (i)] * points.chan[ny_idx].vals[indices.at (i)] +
-                              points.chan[nz_idx].vals[indices.at (i)] * points.chan[nz_idx].vals[indices.at (i)]);
+        double norm_a = sqrt (points.channels[nx_idx].values[indices.at (i)] * points.channels[nx_idx].values[indices.at (i)] +
+                              points.channels[ny_idx].values[indices.at (i)] * points.channels[ny_idx].values[indices.at (i)] +
+                              points.channels[nz_idx].values[indices.at (i)] * points.channels[nz_idx].values[indices.at (i)]);
 
         processed[i] = true;
 
@@ -214,13 +214,13 @@ class SemanticPointAnnotator
           {
             if (!processed.at (nn_indices[j]))
             {
-              double norm_b = sqrt (points.chan[nx_idx].vals[indices.at (nn_indices[j])] * points.chan[nx_idx].vals[indices.at (nn_indices[j])] +
-                                    points.chan[ny_idx].vals[indices.at (nn_indices[j])] * points.chan[ny_idx].vals[indices.at (nn_indices[j])] +
-                                    points.chan[nz_idx].vals[indices.at (nn_indices[j])] * points.chan[nz_idx].vals[indices.at (nn_indices[j])]);
+              double norm_b = sqrt (points.channels[nx_idx].values[indices.at (nn_indices[j])] * points.channels[nx_idx].values[indices.at (nn_indices[j])] +
+                                    points.channels[ny_idx].values[indices.at (nn_indices[j])] * points.channels[ny_idx].values[indices.at (nn_indices[j])] +
+                                    points.channels[nz_idx].values[indices.at (nn_indices[j])] * points.channels[nz_idx].values[indices.at (nn_indices[j])]);
               // [-1;1]
-              double dot_p = points.chan[nx_idx].vals[indices.at (i)] * points.chan[nx_idx].vals[indices.at (nn_indices[j])] +
-                             points.chan[ny_idx].vals[indices.at (i)] * points.chan[ny_idx].vals[indices.at (nn_indices[j])] +
-                             points.chan[nz_idx].vals[indices.at (i)] * points.chan[nz_idx].vals[indices.at (nn_indices[j])];
+              double dot_p = points.channels[nx_idx].values[indices.at (i)] * points.channels[nx_idx].values[indices.at (nn_indices[j])] +
+                             points.channels[ny_idx].values[indices.at (i)] * points.channels[ny_idx].values[indices.at (nn_indices[j])] +
+                             points.channels[nz_idx].values[indices.at (i)] * points.channels[nz_idx].values[indices.at (nn_indices[j])];
               if ( acos (dot_p / (norm_a * norm_b)) < region_angle_threshold_)
               {
                 processed[nn_indices[j]] = true;
@@ -286,9 +286,9 @@ class SemanticPointAnnotator
       poly.points.resize (seed_queue.size ());
       for (unsigned int i = 0; i < seed_queue.size (); i++)
       {
-        poly.points[i].x = points.pts.at (indices.at (seed_queue[i])).x;
-        poly.points[i].y = points.pts.at (indices.at (seed_queue[i])).y;
-        poly.points[i].z = points.pts.at (indices.at (seed_queue[i])).z;
+        poly.points[i].x = points.points.at (indices.at (seed_queue[i])).x;
+        poly.points[i].y = points.points.at (indices.at (seed_queue[i])).y;
+        poly.points[i].z = points.points.at (indices.at (seed_queue[i])).z;
       }
       // Destroy the tree
       delete tree;
@@ -369,8 +369,8 @@ class SemanticPointAnnotator
       robot_origin.x = robot_origin.y = 0;
       for (unsigned int i = 0; i < indices->size (); i++)
       {
-        robot_origin.x += points->pts.at (indices->at (i)).x;
-        robot_origin.y += points->pts.at (indices->at (i)).y;
+        robot_origin.x += points->points.at (indices->at (i)).x;
+        robot_origin.y += points->points.at (indices->at (i)).y;
       }
       robot_origin.x /= indices->size ();
       robot_origin.y /= indices->size ();
@@ -457,7 +457,7 @@ class SemanticPointAnnotator
 
       tf_.transformPoint ("base_link", base_link_origin, map_origin);
 
-      ROS_INFO ("Received %d data points. Current robot pose is %g, %g, %g", (int)cloud_.pts.size (), map_origin.point.x, map_origin.point.y, map_origin.point.z);
+      ROS_INFO ("Received %d data points. Current robot pose is %g, %g, %g", (int)cloud_.points.size (), map_origin.point.x, map_origin.point.y, map_origin.point.z);
 
       cloud_annotated_.header = cloud_.header;
 
@@ -465,7 +465,7 @@ class SemanticPointAnnotator
       int ny = cloud_geometry::getChannelIndex (cloud_, "ny");
       int nz = cloud_geometry::getChannelIndex (cloud_, "nz");
 
-      if ( (cloud_.chan.size () < 3) || (nx == -1) || (ny == -1) || (nz == -1) )
+      if ( (cloud_.channels.size () < 3) || (nx == -1) || (ny == -1) || (nz == -1) )
       {
         ROS_ERROR ("This PointCloud message does not contain normal information!");
         return;
@@ -509,8 +509,8 @@ class SemanticPointAnnotator
       vector<vector<vector<double> > > all_cluster_coeff (clusters.size ());
 
       // Reserve enough space
-      cloud_annotated_.pts.resize (total_p);
-      cloud_annotated_.chan[0].vals.resize (total_p);
+      cloud_annotated_.points.resize (total_p);
+      cloud_annotated_.channels[0].values.resize (total_p);
 
       int nr_p = 0;
 
@@ -627,10 +627,10 @@ class SemanticPointAnnotator
           }
           for (unsigned int k = 0; k < plane_inliers->size (); k++)
           {
-            cloud_annotated_.pts[nr_p].x = cloud_.pts.at (plane_inliers->at (k)).x;
-            cloud_annotated_.pts[nr_p].y = cloud_.pts.at (plane_inliers->at (k)).y;
-            cloud_annotated_.pts[nr_p].z = cloud_.pts.at (plane_inliers->at (k)).z;
-            cloud_annotated_.chan[0].vals[nr_p] = rgb;
+            cloud_annotated_.points[nr_p].x = cloud_.points.at (plane_inliers->at (k)).x;
+            cloud_annotated_.points[nr_p].y = cloud_.points.at (plane_inliers->at (k)).y;
+            cloud_annotated_.points[nr_p].z = cloud_.points.at (plane_inliers->at (k)).z;
+            cloud_annotated_.channels[0].values[nr_p] = rgb;
             nr_p++;
           }
         }
@@ -639,10 +639,10 @@ class SemanticPointAnnotator
         b = rand () / (RAND_MAX + 1.0);
         for (unsigned int j = 0; j < clusters[cc].indices.size (); j++)
         {
-          cloud_annotated_.pts[nr_p].x = cloud_.pts.at (clusters[cc].indices.at (j)).x;
-          cloud_annotated_.pts[nr_p].y = cloud_.pts.at (clusters[cc].indices.at (j)).y;
-          cloud_annotated_.pts[nr_p].z = cloud_.pts.at (clusters[cc].indices.at (j)).z;
-          cloud_annotated_.chan[0].vals[nr_p] = rgb;
+          cloud_annotated_.points[nr_p].x = cloud_.points.at (clusters[cc].indices.at (j)).x;
+          cloud_annotated_.points[nr_p].y = cloud_.points.at (clusters[cc].indices.at (j)).y;
+          cloud_annotated_.points[nr_p].z = cloud_.points.at (clusters[cc].indices.at (j)).z;
+          cloud_annotated_.channels[0].values[nr_p] = rgb;
           nr_p++;
         }*/
       }
@@ -651,8 +651,8 @@ class SemanticPointAnnotator
       time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
       ROS_INFO ("Cloud annotated in: %g seconds.", time_spent);
       gettimeofday (&t1, NULL);
-      cloud_annotated_.pts.resize (nr_p);
-      cloud_annotated_.chan[0].vals.resize (nr_p);
+      cloud_annotated_.points.resize (nr_p);
+      cloud_annotated_.channels[0].values.resize (nr_p);
 
       node_.publish ("cloud_annotated", cloud_annotated_);
 
@@ -673,11 +673,11 @@ class SemanticPointAnnotator
         b = rand () / (RAND_MAX + 1.0);
         for (unsigned int j = 0; j < clusters[cc].size (); j++)
         {
-          cloud_annotated_.pts[nr_p].x = cloud_.pts[xy_axis_indices[clusters[cc].at (j)]].x;
-          cloud_annotated_.pts[nr_p].y = cloud_.pts[xy_axis_indices[clusters[cc].at (j)]].y;
-          cloud_annotated_.pts[nr_p].z = cloud_.pts[xy_axis_indices[clusters[cc].at (j)]].z;
-          //cloud_annotated_.chan[0].vals[i] = intensity_value;
-          cloud_annotated_.chan[0].vals[nr_p] = rgb;
+          cloud_annotated_.points[nr_p].x = cloud_.points[xy_axis_indices[clusters[cc].at (j)]].x;
+          cloud_annotated_.points[nr_p].y = cloud_.points[xy_axis_indices[clusters[cc].at (j)]].y;
+          cloud_annotated_.points[nr_p].z = cloud_.points[xy_axis_indices[clusters[cc].at (j)]].z;
+          //cloud_annotated_.channels[0].values[i] = intensity_value;
+          cloud_annotated_.channels[0].values[nr_p] = rgb;
           nr_p++;
         }
       }*/

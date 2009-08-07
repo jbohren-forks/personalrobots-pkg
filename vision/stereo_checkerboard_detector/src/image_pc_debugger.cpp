@@ -72,12 +72,12 @@ public:
     const double* P = &info_msg_.P[0] ;
 
     vector<CvPoint> cv_pts ;
-    cv_pts.resize(pc_msg_.pts.size()) ;
+    cv_pts.resize(pc_msg_.points.size()) ;
 
     // Project 3D points onto camera plane (assume that frame_ids match)
-    for (unsigned int i=0; i<pc_msg_.pts.size(); i++)
+    for (unsigned int i=0; i<pc_msg_.points.size(); i++)
     {
-      const geometry_msgs::Point32& pt = pc_msg_.pts[i] ;
+      const geometry_msgs::Point32& pt = pc_msg_.points[i] ;
       double u = P[0]*pt.x + P[1]*pt.y + P[2]*pt.z + P[3] ;
       double v = P[4]*pt.x + P[5]*pt.y + P[6]*pt.z + P[7] ;
       double w = P[8]*pt.x + P[9]*pt.y + P[10]*pt.z + P[11] ;

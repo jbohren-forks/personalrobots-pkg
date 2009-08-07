@@ -251,7 +251,7 @@ class ModelFitNode():
         marker.color.r = self.colors[self.cnt%len(self.colors)][0]
         marker.color.g = self.colors[self.cnt%len(self.colors)][1]
         marker.color.b = self.colors[self.cnt%len(self.colors)][2]
-        for p in cloud.pts:
+        for p in cloud.points:
             marker.points.append(Point(p.x,p.y,p.z))
         self.maker_pub.publish(marker)
         
@@ -261,9 +261,9 @@ class ModelFitNode():
     def model_fit(self,req):
         print "Service called"
         
-        point_cloud = numpy.empty((len(req.cloud.pts),3), dtype=numpy.float32)
+        point_cloud = numpy.empty((len(req.cloud.points),3), dtype=numpy.float32)
         i = 0
-        for p in req.cloud.pts:
+        for p in req.cloud.points:
             point_cloud[i] = (p.x,p.y,p.z)
             i+=1 
 

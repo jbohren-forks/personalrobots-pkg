@@ -227,21 +227,21 @@ class DoorStereo : public ros::Node
 
     void fitDoorEdges(sensor_msgs::PointCloud& cloud)
     {
-      ROS_INFO("Received a point cloud with %d points in frame: %s",(int) cloud.pts.size(),cloud.header.frame_id.c_str());
-      if(cloud.pts.empty())
+      ROS_INFO("Received a point cloud with %d points in frame: %s",(int) cloud.points.size(),cloud.header.frame_id.c_str());
+      if(cloud.points.empty())
       {
         ROS_WARN("Received an empty point cloud");
         return;
       }
-      if ((int)cloud.pts.size() < sac_min_points_per_model_)
+      if ((int)cloud.points.size() < sac_min_points_per_model_)
         return;
 
 
       vector<int> indices;
       vector<int> possible_door_edge_points;
-      indices.resize(cloud.pts.size());
+      indices.resize(cloud.points.size());
 
-      for(unsigned int i=0; i < cloud.pts.size(); i++)      //Use all the indices
+      for(unsigned int i=0; i < cloud.points.size(); i++)      //Use all the indices
       {
         indices[i] = i;
       }
@@ -448,20 +448,20 @@ class DoorStereo : public ros::Node
 
     	out.header.frame_id = in_cloud.header.frame_id;
     	out.header.stamp = in_cloud.header.stamp;
-    	out.chan.resize(in_cloud.chan.size());
-    	for (size_t c = 0; c < in_cloud.get_chan_size();++c) {
-    		out.chan[c].name = in_cloud.chan[c].name;
+    	out.channels.resize(in_cloud.channels.size());
+    	for (size_t c = 0; c < in_cloud.get_channels_size();++c) {
+    		out.channels[c].name = in_cloud.channels[c].name;
     	}
 
 
 		int xchan = -1;
 		int ychan = -1;
 
-		for (size_t i=0;i<in_cloud.chan.size();++i) {
-			if (in_cloud.chan[i].name == "x") {
+		for (size_t i=0;i<in_cloud.channels.size();++i) {
+			if (in_cloud.channels[i].name == "x") {
 				xchan = i;
 			}
-			if (in_cloud.chan[i].name == "y") {
+			if (in_cloud.channels[i].name == "y") {
 				ychan = i;
 			}
 		}
@@ -478,18 +478,18 @@ class DoorStereo : public ros::Node
 			}
 
 
-			for (size_t i=0; i<in_cloud.get_pts_size(); ++i) {
-				float x = in_cloud.chan[xchan].vals[i];
-				float y = in_cloud.chan[xchan].vals[i];
+			for (size_t i=0; i<in_cloud.get_points_size(); ++i) {
+				float x = in_cloud.channels[xchan].values[i];
+				float y = in_cloud.channels[xchan].values[i];
 
 				for (int j=0;j<n_lines;++j) {
 					// compute distance to edge
 					double d = fabs((lines[j].first.y-y)*vdx[j]-(lines[j].first.x-x)*vdy[j])/vd[j];
 
 					if (d<line_min_dist_) {
-						out.pts.push_back(in_cloud.pts[i]);
-						for (size_t c = 0; c < in_cloud.get_chan_size();++c) {
-							out.chan[c].vals.push_back(in_cloud.chan[c].vals[i]);
+						out.points.push_back(in_cloud.points[i]);
+						for (size_t c = 0; c < in_cloud.get_channels_size();++c) {
+							out.channels[c].values.push_back(in_cloud.channels[c].values[i]);
 						}
 					}
 				}

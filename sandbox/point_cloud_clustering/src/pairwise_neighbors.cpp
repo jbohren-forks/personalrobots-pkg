@@ -80,7 +80,7 @@ int point_cloud_clustering::PairwiseNeighbors::cluster(const sensor_msgs::PointC
   map<unsigned int, set<unsigned int> > adj_list;
 
   // Iterate over each index, find neighboring points, and randomly link to them
-  const unsigned int nbr_total_pts = pt_cloud.pts.size();
+  const unsigned int nbr_total_pts = pt_cloud.points.size();
   for (set<unsigned int>::const_iterator iter_indices_to_cluster = indices_to_cluster.begin() ; iter_indices_to_cluster
       != indices_to_cluster.end() ; iter_indices_to_cluster++)
   {
@@ -150,7 +150,7 @@ int point_cloud_clustering::PairwiseNeighbors::cluster(const sensor_msgs::PointC
       created_clusters[curr_cluster_label] = vector<int> (2);
 
       // Create edges such that first point is always lower than the second point
-      if (pt_cloud.pts[curr_source_idx].z < pt_cloud.pts[curr_target_idx].z)
+      if (pt_cloud.points[curr_source_idx].z < pt_cloud.points[curr_target_idx].z)
       {
         created_clusters[curr_cluster_label][0] = static_cast<int> (curr_source_idx);
         created_clusters[curr_cluster_label][1] = static_cast<int> (curr_target_idx);

@@ -204,7 +204,7 @@ private:
             return;
         }
 
-        if( _pointcloudin->pts.size() == 0 )
+        if( _pointcloudin->points.size() == 0 )
             return;
 
         ros::Time stampprocess = ros::Time::now();
@@ -219,20 +219,20 @@ private:
             totalpoints += itpoint->inside==0;
 
         _pointcloudout.header = _pointcloudin->header;
-        _pointcloudout.set_pts_size(totalpoints);
-        _pointcloudout.set_chan_size(_pointcloudin->chan.size());
-        for(int ichan = 0; ichan < (int)_pointcloudin->chan.size(); ++ichan) {
-            _pointcloudout.chan[ichan].name = _pointcloudin->chan[ichan].name;
-            _pointcloudout.chan[ichan].set_vals_size(totalpoints);
+        _pointcloudout.set_points_size(totalpoints);
+        _pointcloudout.set_channels_size(_pointcloudin->channels.size());
+        for(int ichan = 0; ichan < (int)_pointcloudin->channels.size(); ++ichan) {
+            _pointcloudout.channels[ichan].name = _pointcloudin->channels[ichan].name;
+            _pointcloudout.channels[ichan].set_values_size(totalpoints);
         }
 
         for(int oldindex = 0, newindex = 0; oldindex < (int)_vlaserpoints.size(); ++oldindex) {
             if( _vlaserpoints[oldindex].inside )
                 continue;
 
-            _pointcloudout.pts[newindex] = _pointcloudin->pts[oldindex];
-            for(int ichan = 0; ichan < (int)_pointcloudin->chan.size(); ++ichan)
-                _pointcloudout.chan[ichan].vals[newindex] = _pointcloudin->chan[ichan].vals[oldindex];
+            _pointcloudout.points[newindex] = _pointcloudin->points[oldindex];
+            for(int ichan = 0; ichan < (int)_pointcloudin->channels.size(); ++ichan)
+                _pointcloudout.channels[ichan].values[newindex] = _pointcloudin->channels[ichan].values[oldindex];
             ++newindex;
         }
 
@@ -245,13 +245,13 @@ private:
     void PruneWithAccurateTiming(const sensor_msgs::PointCloud& pointcloudin, vector<LASERPOINT>& vlaserpoints)
     {
         int istampchan = 0;
-        while(istampchan < (int)pointcloudin.chan.size()) {
-            if( pointcloudin.chan[istampchan].name == "stamps" )
+        while(istampchan < (int)pointcloudin.channels.size()) {
+            if( pointcloudin.channels[istampchan].name == "stamps" )
                 break;
             ++istampchan;
         }
 
-        if( istampchan >= (int)pointcloudin.chan.size()) {
+        if( istampchan >= (int)pointcloudin.channels.size()) {
             ROS_DEBUG("accurate timing needs 'stamp' channel to be published in point cloud, reverting to simple timing");
             PruneWithSimpleTiming(pointcloudin, vlaserpoints);
             return;
@@ -259,19 +259,19 @@ private:
 
         // look for timestamp channel
         float fdeltatime = 0;
-        for(int i = 0; i < (int)pointcloudin.chan[istampchan].vals.size(); ++i)
-            fdeltatime = pointcloudin.chan[istampchan].vals[i];
+        for(int i = 0; i < (int)pointcloudin.channels[istampchan].values.size(); ++i)
+            fdeltatime = pointcloudin.channels[istampchan].values[i];
             
         if( fdeltatime == 0 ) {
             PruneWithSimpleTiming(pointcloudin, vlaserpoints);
             return;
         }
 
-        vlaserpoints.resize(pointcloudin.pts.size());
+        vlaserpoints.resize(pointcloudin.points.size());
         float ideltatime=1.0f/fdeltatime;
         int index = 0;
-        FOREACH(itp, pointcloudin.pts) {
-            vlaserpoints[index] = LASERPOINT(Vector(itp->x,itp->y,itp->z,1),pointcloudin.chan[istampchan].vals[index]*ideltatime);
+        FOREACH(itp, pointcloudin.points) {
+            vlaserpoints[index] = LASERPOINT(Vector(itp->x,itp->y,itp->z,1),pointcloudin.channels[istampchan].values[index]*ideltatime);
             ++index;
         }
 
@@ -336,10 +336,10 @@ private:
             return;
         }
         
-        vlaserpoints.resize(pointcloudin.pts.size());
+        vlaserpoints.resize(pointcloudin.points.size());
 
         int index = 0;
-        FOREACH(itp, pointcloudin.pts)
+        FOREACH(itp, pointcloudin.points)
             vlaserpoints[index++] = LASERPOINT(Vector(itp->x,itp->y,itp->z,1),0);
 
         FOREACH(ithull, _vLinkHulls) {

@@ -579,22 +579,22 @@ private:
 		int xchan = -1;
 		int ychan = -1;
 
-		for (size_t i=0;i<pc.chan.size();++i) {
-			if (pc.chan[i].name == "x") {
+		for (size_t i=0;i<pc.channels.size();++i) {
+			if (pc.channels[i].name == "x") {
 				xchan = i;
 			}
-			if (pc.chan[i].name == "y") {
+			if (pc.channels[i].name == "y") {
 				ychan = i;
 			}
 		}
 
 		if (xchan!=-1 && ychan!=-1) {
-			for (size_t i=0;i<pc.pts.size();++i) {
-				int x = (int)pc.chan[xchan].vals[i];
-				int y = (int)pc.chan[ychan].vals[i];
+			for (size_t i=0;i<pc.points.size();++i) {
+				int x = (int)pc.channels[xchan].values[i];
+				int y = (int)pc.channels[ychan].values[i];
 
 				if (x==p.x && y==p.y) {
-					center_point = pc.pts[i];
+					center_point = pc.points[i];
 					return true;
 				}
 			}
@@ -674,14 +674,14 @@ private:
     	result.header.stamp = laser_cloud.header.stamp;
 
     	double d = distance*distance;
-    	for (size_t i=0; i<laser_cloud.get_pts_size(); ++i) {
-    		double crt_dist =squaredPointDistance(laser_cloud.pts[i],ps_cloud.point);
+    	for (size_t i=0; i<laser_cloud.get_points_size(); ++i) {
+    		double crt_dist =squaredPointDistance(laser_cloud.points[i],ps_cloud.point);
     		if (crt_dist<dist) {
-    			closest = laser_cloud.pts[i];
+    			closest = laser_cloud.points[i];
     			dist = crt_dist;
     		}
     		if (crt_dist<d) {
-    			result.pts.push_back(laser_cloud.pts[i]);
+    			result.points.push_back(laser_cloud.points[i]);
     		}
     	}
 
@@ -733,7 +733,7 @@ private:
 //        model->selectWithinDistance (coeff, dist_thresh, inliers);
 //        //inliers = sac->getInliers ();
 //
-//        cloud_geometry::angles::flipNormalTowardsViewpoint (coeff, points.pts.at (inliers[0]), viewpoint_cloud);
+//        cloud_geometry::angles::flipNormalTowardsViewpoint (coeff, points.points.at (inliers[0]), viewpoint_cloud);
 //
 //        //ROS_DEBUG ("Found a model supported by %d inliers: [%g, %g, %g, %g]\n", sac->getInliers ().size (),
 //        //           coeff[0], coeff[1], coeff[2], coeff[3]);
@@ -926,8 +926,8 @@ private:
         PointCloud outlet_vecinity = outletVecinity(base_cloud_, ps_cloud, 0.4, closest);
 
         // fit a line in the outlet cloud
-        vector<int> indices(outlet_vecinity.pts.size());
-        for (size_t i=0;i<outlet_vecinity.get_pts_size();++i) {
+        vector<int> indices(outlet_vecinity.points.size());
+        for (size_t i=0;i<outlet_vecinity.get_points_size();++i) {
         	indices[i] = i;
         }
         vector<double> coeff(4);	// line coefficients
@@ -1109,29 +1109,29 @@ private:
 		int xchan = -1;
 		int ychan = -1;
 
-		for (size_t i=0;i<cloud.chan.size();++i) {
-			if (cloud.chan[i].name == "x") {
+		for (size_t i=0;i<cloud.channels.size();++i) {
+			if (cloud.channels[i].name == "x") {
 				xchan = i;
 			}
-			if (cloud.chan[i].name == "y") {
+			if (cloud.channels[i].name == "y") {
 				ychan = i;
 			}
 		}
 
-		int chan_size = cloud.get_chan_size();
-		result.chan.resize(chan_size);
+		int chan_size = cloud.get_channels_size();
+		result.channels.resize(chan_size);
 		for (int j=0;j<chan_size;++j) {
-			result.chan[j].name = cloud.chan[j].name;
+			result.channels[j].name = cloud.channels[j].name;
 		}
 
 		if (xchan!=-1 && ychan!=-1) {
-			for (size_t i=0;i<cloud.pts.size();++i) {
-				int x = (int)cloud.chan[xchan].vals[i];
-				int y = (int)cloud.chan[ychan].vals[i];
+			for (size_t i=0;i<cloud.points.size();++i) {
+				int x = (int)cloud.channels[xchan].values[i];
+				int y = (int)cloud.channels[ychan].values[i];
 				if (x>=rect.x && x<rect.x+rect.width && y>=rect.y && y<rect.y+rect.height) {
-					result.pts.push_back(cloud.pts[i]);
+					result.points.push_back(cloud.points[i]);
 					for (int j=0;j<chan_size;++j) {
-						result.chan[j].vals.push_back(cloud.chan[j].vals[i]);
+						result.channels[j].values.push_back(cloud.channels[j].values[i]);
 					}
 				}
 			}

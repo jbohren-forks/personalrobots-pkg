@@ -58,16 +58,16 @@ namespace cloud_geometry
     {
       centroid.x = centroid.y = centroid.z = 0;
       // For each point in the cloud
-      for (unsigned int i = 0; i < points.pts.size (); i++)
+      for (unsigned int i = 0; i < points.points.size (); i++)
       {
-        centroid.x += points.pts.at (i).x;
-        centroid.y += points.pts.at (i).y;
-        centroid.z += points.pts.at (i).z;
+        centroid.x += points.points.at (i).x;
+        centroid.y += points.points.at (i).y;
+        centroid.z += points.points.at (i).z;
       }
 
-      centroid.x /= points.pts.size ();
-      centroid.y /= points.pts.size ();
-      centroid.z /= points.pts.size ();
+      centroid.x /= points.points.size ();
+      centroid.y /= points.points.size ();
+      centroid.z /= points.points.size ();
     }
 
 
@@ -106,9 +106,9 @@ namespace cloud_geometry
       // For each point in the cloud
       for (unsigned int i = 0; i < indices.size (); i++)
       {
-        centroid.x += points.pts.at (indices.at (i)).x;
-        centroid.y += points.pts.at (indices.at (i)).y;
-        centroid.z += points.pts.at (indices.at (i)).z;
+        centroid.x += points.points.at (indices.at (i)).x;
+        centroid.y += points.points.at (indices.at (i)).y;
+        centroid.z += points.points.at (indices.at (i)).z;
       }
 
       centroid.x /= indices.size ();
@@ -129,9 +129,9 @@ namespace cloud_geometry
       // For each point in the cloud
       for (unsigned int i = 0; i < indices.size (); i++)
       {
-        centroid.x += points->pts.at (indices.at (i)).x;
-        centroid.y += points->pts.at (indices.at (i)).y;
-        centroid.z += points->pts.at (indices.at (i)).z;
+        centroid.x += points->points.at (indices.at (i)).x;
+        centroid.y += points->points.at (indices.at (i)).y;
+        centroid.z += points->points.at (indices.at (i)).z;
       }
 
       centroid.x /= indices.size ();
@@ -153,9 +153,9 @@ namespace cloud_geometry
       // For each point in the cloud
       for (unsigned int i = 0; i < indices.size (); i++)
       {
-        centroid[0] += points.pts.at (indices.at (i)).x;
-        centroid[1] += points.pts.at (indices.at (i)).y;
-        centroid[2] += points.pts.at (indices.at (i)).z;
+        centroid[0] += points.points.at (indices.at (i)).x;
+        centroid[1] += points.points.at (indices.at (i)).y;
+        centroid[2] += points.points.at (indices.at (i)).z;
       }
 
       centroid[0] /= indices.size ();
@@ -180,19 +180,19 @@ namespace cloud_geometry
 
       // Sum of outer products
       // covariance_matrix (k, i)  += points_c (j, k) * points_c (j, i);
-      for (unsigned int j = 0; j < points.pts.size (); j++)
+      for (unsigned int j = 0; j < points.points.size (); j++)
       {
-        covariance_matrix (0, 0) += (points.pts[j].x - centroid.x) * (points.pts[j].x - centroid.x);
-        covariance_matrix (0, 1) += (points.pts[j].x - centroid.x) * (points.pts[j].y - centroid.y);
-        covariance_matrix (0, 2) += (points.pts[j].x - centroid.x) * (points.pts[j].z - centroid.z);
+        covariance_matrix (0, 0) += (points.points[j].x - centroid.x) * (points.points[j].x - centroid.x);
+        covariance_matrix (0, 1) += (points.points[j].x - centroid.x) * (points.points[j].y - centroid.y);
+        covariance_matrix (0, 2) += (points.points[j].x - centroid.x) * (points.points[j].z - centroid.z);
 
-        covariance_matrix (1, 0) += (points.pts[j].y - centroid.y) * (points.pts[j].x - centroid.x);
-        covariance_matrix (1, 1) += (points.pts[j].y - centroid.y) * (points.pts[j].y - centroid.y);
-        covariance_matrix (1, 2) += (points.pts[j].y - centroid.y) * (points.pts[j].z - centroid.z);
+        covariance_matrix (1, 0) += (points.points[j].y - centroid.y) * (points.points[j].x - centroid.x);
+        covariance_matrix (1, 1) += (points.points[j].y - centroid.y) * (points.points[j].y - centroid.y);
+        covariance_matrix (1, 2) += (points.points[j].y - centroid.y) * (points.points[j].z - centroid.z);
 
-        covariance_matrix (2, 0) += (points.pts[j].z - centroid.z) * (points.pts[j].x - centroid.x);
-        covariance_matrix (2, 1) += (points.pts[j].z - centroid.z) * (points.pts[j].y - centroid.y);
-        covariance_matrix (2, 2) += (points.pts[j].z - centroid.z) * (points.pts[j].z - centroid.z);
+        covariance_matrix (2, 0) += (points.points[j].z - centroid.z) * (points.points[j].x - centroid.x);
+        covariance_matrix (2, 1) += (points.points[j].z - centroid.z) * (points.points[j].y - centroid.y);
+        covariance_matrix (2, 2) += (points.points[j].z - centroid.z) * (points.points[j].z - centroid.z);
       }
     }
 
@@ -227,17 +227,17 @@ namespace cloud_geometry
 
       for (unsigned int j = 0; j < indices.size (); j++)
       {
-        covariance_matrix (0, 0) += (points.pts[indices.at (j)].x - centroid.x) * (points.pts[indices.at (j)].x - centroid.x);
-        covariance_matrix (0, 1) += (points.pts[indices.at (j)].x - centroid.x) * (points.pts[indices.at (j)].y - centroid.y);
-        covariance_matrix (0, 2) += (points.pts[indices.at (j)].x - centroid.x) * (points.pts[indices.at (j)].z - centroid.z);
+        covariance_matrix (0, 0) += (points.points[indices.at (j)].x - centroid.x) * (points.points[indices.at (j)].x - centroid.x);
+        covariance_matrix (0, 1) += (points.points[indices.at (j)].x - centroid.x) * (points.points[indices.at (j)].y - centroid.y);
+        covariance_matrix (0, 2) += (points.points[indices.at (j)].x - centroid.x) * (points.points[indices.at (j)].z - centroid.z);
 
-        covariance_matrix (1, 0) += (points.pts[indices.at (j)].y - centroid.y) * (points.pts[indices.at (j)].x - centroid.x);
-        covariance_matrix (1, 1) += (points.pts[indices.at (j)].y - centroid.y) * (points.pts[indices.at (j)].y - centroid.y);
-        covariance_matrix (1, 2) += (points.pts[indices.at (j)].y - centroid.y) * (points.pts[indices.at (j)].z - centroid.z);
+        covariance_matrix (1, 0) += (points.points[indices.at (j)].y - centroid.y) * (points.points[indices.at (j)].x - centroid.x);
+        covariance_matrix (1, 1) += (points.points[indices.at (j)].y - centroid.y) * (points.points[indices.at (j)].y - centroid.y);
+        covariance_matrix (1, 2) += (points.points[indices.at (j)].y - centroid.y) * (points.points[indices.at (j)].z - centroid.z);
 
-        covariance_matrix (2, 0) += (points.pts[indices.at (j)].z - centroid.z) * (points.pts[indices.at (j)].x - centroid.x);
-        covariance_matrix (2, 1) += (points.pts[indices.at (j)].z - centroid.z) * (points.pts[indices.at (j)].y - centroid.y);
-        covariance_matrix (2, 2) += (points.pts[indices.at (j)].z - centroid.z) * (points.pts[indices.at (j)].z - centroid.z);
+        covariance_matrix (2, 0) += (points.points[indices.at (j)].z - centroid.z) * (points.points[indices.at (j)].x - centroid.x);
+        covariance_matrix (2, 1) += (points.points[indices.at (j)].z - centroid.z) * (points.points[indices.at (j)].y - centroid.y);
+        covariance_matrix (2, 2) += (points.points[indices.at (j)].z - centroid.z) * (points.points[indices.at (j)].z - centroid.z);
       }
     }
 
@@ -260,17 +260,17 @@ namespace cloud_geometry
 
       for (unsigned int j = 0; j < indices.size (); j++)
       {
-        covariance_matrix (0, 0) += (points->pts[indices.at (j)].x - centroid.x) * (points->pts[indices.at (j)].x - centroid.x);
-        covariance_matrix (0, 1) += (points->pts[indices.at (j)].x - centroid.x) * (points->pts[indices.at (j)].y - centroid.y);
-        covariance_matrix (0, 2) += (points->pts[indices.at (j)].x - centroid.x) * (points->pts[indices.at (j)].z - centroid.z);
+        covariance_matrix (0, 0) += (points->points[indices.at (j)].x - centroid.x) * (points->points[indices.at (j)].x - centroid.x);
+        covariance_matrix (0, 1) += (points->points[indices.at (j)].x - centroid.x) * (points->points[indices.at (j)].y - centroid.y);
+        covariance_matrix (0, 2) += (points->points[indices.at (j)].x - centroid.x) * (points->points[indices.at (j)].z - centroid.z);
 
-        covariance_matrix (1, 0) += (points->pts[indices.at (j)].y - centroid.y) * (points->pts[indices.at (j)].x - centroid.x);
-        covariance_matrix (1, 1) += (points->pts[indices.at (j)].y - centroid.y) * (points->pts[indices.at (j)].y - centroid.y);
-        covariance_matrix (1, 2) += (points->pts[indices.at (j)].y - centroid.y) * (points->pts[indices.at (j)].z - centroid.z);
+        covariance_matrix (1, 0) += (points->points[indices.at (j)].y - centroid.y) * (points->points[indices.at (j)].x - centroid.x);
+        covariance_matrix (1, 1) += (points->points[indices.at (j)].y - centroid.y) * (points->points[indices.at (j)].y - centroid.y);
+        covariance_matrix (1, 2) += (points->points[indices.at (j)].y - centroid.y) * (points->points[indices.at (j)].z - centroid.z);
 
-        covariance_matrix (2, 0) += (points->pts[indices.at (j)].z - centroid.z) * (points->pts[indices.at (j)].x - centroid.x);
-        covariance_matrix (2, 1) += (points->pts[indices.at (j)].z - centroid.z) * (points->pts[indices.at (j)].y - centroid.y);
-        covariance_matrix (2, 2) += (points->pts[indices.at (j)].z - centroid.z) * (points->pts[indices.at (j)].z - centroid.z);
+        covariance_matrix (2, 0) += (points->points[indices.at (j)].z - centroid.z) * (points->points[indices.at (j)].x - centroid.x);
+        covariance_matrix (2, 1) += (points->points[indices.at (j)].z - centroid.z) * (points->points[indices.at (j)].y - centroid.y);
+        covariance_matrix (2, 2) += (points->points[indices.at (j)].z - centroid.z) * (points->points[indices.at (j)].z - centroid.z);
       }
     }
 

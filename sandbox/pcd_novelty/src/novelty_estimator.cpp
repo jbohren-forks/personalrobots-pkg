@@ -60,20 +60,20 @@ void NoveltyEstimator::addCloudToHistory(const sensor_msgs::PointCloud &cloud)
 {  
   boost::mutex::scoped_lock lock(proc_mutex_);
 
-  unsigned int num_pts=cloud.pts.size();
+  unsigned int num_pts=cloud.points.size();
 
   //Now lets make a 3d copy and 2d version of the cloud. 
 
   boost::shared_ptr<PcdHolder> pcd_holder=boost::shared_ptr<PcdHolder>(new PcdHolder());
 
-  pcd_holder->cloud_2d_.pts.resize(num_pts);
-  pcd_holder->cloud_3d_.pts.resize(num_pts);
+  pcd_holder->cloud_2d_.points.resize(num_pts);
+  pcd_holder->cloud_3d_.points.resize(num_pts);
 
   for(unsigned int iPt=0;iPt<num_pts;iPt++)
   {
-    pcd_holder->cloud_3d_.pts[iPt]=cloud.pts[iPt];
-    pcd_holder->cloud_2d_.pts[iPt]=cloud.pts[iPt];
-    pcd_holder->cloud_2d_.pts[iPt].z=0;
+    pcd_holder->cloud_3d_.points[iPt]=cloud.points[iPt];
+    pcd_holder->cloud_2d_.points[iPt]=cloud.points[iPt];
+    pcd_holder->cloud_2d_.points[iPt].z=0;
   }
 
   //Now lets setup the search structures
@@ -88,14 +88,14 @@ void NoveltyEstimator::allocateNoveltyChannel(sensor_msgs::PointCloud& point_clo
   int novelty_idx=cloud_geometry::getChannelIndex(point_cloud,novelty_channel_);
   if(novelty_idx==-1)
   {
-    unsigned int num_channels = point_cloud.chan.size();
-    point_cloud.chan.resize(num_channels+1);
+    unsigned int num_channels = point_cloud.channels.size();
+    point_cloud.channels.resize(num_channels+1);
     novelty_idx=num_channels;
-    point_cloud.chan[novelty_idx].name=novelty_channel_;
-    point_cloud.chan[novelty_idx].vals.resize(point_cloud.pts.size());
+    point_cloud.channels[novelty_idx].name=novelty_channel_;
+    point_cloud.channels[novelty_idx].values.resize(point_cloud.points.size());
   }
 
-  *ptr_channel = &point_cloud.chan[novelty_idx].vals;
+  *ptr_channel = &point_cloud.channels[novelty_idx].values;
 }
 
 
@@ -104,7 +104,7 @@ void NoveltyEstimator::computeNovelty(const sensor_msgs::PointCloud& point_cloud
 {
   ROS_INFO("Computing novelty");
 
-  unsigned int inbound_cloud_size=point_cloud.pts.size();
+  unsigned int inbound_cloud_size=point_cloud.points.size();
   std::vector<float> relevant_cloud_count;
   std::vector<float> relevant_point_2d_count;
   std::vector<float> relevant_point_3d_count;
@@ -136,7 +136,7 @@ void NoveltyEstimator::computeNovelty(const sensor_msgs::PointCloud& point_cloud
       vector<float> k_distances;
       vector<int> k_indices3d;
       vector<float> k_distances3d;
-      geometry_msgs::Point32 pt2d=point_cloud.pts[iPt];
+      geometry_msgs::Point32 pt2d=point_cloud.points[iPt];
       pt2d.z=0;
       (*it)->kdtree_2d_->radiusSearch (pt2d, max_2d_search_radius_, 
                                       k_indices, k_distances,num_required_nei_2d_);
@@ -148,7 +148,7 @@ void NoveltyEstimator::computeNovelty(const sensor_msgs::PointCloud& point_cloud
       relevant_cloud_count[iPt] ++;
       relevant_point_2d_count[iPt] ++ ;
 
-      (*it)->kdtree_3d_->radiusSearch (point_cloud.pts[iPt], max_3d_search_radius_, 
+      (*it)->kdtree_3d_->radiusSearch (point_cloud.points[iPt], max_3d_search_radius_, 
                                       k_indices3d, k_distances3d,num_required_nei_3d_);
       if( k_distances3d.size()==num_required_nei_3d_ )
       {

@@ -164,7 +164,7 @@ public:
 		while (capture_cloud_point_) {
 			cloud_point_cv.wait(lock);
 		}
-		ROS_INFO("Got %d points",base_cloud_.pts.size());
+		ROS_INFO("Got %d points",base_cloud_.points.size());
 	}
 
 	void capture()
@@ -235,8 +235,8 @@ public:
 		geometry_msgs::Point32 closest;
 		float dist = 1e10;
 
-		for (size_t i=0; i<cloud.get_pts_size(); ++i) {
-			geometry_msgs::Point32 crt = cloud.pts[i];
+		for (size_t i=0; i<cloud.get_points_size(); ++i) {
+			geometry_msgs::Point32 crt = cloud.points[i];
 			if (fabs(crt.x)<1e-10 && fabs(crt.y)<1e-10 && fabs(crt.z)<1e-10) continue;
 			float crt_dist = fabs(crt.y);
 
@@ -257,9 +257,9 @@ public:
 		result.header.stamp = laser_cloud.header.stamp;
 
 		double d = distance*distance;
-		for (size_t i=0; i<laser_cloud.get_pts_size(); ++i) {
-			if (squaredPointDistance(laser_cloud.pts[i],point)<d) {
-				result.pts.push_back(laser_cloud.pts[i]);
+		for (size_t i=0; i<laser_cloud.get_points_size(); ++i) {
+			if (squaredPointDistance(laser_cloud.points[i],point)<d) {
+				result.points.push_back(laser_cloud.points[i]);
 			}
 		}
 		return result;
@@ -279,8 +279,8 @@ public:
 		sensor_msgs::PointCloud wall_cloud = getWallCloud(base_cloud_,start_point,0.4);
 
 		// fit a line in the outlet cloud
-		vector<int> indices(wall_cloud.pts.size());
-		for (size_t i=0;i<wall_cloud.get_pts_size();++i) {
+		vector<int> indices(wall_cloud.points.size());
+		for (size_t i=0;i<wall_cloud.get_points_size();++i) {
 			indices[i] = i;
 		}
 		vector<double> coeff(4);	// line coefficients

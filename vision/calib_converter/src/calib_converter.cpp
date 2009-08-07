@@ -114,14 +114,14 @@ public:
     // -- Save the pointcloud.
     if(hasPtcld) {
       outputname = outputdir + string("/") + num + string("-J.xml");
-      cout << "Saving pointcloud of " << cloud.get_pts_size() << " points to " << outputname << "..." << endl;
+      cout << "Saving pointcloud of " << cloud.get_points_size() << " points to " << outputname << "..." << endl;
     
-      CvMat *M = cvCreateMat(cloud.get_pts_size(), 4, CV_64FC1);
-      for(unsigned int i=0; i<cloud.get_pts_size(); i++) {
-	cvmSet(M, i, 0, cloud.pts[i].x);
-	cvmSet(M, i, 1, cloud.pts[i].y);
-	cvmSet(M, i, 2, cloud.pts[i].z);
-	cvmSet(M, i, 3, cloud.chan[0].vals[i]);
+      CvMat *M = cvCreateMat(cloud.get_points_size(), 4, CV_64FC1);
+      for(unsigned int i=0; i<cloud.get_points_size(); i++) {
+	cvmSet(M, i, 0, cloud.points[i].x);
+	cvmSet(M, i, 1, cloud.points[i].y);
+	cvmSet(M, i, 2, cloud.points[i].z);
+	cvmSet(M, i, 3, cloud.channels[0].values[i]);
       }
       cvSave(outputname.c_str(), M);
       cout << " done." << endl;

@@ -65,33 +65,33 @@ class Cropper
 
     void cloudCallback(const tf::MessageNotifier<sensor_msgs::PointCloud>::MessagePtr& cloud_in)
     {
-      ROS_INFO("Received message with %d points", cloud_in->pts.size());
+      ROS_INFO("Received message with %d points", cloud_in->points.size());
       sensor_msgs::PointCloud cloud_transformed;
       tf_->transformPointCloud(frame_id_, *cloud_in, cloud_transformed);
 
       sensor_msgs::PointCloud cloud_out;
       cloud_out.header = cloud_transformed.header;
-      for(unsigned int j=0;j<cloud_transformed.chan.size();j++)
+      for(unsigned int j=0;j<cloud_transformed.channels.size();j++)
       {
         sensor_msgs::ChannelFloat32 c;
-        c.name = cloud_transformed.chan[j].name;
-        cloud_out.chan.push_back(c);
+        c.name = cloud_transformed.channels[j].name;
+        cloud_out.channels.push_back(c);
       }
-      for(unsigned int i=0;i<cloud_transformed.pts.size();i++)
+      for(unsigned int i=0;i<cloud_transformed.points.size();i++)
       {
-        if((cloud_transformed.pts[i].z >= zmin_) &&
-           (cloud_transformed.pts[i].z <= zmax_))
+        if((cloud_transformed.points[i].z >= zmin_) &&
+           (cloud_transformed.points[i].z <= zmax_))
         {
-          cloud_out.pts.push_back(cloud_transformed.pts[i]);
-          for(unsigned int j=0;j<cloud_transformed.chan.size();j++)
+          cloud_out.points.push_back(cloud_transformed.points[i]);
+          for(unsigned int j=0;j<cloud_transformed.channels.size();j++)
           {
-            cloud_out.chan[j].vals.push_back(cloud_transformed.chan[j].vals[i]);
+            cloud_out.channels[j].values.push_back(cloud_transformed.channels[j].values[i]);
           }
         }
       }
 
       pub_.publish(cloud_out);
-      ROS_INFO("Published message with %d points", cloud_out.pts.size());
+      ROS_INFO("Published message with %d points", cloud_out.points.size());
     }
 };
 

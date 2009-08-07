@@ -87,11 +87,11 @@ public:
   {
     ROS_INFO("%f - Callback", t.toSec());
 
-    unsigned int C = pixel_corners_.pts.size() ;
+    unsigned int C = pixel_corners_.points.size() ;
     sensor_msgs::PointCloud measured_corners;
     measured_corners.header.stamp = pixel_corners_.header.stamp ;
     measured_corners.header.frame_id = "NOT_APPLICABLE" ;
-    measured_corners.pts.resize(C);
+    measured_corners.points.resize(C);
 
     if (C > 0)
     {
@@ -122,8 +122,8 @@ public:
 
       for (unsigned int i = 0; i < C; i++)
       {
-        corners_pix_x[i] = pixel_corners_.pts[i].x;
-        corners_pix_y[i] = pixel_corners_.pts[i].y;
+        corners_pix_x[i] = pixel_corners_.points[i].x;
+        corners_pix_y[i] = pixel_corners_.points[i].y;
       }
 
       float x_scale = (float)(joint_info_.data.layout.dim[1].size - 1)
@@ -150,11 +150,11 @@ public:
       for (unsigned int i = 0; i < C; i++)
       {
         // Tilt angle
-        measured_corners.pts[i].x = corners_joint[i];
+        measured_corners.points[i].x = corners_joint[i];
         // Pointing angle
-        measured_corners.pts[i].y = pointingAngle(scan_info_, pixel_corners_.pts[i].x);
+        measured_corners.points[i].y = pointingAngle(scan_info_, pixel_corners_.points[i].x);
         // Range
-        measured_corners.pts[i].z = corners_range[i];
+        measured_corners.points[i].z = corners_range[i];
       }
     }
 

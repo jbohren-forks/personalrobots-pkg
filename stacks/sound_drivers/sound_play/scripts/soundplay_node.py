@@ -89,7 +89,7 @@ class soundtype:
         if self.state != self.STOPPED:
             self.lock.acquire()
             try:
-                self.chan.fadeout(300)
+                self.channels.fadeout(300)
                 self.state = self.STOPPED
             finally:
                 self.lock.release()
@@ -104,7 +104,7 @@ class soundtype:
             if self.state == self.STOPPED:
                 self.chan = self.sound.play()
             else: # Already counting
-                self.chan.queue(self.sound) # This will only allow one extra one to be enqueued
+                self.channels.queue(self.sound) # This will only allow one extra one to be enqueued
 
             self.state = self.COUNTING
         finally:
@@ -119,7 +119,7 @@ class soundtype:
              self.loop()
 
     def get_staleness(self):
-        if self.chan.get_busy():
+        if self.channels.get_busy():
             self.staleness = 0
         else:
             self.staleness = self.staleness + 1

@@ -43,24 +43,24 @@ sensor_msgs::PointCloud
   sensor_msgs::PointCloud i_points;
 
   // Allocate enough space
-  i_points.pts.resize (indices.size ());
-  i_points.set_chan_size (sac_model_->getCloud ()->get_chan_size ());
+  i_points.points.resize (indices.size ());
+  i_points.set_channels_size (sac_model_->getCloud ()->get_channels_size ());
 
   // Create the channels
-  for (unsigned int d = 0; d < i_points.get_chan_size (); d++)
+  for (unsigned int d = 0; d < i_points.get_channels_size (); d++)
   {
-    i_points.chan[d].name = sac_model_->getCloud ()->chan[d].name;
-    i_points.chan[d].vals.resize (indices.size ());
+    i_points.channels[d].name = sac_model_->getCloud ()->channels[d].name;
+    i_points.channels[d].values.resize (indices.size ());
   }
 
   // Copy the data
-  for (unsigned int i = 0; i < i_points.pts.size (); i++)
+  for (unsigned int i = 0; i < i_points.points.size (); i++)
   {
-    i_points.pts[i].x = sac_model_->getCloud ()->pts[indices.at (i)].x;
-    i_points.pts[i].y = sac_model_->getCloud ()->pts[indices.at (i)].y;
-    i_points.pts[i].z = sac_model_->getCloud ()->pts[indices.at (i)].z;
-    for (unsigned int d = 0; d < i_points.get_chan_size (); d++)
-      i_points.chan[d].vals[i] = sac_model_->getCloud ()->chan[d].vals[indices.at (i)];
+    i_points.points[i].x = sac_model_->getCloud ()->points[indices.at (i)].x;
+    i_points.points[i].y = sac_model_->getCloud ()->points[indices.at (i)].y;
+    i_points.points[i].z = sac_model_->getCloud ()->points[indices.at (i)].z;
+    for (unsigned int d = 0; d < i_points.get_channels_size (); d++)
+      i_points.channels[d].values[i] = sac_model_->getCloud ()->channels[d].values[indices.at (i)];
   }
 
   return (i_points);
