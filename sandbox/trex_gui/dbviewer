@@ -712,7 +712,7 @@ def lolight_token(tid):
   end_bounds = number_bound_regex.findall(vars[tokens[tid].end_key].values)
   end_bounds = end_bounds[0].split(" ")
 
-  if len(start_bounds) != 1 and float(start_bounds[1]) > tick:
+  if len(start_bounds) != 1 and float(start_bounds[1]) > tick and tokens[tid].slot_index==0:
     graph.styleApply("PlannedToken", tokens[tid].node)
 
 def hilight_rule(rid):
