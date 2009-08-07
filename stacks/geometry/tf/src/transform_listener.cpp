@@ -88,7 +88,7 @@ TransformListener::TransformListener(ros::Duration max_cache_time, bool spin_thr
 }
 
 TransformListener::TransformListener(const ros::NodeHandle& nh, ros::Duration max_cache_time, bool spin_thread):
-  Transformer(true, max_cache_time), node_(nh), dedicated_listener_thread_(NULL)
+  Transformer(true, max_cache_time), dedicated_listener_thread_(NULL), node_(nh)
 {
   if (spin_thread)
     initWithThread();

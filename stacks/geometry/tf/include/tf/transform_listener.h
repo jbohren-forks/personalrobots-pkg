@@ -47,10 +47,6 @@ namespace tf{
 /** \brief This class inherits from Transformer and automatically subscribes to ROS transform messages */
 class TransformListener : public Transformer { //subscribes to message and automatically stores incoming data
 
-private:
-  ros::NodeHandle node_;
-  ros::Subscriber message_subscriber_, reset_time_subscriber_;
-
 public:
   /**@brief The deprecated constructor for transform listener
    * \param rosnode A reference to an instance of a ros::Node for communication
@@ -146,6 +142,8 @@ private:
 
   ros::CallbackQueue tf_message_callback_queue_;
   boost::thread* dedicated_listener_thread_;
+  ros::NodeHandle node_;
+  ros::Subscriber message_subscriber_, reset_time_subscriber_;
 
   void dedicatedListenerThread()
   {
