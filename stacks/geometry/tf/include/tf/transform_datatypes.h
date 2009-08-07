@@ -108,6 +108,20 @@ static inline void quaternionTFToMsg(const Quaternion& bt, geometry_msgs::Quater
   }
 };
 
+/** \brief Helper function for getting yaw from a Quaternion */
+static inline double getYaw(const Quaternion& bt_q){
+  double useless_pitch, useless_roll, yaw;
+  btMatrix3x3(bt_q).getEulerZYX(yaw, useless_pitch, useless_roll);
+  return yaw;
+}
+
+/** \brief Helper function for getting yaw from a Quaternion message*/
+static inline double getYaw(const geometry_msgs::Quaternion& msg_q){
+  Quaternion bt_q;
+  quaternionMsgToTF(msg_q, bt_q);
+  return getYaw(bt_q);
+}
+
 /** \brief convert QuaternionStamped msg to Stamped<Quaternion> */
 static inline void quaternionStampedMsgToTF(const geometry_msgs::QuaternionStamped & msg, Stamped<Quaternion>& bt)
 {quaternionMsgToTF(msg.quaternion, bt); bt.stamp_ = msg.header.stamp; bt.frame_id_ = msg.header.frame_id;};
