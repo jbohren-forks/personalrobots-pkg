@@ -1,8 +1,6 @@
 <stack name="imu_drivers" version="0.1.0">
-  <description brief="imu_drivers">
-
-     imu_drivers
-
+  <description brief="Drivers for IMUs">
+  This stack contains drivers for IMUs.
   </description>
   <author>Blaise Gassend</author>
   <license>BSD,LGPL</license>  

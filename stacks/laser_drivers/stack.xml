@@ -1,8 +1,6 @@
 <stack name="laser_drivers" version="0.1.0">
-  <description brief="laser_drivers">
-
-     laser_drivers
-
+  <description brief="Drivers for Laser Scanners">
+  This stack contains drivers for laser scanners.
   </description>
   <author>Blaise Gassend</author>
   <license>BSD,LGPL</license>  
