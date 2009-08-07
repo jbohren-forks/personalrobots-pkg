@@ -39,7 +39,7 @@ import rospy
 from robot_srvs.srv import FindTable, FindTableRequest
 from robot_msgs.msg import Polygon3D, Point
 from visualization_msgs.msg import Marker
-from deprecated_msgs.msg import RobotBase2DOdom
+from nav_msgs.msg import Odometry
 from tf.msg import tfMessage
 import bullet
 import tf
@@ -59,7 +59,7 @@ class ApproachTable:
     self.odom_pose = None
     self.robot_position = None
     self.vm = None
-    rospy.Subscriber('odom', RobotBase2DOdom, self.odomCallback)
+    rospy.Subscriber('odom', Odometry, self.odomCallback)
     rospy.Subscriber('tf_message', tfMessage, self.tfCallback)
     self.pub_vis = rospy.Publisher("visualization_marker", Marker)
     self.global_frame = rospy.get_param('/global_frame_id')
@@ -68,9 +68,9 @@ class ApproachTable:
   def tfCallback(self,msg):
     if (msg.transforms[0].header.frame_id == self.global_frame and 
         self.odom_pose != None):
-      self.robot_position = Point((self.odom_pose.pos.x - 
+      self.robot_position = Point((self.odom_pose.pose_with_covariance.pose.position.x - 
                                    msg.transforms[0].transform.translation.x),
-                                  (self.odom_pose.pos.y - 
+                                  (self.odom_pose.pose_with_covariance.pose.position.y - 
                                    msg.transforms[0].transform.translation.y),
                                   0.0)
 

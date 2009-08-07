@@ -43,7 +43,6 @@ ROS_REGISTER_CONTROLLER(Pr2Odometry)
 Pr2Odometry::Pr2Odometry()
 {
   odometry_publisher_ = NULL;
-  old_odometry_publisher_ = NULL;
   transform_publisher_ = NULL;
 }
 
@@ -53,11 +52,6 @@ Pr2Odometry::~Pr2Odometry()
   {
     odometry_publisher_->stop();
     delete odometry_publisher_;
-  }
-  if(old_odometry_publisher_)
-  {
-    old_odometry_publisher_->stop();
-    delete old_odometry_publisher_;
   }
 
   if(transform_publisher_)
@@ -99,10 +93,7 @@ bool Pr2Odometry::init(mechanism::RobotState *robot_state, const ros::NodeHandle
 
   if(odometry_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
     delete odometry_publisher_;
-  odometry_publisher_ = new realtime_tools::RealtimePublisher<pr2_msgs::Odometry>("/base/" + odom_frame_, 1);
-  if(old_odometry_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
-    delete old_odometry_publisher_;
-  old_odometry_publisher_ = new realtime_tools::RealtimePublisher<deprecated_msgs::RobotBase2DOdom>("odom", 1);
+  odometry_publisher_ = new realtime_tools::RealtimePublisher<nav_msgs::Odometry>("/base/" + odom_frame_, 1);
   if(transform_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
     delete transform_publisher_;
   transform_publisher_ = new realtime_tools::RealtimePublisher<tf::tfMessage>("tf_message", 1);
@@ -141,9 +132,9 @@ void Pr2Odometry::updateOdometry()
 
   computeBaseVelocity();
 
-  double odom_delta_x = (odom_vel_.vel.vx * costh - odom_vel_.vel.vy * sinth) * dt;
-  double odom_delta_y = (odom_vel_.vel.vx * sinth + odom_vel_.vel.vy * costh) * dt;
-  double odom_delta_th = odom_vel_.ang_vel.vz * dt;
+  double odom_delta_x = (odom_vel_.linear.x * costh - odom_vel_.linear.y * sinth) * dt;
+  double odom_delta_y = (odom_vel_.linear.x * sinth + odom_vel_.linear.y * costh) * dt;
+  double odom_delta_th = odom_vel_.angular.z * dt;
 
   odom_.x += odom_delta_x;
   odom_.y += odom_delta_y;
@@ -153,47 +144,32 @@ void Pr2Odometry::updateOdometry()
   odometer_angle_ += fabs(odom_delta_th);
 }
 
-void Pr2Odometry::getOdometry(geometry_msgs::Point &odom, robot_msgs::PoseDot &odom_vel)
+void Pr2Odometry::getOdometry(geometry_msgs::Point &odom, geometry_msgs::Twist &odom_vel)
 {
   odom = odom_;
   odom_vel = odom_vel_;
   return;
 }
 
-void Pr2Odometry::getOdometryMessage(pr2_msgs::Odometry &msg)
+void Pr2Odometry::getOdometryMessage(nav_msgs::Odometry &msg)
 {
   msg.header.frame_id = odom_frame_;
   msg.header.stamp.fromSec(current_time_);
-  msg.odom.position.x = odom_.x;
-  msg.odom.position.y = odom_.y;
-  msg.odom.position.z = 0.0;
+  msg.pose_with_covariance.pose.position.x = odom_.x;
+  msg.pose_with_covariance.pose.position.y = odom_.y;
+  msg.pose_with_covariance.pose.position.z = 0.0;
 
   tf::Quaternion quat_trans = tf::Quaternion(odom_.z, 0.0, 0.0);
-  msg.odom.orientation.x = quat_trans.x();
-  msg.odom.orientation.y = quat_trans.y();
-  msg.odom.orientation.z = quat_trans.z();
-  msg.odom.orientation.w = quat_trans.w();
+  msg.pose_with_covariance.pose.orientation.x = quat_trans.x();
+  msg.pose_with_covariance.pose.orientation.y = quat_trans.y();
+  msg.pose_with_covariance.pose.orientation.z = quat_trans.z();
+  msg.pose_with_covariance.pose.orientation.w = quat_trans.w();
 
-  msg.odom_vel = odom_vel_;
-  msg.angle = odometer_angle_;
-  msg.distance = odometer_distance_;
-  msg.residual = odometry_residual_max_;
-}
+  msg.twist_with_covariance.twist = odom_vel_;
 
-void Pr2Odometry::getOldOdometryMessage(deprecated_msgs::RobotBase2DOdom &msg)
-{
-  msg.header.frame_id = "odom";
-  msg.header.stamp.fromSec(current_time_);
-
-  msg.pos.x = odom_.x;
-  msg.pos.y = odom_.y;
-  msg.pos.th = angles::normalize_angle(odom_.z);
-
-  msg.vel.x = odom_vel_.vel.vx;
-  msg.vel.y = odom_vel_.vel.vy;
-  msg.vel.th = odom_vel_.ang_vel.vz;
-
-  msg.residual = odometry_residual_max_;
+#warning A full covariance should be published instead of the residual, this code will not work properly with the ekf until this is changed
+  //@todo TODO: change from residual to covariance
+  //msg.residual = odometry_residual_max_;
 }
 
 void Pr2Odometry::getOdometry(double &x, double &y, double &yaw, double &vx, double &vy, double &vw)
@@ -201,16 +177,16 @@ void Pr2Odometry::getOdometry(double &x, double &y, double &yaw, double &vx, dou
   x = odom_.x;
   y = odom_.y;
   yaw = odom_.z;
-  vx = odom_vel_.vel.vx;
-  vy = odom_vel_.vel.vy;
-  vw = odom_vel_.ang_vel.vz;
+  vx = odom_vel_.linear.x;
+  vy = odom_vel_.linear.y;
+  vw = odom_vel_.angular.z;
 }
 
 void Pr2Odometry::computeBaseVelocity()
 {
   double steer_angle, wheel_speed, costh, sinth;
-  robot_msgs::PoseDot caster_local_velocity;
-  robot_msgs::PoseDot wheel_local_velocity;
+  geometry_msgs::Twist caster_local_velocity;
+  geometry_msgs::Twist wheel_local_velocity;
   geometry_msgs::Point wheel_position;
   for(int i = 0; i < base_kin_.num_wheels_; i++)
   {
@@ -235,19 +211,19 @@ void Pr2Odometry::computeBaseVelocity()
   odometry_residual_ = cbv_lhs_ * cbv_soln_ - cbv_rhs_;
   odometry_residual_max_ = odometry_residual_.cwise().abs().maxCoeff();
 
-  odom_vel_.vel.vx = cbv_soln_(0, 0);
-  odom_vel_.vel.vy = cbv_soln_(1, 0);
-  odom_vel_.ang_vel.vz = cbv_soln_(2, 0);
+  odom_vel_.linear.x = cbv_soln_(0, 0);
+  odom_vel_.linear.y = cbv_soln_(1, 0);
+  odom_vel_.angular.z = cbv_soln_(2, 0);
 }
 
 double Pr2Odometry::getCorrectedWheelSpeed(int index)
 {
   double wheel_speed;
-  robot_msgs::PoseDot caster_local_vel;
-  robot_msgs::PoseDot wheel_local_vel;
-  caster_local_vel.ang_vel.vz = base_kin_.wheel_[index].parent_->joint_->velocity_;
+  geometry_msgs::Twist caster_local_vel;
+  geometry_msgs::Twist wheel_local_vel;
+  caster_local_vel.angular.z = base_kin_.wheel_[index].parent_->joint_->velocity_;
   wheel_local_vel = base_kin_.pointVel2D(base_kin_.wheel_[index].offset_, caster_local_vel);
-  wheel_speed = base_kin_.wheel_[index].joint_->velocity_ - wheel_local_vel.vel.vx / (base_kin_.wheel_radius_ * base_kin_.wheel_[index].wheel_radius_scaler_);
+  wheel_speed = base_kin_.wheel_[index].joint_->velocity_ - wheel_local_vel.linear.x / (base_kin_.wheel_radius_ * base_kin_.wheel_[index].wheel_radius_scaler_);
   return wheel_speed;
 }
 
@@ -338,12 +314,6 @@ void Pr2Odometry::publish()
   {
     getOdometryMessage(odometry_publisher_->msg_);
     odometry_publisher_->unlockAndPublish();
-  }
-
-  if(old_odometry_publisher_->trylock())
-  {
-    getOldOdometryMessage(old_odometry_publisher_->msg_);
-    old_odometry_publisher_->unlockAndPublish();
   }
 
   if(transform_publisher_->trylock())

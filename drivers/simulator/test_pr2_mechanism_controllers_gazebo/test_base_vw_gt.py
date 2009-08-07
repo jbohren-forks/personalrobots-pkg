@@ -49,7 +49,7 @@ import sys, unittest
 import os, time
 import rospy, rostest
 from robot_msgs.msg import *
-from deprecated_msgs.msg import *
+from nav_msgs.msg import *
 
 TEST_DURATION   = 60.0
 
@@ -68,13 +68,16 @@ class BaseTest(unittest.TestCase):
 
 
     def printBaseOdom(self, odom):
+        orientation = odom.pose_with_covariance.orientation
+        q = Q(orientation.x, orientation.y, orientation.z, orientation.w)
+        q.normalize()
         print "odom received"
-        print "odom pos " + "x: " + str(odom.pos.x)
-        print "odom pos " + "y: " + str(odom.pos.y)
-        print "odom pos " + "t: " + str(odom.pos.th)
-        print "odom vel " + "x: " + str(odom.vel.x)
-        print "odom vel " + "y: " + str(odom.vel.y)
-        print "odom vel " + "t: " + str(odom.vel.th)
+        print "odom pos " + "x: " + str(odom.pose_with_covariance.pose.position.x)
+        print "odom pos " + "y: " + str(odom.pose_with_covariance.pose.position.y)
+        print "odom pos " + "t: " + str(q.getEuler().z)
+        print "odom vel " + "x: " + str(odom.twist_with_covariance.twist.linear.x)
+        print "odom vel " + "y: " + str(odom.twist_with_covariance.twist.linear.y)
+        print "odom vel " + "t: " + str(odom.twist_with_covariance.twist.angular.z)
 
     def printBaseP3D(self, p3d):
         print "base pose ground truth received"
@@ -120,7 +123,7 @@ class BaseTest(unittest.TestCase):
         print "LNK\n"
         pub = rospy.Publisher("/cmd_vel", PoseDot)
         rospy.Subscriber("/base_pose_ground_truth", PoseWithRatesStamped, self.p3dInput)
-        rospy.Subscriber("/odom",                   RobotBase2DOdom,      self.odomInput)
+        rospy.Subscriber("/odom",                   Odometry,      self.odomInput)
         rospy.init_node(NAME, anonymous=True)
         timeout_t = time.time() + TEST_DURATION
         while not rospy.is_shutdown() and not self.success and time.time() < timeout_t:

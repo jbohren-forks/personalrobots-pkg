@@ -30,7 +30,7 @@
 #include <ros/ros.h>
 #include "tf/transform_broadcaster.h"
 #include <robot_msgs/PoseDot.h>
-#include <deprecated_msgs/RobotBase2DOdom.h>
+#include <nav_msgs/Odometry.h>
 
 #include <boost/bind.hpp>
 
@@ -96,13 +96,13 @@ public:
     this->rnh_ = new ros::NodeHandle();
     //this->sub_ = rnh_->subscribe<geometry_msgs::PoseDot>("/cmd_vel", 100, boost::bind(&DiffDrive::cmdVelCallBack,this,_1));
     this->sub_ = rnh_->subscribe<robot_msgs::PoseDot>("/cmd_vel", 100, &DiffDrive::cmdVelCallBack,this);
-    this->pub_ = rnh_->advertise<deprecated_msgs::RobotBase2DOdom>("/odom", 1);
+    this->pub_ = rnh_->advertise<nav_msgs::Odometry>("/odom", 1);
    
     // spawn 2 threads by default, ///@todo: make this a parameter
     ros::MultiThreadedSpinner s(2);
     boost::thread spinner_thread( boost::bind( &ros::spin, s ) );
 
-    deprecated_msgs::RobotBase2DOdom odom;
+    nav_msgs::Odometry odom;
     tf::TransformBroadcaster tfb;
 
     ros::Duration d; d.fromSec(0.01);
@@ -125,13 +125,12 @@ public:
         tfb.sendTransform(tmp_tf_stamped);
         
 
-        odom.pos.x = this->posIface->data->pose.pos.x;
-        odom.pos.y = this->posIface->data->pose.pos.y;
-        odom.pos.th = this->posIface->data->pose.yaw;
-        odom.vel.x = this->posIface->data->velocity.pos.x;
-        odom.vel.y = this->posIface->data->velocity.pos.y;
-        odom.vel.th = this->posIface->data->velocity.yaw;
-        odom.stall = 0;
+        odom.pose_with_covariance.pose.position.x = this->posIface->data->pose.pos.x;
+        odom.pose_with_covariance.pose.position.y = this->posIface->data->pose.pos.y;
+        odom.pose_with_covariance.pose.orientation = tf::createQuaternionMsgFromYaw(this->posIface->data->pose.yaw);
+        odom.twist_with_covariance.twist.linear.x = this->posIface->data->velocity.pos.x;
+        odom.twist_with_covariance.twist.linear.y = this->posIface->data->velocity.pos.y;
+        odom.twist_with_covariance.twist.angular.z = this->posIface->data->velocity.yaw;
         
         odom.header.frame_id = "odom"; 
         

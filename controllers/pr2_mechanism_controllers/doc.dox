@@ -22,7 +22,7 @@ Here are the controllers which are currently implemented:
     <table border="1">
     <tr><th> Topic Name </th> <th> Message Type </th><th> Description </th></tr>
     <tr><td>\ref controller::BaseController::setOdomMessage "odom"</td>
-        <td><a href="http://pr.willowgarage.com/pr-docs/ros-packages/std_msgs/html/classstd__msgs_1_1RobotBase2DOdom.html">RobotBase2DOdom </a> </td>
+        <td><a href="http://pr.willowgarage.com/pr-docs/ros-packages/std_msgs/html/classstd__msgs_1_1Odometry.html">Odometry </a> </td>
         <td>Odometry information from base caster and wheels. </td></tr>
     </table><br>
 

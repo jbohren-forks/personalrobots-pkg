@@ -35,7 +35,7 @@
 #include <pr2_mechanism_controllers/Pose3D.h>
 #include <ros/node.h>
 #include <robot_msgs/PoseDot.h>
-#include <deprecated_msgs/RobotBase2DOdom.h>
+#include <nav_msgs/Odometry.h>
 #include <geometry_msgs/Quaternion.h>
 #include <iostream>
 #include <fstream>
@@ -87,7 +87,7 @@ class test_run_base
 
     ~test_run_base() {}
 
-    deprecated_msgs::RobotBase2DOdom odom;
+    nav_msgs::Odometry odom;
 
     void odomMsgReceived()
     {
@@ -162,9 +162,9 @@ int main( int argc, char** argv )
      if(run_time_set && delta_time.toSec() > run_time)
         break;
 
-     odom_log_file << tb.odom.pos.x <<  " " << tb.odom.pos.y << " " << tb.odom.pos.th << " " << tb.odom.vel.x <<  " " << tb.odom.vel.y << " " << tb.odom.vel.th << " " << tb.odom.header.stamp.sec + tb.odom.header.stamp.nsec/1.0e9 << std::endl;
+     odom_log_file << tb.odom.pose_with_covariance.pose.position.x <<  " " << tb.odom.pose_with_covariance.pose.position.y << " " << tf::getYaw(tb.odom.pose_with_covariance.pose.orientation) << " " << tb.odom.twist_with_covariance.twist.linear.x <<  " " << tb.odom.twist_with_covariance.twist.linear.y << " " << tb.odom.twist_with_covariance.twist.angulat.z << " " << tb.odom.header.stamp.sec + tb.odom.header.stamp.nsec/1.0e9 << std::endl;
 
-     cout << endl << "odometry:: " << endl << "velocity:" << endl << " x:" << tb.odom.vel.x <<  endl << " y:" << tb.odom.vel.y << endl << " omega:" << tb.odom.vel.th << std::endl;
+     cout << endl << "odometry:: " << endl << "velocity:" << endl << " x:" << tb.odom.twist_with_covariance.twist.linear.x <<  endl << " y:" << tb.odom.twist_with_covariance.twist.linear.y << endl << " omega:" << tb.odom.twist_with_covariance.twist.angular.z << std::endl;
     node->publish("cmd_vel",cmd);
     sleep_time.sleep();
   }

@@ -46,7 +46,7 @@ import sys, unittest
 import os, time
 import rospy, rostest
 from robot_msgs.msg import *
-from deprecated_msgs.msg import *
+from nav_msgs.msg import *
 
 TEST_DURATION   = 10.0
 
@@ -154,13 +154,16 @@ class BaseTest(unittest.TestCase):
         return self.normalize_angle(angle_diff)
 
     def printBaseOdom(self, odom):
+        orientation = odom.pose_with_covariance.orientation
+        q = Q(orientation.x, orientation.y, orientation.z, orientation.w)
+        q.normalize()
         print "odom received"
-        print "odom pos " + "x: " + str(odom.pos.x)
-        print "odom pos " + "y: " + str(odom.pos.y)
-        print "odom pos " + "t: " + str(odom.pos.th)
-        print "odom vel " + "x: " + str(odom.vel.x)
-        print "odom vel " + "y: " + str(odom.vel.y)
-        print "odom vel " + "t: " + str(odom.vel.th)
+        print "odom pos " + "x: " + str(odom.pose_with_covariance.pose.position.x)
+        print "odom pos " + "y: " + str(odom.pose_with_covariance.pose.position.y)
+        print "odom pos " + "t: " + str(q.getEuler().z)
+        print "odom vel " + "x: " + str(odom.twist_with_covariance.twist.linear.x)
+        print "odom vel " + "y: " + str(odom.twist_with_covariance.twist.linear.y)
+        print "odom vel " + "t: " + str(odom.twist_with_covariance.twist.angular.z)
 
     def printBaseP3D(self, p3d):
         print "base pose ground truth received"
@@ -184,12 +187,12 @@ class BaseTest(unittest.TestCase):
         #self.printBaseOdom(odom)
         if self.odom_initialized == False:
             self.odom_initialized = True
-            self.odom_xi = odom.pos.x
-            self.odom_yi = odom.pos.y
-            self.odom_ei = E(0,0,odom.pos.th)
-        self.odom_x = odom.pos.x   - self.odom_xi
-        self.odom_y = odom.pos.y   - self.odom_yi
-        self.odom_e.shortest_euler_distance(self.odom_ei, E(0,0,odom.pos.th))
+            self.odom_xi = odom.pose_with_covariance.pose.position.x
+            self.odom_yi = odom.pose_with_covariance.pose.position.y
+            self.odom_ei = q.getEuler()
+        self.odom_x = odom.pose_with_covariance.pose.position.x   - self.odom_xi
+        self.odom_y = odom.pose_with_covariance.pose.position.y   - self.odom_yi
+        self.odom_e.shortest_euler_distance(self.odom_ei, q.getEuler())
 
 
     def p3dInput(self, p3d):
@@ -214,7 +217,7 @@ class BaseTest(unittest.TestCase):
         print "LNK\n"
         pub = rospy.Publisher("/cmd_vel", PoseDot)
         rospy.Subscriber("/base_pose_ground_truth", PoseWithRatesStamped, self.p3dInput)
-        rospy.Subscriber("/odom",                   RobotBase2DOdom,      self.odomInput)
+        rospy.Subscriber("/odom",                   Odometry,      self.odomInput)
         rospy.init_node(NAME, anonymous=True)
         timeout_t = time.time() + TEST_DURATION
         while not rospy.is_shutdown() and not self.success and time.time() < timeout_t:

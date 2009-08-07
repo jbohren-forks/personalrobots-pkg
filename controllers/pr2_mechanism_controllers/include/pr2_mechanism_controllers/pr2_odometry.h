@@ -34,11 +34,10 @@
 
 #include <Eigen/Array>
 #include <Eigen/SVD>
-#include <pr2_msgs/Odometry.h>
+#include <nav_msgs/Odometry.h>
 #include <realtime_tools/realtime_publisher.h>
 #include <tf/tfMessage.h>
 #include <pr2_mechanism_controllers/base_kinematics.h>
-#include <deprecated_msgs/RobotBase2DOdom.h>
 #include <angles/angles.h>
 
 typedef Eigen::Matrix<float, 3, 1> OdomMatrix3x1;
@@ -118,9 +117,9 @@ namespace controller
 
     /*!
     * \brief Builds the odometry message and prepares it for sending
-    * @param msg The pr2_msgs::Odometry into which the odometry values are placed
+    * @param msg The nav_msgs::Odometry into which the odometry values are placed
     */
-    void getOdometryMessage(pr2_msgs::Odometry &msg);
+    void getOdometryMessage(nav_msgs::Odometry &msg);
     
     /*!
     * \brief Takes the current odometery information and stores it into the six double parameters
@@ -134,11 +133,11 @@ namespace controller
     void getOdometry(double &x, double &y, double &yaw, double &vx, double &vy, double &vw);
 
     /*!
-    * \brief Takes the current odometry information and stores it into the Point and PoseDot parameters
+    * \brief Takes the current odometry information and stores it into the Point and Twist parameters
     * @param odom Point into which the odometry position is placed (z is theta)
     * @param odom_vel into which the odometry velocity is placed
     */
-    void getOdometry(geometry_msgs::Point &odom, robot_msgs::PoseDot &odom_vel);
+    void getOdometry(geometry_msgs::Point &odom, geometry_msgs::Twist &odom_vel);
 
     /*!
     * \brief Computes the base velocity from the caster positions and wheel speeds
@@ -187,9 +186,9 @@ namespace controller
     geometry_msgs::Point odom_;
 
     /*!
-    * \brief PoseDot that remembers the current translational velocities (vel.vx, vel.vy) and angular position (ang_vel.vz)
+    * \brief Twist that remembers the current translational velocities (vel.vx, vel.vy) and angular position (ang_vel.vz)
     */
-    robot_msgs::PoseDot odom_vel_;
+    geometry_msgs::Twist odom_vel_;
 
     /*!
     * \brief The type of weighting used in findWeightMatrix
@@ -224,23 +223,12 @@ namespace controller
     /*!
     * \brief The RealtimePublisher that does the realtime publishing of the odometry
     */
-    realtime_tools::RealtimePublisher <pr2_msgs::Odometry>* odometry_publisher_ ;  
-
-    /*!
-    * \brief The RealtimePublisher that does the realtime publishing of the old style odometry
-    */
-    realtime_tools::RealtimePublisher <deprecated_msgs::RobotBase2DOdom>* old_odometry_publisher_ ;  
+    realtime_tools::RealtimePublisher <nav_msgs::Odometry>* odometry_publisher_ ;  
 
     /*!
     * \brief Publishes the transform between the odometry frame and the base frame
     */
     realtime_tools::RealtimePublisher <tf::tfMessage>* transform_publisher_ ;  
-
-    /*!
-    * \brief Creates an old odometry message from the new odometery message
-    * @param msg The old message into which the odometry will be placed
-    */
-    void getOldOdometryMessage(deprecated_msgs::RobotBase2DOdom &msg);
 
   };
 }

@@ -72,12 +72,12 @@ namespace calibration
   {
     _odom_mutex.lock();
     if (!_odom_active){
-      _odom_begin = _odom.pos.th;
-      _odom_end   = _odom.pos.th;
+      _odom_begin = tf::getYaw(_odom.pose_with_covariance.pose.orientation);
+      _odom_end   = tf::getYaw(_odom.pose_with_covariance.pose.orientation);
       _odom_active = true;
     }
     else{
-      double tmp = _odom.pos.th;
+      double tmp = tf::getYaw(_odom.pose_with_covariance.pose.orientation);
       AngleOverflowCorrect(tmp, _odom_end);
       _odom_end = tmp;
     }

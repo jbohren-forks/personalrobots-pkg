@@ -50,7 +50,7 @@ from std_msgs.msg import String
 from nav_robot_actions.msg import MoveBaseState
 from geometry_msgs.msg import Pose,Quaternion,Point, PoseWithRatesStamped, PoseStamped, PoseWithCovariance
 from robot_msgs.msg import PoseDot
-from deprecated_msgs.msg import RobotBase2DOdom
+from nav_msgs.msg import Odometry
 import tf.transformations as tft
 from numpy import float64
 
@@ -147,20 +147,22 @@ class NavStackTest(unittest.TestCase):
         print "                   " + "z: " + str(p3d.vel.ang_vel.vz)
 
 
+    def quaternionMsgToList(self, q):
+      return [q.x, q.y, q.z, q.w]
 
     def odomInput(self, odom):
         #self.printBaseOdom(odom)
         # initialize odom
         if self.odom_initialized == False or self.p3d_initialized == False:
             self.odom_initialized = True
-            self.odom_xi = odom.pos.x
-            self.odom_yi = odom.pos.y
-            self.odom_qi = tft.quaternion_from_euler(0,0,odom.pos.th,'rxyz')
+            self.odom_xi = odom.pose_with_covariance.pose.position.x
+            self.odom_yi = odom.pose_with_covariance.pose.position.y
+            self.odom_qi = quaternionMsgToList(odom.pose_with_covariance.orientation)
         else:
             # update odom
             self.odom_x = odom.pos.x
             self.odom_y = odom.pos.y
-            self.odom_q = tft.quaternion_from_euler(0,0,odom.pos.th,'rxyz')
+            self.odom_q = quaternionMsgToList(odom.pose_with_covariance.orientation)
 
     def p3dInput(self, p3d):
         #self.printBaseP3D(p3d)
@@ -223,7 +225,7 @@ class NavStackTest(unittest.TestCase):
         pub_goal = rospy.Publisher("/move_base/activate", PoseStamped)
         pub_pose = rospy.Publisher("initialpose", PoseWithCovariance)
         rospy.Subscriber("base_pose_ground_truth", PoseWithRatesStamped, self.p3dInput)
-        rospy.Subscriber("odom"                  , RobotBase2DOdom     , self.odomInput)
+        rospy.Subscriber("odom"                  , Odometry     , self.odomInput)
         rospy.Subscriber("base_bumper/info"      , String              , self.bumpedInput)
         rospy.Subscriber("torso_lift_bumper/info", String              , self.bumpedInput)
         rospy.Subscriber("/move_base/feedback"   , MoveBaseState       , self.stateInput)

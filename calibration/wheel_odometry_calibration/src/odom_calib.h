@@ -42,7 +42,7 @@
 
 
 // messages
-#include "deprecated_msgs/RobotBase2DOdom.h"
+#include "nav_msgs/Odometry.h"
 #include "robot_msgs/PoseDot.h"
 #include "geometry_msgs/PoseWithRatesStamped.h"
 #include "mechanism_msgs/MechanismState.h"
@@ -79,7 +79,7 @@ private:
   void AngleOverflowCorrect(double& a, double ref);
 
   // messages to receive
-  deprecated_msgs::RobotBase2DOdom       _odom;
+  nav_msgs::Odometry       _odom;
   geometry_msgs::PoseWithRatesStamped  _imu;
   mechanism_msgs::MechanismState      _mech;
 

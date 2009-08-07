@@ -43,17 +43,17 @@ ROS_REGISTER_CONTROLLER(Pr2BaseController)
 Pr2BaseController::Pr2BaseController()
 {
   //init variables
-  cmd_vel_.vel.vx = 0;
-  cmd_vel_.vel.vy = 0;
-  cmd_vel_.ang_vel.vz = 0;
+  cmd_vel_.linear.x = 0;
+  cmd_vel_.linear.y = 0;
+  cmd_vel_.angular.z = 0;
 
-  desired_vel_.vel.vx = 0;
-  desired_vel_.vel.vy = 0;
-  desired_vel_.ang_vel.vz = 0;
+  desired_vel_.linear.x = 0;
+  desired_vel_.linear.y = 0;
+  desired_vel_.angular.z = 0;
 
-  cmd_vel_t_.vel.vx = 0;
-  cmd_vel_t_.vel.vy = 0;
-  cmd_vel_t_.ang_vel.vz = 0;
+  cmd_vel_t_.linear.x = 0;
+  cmd_vel_t_.linear.y = 0;
+  cmd_vel_t_.angular.z = 0;
 
   new_cmd_available_ = false;
 
@@ -101,9 +101,9 @@ bool Pr2BaseController::init(mechanism::RobotState *robot, const ros::NodeHandle
 //    joy_sub_ = ros_node_.subscribe(joy_listen_topic, 1, &AntiCollisionBaseController::joyCallBack, this);
 
   //Get params from param server
-  node_.param<double> ("max_vel/vx", max_vel_.vel.vx, .5);
-  node_.param<double> ("max_vel/vy", max_vel_.vel.vy, .5);
-  node_.param<double> ("max_vel/omegaz", max_vel_.ang_vel.vz, 10.0); //0.5
+  node_.param<double> ("max_vel/vx", max_vel_.linear.x, .5);
+  node_.param<double> ("max_vel/vy", max_vel_.linear.y, .5);
+  node_.param<double> ("max_vel/omegaz", max_vel_.angular.z, 10.0); //0.5
   node_.param<double> ("max_accel/ax", max_accel_.linear.x, .2);
   node_.param<double> ("max_accel/ay", max_accel_.linear.y, .2);
   node_.param<double> ("max_accel/alphaz", max_accel_.linear.z, 10.0); //0.2
@@ -122,7 +122,7 @@ bool Pr2BaseController::init(mechanism::RobotState *robot, const ros::NodeHandle
   node_.param<double> ("state_publish_time", state_publish_time_, 0.5);
 
   node_.param<std::string> ("cmd_topic", cmd_topic_, "/cmd_vel");
-  cmd_sub_ = node_.subscribe<robot_msgs::PoseDot>(cmd_topic_, 1, &Pr2BaseController::CmdBaseVelReceived, this);
+  cmd_sub_ = node_.subscribe<geometry_msgs::Twist>(cmd_topic_, 1, &Pr2BaseController::CmdBaseVelReceived, this);
 
   //casters
   caster_controller_.resize(base_kin_.num_casters_);
@@ -166,25 +166,25 @@ bool Pr2BaseController::initXml(mechanism::RobotState *robot, TiXmlElement *conf
 }
 
 // Set the base velocity command
-void Pr2BaseController::setCommand(robot_msgs::PoseDot cmd_vel)
+void Pr2BaseController::setCommand(geometry_msgs::Twist cmd_vel)
 {
-  double vel_mag = sqrt(cmd_vel.vel.vx * cmd_vel.vel.vx + cmd_vel.vel.vy * cmd_vel.vel.vy);
-  double clamped_vel_mag = filters::clamp(vel_mag, -(max_vel_.vel.vx + max_vel_.vel.vy) / 2.0, (max_vel_.vel.vx + max_vel_.vel.vy) / 2.0);
+  double vel_mag = sqrt(cmd_vel.linear.x * cmd_vel.linear.x + cmd_vel.linear.y * cmd_vel.linear.y);
+  double clamped_vel_mag = filters::clamp(vel_mag, -(max_vel_.linear.x + max_vel_.linear.y) / 2.0, (max_vel_.linear.x + max_vel_.linear.y) / 2.0);
   if(vel_mag > eps_)
   {
-    cmd_vel_t_.vel.vx = cmd_vel.vel.vx * clamped_vel_mag / vel_mag;
-    cmd_vel_t_.vel.vy = cmd_vel.vel.vy * clamped_vel_mag / vel_mag;
+    cmd_vel_t_.linear.x = cmd_vel.linear.x * clamped_vel_mag / vel_mag;
+    cmd_vel_t_.linear.y = cmd_vel.linear.y * clamped_vel_mag / vel_mag;
   }
   else
   {
-    cmd_vel_t_.vel.vx = 0.0;
-    cmd_vel_t_.vel.vy = 0.0;
+    cmd_vel_t_.linear.x = 0.0;
+    cmd_vel_t_.linear.y = 0.0;
   }
-  cmd_vel_t_.ang_vel.vz = filters::clamp(cmd_vel.ang_vel.vz, -max_vel_.ang_vel.vz, max_vel_.ang_vel.vz);
+  cmd_vel_t_.angular.z = filters::clamp(cmd_vel.angular.z, -max_vel_.angular.z, max_vel_.angular.z);
   cmd_received_timestamp_ = base_kin_.robot_state_->hw_->current_time_;
 
-  ROS_DEBUG("BaseController:: command received: %f %f %f",cmd_vel.vel.vx,cmd_vel.vel.vy,cmd_vel.ang_vel.vz);
-  ROS_DEBUG("BaseController:: command current: %f %f %f", cmd_vel_.vel.vx,cmd_vel_.vel.vy,cmd_vel_.ang_vel.vz);
+  ROS_DEBUG("BaseController:: command received: %f %f %f",cmd_vel.linear.x,cmd_vel.linear.y,cmd_vel.angular.z);
+  ROS_DEBUG("BaseController:: command current: %f %f %f", cmd_vel_.linear.x,cmd_vel_.linear.y,cmd_vel_.angular.z);
   ROS_DEBUG("BaseController:: clamped vel: %f", clamped_vel_mag);
   ROS_DEBUG("BaseController:: vel: %f", vel_mag);
 
@@ -199,27 +199,27 @@ void Pr2BaseController::setCommand(robot_msgs::PoseDot cmd_vel)
   new_cmd_available_ = true;
 }
 
-robot_msgs::PoseDot Pr2BaseController::interpolateCommand(robot_msgs::PoseDot start, robot_msgs::PoseDot end, geometry_msgs::Twist max_rate, double dT)
+geometry_msgs::Twist Pr2BaseController::interpolateCommand(geometry_msgs::Twist start, geometry_msgs::Twist end, geometry_msgs::Twist max_rate, double dT)
 {
-  robot_msgs::PoseDot result;
+  geometry_msgs::Twist result;
   geometry_msgs::Twist alpha;
   double delta(0), max_delta(0);
 
-  delta = end.vel.vx - start.vel.vx;
+  delta = end.linear.x - start.linear.x;
   max_delta = max_rate.linear.x * dT;
   if(fabs(delta) <= max_delta || max_delta < eps_)
     alpha.linear.x = 1;
   else
     alpha.linear.x = max_delta / fabs(delta);
 
-  delta = end.vel.vy - start.vel.vy;
+  delta = end.linear.y - start.linear.y;
   max_delta = max_rate.linear.y * dT;
   if(fabs(delta) <= max_delta || max_delta < eps_)
     alpha.linear.y = 1;
   else
     alpha.linear.y = max_delta / fabs(delta);
 
-  delta = end.ang_vel.vz - start.ang_vel.vz;
+  delta = end.angular.z - start.angular.z;
   max_delta = max_rate.angular.z * dT;
   if(fabs(delta) <= max_delta || max_delta < eps_)
     alpha.angular.z = 1;
@@ -232,19 +232,19 @@ robot_msgs::PoseDot Pr2BaseController::interpolateCommand(robot_msgs::PoseDot st
   if(alpha.angular.z < alpha_min)
     alpha_min = alpha.angular.z;
 
-  result.vel.vx = start.vel.vx + alpha_min * (end.vel.vx - start.vel.vx);
-  result.vel.vy = start.vel.vy + alpha_min * (end.vel.vy - start.vel.vy);
-  result.ang_vel.vz = start.ang_vel.vz + alpha_min * (end.ang_vel.vz - start.ang_vel.vz);
+  result.linear.x = start.linear.x + alpha_min * (end.linear.x - start.linear.x);
+  result.linear.y = start.linear.y + alpha_min * (end.linear.y - start.linear.y);
+  result.angular.z = start.angular.z + alpha_min * (end.angular.z - start.angular.z);
   return result;
 }
 
-robot_msgs::PoseDot Pr2BaseController::getCommand()// Return the current velocity command
+geometry_msgs::Twist Pr2BaseController::getCommand()// Return the current velocity command
 {
-  robot_msgs::PoseDot cmd_vel;
+  geometry_msgs::Twist cmd_vel;
   pthread_mutex_lock(&pr2_base_controller_lock_);
-  cmd_vel.vel.vx = cmd_vel_.vel.vx;
-  cmd_vel.vel.vy = cmd_vel_.vel.vy;
-  cmd_vel.ang_vel.vz = cmd_vel_.ang_vel.vz;
+  cmd_vel.linear.x = cmd_vel_.linear.x;
+  cmd_vel.linear.y = cmd_vel_.linear.y;
+  cmd_vel.angular.z = cmd_vel_.angular.z;
   pthread_mutex_unlock(&pr2_base_controller_lock_);
   return cmd_vel;
 }
@@ -283,9 +283,9 @@ void Pr2BaseController::update()
   {
     if(pthread_mutex_trylock(&pr2_base_controller_lock_) == 0)
     {
-      desired_vel_.vel.vx = cmd_vel_t_.vel.vx;
-      desired_vel_.vel.vy = cmd_vel_t_.vel.vy;
-      desired_vel_.ang_vel.vz = cmd_vel_t_.ang_vel.vz;
+      desired_vel_.linear.x = cmd_vel_t_.linear.x;
+      desired_vel_.linear.y = cmd_vel_t_.linear.y;
+      desired_vel_.angular.z = cmd_vel_t_.angular.z;
       new_cmd_available_ = false;
       pthread_mutex_unlock(&pr2_base_controller_lock_);
     }
@@ -293,9 +293,9 @@ void Pr2BaseController::update()
 
   if((current_time - cmd_received_timestamp_) > timeout_)
   {
-    cmd_vel_.vel.vx = 0;
-    cmd_vel_.vel.vy = 0;
-    cmd_vel_.ang_vel.vz = 0;
+    cmd_vel_.linear.x = 0;
+    cmd_vel_.linear.y = 0;
+    cmd_vel_.angular.z = 0;
   }
   else
     cmd_vel_ = interpolateCommand(cmd_vel_, desired_vel_, max_accel_, dT);
@@ -323,9 +323,9 @@ void Pr2BaseController::publishState(double time)
   }
   if(state_publisher_->trylock())
   {
-    state_publisher_->msg_.command_vx = cmd_vel_.vel.vx;
-    state_publisher_->msg_.command_vy = cmd_vel_.vel.vy;
-    state_publisher_->msg_.command_vw = cmd_vel_.ang_vel.vz;
+    state_publisher_->msg_.command_vx = cmd_vel_.linear.x;
+    state_publisher_->msg_.command_vy = cmd_vel_.linear.y;
+    state_publisher_->msg_.command_vw = cmd_vel_.angular.z;
     for(int i = 0; i < base_kin_.num_casters_; i++)
     {
       state_publisher_->msg_.joint_speed[i] = base_kin_.caster_[i].caster_speed_;
@@ -368,21 +368,21 @@ void Pr2BaseController::setJointCommands()
 
 void Pr2BaseController::computeDesiredCasterSteer()
 {
-  robot_msgs::PoseDot result;
+  geometry_msgs::Twist result;
 
   double steer_angle_desired(0.0), steer_angle_desired_m_pi(0.0);
   double error_steer(0.0), error_steer_m_pi(0.0);
-  double trans_vel = sqrt(cmd_vel_.vel.vx * cmd_vel_.vel.vx + cmd_vel_.vel.vy * cmd_vel_.vel.vy);
+  double trans_vel = sqrt(cmd_vel_.linear.x * cmd_vel_.linear.x + cmd_vel_.linear.y * cmd_vel_.linear.y);
   for(int i = 0; i < base_kin_.num_casters_; i++)
   {
     result = base_kin_.pointVel2D(base_kin_.caster_[i].offset_, cmd_vel_);
-    if(trans_vel < cmd_vel_trans_eps_ && fabs(cmd_vel_.ang_vel.vz) < cmd_vel_rot_eps_)
+    if(trans_vel < cmd_vel_trans_eps_ && fabs(cmd_vel_.angular.z) < cmd_vel_rot_eps_)
     {
       steer_angle_desired = base_kin_.caster_[i].steer_angle_stored_;
     }
     else
     {
-      steer_angle_desired = atan2(result.vel.vy, result.vel.vx);
+      steer_angle_desired = atan2(result.linear.y, result.linear.x);
       base_kin_.caster_[i].steer_angle_stored_ = steer_angle_desired;
     }
     steer_angle_desired_m_pi = angles::normalize_angle(steer_angle_desired + M_PI);
@@ -409,20 +409,20 @@ void Pr2BaseController::setDesiredCasterSteer()
 
 void Pr2BaseController::computeDesiredWheelSpeeds()
 {
-  robot_msgs::PoseDot wheel_point_velocity;
-  robot_msgs::PoseDot wheel_point_velocity_projected;
-  robot_msgs::PoseDot wheel_caster_steer_component;
-  robot_msgs::PoseDot caster_2d_velocity;
+  geometry_msgs::Twist wheel_point_velocity;
+  geometry_msgs::Twist wheel_point_velocity_projected;
+  geometry_msgs::Twist wheel_caster_steer_component;
+  geometry_msgs::Twist caster_2d_velocity;
 
-  caster_2d_velocity.vel.vx = 0;
-  caster_2d_velocity.vel.vy = 0;
-  caster_2d_velocity.ang_vel.vz = 0;
+  caster_2d_velocity.linear.x = 0;
+  caster_2d_velocity.linear.y = 0;
+  caster_2d_velocity.angular.z = 0;
 
   double steer_angle_actual = 0;
   for(int i = 0; i < (int) base_kin_.num_wheels_; i++)
   {
     base_kin_.wheel_[i].updatePosition();
-    caster_2d_velocity.ang_vel.vz = kp_wheel_steer_ * base_kin_.wheel_[i].parent_->steer_velocity_desired_;
+    caster_2d_velocity.angular.z = kp_wheel_steer_ * base_kin_.wheel_[i].parent_->steer_velocity_desired_;
     steer_angle_actual = base_kin_.wheel_[i].parent_->joint_->position_;
     wheel_point_velocity = base_kin_.pointVel2D(base_kin_.wheel_[i].position_, cmd_vel_);
     wheel_caster_steer_component = base_kin_.pointVel2D(base_kin_.wheel_[i].offset_, caster_2d_velocity);
@@ -430,9 +430,9 @@ void Pr2BaseController::computeDesiredWheelSpeeds()
     double costh = cos(-steer_angle_actual);
     double sinth = sin(-steer_angle_actual);
 
-    wheel_point_velocity_projected.vel.vx = costh * wheel_point_velocity.vel.vx - sinth * wheel_point_velocity.vel.vy;
-    wheel_point_velocity_projected.vel.vy = sinth * wheel_point_velocity.vel.vx + costh * wheel_point_velocity.vel.vy;
-    base_kin_.wheel_[i].wheel_speed_cmd_ = (wheel_point_velocity_projected.vel.vx + wheel_caster_steer_component.vel.vx) / (base_kin_.wheel_radius_ * base_kin_.wheel_[i].wheel_radius_scaler_);
+    wheel_point_velocity_projected.linear.x = costh * wheel_point_velocity.linear.x - sinth * wheel_point_velocity.linear.y;
+    wheel_point_velocity_projected.linear.y = sinth * wheel_point_velocity.linear.x + costh * wheel_point_velocity.linear.y;
+    base_kin_.wheel_[i].wheel_speed_cmd_ = (wheel_point_velocity_projected.linear.x + wheel_caster_steer_component.linear.x) / (base_kin_.wheel_radius_ * base_kin_.wheel_[i].wheel_radius_scaler_);
   }
 }
 
@@ -486,7 +486,7 @@ void Pr2BaseController::computeStall()
   }
 }
 
-void Pr2BaseController::CmdBaseVelReceived(const robot_msgs::PoseDotConstPtr& msg)
+void Pr2BaseController::CmdBaseVelReceived(const geometry_msgs::TwistConstPtr& msg)
 {
   pthread_mutex_lock(&pr2_base_controller_lock_);
   base_vel_msg_ = *msg;

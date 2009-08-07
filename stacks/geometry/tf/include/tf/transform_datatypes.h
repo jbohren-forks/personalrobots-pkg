@@ -122,6 +122,17 @@ static inline double getYaw(const geometry_msgs::Quaternion& msg_q){
   return getYaw(bt_q);
 }
 
+static inline Quaternion createQuaternionFromYaw(double yaw){
+  return Quaternion(yaw, 0.0, 0.0);
+}
+
+static inline geometry_msgs::Quaternion createQuaternionMsgFromYaw(double yaw){
+  Quaternion q(yaw, 0.0, 0.0);
+  geometry_msgs::Quaternion q_msg;
+  quaternionTFToMsg(q, q_msg);
+  return q_msg;
+}
+
 /** \brief convert QuaternionStamped msg to Stamped<Quaternion> */
 static inline void quaternionStampedMsgToTF(const geometry_msgs::QuaternionStamped & msg, Stamped<Quaternion>& bt)
 {quaternionMsgToTF(msg.quaternion, bt); bt.stamp_ = msg.header.stamp; bt.frame_id_ = msg.header.frame_id;};

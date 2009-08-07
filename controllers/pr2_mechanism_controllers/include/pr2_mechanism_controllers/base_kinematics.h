@@ -37,7 +37,7 @@
 
 #include <mechanism_model/robot.h>
 #include <mechanism_control/controller.h>
-#include <robot_msgs/PoseDot.h>
+#include <geometry_msgs/Twist.h>
 #include <geometry_msgs/Point.h>
 #include <control_toolbox/filters.h>
 
@@ -248,7 +248,7 @@ namespace controller
        * @param vel Velocity of the center of rotation
        * @return Velocity at the given point
        */
-      robot_msgs::PoseDot pointVel2D(const geometry_msgs::Point& pos, const robot_msgs::PoseDot& vel);
+      geometry_msgs::Twist pointVel2D(const geometry_msgs::Point& pos, const geometry_msgs::Twist& vel);
 
       /*!
        * \brief remembers everything about the state of the robot

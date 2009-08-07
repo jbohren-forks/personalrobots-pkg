@@ -46,7 +46,7 @@
 #include "mocap_msgs/MocapBody.h"
 
 #include "geometry_msgs/Transform.h"
-#include "deprecated_msgs/RobotBase2DOdom.h"
+#include "nav_msgs/Odometry.h"
 #include "geometry_msgs/PoseWithRatesStamped.h"
 
 #include <tf/tf.h>
@@ -74,7 +74,7 @@ public :
     param("~publish_transform", publish_transform_, true) ;
     param("~base_id", base_id_, 1) ;
 
-    advertise<deprecated_msgs::RobotBase2DOdom>("localizedpose", 1);
+    advertise<nav_msgs::Odometry>("localizedpose", 1);
     advertise<geometry_msgs::PoseWithRatesStamped>("base_pose_ground_truth", 1) ;
 
     m_tfServer = new tf::TransformBroadcaster();
@@ -114,12 +114,12 @@ public :
         m_currentPos.header = snapshot_.header;
         m_currentPos.header.frame_id = "map";
 
-        m_currentPos.pos.x = body.pose.translation.x;
-        m_currentPos.pos.y = body.pose.translation.y;
+        m_currentPos.pose_with_covariance.pose.position.x = body.pose.translation.x;
+        m_currentPos.pose_with_covariance.pose.position.y = body.pose.translation.y;
 
         double yaw,pitch,roll;
         mytf.getBasis().getEulerZYX(yaw,pitch,roll);
-        m_currentPos.pos.th = yaw;
+        m_currentPos.pose_with_covariance.pose.orientation= tf::createQuaternionMsgFromYaw(yaw);
 
         if (publish_localized_pose_)
           publish("localizedpose", m_currentPos) ;
@@ -151,7 +151,7 @@ public :
 private:
 
   mocap_msgs::MocapSnapshot snapshot_;
-  deprecated_msgs::RobotBase2DOdom m_currentPos;
+  nav_msgs::Odometry m_currentPos;
   tf::TransformBroadcaster *m_tfServer;
   unsigned int publish_success_count_ ;
   unsigned int publish_attempt_count_ ;

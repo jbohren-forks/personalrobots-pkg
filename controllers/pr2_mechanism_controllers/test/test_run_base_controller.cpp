@@ -36,7 +36,7 @@
 #include <ros/node.h>
 #include <geometry_msgs/PoseWithRatesStamped.h>
 #include <robot_msgs/PoseDot.h>
-#include <deprecated_msgs/RobotBase2DOdom.h>
+#include <nav_msgs/Odometry.h>
 #include <geometry_msgs/Quaternion.h>
 
 static int done = 0;
@@ -88,7 +88,7 @@ class test_run_base
 
     geometry_msgs::PoseWithRatesStamped ground_truth;
 
-    deprecated_msgs::RobotBase2DOdom odom;
+    nav_msgs::Odometry odom;
 
     int subscriber_connected;
 
@@ -121,9 +121,9 @@ int main( int argc, char** argv )
 
   test_run_base tb;
 
-  node->subscribe("base_pose_ground_truth",tb.ground_truth,&test_run_base::odomMsgReceived,&tb,10);
+  node->subscribe("base_pose_ground_truth",tb.ground_truth,&test_run_base::groundTruthMsgReceived,&tb,10);
 
-  node->subscribe("odom",tb.odom,&test_run_base::groundTruthMsgReceived,&tb,10);
+  node->subscribe("odom",tb.odom,&test_run_base::odomMsgReceived,&tb,10);
 
   signal(SIGINT,  finalize);
   signal(SIGQUIT, finalize);
@@ -174,7 +174,7 @@ int main( int argc, char** argv )
     //   ang_rates = GetAsEuler(tb.ground_truth.vel.ang_vel);
      ground_truth_angles = GetAsEuler(tb.ground_truth.pos.orientation);
      cout << "g:: " << tb.ground_truth.vel.vel.vx <<  " " << tb.ground_truth.vel.vel.vy << " "  << tb.ground_truth.vel.ang_vel.vz  << " " << tb.ground_truth.pos.position.x << " " << tb.ground_truth.pos.position.y <<  " " << ground_truth_angles.z << " " <<  tb.ground_truth.header.stamp.sec + tb.ground_truth.header.stamp.nsec/1.0e9 << std::endl;
-    cout << "o:: " << tb.odom.vel.x <<  " " << tb.odom.vel.y << " " << tb.odom.vel.th << " " << tb.odom.pos.x <<  " " << tb.odom.pos.y << " " << tb.odom.pos.th << " " << tb.odom.header.stamp.sec + tb.odom.header.stamp.nsec/1.0e9 << std::endl;
+    cout << "o:: " << tb.odom.twist_with_covariance.twist.linear.x <<  " " << tb.odom.twist_with_covariance.twist.linear.y << " " << tb.odom.twist_with_covariance.twist.angular.z << " " << tb.odom.pose_with_covariance.pose.position.x <<  " " << tb.odom.pose_with_covariance.pose.position.y << " " << tf::getYaw(tb.odom.pose_with_covariance.pose.orientation) << " " << tb.odom.header.stamp.sec + tb.odom.header.stamp.nsec/1.0e9 << std::endl;
     //    cout << delta_time.toSec() << "  " << run_time << endl;
     node->publish("cmd_vel",cmd);
     sleep_time.sleep();
