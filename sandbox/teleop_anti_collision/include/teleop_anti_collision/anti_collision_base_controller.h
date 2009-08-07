@@ -54,7 +54,7 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Point.h>
 #include <robot_msgs/PoseDot.h>
-#include <deprecated_msgs/RobotBase2DOdom.h>
+#include <nav_msgs/Odometry.h>
 
 //for some datatypes
 #include <tf/transform_datatypes.h>
@@ -85,7 +85,7 @@ namespace anti_collision_base_controller {
 
       void joyCallBack(const robot_msgs::PoseDotConstPtr& msg);
 
-      void odomCallback(const deprecated_msgs::RobotBase2DOdomConstPtr& msg);
+      void odomCallback(const nav_msgs::OdometryConstPtr& msg);
 
       void spin();
 

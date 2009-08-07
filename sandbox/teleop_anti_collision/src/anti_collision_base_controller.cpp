@@ -294,15 +294,15 @@ void AntiCollisionBaseController::joyCallBack(const robot_msgs::PoseDot::ConstPt
     vel_desired_.unlock();
   }
 
-  void AntiCollisionBaseController::odomCallback(const deprecated_msgs::RobotBase2DOdomConstPtr& msg){
+  void AntiCollisionBaseController::odomCallback(const nav_msgs::OdometryConstPtr& msg){
     base_odom_.lock();
     try
     {
-      tf::Stamped<btVector3> v_in(btVector3(msg->vel.x, msg->vel.y, 0), ros::Time(), msg->header.frame_id), v_out;
+      tf::Stamped<btVector3> v_in(btVector3(msg->twist_with_covariance.twist.linear.x, msg->twist_with_covariance.twist.linear.y, 0), ros::Time(), msg->header.frame_id), v_out;
       tf_.transformVector(robot_base_frame_, ros::Time(), v_in, msg->header.frame_id, v_out);
       base_odom_.vel.vx = v_in.x();
       base_odom_.vel.vy = v_in.y();
-      base_odom_.ang_vel.vz = msg->vel.th;
+      base_odom_.ang_vel.vz = msg->twist_with_covariance.twist.angular.z;
     }
     catch(tf::LookupException& ex)
     {
