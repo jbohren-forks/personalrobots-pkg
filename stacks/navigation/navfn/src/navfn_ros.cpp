@@ -35,11 +35,12 @@
 * Author: Eitan Marder-Eppstein
 *********************************************************************/
 #include <navfn/navfn_ros.h>
+#include <pluginlib/plugin_macros.h>
 
 //register this planner as a BaseGlobalPlanner plugin
-POCO_BEGIN_MANIFEST(nav_core::BaseGlobalPlanner)
-POCO_EXPORT_CLASS(navfn::NavfnROS)
-POCO_END_MANIFEST
+BEGIN_PLUGIN_LIST(nav_core::BaseGlobalPlanner)
+REGISTER_PLUGIN(navfn::NavfnROS)
+END_PLUGIN_LIST
 
 namespace navfn {
 

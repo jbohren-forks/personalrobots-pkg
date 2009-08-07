@@ -47,8 +47,6 @@
 #include <vector>
 #include <nav_core/base_global_planner.h>
 
-#include <Poco/ClassLibrary.h>
-
 namespace navfn {
   class NavfnROS : public nav_core::BaseGlobalPlanner {
     public:
