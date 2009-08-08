@@ -77,11 +77,11 @@ public:
   IplImage* pixFree;
   IplImage* pixUnknown;
   IplImage* pixDist;
-  std::vector<robot_msgs::PointCloud> plane_cloud;
+  std::vector<sensor_msgs::PointCloud> plane_cloud;
   std::vector<std::vector<double> > plane_coeff;
   std::vector<std::vector<int> > plane_indices;
   int current_plane;
-  robot_msgs::PointCloud outside;
+  sensor_msgs::PointCloud outside;
 
   // MESSAGES - INCOMING
   ros::Subscriber cloud_sub_;

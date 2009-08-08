@@ -983,8 +983,8 @@ void BoxDetector::findCornerCandidates(IplImage* pixOccupied, IplImage *pixFree,
     while(p[0]==p[2] || p[0]==p[2]) p[2] = plane_indices[random() % plane_indices.size()];
 
     // now shift inliers to maximize surface
-    btVector3 position(cloud_->pts[p[0]].x,cloud_->pts[p[0]].y,cloud_->pts[p[0]].z);
-    btVector3 vec1(cloud_->pts[p[1]].x,cloud_->pts[p[1]].y,cloud_->pts[p[1]].z);
+    btVector3 position(cloud_->points[p[0]].x,cloud_->points[p[0]].y,cloud_->points[p[0]].z);
+    btVector3 vec1(cloud_->points[p[1]].x,cloud_->points[p[1]].y,cloud_->points[p[1]].z);
     vec1 -= position;
     vec1 = vec1.normalize();
 
