@@ -12,8 +12,10 @@ Do not use these messages!
   <depend package="roslib"/>
   <depend package="std_msgs"/>
   <depend package="geometry_msgs"/>
+  <depend package="rosbagmigration"/>
   <export>
     <cpp cflags="-I${prefix}/msg/cpp"/>
+    <rosbagmigration rule_file="migration_rules/migration_rules.py"/>
   </export>
 </package>
 
