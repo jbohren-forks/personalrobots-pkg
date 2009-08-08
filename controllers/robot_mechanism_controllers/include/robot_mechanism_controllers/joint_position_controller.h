@@ -35,22 +35,28 @@
 #ifndef JOINT_POSITION_CONTROLLER_H
 #define JOINT_POSITION_CONTROLLER_H
 
-/***************************************************/
-/*! \class controller::JointPositionController
-    \brief Joint Position Controller
+/**
+   @class controller::JointPositionController
+   @brief Joint Position Controller
 
-    This class closes the loop around positon using
-    a pid loop.
+   This class controls positon using a pid loop.
 
-    Example config:<br>
+   @section ROS ROS interface
 
-    <controller type="JointPositionController" name="controller_name" ><br>
-      <joint name="head_tilt_joint"><br>
-        <pid p="1.0" i="0.0" d="3.0" iClamp="0.0" /><br>
-      </joint><br>
-    </controller><br>
+   @param type Must be "JointPositionController"
+   @param joint Name of the joint to control.
+   @param pid Contains the gains for the PID loop around position.  See: control_toolbox::Pid
+
+   Subscribes to:
+
+   - @b command (std_msgs::Float64) : The joint position to achieve.
+
+   Publishes:
+
+   - @b state (robot_mechanism_controllers::JointControllerState) :
+     Current state of the controller, including pid error and gains.
+
 */
-/***************************************************/
 
 #include <ros/node.h>
 

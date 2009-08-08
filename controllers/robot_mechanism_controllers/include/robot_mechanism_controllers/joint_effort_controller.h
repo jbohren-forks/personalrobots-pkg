@@ -35,21 +35,21 @@
 #ifndef JOINT_EFFORT_CONTROLLER_H
 #define JOINT_EFFORT_CONTROLLER_H
 
-/***************************************************/
-/*! \class controller::JointEffortController
-    \brief Joint Torque Controller
+/**
+   @class controller::JointEffortController
+   @brief Joint Effort Controller (torque or force)
 
-    This class basically passes the commanded effort
-    down through the transmissions and safety code.
+   This class passes the commanded effort down through the
+   transmissions and safety code.
 
-    Example config:<br>
+   @section ROS ROS interface
 
-    <controller type="JointEffortController" name="controller_name"><br>
-      <joint name="joint_to_control" /><br>
-    </controller><br>
+   @param type Must be "JointEffortController"
+   @param joint Name of the joint to control.
 
+   Subscribes to:
+   - @b command (std_msgs::Float64) : The joint effort to apply
 */
-/***************************************************/
 
 #include <ros/node.h>
 #include <mechanism_control/controller.h>

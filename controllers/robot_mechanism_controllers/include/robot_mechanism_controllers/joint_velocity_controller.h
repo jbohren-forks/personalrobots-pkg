@@ -35,30 +35,29 @@
 #ifndef JOINT_VELOCITY_CONTROLLER_H
 #define JOINT_VELOCITY_CONTROLLER_H
 
-/***************************************************/
-/*! \class controller::JointVelocityController
-    \brief Joint Velocity Controller
+/**
+   @class controller::JointVelocityController
+   @author Stuart Glaser
+   @brief Joint Velocity Controller
 
-    This class closes the loop around velocity using
-    a pid loop.
+   This controller controls velocity using a pid loop.
 
-    Example config:<br>
+   @section ROS ROS interface
 
-    <controller type="JointVelocityController" name="controller_name"><br>
-      <joint name="joint_to_control"><br>
-        <pid p="1.0" i="2.0" d="3.0" iClamp="4.0" /><br>
-      </joint><br>
-    </controller><br>
+   @param type Must be "JointVelocityController"
+   @param joint Name of the joint to control.
+   @param pid Contains the gains for the PID loop around velocity.  See: control_toolbox::Pid
 
-     Configuration:
-     <controller name>:
-       type: "JointVelocityController"
-       joint: "<joint_name>"
-       pid: { p: <p_gain>, i: <i_gain>, d: <d_gain>, i_clamp: <i_clamp> }
+   Subscribes to:
 
+   - @b command (std_msgs::Float64) : The joint velocity to achieve
+
+   Publishes:
+
+   - @b state (robot_mechanism_controllers::JointControllerState) :
+     Current state of the controller, including pid error and gains.
 
 */
-/***************************************************/
 
 #include <ros/node.h>
 #include <ros/node_handle.h>

@@ -27,8 +27,42 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- * Author: Wim Meeussen
+/**
+   @class controller::CartesianPoseController
+   @author Wim Meeussen
+   @brief Cartesian pose controller
+
+   Controls the pose of the end effector of a chain of the robot.
+
+   @section ROS ROS interface
+
+   @param type Must be "CartesianPoseController"
+
+   @param root_name The name of the root link of the chain of links
+   that you wish to control.
+
+   @param tip_name The name of the tip link (end effector) of the
+   chain of links that you wish to control.
+
+   @param output The name of the CartesianWrenchController which will
+   achieve the desired wrench computed by this controller.
+
+   @param fb_trans The gains for the PID loop around position.  See: control_toolbox::Pid
+
+   @param fb_rot The gains for the PID loop around orientation.  See: control_toolbox::Pid
+
+   Subscribes to:
+
+   - @b command (geometry_msgs::PoseStamped) : The desired pose to
+     achieve.  The controller will transform this into the root link
+     (using tf), and then attempt to move the tip link to the
+     transformed pose.
+
+   Publishes:
+
+   - @b state/error (geometry_msgs::Twist) : The error from the measured pose to the desired pose.
+
+   - @b state/pose (geometry_msgs::PoseStamped) : The current measured pose of the tip link.
  */
 
 #ifndef CARTESIAN_POSE_CONTROLLER_H
