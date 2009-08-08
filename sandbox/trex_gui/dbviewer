@@ -195,16 +195,47 @@ class PropertyWindow(gtk.Window):
     self.create_columns(treeView)
 
     ###################################################
-    hbox = gtk.HBox(False, 8)
-    srccode_but = gtk.Button("View NDDL Source")
-    srccode_but.connect("clicked",self.on_srccode_clicked)
 
-    if not rule_src.has_key(self.entity.name):
-      srccode_but.set_sensitive(False)
 
-    hbox.pack_start(srccode_but, False, False, 0)
-    vbox.pack_start(hbox, False, False, 0)
     ###################################################
+
+
+    if rule_src.has_key(self.entity.name):
+      rule_name = self.entity.name
+
+      # Create the syntax hilighter and code buffer
+      lang = SyntaxLoader("cpp")
+      buff = CodeBuffer(lang=lang)
+
+      hbox = gtk.HBox(False, 8)
+      scr = gtk.ScrolledWindow()
+      scr.add(gtk.TextView(buff))
+      scr.set_shadow_type(gtk.SHADOW_ETCHED_IN)
+      scr.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)	      
+
+      # Get the source file path, and start line
+      src_path = rule_src[rule_name][0]
+      src_line_start = int(rule_src[rule_name][1])-1
+
+      # Open the source file
+      src_file = open(src_path,'r')
+      src_file_lines = src_file.readlines()
+      src_line_end = len(src_file_lines)
+      
+      # Find the line on which the next rule is defined
+      for line in range(src_line_start+1,len(src_file_lines)):
+	if src_file_lines[line].find("::") != -1:
+	  src_line_end = line;
+	  break
+
+      # Display the source code of just this rule
+      srccode = "".join(src_file_lines[src_line_start:src_line_end])
+
+      buff.set_text(srccode)
+      hbox.pack_start(scr, True, True, 0)
+      vbox.pack_start(hbox, True, True, 0)
+
+    ##################################################
 
     self.statusbar = gtk.Statusbar()
     vbox.pack_start(self.statusbar, False, False, 0)
@@ -218,9 +249,8 @@ class PropertyWindow(gtk.Window):
   def create_model(self):
     store = gtk.ListStore(str, str, str, str)
 
-    for vid in self.entity.vars:
-      var = vars[vid]
-      store.append([ vid, var.type, var.name, var.values])
+    for var in self.entity.vars:
+      store.append([ var.key, var.type, var.name, var.values])
     return store
 
   def create_columns(self, treeView):
@@ -267,88 +297,167 @@ class PropertyWindow(gtk.Window):
 class SearchWindow(gtk.Window):
   def __init__(self):
     super(SearchWindow, self).__init__()
-    self.set_title("Search")
-    self.set_size_request(400, 50)
+    self.set_title("Search Filters")
+    self.set_size_request(400, 300)
     #self.set_position(gtk.WIN_POS_CENTER)
 
     vbox = gtk.VBox(False, 8)
+    ###################################################
+    sw = gtk.ScrolledWindow()
+    sw.set_shadow_type(gtk.SHADOW_ETCHED_IN)
+    sw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+
+
+    store = self.create_model()
+
+    self.filter_view = gtk.TreeView(store)
+    self.filter_view.connect("row-activated", self.on_activated)
+    self.filter_view.connect('key_press_event', self.on_key_press)
+    self.filter_view.set_rules_hint(True)
+    sw.add(self.filter_view)
+
+    self.create_columns(self.filter_view)
+    vbox.pack_start(sw, True, True, 0)
 
     ################################################
-    self.search_entry = gtk.Entry()
-    self.search_entry.set_activates_default(True)
-    search_but = gtk.Button("String")
-    search_but.set_flags(gtk.CAN_DEFAULT)
-    self.set_default(search_but)
+    filter_hbox = gtk.HBox(False,4)
 
-    search_regex_but = gtk.Button("REGEX")
-    search_regex_but.set_flags(gtk.CAN_DEFAULT)
+    add_but = gtk.Button("Add")
+    add_but.connect("clicked",self.add_filter)
 
-    search_but.connect("clicked",self.search_string)
-    search_regex_but.connect("clicked",self.search_regex)
+    rep_but = gtk.Button("Replace")
+    rep_but.connect("clicked",self.replace_filter)
+    rep_but.set_flags(gtk.CAN_DEFAULT)
+
+    self.filter_entry = gtk.Entry()
+    self.filter_entry.set_activates_default(True)
+    self.set_default(rep_but)
+
+
+    filter_hbox.pack_start(self.filter_entry, True, True, 0)
+    filter_hbox.pack_start(rep_but, False, False, 0)
+    filter_hbox.pack_start(add_but, False, False, 0)
+
+    vbox.pack_start(filter_hbox, False, False, 4)
     
-    search_hbox = gtk.HBox(False,4)
-    search_hbox.pack_start(self.search_entry, True, True, 0)
-
-    search_hbox.pack_end(search_but, False, False, 0)
-    search_hbox.pack_end(search_regex_but, False, False, 0)
-
-    vbox.pack_start(search_hbox, False, False, 4)
-    
-    ################################################
-    timeline_check = gtk.CheckButton("Timelines")
-    token_check = gtk.CheckButton("Tokens")
-    rule_check = gtk.CheckButton("Rules")
-    variable_check = gtk.CheckButton("Variables")
-
-    timeline_check.connect("clicked",self.toggle_timeline)
-    token_check.connect("clicked",self.toggle_timeline)
-    rule_check.connect("clicked",self.toggle_timeline)
-    variable_check.connect("clicked",self.toggle_timeline)
-
-    scope_frame = gtk.Frame("Scope")
-
-    scope_vbox = gtk.HBox(True,2)
-
-    scope_vbox.pack_end(timeline_check,False,False,0)
-    scope_vbox.pack_end(token_check,False,False,0)
-    scope_vbox.pack_end(rule_check,False,False,0)
-    scope_vbox.pack_end(variable_check,False,False,0)
-
-    scope_frame.add(scope_vbox)
-    #vbox.pack_start(scope_frame,False,False,0)
     #################################################
+
+    opt_frame = gtk.Frame("Options")
+    opt_table = gtk.Table(2,1,homogeneous=False)
+
+    ignore_check = gtk.CheckButton("Ignore Case ")
+    halign = gtk.Alignment(1,0.5,0,0.5)
+    halign.add(ignore_check)
+    opt_table.attach(halign, 0,1,0,1, gtk.FILL, gtk.FILL,0,0)
+
+    regex_check = gtk.CheckButton("Use Regex")
+    halign = gtk.Alignment(1,0.5,0,0.5)
+    halign.add(regex_check)
+    opt_table.attach(halign, 1,2,0,1, gtk.FILL, gtk.FILL,0,0)
+
+
+    padding = gtk.Alignment(1.0,0.5,1,1)
+    padding.set_padding(4,4,4,4)
+    padding.add(opt_table)
+    opt_frame.add(padding)
+
+    vbox.pack_start(opt_frame, False, False, 4)
 
     self.add(vbox)
 
     self.connect("destroy", self.on_destroy)
     self.show_all()
+
+  def add_filter(self,widget):
+    filter = self.filter_entry.get_text()
+    self.store.append([ True, filter])
+    self.post_refilter()
+
+  def replace_filter(self,widget):
+    selection = self.filter_view.get_selection()
+    model, iter = selection.get_selected()
+    first_iter = self.store.get_iter_first()
+    if iter:
+      self.store.remove(iter)
+    elif first_iter:
+      self.store.remove(first_iter)
+    self.add_filter(widget)
+
+  def remove_selected_filter(self):
+    selection = self.filter_view.get_selection()
+    model, iter = selection.get_selected()
+    if iter:
+      model.remove(iter)
+    self.post_refilter()
+
+  def on_key_press(self,widget,event):
+    keyname = gtk.gdk.keyval_name(event.keyval)
+    if keyname == "BackSpace" or keyname == "Delete":
+      self.remove_selected_filter()
+
+  def create_model(self):
+    self.store = gtk.ListStore(bool, str)
+    
+    self.store.append([ True, "SUCCESS"])
+    self.store.append([ True, "Inactive"])
+
+    return self.store
+
+  def on_set_include(self, model, row):
+    model[row][0] = not model[row][0]
+    self.post_refilter(model)
+
+  def create_columns(self, treeView):
+    # Create checkbox column
+    cell = gtk.CellRendererToggle()
+    cell.set_property( 'activatable', True )
+    cell.connect_object( 'toggled', self.on_set_include, self.store )
+
+    column = gtk.TreeViewColumn("On", cell)
+    column.set_sort_column_id(0)    
+    column.add_attribute( cell, 'active', 0)
+
+    treeView.append_column(column)
+
+    # Create pattern column
+    rendererText = gtk.CellRendererText()
+    column = gtk.TreeViewColumn("Pattern", rendererText, text=1)
+    column.set_sort_column_id(1)
+    treeView.append_column(column)
+
+  def on_activated(self, widget, row, col):
+    pass
   
   def on_destroy(self,widget):
     # If we don't make a new one here, you can't anywhere else
     search_window = SearchWindow()
 
-  def toggle_timeline(self, widget):
-    search_timeline = widget.get_active()
+  def post_refilter(self,model=None):
+    # Generate entity list
+    filtered = tokens.values() + rules.values() 
 
-  def toggle_token(self, widget):
-    search_token = widget.get_active()
+    # Apply all enabled filters to shrink list
+    enabled_patterns = [row[1] for row in self.store if row[0]]
+    if len(enabled_patterns) != 0:
+      for pattern in enabled_patterns:
+	entities = filtered
+	filtered = []
+	for entity in entities:
+	  if entity.matches(pattern):
+	    filtered.append(entity)
+	    entity.hilight()
+	  else:
+	    entity.lolight()
+    else:
+      for entity in filtered:
+	entity.lolight()
 
-  def toggle_rule(self, widget):
-    search_rule = widget.get_active()
-
-  def toggle_variable(self, widget):
-    search_variable = widget.get_active()
-
-  def search_string(self, widget):
     # Crete a string stream
     dotfile = StringIO.StringIO()
-
-    # Search the graph
-    search_graph(dotfile,search=self.search_entry.get_text())
-
+    # Generate the GvGen graph
+    draw_graph(dotfile)
     # Set the dotcode
     window.set_dotcode(dotfile.getvalue())
-
     # Close the string stream
     dotfile.close()
 
@@ -359,18 +468,6 @@ class SearchWindow(gtk.Window):
     except:
       print "ERROR: Cound not parse regular expression: \"%s\"" % self.search_entry.get_text()
       return
-
-    # Crete a string stream
-    dotfile = StringIO.StringIO()
-
-    # Search the graph
-    search_graph(dotfile,regex=regex)
-
-    # Set the dotcode
-    window.set_dotcode(dotfile.getvalue())
-
-    # Close the string stream
-    dotfile.close()
 
 ##############################################################################
 # ControlWindow
@@ -577,12 +674,29 @@ class ControlWindow(gtk.Window):
 
       tick = new_tick
       self.update_text()
-      run()
+
+      # Load data
+      load_data()
+
+      # Create a new graph with GvGen
+      global graph
+      graph = GvGen()
+
+      # Create graph styles
+      define_graph_styles()
+
+      # Populate graph
+      populate_graph()
+
+      # Refilter and display the data
+      search_window.post_refilter()
       self.statusbar.push(0,"Loaded Tick [%d] from \"%s\"" % (tick,self.reactor_chooser.get_active_text()))
     except ValueError:
       self.statusbar.push(0,"Invalid tick entry!")
+      raise
     except:
       self.statusbar.push(0,"Could not load Tick [%d] from \"%s\"" % (tick,self.reactor_chooser.get_active_text()))
+      raise
 
   def update_available_buttons(self):
     try:
@@ -619,15 +733,13 @@ class Variable():
   def __str__(self):
     return "%s = %s (%s)" % (self.name, self.values, self.key)
 
-  def matches(self,search=None,regex=None):
-    if search:
-      return str(self).find(search) != -1
-    if regex:
-      match = False
-      match = match or regex.match(self.name)
-      match = match or regex.match(str(self.token))
-      match = match or regex.match(self.values)
-      return match
+  def matches(self,pattern):
+    matched = False
+    matched = matched or str(self.key).find(pattern) != -1
+    matched = matched or str(self.name).find(pattern) != -1
+    matched = matched or str(self.values).find(pattern) != -1
+    matched = matched or str(self.type).find(pattern) != -1
+    return matched
 
 class Slot():
   def __init__(self,id,tokens = []):
@@ -648,20 +760,42 @@ class Token():
     self.start_key = start_key
     self.end_key = end_key
 
-    self.node = None
     self.vars = token_vars
+    self.node = None
 
   def __str__(self):
     return "%s (%d)" % (self.name, self.key)
 
-  def matches(self,search=None,regex=None):
-    if search:
-      return str(self).find(search) != -1
-    if regex:
-      match = False
-      match = match or regex.match(self.name)
-      match = match or regex.match(str(self.key))
-      return match
+  def matches(self,pattern):
+    matched = str(self).find(pattern) != -1
+
+    for var in self.vars:
+      matched = matched or var.matches(pattern)
+
+    return matched
+
+  def hilight(self):
+    graph.styleApply("TokenHilight", self.node)
+
+  def lolight(self):
+    global tick
+    if self.slot_id != -1:
+      if self.slot_index == 0:
+	graph.styleApply("Token", self.node)
+      else:
+	graph.styleApply("MergedToken", self.node)
+    else:
+      graph.styleApply("InactiveToken", self.node)
+
+    start_bounds = number_bound_regex.findall(vars[self.start_key].values)
+    start_bounds = start_bounds[0].split(" ")
+
+    end_bounds = number_bound_regex.findall(vars[self.end_key].values)
+    end_bounds = end_bounds[0].split(" ")
+
+    if len(start_bounds) != 1 and float(start_bounds[1]) > tick and self.slot_index==0:
+      graph.styleApply("PlannedToken", self.node)
+
 
 class Rule():
   def __init__(self,key,name,token,filename,line,slaves=[],vars=[]):
@@ -678,48 +812,20 @@ class Rule():
   def __str__(self):
     return "%s (%d)" % (self.name, self.key)
 
-  def matches(self,search=None,regex=None):
-    if search:
-      return str(self).find(search) != -1
-    if regex:
-      match = False
-      match = match or regex.match(self.name)
-      match = match or regex.match(str(self.key))
-      match = match or regex.match(str(self.token))
-      return match
+  def matches(self,pattern):
+    return str(self).find(pattern) != -1
+
+  def hilight(self):
+    graph.styleApply("RuleHilight", self.node)
+
+  def lolight(self):
+    graph.styleApply("Rule", self.node)
+
 
 ##############################################################################
 # Hilight Functions
 #   These set a given entity a style based on it's properties
 ##############################################################################
-
-def hilight_token(tid):
-  graph.styleApply("TokenHilight", tokens[tid].node)
-
-def lolight_token(tid):
-  global tick
-  if tokens[tid].slot_id != -1:
-    if tokens[tid].slot_index == 0:
-      graph.styleApply("Token", tokens[tid].node)
-    else:
-      graph.styleApply("MergedToken", tokens[tid].node)
-  else:
-    graph.styleApply("InactiveToken", tokens[tid].node)
-
-  start_bounds = number_bound_regex.findall(vars[tokens[tid].start_key].values)
-  start_bounds = start_bounds[0].split(" ")
-
-  end_bounds = number_bound_regex.findall(vars[tokens[tid].end_key].values)
-  end_bounds = end_bounds[0].split(" ")
-
-  if len(start_bounds) != 1 and float(start_bounds[1]) > tick and tokens[tid].slot_index==0:
-    graph.styleApply("PlannedToken", tokens[tid].node)
-
-def hilight_rule(rid):
-  graph.styleApply("RuleHilight", rules[rid].node)
-
-def lolight_rule(rid):
-  graph.styleApply("Rule", rules[rid].node)
 
 ##############################################################################
 # Graph Functions
@@ -748,36 +854,14 @@ def lolight_rule(rid):
 #   populate graph. It accesses the global GvGen graph.
 ##############################################################################
 
-def hilight_graph(search=None,regex=None):
-  # Search over tokens
-  for tid in tokens:
-    if (search and search != "" and tokens[tid].matches(search=search)) or (regex and regex != "" and tokens[tid].matches(regex=regex)):
-      hilight_token(tid)
-    else:
-      lolight_token(tid)
-
-      # Search token variables
-      for vid in tokens[tid].vars:
-	if (search and search != "" and vars[vid].matches(search=search)) or (regex and regex != "" and vars[vid].matches(regex=regex)):
-	  hilight_token(tid)
-
-  # Search over rules
-  for rid in rules:
-    if (search and rules[rid].matches(search=search)) or (regex and rules[rid].matches(regex=regex)):
-      hilight_rule(rid)
-    else:
-      lolight_rule(rid)
-
-def search_graph(dotfile,search=None,regex=None):
-  hilight_graph(search,regex)
-
+def draw_graph(dotfile):
   # Copy the graph for drawing
   graph_to_draw = copy.deepcopy(graph)
 
   # Generate dotfile
   graph_to_draw.dot(dotfile)
 
-def populate_graph(dotfile):
+def populate_graph():
   for sid in slots:
     if sid != -1:
       slots[sid].node = graph.newItem(slots[sid]);
@@ -794,15 +878,17 @@ def populate_graph(dotfile):
 
   for rid in rules:
     rules[rid].node = graph.newItem(rules[rid]);
-    graph.newLink(tokens[rules[rid].token].node,rules[rid].node)
-    for tid in rules[rid].slaves:
-      graph.newLink(rules[rid].node,tokens[tid].node)
+    graph.newLink(rules[rid].token.node,rules[rid].node)
+    for token in rules[rid].slaves:
+      graph.newLink(rules[rid].node,token.node)
 
     # Set the user data to link up clickthroughs
     graph.propertyAppend(rules[rid].node,"URL","Rule:%d" % rid)
 
-  # Generate the GvGen graph
-  search_graph(dotfile)
+  # Set entities to be unselected by default
+  entities = tokens.values() + rules.values() 
+  for entity in entities:
+    entity.lolight()
 
 def define_graph_styles():
   graph.styleAppend("Token", "shape", "rectangle")
@@ -899,9 +985,9 @@ def load_data():
 
     # Append token key to slot
     if slots.has_key(slot_id):
-      slots[slot_id].tokens.append(token_key)
+      slots[slot_id].tokens.append(tokens[token_key])
     else:
-      slots[slot_id] = Slot(slot_id,[token_key])
+      slots[slot_id] = Slot(slot_id,[tokens[token_key]])
 
   # Read in rule instances
   rule_instances_reader = csv.reader(open("%s.ruleInstances" % step_path),delimiter='\t')
@@ -917,16 +1003,16 @@ def load_data():
     rule_line = rule_src[rule_name][1]
     
     # Get rule slaves
-    rule_slaves = [int(slave) for slave in slave_token_keys.split(',') if slave != '' and slave != '\N'];
+    rule_slaves = [tokens[int(slave)] for slave in slave_token_keys.split(',') if slave != '' and slave != '\N'];
     #rule_vars = [int(var) for var in variable_keys.split(',') if var != '' and var != '\N'];
 
-    rules[rule_key] = Rule(rule_key, rule_name, rule_token_key, rule_filename, rule_line, rule_slaves, [])
+    rules[rule_key] = Rule(rule_key, rule_name, tokens[rule_token_key], rule_filename, rule_line, rule_slaves, [])
 
   # Read in variables
   vars_reader = csv.reader(open("%s.variables" % step_path),delimiter='\t')
   for row in vars_reader:
     var_key = int(row[0])
-    var_token = int(row[2])
+    var_token_key = int(row[2])
     var_name = row[3]
     var_domain = row[4]
     var_values = row[5]
@@ -934,14 +1020,17 @@ def load_data():
       var_values = "[%s %s]" % (row[7], row[8])
     var_type = row[9]
 
-    vars[var_key] = Variable(var_key,var_token,var_name,var_domain, var_values, var_type)
-
     # Add variable reference to token
+    entity = None
     if var_type != "MEMBER_VAR":
       if var_type == "RULE_VAR":
-	rules[var_token].vars.append(var_key)
+	entity = rules[var_token_key]
       else:
-	tokens[var_token].vars.append(var_key)
+	entity = tokens[var_token_key]
+
+    vars[var_key] = Variable(var_key,entity,var_name,var_domain, var_values, var_type)
+    if entity:
+      entity.vars.append(vars[var_key])
 
 ##############################################################################
 # run()
@@ -951,33 +1040,22 @@ def load_data():
 #   This function can be used repeatedly to reload different datasets.
 ##############################################################################
 def run():
-  # set task progress
-  global progress
-  progress.reset()
-  progress.total(5)
-
   # load data
   load_data()
-  progress.step()
 
   # Create a new graph with GvGen
   global graph
   graph = GvGen()
-  progress.step()
 
   # Create graph styles
   define_graph_styles()
-  progress.step()
 
   # Populate graph
   dotfile = StringIO.StringIO()
   populate_graph(dotfile)
-  progress.step()
-
   # Pass the graph to XDot
   window.set_dotcode(dotfile.getvalue())
   dotfile.close()
-  progress.step()
 
 ##############################################################################
 # main()
@@ -1005,19 +1083,22 @@ def main():
   else:
     tick = 0
 
-  # Spawn the progress tracked
-  global progress
-  progress = ProgressTracker()
+  # Create a new graph with GvGen
+  global graph
+  graph = GvGen()
 
-  # Spawn a search window
-  global search_window
-  search_window = SearchWindow()
+  # Create graph styles
+  define_graph_styles()
 
   # Spawn the dot window
   global window
   window = MyDotWindow()
   window.set_filter('dot')
   window.connect('destroy', gtk.main_quit)
+
+  # Spawn a search window
+  global search_window
+  search_window = SearchWindow()
 
   # Spawn a control window
   global control_window
