@@ -73,7 +73,7 @@ This node should be used for testing different planar segmentation strategies.
 #include <angles/angles.h>
 
 using namespace std;
-using namespace robot_msgs;
+using namespace sensor_msgs;
 
 class PlanarFit
 {
