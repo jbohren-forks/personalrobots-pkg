@@ -50,7 +50,7 @@
 #include <kdl/chainjnttojacsolver.hpp>
 
 /** Messages **/
-#include <robot_msgs/Wrench.h>
+#include <geometry_msgs/Wrench.h>
 #include <geometry_msgs/Pose.h>
 #include <manipulation_msgs/JointTraj.h>
 #include <mapping_msgs/CollisionMap.h>

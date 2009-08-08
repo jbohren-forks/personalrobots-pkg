@@ -66,7 +66,7 @@ void TwistKDLToMsg(const KDL::Twist &k, geometry_msgs::Twist &m)
   m.angular.z = k.rot.z();
 }
 
-void WrenchKDLToMsg(const KDL::Wrench &k, robot_msgs::Wrench &m)
+void WrenchKDLToMsg(const KDL::Wrench &k, geometry_msgs::Wrench &m)
 {
   m.force.x = k.force.x();
   m.force.y = k.force.y();

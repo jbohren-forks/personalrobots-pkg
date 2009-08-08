@@ -59,7 +59,7 @@
 #include <kdl/chainjnttojacsolver.hpp>
 #include "ros/node.h"
 #include "control_toolbox/pid.h"
-#include "robot_msgs/Wrench.h"
+#include "geometry_msgs/Wrench.h"
 #include "robot_mechanism_controllers/ChangeConstraints.h"
 #include "robot_mechanism_controllers/JointConstraint.h"
 #include "mechanism_control/controller.h"
@@ -173,7 +173,7 @@ class JointChainConstraintControllerNode : public Controller
   JointChainConstraintController controller_;
   mechanism::RobotState *robot_;
 
-  robot_msgs::Wrench wrench_msg_;
+  geometry_msgs::Wrench wrench_msg_;
 
 
 };

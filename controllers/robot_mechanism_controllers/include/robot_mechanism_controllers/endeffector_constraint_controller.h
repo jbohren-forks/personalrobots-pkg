@@ -42,7 +42,7 @@
 #include "kdl/chainfksolver.hpp"
 #include "kdl/chainjnttojacsolver.hpp"
 #include "ros/node.h"
-#include "robot_msgs/Wrench.h"
+#include "geometry_msgs/Wrench.h"
 #include "misc_utils/subscription_guard.h"
 #include "mechanism_control/controller.h"
 #include "tf/transform_datatypes.h"
@@ -132,7 +132,7 @@ class EndeffectorConstraintControllerNode : public Controller
   EndeffectorConstraintController controller_;
   SubscriptionGuard guard_command_;
 
-  robot_msgs::Wrench wrench_msg_;
+  geometry_msgs::Wrench wrench_msg_;
 
   unsigned int loop_count_;
 };

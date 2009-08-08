@@ -39,7 +39,7 @@
 #include <kdl/frames.hpp>
 #include <kdl/chainjnttojacsolver.hpp>
 #include <ros/node_handle.h>
-#include <robot_msgs/Wrench.h>
+#include <geometry_msgs/Wrench.h>
 #include <mechanism_control/controller.h>
 #include <mechanism_model/chain.h>
 #include <tf/transform_datatypes.h>
@@ -70,7 +70,7 @@ private:
 
   ros::NodeHandle node_;
   ros::Subscriber sub_command_;
-  void command(const robot_msgs::WrenchConstPtr& wrench_msg);
+  void command(const geometry_msgs::WrenchConstPtr& wrench_msg);
   mechanism::RobotState *robot_state_;
   mechanism::Chain chain_;
 

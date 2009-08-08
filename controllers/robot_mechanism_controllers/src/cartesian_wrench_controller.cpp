@@ -130,7 +130,7 @@ bool CartesianWrenchController::init(mechanism::RobotState *robot, const ros::No
 
 
   // subscribe to wrench commands
-  sub_command_ = node_.subscribe<robot_msgs::Wrench>
+  sub_command_ = node_.subscribe<geometry_msgs::Wrench>
     ("command", 1, &CartesianWrenchController::command, this);
 
   return true;
@@ -203,7 +203,7 @@ bool CartesianWrenchController::publishDiagnostics(int level, const std::string&
 
 
 
-void CartesianWrenchController::command(const robot_msgs::WrenchConstPtr& wrench_msg)
+void CartesianWrenchController::command(const geometry_msgs::WrenchConstPtr& wrench_msg)
 {
   // convert to wrench command
   wrench_desi_.force(0) = wrench_msg->force.x;

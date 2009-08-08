@@ -41,7 +41,7 @@
 #include "kdl/frames.hpp"
 #include "kdl/chainfksolver.hpp"
 #include "ros/node.h"
-#include "robot_msgs/Wrench.h"
+#include "geometry_msgs/Wrench.h"
 #include "robot_msgs/PoseStamped.h"
 #include "robot_msgs/Transform.h"
 #include "robot_mechanism_controllers/PlugInternalState.h"
@@ -166,7 +166,7 @@ class PlugControllerNode : public Controller
   SubscriptionGuard guard_outlet_pose_;
   AdvertisedServiceGuard guard_set_tool_frame_;
 
-  robot_msgs::Wrench wrench_msg_;
+  geometry_msgs::Wrench wrench_msg_;
   robot_msgs::PoseStamped outlet_pose_msg_;
   unsigned int loop_count_;
 
