@@ -62,7 +62,7 @@ namespace people_aware_nav {
     ros_node_.param("~controller_patience", controller_patience_, 10.0);
 
     //for comanding the base
-    ros_node_.advertise<robot_msgs::PoseDot>("cmd_vel", 1);
+    ros_node_.advertise<geometry_msgs::Twist>("cmd_vel", 1);
 
     //we'll assume the radius of the robot to be consistent with what's specified for the costmaps
     ros_node_.param("~base_local_planner/costmap/inscribed_radius", inscribed_radius_, 0.325);
@@ -208,7 +208,7 @@ void MoveBaseConstrained::makePlan(const PoseStamped& goal, const Polygon3D& for
 
     ros::Rate r(controller_frequency_);
     last_valid_control_ = ros::Time::now();
-    robot_msgs::PoseDot cmd_vel;
+    geometry_msgs::Twist cmd_vel;
     while(!isPreemptRequested() && ros_node_.ok()){
       struct timeval start, end;
       double start_t, end_t, t_diff;
@@ -228,9 +228,9 @@ void MoveBaseConstrained::makePlan(const PoseStamped& goal, const Polygon3D& for
       //check that the observation buffers for the costmap are current
       if(!controller_costmap_ros_->isCurrent()){
         ROS_WARN("Sensor data is out of date, we're not going to allow commanding of the base for safety");
-        cmd_vel.vel.vx = 0.0;
-        cmd_vel.vel.vy = 0.0;
-        cmd_vel.ang_vel.vz = 0.0;
+        cmd_vel.linear.x = 0.0;
+        cmd_vel.linear.y = 0.0;
+        cmd_vel.angular.z = 0.0;
         //give the base the velocity command
         ros_node_.publish("cmd_vel", cmd_vel);
         r.sleep();
@@ -286,9 +286,9 @@ void MoveBaseConstrained::makePlan(const PoseStamped& goal, const Polygon3D& for
 
         ROS_INFO ("No valid plan; stopping");
 
-        cmd_vel.vel.vx = 0.0;
-        cmd_vel.vel.vy = 0.0;
-        cmd_vel.ang_vel.vz = 0.0;
+        cmd_vel.linear.x = 0.0;
+        cmd_vel.linear.y = 0.0;
+        cmd_vel.angular.z = 0.0;
       }
 
       //give the base the velocity command
@@ -367,7 +367,7 @@ void MoveBaseConstrained::makePlan(const PoseStamped& goal, const Polygon3D& for
       start_t = start.tv_sec + double(start.tv_usec) / 1e6;
       end_t = end.tv_sec + double(end.tv_usec) / 1e6;
       t_diff = end_t - start_t;
-      ROS_DEBUG("Full control cycle: %.9f Valid control: %d, Vel Cmd (%.2f, %.2f, %.2f)", t_diff, valid_control, cmd_vel.vel.vx, cmd_vel.vel.vy, cmd_vel.ang_vel.vz);
+      ROS_DEBUG("Full control cycle: %.9f Valid control: %d, Vel Cmd (%.2f, %.2f, %.2f)", t_diff, valid_control, cmd_vel.linear.x, cmd_vel.linear.y, cmd_vel.angular.z);
 
       //sleep the remainder of the cycle
       if(!r.sleep())
@@ -375,9 +375,9 @@ void MoveBaseConstrained::makePlan(const PoseStamped& goal, const Polygon3D& for
     }
 
     //make sure to stop on pre-emption
-    cmd_vel.vel.vx = 0.0;
-    cmd_vel.vel.vy = 0.0;
-    cmd_vel.ang_vel.vz = 0.0;
+    cmd_vel.linear.x = 0.0;
+    cmd_vel.linear.y = 0.0;
+    cmd_vel.angular.z = 0.0;
     //give the base the velocity command
     ros_node_.publish("cmd_vel", cmd_vel);
     return robot_actions::PREEMPTED;
@@ -402,12 +402,12 @@ bool MoveBaseConstrained::tryPlan(geometry_msgs::PoseStamped goal, const Polygon
         return true;
 
       //for now... we'll publish zero velocity
-      robot_msgs::PoseDot cmd_vel;
+      geometry_msgs::Twist cmd_vel;
 
       last_valid_control_ = ros::Time::now();
-      cmd_vel.vel.vx = 0.0;
-      cmd_vel.vel.vy = 0.0;
-      cmd_vel.ang_vel.vz = 0.0;
+      cmd_vel.linear.x = 0.0;
+      cmd_vel.linear.y = 0.0;
+      cmd_vel.angular.z = 0.0;
       //give the base the velocity command
       ros_node_.publish("cmd_vel", cmd_vel);
 
