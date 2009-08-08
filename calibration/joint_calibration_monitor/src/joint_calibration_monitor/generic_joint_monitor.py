@@ -69,8 +69,8 @@ class GenericJointMonitor() :
         #diag.values.append(KeyValue(value=timestamp, label="Time"))
 
         # Display the actuator and joint names for this monitor
-        diag.strings.append(DiagnosticString(value=self._actuator, label="Actuator"))
-        diag.strings.append(DiagnosticString(value=self._joint, label="Joint"))
+        diag.strings.append(KeyValue(value=self._actuator, label="Actuator"))
+        diag.strings.append(KeyValue(value=self._joint, label="Joint"))
 
         # Check if we can find both the joint and actuator
         act_names = [x.name for x in mech_state.actuator_states]
@@ -113,8 +113,8 @@ class GenericJointMonitor() :
         flag_deadbands = len([x for x in self._hist if x == FLAG_DEADBAND])
         flag_errors    = len([x for x in self._hist if x == FLAG_ERROR])
 
-        diag.strings.append(DiagnosticString(value=self._flag_lookup[sample_result],
-                                             label="Flag Check Result"))
+        diag.strings.append(KeyValue(value=self._flag_lookup[sample_result],
+                                     label="Flag Check Result"))
 
         diag.values.append(KeyValue(value=flag_oks,
                                            label="Flag OKs"))
