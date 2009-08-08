@@ -135,10 +135,10 @@ static inline geometry_msgs::Quaternion createQuaternionMsgFromYaw(double yaw){
 
 /** \brief convert QuaternionStamped msg to Stamped<Quaternion> */
 static inline void quaternionStampedMsgToTF(const geometry_msgs::QuaternionStamped & msg, Stamped<Quaternion>& bt)
-{quaternionMsgToTF(msg.data, bt); bt.stamp_ = msg.header.stamp; bt.frame_id_ = msg.header.frame_id;};
+{quaternionMsgToTF(msg.quaternion, bt); bt.stamp_ = msg.header.stamp; bt.frame_id_ = msg.header.frame_id;};
 /** \brief convert Stamped<Quaternion> to QuaternionStamped msg*/
 static inline void quaternionStampedTFToMsg(const Stamped<Quaternion>& bt, geometry_msgs::QuaternionStamped & msg)
-{quaternionTFToMsg(bt, msg.data); msg.header.stamp = bt.stamp_; msg.header.frame_id = bt.frame_id_;};
+{quaternionTFToMsg(bt, msg.quaternion); msg.header.stamp = bt.stamp_; msg.header.frame_id = bt.frame_id_;};
 
 /** \brief convert Vector3 msg to Vector3 */
 static inline void vector3MsgToTF(const geometry_msgs::Vector3& msg_v, Vector3& bt_v) {bt_v = Vector3(msg_v.x, msg_v.y, msg_v.z);};

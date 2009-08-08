@@ -59,18 +59,18 @@ class PoseConversions(unittest.TestCase):
 
         ## Setup the quaternion tests
         self.tfquaternion_stamped = tf.QuaternionStamped()
-        self.tfquaternion_stamped.data.x = 0
-        self.tfquaternion_stamped.data.y = 0
-        self.tfquaternion_stamped.data.z = 0
-        self.tfquaternion_stamped.data.w = 1
+        self.tfquaternion_stamped.quaternion.x = 0
+        self.tfquaternion_stamped.quaternion.y = 0
+        self.tfquaternion_stamped.quaternion.z = 0
+        self.tfquaternion_stamped.quaternion.w = 1
         self.tfquaternion_stamped.frame_id = "frame1"
         self.tfquaternion_stamped.stamp = roslib.rostime.Time(10, 0)
 
         self.msgquaternion_stamped = robot_msgs.msg.QuaternionStamped()
-        self.msgquaternion_stamped.data.x = 0
-        self.msgquaternion_stamped.data.y = 0
-        self.msgquaternion_stamped.data.z = 0
-        self.msgquaternion_stamped.data.w = 1
+        self.msgquaternion_stamped.quaternion.x = 0
+        self.msgquaternion_stamped.quaternion.y = 0
+        self.msgquaternion_stamped.quaternion.z = 0
+        self.msgquaternion_stamped.quaternion.w = 1
         self.msgquaternion_stamped.header.frame_id = "frame1"
         self.msgquaternion_stamped.header.stamp = roslib.rostime.Time(10,0)
         
@@ -159,9 +159,9 @@ class PoseConversions(unittest.TestCase):
         self.assertEquals(tf.quaternion_stamped_msg_to_bt(self.msgquaternion_stamped), tf.quaternion_stamped_msg_to_bt(self.msgquaternion_stamped), "quaternion bt test correctness after conversion")
 
     def test_to_msg_quaternion(self):
-        self.assertEquals(tf.quaternion_bt_to_msg(self.tfquaternion_stamped.data), self.msgquaternion_stamped.data, "quaternion tf to msg incorrect")
+        self.assertEquals(tf.quaternion_bt_to_msg(self.tfquaternion_stamped.quaternion), self.msgquaternion_stamped.quaternion, "quaternion tf to msg incorrect")
     def test_to_tf_quaternion(self):
-        self.assertEquals(tf.quaternion_msg_to_bt(self.msgquaternion_stamped.data), self.tfquaternion_stamped.data, "quaternion stamped msg to tf incorrect")
+        self.assertEquals(tf.quaternion_msg_to_bt(self.msgquaternion_stamped.quaternion), self.tfquaternion_stamped.quaternion, "quaternion stamped msg to tf incorrect")
 
     def test_stamped_to_msg_quaternion(self):
         self.assertEquals(tf.quaternion_stamped_bt_to_msg(self.tfquaternion_stamped), self.msgquaternion_stamped, "quaternion stamped tf to msg incorrect")
