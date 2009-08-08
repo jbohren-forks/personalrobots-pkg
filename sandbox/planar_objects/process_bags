@@ -4,7 +4,7 @@ source $HOME/.bashrc
 
 #rosrun topic_tools drop /narrow_stereo/raw_stereo 29 30
 
-for f in $HOME/bags/*.bag; do
+#for f in $HOME/bags-filtered2/*.bag; do
 
 TERM=$(which gnome-terminal)
 echo Using $TERM
@@ -15,6 +15,7 @@ function start {
   gnome-terminal --geometry $1 --command "bash -i -c \". $HOME/.bashrc; pwd; echo $2; $2; echo Exiting..; sleep 3\""
 }
 
+f=$HOME/bags-filtered/paperbag_2009-08-05-22-13-22-topic.bag
 #f=$HOME/bags/drawers-easy_2009-07-29-20-00-24-topic.bag
 #f=$HOME/bags/drawers-easy_2009-07-29-20-00-24-topic.bag
 #f=$HOME/bags/drawer2-simple_2009-07-29-20-54-41-topic.bag
@@ -27,15 +28,14 @@ echo
 
 name=$(echo $(basename $f) | awk '//{print substr($0,1,index($0,"_")-1)}')
 
-start 80x6-0-400 "rosrun rosrecord rosrecord -f $HOME/bags-filtered/$name /narrow_stereo/raw_stereo /narrow_stereo/raw_stereo:=/narrow_stereo/raw_stereo_drop"
+start 80x6-0-400 "rosrun rosrecord rosrecord -f $HOME/observations/$name /box_detector/observations /box_detector/planes /narrow_stereo/cloud"
 
-
-rosplay $f
+rosplay -r 0.2 $f
 
 echo "killing rosrecord"
 
 kill -INT $(pidof rosrecord)
 sleep 10
 
-done
+#done
 

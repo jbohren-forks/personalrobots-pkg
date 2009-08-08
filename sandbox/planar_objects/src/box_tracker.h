@@ -35,7 +35,8 @@ public:
   int track_ids;
 
   // PARAMETERS
-  bool show_boxes;
+  bool show_obs;
+  bool show_tracks;
   bool verbose;
   TrackParameters params;
   double timeout;

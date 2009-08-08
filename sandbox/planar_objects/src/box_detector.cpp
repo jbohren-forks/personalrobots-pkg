@@ -41,21 +41,24 @@ BoxDetector::BoxDetector() :
   nh_.param("~n_planes_max", n_planes_max_, 5);
   nh_.param("~point_plane_distance", point_plane_distance_, 0.01);
 
-  nh_.param("~show_colorized_planes", show_colorized_planes, false);
+  nh_.param("~show_colorized_planes", show_colorized_planes, true);
   nh_.param("~show_convex_hulls", show_convex_hulls, false);
   nh_.param("~show_lines", show_lines, false);
-  nh_.param("~show_images", show_images, false);
+  nh_.param("~show_images", show_images, true);
   nh_.param("~show_corners", show_corners, true);
   nh_.param("~show_rectangles", show_rectangles, true);
+  nh_.param("~save_images", save_images, false);
+  nh_.param("~save_images_matching", save_images_matching, false);
 
-  nh_.param("~verbose", verbose, true);
+  nh_.param("~verbose", verbose, false);
 
   nh_.param("~select_frontplane", select_frontplane, -1);
+//  cout << "select_frontplane="<<select_frontplane<<endl;
   nh_.param("~max_lines", max_lines, 200);
   nh_.param("~max_corners", max_corners, 500 );
 
-  nh_.param("~min_precision", min_precision, 0.5);
-  nh_.param("~min_recall", min_recall, 0.3);
+  nh_.param("~min_precision", min_precision, 0.7);
+  nh_.param("~min_recall", min_recall, 0.7);
 
   nh_.param("~rect_min_size", rect_min_size, 0.05);
   nh_.param("~rect_max_size", rect_max_size, 1.50);
@@ -101,6 +104,7 @@ BoxDetector::BoxDetector() :
   currentTime = Time::now();
   lastTime = Time::now();
   lastDuration = Duration::Duration(0);
+  frame=0;
 }
 
 void BoxDetector::cloudCallback(const sensor_msgs::PointCloud::ConstPtr& point_cloud)
@@ -143,9 +147,7 @@ void BoxDetector::limageCallback(const sensor_msgs::Image::ConstPtr& left_img)
 
   if (lbridge_.fromImage(*limage_))
   {
-    IplImage* disp = cvCreateImage(cvGetSize(lbridge_.toIpl()), IPL_DEPTH_8U, 1);
     cvShowImage("left", lbridge_.toIpl());
-    cvReleaseImage(&disp);
   }
 }
 
@@ -155,9 +157,7 @@ void BoxDetector::rimageCallback(const sensor_msgs::Image::ConstPtr& right_img)
 
   if (rbridge_.fromImage(*rimage_))
   {
-    IplImage* disp = cvCreateImage(cvGetSize(rbridge_.toIpl()), IPL_DEPTH_8U, 1);
     cvShowImage("right", rbridge_.toIpl());
-    cvReleaseImage(&disp);
   }
 }
 
@@ -230,18 +230,13 @@ void BoxDetector::syncCallback()
   Time timeStamp = Time::now();
 
   currentTime = Time::now();
-  if (lastTime + lastDuration * 1.5 > currentTime)
+  if (lastTime + lastDuration * 1.1 > currentTime)
   {
     ROS_INFO("skipping frame..");
     return;
   }
 
   buildRP();
-
-  vector<sensor_msgs::PointCloud> plane_cloud;
-  vector<vector<double> > plane_coeff;
-  vector<vector<int> > plane_indices;
-  sensor_msgs::PointCloud outside;
 
   findPlanes(*cloud_, n_planes_max_, point_plane_distance_, plane_indices, plane_cloud, plane_coeff,
                           outside);
@@ -256,21 +251,22 @@ void BoxDetector::syncCallback()
   //  findFrontAndBackPlane(frontplane, backplane, plane_indices, plane_coeff);
   //  visualizeFrontAndBackPlane(frontplane, backplane, *cloud_, plane_indices, plane_cloud, plane_coeff, outside, false);
 
-  IplImage* pixOccupied = cvCreateImage(cvGetSize(dbridge_.toIpl()), IPL_DEPTH_8U, 1);
-  IplImage* pixFree = cvCreateImage(cvGetSize(dbridge_.toIpl()), IPL_DEPTH_8U, 1);
-  IplImage* pixUnknown = cvCreateImage(cvGetSize(dbridge_.toIpl()), IPL_DEPTH_8U, 1);
-  IplImage* pixDist = cvCreateImage(cvGetSize(dbridge_.toIpl()), IPL_DEPTH_8U, 1);
+  pixOccupied = cvCreateImage(cvGetSize(dbridge_.toIpl()), IPL_DEPTH_8U, 1);
+  pixFree = cvCreateImage(cvGetSize(dbridge_.toIpl()), IPL_DEPTH_8U, 1);
+  pixUnknown = cvCreateImage(cvGetSize(dbridge_.toIpl()), IPL_DEPTH_8U, 1);
+  pixDist = cvCreateImage(cvGetSize(dbridge_.toIpl()), IPL_DEPTH_8U, 1);
   pixDebug = cvCreateImage(cvGetSize(dbridge_.toIpl()), IPL_DEPTH_8U, 3);
   cvCvtColor(lbridge_.toIpl(), pixDebug, CV_GRAY2BGR);
 
   std::vector<CornerCandidate> corners;
-
+cout << "frontplane="<<select_frontplane<<endl;
   for (size_t frontplane = 0; frontplane < plane_coeff.size(); frontplane++)
   {
     if (select_frontplane != -1)
     {
       if (select_frontplane >= 0 || select_frontplane < (int)plane_coeff.size())
       {
+        ROS_INFO("selected frontplane %d.. ",select_frontplane);
         frontplane = select_frontplane;
       }
       else
@@ -289,19 +285,21 @@ void BoxDetector::syncCallback()
     cvShowImage("free", pixFree);
     cvShowImage("unknown", pixUnknown);
 
+    current_plane = frontplane;
+
     std::vector<CornerCandidate> corner;
-    findCornerCandidates(pixOccupied, pixFree, pixUnknown, pixDist, plane_coeff[frontplane], corner, frontplane * 1000);
+    findCornerCandidates(pixOccupied, pixFree, pixUnknown, pixDist, plane_coeff[frontplane], plane_indices[frontplane],corner, frontplane * 1000);
 
-    corner = groupCorners(corner, 20);
+//    corner = groupCorners(corner, 20);
 
-    findRectangles(corner, pixDist);
+    findRectangles(corner, pixOccupied);
 
     corner = filterRectanglesBySupport2d(corner, pixOccupied, min_precision);
     corner = filterRectanglesBySupport3d(corner, *cloud_, plane_indices[frontplane], min_recall);
 
     //    cout << "corners in plane="<<frontplane<<" with high support: "<<corner.size()<<endl;;
     if (show_images)
-      visualizeRectangles2d(corner);
+      visualizeRectangles2d(corner,CV_RGB(0,255,0));
     if (show_corners)
       visualizeCorners(corner, frontplane * 1000);
     if (show_rectangles)
@@ -342,6 +340,18 @@ void BoxDetector::syncCallback()
     obs.obs[i].plane_id = corners[i].plane_id;
   }
   observations_pub_.publish(obs);
+
+  if(save_images) {
+    char buf[50];
+    sprintf(buf,"/tmp/debug-%05d.png",cloud_->header.seq); cvSaveImage(buf,pixDebug);
+
+    sprintf(buf,"/tmp/left-%05d.png",cloud_->header.seq); cvSaveImage(buf,lbridge_.toIpl());
+
+    IplImage* disp = cvCreateImage(cvGetSize(dbridge_.toIpl()), IPL_DEPTH_8U, 1);
+    cvCvtScale(dbridge_.toIpl(), disp, 4.0 / dinfo_->dpp);
+    sprintf(buf,"/tmp/disparity-%05d.png",cloud_->header.seq); cvSaveImage(buf,disp);
+    cvReleaseImage(&disp);
+  }
 
   cvReleaseImage(&pixDist);
   cvReleaseImage(&pixOccupied);
@@ -435,8 +445,8 @@ void BoxDetector::visualizePlanes(const sensor_msgs::PointCloud& cloud, std::vec
 
 }
 
-void BoxDetector::findCornerCandidates(IplImage* pixOccupied, IplImage *pixFree, IplImage* pixUnknown,
-                                      IplImage* &pixCannyDist, vector<double>& plane_coeff,
+void BoxDetector::findCornerCandidates2(IplImage* pixOccupied, IplImage *pixFree, IplImage* pixUnknown,
+                                      IplImage* &pixCannyDist, vector<double>& plane_coeff,vector<int>& plane_indices,
                                       std::vector<CornerCandidate> &corner, int id)
 {
   //  // occupied pixels in plane, distance transform
@@ -524,6 +534,9 @@ void BoxDetector::findCornerCandidates(IplImage* pixOccupied, IplImage *pixFree,
   candidate.rect_max_displace = rect_max_displace;
   candidate.rect_min_size = rect_min_size;
   candidate.rect_max_size = rect_max_size;
+  candidate.w = rect_min_size;
+  candidate.h = rect_min_size;
+
   for (size_t i = 0; i < lines3d.size(); i++)
   {
     for (size_t j = i + 1; j < lines3d.size(); j++)
@@ -647,21 +660,18 @@ void BoxDetector::findCornerCandidates(IplImage* pixOccupied, IplImage *pixFree,
   //    broadcaster_.sendTransform(table_pose_frame);
   //  }
 
+  IplImage* pixColoredCannyFiltered = cvCreateImage(cvGetSize(dbridge_.toIpl()), IPL_DEPTH_8U, 3);
+  cvCvtColor(pixCannyFiltered, pixColoredCannyFiltered, CV_GRAY2BGR);
+  cvAndS(pixColoredCannyFiltered,cvScalar(255,255,255),pixColoredCannyFiltered );
+  cvCopy(pixColoredCannyFiltered,pixDebug,pixCannyFiltered);
+  cvReleaseImage(&pixColoredCannyFiltered);
+
   cvShowImage("hough", pixHough);
 
   cvNot(pixCannyFiltered, pixCannyFiltered);
   cvDistTransform(pixCannyFiltered, pixCannyDist, CV_DIST_L1);
 
   cvShowImage("distance", pixCannyDist);
-
-  //  cvSaveImage("/tmp/pixOccupied.png",pixOccupied);
-  //  cvSaveImage("/tmp/pixFree.png",pixFree);
-  //  cvSaveImage("/tmp/pixUnknown.png",pixUnknown);
-  //  cvSaveImage("/tmp/pixCanny.png",pixCanny);
-  //  cvSaveImage("/tmp/pixFreeDilated.png",pixFreeDilated);
-  //  cvSaveImage("/tmp/pixCannyFiltered.png",pixCannyFiltered);
-  //  cvSaveImage("/tmp/pixCannyFilteredAndDilated.png",pixCannyFilteredAndDilated);
-  //  cvSaveImage("/tmp/pixHough.png",pixOccupied);
 
   //  cvReleaseImage(&pixOccupiedDist);
   //  cvReleaseImage(&pixOccupied);
@@ -810,32 +820,69 @@ void BoxDetector::visualizeRectangles3d(std::vector<CornerCandidate> &corner, in
     visualizeLines(visualization_pub_,cloud_->header.frame_id,lines, id + 100 + i,1.0,1.0,1.0);
 }
 
-void BoxDetector::visualizeRectangles2d(std::vector<CornerCandidate> &corner)
+void BoxDetector::visualizeRectangles2d(std::vector<CornerCandidate> &corner,CvScalar col)
 {
   for (size_t i = 0; i < corner.size(); i++)
   {
-    visualizeRectangle2d(corner[i]);
+    visualizeRectangle2d(corner[i],col);
   }
 }
 
-void BoxDetector::visualizeRectangle2d(CornerCandidate &corner,int i)
+void BoxDetector::visualizeRectangle2d(CornerCandidate &corner,CvScalar col)
 {
   corner.updatePoints3d();
   corner.updatePoints2d();
 
+  cvCircle(pixDebug,corner.points2d[0],5,col);
+  cvCircle(pixDebug,corner.points2d[2],3,col);
   for (int j = 0; j < 4; j++)
   {
-    cvLine(pixDebug, corner.points2d[j], corner.points2d[(j + 1) % 4], CV_RGB(MIN(i*50,255),MAX(0,255-i*50),0), 1, 8);
+    cvLine(pixDebug, corner.points2d[j], corner.points2d[(j + 1) % 4], col, 1, 8);
     //      cout << "j="<<j<<" x="<< corner[i].points2d[j].x <<" y="<<corner[i].points2d[j].y << endl;
   }
 }
 
 void BoxDetector::findRectangles(std::vector<CornerCandidate> &corner, IplImage* pixDist)
 {
+  IplImage* pixSave;
+  if(save_images_matching) {
+    pixSave = cvCreateImage(cvGetSize(pixDebug), IPL_DEPTH_8U, 3);
+    cvCopy(pixDebug,pixSave);
+  }
+
+  for(int x=0;x<pixDebug->width;x++) {
+    for(int y=0;y<pixDebug->height;y++) {
+      if(((uchar*)pixOccupied->imageData)[y * pixOccupied->widthStep + x * pixOccupied->nChannels]>0) {
+        ((uchar*)pixDebug->imageData)[y * pixDebug->widthStep + x * pixDebug->nChannels] =
+          255 - (255 - ((uchar*)pixDebug->imageData)[y * pixDebug->widthStep + x * pixDebug->nChannels])/2;
+      }
+    }
+  }
 
   for (size_t i = 0; i < corner.size(); i++)
   {
     initializeRectangle(corner[i], pixDist);
+
+    CvScalar col;
+    if( corner[i].computeSupport2d(pixOccupied) >= min_precision
+        & corner[i].computeSupport3d(*cloud_,plane_indices[current_plane]) >= min_recall) {
+      col = CV_RGB(0,255,0);
+    } else {
+      col = CV_RGB(255,0,0);
+    }
+
+
+    for (int j = 0; j < 4; j++)
+      cvLine(pixDebug, corner[i].points2d[j], corner[i].points2d[(j + 1) % 4], col, 1, 8);
+
+    if(save_images_matching) {
+      char buf[50];
+      sprintf(buf,"/tmp/debug-%05d.png",frame++); cvSaveImage(buf,pixDebug);
+    }
+  }
+  if(save_images_matching) {
+    cvCopy(pixSave,pixDebug);
+    cvReleaseImage(&pixSave);
   }
 
   //  for(size_t i=0;i<corner.size();i++) {
@@ -847,22 +894,22 @@ void BoxDetector::findRectangles(std::vector<CornerCandidate> &corner, IplImage*
 
 void BoxDetector::initializeRectangle(CornerCandidate &corner, IplImage* pixDist)
 {
-  corner.w = rect_min_size;
-  corner.h = rect_min_size;
-
-  for (int i = 0; i < 3; i++)
+  corner.w = 0.2;
+  corner.h = 0.2;
+  visualizeRectangle2d(corner,CV_RGB(255,255,255));
+  for (int i = 0; i < 20; i++)
   {
-    visualizeRectangle2d(corner,i*4);
-    corner.optimizeWidth(pixDist, -(rect_max_size - rect_min_size) / (2), (rect_max_size - rect_min_size) / (2), 100);
-    visualizeRectangle2d(corner,i*4+1);
-    corner.optimizeHeight(pixDist, -(rect_max_size - rect_min_size) / (2), (rect_max_size - rect_min_size) / (2), 100);
-    visualizeRectangle2d(corner,i*4+2);
-    corner.optimizePhi(pixDist, -M_PI / (4), +M_PI / (4), 100);
-    visualizeRectangle2d(corner,i*4+3);
-    corner.optimizeX(pixDist, -rect_max_displace / (2), rect_max_displace / (2), 20);
-    visualizeRectangle2d(corner,i*4+4);
-    corner.optimizeY(pixDist, -rect_max_displace / (2), rect_max_displace / (2), 20);
-    visualizeRectangle2d(corner,i*4+5);
+    for(int c=0;c<2;c++) {
+      corner.optimizeWidth2(pixDist, -0.05,+0.05, 5,c);
+      corner.optimizeHeight2(pixDist, -0.05,+0.05, 5,c);
+    }
+    corner.optimizePhi(pixDist, -M_PI / (16), +M_PI / (16), 5);
+    visualizeRectangle2d(corner,CV_RGB(255-3*i,255-3*i,255-3*i));
+
+    if(save_images_matching) {
+      char buf[50];
+      sprintf(buf,"/tmp/debug-%05d.png",frame++); cvSaveImage(buf,pixDebug);
+    }
   }
 }
 
@@ -890,6 +937,95 @@ std::vector<CornerCandidate> BoxDetector::filterRectanglesBySupport3d(std::vecto
   }
   return (result);
 }
+
+void BoxDetector::findCornerCandidates(IplImage* pixOccupied, IplImage *pixFree, IplImage* pixUnknown,
+                                      IplImage* &pixCannyDist, vector<double>& plane_coeff, vector<int>& plane_indices,
+                                      std::vector<CornerCandidate> &corner, int id)
+{
+  // dilate (increase) free pixels
+  IplImage* pixFreeDilated = cvCreateImage(cvGetSize(dbridge_.toIpl()), IPL_DEPTH_8U, 1);
+  cvDilate(pixFree, pixFreeDilated, NULL, 10);
+  cvShowImage("free-dilated", pixFreeDilated);
+
+  // canny edge image of occupied pixels
+  IplImage* pixCanny = cvCreateImage(cvGetSize(dbridge_.toIpl()), IPL_DEPTH_8U, 1);
+  cvCanny(pixOccupied, pixCanny, 50, 200, 3);
+  cvShowImage("canny", pixCanny);
+
+  // only keep edges that lie substantially close to free pixels
+  IplImage* pixCannyFiltered = cvCreateImage(cvGetSize(dbridge_.toIpl()), IPL_DEPTH_8U, 1);
+  cvAnd(pixCanny, pixFreeDilated, pixCannyFiltered);
+  cvShowImage("canny-filtered", pixCannyFiltered);
+
+  // dilate filtered canny edge image..
+  IplImage* pixCannyFilteredAndDilated = cvCreateImage(cvGetSize(dbridge_.toIpl()), IPL_DEPTH_8U, 1);
+  cvDilate(pixCannyFiltered, pixCannyFilteredAndDilated, NULL, 1);
+  cvShowImage("canny-filtered-dilated", pixCannyFilteredAndDilated);
+
+  // compute corner candidates
+  btVector3 vecPlane(plane_coeff[0], plane_coeff[1], plane_coeff[2]);
+  CornerCandidate candidate;
+  candidate.RP = RP;
+  candidate.P = P;
+  candidate.rect_max_displace = rect_max_displace;
+  candidate.rect_min_size = rect_min_size;
+  candidate.rect_max_size = rect_max_size;
+  candidate.w = rect_min_size;
+  candidate.h = rect_min_size;
+
+  int MAX_ITER = 4;
+  for(int iter=0;iter<MAX_ITER;iter++) {
+    cout << iter << endl;
+    // pick 3 inliers
+    int p[3];
+    p[0] = p[1] = p[2] = plane_indices[random() % plane_indices.size()];
+    while(p[0]==p[1]) p[1] = plane_indices[random() % plane_indices.size()];
+    while(p[0]==p[2] || p[0]==p[2]) p[2] = plane_indices[random() % plane_indices.size()];
+
+    // now shift inliers to maximize surface
+    btVector3 position(cloud_->pts[p[0]].x,cloud_->pts[p[0]].y,cloud_->pts[p[0]].z);
+    btVector3 vec1(cloud_->pts[p[1]].x,cloud_->pts[p[1]].y,cloud_->pts[p[1]].z);
+    vec1 -= position;
+    vec1 = vec1.normalize();
+
+    vec1 -= vecPlane * vecPlane.dot(vec1);
+
+    btVector3 vec2 = vecPlane.cross(vec1);
+
+    // orientation
+    btQuaternion orientation;
+    btMatrix3x3 rotation;
+    rotation[0] = vec1; // x
+    rotation[1] = vec2; // y
+    rotation[2] = vecPlane; // z
+
+    rotation = rotation.transpose();
+    rotation.getRotation(orientation);
+    rotation.setRotation(orientation);
+    candidate.tf = btTransform(orientation, position);
+
+    candidate.updatePoints3d();
+    candidate.updatePoints2d();
+
+    corner.push_back(candidate);
+  }
+
+//  IplImage* pixColoredCannyFiltered = cvCreateImage(cvGetSize(dbridge_.toIpl()), IPL_DEPTH_8U, 3);
+//  cvCvtColor(pixCannyFiltered, pixColoredCannyFiltered, CV_GRAY2BGR);
+//  cvAndS(pixColoredCannyFiltered,cvScalar(255,255,255),pixColoredCannyFiltered );
+//  cvCopy(pixColoredCannyFiltered,pixDebug,pixCannyFiltered);
+//  cvReleaseImage(&pixColoredCannyFiltered);
+
+  cvNot(pixCanny, pixCanny);
+  cvDistTransform(pixCanny, pixCannyDist, CV_DIST_L1);
+  cvShowImage("distance", pixCannyDist);
+
+  cvReleaseImage(&pixFreeDilated);
+  cvReleaseImage(&pixCanny);
+  cvReleaseImage(&pixCannyFiltered);
+  cvReleaseImage(&pixCannyFilteredAndDilated);
+}
+
 
 
 }

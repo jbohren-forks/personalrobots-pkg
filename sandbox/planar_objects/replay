@@ -1,0 +1,15 @@
+#!/bin/bash
+
+. $HOME/.bashrc
+echo hello
+#rosplay  -r 0.02 -t 450 $HOME/kitchen-both_2009-07-08-16-27-29-topic.bag
+#rosplay  $HOME/kitchen-both_2009-07-08-16-27-29-topic.bag
+#rosplay -r 0.3 $HOME/kitchen-both_2009-07-08-16-27-29-topic.bag
+#rosplay -r 0.3 $HOME/kitchen-drawer_2009-07-08-16-17-42-topic.bag
+#rosplay -r 0.3 /u/sturm/kitchen-door_2009-07-08-16-25-04-topic.bag
+#rosplay -r 0.3 /u/sturm/kitchen-door_2009-07-08-16-24-34-topic.bag
+
+#rosplay -r 0.2 -t 20.00 $HOME/kitchen-both_2009-07-08-16-27-29-topic.bag
+
+rosplay -r 5 $HOME/observations_2009-07-28-17-58-16-topic.bag
+

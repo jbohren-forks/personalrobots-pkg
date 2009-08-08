@@ -210,6 +210,8 @@ btTransform PrismaticModel::getPrediction(std::vector<double> q)
 }
 
 bool PrismaticModel::isValid() {
+  if (track->obs_history.size() < 6)
+    return(false);
   if(!isnormal(center.getOrigin().x())) return(false);
   if(!isnormal(center.getOrigin().y())) return(false);
   if(!isnormal(center.getOrigin().z())) return(false);

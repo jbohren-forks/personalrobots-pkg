@@ -1,0 +1,24 @@
+#!/bin/bash
+
+. $HOME/.bashrc
+
+TERM=$(which gnome-terminal)
+echo Using $TERM
+
+function start {
+  echo gnome-terminal --geometry $1 --command "bash -i -c \". $HOME/.bashrc; echo \"$2\"; read; $2; read\""
+
+  gnome-terminal --geometry $1 --command "bash -i -c \". $HOME/.bashrc; pwd; echo $2; $2; echo Exiting..; sleep 3\""
+}
+
+kill $(ps a | grep roscore | awk '/python/{print $1}')
+
+start 80x5-0-200 "roscore"
+sleep 2
+
+start 80x6-0-0 "roscd planar_objects; while true; do ./replay; done"
+
+start 80x6-0-400 "roscd stereo_image_proc; roslaunch stereoproc.launch"
+
+start 80x6-0-600 "rosrun rviz rviz"
+

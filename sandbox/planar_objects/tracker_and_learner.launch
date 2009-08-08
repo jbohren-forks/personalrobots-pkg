@@ -1,0 +1,24 @@
+<launch>
+    <node pkg="planar_objects" type="box_tracker" respawn="false" output="screen" name="box_tracker">
+      <param name="visualize" type="bool" value="false"/>
+      <param name="verbose" type="bool" value="true"/>
+
+      <param name="timeout" value="20.0"/>
+
+      <param name="translation_tolerance" type="double" value="0.20"/>
+      <param name="rotation_tolerance" type="double" value="0.3"/>
+      <param name="size_tolerance" type="double" value="0.03"/>
+
+    </node>
+    <node pkg="planar_objects" type="articulation_learner" respawn="false" output="screen" name="articulation_learner">
+      <param name="visualize" type="bool" value="true"/>
+      <param name="verbose" type="bool" value="true"/>
+
+      <param name="dist_vis" value="0.01"/>
+
+      <param name="thres_trans" type="double" value="0.1"/>
+      <param name="thres_rot" type="double" value="0.3"/>
+
+    </node>
+</launch>
+

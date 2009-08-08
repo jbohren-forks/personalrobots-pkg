@@ -51,6 +51,8 @@ public:
   bool show_images;
   bool show_corners;
   bool show_rectangles;
+  bool save_images;
+  bool save_images_matching;
 
   bool verbose;
 
@@ -65,10 +67,21 @@ public:
   double rect_max_size;
   double rect_max_displace;
 
+  int frame;
+
   // reprojection matrix
   double RP[16];
   double P[16];
   IplImage* pixDebug;
+  IplImage* pixOccupied;
+  IplImage* pixFree;
+  IplImage* pixUnknown;
+  IplImage* pixDist;
+  std::vector<robot_msgs::PointCloud> plane_cloud;
+  std::vector<std::vector<double> > plane_coeff;
+  std::vector<std::vector<int> > plane_indices;
+  int current_plane;
+  robot_msgs::PointCloud outside;
 
   // MESSAGES - INCOMING
   ros::Subscriber cloud_sub_;
@@ -129,8 +142,10 @@ public:
 
   void findFrontAndBackPlane(int& frontplane, int& backplane, std::vector<std::vector<int> >& indices, std::vector<
       std::vector<double> >& plane_coeff);
+  void findCornerCandidates2(IplImage* pixOccupied, IplImage *pixFree, IplImage* pixUnknown, IplImage* &pixDist,
+                            std::vector<double> & plane_coeff, std::vector<int>& plane_indices,std::vector<CornerCandidate> &corner,int id);
   void findCornerCandidates(IplImage* pixOccupied, IplImage *pixFree, IplImage* pixUnknown, IplImage* &pixDist,
-                            std::vector<double> & plane_coeff, std::vector<CornerCandidate> &corner,int id);
+                            std::vector<double> & plane_coeff, std::vector<int>& plane_indices,std::vector<CornerCandidate> &corner,int id);
   std::vector<CornerCandidate> groupCorners(std::vector<CornerCandidate> &corner, double group_dist = 20);
   void visualizeCorners(std::vector<CornerCandidate> &corner, int id = 0);
   void visualizeFrontAndBackPlane(int frontplane, int backplane, const sensor_msgs::PointCloud& cloud, std::vector<
@@ -141,8 +156,8 @@ public:
       double> >& plane_coeff, sensor_msgs::PointCloud& outside, bool showConvexHull = false);
 
   void visualizeRectangles3d(std::vector<CornerCandidate> &corner, int id = 0);
-  void visualizeRectangles2d(std::vector<CornerCandidate> &corner);
-  void visualizeRectangle2d(CornerCandidate &corner, int col=0);
+  void visualizeRectangles2d(std::vector<CornerCandidate> &corner,CvScalar col);
+  void visualizeRectangle2d(CornerCandidate &corner, CvScalar col);
   void findRectangles(std::vector<CornerCandidate> &corner, IplImage* pixDist);
   std::vector<CornerCandidate> filterRectanglesBySupport2d(std::vector<CornerCandidate> &corner, IplImage* pixOccupied,
                                                            double min_support = 0.8);

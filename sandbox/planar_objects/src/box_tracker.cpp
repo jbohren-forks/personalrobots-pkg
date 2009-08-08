@@ -33,12 +33,13 @@ namespace planar_objects
 BoxTracker::BoxTracker() :
   sync(&BoxTracker::syncCallback, this)
 {
-  nh.param("~visualize", show_boxes, false);
+  nh.param("~visualize_obs", show_obs, true);
+  nh.param("~visualize_tracks", show_tracks, true);
   nh.param("~verbose", verbose, true);
 
-  nh.param("~timeout", timeout, 3.0);
+  nh.param("~timeout", timeout, 20.0);
 
-  nh.param("~translation_tolerance", params.translation_tolerance, 0.1);
+  nh.param("~translation_tolerance", params.translation_tolerance, 0.20);
   nh.param("~rotation_tolerance", params.rotation_tolerance, M_PI/8);
   nh.param("~size_tolerance", params.size_tolerance, 0.03);
 
@@ -112,11 +113,13 @@ void BoxTracker::syncCallback()
   ///observations = observations[0].listAmbiguity();
 
   removeOldTracks(ros::Duration(timeout));
-  if(show_boxes) {
+  if(show_obs) {
     visualizeObservations();
-    visualizeTracks();
-    removeOldLines();
   }
+  if(show_tracks) {
+    visualizeTracks();
+  }
+  removeOldLines();
   sendTracks();
 }
 
@@ -157,7 +160,7 @@ void BoxTracker::visualizeObservations() {
   for(size_t i=0; i<observations.size(); i++) {
 //    cout << "drawing line "<<newLines << endl;
     visualizeLines(visualization_pub, observations_msg->header.frame_id, observations[i].visualize(),
-                   newLines++,HSV_to_RGB(0.0 * i,0.0,1.0));
+                   newLines++,show_tracks?HSV_to_RGB(0.0 * i,0.0,1.0):0x00ff00);
   }
 }
 
