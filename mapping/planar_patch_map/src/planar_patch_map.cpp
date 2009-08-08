@@ -66,7 +66,8 @@
 #include <sys/time.h>
 
 using namespace std;
-using namespace robot_msgs;
+using namespace sensor_msgs;
+using namespace geometry_msgs;
 using namespace mapping_msgs;
 
 class PlanarPatchMap
@@ -131,7 +132,7 @@ class PlanarPatchMap
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void
-      fitSACPlane (sensor_msgs::PointCloud *points, cloud_octree::Octree *octree, cloud_octree::Leaf* leaf, Polygon3D &poly)
+      fitSACPlane (sensor_msgs::PointCloud *points, cloud_octree::Octree *octree, cloud_octree::Leaf* leaf, Polygon &poly)
     {
       double dist_thresh = 0.02;
       vector<int> indices = leaf->getIndices ();
