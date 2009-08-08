@@ -35,7 +35,7 @@
 
 #include "ObjectInPerspective.h"
 using namespace std;
-using namespace robot_msgs;
+using namespace sensor_msgs;
 
 template<typename T>
 static double dist2D(const T& a, const T& b)
