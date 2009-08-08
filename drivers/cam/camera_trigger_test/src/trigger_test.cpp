@@ -154,31 +154,9 @@ public:
   {
     // Compute image intensity.
     
-#if 0   // XXX-REVIEW
-    if (img_msg_.encoding.find("bayer") != std::string::npos)
-      img_msg_.encoding = "mono";
-    
-    long long sum = 0;
-    
-    if (img_bridge_.fromImage(img_msg_, "mono"))
-    {
-      std::vector<unsigned char> data = img_msg_.uint8_data.data;
-      int pixels = img_msg_.uint8_data.layout.dim[0].size * img_msg_.uint8_data.layout.dim[1].size;
-
-      for (int i = 0; i < pixels; i++)
-      {
-        sum += data[i];
-      }
-      
-      //ROS_INFO("Sum: %f", sum / 7e6);
-    }
-    
-    double intensity = sum / 7e6;
-#else
     img_bridge_.fromImage(img_msg_);
     CvScalar mean = cvAvg(img_bridge_.toIpl());
     double intensity = mean.val[0];
-#endif
 
     // Control logic
     
