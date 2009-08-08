@@ -49,7 +49,7 @@
 #include "geometry_msgs/Twist.h"
 #include "geometry_msgs/PoseWithRatesStamped.h"
 #include "geometry_msgs/PoseStamped.h"
-#include "robot_msgs/VOPose.h"
+#include "deprecated_msgs/VOPose.h"
 #include "geometry_msgs/PoseWithCovarianceStamped.h"
 
 #include <boost/thread/mutex.hpp>
@@ -96,7 +96,7 @@ private:
   void imuCallback(const ImuConstPtr& imu);
 
   /// callback function for vo data
-  void voCallback(const tf::MessageNotifier<robot_msgs::VOPose>::MessagePtr& vo);
+  void voCallback(const tf::MessageNotifier<deprecated_msgs::VOPose>::MessagePtr& vo);
 
 
   ros::NodeHandle node_;
@@ -115,7 +115,7 @@ private:
   tf::TransformBroadcaster odom_broadcaster_;
 
   // message notifier for vo
-  tf::MessageNotifier<robot_msgs::VOPose>*  vo_notifier_;
+  tf::MessageNotifier<deprecated_msgs::VOPose>*  vo_notifier_;
 
   // vectors
   MatrixWrapper::ColumnVector vel_desi_;

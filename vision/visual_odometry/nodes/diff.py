@@ -50,7 +50,7 @@ class diff:
     self.prev_a = 0
     self.prev_b = 0
     rospy.Subscriber('/stereo/raw_stereo', sensor_msgs.msg.RawStereo, self.handle_a, queue_size=2, buff_size=7000000)
-    rospy.Subscriber('/vo', robot_msgs.msg.VOPose, self.handle_b, queue_size=2, buff_size=7000000)
+    rospy.Subscriber('/vo', deprecated_msgs.msg.VOPose, self.handle_b, queue_size=2, buff_size=7000000)
 
   def handle_a(self, msg):
     self.prev_a = msg.header.stamp.to_seconds()

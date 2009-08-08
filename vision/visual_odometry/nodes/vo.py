@@ -75,7 +75,7 @@ class VO:
   def __init__(self):
     rospy.Subscriber('/stereo/raw_stereo', sensor_msgs.msg.RawStereo, self.handle_raw_stereo, queue_size=2, buff_size=7000000)
 
-    self.pub_vo = rospy.Publisher("/vo", robot_msgs.msg.VOPose)
+    self.pub_vo = rospy.Publisher("/vo", deprecated_msgs.msg.VOPose)
 
     self.vo = None
     self.modulo = 0
@@ -93,7 +93,7 @@ class VO:
     pair = [imgAdapted(i, size) for i in [ msg.left_image, msg.right_image ]]
     af = SparseStereoFrame(pair[0], pair[1], feature_detector = self.fd, descriptor_scheme = self.ds)
     pose = self.vo.handle_frame(af)
-    p = robot_msgs.msg.VOPose()
+    p = deprecated_msgs.msg.VOPose()
     p.inliers = self.vo.inl
     # XXX - remove after camera sets frame_id
     p.header = roslib.msg.Header(0, msg.header.stamp, "stereo_link")

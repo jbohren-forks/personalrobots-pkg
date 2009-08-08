@@ -102,7 +102,7 @@ namespace estimation
     // subscribe to vo messages
     if (vo_used_){
       ROS_INFO("VO sensor can be used");
-      vo_notifier_ = new MessageNotifier<robot_msgs::VOPose>(robot_state_,  boost::bind(&OdomEstimationNode::voCallback, this, _1), "vo", "base_link", 10);
+      vo_notifier_ = new MessageNotifier<deprecated_msgs::VOPose>(robot_state_,  boost::bind(&OdomEstimationNode::voCallback, this, _1), "vo", "base_link", 10);
     }
     else ROS_INFO("VO sensor will NOT be used");
 
@@ -240,7 +240,7 @@ namespace estimation
 
 
   // callback function for VO data
-  void OdomEstimationNode::voCallback(const MessageNotifier<robot_msgs::VOPose>::MessagePtr& vo)
+  void OdomEstimationNode::voCallback(const MessageNotifier<deprecated_msgs::VOPose>::MessagePtr& vo)
   {
     assert(vo_used_);
 
