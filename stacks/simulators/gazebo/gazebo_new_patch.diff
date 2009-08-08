@@ -1,6 +1,6 @@
 Index: server/physics/Geom.cc
 ===================================================================
---- server/physics/Geom.cc	(revision 8166)
+--- server/physics/Geom.cc	(revision 8178)
 +++ server/physics/Geom.cc	(working copy)
 @@ -257,7 +257,7 @@
        this->transId = dCreateGeomTransform( this->spaceId );
@@ -11,3 +11,30 @@ Index: server/physics/Geom.cc
      }
    }
    else if ( dGeomGetSpace(this->geomId) == 0 )
+Index: server/rendering/Image.cc
+===================================================================
+--- server/rendering/Image.cc	(revision 8178)
++++ server/rendering/Image.cc	(working copy)
+@@ -174,7 +174,8 @@
+       return clr;
+     }
+ 
+-    if (FREEIMAGE_COLORORDER == FREEIMAGE_COLORORDER_RGB)
++    //if (FREEIMAGE_COLORORDER == FREEIMAGE_COLORORDER_RGB)
++    if (1)
+     {
+       clr.Set(  firgb.rgbRed, firgb.rgbGreen, firgb.rgbBlue);
+     }
+Index: CMakeLists.txt
+===================================================================
+--- CMakeLists.txt	(revision 8178)
++++ CMakeLists.txt	(working copy)
+@@ -34,7 +34,7 @@
+ SET (OGRE_VERSION 1.6.1 CACHE INTERNAL "Ogre version requirement" FORCE)
+ 
+ SET (FREEIMAGE_MAJOR_VERSION 3 CACHE INTERNAL "FreeImage major version requirement" FORCE)
+-SET (FREEIMAGE_MINOR_VERSION 10 CACHE INTERNAL "FreeImage minor version requirement" FORCE)
++SET (FREEIMAGE_MINOR_VERSION 9 CACHE INTERNAL "FreeImage minor version requirement" FORCE)
+ SET (FREEIMAGE_VERSION ${FREEIMAGE_MAJOR_VERSION}.${FREEIMAGE_MINOR_VERSION}.0 CACHE INTERNAL "FreeImage version requirement" FORCE)
+ SET (ODE_VERSION 0.10.1 CACHE INTERNAL "ODE version requirement" FORCE)
+ SET (MIN_BOOST_VERSION 1.35.0 CACHE INTERNAL "Boost min version requirement" FORCE)
