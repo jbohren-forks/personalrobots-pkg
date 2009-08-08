@@ -41,7 +41,7 @@ import sys
 import threading
 import math
 
-from diagnostic_msgs.msg import DiagnosticMessage
+from diagnostic_msgs.msg import DiagnosticArray
 from mechanism_msgs.msg import MechanismState
 from roslib import rostime
 from joint_calibration_monitor.generic_joint_monitor import *
@@ -93,7 +93,7 @@ if __name__ == '__main__':
                                               100) )
 
 
-    pub = rospy.Publisher("/diagnostics", DiagnosticMessage)
+    pub = rospy.Publisher("/diagnostics", DiagnosticArray)
     sub = rospy.Subscriber('mechanism_state', MechanismState,
                            mech_state_callback, None)
 

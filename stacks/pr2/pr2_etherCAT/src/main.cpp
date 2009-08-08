@@ -97,7 +97,7 @@ static struct
   accumulator_set<double, stats<tag::max, tag::mean> > mc_acc;
 } g_stats;
 
-static void publishDiagnostics(realtime_tools::RealtimePublisher<diagnostic_msgs::DiagnosticMessage> &publisher)
+static void publishDiagnostics(realtime_tools::RealtimePublisher<diagnostic_msgs::DiagnosticArray> &publisher)
 {
   if (publisher.trylock())
   {
@@ -163,7 +163,7 @@ static inline double now()
 void *controlLoop(void *)
 {
   ros::NodeHandle node;
-  realtime_tools::RealtimePublisher<diagnostic_msgs::DiagnosticMessage> publisher(node, "/diagnostics", 2);
+  realtime_tools::RealtimePublisher<diagnostic_msgs::DiagnosticArray> publisher(node, "/diagnostics", 2);
 
   // Initialize the hardware interface
   EthercatHardware ec;

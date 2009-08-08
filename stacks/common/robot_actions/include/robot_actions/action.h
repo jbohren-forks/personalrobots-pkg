@@ -49,7 +49,7 @@
 #include <robot_actions/ActionStatus.h>
 #include <boost/bind.hpp>
 #include <boost/thread.hpp>
-#include <diagnostic_msgs/DiagnosticMessage.h>
+#include <diagnostic_msgs/DiagnosticArray.h>
 #include "ros/assert.h"
 #include "ros/ros.h"
 
@@ -194,7 +194,7 @@ namespace robot_actions {
       : _name(name), _preempt_request(false), _result_status(SUCCESS), _terminated(false), _action_thread(NULL), _callback(NULL),_diagnostics_statuses(1){
       _status.value = ActionStatus::RESET; 
       _node = new ros::NodeHandle();
-      _diagnostics_publisher = _node->advertise<diagnostic_msgs::DiagnosticMessage> ("/diagnostics", 1) ;
+      _diagnostics_publisher = _node->advertise<diagnostic_msgs::DiagnosticArray> ("/diagnostics", 1) ;
     }
 
     virtual ~Action(){
@@ -309,7 +309,7 @@ namespace robot_actions {
     bool _terminated;
     boost::thread* _action_thread; /*!< Thread running the action */
     boost::function< void(const ActionStatus&, const Goal&, const Feedback&) > _callback; /*!< Callback function for sending updates */
-    diagnostic_msgs::DiagnosticMessage _diagnostics_message;
+    diagnostic_msgs::DiagnosticArray _diagnostics_message;
     std::vector<diagnostic_msgs::DiagnosticStatus> _diagnostics_statuses;
     ros::NodeHandle *_node;
     ros::Publisher _diagnostics_publisher;

@@ -43,7 +43,7 @@
 #include <mechanism_control/controller.h>
 #include <mechanism_model/chain.h>
 #include <tf/transform_datatypes.h>
-#include <diagnostic_msgs/DiagnosticMessage.h>
+#include <diagnostic_msgs/DiagnosticArray.h>
 #include <realtime_tools/realtime_publisher.h>
 #include <boost/scoped_ptr.hpp>
 
@@ -79,8 +79,8 @@ private:
   KDL::JntArray jnt_pos_, jnt_eff_;
   KDL::Jacobian jacobian_;
 
-  diagnostic_msgs::DiagnosticMessage diagnostics_;
-  realtime_tools::RealtimePublisher <diagnostic_msgs::DiagnosticMessage> diagnostics_publisher_;
+  diagnostic_msgs::DiagnosticArray diagnostics_;
+  realtime_tools::RealtimePublisher <diagnostic_msgs::DiagnosticArray> diagnostics_publisher_;
   ros::Time diagnostics_time_;
   ros::Duration diagnostics_interval_;
 

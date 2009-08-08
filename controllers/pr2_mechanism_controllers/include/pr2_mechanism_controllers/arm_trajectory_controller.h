@@ -58,7 +58,7 @@
 
 #include <manipulation_msgs/JointTraj.h>
 #include <manipulation_msgs/JointTrajPoint.h>
-#include <diagnostic_msgs/DiagnosticMessage.h>
+#include <diagnostic_msgs/DiagnosticArray.h>
 
 #include <pr2_mechanism_controllers/TrajectoryStart.h>
 #include <pr2_mechanism_controllers/TrajectoryQuery.h>
@@ -239,7 +239,7 @@ namespace controller
 
     void publishDiagnostics();
 
-    realtime_tools::RealtimePublisher <diagnostic_msgs::DiagnosticMessage>* diagnostics_publisher_ ;  //!< Publishes controller information
+    realtime_tools::RealtimePublisher <diagnostic_msgs::DiagnosticArray>* diagnostics_publisher_ ;  //!< Publishes controller information
 
     /*!
      * \brief mutex lock for setting and getting ros messages

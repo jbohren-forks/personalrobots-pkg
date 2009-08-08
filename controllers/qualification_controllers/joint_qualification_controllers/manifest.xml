@@ -7,7 +7,6 @@
   <depend package="mechanism_model" />
   <depend package="wg_robot_description_parser" />
   <depend package="realtime_tools" />
-  <depend package="robot_msgs" />
   <depend package="control_toolbox" />
   <depend package="roscpp" />
   <depend package="robot_mechanism_controllers" />

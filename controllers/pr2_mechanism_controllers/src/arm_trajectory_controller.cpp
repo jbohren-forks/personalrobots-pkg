@@ -409,7 +409,7 @@ bool ArmTrajectoryControllerNode::initXml(mechanism::RobotState * robot, TiXmlEl
 
   if (diagnostics_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
     delete diagnostics_publisher_ ;
-  diagnostics_publisher_ = new realtime_tools::RealtimePublisher <diagnostic_msgs::DiagnosticMessage> ("/diagnostics", 2) ;
+  diagnostics_publisher_ = new realtime_tools::RealtimePublisher <diagnostic_msgs::DiagnosticArray> ("/diagnostics", 2) ;
 
   last_diagnostics_publish_time_ = c_->robot_->hw_->current_time_;
   node_->param<double>(service_prefix_ + "/diagnostics_publish_delta_time",diagnostics_publish_delta_time_,0.05);

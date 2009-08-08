@@ -40,7 +40,7 @@
 #include <kdl/frames.hpp>
 #include <ros/rate.h>
 
-#include <diagnostic_msgs/DiagnosticMessage.h>
+#include <diagnostic_msgs/DiagnosticArray.h>
 
 
 
@@ -72,7 +72,7 @@ namespace nav
     ros_node_.advertise<visualization_msgs::Polyline>("~gui_path", 1);
     ros_node_.advertise<visualization_msgs::Polyline>("~local_path", 1);
     ros_node_.advertise<visualization_msgs::Polyline>("~robot_footprint", 1);
-    ros_node_.advertise<diagnostic_msgs::DiagnosticMessage> ("/diagnostics", 1) ;
+    ros_node_.advertise<diagnostic_msgs::DiagnosticArray> ("/diagnostics", 1) ;
 
     //pass on some parameters to the components of the move base node if they are not explicitly overridden 
     //(perhaps the controller and the planner could operate in different frames)
@@ -428,7 +428,7 @@ namespace nav
       return;
     }
 
-    diagnostic_msgs::DiagnosticMessage message;
+    diagnostic_msgs::DiagnosticArray message;
     std::vector<diagnostic_msgs::DiagnosticStatus> statuses;
 
     diagnostic_msgs::DiagnosticStatus status_planner = planner_->getDiagnostics();

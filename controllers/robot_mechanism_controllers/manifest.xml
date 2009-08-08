@@ -26,6 +26,7 @@
   <depend package="joy" />
   <depend package="eigen" />
   <depend package="filters" />
+  <depend package="diagnostic_msgs" />
   <url>http://pr.willowgarage.com</url>
   <repository>http://pr.willowgarage.com/repos</repository>
   <export>

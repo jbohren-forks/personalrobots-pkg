@@ -49,7 +49,7 @@
 #include <mechanism_control/controller.h>
 #include <mechanism_model/chain.h>
 #include <tf/transform_datatypes.h>
-#include <diagnostic_msgs/DiagnosticMessage.h>
+#include <diagnostic_msgs/DiagnosticArray.h>
 #include <realtime_tools/realtime_publisher.h>
 #include <boost/scoped_ptr.hpp>
 #include <filters/filter_chain.h>
@@ -94,8 +94,8 @@ namespace controller {
     KDL::JntArrayVel jnt_posvel_meas_;
     KDL::JntArrayAcc jnt_posvelacc_control_;
     double Kp_acc_,Kv_acc_,Kf_acc_,Kp_tau_,Kv_tau_;
-    diagnostic_msgs::DiagnosticMessage diagnostics_;
-    realtime_tools::RealtimePublisher <diagnostic_msgs::DiagnosticMessage> diagnostics_publisher_;
+    diagnostic_msgs::DiagnosticArray diagnostics_;
+    realtime_tools::RealtimePublisher <diagnostic_msgs::DiagnosticArray> diagnostics_publisher_;
     ros::Time diagnostics_time_;
     ros::Duration diagnostics_interval_;
 

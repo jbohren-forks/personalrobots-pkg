@@ -36,7 +36,7 @@
 #include <gazebo/Entity.hh>
 #include <gazebo/Model.hh>
 #include <pr2_msgs/BatteryState.h>
-#include <diagnostic_msgs/DiagnosticMessage.h>
+#include <diagnostic_msgs/DiagnosticArray.h>
 #include <diagnostic_msgs/DiagnosticStatus.h>
 #include <gazebo_plugin/PlugCommand.h>
 #include <ros/ros.h>
@@ -111,7 +111,7 @@ private:
   pr2_msgs::BatteryState battery_state_;
 
   /// \brief ros message for diagnostic messages
-  diagnostic_msgs::DiagnosticMessage diagnostic_message_;
+  diagnostic_msgs::DiagnosticArray diagnostic_message_;
   diagnostic_msgs::DiagnosticStatus diagnostic_status_;
 
   /// \brief pointer to ros node

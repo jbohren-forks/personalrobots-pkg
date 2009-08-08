@@ -48,7 +48,8 @@ import time
 import rospy
 
 from robot_msgs.msg import BatteryState
-from diagnostic_msgs.msg import DiagnosticMessage, DiagnosticStatus, KeyValue, DiagnosticString
+from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus, KeyValue, DiagnosticString
+
 
 NAME = 'monitor'
 
@@ -119,7 +120,7 @@ def make_diagnostics(info):
             item.label = k
             item.value = v
             diag.strings.append(item)
-    msg = DiagnosticMessage(None, [diag])
+    msg = DiagnosticArray(None, [diag])
     return msg
 
 class batteryStateGenerator:
@@ -172,7 +173,7 @@ class batteryStateGenerator:
 if __name__ == '__main__':
     rospy.init_node(NAME)
     
-    diag_pub = rospy.Publisher("/diagnostics", DiagnosticMessage)
+    diag_pub = rospy.Publisher("/diagnostics", DiagnosticArray)
     battery_state_pub = rospy.Publisher("battery_state", BatteryState)
 
     try:

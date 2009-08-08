@@ -49,14 +49,14 @@ def joint_to_diag(js):
     return d
 
 rospy.init_node('joints_to_diagnostics')
-pub_diag = rospy.Publisher('/diagnostics', DiagnosticMessage)
+pub_diag = rospy.Publisher('/diagnostics', DiagnosticArray)
 
 last_publish_time = rospy.Time(0.0)
 def state_cb(j):
     global last_publish_time
     now = rospy.get_rostime()
     if (now - last_publish_time).to_seconds() > 1.0:
-        d = DiagnosticMessage()
+        d = DiagnosticArray()
         d.header.stamp = j.header.stamp
         d.status = [joint_to_diag(js) for js in j.joints]
         pub_diag.publish(d)

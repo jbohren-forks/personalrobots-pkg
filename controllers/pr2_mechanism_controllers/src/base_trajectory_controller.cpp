@@ -35,7 +35,7 @@
 * Author: Sachin Chitta
 *********************************************************************/
 #include <pr2_mechanism_controllers/base_trajectory_controller.h>
-#include <diagnostic_msgs/DiagnosticMessage.h>
+#include <diagnostic_msgs/DiagnosticArray.h>
 #include <diagnostic_msgs/DiagnosticStatus.h>
 #include <ros/rate.h>
 
@@ -85,7 +85,7 @@ namespace pr2_mechanism_controllers
 
     ros_node_.advertise<geometry_msgs::Twist>(control_topic_name_, 1);
     ros_node_.subscribe(path_input_topic_name_,path_msg_in_, &BaseTrajectoryController::pathCallback, this, 1);
-    ros_node_.advertise<diagnostic_msgs::DiagnosticMessage> ("/diagnostics", 1) ;
+    ros_node_.advertise<diagnostic_msgs::DiagnosticArray> ("/diagnostics", 1) ;
 
     last_diagnostics_publish_time_ = ros::Time::now();
     current_time_ = ros::Time::now().toSec();
@@ -279,7 +279,7 @@ namespace pr2_mechanism_controllers
       return;
     }
 
-    diagnostic_msgs::DiagnosticMessage message;
+    diagnostic_msgs::DiagnosticArray message;
     std::vector<diagnostic_msgs::DiagnosticStatus> statuses;
     std::vector<diagnostic_msgs::KeyValue> values;
     std::vector<diagnostic_msgs::DiagnosticString> strings;

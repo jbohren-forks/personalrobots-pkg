@@ -53,7 +53,7 @@
 #include <mechanism_msgs/SwitchController.h>
 #include <mechanism_msgs/MechanismState.h>
 #include <mechanism_msgs/JointStates.h>
-#include <diagnostic_msgs/DiagnosticMessage.h>
+#include <diagnostic_msgs/DiagnosticArray.h>
 
 typedef controller::ControllerHandle* (*ControllerAllocator)();
 
@@ -122,7 +122,7 @@ private:
   // for publishing constroller state/diagnostics
   void publishDiagnostics();
   void publishState();
-  realtime_tools::RealtimePublisher<diagnostic_msgs::DiagnosticMessage> pub_diagnostics_;
+  realtime_tools::RealtimePublisher<diagnostic_msgs::DiagnosticArray> pub_diagnostics_;
   realtime_tools::RealtimePublisher<mechanism_msgs::JointStates> pub_joints_;
   realtime_tools::RealtimePublisher<mechanism_msgs::MechanismState> pub_mech_state_;
   double publish_period_state_, last_published_state_;
