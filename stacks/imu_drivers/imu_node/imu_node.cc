@@ -543,7 +543,7 @@ public:
 
     status.adds("Device", port);
     status.adds("TF frame", frameid_);
-    status.addv("Error count", error_count_);
+    status.adds("Error count", error_count_);
   }
 
   void calibrationStatus(diagnostic_updater::DiagnosticStatusWrapper& status)
@@ -551,9 +551,9 @@ public:
     if (calibrated_)
     {
       status.summary(0, "Gyro is calibrated");
-      status.addv("X bias", bias_x_);
-      status.addv("Y bias", bias_y_);
-      status.addv("Z bias", bias_z_);
+      status.adds("X bias", bias_x_);
+      status.adds("Y bias", bias_y_);
+      status.adds("Z bias", bias_z_);
     }
     else
       status.summary(2, "Gyro not calibrated");
