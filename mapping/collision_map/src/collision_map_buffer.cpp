@@ -63,7 +63,7 @@ dimension, orientation) useful for collision detection.
 #include <sys/time.h>
 
 using namespace std;
-using namespace robot_msgs;
+using namespace sensor_msgs;
 using namespace mapping_msgs;
 using namespace tabletop_srvs;
 using namespace visualization_msgs;
