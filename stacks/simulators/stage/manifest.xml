@@ -19,6 +19,7 @@ This package also provides stageros, a ROS node that uses Stage.
   <depend package="std_msgs" />
   <depend package="nav_msgs" />
   <depend package="sensor_msgs" />
+  <depend package="geometry_msgs" />
   <depend package="tf" />
 
 <rosdep name="autoconf"/>

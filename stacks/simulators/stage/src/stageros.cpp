@@ -37,7 +37,7 @@
 #include <sensor_msgs/LaserScan.h>
 #include <nav_msgs/Odometry.h>
 #include <geometry_msgs/PoseWithRatesStamped.h>
-#include <robot_msgs/PoseDot.h>
+#include <geometry_msgs/Twist.h>
 #include <roslib/Time.h>
 
 #include "tf/transform_broadcaster.h"
@@ -53,7 +53,7 @@ class StageNode : public ros::Node
 {
   private:
     // Messages that we'll send or receive
-    robot_msgs::PoseDot *velMsgs;
+    geometry_msgs::Twist *velMsgs;
     sensor_msgs::LaserScan *laserMsgs;
     nav_msgs::Odometry *odomMsgs;
     geometry_msgs::PoseWithRatesStamped *groundTruthMsgs;
@@ -136,9 +136,9 @@ StageNode::cmdvelReceived()
   boost::mutex::scoped_lock lock(msg_lock);
   for (size_t r = 0; r < this->positionmodels.size(); r++)
   {
-    this->positionmodels[r]->SetSpeed(this->velMsgs[r].vel.vx, 
-                                      this->velMsgs[r].vel.vy, 
-                                      this->velMsgs[r].ang_vel.vz);
+    this->positionmodels[r]->SetSpeed(this->velMsgs[r].linear.x, 
+                                      this->velMsgs[r].linear.y, 
+                                      this->velMsgs[r].angular.z);
   }
   this->base_last_cmd = this->sim_time;
 }
@@ -172,7 +172,7 @@ StageNode::StageNode(int argc, char** argv, bool gui, const char* fname) :
   size_t numRobots = positionmodels.size();
   ROS_INFO("found %d position model(s) in the file", numRobots);
 
-  this->velMsgs = new robot_msgs::PoseDot[numRobots];
+  this->velMsgs = new geometry_msgs::Twist[numRobots];
   this->laserMsgs = new sensor_msgs::LaserScan[numRobots];
   this->odomMsgs = new nav_msgs::Odometry[numRobots];
   this->groundTruthMsgs = new geometry_msgs::PoseWithRatesStamped[numRobots];
