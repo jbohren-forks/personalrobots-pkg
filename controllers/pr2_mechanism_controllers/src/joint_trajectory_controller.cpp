@@ -926,17 +926,15 @@ void JointTrajectoryController::publishDiagnostics()
 
   if(diagnostics_publisher_->trylock())
   {
-    robot_msgs::JointCmd cmd;
+    deprecated_msgs::JointCmd cmd;
     cmd.set_names_size(1);
     cmd.set_positions_size(1);
     cmd.set_velocity_size(1);
 
     vector<diagnostic_msgs::DiagnosticStatus> statuses;
     vector<diagnostic_msgs::KeyValue> values;
-    vector<diagnostic_msgs::DiagnosticString> strings;
     diagnostic_msgs::DiagnosticStatus status;
     diagnostic_msgs::KeyValue v;
-    diagnostic_msgs::DiagnosticString s;
     status.name = "Whole Body Trajectory Controller";
     status.level = 0;
     if(watch_dog_active_)
@@ -1024,24 +1022,23 @@ void JointTrajectoryController::publishDiagnostics()
     v.value = max_trajectory_queue_size_;
     values.push_back(v);
 
-    s.label = "Listen topic name";
-    s.value = listen_topic_name_;
-    strings.push_back(s);
+    v.label = "Listen topic name";
+    v.value = listen_topic_name_;
+    values.push_back(v);
 
-    s.label = "Trajectory set service";
-    s.value = name_ + "/TrajectoryStart";
-    strings.push_back(s);
+    v.label = "Trajectory set service";
+    v.value = name_ + "/TrajectoryStart";
+    values.push_back(v);
 
-    s.label = "Trajectory query service";
-    s.value = name_ + "/TrajectoryQuery";
-    strings.push_back(s);
+    v.label = "Trajectory query service";
+    v.value = name_ + "/TrajectoryQuery";
+    values.push_back(v);
 
-    s.label = "Trajectory cancel service";
-    s.value = name_ + "/TrajectoryCancel";
-    strings.push_back(s);
+    v.label = "Trajectory cancel service";
+    v.value = name_ + "/TrajectoryCancel";
+    values.push_back(v);
 
     status.set_values_vec(values);
-    status.set_strings_vec(strings);
     statuses.push_back(status);
 
     last_diagnostics_publish_time_ = current_time_;

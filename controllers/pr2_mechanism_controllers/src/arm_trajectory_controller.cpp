@@ -684,14 +684,13 @@ void ArmTrajectoryControllerNode::publishDiagnostics()
   if(diagnostics_publisher_->trylock())
   {
 //    ROS_INFO("Started diagnostics");
-    robot_msgs::JointCmd cmd;
+    deprecated_msgs::JointCmd cmd;
     cmd.set_names_size(1);
     cmd.set_positions_size(1);
     cmd.set_velocity_size(1);
 
     vector<diagnostic_msgs::DiagnosticStatus> statuses;
     vector<diagnostic_msgs::KeyValue> values;
-    vector<diagnostic_msgs::DiagnosticString> strings;
     diagnostic_msgs::DiagnosticStatus status;
     diagnostic_msgs::KeyValue v;
 
@@ -757,7 +756,6 @@ void ArmTrajectoryControllerNode::publishDiagnostics()
 //    ROS_INFO("Diagnostics 5");
 
     status.set_values_vec(values);
-    status.set_strings_vec(strings);
     statuses.push_back(status);
     diagnostics_publisher_->msg_.set_status_vec(statuses);
 //    ROS_INFO("Set diagnostics info");

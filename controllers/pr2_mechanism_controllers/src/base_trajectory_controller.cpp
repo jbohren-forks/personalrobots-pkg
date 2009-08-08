@@ -282,11 +282,9 @@ namespace pr2_mechanism_controllers
     diagnostic_msgs::DiagnosticArray message;
     std::vector<diagnostic_msgs::DiagnosticStatus> statuses;
     std::vector<diagnostic_msgs::KeyValue> values;
-    std::vector<diagnostic_msgs::DiagnosticString> strings;
 
     diagnostic_msgs::DiagnosticStatus status;
     diagnostic_msgs::KeyValue v;
-    diagnostic_msgs::DiagnosticString s;
     status.name = ros_node_.getName();
     status.message = control_state_;
 
@@ -326,24 +324,23 @@ namespace pr2_mechanism_controllers
     v.value = max_update_time_;
     values.push_back(v);
 
-    s.label = "Control topic name";
-    s.value = control_topic_name_;
-    strings.push_back(s);
+    v.label = "Control topic name";
+    v.value = control_topic_name_;
+    values.push_back(v);
 
-    s.label = "Global frame";
-    s.value = global_frame_;
-    strings.push_back(s);
+    v.label = "Global frame";
+    v.value = global_frame_;
+    values.push_back(v);
+    
+    v.label = "Path input topic name";
+    v.value = path_input_topic_name_;
+    values.push_back(v);
 
-    s.label = "Path input topic name";
-    s.value = path_input_topic_name_;
-    strings.push_back(s);
-
-    s.label = "Trajectory type";
-    s.value = trajectory_type_;
-    strings.push_back(s);
+    v.label = "Trajectory type";
+    v.value = trajectory_type_;
+    values.push_back(v);
 
     status.set_values_vec(values);
-    status.set_strings_vec(strings);
 
     statuses.push_back(status);
 
