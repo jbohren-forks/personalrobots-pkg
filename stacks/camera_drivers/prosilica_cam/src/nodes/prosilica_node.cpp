@@ -544,8 +544,8 @@ private:
   static void setBgrLayout(sensor_msgs::Image &image, int width, int height)
   {
     image.type = sensor_msgs::Image::TYPE_8UC3;
-    image.rows = height;
-    image.cols = width;
+    image.height = height;
+    image.width = width;
     image.step = width * 3;
     image.data.resize(height * (width * 3));
   }

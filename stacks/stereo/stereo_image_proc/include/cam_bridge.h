@@ -211,8 +211,8 @@ namespace cam_bridge
     // FIXME: this to avoid segfault when right image empty (disparity image requested instead).
     //        this all seems kind of hacky
     if (im_msg.type == sensor_msgs::Image::TYPE_8UC1) {
-      im->imHeight = im_msg.rows;
-      im->imWidth  = im_msg.cols;
+      im->imHeight = im_msg.height;
+      im->imWidth  = im_msg.width;
     } else {
       im->imHeight = info_msg.height;
       im->imWidth  = info_msg.width;
