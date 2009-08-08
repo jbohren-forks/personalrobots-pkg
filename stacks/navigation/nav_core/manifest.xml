@@ -9,7 +9,6 @@
   <review status="proposal cleared" notes=""/>
   <url>http://pr.willowgarage.com/wiki/nav_core</url>
   <depend package="std_msgs"/>
-  <depend package="robot_msgs"/>
   <depend package="geometry_msgs"/>
 
   <export>
