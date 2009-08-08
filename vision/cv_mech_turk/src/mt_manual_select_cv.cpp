@@ -118,7 +118,7 @@ public:
 	  }
       }
     } else {
-      ROS_ERROR("Unable to convert from %s to bgr", msg->encoding.c_str());
+      ROS_ERROR("Unable to convert from %d to bgr", msg->type);
     }
   }
 };
