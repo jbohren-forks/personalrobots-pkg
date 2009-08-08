@@ -42,7 +42,7 @@
 #include <ros/node.h>
 
 // Msgs
-#include <robot_msgs/Path.h>
+#include <nav_msgs/Path.h>
 #include <std_msgs/Empty.h>
 
 
@@ -52,13 +52,13 @@
 
 namespace writing_core{
 
-class WriteOnWhiteBoardAction: public robot_actions::Action<robot_msgs::Path, std_msgs::Empty>
+class WriteOnWhiteBoardAction: public robot_actions::Action<nav_msgs::Path, std_msgs::Empty>
 {
 public:
   WriteOnWhiteBoardAction();
   ~WriteOnWhiteBoardAction();
 
-  robot_actions::ResultStatus execute(const robot_msgs::Path& text_trajectory, std_msgs::Empty&);
+  robot_actions::ResultStatus execute(const nav_msgs::Path& text_trajectory, std_msgs::Empty&);
 
 private:
   
@@ -72,7 +72,7 @@ private:
   std::string arm_controller_;
 
   std_msgs::Empty empty_;
-  robot_msgs::Path text_trajectory_;
+  nav_msgs::Path text_trajectory_;
   
   //robot_srvs::MoveToPose::Request req_pose_;
   //robot_srvs::MoveToPose::Response res_pose_;

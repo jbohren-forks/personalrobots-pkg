@@ -10,4 +10,4 @@ robot_actions/ActionStatus status
 TextGoal goal
 
 # Feedback
-robot_msgs/Path feedback
+nav_msgs/Path feedback

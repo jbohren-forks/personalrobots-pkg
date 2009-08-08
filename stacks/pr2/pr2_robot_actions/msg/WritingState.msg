@@ -5,7 +5,7 @@ Header header
 robot_actions/ActionStatus status
 
 # Goal
-robot_msgs/Path goal
+nav_msgs/Path goal
 
 # Feedback
 std_msgs/Empty feedback

@@ -99,7 +99,7 @@ if __name__ == '__main__':
   try:
 
     rospy.init_node("write_trajectory",  log_level=roslib.msg.Log.DEBUG)
-    w = WriteTrajectoryAction("write_trajectory", robot_msgs.msg.Path, robot_actions.msg.WriteTracjectoryState, Empty)
+    w = WriteTrajectoryAction("write_trajectory", nav_msgs.msg.Path, robot_actions.msg.WriteTracjectoryState, Empty)
     w.run()
     rospy.spin();
     

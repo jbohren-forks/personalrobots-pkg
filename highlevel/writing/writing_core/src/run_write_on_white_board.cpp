@@ -59,7 +59,7 @@ int main(int argc, char** argv)
   WriteOnWhiteBoardAction write_on_white_board;
 
   robot_actions::ActionRunner runner(10.0);
-  runner.connect<robot_msgs::Path, pr2_robot_actions::WritingState, std_msgs::Empty>(write_on_white_board);
+  runner.connect<nav_msgs::Path, pr2_robot_actions::WritingState, std_msgs::Empty>(write_on_white_board);
   runner.run();
 
   node.spin();

@@ -142,7 +142,7 @@ class GenerateTextTrajectoryAction(python_actions.Action):
     for t in traject(goal.text):
       points += [(t[0][0], t[0][1], 0.10)] + [(x, y, -0.05) for (x, y) in t] + [(t[-1][0], t[-1][1], 0.10)]
 
-    msg = robot_msgs.msg.Path()
+    msg = nav_msgs.msg.Path()
     msg.poses = []
     for (x, y, z) in points:
       ps = robot_msgs.msg.PoseStamped()
@@ -161,7 +161,7 @@ if __name__ == '__main__':
     w = GenerateTextTrajectoryAction("generate_text_trajectory",
                                      pr2_robot_actions.msg.TextGoal,
                                      pr2_robot_actions.msg.GenerateTextTrajectoryState,
-                                     robot_msgs.msg.Path)
+                                     nav_msgs.msg.Path)
     w.run()
     rospy.spin();
 

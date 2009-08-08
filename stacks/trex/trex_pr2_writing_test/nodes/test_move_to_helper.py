@@ -148,7 +148,7 @@ if __name__ == '__main__':
     generate_text_trajectory = python_actions.ActionClient("generate_text_trajectory",
                                     pr2_robot_actions.msg.TextGoal,
                                     pr2_robot_actions.msg.GenerateTextTrajectoryState,
-                                    robot_msgs.msg.Path)
+                                    nav_msgs.msg.Path)
     generate_text_trajectory.preempt()
 
     time.sleep(2)

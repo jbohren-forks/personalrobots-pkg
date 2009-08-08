@@ -40,7 +40,7 @@ namespace writing_core
 {
 
 WriteOnWhiteBoardAction::WriteOnWhiteBoardAction() :
-  robot_actions::Action<robot_msgs::Path, std_msgs::Empty>("write_on_white_board"),
+  robot_actions::Action<nav_msgs::Path, std_msgs::Empty>("write_on_white_board"),
   action_name_("write_on_white_board"),
   node_(ros::Node::instance()),
   arm_controller_("r_arm_cartesian_pose_controller")
@@ -61,7 +61,7 @@ WriteOnWhiteBoardAction::~WriteOnWhiteBoardAction()
 {
 };
 
-robot_actions::ResultStatus WriteOnWhiteBoardAction::execute(const robot_msgs::Path& text_trajectory, std_msgs::Empty& feedback)
+robot_actions::ResultStatus WriteOnWhiteBoardAction::execute(const nav_msgs::Path& text_trajectory, std_msgs::Empty& feedback)
 {
   ROS_DEBUG("%s: executing.", action_name_.c_str());
 
