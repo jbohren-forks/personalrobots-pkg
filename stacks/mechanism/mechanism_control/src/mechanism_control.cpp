@@ -110,12 +110,12 @@ bool MechanismControl::initXml(TiXmlElement* config)
 
 
 #define ADD_STRING_FMT(lab, fmt, ...) \
-  s.label = (lab); \
+  v.label = (lab); \
   { char buf[1024]; \
     snprintf(buf, sizeof(buf), fmt, ##__VA_ARGS__); \
-    s.value = buf; \
+    v.value = buf; \
   } \
-  strings.push_back(s)
+  values.push_back(v)
 
 
 // Must be realtime safe.
@@ -452,10 +452,8 @@ void MechanismControl::publishDiagnostics()
       
       std::vector<diagnostic_msgs::DiagnosticStatus> statuses;
       std::vector<diagnostic_msgs::KeyValue> values;
-      std::vector<diagnostic_msgs::DiagnosticString> strings;
       diagnostic_msgs::DiagnosticStatus status;
       diagnostic_msgs::KeyValue v;
-      diagnostic_msgs::DiagnosticString s;
       
       status.name = "Mechanism Control";
       status.level = 0;
@@ -505,7 +503,6 @@ void MechanismControl::publishDiagnostics()
       ADD_STRING_FMT("Active controllers", "%d", active);
       
       status.set_values_vec(values);
-      status.set_strings_vec(strings);
       statuses.push_back(status);
       pub_diagnostics_.msg_.set_status_vec(statuses);
       pub_diagnostics_.unlockAndPublish();
