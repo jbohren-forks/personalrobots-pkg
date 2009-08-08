@@ -35,7 +35,7 @@
 #include <novelty_estimator_node.h>
 
 using namespace std;
-using namespace robot_msgs;
+using namespace sensor_msgs;
 using namespace pcd_novelty;
 
 
