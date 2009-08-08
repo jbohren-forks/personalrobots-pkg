@@ -104,7 +104,7 @@ class TransformerROS(TFX.Transformer):
         r = geometry_msgs.msg.QuaternionStamped()
         r.header.stamp = ps.header.stamp
         r.header.frame_id = target_frame
-        r.quaternion = geometry_msgs.msg.Quaternion(*quat)
+        r.data = geometry_msgs.msg.Quaternion(*quat)
         return r
 
     ## Transforms a robot_msgs PoseStamped message to frame target_frame, returns the resulting PoseStamped.
