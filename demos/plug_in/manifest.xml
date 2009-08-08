@@ -22,6 +22,5 @@
   <depend package="tf" />
   
   <depend package="visualization_msgs" />
-  <depend package="robot_msgs" />
   <depend package="manipulation_msgs" />
 </package>

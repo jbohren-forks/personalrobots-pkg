@@ -5,7 +5,6 @@
   <review status="NA" notes=""/>
   <url>http://pr.willowgarage.com/wiki/Simulator</url>
   <depend package="std_msgs"/>
-  <depend package="robot_msgs"/>
   <depend package="nav_view"/>
   <depend package="move_base"/>
   <depend package="gazebo_plugin"/>

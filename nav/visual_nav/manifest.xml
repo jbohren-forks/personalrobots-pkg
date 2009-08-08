@@ -5,7 +5,6 @@
 <review status="unreviewed" notes=""/>
 <depend package="roscpp" />
 <depend package="rosconsole" />
-<depend package="robot_msgs" />
 <depend package="sensor_msgs" />
 <depend package="laser_scan" />
 <depend package="robot_actions" />

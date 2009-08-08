@@ -9,7 +9,6 @@
   <review status="experimental" notes="beta"/>
 
   <depend package="roscpp" />
-  <depend package="robot_msgs" />
   <depend package="std_msgs" />
   <depend package="opencv_latest"/>
   <depend package="sensor_msgs"/>

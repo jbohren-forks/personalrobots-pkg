@@ -5,7 +5,6 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <depend package="kdl" />
-  <depend package="robot_msgs" />
   <depend package="mechanism_msgs" />
   <depend package="std_msgs" />
   <depend package="tf" />

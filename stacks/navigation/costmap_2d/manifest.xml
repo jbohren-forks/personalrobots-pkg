@@ -15,7 +15,6 @@
 <depend package="rosconsole"/>
 <depend package="roscpp" />
 <depend package="std_msgs" />
-<depend package="robot_msgs" />
 <depend package="geometry_msgs" />
 <depend package="sensor_msgs" />
 <depend package="laser_scan" />

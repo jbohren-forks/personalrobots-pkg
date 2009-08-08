@@ -9,7 +9,6 @@
   <depend package="rospy"/>
   <depend package="rosjson"/>
   <depend package="std_msgs"/>
-  <depend package="robot_msgs"/>
   <depend package="geometry_msgs"/>
   <depend package="nav_msgs"/>
   <depend package="bullet_python"/>

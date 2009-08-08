@@ -9,5 +9,4 @@
   <depend package="gazebo_plugin"/>
   <depend package="examples_gazebo" />
   <depend package="gazebo_worlds" />
-  <depend package="robot_msgs" />
 </package>

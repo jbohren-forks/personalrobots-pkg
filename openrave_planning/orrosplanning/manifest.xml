@@ -9,7 +9,6 @@
   <depend package="openrave_robot_description"/>
   <depend package="checkerboard_detector"/>
   <depend package="tf"/>
-  <depend package="robot_msgs"/>
   <depend package="mapping_msgs"/>
   <depend package="mechanism_msgs" />
   <depend package="manipulation_msgs" />

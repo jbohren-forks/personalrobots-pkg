@@ -9,7 +9,6 @@
   <url>http://pr.willowgarage.com/wiki/laser_camera_calibration</url>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
-  <depend package="robot_msgs"/>
   <depend package="std_msgs"/>
   <depend package="sensor_msgs"/>
   <depend package="rospy"/>

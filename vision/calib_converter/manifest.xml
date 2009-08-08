@@ -8,7 +8,6 @@
 <depend package="rosrecord"/>
 <depend package="opencv_latest"/>
 <depend package="std_msgs"/>
-<depend package="robot_msgs"/>
 <depend package="image_utils"/>
 <depend package="roscpp"/>
 <export>

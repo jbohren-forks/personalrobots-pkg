@@ -8,7 +8,6 @@
   <!-- url>http://pr.willowgarage.com/wiki/laser_cb_detection</url -->
   
   <depend package="topic_synchronizer" />
-  <depend package="robot_msgs" />
   <depend package="opencv_latest" />
   <depend package="sensor_msgs" />
   <depend package="dense_laser_assembler" />

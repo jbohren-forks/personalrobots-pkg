@@ -37,7 +37,6 @@
   <review status="experimental" notes="beta"/>
 
   <depend package="roscpp" />
-  <depend package="robot_msgs" />
   <depend package="sensor_msgs" />
   <depend package="visualization_msgs" />
   <depend package="angles" />

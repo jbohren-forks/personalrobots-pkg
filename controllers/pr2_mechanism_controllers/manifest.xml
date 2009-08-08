@@ -17,7 +17,6 @@
   <depend package="nav_msgs" />
   <depend package="pr2_msgs" />
   <depend package="pr2_srvs"/>
-  <depend package="robot_msgs" />
   <depend package="visualization_msgs" />
   <depend package="robot_actions" />
   <depend package="rosconsole" />

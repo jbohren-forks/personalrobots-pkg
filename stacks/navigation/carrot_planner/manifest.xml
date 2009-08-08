@@ -9,7 +9,6 @@
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/carrot_planner</url>
   <depend package="roscpp"/>
-  <depend package="robot_msgs"/>
   <depend package="costmap_2d"/>
   <depend package="pluginlib"/>
   <depend package="nav_core"/>

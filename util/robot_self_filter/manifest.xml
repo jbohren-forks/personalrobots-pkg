@@ -12,7 +12,6 @@
   <depend package="roscpp"/>
   <depend package="tf"/>
   <depend package="filters"/>
-  <depend package="robot_msgs"/>
   <depend package="sensor_msgs"/>
   <depend package="visualization_msgs"/>
   <depend package="geometric_shapes"/>

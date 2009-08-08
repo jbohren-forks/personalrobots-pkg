@@ -49,7 +49,6 @@ import rospy, rostest
 from std_msgs.msg import String
 from nav_robot_actions.msg import MoveBaseState
 from geometry_msgs.msg import Pose,Quaternion,Point, PoseWithRatesStamped, PoseStamped, PoseWithCovarianceStamped
-from robot_msgs.msg import PoseDot
 from nav_msgs.msg import Odometry
 import tf.transformations as tft
 from numpy import float64
@@ -232,7 +231,7 @@ class NavStackTest(unittest.TestCase):
         rospy.Subscriber("/amcl_pose"            , PoseWithCovarianceStamped  , self.amclInput)
 
         # below only for debugging build 303, base not moving
-        rospy.Subscriber("cmd_vel"               , PoseDot             , self.cmd_velInput)
+        #rospy.Subscriber("cmd_vel"               , PoseDot             , self.cmd_velInput)
 
         rospy.init_node(NAME, anonymous=True)
 

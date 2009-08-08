@@ -8,7 +8,6 @@
   <url>http://pr.willowgarage.com/wiki/labeled_object_detector</url>
 
   <depend package="roscpp" />
-  <depend package="robot_msgs" />
   <depend package="robot_actions" />
   <depend package="pr2_robot_actions" />
   <depend package="point_cloud_mapping" />

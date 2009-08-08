@@ -7,7 +7,6 @@
   <depend package="rospy" />
   <depend package="roscpp" />
   <depend package="roslib" />
-  <depend package="robot_msgs" />
   <rosdep name="python-pygame" />
   <rosdep name="festival" />
   <rosdep name="festvox-kallpc16k" />

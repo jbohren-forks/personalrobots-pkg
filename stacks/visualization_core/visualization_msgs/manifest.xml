@@ -13,7 +13,6 @@
     <cpp cflags="-I${prefix}/msg/cpp"/>
   </export>
 
-  <depend package="robot_msgs"/>
   <depend package="geometry_msgs"/>
   <depend package="std_msgs"/>
 

@@ -13,7 +13,6 @@ includes access of some information from the past.
 <depend package="rospy"/>
 <depend package="rosrecord"/>
 <depend package="std_msgs"/>
-<depend package="robot_msgs"/>
 <depend package="sensor_msgs"/>
 <depend package="geometry_msgs"/>
 <depend package="cv_mech_turk"/>

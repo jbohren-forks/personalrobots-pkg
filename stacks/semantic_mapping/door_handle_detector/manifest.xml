@@ -16,7 +16,6 @@
   <depend package="opencv_latest"/>
 
   <depend package="std_msgs" />
-  <depend package="robot_msgs" />
   <depend package="geometry_msgs" />
   <depend package="mapping_msgs" />
   <depend package="door_msgs" />

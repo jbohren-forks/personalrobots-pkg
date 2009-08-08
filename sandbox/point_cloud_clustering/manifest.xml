@@ -10,7 +10,6 @@
   <url>http://pr.willowgarage.com/wiki/point_cloud_clustering</url>
   
   <depend package="roscpp" />
-  <depend package="robot_msgs" />
   <depend package="opencv_latest" />
   <depend package="point_cloud_mapping" />
 

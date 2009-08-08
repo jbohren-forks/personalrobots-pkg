@@ -13,7 +13,6 @@ DO NOT USE THESE MESSAGES!
   <logo>http://www.willowgarage.com/files/willowgarage/robot10.jpg</logo>
   <depend package="roslib"/>
   <depend package="std_msgs"/>
-  <depend package="robot_msgs"/>
   <depend package="geometry_msgs"/>
   <depend package="deprecated_msgs"/>
   <export>

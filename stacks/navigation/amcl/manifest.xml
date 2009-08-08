@@ -7,7 +7,6 @@
   <review status="proposal cleared" notes="API review in progress (Brian)"/>
   <depend package="roscpp" />
   <depend package="tf" />
-  <depend package="robot_msgs" />
   <depend package="nav_msgs" />
   <depend package="std_srvs" />
   <depend package="laser_scan" />

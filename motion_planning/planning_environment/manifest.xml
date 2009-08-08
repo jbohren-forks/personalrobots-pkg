@@ -14,7 +14,6 @@
   <depend package="tf" />
   <depend package="angles" />
   <depend package="pr2_defs" />
-  <depend package="robot_msgs" />
   <depend package="tabletop_msgs" />
   <depend package="mechanism_msgs" />
   <depend package="motion_planning_msgs" />

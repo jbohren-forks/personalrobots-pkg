@@ -9,7 +9,6 @@
   <url>http://pr.willowgarage.com/wiki/apcupsd_node</url>
   <depend package="rospy"/>
   <depend package="diagnostic_msgs"/>
-  <depend package="robot_msgs"/>
    <rosdep name="apcupsd"/>
 </package>
 

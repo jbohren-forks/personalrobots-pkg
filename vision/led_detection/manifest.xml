@@ -10,7 +10,6 @@
   <depend package="opencv_latest" />
   <depend package="tf" />
   <depend package="sensor_msgs" />
-  <depend package="robot_msgs" />
   <depend package="topic_synchronizer" />
   <depend package="kinematic_calibration" />
   <depend package="calibration_msgs" />  
