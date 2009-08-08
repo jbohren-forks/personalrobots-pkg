@@ -104,7 +104,7 @@ namespace people_aware_nav {
   }
 
 
-void MoveBaseConstrained::makePlan(const PoseStamped& goal, const Polygon3D& forbidden){
+void MoveBaseConstrained::makePlan(const PoseStamped& goal, const Polygon& forbidden){
     //since this gets called on handle activate
     if(planner_costmap_ros_ == NULL)
       return;
@@ -390,7 +390,7 @@ void MoveBaseConstrained::makePlan(const PoseStamped& goal, const Polygon3D& for
     attempted_costmap_reset_ = false;
   }
 
-bool MoveBaseConstrained::tryPlan(geometry_msgs::PoseStamped goal, const Polygon3D& forbidden){
+bool MoveBaseConstrained::tryPlan(geometry_msgs::PoseStamped goal, const Polygon& forbidden){
     ros::Duration patience = ros::Duration(planner_patience_);
     ros::Time attempt_end = ros::Time::now() + patience;
     ros::Rate r(controller_frequency_);
