@@ -65,7 +65,8 @@ histogram and matches it using HIK (the Histogram Intersection Kernel) to a "dat
 #include <sys/time.h>
 
 using namespace std;
-using namespace robot_msgs;
+using namespace sensor_msgs;
+using namespace geometry_msgs;
 using namespace mapping_msgs;
 
 class ConvexPatchHistogram
@@ -267,7 +268,7 @@ class ConvexPatchHistogram
       int nr_p = 0;
       vector<double> histogram;
       // Compute the hull and area of each cluster
-      Polygon3D poly;
+      Polygon poly;
       for (unsigned int cc = 0; cc < clusters.size (); cc++)
       {
         cloud_geometry::areas::convexHull2D (cloud_, clusters[cc], coeff, poly);
