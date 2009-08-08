@@ -4,7 +4,6 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <depend package="roscpp" />
-  <depend package="geometry_msgs" />
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lmessageseq"/>
   </export>

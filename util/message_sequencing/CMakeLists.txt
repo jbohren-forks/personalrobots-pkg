@@ -8,4 +8,4 @@ rospack_add_boost_directories()
 rospack_add_library(messageseq src/allocation.cpp)
 rospack_link_boost(messageseq thread)
 
-add_subdirectory(example)
+#add_subdirectory(example)
