@@ -360,9 +360,9 @@ class SemanticPointAnnotator
       double r = 0, g = 0, b = 0;
       // Get all planes parallel to the floor (perpendicular to Z)
       geometry_msgs::Point32 robot_origin;
-      robot_origin.x = map_origin.point.x;
-      robot_origin.y = map_origin.point.y;
-      robot_origin.z = map_origin.point.z;
+      robot_origin.x = map_origin.data.x;
+      robot_origin.y = map_origin.data.y;
+      robot_origin.z = map_origin.data.z;
 
       // Assuming that the robot always has its base at Z = 0 in the base_link frame,
       // compute the X,Y centroid coordinates of the planar patch
@@ -451,13 +451,13 @@ class SemanticPointAnnotator
     void cloud_cb ()
     {
       geometry_msgs::PointStamped base_link_origin, map_origin;
-      base_link_origin.point.x = base_link_origin.point.y = base_link_origin.point.z = 0.0;
+      base_link_origin.data.x = base_link_origin.data.y = base_link_origin.data.z = 0.0;
       base_link_origin.header.frame_id = "base_link";
       base_link_origin.header.stamp = ros::Time();
 
       tf_.transformPoint ("base_link", base_link_origin, map_origin);
 
-      ROS_INFO ("Received %d data points. Current robot pose is %g, %g, %g", (int)cloud_.points.size (), map_origin.point.x, map_origin.point.y, map_origin.point.z);
+      ROS_INFO ("Received %d data points. Current robot pose is %g, %g, %g", (int)cloud_.points.size (), map_origin.data.x, map_origin.data.y, map_origin.data.z);
 
       cloud_annotated_.header = cloud_.header;
 

@@ -116,14 +116,14 @@ int
   geometry_msgs::PointStamped guess;
 #if 0
   guess.header.frame_id = "odom_combined";
-  guess.point.x = 4.0;
-  guess.point.y = 0.0;
-  guess.point.z = 0.4;
+  guess.data.x = 4.0;
+  guess.data.y = 0.0;
+  guess.data.z = 0.4;
 #else
   guess.header.frame_id = "map";
-  guess.point.x = 9.899;
-  guess.point.y = 24.91;
-  guess.point.z = 0.4;
+  guess.data.x = 9.899;
+  guess.data.y = 24.91;
+  guess.data.z = 0.4;
 #endif
   geometry_msgs::PoseStamped coarse_outlet_pose_msg;
   int tries = 0;

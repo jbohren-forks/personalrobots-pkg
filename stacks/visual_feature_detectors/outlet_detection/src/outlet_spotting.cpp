@@ -803,8 +803,8 @@ private:
 //    	tf::Stamped<tf::Transform> tilt_stage;
 //    	tf_->lookupTransform("base_footprint", "laser_tilt_link", ros::Time(), tilt_stage);
 //    	double laser_height = tilt_stage.getOrigin()[2];
-//    	double outlet_height = outlet_location.point.z;
-//    	double dist = outlet_location.point.x;
+//    	double outlet_height = outlet_location.data.z;
+//    	double dist = outlet_location.data.x;
 //    	double outlet_bottom = outlet_height-(scan_height/2.0);
 //    	double outlet_top = outlet_height+(scan_height/2.0);
 //
@@ -870,15 +870,15 @@ private:
 		PointStamped ps_stereo;
 		ps_stereo.header.frame_id = cloud.header.frame_id;
 		ps_stereo.header.stamp = cloud.header.stamp;
-		ps_stereo.point.x = center_point.x;
-		ps_stereo.point.y = center_point.y;
-		ps_stereo.point.z = center_point.z;
+		ps_stereo.data.x = center_point.x;
+		ps_stereo.data.y = center_point.y;
+		ps_stereo.data.z = center_point.z;
 
 
 		PointStamped center_in_base_footprint;
 
 		tf_->transformPoint("base_footprint", ps_stereo, center_in_base_footprint);
-		double outlet_height = center_in_base_footprint.point.z;
+		double outlet_height = center_in_base_footprint.data.z;
 
 		if (outlet_height>max_outlet_height_ || outlet_height<min_outlet_height_) {
 			// not an outlet
@@ -951,7 +951,7 @@ private:
         temp_pose.header.frame_id = base_cloud_.header.frame_id;
         temp_pose.header.stamp = base_cloud_.header.stamp;
 
-//        btVector3 position(ps_cloud.point.x,ps_cloud.point.y,ps_cloud.point.z);
+//        btVector3 position(ps_cloud.data.x,ps_cloud.data.y,ps_cloud.data.z);
         btVector3 position(closest.x,closest.y,closest.z);
         btVector3 up(0,0,1);
         btVector3 left(line_segment[1].x-line_segment[0].x,line_segment[1].y-line_segment[0].y,line_segment[1].z-line_segment[0].z);
@@ -1249,9 +1249,9 @@ public:
 		point.header.stamp = ros::Time::now();
 		point.header.frame_id = "torso_lift_link";
 
-		point.point.x = 1;
-		point.point.y = tan(M_PI*horizontalAngle/180);
-		point.point.z = tan(M_PI*verticalAngle/180);
+		point.data.x = 1;
+		point.data.y = tan(M_PI*horizontalAngle/180);
+		point.data.z = tan(M_PI*verticalAngle/180);
 
 		publish(head_controller_ + "/point_head", point);
 		ros::Duration(1.0).sleep();

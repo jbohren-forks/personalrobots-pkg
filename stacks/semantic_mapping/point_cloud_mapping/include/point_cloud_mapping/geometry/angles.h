@@ -236,9 +236,9 @@ namespace cloud_geometry
     {
       // See if we need to flip any plane normals
       float vp_m[3];
-      vp_m[0] = viewpoint.point.x - point.x;
-      vp_m[1] = viewpoint.point.y - point.y;
-      vp_m[2] = viewpoint.point.z - point.z;
+      vp_m[0] = viewpoint.data.x - point.x;
+      vp_m[1] = viewpoint.data.y - point.y;
+      vp_m[2] = viewpoint.data.z - point.z;
 
       // Dot product between the (viewpoint - point) and the plane normal
       double cos_theta = (vp_m[0] * normal (0) + vp_m[1] * normal (1) + vp_m[2] * normal (2));
@@ -320,9 +320,9 @@ namespace cloud_geometry
     {
       // See if we need to flip any plane normals
       float vp_m[3];
-      vp_m[0] = viewpoint.point.x - point.x;
-      vp_m[1] = viewpoint.point.y - point.y;
-      vp_m[2] = viewpoint.point.z - point.z;
+      vp_m[0] = viewpoint.data.x - point.x;
+      vp_m[1] = viewpoint.data.y - point.y;
+      vp_m[2] = viewpoint.data.z - point.z;
 
       // Dot product between the (viewpoint - point) and the plane normal
       double cos_theta = (vp_m[0] * normal[0] + vp_m[1] * normal[1] + vp_m[2] * normal[2]);

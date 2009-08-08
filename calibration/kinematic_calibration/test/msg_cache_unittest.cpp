@@ -53,7 +53,7 @@ TEST(KINEMATIC_CALIBRATION_MSG_CACHE, test1)
   cache.insertData(sample) ;
 
   sample.header.stamp =ros::Time(2.0) ;
-  sample.point.x = 11 ;
+  sample.data.x = 11 ;
   cache.insertData(sample) ;
 
   sample.header.stamp =ros::Time(3.0) ;

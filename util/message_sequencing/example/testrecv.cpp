@@ -20,12 +20,12 @@ public:
 
   void sequencedCb(const boost::shared_ptr<geometry_msgs::PointStamped>& message)
   {
-    printf("Got a stamped point from %f with: %f %f %f (%f late)\n", message->header.stamp.toSec(), message->point.x, message->point.y, message->point.z, (ros::Time::now() - message->header.stamp).toSec());
+    printf("Got a stamped point from %f with: %f %f %f (%f late)\n", message->header.stamp.toSec(), message->data.x, message->data.y, message->data.z, (ros::Time::now() - message->header.stamp).toSec());
   }
 
   void droppedCb(const boost::shared_ptr<geometry_msgs::PointStamped>& message)
   {
-    printf("Dropped a stamped point from %f with: %f %f %f\n", message->header.stamp.toSec(), message->point.x, message->point.y, message->point.z);
+    printf("Dropped a stamped point from %f with: %f %f %f\n", message->header.stamp.toSec(), message->data.x, message->data.y, message->data.z);
   }
 };
 

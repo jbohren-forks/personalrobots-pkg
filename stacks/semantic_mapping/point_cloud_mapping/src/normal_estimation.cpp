@@ -177,21 +177,21 @@ class NormalEstimation
       geometry_msgs::PointStamped viewpoint_laser;
       viewpoint_laser.header.frame_id = "laser_tilt_mount_link";
       // Set the viewpoint in the laser coordinate system to 0, 0, 0
-      viewpoint_laser.point.x = viewpoint_laser.point.y = viewpoint_laser.point.z = 0.0;
+      viewpoint_laser.data.x = viewpoint_laser.data.y = viewpoint_laser.data.z = 0.0;
 
       try
       {
         tf.transformPoint (cloud_frame, viewpoint_laser, viewpoint_cloud);
         ROS_INFO ("Cloud view point in frame %s is: %g, %g, %g.", cloud_frame.c_str (),
-                  viewpoint_cloud.point.x, viewpoint_cloud.point.y, viewpoint_cloud.point.z);
+                  viewpoint_cloud.data.x, viewpoint_cloud.data.y, viewpoint_cloud.data.z);
       }
       catch (...)
       {
         // Default to 0.05, 0, 0.942768 (base_link, ~base_footprint)
-        viewpoint_cloud.point.x = 0.05; viewpoint_cloud.point.y = 0.0; viewpoint_cloud.point.z = 0.942768;
+        viewpoint_cloud.data.x = 0.05; viewpoint_cloud.data.y = 0.0; viewpoint_cloud.data.z = 0.942768;
         ROS_WARN ("Could not transform a point from frame %s to frame %s! Defaulting to <%f, %f, %f>",
                   viewpoint_laser.header.frame_id.c_str (), cloud_frame.c_str (),
-                  viewpoint_cloud.point.x, viewpoint_cloud.point.y, viewpoint_cloud.point.z);
+                  viewpoint_cloud.data.x, viewpoint_cloud.data.y, viewpoint_cloud.data.z);
       }
     }
 

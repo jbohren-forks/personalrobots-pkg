@@ -83,7 +83,7 @@ public :
       
       geometry_msgs::PointStamped target_point ;
       target_point.header = snapshot_.header ;
-      target_point.point = cur_marker.location ;
+      target_point.data = cur_marker.location ;
       
       publish(topic, target_point) ;
 

@@ -431,9 +431,9 @@ void  HandleDetector::getHandleCandidates (const vector<int> &indices, const vec
 
   // Install the basis for a viewpoint -> point line
   vector<double> viewpoint_pt_line (6);
-  viewpoint_pt_line[0] = viewpoint_cloud.point.x;
-  viewpoint_pt_line[1] = viewpoint_cloud.point.y;
-  viewpoint_pt_line[2] = viewpoint_cloud.point.z;
+  viewpoint_pt_line[0] = viewpoint_cloud.data.x;
+  viewpoint_pt_line[1] = viewpoint_cloud.data.y;
+  viewpoint_pt_line[2] = viewpoint_cloud.data.z;
 
   // Remove outliers around the door margin
   geometry_msgs::Point32 tmp_p;              // Used as a temporary point
@@ -455,9 +455,9 @@ void  HandleDetector::getHandleCandidates (const vector<int> &indices, const vec
       continue;
 
     // Check whether the line viewpoint->point intersects the polygon
-    viewpoint_pt_line[3] = pointcloud.points.at (indices.at (i)).x - viewpoint_cloud.point.x;
-    viewpoint_pt_line[4] = pointcloud.points.at (indices.at (i)).y - viewpoint_cloud.point.y;
-    viewpoint_pt_line[5] = pointcloud.points.at (indices.at (i)).z - viewpoint_cloud.point.z;
+    viewpoint_pt_line[3] = pointcloud.points.at (indices.at (i)).x - viewpoint_cloud.data.x;
+    viewpoint_pt_line[4] = pointcloud.points.at (indices.at (i)).y - viewpoint_cloud.data.y;
+    viewpoint_pt_line[5] = pointcloud.points.at (indices.at (i)).z - viewpoint_cloud.data.z;
     // Normalize direction
     double n_norm = sqrt (viewpoint_pt_line[3] * viewpoint_pt_line[3] +
                           viewpoint_pt_line[4] * viewpoint_pt_line[4] +
@@ -501,9 +501,9 @@ void HandleDetector::getDoorOutliers (const vector<int> &indices, const vector<i
 #if 0
   // Install the basis for a viewpoint -> point line
   vector<double> viewpoint_pt_line (6);
-  viewpoint_pt_line[0] = viewpoint_cloud.point.x;
-  viewpoint_pt_line[1] = viewpoint_cloud.point.y;
-  viewpoint_pt_line[2] = viewpoint_cloud.point.z;
+  viewpoint_pt_line[0] = viewpoint_cloud.data.x;
+  viewpoint_pt_line[1] = viewpoint_cloud.data.y;
+  viewpoint_pt_line[2] = viewpoint_cloud.data.z;
 #endif
   geometry_msgs::Point32 pt;
   tmp_indices.resize (outliers.size ());

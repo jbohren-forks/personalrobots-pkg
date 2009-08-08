@@ -119,8 +119,8 @@ try:
     print "getting stamp"
     output = pointstamped.stamp
     print output
-    print pointstamped.point
-    print transform_stamped.transform * pointstamped.point
+    print pointstamped.data
+    print transform_stamped.transform * pointstamped.data
 
     pose_only = bullet.Transform(transform_stamped.transform)
     print "destructing pose_only", pose_only.this    

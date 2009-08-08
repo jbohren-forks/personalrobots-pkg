@@ -27,7 +27,7 @@ public:
   void cb()
   {
     delay.sleep();
-    point.point.y = num;
+    point.data.y = num;
     publish("delay", point);
   }
 };

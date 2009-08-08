@@ -729,9 +729,9 @@ public:
     }
 
     // convert the centroid into meters
-    point_stamped_.point.x = blobCentroid_.val[0]/1000.;
-    point_stamped_.point.y = blobCentroid_.val[1]/1000.;
-    point_stamped_.point.z = blobCentroid_.val[2]/1000.;
+    point_stamped_.data.x = blobCentroid_.val[0]/1000.;
+    point_stamped_.data.y = blobCentroid_.val[1]/1000.;
+    point_stamped_.data.z = blobCentroid_.val[2]/1000.;
     // publish the centroid of the tracked object
     publish("points", point_stamped_);
 
@@ -739,9 +739,9 @@ public:
 
     geometry_msgs::PointStamped target;
 
-    target.point.x =  point_stamped_.point.z ;
-    target.point.y = -point_stamped_.point.x ;
-    target.point.z = -point_stamped_.point.y;
+    target.data.x =  point_stamped_.data.z ;
+    target.data.y = -point_stamped_.data.x ;
+    target.data.z = -point_stamped_.data.y;
 
     target.header.frame_id = "stereo" ;
     target.header.stamp=image_msg_.header.stamp;
@@ -750,16 +750,16 @@ public:
     // point is derived from that input.
     target.header.stamp = image_msg_.header.stamp;
 #if 0
-    cout << "Requesting to move to: " << point_stamped_.point.x << ","
-	 << point_stamped_.point.y << ","
-	 << point_stamped_.point.z << endl ;
+    cout << "Requesting to move to: " << point_stamped_.data.x << ","
+	 << point_stamped_.data.y << ","
+	 << point_stamped_.data.z << endl ;
 #endif
 
 #if 1
     cout << " publishing to head_controller/track_point ";
-    cout << target.point.x<<"," <<
-    target.point.y<<"," <<
-    target.point.z<< endl;
+    cout << target.data.x<<"," <<
+    target.data.y<<"," <<
+    target.data.z<< endl;
 #endif
 
     static int count = 0;

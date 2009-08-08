@@ -35,7 +35,6 @@
 
 #include "ObjectInPerspective.h"
 using namespace std;
-using namespace robot_msgs;
 
 template<typename T>
 static double dist2D(const T& a, const T& b)
@@ -173,7 +172,7 @@ static double dist2D(const T& a, const T& b)
     void addTableFrame(geometry_msgs::PointStamped origin, const vector<double>& plane, tf::TransformListener& tf_, tf::TransformBroadcaster& broadcaster_)
 	{
 
-		btVector3 position(origin.point.x,origin.point.y,origin.point.z);
+		btVector3 position(origin.data.x,origin.data.y,origin.data.z);
 
 		btQuaternion orientation;
 		btMatrix3x3 rotation;
@@ -230,9 +229,9 @@ static double dist2D(const T& a, const T& b)
 		ps.header.stamp = cloud.header.stamp;
 
 		// compute location
-        ps.point.x = 0;
-        ps.point.z = 0.7;
-		ps.point.y = -(plane_coeff[2]/plane_coeff[1])*ps.point.z;
+        ps.data.x = 0;
+        ps.data.z = 0.7;
+		ps.data.y = -(plane_coeff[2]/plane_coeff[1])*ps.data.z;
 		geometry_msgs::Point pp = project3DPointIntoImage(lcinfo, ps, tf_);
 
         // get imaeg coordinate of the pts
@@ -514,9 +513,9 @@ static double dist2D(const T& a, const T& b)
 		geometry_msgs::PointStamped table_point;
 		table_point.header.frame_id = projected_objects.header.frame_id;
 		table_point.header.stamp = projected_objects.header.stamp;
-		table_point.point.x = projected_objects.points[0].x;
-		table_point.point.y = projected_objects.points[0].y;
-		table_point.point.z = projected_objects.points[0].z;
+		table_point.data.x = projected_objects.points[0].x;
+		table_point.data.y = projected_objects.points[0].y;
+		table_point.data.z = projected_objects.points[0].z;
 
 		addTableFrame(table_point,plane, tf_, broadcaster_);
 
@@ -544,18 +543,18 @@ static double dist2D(const T& a, const T& b)
 			ps.header.stamp = objects_table_frame.header.stamp;
 
 			// compute location
-			ps.point.x = clusters[i].x;
-			ps.point.y = clusters[i].y;
-			ps.point.z = clusters[i].z/2;
+			ps.data.x = clusters[i].x;
+			ps.data.y = clusters[i].y;
+			ps.data.z = clusters[i].z/2;
 			geometry_msgs::Point pp = project3DPointIntoImage(lcinfo, ps, tf_);
 
 			locations[i].x = int(pp.x);
 			locations[i].y = int(pp.y);
 
 			// compute scale
-			ps.point.z = 0;
+			ps.data.z = 0;
 			geometry_msgs::Point pp1 = project3DPointIntoImage(lcinfo, ps, tf_);  // compute obj bottom in image coordinate
-			ps.point.z = clusters[i].z;
+			ps.data.z = clusters[i].z;
 			geometry_msgs::Point pp2 = project3DPointIntoImage(lcinfo, ps, tf_);
 
 			float dist = sqrt(dist2D(pp1,pp2));
@@ -582,17 +581,17 @@ static double dist2D(const T& a, const T& b)
 		tf_.transformPoint(cam_info.header.frame_id, point, image_point);
 		geometry_msgs::Point pp; // projected point
 
-		pp.x = cam_info.P[0]*image_point.point.x+
-				cam_info.P[1]*image_point.point.y+
-				cam_info.P[2]*image_point.point.z+
+		pp.x = cam_info.P[0]*image_point.data.x+
+				cam_info.P[1]*image_point.data.y+
+				cam_info.P[2]*image_point.data.z+
 				cam_info.P[3];
-		pp.y = cam_info.P[4]*image_point.point.x+
-				cam_info.P[5]*image_point.point.y+
-				cam_info.P[6]*image_point.point.z+
+		pp.y = cam_info.P[4]*image_point.data.x+
+				cam_info.P[5]*image_point.data.y+
+				cam_info.P[6]*image_point.data.z+
 				cam_info.P[7];
-		pp.z = cam_info.P[8]*image_point.point.x+
-				cam_info.P[9]*image_point.point.y+
-				cam_info.P[10]*image_point.point.z+
+		pp.z = cam_info.P[8]*image_point.data.x+
+				cam_info.P[9]*image_point.data.y+
+				cam_info.P[10]*image_point.data.z+
 				cam_info.P[11];
 
 		pp.x /= pp.z;

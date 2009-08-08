@@ -266,14 +266,14 @@ class CollisionMapperBuffer
       computeLeaves (sensor_msgs::PointCloud *points, vector<Leaf> &leaves, sensor_msgs::PointCloud &centers)
     {
       geometry_msgs::PointStamped base_origin, torso_lift_origin;
-      base_origin.point.x = base_origin.point.y = base_origin.point.z = 0.0;
+      base_origin.data.x = base_origin.data.y = base_origin.data.z = 0.0;
       base_origin.header.frame_id = "torso_lift_link";
       base_origin.header.stamp = ros::Time ();
 
       try
       {
         tf_.transformPoint (points->header.frame_id, base_origin, torso_lift_origin);
-        //ROS_INFO ("Robot 'origin' is : %g,%g,%g", torso_lift_origin.point.x, torso_lift_origin.point.y, torso_lift_origin.point.z);
+        //ROS_INFO ("Robot 'origin' is : %g,%g,%g", torso_lift_origin.data.x, torso_lift_origin.data.y, torso_lift_origin.data.z);
       }
       catch (tf::ConnectivityException)
       {
@@ -291,9 +291,9 @@ class CollisionMapperBuffer
       for (unsigned int i = 0; i < points->points.size (); i++)
       {
         // We split the "distance" on all 3 dimensions to allow greater flexibility
-        distance_sqr_x = fabs ((points->points[i].x - torso_lift_origin.point.x) * (points->points[i].x - torso_lift_origin.point.x));
-        distance_sqr_y = fabs ((points->points[i].y - torso_lift_origin.point.y) * (points->points[i].y - torso_lift_origin.point.y));
-        distance_sqr_z = fabs ((points->points[i].z - torso_lift_origin.point.z) * (points->points[i].z - torso_lift_origin.point.z));
+        distance_sqr_x = fabs ((points->points[i].x - torso_lift_origin.data.x) * (points->points[i].x - torso_lift_origin.data.x));
+        distance_sqr_y = fabs ((points->points[i].y - torso_lift_origin.data.y) * (points->points[i].y - torso_lift_origin.data.y));
+        distance_sqr_z = fabs ((points->points[i].z - torso_lift_origin.data.z) * (points->points[i].z - torso_lift_origin.data.z));
 
         // If the point is within the bounds, use it for minP/maxP calculations
         if (distance_sqr_x < robot_max_.x && distance_sqr_y < robot_max_.y && distance_sqr_z < robot_max_.z)
@@ -413,7 +413,7 @@ class CollisionMapperBuffer
       src.header.frame_id = end_effector_frame_l_;
       src.header.stamp    = stamp;
 
-      src.point.x = src.point.y = src.point.z = 0.0;
+      src.data.x = src.data.y = src.data.z = 0.0;
       try
       {
         tf_.transformPoint (tgt_frame, src, tgt);
@@ -428,7 +428,7 @@ class CollisionMapperBuffer
         ROS_ERROR("Extrapolation exception from %s to %s.", tgt_frame.c_str(), src.header.frame_id.c_str());
       }
 
-      center.x = tgt.point.x; center.y = tgt.point.y; center.z = tgt.point.z;
+      center.x = tgt.data.x; center.y = tgt.data.y; center.z = tgt.data.z;
 
       src.header.frame_id = end_effector_frame_r_;
       try
@@ -445,7 +445,7 @@ class CollisionMapperBuffer
         ROS_ERROR("Extrapolation exception from %s to %s.", tgt_frame.c_str(), src.header.frame_id.c_str());
       }
 
-      center.x += tgt.point.x; center.y += tgt.point.y; center.z += tgt.point.z;
+      center.x += tgt.data.x; center.y += tgt.data.y; center.z += tgt.data.z;
       center.x /= 2.0;         center.y /= 2.0;         center.z /= 2.0;
       return (true);
 
@@ -512,7 +512,7 @@ class CollisionMapperBuffer
       }
 
       geometry_msgs::PointStamped ee_local, ee_global;      // Transform the end effector position in global (source frame)
-      ee_local.point.x = ee_local.point.y = ee_local.point.z = 0.0;
+      ee_local.data.x = ee_local.data.y = ee_local.data.z = 0.0;
       ee_local.header.frame_id = target_frame;
       ee_local.header.stamp = points->header.stamp;
 
@@ -529,7 +529,7 @@ class CollisionMapperBuffer
         return;
       }
 
-      ROS_DEBUG ("End effector position is: [%f, %f, %f].", ee_global.point.x, ee_global.point.y, ee_global.point.z);
+      ROS_DEBUG ("End effector position is: [%f, %f, %f].", ee_global.data.x, ee_global.data.y, ee_global.data.z);
 
       // Compute the leaves
       vector<Leaf> object_leaves;

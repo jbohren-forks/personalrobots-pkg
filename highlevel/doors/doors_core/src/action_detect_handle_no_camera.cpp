@@ -233,13 +233,13 @@ bool DetectHandleNoCameraAction::cameraDetection(const door_msgs::Door& door_in,
   ROS_INFO("point head towards door");
   geometry_msgs::PointStamped door_pnt;
   door_pnt.header.frame_id = door_in.header.frame_id;
-  door_pnt.point.x = (door_in.door_p1.x+door_in.door_p2.x)/2.0;
-  door_pnt.point.y = (door_in.door_p1.y+door_in.door_p2.y)/2.0;
-  door_pnt.point.z = 0.9;
+  door_pnt.data.x = (door_in.door_p1.x+door_in.door_p2.x)/2.0;
+  door_pnt.data.y = (door_in.door_p1.y+door_in.door_p2.y)/2.0;
+  door_pnt.data.z = 0.9;
   cout << "door_pnt.point " << door_in.header.frame_id << " " 
-       << door_pnt.point.x << " " 
-       << door_pnt.point.y << " " 
-       <<  door_pnt.point.z << endl;
+       << door_pnt.data.x << " "
+       << door_pnt.data.y << " "
+       <<  door_pnt.data.z << endl;
   pub_.publish(door_pnt);
   ros::Duration().fromSec(2).sleep();
 

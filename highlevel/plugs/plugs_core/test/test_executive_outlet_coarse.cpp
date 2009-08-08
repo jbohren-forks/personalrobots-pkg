@@ -103,9 +103,9 @@ int
   geometry_msgs::PoseStamped pose;
   
   point.header.frame_id = "odom_combined";
-  point.point.x=3.373;
-  point.point.y=0.543;
-  point.point.z=0;
+  point.data.x=3.373;
+  point.data.y=0.543;
+  point.data.z=0;
 
   Duration timeout_short = Duration().fromSec(2.0);
   Duration timeout_medium = Duration().fromSec(5.0);
@@ -140,7 +140,7 @@ int
   if (detect_outlet_coarse.execute(point, pose, timeout_long) != robot_actions::SUCCESS) return -1;
   
   fine_outlet_point.header = pose.header;
-  fine_outlet_point.point = pose.pose.position;
+  fine_outlet_point.data = pose.pose.position;
 
   pose.pose = transformOutletPose(pose.pose, 0.6);
 

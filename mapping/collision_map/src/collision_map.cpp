@@ -205,14 +205,14 @@ class CollisionMapper
       cmap.boxes.resize (cloud_.points.size ());
 
       geometry_msgs::PointStamped base_origin, torso_lift_origin;
-      base_origin.point.x = base_origin.point.y = base_origin.point.z = 0.0;
+      base_origin.data.x = base_origin.data.y = base_origin.data.z = 0.0;
       base_origin.header.frame_id = "torso_lift_link";
       base_origin.header.stamp = ros::Time();
 
       try
       {
         tf_.transformPoint ("base_link", base_origin, torso_lift_origin);
-        //ROS_INFO ("Robot 'origin' is : %g,%g,%g", torso_lift_origin.point.x, torso_lift_origin.point.y, torso_lift_origin.point.z);
+        //ROS_INFO ("Robot 'origin' is : %g,%g,%g", torso_lift_origin.data.x, torso_lift_origin.data.y, torso_lift_origin.data.z);
       }
       catch (tf::ConnectivityException)
       {
@@ -230,9 +230,9 @@ class CollisionMapper
       for (unsigned int i = 0; i < cloud_.points.size (); i++)
       {
         // We split the "distance" on all 3 dimensions to allow greater flexibility
-        distance_sqr_x = fabs ((cloud_.points[i].x - torso_lift_origin.point.x) * (cloud_.points[i].x - torso_lift_origin.point.x));
-        distance_sqr_y = fabs ((cloud_.points[i].y - torso_lift_origin.point.y) * (cloud_.points[i].y - torso_lift_origin.point.y));
-        distance_sqr_z = fabs ((cloud_.points[i].z - torso_lift_origin.point.z) * (cloud_.points[i].z - torso_lift_origin.point.z));
+        distance_sqr_x = fabs ((cloud_.points[i].x - torso_lift_origin.data.x) * (cloud_.points[i].x - torso_lift_origin.data.x));
+        distance_sqr_y = fabs ((cloud_.points[i].y - torso_lift_origin.data.y) * (cloud_.points[i].y - torso_lift_origin.data.y));
+        distance_sqr_z = fabs ((cloud_.points[i].z - torso_lift_origin.data.z) * (cloud_.points[i].z - torso_lift_origin.data.z));
 
         // If the point is within the bounds, use it for minP/maxP calculations
         if (distance_sqr_x < robot_max_.x && distance_sqr_y < robot_max_.y && distance_sqr_z < robot_max_.z)

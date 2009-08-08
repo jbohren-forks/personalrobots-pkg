@@ -164,9 +164,9 @@ void planning_environment::CollisionSpaceMonitor::collisionMapAsSpheres(const ma
 	{
 	    geometry_msgs::PointStamped psi;
 	    psi.header  = collisionMap->header;
-	    psi.point.x = collisionMap->boxes[i].center.x;
-	    psi.point.y = collisionMap->boxes[i].center.y;
-	    psi.point.z = collisionMap->boxes[i].center.z;
+	    psi.data.x = collisionMap->boxes[i].center.x;
+	    psi.data.y = collisionMap->boxes[i].center.y;
+	    psi.data.z = collisionMap->boxes[i].center.z;
 	    
 	    geometry_msgs::PointStamped pso;
 	    try
@@ -180,7 +180,7 @@ void planning_environment::CollisionSpaceMonitor::collisionMapAsSpheres(const ma
 	    }
 	    
 	    poses[i].setIdentity();
-	    poses[i].setOrigin(btVector3(pso.point.x, pso.point.y, pso.point.z));
+	    poses[i].setOrigin(btVector3(pso.data.x, pso.data.y, pso.data.z));
 	    spheres[i] = new shapes::Sphere(maxCoord(collisionMap->boxes[i].extents) * 0.867 + pointcloud_padd_);
 	}
 	
@@ -222,9 +222,9 @@ void planning_environment::CollisionSpaceMonitor::collisionMapAsBoxes(const mapp
 	{
 	    geometry_msgs::PointStamped psi;
 	    psi.header  = collisionMap->header;
-	    psi.point.x = collisionMap->boxes[i].center.x;
-	    psi.point.y = collisionMap->boxes[i].center.y;
-	    psi.point.z = collisionMap->boxes[i].center.z;
+	    psi.data.x = collisionMap->boxes[i].center.x;
+	    psi.data.y = collisionMap->boxes[i].center.y;
+	    psi.data.z = collisionMap->boxes[i].center.z;
 	    
 	    geometry_msgs::PointStamped pso;
 	    try
@@ -238,7 +238,7 @@ void planning_environment::CollisionSpaceMonitor::collisionMapAsBoxes(const mapp
 	    }
 	    
 	    poses[i].setRotation(btQuaternion(btVector3(collisionMap->boxes[i].axis.x, collisionMap->boxes[i].axis.y, collisionMap->boxes[i].axis.z), collisionMap->boxes[i].angle));
-	    poses[i].setOrigin(btVector3(pso.point.x, pso.point.y, pso.point.z));
+	    poses[i].setOrigin(btVector3(pso.data.x, pso.data.y, pso.data.z));
 	    boxes[i] = new shapes::Box(collisionMap->boxes[i].extents.x + pd, collisionMap->boxes[i].extents.y + pd, collisionMap->boxes[i].extents.z + pd);
 	}
 	

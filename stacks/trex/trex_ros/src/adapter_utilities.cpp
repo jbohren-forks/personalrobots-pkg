@@ -6,15 +6,15 @@ namespace trex_ros {
 
   void AdapterUtilities::read(ObservationByValue& obs, const geometry_msgs::PointStamped& msg){
     setHeader(msg, obs);
-    readPoint(obs, msg.point.x, msg.point.y, msg.point.z);
+    readPoint(obs, msg.data.x, msg.data.y, msg.data.z);
   }
 
   void AdapterUtilities::write(const TokenId& token, geometry_msgs::PointStamped& msg){
     getHeader(msg, token);
 
-    write<double>("x", token, msg.point.x);
-    write<double>("y", token, msg.point.y);
-    write<double>("z", token, msg.point.z);
+    write<double>("x", token, msg.data.x);
+    write<double>("y", token, msg.data.y);
+    write<double>("z", token, msg.data.z);
   }
 
   void AdapterUtilities::read(ObservationByValue& obs, const geometry_msgs::PoseStamped& msg){

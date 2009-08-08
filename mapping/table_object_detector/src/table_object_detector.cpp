@@ -309,21 +309,21 @@ class TableObjectDetector
       cloud_geometry::statistics::getMinMax (cloud_down_, inliers, minP, maxP);
       // Transform to the global frame
       geometry_msgs::PointStamped minPstamped_local, maxPstamped_local;
-      minPstamped_local.point.x = minP.x;
-      minPstamped_local.point.y = minP.y;
+      minPstamped_local.data.x = minP.x;
+      minPstamped_local.data.y = minP.y;
       minPstamped_local.header = cloud_in_.header;
-      maxPstamped_local.point.x = maxP.x;
-      maxPstamped_local.point.y = maxP.y;
+      maxPstamped_local.data.x = maxP.x;
+      maxPstamped_local.data.y = maxP.y;
       maxPstamped_local.header = cloud_in_.header;
       geometry_msgs::PointStamped minPstamped_global, maxPstamped_global;
       try
       {
         tf_.transformPoint (global_frame_, minPstamped_local, minPstamped_global);
         tf_.transformPoint (global_frame_, maxPstamped_local, maxPstamped_global);
-        resp.table.table_min.x = minPstamped_global.point.x;
-        resp.table.table_min.y = minPstamped_global.point.y;
-        resp.table.table_max.x = maxPstamped_global.point.x;
-        resp.table.table_max.y = maxPstamped_global.point.y;
+        resp.table.table_min.x = minPstamped_global.data.x;
+        resp.table.table_min.y = minPstamped_global.data.y;
+        resp.table.table_max.x = maxPstamped_global.data.x;
+        resp.table.table_max.y = maxPstamped_global.data.y;
       }
       catch (tf::TransformException)
       {
@@ -350,11 +350,11 @@ class TableObjectDetector
         {
           for (unsigned int j = 0; j < pmap_.polygons[i].points.size (); j++)
           {
-            local.point.x = pmap_.polygons[i].points[j].x;
-            local.point.y = pmap_.polygons[i].points[j].y;
+            local.data.x = pmap_.polygons[i].points[j].x;
+            local.data.y = pmap_.polygons[i].points[j].y;
             tf_.transformPoint (global_frame_, local, global);
-            pmap_.polygons[i].points[j].x = global.point.x;
-            pmap_.polygons[i].points[j].y = global.point.y;
+            pmap_.polygons[i].points[j].x = global.data.x;
+            pmap_.polygons[i].points[j].y = global.data.y;
           }
         }
       }
@@ -552,7 +552,7 @@ class TableObjectDetector
       geometry_msgs::PointStamped viewpoint_laser, viewpoint_cloud;
       viewpoint_laser.header.frame_id = "laser_tilt_mount_link";
       // Set the viewpoint in the laser coordinate system to 0,0,0
-      viewpoint_laser.point.x = viewpoint_laser.point.y = viewpoint_laser.point.z = 0.0;
+      viewpoint_laser.data.x = viewpoint_laser.data.y = viewpoint_laser.data.z = 0.0;
 
       try
       {
@@ -560,7 +560,7 @@ class TableObjectDetector
       }
       catch (tf::TransformException)
       {
-        viewpoint_cloud.point.x = viewpoint_cloud.point.y = viewpoint_cloud.point.z = 0.0;
+        viewpoint_cloud.data.x = viewpoint_cloud.data.y = viewpoint_cloud.data.z = 0.0;
       }
 
 #pragma omp parallel for schedule(dynamic)

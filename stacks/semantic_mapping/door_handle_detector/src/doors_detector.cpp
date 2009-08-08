@@ -167,7 +167,7 @@ bool
   vector<int> indices_in_bounds (pointcloud.points.size ());
   for (unsigned int i = 0; i < pointcloud.points.size (); i++)
   {
-    double dist = cloud_geometry::distances::pointToPointDistanceSqr (viewpoint_cloud_.point, pointcloud.points[i]);
+    double dist = cloud_geometry::distances::pointToPointDistanceSqr (viewpoint_cloud_.data, pointcloud.points[i]);
     if (dist < maximum_search_radius_ && pointcloud.points[i].z > minimum_z_ && pointcloud.points[i].z < maximum_z_)
       indices_in_bounds[nr_p++] = i;
   }
@@ -191,7 +191,7 @@ bool
   leaves.resize (0);    // dealloc memory used for the downsampling process
 
 #if DEBUG_FAILURES
-  sendMarker (viewpoint_cloud_.point.x, viewpoint_cloud_.point.y, viewpoint_cloud_.point.z, parameter_frame_, &node_, global_marker_id_, 0, 0, 0);
+  sendMarker (viewpoint_cloud_.data.x, viewpoint_cloud_.data.y, viewpoint_cloud_.data.z, parameter_frame_, &node_, global_marker_id_, 0, 0, 0);
 #endif
   // Create Kd-Tree and estimate the point normals in the original point cloud
   estimatePointNormals (pointcloud, indices_in_bounds, cloud_down, k_search_, viewpoint_cloud_);
@@ -273,7 +273,7 @@ bool
     // ---[ If any of the points on the hull are near/outside the imposed "maximum search radius to viewpoint" limit, discard the candidate
     for (int i = 0; i < (int)pmap_.polygons[cc].points.size (); i++)
     {
-      double dist = cloud_geometry::distances::pointToPointDistanceSqr (viewpoint_cloud_.point, pmap_.polygons[cc].points[i]);
+      double dist = cloud_geometry::distances::pointToPointDistanceSqr (viewpoint_cloud_.data, pmap_.polygons[cc].points[i]);
       if (dist < maximum_search_radius_limit_)
         continue;
 

@@ -264,24 +264,24 @@ bool DetectHandleAction::cameraDetection(const door_msgs::Door& door_in,
   if (isPreemptRequested()) return false;
   ROS_INFO("point head towards door");
   geometry_msgs::PointStamped door_pnt;
-  door_pnt.point.z = 0.9;
+  door_pnt.data.z = 0.9;
   door_pnt.header.frame_id = door_in.header.frame_id;
   if (door_in.hinge == door_in.HINGE_P1){
-    door_pnt.point.x = 0.1*door_in.door_p1.x + 0.9*door_in.door_p2.x;
-    door_pnt.point.y = 0.1*door_in.door_p1.y + 0.9*door_in.door_p2.y;
+    door_pnt.data.x = 0.1*door_in.door_p1.x + 0.9*door_in.door_p2.x;
+    door_pnt.data.y = 0.1*door_in.door_p1.y + 0.9*door_in.door_p2.y;
   }
   else if (door_in.hinge == door_in.HINGE_P2){
-    door_pnt.point.x = 0.9*door_in.door_p1.x + 0.1*door_in.door_p2.x;
-    door_pnt.point.y = 0.9*door_in.door_p1.y + 0.1*door_in.door_p2.y;
+    door_pnt.data.x = 0.9*door_in.door_p1.x + 0.1*door_in.door_p2.x;
+    door_pnt.data.y = 0.9*door_in.door_p1.y + 0.1*door_in.door_p2.y;
   }
   else{
     ROS_ERROR("Door hinge side is not specified");
     return false;
   }
   cout << "door_pnt.point " << door_in.header.frame_id << " " 
-       << door_pnt.point.x << " " 
-       << door_pnt.point.y << " " 
-       <<  door_pnt.point.z << endl;
+       << door_pnt.data.x << " "
+       << door_pnt.data.y << " "
+       <<  door_pnt.data.z << endl;
   pub_.publish(door_pnt);
   ros::Duration().fromSec(2).sleep();
 

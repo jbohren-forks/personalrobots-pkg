@@ -47,7 +47,7 @@ public:
   }
   void point_cb()
   {
-    printf("I heard: [%f, %f, %f]\n", msg.point.x, msg.point.y, msg.point.z);
+    printf("I heard: [%f, %f, %f]\n", msg.data.x, msg.data.y, msg.data.z);
   }
   void selectionbox_cb() {
     printf("I heard selection box [%f, %f, %f, %f]\n", 
