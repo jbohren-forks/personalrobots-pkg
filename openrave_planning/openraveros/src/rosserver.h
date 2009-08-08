@@ -1400,25 +1400,12 @@ public:
 
             res.camimage.header.stamp = ros::Time::now();
             res.camimage.header.seq = pcameradata->id;
-            res.camimage.label = probot->GetSensors()[req.sensorindex].GetName();
-            res.camimage.encoding = "rgb";
-            res.camimage.depth = "uint8";
-            std_msgs::MultiArrayLayout& layout = res.camimage.uint8_data.layout;
+            res.camimage.width = pgeom->width;
+            res.camimage.height = pgeom->height;
+            res.camimage.step = pgeom->width * 3;
 
-            int nchannels = 3;
-            layout.dim.resize(3);
-            layout.dim.resize(3);
-            layout.dim[0].label  = "height";
-            layout.dim[0].size   = pgeom->height;
-            layout.dim[0].stride = pgeom->width*pgeom->height*nchannels;
-            layout.dim[1].label  = "width";
-            layout.dim[1].size   = pgeom->width;
-            layout.dim[1].stride = pgeom->width*nchannels;
-            layout.dim[2].label  = "channel";
-            layout.dim[2].size   = nchannels;
-            layout.dim[2].stride = nchannels;
-            res.camimage.uint8_data.data.resize(layout.dim[0].stride);
-            memcpy(&res.camimage.uint8_data.data[0], &pcameradata->vimagedata[0], res.camimage.uint8_data.data.size());
+            res.camimage.data.resize(res.camimage.step * res.camimage.height);
+            memcpy(&res.camimage.data[0], &pcameradata->vimagedata[0], res.camimage.data.size());
             break;
         }
         default:
