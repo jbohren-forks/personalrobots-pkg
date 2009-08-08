@@ -627,10 +627,10 @@ end_image_thread:
       stat.summary(0, "Frames are streaming.");
     }
     
-    stat.addv("Missing image line frames", missed_line_count_);
-    stat.addv("Missing EOF frames", missed_eof_count_);
-    stat.addv("Losses of image thread", lost_image_thread_count_);
-    stat.addv("First packet offset", config_.first_packet_offset);
+    stat.addsf("Missing image line frames", "%d", missed_line_count_);
+    stat.addsf("Missing EOF frames", "%d", missed_eof_count_);
+    stat.addsf("Losses of image thread", "%d", lost_image_thread_count_);
+    stat.addsf("First packet offset", "%d", config_.first_packet_offset);
     if (isClosed())
     {
       static const std::string not_opened = "not_opened";
@@ -653,7 +653,7 @@ end_image_thread:
     stat.adds("Image mode", config_.video_mode);
     stat.addsf("Latest frame time", "%f", last_image_time_);
     stat.adds("Latest frame #", last_frame_number_);
-    stat.addv("Free-running frequency", imager_freq_);
+    stat.addsf("Free-running frequency", "%f", imager_freq_);
     stat.adds("External trigger controller", config_.trig_controller);
     stat.adds("Trigger mode", config_.ext_trig ? "external" : "internal");
   }
