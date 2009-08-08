@@ -58,7 +58,7 @@ namespace move_base {
     ros_node_.param("~controller_patience", controller_patience_, 15.0);
 
     //for comanding the base
-    vel_pub_ = ros_node_.advertise<robot_msgs::PoseDot>("cmd_vel", 1);
+    vel_pub_ = ros_node_.advertise<geometry_msgs::Twist>("cmd_vel", 1);
     vis_pub_ = ros_node_.advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
     position_pub_ = ros_node_.advertise<geometry_msgs::PoseStamped>("~current_position", 1);
 
@@ -341,11 +341,11 @@ namespace move_base {
   }
 
   bool MoveBase::rotateRobot(){
-      robot_msgs::PoseDot cmd_vel;
+      geometry_msgs::Twist cmd_vel;
       if(tc_->computeVelocityCommands(cmd_vel)){
         //make sure that we send the velocity command to the base
         vel_pub_.publish(cmd_vel);
-        ROS_DEBUG("Velocity commands produced by controller: vx: %.2f, vy: %.2f, vth: %.2f", cmd_vel.vel.vx, cmd_vel.vel.vy, cmd_vel.ang_vel.vz);
+        ROS_DEBUG("Velocity commands produced by controller: vx: %.2f, vy: %.2f, vth: %.2f", cmd_vel.linear.x, cmd_vel.linear.y, cmd_vel.angular.z);
         return true;
       }
 
@@ -354,10 +354,10 @@ namespace move_base {
   }
 
   void MoveBase::publishZeroVelocity(){
-    robot_msgs::PoseDot cmd_vel;
-    cmd_vel.vel.vx = 0.0;
-    cmd_vel.vel.vy = 0.0;
-    cmd_vel.ang_vel.vz = 0.0;
+    geometry_msgs::Twist cmd_vel;
+    cmd_vel.linear.x = 0.0;
+    cmd_vel.linear.y = 0.0;
+    cmd_vel.angular.z = 0.0;
     vel_pub_.publish(cmd_vel);
 
   }
@@ -463,7 +463,7 @@ namespace move_base {
   
   void MoveBase::executeCycle(geometry_msgs::PoseStamped& goal, std::vector<geometry_msgs::PoseStamped>& global_plan){
     //we need to be able to publish velocity commands
-    robot_msgs::PoseDot cmd_vel;
+    geometry_msgs::Twist cmd_vel;
 
     //update feedback to correspond to our curent position
     tf::Stamped<tf::Pose> global_pose;

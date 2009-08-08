@@ -60,7 +60,7 @@ namespace move_base {
     ros_node_.param("~controller_patience", controller_patience_, 15.0);
 
     //for comanding the base
-    vel_pub_ = ros_node_.advertise<robot_msgs::PoseDot>("cmd_vel", 1);
+    vel_pub_ = ros_node_.advertise<geometry_msgs::Twist>("cmd_vel", 1);
     vis_pub_ = ros_node_.advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
 
     //we'll assume the radius of the robot to be consistent with what's specified for the costmaps
@@ -323,12 +323,12 @@ namespace move_base {
         return;
       }
 
-      robot_msgs::PoseDot cmd_vel;
+      geometry_msgs::Twist cmd_vel;
       while(!isPreemptRequested() && ros_node_.ok() && !tc_->goalReached()){
         if(tc_->computeVelocityCommands(cmd_vel)){
           //make sure that we send the velocity command to the base
           vel_pub_.publish(cmd_vel);
-          ROS_DEBUG("Velocity commands produced by controller: vx: %.2f, vy: %.2f, vth: %.2f", cmd_vel.vel.vx, cmd_vel.vel.vy, cmd_vel.ang_vel.vz);
+          ROS_DEBUG("Velocity commands produced by controller: vx: %.2f, vy: %.2f, vth: %.2f", cmd_vel.linear.x, cmd_vel.linear.y, cmd_vel.angular.z);
         }
         else{
           //if we can't perform an in-place rotation then we'll just return 
@@ -342,10 +342,10 @@ namespace move_base {
   }
 
   void MoveBase::publishZeroVelocity(){
-    robot_msgs::PoseDot cmd_vel;
-    cmd_vel.vel.vx = 0.0;
-    cmd_vel.vel.vy = 0.0;
-    cmd_vel.ang_vel.vz = 0.0;
+    geometry_msgs::Twist cmd_vel;
+    cmd_vel.linear.x = 0.0;
+    cmd_vel.linear.y = 0.0;
+    cmd_vel.angular.z = 0.0;
     vel_pub_.publish(cmd_vel);
 
   }
@@ -364,7 +364,7 @@ namespace move_base {
     publishGoal(goal);
 
     std::vector<geometry_msgs::PoseStamped> global_plan;
-    robot_msgs::PoseDot cmd_vel;
+    geometry_msgs::Twist cmd_vel;
     ros::Time last_valid_plan, last_valid_control;
 
     last_valid_control = ros::Time::now();

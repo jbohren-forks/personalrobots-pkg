@@ -50,7 +50,7 @@
 #include <string>
 #include <nav_msgs/GetPlan.h>
 #include <visualization_msgs/Marker.h>
-#include <robot_msgs/PoseDot.h>
+#include <geometry_msgs/Twist.h>
 
 #include <pluginlib/plugin_loader.h>
 
