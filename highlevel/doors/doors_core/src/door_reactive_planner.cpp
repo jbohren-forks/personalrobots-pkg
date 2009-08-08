@@ -341,13 +341,11 @@ bool DoorReactivePlanner::makePlan(const pr2_robot_actions::Pose2D &start, std::
 diagnostic_msgs::DiagnosticStatus DoorReactivePlanner::getDiagnostics()
 {
   vector<diagnostic_msgs::KeyValue> values;
-  vector<diagnostic_msgs::DiagnosticString> strings;
   diagnostic_msgs::DiagnosticStatus status;
   diagnostic_msgs::KeyValue v;
-  diagnostic_msgs::DiagnosticString s;
   status.name = "Door Reactive Planner";
   status.level = 0;
-
+#warning These need a MACRO/function to do num to string
   v.label = "Goal x";
   v.value = goal_.x;
   values.push_back(v);
@@ -416,12 +414,11 @@ diagnostic_msgs::DiagnosticStatus DoorReactivePlanner::getDiagnostics()
   v.value = cell_distance_from_obstacles_;
   values.push_back(v);
 
-  s.label = "Current position in collision";
-  s.value = current_position_in_collision_;
-  strings.push_back(s);
+  v.label = "Current position in collision";
+  v.value = current_position_in_collision_;
+  values.push_back(v);
 
   status.set_values_vec(values);
-  status.set_strings_vec(strings);
 
   return status;
 }
