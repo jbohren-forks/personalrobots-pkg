@@ -62,7 +62,7 @@
 #include <robot_mechanism_controllers/SetPDCommand.h>
 #include <robot_mechanism_controllers/GetPDActual.h>
 #include <robot_mechanism_controllers/GetPDCommand.h>
-#include <robot_msgs/JointCmd.h>
+#include <deprecated_msgs/JointCmd.h>
 
 namespace controller
 {
