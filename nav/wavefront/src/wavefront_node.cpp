@@ -66,7 +66,7 @@ Subscribes to (name/type):
 - @b "scan" sensor_msgs/LaserScan : laser scans.  Used to temporarily modify the map for dynamic obstacles.
 
 Publishes to (name / type):
-- @b "cmd_vel" geometry_msgs/PoseDot : velocity commands to robot
+- @b "cmd_vel" geometry_msgs/Twist : velocity commands to robot
 - @b "state" nav_robot_actions/MoveBaseState : current planner state (e.g., goal reached, no path)
 - @b "gui_path" visualization_msgs/Polyline : current global path (for visualization)
 - @b "gui_laser" visualization_msgs/Polyline : re-projected laser scans (for visualization)
@@ -103,7 +103,7 @@ parameters.
 // The messages that we'll use
 #include <nav_robot_actions/MoveBaseState.h>
 #include <geometry_msgs/PoseStamped.h>
-#include <robot_msgs/PoseDot.h>
+#include <geometry_msgs/Twist.h>
 #include <sensor_msgs/PointCloud.h>
 #include <sensor_msgs/LaserScan.h>
 #include <nav_msgs/GetMap.h>
@@ -364,7 +364,7 @@ WavefrontNode::WavefrontNode() :
   advertise<nav_robot_actions::MoveBaseState>("state",1);
   advertise<visualization_msgs::Polyline>("gui_path",1);
   advertise<visualization_msgs::Polyline>("gui_laser",1);
-  advertise<robot_msgs::PoseDot>("cmd_vel",1);
+  advertise<geometry_msgs::Twist>("cmd_vel",1);
   subscribe("goal", goalMsg, &WavefrontNode::goalReceived,1);
 
   scan_notifier = new tf::MessageNotifier<sensor_msgs::LaserScan>(&tf, this, boost::bind(&WavefrontNode::laserReceived, this, _1), "scan", "/map", 1);
@@ -545,15 +545,15 @@ WavefrontNode::stopRobot()
 
 // Declare this globally, so that it never gets desctructed (message
 // desctruction causes master disconnect)
-robot_msgs::PoseDot* cmdvel;
+geometry_msgs::Twist* cmdvel;
 
 void
 WavefrontNode::sendVelCmd(double vx, double vy, double vth)
 {
   if(!cmdvel)
-    cmdvel = new robot_msgs::PoseDot();
-  cmdvel->vel.vx = vx;
-  cmdvel->ang_vel.vz = vth;
+    cmdvel = new geometry_msgs::Twist();
+  cmdvel->linear.x = vx;
+  cmdvel->angular.z = vth;
   this->ros::Node::publish("cmd_vel", *cmdvel);
   if(vx || vy || vth)
     this->stopped = false;

@@ -7,7 +7,7 @@
   <depend package="laser_scan" />
   <depend package="nav_msgs" />
   <depend package="sensor_msgs" />
-  <depend package="robot_msgs" />
+  <depend package="geometry_msgs" />
   <depend package="robot_actions" />
   <depend package="nav_robot_actions" />
   <depend package="tf"/>
