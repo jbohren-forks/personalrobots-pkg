@@ -20,6 +20,7 @@
   <depend package="voxel_grid" />
   <depend package="angles" />
   <depend package="visualization_msgs"/>
+  <depend package="geometry_msgs"/>
   <depend package="nav_core"/>
   <repository>http://pr.willowgarage.com/repos</repository>
   <export>

@@ -43,7 +43,6 @@
 #include "visualization_msgs/Polyline.h"
 
 using namespace std;
-using namespace robot_msgs;
 using namespace costmap_2d;
 
 //register this planner as a BaseLocalPlanner plugin
@@ -194,12 +193,12 @@ namespace base_local_planner {
     return fabs(angles::shortest_angular_distance(yaw, goal_th)) <= yaw_goal_tolerance_;
   }
 
-  bool TrajectoryPlannerROS::rotateToGoal(const tf::Stamped<tf::Pose>& global_pose, const tf::Stamped<tf::Pose>& robot_vel, double goal_th, robot_msgs::PoseDot& cmd_vel){
+  bool TrajectoryPlannerROS::rotateToGoal(const tf::Stamped<tf::Pose>& global_pose, const tf::Stamped<tf::Pose>& robot_vel, double goal_th, geometry_msgs::Twist& cmd_vel){
     double uselessPitch, uselessRoll, yaw, vel_yaw;
     global_pose.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
     robot_vel.getBasis().getEulerZYX(vel_yaw, uselessPitch, uselessRoll);
-    cmd_vel.vel.vx = 0;
-    cmd_vel.vel.vy = 0;
+    cmd_vel.linear.x = 0;
+    cmd_vel.linear.y = 0;
     double ang_diff = angles::shortest_angular_distance(yaw, goal_th);
     double v_theta_samp = ang_diff > 0.0 ? std::max(min_in_place_vel_th_, ang_diff) : std::min(-1.0 * min_in_place_vel_th_, ang_diff);
 
@@ -210,11 +209,11 @@ namespace base_local_planner {
     ROS_DEBUG("Moving to desired goal orientation, th cmd: %.2f, valid_cmd: %d", v_theta_samp, valid_cmd);
 
     if(valid_cmd){
-      cmd_vel.ang_vel.vz = v_theta_samp;
+      cmd_vel.angular.z = v_theta_samp;
       return true;
     }
 
-    cmd_vel.ang_vel.vz = 0.0;
+    cmd_vel.angular.z = 0.0;
     return false;
 
   }
@@ -379,7 +378,7 @@ namespace base_local_planner {
     return true;
   }
 
-  bool TrajectoryPlannerROS::computeVelocityCommands(robot_msgs::PoseDot& cmd_vel){
+  bool TrajectoryPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel){
     if(!initialized_){
       ROS_ERROR("This planner has not been initialized, please call initialize() before using this planner");
       return false;
@@ -409,20 +408,20 @@ namespace base_local_planner {
     costmap_ros_->getCostmapCopy(costmap_);
 
     // Set current velocities from odometry
-    robot_msgs::PoseDot global_vel;
+    geometry_msgs::Twist global_vel;
 
     odom_lock_.lock();
-    global_vel.vel.vx = base_odom_.twist_with_covariance.twist.linear.x;
-    global_vel.vel.vy = base_odom_.twist_with_covariance.twist.linear.y;
-    global_vel.ang_vel.vz = base_odom_.twist_with_covariance.twist.angular.z;
+    global_vel.linear.x = base_odom_.twist_with_covariance.twist.linear.x;
+    global_vel.linear.y = base_odom_.twist_with_covariance.twist.linear.y;
+    global_vel.angular.z = base_odom_.twist_with_covariance.twist.angular.z;
     odom_lock_.unlock();
 
     tf::Stamped<tf::Pose> drive_cmds;
     drive_cmds.frame_id_ = robot_base_frame_;
 
     tf::Stamped<tf::Pose> robot_vel;
-    btQuaternion qt(global_vel.ang_vel.vz, 0, 0);
-    robot_vel.setData(btTransform(qt, btVector3(global_vel.vel.vx, global_vel.vel.vy, 0)));
+    btQuaternion qt(global_vel.angular.z, 0, 0);
+    robot_vel.setData(btTransform(qt, btVector3(global_vel.linear.x, global_vel.linear.y, 0)));
     robot_vel.frame_id_ = robot_base_frame_;
     robot_vel.stamp_ = ros::Time();
 
@@ -452,9 +451,9 @@ namespace base_local_planner {
       //check to see if the goal orientation has been reached
       if(goalOrientationReached(global_pose, goal_th)){
         //set the velocity command to zero
-        cmd_vel.vel.vx = 0.0;
-        cmd_vel.vel.vy = 0.0;
-        cmd_vel.ang_vel.vz = 0.0;
+        cmd_vel.linear.x = 0.0;
+        cmd_vel.linear.y = 0.0;
+        cmd_vel.angular.z = 0.0;
       }
       else {
         tc_->updatePlan(transformed_plan);
@@ -488,11 +487,11 @@ namespace base_local_planner {
     */
 
     //pass along drive commands
-    cmd_vel.vel.vx = drive_cmds.getOrigin().getX();
-    cmd_vel.vel.vy = drive_cmds.getOrigin().getY();
+    cmd_vel.linear.x = drive_cmds.getOrigin().getX();
+    cmd_vel.linear.y = drive_cmds.getOrigin().getY();
     drive_cmds.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
 
-    cmd_vel.ang_vel.vz = yaw;
+    cmd_vel.angular.z = yaw;
 
     //if we cannot move... tell someone
     if(path.cost_ < 0){

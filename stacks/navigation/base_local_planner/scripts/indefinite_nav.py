@@ -4,8 +4,8 @@ import roslib
 roslib.load_manifest('base_local_planner')
 
 import sys, time, traceback, logging, rospy, random
-from robot_msgs.msg import Planner2DGoal
-from robot_msgs.msg import Planner2DState
+from test_msgs.msg import Planner2DGoal
+from test_msgs.msg import Planner2DState
 
 NAME = 'indefinite_nav'
 
