@@ -47,64 +47,6 @@ using namespace sensor_msgs ;
 using namespace calibration_msgs ;
 using namespace geometry_msgs ;
 
-// ******************** Helper Functions (Hack) ********************8
-template <typename T>
-static void fillImageHelperCV(T& m, const IplImage* frame)
-{
-    m.layout.dim.resize(3);
-    m.layout.dim.resize(3);
-    m.layout.dim[0].label  = "height";
-    m.layout.dim[0].size   = frame->height;
-    m.layout.dim[0].stride = frame->widthStep*frame->height/sizeof(m.data[0]);
-    m.layout.dim[1].label  = "width";
-    m.layout.dim[1].size   = frame->width;
-    m.layout.dim[1].stride = frame->widthStep/sizeof(m.data[0]);
-    m.layout.dim[2].label  = "channel";
-    m.layout.dim[2].size   = frame->nChannels;
-    m.layout.dim[2].stride = frame->nChannels*sizeof(m.data[0]);
-    m.data.resize(frame->widthStep*frame->height/sizeof(m.data[0]));
-    memcpy((char*)(&m.data[0]), frame->imageData, m.data.size()*sizeof(m.data[0]));
-}
-
-/**
- * Converts an openCV IPL image into a ros image message
- * \todo Robustify and move this function into opencv_latest/CvBridge.h
- * \param cv_image input: The IPL image to be converted
- * \param ros_image output: The location of the destination image
- */
-
-bool toRosImage(const IplImage* pcvimage, sensor_msgs::Image& imagemsg)
-{
-  imagemsg.label = "mylabel";
-  switch(pcvimage->nChannels)
-  {
-    case 1:
-        imagemsg.encoding = "mono";
-        break;
-    case 3: imagemsg.encoding = "rgb"; break;
-    case 4: imagemsg.encoding = "rgba"; break;
-    default:
-        ROS_ERROR("unknown image format\n");
-        return false ;
-  }
-
-  switch(pcvimage->depth)
-  {
-    case IPL_DEPTH_8U: imagemsg.depth = "uint8"; fillImageHelperCV(imagemsg.uint8_data,pcvimage); break;
-    case IPL_DEPTH_8S: imagemsg.depth = "int8"; fillImageHelperCV(imagemsg.int8_data,pcvimage); break;
-    case IPL_DEPTH_16U: imagemsg.depth = "uint16"; fillImageHelperCV(imagemsg.uint16_data,pcvimage); break;
-    case IPL_DEPTH_16S: imagemsg.depth = "int16"; fillImageHelperCV(imagemsg.int16_data,pcvimage); break;
-    case IPL_DEPTH_32S: imagemsg.depth = "int32"; fillImageHelperCV(imagemsg.int32_data,pcvimage); break;
-    case IPL_DEPTH_32F: imagemsg.depth = "float32"; fillImageHelperCV(imagemsg.float32_data,pcvimage); break;
-    case IPL_DEPTH_64F: imagemsg.depth = "float64"; fillImageHelperCV(imagemsg.float64_data,pcvimage); break;
-    default:
-        ROS_ERROR("unsupported depth %d\n", pcvimage->depth);
-        return false;
-  }
-
-  return true;
-}
-
 void poseToPixelCoords(const geometry_msgs::Pose& pose, const CameraInfo& info, ImagePoint& pix)
 {
   assert(info.get_P_size() == 12) ;
@@ -161,7 +103,7 @@ bool LedDetector::findLed(Image& image, const CameraInfo& info, const geometry_m
 
   // Convert the debug image into a ROS Image
   if (cv_debug != NULL)
-    toRosImage(cv_debug, debug_image) ;
+    img_bridge_.fromIpltoRosImage(cv_debug, debug_image) ;
 
   // Deallocate
   cvReleaseImage(&cv_debug) ;
