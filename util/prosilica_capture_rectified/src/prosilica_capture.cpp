@@ -66,7 +66,7 @@ static char rectifiedWindowName[] = "Rectified image";
 
 
 using namespace std;
-using namespace robot_msgs;
+using namespace sensor_msgs;
 
 class ProsilicaCapture {
 
