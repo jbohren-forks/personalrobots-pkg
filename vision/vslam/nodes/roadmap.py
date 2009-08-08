@@ -259,9 +259,9 @@ class FakeRoadmapServer:
       self.send_map(msg.header.stamp)
 
   def handle_localizedpose(self, msg):
-    th = tf.transformations.euler_from_quaternion([msg.data.pose.orientation.x, msg.data.pose.orientation.y, msg.data.pose.orientation.z, msg.data.pose.orientation.w])[2]
-    x = msg.data.pose.position.x
-    y = msg.data.pose.position.y
+    th = tf.transformations.euler_from_quaternion([msg.pose.pose.orientation.x, msg.pose.pose.orientation.y, msg.pose.pose.orientation.z, msg.pose.pose.orientation.w])[2]
+    x = msg.pose.pose.position.x
+    y = msg.pose.pose.position.y
     print x, y, th
     n = (x, y, th)
     if self.nodes == [] or (dist(self.nodes[-1], n) > 1.0) or (abs(self.nodes[-1][2] - n[2]) > (2.0 * pi / 180)):

@@ -53,7 +53,7 @@ void on_pose(robot_actions::ActionClient<PoseStamped, PoseStampedState, PoseStam
   ROS_INFO_STREAM("pose "<<count <<","<<pose);
 
   PoseStamped goal;
-  goal.pose=pose->data.pose;
+  goal.pose=pose->pose.pose;
   goal.header=pose->header;
   PoseStamped feedback;
   robot_actions::ResultStatus result = client.execute(goal, feedback, ros::Duration(5));      

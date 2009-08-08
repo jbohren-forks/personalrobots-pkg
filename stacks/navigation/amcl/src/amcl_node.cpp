@@ -669,10 +669,10 @@ AmclNode::laserReceived(const tf::MessageNotifier<sensor_msgs::LaserScan>::Messa
       p.header.frame_id = "map";
       p.header.stamp = laser_scan->header.stamp;
       // Copy in the pose
-      p.data.pose.position.x = hyps[max_weight_hyp].pf_pose_mean.v[0];
-      p.data.pose.position.y = hyps[max_weight_hyp].pf_pose_mean.v[1];
+      p.pose.pose.position.x = hyps[max_weight_hyp].pf_pose_mean.v[0];
+      p.pose.pose.position.y = hyps[max_weight_hyp].pf_pose_mean.v[1];
       tf::quaternionTFToMsg(tf::Quaternion(hyps[max_weight_hyp].pf_pose_mean.v[2], 0.0, 0.0),
-                            p.data.pose.orientation);
+                            p.pose.pose.orientation);
       // Copy in the covariance, converting from 3-D to 6-D
       pf_sample_set_t* set = pf_->sets + pf_->current_set;
       for(int i=0; i<2; i++)
@@ -682,13 +682,13 @@ AmclNode::laserReceived(const tf::MessageNotifier<sensor_msgs::LaserScan>::Messa
           // Report the overall filter covariance, rather than the
           // covariance for the highest-weight cluster
           //p.covariance[6*i+j] = hyps[max_weight_hyp].pf_pose_cov.m[i][j];
-          p.data.covariance[6*i+j] = set->cov.m[i][j];
+          p.pose.covariance[6*i+j] = set->cov.m[i][j];
         }
       }
       // Report the overall filter covariance, rather than the
       // covariance for the highest-weight cluster
       //p.covariance[6*3+3] = hyps[max_weight_hyp].pf_pose_cov.m[2][2];
-      p.data.covariance[6*3+3] = set->cov.m[2][2];
+      p.pose.covariance[6*3+3] = set->cov.m[2][2];
 
       /*
          printf("cov:\n");
@@ -821,11 +821,11 @@ AmclNode::laserReceived(const tf::MessageNotifier<sensor_msgs::LaserScan>::Messa
       ros::Node::instance()->setParam("~initial_pose_y", map_pose.getOrigin().y());
       ros::Node::instance()->setParam("~initial_pose_a", yaw);
       ros::Node::instance()->setParam("~initial_cov_xx", 
-                                      last_published_pose.data.covariance[6*0+0]);
+                                      last_published_pose.pose.covariance[6*0+0]);
       ros::Node::instance()->setParam("~initial_cov_yy", 
-                                      last_published_pose.data.covariance[6*1+1]);
+                                      last_published_pose.pose.covariance[6*1+1]);
       ros::Node::instance()->setParam("~initial_cov_aa", 
-                                      last_published_pose.data.covariance[6*3+3]);
+                                      last_published_pose.pose.covariance[6*3+3]);
       save_pose_last_time = now;
     }
   }
@@ -861,7 +861,7 @@ AmclNode::initialPoseReceived()
   }
 
   tf::Pose pose_old, pose_new;
-  tf::poseMsgToTF(initial_pose_.data.pose, pose_old);
+  tf::poseMsgToTF(initial_pose_.pose.pose, pose_old);
   pose_new = tx_odom.inverse() * pose_old;
 
   ROS_INFO("Setting pose (%.6f): %.3f %.3f %.3f",
@@ -880,10 +880,10 @@ AmclNode::initialPoseReceived()
   {
     for(int j=0; j<2; j++)
     {
-      pf_init_pose_cov.m[i][j] = initial_pose_.data.covariance[6*i+j];
+      pf_init_pose_cov.m[i][j] = initial_pose_.pose.covariance[6*i+j];
     }
   }
-  pf_init_pose_cov.m[2][2] = initial_pose_.data.covariance[6*3+3];
+  pf_init_pose_cov.m[2][2] = initial_pose_.pose.covariance[6*3+3];
 
   pf_mutex_.lock();
   pf_init(pf_, pf_init_pose_mean, pf_init_pose_cov);

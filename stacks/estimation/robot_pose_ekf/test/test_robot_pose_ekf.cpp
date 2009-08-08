@@ -142,20 +142,20 @@ TEST_F(TestEKF, test)
   EXPECT_GT(Duration(ekf_msg_.header.stamp - odom_msg_.header.stamp).toSec(), -1.0);
 
   // check filter result
-  EXPECT_GT(ekf_begin_.data.pose.position.x, 0.038043 - EPS_trans);
-  EXPECT_LT(ekf_begin_.data.pose.position.x, 0.038043 + EPS_trans);
-  EXPECT_GT(ekf_begin_.data.pose.position.y, -0.001618 - EPS_trans);
-  EXPECT_LT(ekf_begin_.data.pose.position.y, -0.001618 + EPS_trans);
-  EXPECT_GT(ekf_begin_.data.pose.position.z, 0.000000 - EPS_trans);
-  EXPECT_LT(ekf_begin_.data.pose.position.z, 0.000000 + EPS_trans);
-  EXPECT_GT(ekf_begin_.data.pose.orientation.x, 0.000000 - EPS_rot);
-  EXPECT_LT(ekf_begin_.data.pose.orientation.x, 0.000000 + EPS_rot);
-  EXPECT_GT(ekf_begin_.data.pose.orientation.y, 0.000000 - EPS_rot);
-  EXPECT_LT(ekf_begin_.data.pose.orientation.y, 0.000000 + EPS_rot);
-  EXPECT_GT(ekf_begin_.data.pose.orientation.z, 0.088400 - EPS_rot);
-  EXPECT_LT(ekf_begin_.data.pose.orientation.z, 0.088400 + EPS_rot);
-  EXPECT_GT(ekf_begin_.data.pose.orientation.w, 0.996085 - EPS_rot);
-  EXPECT_LT(ekf_begin_.data.pose.orientation.w, 0.996085 + EPS_rot);
+  EXPECT_GT(ekf_begin_.pose.pose.position.x, 0.038043 - EPS_trans);
+  EXPECT_LT(ekf_begin_.pose.pose.position.x, 0.038043 + EPS_trans);
+  EXPECT_GT(ekf_begin_.pose.pose.position.y, -0.001618 - EPS_trans);
+  EXPECT_LT(ekf_begin_.pose.pose.position.y, -0.001618 + EPS_trans);
+  EXPECT_GT(ekf_begin_.pose.pose.position.z, 0.000000 - EPS_trans);
+  EXPECT_LT(ekf_begin_.pose.pose.position.z, 0.000000 + EPS_trans);
+  EXPECT_GT(ekf_begin_.pose.pose.orientation.x, 0.000000 - EPS_rot);
+  EXPECT_LT(ekf_begin_.pose.pose.orientation.x, 0.000000 + EPS_rot);
+  EXPECT_GT(ekf_begin_.pose.pose.orientation.y, 0.000000 - EPS_rot);
+  EXPECT_LT(ekf_begin_.pose.pose.orientation.y, 0.000000 + EPS_rot);
+  EXPECT_GT(ekf_begin_.pose.pose.orientation.z, 0.088400 - EPS_rot);
+  EXPECT_LT(ekf_begin_.pose.pose.orientation.z, 0.088400 + EPS_rot);
+  EXPECT_GT(ekf_begin_.pose.pose.orientation.w, 0.996085 - EPS_rot);
+  EXPECT_LT(ekf_begin_.pose.pose.orientation.w, 0.996085 + EPS_rot);
 
   SUCCEED();
 }

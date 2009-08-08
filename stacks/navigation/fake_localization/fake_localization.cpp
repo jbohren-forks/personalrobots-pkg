@@ -205,16 +205,16 @@ public:
     // Publish localized pose
     m_currentPos.header = message->header;
     m_currentPos.header.frame_id = "/map"; ///\todo fixme hack
-    m_currentPos.data.pose.position.x = x;
-    m_currentPos.data.pose.position.y = y;
+    m_currentPos.pose.pose.position.x = x;
+    m_currentPos.pose.pose.position.y = y;
     // Leave z as zero
     tf::quaternionTFToMsg(tf::Quaternion(yaw, 0.0, 0.0),
-                          m_currentPos.data.pose.orientation);
+                          m_currentPos.pose.pose.orientation);
     // Leave covariance as zero
     publish("amcl_pose", m_currentPos);
 
     // The particle cloud is the current position. Quite convenient.
-    m_particleCloud.poses[0] = m_currentPos.data.pose;
+    m_particleCloud.poses[0] = m_currentPos.pose.pose;
     publish("particlecloud", m_particleCloud);
   }   
 };

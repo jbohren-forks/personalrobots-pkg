@@ -191,8 +191,8 @@ class PicmapNode:
   def handle_amcl_pose(self, msg):
     if self.vo:
       print "handle_amcl_pose(", msg, ")"
-      happy = max([msg.data.covariance[0], msg.data.covariance[7]]) < 0.003
-      print "picmap node got amcl", msg.header.stamp.to_seconds(), msg.data.covariance[0], msg.data.covariance[7], "happy", happy
+      happy = max([msg.pose.covariance[0], msg.pose.covariance[7]]) < 0.003
+      print "picmap node got amcl", msg.header.stamp.to_seconds(), msg.pose.covariance[0], msg.pose.covariance[7], "happy", happy
       self.pmlock.acquire()
       self.pm.newLocalization(msg.header.stamp.to_seconds(), happy)
       self.pmlock.release()

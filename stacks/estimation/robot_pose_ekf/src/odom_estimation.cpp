@@ -344,7 +344,7 @@ namespace estimation
       return;
     }
     transformer_.lookupTransform("base_footprint","odom", ros::Time(), tmp);
-    poseTFToMsg(tmp, estimate.data.pose);
+    poseTFToMsg(tmp, estimate.pose.pose);
 
     // header
     estimate.header.stamp = tmp.stamp_;
@@ -354,7 +354,7 @@ namespace estimation
     SymmetricMatrix covar =  filter_->PostGet()->CovarianceGet();
     for (unsigned int i=0; i<6; i++)
       for (unsigned int j=0; j<6; j++)
-	estimate.data.covariance[6*i+j] = covar(i+1,j+1);
+	estimate.pose.covariance[6*i+j] = covar(i+1,j+1);
   };
 
   // correct for angle overflow
