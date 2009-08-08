@@ -85,7 +85,7 @@
 #include "laser_scan/intensity_filter.h"
 
 using namespace std;
-using namespace robot_msgs;
+using namespace geometry_msgs;
 using namespace mapping_msgs;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
