@@ -51,9 +51,9 @@ class PoseConversions(unittest.TestCase):
         self.tfvector_stamped.stamp = roslib.rostime.Time(10, 0)
 
         self.msgvector_stamped = robot_msgs.msg.Vector3Stamped()
-        self.msgvector_stamped.data.x = 0
-        self.msgvector_stamped.data.y = 0
-        self.msgvector_stamped.data.z = 0
+        self.msgvector_stamped.vector.x = 0
+        self.msgvector_stamped.vector.y = 0
+        self.msgvector_stamped.vector.z = 0
         self.msgvector_stamped.header.frame_id = "frame1"
         self.msgvector_stamped.header.stamp = roslib.rostime.Time(10,0)
 

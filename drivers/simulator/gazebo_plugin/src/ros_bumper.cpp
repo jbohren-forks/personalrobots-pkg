@@ -87,9 +87,9 @@ void RosBumper::LoadChild(XMLConfigNode *node)
 // Initialize the controller
 void RosBumper::InitChild()
 {
-      this->forceMsg.data.x = 0;
-      this->forceMsg.data.y = 0;
-      this->forceMsg.data.z = 0;
+      this->forceMsg.vector.x = 0;
+      this->forceMsg.vector.y = 0;
+      this->forceMsg.vector.z = 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -136,9 +136,9 @@ void RosBumper::UpdateChild()
       this->forceMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  cur_time - this->forceMsg.header.stamp.sec) );
 
       double eps = 0.10; // very crude low pass filter
-      this->forceMsg.data.x = (1.0-eps)*this->forceMsg.data.x + eps*contact_forces.f1[0];
-      this->forceMsg.data.y = (1.0-eps)*this->forceMsg.data.y + eps*contact_forces.f1[1];
-      this->forceMsg.data.z = (1.0-eps)*this->forceMsg.data.z + eps*contact_forces.f1[2];
+      this->forceMsg.vector.x = (1.0-eps)*this->forceMsg.vector.x + eps*contact_forces.f1[0];
+      this->forceMsg.vector.y = (1.0-eps)*this->forceMsg.vector.y + eps*contact_forces.f1[1];
+      this->forceMsg.vector.z = (1.0-eps)*this->forceMsg.vector.z + eps*contact_forces.f1[2];
 
       this->info_pub_.publish(this->bumperMsg);
       this->force_pub_.publish(this->forceMsg);

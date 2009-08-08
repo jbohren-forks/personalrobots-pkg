@@ -65,8 +65,8 @@ t = TransformStamped()
 t.header.frame_id = 'high_def_frame'
 t.header.seq = 0
 t.parent_id = 'base_link'
-t.data.translation = xyz(0, 0, 1.25)
-t.data.rotation = rpy(0, 1.3, 0)
+t.transform.translation = xyz(0, 0, 1.25)
+t.transform.rotation = rpy(0, 1.3, 0)
 
 rospy.init_node('fake_camera')
 pub_tf = rospy.Publisher('/tf_message', tfMessage)

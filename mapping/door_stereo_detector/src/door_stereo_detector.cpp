@@ -300,18 +300,18 @@ class DoorStereo : public ros::Node
        geometry_msgs::Vector3Stamped axis_original;
        ROS_INFO("Original axis: %f %f %f",axis_.x,axis_.y,axis_.z);
 
-       axis_original.data.x = axis_.x;
-       axis_original.data.y = axis_.y;
-       axis_original.data.z = axis_.z;
+       axis_original.vector.x = axis_.x;
+       axis_original.vector.y = axis_.y;
+       axis_original.vector.z = axis_.z;
        axis_original.header.frame_id = "base_link";
        axis_original.header.stamp = ros::Time(0.0);
 
        tf_->transformVector("stereo_link",axis_original,axis_transformed);
 
        geometry_msgs::Point32 axis_point_32;
-       axis_point_32.x = axis_transformed.data.x;
-       axis_point_32.y = axis_transformed.data.y;
-       axis_point_32.z = axis_transformed.data.z;
+       axis_point_32.x = axis_transformed.vector.x;
+       axis_point_32.y = axis_transformed.vector.y;
+       axis_point_32.z = axis_transformed.vector.z;
 
        ROS_INFO("Transformed axis: %f %f %f",axis_point_32.x,axis_point_32.y,axis_point_32.z);
 

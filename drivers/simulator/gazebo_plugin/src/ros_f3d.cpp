@@ -109,9 +109,9 @@ void RosF3D::UpdateChild()
   this->vector3Msg.header.stamp.sec = (unsigned long)floor(Simulator::Instance()->GetSimTime());
   this->vector3Msg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  Simulator::Instance()->GetSimTime() - this->vector3Msg.header.stamp.sec) );
 
-  this->vector3Msg.data.x    = force.x;
-  this->vector3Msg.data.y    = force.y;
-  this->vector3Msg.data.z    = force.z;
+  this->vector3Msg.vector.x    = force.x;
+  this->vector3Msg.vector.y    = force.y;
+  this->vector3Msg.vector.z    = force.z;
 
   //std::cout << "RosF3D: " << this->topicName
   //          << "  f: " << force

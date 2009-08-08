@@ -147,10 +147,10 @@ static inline void vector3TFToMsg(const Vector3& bt_v, geometry_msgs::Vector3& m
 
 /** \brief convert Vector3Stamped msg to Stamped<Vector3> */
 static inline void vector3StampedMsgToTF(const geometry_msgs::Vector3Stamped & msg, Stamped<Vector3>& bt)
-{vector3MsgToTF(msg.data, bt); bt.stamp_ = msg.header.stamp; bt.frame_id_ = msg.header.frame_id;};
+{vector3MsgToTF(msg.vector, bt); bt.stamp_ = msg.header.stamp; bt.frame_id_ = msg.header.frame_id;};
 /** \brief convert Stamped<Vector3> to Vector3Stamped msg*/
 static inline void vector3StampedTFToMsg(const Stamped<Vector3>& bt, geometry_msgs::Vector3Stamped & msg)
-{vector3TFToMsg(bt, msg.data); msg.header.stamp = bt.stamp_; msg.header.frame_id = bt.frame_id_;};
+{vector3TFToMsg(bt, msg.vector); msg.header.stamp = bt.stamp_; msg.header.frame_id = bt.frame_id_;};
 
 
 /** \brief convert Point msg to Point */
