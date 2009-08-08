@@ -30,6 +30,11 @@
 #include <string>
 #include <map>
 #include <ros/node.h>
+#include <ros/param.h>
+#include "yaml-cpp/yaml.h"
+#include <stdio.h>
+
+using XmlRpc::XmlRpcValue;
 
 class ConfigurationDictionary{
 public:
@@ -41,14 +46,23 @@ public:
 
   bool hasKey(const std::string &key);
 
-  std::string AsYaml();
+  std::string asYaml();
+  void emitAsYaml(YAML::Emitter &emitter);
 
 protected:
   std::map<std::string, bool> bool_values;
   std::map<std::string, int> int_values;
   std::map<std::string, double> double_values;
   std::map<std::string, std::string> string_values;
-  std::map<std::string, ConfigurationDictionary> dictionary_values;
+  std::map<std::string, ConfigurationDictionary *> dictionary_values;
+
+  template<typename T> void emit_map(YAML::Emitter &emitter, T map){
+  typename T::iterator i = map.begin();
+  for(; i != map.end(); i++){
+    emitter << YAML::Key << i->first;
+    emitter << YAML::Value << i->second;
+  }
+  }
 };
 
 class MutableConfigurationDictionary : public ConfigurationDictionary{
@@ -57,13 +71,17 @@ public:
   void setParam(const std::string &key, int value);
   void setParam(const std::string &key, double value);
   void setParam(const std::string &key, std::string value);
-  void setParam(const std::string &key, ConfigurationDictionary &value);
+  void setParam(const std::string &key, char *value);
+  void setParam(const std::string &key, ConfigurationDictionary *value);
 
   void deleteParam(const std::string &key);
 
-  bool loadFromParamServer(ros::Node *n, std::string &name);
+  bool loadFromParamServer(const std::string &name);
+  bool loadFromXmlRpcValue(XmlRpcValue &value);
+
   bool loadFromYaml(std::string &yaml);
-  bool loadFromYamlFile(std::string &filename);
+  bool loadFromYamlFile(std::string filename);
+  bool loadFromYamlNode(const YAML::Node &node);
 };
 
 #endif

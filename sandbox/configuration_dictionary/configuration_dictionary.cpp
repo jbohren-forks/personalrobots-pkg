@@ -26,6 +26,11 @@
  */
 
 #include "configuration_dictionary.h"
+#include "yaml-cpp/yaml.h"
+#include <iostream>
+#include <fstream>
+#include <ros/ros.h>
+#include <ros/param.h>
 
 bool ConfigurationDictionary::getParam(const std::string &key, bool &value){
   if(bool_values.count(key) > 0)
@@ -55,14 +60,45 @@ bool ConfigurationDictionary::getParam(const std::string &key, std::string &valu
   return false;
 }
 
+bool ConfigurationDictionary::getParam(const std::string &key, ConfigurationDictionary &value){
+  if(dictionary_values.count(key) > 0)
+    value = *dictionary_values[key];
+    return true;
+  return false;
+}
+
 bool ConfigurationDictionary::hasKey(const std::string &key){
   if(bool_values.count(key) > 0 || int_values.count(key) > 0 || double_values.count(key) > 0 || string_values.count(key) > 0)
     return true;
   return false;
 }
 
-std::string ConfigurationDictionary::AsYaml(){
-  return std::string("This would be a yaml representation.\n");
+
+std::string ConfigurationDictionary::asYaml(){
+  YAML::Emitter emitter;
+  emitAsYaml(emitter);
+  return emitter.c_str();
+}
+
+void ConfigurationDictionary::emitAsYaml(YAML::Emitter &emitter){
+  if(bool_values.empty() && int_values.empty() && double_values.empty() && string_values.empty() && dictionary_values.empty())
+    return;
+  emitter << YAML::BeginMap;
+
+  emit_map(emitter, bool_values);
+  emit_map(emitter, int_values);
+  emit_map(emitter, double_values);
+  emit_map(emitter, string_values);
+ 
+  std::map<std::string, ConfigurationDictionary *>::iterator i = dictionary_values.begin();
+  for(; i != dictionary_values.end(); ++i)
+  {
+    emitter << YAML::Key << i->first;
+    emitter << YAML::Value;
+    i->second->emitAsYaml(emitter);
+  }
+ 
+  emitter << YAML::EndMap;
 }
 
 
@@ -94,24 +130,119 @@ void MutableConfigurationDictionary::setParam(const std::string &key, std::strin
   string_values[key] = value;
 }
 
+void MutableConfigurationDictionary::setParam(const std::string &key, char *value){
+  if(hasKey(key)){
+    deleteParam(key);
+  }
+  string_values[key] = std::string(value);
+}
+
+void MutableConfigurationDictionary::setParam(const std::string &key, ConfigurationDictionary *value){
+  printf("Set dictionary param.\n");
+  if(hasKey(key)){
+    deleteParam(key);
+  }
+  dictionary_values[key] = value;
+}
+
 void MutableConfigurationDictionary::deleteParam(const std::string &key){
   bool_values.erase(key);
   int_values.erase(key);
   double_values.erase(key);
   string_values.erase(key);
+  dictionary_values.erase(key); //TODO - delete this when it is erased
 }
 
-bool MutableConfigurationDictionary::loadFromParamServer(ros::Node *n, std::string &name){
-  printf("Not implemented yet.\n");
-  return false;
+bool MutableConfigurationDictionary::loadFromParamServer(const std::string &key){
+  XmlRpc::XmlRpcValue paramValue;
+  if(ros::param::get(key, paramValue))//TODO: Check return value for errors
+  {
+    return loadFromXmlRpcValue(paramValue);
+    return true;
+  }
+  else{
+    ROS_DEBUG("Failed to load ConfigurationDictionary from parameter %s", key.c_str());
+    return false;
+  }
+}
+
+bool MutableConfigurationDictionary::loadFromXmlRpcValue(XmlRpcValue &value){
+  if(value.getType() != XmlRpc::XmlRpcValue::TypeStruct){
+    ROS_WARN("ConfigurationDictionary can only load from a namespace of the param server");
+    return 0;
+  }
+  MutableConfigurationDictionary *d;
+  for(XmlRpcValue::ValueStruct::iterator i = value.begin(); i != value.end(); i++){
+    switch(i->second.getType()){
+    case XmlRpcValue::TypeBoolean:
+      setParam(i->first, (bool)i->second);
+      break;
+    case XmlRpcValue::TypeInt:
+      setParam(i->first, (int)i->second);
+      break;
+    case XmlRpcValue::TypeDouble:
+      setParam(i->first, (double)i->second);
+      break;
+    case XmlRpcValue::TypeString:
+      setParam(i->first, (std::string)i->second);
+      break;
+    case XmlRpcValue::TypeStruct:
+      d = new MutableConfigurationDictionary();
+      if(d->loadFromXmlRpcValue(i->second)){
+        setParam(i->first, d); 
+      }
+      else{
+        delete d;
+        return false;
+      }
+      break;
+    default:
+      ROS_WARN("Attempted to load ConfigurationDictionary from unsupported type on param server\n");
+    }
+  }
+  return true;
+}
+
+bool MutableConfigurationDictionary::loadFromYamlNode(const YAML::Node &node){
+  if(node.GetType() != YAML::CT_MAP){
+    printf("Error, top level must be a map.");
+    return false;
+  }
+  for(YAML::Iterator it=node.begin();it!=node.end();++it) {
+    std::string key, value;
+    MutableConfigurationDictionary *d;
+    it.first() >> key;
+    switch(it.second().GetType()){
+    case YAML::CT_SCALAR:
+      it.second() >> value;
+      setParam(key, value);
+      break;
+    case YAML::CT_MAP:
+      printf("Loading new namespace.\n");
+      d = new MutableConfigurationDictionary();
+      d->loadFromYamlNode(it.second());
+      setParam(key, d);
+      break;
+    case YAML::CT_NONE:
+      printf("Unexpected empty node.\n");
+      return false;
+    case YAML::CT_SEQUENCE:
+      printf("Sequences currently unsupported.\n");
+      return false;
+    }
+  }
+  return true;
 }
 
 bool MutableConfigurationDictionary::loadFromYaml(std::string &yaml){
-  printf("Not implemented yet.\n");
   return false;
 }
 
-bool loadFromYamlFile(std::string *filename){
-  printf("Not implemented yet.\n");
-  return false;
+bool MutableConfigurationDictionary::loadFromYamlFile(std::string filename){
+  std::ifstream fin("test.yaml"); //TODO: load from proper filename
+  //TODO - check that the document loaded properly
+  YAML::Parser parser(fin);
+  YAML::Node doc;
+  parser.GetNextDocument(doc);
+  return loadFromYamlNode(doc);
 }
