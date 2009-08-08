@@ -281,11 +281,11 @@ namespace pr2_mechanism_controllers
 
     diagnostic_msgs::DiagnosticMessage message;
     std::vector<diagnostic_msgs::DiagnosticStatus> statuses;
-    std::vector<diagnostic_msgs::DiagnosticValue> values;
+    std::vector<diagnostic_msgs::KeyValue> values;
     std::vector<diagnostic_msgs::DiagnosticString> strings;
 
     diagnostic_msgs::DiagnosticStatus status;
-    diagnostic_msgs::DiagnosticValue v;
+    diagnostic_msgs::KeyValue v;
     diagnostic_msgs::DiagnosticString s;
     status.name = ros_node_.getName();
     status.message = control_state_;

@@ -340,10 +340,10 @@ bool DoorReactivePlanner::makePlan(const pr2_robot_actions::Pose2D &start, std::
 
 diagnostic_msgs::DiagnosticStatus DoorReactivePlanner::getDiagnostics()
 {
-  vector<diagnostic_msgs::DiagnosticValue> values;
+  vector<diagnostic_msgs::KeyValue> values;
   vector<diagnostic_msgs::DiagnosticString> strings;
   diagnostic_msgs::DiagnosticStatus status;
-  diagnostic_msgs::DiagnosticValue v;
+  diagnostic_msgs::KeyValue v;
   diagnostic_msgs::DiagnosticString s;
   status.name = "Door Reactive Planner";
   status.level = 0;

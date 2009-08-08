@@ -690,10 +690,10 @@ void ArmTrajectoryControllerNode::publishDiagnostics()
     cmd.set_velocity_size(1);
 
     vector<diagnostic_msgs::DiagnosticStatus> statuses;
-    vector<diagnostic_msgs::DiagnosticValue> values;
+    vector<diagnostic_msgs::KeyValue> values;
     vector<diagnostic_msgs::DiagnosticString> strings;
     diagnostic_msgs::DiagnosticStatus status;
-    diagnostic_msgs::DiagnosticValue v;
+    diagnostic_msgs::KeyValue v;
 
     status.name = service_prefix_;
     status.level = 0;

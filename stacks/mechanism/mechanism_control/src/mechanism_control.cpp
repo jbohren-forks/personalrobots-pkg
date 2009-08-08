@@ -451,10 +451,10 @@ void MechanismControl::publishDiagnostics()
       TimeStatistics blank_statistics;
       
       std::vector<diagnostic_msgs::DiagnosticStatus> statuses;
-      std::vector<diagnostic_msgs::DiagnosticValue> values;
+      std::vector<diagnostic_msgs::KeyValue> values;
       std::vector<diagnostic_msgs::DiagnosticString> strings;
       diagnostic_msgs::DiagnosticStatus status;
-      diagnostic_msgs::DiagnosticValue v;
+      diagnostic_msgs::KeyValue v;
       diagnostic_msgs::DiagnosticString s;
       
       status.name = "Mechanism Control";

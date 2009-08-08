@@ -103,10 +103,10 @@ static void publishDiagnostics(realtime_tools::RealtimePublisher<diagnostic_msgs
   {
     accumulator_set<double, stats<tag::max, tag::mean> > zero;
     vector<diagnostic_msgs::DiagnosticStatus> statuses;
-    vector<diagnostic_msgs::DiagnosticValue> values;
+    vector<diagnostic_msgs::KeyValue> values;
     vector<diagnostic_msgs::DiagnosticString> strings;
     diagnostic_msgs::DiagnosticStatus status;
-    diagnostic_msgs::DiagnosticValue v;
+    diagnostic_msgs::KeyValue v;
     diagnostic_msgs::DiagnosticString s;
 
     static double max_ec = 0, max_mc = 0;

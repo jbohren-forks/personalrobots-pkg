@@ -66,7 +66,7 @@ class GenericJointMonitor() :
 
         # Display the time, just so that something is always updating
         #timestamp = mech_state.header.stamp.to_seconds()
-        #diag.values.append(DiagnosticValue(value=timestamp, label="Time"))
+        #diag.values.append(KeyValue(value=timestamp, label="Time"))
 
         # Display the actuator and joint names for this monitor
         diag.strings.append(DiagnosticString(value=self._actuator, label="Actuator"))
@@ -79,7 +79,7 @@ class GenericJointMonitor() :
         if act_exists :
             cal_flag = mech_state.actuator_states[act_names.index(self._actuator)].calibration_reading
 
-        diag.values.append(DiagnosticValue(value=(1 if act_exists else 0),
+        diag.values.append(KeyValue(value=(1 if act_exists else 0),
                                            label="Actuator Exists"))
 
         joint_names = [x.name for x in mech_state.joint_states]
@@ -87,7 +87,7 @@ class GenericJointMonitor() :
         if joint_exists :
             joint_pos = mech_state.joint_states[joint_names.index(self._joint)].position
 
-        diag.values.append(DiagnosticValue(value=(1 if joint_exists else 0),
+        diag.values.append(KeyValue(value=(1 if joint_exists else 0),
                                            label="Joint Exists"))
 
         if not (act_exists and joint_exists) :
@@ -95,10 +95,10 @@ class GenericJointMonitor() :
             diag.message = "Error finding joint and actuator"
             return diag
 
-        diag.values.append(DiagnosticValue(value=cal_flag,
+        diag.values.append(KeyValue(value=cal_flag,
                                            label="Flag State"))
 
-        diag.values.append(DiagnosticValue(value=joint_pos,
+        diag.values.append(KeyValue(value=joint_pos,
                                            label="Joint Position"))
 
         # Call the predicate to see what the result is for this joint
@@ -116,11 +116,11 @@ class GenericJointMonitor() :
         diag.strings.append(DiagnosticString(value=self._flag_lookup[sample_result],
                                              label="Flag Check Result"))
 
-        diag.values.append(DiagnosticValue(value=flag_oks,
+        diag.values.append(KeyValue(value=flag_oks,
                                            label="Flag OKs"))
-        diag.values.append(DiagnosticValue(value=flag_deadbands,
+        diag.values.append(KeyValue(value=flag_deadbands,
                                            label="Flag Deadbands"))
-        diag.values.append(DiagnosticValue(value=flag_errors,
+        diag.values.append(KeyValue(value=flag_errors,
                                            label="Flag Errors"))
 
         if flag_errors > 0 :
