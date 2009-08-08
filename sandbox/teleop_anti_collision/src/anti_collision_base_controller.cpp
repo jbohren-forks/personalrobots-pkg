@@ -88,7 +88,7 @@ namespace anti_collision_base_controller
 
     joy_sub_ = ros_node_.subscribe(joy_listen_topic, 1, &AntiCollisionBaseController::joyCallBack, this);
     odom_sub_ = ros_node_.subscribe(odom_topic, 1, &AntiCollisionBaseController::odomCallback, this);
-    base_cmd_pub_ = ros_node_.advertise<robot_msgs::PoseDot>(base_cmd_topic,1);
+    base_cmd_pub_ = ros_node_.advertise<geometry_msgs::Twist>(base_cmd_topic,1);
 
     last_cmd_received_ = ros::Time();
 
@@ -286,7 +286,7 @@ namespace anti_collision_base_controller
     vtheta_result = vtheta_tmp;
   }
 
-void AntiCollisionBaseController::joyCallBack(const robot_msgs::PoseDot::ConstPtr& msg)
+void AntiCollisionBaseController::joyCallBack(const geometry_msgs::Twist::ConstPtr& msg)
   {
     last_cmd_received_ = ros::Time::now();
     vel_desired_.lock();
@@ -300,9 +300,9 @@ void AntiCollisionBaseController::joyCallBack(const robot_msgs::PoseDot::ConstPt
     {
       tf::Stamped<btVector3> v_in(btVector3(msg->twist_with_covariance.twist.linear.x, msg->twist_with_covariance.twist.linear.y, 0), ros::Time(), msg->header.frame_id), v_out;
       tf_.transformVector(robot_base_frame_, ros::Time(), v_in, msg->header.frame_id, v_out);
-      base_odom_.vel.vx = v_in.x();
-      base_odom_.vel.vy = v_in.y();
-      base_odom_.ang_vel.vz = msg->twist_with_covariance.twist.angular.z;
+      base_odom_.linear.x = v_in.x();
+      base_odom_.linear.y = v_in.y();
+      base_odom_.angular.z = msg->twist_with_covariance.twist.angular.z;
     }
     catch(tf::LookupException& ex)
     {
@@ -343,9 +343,9 @@ void AntiCollisionBaseController::joyCallBack(const robot_msgs::PoseDot::ConstPt
       ros::spinOnce();
       double vx_desired, vy_desired, vt_desired;
       vel_desired_.lock();
-      vx_desired = vel_desired_.vel.vx;
-      vy_desired = vel_desired_.vel.vy;
-      vt_desired = vel_desired_.ang_vel.vz;
+      vx_desired = vel_desired_.linear.x;
+      vy_desired = vel_desired_.linear.y;
+      vt_desired = vel_desired_.angular.z;
       vel_desired_.unlock();
 
       double x,y,theta;
@@ -357,9 +357,9 @@ void AntiCollisionBaseController::joyCallBack(const robot_msgs::PoseDot::ConstPt
 
       double vx_current,vy_current,vt_current;
       base_odom_.lock();
-      vx_current = base_odom_.vel.vx;
-      vy_current = base_odom_.vel.vy;
-      vt_current = base_odom_.ang_vel.vz;
+      vx_current = base_odom_.linear.x;
+      vy_current = base_odom_.linear.y;
+      vt_current = base_odom_.angular.z;
       base_odom_.unlock();
 
       //we also want to clear the robot footprint from the costmap we're using
@@ -378,10 +378,10 @@ void AntiCollisionBaseController::joyCallBack(const robot_msgs::PoseDot::ConstPt
         vt_result = 0.0;
       }
 
-      robot_msgs::PoseDot cmd;
-      cmd.vel.vx = vx_result;
-      cmd.vel.vy = vy_result;
-      cmd.ang_vel.vz = vt_result;
+      geometry_msgs::Twist cmd;
+      cmd.linear.x = vx_result;
+      cmd.linear.y = vy_result;
+      cmd.angular.z = vt_result;
       base_cmd_pub_.publish(cmd);
 
       r.sleep();
