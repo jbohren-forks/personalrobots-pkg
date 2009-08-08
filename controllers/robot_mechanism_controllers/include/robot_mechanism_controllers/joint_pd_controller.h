@@ -93,7 +93,7 @@ namespace controller
     /*!
      * \brief Get latest position command to the joint: revolute (angle) and prismatic (position).
      */
-    void getCommand(robot_msgs::JointCmd & cmd);
+    void getCommand(deprecated_msgs::JointCmd & cmd);
 
 
     /*!
@@ -160,7 +160,7 @@ namespace controller
     SubscriptionGuard guard_set_command_;        /**< Makes sure the subscription goes down neatly. */
 
     //msgs
-    robot_msgs::JointCmd cmd_;                      /**< The command from the subscription. */
+    deprecated_msgs::JointCmd cmd_;                      /**< The command from the subscription. */
 
     //controller
     JointPDController *c_;                       /**< The controller. */

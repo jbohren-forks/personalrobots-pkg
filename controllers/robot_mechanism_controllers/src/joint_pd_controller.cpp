@@ -123,7 +123,7 @@ void JointPDController::setCommand(double command, double command_dot)
 }
 
 // Return the current  command
-void JointPDController::getCommand(robot_msgs::JointCmd & cmd)
+void JointPDController::getCommand(deprecated_msgs::JointCmd & cmd)
 {
   pthread_mutex_lock(&joint_pd_controller_lock_);
   cmd.names[0]= joint_state_->joint_->name_;
