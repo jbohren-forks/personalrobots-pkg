@@ -50,7 +50,7 @@
 #include "geometry_msgs/PoseWithRatesStamped.h"
 #include "geometry_msgs/PoseStamped.h"
 #include "robot_msgs/VOPose.h"
-#include "geometry_msgs/PoseWithCovariance.h"
+#include "geometry_msgs/PoseWithCovarianceStamped.h"
 
 #include <boost/thread/mutex.hpp>
 
@@ -108,7 +108,7 @@ private:
   OdomEstimation my_filter_;
 
   // estimated robot pose message to send
-  geometry_msgs::PoseWithCovariance  output_; 
+  geometry_msgs::PoseWithCovarianceStamped  output_; 
 
   // robot state
   tf::TransformListener    robot_state_;

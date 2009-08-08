@@ -41,7 +41,7 @@ running = False
 rosCoreUp = False
 launchers = {}
 
-msgClasses = { '/initialpose' : geometry_msgs.msg.PoseWithCovariance,
+msgClasses = { '/initialpose' : geometry_msgs.msg.PoseWithCovarianceStamped,
                '/move_base/activate' : geometry_msgs.msg.PoseStamped
              }
 

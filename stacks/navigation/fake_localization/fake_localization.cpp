@@ -59,7 +59,7 @@ Subscribes to (name/type):
 - @b "base_pose_ground_truth" geometry_msgs/PoseWithRatesStamped : robot's odometric pose.  Only the position information is used (velocity is ignored).
 
 Publishes to (name / type):
-- @b "amcl_pose" geometry_msgs/PoseWithCovariance : robot's estimated pose in the map, with covariance
+- @b "amcl_pose" geometry_msgs/PoseWithCovarianceStamped : robot's estimated pose in the map, with covariance
 - @b "particlecloud" geometry_msgs/PoseArray : fake set of poses being maintained by the filter (one paricle only).
 
 <hr>
@@ -75,7 +75,7 @@ Publishes to (name / type):
 
 #include <geometry_msgs/PoseWithRatesStamped.h>
 #include <geometry_msgs/PoseArray.h>
-#include <geometry_msgs/PoseWithCovariance.h>
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
 
 #include <angles/angles.h>
 
@@ -91,7 +91,7 @@ class FakeOdomNode: public ros::Node
 public:
     FakeOdomNode(void) : ros::Node("fake_localization")
     {
-      advertise<geometry_msgs::PoseWithCovariance>("amcl_pose",1);
+      advertise<geometry_msgs::PoseWithCovarianceStamped>("amcl_pose",1);
       advertise<geometry_msgs::PoseArray>("particlecloud",1);
       m_tfServer = new tf::TransformBroadcaster();	
       m_tfListener = new tf::TransformListener(*this);
@@ -141,7 +141,7 @@ private:
     
     geometry_msgs::PoseWithRatesStamped  m_basePosMsg;
     geometry_msgs::PoseArray      m_particleCloud;
-    geometry_msgs::PoseWithCovariance      m_currentPos;
+    geometry_msgs::PoseWithCovarianceStamped      m_currentPos;
 
     //parameter for what odom to use
     std::string odom_frame_id_;
@@ -205,16 +205,16 @@ public:
     // Publish localized pose
     m_currentPos.header = message->header;
     m_currentPos.header.frame_id = "/map"; ///\todo fixme hack
-    m_currentPos.pose.position.x = x;
-    m_currentPos.pose.position.y = y;
+    m_currentPos.data.pose.position.x = x;
+    m_currentPos.data.pose.position.y = y;
     // Leave z as zero
     tf::quaternionTFToMsg(tf::Quaternion(yaw, 0.0, 0.0),
-                          m_currentPos.pose.orientation);
+                          m_currentPos.data.pose.orientation);
     // Leave covariance as zero
     publish("amcl_pose", m_currentPos);
 
     // The particle cloud is the current position. Quite convenient.
-    m_particleCloud.poses[0] = m_currentPos.pose;
+    m_particleCloud.poses[0] = m_currentPos.data.pose;
     publish("particlecloud", m_particleCloud);
   }   
 };

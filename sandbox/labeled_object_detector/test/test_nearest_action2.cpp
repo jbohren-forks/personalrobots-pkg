@@ -40,7 +40,7 @@
 #include <ros/ros.h>
 #include <geometry_msgs/PointStamped.h>
 #include <geometry_msgs/PoseStamped.h>
-#include <geometry_msgs/PoseWithCovariance.h>
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <gtest/gtest.h>
 
 using namespace robot_msgs;
@@ -48,12 +48,12 @@ using namespace labeled_object_detector;
 
 int count=0;
 
-void on_pose(robot_actions::ActionClient<PoseStamped, PoseStampedState, PoseStamped> &client,PoseWithCovarianceConstPtr pose)
+void on_pose(robot_actions::ActionClient<PoseStamped, PoseStampedState, PoseStamped> &client,PoseWithCovarianceStampedConstPtr pose)
 {
   ROS_INFO_STREAM("pose "<<count <<","<<pose);
 
   PoseStamped goal;
-  goal.pose=pose->pose;
+  goal.pose=pose->data.pose;
   goal.header=pose->header;
   PoseStamped feedback;
   robot_actions::ResultStatus result = client.execute(goal, feedback, ros::Duration(5));      
@@ -71,7 +71,7 @@ int
   //duration.sleep();
   
   ros::NodeHandle n_;
-  ros::Subscriber s=n_.subscribe<PoseWithCovariance>("amcl_pose",1,boost::bind(&on_pose,client,_1));
+  ros::Subscriber s=n_.subscribe<PoseWithCovarianceStamped>("amcl_pose",1,boost::bind(&on_pose,client,_1));
 
   ros::spin();
 

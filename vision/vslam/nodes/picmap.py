@@ -107,7 +107,7 @@ class PicmapNode:
     #self.pub = rospy.Publisher("/picmap_pose", vslam.msg.Picmap)
 
     rospy.Subscriber('/stereo/raw_stereo', sensor_msgs.msg.RawStereo, self.handle_raw_stereo_queue, queue_size=2, buff_size=7000000)
-    rospy.Subscriber('/amcl_pose', robot_msgs.msg.PoseWithCovariance, self.handle_amcl_pose)
+    rospy.Subscriber('/amcl_pose', robot_msgs.msg.PoseWithCovarianceStamped, self.handle_amcl_pose)
     rospy.Subscriber('/tf_message', tf.msg.tfMessage, self.handle_tf_queue)
 
     self.pmlock = threading.Lock()
@@ -191,8 +191,8 @@ class PicmapNode:
   def handle_amcl_pose(self, msg):
     if self.vo:
       print "handle_amcl_pose(", msg, ")"
-      happy = max([msg.covariance[0], msg.covariance[7]]) < 0.003
-      print "picmap node got amcl", msg.header.stamp.to_seconds(), msg.covariance[0], msg.covariance[7], "happy", happy
+      happy = max([msg.data.covariance[0], msg.data.covariance[7]]) < 0.003
+      print "picmap node got amcl", msg.header.stamp.to_seconds(), msg.data.covariance[0], msg.data.covariance[7], "happy", happy
       self.pmlock.acquire()
       self.pm.newLocalization(msg.header.stamp.to_seconds(), happy)
       self.pmlock.release()

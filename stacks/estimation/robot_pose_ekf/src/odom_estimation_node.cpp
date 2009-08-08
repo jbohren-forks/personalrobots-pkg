@@ -74,7 +74,7 @@ namespace estimation
     timer_ = node_.createTimer(ros::Duration(1.0/max(freq,1.0)), &OdomEstimationNode::spin, this);
 
     // advertise our estimation
-    pose_pub_ = node_.advertise<geometry_msgs::PoseWithCovariance>("~"+publish_name, 10);
+    pose_pub_ = node_.advertise<geometry_msgs::PoseWithCovarianceStamped>("~"+publish_name, 10);
 
     // initialize
     filter_stamp_ = Time::now();
@@ -303,7 +303,7 @@ namespace estimation
   {
     // receive data
     boost::mutex::scoped_lock lock(vel_mutex_);
-    vel_desi_(1) = vel->vel.vx;   vel_desi_(2) = vel->ang_vel.vz;
+    vel_desi_(1) = vel->linear.x;   vel_desi_(2) = vel->angular.z;
 
     // active
     //if (!vel_active_) vel_active_ = true;

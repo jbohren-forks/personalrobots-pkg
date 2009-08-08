@@ -49,7 +49,7 @@ import rospy, rostest
 
 from std_msgs.msg import String
 from nav_robot_actions.msg import MoveBaseState
-from geometry_msgs.msg import Pose,Quaternion,Point, PoseWithRatesStamped, PoseStamped, PoseWithCovariance
+from geometry_msgs.msg import Pose,Quaternion,Point, PoseWithRatesStamped, PoseStamped, PoseWithCovarianceStamped
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 import tf.transformations as tft
@@ -222,13 +222,13 @@ class NavStackTest():
 
         #pub_base = rospy.Publisher("cmd_vel", BaseVel)
         pub_goal = rospy.Publisher("/move_base/activate", PoseStamped)
-        pub_pose = rospy.Publisher("initialpose", PoseWithCovariance)
+        pub_pose = rospy.Publisher("initialpose", PoseWithCovarianceStamped)
         rospy.Subscriber("base_pose_ground_truth", PoseWithRatesStamped, self.p3dInput)
         rospy.Subscriber("odom"                  , Odometry     , self.odomInput)
         rospy.Subscriber("base_bumper/info"      , String              , self.bumpedInput)
         rospy.Subscriber("torso_lift_bumper/info", String              , self.bumpedInput)
         rospy.Subscriber("/move_base/feedback"   , MoveBaseState       , self.stateInput)
-        rospy.Subscriber("/amcl_pose"            , PoseWithCovariance  , self.amclInput)
+        rospy.Subscriber("/amcl_pose"            , PoseWithCovarianceStamped  , self.amclInput)
 
         # below only for debugging build 303, base not moving
         rospy.Subscriber("cmd_vel"               , Twist               , self.cmd_velInput)
@@ -312,7 +312,7 @@ class NavStackTest():
               q = Quaternion(tmpq[0],tmpq[1],tmpq[2],tmpq[3])
               pose = Pose(p,q)
               print "publishing initialpose",h,p,COV[0]
-              pub_pose.publish(PoseWithCovariance(h, pose,COV))
+              pub_pose.publish(PoseWithCovarianceStamped(h, PoseWithCovariance(pose,COV)))
             else:
               # send goal until state /move_base/feedback indicates goal is received
               p = Point(self.target_x, self.target_y, 0)

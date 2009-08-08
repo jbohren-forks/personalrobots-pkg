@@ -88,7 +88,7 @@ PoseTool::PoseTool( NavViewPanel* panel, bool goal )
 , is_goal_( goal )
 {
   goal_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("goal", 1);
-  pose_pub_ = nh_.advertise<geometry_msgs::PoseWithCovariance>("initialpose", 1);
+  pose_pub_ = nh_.advertise<geometry_msgs::PoseWithCovarianceStamped>("initialpose", 1);
 }
 
 PoseTool::~PoseTool()
@@ -171,14 +171,14 @@ int PoseTool::processMouseEvent( wxMouseEvent& event, int last_x, int last_y, fl
       }
       else
       {
-        geometry_msgs::PoseWithCovariance pose;
-        pose.pose.position.x = pos_.x;
-        pose.pose.position.y = pos_.y;
+        geometry_msgs::PoseWithCovarianceStamped pose;
+        pose.data.pose.position.x = pos_.x;
+        pose.data.pose.position.y = pos_.y;
         tf::quaternionTFToMsg(tf::Quaternion(angle, 0.0, 0.0),
-                              pose.pose.orientation);
-        pose.covariance[6*0+0] = 0.5 * 0.5;
-        pose.covariance[6*1+1] = 0.5 * 0.5;
-        pose.covariance[6*3+3] = M_PI/12.0 * M_PI/12.0;
+                              pose.data.pose.orientation);
+        pose.data.covariance[6*0+0] = 0.5 * 0.5;
+        pose.data.covariance[6*1+1] = 0.5 * 0.5;
+        pose.data.covariance[6*3+3] = M_PI/12.0 * M_PI/12.0;
         ROS_INFO( "setting pose: %.3f %.3f %.3f\n", pos_.x, pos_.y, angle );
         pose_pub_.publish( pose );
       }

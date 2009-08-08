@@ -246,7 +246,7 @@ class FakeRoadmapServer:
   def __init__(self, args):
     rospy.init_node('roadmap_server')
     self.pub = rospy.Publisher("roadmap", vslam.msg.Roadmap)
-    rospy.Subscriber('amcl_pose', robot_msgs.msg.PoseWithCovariance, self.handle_localizedpose)
+    rospy.Subscriber('amcl_pose', robot_msgs.msg.PoseWithCovarianceStamped, self.handle_localizedpose)
     self.updated = None
     rospy.Subscriber('time', roslib.msg.Time, self.handle_time)
     self.nodes = []
@@ -259,9 +259,9 @@ class FakeRoadmapServer:
       self.send_map(msg.header.stamp)
 
   def handle_localizedpose(self, msg):
-    th = tf.transformations.euler_from_quaternion([msg.pose.orientation.x, msg.pose.orientation.y, msg.pose.orientation.z, msg.pose.orientation.w])[2]
-    x = msg.pose.position.x
-    y = msg.pose.position.y
+    th = tf.transformations.euler_from_quaternion([msg.data.pose.orientation.x, msg.data.pose.orientation.y, msg.data.pose.orientation.z, msg.data.pose.orientation.w])[2]
+    x = msg.data.pose.position.x
+    y = msg.data.pose.position.y
     print x, y, th
     n = (x, y, th)
     if self.nodes == [] or (dist(self.nodes[-1], n) > 1.0) or (abs(self.nodes[-1][2] - n[2]) > (2.0 * pi / 180)):

@@ -334,8 +334,8 @@ namespace estimation
     transformer_.lookupTransform("base_footprint","odom", time, estimate);
   };
 
-  // get most recent filter posterior as PoseWithCovariance
-  void OdomEstimation::getEstimate(geometry_msgs::PoseWithCovariance& estimate)
+  // get most recent filter posterior as PoseWithCovarianceStamped
+  void OdomEstimation::getEstimate(geometry_msgs::PoseWithCovarianceStamped& estimate)
   {
     // pose
     Stamped<Transform> tmp;
@@ -344,7 +344,7 @@ namespace estimation
       return;
     }
     transformer_.lookupTransform("base_footprint","odom", ros::Time(), tmp);
-    poseTFToMsg(tmp, estimate.pose);
+    poseTFToMsg(tmp, estimate.data.pose);
 
     // header
     estimate.header.stamp = tmp.stamp_;
@@ -354,7 +354,7 @@ namespace estimation
     SymmetricMatrix covar =  filter_->PostGet()->CovarianceGet();
     for (unsigned int i=0; i<6; i++)
       for (unsigned int j=0; j<6; j++)
-	estimate.covariance[6*i+j] = covar(i+1,j+1);
+	estimate.data.covariance[6*i+j] = covar(i+1,j+1);
   };
 
   // correct for angle overflow

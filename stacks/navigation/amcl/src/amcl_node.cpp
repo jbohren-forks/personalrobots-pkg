@@ -37,7 +37,7 @@
 
 // Messages that I need
 #include "sensor_msgs/LaserScan.h"
-#include "geometry_msgs/PoseWithCovariance.h"
+#include "geometry_msgs/PoseWithCovarianceStamped.h"
 #include "geometry_msgs/PoseArray.h"
 #include "geometry_msgs/Pose.h"
 #include "nav_msgs/GetMap.h"
@@ -106,7 +106,7 @@ class AmclNode
     static pf_vector_t uniformPoseGenerator(void* arg);
 
     // incoming messages
-    geometry_msgs::PoseWithCovariance initial_pose_;
+    geometry_msgs::PoseWithCovarianceStamped initial_pose_;
 
     // Message callbacks
     bool globalLocalizationCallback(std_srvs::Empty::Request& req,
@@ -126,7 +126,7 @@ class AmclNode
     ros::Time save_pose_last_time;
     ros::Duration save_pose_period;
 
-    geometry_msgs::PoseWithCovariance last_published_pose;
+    geometry_msgs::PoseWithCovarianceStamped last_published_pose;
 
     map_t* map_;
     char* mapdata;
@@ -319,7 +319,7 @@ AmclNode::AmclNode() :
     laser_->SetModelLikelihoodField(z_hit, z_rand, sigma_hit,
                                     laser_likelihood_max_dist);
 
-  ros::Node::instance()->advertise<geometry_msgs::PoseWithCovariance>("amcl_pose",2);
+  ros::Node::instance()->advertise<geometry_msgs::PoseWithCovarianceStamped>("amcl_pose",2);
   ros::Node::instance()->advertise<geometry_msgs::PoseArray>("particlecloud",2);
   ros::Node::instance()->advertise<visualization_msgs::Polyline>("gui_laser",2);
   ros::Node::instance()->advertiseService("global_localization",
@@ -664,15 +664,15 @@ AmclNode::laserReceived(const tf::MessageNotifier<sensor_msgs::LaserScan>::Messa
          puts("");
        */
 
-      geometry_msgs::PoseWithCovariance p;
+      geometry_msgs::PoseWithCovarianceStamped p;
       // Fill in the header
       p.header.frame_id = "map";
       p.header.stamp = laser_scan->header.stamp;
       // Copy in the pose
-      p.pose.position.x = hyps[max_weight_hyp].pf_pose_mean.v[0];
-      p.pose.position.y = hyps[max_weight_hyp].pf_pose_mean.v[1];
+      p.data.pose.position.x = hyps[max_weight_hyp].pf_pose_mean.v[0];
+      p.data.pose.position.y = hyps[max_weight_hyp].pf_pose_mean.v[1];
       tf::quaternionTFToMsg(tf::Quaternion(hyps[max_weight_hyp].pf_pose_mean.v[2], 0.0, 0.0),
-                            p.pose.orientation);
+                            p.data.pose.orientation);
       // Copy in the covariance, converting from 3-D to 6-D
       pf_sample_set_t* set = pf_->sets + pf_->current_set;
       for(int i=0; i<2; i++)
@@ -682,13 +682,13 @@ AmclNode::laserReceived(const tf::MessageNotifier<sensor_msgs::LaserScan>::Messa
           // Report the overall filter covariance, rather than the
           // covariance for the highest-weight cluster
           //p.covariance[6*i+j] = hyps[max_weight_hyp].pf_pose_cov.m[i][j];
-          p.covariance[6*i+j] = set->cov.m[i][j];
+          p.data.covariance[6*i+j] = set->cov.m[i][j];
         }
       }
       // Report the overall filter covariance, rather than the
       // covariance for the highest-weight cluster
       //p.covariance[6*3+3] = hyps[max_weight_hyp].pf_pose_cov.m[2][2];
-      p.covariance[6*3+3] = set->cov.m[2][2];
+      p.data.covariance[6*3+3] = set->cov.m[2][2];
 
       /*
          printf("cov:\n");
@@ -821,11 +821,11 @@ AmclNode::laserReceived(const tf::MessageNotifier<sensor_msgs::LaserScan>::Messa
       ros::Node::instance()->setParam("~initial_pose_y", map_pose.getOrigin().y());
       ros::Node::instance()->setParam("~initial_pose_a", yaw);
       ros::Node::instance()->setParam("~initial_cov_xx", 
-                                      last_published_pose.covariance[6*0+0]);
+                                      last_published_pose.data.covariance[6*0+0]);
       ros::Node::instance()->setParam("~initial_cov_yy", 
-                                      last_published_pose.covariance[6*1+1]);
+                                      last_published_pose.data.covariance[6*1+1]);
       ros::Node::instance()->setParam("~initial_cov_aa", 
-                                      last_published_pose.covariance[6*3+3]);
+                                      last_published_pose.data.covariance[6*3+3]);
       save_pose_last_time = now;
     }
   }
@@ -861,7 +861,7 @@ AmclNode::initialPoseReceived()
   }
 
   tf::Pose pose_old, pose_new;
-  tf::poseMsgToTF(initial_pose_.pose, pose_old);
+  tf::poseMsgToTF(initial_pose_.data.pose, pose_old);
   pose_new = tx_odom.inverse() * pose_old;
 
   ROS_INFO("Setting pose (%.6f): %.3f %.3f %.3f",
@@ -880,10 +880,10 @@ AmclNode::initialPoseReceived()
   {
     for(int j=0; j<2; j++)
     {
-      pf_init_pose_cov.m[i][j] = initial_pose_.covariance[6*i+j];
+      pf_init_pose_cov.m[i][j] = initial_pose_.data.covariance[6*i+j];
     }
   }
-  pf_init_pose_cov.m[2][2] = initial_pose_.covariance[6*3+3];
+  pf_init_pose_cov.m[2][2] = initial_pose_.data.covariance[6*3+3];
 
   pf_mutex_.lock();
   pf_init(pf_, pf_init_pose_mean, pf_init_pose_cov);
