@@ -88,7 +88,7 @@
 #include "laser_scan/scan_shadows_filter.h"
 
 using namespace std;
-using namespace robot_msgs;
+using namespace sensor_msgs;
 using namespace mapping_msgs;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
