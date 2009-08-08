@@ -416,13 +416,13 @@ public:
       status.message = "Sensor connected";
     }
 
-    status.set_strings_size(3);
-    status.strings[0].label = "Port";
-    status.strings[0].value = port_;
-    status.strings[1].label = "Device ID";
-    status.strings[1].value = device_id_;
-    status.strings[2].label = "Device Status";
-    status.strings[2].value = device_status_;
+    status.set_values_size(3);
+    status.values[0].label = "Port";
+    status.values[0].value = port_;
+    status.values[1].label = "Device ID";
+    status.values[1].value = device_id_;
+    status.values[2].label = "Device Status";
+    status.values[2].value = device_status_;
   }
 
   void freqStatus(diagnostic_msgs::DiagnosticStatus& status)
