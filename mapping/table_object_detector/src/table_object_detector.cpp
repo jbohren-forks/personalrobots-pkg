@@ -76,7 +76,8 @@
 
 using namespace std;
 using namespace std_msgs;
-using namespace robot_msgs;
+using namespace sensor_msgs;
+using namespace geometry_msgs;
 using namespace mapping_msgs;
 using namespace tabletop_msgs;
 using namespace tabletop_srvs;
@@ -417,7 +418,7 @@ class TableObjectDetector
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void
-      findObjectClusters (sensor_msgs::PointCloud &points, const vector<double> &coeff, const Polygon3D &poly,
+      findObjectClusters (sensor_msgs::PointCloud &points, const vector<double> &coeff, const Polygon &poly,
                           const geometry_msgs::Point32 &minP, const geometry_msgs::Point32 &maxP,
                           vector<int> &object_indices, Table &table)
     {
