@@ -85,7 +85,7 @@ class BagToPcd
         return;
       geometry_msgs::PointStamped pin, pout;
       pin.header.frame_id = "laser_tilt_mount_link";
-      pin.data.x = pin.data.y = pin.data.z = 0.0;
+      pin.point.x = pin.point.y = pin.point.z = 0.0;
 
       try
       {
@@ -96,7 +96,7 @@ class BagToPcd
         ROS_ERROR ("TF::ConectivityException caught while trying to transform a point from frame %s into %s!", cloud->header.frame_id.c_str (), pin.header.frame_id.c_str ());
       }
       ROS_INFO ("Received %d data points in frame %s with %d channels (%s). Viewpoint is <%.3f, %.3f, %.3f>", (int)cloud->points.size (), cloud->header.frame_id.c_str (),
-                (int)cloud->channels.size (), cloud_geometry::getAvailableChannels (cloud).c_str (), pout.data.x, pout.data.y, pout.data.z);
+                (int)cloud->channels.size (), cloud_geometry::getAvailableChannels (cloud).c_str (), pout.point.x, pout.point.y, pout.point.z);
 
       double c_time = cloud->header.stamp.sec * 1e3 + cloud->header.stamp.nsec;
       sprintf (fn_, "%.0f.pcd", c_time);
@@ -120,9 +120,9 @@ class BagToPcd
             cloud_out.channels[cloud->channels.size () - 1].values.resize (cloud->points.size ());
             for (unsigned int i = 0; i < cloud->points.size (); i++)
             {
-              cloud_out.channels[cloud->channels.size () - 3].values[i] = pout.data.x;
-              cloud_out.channels[cloud->channels.size () - 2].values[i] = pout.data.y;
-              cloud_out.channels[cloud->channels.size () - 1].values[i] = pout.data.z;
+              cloud_out.channels[cloud->channels.size () - 3].values[i] = pout.point.x;
+              cloud_out.channels[cloud->channels.size () - 2].values[i] = pout.point.y;
+              cloud_out.channels[cloud->channels.size () - 1].values[i] = pout.point.z;
             }
           }
           cloud_io::savePCDFileASCII (fn_, cloud_out, 5);

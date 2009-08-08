@@ -160,10 +160,10 @@ static inline void pointTFToMsg(const Point& bt_v, geometry_msgs::Point& msg_v) 
 
 /** \brief convert PointStamped msg to Stamped<Point> */
 static inline void pointStampedMsgToTF(const geometry_msgs::PointStamped & msg, Stamped<Point>& bt)
-{pointMsgToTF(msg.data, bt); bt.stamp_ = msg.header.stamp; bt.frame_id_ = msg.header.frame_id;};
+{pointMsgToTF(msg.point, bt); bt.stamp_ = msg.header.stamp; bt.frame_id_ = msg.header.frame_id;};
 /** \brief convert Stamped<Point> to PointStamped msg*/
 static inline void pointStampedTFToMsg(const Stamped<Point>& bt, geometry_msgs::PointStamped & msg)
-{pointTFToMsg(bt, msg.data); msg.header.stamp = bt.stamp_; msg.header.frame_id = bt.frame_id_;};
+{pointTFToMsg(bt, msg.point); msg.header.stamp = bt.stamp_; msg.header.frame_id = bt.frame_id_;};
 
 
 /** \brief convert Transform msg to Transform */

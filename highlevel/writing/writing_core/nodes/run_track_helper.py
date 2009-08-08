@@ -67,14 +67,14 @@ class TrackHelperAction(python_actions.Action):
     rospy.logdebug("%s: executing.", self.name)
     htp = geometry_msgs.msg.PointStamped()
     htp.header = goal.header
-    htp.data = goal.pose.position
+    htp.point = goal.pose.position
 
     self.head_controller_publisher.publish(htp)
 
     while not self.isPreemptRequested():
       time.sleep(0.1)
       
-      #print htp.header.frame_id, htp.data.x, htp.data.y, htp.data.z
+      #print htp.header.frame_id, htp.point.x, htp.point.y, htp.point.z
       htp.header.stamp = rospy.get_rostime()
       self.head_controller_publisher.publish(htp)
       

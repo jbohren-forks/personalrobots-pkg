@@ -269,14 +269,14 @@ class ROSWebTopic(object):
           point = geometry_msgs.msg.PointStamped()
           point.header.stamp = self.last_message.header.stamp
           point.header.frame_id = frameId
-          point.data.x = self.last_message.points[i].x
-          point.data.y = self.last_message.points[i].y
-          point.data.z = self.last_message.points[i].z
+          point.point.x = self.last_message.points[i].x
+          point.point.y = self.last_message.points[i].y
+          point.point.z = self.last_message.points[i].z
 
           point = tfclient.transformPoint("/map", point)
-          msg += '{"x": "%f",' % point.data.x
-          msg += '"y": "%f",' % point.data.y
-          msg += '"z": "%f"},' % point.data.z
+          msg += '{"x": "%f",' % point.point.x
+          msg += '"y": "%f",' % point.point.y
+          msg += '"z": "%f"},' % point.point.z
 
         msg += ']}'
 

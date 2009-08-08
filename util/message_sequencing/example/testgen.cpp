@@ -22,9 +22,9 @@ public:
 
       geometry_msgs::PointStamped p1;
       p1.header.stamp = ros::Time::now();
-      p1.data.x = count;
-      p1.data.y = 0.0;
-      p1.data.z = 0.0;
+      p1.point.x = count;
+      p1.point.y = 0.0;
+      p1.point.z = 0.0;
 
       publish("orig", p1);
 

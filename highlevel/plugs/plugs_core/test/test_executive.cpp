@@ -86,9 +86,9 @@ int
   geometry_msgs::PoseStamped pose;
 
   point.header.frame_id = "torso_lift_link";
-  point.data.x=0;
-  point.data.y=0;
-  point.data.z=0;
+  point.point.x=0;
+  point.point.y=0;
+  point.point.z=0;
 
   Duration switch_timeout = Duration(4.0);
 
@@ -160,9 +160,9 @@ int
   if (switch_controllers.execute(switchlist, empty, switch_timeout) != robot_actions::SUCCESS) return -37;
   geometry_msgs::PointStamped guess;
   guess.header.frame_id = "base_link";
-  guess.data.x = 2.0;
-  guess.data.y = 0.0;
-  guess.data.z = 0.4;
+  guess.point.x = 2.0;
+  guess.point.y = 0.0;
+  guess.point.z = 0.4;
   geometry_msgs::PoseStamped coarse_outlet_pose_msg;
   int tries = 0;
   while (detect_outlet_coarse.execute(guess, coarse_outlet_pose_msg, Duration(300.0)) != robot_actions::SUCCESS)
@@ -191,7 +191,7 @@ int
   geometry_msgs::PointStamped outlet_pt;
   outlet_pt.header.frame_id = coarse_outlet_pose_msg.header.frame_id;
   outlet_pt.header.stamp = coarse_outlet_pose_msg.header.stamp;
-  outlet_pt.data = coarse_outlet_pose_msg.pose.position;
+  outlet_pt.point = coarse_outlet_pose_msg.pose.position;
   if (detect_outlet_fine.execute(outlet_pt, pose, Duration(60.0)) != robot_actions::SUCCESS) return -70;
 
   // untuck arm

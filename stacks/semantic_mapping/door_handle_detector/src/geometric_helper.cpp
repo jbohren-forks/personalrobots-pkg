@@ -257,19 +257,19 @@ void
   geometry_msgs::PointStamped viewpoint_laser;
   viewpoint_laser.header.frame_id = "laser_tilt_mount_link";
   // Set the viewpoint in the laser coordinate system to 0, 0, 0
-  viewpoint_laser.data.x = viewpoint_laser.data.y = viewpoint_laser.data.z = 0.0;
+  viewpoint_laser.point.x = viewpoint_laser.point.y = viewpoint_laser.point.z = 0.0;
 
   try
   {
     tf->transformPoint (cloud_frame, viewpoint_laser, viewpoint_cloud);
-    ROS_INFO ("Cloud view data in frame %s is: %g, %g, %g.", cloud_frame.c_str (),
-              viewpoint_cloud.data.x, viewpoint_cloud.data.y, viewpoint_cloud.data.z);
+    ROS_INFO ("Cloud view point in frame %s is: %g, %g, %g.", cloud_frame.c_str (),
+              viewpoint_cloud.point.x, viewpoint_cloud.point.y, viewpoint_cloud.point.z);
   }
   catch (tf::ConnectivityException)
   {
-    ROS_WARN ("Could not transform a data from frame %s to frame %s!", viewpoint_laser.header.frame_id.c_str (), cloud_frame.c_str ());
+    ROS_WARN ("Could not transform a point from frame %s to frame %s!", viewpoint_laser.header.frame_id.c_str (), cloud_frame.c_str ());
     // Default to 0.05, 0, 0.942768
-    viewpoint_cloud.data.x = 0.05; viewpoint_cloud.data.y = 0.0; viewpoint_cloud.data.z = 0.942768;
+    viewpoint_cloud.point.x = 0.05; viewpoint_cloud.point.y = 0.0; viewpoint_cloud.point.z = 0.942768;
   }
 }
 
@@ -425,9 +425,9 @@ bool
   cloud_geometry::nearest::computeCentroid (points, indices, centroid);
 
   // Create a line direction from the viewpoint to the centroid
-  centroid.x -= viewpoint->data.x;
-  centroid.y -= viewpoint->data.y;
-  centroid.z -= viewpoint->data.z;
+  centroid.x -= viewpoint->point.x;
+  centroid.y -= viewpoint->point.y;
+  centroid.z -= viewpoint->point.z;
 
   // Compute the normal of this cluster
   Eigen::Vector4d plane_parameters;

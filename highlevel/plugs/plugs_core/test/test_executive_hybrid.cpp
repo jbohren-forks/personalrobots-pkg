@@ -85,9 +85,9 @@ int
   geometry_msgs::PoseStamped pose;
 
   point.header.frame_id = "torso_lift_link";
-  point.data.x=0;
-  point.data.y=0;
-  point.data.z=0;
+  point.point.x=0;
+  point.point.y=0;
+  point.point.z=0;
 
   Duration timeout_short = Duration().fromSec(3.0);
   Duration timeout_medium = Duration().fromSec(20.0);

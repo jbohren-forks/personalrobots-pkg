@@ -547,9 +547,9 @@ private:
         marker.type = visualization_msgs::Marker::SPHERE;
         marker.action = visualization_msgs::Marker::ADD;
 
-        marker.pose.position.x = point.data.x;
-        marker.pose.position.y = point.data.y;
-        marker.pose.position.z = point.data.z;
+        marker.pose.position.x = point.point.x;
+        marker.pose.position.y = point.point.y;
+        marker.pose.position.z = point.point.z;
         marker.pose.orientation.x = 0.0;
         marker.pose.orientation.y = 0.0;
         marker.pose.orientation.z = 0.0;
@@ -574,8 +574,8 @@ private:
 //    	tf::Stamped<tf::Transform> tilt_stage;
 //    	tf_->lookupTransform("base_footprint", "laser_tilt_link", ros::Time(), tilt_stage);
 //    	double laser_height = tilt_stage.getOrigin()[2];
-//    	double outlet_height = outlet_location.data.z;
-//    	double dist = outlet_location.data.x;
+//    	double outlet_height = outlet_location.point.z;
+//    	double dist = outlet_location.point.x;
 //    	double outlet_bottom = outlet_height-(scan_height/2.0);
 //    	double outlet_top = outlet_height+(scan_height/2.0);
 //
@@ -704,17 +704,17 @@ private:
 		tf_.transformPoint(cam_info.header.frame_id, point, image_point);
 		Point pp; // projected point
 
-		pp.x = cam_info.P[0]*image_point.data.x+
-				cam_info.P[1]*image_point.data.y+
-				cam_info.P[2]*image_point.data.z+
+		pp.x = cam_info.P[0]*image_point.point.x+
+				cam_info.P[1]*image_point.point.y+
+				cam_info.P[2]*image_point.point.z+
 				cam_info.P[3];
-		pp.y = cam_info.P[4]*image_point.data.x+
-				cam_info.P[5]*image_point.data.y+
-				cam_info.P[6]*image_point.data.z+
+		pp.y = cam_info.P[4]*image_point.point.x+
+				cam_info.P[5]*image_point.point.y+
+				cam_info.P[6]*image_point.point.z+
 				cam_info.P[7];
-		pp.z = cam_info.P[8]*image_point.data.x+
-				cam_info.P[9]*image_point.data.y+
-				cam_info.P[10]*image_point.data.z+
+		pp.z = cam_info.P[8]*image_point.point.x+
+				cam_info.P[9]*image_point.point.y+
+				cam_info.P[10]*image_point.point.z+
 				cam_info.P[11];
 
 		pp.x /= pp.z;
@@ -1235,14 +1235,14 @@ private:
 			PointStamped center_in_stereo_frame;
 			center_in_stereo_frame.header.frame_id = blob_cloud.header.frame_id;
 			center_in_stereo_frame.header.stamp = blob_cloud.header.stamp;
-			center_in_stereo_frame.data.x = x_stats.mean;
-			center_in_stereo_frame.data.y = y_stats.mean;
-			center_in_stereo_frame.data.z = z_stats.mean;
+			center_in_stereo_frame.point.x = x_stats.mean;
+			center_in_stereo_frame.point.y = y_stats.mean;
+			center_in_stereo_frame.point.z = z_stats.mean;
 
 			// check the center of the blob is at a reasonable height in "base_footprint" frame
 			PointStamped center_in_base_footprint;
 			tf_.transformPoint("base_footprint", center_in_stereo_frame, center_in_base_footprint);
-			if (center_in_base_footprint.data.z<min_outlet_height_ || center_in_base_footprint.data.z>max_outlet_height_) {
+			if (center_in_base_footprint.point.z<min_outlet_height_ || center_in_base_footprint.point.z>max_outlet_height_) {
 				continue;
 			}
 
@@ -1284,9 +1284,9 @@ private:
 			PointStamped origin_in_wall_frame;
 			origin_in_wall_frame.header.frame_id = blob_in_wall_frame.header.frame_id;
 			origin_in_wall_frame.header.stamp = blob_in_wall_frame.header.stamp;
-			origin_in_wall_frame.data.x = x_stats.mean;
-			origin_in_wall_frame.data.y = y_stats.mean;
-			origin_in_wall_frame.data.z = z_stats.mean;
+			origin_in_wall_frame.point.x = x_stats.mean;
+			origin_in_wall_frame.point.y = y_stats.mean;
+			origin_in_wall_frame.point.z = z_stats.mean;
 
 			PointStamped origin_in_base_laser_frame;
 			tf_.transformPoint(base_cloud_->header.frame_id, origin_in_wall_frame, origin_in_base_laser_frame);
@@ -1433,9 +1433,9 @@ private:
 		point.header.stamp = ros::Time::now();
 		point.header.frame_id = "torso_lift_link";
 
-		point.data.x = 1;
-		point.data.y = tan(M_PI*horizontalAngle/180);
-		point.data.z = tan(M_PI*verticalAngle/180);
+		point.point.x = 1;
+		point.point.y = tan(M_PI*horizontalAngle/180);
+		point.point.z = tan(M_PI*verticalAngle/180);
 
 		head_pub_.publish(point);
 		ros::Duration(1.0).sleep();

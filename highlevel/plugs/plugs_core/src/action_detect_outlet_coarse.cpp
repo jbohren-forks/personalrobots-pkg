@@ -109,7 +109,7 @@ bool DetectOutletCoarseAction::spotOutlet(const geometry_msgs::PointStamped& out
         geometry_msgs::PointStamped outlet_final_position;
         outlet_final_position.header.frame_id = pose.header.frame_id;
         outlet_final_position.header.stamp = pose.header.stamp;
-        outlet_final_position.data = pose.pose.position;
+        outlet_final_position.point = pose.pose.position;
 
         node_->publish(head_controller_ + "/point_head", outlet_final_position);
 		return true;

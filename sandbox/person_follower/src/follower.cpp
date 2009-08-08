@@ -117,11 +117,11 @@ class Follower {
     geometry_msgs::PointStamped in;
     in.header.frame_id = "/base_footprint";
     in.header.stamp = cloud->header.stamp;
-    in.data.x = in.data.y = in.data.z = 0;
+    in.point.x = in.point.y = in.point.z = 0;
     geometry_msgs::PointStamped out;
     tf_client_.transformPoint("/odom_combined", in, out);
-    cout<<"Zero is at: "<<out.data.x<<","<<out.data.y<<endl;
-    setGoal(x, y, atan2(y-out.data.y,x-out.data.x), cloud->header.stamp);
+    cout<<"Zero is at: "<<out.point.x<<","<<out.point.y<<endl;
+    setGoal(x, y, atan2(y-out.point.y,x-out.point.x), cloud->header.stamp);
   }
 
   bool receivedVoxels;

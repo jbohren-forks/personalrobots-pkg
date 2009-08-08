@@ -590,7 +590,7 @@ private:
 	void addTableFrame(geometry_msgs::PointStamped origin, const vector<double>& plane)
 	{
 
-		btVector3 position(origin.data.x,origin.data.y,origin.data.z);
+		btVector3 position(origin.point.x,origin.point.y,origin.point.z);
 
 		btQuaternion orientation;
 		btMatrix3x3 rotation;
@@ -1034,17 +1034,17 @@ private:
 		tf_.transformPoint(cam_info.header.frame_id, point, image_point);
 		geometry_msgs::Point pp; // projected point
 
-		pp.x = cam_info.P[0]*image_point.data.x+
-				cam_info.P[1]*image_point.data.y+
-				cam_info.P[2]*image_point.data.z+
+		pp.x = cam_info.P[0]*image_point.point.x+
+				cam_info.P[1]*image_point.point.y+
+				cam_info.P[2]*image_point.point.z+
 				cam_info.P[3];
-		pp.y = cam_info.P[4]*image_point.data.x+
-				cam_info.P[5]*image_point.data.y+
-				cam_info.P[6]*image_point.data.z+
+		pp.y = cam_info.P[4]*image_point.point.x+
+				cam_info.P[5]*image_point.point.y+
+				cam_info.P[6]*image_point.point.z+
 				cam_info.P[7];
-		pp.z = cam_info.P[8]*image_point.data.x+
-				cam_info.P[9]*image_point.data.y+
-				cam_info.P[10]*image_point.data.z+
+		pp.z = cam_info.P[8]*image_point.point.x+
+				cam_info.P[9]*image_point.point.y+
+				cam_info.P[10]*image_point.point.z+
 				cam_info.P[11];
 
 		pp.x /= pp.z;
@@ -1063,40 +1063,40 @@ private:
 			geometry_msgs::PointStamped ps;
 			ps.header.frame_id = objects_table_frame.header.frame_id;
 			ps.header.stamp = objects_table_frame.header.stamp;
-			ps.data.z = 0;
+			ps.point.z = 0;
 
 
-			ps.data.x = clusters[i].x - CLUSTER_RADIUS;
-			ps.data.y = clusters[i].y - CLUSTER_RADIUS;
+			ps.point.x = clusters[i].x - CLUSTER_RADIUS;
+			ps.point.y = clusters[i].y - CLUSTER_RADIUS;
 			pp[0] = project3DPointIntoImage(lcinfo, ps);
 
-			ps.data.x = clusters[i].x - CLUSTER_RADIUS;
-			ps.data.y = clusters[i].y + CLUSTER_RADIUS;
+			ps.point.x = clusters[i].x - CLUSTER_RADIUS;
+			ps.point.y = clusters[i].y + CLUSTER_RADIUS;
 			pp[1] = project3DPointIntoImage(lcinfo, ps);
 
-			ps.data.x = clusters[i].x + CLUSTER_RADIUS;
-			ps.data.y = clusters[i].y + CLUSTER_RADIUS;
+			ps.point.x = clusters[i].x + CLUSTER_RADIUS;
+			ps.point.y = clusters[i].y + CLUSTER_RADIUS;
 			pp[2] = project3DPointIntoImage(lcinfo, ps);
 
-			ps.data.x = clusters[i].x + CLUSTER_RADIUS;
-			ps.data.y = clusters[i].y - CLUSTER_RADIUS;
+			ps.point.x = clusters[i].x + CLUSTER_RADIUS;
+			ps.point.y = clusters[i].y - CLUSTER_RADIUS;
 			pp[3] = project3DPointIntoImage(lcinfo, ps);
 
-			ps.data.z = clusters[i].z;
-			ps.data.x = clusters[i].x - CLUSTER_RADIUS;
-			ps.data.y = clusters[i].y - CLUSTER_RADIUS;
+			ps.point.z = clusters[i].z;
+			ps.point.x = clusters[i].x - CLUSTER_RADIUS;
+			ps.point.y = clusters[i].y - CLUSTER_RADIUS;
 			pp[4] = project3DPointIntoImage(lcinfo, ps);
 
-			ps.data.x = clusters[i].x - CLUSTER_RADIUS;
-			ps.data.y = clusters[i].y + CLUSTER_RADIUS;
+			ps.point.x = clusters[i].x - CLUSTER_RADIUS;
+			ps.point.y = clusters[i].y + CLUSTER_RADIUS;
 			pp[5] = project3DPointIntoImage(lcinfo, ps);
 
-			ps.data.x = clusters[i].x + CLUSTER_RADIUS;
-			ps.data.y = clusters[i].y + CLUSTER_RADIUS;
+			ps.point.x = clusters[i].x + CLUSTER_RADIUS;
+			ps.point.y = clusters[i].y + CLUSTER_RADIUS;
 			pp[6] = project3DPointIntoImage(lcinfo, ps);
 
-			ps.data.x = clusters[i].x + CLUSTER_RADIUS;
-			ps.data.y = clusters[i].y - CLUSTER_RADIUS;
+			ps.point.x = clusters[i].x + CLUSTER_RADIUS;
+			ps.point.y = clusters[i].y - CLUSTER_RADIUS;
 			pp[7] = project3DPointIntoImage(lcinfo, ps);
 
 //			cvLine(left, cvPoint(pp[0].x+0.5,pp[0].y+0.5), cvPoint(pp[1].x+0.5,pp[1].y+0.5), CV_RGB(0,255,0));
@@ -1117,9 +1117,9 @@ private:
 			cvLine(left, cvPoint(pp[3].x+0.5,pp[3].y+0.5), cvPoint(pp[6].x+0.5,pp[6].y+0.5), CV_RGB(0,255,0));
 
 
-			ps.data.x = clusters[i].x;
-			ps.data.y = clusters[i].y;
-			ps.data.z = clusters[i].z/2;
+			ps.point.x = clusters[i].x;
+			ps.point.y = clusters[i].y;
+			ps.point.z = clusters[i].z/2;
 
 			geometry_msgs::Point center_pp = project3DPointIntoImage(lcinfo, ps);
 
@@ -1183,9 +1183,9 @@ private:
 		geometry_msgs::PointStamped table_point;
 		table_point.header.frame_id = projected_objects.header.frame_id;
 		table_point.header.stamp = projected_objects.header.stamp;
-		table_point.data.x = projected_objects.points[0].x;
-		table_point.data.y = projected_objects.points[0].y;
-		table_point.data.z = projected_objects.points[0].z;
+		table_point.point.x = projected_objects.points[0].x;
+		table_point.point.y = projected_objects.points[0].y;
+		table_point.point.z = projected_objects.points[0].z;
 		addTableFrame(table_point,plane);
 
 		sleep(1);
@@ -1236,9 +1236,9 @@ private:
 		geometry_msgs::PointStamped table_point;
 		table_point.header.frame_id = projected_objects.header.frame_id;
 		table_point.header.stamp = projected_objects.header.stamp;
-		table_point.data.x = projected_objects.points[0].x;
-		table_point.data.y = projected_objects.points[0].y;
-		table_point.data.z = projected_objects.points[0].z;
+		table_point.point.x = projected_objects.points[0].x;
+		table_point.point.y = projected_objects.points[0].y;
+		table_point.point.z = projected_objects.points[0].z;
 		addTableFrame(table_point,plane);
 
 		// transform all the objects into the table frame
@@ -1274,18 +1274,18 @@ private:
 			ps.header.stamp = objects_table_frame.header.stamp;
 
 			// compute location
-			ps.data.x = centers[i].x;
-			ps.data.y = centers[i].y;
-			ps.data.z = centers[i].z/2;
+			ps.point.x = centers[i].x;
+			ps.point.y = centers[i].y;
+			ps.point.z = centers[i].z/2;
 			geometry_msgs::Point pp = project3DPointIntoImage(lcinfo, ps);
 
 			locations[i].x = int(pp.x);
 			locations[i].y = int(pp.y);
 
 			// compute scale
-			ps.data.z = 0;
+			ps.point.z = 0;
 			geometry_msgs::Point pp1 = project3DPointIntoImage(lcinfo, ps);
-			ps.data.z = centers[i].z;
+			ps.point.z = centers[i].z;
 			geometry_msgs::Point pp2 = project3DPointIntoImage(lcinfo, ps);
 
 			float dist = sqrt(dist2D(pp1,pp2));

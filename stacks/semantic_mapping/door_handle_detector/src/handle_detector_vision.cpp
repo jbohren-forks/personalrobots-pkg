@@ -489,9 +489,9 @@ private:
         marker.id = 0;
         marker.type = visualization_msgs::Marker::SPHERE;
         marker.action = visualization_msgs::Marker::ADD;
-        marker.pose.position.x = p.data.x;
-        marker.pose.position.y = p.data.y;
-        marker.pose.position.z = p.data.z;
+        marker.pose.position.x = p.point.x;
+        marker.pose.position.y = p.point.y;
+        marker.pose.position.z = p.point.z;
         marker.pose.orientation.w = 1.0;
         marker.scale.x = marker.scale.y = marker.scale.z = 0.1;
         marker.color.g = 1.0;
@@ -634,16 +634,16 @@ private:
     	geometry_msgs::PointStamped pin, pout;
     	pin.header.frame_id = cloud_->header.frame_id;
     	pin.header.stamp = cloud_->header.stamp;
-    	pin.data.x = xstats.mean;
-    	pin.data.y = ystats.mean;
-    	pin.data.z = zstats.mean;
+    	pin.point.x = xstats.mean;
+    	pin.point.y = ystats.mean;
+    	pin.point.z = zstats.mean;
         if (!tf_.canTransform("base_footprint", pin.header.frame_id, pin.header.stamp, ros::Duration(5.0))){
           ROS_ERROR("Cannot transform from base_footprint to %s", pin.header.frame_id.c_str());
           return false;
         }
         tf_.transformPoint("base_footprint", pin, pout);
-    	if(pout.data.z > max_height_ || pout.data.z < min_height_){
-    		printf("Height not within admissable range: %f\n", pout.data.z);
+    	if(pout.point.z > max_height_ || pout.point.z < min_height_){
+    		printf("Height not within admissable range: %f\n", pout.point.z);
     		return false;
     	}
 
@@ -789,9 +789,9 @@ private:
 
         handle_stereo.header.frame_id = cloud_->header.frame_id;
         handle_stereo.header.stamp = cloud_->header.stamp;
-        handle_stereo.data.x = xstats.mean;
-        handle_stereo.data.y = ystats.mean;
-        handle_stereo.data.z = zstats.mean;
+        handle_stereo.point.x = xstats.mean;
+        handle_stereo.point.y = ystats.mean;
+        handle_stereo.point.z = zstats.mean;
 
         if (!tf_.canTransform(handle.header.frame_id, handle_stereo.header.frame_id,
                                handle_stereo.header.stamp, ros::Duration(5.0))){
@@ -895,9 +895,9 @@ private:
             resp.doors.resize(1);
             resp.doors[0] = req.door;
             resp.doors[0].header.stamp = handle.header.stamp; // set time stamp
-            resp.doors[0].handle.x = handle.data.x;
-            resp.doors[0].handle.y = handle.data.y;
-            resp.doors[0].handle.z = handle.data.z;
+            resp.doors[0].handle.x = handle.point.x;
+            resp.doors[0].handle.y = handle.point.y;
+            resp.doors[0].handle.z = handle.point.z;
             resp.doors[0].weight = 1;
         }else{
             resp.doors[0] = req.door;

@@ -141,18 +141,18 @@ private:
 		geometry_msgs::PointStamped laser_origin;
 		laser_origin.header.frame_id = point_cloud.header.frame_id;
 		laser_origin.header.stamp = point_cloud.header.stamp;
-		laser_origin.data.x = 0;
-		laser_origin.data.y = 0;
-		laser_origin.data.z = 0;
+		laser_origin.point.x = 0;
+		laser_origin.point.y = 0;
+		laser_origin.point.z = 0;
 
 
 		geometry_msgs::PointStamped odom_laser_origin;
 		tf_.transformPoint("odom_combined", laser_origin, odom_laser_origin);
 
 		geometry_msgs::Point32 before_projection;
-		before_projection.x = odom_laser_origin.data.x;
-		before_projection.y = odom_laser_origin.data.y;
-		before_projection.z = odom_laser_origin.data.z;
+		before_projection.x = odom_laser_origin.point.x;
+		before_projection.y = odom_laser_origin.point.y;
+		before_projection.z = odom_laser_origin.point.z;
 		geometry_msgs::Point32 origin_projection;
 
 		cloud_geometry::projections::pointToPlane(before_projection, origin_projection, model);
@@ -160,9 +160,9 @@ private:
 		geometry_msgs::PointStamped origin;
 		origin.header.stamp = odom_laser_origin.header.stamp;
 		origin.header.frame_id = odom_laser_origin.header.frame_id;
-		origin.data.x = origin_projection.x;
-		origin.data.y = origin_projection.y;
-		origin.data.z = origin_projection.z;
+		origin.point.x = origin_projection.x;
+		origin.point.y = origin_projection.y;
+		origin.point.z = origin_projection.z;
 
 		addWhiteboardFrame(origin, model);
 
@@ -172,7 +172,7 @@ private:
 	void addWhiteboardFrame(geometry_msgs::PointStamped origin, const vector<double>& plane)
 	{
 
-		btVector3 position(origin.data.x,origin.data.y,origin.data.z);
+		btVector3 position(origin.point.x,origin.point.y,origin.point.z);
 
 		btQuaternion orientation;
 		btMatrix3x3 rotation;

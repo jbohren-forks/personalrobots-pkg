@@ -29,16 +29,16 @@ class PoseConversions(unittest.TestCase):
 
         ## Setup the point tests
         self.tfpoint_stamped = tf.PointStamped()
-        self.tfpoint_stamped.data.x = 0
-        self.tfpoint_stamped.data.y = 0
-        self.tfpoint_stamped.data.z = 0
+        self.tfpoint_stamped.point.x = 0
+        self.tfpoint_stamped.point.y = 0
+        self.tfpoint_stamped.point.z = 0
         self.tfpoint_stamped.frame_id = "frame1"
         self.tfpoint_stamped.stamp = roslib.rostime.Time(10,0)
 
         self.msgpoint_stamped = robot_msgs.msg.PointStamped()
-        self.msgpoint_stamped.data.x = 0
-        self.msgpoint_stamped.data.y = 0
-        self.msgpoint_stamped.data.z = 0
+        self.msgpoint_stamped.point.x = 0
+        self.msgpoint_stamped.point.y = 0
+        self.msgpoint_stamped.point.z = 0
         self.msgpoint_stamped.header.frame_id = "frame1"
         self.msgpoint_stamped.header.stamp = roslib.rostime.Time(10,0)
 
@@ -113,9 +113,9 @@ class PoseConversions(unittest.TestCase):
         self.assertEquals(tf.point_stamped_msg_to_bt(self.msgpoint_stamped), tf.point_stamped_msg_to_bt(self.msgpoint_stamped), "point bt test correctness after conversion")
 
     def test_to_msg_point(self):
-        self.assertEquals(tf.point_bt_to_msg(self.tfpoint_stamped.data), self.msgpoint_stamped.data, "point tf to msg incorrect")
+        self.assertEquals(tf.point_bt_to_msg(self.tfpoint_stamped.point), self.msgpoint_stamped.point, "point tf to msg incorrect")
     def test_to_tf_point(self):
-        self.assertEquals(tf.point_msg_to_bt(self.msgpoint_stamped.data), self.tfpoint_stamped.data, "point stamped msg to tf incorrect")
+        self.assertEquals(tf.point_msg_to_bt(self.msgpoint_stamped.point), self.tfpoint_stamped.point, "point stamped msg to tf incorrect")
 
     def test_stamped_to_msg_point(self):
         self.assertEquals(tf.point_stamped_bt_to_msg(self.tfpoint_stamped), self.msgpoint_stamped, "point stamped tf to msg incorrect")

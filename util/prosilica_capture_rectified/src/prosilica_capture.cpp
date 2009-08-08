@@ -66,7 +66,7 @@ static char rectifiedWindowName[] = "Rectified image";
 
 
 using namespace std;
-using namespace sensor_msgs;
+using namespace robot_msgs;
 
 class ProsilicaCapture {
 
@@ -301,15 +301,15 @@ public:
 
 		base_p1.header.stamp = ros::Time();
 		base_p1.header.frame_id = base_cloud_.header.frame_id;
-		base_p1.data.x = line_segment[0].x;
-		base_p1.data.y = line_segment[0].y;
-		base_p1.data.z = line_segment[0].z;
+		base_p1.point.x = line_segment[0].x;
+		base_p1.point.y = line_segment[0].y;
+		base_p1.point.z = line_segment[0].z;
 
 		base_p2.header.stamp = ros::Time();
 		base_p2.header.frame_id = base_cloud_.header.frame_id;;
-		base_p2.data.x = line_segment[1].x;
-		base_p2.data.y = line_segment[1].y;
-		base_p2.data.z = line_segment[1].z;
+		base_p2.point.x = line_segment[1].x;
+		base_p2.point.y = line_segment[1].y;
+		base_p2.point.z = line_segment[1].z;
 
 		// need the points in the prosilica frame
 		tf_->transformPoint("high_def_optical_frame", base_p1, prosilica_p1);
@@ -319,8 +319,8 @@ public:
 		float length = 0.2;
 		double distance = sqrt(squaredPointDistance(line_segment[0],line_segment[1]));
 		float alpha = (distance-length)/(2*distance);
-		Vector3f p1= Vector3f(prosilica_p1.data.x,prosilica_p1.data.y,prosilica_p1.data.z);
-		Vector3f p2 = Vector3f(prosilica_p2.data.x,prosilica_p2.data.y,prosilica_p2.data.z);
+		Vector3f p1= Vector3f(prosilica_p1.point.x,prosilica_p1.point.y,prosilica_p1.point.z);
+		Vector3f p2 = Vector3f(prosilica_p2.point.x,prosilica_p2.point.y,prosilica_p2.point.z);
 
 
 		Vector3f tmp;
@@ -337,19 +337,19 @@ public:
 		p2 /= p2.z();
 
 		// find another 2 points higher up on the wall
-		base_p1.data.z -= length;
-		base_p2.data.z -= length;
+		base_p1.point.z -= length;
+		base_p2.point.z -= length;
 
 		// need the points in the prosilica frame
 		tf_->transformPoint("high_def_optical_frame", base_p1, prosilica_p1);
 		tf_->transformPoint("high_def_optical_frame", base_p2, prosilica_p2);
 
 
-		Vector3f p3 = Vector3f(prosilica_p1.data.x,prosilica_p1.data.y,prosilica_p1.data.z);
+		Vector3f p3 = Vector3f(prosilica_p1.point.x,prosilica_p1.point.y,prosilica_p1.point.z);
 		p3 = K*p3;
 		p3 /= p3.z();
 
-		Vector3f p4 = Vector3f(prosilica_p2.data.x,prosilica_p2.data.y,prosilica_p2.data.z);
+		Vector3f p4 = Vector3f(prosilica_p2.point.x,prosilica_p2.point.y,prosilica_p2.point.z);
 		p4 = K*p4;
 		p4 /= p4.z();
 
