@@ -154,6 +154,7 @@ public:
   {
     // Compute image intensity.
     
+#if 0   // XXX-REVIEW
     if (img_msg_.encoding.find("bayer") != std::string::npos)
       img_msg_.encoding = "mono";
     
@@ -173,6 +174,11 @@ public:
     }
     
     double intensity = sum / 7e6;
+#else
+    img_bridge_.fromImage(img_msg_);
+    CvScalar mean = cvAvg(img_bridge_.toIpl());
+    double intensity = mean.val[0];
+#endif
 
     // Control logic
     
