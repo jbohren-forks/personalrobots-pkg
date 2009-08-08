@@ -8,7 +8,7 @@
   <depend package="rosconsole"/>
   <depend package="robot_actions" />
   <depend package="std_msgs" />
-  <depend package="robot_msgs" />
+  <depend package="geometry_msgs" />
   <depend package="gtest" />
 
   <export>
