@@ -64,8 +64,8 @@ inline void insert(int *max, int val)
 
 void callback(const sensor_msgs::ImageConstPtr& msg)
 {
-  int width = msg->uint8_data.layout.dim[1].size;
-  int height = msg->uint8_data.layout.dim[0].size;
+  int width = msg->width;
+  int height = msg->height;
 
   int max[2][NUMSKIP];
   int maxv[NUMSKIP];
@@ -99,9 +99,9 @@ void callback(const sensor_msgs::ImageConstPtr& msg)
       int i = y * width + x;
       int i1 = i + width - 1;
       int i2 = i1 + 2;
-      int p = msg->uint8_data.data[i] - base[i];
-      int p1 = msg->uint8_data.data[i1] - base[i1];
-      int p2 = msg->uint8_data.data[i2] - base[i2];
+      int p = msg->data[i] - base[i];
+      int p1 = msg->data[i1] - base[i1];
+      int p2 = msg->data[i2] - base[i2];
 
       int d1 = abs(p - p1);
       int d2 = abs(p - p2);
@@ -132,8 +132,8 @@ int bound(int x, int min, int max)
 
 void callback2(const sensor_msgs::ImageConstPtr& msg)
 {
-  int width = msg->uint8_data.layout.dim[1].size;
-  int height = msg->uint8_data.layout.dim[0].size;
+  int width = msg->width;
+  int height = msg->height;
   int sx = bound(startx, 0, width - 3);
   int sy = bound(starty, 0, height - 3);
   int ex = bound(endx, sx + 3, width);
@@ -173,9 +173,9 @@ void callback2(const sensor_msgs::ImageConstPtr& msg)
       int i = y * width + x;
       int i1 = i + width - 1;
       int i2 = i1 + 2;
-      int p = msg->uint8_data.data[i] - base[i];
-      int p1 = msg->uint8_data.data[i1] - base[i1];
-      int p2 = msg->uint8_data.data[i2] - base[i2];
+      int p = msg->data[i] - base[i];
+      int p1 = msg->data[i1] - base[i1];
+      int p2 = msg->data[i2] - base[i2];
 
       int d1 = abs(p - p1);
       int d2 = abs(p - p2);
