@@ -38,7 +38,7 @@
 #include <gtest/gtest.h>
 #include "ros/node.h"
 #include "geometry_msgs/PoseWithCovarianceStamped.h"
-#include "geometry_msgs/PoseWithRatesStamped.h"
+#include "sensor_msgs/Imu.h"
 
 
 using namespace ros;
@@ -57,7 +57,7 @@ class TestEKF : public testing::Test
 {
 public:
   geometry_msgs::PoseWithCovarianceStamped ekf_msg_, ekf_begin_;
-  geometry_msgs::PoseWithRatesStamped odom_msg_;
+  sensor_msgs::Imu odom_msg_;
   double ekf_counter_, odom_counter_;
   Time ekf_time_begin_, odom_time_begin_;
   Node* node_;
@@ -136,26 +136,17 @@ TEST_F(TestEKF, test)
   EXPECT_GT(Duration(ekf_msg_.header.stamp - ekf_time_begin_).toSec(), ekf_duration * 0.85);
 
   // check if ekf time is same as odom time
-  EXPECT_LT(Duration(ekf_time_begin_ - odom_time_begin_).toSec(), 1.0);
-  EXPECT_GT(Duration(ekf_time_begin_ - odom_time_begin_).toSec(), -1.0);
-  EXPECT_LT(Duration(ekf_msg_.header.stamp - odom_msg_.header.stamp).toSec(), 1.0);
-  EXPECT_GT(Duration(ekf_msg_.header.stamp - odom_msg_.header.stamp).toSec(), -1.0);
+  EXPECT_NEAR(ekf_time_begin_.toSec(),  odom_time_begin_.toSec(), 1.0);
+  EXPECT_NEAR(ekf_msg_.header.stamp.toSec(), odom_msg_.header.stamp.toSec(), 1.0);
 
   // check filter result
-  EXPECT_GT(ekf_begin_.pose.pose.position.x, 0.038043 - EPS_trans);
-  EXPECT_LT(ekf_begin_.pose.pose.position.x, 0.038043 + EPS_trans);
-  EXPECT_GT(ekf_begin_.pose.pose.position.y, -0.001618 - EPS_trans);
-  EXPECT_LT(ekf_begin_.pose.pose.position.y, -0.001618 + EPS_trans);
-  EXPECT_GT(ekf_begin_.pose.pose.position.z, 0.000000 - EPS_trans);
-  EXPECT_LT(ekf_begin_.pose.pose.position.z, 0.000000 + EPS_trans);
-  EXPECT_GT(ekf_begin_.pose.pose.orientation.x, 0.000000 - EPS_rot);
-  EXPECT_LT(ekf_begin_.pose.pose.orientation.x, 0.000000 + EPS_rot);
-  EXPECT_GT(ekf_begin_.pose.pose.orientation.y, 0.000000 - EPS_rot);
-  EXPECT_LT(ekf_begin_.pose.pose.orientation.y, 0.000000 + EPS_rot);
-  EXPECT_GT(ekf_begin_.pose.pose.orientation.z, 0.088400 - EPS_rot);
-  EXPECT_LT(ekf_begin_.pose.pose.orientation.z, 0.088400 + EPS_rot);
-  EXPECT_GT(ekf_begin_.pose.pose.orientation.w, 0.996085 - EPS_rot);
-  EXPECT_LT(ekf_begin_.pose.pose.orientation.w, 0.996085 + EPS_rot);
+  EXPECT_NEAR(ekf_begin_.pose.pose.position.x, 0.038043, EPS_trans);
+  EXPECT_NEAR(ekf_begin_.pose.pose.position.y, -0.001618, EPS_trans);
+  EXPECT_NEAR(ekf_begin_.pose.pose.position.z, 0.000000, EPS_trans);
+  EXPECT_NEAR(ekf_begin_.pose.pose.orientation.x, 0.000000,  EPS_rot);
+  EXPECT_NEAR(ekf_begin_.pose.pose.orientation.y, 0.000000,  EPS_rot);
+  EXPECT_NEAR(ekf_begin_.pose.pose.orientation.z, 0.088400,  EPS_rot);
+  EXPECT_NEAR(ekf_begin_.pose.pose.orientation.w, 0.996085,  EPS_rot);
 
   SUCCEED();
 }

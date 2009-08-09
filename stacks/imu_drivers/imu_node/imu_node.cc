@@ -41,7 +41,7 @@ or 3dmgx2 IMUs and makes use of the 3dmgx2_driver.
 
 @section information Information
 
-The IMU provides a single message PoseWithRatesStamped messaged at 100Hz
+The IMU provides a single message Imu messaged at 100Hz
 which is taken from the 3DMGX2 ACCEL_ANGRATE_ORIENTATION message.
 
 <hr>
@@ -62,7 +62,7 @@ Subscribes to (name/type):
 - None
 
 Publishes to (name / type):
-- @b "imu_data"/<a href="../../std_msgs/html/classstd__msgs_1_1PoseWithRatesStamped.html">std_msgs/PoseWithRatesStamped</a> : the imu data
+- @b "imu_data"/<a href="../../sensor_msgs/html/classstd__msgs_1_1Imu.html">sensor_msgs/Imu</a> : the imu data
 - @b "/diagnostics"/<a href="../../diagnostic_msgs/html/classrobot__msgs_1_1DiagnosticMessage.html">diagnostic_msgs/DiagnosticMessage</a> : diagnostic status information.
 
 <hr>
@@ -98,7 +98,7 @@ Reads the following parameters from the parameter server
 #include "diagnostic_updater/diagnostic_updater.h"
 #include "diagnostic_updater/update_functions.h"
 
-#include "geometry_msgs/PoseWithRatesStamped.h"
+#include "sensor_msgs/Imu.h"
 #include "std_srvs/Empty.h"
 #include "imu_node/GetBoolStatus.h"
 
@@ -113,7 +113,7 @@ class ImuNode
 {
 public:
   ms_3dmgx2_driver::IMU imu;
-  geometry_msgs::PoseWithRatesStamped reading;
+  sensor_msgs::Imu reading;
 
   string port;
 
@@ -154,7 +154,7 @@ public:
   desired_freq_(100), 
   freq_diag_(diagnostic_updater::FrequencyStatusParam(&desired_freq_, &desired_freq_, 0.05))
   {
-    imu_data_pub_ = node_handle_.advertise<geometry_msgs::PoseWithRatesStamped>("imu_data", 100);
+    imu_data_pub_ = node_handle_.advertise<sensor_msgs::Imu>("imu_data", 100);
 
     add_offset_serv_ = node_handle_.advertiseService("imu/add_offset", &ImuNode::addOffset, this);
     calibrate_serv_ = node_handle_.advertiseService("imu/calibrate", &ImuNode::calibrate, this);
@@ -284,20 +284,20 @@ public:
         ROS_WARN("Gathering data took %f ms. Nominal is 10ms.", 1000 * (endtime - starttime));
       prevtime = starttime;
 
-      reading.pose_with_rates.acceleration.linear.x = accel[0];
-      reading.pose_with_rates.acceleration.linear.y = accel[1];
-      reading.pose_with_rates.acceleration.linear.z = accel[2];
+      reading.linear_acceleration.x = accel[0];
+      reading.linear_acceleration.y = accel[1];
+      reading.linear_acceleration.z = accel[2];
  
-      reading.pose_with_rates.velocity.angular.x = angrate[0];
-      reading.pose_with_rates.velocity.angular.y = angrate[1];
-      reading.pose_with_rates.velocity.angular.z = angrate[2];
+      reading.angular_velocity.x = angrate[0];
+      reading.angular_velocity.y = angrate[1];
+      reading.angular_velocity.z = angrate[2];
       
-      btTransform pose(btMatrix3x3(orientation[0], orientation[1], orientation[2],
-                                   orientation[3], orientation[4], orientation[5],
-                                   orientation[6], orientation[7], orientation[8]), 
-                       btVector3(0,0,0));
-
-      tf::poseTFToMsg(pose, reading.pose_with_rates.pose);
+      btQuaternion quat;
+      btMatrix3x3(orientation[0], orientation[1], orientation[2],
+                  orientation[3], orientation[4], orientation[5],
+                  orientation[6], orientation[7], orientation[8]).getRotation(quat);
+      
+      tf::quaternionTFToMsg(quat, reading.orientation);
       
       
       reading.header.stamp = ros::Time::now().fromNSec(time);

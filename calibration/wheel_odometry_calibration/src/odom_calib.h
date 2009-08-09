@@ -44,7 +44,7 @@
 // messages
 #include "nav_msgs/Odometry.h"
 #include "geometry_msgs/Twist.h"
-#include "geometry_msgs/PoseWithRatesStamped.h"
+#include "sensor_msgs/Imu.h"
 #include "mechanism_msgs/MechanismState.h"
 
 namespace calibration
@@ -80,7 +80,7 @@ private:
 
   // messages to receive
   nav_msgs::Odometry       _odom;
-  geometry_msgs::PoseWithRatesStamped  _imu;
+  sensor_msgs::Imu  _imu;
   mechanism_msgs::MechanismState      _mech;
 
   // estimated robot pose message to send

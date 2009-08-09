@@ -47,7 +47,7 @@
 // messages
 #include "nav_msgs/Odometry.h"
 #include "geometry_msgs/Twist.h"
-#include "geometry_msgs/PoseWithRatesStamped.h"
+#include "sensor_msgs/Imu.h"
 #include "geometry_msgs/PoseStamped.h"
 #include "deprecated_msgs/VOPose.h"
 #include "geometry_msgs/PoseWithCovarianceStamped.h"
@@ -70,7 +70,7 @@ namespace estimation
 */
 
 typedef boost::shared_ptr<nav_msgs::Odometry const> OdomConstPtr;
-typedef boost::shared_ptr<geometry_msgs::PoseWithRatesStamped const> ImuConstPtr;
+typedef boost::shared_ptr<sensor_msgs::Imu const> ImuConstPtr;
 typedef boost::shared_ptr<geometry_msgs::Twist const> VelConstPtr;
 
 class OdomEstimationNode

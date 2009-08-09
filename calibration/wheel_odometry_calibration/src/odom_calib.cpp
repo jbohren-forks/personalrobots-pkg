@@ -90,9 +90,9 @@ namespace calibration
   void odom_calib::imu_callback()
   {
     _imu_mutex.lock();
-    double tmp, yaw;  Transform tf;
-    poseMsgToTF(_imu.pose_with_rates.pose, tf);
-    tf.getBasis().getEulerZYX(yaw, tmp, tmp);
+    double tmp, yaw;  btQuaternion tf;
+    quaternionMsgToTF(_imu.orientation, tf);
+    btMatrix3x3(tf).getEulerZYX(yaw, tmp, tmp);
 
     if (!_imu_active){
       _imu_begin = yaw;

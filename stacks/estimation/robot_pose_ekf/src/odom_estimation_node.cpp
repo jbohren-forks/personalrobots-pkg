@@ -209,7 +209,9 @@ namespace estimation
     boost::mutex::scoped_lock lock(imu_mutex_);
     imu_stamp_ = imu->header.stamp;
     imu_time_  = Time::now();
-    poseMsgToTF(imu->pose_with_rates.pose, imu_meas_);
+    btQuaternion orientation;
+    quaternionMsgToTF(imu->orientation, orientation);
+    imu_meas_ = btTransform(orientation, btVector3(0,0,0));
     my_filter_.addMeasurement(Stamped<Transform>(imu_meas_, imu_stamp_, "imu", "base_footprint"));
     
     // activate imu

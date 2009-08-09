@@ -6,7 +6,7 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <depend package="roscpp"/>
-  <depend package="std_msgs"/>
+  <depend package="sensor_msgs"/>
   <depend package="3dmgx2_driver"/>
   <depend package="self_test"/>
   <depend package="diagnostic_updater"/>
