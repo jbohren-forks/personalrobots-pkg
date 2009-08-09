@@ -67,29 +67,16 @@ public:
 
 
     image.header.stamp = msg->header.stamp ;
-    image.depth = "uint8" ;
-    image.encoding = "mono" ;
+    image.encoding = "mono8" ;
+    image.height = msg->num_scans;
+    image.width = msg->readings_per_scan;
+    image.step = msg->readings_per_scan;
 
-    image.uint8_data.layout.dim.resize(3) ;
-    image.uint8_data.layout.dim[0].label = "height" ;
-    image.uint8_data.layout.dim[0].size   = msg->num_scans ;
-    image.uint8_data.layout.dim[0].stride = N ;
-
-    image.uint8_data.layout.dim[1].label = "width" ;
-    image.uint8_data.layout.dim[1].size   = msg->readings_per_scan ;
-    image.uint8_data.layout.dim[1].stride = msg->readings_per_scan ;
-
-    image.uint8_data.layout.dim[2].label = "elem" ;
-    image.uint8_data.layout.dim[2].size   = 1 ;
-    image.uint8_data.layout.dim[2].stride = 1 ;
-
-    image.uint8_data.layout.data_offset = 0 ;
-
-    image.uint8_data.data.resize(msg->num_scans*msg->readings_per_scan) ;
+    image.data.resize(msg->num_scans*msg->readings_per_scan) ;
 
     for(unsigned int i=0; i<N; i++)
     {
-      image.uint8_data.data[i] = (unsigned int) ((fmin(3000, fmax(2000, msg->intensities[i])) - 2000) / 1000.0 * 255) ;
+      image.data[i] = (unsigned int) ((fmin(3000, fmax(2000, msg->intensities[i])) - 2000) / 1000.0 * 255) ;
     }
     intensity_pub_.publish(image) ;
   }
