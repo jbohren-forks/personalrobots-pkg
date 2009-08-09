@@ -293,7 +293,7 @@ public:
         s_pmasternode->publish("ObjectDetection", _objdetmsg);
 
         ROS_INFO("checkerboard: image: %ux%u (size=%u), num: %u, total: %.3fs",_caminfomsg.width,_caminfomsg.height,
-                 (unsigned int)_imagemsg.uint8_data.data.size(), (unsigned int)_objdetmsg.get_objects_size(),
+                 (unsigned int)_imagemsg.data.size(), (unsigned int)_objdetmsg.get_objects_size(),
                 (float)(ros::Time::now()-lasttime).toSec());
         lasttime = ros::Time::now();
         
