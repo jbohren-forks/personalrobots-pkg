@@ -8,7 +8,7 @@
   <node pkg="gazebo" launch-prefix="gdb - -args" type="gazebo" args="$(find gazebo_worlds)/worlds/empty.world" respawn="false" >
   -->
   <node pkg="gazebo" type="gazebo" args="$(find gazebo_worlds)/worlds/empty.world" respawn="false" >
-    <env name="LD_LIBRARY_PATH" value="$(find gazebo_plugin)/lib:$(find gazebo)/gazebo/lib:$(find Cg)/Cg/lib:$(optenv LD_LIBRARY_PATH)" />
+    <env name="LD_LIBRARY_PATH" value="$(find gazebo_plugin)/lib:$(find gazebo)/gazebo/lib:$(optenv LD_LIBRARY_PATH)" />
     <env name="GAZEBO_RESOURCE_PATH" value="$(find pr2_ogre):$(find ikea_ogre):$(find gazebo_worlds):$(find gazebo)/gazebo/share/gazebo" />
     <env name="OGRE_RESOURCE_PATH" value="$(find ogre)/ogre/lib/OGRE" />
   </node>
