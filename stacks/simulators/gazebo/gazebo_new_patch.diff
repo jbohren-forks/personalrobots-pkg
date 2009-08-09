@@ -1,33 +1,33 @@
-Index: server/physics/Geom.cc
+Index: libgazebo/Client.cc
 ===================================================================
---- server/physics/Geom.cc	(revision 8178)
-+++ server/physics/Geom.cc	(working copy)
-@@ -257,7 +257,7 @@
-       this->transId = dCreateGeomTransform( this->spaceId );
-       dGeomTransformSetGeom( this->transId, this->geomId );
-       dGeomTransformSetInfo( this->transId, 1 );
--      assert(dGeomGetSpace(this->geomId) == 0);
-+      //assert(dGeomGetSpace(this->geomId) == 0);
+--- libgazebo/Client.cc	(revision 8187)
++++ libgazebo/Client.cc	(working copy)
+@@ -172,7 +172,7 @@
+     catch (std::string e)
+     {
+       std::cerr << "Error Opening SimulationIface [" << e << "]\n";
+-      //exit(0); // don't exit, retry
++      exit(0);
      }
    }
-   else if ( dGeomGetSpace(this->geomId) == 0 )
+ 
 Index: server/rendering/Image.cc
 ===================================================================
---- server/rendering/Image.cc	(revision 8178)
+--- server/rendering/Image.cc	(revision 8187)
 +++ server/rendering/Image.cc	(working copy)
 @@ -174,7 +174,8 @@
        return clr;
      }
  
 -    if (FREEIMAGE_COLORORDER == FREEIMAGE_COLORORDER_RGB)
-+    //if (FREEIMAGE_COLORORDER == FREEIMAGE_COLORORDER_RGB)
++    //if (FREEIMAGE_COLORORDER == FREEIMAGE_COLORORDER_RGB) /// @todo: freeimage 3.9.3 does not have these defined
 +    if (1)
      {
        clr.Set(  firgb.rgbRed, firgb.rgbGreen, firgb.rgbBlue);
      }
 Index: CMakeLists.txt
 ===================================================================
---- CMakeLists.txt	(revision 8178)
+--- CMakeLists.txt	(revision 8187)
 +++ CMakeLists.txt	(working copy)
 @@ -34,7 +34,7 @@
  SET (OGRE_VERSION 1.6.1 CACHE INTERNAL "Ogre version requirement" FORCE)
