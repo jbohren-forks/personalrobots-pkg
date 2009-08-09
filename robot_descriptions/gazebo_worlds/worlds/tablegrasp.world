@@ -39,7 +39,7 @@
 
   <rendering:gui>
     <type>fltk</type>
-    <imageSize>1024 800</imageSize>
+    <size>480 320</size>
     <pos>0 0</pos>
   </rendering:gui>
 

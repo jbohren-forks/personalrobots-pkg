@@ -41,7 +41,7 @@
 
   <rendering:gui>
     <type>fltk</type>
-    <size>1024 800</size>
+    <imageSize>640 480</imageSize>
     <pos>0 0</pos>
     <frames>
       <row height="100%">
