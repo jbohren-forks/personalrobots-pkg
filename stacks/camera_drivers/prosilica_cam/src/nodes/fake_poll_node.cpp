@@ -86,7 +86,7 @@ public:
       return false;
 
     // Copy into result
-    fillImage(res.image, sensor_msgs::Image::TYPE_8UC3,
+    fillImage(res.image, sensor_msgs::image_encodings::TYPE_8UC3,
               img.Height(), img.Width(), 3 * img.Width(),
               img.ImageData());
     

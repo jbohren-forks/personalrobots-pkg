@@ -82,7 +82,7 @@ PlugTracker::~PlugTracker()
 
 bool PlugTracker::detectObject(tf::Transform &pose)
 {
-  if (!img_bridge_.fromImage(img_, "mono")) {
+  if (!img_bridge_.fromImage(img_, "mono8")) {
     ROS_ERROR("Failed to convert image");
     return false; // throw instead?
   }

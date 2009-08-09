@@ -543,7 +543,7 @@ private:
 
   static void setBgrLayout(sensor_msgs::Image &image, int width, int height)
   {
-    image.type = sensor_msgs::Image::TYPE_8UC3;
+    image.encoding = sensor_msgs::image_encodings::TYPE_8UC3;
     image.height = height;
     image.width = width;
     image.step = width * 3;
@@ -557,7 +557,7 @@ private:
     {
 
       case ePvFmtMono8:
-        fillImage(image, sensor_msgs::Image::TYPE_8UC1, frame->Height, frame->Width, frame->Width, frame->ImageBuffer);
+        fillImage(image, sensor_msgs::image_encodings::TYPE_8UC1, frame->Height, frame->Width, frame->Width, frame->ImageBuffer);
         break;
 
       case ePvFmtBayer8:
@@ -569,20 +569,20 @@ private:
         break;
 
       case ePvFmtBgr24:
-        fillImage(image, sensor_msgs::Image::TYPE_8UC3, frame->Height, frame->Width, 3 * frame->Width, frame->ImageBuffer);
+        fillImage(image, sensor_msgs::image_encodings::TYPE_8UC3, frame->Height, frame->Width, 3 * frame->Width, frame->ImageBuffer);
         break;
 
       case ePvFmtRgba32:
-        fillImage(image, sensor_msgs::Image::TYPE_8UC4, frame->Height, frame->Width, 4 * frame->Width, frame->ImageBuffer);
+        fillImage(image, sensor_msgs::image_encodings::TYPE_8UC4, frame->Height, frame->Width, 4 * frame->Width, frame->ImageBuffer);
         break;
 
       case ePvFmtBgra32:
-        fillImage(image, sensor_msgs::Image::TYPE_8UC4, frame->Height, frame->Width, 4 * frame->Width, frame->ImageBuffer);
+        fillImage(image, sensor_msgs::image_encodings::TYPE_8UC4, frame->Height, frame->Width, 4 * frame->Width, frame->ImageBuffer);
         break;
      
 #if 0   // XXX JCB - these cannot be represented in a CvMat
       case ePvFmtRgb24:
-        // fillImage(image, sensor_msgs::Image::TYPE_8UC3, frame->Height, frame->Width, 3 * frame->Width, frame->ImageBuffer);
+        // fillImage(image, sensor_msgs::image_encodings::TYPE_8UC3, frame->Height, frame->Width, 3 * frame->Width, frame->ImageBuffer);
         break;
       case ePvFmtYuv411:
         // fillImage(image, "image", frame->Height, frame->Width, 6, "yuv411", "uint8", frame->ImageBuffer);
@@ -603,15 +603,15 @@ private:
                     sensor_msgs::CameraInfo &cam_info)
   {
     // Currently assume BGR format so bridge.toIpl() image points to msg data buffer
-    if (img.type != sensor_msgs::Image::TYPE_8UC1) {
-      ROS_WARN("Couldn't rectify frame, unsupported encoding %d", img.type);
+    if (img.encoding != sensor_msgs::image_encodings::TYPE_8UC1) {
+      ROS_WARN("Couldn't rectify frame, unsupported encoding %s", img.encoding.c_str());
       return false;
     }
     
     // Prepare image buffer
     setBgrLayout(rect_img, frame->Width, frame->Height);
-    if (!img_bridge_.fromImage(img, "bgr") ||
-        !rect_img_bridge_.fromImage(rect_img, "bgr")) {
+    if (!img_bridge_.fromImage(img, "bgr8") ||
+        !rect_img_bridge_.fromImage(rect_img, "bgr8")) {
       ROS_WARN("Couldn't rectify frame, failed to convert");
       return false;
     }

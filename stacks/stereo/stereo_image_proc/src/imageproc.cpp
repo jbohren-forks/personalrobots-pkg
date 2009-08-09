@@ -109,7 +109,7 @@ public:
     
     if (img_data_.imType != COLOR_CODING_NONE)
     {
-      fillImage(img_, sensor_msgs::Image::TYPE_8UC1,
+      fillImage(img_, sensor_msgs::image_encodings::TYPE_8UC1,
                 img_data_.imHeight, img_data_.imWidth, img_data_.imWidth,
                 img_data_.im );
       node_.publish(cam_name_ + "image", img_);
@@ -117,7 +117,7 @@ public:
 
     if (img_data_.imColorType == COLOR_CODING_RGB8)
     {
-      fillImage(img_,sensor_msgs::Image::TYPE_8UC3,
+      fillImage(img_,sensor_msgs::image_encodings::TYPE_8UC3,
                 img_data_.imHeight, img_data_.imWidth, 3 * img_data_.imWidth,
                 img_data_.imColor );
       node_.publish(cam_name_ + "image_color", img_);
@@ -125,7 +125,7 @@ public:
 
     if (img_data_.imRectType != COLOR_CODING_NONE)
     {
-      fillImage(img_,  sensor_msgs::Image::TYPE_8UC1,
+      fillImage(img_,  sensor_msgs::image_encodings::TYPE_8UC1,
                 img_data_.imHeight, img_data_.imWidth, img_data_.imWidth,
                 img_data_.imRect );
       node_.publish(cam_name_ + "image_rect", img_);
@@ -133,7 +133,7 @@ public:
 
     if (img_data_.imRectColorType == COLOR_CODING_RGB8)
     {
-      fillImage(img_,  sensor_msgs::Image::TYPE_8UC3,
+      fillImage(img_,  sensor_msgs::image_encodings::TYPE_8UC3,
                 img_data_.imHeight, img_data_.imWidth, 3 * img_data_.imWidth,
                 img_data_.imRectColor );
       node_.publish(cam_name_ + "image_rect_color", img_);
@@ -141,7 +141,7 @@ public:
 
     if (img_data_.imRectColorType == COLOR_CODING_RGBA8)
     {
-      fillImage(img_, sensor_msgs::Image::TYPE_8UC4,
+      fillImage(img_, sensor_msgs::image_encodings::TYPE_8UC4,
                 img_data_.imHeight, img_data_.imWidth, 4 * img_data_.imWidth,
                 img_data_.imRectColor);
       node_.publish(cam_name_ + "image_rect_color", img_);

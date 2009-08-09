@@ -23,7 +23,7 @@ IplImage* callPollProsilica(int timeout)
     return NULL;
   }
   
-  if (!bridge.fromImage(res.image, "bgr")) {
+  if (!bridge.fromImage(res.image, "bgr8")) {
     ROS_ERROR("CvBridge::fromImage failed");
     return NULL;
   }

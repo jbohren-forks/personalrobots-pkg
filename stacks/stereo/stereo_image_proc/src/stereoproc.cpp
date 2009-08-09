@@ -214,7 +214,7 @@ public:
 
       publish("disparity_info", disparity_info_);
 
-      fillImage(img_, sensor_msgs::Image::TYPE_16SC1, stdata_->imHeight, stdata_->imWidth, 2 * stdata_->imWidth, stdata_->imDisp);
+      fillImage(img_, sensor_msgs::image_encodings::TYPE_16SC1, stdata_->imHeight, stdata_->imWidth, 2 * stdata_->imWidth, stdata_->imDisp);
 
       img_.header.stamp = raw_stereo_.header.stamp;
       img_.header.frame_id = raw_stereo_.header.frame_id;
@@ -277,7 +277,7 @@ public:
   {
     if (img_data->imRawType != COLOR_CODING_NONE)
     {
-      fillImage(img_, sensor_msgs::Image::TYPE_8UC1, img_data->imHeight, img_data->imWidth, img_data->imWidth, img_data->imRaw);
+      fillImage(img_, sensor_msgs::image_encodings::TYPE_8UC1, img_data->imHeight, img_data->imWidth, img_data->imWidth, img_data->imRaw);
 
       img_.header.stamp = raw_stereo_.header.stamp;
       img_.header.frame_id = raw_stereo_.header.frame_id;
@@ -287,7 +287,7 @@ public:
 
     if (img_data->imType != COLOR_CODING_NONE)
     {
-      fillImage(img_,  sensor_msgs::Image::TYPE_8UC1,
+      fillImage(img_,  sensor_msgs::image_encodings::TYPE_8UC1,
                 img_data->imHeight, img_data->imWidth, 2 * img_data->imWidth, 
                 img_data->im);
       img_.header.stamp = raw_stereo_.header.stamp;
@@ -297,7 +297,7 @@ public:
 
     if (img_data->imColorType != COLOR_CODING_NONE && img_data->imColorType == COLOR_CODING_RGB8)
     {
-      fillImage(img_,  sensor_msgs::Image::TYPE_8UC3,
+      fillImage(img_,  sensor_msgs::image_encodings::TYPE_8UC3,
                 img_data->imHeight, img_data->imWidth, 3 * img_data->imWidth,
                 img_data->imColor );
 
@@ -308,7 +308,7 @@ public:
 
     if (img_data->imRectType != COLOR_CODING_NONE)
     {
-      fillImage(img_,  sensor_msgs::Image::TYPE_8UC1,
+      fillImage(img_,  sensor_msgs::image_encodings::TYPE_8UC1,
                 img_data->imHeight, img_data->imWidth, img_data->imWidth,
                 img_data->imRect );
       img_.header.stamp = raw_stereo_.header.stamp;
@@ -318,7 +318,7 @@ public:
 
     if (img_data->imRectColorType != COLOR_CODING_NONE && img_data->imRectColorType == COLOR_CODING_RGB8)
     {
-      fillImage(img_,  sensor_msgs::Image::TYPE_8UC3,
+      fillImage(img_,  sensor_msgs::image_encodings::TYPE_8UC3,
                 img_data->imHeight, img_data->imWidth, 3 * img_data->imWidth,
                 img_data->imRectColor);
       img_.header.stamp = raw_stereo_.header.stamp;
@@ -328,7 +328,7 @@ public:
 
     if (img_data->imRectColorType != COLOR_CODING_NONE && img_data->imRectColorType == COLOR_CODING_RGBA8)
     {
-      fillImage(img_,  sensor_msgs::Image::TYPE_8UC4,
+      fillImage(img_,  sensor_msgs::image_encodings::TYPE_8UC4,
                 img_data->imHeight, img_data->imWidth, 4 * img_data->imWidth,
                 img_data->imRectColor );
       img_.header.stamp = raw_stereo_.header.stamp;

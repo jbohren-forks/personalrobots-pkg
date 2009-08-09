@@ -25,7 +25,7 @@ OutletTracker::~OutletTracker()
 
 bool OutletTracker::detectObject(tf::Transform &pose)
 {
-  if (!img_bridge_.fromImage(img_, "bgr")) {
+  if (!img_bridge_.fromImage(img_, "bgr8")) {
     ROS_ERROR("Failed to convert image");
     return false;
   }

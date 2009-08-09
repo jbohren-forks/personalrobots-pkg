@@ -282,7 +282,7 @@ private:
 		boost::unique_lock<boost::mutex> lock(data_lock_);
 
 		limage_ = image;
-		if(lbridge_.fromImage(*limage_, "bgr")) {
+		if(lbridge_.fromImage(*limage_, "bgr8")) {
 			left_ = lbridge_.toIpl();
 		}
 	}

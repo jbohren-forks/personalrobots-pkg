@@ -136,7 +136,7 @@ public:
 private:
     void image_cb()
     {
-        if( !_cvbridge.fromImage(_imagemsg, "mono") ) {
+        if( !_cvbridge.fromImage(_imagemsg, "mono8") ) {
             ROS_ERROR("failed to get image");
             return;
         }
