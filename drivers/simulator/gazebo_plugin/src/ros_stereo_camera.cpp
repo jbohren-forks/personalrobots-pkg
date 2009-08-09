@@ -214,18 +214,18 @@ void RosStereoCamera::InitChild()
   this->rightCamera->SetActive(true);
 
   if( leftCamera->GetImageFormat() == "L8" ) 
-      left_type = sensor_msgs::Image::TYPE_MONO8;
+      left_type = "mono8";
   else if ( leftCamera->GetImageFormat() == "R8G8B8" ) 
-      left_type = sensor_msgs::Image::TYPE_BGR8; // FIXME, doesn't exist in Image.msg yet
+      left_type = "rgb8";
   else if ( leftCamera->GetImageFormat() == "B8G8R8" ) 
-      left_type = sensor_msgs::Image::TYPE_BGR8; 
+      left_type = "bgr8";
    
   if( rightCamera->GetImageFormat() == "L8" ) 
-      right_type = sensor_msgs::Image::TYPE_MONO8; 
+      right_type = "mono8";
   else if ( rightCamera->GetImageFormat() == "R8G8B8" ) 
-      right_type = sensor_msgs::Image::TYPE_BGR8;  // FIXME, doesn't exist in Image.msg yet
+      right_type = "rgb8";
   else if ( rightCamera->GetImageFormat() == "B8G8R8" ) 
-      right_type = sensor_msgs::Image::TYPE_BGR8; 
+      right_type = "bgr8";
 
   ROS_DEBUG("stereo: set sensors active\n");
 

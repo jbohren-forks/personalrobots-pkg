@@ -105,15 +105,15 @@ void RosCamera::InitChild()
   this->height           = this->myParent->GetImageHeight();
   this->depth            = this->myParent->GetImageDepth();
   if (this->myParent->GetImageFormat() == "L8")
-    this->type           = sensor_msgs::Image::TYPE_MONO8;
+    this->type           = "mono8";
   else if (this->myParent->GetImageFormat() == "R8G8B8")
-    this->type           = sensor_msgs::Image::TYPE_BGR8;
+    this->type           = "rgb8";
   else if (this->myParent->GetImageFormat() == "B8G8R8")
-    this->type           = sensor_msgs::Image::TYPE_BGR8;
+    this->type           = "bgr8";
   else
   {
     ROS_ERROR("Unsupported Gazebo ImageFormat\n");
-    this->type           = sensor_msgs::Image::TYPE_BGR8;
+    this->type           = "bgr8";
   }
 
 }

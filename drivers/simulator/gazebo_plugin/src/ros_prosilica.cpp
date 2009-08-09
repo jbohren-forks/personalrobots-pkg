@@ -363,15 +363,15 @@ void RosProsilica::InitChild()
   this->depth            = this->myParent->GetImageDepth();
   //ROS_INFO("image format in urdf is %s\n",this->myParent->GetImageFormat().c_str());
   if (this->myParent->GetImageFormat() == "L8")
-    this->type           = sensor_msgs::Image::TYPE_MONO8;
+    this->type           = "mono8";
   else if (this->myParent->GetImageFormat() == "R8G8B8")
-    this->type           = sensor_msgs::Image::TYPE_BGR8;
+    this->type           = "rgb8";
   else if (this->myParent->GetImageFormat() == "B8G8R8")
-    this->type           = sensor_msgs::Image::TYPE_BGR8;
+    this->type           = "bgr8";
   else
   {
     ROS_ERROR("Unsupported Gazebo ImageFormat\n");
-    this->type           = sensor_msgs::Image::TYPE_BGR8;
+    this->type           = "bgr8";
   }
 
 

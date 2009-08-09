@@ -193,7 +193,7 @@ class RosProsilica : public Controller
 
   /// \brief size of image buffer
   private: int height, width, depth;
-  private: int type;
+  private: std::string type;
 };
 
 /** \} */
