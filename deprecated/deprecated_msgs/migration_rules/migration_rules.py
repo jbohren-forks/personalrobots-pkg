@@ -86,7 +86,7 @@ float64 w
 		("Header","Header"),
                 ("Pose", "geometry_msgs/Pose")]
 
-	valid = False
+	valid = True
 
 	def update(self, old_msg, new_msg):
 		self.migrate(old_msg.header, new_msg.header)

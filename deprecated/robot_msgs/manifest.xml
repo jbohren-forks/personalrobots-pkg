@@ -1,0 +1,13 @@
+<package>
+  <description brief="robot_msgs">
+
+    This is a placeholder package that needs to exist until ken fixes a bug in python generate dynamic.
+
+  </description>
+  <author>Jeremy Leibs</author>
+  <license>BSD</license>
+  <review status="deprecated" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/robot_msgs</url>
+</package>
+
+
