@@ -58,7 +58,7 @@ cal_r_upper_arm_roll:
   joint: r_upper_arm_roll_joint
   actuator: r_upper_arm_roll_motor
   transmission: r_upper_arm_roll_trans
-  velocity: 1.5
+  velocity: 1.0
   pid:
     p: 6
     i: 0.2
@@ -128,10 +128,11 @@ cal_r_gripper:
   joint: r_gripper_joint
   velocity: -0.01
   pid:
+    p: 1500
     d: 0
     i: 25.0
     i_clamp: 100.0
-    p: 1500
+
 
 cal_l_forearm_roll:
   type: JointUDCalibrationController
@@ -163,10 +164,11 @@ cal_l_gripper:
   joint: l_gripper_joint
   velocity: -0.01
   pid:
+    p: 1500
     d: 0
     i: 25.0
     i_clamp: 100.0
-    p: 1500
+
 
 
 cal_laser_tilt:
