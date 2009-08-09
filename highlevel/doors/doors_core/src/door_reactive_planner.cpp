@@ -346,75 +346,75 @@ diagnostic_msgs::DiagnosticStatus DoorReactivePlanner::getDiagnostics()
   status.name = "Door Reactive Planner";
   status.level = 0;
 #warning These need a MACRO/function to do num to string
-  v.label = "Goal x";
+  v.key = "Goal x";
   v.value = goal_.x;
   values.push_back(v);
 
-  v.label = "Goal y";
+  v.key = "Goal y";
   v.value = goal_.y;
   values.push_back(v);
 
-  v.label = "Goal theta";
+  v.key = "Goal theta";
   v.value = goal_.th;
   values.push_back(v);
 
-  v.label = "Carrot x";
+  v.key = "Carrot x";
   v.value = carrot_.x;
   values.push_back(v);
 
-  v.label = "Carrot y";
+  v.key = "Carrot y";
   v.value = carrot_.y;
   values.push_back(v);
 
-  v.label = "Carrot theta";
+  v.key = "Carrot theta";
   v.value = carrot_.th;
   values.push_back(v);
 
-  v.label = "Centerline angle";
+  v.key = "Centerline angle";
   v.value = centerline_angle_;
   values.push_back(v);
 
-  v.label = "Travel angle";
+  v.key = "Travel angle";
   v.value = travel_angle_;
   values.push_back(v);
 
-  v.label = "Sideslip.x";
+  v.key = "Sideslip.x";
   v.value = vector_along_door_.x;
   values.push_back(v);
 
-  v.label = "Sideslip.y";
+  v.key = "Sideslip.y";
   v.value = vector_along_door_.y;
   values.push_back(v);
 
-  v.label = "Plan delta angle";
+  v.key = "Plan delta angle";
   v.value = delta_angle_;
   values.push_back(v);
 
-  v.label = "Plan length";
+  v.key = "Plan length";
   v.value = plan_length_;
   values.push_back(v);
 
-  v.label = "Centerline distance";
+  v.key = "Centerline distance";
   v.value = centerline_distance_;
   values.push_back(v);
 
-  v.label = "Current x";
+  v.key = "Current x";
   v.value = current_position_.x;
   values.push_back(v);
 
-  v.label = "Current y";
+  v.key = "Current y";
   v.value = current_position_.y;
   values.push_back(v);
 
-  v.label = "Current th";
+  v.key = "Current th";
   v.value = current_position_.th;
   values.push_back(v);
 
-  v.label = "Cell distance from obstacles";
+  v.key = "Cell distance from obstacles";
   v.value = cell_distance_from_obstacles_;
   values.push_back(v);
 
-  v.label = "Current position in collision";
+  v.key = "Current position in collision";
   v.value = current_position_in_collision_;
   values.push_back(v);
 

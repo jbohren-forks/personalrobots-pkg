@@ -948,93 +948,93 @@ void JointTrajectoryController::publishDiagnostics()
 
     for(unsigned int i=0; i < joint_pv_controllers_.size(); i++)
     {
-      v.label = joint_pv_controllers_[i]->getJointName() + "/Position/Actual";
+      v.key = joint_pv_controllers_[i]->getJointName() + "/Position/Actual";
       v.value = joint_pv_controllers_[i]->joint_state_->position_;
       values.push_back(v);
-      v.label = joint_pv_controllers_[i]->getJointName() + "/Position/Command";
+      v.key = joint_pv_controllers_[i]->getJointName() + "/Position/Command";
       joint_pv_controllers_[i]->getCommand(cmd);
       v.value = cmd.positions[0];
       values.push_back(v);
-      v.label = joint_pv_controllers_[i]->getJointName() + "/Position/Error (Command-Actual)";
+      v.key = joint_pv_controllers_[i]->getJointName() + "/Position/Error (Command-Actual)";
       v.value = cmd.positions[0] - joint_pv_controllers_[i]->joint_state_->position_;
       values.push_back(v);
     }
 
-    v.label = "Trajectory id";
+    v.key = "Trajectory id";
     v.value = current_trajectory_id_;
     values.push_back(v);
 
-    v.label = "Trajectory Status:: ";
+    v.key = "Trajectory Status:: ";
 
     if(current_trajectory_id_ < 0)
     {
-      v.label += "AT REST";
+      v.key += "AT REST";
       v.value = -1;
     }
     else
     {
-      v.label += JointTrajectoryStatusString[joint_trajectory_status_[current_trajectory_id_]];
+      v.key += JointTrajectoryStatusString[joint_trajectory_status_[current_trajectory_id_]];
       v.value = joint_trajectory_status_[current_trajectory_id_];
     }
     values.push_back(v);
 
-    v.label = "Trajectory Current Time";
+    v.key = "Trajectory Current Time";
     v.value = current_time_-trajectory_start_time_;
     values.push_back(v);
 
-    v.label = "Trajectory Expected End Time (computed)";
+    v.key = "Trajectory Expected End Time (computed)";
     v.value = trajectory_end_time_-trajectory_start_time_;
     values.push_back(v);
 
-    v.label = "Current trajectory queue index";
+    v.key = "Current trajectory queue index";
     v.value = current_trajectory_index_;
     values.push_back(v);
 
-    v.label = "Number queued trajectories";
+    v.key = "Number queued trajectories";
     v.value = num_trajectory_available_;
     values.push_back(v);
 
-    v.label = "Next queue free index";
+    v.key = "Next queue free index";
     v.value = next_free_index_;
     values.push_back(v);
 
-    v.label = "Number joints";
+    v.key = "Number joints";
     v.value = num_joints_;
     values.push_back(v);
 
-    v.label = "Velocity scaling factor";
+    v.key = "Velocity scaling factor";
     v.value = velocity_scaling_factor_;
     values.push_back(v);
 
-    v.label = "Trajectory wait timeout";
+    v.key = "Trajectory wait timeout";
     v.value = trajectory_wait_timeout_;
     values.push_back(v);
 
-    v.label = "Max allowed update time";
+    v.key = "Max allowed update time";
     v.value = max_allowed_update_time_;
     values.push_back(v);
 
-    v.label = "Diagnostics publish time";
+    v.key = "Diagnostics publish time";
     v.value = diagnostics_publish_delta_time_;
     values.push_back(v);
 
-    v.label = "Max trajectory queue size";
+    v.key = "Max trajectory queue size";
     v.value = max_trajectory_queue_size_;
     values.push_back(v);
 
-    v.label = "Listen topic name";
+    v.key = "Listen topic name";
     v.value = listen_topic_name_;
     values.push_back(v);
 
-    v.label = "Trajectory set service";
+    v.key = "Trajectory set service";
     v.value = name_ + "/TrajectoryStart";
     values.push_back(v);
 
-    v.label = "Trajectory query service";
+    v.key = "Trajectory query service";
     v.value = name_ + "/TrajectoryQuery";
     values.push_back(v);
 
-    v.label = "Trajectory cancel service";
+    v.key = "Trajectory cancel service";
     v.value = name_ + "/TrajectoryCancel";
     values.push_back(v);
 

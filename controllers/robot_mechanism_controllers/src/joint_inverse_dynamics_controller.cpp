@@ -124,10 +124,10 @@ bool JointInverseDynamicsController::init(mechanism::RobotState *robot_state, co
   diagnostics_.status[0].name  = "Inverse Dynamics Controller";
   diagnostics_.status[0].values.resize(2);
   diagnostics_.status[0].values[0].value = "3";
-  diagnostics_.status[0].values[0].label = "TestValueLabel";
+  diagnostics_.status[0].values[0].key = "TestValueLabel";
   
   diagnostics_.status[0].values[1].value = "TestValue";
-  diagnostics_.status[0].values[1].label = "TestLabel";
+  diagnostics_.status[0].values[1].key = "TestLabel";
   
   diagnostics_time_ = ros::Time::now();
   diagnostics_interval_ = ros::Duration().fromSec(1.0);

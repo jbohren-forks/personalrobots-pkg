@@ -50,7 +50,7 @@ def diagnostic_callback(message):
         ## @TODO process byte level
         print "Name: %s \nMessage: %s"%(s.name, s.message)
         for v in s.strings + s.values:
-            print "   %s: %s" % (v.label, v.value)
+            print "   %s: %s" % (v.key, v.value)
     sys.stdout.flush()
 
 def battery_callback(state):

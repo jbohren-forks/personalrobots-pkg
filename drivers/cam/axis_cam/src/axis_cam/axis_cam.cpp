@@ -170,9 +170,9 @@ public:
         status.level = 0;
         status.message = "Retrieved image successfully.";
         status.set_values_size(2);
-        status.values[0].label = "Width";
+        status.values[0].key = "Width";
         status.values[0].value       = images.images[0].width;
-        status.values[1].label = "Height";
+        status.values[1].key = "Height";
         status.values[1].value       = images.images[0].height;
       }
     }

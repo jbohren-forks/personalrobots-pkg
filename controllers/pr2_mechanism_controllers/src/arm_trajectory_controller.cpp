@@ -702,18 +702,18 @@ void ArmTrajectoryControllerNode::publishDiagnostics()
 
     for(unsigned int i=0; i < c_->joint_pd_controllers_.size(); i++)
     {
-      v.label = c_->joint_pd_controllers_[i]->getJointName() + "/Position/Actual";
+      v.key = c_->joint_pd_controllers_[i]->getJointName() + "/Position/Actual";
       v.value = c_->joint_pd_controllers_[i]->joint_state_->position_;
       values.push_back(v);
 
 //      ROS_INFO("Diagnostics %d: 1",i);
 
-      v.label = c_->joint_pd_controllers_[i]->getJointName() + "/Position/Command";
+      v.key = c_->joint_pd_controllers_[i]->getJointName() + "/Position/Command";
       c_->joint_pd_controllers_[i]->getCommand(cmd);
       v.value = cmd.positions[0];
       values.push_back(v);
 
-      v.label = c_->joint_pd_controllers_[i]->getJointName() + "/Position/Error (Command-Actual)";
+      v.key = c_->joint_pd_controllers_[i]->getJointName() + "/Position/Error (Command-Actual)";
       v.value = cmd.positions[0] - c_->joint_pd_controllers_[i]->joint_state_->position_;
       values.push_back(v);
 
@@ -721,35 +721,35 @@ void ArmTrajectoryControllerNode::publishDiagnostics()
 
     }
 
-    v.label = "Trajectory id";
+    v.key = "Trajectory id";
     v.value = current_trajectory_id_;
     values.push_back(v);
 
 //    ROS_INFO("Diagnostics 2");
 
-    v.label = "Trajectory Status:: ";
+    v.key = "Trajectory Status:: ";
     std::map<int, int>::const_iterator it = joint_trajectory_status_.find((int)current_trajectory_id_);
     if(it == joint_trajectory_status_.end())
     {
-      v.label += "UNKNOWN";
+      v.key += "UNKNOWN";
       v.value = -1;
     }
     else
     {
-      v.label += JointTrajectoryStatusString[it->second];
+      v.key += JointTrajectoryStatusString[it->second];
       v.value = it->second;
     }
     values.push_back(v);
 
 //    ROS_INFO("Diagnostics 3");
 
-    v.label = "Trajectory Current Time";
+    v.key = "Trajectory Current Time";
     v.value = c_->current_time_-c_->trajectory_start_time_;
     values.push_back(v);
 
 //    ROS_INFO("Diagnostics 4");
 
-    v.label = "Trajectory Expected End Time (computed)";
+    v.key = "Trajectory Expected End Time (computed)";
     v.value = c_->trajectory_end_time_-c_->trajectory_start_time_;
     values.push_back(v);
 

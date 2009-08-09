@@ -409,11 +409,11 @@ public:
     }
 
     status.set_values_size(3);
-    status.values[0].label = "Images in interval";
+    status.values[0].key = "Images in interval";
     status.values[0].value = count_;
-    status.values[1].label = "Desired frequency";
+    status.values[1].key = "Desired frequency";
     status.values[1].value = desired_freq_;
-    status.values[2].label = "Actual frequency";
+    status.values[2].key = "Actual frequency";
     status.values[2].value = freq;
 
     printf("%g fps\n", freq);

@@ -314,11 +314,11 @@ public:
     }
 
     status.set_values_size(3);
-    status.values[0].label = "Images in interval";
+    status.values[0].key = "Images in interval";
     status.values[0].value = count_;
-    status.values[1].label = "Desired frequency";
+    status.values[1].key = "Desired frequency";
     status.values[1].value = desired_freq_;
-    status.values[2].label = "Actual frequency";
+    status.values[2].key = "Actual frequency";
     status.values[2].value = freq;
 
     count_ = 0;
@@ -362,15 +362,15 @@ public:
     }
 
     status.set_values_size(5);
-    status.values[0].label = "Camera Frame Rate";
+    status.values[0].key = "Camera Frame Rate";
     status.values[0].value = frame_rate;
-    status.values[1].label = "Recent % Frames Completed";
+    status.values[1].key = "Recent % Frames Completed";
     status.values[1].value = recent_ratio * 100.0f;
-    status.values[2].label = "Overall % Frames Completed";
+    status.values[2].key = "Overall % Frames Completed";
     status.values[2].value = total_ratio * 100.0f;
-    status.values[3].label = "Frames Completed";
+    status.values[3].key = "Frames Completed";
     status.values[3].value = completed;
-    status.values[4].label = "Frames Dropped";
+    status.values[4].key = "Frames Dropped";
     status.values[4].value = dropped;
   }
 
@@ -433,19 +433,19 @@ public:
 #endif
     
     status.set_values_size(7);
-    status.values[0].label = "Recent % Packets Received";
+    status.values[0].key = "Recent % Packets Received";
     status.values[0].value = recent_ratio * 100.0f;
-    status.values[1].label = "Overall % Packets Received";
+    status.values[1].key = "Overall % Packets Received";
     status.values[1].value = total_ratio * 100.0f;
-    status.values[2].label = "Received Packets";
+    status.values[2].key = "Received Packets";
     status.values[2].value = received;
-    status.values[3].label = "Missed Packets";
+    status.values[3].key = "Missed Packets";
     status.values[3].value = missed;
-    status.values[4].label = "Requested Packets";
+    status.values[4].key = "Requested Packets";
     status.values[4].value = requested;
-    status.values[5].label = "Resent Packets";
+    status.values[5].key = "Resent Packets";
     status.values[5].value = resent;
-    status.values[6].label = "Data Rate (bytes/s)";
+    status.values[6].key = "Data Rate (bytes/s)";
     status.values[6].value = data_rate;
   }
 
@@ -465,7 +465,7 @@ public:
     }
 
     status.set_values_size(1);
-    status.values[0].label = "Erroneous Packets";
+    status.values[0].key = "Erroneous Packets";
     status.values[0].value = erroneous;
   }
 

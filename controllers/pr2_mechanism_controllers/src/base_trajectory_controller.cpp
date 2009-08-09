@@ -288,55 +288,55 @@ namespace pr2_mechanism_controllers
     status.name = ros_node_.getName();
     status.message = control_state_;
 
-    v.label = "Error.x";
+    v.key = "Error.x";
     v.value = error_x_;
     values.push_back(v);
 
-    v.label = "Error.y";
+    v.key = "Error.y";
     v.value = error_y_;
     values.push_back(v);
 
-    v.label = "Error.th";
+    v.key = "Error.th";
     v.value = error_th_;
     values.push_back(v);
 
-    v.label = "Goal.x";
+    v.key = "Goal.x";
     v.value = goal_.q_[0];
     values.push_back(v);
 
-    v.label = "Goal.y";
+    v.key = "Goal.y";
     v.value = goal_.q_[1];
     values.push_back(v);
 
-    v.label = "Goal.th";
+    v.key = "Goal.th";
     v.value = goal_.q_[2];
     values.push_back(v);
 
-    v.label = "Number of waypoints";
+    v.key = "Number of waypoints";
     v.value = path_msg_.get_points_size();
     values.push_back(v);
 
-    v.label = "Controller frequency (Hz)";
+    v.key = "Controller frequency (Hz)";
     v.value = controller_frequency_;
     values.push_back(v);
 
-    v.label = "Max update delta time (s)";
+    v.key = "Max update delta time (s)";
     v.value = max_update_time_;
     values.push_back(v);
 
-    v.label = "Control topic name";
+    v.key = "Control topic name";
     v.value = control_topic_name_;
     values.push_back(v);
 
-    v.label = "Global frame";
+    v.key = "Global frame";
     v.value = global_frame_;
     values.push_back(v);
     
-    v.label = "Path input topic name";
+    v.key = "Path input topic name";
     v.value = path_input_topic_name_;
     values.push_back(v);
 
-    v.label = "Trajectory type";
+    v.key = "Trajectory type";
     v.value = trajectory_type_;
     values.push_back(v);
 
