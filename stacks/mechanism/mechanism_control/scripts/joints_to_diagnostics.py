@@ -41,11 +41,11 @@ def joint_to_diag(js):
         d.message = 'UNCALIBRATED'
     d.name = "Joint (%s)" % js.name
     d.values = [
-        KeyValue(js.position, 'Position'),
-        KeyValue(js.velocity, 'Velocity'),
-        KeyValue(js.applied_effort, 'Applied Effort'),
-        KeyValue(js.commanded_effort, 'Commanded Effort'),
-        KeyValue(js.is_calibrated, 'Calibrated')]
+        KeyValue('Position', str(js.position)),
+        KeyValue('Velocity', str(js.velocity)),
+        KeyValue('Applied Effort', str(js.applied_effort)),
+        KeyValue('Commanded Effort', str(js.commanded_effort)),
+        KeyValue('Calibrated', str(js.is_calibrated))]
     return d
 
 rospy.init_node('joints_to_diagnostics')
