@@ -38,7 +38,7 @@
 #include "cam_bridge.h"
 
 #include "sensor_msgs/Image.h"
-#include "sensor_msgs/FillImage.h"
+#include "sensor_msgs/fill_image.h"
 #include "sensor_msgs/CameraInfo.h"
 
 #include <boost/thread.hpp>

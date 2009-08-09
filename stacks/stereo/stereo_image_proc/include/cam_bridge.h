@@ -36,7 +36,7 @@
 #define CAM_BRIDGE_HH
 
 #include "sensor_msgs/RawStereo.h"
-#include "sensor_msgs/FillImage.h"
+#include "sensor_msgs/fill_image.h"
 #include "image.h"
 
 namespace cam_bridge

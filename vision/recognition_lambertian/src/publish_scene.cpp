@@ -52,7 +52,7 @@
 #include <sensor_msgs/DisparityInfo.h>
 
 #include <opencv_latest/CvBridge.h>
-#include <sensor_msgs/FillImage.h>
+#include <sensor_msgs/fill_image.h>
 #include <std_msgs/String.h>
 
 #include <point_cloud_mapping/cloud_io.h>

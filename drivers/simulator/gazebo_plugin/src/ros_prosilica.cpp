@@ -46,7 +46,7 @@
 
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/CameraInfo.h>
-#include <sensor_msgs/FillImage.h>
+#include <sensor_msgs/fill_image.h>
 #include <diagnostic_updater/diagnostic_updater.h>
 
 #include <opencv_latest/CvBridge.h>

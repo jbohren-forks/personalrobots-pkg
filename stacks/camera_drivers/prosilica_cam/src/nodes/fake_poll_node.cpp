@@ -1,7 +1,7 @@
 #include "ros/node.h"
 #include "sensor_msgs/Image.h"
 #include "sensor_msgs/CameraInfo.h"
-#include "sensor_msgs/FillImage.h"
+#include "sensor_msgs/fill_image.h"
 #include "prosilica_cam/PolledImage.h"
 #include "prosilica_cam/CameraInfo.h"
 

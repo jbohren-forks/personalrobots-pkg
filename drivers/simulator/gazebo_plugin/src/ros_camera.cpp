@@ -45,7 +45,7 @@
 #include <gazebo/MonoCameraSensor.hh>
 
 #include "sensor_msgs/Image.h"
-#include "sensor_msgs/FillImage.h"
+#include "sensor_msgs/fill_image.h"
 using namespace gazebo;
 
 GZ_REGISTER_DYNAMIC_CONTROLLER("ros_camera", RosCamera);

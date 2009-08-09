@@ -37,7 +37,7 @@
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/CameraInfo.h>
-#include <sensor_msgs/FillImage.h>
+#include <sensor_msgs/fill_image.h>
 #include <opencv_latest/CvBridge.h>
 #include <camera_calibration/pinhole.h>
 #include <image_publisher/image_publisher.h>
