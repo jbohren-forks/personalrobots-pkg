@@ -67,8 +67,8 @@ public:
     boost::lock_guard<boost::mutex> guard(sync_mutex);
     image = msg;
 
-    if (!bridge.fromImage(*image, "bgr")) {
-      ROS_WARN("Unable to convert from %d to bgr", msg->type);
+    if (!bridge.fromImage(*image, "bgr8")) {
+      ROS_WARN("Unable to convert from image to bgr");
       return;
     }
 

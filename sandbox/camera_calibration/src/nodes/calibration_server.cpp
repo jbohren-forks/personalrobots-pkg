@@ -69,8 +69,8 @@ public:
       return;
     }
 
-    if (!bridge.fromImage(*msg, "mono")) {
-      ROS_WARN("Unable to convert from %d to mono", msg->type);
+    if (!bridge.fromImage(*msg, "mono8")) {
+      ROS_WARN("Unable to convert image");
       pattern_pub.publish(pattern_msg);
       return;
     }
