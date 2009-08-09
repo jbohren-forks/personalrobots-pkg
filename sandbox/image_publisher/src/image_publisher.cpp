@@ -93,27 +93,9 @@ void ImagePublisher::publish(const sensor_msgs::Image& message) const
   if (thumb_subscribers == 0 && compressed_subscribers == 0)
     return;
 
-  // Convert to IPL image
-  /** @todo: support depths other than 8-bit */
-  if (message.type != sensor_msgs::Image::TYPE_8UC1) {
-    ROS_ERROR("Unsupported image depth: %d", message.type);
-    return;
-  }
-
-  int channels = CV_MAT_CN(message.type);
-  std::string encoding;
-  if (channels == 1)
-    encoding = "mono";
-  else if (channels == 3)
-    encoding = "rgb";
-  else {
-    /** @todo: RGBA, BGRA. Can we do anything with other encodings? */
-    ROS_ERROR("Unsupported number of image channels: %d", channels);
-    return;
-  }
-  
-  if (!cv_bridge_.fromImage(message, encoding)) {
-    ROS_ERROR("Could not convert from %d to %s", message.type, encoding.c_str());
+  // XXX JCB - make special case path for mono images
+  if (!cv_bridge_.fromImage(message, "rgb8")) {
+    ROS_ERROR("Could not convert image");
     return;
   }
   
