@@ -139,7 +139,7 @@ class RosCamera : public Controller
 
   /// \brief size of image buffer
   private: int height, width, depth;
-  private: std::string format;
+  private: int type;
 };
 
 /** \} */

@@ -214,18 +214,18 @@ void RosStereoCamera::InitChild()
   this->rightCamera->SetActive(true);
 
   if( leftCamera->GetImageFormat() == "L8" ) 
-      left_format = "mono"; 
+      left_type = sensor_msgs::Image::TYPE_MONO8;
   else if ( leftCamera->GetImageFormat() == "R8G8B8" ) 
-      left_format = "rgb"; 
+      left_type = sensor_msgs::Image::TYPE_BGR8; // FIXME, doesn't exist in Image.msg yet
   else if ( leftCamera->GetImageFormat() == "B8G8R8" ) 
-      left_format = "bgr"; 
+      left_type = sensor_msgs::Image::TYPE_BGR8; 
    
   if( rightCamera->GetImageFormat() == "L8" ) 
-      right_format = "mono"; 
+      right_type = sensor_msgs::Image::TYPE_MONO8; 
   else if ( rightCamera->GetImageFormat() == "R8G8B8" ) 
-      right_format = "rgb"; 
+      right_type = sensor_msgs::Image::TYPE_BGR8;  // FIXME, doesn't exist in Image.msg yet
   else if ( rightCamera->GetImageFormat() == "B8G8R8" ) 
-      right_format = "bgr"; 
+      right_type = sensor_msgs::Image::TYPE_BGR8; 
 
   ROS_DEBUG("stereo: set sensors active\n");
 
@@ -277,20 +277,20 @@ void RosStereoCamera::PutCameraData()
 
       // copy from src to leftImageMsg
       this->leftImageMsg->header = this->rawStereoMsg.header;
-      fillImage(*(this->leftImageMsg)   ,"image_raw" ,
+      fillImage(*(this->leftImageMsg),
+                this->left_type,
                 this->leftCamera->GetImageHeight(),
                 this->leftCamera->GetImageWidth() ,
                 1,
-                this->left_format,"uint8",
                 (void*)left_src );
 
       // copy from src to rightImageMsg
       this->rightImageMsg->header = this->rawStereoMsg.header;
-      fillImage(*(this->rightImageMsg)   ,"image_raw" ,
+      fillImage(*(this->rightImageMsg),
+                this->right_type,
                 this->rightCamera->GetImageHeight(),
                 this->rightCamera->GetImageWidth() ,
                 1,
-                this->right_format,"uint8",
                 (void*)right_src );
 
       // fill StereoInfo stereo_info

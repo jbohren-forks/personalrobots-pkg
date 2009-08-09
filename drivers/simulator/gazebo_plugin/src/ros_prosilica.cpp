@@ -304,9 +304,11 @@ bool RosProsilica::triggeredGrab(prosilica_cam::PolledImage::Request &req,
     this->roiImageMsg->header.stamp    = ros::Time((unsigned long)floor(Simulator::Instance()->GetSimTime()));
 
     // copy from src to imageMsg
-    fillImage(this->imageMsg      ,"image_raw" ,
-              this->height         ,this->width ,this->depth,
-              this->format.c_str() , "uint8"    ,
+    fillImage(this->imageMsg,
+              this->type,
+              this->height,
+              this->width,
+              this->depth,
               (void*)src );
     // publish to ros, thumbnails and rect image?
     /// @todo: don't bother if there are no subscribers
@@ -315,8 +317,12 @@ bool RosProsilica::triggeredGrab(prosilica_cam::PolledImage::Request &req,
     //if (this->image_rect_pub_.getNumSubscribers() > 0)
       this->image_rect_pub_.publish(this->imageMsg);
 
+    //sensor_msgs::CvBridge img_bridge_(&this->imageMsg);
+    //IplImage* cv_image;
+    //img_bridge_.to_cv( &cv_image );
+
     sensor_msgs::CvBridge img_bridge_;
-    img_bridge_.fromImage(this->imageMsg,this->format.c_str());
+    img_bridge_.fromImage(this->imageMsg);
 
     //cvNamedWindow("showme",CV_WINDOW_AUTOSIZE);
     //cvSetMouseCallback("showme", &RosProsilica::mouse_cb, this);
@@ -357,17 +363,16 @@ void RosProsilica::InitChild()
   this->depth            = this->myParent->GetImageDepth();
   //ROS_INFO("image format in urdf is %s\n",this->myParent->GetImageFormat().c_str());
   if (this->myParent->GetImageFormat() == "L8")
-    this->format           = "mono";
+    this->type           = sensor_msgs::Image::TYPE_MONO8;
   else if (this->myParent->GetImageFormat() == "R8G8B8")
-    this->format           = "rgb";
+    this->type           = sensor_msgs::Image::TYPE_BGR8;
   else if (this->myParent->GetImageFormat() == "B8G8R8")
-    this->format           = "bgr";
+    this->type           = sensor_msgs::Image::TYPE_BGR8;
   else
   {
     ROS_ERROR("Unsupported Gazebo ImageFormat\n");
-    this->format           = "rgb";
+    this->type           = sensor_msgs::Image::TYPE_BGR8;
   }
-  //ROS_INFO("image format in prosilica plugin is %s\n",this->format.c_str());
 
 
 }
