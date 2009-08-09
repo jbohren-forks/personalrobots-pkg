@@ -170,7 +170,7 @@ namespace people
     void imageCBAll(ros::Time t)
     {
       // Convert the image to OpenCV
-      if (!lbridge_.fromImage(limage_,"mono")) 
+      if (!lbridge_.fromImage(limage_,"mono8")) 
 	return;
       IplImage *cv_image_left = lbridge_.toIpl();
 

@@ -342,7 +342,7 @@ void image_cb_all(ros::Time t)
 	if((PROJGREEN >= projStatusCount) && (projStatusCount > PROJRED))	 greenstr = "   (debounced)";
 	cout << "projector: " << projStatus << greenstr << endl;
 	
-    if (lbridge.fromImage(limage, "bgr"))
+    if (lbridge.fromImage(limage, "bgr8"))
     { 
 		if(((PROJGREEN >= projStatusCount) && (projStatusCount > PROJRED))|| captureNoTex || always_on_capture)
 		{    
@@ -375,7 +375,7 @@ void image_cb_all(ros::Time t)
 	     	cvShowImage("left", lbridge.toIpl());
     }
 
-    if (rbridge.fromImage(rimage, "bgr"))
+    if (rbridge.fromImage(rimage, "bgr8"))
     {
 		if(((PROJGREEN >= projStatusCount) && (projStatusCount > PROJRED))|| captureNoTex || always_on_capture)
 		{      

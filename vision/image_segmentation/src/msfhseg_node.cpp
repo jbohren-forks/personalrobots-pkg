@@ -124,7 +124,7 @@ namespace image_segmentation
 
         // Convert images to OpenCV and do apply color calibration if requested.
         IplImage *cv_image_left;
-        if (lbridge_.fromImage(limage_,"bgr")) {
+        if (lbridge_.fromImage(limage_,"bgr8")) {
           cv_image_left = lbridge_.toIpl();
           // Color calibration
           if (calib_color_) {

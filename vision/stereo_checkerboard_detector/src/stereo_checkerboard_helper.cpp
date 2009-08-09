@@ -45,8 +45,8 @@ using namespace stereo_checkerboard_detector ;
 bool StereoCheckerboardHelper::findCheckerboard(sensor_msgs::Image& left, sensor_msgs::Image& right,
                                                 const sensor_msgs::CameraInfo& left_info, const sensor_msgs::CameraInfo& right_info)
 {
-  if (!left_bridge_.fromImage(left, "mono") ||
-      !right_bridge_.fromImage(right, "mono") )
+  if (!left_bridge_.fromImage(left, "mono8") ||
+      !right_bridge_.fromImage(right, "mono8") )
   {
     ROS_ERROR("Error opening image") ;
     return false ;

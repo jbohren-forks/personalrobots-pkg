@@ -307,7 +307,7 @@ namespace people
       last_image_time_ = limage_.header.stamp;
 
       // Convert images to OpenCV.
-      if (lbridge_.fromImage(limage_,"bgr")) {
+      if (lbridge_.fromImage(limage_,"bgr8")) {
 	cv_image_left_ = lbridge_.toIpl();
 	cvSmooth(cv_image_left_, cv_image_left_, CV_GAUSSIAN, 5);
 	if (calib_color_) {

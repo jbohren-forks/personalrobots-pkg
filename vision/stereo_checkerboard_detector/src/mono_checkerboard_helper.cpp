@@ -43,7 +43,7 @@ using namespace std ;
 bool MonoCheckerboardHelper::getCorners(sensor_msgs::Image& image, vector<geometry_msgs::Point>& ros_corners)
 {
   // Always process checkerboard images as mono images
-  if (!img_bridge_.fromImage(image, "mono"))
+  if (!img_bridge_.fromImage(image, "mono8"))
   {
     ROS_ERROR("Error opening image") ;
     return false ;

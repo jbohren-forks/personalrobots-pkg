@@ -78,7 +78,7 @@ public:
 
     cv_mutex.lock();
 
-    if (bridge.fromImage(image, "bgr"))
+    if (bridge.fromImage(image, "bgr8"))
     {
       IplImage* cv_img  = bridge.toIpl();
       IplImage* cv_img_decompand = cvCreateImage(cvGetSize(cv_img), IPL_DEPTH_32F, 3);

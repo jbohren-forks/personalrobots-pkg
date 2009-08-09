@@ -68,14 +68,14 @@ void imageCB(const sensor_msgs::ImageConstPtr &image)
   int rawBufferSize = 0;
   int depth;
 
-  g_img_bridge.fromImage(*image, image->encoding);
-
-  if (image->encoding == "mono")
+  if (image->encoding == "mono8")
   {
+    g_img_bridge.fromImage(*image, "mono8");
     depth = 1;
   }
   else
   {
+    g_img_bridge.fromImage(*image, "rgb8");
     depth = 3;
   }
 

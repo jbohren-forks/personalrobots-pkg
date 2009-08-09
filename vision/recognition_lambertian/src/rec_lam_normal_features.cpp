@@ -2226,7 +2226,7 @@ private:
         // obtain lock on vision data
         boost::lock_guard<boost::mutex> lock(cv_mutex);
 
-        if(lbridge.fromImage(limage, "bgr")){
+        if(lbridge.fromImage(limage, "bgr8")){
             if(left != NULL)
                 cvReleaseImage(&left);
 
@@ -2235,7 +2235,7 @@ private:
             	color_depth = cvCreateImage(cvGetSize(left), IPL_DEPTH_8U, 3);
             }
         }
-        if(rbridge.fromImage(rimage, "bgr")){
+        if(rbridge.fromImage(rimage, "bgr8")){
             if(right != NULL)
                 cvReleaseImage(&right);
 

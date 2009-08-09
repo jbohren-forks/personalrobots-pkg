@@ -69,7 +69,7 @@ public:
   void imageCallback(const sensor_msgs::ImageConstPtr& msg)
   {
     // Always process checkerboard images as mono images
-    if (!img_bridge_.fromImage(*msg, "mono"))
+    if (!img_bridge_.fromImage(*msg, "mono8"))
     {
       ROS_ERROR("Error opening image") ;
       return ;

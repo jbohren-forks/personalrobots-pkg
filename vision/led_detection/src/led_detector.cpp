@@ -86,7 +86,7 @@ bool LedDetector::findLed(Image& image, const CameraInfo& info, const geometry_m
 {
   // Right now we're assuming that we're only going to be working in grayscale space.
   // However, it might make sense to work in some channel that matches the LED's color (ie. Red)
-  if (!img_bridge_.fromImage(image, "mono"))
+  if (!img_bridge_.fromImage(image, "mono8"))
   {
     ROS_ERROR("Error opening image") ;
     return false;                       // Got an error, so say we didn't find the led

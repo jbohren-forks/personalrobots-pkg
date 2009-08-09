@@ -96,7 +96,7 @@ void CMVisionBF::imageCB()
 
       
   // Get the image as and RGB image
-  this->imageBridge.fromImage(this->image,"bgr");
+  this->imageBridge.fromImage(this->image,"bgr8");
   cvImage = this->imageBridge.toIpl();
 
   size = cvGetSize(cvImage);

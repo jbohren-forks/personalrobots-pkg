@@ -273,7 +273,7 @@ public:
     // Set color calibration.
     bool do_calib = false;
     if (!calib_color_) {
-      if (lbridge_.fromImage(limage_,"bgr")) {
+      if (lbridge_.fromImage(limage_,"bgr8")) {
 	cv_image_left_ = lbridge_.toIpl();
 	cvSmooth(cv_image_left_, cv_image_left_, CV_GAUSSIAN, 5);
       }
@@ -281,7 +281,7 @@ public:
     else if (calib_color_ && lcolor_cal_.getFromParam("stereo/left/image_rect_color")) {
       // Exit if color calibration hasn't been performed.
       do_calib = true;
-      if (lbridge_.fromImage(limage_,"bgr")) {
+      if (lbridge_.fromImage(limage_,"bgr8")) {
 	cv_image_left_ = lbridge_.toIpl();
 	cvSmooth(cv_image_left_, cv_image_left_, CV_GAUSSIAN, 5);
 	lcolor_cal_.correctColor(cv_image_left_, cv_image_left_, true, true, COLOR_CAL_BGR);

@@ -210,14 +210,14 @@ private:
 	{
         boost::lock_guard<boost::mutex> lock(data_lock_);
 
-		if (lbridge_.fromImage(limage_, "bgr"))
+		if (lbridge_.fromImage(limage_, "bgr8"))
 		{
 			if(left != NULL)
 				cvReleaseImage(&left_);
 			left_ = cvCloneImage(lbridge_.toIpl());
 		}
 
-		if (rbridge_.fromImage(rimage_, "bgr"))
+		if (rbridge_.fromImage(rimage_, "bgr8"))
 		{
 			if(right_ != NULL)
 				cvReleaseImage(&right_);

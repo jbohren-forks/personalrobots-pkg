@@ -122,7 +122,7 @@ public:
   {
     cv_mutex.lock();
 
-    if (lbridge.fromImage(limage, "bgr"))
+    if (lbridge.fromImage(limage, "bgr8"))
     {
       if (calib_color_)
       {
@@ -135,7 +135,7 @@ public:
         cvShowImage("left", lbridge.toIpl());
     }
 
-    if (rbridge.fromImage(rimage, "bgr"))
+    if (rbridge.fromImage(rimage, "bgr8"))
     {
       if (calib_color_)
       {

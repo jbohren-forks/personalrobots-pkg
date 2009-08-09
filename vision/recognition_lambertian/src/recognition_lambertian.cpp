@@ -254,7 +254,7 @@ private:
 //		ROS_INFO("Left image callback");
 
 		limage_ = image;
-		if(lbridge_.fromImage(*limage_, "bgr")) {
+		if(lbridge_.fromImage(*limage_, "bgr8")) {
 			left = lbridge_.toIpl();
 		}
 	}
@@ -265,7 +265,7 @@ private:
 //		ROS_INFO("Right image callback");
 
 		rimage_ = image;
-		if(rbridge_.fromImage(*rimage_, "bgr")) {
+		if(rbridge_.fromImage(*rimage_, "bgr8")) {
 			right = rbridge_.toIpl();
 		}
 	}

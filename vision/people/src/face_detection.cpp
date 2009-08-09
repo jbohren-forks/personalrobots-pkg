@@ -337,7 +337,7 @@ public:
  
     CvSize im_size;
 
-    if (lbridge_.fromImage(*limage,"bgr") && dbridge_.fromImage(*dimage)) {
+    if (lbridge_.fromImage(*limage,"bgr8") && dbridge_.fromImage(*dimage)) {
       cv_image_left_ = lbridge_.toIpl();
       cv_image_disp_ = dbridge_.toIpl();
     }

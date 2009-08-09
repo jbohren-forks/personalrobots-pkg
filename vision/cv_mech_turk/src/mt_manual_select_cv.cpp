@@ -118,7 +118,7 @@ public:
 	  }
       }
     } else {
-      ROS_ERROR("Unable to convert from %d to bgr", msg->type);
+      ROS_ERROR("Unable to convert image to bgr");
     }
   }
 };

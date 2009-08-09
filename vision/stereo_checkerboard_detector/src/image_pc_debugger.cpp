@@ -84,7 +84,7 @@ public:
       cv_pts[i] = cvPoint(u/w, v/w) ;
     }
 
-    if (!img_bridge_.fromImage(image_msg_, "mono"))
+    if (!img_bridge_.fromImage(image_msg_, "mono8"))
     {
       ROS_ERROR("Error opening image") ;
       return ;

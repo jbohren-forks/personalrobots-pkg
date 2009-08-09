@@ -53,7 +53,7 @@ neven::FaceDetector* fd;
 
 void imageCB(const sensor_msgs::ImageConstPtr& image)
 {
-  if (g_img_bridge.fromImage(*image, "mono"))
+  if (g_img_bridge.fromImage(*image, "mono8"))
   {
     CvSize size = cvGetSize(g_img_bridge.toIpl());
 

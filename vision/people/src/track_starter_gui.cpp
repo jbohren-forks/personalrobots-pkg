@@ -188,13 +188,13 @@ public:
     sel_lock.unlock();
 
     bool do_calib = false;
-    if (CV_MAT_CN(limage_.type) != 1) {
+    if (limage_.encoding != "mono8") {
       // If this is a color image, set the calibration and convert it.
       if (calib_color_ && lcolor_cal_.getFromParam("stereo/left/image_rect_color")) {
 	do_calib = true;      
       }
       // Convert the images to OpenCV format.
-      if (lbridge_.fromImage(limage_,"bgr")) {
+      if (lbridge_.fromImage(limage_,"bgr8")) {
 	cv_image_ = lbridge_.toIpl();
 	if (do_calib) {
 	  lcolor_cal_.correctColor(cv_image_, cv_image_, true, true, COLOR_CAL_BGR);
@@ -203,7 +203,7 @@ public:
     }
     else {
       // If this is a mono image, just convert it.
-      lbridge_.fromImage(limage_,"mono");
+      lbridge_.fromImage(limage_,"mono8");
       cv_image_ = lbridge_.toIpl();
     }
 
