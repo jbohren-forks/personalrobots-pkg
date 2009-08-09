@@ -25,7 +25,7 @@
    Date: 24 Sept 2008
    SVN info: $Id$
  @htmlinclude manifest.html
- @b RosSimIface plugin reads ROS PoseWithRatesStamped messages
+ @b RosSimIface plugin reads ROS Odometry messages
  */
 
 #include <algorithm>
@@ -123,14 +123,14 @@ void RosSimIface::InitChild()
 
 ////////////////////////////////////////////////////////////////////////////////
 // Update the controller
-void RosSimIface::UpdateObjectPose(const geometry_msgs::PoseWithRatesStampedConstPtr& poseMsg)
+void RosSimIface::UpdateObjectPose(const nav_msgs::Odometry::ConstPtr& poseMsg)
 {
 
   this->lock.lock();
 
   Model* model = gazebo::World::Instance()->GetModelByName(this->modelName);
-  Vector3 pos(poseMsg->pose_with_rates.pose.position.x,poseMsg->pose_with_rates.pose.position.y,poseMsg->pose_with_rates.pose.position.z);
-  Quatern rot(poseMsg->pose_with_rates.pose.orientation.w,poseMsg->pose_with_rates.pose.orientation.x,poseMsg->pose_with_rates.pose.orientation.y,poseMsg->pose_with_rates.pose.orientation.z);
+  Vector3 pos(poseMsg->pose_with_covariance.pose.position.x,poseMsg->pose_with_covariance.pose.position.y,poseMsg->pose_with_covariance.pose.position.z);
+  Quatern rot(poseMsg->pose_with_covariance.pose.orientation.w,poseMsg->pose_with_covariance.pose.orientation.x,poseMsg->pose_with_covariance.pose.orientation.y,poseMsg->pose_with_covariance.pose.orientation.z);
   Pose3d modelPose(pos,rot);
   model->SetPose(modelPose);
 

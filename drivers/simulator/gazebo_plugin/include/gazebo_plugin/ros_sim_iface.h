@@ -19,7 +19,7 @@
  *
  */
 /*
- * Desc: A dynamic controller plugin that publishes ROS PoseWithRatesStamped topic for generic simiface interface.  Puts body at the specified Pose (rate) etc.  Only pose implemented for now.
+ * Desc: A dynamic controller plugin that publishes ROS Odometry topic for generic simiface interface.  Puts body at the specified Pose (rate) etc.  Only pose implemented for now.
  * Author: John Hsu
  * Date: 24 Sept 2008
  * SVN: $Id$
@@ -31,7 +31,7 @@
 #include "boost/thread/mutex.hpp"
 #include <gazebo/Controller.hh>
 #include <gazebo/Param.hh>
-#include <geometry_msgs/PoseWithRatesStamped.h>
+#include <nav_msgs/Odometry.h>
 
 namespace gazebo
 {
@@ -90,8 +90,8 @@ class RosSimIface : public Controller
   /// \brief Finalize the controller, unadvertise topics
   protected: virtual void FiniChild();
 
-  /// \brief call back when a PoseWithRatesStamped message is published
-  private: void UpdateObjectPose(const geometry_msgs::PoseWithRatesStampedConstPtr& poseMsg);
+  /// \brief call back when a Odometry message is published
+private: void UpdateObjectPose(const nav_msgs::Odometry::ConstPtr& poseMsg);
 
   /// \brief A pointer to the parent entity
   private: Entity *myParent;

@@ -47,7 +47,7 @@
 
 #include "geometry_msgs/Transform.h"
 #include "nav_msgs/Odometry.h"
-#include "geometry_msgs/PoseWithRatesStamped.h"
+#include "nav_msgs/Odometry.h"
 
 #include <tf/tf.h>
 #include <tf/transform_broadcaster.h>
@@ -75,7 +75,7 @@ public :
     param("~base_id", base_id_, 1) ;
 
     advertise<nav_msgs::Odometry>("localizedpose", 1);
-    advertise<geometry_msgs::PoseWithRatesStamped>("base_pose_ground_truth", 1) ;
+    advertise<nav_msgs::Odometry>("base_pose_ground_truth", 1) ;
 
     m_tfServer = new tf::TransformBroadcaster();
 
@@ -125,14 +125,14 @@ public :
           publish("localizedpose", m_currentPos) ;
 
         // Build Ground Truth Message
-        geometry_msgs::PoseWithRatesStamped m_pose_with_rates ;
-        m_pose_with_rates.header = snapshot_.header ;
-        m_pose_with_rates.pose_with_rates.pose.position.x = body.pose.translation.x ;
-        m_pose_with_rates.pose_with_rates.pose.position.y = body.pose.translation.y ;
-        m_pose_with_rates.pose_with_rates.pose.position.z = body.pose.translation.z ;
-        m_pose_with_rates.pose_with_rates.pose.orientation = body.pose.rotation ;
+        nav_msgs::Odometry m_ground_truth ;
+        m_ground_truth.header = snapshot_.header ;
+        m_ground_truth.pose_with_covariance.pose.position.x = body.pose.translation.x ;
+        m_ground_truth.pose_with_covariance.pose.position.y = body.pose.translation.y ;
+        m_ground_truth.pose_with_covariance.pose.position.z = body.pose.translation.z ;
+        m_ground_truth.pose_with_covariance.pose.orientation = body.pose.rotation ;
 
-        publish("base_pose_ground_truth", m_pose_with_rates) ;
+        publish("base_pose_ground_truth", m_ground_truth) ;
 
         publish_success_count_++ ;
 

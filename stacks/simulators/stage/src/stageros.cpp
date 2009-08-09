@@ -36,7 +36,7 @@
 #include "boost/thread/mutex.hpp"
 #include <sensor_msgs/LaserScan.h>
 #include <nav_msgs/Odometry.h>
-#include <geometry_msgs/PoseWithRatesStamped.h>
+#include <nav_msgs/Odometry.h>
 #include <geometry_msgs/Twist.h>
 #include <roslib/Time.h>
 
@@ -56,7 +56,7 @@ class StageNode : public ros::Node
     geometry_msgs::Twist *velMsgs;
     sensor_msgs::LaserScan *laserMsgs;
     nav_msgs::Odometry *odomMsgs;
-    geometry_msgs::PoseWithRatesStamped *groundTruthMsgs;
+    nav_msgs::Odometry *groundTruthMsgs;
     roslib::Time timeMsg;
 
     // A mutex to lock access to fields that are used in message callbacks
@@ -175,7 +175,7 @@ StageNode::StageNode(int argc, char** argv, bool gui, const char* fname) :
   this->velMsgs = new geometry_msgs::Twist[numRobots];
   this->laserMsgs = new sensor_msgs::LaserScan[numRobots];
   this->odomMsgs = new nav_msgs::Odometry[numRobots];
-  this->groundTruthMsgs = new geometry_msgs::PoseWithRatesStamped[numRobots];
+  this->groundTruthMsgs = new nav_msgs::Odometry[numRobots];
 }
 
 
@@ -208,8 +208,8 @@ StageNode::SubscribeModels()
     }
     advertise<sensor_msgs::LaserScan>(mapName(BASE_SCAN,r), 10);
     advertise<nav_msgs::Odometry>(mapName(ODOM,r), 10);
-    advertise<geometry_msgs::PoseWithRatesStamped>(
-                                        mapName(BASE_POSE_GROUND_TRUTH,r), 10);
+    advertise<nav_msgs::Odometry>(
+                                  mapName(BASE_POSE_GROUND_TRUTH,r), 10);
     subscribe(mapName(CMD_VEL,r), velMsgs[r], &StageNode::cmdvelReceived, 10);
   }
   advertise<roslib::Time>("/time",10);
@@ -315,13 +315,13 @@ StageNode::Update()
     tf::Transform gt(tf::Quaternion(gpose.a-M_PI/2.0, 0, 0), 
         tf::Point(gpose.y, -gpose.x, 0.0));
 
-    this->groundTruthMsgs[r].pose_with_rates.pose.position.x     = gt.getOrigin().x();
-    this->groundTruthMsgs[r].pose_with_rates.pose.position.y     = gt.getOrigin().y();
-    this->groundTruthMsgs[r].pose_with_rates.pose.position.z     = gt.getOrigin().z();
-    this->groundTruthMsgs[r].pose_with_rates.pose.orientation.x  = gt.getRotation().x();
-    this->groundTruthMsgs[r].pose_with_rates.pose.orientation.y  = gt.getRotation().y();
-    this->groundTruthMsgs[r].pose_with_rates.pose.orientation.z  = gt.getRotation().z();
-    this->groundTruthMsgs[r].pose_with_rates.pose.orientation.w  = gt.getRotation().w();
+    this->groundTruthMsgs[r].pose_with_covariance.pose.position.x     = gt.getOrigin().x();
+    this->groundTruthMsgs[r].pose_with_covariance.pose.position.y     = gt.getOrigin().y();
+    this->groundTruthMsgs[r].pose_with_covariance.pose.position.z     = gt.getOrigin().z();
+    this->groundTruthMsgs[r].pose_with_covariance.pose.orientation.x  = gt.getRotation().x();
+    this->groundTruthMsgs[r].pose_with_covariance.pose.orientation.y  = gt.getRotation().y();
+    this->groundTruthMsgs[r].pose_with_covariance.pose.orientation.z  = gt.getRotation().z();
+    this->groundTruthMsgs[r].pose_with_covariance.pose.orientation.w  = gt.getRotation().w();
 
     this->groundTruthMsgs[r].header.frame_id = mapName("odom", r);
     this->groundTruthMsgs[r].header.stamp = sim_time;

@@ -84,7 +84,7 @@ void RosP3D::LoadChild(XMLConfigNode *node)
 
   ROS_DEBUG("==== topic name for RosP3D ======== %s", this->topicName.c_str());
   if (this->topicName != "")
-    this->pub_ = this->rosnode_->advertise<geometry_msgs::PoseWithRatesStamped>(this->topicName,10);
+    this->pub_ = this->rosnode_->advertise<nav_msgs::Odometry>(this->topicName,10);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -149,30 +149,22 @@ void RosP3D::UpdateChild()
 
     // pose is given in inertial frame for Gazebo, transform to the designated frame name
 
-    this->poseMsg.pose_with_rates.pose.position.x    = pos.x;
-    this->poseMsg.pose_with_rates.pose.position.y    = pos.y;
-    this->poseMsg.pose_with_rates.pose.position.z    = pos.z;
+    this->poseMsg.pose_with_covariance.pose.position.x    = pos.x;
+    this->poseMsg.pose_with_covariance.pose.position.y    = pos.y;
+    this->poseMsg.pose_with_covariance.pose.position.z    = pos.z;
 
-    this->poseMsg.pose_with_rates.pose.orientation.x = rot.x;
-    this->poseMsg.pose_with_rates.pose.orientation.y = rot.y;
-    this->poseMsg.pose_with_rates.pose.orientation.z = rot.z;
-    this->poseMsg.pose_with_rates.pose.orientation.w = rot.u;
+    this->poseMsg.pose_with_covariance.pose.orientation.x = rot.x;
+    this->poseMsg.pose_with_covariance.pose.orientation.y = rot.y;
+    this->poseMsg.pose_with_covariance.pose.orientation.z = rot.z;
+    this->poseMsg.pose_with_covariance.pose.orientation.w = rot.u;
 
-    this->poseMsg.pose_with_rates.velocity.linear.x        = vpos.x + this->GaussianKernel(0,this->gaussianNoise) ;
-    this->poseMsg.pose_with_rates.velocity.linear.y        = vpos.y + this->GaussianKernel(0,this->gaussianNoise) ;
-    this->poseMsg.pose_with_rates.velocity.linear.z        = vpos.z + this->GaussianKernel(0,this->gaussianNoise) ;
+    this->poseMsg.twist_with_covariance.twist.linear.x        = vpos.x + this->GaussianKernel(0,this->gaussianNoise) ;
+    this->poseMsg.twist_with_covariance.twist.linear.y        = vpos.y + this->GaussianKernel(0,this->gaussianNoise) ;
+    this->poseMsg.twist_with_covariance.twist.linear.z        = vpos.z + this->GaussianKernel(0,this->gaussianNoise) ;
     // pass euler anglular rates
-    this->poseMsg.pose_with_rates.velocity.angular.x    = veul.x + this->GaussianKernel(0,this->gaussianNoise) ;
-    this->poseMsg.pose_with_rates.velocity.angular.y    = veul.y + this->GaussianKernel(0,this->gaussianNoise) ;
-    this->poseMsg.pose_with_rates.velocity.angular.z    = veul.z + this->GaussianKernel(0,this->gaussianNoise) ;
-
-    this->poseMsg.pose_with_rates.acceleration.linear.x        = this->apos.x + this->GaussianKernel(0,this->gaussianNoise) ;
-    this->poseMsg.pose_with_rates.acceleration.linear.y        = this->apos.y + this->GaussianKernel(0,this->gaussianNoise) ;
-    this->poseMsg.pose_with_rates.acceleration.linear.z        = this->apos.z + this->GaussianKernel(0,this->gaussianNoise) ;
-    // pass euler anglular rates
-    this->poseMsg.pose_with_rates.acceleration.angular.x    = this->aeul.x + this->GaussianKernel(0,this->gaussianNoise) ;
-    this->poseMsg.pose_with_rates.acceleration.angular.y    = this->aeul.y + this->GaussianKernel(0,this->gaussianNoise) ;
-    this->poseMsg.pose_with_rates.acceleration.angular.z    = this->aeul.z + this->GaussianKernel(0,this->gaussianNoise) ;
+    this->poseMsg.twist_with_covariance.twist.angular.x    = veul.x + this->GaussianKernel(0,this->gaussianNoise) ;
+    this->poseMsg.twist_with_covariance.twist.angular.y    = veul.y + this->GaussianKernel(0,this->gaussianNoise) ;
+    this->poseMsg.twist_with_covariance.twist.angular.z    = veul.z + this->GaussianKernel(0,this->gaussianNoise) ;
 
     // publish to ros
     this->pub_.publish(this->poseMsg);

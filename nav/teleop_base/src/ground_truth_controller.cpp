@@ -35,7 +35,7 @@
 
 #include <ros/node.h>
 #include <ros/time.h>
-#include <geometry_msgs/PoseWithRatesStamped.h>
+#include <nav_msgs/Odometry.h>
 #include <geometry_msgs/Twist.h>
 #include "control_toolbox/base_position_pid.h"
 #include "tf/transform_datatypes.h"
@@ -48,7 +48,7 @@ namespace fake_localization
 class GroundTruthController : public ros::Node
 {
 public:
-  geometry_msgs::PoseWithRatesStamped  m_ground_truth_ ;                     //!< Message on which we receive ground truth info
+  nav_msgs::Odometry  m_ground_truth_ ;                                 //!< Message on which we receive ground truth info
   control_toolbox::BasePositionPid base_position_pid_ ;                 //!< Does the PID math for controlling the robot
   tf::Vector3 xyt_target_ ;                                             //!< The ground truth pose we want to acheive
   bool first_time_ ;
@@ -117,7 +117,7 @@ public:
     
     tf::Transform ground_truth_pose ;
     
-    tf::poseMsgToTF(m_ground_truth_.pose_with_rates.pose, ground_truth_pose) ;
+    tf::poseMsgToTF(m_ground_truth_.pose_with_covariance.pose, ground_truth_pose) ;
 
     //! \todo Compute yaw angle in a more stable way
     double yaw,pitch,roll ;

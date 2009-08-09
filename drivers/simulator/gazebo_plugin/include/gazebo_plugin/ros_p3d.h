@@ -34,7 +34,7 @@
 
 #include <ros/ros.h>
 #include "boost/thread/mutex.hpp"
-#include <geometry_msgs/PoseWithRatesStamped.h>
+#include <nav_msgs/Odometry.h>
 
 namespace gazebo
 {
@@ -44,7 +44,7 @@ namespace gazebo
 
    \brief RosP3D controller.
 
-   This controller requires to a model as its parent. The plugin broadcasts a body's pose and rates through ROS geometry_msgs::PoseWithRatesStamped message.  In the example below, the plubin broadcasts pose and rate of a body named \b body_name over ROS topic name \b body_pose_groud_truth.
+   This controller requires to a model as its parent. The plugin broadcasts a body's pose and rates through ROS nav_msgs::Odometry message.  In the example below, the plubin broadcasts pose and rate of a body named \b body_name over ROS topic name \b body_pose_groud_truth.
 
    Example Usage:
    \verbatim
@@ -69,7 +69,7 @@ namespace gazebo
 
    \brief RosP3D controller
           \li Starts a ROS node if none exists.
-          \li This controller simulates a 6 dof position and rate sensor, publishes geometry_msgs::PoseWithRatesStamped.msg ROS topic.
+          \li This controller simulates a 6 dof position and rate sensor, publishes nav_msgs::Odometry.msg ROS topic.
           \li Example Usage:
    \verbatim
      <model:physical name="some_fancy_model">
@@ -122,7 +122,7 @@ namespace gazebo
       private: ros::Publisher pub_;
 
       /// \brief ros message
-      private: geometry_msgs::PoseWithRatesStamped poseMsg;
+      private: nav_msgs::Odometry poseMsg;
 
       /// \brief topic name
       private: std::string topicName;

@@ -56,7 +56,7 @@ $ fake_localization
 @section topic ROS topics
 
 Subscribes to (name/type):
-- @b "base_pose_ground_truth" geometry_msgs/PoseWithRatesStamped : robot's odometric pose.  Only the position information is used (velocity is ignored).
+- @b "base_pose_ground_truth" nav_msgs/Odometry : robot's odometric pose.  Only the position information is used (velocity is ignored).
 
 Publishes to (name / type):
 - @b "amcl_pose" geometry_msgs/PoseWithCovarianceStamped : robot's estimated pose in the map, with covariance
@@ -73,7 +73,7 @@ Publishes to (name / type):
 #include <ros/node.h>
 #include <ros/time.h>
 
-#include <geometry_msgs/PoseWithRatesStamped.h>
+#include <nav_msgs/Odometry.h>
 #include <geometry_msgs/PoseArray.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 
@@ -103,7 +103,7 @@ public:
       m_particleCloud.header.stamp = ros::Time::now();
       m_particleCloud.header.frame_id = "/map";
       m_particleCloud.set_poses_size(1);
-      notifier = new tf::MessageNotifier<geometry_msgs::PoseWithRatesStamped>(m_tfListener, this, 
+      notifier = new tf::MessageNotifier<nav_msgs::Odometry>(m_tfListener, this, 
                                                                            boost::bind(&FakeOdomNode::update, this, _1),
                                                                            "",//empty topic it will be manually stuffed
                                                                            odom_frame_id_, 100);
@@ -133,13 +133,13 @@ public:
 private:
     tf::TransformBroadcaster       *m_tfServer;
     tf::TransformListener          *m_tfListener;
-    tf::MessageNotifier<geometry_msgs::PoseWithRatesStamped>* notifier;
+    tf::MessageNotifier<nav_msgs::Odometry>* notifier;
   
     ros::Time                      m_lastUpdate;
     double                         m_maxPublishFrequency;
     bool                           m_base_pos_received;
     
-    geometry_msgs::PoseWithRatesStamped  m_basePosMsg;
+    nav_msgs::Odometry  m_basePosMsg;
     geometry_msgs::PoseArray      m_particleCloud;
     geometry_msgs::PoseWithCovarianceStamped      m_currentPos;
 
@@ -149,20 +149,20 @@ private:
   void basePosReceived()
   {
     m_basePosMsg.header.frame_id = "base_footprint"; //hack to make the notifier do what I want (changed back later)
-    boost::shared_ptr<geometry_msgs::PoseWithRatesStamped>  message(new geometry_msgs::PoseWithRatesStamped);
+    boost::shared_ptr<nav_msgs::Odometry>  message(new nav_msgs::Odometry);
     *message = m_basePosMsg;
     notifier->enqueueMessage(message);
     //    update();
   }
 public:
-  void update(const tf::MessageNotifier<geometry_msgs::PoseWithRatesStamped>::MessagePtr & message){
-    tf::Transform txi(tf::Quaternion(message->pose_with_rates.pose.orientation.x,
-				     message->pose_with_rates.pose.orientation.y, 
-				     message->pose_with_rates.pose.orientation.z, 
-				     message->pose_with_rates.pose.orientation.w),
-		      tf::Point(message->pose_with_rates.pose.position.x,
-				message->pose_with_rates.pose.position.y,
-                                0.0*message->pose_with_rates.pose.position.z )); // zero height for base_footprint
+  void update(const tf::MessageNotifier<nav_msgs::Odometry>::MessagePtr & message){
+    tf::Transform txi(tf::Quaternion(message->pose_with_covariance.pose.orientation.x,
+				     message->pose_with_covariance.pose.orientation.y, 
+				     message->pose_with_covariance.pose.orientation.z, 
+				     message->pose_with_covariance.pose.orientation.w),
+		      tf::Point(message->pose_with_covariance.pose.position.x,
+				message->pose_with_covariance.pose.position.y,
+                                0.0*message->pose_with_covariance.pose.position.z )); // zero height for base_footprint
 
     double x = txi.getOrigin().x();
     double y = txi.getOrigin().y();
