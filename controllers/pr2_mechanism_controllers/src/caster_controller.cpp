@@ -38,6 +38,8 @@ namespace controller {
 const double CasterController::WHEEL_RADIUS = 0.079;
 const double CasterController::WHEEL_OFFSET = 0.049;
 
+ROS_REGISTER_CONTROLLER(CasterController);
+
 CasterController::CasterController()
   : steer_velocity_(0), drive_velocity_(0)
 {
