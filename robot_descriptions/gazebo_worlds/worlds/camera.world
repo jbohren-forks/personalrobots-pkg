@@ -36,17 +36,18 @@
     <type>fltk</type>
     <size>480 320</size>
     <pos>0 0</pos>
+    <!--
     <frames>
       <row height="100%">
-	<camera width="100%">
-	  <xyz>-8 0 3</xyz>	
-	  <rpy>0 25 0</rpy>
-	  <saveFrames>false</saveFrames>
-	  <startSaveFrames>true</startSaveFrames>
-	  <saveFramePath>testguicameraframes</saveFramePath>
-	</camera>
-    <imageSize>640 480</imageSize>
+      <camera width="100%">
+      <xyz>-8 0 3</xyz>
+      <rpy>0 25 0</rpy>
+      <saveFrames>false</saveFrames>
+      <startSaveFrames>true</startSaveFrames>
+      <saveFramePath>testguicameraframes</saveFramePath>
+      </camera>
     </frames>
+    -->
   </rendering:gui>
 
   <!-- camera used to test ros_camera plugin -->
