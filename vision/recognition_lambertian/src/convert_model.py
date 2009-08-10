@@ -9,8 +9,6 @@ import ply_import
 from scipy.io.numpyio import fwrite, fread
 import sys
 
-from robot_msgs.msg import *
-
 #import psyco
 #psyco.full()
 

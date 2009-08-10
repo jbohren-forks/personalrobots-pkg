@@ -7,7 +7,7 @@ import rospy
 import os
 import ply_import
 
-from robot_msgs.msg import *
+from geometry_msg.msg import Point
 from recognition_lambertian.srv import *
 from visualization_msgs.msg import Marker
 
