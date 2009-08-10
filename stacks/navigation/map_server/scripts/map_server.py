@@ -33,14 +33,13 @@
 #
 
 import roslib
-roslib.load_manifest('static_map_server')
+roslib.load_manifest('map_server')
 
 import sys, time
 import rospy
 import std_msgs.msg
-import robot_msgs.msg
-import deprecated_msgs.msg
-import robot_srvs.srv
+import geometry_msgs.msg
+import nav_msgs.msg
 
 import Image
 import yaml
@@ -50,14 +49,17 @@ NAME = 'static_map_server'
 
 class map_server:
     def __init__(self):
-        pass
+        self.load_time=None
 
     def map_handler(self, req):
-        r = robot_srvs.srv.StaticMapResponse(robot_msgs.msg.OccMap2D(self.scale,
-                                                                    self.im.size[0],
-                                                                    self.im.size[1],
-                                                                    deprecated_msgs.msg.Pose2DFloat32(*tuple(self.origin)),
-                                                                    self.byte_map))
+        pos = geometry_msgs.Point(*tuple(self.origin))
+        info=nav_msgs.msg.MapMetaData(self.load_time,
+                                      self.scale,
+                                      self.im.size[0],
+                                      self.im.size[1],
+                                      geometry_msgs.msg.Pose(position=pos),
+                                      self.byte_map)
+        r = nav_msgs.srv.GetMapResponse(map=nav_msgs.msg.OccupancyGrid(info=info))
         print r.map
         return r
 
@@ -90,18 +92,22 @@ class map_server:
         # 100   occupied
         # 255   unknown
 
+        rospy.init_node(NAME)
+
         map = Numeric.where(is_unknown, 255, Numeric.where(is_vacant, 0, 100))
         self.byte_map = map.astype(Numeric.UnsignedInt8).tostring()
+        self.load_time = rospy.get_rostime() 
 
         self.scale = yaml_defs['resolution']
         self.origin = yaml_defs['origin']
 
-        rospy.init_node(NAME)
         s1 = rospy.Service("static_map", robot_srvs.srv.StaticMap, self.map_handler)
         rospy.spin()
 
 if __name__ == '__main__':
     try:
+        if len(sys.argv) != 3:
+            print >> sys.stderr, "Usage: map_server.py image yaml-def"
         map_server().start(sys.argv[1:])
     except KeyboardInterrupt, e:
         pass
