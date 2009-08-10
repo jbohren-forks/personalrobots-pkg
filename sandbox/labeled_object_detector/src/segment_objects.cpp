@@ -54,7 +54,8 @@
 
 
 using namespace std;
-using namespace robot_msgs;
+using namespace geometry_msgs;
+using namespace sensor_msgs;
 
 
 
@@ -73,7 +74,7 @@ class SegmentObjects
 
 	double min_height_;
 
-        std_msgs::PointCloud full_cloud;
+        sensor_msgs::PointCloud full_cloud;
 
 
 

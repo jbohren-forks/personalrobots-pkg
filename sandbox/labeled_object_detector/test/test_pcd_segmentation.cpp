@@ -42,7 +42,8 @@
 #include "pcd_misc.h"
 
 
-using namespace robot_msgs;
+using namespace sensor_msgs;
+using namespace geometry_msgs;
 
 Point32 mk_pt(float x,float y,float z)
 {

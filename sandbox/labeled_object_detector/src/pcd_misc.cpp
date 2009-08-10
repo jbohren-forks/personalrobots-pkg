@@ -36,7 +36,6 @@
 #include "pcd_misc.h"
 
 
-using namespace robot_msgs;
 using namespace pcd_misc;
 
 int union_get_parent(std::vector<int>& group_ids,int i)
@@ -199,13 +198,13 @@ void pcd_misc::cluster_ids_to_cluster_indices(const std::vector<int>& cluster_id
 
 
 
-void pcd_misc::variationAlongLine(Point32 dir_line,geometry_msgs::Point32 pt_line, sensor_msgs::PointCloud cloud, std::vector<int> indices, float &min_v,float& max_v)
+void pcd_misc::variationAlongLine(geometry_msgs::Point32 dir_line,geometry_msgs::Point32 pt_line, sensor_msgs::PointCloud cloud, std::vector<int> indices, float &min_v,float& max_v)
 {
   min_v=1e15;
   max_v=-1e15;
   for(unsigned int iPt=0;iPt<indices.size();iPt++)
   {
-    Point32 &pt=cloud.points[indices[iPt]];
+    geometry_msgs::Point32 &pt=cloud.points[indices[iPt]];
     float new_v=(pt.x-pt_line.x)*dir_line.x+(pt.y-pt_line.y)*dir_line.y+(pt.z-pt_line.z)*dir_line.z;
 
     if(min_v>new_v)

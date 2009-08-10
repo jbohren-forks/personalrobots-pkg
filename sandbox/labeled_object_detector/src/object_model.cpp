@@ -40,7 +40,6 @@
 #include "object_names/Name2Float.h"
 
 using namespace std;
-using namespace robot_msgs;
 using namespace pcd_misc;
 using namespace labeled_object_detector;
 

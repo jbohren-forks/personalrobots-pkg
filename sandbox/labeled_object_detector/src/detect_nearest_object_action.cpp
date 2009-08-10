@@ -39,7 +39,8 @@
 
 
 using namespace std;
-using namespace robot_msgs;
+using namespace geometry_msgs;
+using namespace sensor_msgs;
 using namespace labeled_object_detector;
 
 

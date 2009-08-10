@@ -43,7 +43,7 @@
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <gtest/gtest.h>
 
-using namespace robot_msgs;
+using namespace geometry_msgs;
 using namespace labeled_object_detector;
 
 int count=0;
