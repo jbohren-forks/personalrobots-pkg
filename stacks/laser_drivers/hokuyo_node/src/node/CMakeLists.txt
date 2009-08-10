@@ -1,2 +1,5 @@
 rospack_add_executable(hokuyo_node hokuyo_node.cpp)
 target_link_libraries(hokuyo_node libhokuyo)
+
+rospack_add_executable(hokuyo_node_new hokuyo_node_new.cpp)
+target_link_libraries(hokuyo_node_new libhokuyo)
