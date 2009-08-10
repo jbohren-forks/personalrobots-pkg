@@ -61,6 +61,7 @@
 
 using namespace std;
 using namespace sensor_msgs;
+using namespace stereo_msgs;
 
 class PublishScene
 {
