@@ -40,7 +40,6 @@ import Queue
 import time
 
 from robot_actions.msg import ActionStatus
-import robot_msgs.msg
 from std_msgs.msg import Empty
 
 RESET = ActionStatus.RESET

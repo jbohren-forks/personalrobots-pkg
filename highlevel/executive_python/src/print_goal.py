@@ -45,7 +45,7 @@ roslib.load_manifest('executive_python')
 import rospy
 import random
 import sys
-from robot_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped
 
 class GoalPrinter:
   def __init__(self, goal_topic):

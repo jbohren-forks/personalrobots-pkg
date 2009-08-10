@@ -36,8 +36,8 @@
 import roslib
 roslib.load_manifest('tabletop_manipulation')
 import rospy
-from robot_srvs.srv import FindTable, FindTableRequest
-from robot_msgs.msg import Polygon3D, Point
+from tabletop_srvs.srv import FindTable, FindTableRequest
+from geometry_msgs.msg import Point
 from visualization_msgs.msg import Marker
 from nav_msgs.msg import Odometry
 from tf.msg import tfMessage

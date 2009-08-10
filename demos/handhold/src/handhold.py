@@ -3,7 +3,7 @@
 import roslib; roslib.load_manifest('handhold')
 import rospy
 from tf import TransformListener
-from robot_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import Twist
 #import numpy
 

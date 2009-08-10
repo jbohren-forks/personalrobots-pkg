@@ -37,7 +37,7 @@
 import roslib
 roslib.load_manifest('executive_python')
 import rospy
-from robot_msgs.msg import BatteryState
+from pr2_msgs.msg import BatteryState
 import os
 
 class BatteryMonitorAdapter:

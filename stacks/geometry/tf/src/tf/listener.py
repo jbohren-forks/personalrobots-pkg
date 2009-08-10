@@ -70,9 +70,9 @@ class TransformerROS(TFX.Transformer):
     def fromTranslationRotation(self, translation, rotation):
         return numpy.dot(transformations.translation_matrix(translation), transformations.quaternion_matrix(rotation))
 
-    ## Transforms a robot_msgs PointStamped message to frame target_frame, returns the resulting PointStamped.
+    ## Transforms a geometry_msgs PointStamped message to frame target_frame, returns the resulting PointStamped.
     # @param target_frame The target frame
-    # @param ps           robot_msgs.msg.PointStamped object
+    # @param ps           geometry_msgs.msg.PointStamped object
 
     def transformPoint(self, target_frame, ps):
         mat44 = self.asMatrix(target_frame, ps.header)
@@ -83,9 +83,9 @@ class TransformerROS(TFX.Transformer):
         r.point = geometry_msgs.msg.Point(*xyz)
         return r
 
-    ## Transforms a robot_msgs QuaternionStamped message to frame target_frame, returns the resulting QuaternionStamped.
+    ## Transforms a geometry_msgs QuaternionStamped message to frame target_frame, returns the resulting QuaternionStamped.
     # @param target_frame The target frame
-    # @param ps           robot_msgs.msg.QuaternionStamped object
+    # @param ps           geometry_msgs.msg.QuaternionStamped object
 
     def transformQuaternion(self, target_frame, ps):
         # mat44 is frame-to-frame transform as a 4x4
@@ -107,9 +107,9 @@ class TransformerROS(TFX.Transformer):
         r.quaternion = geometry_msgs.msg.Quaternion(*quat)
         return r
 
-    ## Transforms a robot_msgs PoseStamped message to frame target_frame, returns the resulting PoseStamped.
+    ## Transforms a geometry_msgs PoseStamped message to frame target_frame, returns the resulting PoseStamped.
     # @param target_frame The target frame
-    # @param ps           robot_msgs.msg.PoseStamped object
+    # @param ps           geometry_msgs.msg.PoseStamped object
 
     def transformPose(self, target_frame, ps):
         # mat44 is frame-to-frame transform as a 4x4

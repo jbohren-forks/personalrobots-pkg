@@ -8,6 +8,12 @@
   <depend package="3dnav_pr2"/>
   <depend package="planning_environment"/>
   <depend package="nav_msgs"/>
+  <depend package="tf"/>
+  <depend package="geometry_msgs"/>
+  <depend package="visualization_msgs"/>
+  <depend package="nav_msgs"/>
+  <depend package="tabletop_srvs"/>
+
 
 <!--
   <depend package="2dnav_pr2"/>

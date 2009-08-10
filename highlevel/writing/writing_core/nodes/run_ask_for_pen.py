@@ -49,7 +49,7 @@ from robot_actions.msg import NoArgumentsActionState
 import robot_actions.msg
 import std_msgs.msg
 import pr2_robot_actions.msg
-import robot_msgs.msg
+from geometry_msgs.msg import PoseStamped, Twist
 import robot_srvs.srv
 import python_actions
 
@@ -81,7 +81,7 @@ class AskForPenAction(python_actions.Action):
     #open the gripper 
     self.gripper_controller_publisher.publish(std_msgs.msg.Float64(0.03))
 
-    mtp = robot_msgs.msg.PoseStamped()
+    mtp = PoseStamped()
     mtp.header.stamp = rospy.get_rostime()
     mtp.header.frame_id = "torso_lift_link"
     mtp.pose.position.x =0.56
@@ -91,7 +91,7 @@ class AskForPenAction(python_actions.Action):
     mtp.pose.orientation.y =0.181
     mtp.pose.orientation.z =0.412
     mtp.pose.orientation.w =-0.029
-    twist = robot_msgs.msg.Twist()
+    twist = Twist()
 
     #move the arm 
     try:

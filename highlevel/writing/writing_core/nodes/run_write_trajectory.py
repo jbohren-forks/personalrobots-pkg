@@ -47,7 +47,7 @@ from std_msgs.msg import Empty
 from robot_actions.msg import NoArgumentsActionState
 import robot_actions.msg
 import std_msgs.msg
-import robot_msgs.msg
+import geometry_msgs.msg
 import python_actions
 
 
@@ -66,7 +66,7 @@ class WriteTrajectoryAction(python_actions.Action):
       self.arm_controller = "r_arm_cartesian_pose_controller"
       rospy.set_param(self.name + "/arm_controller", self.arm_controller)
 
-    self.arm_controller_publisher = rospy.Publisher("r_arm_cartesian_pose_controller/command",  robot_msgs.msg.PoseStamped)
+    self.arm_controller_publisher = rospy.Publisher("r_arm_cartesian_pose_controller/command",  geometry_msgs.msg.PoseStamped)
     
     
   def execute(self, goal):

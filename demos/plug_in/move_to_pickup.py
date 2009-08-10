@@ -8,7 +8,7 @@ import numpy
 import rospy
 
 from plugs_msgs.msg import PlugStow
-from robot_msgs.msg import Point, PoseStamped
+from geometry_msgs.msg import Point, PoseStamped
 from mechanism_msgs.msg import JointTraj, JointTrajPoint
 from mechanism_control import mechanism
 from robot_mechanism_controllers.srv import *

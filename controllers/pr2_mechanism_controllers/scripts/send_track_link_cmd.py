@@ -11,7 +11,7 @@ import string
 import rospy
 from std_msgs import *
 
-from robot_msgs.msg import Point
+from geometry_msgs.msg import Point
 from pr2_mechanism_controllers.msg import TrackLinkCmd
 from time import sleep
 

@@ -695,7 +695,7 @@ def main(argv) :
         pass
 
   #  if people_tracker.visualize:
-  #    people_tracker.pub = rospy.Publisher('/robot_msgs/full_cloud',PointCloud)
+  #    people_tracker.pub = rospy.Publisher('sensor_msgs/full_cloud',PointCloud)
   #    rospy.init_node('videre_face_tracker',anonymous=True)
 
     num_frames = 0

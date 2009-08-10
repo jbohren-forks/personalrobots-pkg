@@ -39,7 +39,7 @@ roslib.load_manifest('annotated_map_builder')
 import rospy
 import random
 import sys
-from robot_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped
 from annotated_map_builder.msg import WaitActionState
 from stereo_msgs.msg import RawStereo
 

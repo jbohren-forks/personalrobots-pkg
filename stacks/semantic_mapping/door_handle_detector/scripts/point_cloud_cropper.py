@@ -46,7 +46,8 @@ import tf
 import bullet
 
 import rospy
-from robot_msgs.msg import PointCloud, ChannelFloat32, Point32
+from sensor_msgs.msg import PointCloud, ChannelFloat32, Point32
+from geometry_msgs.msg import Point32
 
 NAME='point_cloud_cropper'
 

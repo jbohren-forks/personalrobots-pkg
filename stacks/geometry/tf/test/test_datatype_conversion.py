@@ -4,7 +4,7 @@ import roslib; roslib.load_manifest('tf')
 import sys
 import unittest
 import tf
-import robot_msgs.msg
+import geometry_msgs.msg
 import rospy
 
 ## A sample python unit test
@@ -16,7 +16,7 @@ class PoseConversions(unittest.TestCase):
         self.tfpose_stamped.frame_id = "frame1"
         self.tfpose_stamped.stamp = roslib.rostime.Time(10,0)
 
-        self.msgpose_stamped = robot_msgs.msg.PoseStamped()
+        self.msgpose_stamped = geometry_msgs.msg.PoseStamped()
         self.msgpose_stamped.pose.position.x = 0
         self.msgpose_stamped.pose.position.y = 0
         self.msgpose_stamped.pose.position.z = 0
@@ -35,7 +35,7 @@ class PoseConversions(unittest.TestCase):
         self.tfpoint_stamped.frame_id = "frame1"
         self.tfpoint_stamped.stamp = roslib.rostime.Time(10,0)
 
-        self.msgpoint_stamped = robot_msgs.msg.PointStamped()
+        self.msgpoint_stamped = geometry_msgs.msg.PointStamped()
         self.msgpoint_stamped.point.x = 0
         self.msgpoint_stamped.point.y = 0
         self.msgpoint_stamped.point.z = 0
@@ -50,7 +50,7 @@ class PoseConversions(unittest.TestCase):
         self.tfvector_stamped.frame_id = "frame1"
         self.tfvector_stamped.stamp = roslib.rostime.Time(10, 0)
 
-        self.msgvector_stamped = robot_msgs.msg.Vector3Stamped()
+        self.msgvector_stamped = geometry_msgs.msg.Vector3Stamped()
         self.msgvector_stamped.vector.x = 0
         self.msgvector_stamped.vector.y = 0
         self.msgvector_stamped.vector.z = 0
@@ -66,7 +66,7 @@ class PoseConversions(unittest.TestCase):
         self.tfquaternion_stamped.frame_id = "frame1"
         self.tfquaternion_stamped.stamp = roslib.rostime.Time(10, 0)
 
-        self.msgquaternion_stamped = robot_msgs.msg.QuaternionStamped()
+        self.msgquaternion_stamped = geometry_msgs.msg.QuaternionStamped()
         self.msgquaternion_stamped.quaternion.x = 0
         self.msgquaternion_stamped.quaternion.y = 0
         self.msgquaternion_stamped.quaternion.z = 0

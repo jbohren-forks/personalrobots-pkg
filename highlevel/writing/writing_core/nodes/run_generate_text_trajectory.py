@@ -47,7 +47,7 @@ from std_msgs.msg import Empty
 
 import pr2_robot_actions.msg
 
-import robot_msgs
+import geometry_msgs
 import python_actions
 
 # http://local.wasp.uwa.edu.au/~pbourke/dataformats/hershey/
@@ -145,8 +145,8 @@ class GenerateTextTrajectoryAction(python_actions.Action):
     msg = nav_msgs.msg.Path()
     msg.poses = []
     for (x, y, z) in points:
-      ps = robot_msgs.msg.PoseStamped()
-      ps.pose.position = robot_msgs.msg.Point(x/goal.scale, y/goal.scale, z)
+      ps = geometry_msgs.msg.PoseStamped()
+      ps.pose.position = geometry_msgs.msg.Point(x/goal.scale, y/goal.scale, z)
       msg.poses.append(ps)
     self.feedback = msg
 

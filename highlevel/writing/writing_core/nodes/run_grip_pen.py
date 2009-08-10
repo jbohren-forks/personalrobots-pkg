@@ -48,7 +48,6 @@ from robot_actions.msg import NoArgumentsActionState
 import robot_actions.msg
 import std_msgs.msg
 import pr2_robot_actions.msg
-import robot_msgs.msg
 import python_actions
 import mechanism_msgs.msg
 

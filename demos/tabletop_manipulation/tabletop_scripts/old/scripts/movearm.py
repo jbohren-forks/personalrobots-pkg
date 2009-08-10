@@ -37,7 +37,7 @@ import roslib
 roslib.load_manifest('tabletop_manipulation')
 import rospy
 from pr2_msgs.msg import MoveArmGoal, MoveArmState
-from robot_msgs.msg import PoseConstraint, ControllerStatus
+from geometry_msgs.msg import PoseConstraint, ControllerStatus
 from mechanism_msgs.msg import JointState
 
 import sys

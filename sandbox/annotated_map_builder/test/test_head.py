@@ -51,7 +51,7 @@ from annotated_map_builder.move_head_adapter import *
 
 from pr2_msgs.msg import BaseControllerState
 from geometry_msgs.msg import Twist
-from robot_msgs.msg import JointCmd
+from deprecated_msgs.msg import JointCmd
 
 from python_actions import *
 

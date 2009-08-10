@@ -14,7 +14,7 @@ import tf
 import bullet
 import time
 
-from robot_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped
 from robot_actions.msg import ActionStatus
 from nav_robot_actions.msg import MoveBaseState
 from tf.msg import tfMessage

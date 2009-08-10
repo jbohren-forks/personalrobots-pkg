@@ -126,8 +126,9 @@ import rospy
 import random
 import sys
 from visualization_msgs.msg import Marker
-from robot_msgs.msg import AttachedObject, PoseConstraint
-from robot_srvs.srv import FindTable, FindTableRequest, SubtractObjectFromCollisionMap, SubtractObjectFromCollisionMapRequest, RecordStaticMapTrigger, RecordStaticMapTriggerRequest
+from mapping_msgs.msg import AttachedObject
+from motion_planning_msgs import PoseConstraint
+from tabletop_srvs.srv import FindTable, FindTableRequest, SubtractObjectFromCollisionMap, SubtractObjectFromCollisionMapRequest, RecordStaticMapTrigger, RecordStaticMapTriggerRequest
 from pr2_mechanism_controllers.srv import SetProfile, SetProfileRequest
 from highlevel_controllers.msg import *
 from executive_python.navigation_adapter import *

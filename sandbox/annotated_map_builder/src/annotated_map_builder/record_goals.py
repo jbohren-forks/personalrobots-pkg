@@ -39,7 +39,7 @@ roslib.load_manifest('annotated_map_builder')
 import rospy
 import random
 import sys
-from robot_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped
 
 class RecordGoals:
   def __init__(self,filename):
