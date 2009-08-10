@@ -4,6 +4,7 @@ SVN_CMDLINE = svn
 SVN_REVISION = 175
 SVN_DIR = yaml-cpp-svn
 SVN_URL = http://yaml-cpp.googlecode.com/svn/trunk
+SVN_PATCH = yaml_cmake.patch
 INSTALL_DIR = yaml-cpp
 CMAKE = cmake
 CMAKE_ARGS = 	-DCMAKE_INSTALL_PREFIX=$(PWD)/$(INSTALL_DIR)/ \
@@ -12,7 +13,7 @@ CMAKE_ARGS = 	-DCMAKE_INSTALL_PREFIX=$(PWD)/$(INSTALL_DIR)/ \
 
 include $(shell rospack find mk)/svn_checkout.mk
 
-yaml-cpp: 
+yaml-cpp: patched 
 #	$(SVN_DIR) Makefile
 	@if [ ! -d yaml-cpp-svn ]; then $(SVN_CMDLINE) co -r $(SVN_REVISION) http://yaml-cpp.googlecode.com/svn/trunk  yaml-cpp-svn; fi;
 	@if [ ! -n "`svn info yaml-cpp | grep 'Revision: $(SVN_REVISION)'`" ]; then cd yaml-cpp-svn && $(SVN_CMDLINE) up -r $(SVN_REVISION); fi;
