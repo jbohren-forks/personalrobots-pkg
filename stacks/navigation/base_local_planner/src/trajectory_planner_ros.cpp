@@ -93,8 +93,10 @@ namespace base_local_planner {
       ros_node.param("yaw_goal_tolerance", yaw_goal_tolerance_, 0.05);
       ros_node.param("xy_goal_tolerance", xy_goal_tolerance_, 0.10);
 
+      //create a node in the global namespace for the odom topic
+      ros::Node global_node;
       string odom_topic;
-      ros_node.param("odom_topic", odom_topic, string("odom"));
+      global_node.param("odom_topic", odom_topic, string("odom"));
       // Subscribe to odometry messages to get global pose
 
       //to get odometery information, we need to get a handle to the topic in the global namespace of the node
