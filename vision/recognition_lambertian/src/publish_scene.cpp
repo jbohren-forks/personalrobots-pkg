@@ -204,18 +204,18 @@ public:
 
 	void IplToImage(IplImage* cv_image, Image& ros_image, string name)
 	{
-		string encoding;
 		if (cv_image->nChannels==1) {
-			encoding = "mono";
+		  fillImage(ros_image, "mono8",
+			    cv_image->height, cv_image->width, cv_image->width,
+			    cv_image->imageData );
 		}
 		else if (cv_image->nChannels==3) {
-			encoding = "rgb";
+		  fillImage(ros_image, "rgb8",
+			    cv_image->height, cv_image->width, cv_image->width * 3,
+			    cv_image->imageData );
+
 		}
 
-		fillImage(ros_image,  name.c_str(),
-				cv_image->height, cv_image->width, cv_image->nChannels,
-				encoding.c_str(), "uint8",
-				cv_image->imageData );
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
