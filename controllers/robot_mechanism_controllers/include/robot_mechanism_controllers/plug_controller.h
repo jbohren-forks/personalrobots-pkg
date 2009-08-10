@@ -45,7 +45,7 @@
 #include "geometry_msgs/PoseStamped.h"
 #include "geometry_msgs/Transform.h"
 #include "robot_mechanism_controllers/PlugInternalState.h"
-#include "robot_srvs/SetPoseStamped.h"
+#include "robot_mechanism_controllers/SetPoseStamped.h"
 #include "control_toolbox/pid.h"
 #include "misc_utils/subscription_guard.h"
 #include "mechanism_control/controller.h"
@@ -155,8 +155,8 @@ class PlugControllerNode : public Controller
   void command();
   void outletPose();
 
-  bool setToolFrame(robot_srvs::SetPoseStamped::Request &req,
-                    robot_srvs::SetPoseStamped::Response &resp);
+  bool setToolFrame(robot_mechanism_controllers::SetPoseStamped::Request &req,
+                    robot_mechanism_controllers::SetPoseStamped::Response &resp);
 
  private:
   std::string topic_;
