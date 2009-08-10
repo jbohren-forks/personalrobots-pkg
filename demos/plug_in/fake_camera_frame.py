@@ -28,8 +28,7 @@
 
 import roslib
 roslib.load_manifest('plug_in')
-import rospy
-from robot_msgs.msg import *
+import rospy:
 from tf.msg import tfMessage
 from math import *
 import time

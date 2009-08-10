@@ -34,7 +34,7 @@ import random, time
 import rospy
 import sys
 from std_msgs.msg import *
-from robot_msgs.msg import *
+from manipulation_msgs.msg import TaskFrameFormalism
 
 pub = rospy.Publisher('/cartesian_tff_right/command', TaskFrameFormalism)
 

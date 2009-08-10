@@ -17,6 +17,7 @@
   <depend package="move_base"/>
   <depend package="mux"/>
   <depend package="backup_safetysound"/>
+  <depend package="geometry_msgs"/>
 
   <!-- packages used in the test scripts -->
   <depend package="robot_actions"/>

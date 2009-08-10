@@ -44,7 +44,7 @@ import sys
 import time
 
 import rospy
-from robot_msgs.msg import *
+from pr2_msgs import BatteryState
 
 def talker():
     pub = rospy.Publisher("battery_state", BatteryState)

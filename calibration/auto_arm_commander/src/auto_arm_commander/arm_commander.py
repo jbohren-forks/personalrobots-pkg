@@ -40,7 +40,6 @@ import sys
 #from std_msgs.msg import Empty
 from pr2_mechanism_controllers.srv import *
 #from pr2_mechanism_controllers.msg import 
-from robot_msgs.msg import *
 from manipulation_msgs.msg import *
 
 class ArmCommander() :

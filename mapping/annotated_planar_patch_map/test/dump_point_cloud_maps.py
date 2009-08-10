@@ -40,7 +40,7 @@ import rospy
 import random
 from annotated_map_msgs.msg import *
 
-from robot_msgs.msg import *
+from mapping_msgs.msg import PolygonalMap
 
 
 import os

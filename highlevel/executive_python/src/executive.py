@@ -38,10 +38,6 @@ import roslib
 roslib.load_manifest('executive_python')
 import rospy
 import random
-from std_msgs.msg import *
-from robot_msgs.msg import *
-from std_msgs.msg import *
-from robot_msgs.msg import *
 from battery_monitor_adapter import *
 from navigation_adapter import *
 from stuck_adapter import *

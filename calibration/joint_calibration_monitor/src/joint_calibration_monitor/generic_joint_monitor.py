@@ -31,7 +31,6 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
-from robot_msgs.msg import *
 from diagnostic_msgs.msg import *
 
 # Should these be constants in the Status msg?

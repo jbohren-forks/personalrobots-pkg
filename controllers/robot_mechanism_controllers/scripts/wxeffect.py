@@ -30,7 +30,6 @@ PKG = 'robot_mechanism_controllers'
 import roslib; roslib.load_manifest(PKG)
 
 import rospy
-from robot_msgs.msg import *
 from mechanism_msgs.msg import MechanismState
 
 import wx

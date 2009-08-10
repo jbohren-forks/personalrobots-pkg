@@ -34,7 +34,7 @@ import random, time
 import rospy
 import sys
 from std_msgs.msg import *
-from robot_msgs.msg import *
+from geometry_msgs.msg import PoseStamped
 
 pub = rospy.Publisher('/cartesian_trajectory/command', PoseStamped)
 

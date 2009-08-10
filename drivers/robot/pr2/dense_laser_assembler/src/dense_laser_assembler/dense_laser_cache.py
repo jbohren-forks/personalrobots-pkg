@@ -39,8 +39,6 @@ import rospy
 import sys
 import threading
 from laser_scan.msg import *
-from robot_msgs.msg import *
-from mechanism_msgs.msg import MechanismState
 from roslib import rostime
 
 # Stores a single laser scan plus some meta information

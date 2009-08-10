@@ -40,7 +40,7 @@ import rospy
 import threading
 from time import sleep
 from sensor_msgs.msg import LaserScan
-from robot_msgs.msg import *
+from pr2_msgs import LaserScannerSignal
 from mechanism_msgs.msg import MechanismState
 from std_msgs.msg import *
 from dense_laser_assembler.msg import *

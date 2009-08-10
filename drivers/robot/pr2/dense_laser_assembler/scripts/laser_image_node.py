@@ -39,11 +39,10 @@ import sys
 import rospy
 from time import sleep
 from laser_scan.msg import *
-from robot_msgs.msg import *
 from std_msgs.msg import *
 from dense_laser_assembler.msg import *
 from pr2_mechanism_controllers.msg import *
-from sensor_msgs.msg import *
+from sensor_msgs.msg import Image
 
 
 # Takes the dense laser scan data and converts it into images to can be viewed in

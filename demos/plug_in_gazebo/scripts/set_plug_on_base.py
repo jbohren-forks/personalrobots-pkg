@@ -47,7 +47,6 @@ import rospy, rostest
 from std_msgs.msg import *
 from robot_actions.msg import *
 from nav_robot_actions.msg import *
-from robot_msgs.msg import *
 from tf.transformations import *
 from geometry_msgs.msg import Twist, PoseWithRatesStamped
 from numpy import *

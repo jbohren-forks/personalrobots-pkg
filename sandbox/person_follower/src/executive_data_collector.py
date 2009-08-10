@@ -39,10 +39,6 @@ roslib.load_manifest('annotated_map_builder')
 import rospy
 import sys
 import random
-from std_msgs.msg import *
-from robot_msgs.msg import *
-from std_msgs.msg import *
-from robot_msgs.msg import *
 from stereo_msgs.msg import RawStereo
 from mechanism_msgs.msg import JointStates, JointState
 

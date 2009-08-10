@@ -5,7 +5,7 @@ roslib.load_manifest('plug_in')
 
 import rospy
 from std_msgs.msg import *
-from robot_msgs.msg import *
+from geometry_msgs.msg import Wrench
 from joy.msg import Joy
 
 rospy.init_node('wrencher', anonymous=True)

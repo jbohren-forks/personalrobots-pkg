@@ -33,9 +33,8 @@ import sys, time
 import roslib
 roslib.load_manifest('plug_in')
 import rospy
-from robot_msgs.msg import *
-from robot_srvs.srv import *
-from deprecated_srvs.srv import *
+from geometry.msg import PoseStamped
+from robot_mechanism_controllers.srv import SetPoseStamped
 
 CONTROLLER = 'arm_constraint'
 

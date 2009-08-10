@@ -34,9 +34,8 @@ import math
 import roslib
 roslib.load_manifest('plug_in')
 import rospy
-from robot_msgs.msg import *
-from robot_srvs.srv import *
-from deprecated_srvs.srv import *
+from geometry_msgs.msg import PoseStamped
+from deprecated_srvs.srv import MoveToPose
 import tf.transformations
 import tf
 

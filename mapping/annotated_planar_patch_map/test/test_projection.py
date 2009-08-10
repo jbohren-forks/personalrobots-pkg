@@ -40,7 +40,6 @@ import sys
 import unittest
 from pr2_mechanism_controllers.msg import LaserScannerSignal
 from annotated_map_msgs.msg import *
-from robot_msgs.msg import *
 from roslib.msg import *
 import tf
 from cv_mech_turk.msg import ExternalAnnotation

@@ -49,9 +49,8 @@ roslib.load_manifest('rostest')
 import sys, unittest
 import os, os.path, threading, time
 import rospy, rostest
-from robot_msgs.msg import *
-from std_msgs.msg import *
-from pr2_mechanism_controllers.msg import *
+from std_msgs.msg import FLoat64
+from pr2_mechanism_controllers.msg import JointPosCmd
 
 TEST_DURATION = 60.0
 COMMAND_INTERVAL = 5.0

@@ -30,7 +30,6 @@ from tf.msg import tfMessage
 from nav_msgs import *
 from nav_msgs.msg import *
 from std_msgs.msg import *
-from robot_msgs.msg import *
 from geometry_msgs.msg import *
 
 tfclient = None

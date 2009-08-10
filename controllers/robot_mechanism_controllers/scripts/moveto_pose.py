@@ -24,7 +24,7 @@
 # INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
+# POSSIBILITY OF SUCH DAMAGE.from robot_msgs.msg import *
 
 
 import roslib; roslib.load_manifest('pr2_mechanism_controllers')
@@ -34,7 +34,7 @@ import random, time
 import rospy
 import sys
 from std_msgs.msg import *
-from robot_msgs.msg import *
+from geometry_msgs.msg import PoseStamped
 
 pub = rospy.Publisher('/cartesian_pose/command', PoseStamped)
 

@@ -41,7 +41,6 @@ import threading
 
 from pr2_mechanism_controllers.srv import *
 from mechanism_msgs.msg import MechanismState
-from robot_msgs.msg import *
 from roslib import rostime
 from kinematic_calibration.msg_cache import MsgCache
 
