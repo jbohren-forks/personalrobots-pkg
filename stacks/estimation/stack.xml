@@ -9,8 +9,8 @@
   
 
   <depend stack="geometry"/> <!-- tf --> 
-  <depend stack="ros"/> <!-- roscpp, std_msgs, gtest --> 
+  <depend stack="ros"/> 
   <depend stack="common"/> <!-- bfl --> 
-  <depend stack="common_msgs"/> <!-- robot_msgs, geometry_msgs --> 
+  <depend stack="common_msgs"/> <!-- geometry_msgs --> 
 
 </stack>

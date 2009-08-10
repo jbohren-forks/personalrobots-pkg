@@ -8,6 +8,6 @@
   <url>http://pr.willowgarage.com/wiki/ROS</url>
 
   <depend stack="ros"/> <!-- rostest, roscpp, rosconsole, rospy, rostest, roswtf, message_filters --> 
-  <depend stack="common_msgs"/> <!-- geometry_msgs, robot_msgs, sensor_msgs --> 
+  <depend stack="common_msgs"/> <!-- geometry_msgs, sensor_msgs --> 
 
 </stack>

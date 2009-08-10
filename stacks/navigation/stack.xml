@@ -8,10 +8,10 @@
   <url>http://pr.willowgarage.com/wiki/navigation</url>
   
 
-  <depend stack="geometry"/> <!-- tf, angles, tf, bullet, tf, tf, tf, angles, tf, tf, angles, tf --> 
-  <depend stack="ros"/> <!-- roscpp, rosconsole, roscpp, rosconsole, rosconsole, roscpp, rospy, roscpp, message_filters, roscpp, rosconsole, std_msgs, roslib, roscpp, roscpp, rosconsole, roscpp, std_srvs, rostest, std_msgs, rosconsole, roscpp, roslib, rospy, rosconsole, roscpp, std_msgs, std_msgs --> 
-  <depend stack="visualization_core"/> <!-- visualization_msgs, ogre, ogre_tools, visualization_msgs, visualization_msgs, visualization_msgs, visualization_msgs, visualization_msgs --> 
-  <depend stack="common"/> <!-- robot_actions, laser_scan, laser_scan, robot_actions, loki --> 
-  <depend stack="common_msgs"/> <!-- robot_msgs, geometry_msgs, nav_msgs, nav_msgs, robot_srvs, nav_msgs, robot_msgs, geometry_msgs, nav_msgs, nav_msgs, robot_msgs, robot_srvs, robot_msgs, nav_msgs, robot_msgs, geometry_msgs, sensor_msgs, nav_msgs, robot_msgs, geometry_msgs --> 
+  <depend stack="geometry"/> 
+  <depend stack="ros"/> 
+  <depend stack="visualization_core"/> 
+  <depend stack="common"/> 
+  <depend stack="common_msgs"/> 
 
 </stack>
