@@ -569,7 +569,9 @@ class ControlWindow(gtk.Window):
     self.load_data_path()
     self.load_ticks_path()
 
-    self.load(self.ticks[-1])
+    # try to load the latest
+    if len(self.ticks) > 0:
+      self.load(self.ticks[-1])
 
     self.reactor_chooser.connect("changed",self.on_reactor_change)
     self.connect("destroy", self.on_destroy)
@@ -615,10 +617,14 @@ class ControlWindow(gtk.Window):
       pass
 
   def load_ticks_path(self, widget=None, event = None):
-    tick_paths = os.listdir(data_path)
-    self.ticks = [int(os.path.basename(s)[4:]) for s in tick_paths if s[0:4] == "tick"]
-    self.ticks.sort()
-    self.update_available_buttons()
+    try:
+      tick_paths = os.listdir(data_path)
+      self.ticks = [int(os.path.basename(s)[4:]) for s in tick_paths if s[0:4] == "tick"]
+      self.ticks.sort()
+      self.update_available_buttons()
+    except:
+      self.statusbar.push(0,"No data at log path yet.")
+
 
   def on_path_change(self,widget):
     global log_path
@@ -695,10 +701,8 @@ class ControlWindow(gtk.Window):
       self.statusbar.push(0,"Loaded Tick [%d] from \"%s\"" % (tick,self.reactor_chooser.get_active_text()))
     except ValueError:
       self.statusbar.push(0,"Invalid tick entry!")
-      raise
     except:
       self.statusbar.push(0,"Could not load Tick [%d] from \"%s\"" % (tick,self.reactor_chooser.get_active_text()))
-      raise
 
   def update_available_buttons(self):
     try:
