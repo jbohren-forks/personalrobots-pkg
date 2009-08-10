@@ -10,18 +10,18 @@
 
   <depend stack="controllers"/> <!-- pr2_mechanism_controllers --> 
   <depend stack="3rdparty"/> <!-- toro, neven --> 
-  <depend stack="calibration"/> <!-- calibration_msgs, kinematic_calibration, calibration_msgs --> 
-  <depend stack="geometry"/> <!-- eigen, tf, tf, kdl, angles, tf, eigen, tf, tf, tf, tf, bullet, tf, tf, eigen, tf --> 
+  <depend stack="calibration"/> <!-- calibration_msgs, kinematic_calibration --> 
+  <depend stack="geometry"/> <!-- eigen, tf, kdl, angles, bullet--> 
   <depend stack="navigation"/> <!-- map_server, amcl, nav_view --> 
   <depend stack="drivers"/> <!-- axis_cam --> 
   <depend stack="semantic_mapping"/> <!-- point_cloud_mapping, FLANN, point_cloud_mapping, ANN --> 
-  <depend stack="util"/> <!-- image_utils, image_utils, topic_synchronizer, topic_synchronizer, image_utils, topic_synchronizer, topic_synchronizer, message_sequencing, image_utils, topic_synchronizer, topic_synchronizer, image_utils --> 
-  <depend stack="opencv"/> <!-- opencv_latest, opencv_latest, opencvpython, opencv_latest, opencv_latest, opencv_latest, opencv_latest, opencv_latest, opencv_latest, opencv_latest, opencv_latest, opencv_latest, opencvpython, opencv_latest, opencv_latest, opencv_latest, opencv_latest, opencv_latest, opencv_latest --> 
+  <depend stack="util"/> <!-- image_utils, topic_synchronizer --> 
+  <depend stack="opencv"/> <!-- opencv_latest, opencvpython --> 
   <depend stack="camera_drivers"/> <!-- dcam, dcam, dcam --> 
-  <depend stack="common"/> <!-- robot_actions, filters, robot_actions, laser_scan, bfl, robot_actions, python_actions --> 
+  <depend stack="common"/> <!-- robot_actions, filters, laser_scan, bfl, python_actions --> 
   <depend stack="highlevel"/> <!-- door_msgs --> 
-  <depend stack="ros"/> <!-- roscpp, rostest, rospy, roscpp, rostest, rospy, std_msgs, rosrecord, roscpp, std_srvs, roscpp, roscpp, std_msgs, roscpp, std_msgs, std_msgs, std_srvs, roscpp, rospy, rostest, roscpp, std_msgs, std_srvs, roscpp, std_msgs, roscpp, std_msgs, std_srvs, rospy, rosrecord, rospy, rosrecord, std_msgs, roscpp, roscpp, roscpp, std_msgs, std_srvs, roscpp, roscpp, std_msgs, rospy, roscpp, std_msgs, roscpp, std_msgs, std_srvs --> 
-  <depend stack="visualization_core"/> <!-- visualization_msgs, visualization_msgs, visualization_msgs, visualization_msgs --> 
-  <depend stack="common_msgs"/> <!-- sensor_msgs, robot_msgs, sensor_msgs, sensor_msgs, robot_msgs, robot_msgs, geometry_msgs, robot_srvs, sensor_msgs, mapping_msgs, robot_msgs, sensor_msgs, sensor_msgs, robot_msgs, sensor_msgs, geometry_msgs, sensor_msgs, sensor_msgs, sensor_msgs, robot_msgs, robot_msgs, sensor_msgs, robot_msgs, sensor_msgs, sensor_msgs, robot_msgs, sensor_msgs, sensor_msgs --> 
+  <depend stack="ros"/> <!-- roscpp, rostest, rospy, std_msgs, rosrecord, std_srvs --> 
+  <depend stack="visualization_core"/> <!-- visualization_msgs -->
+  <depend stack="common_msgs"/> <!-- sensor_msgs, geometry_msgs -->
 
 </stack>
