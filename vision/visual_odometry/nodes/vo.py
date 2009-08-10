@@ -43,6 +43,7 @@ from math import *
 import rospy
 
 import stereo_msgs.msg
+import geometry_msgs.msg
 
 from stereo import DenseStereoFrame, SparseStereoFrame
 import deprecated_msgs.msg
@@ -97,7 +98,7 @@ class VO:
     p.inliers = self.vo.inl
     # XXX - remove after camera sets frame_id
     p.header = roslib.msg.Header(0, msg.header.stamp, "stereo_link")
-    p.pose = robot_msgs.msg.Pose(robot_msgs.msg.Point(*pose.xform(0,0,0)), robot_msgs.msg.Quaternion(*pose.quaternion()))
+    p.pose = geometry_msgs.msg.Pose(geometry_msgs.msg.Point(*pose.xform(0,0,0)), geometry_msgs.msg.Quaternion(*pose.quaternion()))
     self.pub_vo.publish(p)
 
 def main(args):
