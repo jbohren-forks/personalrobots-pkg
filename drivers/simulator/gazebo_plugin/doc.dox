@@ -52,7 +52,7 @@ Here are the gazebo plugins which are currently implemented:
 Various dynamically loaded plugins have been outfitted for PR2.
 ROS topics and services used by PR2 simulation can be listed by typing \b rostopic list
 
- - SAmple ROS topics published directly by the simulator plugins
+ - Sample ROS topics published directly by the simulator plugins
      <table border="1">
      <tr><th>  Topic Name                          </th> <th> Message Type                         </th>  <th> Plugin Name             </th> <th>  Description                                               </th>  </tr>
      <tr><td> \b narrow_stereo/raw_stereo             </td> <td>  sensor_msgs::RawStereo.msg       </td>  <td>  Ros_Camera.hh          </td> <td>  Images from left stereo camera.                           </td>  </tr>
@@ -60,16 +60,16 @@ ROS topics and services used by PR2 simulation can be listed by typing \b rostop
      <tr><td> \b base_scan                            </td> <td>  sensor_msgs::LaserScan.msg       </td>  <td>  Ros_Laser.hh           </td> <td>  Laser scans from Hokuyo at the base.                      </td>  </tr>
      <tr><td> \b tilt_scan                            </td> <td>  sensor_msgs::LaserScan.msg       </td>  <td>  Ros_Laser.hh           </td> <td>  Laser scans from tilting Hokuyo.                          </td>  </tr>
 
-     <tr><td> \b battery_state                        </td> <td>  robot_msgs::BatteryStzte            </td>  <td>  gazebo_battery.h       </td> <td> Simulated battery state.                                   </td>  </tr>
-     <tr><td> \b diagnostic                           </td> <td>  robot_msgs::DiagnosticMessage       </td>  <td>  gazebo_battery.h       </td> <td> Simulated battery diagnostic messages.                     </td>  </tr>
+     <tr><td> \b battery_state                        </td> <td>  pr2_msgs::BatteryStzte            </td>  <td>  gazebo_battery.h       </td> <td> Simulated battery state.                                   </td>  </tr>
+     <tr><td> \b diagnostic                           </td> <td>  diagnostic_msgs::DiagnosticArray       </td>  <td>  gazebo_battery.h       </td> <td> Simulated battery diagnostic messages.                     </td>  </tr>
 
-     <tr><td> \b base_pose_ground_truth               </td> <td>  std_msgs::PoseWithRatesStamped      </td>  <td> P3D.hh                  </td> <td> Ground truth from the base, theoretical exact odometry.    </td>  </tr>
-     <tr><td> \b gripper_roll_right_pose_ground_truth </td> <td>  std_msgs::PoseWithRatesStamped      </td>  <td> P3D.hh                  </td> <td> Ground truth from center of right gripper_roll link.       </td>  </tr>
-     <tr><td> \b gripper_roll_left_pose_ground_truth  </td> <td>  std_msgs::PoseWithRatesStamped      </td>  <td> P3D.hh                  </td> <td> Ground truth from center of left gripper_roll link.        </td>  </tr>
-     <tr><td> \b finger_tip_l_left_ground_truth       </td> <td>  std_msgs::PoseWithRatesStamped      </td>  <td> P3D.hh                  </td> <td> Ground truth from center of left finger tip on left arm.   </td>  </tr>
-     <tr><td> \b finger_tip_r_left_ground_truth       </td> <td>  std_msgs::PoseWithRatesStamped      </td>  <td> P3D.hh                  </td> <td> Ground truth from center of right finger tip on left arm.  </td>  </tr>
-     <tr><td> \b finger_tip_l_right_ground_truth      </td> <td>  std_msgs::PoseWithRatesStamped      </td>  <td> P3D.hh                  </td> <td> Ground truth from center of left finger tip on right arm.  </td>  </tr>
-     <tr><td> \b finger_tip_R_right_ground_truth      </td> <td>  std_msgs::PoseWithRatesStamped      </td>  <td> P3D.hh                  </td> <td> Ground truth from center of right finger tip on right arm. </td>  </tr>
+     <tr><td> \b base_pose_ground_truth               </td> <td>  nav_msgs::Odometry      </td>  <td> P3D.hh                  </td> <td> Ground truth from the base, theoretical exact odometry.    </td>  </tr>
+     <tr><td> \b gripper_roll_right_pose_ground_truth </td> <td>  nav_msgs::Odometry      </td>  <td> P3D.hh                  </td> <td> Ground truth from center of right gripper_roll link.       </td>  </tr>
+     <tr><td> \b gripper_roll_left_pose_ground_truth  </td> <td>  nav_msgs::Odometry      </td>  <td> P3D.hh                  </td> <td> Ground truth from center of left gripper_roll link.        </td>  </tr>
+     <tr><td> \b finger_tip_l_left_ground_truth       </td> <td>  nav_msgs::Odometry      </td>  <td> P3D.hh                  </td> <td> Ground truth from center of left finger tip on left arm.   </td>  </tr>
+     <tr><td> \b finger_tip_r_left_ground_truth       </td> <td>  nav_msgs::Odometry      </td>  <td> P3D.hh                  </td> <td> Ground truth from center of right finger tip on left arm.  </td>  </tr>
+     <tr><td> \b finger_tip_l_right_ground_truth      </td> <td>  nav_msgs::Odometry      </td>  <td> P3D.hh                  </td> <td> Ground truth from center of left finger tip on right arm.  </td>  </tr>
+     <tr><td> \b finger_tip_R_right_ground_truth      </td> <td>  nav_msgs::Odometry      </td>  <td> P3D.hh                  </td> <td> Ground truth from center of right finger tip on right arm. </td>  </tr>
      <tr><td> \b time                                 </td> <td>  roslib::Time                      </td>  <td> Ros_Time.hh             </td> <td> Simulation time.                                           </td>  </tr>
      </table><br>
 
