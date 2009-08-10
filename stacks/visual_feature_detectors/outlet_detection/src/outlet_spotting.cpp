@@ -86,7 +86,6 @@
 #include <boost/thread.hpp>
 
 using namespace std;
-using namespace robot_msgs;
 
 
 template <typename T>

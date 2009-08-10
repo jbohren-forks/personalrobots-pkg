@@ -187,7 +187,7 @@ void RandomFieldCreator::createDescriptors()
  */
 // --------------------------------------------------------------
 void RandomFieldCreator::createNodes(RandomField& rf,
-                                     const robot_msgs::PointCloud& pt_cloud,
+                                     const sensor_msgs::PointCloud& pt_cloud,
                                      cloud_kdtree::KdTree& pt_cloud_kdtree,
                                      const vector<float>& labels,
                                      set<unsigned int>& failed_indices)
@@ -198,7 +198,7 @@ void RandomFieldCreator::createNodes(RandomField& rf,
   // ----------------------------------------------
   // Create interests points over the whole point cloud
   unsigned int nbr_pts = pt_cloud.points.size();
-  cv::Vector<const robot_msgs::Point32*> interest_pts(nbr_pts, NULL);
+  cv::Vector<const sensor_msgs::Point32*> interest_pts(nbr_pts, NULL);
   for (unsigned int i = 0 ; i < nbr_pts ; i++)
   {
     interest_pts[(size_t) i] = &(pt_cloud.points[i]);
@@ -260,7 +260,7 @@ void RandomFieldCreator::createNodes(RandomField& rf,
  */
 // --------------------------------------------------------------
 void RandomFieldCreator::createCliqueSet(RandomField& rf,
-                                         const robot_msgs::PointCloud& pt_cloud,
+                                         const sensor_msgs::PointCloud& pt_cloud,
                                          cloud_kdtree::KdTree& pt_cloud_kdtree,
                                          const set<unsigned int>& node_indices,
                                          const unsigned int clique_set_idx)
@@ -391,7 +391,7 @@ void RandomFieldCreator::createCliqueSet(RandomField& rf,
   ROS_INFO("    ########### Created clique set %u with %u cliques from %u clusters #############", clique_set_idx, nbr_created_cliques, nbr_created_clusters);
 }
 
-boost::shared_ptr<RandomField> RandomFieldCreator::createRandomField(const robot_msgs::PointCloud& pt_cloud, const vector<
+boost::shared_ptr<RandomField> RandomFieldCreator::createRandomField(const sensor_msgs::PointCloud& pt_cloud, const vector<
     float>& labels)
 {
   createDescriptors();

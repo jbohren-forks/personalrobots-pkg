@@ -38,7 +38,6 @@
 #include "annotated_planar_patch_map/map_base_assembler_srv.h"
 
 
-using namespace robot_msgs;
 using namespace annotated_map_msgs;
 using namespace std ;
 

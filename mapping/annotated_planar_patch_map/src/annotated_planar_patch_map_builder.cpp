@@ -12,7 +12,7 @@
 #include "ros/node.h"
 #include "ros/publisher.h"
 #include <tf/transform_listener.h>
-#include "robot_msgs/PolygonalMap.h"
+#include "mapping_msgs/PolygonalMap.h"
 #include <annotated_map_msgs/TaggedPolygonalMap.h>
 #include <annotated_map_msgs/TaggedPolygon3D.h>
 
@@ -38,14 +38,14 @@ class AnnotatedMapBuilder : public ros::Node
 
   void advertise_maps(){
     
-    advertise<robot_msgs::PolygonalMap>(std::string("global_object_map"),1);
+    advertise<mapping_msgs::PolygonalMap>(std::string("global_object_map"),1);
   }
   
   void handlePolygon(){
     try{
 
       printf("Polygon\n");
-      robot_msgs::PolygonalMap polymapOut;
+      mapping_msgs::PolygonalMap polymapOut;
       transformPolygonalMap(target_frame_, poly_object_, polymapOut);
 
       add_to_map(polymapOut,global_map_);
@@ -63,7 +63,7 @@ class AnnotatedMapBuilder : public ros::Node
 
   };
 
-  void add_to_map(robot_msgs::PolygonalMap newMap,robot_msgs::PolygonalMap& output_map)
+  void add_to_map(mapping_msgs::PolygonalMap newMap,mapping_msgs::PolygonalMap& output_map)
   {
     unsigned int num_polygons_to_add = newMap.get_polygons_size();
     unsigned int old_num_polygons = output_map.get_polygons_size();
@@ -78,7 +78,7 @@ class AnnotatedMapBuilder : public ros::Node
 
 
   //From tf
-void transformPolygonalMap(const std::string & target_frame, const robot_msgs::PolygonalMap & polymapIn, robot_msgs::PolygonalMap & polymapOut)
+void transformPolygonalMap(const std::string & target_frame, const mapping_msgs::PolygonalMap & polymapIn, mapping_msgs::PolygonalMap & polymapOut)
   {
   Stamped<Transform> transform;
   tf_->lookupTransform(target_frame, polymapIn.header.frame_id, polymapIn.header.stamp, transform);
@@ -86,8 +86,8 @@ void transformPolygonalMap(const std::string & target_frame, const robot_msgs::P
   transformPolygonalMap(target_frame, transform, polymapIn.header.stamp, polymapIn, polymapOut);
 };
 void transformPolygonalMap(const std::string& target_frame, const ros::Time& target_time,
-    const robot_msgs::PolygonalMap& polymapIn,
-    const std::string& fixed_frame, robot_msgs::PolygonalMap& polymapOut)
+    const mapping_msgs::PolygonalMap& polymapIn,
+    const std::string& fixed_frame, mapping_msgs::PolygonalMap& polymapOut)
 {
   Stamped<Transform> transform;
   tf_->lookupTransform(target_frame, target_time,
@@ -101,7 +101,7 @@ void transformPolygonalMap(const std::string& target_frame, const ros::Time& tar
 };
 
   
-  void transformPolygonalMap(const std::string & target_frame, const Transform& net_transform, const ros::Time& target_time, const robot_msgs::PolygonalMap & polymapIn, robot_msgs::PolygonalMap & polymapOut)
+  void transformPolygonalMap(const std::string & target_frame, const Transform& net_transform, const ros::Time& target_time, const mapping_msgs::PolygonalMap & polymapIn, mapping_msgs::PolygonalMap & polymapOut)
   {
   boost::numeric::ublas::matrix<double> transform = transformAsMatrix(net_transform);
 

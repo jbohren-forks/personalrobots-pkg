@@ -40,8 +40,6 @@
 // Service
 #include "point_cloud_assembler/BuildCloud.h"
 
-
-using namespace robot_msgs;
 using namespace annotated_map_msgs;
 using namespace std ;
 using namespace point_cloud_assembler;

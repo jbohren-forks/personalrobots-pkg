@@ -85,7 +85,7 @@ namespace controller {
     std::vector<boost::shared_ptr<controller::PIDPositionVelocityController> > joint_controllers_;
 
     // reatltime publisher
-//    boost::scoped_ptr<realtime_tools::RealtimePublisher<robot_msgs::Twist> > state_error_publisher_;
+//    boost::scoped_ptr<realtime_tools::RealtimePublisher<geometry_msgs::Twist> > state_error_publisher_;
 
 //    boost::scoped_ptr<realtime_tools::RealtimePublisher<> > spline_info_publisher_;
 

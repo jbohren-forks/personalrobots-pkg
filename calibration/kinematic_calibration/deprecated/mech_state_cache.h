@@ -40,7 +40,7 @@
 
 #include "kinematic_calibration/msg_cache.h"
 
-#include "robot_msgs/MechanismState.h"
+#include "mechanism_msgs/MechanismState.h"
 #include "kinematic_calibration/Interval.h"
 
 #include "tinyxml/tinyxml.h"
@@ -48,10 +48,10 @@
 namespace kinematic_calibration
 {
 
-class MechStateCache : public MsgCache<robot_msgs::MechanismState>
+class MechStateCache : public MsgCache<mechanism_msgs::MechanismState>
 {
 public:
-  MechStateCache(unsigned int N) : MsgCache<robot_msgs::MechanismState>(N)
+  MechStateCache(unsigned int N) : MsgCache<mechanism_msgs::MechanismState>(N)
   {
 
   }
@@ -132,7 +132,7 @@ public:
     if (interval.start > interval.end)
       return false ;
 
-    deque<robot_msgs::MechanismState>::iterator it ;
+    deque<mechanism_msgs::MechanismState>::iterator it ;
     it = storage_.begin() ;
 
     // Walk along list to just inside beginning of interval

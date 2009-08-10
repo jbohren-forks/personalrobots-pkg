@@ -8,7 +8,6 @@
 #include <visualization_msgs/Marker.h>
 
 using namespace std;
-using namespace robot_msgs;
 
 #define MIN(a,b) ((a<b)?a:b)
 #define MAX(a,b) ((a>b)?a:b)

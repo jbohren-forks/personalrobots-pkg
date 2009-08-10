@@ -57,7 +57,7 @@
 
 using namespace costmap_2d;
 using namespace tf;
-using namespace robot_msgs;
+using sensor_msgs::PointCloud; 
 
 class CostmapTester {
   public:

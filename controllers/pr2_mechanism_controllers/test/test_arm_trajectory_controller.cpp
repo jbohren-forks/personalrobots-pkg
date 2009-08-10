@@ -55,7 +55,7 @@ int main( int argc, char** argv )
 
 
   /*********** Start moving the robot ************/
-  robot_msgs::JointTraj cmd;
+  manipulation_msgs::JointTraj cmd;
 
   int num_points = 3;
   int num_joints = 14;
@@ -109,7 +109,7 @@ int main( int argc, char** argv )
   cmd.points[2].positions[6] = 0.0;
   cmd.points[2].time = 0.0;
 
-  node->advertise<robot_msgs::JointTraj>("/arm/trajectory_controller/arm_trajectory_command",1);
+  node->advertise<manipulation_msgs::JointTraj>("/arm/trajectory_controller/arm_trajectory_command",1);
   node->publish("/arm/trajectory_controller/arm_trajectory_command",cmd);
   sleep(4);
 

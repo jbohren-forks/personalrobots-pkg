@@ -52,7 +52,6 @@
 #include <mapping_msgs/PolygonalMap.h>
 
 #include <geometry_msgs/Point32.h>
-//#include <robot_msgs/Hallway.h>
 #include <visualization_msgs/Marker.h>
 
 // Sample Consensus

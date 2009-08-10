@@ -148,7 +148,7 @@ public:
     tf_ = boost::shared_ptr<tf::TransformListener>(new tf::TransformListener(lifting_delay_*2+ros::Duration(12)));
 
     lifted_pub_=n_.advertise<sensor_msgs::PointCloud>(out_topic_name_,1);
-    //original_pub_=n_.advertise<robot_msgs::PointCloud>(out_topic_name_,1);
+    //original_pub_=n_.advertise<sensor_msgs::PointCloud>(out_topic_name_,1);
     
     annotation_notifier_=new tf::MessageNotifier<cv_mech_turk::ExternalAnnotation>(*tf_,
                                                                                    boost::bind(&AnnotationLifterToPcdViaService::handleAnnotation, this,_1),

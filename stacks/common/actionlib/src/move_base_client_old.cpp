@@ -40,7 +40,8 @@
 #include "geometry_msgs/PoseStamped.h"
 
 using namespace action_tools;
-using namespace robot_msgs;
+using geometry_msgs::PoseStamped;
+
 
 typedef ActionClient<MoveBaseGoal, PoseStamped, MoveBaseResult, PoseStamped> MoveBaseClient;
 

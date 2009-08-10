@@ -44,7 +44,7 @@
 #include "kinematic_calibration/image_point_cache.h"
 
 #include "kinematic_calibration/Capture.h"
-#include "robot_msgs/MechanismState.h"
+#include "mechanism_msgs/MechanismState.h"
 #include "sensor_msgs/Image.h"
 #include "sensor_msgs/CameraInfo.h"
 #include "topic_synchronizer/topic_synchronizer.h"
@@ -129,7 +129,7 @@ public:
 private:
   ros::Node* node_ ;
 
-  MsgCacheListener<robot_msgs::MechanismState> mech_state_cache_ ;
+  MsgCacheListener<mechanism_msgs::MechanismState> mech_state_cache_ ;
   Interval interval_msg_ ;
   std::vector<ImagePointHandler*> stream_handlers_ ;
 } ;

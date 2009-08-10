@@ -42,8 +42,6 @@
 //include "sensor_msgs/PointCloud.h"
 //include "pr2_mechanism_controllers/LaserScannerSignal.h"
 
-using namespace robot_msgs ;
-
 /***
  * This uses the point_cloud_assembler's build_cloud service call to grab all the scans/clouds between two tilt-laser shutters
  * params
