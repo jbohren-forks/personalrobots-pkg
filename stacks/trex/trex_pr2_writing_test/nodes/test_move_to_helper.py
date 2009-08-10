@@ -44,7 +44,7 @@ import sys
 import threading
 
 from robot_actions.msg import ActionStatus
-import robot_msgs.msg
+import geometry_msgs.msg
 from std_msgs.msg import Empty
 import python_actions
 
@@ -124,9 +124,9 @@ if __name__ == '__main__':
                                               pr2_robot_actions.msg.FindHelperResult)
 
     move_base_local = python_actions.ActionClient("move_base_local",
-                                                  robot_msgs.msg.PoseStamped,
+                                                  geometry_msgs.msg.PoseStamped,
                                                   nav_robot_actions.msg.MoveBaseState,
-                                                  robot_msgs.msg.PoseStamped)
+                                                  geometry_msgs.msg.PoseStamped)
 
     start_tilt_laser = python_actions.ActionClient("set_laser_tilt",
                                         Empty,
@@ -134,7 +134,7 @@ if __name__ == '__main__':
                                         Empty)
 
     track_helper = python_actions.ActionClient("track_helper",
-                         robot_msgs.msg.PoseStamped,
+                         geometry_msgs.msg.PoseStamped,
                          pr2_robot_actions.msg.TrackHelperState,
                          Empty)
 
@@ -208,7 +208,7 @@ if __name__ == '__main__':
 
 
     if 0:
-      state, path = w.execute(pr2_robot_actions.msg.TextGoal("klak", robot_msgs.msg.Point(10,20,0), 30))
+      state, path = w.execute(pr2_robot_actions.msg.TextGoal("klak", geometry_msgs.msg.Point(10,20,0), 30))
       print "EXECUTE returned", state #, path
       #for p in path.poses:
       #  print p.pose.position
