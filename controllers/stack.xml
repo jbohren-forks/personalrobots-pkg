@@ -14,6 +14,6 @@
   <depend stack="common"/> <!-- tinyxml, manipulation_msgs, filters, tinyxml, robot_actions, filters, manipulation_msgs --> 
   <depend stack="ros"/> <!-- rospy, rospy, rospy, roscpp, std_msgs, rosconsole, roscpp, roscpp, roscpp, rospy, std_msgs, rosconsole --> 
   <depend stack="visualization_core"/> <!-- visualization_msgs, visualization_msgs --> 
-  <depend stack="common_msgs"/> <!-- robot_msgs, robot_srvs, robot_msgs, robot_msgs, robot_srvs, robot_srvs, robot_msgs, geometry_msgs, robot_msgs, geometry_msgs --> 
+  <depend stack="common_msgs"/> <!-- geometry_msgs --> 
 
 </stack>

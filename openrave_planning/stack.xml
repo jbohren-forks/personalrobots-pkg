@@ -15,6 +15,6 @@
   <depend stack="simulators"/> <!-- opende --> 
   <depend stack="common"/> <!-- manipulation_msgs, laser_scan --> 
   <depend stack="ros"/> <!-- std_msgs, roscpp, roscpp, roscpp, roscpp_sessions, std_msgs, rosoct, roscpp, roslaunch --> 
-  <depend stack="common_msgs"/> <!-- sensor_msgs, robot_msgs, mapping_msgs --> 
+  <depend stack="common_msgs"/> <!-- sensor_msgs, mapping_msgs --> 
 
 </stack>

@@ -21,6 +21,6 @@
   <depend stack="common"/> <!-- laser_scan, tinyxml --> 
   <depend stack="driver_common"/> <!-- driver_base, dynamic_reconfigure --> 
   <depend stack="ros"/> <!-- std_msgs, roscpp, rospy, std_msgs, rostest, std_msgs, roscpp, rospy, std_msgs, std_msgs, roscpp, roscpp, std_msgs, message_filters, rospy, roscpp, std_msgs, roscpp, std_msgs, roscpp, std_msgs, rospy, rospy, roscpp, roscpp, std_msgs, roscpp, rospy, std_msgs, roscpp, std_msgs, roscpp, std_msgs --> 
-  <depend stack="common_msgs"/> <!-- sensor_msgs, robot_msgs, geometry_msgs, robot_msgs, sensor_msgs, robot_msgs, sensor_msgs, sensor_msgs, robot_msgs, diagnostic_msgs, robot_msgs, robot_msgs, sensor_msgs, sensor_msgs, diagnostic_msgs, robot_msgs, robot_msgs, diagnostic_msgs, robot_msgs, sensor_msgs, robot_msgs, sensor_msgs --> 
+  <depend stack="common_msgs"/> <!-- sensor_msgs, geometry_msgs, diagnostic_msgs --> 
 
 </stack>
