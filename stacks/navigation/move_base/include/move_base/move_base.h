@@ -38,7 +38,7 @@
 #define NAV_MOVE_BASE_ACTION_H_
 #include <ros/ros.h>
 
-#include <actionlib/single_goal_action_server.h>
+#include <actionlib/server/single_goal_action_server.h>
 #include <move_base/MoveBaseAction.h>
 
 #include <nav_core/base_local_planner.h>

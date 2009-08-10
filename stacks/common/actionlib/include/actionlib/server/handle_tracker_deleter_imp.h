@@ -34,39 +34,23 @@
 *
 * Author: Eitan Marder-Eppstein
 *********************************************************************/
-#include <ros/ros.h>
-#include <actionlib/server/action_server.h>
-#include <actionlib/server/single_goal_action_server.h>
-#include <boost/thread.hpp>
-#include <geometry_msgs/PoseStamped.h>
-#include <actionlib/MoveBaseAction.h>
+#ifndef ACTIONLIB_HANDLE_TRACKER_DELETER_IMP_H_
+#define ACTIONLIB_HANDLE_TRACKER_DELETER_IMP_H_
+namespace actionlib {
+  template <class ActionSpec>
+  ActionServer<ActionSpec>::HandleTrackerDeleter::HandleTrackerDeleter(ActionServer<ActionSpec>* as,
+      typename std::list<typename ActionServer<ActionSpec>::StatusTracker>::iterator status_it)
+    : as_(as), status_it_(status_it) {}
 
-typedef actionlib::ActionServer<actionlib::MoveBaseAction> MoveBaseActionServer;
-
-typedef MoveBaseActionServer::GoalHandle GoalHandle;
-
-std::vector<GoalHandle> goals;
-
-void goalCB(GoalHandle goal){
-  ROS_INFO("In goal callback, got a goal with id: %.2f", goal.getGoalID().id.toSec());
-  goal.setAccepted();
-  goals.push_back(goal);
-}
-
-void cancelCB(GoalHandle goal){
-  ROS_INFO("In cancel callback, got a goal with id: %.2f", goal.getGoalID().id.toSec());
-  for(unsigned int i = 0; i < goals.size(); ++i){
-    if(goals[i] == goal)
-      goals[i].setCanceled();
+  template <class ActionSpec>
+  void ActionServer<ActionSpec>::HandleTrackerDeleter::operator()(void* ptr){
+    if(as_){
+      //make sure to lock while we erase status for this goal from the list
+      as_->lock_.lock();
+      (*status_it_).handle_destruction_time_ = ros::Time::now();
+      //as_->status_list_.erase(status_it_);
+      as_->lock_.unlock();
+    }
   }
-}
-
-int main(int argc, char** argv){
-  ros::init(argc, argv, "test_action");
-
-  ros::NodeHandle n;
-
-  MoveBaseActionServer as(n, "move_base", boost::bind(&goalCB, _1), boost::bind(&cancelCB, _1));
-
-  ros::spin();
-}
+};
+#endif

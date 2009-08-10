@@ -34,39 +34,34 @@
 *
 * Author: Eitan Marder-Eppstein
 *********************************************************************/
-#include <ros/ros.h>
-#include <actionlib/server/action_server.h>
-#include <actionlib/server/single_goal_action_server.h>
-#include <boost/thread.hpp>
-#include <geometry_msgs/PoseStamped.h>
-#include <actionlib/MoveBaseAction.h>
-
-typedef actionlib::ActionServer<actionlib::MoveBaseAction> MoveBaseActionServer;
-
-typedef MoveBaseActionServer::GoalHandle GoalHandle;
-
-std::vector<GoalHandle> goals;
-
-void goalCB(GoalHandle goal){
-  ROS_INFO("In goal callback, got a goal with id: %.2f", goal.getGoalID().id.toSec());
-  goal.setAccepted();
-  goals.push_back(goal);
-}
-
-void cancelCB(GoalHandle goal){
-  ROS_INFO("In cancel callback, got a goal with id: %.2f", goal.getGoalID().id.toSec());
-  for(unsigned int i = 0; i < goals.size(); ++i){
-    if(goals[i] == goal)
-      goals[i].setCanceled();
+#ifndef ACTIONLIB_STATUS_TRACKER_IMP_H_
+#define ACTIONLIB_STATUS_TRACKER_IMP_H_
+namespace actionlib {
+  template <class ActionSpec>
+  ActionServer<ActionSpec>::StatusTracker::StatusTracker(const GoalID& goal_id, unsigned int status){
+    //set the goal id and status appropriately
+    status_.goal_id = goal_id;
+    status_.status = status;
   }
-}
 
-int main(int argc, char** argv){
-  ros::init(argc, argv, "test_action");
+  template <class ActionSpec>
+  ActionServer<ActionSpec>::StatusTracker::StatusTracker(const boost::shared_ptr<const typename ActionServer<ActionSpec>::ActionGoal>& goal)
+    : goal_(goal) {
+      //set the goal_id from the message
+      status_.goal_id = goal_->goal_id;
 
-  ros::NodeHandle n;
+      //initialize the status of the goal to pending
+      status_.status = GoalStatus::PENDING;
 
-  MoveBaseActionServer as(n, "move_base", boost::bind(&goalCB, _1), boost::bind(&cancelCB, _1));
+      //if the goal id is zero, then we need to make up an id for the goal
+      if(status_.goal_id.id == ros::Time()){
+        status_.goal_id.id = ros::Time::now();
+      }
 
-  ros::spin();
-}
+      //if the timestamp of the goal is zero, then we'll set it to now()
+      if(status_.goal_id.stamp == ros::Time()){
+        status_.goal_id.stamp = ros::Time::now();
+      }
+    }
+};
+#endif
