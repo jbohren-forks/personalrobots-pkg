@@ -46,7 +46,7 @@ roslib.load_manifest('rostest')
 import sys, unittest
 import os, os.path, threading, time
 import rospy, rostest
-from robot_msgs.msg import *
+from nav_msgs.msg import *
 
 TOLERANCE = 0.01
 MAX_ERROR = 0.02
@@ -122,9 +122,9 @@ class PendulumTest(unittest.TestCase):
     def p3dInput1(self, p3d):
         #print "link1 pose ground truth received"
         #self.printPendulum(p3d)
-        tmpx = p3d.pos.position.x
-        tmpy = p3d.pos.position.y
-        tmpz = p3d.pos.position.z - 2.0
+        tmpx = p3d.pose.pose.position.x
+        tmpy = p3d.pose.pose.position.y
+        tmpz = p3d.pose.pose.position.z - 2.0
 
         self.error1_total += math.sqrt(tmpx*tmpx+tmpy*tmpy+tmpz*tmpz)
         self.error1_count += 1
@@ -132,9 +132,9 @@ class PendulumTest(unittest.TestCase):
             self.error1_max =  math.sqrt(tmpx*tmpx+tmpy*tmpy+tmpz*tmpz)
  
     def p3dInput2(self, p3d):
-        tmpx = p3d.pos.position.x
-        tmpy = p3d.pos.position.y
-        tmpz = p3d.pos.position.z - 2.0
+        tmpx = p3d.pose.pose.position.x
+        tmpy = p3d.pose.pose.position.y
+        tmpz = p3d.pose.pose.position.z - 2.0
 
         self.error2_total += math.sqrt(tmpx*tmpx+tmpy*tmpy+tmpz*tmpz)
         self.error2_count += 1
@@ -143,8 +143,8 @@ class PendulumTest(unittest.TestCase):
 
     def test_pendulum(self):
         print "LNK\n"
-        rospy.Subscriber("/link1_pose", PoseWithRatesStamped, self.p3dInput1)
-        rospy.Subscriber("/link2_pose", PoseWithRatesStamped, self.p3dInput2)
+        rospy.Subscriber("/link1_pose", Odometry, self.p3dInput1)
+        rospy.Subscriber("/link2_pose", Odometry, self.p3dInput2)
         rospy.init_node(NAME, anonymous=True)
         timeout_t = time.time() + TEST_DURATION
         while not rospy.is_shutdown() and not self.success and time.time() < timeout_t:
