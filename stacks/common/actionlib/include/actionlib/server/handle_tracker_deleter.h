@@ -34,23 +34,34 @@
 *
 * Author: Eitan Marder-Eppstein
 *********************************************************************/
-#ifndef ACTIONLIB_HANDLE_TRACKER_DELETER_IMP_H_
-#define ACTIONLIB_HANDLE_TRACKER_DELETER_IMP_H_
+#ifndef ACTONLIB_HANDLE_TRACKER_DELETER_H_
+#define ACTONLIB_HANDLE_TRACKER_DELETER_H_
+#include <actionlib/action_definition.h>
+#include <actionlib/server/status_tracker.h>
 namespace actionlib {
+  //we need to forward declare the ActionServer class
   template <class ActionSpec>
-  HandleTrackerDeleter<ActionSpec>::HandleTrackerDeleter(ActionServer<ActionSpec>* as,
-      typename std::list<StatusTracker<ActionSpec> >::iterator status_it)
-    : as_(as), status_it_(status_it) {}
+  class ActionServer;
 
+  /**
+   * @class HandleTrackerDeleter
+   * @brief A class to help with tracking GoalHandles and removing goals
+   * from the status list when the last GoalHandle associated with a given
+   * goal is deleted.
+   */
+  //class to help with tracking status objects
   template <class ActionSpec>
-  void HandleTrackerDeleter<ActionSpec>::operator()(void* ptr){
-    if(as_){
-      //make sure to lock while we erase status for this goal from the list
-      as_->lock_.lock();
-      (*status_it_).handle_destruction_time_ = ros::Time::now();
-      //as_->status_list_.erase(status_it_);
-      as_->lock_.unlock();
-    }
-  }
+    class HandleTrackerDeleter {
+      public:
+        HandleTrackerDeleter(ActionServer<ActionSpec>* as,
+            typename std::list<StatusTracker<ActionSpec> >::iterator status_it);
+
+        void operator()(void* ptr);
+
+      private:
+        ActionServer<ActionSpec>* as_;
+        typename std::list<StatusTracker<ActionSpec> >::iterator status_it_;
+    };
 };
+#include <actionlib/server/handle_tracker_deleter_imp.h>
 #endif

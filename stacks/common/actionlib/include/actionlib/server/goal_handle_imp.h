@@ -38,10 +38,10 @@
 #define ACTIONLIB_GOAL_HANDLE_IMP_H_
 namespace actionlib {
   template <class ActionSpec>
-  ActionServer<ActionSpec>::GoalHandle::GoalHandle(){}
+  ServerGoalHandle<ActionSpec>::ServerGoalHandle(){}
 
   template <class ActionSpec>
-  void ActionServer<ActionSpec>::GoalHandle::setAccepted(){
+  void ServerGoalHandle<ActionSpec>::setAccepted(){
     ROS_DEBUG("Accepting goal, id: %.2f, stamp: %.2f", getGoalID().id.toSec(), getGoalID().stamp.toSec());
     if(goal_){
       unsigned int status = (*status_it_).status_.status;
@@ -61,11 +61,11 @@ namespace actionlib {
             (*status_it_).status_.status);
     }
     else
-      ROS_ERROR("Attempt to set status on an uninitialized GoalHandle");
+      ROS_ERROR("Attempt to set status on an uninitialized ServerGoalHandle");
   }
 
   template <class ActionSpec>
-  void ActionServer<ActionSpec>::GoalHandle::setCanceled(const Result& result){
+  void ServerGoalHandle<ActionSpec>::setCanceled(const Result& result){
     ROS_DEBUG("Setting status to canceled on goal, id: %.2f, stamp: %.2f", getGoalID().id.toSec(), getGoalID().stamp.toSec());
     if(goal_){
       unsigned int status = (*status_it_).status_.status;
@@ -82,11 +82,11 @@ namespace actionlib {
             (*status_it_).status_.status);
     }
     else
-      ROS_ERROR("Attempt to set status on an uninitialized GoalHandle");
+      ROS_ERROR("Attempt to set status on an uninitialized ServerGoalHandle");
   }
 
   template <class ActionSpec>
-  void ActionServer<ActionSpec>::GoalHandle::setRejected(const Result& result){
+  void ServerGoalHandle<ActionSpec>::setRejected(const Result& result){
     ROS_DEBUG("Setting status to rejected on goal, id: %.2f, stamp: %.2f", getGoalID().id.toSec(), getGoalID().stamp.toSec());
     if(goal_){
       unsigned int status = (*status_it_).status_.status;
@@ -99,11 +99,11 @@ namespace actionlib {
             (*status_it_).status_.status);
     }
     else
-      ROS_ERROR("Attempt to set status on an uninitialized GoalHandle");
+      ROS_ERROR("Attempt to set status on an uninitialized ServerGoalHandle");
   }
 
   template <class ActionSpec>
-  void ActionServer<ActionSpec>::GoalHandle::setAborted(const Result& result){
+  void ServerGoalHandle<ActionSpec>::setAborted(const Result& result){
     ROS_DEBUG("Setting status to aborted on goal, id: %.2f, stamp: %.2f", getGoalID().id.toSec(), getGoalID().stamp.toSec());
     if(goal_){
       unsigned int status = (*status_it_).status_.status;
@@ -116,11 +116,11 @@ namespace actionlib {
             status);
     }
     else
-      ROS_ERROR("Attempt to set status on an uninitialized GoalHandle");
+      ROS_ERROR("Attempt to set status on an uninitialized ServerGoalHandle");
   }
 
   template <class ActionSpec>
-  void ActionServer<ActionSpec>::GoalHandle::setSucceeded(const Result& result){
+  void ServerGoalHandle<ActionSpec>::setSucceeded(const Result& result){
     ROS_DEBUG("Setting status to succeeded on goal, id: %.2f, stamp: %.2f", getGoalID().id.toSec(), getGoalID().stamp.toSec());
     if(goal_){
       unsigned int status = (*status_it_).status_.status;
@@ -133,21 +133,21 @@ namespace actionlib {
             status);
     }
     else
-      ROS_ERROR("Attempt to set status on an uninitialized GoalHandle");
+      ROS_ERROR("Attempt to set status on an uninitialized ServerGoalHandle");
   }
 
   template <class ActionSpec>
-  void ActionServer<ActionSpec>::GoalHandle::publishFeedback(const Feedback& feedback){
+  void ServerGoalHandle<ActionSpec>::publishFeedback(const Feedback& feedback){
     ROS_DEBUG("Publishing feedback for goal, id: %.2f, stamp: %.2f", getGoalID().id.toSec(), getGoalID().stamp.toSec());
     if(goal_) {
       as_->publishFeedback((*status_it_).status_, feedback);
     }
     else
-      ROS_ERROR("Attempt to publish feedback on an uninitialized GoalHandle");
+      ROS_ERROR("Attempt to publish feedback on an uninitialized ServerGoalHandle");
   }
 
   template <class ActionSpec>
-  boost::shared_ptr<const typename ActionServer<ActionSpec>::Goal> ActionServer<ActionSpec>::GoalHandle::getGoal() const{
+  boost::shared_ptr<const typename ServerGoalHandle<ActionSpec>::Goal> ServerGoalHandle<ActionSpec>::getGoal() const{
     //if we have a goal that is non-null
     if(goal_){
       //create the deleter for our goal subtype
@@ -158,27 +158,27 @@ namespace actionlib {
   }
 
   template <class ActionSpec>
-  GoalID ActionServer<ActionSpec>::GoalHandle::getGoalID() const{
+  GoalID ServerGoalHandle<ActionSpec>::getGoalID() const{
     if(goal_)
       return (*status_it_).status_.goal_id;
     else{
-      ROS_ERROR("Attempt to get a goal id on an uninitialized GoalHandle");
+      ROS_ERROR("Attempt to get a goal id on an uninitialized ServerGoalHandle");
       return GoalID();
     }
   }
 
   template <class ActionSpec>
-  GoalStatus ActionServer<ActionSpec>::GoalHandle::getGoalStatus() const{
+  GoalStatus ServerGoalHandle<ActionSpec>::getGoalStatus() const{
     if(goal_)
       return (*status_it_).status_;
     else{
-      ROS_ERROR("Attempt to get goal status on an uninitialized GoalHandle");
+      ROS_ERROR("Attempt to get goal status on an uninitialized ServerGoalHandle");
       return GoalStatus();
     }
   }
 
   template <class ActionSpec>
-  bool ActionServer<ActionSpec>::GoalHandle::operator==(const GoalHandle& other){
+  bool ServerGoalHandle<ActionSpec>::operator==(const ServerGoalHandle& other){
     if(!goal_ || !other.goal_)
       return false;
     GoalID my_id = getGoalID();
@@ -187,7 +187,7 @@ namespace actionlib {
   }
 
   template <class ActionSpec>
-  bool ActionServer<ActionSpec>::GoalHandle::operator!=(const GoalHandle& other){
+  bool ServerGoalHandle<ActionSpec>::operator!=(const ServerGoalHandle& other){
     if(!goal_ || !other.goal_)
       return true;
     GoalID my_id = getGoalID();
@@ -196,13 +196,13 @@ namespace actionlib {
   }
 
   template <class ActionSpec>
-  ActionServer<ActionSpec>::GoalHandle::GoalHandle(typename std::list<StatusTracker>::iterator status_it,
+  ServerGoalHandle<ActionSpec>::ServerGoalHandle(typename std::list<StatusTracker<ActionSpec> >::iterator status_it,
       ActionServer<ActionSpec>* as, boost::shared_ptr<void> handle_tracker)
     : status_it_(status_it), goal_((*status_it).goal_),
     as_(as), handle_tracker_(handle_tracker){}
 
   template <class ActionSpec>
-  bool ActionServer<ActionSpec>::GoalHandle::setCancelRequested(){
+  bool ServerGoalHandle<ActionSpec>::setCancelRequested(){
     ROS_DEBUG("Transisitoning to a cancel requested state on goal id: %.2f, stamp: %.2f", getGoalID().id.toSec(), getGoalID().stamp.toSec());
     if(goal_){
       unsigned int status = (*status_it_).status_.status;

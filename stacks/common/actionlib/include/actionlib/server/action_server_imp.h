@@ -100,7 +100,7 @@ namespace actionlib {
     //we need to handle a cancel for the user
     ROS_DEBUG("The action server has received a new cancel request");
     bool goal_id_found = false;
-    for(typename std::list<StatusTracker>::iterator it = status_list_.begin(); it != status_list_.end(); ++it){
+    for(typename std::list<StatusTracker<ActionSpec> >::iterator it = status_list_.begin(); it != status_list_.end(); ++it){
       //check if the goal id is zero or if it is equal to the goal id of
       //the iterator or if the time of the iterator warrants a cancel
       if(
@@ -117,7 +117,7 @@ namespace actionlib {
 
         if((*it).handle_tracker_.expired()){
           //if the handle tracker is expired, then we need to create a new one
-          HandleTrackerDeleter d(this, it);
+          HandleTrackerDeleter<ActionSpec> d(this, it);
           handle_tracker = boost::shared_ptr<void>((void *)NULL, d);
           (*it).handle_tracker_ = handle_tracker;
 
@@ -138,8 +138,8 @@ namespace actionlib {
 
     //if the requested goal_id was not found, and it is non-zero, then we need to store the cancel request
     if(goal_id->id != ros::Time() && !goal_id_found){
-      typename std::list<StatusTracker>::iterator it = status_list_.insert(status_list_.end(),
-          StatusTracker(*goal_id, GoalStatus::RECALLING));
+      typename std::list<StatusTracker<ActionSpec> >::iterator it = status_list_.insert(status_list_.end(),
+          StatusTracker<ActionSpec> (*goal_id, GoalStatus::RECALLING));
       //start the timer for how long the status will live in the list without a goal handle to it
       (*it).handle_destruction_time_ = ros::Time::now();
     }
@@ -156,7 +156,7 @@ namespace actionlib {
     ROS_DEBUG("The action server has received a new goal request");
 
     //we need to check if this goal already lives in the status list
-    for(typename std::list<StatusTracker>::iterator it = status_list_.begin(); it != status_list_.end(); ++it){
+    for(typename std::list<StatusTracker<ActionSpec> >::iterator it = status_list_.begin(); it != status_list_.end(); ++it){
       if(goal->goal_id.id == (*it).status_.goal_id.id){
 
         //if this is a request for a goal that has no active handles left,
@@ -171,10 +171,10 @@ namespace actionlib {
     }
 
     //if the goal is not in our list, we need to create a StatusTracker associated with this goal and push it on
-    typename std::list<StatusTracker>::iterator it = status_list_.insert(status_list_.end(), StatusTracker(goal));
+    typename std::list<StatusTracker<ActionSpec> >::iterator it = status_list_.insert(status_list_.end(), StatusTracker<ActionSpec> (goal));
 
     //we need to create a handle tracker for the incoming goal and update the StatusTracker
-    HandleTrackerDeleter d(this, it);
+    HandleTrackerDeleter<ActionSpec> d(this, it);
     boost::shared_ptr<void> handle_tracker((void *)NULL, d);
     (*it).handle_tracker_ = handle_tracker;
 
@@ -205,7 +205,7 @@ namespace actionlib {
     status_array.set_status_list_size(status_list_.size());
 
     unsigned int i = 0;
-    for(typename std::list<StatusTracker>::iterator it = status_list_.begin(); it != status_list_.end();){
+    for(typename std::list<StatusTracker<ActionSpec> >::iterator it = status_list_.begin(); it != status_list_.end();){
       status_array.status_list[i] = (*it).status_;
 
       //check if the item is due for deletion from the status list

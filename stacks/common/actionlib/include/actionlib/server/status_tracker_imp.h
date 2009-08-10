@@ -38,14 +38,14 @@
 #define ACTIONLIB_STATUS_TRACKER_IMP_H_
 namespace actionlib {
   template <class ActionSpec>
-  ActionServer<ActionSpec>::StatusTracker::StatusTracker(const GoalID& goal_id, unsigned int status){
+  StatusTracker<ActionSpec>::StatusTracker(const GoalID& goal_id, unsigned int status){
     //set the goal id and status appropriately
     status_.goal_id = goal_id;
     status_.status = status;
   }
 
   template <class ActionSpec>
-  ActionServer<ActionSpec>::StatusTracker::StatusTracker(const boost::shared_ptr<const typename ActionServer<ActionSpec>::ActionGoal>& goal)
+  StatusTracker<ActionSpec>::StatusTracker(const boost::shared_ptr<const ActionGoal>& goal)
     : goal_(goal) {
       //set the goal_id from the message
       status_.goal_id = goal_->goal_id;

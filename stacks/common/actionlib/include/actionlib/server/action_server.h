@@ -46,6 +46,9 @@
 #include <actionlib/RequestType.h>
 #include <actionlib/enclosure_deleter.h>
 #include <actionlib/action_definition.h>
+#include <actionlib/server/status_tracker.h>
+#include <actionlib/server/handle_tracker_deleter.h>
+#include <actionlib/server/server_goal_handle.h>
 
 #include <list>
 
@@ -62,149 +65,15 @@ namespace actionlib {
    */
   template <class ActionSpec>
   class ActionServer {
+    public:
+      //for convenience when referring to ServerGoalHandles
+      typedef ServerGoalHandle<ActionSpec> GoalHandle;
+
     private:
       //generates typedefs that we'll use to make our lives easier
       ACTION_DEFINITION(ActionSpec);
 
-      /**
-       * @class StatusTracker
-       * @brief A class for storing the status of each goal the action server
-       * is currently working on
-       */
-      class StatusTracker {
-        public:
-          StatusTracker(const GoalID& goal_id, unsigned int status);
-
-          StatusTracker(const boost::shared_ptr<const ActionGoal>& goal);
-
-          boost::shared_ptr<const ActionGoal> goal_;
-          boost::weak_ptr<void> handle_tracker_;
-          GoalStatus status_;
-          ros::Time handle_destruction_time_;
-      };
-
-      /**
-       * @class HandleTrackerDeleter
-       * @brief A class to help with tracking GoalHandles and removing goals
-       * from the status list when the last GoalHandle associated with a given
-       * goal is deleted.
-       */
-      //class to help with tracking status objects
-      class HandleTrackerDeleter {
-        public:
-          HandleTrackerDeleter(ActionServer<ActionSpec>* as,
-              typename std::list<StatusTracker>::iterator status_it);
-
-          void operator()(void* ptr);
-
-        private:
-          ActionServer<ActionSpec>* as_;
-          typename std::list<StatusTracker>::iterator status_it_;
-      };
-
     public:
-      /**
-       * @class GoalHandle
-       * @brief Encapsulates a state machine for a given goal that the user can
-       * trigger transisions on. All ROS interfaces for the goal are managed by
-       * the ActionServer to lessen the burden on the user.
-       */
-      class GoalHandle {
-        public:
-          /**
-           * @brief  Default constructor for a GoalHandle
-           */
-          GoalHandle();
-
-          /** @brief  Accept the goal referenced by the goal handle. This will
-           * transition to the ACTIVE state or the PREEMPTING state depending
-           * on whether a cancel request has been received for the goal
-           */
-          void setAccepted();
-
-          /**
-           * @brief  Set the status of the goal associated with the GoalHandle to RECALLED or PREEMPTED
-           * depending on what the current status of the goal is
-           * @param  result Optionally, the user can pass in a result to be sent to any clients of the goal
-           */
-          void setCanceled(const Result& result = Result());
-
-          /**
-           * @brief  Set the status of the goal associated with the GoalHandle to rejected
-           * @param  result Optionally, the user can pass in a result to be sent to any clients of the goal
-           */
-          void setRejected(const Result& result = Result());
-
-          /**
-           * @brief  Set the status of the goal associated with the GoalHandle to aborted
-           * @param  result Optionally, the user can pass in a result to be sent to any clients of the goal
-           */
-          void setAborted(const Result& result = Result());
-
-          /**
-           * @brief  Set the status of the goal associated with the GoalHandle to succeeded
-           * @param  result Optionally, the user can pass in a result to be sent to any clients of the goal
-           */
-          void setSucceeded(const Result& result = Result());
-
-          /**
-           * @brief  Send feedback to any clients of the goal associated with this GoalHandle
-           * @param feedback The feedback to send to the client
-           */
-          void publishFeedback(const Feedback& feedback);
-
-          /**
-           * @brief  Accessor for the goal associated with the GoalHandle
-           * @return A shared_ptr to the goal object
-           */
-          boost::shared_ptr<const Goal> getGoal() const;
-
-          /**
-           * @brief  Accessor for the goal id associated with the GoalHandle
-           * @return The goal id
-           */
-          GoalID getGoalID() const;
-
-          /**
-           * @brief  Accessor for the status associated with the GoalHandle
-           * @return The goal status
-           */
-          GoalStatus getGoalStatus() const;
-
-          /**
-           * @brief  Equals operator for GoalHandles
-           * @param other The GoalHandle to compare to
-           * @return True if the GoalHandles refer to the same goal, false otherwise
-           */
-          bool operator==(const GoalHandle& other);
-
-          /**
-           * @brief  != operator for GoalHandles
-           * @param other The GoalHandle to compare to
-           * @return True if the GoalHandles refer to different goals, false otherwise
-           */
-          bool operator!=(const GoalHandle& other);
-
-        private:
-          /**
-           * @brief  A private constructor used by the ActionServer to initialize a GoalHandle
-           */
-          GoalHandle(typename std::list<StatusTracker>::iterator status_it,
-              ActionServer<ActionSpec>* as, boost::shared_ptr<void> handle_tracker);
-
-          /**
-           * @brief  A private method to set status to PENDING or RECALLING
-           * @return True if the cancel request should be passed on to the user, false otherwise
-           */
-          bool setCancelRequested();
-
-          typename std::list<StatusTracker>::iterator status_it_;
-          boost::shared_ptr<const ActionGoal> goal_;
-          ActionServer<ActionSpec>* as_;
-          boost::shared_ptr<void> handle_tracker_;
-          friend class ActionServer<ActionSpec>;
-      };
-
       /**
        * @brief  Constructor for an ActionServer
        * @param  n A NodeHandle to create a namespace under
@@ -272,7 +141,7 @@ namespace actionlib {
 
       ros::Timer status_timer_;
 
-      std::list<StatusTracker> status_list_;
+      std::list<StatusTracker<ActionSpec> > status_list_;
 
       boost::function<void (GoalHandle)> goal_callback_;
       boost::function<void (GoalHandle)> cancel_callback_;
@@ -280,14 +149,13 @@ namespace actionlib {
       ros::Time last_cancel_;
       ros::Duration status_list_timeout_;
 
+      //we need to allow access to our private fields to our helper classes
+      friend class ServerGoalHandle<ActionSpec>;
+      friend class HandleTrackerDeleter<ActionSpec>;
 
   };
 };
 
-//Sinc all of this is templated things need to be header-based, but its still
-//nice to separate out the implementation which we'll include here
-#include <actionlib/server/status_tracker_imp.h>
-#include <actionlib/server/handle_tracker_deleter_imp.h>
-#include <actionlib/server/goal_handle_imp.h>
+//include the implementation
 #include <actionlib/server/action_server_imp.h>
 #endif

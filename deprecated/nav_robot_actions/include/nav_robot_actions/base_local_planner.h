@@ -34,23 +34,54 @@
 *
 * Author: Eitan Marder-Eppstein
 *********************************************************************/
-#ifndef ACTIONLIB_HANDLE_TRACKER_DELETER_IMP_H_
-#define ACTIONLIB_HANDLE_TRACKER_DELETER_IMP_H_
-namespace actionlib {
-  template <class ActionSpec>
-  HandleTrackerDeleter<ActionSpec>::HandleTrackerDeleter(ActionServer<ActionSpec>* as,
-      typename std::list<StatusTracker<ActionSpec> >::iterator status_it)
-    : as_(as), status_it_(status_it) {}
+#ifndef NAV_ROBOT_ACTIONS_BASE_LOCAL_PLANNER_
+#define NAV_ROBOT_ACTIONS_BASE_LOCAL_PLANNER_
 
-  template <class ActionSpec>
-  void HandleTrackerDeleter<ActionSpec>::operator()(void* ptr){
-    if(as_){
-      //make sure to lock while we erase status for this goal from the list
-      as_->lock_.lock();
-      (*status_it_).handle_destruction_time_ = ros::Time::now();
-      //as_->status_list_.erase(status_it_);
-      as_->lock_.unlock();
-    }
-  }
+#include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/Twist.h>
+#include <costmap_2d/costmap_2d_ros.h>
+#include <loki/Factory.h>
+#include <loki/Sequence.h>
+
+namespace nav_robot_actions {
+  class BaseLocalPlanner{
+    public:
+      virtual bool computeVelocityCommands(geometry_msgs::Twist& cmd_vel) = 0;
+      virtual bool goalReached() = 0;
+      virtual bool updatePlan(const std::vector<geometry_msgs::PoseStamped>& plan) = 0;
+
+    protected:
+      BaseLocalPlanner(){}
+  };
+
+  //create an associated factory
+  typedef Loki::SingletonHolder
+  <
+    Loki::Factory< BaseLocalPlanner, std::string, 
+      Loki::Seq< std::string, 
+      tf::TransformListener&, 
+      costmap_2d::Costmap2DROS& > >,
+    Loki::CreateUsingNew,
+    Loki::LongevityLifetime::DieAsSmallObjectParent
+  > BLPFactory;
+
+#define ROS_REGISTER_BLP(c) \
+  nav_robot_actions::BaseLocalPlanner* ROS_New_##c(std::string name, tf::TransformListener& tf, \
+      costmap_2d::Costmap2DROS& costmap_ros){ \
+    return new c(name, tf, costmap_ros); \
+  }  \
+  class RosBLP##c { \
+    public: \
+    RosBLP##c() \
+    { \
+      nav_robot_actions::BLPFactory::Instance().Register(#c, ROS_New_##c); \
+    } \
+    ~RosBLP##c() \
+    { \
+      nav_robot_actions::BLPFactory::Instance().Unregister(#c); \
+    } \
+  }; \
+  static RosBLP##c ROS_BLP_##c;
 };
+
 #endif

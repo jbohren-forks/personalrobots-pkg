@@ -34,23 +34,51 @@
 *
 * Author: Eitan Marder-Eppstein
 *********************************************************************/
-#ifndef ACTIONLIB_HANDLE_TRACKER_DELETER_IMP_H_
-#define ACTIONLIB_HANDLE_TRACKER_DELETER_IMP_H_
-namespace actionlib {
-  template <class ActionSpec>
-  HandleTrackerDeleter<ActionSpec>::HandleTrackerDeleter(ActionServer<ActionSpec>* as,
-      typename std::list<StatusTracker<ActionSpec> >::iterator status_it)
-    : as_(as), status_it_(status_it) {}
+#ifndef NAV_ROBOT_ACTIONS_BASE_GLOBAL_PLANNER_
+#define NAV_ROBOT_ACTIONS_BASE_GLOBAL_PLANNER_
 
-  template <class ActionSpec>
-  void HandleTrackerDeleter<ActionSpec>::operator()(void* ptr){
-    if(as_){
-      //make sure to lock while we erase status for this goal from the list
-      as_->lock_.lock();
-      (*status_it_).handle_destruction_time_ = ros::Time::now();
-      //as_->status_list_.erase(status_it_);
-      as_->lock_.unlock();
-    }
-  }
+#include <geometry_msgs/PoseStamped.h>
+#include <costmap_2d/costmap_2d_ros.h>
+#include <loki/Factory.h>
+#include <loki/Sequence.h>
+
+namespace nav_robot_actions {
+  class BaseGlobalPlanner{
+    public:
+      virtual bool makePlan(const geometry_msgs::PoseStamped& start, 
+          const geometry_msgs::PoseStamped& goal, std::vector<geometry_msgs::PoseStamped>& plan) = 0;
+
+    protected:
+      BaseGlobalPlanner(){}
+  };
+
+  //create an associated factory
+  typedef Loki::SingletonHolder
+  <
+    Loki::Factory< BaseGlobalPlanner, std::string, 
+      Loki::Seq< std::string, 
+      costmap_2d::Costmap2DROS&  > >,
+    Loki::CreateUsingNew,
+    Loki::LongevityLifetime::DieAsSmallObjectParent
+  > BGPFactory;
+
+#define ROS_REGISTER_BGP(c) \
+  nav_robot_actions::BaseGlobalPlanner* ROS_New_##c(std::string name, \
+      costmap_2d::Costmap2DROS& costmap_ros){ \
+    return new c(name, costmap_ros); \
+  }  \
+  class RosBGP##c { \
+    public: \
+    RosBGP##c() \
+    { \
+      nav_robot_actions::BGPFactory::Instance().Register(#c, ROS_New_##c); \
+    } \
+    ~RosBGP##c() \
+    { \
+      nav_robot_actions::BGPFactory::Instance().Unregister(#c); \
+    } \
+  }; \
+  static RosBGP##c ROS_BGP_##c;
 };
+
 #endif
