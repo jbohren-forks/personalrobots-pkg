@@ -1,26 +1,15 @@
 <launch>
+  <!-- This controller file has the torso and head, which is unnecessary
+       but not harmful -->
+  <include file="$(find pr2_alpha)/teleop_controllers.launch" />
 
-  <rosparam file="$(find pr2_default_controllers)/pr2_base_controller.yaml" command="load" ns="pr2_base_controller" />
-  <rosparam file="$(find pr2_default_controllers)/pr2_odometry.yaml" command="load" ns="pr2_odometry" />
-  <node pkg="mechanism_control" type="spawner.py" args="pr2_base_controller pr2_odometry" output="screen"/>
-
-  <!-- The robot pose EKF is launched with the base controller-->
-  <group ns="robot_pose_ekf">
-    <param name="freq" value="30.0"/>
-    <param name="sensor_timeout" value="1.0"/>
-    <param name="odom_used" value="true"/>
-    <param name="imu_used" value="true"/>
-    <param name="vo_used" value="false"/>
+  <group name="keyboard_teleop" >
+    <param name="walk_vel" value="0.5" />
+    <param name="run_vel" value="1.0" />
+    <param name="yaw_rate" value="1.0" />
+    <param name="yaw_run_rate" value="1.5" />
+        
+    <node pkg="teleop_pr2" type="teleop_pr2_keyboard" output="screen"/>
   </group>
-  <node pkg="robot_pose_ekf" type="robot_pose_ekf" args="robot_pose_ekf"/>
-
-  <param name="walk_vel" value="0.5" />
-  <param name="run_vel" value="1.0" />
-  <param name="yaw_rate" value="1.0" />
-  <param name="yaw_run_rate" value="1.5" />
-
-
-  <node pkg="teleop_pr2" type="teleop_pr2_keyboard" output="screen"/>
-
 </launch>
 
