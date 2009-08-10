@@ -1,10 +1,10 @@
-(roslisp:ros-load-message-types "robot_msgs/Point" "robot_msgs/PointCloud" "robot_msgs/Point32" "robot_msgs/VisualizationMarker")
+(roslisp:ros-load-message-types "geometry_msgs/Point" "sensor_msgs/PointCloud" "geometry_msgs/Point32" "visualization_msgs/VisualizationMarker")
 
 (defpackage :fake-person
   (:use :roslisp :cl)
   (:export :main)
   (:import-from 
-   :robot_msgs
+   :geometry_msgs
    :<Point>
    :<Point32>
    :<PointCloud>
@@ -31,7 +31,7 @@
 
 (defun main ()
   (with-ros-node ("fake-person-sender")
-    (advertise "person_position" "robot_msgs/Point")
+    (advertise "person_position" "geometry_msgs/Point")
     (sb-thread:make-thread #'publisher :name "fake-person-publisher")
     (loop
        (let ((x (read)) (y (read)))

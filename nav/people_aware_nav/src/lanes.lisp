@@ -48,14 +48,14 @@
 
 
 (defun setup-node ()
-  (subscribe "hallway_points" "robot_msgs/PointCloud" #'hallway-callback)
+  (subscribe "hallway_points" "sensor_msgs/PointCloud" #'hallway-callback)
   (subscribe "robot_pose" "deprecated_msgs/Pose2DFloat32" #'pose-callback)
   (subscribe "move_base/feedback" "nav_robot_actions/MoveBaseState" #'state-callback)
-  (subscribe "goal" "robot_msgs/PoseStamped" #'goal-callback)
+  (subscribe "goal" "geometry_msgs/PoseStamped" #'goal-callback)
   (subscribe "people_tracker_measurements" "people/PositionMeasurement" (store-message-in *person-position*))
-  (advertise "move_base/activate" "robot_msgs/PoseStamped")
+  (advertise "move_base/activate" "geometry_msgs/PoseStamped")
   (advertise "move_base/preempt" "std_msgs/Empty")
-  (advertise "~goal" "robot_msgs/PoseStamped")
+  (advertise "~goal" "geometry_msgs/PoseStamped")
   (setq *global-frame* (get-param "global_frame_id" "/map")
 	*person-on-path-use-stub* (get-param "~person_on_path_use_stub" *person-on-path-use-stub*)))
 
@@ -99,7 +99,7 @@
     (send-move-goal (aref position 0) (aref position 1) theta))
   (sleep 5)
   (with-fields ((frame (frame_id header)) (stamp (stamp header)) (pos pos)) *person-position*
-	       (call-service "glance_at" 'glanceat :point_stamped (make-message "robot_msgs/PointStamped" 
+	       (call-service "glance_at" 'glanceat :point_stamped (make-message "geometry_msgs/PointStamped" 
 								      (frame_id header) frame
 								      (stamp header) stamp
 								      point pos)))
@@ -115,7 +115,7 @@
 	*move-base-result* nil)
   (call-service "move_base/set_nav_constraint" 'SetNavConstraint :forbidden (make-boundary *robot-pose* constrained))
   (publish-on-topic "/move_base/activate" 
-		    (make-message "robot_msgs/PoseStamped"
+		    (make-message "geometry_msgs/PoseStamped"
 				  (frame_id header) *global-frame*
 				  (x position pose) x
 				  (y position pose) y
@@ -155,14 +155,14 @@
   
 
 (defun hallway-callback (m)
-  (with-fields (pts) m
-    (if (= (length pts) 3)
+  (with-fields (points) m
+    (if (= (length points) 3)
 
-	(setf *hallway* (hallway-info (make-point (aref pts 0))
-				      (make-point (aref pts 1))
-				      (make-point (aref pts 2))))
+	(setf *hallway* (hallway-info (make-point (aref points 0))
+				      (make-point (aref points 1))
+				      (make-point (aref points 2))))
 
-	(ros-error pan "Hallway cloud ~a had incorrect length.  Skipping." pts))))
+	(ros-error pan "Hallway cloud ~a had incorrect length.  Skipping." points))))
 
 
 (defun goal-callback (m)
@@ -239,19 +239,19 @@
   (if constrained?
       (let ((pos (pose-position pose))
 	    (theta (pose-orientation pose)))
-	(make-message "robot_msgs/Polygon3D"
+	(make-message "geometry_msgs/Polygon"
 		      :points (vector (get-offset-point pos (+ theta *angle-offset*))
 				      (get-offset-point pos (+ theta pi))
 				      (get-offset-point pos (- theta *angle-offset*)))))
       ;; if not constrained, return an empty polygon
-      (make-message "robot_msgs/Polygon3D")))
+      (make-message "geometry_msgs/Polygon3D")))
 
 
 
 (defun get-offset-point (pos theta)
   (let ((x (aref pos 0))
 	(y (aref pos 1)))
-    (make-message "robot_msgs/Point32"
+    (make-message "geometry_msgs/Point32"
 		  :x (+ x (* *offset-length* (cos theta)))
 		  :y (+ y (* *offset-length* (sin theta))))))
 
