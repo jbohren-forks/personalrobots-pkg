@@ -29,7 +29,7 @@
 import roslib
 roslib.load_manifest('outlet_detection')
 import rospy
-from robot_msgs.msg import *
+from geometry_msgs.msg import PoseStamped
 from tf.msg import tfMessage
 from math import *
 import time
@@ -52,14 +52,6 @@ def rpy(y, p, r):
   q.z = cosR*sinP*cosY + sinR*cosP*sinY
   q.w = cosR*cosP*sinY + sinR*sinP*cosY
   return q
-
-class Tracker:
-  def __init__(self, topic, Msg):
-    self.sub = rospy.Subscriber(topic, Msg, self.callback)
-    self.msg = Msg()
-
-  def callback(self, msg):
-    self.msg = msg
 
 t = TransformStamped()
 t.header.frame_id = 'r_gripper_tool_frame'

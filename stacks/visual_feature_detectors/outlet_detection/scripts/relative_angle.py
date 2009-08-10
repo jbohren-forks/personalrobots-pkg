@@ -2,7 +2,7 @@
 import roslib; roslib.load_manifest('outlet_detection')
 
 import rospy
-from robot_msgs.msg import *
+from geometry_msgs.msg import PoseStamped
 import threading
 import numpy
 from math import acos, degrees
