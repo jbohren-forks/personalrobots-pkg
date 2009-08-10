@@ -30,7 +30,7 @@
 
 /** \author Radu Bogdan Rusu
   *
-  * Extremely silly PCD to C++ ROS robot_msgs PointCloud converter.
+  * Extremely silly PCD to C++ ROS sensor_msgs PointCloud converter.
   * Useful for tools which don't want to link against \a cloud_io (I guess).
   *
   */

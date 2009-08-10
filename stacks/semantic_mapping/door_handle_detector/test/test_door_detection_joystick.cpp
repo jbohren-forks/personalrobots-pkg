@@ -160,7 +160,7 @@ class TestDoorDetectionNode : public PR2ArmNode
       if(joy_msg_.data == std::string("open_door"))
       {
         geometry_msgs::PoseStamped pose_msg;
-        robot_msgs::JointTraj traj;
+        manipulation_msgs::JointTraj traj;
 
         pose_msg.pose = RPYToTransform(0.0,0.0,0.0,door_msg_from_detector_.handle.x, door_msg_from_detector_.handle.y, door_msg_from_detector_.handle.z);
         pose_msg.header.frame_id = door_msg_from_detector_.header.frame_id;

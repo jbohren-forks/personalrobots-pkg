@@ -58,7 +58,7 @@ typedef btTransform Pose;
 
 static const double QUATERNION_TOLERANCE = 0.1f;
 
-/** \brief The data type which will be cross compatable with robot_msgs
+/** \brief The data type which will be cross compatable with geometry_msgs
  * this will require the associated rosTF package to convert */
 template <typename T>
 class Stamped : public T{

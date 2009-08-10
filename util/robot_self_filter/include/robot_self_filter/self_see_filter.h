@@ -130,8 +130,8 @@ protected:
         
 };
     
-    typedef sensor_msgs::PointCloud robot_msgs_PointCloud;
-    FILTERS_REGISTER_FILTER(SelfFilter, robot_msgs_PointCloud);
+    typedef sensor_msgs::PointCloud sensor_msgs_PointCloud;
+    FILTERS_REGISTER_FILTER(SelfFilter, sensor_msgs_PointCloud);
     
 }
 

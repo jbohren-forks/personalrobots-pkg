@@ -115,7 +115,7 @@ public:
 
 
 
-    ///\todo move to high precision laser projector class  void projectAndTransformLaserScan(const robot_msgs::LaserScan& scan_in, sensor_msgs::PointCloud& pcout);
+    ///\todo move to high precision laser projector class  void projectAndTransformLaserScan(const sensor_msgs::LaserScan& scan_in, sensor_msgs::PointCloud& pcout);
 
   bool getFrames(tf::FrameGraph::Request& req, tf::FrameGraph::Response& res) 
   {
