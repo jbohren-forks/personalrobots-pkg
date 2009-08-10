@@ -38,12 +38,11 @@ NAME = 'test_slide'
 
 import roslib
 roslib.load_manifest(PKG)
-roslib.load_manifest('rostest')
 
 import unittest, sys, os, math
 import time
 import rospy, rostest
-from robot_msgs.msg import *
+from nav_msgs.msg import *
 
 TEST_DURATION = 90.0
 TARGET_X = -6.0 + 25.65 #contains offset specified in P3D for base, alternatively, use the gripper roll ground truths
@@ -70,13 +69,13 @@ class TestSlide(unittest.TestCase):
 
         self.runs = self.runs + 1
         #if (pos.frame == 1):
-        dx = p3d.pos.position.x - TARGET_X
-        dy = p3d.pos.position.y - TARGET_Y
-        dz = p3d.pos.position.z - TARGET_Z
+        dx = p3d.pose.pose.position.x - TARGET_X
+        dy = p3d.pose.pose.position.y - TARGET_Y
+        dz = p3d.pose.pose.position.z - TARGET_Z
         d = math.sqrt((dx * dx) + (dy * dy)) #+ (dz * dz))
 
         print self.runs, self.hits, \
-              p3d.pos.position.x , p3d.pos.position.y , p3d.pos.position.z, \
+              p3d.pose.pose.position.x , p3d.pose.pose.position.y , p3d.pose.pose.position.z, \
               dx , dy , dz , d, TARGET_RAD
 
         if (d < TARGET_RAD and abs(dz) < CUP_HEIGHT):
@@ -94,7 +93,7 @@ class TestSlide(unittest.TestCase):
     
     def test_slide(self):
         print "LINK\n"
-        rospy.Subscriber("/base_pose_ground_truth", PoseWithRatesStamped, self.positionInput)
+        rospy.Subscriber("/base_pose_ground_truth", Odometry, self.positionInput)
         rospy.init_node(NAME, anonymous=True)
         timeout_t = time.time() + TEST_DURATION
         while not rospy.is_shutdown() and not self.success and not self.fail and time.time() < timeout_t:

@@ -6,6 +6,9 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/test_pr2_collision_gazebo</url>
+  <depend package="rospy"/>
+  <depend package="rostest"/>
+  <depend package="nav_msgs"/>
   <depend package="gazebo_plugin"/>
   <depend package="pr2_gazebo" />
   <depend package="pr2_ogre" />

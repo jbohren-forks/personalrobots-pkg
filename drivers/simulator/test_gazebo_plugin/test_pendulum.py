@@ -41,7 +41,6 @@ NAME = 'test_pendulum'
 import math
 import roslib
 roslib.load_manifest(PKG)
-roslib.load_manifest('rostest')
 
 import sys, unittest
 import os, os.path, threading, time
