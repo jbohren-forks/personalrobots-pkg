@@ -162,17 +162,83 @@ class TestStereoMsgsMigration(unittest.TestCase):
                                (722.28197999999998, 0.0, 309.70123000000001, -64.130840000000006,
                                 0.0, 722.28197999999998, 240.53899000000001, 0.0, 
                                 0.0, 0.0, 1.0, 0.0)),
-                      2,
-                      right_img,
                       raw_stereo.IMAGE,
+                      right_img,
+                      0,
                       disparity_info(),
                       image())
 
 
   def get_new_raw_stereo(self):
     from stereo_msgs.msg import RawStereo
+    from stereo_msgs.msg import StereoInfo
+    from stereo_msgs.msg import CamInfo
+    from sensor_msgs.msg import RegionOfInterest
+    from sensor_msgs.msg import Image
+
+    from sensor_msgs.msg import DisparityInfo
+
+    import random
+    r = random.Random(5678)
     
-    return RawStereo()
+    left_img = Image(None,
+                     'mono8',
+                     640,
+                     [r.randint(0,255) for x in xrange(0,307200)],
+                     480,
+                     640,
+                     0)
+
+    right_img = Image(None,
+                      'mono8',
+                      640,
+                      [r.randint(0,255) for x in xrange(0,307200)],
+                      480,
+                      640,
+                      0)
+
+    return RawStereo(None,
+                     StereoInfo(None,
+                                  480, 640,
+                                  (-0.088779999999999998, -0.00017000000000000001, 0.0015399999999999999),
+                                  (-0.00296, 0.01155, 0.00064999999999999997),
+                                  (1.0, 0.0, 0.0, -309.70123000000001,
+                                   0.0, 1.0, 0.0, -240.53899000000001,
+                                   0.0, 0.0, 0.0, 722.28197999999998,
+                                   0.0, 0.0, 11.262630896461046, -0.0)),
+                     CamInfo(None,
+                             480, 640,
+                             RegionOfInterest(0,0,480,640),
+                               (-0.45795000000000002, 0.29532999999999998, 0.0, 0.0, 0.0),
+                             (734.37707999999998, 0.0, 343.25992000000002,
+                              0.0, 734.37707999999998, 229.65119999999999,
+                              0.0, 0.0, 1.0),
+                             (0.99997999999999998, 0.0012800000000000001, -0.0057400000000000003,
+                              -0.0012700000000000001, 1.0, 0.00148,
+                              0.0057400000000000003, -0.00147, 0.99997999999999998),
+                             (722.28197999999998, 0.0, 309.70123000000001, 0.0,
+                              0.0, 722.28197999999998, 240.53899000000001, 0.0,
+                              0.0, 0.0, 1.0, 0.0)),
+                     RawStereo.IMAGE,
+                     left_img,
+                     CamInfo(None,
+                             480, 640,
+                             RegionOfInterest(0,0,480,640),
+                             (-0.46471000000000001, 0.28405999999999998, 0.0, 0.0, 0.0),
+                             (732.43358999999998, 0.0, 330.20074,
+                              0.0, 732.43358999999998, 234.71764999999999,
+                              0.0, 0.0, 1.0),
+                             (0.99985000000000002, 0.0019, -0.017299999999999999,
+                              -0.0019300000000000001, 1.0, -0.0014599999999999999,
+                              0.017299999999999999, 0.00149, 0.99985000000000002),
+                             (722.28197999999998, 0.0, 309.70123000000001, -64.130840000000006,
+                              0.0, 722.28197999999998, 240.53899000000001, 0.0, 
+                              0.0, 0.0, 1.0, 0.0)),
+                     RawStereo.IMAGE,
+                     right_img,
+                     0,
+                     DisparityInfo(),
+                     Image())
 
   def test_raw_stereo(self):
     self.do_test('raw_stereo', self.get_old_raw_stereo, self.get_new_raw_stereo)

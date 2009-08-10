@@ -13,6 +13,7 @@
   <depend package="rosbagmigration"/>
 
   <depend package="sensor_msgs"/>
+  <depend package="stereo_msgs"/>
 
   <url>http://pr.willowgarage.com/wiki/test_stereo_msgs</url>
 
