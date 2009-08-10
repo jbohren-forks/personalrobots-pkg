@@ -288,7 +288,7 @@ public:
     if (img_data->imType != COLOR_CODING_NONE)
     {
       fillImage(img_,  sensor_msgs::image_encodings::TYPE_8UC1,
-                img_data->imHeight, img_data->imWidth, 2 * img_data->imWidth, 
+                img_data->imHeight, img_data->imWidth, img_data->imWidth, 
                 img_data->im);
       img_.header.stamp = raw_stereo_.header.stamp;
       img_.header.frame_id = raw_stereo_.header.frame_id;
