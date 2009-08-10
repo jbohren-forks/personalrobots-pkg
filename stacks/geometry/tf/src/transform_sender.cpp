@@ -46,8 +46,8 @@ public:
 
 
   // A function to call to send data periodically
-  void send () {
-    transform_.stamp_ = ros::Time::now();
+  void send (ros::Time time) {
+    transform_.stamp_ = time;
     broadcaster.sendTransform(transform_);
   };
 
@@ -84,7 +84,7 @@ int main(int argc, char ** argv)
 
   while(tf_sender.node_.ok())
   {
-    tf_sender.send();
+    tf_sender.send(ros::Time::now() + sleeper);
     ROS_DEBUG("Sending transform from %s with parent %s\n", argv[7], argv[8]);
     sleeper.sleep();
   }
