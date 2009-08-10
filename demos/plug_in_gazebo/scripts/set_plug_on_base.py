@@ -44,12 +44,22 @@ roslib.load_manifest(PKG)
 import sys, unittest
 import os, os.path, threading, time
 import rospy, rostest
-from std_msgs.msg import *
-from robot_actions.msg import *
-from nav_robot_actions.msg import *
-from tf.transformations import *
-from geometry_msgs.msg import Twist, PoseWithRatesStamped
-from numpy import *
+
+
+from std_msgs.msg import String
+from nav_robot_actions.msg import MoveBaseState
+from geometry_msgs.msg import Pose,Quaternion,Point, PoseStamped, PoseWithCovarianceStamped
+from nav_msgs.msg import Odometry
+import tf.transformations as tft
+from numpy import float64
+
+# @todo: this is copied covariance from amcl, need to update for position
+COV = [float64(0.5*0.5                  ),float64(0),float64(0),float64(0),float64(0),float64(0), \
+       float64(0),float64(0.5*0.5                  ),float64(0),float64(0),float64(0),float64(0), \
+       float64(0                        ),float64(0),float64(0),float64(0),float64(0),float64(0), \
+       float64(0),float64(0),float64(0),float64(math.pi/23.0*math.pi/12.0),float64(0),float64(0), \
+       float64(0                        ),float64(0),float64(0),float64(0),float64(0),float64(0), \
+       float64(0                        ),float64(0),float64(0),float64(0),float64(0),float64(0)  ]
 
 def normalize_angle_positive(angle):
     return math.fmod(math.fmod(angle, 2*math.pi) + 2*math.pi, 2*math.pi)
@@ -94,7 +104,7 @@ def  plugP3DInput(p3d):
       p3d_qz = p3d.pos.orientation.z
 
       # check plug position from goal
-      e = euler_from_quaternion([p3d_qx,p3d_qy,p3d_qz,p3d_qw])
+      e = tft.euler_from_quaternion([p3d_qx,p3d_qy,p3d_qz,p3d_qw])
       if tolerance > 0:
         if abs(p3d_x - xyz[0]) < tolerance and \
            abs(p3d_y - xyz[1]) < tolerance and \
@@ -115,7 +125,7 @@ def  magnetP3DInput(p3d):
     if not goal_reached:
       magnet_p = [p3d.pos.position.x - x_origin, p3d.pos.position.y - y_origin, p3d.pos.position.z - z_origin]
       magnet_q = [p3d.pos.orientation.x, p3d.pos.orientation.y, p3d.pos.orientation.z, p3d.pos.orientation.w]
-      magnet_e = euler_from_quaternion([magnet_q[0],magnet_q[1],magnet_q[2],magnet_q[3]])
+      magnet_e = tft.euler_from_quaternion([magnet_q[0],magnet_q[1],magnet_q[2],magnet_q[3]])
 
 def main():
     global xyz, rpy, test_timeout, goal_reached
@@ -138,9 +148,9 @@ def main():
         if len(sys.argv) > i+1:
           tolerance = float(sys.argv[i+1])
 
-    pub_pose = rospy.Publisher("set_plug_pose", PoseWithRatesStamped)
-    rospy.Subscriber("plug_pose_ground_truth", PoseWithRatesStamped, plugP3DInput)
-    rospy.Subscriber("plug_magnet_pose_ground_truth", PoseWithRatesStamped, magnetP3DInput)
+    pub_pose = rospy.Publisher("set_plug_pose", Odometry)
+    rospy.Subscriber("plug_pose_ground_truth", Odometry, plugP3DInput)
+    rospy.Subscriber("plug_magnet_pose_ground_truth", Odometry, magnetP3DInput)
 
     rospy.init_node(NAME, anonymous=True)
 
@@ -155,10 +165,10 @@ def main():
         h.frame_id = "map"
         # publish pose
         p = Point(xyz[0]+magnet_p[0],xyz[1]+magnet_p[1],xyz[2]+magnet_p[2])
-        tmpq = quaternion_multiply(quaternion_from_euler(rpy[0],rpy[1],rpy[2],'rxyz'),magnet_q)
+        tmpq = tft.quaternion_multiply(tft.quaternion_from_euler(rpy[0],rpy[1],rpy[2],'rxyz'),magnet_q)
         q = Quaternion(tmpq[0],tmpq[1],tmpq[2],tmpq[3])
-        pose = Pose(p,q)
-        poseWithRatesStamped = PoseWithRatesStamped(h,pose,Twist(),Twist());
+        pose = PoseWithCovariance(Pose(p,q),COV)
+        poseWithRatesStamped = Odometry(h,pose,TwistWithCovariance());
         pub_pose.publish(poseWithRatesStamped)
         time.sleep(0.05)
 
