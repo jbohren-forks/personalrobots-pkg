@@ -53,9 +53,9 @@ void GoalManager<ActionSpec>::registerCancelFunc(CancelFunc cancel_func)
 
 
 template<class ActionSpec>
-GoalHandle<ActionSpec> GoalManager<ActionSpec>::initGoal(const Goal& goal,
-                                                         TransitionCallback transition_cb,
-                                                         FeedbackCallback feedback_cb )
+ClientGoalHandle<ActionSpec> GoalManager<ActionSpec>::initGoal(const Goal& goal,
+                                                               TransitionCallback transition_cb,
+                                                               FeedbackCallback feedback_cb )
 {
   ActionGoalPtr action_goal(new ActionGoal);
   action_goal->goal_id = id_generator_.generateID();
@@ -72,7 +72,7 @@ GoalHandle<ActionSpec> GoalManager<ActionSpec>::initGoal(const Goal& goal,
   boost::recursive_mutex::scoped_lock lock(list_mutex_);
   typename ManagedListT::Handle list_handle = list_.add(comm_state_machine, boost::bind(&GoalManagerT::listElemDeleter, this, _1));
 
-  return GoalHandle<ActionSpec>(this, list_handle);
+  return GoalHandleT(this, list_handle);
 }
 
 template<class ActionSpec>
@@ -92,7 +92,7 @@ void GoalManager<ActionSpec>::updateStatuses(const GoalStatusArrayConstPtr& stat
 
   while (it != list_.end())
   {
-    GoalHandle<ActionSpec> gh(this, it.createHandle());
+    GoalHandleT gh(this, it.createHandle());
     (*it)->updateStatus(gh, status_array);
     ++it;
   }
@@ -106,7 +106,7 @@ void GoalManager<ActionSpec>::updateFeedbacks(const ActionFeedbackConstPtr& acti
 
   while (it != list_.end())
   {
-    GoalHandle<ActionSpec> gh(this, it.createHandle());
+    GoalHandleT gh(this, it.createHandle());
     (*it)->updateFeedback(gh, action_feedback);
     ++it;
   }
@@ -120,7 +120,7 @@ void GoalManager<ActionSpec>::updateResults(const ActionResultConstPtr& action_r
 
   while (it != list_.end())
   {
-    GoalHandle<ActionSpec> gh(this, it.createHandle());
+    GoalHandleT gh(this, it.createHandle());
     (*it)->updateResult(gh, action_result);
     ++it;
   }

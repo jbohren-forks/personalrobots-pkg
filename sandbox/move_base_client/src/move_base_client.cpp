@@ -45,7 +45,7 @@ using namespace move_base;
 
 typedef ActionClient<MoveBaseAction> MoveBaseClient;
 
-void transitionCallback(GoalHandle<MoveBaseAction> gh)
+void transitionCallback(ActionClient<MoveBaseAction>::GoalHandle gh)
 {
   ROS_DEBUG("In the transition");
 
@@ -57,7 +57,7 @@ void transitionCallback(GoalHandle<MoveBaseAction> gh)
     ROS_DEBUG("NULL Result");
 }
 
-void feedbackCallback(GoalHandle<MoveBaseAction> gh, const MoveBaseFeedbackConstPtr& fb)
+void feedbackCallback(ActionClient<MoveBaseAction>::GoalHandle gh, const MoveBaseFeedbackConstPtr& fb)
 {
   ROS_INFO("Got Feedback!");
 }
@@ -83,7 +83,7 @@ int main(int argc, char** argv)
 
   MoveBaseGoal goal;
 
-  GoalHandle<MoveBaseAction> gh = ac.sendGoal(goal, &transitionCallback, &feedbackCallback);
+  ActionClient<MoveBaseAction>::GoalHandle gh = ac.sendGoal(goal, &transitionCallback, &feedbackCallback);
 
   sleep(1.0);
 

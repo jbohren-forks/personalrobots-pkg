@@ -58,7 +58,7 @@ class SimpleActionClient
 {
 private:
   ACTION_DEFINITION(ActionSpec);
-  typedef GoalHandle<ActionSpec> GoalHandleT;
+  typedef ClientGoalHandle<ActionSpec> GoalHandleT;
   typedef SimpleActionClient<ActionSpec> SimpleActionClientT;
 
 public:

@@ -32,7 +32,7 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-/* This file has the template implementation for GoalHandle. It should be included with the
+/* This file has the template implementation for ClientGoalHandle. It should be included with the
  * class definition.
  */
 
@@ -40,14 +40,14 @@ namespace actionlib
 {
 
 template<class ActionSpec>
-GoalHandle<ActionSpec>::GoalHandle()
+ClientGoalHandle<ActionSpec>::ClientGoalHandle()
 {
   gm_ = NULL;
   active_ = false;
 }
 
 template<class ActionSpec>
-GoalHandle<ActionSpec>::GoalHandle(GoalManagerT* gm, typename ManagedListT::Handle handle)
+ClientGoalHandle<ActionSpec>::ClientGoalHandle(GoalManagerT* gm, typename ManagedListT::Handle handle)
 {
   gm_ = gm;
   active_ = true;
@@ -55,7 +55,7 @@ GoalHandle<ActionSpec>::GoalHandle(GoalManagerT* gm, typename ManagedListT::Hand
 }
 
 template<class ActionSpec>
-void GoalHandle<ActionSpec>::reset()
+void ClientGoalHandle<ActionSpec>::reset()
 {
   list_handle_.reset();
   active_ = false;
@@ -63,17 +63,17 @@ void GoalHandle<ActionSpec>::reset()
 }
 
 template<class ActionSpec>
-bool GoalHandle<ActionSpec>::isExpired() const
+bool ClientGoalHandle<ActionSpec>::isExpired() const
 {
   return !active_;
 }
 
 
 template<class ActionSpec>
-CommState GoalHandle<ActionSpec>::getCommState()
+CommState ClientGoalHandle<ActionSpec>::getCommState()
 {
   if (!active_)
-    ROS_ERROR("Trying to getCommState on an inactive GoalHandle. You are incorrectly using a GoalHandle");
+    ROS_ERROR("Trying to getCommState on an inactive ClientGoalHandle. You are incorrectly using a ClientGoalHandle");
 
   assert(gm_);
 
@@ -82,10 +82,10 @@ CommState GoalHandle<ActionSpec>::getCommState()
 }
 
 template<class ActionSpec>
-TerminalState GoalHandle<ActionSpec>::getTerminalState()
+TerminalState ClientGoalHandle<ActionSpec>::getTerminalState()
 {
   if (!active_)
-    ROS_ERROR("Trying to getTerminalState on an inactive GoalHandle. You are incorrectly using a GoalHandle");
+    ROS_ERROR("Trying to getTerminalState on an inactive ClientGoalHandle. You are incorrectly using a ClientGoalHandle");
 
   assert(gm_);
 
@@ -118,20 +118,20 @@ TerminalState GoalHandle<ActionSpec>::getTerminalState()
 }
 
 template<class ActionSpec>
-typename GoalHandle<ActionSpec>::ResultConstPtr GoalHandle<ActionSpec>::getResult()
+typename ClientGoalHandle<ActionSpec>::ResultConstPtr ClientGoalHandle<ActionSpec>::getResult()
 {
   if (!active_)
-    ROS_ERROR("Trying to getResult on an inactive GoalHandle. You are incorrectly using a GoalHandle");
+    ROS_ERROR("Trying to getResult on an inactive ClientGoalHandle. You are incorrectly using a ClientGoalHandle");
   assert(gm_);
   boost::recursive_mutex::scoped_lock lock(gm_->list_mutex_);
   return list_handle_.getElem()->getResult();
 }
 
 template<class ActionSpec>
-void GoalHandle<ActionSpec>::resend()
+void ClientGoalHandle<ActionSpec>::resend()
 {
   if (!active_)
-    ROS_ERROR("Trying to resend() on an inactive GoalHandle. You are incorrectly using a GoalHandle");
+    ROS_ERROR("Trying to resend() on an inactive ClientGoalHandle. You are incorrectly using a ClientGoalHandle");
   assert(gm_);
   boost::recursive_mutex::scoped_lock lock(gm_->list_mutex_);
 
@@ -145,10 +145,10 @@ void GoalHandle<ActionSpec>::resend()
 }
 
 template<class ActionSpec>
-void GoalHandle<ActionSpec>::cancel()
+void ClientGoalHandle<ActionSpec>::cancel()
 {
   if (!active_)
-    ROS_ERROR("Trying to cancel() on an inactive GoalHandle. You are incorrectly using a GoalHandle");
+    ROS_ERROR("Trying to cancel() on an inactive ClientGoalHandle. You are incorrectly using a ClientGoalHandle");
   assert(gm_);
   boost::recursive_mutex::scoped_lock lock(gm_->list_mutex_);
 
@@ -165,7 +165,7 @@ void GoalHandle<ActionSpec>::cancel()
 }
 
 template<class ActionSpec>
-bool GoalHandle<ActionSpec>::operator==(const GoalHandle<ActionSpec>& rhs)
+bool ClientGoalHandle<ActionSpec>::operator==(const ClientGoalHandle<ActionSpec>& rhs)
 {
   // Check if both are inactive
   if (!active_ && !rhs.active_)
@@ -179,7 +179,7 @@ bool GoalHandle<ActionSpec>::operator==(const GoalHandle<ActionSpec>& rhs)
 }
 
 template<class ActionSpec>
-bool GoalHandle<ActionSpec>::operator!=(const GoalHandle<ActionSpec>& rhs)
+bool ClientGoalHandle<ActionSpec>::operator!=(const ClientGoalHandle<ActionSpec>& rhs)
 {
   return !(*this==rhs);
 }

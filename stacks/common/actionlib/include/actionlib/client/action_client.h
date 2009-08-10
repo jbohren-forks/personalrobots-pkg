@@ -36,7 +36,7 @@
 #define ACTIONLIB_ACTION_CLIENT_H_
 
 #include "ros/ros.h"
-#include "actionlib/client/goal_manager.h"
+#include "actionlib/client/client_helpers.h"
 
 namespace actionlib
 {
@@ -51,11 +51,14 @@ namespace actionlib
 template <class ActionSpec>
 class ActionClient
 {
+public:
+  typedef ClientGoalHandle<ActionSpec> GoalHandle;
+
 private:
   ACTION_DEFINITION(ActionSpec);
   typedef ActionClient<ActionSpec> ActionClientT;
-  typedef boost::function<void (GoalHandle<ActionSpec>) > TransitionCallback;
-  typedef boost::function<void (GoalHandle<ActionSpec>, const FeedbackConstPtr&) > FeedbackCallback;
+  typedef boost::function<void (GoalHandle) > TransitionCallback;
+  typedef boost::function<void (GoalHandle, const FeedbackConstPtr&) > FeedbackCallback;
   typedef boost::function<void (const ActionGoalConstPtr)> SendGoalFunc;
 
 public:
@@ -88,12 +91,12 @@ public:
    * \param transition_cb Callback that gets called on every client state transition
    * \param feedback_cb Callback that gets called whenever feedback for this goal is received
    */
-  GoalHandle<ActionSpec> sendGoal(const Goal& goal,
-                                  TransitionCallback transition_cb = TransitionCallback(),
-                                  FeedbackCallback   feedback_cb   = FeedbackCallback())
+  GoalHandle sendGoal(const Goal& goal,
+                      TransitionCallback transition_cb = TransitionCallback(),
+                      FeedbackCallback   feedback_cb   = FeedbackCallback())
   {
     ROS_DEBUG("about to start initGoal()");
-    GoalHandle<ActionSpec> gh = manager_.initGoal(goal, transition_cb, feedback_cb);
+    GoalHandle gh = manager_.initGoal(goal, transition_cb, feedback_cb);
     ROS_DEBUG("Done with initGoal()");
 
     return gh;

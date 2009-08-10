@@ -59,7 +59,7 @@ namespace actionlib
 {
 
 template <class ActionSpec>
-class GoalHandle;
+class ClientGoalHandle;
 
 template <class ActionSpec>
 class CommStateMachine;
@@ -70,8 +70,9 @@ class GoalManager
 public:
   ACTION_DEFINITION(ActionSpec);
   typedef GoalManager<ActionSpec> GoalManagerT;
-  typedef boost::function<void (GoalHandle<ActionSpec>) > TransitionCallback;
-  typedef boost::function<void (GoalHandle<ActionSpec>, const FeedbackConstPtr&) > FeedbackCallback;
+  typedef ClientGoalHandle<ActionSpec> GoalHandleT;
+  typedef boost::function<void (GoalHandleT) > TransitionCallback;
+  typedef boost::function<void (GoalHandleT, const FeedbackConstPtr&) > FeedbackCallback;
   typedef boost::function<void (const ActionGoalConstPtr)> SendGoalFunc;
   typedef boost::function<void (const GoalID&)> CancelFunc;
 
@@ -80,15 +81,15 @@ public:
   void registerSendGoalFunc(SendGoalFunc send_goal_func);
   void registerCancelFunc(CancelFunc cancel_func);
 
-  GoalHandle<ActionSpec> initGoal( const Goal& goal,
-                                   TransitionCallback transition_cb = TransitionCallback(),
-                                   FeedbackCallback feedback_cb = FeedbackCallback() );
+  GoalHandleT initGoal( const Goal& goal,
+                        TransitionCallback transition_cb = TransitionCallback(),
+                        FeedbackCallback feedback_cb = FeedbackCallback() );
 
   void updateStatuses(const GoalStatusArrayConstPtr& status_array);
   void updateFeedbacks(const ActionFeedbackConstPtr& action_feedback);
   void updateResults(const ActionResultConstPtr& action_result);
 
-  friend class GoalHandle<ActionSpec>;
+  friend class ClientGoalHandle<ActionSpec>;
 
   // should be private
   typedef ManagedList< boost::shared_ptr<CommStateMachine<ActionSpec> > > ManagedListT;
@@ -107,12 +108,12 @@ private:
 /**
  * \brief Client side handle to monitor goal progress
  *
- * A GoalHandle is a reference counted object that is used to manipulate and monitor the progress
+ * A ClientGoalHandle is a reference counted object that is used to manipulate and monitor the progress
  * of an already dispatched goal. Once all the goal handles go out of scope (or are reset), an
  * ActionClient stops maintaining state for that goal.
  */
 template <class ActionSpec>
-class GoalHandle
+class ClientGoalHandle
 {
 private:
   ACTION_DEFINITION(ActionSpec);
@@ -124,7 +125,7 @@ public:
    * Constructs a goal handle that doesn't track any goal. Calling any method on an empty goal
    * handle other than operator= will trigger an assertion.
    */
-  GoalHandle();
+  ClientGoalHandle();
 
   /**
    * \brief Stops goal handle from tracking a goal
@@ -185,19 +186,19 @@ public:
    * \brief Check if two goal handles point to the same goal
    * \return TRUE if both point to the same goal. Also returns TRUE if both handles are inactive.
    */
-  bool operator==(const GoalHandle<ActionSpec>& rhs);
+  bool operator==(const ClientGoalHandle<ActionSpec>& rhs);
 
   /**
    * \brief !(operator==())
    */
-  bool operator!=(const GoalHandle<ActionSpec>& rhs);
+  bool operator!=(const ClientGoalHandle<ActionSpec>& rhs);
 
   friend class GoalManager<ActionSpec>;
 private:
   typedef GoalManager<ActionSpec> GoalManagerT;
   typedef ManagedList< boost::shared_ptr<CommStateMachine<ActionSpec> > > ManagedListT;
 
-  GoalHandle(GoalManagerT* gm, typename ManagedListT::Handle handle);
+  ClientGoalHandle(GoalManagerT* gm, typename ManagedListT::Handle handle);
 
   GoalManagerT* gm_;
   bool active_;
@@ -213,9 +214,9 @@ class CommStateMachine
     ACTION_DEFINITION(ActionSpec);
 
   public:
-    typedef boost::function<void (const GoalHandle<ActionSpec>&) > TransitionCallback;
-    typedef boost::function<void (const GoalHandle<ActionSpec>&, const FeedbackConstPtr&) > FeedbackCallback;
-    typedef GoalHandle<ActionSpec> GoalHandleT;
+    typedef boost::function<void (const ClientGoalHandle<ActionSpec>&) > TransitionCallback;
+    typedef boost::function<void (const ClientGoalHandle<ActionSpec>&, const FeedbackConstPtr&) > FeedbackCallback;
+    typedef ClientGoalHandle<ActionSpec> GoalHandleT;
 
     CommStateMachine(const ActionGoalConstPtr& action_goal,
                      TransitionCallback transition_callback,
@@ -257,8 +258,8 @@ class CommStateMachine
 
 }
 
-#include "actionlib/client/goal_manager.cpp"
-#include "actionlib/client/goal_handle.cpp"
-#include "actionlib/client/comm_state_machine.cpp"
+#include "actionlib/client/goal_manager.ipp"
+#include "actionlib/client/client_goal_handle.ipp"
+#include "actionlib/client/comm_state_machine.ipp"
 
 #endif // ACTIONLIB_GOAL_MANAGER_H_
