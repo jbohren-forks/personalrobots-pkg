@@ -43,13 +43,12 @@ NAME = 'test_arm'
 import math
 import roslib
 roslib.load_manifest(PKG)
-roslib.load_manifest('rostest')
 
 import sys, unittest
 import os, os.path, threading, time
 import rospy, rostest
 from std_msgs.msg import *
-from robot_msgs.msg import *
+from nav_msgs.msg import *
 from pr2_mechanism_controllers.msg import *
 from tf.transformations import *
 from numpy import *
@@ -92,13 +91,13 @@ class ArmTest(unittest.TestCase):
 
     def printP3D(self, p3d):
         print "pose ground truth received"
-        print "P3D pose translan: " + "x: " + str(p3d.pos.position.x)
+        print "P3D pose translan: " + "x: " + str(p3d.pose.pose.position.x)
         print "                   " + "y: " + str(p3d.pos.position.y)
-        print "                   " + "z: " + str(p3d.pos.position.z)
-        print "P3D pose rotation: " + "x: " + str(p3d.pos.orientation.x)
-        print "                   " + "y: " + str(p3d.pos.orientation.y)
-        print "                   " + "z: " + str(p3d.pos.orientation.z)
-        print "                   " + "w: " + str(p3d.pos.orientation.w)
+        print "                   " + "z: " + str(p3d.pose.pose.position.z)
+        print "P3D pose rotation: " + "x: " + str(p3d.pose.pose.orientation.x)
+        print "                   " + "y: " + str(p3d.pose.pose.orientation.y)
+        print "                   " + "z: " + str(p3d.pose.pose.orientation.z)
+        print "                   " + "w: " + str(p3d.pose.pose.orientation.w)
         print "P3D rate translan: " + "x: " + str(p3d.vel.vel.vx)
         print "                   " + "y: " + str(p3d.vel.vel.vy)
         print "                   " + "z: " + str(p3d.vel.vel.vz)
@@ -108,9 +107,9 @@ class ArmTest(unittest.TestCase):
 
     def fngrP3dInput(self, p3d):
         i = 0
-        pos_error = abs(p3d.pos.position.x - TARGET_FNGR_TX) + \
-                    abs(p3d.pos.position.y - TARGET_FNGR_TY) + \
-                    abs(p3d.pos.position.z - TARGET_FNGR_TZ)
+        pos_error = abs(p3d.pose.pose.position.x - TARGET_FNGR_TX) + \
+                    abs(p3d.pose.pose.position.y - TARGET_FNGR_TY) + \
+                    abs(p3d.pose.pose.position.z - TARGET_FNGR_TZ)
 
         #target pose rotation matrix
         target_q = [TARGET_FNGR_QX  \
@@ -119,10 +118,10 @@ class ArmTest(unittest.TestCase):
                    ,TARGET_FNGR_QW]
 
         #p3d pose quaternion
-        p3d_q     = [p3d.pos.orientation.x  \
-                    ,p3d.pos.orientation.y  \
-                    ,p3d.pos.orientation.z  \
-                    ,p3d.pos.orientation.w]
+        p3d_q     = [p3d.pose.pose.orientation.x  \
+                    ,p3d.pose.pose.orientation.y  \
+                    ,p3d.pose.pose.orientation.z  \
+                    ,p3d.pose.pose.orientation.w]
 
         # get error euler angles by inverting the target rotation matrix and multiplying by p3d quaternion
         target_q_inv = quaternion_inverse(target_q)
@@ -152,9 +151,9 @@ class ArmTest(unittest.TestCase):
 
     def palmP3dInput(self, p3d):
         i = 0
-        pos_error = abs(p3d.pos.position.x - TARGET_PALM_TX) + \
-                    abs(p3d.pos.position.y - TARGET_PALM_TY) + \
-                    abs(p3d.pos.position.z - TARGET_PALM_TZ)
+        pos_error = abs(p3d.pose.pose.position.x - TARGET_PALM_TX) + \
+                    abs(p3d.pose.pose.position.y - TARGET_PALM_TY) + \
+                    abs(p3d.pose.pose.position.z - TARGET_PALM_TZ)
 
         #target pose rotation matrix
         target_q = [TARGET_PALM_QX  \
@@ -163,10 +162,10 @@ class ArmTest(unittest.TestCase):
                    ,TARGET_PALM_QW]
 
         #p3d pose quaternion
-        p3d_q     = [p3d.pos.orientation.x  \
-                    ,p3d.pos.orientation.y  \
-                    ,p3d.pos.orientation.z  \
-                    ,p3d.pos.orientation.w]
+        p3d_q     = [p3d.pose.pose.orientation.x  \
+                    ,p3d.pose.pose.orientation.y  \
+                    ,p3d.pose.pose.orientation.z  \
+                    ,p3d.pose.pose.orientation.w]
 
         # get error euler angles by inverting the target rotation matrix and multiplying by p3d quaternion
         target_q_inv = quaternion_inverse(target_q)
@@ -197,8 +196,8 @@ class ArmTest(unittest.TestCase):
     def test_arm(self):
         print "LNK\n"
         pub_gripper = rospy.Publisher("/l_gripper_controller/set_command", Float64)
-        rospy.Subscriber("/l_gripper_palm_pose_ground_truth", PoseWithRatesStamped, self.palmP3dInput)
-        rospy.Subscriber("/l_gripper_l_finger_pose_ground_truth", PoseWithRatesStamped, self.fngrP3dInput)
+        rospy.Subscriber("/l_gripper_palm_pose_ground_truth", Odometry, self.palmP3dInput)
+        rospy.Subscriber("/l_gripper_l_finger_pose_ground_truth", Odometry, self.fngrP3dInput)
         rospy.init_node(NAME, anonymous=True)
         timeout_t = time.time() + TEST_TIMEOUT
         while not rospy.is_shutdown() and (not self.palm_success or not self.fngr_success) and time.time() < timeout_t:

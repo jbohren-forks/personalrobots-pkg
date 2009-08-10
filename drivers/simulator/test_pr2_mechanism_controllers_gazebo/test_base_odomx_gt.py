@@ -40,7 +40,6 @@ NAME = 'test_base_odomx_gt'
 import math
 import roslib
 roslib.load_manifest(PKG)
-roslib.load_manifest('rostest')
 
 import sys, unittest
 import os, time
@@ -133,19 +132,19 @@ class BaseTest(unittest.TestCase):
 
     def printBaseP3D(self, p3d):
         print "base pose ground truth received"
-        print "P3D pose translan: " + "x: " + str(p3d.pos.position.x)
-        print "                   " + "y: " + str(p3d.pos.position.y)
-        print "                   " + "z: " + str(p3d.pos.position.z)
-        print "P3D pose rotation: " + "x: " + str(p3d.pos.orientation.x)
-        print "                   " + "y: " + str(p3d.pos.orientation.y)
-        print "                   " + "z: " + str(p3d.pos.orientation.z)
-        print "                   " + "w: " + str(p3d.pos.orientation.w)
-        print "P3D rate translan: " + "x: " + str(p3d.vel.vel.x)
-        print "                   " + "y: " + str(p3d.vel.vel.y)
-        print "                   " + "z: " + str(p3d.vel.vel.z)
-        print "P3D rate rotation: " + "x: " + str(p3d.vel.ang_vel.vx)
-        print "                   " + "y: " + str(p3d.vel.ang_vel.vy)
-        print "                   " + "z: " + str(p3d.vel.ang_vel.vz)
+        print "P3D pose translan: " + "x: " + str(p3d.pose.pose.position.x)
+        print "                   " + "y: " + str(p3d.pose.pose.position.y)
+        print "                   " + "z: " + str(p3d.pose.pose.position.z)
+        print "P3D pose rotation: " + "x: " + str(p3d.pose.pose.orientation.x)
+        print "                   " + "y: " + str(p3d.pose.pose.orientation.y)
+        print "                   " + "z: " + str(p3d.pose.pose.orientation.z)
+        print "                   " + "w: " + str(p3d.pose.pose.orientation.w)
+        print "P3D rate translan: " + "x: " + str(p3d.twist.twist.linear.x)
+        print "                   " + "y: " + str(p3d.twist.twist.linear.y)
+        print "                   " + "z: " + str(p3d.twist.twist.linear.z)
+        print "P3D rate rotation: " + "x: " + str(p3d.twist.twist.angular.vx)
+        print "                   " + "y: " + str(p3d.twist.twist.angular.vy)
+        print "                   " + "z: " + str(p3d.twist.twist.angular.vz)
 
     def odomInput(self, odom):
         #self.printBaseOdom(odom)
@@ -163,26 +162,26 @@ class BaseTest(unittest.TestCase):
 
 
     def p3dInput(self, p3d):
-        q = Q(p3d.pos.orientation.x , p3d.pos.orientation.y , p3d.pos.orientation.z , p3d.pos.orientation.w)
+        q = Q(p3d.pose.pose.orientation.x , p3d.pose.pose.orientation.y , p3d.pose.pose.orientation.z , p3d.pose.pose.orientation.w)
         q.normalize()
         v = q.getEuler()
 
         if self.p3d_initialized == False:
             self.p3d_initialized = True
-            self.p3d_xi = p3d.pos.position.x
-            self.p3d_yi = p3d.pos.position.y
+            self.p3d_xi = p3d.pose.pose.position.x
+            self.p3d_yi = p3d.pose.pose.position.y
             self.p3d_ti = v.z
 
-        self.p3d_x = p3d.pos.position.x - self.p3d_xi
-        self.p3d_y = p3d.pos.position.y - self.p3d_yi
+        self.p3d_x = p3d.pose.pose.position.x - self.p3d_xi
+        self.p3d_y = p3d.pose.pose.position.y - self.p3d_yi
         self.p3d_t = v.z                - self.p3d_ti
 
     
     def test_base(self):
         print "LNK\n"
         pub = rospy.Publisher("/cmd_vel", Twist)
-        rospy.Subscriber("/base_pose_ground_truth", PoseWithRatesStamped, self.p3dInput)
-        rospy.Subscriber("/odom",                   Odometry,      self.odomInput)
+        rospy.Subscriber("/base_pose_ground_truth", Odometry, self.p3dInput)
+        rospy.Subscriber("/odom",                   Odometry, self.odomInput)
         rospy.init_node(NAME, anonymous=True)
         timeout_t = time.time() + TEST_DURATION
         while not rospy.is_shutdown() and not self.success and time.time() < timeout_t:

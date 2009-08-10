@@ -199,18 +199,18 @@ class BaseTest(unittest.TestCase):
 
 
     def p3dInput(self, p3d):
-        q = Q(p3d.pos.orientation.x , p3d.pos.orientation.y , p3d.pos.orientation.z , p3d.pos.orientation.w)
+        q = Q(p3d.pose.pose.orientation.x , p3d.pose.pose.orientation.y , p3d.pose.pose.orientation.z , p3d.pose.pose.orientation.w)
         q.normalize()
         v = q.getEuler()
 
         if self.p3d_initialized == False:
             self.p3d_initialized = True
-            self.p3d_xi = p3d.pos.position.x
-            self.p3d_yi = p3d.pos.position.y
+            self.p3d_xi = p3d.pose.pose.position.x
+            self.p3d_yi = p3d.pose.pose.position.y
             self.p3d_ei = E(v.x,v.y,v.z)
 
-        self.p3d_x = p3d.pos.position.x - self.p3d_xi
-        self.p3d_y = p3d.pos.position.y - self.p3d_yi
+        self.p3d_x = p3d.pose.pose.position.x - self.p3d_xi
+        self.p3d_y = p3d.pose.pose.position.y - self.p3d_yi
         self.p3d_e.shortest_euler_distance(self.p3d_ei,E(v.x,v.y,v.z))
         #print "p3d initial:" + str(self.p3d_ei.x) + "," + str(self.p3d_ei.y) + "," + str(self.p3d_ei.z) \
         #    +  " p3d final:" + str(v.x)           + "," + str(v.y)           + "," + str(v.z)
@@ -219,8 +219,8 @@ class BaseTest(unittest.TestCase):
     def test_base(self):
         print "LNK\n"
         pub = rospy.Publisher("/cmd_vel", Twist)
-        rospy.Subscriber("/base_pose_ground_truth", PoseWithRatesStamped, self.p3dInput)
-        rospy.Subscriber("/odom",                   Odometry,      self.odomInput)
+        rospy.Subscriber("/base_pose_ground_truth", Odometry, self.p3dInput)
+        rospy.Subscriber("/odom",                   Odometry, self.odomInput)
         rospy.init_node(NAME, anonymous=True)
         timeout_t = time.time() + TEST_DURATION
         while not rospy.is_shutdown() and not self.success and time.time() < timeout_t:
