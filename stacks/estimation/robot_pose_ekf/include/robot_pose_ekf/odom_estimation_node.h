@@ -119,7 +119,6 @@ private:
 
   // vectors
   MatrixWrapper::ColumnVector vel_desi_;
-  MatrixWrapper::SymmetricMatrix odom_covariance_, imu_covariance_, vo_covariance_;
   tf::Transform odom_meas_, imu_meas_, vo_meas_;
   tf::Transform base_vo_init_, vo_camera_;
   tf::Stamped<tf::Transform> camera_base_;
@@ -130,6 +129,7 @@ private:
   bool odom_used_, imu_used_, vo_used_;
   bool odom_initializing_, imu_initializing_, vo_initializing_;
   double timeout_;
+  MatrixWrapper::SymmetricMatrix odom_covariance_, imu_covariance_, vo_covariance_;
 
   // mutex
   boost::mutex odom_mutex_, imu_mutex_, vo_mutex_, vel_mutex_;

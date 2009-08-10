@@ -61,7 +61,10 @@ namespace estimation
       vo_active_(false),
       odom_initializing_(false),
       imu_initializing_(false),
-      vo_initializing_(false)
+      vo_initializing_(false),
+      odom_covariance_(6),
+      imu_covariance_(6),
+      vo_covariance_(6)
   {
     // paramters
     node_.param("sensor_timeout", timeout_, 1.0);
