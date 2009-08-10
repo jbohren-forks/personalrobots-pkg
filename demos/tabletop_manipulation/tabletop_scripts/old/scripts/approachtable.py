@@ -68,9 +68,9 @@ class ApproachTable:
   def tfCallback(self,msg):
     if (msg.transforms[0].header.frame_id == self.global_frame and 
         self.odom_pose != None):
-      self.robot_position = Point((self.odom_pose.pose_with_covariance.pose.position.x - 
+      self.robot_position = Point((self.odom_pose.pose.pose.position.x - 
                                    msg.transforms[0].transform.translation.x),
-                                  (self.odom_pose.pose_with_covariance.pose.position.y - 
+                                  (self.odom_pose.pose.pose.position.y - 
                                    msg.transforms[0].transform.translation.y),
                                   0.0)
 

@@ -173,9 +173,9 @@ namespace base_local_planner {
 
   bool TrajectoryPlannerROS::stopped(){
     boost::recursive_mutex::scoped_lock(odom_lock_);
-    return abs(base_odom_.twist_with_covariance.twist.angular.z) <= rot_stopped_velocity_ 
-      && abs(base_odom_.twist_with_covariance.twist.linear.x) <= trans_stopped_velocity_
-      && abs(base_odom_.twist_with_covariance.twist.linear.y) <= trans_stopped_velocity_;
+    return abs(base_odom_.twist.twist.angular.z) <= rot_stopped_velocity_ 
+      && abs(base_odom_.twist.twist.linear.x) <= trans_stopped_velocity_
+      && abs(base_odom_.twist.twist.linear.y) <= trans_stopped_velocity_;
   }
 
   double TrajectoryPlannerROS::distance(double x1, double y1, double x2, double y2){
@@ -222,11 +222,11 @@ namespace base_local_planner {
     boost::recursive_mutex::scoped_lock(odom_lock_);
     try
     {
-      tf::Stamped<btVector3> v_in(btVector3(msg->twist_with_covariance.twist.linear.x, msg->twist_with_covariance.twist.linear.y, 0), ros::Time(), msg->header.frame_id), v_out;
+      tf::Stamped<btVector3> v_in(btVector3(msg->twist.twist.linear.x, msg->twist.twist.linear.y, 0), ros::Time(), msg->header.frame_id), v_out;
       tf_->transformVector(robot_base_frame_, ros::Time(), v_in, msg->header.frame_id, v_out);
-      base_odom_.twist_with_covariance.twist.linear.x = v_in.x();
-      base_odom_.twist_with_covariance.twist.linear.y = v_in.y();
-      base_odom_.twist_with_covariance.twist.angular.z = msg->twist_with_covariance.twist.angular.z;
+      base_odom_.twist.twist.linear.x = v_in.x();
+      base_odom_.twist.twist.linear.y = v_in.y();
+      base_odom_.twist.twist.angular.z = msg->twist.twist.angular.z;
     }
     catch(tf::LookupException& ex)
     {
@@ -411,9 +411,9 @@ namespace base_local_planner {
     geometry_msgs::Twist global_vel;
 
     odom_lock_.lock();
-    global_vel.linear.x = base_odom_.twist_with_covariance.twist.linear.x;
-    global_vel.linear.y = base_odom_.twist_with_covariance.twist.linear.y;
-    global_vel.angular.z = base_odom_.twist_with_covariance.twist.angular.z;
+    global_vel.linear.x = base_odom_.twist.twist.linear.x;
+    global_vel.linear.y = base_odom_.twist.twist.linear.y;
+    global_vel.angular.z = base_odom_.twist.twist.angular.z;
     odom_lock_.unlock();
 
     tf::Stamped<tf::Pose> drive_cmds;

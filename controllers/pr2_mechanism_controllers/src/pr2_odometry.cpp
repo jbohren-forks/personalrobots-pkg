@@ -155,17 +155,17 @@ void Pr2Odometry::getOdometryMessage(nav_msgs::Odometry &msg)
 {
   msg.header.frame_id = odom_frame_;
   msg.header.stamp.fromSec(current_time_);
-  msg.pose_with_covariance.pose.position.x = odom_.x;
-  msg.pose_with_covariance.pose.position.y = odom_.y;
-  msg.pose_with_covariance.pose.position.z = 0.0;
+  msg.pose.pose.position.x = odom_.x;
+  msg.pose.pose.position.y = odom_.y;
+  msg.pose.pose.position.z = 0.0;
 
   tf::Quaternion quat_trans = tf::Quaternion(odom_.z, 0.0, 0.0);
-  msg.pose_with_covariance.pose.orientation.x = quat_trans.x();
-  msg.pose_with_covariance.pose.orientation.y = quat_trans.y();
-  msg.pose_with_covariance.pose.orientation.z = quat_trans.z();
-  msg.pose_with_covariance.pose.orientation.w = quat_trans.w();
+  msg.pose.pose.orientation.x = quat_trans.x();
+  msg.pose.pose.orientation.y = quat_trans.y();
+  msg.pose.pose.orientation.z = quat_trans.z();
+  msg.pose.pose.orientation.w = quat_trans.w();
 
-  msg.twist_with_covariance.twist = odom_vel_;
+  msg.twist.twist = odom_vel_;
 
 #warning A full covariance should be published instead of the residual, this code will not work properly with the ekf until this is changed
   //@todo TODO: change from residual to covariance

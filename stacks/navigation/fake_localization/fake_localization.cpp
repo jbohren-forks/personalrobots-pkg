@@ -156,13 +156,13 @@ private:
   }
 public:
   void update(const tf::MessageNotifier<nav_msgs::Odometry>::MessagePtr & message){
-    tf::Transform txi(tf::Quaternion(message->pose_with_covariance.pose.orientation.x,
-				     message->pose_with_covariance.pose.orientation.y, 
-				     message->pose_with_covariance.pose.orientation.z, 
-				     message->pose_with_covariance.pose.orientation.w),
-		      tf::Point(message->pose_with_covariance.pose.position.x,
-				message->pose_with_covariance.pose.position.y,
-                                0.0*message->pose_with_covariance.pose.position.z )); // zero height for base_footprint
+    tf::Transform txi(tf::Quaternion(message->pose.pose.orientation.x,
+				     message->pose.pose.orientation.y, 
+				     message->pose.pose.orientation.z, 
+				     message->pose.pose.orientation.w),
+		      tf::Point(message->pose.pose.position.x,
+				message->pose.pose.position.y,
+                                0.0*message->pose.pose.position.z )); // zero height for base_footprint
 
     double x = txi.getOrigin().x();
     double y = txi.getOrigin().y();

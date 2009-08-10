@@ -284,13 +284,13 @@ StageNode::Update()
          sim_time, mapName("base_link", r), mapName("base_footprint", r)));
     // Get latest odometry data
     // Translate into ROS message format and publish
-    this->odomMsgs[r].pose_with_covariance.pose.position.x = this->positionmodels[r]->est_pose.x;
-    this->odomMsgs[r].pose_with_covariance.pose.position.y = this->positionmodels[r]->est_pose.y;
-    this->odomMsgs[r].pose_with_covariance.pose.orientation = tf::createQuaternionMsgFromYaw(this->positionmodels[r]->est_pose.a);
+    this->odomMsgs[r].pose.pose.position.x = this->positionmodels[r]->est_pose.x;
+    this->odomMsgs[r].pose.pose.position.y = this->positionmodels[r]->est_pose.y;
+    this->odomMsgs[r].pose.pose.orientation = tf::createQuaternionMsgFromYaw(this->positionmodels[r]->est_pose.a);
     Stg::stg_velocity_t v = this->positionmodels[r]->GetVelocity();
-    this->odomMsgs[r].twist_with_covariance.twist.linear.x = v.x;
-    this->odomMsgs[r].twist_with_covariance.twist.linear.y = v.y;
-    this->odomMsgs[r].twist_with_covariance.twist.angular.z = v.a;
+    this->odomMsgs[r].twist.twist.linear.x = v.x;
+    this->odomMsgs[r].twist.twist.linear.y = v.y;
+    this->odomMsgs[r].twist.twist.angular.z = v.a;
 
     //@todo Publish stall on a separate topic when one becomes available
     //this->odomMsgs[r].stall = this->positionmodels[r]->Stall();
@@ -301,11 +301,11 @@ StageNode::Update()
     publish(mapName(ODOM,r),this->odomMsgs[r]);
 
     tf::Quaternion q;
-    tf::quaternionMsgToTF(odomMsgs[r].pose_with_covariance.pose.orientation, q);
+    tf::quaternionMsgToTF(odomMsgs[r].pose.pose.orientation, q);
     tf::Stamped<tf::Transform> tx(
         tf::Transform(
           q, 
-          tf::Point(odomMsgs[r].pose_with_covariance.pose.position.x, odomMsgs[r].pose_with_covariance.pose.position.y, 0.0)),
+          tf::Point(odomMsgs[r].pose.pose.position.x, odomMsgs[r].pose.pose.position.y, 0.0)),
         sim_time, mapName("base_footprint", r), mapName("odom", r));
     this->tf.sendTransform(tx);
       
@@ -315,13 +315,13 @@ StageNode::Update()
     tf::Transform gt(tf::Quaternion(gpose.a-M_PI/2.0, 0, 0), 
         tf::Point(gpose.y, -gpose.x, 0.0));
 
-    this->groundTruthMsgs[r].pose_with_covariance.pose.position.x     = gt.getOrigin().x();
-    this->groundTruthMsgs[r].pose_with_covariance.pose.position.y     = gt.getOrigin().y();
-    this->groundTruthMsgs[r].pose_with_covariance.pose.position.z     = gt.getOrigin().z();
-    this->groundTruthMsgs[r].pose_with_covariance.pose.orientation.x  = gt.getRotation().x();
-    this->groundTruthMsgs[r].pose_with_covariance.pose.orientation.y  = gt.getRotation().y();
-    this->groundTruthMsgs[r].pose_with_covariance.pose.orientation.z  = gt.getRotation().z();
-    this->groundTruthMsgs[r].pose_with_covariance.pose.orientation.w  = gt.getRotation().w();
+    this->groundTruthMsgs[r].pose.pose.position.x     = gt.getOrigin().x();
+    this->groundTruthMsgs[r].pose.pose.position.y     = gt.getOrigin().y();
+    this->groundTruthMsgs[r].pose.pose.position.z     = gt.getOrigin().z();
+    this->groundTruthMsgs[r].pose.pose.orientation.x  = gt.getRotation().x();
+    this->groundTruthMsgs[r].pose.pose.orientation.y  = gt.getRotation().y();
+    this->groundTruthMsgs[r].pose.pose.orientation.z  = gt.getRotation().z();
+    this->groundTruthMsgs[r].pose.pose.orientation.w  = gt.getRotation().w();
 
     this->groundTruthMsgs[r].header.frame_id = mapName("odom", r);
     this->groundTruthMsgs[r].header.stamp = sim_time;

@@ -149,22 +149,22 @@ void RosP3D::UpdateChild()
 
     // pose is given in inertial frame for Gazebo, transform to the designated frame name
 
-    this->poseMsg.pose_with_covariance.pose.position.x    = pos.x;
-    this->poseMsg.pose_with_covariance.pose.position.y    = pos.y;
-    this->poseMsg.pose_with_covariance.pose.position.z    = pos.z;
+    this->poseMsg.pose.pose.position.x    = pos.x;
+    this->poseMsg.pose.pose.position.y    = pos.y;
+    this->poseMsg.pose.pose.position.z    = pos.z;
 
-    this->poseMsg.pose_with_covariance.pose.orientation.x = rot.x;
-    this->poseMsg.pose_with_covariance.pose.orientation.y = rot.y;
-    this->poseMsg.pose_with_covariance.pose.orientation.z = rot.z;
-    this->poseMsg.pose_with_covariance.pose.orientation.w = rot.u;
+    this->poseMsg.pose.pose.orientation.x = rot.x;
+    this->poseMsg.pose.pose.orientation.y = rot.y;
+    this->poseMsg.pose.pose.orientation.z = rot.z;
+    this->poseMsg.pose.pose.orientation.w = rot.u;
 
-    this->poseMsg.twist_with_covariance.twist.linear.x        = vpos.x + this->GaussianKernel(0,this->gaussianNoise) ;
-    this->poseMsg.twist_with_covariance.twist.linear.y        = vpos.y + this->GaussianKernel(0,this->gaussianNoise) ;
-    this->poseMsg.twist_with_covariance.twist.linear.z        = vpos.z + this->GaussianKernel(0,this->gaussianNoise) ;
+    this->poseMsg.twist.twist.linear.x        = vpos.x + this->GaussianKernel(0,this->gaussianNoise) ;
+    this->poseMsg.twist.twist.linear.y        = vpos.y + this->GaussianKernel(0,this->gaussianNoise) ;
+    this->poseMsg.twist.twist.linear.z        = vpos.z + this->GaussianKernel(0,this->gaussianNoise) ;
     // pass euler anglular rates
-    this->poseMsg.twist_with_covariance.twist.angular.x    = veul.x + this->GaussianKernel(0,this->gaussianNoise) ;
-    this->poseMsg.twist_with_covariance.twist.angular.y    = veul.y + this->GaussianKernel(0,this->gaussianNoise) ;
-    this->poseMsg.twist_with_covariance.twist.angular.z    = veul.z + this->GaussianKernel(0,this->gaussianNoise) ;
+    this->poseMsg.twist.twist.angular.x    = veul.x + this->GaussianKernel(0,this->gaussianNoise) ;
+    this->poseMsg.twist.twist.angular.y    = veul.y + this->GaussianKernel(0,this->gaussianNoise) ;
+    this->poseMsg.twist.twist.angular.z    = veul.z + this->GaussianKernel(0,this->gaussianNoise) ;
 
     // publish to ros
     this->pub_.publish(this->poseMsg);

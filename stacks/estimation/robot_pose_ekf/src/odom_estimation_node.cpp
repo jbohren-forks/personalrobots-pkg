@@ -150,8 +150,8 @@ namespace estimation
     odom_stamp_ = odom->header.stamp;
     odom_time_  = Time::now();
     Quaternion q;
-    tf::quaternionMsgToTF(odom->pose_with_covariance.pose.orientation, q);
-    odom_meas_  = Transform(q, Vector3(odom->pose_with_covariance.pose.position.x, odom->pose_with_covariance.pose.position.y, 0));
+    tf::quaternionMsgToTF(odom->pose.pose.orientation, q);
+    odom_meas_  = Transform(q, Vector3(odom->pose.pose.position.x, odom->pose.pose.position.y, 0));
 
 #warning Until the robot_pose_ekf moves to taking covariances from odometry sources instead of a residual the robot_pose_ekf will not work
 

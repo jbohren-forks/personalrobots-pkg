@@ -59,9 +59,9 @@ void odom_callback(string name, nav_msgs::Odometry * odom, ros::Time t, ros::Tim
   double x = odom->pose.position.x;
   double y = odom->pose.position.y;
   */
-  double x  = odom->pose_with_covariance.pose.position.x;
-  double y  = odom->pose_with_covariance.pose.position.y;
-  double th = tf::getYaw(odom->pose_with_covariance.pose.orientation);
+  double x  = odom->pose.pose.position.x;
+  double y  = odom->pose.pose.position.y;
+  double th = tf::getYaw(odom->pose.pose.orientation);
 
   if (!vel_init)
   {

@@ -44,12 +44,12 @@ void odom_callback(std::string name, nav_msgs::Odometry* odom, ros::Time t, ros:
   fprintf(file, "%.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f %d\n",
           t.toSec(),
           odom->header.stamp.toSec(),
-          odom->pose_with_covariance.pose.position.x,
-          odom->pose_with_covariance.pose.position.y,
-          tf::getYaw(odom->pose_with_covariance.pose.orientation),
-          odom->twist_with_covariance.twist.linear.x,
-          odom->twist_with_covariance.twist.linear.y,
-          odom->twist_with_covariance.twist.angular.z,
+          odom->pose.pose.position.x,
+          odom->pose.pose.position.y,
+          tf::getYaw(odom->pose.pose.orientation),
+          odom->twist.twist.linear.x,
+          odom->twist.twist.linear.y,
+          odom->twist.twist.angular.z,
           0);
           //@todo TODO: Decide whether or not its important to get stall from another topic since the odometry message doesn't contain that information anymore
           //odom->stall);

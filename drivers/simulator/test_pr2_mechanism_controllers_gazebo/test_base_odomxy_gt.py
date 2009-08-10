@@ -119,16 +119,16 @@ class BaseTest(unittest.TestCase):
 
 
     def printBaseOdom(self, odom):
-        orientation = odom.pose_with_covariance.orientation
+        orientation = odom.pose.orientation
         q = Q(orientation.x, orientation.y, orientation.z, orientation.w)
         q.normalize()
         print "odom received"
-        print "odom pos " + "x: " + str(odom.pose_with_covariance.pose.position.x)
-        print "odom pos " + "y: " + str(odom.pose_with_covariance.pose.position.y)
+        print "odom pos " + "x: " + str(odom.pose.pose.position.x)
+        print "odom pos " + "y: " + str(odom.pose.pose.position.y)
         print "odom pos " + "t: " + str(q.getEuler().z)
-        print "odom vel " + "x: " + str(odom.twist_with_covariance.twist.linear.x)
-        print "odom vel " + "y: " + str(odom.twist_with_covariance.twist.linear.y)
-        print "odom vel " + "t: " + str(odom.twist_with_covariance.twist.angular.z)
+        print "odom vel " + "x: " + str(odom.twist.twist.linear.x)
+        print "odom vel " + "y: " + str(odom.twist.twist.linear.y)
+        print "odom vel " + "t: " + str(odom.twist.twist.angular.z)
 
     def printBaseP3D(self, p3d):
         print "base pose ground truth received"
@@ -148,16 +148,16 @@ class BaseTest(unittest.TestCase):
 
     def odomInput(self, odom):
         #self.printBaseOdom(odom)
-        orientation = odom.pose_with_covariance.orientation
+        orientation = odom.pose.orientation
         q = Q(orientation.x, orientation.y, orientation.z, orientation.w)
         q.normalize()
         if self.odom_initialized == False:
             self.odom_initialized = True
-            self.odom_xi = odom.pose_with_covariance.pose.position.x
-            self.odom_yi = odom.pose_with_covariance.pose.position.y
+            self.odom_xi = odom.pose.pose.position.x
+            self.odom_yi = odom.pose.pose.position.y
             self.odom_ti = q.getEuler().z
-        self.odom_x = odom.pose_with_covariance.pose.position.x   - self.odom_xi
-        self.odom_y = odom.pose_with_covariance.pose.position.y   - self.odom_yi
+        self.odom_x = odom.pose.pose.position.x   - self.odom_xi
+        self.odom_y = odom.pose.pose.position.y   - self.odom_yi
         self.odom_t = q.getEuler().z  - self.odom_ti
 
 

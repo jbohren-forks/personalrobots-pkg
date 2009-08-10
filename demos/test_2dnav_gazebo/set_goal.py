@@ -154,14 +154,14 @@ class NavStackTest(unittest.TestCase):
         # initialize odom
         if self.odom_initialized == False or self.p3d_initialized == False:
             self.odom_initialized = True
-            self.odom_xi = odom.pose_with_covariance.pose.position.x
-            self.odom_yi = odom.pose_with_covariance.pose.position.y
-            self.odom_qi = quaternionMsgToList(odom.pose_with_covariance.orientation)
+            self.odom_xi = odom.pose.pose.position.x
+            self.odom_yi = odom.pose.pose.position.y
+            self.odom_qi = quaternionMsgToList(odom.pose.orientation)
         else:
             # update odom
             self.odom_x = odom.pos.x
             self.odom_y = odom.pos.y
-            self.odom_q = quaternionMsgToList(odom.pose_with_covariance.orientation)
+            self.odom_q = quaternionMsgToList(odom.pose.orientation)
 
     def p3dInput(self, p3d):
         #self.printBaseP3D(p3d)

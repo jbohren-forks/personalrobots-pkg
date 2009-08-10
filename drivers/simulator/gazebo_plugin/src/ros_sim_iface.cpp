@@ -129,8 +129,8 @@ void RosSimIface::UpdateObjectPose(const nav_msgs::Odometry::ConstPtr& poseMsg)
   this->lock.lock();
 
   Model* model = gazebo::World::Instance()->GetModelByName(this->modelName);
-  Vector3 pos(poseMsg->pose_with_covariance.pose.position.x,poseMsg->pose_with_covariance.pose.position.y,poseMsg->pose_with_covariance.pose.position.z);
-  Quatern rot(poseMsg->pose_with_covariance.pose.orientation.w,poseMsg->pose_with_covariance.pose.orientation.x,poseMsg->pose_with_covariance.pose.orientation.y,poseMsg->pose_with_covariance.pose.orientation.z);
+  Vector3 pos(poseMsg->pose.pose.position.x,poseMsg->pose.pose.position.y,poseMsg->pose.pose.position.z);
+  Quatern rot(poseMsg->pose.pose.orientation.w,poseMsg->pose.pose.orientation.x,poseMsg->pose.pose.orientation.y,poseMsg->pose.pose.orientation.z);
   Pose3d modelPose(pos,rot);
   model->SetPose(modelPose);
 

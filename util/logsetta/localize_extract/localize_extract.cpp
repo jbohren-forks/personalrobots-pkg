@@ -43,9 +43,9 @@ void localize_callback(std::string name, nav_msgs::Odometry* bL, ros::Time t, ro
 
   fprintf(file, "%.5f ",t.toSec());
 
-  fprintf(file, "%0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %d", bL->pose_with_covariance.pose.position.x, bL->pose_with_covariance.pose.position.y, 
-      tf::getYaw(bL->pose_with_covariance.pose.orientation), 
-      bL->twist_with_covariance.twist.linear.x, bL->twist_with_covariance.twist.linear.y, bL->twist_with_covariance.twist.angular.z, 
+  fprintf(file, "%0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %d", bL->pose.pose.position.x, bL->pose.pose.position.y, 
+      tf::getYaw(bL->pose.pose.orientation), 
+      bL->twist.twist.linear.x, bL->twist.twist.linear.y, bL->twist.twist.angular.z, 
       0);
       //@todo TODO: Decide if we should be getting stall information from a separate channel or not now that the Odometry message doesn't contain it
       //bL->stall);

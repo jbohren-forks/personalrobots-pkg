@@ -172,9 +172,9 @@ int main( int argc, char** argv )
      if(run_time_set && delta_time.toSec() > run_time)
         break;
     //   ang_rates = GetAsEuler(tb.ground_truth.vel.ang_vel);
-     ground_truth_angles = GetAsEuler(tb.ground_truth.pose_with_covariance.pose.orientation);
-     cout << "g:: " << tb.ground_truth.twist_with_covariance.twist.linear.x <<  " " << tb.ground_truth.twist_with_covariance.twist.linear.y << " "  << tb.ground_truth.twist_with_covariance.twist.angular.z  << " " << tb.ground_truth.pose_with_covariance.pose.position.x << " " << tb.ground_truth.pose_with_covariance.pose.position.y <<  " " << ground_truth_angles.z << " " <<  tb.ground_truth.header.stamp.sec + tb.ground_truth.header.stamp.nsec/1.0e9 << std::endl;
-    cout << "o:: " << tb.odom.twist_with_covariance.twist.linear.x <<  " " << tb.odom.twist_with_covariance.twist.linear.y << " " << tb.odom.twist_with_covariance.twist.angular.z << " " << tb.odom.pose_with_covariance.pose.position.x <<  " " << tb.odom.pose_with_covariance.pose.position.y << " " << tf::getYaw(tb.odom.pose_with_covariance.pose.orientation) << " " << tb.odom.header.stamp.sec + tb.odom.header.stamp.nsec/1.0e9 << std::endl;
+     ground_truth_angles = GetAsEuler(tb.ground_truth.pose.pose.orientation);
+     cout << "g:: " << tb.ground_truth.twist.twist.linear.x <<  " " << tb.ground_truth.twist.twist.linear.y << " "  << tb.ground_truth.twist.twist.angular.z  << " " << tb.ground_truth.pose.pose.position.x << " " << tb.ground_truth.pose.pose.position.y <<  " " << ground_truth_angles.z << " " <<  tb.ground_truth.header.stamp.sec + tb.ground_truth.header.stamp.nsec/1.0e9 << std::endl;
+    cout << "o:: " << tb.odom.twist.twist.linear.x <<  " " << tb.odom.twist.twist.linear.y << " " << tb.odom.twist.twist.angular.z << " " << tb.odom.pose.pose.position.x <<  " " << tb.odom.pose.pose.position.y << " " << tf::getYaw(tb.odom.pose.pose.orientation) << " " << tb.odom.header.stamp.sec + tb.odom.header.stamp.nsec/1.0e9 << std::endl;
     //    cout << delta_time.toSec() << "  " << run_time << endl;
     node->publish("cmd_vel",cmd);
     sleep_time.sleep();

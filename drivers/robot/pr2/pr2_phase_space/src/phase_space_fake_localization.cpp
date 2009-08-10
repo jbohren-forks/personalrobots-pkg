@@ -114,12 +114,12 @@ public :
         m_currentPos.header = snapshot_.header;
         m_currentPos.header.frame_id = "map";
 
-        m_currentPos.pose_with_covariance.pose.position.x = body.pose.translation.x;
-        m_currentPos.pose_with_covariance.pose.position.y = body.pose.translation.y;
+        m_currentPos.pose.pose.position.x = body.pose.translation.x;
+        m_currentPos.pose.pose.position.y = body.pose.translation.y;
 
         double yaw,pitch,roll;
         mytf.getBasis().getEulerZYX(yaw,pitch,roll);
-        m_currentPos.pose_with_covariance.pose.orientation= tf::createQuaternionMsgFromYaw(yaw);
+        m_currentPos.pose.pose.orientation= tf::createQuaternionMsgFromYaw(yaw);
 
         if (publish_localized_pose_)
           publish("localizedpose", m_currentPos) ;
@@ -127,10 +127,10 @@ public :
         // Build Ground Truth Message
         nav_msgs::Odometry m_ground_truth ;
         m_ground_truth.header = snapshot_.header ;
-        m_ground_truth.pose_with_covariance.pose.position.x = body.pose.translation.x ;
-        m_ground_truth.pose_with_covariance.pose.position.y = body.pose.translation.y ;
-        m_ground_truth.pose_with_covariance.pose.position.z = body.pose.translation.z ;
-        m_ground_truth.pose_with_covariance.pose.orientation = body.pose.rotation ;
+        m_ground_truth.pose.pose.position.x = body.pose.translation.x ;
+        m_ground_truth.pose.pose.position.y = body.pose.translation.y ;
+        m_ground_truth.pose.pose.position.z = body.pose.translation.z ;
+        m_ground_truth.pose.pose.orientation = body.pose.rotation ;
 
         publish("base_pose_ground_truth", m_ground_truth) ;
 

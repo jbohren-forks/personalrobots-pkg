@@ -125,12 +125,12 @@ public:
         tfb.sendTransform(tmp_tf_stamped);
         
 
-        odom.pose_with_covariance.pose.position.x = this->posIface->data->pose.pos.x;
-        odom.pose_with_covariance.pose.position.y = this->posIface->data->pose.pos.y;
-        odom.pose_with_covariance.pose.orientation = tf::createQuaternionMsgFromYaw(this->posIface->data->pose.yaw);
-        odom.twist_with_covariance.twist.linear.x = this->posIface->data->velocity.pos.x;
-        odom.twist_with_covariance.twist.linear.y = this->posIface->data->velocity.pos.y;
-        odom.twist_with_covariance.twist.angular.z = this->posIface->data->velocity.yaw;
+        odom.pose.pose.position.x = this->posIface->data->pose.pos.x;
+        odom.pose.pose.position.y = this->posIface->data->pose.pos.y;
+        odom.pose.pose.orientation = tf::createQuaternionMsgFromYaw(this->posIface->data->pose.yaw);
+        odom.twist.twist.linear.x = this->posIface->data->velocity.pos.x;
+        odom.twist.twist.linear.y = this->posIface->data->velocity.pos.y;
+        odom.twist.twist.angular.z = this->posIface->data->velocity.yaw;
         
         odom.header.frame_id = "odom"; 
         
