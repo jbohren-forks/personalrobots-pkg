@@ -16,6 +16,6 @@
   <depend stack="common"/> <!-- laser_scan, robot_actions --> 
   <depend stack="estimation"/> <!-- robot_pose_ekf --> 
   <depend stack="navigation"/> <!-- amcl, map_server, move_base, nav_robot_actions --> 
-  <depend stack="common_msgs"/> <!-- robot_msgs --> 
+  <depend stack="common_msgs"/> 
 
 </stack>

@@ -38,31 +38,32 @@
 #define _NEIGHBORHOOD_INDEX_
 
 #include <vector>
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
+#include <geometry_msgs/Point32.h>
 
 namespace neighborhood_index
 {
 
   class Index {
-    virtual void knnSearch(const robot_msgs::Point32 &point, int k,
+    virtual void knnSearch(const geometry_msgs::Point32 &point, int k,
                            std::vector<int> &k_indices, std::vector<float> &k_distances) = 0;
-    virtual void knnSearch(const robot_msgs::PointCloud &pointsToFind, int k,
+    virtual void knnSearch(const sensor_msgs::PointCloud &pointsToFind, int k,
                            std::vector<std::vector<int> > &k_indices_array, std::vector<std::vector<float> > &k_distances_array) = 0;
 
-    virtual bool radiusSearch (const robot_msgs::Point32 &p_q, double radius,
+    virtual bool radiusSearch (const geometry_msgs::Point32 &p_q, double radius,
                                std::vector<int> &k_indices, std::vector<float> &k_distances, int max_nn = INT_MAX) = 0;
-    virtual bool radiusSearch (const robot_msgs::PointCloud &points, double radius,
+    virtual bool radiusSearch (const sensor_msgs::PointCloud &points, double radius,
                                std::vector<std::vector<int> > &k_indices_array, std::vector<std::vector<float> > &k_distances_array, int max_nn = INT_MAX) = 0;
 
   };
 
   //Version of Index which supports dynamic resizing
   class DynamicIndex : public Index {
-    virtual void add(const robot_msgs::Point32 &point) = 0;
-    virtual void add(const robot_msgs::PointCloud &points) = 0;
+    virtual void add(const geometry_msgs::Point32 &point) = 0;
+    virtual void add(const sensor_msgs::PointCloud &points) = 0;
 
-    virtual void remove(const robot_msgs::Point32 &point) = 0;
-    virtual void remove(const robot_msgs::PointCloud &points) = 0;
+    virtual void remove(const geometry_msgs::Point32 &point) = 0;
+    virtual void remove(const sensor_msgs::PointCloud &points) = 0;
 
     virtual bool canRemove() = 0;
     virtual bool optimize(int optimizationLevel = 0) = 0;

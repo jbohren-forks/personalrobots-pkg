@@ -9,7 +9,7 @@
   
 
   <depend stack="sound_drivers"/> <!-- sound_play --> 
-  <depend stack="ros"/> <!-- rospy, roscpp --> 
-  <depend stack="common_msgs"/> <!-- robot_msgs --> 
+  <depend stack="ros"/>
+  <depend stack="common_msgs"/> 
 
 </stack>
