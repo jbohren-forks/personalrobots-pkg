@@ -50,7 +50,7 @@
 #include <tf/transform_listener.h>
 
 #include <mapping_msgs/PolygonalMap.h>
-#include <sensor_msgs/StereoInfo.h>
+#include <stereo_msgs/StereoInfo.h>
 
 #include <annotated_map_msgs/TaggedPolygonalMap.h>
 #include <annotated_map_msgs/TaggedPolygon3D.h>

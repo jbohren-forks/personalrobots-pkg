@@ -37,13 +37,13 @@
 #include "image.h"
 
 #include "ros/node.h"
-#include "sensor_msgs/RawStereo.h"
+#include "stereo_msgs/RawStereo.h"
 #include "cam_bridge.h"
 
 #include "sensor_msgs/Image.h"
 #include "sensor_msgs/fill_image.h"
 #include "sensor_msgs/CameraInfo.h"
-#include "sensor_msgs/StereoInfo.h"
+#include "stereo_msgs/StereoInfo.h"
 #include "sensor_msgs/PointCloud.h"
 
 #include "diagnostic_msgs/DiagnosticStatus.h"
@@ -60,13 +60,13 @@ class StereoProc : public ros::Node
   bool do_calc_points_;
   bool do_keep_coords_;
 
-  sensor_msgs::RawStereo    raw_stereo_;
+  stereo_msgs::RawStereo    raw_stereo_;
 
   sensor_msgs::Image         img_;
   sensor_msgs::PointCloud      cloud_;
   sensor_msgs::CameraInfo       cam_info_;
-  sensor_msgs::DisparityInfo disparity_info_;
-  sensor_msgs::StereoInfo    stereo_info_;
+  stereo_msgs::DisparityInfo disparity_info_;
+  stereo_msgs::StereoInfo    stereo_info_;
 
 
   DiagnosticUpdater<StereoProc> diagnostic_;
@@ -375,14 +375,14 @@ public:
 
   void advertiseCam()
   {
-    advertise<sensor_msgs::StereoInfo>("stereo_info", 1);
+    advertise<stereo_msgs::StereoInfo>("stereo_info", 1);
 
     advertiseImages("left/", stdata_->imLeft);
     advertiseImages("right/", stdata_->imRight);
 
     if (stdata_->hasDisparity)
     {
-      advertise<sensor_msgs::DisparityInfo>("disparity_info", 1);
+      advertise<stereo_msgs::DisparityInfo>("disparity_info", 1);
       advertise<sensor_msgs::Image>("disparity", 1);
     }
 

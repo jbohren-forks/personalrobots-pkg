@@ -40,7 +40,7 @@ import rospy
 import random
 import threading 
 
-from sensor_msgs.msg import RawStereo
+from stereo_msgs.msg import RawStereo
 from std_msgs.msg import Empty
 
 

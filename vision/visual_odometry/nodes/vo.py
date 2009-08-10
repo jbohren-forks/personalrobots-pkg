@@ -42,10 +42,10 @@ from math import *
 
 import rospy
 
-import sensor_msgs.msg
+import stereo_msgs.msg
 
 from stereo import DenseStereoFrame, SparseStereoFrame
-import robot_msgs.msg
+import deprecated_msgs.msg
 
 from visualodometer import VisualOdometer, FeatureDetectorHarris, FeatureDetector4x4, FeatureDetectorFast, Pose, DescriptorSchemeCalonder
 import camera
@@ -73,7 +73,7 @@ class dcamImage:
 class VO:
 
   def __init__(self):
-    rospy.Subscriber('/stereo/raw_stereo', sensor_msgs.msg.RawStereo, self.handle_raw_stereo, queue_size=2, buff_size=7000000)
+    rospy.Subscriber('/stereo/raw_stereo', stereo_msgs.msg.RawStereo, self.handle_raw_stereo, queue_size=2, buff_size=7000000)
 
     self.pub_vo = rospy.Publisher("/vo", deprecated_msgs.msg.VOPose)
 

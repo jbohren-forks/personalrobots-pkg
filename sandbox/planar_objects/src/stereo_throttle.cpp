@@ -47,12 +47,12 @@ StereoThrottle::StereoThrottle()
   stereo_sub = nh.subscribe(stereo_ns+"/raw_stereo", 1, &StereoThrottle::stereoCallback,this);
 
   // advertise topics
-  stereo_pub = nh.advertise<sensor_msgs::RawStereo> ("~raw_stereo", 1);
+  stereo_pub = nh.advertise<stereo_msgs::RawStereo> ("~raw_stereo", 1);
 
   n = 0;
 }
 
-void StereoThrottle::stereoCallback(const sensor_msgs::RawStereo::ConstPtr& stereo)
+void StereoThrottle::stereoCallback(const stereo_msgs::RawStereo::ConstPtr& stereo)
 {
   n++;
   if(n % divisor != 1) {

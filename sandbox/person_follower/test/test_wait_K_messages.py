@@ -5,7 +5,7 @@ import roslib
 roslib.load_manifest('annotated_map_builder')
 import rospy
 import random
-from image_msgs.msg import RawStereo
+from stereo_msgs.msg import RawStereo
 
 from annotated_map_builder.wait_for_k_messages_adapter import *
 

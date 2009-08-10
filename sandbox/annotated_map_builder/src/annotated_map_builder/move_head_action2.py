@@ -38,7 +38,7 @@ import roslib
 roslib.load_manifest('annotated_map_builder')
 import rospy
 import random
-from sensor_msgs.msg import RawStereo
+from stereo_msgs.msg import RawStereo
 from std_msgs.msg import Empty
 
 import threading

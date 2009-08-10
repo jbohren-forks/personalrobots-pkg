@@ -41,7 +41,7 @@ import random
 import sys
 from robot_msgs.msg import PoseStamped
 from annotated_map_builder.msg import WaitActionState
-from sensor_msgs.msg import RawStereo
+from stereo_msgs.msg import RawStereo
 
 from robot_actions.msg import ActionStatus;
 

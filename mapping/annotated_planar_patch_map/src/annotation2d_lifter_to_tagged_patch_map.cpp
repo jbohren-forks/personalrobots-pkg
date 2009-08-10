@@ -53,7 +53,7 @@
 
 
 #include <mapping_msgs/PolygonalMap.h>
-#include <sensor_msgs/StereoInfo.h>
+#include <stereo_msgs/StereoInfo.h>
 #include <sensor_msgs/CameraInfo.h>
 
 #include <cv_mech_turk/ExternalAnnotation.h>

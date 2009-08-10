@@ -12,6 +12,7 @@
   <depend package="std_msgs"/>
   <depend package="mapping_msgs" />
   <depend package="sensor_msgs" />
+  <depend package="stereo_msgs" />
   <depend package="geometry_msgs" />
 
   <depend package="annotated_map_msgs"/>

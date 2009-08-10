@@ -10,5 +10,6 @@
   <depend package="tf" />
   <depend package="laser_scan" />
   <depend package="sensor_msgs" />
+  <depend package="stereo_msgs"/>
   
 </package>

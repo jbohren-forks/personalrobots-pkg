@@ -16,8 +16,8 @@
 #include "visualization_msgs/Marker.h"
 
 #include "sensor_msgs/Image.h"
-#include "sensor_msgs/StereoInfo.h"
-#include "sensor_msgs/DisparityInfo.h"
+#include "stereo_msgs/StereoInfo.h"
+#include "stereo_msgs/DisparityInfo.h"
 #include "sensor_msgs/CameraInfo.h"
 
 #include "opencv_latest/CvBridge.h"
@@ -100,7 +100,7 @@ public:
   sensor_msgs::CvBridge rbridge_;
 
   ros::Subscriber dinfo_sub_;
-  sensor_msgs::DisparityInfoConstPtr dinfo_;
+  stereo_msgs::DisparityInfoConstPtr dinfo_;
 
   ros::Subscriber linfo_sub_;
   sensor_msgs::CameraInfoConstPtr linfo_;
@@ -127,7 +127,7 @@ public:
   // Callbacks
   void cloudCallback(const sensor_msgs::PointCloud::ConstPtr& point_cloud);
   void dispCallback(const sensor_msgs::Image::ConstPtr& disp_img);
-  void dinfoCallback(const sensor_msgs::DisparityInfo::ConstPtr& disp_img);
+  void dinfoCallback(const stereo_msgs::DisparityInfo::ConstPtr& disp_img);
   void limageCallback(const sensor_msgs::Image::ConstPtr& left_img);
   void rimageCallback(const sensor_msgs::Image::ConstPtr& right_img);
   void linfoCallback(const sensor_msgs::CameraInfo::ConstPtr& rinfo);

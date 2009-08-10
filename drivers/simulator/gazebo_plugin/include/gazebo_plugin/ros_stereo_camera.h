@@ -38,10 +38,10 @@
 
 // raw_stereo components
 #include <sensor_msgs/Image.h>
-#include "sensor_msgs/RawStereo.h"
-#include "sensor_msgs/StereoInfo.h"
+#include "stereo_msgs/RawStereo.h"
+#include "stereo_msgs/StereoInfo.h"
 #include "sensor_msgs/CameraInfo.h"
-#include "sensor_msgs/DisparityInfo.h"
+#include "stereo_msgs/DisparityInfo.h"
 
 namespace gazebo
 {
@@ -164,12 +164,12 @@ class RosStereoCamera : public Controller
 
   /// \brief ros message
   /// \brief construct raw stereo message
-  private: sensor_msgs::RawStereo rawStereoMsg;
+  private: stereo_msgs::RawStereo rawStereoMsg;
   private: sensor_msgs::Image* leftImageMsg;
   private: sensor_msgs::Image* rightImageMsg;
   private: sensor_msgs::CameraInfo* leftCameraInfoMsg;
   private: sensor_msgs::CameraInfo* rightCameraInfoMsg;
-  private: sensor_msgs::StereoInfo* stereoInfoMsg;
+  private: stereo_msgs::StereoInfo* stereoInfoMsg;
 
   /// \brief A mutex to lock access to fields that are used in message callbacks
   private: boost::mutex lock;

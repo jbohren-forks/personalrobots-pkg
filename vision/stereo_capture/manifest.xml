@@ -15,4 +15,5 @@
   <depend package="stereo_utils"/>
   <depend package="tf"/>
   <depend package="point_cloud_mapping"/>
+  <depend package="stereo_msgs"/>
 </package>

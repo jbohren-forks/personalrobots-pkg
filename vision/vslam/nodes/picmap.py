@@ -46,8 +46,8 @@ from vis import Vis
 from picturemap import Picture, PictureMap
 import pytf_swig
 
-import sensor_msgs.msg
-import robot_msgs.msg
+import stereo_msgs.msg
+import geometry_msgs.msg
 import tf.msg
 
 from stereo_utils import camera
@@ -106,8 +106,8 @@ class PicmapNode:
 
     #self.pub = rospy.Publisher("/picmap_pose", vslam.msg.Picmap)
 
-    rospy.Subscriber('/stereo/raw_stereo', sensor_msgs.msg.RawStereo, self.handle_raw_stereo_queue, queue_size=2, buff_size=7000000)
-    rospy.Subscriber('/amcl_pose', robot_msgs.msg.PoseWithCovarianceStamped, self.handle_amcl_pose)
+    rospy.Subscriber('/stereo/raw_stereo', stereo_msgs.msg.RawStereo, self.handle_raw_stereo_queue, queue_size=2, buff_size=7000000)
+    rospy.Subscriber('/amcl_pose', geometry_msgs.msg.PoseWithCovarianceStamped, self.handle_amcl_pose)
     rospy.Subscriber('/tf_message', tf.msg.tfMessage, self.handle_tf_queue)
 
     self.pmlock = threading.Lock()

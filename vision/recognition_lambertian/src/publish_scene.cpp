@@ -49,7 +49,7 @@
 
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/CameraInfo.h>
-#include <sensor_msgs/DisparityInfo.h>
+#include <stereo_msgs/DisparityInfo.h>
 
 #include <opencv_latest/CvBridge.h>
 #include <sensor_msgs/fill_image.h>
@@ -117,7 +117,7 @@ public:
 		node_.advertise<sensor_msgs::Image> (right_topic_.c_str (), 1);
 		node_.advertise<sensor_msgs::Image> (disp_topic_.c_str (), 1);
 		node_.advertise<sensor_msgs::CameraInfo> (left_caminfo_topic_.c_str (), 1);
-		node_.advertise<sensor_msgs::DisparityInfo> (dispinfo_topic_.c_str (), 1);
+		node_.advertise<stereo_msgs::DisparityInfo> (dispinfo_topic_.c_str (), 1);
 		ROS_INFO ("Publishing data on topic %s.", node_.mapName (cloud_topic_).c_str ());
 
 

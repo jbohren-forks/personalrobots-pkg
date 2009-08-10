@@ -50,7 +50,7 @@
 #include <tf/transform_listener.h>
 
 #include <mapping_msgs/PolygonalMap.h>
-#include <sensor_msgs/StereoInfo.h>
+#include <stereo_msgs/StereoInfo.h>
 #include <sensor_msgs/CameraInfo.h>
 #include <annotated_map_msgs/TaggedPolygonalMap.h>
 #include <annotated_map_msgs/TaggedPolygon3D.h>
@@ -64,7 +64,7 @@ namespace projection
 
 void projectAnyObject(const sensor_msgs::CameraInfo& cam_info,geometry_msgs::Polygon polyIn,geometry_msgs::Polygon& polyOut);
 
-void projectAnyObject(const sensor_msgs::StereoInfo& stereo_info_, const annotated_map_msgs::TaggedPolygonalMap& transformed_map_3D, annotated_map_msgs::TaggedPolygonalMap &transformed_map_2D);
+void projectAnyObject(const stereo_msgs::StereoInfo& stereo_info_, const annotated_map_msgs::TaggedPolygonalMap& transformed_map_3D, annotated_map_msgs::TaggedPolygonalMap &transformed_map_2D);
 
 
 void projectAnyObject(const sensor_msgs::CameraInfo& cam_info_, const annotated_map_msgs::TaggedPolygonalMap& transformed_map_3D, annotated_map_msgs::TaggedPolygonalMap &transformed_map_2D);
@@ -73,7 +73,7 @@ void projectAnyObject(const sensor_msgs::CameraInfo& cam_info_, const sensor_msg
 
 
 
-void projectPolygonalMap(const sensor_msgs::StereoInfo& stereo_info_, const mapping_msgs::PolygonalMap& transformed_map_3D, mapping_msgs::PolygonalMap &transformed_map_2D);
+void projectPolygonalMap(const stereo_msgs::StereoInfo& stereo_info_, const mapping_msgs::PolygonalMap& transformed_map_3D, mapping_msgs::PolygonalMap &transformed_map_2D);
 
 
 void projectPolygonPoints(double* projection,double img_w, double img_h, geometry_msgs::Polygon polyIn,geometry_msgs::Polygon& polyOut);

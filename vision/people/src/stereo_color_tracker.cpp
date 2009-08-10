@@ -41,8 +41,8 @@
 #include "CvStereoCamModel.h"
 #include "color_calib.h"
 #include <people/PositionMeasurement.h>
-#include "sensor_msgs/StereoInfo.h"
-#include "sensor_msgs/DisparityInfo.h"
+#include "stereo_msgs/StereoInfo.h"
+#include "stereo_msgs/DisparityInfo.h"
 #include "sensor_msgs/CameraInfo.h"
 #include "sensor_msgs/Image.h"
 #include "opencv_latest/CvBridge.h"
@@ -75,8 +75,8 @@ namespace people
     // Images and conversion
     sensor_msgs::Image limage_;
     sensor_msgs::Image dimage_;
-    sensor_msgs::StereoInfo stinfo_;
-    sensor_msgs::DisparityInfo dispinfo_;
+    stereo_msgs::StereoInfo stinfo_;
+    stereo_msgs::DisparityInfo dispinfo_;
     sensor_msgs::CameraInfo rcinfo_;
     sensor_msgs::CvBridge lbridge_;
     sensor_msgs::CvBridge dbridge_;

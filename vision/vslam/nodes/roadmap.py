@@ -48,7 +48,7 @@ from visual_odometry.visualodometer import VisualOdometer, Pose, from_xyz_euler
 from stereo_utils.descriptor_schemes import DescriptorSchemeCalonder, DescriptorSchemeSAD
 from stereo_utils.feature_detectors import FeatureDetectorFast, FeatureDetector4x4, FeatureDetectorStar, FeatureDetectorHarris
 from skeleton import Skeleton
-import sensor_msgs.msg
+import stereo_msgs.msg
 import robot_msgs.msg
 from tf.listener import TransformListener
 
@@ -88,7 +88,7 @@ class RoadmapServer:
         #self.send_map(rospy.time(0))
         self.wheel_odom_edges = set()
 
-        rospy.Subscriber('/wide_stereo/raw_stereo', sensor_msgs.msg.RawStereo, self.handle_raw_stereo, queue_size=2, buff_size=7000000)
+        rospy.Subscriber('/wide_stereo/raw_stereo', stereo_msgs.msg.RawStereo, self.handle_raw_stereo, queue_size=2, buff_size=7000000)
 
     def send_map(self, stamp):
 

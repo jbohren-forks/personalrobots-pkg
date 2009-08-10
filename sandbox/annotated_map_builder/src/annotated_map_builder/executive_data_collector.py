@@ -43,7 +43,7 @@ from std_msgs.msg import *
 from robot_msgs.msg import *
 from std_msgs.msg import *
 from robot_msgs.msg import *
-from sensor_msgs.msg import RawStereo
+from stereo_msgs.msg import RawStereo
 
 import tf
 from battery_monitor_adapter import *

@@ -40,7 +40,7 @@
 #include "tf/transform_datatypes.h"
 #include "mechanism_msgs/MechanismState.h"
 #include "sensor_msgs/LaserScan.h"
-#include "sensor_msgs/RawStereo.h"
+#include "stereo_msgs/RawStereo.h"
 
 class LaserHeadKinematics
 {
@@ -62,14 +62,14 @@ public:
                               &LaserHeadKinematics::updateTiltScan, this) ;
 
     // Raw Stereo Updates
-    stereo_pub_ = nh.advertise<sensor_msgs::RawStereo>("/stereo/raw_stereo_cal", 100) ;
+    stereo_pub_ = nh.advertise<stereo_msgs::RawStereo>("/stereo/raw_stereo_cal", 100) ;
     stereo_sub_ = nh.subscribe("/stereo/raw_stereo", 100,
                                &LaserHeadKinematics::updateStereo, this) ;
   }
 
-  void updateStereo(const sensor_msgs::RawStereoConstPtr& msg_in)
+  void updateStereo(const stereo_msgs::RawStereoConstPtr& msg_in)
   {
-    sensor_msgs::RawStereo msg_out ;
+    stereo_msgs::RawStereo msg_out ;
     msg_out = *msg_in ;
     msg_out.header.frame_id = "stereo_optical_frame_cal" ;
     stereo_pub_.publish(msg_out) ;

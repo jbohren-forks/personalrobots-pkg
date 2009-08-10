@@ -13,6 +13,7 @@
   <depend package="milestone2_actions" />
   <depend package="executive_python" />
   <depend package="bagserver" />
+  <depend package="stereo_msgs"/>
   <export>
      <cpp cflags="-I${prefix}/msg/cpp -I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib"/>
   </export>

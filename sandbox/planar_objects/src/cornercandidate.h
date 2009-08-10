@@ -16,8 +16,8 @@
 #include "visualization_msgs/Marker.h"
 
 #include "sensor_msgs/Image.h"
-#include "sensor_msgs/StereoInfo.h"
-#include "sensor_msgs/DisparityInfo.h"
+#include "stereo_msgs/StereoInfo.h"
+#include "stereo_msgs/DisparityInfo.h"
 #include "sensor_msgs/CameraInfo.h"
 
 #include "opencv_latest/CvBridge.h"

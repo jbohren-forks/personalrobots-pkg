@@ -43,7 +43,7 @@ from std_msgs.msg import *
 from robot_msgs.msg import *
 from std_msgs.msg import *
 from robot_msgs.msg import *
-from image_msgs.msg import RawStereo
+from stereo_msgs.msg import RawStereo
 from mechanism_msgs.msg import JointStates, JointState
 
 

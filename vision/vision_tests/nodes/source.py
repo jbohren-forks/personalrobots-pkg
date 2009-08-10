@@ -41,12 +41,12 @@ import math
 
 import rospy
 
-import sensor_msgs.msg
+import stereo_msgs.msg
 
 class source:
 
   def __init__(self):
-    self.pub = rospy.Publisher("/stereo/raw_stereo", sensor_msgs.msg.RawStereo)
+    self.pub = rospy.Publisher("/stereo/raw_stereo", stereo_msgs.msg.RawStereo)
     self.rate = 30.0
     self.duration = 10.0
 
@@ -59,7 +59,7 @@ class source:
       expected = int((now - started) * self.rate)
       #print "counter", counter, "expected", expected
       if counter < expected:
-        img_msg = sensor_msgs.msg.RawStereo()
+        img_msg = stereo_msgs.msg.RawStereo()
         img_msg.left_image.uint8_data.data = "L" * (640 * 480)
         img_msg.right_image.uint8_data.data = "R" * (640 * 480)
         self.pub.publish(img_msg)

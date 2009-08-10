@@ -10,5 +10,6 @@
   <depend package="roscpp"/>
   <depend package="opencv_latest"/>
   <depend package="sensor_msgs"/>
+  <depend package="stereo_msgs"/>
   <depend package="diagnostic_updater"/>
 </package>

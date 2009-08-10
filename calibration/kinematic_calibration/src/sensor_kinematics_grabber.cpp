@@ -44,7 +44,7 @@
 #include "std_msgs/Empty.h"
 #include "sensor_msgs/PointCloud.h"
 
-#include "sensor_msgs/RawStereo.h"
+#include "stereo_msgs/RawStereo.h"
 #include "sensor_msgs/Image.h"
 #include "sensor_msgs/CameraInfo.h"
 
@@ -87,8 +87,8 @@ public:
   std_msgs::Empty capture_msg_ ;
 
   // Dcam messages
-  sensor_msgs::RawStereo raw_stereo_ ;
-  sensor_msgs::RawStereo safe_raw_stereo_ ;
+  stereo_msgs::RawStereo raw_stereo_ ;
+  stereo_msgs::RawStereo safe_raw_stereo_ ;
   boost::mutex raw_stereo_lock_ ;
 
   // HiRes Camera messages

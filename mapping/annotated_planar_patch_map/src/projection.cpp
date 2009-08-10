@@ -52,7 +52,7 @@ using namespace annotated_planar_patch_map::projection;
  * 
  */
 
-void annotated_planar_patch_map::projection::projectPolygonalMap(const sensor_msgs::StereoInfo& stereo_info, const mapping_msgs::PolygonalMap& transformed_map_3D, mapping_msgs::PolygonalMap &transformed_map_2D)
+void annotated_planar_patch_map::projection::projectPolygonalMap(const stereo_msgs::StereoInfo& stereo_info, const mapping_msgs::PolygonalMap& transformed_map_3D, mapping_msgs::PolygonalMap &transformed_map_2D)
 {
 
   //Get projections matrix
@@ -293,7 +293,7 @@ void annotated_planar_patch_map::projection::projectPolygonPointsNOP(double* pro
   }
 }
 
-void annotated_planar_patch_map::projection::projectAnyObject(const sensor_msgs::StereoInfo& stereo_info, const annotated_map_msgs::TaggedPolygonalMap& transformed_map_3D, annotated_map_msgs::TaggedPolygonalMap &transformed_map_2D)
+void annotated_planar_patch_map::projection::projectAnyObject(const stereo_msgs::StereoInfo& stereo_info, const annotated_map_msgs::TaggedPolygonalMap& transformed_map_3D, annotated_map_msgs::TaggedPolygonalMap &transformed_map_2D)
 {
   bool bSame = (&transformed_map_3D == &transformed_map_2D);
 

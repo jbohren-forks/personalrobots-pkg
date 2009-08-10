@@ -64,8 +64,8 @@
 
 #include "ros/ros.h"
 #include "ros/callback_queue.h"
-#include "sensor_msgs/StereoInfo.h"
-#include "sensor_msgs/DisparityInfo.h"
+#include "stereo_msgs/StereoInfo.h"
+#include "stereo_msgs/DisparityInfo.h"
 #include "sensor_msgs/CameraInfo.h"
 #include "sensor_msgs/Image.h"
 #include "sensor_msgs/PointCloud.h"
@@ -105,8 +105,8 @@ public:
 	sensor_msgs::ImageConstPtr limage_;
 	sensor_msgs::ImageConstPtr rimage_;
 	sensor_msgs::ImageConstPtr dimage_;
-	sensor_msgs::StereoInfoConstPtr stinfo_;
-	sensor_msgs::DisparityInfoConstPtr dispinfo_;
+	stereo_msgs::StereoInfoConstPtr stinfo_;
+	stereo_msgs::DisparityInfoConstPtr dispinfo_;
 	sensor_msgs::CameraInfoConstPtr lcinfo_;
 	sensor_msgs::CvBridge lbridge_;
 	sensor_msgs::CvBridge rbridge_;
@@ -278,7 +278,7 @@ private:
 		dimage_ = image;
 	}
 
-	void dispinfoCallback(const sensor_msgs::DisparityInfo::ConstPtr& dinfo)
+	void dispinfoCallback(const stereo_msgs::DisparityInfo::ConstPtr& dinfo)
 	{
 		if (got_data_) return;
 //		ROS_INFO("Disp info callback");

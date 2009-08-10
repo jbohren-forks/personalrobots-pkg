@@ -15,6 +15,7 @@
   <depend package="sensor_msgs"/>
   <depend package="diagnostic_updater"/>
   <depend package="rospy"/>
+  <depend package="stereo_msgs"/>
 
   <rosdep name="fltk"/>
   <url></url>

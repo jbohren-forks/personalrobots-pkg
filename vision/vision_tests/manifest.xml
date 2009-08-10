@@ -10,6 +10,7 @@
 
   <depend package="rospy"/>
   <depend package="sensor_msgs"/>
+  <depend package="stereo_msgs"/>
   <depend package="robot_actions"/>
   <depend package="python_actions"/>
   <depend package="tf"/>

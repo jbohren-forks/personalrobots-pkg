@@ -1,0 +1,17 @@
+<package>
+  <description brief="stereo_msgs">
+
+     stereo_msgs
+
+  </description>
+  <author>Kurt Konolige</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/stereo_msgs</url>
+  <depend package="sensor_msgs"/>
+  <export>
+    <cpp cflags="-I${prefix}/msg/cpp"/>
+  </export>
+</package>
+
+

@@ -40,7 +40,7 @@ import getopt
 
 from math import *
 
-from sensor_msgs.msg import RawStereo
+from stereo_msgs.msg import RawStereo
 import vslam.msg
 import rospy
 

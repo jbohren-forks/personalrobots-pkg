@@ -45,7 +45,7 @@ import getopt
 
 from math import *
 
-from sensor_msgs.msg import RawStereo
+from stereo_msgs.msg import RawStereo
 import sensor_msgs.msg
 import rospy
 import Image

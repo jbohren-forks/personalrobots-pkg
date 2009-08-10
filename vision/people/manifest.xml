@@ -16,6 +16,7 @@
 <depend package="std_srvs"/>
 <depend package="opencv_latest"/>
 <depend package="stereo_utils"/>
+<depend package="stereo_msgs"/>
 <!--<depend package="visual_odometry"/>-->
 <!--depend package="pyrob"/-->
 <depend package="rospy"/>

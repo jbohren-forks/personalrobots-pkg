@@ -52,8 +52,8 @@
 #include "opencv/cv.hpp"
 
 #include "ros/node.h"
-#include "sensor_msgs/StereoInfo.h"
-#include "sensor_msgs/DisparityInfo.h"
+#include "stereo_msgs/StereoInfo.h"
+#include "stereo_msgs/DisparityInfo.h"
 #include "sensor_msgs/CameraInfo.h"
 #include "sensor_msgs/Image.h"
 #include "sensor_msgs/PointCloud.h"
@@ -1432,8 +1432,8 @@ public:
 	sensor_msgs::Image limage;
 	sensor_msgs::Image rimage;
 	sensor_msgs::Image dimage;
-	sensor_msgs::StereoInfo stinfo;
-	sensor_msgs::DisparityInfo dispinfo;
+	stereo_msgs::StereoInfo stinfo;
+	stereo_msgs::DisparityInfo dispinfo;
 	sensor_msgs::CameraInfo rcinfo;
 	sensor_msgs::CvBridge lbridge;
 	sensor_msgs::CvBridge rbridge;

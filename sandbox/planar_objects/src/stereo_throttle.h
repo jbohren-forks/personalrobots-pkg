@@ -11,7 +11,7 @@
 #include "ros/ros.h"
 #include "topic_synchronizer2/topic_synchronizer.h"
 
-#include "sensor_msgs/RawStereo.h"
+#include "stereo_msgs/RawStereo.h"
 
 namespace planar_objects {
 
@@ -35,7 +35,7 @@ public:
   StereoThrottle();
 
   // Callbacks
-  void stereoCallback(const sensor_msgs::RawStereo::ConstPtr& stereo);
+  void stereoCallback(const stereo_msgs::RawStereo::ConstPtr& stereo);
 };
 
 }

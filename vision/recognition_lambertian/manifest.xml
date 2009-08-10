@@ -19,6 +19,7 @@
   <depend package="std_msgs" />
   <depend package="opencv_latest"/>
   <depend package="sensor_msgs"/>
+  <depend package="stereo_msgs"/>
   <depend package="topic_synchronizer"/>
   <depend package="topic_synchronizer2"/>
   <depend package="stereo_utils"/>

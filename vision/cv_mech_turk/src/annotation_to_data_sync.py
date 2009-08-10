@@ -13,7 +13,7 @@ from math import *
 
 
 from cv_mech_turk.msg import ExternalAnnotation
-from sensor_msgs.msg import RawStereo
+from stereo_msgs.msg import RawStereo
 from tf.msg import tfMessage
 
 class AnnotationToDataSync:

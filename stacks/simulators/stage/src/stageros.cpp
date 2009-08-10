@@ -36,7 +36,6 @@
 #include "boost/thread/mutex.hpp"
 #include <sensor_msgs/LaserScan.h>
 #include <nav_msgs/Odometry.h>
-#include <nav_msgs/Odometry.h>
 #include <geometry_msgs/Twist.h>
 #include <roslib/Time.h>
 

@@ -49,7 +49,7 @@
 
 
 #include <mapping_msgs/PolygonalMap.h>
-#include <sensor_msgs/StereoInfo.h>
+#include <stereo_msgs/StereoInfo.h>
 
 #include <cv_mech_turk/ExternalAnnotation.h>
 #include <annotated_map_msgs/TaggedPolygonalMap.h>

@@ -112,7 +112,7 @@ void BoxDetector::cloudCallback(const sensor_msgs::PointCloud::ConstPtr& point_c
   cloud_ = point_cloud;
 }
 
-void BoxDetector::dinfoCallback(const sensor_msgs::DisparityInfo::ConstPtr& dinfo)
+void BoxDetector::dinfoCallback(const stereo_msgs::DisparityInfo::ConstPtr& dinfo)
 {
   dinfo_ = dinfo;
 }

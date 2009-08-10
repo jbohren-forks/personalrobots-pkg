@@ -8,6 +8,7 @@
   <depend package="visual_odometry"/>
   <depend package="std_msgs"/>
   <depend package="sensor_msgs"/>
+  <depend package="stereo_msgs"/>
   <depend package="rospy"/>
   <depend package="tf"/>
   <depend package="pytoro"/>
