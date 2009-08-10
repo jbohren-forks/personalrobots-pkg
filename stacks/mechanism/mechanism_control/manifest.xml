@@ -1,5 +1,15 @@
 <package>
 <description brief="Mechanism control">
+
+The mechanism control (MC) package provides the infrastructure to
+run controllers in a hard realtime loop. In every cycle of the control
+loop, all controllers loaded into MC will get triggered. The order in in
+which the controllers are triggered is determined by the MC scheduler.
+MC provides ros service calls to spawn/start/stop/kill controllers.
+
+Mechanism control also enforces low level safety limits 
+on the effort/velocity/position of each joint.
+
 </description>
 <author>Eric Berger berger@willowgarage.com, Stuart Glaser, Wim Meeussen</author>
 <license>BSD</license>
