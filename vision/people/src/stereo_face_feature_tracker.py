@@ -6,8 +6,9 @@ import face_detection
 from visualodometer import VisualOdometer, FeatureDetectorStar, DescriptorSchemeCalonder, DescriptorSchemeSAD
 import camera
 from std_msgs.msg import String
-from deprecated_msgs.msg import Image, ImageArray
-from robot_msgs.msg import PositionMeasurement, PointStamped, PointCloud, Point
+from deprecated_msgs.msg import ImageArray
+from geometry_msgs.msg import PointStamped, PointCloud, Point
+from people.msg import PositionMeasurement
 import visual_odometry as VO
 import starfeature
 import calonder
