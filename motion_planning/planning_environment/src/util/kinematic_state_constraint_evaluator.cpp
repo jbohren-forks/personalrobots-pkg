@@ -235,10 +235,7 @@ void planning_environment::PoseConstraintEvaluator::evaluate(double *distPos, do
 
 bool planning_environment::PoseConstraintEvaluator::decide(double dPos, double dAng) const
 {
-    // the values should actually be 0, for this to be true, but we put a small eps
-    bool v1 = (m_pc.type & 0xFF) ? dPos < 1e-12 : true;
-    bool v2 = (m_pc.type & (~0xFF)) ? dAng < 1e-12 : true;
-    return v1 && v2;
+    return dPos < 1e-12 && dAng < 1e-12;
 }
 
 const motion_planning_msgs::PoseConstraint& planning_environment::PoseConstraintEvaluator::getConstraintMessage(void) const
