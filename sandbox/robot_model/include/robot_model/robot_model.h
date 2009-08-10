@@ -139,6 +139,7 @@ public:
 
   bool initXml(TiXmlElement *xml);
   bool initFile(const std::string& filename);
+  bool initString(const std::string& xmlstring);
 
   const boost::shared_ptr<Link> getRoot(void) const{return (const boost::shared_ptr<Link>)this->root_link_;};
   const boost::shared_ptr<Link> getLink(const std::string& name) const;

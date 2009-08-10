@@ -67,6 +67,17 @@ bool RobotModel::initFile(const std::string& filename)
 }
 
 
+bool RobotModel::initString(const std::string& xml_string)
+{
+  TiXmlDocument urdf_xml;
+  urdf_xml.Parse(xml_string.c_str());
+  TiXmlElement *robot_xml = urdf_xml.FirstChildElement("robot");
+  if (!robot_xml)
+  {std::cerr << "Could not parse the xml" << std::endl; return false;}
+
+  return initXml(robot_xml);
+}
+
 bool RobotModel::initXml(TiXmlElement *robot_xml)
 {
   links_.clear();
