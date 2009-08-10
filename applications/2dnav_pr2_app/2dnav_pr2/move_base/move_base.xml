@@ -3,9 +3,8 @@
 
 <node pkg="mux" type="throttle" args="3.0 /move_base/local_costmap/voxel_grid /move_base/local_costmap/voxel_grid_throttled" />
 <node pkg="move_base" type="move_base" respawn="true" name="move_base" output="screen" machine="four">
-  <!--
-  <remap from="cmd_vel" to="/bs" />
-  -->
+  <remap from="odom" to="base/odom" />
+
   <param name="controller_frequency" value="10.0" />
   <param name="footprint_padding" value="0.015" />
   <param name="controller_patience" value="15.0" />

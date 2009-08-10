@@ -3,6 +3,7 @@
 
 <node pkg="mux" type="throttle" args="3.0 /move_base_local/local_costmap/voxel_grid /move_base_local/local_costmap/voxel_grid_throttled" />
 <node pkg="move_base" type="move_base" respawn="false" name="move_base_local" output="screen" machine="three">
+  <remap from="odom" to="base/odom" />
   <param name="controller_frequency" value="10.0" />
 
   <rosparam file="$(find 2dnav_pr2)/config/costmap_common_params.yaml" command="load" ns="global_costmap" />
