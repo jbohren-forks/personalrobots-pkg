@@ -181,20 +181,20 @@ class TestStereoMsgsMigration(unittest.TestCase):
     r = random.Random(5678)
     
     left_img = Image(None,
-                     'mono8',
-                     640,
-                     [r.randint(0,255) for x in xrange(0,307200)],
                      480,
                      640,
-                     0)
+                     'mono8',
+                     0,
+                     640,
+                     [r.randint(0,255) for x in xrange(0,307200)])
 
     right_img = Image(None,
-                      'mono8',
-                      640,
-                      [r.randint(0,255) for x in xrange(0,307200)],
                       480,
                       640,
-                      0)
+                      'mono8',
+                      0,
+                      640,
+                      [r.randint(0,255) for x in xrange(0,307200)])
 
     return RawStereo(None,
                      StereoInfo(None,
