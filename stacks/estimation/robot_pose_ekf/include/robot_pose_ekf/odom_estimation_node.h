@@ -119,6 +119,7 @@ private:
 
   // vectors
   MatrixWrapper::ColumnVector vel_desi_;
+  MatrixWrapper::SymmetricMatrix odom_covariance_, imu_covariance_, vo_covariance_;
   tf::Transform odom_meas_, imu_meas_, vo_meas_;
   tf::Transform base_vo_init_, vo_camera_;
   tf::Stamped<tf::Transform> camera_base_;

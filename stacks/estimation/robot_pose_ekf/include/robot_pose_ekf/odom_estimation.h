@@ -38,6 +38,7 @@
 
 // bayesian filtering
 #include <filter/extendedkalmanfilter.h>
+#include <wrappers/matrix/matrix_wrapper.h>
 #include <model/linearanalyticsystemmodel_gaussianuncertainty.h>
 #include <model/linearanalyticmeasurementmodel_gaussianuncertainty.h>
 #include <pdf/analyticconditionalgaussian.h>
@@ -114,6 +115,12 @@ public:
    */
   void addMeasurement(const tf::Stamped<tf::Transform>& meas, double covar_multiplier=1);
 
+  /** Add a sensor measurement to the measurement buffer
+   * \param meas the measurement to add
+   * \param covar the 6x6 covariance matrix of this measurement, as defined in the PoseWithCovariance message
+   */
+  void addMeasurement(const tf::Stamped<tf::Transform>& meas, const MatrixWrapper::SymmetricMatrix& covar);
+
 private:
   /// correct for angle overflow
   void angleOverflowCorrect(double& a, double ref);
@@ -144,7 +151,7 @@ private:
   tf::Stamped<tf::Transform> odom_meas_, odom_meas_old_, imu_meas_, imu_meas_old_, vo_meas_, vo_meas_old_;
   ros::Time filter_time_old_;
   bool filter_initialized_, odom_initialized_, imu_initialized_, vo_initialized_;
-  double odom_covar_multiplier_, imu_covar_multiplier_, vo_covar_multiplier_;
+  double imu_covar_multiplier_, vo_covar_multiplier_;
 
   // diagnostics
   double diagnostics_odom_rot_rel_, diagnostics_imu_rot_rel_;

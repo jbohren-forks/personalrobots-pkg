@@ -53,7 +53,6 @@ namespace estimation
     odom_initialized_(false),
     imu_initialized_(false),
     vo_initialized_(false),
-    odom_covar_multiplier_(1.0),
     imu_covar_multiplier_(1.0),
     vo_covar_multiplier_(1.0)
   {
@@ -203,7 +202,7 @@ namespace estimation
 	decomposeTransform(odom_rel_frame, odom_rel(1), odom_rel(2), tmp, tmp, tmp, odom_rel(3));
 	angleOverflowCorrect(odom_rel(3), filter_estimate_old_vec_(6));
 	// update filter
-	odom_meas_pdf_->AdditiveNoiseSigmaSet(odom_covariance_ * pow(odom_covar_multiplier_ * dt,2));
+	odom_meas_pdf_->AdditiveNoiseSigmaSet(odom_covariance_ * pow(dt,2));
 	filter_->Update(odom_meas_model_, odom_rel);
 	diagnostics_odom_rot_rel_ = odom_rel(3);
       }
@@ -300,9 +299,18 @@ namespace estimation
   void OdomEstimation::addMeasurement(const Stamped<Transform>& meas, const double covar_multiplier)
   {
     transformer_.setTransform( meas );
-    if (meas.frame_id_ == "wheelodom") odom_covar_multiplier_ = covar_multiplier;
-    else if (meas.frame_id_ == "imu")  imu_covar_multiplier_  = covar_multiplier;
+    if (meas.frame_id_ == "imu")  imu_covar_multiplier_  = covar_multiplier;
     else if (meas.frame_id_ == "vo")   vo_covar_multiplier_   = covar_multiplier;
+    else ROS_ERROR("Calling old multiplier api is only supported for imu and vo");
+  };
+
+  void OdomEstimation::addMeasurement(const Stamped<Transform>& meas, const MatrixWrapper::SymmetricMatrix& covar)
+  {
+    transformer_.setTransform( meas );
+    if (meas.frame_id_ == "wheelodom") odom_covariance_ = covar;
+    else if (meas.frame_id_ == "imu")  imu_covariance_  = covar;
+    else if (meas.frame_id_ == "vo")   vo_covariance_   = covar;
+    else ROS_ERROR("Adding a measurement for an unknown sensor %s", meas.frame_id_.c_str());
   };
 
 

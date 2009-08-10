@@ -152,26 +152,11 @@ namespace estimation
     Quaternion q;
     tf::quaternionMsgToTF(odom->pose.pose.orientation, q);
     odom_meas_  = Transform(q, Vector3(odom->pose.pose.position.x, odom->pose.pose.position.y, 0));
+    for (unsigned int i=0; i<6; i++)
+      for (unsigned int j=0; j<6; j++)
+        odom_covariance_(i+1, j+1) = odom->pose.covariance[6*i+j];
 
-#warning Until the robot_pose_ekf moves to taking covariances from odometry sources instead of a residual the robot_pose_ekf will not work
-
-    //@todo TODO: Use a covariance instead of a residual
-    //double odom_residual = odom->residual;
-    double odom_residual = 1.0;
-    
-    // multiplier to scale covariance
-    // the smaller the residual, the more reliable odom
-    double odom_multiplier;
-    if (odom_residual < 0.05)
-      // residu=0.00001 --> multiplier=0.00001     residu=0.05 --> multiplier=1.0
-      odom_multiplier = ((odom_residual-0.00001)*(0.99999/0.04999))+0.00001;  
-    else
-      // residu=0.05 --> multiplier=1.0     residu=0.2 --> multiplier=20.0
-      odom_multiplier = ((odom_residual-0.05)*(19.0/0.15))+1.0; 
-    odom_multiplier = fmax(0.00001, fmin(100.0, odom_multiplier));
-    odom_multiplier *= 2.0;
-    //cout << "odom_multiplier = " << odom_multiplier << endl;
-    my_filter_.addMeasurement(Stamped<Transform>(odom_meas_, odom_stamp_,"wheelodom", "base_footprint"), odom_multiplier);
+    my_filter_.addMeasurement(Stamped<Transform>(odom_meas_, odom_stamp_,"wheelodom", "base_footprint"), odom_covariance_);
     
     // activate odom
     if (!odom_active_) {
