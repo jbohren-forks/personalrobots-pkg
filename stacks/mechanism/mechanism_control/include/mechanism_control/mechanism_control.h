@@ -44,7 +44,6 @@
 #include <mechanism_model/robot.h>
 #include <realtime_tools/realtime_publisher.h>
 #include <ros/node.h>
-//#include <misc_utils/advertised_service_guard.h>
 
 #include <mechanism_msgs/ListControllerTypes.h>
 #include <mechanism_msgs/ListControllers.h>

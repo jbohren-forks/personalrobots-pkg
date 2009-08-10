@@ -1,15 +1,14 @@
 <package>
 <description brief="Mechanism control">
 </description>
-<author>Eric Berger berger@willowgarage.com</author>
+<author>Eric Berger berger@willowgarage.com, Stuart Glaser, Wim Meeussen</author>
 <license>BSD</license>
 <review status="unreviewed" notes=""/>
-<url>http://pr.willowgarage.com</url>
+<url>http://pr.willowgarage.com/mechanism_control</url>
 <depend package="roscpp" />
 <depend package="hardware_interface"/>
 <depend package="tinyxml"/>
 <depend package="mechanism_model"/>
-<depend package="misc_utils" />
 <depend package="realtime_tools" />
 <depend package="rospy" />
 <depend package="tf" />
