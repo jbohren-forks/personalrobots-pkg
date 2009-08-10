@@ -62,10 +62,10 @@ $ self_filter cloud_in:=tilt_cloud cloud_out:=tilt_cloud_filtered
 \subsubsection topics ROS topics
 
 Subscribes to:
-- \b "cloud_in": [robot_msgs/PointCloud] 
+- \b "cloud_in": [sensor_msgs/PointCloud] 
 
 Publishes to:
-- \b "cloud_out": [robot_msgs/PointCloud] 
+- \b "cloud_out": [sensor_msgs/PointCloud] 
 
 
 \subsubsection parameters ROS parameters
