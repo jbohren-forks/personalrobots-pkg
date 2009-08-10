@@ -1,6 +1,6 @@
 Index: src/tree.hpp
 ===================================================================
---- src/tree.hpp	(revision 30400)
+--- src/tree.hpp	(revision 30408)
 +++ src/tree.hpp	(working copy)
 @@ -37,7 +37,7 @@
      class TreeElement
@@ -48,7 +48,7 @@ Index: src/tree.hpp
  #endif
 Index: src/tree.cpp
 ===================================================================
---- src/tree.cpp	(revision 30400)
+--- src/tree.cpp	(revision 30408)
 +++ src/tree.cpp	(working copy)
 @@ -27,7 +27,7 @@
  
@@ -79,13 +79,3 @@ Index: src/tree.cpp
      this->addTree(in, root_name);
      return *this;
  }
-@@ -110,6 +109,9 @@
- 
- bool Tree::getChain(const std::string& chain_root, const std::string& chain_tip, Chain& chain)const
- {
-+    // clear chain
-+    chain = Chain();
-+
-     // walk down from chain_root and chain_tip to the root of the tree
-     vector<SegmentMap::key_type> parents_chain_root, parents_chain_tip;
-     for (SegmentMap::const_iterator s=getSegment(chain_root); s!=segments.end(); s=s->second.parent){
