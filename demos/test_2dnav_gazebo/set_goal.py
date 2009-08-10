@@ -48,7 +48,7 @@ import os, os.path, threading, time
 import rospy, rostest
 from std_msgs.msg import String
 from nav_robot_actions.msg import MoveBaseState
-from geometry_msgs.msg import Pose,Quaternion,Point, PoseWithRatesStamped, PoseStamped, PoseWithCovarianceStamped
+from geometry_msgs.msg import Pose,Quaternion,Point, PoseStamped, PoseWithCovarianceStamped
 from nav_msgs.msg import Odometry
 import tf.transformations as tft
 from numpy import float64
@@ -122,28 +122,28 @@ class NavStackTest(unittest.TestCase):
 
     def printBaseOdom(self, odom):
         print "odom received"
-        print "odom pos " + "x: " + str(odom.pos.x)
-        print "odom pos " + "y: " + str(odom.pos.y)
-        print "odom pos " + "t: " + str(odom.pos.th)
-        print "odom vel " + "x: " + str(odom.vel.x)
-        print "odom vel " + "y: " + str(odom.vel.y)
-        print "odom vel " + "t: " + str(odom.vel.th)
+        print "odom pose " + "x: " + str(odom.pose.pose.position.x)
+        print "odom pose " + "y: " + str(odom.pose.pose.position.y)
+        print "odom pose " + "t: " + str(odom.pose.pose.position.z)
+        print "odom twist " + "x: " + str(odom.twist.twist.linear.x)
+        print "odom twist " + "y: " + str(odom.twist.twist.linear.y)
+        print "odom twist " + "t: " + str(odom.twist.twist.angular.z)
 
     def printBaseP3D(self, p3d):
         print "base pose ground truth received"
-        print "P3D pose translan: " + "x: " + str(p3d.pos.position.x)
-        print "                   " + "y: " + str(p3d.pos.position.y)
-        print "                   " + "z: " + str(p3d.pos.position.z)
-        print "P3D pose rotation: " + "x: " + str(p3d.pos.orientation.x)
-        print "                   " + "y: " + str(p3d.pos.orientation.y)
-        print "                   " + "z: " + str(p3d.pos.orientation.z)
-        print "                   " + "w: " + str(p3d.pos.orientation.w)
-        print "P3D rate translan: " + "x: " + str(p3d.vel.vel.x)
-        print "                   " + "y: " + str(p3d.vel.vel.y)
-        print "                   " + "z: " + str(p3d.vel.vel.z)
-        print "P3D rate rotation: " + "x: " + str(p3d.vel.ang_vel.vx)
-        print "                   " + "y: " + str(p3d.vel.ang_vel.vy)
-        print "                   " + "z: " + str(p3d.vel.ang_vel.vz)
+        print "P3D pose translan: " + "x: " + str(p3d.pose.pose.position.x)
+        print "                   " + "y: " + str(p3d.pose.pose.position.y)
+        print "                   " + "z: " + str(p3d.pose.pose.position.z)
+        print "P3D pose rotation: " + "x: " + str(p3d.pose.pose.orientation.x)
+        print "                   " + "y: " + str(p3d.pose.pose.orientation.y)
+        print "                   " + "z: " + str(p3d.pose.pose.orientation.z)
+        print "                   " + "w: " + str(p3d.pose.pose.orientation.w)
+        print "P3D rate translan: " + "x: " + str(p3d.twist.twist.linear.x)
+        print "                   " + "y: " + str(p3d.twist.twist.linear.y)
+        print "                   " + "z: " + str(p3d.twist.twist.linear.z)
+        print "P3D rate rotation: " + "x: " + str(p3d.twist.twist.angular.x)
+        print "                   " + "y: " + str(p3d.twist.twist.angular.y)
+        print "                   " + "z: " + str(p3d.twist.twist.angular.z)
 
 
     def quaternionMsgToList(self, q):
@@ -156,32 +156,27 @@ class NavStackTest(unittest.TestCase):
             self.odom_initialized = True
             self.odom_xi = odom.pose.pose.position.x
             self.odom_yi = odom.pose.pose.position.y
-            self.odom_qi = quaternionMsgToList(odom.pose.orientation)
+            self.odom_qi = self.quaternionMsgToList(odom.pose.pose.orientation)
         else:
             # update odom
-            self.odom_x = odom.pos.x
-            self.odom_y = odom.pos.y
-            self.odom_q = quaternionMsgToList(odom.pose.orientation)
+            self.odom_x = odom.pose.pose.position.x
+            self.odom_y = odom.pose.pose.position.y
+            self.odom_q = self.quaternionMsgToList(odom.pose.pose.orientation)
 
     def p3dInput(self, p3d):
         #self.printBaseP3D(p3d)
         # initialize ground truth
+        #print "init ", self.odom_initialized , " " , self.p3d_initialized, " " ,self.p3d_x
         if self.odom_initialized == False or self.p3d_initialized == False:
             self.p3d_initialized = True
-            self.p3d_xi =  p3d.pose_with_rates.pose.position.x
-            self.p3d_yi =  p3d.pose_with_rates.pose.position.y
-            self.p3d_qi =[ p3d.pose_with_rates.pose.orientation.x \
-                          ,p3d.pose_with_rates.pose.orientation.y \
-                          ,p3d.pose_with_rates.pose.orientation.z \
-                          ,p3d.pose_with_rates.pose.orientation.w]
+            self.p3d_xi =  p3d.pose.pose.position.x
+            self.p3d_yi =  p3d.pose.pose.position.y
+            self.p3d_qi = self.quaternionMsgToList(p3d.pose.pose.orientation)
         else:
             # update ground truth
-            self.p3d_x  =  p3d.pose_with_rates.pose.position.x
-            self.p3d_y  =  p3d.pose_with_rates.pose.position.y
-            self.p3d_q  =[ p3d.pose_with_rates.pose.orientation.x \
-                          ,p3d.pose_with_rates.pose.orientation.y \
-                          ,p3d.pose_with_rates.pose.orientation.z \
-                          ,p3d.pose_with_rates.pose.orientation.w]
+            self.p3d_x  =  p3d.pose.pose.position.x
+            self.p3d_y  =  p3d.pose.pose.position.y
+            self.p3d_q  = self.quaternionMsgToList(p3d.pose.pose.orientation)
 
     def bumpedInput(self, bumpString):
         print "robot touched something! ", bumpString.data
@@ -222,9 +217,9 @@ class NavStackTest(unittest.TestCase):
 
         #pub_base = rospy.Publisher("cmd_vel", BaseVel)
         pub_goal = rospy.Publisher("/move_base/activate", PoseStamped)
-        pub_pose = rospy.Publisher("initialpose", PoseWithCovarianceStamped)
-        rospy.Subscriber("base_pose_ground_truth", PoseWithRatesStamped, self.p3dInput)
-        rospy.Subscriber("odom"                  , Odometry     , self.odomInput)
+        pub_pose = rospy.Publisher("initialpose" , PoseWithCovarianceStamped)
+        rospy.Subscriber("base_pose_ground_truth", Odometry            , self.p3dInput)
+        rospy.Subscriber("base/odom"                  , Odometry            , self.odomInput)
         rospy.Subscriber("base_bumper/info"      , String              , self.bumpedInput)
         rospy.Subscriber("torso_lift_bumper/info", String              , self.bumpedInput)
         rospy.Subscriber("/move_base/feedback"   , MoveBaseState       , self.stateInput)
