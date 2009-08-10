@@ -25,6 +25,8 @@ import xdot
 
 # GTKCodeBuffer for doing syntax hilighting for NDDL file display
 from gtkcodebuffer import CodeBuffer, SyntaxLoader, add_syntax_path
+add_syntax_path(os.path.abspath("./ext/PyGTKCodeBuffer-1.0-RC2/syntax"))
+
 
 # Initialize dictionaries
 slots = {}
