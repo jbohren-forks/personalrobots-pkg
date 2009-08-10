@@ -43,7 +43,6 @@ NAME = 'test_base_vw_gt'
 import math
 import roslib
 roslib.load_manifest(PKG)
-roslib.load_manifest('rostest')
 
 import sys, unittest
 import os, time
@@ -57,50 +56,20 @@ TARGET_VW       =  0.5
 TARGET_DURATION = 2.0
 TARGET_TOL      = 0.15 #empirical test result john - 20090420
 
-
-
-class BaseTest(unittest.TestCase):
+from test_base import BaseTest, Q, E
+class VW_GT(BaseTest):
     def __init__(self, *args):
-        super(BaseTest, self).__init__(*args)
-        self.success = False
+        super(VW_GT, self).__init__(*args)
         self.reached_target_vw = False
         self.duration_start = 0
 
-
-    def printBaseOdom(self, odom):
-        orientation = odom.pose.orientation
-        q = Q(orientation.x, orientation.y, orientation.z, orientation.w)
-        q.normalize()
-        print "odom received"
-        print "odom pos " + "x: " + str(odom.pose.pose.position.x)
-        print "odom pos " + "y: " + str(odom.pose.pose.position.y)
-        print "odom pos " + "t: " + str(q.getEuler().z)
-        print "odom vel " + "x: " + str(odom.twist.twist.linear.x)
-        print "odom vel " + "y: " + str(odom.twist.twist.linear.y)
-        print "odom vel " + "t: " + str(odom.twist.twist.angular.z)
-
-    def printBaseP3D(self, p3d):
-        print "base pose ground truth received"
-        print "P3D pose translan: " + "x: " + str(p3d.pose.pose.position.x)
-        print "                   " + "y: " + str(p3d.pose.pose.position.y)
-        print "                   " + "z: " + str(p3d.pose.pose.position.z)
-        print "P3D pose rotation: " + "x: " + str(p3d.pose.pose.orientation.x)
-        print "                   " + "y: " + str(p3d.pose.pose.orientation.y)
-        print "                   " + "z: " + str(p3d.pose.pose.orientation.z)
-        print "                   " + "w: " + str(p3d.pose.pose.orientation.w)
-        print "P3D rate translan: " + "x: " + str(p3d.twist.twist.linear.x)
-        print "                   " + "y: " + str(p3d.twist.twist.linear.y)
-        print "                   " + "z: " + str(p3d.twist.twist.linear.z)
-        print "P3D rate rotation: " + "x: " + str(p3d.twist.twist.angular.x)
-        print "                   " + "y: " + str(p3d.twist.twist.angular.y)
-        print "                   " + "z: " + str(p3d.twist.twist.angular.z)
-
     def odomInput(self, odom):
+        # override parent
         #self.printBaseOdom(odom)
         error = 0
 
-
     def p3dInput(self, p3d):
+        # override parent
         i = 0
         #self.printBaseP3D(p3d)
         error = abs(p3d.twist.twist.angular.z - TARGET_VW)
@@ -120,18 +89,14 @@ class BaseTest(unittest.TestCase):
             self.duration_start = time.time()
     
     def test_base(self):
-        print "LNK\n"
-        pub = rospy.Publisher("/cmd_vel", Twist)
-        rospy.Subscriber("/base_pose_ground_truth", Odometry, self.p3dInput)
-        rospy.Subscriber("/odom",                   Odometry, self.odomInput)
-        rospy.init_node(NAME, anonymous=True)
+        self.init_ros(NAME)
         timeout_t = time.time() + TEST_DURATION
         while not rospy.is_shutdown() and not self.success and time.time() < timeout_t:
-            pub.publish(Twist(Vector3(0.0,0.0,0), Vector3(0,0,TARGET_VW)))
+            self.pub.publish(Twist(Vector3(0.0,0.0,0), Vector3(0,0,TARGET_VW)))
             time.sleep(0.1)
         self.assert_(self.success)
         
 if __name__ == '__main__':
-    rostest.run(PKG, sys.argv[0], BaseTest, sys.argv) #, text_mode=True)
+    rostest.run(PKG, sys.argv[0], VW_GT, sys.argv) #, text_mode=True)
 
 
