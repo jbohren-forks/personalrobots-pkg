@@ -112,6 +112,10 @@ public:
   /// \throws NoDoorInRegionException
   bool isDoorOpen (RegionId id, const Time& stamp);
 
+  /// \return The region id of the nearest door to this point.  Call regionDoor on this id to get the corresponding door message.
+  RegionId nearestDoor (const Point2D& p) const;
+
+
   /// \return The id of the nearest outlet to this 2d-position
   /// \throws NoOutletException
   OutletId nearestOutlet (const Point2D& p) const;
@@ -288,6 +292,9 @@ private:
   void setDoorCosts (const Time& t);
   void updateDistances (const RegionId region_id);
   bool connectorsTouchSameRegion (ConnectorId c1, ConnectorId c2, ConnectorId c3) const;
+  bool notDoor (const RegionId id) const;
+  bool doorCloser (const double x, const double y, const RegionId id1, const RegionId id2) const;
+
 
   RegionPtr squareRegion (const Point2D& p, double radius) const;
 

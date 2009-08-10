@@ -130,7 +130,7 @@ int main (int argc, char* argv[])
 
   cout << "Approach position of outlet 1 is " << m->outletApproachPosition(1u, 1.0, 1.0) << endl;
   cout << "Approach position of outlet 2 is " << m->outletApproachPosition(2u, 1.0, 1.0) << endl;
-  cout << "Approach position of connector 100 is " << m->doorApproachPosition(100, 1.0) << endl;
+  // cout << "Approach position of connector 100 is " << m->doorApproachPosition(100, 1.0) << endl;
 
 
   
@@ -140,6 +140,12 @@ int main (int argc, char* argv[])
 
   Point2D p1(19.1125, 29.1625);
   Point2D p2(12.7, 22.5);
+
+  ROS_INFO ("Looking for nearest doors");
+  ROS_INFO_STREAM ("Nearest door to " << p1 << " is " << m3.nearestDoor(p1));
+  ROS_INFO_STREAM ("Nearest door to " << p2 << " is " << m3.nearestDoor(p2));
+
+
   tmap::ConnectorIdVector path = m3.shortestConnectorPath(p1, p2);
   cout << " Path between " << p1 << " and " << p2 << ": ";
   foreach (ConnectorId connector, path) {

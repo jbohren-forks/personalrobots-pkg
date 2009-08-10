@@ -895,6 +895,50 @@ Point2D TopologicalMap::MapImpl::doorApproachPosition (const ConnectorId id, con
 
 
 
+bool TopologicalMap::MapImpl::notDoor (const RegionId id) const
+{
+  return regionType(id)!=DOORWAY;
+}
+
+
+bool TopologicalMap::MapImpl::doorCloser (const double x, const double y, const RegionId id1, const RegionId id2) const
+{
+  const double x1=regionDoor(id1).door_p1.x;
+  const double y1=regionDoor(id1).door_p1.y;
+  const double x2=regionDoor(id2).door_p2.x;
+  const double y2=regionDoor(id2).door_p2.y;
+
+  const double dist1 = pow(x1-x,2)+pow(y1-y,2);
+  const double dist2 = pow(x2-x,2)+pow(y2-y,2);
+  // ROS_DEBUG_STREAM ("Distance from " << id1 << ": " << x1 << ", " << y1 << " to " << x << ", " << y << " is " << dist1);
+
+  return dist1 < dist2;
+}
+
+
+RegionId TopologicalMap::nearestDoor (const Point2D& p) const
+{
+  return map_impl_->nearestDoor(p);
+}
+
+RegionId TopologicalMap::MapImpl::nearestDoor (const Point2D& p) const
+{
+  RegionIdSet doors;
+  remove_copy_if (allRegions().begin(), allRegions().end(), inserter(doors, doors.begin()), bind(&TopologicalMap::MapImpl::notDoor, this, _1));
+  RegionIdSet::iterator best = min_element (doors.begin(), doors.end(), bind(&TopologicalMap::MapImpl::doorCloser, this, p.x, p.y, _1, _2));
+  ROS_ASSERT_MSG (best!=doors.end(), "Unexpectedly could not find doors near %f, %f", p.x, p.y);
+  return *best;
+}
+
+  
+    
+  
+  
+
+
+
+
+
 /****************************************
  * Outlets
  ****************************************/

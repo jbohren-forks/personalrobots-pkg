@@ -200,6 +200,9 @@ public:
   /// \throws NoDoorInRegionException
   bool isDoorOpen (RegionId id, const Time& stamp);
 
+  /// \return The region id of the nearest door to this point.  Call regionDoor on this id to get the corresponding door message.
+  RegionId nearestDoor (const Point2D& p) const;
+
   /// \return The id of the nearest outlet to this point
   /// \throws NoOutletException
   OutletId nearestOutlet (const Point2D& p) const;
