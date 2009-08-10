@@ -41,6 +41,7 @@
 // messages
 #include "pr2_calibration_actions/RobotPixelsConfig.h"
 #include "pr2_calibration_actions/RobotPixelsResult.h"
+#include "pr2_calibration_actions/RobotPixelsFeedback.h"
 
 namespace pr2_calibration_actions
 {
@@ -51,8 +52,13 @@ public:
   typedef calibration_message_filters::DeflatedMsg<mechanism_msgs::JointStates> DeflatedJointStates;
   typedef calibration_message_filters::DeflatedMsg<sensor_msgs::Image> DeflatedImage;
   typedef boost::function<void(const RobotPixelsResult&)> CompletionCallback;
+  typedef boost::function<void(const RobotPixelsFeedback&)> FeedbackCallback;
 
-  RobotPixelsCapture(const RobotPixelsConfig& config, CompletionCallback completion_cb = NULL);
+  RobotPixelsCapture(const RobotPixelsConfig& config,
+                     CompletionCallback completion_cb = NULL,
+                     FeedbackCallback feedback_cb_ = NULL);
+
+  void registerFeedbackCb(FeedbackCallback cb);
 
   void shutdown();
 
@@ -62,6 +68,9 @@ private:
   void jointStatesCb(const DeflatedJointStates& deflated);
   void pixelCb(unsigned int channel, const DeflatedImage& deflated);
   void searchForMatch(const ros::Time& time);
+
+  void updateJointStatesFeedback(const ChannelFeedback& channel_feedback);
+  void updatePixelFeedback(unsigned int channel, const ChannelFeedback& channel_feedback);
 
   boost::scoped_ptr<JointStatesChannel> joint_states_channel_;
   boost::scoped_ptr<SortedDeque<DeflatedJointStates> > stationary_joint_states_;
@@ -73,6 +82,9 @@ private:
   std::vector<CrossPixelTimeshift> pixel_timeshifts_;
 
   CompletionCallback completion_cb_;
+  FeedbackCallback feedback_cb_;
+
+  RobotPixelsFeedback cur_feedback_;
 
   // Mutexes
   boost::mutex joint_states_mutex_;

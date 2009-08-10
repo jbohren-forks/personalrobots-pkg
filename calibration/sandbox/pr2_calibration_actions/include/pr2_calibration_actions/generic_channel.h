@@ -48,7 +48,11 @@ class GenericChannel
 public:
   typedef boost::function<void (const ChannelFeedback&)> FeedbackCallback;
 
-  GenericChannel() { }
+  GenericChannel(FeedbackCallback cb = NULL) : feedback_cb_(cb)
+  {
+
+  }
+
   ~GenericChannel() { }
 
   void registerFeedbackCb(FeedbackCallback cb)

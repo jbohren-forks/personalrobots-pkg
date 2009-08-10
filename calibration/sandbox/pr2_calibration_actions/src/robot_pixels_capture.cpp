@@ -38,14 +38,17 @@ using namespace calibration_message_filters;
 using namespace pr2_calibration_actions;
 using namespace std;
 
-RobotPixelsCapture::RobotPixelsCapture(const RobotPixelsConfig& config, CompletionCallback completion_cb)
+RobotPixelsCapture::RobotPixelsCapture(const RobotPixelsConfig& config, CompletionCallback completion_cb, FeedbackCallback feedback_cb)
 {
   completion_cb_ = completion_cb;
+  feedback_cb_ = feedback_cb;
 
   match_found_ = false;
 
   joint_states_channel_.reset( new JointStatesChannel(config.joint_states_config));
   joint_states_channel_->registerStationaryCallback(boost::bind(&RobotPixelsCapture::jointStatesCb, this, _1));
+  joint_states_channel_->registerFeedbackCb(boost::bind(&RobotPixelsCapture::updateJointStatesFeedback, this, _1));
+
   stationary_joint_states_.reset(new SortedDeque<DeflatedJointStates>());
   stationary_joint_states_->setMaxSize(100);
 
@@ -57,6 +60,7 @@ RobotPixelsCapture::RobotPixelsCapture(const RobotPixelsConfig& config, Completi
   {
     pixel_channels_[i].reset(new PixelChannel(config.pixel_configs[i]));
     pixel_channels_[i]->registerStationaryCallback(boost::bind(&RobotPixelsCapture::pixelCb, this, i, _1));
+    pixel_channels_[i]->registerFeedbackCb(boost::bind(&RobotPixelsCapture::updatePixelFeedback, this, i, _1));
     stationary_pixels_[i].reset(new SortedDeque<DeflatedImage>());
     stationary_pixels_[i]->setMaxSize(100);
   }
@@ -84,7 +88,11 @@ RobotPixelsCapture::RobotPixelsCapture(const RobotPixelsConfig& config, Completi
       pixel_timeshifts_[i].max_timeshift = -pixel_timeshifts_[i].max_timeshift;
     }
   }
+}
 
+void RobotPixelsCapture::registerFeedbackCb(FeedbackCallback cb)
+{
+  feedback_cb_ = cb;
 }
 
 void RobotPixelsCapture::jointStatesCb(const DeflatedJointStates& deflated)
@@ -97,6 +105,20 @@ void RobotPixelsCapture::jointStatesCb(const DeflatedJointStates& deflated)
 
   ROS_INFO("Got a stationary joint state");
   searchForMatch(deflated.header.stamp);
+}
+
+void RobotPixelsCapture::updateJointStatesFeedback(const ChannelFeedback& channel_feedback)
+{
+  cur_feedback_.joint_states_channel = channel_feedback;
+  if (feedback_cb_)
+    feedback_cb_(cur_feedback_);
+}
+
+void RobotPixelsCapture::updatePixelFeedback(unsigned int channel, const ChannelFeedback& channel_feedback)
+{
+  cur_feedback_.pixel_channels[channel] = channel_feedback;
+  if (feedback_cb_)
+    feedback_cb_(cur_feedback_);
 }
 
 void RobotPixelsCapture::pixelCb(unsigned int channel, const DeflatedImage& deflated)
