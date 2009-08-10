@@ -6,7 +6,7 @@
 
 <!-- PS3 joystick for A2 servers on PRE -->
 <!-- Watts Commenting out until joystick driver works all the way, and python dev selector is tested. Launch joy with joy/ps3.launch
-  <node machine="realtime" pkg="joy" type="ps3_joy" name="joy" respawn="true" >
+  <node machine="realtime" pkg="ps3joy" type="ps3_joy_node" name="joy" respawn="true" >
     <param name="deadzone" value="0.10" />
     <param name="dev" value="/dev/input/js1" />
   </node>
