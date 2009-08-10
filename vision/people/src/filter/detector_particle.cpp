@@ -42,7 +42,7 @@ using namespace BFL;
 using namespace tf;
 using namespace std;
 using namespace ros;
-using namespace robot_msgs;
+using namespace geometry_msgs;
 
 
 

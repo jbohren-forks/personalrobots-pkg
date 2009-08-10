@@ -62,7 +62,7 @@
 #include "geometry_msgs/PointStamped.h"
 #include <geometry_msgs/Polygon.h>
 #include "door_msgs/Door.h"
-//#include "robot_msgs/VisualizationMarker.h"
+//#include "visualization_msgs/VisualizationMarker.h"
 
 // Cloud kd-tree
 #include <point_cloud_mapping/kdtree/kdtree_ann.h>
@@ -1548,7 +1548,7 @@ public:
 
 
 //        advertise<geometry_msgs::PointStamped>("handle_detector/handle_location", 1);
-       // advertise<robot_msgs::VisualizationMarker>("visualizationMarker", 1);
+       // advertise<visualization_msgs::VisualizationMarker>("visualizationMarker", 1);
 
         subscribeStereoData();
 
