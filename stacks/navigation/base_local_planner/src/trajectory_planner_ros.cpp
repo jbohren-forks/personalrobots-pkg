@@ -93,14 +93,9 @@ namespace base_local_planner {
       ros_node.param("yaw_goal_tolerance", yaw_goal_tolerance_, 0.05);
       ros_node.param("xy_goal_tolerance", xy_goal_tolerance_, 0.10);
 
-      //create a node in the global namespace for the odom topic
-      string odom_topic;
-      ros_node.param("odom_topic", odom_topic, string("odom"));
-      // Subscribe to odometry messages to get global pose
-
       //to get odometery information, we need to get a handle to the topic in the global namespace of the node
       ros::NodeHandle global_node;
-      odom_sub_ = global_node.subscribe<nav_msgs::Odometry>(odom_topic, 1, boost::bind(&TrajectoryPlannerROS::odomCallback, this, _1));
+      odom_sub_ = global_node.subscribe<nav_msgs::Odometry>("odom", 1, boost::bind(&TrajectoryPlannerROS::odomCallback, this, _1));
 
       //we'll get the parameters for the robot radius from the costmap we're associated with
       inscribed_radius_ = costmap_ros_->getInscribedRadius();
