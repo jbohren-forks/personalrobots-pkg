@@ -308,7 +308,7 @@ bool RosProsilica::triggeredGrab(prosilica_cam::PolledImage::Request &req,
               this->type,
               this->height,
               this->width,
-              this->depth,
+              this->skip*this->width,
               (void*)src );
     // publish to ros, thumbnails and rect image?
     /// @todo: don't bother if there are no subscribers
@@ -363,15 +363,25 @@ void RosProsilica::InitChild()
   this->depth            = this->myParent->GetImageDepth();
   //ROS_INFO("image format in urdf is %s\n",this->myParent->GetImageFormat().c_str());
   if (this->myParent->GetImageFormat() == "L8")
-    this->type           = "mono8";
+  {
+    this->type = sensor_msgs::image_encodings::MONO8;
+    this->skip = 1;
+  }
   else if (this->myParent->GetImageFormat() == "R8G8B8")
-    this->type           = "rgb8";
+  {
+    this->type = sensor_msgs::image_encodings::RGB8;
+    this->skip = 3;
+  }
   else if (this->myParent->GetImageFormat() == "B8G8R8")
-    this->type           = "bgr8";
+  {
+    this->type = sensor_msgs::image_encodings::BGR8;
+    this->skip = 3;
+  }
   else
   {
     ROS_ERROR("Unsupported Gazebo ImageFormat\n");
-    this->type           = "bgr8";
+    this->type = sensor_msgs::image_encodings::BGR8;
+    this->skip = 3;
   }
 
 

@@ -105,15 +105,25 @@ void RosCamera::InitChild()
   this->height           = this->myParent->GetImageHeight();
   this->depth            = this->myParent->GetImageDepth();
   if (this->myParent->GetImageFormat() == "L8")
-    this->type           = "mono8";
+  {
+    this->type = sensor_msgs::image_encodings::MONO8;
+    this->skip = 1;
+  }
   else if (this->myParent->GetImageFormat() == "R8G8B8")
-    this->type           = "rgb8";
+  {
+    this->type = sensor_msgs::image_encodings::RGB8;
+    this->skip = 3;
+  }
   else if (this->myParent->GetImageFormat() == "B8G8R8")
-    this->type           = "bgr8";
+  {
+    this->type = sensor_msgs::image_encodings::BGR8;
+    this->skip = 3;
+  }
   else
   {
     ROS_ERROR("Unsupported Gazebo ImageFormat\n");
-    this->type           = "bgr8";
+    this->type = sensor_msgs::image_encodings::BGR8;
+    this->skip = 3;
   }
 
 }
@@ -172,7 +182,7 @@ void RosCamera::PutCameraData()
                 this->type,
                 this->height,
                 this->width,
-                this->depth,
+                this->skip*this->width,
                 (void*)src );
 
       //tmpT2 = Simulator::Instance()->GetWallTime();

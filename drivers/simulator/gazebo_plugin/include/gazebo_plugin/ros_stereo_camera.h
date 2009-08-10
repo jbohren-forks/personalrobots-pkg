@@ -179,7 +179,9 @@ class RosStereoCamera : public Controller
 
   /// \brief The image formats of the cameras 
   private: std::string left_type; 
+  private: int left_skip; 
   private: std::string right_type; 
+  private: int right_skip; 
 };
 
 /** \} */

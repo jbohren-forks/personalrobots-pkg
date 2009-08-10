@@ -214,18 +214,36 @@ void RosStereoCamera::InitChild()
   this->rightCamera->SetActive(true);
 
   if( leftCamera->GetImageFormat() == "L8" ) 
-      left_type = "mono8";
+  {
+      left_type = sensor_msgs::image_encodings::MONO8;
+      left_skip = 1;
+  }
   else if ( leftCamera->GetImageFormat() == "R8G8B8" ) 
-      left_type = "rgb8";
+  {
+      left_type = sensor_msgs::image_encodings::RGB8;
+      left_skip = 3;
+  }
   else if ( leftCamera->GetImageFormat() == "B8G8R8" ) 
-      left_type = "bgr8";
+  {
+      left_type = sensor_msgs::image_encodings::BGR8;
+      left_skip = 3;
+  }
    
   if( rightCamera->GetImageFormat() == "L8" ) 
-      right_type = "mono8";
+  {
+      right_type = sensor_msgs::image_encodings::MONO8;
+      right_skip = 1;
+  }
   else if ( rightCamera->GetImageFormat() == "R8G8B8" ) 
-      right_type = "rgb8";
+  {
+      right_type = sensor_msgs::image_encodings::RGB8;
+      right_skip = 3;
+  }
   else if ( rightCamera->GetImageFormat() == "B8G8R8" ) 
-      right_type = "bgr8";
+  {
+      right_type = sensor_msgs::image_encodings::BGR8;
+      right_skip = 3;
+  }
 
   ROS_DEBUG("stereo: set sensors active\n");
 
@@ -280,8 +298,8 @@ void RosStereoCamera::PutCameraData()
       fillImage(*(this->leftImageMsg),
                 this->left_type,
                 this->leftCamera->GetImageHeight(),
-                this->leftCamera->GetImageWidth() ,
-                1,
+                this->leftCamera->GetImageWidth(),
+                this->left_skip*this->leftCamera->GetImageWidth(),
                 (void*)left_src );
 
       // copy from src to rightImageMsg
@@ -289,8 +307,8 @@ void RosStereoCamera::PutCameraData()
       fillImage(*(this->rightImageMsg),
                 this->right_type,
                 this->rightCamera->GetImageHeight(),
-                this->rightCamera->GetImageWidth() ,
-                1,
+                this->rightCamera->GetImageWidth(),
+                this->right_skip*this->rightCamera->GetImageWidth(),
                 (void*)right_src );
 
       // fill StereoInfo stereo_info
