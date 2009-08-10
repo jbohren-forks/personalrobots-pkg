@@ -40,7 +40,6 @@ NAME = 'test_scan'
 import math
 import roslib
 roslib.load_manifest(PKG)
-roslib.load_manifest('rostest')
 
 
 import sys, unittest
