@@ -288,12 +288,12 @@ class ErraticNode: public ros::Node
 	player_position2d_data_t* pdata = (player_position2d_data_t*)msg->GetPayload(); 
 	
 	// Translate from Player data to ROS data 
-	odom.pose_with_covariance.pose.position.x = pdata->pos.px; 
-	odom.pose_with_covariance.pose.position.y = pdata->pos.py; 
-	odom.pose_with_covariance.pose.orientation = tf::createQuaternionMsgFromYaw(pdata->pos.pa); 
-	odom.twist_with_covariance.twist.linear.x = pdata->vel.px; 
-	odom.twist_with_covariance.twist.linear.y = pdata->vel.py; 
-	odom.twist_with_covariance.twist.angular.z = pdata->vel.pa; 
+	odom.pose.pose.position.x = pdata->pos.px; 
+	odom.pose.pose.position.y = pdata->pos.py; 
+	odom.pose.pose.orientation = tf::createQuaternionMsgFromYaw(pdata->pos.pa); 
+	odom.twist.twist.linear.x = pdata->vel.px; 
+	odom.twist.twist.linear.y = pdata->vel.py; 
+	odom.twist.twist.angular.z = pdata->vel.pa; 
 
   //@todo TODO: Think about publishing stall information with odometry or on a separate topic
 	//odom.stall = pdata->stall; 
@@ -332,7 +332,7 @@ class ErraticNode: public ros::Node
 	
 	
 	//printf("Published new odom: (%.3f,%.3f,%.3f)\n",  
-	//odom.pose_with_covariance.pose.position.x, odom.pose_with_covariance.pose.position.y, odom.pose_with_covariance.pose.position.th); 
+	//odom.pose.pose.position.x, odom.pose.pose.position.y, odom.pose.pose.position.th); 
       } 
       else if((hdr->type == PLAYER_MSGTYPE_DATA) &&   
 	      (hdr->subtype == PLAYER_POWER_DATA_STATE) &&  
