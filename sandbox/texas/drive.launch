@@ -1,0 +1,12 @@
+<launch>
+
+<node pkg="mechanism_control" type="spawner.py" 
+      args="$(find texas)/controllers.xml" />
+
+<node pkg="texas" type="tdrive.py" />
+
+<node pkg="texas" type="teleop_texas_keyboard" output="screen" >
+  <param name="max_vel" type="double" value="6.0" />
+</node>
+
+</launch>

@@ -1,0 +1,13 @@
+<package>
+  <description brief="Brings up and controls Dallas Bot">
+  </description>
+  <author>Dallas, Kevin</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/texas</url>
+  <depend package="pr2_etherCAT"/>
+  <depend package="pr2_defs"/>
+  <depend package="mechanism_msgs" />
+</package>
+
+
