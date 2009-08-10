@@ -429,7 +429,7 @@ public:
   {
     status.name = "Frequency Status";
 
-    double desired_freq = 40.0 / ((double)(skip_) + 1.0);
+    double desired_freq = (1. / cfg_.scan_time) / ((double) (skip_) + 1.0);
     double freq = (double)(count_)/diagnostic_.getPeriod();
 
     if (freq < (.9*desired_freq))
