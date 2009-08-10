@@ -8,7 +8,7 @@ Header header
 sensor_msgs/Image left_image
 sensor_msgs/Image right_image
 sensor_msgs/Image disparity_image
-sensor_msgs/StereoInfo stereo_info
+stereo_msgs/StereoInfo stereo_info
 sensor_msgs/CameraInfo left_info
 sensor_msgs/CameraInfo right_info
 
