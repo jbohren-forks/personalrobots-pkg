@@ -49,7 +49,7 @@ from stereo_utils.descriptor_schemes import DescriptorSchemeCalonder, Descriptor
 from stereo_utils.feature_detectors import FeatureDetectorFast, FeatureDetector4x4, FeatureDetectorStar, FeatureDetectorHarris
 from skeleton import Skeleton
 import stereo_msgs.msg
-import robot_msgs.msg
+import geometry_msgs.msg
 from tf.listener import TransformListener
 
 from pytoro import TreeOptimizer3
@@ -246,7 +246,7 @@ class FakeRoadmapServer:
   def __init__(self, args):
     rospy.init_node('roadmap_server')
     self.pub = rospy.Publisher("roadmap", vslam.msg.Roadmap)
-    rospy.Subscriber('amcl_pose', robot_msgs.msg.PoseWithCovarianceStamped, self.handle_localizedpose)
+    rospy.Subscriber('amcl_pose', geometry_msgs.msg.PoseWithCovarianceStamped, self.handle_localizedpose)
     self.updated = None
     rospy.Subscriber('time', roslib.msg.Time, self.handle_time)
     self.nodes = []
