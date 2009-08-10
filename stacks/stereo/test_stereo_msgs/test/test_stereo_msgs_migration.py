@@ -172,11 +172,10 @@ class TestStereoMsgsMigration(unittest.TestCase):
   def get_new_raw_stereo(self):
     from stereo_msgs.msg import RawStereo
     from stereo_msgs.msg import StereoInfo
-    from stereo_msgs.msg import CamInfo
+    from stereo_msgs.msg import DisparityInfo
+    from sensor_msgs.msg import CameraInfo
     from sensor_msgs.msg import RegionOfInterest
     from sensor_msgs.msg import Image
-
-    from sensor_msgs.msg import DisparityInfo
 
     import random
     r = random.Random(5678)
@@ -206,7 +205,7 @@ class TestStereoMsgsMigration(unittest.TestCase):
                                    0.0, 1.0, 0.0, -240.53899000000001,
                                    0.0, 0.0, 0.0, 722.28197999999998,
                                    0.0, 0.0, 11.262630896461046, -0.0)),
-                     CamInfo(None,
+                     CameraInfo(None,
                              480, 640,
                              RegionOfInterest(0,0,480,640),
                                (-0.45795000000000002, 0.29532999999999998, 0.0, 0.0, 0.0),
@@ -221,7 +220,7 @@ class TestStereoMsgsMigration(unittest.TestCase):
                               0.0, 0.0, 1.0, 0.0)),
                      RawStereo.IMAGE,
                      left_img,
-                     CamInfo(None,
+                     CameraInfo(None,
                              480, 640,
                              RegionOfInterest(0,0,480,640),
                              (-0.46471000000000001, 0.28405999999999998, 0.0, 0.0, 0.0),
@@ -297,10 +296,10 @@ class TestStereoMsgsMigration(unittest.TestCase):
     m.deserialize(buff.getvalue())
     
     #Compare
-    print "old"
-    print roslib.message.strify_message(msgs[0][1])
-    print "new"
-    print roslib.message.strify_message(m)
+#    print "old"
+#    print roslib.message.strify_message(msgs[0][1])
+#    print "new"
+#    print roslib.message.strify_message(m)
 
     # Strifying them helps make the comparison easier until I figure out why the equality operator is failing
     self.assertTrue(roslib.message.strify_message(msgs[0][1]) == roslib.message.strify_message(m))

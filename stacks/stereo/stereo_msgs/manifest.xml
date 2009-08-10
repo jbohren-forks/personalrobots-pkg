@@ -9,9 +9,12 @@
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/stereo_msgs</url>
   <depend package="sensor_msgs"/>
+  <depend package="rosbagmigration"/>
   <export>
     <cpp cflags="-I${prefix}/msg/cpp"/>
+    <rosbagmigration rule_file="migration_rules/stereo_msgs.bmr"/>
   </export>
+
 </package>
 
 
