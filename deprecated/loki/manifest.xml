@@ -6,7 +6,7 @@ Loki is a C++ library of designs, containing flexible implementations of common 
 </description>
 <author>Andrei Alexandrescu</author>
 <license>MIT</license>
-<review status="3rdparty" notes=""/>
+<review status="deprecated" notes=""/>
 <url>http://loki-lib.sourceforge.net/</url>
 <export>
   <cpp lflags="-Wl,-rpath,${prefix}/build/lib -L${prefix}/build/lib -lloki" cflags="-I${prefix}/build/loki-0.1.7/include"/>
