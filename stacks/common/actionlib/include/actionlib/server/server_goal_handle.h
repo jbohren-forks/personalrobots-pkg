@@ -158,6 +158,6 @@ namespace actionlib {
 };
 
 //include the implementation
-#include <actionlib/server/goal_handle_imp.h>
+#include <actionlib/server/server_goal_handle_imp.h>
 
 #endif

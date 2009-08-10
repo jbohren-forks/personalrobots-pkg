@@ -34,8 +34,8 @@
 *
 * Author: Eitan Marder-Eppstein
 *********************************************************************/
-#ifndef ACTIONLIB_GOAL_HANDLE_IMP_H_
-#define ACTIONLIB_GOAL_HANDLE_IMP_H_
+#ifndef ACTIONLIB_SERVER_GOAL_HANDLE_IMP_H_
+#define ACTIONLIB_SERVER_GOAL_HANDLE_IMP_H_
 namespace actionlib {
   template <class ActionSpec>
   ServerGoalHandle<ActionSpec>::ServerGoalHandle(){}
