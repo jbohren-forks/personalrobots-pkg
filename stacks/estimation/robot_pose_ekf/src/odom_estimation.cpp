@@ -71,15 +71,18 @@ namespace estimation
     
 
     // create MEASUREMENT MODEL ODOM
-    ColumnVector measNoiseOdom_Mu(3);  measNoiseOdom_Mu = 0;
-    SymmetricMatrix measNoiseOdom_Cov(3);  measNoiseOdom_Cov = 0;
+    ColumnVector measNoiseOdom_Mu(6);  measNoiseOdom_Mu = 0;
+    SymmetricMatrix measNoiseOdom_Cov(6);  measNoiseOdom_Cov = 0;
     measNoiseOdom_Cov(1,1) = pow(0.002,2);    // = 2 mm / sec
     measNoiseOdom_Cov(2,2) = pow(0.002,2);    // = 2 mm / sec
-    measNoiseOdom_Cov(3,3) = pow(0.017,2);    // = 1 degree / sec
+    measNoiseOdom_Cov(3,3) = pow(999.9,2);    // = large
+    measNoiseOdom_Cov(4,4) = pow(999.9,2);    // = large
+    measNoiseOdom_Cov(5,5) = pow(999.9,2);    // = large
+    measNoiseOdom_Cov(6,6) = pow(0.017,2);    // = 1 degree / sec
     odom_covariance_ = measNoiseOdom_Cov;
     Gaussian measurement_Uncertainty_Odom(measNoiseOdom_Mu, measNoiseOdom_Cov);
-    Matrix Hodom(3,6);  Hodom = 0;
-    Hodom(1,1) = 1;    Hodom(2,2) = 1;    Hodom(3,6) = 1;
+    Matrix Hodom(6,6);  Hodom = 0;
+    Hodom(1,1) = 1;    Hodom(2,2) = 1;    Hodom(6,6) = 1;
     odom_meas_pdf_   = new LinearAnalyticConditionalGaussian(Hodom, measurement_Uncertainty_Odom);
     odom_meas_model_ = new LinearAnalyticMeasurementModelGaussianUncertainty(odom_meas_pdf_);
     
@@ -198,13 +201,13 @@ namespace estimation
 	// convert absolute odom measurements to relative odom measurements in horizontal plane
 	Transform odom_rel_frame =  Transform(Quaternion(filter_estimate_old_vec_(6),0,0), 
 					      filter_estimate_old_.getOrigin()) * odom_meas_old_.inverse() * odom_meas_;
-	ColumnVector odom_rel(3);  double tmp;
-	decomposeTransform(odom_rel_frame, odom_rel(1), odom_rel(2), tmp, tmp, tmp, odom_rel(3));
-	angleOverflowCorrect(odom_rel(3), filter_estimate_old_vec_(6));
+	ColumnVector odom_rel(6); 
+	decomposeTransform(odom_rel_frame, odom_rel(1), odom_rel(2), odom_rel(3), odom_rel(4), odom_rel(5), odom_rel(6));
+	angleOverflowCorrect(odom_rel(6), filter_estimate_old_vec_(6));
 	// update filter
 	odom_meas_pdf_->AdditiveNoiseSigmaSet(odom_covariance_ * pow(dt,2));
 	filter_->Update(odom_meas_model_, odom_rel);
-	diagnostics_odom_rot_rel_ = odom_rel(3);
+	diagnostics_odom_rot_rel_ = odom_rel(6);
       }
       else{
 	odom_initialized_ = true;
@@ -307,7 +310,7 @@ namespace estimation
   void OdomEstimation::addMeasurement(const Stamped<Transform>& meas, const MatrixWrapper::SymmetricMatrix& covar)
   {
     transformer_.setTransform( meas );
-    if (meas.frame_id_ == "wheelodom") odom_covariance_ = covar;
+    if (meas.frame_id_ == "wheelodom") {}// @TODO remove this hack when sachin ports the pr2_odometry to publish a covariance. odom_covariance_ = covar;
     else if (meas.frame_id_ == "imu")  imu_covariance_  = covar;
     else if (meas.frame_id_ == "vo")   vo_covariance_   = covar;
     else ROS_ERROR("Adding a measurement for an unknown sensor %s", meas.frame_id_.c_str());
