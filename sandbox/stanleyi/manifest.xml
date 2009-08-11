@@ -14,6 +14,7 @@
   <depend package="rosrecord"/>
   <depend package="descriptors_2d"/>
   <depend package="descriptors_2d_gpl"/>
+  <depend package="tinyxml"/>
 
   <export>
     <cpp cflags="-I${prefix}" lflags="-L${prefix}/lib"/>

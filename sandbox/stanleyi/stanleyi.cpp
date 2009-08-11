@@ -49,6 +49,8 @@
 #include <vector>
 #include <string>
 #include <fstream>
+#include <tinyxml/tinyxml.h>
+
 
 #include <descriptors_2d/descriptors_2d.h>
 #include <descriptors_2d_gpl/descriptors_2d_gpl.h>
@@ -63,8 +65,10 @@ void releaseImageDescriptors(vector<ImageDescriptor*>* desc);
 template <class T> void copyMsg(string name, T* m, ros::Time t, ros::Time t_no_use, void* n);
 int getdir (string dir, vector<string> &files);
 IplImage* findLabelMask(double stamp, string results_dir);
-
-
+void findLabelPolys(double stamp, string results_dir, Vector< Vector<Point> >& polys, vector<int>& poly_labels);
+map<string, int> createLabelMap();
+void showLabelPolys(IplImage* img, const Vector< Vector<Point> >& polys);
+void createLabelMaps(map<string, int>* str2int, vector<string>* int2str);
   
 /***************************************************************************
 ***********  Stanleyi
@@ -79,6 +83,7 @@ public:
   void testContours(string bagfile, string label_dir);
   void sanityCheck(string bagfile, string results_dir);
   DorylusDataset* collectDataset(string bagfile, int samples_per_img, string results_dir);
+  DorylusDataset* collectDatasetXML(string bagfile, int samples_per_img, string results_dir);
   void viewLabels(string bagfile, string results_dir);
   void makeClassificationVideo(string bagfile, Dorylus& d, int samples_per_img, string results_dir);
 
@@ -92,12 +97,13 @@ private:
 
   void drawResponse(IplImage* img, float response, CvPoint pt);
   void collectObjectsFromImageVectorized(int samples_per_img, vector<object*>* objects, Vector<KeyPoint>* keypoints);
+  void collectObjectsFromImageVectorizedXML(int samples_per_img, const Vector< Vector<Point> >& polys, const vector<int>& poly_labels, vector<object*>* objects, Vector<KeyPoint>* keypoints);
 };
 
 Stanleyi::Stanleyi()
   : img_(NULL), mask_(NULL)
 {
-  lp_.addHandler<sensor_msgs::Image>(string("/forearm/image_rect_color"), &copyMsg<sensor_msgs::Image>, (void*)(&img_msg_));
+  lp_.addHandler<sensor_msgs::Image>(string("/narrow_stereo/left/image_rect_color"), &copyMsg<sensor_msgs::Image>, (void*)(&img_msg_));
   descriptor_ = setupImageDescriptors();
   if(getenv("DEBUG") != NULL) {
     for(size_t i=0; i<descriptor_.size(); i++) { 
@@ -154,6 +160,46 @@ DorylusDataset* Stanleyi::collectDataset(string bagfile, int samples_per_img, st
   return dd;
 }
 
+DorylusDataset* Stanleyi::collectDatasetXML(string bagfile, int samples_per_img, string results_dir) {
+  bool debug = false;
+  vector<object*> objs;
+
+  if(getenv("DEBUG") != NULL) {
+    cout << "Entering debug mode." << endl;
+    debug = true;
+  }
+
+  lp_.open(bagfile, ros::Time());
+
+  // -- Get data for all labeled images.
+  int frame_id = 0;
+  while(lp_.nextMsg()) {
+    frame_id++;
+    cout << frame_id << endl;
+
+    // -- Get the next img with a label mask.
+    if (!img_bridge_.fromImage(img_msg_, "bgr"))  {
+      ROS_ERROR("Could not convert message to ipl.");
+      continue;
+    }
+
+    img_ = img_bridge_.toIpl();
+    ROS_ASSERT(img_ != NULL);
+
+    Vector< Vector<Point> > polys;
+    vector<int> poly_labels;
+    findLabelPolys(img_msg_.header.stamp.toSec(), results_dir, polys, poly_labels);    
+    showLabelPolys(img_, polys);
+    
+    Vector<KeyPoint> keypoints;
+    collectObjectsFromImageVectorizedXML(samples_per_img, polys, poly_labels, &objs, &keypoints);
+  }
+
+  DorylusDataset* dd = new DorylusDataset();
+  dd->setObjs(objs);
+  return dd;
+}
+
 // TODO: Make this not copy data.  
 MatrixXf* cvVector2Eigen(const Vector<float>& v) {
   MatrixXf* m = new MatrixXf(v.size(), 1);
@@ -190,6 +236,73 @@ void Stanleyi::collectObjectsFromImageVectorized(int samples_per_img, vector<obj
     else
       labels[i] = -1;
       
+  }
+  
+  // -- Call all descriptors, get vectorized results.
+  for(size_t i=0; i<descriptor_.size(); i++) {
+    descriptor_[i]->compute(img_, desired, results[i]);
+  }
+
+  // -- Copy into objects.
+  for(int i=0; i<samples_per_img; i++)  {
+    object* obj = new object;
+    obj->label = labels[i];
+
+    // -- Only accept those that have all valid descriptors. 
+    bool success = true;
+    for(size_t j=0; j<descriptor_.size(); j++) {
+
+      if(results[j][i].empty()) {
+	success = false;
+	break;
+      }
+      obj->features[descriptor_[j]->getName()] = cvVector2Eigen(results[j][i]);
+    }
+    if(success) {
+      objects->push_back(obj);
+      keypoints->push_back(desired[i]);
+    }
+    else {
+      delete obj;
+    }
+  }
+}
+
+
+//! Appends to objects.  If an object is invalid, a NULL pointer is used so that keypoints[i] corresponds to objects[i].
+void Stanleyi::collectObjectsFromImageVectorizedXML(int samples_per_img, const Vector< Vector<Point> >& polys, const vector<int>& poly_labels, vector<object*>* objects, Vector<KeyPoint>* keypoints) {
+  assert(polys.size() == poly_labels.size());
+
+  vector<vvf> results(descriptor_.size());
+  Vector<KeyPoint> desired;
+
+  // -- Choose random locations and make keypoints.
+  keypoints->clear();
+  keypoints->reserve(samples_per_img);
+  desired.reserve(samples_per_img);
+  vector<int> labels(samples_per_img);
+  for(int i=0; i<samples_per_img; i++)  {
+    int r = rand() % img_->height;
+    int c = rand() % img_->width;
+    int size = 1;
+    desired.push_back(KeyPoint(c, r, size));
+
+    // -- Find the label.  (0 for bg).
+    for(size_t j=0; j<polys.size(); ++j) {
+      if(pointPolygonTest(polys[j], Point2f(c, r), 0) >= 0) {
+	labels[i] = poly_labels[j];
+      }
+    }
+
+    // -- Show the labels.
+    vector<string> label_int2str;
+    createLabelMaps(NULL, &label_int2str);
+    cout << "This point is labeled " << labels[i] << ", " << label_int2str[labels[i]] << endl;
+    IplImage* vis = cvCloneImage(img_);
+    cvLine(vis, cvPoint(c-10, r), cvPoint(c+10, r), cvScalar(0,0,255));
+    cvLine(vis, cvPoint(c, r-10), cvPoint(c, r+10), cvScalar(0,0,255));
+    CVSHOW("Label", vis);
+    cvWaitKey(0);
   }
   
   // -- Call all descriptors, get vectorized results.
@@ -604,6 +717,15 @@ int main(int argc, char** argv)
       dd->save(argv[4]);
       delete dd;
     }
+
+  else if(argc > 4 && !strcmp(argv[1], "--collectDatasetXML"))
+    {
+      cout << "Collecting a multiclass dataset for bag " << argv[2] << ", saving with name " << argv[4] << " using the label masks in " << argv[3] <<  endl;  
+      DorylusDataset* dd = s.collectDatasetXML(argv[2], samples_per_img, argv[3]);
+      cout << dd->status() << endl;
+      dd->save(argv[4]);
+      delete dd;
+    }
   
   else if(argc > 2 && !strcmp(argv[1], "--status")) {
     cout << "Examining " << argv[2] << endl;
@@ -675,6 +797,7 @@ int main(int argc, char** argv)
     cout << "usage: " << endl;
     cout << argv[0] << " --makeClassificationVideo CLASSIFIER BAGFILE [LABELS]" << endl;
     cout << argv[0] << " --collectDataset BAGFILE LABELS DATASET" << endl;
+    cout << argv[0] << " --collectDatasetXML BAGFILE LABELS DATASET" << endl;
     cout << argv[0] << " --collectAndTrain BAGFILE LABELS CLASSIFIER" << endl;
     cout << argv[0] << " --viewLabels BAGFILE LABELS" << endl;
     cout << argv[0] << " --status DATASET" << endl;
@@ -760,4 +883,129 @@ IplImage* findLabelMask(double stamp, string results_dir)
 	}
     }
   return mask;
+}
+
+void getContoursFromTinyXML(string filename, Vector< Vector<Point> >& contours, vector<int>& poly_labels) {
+
+  assert(poly_labels.empty());
+  assert(contours.empty());
+
+  map<string, int> label_str2int;
+  vector<string> label_int2str;
+  createLabelMaps(&label_str2int, &label_int2str);
+
+
+  // -- Setup XML.
+  TiXmlDocument XMLdoc(filename);
+  bool loadOkay = XMLdoc.LoadFile();
+  if (!loadOkay) {
+    cout << "Could not load " << filename << endl;
+    return;
+  } 
+
+  TiXmlElement *annotations, *annotation, *polygon, *results, *pt;
+  annotations = XMLdoc.FirstChildElement("annotations");
+  results = annotations->FirstChildElement("results");
+  annotation = results->FirstChildElement("annotation");
+  polygon = annotation->FirstChildElement("polygon");
+
+  // -- For each poly, get the label and the contour.
+  while(polygon) {
+    poly_labels.push_back(label_str2int[polygon->Attribute("name")]);
+    //cout << "polygon " << polygon->Attribute("name") << " " << polygon->Attribute("sqn") << endl;
+    pt = polygon->FirstChildElement("pt");
+    Vector<Point> contour;
+    while(pt) {
+      //cout << "pt " << pt->Attribute("x") << " " << pt->Attribute("y") << endl;
+      contour.push_back(Point(atoi(pt->Attribute("x")), atoi(pt->Attribute("y"))));
+      pt = pt->NextSiblingElement("pt");
+    }
+    contours.push_back(contour);
+    polygon = polygon->NextSiblingElement("polygon");
+  }
+}
+
+void findLabelPolys(double stamp, string results_dir, Vector< Vector<Point> >& polys, vector<int>& poly_labels) {
+  assert(polys.empty());
+  assert(poly_labels.empty());
+
+  vector<string> files;
+
+  string polys_dir = results_dir + "/annotations/";
+  char buf[100];
+  sprintf(buf, "%f", stamp); 
+  string sbuf(buf);
+  sbuf = sbuf.substr(0, sbuf.length()-1);   //Remove the last digit - it's been rounded.
+
+  getDir(polys_dir, files);
+  for(size_t i=0; i<files.size(); i++)
+    {
+      //cout << "searching for " << sbuf << " in " << files[i] << endl;
+      if(files[i].find(sbuf) != string::npos && 
+	 files[i].find(string(".xml")) != string::npos)
+	{
+	  cout << "Found polys for " << sbuf << ": " << files[i] << endl;
+	  getContoursFromTinyXML(results_dir + "/annotations/" + files[i], polys, poly_labels);
+	  break;
+	}
+    }
+  
+  if(polys.size() > 0) { 
+    cout << " Found " << polys.size() << " polygon labels in " << results_dir << endl;
+  }
+}
+
+void drawPointsInOrder(IplImage* img, const Vector<Point>& poly) {
+  IplImage* vis = cvCreateImage(cvGetSize(img), 8, 1);
+  for(size_t i=0; i<poly.size(); ++i) {
+    CV_IMAGE_ELEM(vis, uchar, poly[i].y, poly[i].x) = 255;
+    CVSHOW("points", vis);
+    cvWaitKey(0);
+  }
+  cvReleaseImage(&vis);
+}
+
+void showLabelPolys(IplImage* img, const Vector< Vector<Point> >& polys) {
+  CVSHOW("img", img);
+  for(size_t l=0; l<polys.size(); ++l) {
+
+    // -- Draw points in order.
+    //drawPointsInOrder(img, polys[l]);
+
+    IplImage* label = cvCreateImage(cvGetSize(img), 8, 1);
+    cout << "Showing polygon " << l << endl;
+    for(size_t p=0; p<polys[l].size(); ++p) {
+      cout << "x " << polys[l][p].x << " y " << polys[l][p].y << endl;
+    }
+
+    for(int x=0; x<img->width; ++x) {
+      for(int y=0; y<img->height; ++y) {
+	bool inside; 
+	inside = cv::pointPolygonTest(polys[l], Point2f(x, y), false) >= 0;
+	if(inside) 
+	  CV_IMAGE_ELEM(label, uchar, y, x) = 255;
+      }
+    }
+    CVSHOW("polygon", label);
+    cvWaitKey(0);
+    cvReleaseImage(&label);
+  }
+}
+
+void createLabelMaps(map<string, int>* str2int, vector<string>* int2str) {
+  if(str2int) {
+    map<string, int>& s2i = *str2int;
+    s2i["Unlabeled"] = 0;
+    s2i["Odwalla"] = 1;
+    s2i["Naked"] = 2;
+    s2i["Water"] = 3;
+  }
+
+  if(int2str) {
+    vector<string>& i2s = *int2str;
+    i2s.push_back("Unlabeled");
+    i2s.push_back("Odwalla");
+    i2s.push_back("Naked");
+    i2s.push_back("Water");
+  }
 }
