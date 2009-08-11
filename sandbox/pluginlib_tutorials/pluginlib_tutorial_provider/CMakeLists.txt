@@ -29,6 +29,6 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #rospack_add_executable(example examples/example.cpp)
 #target_link_libraries(example ${PROJECT_NAME})
 
-rospack_add_library(square square.cpp triangle.cpp manifest.cpp)
+rospack_add_library(square src/square.cpp src/triangle.cpp src/manifest.cpp)
 
-rospack_add_library(line line.cpp shape_manifest.cpp)
+rospack_add_library(line src/line.cpp src/shape_manifest.cpp)
