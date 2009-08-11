@@ -12,6 +12,93 @@ wiki, it should be transferred here once your package starts to take shape.
 You can then link to this documentation page from the Wiki. 
 -->
 
+\li RobotModel is a class containing robot model data structure.
+
+\li Below is an example Robot Description Describing a Parent Link "P", a Child Link "C", and a Joint "J"
+
+\li OLD URDF:
+ @verbatim
+  <link name="C">
+    <inertial>
+      <mass value="10"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <box size="1 1 1"/>
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <box size="1.01 1.01 1.01"/>
+      </geometry>
+    </collision>
+
+    <parent name="P"/>  <!-- name of the parent link. in new RobotModel, this is in <link><joint>, not here -->
+
+    <!-- <origin> is the transform from parent Link to this Joint in parent Link frame -->
+    <origin xyz="0 0 0" rpy="0 0 0"/> <!-- in new RobotModel, this is in <joint><parent>, not here -->
+
+    <joint name="J" type="revolute">
+      <!-- joint properties -->
+      <axis xyz="0 1 0"/>
+      <joint_properties damping="1" friction="0"/>
+      <limit min="0" max="1" effort="1000" velocity="1"/>
+
+      <!-- OPTIONAL: transform from this Joint in child Link frame to child Link (equivalent to <child> in new RobotModel) -->
+      <anchor xyz="0 0 0"/>
+    </joint>
+  </link>
+ @endverbatim
+\li NEW URDF XML that corresponds to the current RobotModel data structure:
+ @verbatim
+  <link name="C">
+    <joint name="J" type="revolute">
+      <!-- transform from link to joint frame -->
+      <!-- in old URDF, this is undefined and assumed to be identity transform -->
+      <origin xyz="0 0 0" rpy="0 0 0"/> 
+
+      <!-- joint properties -->
+      <axis xyz="0 1 0"/>  <!--in the joint frame-->
+      <joint_properties damping="1" friction="0"/>
+      <limit lower="0.9" upper="2.1" effort="1000" velocity="1"/>
+      <safety_controller soft_lower_limit="0.7" soft_upper_limit="2.1" k_position="1" k_velocity="1" />
+      <calibration reference_position="0.7" />
+      <parent name="P"/>  <!-- in old URDF, this is in <link> not in <joint> -->
+        <!-- <origin> is the transform from parent Link to this Joint in parent Link frame -->
+        <!-- in old URDF, this is in <link> not in <joint><parent> -->
+        <origin xyz="0 0 0" rpy="0 0 0"/> 
+      </parent>
+    </joint>
+
+    <inertial>
+      <mass value="10"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1"/>
+    </inertial>
+
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <box size="1 1 1"/>
+      </geometry>
+      <texture name="PR2/Green"/>
+    </visual>
+
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <box size="1.01 1.01 1.01"/>
+      </geometry>
+      <contact_coefficient mu="0"  resitution="0"  k_p="0"  k_d="0" />
+    </collision>
+  </link>
+ @endverbatim
+
+
 
 \section codeapi Code API
 
