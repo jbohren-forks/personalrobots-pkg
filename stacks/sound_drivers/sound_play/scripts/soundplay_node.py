@@ -88,7 +88,7 @@ class soundtype:
         if self.state != self.STOPPED:
             self.lock.acquire()
             try:
-                self.channels.fadeout(300)
+                self.chan.fadeout(300)
                 self.state = self.STOPPED
             finally:
                 self.lock.release()
@@ -103,7 +103,7 @@ class soundtype:
             if self.state == self.STOPPED:
                 self.chan = self.sound.play()
             else: # Already counting
-                self.channels.queue(self.sound) # This will only allow one extra one to be enqueued
+                self.chan.queue(self.sound) # This will only allow one extra one to be enqueued
 
             self.state = self.COUNTING
         finally:
@@ -118,7 +118,7 @@ class soundtype:
              self.loop()
 
     def get_staleness(self):
-        if self.channels.get_busy():
+        if self.chan.get_busy():
             self.staleness = 0
         else:
             self.staleness = self.staleness + 1
@@ -166,8 +166,8 @@ class soundplay:
                 else:
                     sound = self.builtinsounds[data.sound]
                 sound.command(data.command)
-        except:
-            rospy.logdebug('Exception in callback: %s'%(sys.exc_info()[0]))
+        except Exception, e:
+            rospy.logerr('Exception in callback: %s'%str(e))
         finally:
             self.mutex.release()
 
@@ -191,7 +191,7 @@ class soundplay:
         self.cleanupdict(self.voicesounds)
 
     def __init__(self):
-        rospy.init_node('soundplay')
+        rospy.init_node('sound_play', log_level = rospy.DEBUG)
 
         rootdir = os.path.join(os.path.dirname(__file__),'..','sounds')
         
@@ -208,8 +208,8 @@ class soundplay:
             self.filesounds = {}
             self.voicesounds = {}
             self.hotlist = []
-        except:
-            rospy.logfatal('Exception in sound startup: %s'%sys.exc_info()[0])
+        except Exception, e:
+            rospy.logfatal('Exception in sound startup: %s'%str(e))
 
         rospy.Subscriber("robotsound", SoundRequest, self.callback)
 
