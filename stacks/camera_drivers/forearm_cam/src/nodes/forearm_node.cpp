@@ -502,34 +502,34 @@ public:
   {
     if ( fcamReliableSensorWrite( &camera_, 0x7F, mode, NULL ) != 0) {
       status.summary(2, "Could not set imager into test mode.");
-      status.adds("Writing imager test mode", "Fail");
+      status.add("Writing imager test mode", "Fail");
       return 1;
     }
     else
     {
-      status.adds("Writing imager test mode", "Pass");
+      status.add("Writing imager test mode", "Pass");
     }
 
     usleep(100000);
     uint16_t inmode;
     if ( fcamReliableSensorRead( &camera_, 0x7F, &inmode, NULL ) != 0) {
       status.summary(2, "Could not read imager mode back.");
-      status.adds("Reading imager test mode", "Fail");
+      status.add("Reading imager test mode", "Fail");
       return 1;
     }
     else
     {
-      status.adds("Reading imager test mode", "Pass");
+      status.add("Reading imager test mode", "Pass");
     }
     
     if (inmode != mode) {
       status.summary(2, "Imager test mode read back did not match.");
-      status.addsf("Comparing read back value", "Fail (%04x != %04x)", inmode, mode);
+      status.addf("Comparing read back value", "Fail (%04x != %04x)", inmode, mode);
       return 1;
     }
     else
     {
-      status.adds("Comparing read back value", "Pass");
+      status.add("Comparing read back value", "Pass");
     }
     
     return 0;
@@ -627,35 +627,35 @@ end_image_thread:
       stat.summary(0, "Frames are streaming.");
     }
     
-    stat.addsf("Missing image line frames", "%d", missed_line_count_);
-    stat.addsf("Missing EOF frames", "%d", missed_eof_count_);
-    stat.addsf("Losses of image thread", "%d", lost_image_thread_count_);
-    stat.addsf("First packet offset", "%d", config_.first_packet_offset);
+    stat.addf("Missing image line frames", "%d", missed_line_count_);
+    stat.addf("Missing EOF frames", "%d", missed_eof_count_);
+    stat.addf("Losses of image thread", "%d", lost_image_thread_count_);
+    stat.addf("First packet offset", "%d", config_.first_packet_offset);
     if (isClosed())
     {
       static const std::string not_opened = "not_opened";
-      stat.adds("Camera Serial #", not_opened);
-      stat.adds("Camera Name", not_opened);
-      stat.adds("Camera Hardware", not_opened);
-      stat.adds("Camera MAC", not_opened);
-      stat.adds("Interface", not_opened);
-      stat.adds("Camera IP", not_opened);
+      stat.add("Camera Serial #", not_opened);
+      stat.add("Camera Name", not_opened);
+      stat.add("Camera Hardware", not_opened);
+      stat.add("Camera MAC", not_opened);
+      stat.add("Interface", not_opened);
+      stat.add("Camera IP", not_opened);
     }
     else
     {
-      stat.adds("Camera Serial #", camera_.serial);
-      stat.adds("Camera Name", camera_.cam_name);
-      stat.adds("Camera Hardware", hwinfo_);
-      stat.addsf("Camera MAC", "%02X:%02X:%02X:%02X:%02X:%02X", camera_.mac[0], camera_.mac[1], camera_.mac[2], camera_.mac[3], camera_.mac[4], camera_.mac[5]);
-      stat.adds("Interface", camera_.ifName);
-      stat.adds("Camera IP", camera_.ip_str);
+      stat.add("Camera Serial #", camera_.serial);
+      stat.add("Camera Name", camera_.cam_name);
+      stat.add("Camera Hardware", hwinfo_);
+      stat.addf("Camera MAC", "%02X:%02X:%02X:%02X:%02X:%02X", camera_.mac[0], camera_.mac[1], camera_.mac[2], camera_.mac[3], camera_.mac[4], camera_.mac[5]);
+      stat.add("Interface", camera_.ifName);
+      stat.add("Camera IP", camera_.ip_str);
     }
-    stat.adds("Image mode", config_.video_mode);
-    stat.addsf("Latest frame time", "%f", last_image_time_);
-    stat.adds("Latest frame #", last_frame_number_);
-    stat.addsf("Free-running frequency", "%f", imager_freq_);
-    stat.adds("External trigger controller", config_.trig_controller);
-    stat.adds("Trigger mode", config_.ext_trig ? "external" : "internal");
+    stat.add("Image mode", config_.video_mode);
+    stat.addf("Latest frame time", "%f", last_image_time_);
+    stat.add("Latest frame #", last_frame_number_);
+    stat.addf("Free-running frequency", "%f", imager_freq_);
+    stat.add("External trigger controller", config_.trig_controller);
+    stat.add("Trigger mode", config_.ext_trig ? "external" : "internal");
   }
 
   double getTriggeredFrameTime(double firstPacketTime)
@@ -1036,7 +1036,7 @@ private:
 
       int run(size_t width, size_t height, uint8_t *data, ros::Time stamp)
       {
-        status_.adds("Got a frame", "Pass");
+        status_.add("Got a frame", "Pass");
 
         for (size_t y = 0; y < height; y++)
           for (size_t x = 0; x < width; x++, data++)
@@ -1052,11 +1052,11 @@ private:
               continue;
 
             status_.summaryf(2, "Unexpected value in frame at x=%i y=%i expected=%i got=%i.", x, y, (int) expected, (int) *data);
-            status_.addsf("Frame content", "Fail: Unexpected value at (x=%i, y=%i, %hhi != %hhi)", x, y, expected, *data);
+            status_.addf("Frame content", "Fail: Unexpected value at (x=%i, y=%i, %hhi != %hhi)", x, y, expected, *data);
             return 1;
           }
 
-        status_.addsf("Frame content", "Pass");
+        status_.addf("Frame content", "Pass");
         return 1;
       }
 

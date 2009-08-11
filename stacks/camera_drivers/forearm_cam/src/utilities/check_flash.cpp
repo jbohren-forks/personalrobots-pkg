@@ -8,12 +8,12 @@
 
 int main(int argc, char** argv)
 {
-  if (argc != 2) {
+  if (argc != 2 || !strcmp(argv[1], "--help")) {
     fprintf(stderr, "Usage: %s <camera_url>\n", argv[0]);
     fprintf(stderr, "Writes a test sequence to unused portions of the flash to check for\n");
     fprintf(stderr, "proper operation. It is very improbable that you need this tool in\n");
     fprintf(stderr, "normal use of the camera.\n");
-    return 0;
+    return -1;
   }
   char* camera_url = argv[1];
 

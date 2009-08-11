@@ -118,7 +118,7 @@ int write_name(IpCamList *camera, char *name, char *new_ip)
 
 int main(int argc, char **argv)
 {
-  if (argc != 4 && argc != 2) {
+  if (argc != 4 && argc != 2 || strcmp(argv[1], "--help")) {
     fprintf(stderr, "Usage: %s <camera_url> <new_name> <new_default_ip>   # Sets the camera name and default IP\n", argv[0]);
     fprintf(stderr, "       %s <camera_url>                               # Reads the camera name and default IP\n", argv[0]);
     fprintf(stderr, "\nReads or writes the camera name and default IP address stored on the camera's flash.\n");

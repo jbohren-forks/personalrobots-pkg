@@ -7,7 +7,7 @@
 
 int main(int argc, char** argv)
 {
-  if (argc != 2) {
+  if (argc != 2 || !strcmp(argv[1], "--help")) {
     fprintf(stderr, "Usage: %s <camera URL>\n", argv[0]);
     fprintf(stderr, "Sends the camera a PacketReconfigureFPGA packet.\n");
     fprintf(stderr, "Note: Currently reconfigure_cam and reset_cam have the same effect.\n");

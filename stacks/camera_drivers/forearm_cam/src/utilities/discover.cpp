@@ -96,6 +96,8 @@ int discover(const std::string &if_name, bool verbose, bool report_rp_filter)
 
 int main(int argc, char **argv)
 {
+  if (argc > 1 && !strcmp(argv[1], "--help"))
+  {} // We want usage.
   if (argc == 2)
     return discover(argv[1], true, true);
   else if (argc == 1)

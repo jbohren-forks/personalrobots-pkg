@@ -48,8 +48,12 @@ int main(int argc, char** argv)
 
   char **nextarg = argv + 1;
   char **endarg = argv;
-  while (*endarg)
-    endarg++;
+  while (*endarg++)
+    if (!strcmp(*endarg, "--help"))
+    {
+      usage(argc, argv);
+      return 0;
+    }
 
   // Get the URL
   if (nextarg == endarg) // No arguments

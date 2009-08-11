@@ -7,7 +7,7 @@
 
 int main(int argc, char** argv)
 {
-  if (argc != 2) {
+  if (argc != 2 || !strcmp(argv[1], "--help")) {
     fprintf(stderr, "Usage: %s <camera_url> > dump.bin\n", argv[0]);
     return 0;
   }
