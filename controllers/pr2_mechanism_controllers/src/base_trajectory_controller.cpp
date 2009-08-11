@@ -36,7 +36,7 @@
 *********************************************************************/
 #include <pr2_mechanism_controllers/base_trajectory_controller.h>
 #include <diagnostic_msgs/DiagnosticArray.h>
-#include <diagnostic_msgs/DiagnosticStatus.h>
+#include <diagnostic_updater/DiagnosticStatusWrapper.h>
 #include <ros/rate.h>
 
 #include "ros/node.h" //\todo Switch to node handles in ros.h
@@ -281,66 +281,23 @@ namespace pr2_mechanism_controllers
 
     diagnostic_msgs::DiagnosticArray message;
     std::vector<diagnostic_msgs::DiagnosticStatus> statuses;
-    std::vector<diagnostic_msgs::KeyValue> values;
-
-    diagnostic_msgs::DiagnosticStatus status;
-    diagnostic_msgs::KeyValue v;
+    diagnostic_updater::DiagnosticStatusWrapper status;
     status.name = ros_node_.getName();
-    status.message = control_state_;
+    status.summary(0, control_state_);
 
-    v.key = "Error.x";
-    v.value = error_x_;
-    values.push_back(v);
-
-    v.key = "Error.y";
-    v.value = error_y_;
-    values.push_back(v);
-
-    v.key = "Error.th";
-    v.value = error_th_;
-    values.push_back(v);
-
-    v.key = "Goal.x";
-    v.value = goal_.q_[0];
-    values.push_back(v);
-
-    v.key = "Goal.y";
-    v.value = goal_.q_[1];
-    values.push_back(v);
-
-    v.key = "Goal.th";
-    v.value = goal_.q_[2];
-    values.push_back(v);
-
-    v.key = "Number of waypoints";
-    v.value = path_msg_.get_points_size();
-    values.push_back(v);
-
-    v.key = "Controller frequency (Hz)";
-    v.value = controller_frequency_;
-    values.push_back(v);
-
-    v.key = "Max update delta time (s)";
-    v.value = max_update_time_;
-    values.push_back(v);
-
-    v.key = "Control topic name";
-    v.value = control_topic_name_;
-    values.push_back(v);
-
-    v.key = "Global frame";
-    v.value = global_frame_;
-    values.push_back(v);
-    
-    v.key = "Path input topic name";
-    v.value = path_input_topic_name_;
-    values.push_back(v);
-
-    v.key = "Trajectory type";
-    v.value = trajectory_type_;
-    values.push_back(v);
-
-    status.set_values_vec(values);
+    status.add("Error.x", error_x_);
+    status.add("Error.y", error_y_);
+    status.add("Error.th", error_th_);
+    status.add("Goal.x", goal_.q_[0]);
+    status.add("Goal.y", goal_.q_[1]);
+    status.add("Goal.th", goal_.q_[2]);
+    status.add("Number of waypoints", path_msg_.get_points_size());
+    status.add("Controller frequency (Hz)", controller_frequency_);
+    status.add("Max update delta time (s)", max_update_time_);
+    status.add("Control topic name", control_topic_name_);
+    status.add("Global frame", global_frame_);
+    status.add("Path input topic name", path_input_topic_name_);
+    status.add("Trajectory type", trajectory_type_);
 
     statuses.push_back(status);
 

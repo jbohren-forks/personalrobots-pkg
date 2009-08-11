@@ -36,6 +36,7 @@
 
 #include "pr2_mechanism_controllers/arm_trajectory_controller.h"
 #include "angles/angles.h"
+#include <diagnostic_updater/DiagnosticStatusWrapper.h>
 
 using namespace controller;
 using namespace std;
@@ -690,72 +691,54 @@ void ArmTrajectoryControllerNode::publishDiagnostics()
     cmd.set_velocity_size(1);
 
     vector<diagnostic_msgs::DiagnosticStatus> statuses;
-    vector<diagnostic_msgs::KeyValue> values;
-    diagnostic_msgs::DiagnosticStatus status;
-    diagnostic_msgs::KeyValue v;
+    diagnostic_updater::DiagnosticStatusWrapper status;
 
     status.name = service_prefix_;
-    status.level = 0;
-    status.message = "OK";
+    status.summary(0, "OK");
 
 //    ROS_INFO("Diagnostics 1");
 
     for(unsigned int i=0; i < c_->joint_pd_controllers_.size(); i++)
     {
-      v.key = c_->joint_pd_controllers_[i]->getJointName() + "/Position/Actual";
-      v.value = c_->joint_pd_controllers_[i]->joint_state_->position_;
-      values.push_back(v);
+      status.add(c_->joint_pd_controllers_[i]->getJointName() + "/Position/Actual",
+          c_->joint_pd_controllers_[i]->joint_state_->position_);
 
 //      ROS_INFO("Diagnostics %d: 1",i);
 
-      v.key = c_->joint_pd_controllers_[i]->getJointName() + "/Position/Command";
       c_->joint_pd_controllers_[i]->getCommand(cmd);
-      v.value = cmd.positions[0];
-      values.push_back(v);
+      status.add(c_->joint_pd_controllers_[i]->getJointName() + "/Position/Command",
+          cmd.positions[0]);
 
-      v.key = c_->joint_pd_controllers_[i]->getJointName() + "/Position/Error (Command-Actual)";
-      v.value = cmd.positions[0] - c_->joint_pd_controllers_[i]->joint_state_->position_;
-      values.push_back(v);
+      status.add(c_->joint_pd_controllers_[i]->getJointName() + "/Position/Error (Command-Actual)", 
+      cmd.positions[0] - c_->joint_pd_controllers_[i]->joint_state_->position_);
 
 //      ROS_INFO("Diagnostics %d: 2",i);
 
     }
 
-    v.key = "Trajectory id";
-    v.value = current_trajectory_id_;
-    values.push_back(v);
+    status.add("Trajectory id", current_trajectory_id_);
 
 //    ROS_INFO("Diagnostics 2");
 
-    v.key = "Trajectory Status:: ";
+    std::string key = "Trajectory Status:: ";
     std::map<int, int>::const_iterator it = joint_trajectory_status_.find((int)current_trajectory_id_);
     if(it == joint_trajectory_status_.end())
-    {
-      v.key += "UNKNOWN";
-      v.value = -1;
-    }
+      status.add(key + "UNKNOWN", -1);
     else
-    {
-      v.key += JointTrajectoryStatusString[it->second];
-      v.value = it->second;
-    }
-    values.push_back(v);
+      status.add(key + JointTrajectoryStatusString[it->second], it->second);
 
 //    ROS_INFO("Diagnostics 3");
 
-    v.key = "Trajectory Current Time";
-    v.value = c_->current_time_-c_->trajectory_start_time_;
-    values.push_back(v);
+    status.add("Trajectory Current Time", 
+        c_->current_time_-c_->trajectory_start_time_);
 
 //    ROS_INFO("Diagnostics 4");
 
-    v.key = "Trajectory Expected End Time (computed)";
-    v.value = c_->trajectory_end_time_-c_->trajectory_start_time_;
-    values.push_back(v);
+    status.add("Trajectory Expected End Time (computed)", 
+        c_->trajectory_end_time_-c_->trajectory_start_time_);
 
 //    ROS_INFO("Diagnostics 5");
 
-    status.set_values_vec(values);
     statuses.push_back(status);
     diagnostics_publisher_->msg_.set_status_vec(statuses);
 //    ROS_INFO("Set diagnostics info");
