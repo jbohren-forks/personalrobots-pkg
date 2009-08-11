@@ -1,5 +1,5 @@
-<stack name="visualization_core" version="0.1">
-  <description brief="Visualization Core">
+<stack name="visualization_common" version="0.1">
+  <description brief="Visualization Common">
     Tools used for visualization
   </description>
   <author>Josh Faust jfaust@willowgarage.com</author>
