@@ -32,6 +32,8 @@
 namespace node_sequencer
 {
 
+using std_msgs::String;
+
 void waitFor (const string& name, const string& ns)
 {
   impl::Waiter(name, ns).wait();

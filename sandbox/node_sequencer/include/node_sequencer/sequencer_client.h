@@ -34,20 +34,22 @@
 #include <ros/ros.h>
 #include <std_msgs/String.h>
 
+namespace node_sequencer 
+{
+
 using namespace std;
 using std_msgs::String;
 
-namespace node_sequencer 
-{
+
 
 /************************************************************
  * External API
  ************************************************************/
 
-/// Postcondition: the preconditions of event \a name for sequencer \a ns are met
+/// \post The preconditions of event \a name for sequencer \a ns are met
 void waitFor (const string& name, const string& ns);
 
-/// Postcondition: a message has been sent to the sequencer \a ns that event \a name has completed
+/// \post A message has been sent to the sequencer \a ns that event \a name has completed
 void notify (const string& name, const string& ns);
   
 
