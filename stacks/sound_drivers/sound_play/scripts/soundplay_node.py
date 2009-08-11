@@ -45,7 +45,6 @@ import os
 import logging
 import sys
 
-logger = logging.getLogger('rospy.soundplay_node')
 try:
     import pygame.mixer as mixer
 except:
@@ -54,7 +53,7 @@ except:
 Error opening pygame.mixer. Is pygame installed? (sudo apt-get install python-pygame)
 **************************************************************
 """
-    logger.fatal(str)
+    rospy.logfatal(str)
     print str
 
 
@@ -145,9 +144,9 @@ class soundplay:
                 if data.sound == SoundRequest.PLAY_FILE:
                     if not data.arg in self.filesounds.keys():
                         self.filesounds[data.arg] = soundtype(data.arg)
-                        logger.debug('command for  uncached wave: "%s"'%data.arg)
+                        rospy.logdebug('command for  uncached wave: "%s"'%data.arg)
                     else:
-                        logger.debug('command for cached wave: "%s"'%data.arg)
+                        rospy.logdebug('command for cached wave: "%s"'%data.arg)
                     sound = self.filesounds[data.arg]
                 elif data.sound == SoundRequest.SAY:
                     if not data.arg in self.voicesounds.keys():
@@ -160,15 +159,15 @@ class soundplay:
                             f.close()
                         os.system('text2wave '+txtfilename+' -o '+wavfilename)
                         self.voicesounds[data.arg] = soundtype(wavfilename)
-                        logger.debug('command for uncached text: "%s"'%data.arg)
+                        rospy.logdebug('command for uncached text: "%s"'%data.arg)
                     else:
-                        logger.debug('command for cached text: "%s"'%data.arg)
+                        rospy.logdebug('command for cached text: "%s"'%data.arg)
                     sound = self.voicesounds[data.arg]
                 else:
                     sound = self.builtinsounds[data.sound]
                 sound.command(data.command)
         except:
-            logger.debug('Exception in callback: %s'%(sys.exc_info()[0]))
+            rospy.logdebug('Exception in callback: %s'%(sys.exc_info()[0]))
         finally:
             self.mutex.release()
 
@@ -197,7 +196,6 @@ class soundplay:
         rootdir = os.path.join(os.path.dirname(__file__),'..','sounds')
         
         self.mutex = threading.Lock()
-        logger.info('Starting soundplay_node')
         try:
             mixer.init(11025, -16, 1, 4000)
             self.builtinsounds = {
@@ -211,9 +209,11 @@ class soundplay:
             self.voicesounds = {}
             self.hotlist = []
         except:
-            logger.fatal('Exception in sound startup: %s'%sys.exc_info()[0])
+            rospy.logfatal('Exception in sound startup: %s'%sys.exc_info()[0])
 
         rospy.Subscriber("robotsound", SoundRequest, self.callback)
+
+        rospy.loginfo('sound_play node is ready to play sound')
 
         while not rospy.is_shutdown():
             rospy.sleep(1)   
@@ -221,7 +221,7 @@ class soundplay:
             try:
                 self.cleanup()
             except:
-                logger.debug('Exception in cleanup: %s'%sys.exc_info()[0])
+                rospy.logdebug('Exception in cleanup: %s'%sys.exc_info()[0])
 
             self.mutex.release()
 
