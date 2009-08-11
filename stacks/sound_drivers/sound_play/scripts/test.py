@@ -42,6 +42,12 @@ from sound_play.msg import SoundRequest
 
 from sound_play.libsoundplay import SoundHandle
 
+def sleep(t):
+    try:
+        rospy.sleep(t)
+    except:
+        pass
+
 if __name__ == '__main__':
     rospy.init_node('soundplay_test', anonymous = True)
     soundhandle = SoundHandle()
@@ -50,46 +56,50 @@ if __name__ == '__main__':
     
     soundhandle.stopall()
 
+    print "This script will run continuously until you hit CTRL+C, testing various sound_node sound types."
+
     while not rospy.is_shutdown():
+        print
+        print 'Try to play wave files that do not exist.'
         soundhandle.playwave('17')
         soundhandle.playwave('dummy')
         
         print 'say'
         soundhandle.say('Hello world!')
-        rospy.sleep(3)
+        sleep(3)
         
-        print 'wave'
+        print 'wave (assumes you have some xemacs21 sounds present)'
         soundhandle.playwave('/usr/share/xemacs21/xemacs-packages/etc/sounds/cuckoo.wav')
 
-        rospy.sleep(3)
+        sleep(3)
         
-        print 'wave2'
+        print 'wave2 (assumes you have some xemacs21 sounds present)'
         soundhandle.playwave('/usr/share/xemacs21/xemacs-packages/etc/sounds/say-beep.wav')
 
-        rospy.sleep(3)
+        sleep(3)
 
         print 'plugging'
         soundhandle.play(SoundRequest.NEEDS_PLUGGING)
         soundhandle.play(SoundRequest.NEEDS_PLUGGING)
 
-        rospy.sleep(2)
+        sleep(2)
 
         #start(SoundRequest.BACKINGUP)
 
-        rospy.sleep(1)
+        sleep(1)
 
         print 'unplugging'
         soundhandle.play(SoundRequest.NEEDS_UNPLUGGING)
 
-        rospy.sleep(1)
+        sleep(1)
         print 'plugging badly'
         soundhandle.play(SoundRequest.NEEDS_PLUGGING_BADLY)
-        rospy.sleep(1)
+        sleep(1)
         #stop(SoundRequest.BACKINGUP)
 
-        rospy.sleep(2)
+        sleep(2)
         print 'unplugging badly'
         soundhandle.play(SoundRequest.NEEDS_UNPLUGGING_BADLY)
 
-        rospy.sleep(3)
+        sleep(3)
         

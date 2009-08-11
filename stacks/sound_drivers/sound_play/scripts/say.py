@@ -36,27 +36,38 @@
 
 # Author: Blaise Gassend
 
-import roslib; roslib.load_manifest('sound_play')
-
-import rospy
-from sound_play.msg import SoundRequest
 
 import sys
 
-from sound_play.libsoundplay import SoundHandle
-
 if __name__ == '__main__':
+    if len(sys.argv) > 1 and sys.argv[1] == '--help':
+        print 'Usage: %s \'String to say.\''%sys.argv[0]
+        print '       %s < file_to_say.txt'%sys.argv[0]
+        print
+        print 'Says a string. For a string on the command line, you must use quotes as apropriate.'
+        print 'For a string on standard input, the command will wait for EOF before saying anything.'
+        exit(-1)
+
+    # Import after printing usage for speed.
+    import roslib; roslib.load_manifest('sound_play')
+    import rospy
+    from sound_play.msg import SoundRequest
+    from sound_play.libsoundplay import SoundHandle
+    
+    if len(sys.argv) == 1:
+        print 'Awaiting something to say on standard input.'
+    
+    # Ordered this way to minimize wait time.
     rospy.init_node('say', anonymous = True)
-    
     soundhandle = SoundHandle()
-    
     rospy.sleep(1)
     
-    s=sys.argv[1]
-    for word in sys.argv[2:]:
-        s=s+' '+word
-    print 'Saying "%s".'%s
-
+    if len(sys.argv) == 1:
+        s = sys.stdin.read()
+    else:
+        s = " ".join(sys.argv[1:])
+    
+    print 'Saying: %s.'%s
+    
     soundhandle.say(s)
-
     rospy.sleep(1)

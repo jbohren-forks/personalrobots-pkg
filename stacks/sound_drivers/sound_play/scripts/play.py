@@ -36,24 +36,26 @@
 
 # Author: Blaise Gassend
 
-import roslib; roslib.load_manifest('sound_play')
-
-import rospy
-from sound_play.msg import SoundRequest
 
 import sys
 
-from sound_play.libsoundplay import SoundHandle
-
 if __name__ == '__main__':
-    rospy.init_node('play', anonymous = True)
+    if len(sys.argv) != 2 or sys.argv[1] == '--help':
+        print 'Usage: %s sound_to_play.(ogg|wav)'%sys.argv[0]
+        print
+        print 'Plays a .OGG or .WAV file. The path to the file should be absolute, and be valid on the computer on which sound_play is running.'
+        exit(1)
     
+    # Import after printing usage for speed.
+    import roslib; roslib.load_manifest('sound_play')
+    import rospy
+    from sound_play.msg import SoundRequest
+    from sound_play.libsoundplay import SoundHandle
+
+    rospy.init_node('play', anonymous = True)
     soundhandle = SoundHandle()
     
     rospy.sleep(1)
-    
     print 'Playing "%s".'%sys.argv[1]
-
     soundhandle.playwave(sys.argv[1])
-
     rospy.sleep(1)

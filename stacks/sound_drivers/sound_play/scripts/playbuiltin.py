@@ -36,16 +36,21 @@
 
 # Author: Blaise Gassend
 
-import roslib; roslib.load_manifest('sound_play')
-
-import rospy
-from sound_play.msg import SoundRequest
-
 import sys
 
-from sound_play.libsoundplay import SoundHandle
-
 if __name__ == '__main__':
+    if len(sys.argv) != 2 or sys.argv[1] == '--help':
+        print 'Usage: %s <sound_id>'%sys.argv[0]
+        print
+        print 'Plays one of the built-in sounds based on its integer ID. Look at the sound_play/SoundRequest message definition for IDs.'
+        exit(1)
+
+    # Import here so that usage is fast.
+    import roslib; roslib.load_manifest('sound_play')
+    import rospy
+    from sound_play.msg import SoundRequest
+    from sound_play.libsoundplay import SoundHandle
+    
     rospy.init_node('play', anonymous = True)
     
     soundhandle = SoundHandle()
