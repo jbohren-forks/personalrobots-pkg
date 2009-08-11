@@ -134,9 +134,7 @@ namespace pluginlib {
     ROS_DEBUG("Loading library %s", library_path.c_str());
     try
     {
-      loadPluginLibrary(library_path);
-      //poco_assert (poco_class_loader_.isLibraryLoaded(library_path));
-      //zpoco_check_ptr (poco_class_loader_.findManifest(library_path)); 
+      loadPluginLibraryInternal(library_path);
     }
     catch (Poco::LibraryLoadException &ex)
     {
@@ -243,9 +241,8 @@ namespace pluginlib {
         throw std::runtime_error("Failed to auto load library for plugin " + name + ".");
       }
 
-    //\todo rethrow with non poco Exceptions
     try{
-    return poco_class_loader_.create(getPluginClass(name));
+      return poco_class_loader_.create(getPluginClass(name));
     }
     catch(const Poco::RuntimeException& ex){
       throw std::runtime_error(ex.what());
@@ -253,24 +250,42 @@ namespace pluginlib {
   } 
 
   template <class T>
-  void PluginLoader<T>::unloadPluginLibrary(const std::string& library_path)
+  bool PluginLoader<T>::unloadPluginLibrary(const std::string& library_path)
   {
     LibraryCountMap::iterator it = loaded_libraries_.find(library_path);
     if (it == loaded_libraries_.end())
     {
-      ROS_ERROR("unable to unload library which is not loaded");
-      return;
+      ROS_DEBUG("unable to unload library which is not loaded");
+      return false;
     }
     else if (it-> second > 1)
       (it->second)--;
     else 
       poco_class_loader_.unloadLibrary(library_path);
 
+    return true;
+
   }
 
   template <class T>
-  void PluginLoader<T>::loadPluginLibrary(const std::string& library_path)
-  {
+  bool PluginLoader<T>::loadPluginLibrary(const std::string& library_path){
+    try
+    {
+      loadPluginLibraryInternal(library_path);
+    }
+    catch (Poco::LibraryLoadException &ex)
+    {
+      return false;
+    }
+    catch (Poco::NotFoundException &ex)
+    {
+      return false;
+    }
+    return true;
+  }
+
+  template <class T>
+  void PluginLoader<T>::loadPluginLibraryInternal(const std::string& library_path) {
     poco_class_loader_.loadLibrary(library_path);
     LibraryCountMap::iterator it = loaded_libraries_.find(library_path);
     if (it == loaded_libraries_.end())

@@ -31,6 +31,8 @@
 
 #include "ros/console.h"
 
+#include "pluginlib/plugin.h"
+
 #include "Poco/ClassLoader.h"
 #include "ros/package.h"
 #include "tinyxml/tinyxml.h"
@@ -46,69 +48,130 @@ namespace fs = boost::filesystem;
 namespace pluginlib
 {
 
+  /**
+   * @class PluginLoader
+   * @brief A class to help manage and load plugins
+   */
   template <class T>
     class PluginLoader 
     {
       private:
         typedef std::map<std::string, unsigned int> LibraryCountMap;
 
-
-        class Plugin
-        {
-          public:
-            Plugin(const std::string& name, const std::string& class_name, const std::string& type, const std::string& package, 
-                const std::string& description, const std::string& library_path):
-              name_(name), 
-              class_name_(class_name),
-              type_(type),
-              package_(package),
-              description_(description), 
-              library_path_ (library_path){};
-            std::string name_;
-            std::string class_name_;
-            std::string type_;
-            std::string package_;
-            std::string description_;
-            std::string library_path_;
-
-        };
-
+      public:
         typedef typename std::map<std::string, Plugin>::iterator PluginMapIterator;
 
       public:
-
+        /**
+         * @brief  Constructor for a PluginLoader
+         * @param package The package containing the base class for the plugins 
+         * @param plugin_type The type or base class of the plugins to be loaded
+         */
         PluginLoader(std::string package, std::string plugin_type);
 
+        /**
+         * @brief  Attempts to load a plugin with a given name
+         * @param plugin_name The name of the plugin to load
+         * @return True if the plugin and its associated library were successfully loaded, false otherwise
+         */
         bool loadPlugin(const std::string & plugin_name);
 
+        /**
+         * @brief  Destructor for PluginLoader 
+         */
         ~PluginLoader();
 
 
+        /**
+         * @brief Checks if a given plugin is currently loaded
+         * @param  name The name of the plugin to query
+         * @return True if the plugin is loaded, false otherwise
+         */
         bool isPluginLoaded(const std::string& name);
 
+        /**
+         * @brief  Returns a list of all available plugins for this PluginLoader's plugin type
+         * @return A vector of strings corresponding to the names of all available plugins
+         */
         std::vector<std::string> getDeclaredPlugins();
 
+        /**
+         * @brief  Given the name of a plugin, returns the name of the derived class associated with it
+         * @param plugin_name The name of the plugin 
+         * @return The name of the associated derived class
+         */
         std::string getPluginClass(const std::string& plugin_name);
 
+        /**
+         * @brief  Given the name of a plugin, returns its description
+         * @param plugin_name The name of the plugin 
+         * @return The description of the plugin
+         */
         std::string getPluginDescription(const std::string& plugin_name);
 
+        /**
+         * @brief  Given the name of a plugin, returns the name of the base class or type associated with it
+         * @param plugin_name The name of the plugin 
+         * @return The name of the associated base class or type
+         */
         std::string getPluginType(const std::string& plugin_name);
 
+        /**
+         * @brief  Given the name of a plugin, returns the path to its associated library
+         * @param plugin_name The name of the plugin 
+         * @return The path to the associated library
+         */
         std::string getPluginLibraryPath(const std::string& plugin_name);
 
+        /**
+         * @brief  Given the name of a plugin, returns name of the containing package
+         * @param plugin_name The name of the plugin 
+         * @return The name of the containing package
+         */
         std::string getPluginPackage(const std::string& plugin_name);
 
+        /**
+         * @brief  Creates an instance of a desired plugin, optionally loading the associated library automatically if necessary
+         * @param  name The name of the plugin to load
+         * @param  auto_load_plugin Specifies whether or not to automatically load the library containing the plugin, set to true by default
+         * @exception std::runtime_error Thrown when the library cannot be loaded or the plugin cannot be instantiated 
+         * @return An instance of the plugin
+         */
         T* createPluginInstance(const std::string& name, bool auto_load_plugin = true);
 
-        void unloadPluginLibrary(const std::string& library_path);
+        /**
+         * @brief  Unloads a previously dynamically loaded lobrary
+         * @param library_path The library to unload
+         * @return True if the library was successfully unloaded, false otherwise
+         */
+        bool unloadPluginLibrary(const std::string& library_path);
 
-        void loadPluginLibrary(const std::string& library_path);
+        /**
+         * @brief  Dynamicaly loads a library
+         * @param library_path The library to unload
+         * @return True if the library was successfully loaded, false otherwise
+         */
+        bool loadPluginLibrary(const std::string& library_path);
 
+        /**
+         * @brief  Returns the names of the plugins that are available in a given library
+         * @param  library_path The path to the library
+         * @return A vector of strings corresponding to the names of the plugins in the library
+         */
         std::vector<std::string> getPluginsInLibrary(const std::string & library_path);
 
+        /**
+         * @brief  Returns the libraries that are currently loaded
+         * @return A vector of strings corresponding to the names of loaded libraries
+         */
         std::vector<std::string> getLoadedLibraries();
 
       private:
+        /**
+         * @brief  Helper function for loading a shared library
+         * @param  library_path the path to the library to load
+         */
+        void loadPluginLibraryInternal(const std::string& library_path);
 
         //used for proper unloading of automatically loaded libraries
         LibraryCountMap loaded_libraries_;
