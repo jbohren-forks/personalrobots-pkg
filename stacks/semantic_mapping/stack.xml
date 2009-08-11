@@ -1,4 +1,4 @@
-<stack name="mapping" version="0.1">
+<stack name="semantic_mapping" version="0.1">
   <description brief="laser-based sensing packages from ros-pkg">
     These are packages that primarily process laser / range data.
   </description>
