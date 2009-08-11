@@ -17,7 +17,7 @@
   <depend stack="camera_drivers"/> <!-- prosilica_cam --> 
   <depend stack="common"/> <!-- filters, tinyxml, filters, manipulation_srvs, manipulation_msgs --> 
   <depend stack="ros"/> <!-- rosconsole, rospy, std_msgs, std_msgs, roscpp, rosrecord, rosoct,--> 
-  <depend stack="visualization_core"/> <!-- visualization_msgs --> 
+  <depend stack="visualization_common"/> <!-- visualization_msgs --> 
   <depend stack="vision"/> <!-- cv_mech_turk --> 
   <depend stack="common_msgs"/> <!-- sensor_msgs, geometry_msgs --> 
 
