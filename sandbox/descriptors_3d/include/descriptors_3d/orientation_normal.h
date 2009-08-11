@@ -53,19 +53,26 @@
  *        the local direction.
  */
 // --------------------------------------------------------------
+
+// --------------------------------------------------------------
+/*!
+ * \brief An OrientationNormal descriptor uses extracted local
+ *        normals around each interest point/region to use as the
+ *        local directions.
+ *
+ * \warning This descriptor ignores the sign of the extracted normal and
+ *          the computed feature is always between 0 and 1
+ *
+ * TODO: use sensor location so the extracted directions have meaningful signs
+ */
+// --------------------------------------------------------------
 class OrientationNormal: public OrientationGeneric
 {
   public:
     // --------------------------------------------------------------
     /*!
-     * \brief An OrientationNormal descriptor uses extracted local
-     *        normals around each interest point/region to use as the
-     *        local directions.
-     *
-     * \warning This descriptor ignores the sign of the extracted normal and
-     *          the computed feature is always between 0 and 1
-     *
-     * TODO: use sensor location so the extracted directions have meaningful signs
+     * \brief Instantiates the orientation descriptor with given
+     *        reference direction information and spectral information
      *
      * \param ref_x The x dimension of the reference direction
      * \param ref_y The y dimension of the reference direction

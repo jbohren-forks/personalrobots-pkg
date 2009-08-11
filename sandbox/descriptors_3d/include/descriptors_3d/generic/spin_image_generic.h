@@ -55,17 +55,23 @@
  *        Recognition in Cluttered 3-D Scenes", PAMI 1999.
  */
 // --------------------------------------------------------------
+
+// --------------------------------------------------------------
+/*!
+ * \brief SpinImageGeneric is the base class for descriptors that
+ *        compute spin images as described in: \n
+ *        Johnson and Hebert, "Using Spin-Images for Efficient Object
+ *        Recognition in Cluttered 3-D Scenes", PAMI 1999.
+ *
+ * See the inheriting class' descriptions
+ */
+// --------------------------------------------------------------
 class SpinImageGeneric: public NeighborhoodFeature
 {
   public:
     // --------------------------------------------------------------
     /*!
-     * \brief SpinImageGeneric is the base class for descriptors that
-     *        compute spin images as described in: \n
-     *        Johnson and Hebert, "Using Spin-Images for Efficient Object
-     *        Recognition in Cluttered 3-D Scenes", PAMI 1999.
-     *
-     * See the inheriting class' description
+     * \brief Abstract constructor
      */
     // --------------------------------------------------------------
     SpinImageGeneric();
@@ -84,10 +90,11 @@ class SpinImageGeneric: public NeighborhoodFeature
      * \param result The vector to hold the resulting spin image feature vector
      */
     // --------------------------------------------------------------
-    virtual void computeNeighborhoodFeature(const sensor_msgs::PointCloud& data,
-                                            const std::vector<int>& neighbor_indices,
-                                            const unsigned int interest_sample_idx,
-                                            cv::Vector<float>& result) const;
+    virtual void
+    computeNeighborhoodFeature(const sensor_msgs::PointCloud& data,
+                               const std::vector<int>& neighbor_indices,
+                               const unsigned int interest_sample_idx,
+                               cv::Vector<float>& result) const;
 
     /*! \brief The spinning (beta) axis for each interest point/region */
     const std::vector<const Eigen::Vector3d*>* spin_axes_;

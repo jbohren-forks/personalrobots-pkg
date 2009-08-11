@@ -49,9 +49,21 @@
  *
  * \brief A ShapeSpectral descriptor computes features that describe
  *        the local shape of a neighborhood of points.
+ */
+// --------------------------------------------------------------
+
+// --------------------------------------------------------------
+/*!
+ * \brief A ShapeSpectral descriptor computes features that indicate
+ *        the flat-ness (F), linear-ness (L), and scattered-ness (S)
+ *        of a local neighborhood around an interest point/region.
  *
  * It is based from the Tensor Voting framework from Medioni et al.,
  * "A Computational Framework for Segmentation and Grouping", Elsevier 2000.
+ *
+ * The features are based on the eigenvalues from the scatter matrix
+ * constructed from the neighborhood of points.
+ * The feature vector format is: [S L F]
  */
 // --------------------------------------------------------------
 class ShapeSpectral: public Descriptor3D
@@ -59,13 +71,8 @@ class ShapeSpectral: public Descriptor3D
   public:
     // --------------------------------------------------------------
     /*!
-     * \brief A ShapeSpectral descriptor computes features that indicate
-     *        the flat-ness (F), linear-ness (L), and scattered-ness (S)
-     *        of a local neighborhood around an interest point/region.
-     *
-     * The features are based on the eigenvalues from the scatter matrix
-     * constructed from the neighborhood of points.
-     * The feature vector format is: [S L F]
+     * \brief Instantiates the shape descriptor to use the given spectral
+     *        information
      *
      * \param spectral_information Class to retrieve the eigenvalues from
      *
@@ -135,7 +142,8 @@ class ShapeSpectral: public Descriptor3D
      * \brief Computes local shape features for the specified interest point/region
      */
     // --------------------------------------------------------------
-    virtual void computeShapeFeatures(const unsigned int interest_sample_idx, cv::Vector<float>& result) const;
+    virtual void computeShapeFeatures(const unsigned int interest_sample_idx,
+                                      cv::Vector<float>& result) const;
 
   private:
     /*! \brief The eigenvalues for each interest point/region to be processed */

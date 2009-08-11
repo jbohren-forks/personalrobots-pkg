@@ -51,25 +51,36 @@
  * \brief A spin image descriptor with custom spinning axis
  */
 // --------------------------------------------------------------
+
+// --------------------------------------------------------------
+/*!
+ * \brief A SpinImageCustom descriptor computes a spin image spinning
+ *        around a custom reference direction/axis.
+ *
+ * The custom axis is the "beta" axis as described in Johnson & Hebert 1999.
+ *
+ * Example spin image definition with 3 rows and 4 cols: \n
+ *   beta                 \n
+ *    ^                   \n
+ *    |_ _ _ _            \n
+ *    |_|_|_|_|           \n
+ *    x_|_|_|_|           \n
+ *    |_|_|_|_|           \n
+ *    -----------> alpha  \n
+ * (x = center point of spin image, beta = [custom reference direction]
+ *
+ * The center point of the spin image is the given interest point or
+ * the centroid of given regions of interest points
+ */
+// --------------------------------------------------------------
 class SpinImageCustom: public SpinImageGeneric
 {
   public:
     // --------------------------------------------------------------
     /*!
-     * \brief A SpinImageCustom descriptor computes a spin image spinning
-     *        around a custom axis.
+     * \brief Instantiates the spin image descriptor to use the given specifications
      *
-     * The custom axis is the "beta" axis as described in Johnson & Hebert 1999.
-     *
-     * Example spin image definition with 3 rows and 4 cols: \n
-     *   beta                 \n
-     *    ^                   \n
-     *    |_ _ _ _            \n
-     *    |_|_|_|_|           \n
-     *    x_|_|_|_|           \n
-     *    |_|_|_|_|           \n
-     *    -----------> alpha  \n
-     * (x = center point of spin image, beta = [ref_x, ref_y, ref_z])
+     * \warning The number of rows (nbr_rows) must be odd
      *
      * \param ref_x The x dimension of the beta vector
      * \param ref_y The y dimension of the beta vector
@@ -79,10 +90,8 @@ class SpinImageCustom: public SpinImageGeneric
      * \param nbr_rows The number of cells along the beta axis
      * \param nbr_cols The number of cells along the alpha axis
      * \param use_interest_regions_only When computing for interest regions,
-     *                                  true indicates to use the points within
+     *                                  true indicates to use only the points within
      *                                  the interest region to compute the spin image
-     *
-     * \warning nbr_rows must be odd
      */
     // --------------------------------------------------------------
     SpinImageCustom(const double ref_x,

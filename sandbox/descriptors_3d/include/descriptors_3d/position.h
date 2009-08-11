@@ -55,16 +55,23 @@ using namespace std;
  *        interest point/region, for now.
  */
 // --------------------------------------------------------------
+
+// --------------------------------------------------------------
+/*!
+ * \brief A Position descriptor defines the value to be the z-coordinate
+ *        of the interest point or the interest region's centroid
+ *
+ * TODO: use sensor location so height is relative and dont assume flat ground
+ * TODO: use map information such as distance from walls
+ */
+// --------------------------------------------------------------
 class Position: public Descriptor3D
 {
   public:
     // --------------------------------------------------------------
     /*!
-     * \brief A Position descriptor defines the value to be the z-coordinate
-     *        of the interest point or the interest region's centroid
-     *
-     * TODO: use sensor location so height is relative and dont assume flat groudn
-     * TODO: use map information such as distance from walls
+     * \brief Instantiates the position descriptor such that the z coordinate
+     *        is absolute
      */
     // --------------------------------------------------------------
     Position();

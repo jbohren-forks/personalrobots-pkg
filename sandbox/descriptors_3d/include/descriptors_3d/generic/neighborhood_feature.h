@@ -57,15 +57,21 @@
  *        uses a neighborhood of points to compute features
  */
 // --------------------------------------------------------------
+
+// --------------------------------------------------------------
+/*!
+ * \brief A NeighborhoodFeature is an abstract base class for descriptors
+ *        that use a local neighborhood of points to compute features.
+ *
+ * Example: a spin image uses neighboring points to compute a histogram
+ */
+// --------------------------------------------------------------
 class NeighborhoodFeature: public Descriptor3D
 {
   public:
     // --------------------------------------------------------------
     /*!
-     * \brief A NeighborhoodFeature is an abstract base class for descriptors
-     *        that use a local neighborhood of points to compute features.
-     *
-     * Example: spin images
+     * \brief Abstract constructor
      */
     // --------------------------------------------------------------
     NeighborhoodFeature();
@@ -110,10 +116,11 @@ class NeighborhoodFeature: public Descriptor3D
      * \param result The vector to hold the resulting spin image feature vector
      */
     // --------------------------------------------------------------
-    virtual void computeNeighborhoodFeature(const sensor_msgs::PointCloud& data,
-                                            const std::vector<int>& neighbor_indices,
-                                            const unsigned int interest_sample_idx,
-                                            cv::Vector<float>& result) const = 0;
+    virtual void
+        computeNeighborhoodFeature(const sensor_msgs::PointCloud& data,
+                                   const std::vector<int>& neighbor_indices,
+                                   const unsigned int interest_sample_idx,
+                                   cv::Vector<float>& result) const = 0;
 
     /*! \brief The radius to define the bounding box */
     float neighborhood_radius_;

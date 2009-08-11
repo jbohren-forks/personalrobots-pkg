@@ -52,18 +52,24 @@
  *        direction (data dependent) and a specified reference direction.
  */
 // --------------------------------------------------------------
+
+// --------------------------------------------------------------
+/*!
+ * \brief OrientationGeneric is an abstract base class for descriptors
+ *        that compute the angle between a locally extracted direction
+ *        and a specified reference direction. the Orientation descriptor
+ *
+ * The computed feature is the cosine of the angle between the two vectors.
+ * See the inheriting class for the definition of the extracted local
+ * direction.
+ */
+// --------------------------------------------------------------
 class OrientationGeneric: public Descriptor3D
 {
   public:
     // --------------------------------------------------------------
     /*!
-     * \brief OrientationGeneric is an abstract base class for descriptors
-     *        that compute the angle between a locally extracted direction
-     *        and a specified reference direction. the Orientation descriptor
-     *
-     * The computed feature is the cosine of the angle between the two vectors.
-     * See the inheriting class for the definition of the extracted local
-     * direction.
+     * \brief Abstract constructor
      */
     // --------------------------------------------------------------
     OrientationGeneric();
@@ -105,7 +111,8 @@ class OrientationGeneric: public Descriptor3D
      * \param result Container to hold cosine(theta)
      */
     // --------------------------------------------------------------
-    virtual void computeOrientation(const unsigned int interest_sample_idx, cv::Vector<float>& result) const;
+    virtual void computeOrientation(const unsigned int interest_sample_idx,
+                                    cv::Vector<float>& result) const;
 
     /*! \brief Container of the extracted local direction for each interest point/region */
     const std::vector<const Eigen::Vector3d*>* local_directions_;

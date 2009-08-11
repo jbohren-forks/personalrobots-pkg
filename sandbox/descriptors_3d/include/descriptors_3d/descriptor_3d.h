@@ -57,18 +57,24 @@
  *        that operate on 3-D data
  */
 // --------------------------------------------------------------
+
+// --------------------------------------------------------------
+/*!
+ * \brief Descriptor3D is the abstract base class for all descriptors
+ *        that operate on 3-D data.  All inheriting classes define
+ *        all necessary parameters in their constructor.  Hence,
+ *        after instantiation, all descriptors can compute feature
+ *        values through the compute() method.  The number of feature
+ *        values the descriptor generates on success is given by
+ *        getResultSize()
+ */
+// --------------------------------------------------------------
 class Descriptor3D
 {
   public:
     // --------------------------------------------------------------
     /*!
-     * \brief Descriptor3D is the abstract base class for all descriptors
-     *        that operate on 3-D data.  All inheriting classes define
-     *        all necessary parameters in their constructor.  Hence,
-     *        after instantiation, all descriptors can compute feature
-     *        values through the compute() method.  The number of feature
-     *        values the descriptor generates on success is given by
-     *        getResultSize()
+     * \brief Abstract constructor
      */
     // --------------------------------------------------------------
     Descriptor3D();
@@ -90,8 +96,10 @@ class Descriptor3D
      *                results[i].size() == 0
      */
     // --------------------------------------------------------------
-    void compute(const sensor_msgs::PointCloud& data, cloud_kdtree::KdTree& data_kdtree, const cv::Vector<
-        const geometry_msgs::Point32*>& interest_pts, cv::Vector<cv::Vector<float> >& results);
+    void compute(const sensor_msgs::PointCloud& data,
+                 cloud_kdtree::KdTree& data_kdtree,
+                 const cv::Vector<const geometry_msgs::Point32*>& interest_pts,
+                 cv::Vector<cv::Vector<float> >& results);
 
     // --------------------------------------------------------------
     /*!
@@ -108,8 +116,10 @@ class Descriptor3D
      *                results[i].size() == 0
      */
     // --------------------------------------------------------------
-    void compute(const sensor_msgs::PointCloud& data, cloud_kdtree::KdTree& data_kdtree, const cv::Vector<
-        const std::vector<int>*>& interest_region_indices, cv::Vector<cv::Vector<float> >& results);
+    void compute(const sensor_msgs::PointCloud& data,
+                 cloud_kdtree::KdTree& data_kdtree,
+                 const cv::Vector<const std::vector<int>*>& interest_region_indices,
+                 cv::Vector<cv::Vector<float> >& results);
 
     // --------------------------------------------------------------
     /*!
@@ -145,7 +155,7 @@ class Descriptor3D
      * \return The total number of concatenated feature values
      */
     // --------------------------------------------------------------
-    static unsigned int 
+    static unsigned int
     computeAndConcatFeatures(const sensor_msgs::PointCloud& data,
                              cloud_kdtree::KdTree& data_kdtree,
                              const cv::Vector<const geometry_msgs::Point32*>& interest_pts,

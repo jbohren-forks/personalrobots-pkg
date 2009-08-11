@@ -54,19 +54,26 @@
  *        principle component space
  */
 // --------------------------------------------------------------
+
+// --------------------------------------------------------------
+/*!
+ * \brief A BoundingBoxSpectral descriptor to compute the dimensions
+ *        of the bounding box in principle component space that
+ *        encloses a neighborhood of points within a radius of
+ *        the interest point/region.
+ *
+ * The compute features are in order: [a,b,c] where a is the length
+ * along the principle eigenvector, b is the length along the middle
+ * eigenvector, and c is the length along the smallest eigenvector.
+ */
+// --------------------------------------------------------------
 class BoundingBoxSpectral: public NeighborhoodFeature
 {
   public:
     // --------------------------------------------------------------
     /*!
-     * \brief A BoundingBoxSpectral descriptor to compute the dimensions
-     *        of the bounding box in principle component space that
-     *        encloses a neighborhood of points within a radius of
-     *        the interest point/region.
-     *
-     * The compute features are in order: [a,b,c] where a is the length
-     * along the principle eigenvector, b is the length along the middle
-     * eigenvector, and c is the length along the smallest eigenvector.
+     * \brief Instantiates the bounding box feature with the specified
+     *        radius to define the neighborhood and spectral information
      *
      * When computing the feature for an interest region of points, the
      * bounding box can either be the box that encloses the given region
@@ -127,10 +134,11 @@ class BoundingBoxSpectral: public NeighborhoodFeature
      * \param result The vector to hold the computed bounding box dimensions
      */
     // --------------------------------------------------------------
-    virtual void computeNeighborhoodFeature(const sensor_msgs::PointCloud& data,
-                                            const std::vector<int>& neighbor_indices,
-                                            const unsigned int interest_sample_idx,
-                                            cv::Vector<float>& result) const;
+    virtual void
+    computeNeighborhoodFeature(const sensor_msgs::PointCloud& data,
+                               const std::vector<int>& neighbor_indices,
+                               const unsigned int interest_sample_idx,
+                               cv::Vector<float>& result) const;
 
   private:
     /*! \brief The smallest eigenvector for each interest point/region */
