@@ -48,7 +48,7 @@ import os, os.path, threading, time
 import rospy, rostest
 from std_msgs.msg import String
 from nav_robot_actions.msg import MoveBaseState
-from geometry_msgs.msg import Pose,Quaternion,Point, PoseStamped, PoseWithCovarianceStamped
+from geometry_msgs.msg import Pose,Quaternion,Point, PoseStamped, PoseWithCovariance, PoseWithCovarianceStamped
 from nav_msgs.msg import Odometry
 import tf.transformations as tft
 from numpy import float64
