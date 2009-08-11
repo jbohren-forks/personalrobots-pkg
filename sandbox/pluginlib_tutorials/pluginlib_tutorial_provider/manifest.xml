@@ -7,7 +7,7 @@
   <author>Tully Foote</author>
   <license>BSD</license>
   <review status="experimental" notes=""/>
-  <url>http://pr.willowgarage.com/wiki/pluging_provider</url>
+  <url>http://pr.willowgarage.com/wiki/pluginlib_tutorial_provider</url>
   <depend package="pluginlib"/>
   <depend package="pluginlib_tutorial_interfaces"/>
 
