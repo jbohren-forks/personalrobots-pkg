@@ -142,7 +142,7 @@ public:
   }
 
 
-  void checkImage(diagnostic_msgs::DiagnosticStatusWrapper& status)
+  void checkImage(diagnostic_updater::DiagnosticStatusWrapper& status)
   {
     status.name = "Image Test";
     uint8_t *jpeg;
@@ -168,7 +168,7 @@ public:
     }
   }
 
-  void checkMac(diagnostic_msgs::DiagnosticStatusWrapper& status)
+  void checkMac(diagnostic_updater::DiagnosticStatusWrapper& status)
   {
     status.name = "MAC test";
     char cmd[100];
