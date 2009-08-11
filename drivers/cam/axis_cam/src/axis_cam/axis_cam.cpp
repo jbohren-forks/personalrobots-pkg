@@ -142,7 +142,7 @@ public:
   }
 
 
-  void checkImage(diagnostic_msgs::DiagnosticStatus& status)
+  void checkImage(diagnostic_msgs::DiagnosticStatusWrapper& status)
   {
     status.name = "Image Test";
     uint8_t *jpeg;
@@ -150,13 +150,8 @@ public:
     int res;
     if ((res = cam->get_jpeg(&jpeg, &jpeg_size)))
     {
-      status.level = 2;
-
-      ostringstream oss;
-      oss << "libaxis error code: " << res << ". Consult manual for meaning.";
-      status.message = oss.str();
+      status.summaryf(2, "libaxis error code: %i. Consult manual for meaning.", res);
     } else {
-
 
       images.images[0].set_data_size(jpeg_size);
       memcpy(&images.images[0].data[0], jpeg, jpeg_size);
@@ -164,21 +159,16 @@ public:
 
       if (!codec->inflate_header())
       {
-        status.level = 2;
-        status.message = "Could not process header from jpeg.";
+        status.summary(2, "Could not process header from jpeg.");
       } else {
-        status.level = 0;
-        status.message = "Retrieved image successfully.";
-        status.set_values_size(2);
-        status.values[0].key = "Width";
-        status.values[0].value       = images.images[0].width;
-        status.values[1].key = "Height";
-        status.values[1].value       = images.images[0].height;
+        status.summary(0, "Retrieved image successfully.");
+        status.add("Width", images.images[0].width);
+        status.add("Height", images.images[0].height);
       }
     }
   }
 
-  void checkMac(diagnostic_msgs::DiagnosticStatus& status)
+  void checkMac(diagnostic_msgs::DiagnosticStatusWrapper& status)
   {
     status.name = "MAC test";
     char cmd[100];
@@ -191,14 +181,12 @@ public:
     char buf4[100];
 
     if (fscanf(f, "Address HWtype HWaddress Flags Mask Iface\n%s %s %s %s", buf1, buf2, buf3, buf4) < 4)
-    {
-      status.level = 2;
-      status.message = "No mac address found in ARP table.";
+    {          
+      status.summary(2, "No mac address found in ARP table.");
     }
     else
     {
-      status.level = 0;
-      status.message = buf3;
+      status.summary(0, buf3);
       self_test_.setID(buf3);
     }
     fclose(f);
