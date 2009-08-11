@@ -1,0 +1,18 @@
+<package>
+  <description brief="Example of using a plugin">
+
+  Example of using a plugin
+
+  </description>
+  <author>Eitan Marder-Eppstein</author>
+  <license>BSD</license>
+  <review status="experimental" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/plugin_user</url>
+
+  <depend package="pluginlib"/>
+  <depend package="pluginlib_tutorial_interfaces"/>
+  <depend package="roslib"/>
+
+</package>
+
+

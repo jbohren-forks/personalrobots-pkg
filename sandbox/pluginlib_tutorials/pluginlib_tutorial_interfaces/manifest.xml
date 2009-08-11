@@ -1,0 +1,18 @@
+<package>
+  <description brief="pluginlib_tutorial_interfaces">
+
+     pluginlib_tutorial_interfaces
+
+  </description>
+  <author>Eitan Marder-Eppstein</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/pluginlib_tutorial_interfaces</url>
+
+  <export>
+    <cpp cflags="-I${prefix}/include" />
+  </export>
+
+</package>
+
+
