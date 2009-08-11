@@ -1,0 +1,17 @@
+<package>
+  <description brief="voxel_grid">
+
+This package contains a data structure which maintains a discretized
+3D voxel grid. It also contains a Euclidean Distance Transform algorithm
+which can operate on a set of points and populate the voxel_grid with
+its corresponding distance map.
+
+  </description>
+  <author>Mrinal Kalakrishnan</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/voxel_grid</url>
+
+</package>
+
+
