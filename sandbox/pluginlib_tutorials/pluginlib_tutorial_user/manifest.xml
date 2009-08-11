@@ -11,7 +11,7 @@
 
   <depend package="pluginlib"/>
   <depend package="pluginlib_tutorial_interfaces"/>
-  <depend package="roslib"/>
+  <depend package="rosconsole"/>
 
 </package>
 

@@ -27,88 +27,86 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "ros/console.h"
+
 #include "pluginlib_tutorial_interfaces/polygon.h"
 #include "pluginlib_tutorial_interfaces/shape.h"
-#include <iostream>
-
-#include "ros/package.h"
-
 #include "pluginlib/plugin_loader.h"
 
 int main() {
   
   pluginlib::PluginLoader<polygon> cl("pluginlib_tutorial_interfaces", "polygon");
 
-  std::cout << "Created Class Loader of polygon" << std::endl;
-  std::cout << "Available plugins are:" << std::endl;
+  ROS_INFO("Created Class Loader of polygon");
+  ROS_INFO("Available plugins are:");
   std::vector<std::string> plugins = cl.getDeclaredPlugins();
   for (std::vector<std::string>::iterator it = plugins.begin(); it != plugins.end() ; ++it)
   {
-    std::cout << *it << " is in package " << cl.getPluginPackage(*it) << " and is of type " << cl.getPluginType(*it) << std::endl
-              << "It does \"" << cl.getPluginDescription(*it) << "\"" <<std::endl
-              << "It is found in library " << cl.getPluginLibraryPath(*it) << std::endl;
+    ROS_INFO("%s is in package %s and is of type %s", it->c_str(), cl.getPluginPackage(*it).c_str(), cl.getPluginType(*it).c_str());
+    ROS_INFO("It does \"%s\"", cl.getPluginDescription(*it).c_str());
+    ROS_INFO("It is found in library %s", cl.getPluginLibraryPath(*it).c_str());
   }
 
 
   if (cl.loadPlugin("square"))
   {
-    std::cout << "asdf Loaded library with plugin square inside" << std::endl;
+    ROS_INFO("Loaded library with plugin square inside");
   }
   else
   {
-    std::cout << "asdf Failed to load library with plugin square inside" << std::endl;
+    ROS_INFO("Failed to load library with plugin square inside");
   }
   
   if (cl.isPluginLoaded("square"))
   { 
-    std::cout << "Can create square";
+    ROS_INFO("Can create square");
     polygon * poly = cl.createPluginInstance("square");
     // use the class
     poly->set_side_length(7);
-    std::cout << "The square area is: " << poly->area() << '\n';
+    ROS_INFO("The square area is: %.2f", poly->area());
   }
-  else std::cout << "Square Plugin not loaded" << std::endl;
+  else ROS_INFO("Square Plugin not loaded");
   
-  std::cout << "Created square, trying triangle next" << std::endl;
+  ROS_INFO("Created square, trying triangle next");
   if (cl.isPluginLoaded("triangle"))
   { 
     polygon * tri = cl.createPluginInstance("triangle");
 
   // use the class
   tri->set_side_length(7);
-  std::cout << "The triangle area is: " << tri->area() << '\n';
+  ROS_INFO("The triangle area is: %.2f", tri->area());
   }
-  else std::cout << "Triangle Plugin not loaded" << std::endl;
+  else ROS_INFO("Triangle Plugin not loaded");
   
   
   if (!cl.loadPlugin("line"))
-    std::cerr<< "Correctly failed to load line in polygon loader" << std::endl;
+    ROS_ERROR("Correctly failed to load line in polygon loader");
 
   pluginlib::PluginLoader<shape> ph("pluginlib_tutorial_interfaces", "shape");
 
   if (!ph.loadPlugin("line"))
-    std::cerr<<"Failed to load line" << std::endl;
+    ROS_ERROR("Failed to load line");
 
-  if ( ph.isPluginLoaded("line"))
+  if (ph.isPluginLoaded("line"))
     {
       shape * sh = ph.createPluginInstance("line");
       // use the class
       sh->set_side_length(7);
-      std::cout << "The line area is: " << sh->area() << '\n';
+      ROS_INFO("The line area is: %.2f", sh->area()); 
     }
     else
-      std::cerr << "Cloudn't find line lib" << std::endl;
+      ROS_ERROR("Cloudn't find line lib");
 
   std::vector<std::string> libs = cl.getLoadedLibraries();
-  std::cout <<"Libraries in cl are:" << std::endl;
+  ROS_INFO("Libraries in cl are:");
   for (std::vector<std::string>::iterator it = libs.begin(); it != libs.end() ; ++it)
   {
-    std::cout << "Library name " << *it << std::endl;
+    ROS_INFO("Library name %s", it->c_str());
     std::vector<std::string> plugins = cl.getPluginsInLibrary(*it);
-    std::cout << "  With plugins:" << std::endl;
+    ROS_INFO("  With plugins:");
     for (std::vector<std::string>::iterator it2 = plugins.begin(); it2 != plugins.end() ; ++it2)
     {
-      std::cout << "   " << *it2 << std::endl;
+      ROS_INFO("   %s", it2->c_str());
     }
   }
 
