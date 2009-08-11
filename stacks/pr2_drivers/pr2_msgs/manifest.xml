@@ -17,8 +17,11 @@
   <depend package="mechanism_msgs" />
   <depend package="motion_planning_msgs"/>
 
+  <depend package="rosbagmigration"/>
+  
   <export>
     <cpp cflags="-I${prefix}/msg/cpp"/>
+    <rosbagmigration rule_file="migration_rules/pr2_msgs.bmr"/>
   </export>
 </package>
 
