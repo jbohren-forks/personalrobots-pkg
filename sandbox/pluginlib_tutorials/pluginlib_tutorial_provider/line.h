@@ -37,7 +37,7 @@
 #ifndef LINE_H_
 #define LINE_H_
 
-#include "shape.h"
+#include "pluginlib_tutorial_interfaces/shape.h"
 
 class line : public shape {
 public:

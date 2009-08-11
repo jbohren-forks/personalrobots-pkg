@@ -37,7 +37,7 @@
 #ifndef TRIANGLE_H_
 #define TRIANGLE_H_
 
-#include "polygon.h"
+#include "pluginlib_tutorial_interfaces/polygon.h"
 
 class triangle : public polygon {
 public:

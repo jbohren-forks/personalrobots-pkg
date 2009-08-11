@@ -37,7 +37,7 @@
 #ifndef SQUARE_H_
 #define SQUARE_H_
 
-#include "polygon.h"
+#include "pluginlib_tutorial_interfaces/polygon.h"
 
 class square : public polygon {
 public:

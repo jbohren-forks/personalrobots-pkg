@@ -9,9 +9,10 @@
   <review status="experimental" notes=""/>
   <url>http://pr.willowgarage.com/wiki/pluging_provider</url>
   <depend package="pluginlib"/>
+  <depend package="pluginlib_tutorial_interfaces"/>
 
   <export>
-    <pluginlib polygon="${prefix}/polygon_plugins.xml" shape="${prefix}/shape_plugins.xml"/>
+    <pluginlib_tutorial_interfaces polygon="${prefix}/polygon_plugins.xml" shape="${prefix}/shape_plugins.xml"/>
   </export>
 
 </package>
