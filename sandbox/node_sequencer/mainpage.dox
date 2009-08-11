@@ -66,7 +66,7 @@ Each line of the constraints file must be of the form
 event1 event2
 \endverbatim
 
-which means that event1 must happen before event2.  Events are made to happen by creating objects of type SequencedTask.
+which means that event1 must happen before event2.  Events are signalled in client code using notify and waited on using waitFor.
 
 
 */
