@@ -122,7 +122,9 @@ int BoundingBoxSpectral::precompute(const sensor_msgs::PointCloud& data,
 }
 
 // --------------------------------------------------------------
-/* See function definition */
+/* See function definition
+ * Invariant: interest_sample_idx is in bounds of field containers.
+ * Invariant: Eigenvectors are unit */
 // --------------------------------------------------------------
 void BoundingBoxSpectral::computeNeighborhoodFeature(const sensor_msgs::PointCloud& data,
                                                      const vector<int>& neighbor_indices,
@@ -140,12 +142,13 @@ void BoundingBoxSpectral::computeNeighborhoodFeature(const sensor_msgs::PointClo
   }
 
   result.resize(result_size_);
-  const unsigned int nbr_pts = neighbor_indices.size();
+  const unsigned int nbr_neighbors = neighbor_indices.size();
+  const unsigned int nbr_total_pts = data.points.size();
 
   // --------------------------
   // Check for special case when no points in the bounding box as will initialize
   // the min/max extremas using the first point below
-  if (nbr_pts == 0)
+  if (nbr_neighbors == 0)
   {
     ROS_INFO("BoundingBoxSpectral::computeNeighborhoodFeature() No points to form bounding box");
     for (size_t i = 0 ; i < result_size_ ; i++)
@@ -155,34 +158,46 @@ void BoundingBoxSpectral::computeNeighborhoodFeature(const sensor_msgs::PointClo
     return;
   }
 
-  // Get the norms of the current principle component vectors in order to
-  // compute scalar projections
-  const double norm_ev_max = eig_vec_max->norm();
-  const double norm_ev_mid = eig_vec_mid->norm();
-  const double norm_ev_min = eig_vec_min->norm();
+  // Verify neighbor index is in bounds
+  unsigned int first_neighbor_idx = static_cast<unsigned int>(neighbor_indices[0]);
+  if (first_neighbor_idx >= nbr_total_pts)
+  {
+    ROS_ERROR("BoundingBoxSpectral::computeNeighborhoodFeature() exceeds index %u %u", first_neighbor_idx, nbr_total_pts);
+    result.clear();
+    return;
+  }
 
   // Initialize extrema values of the first point's scalar projections
   // onto the principle components
   Eigen::Vector3d curr_pt;
-  curr_pt[0] = data.points[neighbor_indices[0]].x;
-  curr_pt[1] = data.points[neighbor_indices[0]].y;
-  curr_pt[2] = data.points[neighbor_indices[0]].z;
-  float min_v1 = curr_pt.dot(*eig_vec_max) / norm_ev_max;
-  float min_v2 = curr_pt.dot(*eig_vec_mid) / norm_ev_mid;
-  float min_v3 = curr_pt.dot(*eig_vec_min) / norm_ev_min;
+  curr_pt[0] = data.points[first_neighbor_idx].x;
+  curr_pt[1] = data.points[first_neighbor_idx].y;
+  curr_pt[2] = data.points[first_neighbor_idx].z;
+  float min_v1 = curr_pt.dot(*eig_vec_max);
+  float min_v2 = curr_pt.dot(*eig_vec_mid);
+  float min_v3 = curr_pt.dot(*eig_vec_min);
   float max_v1 = min_v1;
   float max_v2 = min_v2;
   float max_v3 = min_v3;
 
   // Loop over remaining points in region and update projection extremas
-  for (unsigned int i = 1 ; i < nbr_pts ; i++)
+  for (unsigned int i = 1 ; i < nbr_neighbors ; i++)
   {
-    curr_pt[0] = data.points[neighbor_indices[i]].x;
-    curr_pt[1] = data.points[neighbor_indices[i]].y;
-    curr_pt[2] = data.points[neighbor_indices[i]].z;
+    // verify the index doesnt exceed array
+    unsigned int curr_neighbor_idx = static_cast<unsigned int>(neighbor_indices[i]);
+    if (curr_neighbor_idx >= nbr_total_pts)
+    {
+      ROS_ERROR("BoundingBoxSpectral::computeNeighborhoodFeature() exceeds index %u %u", curr_neighbor_idx, nbr_total_pts);
+      result.clear();
+      return;
+    }
 
-    // biggest eigenvector
-    float curr_projection = curr_pt.dot(*eig_vec_max) / norm_ev_max;
+    curr_pt[0] = data.points[curr_neighbor_idx].x;
+    curr_pt[1] = data.points[curr_neighbor_idx].y;
+    curr_pt[2] = data.points[curr_neighbor_idx].z;
+
+    // extrema along biggest eigenvector
+    float curr_projection = curr_pt.dot(*eig_vec_max);
     if (curr_projection < min_v1)
     {
       min_v1 = curr_projection;
@@ -191,8 +206,8 @@ void BoundingBoxSpectral::computeNeighborhoodFeature(const sensor_msgs::PointClo
     {
       max_v1 = curr_projection;
     }
-    // middle eigenvector
-    curr_projection = curr_pt.dot(*eig_vec_mid) / norm_ev_mid;
+    // extrema along middle eigenvector
+    curr_projection = curr_pt.dot(*eig_vec_mid);
     if (curr_projection < min_v2)
     {
       min_v2 = curr_projection;
@@ -201,8 +216,8 @@ void BoundingBoxSpectral::computeNeighborhoodFeature(const sensor_msgs::PointClo
     {
       max_v2 = curr_projection;
     }
-    // smallest eigenvector
-    curr_projection = curr_pt.dot(*eig_vec_min) / norm_ev_min;
+    // extrema along smallest eigenvector
+    curr_projection = curr_pt.dot(*eig_vec_min);
     if (curr_projection < min_v3)
     {
       min_v3 = curr_projection;

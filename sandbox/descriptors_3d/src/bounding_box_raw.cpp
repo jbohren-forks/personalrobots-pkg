@@ -78,6 +78,7 @@ void BoundingBoxRaw::computeNeighborhoodFeature(const sensor_msgs::PointCloud& d
 {
   result.resize(result_size_);
   const unsigned int nbr_neighbors = neighbor_indices.size();
+  const unsigned int nbr_total_pts = data.points.size();
 
   // --------------------------
   // Check for special case when no points in the bounding box as will initialize
@@ -94,9 +95,16 @@ void BoundingBoxRaw::computeNeighborhoodFeature(const sensor_msgs::PointCloud& d
 
   // --------------------------
   // Initialize extrema values to the first coordinate in the interest region
-  float min_x = data.points[neighbor_indices[0]].x;
-  float min_y = data.points[neighbor_indices[0]].y;
-  float min_z = data.points[neighbor_indices[0]].z;
+  unsigned int first_neighbor_idx = static_cast<unsigned int>(neighbor_indices[0]);
+  if (first_neighbor_idx >= nbr_total_pts)
+  {
+    ROS_ERROR("BoundingBoxRaw::computeNeighborhoodFeature() exceeds index %u %u", first_neighbor_idx, nbr_total_pts);
+    result.clear();
+    return;
+  }
+  float min_x = data.points[first_neighbor_idx].x;
+  float min_y = data.points[first_neighbor_idx].y;
+  float min_z = data.points[first_neighbor_idx].z;
   float max_x = min_x;
   float max_y = min_y;
   float max_z = min_z;
@@ -105,8 +113,17 @@ void BoundingBoxRaw::computeNeighborhoodFeature(const sensor_msgs::PointCloud& d
   // Loop over remaining points in region and update extremas
   for (unsigned int i = 1 ; i < nbr_neighbors ; i++)
   {
-    // x
-    float curr_coord = data.points[neighbor_indices[i]].x;
+    // verify the index doesnt exceed array
+    unsigned int curr_neighbor_idx = static_cast<unsigned int>(neighbor_indices[i]);
+    if (curr_neighbor_idx >= nbr_total_pts)
+    {
+      ROS_ERROR("BoundingBoxRaw::computeNeighborhoodFeature() exceeds index %u %u", curr_neighbor_idx, nbr_total_pts);
+      result.clear();
+      return;
+    }
+
+    // x extremas
+    float curr_coord = data.points[curr_neighbor_idx].x;
     if (curr_coord < min_x)
     {
       min_x = curr_coord;
@@ -115,8 +132,9 @@ void BoundingBoxRaw::computeNeighborhoodFeature(const sensor_msgs::PointCloud& d
     {
       max_x = curr_coord;
     }
-    // y
-    curr_coord = data.points[neighbor_indices[i]].y;
+
+    // y extremas
+    curr_coord = data.points[curr_neighbor_idx].y;
     if (curr_coord < min_y)
     {
       min_y = curr_coord;
@@ -125,8 +143,9 @@ void BoundingBoxRaw::computeNeighborhoodFeature(const sensor_msgs::PointCloud& d
     {
       max_y = curr_coord;
     }
-    // z
-    curr_coord = data.points[neighbor_indices[i]].z;
+
+    // z extremas
+    curr_coord = data.points[curr_neighbor_idx].z;
     if (curr_coord < min_z)
     {
       min_z = curr_coord;
