@@ -1,0 +1,4 @@
+
+CaptureRobotPixelsActionGoal action_goal
+CaptureRobotPixelsActionResult action_result
+CaptureRobotPixelsActionFeedback action_feedback

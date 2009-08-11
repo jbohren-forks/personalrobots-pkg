@@ -1,0 +1,1 @@
+RobotPixelsResult result
