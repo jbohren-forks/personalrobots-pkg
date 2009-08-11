@@ -34,6 +34,7 @@
 #include <boost/thread/thread.hpp>
 #include <sstream>
 #include "ros/console.h"
+#include <diagnostic_updater/DiagnosticStatusWrapper.h>
 
 using namespace mechanism;
 using namespace controller;
@@ -108,14 +109,6 @@ bool MechanismControl::initXml(TiXmlElement* config)
 
 
 
-
-#define ADD_STRING_FMT(lab, fmt, ...) \
-  v.key = (lab); \
-  { char buf[1024]; \
-    snprintf(buf, sizeof(buf), fmt, ##__VA_ARGS__); \
-    v.value = buf; \
-  } \
-  values.push_back(v)
 
 
 // Must be realtime safe.
@@ -451,13 +444,10 @@ void MechanismControl::publishDiagnostics()
       TimeStatistics blank_statistics;
       
       std::vector<diagnostic_msgs::DiagnosticStatus> statuses;
-      std::vector<diagnostic_msgs::KeyValue> values;
-      diagnostic_msgs::DiagnosticStatus status;
-      diagnostic_msgs::KeyValue v;
+      diagnostic_updater::DiagnosticStatusWrapper status;
       
       status.name = "Mechanism Control";
-      status.level = 0;
-      status.message = "OK";
+      status.summary(0, "OK");
       
       for (size_t i = 0; i < controllers.size(); ++i)
       {
@@ -470,7 +460,7 @@ void MechanismControl::publishDiagnostics()
           state = "Running";
         else
           state = "Stopped";
-        ADD_STRING_FMT(controllers[i].name,
+        status.addf(controllers[i].name,
                        "%.4f (avg) %.4f (stdev) %.4f (max) %.4f (1-min max) %.4f (life max) %s (state)",
                        mean(controllers[i].stats->acc)*1e6,
                        sqrt(variance(controllers[i].stats->acc))*1e6,
@@ -487,7 +477,7 @@ void MechanismControl::publishDiagnostics()
         double m = extract_result<tag::max>(stats_.acc);        \
         stats_.max1.push_back(m);                               \
         stats_.max = std::max(m, stats_.max);                           \
-        ADD_STRING_FMT(label, "%.4f (avg) %.4f (stdev) %.4f (max) %.4f (1-min max) %.4f (life max)", \
+        status.addf(label, "%.4f (avg) %.4f (stdev) %.4f (max) %.4f (1-min max) %.4f (life max)", \
                        mean(stats_.acc)*1e6,                            \
                        sqrt(variance(stats_.acc))*1e6,                  \
                        m*1e6,                                           \
@@ -500,9 +490,8 @@ void MechanismControl::publishDiagnostics()
       REPORT_STATS(update_stats_, "Update");
       REPORT_STATS(post_update_stats_, "After Update");
       
-      ADD_STRING_FMT("Active controllers", "%d", active);
+      status.addf("Active controllers", "%d", active);
       
-      status.set_values_vec(values);
       statuses.push_back(status);
       pub_diagnostics_.msg_.set_status_vec(statuses);
       pub_diagnostics_.unlockAndPublish();
