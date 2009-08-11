@@ -84,7 +84,7 @@ class SpinImageGeneric: public NeighborhoodFeature
      * \param result The vector to hold the resulting spin image feature vector
      */
     // --------------------------------------------------------------
-    virtual void computeNeighborhoodFeature(const robot_msgs::PointCloud& data,
+    virtual void computeNeighborhoodFeature(const sensor_msgs::PointCloud& data,
                                             const std::vector<int>& neighbor_indices,
                                             const unsigned int interest_sample_idx,
                                             cv::Vector<float>& result) const;
