@@ -18,6 +18,5 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 rospack_add_boost_directories()
 
-rospack_add_executable(example example.cpp)
-rospack_link_boost(example filesystem)
-target_link_libraries(example PocoUtil)
+rospack_add_library(poco_lite src/Exception.cpp src/File.cpp src/Manifest.cpp src/Mutex.cpp src/Path.cpp src/SharedLibrary.cpp src/StringTokenizer.cpp src/Timestamp.cpp src/UnicodeConverter.cpp src/AtomicCounter.cpp src/UTF16Encoding.cpp src/UTF8Encoding.cpp src/TextEncoding.cpp src/ASCIIEncoding.cpp src/Latin1Encoding.cpp src/Latin9Encoding.cpp src/Windows1252Encoding.cpp src/RWLock.cpp src/DirectoryIterator.cpp src/Bugcheck.cpp src/Environment.cpp src/TextIterator.cpp src/Debugger.cpp src/TextConverter.cpp)
+target_link_libraries(poco_lite dl)

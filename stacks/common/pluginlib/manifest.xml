@@ -13,10 +13,9 @@
   <depend package="tinyxml"/>
 
   <export>
-    <cpp cflags="-I${prefix}/include -I${prefix} `rosboost-cfg --cflags`" lflags="-lPocoUtil `rosboost-cfg -l filesystem`"/>
+    <cpp cflags="-I${prefix}/include -I${prefix} `rosboost-cfg --cflags`" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lpoco_lite `rosboost-cfg -l filesystem`"/>
   </export>
 
-  <rosdep name="libpoco"/>
 </package>
 
 
