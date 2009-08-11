@@ -41,6 +41,7 @@
 #include <geometry_msgs/Vector3.h>
 #include <geometry_msgs/Point.h>
 #include <diagnostic_msgs/DiagnosticStatus.h>
+#include <diagnostic_updater/DiagnosticStatusWrapper.h>
 #include <door_msgs/Door.h>
 
 // For transform support
@@ -105,7 +106,7 @@ namespace door_reactive_planner
      */
     bool getGoal(pr2_robot_actions::Pose2D &goal);
 
-    diagnostic_msgs::DiagnosticStatus getDiagnostics();
+    diagnostic_updater::DiagnosticStatusWrapper getDiagnostics();
 
     bool door_information_set_ ; /**< Has door information been set before invoking the planner */
 

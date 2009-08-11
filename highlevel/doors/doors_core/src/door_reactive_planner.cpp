@@ -338,88 +338,31 @@ bool DoorReactivePlanner::makePlan(const pr2_robot_actions::Pose2D &start, std::
   return true;
 }
 
-diagnostic_msgs::DiagnosticStatus DoorReactivePlanner::getDiagnostics()
+diagnostic_updater::DiagnosticStatusWrapper DoorReactivePlanner::getDiagnostics()
 {
-  vector<diagnostic_msgs::KeyValue> values;
-  diagnostic_msgs::DiagnosticStatus status;
-  diagnostic_msgs::KeyValue v;
+  diagnostic_updater::DiagnosticStatusWrapper status;
   status.name = "Door Reactive Planner";
   status.level = 0;
-#warning These need a MACRO/function to do num to string
-  v.key = "Goal x";
-  v.value = goal_.x;
-  values.push_back(v);
-
-  v.key = "Goal y";
-  v.value = goal_.y;
-  values.push_back(v);
-
-  v.key = "Goal theta";
-  v.value = goal_.th;
-  values.push_back(v);
-
-  v.key = "Carrot x";
-  v.value = carrot_.x;
-  values.push_back(v);
-
-  v.key = "Carrot y";
-  v.value = carrot_.y;
-  values.push_back(v);
-
-  v.key = "Carrot theta";
-  v.value = carrot_.th;
-  values.push_back(v);
-
-  v.key = "Centerline angle";
-  v.value = centerline_angle_;
-  values.push_back(v);
-
-  v.key = "Travel angle";
-  v.value = travel_angle_;
-  values.push_back(v);
-
-  v.key = "Sideslip.x";
-  v.value = vector_along_door_.x;
-  values.push_back(v);
-
-  v.key = "Sideslip.y";
-  v.value = vector_along_door_.y;
-  values.push_back(v);
-
-  v.key = "Plan delta angle";
-  v.value = delta_angle_;
-  values.push_back(v);
-
-  v.key = "Plan length";
-  v.value = plan_length_;
-  values.push_back(v);
-
-  v.key = "Centerline distance";
-  v.value = centerline_distance_;
-  values.push_back(v);
-
-  v.key = "Current x";
-  v.value = current_position_.x;
-  values.push_back(v);
-
-  v.key = "Current y";
-  v.value = current_position_.y;
-  values.push_back(v);
-
-  v.key = "Current th";
-  v.value = current_position_.th;
-  values.push_back(v);
-
-  v.key = "Cell distance from obstacles";
-  v.value = cell_distance_from_obstacles_;
-  values.push_back(v);
-
-  v.key = "Current position in collision";
-  v.value = current_position_in_collision_;
-  values.push_back(v);
-
-  status.set_values_vec(values);
-
+  
+  status.add("Goal x", goal_.x);
+  status.add("Goal y",goal_.y);
+  status.add("Goal theta", goal_.th);
+  status.add("Carrot x", carrot_.x);
+  status.add("Carrot y", carrot_.y);
+  status.add("Carrot theta", carrot_.th);
+  status.add("Centerline angle", centerline_angle_);
+  status.add("Travel angle", travel_angle_);
+  status.add("Sideslip.x", vector_along_door_.x);
+  status.add("Sideslip.y", vector_along_door_.y);
+  status.add("Plan delta angle", delta_angle_);
+  status.add("Plan length", plan_length_);
+  status.add("Centerline distance", centerline_distance_);
+  status.add("Current x", current_position_.x);
+  status.add("Current y", current_position_.y);
+  status.add("Current th", current_position_.th);
+  status.add("Cell distance from obstacles", cell_distance_from_obstacles_);
+  status.add("Current position in collision", current_position_in_collision_);
+  
   return status;
 }
 
