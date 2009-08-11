@@ -187,6 +187,7 @@ int SpectralAnalysis::analyzeInterestRegions(const sensor_msgs::PointCloud& data
       if (support_radius_ > 1e-6)
       {
         // Compute centroid of interest region
+        // TODO handle exception if this fails
         geometry_msgs::Point32 region_centroid;
         cloud_geometry::nearest::computeCentroid(data, *curr_interest_region, region_centroid);
 
@@ -236,6 +237,8 @@ void SpectralAnalysis::computeSpectralInfo(const sensor_msgs::PointCloud& data,
   // smallest eigenvalue = index 0
   geometry_msgs::Point32 centroid;
   Eigen::Matrix3d eigen_vectors;
+  // TODO handle exception if this fails (support_vol_indices could contain out of bound indices
+  // when passing region of interest points)
   cloud_geometry::nearest::computePatchEigenNormalized(data, support_volume_indices, eigen_vectors,
       *(new_eig_vals), centroid);
 

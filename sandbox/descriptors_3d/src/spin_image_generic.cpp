@@ -66,6 +66,8 @@ void SpinImageGeneric::computeNeighborhoodFeature(const sensor_msgs::PointCloud&
     return;
   }
 
+  unsigned int total_nbr_pts = data.points.size();
+
   // Clear out result for counting
   result.resize(result_size_);
   for (size_t i = 0 ; i < result_size_ ; i++)
@@ -82,11 +84,20 @@ void SpinImageGeneric::computeNeighborhoodFeature(const sensor_msgs::PointCloud&
   unsigned int nbr_neighbors = neighbor_indices.size();
   for (unsigned int i = 0 ; i < nbr_neighbors ; i++)
   {
+    // Verify the neighbor point index doesnt exceed bounds
+    unsigned int curr_neighbor_idx = neighbor_indices[i];
+    if (curr_neighbor_idx >= total_nbr_pts)
+    {
+      ROS_ERROR("SpinImageGeneric::computeNeighborhoodFeature() exceeds index %u %u", curr_neighbor_idx, total_nbr_pts);
+      result.clear();
+      return;
+    }
+
     // Create vector from center point to neighboring point
     Eigen::Vector3d neighbor_vec;
-    neighbor_vec[0] = data.points[neighbor_indices[i]].x - curr_center_pt[0];
-    neighbor_vec[1] = data.points[neighbor_indices[i]].y - curr_center_pt[1];
-    neighbor_vec[2] = data.points[neighbor_indices[i]].z - curr_center_pt[2];
+    neighbor_vec[0] = data.points[curr_neighbor_idx].x - curr_center_pt[0];
+    neighbor_vec[1] = data.points[curr_neighbor_idx].y - curr_center_pt[1];
+    neighbor_vec[2] = data.points[curr_neighbor_idx].z - curr_center_pt[2];
     const double neighbor_vec_norm = neighbor_vec.norm();
 
     // ----------------------------------------
@@ -104,14 +115,18 @@ void SpinImageGeneric::computeNeighborhoodFeature(const sensor_msgs::PointCloud&
     // a = spin axis (unit length)
     // b = neighbor_vec
     // h = Q / |a| = |a x b| / |a| = |a x b|
-    const unsigned int curr_col = static_cast<unsigned int> (floor(
-        (curr_spin_axis->cross(neighbor_vec)).norm() / col_res_));
+    const unsigned int curr_col = static_cast<unsigned int> (floor((curr_spin_axis->cross(
+        neighbor_vec)).norm() / col_res_));
 
-    // Increment appropriate spin image cell
+    // Increment appropriate spin image cell.
+    // First verify the point is contained in the image
     if (curr_row >= 0 && static_cast<unsigned int> (curr_row) < nbr_rows_ && curr_col < nbr_cols_)
     {
+      // Compute vectorized cell number
       size_t cell_nbr = static_cast<size_t> (curr_row * nbr_cols_ + curr_col);
       result[cell_nbr] += 1.0;
+
+      // Update counter for cell with most points
       if (result[cell_nbr] > max_bin_count)
       {
         max_bin_count = result[cell_nbr];
@@ -119,7 +134,7 @@ void SpinImageGeneric::computeNeighborhoodFeature(const sensor_msgs::PointCloud&
     }
   }
 
-  // Normalize counts between 0 and 1
+  // Normalize all cells between 0 and 1
   for (size_t i = 0 ; i < result_size_ ; i++)
   {
     result[i] /= max_bin_count;

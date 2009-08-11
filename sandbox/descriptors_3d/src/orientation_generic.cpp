@@ -86,7 +86,8 @@ void OrientationGeneric::doComputation(const sensor_msgs::PointCloud& data,
 }
 
 // --------------------------------------------------------------
-/* See function definition */
+/* See function definition.
+ * Invariant: interest_sample_idx is within bounds */
 // --------------------------------------------------------------
 inline void OrientationGeneric::computeOrientation(const unsigned int interest_sample_idx,
                                                    cv::Vector<float>& result) const

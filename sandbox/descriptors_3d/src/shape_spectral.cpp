@@ -145,7 +145,8 @@ void ShapeSpectral::doComputation(const sensor_msgs::PointCloud& data,
 }
 
 // --------------------------------------------------------------
-/* See function definition */
+/* See function definition
+ * Invariant: interest_sample_idx is within bounds */
 // --------------------------------------------------------------
 void ShapeSpectral::computeShapeFeatures(const unsigned int interest_sample_idx, cv::Vector<float>& result) const
 {

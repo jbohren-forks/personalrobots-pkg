@@ -88,7 +88,7 @@ void NeighborhoodFeature::doComputation(const sensor_msgs::PointCloud& data,
       // Grab neighbors around interest point
       vector<int> neighbor_indices;
       vector<float> neighbor_distances; // unused
-      // radiusSearch returning false (0 points) is handled by computeBoundingBoxFeatures
+      // radiusSearch returning false (0 points) is handled in inherited class
       data_kdtree.radiusSearch(*curr_interest_pt, neighborhood_radius_, neighbor_indices, neighbor_distances);
 
       computeNeighborhoodFeature(data, neighbor_indices, i, results[static_cast<size_t> (i)]);
@@ -130,11 +130,12 @@ void NeighborhoodFeature::doComputation(const sensor_msgs::PointCloud& data,
       if (neighborhood_radius_ > 1e-6)
       {
         // Compute centroid of interest region
+        // TODO handle exception if this fails (interest region contains out of bounds indices)
         geometry_msgs::Point32 region_centroid;
         cloud_geometry::nearest::computeCentroid(data, *curr_interest_region, region_centroid);
 
         vector<float> neighbor_distances; // unused
-        // radiusSearch returning false (0 points) is handled by computeBoundingBoxFeatures
+        // radiusSearch returning false (0 points) is handled in inherited class
         data_kdtree.radiusSearch(region_centroid, neighborhood_radius_, neighbor_indices, neighbor_distances);
 
         // Now point to the neighboring points from radiusSearch

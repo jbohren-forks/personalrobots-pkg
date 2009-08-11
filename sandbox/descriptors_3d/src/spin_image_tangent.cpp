@@ -85,7 +85,7 @@ int SpinImageTangent::precompute(const sensor_msgs::PointCloud& data,
   // Retrieve necessary spectral information this class needs to compute features
   spin_axes_ = &(spectral_information_->getTangents());
 
-  // Verify the normals are for the interest points
+  // Verify the tangents are for the interest points
   size_t nbr_interest_pts = interest_pts.size();
   if (spin_axes_->size() != nbr_interest_pts)
   {
@@ -98,7 +98,7 @@ int SpinImageTangent::precompute(const sensor_msgs::PointCloud& data,
   spin_image_centers_.resize(nbr_interest_pts);
   for (size_t i = 0 ; i < nbr_interest_pts ; i++)
   {
-    // Will be handled in compute() if NULL
+    // Will be handled in NeighborhoodFeature::doComputation() if interest point is NULL
     if (interest_pts[i] != NULL)
     {
       spin_image_centers_[i][0] = (interest_pts[i])->x;
@@ -129,7 +129,7 @@ int SpinImageTangent::precompute(const sensor_msgs::PointCloud& data,
   // Retrieve necessary spectral information this class needs to compute features
   spin_axes_ = &(spectral_information_->getTangents());
 
-  // Verify the normals are for the interest regions
+  // Verify the tangents are for the interest regions
   size_t nbr_interest_regions = interest_region_indices.size();
   if (spin_axes_->size() != nbr_interest_regions)
   {
@@ -142,10 +142,12 @@ int SpinImageTangent::precompute(const sensor_msgs::PointCloud& data,
   spin_image_centers_.resize(nbr_interest_regions);
   for (size_t i = 0 ; i < nbr_interest_regions ; i++)
   {
-    geometry_msgs::Point32 region_centroid;
-    // Will be handled in compute() if region indices are NULL
+    // Will be handled in NeighborhoodFeature::doComputation() if region_indices is NULL
+    // Will be handled in SpinImageGeneric::computeNeighborhoodFeature() if spin axis is NULL
     if (interest_region_indices[i] != NULL && (*spin_axes_)[i] != NULL)
     {
+      geometry_msgs::Point32 region_centroid;
+      // TODO handle exception if this fails
       cloud_geometry::nearest::computeCentroid(data, *(interest_region_indices[i]), region_centroid);
       spin_image_centers_[i][0] = region_centroid.x;
       spin_image_centers_[i][1] = region_centroid.y;
