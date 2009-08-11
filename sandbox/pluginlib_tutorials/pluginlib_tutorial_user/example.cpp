@@ -37,7 +37,7 @@
 
 int main() {
   
-  pluginlib::PluginLoader<polygon> cl("pluginlib", "polygon");
+  pluginlib::PluginLoader<polygon> cl("pluginlib_tutorial_interfaces", "polygon");
 
   std::cout << "Created Class Loader of polygon" << std::endl;
   std::cout << "Available plugins are:" << std::endl;
@@ -84,7 +84,7 @@ int main() {
   if (!cl.loadPlugin("line"))
     std::cerr<< "Correctly failed to load line in polygon loader" << std::endl;
 
-  pluginlib::PluginLoader<shape> ph("pluginlib", "shape");
+  pluginlib::PluginLoader<shape> ph("pluginlib_tutorial_interfaces", "shape");
 
   if (!ph.loadPlugin("line"))
     std::cerr<<"Failed to load line" << std::endl;
