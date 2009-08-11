@@ -1,0 +1,15 @@
+<stack name="simulator_stage" version="0.1.0">
+  <description brief="simulator_stage">
+
+     2D simulation using Stage.
+
+  </description>
+  <author>Maintained by Brian Gerkey</author>
+  <license>GPL</license>  
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/simulator_stage</url>
+  <depend stack="geometry"/> <!-- tf --> 
+  <depend stack="ros"/> <!-- std_msgs, roscpp --> 
+  <depend stack="common_msgs"/> <!-- nav_msgs, geometry_msgs, sensor_msgs --> 
+
+</stack>
