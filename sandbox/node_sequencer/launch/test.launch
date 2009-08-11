@@ -1,0 +1,8 @@
+<launch>
+  
+  <node pkg="node_sequencer" type="node_sequencer" args="-c $(find node_sequencer)/launch/example1.constraints" output="screen"/>
+  <node pkg="node_sequencer" type="sequencer_test" args="qux 0 baz 0 oof 0" />
+  <node pkg="node_sequencer" type="sequencer_test" args="foo 0 gar 0 bar 0" />
+
+
+</launch>

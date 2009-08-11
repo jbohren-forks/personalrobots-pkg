@@ -1,0 +1,16 @@
+<package>
+  <description brief="node_sequencer">
+
+     node_sequencer
+
+  </description>
+  <author>Bhaskara Marthi</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/node_sequencer</url>
+  <depend package="roscpp"/>
+  <depend package="std_msgs"/>
+
+</package>
+
+
