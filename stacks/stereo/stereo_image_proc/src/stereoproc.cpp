@@ -46,8 +46,8 @@
 #include "stereo_msgs/StereoInfo.h"
 #include "sensor_msgs/PointCloud.h"
 
-#include "diagnostic_msgs/DiagnosticStatus.h"
 #include "diagnostic_updater/diagnostic_updater.h"
+#include "diagnostic_updater/update_functions.h"
 
 using namespace std;
 
@@ -69,7 +69,8 @@ class StereoProc : public ros::Node
   stereo_msgs::StereoInfo    stereo_info_;
 
 
-  DiagnosticUpdater<StereoProc> diagnostic_;
+  diagnostic_updater::Updater diagnostic_;
+  diagnostic_updater::FrequencyStatus freq_status_;
   int count_;
   double desired_freq_;
 
@@ -79,9 +80,11 @@ public:
 
   cam::StereoData* stdata_;
 
-  StereoProc() : ros::Node("stereoproc"), diagnostic_(this), count_(0), stdata_(NULL)
+  StereoProc() : ros::Node("stereoproc"), diagnostic_(ros::NodeHandle()), /// @todo Pass in the NodeHandle to diagnostic_ when this gets upgraded to NodeHandle API.
+    freq_status_(diagnostic_updater::FrequencyStatusParam(&desired_freq_, &desired_freq_)), 
+    count_(0), stdata_(NULL)
   {
-    diagnostic_.addUpdater( &StereoProc::freqStatus );
+    diagnostic_.add( freq_status_ );
 
     param("~do_colorize", do_colorize_, false);
 
@@ -388,37 +391,6 @@ public:
 
     if (do_calc_points_)
       advertise<sensor_msgs::PointCloud>("cloud",1);
-  }
-
-
-  void freqStatus(diagnostic_msgs::DiagnosticStatus& status)
-  {
-    status.name = "Frequency Status";
-
-    double freq = (double)(count_)/diagnostic_.getPeriod();
-
-    if (freq < (.9*desired_freq_))
-    {
-      status.level = 2;
-      status.message = "Desired frequency not met";
-    }
-    else
-    {
-      status.level = 0;
-      status.message = "Desired frequency met";
-    }
-
-    status.set_values_size(3);
-    status.values[0].key = "Images in interval";
-    status.values[0].value = count_;
-    status.values[1].key = "Desired frequency";
-    status.values[1].value = desired_freq_;
-    status.values[2].key = "Actual frequency";
-    status.values[2].value = freq;
-
-    printf("%g fps\n", freq);
-
-    count_ = 0;
   }
 
   bool spin()
