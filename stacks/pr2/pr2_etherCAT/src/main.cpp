@@ -42,6 +42,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+#include <diagnostic_updater/DiagnosticStatusWrapper.h>
 #include <mechanism_control/mechanism_control.h>
 #include <ethercat_hardware/ethercat_hardware.h>
 #include <urdf/parser.h>
@@ -103,9 +104,7 @@ static void publishDiagnostics(realtime_tools::RealtimePublisher<diagnostic_msgs
   {
     accumulator_set<double, stats<tag::max, tag::mean> > zero;
     vector<diagnostic_msgs::DiagnosticStatus> statuses;
-    vector<diagnostic_msgs::KeyValue> values;
-    diagnostic_msgs::DiagnosticStatus status;
-    diagnostic_msgs::KeyValue v;
+    diagnostic_updater::DiagnosticStatusWrapper status;
 
     static double max_ec = 0, max_mc = 0;
     double avg_ec, avg_mc;
@@ -121,29 +120,18 @@ static void publishDiagnostics(realtime_tools::RealtimePublisher<diagnostic_msgs
     if (first)
     {
       first = false;
-      v.key = "Robot Description";
-      v.value = g_robot_desc;
-      values.push_back(v);
+      status.add("Robot Description", g_robot_desc);
     }
 
-#define ADD_STRING_FMT(lab, fmt, ...) \
-  v.key = (lab); \
-  { char buf[1024]; \
-    snprintf(buf, sizeof(buf), fmt, ##__VA_ARGS__); \
-    v.value = buf; \
-  } \
-  values.push_back(v)
-
-    ADD_STRING_FMT("Max EtherCAT roundtrip (us)", "%.2f", max_ec*1e+6);
-    ADD_STRING_FMT("Avg EtherCAT roundtrip (us)", "%.2f", avg_ec*1e+6);
-    ADD_STRING_FMT("Max Mechanism Control roundtrip (us)", "%.2f", max_mc*1e+6);
-    ADD_STRING_FMT("Avg Mechanism Control roundtrip (us)", "%.2f", avg_mc*1e+6);
+    status.addf("Max EtherCAT roundtrip (us)", "%.2f", max_ec*1e+6);
+    status.addf("Avg EtherCAT roundtrip (us)", "%.2f", avg_ec*1e+6);
+    status.addf("Max Mechanism Control roundtrip (us)", "%.2f", max_mc*1e+6);
+    status.addf("Avg Mechanism Control roundtrip (us)", "%.2f", avg_mc*1e+6);
 
     status.name = "Realtime Control Loop";
     status.level = 0;
     status.message = "OK";
 
-    status.set_values_vec(values);
     statuses.push_back(status);
     publisher.msg_.set_status_vec(statuses);
     publisher.unlockAndPublish();
