@@ -18,7 +18,7 @@ BULLET_LIB_DIR=$(shell rospack find bullet)/lib
 BULLET_CFLAGS=$(shell rospack export --lang=cpp --attrib=cflags bullet)
 BULLET_LFLAGS=$(shell rospack export --lang=cpp --attrib=lflags bullet)
 
-# create 
+# create
 installed: $(SVN_DIR) patched
 	echo "prefix=${BULLET_DIR}\n\
 libdir=${BULLET_INCLUDE_DIR}\n\
@@ -29,7 +29,7 @@ Description: Bullet as built by ROS\n\
 Version: 2.74\n\
 Libs: ${BULLET_LFLAGS}\n\
 CFlags: ${BULLET_CFLAGS}" > bullet.pc
-	cd $(SVN_DIR) && export PKG_CONFIG_PATH="$(PKG_CONFIG_PATH):`rospack find openrave`" && export PATH="$(shell rospack find soqt)/bin:$(shell rospack find opende)/opende/bin:$(PATH)" && mkdir -p build && cd build && BOOST_INCLUDEDIR=$(BOOST_INCLUDE_DIRS) BOOST_LIBRARYDIR=$(BOOST_LIBRARY_DIRS) cmake -DCMAKE_INSTALL_PREFIX=`rospack find openrave` -DCMAKE_BUILD_TYPE=RelWithDebInfo -DODE_HAVE_ALLOCATE_DATA_THREAD -DBoost_INCLUDE_DIR=$(BOOST_INCLUDE_DIRS) -DBoost_LIBRARY_DIR=$(BOOST_LIBRARY_DIRS) .. && export PARALLEL_JOBS=ROS_PARALLEL_JOBS && make $(ROS_PARALLEL_JOBS) install
+	cd $(SVN_DIR) && export PKG_CONFIG_PATH="$(PKG_CONFIG_PATH):`rospack find openrave`" && export PATH="$(shell rospack find soqt)/bin:$(shell rospack find opende)/opende/bin:$(PATH)" && mkdir -p build && cd build && BOOST_INCLUDEDIR=$(BOOST_INCLUDE_DIRS) BOOST_LIBRARYDIR=$(BOOST_LIBRARY_DIRS) cmake -DCMAKE_INSTALL_PREFIX=`rospack find openrave` -DCMAKE_BUILD_TYPE=RelWithDebInfo -DODE_HAVE_ALLOCATE_DATA_THREAD=1 -DBoost_INCLUDE_DIR=$(BOOST_INCLUDE_DIRS) -DBoost_LIBRARY_DIR=$(BOOST_LIBRARY_DIRS) .. && export PARALLEL_JOBS=ROS_PARALLEL_JOBS && make $(ROS_PARALLEL_JOBS) install
 	touch installed
 
 clean:
