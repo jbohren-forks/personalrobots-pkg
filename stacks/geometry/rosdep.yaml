@@ -1,0 +1,5 @@
+glut:
+  ubuntu: libglut3-dev
+  debian: libglut3-dev
+  fedora: freeglut-devel
+  arch: freeglut
