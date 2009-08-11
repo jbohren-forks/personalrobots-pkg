@@ -31,7 +31,10 @@
   <property name="base_laser_size_z" value="0.03" />
   <property name="base_laser_collision_offset_z" value="0.03" />
 
-  <macro name="pr2_wheel" params="suffix parent reflect">
+  <!--                                                      -->
+  <!-- Alpha 2.0 hardware                                   -->
+  <!--                                                      -->
+  <macro name="pr2_wheel_alpha2" params="suffix parent reflect">
     <joint name="${parent}_${suffix}_wheel_joint" type="revolute">
       <axis xyz="0 1 0" />
       <anchor xyz="0 0 0" />
@@ -93,18 +96,18 @@
     </link>
 
     <transmission type="SimpleTransmission" name="${parent}_${suffix}_wheel_trans">
-      <actuator name="${parent}_${suffix}_wheel_motor" />
+      <actuator name="${parent}_${suffix}_wheel_motor_alpha2" />
       <joint name="${parent}_${suffix}_wheel_joint" />
-      <mechanicalReduction>${reflect*75.05}</mechanicalReduction>
+      <mechanicalReduction>${-1 * reflect * 79.226}</mechanicalReduction>
     </transmission>
   </macro>
 
-  <macro name="pr2_caster" params="suffix parent *origin">
+  <macro name="pr2_caster_alpha2" params="suffix parent *origin ref_position">
     <joint name="${suffix}_caster_rotation_joint" type="revolute">
       <axis xyz="0 0 1" />
       <anchor xyz="0 0 0" />
       <limit effort="100" velocity="100" k_velocity="10" />
-      <calibration reference_position="0.0" values="1.5 -1" />
+      <calibration reference_position="${ref_position}" values="1.5 -1" />
       <joint_properties damping="0.0" friction="0.0" />
     </joint>
 
@@ -142,21 +145,22 @@
     </link>
 
     <transmission type="SimpleTransmission" name="${suffix}_caster_rotation_trans">
-      <actuator name="${suffix}_caster_rotation_motor" />
+      <actuator name="${suffix}_caster_rotation_motor_alpha2" />
       <joint name="${suffix}_caster_rotation_joint" />
-      <mechanicalReduction>-75.05</mechanicalReduction>
+      <mechanicalReduction>79.226</mechanicalReduction>
     </transmission>
 
-    <pr2_wheel parent="${suffix}_caster" suffix="l" reflect="1" />
-    <pr2_wheel parent="${suffix}_caster" suffix="r" reflect="-1" />
+    <!-- Double check these are right for the Alpha 2.0's -->
+    <pr2_wheel_alpha2 parent="${suffix}_caster" suffix="l" reflect="1" />
+    <pr2_wheel_alpha2 parent="${suffix}_caster" suffix="r" reflect="-1" />
   </macro>
-
 
   <property name="caster_offset_x" value="0.2225" />
   <property name="caster_offset_y" value="0.2225" />
   <property name="caster_offset_z" value="0.0282" />
 
-  <macro name="pr2_base" params="name *origin">
+
+  <macro name="pr2_base_alpha2" params="name *origin">
 
     <joint name="${name}_joint" type="planar" />
 
@@ -180,7 +184,7 @@
         <geometry name="${name}_visual">
           <mesh filename="base.stlb" />
         </geometry>
-        <map name="${name}_visual_mesh" flag="ogre">
+        <map name="${name}_visual_mesh" flag="ogre" >
           <elem key="mesh" value="base.mesh" />
         </map>
       </visual>
@@ -190,12 +194,6 @@
         <geometry name="${name}_collision">
           <box size="${base_size_x} ${base_size_y} ${base_size_z}" />
         </geometry>
-        <map name="base_collision_properties" flag="gazebo">
-          <elem key="mu1" value="500.0" />
-          <elem key="mu2" value="500.0" />
-          <elem key="kp"  value="100000000.0" />
-          <elem key="kd"  value="1.0" />
-        </map>
       </collision>
       <map name="bumper_sensor" flag="gazebo">
         <verbatim key="sensor_base_bumper">
@@ -275,68 +273,19 @@
       </map>
     </link>
 
-    <joint name="plug_magnet_joint" type="fixed">
-      <axis xyz="0 1 0" />
-      <anchor xyz="0 0 0" />
-    </joint>
 
-    <link name="plug_magnet" type="laser">
-      <parent name="${name}_link" />
-      <origin xyz="0.18 0 ${base_height_offset+0.235}" rpy="0 0 0" />
-      <joint name="plug_magnet_joint" />
-      <inertial>
-        <mass value="0.1" />
-        <com xyz="0 0 0.0" />
-        <inertia ixx="0.1" ixy="0" ixz="0" iyy="0.1" iyz="0" izz="0.1" />
-      </inertial>
-
-      <visual>
-        <origin xyz="0 0 0.0" rpy="0 0 0" />
-        <map name="gazebo_material" flag="gazebo">
-          <elem key="material" value="PR2/Red" />
-        </map>
-        <geometry name="plug_magnet_visual">
-          <box size="0.001 0.001 0.001"/>
-        </geometry>
-      </visual>
-
-      <collision>
-        <origin xyz="0 0 0.0" rpy="0 0 0" />
-        <geometry name="plug_magnet_collision">
-          <box size=".001 .001 .001" />
-        </geometry>
-      </collision>
-
-    </link>
-    <map name="sensor" flag="gazebo">
-      <verbatim key="sensor_plug_magnet_p3d">
-        <controller:ros_p3d name="p3d_plug_magnet_controller" plugin="libros_p3d.so">
-          <alwaysOn>true</alwaysOn>
-          <updateRate>100.0</updateRate>
-          <bodyName>plug_magnet</bodyName>
-          <topicName>plug_magnet_pose_ground_truth</topicName>
-          <gaussianNoise>0.01</gaussianNoise>
-          <frameName>map</frameName>
-          <xyzOffsets>0 0 0</xyzOffsets> <!-- initialize odometry for fake localization-->
-          <rpyOffsets>0 0 0</rpyOffsets>
-          <interface:position name="p3d_plug_magnet_position"/>
-        </controller:ros_p3d>
-      </verbatim>
-    </map>
-
-
-    <pr2_caster suffix="fl" parent="${name}_link">
+    <pr2_caster_alpha2 suffix="fl" parent="${name}_link" ref_position="${cal_caster_fl}" >
       <origin xyz="${caster_offset_x} ${caster_offset_y} ${caster_offset_z}" rpy="0 0 0" />
-    </pr2_caster>
-    <pr2_caster suffix="fr" parent="${name}_link">
+    </pr2_caster_alpha2>
+    <pr2_caster_alpha2 suffix="fr" parent="${name}_link" ref_position="${cal_caster_fr}" >
       <origin xyz="${caster_offset_x} ${-caster_offset_y} ${caster_offset_z}" rpy="0 0 0" />
-    </pr2_caster>
-    <pr2_caster suffix="bl" parent="${name}_link">
+    </pr2_caster_alpha2>
+    <pr2_caster_alpha2 suffix="bl" parent="${name}_link" ref_position="${cal_caster_bl}" >
       <origin xyz="${-caster_offset_x} ${caster_offset_y} ${caster_offset_z}" rpy="0 0 0" />
-    </pr2_caster>
-    <pr2_caster suffix="br" parent="${name}_link">
+    </pr2_caster_alpha2>
+    <pr2_caster_alpha2 suffix="br" parent="${name}_link" ref_position="${cal_caster_br}"  >
       <origin xyz="${-caster_offset_x} ${-caster_offset_y} ${caster_offset_z}" rpy="0 0 0" />
-    </pr2_caster>
+    </pr2_caster_alpha2>
 
     <map name="sensor" flag="gazebo">
       <verbatim key="sensor_base_laser_ray">
@@ -356,31 +305,28 @@
 
   </macro>
 
-
-
   <!--                    Calibration                            -->
 
-  <macro name="caster_calibrator" params="suffix">
+  <macro name="caster_calibrator_alpha2" params="suffix">
     <controller type="CasterCalibrationControllerNode"
                 name="cal_caster_${suffix}" topic="cal_caster_${suffix}">
       <calibrate joint="${suffix}_caster_rotation_joint"
-                 actuator="${suffix}_caster_rotation_motor"
+                 actuator="${suffix}_caster_rotation_motor_alpha2"
                  transmission="${suffix}_caster_rotation_trans"
-                 velocity="2.0" />
+                 velocity="1.0" />
       <joints caster="${suffix}_caster_rotation_joint"
               wheel_l="${suffix}_caster_l_wheel_joint"
               wheel_r="${suffix}_caster_r_wheel_joint" />
       <caster_pid p="6" i="0" d="0" iClamp="0" />
-      <wheel_pid p="4" i="0" d="0" iClamp="0" />
+      <wheel_pid p="6" i="0" d="0" iClamp="0" />
     </controller>
   </macro>
 
-
-  <macro name="base_calibrator">
-    <caster_calibrator suffix="fl" />
-    <caster_calibrator suffix="fr" />
-    <caster_calibrator suffix="bl" />
-    <caster_calibrator suffix="br" />
+  <macro name="base_calibrator_alpha2">
+    <caster_calibrator_alpha2 suffix="fl" />
+    <caster_calibrator_alpha2 suffix="fr" />
+    <caster_calibrator_alpha2 suffix="bl" />
+    <caster_calibrator_alpha2 suffix="br" />
   </macro>
 
 
