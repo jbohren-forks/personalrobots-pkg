@@ -55,6 +55,7 @@ RobotPixelsCapture::RobotPixelsCapture(const RobotPixelsConfig& config, Completi
   const unsigned int N = config.pixel_configs.size();
   pixel_channels_.resize(N);
   stationary_pixels_.resize(N);
+  cur_feedback_.pixel_channels.resize(N);
 
   for (unsigned int i=0; i<N; i++)
   {
@@ -143,7 +144,7 @@ void RobotPixelsCapture::searchForMatch(const ros::Time& time)
     boost::mutex::scoped_lock lock(joint_states_mutex_);
     if (stationary_joint_states_->size() == 0)
     {
-      ROS_INFO("Haven't received data from JointStates yet");
+      ROS_INFO("Haven't received data any stationary JointStates in a while");
       return;
     }
     success = stationary_joint_states_->getClosestElem(time, joint_states);
@@ -159,14 +160,13 @@ void RobotPixelsCapture::searchForMatch(const ros::Time& time)
     {
       if (stationary_pixels_[i]->size() == 0)
       {
-        ROS_INFO("Haven't received data for PixelChannel[%u] yet", i);
+        ROS_INFO("Haven't received stationary PixelChannel[%u] data in a while", i);
         return;
       }
       success = stationary_pixels_[i]->getClosestElem(time, pixel_vec[i]);
       ROS_ERROR_COND(!success, "Error trying to get closest pixel elem. This is a bug in RobotPixelsCapture");
     }
   }
-
 
   // If timeshift is 0, then it's a special case, and we skip the timeshift checking
   if (joint_states_timeshift_ != ros::Duration(0,0))
@@ -189,7 +189,7 @@ void RobotPixelsCapture::searchForMatch(const ros::Time& time)
     }
   }
   else
-    ROS_INFO("Ignote joint states timeshift");
+    ROS_INFO("Ignore joint states timeshift");
 
   // Verify all cross pixel timeshifts are within bounds
   for (unsigned int i=0; i<pixel_timeshifts_.size(); i++)

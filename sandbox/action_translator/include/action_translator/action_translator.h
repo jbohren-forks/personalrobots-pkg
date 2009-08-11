@@ -43,6 +43,9 @@
 namespace action_translator
 {
 
+/**
+ * \brief A helper class used to convert between the old actions (robot_actions) and the new actions (actionlib)
+ */
 template<class ActionSpec, class OldGoal, class OldFeedback>
 class ActionTranslator : public robot_actions::Action<OldGoal, OldFeedback>
 {
@@ -55,6 +58,13 @@ public:
   typedef boost::function< OldFeedback(const Feedback&)> FromActionFeedbackFunc;
   typedef boost::function< OldFeedback(const Result&)> FromActionResultFunc;
 
+  /**
+   * \param new_action_name The namespace in which actionlib should communicate. The robot_actions
+   *                        part will communicate in the namespace [new_action_name]_old
+   * \param from_old_goal_func Function to translate the robot_actions goal into the actionlib goal
+   * \param from_action_feedback_func Function to translate the actionlib feedback into a robot_actions feedback
+   * \param from_action_result_func Function to translate the actionlib result into a robot_actions feedback
+   */
   ActionTranslator(const std::string& new_action_name,
                    FromOldGoalFunc from_old_goal_func,
                    FromActionFeedbackFunc from_action_feedback_func = FromActionFeedbackFunc(),
@@ -69,6 +79,9 @@ public:
 
   }
 
+  /**
+   * \brief Blocking call to actionlib with a goal request
+   */
   robot_actions::ResultStatus execute(const OldGoal& old_goal, OldFeedback& old_feedback)
   {
     ac_.stopTrackingGoal();

@@ -24,6 +24,11 @@ rospack_add_executable(capture_hand_led src/capture_hand_led.cpp)
 rospack_add_executable(run_robot_pixels_capture src/run_robot_pixels_capture.cpp)
 target_link_libraries(run_robot_pixels_capture ${PROJECT_NAME})
 
+rospack_add_executable(capture_robot_pixels_action_server src/capture_robot_pixels_action_server.cpp)
+target_link_libraries(capture_robot_pixels_action_server ${PROJECT_NAME})
+
+rospack_add_executable(capture_robot_pixels_sample_client src/capture_robot_pixels_sample_client.cpp)
+target_link_libraries(capture_robot_pixels_sample_client ${PROJECT_NAME})
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
