@@ -69,5 +69,8 @@ namespace door_functions{
     std::ostream& operator<< (std::ostream& os, const door_msgs::Door& d);
     std::vector<geometry_msgs::Point> getPolygon(const door_msgs::Door& door, const double &door_thickness);
     door_msgs::Door rotateDoor(const door_msgs::Door& door, const double &angle);
+    geometry_msgs::Point32 getHingeAxisPoint(const door_msgs::Door& door);
+    geometry_msgs::Point32 getEdgePoint(const door_msgs::Door& door);
+
 }
 #endif

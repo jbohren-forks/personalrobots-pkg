@@ -117,6 +117,30 @@ namespace door_functions{
     return gripper_pose;  
   }
 
+  geometry_msgs::Point32 getHingeAxisPoint(const door_msgs::Door& door)
+  {
+    geometry_msgs::Point32 hinge;
+    if (door.hinge == door_msgs::Door::HINGE_P1){
+      hinge = door.door_p1;
+    }
+    else if (door.hinge == door_msgs::Door::HINGE_P2){
+      hinge = door.door_p2;
+    }
+    return hinge;
+  }
+
+  geometry_msgs::Point32 getEdgePoint(const door_msgs::Door& door)
+  {
+    geometry_msgs::Point32 edge;
+    if (door.hinge == door_msgs::Door::HINGE_P1){
+      edge = door.door_p2;
+    }
+    else if (door.hinge == door_msgs::Door::HINGE_P2){
+      edge = door.door_p1;
+    }
+    return edge;
+  }
+
   tf::Stamped<tf::Pose> getHandlePose(const door_msgs::Door& door, int side)
   {
     Vector x_axis(1,0,0);
