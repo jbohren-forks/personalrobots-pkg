@@ -63,7 +63,7 @@ namespace pluginlib {
         std::string library_path = library->Attribute("path");
         if (library_path.size() == 0)
         {
-          std::cerr << "Failed to find Path Attirbute in library element in " << it->c_str() << std::endl;
+          ROS_ERROR("Failed to find Path Attirbute in library element in %s", it->c_str());
           continue;
         }
 
@@ -89,7 +89,7 @@ namespace pluginlib {
 
           if (parent.string().empty())
           {
-            std::cerr << "Could not find package name for plugin" << *it << std::endl;
+            ROS_ERROR("Could not find package name for plugin %s", it->c_str());
             break;
           }
         }
@@ -127,11 +127,11 @@ namespace pluginlib {
       library_path = it->second.library_path_;
     else
     {
-      std::cerr<< "Couldn't find plugin "<<plugin_name << std::endl;
+      ROS_ERROR("Couldn't find plugin %s", plugin_name.c_str());
       return false;
     }
     library_path.append(Poco::SharedLibrary::suffix());
-    std::cout << "Loading library " << library_path << std::endl;
+    ROS_DEBUG("Loading library %s", library_path.c_str());
     try
     {
       loadPluginLibrary(library_path);
@@ -140,12 +140,12 @@ namespace pluginlib {
     }
     catch (Poco::LibraryLoadException &ex)
     {
-      std::cerr << "Failed to load library " << library_path << ex.what() << std::endl;
+      ROS_ERROR("Failed to load library %s %s", library_path.c_str(), ex.what());
       return false;
     }
     catch (Poco::NotFoundException &ex)
     {
-      std::cerr << "Failed to find library " << library_path << ex.what() << std::endl;
+      ROS_ERROR("Failed to find library %s %s", library_path.c_str(), ex.what());
       return false;
     }
     return true;
@@ -238,7 +238,7 @@ namespace pluginlib {
       if(!loadPlugin(name))
       {
         //\todo THROW HERE
-        std::cerr <<"Failed to auto load library" << std::endl;
+        ROS_ERROR("Failed to auto load library");
         return NULL;
         throw std::runtime_error("Failed to auto load library for plugin " + name + ".");
       }
@@ -258,7 +258,7 @@ namespace pluginlib {
     LibraryCountMap::iterator it = loaded_libraries_.find(library_path);
     if (it == loaded_libraries_.end())
     {
-      std::cerr << "unable to unload library which is not loaded" << std::endl;
+      ROS_ERROR("unable to unload library which is not loaded");
       return;
     }
     else if (it-> second > 1)

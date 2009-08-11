@@ -29,7 +29,7 @@
 #ifndef PLUGINLIB_PLUGIN_LOADER_H
 #define PLUGINLIB_PLUGIN_LOADER_H
 
-#include <iostream>
+#include "ros/console.h"
 
 #include "Poco/ClassLoader.h"
 #include "ros/package.h"
