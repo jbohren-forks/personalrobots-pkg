@@ -1,0 +1,40 @@
+To build the hand dataset, follow these steps. The data from all these steps
+is store in /u/prdata
+
+1) Retrieve the images and annotations:
+rosrun cv_mech_turk session_results.py --session=hands-3-s --server=vm7.willowgarage.com:80 --saveto=results
+
+This creates directories results/annotations and results/images, fetches xml descriptions of the hand
+annotations, and converts them from relative to absolute coordinates.
+
+Note: right now images 33 and 80 have a reversed annotation, so if you run the line above, you will have
+to reverse the list of points of the polygon in frame0033.xml. Keep the first point in first position
+and reverse the rest of the list (ie go through the polygon in opposite circular direction starting
+from the same point)
+
+2) Extract the hand polygons from the annotations:
+python scripts/mt_results_to_hand_outlines.py --folder=results
+
+This simply creates a simplified xml containing only the hand polygons. It used to do more.
+
+3) Find an oriented bounding box containing the polygons, with the wrist-major axis vertical
+python scripts/hand_outlines_to_oriented_bounding_boxes.py --folder=results
+
+4) Crop the oriented bounding boxes from the images
+python scripts/oriented_bounding_boxes_to_cropped_images.py --folder=results
+
+
+
+
+
+To create additional data using Mechanical Turk:
+
+1) rosrun cv_mech_turk submit_img.py --server=vm7.willowgarage.com:80 --session=hands-3-s /u/prdata/hand_data/flat_hands/images/frame00*
+
+(Replace the image list with your own path). Follow the instructions at
+http://pr.willowgarage.com/wiki/ROS/mturk/AnnotationTutorial
+to annotate the images yourself or have them annotated by MTurk.
+You may replace hands-3-s by a session you have created, in particular if you want the images annotated
+by MTurk workers since hands-3-s is specifically restricted to the sandbox.
+
+2) Repeat the first part

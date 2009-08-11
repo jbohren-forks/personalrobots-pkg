@@ -9,7 +9,9 @@
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/hand_tracker</url>
   <depend package="roscpp"/>
+  <depend package="rospy"/>
   <depend package="opencv_latest"/>
+  <depend package="opencvpython"/>
   <depend package="mux"/>
 
 </package>

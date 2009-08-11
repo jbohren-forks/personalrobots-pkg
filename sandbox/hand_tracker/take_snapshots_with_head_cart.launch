@@ -2,4 +2,9 @@
 
   <node pkg="mux" type="throttle" args="2.0 /narrow_stereo/left/image_color /narrow_stereo/left/image_color_throttled" />
 
+  <!node pkg="rosrecord" type="rosrecord" machine="two" args="-f /bags/hand_tracker/tf_ /tf_message"/>
+  <!node pkg="rosrecord" type="rosrecord" machine="one" args="-f /bags/hand_tracker/wide_stereo_ /wide_stereo/raw_stereo"/>
+
+
+
 </launch>
