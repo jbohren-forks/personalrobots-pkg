@@ -31,7 +31,7 @@
 /**
  * \file
  *
- * Node that sequences other nodes
+ * Node that sequences events across other nodes
  *
  */
 
@@ -147,7 +147,7 @@ void NodeSequencer::addTaskIfNecessary(const string& name)
 void NodeSequencer::run ()
 {
   // Main loop
-  ros::Duration d(1);
+  ros::Duration d(.1);
   while (node_.ok()) {
 
     foreach (string task, tasks_) {
@@ -162,10 +162,9 @@ void NodeSequencer::run ()
         msg.data = task;
         publisher_.publish(msg);
       }
+      ros::spinOnce();
+      d.sleep();
     }
-
-    ros::spinOnce();
-    d.sleep();
   }
 }
 

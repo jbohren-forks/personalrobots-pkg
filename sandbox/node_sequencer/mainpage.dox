@@ -2,7 +2,9 @@
 \mainpage
 \htmlinclude manifest.html
 
-\b node_sequencer is ... 
+\b node_sequencer provides a way to control the order in which things happen across multiple ROS nodes.
+
+
 
 <!-- 
 In addition to providing an overview of your package,
@@ -14,6 +16,8 @@ You can then link to this documentation page from the Wiki.
 
 
 \section codeapi Code API
+
+Use the waitFor and notify functions.
 
 <!--
 Provide links to specific auto-generated API documentation within your
@@ -40,80 +44,29 @@ List of nodes:
 - \b node_name2
 -->
 
+
+
+
 <!-- START: copy from here to 'END' for each node 
+-->
 
 <hr>
 
-\subsection node_name node_name
+\subsection node_sequencer node_sequencer
 
-node_name does (provide a basic description of your node)
-
-\subsubsection Usage
-\verbatim
-$ node_type1 [standard ROS args]
-\endverbatim
-
-\par Example
-
-\verbatim
-$ node_type1
-\endverbatim
-
-
-\subsubsection topics ROS topics
-
-Subscribes to:
-- \b "in": [std_msgs/FooType] description of in
-
-Publishes to:
-- \b "out": [std_msgs/FooType] description of out
-
-
-\subsubsection parameters ROS parameters
-
-Reads the following parameters from the parameter server
-
-- \b "~param_name" : \b [type] description of param_name
-- \b "~my_param" : \b [string] description of my_param
-
-Sets the following parameters on the parameter server
-
-- \b "~param_name" : \b [type] description of param_name
-
-
-\subsubsection services ROS services
-- \b "foo_service": [std_srvs/FooType] description of foo_service
-
-
-END: copy for each node -->
-
-
-<!-- START: Uncomment if you have any command-line tools
-
-\section commandline Command-line tools
-
-This section is a catch-all for any additional tools that your package
-provides or uses that may be of use to the reader. For example:
-
-- tools/scripts (e.g. rospack, roscd)
-- roslaunch .launch files
-- xmlparam files
-
-\subsection script_name script_name
-
-Description of what this script/file does.
+node_sequencer is the node that actually synchronizes the other nodes.
 
 \subsubsection Usage
 \verbatim
-$ ./script_name [args]
+$ node_sequencer -c constraints_file
 \endverbatim
 
-\par Example
-
+Each line of the constraints file must be of the form
 \verbatim
-$ ./script_name foo bar
+event1 event2
 \endverbatim
 
-END: Command-Line Tools Section -->
+which means that event1 must happen before event2.  Events are made to happen by creating objects of type SequencedTask.
+
 
 */

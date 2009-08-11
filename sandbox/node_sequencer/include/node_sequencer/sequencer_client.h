@@ -40,63 +40,54 @@ using std_msgs::String;
 namespace node_sequencer 
 {
 
-class SequencedTask
-{
-public:
-  SequencedTask(const string& name, const string& ns) : done_(false), connected_(false), name_(name)
-  {
-    subscriber_ = node_.subscribe(ns + "/" + "can_start", 1000, &SequencedTask::startCallback, this);
-    publisher_ = node_.advertise<String>(ns + "/" + "completed", 1000, bind(&SequencedTask::connectionCallback, this, _1));
-    
-    ros::Duration d(.1);
-    while (node_.ok() && !done_) {
-      ros::spinOnce();
-      d.sleep();
-    }
-  }
+/************************************************************
+ * External API
+ ************************************************************/
 
-  ~SequencedTask()
-  {
-    String msg;
-    msg.data = name_;
-    ros::Duration d(.1);
-    while (node_.ok() && !connected_) {
-      d.sleep();
-      ROS_DEBUG_STREAM_NAMED ("sequenced_task", "Waiting for sequencer node to connect to " << name_);
-    }
-    
-    ROS_DEBUG_STREAM_NAMED ("sequenced_task", "Setting completion message for task " << name_);
-    if (node_.ok())
-      publisher_.publish(msg);
+/// Postcondition: the preconditions of event \a name for sequencer \a ns are met
+void waitFor (const string& name, const string& ns);
 
-  }
-
-  void startCallback (const std_msgs::String::ConstPtr& msg)
-  {
-    if (msg->data == name_) {
-      ROS_DEBUG_STREAM_NAMED ("sequenced_task", "Received start callback for " << name_);
-      done_ = true;
-    }
-  }
-
-  void connectionCallback (const ros::SingleSubscriberPublisher& pub)
-  {
-    ROS_DEBUG_STREAM_NAMED ("sequenced_task", "Received connection callback");
-    connected_=true;
-  }
-
-private:
-
-  bool done_;
-  bool connected_;
-  string name_;
-  ros::NodeHandle node_;
-  ros::Publisher publisher_;
-  ros::Subscriber subscriber_;
-};
+/// Postcondition: a message has been sent to the sequencer \a ns that event \a name has completed
+void notify (const string& name, const string& ns);
   
 
+/************************************************************
+ * Internally used classes
+ ************************************************************/
 
+namespace impl
+{
+
+class Waiter
+{
+public:
+  Waiter (const string& name, const string& ns);
+  void wait();
+  void waiterCallback (const String::ConstPtr& msg);
+
+private:
+  ros::NodeHandle nh_;
+  ros::Subscriber sub_;
+  string name_;
+  bool done_;
+};
+
+
+class Notifier
+{
+public:
+  Notifier (const string& name, const string& ns);
+  void notify();
+  void connectionCallback (const ros::SingleSubscriberPublisher& pub);
+
+private:
+  bool connected_;
+  ros::NodeHandle nh_;
+  ros::Publisher pub_;
+  String msg_;
+};
+
+}
 
 } // namespace
 

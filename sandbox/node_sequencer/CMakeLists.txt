@@ -21,6 +21,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 rospack_add_executable(node_sequencer src/sequencer.cpp)
 rospack_link_boost(node_sequencer program_options)
-
+rospack_add_library(sequencer_client src/sequencer_client.cpp)
 rospack_add_executable(sequencer_test src/sequencer_test.cpp)
+target_link_libraries(sequencer_test sequencer_client)
 

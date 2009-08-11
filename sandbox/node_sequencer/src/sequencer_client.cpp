@@ -27,26 +27,70 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 #include <node_sequencer/sequencer_client.h>
 
-namespace nseq=node_sequencer;
-
-int main (int argc, char** argv)
+namespace node_sequencer
 {
-  ros::init(argc, argv, "sequencer_test", ros::init_options::AnonymousName);
-  ros::NodeHandle node;
-  for (int i=1; i<argc && node.ok() ; i+=2) {
-    ROS_INFO_STREAM ("Waiting to start " << argv[i]);
-    nseq::waitFor(argv[i], "node_sequencer");
-    ROS_INFO_STREAM ("Started " << argv[i]);
 
-    ros::Duration d(atof(argv[i+1]));
-    d.sleep();
-    ROS_INFO_STREAM ("Finished " << argv[i]);
-    nseq::notify(argv[i], "node_sequencer");
-  }
-  ROS_INFO ("Done!");
-
-  return 0;
+void waitFor (const string& name, const string& ns)
+{
+  impl::Waiter(name, ns).wait();
 }
+
+void notify (const string& name, const string& ns)
+{
+  impl::Notifier(name, ns).notify();
+}
+
+
+
+namespace impl
+{
+
+
+Waiter::Waiter (const string& name, const string& ns) : name_(name), done_(false)
+{
+  sub_=nh_.subscribe(ns+"/can_start", 1000, &Waiter::waiterCallback, this);
+}
+
+void Waiter::waiterCallback (const String::ConstPtr& msg)
+{
+  if (msg->data == name_)
+    done_=true;
+}
+
+void Waiter::wait()
+{
+  ros::Duration d(.1);
+  while (!done_ && nh_.ok())
+  {
+    ros::spinOnce();
+    d.sleep();
+  }
+}
+
+
+Notifier::Notifier (const string& name, const string& ns) : connected_(false)
+{
+  pub_ = nh_.advertise<String>(ns + "/completed", 1000, bind(&Notifier::connectionCallback, this, _1));
+  msg_.data = name;
+}
+
+void Notifier::notify ()
+{
+  ros::Duration d(.1);
+  while (!connected_) {
+    ros::spinOnce();
+    d.sleep();
+  }
+  pub_.publish(msg_);
+}
+
+void Notifier::connectionCallback (const ros::SingleSubscriberPublisher& pub)
+{
+  connected_=true;
+}
+
+  
+} // namespace impl
+} // namespace node_sequencer
