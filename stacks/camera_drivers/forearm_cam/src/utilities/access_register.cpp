@@ -1,5 +1,6 @@
 #include "forearm_cam/fcamlib.h"
 #include "forearm_cam/host_netutil.h"
+#include <string.h>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -48,15 +49,11 @@ int main(int argc, char** argv)
 
   char **nextarg = argv + 1;
   char **endarg = argv;
-  while (*endarg++)
-    if (!strcmp(*endarg, "--help"))
-    {
-      usage(argc, argv);
-      return 0;
-    }
+  while (*endarg)
+    endarg++;
 
   // Get the URL
-  if (nextarg == endarg) // No arguments
+  if (nextarg == endarg || !strcmp(*nextarg, "--help")) // No arguments or --help
     return usage(argc, argv);
   const char *camera_url = *nextarg++;
 
@@ -80,7 +77,11 @@ int main(int argc, char** argv)
       if (i % 16 == 8)
         fprintf(stderr, "- "); 
         
-      fprintf(stderr, "%04x ", sensorread(&camera, i));
+      int value = sensorread(&camera, i);
+      if (value == -1)
+        fprintf(stderr, "??");
+      else
+        fprintf(stderr, "%04x ", value);
       
       if ((i + 1) % 16 == 0)
         fprintf(stderr, "\n"); 

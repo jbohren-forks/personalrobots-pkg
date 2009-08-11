@@ -494,7 +494,8 @@ err:
  * Configures the IP address of one specific camera.
  *
  * @param camInfo		Structure describing the camera to configure
- * @param ipAddress	An ASCII string containing the new IP address to assign (e.g., "192.168.0.5")
+ * @param ipAddress	An ASCII string containing the new IP address to assign (e.g., "192.168.0.5"). If it is NULL or empty, the address in camInfo is used, and the 
+ * configure packet is not broadcast.
  * @param wait_us		The number of microseconds to wait for a reply from the camera
  *
  * @return 	Returns -1 with errno set for system call failures.
@@ -515,8 +516,6 @@ int fcamConfigure( IpCamList *camInfo, const char *ipAddress, unsigned wait_us) 
 
 	cPkt.ser_no = htonl(camInfo->serial);
 
-
-
 	// Create and send the Configure broadcast packet. It is sent broadcast
 	// because the camera does not yet have an IP address assigned.
 
@@ -529,8 +528,10 @@ int fcamConfigure( IpCamList *camInfo, const char *ipAddress, unsigned wait_us) 
 		return -1;
 	}
 	
-  if (!ipAddress)
+  // Figure out the IP to use, and send the packet.
+  if (!ipAddress || !*ipAddress)
   {
+    debug("No ipAddress, using %x\n", camInfo->ip);
     cPkt.ip_addr = camInfo->ip;
     
     if(wgSendUDP(s, &camInfo->ip, &cPkt, sizeof(cPkt)) == -1) {
@@ -544,18 +545,21 @@ int fcamConfigure( IpCamList *camInfo, const char *ipAddress, unsigned wait_us) 
     struct in_addr newIP;
     inet_aton(ipAddress, &newIP);
     cPkt.ip_addr = newIP.s_addr;
-
+    debug("Using ipAddress %s -> %x iface %s\n", ipAddress, cPkt.ip_addr, camInfo->ifName);
+    
+    debug("Sending broadcast discover packet.\n");
     if(wgSendUDPBcast(s, camInfo->ifName, &cPkt, sizeof(cPkt)) == -1) {
       debug("Unable to send broadcast\n");
       close(s);
       return -1;
     }
   }
-
-
+    
 	// 'Connect' insures we will only receive datagram replies from the camera's new IP
 	IPAddress camIP = cPkt.ip_addr;
+  debug("Connecting to %x.\n", camIP);
 	if( wgSocketConnect(s, &camIP) ) {
+    debug("Unable to connect\n");
     close(s);
 		return -1;
 	}
@@ -589,7 +593,8 @@ int fcamConfigure( IpCamList *camInfo, const char *ipAddress, unsigned wait_us) 
 	if(wait_us != 0) {
 		return 0;
 	} else {
-		return ERR_TIMEOUT;
+		debug("Timed out.\n");
+    return ERR_TIMEOUT;
 	}
 }
 
@@ -1841,8 +1846,6 @@ int fcamVidReceiveAuto( IpCamList *camera, size_t height, size_t width, FrameHan
 		return 1;
 	}
 
-	debug("fcamVidReceive ready to receive on %s (%s:%u)\n", camera->ifName, inet_ntoa(localIp), port);
-
   s = wgSocketCreate( &localIp, 0 );
 	if( s == -1 ) {
 		return -1;
@@ -1855,9 +1858,11 @@ int fcamVidReceiveAuto( IpCamList *camera, size_t height, size_t width, FrameHan
     close(s);
     return -1;
   }
-
+	
   port = ntohs(((struct sockaddr_in *)&localPort)->sin_port);
 //  fprintf(stderr, "Streaming to port %i.\n", port);
+
+  debug("fcamVidReceiveAuto ready to receive on %s (%s:%u)\n", camera->ifName, inet_ntoa(localIp), port);
 
   if ( fcamStartVid( camera, (uint8_t *)&(localMac.sa_data[0]), inet_ntoa(localIp), port) != 0 ) 
   {

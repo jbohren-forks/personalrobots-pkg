@@ -325,7 +325,7 @@ int write_flash(char *camera_url)
 
 int main(int argc, char **argv)
 {
-  if (argc != 3 && argc != 2 || strcmp(argv[1], "--help")) {
+  if ((argc != 3 && argc != 2) || !strcmp(argv[1], "--help")) {
     fprintf(stderr, "Usage: %s <file.mcs> <camera_url>\n", argv[0]);
     fprintf(stderr, "       %s <file.mcs> > dump.bin\n", argv[0]);
     fprintf(stderr, "Reads a .mcs file and uploads it to the camera or dumps it as binary to stdout.\n");

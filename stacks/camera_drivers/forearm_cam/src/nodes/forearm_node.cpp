@@ -486,8 +486,11 @@ public:
   void doStop()
   {
     ROS_DEBUG("stop()");
-    assert(state_ == RUNNING);
+    if (state_ != RUNNING) // RUNNING can exit asynchronously.
+      return;
     
+    /// @todo race condition here. Need to think more.
+
     state_ = OPENED;
 
     if (image_thread_ && !image_thread_->timed_join((boost::posix_time::milliseconds) 2000))

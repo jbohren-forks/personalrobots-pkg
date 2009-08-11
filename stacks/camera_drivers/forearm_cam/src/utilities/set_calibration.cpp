@@ -121,7 +121,7 @@ int write_calibration(IpCamList *camera, char *filename)
 
 int main(int argc, char **argv)
 {
-  if ((argc != 3 && argc != 2) || strcmp(argv[1], "--help")) {
+  if ((argc != 3 && argc != 2) || !strcmp(argv[1], "--help")) {
     fprintf(stderr, "Usage: %s <camera_url> <calibration_file>    # Sets the camera calibration information\n", argv[0]);
     fprintf(stderr, "       %s <camera_url>                       # Reads the camera calibration information\n", argv[0]);
     fprintf(stderr, "\nReads or writes the camera calibration information stored on the camera's flash.\n");

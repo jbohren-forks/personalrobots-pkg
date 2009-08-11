@@ -1,5 +1,6 @@
 #include "forearm_cam/fcamlib.h"
 #include "forearm_cam/host_netutil.h"
+#include <string.h>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>

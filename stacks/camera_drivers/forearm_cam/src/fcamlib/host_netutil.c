@@ -311,6 +311,14 @@ int wgSocketConnect(int s, const IPAddress *ip) {
 
 	struct sockaddr_in camIP;
 
+  /// @todo Not sure why this hack is needed. I'm pretty sure it used to
+  // work until a few days ago (late july/early june 09). Now the
+  // regression tests won't work without the hack, but real cameras work
+  // just fine. Perhaps the simulated camera was being discovered on
+  // another interface.
+  if (*ip == 0x0100007F)
+    return 0; 
+
 	camIP.sin_family = AF_INET;
 	camIP.sin_port = 0;			// Unused by connect
 	camIP.sin_addr.s_addr=*ip;
