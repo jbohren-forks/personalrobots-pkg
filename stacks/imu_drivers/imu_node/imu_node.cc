@@ -541,9 +541,9 @@ public:
     else
       status.summary(2, "IMU is stopped");
 
-    status.adds("Device", port);
-    status.adds("TF frame", frameid_);
-    status.adds("Error count", error_count_);
+    status.add("Device", port);
+    status.add("TF frame", frameid_);
+    status.add("Error count", error_count_);
   }
 
   void calibrationStatus(diagnostic_updater::DiagnosticStatusWrapper& status)
@@ -551,9 +551,9 @@ public:
     if (calibrated_)
     {
       status.summary(0, "Gyro is calibrated");
-      status.adds("X bias", bias_x_);
-      status.adds("Y bias", bias_y_);
-      status.adds("Z bias", bias_z_);
+      status.add("X bias", bias_x_);
+      status.add("Y bias", bias_y_);
+      status.add("Z bias", bias_z_);
     }
     else
       status.summary(2, "Gyro not calibrated");
