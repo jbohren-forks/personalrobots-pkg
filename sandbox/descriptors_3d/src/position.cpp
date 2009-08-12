@@ -95,7 +95,6 @@ void Position::doComputation(const sensor_msgs::PointCloud& data,
   size_t nbr_interest_regions = interest_region_indices.size();
   for (size_t i = 0 ; i < nbr_interest_regions ; i++)
   {
-    // TODO handle exception if this fails
     cloud_geometry::nearest::computeCentroid(data, *(interest_region_indices[i]), region_centroid);
     results[i].resize(result_size_);
     results[i][0] = region_centroid.z;

@@ -66,8 +66,6 @@ void SpinImageGeneric::computeNeighborhoodFeature(const sensor_msgs::PointCloud&
     return;
   }
 
-  unsigned int total_nbr_pts = data.points.size();
-
   // Clear out result for counting
   result.resize(result_size_);
   for (size_t i = 0 ; i < result_size_ ; i++)
@@ -75,7 +73,7 @@ void SpinImageGeneric::computeNeighborhoodFeature(const sensor_msgs::PointCloud&
     result[i] = 0.0;
   }
 
-  const Eigen::Vector3d& curr_center_pt = spin_image_centers_[interest_sample_idx];
+  const Eigen::Vector3d& center_pt = spin_image_centers_[interest_sample_idx];
 
   // Offset into row number (center point is middle of the spin image)
   const unsigned int row_offset = nbr_rows_ / 2;
@@ -84,20 +82,12 @@ void SpinImageGeneric::computeNeighborhoodFeature(const sensor_msgs::PointCloud&
   unsigned int nbr_neighbors = neighbor_indices.size();
   for (unsigned int i = 0 ; i < nbr_neighbors ; i++)
   {
-    // Verify the neighbor point index doesnt exceed bounds
-    unsigned int curr_neighbor_idx = neighbor_indices[i];
-    if (curr_neighbor_idx >= total_nbr_pts)
-    {
-      ROS_ERROR("SpinImageGeneric::computeNeighborhoodFeature() exceeds index %u %u", curr_neighbor_idx, total_nbr_pts);
-      result.clear();
-      return;
-    }
-
     // Create vector from center point to neighboring point
+    const geometry_msgs::Point32& curr_neighbor_pt = data.points.at(neighbor_indices[i]);
     Eigen::Vector3d neighbor_vec;
-    neighbor_vec[0] = data.points[curr_neighbor_idx].x - curr_center_pt[0];
-    neighbor_vec[1] = data.points[curr_neighbor_idx].y - curr_center_pt[1];
-    neighbor_vec[2] = data.points[curr_neighbor_idx].z - curr_center_pt[2];
+    neighbor_vec[0] = curr_neighbor_pt.x - center_pt[0];
+    neighbor_vec[1] = curr_neighbor_pt.y - center_pt[1];
+    neighbor_vec[2] = curr_neighbor_pt.z - center_pt[2];
     const double neighbor_vec_norm = neighbor_vec.norm();
 
     // ----------------------------------------
