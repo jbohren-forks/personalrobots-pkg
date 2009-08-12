@@ -41,6 +41,11 @@ using namespace point_cloud_clustering;
 // --------------------------------------------------------------
 SingleLink::SingleLink(double max_radius)
 {
+  if (max_radius < 0.0)
+  {
+    throw "point_cloud_clustering::SingleLink() invalid radius, must be between positive";
+  }
+
   max_radius_ = max_radius;
 }
 
@@ -186,11 +191,6 @@ int SingleLink::cluster(const sensor_msgs::PointCloud& pt_cloud,
 {
   created_clusters.clear();
   unsigned int nbr_pts_full_cloud = pt_cloud.points.size();
-  if (max_radius_ < 1e-6)
-  {
-    ROS_ERROR("SingleLink::cluster given negative radius");
-    return -1;
-  }
 
   // -----------------------------------------
   // Create a subset point cloud containing only those points specified to cluster over
@@ -224,7 +224,7 @@ int SingleLink::cluster(const sensor_msgs::PointCloud& pt_cloud,
   for (std::set<unsigned int>::const_iterator iter_indices_to_cluster = indices_to_cluster.begin() ; iter_indices_to_cluster
       != indices_to_cluster.end() ; iter_indices_to_cluster++, idx++)
   {
-    unsigned int curr_cluster_label = cluster_ids[idx];
+    unsigned int curr_cluster_label = starting_label_ + cluster_ids[idx];
     if (created_clusters.count(curr_cluster_label) == 0)
     {
       created_clusters[curr_cluster_label] = std::vector<int> ();

@@ -55,11 +55,7 @@ namespace point_cloud_clustering
   class KMeans: public PointCloudClustering
   {
     public:
-      KMeans()
-      {
-      }
-
-      int setParameters(double k_factor, double accuracy, int max_iter);
+      KMeans(double k_factor, double accuracy, unsigned int max_iter);
 
       virtual int cluster(const sensor_msgs::PointCloud& pt_cloud,
                           cloud_kdtree::KdTree& pt_cloud_kdtree,
@@ -69,7 +65,7 @@ namespace point_cloud_clustering
     private:
       double k_factor_;
       double accuracy_;
-      int max_iter_;
+      unsigned int max_iter_;
   };
 }
 #endif

@@ -39,25 +39,15 @@ using namespace std;
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-int point_cloud_clustering::PairwiseNeighbors::setParameters(double radius, unsigned int nbr_neighbors)
+point_cloud_clustering::PairwiseNeighbors::PairwiseNeighbors(double radius, unsigned int nbr_neighbors)
 {
   if (radius < 0.0)
   {
-    ROS_ERROR("Invalid radius accuracy");
-    return -1;
-  }
-
-  if (nbr_neighbors == 0)
-  {
-    ROS_ERROR("Invalid kmeans nbr_neighbors");
-    return -1;
+    throw "point_cloud_clustering::PairwiseNeighbors() invalid radius, must be between positive";
   }
 
   radius_ = radius;
   nbr_neighbors_ = nbr_neighbors;
-
-  parameters_defined_ = true;
-  return 0;
 }
 
 // --------------------------------------------------------------
@@ -70,21 +60,21 @@ int point_cloud_clustering::PairwiseNeighbors::cluster(const sensor_msgs::PointC
                                                        const set<unsigned int>& indices_to_cluster,
                                                        map<unsigned int, vector<int> >& created_clusters)
 {
-  if (parameters_defined_ == false)
-  {
-    return -1;
-  }
+  created_clusters.clear();
 
+  // -------------------------------------------------
   // Create adjacency list where
   // adj_list: i --> [point i's neighbors j], such that i < j
   map<unsigned int, set<unsigned int> > adj_list;
 
+  // -------------------------------------------------
   // Iterate over each index, find neighboring points, and randomly link to them
   const unsigned int nbr_total_pts = pt_cloud.points.size();
   for (set<unsigned int>::const_iterator iter_indices_to_cluster = indices_to_cluster.begin() ; iter_indices_to_cluster
       != indices_to_cluster.end() ; iter_indices_to_cluster++)
   {
-    // retrieve next index
+    // -----------------------
+    // Retrieve next index to crate edge from
     const unsigned int curr_pt_cloud_idx = *iter_indices_to_cluster;
     if (curr_pt_cloud_idx >= nbr_total_pts)
     {
@@ -92,15 +82,18 @@ int point_cloud_clustering::PairwiseNeighbors::cluster(const sensor_msgs::PointC
       return -1;
     }
 
-    // STL set contains unique values, so next index guaranteed to not exist
+    // -----------------------
+    // STL set contains unique values, so next entry in adj doesnt exist
     adj_list[curr_pt_cloud_idx] = set<unsigned int> ();
 
-    // Find valid neighboring points to cluster on
+    // -----------------------
+    // Find valid neighboring candidate points to link to
     list<unsigned int> valid_neighbor_indices;
     const unsigned int nbr_valid_neighbors = findRadiusNeighbors(pt_cloud_kdtree, curr_pt_cloud_idx, radius_,
         indices_to_cluster, valid_neighbor_indices);
 
-    // Generate random indices
+    // -----------------------
+    // Randomly generate which neighbors to link to
     vector<unsigned int> random_indices(nbr_valid_neighbors, 0);
     for (unsigned int i = 0 ; i < nbr_valid_neighbors ; i++)
     {
@@ -109,7 +102,8 @@ int point_cloud_clustering::PairwiseNeighbors::cluster(const sensor_msgs::PointC
     }
     random_shuffle(random_indices.begin(), random_indices.end());
 
-    // Randomly link to neighbors within radius
+    // -----------------------
+    // Now link to random neighbors within radius
     for (unsigned int i = 0 ; i < nbr_neighbors_ && i < nbr_valid_neighbors ; i++)
     {
       // retrieve neighboring index
@@ -128,8 +122,8 @@ int point_cloud_clustering::PairwiseNeighbors::cluster(const sensor_msgs::PointC
     }
   }
 
+  // -------------------------------------------------
   // Create clusters from adjacency list
-  created_clusters.clear();
   unsigned int curr_cluster_label = starting_label_;
   for (map<unsigned int, set<unsigned int> >::iterator iter_adj_list = adj_list.begin() ; iter_adj_list
       != adj_list.end() ; iter_adj_list++)
@@ -139,6 +133,7 @@ int point_cloud_clustering::PairwiseNeighbors::cluster(const sensor_msgs::PointC
     // i's neighbors j
     const set<unsigned int>& curr_neighbors = iter_adj_list->second;
 
+    // -----------------------
     // Iterate and create edges from i to each neighbor j
     for (set<unsigned int>::const_iterator iter_neighbors = curr_neighbors.begin() ; iter_neighbors
         != curr_neighbors.end() ; iter_neighbors++)
@@ -149,7 +144,7 @@ int point_cloud_clustering::PairwiseNeighbors::cluster(const sensor_msgs::PointC
       // The "cluster" is an edge with 2 points
       created_clusters[curr_cluster_label] = vector<int> (2);
 
-      // Create edges such that first point is always lower than the second point
+      // Create edges such that first point is always lower (z-coord) than the second point
       if (pt_cloud.points[curr_source_idx].z < pt_cloud.points[curr_target_idx].z)
       {
         created_clusters[curr_cluster_label][0] = static_cast<int> (curr_source_idx);

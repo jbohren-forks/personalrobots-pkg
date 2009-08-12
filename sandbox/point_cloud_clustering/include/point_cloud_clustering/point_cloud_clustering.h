@@ -49,8 +49,10 @@ namespace point_cloud_clustering
   class PointCloudClustering
   {
     public:
-      static int computeClusterCentroids(const sensor_msgs::PointCloud& pt_cloud, const std::map<unsigned int,
-          std::vector<int> >& clusters, std::map<unsigned int, std::vector<float> >& cluster_centroids);
+      static int
+      computeClusterCentroids(const sensor_msgs::PointCloud& pt_cloud,
+                              const std::map<unsigned int, std::vector<int> >& clusters,
+                              std::map<unsigned int, std::vector<float> >& cluster_centroids);
 
       PointCloudClustering();
 
@@ -61,8 +63,9 @@ namespace point_cloud_clustering
         starting_label_ = starting_label;
       }
 
-      int cluster(const sensor_msgs::PointCloud& pt_cloud, cloud_kdtree::KdTree& pt_cloud_kdtree, std::map<
-          unsigned int, std::vector<int> >& created_clusters);
+      int cluster(const sensor_msgs::PointCloud& pt_cloud,
+                  cloud_kdtree::KdTree& pt_cloud_kdtree,
+                  std::map<unsigned int, std::vector<int> >& created_clusters);
 
       virtual int cluster(const sensor_msgs::PointCloud& pt_cloud,
                           cloud_kdtree::KdTree& pt_cloud_kdtree,
@@ -76,7 +79,6 @@ namespace point_cloud_clustering
                                        const std::set<unsigned int>& indices_to_cluster,
                                        std::list<unsigned int>& neighbor_indices);
 
-      bool parameters_defined_;
       unsigned int starting_label_;
   };
 }

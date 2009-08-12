@@ -39,31 +39,21 @@ using namespace std;
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-int point_cloud_clustering::KMeans::setParameters(double k_factor, double accuracy, int max_iter)
+point_cloud_clustering::KMeans::KMeans(double k_factor, double accuracy, unsigned int max_iter)
 {
   if (k_factor < 0.0 || k_factor > 1.0)
   {
-    ROS_ERROR("Invalid kmeans factor");
-    return -1;
+    throw "point_cloud_clustering::KMeans() invalid k_factor, must be between [0,1]";
   }
 
   if (accuracy < 0.0 || accuracy > 1.0)
   {
-    ROS_ERROR("Invalid kmeans accuracy");
-    return -1;
-  }
-
-  if (max_iter < 1)
-  {
-    ROS_ERROR("Invalid kmeans max iteration");
-    return -1;
+    throw "point_cloud_clustering::KMeans() invalid accuracy, must be between [0,1]";
   }
 
   k_factor_ = k_factor;
   accuracy_ = accuracy;
   max_iter_ = max_iter;
-  parameters_defined_ = true;
-  return 0;
 }
 
 // --------------------------------------------------------------
@@ -74,11 +64,6 @@ int point_cloud_clustering::KMeans::cluster(const sensor_msgs::PointCloud& pt_cl
                                             const set<unsigned int>& indices_to_cluster,
                                             map<unsigned int, vector<int> >& created_clusters)
 {
-  if (parameters_defined_ == false)
-  {
-    return -1;
-  }
-
   created_clusters.clear();
 
   // ----------------------------------------------------------

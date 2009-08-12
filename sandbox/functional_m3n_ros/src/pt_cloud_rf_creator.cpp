@@ -131,8 +131,8 @@ vector<Descriptor3D*> initCS1Features()
 std::vector<std::pair<bool, point_cloud_clustering::PointCloudClustering*> > initCS0Clusters()
 {
   //
-  point_cloud_clustering::KMeans* kmeans_cluster = new point_cloud_clustering::KMeans();
-  kmeans_cluster->setParameters(0.003, 1.0, 10);
+  point_cloud_clustering::KMeans* kmeans_cluster = new point_cloud_clustering::KMeans(0.003, 1.0,
+      10);
 
   // ---------------
   std::vector<std::pair<bool, point_cloud_clustering::PointCloudClustering*> > cs0_clusterings(1);
@@ -148,8 +148,9 @@ std::vector<std::pair<bool, point_cloud_clustering::PointCloudClustering*> > ini
 std::vector<std::pair<bool, point_cloud_clustering::PointCloudClustering*> > initCS1Clusters()
 {
   //
-  point_cloud_clustering::KMeans* kmeans_cluster = new point_cloud_clustering::KMeans();
-  kmeans_cluster->setParameters(0.001, 1.0, 10);
+  point_cloud_clustering::KMeans* kmeans_cluster = new point_cloud_clustering::KMeans(0.001, 1.0,
+      10);
+
   // ---------------
   std::vector<std::pair<bool, point_cloud_clustering::PointCloudClustering*> > cs1_clusterings(1);
   bool cluster_only_nodes = false;
@@ -223,8 +224,9 @@ void PtCloudRFCreator::createNodes(RandomField& rf,
   // Compute features over all point cloud
   //vector<float*> concatenated_features(nbr_pts, NULL);
   vector<boost::shared_array<const float> > concatenated_features;
-  unsigned int nbr_concatenated_vals = Descriptor3D::computeAndConcatFeatures(pt_cloud, pt_cloud_kdtree,
-      interest_pts, node_feature_descriptors_, concatenated_features, successful_indices);
+  unsigned int nbr_concatenated_vals = Descriptor3D::computeAndConcatFeatures(pt_cloud,
+      pt_cloud_kdtree, interest_pts, node_feature_descriptors_, concatenated_features,
+      successful_indices);
   if (nbr_concatenated_vals == 0)
   {
     ROS_FATAL("Could not compute node features at all. This should never happen");
@@ -247,12 +249,14 @@ void PtCloudRFCreator::createNodes(RandomField& rf,
           continue;
         }
         created_node = rf.createNode(i, concatenated_features[i], nbr_concatenated_vals,
-            static_cast<unsigned int> (labels[i]), pt_cloud.points[i].x, pt_cloud.points[i].y, pt_cloud.points[i].z);
+            static_cast<unsigned int> (labels[i]), pt_cloud.points[i].x, pt_cloud.points[i].y,
+            pt_cloud.points[i].z);
       }
       else
       {
         created_node = rf.createNode(i, concatenated_features[i], nbr_concatenated_vals,
-            RandomField::UNKNOWN_LABEL, pt_cloud.points[i].x, pt_cloud.points[i].y, pt_cloud.points[i].z);
+            RandomField::UNKNOWN_LABEL, pt_cloud.points[i].x, pt_cloud.points[i].y,
+            pt_cloud.points[i].z);
       }
 
       if (created_node == NULL)
@@ -307,15 +311,16 @@ void PtCloudRFCreator::createCliqueSet(RandomField& rf,
     }
     else
     {
-      cluster_ret_val = clique_set_info[i].second->cluster(pt_cloud, pt_cloud_kdtree, created_clusters);
+      cluster_ret_val = clique_set_info[i].second->cluster(pt_cloud, pt_cloud_kdtree,
+          created_clusters);
     }
     if (cluster_ret_val < 0)
     {
       abort();
     }
     map<unsigned int, vector<float> > cluster_centroids;
-    point_cloud_clustering::PointCloudClustering::computeClusterCentroids(pt_cloud, created_clusters,
-        cluster_centroids);
+    point_cloud_clustering::PointCloudClustering::computeClusterCentroids(pt_cloud,
+        created_clusters, cluster_centroids);
     unsigned int curr_nbr_clusters = created_clusters.size();
     nbr_created_clusters += curr_nbr_clusters;
 
@@ -334,9 +339,9 @@ void PtCloudRFCreator::createCliqueSet(RandomField& rf,
     // Compute features over clusters
     vector<boost::shared_array<const float> > concatenated_features;
     set<unsigned int> successful_region_indices; // unused
-    unsigned int nbr_concatenated_vals = Descriptor3D::computeAndConcatFeatures(pt_cloud, pt_cloud_kdtree,
-        interest_region_indices, clique_set_feature_descriptors_[clique_set_idx], concatenated_features,
-        successful_region_indices);
+    unsigned int nbr_concatenated_vals = Descriptor3D::computeAndConcatFeatures(pt_cloud,
+        pt_cloud_kdtree, interest_region_indices, clique_set_feature_descriptors_[clique_set_idx],
+        concatenated_features, successful_region_indices);
     if (nbr_concatenated_vals == 0)
     {
       ROS_FATAL("Could not compute cluster features at all. This should never happen");
@@ -389,8 +394,9 @@ void PtCloudRFCreator::createCliqueSet(RandomField& rf,
           const vector<float>& centroid = cluster_centroids.find(curr_cluster_label)->second;
 
           // Create clique using the cluster label as the clique id
-          if (rf.createClique(curr_cluster_label, clique_set_idx, clique_nodes, curr_cluster_features,
-              nbr_concatenated_vals, centroid[0], centroid[1], centroid[2]) == NULL)
+          if (rf.createClique(curr_cluster_label, clique_set_idx, clique_nodes,
+              curr_cluster_features, nbr_concatenated_vals, centroid[0], centroid[1], centroid[2])
+              == NULL)
           {
             abort();
           }

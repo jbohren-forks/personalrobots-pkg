@@ -94,7 +94,6 @@ int point_cloud_clustering::PointCloudClustering::computeClusterCentroids(const 
 // --------------------------------------------------------------
 point_cloud_clustering::PointCloudClustering::PointCloudClustering()
 {
-  parameters_defined_ = false;
   starting_label_ = 0;
 }
 

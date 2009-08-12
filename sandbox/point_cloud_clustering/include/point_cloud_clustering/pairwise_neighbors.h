@@ -51,11 +51,7 @@ namespace point_cloud_clustering
   class PairwiseNeighbors: public PointCloudClustering
   {
     public:
-      PairwiseNeighbors()
-      {
-      }
-
-      int setParameters(double radius, unsigned int nbr_neighbors);
+      PairwiseNeighbors(double radius, unsigned int nbr_neighbors);
 
       virtual int cluster(const sensor_msgs::PointCloud& pt_cloud,
                           cloud_kdtree::KdTree& pt_cloud_kdtree,
