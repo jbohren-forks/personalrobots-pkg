@@ -69,9 +69,9 @@ bool pm_wrapper::initPlanningMonitor(const std::vector<std::string> &links, tf::
     ROS_WARN("[pm_wrapper] joint group %i is empty", groupID_);
     return false;
   }
-  ROS_INFO("[pm_wrapper] joint names in group #%i",groupID_);
+  ROS_DEBUG("[pm_wrapper] joint names in group #%i",groupID_);
   for(unsigned int i = 0; i < joint_names.size(); i++)
-    ROS_INFO("[pm_wrapper]%i: %s", i, joint_names[i].c_str());
+    ROS_DEBUG("[pm_wrapper]%i: %s", i, joint_names[i].c_str());
 
   return true;
 }
