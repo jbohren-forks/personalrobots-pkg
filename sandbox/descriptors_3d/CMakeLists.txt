@@ -38,7 +38,7 @@ rospack_add_library(${PROJECT_NAME}
 			src/curvature.cpp
 			src/channel.cpp)
 #rospack_add_openmp_flags (${PROJECT_NAME})
-			
+#Does not compile with OpenMP on gcc-4.3			
 
 rospack_add_executable(interest_point_example examples/interest_point_example.cpp)
 target_link_libraries(interest_point_example ${PROJECT_NAME})
