@@ -42,7 +42,6 @@ class ActionSpecException(Exception): pass
 def parse_action_spec(text, package_context = ''):
     pieces = [cStringIO.StringIO()]
     for l in text.split('\n'):
-        l = l.split(COMMENTCHAR)[0].strip()  # Strips comments
         if l.startswith(IODELIM):
             pieces.append(cStringIO.StringIO())
         else:
