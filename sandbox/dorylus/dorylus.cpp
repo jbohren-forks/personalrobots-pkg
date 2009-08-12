@@ -605,7 +605,7 @@ void Dorylus::train(int nCandidates, int max_secs, int max_wcs, void (*debugHook
 
     assert(obj2 < obj);
 
-    if(difftime(end,start) > max_secs)
+    if(max_secs != 0 && difftime(end,start) > max_secs)
       break;
     if(max_wcs != 0 && wcs >= max_wcs)
       break;
