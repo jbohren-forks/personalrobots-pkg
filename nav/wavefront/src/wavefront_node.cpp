@@ -69,7 +69,6 @@ Publishes to (name / type):
 - @b "cmd_vel" geometry_msgs/Twist : velocity commands to robot
 - @b "state" nav_robot_actions/MoveBaseState : current planner state (e.g., goal reached, no path)
 - @b "gui_path" visualization_msgs/Polyline : current global path (for visualization)
-- @b "gui_laser" visualization_msgs/Polyline : re-projected laser scans (for visualization)
 
 <hr>
 
@@ -110,6 +109,7 @@ parameters.
 
 // For GUI debug
 #include <visualization_msgs/Polyline.h>
+#include <nav_msgs/Path.h>
 
 // For transform support
 #include <tf/transform_listener.h>
@@ -177,7 +177,6 @@ class WavefrontNode: public ros::Node
     double ang_eps;
     ros::Duration cycletime;
 
-    ros::Time gui_laser_last_publish_time;
     ros::Time gui_path_last_publish_time;
     ros::Duration gui_publish_rate;
 
@@ -197,7 +196,7 @@ class WavefrontNode: public ros::Node
     geometry_msgs::PoseStamped goalMsg;
     //Odometry odomMsg;
     visualization_msgs::Polyline polylineMsg;
-    visualization_msgs::Polyline pointcloudMsg;
+    nav_msgs::Path pathMsg;
     nav_robot_actions::MoveBaseState pstate;
     //Odometry prevOdom;
     bool firstodom;
@@ -363,7 +362,7 @@ WavefrontNode::WavefrontNode() :
 
   advertise<nav_robot_actions::MoveBaseState>("state",1);
   advertise<visualization_msgs::Polyline>("gui_path",1);
-  advertise<visualization_msgs::Polyline>("gui_laser",1);
+  advertise<nav_msgs::Path>("global_plan",1);
   advertise<geometry_msgs::Twist>("cmd_vel",1);
   subscribe("goal", goalMsg, &WavefrontNode::goalReceived,1);
 
@@ -508,27 +507,6 @@ WavefrontNode::laserReceived(const tf::MessageNotifier<sensor_msgs::LaserScan>::
     this->laser_hitpts_len += it->pts_num;
   }
 
-  // Draw the points
-
-  ros::Time now = ros::Time::now();
-  if((now - gui_laser_last_publish_time) >= gui_publish_rate)
-  {
-    this->pointcloudMsg.header.frame_id = "/map";
-    this->pointcloudMsg.set_points_size(this->laser_hitpts_len);
-    this->pointcloudMsg.color.a = 0.0;
-    this->pointcloudMsg.color.r = 0.0;
-    this->pointcloudMsg.color.b = 1.0;
-    this->pointcloudMsg.color.g = 0.0;
-    for(unsigned int i=0;i<this->laser_hitpts_len;i++)
-    {
-      this->pointcloudMsg.points[i].x = this->laser_hitpts[2*i];
-      this->pointcloudMsg.points[i].y = this->laser_hitpts[2*i+1];
-      this->pointcloudMsg.points[i].z = 0;
-    }
-    publish("gui_laser",this->pointcloudMsg);
-
-    gui_laser_last_publish_time = now;
-  }
   this->lock.unlock();
 }
 
@@ -727,12 +705,17 @@ WavefrontNode::doOneCycle()
         ros::Time now = ros::Time::now();
         if((now - gui_path_last_publish_time) >= gui_publish_rate)
         {
+          //@todo TODO: Remove polyline completely
           this->polylineMsg.header.frame_id = "map";
           this->polylineMsg.set_points_size(this->plan->path_count);
           this->polylineMsg.color.r = 0;
           this->polylineMsg.color.g = 1.0;
           this->polylineMsg.color.b = 0;
           this->polylineMsg.color.a = 0;
+
+          this->pathMsg.header.frame_id = "map";
+          this->pathMsg.set_poses_size(this->plan->path_count);
+
           for(int i=0;i<this->plan->path_count;i++)
           {
             this->polylineMsg.points[i].x =
@@ -740,8 +723,15 @@ WavefrontNode::doOneCycle()
             this->polylineMsg.points[i].y =
                     PLAN_WYGY(this->plan,this->plan->path[i]->cj);
             this->polylineMsg.points[i].z = 0;
+
+            this->pathMsg.poses[i].pose.position.x =
+                    PLAN_WXGX(this->plan,this->plan->path[i]->ci);
+            this->pathMsg.poses[i].pose.position.y =
+                    PLAN_WYGY(this->plan,this->plan->path[i]->cj);
+            this->pathMsg.poses[i].pose.position.z = 0;
           }
           publish("gui_path", polylineMsg);
+          publish("global_plan", pathMsg);
 
           gui_path_last_publish_time = now;
         }
