@@ -139,9 +139,8 @@ void TrackerBase::processImage()
 
   // Visual feedback
   if (node_.numSubscribers(display_topic_name_) > 0) {
-    display_img_.encoding = "rgb"; // TODO: temporary hack
     sensor_msgs::CvBridge::fromIpltoRosImage(getDisplayImage(success), display_img_);
-    display_img_.encoding = "bgr";
+    display_img_.encoding = "bgr8";
     node_.publish(display_topic_name_, display_img_);
   }
 

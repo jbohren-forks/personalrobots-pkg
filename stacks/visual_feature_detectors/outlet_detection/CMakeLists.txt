@@ -13,7 +13,7 @@ rospack_add_boost_directories()
 # Outlet detection library
 rospack_add_library(outlet src/affine_transform.cpp src/chamfer_match.cpp src/constellation.cpp src/features.cpp src/learning.cpp src/one_way_descriptor.cpp src/one_way_descriptor_base.cpp src/one_way_outlets.cpp src/outlet_detector.cpp src/outlet_model.cpp src/outlet_tuple.cpp src/pca_features.cpp src/planar.cpp src/tracker_base.cpp src/outlet_tracker.cpp src/generalized_hough.cpp src/outlet_detector_test.cpp src/l_detector_outlets.cpp)
 add_definitions(-D_OUTLET_HR -D_TUNING -D_USE_OUTLET_TUPLE -D_GHT)
-add_definitions(-D_VERBOSE)
+#add_definitions(-D_VERBOSE)
 rospack_link_boost(outlet thread)
 
 # Stand-alone outlet detection executables

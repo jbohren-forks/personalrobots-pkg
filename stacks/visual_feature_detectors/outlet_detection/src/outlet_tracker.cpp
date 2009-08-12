@@ -32,7 +32,8 @@ bool OutletTracker::detectObject(tf::Transform &pose)
 
   IplImage* image = img_bridge_.toIpl();
   outlets_.clear();
-  if (!detect_outlet_tuple(image, K_, NULL, outlets_))
+  //if (!detect_outlet_tuple(image, K_, NULL, outlets_))
+  if (!detect_outlet_tuple_2x2_orange(image, K_, NULL, outlets_, outlet_template_t(), NULL, NULL))
     return false;
 
   // TODO: do this in library code instead
@@ -98,7 +99,7 @@ bool OutletTracker::detectObject(tf::Transform &pose)
 
   publishOutletMarker(holes);
   publishRayMarker(holes[0]);
-
+  
   //BEGIN CHANGE MADE WITHOUT KNOWLEDGE OF CODE STRUCTURE
   //We want to insert a sanity-check here on the outlet, since we saw a detection that was off by 45 degrees during the milestone
   //The check will be that the up vector of the outlet is within some threshold of up in the base frame
@@ -225,7 +226,7 @@ void OutletTracker::publishOutletMarker(const tf::Point* holes)
     tf::pointTFToMsg(holes[i], marker.points[i]);
   }
   
-  node_.publish("visualization_marker", marker);
+  node_.publish("/visualization_marker", marker);
 }
 
 void OutletTracker::publishRayMarker(const tf::Point &outlet_position)
@@ -255,7 +256,7 @@ void OutletTracker::publishRayMarker(const tf::Point &outlet_position)
   marker.points.resize(2); // first is origin
   tf::pointTFToMsg(outlet_position, marker.points[1]);
 
-  node_.publish("visualization_marker", marker);
+  node_.publish("/visualization_marker", marker);
 }
 
 /*
