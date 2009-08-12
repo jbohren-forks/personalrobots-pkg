@@ -41,6 +41,19 @@ using namespace std;
 // --------------------------------------------------------------
 Position::Position()
 {
+  ref_z_ = 0.0;
+
+  result_size_ = 1;
+  result_size_defined_ = true;
+}
+
+// --------------------------------------------------------------
+/* See function definition */
+// --------------------------------------------------------------
+Position::Position(float ref_z)
+{
+  ref_z_ = ref_z;
+
   result_size_ = 1;
   result_size_defined_ = true;
 }
@@ -78,7 +91,7 @@ void Position::doComputation(const sensor_msgs::PointCloud& data,
   for (size_t i = 0 ; i < nbr_interest_pts ; i++)
   {
     results[i].resize(result_size_);
-    results[i][0] = (interest_pts[i])->z;
+    results[i][0] = (interest_pts[i])->z - ref_z_;
   }
 }
 
@@ -97,6 +110,6 @@ void Position::doComputation(const sensor_msgs::PointCloud& data,
   {
     cloud_geometry::nearest::computeCentroid(data, *(interest_region_indices[i]), region_centroid);
     results[i].resize(result_size_);
-    results[i][0] = region_centroid.z;
+    results[i][0] = region_centroid.z - ref_z_;
   }
 }

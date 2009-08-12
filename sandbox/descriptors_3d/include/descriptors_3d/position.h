@@ -51,17 +51,16 @@ using namespace std;
 /*!
  * \file position.h
  *
- * \brief A Position descriptor simply uses the 3rd coordinate (z) of the
- *        interest point/region, for now.
+ * \brief A Position descriptor uses the 3rd coordinate (z/elevation)
+ *        of the interest point/region.
  */
 // --------------------------------------------------------------
 
 // --------------------------------------------------------------
 /*!
- * \brief A Position descriptor defines the value to be the z-coordinate
+ * \brief A Position descriptor defines a feature from the z-coordinate
  *        of the interest point or the interest region's centroid
  *
- * TODO: use sensor location so height is relative and dont assume flat ground
  * TODO: use map information such as distance from walls
  */
 // --------------------------------------------------------------
@@ -70,11 +69,23 @@ class Position: public Descriptor3D
   public:
     // --------------------------------------------------------------
     /*!
-     * \brief Instantiates the position descriptor such that the z coordinate
-     *        is absolute
+     * \brief Instantiates the position descriptor such that the z-coordinate
+     *        is absolute.  i.e. the feature is the interest point/region's
+     *        z-coordinate.
      */
     // --------------------------------------------------------------
     Position();
+
+    // --------------------------------------------------------------
+    /*!
+     * \brief Instantiates the position descriptor such that the z coordinate
+     *        is relative to the given height.  i.e. the feature is the
+     *        interest point/region's z-coordinate minus ref_z
+     *
+     * \param ref_z The reference z (elevation) coordinate.
+     */
+    // --------------------------------------------------------------
+    Position(float ref_z);
 
   protected:
     // --------------------------------------------------------------
@@ -123,6 +134,9 @@ class Position: public Descriptor3D
                                cloud_kdtree::KdTree& data_kdtree,
                                const cv::Vector<const vector<int>*>& interest_region_indices,
                                cv::Vector<cv::Vector<float> >& results);
+
+  private:
+    float ref_z_;
 };
 
 #endif
