@@ -58,7 +58,6 @@
 #include <tf/transform_broadcaster.h>
 #include <tf/message_notifier.h>
 #include <visual_nav/visual_nav.h>
-#include <visualization_msgs/Polyline.h>
 #include <visualization_msgs/Marker.h>
 #include <vslam/Roadmap.h>
 #include <visual_nav/exceptions.h>
@@ -74,7 +73,6 @@ using geometry_msgs::PointStamped;
 using geometry_msgs::Point32;
 using ros::Duration;
 using vslam::Roadmap;
-using visualization_msgs::Polyline;
 using vslam::Edge;
 using std::map;
 using visual_nav::VisualNavGoal;
@@ -280,7 +278,6 @@ RosVisualNavigator::RosVisualNavigator (double exit_point_radius, uint scan_peri
 
   move_base_publisher_ = node_.advertise<PoseStamped>("/move_base/activate", 1);
   visualization_publisher_ = node_.advertise<Marker>( "visualization_marker", 0 );
-  laser_publisher_ = node_.advertise<Polyline> ("vslam_laser", 1);
 
   ROS_INFO_STREAM ("Started RosVisualNavigator with exit_point_radius=" << exit_point_radius_ << ", goal_id=" << goal_id_) ;
 }
@@ -545,14 +542,6 @@ struct DrawEdges
 
 
 
-Point transformToPolylinePoint (tf::TransformListener* tf, const Point2D& p)
-{
-  Point visualized_point;
-  visualized_point.x = p.x;
-  visualized_point.y = p.y;
-  return visualized_point;
-}
-
 void RosVisualNavigator::deleteOldMarkers ()
 {
   for (uint i=0; i<num_active_markers_; ++i) {
@@ -609,7 +598,7 @@ void RosVisualNavigator::publishVisualization ()
   }
   PointSet points = roadmap_->overlayScans();
 
-  // Publish as polyline
+  /** @todo: use a marker instead
   Polyline scans;
   scans.header.frame_id=vslam_frame_;
   scans.set_points_size(points.size());
@@ -618,7 +607,7 @@ void RosVisualNavigator::publishVisualization ()
   ROS_DEBUG_STREAM_COND_NAMED (points.size()>0, "scans", "First scan point in vslam frame is " << *(points.begin())
                                << " and transformed version is " << scans.points[0].x << ", " << scans.points[0].y << ", " << scans.points[0].z);
   ROS_DEBUG_STREAM_NAMED ("rviz", "Publishing scans with " << scans.get_points_size() << " points");
-  laser_publisher_.publish( scans);
+  laser_publisher_.publish( scans); */
 
   ROS_DEBUG_STREAM_NAMED ("rviz", "Finished publishing roadmap with " << roadmap_->numNodes() << " nodes");
 }
