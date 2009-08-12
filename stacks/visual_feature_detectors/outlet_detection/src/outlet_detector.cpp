@@ -64,7 +64,6 @@ int detect_outlet_tuple(IplImage* src, CvMat* intrinsic_matrix, CvMat* distortio
     cvSetImageCOI(src, 3);
     cvCopy(src, red);
     cvSetImageCOI(src, 0);
-    
     detect_outlets_one_way(red, outlet_templ, outlets, src, output_path, filename);
     cvReleaseImage(&red);
 #endif
