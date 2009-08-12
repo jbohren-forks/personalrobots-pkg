@@ -1,0 +1,20 @@
+<package>
+  <description brief="">
+  </description>
+  <author>Benjamin Cohen /bcohen@willowgarage.com</author>
+  <license>BSD</license>
+    <depend package="roscpp"/>
+		<depend package="geometric_shapes"/>
+    <depend package="planning_environment" />
+		<depend package="bullet" />
+    <depend package="planning_models" />
+		<depend package="visualization_msgs" />
+		<depend package="mechanism_msgs" />
+  <url></url>
+
+  <export>
+    <cpp cflags="-I${prefix}/include -O3 -g" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lrobot_voxelizer" />
+  </export>
+
+</package>
+
