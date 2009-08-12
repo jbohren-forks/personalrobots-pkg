@@ -153,8 +153,8 @@ private:
   void initClient()
   {
     // Start publishers and subscribers
-    goal_pub_ = n_.advertise<ActionGoal>("goal", 1);
-    cancel_pub_ = n_.advertise<GoalID>("cancel", 1);
+    goal_pub_ = n_.advertise<ActionGoal>("goal", 1, true);
+    cancel_pub_ = n_.advertise<GoalID>("cancel", 1, true);
     manager_.registerSendGoalFunc(boost::bind(&ActionClientT::sendGoalFunc, this, _1));
     manager_.registerCancelFunc(boost::bind(&ActionClientT::sendCancelFunc, this, _1));
 
