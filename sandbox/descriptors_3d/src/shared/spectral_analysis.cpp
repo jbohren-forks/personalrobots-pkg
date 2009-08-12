@@ -32,7 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include <descriptors_3d/spectral_analysis.h>
+#include <descriptors_3d/shared/spectral_analysis.h>
 
 using namespace std;
 

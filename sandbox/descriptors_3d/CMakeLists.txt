@@ -24,7 +24,7 @@ rospack_add_library(${PROJECT_NAME}
 			src/descriptor_3d.cpp
 			src/generic/neighborhood_feature.cpp
 			src/bounding_box_raw.cpp
-			src/spectral_analysis.cpp
+			src/shared/spectral_analysis.cpp
 			src/bounding_box_spectral.cpp
 			src/shape_spectral.cpp
 			src/generic/orientation_generic.cpp

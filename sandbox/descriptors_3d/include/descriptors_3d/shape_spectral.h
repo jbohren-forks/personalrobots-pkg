@@ -41,7 +41,7 @@
 #include <opencv/cvaux.hpp>
 
 #include <descriptors_3d/generic/neighborhood_feature.h>
-#include <descriptors_3d/spectral_analysis.h>
+#include <descriptors_3d/shared/spectral_analysis.h>
 
 // --------------------------------------------------------------
 /*!
