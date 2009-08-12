@@ -42,8 +42,8 @@ namespace move_base {
 
   MoveBase::MoveBase(std::string name, tf::TransformListener& tf) :
     tf_(tf),
-    as_(ros::NodeHandle(), name),
-    tc_(NULL), planner_costmap_ros_(NULL), controller_costmap_ros_(NULL), 
+    as_(ros::NodeHandle(), name, boost::bind(&MoveBase::executeCb, this, _1)),
+    tc_(NULL), planner_costmap_ros_(NULL), controller_costmap_ros_(NULL),
     planner_(NULL), bgp_loader_("nav_core", "BaseGlobalPlanner"),
     blp_loader_("nav_core", "BaseLocalPlanner"){
 
@@ -124,8 +124,6 @@ namespace move_base {
 
     //the initial clearing state will be to conservatively clear the costmaps
     clearing_state_ = CONSERVATIVE_RESET;
-
-    run_loop_ = new boost::thread(boost::bind(&MoveBase::runLoop, this));
 
   }
 
@@ -216,13 +214,13 @@ namespace move_base {
     //update the copy of the costmap the planner uses
     clearCostmapWindows(2 * clearing_radius_, 2 * clearing_radius_);
 
-    //if we have a tolerance on the goal point that is greater 
+    //if we have a tolerance on the goal point that is greater
     //than the resolution of the map... compute the full potential function
     double resolution = planner_costmap_ros_->getResolution();
     std::vector<geometry_msgs::PoseStamped> global_plan;
     geometry_msgs::PoseStamped p;
     p = req.goal;
-    p.pose.position.y = req.goal.pose.position.y - req.tolerance; 
+    p.pose.position.y = req.goal.pose.position.y - req.tolerance;
     bool found_legal = false;
     while(!found_legal && p.pose.position.y <= req.goal.pose.position.y + req.tolerance){
       p.pose.position.x = req.goal.pose.position.x - req.tolerance;
@@ -252,10 +250,6 @@ namespace move_base {
   }
 
   MoveBase::~MoveBase(){
-    if(run_loop_){
-      run_loop_->join();
-      delete run_loop_;
-    }
 
     if(planner_ != NULL)
       delete planner_;
@@ -369,13 +363,13 @@ namespace move_base {
 
     //just get the latest available transform... for accuracy they should send
     //goals in the frame of the planner
-    goal_pose.stamp_ = ros::Time(); 
+    goal_pose.stamp_ = ros::Time();
 
     try{
       tf_.transformPose(global_frame, goal_pose, global_pose);
     }
     catch(tf::TransformException& ex){
-      ROS_WARN("Failed to transform the goal pose from %s into the %s frame: %s", 
+      ROS_WARN("Failed to transform the goal pose from %s into the %s frame: %s",
           goal_pose.frame_id_.c_str(), global_frame.c_str(), ex.what());
       return goal_pose_msg;
     }
@@ -386,81 +380,67 @@ namespace move_base {
 
   }
 
-  void MoveBase::runLoop(){
-    ros::Rate r(controller_frequency_);
-    geometry_msgs::PoseStamped goal;
+  void MoveBase::executeCb(const MoveBaseGoalConstPtr& move_base_goal)
+  {
+    geometry_msgs::PoseStamped goal = move_base_goal->target_pose;
     std::vector<geometry_msgs::PoseStamped> global_plan;
-    while(ros_node_.ok()){
-      if(as_.isActive()){
-        if(!as_.isPreemptRequested()){
-          if(as_.isNewGoalAvailable()){
-            //if we're active and a new goal is available, we'll accept it, but we won't shut anything down
-            goal = goalToGlobalFrame((*as_.acceptNewGoal()).target_pose);
 
-            //we'll make sure that we reset our state for the next execution cycle
-            clearing_state_ = CONSERVATIVE_RESET;
-            state_ = PLANNING;
+    ros::Rate r(controller_frequency_);
 
-            //publish the goal point to the visualizer
-            ROS_DEBUG("move_base has received a goal of x: %.2f, y: %.2f", goal.pose.position.x, goal.pose.position.y);
-            publishGoal(goal);
-
-            //make sure to reset our timeouts
-            last_valid_control_ = ros::Time::now();
-            last_valid_plan_ = ros::Time::now();
-          }
-          //for timing that gives real time even in simulation
-          struct timeval start, end;
-          double start_t, end_t, t_diff;
-          gettimeofday(&start, NULL);
-
-          //the real work on pursuing a goal is done here
-          executeCycle(goal, global_plan);
-          
-          gettimeofday(&end, NULL);
-          start_t = start.tv_sec + double(start.tv_usec) / 1e6;
-          end_t = end.tv_sec + double(end.tv_usec) / 1e6;
-          t_diff = end_t - start_t;
-          ROS_DEBUG("Full control cycle time: %.9f\n", t_diff);
-        }
-        else{
-          //if we've been preempted explicitly we need to shut things down
-          resetState();
-
-          //notify the ActionServer that we've successfully preemted
-          ROS_DEBUG("Move base preempting the current goal");
-          as_.setPreempted();
-        }
+    while(as_.isActive())
+    {
+      if (!ros_node_.ok())
+      {
+        as_.setAborted();
+        break;
       }
-      else if(as_.isNewGoalAvailable()){
-        //if we're inactive and a new goal is available, we'll accept it
-        goal = goalToGlobalFrame((*as_.acceptNewGoal()).target_pose);
 
-        //if we shutdown our costmaps when we're deactivated... we need to start them back up now
-        if(shutdown_costmaps_){
-          planner_costmap_ros_->start();
-          controller_costmap_ros_->start();
+      if(!as_.isPreemptRequested()){
+        if(as_.isNewGoalAvailable()){
+          //if we're active and a new goal is available, we'll accept it, but we won't shut anything down
+          goal = goalToGlobalFrame((*as_.acceptNewGoal()).target_pose);
+
+          //we'll make sure that we reset our state for the next execution cycle
+          clearing_state_ = CONSERVATIVE_RESET;
+          state_ = PLANNING;
+
+          //publish the goal point to the visualizer
+          ROS_DEBUG("move_base has received a goal of x: %.2f, y: %.2f", goal.pose.position.x, goal.pose.position.y);
+          publishGoal(goal);
+
+          //make sure to reset our timeouts
+          last_valid_control_ = ros::Time::now();
+          last_valid_plan_ = ros::Time::now();
         }
+        //for timing that gives real time even in simulation
+        struct timeval start, end;
+        double start_t, end_t, t_diff;
+        gettimeofday(&start, NULL);
 
-        //on activation... we'll reset our costmaps
-        clearCostmapWindows(2 * clearing_radius_, 2 * clearing_radius_);
+        //the real work on pursuing a goal is done here
+        executeCycle(goal, global_plan);
 
-        //publish the goal point to the visualizer
-        ROS_DEBUG("move_base has received a goal of x: %.2f, y: %.2f", goal.pose.position.x, goal.pose.position.y);
-        publishGoal(goal);
+        gettimeofday(&end, NULL);
+        start_t = start.tv_sec + double(start.tv_usec) / 1e6;
+        end_t = end.tv_sec + double(end.tv_usec) / 1e6;
+        t_diff = end_t - start_t;
+        ROS_DEBUG("Full control cycle time: %.9f\n", t_diff);
+      }
+      else{
+        //if we've been preempted explicitly we need to shut things down
+        resetState();
 
-        //make sure to reset our timeouts
-        last_valid_control_ = ros::Time::now();
-        last_valid_plan_ = ros::Time::now();
+        //notify the ActionServer that we've successfully preemted
+        ROS_DEBUG("Move base preempting the current goal");
+        as_.setPreempted();
       }
 
       //make sure to sleep for the remainder of our cycle time
       if(!r.sleep() && state_ == CONTROLLING)
         ROS_WARN("Control loop missed its desired rate of %.4fHz... the loop actually took %.4f seconds", controller_frequency_, r.cycleTime().toSec());
-
     }
   }
-  
+
   void MoveBase::executeCycle(geometry_msgs::PoseStamped& goal, std::vector<geometry_msgs::PoseStamped>& global_plan){
     //we need to be able to publish velocity commands
     geometry_msgs::Twist cmd_vel;
@@ -474,7 +454,7 @@ namespace move_base {
     //push the feedback out
     position_pub_.publish(current_position);
 
-    //check that the observation buffers for the costmap are current, we don't want to drive blind 
+    //check that the observation buffers for the costmap are current, we don't want to drive blind
     if(!controller_costmap_ros_->isCurrent()){
       ROS_WARN("Sensor data is out of date, we're not going to allow commanding of the base for safety");
       publishZeroVelocity();
@@ -505,7 +485,7 @@ namespace move_base {
         else{
           ros::Time attempt_end = last_valid_plan_ + ros::Duration(planner_patience_);
 
-          //check if we've tried to make a plan for over our time limit 
+          //check if we've tried to make a plan for over our time limit
           if(ros::Time::now() > attempt_end){
             //we'll move into our obstacle clearing mode
             state_ = CLEARING;
@@ -526,7 +506,7 @@ namespace move_base {
           resetState();
           as_.setSucceeded();
           return;
-        } 
+        }
 
         if(tc_->computeVelocityCommands(cmd_vel)){
           last_valid_control_ = ros::Time::now();
@@ -542,7 +522,7 @@ namespace move_base {
             resetState();
             as_.setAborted();
             return;
-          } 
+          }
 
           //otherwise, if we can't find a valid control, we'll go back to planning
           last_valid_plan_ = ros::Time::now();
@@ -629,7 +609,7 @@ namespace move_base {
 
 
 
-  } 
+  }
 
   void MoveBase::resetState(){
     state_ = PLANNING;
@@ -653,12 +633,12 @@ namespace move_base {
 int main(int argc, char** argv){
   ros::init(argc, argv, "move_base");
   tf::TransformListener tf(ros::Duration(10));
-  
+
   move_base::MoveBase move_base(ros::this_node::getName(), tf);
 
   //ros::MultiThreadedSpinner s;
   ros::spin();
-  
+
   return(0);
 
 }

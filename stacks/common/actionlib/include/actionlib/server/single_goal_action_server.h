@@ -37,6 +37,7 @@
 #ifndef ACTIONLIB_SINGLE_GOAL_ACTION_SERVER_H_
 #define ACTIONLIB_SINGLE_GOAL_ACTION_SERVER_H_
 
+#include <boost/thread/condition.hpp>
 #include <ros/ros.h>
 #include <actionlib/server/action_server.h>
 #include <actionlib/action_definition.h>
@@ -59,13 +60,19 @@ namespace actionlib {
       ACTION_DEFINITION(ActionSpec);
 
       typedef typename ActionServer<ActionSpec>::GoalHandle GoalHandle;
+      typedef boost::function<void (const GoalConstPtr&)> ExecuteCallback;
 
       /**
        * @brief  Constructor for a SingleGoalActionServer
        * @param n A NodeHandle to create a namespace under
        * @param name A name for the action server
+       * @param execute_cb Optional callback that gets called in a separate thread whenever
+       *                   a new goal is received, allowing users to have blocking callbacks.
+       *                   Adding an execute callback also deactivates the goalCallback.
        */
-      SingleGoalActionServer(ros::NodeHandle n, std::string name);
+      SingleGoalActionServer(ros::NodeHandle n, std::string name, ExecuteCallback execute_cb = NULL);
+
+      ~SingleGoalActionServer();
 
       /**
        * @brief  Accepts a new goal when one is available The status of this
@@ -140,6 +147,13 @@ namespace actionlib {
        */
       void preemptCallback(GoalHandle preempt);
 
+      /**
+       * @brief  Called from a separate thread to call blocking execute calls
+       */
+      void executeLoop();
+
+      ros::NodeHandle n_;
+
       boost::shared_ptr<ActionServer<ActionSpec> > as_;
 
       GoalHandle current_goal_, next_goal_;
@@ -150,7 +164,10 @@ namespace actionlib {
 
       boost::function<void ()> goal_callback_;
       boost::function<void ()> preempt_callback_;
+      ExecuteCallback execute_callback_;
 
+      boost::condition execute_condition_;
+      boost::thread* execute_thread_;
   };
 };
 

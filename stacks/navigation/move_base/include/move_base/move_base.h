@@ -99,11 +99,6 @@ namespace move_base {
        */
       void executeCycle(geometry_msgs::PoseStamped& goal, std::vector<geometry_msgs::PoseStamped>& global_plan);
 
-      /**
-       * @brief  The main loop of the MoveBase action
-       */
-      void runLoop();
-
     private:
       /**
        * @brief  A service call that can be made when the action is inactive that will return a plan
@@ -160,6 +155,8 @@ namespace move_base {
 
       void goalCB(const geometry_msgs::PoseStamped::ConstPtr& goal);
 
+      void executeCb(const MoveBaseGoalConstPtr& move_base_goal);
+
       geometry_msgs::PoseStamped goalToGlobalFrame(const geometry_msgs::PoseStamped& goal_pose_msg);
 
       ros::NodeHandle ros_node_;
@@ -186,10 +183,9 @@ namespace move_base {
       ClearingState clearing_state_;
 
       ros::Time last_valid_plan_, last_valid_control_;
-      boost::thread* run_loop_;
-      pluginlib::PluginLoader<nav_core::BaseGlobalPlanner> bgp_loader_; 
-      pluginlib::PluginLoader<nav_core::BaseLocalPlanner> blp_loader_; 
-      
+      pluginlib::PluginLoader<nav_core::BaseGlobalPlanner> bgp_loader_;
+      pluginlib::PluginLoader<nav_core::BaseLocalPlanner> blp_loader_;
+
   };
 };
 #endif

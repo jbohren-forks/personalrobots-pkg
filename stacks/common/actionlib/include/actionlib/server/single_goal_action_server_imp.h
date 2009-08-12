@@ -38,15 +38,30 @@
 #define ACTION_LIB_SINGLE_GOAL_ACTION_SERVER_H_
 namespace actionlib {
   template <class ActionSpec>
-  SingleGoalActionServer<ActionSpec>::SingleGoalActionServer(ros::NodeHandle n, std::string name)
-    : new_goal_(false), preempt_request_(false), new_goal_preempt_request_(false) {
+  SingleGoalActionServer<ActionSpec>::SingleGoalActionServer(ros::NodeHandle n, std::string name, ExecuteCallback execute_callback)
+    : n_(n), new_goal_(false), preempt_request_(false), new_goal_preempt_request_(false), execute_callback_(execute_callback) {
 
-      //create the action server
-      as_ = boost::shared_ptr<ActionServer<ActionSpec> >(new ActionServer<ActionSpec>(n, name,
-            boost::bind(&SingleGoalActionServer::goalCallback, this, _1),
-            boost::bind(&SingleGoalActionServer::preemptCallback, this, _1)));
+    //create the action server
+    as_ = boost::shared_ptr<ActionServer<ActionSpec> >(new ActionServer<ActionSpec>(n, name,
+          boost::bind(&SingleGoalActionServer::goalCallback, this, _1),
+          boost::bind(&SingleGoalActionServer::preemptCallback, this, _1)));
 
+    if (execute_callback_ != NULL)
+    {
+      execute_thread_ = new boost::thread(boost::bind(&SingleGoalActionServer::executeLoop, this));
     }
+  }
+
+  template <class ActionSpec>
+  SingleGoalActionServer<ActionSpec>::~SingleGoalActionServer()
+  {
+    if (execute_callback_)
+    {
+      assert(execute_thread_);
+      execute_thread_->join();
+      delete execute_thread_;
+    }
+  }
 
   template <class ActionSpec>
   boost::shared_ptr<const typename SingleGoalActionServer<ActionSpec>::Goal> SingleGoalActionServer<ActionSpec>::acceptNewGoal(){
@@ -120,7 +135,11 @@ namespace actionlib {
 
   template <class ActionSpec>
   void SingleGoalActionServer<ActionSpec>::registerGoalCallback(boost::function<void ()> cb){
-    goal_callback_ = cb;
+    // Cannot register a goal callback if an execute callback exists
+    if (execute_callback_)
+      ROS_WARN("Cannot call SingleGoalActionServer::registerGoalCallback() because an executeCallback exists. Not going to register it.");
+    else
+      goal_callback_ = cb;
   }
 
   template <class ActionSpec>
@@ -149,6 +168,9 @@ namespace actionlib {
       //if the user has defined a goal callback, we'll call it now
       if(goal_callback_)
         goal_callback_();
+
+      // Trigger runLoop to call execute()
+      execute_condition_.notify_all();
     }
     else{
       //the goal requested has already been preempted by a different goal, so we're not going to execute it
@@ -176,5 +198,40 @@ namespace actionlib {
       new_goal_preempt_request_ = true;
     }
   }
+
+  template <class ActionSpec>
+  void SingleGoalActionServer<ActionSpec>::executeLoop(){
+
+    ros::Duration loop_duration = ros::Duration().fromSec(.1);
+
+    while (n_.ok())
+    {
+      boost::recursive_mutex::scoped_lock lock(lock_);
+      if (isActive())
+        ROS_ERROR("Should never reach this code with an active goal");
+      else if (isNewGoalAvailable())
+      {
+        GoalConstPtr goal = acceptNewGoal();
+
+        ROS_FATAL_COND(!execute_callback_, "execute_callback_ must exist. This is a bug in SingleGoalActionServer");
+
+        // Make sure we're not locked when we call execute
+        lock.unlock();
+        execute_callback_(goal);
+        lock.lock();
+
+        if (isActive())
+        {
+          ROS_WARN("Your executeCallback did not set the goal to a terminal status.\n"
+                   "This is a bug in your ActionServer implementation. Fix your code!\n"
+                   "For now, the ActionServer will set this goal to aborted");
+          setAborted();
+        }
+      }
+      else
+        execute_condition_.timed_wait(lock, boost::posix_time::milliseconds(loop_duration.toSec() * 1000.0f));
+    }
+  }
+
 };
 #endif
