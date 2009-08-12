@@ -40,6 +40,9 @@
 #include <kdl/frames.hpp>
 #include <ros/rate.h>
 
+#include <nav_msgs/Path.h>
+#include <geometry_msgs/PolygonStamped.h>
+
 #include <diagnostic_msgs/DiagnosticArray.h>
 
 
@@ -69,9 +72,9 @@ namespace nav
     ros_node_.param("~action_max_allowed_time", action_max_allowed_time_,5.0);
 
     //for display purposes
-    ros_node_.advertise<visualization_msgs::Polyline>("~gui_path", 1);
-    ros_node_.advertise<visualization_msgs::Polyline>("~local_path", 1);
-    ros_node_.advertise<visualization_msgs::Polyline>("~robot_footprint", 1);
+    ros_node_.advertise<nav_msgs::Path>("~global_plan", 1);
+    ros_node_.advertise<nav_msgs::Path>("~local_plan", 1);
+    ros_node_.advertise<geometry_msgs::PolygonStamped>("~robot_footprint", 1);
     ros_node_.advertise<diagnostic_msgs::DiagnosticArray> ("/diagnostics", 1) ;
 
     //pass on some parameters to the components of the move base node if they are not explicitly overridden 
@@ -386,17 +389,13 @@ namespace nav
     std::vector<geometry_msgs::Point> footprint;
     planner_->computeOrientedFootprint(getPose2D(global_pose_), planner_->footprint_, footprint);
 
-    visualization_msgs::Polyline footprint_msg;
+    geometry_msgs::PolygonStamped footprint_msg;
     footprint_msg.header.frame_id = global_frame_;
-    footprint_msg.set_points_size(footprint.size());
-    footprint_msg.color.r = 1.0;
-    footprint_msg.color.g = 0;
-    footprint_msg.color.b = 0;
-    footprint_msg.color.a = 0;
+    footprint_msg.polygon.set_points_size(footprint.size());
     for(unsigned int i = 0; i < footprint.size(); ++i){
-      footprint_msg.points[i].x = footprint[i].x;
-      footprint_msg.points[i].y = footprint[i].y;
-      footprint_msg.points[i].z = footprint[i].z;
+      footprint_msg.polygon.points[i].x = footprint[i].x;
+      footprint_msg.polygon.points[i].y = footprint[i].y;
+      footprint_msg.polygon.points[i].z = footprint[i].z;
       ROS_DEBUG("Footprint:%d:: %f, %f\n",i,footprint[i].x,footprint[i].y);
     }
     ros_node_.publish("~robot_footprint", footprint_msg);
@@ -404,19 +403,14 @@ namespace nav
 
   void MoveBaseDoorAction::publishPath(const std::vector<pr2_robot_actions::Pose2D>& path, std::string topic, double r, double g, double b, double a){
     // Extract the plan in world co-ordinates
-    visualization_msgs::Polyline gui_path_msg;
+    nav_msgs::Path gui_path_msg;
     gui_path_msg.header.frame_id = global_frame_;
-    gui_path_msg.set_points_size(path.size());
+    gui_path_msg.set_poses_size(path.size());
     for(unsigned int i=0; i < path.size(); i++){
-      gui_path_msg.points[i].x = path[i].x;
-      gui_path_msg.points[i].y = path[i].y;
-      gui_path_msg.points[i].z = 0;
+      gui_path_msg.poses[i].pose.position.x = path[i].x;
+      gui_path_msg.poses[i].pose.position.y = path[i].y;
+      gui_path_msg.poses[i].pose.position.z = 0;
     }
-
-    gui_path_msg.color.r = r;
-    gui_path_msg.color.g = g;
-    gui_path_msg.color.b = b;
-    gui_path_msg.color.a = a;
 
     ros_node_.publish(topic, gui_path_msg);
   }
