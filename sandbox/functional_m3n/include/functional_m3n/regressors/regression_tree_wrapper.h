@@ -56,6 +56,13 @@
  * \brief Wrapper around the OpenCV regression tree implementation
  */
 // --------------------------------------------------------------
+
+// --------------------------------------------------------------
+/*!
+ * \brief Implements regressor training and prediction using
+ *        OpenCV's regression tree
+ */
+// --------------------------------------------------------------
 class RegressionTreeWrapper: public RegressorWrapper
 {
   public:

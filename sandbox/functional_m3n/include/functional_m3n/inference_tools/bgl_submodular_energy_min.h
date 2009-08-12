@@ -49,31 +49,37 @@ using namespace boost;
 using namespace std;
 
 // --------------------------------------------------------------
-//* SubmodularEnergyMin
-/** 
- * \brief Minimizes a submodular energy function with binary variables
- *        using the Graph Boost Library (BGL)
- *
- * This implementation is based on a class originally written by Vladimir Kolmogorov,
- * implementing the graph structure as described in:
- *  What Energy Functions can be Minimized via Graph Cuts?
- *  Vladimir Kolmogorov and Ramin Zabih.
- *  IEEE Transactions on Pattern Analysis and Machine Intelligence, 2004
+/*!
+ * \brief Namespace for minimizing a submodular energy function with
+ *        the Boost Graph Library (BGL)
  */
 // --------------------------------------------------------------
 namespace bgl_energy
 {
+  // --------------------------------------------------------------
+  /*!
+   * \brief Minimizes a submodular energy function with binary variables
+   *        using the Boost Graph Library (BGL)
+   *
+   * This implementation is based on a class originally written by Vladimir Kolmogorov,
+   * implementing the graph structure as described in: \n
+   * What Energy Functions can be Minimized via Graph Cuts? \n
+   * Vladimir Kolmogorov and Ramin Zabih. \n
+   * IEEE Transactions on Pattern Analysis and Machine Intelligence, 2004
+   */
+  // --------------------------------------------------------------
   class SubmodularEnergyMin
   {
     public:
       // Change properties of the graph as needed
       typedef adjacency_list_traits<vecS, vecS, directedS> Traits;
       typedef adjacency_list<vecS, vecS, directedS, property<vertex_name_t, std::string, property<
-          vertex_index_t, unsigned int, property<vertex_color_t, boost::default_color_type, property<
-              vertex_distance_t, double, property<vertex_predecessor_t, Traits::edge_descriptor> > > > > ,
+          vertex_index_t, unsigned int, property<vertex_color_t, boost::default_color_type,
+              property<vertex_distance_t, double, property<vertex_predecessor_t,
+                  Traits::edge_descriptor> > > > > ,
 
-      property<edge_capacity_t, double, property<edge_residual_capacity_t, double, property<edge_reverse_t,
-          Traits::edge_descriptor> > > > Graph;
+      property<edge_capacity_t, double, property<edge_residual_capacity_t, double, property<
+          edge_reverse_t, Traits::edge_descriptor> > > > Graph;
 
       typedef Traits::vertex_descriptor EnergyVar;
 
@@ -138,7 +144,12 @@ namespace bgl_energy
        * \return 0 on success, otherwise negative value on error
        */
       // --------------------------------------------------------------
-      int addPairwise(const EnergyVar& x, const EnergyVar& y, double E00, double E01, double E10, double E11);
+      int addPairwise(const EnergyVar& x,
+                      const EnergyVar& y,
+                      double E00,
+                      double E01,
+                      double E10,
+                      double E11);
 
       // --------------------------------------------------------------
       /*!
@@ -256,7 +267,9 @@ namespace bgl_energy
        * \param cap_x_to_sink The capacity of edge from x -> Sink
        */
       // --------------------------------------------------------------
-      void add_tweights(const EnergyVar& x, const double cap_source_to_x, const double cap_x_to_sink);
+      void add_tweights(const EnergyVar& x,
+                        const double cap_source_to_x,
+                        const double cap_x_to_sink);
 
       // --------------------------------------------------------------
       /*!
@@ -270,7 +283,10 @@ namespace bgl_energy
        * \param reverse_cap_val The capacity of edge to->from
        */
       // --------------------------------------------------------------
-      void create_dedge(const EnergyVar& from, const EnergyVar& to, double cap_val, double reverse_cap_val);
+      void create_dedge(const EnergyVar& from,
+                        const EnergyVar& to,
+                        double cap_val,
+                        double reverse_cap_val);
 
       EnergyVar source_;
       EnergyVar sink_;

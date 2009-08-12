@@ -44,21 +44,26 @@
 using namespace std;
 
 // --------------------------------------------------------------
-//* SubmodularEnergyMin
-/** 
- * \brief Minimizes a submodular energy function with binary variables
- *        using Vladimir Kolmogorov's maxflow-v3.0 library, which
- *        is under "research-only" license.
- *
- * This implementation is based on a class originally written by Vladimir Kolmogorov,
- * implementing the graph structure as described in:
- *  What Energy Functions can be Minimized via Graph Cuts?
- *  Vladimir Kolmogorov and Ramin Zabih.
- *  IEEE Transactions on Pattern Analysis and Machine Intelligence, 2004
+/*!
+ * \brief Namespace for minimizing a submodular energy function with
+ *        Vladimir Kolmogorov's maxflow-v3.0 library
  */
 // --------------------------------------------------------------
 namespace vk_energy
 {
+  // --------------------------------------------------------------
+  /*!
+   * \brief Minimizes a submodular energy function with binary variables
+   *        using Vladimir Kolmogorov's maxflow-v3.0 library, which
+   *        is under "research-only" license.
+   *
+   * This implementation is based on a class originally written by Vladimir Kolmogorov,
+   * implementing the graph structure as described in: \n
+   * What Energy Functions can be Minimized via Graph Cuts? \n
+   * Vladimir Kolmogorov and Ramin Zabih. \n
+   * IEEE Transactions on Pattern Analysis and Machine Intelligence, 2004
+   */
+  // --------------------------------------------------------------
   class SubmodularEnergyMin
   {
     public:
@@ -75,7 +80,6 @@ namespace vk_energy
       {
         delete graph_;
       }
-      ;
 
       // --------------------------------------------------------------
       /*!
@@ -126,7 +130,12 @@ namespace vk_energy
        * \return 0 on success, otherwise negative value on error
        */
       // --------------------------------------------------------------
-      int addPairwise(const EnergyVar& x, const EnergyVar& y, double E00, double E01, double E10, double E11);
+      int addPairwise(const EnergyVar& x,
+                      const EnergyVar& y,
+                      double E00,
+                      double E01,
+                      double E10,
+                      double E11);
 
       // --------------------------------------------------------------
       /*!

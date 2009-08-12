@@ -38,7 +38,15 @@
 /*!
  * \file regressor_params.h
  *
- * \brief Parameters to construct a RegressTreeWrapper
+ * \brief Contains the parameter data structures for each regressor
+ *        implementation.
+ */
+// --------------------------------------------------------------
+
+// --------------------------------------------------------------
+/*!
+ * \brief Container for the parameters needed to train an OpenCV
+ *        regression tree.
  */
 // --------------------------------------------------------------
 class RegressionTreeWrapperParams
@@ -46,7 +54,8 @@ class RegressionTreeWrapperParams
   public:
     // --------------------------------------------------------------
     /**
-     * \brief Default parameters for regression tree.
+     * \brief Container for the regression tree's parameters, initialized
+     *        to reasonable default values
      *
      * See CvDTreeParams in OpenCV: \n
      * http://opencv.willowgarage.com/wiki/MachineLearning#DecisionTrees \n
@@ -56,7 +65,8 @@ class RegressionTreeWrapperParams
      * regression_accuracy \n
      * nbr_xvalidation_folds \n
      *
-     * max_allocation The max size of the matrix to train regressor TODO
+     * max_allocation The max size (bytes) of the matrix used to train the
+     *                regressor (used to avoid bad malloc from OpenCV)
      */
     // --------------------------------------------------------------
     RegressionTreeWrapperParams() :
