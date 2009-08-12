@@ -41,7 +41,7 @@
 #include <ros/node.h>
 #include <people_aware_nav/PersonOnPath.h>
 #include <people/PositionMeasurement.h>
-#include <visualization_msgs/Polyline.h>
+#include <nav_msgs/Path.h>
 #include "tf/transform_listener.h"
 #include <tf/message_notifier.h>
 #include <boost/thread/mutex.hpp>
@@ -55,9 +55,9 @@ public:
   ros::Node *node_;
   tf::TransformListener *tf_;
   tf::MessageNotifier<people::PositionMeasurement>* message_notifier_person_;
-  tf::MessageNotifier<visualization_msgs::Polyline>* message_notifier_path_;
+  tf::MessageNotifier<nav_msgs::Path>* message_notifier_path_;
   people::PositionMeasurement person_pos_;
-  visualization_msgs::Polyline path_;
+  nav_msgs::Path path_;
   bool got_person_pos_, got_path_;
   std::string fixed_frame_;
   double total_dist_sqr_m_;
@@ -79,7 +79,7 @@ public:
     total_dist_sqr_m_ = robot_radius_m*robot_radius_m + person_radius_m*person_radius_m;
 
     message_notifier_person_ = new tf::MessageNotifier<people::PositionMeasurement> (tf_, node_, boost::bind(&IsPersonOnPath::personPosCB, this, _1), "face_detector/people_tracker_measurements", fixed_frame_, 1);
-    message_notifier_path_ = new tf::MessageNotifier<visualization_msgs::Polyline>(tf_, node_, boost::bind(&IsPersonOnPath::pathCB, this, _1), "/move_base/NavfnROSConstrained/plan", fixed_frame_, 1);
+    message_notifier_path_ = new tf::MessageNotifier<nav_msgs::Path>(tf_, node_, boost::bind(&IsPersonOnPath::pathCB, this, _1), "/move_base/NavfnROSConstrained/plan", fixed_frame_, 1);
 
     node_->advertiseService ("is_person_on_path", &IsPersonOnPath::personOnPathCB, this);
     path_mutex_.lock();
@@ -103,7 +103,7 @@ public:
   }
 
   // Path callback
-  void pathCB(const tf::MessageNotifier<visualization_msgs::Polyline>::MessagePtr& gui_path_msg)
+  void pathCB(const tf::MessageNotifier<nav_msgs::Path>::MessagePtr& gui_path_msg)
   {
     boost::mutex::scoped_lock l1(path_mutex_);
     ROS_DEBUG_STREAM ("In path callback and got_path_ is " << got_path_);
@@ -169,12 +169,12 @@ public:
 
     ROS_DEBUG_STREAM_NAMED ("person_on_path", "Attempting to compute person-path dist to point " << t_person_tf_stamped_point[0] << ", " << t_person_tf_stamped_point[1]);
 
-    int psize = (int)path_.points.size();
+    int psize = (int)path_.poses.size();
     std::vector<tf::Stamped<tf::Point> > t_path_points;
     for (int i=0; i<psize; ++i) {
       tf::Point tpt;
-      tpt[0] = path_.points[i].x;
-      tpt[1] = path_.points[i].y;
+      tpt[0] = path_.poses[i].pose.position.x;
+      tpt[1] = path_.poses[i].pose.position.y;
       tpt[2] = 0.0;
       tf::Stamped<tf::Point> t_path_point(tpt, path_.header.stamp, path_.header.frame_id);
       try {
@@ -191,7 +191,7 @@ public:
 
     // Go through each line segment on the path and get the distance to the person.
     double min_dist = -1.0;
-    psize = (int)path_.points.size()-1;
+    psize = (int)path_.poses.size()-1;
     for (int i=0; i<psize; ++i) {
 
       // Two points on the line segment

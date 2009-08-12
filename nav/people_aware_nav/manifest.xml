@@ -22,7 +22,6 @@
 <depend package="deprecated_msgs" />
 <depend package="rosconsole" />
 <depend package="roscpp" />
-<depend package="visualization_msgs"/>
 <export>
   <cpp cflags="-I${prefix}/include -I${prefix}/srv/cpp -I${prefix}/msg/cpp" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lnavfn_constrained"/>
   <nav_core BaseGlobalPlanner="${prefix}/bgp_plugin.xml" />
