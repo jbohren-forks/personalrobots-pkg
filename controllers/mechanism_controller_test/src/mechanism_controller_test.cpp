@@ -33,6 +33,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+#include <ros/node_handle.h>
 #include <mechanism_controller_test/null_hardware.h>
 #include <mechanism_control/mechanism_control.h>
 #include <urdf/parser.h>
@@ -49,6 +50,7 @@ void controlLoop()
   NullHardware hw;
   controller::MechanismControl mc(hw.hw_);
 
+  ros::NodeHandle node_;
 
   // Load robot description
   TiXmlDocument xml;
@@ -60,9 +62,8 @@ void controlLoop()
   else
   {
     ROS_INFO("Xml file not found, reading from parameter server\n");
-    assert(ros::Node::instance());
     std::string result;
-    if (ros::Node::instance()->getParam(g_options.xml_, result))
+    if (node_.getParam(g_options.xml_, result))
       xml.Parse(result.c_str());
     else
     {
@@ -98,7 +99,7 @@ void controlLoop()
 }
 
 int main(int argc, char *argv[]){
-  ros::init(argc, argv);
+  ros::init(argc, argv, "mc_test");
 
   // Parse options
   g_options.program_ = argv[0];
@@ -118,11 +119,11 @@ int main(int argc, char *argv[]){
     }
   }
 
-  ros::Node *node = new ros::Node("pr2_etherCAT", ros::Node::DONT_HANDLE_SIGINT);
+  //ros::Node *node = new ros::Node("pr2_etherCAT", ros::Node::DONT_HANDLE_SIGINT);
 
   controlLoop();
 
-  delete node;
+  //delete node;
 
   return 0;
 }
