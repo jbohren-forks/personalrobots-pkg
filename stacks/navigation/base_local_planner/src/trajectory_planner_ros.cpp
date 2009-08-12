@@ -584,28 +584,30 @@ namespace base_local_planner {
   }
 
   void TrajectoryPlannerROS::publishPlan(const std::vector<geometry_msgs::PoseStamped>& path, const ros::Publisher& pub, const ros::Publisher& new_pub, double r, double g, double b, double a){
+    //given an empty path we won't do anything
+    if(path.empty())
+      return;
+
     visualization_msgs::Polyline gui_path_msg;
     gui_path_msg.header.frame_id = global_frame_;
 
     //create a path message
     nav_msgs::Path gui_path;
     gui_path.set_poses_size(path.size());
+    gui_path.header.frame_id = global_frame_;
+    gui_path.header.stamp = path[0].header.stamp;
 
-    //given an empty path we won't do anything
-    if(!path.empty()){
-      // Extract the plan in world co-ordinates, we assume the path is all in the same frame
-      gui_path_msg.header.stamp = path[0].header.stamp;
-      gui_path_msg.set_points_size(path.size());
-      for(unsigned int i=0; i < path.size(); i++){
-        gui_path_msg.points[i].x = path[i].pose.position.x;
-        gui_path_msg.points[i].y = path[i].pose.position.y;
-        gui_path_msg.points[i].z = path[i].pose.position.z;
+    // Extract the plan in world co-ordinates, we assume the path is all in the same frame
+    gui_path_msg.header.stamp = path[0].header.stamp;
+    gui_path_msg.set_points_size(path.size());
+    for(unsigned int i=0; i < path.size(); i++){
+      gui_path_msg.points[i].x = path[i].pose.position.x;
+      gui_path_msg.points[i].y = path[i].pose.position.y;
+      gui_path_msg.points[i].z = path[i].pose.position.z;
 
-        gui_path.poses[i].header.frame_id = global_frame_;
-        gui_path.poses[i].pose.position.x = path[i].pose.position.x;
-        gui_path.poses[i].pose.position.y = path[i].pose.position.y;
-        gui_path.poses[i].pose.position.z = path[i].pose.position.z;
-      }
+      gui_path.poses[i].pose.position.x = path[i].pose.position.x;
+      gui_path.poses[i].pose.position.y = path[i].pose.position.y;
+      gui_path.poses[i].pose.position.z = path[i].pose.position.z;
     }
 
     gui_path_msg.color.r = r;
