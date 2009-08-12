@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Willow Garage, Inc.
+ * Copyright (c) 2009, Willow Garage, Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,64 +27,40 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- * Author: Stuart Glaser
- */
+#include "pluginlib/plugin_macros.h"
+#include "mechanism_control/controller.h"
 
-#ifndef CASTER_CALIBRATION_CONTROLLER_H
-#define CASTER_CALIBRATION_CONTROLLER_H
-
-#include "ros/node_handle.h"
+#include "pr2_mechanism_controllers/caster_calibration_controller.h"
 #include "pr2_mechanism_controllers/caster_controller.h"
-#include "realtime_tools/realtime_publisher.h"
-#include "std_msgs/Empty.h"
-#include <robot_mechanism_controllers/CalibrateJoint.h>
+#include "pr2_mechanism_controllers/gripper_calibration_controller.h"
+#include "pr2_mechanism_controllers/head_position_controller.h"
+#include "pr2_mechanism_controllers/head_servoing_controller.h"
+#include "pr2_mechanism_controllers/joint_trajectory_controller.h"
+#include "pr2_mechanism_controllers/laser_scanner_traj_controller.h"
+#include "pr2_mechanism_controllers/pr2_base_controller.h"
+//#include "pr2_mechanism_controllers/pr2_gripper_controller.h"
+#include "pr2_mechanism_controllers/pr2_odometry.h"
+#include "pr2_mechanism_controllers/wrist_calibration_controller.h"
 
-namespace controller {
+using namespace controller;
 
-class CasterCalibrationController : public Controller
-{
-public:
-  CasterCalibrationController();
-  ~CasterCalibrationController();
+BEGIN_PLUGIN_LIST(Controller)
 
-  virtual bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
-  virtual bool init(mechanism::RobotState *robot, const ros::NodeHandle &n);
+REGISTER_PLUGIN(CasterCalibrationController)
+REGISTER_PLUGIN(CasterController)
+REGISTER_PLUGIN(CasterControllerNode)
+REGISTER_PLUGIN(GripperCalibrationController)
+REGISTER_PLUGIN(GripperCalibrationControllerNode)
+REGISTER_PLUGIN(HeadPositionController)
+REGISTER_PLUGIN(HeadServoingController)
+REGISTER_PLUGIN(JointTrajectoryController)
+REGISTER_PLUGIN(LaserScannerTrajController)
+REGISTER_PLUGIN(LaserScannerTrajControllerNode)
+REGISTER_PLUGIN(Pr2BaseController)
+//REGISTER_PLUGIN(Pr2GripperController)
+REGISTER_PLUGIN(Pr2Odometry)
+REGISTER_PLUGIN(WristCalibrationController)
+REGISTER_PLUGIN(WristCalibrationControllerNode)
 
+END_PLUGIN_LIST
 
-  /*!
-   * \brief Issues commands to the joint. Should be called at regular intervals
-   */
-  virtual void update();
-
-  bool calibrated() { return state_ == CALIBRATED; }
-  void beginCalibration()
-  {
-    if (state_ == INITIALIZED)
-      state_ = BEGINNING;
-  }
-
-protected:
-
-  ros::NodeHandle node_;
-  mechanism::RobotState *robot_;
-
-  enum { INITIALIZED, BEGINNING, MOVING, CALIBRATED };
-  int state_;
-
-  double search_velocity_;
-  bool original_switch_state_;
-
-  Actuator *actuator_;
-  mechanism::JointState *joint_, *wheel_l_joint_, *wheel_r_joint_;
-  mechanism::Transmission *transmission_;
-
-  controller::CasterController cc_;
-
-  double last_publish_time_;
-  boost::scoped_ptr<realtime_tools::RealtimePublisher<std_msgs::Empty> > pub_calibrated_;
-};
-
-} // namespace
-
-#endif
