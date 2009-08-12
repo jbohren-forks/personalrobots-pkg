@@ -129,9 +129,9 @@ public:
  
   People *people_; /**< List of people and associated fcns. */
   int num_filenames_;
-  string *names_; /**< The name of each detector. Ie frontalface, profileface. These will be the names in the published face location msgs. */
-  string *haar_filenames_; /**< Training file for the haar cascade classifier. */
-  double *reliabilities_; /**< Reliability of the predictions. This should depend on the training file used. */
+  vector<string> names_; /**< The name of each detector. Ie frontalface, profileface. These will be the names in the published face location msgs. */
+  vector<string> haar_filenames_; /**< Training file for the haar cascade classifier. */
+  vector<double> reliabilities_; /**< Reliability of the predictions. This should depend on the training file used. */
 
   bool external_init_; 
 
@@ -152,7 +152,7 @@ public:
   bool run_detector_;
   bool do_publish_unknown_;
 
-  FaceDetector(int num_filenames, string *names, string *haar_filenames, double *reliabilities) : 
+  FaceDetector(int num_filenames, vector<string> names, vector<string> haar_filenames, vector<double> reliabilities) : 
     BIGDIST_M(1000000.0),
     cv_image_left_(NULL),
     cv_image_disp_(NULL),
@@ -174,17 +174,17 @@ public:
     }
 
     // Parameters
-    nh_.param("/people/face_detector/do_display",do_display_,std::string("none"));
-    nh_.param("/people/face_detector/do_continuous",do_continuous_,true);
-    nh_.param("/people/face_detector/do_publish_faces_of_unknown_size",do_publish_unknown_,false);
-    nh_.param("/people/face_detector/use_depth",use_depth_,true);
-    nh_.param("/people/face_detector/use_external_init",external_init_,true);
+    nh_.param("~do_display",do_display_,std::string("none"));
+    nh_.param("~do_continuous",do_continuous_,true);
+    nh_.param("~do_publish_faces_of_unknown_size",do_publish_unknown_,false);
+    nh_.param("~use_depth",use_depth_,true);
+    nh_.param("~use_external_init",external_init_,true);
     run_detector_ = do_continuous_;
 
     people_ = new People();
     people_->initFaceDetection(num_filenames_, haar_filenames_);
 
-    // Subscribe to the images and parameters
+    // Subscribe to the images and camera parameters
     string stereo_namespace;
     nh_.param("~stereo_namespace", stereo_namespace, string("wide_stereo"));
 
@@ -626,34 +626,23 @@ public:
 int main(int argc, char **argv)
 {
 
-  if (argc < 2) {
-    cerr << "A path to the file containing the experiment list is required.\n" << endl;
+  if (argc < 4) {
+    ROS_INFO_STREAM_NAMED("face_detector","At least one face classifier name, file path and reliability must be given.\n");
     return 0;
   }
 
-  ifstream expfile(argv[1]);
-  if (!expfile.is_open()) {
-    ROS_ERROR_STREAM_NAMED("face_detector","File " << argv[1] << " cannot be opened.");
-    return 0;
-  }
-  int numlines;
-  expfile >> numlines;
-  double reliabilities[numlines];
-  string haar_filenames[numlines];
-  string names[numlines];
-  for (int i=0; i<numlines; i++) {
-    if (expfile.eof()) {
-      ROS_ERROR_STREAM_NAMED("face_detector","File " << argv[1] << " has an incorrect number of lines.");
-      return 0;
-    }
-    expfile >> names[i];
-    expfile >> haar_filenames[i];
-    expfile >> reliabilities[i];
+  std::vector<double> reliabilities;
+  std::vector<string> haar_filenames;
+  std::vector<string> names;
+  for (int i=1, j=0; i+2<argc; i+=3, j++) {
+    names.push_back(argv[i]);
+    haar_filenames.push_back(argv[i+1]);
+    reliabilities.push_back(std::atof(argv[i+2]));
   }
 
-  ros::init(argc,argv,"face_detection");
+  ros::init(argc,argv,"face_detector");
 
-  people::FaceDetector fd(numlines, names, haar_filenames, reliabilities);
+  people::FaceDetector fd(names.size(), names, haar_filenames, reliabilities);
 
   return 0;
 }

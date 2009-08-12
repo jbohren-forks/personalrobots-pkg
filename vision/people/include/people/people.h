@@ -247,7 +247,7 @@ class People
    * A vector of CvRects containing the bounding boxes around found faces.
    */ 
   vector<Box2D3D> detectAllFaces(IplImage *image, double threshold, IplImage *disparity_image, CvStereoCamModel *cam_model);
-  void initFaceDetection(uint num_cascades, string* haar_classifier_filenames);
+  void initFaceDetection(uint num_cascades, std::vector<string> haar_classifier_filenames);
 
   // Detect only known faces in an image.
   void detectKnownFaces(){}

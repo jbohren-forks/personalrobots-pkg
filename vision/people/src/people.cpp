@@ -350,7 +350,7 @@ void People::clearFaceColorHist(int iperson) {
 
 
 
-void People::initFaceDetection(uint num_cascades, string* haar_classifier_filenames) {
+void People::initFaceDetection(uint num_cascades, std::vector<string> haar_classifier_filenames) {
   images_ready_ = 0;
 
   face_go_mutices_.resize(num_cascades);
