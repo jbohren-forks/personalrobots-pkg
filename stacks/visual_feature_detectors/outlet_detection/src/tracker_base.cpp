@@ -96,10 +96,13 @@ void TrackerBase::processCameraInfo()
 
 void TrackerBase::processImage()
 {
+  ROS_INFO("%s: Received image, performing detection", ros::this_node::getName().c_str());
+  
   tf::Transform transform;
   bool success = detectObject(transform);
 
   if (success) {
+    ROS_INFO("%s: Found the %s", ros::this_node::getName().c_str(), save_prefix_.c_str());
     // Publish to topic
     geometry_msgs::PoseStamped pose;
     pose.header.frame_id = "high_def_frame";
@@ -121,6 +124,8 @@ void TrackerBase::processImage()
     }
   }
   else {
+    ROS_INFO("%s: Did not find the %s", ros::this_node::getName().c_str(), save_prefix_.c_str());
+    
     // Save failure for debugging
     if (save_failures_)
       saveImage(false);
