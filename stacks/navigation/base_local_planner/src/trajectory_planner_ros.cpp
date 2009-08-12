@@ -41,6 +41,8 @@
 #include <pluginlib/plugin_macros.h>
 
 #include "visualization_msgs/Polyline.h"
+#include "geometry_msgs/PolygonStamped.h"
+#include "nav_msgs/Path.h"
 
 using namespace std;
 using namespace costmap_2d;
@@ -85,6 +87,11 @@ namespace base_local_planner {
       footprint_pub_ = ros_node.advertise<visualization_msgs::Polyline>("robot_footprint", 1);
       g_plan_pub_ = ros_node.advertise<visualization_msgs::Polyline>("global_plan", 1);
       l_plan_pub_ = ros_node.advertise<visualization_msgs::Polyline>("local_plan", 1);
+
+      //@todo TODO: Remove old publishers with Polyline stuff
+      new_footprint_pub_ = ros_node.advertise<visualization_msgs::Polyline>("robot_footprint_new", 1);
+      new_g_plan_pub_ = ros_node.advertise<visualization_msgs::Polyline>("global_plan_new", 1);
+      new_l_plan_pub_ = ros_node.advertise<visualization_msgs::Polyline>("local_plan_new", 1);
 
       global_frame_ = costmap_ros_->getGlobalFrameID();
       robot_base_frame_ = costmap_ros_->getBaseFrameID();
@@ -462,8 +469,8 @@ namespace base_local_planner {
 
       //publish the robot footprint and an empty plan because we've reached our goal position
       publishFootprint(global_pose);
-      publishPlan(transformed_plan, g_plan_pub_, 0.0, 1.0, 0.0, 0.0);
-      publishPlan(local_plan, l_plan_pub_, 0.0, 0.0, 1.0, 0.0);
+      publishPlan(transformed_plan, g_plan_pub_, new_g_plan_pub_, 0.0, 1.0, 0.0, 0.0);
+      publishPlan(local_plan, l_plan_pub_, new_l_plan_pub_, 0.0, 0.0, 1.0, 0.0);
 
       //we don't actually want to run the controller when we're just rotating to goal
       return true;
@@ -493,8 +500,8 @@ namespace base_local_planner {
     if(path.cost_ < 0){
       local_plan.clear();
       publishFootprint(global_pose);
-      publishPlan(transformed_plan, g_plan_pub_, 0.0, 1.0, 0.0, 0.0);
-      publishPlan(local_plan, l_plan_pub_, 0.0, 0.0, 1.0, 0.0);
+      publishPlan(transformed_plan, g_plan_pub_, new_g_plan_pub_, 0.0, 1.0, 0.0, 0.0);
+      publishPlan(local_plan, l_plan_pub_, new_l_plan_pub_, 0.0, 0.0, 1.0, 0.0);
       return false;
     }
 
@@ -511,8 +518,8 @@ namespace base_local_planner {
 
     //publish information to the visualizer
     publishFootprint(global_pose);
-    publishPlan(transformed_plan, g_plan_pub_, 0.0, 1.0, 0.0, 0.0);
-    publishPlan(local_plan, l_plan_pub_, 0.0, 0.0, 1.0, 0.0);
+    publishPlan(transformed_plan, g_plan_pub_, new_g_plan_pub_, 0.0, 1.0, 0.0, 0.0);
+    publishPlan(local_plan, l_plan_pub_, new_l_plan_pub_, 0.0, 0.0, 1.0, 0.0);
     return true;
   }
 
@@ -549,6 +556,13 @@ namespace base_local_planner {
     double useless_pitch, useless_roll, yaw;
     global_pose.getBasis().getEulerZYX(yaw, useless_pitch, useless_roll);
     std::vector<geometry_msgs::Point> footprint = drawFootprint(global_pose.getOrigin().x(), global_pose.getOrigin().y(), yaw);
+
+    //create a polygon message for the footprint
+    geometry_msgs::PolygonStamped footprint_poly;
+    footprint_poly.header.frame_id = global_frame_;
+    footprint_poly.header.stamp = ros::Time::now();
+    footprint_poly.polygon.set_points_size(footprint.size());
+    
     visualization_msgs::Polyline footprint_msg;
     footprint_msg.header.frame_id = global_frame_;
     footprint_msg.set_points_size(footprint.size());
@@ -560,13 +574,21 @@ namespace base_local_planner {
       footprint_msg.points[i].x = footprint[i].x;
       footprint_msg.points[i].y = footprint[i].y;
       footprint_msg.points[i].z = footprint[i].z;
+
+      footprint_poly.polygon.points[i].x = footprint[i].x;
+      footprint_poly.polygon.points[i].y = footprint[i].y;
+      footprint_poly.polygon.points[i].z = footprint[i].z;
     }
     footprint_pub_.publish(footprint_msg);
+    new_footprint_pub_.publish(footprint_poly);
   }
 
-  void TrajectoryPlannerROS::publishPlan(const std::vector<geometry_msgs::PoseStamped>& path, const ros::Publisher& pub, double r, double g, double b, double a){
+  void TrajectoryPlannerROS::publishPlan(const std::vector<geometry_msgs::PoseStamped>& path, const ros::Publisher& pub, const ros::Publisher& new_pub, double r, double g, double b, double a){
     visualization_msgs::Polyline gui_path_msg;
     gui_path_msg.header.frame_id = global_frame_;
+
+    //create a path message
+    nav_msgs::Path gui_path;
 
     //given an empty path we won't do anything
     if(!path.empty()){
@@ -577,6 +599,11 @@ namespace base_local_planner {
         gui_path_msg.points[i].x = path[i].pose.position.x;
         gui_path_msg.points[i].y = path[i].pose.position.y;
         gui_path_msg.points[i].z = path[i].pose.position.z;
+
+        gui_path.poses[i].header.frame_id = global_frame_;
+        gui_path.poses[i].pose.position.x = path[i].pose.position.x;
+        gui_path.poses[i].pose.position.y = path[i].pose.position.y;
+        gui_path.poses[i].pose.position.z = path[i].pose.position.z;
       }
     }
 
@@ -586,5 +613,6 @@ namespace base_local_planner {
     gui_path_msg.color.a = a;
 
     pub.publish(gui_path_msg);
+    new_pub.publish(gui_path);
   }
 };
