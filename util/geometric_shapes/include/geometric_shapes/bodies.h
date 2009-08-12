@@ -39,8 +39,8 @@
 
 #include "geometric_shapes/shapes.h"
 #include <LinearMath/btTransform.h>
-#include <BulletCollision/CollisionShapes/btBvhTriangleMeshShape.h>
-#include <BulletCollision/CollisionShapes/btTriangleMesh.h>
+// #include <BulletCollision/CollisionShapes/btBvhTriangleMeshShape.h>
+// #include <BulletCollision/CollisionShapes/btTriangleMesh.h>
 #include <vector>
 
 /**
@@ -296,6 +296,7 @@ namespace bodies
 	double    m_radius2;
     };
 
+    /*
     class Mesh : public Body
     {	
     public:
@@ -323,10 +324,10 @@ namespace bodies
 		delete m_btMesh;
 	}
 	
-	/** \brief The mesh is considered to be concave, so this function is implemented with raycasting. This is a bit slow and not so accurate for very small triangles. */
+	\\\ \brief The mesh is considered to be concave, so this function is implemented with raycasting. This is a bit slow and not so accurate for very small triangles.
 	virtual bool containsPoint(const btVector3 &p) const;
 
-	/** \brief This function is approximate. It returns the volume of the AABB enclosing the shape */
+	\\\ \brief This function is approximate. It returns the volume of the AABB enclosing the shape 
 	virtual double computeVolume(void) const;
 	virtual void computeBoundingSphere(BoundingSphere &sphere) const;
 	virtual bool intersectsRay(const btVector3& origin, const btVector3 &dir, std::vector<btVector3> *intersections = NULL, unsigned int count = 0) const;
@@ -346,8 +347,8 @@ namespace bodies
 	double                   m_radiusBSqr;
 	
     };
+    */
     
-	    
     /** \brief Definition of a convex mesh. Convex hull is computed for a given shape::Mesh */
     class ConvexMesh : public Body
     {

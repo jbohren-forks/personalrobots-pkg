@@ -36,7 +36,7 @@
 
 #include "geometric_shapes/bodies.h"
 #include <LinearMath/btConvexHull.h>
-#include <BulletCollision/CollisionShapes/btTriangleShape.h>
+// #include <BulletCollision/CollisionShapes/btTriangleShape.h>
 #include <algorithm>
 #include <iostream>
 #include <cmath>
@@ -516,7 +516,7 @@ bool bodies::Box::intersectsRay(const btVector3& origin, const btVector3& dir, s
     
     return true;
 }
-
+/*
 bool bodies::Mesh::containsPoint(const btVector3 &p) const
 {
     // compute all intersections
@@ -698,6 +698,8 @@ void bodies::Mesh::computeBoundingSphere(BoundingSphere &sphere) const
     sphere.center = m_center;
     sphere.radius = m_radiusB;
 }
+
+*/
 
 bool bodies::ConvexMesh::containsPoint(const btVector3 &p) const
 {
