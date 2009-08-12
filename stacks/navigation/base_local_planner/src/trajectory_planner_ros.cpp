@@ -589,6 +589,7 @@ namespace base_local_planner {
 
     //create a path message
     nav_msgs::Path gui_path;
+    gui_path.set_poses_size(path.size());
 
     //given an empty path we won't do anything
     if(!path.empty()){
