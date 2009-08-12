@@ -69,6 +69,9 @@
 #include <door_msgs/Door.h>
 #include <door_functions/door_functions.h>
 
+#include <nav_msgs/Path.h>
+#include <geometry_msgs/PolygonStamped.h>
+
 typedef struct
 {
     door_msgs::Door door;

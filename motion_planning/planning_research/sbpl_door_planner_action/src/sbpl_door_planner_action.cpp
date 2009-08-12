@@ -89,12 +89,12 @@ SBPLDoorPlanner::SBPLDoorPlanner() :  Action<door_msgs::Door, door_msgs::Door>(r
 	door_env_.shoulder.y = shoulder_y;
 
 	/** publishers */
-	start_footprint_pub_ = ros_node_.advertise<visualization_msgs::Polyline>("~start", 1);
-	goal_footprint_pub_ = ros_node_.advertise<visualization_msgs::Polyline>("~goal", 1);
-	robot_footprint_pub_ = ros_node_.advertise<visualization_msgs::Polyline>("~robot_footprint", 1);
-	global_plan_pub_ = ros_node_.advertise<visualization_msgs::Polyline>("~global_plan", 1);
-	door_frame_pub_ = ros_node_.advertise<visualization_msgs::Polyline>("~door/frame", 1);
-	door_pub_ = ros_node_.advertise<visualization_msgs::Polyline>("~door/door", 1);
+	start_footprint_pub_ = ros_node_.advertise<geometry_msgs::PolygonStamped>("~start", 1);
+	goal_footprint_pub_ = ros_node_.advertise<geometry_msgs::PolygonStamped>("~goal", 1);
+	robot_footprint_pub_ = ros_node_.advertise<geometry_msgs::PolygonStamped>("~robot_footprint", 1);
+	global_plan_pub_ = ros_node_.advertise<nav_msgs::Path>("~global_plan", 1);
+	door_frame_pub_ = ros_node_.advertise<nav_msgs::Path>("~door/frame", 1);
+	door_pub_ = ros_node_.advertise<nav_msgs::Path>("~door/door", 1);
 	viz_markers_ = ros_node_.advertise<visualization_msgs::Marker>( "visualization_marker",1);
 	display_path_pub_ = ros_node_.advertise<motion_planning_msgs::KinematicPath>("display_kinematic_path", 10);
 	pr2_ik_pub_ = ros_node_.advertise<pr2_ik::PoseCmd>(arm_control_topic_name_,1);
@@ -682,7 +682,7 @@ double SBPLDoorPlanner::getHandleHingeDistance(const door_msgs::Door &door)
 
 void SBPLDoorPlanner::publishPath(const manipulation_msgs::JointTraj &path, const ros::Publisher &pub, double r, double g, double b, double a)
 {
-	visualization_msgs::Polyline gui_path_msg;
+	nav_msgs::Path gui_path_msg;
 	gui_path_msg.header.frame_id = global_frame_;
 	gui_path_msg.header.stamp = ros::Time::now();
 
@@ -691,18 +691,13 @@ void SBPLDoorPlanner::publishPath(const manipulation_msgs::JointTraj &path, cons
 	{
     // Extract the plan in world co-ordinates, we assume the path is all in the same frame
     //    gui_path_msg.header.stamp = door_env_.door.header.stamp;
-		gui_path_msg.set_points_size(path.get_points_size());
+		gui_path_msg.set_poses_size(path.get_points_size());
 		for(unsigned int i=0; i < path.get_points_size(); i++){
-			gui_path_msg.points[i].y = path.points[i].positions[0];
-			gui_path_msg.points[i].y = path.points[i].positions[1];
-			gui_path_msg.points[i].z = path.points[i].positions[2];
+			gui_path_msg.poses[i].pose.position.x = path.points[i].positions[0];
+			gui_path_msg.poses[i].pose.position.y = path.points[i].positions[1];
+			gui_path_msg.poses[i].pose.position.z = path.points[i].positions[2];
 		}
-		gui_path_msg.color.r = r;
-		gui_path_msg.color.g = g;
-		gui_path_msg.color.b = b;
-		gui_path_msg.color.a = a;
 
-// 		ros_node_.publish("~" + topic, gui_path_msg);
 		pub.publish(gui_path_msg);
 	}
 }
@@ -789,26 +784,22 @@ void SBPLDoorPlanner::publishFootprint(const pr2_robot_actions::Pose2D &position
 	std::vector<geometry_msgs::Point> oriented_footprint;
 	computeOrientedFootprint(position,footprint_,oriented_footprint);
 
-	visualization_msgs::Polyline robot_polygon;
+	geometry_msgs::PolygonStamped robot_polygon;
 	robot_polygon.header.frame_id = global_frame_;
 	robot_polygon.header.stamp = door_env_.door.header.stamp;
-	robot_polygon.set_points_size(2*footprint_.size());
+	robot_polygon.polygon.set_points_size(2*footprint_.size());
 
 	for(int i=0; i < (int) oriented_footprint.size(); ++i)
 	{
 		int index_2 = (i+1)%((int)oriented_footprint.size());
-		robot_polygon.points[2*i].y = oriented_footprint[i].y;
-		robot_polygon.points[2*i].y = oriented_footprint[i].y;
-		robot_polygon.points[2*i].z = oriented_footprint[i].z;
+		robot_polygon.polygon.points[2*i].y = oriented_footprint[i].y;
+		robot_polygon.polygon.points[2*i].y = oriented_footprint[i].y;
+		robot_polygon.polygon.points[2*i].z = oriented_footprint[i].z;
 
-		robot_polygon.points[2*i+1].y = oriented_footprint[index_2].y;
-		robot_polygon.points[2*i+1].y = oriented_footprint[index_2].y;
-		robot_polygon.points[2*i+1].z = oriented_footprint[index_2].z;
+		robot_polygon.polygon.points[2*i+1].y = oriented_footprint[index_2].y;
+		robot_polygon.polygon.points[2*i+1].y = oriented_footprint[index_2].y;
+		robot_polygon.polygon.points[2*i+1].z = oriented_footprint[index_2].z;
 	}
-	robot_polygon.color.r = r;
-	robot_polygon.color.g = g;
-	robot_polygon.color.b = b;
-	robot_polygon.color.a = 0;
 
 	pub.publish(robot_polygon);
 }
@@ -817,41 +808,31 @@ void SBPLDoorPlanner::publishDoor(const door_msgs::Door &door_in, const double &
 {
 	door_msgs::Door door = rotateDoor(door_in,angles::normalize_angle(angle-getFrameAngle(door_in)));
 
-	visualization_msgs::Polyline marker_door;
+	nav_msgs::Path marker_door;
 	marker_door.header.frame_id = global_frame_;
 	marker_door.header.stamp = ros::Time();
-	marker_door.set_points_size(2);
+	marker_door.set_poses_size(2);
 
-	marker_door.points[0].y = door.door_p1.y;
-	marker_door.points[0].y = door.door_p1.y;
-	marker_door.points[0].z = door.door_p1.z;
+	marker_door.poses[0].pose.position.x = door.door_p1.x;
+	marker_door.poses[0].pose.position.y = door.door_p1.y;
+	marker_door.poses[0].pose.position.z = door.door_p1.z;
 
-	marker_door.points[1].y = door.door_p2.y;
-	marker_door.points[1].y = door.door_p2.y;
-	marker_door.points[1].z = door.door_p2.z;
+	marker_door.poses[1].pose.position.x = door.door_p2.x;
+	marker_door.poses[1].pose.position.y = door.door_p2.y;
+	marker_door.poses[1].pose.position.z = door.door_p2.z;
 
-	visualization_msgs::Polyline marker_frame;
+	nav_msgs::Path marker_frame;
 	marker_frame.header.frame_id = global_frame_;
 	marker_frame.header.stamp =  ros::Time();
-	marker_frame.set_points_size(2);
+	marker_frame.set_poses_size(2);
 
-	marker_frame.points[0].y = door.frame_p1.y;
-	marker_frame.points[0].y = door.frame_p1.y;
-	marker_frame.points[0].z = door.frame_p1.z;
+	marker_frame.poses[0].pose.position.x = door.frame_p1.x;
+	marker_frame.poses[0].pose.position.y = door.frame_p1.y;
+	marker_frame.poses[0].pose.position.z = door.frame_p1.z;
 
-	marker_frame.points[1].y = door.frame_p2.y;
-	marker_frame.points[1].y = door.frame_p2.y;
-	marker_frame.points[1].z = door.frame_p2.z;
-
-	marker_door.color.r = 0;
-	marker_door.color.g = 0;
-	marker_door.color.b = 1;
-	marker_door.color.a = 0;
-
-	marker_frame.color.r = 1;
-	marker_frame.color.g = 0;
-	marker_frame.color.b = 0;
-	marker_frame.color.a = 0;
+	marker_frame.poses[1].pose.position.x = door.frame_p2.x;
+	marker_frame.poses[1].pose.position.y = door.frame_p2.y;
+	marker_frame.poses[1].pose.position.z = door.frame_p2.z;
 
 	visualization_msgs::Marker marker;
 	marker.header.frame_id = global_frame_;
@@ -860,14 +841,14 @@ void SBPLDoorPlanner::publishDoor(const door_msgs::Door &door_in, const double &
 	marker.id = 0;
 	marker.type = visualization_msgs::Marker::SPHERE;
 	marker.action = visualization_msgs::Marker::ADD;
-	marker.pose.position.y = door.handle.y;
+	marker.pose.position.x = door.handle.x;
 	marker.pose.position.y = door.handle.y;
 	marker.pose.position.z = 0.5;
-	marker.pose.orientation.y = 0.0;
+	marker.pose.orientation.x = 0.0;
 	marker.pose.orientation.y = 0.0;
 	marker.pose.orientation.z = 0.0;
 	marker.pose.orientation.w = 1.0;
-	marker.scale.y = 0.03;
+	marker.scale.x = 0.03;
 	marker.scale.y = 0.03;
 	marker.scale.z = 0.03;
 	marker.color.a = 1.0;
