@@ -126,39 +126,4 @@ void JointEffortController::commandCB(const std_msgs::Float64ConstPtr& msg)
   command_ = msg->data;
 }
 
-//------ Joint Effort controller node --------
-ROS_REGISTER_CONTROLLER(JointEffortControllerNode)
-
-JointEffortControllerNode::JointEffortControllerNode(): node_(ros::Node::instance())
-{
-}
-
-JointEffortControllerNode::~JointEffortControllerNode()
-{
-  node_->unsubscribe(name_ + "/command");
-}
-
-void JointEffortControllerNode::update()
-{
-  c_.update();
-}
-
-bool JointEffortControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
-{
-  assert(node_);
-  name_ = config->Attribute("name");
-
-  if (!c_.initXml(robot, config))
-    return false;
-
-  node_->subscribe(name_ + "/command", command_msg_, &JointEffortControllerNode::command, this, 1);
-
-  return true;
-}
-
-void JointEffortControllerNode::command()
-{
-  c_.command_ = command_msg_.data;
-}
-
 }

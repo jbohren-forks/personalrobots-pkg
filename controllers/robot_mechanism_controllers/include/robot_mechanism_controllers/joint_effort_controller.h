@@ -53,8 +53,6 @@
 
 #include <ros/node.h>
 #include <mechanism_control/controller.h>
-#include "misc_utils/advertised_service_guard.h"
-#include "misc_utils/subscription_guard.h"
 
 #include <std_msgs/Float64.h>
 
@@ -89,42 +87,6 @@ private:
 
 };
 
-/***************************************************/
-/*! \class controller::JointEffortControllerNode
-    \brief Joint Torque Controller ROS Node
-
-    This class basically passes the commanded effort
-    down through the transmissions and safety code.
-
-*/
-/***************************************************/
-
-class JointEffortControllerNode : public Controller
-{
-public:
-
-  JointEffortControllerNode();
-  ~JointEffortControllerNode();
-
-  virtual bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
-
-  virtual bool starting() { return c_.starting(); }
-  virtual void update();
-
-  void command();
-
-private:
- //node stuff
-  std::string name_;
-  ros::Node *node_;
-
-  //msgs
-  std_msgs::Float64 command_msg_;
-
-  //controller
-  JointEffortController c_;
-
-};
 }
 
 #endif
