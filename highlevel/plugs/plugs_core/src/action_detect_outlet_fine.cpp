@@ -72,8 +72,10 @@ robot_actions::ResultStatus DetectOutletFineAction::execute(const geometry_msgs:
   ros::Time started = ros::Time::now();
   ROS_DEBUG("%s: executing.", action_name_.c_str());
   // point the head at the outlet
-  node_.publish(head_controller_ + "/point_head", outlet_estimate);
-  node_.publish(head_controller_ + "/point_head", outlet_estimate);
+  geometry_msgs::PointStamped outlet_estimate_now(outlet_estimate);
+  outlet_estimate_now.header.stamp = ros::Time::now(); 
+  node_.publish(head_controller_ + "/point_head", outlet_estimate_now);
+  node_.publish(head_controller_ + "/point_head", outlet_estimate_now);
   ros::Duration(3.0).sleep();
 
   finished_detecting_ = false;
