@@ -4,11 +4,25 @@
 
 @section summary Summary
 
-@b ompl_planning is a node capable of planning kinematic paths for a
+@b ompl_planning provides a node capable of planning kinematic paths for a
 set of robot models. Each robot model is a group of links/joints from a
 URDF file, not necessarily the complete robot model. The available
 models (groups of links) are defined as described in the
 <a href="../../planning_environment/html">planning_environment</a> package.
+
+When a request for motion planning is received, depending on the goal
+specification (whether it is a state, a position for the end effector
+or a combination of constraints) a motion planner is chosen. The
+motion planner and its state space have been instantiated since the
+model was loaded, but certain parameters need to be updated, depending
+on the planning problem. The motion planner is then executed. If a
+solution is found in the allowed time, a path is sent as result. The
+path consists of a set of states. Between subsequent states, it is
+assumed that linear interpolation is used. The constraints the motion
+planner has to satisfy are that there is no collision (can be done
+using the collision space) and additional user constraints (see <a
+href="../../motion_planning_msgs/html">motion_planning_msgs</a>).	
+									
 
 Organization:
 
@@ -47,7 +61,6 @@ different settings may need to be employed.
 
 List of nodes:
 - \b motion_planner
-- \b display_planner_collision_model
 
 <!-- START: copy for each node -->
 
@@ -80,10 +93,6 @@ Subscribes to:
 - @b "plan_kinematic_path"/MotionPlan : given a robot model, starting and goal states,
   this service computes a collision free path.
 
-
-\subsection display_planner_collision_model
-
-Displays the current state of the collision space, as seen by the planners, using visualization markers.
 
 
 <!-- END: copy for each node -->

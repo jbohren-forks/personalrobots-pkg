@@ -1,0 +1,9 @@
+/**
+\mainpage
+\htmlinclude manifest.html
+
+@section summary Summary
+
+This package defines the messages used by motion planning.
+
+*/
