@@ -285,6 +285,8 @@ namespace navfn {
     //create a message for the plan 
     nav_msgs::Path gui_path;
     gui_path.set_poses_size(path.size());
+    gui_path.header.frame_id = path[0].header.frame_id;
+    gui_path.header.stamp = path[0].header.stamp;
 
     // Extract the plan in world co-ordinates, we assume the path is all in the same frame
     visualization_msgs::Polyline gui_path_msg;
@@ -296,7 +298,6 @@ namespace navfn {
       gui_path_msg.points[i].y = path[i].pose.position.y;
       gui_path_msg.points[i].z = path[i].pose.position.z;
 
-      gui_path.poses[i].header.frame_id = path[0].header.frame_id;
       gui_path.poses[i].pose.position.x = path[i].pose.position.x;
       gui_path.poses[i].pose.position.y = path[i].pose.position.y;
       gui_path.poses[i].pose.position.z = path[i].pose.position.z;
