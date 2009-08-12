@@ -53,8 +53,21 @@
 /*!
  * \file spectral_analysis.h
  *
- * \brief An abstract class for descriptors that require the results
+ * \brief An auxiliary class used by descriptors that require the results
  *        from spectral analysis of a given volume of points
+ */
+// --------------------------------------------------------------
+
+// --------------------------------------------------------------
+/*!
+ * \brief A SpectralAnalysis performs eigen-analysis on neighborhoods
+ *        of point clouds and saves the resulting eigenvectors and
+ *        eigenvalues
+ *
+ * SpectralAnalysis does NOT inherit from Descriptor3D.  Instead,
+ * this class is meant to hold intermediate computations to be shared
+ * with requiring Descriptor3Ds that use spectral information such
+ * that computation is not unnecessarily repeated.
  */
 // --------------------------------------------------------------
 class SpectralAnalysis
@@ -62,14 +75,12 @@ class SpectralAnalysis
   public:
     // --------------------------------------------------------------
     /*!
-     * \brief A SpectralAnalysis performs eigen-decomposition on neighborhoods
-     *        of point clouds and saves the resulting eigenvectors and
-     *        eigenvalues
+     * \brief Instantiates the class to perform eigen-analysis on
+     *        neighborhoods of points around each interest point/region
+     *        within the specified support radius.
      *
-     * This class is meant to hold intermediate results needed for the
-     * computation of other descriptors so that computation is not
-     * unnecessarily repeated. Calling analyzeInterestPoints explicitly
-     * is not needed before passing to a Descriptor3D
+     * After instantiation, NO other methods need to be called before
+     * passing this to a Descriptor3D for computation.
      *
      * TODO add sensor location (for aligning normals to viewpoint)
      *
@@ -87,8 +98,8 @@ class SpectralAnalysis
     /*!
      * \brief Clears & frees previously computed spectral data
      *
-     * This function should be called when calling compute() on different
-     * sequential point clouds.
+     * This function should be called when calling Descriptor3D::compute()
+     * on DIFFERENT point clouds.
      */
     // --------------------------------------------------------------
     void clearSpectral();
