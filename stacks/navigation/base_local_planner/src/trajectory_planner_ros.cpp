@@ -89,9 +89,9 @@ namespace base_local_planner {
       l_plan_pub_ = ros_node.advertise<visualization_msgs::Polyline>("local_plan", 1);
 
       //@todo TODO: Remove old publishers with Polyline stuff
-      new_footprint_pub_ = ros_node.advertise<visualization_msgs::Polyline>("robot_footprint_new", 1);
-      new_g_plan_pub_ = ros_node.advertise<visualization_msgs::Polyline>("global_plan_new", 1);
-      new_l_plan_pub_ = ros_node.advertise<visualization_msgs::Polyline>("local_plan_new", 1);
+      new_footprint_pub_ = ros_node.advertise<geometry_msgs::PolygonStamped>("robot_footprint_new", 1);
+      new_g_plan_pub_ = ros_node.advertise<nav_msgs::Path>("global_plan_new", 1);
+      new_l_plan_pub_ = ros_node.advertise<nav_msgs::Path>("local_plan_new", 1);
 
       global_frame_ = costmap_ros_->getGlobalFrameID();
       robot_base_frame_ = costmap_ros_->getBaseFrameID();
