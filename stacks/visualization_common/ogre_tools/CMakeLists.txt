@@ -129,6 +129,7 @@ rospack_declare_test(bin/grid_test)
 include_directories(src)
 rospack_add_executable(bin/stl_to_mesh src/stl_to_mesh/stl_to_mesh.cpp)
 target_link_libraries(bin/stl_to_mesh ${OGRE_LIBRARIES} ${PROJECT_NAME})
+rospack_link_boost(bin/stl_to_mesh filesystem)
 
 rospack_add_gtest_future(test/utest test/utest.cpp)
 target_link_libraries(test/utest ${PROJECT_NAME})

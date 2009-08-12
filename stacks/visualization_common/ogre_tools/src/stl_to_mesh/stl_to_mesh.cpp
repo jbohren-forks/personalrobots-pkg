@@ -1,3 +1,32 @@
+/*
+ * Copyright (c) 2009, Willow Garage, Inc.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the Willow Garage, Inc. nor the names of its
+ *       contributors may be used to endorse or promote products derived from
+ *       this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
 #include <OGRE/OgreRoot.h>
 #include <OGRE/OgreLogManager.h>
 #include <OGRE/OgreMaterialManager.h>
@@ -10,6 +39,8 @@
 #include <OGRE/OgreManualObject.h>
 
 #include "ogre_tools/stl_loader.h"
+
+#include <boost/filesystem.hpp>
 
 #include <ros/console.h>
 
@@ -29,6 +60,7 @@
 
 using namespace Ogre;
 using namespace ogre_tools;
+namespace fs=boost::filesystem;
 
 
 int main( int argc, char** argv )
@@ -60,29 +92,16 @@ int main( int argc, char** argv )
       std::string inputFile = argv[ i ];
       inputFiles.push_back( inputFile );
 
-      // convert the input filename to the mesh file
-      size_t pos = inputFile.rfind( ".stl" );
-      if ( pos == std::string::npos )
+      fs::path p(inputFile);
+      if (!(p.extension() == ".stl" || p.extension() == ".STL" || p.extension() == ".stlb" || p.extension() == ".STLB"))
       {
-        pos = inputFile.rfind( ".STL" );
-      }
-
-      if ( pos == std::string::npos )
-      {
-        ROS_INFO( "Input file %s is not a .stl or .STL file!", inputFile.c_str() );
+        ROS_ERROR( "Input file %s is not a .stl or .STL file!", inputFile.c_str() );
         exit(1);
       }
 
-      std::string outputFile = inputFile;
-      outputFile.replace( pos, strlen( ".stl" ), ".mesh" );
+      p = p.replace_extension("mesh");
 
-      pos = outputFile.rfind( "/" );
-      if ( pos != std::string::npos )
-      {
-        outputFile.erase( 0, pos );
-      }
-
-      outputFile = outputDirectory + "/" + outputFile;
+      std::string outputFile = outputDirectory + "/" + p.filename();
 
       outputFiles.push_back( outputFile );
     }
