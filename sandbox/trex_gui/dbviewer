@@ -101,6 +101,35 @@ class MyDotWindow(xdot.DotWindow):
 
     return True
 
+  def clear(self):
+    dotfile = StringIO.StringIO()
+    graph_to_clear = GvGen()
+    try:
+      graph_to_clear.dot(dotfile)
+      self.set_dotcode(dotfile.getvalue())
+    except:
+      pass
+    dotfile.close()
+
+  def draw(self):
+    # Crete a string stream
+    dotfile = StringIO.StringIO()
+
+    # Copy the graph for drawing
+    graph_to_draw = copy.deepcopy(graph)
+
+    # Generate dotfile
+    graph_to_draw.dot(dotfile)
+
+    # Set the dotcode
+    try:
+      window.set_dotcode(dotfile.getvalue())
+    except:
+      control_window.statusbar.push(0,"No nodes to view at tick [%s]",tick)
+    # Close the string stream
+    dotfile.close()
+
+
 ##############################################################################
 # SrccodeWindow
 #   This window provides a user with a source code view.
@@ -454,14 +483,8 @@ class SearchWindow(gtk.Window):
       for entity in filtered:
 	entity.lolight()
 
-    # Crete a string stream
-    dotfile = StringIO.StringIO()
-    # Generate the GvGen graph
-    draw_graph(dotfile)
-    # Set the dotcode
-    window.set_dotcode(dotfile.getvalue())
-    # Close the string stream
-    dotfile.close()
+    # Redraw dotcode
+    window.draw()
 
   def search_regex(self, widget):
     # Compile the regular expression
@@ -493,8 +516,17 @@ class ControlWindow(gtk.Window):
     source_frame = gtk.Frame("Source: ")
     source_table = gtk.Table(2,2,homogeneous=False)
 
-    self.path_chooser = gtk.Entry()
-    self.path_chooser.connect("changed",self.on_path_change)
+
+    self.fc_dialog = gtk.FileChooserDialog(
+	"Select a TREX log path...",
+	action=gtk.FILE_CHOOSER_ACTION_OPEN | gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER,
+	buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_OPEN,gtk.RESPONSE_OK))
+    self.fc_dialog.set_default_response(gtk.RESPONSE_OK)
+    self.fc_dialog.add_shortcut_folder(os.environ["TREX_LOG_DIR"])
+    self.fc_dialog.set_filename(log_path)
+
+    self.path_chooser = gtk.FileChooserButton(self.fc_dialog)
+    self.path_chooser.connect("selection-changed",self.on_path_change)
     path_label = gtk.Label("Path: ")
 
     halign = gtk.Alignment(1,0.5,0,0.5)
@@ -582,10 +614,13 @@ class ControlWindow(gtk.Window):
     # If we don't make a new one here, you can't anywhere else
     control_window = ControlWindow()
 
+  def on_path_change(self,widget):
+    global log_path
+    log_path = self.path_chooser.get_filename()
+    self.load_log_path()
+
   def load_log_path(self):
     global log_path
-
-    self.path_chooser.set_text(log_path)
 
     # Try to load the reactors at the given log path
     try:
@@ -600,6 +635,7 @@ class ControlWindow(gtk.Window):
 
       self.reactor_chooser.set_active(0)
     except:
+      window.clear()
       self.statusbar.push(0,"Failed to load reactor list from log path.")
 
     # Try to load the available ticks
@@ -607,7 +643,7 @@ class ControlWindow(gtk.Window):
       self.load_ticks_path()
     except:
       self.statusbar.push(0,"Failed to load any ticks from log path.")
-
+      window.clear()
 
   def load_data_path(self):
     global data_path
@@ -624,12 +660,6 @@ class ControlWindow(gtk.Window):
       self.update_available_buttons()
     except:
       self.statusbar.push(0,"No data at log path yet.")
-
-
-  def on_path_change(self,widget):
-    global log_path
-    log_path = self.path_chooser.get_text()
-    self.load_log_path()
 
   def on_reactor_change(self,widget):
     self.load_data_path()
@@ -654,7 +684,6 @@ class ControlWindow(gtk.Window):
     self.load(self.ticks[-1])
 
   def go_tick(self, widget):
-    # Reload the ticks path
     self.load_ticks_path()
     self.load(self.tick_entry.get_text())
 
@@ -665,6 +694,24 @@ class ControlWindow(gtk.Window):
   def step_back(self, widget):
     self.load_ticks_path()
     self.load(self.tick_increment(-1))
+
+  def update_available_buttons(self):
+    try:
+      if self.ticks.index(tick) == 0:
+	self.bk_but.set_sensitive(False)
+	self.st_but.set_sensitive(False)
+      else:
+	self.bk_but.set_sensitive(True)
+	self.st_but.set_sensitive(True)
+
+      if self.ticks.index(tick) == len(self.ticks)-1:
+	self.en_but.set_sensitive(False) 
+	self.fw_but.set_sensitive(False)
+      else:
+	self.en_but.set_sensitive(True) 
+	self.fw_but.set_sensitive(True)
+    except:
+      pass
 
   def update_text(self):
     self.tick_entry.set_text(str(tick))
@@ -694,7 +741,7 @@ class ControlWindow(gtk.Window):
       define_graph_styles()
 
       # Populate graph
-      populate_graph()
+      self.populate_graph()
 
       # Refilter and display the data
       search_window.post_refilter()
@@ -704,23 +751,35 @@ class ControlWindow(gtk.Window):
     except:
       self.statusbar.push(0,"Could not load Tick [%d] from \"%s\"" % (tick,self.reactor_chooser.get_active_text()))
 
-  def update_available_buttons(self):
-    try:
-      if self.ticks.index(tick) == 0:
-	self.bk_but.set_sensitive(False)
-	self.st_but.set_sensitive(False)
-      else:
-	self.bk_but.set_sensitive(True)
-	self.st_but.set_sensitive(True)
+  def populate_graph(self):
+    for sid in slots:
+      if sid != -1:
+	slots[sid].node = graph.newItem(slots[sid]);
+	graph.styleApply("Slot", slots[sid].node)
 
-      if self.ticks.index(tick) == len(self.ticks)-1:
-	self.en_but.set_sensitive(False) 
-	self.fw_but.set_sensitive(False)
+    for tid in tokens:
+      if tokens[tid].slot_id != -1:
+	tokens[tid].node = graph.newItem(tokens[tid],slots[tokens[tid].slot_id].node);
       else:
-	self.en_but.set_sensitive(True) 
-	self.fw_but.set_sensitive(True)
-    except:
-      pass
+	tokens[tid].node = graph.newItem(tokens[tid]);
+
+      # Set the user data to link up clickthroughs
+      graph.propertyAppend(tokens[tid].node,"URL","Token:%d" % tid)
+
+    for rid in rules:
+      rules[rid].node = graph.newItem(rules[rid]);
+      graph.newLink(rules[rid].token.node,rules[rid].node)
+      for token in rules[rid].slaves:
+	graph.newLink(rules[rid].node,token.node)
+
+      # Set the user data to link up clickthroughs
+      graph.propertyAppend(rules[rid].node,"URL","Rule:%d" % rid)
+
+    # Set entities to be unselected by default
+    entities = tokens.values() + rules.values() 
+    for entity in entities:
+      entity.lolight()
+
 
 ##############################################################################
 # Model Classes
@@ -859,42 +918,6 @@ class Rule():
 #   This defines all of the relevant styles used by hilight_graph and
 #   populate graph. It accesses the global GvGen graph.
 ##############################################################################
-
-def draw_graph(dotfile):
-  # Copy the graph for drawing
-  graph_to_draw = copy.deepcopy(graph)
-
-  # Generate dotfile
-  graph_to_draw.dot(dotfile)
-
-def populate_graph():
-  for sid in slots:
-    if sid != -1:
-      slots[sid].node = graph.newItem(slots[sid]);
-      graph.styleApply("Slot", slots[sid].node)
-
-  for tid in tokens:
-    if tokens[tid].slot_id != -1:
-      tokens[tid].node = graph.newItem(tokens[tid],slots[tokens[tid].slot_id].node);
-    else:
-      tokens[tid].node = graph.newItem(tokens[tid]);
-
-    # Set the user data to link up clickthroughs
-    graph.propertyAppend(tokens[tid].node,"URL","Token:%d" % tid)
-
-  for rid in rules:
-    rules[rid].node = graph.newItem(rules[rid]);
-    graph.newLink(rules[rid].token.node,rules[rid].node)
-    for token in rules[rid].slaves:
-      graph.newLink(rules[rid].node,token.node)
-
-    # Set the user data to link up clickthroughs
-    graph.propertyAppend(rules[rid].node,"URL","Rule:%d" % rid)
-
-  # Set entities to be unselected by default
-  entities = tokens.values() + rules.values() 
-  for entity in entities:
-    entity.lolight()
 
 def define_graph_styles():
   graph.styleAppend("Token", "shape", "rectangle")
@@ -1039,31 +1062,6 @@ def load_data():
       entity.vars.append(vars[var_key])
 
 ##############################################################################
-# run()
-#   This loads the data, creates a new graph, defines the styles, populates
-#   it, and then passes the graph to the XDot window.
-#   
-#   This function can be used repeatedly to reload different datasets.
-##############################################################################
-def run():
-  # load data
-  load_data()
-
-  # Create a new graph with GvGen
-  global graph
-  graph = GvGen()
-
-  # Create graph styles
-  define_graph_styles()
-
-  # Populate graph
-  dotfile = StringIO.StringIO()
-  populate_graph(dotfile)
-  # Pass the graph to XDot
-  window.set_dotcode(dotfile.getvalue())
-  dotfile.close()
-
-##############################################################################
 # main()
 #   This instantiates all of the GUI windows, and loads the data from command
 #   line arguments.
@@ -1077,12 +1075,15 @@ def main():
     tick: a tick during which the assemblies were dumped to disk"""
 
   # Check arguments
-  if len(sys.argv) < 2:
+  if len(sys.argv) == 2 and sys.argv[1] == "-h":
     print usagestr
     return
 
   # Read in arguments
-  log_path = sys.argv[1]
+  if len(sys.argv) > 1:
+    log_path = sys.argv[1]
+  else:
+    log_path = "."
 
   if len(sys.argv) == 3:
     tick = int(sys.argv[2])
