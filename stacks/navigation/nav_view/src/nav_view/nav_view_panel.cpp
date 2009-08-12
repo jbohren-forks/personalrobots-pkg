@@ -67,8 +67,8 @@ NavViewPanel::NavViewPanel( wxWindow* parent )
 , map_object_( NULL )
 , cloud_object_( NULL )
 , radius_object_( NULL )
-, path_line_object_( NULL )
-, local_path_object_( NULL )
+, global_plan_object_( NULL )
+, local_plan_object_( NULL )
 , footprint_object_( NULL )
 , inflated_obstacles_object_( NULL )
 , raw_obstacles_object_( NULL )
@@ -98,25 +98,22 @@ NavViewPanel::NavViewPanel( wxWindow* parent )
 
   particle_cloud_sub_ = nh_.subscribe("particlecloud", 1, &NavViewPanel::incomingPoseArray, this);
 
-  gui_path_sub_.subscribe(nh_, "gui_path", 2);
-  local_path_sub_.subscribe(nh_, "local_path", 2);
+  global_plan_sub_.subscribe(nh_, "global_plan", 2);
+  local_plan_sub_.subscribe(nh_, "local_plan", 2);
   robot_footprint_sub_.subscribe(nh_, "robot_footprint", 2);
   inflated_obs_sub_.subscribe(nh_, "inflated_obstacles", 2);
-  raw_obs_sub_.subscribe(nh_, "raw_obstacles", 2);
-  gui_laser_sub_.subscribe(nh_, "gui_laser", 2);
-  gui_path_filter_ = PolylineFilterPtr(new PolylineFilter(gui_path_sub_, *tf_client_, global_frame_id_, 2));
-  local_path_filter_ = PolylineFilterPtr(new PolylineFilter(local_path_sub_, *tf_client_, global_frame_id_, 2));
-  robot_footprint_filter_ = PolylineFilterPtr(new PolylineFilter(robot_footprint_sub_, *tf_client_, global_frame_id_, 2));
-  inflated_obs_filter_ = PolylineFilterPtr(new PolylineFilter(inflated_obs_sub_, *tf_client_, global_frame_id_, 2));
-  raw_obs_filter_ = PolylineFilterPtr(new PolylineFilter(raw_obs_sub_, *tf_client_, global_frame_id_, 2));
-  gui_laser_filter_ = PolylineFilterPtr(new PolylineFilter(gui_laser_sub_, *tf_client_, global_frame_id_, 2));
+  raw_obs_sub_.subscribe(nh_, "obstacles", 2);
+  global_plan_filter_.reset(new PathFilter(global_plan_sub_, *tf_client_, global_frame_id_, 2));
+  local_plan_filter_.reset(new PathFilter(local_plan_sub_, *tf_client_, global_frame_id_, 2));
+  robot_footprint_filter_.reset(new PolygonFilter(robot_footprint_sub_, *tf_client_, global_frame_id_, 2));
+  inflated_obs_filter_.reset(new GridCellsFilter(inflated_obs_sub_, *tf_client_, global_frame_id_, 2));
+  raw_obs_filter_.reset(new GridCellsFilter(raw_obs_sub_, *tf_client_, global_frame_id_, 2));
 
-  gui_path_filter_->registerCallback(boost::bind(&NavViewPanel::incomingGuiPath, this, _1));
-  local_path_filter_->registerCallback(boost::bind(&NavViewPanel::incomingLocalPath, this, _1));
+  global_plan_filter_->registerCallback(boost::bind(&NavViewPanel::incomingGuiPath, this, _1));
+  local_plan_filter_->registerCallback(boost::bind(&NavViewPanel::incomingLocalPath, this, _1));
   robot_footprint_filter_->registerCallback(boost::bind(&NavViewPanel::incomingRobotFootprint, this, _1));
   inflated_obs_filter_->registerCallback(boost::bind(&NavViewPanel::incomingInflatedObstacles, this, _1));
   raw_obs_filter_->registerCallback(boost::bind(&NavViewPanel::incomingRawObstacles, this, _1));
-  gui_laser_filter_->registerCallback(boost::bind(&NavViewPanel::incomingGuiLaser, this, _1));
 
   render_panel_->Connect( wxEVT_LEFT_DOWN, wxMouseEventHandler( NavViewPanel::onRenderWindowMouseEvents ), NULL, this );
   render_panel_->Connect( wxEVT_MIDDLE_DOWN, wxMouseEventHandler( NavViewPanel::onRenderWindowMouseEvents ), NULL, this );
@@ -160,18 +157,16 @@ NavViewPanel::~NavViewPanel()
   render_panel_->Disconnect( wxEVT_MOUSEWHEEL, wxMouseEventHandler( NavViewPanel::onRenderWindowMouseEvents ), NULL, this );
 
   particle_cloud_sub_.shutdown();
-  gui_path_sub_.unsubscribe();
-  local_path_sub_.unsubscribe();
+  global_plan_sub_.unsubscribe();
+  local_plan_sub_.unsubscribe();
   robot_footprint_sub_.unsubscribe();
   inflated_obs_sub_.unsubscribe();
   raw_obs_sub_.unsubscribe();
-  gui_laser_sub_.unsubscribe();
-  gui_path_filter_.reset();
-  local_path_filter_.reset();
+  global_plan_filter_.reset();
+  local_plan_filter_.reset();
   robot_footprint_filter_.reset();
   inflated_obs_filter_.reset();
   raw_obs_filter_.reset();
-  gui_laser_filter_.reset();
 
   delete update_timer_;
   delete current_tool_;
@@ -425,7 +420,7 @@ void NavViewPanel::createObjectFromPolyLine( Ogre::ManualObject*& object, const 
   {
     static int count = 0;
     std::stringstream ss;
-    ss << "NavViewPathLine" << count++;
+    ss << "NavViewPolyLine" << count++;
     object = scene_manager_->createManualObject( ss.str() );
     Ogre::SceneNode* node = root_node_->createChildSceneNode();
     node->attachObject( object );
@@ -459,6 +454,136 @@ void NavViewPanel::createObjectFromPolyLine( Ogre::ManualObject*& object, const 
       tf::pointMsgToTF(path.points[0], point);
       point.frame_id_ = path.header.frame_id;
       point.stamp_ = path.header.stamp;
+
+      tf_client_->transformPoint(global_frame_id_, point, point);
+
+      object->position(point.x(), point.y(), point.z());
+      object->colour( color );
+    }
+
+    object->end();
+
+    object->getParentSceneNode()->setPosition( Ogre::Vector3( 0.0f, 0.0f, depth ) );
+  }
+
+  queueRender();
+}
+
+void NavViewPanel::createObjectFromPath(Ogre::ManualObject*& object, const nav_msgs::Path& path, const Ogre::ColourValue& color, float depth)
+{
+  if ( !object )
+  {
+    static int count = 0;
+    std::stringstream ss;
+    ss << "NavViewPath" << count++;
+    object = scene_manager_->createManualObject( ss.str() );
+    Ogre::SceneNode* node = root_node_->createChildSceneNode();
+    node->attachObject( object );
+  }
+
+  object->clear();
+
+  size_t num_points = path.poses.size();
+
+  if ( num_points > 0 )
+  {
+    object->estimateVertexCount( num_points);
+    object->begin( "BaseWhiteNoLighting", Ogre::RenderOperation::OT_LINE_STRIP );
+    for( size_t i=0; i < num_points; ++i)
+    {
+      tf::Stamped<tf::Point> point;
+      tf::pointMsgToTF(path.poses[i].pose.position, point);
+      point.frame_id_ = path.header.frame_id;
+      point.stamp_ = path.header.stamp;
+
+      tf_client_->transformPoint(global_frame_id_, point, point);
+
+      object->position(point.x(), point.y(), point.z());
+      object->colour( color );
+    }
+
+    object->end();
+
+    object->getParentSceneNode()->setPosition( Ogre::Vector3( 0.0f, 0.0f, depth ) );
+  }
+
+  queueRender();
+}
+
+void point32MsgToTF(const geometry_msgs::Point32& from, tf::Point& to)
+{
+  to.setX(from.x);
+  to.setY(from.y);
+  to.setZ(from.z);
+}
+
+void NavViewPanel::createObjectFromPolygon(Ogre::ManualObject*& object, const geometry_msgs::PolygonStamped& polygon, const Ogre::ColourValue& color, float depth)
+{
+  if ( !object )
+  {
+    static int count = 0;
+    std::stringstream ss;
+    ss << "NavViewPolygon" << count++;
+    object = scene_manager_->createManualObject( ss.str() );
+    Ogre::SceneNode* node = root_node_->createChildSceneNode();
+    node->attachObject( object );
+  }
+
+  object->clear();
+
+  size_t num_points = polygon.polygon.points.size();
+
+  if ( num_points > 0 )
+  {
+    object->estimateVertexCount( num_points);
+    object->begin( "BaseWhiteNoLighting", Ogre::RenderOperation::OT_LINE_STRIP );
+    for( size_t i=0; i < num_points + 1; ++i)
+    {
+      tf::Stamped<tf::Point> point;
+      point32MsgToTF(polygon.polygon.points[i % num_points], point);
+      point.frame_id_ = polygon.header.frame_id;
+      point.stamp_ = polygon.header.stamp;
+
+      tf_client_->transformPoint(global_frame_id_, point, point);
+
+      object->position(point.x(), point.y(), point.z());
+      object->colour( color );
+    }
+
+    object->end();
+
+    object->getParentSceneNode()->setPosition( Ogre::Vector3( 0.0f, 0.0f, depth ) );
+  }
+
+  queueRender();
+}
+
+void NavViewPanel::createObjectFromGridCells(Ogre::ManualObject*& object, const nav_msgs::GridCells& cells, const Ogre::ColourValue& color, float depth)
+{
+  if ( !object )
+  {
+    static int count = 0;
+    std::stringstream ss;
+    ss << "NavViewGridCells" << count++;
+    object = scene_manager_->createManualObject( ss.str() );
+    Ogre::SceneNode* node = root_node_->createChildSceneNode();
+    node->attachObject( object );
+  }
+
+  object->clear();
+
+  size_t num_points = cells.cells.size();
+
+  if ( num_points > 0 )
+  {
+    object->estimateVertexCount( num_points);
+    object->begin( "BaseWhiteNoLighting", Ogre::RenderOperation::OT_POINT_LIST );
+    for( size_t i=0; i < num_points; ++i)
+    {
+      tf::Stamped<tf::Point> point;
+      tf::pointMsgToTF(cells.cells[i], point);
+      point.frame_id_ = cells.header.frame_id;
+      point.stamp_ = cells.header.stamp;
 
       tf_client_->transformPoint(global_frame_id_, point, point);
 
@@ -524,34 +649,29 @@ void NavViewPanel::incomingPoseArray(const geometry_msgs::PoseArray::ConstPtr& m
   queueRender();
 }
 
-void NavViewPanel::incomingGuiPath(const visualization_msgs::Polyline::ConstPtr& msg)
+void NavViewPanel::incomingGuiPath(const nav_msgs::Path::ConstPtr& msg)
 {
-  createObjectFromPolyLine( path_line_object_, *msg, Ogre::RenderOperation::OT_LINE_LIST, PATH_LINE_DEPTH, false );
+  createObjectFromPath( global_plan_object_, *msg, Ogre::ColourValue(0.0, 1.0, 0.0), PATH_LINE_DEPTH );
 }
 
-void NavViewPanel::incomingLocalPath(const visualization_msgs::Polyline::ConstPtr& msg)
+void NavViewPanel::incomingLocalPath(const nav_msgs::Path::ConstPtr& msg)
 {
-  createObjectFromPolyLine( local_path_object_, *msg, Ogre::RenderOperation::OT_LINE_LIST, LOCAL_PATH_DEPTH, false );
+  createObjectFromPath( local_plan_object_, *msg, Ogre::ColourValue(0.0, 0.0, 1.0), LOCAL_PATH_DEPTH );
 }
 
-void NavViewPanel::incomingRobotFootprint(const visualization_msgs::Polyline::ConstPtr& msg)
+void NavViewPanel::incomingRobotFootprint(const geometry_msgs::PolygonStamped::ConstPtr& msg)
 {
-  createObjectFromPolyLine( footprint_object_, *msg, Ogre::RenderOperation::OT_LINE_LIST, FOOTPRINT_DEPTH, true );
+  createObjectFromPolygon( footprint_object_, *msg, Ogre::ColourValue(1.0, 0.0, 0.0), FOOTPRINT_DEPTH );
 }
 
-void NavViewPanel::incomingInflatedObstacles(const visualization_msgs::Polyline::ConstPtr& msg)
+void NavViewPanel::incomingInflatedObstacles(const nav_msgs::GridCells::ConstPtr& msg)
 {
-  createObjectFromPolyLine( inflated_obstacles_object_, *msg, Ogre::RenderOperation::OT_POINT_LIST, INFLATED_OBSTACLES_DEPTH, false );
+  createObjectFromGridCells( inflated_obstacles_object_, *msg, Ogre::ColourValue(0.0, 0.0, 1.0), INFLATED_OBSTACLES_DEPTH );
 }
 
-void NavViewPanel::incomingRawObstacles(const visualization_msgs::Polyline::ConstPtr& msg)
+void NavViewPanel::incomingRawObstacles(const nav_msgs::GridCells::ConstPtr& msg)
 {
-  createObjectFromPolyLine( raw_obstacles_object_, *msg, Ogre::RenderOperation::OT_POINT_LIST, RAW_OBSTACLES_DEPTH, false );
-}
-
-void NavViewPanel::incomingGuiLaser(const visualization_msgs::Polyline::ConstPtr& msg)
-{
-  createObjectFromPolyLine( laser_scan_object_, *msg, Ogre::RenderOperation::OT_POINT_LIST, LASER_SCAN_DEPTH, false );
+  createObjectFromGridCells( raw_obstacles_object_, *msg, Ogre::ColourValue(1.0, 0.0, 0.0), RAW_OBSTACLES_DEPTH );
 }
 
 void NavViewPanel::onRenderWindowMouseEvents( wxMouseEvent& event )

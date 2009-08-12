@@ -34,8 +34,11 @@
 
 #include "geometry_msgs/PoseArray.h"
 #include "geometry_msgs/PoseStamped.h"
-#include "visualization_msgs/Polyline.h"
+#include "geometry_msgs/PolygonStamped.h"
+#include "nav_msgs/Path.h"
+#include "nav_msgs/GridCells.h"
 #include "geometry_msgs/PoseWithCovarianceStamped.h"
+#include "visualization_msgs/Polyline.h"
 
 #include <OGRE/OgreTexture.h>
 #include <OGRE/OgreMaterial.h>
@@ -89,17 +92,16 @@ Mouse controls:
 @section topic ROS topics
 
 Subscribes to (name/type):
-- @b "particlecloud"geometry_msgs/PoseArray : a set particles from a probabilistic localization system.  Rendered is a set of small arrows.
-- @b "gui_path"/Polyline : a path from a planner.  Rendered as a dashed line.
-- @b "gui_laser"/Polyline : re-projected laser scan from a planner.  Rendered as a set of points.
-- @b "local_path"/Polyline : local path from a planner.  Rendered as a dashed line.
-- @b "robot_footprint"/Polyline : Box "footprint" around the robot.  Rendered as a dashed line
-- @b "raw_obstacles"/Polyline : Raw obstacle data.  Rendered as points
-- @b "inflated_obstacles"/Polyline : Inflated obstacle data. Rendered as points
+- @b "particlecloud" - geometry_msgs/PoseArray : a set particles from a probabilistic localization system.  Rendered is a set of small arrows.
+- @b "global_plan" - nav_msgs/Path : a path from a planner.  Rendered as a line.
+- @b "local_plan" - nav_msgs/Path: local path from a planner.  Rendered as a line.
+- @b "robot_footprint" - geometry_msgs/Polygon : Box "footprint" around the robot.  Rendered as a dashed line
+- @b "obstacles" - nav_msgs/GridCells : Raw obstacle data.  Rendered as points
+- @b "inflated_obstacles" - nav_msgs/GridCells : Inflated obstacle data. Rendered as points
 
 Publishes to (name / type):
-- @b "goal"/PoseStamped : goal for planner.  Sent when using the Goal tool
-- @b "initialpose"/Pose2DFloat32 : pose to initialize localization system.  Sent when using the Pose tool
+- @b "goal" - geometry_msgs/PoseStamped : goal for planner.  Sent when using the Goal tool
+- @b "initialpose" - geometry_msgs/PoseWithCovarianceStamped : pose to initialize localization system.  Sent when using the Pose tool
 
 <hr>
 
@@ -165,11 +167,11 @@ protected:
   void loadMap();
   void clearMap();
   void incomingPoseArray(const geometry_msgs::PoseArray::ConstPtr& msg);
-  void incomingGuiPath(const visualization_msgs::Polyline::ConstPtr& msg);
-  void incomingLocalPath(const visualization_msgs::Polyline::ConstPtr& msg);
-  void incomingRobotFootprint(const visualization_msgs::Polyline::ConstPtr& msg);
-  void incomingInflatedObstacles(const visualization_msgs::Polyline::ConstPtr& msg);
-  void incomingRawObstacles(const visualization_msgs::Polyline::ConstPtr& msg);
+  void incomingGuiPath(const nav_msgs::Path::ConstPtr& msg);
+  void incomingLocalPath(const nav_msgs::Path::ConstPtr& msg);
+  void incomingRobotFootprint(const geometry_msgs::PolygonStamped::ConstPtr& msg);
+  void incomingInflatedObstacles(const nav_msgs::GridCells::ConstPtr& msg);
+  void incomingRawObstacles(const nav_msgs::GridCells::ConstPtr& msg);
   void incomingGuiLaser(const visualization_msgs::Polyline::ConstPtr& msg);
 
   void onRenderWindowMouseEvents( wxMouseEvent& event );
@@ -177,7 +179,10 @@ protected:
   void createRadiusObject();
   void updateRadiusPosition();
 
-  void createObjectFromPolyLine( Ogre::ManualObject*& object, const visualization_msgs::Polyline& path, Ogre::RenderOperation::OperationType op, float depth, bool loop );
+  void createObjectFromPolyLine(Ogre::ManualObject*& object, const visualization_msgs::Polyline& path, Ogre::RenderOperation::OperationType op, float depth, bool loop);
+  void createObjectFromPath(Ogre::ManualObject*& object, const nav_msgs::Path& path, const Ogre::ColourValue& color, float depth);
+  void createObjectFromPolygon(Ogre::ManualObject*& object, const geometry_msgs::PolygonStamped& polygon, const Ogre::ColourValue& color, float depth);
+  void createObjectFromGridCells(Ogre::ManualObject*& object, const nav_msgs::GridCells& cells, const Ogre::ColourValue& color, float depth);
 
   void createTransientObject();
 
@@ -198,26 +203,30 @@ protected:
 
   typedef tf::MessageFilter<visualization_msgs::Polyline> PolylineFilter;
   typedef boost::shared_ptr<PolylineFilter> PolylineFilterPtr;
-  message_filters::Subscriber<visualization_msgs::Polyline> gui_path_sub_;
-  PolylineFilterPtr gui_path_filter_;
-  message_filters::Subscriber<visualization_msgs::Polyline> local_path_sub_;
-  PolylineFilterPtr local_path_filter_;
-  message_filters::Subscriber<visualization_msgs::Polyline> robot_footprint_sub_;
-  PolylineFilterPtr robot_footprint_filter_;
-  message_filters::Subscriber<visualization_msgs::Polyline> inflated_obs_sub_;
-  PolylineFilterPtr inflated_obs_filter_;
-  message_filters::Subscriber<visualization_msgs::Polyline> raw_obs_sub_;
-  PolylineFilterPtr raw_obs_filter_;
-  message_filters::Subscriber<visualization_msgs::Polyline> gui_laser_sub_;
-  PolylineFilterPtr gui_laser_filter_;
+  typedef tf::MessageFilter<nav_msgs::Path> PathFilter;
+  typedef boost::shared_ptr<PathFilter> PathFilterPtr;
+  typedef tf::MessageFilter<nav_msgs::GridCells> GridCellsFilter;
+  typedef boost::shared_ptr<GridCellsFilter> GridCellsFilterPtr;
+  typedef tf::MessageFilter<geometry_msgs::PolygonStamped> PolygonFilter;
+  typedef boost::shared_ptr<PolygonFilter> PolygonFilterPtr;
+  message_filters::Subscriber<nav_msgs::Path> global_plan_sub_;
+  PathFilterPtr global_plan_filter_;
+  message_filters::Subscriber<nav_msgs::Path> local_plan_sub_;
+  PathFilterPtr local_plan_filter_;
+  message_filters::Subscriber<geometry_msgs::PolygonStamped> robot_footprint_sub_;
+  PolygonFilterPtr robot_footprint_filter_;
+  message_filters::Subscriber<nav_msgs::GridCells> inflated_obs_sub_;
+  GridCellsFilterPtr inflated_obs_filter_;
+  message_filters::Subscriber<nav_msgs::GridCells> raw_obs_sub_;
+  GridCellsFilterPtr raw_obs_filter_;
 
   Ogre::ManualObject* map_object_;
   Ogre::MaterialPtr map_material_;
 
   Ogre::ManualObject* cloud_object_;
   Ogre::ManualObject* radius_object_;
-  Ogre::ManualObject* path_line_object_;
-  Ogre::ManualObject* local_path_object_;
+  Ogre::ManualObject* global_plan_object_;
+  Ogre::ManualObject* local_plan_object_;
   Ogre::ManualObject* footprint_object_;
   Ogre::ManualObject* inflated_obstacles_object_;
   Ogre::ManualObject* raw_obstacles_object_;
