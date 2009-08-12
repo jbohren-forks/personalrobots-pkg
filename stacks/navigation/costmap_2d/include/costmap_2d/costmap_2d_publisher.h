@@ -39,7 +39,6 @@
 #include <ros/ros.h>
 #include <ros/console.h>
 #include <costmap_2d/costmap_2d.h>
-#include <visualization_msgs/Polyline.h>
 #include <nav_msgs/GridCells.h>
 #include <boost/thread.hpp>
 
@@ -88,8 +87,7 @@ namespace costmap_2d {
       std::vector< std::pair<double, double> > raw_obstacles_, inflated_obstacles_;
       boost::recursive_mutex lock_; ///< @brief A lock
       bool active_, new_data_;
-      ros::Publisher raw_obs_pub_, inf_obs_pub_;
-      ros::Publisher new_obs_pub_, new_inf_obs_pub_;
+      ros::Publisher obs_pub_, inf_obs_pub_;
       double resolution_;
   };
 };

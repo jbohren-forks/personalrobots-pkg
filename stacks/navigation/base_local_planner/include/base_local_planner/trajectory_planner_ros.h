@@ -205,7 +205,7 @@ namespace base_local_planner {
       /**
        * @brief  Publish a plan for visualization purposes
        */
-      void publishPlan(const std::vector<geometry_msgs::PoseStamped>& path, const ros::Publisher& pub, const ros::Publisher& new_pub, double r, double g, double b, double a);
+      void publishPlan(const std::vector<geometry_msgs::PoseStamped>& path, const ros::Publisher& pub, double r, double g, double b, double a);
 
       void odomCallback(const nav_msgs::Odometry::ConstPtr& msg);
 
@@ -224,7 +224,6 @@ namespace base_local_planner {
       std::vector<geometry_msgs::PoseStamped> global_plan_;
       bool prune_plan_;
       ros::Publisher footprint_pub_, g_plan_pub_, l_plan_pub_;
-      ros::Publisher new_footprint_pub_, new_g_plan_pub_, new_l_plan_pub_;
       ros::Subscriber odom_sub_;
       boost::recursive_mutex odom_lock_;
       bool initialized_;

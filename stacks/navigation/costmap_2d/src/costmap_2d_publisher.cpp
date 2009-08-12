@@ -40,12 +40,10 @@ namespace costmap_2d {
   Costmap2DPublisher::Costmap2DPublisher(ros::NodeHandle& ros_node, double publish_frequency, std::string global_frame) 
     : ros_node_(ros_node), global_frame_(global_frame), 
     visualizer_thread_(NULL), active_(false), new_data_(false), resolution_(0.0){
-    //@todo TODO: Remove old obstacle publishers
-    raw_obs_pub_ = ros_node_.advertise<visualization_msgs::Polyline>("raw_obstacles", 1);
-    inf_obs_pub_ = ros_node_.advertise<visualization_msgs::Polyline>("inflated_obstacles", 1);
 
-    new_obs_pub_ = ros_node_.advertise<nav_msgs::GridCells>("obstacles_new", 1);
-    new_inf_obs_pub_ = ros_node_.advertise<nav_msgs::GridCells>("inflated_obstacles_new", 1);
+    obs_pub_ = ros_node_.advertise<nav_msgs::GridCells>("obstacles", 1);
+    inf_obs_pub_ = ros_node_.advertise<nav_msgs::GridCells>("inflated_obstacles", 1);
+
     visualizer_thread_ = new boost::thread(boost::bind(&Costmap2DPublisher::mapPublishLoop, this, publish_frequency));
   }
 
@@ -110,17 +108,7 @@ namespace costmap_2d {
     resolution = resolution_;
     lock_.unlock();
 
-    //@todo TODO: Remove Polyline generation
-
-    // First publish raw obstacles in red
-    visualization_msgs::Polyline obstacle_msg;
-    obstacle_msg.header.frame_id = global_frame_;
     unsigned int point_count = raw_obstacles.size();
-    obstacle_msg.set_points_size(point_count);
-    obstacle_msg.color.a = 0.0;
-    obstacle_msg.color.r = 1.0;
-    obstacle_msg.color.b = 0.0;
-    obstacle_msg.color.g = 0.0;
 
     //create a GridCells message for the obstacles
     nav_msgs::GridCells obstacle_cells;
@@ -135,42 +123,24 @@ namespace costmap_2d {
     obstacle_cells.set_cells_size(point_count);
 
     for(unsigned int i=0;i<point_count;i++){
-      obstacle_msg.points[i].x = raw_obstacles[i].first;
-      obstacle_msg.points[i].y = raw_obstacles[i].second;
-      obstacle_msg.points[i].z = 0;
-
       obstacle_cells.cells[i].x = raw_obstacles[i].first;
       obstacle_cells.cells[i].y = raw_obstacles[i].second;
       obstacle_cells.cells[i].z = 0;
     }
 
-    raw_obs_pub_.publish(obstacle_msg);
-    new_obs_pub_.publish(obstacle_cells);
-
-    // Now do inflated obstacles in blue
-    point_count = inflated_obstacles.size();
-    obstacle_msg.set_points_size(point_count);
-    obstacle_msg.color.a = 0.0;
-    obstacle_msg.color.r = 0.0;
-    obstacle_msg.color.b = 1.0;
-    obstacle_msg.color.g = 0.0;
+    obs_pub_.publish(obstacle_cells);
 
     //set the size equal to the number of inflated obstacles
+    point_count = inflated_obstacles.size();
     obstacle_cells.set_cells_size(point_count);
 
     for(unsigned int i=0;i<point_count;i++){
-      obstacle_msg.points[i].x = inflated_obstacles[i].first;
-      obstacle_msg.points[i].y = inflated_obstacles[i].second;
-      obstacle_msg.points[i].z = 0;
-
       obstacle_cells.cells[i].x = inflated_obstacles[i].first;
       obstacle_cells.cells[i].y = inflated_obstacles[i].second;
       obstacle_cells.cells[i].z = 0;
     }
 
-    inf_obs_pub_.publish(obstacle_msg);
-
-    new_inf_obs_pub_.publish(obstacle_cells);
+    inf_obs_pub_.publish(obstacle_cells);
   }
 
 };

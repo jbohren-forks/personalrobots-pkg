@@ -63,11 +63,7 @@ namespace navfn {
 
       ros::NodeHandle ros_node("~/" + name);
 
-      //advertise our plan visualization
-      plan_pub_ = ros_node.advertise<visualization_msgs::Polyline>("plan", 1);
-
-      //@todo TODO: Remove old Polyline stuff
-      new_plan_pub_ = ros_node.advertise<nav_msgs::Path>("plan_new", 1);
+      plan_pub_ = ros_node.advertise<nav_msgs::Path>("plan", 1);
 
       //read parameters for the planner
       global_frame_ = costmap_ros_->getGlobalFrameID();
@@ -289,26 +285,12 @@ namespace navfn {
     gui_path.header.stamp = path[0].header.stamp;
 
     // Extract the plan in world co-ordinates, we assume the path is all in the same frame
-    visualization_msgs::Polyline gui_path_msg;
-    gui_path_msg.header.frame_id = path[0].header.frame_id;
-    gui_path_msg.header.stamp = path[0].header.stamp;
-    gui_path_msg.set_points_size(path.size());
     for(unsigned int i=0; i < path.size(); i++){
-      gui_path_msg.points[i].x = path[i].pose.position.x;
-      gui_path_msg.points[i].y = path[i].pose.position.y;
-      gui_path_msg.points[i].z = path[i].pose.position.z;
-
       gui_path.poses[i].pose.position.x = path[i].pose.position.x;
       gui_path.poses[i].pose.position.y = path[i].pose.position.y;
       gui_path.poses[i].pose.position.z = path[i].pose.position.z;
     }
 
-    gui_path_msg.color.r = r;
-    gui_path_msg.color.g = g;
-    gui_path_msg.color.b = b;
-    gui_path_msg.color.a = a;
-
-    plan_pub_.publish(gui_path_msg);
-    new_plan_pub_.publish(gui_path);
+    plan_pub_.publish(gui_path);
   }
 };

@@ -42,7 +42,6 @@
 #include <costmap_2d/costmap_2d_ros.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Point.h>
-#include <visualization_msgs/Polyline.h>
 #include <nav_msgs/Path.h>
 #include <tf/transform_datatypes.h>
 #include <vector>
@@ -118,7 +117,6 @@ namespace navfn {
       boost::shared_ptr<NavFn> planner_;
       double inscribed_radius_, circumscribed_radius_, inflation_radius_;
       ros::Publisher plan_pub_;
-      ros::Publisher new_plan_pub_;
       bool initialized_;
 
 

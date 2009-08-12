@@ -68,7 +68,7 @@ Subscribes to (name/type):
 Publishes to (name / type):
 - @b "cmd_vel" geometry_msgs/Twist : velocity commands to robot
 - @b "state" nav_robot_actions/MoveBaseState : current planner state (e.g., goal reached, no path)
-- @b "gui_path" visualization_msgs/Polyline : current global path (for visualization)
+- @b "global_plan" nav_msgs/Path : current global path (for visualization)
 
 <hr>
 
@@ -108,7 +108,6 @@ parameters.
 #include <nav_msgs/GetMap.h>
 
 // For GUI debug
-#include <visualization_msgs/Polyline.h>
 #include <nav_msgs/Path.h>
 
 // For transform support
@@ -195,7 +194,6 @@ class WavefrontNode: public ros::Node
     // incoming/outgoing messages
     geometry_msgs::PoseStamped goalMsg;
     //Odometry odomMsg;
-    visualization_msgs::Polyline polylineMsg;
     nav_msgs::Path pathMsg;
     nav_robot_actions::MoveBaseState pstate;
     //Odometry prevOdom;
@@ -361,7 +359,6 @@ WavefrontNode::WavefrontNode() :
   this->firstodom = true;
 
   advertise<nav_robot_actions::MoveBaseState>("state",1);
-  advertise<visualization_msgs::Polyline>("gui_path",1);
   advertise<nav_msgs::Path>("global_plan",1);
   advertise<geometry_msgs::Twist>("cmd_vel",1);
   subscribe("goal", goalMsg, &WavefrontNode::goalReceived,1);
@@ -705,32 +702,17 @@ WavefrontNode::doOneCycle()
         ros::Time now = ros::Time::now();
         if((now - gui_path_last_publish_time) >= gui_publish_rate)
         {
-          //@todo TODO: Remove polyline completely
-          this->polylineMsg.header.frame_id = "map";
-          this->polylineMsg.set_points_size(this->plan->path_count);
-          this->polylineMsg.color.r = 0;
-          this->polylineMsg.color.g = 1.0;
-          this->polylineMsg.color.b = 0;
-          this->polylineMsg.color.a = 0;
-
           this->pathMsg.header.frame_id = "map";
           this->pathMsg.set_poses_size(this->plan->path_count);
 
           for(int i=0;i<this->plan->path_count;i++)
           {
-            this->polylineMsg.points[i].x =
-                    PLAN_WXGX(this->plan,this->plan->path[i]->ci);
-            this->polylineMsg.points[i].y =
-                    PLAN_WYGY(this->plan,this->plan->path[i]->cj);
-            this->polylineMsg.points[i].z = 0;
-
             this->pathMsg.poses[i].pose.position.x =
                     PLAN_WXGX(this->plan,this->plan->path[i]->ci);
             this->pathMsg.poses[i].pose.position.y =
                     PLAN_WYGY(this->plan,this->plan->path[i]->cj);
             this->pathMsg.poses[i].pose.position.z = 0;
           }
-          publish("gui_path", polylineMsg);
           publish("global_plan", pathMsg);
 
           gui_path_last_publish_time = now;
