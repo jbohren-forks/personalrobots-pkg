@@ -57,7 +57,7 @@ Pr2BaseController::Pr2BaseController()
 
   new_cmd_available_ = false;
 
-  state_publisher_ = NULL;
+//  state_publisher_ = NULL;
 
   last_publish_time_ = 0.0;
 
@@ -66,20 +66,6 @@ Pr2BaseController::Pr2BaseController()
 
 Pr2BaseController::~Pr2BaseController()
 {
-  //Destruct things (publishers)
-  if(state_publisher_)
-  {
-    state_publisher_->stop();
-    delete state_publisher_;
-  }
-  for(int i = 0; i < base_kin_.num_casters_; i++)
-  {
-    delete caster_controller_[i];
-  }
-  for(int j = 0; j < base_kin_.num_wheels_; j++)
-  {
-    delete wheel_controller_[j];
-  }
 }
 
 bool Pr2BaseController::init(mechanism::RobotState *robot, const ros::NodeHandle &n)
@@ -87,9 +73,9 @@ bool Pr2BaseController::init(mechanism::RobotState *robot, const ros::NodeHandle
   if(!base_kin_.init(robot,n))
     return false;
   node_ = n;
-  if(state_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
-    delete state_publisher_;
-  state_publisher_ = new realtime_tools::RealtimePublisher<pr2_msgs::BaseControllerState>(base_kin_.name_ + "/state", 1);
+//  if(state_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
+//    delete state_publisher_;
+  state_publisher_.reset(new realtime_tools::RealtimePublisher<pr2_msgs::BaseControllerState>(base_kin_.name_ + "/state", 1));
   state_publisher_->msg_.set_joint_name_size(base_kin_.num_wheels_ + base_kin_.num_casters_);
   state_publisher_->msg_.set_joint_stall_size(base_kin_.num_wheels_ + base_kin_.num_casters_);
   state_publisher_->msg_.set_joint_speed_error_size(base_kin_.num_wheels_ + base_kin_.num_casters_);
@@ -133,11 +119,13 @@ bool Pr2BaseController::init(mechanism::RobotState *robot, const ros::NodeHandle
     if(!p_i_d.init(ros::NodeHandle(node_, base_kin_.caster_[i].joint_name_)))
     {
       ROS_ERROR("Could not initialize pid for %s",base_kin_.caster_[i].joint_name_.c_str());
+      return false;
     }
-    caster_controller_[i] = new JointVelocityController();
+    caster_controller_[i].reset(new JointVelocityController());
     if(!caster_controller_[i]->init(base_kin_.robot_state_, base_kin_.caster_[i].joint_name_, p_i_d))
     {
       ROS_ERROR("Could not initialize pid for %s",base_kin_.caster_[i].joint_name_.c_str());
+      return false;
     }
   }
   //wheels
@@ -149,11 +137,13 @@ bool Pr2BaseController::init(mechanism::RobotState *robot, const ros::NodeHandle
     if(!p_i_d.init(ros::NodeHandle(node_,base_kin_.wheel_[j].joint_name_)))
     {       
       ROS_ERROR("Could not initialize pid for %s",base_kin_.wheel_[j].joint_name_.c_str());
+      return false;
     }
-   wheel_controller_[j] = new JointVelocityController();
+    wheel_controller_[j].reset(new JointVelocityController());
    if(!wheel_controller_[j]->init(base_kin_.robot_state_, base_kin_.wheel_[j].joint_name_, p_i_d))
    {
       ROS_ERROR("Could not initialize joint velocity controller for %s",base_kin_.wheel_[j].joint_name_.c_str());
+      return false;
    }
   }
   return true;

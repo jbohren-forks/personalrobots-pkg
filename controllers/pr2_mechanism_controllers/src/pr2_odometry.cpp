@@ -42,23 +42,10 @@ ROS_REGISTER_CONTROLLER(Pr2Odometry)
 
 Pr2Odometry::Pr2Odometry()
 {
-  odometry_publisher_ = NULL;
-  transform_publisher_ = NULL;
 }
 
 Pr2Odometry::~Pr2Odometry()
 {
-  if(odometry_publisher_)
-  {
-    odometry_publisher_->stop();
-    delete odometry_publisher_;
-  }
-
-  if(transform_publisher_)
-  {
-    transform_publisher_->stop();
-    delete transform_publisher_;
-  }
 }
 
 bool Pr2Odometry::init(mechanism::RobotState *robot_state, const ros::NodeHandle &node)
@@ -73,6 +60,19 @@ bool Pr2Odometry::init(mechanism::RobotState *robot_state, const ros::NodeHandle
   node.param<std::string> ("ils_weight_type", ils_weight_type_, "Gaussian");
   node.param<int> ("ils_max_iterations", ils_max_iterations_, 3);
   node.param<std::string> ("odom_frame", odom_frame_, "odom");
+  node.param<std::string> ("base_footprint_frame", base_footprint_frame_, "base_footprint");
+  node.param<std::string> ("base_link_frame", base_link_frame_, "base_link");
+  node.param<double> ("base_link_floor_z_offset",  base_link_floor_z_offset_, 0.051);
+
+  node.param<double> ("sigma_x", sigma_x_, 0.002);
+  node.param<double> ("sigma_y", sigma_y_, 0.002);
+  node.param<double> ("sigma_theta", sigma_theta_, 0.017);
+
+  node.param<double> ("cov_x_y", cov_x_y_, 0.0);
+  node.param<double> ("cov_x_theta", cov_x_theta_, 0.0);
+  node.param<double> ("cov_y_theta", cov_y_theta_, 0.0);
+
+
   node.param("expected_publish_time", expected_publish_time_, 0.03);
 
   if(!base_kin_.init(robot_state, node_))
@@ -91,12 +91,8 @@ bool Pr2Odometry::init(mechanism::RobotState *robot_state, const ros::NodeHandle
   
   weight_matrix_ = Eigen::MatrixXf::Identity(16, 16);
 
-  if(odometry_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
-    delete odometry_publisher_;
-  odometry_publisher_ = new realtime_tools::RealtimePublisher<nav_msgs::Odometry>(node_, odom_frame_, 1);
-  if(transform_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
-    delete transform_publisher_;
-  transform_publisher_ = new realtime_tools::RealtimePublisher<tf::tfMessage>("tf_message", 1);
+  odometry_publisher_.reset(new realtime_tools::RealtimePublisher<nav_msgs::Odometry>(node_,odom_frame_, 1));
+  transform_publisher_.reset(new realtime_tools::RealtimePublisher<tf::tfMessage>("tf_message", 1));
   transform_publisher_->msg_.set_transforms_size(2);
 
   return true;
@@ -166,11 +162,49 @@ void Pr2Odometry::getOdometryMessage(nav_msgs::Odometry &msg)
   msg.pose.pose.orientation.w = quat_trans.w();
 
   msg.twist.twist = odom_vel_;
-
-#warning A full covariance should be published instead of the residual, this code will not work properly with the ekf until this is changed
-  //@todo TODO: change from residual to covariance
-  //msg.residual = odometry_residual_max_;
+/*  msg.twist.linear.x = odom_vel_.x*cos(odom_.z)-odom_vel_.y*sin(odom_.z);
+  msg.twist.linear.y = odom_vel_.x*sin(odom_.z)+odom_vel_.y*cos(odom_.z);
+*/
+  populateCovariance(odometry_residual_max_,msg);
 }
+
+void Pr2Odometry::populateCovariance(double residual, nav_msgs::Odometry &msg)
+{
+  // multiplier to scale covariance
+  // the smaller the residual, the more reliable odom
+  double odom_multiplier;
+  if (residual < 0.05)
+  {
+    odom_multiplier = ((residual-0.00001)*(0.99999/0.04999))+0.00001;  
+  }
+  else
+  {
+    odom_multiplier = ((residual-0.05)*(19.0/0.15))+1.0; 
+  }
+  odom_multiplier = fmax(0.00001, fmin(100.0, odom_multiplier));
+  odom_multiplier *= 2.0;
+
+  //nav_msgs::Odometry has a 6x6 covariance matrix
+  msg.pose.covariance[0] = odom_multiplier*pow(sigma_x_,2);
+  msg.pose.covariance[7] = odom_multiplier*pow(sigma_y_,2);
+  msg.pose.covariance[35] = odom_multiplier*pow(sigma_theta_,2);
+
+  msg.pose.covariance[1] = odom_multiplier*cov_x_y_;
+  msg.pose.covariance[6] = odom_multiplier*cov_x_y_;
+
+  msg.pose.covariance[31] = odom_multiplier*cov_y_theta_;
+  msg.pose.covariance[11] = odom_multiplier*cov_y_theta_;
+
+  msg.pose.covariance[30] = odom_multiplier*cov_x_theta_;
+  msg.pose.covariance[5] =  odom_multiplier*cov_x_theta_;
+
+  msg.pose.covariance[14] = DBL_MAX;
+  msg.pose.covariance[21] = DBL_MAX;
+  msg.pose.covariance[28] = DBL_MAX;
+
+  msg.twist.covariance = msg.pose.covariance;
+}
+
 
 void Pr2Odometry::getOdometry(double &x, double &y, double &yaw, double &vx, double &vy, double &vw)
 {
@@ -324,8 +358,8 @@ void Pr2Odometry::publish()
 
     geometry_msgs::TransformStamped &out = transform_publisher_->msg_.transforms[0];
     out.header.stamp.fromSec(current_time_);
-    out.header.frame_id = "odom";
-    out.parent_id = "base_footprint";
+    out.header.frame_id = odom_frame_;
+    out.parent_id = base_footprint_frame_;
     out.transform.translation.x = -x * cos(yaw) - y * sin(yaw);
     out.transform.translation.y = +x * sin(yaw) - y * cos(yaw);
     out.transform.translation.z = 0;
@@ -338,13 +372,13 @@ void Pr2Odometry::publish()
 
     geometry_msgs::TransformStamped &out2 = transform_publisher_->msg_.transforms[1];
     out2.header.stamp.fromSec(current_time_);
-    out2.header.frame_id = "base_link";
-    out2.parent_id = "base_footprint";
+    out2.header.frame_id = base_link_frame_;
+    out2.parent_id = base_footprint_frame_;
     out2.transform.translation.x = 0;
     out2.transform.translation.y = 0;
 
     // FIXME: this is the offset between base_link origin and the ideal floor
-    out2.transform.translation.z = 0.051; // FIXME: this is hardcoded, considering we are deprecating base_footprint soon, I will not get this from URDF.
+    out2.transform.translation.z = base_link_floor_z_offset_; // FIXME: this is hardcoded, considering we are deprecating base_footprint soon, I will not get this from URDF.
 
     out2.transform.rotation.x = 0;
     out2.transform.rotation.y = 0;

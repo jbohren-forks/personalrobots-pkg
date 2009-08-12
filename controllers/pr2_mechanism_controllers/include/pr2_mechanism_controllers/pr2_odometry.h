@@ -40,6 +40,8 @@
 #include <pr2_mechanism_controllers/base_kinematics.h>
 #include <angles/angles.h>
 
+#include <boost/scoped_ptr.hpp>
+
 typedef Eigen::Matrix<float, 3, 1> OdomMatrix3x1;
 typedef Eigen::Matrix<float, 16, 1> OdomMatrix16x1;
 typedef Eigen::Matrix<float, 16, 3> OdomMatrix16x3;
@@ -211,6 +213,16 @@ namespace controller
     std::string odom_frame_;
 
     /*!
+    * \brief The topic name of the base link frame
+    */
+    std::string base_link_frame_;
+
+    /*!
+    * \brief The topic name of the base footprint frame
+    */
+    std::string base_footprint_frame_;
+
+    /*!
     * \brief The last time the odometry information was published
     */
     double last_publish_time_;
@@ -223,12 +235,21 @@ namespace controller
     /*!
     * \brief The RealtimePublisher that does the realtime publishing of the odometry
     */
-    realtime_tools::RealtimePublisher <nav_msgs::Odometry>* odometry_publisher_ ;  
+    boost::scoped_ptr<realtime_tools::RealtimePublisher <nav_msgs::Odometry> > odometry_publisher_ ;  
 
     /*!
     * \brief Publishes the transform between the odometry frame and the base frame
     */
-    realtime_tools::RealtimePublisher <tf::tfMessage>* transform_publisher_ ;  
+    boost::scoped_ptr<realtime_tools::RealtimePublisher <tf::tfMessage> > transform_publisher_ ;  
+
+    double sigma_x_,sigma_y_,sigma_theta_,cov_x_y_,cov_x_theta_,cov_y_theta_;
+
+    double base_link_floor_z_offset_;
+
+    /*!
+    * \brief populate the covariance part of the odometry message
+    */
+    void populateCovariance(double residual, nav_msgs::Odometry &msg);
 
   };
 }

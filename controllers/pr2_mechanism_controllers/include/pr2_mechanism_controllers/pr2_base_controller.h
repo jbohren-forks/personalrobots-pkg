@@ -42,6 +42,8 @@
 #include <pr2_mechanism_controllers/base_kinematics.h>
 #include <geometry_msgs/Twist.h>
 #include <angles/angles.h>
+#include <boost/shared_ptr.hpp>
+#include <boost/scoped_ptr.hpp>
 
 namespace controller
 {
@@ -219,17 +221,17 @@ namespace controller
       /*!
        * \brief vector that stores the wheel controllers
        */
-      std::vector<JointVelocityController*> wheel_controller_;
+      std::vector<boost::shared_ptr<JointVelocityController> > wheel_controller_;
 
       /*!
        * \brief vector that stores the caster controllers
        */
-      std::vector<JointVelocityController*> caster_controller_;
+      std::vector<boost::shared_ptr<JointVelocityController> > caster_controller_;
 
       /*!
        * \brief publishes information about the caster and wheel controllers
        */
-      realtime_tools::RealtimePublisher<pr2_msgs::BaseControllerState>* state_publisher_;
+      boost::scoped_ptr<realtime_tools::RealtimePublisher<pr2_msgs::BaseControllerState> > state_publisher_;
 
       /*!
        * \brief Computes if there is a stall on the motors
