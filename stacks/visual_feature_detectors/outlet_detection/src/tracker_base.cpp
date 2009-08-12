@@ -61,23 +61,23 @@ TrackerBase::TrackerBase(const ros::NodeHandle& nh, const std::string& prefix)
 
 TrackerBase::~TrackerBase()
 {
-  if (active_thread_.joinable()) {
-    deactivate();
-    active_thread_.join();
-  }
-
+  deactivate();
   cvReleaseMat(&K_);
 }
 
 void TrackerBase::activate()
 {
-  boost::thread t(boost::bind(&TrackerBase::spin, this));
-  active_thread_.swap(t);
+  deactivate();
+  active_thread_.reset(new boost::thread(boost::bind(&TrackerBase::spin, this)));
 }
 
 void TrackerBase::deactivate()
 {
-  active_thread_.interrupt();
+  if (active_thread_ && active_thread_->joinable()) {
+    active_thread_->interrupt();
+    active_thread_->join();
+  }
+  active_thread_.reset();
 }
 
 IplImage* TrackerBase::getDisplayImage(bool success)
@@ -145,10 +145,15 @@ void TrackerBase::processImage()
   //saveImage(success);
 }
 
+bool TrackerBase::ok()
+{
+  return node_.ok() && !boost::this_thread::interruption_requested();
+}
+
 void TrackerBase::spin()
 {
   bool informed_of_deactivation = false;
-  while (node_.ok() && !boost::this_thread::interruption_requested())
+  while (ok())
   {
     if (!stay_active_)
     {
@@ -335,7 +340,7 @@ void TrackerBase::saveImage(bool success)
 
 bool TrackerBase::waitForService(const std::string &service)
 {
-  while (node_.ok() && !boost::this_thread::interruption_requested()) {
+  while (ok()) {
     if (ros::service::exists(service, false))
       return true;
     usleep(100000);

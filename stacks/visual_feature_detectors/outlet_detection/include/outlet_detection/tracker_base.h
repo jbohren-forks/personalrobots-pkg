@@ -49,6 +49,7 @@
 #include <opencv/highgui.h>
 
 #include <boost/thread.hpp>
+#include <boost/scoped_ptr.hpp>
 
 class TrackerBase
 {
@@ -59,6 +60,8 @@ public:
   void activate();
   void deactivate();
 
+  bool ok();
+  
   void spin();
 
 protected:
@@ -83,7 +86,7 @@ protected:
   ros::Publisher pose_pub_;
   ros::Publisher display_pub_;
   ros::Publisher marker_pub_;
-  boost::thread active_thread_;
+  boost::scoped_ptr<boost::thread> active_thread_;
 
   prosilica_cam::PolledImage::Request req_;
   prosilica_cam::PolledImage::Response res_;
