@@ -90,6 +90,9 @@ namespace point_cloud_clustering
 
       // --------------------------------------------------------------
       /*!
+       * \brief Note: KMeans does not require efficient neighborhood search
+       *              so an empty kdtree can be passed
+       *
        * \see PointCloudClustering::cluster
        */
       // --------------------------------------------------------------

@@ -39,41 +39,35 @@ using namespace std;
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-int point_cloud_clustering::PointCloudClustering::computeClusterCentroids(const sensor_msgs::PointCloud& pt_cloud,
-                                                                          const map<unsigned int,
-                                                                              vector<int> >& clusters,
-                                                                          map<unsigned int, vector<
-                                                                              float> >& cluster_centroids)
+void point_cloud_clustering::PointCloudClustering::computeClusterCentroids(const sensor_msgs::PointCloud& pt_cloud,
+                                                                           const map<unsigned int,
+                                                                               vector<int> >& clusters,
+                                                                           map<unsigned int,
+                                                                               vector<float> >& cluster_centroids)
 {
   cluster_centroids.clear();
-
-  const unsigned int nbr_total_pts = pt_cloud.points.size();
 
   // Iterate over clusters (cluster_label --> [point cloud indices]
   for (map<unsigned int, vector<int> >::const_iterator iter_clusters = clusters.begin() ; iter_clusters
       != clusters.end() ; iter_clusters++)
   {
+    // ----------------
     // retrieve point indices of current cluster
     const vector<int>& curr_cluster_pt_indices = iter_clusters->second;
     const unsigned int curr_cluster_nbr_pts = curr_cluster_pt_indices.size();
 
+    // ----------------
     // accumulate sum coordinates for each point in cluster
     vector<float> curr_centroid(3, 0.0);
     for (unsigned int i = 0 ; i < curr_cluster_nbr_pts ; i++)
     {
-      // Verify index does not exceed boundary
-      const unsigned int curr_pt_cloud_idx = curr_cluster_pt_indices[i];
-      if (curr_pt_cloud_idx >= nbr_total_pts)
-      {
-        ROS_ERROR("Invalid index to compute centroid: %u out of %u", curr_pt_cloud_idx, nbr_total_pts);
-        return -1;
-      }
-
-      curr_centroid[0] += pt_cloud.points[curr_pt_cloud_idx].x;
-      curr_centroid[1] += pt_cloud.points[curr_pt_cloud_idx].y;
-      curr_centroid[2] += pt_cloud.points[curr_pt_cloud_idx].z;
+      const geometry_msgs::Point32& curr_pt = pt_cloud.points.at(curr_cluster_pt_indices[i]);
+      curr_centroid[0] += curr_pt.x;
+      curr_centroid[1] += curr_pt.y;
+      curr_centroid[2] += curr_pt.z;
     }
 
+    // ----------------
     // normalize by number of points
     if (curr_cluster_nbr_pts > 0)
     {
@@ -83,12 +77,13 @@ int point_cloud_clustering::PointCloudClustering::computeClusterCentroids(const 
       }
     }
 
+    // ----------------
     // insert into results
     const unsigned int curr_cluster_label = iter_clusters->first;
     cluster_centroids.insert(pair<unsigned int, vector<float> > (curr_cluster_label, curr_centroid));
   }
 
-  return 0;
+  return;
 }
 
 // --------------------------------------------------------------

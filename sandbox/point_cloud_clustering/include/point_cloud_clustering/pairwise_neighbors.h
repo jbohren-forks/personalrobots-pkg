@@ -72,16 +72,30 @@ namespace point_cloud_clustering
     public:
       // --------------------------------------------------------------
       /*!
-       * \brief PairwiseNeighbors creates clusters of size 2 between adjacent
-       *        points.
+       * \brief Instantiates the clustering to create edges (clusters)
+       *        between neighboring points.
        *
-       * This type of clustering is useful for creating edges in a graph
-       * where the points are the nodes, which can be used for MRF-based
-       * classification.
+       * The neighborhood of a point is defined by a Euclidean distance.
+       * The number of neighbors a point links to is specified as a parameter.
+       * The order in which points are linked to neighbors is arbitrary.
+       * The created edges are unique.  The edges are created such that the point
+       * with lower z-coordinate has the first index.
+       *
+       * \param neighbor_radius The Euclidean radius that defines the neighborhood
+       *                        for a point
+       * \param max_nbr_neighbors The maximum number of neighbors a point should
+       *                          link to.  0 indicates to link to all neighbors.
+       *                          If the value is smaller than the neighborhood size,
+       *                          the neighbors are chosen randomly.
        */
       // --------------------------------------------------------------
       PairwiseNeighbors(double neighbor_radius, unsigned int max_nbr_neighbors);
 
+      // --------------------------------------------------------------
+      /*!
+       * \see PointCloudClustering::cluster
+       */
+      // --------------------------------------------------------------
       virtual int cluster(const sensor_msgs::PointCloud& pt_cloud,
                           cloud_kdtree::KdTree& pt_cloud_kdtree,
                           const std::set<unsigned int>& indices_to_cluster,
