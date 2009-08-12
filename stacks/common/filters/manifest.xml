@@ -13,6 +13,7 @@ implementations of commonly used filters.
 <depend package="rosconsole" />
 <depend package="loki" />
 <export>
-<cpp cflags="-I${prefix}/include `rosboost-cfg --cflags`" lflags="-lloki"/> <!--lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lfilter"/-->
+<cpp cflags="-I${prefix}/include `rosboost-cfg --cflags`"
+     lflags="-lloki -Wl,-rpath,${prefix}/lib -L${prefix}/lib -lfilter"/>
 </export>
 </package>

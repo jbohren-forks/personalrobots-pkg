@@ -61,7 +61,7 @@ namespace filters
 
 
     If \f$a[0]\f$ is not equal to 1, the coefficients are normalized by \f$a[0]\f$.
-    
+
     Example xml config:<br>
 
     <filter type="TransferFunctionFilter" name="filter_name"><br>
@@ -75,14 +75,14 @@ class TransferFunctionFilter: public FilterBase <T>
 {
 public:
   /**
-   * \brief Construct the filter 
+   * \brief Construct the filter
    */
   TransferFunctionFilter() ;
 
   /** \brief Destructor to clean up
    */
   ~TransferFunctionFilter();
-  
+
   /** \brief Configure the filter with the correct number of channels and params.
    * \param number_of_channels The number of inputs filtered.
    * \param config The xml that is parsed to configure the filter.
@@ -95,23 +95,20 @@ public:
    */
   virtual bool update(const T & data_in, T& data_out) ;
   virtual bool update(const std::vector<T> & data_in, std::vector<T>& data_out) ;
-  
-  
+
+
 
 protected:
-  
-  boost::scoped_ptr<RealtimeCircularBuffer<std::vector<T> > > input_buffer_; //The input sample history. 
+
+  boost::scoped_ptr<RealtimeCircularBuffer<std::vector<T> > > input_buffer_; //The input sample history.
   boost::scoped_ptr<RealtimeCircularBuffer<std::vector<T> > > output_buffer_; //The output sample history.
-  
+
   std::vector<T>  temp; //used for storage and preallocation
-  
+
   std::vector<double> a_;   //Transfer functon coefficients (output).
   std::vector<double> b_;   //Transfer functon coefficients (input).
-  
-};
 
-FILTERS_REGISTER_FILTER(TransferFunctionFilter, double)
-FILTERS_REGISTER_FILTER(TransferFunctionFilter, float)
+};
 
 template <typename T>
 TransferFunctionFilter<T>::TransferFunctionFilter()
@@ -133,7 +130,7 @@ bool TransferFunctionFilter<T>::configure()
     ROS_ERROR("TransferFunctionFilter, \"%s\", params has no attribute a.", FilterBase<T>::getName().c_str());
     return false;
   }///\todo check length
-  
+
 
   if (!FilterBase<T>::getDoubleVectorParam("b", b_, temp_default))
   {
@@ -145,17 +142,17 @@ bool TransferFunctionFilter<T>::configure()
   temp.resize(this->number_of_channels_);
   input_buffer_.reset(new RealtimeCircularBuffer<std::vector<T> >(b_.size()-1, temp));
   output_buffer_.reset(new RealtimeCircularBuffer<std::vector<T> >(a_.size()-1, temp));
-  
+
   // Prevent divide by zero while normalizing coeffs.
   if ( a_[0] == 0)
   {
     ROS_ERROR("a[0] can not equal 0.");
     return false;
   }
-  
+
   // Normalize the coeffs by a[0].
   if(a_[0] != 1)
-  { 
+  {
     for(uint32_t i = 0; i < b_.size(); i++)
     {
       b_[i] = (b_[i] / a_[0]);
@@ -166,7 +163,7 @@ bool TransferFunctionFilter<T>::configure()
     }
     a_[0] = (a_[0] / a_[0]);
   }
-  
+
   return true;
 };
 
@@ -179,9 +176,9 @@ bool TransferFunctionFilter<T>::update(const T & data_in, T& data_out)
   {
     ROS_ERROR("Number of channels is %d, to use non vector constructor it must be 1", this->number_of_channels_);
     return false;
-  }  
+  }
   // Copy data to prevent mutation if in and out are the same ptr
-  temp[0] = data_in;        
+  temp[0] = data_in;
   std::vector<T> temp_in(1);
   temp_in[0] = data_in;
   std::vector<T> temp_out(1);
@@ -211,13 +208,13 @@ bool TransferFunctionFilter<T>::update(const std::vector<T>  & data_in, std::vec
 {
 
   // Ensure the correct number of inputs
-  if (data_in.size() != this->number_of_channels_ || data_out.size() != this->number_of_channels_ )  
+  if (data_in.size() != this->number_of_channels_ || data_out.size() != this->number_of_channels_ )
   {
     ROS_ERROR("Number of channels is %d, but data_in.size() = %d and data_out.size() = %d.  They must match", this->number_of_channels_, data_in.size(), data_out.size());
     return false;
   }
   // Copy data to prevent mutation if in and out are the same ptr
-  temp = data_in;        
+  temp = data_in;
 
   for (uint32_t i = 0; i < temp.size(); i++)
   {

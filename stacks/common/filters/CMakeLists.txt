@@ -4,6 +4,8 @@ rospack(filters)
 
 rospack_add_boost_directories()
 
+rospack_add_library(filter
+  src/transfer_function.cpp)
 
 rospack_add_gtest(median_test test/test_median.cpp)
 target_link_libraries(median_test loki) 
