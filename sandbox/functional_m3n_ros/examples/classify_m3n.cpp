@@ -68,7 +68,8 @@ int loadPointCloud(string filename,
       infile >> labels[i];
       col++;
     }
-    if (col < nbr_cols) infile >> tempo;
+    if (col < nbr_cols)
+      infile >> tempo;
   }
 
   infile.close();
@@ -110,5 +111,46 @@ int main()
   testing_rf->updateLabelings(inferred_labels);
   testing_rf->saveNodeFeatures("classified_results.node_features");
   ROS_INFO("Classified results");
+
+  /*
+  map<unsigned int, set<unsigned int> > label_groups; // label-->[list of indices]
+  for (map<unsigned int, unsigned int>::iterator iter_inferred_labels = inferred_labels.begin() ; iter_inferred_labels
+      != inferred_labels.end() ; iter_inferred_labels++)
+  {
+    unsigned int curr_idx = iter_inferred_labels->first;
+    unsigned int curr_label = iter_inferred_labels->second;
+    if (label_groups.count(curr_label) == 0)
+    {
+      label_groups[curr_label] = set<unsigned int> ();
+    }
+    label_groups[curr_label].insert(curr_idx);
+  }
+
+  cloud_kdtree::KdTreeANN pt_cloud_kdtree(pt_cloud);
+
+  unsigned int seed = 0;
+
+  point_cloud_clustering::SingleLink single_link(0.3048);
+  for (map<unsigned int, set<unsigned int> >::iterator iter_label_groups = label_groups.begin() ; iter_label_groups
+      != label_groups.end() ; iter_label_groups++)
+  {
+    std::map<unsigned int, std::vector<int> > created_clusters;
+    single_link.cluster(pt_cloud, pt_cloud_kdtree, iter_label_groups->second, created_clusters);
+
+    for (map<unsigned int, vector<int> >::iterator iter_created_clusters = created_clusters.begin() ; iter_created_clusters
+        != created_clusters.end() ; iter_created_clusters++)
+    {
+      unsigned int curr_cluster_label = seed + iter_created_clusters->first;
+      vector<int>& curr_pt_indices = iter_created_clusters->second;
+      for (unsigned int i = 0 ; i < curr_pt_indices.size() ; i++)
+      {
+        cout << pt_cloud.pts[curr_pt_indices[i]].x << " " << pt_cloud.pts[curr_pt_indices[i]].y
+            << " " << pt_cloud.pts[curr_pt_indices[i]].z << " " << curr_cluster_label << endl;
+      }
+    }
+
+    seed += created_clusters.size();
+  }
+*/
   return 0;
 }
