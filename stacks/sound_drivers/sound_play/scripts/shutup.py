@@ -47,7 +47,9 @@ if __name__ == '__main__':
     soundhandle = SoundHandle()
 
     print "Sending stopall commande every 100 ms."
-    print "Note: This will not prevent a node that is continuing to issue commands from producing sound."
+    print "Note: This will not prevent a node that is continuing to issue commands"
+    print "from producing sound."
+    print "Press Ctrl+C to exit."
 
     while not rospy.is_shutdown():
         soundhandle.stopall()

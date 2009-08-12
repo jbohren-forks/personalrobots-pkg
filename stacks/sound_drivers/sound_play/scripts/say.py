@@ -44,8 +44,9 @@ if __name__ == '__main__':
         print 'Usage: %s \'String to say.\''%sys.argv[0]
         print '       %s < file_to_say.txt'%sys.argv[0]
         print
-        print 'Says a string. For a string on the command line, you must use quotes as apropriate.'
-        print 'For a string on standard input, the command will wait for EOF before saying anything.'
+        print 'Says a string. For a string on the command line, you must use quotes as'
+        print 'appropriate. For a string on standard input, the command will wait for'
+        print 'EOF before saying anything.'
         exit(-1)
 
     # Import after printing usage for speed.
@@ -67,7 +68,7 @@ if __name__ == '__main__':
     else:
         s = " ".join(sys.argv[1:])
     
-    print 'Saying: %s.'%s
+    print 'Saying: %s'%s
     
     soundhandle.say(s)
     rospy.sleep(1)

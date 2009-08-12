@@ -43,7 +43,7 @@ if __name__ == '__main__':
     if len(sys.argv) != 2 or sys.argv[1] == '--help':
         print 'Usage: %s sound_to_play.(ogg|wav)'%sys.argv[0]
         print
-        print 'Plays a .OGG or .WAV file. The path to the file should be absolute, and be valid on the computer on which sound_play is running.'
+        print 'Plays an .OGG or .WAV file. The path to the file should be absolute, and be valid on the computer on which sound_play is running.'
         exit(1)
     
     # Import after printing usage for speed.
