@@ -40,8 +40,10 @@ using namespace std;
 /* See function definition */
 // --------------------------------------------------------------
 int point_cloud_clustering::PointCloudClustering::computeClusterCentroids(const sensor_msgs::PointCloud& pt_cloud,
-                                                                          const map<unsigned int, vector<int> >& clusters,
-                                                                          map<unsigned int, vector<float> >& cluster_centroids)
+                                                                          const map<unsigned int,
+                                                                              vector<int> >& clusters,
+                                                                          map<unsigned int, vector<
+                                                                              float> >& cluster_centroids)
 {
   cluster_centroids.clear();
 
@@ -127,27 +129,30 @@ int point_cloud_clustering::PointCloudClustering::cluster(const sensor_msgs::Poi
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-unsigned int point_cloud_clustering::PointCloudClustering::findRadiusNeighbors(cloud_kdtree::KdTree& pt_cloud_kdtree,
-                                                                               unsigned int index,
-                                                                               double radius,
-                                                                               const std::set<unsigned int>& indices_to_cluster,
-                                                                               std::list<unsigned int>& neighbor_indices)
+void point_cloud_clustering::PointCloudClustering::findRadiusNeighbors(cloud_kdtree::KdTree& pt_cloud_kdtree,
+                                                                       unsigned int index,
+                                                                       double radius,
+                                                                       const std::set<unsigned int>& indices_to_cluster,
+                                                                       std::vector<unsigned int>& neighbor_indices)
 {
+  neighbor_indices.clear();
+
+  // Perform range search over entire point cloud
   vector<int> k_indices;
   vector<float> k_distances;
   pt_cloud_kdtree.radiusSearch(static_cast<int> (index), radius, k_indices, k_distances);
 
-  // check if each neighbor is a valid index to cluster
+  // Only find neighbors from range search that are "valid"
   const unsigned int nbr_k_neighbors = k_indices.size();
-  unsigned int nbr_valid_neighbors = 0;
+  neighbor_indices.reserve(nbr_k_neighbors);
   for (unsigned int i = 0 ; i < nbr_k_neighbors ; i++)
   {
+    // check if the neighbor point is "valid"
     const unsigned int neighbor_idx = static_cast<unsigned int> (k_indices[i]);
     if (indices_to_cluster.count(neighbor_idx) != 0)
     {
       neighbor_indices.push_back(neighbor_idx);
-      nbr_valid_neighbors++;
     }
   }
-  return nbr_valid_neighbors;
+  return;
 }

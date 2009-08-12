@@ -73,11 +73,11 @@ namespace point_cloud_clustering
                           std::map<unsigned int, std::vector<int> >& created_clusters) = 0;
 
     protected:
-      unsigned int findRadiusNeighbors(cloud_kdtree::KdTree& pt_cloud_kdtree,
-                                       unsigned int index,
-                                       double radius,
-                                       const std::set<unsigned int>& indices_to_cluster,
-                                       std::list<unsigned int>& neighbor_indices);
+      void findRadiusNeighbors(cloud_kdtree::KdTree& pt_cloud_kdtree,
+                               unsigned int index,
+                               double radius,
+                               const std::set<unsigned int>& indices_to_cluster,
+                               std::vector<unsigned int>& neighbor_indices);
 
       unsigned int starting_label_;
   };

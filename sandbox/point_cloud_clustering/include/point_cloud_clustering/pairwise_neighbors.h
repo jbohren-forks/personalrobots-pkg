@@ -46,12 +46,41 @@
 
 #include <point_cloud_clustering/point_cloud_clustering.h>
 
+// --------------------------------------------------------------
+/*!
+ * \file pairwise_neighbors.h
+ *
+ * \brief PairwiseNeighbors creates clusters of size 2 between adjacent
+ *        points
+ */
+// --------------------------------------------------------------
+
 namespace point_cloud_clustering
 {
+  // --------------------------------------------------------------
+  /*!
+   * \brief PairwiseNeighbors creates clusters of size 2 between adjacent
+   *        points.
+   *
+   * This type of clustering is useful for creating edges in a graph
+   * where the points are the nodes, which can be used for MRF-based
+   * classification.
+   */
+  // --------------------------------------------------------------
   class PairwiseNeighbors: public PointCloudClustering
   {
     public:
-      PairwiseNeighbors(double radius, unsigned int nbr_neighbors);
+      // --------------------------------------------------------------
+      /*!
+       * \brief PairwiseNeighbors creates clusters of size 2 between adjacent
+       *        points.
+       *
+       * This type of clustering is useful for creating edges in a graph
+       * where the points are the nodes, which can be used for MRF-based
+       * classification.
+       */
+      // --------------------------------------------------------------
+      PairwiseNeighbors(double neighbor_radius, unsigned int max_nbr_neighbors);
 
       virtual int cluster(const sensor_msgs::PointCloud& pt_cloud,
                           cloud_kdtree::KdTree& pt_cloud_kdtree,
@@ -59,8 +88,8 @@ namespace point_cloud_clustering
                           std::map<unsigned int, std::vector<int> >& created_clusters);
 
     private:
-      double radius_;
-      unsigned int nbr_neighbors_;
+      double neighbor_radius_;
+      unsigned int max_nbr_neighbors_;
   };
 }
 #endif

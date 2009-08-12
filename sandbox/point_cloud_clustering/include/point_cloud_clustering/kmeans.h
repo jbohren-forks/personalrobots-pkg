@@ -50,13 +50,49 @@
 
 #include <point_cloud_clustering/point_cloud_clustering.h>
 
+// --------------------------------------------------------------
+/*!
+ * \file kmeans.h
+ *
+ * \brief KMeans performs basic k-means clustering on the point
+ *        cloud
+ */
+// --------------------------------------------------------------
+
 namespace point_cloud_clustering
 {
+  // --------------------------------------------------------------
+  /*!
+   * \brief A KMeans clustering performs k-means clustering on the point
+   *        cloud where the features are the x,y,z coordinates
+   */
+  // --------------------------------------------------------------
   class KMeans: public PointCloudClustering
   {
     public:
+      // --------------------------------------------------------------
+      /*!
+       * \brief Instantiates the k-means clustering with the specified
+       *        parameters
+       *
+       * This method wraps around OpenCV's k-means implementation:
+       * http://opencv.willowgarage.com/documentation/miscellaneous_functions.html?highlight=kmeans#cvKMeans2
+       *
+       * \param k_factor Defines the number of clusters to produce where
+       *                 k = k_factor * [number of points to cluster over]
+       * \param accuracy The termination accuracy criterea, see OpenCV
+       *                 documentation
+       * \param max_iter The maximum number of iterations before terminating,
+       *                 see OpenCV documentation
+       */
+      // --------------------------------------------------------------
       KMeans(double k_factor, double accuracy, unsigned int max_iter);
 
+      // --------------------------------------------------------------
+      /*!
+       * \see PointCloudClustering::cluster
+       */
+      // --------------------------------------------------------------
       virtual int cluster(const sensor_msgs::PointCloud& pt_cloud,
                           cloud_kdtree::KdTree& pt_cloud_kdtree,
                           const std::set<unsigned int>& indices_to_cluster,

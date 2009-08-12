@@ -39,15 +39,16 @@ using namespace std;
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-point_cloud_clustering::PairwiseNeighbors::PairwiseNeighbors(double radius, unsigned int nbr_neighbors)
+point_cloud_clustering::PairwiseNeighbors::PairwiseNeighbors(double neighbor_radius,
+                                                             unsigned int max_nbr_neighbors)
 {
-  if (radius < 0.0)
+  if (neighbor_radius < 0.0)
   {
     throw "point_cloud_clustering::PairwiseNeighbors() invalid radius, must be between positive";
   }
 
-  radius_ = radius;
-  nbr_neighbors_ = nbr_neighbors;
+  neighbor_radius_ = neighbor_radius;
+  max_nbr_neighbors_ = max_nbr_neighbors;
 }
 
 // --------------------------------------------------------------
@@ -61,6 +62,9 @@ int point_cloud_clustering::PairwiseNeighbors::cluster(const sensor_msgs::PointC
                                                        map<unsigned int, vector<int> >& created_clusters)
 {
   created_clusters.clear();
+
+  // 0 indicates to link to all neighbors
+  bool link_to_all_neighbors = max_nbr_neighbors_ == 0;
 
   // -------------------------------------------------
   // Create adjacency list where
@@ -88,26 +92,25 @@ int point_cloud_clustering::PairwiseNeighbors::cluster(const sensor_msgs::PointC
 
     // -----------------------
     // Find valid neighboring candidate points to link to
-    list<unsigned int> valid_neighbor_indices;
-    const unsigned int nbr_valid_neighbors = findRadiusNeighbors(pt_cloud_kdtree, curr_pt_cloud_idx, radius_,
-        indices_to_cluster, valid_neighbor_indices);
+    vector<unsigned int> valid_neighbor_indices;
+    findRadiusNeighbors(pt_cloud_kdtree, curr_pt_cloud_idx, neighbor_radius_, indices_to_cluster,
+        valid_neighbor_indices);
 
     // -----------------------
-    // Randomly generate which neighbors to link to
-    vector<unsigned int> random_indices(nbr_valid_neighbors, 0);
-    for (unsigned int i = 0 ; i < nbr_valid_neighbors ; i++)
+    // If NOT linking to all neighbors, randomly pick max_nbr_neighbors_
+    if (link_to_all_neighbors == false)
     {
-      random_indices[i] = valid_neighbor_indices.front();
-      valid_neighbor_indices.pop_front();
+      random_shuffle(valid_neighbor_indices.begin(), valid_neighbor_indices.end());
+      valid_neighbor_indices.resize(max_nbr_neighbors_);
     }
-    random_shuffle(random_indices.begin(), random_indices.end());
+    unsigned int nbr_valid_neighbors = valid_neighbor_indices.size();
 
     // -----------------------
     // Now link to random neighbors within radius
-    for (unsigned int i = 0 ; i < nbr_neighbors_ && i < nbr_valid_neighbors ; i++)
+    for (unsigned int i = 0 ; i < nbr_valid_neighbors ; i++)
     {
       // retrieve neighboring index
-      const unsigned int curr_neighbor_idx = random_indices[i];
+      const unsigned int curr_neighbor_idx = valid_neighbor_indices[i];
 
       // avoid self-edges
       if (curr_neighbor_idx == curr_pt_cloud_idx)
@@ -123,7 +126,7 @@ int point_cloud_clustering::PairwiseNeighbors::cluster(const sensor_msgs::PointC
   }
 
   // -------------------------------------------------
-  // Create clusters from adjacency list
+  // Create clusters (edges) from adjacency list
   unsigned int curr_cluster_label = starting_label_;
   for (map<unsigned int, set<unsigned int> >::iterator iter_adj_list = adj_list.begin() ; iter_adj_list
       != adj_list.end() ; iter_adj_list++)
