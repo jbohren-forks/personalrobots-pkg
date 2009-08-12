@@ -35,7 +35,7 @@
 * Author: Eitan Marder-Eppstein
 *********************************************************************/
 
-//NOTE: this should really never be included on its own, but just in case someone is bad we'll guard  
+//NOTE: this should really never be included on its own, but just in case someone is bad we'll guard
 
 #ifndef PLUGINLIB_PLUGIN_LOADER_IMP_H_
 #define PLUGINLIB_PLUGIN_LOADER_IMP_H_
@@ -100,7 +100,7 @@ namespace pluginlib {
         {
           // register plugin here
           TiXmlElement* description = plugin->FirstChildElement( "description" );
-          std::string description_str = description->GetText();
+          std::string description_str = description ? description->GetText() : "";
 
           std::string plugin_name = plugin->Attribute("name");
           std::string plugin_class_name = plugin->Attribute("class");
@@ -180,7 +180,7 @@ namespace pluginlib {
     for (PluginMapIterator it = plugins_available_.begin(); it != plugins_available_.end(); ++it)
     {
       plugin_names.push_back(it->first);
-    }    
+    }
     return plugin_names;
   }
 
@@ -247,7 +247,7 @@ namespace pluginlib {
     catch(const Poco::RuntimeException& ex){
       throw std::runtime_error(ex.what());
     }
-  } 
+  }
 
   template <class T>
   bool PluginLoader<T>::unloadPluginLibrary(const std::string& library_path)
@@ -260,7 +260,7 @@ namespace pluginlib {
     }
     else if (it-> second > 1)
       (it->second)--;
-    else 
+    else
       poco_class_loader_.unloadLibrary(library_path);
 
     return true;
@@ -290,7 +290,7 @@ namespace pluginlib {
     LibraryCountMap::iterator it = loaded_libraries_.find(library_path);
     if (it == loaded_libraries_.end())
       loaded_libraries_[library_path] = 1;  //for correct destruction and access
-    else 
+    else
       loaded_libraries_[library_path] = loaded_libraries_[library_path] + 1;
   }
 
@@ -317,7 +317,7 @@ namespace pluginlib {
     std::vector<std::string> library_names;
 
     /*
-       \todo find a way to get ths out of poco 
+       \todo find a way to get ths out of poco
        for (typename Poco::ClassLoader<T>::Iterator it = poco_class_loader_.begin(); it != poco_class_loader_.end(); ++it)
        {
        library_names.push_back(it->second->className());
@@ -326,7 +326,7 @@ namespace pluginlib {
        */
     LibraryCountMap::iterator it;
     for (it = loaded_libraries_.begin(); it != loaded_libraries_.end(); it++)
-    { 
+    {
       if (it->second > 0)
         library_names.push_back(it->first);
     }
