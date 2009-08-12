@@ -39,7 +39,6 @@
 #include <geometry_msgs/PointStamped.h>
 #include <sensor_msgs/PointCloud.h>
 #include <geometry_msgs/Polygon.h>
-#include <visualization_msgs/Polyline.h>
 
 #include <point_cloud_mapping/geometry/point.h>
 #include <point_cloud_mapping/geometry/nearest.h>
