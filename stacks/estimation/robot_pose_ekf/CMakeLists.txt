@@ -18,7 +18,7 @@ rospack_add_executable(test_robot_pose_ekf
                        test/test_robot_pose_ekf.cpp)
 rospack_link_boost(test_robot_pose_ekf thread)
 
-rospack_add_rostest(${CMAKE_CURRENT_SOURCE_DIR}/test/test_robot_pose_ekf.launch)
+rospack_add_rostest_future(${CMAKE_CURRENT_SOURCE_DIR}/test/test_robot_pose_ekf.launch)
 
 # Download needed data file
 rospack_download_test_data(http://pr.willowgarage.com/data/robot_pose_ekf/ekf_test.bag test/ekf_test.bag)

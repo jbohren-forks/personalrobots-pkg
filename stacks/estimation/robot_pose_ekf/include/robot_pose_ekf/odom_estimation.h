@@ -111,9 +111,8 @@ public:
 
   /** Add a sensor measurement to the measurement buffer
    * \param meas the measurement to add
-   * \param covar_multiplier a measure for the covariance of the measurement. The covariance matrix is multiplied with this value
    */
-  void addMeasurement(const tf::Stamped<tf::Transform>& meas, double covar_multiplier=1);
+  void addMeasurement(const tf::Stamped<tf::Transform>& meas);
 
   /** Add a sensor measurement to the measurement buffer
    * \param meas the measurement to add
@@ -151,7 +150,6 @@ private:
   tf::Stamped<tf::Transform> odom_meas_, odom_meas_old_, imu_meas_, imu_meas_old_, vo_meas_, vo_meas_old_;
   ros::Time filter_time_old_;
   bool filter_initialized_, odom_initialized_, imu_initialized_, vo_initialized_;
-  double imu_covar_multiplier_, vo_covar_multiplier_;
 
   // diagnostics
   double diagnostics_odom_rot_rel_, diagnostics_imu_rot_rel_;

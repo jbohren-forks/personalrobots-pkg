@@ -67,12 +67,12 @@ namespace estimation
       vo_covariance_(6)
   {
     // paramters
-    node_.param("sensor_timeout", timeout_, 1.0);
-    node_.param("odom_used", odom_used_, true);
-    node_.param("imu_used",  imu_used_, true);
-    node_.param("vo_used",   vo_used_, true);
+    node_.getParam("~sensor_timeout", timeout_, 1.0);
+    node_.getParam("~odom_used", odom_used_, true);
+    node_.getParam("~imu_used",  imu_used_, true);
+    node_.getParam("~vo_used",   vo_used_, true);
     double freq;
-    node_.param("freq", freq, 30.0);
+    node_.getParam("~freq", freq, 30.0);
 
     timer_ = node_.createTimer(ros::Duration(1.0/max(freq,1.0)), &OdomEstimationNode::spin, this);
 
@@ -146,6 +146,7 @@ namespace estimation
   // callback function for odom data
   void OdomEstimationNode::odomCallback(const OdomConstPtr& odom)
   {
+    ROS_DEBUG("Odom callback at time %f ", ros::Time::now().toSec());
     assert(odom_used_);
 
     // receive data 
@@ -158,6 +159,18 @@ namespace estimation
     for (unsigned int i=0; i<6; i++)
       for (unsigned int j=0; j<6; j++)
         odom_covariance_(i+1, j+1) = odom->pose.covariance[6*i+j];
+
+    // manually set covariance
+    /*
+    SymmetricMatrix measNoiseOdom_Cov(6);  measNoiseOdom_Cov = 0;
+    measNoiseOdom_Cov(1,1) = pow(0.002,2);    // = 2 mm / sec
+    measNoiseOdom_Cov(2,2) = pow(0.002,2);    // = 2 mm / sec
+    measNoiseOdom_Cov(3,3) = pow(999.9,2);    // = large
+    measNoiseOdom_Cov(4,4) = pow(999.9,2);    // = large
+    measNoiseOdom_Cov(5,5) = pow(999.9,2);    // = large
+    measNoiseOdom_Cov(6,6) = pow(0.017,2);    // = 1 degree / sec
+    odom_covariance_ = measNoiseOdom_Cov;
+    */
 
     my_filter_.addMeasurement(Stamped<Transform>(odom_meas_, odom_stamp_,"wheelodom", "base_footprint"), odom_covariance_);
     
@@ -193,14 +206,22 @@ namespace estimation
   {
     assert(imu_used_);
 
-    // receive data
+    // receive data 
     boost::mutex::scoped_lock lock(imu_mutex_);
     imu_stamp_ = imu->header.stamp;
     imu_time_  = Time::now();
     btQuaternion orientation;
     quaternionMsgToTF(imu->orientation, orientation);
     imu_meas_ = btTransform(orientation, btVector3(0,0,0));
-    my_filter_.addMeasurement(Stamped<Transform>(imu_meas_, imu_stamp_, "imu", "base_footprint"));
+
+    // manually set covariance
+    SymmetricMatrix measNoiseImu_Cov(3);  measNoiseImu_Cov = 0;
+    measNoiseImu_Cov(1,1) = pow(0.00017,2);  // = 0.01 degrees / sec
+    measNoiseImu_Cov(2,2) = pow(0.00017,2);  // = 0.01 degrees / sec
+    measNoiseImu_Cov(3,3) = pow(0.00017,2);  // = 0.01 degrees / sec
+    imu_covariance_ = measNoiseImu_Cov;
+
+    my_filter_.addMeasurement(Stamped<Transform>(imu_meas_, imu_stamp_, "imu", "base_footprint"), imu_covariance_);
     
     // activate imu
     if (!imu_active_) {
@@ -244,21 +265,24 @@ namespace estimation
     }
     robot_state_.lookupTransform("stereo_link","base_link", vo_stamp_, camera_base_);
     poseMsgToTF(vo->pose, vo_meas_);
+
+    // manually set covariance
+    SymmetricMatrix measNoiseVo_Cov(6);  measNoiseVo_Cov = 0;
+    measNoiseVo_Cov(1,1) = pow(0.01,2);  // = 1 cm / sec
+    measNoiseVo_Cov(2,2) = pow(0.01,2);  // = 1 cm / sec
+    measNoiseVo_Cov(3,3) = pow(0.01,2);  // = 1 cm / sec
+    measNoiseVo_Cov(4,4) = pow(0.003,2); // = 0.2 degrees / sec
+    measNoiseVo_Cov(5,5) = pow(0.003,2); // = 0.2 degrees / sec
+    measNoiseVo_Cov(6,6) = pow(0.003,2); // = 0.2 degrees / sec
+    vo_covariance_ = measNoiseVo_Cov;
     
     // initialize
     if (!vo_active_ && !vo_initializing_){
       base_vo_init_ = camera_base_.inverse() * vo_camera_.inverse() * vo_meas_.inverse();
     }
-    // vo measurement as base transform
-    // the more inliers, the more reliable the vo
-    // inliers=200+ --> multiplier=1        inliers=100 --> multiplier=11      inliers=10 --> multiplier=20
-    double vo_multiplier = 21.0-(min(200.0,(double)vo->inliers)/10.0);
-    vo_multiplier = fmax(0.00001, fmin(100.0, vo_multiplier));
-    vo_multiplier /= 2.0;
-    //cout << "vo_multiplier = " << vo_multiplier << endl;
     Transform vo_meas_base = base_vo_init_ * vo_meas_ * vo_camera_ * camera_base_;
-    my_filter_.addMeasurement(Stamped<Transform>(vo_meas_base, vo_stamp_, "vo", "base_footprint"),
-			      vo_multiplier);
+
+    my_filter_.addMeasurement(Stamped<Transform>(vo_meas_base, vo_stamp_, "vo", "base_footprint"), vo_covariance_);
     
     // activate vo
     if (!vo_active_) {
@@ -306,6 +330,8 @@ namespace estimation
   // filter loop
   void OdomEstimationNode::spin(const ros::TimerEvent& e)
   {
+    ROS_DEBUG("Spin function at time %f", ros::Time::now().toSec());
+
     boost::mutex::scoped_lock odom_lock(odom_mutex_);
     boost::mutex::scoped_lock imu_lock(imu_mutex_);
     boost::mutex::scoped_lock vo_lock(vo_mutex_);

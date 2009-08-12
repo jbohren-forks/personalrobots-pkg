@@ -52,48 +52,30 @@ namespace estimation
     filter_initialized_(false),
     odom_initialized_(false),
     imu_initialized_(false),
-    vo_initialized_(false),
-    imu_covar_multiplier_(1.0),
-    vo_covar_multiplier_(1.0)
+    vo_initialized_(false)
   {
     // create SYSTEM MODEL
     ColumnVector sysNoise_Mu(6);  sysNoise_Mu = 0;
     SymmetricMatrix sysNoise_Cov(6); sysNoise_Cov = 0;
-    sysNoise_Cov(1,1) = pow(1000.0,2);
-    sysNoise_Cov(2,2) = pow(1000.0,2);
-    sysNoise_Cov(3,3) = pow(1000.0,2);
-    sysNoise_Cov(4,4) = pow(1000.0,2);
-    sysNoise_Cov(5,5) = pow(1000.0,2);
-    sysNoise_Cov(6,6) = pow(1000.0,2);  
+    for (unsigned int i=1; i<=6; i++) sysNoise_Cov(i,i) = pow(1000.0,2);
     Gaussian system_Uncertainty(sysNoise_Mu, sysNoise_Cov);
     sys_pdf_   = new NonLinearAnalyticConditionalGaussianOdo(system_Uncertainty);
     sys_model_ = new AnalyticSystemModelGaussianUncertainty(sys_pdf_);
-    
 
     // create MEASUREMENT MODEL ODOM
     ColumnVector measNoiseOdom_Mu(6);  measNoiseOdom_Mu = 0;
     SymmetricMatrix measNoiseOdom_Cov(6);  measNoiseOdom_Cov = 0;
-    measNoiseOdom_Cov(1,1) = pow(0.002,2);    // = 2 mm / sec
-    measNoiseOdom_Cov(2,2) = pow(0.002,2);    // = 2 mm / sec
-    measNoiseOdom_Cov(3,3) = pow(999.9,2);    // = large
-    measNoiseOdom_Cov(4,4) = pow(999.9,2);    // = large
-    measNoiseOdom_Cov(5,5) = pow(999.9,2);    // = large
-    measNoiseOdom_Cov(6,6) = pow(0.017,2);    // = 1 degree / sec
-    odom_covariance_ = measNoiseOdom_Cov;
+    for (unsigned int i=1; i<=6; i++) measNoiseOdom_Cov(i,i) = 1;
     Gaussian measurement_Uncertainty_Odom(measNoiseOdom_Mu, measNoiseOdom_Cov);
     Matrix Hodom(6,6);  Hodom = 0;
     Hodom(1,1) = 1;    Hodom(2,2) = 1;    Hodom(6,6) = 1;
     odom_meas_pdf_   = new LinearAnalyticConditionalGaussian(Hodom, measurement_Uncertainty_Odom);
     odom_meas_model_ = new LinearAnalyticMeasurementModelGaussianUncertainty(odom_meas_pdf_);
-    
 
     // create MEASUREMENT MODEL IMU
     ColumnVector measNoiseImu_Mu(3);  measNoiseImu_Mu = 0;
     SymmetricMatrix measNoiseImu_Cov(3);  measNoiseImu_Cov = 0;
-    measNoiseImu_Cov(1,1) = pow(0.00017,2);  // = 0.01 degrees / sec
-    measNoiseImu_Cov(2,2) = pow(0.00017,2);  // = 0.01 degrees / sec
-    measNoiseImu_Cov(3,3) = pow(0.00017,2);  // = 0.01 degrees / sec
-    imu_covariance_ = measNoiseImu_Cov;
+    for (unsigned int i=1; i<=3; i++) measNoiseImu_Cov(i,i) = 1;
     Gaussian measurement_Uncertainty_Imu(measNoiseImu_Mu, measNoiseImu_Cov);
     Matrix Himu(3,6);  Himu = 0;
     Himu(1,4) = 1;    Himu(2,5) = 1;    Himu(3,6) = 1;
@@ -103,13 +85,7 @@ namespace estimation
     // create MEASUREMENT MODEL VO
     ColumnVector measNoiseVo_Mu(6);  measNoiseVo_Mu = 0;
     SymmetricMatrix measNoiseVo_Cov(6);  measNoiseVo_Cov = 0;
-    measNoiseVo_Cov(1,1) = pow(0.01,2);  // = 1 cm / sec
-    measNoiseVo_Cov(2,2) = pow(0.01,2);  // = 1 cm / sec
-    measNoiseVo_Cov(3,3) = pow(0.01,2);  // = 1 cm / sec
-    measNoiseVo_Cov(4,4) = pow(0.003,2); // = 0.2 degrees / sec
-    measNoiseVo_Cov(5,5) = pow(0.003,2); // = 0.2 degrees / sec
-    measNoiseVo_Cov(6,6) = pow(0.003,2); // = 0.2 degrees / sec
-    vo_covariance_ = measNoiseVo_Cov;
+    for (unsigned int i=1; i<=6; i++) measNoiseVo_Cov(i,i) = 1;
     Gaussian measurement_Uncertainty_Vo(measNoiseVo_Mu, measNoiseVo_Cov);
     Matrix Hvo(6,6);  Hvo = 0;
     Hvo(1,1) = 1;    Hvo(2,2) = 1;    Hvo(3,3) = 1;    Hvo(4,4) = 1;    Hvo(5,5) = 1;    Hvo(6,6) = 1;
@@ -151,7 +127,7 @@ namespace estimation
     filter_ = new ExtendedKalmanFilter(prior_);
 
     // remember prior
-    addMeasurement(Stamped<Transform>(prior, time, "odom", "base_footprint"));
+    addMeasurement(Stamped<Transform>(prior, time, "odom_combined", "base_footprint"));
     filter_estimate_old_vec_ = prior_Mu;
     filter_estimate_old_ = prior;
     filter_time_old_     = time;
@@ -173,7 +149,6 @@ namespace estimation
       return false;
     }
 
-
     // only update filter for time later than current filter time
     double dt = (filter_time - filter_time_old_).toSec();
     if (dt == 0) return false;
@@ -181,6 +156,8 @@ namespace estimation
       ROS_INFO("Will not update robot pose with time %f sec in the past.", dt);
       return false;
     }
+    ROS_DEBUG("Update filter at time %f with dt %f", filter_time.toSec(), dt);
+
 
     // system update filter
     // --------------------
@@ -191,6 +168,7 @@ namespace estimation
     
     // process odom measurement
     // ------------------------
+    ROS_DEBUG("Process odom meas");
     if (odom_active){
       if (!transformer_.canTransform("base_footprint","wheelodom", filter_time)){
         ROS_ERROR("filter time older than odom message buffer");
@@ -206,6 +184,9 @@ namespace estimation
 	angleOverflowCorrect(odom_rel(6), filter_estimate_old_vec_(6));
 	// update filter
 	odom_meas_pdf_->AdditiveNoiseSigmaSet(odom_covariance_ * pow(dt,2));
+
+        ROS_DEBUG("Update filter with odom measurement %f %f %f %f %f %f", 
+                  odom_rel(1), odom_rel(2), odom_rel(3), odom_rel(4), odom_rel(5), odom_rel(6));
 	filter_->Update(odom_meas_model_, odom_rel);
 	diagnostics_odom_rot_rel_ = odom_rel(6);
       }
@@ -217,8 +198,7 @@ namespace estimation
     }
     // sensor not active
     else odom_initialized_ = false;
-    
-    
+
     
     // process imu measurement
     // -----------------------
@@ -237,7 +217,7 @@ namespace estimation
 	angleOverflowCorrect(imu_rel(3), filter_estimate_old_vec_(6));
 	diagnostics_imu_rot_rel_ = imu_rel(3);
 	// update filter
-	imu_meas_pdf_->AdditiveNoiseSigmaSet(imu_covariance_ * pow(imu_covar_multiplier_ * dt,2));
+	imu_meas_pdf_->AdditiveNoiseSigmaSet(imu_covariance_ * pow(dt,2));
 	filter_->Update(imu_meas_model_,  imu_rel);
       }
       else{
@@ -266,10 +246,8 @@ namespace estimation
 	decomposeTransform(vo_rel_frame, vo_rel(1),  vo_rel(2), vo_rel(3), vo_rel(4), vo_rel(5), vo_rel(6));
 	angleOverflowCorrect(vo_rel(6), filter_estimate_old_vec_(6));
 	// update filter
-	if (vo_covar_multiplier_ < 100.0){
-	  vo_meas_pdf_->AdditiveNoiseSigmaSet(vo_covariance_ * pow(vo_covar_multiplier_ * dt,2));
-	  filter_->Update(vo_meas_model_,  vo_rel);
-	}
+        vo_meas_pdf_->AdditiveNoiseSigmaSet(vo_covariance_ * pow(dt,2));
+        filter_->Update(vo_meas_model_,  vo_rel);
       }
       else vo_initialized_ = true;
       vo_meas_old_ = vo_meas_;
@@ -283,14 +261,13 @@ namespace estimation
     filter_estimate_old_ = Transform(Quaternion(filter_estimate_old_vec_(6), filter_estimate_old_vec_(5), filter_estimate_old_vec_(4)),
 				     Vector3(filter_estimate_old_vec_(1), filter_estimate_old_vec_(2), filter_estimate_old_vec_(3)));
     filter_time_old_ = filter_time;
-    addMeasurement(Stamped<Transform>(filter_estimate_old_, filter_time, "odom", "base_footprint"));
+    addMeasurement(Stamped<Transform>(filter_estimate_old_, filter_time, "odom_combined", "base_footprint"));
 
     // diagnostics
     diagnostics_res = true;
     if (odom_active && imu_active){
       double diagnostics = fabs(diagnostics_odom_rot_rel_ - diagnostics_imu_rot_rel_)/dt;
       if (diagnostics > 0.3 && dt > 0.01){
-	cout << "diagnostics: dt = " << dt << "    error = " << diagnostics << endl;
 	diagnostics_res = false;
       }
     }
@@ -299,18 +276,15 @@ namespace estimation
 };
 
 
-  void OdomEstimation::addMeasurement(const Stamped<Transform>& meas, const double covar_multiplier)
+  void OdomEstimation::addMeasurement(const Stamped<Transform>& meas)
   {
     transformer_.setTransform( meas );
-    if (meas.frame_id_ == "imu")  imu_covar_multiplier_  = covar_multiplier;
-    else if (meas.frame_id_ == "vo")   vo_covar_multiplier_   = covar_multiplier;
-    else ROS_ERROR("Calling old multiplier api is only supported for imu and vo");
   };
 
   void OdomEstimation::addMeasurement(const Stamped<Transform>& meas, const MatrixWrapper::SymmetricMatrix& covar)
   {
     transformer_.setTransform( meas );
-    if (meas.frame_id_ == "wheelodom") {}// @TODO remove this hack when sachin ports the pr2_odometry to publish a covariance. odom_covariance_ = covar;
+    if (meas.frame_id_ == "wheelodom") odom_covariance_ = covar;
     else if (meas.frame_id_ == "imu")  imu_covariance_  = covar;
     else if (meas.frame_id_ == "vo")   vo_covariance_   = covar;
     else ROS_ERROR("Adding a measurement for an unknown sensor %s", meas.frame_id_.c_str());
@@ -327,22 +301,22 @@ namespace estimation
   void OdomEstimation::getEstimate(Time time, Transform& estimate)
   {
     Stamped<Transform> tmp;
-    if (!transformer_.canTransform("base_footprint","odom", time)){
+    if (!transformer_.canTransform("base_footprint","odom_combined", time)){
       ROS_ERROR("Cannot get transform at time %f", time.toSec());
       return;
     }
-    transformer_.lookupTransform("base_footprint","odom", time, tmp);
+    transformer_.lookupTransform("base_footprint","odom_combined", time, tmp);
     estimate = tmp;
   };
 
   // get filter posterior at time 'time' as Stamped Transform
   void OdomEstimation::getEstimate(Time time, Stamped<Transform>& estimate)
   {
-    if (!transformer_.canTransform("base_footprint","odom", time)){
+    if (!transformer_.canTransform("base_footprint","odom_combined", time)){
       ROS_ERROR("Cannot get transform at time %f", time.toSec());
       return;
     }
-    transformer_.lookupTransform("base_footprint","odom", time, estimate);
+    transformer_.lookupTransform("base_footprint","odom_combined", time, estimate);
   };
 
   // get most recent filter posterior as PoseWithCovarianceStamped
@@ -350,11 +324,11 @@ namespace estimation
   {
     // pose
     Stamped<Transform> tmp;
-    if (!transformer_.canTransform("base_footprint","odom", ros::Time())){
+    if (!transformer_.canTransform("base_footprint","odom_combined", ros::Time())){
       ROS_ERROR("Cannot get transform at time %f", 0.0);
       return;
     }
-    transformer_.lookupTransform("base_footprint","odom", ros::Time(), tmp);
+    transformer_.lookupTransform("base_footprint","odom_combined", ros::Time(), tmp);
     poseTFToMsg(tmp, estimate.pose.pose);
 
     // header
