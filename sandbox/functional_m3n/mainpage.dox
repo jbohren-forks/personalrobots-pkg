@@ -2,8 +2,10 @@
 \mainpage
 \htmlinclude manifest.html
 
-\b functional_m3n is a package for training and classification with Max-Margin Markov Networks 
-using functional gradient boosting and high-order cliques.
+\b functional_m3n is a package for training and classifying with Max-Margin Markov Networks 
+using functional gradient boosting.  The network structure can contain high-order cliques 
+assuming a (Robust) Potts interaction model.  This package does not have ROS dependencies, 
+and is currently only dependent on OpenCV and Boost C++.
 \n\n
 This package implements/heavily uses techniques/ideas described in the following publications:
 \n
@@ -45,43 +47,25 @@ Client API page.
 
 -->
 
-\section rosapi ROS API
+\section codeapi Code API
 
-List of nodes:
-- \b functional_m3n_node
+The main two classes are 
+- \b RandomField
+- \b M3NModel
 
 <hr>
 
-\subsection functional_m3n_node functional_m3n_node
+\subsection Creating RandomFields
 
-TODO: implement this node wrapper 
+See RandomField::createNode and RandomField::createClique 
 
-\subsubsection Usage
-\verbatim
-$ functional_m3n_node [standard ROS args]
-\endverbatim
+\subsection Training the M3NModel
 
-\par Example
+See M3NModel::train
 
-\verbatim
-$ functional_m3n_node 
-\endverbatim
+\subsection Classifying with the M3NModel
 
-
-\subsubsection topics ROS topics
-
-Subscribes to:
-- \b "TODO": [TODO] TODO.
-
-Publishes to:
-- \b "TODO": [TODO] TODO.
-
-\subsubsection parameters ROS parameters
-
-Reads the following parameters from the parameter server
-
-- \b "~TODO" : \b [string] TODO
-
+See M3NModel::infer
 
 <!--
 
