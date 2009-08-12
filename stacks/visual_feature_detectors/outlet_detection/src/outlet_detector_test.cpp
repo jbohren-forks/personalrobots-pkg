@@ -6,7 +6,7 @@ Created by: Alexey Latyshev
 #include <vector>
 
 #include "outlet_detection/outlet_detector_test.h"
-#include "outlet_detection/l_detector_outlets.h"
+#include "outlet_detection/ferns_detector_outlets.h"
 
 #define DETECT_NA -1
 #define DETECT_SKIP -2
@@ -677,7 +677,7 @@ void runLOutletDetectorTest(CvMat* intrinsic_matrix, CvMat* distortion_params,
     Size patchSize(32, 32);
     LDetector ldetector(7, 20, 2, 2000, patchSize.width, 2);
     ldetector.setVerbose(true);
-	l_detector_initialize(detector,ldetector,config_path,object, patchSize);
+	ferns_detector_initialize(detector,ldetector,config_path,object, patchSize);
 
 	for (int i=0;i<(size_t)test_data.size();i++)
 	{
@@ -703,13 +703,13 @@ void runLOutletDetectorTest(CvMat* intrinsic_matrix, CvMat* distortion_params,
 		undistort(image,undistortedImg,intrinsic,distortion);
 		if (output_path)
 		{
-			l_detect_outlets(undistortedImg, object, config_path, detector,ldetector,train_features,
+			ferns_detect_outlets(undistortedImg, object, config_path, detector,ldetector,train_features,
 				test_data[i].test_outlet, output_path, filename);
 
 		}
 		else
 		{
-			l_detect_outlets(undistortedImg, object, config_path, detector,ldetector,train_features,
+			ferns_detect_outlets(undistortedImg, object, config_path, detector,ldetector,train_features,
 				test_data[i].test_outlet);
 		}
 			//detect_outlet_tuple(img,intrinsic_matrix,distortion_params,test_data[i].test_outlet,outlet_templ);
