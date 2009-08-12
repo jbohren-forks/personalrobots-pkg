@@ -110,23 +110,51 @@ Reads the following parameters from the parameter server
 
 #include "sensor_msgs/LaserScan.h"
 
-#include "self_test/self_test.h"
-#include "diagnostic_updater/diagnostic_updater.h"
-#include "diagnostic_msgs/DiagnosticStatus.h"
+#include "driver_base/driver.h"
+#include "driver_base/driver_node.h"
 
 #include "hokuyo.h"
+#include "hokuyo/HokuyoConfig.h"
 
 using namespace std;
 
-class HokuyoNode: public ros::Node
+class HokuyoDriver : public driver_base::Driver
 {
-private:
+  hokuyo::HokuyoConfig config_;
+
+public:
+  typedef hokuyo::HokuyoReconfigurator Reconfigurator;
+
+  void doOpen()
+  {
+  }
+
+  void doClose()
+  {
+  }
+
+  void doStart()
+  {
+  }
+
+  void doStop()
+  {
+  }
+
+  virtual std::string getID()
+  {
+    std::string id = laser_.getID();
+    if (id == std::string("H0000000"))
+      return "";
+    return id;
+  }
+};
+
+class HokuyoNode : public driver_Node::DriverNode
+{
+private:   
   hokuyo::LaserScan  scan_;
   hokuyo::LaserConfig cfg_;
-
-  bool running_;
-
-  int count_;
 
   SelfTest<HokuyoNode> self_test_;
   DiagnosticUpdater<HokuyoNode> diagnostic_;
@@ -149,7 +177,7 @@ public:
   string device_status_;
   string connect_fail_;
 
-  HokuyoNode() : ros::Node("hokuyo"), running_(false), count_(0), self_test_(this), diagnostic_(this)
+  HokuyoNode() : ros::Node("hokuyo"), running_(false) 
   {
     advertise<sensor_msgs::LaserScan>("scan", 100);
     
@@ -322,7 +350,6 @@ public:
       } catch (hokuyo::Exception& e) {
         ROS_WARN("Exception thrown while trying to close:\n%s",e.what());
       }
-      running_ = false;
     }
 
     return 0;
@@ -368,147 +395,6 @@ public:
     //ROS_DEBUG("publishScan done");
 
     return(0);
-  }
-
-  bool spin()
-  {
-    // Start up the laser
-    while (ok())
-    {
-      if (autostart_ && start() == 0)
-      {
-        while(ok()) {
-          if(publishScan() < 0)
-            break;
-          self_test_.checkTest();
-          diagnostic_.update();
-          check_reconfigure();
-        }
-      } else {
-        usleep(100000);
-        self_test_.checkTest();
-        diagnostic_.update();
-        check_reconfigure();
-      }
-    }
-
-    //stopping should be fine even if not running
-    stop();
-
-    return true;
-  }
-
-  void connectionStatus(diagnostic_msgs::DiagnosticStatus& status)
-  {
-    status.name = "Connection Status";
-
-    if (!running_)
-    {
-      status.level = 2;
-      status.message = "Not connected. " + connect_fail_;
-    }
-    else if (device_status_ != std::string("Sensor works well."))
-    {
-      status.level = 2;
-      status.message = "Sensor not operational";
-    } else {
-      status.level = 0;
-      status.message = "Sensor connected";
-    }
-
-    status.set_values_size(3);
-    status.values[0].key = "Port";
-    status.values[0].value = port_;
-    status.values[1].key = "Device ID";
-    status.values[1].value = device_id_;
-    status.values[2].key = "Device Status";
-    status.values[2].value = device_status_;
-  }
-
-  void freqStatus(diagnostic_msgs::DiagnosticStatus& status)
-  {
-    status.name = "Frequency Status";
-
-    double desired_freq = (1. / cfg_.scan_time) / ((double) (skip_) + 1.0);
-    double freq = (double)(count_)/diagnostic_.getPeriod();
-
-    if (freq < (.9*desired_freq))
-    {
-      status.level = 2;
-      status.message = "Desired frequency not met";
-    }
-    else
-    {
-      status.level = 0;
-      status.message = "Desired frequency met";
-    }
-
-    status.set_values_size(3);
-    status.values[0].key = "Scans in interval";
-    status.values[0].value = count_;
-    status.values[1].key = "Desired frequency";
-    status.values[1].value = desired_freq;
-    status.values[2].key = "Actual frequency";
-    status.values[2].value = freq;
-
-    count_ = 0;
-  }
-
-  void pretest()
-  {
-    // Stop for good measure.
-    try
-    {
-      laser_.close();
-    } catch (hokuyo::Exception& e) {
-      // Ignore exception here.
-    }
-  }
-
-  void interruptionTest(diagnostic_msgs::DiagnosticStatus& status)
-  {
-    status.name = "Interruption Test";
-
-    if (numSubscribers("scan") == 0)
-    {
-      status.level = 0;
-      status.message = "No operation interrupted.";
-    }
-    else
-    {
-      status.level = 1;
-      status.message = "There were active subscribers.  Running of self test interrupted operations.";
-    }
-  }
-
-  void connectTest(diagnostic_msgs::DiagnosticStatus& status)
-  {
-    status.name = "Connection Test";
-
-    laser_.open(port_.c_str(), LaserIsHokuyoModel04LX);
-
-    status.level = 0;
-    status.message = "Connected successfully.";
-  }
-
-  void IDTest(diagnostic_msgs::DiagnosticStatus& status)
-  {
-    status.name = "ID Test";
-
-    string id = laser_.getID();
-
-    if (id == std::string("H0000000"))
-    {
-      status.level = 1;
-      status.message = id + std::string(" is indication of failure.");
-    }
-    else
-    {
-      status.level = 0;
-      status.message = id;
-    }
-
-    self_test_.setID(id);
   }
 
   void statusTest(diagnostic_msgs::DiagnosticStatus& status)
@@ -640,40 +526,6 @@ public:
     status.level = 0;
     status.message = "Laser turned off successfully.";
   }
-
-  void disconnectTest(diagnostic_msgs::DiagnosticStatus& status)
-  {
-    status.name = "Disconnect Test";
-
-    laser_.close();
-
-    status.level = 0;
-    status.message = "Disconnected successfully.";
-  }
-
-  void resumeTest(diagnostic_msgs::DiagnosticStatus& status)
-  {
-    status.name = "Resume Test";
-
-    if (running_)
-    {
-      laser_.open(port_.c_str(), LaserIsHokuyoModel04LX);
-      laser_.laserOn();
-
-      int res = laser_.requestScans(!LaserIsHokuyoModel04LX, min_ang_, max_ang_, cluster_, skip_);
-
-      if (res != 0)
-      {
-        status.level = 2;
-        status.message = "Failed to resume previous mode of operation.";
-        return;
-      }
-    }
-
-    status.level = 0;
-    status.message = "Previous operation resumed successfully.";
-  }
-
 };
 
 int
