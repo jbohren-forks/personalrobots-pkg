@@ -75,7 +75,6 @@ class ShapeSpectral: public Descriptor3D
      *        information
      *
      * \param spectral_information Class to retrieve the eigenvalues from
-     *
      */
     // --------------------------------------------------------------
     ShapeSpectral(SpectralAnalysis& spectral_information);
