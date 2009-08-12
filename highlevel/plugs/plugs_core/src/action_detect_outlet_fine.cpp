@@ -55,7 +55,8 @@ DetectOutletFineAction::DetectOutletFineAction(ros::Node& node)
     }
   node_.advertise<geometry_msgs::PointStamped>(head_controller_ + "/point_head",10);
   node_.setParam("~save_failures", 1);
-  detector_ = new OutletTracker::OutletTracker(node);
+  ros::NodeHandle node_handle;
+  detector_ = new OutletTracker::OutletTracker(node_handle);
   detector_->deactivate();  
   node_.subscribe("~outlet_pose", outlet_pose_msg_, &DetectOutletFineAction::foundOutlet, this, 1);
 
