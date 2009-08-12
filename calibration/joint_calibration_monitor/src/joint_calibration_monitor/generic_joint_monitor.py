@@ -61,15 +61,14 @@ class GenericJointMonitor() :
         diag.name = "Joint Monitor: %s" % self._joint
         diag.message = "Good"
         diag.values = [ ]
-        diag.strings = [ ]
 
         # Display the time, just so that something is always updating
         #timestamp = mech_state.header.stamp.to_seconds()
-        #diag.values.append(KeyValue(value=timestamp, label="Time"))
+        #diag.values.append(KeyValue(value=timestamp, key="Time"))
 
         # Display the actuator and joint names for this monitor
-        diag.strings.append(KeyValue(value=self._actuator, label="Actuator"))
-        diag.strings.append(KeyValue(value=self._joint, label="Joint"))
+        diag.values.append(KeyValue(value=self._actuator, key="Actuator"))
+        diag.values.append(KeyValue(value=self._joint, key="Joint"))
 
         # Check if we can find both the joint and actuator
         act_names = [x.name for x in mech_state.actuator_states]
@@ -79,7 +78,7 @@ class GenericJointMonitor() :
             cal_flag = mech_state.actuator_states[act_names.index(self._actuator)].calibration_reading
 
         diag.values.append(KeyValue(value=(1 if act_exists else 0),
-                                           label="Actuator Exists"))
+                                           key="Actuator Exists"))
 
         joint_names = [x.name for x in mech_state.joint_states]
         joint_exists = self._joint in joint_names
@@ -87,7 +86,7 @@ class GenericJointMonitor() :
             joint_pos = mech_state.joint_states[joint_names.index(self._joint)].position
 
         diag.values.append(KeyValue(value=(1 if joint_exists else 0),
-                                           label="Joint Exists"))
+                                           key="Joint Exists"))
 
         if not (act_exists and joint_exists) :
             diag.level = max([LEVEL_WARN, diag.level])
@@ -95,10 +94,10 @@ class GenericJointMonitor() :
             return diag
 
         diag.values.append(KeyValue(value=cal_flag,
-                                           label="Flag State"))
+                                           key="Flag State"))
 
         diag.values.append(KeyValue(value=joint_pos,
-                                           label="Joint Position"))
+                                           key="Joint Position"))
 
         # Call the predicate to see what the result is for this joint
         sample_result = self._predicate(cal_flag, joint_pos)
@@ -112,15 +111,15 @@ class GenericJointMonitor() :
         flag_deadbands = len([x for x in self._hist if x == FLAG_DEADBAND])
         flag_errors    = len([x for x in self._hist if x == FLAG_ERROR])
 
-        diag.strings.append(KeyValue(value=self._flag_lookup[sample_result],
-                                     label="Flag Check Result"))
+        diag.values.append(KeyValue(value=self._flag_lookup[sample_result],
+                                     key="Flag Check Result"))
 
         diag.values.append(KeyValue(value=flag_oks,
-                                           label="Flag OKs"))
+                                           key="Flag OKs"))
         diag.values.append(KeyValue(value=flag_deadbands,
-                                           label="Flag Deadbands"))
+                                           key="Flag Deadbands"))
         diag.values.append(KeyValue(value=flag_errors,
-                                           label="Flag Errors"))
+                                           key="Flag Errors"))
 
         if flag_errors > 0 :
             diag.level = LEVEL_ERROR
