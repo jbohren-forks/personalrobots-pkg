@@ -245,6 +245,8 @@ namespace pluginlib {
       return poco_class_loader_.create(getPluginClass(name));
     }
     catch(const Poco::RuntimeException& ex){
+      ROS_ERROR("Poco exception: %s (plugin: %s)", ex.what(), name.c_str());
+      return NULL;
       throw std::runtime_error(ex.what());
     }
   }
