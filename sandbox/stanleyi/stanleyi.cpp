@@ -175,7 +175,6 @@ DorylusDataset* Stanleyi::collectDatasetXML(string bagfile, int samples_per_img,
   int frame_id = 0;
   while(lp_.nextMsg()) {
     frame_id++;
-    cout << frame_id << endl;
 
     // -- Get the next img with a label mask.
     if (!img_bridge_.fromImage(img_msg_, "bgr"))  {
@@ -186,11 +185,19 @@ DorylusDataset* Stanleyi::collectDatasetXML(string bagfile, int samples_per_img,
     img_ = img_bridge_.toIpl();
     ROS_ASSERT(img_ != NULL);
 
+
+    // -- Find the labels.  If no labels for this image, continue. 
     Vector< Vector<Point> > polys;
     vector<int> poly_labels;
     findLabelPolys(img_msg_.header.stamp.toSec(), results_dir, polys, poly_labels);    
-    showLabelPolys(img_, polys);
+    if(polys.empty())
+      continue;
+
+    cout << "Found labels for frame " << frame_id << endl;
+    if(debug) 
+      showLabelPolys(img_, polys);
     
+    // -- Collect the features.
     Vector<KeyPoint> keypoints;
     collectObjectsFromImageVectorizedXML(samples_per_img, polys, poly_labels, &objs, &keypoints);
   }
@@ -295,14 +302,14 @@ void Stanleyi::collectObjectsFromImageVectorizedXML(int samples_per_img, const V
     }
 
     // -- Show the labels.
-    vector<string> label_int2str;
-    createLabelMaps(NULL, &label_int2str);
-    cout << "This point is labeled " << labels[i] << ", " << label_int2str[labels[i]] << endl;
-    IplImage* vis = cvCloneImage(img_);
-    cvLine(vis, cvPoint(c-10, r), cvPoint(c+10, r), cvScalar(0,0,255));
-    cvLine(vis, cvPoint(c, r-10), cvPoint(c, r+10), cvScalar(0,0,255));
-    CVSHOW("Label", vis);
-    cvWaitKey(0);
+//     vector<string> label_int2str;
+//     createLabelMaps(NULL, &label_int2str);
+//     cout << "This point is labeled " << labels[i] << ", " << label_int2str[labels[i]] << endl;
+//     IplImage* vis = cvCloneImage(img_);
+//     cvLine(vis, cvPoint(c-10, r), cvPoint(c+10, r), cvScalar(0,0,255));
+//     cvLine(vis, cvPoint(c, r-10), cvPoint(c, r+10), cvScalar(0,0,255));
+//     CVSHOW("Label", vis);
+//     cvWaitKey(0);
   }
   
   // -- Call all descriptors, get vectorized results.
