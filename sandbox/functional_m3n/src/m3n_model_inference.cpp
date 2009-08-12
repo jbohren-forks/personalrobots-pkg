@@ -239,8 +239,8 @@ int M3NModel::inferPrivate(const RandomField& random_field,
   }
 
   // Estimate the max number of nodes and edges in the graph for alpha-expansion
-  int est_nbr_energy_nodes = nodes.size() + (clique_sets.size() * 3);
-  int est_nbr_energy_edges = est_nbr_energy_nodes * 5;
+  unsigned int est_nbr_energy_nodes = nodes.size() + (clique_sets.size() * 3);
+  unsigned int est_nbr_energy_edges = est_nbr_energy_nodes * 5;
 
   // -------------------------------------------
   // Verify clique interaction parameters agree

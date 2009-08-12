@@ -46,7 +46,6 @@
 #include <ros/ros.h>
 
 using namespace boost;
-using namespace std;
 
 // --------------------------------------------------------------
 /*!
@@ -168,7 +167,7 @@ namespace bgl_energy
        * \return 0 on success, otherwise negative value on error
        */
       // --------------------------------------------------------------
-      int addPnPotts(const list<EnergyVar>& clique_vars, double Ec0, double Ec1, double Emax);
+      int addPnPotts(const std::list<EnergyVar>& clique_vars, double Ec0, double Ec1, double Emax);
 
       // --------------------------------------------------------------
       /*!
@@ -198,8 +197,8 @@ namespace bgl_energy
        * \return 0 on success, otherwise negative value on error
        */
       // --------------------------------------------------------------
-      int addRobustPottsDominantExpand0(const list<EnergyVar>& node_vars,
-                                        const list<EnergyVar>& dominant_vars,
+      int addRobustPottsDominantExpand0(const std::list<EnergyVar>& node_vars,
+                                        const std::list<EnergyVar>& dominant_vars,
                                         double gamma_alpha,
                                         double gamma_dominant,
                                         double gamma_max,
@@ -230,7 +229,7 @@ namespace bgl_energy
        * \return 0 on success, otherwise negative value on error
        */
       // --------------------------------------------------------------
-      int addRobustPottsNoDominantExpand0(const list<EnergyVar>& node_vars,
+      int addRobustPottsNoDominantExpand0(const std::list<EnergyVar>& node_vars,
                                           double gamma_alpha,
                                           double gamma_max,
                                           double Q);

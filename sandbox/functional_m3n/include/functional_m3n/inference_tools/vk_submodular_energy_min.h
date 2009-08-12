@@ -41,8 +41,6 @@
 
 #include <ros/ros.h>
 
-using namespace std;
-
 // --------------------------------------------------------------
 /*!
  * \brief Namespace for minimizing a submodular energy function with
@@ -74,7 +72,7 @@ namespace vk_energy
        * \brief Instantiates empty energy function
        */
       // --------------------------------------------------------------
-      SubmodularEnergyMin(int node_num_max, int edge_num_max);
+      SubmodularEnergyMin(unsigned int node_num_max, unsigned int edge_num_max);
 
       ~SubmodularEnergyMin()
       {
@@ -154,7 +152,7 @@ namespace vk_energy
        * \return 0 on success, otherwise negative value on error
        */
       // --------------------------------------------------------------
-      int addPnPotts(const list<EnergyVar>& clique_vars, double Ec0, double Ec1, double Emax);
+      int addPnPotts(const std::list<EnergyVar>& clique_vars, double Ec0, double Ec1, double Emax);
 
       // --------------------------------------------------------------
       /*!
@@ -184,8 +182,8 @@ namespace vk_energy
        * \return 0 on success, otherwise negative value on error
        */
       // --------------------------------------------------------------
-      int addRobustPottsDominantExpand0(const list<EnergyVar>& node_vars,
-                                        const list<EnergyVar>& dominant_vars,
+      int addRobustPottsDominantExpand0(const std::list<EnergyVar>& node_vars,
+                                        const std::list<EnergyVar>& dominant_vars,
                                         double gamma_alpha,
                                         double gamma_dominant,
                                         double gamma_max,
@@ -216,7 +214,7 @@ namespace vk_energy
        * \return 0 on success, otherwise negative value on error
        */
       // --------------------------------------------------------------
-      int addRobustPottsNoDominantExpand0(const list<EnergyVar>& node_vars,
+      int addRobustPottsNoDominantExpand0(const std::list<EnergyVar>& node_vars,
                                           double gamma_alpha,
                                           double gamma_max,
                                           double Q);

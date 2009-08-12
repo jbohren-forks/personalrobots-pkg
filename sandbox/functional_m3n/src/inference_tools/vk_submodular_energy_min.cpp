@@ -40,7 +40,7 @@ using namespace std;
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-SubmodularEnergyMin::SubmodularEnergyMin(int node_num_max, int edge_num_max)
+SubmodularEnergyMin::SubmodularEnergyMin(unsigned int node_num_max, unsigned int edge_num_max)
 {
   graph_ = new Graph<double, double, double>(node_num_max, edge_num_max);
   const_offset_ = 0.0;
