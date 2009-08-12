@@ -65,8 +65,6 @@
 #include "mechanism_control/controller.h"
 #include "control_toolbox/pid.h"
 #include "control_toolbox/pid_gains_setter.h"
-#include "misc_utils/advertised_service_guard.h"
-#include "misc_utils/subscription_guard.h"
 
 // Services
 #include <std_msgs/Float64.h>
@@ -139,44 +137,6 @@ private:
   void setCommandCB(const std_msgs::Float64ConstPtr& msg);
 };
 
-/***************************************************/
-/*! \class controller::JointVelocityControllerNode
-    \brief Joint Velocity Controller ROS Node
-
-    This class closes the loop around velocity using
-    a pid loop.
-*/
-/***************************************************/
-
-class JointVelocityControllerNode : public Controller
-{
-public:
-
-  JointVelocityControllerNode();
-  ~JointVelocityControllerNode();
-
-  void update();
-  bool initXml(mechanism::RobotState *robot_state, TiXmlElement *config);
-
-  void setCommand();
-
-private:
-
-  //node stuff
-  std::string service_prefix_;                 /**< The name of the controller. */
-  ros::Node *node_;
-  SubscriptionGuard guard_set_command_;        /**< Makes sure the subscription goes down neatly. */
-
-  //msgs
-  std_msgs::Float64 cmd_;                      /**< The command from the subscription. */
-  //publisher
-  realtime_tools::RealtimePublisher <robot_mechanism_controllers::JointControllerState>* controller_state_publisher_ ;
-  //controller
-  JointVelocityController *c_;                 /**< The controller. */
-  control_toolbox::PidGainsSetter pid_tuner_;
-
-   int count;
-};
-}
+} // namespace
 
 #endif

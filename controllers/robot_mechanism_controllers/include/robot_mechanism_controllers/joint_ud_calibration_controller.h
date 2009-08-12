@@ -83,25 +83,6 @@ protected:
   controller::JointVelocityController vc_;
 };
 
-
-class JointUDCalibrationControllerNode : public Controller
-{
-public:
-  JointUDCalibrationControllerNode();
-  ~JointUDCalibrationControllerNode();
-
-  void update();
-
-  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
-
-private:
-  mechanism::RobotState* robot_;
-  JointUDCalibrationController c_;
-
-  double last_publish_time_;
-  realtime_tools::RealtimePublisher<std_msgs::Empty> *pub_calibrated_;
-};
-
 }
 
 

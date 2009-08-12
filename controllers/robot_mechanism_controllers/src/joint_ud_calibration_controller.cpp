@@ -36,7 +36,8 @@
 #include <ros/time.h>
 
 using namespace std;
-using namespace controller;
+
+namespace controller {
 
 ROS_REGISTER_CONTROLLER(JointUDCalibrationController)
 
@@ -260,60 +261,4 @@ void JointUDCalibrationController::update()
     vc_.update();
 }
 
-
-ROS_REGISTER_CONTROLLER(JointUDCalibrationControllerNode)
-
-JointUDCalibrationControllerNode::JointUDCalibrationControllerNode()
-: robot_(NULL), last_publish_time_(0), pub_calibrated_(NULL)
-{
-}
-
-JointUDCalibrationControllerNode::~JointUDCalibrationControllerNode()
-{
-  if (pub_calibrated_)
-  {
-    std::string topic = pub_calibrated_->topic_;
-    delete pub_calibrated_;
-
-    // I think we're all tired of having the "cal" topics cluttering
-    // up rostopic and rosgraphviz.
-    ros::Node::instance()->unadvertise(topic);
-  }
-}
-
-void JointUDCalibrationControllerNode::update()
-{
-  c_.update();
-
-  if (c_.calibrated())
-  {
-    if (last_publish_time_ + 0.5 < robot_->hw_->current_time_)
-    {
-      assert(pub_calibrated_);
-      if (pub_calibrated_->trylock())
-      {
-        last_publish_time_ = robot_->hw_->current_time_;
-        pub_calibrated_->unlockAndPublish();
-      }
-    }
-  }
-}
-
-bool JointUDCalibrationControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
-{
-  assert(robot);
-  robot_ = robot;
-
-  std::string topic = config->Attribute("name") ? config->Attribute("name") : "";
-  if (topic == "")
-  {
-    fprintf(stderr, "No name given to JointUDCalibrationController\n");
-    return false;
-  }
-  if (!c_.initXml(robot, config))
-    return false;
-
-  pub_calibrated_ = new realtime_tools::RealtimePublisher<std_msgs::Empty>(topic + "/calibrated", 1);
-
-  return true;
-}
+} // namespace

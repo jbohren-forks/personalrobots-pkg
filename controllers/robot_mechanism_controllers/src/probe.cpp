@@ -35,24 +35,19 @@ namespace controller {
 ROS_REGISTER_CONTROLLER(Probe)
 
 Probe::Probe()
-  : node_(NULL), robot_(NULL), joint_(NULL)
+  : robot_(NULL), joint_(NULL)
 {
 }
 
 Probe::~Probe()
 {
-  if (joint_)
-    node_->unadvertise("/probe/" + joint_->joint_->name_);
+  pub_probe_.shutdown();
 }
 
 bool Probe::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
   robot_ = robot;
-  node_ = ros::Node::instance();
-  if (!node_) {
-    ROS_ERROR("Couldn't get a node");
-    return false;
-  }
+  node_ = ros::NodeHandle(config->Attribute("name"));
 
   const char* joint_name = config->Attribute("joint");
   if (!joint_name) {
@@ -66,7 +61,7 @@ bool Probe::initXml(mechanism::RobotState *robot, TiXmlElement *config)
     return false;
   }
 
-  node_->advertise<robot_mechanism_controllers::JointTuningMsg>("/probe/" + joint_->joint_->name_, 100);
+  pub_probe_ = node_.advertise<robot_mechanism_controllers::JointTuningMsg>("/probe/" + joint_->joint_->name_, 100);
 
   ROS_WARN("Probe initialized on joint %s.  Prepare for realtime breakage.", joint_name);
 
@@ -81,7 +76,7 @@ void Probe::update()
   msg.torque = joint_->commanded_effort_;
   msg.torque_measured = joint_->applied_effort_;
   msg.time_step = robot_->hw_->current_time_;
-  node_->publish("/probe/" + joint_->joint_->name_, msg);
+  pub_probe_.publish(msg);
 }
 
 }

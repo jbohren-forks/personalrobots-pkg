@@ -34,7 +34,7 @@
 #ifndef PROBE_CONTROLLER_H
 #define PROBE_CONTROLLER_H
 
-#include <ros/node.h>
+#include <ros/node_handle.h>
 #include <mechanism_control/controller.h>
 
 #include <robot_mechanism_controllers/JointControllerState.h>
@@ -54,7 +54,8 @@ public:
   virtual void update();
 
 private:
-  ros::Node *node_;
+  ros::NodeHandle node_;
+  ros::Publisher pub_probe_;
   mechanism::RobotState *robot_;
   mechanism::JointState *joint_;
   double last_time_;

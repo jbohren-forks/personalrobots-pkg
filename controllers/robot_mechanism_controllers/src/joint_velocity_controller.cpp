@@ -41,14 +41,13 @@ namespace controller {
 ROS_REGISTER_CONTROLLER(JointVelocityController)
 
 JointVelocityController::JointVelocityController()
-: joint_state_(NULL), robot_(NULL), last_time_(0), loop_count_(0), command_(0)
+: joint_state_(NULL), command_(0), robot_(NULL), last_time_(0), loop_count_(0)
 {
 }
 
 JointVelocityController::~JointVelocityController()
 {
-  if ((void*)sub_command_)
-    sub_command_.shutdown();
+  sub_command_.shutdown();
 }
 
 bool JointVelocityController::init(mechanism::RobotState *robot, const std::string &joint_name,
@@ -192,77 +191,6 @@ void JointVelocityController::update()
 void JointVelocityController::setCommandCB(const std_msgs::Float64ConstPtr& msg)
 {
   command_ = msg->data;
-}
-
-
-//------ Joint Velocity controller node --------
-ROS_REGISTER_CONTROLLER(JointVelocityControllerNode)
-
-JointVelocityControllerNode::JointVelocityControllerNode(): node_(ros::Node::instance()), count(0)
-{
-  c_ = new JointVelocityController();
-  controller_state_publisher_ = NULL;
-}
-
-JointVelocityControllerNode::~JointVelocityControllerNode()
-{
-  controller_state_publisher_->stop();
-  delete controller_state_publisher_;
-  delete c_;
-}
-
-void JointVelocityControllerNode::update()
-{
-  c_->update();
-
-  if(count % 10 == 0)
-  {
-    if(controller_state_publisher_->trylock())
-    {
-      double command, p,i,d,i_min,i_max;
-      c_->getCommand(command);
-      controller_state_publisher_->msg_.set_point = command;
-      controller_state_publisher_->msg_.process_value = c_->joint_state_->velocity_;
-      controller_state_publisher_->msg_.error = c_->joint_state_->velocity_ - command;
-      controller_state_publisher_->msg_.time_step = c_->dt_;
-
-      c_->getGains(p,i,d,i_max,i_min);
-      controller_state_publisher_->msg_.p = p;
-      controller_state_publisher_->msg_.i = i;
-      controller_state_publisher_->msg_.d = d;
-      controller_state_publisher_->msg_.i_clamp = i_max;
-
-      controller_state_publisher_->unlockAndPublish();
-    }
-  }
-  count++;
-}
-
-bool JointVelocityControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
-{
-  assert(node_);
-  service_prefix_ = config->Attribute("name");
-  //publishers
-  if (controller_state_publisher_ != NULL)
-    delete controller_state_publisher_ ;
-  controller_state_publisher_ = new realtime_tools::RealtimePublisher <robot_mechanism_controllers::JointControllerState> (service_prefix_+"/state", 1) ;
-
-
-  // Parses subcontroller configuration
-  if (!c_->initXml(robot, config))
-    return false;
-  //subscriptions
-  node_->subscribe(service_prefix_ + "/set_command", cmd_, &JointVelocityControllerNode::setCommand, this, 1);
-  guard_set_command_.set(service_prefix_ + "/set_command");
-
-  pid_tuner_.add(&c_->pid_controller_);
-  pid_tuner_.advertise(service_prefix_);
-
-  return true;
-}
-void JointVelocityControllerNode::setCommand()
-{
-  c_->setCommand(cmd_.data);
 }
 
 } // namespace
