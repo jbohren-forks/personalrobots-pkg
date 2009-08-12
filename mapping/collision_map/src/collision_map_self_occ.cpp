@@ -58,7 +58,7 @@ public:
 	loadParams();
 	
 	// advertise our topics: full map and updates
-	cmapPublisher_ = nh_.advertise<mapping_msgs::CollisionMap>("collision_map_occ", 1);
+	cmapPublisher_ = nh_.advertise<mapping_msgs::CollisionMap>("collision_map_occ", 1, true);
 	cmapUpdPublisher_ = nh_.advertise<mapping_msgs::CollisionMap>("collision_map_occ_update", 1);
 	if (publishOcclusion_)
   	    occPublisher_ = nh_.advertise<mapping_msgs::CollisionMap>("collision_map_occ_occlusion", 1);
