@@ -1,11 +1,11 @@
 <launch>
    <node pkg="robot_self_filter" type="self_filter" respawn="true" output="screen">
-
+     
      <!-- The topic for the input cloud -->
-     <remap from="cloud_in" to="tilt_scan_cloud" />
-
+     <remap from="cloud_in" to="tilt_scan_cloud_without_known_objects" />
+     
      <!-- The topic for the output cloud -->
-     <remap from="cloud_out" to="tilt_scan_cloud_raytest" />
+     <remap from="cloud_out" to="tilt_scan_cloud_filtered" />
 
      <!-- The frame of the sensor used to obtain the data to be
        filtered; This parameter is optional. If it is not specified,
@@ -19,7 +19,7 @@
      <param name="self_see_scale" type="double" value="1.0" />
      
      <!-- The names of the links the sensor can see -->
-     <param name="sefl_see_links" type="string" value="l_upper_arm_link
+     <param name="self_see_links" type="string" value="l_upper_arm_link
 						       l_upper_arm_roll_link
 						       l_elbow_flex_link
 						       l_forearm_link

@@ -52,7 +52,7 @@ class CollisionMapperOcc
 {
 public:
     
-    CollisionMapperOcc(void) : sf_(tf_)			       
+    CollisionMapperOcc(void) 
     { 
 	// read ROS params
 	loadParams();
@@ -62,14 +62,32 @@ public:
 	cmapUpdPublisher_ = nh_.advertise<mapping_msgs::CollisionMap>("collision_map_occ_update", 1);
 	if (publishOcclusion_)
   	    occPublisher_ = nh_.advertise<mapping_msgs::CollisionMap>("collision_map_occ_occlusion", 1);
-
+	
+	// configure self filter
+	std::vector<std::string> links;	
+	std::string link_names;
+	nh_.param<std::string>("~self_see_links", link_names, std::string());
+	std::stringstream ss(link_names);
+	while (ss.good() && !ss.eof())
+	{
+	    std::string link;
+	    ss >> link;
+	    links.push_back(link);
+	}
+	double padd;
+	nh_.param<double>("~self_see_padd", padd, 0.0);
+	double scale;
+	nh_.param<double>("~self_see_scale", scale, 1.0);
+	
+	sf_ = new robot_self_filter::SelfMask(tf_, links, scale, padd);
+	
 	// create a message notifier (and enable subscription) for both the full map and for the updates
 	mnCloud_ = new tf::MessageNotifier<sensor_msgs::PointCloud>(tf_, boost::bind(&CollisionMapperOcc::cloudCallback, this, _1), "cloud_in", "", 1);
 	mnCloudIncremental_ = new tf::MessageNotifier<sensor_msgs::PointCloud>(tf_, boost::bind(&CollisionMapperOcc::cloudIncrementalCallback, this, _1), "cloud_incremental_in", "", 1);
 
 	// configure the self mask and the message notifier
 	std::vector<std::string> frames;
-	sf_.getLinkNames(frames);
+	sf_->getLinkNames(frames);
 	if (std::find(frames.begin(), frames.end(), robotFrame_) == frames.end())
 	    frames.push_back(robotFrame_);
 	mnCloud_->setTargetFrame(frames);
@@ -80,6 +98,7 @@ public:
     {
 	delete mnCloud_;
 	delete mnCloudIncremental_;
+	delete sf_;
     }
 
     void run(void)
@@ -247,7 +266,7 @@ private:
 	    currentMap_ = obstacles;
 
 	    // find out which of these points are now occluded 
-	    sf_.assumeFrame(header_, bi_.sensor_frame);
+	    sf_->assumeFrame(header_, bi_.sensor_frame);
 	    
 	    // OpenMP need an int as the lookup variable, but for set,
 	    // this is not possible, so we copy to a vector
@@ -266,7 +285,7 @@ private:
 		    btVector3 p(((double)pts[i].x - 0.5) * bi_.resolution + bi_.originX,
 				((double)pts[i].y - 0.5) * bi_.resolution + bi_.originY,
 				((double)pts[i].z - 0.5) * bi_.resolution + bi_.originZ);
-		    if (sf_.getMaskIntersection(p) == robot_self_filter::SHADOW)
+		    if (sf_->getMaskIntersection(p) == robot_self_filter::SHADOW)
 		    {
 #pragma omp critical
 			{
@@ -286,7 +305,7 @@ private:
 		    btVector3 p(((double)pts[i].x - 0.5) * bi_.resolution + bi_.originX,
 				((double)pts[i].y - 0.5) * bi_.resolution + bi_.originY,
 				((double)pts[i].z - 0.5) * bi_.resolution + bi_.originZ);
-		    if (sf_.getMaskIntersection(p) == robot_self_filter::SHADOW)
+		    if (sf_->getMaskIntersection(p) == robot_self_filter::SHADOW)
 		    {
 #pragma omp critical
 			{
@@ -385,23 +404,23 @@ private:
 	ROS_DEBUG("Published collision map with %u boxes", ms);
     }
 
-    tf::TransformListener                        tf_;
-    robot_self_filter::SelfMask                  sf_;
+    tf::TransformListener                         tf_;
+    robot_self_filter::SelfMask                  *sf_;
     tf::MessageNotifier<sensor_msgs::PointCloud> *mnCloud_;
     tf::MessageNotifier<sensor_msgs::PointCloud> *mnCloudIncremental_;
-    ros::NodeHandle                              nh_;
-    ros::Publisher                               cmapPublisher_;
-    ros::Publisher                               cmapUpdPublisher_;
-    ros::Publisher                               occPublisher_;
-    roslib::Header                               header_;
-    bool                                         publishOcclusion_;
+    ros::NodeHandle                               nh_;
+    ros::Publisher                                cmapPublisher_;
+    ros::Publisher                                cmapUpdPublisher_;
+    ros::Publisher                                occPublisher_;
+    roslib::Header                                header_;
+    bool                                          publishOcclusion_;
     
-    boost::mutex                                 mapProcessing_;
-    CMap                                         currentMap_;
+    boost::mutex                                  mapProcessing_;
+    CMap                                          currentMap_;
     
-    BoxInfo                                      bi_;
-    std::string                                  fixedFrame_;
-    std::string                                  robotFrame_;
+    BoxInfo                                       bi_;
+    std::string                                   fixedFrame_;
+    std::string                                   robotFrame_;
     
 };  
 

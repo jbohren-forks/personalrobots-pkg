@@ -175,12 +175,12 @@ private:
 
     tf::MessageNotifier<sensor_msgs::PointCloud> *cloudNotifier1_;
     tf::MessageNotifier<sensor_msgs::PointCloud> *cloudNotifier2_;
-    bool                   newCloud1_;
-    bool                   newCloud2_;
+    bool                    newCloud1_;
+    bool                    newCloud2_;
     sensor_msgs::PointCloud cloud1_;
     sensor_msgs::PointCloud cloud2_;
-    boost::mutex           lock1_;
-    boost::mutex           lock2_;
+    boost::mutex            lock1_;
+    boost::mutex            lock2_;
     
 };
 

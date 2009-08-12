@@ -212,47 +212,11 @@ private:
     RequestHandler                         requestHandler_;
 };
 
-class OutputHandlerROScon : public ompl::msg::OutputHandler
-{
-public:
-    
-    OutputHandlerROScon(void) : OutputHandler()
-    {
-    }
-    
-    /** Issue a ROS error */
-    virtual void error(const std::string &text)
-    {
-	ROS_ERROR("%s", text.c_str());
-    }	    
-    
-    /** Issue a ROS warning */
-    virtual void warn(const std::string &text)
-    {
-	ROS_WARN("%s", text.c_str());
-    }
-    
-    /** Issue ROS info */
-    virtual void inform(const std::string &text)
-    {
-	ROS_INFO("%s", text.c_str());
-    }	    
-    
-    /** Issue ROS info */
-    virtual void message(const std::string &text)
-    {
-	ROS_DEBUG("%s", text.c_str());
-    }
-    
-};
 
 int main(int argc, char **argv)
 { 
     ros::init(argc, argv, "ompl_planning");
 
-    OutputHandlerROScon rosconOutputHandler;	
-    ompl::msg::useOutputHandler(&rosconOutputHandler);
-    
     OMPLPlanning planner;
     planner.run();
     

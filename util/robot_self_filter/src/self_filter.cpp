@@ -37,19 +37,40 @@
 #include <ros/ros.h>
 #include "robot_self_filter/self_mask.h"
 #include <tf/message_notifier.h>
-
+#include <sstream>
+    
 class SelfFilter
 {
 public:
 
-    SelfFilter(void) : sf_(tf_), mn_(tf_, boost::bind(&SelfFilter::cloudCallback, this, _1), "cloud_in", "", 1)
+    SelfFilter(void)
     {
 	nh_.param<std::string>("~sensor_frame", sensor_frame_, std::string());
+
+	std::vector<std::string> links;	
+	std::string link_names;
+	nh_.param<std::string>("~self_see_links", link_names, std::string());
+	std::stringstream ss(link_names);
+	while (ss.good() && !ss.eof())
+	{
+	    std::string link;
+	    ss >> link;
+	    links.push_back(link);
+	}
+	double padd;
+	nh_.param<double>("~self_see_padd", padd, 0.0);
+	double scale;
+	nh_.param<double>("~self_see_scale", scale, 1.0);
+	
+	sf_ = new robot_self_filter::SelfMask(tf_, links, scale, padd);
+	
 	std::vector<std::string> frames;
-	sf_.getLinkNames(frames);
+	sf_->getLinkNames(frames);
 	if (!sensor_frame_.empty())
 	    frames.push_back(sensor_frame_);
-	mn_.setTargetFrame(frames);
+
+	mn_ = new tf::MessageNotifier<sensor_msgs::PointCloud>(tf_, boost::bind(&SelfFilter::cloudCallback, this, _1), "cloud_in", "", 1);
+	mn_->setTargetFrame(frames);
 	
 	nh_.param<std::string>("~annotate", annotate_, std::string());
 	pointCloudPublisher_ = nh_.advertise<sensor_msgs::PointCloud>("cloud_out", 1);
@@ -57,6 +78,14 @@ public:
 	    ROS_INFO("Self filter is adding annotation channel '%s'", annotate_.c_str());
 	if (!sensor_frame_.empty())
 	    ROS_INFO("Self filter is removing shadow points for sensor in frame '%s'", sensor_frame_.c_str());
+    }
+    
+    ~SelfFilter(void)
+    {
+	if (mn_)
+	    delete mn_;
+	if (sf_)
+	    delete sf_;
     }
     
 private:
@@ -70,9 +99,9 @@ private:
 	ros::WallTime tm = ros::WallTime::now();
 	
 	if (sensor_frame_.empty())
-	    sf_.maskContainment(*cloud, mask);
+	    sf_->maskContainment(*cloud, mask);
 	else
-	    sf_.maskIntersection(*cloud, sensor_frame_, mask);
+	    sf_->maskIntersection(*cloud, sensor_frame_, mask);
 	
 	double sec = (ros::WallTime::now() - tm).toSec();
 
@@ -147,13 +176,13 @@ private:
 
     }
     
-    tf::TransformListener                       tf_;
-    robot_self_filter::SelfMask                 sf_;
-    tf::MessageNotifier<sensor_msgs::PointCloud> mn_;
-    ros::Publisher                              pointCloudPublisher_;
-    std::string                                 sensor_frame_;
-    ros::NodeHandle                             nh_;
-    std::string                                 annotate_;
+    tf::TransformListener                         tf_;
+    robot_self_filter::SelfMask                  *sf_;
+    tf::MessageNotifier<sensor_msgs::PointCloud> *mn_;
+    ros::Publisher                                pointCloudPublisher_;
+    std::string                                   sensor_frame_;
+    ros::NodeHandle                               nh_;
+    std::string                                   annotate_;
 };
 
     

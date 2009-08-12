@@ -46,8 +46,10 @@ public:
     TestArmVisionCallibration(void) : mn_(tf_, boost::bind(&TestArmVisionCallibration::cloudCallback, this, _1), "cloud_in", "", 1)
     {
 	nh_.param<double>("~error", error_, 0.02);
-	sfMin_ = new robot_self_filter::SelfMask(tf_, 1.0, -error_);
-	sfMax_ = new robot_self_filter::SelfMask(tf_, 1.0,  error_);
+	std::vector<std::string> links;
+	links.push_back("r_forearm_link");
+	sfMin_ = new robot_self_filter::SelfMask(tf_, links, 1.0, -error_);
+	sfMax_ = new robot_self_filter::SelfMask(tf_, links, 1.0,  error_);
 	d_.x = 1;
 	d_.y = 1;
 	d_.z = 0.5;

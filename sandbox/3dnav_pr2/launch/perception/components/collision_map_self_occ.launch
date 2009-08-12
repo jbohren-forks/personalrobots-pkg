@@ -1,0 +1,70 @@
+<launch>
+
+  <include file="$(find 3dnav_pr2)/launch/prX.machine" />
+
+  <node machine="four" pkg="collision_map" type="collision_map_self_occ_node" respawn="true" output="screen">
+    <remap from="cloud_in" to="full_cloud_filtered" />
+    <remap from="cloud_incremental_in" to="tilt_scan_cloud_filtered" />
+
+    <!-- we do not want a separate map with occlusions alone -->
+    <param name="publish_occlusion" type="bool" value="true" />
+
+    <!-- a frame that does not change as the robot moves -->
+<!--    <param name="fixed_frame" type="string" value="/odom_combined" /> -->
+    <param name="fixed_frame" type="string" value="base_link" />
+
+    <!-- define a box of size 2x3x4 around (1.1,  0, 0) in the robot frame -->
+    <param name="robot_frame" type="string" value="base_link" />
+
+    <param name="origin_x" type="double" value="1.1" />
+    <param name="origin_y" type="double" value="0.0" />
+    <param name="origin_z" type="double" value="0.0" />
+    
+    <param name="dimension_x" type="double" value="1.0" />
+    <param name="dimension_y" type="double" value="1.5" />
+    <param name="dimension_z" type="double" value="2.0" />
+
+    <!-- set the resolution (1.0 cm) -->
+    <param name="resolution" type="double" value="0.01" />
+
+    <!-- define sensor  frame -->
+    <param name="sensor_frame" type="string" value="laser_tilt_mount_link" />
+    
+    <!-- The padding to be added for the body parts the robot can see -->
+    <param name="self_see_padd" type="double" value="0.02" />
+    
+    <!-- The scaling to be added for the body parts the robot can see -->
+    <param name="self_see_scale" type="double" value="1.0" />
+    
+    <!-- The names of the links the sensor can see -->
+    <param name="self_see_links" type="string" value="l_upper_arm_link
+						      l_upper_arm_roll_link
+						      l_elbow_flex_link
+						      l_forearm_link
+						      l_forearm_roll_link
+						      l_wrist_flex_link
+						      l_wrist_roll_link
+						      l_gripper_l_finger_link
+						      l_gripper_l_finger_tip_link
+						      l_gripper_r_finger_link
+						      l_gripper_r_finger_tip_link
+						      l_shoulder_pan_link
+						      l_shoulder_lift_link
+						      r_upper_arm_link
+						      r_upper_arm_roll_link
+						      r_elbow_flex_link
+						      r_forearm_link
+						      r_forearm_roll_link
+						      r_wrist_flex_link
+						      r_wrist_roll_link
+						      r_gripper_l_finger_link
+						      r_gripper_l_finger_tip_link
+						      r_gripper_r_finger_link
+						      r_gripper_r_finger_tip_link
+						      r_shoulder_pan_link
+						      r_shoulder_lift_link
+						      base_laser
+						      base_link" />
+  </node>
+  
+</launch>

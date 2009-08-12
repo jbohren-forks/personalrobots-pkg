@@ -56,8 +56,11 @@ bool robot_self_filter::SelfMask::configure(const std::vector<std::string> &link
     // check for point inclusion
     for (unsigned int i = 0 ; i < links.size() ; ++i)
     {
-	SeeLink sl;
 	planning_models::KinematicModel::Link *link = rm_.getKinematicModel()->getLink(links[i]);
+	if (!link)
+	    continue;
+	
+	SeeLink sl;
 	sl.body = bodies::createBodyFromShape(link->shape);
 
 	if (sl.body)
@@ -92,16 +95,6 @@ bool robot_self_filter::SelfMask::configure(const std::vector<std::string> &link
     ROS_INFO("Self filter using %f padding and %f scaling", padd, scale);
 
     return true; 
-}
-
-bool robot_self_filter::SelfMask::configure(double scale, double padd)
-{
-    return configure(rm_.getSelfSeeLinks(), scale, padd);
-}
-
-bool robot_self_filter::SelfMask::configure(void)
-{
-    return configure(rm_.getSelfSeeLinks(), rm_.getSelfSeeScale(), rm_.getSelfSeePadding());
 }
 
 void robot_self_filter::SelfMask::getLinkNames(std::vector<std::string> &frames) const

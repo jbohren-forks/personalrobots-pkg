@@ -123,13 +123,6 @@ namespace planning_environment
 	    return collision_check_links_;
 	}
 
-	/** \brief Return the names of the links that should be considered when cleaning sensor data
-	    of parts the robot can see from itself */
-	const std::vector<std::string> &getSelfSeeLinks(void) const
-	{
-	    return self_see_links_;
-	}
-
 	/** \brief Return the groups of links that should be considered when testing for self collision. This is an
 	    array of pairs. Both elements of the pair are groups of links. If any link in the first member of the pair
 	    collides with some link in the second member of the pair, we have a collision */
@@ -144,12 +137,6 @@ namespace planning_environment
 	    return loaded_models_;
 	}
 	
-	/** \brief Get the amount of padding to be used for links when cleaning sensor data (of points on self) */
-	double getSelfSeePadding(void);
-
-	/** \brief Get the amount of scaling to be used for links when cleaning sensor data (of points on self) */
-	double getSelfSeeScale(void);
-	
 	/** \breif Get the list of planner configurations available for a specific planning group */
 	std::vector< boost::shared_ptr<PlannerConfig> > getGroupPlannersConfig(const std::string &group);
 	
@@ -161,7 +148,6 @@ namespace planning_environment
 	void loadRobot(void);
 	void getPlanningGroups(std::map< std::string, std::vector<std::string> > &groups);
 	
-	void getSelfSeeLinks(std::vector<std::string> &links);
 	void getCollisionCheckLinks(std::vector<std::string> &links);
 	void getSelfCollisionGroups(std::vector< std::pair < std::vector<std::string>, std::vector<std::string> > > &groups);
 	
@@ -175,7 +161,6 @@ namespace planning_environment
 	boost::shared_ptr<robot_desc::URDF>                urdf_;
 	
 	std::map< std::string, std::vector<std::string> >  planning_groups_;
-	std::vector<std::string>                           self_see_links_;
 	std::vector<std::string>                           collision_check_links_;
 	std::vector< std::pair < std::vector<std::string>, std::vector<std::string> > >
 	                                                   self_collision_check_groups_;

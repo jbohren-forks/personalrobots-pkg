@@ -46,8 +46,9 @@ public:
     {
 	id_ = 1;
 	vmPub_ = nodeHandle_.advertise<visualization_msgs::Marker>("visualization_marker", 10240);
-	//	std::vector<std::string> links = rm_.getCollisionCheckLinks();
-	sf_ = new robot_self_filter::SelfMask(tf_, 1.0, 0.05);
+	std::vector<std::string> links;
+	links.push_back("base_link");
+	sf_ = new robot_self_filter::SelfMask(tf_, links, 1.0, 0.05);
     }
 
     ~TestSelfFilter(void)

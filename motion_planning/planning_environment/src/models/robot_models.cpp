@@ -91,7 +91,6 @@ void planning_environment::RobotModels::reload(void)
     kmodel_.reset();
     urdf_.reset();
     planning_groups_.clear();
-    self_see_links_.clear();
     collision_check_links_.clear();
     self_collision_check_groups_.clear();
     loadRobot();
@@ -119,7 +118,6 @@ void planning_environment::RobotModels::loadRobot(void)
 
 	    getCollisionCheckLinks(collision_check_links_);	
 	    getSelfCollisionGroups(self_collision_check_groups_);
-	    getSelfSeeLinks(self_see_links_);	    
 	}
 	else
 	{
@@ -212,25 +210,6 @@ std::vector< boost::shared_ptr<planning_environment::RobotModels::PlannerConfig>
     return configs;
 }
 
-void planning_environment::RobotModels::getSelfSeeLinks(std::vector<std::string> &links)
-{
-    std::string link_list;
-    nh_.param(description_ + "_collision/self_see", link_list, std::string(""));
-    std::stringstream link_list_stream(link_list);
-    
-    while (link_list_stream.good() && !link_list_stream.eof())
-    {
-	std::string name;
-	link_list_stream >> name;
-	if (name.size() == 0)
-	    continue;
-	if (urdf_->getLink(name))
-	    links.push_back(name);
-	else
-	    ROS_ERROR("Unknown link: '%s'", name.c_str());
-    }
-}
-
 void planning_environment::RobotModels::getCollisionCheckLinks(std::vector<std::string> &links)
 {
     std::string link_list;
@@ -298,18 +277,4 @@ void planning_environment::RobotModels::getSelfCollisionGroups(std::vector< std:
 	if (this_group.first.size() > 0 && this_group.second.size() > 0)
 	    groups.push_back(this_group);
     }
-}
-
-double planning_environment::RobotModels::getSelfSeePadding(void)
-{
-    double value;
-    nh_.param(description_ + "_collision/self_see_padd", value, 0.0);
-    return value;
-}
-
-double planning_environment::RobotModels::getSelfSeeScale(void)
-{
-    double value;
-    nh_.param(description_ + "_collision/self_see_scale", value, 1.0);
-    return value;
 }

@@ -58,7 +58,13 @@ This launch file is performing two separate tasks
 
 @subsection merge Merging Pointclouds
 
-@b merge_clouds is a node that can take two other clouds as input, merge them and publish again.
+@b merge_clouds is a node that can take two other clouds as input,
+merge them and publish again.  The frame in which the combined cloud
+is to be published (the output frame) must always be specified. If a
+maximum frequency is not specified, the node outputs clouds at the
+frequency of the input cloud that is published least often.
+
+
 A sample launch file is:
 
 \verbatim

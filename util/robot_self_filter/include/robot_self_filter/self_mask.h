@@ -82,18 +82,6 @@ namespace robot_self_filter
     public:
 	
 	/** \brief Construct the filter */
-	SelfMask(tf::TransformListener &tf) : rm_("robot_description"), tf_(tf)
-	{
-	    configure();
-	}
-
-	/** \brief Construct the filter */
-	SelfMask(tf::TransformListener &tf, double scale, double padd) : rm_("robot_description"), tf_(tf)
-	{
-	    configure(scale, padd);
-	}
-	
-	/** \brief Construct the filter */
 	SelfMask(tf::TransformListener &tf, const std::vector<std::string> &links, double scale, double padd) : rm_("robot_description"), tf_(tf)
 	{
 	    configure(links, scale, padd);
@@ -165,12 +153,6 @@ namespace robot_self_filter
 
 	/** \brief Free memory. */
 	void freeMemory(void);
-	
-	/** \brief Configure the filter. */
-	bool configure(void);
-
-	/** \brief Configure the filter. */
-	bool configure(double scale, double padd);
 
 	/** \brief Configure the filter. */
 	bool configure(const std::vector<std::string> &links, double scale, double padd);
