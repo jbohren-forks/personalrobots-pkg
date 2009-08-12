@@ -1,0 +1,23 @@
+<package>
+  <description brief="hand_detector">
+
+     hand_detector
+
+  </description>
+  <author>Alex Teichman</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/hand_detector</url>
+  <depend package="descriptors_2d"/>
+  <depend package="dorylus"/>
+  <depend package="opencv_latest"/>
+  <depend package="descriptors_2d_gpl"/>
+  <depend package="tinyxml"/>
+
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib"/>
+  </export>
+
+</package>
+
+
