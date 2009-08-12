@@ -34,7 +34,8 @@ rospack_add_library(${PROJECT_NAME}
 			src/generic/spin_image_generic.cpp
 			src/spin_image_normal.cpp
 			src/spin_image_tangent.cpp
-			src/spin_image_custom.cpp)
+			src/spin_image_custom.cpp
+			src/curvature.cpp)
 #rospack_add_openmp_flags (${PROJECT_NAME})
 			
 
