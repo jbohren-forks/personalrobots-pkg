@@ -22,16 +22,16 @@ rospack_add_boost_directories()
 #common commands for building c++ executables and libraries
 rospack_add_library(${PROJECT_NAME} 
 			src/descriptor_3d.cpp
-			src/neighborhood_feature.cpp
+			src/generic/neighborhood_feature.cpp
 			src/bounding_box_raw.cpp
 			src/spectral_analysis.cpp
 			src/bounding_box_spectral.cpp
 			src/shape_spectral.cpp
-			src/orientation_generic.cpp
+			src/generic/orientation_generic.cpp
 			src/orientation_normal.cpp
 			src/orientation_tangent.cpp
 			src/position.cpp
-			src/spin_image_generic.cpp
+			src/generic/spin_image_generic.cpp
 			src/spin_image_normal.cpp
 			src/spin_image_tangent.cpp
 			src/spin_image_custom.cpp)
