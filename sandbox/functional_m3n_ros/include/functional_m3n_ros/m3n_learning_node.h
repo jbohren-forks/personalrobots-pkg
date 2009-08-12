@@ -53,7 +53,7 @@
 
 #include <functional_m3n/m3n_model.h>
 
-#include <functional_m3n/example/pt_cloud_rf_creator.h>
+#include <functional_m3n_ros/pt_cloud_rf_creator.h>
 
 #include <functional_m3n_ros/Learn.h>
 

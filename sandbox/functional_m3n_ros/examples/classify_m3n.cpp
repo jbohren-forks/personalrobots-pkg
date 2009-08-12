@@ -9,7 +9,7 @@
 
 #include <sensor_msgs/PointCloud.h>
 
-#include <functional_m3n/example/pt_cloud_rf_creator.h>
+#include <functional_m3n_ros/pt_cloud_rf_creator.h>
 
 #include <functional_m3n/random_field.h>
 #include <functional_m3n/m3n_model.h>
@@ -22,7 +22,10 @@
  * File format: x y z label 2
  */
 // --------------------------------------------------------------
-int loadPointCloud(string filename, sensor_msgs::PointCloud& pt_cloud, vector<float>& labels)
+int loadPointCloud(string filename,
+                   unsigned int nbr_cols,
+                   sensor_msgs::PointCloud& pt_cloud,
+                   vector<float>& labels)
 {
   // ----------------------------------------------
   // Open file
@@ -53,14 +56,19 @@ int loadPointCloud(string filename, sensor_msgs::PointCloud& pt_cloud, vector<fl
   // ----------------------------------------------
   // Read file
   // file format: x y z label 2
-  unsigned int tempo;
+  int tempo;
   for (unsigned int i = 0 ; i < nbr_samples ; i++)
   {
     infile >> pt_cloud.points[i].x;
     infile >> pt_cloud.points[i].y;
     infile >> pt_cloud.points[i].z;
-    infile >> labels[i];
-    infile >> tempo;
+    unsigned int col = 3;
+    if (col < nbr_cols)
+    {
+      infile >> labels[i];
+      col++;
+    }
+    if (col < nbr_cols) infile >> tempo;
   }
 
   infile.close();
@@ -72,40 +80,35 @@ int main()
   // ----------------------------------------------------------
   // Load point cloud from file
   sensor_msgs::PointCloud pt_cloud;
+  unsigned int nbr_cols = 5;
   vector<float> labels;
-  loadPointCloud("training_data.xyz_label_conf", pt_cloud, labels);
+  loadPointCloud("pt_cloud_260.xyz_label_conf", nbr_cols, pt_cloud, labels);
 
   // ----------------------------------------------------------
   // Create random field
   PtCloudRFCreator rf_creator;
-  const boost::shared_ptr<RandomField> training_rf = rf_creator.createRandomField(pt_cloud, labels);
-  training_rf->saveRandomField("rf_from_memory/train_rf");
-
-  //const boost::shared_ptr<RandomField> loaded_rf(new RandomField(2));
-  //loaded_rf->loadRandomField("rf_from_memory/train_rf");
-  //loaded_rf->saveRandomField("rf_from_file/train_rf");
-
-  // ----------------------------------------------
-  // Define learning parameters
-  vector<float> robust_potts_params(training_rf->getNumberOfCliqueSets(), -1.0);
-  RegressionTreeWrapperParams regression_tree_params;
-  regression_tree_params.max_tree_depth_factor = 0.07; // was 0.2
-  M3NParams m3n_learning_params;
-  m3n_learning_params.setLearningRate(0.4);
-  m3n_learning_params.setNumberOfIterations(6);
-  m3n_learning_params.setRegressorRegressionTrees(regression_tree_params);
-  m3n_learning_params.setInferenceRobustPotts(robust_potts_params);
+  boost::shared_ptr<RandomField> testing_rf = rf_creator.createRandomField(pt_cloud);
 
   // ----------------------------------------------------------
-  // Train M3N model
-  ROS_INFO("Starting to train...");
+  // Load M3N model
   M3NModel m3n_model;
-  vector<const RandomField*> training_rfs(1, training_rf.get());
-  if (m3n_model.train(training_rfs, m3n_learning_params) < 0)
+  if (m3n_model.loadFromFile("m3n_models/2cs_pn_potts") < 0)
   {
-    ROS_ERROR("Failed to train M3N model");
+    ROS_ERROR("Could not load M3N model");
     return -1;
   }
-  ROS_INFO("Successfully trained M3n model");
-  m3n_model.saveToFile("m3n_models/2cs_pn_potts");
+
+  // ----------------------------------------------------------
+  // Classify
+  ROS_INFO("Starting to classify...");
+  map<unsigned int, unsigned int> inferred_labels;
+  if (m3n_model.infer(*testing_rf, inferred_labels) < 0)
+  {
+    ROS_ERROR("could not do inference");
+    return -1;
+  }
+  testing_rf->updateLabelings(inferred_labels);
+  testing_rf->saveNodeFeatures("classified_results.node_features");
+  ROS_INFO("Classified results");
+  return 0;
 }
