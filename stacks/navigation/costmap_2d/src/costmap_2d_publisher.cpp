@@ -124,6 +124,8 @@ namespace costmap_2d {
 
     //create a GridCells message for the obstacles
     nav_msgs::GridCells obstacle_cells;
+    obstacle_cells.header.frame_id = global_frame_;
+    obstacle_cells.header.stamp = ros::Time::now();
 
     //set the width and height appropriately
     obstacle_cells.cell_width = resolution;
