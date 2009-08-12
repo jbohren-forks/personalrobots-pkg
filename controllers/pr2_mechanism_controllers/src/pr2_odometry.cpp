@@ -93,7 +93,7 @@ bool Pr2Odometry::init(mechanism::RobotState *robot_state, const ros::NodeHandle
 
   if(odometry_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
     delete odometry_publisher_;
-  odometry_publisher_ = new realtime_tools::RealtimePublisher<nav_msgs::Odometry>("/base/" + odom_frame_, 1);
+  odometry_publisher_ = new realtime_tools::RealtimePublisher<nav_msgs::Odometry>(node_, odom_frame_, 1);
   if(transform_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
     delete transform_publisher_;
   transform_publisher_ = new realtime_tools::RealtimePublisher<tf::tfMessage>("tf_message", 1);
