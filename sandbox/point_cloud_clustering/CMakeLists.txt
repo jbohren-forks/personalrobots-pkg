@@ -25,7 +25,8 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 rospack_add_library(${PROJECT_NAME} 
 			src/point_cloud_clustering.cpp
 			src/kmeans.cpp
-			src/pairwise_neighbors.cpp)
+			src/pairwise_neighbors.cpp
+			src/single_link.cpp)
 #target_link_libraries(${PROJECT_NAME} another_library)
 #rospack_add_boost_directories()
 #rospack_link_boost(${PROJECT_NAME} thread)
