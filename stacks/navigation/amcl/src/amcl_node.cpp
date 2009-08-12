@@ -42,7 +42,6 @@
 #include "geometry_msgs/Pose.h"
 #include "nav_msgs/GetMap.h"
 #include "std_srvs/Empty.h"
-#include "visualization_msgs/Polyline.h"
 
 // For transform support
 #include "tf/transform_broadcaster.h"
@@ -121,7 +120,6 @@ class AmclNode
     //parameter for what base to use
     std::string base_frame_id_;
 
-    ros::Time gui_laser_last_publish_time;
     ros::Duration gui_publish_period;
     ros::Time save_pose_last_time;
     ros::Duration save_pose_period;
@@ -321,7 +319,6 @@ AmclNode::AmclNode() :
 
   ros::Node::instance()->advertise<geometry_msgs::PoseWithCovarianceStamped>("amcl_pose",2);
   ros::Node::instance()->advertise<geometry_msgs::PoseArray>("particlecloud",2);
-  ros::Node::instance()->advertise<visualization_msgs::Polyline>("gui_laser",2);
   ros::Node::instance()->advertiseService("global_localization",
                                           &AmclNode::globalLocalizationCallback,
                                           this);
@@ -702,50 +699,6 @@ AmclNode::laserReceived(const tf::MessageNotifier<sensor_msgs::LaserScan>::Messa
 
       ros::Node::instance()->publish("amcl_pose", p);
       last_published_pose = p;
-      // Publish the laser scan from the most likely pose
-      ros::Time now = ros::Time::now();
-      if((gui_publish_period.toSec() > 0.0) &&
-         (now - gui_laser_last_publish_time) >= gui_publish_period)
-      {
-        visualization_msgs::Polyline point_cloud;
-        point_cloud.header = laser_scan->header;
-        point_cloud.header.frame_id = "map";
-        point_cloud.set_points_size(laser_scan->ranges.size());
-        point_cloud.color.a = 0.0;
-        point_cloud.color.r = 1.0;
-        point_cloud.color.b = 1.0;
-        point_cloud.color.g = 0.0;
-        for(unsigned int i=0;i<laser_scan->ranges.size();i++)
-        {
-          tf::Stamped<tf::Point> lp, gp;
-          lp.frame_id_ = laser_scan->header.frame_id;
-          lp.stamp_ = laser_scan->header.stamp;
-          lp.setX(laser_scan->ranges[i] *
-                  cos(laser_scan->angle_min +
-                      i * laser_scan->angle_increment));
-          lp.setY(laser_scan->ranges[i] *
-                  sin(laser_scan->angle_min +
-                      i * laser_scan->angle_increment));
-          lp.setZ(0); ///\todo Brian please verify --Tully
-
-          try
-          {
-            tf_->transformPoint("map", lp, gp);
-            point_cloud.points[i].x = gp.x();
-            point_cloud.points[i].y = gp.y();
-            point_cloud.points[i].z = gp.z();
-          }
-          catch(tf::TransformException e)
-          {
-            // oh, well; it's only for visualization anyway
-          }
-
-        }
-
-        ros::Node::instance()->publish("gui_laser", point_cloud);
-
-        gui_laser_last_publish_time = now;
-      }
 
       ROS_DEBUG("New pose: %6.3f %6.3f %6.3f",
                hyps[max_weight_hyp].pf_pose_mean.v[0],
