@@ -1,0 +1,19 @@
+<package>
+  <description brief="camera_offsetter">
+
+     camera_offsetter
+
+  </description>
+  <author>Vijay Pradeep</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/camera_offsetter</url>
+
+  <depend package="tf" />
+  <depend package="geometry_msgs" />
+  <depend package="sensor_msgs" />
+  <depend package="roscpp" />
+  <depend package="stereo_msgs" />  
+</package>
+
+
