@@ -48,6 +48,8 @@
 #include <boost/thread.hpp>
 #include <boost/thread/mutex.hpp>
 
+#include <fstream>
+
 namespace camera_offsetter
 {
 
@@ -61,6 +63,53 @@ public:
 
     nh_.param("~position_scaling", position_scaling_, 1.0);
     nh_.param("~angular_scaling",  angular_scaling_,  1.0);
+
+    nh_.param("~config_file", config_file_, std::string("N/A"));
+
+    readConfig();
+  }
+
+  void readConfig()
+  {
+    if(config_file_==std::string("N/A"))
+    {
+      ROS_WARN("No config file is set");
+      return;
+    }
+
+    geometry_msgs::PosePtr p(new geometry_msgs::Pose());
+    std::fstream f (config_file_.c_str(), std::fstream::in);
+    if(!f.is_open())
+    {
+      ROS_WARN("Couldn't open config file");
+      return;
+    }
+    f >> p->position.x;
+    f >> p->position.y;
+    f >> p->position.z;
+    f >> p->orientation.x;
+    f >> p->orientation.y;
+    f >> p->orientation.z;
+    f >> p->orientation.w;
+    ROS_INFO_STREAM(p->orientation.x);
+    ROS_INFO_STREAM(p);
+    poseCb(p);
+  }
+  void saveConfig()
+  {
+    if(config_file_==std::string("N/A"))
+    {
+      ROS_WARN("No config file is set");
+      return;
+    }
+    std::fstream f (config_file_.c_str(), std::fstream::out);
+    f << virtual_offset_.getOrigin().x() << " ";
+    f << virtual_offset_.getOrigin().y() << " ";
+    f << virtual_offset_.getOrigin().z() << std::endl;
+    f << virtual_offset_.getRotation().x()<< " ";
+    f << virtual_offset_.getRotation().y()<< " ";
+    f << virtual_offset_.getRotation().z()<< " ";
+    f << virtual_offset_.getRotation().w();
   }
 
   void poseCb(const geometry_msgs::PoseConstPtr& msg)
@@ -89,6 +138,8 @@ public:
     btTransform incrementalT(rot, trans);
 
     virtual_offset_ = virtual_offset_ * incrementalT;
+
+    saveConfig();
   }
 
   void publishTransform(const ros::Time& time, const std::string frame_id, const std::string parent_id)
@@ -115,6 +166,8 @@ private:
 
   double position_scaling_;
   double angular_scaling_;
+
+  std::string config_file_;
 
   boost::mutex offset_mutex_;
   btTransform virtual_offset_;
