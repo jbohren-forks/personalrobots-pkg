@@ -48,6 +48,13 @@
  * \brief Parameters to train a M3NModel
  */
 // --------------------------------------------------------------
+
+// --------------------------------------------------------------
+/*!
+ * \brief M3NParams is a container of the parameter settings
+ *        necessary to train a M3NModel
+ */
+// --------------------------------------------------------------
 class M3NParams
 {
   public:
