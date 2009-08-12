@@ -106,8 +106,8 @@ namespace robot_self_filter
 	    freeMemory();
 	}
 	
-	/** \brief Compute the containment mask (INSIDE or OUTSIDE) for a given pointcloud. If a mask element is 1, the point
-	    is outside the robot. The point is outside if the mask element is 0.
+	/** \brief Compute the containment mask (INSIDE or OUTSIDE) for a given pointcloud. If a mask element is INSIDE, the point
+	    is inside the robot. The point is outside if the mask element is OUTSIDE.
 	 */
 	void maskContainment(const sensor_msgs::PointCloud& data_in, std::vector<int> &mask);
 

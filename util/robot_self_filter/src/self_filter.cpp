@@ -119,29 +119,32 @@ private:
 	}
 
 	for (unsigned int i = 0 ; i < np ; ++i)
-	    if (keep[i] != robot_self_filter::SHADOW)
+	    if (annotate_.empty())
 	    {
-		if (annotate_.empty())
-		{
-		    if (keep[i] == robot_self_filter::OUTSIDE)
-		    {
-			data_out.points.push_back(data_in.points[i]);
-			for (unsigned int j = 0 ; j < data_out.channels.size() ; ++j)
-			    data_out.channels[j].values.push_back(data_in.channels[j].values[i]);
-		    }
-		}
-		else
+		if (keep[i] == robot_self_filter::OUTSIDE)
 		{
 		    data_out.points.push_back(data_in.points[i]);
 		    for (unsigned int j = 0 ; j < data_out.channels.size() ; ++j)
-		    {
-			if ((int)j == c)
-			    data_out.channels[c].values.push_back(keep[i] == robot_self_filter::OUTSIDE ? 1.0f : -1.0f);
-			else
-			    data_out.channels[j].values.push_back(data_in.channels[j].values[i]);
-		    }
+			data_out.channels[j].values.push_back(data_in.channels[j].values[i]);
 		}
 	    }
+	    else
+	    {
+		data_out.points.push_back(data_in.points[i]);
+		for (unsigned int j = 0 ; j < data_out.channels.size() ; ++j)
+		{
+		    if ((int)j == c)
+		    {
+			float flag = 0.0;
+			if (keep[i] != robot_self_filter::SHADOW)
+			    flag = keep[i] == robot_self_filter::OUTSIDE ? 1.0f : -1.0f;			
+			data_out.channels[c].values.push_back(flag);
+		    }
+		    else
+			data_out.channels[j].values.push_back(data_in.channels[j].values[i]);
+		}
+	    }
+
     }
     
     tf::TransformListener                       tf_;

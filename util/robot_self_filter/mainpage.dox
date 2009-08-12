@@ -5,8 +5,8 @@
 \b robot_self_filter can either remove points from a pointcloud that
 are on the robot (parts the robot can see of itself) or it can
 annotate the points by adding a channel with a name of choice that
-will have values of 1.0 (point is outside the robot) or -1.0 (point is
-on the robot)
+will have values of 1.0 (point is outside the robot), -1.0 (point is
+on the robot) or 0.0 (point is shadowed by robot)
 
 The set of robot links the robot can see, and the padding and scaling
 for those links can be set using the collision YAML files described in
