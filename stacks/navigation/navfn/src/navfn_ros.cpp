@@ -66,6 +66,9 @@ namespace navfn {
       //advertise our plan visualization
       plan_pub_ = ros_node.advertise<visualization_msgs::Polyline>("plan", 1);
 
+      //@todo TODO: Remove old Polyline stuff
+      new_plan_pub_ = ros_node.advertise<nav_msgs::Path>("plan_new", 1);
+
       //read parameters for the planner
       global_frame_ = costmap_ros_->getGlobalFrameID();
 
@@ -279,6 +282,10 @@ namespace navfn {
     if(path.empty())
       return;
 
+    //create a message for the plan 
+    nav_msgs::Path gui_path;
+    gui_path.set_poses_size(path.size());
+
     // Extract the plan in world co-ordinates, we assume the path is all in the same frame
     visualization_msgs::Polyline gui_path_msg;
     gui_path_msg.header.frame_id = path[0].header.frame_id;
@@ -288,6 +295,11 @@ namespace navfn {
       gui_path_msg.points[i].x = path[i].pose.position.x;
       gui_path_msg.points[i].y = path[i].pose.position.y;
       gui_path_msg.points[i].z = path[i].pose.position.z;
+
+      gui_path.poses[i].header.frame_id = path[0].header.frame_id;
+      gui_path.poses[i].pose.position.x = path[i].pose.position.x;
+      gui_path.poses[i].pose.position.y = path[i].pose.position.y;
+      gui_path.poses[i].pose.position.z = path[i].pose.position.z;
     }
 
     gui_path_msg.color.r = r;
