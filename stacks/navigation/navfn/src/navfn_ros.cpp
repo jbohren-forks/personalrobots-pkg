@@ -308,5 +308,6 @@ namespace navfn {
     gui_path_msg.color.a = a;
 
     plan_pub_.publish(gui_path_msg);
+    new_plan_pub_.publish(gui_path);
   }
 };
