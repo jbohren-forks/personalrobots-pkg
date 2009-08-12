@@ -25,7 +25,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "configuration_dictionary.h"
+#include "configuration_dictionary/configuration_dictionary.h"
 #include "yaml-cpp/yaml.h"
 #include <iostream>
 #include <fstream>
@@ -33,43 +33,49 @@
 #include <ros/param.h>
 
 bool ConfigurationDictionary::getParam(const std::string &key, bool &value){
-  if(bool_values.count(key) > 0)
+  if(bool_values.count(key) > 0){
     value = bool_values[key];
     return true;
+  }
   return false;
 }
 
 bool ConfigurationDictionary::getParam(const std::string &key, int &value){
- if(int_values.count(key) > 0)
+ if(int_values.count(key) > 0){
     value = int_values[key];
     return true;
+  }
   return false;
 }
 
 bool ConfigurationDictionary::getParam(const std::string &key, double &value){
-  if(double_values.count(key) > 0)
+  if(double_values.count(key) > 0){
     value = double_values[key];
     return true;
+  }
   return false;
 }
 
 bool ConfigurationDictionary::getParam(const std::string &key, std::string &value){
-  if(string_values.count(key) > 0)
+  if(string_values.count(key) > 0){
     value = string_values[key];
     return true;
+  }
   return false;
 }
 
 bool ConfigurationDictionary::getParam(const std::string &key, ConfigurationDictionary &value){
-  if(dictionary_values.count(key) > 0)
+  if(dictionary_values.count(key) > 0){
     value = *dictionary_values[key];
     return true;
+  }
   return false;
 }
 
 bool ConfigurationDictionary::hasKey(const std::string &key){
-  if(bool_values.count(key) > 0 || int_values.count(key) > 0 || double_values.count(key) > 0 || string_values.count(key) > 0)
+  if(bool_values.count(key) > 0 || int_values.count(key) > 0 || double_values.count(key) > 0 || string_values.count(key) > 0){
     return true;
+   }
   return false;
 }
 
