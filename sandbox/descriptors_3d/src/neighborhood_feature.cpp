@@ -130,7 +130,6 @@ void NeighborhoodFeature::doComputation(const sensor_msgs::PointCloud& data,
       if (neighborhood_radius_ > 1e-6)
       {
         // Compute centroid of interest region
-        // TODO handle exception if this fails (interest region contains out of bounds indices)
         geometry_msgs::Point32 region_centroid;
         cloud_geometry::nearest::computeCentroid(data, *curr_interest_region, region_centroid);
 

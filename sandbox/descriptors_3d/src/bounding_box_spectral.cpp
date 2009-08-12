@@ -158,21 +158,13 @@ void BoundingBoxSpectral::computeNeighborhoodFeature(const sensor_msgs::PointClo
     return;
   }
 
-  // Verify neighbor index is in bounds
-  unsigned int first_neighbor_idx = static_cast<unsigned int>(neighbor_indices[0]);
-  if (first_neighbor_idx >= nbr_total_pts)
-  {
-    ROS_ERROR("BoundingBoxSpectral::computeNeighborhoodFeature() exceeds index %u %u", first_neighbor_idx, nbr_total_pts);
-    result.clear();
-    return;
-  }
-
   // Initialize extrema values of the first point's scalar projections
   // onto the principle components
+  const geometry_msgs::Point32& first_sensor_point = data.points.at(neighbor_indices[0]);
   Eigen::Vector3d curr_pt;
-  curr_pt[0] = data.points[first_neighbor_idx].x;
-  curr_pt[1] = data.points[first_neighbor_idx].y;
-  curr_pt[2] = data.points[first_neighbor_idx].z;
+  curr_pt[0] = first_sensor_point.x;
+  curr_pt[1] = first_sensor_point.y;
+  curr_pt[2] = first_sensor_point.z;
   float min_v1 = curr_pt.dot(*eig_vec_max);
   float min_v2 = curr_pt.dot(*eig_vec_mid);
   float min_v3 = curr_pt.dot(*eig_vec_min);
@@ -183,18 +175,10 @@ void BoundingBoxSpectral::computeNeighborhoodFeature(const sensor_msgs::PointClo
   // Loop over remaining points in region and update projection extremas
   for (unsigned int i = 1 ; i < nbr_neighbors ; i++)
   {
-    // verify the index doesnt exceed array
-    unsigned int curr_neighbor_idx = static_cast<unsigned int>(neighbor_indices[i]);
-    if (curr_neighbor_idx >= nbr_total_pts)
-    {
-      ROS_ERROR("BoundingBoxSpectral::computeNeighborhoodFeature() exceeds index %u %u", curr_neighbor_idx, nbr_total_pts);
-      result.clear();
-      return;
-    }
-
-    curr_pt[0] = data.points[curr_neighbor_idx].x;
-    curr_pt[1] = data.points[curr_neighbor_idx].y;
-    curr_pt[2] = data.points[curr_neighbor_idx].z;
+    const geometry_msgs::Point32& curr_sensor_pt = data.points.at(neighbor_indices[i]);
+    curr_pt[0] = curr_sensor_pt.x;
+    curr_pt[1] = curr_sensor_pt.y;
+    curr_pt[2] = curr_sensor_pt.z;
 
     // extrema along biggest eigenvector
     float curr_projection = curr_pt.dot(*eig_vec_max);
