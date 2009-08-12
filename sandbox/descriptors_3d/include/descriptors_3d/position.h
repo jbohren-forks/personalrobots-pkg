@@ -45,8 +45,6 @@
 
 #include <descriptors_3d/descriptor_3d.h>
 
-using namespace std;
-
 // --------------------------------------------------------------
 /*!
  * \file position.h
@@ -132,7 +130,7 @@ class Position: public Descriptor3D
     // --------------------------------------------------------------
     virtual void doComputation(const sensor_msgs::PointCloud& data,
                                cloud_kdtree::KdTree& data_kdtree,
-                               const cv::Vector<const vector<int>*>& interest_region_indices,
+                               const cv::Vector<const std::vector<int>*>& interest_region_indices,
                                cv::Vector<cv::Vector<float> >& results);
 
   private:
