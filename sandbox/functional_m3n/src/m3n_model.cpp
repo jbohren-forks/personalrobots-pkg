@@ -35,7 +35,7 @@
 #include <functional_m3n/m3n_model.h>
 
 // --------------------------------------------------------------
-/*! See function definition */
+/* See function definition */
 // --------------------------------------------------------------
 M3NModel::~M3NModel()
 {
@@ -43,7 +43,7 @@ M3NModel::~M3NModel()
 }
 
 // --------------------------------------------------------------
-/*! See function definition */
+/* See function definition */
 // --------------------------------------------------------------
 void M3NModel::clear()
 {
@@ -68,7 +68,7 @@ void M3NModel::clear()
 }
 
 // --------------------------------------------------------------
-/*! See function definition */
+/* See function definition */
 // --------------------------------------------------------------
 int M3NModel::loadFromFile(const string& basename)
 {
@@ -199,7 +199,7 @@ int M3NModel::loadFromFile(const string& basename)
 }
 
 // --------------------------------------------------------------
-/*! See function definition */
+/* See function definition */
 // --------------------------------------------------------------
 int M3NModel::saveToFile(const string& basename)
 {
@@ -311,7 +311,7 @@ int M3NModel::saveToFile(const string& basename)
 }
 
 // --------------------------------------------------------------
-/*! See function definition */
+/* See function definition */
 // --------------------------------------------------------------
 void M3NModel::initStackedFeatureIndices()
 {

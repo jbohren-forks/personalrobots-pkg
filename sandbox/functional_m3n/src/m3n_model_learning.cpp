@@ -35,7 +35,7 @@
 #include <functional_m3n/m3n_model.h>
 
 // --------------------------------------------------------------
-/*! See function definition */
+/* See function definition */
 // --------------------------------------------------------------
 int M3NModel::train(const vector<const RandomField*>& training_rfs, const M3NParams& m3n_params)
 {
@@ -276,7 +276,7 @@ int M3NModel::train(const vector<const RandomField*>& training_rfs, const M3NPar
 }
 
 // --------------------------------------------------------------
-/*!
+/*
  * See function definition
  * Invariant: truncation_params are valid
  */
@@ -310,7 +310,7 @@ float M3NModel::calcFuncGradResidual(const float truncation_param,
 }
 
 // --------------------------------------------------------------
-/*! See function definition */
+/* See function definition */
 // --------------------------------------------------------------
 RegressorWrapper* M3NModel::instantiateRegressor(const M3NParams& m3n_params)
 {
@@ -327,7 +327,7 @@ RegressorWrapper* M3NModel::instantiateRegressor(const M3NParams& m3n_params)
 }
 
 // --------------------------------------------------------------
-/*! See function definition */
+/* See function definition */
 // --------------------------------------------------------------
 int M3NModel::extractVerifyLabelsFeatures(const vector<const RandomField*>& training_rfs,
                                           set<unsigned int>& invalid_training_indices)

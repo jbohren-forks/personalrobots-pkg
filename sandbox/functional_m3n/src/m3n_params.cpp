@@ -37,7 +37,7 @@
 using namespace std;
 
 // --------------------------------------------------------------
-/*! See function definition */
+/* See function definition */
 // --------------------------------------------------------------
 bool M3NParams::parametersDefined() const
 {
@@ -46,7 +46,7 @@ bool M3NParams::parametersDefined() const
 }
 
 // --------------------------------------------------------------
-/*! See function definition */
+/* See function definition */
 // --------------------------------------------------------------
 int M3NParams::setLearningRate(const double learning_rate)
 {
@@ -61,7 +61,7 @@ int M3NParams::setLearningRate(const double learning_rate)
 }
 
 // --------------------------------------------------------------
-/*! See function definition */
+/* See function definition */
 // --------------------------------------------------------------
 double M3NParams::getLearningRate() const
 {
@@ -69,7 +69,7 @@ double M3NParams::getLearningRate() const
 }
 
 // --------------------------------------------------------------
-/*! See function definition */
+/* See function definition */
 // --------------------------------------------------------------
 int M3NParams::setNumberOfIterations(const unsigned int nbr_iterations)
 {
@@ -84,7 +84,7 @@ int M3NParams::setNumberOfIterations(const unsigned int nbr_iterations)
 }
 
 // --------------------------------------------------------------
-/*! See function definition */
+/* See function definition */
 // --------------------------------------------------------------
 unsigned int M3NParams::getNumberOfIterations() const
 {
@@ -113,7 +113,7 @@ int M3NParams::setInferenceRobustPotts(const vector<float>& robust_potts_params)
 }
 
 // --------------------------------------------------------------
-/*! See function definition */
+/* See function definition */
 // --------------------------------------------------------------
 const vector<float>& M3NParams::getRobustPottsParams() const
 {
@@ -121,7 +121,7 @@ const vector<float>& M3NParams::getRobustPottsParams() const
 }
 
 // --------------------------------------------------------------
-/*! See function definition */
+/* See function definition */
 // --------------------------------------------------------------
 RegressorWrapper::algorithm_t M3NParams::getRegressorAlgorithm() const
 {
@@ -129,7 +129,7 @@ RegressorWrapper::algorithm_t M3NParams::getRegressorAlgorithm() const
 }
 
 // --------------------------------------------------------------
-/*! See function definition */
+/* See function definition */
 // --------------------------------------------------------------
 int M3NParams::setRegressorRegressionTrees(const RegressionTreeWrapperParams& regression_tree_params)
 {
@@ -158,7 +158,7 @@ int M3NParams::setRegressorRegressionTrees(const RegressionTreeWrapperParams& re
 }
 
 // --------------------------------------------------------------
-/*! See function definition */
+/* See function definition */
 // --------------------------------------------------------------
 const RegressionTreeWrapperParams& M3NParams::getRegressionTreeParams() const
 {

@@ -388,7 +388,7 @@ int M3NModel::inferPrivate(const RandomField& random_field,
 }
 
 // --------------------------------------------------------------
-/*! See function definition */
+/* See function definition */
 // --------------------------------------------------------------
 int M3NModel::addNodeEnergy(const RandomField::Node& node,
                             SubmodularEnergyMin& energy_func,
@@ -447,7 +447,7 @@ int M3NModel::addNodeEnergy(const RandomField::Node& node,
 }
 
 // --------------------------------------------------------------
-/*! See function definition.  Assumes edge contains only 2 nodes */
+/* See function definition.  Assumes edge contains only 2 nodes */
 // --------------------------------------------------------------
 int M3NModel::addEdgeEnergy(const RandomField::Clique& edge,
                             const unsigned int clique_set_idx,
@@ -523,7 +523,7 @@ int M3NModel::addEdgeEnergy(const RandomField::Clique& edge,
 }
 
 // --------------------------------------------------------------
-/*! See function definition */
+/* See function definition */
 // --------------------------------------------------------------
 int M3NModel::addCliqueEnergyPotts(const RandomField::Clique& clique,
                                    const unsigned int clique_set_idx,
@@ -595,7 +595,7 @@ int M3NModel::addCliqueEnergyPotts(const RandomField::Clique& clique,
 }
 
 // --------------------------------------------------------------
-/*! See function definition */
+/* See function definition */
 // --------------------------------------------------------------
 int M3NModel::addCliqueEnergyRobustPotts(const RandomField::Clique& clique,
                                          const unsigned int clique_set_idx,
@@ -699,7 +699,7 @@ int M3NModel::addCliqueEnergyRobustPotts(const RandomField::Clique& clique,
 }
 
 // --------------------------------------------------------------
-/*! See function definition */
+/* See function definition */
 // --------------------------------------------------------------
 int M3NModel::computePotential(const RandomField::Node& node, const unsigned int label, double& potential_val)
 {
@@ -728,7 +728,7 @@ int M3NModel::computePotential(const RandomField::Node& node, const unsigned int
 }
 
 // --------------------------------------------------------------
-/*! See function definition */
+/* See function definition */
 // --------------------------------------------------------------
 int M3NModel::computePotential(const RandomField::Clique& clique,
                                const unsigned int clique_set_idx,
