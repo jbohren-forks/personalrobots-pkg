@@ -11,9 +11,6 @@
   <review status="unreviewed" notes=""/>
   
   <depend package="pr2_defs" />
-  <depend package="convex_decomposition"/>
-  <depend package="ivcon"/>
-  <depend package="ogre_tools"/>
   <url>http://pr.willowgarage.com/wiki/RobotDescriptionFormat</url>
 
 </package>
