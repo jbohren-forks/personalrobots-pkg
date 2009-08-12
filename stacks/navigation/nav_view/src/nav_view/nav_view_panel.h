@@ -38,7 +38,6 @@
 #include "nav_msgs/Path.h"
 #include "nav_msgs/GridCells.h"
 #include "geometry_msgs/PoseWithCovarianceStamped.h"
-#include "visualization_msgs/Polyline.h"
 
 #include <OGRE/OgreTexture.h>
 #include <OGRE/OgreMaterial.h>
@@ -172,14 +171,12 @@ protected:
   void incomingRobotFootprint(const geometry_msgs::PolygonStamped::ConstPtr& msg);
   void incomingInflatedObstacles(const nav_msgs::GridCells::ConstPtr& msg);
   void incomingRawObstacles(const nav_msgs::GridCells::ConstPtr& msg);
-  void incomingGuiLaser(const visualization_msgs::Polyline::ConstPtr& msg);
 
   void onRenderWindowMouseEvents( wxMouseEvent& event );
 
   void createRadiusObject();
   void updateRadiusPosition();
 
-  void createObjectFromPolyLine(Ogre::ManualObject*& object, const visualization_msgs::Polyline& path, Ogre::RenderOperation::OperationType op, float depth, bool loop);
   void createObjectFromPath(Ogre::ManualObject*& object, const nav_msgs::Path& path, const Ogre::ColourValue& color, float depth);
   void createObjectFromPolygon(Ogre::ManualObject*& object, const geometry_msgs::PolygonStamped& polygon, const Ogre::ColourValue& color, float depth);
   void createObjectFromGridCells(Ogre::ManualObject*& object, const nav_msgs::GridCells& cells, const Ogre::ColourValue& color, float depth);
@@ -201,8 +198,6 @@ protected:
 
   ros::Subscriber particle_cloud_sub_;
 
-  typedef tf::MessageFilter<visualization_msgs::Polyline> PolylineFilter;
-  typedef boost::shared_ptr<PolylineFilter> PolylineFilterPtr;
   typedef tf::MessageFilter<nav_msgs::Path> PathFilter;
   typedef boost::shared_ptr<PathFilter> PathFilterPtr;
   typedef tf::MessageFilter<nav_msgs::GridCells> GridCellsFilter;

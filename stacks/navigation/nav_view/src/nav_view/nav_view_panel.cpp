@@ -414,61 +414,6 @@ void NavViewPanel::updateRadiusPosition()
   }
 }
 
-void NavViewPanel::createObjectFromPolyLine( Ogre::ManualObject*& object, const visualization_msgs::Polyline& path, Ogre::RenderOperation::OperationType op, float depth, bool loop )
-{
-  if ( !object )
-  {
-    static int count = 0;
-    std::stringstream ss;
-    ss << "NavViewPolyLine" << count++;
-    object = scene_manager_->createManualObject( ss.str() );
-    Ogre::SceneNode* node = root_node_->createChildSceneNode();
-    node->attachObject( object );
-  }
-
-  object->clear();
-
-  Ogre::ColourValue color( path.color.r, path.color.g, path.color.b );
-  size_t num_points = path.points.size();
-
-  if ( num_points > 0 )
-  {
-    object->estimateVertexCount( num_points);
-    object->begin( "BaseWhiteNoLighting", op );
-    for( size_t i=0; i < num_points; ++i)
-    {
-      tf::Stamped<tf::Point> point;
-      tf::pointMsgToTF(path.points[i], point);
-      point.frame_id_ = path.header.frame_id;
-      point.stamp_ = path.header.stamp;
-
-      tf_client_->transformPoint(global_frame_id_, point, point);
-
-      object->position(point.x(), point.y(), point.z());
-      object->colour( color );
-    }
-
-    if ( loop )
-    {
-      tf::Stamped<tf::Point> point;
-      tf::pointMsgToTF(path.points[0], point);
-      point.frame_id_ = path.header.frame_id;
-      point.stamp_ = path.header.stamp;
-
-      tf_client_->transformPoint(global_frame_id_, point, point);
-
-      object->position(point.x(), point.y(), point.z());
-      object->colour( color );
-    }
-
-    object->end();
-
-    object->getParentSceneNode()->setPosition( Ogre::Vector3( 0.0f, 0.0f, depth ) );
-  }
-
-  queueRender();
-}
-
 void NavViewPanel::createObjectFromPath(Ogre::ManualObject*& object, const nav_msgs::Path& path, const Ogre::ColourValue& color, float depth)
 {
   if ( !object )
