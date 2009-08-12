@@ -41,7 +41,7 @@
 class OutletTracker : public TrackerBase
 {
 public:
-  OutletTracker(ros::Node &node);
+  OutletTracker(const ros::NodeHandle& nh);
   ~OutletTracker();
   
 protected:

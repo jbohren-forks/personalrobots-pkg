@@ -1,5 +1,4 @@
 #include "outlet_detection/plug_tracker.h"
-#include <visualization_msgs/Marker.h>
 
 // FIXME: move back to OpenCV versions whenever they get updated
 extern "C"
@@ -7,8 +6,8 @@ int cvFindChessboardCorners_ex( const void* arr, CvSize pattern_size,
                                 CvPoint2D32f* out_corners, int* out_corner_count,
                                 int flags );
 
-PlugTracker::PlugTracker(ros::Node &node)
-  : TrackerBase(node, "plug"), grid_pts_(NULL)
+PlugTracker::PlugTracker(const ros::NodeHandle& nh)
+  : TrackerBase(nh, "plug"), grid_pts_(NULL)
 {
   // Read plug-specific parameters
   double square_size;
@@ -69,8 +68,6 @@ PlugTracker::PlugTracker(ros::Node &node)
       ++j;
     }
   }
-
-  node_.advertise<visualization_msgs::Marker>("visualization_marker", 1);
   
   activate();
 }
@@ -258,7 +255,7 @@ void PlugTracker::publishBoardMarker(const tf::Transform &board_in_cam)
     marker.points.push_back(pt_msg);
   }
   
-  node_.publish("visualization_marker", marker);
+  marker_pub_.publish(marker);
 }
 
 void PlugTracker::publishBoardRayMarker(const tf::Transform &board_in_cam)
@@ -288,7 +285,7 @@ void PlugTracker::publishBoardRayMarker(const tf::Transform &board_in_cam)
   marker.points.resize(2); // first is origin
   tf::pointTFToMsg(board_in_cam.getOrigin(), marker.points[1]);
 
-  node_.publish("visualization_marker", marker);
+  marker_pub_.publish(marker);
 }
 
 void PlugTracker::publishPlugRayMarker(const tf::Transform &board_in_cam,
@@ -320,9 +317,9 @@ void PlugTracker::publishPlugRayMarker(const tf::Transform &board_in_cam,
   tf::pointTFToMsg(board_in_cam.getOrigin(), marker.points[0]);
   tf::pointTFToMsg(plug_pose.getOrigin(), marker.points[1]);
 
-  node_.publish("visualization_marker", marker);
+  marker_pub_.publish(marker);
 
   marker.id = 3;
   tf::pointTFToMsg((board_in_cam * prong_in_board_).getOrigin(), marker.points[1]);
-  node_.publish("visualization_marker", marker);
+  marker_pub_.publish(marker);
 }

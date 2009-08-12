@@ -1,5 +1,4 @@
 #include "outlet_detection/outlet_tracker.h"
-#include <visualization_msgs/Marker.h>
 
 #include <Eigen/Core>
 #include <Eigen/QR>
@@ -11,11 +10,9 @@
 static void changeAxes(CvPoint3D32f src, btVector3 &dst);
 static btVector3 fitPlane(btVector3 *holes, int num_holes);
 
-OutletTracker::OutletTracker(ros::Node &node)
-  : TrackerBase(node, "outlet")
+OutletTracker::OutletTracker(const ros::NodeHandle& nh)
+  : TrackerBase(nh, "outlet")
 {
-  node_.advertise<visualization_msgs::Marker>("visualization_marker", 1);
-  
   activate();
 }
 
@@ -99,7 +96,8 @@ bool OutletTracker::detectObject(tf::Transform &pose)
 
   publishOutletMarker(holes);
   publishRayMarker(holes[0]);
-  
+
+#if 1
   //BEGIN CHANGE MADE WITHOUT KNOWLEDGE OF CODE STRUCTURE
   //We want to insert a sanity-check here on the outlet, since we saw a detection that was off by 45 degrees during the milestone
   //The check will be that the up vector of the outlet is within some threshold of up in the base frame
@@ -124,6 +122,7 @@ bool OutletTracker::detectObject(tf::Transform &pose)
   }
 
   //END CHANGE MADE WITHOUT KNOWLEDGE OF CODE STRUCTURE
+#endif
   
   return true;
 }
@@ -226,7 +225,7 @@ void OutletTracker::publishOutletMarker(const tf::Point* holes)
     tf::pointTFToMsg(holes[i], marker.points[i]);
   }
   
-  node_.publish("/visualization_marker", marker);
+  marker_pub_.publish(marker);
 }
 
 void OutletTracker::publishRayMarker(const tf::Point &outlet_position)
@@ -256,7 +255,7 @@ void OutletTracker::publishRayMarker(const tf::Point &outlet_position)
   marker.points.resize(2); // first is origin
   tf::pointTFToMsg(outlet_position, marker.points[1]);
 
-  node_.publish("/visualization_marker", marker);
+  marker_pub_.publish(marker);
 }
 
 /*

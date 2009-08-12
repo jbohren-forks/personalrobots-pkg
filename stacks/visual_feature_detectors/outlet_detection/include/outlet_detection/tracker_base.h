@@ -35,13 +35,14 @@
 #ifndef TRACKER_BASE_H
 #define TRACKER_BASE_H
 
-#include <ros/node.h>
+#include <ros/ros.h>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/CameraInfo.h>
 #include <opencv_latest/CvBridge.h>
 #include <prosilica_cam/PolledImage.h>
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_listener.h>
+#include <visualization_msgs/Marker.h>
 
 #include <opencv/cv.h>
 #include <opencv/cvwimage.h>
@@ -52,7 +53,7 @@
 class TrackerBase
 {
 public:
-  TrackerBase(ros::Node &node, std::string prefix);
+  TrackerBase(const ros::NodeHandle& nh, const std::string& prefix);
   virtual ~TrackerBase();
 
   void activate();
@@ -78,7 +79,10 @@ protected:
   // TODO: is this really not in roscpp somewhere?
   bool waitForService(const std::string &service);
 
-  ros::Node &node_;
+  ros::NodeHandle node_;
+  ros::Publisher pose_pub_;
+  ros::Publisher display_pub_;
+  ros::Publisher marker_pub_;
   boost::thread active_thread_;
 
   prosilica_cam::PolledImage::Request req_;
@@ -108,10 +112,10 @@ protected:
   int save_count_;
   std::string save_prefix_;
 
-  void activateCB();
+  void activateCB(const std_msgs::EmptyConstPtr& msg);
+  ros::Subscriber activate_sub_;
   bool stay_active_;
   ros::Time last_activate_time_;
-  std_msgs::Empty activate_msg_;
 };
 
 #endif

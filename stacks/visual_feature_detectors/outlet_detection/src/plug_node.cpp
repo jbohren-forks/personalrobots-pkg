@@ -2,11 +2,11 @@
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv);
-  ros::Node node("plug_detector");
+  ros::init(argc, argv, "plug_detector");
+  ros::NodeHandle node;
   PlugTracker tracker(node);
   
-  node.spin();
+  ros::spin();
 
   return 0;
 }

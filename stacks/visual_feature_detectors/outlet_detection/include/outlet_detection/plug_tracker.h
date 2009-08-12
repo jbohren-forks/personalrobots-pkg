@@ -40,7 +40,7 @@
 class PlugTracker : public TrackerBase
 {
 public:
-  PlugTracker(ros::Node &node);
+  PlugTracker(const ros::NodeHandle& nh);
   ~PlugTracker();
 
 protected:

@@ -12,10 +12,10 @@ static inline CvRect resizeRect(CvRect rect, double alpha)
                 int(rect.width*alpha), int(rect.height*alpha));
 }
 
-TrackerBase::TrackerBase(ros::Node &node, std::string prefix)
-  : node_(node), img_(res_.image), cam_info_(res_.cam_info),
+TrackerBase::TrackerBase(const ros::NodeHandle& nh, const std::string& prefix)
+  : node_(nh), img_(res_.image), cam_info_(res_.cam_info),
     pose_topic_name_("~" + prefix + "_pose"),
-    tf_listener_(node),
+    tf_listener_(node_),
     object_frame_id_(prefix + "_pose"), K_(NULL),
     display_topic_name_("~" + prefix + "_image"),
     save_count_(0), save_prefix_(prefix)
@@ -51,8 +51,12 @@ TrackerBase::TrackerBase(ros::Node &node, std::string prefix)
   node_.param("~save_failures", save_failures_, 0);
 
   node_.param("~stay_active", stay_active_, true);
-  node_.subscribe("~activate_tracker", activate_msg_, &TrackerBase::activateCB, this, 2);
+  activate_sub_ = node_.subscribe("~activate_tracker", 2, &TrackerBase::activateCB, this);
   ROS_INFO("Stay active = %d", stay_active_);
+
+  pose_pub_ = node_.advertise<geometry_msgs::PoseStamped>(pose_topic_name_, 1);
+  display_pub_ = node_.advertise<sensor_msgs::Image>(display_topic_name_, 1);
+  marker_pub_ = node_.advertise<visualization_msgs::Marker>("/visualization_marker", 1);
 }
 
 TrackerBase::~TrackerBase()
@@ -63,14 +67,10 @@ TrackerBase::~TrackerBase()
   }
 
   cvReleaseMat(&K_);
-  node_.unsubscribe("~activate_tracker");
 }
 
 void TrackerBase::activate()
 {
-  node_.advertise<geometry_msgs::PoseStamped>(pose_topic_name_, 1);
-  node_.advertise<sensor_msgs::Image>(display_topic_name_, 1);
-
   boost::thread t(boost::bind(&TrackerBase::spin, this));
   active_thread_.swap(t);
 }
@@ -78,9 +78,6 @@ void TrackerBase::activate()
 void TrackerBase::deactivate()
 {
   active_thread_.interrupt();
-
-  node_.unadvertise(pose_topic_name_);
-  node_.unadvertise(display_topic_name_);
 }
 
 IplImage* TrackerBase::getDisplayImage(bool success)
@@ -108,7 +105,7 @@ void TrackerBase::processImage()
     pose.header.frame_id = "high_def_frame";
     pose.header.stamp = img_.header.stamp;
     tf::poseTFToMsg(transform, pose.pose);
-    node_.publish(pose_topic_name_, pose);
+    pose_pub_.publish(pose);
 
     // Publish to TF
     tf_broadcaster_.sendTransform(transform, ros::Time::now(),
@@ -125,8 +122,8 @@ void TrackerBase::processImage()
   }
   else {
     // Save failure for debugging
-    //if (save_failures_)
-    //  saveImage(false);
+    if (save_failures_)
+      saveImage(false);
 
     // Expand ROI for next image
     if (roi_policy_ == LastImageLocation) {
@@ -138,10 +135,10 @@ void TrackerBase::processImage()
   }
 
   // Visual feedback
-  if (node_.numSubscribers(display_topic_name_) > 0) {
+  if (display_pub_.getNumSubscribers() > 0) {
     sensor_msgs::CvBridge::fromIpltoRosImage(getDisplayImage(success), display_img_);
     display_img_.encoding = "bgr8";
-    node_.publish(display_topic_name_, display_img_);
+    display_pub_.publish(display_img_);
   }
 
   // DEBUG: save out everything
@@ -160,7 +157,7 @@ void TrackerBase::spin()
         if (!informed_of_deactivation)
         {
           informed_of_deactivation = true;
-          ROS_WARN("Tracker is going inactive (%s)", node_.getName().c_str());
+          ROS_WARN("Tracker is going inactive (%s)", ros::this_node::getName().c_str());
         }
         ros::Duration(1.0).sleep();
         continue;
@@ -338,8 +335,6 @@ void TrackerBase::saveImage(bool success)
 
 bool TrackerBase::waitForService(const std::string &service)
 {
-  std::string host;
-  int port;
   while (node_.ok() && !boost::this_thread::interruption_requested()) {
     if (ros::service::exists(service, false))
       return true;
@@ -349,7 +344,7 @@ bool TrackerBase::waitForService(const std::string &service)
   return false;
 }
 
-void TrackerBase::activateCB()
+void TrackerBase::activateCB(const std_msgs::EmptyConstPtr& msg)
 {
   last_activate_time_ = ros::Time::now();
 }
