@@ -45,6 +45,11 @@ static struct
   char *xml_;
 } g_options;
 
+void spinThread()
+{
+  ros::spin();
+}
+
 void controlLoop()
 {
   NullHardware hw;
@@ -85,14 +90,21 @@ void controlLoop()
   //Initialize mechanism control from robot description
   mc.initXml(root);
 
+  // Starts up a thread to handle ROS calls
+  boost::thread t(spinThread);
+  t.detach();
+
   //Start running controller updates (and measure update time)
   int count = 0;
-  while(1){
+  while(ros::ok())
+  {
     hw.hw_->current_time_ = count / 1.0e-3;
     mc.update();
     if(count % 1000000 == 0)
       printf("%d seconds simulated \n", count / 1000);
     count++;
+
+    ros::spinOnce();
   }
 
   //Done - return
