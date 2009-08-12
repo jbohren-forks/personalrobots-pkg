@@ -143,7 +143,6 @@ void BoundingBoxSpectral::computeNeighborhoodFeature(const sensor_msgs::PointClo
 
   result.resize(result_size_);
   const unsigned int nbr_neighbors = neighbor_indices.size();
-  const unsigned int nbr_total_pts = data.points.size();
 
   // --------------------------
   // Check for special case when no points in the bounding box as will initialize
