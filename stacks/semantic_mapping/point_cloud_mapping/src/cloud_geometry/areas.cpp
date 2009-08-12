@@ -217,7 +217,7 @@ namespace cloud_geometry
 
       std::sort (epoints_demean.begin (), epoints_demean.end (), comparePoint2D);
 
-      visualization_msgs::Polyline hull_2d;
+      geometry_msgs::Polygon hull_2d;
       convexHull2D (epoints_demean, hull_2d);
 
       int nr_points_hull = hull_2d.points.size ();
@@ -263,10 +263,10 @@ namespace cloud_geometry
       * \note (code snippet inspired from http://www.softsurfer.com/Archive/algorithm_0109/algorithm_0109.htm)
       *        Copyright 2001, softSurfer (www.softsurfer.com)
       * \param points the 2D projected point cloud representing a planar model
-      * \param hull the resultant 2D convex hull model as a \a Polyline
+      * \param hull the resultant 2D convex hull model as a \a Polygon
       */
     void
-      convexHull2D (const std::vector<geometry_msgs::Point32> &points, visualization_msgs::Polyline &hull)
+      convexHull2D (const std::vector<geometry_msgs::Point32> &points, geometry_msgs::Polygon &hull)
     {
       int nr_points = points.size ();
       hull.points.resize (nr_points + 1);

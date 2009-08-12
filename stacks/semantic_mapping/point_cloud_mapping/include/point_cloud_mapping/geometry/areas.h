@@ -37,7 +37,6 @@
 #include <geometry_msgs/Point32.h>
 #include <sensor_msgs/PointCloud.h>
 #include <geometry_msgs/Polygon.h>
-#include <visualization_msgs/Polyline.h>
 
 #include <point_cloud_mapping/geometry/nearest.h>
 
@@ -82,7 +81,7 @@ namespace cloud_geometry
     double compute2DPolygonalArea (const geometry_msgs::Polygon &polygon, const std::vector<double> &normal);
     double compute2DPolygonalArea (const geometry_msgs::Polygon &polygon);
     void convexHull2D (const sensor_msgs::PointCloud &points, const std::vector<int> &indices, const std::vector<double> &coeff, geometry_msgs::Polygon &hull);
-    void convexHull2D (const std::vector<geometry_msgs::Point32> &points, visualization_msgs::Polyline &hull);
+    void convexHull2D (const std::vector<geometry_msgs::Point32> &points, geometry_msgs::Polygon &hull);
 
     bool isPointIn2DPolygon (const geometry_msgs::Point32 &point, const geometry_msgs::Polygon &polygon);
   }
