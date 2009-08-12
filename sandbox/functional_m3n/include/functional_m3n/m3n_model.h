@@ -54,10 +54,6 @@
 #include <functional_m3n/regressors/regressor_includes.h>
 #include <functional_m3n/logging/m3n_logging.h>
 
-using namespace vk_energy;
-// corresponds to submodular energy minimzer
-using namespace std;
-
 // --------------------------------------------------------------
 /*!
  * \file m3n_model.h
@@ -116,7 +112,7 @@ class M3NModel
      * \return 0 on success, otherwise negative value on error
      */
     // --------------------------------------------------------------
-    int saveToFile(const string& basename);
+    int saveToFile(const std::string& basename);
 
     // --------------------------------------------------------------
     /*!
@@ -127,7 +123,7 @@ class M3NModel
      * \return 0 on success, otherwise negative value on error
      */
     // --------------------------------------------------------------
-    int loadFromFile(const string& basename);
+    int loadFromFile(const std::string& basename);
 
     // --------------------------------------------------------------
     /*!
@@ -154,9 +150,8 @@ class M3NModel
      */
     // --------------------------------------------------------------
     int infer(const RandomField& random_field,
-              map<unsigned int, unsigned int>& inferred_labels,
+              std::map<unsigned int, unsigned int>& inferred_labels,
               unsigned int max_iterations = 0);
-    // TODO auxially, projection (RRR)
 
     // --------------------------------------------------------------
     /*!
@@ -170,7 +165,7 @@ class M3NModel
      * \return 0 on success, otherwise negative value on error
      */
     // --------------------------------------------------------------
-    int train(const vector<const RandomField*>& training_rfs, const M3NParams& m3n_params);
+    int train(const std::vector<const RandomField*>& training_rfs, const M3NParams& m3n_params);
 
   private:
     // --------------------------------------------------------------
@@ -197,8 +192,8 @@ class M3NModel
      * \return 0 on success, otherwise negative value on error
      */
     // --------------------------------------------------------------
-    int extractVerifyLabelsFeatures(const vector<const RandomField*>& training_rfs,
-                                    set<unsigned int>& invalid_rf_indices);
+    int extractVerifyLabelsFeatures(const std::vector<const RandomField*>& training_rfs, std::set<
+        unsigned int>& invalid_rf_indices);
 
     // --------------------------------------------------------------
     /*!
@@ -240,7 +235,7 @@ class M3NModel
      */
     // --------------------------------------------------------------
     int inferPrivate(const RandomField& random_field,
-                     map<unsigned int, unsigned int>& inferred_labels,
+                     std::map<unsigned int, unsigned int>& inferred_labels,
                      unsigned int max_iterations = 0);
 
     // --------------------------------------------------------------
@@ -266,8 +261,8 @@ class M3NModel
      * \param inferred_labels Mapping of node ids to initial label value
      */
     // --------------------------------------------------------------
-    void generateInitialLabeling(const RandomField& random_field,
-                                 map<unsigned int, unsigned int>& inferred_labels);
+    void generateInitialLabeling(const RandomField& random_field, std::map<unsigned int,
+        unsigned int>& inferred_labels);
 
     // --------------------------------------------------------------
     /*!
@@ -280,7 +275,9 @@ class M3NModel
      * \return 0 on success, otherwise negative value on error
      */
     // --------------------------------------------------------------
-    int computePotential(const RandomField::Node& node, const unsigned int label, double& potential_val);
+    int computePotential(const RandomField::Node& node,
+                         const unsigned int label,
+                         double& potential_val);
 
     // --------------------------------------------------------------
     /*!
@@ -314,8 +311,8 @@ class M3NModel
      */
     // --------------------------------------------------------------
     int addNodeEnergy(const RandomField::Node& node,
-                      SubmodularEnergyMin& energy_func,
-                      const SubmodularEnergyMin::EnergyVar& energy_var,
+                      vk_energy::SubmodularEnergyMin& energy_func,
+                      const vk_energy::SubmodularEnergyMin::EnergyVar& energy_var,
                       const unsigned int curr_label,
                       const unsigned int alpha_label);
 
@@ -335,9 +332,9 @@ class M3NModel
     // --------------------------------------------------------------
     int addEdgeEnergy(const RandomField::Clique& edge,
                       const unsigned int clique_set_idx,
-                      SubmodularEnergyMin& energy_func,
-                      const map<unsigned int, SubmodularEnergyMin::EnergyVar>& energy_vars,
-                      const map<unsigned int, unsigned int>& curr_labeling,
+                      vk_energy::SubmodularEnergyMin& energy_func,
+                      const std::map<unsigned int, vk_energy::SubmodularEnergyMin::EnergyVar>& energy_vars,
+                      const std::map<unsigned int, unsigned int>& curr_labeling,
                       const unsigned int alpha_label);
 
     // --------------------------------------------------------------
@@ -356,12 +353,13 @@ class M3NModel
      * \return 0 on success, otherwise negative value on error
      */
     // --------------------------------------------------------------
-    int addCliqueEnergyPotts(const RandomField::Clique& clique,
-                             const unsigned int clique_set_idx,
-                             SubmodularEnergyMin& energy_func,
-                             const map<unsigned int, SubmodularEnergyMin::EnergyVar>& energy_vars,
-                             const map<unsigned int, unsigned int>& curr_labeling,
-                             const unsigned int alpha_label);
+    int
+    addCliqueEnergyPotts(const RandomField::Clique& clique,
+                         const unsigned int clique_set_idx,
+                         vk_energy::SubmodularEnergyMin& energy_func,
+                         const std::map<unsigned int, vk_energy::SubmodularEnergyMin::EnergyVar>& energy_vars,
+                         const std::map<unsigned int, unsigned int>& curr_labeling,
+                         const unsigned int alpha_label);
 
     // --------------------------------------------------------------
     /*!
@@ -379,31 +377,34 @@ class M3NModel
      * \return 0 on success, otherwise negative value on error
      */
     // --------------------------------------------------------------
-    int addCliqueEnergyRobustPotts(const RandomField::Clique& clique,
+    int
+        addCliqueEnergyRobustPotts(const RandomField::Clique& clique,
                                    const unsigned int clique_set_idx,
-                                   SubmodularEnergyMin& energy_func,
-                                   const map<unsigned int, SubmodularEnergyMin::EnergyVar>& energy_vars,
-                                   const map<unsigned int, unsigned int>& curr_labeling,
+                                   vk_energy::SubmodularEnergyMin& energy_func,
+                                   const std::map<unsigned int,
+                                   vk_energy::SubmodularEnergyMin::EnergyVar>& energy_vars,
+                                   const std::map<unsigned int, unsigned int>& curr_labeling,
                                    const unsigned int alpha_label);
     //@}
 
     bool trained_;
 
     unsigned int node_feature_dim_;
-    vector<unsigned int> clique_set_feature_dims_;
+    std::vector<unsigned int> clique_set_feature_dims_;
 
     unsigned int total_stack_feature_dim_;
-    map<unsigned int, unsigned int> node_stacked_feature_start_idx_;
-    vector<map<unsigned int, unsigned int> > clique_set_stacked_feature_start_idx_;
+    std::map<unsigned int, unsigned int> node_stacked_feature_start_idx_;
+    std::vector<std::map<unsigned int, unsigned int> > clique_set_stacked_feature_start_idx_;
 
-    vector<unsigned int> training_labels_;
+    std::vector<unsigned int> training_labels_;
     bool loss_augmented_inference_;
 
-    vector<float> robust_potts_params_;
-    map<unsigned int, map<unsigned int, double> > cache_node_potentials_; // node id -> label -> value
-    vector<map<unsigned int, map<unsigned int, double> > > cache_clique_set_potentials_;
+    std::vector<float> robust_potts_params_;
+    std::map<unsigned int, std::map<unsigned int, double> > cache_node_potentials_; // node id -> label -> value
+    std::vector<std::map<unsigned int, std::map<unsigned int, double> > >
+        cache_clique_set_potentials_;
 
-    vector<pair<double, RegressorWrapper*> > regressors_;
+    std::vector<pair<double, RegressorWrapper*> > regressors_;
 };
 
 #endif

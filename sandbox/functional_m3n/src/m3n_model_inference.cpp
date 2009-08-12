@@ -34,6 +34,10 @@
 
 #include <functional_m3n/m3n_model.h>
 
+// corresponds to submodular energy minimzer
+using namespace vk_energy;
+using namespace std;
+
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------

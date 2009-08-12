@@ -34,6 +34,8 @@
 
 #include <functional_m3n/random_field.h>
 
+using namespace std;
+
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------

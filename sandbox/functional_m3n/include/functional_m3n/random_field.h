@@ -48,8 +48,6 @@
 // TODO turn this off when on the robot
 #define DEBUG true
 
-using namespace std;
-
 // --------------------------------------------------------------
 /*!
  * \file random_field.h
@@ -191,7 +189,7 @@ class RandomField
      */
     // --------------------------------------------------------------
     const Clique* createClique(const unsigned int clique_set_idx,
-                               const list<const Node*>& nodes,
+                               const std::list<const Node*>& nodes,
                                const boost::shared_array<const float> feature_vals,
                                unsigned int nbr_feature_vals,
                                float x = 0.0,
@@ -223,7 +221,7 @@ class RandomField
     // --------------------------------------------------------------
     const Clique* createClique(const unsigned int clique_id,
                                const unsigned int clique_set_idx,
-                               const list<const Node*>& nodes,
+                               const std::list<const Node*>& nodes,
                                const boost::shared_array<const float> feature_vals,
                                const unsigned int nbr_feature_vals,
                                float x = 0.0,
@@ -244,7 +242,7 @@ class RandomField
      * \return 0 on success, otherwise negative value on error
      */
     // --------------------------------------------------------------
-    int updateLabelings(const map<unsigned int, unsigned int>& new_labeling);
+    int updateLabelings(const std::map<unsigned int, unsigned int>& new_labeling);
     //@}
 
     // ===================================================================
@@ -256,7 +254,7 @@ class RandomField
      * \brief Returns mapping of ids assigned from this RandomField to associated primitives
      */
     // --------------------------------------------------------------
-    inline const map<unsigned int, Node*>& getNodesRandomFieldIDs() const
+    inline const std::map<unsigned int, Node*>& getNodesRandomFieldIDs() const
     {
       return rf_nodes_;
     }
@@ -267,7 +265,7 @@ class RandomField
      * assigned from this RandomField to associated cliques
      */
     // --------------------------------------------------------------
-    inline const vector<map<unsigned int, Clique*> >& getCliqueSets() const
+    inline const std::vector<std::map<unsigned int, Clique*> >& getCliqueSets() const
     {
       return clique_sets_;
     }
@@ -309,7 +307,7 @@ class RandomField
      * \return 0 on success, otherwise negative value on error
      */
     // --------------------------------------------------------------
-    int saveNodeFeatures(string filename) const;
+    int saveNodeFeatures(std::string filename) const;
 
     // --------------------------------------------------------------
     /*!
@@ -325,7 +323,7 @@ class RandomField
      * \return 0 on success, otherwise negative value on error
      */
     // --------------------------------------------------------------
-    int saveCliqueFeatures(string basename) const;
+    int saveCliqueFeatures(std::string basename) const;
 
     // --------------------------------------------------------------
     /*!
@@ -339,7 +337,7 @@ class RandomField
      * \return 0 on success, otherwise negative value on error
      */
     // --------------------------------------------------------------
-    int saveRandomField(string basename) const;
+    int saveRandomField(std::string basename) const;
 
     // --------------------------------------------------------------
     /*!
@@ -351,17 +349,17 @@ class RandomField
      * \return 0 on success, otherwise negative value on error
      */
     // --------------------------------------------------------------
-    int loadRandomField(string basename);
+    int loadRandomField(std::string basename);
 
     //@}
 
   private:
     /*! \brief Mapping from a Node's id in this RandomField to its instance */
-    map<unsigned int, Node*> rf_nodes_;
+    std::map<unsigned int, Node*> rf_nodes_;
 
     /*! \brief Vector of containers for each clique set.  Each container is
      *         a mapping from a Clique's id wrt the clique set to its instance */
-    vector<map<unsigned int, Clique*> > clique_sets_;
+    std::vector<std::map<unsigned int, Clique*> > clique_sets_;
 
   public:
     // --------------------------------------------------------------
@@ -582,7 +580,7 @@ class RandomField
          * \brief Returns the node ids contained in this Clique
          */
         // --------------------------------------------------------------
-        inline const list<unsigned int>& getNodeIDs() const
+        inline const std::list<unsigned int>& getNodeIDs() const
         {
           return node_ids_;
         }
@@ -610,8 +608,8 @@ class RandomField
                           unsigned int& mode1_count,
                           unsigned int& mode2_label,
                           unsigned int& mode2_count,
-                          list<unsigned int>* mode1_node_ids = NULL,
-                          const map<unsigned int, unsigned int>* tempo_labeling = NULL) const;
+                          std::list<unsigned int>* mode1_node_ids = NULL,
+                          const std::map<unsigned int, unsigned int>* tempo_labeling = NULL) const;
 
       protected:
         // --------------------------------------------------------------
@@ -634,11 +632,11 @@ class RandomField
          * \return 0 on success, otherwise negative value on error.
          */
         // --------------------------------------------------------------
-        int updateLabels(const map<unsigned int, unsigned int>& node_labels);
+        int updateLabels(const std::map<unsigned int, unsigned int>& node_labels);
 
       private:
-        list<unsigned int> node_ids_;
-        map<unsigned int, list<unsigned int> > labels_to_node_ids_;
+        std::list<unsigned int> node_ids_;
+        std::map<unsigned int, std::list<unsigned int> > labels_to_node_ids_;
     };
 
 };
