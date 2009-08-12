@@ -15,5 +15,6 @@
   <depend package="prosilica_cam" />
   <depend package="teleop_head" />
   <depend package="pr2_computer_monitor" />
+  <depend package="pr2_power_board" />
   <depend package="mechanism_bringup" />
 </package>

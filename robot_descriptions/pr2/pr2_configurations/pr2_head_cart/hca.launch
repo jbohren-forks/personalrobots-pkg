@@ -12,6 +12,9 @@
   <node pkg="mechanism_bringup" type="calibrate.py" output="screen"
         args="cal_head_pan_alpha2 cal_head_tilt_alpha2b cal_laser_tilt" />
 
+<!-- Power Board Control Node -->
+ <node pkg="pr2_power_board" type="power_node"  respawn="true"/>
+
   <!-- Robot state publisher -->
   <node machine="two" pkg="robot_state_publisher" type="state_publisher" name="robot_state_publisher">
    <param name="publish_frequency" type="double" value="50.0" />
