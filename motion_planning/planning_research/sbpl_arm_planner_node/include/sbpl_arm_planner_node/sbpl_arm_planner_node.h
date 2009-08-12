@@ -39,6 +39,7 @@
 #include "ros/node_handle.h"
 
 /** stuffZ **/
+#include <boost/bind.hpp>
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
 #include <tf/message_notifier.h>
@@ -93,7 +94,8 @@ class SBPLArmPlannerNode
       ros::Publisher marker_publisher_;
       ros::Publisher sbpl_map_publisher_;
       ros::ServiceServer planning_service_;
-      ros::Subscriber mechanism_subscriber_;
+//       ros::Subscriber mechanism_subscriber_;
+			ros::Subscriber joint_states_subscriber_;
       ros::Subscriber col_map_subscriber_;
       ros::Subscriber point_cloud_subscriber_;
 
@@ -142,6 +144,8 @@ class SBPLArmPlannerNode
       bool bCartesianPlanner_;
 
 			bool print_path_;
+			
+			bool upright_gripper_only_;
 
       int num_joints_;
 
@@ -162,6 +166,12 @@ class SBPLArmPlannerNode
       mapping_msgs::CollisionMap sbpl_collision_map_;
 
       mechanism_msgs::MechanismState mechanism_state_;
+			
+			mechanism_msgs::JointStates joint_states_;
+			
+			tf::MessageNotifier<sensor_msgs::PointCloud>  *point_cloud_notifier_;
+			
+			tf::MessageNotifier<mapping_msgs::CollisionMap>  *collision_map_notifier_;
 
       std::vector<motion_planning_msgs::PoseConstraint> goal_pose_constraint_; //in planning frame
 
@@ -216,6 +226,10 @@ class SBPLArmPlannerNode
       bool setGoalPosition(const std::vector<motion_planning_msgs::PoseConstraint, std::allocator<motion_planning_msgs::PoseConstraint> > &goals);
 
       bool setGoalState(const std::vector<motion_planning_msgs::JointConstraint> &joint_constraint);
+			
+			void updateMapFromPointCloud(const sensor_msgs::PointCloudConstPtr &point_cloud);
+			
+			void updateMapFromCollisionMap(const mapping_msgs::CollisionMapConstPtr &collision_map);
 
       bool planToState(motion_planning_msgs::GetMotionPlan::Request &req, motion_planning_msgs::GetMotionPlan::Response &res);
 
@@ -231,6 +245,8 @@ class SBPLArmPlannerNode
 
       void dummyCallback(const mechanism_msgs::MechanismStateConstPtr &mechanism_state);
 
+			void jointStatesCallback(const mechanism_msgs::JointStatesConstPtr &joint_states);
+					
       void createOccupancyGrid();
 
       void visualizeGoalPosition(geometry_msgs::PoseStamped pose);

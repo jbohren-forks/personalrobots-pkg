@@ -43,13 +43,7 @@ SBPLArmPlannerNode::SBPLArmPlannerNode()
 SBPLArmPlannerNode::~SBPLArmPlannerNode()
 {
   delete planner_;
-//   node_.unsubscribe(collision_map_topic_);
-//   node_.unadvertiseService("plan_kinematic_path");
-// 
-//   if(visualize_goal_)
-//     node_.unadvertise("visualization_marker");
-//   if(!use_voxel3d_grid_)
-//     node_.unadvertise("sbpl_collision_map");
+	delete point_cloud_notifier_;
 };
 
 bool SBPLArmPlannerNode::init()
@@ -94,6 +88,7 @@ bool SBPLArmPlannerNode::init()
   node_.param ("~voxel_grid_height_", env_height_, 220);
   node_.param ("~voxel_grid_depth_", env_depth_, 200);
   node_.param ("~voxel_grid_resolution_", env_resolution_, 0.01);
+	node_.param ("~upright_gripper_only", upright_gripper_only_, false);
 
   // topic names
   node_.param<std::string>("~point_cloud", point_cloud_topic_, "full_cloud_filtered");
@@ -102,10 +97,14 @@ bool SBPLArmPlannerNode::init()
   // visualization parameters
   node_.param ("~visualize_goal", visualize_goal_, true);
 
+	collision_map_notifier_ = new tf::MessageNotifier<mapping_msgs::CollisionMap>(tf_, boost::bind(&SBPLArmPlannerNode::collisionMapCallback, this, _1), collision_map_topic_, planning_frame_, 1);
+	ROS_DEBUG("Listening to %s with message notifier for target frame %s", collision_map_topic_.c_str(), collision_map_notifier_->getTargetFramesString().c_str());
+	
   // main planning service
   planning_service_ = node_.advertiseService("plan_kinematic_path", &SBPLArmPlannerNode::planKinematicPath,this);
 
-  mechanism_subscriber_ = node_.subscribe("/mechanism_state", 1, &SBPLArmPlannerNode::dummyCallback, this);
+//   mechanism_subscriber_ = node_.subscribe("/mechanism_state", 1, &SBPLArmPlannerNode::dummyCallback, this);
+	joint_states_subscriber_ = node_.subscribe("/joint_states", 1, &SBPLArmPlannerNode::jointStatesCallback, this);
 
   if(visualize_goal_)
     marker_publisher_ = node_.advertise<visualization_msgs::Marker>("visualization_marker", 3);
@@ -118,7 +117,11 @@ bool SBPLArmPlannerNode::init()
     if(use_cm_for_voxel_)
       col_map_subscriber_ = node_.subscribe(collision_map_topic_, 1, &SBPLArmPlannerNode::collisionMapCallback, this);
     else
+		{
       point_cloud_subscriber_ = node_.subscribe(point_cloud_topic_, 1, &SBPLArmPlannerNode::pointCloudCallback, this);
+			point_cloud_notifier_ = new tf::MessageNotifier<sensor_msgs::PointCloud>(tf_, boost::bind(&SBPLArmPlannerNode::pointCloudCallback, this, _1), point_cloud_topic_, planning_frame_, 1);
+			ROS_DEBUG("Listening to %s with message notifier for target frame %s", point_cloud_topic_.c_str(), point_cloud_notifier_->getTargetFramesString().c_str());
+		}
   }
   else
   {
@@ -195,6 +198,15 @@ bool SBPLArmPlannerNode::initializePlannerAndEnvironment()
     return false;
   }
 
+	// set environment parameters
+	sbpl_arm_env_.SetEnvParameter("useDijkstraHeuristic", dijkstra_heuristic_);
+	sbpl_arm_env_.SetEnvParameter("useFastCollisionChecking", lowres_cc_);
+	sbpl_arm_env_.SetEnvParameter("exactGripperCollisionChecking", enable_pm_);
+	sbpl_arm_env_.SetEnvParameter("useVoxel3dForOccupancyGrid", use_voxel3d_grid_);
+	sbpl_arm_env_.SetEnvParameter("useMultiResolutionMotionPrimitives", use_multires_primitives_);
+	sbpl_arm_env_.SetEnvParameter("saveExpandedStateIDs", true);
+	sbpl_arm_env_.SetEnvParameter("uprightGripperOnly", upright_gripper_only_);
+
   if(!sbpl_arm_env_.InitEnvFromFilePtr(env_config_fp_, planner_config_fp_, pr2_desc_))
   {
     ROS_ERROR("ERROR: InitEnvFromFilePtr failed\n");
@@ -217,6 +229,7 @@ bool SBPLArmPlannerNode::initializePlannerAndEnvironment()
   sbpl_arm_env_.SetEnvParameter("useVoxel3dForOccupancyGrid", use_voxel3d_grid_);
   sbpl_arm_env_.SetEnvParameter("useMultiResolutionMotionPrimitives", use_multires_primitives_);
 	sbpl_arm_env_.SetEnvParameter("saveExpandedStateIDs", true);
+	sbpl_arm_env_.SetEnvParameter("uprightGripperOnly", upright_gripper_only_);
 
   //set epsilon
   planner_->set_initialsolution_eps(sbpl_arm_env_.GetEpsilon());
@@ -235,10 +248,15 @@ bool SBPLArmPlannerNode::initializePlannerAndEnvironment()
   return true;
 }
 
-/** \brief Callback function that's called by the collision map topic. It reformats the collision map for the sbpl grid */
 void SBPLArmPlannerNode::collisionMapCallback(const mapping_msgs::CollisionMapConstPtr &collision_map)
 {
-//   ROS_INFO("collisionMapCallback called.");
+	updateMapFromCollisionMap(collision_map);
+}
+
+/** \brief Callback function that's called by the collision map topic. It reformats the collision map for the sbpl grid */
+void SBPLArmPlannerNode::updateMapFromCollisionMap(const mapping_msgs::CollisionMapConstPtr &collision_map)
+{
+  ROS_DEBUG("collisionMapCallback called.");
   if(mPlanning_.try_lock())
   {
     if(bPlanning_)
@@ -259,7 +277,7 @@ void SBPLArmPlannerNode::collisionMapCallback(const mapping_msgs::CollisionMapCo
 
   if(!use_voxel3d_grid_)
   {
-    ROS_INFO("[collisionMapCallback] collision_map returned %i boxes",collision_map->boxes.size());
+    ROS_DEBUG("[collisionMapCallback] collision_map returned %i boxes",collision_map->boxes.size());
     std::vector<std::vector<double> > sbpl_boxes(collision_map->boxes.size());
     for(unsigned int i=0; i < collision_map->boxes.size(); i++)
     {
@@ -284,13 +302,13 @@ void SBPLArmPlannerNode::collisionMapCallback(const mapping_msgs::CollisionMapCo
 
     for(double x = .2; x < .3; x += .01)
       for(double y = -.3; y < .3; y += .02)
-	for(double z = -.5; z > -.75; z -= .04)
-	{
-	  robot_base[0] = x;
-	  robot_base[1] = y;
-	  robot_base[2] = z;
-	  sbpl_boxes.push_back(robot_base);
-	}
+				for(double z = -.5; z > -.75; z -= .04)
+				{
+					robot_base[0] = x;
+					robot_base[1] = y;
+					robot_base[2] = z;
+					sbpl_boxes.push_back(robot_base);
+				}
 
     // clear old map
     sbpl_arm_env_.ClearEnv();
@@ -342,7 +360,7 @@ void SBPLArmPlannerNode::collisionMapCallback(const mapping_msgs::CollisionMapCo
 				}
       }
 
-      ROS_DEBUG("collision_map_occ is in %s", collision_map->header.frame_id.c_str());
+//       ROS_INFO("collision_map_occ is in %s", collision_map->header.frame_id.c_str());
       for(unsigned int i=0; i < collision_map->boxes.size(); i++)
       {
 				env_grid_->putWorldObstacle(collision_map->boxes[i].center.x,collision_map->boxes[i].center.y,collision_map->boxes[i].center.z);
@@ -359,8 +377,14 @@ void SBPLArmPlannerNode::collisionMapCallback(const mapping_msgs::CollisionMapCo
   ROS_DEBUG("collisionMapCallback took %lf seconds", (ros::Time::now() - start).toSec());
 }
 
-/** \brief Callback function that updates the voxel when a new point cloud is published */
 void SBPLArmPlannerNode::pointCloudCallback(const sensor_msgs::PointCloudConstPtr &point_cloud)
+{
+	if(point_cloud->points.size() > 0)
+		updateMapFromPointCloud(point_cloud);
+}
+		
+/** \brief Callback function that updates the voxel when a new point cloud is published */
+void SBPLArmPlannerNode::updateMapFromPointCloud(const sensor_msgs::PointCloudConstPtr &point_cloud)
 {
   if(mPlanning_.try_lock())
   {
@@ -445,6 +469,11 @@ void SBPLArmPlannerNode::dummyCallback(const mechanism_msgs::MechanismStateConst
 // 	   xyz_m[0],xyz_m[1],xyz_m[2],rpy_r[0],rpy_r[1],rpy_r[2]);
 }
 
+void SBPLArmPlannerNode::jointStatesCallback(const mechanism_msgs::JointStatesConstPtr &joint_states)
+{
+	joint_states_ = *joint_states;
+}
+
 /** \brief Fetch the SBPL collision map and publish it for debugging purposes in rviz */
 void SBPLArmPlannerNode::getSBPLCollisionMap()
 {
@@ -487,11 +516,11 @@ void SBPLArmPlannerNode::getSBPLCollisionMap()
 bool SBPLArmPlannerNode::setStart(const motion_planning_msgs::KinematicState &start_state)
 {
   double* sbpl_start;
-  sbpl_start = new double[start_state.get_values_size()];
+  sbpl_start = new double[start_state.get_vals_size()];
 
-  for(unsigned int i=0; i< start_state.get_values_size(); i++)
+  for(unsigned int i=0; i< start_state.get_vals_size(); i++)
   {
-    sbpl_start[i] = (double)(start_state.values[i]);
+    sbpl_start[i] = (double)(start_state.vals[i]);
   }
 
   ROS_INFO("[setStart] start: %1.2f %1.2f %1.2f %1.2f %1.2f %1.2f %1.2f", sbpl_start[0],sbpl_start[1],sbpl_start[2],sbpl_start[3],sbpl_start[4],sbpl_start[5],sbpl_start[6]);
@@ -672,13 +701,13 @@ bool SBPLArmPlannerNode::planToState(motion_planning_msgs::GetMotionPlan::Reques
   updatePMWrapper(req);
 
   // get the starting position of the arm joints the planner will be planning for
-  start.set_values_size(num_joints_);
+  start.set_vals_size(num_joints_);
   for(i = 0; i < req.get_start_state_size(); i++)
   {
     ROS_DEBUG("%s: %.3f",req.start_state[i].joint_name.c_str(),req.start_state[i].value[0]);
     if(joint_names_[nind].compare(req.start_state[i].joint_name) == 0)
     {
-      start.values[nind] = req.start_state[i].value[0];
+      start.vals[nind] = req.start_state[i].value[0];
       nind++;
     }
     if(nind == num_joints_)
@@ -808,13 +837,13 @@ bool SBPLArmPlannerNode::planToPosition(motion_planning_msgs::GetMotionPlan::Req
   }
 
   // get the starting position of the specific arm joints the planner will be planning for
-  start.set_values_size(num_joints_);
+  start.set_vals_size(num_joints_);
   for(i = 0; i < req.get_start_state_size(); i++)
   {
     ROS_DEBUG("%s: %.3f",req.start_state[i].joint_name.c_str(),req.start_state[i].value[0]);
     if(joint_names_[nind].compare(req.start_state[i].joint_name) == 0)
     {
-      start.values[nind] = req.start_state[i].value[0];
+      start.vals[nind] = req.start_state[i].value[0];
       nind++;
     }
     if(nind == num_joints_)
@@ -858,7 +887,7 @@ bool SBPLArmPlannerNode::planToPosition(motion_planning_msgs::GetMotionPlan::Req
 				else
 					res.path.header.frame_id = planning_frame_;
 
-				ROS_INFO("path is in %s",res.path.header.frame_id.c_str());
+				ROS_DEBUG("path is in %s",res.path.header.frame_id.c_str());
 
 				res.path.set_times_size(res.path.get_states_size());
 				res.path.times[0] = 0;
@@ -953,34 +982,34 @@ bool SBPLArmPlannerNode::plan(motion_planning_msgs::KinematicPath &arm_path)
   ROS_INFO("[plan] retrieving of the plan completed in %.4f seconds", double(clock()-start_time) / CLOCKS_PER_SEC);
   ROS_DEBUG("[plan] size of solution = %d", solution_state_ids_v.size());
 
-	ROS_DEBUG("displaying expanded states....");
+	ROS_INFO("[plan] displaying expanded states....");
 	displayExpandedStates();
 
   // if a path is returned, then pack it into msg form
   if(b_ret)
   {
-		ROS_INFO("*** a path was planned ***");
+		ROS_INFO("*** a path was found ***");
 
     arm_path.set_states_size(solution_state_ids_v.size());
     for(i = 0; i < solution_state_ids_v.size(); i++)
-      arm_path.states[i].set_values_size(num_joints_);
+      arm_path.states[i].set_vals_size(num_joints_);
 
     for(i = 0; i < arm_path.get_states_size(); i++)
     {
       sbpl_arm_env_.StateID2Angles(solution_state_ids_v[i], angles_r);
       for (unsigned int p = 0; p < (unsigned int) num_joints_; ++p)
-				arm_path.states[i].values[p] = angles_r[p];
+				arm_path.states[i].vals[p] = angles_r[p];
     }
 
     if(bCartesianPlanner_)
     {
       std::vector<double> jnt_pos(num_joints_,0);
       for(int j=0; j<num_joints_; ++j)
-				jnt_pos[j] = arm_path.states[arm_path.get_states_size()-1].values[j];
+				jnt_pos[j] = arm_path.states[arm_path.get_states_size()-1].vals[j];
 
 			bool invalid_ik = true;
 			unsigned int ik_attempts = 0;
-      while(invalid_ik && ik_attempts < 5)
+      while(invalid_ik && ik_attempts < 15)
       {
 				if(computeIK(goal_pose_constraint_[0].pose,jnt_pos,final_waypoint))
 				{
@@ -990,24 +1019,14 @@ bool SBPLArmPlannerNode::plan(motion_planning_msgs::KinematicPath &arm_path)
 					if(sbpl_arm_env_.isValidJointConfiguration(angles_r))
 					{
 						invalid_ik = false;
-						ROS_INFO("IK solution is free of collision");
+						ROS_DEBUG("IK solution is free of collision");
 					}
 					else
-						ROS_INFO("Computed an IK solution but it was in collision");
-				}
-
-				if(invalid_ik)
-				  ROS_INFO("IK solution is invalid.trying again...");
-				else
-				{
-					for(int b = 0; b < num_joints_; ++b)
-					{
-						path[0][b] = arm_path.states[arm_path.get_states_size()-1].values[b];
-						path[1][b] = final_waypoint[b];
-					}
-
+						ROS_DEBUG("Computed an IK solution but it was in collision");
+			
+					//check that the path to the goal from IK is safe in 0.1 rad increments
 					if(!interpolatePathToGoal(path, 0.1))
-						ROS_INFO("ik solution %i: a joint configuration on the way to the final waypoint is in collision", ik_attempts);
+						ROS_DEBUG("ik solution %i: a joint configuration on the way to the final waypoint is in collision", ik_attempts);
 					else
 						invalid_ik = false;
 				}
@@ -1020,34 +1039,36 @@ bool SBPLArmPlannerNode::plan(motion_planning_msgs::KinematicPath &arm_path)
 			{
 				// append final waypoint to path
 				arm_path.set_states_size(arm_path.get_states_size()+1);
-				arm_path.states[arm_path.get_states_size()-1].set_values_size(num_joints_);
+				arm_path.states[arm_path.get_states_size()-1].set_vals_size(num_joints_);
 				for(int j = 0; j < num_joints_; j++)
 				{
-					arm_path.states[arm_path.get_states_size()-1].values[j] = final_waypoint[j];
-					angles_r[j] = arm_path.states[arm_path.get_states_size()-1].values[j];
+					arm_path.states[arm_path.get_states_size()-1].vals[j] = final_waypoint[j];
+					angles_r[j] = arm_path.states[arm_path.get_states_size()-1].vals[j];
 				}
 
+				// print out difference in goal configuration between found IK solution and final waypoint in path
 				i = arm_path.get_states_size() - 1;
 				ROS_INFO("IK Solution:");
 				ROS_INFO("state %d: %.3f %.3f %.3f %.3f %.3f %.3f %.3f",
-								 i,arm_path.states[i].values[0],arm_path.states[i].values[1],arm_path.states[i].values[2],arm_path.states[i].values[3],
-        				 arm_path.states[i].values[4],arm_path.states[i].values[5],arm_path.states[i].values[6]);
-				ROS_INFO("    diff: %.3f %.3f %.3f %.3f %.3f %.3f %.3f",
-									angles::shortest_angular_distance(arm_path.states[i].values[0], arm_path.states[i-1].values[0]),
-									angles::shortest_angular_distance(arm_path.states[i].values[1], arm_path.states[i-1].values[1]),
-									angles::shortest_angular_distance(arm_path.states[i].values[2], arm_path.states[i-1].values[2]),
-									angles::shortest_angular_distance(arm_path.states[i].values[3], arm_path.states[i-1].values[3]),
-									angles::shortest_angular_distance(arm_path.states[i].values[4], arm_path.states[i-1].values[4]),
-									angles::shortest_angular_distance(arm_path.states[i].values[5], arm_path.states[i-1].values[5]),
-									angles::shortest_angular_distance(arm_path.states[i].values[6], arm_path.states[i-1].values[6]));
+								 i,arm_path.states[i].vals[0],arm_path.states[i].vals[1],arm_path.states[i].vals[2],arm_path.states[i].vals[3],
+        				 arm_path.states[i].vals[4],arm_path.states[i].vals[5],arm_path.states[i].vals[6]);
+				ROS_INFO("  diff: %.3f %.3f %.3f %.3f %.3f %.3f %.3f",
+									angles::shortest_angular_distance(arm_path.states[i].vals[0], arm_path.states[i-1].vals[0]),
+									angles::shortest_angular_distance(arm_path.states[i].vals[1], arm_path.states[i-1].vals[1]),
+									angles::shortest_angular_distance(arm_path.states[i].vals[2], arm_path.states[i-1].vals[2]),
+									angles::shortest_angular_distance(arm_path.states[i].vals[3], arm_path.states[i-1].vals[3]),
+									angles::shortest_angular_distance(arm_path.states[i].vals[4], arm_path.states[i-1].vals[4]),
+									angles::shortest_angular_distance(arm_path.states[i].vals[5], arm_path.states[i-1].vals[5]),
+									angles::shortest_angular_distance(arm_path.states[i].vals[6], arm_path.states[i-1].vals[6]));
 
 				for(int j = 0; j < num_joints_; j++)
-					angles_r[j] = arm_path.states[i].values[j];
+					angles_r[j] = arm_path.states[i].vals[j];
 
 				sbpl_arm_env_.ComputeEndEffectorPos(angles_r, xyz_m, rpy_r);
-				ROS_INFO("        xyz: %.3f %.3f %.3f   rpy: %.3f %.3f %.3f",
+				ROS_INFO("    xyz: %.3f %.3f %.3f   rpy: %.3f %.3f %.3f",
 								 xyz_m[0],xyz_m[1],xyz_m[2],rpy_r[0],rpy_r[1],rpy_r[2]);
 			}
+			// print out error to goal position
 			for(unsigned int j = 0; j < goal_pose_constraint_.size(); ++j)
 			{
 				tf::poseMsgToTF(goal_pose_constraint_[j].pose.pose, tf_pose);
@@ -1076,24 +1097,23 @@ bool SBPLArmPlannerNode::plan(motion_planning_msgs::KinematicPath &arm_path)
 
 			// append actual goal to path
 			arm_path.set_states_size(arm_path.get_states_size()+1);
-			arm_path.states[arm_path.get_states_size()-1].set_values_size(num_joints_);
+			arm_path.states[arm_path.get_states_size()-1].set_vals_size(num_joints_);
 			for(int j = 0; j < num_joints_; j++)
 			{
-				arm_path.states[arm_path.get_states_size()-1].values[j] = final_waypoint[j];
-				angles_r[j] = arm_path.states[arm_path.get_states_size()-1].values[j];
+				arm_path.states[arm_path.get_states_size()-1].vals[j] = final_waypoint[j];
+				angles_r[j] = arm_path.states[arm_path.get_states_size()-1].vals[j];
 			}
 
-			for(int j = 0; j < num_joints_; j++)
-				angles_r[j] = arm_path.states[i].values[j];
-
+// 			for(int j = 0; j < num_joints_; j++)
+// 				angles_r[j] = arm_path.states[i].vals[j];
 // 			sbpl_arm_env_.ComputeEndEffectorPos(angles_r, xyz_m, rpy_r);
 // 			ROS_INFO("        xyz: %.3f %.3f %.3f   rpy: %.3f %.3f %.3f",
 // 				xyz_m[0],xyz_m[1],xyz_m[2],rpy_r[0],rpy_r[1],rpy_r[2]);
 
 			for(int b=0; b < num_joints_; ++b)
 			{
-				path[0][b] = arm_path.states[arm_path.get_states_size()-2].values[b];
-				path[1][b] = arm_path.states[arm_path.get_states_size()-1].values[b];
+				path[0][b] = arm_path.states[arm_path.get_states_size()-2].vals[b];
+				path[1][b] = arm_path.states[arm_path.get_states_size()-1].vals[b];
 			}
 
 			if(!interpolatePathToGoal(path, 0.1))
@@ -1162,7 +1182,8 @@ void SBPLArmPlannerNode::visualizeGoalPosition(geometry_msgs::PoseStamped pose)
   goal_marker_.header.frame_id = pose.header.frame_id;
   goal_marker_.ns = "end_effector_goal";
   goal_marker_.type = visualization_msgs::Marker::ARROW;
-  goal_marker_.action = 0;  // 0 add/modify an object, 1 (deprecated), 2 deletes an object
+	goal_marker_.id = 0;
+	goal_marker_.action = visualization_msgs::Marker::ADD;  // 0 add/modify an object, 1 (deprecated), 2 deletes an object
   goal_marker_.pose = pose.pose;
   goal_marker_.scale.x = env_resolution_*10; // Scale of the object 1,1,1 means default (usually 1 meter square)
   goal_marker_.scale.y = env_resolution_*10;
@@ -1179,7 +1200,7 @@ void SBPLArmPlannerNode::visualizeGoalPosition(geometry_msgs::PoseStamped pose)
   goal_marker_.header.frame_id = pose.header.frame_id;
   goal_marker_.ns = "end_effector_goal_sphere";
   goal_marker_.type = visualization_msgs::Marker::SPHERE;
-  goal_marker_.action = 0;  // 0 add/modify an object, 1 (deprecated), 2 deletes an object
+	goal_marker_.action = visualization_msgs::Marker::ADD;  // 0 add/modify an object, 1 (deprecated), 2 deletes an object
   goal_marker_.pose = pose.pose;
   goal_marker_.scale.x = 0.07; // Scale of the object 1,1,1 means default (usually 1 meter square)
   goal_marker_.scale.y = 0.07;
@@ -1256,7 +1277,7 @@ void SBPLArmPlannerNode::finishPath(motion_planning_msgs::KinematicPath &arm_pat
 
   for (unsigned int p = 0; p < (unsigned int) num_joints_; p++)
   {
-    jnt_pos(p) = arm_path.states[arm_path.get_states_size()-1].values[p];
+    jnt_pos(p) = arm_path.states[arm_path.get_states_size()-1].vals[p];
 //     ROS_INFO("%i: %f", p, jnt_pos(p));
   }
 
@@ -1288,7 +1309,7 @@ void SBPLArmPlannerNode::finishPath(motion_planning_msgs::KinematicPath &arm_pat
   ROS_INFO("vel: %f %f %f    rot: %f %f %f", twist.vel(0),twist.vel(1),twist.vel(2),twist.rot(0),twist.rot(1),twist.rot(2));
 
   arm_path.set_states_size(arm_path.get_states_size()+1);
-  arm_path.states[arm_path.get_states_size()-1].set_values_size(num_joints_);
+  arm_path.states[arm_path.get_states_size()-1].set_vals_size(num_joints_);
 
     // Determines the desired wrench from the pose error.
 //   KDL::Wrench wrench_desi;
@@ -1303,7 +1324,7 @@ void SBPLArmPlannerNode::finishPath(motion_planning_msgs::KinematicPath &arm_pat
       jnt_eff(i) += (jacobian(j,i) * twist(j));
 
     ROS_INFO("jnt_eff[%i] = %f",i,jnt_eff(i));
-    arm_path.states[arm_path.get_states_size()-1].values[i] = jnt_eff(i) + jnt_pos(i);
+    arm_path.states[arm_path.get_states_size()-1].vals[i] = jnt_eff(i) + jnt_pos(i);
   }
 
 
@@ -1428,13 +1449,15 @@ void SBPLArmPlannerNode::displayExpandedStates()
 	//get expanded state IDs
 	states = sbpl_arm_env_.debugExpandedStates();
 
-	std::string frame_id = "torso_lift_link";	
+	if(states.empty())
+		ROS_INFO("There are no states in the expanded states list");
+
 	obs_marker.header.frame_id = planning_frame_;
-	obs_marker.header.stamp = ros::Time::now();
+	obs_marker.header.stamp = ros::Time();
 	obs_marker.ns = "sbpl_arm_planner";
-	obs_marker.id = 0;
+	obs_marker.id = 2;
 	obs_marker.type = visualization_msgs::Marker::CUBE_LIST;
-	obs_marker.action = 0;
+	obs_marker.action =  visualization_msgs::Marker::ADD;
 	obs_marker.scale.x = env_resolution_;
 	obs_marker.scale.y = env_resolution_;
 	obs_marker.scale.z = env_resolution_;
@@ -1442,7 +1465,7 @@ void SBPLArmPlannerNode::displayExpandedStates()
 	obs_marker.color.g = 1.0;
 	obs_marker.color.b = 0.5;
 	obs_marker.color.a = 0.5;
-	obs_marker.lifetime = ros::Duration(50.0);
+	obs_marker.lifetime = ros::Duration(40.0);
 
 	obs_marker.points.reserve(50000);
 	for (unsigned int k = 0; k < states.size(); ++k) 
@@ -1470,8 +1493,8 @@ void SBPLArmPlannerNode::printPath(const motion_planning_msgs::KinematicPath &ar
 	for(unsigned int i = 0; i < arm_path.get_states_size(); i++)
 	{
 		ROS_INFO("state %d: %.3f %.3f %.3f %.3f %.3f %.3f %.3f",
-						 i,arm_path.states[i].values[0],arm_path.states[i].values[1],arm_path.states[i].values[2],arm_path.states[i].values[3],
-			 arm_path.states[i].values[4],arm_path.states[i].values[5],arm_path.states[i].values[6]);
+						 i,arm_path.states[i].vals[0],arm_path.states[i].vals[1],arm_path.states[i].vals[2],arm_path.states[i].vals[3],
+			 arm_path.states[i].vals[4],arm_path.states[i].vals[5],arm_path.states[i].vals[6]);
 
 		sbpl_arm_env_.ComputeEndEffectorPos(angles_r, xyz_m, rpy_r);
 		ROS_INFO("        xyz: %.3f %.3f %.3f   rpy: %.3f %.3f %.3f", xyz_m[0],xyz_m[1],xyz_m[2],rpy_r[0],rpy_r[1],rpy_r[2]);

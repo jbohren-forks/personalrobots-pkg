@@ -1,6 +1,5 @@
 <launch>
 
-  <!-- planner -->
   <node pkg="sbpl_arm_planner_node" type="sbpl_arm_planner_node" name="right_arm/sbpl_planner" output="screen" respawn="false">
   <!--   <node launch-prefix="gdb" pkg="sbpl_arm_planner_node" type="sbpl_arm_planner_node" name="right_arm/sbpl_planner" output="screen" respawn="false"/> -->
 
@@ -23,7 +22,7 @@
     <param name="lowres_cc" value="true" />
     <param name="use_collision_map" value="true" />
     <param name="use_collision_map_occ_to_update_voxel" value="true" />
-    <param name="use_exact_gripper_collision_checking" value="false" />
+    <param name="use_exact_gripper_collision_checking" value="true" />
     <param name="use_voxel3d_grid" value="true" />
 
     <!-- planning monitor -->
