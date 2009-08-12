@@ -35,21 +35,20 @@ class TestHandToBox(unittest.TestCase):
         self.assertAlmostEquals(o, e, 5, "Wrong bounding box for the hand")
 
   def test_convert_polygons_to_oriented_boxes(self):
-    xml_string = oriented_bounding_boxes.convert_polygons_to_oriented_boxes("test_case.xml", 0.1, 1.0)
-    gold_standard = "".join(open("test_case_bbox.xml", "r").readlines())
+    xml_string = oriented_bounding_boxes.convert_polygons_to_oriented_boxes("test/test_case.xml", 0.1, 1.0)
+    gold_standard = "".join(open("test/test_case_bbox.xml", "r").readlines())
     self.assertEquals(xml_string, gold_standard)
 
   def test_crop_oriented_boxes(self):
     box_num = 0
-    for cropped_image in oriented_bounding_boxes.cropped_oriented_boxes("test_case_bbox.xml", "test_case.jpg"):
+    for cropped_image in oriented_bounding_boxes.cropped_oriented_boxes("test/test_case_bbox.xml", "test/test_case.png"):
       box_num += 1
-      gold_standard = cv.LoadImage("test_case_%03d.jpg" % box_num)
+      gold_standard = cv.LoadImage("test/test_case_%03d.png" % box_num)
       self.assertEquals(cv.GetElemType(cropped_image), cv.GetElemType(gold_standard))
       self.assertEquals(cv.GetSize(cropped_image), cv.GetSize(gold_standard))
-      self.assertEquals(len(cropped_image.tostring()), len(gold_standard.tostring()))
-      #self.assertEquals(cropped_image.tostring(), gold_standard.tostring())
-      # The above line doesn't work. We want to split the image into channels, and use cv.cmp to
-      # test equality of each channel
+      diff = cv.CloneImage(gold_standard)
+      cv.AbsDiff(cropped_image, gold_standard, diff)
+      self.assertEquals(cv.Sum(diff), (0, 0, 0, 0))
 
 #----------------------------------------------------------------------
 #                             Main
@@ -72,10 +71,10 @@ if __name__ == "__main__":
   #print output
 
   #box_num = 0
-  #for cropped_image in oriented_bounding_boxes.cropped_oriented_boxes("test_case_bbox.xml", "test_case.jpg"):
+  #for cropped_image in oriented_bounding_boxes.cropped_oriented_boxes("test_case_bbox.xml", "test_case.png"):
   #  box_num += 1
   #  cv.NamedWindow("win")
   #  cv.ShowImage("win", cropped_image)
   #  cv.WaitKey()
-  #  cv.SaveImage("test_case_%03d.jpg" % box_num, cropped_image)
+  #  cv.SaveImage("test_case_%03d.png" % box_num, cropped_image)
 
