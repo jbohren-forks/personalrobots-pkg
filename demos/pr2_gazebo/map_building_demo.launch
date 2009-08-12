@@ -14,7 +14,9 @@
   <node pkg="rviz" type="rviz" respawn="false" />
 
   <!-- dynamic map generation -->
-  <node pkg="gmapping" type="slam_gmapping" respawn="false" />
+  <node pkg="gmapping" type="slam_gmapping" respawn="false" >
+    <remap to="base_scan" from="scan"/>
+  </node>
 
   <!-- nav-stack:
        NOTE:  not working with amcl in loop, need to fix how amcl updates dynamic map
