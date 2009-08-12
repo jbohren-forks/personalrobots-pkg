@@ -1,0 +1,18 @@
+<!-- 
+This launch file runs the forearm_cam_demo.launch file in the
+forearm_cam package, and processes its output into a color image. 
+
+Edit forearm_cam_demo.launch to set the camera url.
+-->
+
+<launch>
+  <include file="$(find forearm_cam)/forearm_cam_demo.launch" />
+
+  <group ns="forearm_cam_demo">
+    <param name="do_colorize" type="bool" value="True"/>
+    <param name="do_rectify" type="bool" value="True"/>
+  </group>
+  <node name="forearm_proc" pkg="stereo_image_proc" type="imageproc" respawn="false" output="screen">
+    <remap from="camera" to="forearm_cam_demo"/>
+  </node>
+</launch>

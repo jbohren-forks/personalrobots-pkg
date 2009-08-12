@@ -1,0 +1,17 @@
+<package>
+  <description brief="Launch file examples for camera drivers.">
+  This packages contains launch file examples for the various camera
+  drivers.
+  </description>
+  <author>Blaise Gassend</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/camera_launch_files</url>
+  <depend package="forearm_cam"/>
+  <depend package="prosilica_cam"/>
+  <depend package="dcam"/>
+  <depend package="stereo_image_proc"/>
+  <depend package="image_view"/>
+</package>
+
+

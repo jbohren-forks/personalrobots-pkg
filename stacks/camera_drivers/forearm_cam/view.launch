@@ -1,7 +1,0 @@
-<launch>
-  <node pkg="image_view" type="image_view" respawn="false" name="toto">
-    <param name="autosize" type="bool" value="True"/>
-    <param name="window_name" type="str" value="'Forearm camera'"/>
-    <remap from="image" to="/forearm/image_color"/>
-  </node>
-</launch>
