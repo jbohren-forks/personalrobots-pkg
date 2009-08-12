@@ -15,10 +15,10 @@
   <depend package="diagnostic_updater" />
   <depend package="manipulation_msgs" />
   <depend package="door_msgs" />
-  <depend package="visualization_msgs"/>
 
   <depend package="deprecated_srvs" />
   <depend package="nav_msgs" />
+  <depend package="geometry_msgs" />
 
   <depend package="robot_actions" />
   <depend package="nav_robot_actions" />
