@@ -43,7 +43,7 @@
 
 #define NUMOFLINKS 7
 
-#define UNIFORM_COST 1      // all the joint actions have the same costs when set
+#define UNIFORM_COST 0      // all the joint actions have the same costs when set
 
 #define NUM_TRANS_MATRICES 360 //precomputed matrices
 
@@ -208,9 +208,9 @@ typedef struct ENV_ROBARM_CONFIG
 
     std::vector <double> link_radius;
 
-    int gripper_radius;
-    int forearm_radius;
-    int upper_arm_radius;
+    unsigned int gripper_radius;
+		unsigned int forearm_radius;
+		unsigned int upper_arm_radius;
 	
     //for kinematic library use
     KDL::JntArray jnt_pos_in;
@@ -291,6 +291,7 @@ typedef struct ENVROBARMHASHENTRY
     short unsigned int endeff[3];           //end eff pos (xyz)
     short unsigned int action;              //successor action number
     double orientation[3][3];               //orientation of end effector (rotation matrix)
+		unsigned char dist;																//distance to closest obstacle
     double axis_angle;
 } EnvROBARMHashEntry_t;
 
@@ -451,6 +452,7 @@ class EnvironmentROBARM3D: public DiscreteSpaceInformation
     /** collision checking */
     int IsValidCoord(short unsigned int coord[NUMOFLINKS], short unsigned int endeff_pos[3], short unsigned int wrist_pos[3], short unsigned int elbow_pos[3], double orientation[3][3]);
     int IsValidCoord(const short unsigned int coord[], const std::vector<std::vector<short unsigned int> > &joints, double orientation[3][3], unsigned char ***Grid, const short unsigned int grid_dims[]);
+		int IsValidCoord(short unsigned int coord[], short unsigned int endeff_pos[3], short unsigned int wrist_pos[3], short unsigned int elbow_pos[3], double orientation[3][3], unsigned char &dist);
     int IsValidLineSegment(short unsigned int x0, short unsigned int y0, short unsigned int z0, short unsigned int x1, short unsigned int y1, short unsigned int z1, unsigned char ***Grid3D, vector<CELLV>* pTestedCells);
     int IsValidLineSegment(const short unsigned int xyz0[], const short unsigned int xyz1[], const int &radius, unsigned char*** Grid3D, const int grid_dims[], vector<CELLV>* pTestedCells);
     int IsValidLineSegment(const short unsigned int a[], const short unsigned int b[], int radius, vector<CELLV>* pTestedCells, unsigned char *** Grid3D,const  boost::shared_ptr<Voxel3d> vGrid);
@@ -458,8 +460,11 @@ class EnvironmentROBARM3D: public DiscreteSpaceInformation
     void AddObstacleToGrid(double* obstacle, int type, unsigned char*** grid, double gridcell_m);
     double distanceBetween3DLineSegments(const short unsigned int l1a[],const short unsigned int l1b[],
 					 const short unsigned int l2a[],const short unsigned int l2b[]);
+		unsigned char IsValidLineSegment(const short unsigned int a[],const short unsigned int b[],const unsigned int radius,vector<CELLV>* pTestedCells, unsigned char *** Grid3D);
+		
     inline unsigned char getVoxel(const int x, const int y, const int z, const boost::shared_ptr<Voxel3d> grid)
       { return (*grid)(x,y,z);  }
+		inline unsigned char getCell(const int xyz[], unsigned char ***Grid);
 
     bool isValidCell(const int xyz[], const int &radius, unsigned char ***Grid, const boost::shared_ptr<Voxel3d> vGrid);
     bool isValidCell(const short unsigned int xyz[], const int &radius, unsigned char ***Grid, const boost::shared_ptr<Voxel3d> vGrid);
@@ -544,6 +549,11 @@ inline bool EnvironmentROBARM3D::isValidCell(const short unsigned int xyz[], con
 		return false;
 
 	return true;
+}
+
+inline unsigned char EnvironmentROBARM3D::getCell(const int xyz[], unsigned char ***Grid)
+{
+	return Grid[xyz[0]][xyz[1]][xyz[2]];
 }
 
 //angles are counterclockwise from 0 to 360 in radians, 0 is the center of bin 0, ...
