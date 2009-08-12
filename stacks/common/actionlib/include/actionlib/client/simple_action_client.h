@@ -106,9 +106,10 @@ public:
 
   /**
    * \brief Blocks until this goal transitions to done
-   * Note that this call exits only after the SimpleDoneCallback() is called.
+   * \param timeout Max time to block before returning. A zero timeout is interpreted as an infinite timeout.
+   * \return True if the goal finished. False if the goal didn't finish within the allocated timeout
    */
-  void waitForGoalToFinish();
+  bool waitForGoalToFinish(const ros::Duration& timeout = ros::Duration(0,0) );
 
   /**
    * \brief Get the current state of the goal: [PENDING], [ACTIVE], or [DONE]
@@ -161,6 +162,7 @@ public:
 
 private:
   typedef ActionClient<ActionSpec> ActionClientT;
+  ros::NodeHandle nh_;
   ActionClientT ac_;
   GoalHandleT gh_;
 
@@ -407,15 +409,41 @@ void SimpleActionClient<ActionSpec>::handleTransition(GoalHandleT gh)
 }
 
 template<class ActionSpec>
-void SimpleActionClient<ActionSpec>::waitForGoalToFinish()
+bool SimpleActionClient<ActionSpec>::waitForGoalToFinish(const ros::Duration& timeout )
 {
   if (gh_.isExpired())
     ROS_ERROR("Trying to waitForGoalToFinish() when no goal is running. You are incorrectly using SimpleActionClient");
 
+  if (timeout < ros::Duration(0,0))
+    ROS_WARN("Timeouts can't be negative. Timeout is [%.2fs]", timeout.toSec());
+
+  ros::Time timeout_time = ros::Time::now() + timeout;
+
   boost::mutex::scoped_lock lock(done_mutex_);
 
-  if (cur_simple_state_ != SimpleGoalState::DONE)
-    done_condition_.wait(lock);
+  // Hardcode how often we check for node.ok()
+  ros::Duration loop_period = ros::Duration().fromSec(.1);
+
+  while (nh_.ok())
+  {
+    // Determine how long we should wait
+    ros::Duration time_left = timeout_time - ros::Time::now();
+
+    // Check if we're past the timeout time
+    if (timeout != ros::Duration(0,0) && time_left <= ros::Duration(0,0) )
+      break;
+
+    if (cur_simple_state_ == SimpleGoalState::DONE)
+      break;
+
+    // Truncate the time left
+    if (time_left > loop_period)
+      time_left = loop_period;
+
+    done_condition_.timed_wait(lock, boost::posix_time::milliseconds(time_left.toSec() * 1000.0f));
+  }
+
+  return (cur_simple_state_ == SimpleGoalState::DONE);
 }
 
 
