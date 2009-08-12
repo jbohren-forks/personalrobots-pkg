@@ -37,7 +37,7 @@
       <param name="costmap/cost_scaling_factor" value="1.0" />
       <param name="costmap/lethal_cost_threshold" value="100" />
       <!-- End Costmap Parameters -->
-     <remap from="raw_obstacles" to="~raw_obstacles" />
+     <remap from="obstacles" to="~obstacles" />
      <remap from="inflated_obstacles" to="~inflated_obstacles" />
 
      <!--param name="sbpl_action_file" textfile="$(find mpbench)/data/pr2sides.mprim" /-->

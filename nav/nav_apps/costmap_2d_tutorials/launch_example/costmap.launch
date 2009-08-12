@@ -10,7 +10,7 @@
   </node>
   <node pkg="fake_localization" type="fake_localization" respawn="false" />
   <node pkg="nav_view" type="nav_view" respawn="false">
-    <remap from="raw_obstacles" to="/costmap_test/costmap/raw_obstacles" />
+    <remap from="obstacles" to="/costmap_test/costmap/obstacles" />
     <remap from="inflated_obstacles" to="/costmap_test/costmap/inflated_obstacles" />
   </node>
 </launch>
