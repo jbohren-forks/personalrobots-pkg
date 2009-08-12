@@ -85,7 +85,7 @@
   </group>
 
 <!-- Forearm Camera -->
-  <include file="$(find forearm_cam)/prf_forearm_cam_config.launch"/>
+  <include file="$(find pr2_alpha)/prf_forearm_cam_config.launch"/>
   <node machine="three" name="forearm_cam_r" pkg="forearm_cam" type="forearm_node" respawn="false" output="screen"/>
 
 <!-- Sound  -->
