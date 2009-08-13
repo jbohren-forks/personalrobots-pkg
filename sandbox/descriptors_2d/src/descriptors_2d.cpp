@@ -722,7 +722,13 @@ void ContourFragmentDescriptor::doComputation(IplImage* img, const cv::Vector<Ke
     //IplImage* vis = cvCloneImage(edge_img);
     IplImage* vis = cvCreateImage(cvGetSize(img), IPL_DEPTH_8U, 3);
     cvCvtColor(edge_img, vis, CV_GRAY2RGB);
-    matches_->show(vis, 100000);
+
+    ChamferMatch::ChamferMatches match_instances = matches_->getMatches();
+    for (size_t i = 0; i<match_instances.size();++i) {
+    	printf("Match with cost: %g at lcation: (%d,%d)\n", match_instances[i].cost, match_instances[i].offset.x,match_instances[i].offset.y);
+    	matches_->showMatch(vis, i);
+    }
+
     CVSHOW("vis", vis);
 //    CVSHOW("edge", edge_img);
     cvWaitKey(0);

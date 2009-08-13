@@ -558,11 +558,14 @@ private:
 //		}
 //		printf("\n");
 
-		ChamferMatch match = cm->matchEdgeImage(gray, positions, scales);
+		ChamferMatch match = cm->matchEdgeImage(gray, LocationScaleImageRange(positions, scales));
 		IplImage* left_clone = cvCloneImage(left);
 
-		match.show(left, templates_no);
-
+	    ChamferMatch::ChamferMatches match_instances = match.getMatches();
+	    for (size_t i = 0; i<match_instances.size();++i) {
+	    	printf("Match with cost: %g at lcation: (%d,%d)\n", match_instances[i].cost, match_instances[i].offset.x,match_instances[i].offset.y);
+	    	match.showMatch(left, i);
+	    }
 
 
 		if(display_){

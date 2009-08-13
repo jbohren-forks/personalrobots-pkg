@@ -189,7 +189,7 @@ public:
 
 
 
-const int MAX_MATCHES = 2;
+//const int MAX_MATCHES = 20;
 
 /**
  * Used to represent a matching result.
@@ -197,38 +197,42 @@ const int MAX_MATCHES = 2;
 class ChamferMatch
 {
 
+	int max_matches_;
+	float min_match_distance_;
+
+public:
+
 
 	class ChamferMatchInstance {
 	public:
 		float cost;
 		CvPoint offset;
 		const ChamferTemplate* tpl;
-		vector<float> costs;
-		vector<int> img_offs;
+//		vector<float> costs;
+//		vector<int> img_offs;
 	};
 
-//	int max_matches;
+	typedef vector<ChamferMatchInstance> ChamferMatches;
+
 	int count;
-	vector<ChamferMatchInstance> matches;
+	ChamferMatches matches;
 
 
-	struct MatchCenter {
-		float x;
-		float y;
-		int count;
-		float cost;
-		const ChamferTemplate* tpl;
-	};
-	vector<MatchCenter> centers;
-
-public:
-	ChamferMatch() :  count(0)
+	ChamferMatch(int max_matches = 20, float min_match_distance = 10.0) :  max_matches_(max_matches),
+		min_match_distance_(min_match_distance), count(0)
 	{
-		matches.resize(MAX_MATCHES);
+		matches.resize(max_matches_);
 	}
 
+
+	void showMatch(IplImage* img, int index = 0);
+
+	const ChamferMatches& getMatches() const { return matches; }
+
+private:
 	void addMatch(float cost, CvPoint offset, ChamferTemplate* tpl, const vector<int>& addr, const vector<float>& costs);
-	void show(IplImage* img, int matches_no);
+
+	friend class ChamferMatching;
 };
 
 
@@ -269,7 +273,7 @@ public:
 	 * @param edge_img Edge image
 	 * @return a match object
 	 */
-	ChamferMatch matchEdgeImage(IplImage* edge_img, const ImageRange& range, float orientation_weight = 0.5);
+	ChamferMatch matchEdgeImage(IplImage* edge_img, const ImageRange& range, float orientation_weight = 0.5, int max_matches = 20, float min_match_distance = 10.0);
 
 
 private:

@@ -443,8 +443,6 @@ void findContourOrientations(const template_coords_t& coords, template_orientati
 
 ChamferTemplate::ChamferTemplate(IplImage* edge_image, float scale_) : addr_width(-1), scale(scale_)
 {
-	size = cvGetSize(edge_image);
-
 	template_coords_t local_coords;
 	template_orientations_t local_orientations;
 
@@ -457,11 +455,26 @@ ChamferTemplate::ChamferTemplate(IplImage* edge_image, float scale_) : addr_widt
 		local_orientations.clear();
 	}
 
+	size = cvGetSize(edge_image);
+	CvPoint min, max;
+	min.x = size.width;
+	min.y = size.height;
+	max.x = 0;
+	max.y = 0;
+
 	center = cvPoint(0,0);
 	for (size_t i=0;i<coords.size();++i) {
 		center.x += coords[i].first;
 		center.y += coords[i].second;
+
+		if (min.x>coords[i].first) min.x = coords[i].first;
+		if (min.y>coords[i].second) min.y = coords[i].second;
+		if (max.x<coords[i].first) max.x = coords[i].first;
+		if (max.y<coords[i].second) max.y = coords[i].second;
 	}
+
+	size.width = max.x - min.x;
+	size.height = max.y - min.y;
 
 	center.x /= coords.size();
 	center.y /= coords.size();
@@ -486,7 +499,9 @@ vector<int>& ChamferTemplate::getTemplateAddresses(int width)
 
 		for (size_t i=0; i<coords.size();++i) {
 			addr[i] = coords[i].second*width+coords[i].first;
+//			printf("Addr: %d, (%d,%d), %d\n", addr[i], coords[i].first, coords[i].second, width);
 		}
+//		printf("%d,%d\n", center.x, center.y);
 	}
 	return addr;
 }
@@ -751,6 +766,8 @@ void ChamferMatching::localChamferDistance(CvPoint offset, IplImage* dist_img, I
 
 	float cost = (sum_distance/truncate_)/addr.size();
 
+//	prinddrtf("%d,%d\n", tpl->center.x, tpl->center.y);
+
 	if (orientation_img!=NULL) {
 		float* optr = CV_PIXEL(float, orientation_img, x, y);
 		float sum_orientation = 0;
@@ -762,6 +779,7 @@ void ChamferMatching::localChamferDistance(CvPoint offset, IplImage* dist_img, I
 				//			costs[i] = orientation_diff(tpl.orientations[i], *(optr+addr[i]));
 			}
 		}
+//		printf("\n");
 
 		if (cnt_orientation>0) {
 			cost = beta*cost+alpha*(sum_orientation/(2*M_PI))/cnt_orientation;
@@ -772,6 +790,7 @@ void ChamferMatching::localChamferDistance(CvPoint offset, IplImage* dist_img, I
 //	if (x>260 && x<300 && y>160 && y<190 && fabs(tpl->scale-1.0)<0.01) {
 //		printf("\nCost: %g\n", cost);
 //	}
+
 
 	cm.addMatch(cost, offset, tpl, addr, costs);
 
@@ -788,11 +807,16 @@ void ChamferMatching::matchTemplates(IplImage* dist_img, IplImage* orientation_i
 
 			CvPoint loc = crt.first;
 			float scale = crt.second;
+			ChamferTemplate* tpl = templates[i]->rescale(scale);
 
-			if (loc.x-templates[i]->center.x<0 || loc.x+templates[i]->size.width-templates[i]->center.x>=dist_img->width) continue;
-			if (loc.y-templates[i]->center.y<0 || loc.y+templates[i]->size.height-templates[i]->center.y>=dist_img->height) continue;
+//			printf("Location: (%d,%d), template: (%d,%d), img: (%d,%d)\n",loc.x,loc.y,
+//					templates[i]->size.width,templates[i]->size.height,
+//					dist_img->width, dist_img->height);
 
-			localChamferDistance(loc, dist_img, orientation_img, templates[i]->rescale(scale), cm, orientation_weight);
+			if (loc.x-tpl->center.x<0 || loc.x+tpl->size.width-tpl->center.x>=dist_img->width) continue;
+			if (loc.y-tpl->center.y<0 || loc.y+tpl->size.height-tpl->center.y>=dist_img->height) continue;
+//			printf("%d,%d - %d,%d\n", loc.x, loc.y, templates[i]->center.x, templates[i]->center.y);
+			localChamferDistance(loc, dist_img, orientation_img, tpl, cm, orientation_weight);
 		}
 
 		delete it;
@@ -806,14 +830,15 @@ void ChamferMatching::matchTemplates(IplImage* dist_img, IplImage* orientation_i
 * @param edge_img Edge image
 * @return a match object
 */
-ChamferMatch ChamferMatching::matchEdgeImage(IplImage* edge_img, const ImageRange& range, float orientation_weight)
+ChamferMatch ChamferMatching::matchEdgeImage(IplImage* edge_img, const ImageRange& range, float orientation_weight, int max_matches, float min_match_distance)
 {
 	CV_Assert(edge_img->nChannels==1);
 
 	IplImage* dist_img;
 	IplImage* annotated_img;
 	IplImage* orientation_img;
-	ChamferMatch cm;
+	ChamferMatch cm (max_matches, min_match_distance);
+
 
 	dist_img = cvCreateImage(cvSize(edge_img->width, edge_img->height), IPL_DEPTH_32F, 1);
 	annotated_img = cvCreateImage(cvSize(edge_img->width, edge_img->height), IPL_DEPTH_32S, 2);
@@ -843,14 +868,12 @@ ChamferMatch ChamferMatching::matchEdgeImage(IplImage* edge_img, const ImageRang
 }
 
 
-int CLUSTER_SIZE = 10;
-
 void ChamferMatch::addMatch(float cost, CvPoint offset, ChamferTemplate* tpl, const vector<int>& addr, const vector<float>& costs)
 {
 	bool new_match = true;
 
 	for (int i=0; i<count; ++i) {
-		if (abs(matches[i].offset.x-offset.x)+abs(matches[i].offset.y-offset.y)<CLUSTER_SIZE) {
+		if (abs(matches[i].offset.x-offset.x)+abs(matches[i].offset.y-offset.y)<min_match_distance_) {
 			// too close, not a new match
 			new_match = false;
 			// if better cost, replace existing match
@@ -858,8 +881,8 @@ void ChamferMatch::addMatch(float cost, CvPoint offset, ChamferTemplate* tpl, co
 				matches[i].cost = cost;
 				matches[i].offset = offset;
 				matches[i].tpl = tpl;
-				matches[i].costs = costs;
-				matches[i].img_offs = addr;
+//				matches[i].costs = costs;
+//				matches[i].img_offs = addr;
 			}
 			// re-bubble to keep ordered
 			int k = i;
@@ -876,12 +899,12 @@ void ChamferMatch::addMatch(float cost, CvPoint offset, ChamferTemplate* tpl, co
 
 	if (new_match) {
 		// if we don't have enough matches yet, add it to the array
-		if (count<MAX_MATCHES) {
+		if (count<max_matches_) {
 			matches[count].cost = cost;
 			matches[count].offset = offset;
 			matches[count].tpl = tpl;
-			matches[count].costs = costs;
-			matches[count].img_offs = addr;
+//			matches[count].costs = costs;
+//			matches[count].img_offs = addr;
 			count++;
 		}
 		// otherwise find the right position to insert it
@@ -905,47 +928,30 @@ void ChamferMatch::addMatch(float cost, CvPoint offset, ChamferTemplate* tpl, co
 			matches[j].cost = cost;
 			matches[j].offset = offset;
 			matches[j].tpl = tpl;
-			matches[j].costs = costs;
-			matches[j].img_offs = addr;
+//			matches[j].costs = costs;
+//			matches[j].img_offs = addr;
 		}
 	}
-
-
-	//
-	//	for (int i=0;i<count;++i) {
-	//		printf("Cost: %f\n", matches[i].cost);
-	//	}
-	//	printf("------------------------------------------------\n");
-
 }
 
-void ChamferMatch::show(IplImage* img, int matches_no)
+void ChamferMatch::showMatch(IplImage* img, int index)
 {
-	printf("I have found %d matches.\n",count);
+	if (index>=count) {
+		printf("Index too big.\n");
+	}
 
-	int show_cnt = min(count, matches_no);
+	assert(img->nChannels==3);
 
-	for (int i=0;i<show_cnt;++i) {
-		ChamferMatchInstance match = matches[i];
-		printf("Match at: (%d,%d), scale: %f, cost: %f\n", match.offset.x, match.offset.y, match.tpl->scale,  match.cost);
+	ChamferMatchInstance match = matches[index];
 
-		const template_coords_t& templ_coords = match.tpl->coords;
-		for (size_t i=0;i<templ_coords.size();++i) {
-			printf("%g, ", match.costs[i]);
-			int x = match.offset.x + templ_coords[i].first;
-			int y = match.offset.y + templ_coords[i].second;
+	const template_coords_t& templ_coords = match.tpl->coords;
+	for (size_t i=0;i<templ_coords.size();++i) {
+		//			printf("%g, ", match.costs[i]);
+		int x = match.offset.x + templ_coords[i].first;
+		int y = match.offset.y + templ_coords[i].second;
 
-//			printf("(%d,%d) + (%d,%d) = (%d,%d)\n", match.offset.x,match.offset.y, templ_coords[i].first, templ_coords[i].second, x,y);
-
-			unsigned char *p = CV_PIXEL(unsigned char, img,x,y);
-			p[0] = p[1] = p[2] = 0;
-
-			if (match.costs[i]>2) {
-				p[2] = 255;
-			} else {
-				p[1] = 255;
-			}
-		}
-		printf("\n");
+		unsigned char *p = CV_PIXEL(unsigned char, img,x,y);
+		p[0] = p[2] = 0;
+		p[1] = 255;
 	}
 }
