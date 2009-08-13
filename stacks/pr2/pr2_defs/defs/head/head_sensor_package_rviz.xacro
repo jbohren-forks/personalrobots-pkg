@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+
+<robot>
+
+  <rviz_resource_location path="$(find pr2_ogre)/Media/materials/scripts"/>
+  <rviz_resource_location path="$(find pr2_ogre)/Media/materials/textures"/>
+
+  <macro name="pr2_tilting_laser_rviz" params="name">
+    <rviz reference="${name}_mount_link">
+      <material value="PR2/Red" />
+    </rviz>
+  </macro>
+
+  <!-- Made by Kevin for A2 sensor package -->
+  <!-- Origin is center mount screw on sensor plate mount -->
+  <!-- When mounted properly, should have same origin as head plate frame -->
+  <macro name="pr2_head_sensor_package_rviz" params="name">
+    <rviz reference="${name}_sensor_link">
+      <material value="PR2/Blue" />
+    </rviz>
+  </macro>
+
+  <!-- Made by Kevin for double stereo camera for PR-2 Beta. -->
+  <!-- Needs calibration verification, and CAD check. -->
+  <macro name="double_stereo_camera_rviz" params="name">
+    <!-- Define link to stereo cameras, set origin relative to that -->
+    <rviz reference="${name}_double_stereo_link">
+      <material value="PR2/Blue" />
+    </rviz>
+  </macro>
+
+  <macro name="stereo_camera_rviz" params="name">
+    <rviz reference="${name}_link">
+      <material value="PR2/Blue" />
+    </rviz>
+    <rviz reference="${name}_optical_frame_link">
+      <material value="PR2/Blue" />
+    </rviz>
+    <rviz reference="${name}_l_stereo_camera_link">
+      <material value="PR2/Blue" />
+    </rviz>
+    <rviz reference="${name}_r_stereo_camera_link">
+      <material value="PR2/Blue" />
+    </rviz>
+  </macro>
+
+</robot>

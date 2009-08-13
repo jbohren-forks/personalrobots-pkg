@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+
+<robot>
+
+  <rviz_resource_location path="$(find pr2_ogre)/Media/materials/scripts"/>
+  <rviz_resource_location path="$(find pr2_ogre)/Media/materials/textures"/>
+
+
+  <macro name="pr2_head_pan_rviz" params="name">
+    <rviz reference="${name}_link">
+      <material value="PR2/Blue" />
+    </rviz>
+  </macro>
+
+
+
+  <macro name="pr2_head_tilt_rviz" params="name">
+    <rviz reference="${name}_link">
+      <material value="PR2/Green" />
+    </rviz>
+  </macro>
+
+
+
+  <macro name="pr2_head_rviz" params="name">
+    <rviz reference="${name}_plate_frame_link">
+      <material value="PR2/Blue" />
+    </rviz>
+  </macro>
+
+
+</robot>

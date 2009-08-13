@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+
+<robot>
+
+  <rviz_resource_location path="$(find pr2_ogre)/Media/materials/scripts"/>
+  <rviz_resource_location path="$(find pr2_ogre)/Media/materials/textures"/>
+
+ <macro name="pr2_tilting_laser_alpha2_rviz" params="name">
+    <rviz reference="${name}_mount_link">
+      <material value="PR2/Red" />
+    </rviz>
+  </macro>
+
+</robot>
