@@ -2,7 +2,7 @@
   <description brief="Hand tweak camera extrinsics">
      Provides a tool to make small changes to the location of a monocular camera or stereocamera attached to the robot
   </description>
-  <author>Vijay Pradeep & Alex Sorokin</author>
+  <author>Vijay Pradeep, Alex Sorokin</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/camera_offsetter</url>
