@@ -79,14 +79,14 @@ private:
 
 ////////////////////////// inline functions follow ////////////////////////////////////////
 
-DistanceFieldVoxel::DistanceFieldVoxel(int distance_sq):
+inline DistanceFieldVoxel::DistanceFieldVoxel(int distance_sq):
   distance_square_(distance_sq)
 {
     for (int i=0; i<3; i++)
       closest_point_[i] = DistanceFieldVoxel::UNINITIALIZED;
 }
 
-DistanceFieldVoxel::DistanceFieldVoxel()
+inline DistanceFieldVoxel::DistanceFieldVoxel()
 {
 }
 
