@@ -68,9 +68,9 @@ int dx[DIRECTIONS] = { 1,  1,  1,  0,  0,  0, -1, -1, -1,    1,  1,  1,  0,  0, 
 int dy[DIRECTIONS] = { 1,  0, -1,  1,  0, -1, -1,  0,  1,    1,  0, -1,  1, -1, -1,  0,  1,    1,  0, -1,  1,  0, -1, -1,  0,  1};
 int dz[DIRECTIONS] = {-1, -1, -1, -1, -1, -1, -1, -1, -1,    0,  0,  0,  0,  0,  0,  0,  0,    1,  1,  1,  1,  1,  1,  1,  1,  1};
 
-#if DEBUG
+// #if DEBUG
     FILE* fSucc = fopen("debugsuccs.txt", "w");
-#endif
+// #endif
 
 #if DEBUG_HEURISTIC
     FILE* fDeb = fopen("debug_environment.txt", "w");
@@ -572,30 +572,19 @@ int EnvironmentROBARM3D::cost(short unsigned int state1coord[], short unsigned i
 
 int EnvironmentROBARM3D::cost(EnvROBARMHashEntry_t* HashEntry1, EnvROBARMHashEntry_t* HashEntry2, bool bState2IsGoal)
 {
-    //why does the goal return as invalid from IsValidCoord?
-//     if (!bState2IsGoal)
-//     {
-//         if(!IsValidCoord(HashEntry1->coord,HashEntry1) || !IsValidCoord(HashEntry2->coord,HashEntry2))
-//             return INFINITECOST;
-//     }
-//     else
-//     {
-//         if(!IsValidCoord(HashEntry1->coord,HashEntry1))
-//             return INFINITECOST;
-//     }
 
-#if UNIFORM_COST
-    return 1*COSTMULT;
-#else
+	#if UNIFORM_COST
+			return 1*COSTMULT;
+	#else
 
-		if(HashEntry1->dist < 10)
+		if(HashEntry2->dist < 10)
 			return 1 * COSTMULT * 10;
-		else if(HashEntry1->dist < 20)
+		else if(HashEntry2->dist < 20)
 			return 1 * COSTMULT * 20;
 		else
 			return 1 * COSTMULT;
 		
-#endif
+	#endif
 }
 
 void EnvironmentROBARM3D::GetAxisAngle(double R1[3][3], double R2[3][3], double* angle)
@@ -698,9 +687,9 @@ EnvironmentROBARM3D::EnvironmentROBARM3D()
 
     //hard coded temporarily (meters)
     EnvROBARMCfg.arm_length = 1.3;
-    EnvROBARMCfg.link_radius.push_back(.075);
+    EnvROBARMCfg.link_radius.push_back(.08);
+    EnvROBARMCfg.link_radius.push_back(.07);
     EnvROBARMCfg.link_radius.push_back(.06);
-    EnvROBARMCfg.link_radius.push_back(.05);
 
     EnvROBARMCfg.exact_gripper_collision_checking = false;
     EnvROBARMCfg.use_voxel3d_occupancy_grid = false;
@@ -1949,13 +1938,15 @@ void EnvironmentROBARM3D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vect
 				OutHashEntry = CreateNewHashEntry(succcoord, EnvROBARMCfg.num_joints, endeff, i, orientation);
 				OutHashEntry->axis_angle = axis_angle;
 				OutHashEntry->dist = dist;
+				
+				fprintf(fSucc, "%5i: action: %i dist: %u cost: %d endeff: %3d %3d %3d\n",
+								OutHashEntry->stateID, i,OutHashEntry->dist, cost(HashEntry,OutHashEntry,bSuccisGoal),OutHashEntry->endeff[0],OutHashEntry->endeff[1],OutHashEntry->endeff[2]);
 		}
 
 		//put successor on successor list with the proper cost
 		SuccIDV->push_back(OutHashEntry->stateID);
+		CostV->push_back(cost(HashEntry,OutHashEntry,bSuccisGoal) + EnvROBARMCfg.ActiontoActionCosts[HashEntry->action][OutHashEntry->action]);
 
-		CostV->push_back(cost(HashEntry,OutHashEntry,bSuccisGoal) +
-											EnvROBARMCfg.ActiontoActionCosts[HashEntry->action][OutHashEntry->action]);
 		#if DEBUG
 			fprintf(fSucc, "%5i: action: %i axis_angle: %.3f  endeff: %3d %3d %3d\n",
 					OutHashEntry->stateID, i, axis_angle,
@@ -2426,7 +2417,9 @@ bool EnvironmentROBARM3D::SetGoalPosition(const std::vector <std::vector<double>
 //     if(EnvROBARMCfg.Grid3D[EnvROBARMCfg.EndEffGoals[i].xyz[0]][EnvROBARMCfg.EndEffGoals[i].xyz[1]][EnvROBARMCfg.EndEffGoals[i].xyz[2]] >= EnvROBARMCfg.ObstacleCost)
     if(!isValidCell((EnvROBARMCfg.EndEffGoals[i].xyz[0]), (EnvROBARMCfg.EndEffGoals[i].xyz[1]), (EnvROBARMCfg.EndEffGoals[i].xyz[2]), 8, EnvROBARMCfg.Grid3D, voxel_grid))
     {
-      printf("End effector goal position (%.2f %.2f %.2f) is on an invalid cell.\n",EnvROBARMCfg.EndEffGoals[i].pos[0],EnvROBARMCfg.EndEffGoals[i].pos[1],EnvROBARMCfg.EndEffGoals[i].pos[2]);
+			int xyz[3] = {(int)(EnvROBARMCfg.EndEffGoals[i].xyz[0]), (int)(EnvROBARMCfg.EndEffGoals[i].xyz[1]), (int)(EnvROBARMCfg.EndEffGoals[i].xyz[2])};
+			printf("End effector goal position (%.2f %.2f %.2f) is on an invalid cell (dist = %u).\n",EnvROBARMCfg.EndEffGoals[i].pos[0],EnvROBARMCfg.EndEffGoals[i].pos[1],EnvROBARMCfg.EndEffGoals[i].pos[2],
+						 getCell(xyz, EnvROBARMCfg.Grid3D));
 
       EnvROBARMCfg.EndEffGoals.erase(EnvROBARMCfg.EndEffGoals.begin()+i);
 
