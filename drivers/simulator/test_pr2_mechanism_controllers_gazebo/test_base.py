@@ -131,7 +131,7 @@ class BaseTest(unittest.TestCase):
 
     def odomInput(self, odom):
         #self.printBaseOdom(odom)
-        orientation = odom.pose.orientation
+        orientation = odom.pose.pose.orientation
         q = Q(orientation.x, orientation.y, orientation.z, orientation.w)
         q.normalize()
         if self.odom_initialized == False:
@@ -178,5 +178,5 @@ class BaseTest(unittest.TestCase):
         print "LNK\n"
         self.pub = rospy.Publisher("/cmd_vel", Twist)
         rospy.Subscriber("/base_pose_ground_truth", Odometry, self.p3dInput)
-        rospy.Subscriber("/odom",                   Odometry, self.odomInput)
+        rospy.Subscriber("pr2_odometry/odom",                   Odometry, self.odomInput)
         rospy.init_node(name, anonymous=True)

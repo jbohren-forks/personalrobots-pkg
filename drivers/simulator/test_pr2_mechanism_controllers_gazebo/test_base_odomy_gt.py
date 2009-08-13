@@ -53,7 +53,7 @@ TARGET_VX       =  0.0
 TARGET_VY       =  0.5
 TARGET_VW       =  0.0
 TARGET_DURATION = 2.0
-TARGET_TOL      = 1.0 #empirical test result john - 20081124
+TARGET_TOL      = 0.2
 
 from test_base import BaseTest, Q, E
 class Y_GT(BaseTest):
