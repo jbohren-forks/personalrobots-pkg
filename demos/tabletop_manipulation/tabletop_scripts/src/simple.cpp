@@ -37,15 +37,13 @@
 /* \author: Ioan Sucan */
 
 #include <ros/ros.h>
-#include <robot_actions/action_client.h>
 #include <mapping_msgs/ObjectInMap.h>
 #include <mapping_msgs/AttachedObject.h>
 #include <pr2_mechanism_controllers/TrajectoryStart.h>
 
-#include <move_arm/MoveArmGoal.h>
-#include <move_arm/MoveArmState.h>
-#include <pr2_robot_actions/ActuateGripperState.h>
-#include <std_msgs/Float64.h>
+#include <actionlib/client/simple_action_client.h>
+#include <move_arm/MoveArmAction.h>
+#include <move_arm/ActuateGripperAction.h>
 
 #include <boost/thread/thread.hpp>
 #include <recognition_lambertian/FindObjectPoses.h>
@@ -57,7 +55,7 @@ class CleanTable
 
 public:
     
-    CleanTable(void) :  move_arm("move_right_arm"), gripper("actuate_gripper_right_arm")
+    CleanTable(void) :  move_arm(nh, "move_right_arm"), gripper(nh, "actuate_gripper_right_arm")
     {    
 	pubObj = nh.advertise<mapping_msgs::ObjectInMap>("object_in_map", 1);
 	pubAttach = nh.advertise<mapping_msgs::AttachedObject>("attach_object", 1);
@@ -155,7 +153,6 @@ public:
     bool moveTo(recognition_lambertian::TableTopObject &obj)
     {
 	move_arm::MoveArmGoal goal;
-	int32_t                        feedback;
 	
 	goal.goal_constraints.set_pose_constraint_size(1);
 	goal.goal_constraints.pose_constraint[0].pose = obj.grasp_pose;
@@ -184,39 +181,62 @@ public:
 	
 	sendPoint(obj.grasp_pose.header, obj.grasp_pose.pose.position.x, obj.grasp_pose.pose.position.y, obj.grasp_pose.pose.position.z);
 	
-	if (move_arm.execute(goal, feedback, ros::Duration(60.0)) != robot_actions::SUCCESS)
+	
+	bool finished_within_time;
+	move_arm.sendGoal(goal);
+	finished_within_time = move_arm.waitForGoalToFinish(ros::Duration(60.0));
+	
+	if (!finished_within_time)
 	{
-	    ROS_ERROR("Failed achieving goal");
+	    move_arm.cancelGoal();
+	    std::cerr << "Timed out achieving goal" << std::endl;
 	    return false;
 	}
 	else
-	    return true;
+	{
+	    std::cout << "Final state is " << move_arm.getTerminalState().toString() << std::endl;
+	    return move_arm.getTerminalState() == actionlib::TerminalState::SUCCEEDED;
+	}
     }
 
     bool gripClose(void)
     {	
-	std_msgs::Float64 g, fb;
+	move_arm::ActuateGripperGoal g;
 	g.data = -80;
-	if (gripper.execute(g, fb, ros::Duration(15.0)) != robot_actions::SUCCESS)
-	    return true;
+	
+	gripper.sendGoal(g);
+	bool finished_before_timeout = gripper.waitForGoalToFinish(ros::Duration(10));
+	if (finished_before_timeout)
+	{
+	    std::cout << "Final state is " << gripper.getTerminalState().toString() << std::endl;
+	    return gripper.getTerminalState() == actionlib::TerminalState::SUCCEEDED;
+	}
 	else
 	{
-	    ROS_ERROR("Gripper close failed");
-	    return true;
+	    gripper.cancelGoal();
+	    std::cerr << "Gripper close: failed achieving goal" << std::endl;
+	    return false;
 	}
     }
     
     bool gripOpen(void)
     {
-	std_msgs::Float64 g, fb;
+	move_arm::ActuateGripperGoal g;
 	g.data = 80;
-	if (gripper.execute(g, fb, ros::Duration(15.0)) != robot_actions::SUCCESS)
-	    return true;
+	
+	gripper.sendGoal(g);
+	bool finished_before_timeout = gripper.waitForGoalToFinish(ros::Duration(10));
+	if (finished_before_timeout)
+	{
+	    std::cout << "Final state is " << gripper.getTerminalState().toString() << std::endl;
+	    return gripper.getTerminalState() == actionlib::TerminalState::SUCCEEDED;
+	}
 	else
 	{
-	    ROS_ERROR("Gripper open failed");
-	    return true;
-	}	
+	    gripper.cancelGoal();
+	    std::cerr << "Gripper open: failed achieving goal" << std::endl;
+	    return false;
+	}
     }
 
     bool graspObject(recognition_lambertian::TableTopObject &obj)
@@ -259,8 +279,8 @@ public:
     
 private:
     
-    robot_actions::ActionClient<move_arm::MoveArmGoal, move_arm::MoveArmState, int32_t> move_arm;
-    robot_actions::ActionClient<std_msgs::Float64, pr2_robot_actions::ActuateGripperState, std_msgs::Float64> gripper;
+    actionlib::SimpleActionClient<move_arm::MoveArmAction>        move_arm;
+    actionlib::SimpleActionClient<move_arm::ActuateGripperAction> gripper;
     
     ros::NodeHandle nh;
     
