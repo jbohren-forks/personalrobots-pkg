@@ -29,11 +29,74 @@
 
 #include "pluginlib/plugin_macros.h"
 #include "mechanism_control/controller.h"
+
+#include "robot_mechanism_controllers/cartesian_hybrid_controller.h"
+#include "robot_mechanism_controllers/cartesian_pose_controller.h"
+#include "robot_mechanism_controllers/cartesian_tff_controller.h"
+#include "robot_mechanism_controllers/cartesian_trajectory_controller.h"
+#include "robot_mechanism_controllers/cartesian_twist_controller.h"
+#include "robot_mechanism_controllers/cartesian_twist_controller_ik.h"
+#include "robot_mechanism_controllers/cartesian_wrench_controller.h"
+#include "robot_mechanism_controllers/dynamic_loader_controller.h"
+#include "robot_mechanism_controllers/endeffector_constraint_controller.h"
+#include "robot_mechanism_controllers/joint_autotuner.h"
+#include "robot_mechanism_controllers/joint_blind_calibration_controller.h"
+#include "robot_mechanism_controllers/joint_calibration_controller.h"
+#include "robot_mechanism_controllers/joint_chain_constraint_controller.h"
+#include "robot_mechanism_controllers/joint_chain_sine_controller.h"
 #include "robot_mechanism_controllers/joint_effort_controller.h"
+#include "robot_mechanism_controllers/joint_inverse_dynamics_controller.h"
+#include "robot_mechanism_controllers/joint_limit_calibration_controller.h"
+#include "robot_mechanism_controllers/joint_pd_controller.h"
+#include "robot_mechanism_controllers/joint_position_controller.h"
+#include "robot_mechanism_controllers/joint_position_smoothing_controller.h"
+#include "robot_mechanism_controllers/joint_ud_calibration_controller.h"
+#include "robot_mechanism_controllers/joint_velocity_controller.h"
+#include "robot_mechanism_controllers/probe.h"
+#include "robot_mechanism_controllers/trigger_controller.h"
 
 using namespace controller;
 
 BEGIN_PLUGIN_LIST(Controller)
+
 REGISTER_PLUGIN(JointEffortController)
+REGISTER_PLUGIN(JointVelocityController)
+REGISTER_PLUGIN(JointPositionController)
+
+REGISTER_PLUGIN(CartesianWrenchController)
+REGISTER_PLUGIN(CartesianTwistController)
+REGISTER_PLUGIN(CartesianPoseController)
+
+REGISTER_PLUGIN(JointUDCalibrationController)
+
+REGISTER_PLUGIN(CartesianTrajectoryController)
+
+REGISTER_PLUGIN(DynamicLoaderController)
+
+REGISTER_PLUGIN(TriggerController);
+REGISTER_PLUGIN(TriggerControllerNode);
+
+REGISTER_PLUGIN(Probe)
+REGISTER_PLUGIN(JointPDController)
+REGISTER_PLUGIN(JointPDControllerNode)
+REGISTER_PLUGIN(CartesianTwistControllerIk)
+REGISTER_PLUGIN(CartesianTFFController)
+REGISTER_PLUGIN(CartesianHybridController)
+REGISTER_PLUGIN(CartesianHybridControllerNode)
+REGISTER_PLUGIN(EndeffectorConstraintController)
+REGISTER_PLUGIN(EndeffectorConstraintControllerNode)
+REGISTER_PLUGIN(JointChainConstraintControllerNode)
+REGISTER_PLUGIN(JointInverseDynamicsController);
+REGISTER_PLUGIN(JointPositionSmoothController)
+REGISTER_PLUGIN(JointPositionSmoothControllerNode)
+
+REGISTER_PLUGIN(JointAutotuner)
+REGISTER_PLUGIN(JointAutotunerNode)
+REGISTER_PLUGIN(JointBlindCalibrationController)
+REGISTER_PLUGIN(JointBlindCalibrationControllerNode)
+REGISTER_PLUGIN(JointCalibrationControllerNode)
+REGISTER_PLUGIN(JointChainSineController)
+REGISTER_PLUGIN(JointLimitCalibrationControllerNode)
+
 END_PLUGIN_LIST
 

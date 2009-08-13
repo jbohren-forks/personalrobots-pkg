@@ -1,3 +1,42 @@
 <library path="lib/librobot_mechanism_controllers">
   <plugin name="JointEffortController" class="JointEffortController" type="Controller" />
+
+  <plugin name="JointVelocityController" class="JointVelocityController" type="Controller" />
+  <plugin name="JointPositionController" class="JointPositionController" type="Controller" />
+
+  <plugin name="CartesianWrenchController" class="CartesianWrenchController" type="Controller" />
+  <plugin name="CartesianTwistController" class="CartesianTwistController" type="Controller" />
+  <plugin name="CartesianPoseController" class="CartesianPoseController" type="Controller" />
+
+  <plugin name="JointUDCalibrationController" class="JointUDCalibrationController" type="Controller" />
+
+  <plugin name="CartesianTrajectoryController" class="CartesianTrajectoryController" type="Controller" />
+
+  <plugin name="DynamicLoaderController" class="DynamicLoaderController" type="Controller" />
+
+  <plugin name="TriggerController" class="TriggerController" type="Controller" />
+  <plugin name="TriggerControllerNode" class="TriggerControllerNode" type="Controller" />
+
+  <plugin name="Probe" class="Probe" type="Controller" />
+  <plugin name="JointPDController" class="JointPDController" type="Controller" />
+  <plugin name="JointPDControllerNode" class="JointPDControllerNode" type="Controller" />
+  <plugin name="CartesianTwistControllerIk" class="CartesianTwistControllerIk" type="Controller" />
+  <plugin name="CartesianTFFController" class="CartesianTFFController" type="Controller" />
+  <plugin name="CartesianHybridController" class="CartesianHybridController" type="Controller" />
+  <plugin name="CartesianHybridControllerNode" class="CartesianHybridControllerNode" type="Controller" />
+  <plugin name="EndeffectorConstraintController" class="EndeffectorConstraintController" type="Controller" />
+  <plugin name="EndeffectorConstraintControllerNode" class="EndeffectorConstraintControllerNode" type="Controller" />
+  <plugin name="JointChainConstraintControllerNode" class="JointChainConstraintControllerNode" type="Controller" />
+  <plugin name="JointInverseDynamicsController" class="JointInverseDynamicsController" type="Controller" />
+  <plugin name="JointPositionSmoothController" class="JointPositionSmoothController" type="Controller" />
+  <plugin name="JointPositionSmoothControllerNode" class="JointPositionSmoothControllerNode" type="Controller" />
+
+  <plugin name="JointAutotuner" class="JointAutotuner" type="Controller" />
+  <plugin name="JointAutotunerNode" class="JointAutotunerNode" type="Controller" />
+  <plugin name="JointBlindCalibrationController" class="JointBlindCalibrationController" type="Controller" />
+  <plugin name="JointBlindCalibrationControllerNode" class="JointBlindCalibrationControllerNode" type="Controller" />
+  <plugin name="JointCalibrationControllerNode" class="JointCalibrationControllerNode" type="Controller" />
+  <plugin name="JointChainSineController" class="JointChainSineController" type="Controller" />
+  <plugin name="JointLimitCalibrationControllerNode" class="JointLimitCalibrationControllerNode" type="Controller" />
+
 </library>
