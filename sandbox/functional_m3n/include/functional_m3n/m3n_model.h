@@ -107,6 +107,9 @@ class M3NModel
     /*!
      * \brief Saves this M3N model to file
      *
+     * To avoid loading/saving issues, the basename should contain the
+     * full path of the file.
+     *
      * \param basename The basename of the file to save the M3N
      *
      * \return 0 on success, otherwise negative value on error
@@ -117,6 +120,9 @@ class M3NModel
     // --------------------------------------------------------------
     /*!
      * \brief Loads this M3N model from file
+     *
+     * To avoid loading/saving issues, the basename should contain the
+     * full path of the file.
      *
      * \param basename The basename of the file to load the M3N
      *
