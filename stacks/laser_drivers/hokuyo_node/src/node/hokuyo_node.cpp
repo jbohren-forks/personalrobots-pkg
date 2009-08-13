@@ -432,7 +432,7 @@ public:
     }
     else
     {
-      status.summary(2, "Desired frequency met");
+      status.summary(0, "Desired frequency met");
     }
 
     status.add("Scans in interval", count_);
