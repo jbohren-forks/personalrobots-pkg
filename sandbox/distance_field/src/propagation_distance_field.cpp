@@ -34,19 +34,19 @@
 
 /** \author Mrinal Kalakrishnan */
 
-#include <distance_field/distance_field.h>
+#include <distance_field/propagation_distance_field.h>
 #include <visualization_msgs/Marker.h>
 
 namespace distance_field
 {
 
-DistanceField::~DistanceField()
+PropagationDistanceField::~PropagationDistanceField()
 {
 }
 
-DistanceField::DistanceField(double size_x, double size_y, double size_z, double resolution,
+PropagationDistanceField::PropagationDistanceField(double size_x, double size_y, double size_z, double resolution,
     double origin_x, double origin_y, double origin_z, double max_distance):
-      VoxelGrid<DistanceFieldVoxel>(size_x, size_y, size_z, resolution, origin_x, origin_y, origin_z, DistanceFieldVoxel(max_distance))
+      DistanceField<PropDistanceFieldVoxel>(size_x, size_y, size_z, resolution, origin_x, origin_y, origin_z, PropDistanceFieldVoxel(max_distance))
 {
   max_distance_ = max_distance;
   int max_dist_int = int(max_distance_/resolution);
@@ -56,7 +56,7 @@ DistanceField::DistanceField(double size_x, double size_y, double size_z, double
   initNeighborhoods();
 }
 
-int DistanceField::eucDistSq(int* point1, int* point2)
+int PropagationDistanceField::eucDistSq(int* point1, int* point2)
 {
   int dx = point1[DIM_X] - point2[DIM_X];
   int dy = point1[DIM_Y] - point2[DIM_Y];
@@ -64,7 +64,7 @@ int DistanceField::eucDistSq(int* point1, int* point2)
   return dx*dx + dy*dy + dz*dz;
 }
 
-void DistanceField::addPointsToField(std::vector<btVector3> points)
+void PropagationDistanceField::addPointsToField(std::vector<btVector3> points)
 {
   // initialize the bucket queue
   bucket_queue_.resize(max_distance_sq_+1);
@@ -79,7 +79,7 @@ void DistanceField::addPointsToField(std::vector<btVector3> points)
     bool valid = worldToGrid(points[i].x(), points[i].y(), points[i].z(), x, y, z);
     if (!valid)
       continue;
-    DistanceFieldVoxel& voxel = getCell(x,y,z);
+    PropDistanceFieldVoxel& voxel = getCell(x,y,z);
     voxel.distance_square_ = 0;
     voxel.closest_point_[DIM_X] = x;
     voxel.closest_point_[DIM_Y] = y;
@@ -94,10 +94,10 @@ void DistanceField::addPointsToField(std::vector<btVector3> points)
   // now process the queue:
   for (unsigned int i=0; i<bucket_queue_.size(); ++i)
   {
-    std::vector<DistanceFieldVoxel*>::iterator list_it = bucket_queue_[i].begin();
+    std::vector<PropDistanceFieldVoxel*>::iterator list_it = bucket_queue_[i].begin();
     while(list_it!=bucket_queue_[i].end())
     {
-      DistanceFieldVoxel* vptr = *list_it;
+      PropDistanceFieldVoxel* vptr = *list_it;
 
       x = vptr->location_[DIM_X];
       y = vptr->location_[DIM_Y];
@@ -123,7 +123,7 @@ void DistanceField::addPointsToField(std::vector<btVector3> points)
 
         // the real update code:
         // calculate the neighbor's new distance based on my closest filled voxel:
-        DistanceFieldVoxel* neighbor = &getCell(nx, ny, nz);
+        PropDistanceFieldVoxel* neighbor = &getCell(nx, ny, nz);
         loc[DIM_X] = nx;
         loc[DIM_Y] = ny;
         loc[DIM_Z] = nz;
@@ -154,61 +154,12 @@ void DistanceField::addPointsToField(std::vector<btVector3> points)
 
 }
 
-void DistanceField::visualize(double radius, std::string frame_id, ros::Time stamp)
+void PropagationDistanceField::reset()
 {
-  visualization_msgs::Marker inf_marker; // Marker for the inflation
-  inf_marker.header.frame_id = frame_id;
-  inf_marker.header.stamp = stamp;
-  inf_marker.ns = "distance_field";
-  inf_marker.id = 1;
-  inf_marker.type = visualization_msgs::Marker::CUBE_LIST;
-  inf_marker.action = 0;
-  inf_marker.scale.x = resolution_[DIM_X];
-  inf_marker.scale.y = resolution_[DIM_Y];
-  inf_marker.scale.z = resolution_[DIM_Z];
-  inf_marker.color.r = 1.0;
-  inf_marker.color.g = 0.0;
-  inf_marker.color.b = 0.0;
-  inf_marker.color.a = 0.1;
-  inf_marker.lifetime = ros::Duration(30.0);
-
-  int rad_int_low = int(radius/resolution_[DIM_X]);
-  int rad_int_high = int(ceil(radius/resolution_[DIM_X]));
-  int dist_sq_required_low = int(rad_int_low*rad_int_low);
-  int dist_sq_required_high = int(rad_int_high*rad_int_high);
-  if (dist_sq_required_high == max_distance_sq_)
-    dist_sq_required_high--;
-
-  inf_marker.points.reserve(100000);
-  for (int x = 0; x < num_cells_[DIM_X]; ++x)
-  {
-    for (int y = 0; y < num_cells_[DIM_Y]; ++y)
-    {
-      for (int z = 0; z < num_cells_[DIM_Z]; ++z)
-      {
-        int dist_sq = getCell(x,y,z).distance_square_;
-        if (dist_sq >= dist_sq_required_low && dist_sq <=dist_sq_required_high)
-        {
-          int last = inf_marker.points.size();
-          inf_marker.points.resize(last + 1);
-          gridToWorld(x,y,z,
-                      inf_marker.points[last].x,
-                      inf_marker.points[last].y,
-                      inf_marker.points[last].z);
-        }
-      }
-    }
-  }
-  ROS_DEBUG("Publishing markers: %d inflated", inf_marker.points.size());
-  pub_viz_.publish(inf_marker);
+  VoxelGrid<PropDistanceFieldVoxel>::reset(PropDistanceFieldVoxel(max_distance_sq_));
 }
 
-void DistanceField::reset()
-{
-  VoxelGrid<DistanceFieldVoxel>::reset(DistanceFieldVoxel(max_distance_sq_));
-}
-
-void DistanceField::initNeighborhoods()
+void PropagationDistanceField::initNeighborhoods()
 {
   // first initialize the direction number mapping:
   direction_number_to_direction_.resize(27);
@@ -272,9 +223,10 @@ void DistanceField::initNeighborhoods()
 
 }
 
-int DistanceField::getDirectionNumber(int dx, int dy, int dz) const
+int PropagationDistanceField::getDirectionNumber(int dx, int dy, int dz) const
 {
   return (dx+1)*9 + (dy+1)*3 + dz+1;
 }
+
 
 }
