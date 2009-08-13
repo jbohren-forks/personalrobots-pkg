@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <robot>
 
+  <rviz_resource_location path="$(find pr2_ogre)/Media/materials/scripts"/>
+  <rviz_resource_location path="$(find pr2_ogre)/Media/materials/textures"/>
+
   <macro name="pr2_shoulder_rviz" params="side">
     <rviz reference="${side}_shoulder_pan_link">
       <material value="PR2/Blue" />

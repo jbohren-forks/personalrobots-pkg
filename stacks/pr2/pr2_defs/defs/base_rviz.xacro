@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <robot>
 
+  <rviz_resource_location path="$(find pr2_ogre)/Media/materials/scripts"/>
+  <rviz_resource_location path="$(find pr2_ogre)/Media/materials/textures"/>
+
   <macro name="pr2_wheel_rviz" params="suffix parent">
     <rviz reference="${parent}_${suffix}_wheel_link">
       <!-- TODO should be different for left and right wheel-->

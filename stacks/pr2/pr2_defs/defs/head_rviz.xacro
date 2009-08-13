@@ -2,6 +2,9 @@
 
 <robot>
 
+  <rviz_resource_location path="$(find pr2_ogre)/Media/materials/scripts"/>
+  <rviz_resource_location path="$(find pr2_ogre)/Media/materials/textures"/>
+
   <macro name="pr2_tilting_laser_rviz" params="name parent *origin">
 
     <rviz reference="${name}_mount_link">

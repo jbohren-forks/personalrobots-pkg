@@ -1,5 +1,8 @@
 <?xml version="1.0"?>
 <robot>
+  <rviz_resource_location path="$(find pr2_ogre)/Media/materials/scripts"/>
+  <rviz_resource_location path="$(find pr2_ogre)/Media/materials/textures"/>
+
   <macro name="pr2_finger_rviz" params="prefix">
     <rviz reference="${prefix}_l_finger_link">
       <material value="PR2/Grey" />
