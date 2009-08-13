@@ -43,65 +43,65 @@
 class ActuateGripperAction
 {
 public:
-
-  ActuateGripperAction(const std::string &arm) : as_(nh_, "actuate_gripper_" + arm, boost::bind(&ActuateGripperAction::execute, this, _1))
-  {
-    pub_ = nh_.advertise<std_msgs::Float64>("gripper_command", 10);
-  }
-
-  ~ActuateGripperAction(void)
-  {
-  }
-
-  void execute(const move_arm::ActuateGripperGoalConstPtr &goal)
-  {
-    std_msgs::Float64 gripper_msg;
-    gripper_msg.data = goal->data;
-    pub_.publish(gripper_msg);
-
-    ros::Rate r(10.0);
-    ros::Time start = ros::Time::now();
-    bool result = true;
-    while(ros::Time::now()-start < ros::Duration(4.0))
+    
+    ActuateGripperAction(const std::string &arm) : as_(nh_, "actuate_gripper_" + arm, boost::bind(&ActuateGripperAction::execute, this, _1))
     {
-      if (as_.isPreemptRequested())
-      {
-        gripper_msg.data = 0.0;
-        pub_.publish(gripper_msg);
-        ROS_INFO("ActuateGripperAction: preempted");
-        as_.setPreempted();
-        result = false;
-        break;
-      }
-      r.sleep();
+	pub_ = nh_.advertise<std_msgs::Float64>("gripper_command", 10);
     }
-    if (result)
-      as_.setSucceeded();
-  }
-
+    
+    ~ActuateGripperAction(void)
+    {
+    }
+    
+    void execute(const move_arm::ActuateGripperGoalConstPtr &goal)
+    {
+	std_msgs::Float64 gripper_msg;
+	gripper_msg.data = goal->data;
+	pub_.publish(gripper_msg);
+	
+	ros::Rate r(10.0);
+	ros::Time start = ros::Time::now();
+	bool result = true;
+	while(ros::Time::now()-start < ros::Duration(4.0))
+	{
+	    if (as_.isPreemptRequested())
+	    {
+		gripper_msg.data = 0.0;
+		pub_.publish(gripper_msg);
+		ROS_INFO("ActuateGripperAction: preempted");
+		as_.setPreempted();
+		result = false;
+		break;
+	    }
+	    r.sleep();
+	}
+	if (result)
+	    as_.setSucceeded();
+    }
+    
 protected:
-
-  ros::NodeHandle                                                   nh_;
-  actionlib::SingleGoalActionServer<move_arm::ActuateGripperAction> as_;
-  ros::Publisher                                                    pub_;
-
+    
+    ros::NodeHandle                                                   nh_;
+    actionlib::SingleGoalActionServer<move_arm::ActuateGripperAction> as_;
+    ros::Publisher                                                    pub_;
+    
 };
 
 int main(int argc, char** argv)
 {
-  ros::init(argc, argv, "actuate_gripper");
-
-  ros::NodeHandle node;
-  std::string arm_name;
-  node.param<std::string>("~arm", arm_name, std::string());
-
-  if (arm_name.empty())
-    ROS_ERROR("No '~arm' parameter specified");
-  else
-  {
-    ActuateGripperAction actuate_gripper(arm_name);
-    ros::spin();
-  }
-
-  return 0;
+    ros::init(argc, argv, "actuate_gripper");
+    
+    ros::NodeHandle node;
+    std::string arm_name;
+    node.param<std::string>("~arm", arm_name, std::string());
+    
+    if (arm_name.empty())
+	ROS_ERROR("No '~arm' parameter specified");
+    else
+    {
+	ActuateGripperAction actuate_gripper(arm_name);
+	ros::spin();
+    }
+    
+    return 0;
 }

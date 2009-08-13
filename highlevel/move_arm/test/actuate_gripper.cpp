@@ -39,49 +39,46 @@
 
 
 #include <ros/node.h>
-#include <robot_actions/action_client.h>
-#include <pr2_robot_actions/ActuateGripperState.h>
-#include <robot_actions/NoArgumentsActionState.h>
-#include <pr2_robot_actions/SwitchControllers.h>
-#include <pr2_robot_actions/SwitchControllersState.h>
+#include <actionlib/client/simple_action_client.h>
+#include <move_arm/ActuateGripperAction.h>
 
-
-using namespace ros;
-using namespace std;
-
-int
-  main (int argc, char **argv)
+int main (int argc, char **argv)
 {
-  ros::init(argc, argv);
+    ros::init(argc, argv, "test_actuate_gripper");
+    
+    ros::NodeHandle nh;    
+    ros::Duration timeout(10.0);
 
-  ros::Node node("test_actuate_gripper");
+    actionlib::SimpleActionClient<move_arm::ActuateGripperAction> gripper(nh, "actuate_gripper_right_arm");
+    
+    move_arm::ActuateGripperGoal cmd;
+    cmd.data = -100;
+    
+    gripper.sendGoal(cmd);
 
-  pr2_robot_actions::SwitchControllers switchlist;
-  std_msgs::Empty empty;
+    bool finished_before_timeout = gripper.waitForGoalToFinish(timeout);
+    if (finished_before_timeout)
+	std::cout << "Final state is " << gripper.getTerminalState().toString() << std::endl;
+    else
+    {
+	gripper.cancelGoal();
+	std::cerr << "Failed achieving goal" << std::endl;
+	return -1;
+    }
+    
+    cmd.data = 100;
 
-  Duration timeout_short = Duration().fromSec(2.0);
-  Duration timeout_medium = Duration().fromSec(10.0);
-  Duration timeout_long = Duration().fromSec(40.0);
+    gripper.sendGoal(cmd);
 
-  robot_actions::ActionClient<std_msgs::Float64, pr2_robot_actions::ActuateGripperState, std_msgs::Float64> actuate_gripper("actuate_gripper");
-
-  //  robot_actions::ActionClient<pr2_robot_actions::SwitchControllers, pr2_robot_actions::SwitchControllersState,  std_msgs::Empty> switch_controllers("switch_controllers");
-
-
-  // tuck arm
-  //  switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
-  //  switchlist.start_controllers.push_back("r_gripper_effort_controller");
-  //  if (switch_controllers.execute(switchlist, empty, timeout_medium) != robot_actions::SUCCESS) return -1;
-
-  std_msgs::Float64 cmd, fb;
-  cmd.data = -20;
-
-  if (actuate_gripper.execute(cmd, fb, timeout_medium) != robot_actions::SUCCESS) return -1;
-  sleep(2.0);
-
-  cmd.data = 20;
-  if (actuate_gripper.execute(cmd, fb, timeout_medium) != robot_actions::SUCCESS) return -1;
-  sleep(2.0);
-
-  return (0);
+    finished_before_timeout = gripper.waitForGoalToFinish(timeout);
+    if (finished_before_timeout)
+	std::cout << "Final state is " << gripper.getTerminalState().toString() << std::endl;
+    else
+    {
+	gripper.cancelGoal();
+	std::cerr << "Failed achieving goal" << std::endl;
+	return -1;
+    }
+    
+    return 0;
 }

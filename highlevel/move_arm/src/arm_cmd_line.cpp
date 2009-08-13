@@ -84,7 +84,7 @@ void printHelp(void)
 void printJoints(const planning_environment::KinematicModelStateMonitor &km, const std::vector<std::string> &names)
 {
     const planning_models::KinematicModel::ModelInfo &mi = km.getKinematicModel()->getModelInfo();
-
+    
     for (unsigned int i = 0 ; i < names.size(); ++i)
     {
 	int idx = km.getKinematicModel()->getJointIndex(names[i]);
@@ -143,7 +143,7 @@ void setupGoal(const std::vector<std::string> &names, move_arm::MoveArmGoal &goa
 	goal.goal_constraints.joint_constraint[i].tolerance_below[0] = 0.0;
 	goal.goal_constraints.joint_constraint[i].tolerance_above[0] = 0.0;
     }
-
+    
     goal.contacts.resize(1);
     goal.contacts[0].links.push_back("r_gripper_l_finger_link");
     goal.contacts[0].links.push_back("r_gripper_r_finger_link");
@@ -153,13 +153,13 @@ void setupGoal(const std::vector<std::string> &names, move_arm::MoveArmGoal &goa
     goal.contacts[0].depth = 0.04;
     goal.contacts[0].bound.type = mapping_msgs::Object::SPHERE;
     goal.contacts[0].bound.dimensions.push_back(0.5);
-
+    
     goal.contacts[0].pose.header.stamp = ros::Time::now();
     goal.contacts[0].pose.header.frame_id = "/base_link";
     goal.contacts[0].pose.pose.position.x = 1;
     goal.contacts[0].pose.pose.position.y = 0;
     goal.contacts[0].pose.pose.position.z = 0.5;
-
+    
     goal.contacts[0].pose.pose.orientation.x = 0;
     goal.contacts[0].pose.pose.orientation.y = 0;
     goal.contacts[0].pose.pose.orientation.z = 0;
@@ -177,28 +177,28 @@ void setupGoalEEf(const std::string &link, const std::vector<double> &pz, move_a
     goal.goal_constraints.pose_constraint[0].pose.pose.position.x = pz[0];
     goal.goal_constraints.pose_constraint[0].pose.pose.position.y = pz[1];
     goal.goal_constraints.pose_constraint[0].pose.pose.position.z = pz[2];
-
+    
     goal.goal_constraints.pose_constraint[0].pose.pose.orientation.x = pz[3];
     goal.goal_constraints.pose_constraint[0].pose.pose.orientation.y = pz[4];
     goal.goal_constraints.pose_constraint[0].pose.pose.orientation.z = pz[5];
     goal.goal_constraints.pose_constraint[0].pose.pose.orientation.w = pz[6];
-
+    
     goal.goal_constraints.pose_constraint[0].position_tolerance_above.x = 0.005;
     goal.goal_constraints.pose_constraint[0].position_tolerance_above.y = 0.005;
     goal.goal_constraints.pose_constraint[0].position_tolerance_above.z = 0.01;
     goal.goal_constraints.pose_constraint[0].position_tolerance_below.x = 0.005;
     goal.goal_constraints.pose_constraint[0].position_tolerance_below.y = 0.005;
     goal.goal_constraints.pose_constraint[0].position_tolerance_below.z = 0.005;
-
+    
     goal.goal_constraints.pose_constraint[0].orientation_tolerance_above.x = 0.005;
     goal.goal_constraints.pose_constraint[0].orientation_tolerance_above.y = 0.005;
     goal.goal_constraints.pose_constraint[0].orientation_tolerance_above.z = 0.005;
     goal.goal_constraints.pose_constraint[0].orientation_tolerance_below.x = 0.005;
     goal.goal_constraints.pose_constraint[0].orientation_tolerance_below.y = 0.005;
     goal.goal_constraints.pose_constraint[0].orientation_tolerance_below.z = 0.005;
-
+    
     goal.goal_constraints.pose_constraint[0].orientation_importance = 0.2;
-
+    
     goal.contacts.resize(1);
     goal.contacts[0].links.push_back("r_gripper_l_finger_link");
     goal.contacts[0].links.push_back("r_gripper_r_finger_link");
@@ -233,7 +233,7 @@ void diffConfig(const planning_environment::KinematicModelStateMonitor &km, move
 		  << std::endl;
 	names.push_back(goal.goal_constraints.joint_constraint[i].joint_name);
     }
-
+    
     btTransform pose1 = effPosition(km, goal);
     move_arm::MoveArmGoal temp;
     setConfig(km.getRobotState(), names, temp);
@@ -248,14 +248,14 @@ void diffConfig(const planning_environment::KinematicModelStateMonitor &km, move
 void viewState(ros::Publisher &view, const planning_environment::KinematicModelStateMonitor &km, const planning_models::StateParams &st)
 {
     motion_planning_msgs::KinematicPath kp;
-
+    
     kp.header.frame_id = km.getFrameId();
     kp.header.stamp = km.lastJointStateUpdate();
-
+    
     // fill in start state with current one
     std::vector<planning_models::KinematicModel::Joint*> joints;
     km.getKinematicModel()->getJoints(joints);
-
+    
     kp.start_state.resize(joints.size());
     for (unsigned int i = 0 ; i < joints.size() ; ++i)
     {
@@ -279,52 +279,52 @@ void spinThread(void)
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv, "cmd_line_move_arm", ros::init_options::NoSigintHandler | ros::init_options::AnonymousName);
-
-  std::string arm = "r";
-  if (argc >= 2)
-    if (argv[1][0] == 'l')
-      arm = "l";
-
-  ros::NodeHandle nh;
-
-  actionlib::SimpleActionClient<move_arm::MoveArmAction> move_arm(nh, arm == "r" ? "move_right_arm" : "move_left_arm");
-  actionlib::SimpleActionClient<move_arm::ActuateGripperAction> gripper(nh, arm == "r" ? "actuate_gripper_right_arm" : "actuate_gripper_left_arm");
-  ros::Publisher view = nh.advertise<motion_planning_msgs::KinematicPath>("executing_kinematic_path", 1);
-
-  std::map<std::string, move_arm::MoveArmGoal> goals;
-
-  std::vector<std::string> names(7);
-  names[0] = arm + "_shoulder_pan_joint";
-  names[1] = arm + "_shoulder_lift_joint";
-  names[2] = arm + "_upper_arm_roll_joint";
-  names[3] = arm + "_elbow_flex_joint";
-  names[4] = arm + "_forearm_roll_joint";
-  names[5] = arm + "_wrist_flex_joint";
-  names[6] = arm + "_wrist_roll_joint";
-
-
-  planning_environment::RobotModels rm("robot_description");
-  if (!rm.loadedModels())
-    return 0;
-
-  boost::thread th(&spinThread);
-  tf::TransformListener tf;
-  planning_environment::KinematicModelStateMonitor km(&rm, &tf);
-  km.waitForState();
-
-  std::cout << std::endl << std::endl << "Using joints:" << std::endl;
-  printJoints(km, names);
-  std::cout << std::endl;
-  double allowed_time = 10.0;
-
-  while (nh.ok() && std::cin.good() && !std::cin.eof())
-  {
-    std::cout << "command> ";
-    std::string cmd;
-    std::getline(std::cin, cmd);
-    boost::trim(cmd);
-    ros::spinOnce();
+    ros::init(argc, argv, "cmd_line_move_arm", ros::init_options::NoSigintHandler | ros::init_options::AnonymousName);
+    
+    std::string arm = "r";
+    if (argc >= 2)
+	if (argv[1][0] == 'l')
+	    arm = "l";
+    
+    ros::NodeHandle nh;
+    
+    actionlib::SimpleActionClient<move_arm::MoveArmAction> move_arm(nh, arm == "r" ? "move_right_arm" : "move_left_arm");
+    actionlib::SimpleActionClient<move_arm::ActuateGripperAction> gripper(nh, arm == "r" ? "actuate_gripper_right_arm" : "actuate_gripper_left_arm");
+    ros::Publisher view = nh.advertise<motion_planning_msgs::KinematicPath>("executing_kinematic_path", 1);
+    
+    std::map<std::string, move_arm::MoveArmGoal> goals;
+    
+    std::vector<std::string> names(7);
+    names[0] = arm + "_shoulder_pan_joint";
+    names[1] = arm + "_shoulder_lift_joint";
+    names[2] = arm + "_upper_arm_roll_joint";
+    names[3] = arm + "_elbow_flex_joint";
+    names[4] = arm + "_forearm_roll_joint";
+    names[5] = arm + "_wrist_flex_joint";
+    names[6] = arm + "_wrist_roll_joint";
+    
+    
+    planning_environment::RobotModels rm("robot_description");
+    if (!rm.loadedModels())
+	return 0;
+    
+    boost::thread th(&spinThread);
+    tf::TransformListener tf;
+    planning_environment::KinematicModelStateMonitor km(&rm, &tf);
+    km.waitForState();
+    
+    std::cout << std::endl << std::endl << "Using joints:" << std::endl;
+    printJoints(km, names);
+    std::cout << std::endl;
+    double allowed_time = 10.0;
+    
+    while (nh.ok() && std::cin.good() && !std::cin.eof())
+    {
+	std::cout << "command> ";
+	std::string cmd;
+	std::getline(std::cin, cmd);
+	boost::trim(cmd);
+	ros::spinOnce();
 
 	if (!nh.ok())
 	    break;
@@ -525,77 +525,74 @@ int main(int argc, char **argv)
 	    }
 	}
 	else
-    if (cmd.length() > 3 && cmd.substr(0, 3) == "go ")
-    {
-      std::string config = cmd.substr(3);
-      boost::trim(config);
-      if (goals.find(config) == goals.end())
-      {
-        std::stringstream ss(config);
-        std::vector<double> nrs;
-        while (ss.good() && !ss.eof())
-        {
-          double value;
-          ss >> value;
-          nrs.push_back(value);
-        }
-
-        bool err = true;
-        if (nrs.size() == 3)
-        {
-          nrs.push_back(0);
-          nrs.push_back(0);
-          nrs.push_back(0);
-          nrs.push_back(1);
-        }
-
-        if (nrs.size() == 7)
-        {
-          err = false;
-
-          std::string link = km.getKinematicModel()->getJoint(names.back())->after->name;
-          std::cout << "Moving " << link << " to " << nrs[0] << ", " << nrs[1] << ", " << nrs[2] << ", " <<
-          nrs[3] << ", " << nrs[4] << ", " << nrs[5] << ", " << nrs[6] << "..." << std::endl;
-          move_arm::MoveArmGoal g;
-          setupGoalEEf(link, nrs, g);
-
-
-          bool finished_within_time;
-          move_arm.sendGoal(g);
-          finished_within_time = move_arm.waitForGoalToFinish(ros::Duration(allowed_time));
-
-          if (!finished_within_time)
-          {
-            move_arm.cancelGoal();
-            std::cerr << "Timed out achieving goal" << std::endl;
-          }
-          else
-            std::cout << "Final state is " << move_arm.getTerminalState().toString() << std::endl;
-
-        }
-
-
-        if (err)
-          std::cout << "Configuration '" << config << "' not found" << std::endl;
-      }
-
-      else
-      {
-        std::cout << "Moving to " << config << "..." << std::endl;
-
-        bool finished_within_time;
-        move_arm.sendGoal(goals[config]);
-        finished_within_time = move_arm.waitForGoalToFinish(ros::Duration(allowed_time));
-
-        if (!finished_within_time)
-        {
-          move_arm.cancelGoal();
-          std::cerr << "Timed out achieving goal" << std::endl;
-        }
-        else
-          std::cout << "Final state is " << move_arm.getTerminalState().toString() << std::endl;
-      }
-    }
+	if (cmd.length() > 3 && cmd.substr(0, 3) == "go ")
+	{
+	    std::string config = cmd.substr(3);
+	    boost::trim(config);
+	    if (goals.find(config) == goals.end())
+	    {
+		std::stringstream ss(config);
+		std::vector<double> nrs;
+		while (ss.good() && !ss.eof())
+		{
+		    double value;
+		    ss >> value;
+		    nrs.push_back(value);
+		}
+		
+		bool err = true;
+		if (nrs.size() == 3)
+		{
+		    nrs.push_back(0);
+		    nrs.push_back(0);
+		    nrs.push_back(0);
+		    nrs.push_back(1);
+		}
+		
+		if (nrs.size() == 7)
+		{
+		    err = false;
+		    
+		    std::string link = km.getKinematicModel()->getJoint(names.back())->after->name;
+		    std::cout << "Moving " << link << " to " << nrs[0] << ", " << nrs[1] << ", " << nrs[2] << ", " <<
+			nrs[3] << ", " << nrs[4] << ", " << nrs[5] << ", " << nrs[6] << "..." << std::endl;
+		    move_arm::MoveArmGoal g;
+		    setupGoalEEf(link, nrs, g);
+		    
+		    
+		    bool finished_within_time;
+		    move_arm.sendGoal(g);
+		    finished_within_time = move_arm.waitForGoalToFinish(ros::Duration(allowed_time));
+		    
+		    if (!finished_within_time)
+		    {
+			move_arm.cancelGoal();
+			std::cerr << "Timed out achieving goal" << std::endl;
+		    }
+		    else
+			std::cout << "Final state is " << move_arm.getTerminalState().toString() << std::endl;
+		}
+		if (err)
+		    std::cout << "Configuration '" << config << "' not found" << std::endl;
+	    }
+	    
+	    else
+	    {
+		std::cout << "Moving to " << config << "..." << std::endl;
+		
+		bool finished_within_time;
+		move_arm.sendGoal(goals[config]);
+		finished_within_time = move_arm.waitForGoalToFinish(ros::Duration(allowed_time));
+		
+		if (!finished_within_time)
+		{
+		    move_arm.cancelGoal();
+		    std::cerr << "Timed out achieving goal" << std::endl;
+		}
+		else
+		    std::cout << "Final state is " << move_arm.getTerminalState().toString() << std::endl;
+	    }
+	}
 	else
 	if (cmd.length() > 5 && cmd.find_first_of("[") != std::string::npos)
 	{
@@ -649,23 +646,23 @@ int main(int argc, char **argv)
 	else
 	if (cmd.length() > 5 && cmd.substr(0, 5) == "grip ")
 	{
-	  std::stringstream ss(cmd.substr(5));
-	  if (ss.good() && !ss.eof())
-	  {
-	    move_arm::ActuateGripperGoal g;
-	    ss >> g.data;
-
-	    gripper.sendGoal(g);
-	    bool finished_before_timeout = gripper.waitForGoalToFinish(ros::Duration(allowed_time));
-	    if (finished_before_timeout)
-	      std::cout << "Final state is " << gripper.getTerminalState().toString() << std::endl;
-	    else
+	    std::stringstream ss(cmd.substr(5));
+	    if (ss.good() && !ss.eof())
 	    {
-	      gripper.cancelGoal();
-	      std::cerr << "Failed achieving goal" << std::endl;
+		move_arm::ActuateGripperGoal g;
+		ss >> g.data;
+		
+		gripper.sendGoal(g);
+		bool finished_before_timeout = gripper.waitForGoalToFinish(ros::Duration(allowed_time));
+		if (finished_before_timeout)
+		    std::cout << "Final state is " << gripper.getTerminalState().toString() << std::endl;
+		else
+		{
+		    gripper.cancelGoal();
+		    std::cerr << "Failed achieving goal" << std::endl;
+		}
 	    }
-	  }
-	  std::cerr << "A floating point value expected but '" << cmd.substr(5) << "' was given" << std::endl;
+	    std::cerr << "A floating point value expected but '" << cmd.substr(5) << "' was given" << std::endl;
 	}
 	else
 	if (goals.find(cmd) != goals.end())

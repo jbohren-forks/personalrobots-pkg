@@ -37,10 +37,8 @@
 /* \author: Ioan Sucan */
 
 #include <ros/ros.h>
-#include <robot_actions/action_client.h>
-
-#include <move_arm/MoveArmGoal.h>
-#include <move_arm/MoveArmState.h>
+#include <actionlib/client/simple_action_client.h>
+#include <move_arm/MoveArmAction.h>
 
 #include <vector>
 #include <string>
@@ -50,11 +48,10 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "test_move_right_arm");
     ros::NodeHandle nh;
 
-    robot_actions::ActionClient<move_arm::MoveArmGoal, move_arm::MoveArmState, int32_t> move_arm("move_right_arm");
-    
-    int32_t                         feedback;
-    move_arm::MoveArmGoal  goalA;
-    move_arm::MoveArmGoal  goalB;
+    actionlib::SimpleActionClient<move_arm::MoveArmAction> move_arm(nh, "move_right_arm");
+
+    move_arm::MoveArmGoal goalA;
+    move_arm::MoveArmGoal goalB;
     
     goalA.goal_constraints.set_pose_constraint_size(1);
     goalA.goal_constraints.pose_constraint[0].pose.header.stamp = ros::Time::now();
@@ -120,13 +117,29 @@ int main(int argc, char **argv)
     while (nh.ok())
     {
 	ros::spinOnce();
-	if (move_arm.execute(goalA, feedback, ros::Duration(10.0)) != robot_actions::SUCCESS)
-	  ROS_ERROR("failed on goal A");
-	  //	    return -1;
-	ros::spinOnce();
-	if (move_arm.execute(goalB, feedback, ros::Duration(10.0)) != robot_actions::SUCCESS)
-	  ROS_ERROR("failed on goal B");
-	  //	    return -1;
+
+	bool finished_within_time;
+	move_arm.sendGoal(goalA);
+	finished_within_time = move_arm.waitForGoalToFinish(ros::Duration(10.0));
+	
+	if (!finished_within_time)
+	{
+            move_arm.cancelGoal();
+            std::cerr << "Timed out achieving goal A" << std::endl;
+	}
+	else
+            std::cout << "Final state is " << move_arm.getTerminalState().toString() << std::endl;
+	
+	move_arm.sendGoal(goalB);
+	finished_within_time = move_arm.waitForGoalToFinish(ros::Duration(10.0));
+	
+	if (!finished_within_time)
+	{
+            move_arm.cancelGoal();
+            std::cerr << "Timed out achieving goal B" << std::endl;
+	}
+	else
+            std::cout << "Final state is " << move_arm.getTerminalState().toString() << std::endl;
     }
     
     return 0;
