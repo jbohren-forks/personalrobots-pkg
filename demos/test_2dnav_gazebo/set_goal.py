@@ -219,7 +219,7 @@ class NavStackTest(unittest.TestCase):
         pub_goal = rospy.Publisher("/move_base/activate", PoseStamped)
         pub_pose = rospy.Publisher("initialpose" , PoseWithCovarianceStamped)
         rospy.Subscriber("base_pose_ground_truth", Odometry            , self.p3dInput)
-        rospy.Subscriber("base/odom"                  , Odometry            , self.odomInput)
+        rospy.Subscriber("pr2_odometry/odom"     , Odometry            , self.odomInput)
         rospy.Subscriber("base_bumper/info"      , String              , self.bumpedInput)
         rospy.Subscriber("torso_lift_bumper/info", String              , self.bumpedInput)
         rospy.Subscriber("/move_base/feedback"   , MoveBaseState       , self.stateInput)
