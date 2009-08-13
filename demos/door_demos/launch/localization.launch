@@ -1,5 +1,4 @@
 <launch>
-  <group name="wg">
     <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
 
     <!-- Filter for tilt laser shadowing/veiling -->
@@ -29,5 +28,4 @@
     <param name="pf_transform_tolerance" value="0.2" />
     <node pkg="amcl_player" type="amcl_player" name="amcl_player" respawn="true" args="scan:=base_scan" machine="four" />
 
-  </group>
 </launch>
