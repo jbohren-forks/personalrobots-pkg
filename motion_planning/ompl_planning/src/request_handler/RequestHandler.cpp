@@ -311,7 +311,12 @@ void ompl_planning::RequestHandler::printSettings(ompl::base::SpaceInformation *
 bool ompl_planning::RequestHandler::fixInputStates(PlannerSetup *psetup, double value, unsigned int count)
 {
     /* add bounds for automatic state fixing (in case a state is invalid) */
-    std::vector<double> rhoStart(psetup->si->getStateDimension(), value);
+    std::vector<double> rhoStart(psetup->si->getStateDimension());
+    for (unsigned int i = 0 ; i < rhoStart.size() ; ++i)
+    {
+	const ompl::base::StateComponent &sc = psetup->si->getStateComponent(i);
+	rhoStart[i] = (sc.maxValue - sc.minValue) * value;
+    }
     std::vector<double> rhoGoal(rhoStart);
     
     // in case we have large bounds, we may have a larger area to sample,
