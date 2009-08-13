@@ -319,7 +319,7 @@ int RegressionTreeWrapper::train()
       NULL, // sample_idx
       var_type, //var_type
       NULL, // missing mask
-      CvDTreeParams(static_cast<int> (rtree_params_.max_tree_depth_factor * stacked_feature_dim_), // max depth
+      CvDTreeParams(static_cast<int> (rtree_params_.max_tree_depth_factor * static_cast<float>(stacked_feature_dim_)), // max depth
           rtree_params_.min_sample_count, // min sample count
           rtree_params_.regression_accuracy, // regression accuracy
           false, // do NOT compute surrogate split (no missing data)
