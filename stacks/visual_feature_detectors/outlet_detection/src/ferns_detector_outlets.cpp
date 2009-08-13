@@ -308,7 +308,7 @@ void ferns_detector_initialize(Vector<Point2f>& object_keypoints, FernClassifier
 
 
 	detector.setVerbose(true);
-	Vector<Ptr<Mat>> refimgs = Vector<Ptr<Mat>>();
+	Vector< Ptr<Mat> > refimgs = Vector< Ptr<Mat> >();
 	Vector<int> labels=Vector<int>();
 	for (int i=0;i<(int)object_keypoints.size();i++)
 	{
