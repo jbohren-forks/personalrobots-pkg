@@ -44,7 +44,7 @@
 
 #include "ros/node_handle.h"
 
-#include "mechanism_control/controller.h"
+#include "controller_interface/controller.h"
 #include "mechanism_model/robot.h"
 #include "control_toolbox/pid.h"
 #include "robot_mechanism_controllers/joint_velocity_controller.h"

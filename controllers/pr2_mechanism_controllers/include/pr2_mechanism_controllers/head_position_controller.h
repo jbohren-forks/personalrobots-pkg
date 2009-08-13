@@ -41,7 +41,7 @@
 
 #include <ros/node.h>
 #include <ros/node_handle.h>
-#include <mechanism_control/controller.h>
+#include <controller_interface/controller.h>
 #include <tf/transform_listener.h>
 #include <tf/message_notifier.h>
 #include <tf/transform_datatypes.h>

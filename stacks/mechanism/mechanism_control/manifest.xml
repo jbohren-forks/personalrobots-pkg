@@ -19,6 +19,7 @@ on the effort/velocity/position of each joint.
 <depend package="hardware_interface"/>
 <depend package="tinyxml"/>
 <depend package="mechanism_model"/>
+<depend package="controller_interface"/>
 <depend package="realtime_tools" />
 <depend package="rospy" />
 <depend package="tf" />

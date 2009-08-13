@@ -38,13 +38,12 @@
 #include "ros/ros.h"
 #include "roslib/Time.h"
 #include "mechanism_control/controller_spec.h"
-#include "mechanism_control/controller_handle.h"
 #include <tinyxml/tinyxml.h>
 #include <hardware_interface/hardware_interface.h>
 #include <mechanism_model/robot.h>
 #include <realtime_tools/realtime_publisher.h>
 #include <ros/node.h>
-
+#include <controller_interface/controller_provider.h>
 #include <mechanism_msgs/ListControllerTypes.h>
 #include <mechanism_msgs/ListControllers.h>
 #include <mechanism_msgs/SpawnController.h>
@@ -54,11 +53,11 @@
 #include <mechanism_msgs/JointStates.h>
 #include <diagnostic_msgs/DiagnosticArray.h>
 
-typedef controller::ControllerHandle* (*ControllerAllocator)();
+typedef controller::Controller* (*ControllerAllocator)();
 
 namespace controller{
 
-class MechanismControl {
+class MechanismControl: public ControllerProvider {
 
 public:
   MechanismControl(HardwareInterface *hw);
@@ -76,21 +75,7 @@ public:
                         const int strictness);
 
   // controllers_lock_ must be locked before calling
-  controller::ControllerHandle* getControllerByName(const std::string& name);
-  template<class ControllerType> bool getControllerByName(const std::string& name, ControllerType*& c)
-  {
-    // get controller
-    controller::ControllerHandle* controller = getControllerByName(name);
-    if (controller == NULL) return false;
-
-    // cast controller to ControllerType
-    ControllerType* controller_type = dynamic_cast< ControllerType* >(controller);
-    if (controller_type == NULL)  return false;
-
-    // copy result
-    c = controller_type;
-    return true;
-  };
+  virtual controller::Controller* getControllerByName(const std::string& name);
 
   mechanism::Robot model_;
   mechanism::RobotState *state_;
@@ -103,7 +88,7 @@ private:
   ros::NodeHandle node_;
 
   // for controller switching
-  std::vector<controller::ControllerHandle*> start_request_, stop_request_;
+  std::vector<controller::Controller*> start_request_, stop_request_;
   bool please_switch_, switch_success_;
   int switch_strictness_;
 

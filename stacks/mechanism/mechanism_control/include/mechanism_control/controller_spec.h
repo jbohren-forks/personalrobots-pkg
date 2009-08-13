@@ -37,7 +37,7 @@
 #include <map>
 #include <string>
 #include <vector>
-#include <mechanism_control/controller_handle.h>
+#include <controller_interface/controller.h>
 #define BOOST_CB_DISABLE_DEBUG
 #include <boost/circular_buffer.hpp>
 #include <boost/thread/mutex.hpp>
@@ -61,7 +61,7 @@ struct Statistics {
 
 struct ControllerSpec {
   std::string name;
-  boost::shared_ptr<controller::ControllerHandle> c;
+  boost::shared_ptr<controller::Controller> c;
   boost::shared_ptr<Statistics> stats;
   
   ControllerSpec() : stats(new Statistics) {}

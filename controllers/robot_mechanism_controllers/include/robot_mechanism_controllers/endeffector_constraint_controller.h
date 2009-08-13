@@ -44,7 +44,7 @@
 #include "ros/node.h"
 #include "geometry_msgs/Wrench.h"
 #include "misc_utils/subscription_guard.h"
-#include "mechanism_control/controller.h"
+#include "controller_interface/controller.h"
 #include "tf/transform_datatypes.h"
 #include "misc_utils/advertised_service_guard.h"
 #include "joy/Joy.h"

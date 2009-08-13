@@ -48,7 +48,7 @@
 #include "robot_mechanism_controllers/SetPoseStamped.h"
 #include "control_toolbox/pid.h"
 #include "misc_utils/subscription_guard.h"
-#include "mechanism_control/controller.h"
+#include "controller_interface/controller.h"
 #include "tf/transform_datatypes.h"
 #include "tf/transform_listener.h"
 #include "misc_utils/advertised_service_guard.h"

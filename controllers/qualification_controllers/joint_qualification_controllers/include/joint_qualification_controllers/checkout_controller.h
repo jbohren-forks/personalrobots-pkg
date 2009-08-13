@@ -52,7 +52,7 @@
 #include <math.h>
 #include <joint_qualification_controllers/RobotData.h>
 #include <realtime_tools/realtime_srv_call.h>
-#include <mechanism_control/controller.h>
+#include <controller_interface/controller.h>
 #include <boost/scoped_ptr.hpp>
 
 namespace controller

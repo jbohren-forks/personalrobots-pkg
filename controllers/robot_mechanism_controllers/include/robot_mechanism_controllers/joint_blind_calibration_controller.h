@@ -56,7 +56,7 @@
 /***************************************************/
 
 
-#include "mechanism_control/controller.h"
+#include "controller_interface/controller.h"
 #include "robot_mechanism_controllers/joint_velocity_controller.h"
 #include "misc_utils/advertised_service_guard.h"
 

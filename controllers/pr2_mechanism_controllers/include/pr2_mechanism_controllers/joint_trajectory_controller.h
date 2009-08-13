@@ -37,7 +37,7 @@
 #include <ros/node.h>
 #include <boost/thread/mutex.hpp>
 
-#include <mechanism_control/controller.h>
+#include <controller_interface/controller.h>
 #include <robot_mechanism_controllers/joint_pd_controller.h>
 
 // Services

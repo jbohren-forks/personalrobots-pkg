@@ -32,7 +32,7 @@
 
 #include "ros/node.h"
 #include "boost/scoped_ptr.hpp"
-#include "mechanism_control/controller.h"
+#include "controller_interface/controller.h"
 #include <kdl/chain.hpp>
 #include <kdl/frames.hpp>
 #include "mechanism_model/chain.h"

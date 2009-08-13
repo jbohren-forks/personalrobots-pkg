@@ -34,7 +34,8 @@
 #ifndef DYNAMIC_LOADER_CONTROLLER_H
 #define DYNAMIC_LOADER_CONTROLLER_H
 
-#include "mechanism_control/controller.h"
+#include "controller_interface/controller.h"
+#include <tinyxml/tinyxml.h>
 #include <ltdl.h>
 
 namespace controller {

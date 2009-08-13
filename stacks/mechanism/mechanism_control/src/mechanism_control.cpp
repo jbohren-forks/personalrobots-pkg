@@ -43,9 +43,9 @@ using namespace ros;
 
 
 namespace controller {
-Loki::Factory< controller::ControllerHandle, std::string >& getControllerHandleFactoryInstance()
+Loki::Factory< controller::Controller, std::string >& getControllerFactoryInstance()
 {
-  return controller::ControllerHandleFactory::Instance();
+  return controller::ControllerFactory::Instance();
 }
 }
 
@@ -176,7 +176,7 @@ void MechanismControl::update()
   }
 }
 
-controller::ControllerHandle* MechanismControl::getControllerByName(const std::string& name)
+controller::Controller* MechanismControl::getControllerByName(const std::string& name)
 {
   std::vector<ControllerSpec> &controllers = controllers_lists_[current_controllers_list_];
   for (size_t i = 0; i < controllers.size(); ++i)
@@ -237,13 +237,13 @@ bool MechanismControl::spawnController(const std::string& name)
 
   // Constructs the controller
   NodeHandle c_node(node_, name);
-  controller::ControllerHandle *c = NULL;
+  controller::Controller *c = NULL;
   std::string type;
   if (c_node.getParam("type", type))
   {
     ROS_DEBUG("Constructing controller '%s' of type '%s'", name.c_str(), type.c_str());
-    try {c = controller::ControllerHandleFactory::Instance().CreateObject(type);} 
-    catch(Loki::DefaultFactoryError<std::string, controller::ControllerHandle>::Exception){}
+    try {c = controller::ControllerFactory::Instance().CreateObject(type);} 
+    catch(Loki::DefaultFactoryError<std::string, controller::Controller>::Exception){}
   }
 
   // checks if controller was constructed
@@ -387,7 +387,7 @@ bool MechanismControl::switchController(const std::vector<std::string>& start_co
   // lock controllers
   boost::mutex::scoped_lock guard(controllers_lock_);
 
-  controller::ControllerHandle* ct;
+  controller::Controller* ct;
   // list all controllers to stop
   for (unsigned int i=0; i<stop_controllers.size(); i++)
   {
@@ -591,7 +591,7 @@ bool MechanismControl::listControllerTypesSrv(
   mechanism_msgs::ListControllerTypes::Response &resp)
 {
   (void) req;
-  std::vector<std::string> types = controller::ControllerHandleFactory::Instance().RegisteredIds();
+  std::vector<std::string> types = controller::ControllerFactory::Instance().RegisteredIds();
   resp.set_types_vec(types);
   return true;
 }
@@ -613,7 +613,7 @@ bool MechanismControl::listControllersSrv(
 
   for (size_t i=0; i<controllers.size(); i++){
     // add controller state
-    ControllerHandle* c = getControllerByName(controllers[schedule[i]]);
+    Controller* c = getControllerByName(controllers[schedule[i]]);
     assert(c);
     if (c->isRunning())
       controllers[schedule[i]] += " (Running)";

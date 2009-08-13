@@ -43,7 +43,7 @@
 #include <kdl/chainiksolver.hpp>
 #include <ros/node.h>
 #include <geometry_msgs/Twist.h>
-#include <mechanism_control/controller.h>
+#include <controller_interface/controller.h>
 #include <mechanism_model/chain.h>
 #include <tf/transform_datatypes.h>
 #include <control_toolbox/pid.h>

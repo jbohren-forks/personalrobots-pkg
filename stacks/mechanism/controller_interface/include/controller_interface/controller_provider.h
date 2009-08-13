@@ -32,66 +32,50 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 #pragma once
+
 /***************************************************/
 /*! \namespace controller
  \brief The controller namespace
 
- \class controller::Controller
- \brief A base level controller class.
+ \class controller::ControllerProvider
+ \brief An interface to get access to controllers
 
  */
 /***************************************************/
 
-#include <mechanism_model/robot.h>
 #include <ros/node_handle.h>
-#include <mechanism_control/mechanism_control.h>
-#include <mechanism_control/controller_handle.h>
 
 namespace controller
 {
 
-class Controller: public ControllerHandle
+class Controller;
+
+class ControllerProvider
 {
 public:
-  enum {BEFORE_ME, AFTER_ME};
+  ControllerProvider(){}
+  virtual ~ControllerProvider(){}
 
-  Controller(){}
-  virtual ~Controller(){}
-
-  // The starting method is called by the realtime thread just before
-  // the first call to update.
-  virtual bool starting() { return true; }
-  virtual void update(void) = 0;
-  virtual bool stopping() {return true;}
-  virtual bool init(mechanism::RobotState *robot, const ros::NodeHandle &n) 
+  template<class ControllerType> bool getControllerByName(const std::string& name, ControllerType*& c)
   {
-    ROS_ERROR("Controller %s did not implement init function", n.getNamespace().c_str());
-    return false; 
-  }
+    // get controller
+    controller::Controller* controller = getControllerByName(name);
+    if (controller == NULL) return false;
 
-  template<class ControllerType> bool getController(const std::string& name, int sched, ControllerType*& c)
-  {
-    if (mc_ == NULL){
-      ROS_ERROR("No valid pointer to Mechanism Control exists");
-      return false;
-    }
-    if (!mc_->getControllerByName(name, c)){
-      ROS_ERROR("Could not find controller %s", name.c_str());
-      return false;
-    }
-    if (sched == BEFORE_ME) before_list_.push_back(name);
-    else if (sched == AFTER_ME) after_list_.push_back(name);
-    else{
-      ROS_ERROR("No valid scheduling specified. Need BEFORE_ME or AFTER_ME in getController function");
-      return false;
-    }
+    // cast controller to ControllerType
+    ControllerType* controller_type = dynamic_cast< ControllerType* >(controller);
+    if (controller_type == NULL)  return false;
+
+    // copy result
+    c = controller_type;
     return true;
   };
 
 private:
-  Controller(const Controller &c);
-  Controller& operator =(const Controller &c);
+  virtual controller::Controller* getControllerByName(const std::string& name) = 0;
+
+  ControllerProvider(const ControllerProvider &c);
+  ControllerProvider& operator =(const ControllerProvider &c);
 
 };
-
 }

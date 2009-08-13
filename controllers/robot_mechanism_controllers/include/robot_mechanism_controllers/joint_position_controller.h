@@ -60,7 +60,7 @@
 
 #include <ros/node.h>
 
-#include <mechanism_control/controller.h>
+#include <controller_interface/controller.h>
 #include <control_toolbox/pid.h>
 #include "control_toolbox/pid_gains_setter.h"
 
