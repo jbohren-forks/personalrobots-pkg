@@ -1,4 +1,4 @@
-<stack name="visualization_common" version="0.1">
+<stack name="visualization_common" version="0.9.0">
   <description brief="Visualization Common">
     Tools used for visualization
   </description>
