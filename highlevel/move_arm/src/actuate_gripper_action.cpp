@@ -1,13 +1,13 @@
 /*********************************************************************
  * Software License Agreement (BSD License)
- * 
+ *
  *  Copyright (c) 2008, Willow Garage, Inc.
  *  All rights reserved.
- * 
+ *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions
  *  are met:
- * 
+ *
  *   * Redistributions of source code must retain the above copyright
  *     notice, this list of conditions and the following disclaimer.
  *   * Redistributions in binary form must reproduce the above
@@ -17,7 +17,7 @@
  *   * Neither the name of Willow Garage nor the names of its
  *     contributors may be used to endorse or promote products derived
  *     from this software without specific prior written permission.
- * 
+ *
  *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -34,81 +34,74 @@
 
 /* Author: Sachin Chitta */
 
-#include "pr2_robot_actions/ActuateGripperState.h"
-#include "std_msgs/Float64.h"
-
-/** Actions and messages */
-#include <robot_actions/action.h>
-#include <robot_actions/action_runner.h>
-
 #include <ros/ros.h>
 
-class ActuateGripperAction : public robot_actions::Action<std_msgs::Float64, std_msgs::Float64>
+#include <actionlib/server/single_goal_action_server.h>
+#include <move_arm/ActuateGripperAction.h>
+#include <std_msgs/Float64.h>
+
+class ActuateGripperAction
 {
-public: 
-    
-    ActuateGripperAction(const std::string &arm) : robot_actions::Action<std_msgs::Float64, std_msgs::Float64>("actuate_gripper_" + arm)
+public:
+
+  ActuateGripperAction(const std::string &arm) : as_(nh_, "actuate_gripper_" + arm, boost::bind(&ActuateGripperAction::execute, this, _1))
+  {
+    pub_ = nh_.advertise<std_msgs::Float64>("gripper_command", 10);
+  }
+
+  ~ActuateGripperAction(void)
+  {
+  }
+
+  void execute(const move_arm::ActuateGripperGoalConstPtr &goal)
+  {
+    std_msgs::Float64 gripper_msg;
+    gripper_msg.data = goal->data;
+    pub_.publish(gripper_msg);
+
+    ros::Rate r(10.0);
+    ros::Time start = ros::Time::now();
+    bool result = true;
+    while(ros::Time::now()-start < ros::Duration(4.0))
     {
-	pub_ = nh_.advertise<std_msgs::Float64>("gripper_command", 10);
+      if (as_.isPreemptRequested())
+      {
+        gripper_msg.data = 0.0;
+        pub_.publish(gripper_msg);
+        ROS_INFO("ActuateGripperAction: preempted");
+        as_.setPreempted();
+        result = false;
+        break;
+      }
+      r.sleep();
     }
-    
-    ~ActuateGripperAction(void)
-    {
-    }
-    
-    robot_actions::ResultStatus execute(const std_msgs::Float64& goal, std_msgs::Float64& feedback)
-    {
-	ROS_INFO("ActuateGripperAction: execute");
-	
-	// set default feedback
-	feedback.data = goal.data;
-	
-	std_msgs::Float64 gripper_msg;
-	gripper_msg.data = goal.data;
-	pub_.publish(gripper_msg);
-	
-	ros::Rate r(10.0);
-	ros::Time start = ros::Time::now();
-	
-	while(ros::Time::now()-start < ros::Duration(4.0))
-	{
-	    if (isPreemptRequested()) {
-		gripper_msg.data = 0.0;
-		pub_.publish(gripper_msg);
-		ROS_INFO("ActuateGripperAction: preempted");
-		return robot_actions::PREEMPTED;
-	    }
-	    r.sleep();
-	}
-	ROS_INFO("ActuateGripperAction: Done");
-	return robot_actions::SUCCESS;
-    }
+    if (result)
+      as_.setSucceeded();
+  }
 
 protected:
-    
-    ros::Publisher pub_;
-    ros::NodeHandle nh_;
-    
+
+  ros::NodeHandle                                                   nh_;
+  actionlib::SingleGoalActionServer<move_arm::ActuateGripperAction> as_;
+  ros::Publisher                                                    pub_;
+
 };
 
 int main(int argc, char** argv)
 {
-    ros::init(argc, argv, "actuate_gripper", ros::init_options::AnonymousName);
+  ros::init(argc, argv, "actuate_gripper");
 
-    ros::NodeHandle node;
-    std::string arm_name;
-    node.param<std::string>("~arm", arm_name, std::string());
-    
-    if (arm_name.empty())
-	ROS_ERROR("No '~arm' parameter specified");
-    else
-    {
-	ActuateGripperAction actuate_gripper(arm_name);
-	robot_actions::ActionRunner runner(20.0);
-	runner.connect<std_msgs::Float64, pr2_robot_actions::ActuateGripperState, std_msgs::Float64>(actuate_gripper);
-	runner.run();
-	ros::spin();
-    }
-    
-    return 0;
+  ros::NodeHandle node;
+  std::string arm_name;
+  node.param<std::string>("~arm", arm_name, std::string());
+
+  if (arm_name.empty())
+    ROS_ERROR("No '~arm' parameter specified");
+  else
+  {
+    ActuateGripperAction actuate_gripper(arm_name);
+    ros::spin();
+  }
+
+  return 0;
 }

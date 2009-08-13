@@ -22,8 +22,8 @@ rospack_link_boost(arm_cmd_line thread)
 
 
 # simple tests
-rospack_add_executable(oscillate_move test/oscillate_move.cpp)
-rospack_link_boost(oscillate_move thread)
+# rospack_add_executable(oscillate_move test/oscillate_move.cpp)
+# rospack_link_boost(oscillate_move thread)
 
 # actuate gripper action test
-rospack_add_executable(actuate_gripper_action_test test/test_actuate_gripper.cpp)
+#rospack_add_executable(actuate_gripper_action_test test/test_actuate_gripper.cpp)

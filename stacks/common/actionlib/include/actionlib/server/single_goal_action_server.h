@@ -118,6 +118,12 @@ namespace actionlib {
        */
       void setAborted(const Result& result = Result());
 
+
+      /**
+       *
+       */
+      void publishFeedback(const FeedbackConstPtr& feedback);
+
       /**
        * @brief  Sets the status of the active goal to preempted
        * @param  result An optional result to send back to any clients of the goal

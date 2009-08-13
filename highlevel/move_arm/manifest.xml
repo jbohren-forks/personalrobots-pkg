@@ -20,8 +20,7 @@
   <depend package="geometric_shapes" />
   <depend package="planning_models" />
   <depend package="planning_environment" />
-  <depend package="robot_actions"/>
-  <depend package="pr2_robot_actions"/>
+  <depend package="actionlib"/>
   <depend package="pr2_mechanism_controllers"/>
 
   <export>
