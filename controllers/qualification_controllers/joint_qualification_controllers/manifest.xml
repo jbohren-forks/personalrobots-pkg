@@ -10,12 +10,14 @@
   <depend package="control_toolbox" />
   <depend package="roscpp" />
   <depend package="robot_mechanism_controllers" />
+  <depend package="mechanism_control" />
   <url>http://pr.willowgarage.com</url>
   <rosdep name="wxwidgets"/>
   <rosdep name="wxpython"/>
   <repository>http://pr.willowgarage.com/repos</repository>
   <export>
     <cpp cflags='-I${prefix}/include -I${prefix}/msg/cpp -I${prefix}/srv/cpp' lflags='-Wl,-rpath,${prefix}/lib -L${prefix}/lib -ljoint_qualification_controllers'/>
+    <mechanism_control controller="${prefix}/controller_plugins.xml" />
   </export>
 
 </package>
