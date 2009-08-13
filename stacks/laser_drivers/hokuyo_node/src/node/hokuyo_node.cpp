@@ -169,8 +169,8 @@ public:
     self_test_.addTest( &HokuyoNode::disconnectTest );
     self_test_.addTest( &HokuyoNode::resumeTest );
     
-    diagnostic_.addUpdater( &HokuyoNode::connectionStatus );
-    diagnostic_.addUpdater( &HokuyoNode::freqStatus );
+    diagnostic_.add( "Connection Status", this, &HokuyoNode::connectionStatus );
+    diagnostic_.add( "Frequency Status", this, &HokuyoNode::freqStatus );
   }
 
   void read_config()
@@ -398,34 +398,28 @@ public:
     return true;
   }
 
-  void connectionStatus(diagnostic_msgs::DiagnosticStatus& status)
+  void connectionStatus(diagnostic_updater::DiagnosticStatusWrapper& status)
   {
     status.name = "Connection Status";
 
     if (!running_)
     {
-      status.level = 2;
-      status.message = "Not connected. " + connect_fail_;
+      status.summary(2, "Not connected. " + connect_fail_);
     }
     else if (device_status_ != std::string("Sensor works well."))
     {
-      status.level = 2;
-      status.message = "Sensor not operational";
-    } else {
-      status.level = 0;
-      status.message = "Sensor connected";
+      status.summary(2, "Sensor not operational");
+    }
+    else {
+      status.summary(0, "Sensor connected");
     }
 
-    status.set_values_size(3);
-    status.values[0].key = "Port";
-    status.values[0].value = port_;
-    status.values[1].key = "Device ID";
-    status.values[1].value = device_id_;
-    status.values[2].key = "Device Status";
-    status.values[2].value = device_status_;
+    status.adds("Port", port_);
+    status.adds("Device ID", device_id_);
+    status.adds("Device Status", device_status_);
   }
 
-  void freqStatus(diagnostic_msgs::DiagnosticStatus& status)
+  void freqStatus(diagnostic_updater::DiagnosticStatusWrapper& status)
   {
     status.name = "Frequency Status";
 
@@ -434,23 +428,17 @@ public:
 
     if (freq < (.9*desired_freq))
     {
-      status.level = 2;
-      status.message = "Desired frequency not met";
+      status.summary(2, "Desired frequency not met");
     }
     else
     {
-      status.level = 0;
-      status.message = "Desired frequency met";
+      status.summary(2, "Desired frequency met");
     }
 
-    status.set_values_size(3);
-    status.values[0].key = "Scans in interval";
-    status.values[0].value = count_;
-    status.values[1].key = "Desired frequency";
-    status.values[1].value = desired_freq;
-    status.values[2].key = "Actual frequency";
-    status.values[2].value = freq;
-
+    status.adds("Scans in interval", count_);
+    status.adds("Desired frequency", desired_freq);
+    status.adds("Actual frequency", freq);
+    
     count_ = 0;
   }
 
