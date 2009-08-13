@@ -414,9 +414,9 @@ public:
       status.summary(0, "Sensor connected");
     }
 
-    status.adds("Port", port_);
-    status.adds("Device ID", device_id_);
-    status.adds("Device Status", device_status_);
+    status.add("Port", port_);
+    status.add("Device ID", device_id_);
+    status.add("Device Status", device_status_);
   }
 
   void freqStatus(diagnostic_updater::DiagnosticStatusWrapper& status)
@@ -435,9 +435,9 @@ public:
       status.summary(2, "Desired frequency met");
     }
 
-    status.adds("Scans in interval", count_);
-    status.adds("Desired frequency", desired_freq);
-    status.adds("Actual frequency", freq);
+    status.add("Scans in interval", count_);
+    status.add("Desired frequency", desired_freq);
+    status.add("Actual frequency", freq);
     
     count_ = 0;
   }
