@@ -37,22 +37,43 @@
 #ifndef DF_VOXEL_GRID_H_
 #define DF_VOXEL_GRID_H_
 
+#include <algorithm>
+
 namespace distance_field
 {
 
 /**
- * \brief Container for a discretized 3D voxel grid
+ * \brief Container for a discretized 3D voxel grid for any class/structure
  */
 template <typename T>
 class VoxelGrid
 {
+public:
   VoxelGrid(double size_x, double size_y, double size_z, double resolution,
-      double origin_x, double origin_y, double origin_z, T& default_object);
+      double origin_x, double origin_y, double origin_z, T default_object);
   virtual ~VoxelGrid();
 
-  const typename T& operator()(double x, double y, double z) const;
-  const typename T& getCell(int x, int y, int z) const;
-  typename T& getCell(int x, int y, int z);
+  /**
+   * \brief Gets the value at the given position (returns the value from the closest discretized location)
+   */
+  const T& operator()(double x, double y, double z) const;
+
+  /**
+   * \brief Gets the value at a given integer location
+   */
+  T& getCell(int x, int y, int z);
+
+  T& getCellThroughPtr(int x, int y, int z);
+
+  /**
+   * \brief Gets the value at a given integer location (const version)
+   */
+  const T& getCell(int x, int y, int z) const;
+
+  /**
+   * Reset the entire grid to the given initial value
+   */
+  void reset(T initial);
 
   enum Dimension
   {
@@ -64,22 +85,43 @@ class VoxelGrid
   double getSize(Dimension dim) const;
   double getResolution(Dimension dim) const;
   double getOrigin(Dimension dim) const;
+  int getNumCells(Dimension dim) const;
 
-private:
-  typename T* data_;
-  typename T& default_object_;
+  bool gridToWorld(int x, int y, int z, double& world_x, double& world_y, double& world_z);
+  bool worldToGrid(double world_x, double world_y, double world_z, int& x, int& y, int& z);
+
+protected:
+  T* data_;
+  T default_object_;
+  T*** data_ptrs_;
   double size_[3];
   double resolution_[3];
   double origin_[3];
   int num_cells_[3];
   int num_cells_total_;
+  int stride1_;
+  int stride2_;
+
+  /**
+   * \brief Gets the reference in the data_ array for the given integer x,y,z location
+   */
+  int ref(int x, int y, int z);
+
+  /**
+   * \brief Gets the cell number from the location
+   */
+  int getCellFromLocation(Dimension dim, double loc);
+  double getLocationFromCell(Dimension dim, int cell);
+
+  bool isCellValid(int x, int y, int z);
+  bool isCellValid(Dimension dim, int cell);
 };
 
 //////////////////////////// template function definitions follow //////////////////
 
 template<typename T>
-VoxelGrid::VoxelGrid(double size_x, double size_y, double size_z, double resolution,
-    double origin_x, double origin_y, double origin_z, T& default_object)
+VoxelGrid<T>::VoxelGrid(double size_x, double size_y, double size_z, double resolution,
+    double origin_x, double origin_y, double origin_z, T default_object)
 {
   size_[DIM_X] = size_x;
   size_[DIM_Y] = size_y;
@@ -95,29 +137,145 @@ VoxelGrid::VoxelGrid(double size_x, double size_y, double size_z, double resolut
     num_cells_total_ *= num_cells_[i];
   }
   default_object_ = default_object;
+
+  stride1_ = size_[DIM_Y]*size_[DIM_Z];
+  stride2_ = size_[DIM_Z];
+
+  // initialize the data:
+  data_ = new T[num_cells_total_];
+
+  // initialize the data ptrs:
+  data_ptrs_ = new T**[num_cells_[DIM_X]];
+  for (int x=0; x<num_cells_[DIM_X]; ++x)
+  {
+    data_ptrs_[x] = new T*[num_cells_[DIM_Y]];
+    for (int y=0; y<num_cells_[DIM_Y]; ++y)
+    {
+      data_ptrs_[x][y] = &data_[ref(x,y,0)];
+    }
+  }
 }
 
 template<typename T>
-VoxelGrid::~VoxelGrid()
+VoxelGrid<T>::~VoxelGrid()
 {
+  delete[] data_;
+  for (int x=0; x<num_cells_[DIM_X]; ++x)
+  {
+    delete[] data_ptrs_[x];
+  }
+  delete[] data_ptrs_;
 }
 
 template<typename T>
-double VoxelGrid::getSize(Dimension dim) const
+bool VoxelGrid<T>::isCellValid(int x, int y, int z)
+{
+  return (
+      x>=0 && x<num_cells_[DIM_X] &&
+      y>=0 && y<num_cells_[DIM_Y] &&
+      z>=0 && z<num_cells_[DIM_Z]);
+}
+
+template<typename T>
+bool VoxelGrid<T>::isCellValid(Dimension dim, int cell)
+{
+  return cell>=0 && cell<num_cells_[dim];
+}
+
+template<typename T>
+inline int VoxelGrid<T>::ref(int x, int y, int z)
+{
+  return x*stride1_ + y*stride2_ + z;
+}
+
+template<typename T>
+inline double VoxelGrid<T>::getSize(Dimension dim) const
 {
   return size_[dim];
 }
 
 template<typename T>
-double VoxelGrid::getResolution(Dimension dim) const
+inline double VoxelGrid<T>::getResolution(Dimension dim) const
 {
   return resolution_[dim];
 }
 
 template<typename T>
-double VoxelGrid::getOrigin(Dimension dim) const
+inline double VoxelGrid<T>::getOrigin(Dimension dim) const
 {
   return origin_[dim];
+}
+
+template<typename T>
+inline int VoxelGrid<T>::getNumCells(Dimension dim) const
+{
+  return num_cells_[dim];
+}
+
+template<typename T>
+inline const T& VoxelGrid<T>::operator()(double x, double y, double z) const
+{
+  int cellX = getCellFromLocation(DIM_X, x);
+  int cellY = getCellFromLocation(DIM_Y, y);
+  int cellZ = getCellFromLocation(DIM_Z, z);
+  if (!isCellValid(cellX, cellY, cellZ))
+    return default_object_;
+  return getCell(cellX, cellY, cellZ);
+}
+
+template<typename T>
+T& VoxelGrid<T>::getCellThroughPtr(int x, int y, int z)
+{
+  return data_ptrs_[x][y][z];
+}
+
+template<typename T>
+inline T& VoxelGrid<T>::getCell(int x, int y, int z)
+{
+  return data_[ref(x,y,z)];
+}
+
+template<typename T>
+inline const T& VoxelGrid<T>::getCell(int x, int y, int z) const
+{
+  return data_[ref(x,y,z)];
+}
+
+template<typename T>
+inline int VoxelGrid<T>::getCellFromLocation(Dimension dim, double loc)
+{
+  return (loc-origin_[dim])/resolution_[dim];
+}
+
+template<typename T>
+inline double VoxelGrid<T>::getLocationFromCell(Dimension dim, int cell)
+{
+  return origin_[dim] + resolution_[dim]*cell;
+}
+
+
+template<typename T>
+inline void VoxelGrid<T>::reset(T initial)
+{
+  std::fill(data_, data_+num_cells_total_, initial);
+}
+
+template<typename T>
+bool VoxelGrid<T>::gridToWorld(int x, int y, int z, double& world_x, double& world_y, double& world_z)
+{
+  world_x = getLocationFromCell(DIM_X, x);
+  world_y = getLocationFromCell(DIM_Y, y);
+  world_z = getLocationFromCell(DIM_Z, z);
+  return true;
+}
+
+template<typename T>
+bool VoxelGrid<T>::worldToGrid(double world_x, double world_y, double world_z, int& x, int& y, int& z)
+{
+  x = getCellFromLocation(DIM_X, world_x);
+  y = getCellFromLocation(DIM_Y, world_y);
+  z = getCellFromLocation(DIM_Z, world_z);
+  return isCellValid(x,y,z);
 }
 
 } // namespace distance_field
