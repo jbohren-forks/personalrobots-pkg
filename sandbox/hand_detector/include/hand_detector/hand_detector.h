@@ -11,9 +11,6 @@
 
 class HandDetector {
  public:
-  bool debug_; 
-  
-
   HandDetector();
   HandDetector(std::string classifier_filename);
   //! Collect features on the even images.
@@ -25,11 +22,15 @@ class HandDetector {
   //! Visualize results on the odd images.
   void visualize(std::string classifier_filename, std::string results_dir, size_t num_samples);
   void showLabels(std::string results_dir);
+  //! Sets the HandDetector debug_ flag as well as debugging flags for all the descriptors.
+  void setDebug(bool debug);
 
  private:
   //! Boosting classifier.
   Dorylus d_;
   vector<ImageDescriptor*> descriptors_;
+  bool debug_; 
+ 
   
   void collectRandomFeatures(IplImage* img, int num_samples, const cv::Vector< cv::Vector<cv::Point> >& polys, 
 			     cv::Vector<cv::KeyPoint>* keypoints, std::vector<object*>* objects);

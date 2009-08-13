@@ -5,13 +5,20 @@ using namespace cv;
 USING_PART_OF_NAMESPACE_EIGEN;
 
 HandDetector::HandDetector() :
-  debug_(false),
   d_(Dorylus()),
-  descriptors_(vector<ImageDescriptor*>())
+  descriptors_(vector<ImageDescriptor*>()),
+  debug_(false)
 {
   descriptors_ = setupImageDescriptors();
 }
   
+
+void HandDetector::setDebug(bool debug) {
+  debug_ = debug;
+  for(size_t i=0; i<descriptors_.size(); ++i) {
+    descriptors_[i]->debug_ = debug;
+  }
+}
 
 Dorylus* HandDetector::train(string dataset_filename, int max_secs, int max_wcs, int num_candidates) {
   DorylusDataset dd;
@@ -75,15 +82,15 @@ void HandDetector::collectRandomFeatures(IplImage* img, int num_samples, const V
       }
 
       // -- Show the labels.
-      if(debug_ && labels[j]==1) {
-	cout << "This point is labeled " << labels[j] << endl;
-	IplImage* vis = cvCloneImage(img);
-	cvLine(vis, cvPoint(x-10, y), cvPoint(x+10, y), cvScalar(0,0,255));
-	cvLine(vis, cvPoint(x, y-10), cvPoint(x, y+10), cvScalar(0,0,255));
-	CVSHOW("Label", vis);
-	cvWaitKey(0);
-	cvReleaseImage(&vis);
-      }
+//       if(debug_ && labels[j]==1) {
+// 	cout << "This point is labeled " << labels[j] << endl;
+// 	IplImage* vis = cvCloneImage(img);
+// 	cvLine(vis, cvPoint(x-10, y), cvPoint(x+10, y), cvScalar(0,0,255));
+// 	cvLine(vis, cvPoint(x, y-10), cvPoint(x, y+10), cvScalar(0,0,255));
+// 	CVSHOW("Label", vis);
+// 	cvWaitKey(0);
+// 	cvReleaseImage(&vis);
+//       }
     }
 
     // -- Collect features.
@@ -93,7 +100,7 @@ void HandDetector::collectRandomFeatures(IplImage* img, int num_samples, const V
     }
 
     // -- Put into objects
-    assert(keypoints.size() == num_samples);
+    assert((int)keypoints->size() == num_samples);
     Vector<KeyPoint> actual_keypoints;
     actual_keypoints.reserve(keypoints->size());
     for(size_t k=0; k<(size_t)num_samples; k++)  {
@@ -331,32 +338,36 @@ void releaseImageDescriptors(vector<ImageDescriptor*>* desc) {
 vector<ImageDescriptor*> setupImageDescriptors() {
   vector<ImageDescriptor*> d;
 
-  d.push_back(new HogWrapper(Size(16,16), Size(16,16), Size(8,8), Size(8,8), 7, 1, -1, 0, 0.2, true));
-  d.push_back(new HogWrapper(Size(32,32), Size(16,16), Size(8,8), Size(8,8), 7, 1, -1, 0, 0.2, true));
-  d.push_back(new HogWrapper(Size(64,64), Size(32,32), Size(16,16), Size(16,16), 7, 1, -1, 0, 0.2, true));
-  d.push_back(new HogWrapper(Size(128,128), Size(64,64), Size(32,32), Size(32,32), 7, 1, -1, 0, 0.2, true));
-
-  SuperpixelColorHistogram* sch1 = new SuperpixelColorHistogram(20, 0.5, 10);
-  SuperpixelColorHistogram* sch2 = new SuperpixelColorHistogram(5, 0.5, 10, NULL, sch1);
-  SuperpixelColorHistogram* sch3 = new SuperpixelColorHistogram(5, 1, 10, NULL, sch1);
-  SuperpixelColorHistogram* sch4 = new SuperpixelColorHistogram(5, .25, 10, NULL, sch1);
-  d.push_back(sch1);
-  d.push_back(sch2);
-  d.push_back(sch3);
-  d.push_back(sch4);
+  d.push_back(new HogWrapper(Size(16,16), Size(16,16), Size(8,8), Size(8,8), 9, 1, -1, 0, 0.2, true));
+  d.push_back(new HogWrapper(Size(32,32), Size(16,16), Size(8,8), Size(8,8), 9, 1, -1, 0, 0.2, true));
+  d.push_back(new HogWrapper(Size(64,64), Size(32,32), Size(16,16), Size(16,16), 9, 1, -1, 0, 0.2, true));
+  d.push_back(new HogWrapper(Size(128,128), Size(64,64), Size(32,32), Size(32,32), 9, 1, -1, 0, 0.2, true));
+  d.push_back(new HogWrapper(Size(128,128), Size(64,64), Size(32,32), Size(16,16), 9, 1, -1, 0, 0.2, true));
+  d.push_back(new HogWrapper(Size(64,64), Size(32,32), Size(16,16), Size(8,8), 9, 1, -1, 0, 0.2, true));
+  d.push_back(new HogWrapper(Size(32,32), Size(16,16), Size(8,8), Size(4,4), 9, 1, -1, 0, 0.2, true));
+  d.push_back(new HogWrapper(Size(16,16), Size(16,16), Size(8,8), Size(4,4), 9, 1, -1, 0, 0.2, true));
  
-  d.push_back(new SurfWrapper(true, 150));
-  d.push_back(new SurfWrapper(true, 100));
-  d.push_back(new SurfWrapper(true, 50));
-  d.push_back(new SurfWrapper(true, 25));
-  d.push_back(new SurfWrapper(true, 10));
+//   SuperpixelColorHistogram* sch1 = new SuperpixelColorHistogram(20, 0.5, 10);
+//   SuperpixelColorHistogram* sch2 = new SuperpixelColorHistogram(5, 0.5, 10, NULL, sch1);
+//   SuperpixelColorHistogram* sch3 = new SuperpixelColorHistogram(5, 1, 10, NULL, sch1);
+//   SuperpixelColorHistogram* sch4 = new SuperpixelColorHistogram(5, .25, 10, NULL, sch1);
+//   d.push_back(sch1);
+//   d.push_back(sch2);
+//   d.push_back(sch3);
+//   d.push_back(sch4);
+ 
+//   d.push_back(new SurfWrapper(true, 150));
+//   d.push_back(new SurfWrapper(true, 100));
+//   d.push_back(new SurfWrapper(true, 50));
+//   d.push_back(new SurfWrapper(true, 25));
+//   d.push_back(new SurfWrapper(true, 10));
    
-  Daisy* base_daisy = new Daisy(25, 3, 8, 8, NULL);
-  d.push_back(base_daisy);
-  d.push_back(new Daisy(50, 3, 8, 8, base_daisy));
-  d.push_back(new Daisy(75, 3, 8, 8, base_daisy));
-  d.push_back(new Daisy(100, 3, 8, 8, base_daisy));
-  d.push_back(new Daisy(150, 3, 8, 8, base_daisy));
+//   Daisy* base_daisy = new Daisy(25, 3, 8, 8, NULL);
+//   d.push_back(base_daisy);
+//   d.push_back(new Daisy(50, 3, 8, 8, base_daisy));
+//   d.push_back(new Daisy(75, 3, 8, 8, base_daisy));
+//   d.push_back(new Daisy(100, 3, 8, 8, base_daisy));
+//   d.push_back(new Daisy(150, 3, 8, 8, base_daisy));
 
   return d;
 }

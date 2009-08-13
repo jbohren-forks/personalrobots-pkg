@@ -5,7 +5,7 @@ int main(int argc, char** argv) {
 
   // -- Get env var options.
   if(getenv("DEBUG") != NULL) {
-    hd.debug_ = true;
+    hd.setDebug(true);
   }
 
   size_t num_samples = 1000;
