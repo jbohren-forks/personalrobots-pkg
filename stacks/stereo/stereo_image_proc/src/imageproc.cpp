@@ -88,6 +88,7 @@ public:
     boost::lock_guard<boost::mutex> guard(cam_info_mutex_);
 
     cam_bridge::RawStereoToCamData(raw_img_, cam_info_, stereo_msgs::RawStereo::IMAGE_RAW, &img_data_);
+    // @todo: stop hardcoding this to what forearm cam happens to use
     img_data_.imRawType = COLOR_CODING_BAYER8_BGGR;
 
     if (do_colorize_) {
@@ -109,7 +110,7 @@ public:
     
     if (img_data_.imType != COLOR_CODING_NONE)
     {
-      fillImage(img_, sensor_msgs::image_encodings::TYPE_8UC1,
+      fillImage(img_, sensor_msgs::image_encodings::MONO8,
                 img_data_.imHeight, img_data_.imWidth, img_data_.imWidth,
                 img_data_.im );
       node_.publish(cam_name_ + "image", img_);
@@ -117,7 +118,7 @@ public:
 
     if (img_data_.imColorType == COLOR_CODING_RGB8)
     {
-      fillImage(img_,sensor_msgs::image_encodings::TYPE_8UC3,
+      fillImage(img_,sensor_msgs::image_encodings::RGB8,
                 img_data_.imHeight, img_data_.imWidth, 3 * img_data_.imWidth,
                 img_data_.imColor );
       node_.publish(cam_name_ + "image_color", img_);
@@ -125,7 +126,7 @@ public:
 
     if (img_data_.imRectType != COLOR_CODING_NONE)
     {
-      fillImage(img_,  sensor_msgs::image_encodings::TYPE_8UC1,
+      fillImage(img_,  sensor_msgs::image_encodings::MONO8,
                 img_data_.imHeight, img_data_.imWidth, img_data_.imWidth,
                 img_data_.imRect );
       node_.publish(cam_name_ + "image_rect", img_);
@@ -133,7 +134,7 @@ public:
 
     if (img_data_.imRectColorType == COLOR_CODING_RGB8)
     {
-      fillImage(img_,  sensor_msgs::image_encodings::TYPE_8UC3,
+      fillImage(img_,  sensor_msgs::image_encodings::RGB8,
                 img_data_.imHeight, img_data_.imWidth, 3 * img_data_.imWidth,
                 img_data_.imRectColor );
       node_.publish(cam_name_ + "image_rect_color", img_);
@@ -141,7 +142,7 @@ public:
 
     if (img_data_.imRectColorType == COLOR_CODING_RGBA8)
     {
-      fillImage(img_, sensor_msgs::image_encodings::TYPE_8UC4,
+      fillImage(img_, sensor_msgs::image_encodings::RGBA8,
                 img_data_.imHeight, img_data_.imWidth, 4 * img_data_.imWidth,
                 img_data_.imRectColor);
       node_.publish(cam_name_ + "image_rect_color", img_);
