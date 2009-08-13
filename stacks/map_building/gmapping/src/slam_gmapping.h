@@ -74,6 +74,7 @@ class SlamGMapping
     bool addScan(const sensor_msgs::LaserScan& scan, GMapping::OrientedPoint& gmap_pose);
     
     // Parameters used by GMapping
+    double maxRange_;
     double maxUrange_;
     double maxrange_;
     double sigma_;
