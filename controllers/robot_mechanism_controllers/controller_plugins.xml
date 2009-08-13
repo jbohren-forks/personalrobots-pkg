@@ -1,0 +1,3 @@
+<library path="lib/librobot_mechanism_controllers">
+  <plugin name="JointEffortController" class="JointEffortController" type="Controller" />
+</library>

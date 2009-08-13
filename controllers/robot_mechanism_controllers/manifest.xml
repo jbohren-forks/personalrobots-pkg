@@ -26,11 +26,13 @@
   <depend package="eigen" />
   <depend package="filters" />
   <depend package="diagnostic_msgs" />
+  <depend package="pluginlib" />
   <url>http://pr.willowgarage.com</url>
   <repository>http://pr.willowgarage.com/repos</repository>
   <export>
     <cpp cflags="-I${prefix}/include -I${prefix}/msg/cpp -I${prefix}/srv/cpp"
 	 lflags="-Wl,-rpath,${prefix}/lib/ -L${prefix}/lib -lrobot_mechanism_controllers" />
+    <mechanism_control controller="${prefix}/controller_plugins.xml" />
   </export>
   <rosdep name="libtool"/>
 </package>

@@ -50,13 +50,14 @@ Loki::Factory< controller::Controller, std::string >& getControllerFactoryInstan
 }
 
 MechanismControl::MechanismControl(HardwareInterface *hw) :
-  state_(NULL), hw_(hw), 
+  state_(NULL), hw_(hw),
+  controller_loader_("mechanism_control", "controller"),
   start_request_(0),
   stop_request_(0),
   please_switch_(false),
   switch_success_(false),
-  current_controllers_list_(0), 
-  used_by_realtime_(-1), 
+  current_controllers_list_(0),
+  used_by_realtime_(-1),
   pub_diagnostics_(node_, "/diagnostics", 1),
   pub_joints_(node_, "joint_states", 1),
   pub_mech_state_(node_, "mechanism_state", 1),
@@ -77,7 +78,7 @@ bool MechanismControl::initXml(TiXmlElement* config)
 {
   model_.initXml(config);
   state_ = new RobotState(&model_, hw_);
-  
+
   // pre-allocate for realtime publishing
   pub_mech_state_.msg_.set_actuator_states_size(hw_->actuators_.size());
   int joints_size = 0;
@@ -89,21 +90,21 @@ bool MechanismControl::initXml(TiXmlElement* config)
   }
   pub_joints_.msg_.set_joints_size(joints_size);
   pub_mech_state_.msg_.set_joint_states_size(joints_size);
-  
+
   // Advertise services
   srv_list_controllers_ = node_.advertiseService("list_controllers", &MechanismControl::listControllersSrv, this);
   srv_list_controller_types_ = node_.advertiseService("list_controller_types", &MechanismControl::listControllerTypesSrv, this);
   srv_spawn_controller_ = node_.advertiseService("spawn_controller", &MechanismControl::spawnControllerSrv, this);
   srv_kill_controller_ = node_.advertiseService("kill_controller", &MechanismControl::killControllerSrv, this);
   srv_switch_controller_ = node_.advertiseService("switch_controller", &MechanismControl::switchControllerSrv, this);
-  
+
   // get the publish rate for mechanism state and diagnostics
   double publish_rate_state, publish_rate_diagnostics;
   node_.param("~publish_rate_mechanism_state", publish_rate_state, 100.0);
   node_.param("~publish_rate_diagnostics", publish_rate_diagnostics, 1.0);
   publish_period_state_ = 1.0/fmax(0.000001, publish_rate_state);
   publish_period_diagnostics_ = 1.0/fmax(0.000001, publish_rate_diagnostics);
-  
+
   return true;
 }
 
@@ -139,7 +140,7 @@ void MechanismControl::update()
   double end = ros::Time::now().toSec();
   post_update_stats_.acc(end - end_update);
 
-  // publish diagnostics and state 
+  // publish diagnostics and state
   publishDiagnostics();
   publishState();
 
@@ -150,7 +151,7 @@ void MechanismControl::update()
     switch_success_ = true;
     int last_started = -1;
     for (unsigned int i=0; i<start_request_.size(); i++){
-      if (!start_request_[i]->startRequest() && 
+      if (!start_request_[i]->startRequest() &&
           switch_strictness_ == mechanism_msgs::SwitchController::Request::STRICT){
         switch_success_ = false;
         break;
@@ -242,8 +243,7 @@ bool MechanismControl::spawnController(const std::string& name)
   if (c_node.getParam("type", type))
   {
     ROS_DEBUG("Constructing controller '%s' of type '%s'", name.c_str(), type.c_str());
-    try {c = controller::ControllerFactory::Instance().CreateObject(type);} 
-    catch(Loki::DefaultFactoryError<std::string, controller::Controller>::Exception){}
+    c = controller_loader_.createPluginInstance(type, true);
   }
 
   // checks if controller was constructed
@@ -442,13 +442,13 @@ void MechanismControl::publishDiagnostics()
       std::vector<ControllerSpec> &controllers = controllers_lists_[used_by_realtime_];
       int active = 0;
       TimeStatistics blank_statistics;
-      
+
       std::vector<diagnostic_msgs::DiagnosticStatus> statuses;
       diagnostic_updater::DiagnosticStatusWrapper status;
-      
+
       status.name = "Mechanism Control";
       status.summary(0, "OK");
-      
+
       for (size_t i = 0; i < controllers.size(); ++i)
       {
         ++active;
@@ -468,10 +468,10 @@ void MechanismControl::publishDiagnostics()
                        *std::max_element(controllers[i].stats->max1.begin(), controllers[i].stats->max1.end())*1e6,
                        controllers[i].stats->max*1e6,
                        state.c_str());
-        
+
         controllers[i].stats->acc = blank_statistics;  // clear
       }
-      
+
 #define REPORT_STATS(stats_, label)             \
       {                                              \
         double m = extract_result<tag::max>(stats_.acc);        \
@@ -485,13 +485,13 @@ void MechanismControl::publishDiagnostics()
                        stats_.max*1e6);                                 \
         stats_.acc = blank_statistics;                                  \
       }
-      
+
       REPORT_STATS(pre_update_stats_, "Before Update");
       REPORT_STATS(update_stats_, "Update");
       REPORT_STATS(post_update_stats_, "After Update");
-      
+
       status.addf("Active controllers", "%d", active);
-      
+
       statuses.push_back(status);
       pub_diagnostics_.msg_.set_status_vec(statuses);
       pub_diagnostics_.unlockAndPublish();
@@ -585,13 +585,14 @@ void MechanismControl::publishState()
   }
 }
 
-
 bool MechanismControl::listControllerTypesSrv(
   mechanism_msgs::ListControllerTypes::Request &req,
   mechanism_msgs::ListControllerTypes::Response &resp)
 {
   (void) req;
-  std::vector<std::string> types = controller::ControllerFactory::Instance().RegisteredIds();
+  //std::vector<std::string> types = controller::ControllerHandleFactory::Instance().RegisteredIds();
+  std::vector<std::string> types = controller_loader_.getDeclaredPlugins();
+
   resp.set_types_vec(types);
   return true;
 }
