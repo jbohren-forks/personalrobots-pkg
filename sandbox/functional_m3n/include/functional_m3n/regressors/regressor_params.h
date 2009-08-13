@@ -60,7 +60,7 @@ class RegressionTreeWrapperParams
      * See CvDTreeParams in OpenCV: \n
      * http://opencv.willowgarage.com/wiki/MachineLearning#DecisionTrees \n
      *
-     * max_tree_depth_factor \n
+     * max_tree_depth_factor (the percentage of the stacked feature length) \n
      * min_sample_count \n
      * regression_accuracy \n
      * nbr_xvalidation_folds \n
