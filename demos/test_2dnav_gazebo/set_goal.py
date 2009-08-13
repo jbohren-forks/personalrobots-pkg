@@ -62,20 +62,25 @@ COV = [float64(0.5*0.5                  ),float64(0),float64(0),float64(0),float
        float64(0                        ),float64(0),float64(0),float64(0),float64(0),float64(0), \
        float64(0                        ),float64(0),float64(0),float64(0),float64(0),float64(0)  ]
 
-def normalize_angle_positive(angle):
-    return math.fmod(math.fmod(angle, 2*math.pi) + 2*math.pi, 2*math.pi)
+class Angles:
+    def __init__(self,angle):
+       self.angle = angle
 
-def normalize_angle(angle):
-    anorm = normalize_angle_positive(angle)
-    if anorm > math.pi:
-      anorm -= 2*math.pi
-    return anorm
+    def normalize_angle_positive(self):
+        return math.fmod(math.fmod(self.angle, 2*math.pi) + 2*math.pi, 2*math.pi)
 
-def shortest_angular_distance(angle_from, angle_to):
-    angle_diff = normalize_angle_positive(angle_to) - normalize_angle_positive(angle_from)
-    if angle_diff > math.pi:
-      angle_diff = -(2*math.pi - angle_diff)
-    return normalize_angle(angle_diff)
+    def normalize_angle(self):
+        anorm = normalize_angle_positive(self.angle)
+        if anorm > math.pi:
+          anorm -= 2*math.pi
+        return anorm
+
+    def shortest_angular_distance(self, angle_to):
+        # shortest_angular_distance from this angle to angle_to
+        angle_diff = Angles(normalize_angle_positive(angle_to) - normalize_angle_positive(self.angle))
+        if angle_diff.angle > math.pi:
+          angle_diff.angle = -(2*math.pi - angle_diff.angle)
+        return angle_diff.normalize_angle()
 
 class NavStackTest(unittest.TestCase):
     def __init__(self, *args):
@@ -189,9 +194,11 @@ class NavStackTest(unittest.TestCase):
           print "state.goal: (", state.goal.pose.position.x, ",", state.goal.pose.position.y, ",", state.goal.pose.position.z \
                            ,",", state_eul[0], ",", state_eul[1], ",", state_eul[2] \
                            ,") status:",state.status.value, " comment:" , state.status.comment
+
+          state_angle = Angles(state_eul[2]);
           if abs(state.goal.pose.position.x-self.target_x)<FLOAT_TOL and \
              abs(state.goal.pose.position.y-self.target_y)<FLOAT_TOL and \
-             abs(shortest_angular_distance(state_eul[2],self.target_t))<FLOAT_TOL and \
+             abs(state_angle.shortest_angular_distance(self.target_t))<FLOAT_TOL and \
              ( state.status.value == 4 ):
             print "state goal has been published: ", state.goal.pose.position.x, ",", state.goal.pose.position.y, ",", state_eul[2]
             self.publish_goal = False
