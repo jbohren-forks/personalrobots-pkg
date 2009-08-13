@@ -1,4 +1,5 @@
 <library path="lib/libpr2_mechanism_controllers">
+  <plugin name="CasterCalibrationController" class="CasterCalibrationController" type="Controller" />
   <plugin name="CasterController" class="CasterController" type="Controller" />
   <plugin name="CasterControllerNode" class="CasterControllerNode" type="Controller" />
   <plugin name="GripperCalibrationController" class="GripperCalibrationController" type="Controller" />
