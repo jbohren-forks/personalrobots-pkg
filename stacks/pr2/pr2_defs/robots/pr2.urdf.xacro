@@ -8,13 +8,13 @@
   <resource type="stl_meshes" location="$(find pr2_defs)/meshes"/>
   <resource type="ogre"       location="$(find pr2_ogre)/Media/models"/>
 
-  <include filename="$(find pr2_defs)/defs/arm_defs.urdf.xacro" />
-  <include filename="$(find pr2_defs)/defs/gripper_defs.urdf.xacro" />
-  <include filename="$(find pr2_defs)/defs/head_defs.urdf.xacro" />
-  <include filename="$(find pr2_defs)/defs/body_defs.urdf.xacro" />
-  <include filename="$(find pr2_defs)/defs/base_defs.urdf.xacro" />
-  <include filename="$(find pr2_defs)/defs/prosilica_defs.urdf.xacro" />
-  <include filename="$(find pr2_defs)/defs/gazebo_defs.urdf.xacro" />
+  <include filename="$(find pr2_defs)/defs/arm/arm_defs.urdf.xacro" />
+  <include filename="$(find pr2_defs)/defs/gripper/gripper_defs.urdf.xacro" />
+  <include filename="$(find pr2_defs)/defs/head/head_defs.urdf.xacro" />
+  <include filename="$(find pr2_defs)/defs/body/body_defs.urdf.xacro" />
+  <include filename="$(find pr2_defs)/defs/base/base_defs.urdf.xacro" />
+  <include filename="$(find pr2_defs)/defs/head/prosilica_defs.urdf.xacro" />
+  <include filename="$(find pr2_defs)/defs/gazebo/gazebo_defs.urdf.xacro" />
 
   <pr2_base name="base" >
     <origin xyz="0 0 0.051" rpy="0 0 0" /> <!-- 5.1cm is the height of the base when wheels contact ground -->
