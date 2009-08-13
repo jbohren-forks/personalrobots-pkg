@@ -55,15 +55,15 @@ The main two classes are
 
 <hr>
 
-\subsection Creating RandomFields
+\subsection usage Creating RandomFields
 
 See RandomField::createNode and RandomField::createClique 
 
-\subsection Training the M3NModel
+\subsection usage Training M3NModels
 
 See M3NModel::train
 
-\subsection Classifying with the M3NModel
+\subsection usage Classifying with the M3NModel
 
 See M3NModel::infer
 
