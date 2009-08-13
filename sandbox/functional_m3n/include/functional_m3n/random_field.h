@@ -329,8 +329,13 @@ class RandomField
     /*!
      * \brief Saves the contents of this RandomField to file
      *
-     * The RandomField is distributed across multiple files.  See the
-     * header of the file for the file format.
+     * This call will produce a file named <basename>.random_field and
+     * multiple associative files for the nodes (.node_features) and
+     * clique sets (._cs_XXX_features).
+     * See the header of the files for the file format.
+     *
+     * To avoid loading/saving issues, the basename should contain the
+     * full path of the file.
      *
      * \param The basename of the output files
      *

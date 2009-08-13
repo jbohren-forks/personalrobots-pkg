@@ -107,6 +107,10 @@ class M3NModel
     /*!
      * \brief Saves this M3N model to file
      *
+     * This call will produce a file named <basename>.m3n_model and
+     * multiple associative files related to the regressors with the
+     * same basename prefix.
+     *
      * To avoid loading/saving issues, the basename should contain the
      * full path of the file.
      *
