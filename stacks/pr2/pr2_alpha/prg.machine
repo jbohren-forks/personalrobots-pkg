@@ -1,5 +1,7 @@
 <launch>
-  <machine name="realtime_root" user="root" address="prg1" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" default="never" />
+  <machine name="realtime_root" user="root" address="prg1" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" default="never">
+    <env name="PATH" value="$(env PATH):$(env ROS_ROOT)/bin" /> <!-- HACK.  Depends on ROS bug #1586.  Remove when closed -->
+  </machine>
 
   <machine name="realtime" address="prg1" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" />
   <machine name="two"      address="prg2" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)"  default="true"/>
