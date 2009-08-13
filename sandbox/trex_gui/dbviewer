@@ -11,6 +11,9 @@ import re
 import os
 import StringIO
 
+import time
+import threading
+
 import gtk
 import gtk.gdk
 
@@ -100,6 +103,7 @@ class MyDotWindow(xdot.DotWindow):
       prop_win.show()
 
     return True
+
 
   def clear(self):
     dotfile = StringIO.StringIO()
@@ -459,9 +463,11 @@ class SearchWindow(gtk.Window):
   def on_activated(self, widget, row, col):
     pass
   
-  def on_destroy(self,widget):
+  def on_destroy(self,widget,kill=False):
     # If we don't make a new one here, you can't anywhere else
-    search_window = SearchWindow()
+    if not kill:
+      global search_window
+      search_window = SearchWindow()
 
   def post_refilter(self,model=None):
     # Generate entity list
@@ -509,6 +515,13 @@ class ControlWindow(gtk.Window):
 
     self.reactor_paths = []
     self.ticks = []
+
+    # Spin up the reload thread used to track the latest file
+    self.do_reload = False
+    self.running = True
+    self.reload_lock = threading.RLock()
+    self.reload_thread = threading.Thread(target=self.latest_reload_loop)
+    self.reload_thread.start()
 
     vbox = gtk.VBox(False, 8)
 
@@ -573,6 +586,8 @@ class ControlWindow(gtk.Window):
     self.bk_but.connect("clicked",self.step_back)
     self.en_but.connect("clicked",self.go_last)
     
+    self.latest_but.connect("toggled",self.on_toggle_latest)
+
     search_hbox = gtk.HBox(False,4)
 
     search_hbox.pack_end(self.latest_but, False, False, 0)
@@ -610,14 +625,44 @@ class ControlWindow(gtk.Window):
     self.connect("enter_notify_event", self.load_ticks_path)
     self.show_all()
 
-  def on_destroy(self,widget):
+  def on_destroy(self,widget,kill=False):
+    self.running = False
+    self.reload_thread.join()
     # If we don't make a new one here, you can't anywhere else
-    control_window = ControlWindow()
+    if not kill:
+      global control_window
+      control_window = ControlWindow()
 
   def on_path_change(self,widget):
     global log_path
     log_path = self.path_chooser.get_filename()
     self.load_log_path()
+
+  def on_toggle_latest(self,widget):
+    # Set the reload status so that the reload thread will reload the files
+    enabled = self.latest_but.get_active()
+    self.reload_lock.acquire()
+    self.do_reload = enabled
+    self.reload_lock.release()
+
+    self.update_available_buttons();
+
+  def latest_reload_loop(self):
+    while self.running:
+      gtk.gdk.threads_enter()
+      self.reload_lock.acquire()
+      enabled = self.do_reload
+      if self.do_reload:
+	# Check the available ticks
+	self.load_ticks_path()
+	# Re-load if there is a newer tick available
+	if len(self.ticks) > 0 and self.ticks[-1] != tick:
+	  self.load(self.ticks[-1])
+      self.reload_lock.release()
+      gtk.gdk.threads_leave()
+      # Sleep before trying again
+      time.sleep(1.0)
+
 
   def load_log_path(self):
     global log_path
@@ -697,19 +742,33 @@ class ControlWindow(gtk.Window):
 
   def update_available_buttons(self):
     try:
-      if self.ticks.index(tick) == 0:
+      latest_enabled = self.latest_but.get_active()
+
+      if latest_enabled:
+	# Disable the other tick control buttons
+	self.tick_entry.set_sensitive(False)
+	self.go_but.set_sensitive(False)
 	self.bk_but.set_sensitive(False)
 	self.st_but.set_sensitive(False)
-      else:
-	self.bk_but.set_sensitive(True)
-	self.st_but.set_sensitive(True)
-
-      if self.ticks.index(tick) == len(self.ticks)-1:
 	self.en_but.set_sensitive(False) 
 	self.fw_but.set_sensitive(False)
       else:
-	self.en_but.set_sensitive(True) 
-	self.fw_but.set_sensitive(True)
+	self.tick_entry.set_sensitive(True)
+	self.go_but.set_sensitive(True)
+
+	if self.ticks.index(tick) == 0:
+	  self.bk_but.set_sensitive(False)
+	  self.st_but.set_sensitive(False)
+	else:
+	  self.bk_but.set_sensitive(True)
+	  self.st_but.set_sensitive(True)
+
+	if self.ticks.index(tick) == len(self.ticks)-1:
+	  self.en_but.set_sensitive(False) 
+	  self.fw_but.set_sensitive(False)
+	else:
+	  self.en_but.set_sensitive(True) 
+	  self.fw_but.set_sensitive(True)
     except:
       pass
 
@@ -1101,7 +1160,7 @@ def main():
   global window
   window = MyDotWindow()
   window.set_filter('dot')
-  window.connect('destroy', gtk.main_quit)
+  window.connect('destroy', quit)
 
   # Spawn a search window
   global search_window
@@ -1112,7 +1171,14 @@ def main():
   control_window = ControlWindow()
 
   # Run gtk
+  gtk.gdk.threads_init()
   gtk.main()
+
+def quit(widget=None):
+  window.destroy()
+  search_window.on_destroy(search_window,True)
+  control_window.on_destroy(control_window,True)
+  gtk.main_quit()
 
 if __name__ == '__main__':
   main()
