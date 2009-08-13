@@ -233,8 +233,8 @@ static PyObject *setTransform(PyObject *self, PyObject *args)
     return NULL;
   tf::Stamped< btTransform > transform;
   PyObject *header = PyObject_BorrowAttrString(py_transform, "header");
-  transform.frame_id_ = PyString_AsString(PyObject_BorrowAttrString(header, "frame_id"));
-  transform.parent_id_ = PyString_AsString(PyObject_BorrowAttrString(py_transform, "parent_id"));
+  transform.frame_id_ = PyString_AsString(PyObject_BorrowAttrString(py_transform, "child_frame_id"));
+  transform.parent_id_ = PyString_AsString(PyObject_BorrowAttrString(header, "frame_id"));
   if (rostime_converter(PyObject_BorrowAttrString(header, "stamp"), &transform.stamp_) != 1)
     return NULL;
 

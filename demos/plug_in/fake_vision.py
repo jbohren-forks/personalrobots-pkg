@@ -32,7 +32,6 @@ roslib.load_manifest('plug_in')
 import rospy
 from std_msgs.msg import *
 from geometry_msgs.msg import Quaternion, PoseStamped
-from tf.msg import tfMessage
 from math import *
 from time import sleep
 import tf.transformations

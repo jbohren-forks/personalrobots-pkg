@@ -93,8 +93,8 @@ bool RobotStatePublisher::publishTransforms(const map<string, double>& joint_pos
       tf::Transform tf_frame;
       tf::TransformKDLToTF(frame, tf_frame);
       trans.header.stamp = time;
-      trans.header.frame_id = tf::remap(tf_prefix_, f->first);
-      trans.parent_id = tf::remap(tf_prefix_, root->first);
+      trans.header.frame_id = tf::remap(tf_prefix_, root->first);
+      trans.child_frame_id = tf::remap(tf_prefix_, f->first);
       tf::transformTFToMsg(tf_frame, trans.transform);
 	tf_msg_.transforms[i++] = trans;
     }

@@ -175,10 +175,10 @@ static inline void transformTFToMsg(const Transform& bt, geometry_msgs::Transfor
 
 /** \brief convert TransformStamped msg to Stamped<Transform> */
 static inline void transformStampedMsgToTF(const geometry_msgs::TransformStamped & msg, Stamped<Transform>& bt)
-{transformMsgToTF(msg.transform, bt); bt.stamp_ = msg.header.stamp; bt.frame_id_ = msg.header.frame_id; bt.parent_id_ = msg.parent_id;};
+{transformMsgToTF(msg.transform, bt); bt.stamp_ = msg.header.stamp; bt.parent_id_ = msg.header.frame_id; bt.frame_id_ = msg.child_frame_id;};
 /** \brief convert Stamped<Transform> to TransformStamped msg*/
 static inline void transformStampedTFToMsg(const Stamped<Transform>& bt, geometry_msgs::TransformStamped & msg)
-{transformTFToMsg(bt, msg.transform); msg.header.stamp = bt.stamp_; msg.header.frame_id = bt.frame_id_; msg.parent_id = bt.parent_id_;};
+{transformTFToMsg(bt, msg.transform); msg.header.stamp = bt.stamp_; msg.header.frame_id = bt.parent_id_; msg.child_frame_id = bt.frame_id_;};
 
 /** \brief convert Pose msg to Pose */
 static inline void poseMsgToTF(const geometry_msgs::Pose& msg, Pose& bt)

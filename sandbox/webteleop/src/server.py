@@ -26,7 +26,6 @@ import bullet
 
 import wg_hardware_roslaunch.roslaunch_caller as roslaunch_caller
 
-from tf.msg import tfMessage
 from nav_msgs import *
 from nav_msgs.msg import *
 from std_msgs.msg import *

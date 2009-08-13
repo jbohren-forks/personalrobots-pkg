@@ -51,8 +51,8 @@ class TestPython(unittest.TestCase):
 
     def common(self, t):
         m = geometry_msgs.msg.TransformStamped()
-        m.header.frame_id = "THISFRAME"
-        m.parent_id = "PARENT"
+        m.header.frame_id = "PARENT"
+        m.child_frame_id = "THISFRAME"
         m.transform.translation.y = 5.0
         m.transform.rotation = geometry_msgs.msg.Quaternion(*tf.transformations.quaternion_from_euler(0, 0, 0))
         t.setTransform(m)

@@ -358,8 +358,8 @@ void Pr2Odometry::publish()
 
     geometry_msgs::TransformStamped &out = transform_publisher_->msg_.transforms[0];
     out.header.stamp.fromSec(current_time_);
-    out.header.frame_id = odom_frame_;
-    out.parent_id = base_footprint_frame_;
+    out.header.frame_id =  base_footprint_frame_;
+    out.child_frame_id = odom_frame_;
     out.transform.translation.x = -x * cos(yaw) - y * sin(yaw);
     out.transform.translation.y = +x * sin(yaw) - y * cos(yaw);
     out.transform.translation.z = 0;
@@ -372,8 +372,8 @@ void Pr2Odometry::publish()
 
     geometry_msgs::TransformStamped &out2 = transform_publisher_->msg_.transforms[1];
     out2.header.stamp.fromSec(current_time_);
-    out2.header.frame_id = base_link_frame_;
-    out2.parent_id = base_footprint_frame_;
+    out2.header.frame_id = base_footprint_frame_;
+    out2.child_frame_id = base_link_frame_;
     out2.transform.translation.x = 0;
     out2.transform.translation.y = 0;
 

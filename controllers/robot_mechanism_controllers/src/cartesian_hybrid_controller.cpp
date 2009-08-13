@@ -37,6 +37,7 @@
 #include <kdl/chainfksolvervel_recursive.hpp>
 #include <kdl/chainjnttojacsolver.hpp>
 #include <kdl/jacobian.hpp>
+#include "tf/tfMessage.h"
 #include "tf_conversions/tf_kdl.h"
 #include "realtime_tools/realtime_publisher.h"
 #include "control_toolbox/pid.h"
@@ -587,8 +588,8 @@ void CartesianHybridControllerNode::update()
     if (pub_tf_->trylock())
     {
       //pub_tf_->msg_.transforms[0].header.stamp.fromSec();
-      pub_tf_->msg_.transforms[0].header.frame_id = name_ + "/tool_frame";
-      pub_tf_->msg_.transforms[0].parent_id = c_.kdl_chain_.getSegment(c_.kdl_chain_.getNrOfSegments()-1).getName();
+      pub_tf_->msg_.transforms[0].header.frame_id = c_.kdl_chain_.getSegment(c_.kdl_chain_.getNrOfSegments()-1).getName();
+      pub_tf_->msg_.transforms[0].child_frame_id = name_ + "/tool_frame";
       tf::Transform t;
       tf::TransformKDLToTF(c_.tool_frame_offset_, t);
       tf::transformTFToMsg(t, pub_tf_->msg_.transforms[0].transform);

@@ -26,6 +26,8 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+
+#\todo replace this with usage of transform_sender in tf packge
 import roslib
 roslib.load_manifest('plug_in')
 import rospy
@@ -62,9 +64,9 @@ class Tracker:
     self.msg = msg
 
 t = TransformStamped()
-t.header.frame_id = 'high_def_frame'
+t.header.frame_id = 'base_link'
 t.header.seq = 0
-t.parent_id = 'base_link'
+t.child_frame_id = 'high_def_frame'
 t.transform.translation = xyz(0, 0, 1.25)
 t.transform.rotation = rpy(0, 1.3, 0)
 

@@ -55,7 +55,7 @@ class TestGoto(unittest.TestCase):
   def tf_cb(self, msg):
     if self.active:
       for t in msg.transforms:
-        if t.parent_id == 'odom_combined':
+        if t.header.frame_id == 'odom_combined':
           tx = t.transform
   
           # Convert Transform.msg to bullet

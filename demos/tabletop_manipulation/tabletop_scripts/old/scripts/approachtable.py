@@ -66,7 +66,7 @@ class ApproachTable:
 
   # Hack to get around the fact that we don't have pytf
   def tfCallback(self,msg):
-    if (msg.transforms[0].header.frame_id == self.global_frame and 
+    if (msg.transforms[0].child_frame_id == self.global_frame and 
         self.odom_pose != None):
       self.robot_position = Point((self.odom_pose.pose.pose.position.x - 
                                    msg.transforms[0].transform.translation.x),

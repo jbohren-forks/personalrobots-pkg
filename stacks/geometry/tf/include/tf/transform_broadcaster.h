@@ -61,6 +61,10 @@ public:
    * The stamped data structure includes frame_id, and time, and parent_id already.  */
   void sendTransform(const Stamped<Transform> & transform);
 
+  /** \brief Send a TransformStamped 
+   * The stamped data structure includes frame_id, and time, and parent_id already.  */
+  void sendTransform(const geometry_msgs::TransformStamped & transform);
+
   /** \brief Send a Transform, stamped with time, frame_id and parent_id */
   void sendTransform(const Transform & transform, const ros::Time& time, const std::string& frame_id, const std::string& parent_id);
   

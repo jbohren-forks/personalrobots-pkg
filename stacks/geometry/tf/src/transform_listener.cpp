@@ -318,7 +318,7 @@ void TransformListener::subscription_callback(const tf::tfMessageConstPtr& msg)
     {
       ///\todo Use error reporting
       std::string temp = ex.what();
-      ROS_ERROR("Failure to set recieved transform %s to %s with error: %s\n", msg_in.transforms[i].header.frame_id.c_str(), msg_in.transforms[i].parent_id.c_str(), temp.c_str());
+      ROS_ERROR("Failure to set recieved transform from %s to %s with error: %s\n", msg_in.transforms[i].child_frame_id.c_str(), msg_in.transforms[i].header.frame_id.c_str(), temp.c_str());
     }
   }
 };

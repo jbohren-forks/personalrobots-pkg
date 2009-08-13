@@ -36,9 +36,6 @@
 
 #include "tf/FrameGraph.h"
 
-#include "tf/tfMessage.h"
-
-
 #include "geometry_msgs/PointStamped.h"
 #include "sensor_msgs/PointCloud.h"
 #include "geometry_msgs/PoseStamped.h"
@@ -163,10 +160,8 @@ bool transformVectorCallback(TransformVector::Request &req,
  ******************************************************************************/
 
 void publishTransformCallback(const boost::shared_ptr<const geometry_msgs::TransformStamped> &message) {
-  tf::Transform tft;
-  tf::transformMsgToTF(message->transform, tft);
-  ROS_INFO((std::string("Sending transform from parent ") + message->parent_id + " to " + message->header.frame_id).c_str());
-  tb->sendTransform(tft, message->header.stamp, message->header.frame_id, message->parent_id);
+  ROS_INFO((std::string("Sending transform from parent ") + message->header.frame_id + " to " + message->child_frame_id).c_str());
+  tb->sendTransform(*message);
 }
 
 class TimedTransform {
