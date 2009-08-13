@@ -32,7 +32,10 @@ private:
   void loadIntrinsics(const std::string &intrinsics_file)
   {
     CvFileStorage* fs = cvOpenFileStorage(intrinsics_file.c_str(), 0, CV_STORAGE_READ);
-    assert(fs);
+    if (!fs) {
+      ROS_FATAL("Unable to load file %s", intrinsics_file.c_str());
+      abort();
+    }
     cvReleaseMat(&K_);
     cvReleaseMat(&D_);
     K_ = (CvMat*)cvReadByName(fs, 0, "camera_matrix");
@@ -87,7 +90,7 @@ public:
 
     // Copy into result
     fillImage(res.image, sensor_msgs::image_encodings::TYPE_8UC3,
-              img.Height(), img.Width(), 3 * img.Width(),
+              img.Height(), img.Width(), img.WidthStep(),
               img.ImageData());
     
     // Copy cam info we care about
