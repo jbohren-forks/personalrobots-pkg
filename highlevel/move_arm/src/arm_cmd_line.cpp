@@ -38,16 +38,18 @@
 
 #include <ros/ros.h>
 #include <actionlib/client/simple_action_client.h>
+#include <move_arm/MoveArmAction.h>
+#include <move_arm/ActuateGripperAction.h>
 
 #include <planning_environment/monitors/kinematic_model_state_monitor.h>
 #include <motion_planning_msgs/KinematicPath.h>
+#include <manipulation_msgs/JointTraj.h>
 #include <manipulation_srvs/IKService.h>
-#include <move_arm/MoveArmAction.h>
-#include <move_arm/ActuateGripperAction.h>
-#include <std_msgs/Float64.h>
+#include <pr2_mechanism_controllers/TrajectoryStart.h>
 
 #include <boost/thread/thread.hpp>
 #include <boost/algorithm/string.hpp>
+#include <fstream>
 #include <iostream>
 #include <vector>
 #include <string>
@@ -288,8 +290,9 @@ int main(int argc, char **argv)
     
     ros::NodeHandle nh;
     
-    actionlib::SimpleActionClient<move_arm::MoveArmAction> move_arm(nh, arm == "r" ? "move_right_arm" : "move_left_arm");
-    actionlib::SimpleActionClient<move_arm::ActuateGripperAction> gripper(nh, arm == "r" ? "actuate_gripper_right_arm" : "actuate_gripper_left_arm");
+    std::string group = arm == "r" ? "right_arm" : "left_arm";
+    actionlib::SimpleActionClient<move_arm::MoveArmAction> move_arm(nh, "move_" + group);
+    actionlib::SimpleActionClient<move_arm::ActuateGripperAction> gripper(nh, "actuate_gripper_" + group);
     ros::Publisher view = nh.advertise<motion_planning_msgs::KinematicPath>("executing_kinematic_path", 1);
     
     std::map<std::string, move_arm::MoveArmGoal> goals;
@@ -522,6 +525,101 @@ int main(int argc, char **argv)
 		}
 		if (err)
 		    std::cerr << "Unable to parse IK position" << std::endl;
+	    }
+	}
+	else
+	if (cmd.length() > 2 && cmd.substr(0, 2) == "s ")
+	{
+	    std::string state = cmd.substr(2);
+	    boost::trim(state);
+	    std::string fnm = getenv("HOME") + ("/states/" + state);
+	    std::ifstream in(fnm.c_str());
+	    
+	    planning_models::StateParams sp(*km.getRobotState());
+	    std::vector<double> params;
+	    while (in.good() && !in.eof())
+	    {
+		double v;
+		in >> v;
+		params.push_back(v);
+	    }
+	    in.close();
+	    params.resize(7);
+	    sp.setParamsGroup(params, group);
+	    move_arm::MoveArmGoal g;
+	    setConfig(&sp, names, g);
+	    
+	    printConfig(g);
+	    std::cout << std::endl;
+	    btTransform p = effPosition(km, g);
+	    printPose(p);
+	    
+	    std::cout << "Moving to saved state " << state << "..." << std::endl;
+
+	    bool finished_within_time;
+	    move_arm.sendGoal(g);
+	    finished_within_time = move_arm.waitForGoalToFinish(ros::Duration(allowed_time));
+	    
+	    if (!finished_within_time)
+	    {
+		move_arm.cancelGoal();
+		std::cerr << "Timed out achieving goal" << std::endl;
+	    }
+	    else
+		std::cout << "Final state is " << move_arm.getTerminalState().toString() << std::endl;
+	}
+	else
+	if (cmd.length() > 2 && cmd.substr(0, 2) == "p ")
+	{
+	    std::string tmp = cmd.substr(2);
+	    boost::trim(tmp);
+	    std::stringstream ss(tmp);
+	    std::string path;
+	    ss >> path;
+	    double time;
+	    ss >> time;
+	    if (time <= 0.001)
+		std::cout << "Time is to small" << std::endl;
+	    else
+	    {
+		std::string fnm = getenv("HOME") + ("/paths/" + path);
+		std::ifstream in(fnm.c_str());
+		
+		manipulation_msgs::JointTraj traj;	    
+		traj.names = names;
+		while (in.good() && !in.eof())
+		{
+		    std::vector<double> params;
+		    for (int i = 0 ; i < 7 && in.good() && !in.eof(); ++i)
+		    {
+			double v;
+			in >> v;
+			params.push_back(v);
+			std::cout << v << " ";
+		    }
+		    std::cout << std::endl;
+		    if (params.size() != 7)
+			break;
+		    
+		    unsigned int pz = traj.points.size();		
+		    traj.points.resize(pz + 1);
+		    traj.points[pz].positions = params;
+		    traj.points[pz].time = time * pz;
+		}
+		in.close();
+		
+		std::cout << "Executing path " << fnm << " with " << traj.points.size() << " points at " << time << " seconds apart  ..." << std::endl;
+		ros::ServiceClient clientStart = nh.serviceClient<pr2_mechanism_controllers::TrajectoryStart>("/r_arm_joint_waypoint_controller/TrajectoryStart");
+		
+		pr2_mechanism_controllers::TrajectoryStart::Request  send_traj_start_req;
+		pr2_mechanism_controllers::TrajectoryStart::Response send_traj_start_res;
+		send_traj_start_req.traj = traj;
+		send_traj_start_req.hastiming = 0;
+		send_traj_start_req.requesttiming = 0;
+		if (clientStart.call(send_traj_start_req, send_traj_start_res))
+		    std::cout << "Success!" << std::endl;
+		else
+		    std::cout << "Failure!" << std::endl;
 	    }
 	}
 	else
