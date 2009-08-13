@@ -103,54 +103,6 @@ void DistanceField::addPointsToField(std::vector<btVector3> points)
       y = vptr->location_[DIM_Y];
       z = vptr->location_[DIM_Z];
 
-      // generate all its neighbors
-/*      for (int dx=-1; dx<=1; ++dx)
-      {
-        nx = x + dx;
-        if (!isCellValid(DIM_X, nx))
-          continue;
-        for (int dy=-1; dy<=1; ++dy)
-        {
-          ny = y + dy;
-          if (!isCellValid(DIM_Y, ny))
-            continue;
-          for (int dz=-1; dz<=1; ++dz)
-          {
-            nz = z + dz;
-            if (!isCellValid(DIM_Z, nz))
-              continue;
-
-            if (dx==0 && dy==0 && dz==0)
-              continue;
-
-            // the real update code:
-            // calculate the neighbor's new distance based on my closest filled voxel:
-            DistanceFieldVoxel* neighbor = &getCell(nx, ny, nz);
-            loc[DIM_X] = nx;
-            loc[DIM_Y] = ny;
-            loc[DIM_Z] = nz;
-            int new_distance_sq = eucDistSq(vptr->closest_point_, loc);
-            if (new_distance_sq > max_distance_sq_)
-              continue;
-            if (new_distance_sq < neighbor->distance_square_)
-            {
-              // update the neighboring voxel
-              neighbor->distance_square_ = new_distance_sq;
-              neighbor->closest_point_[DIM_X] = vptr->closest_point_[DIM_X];
-              neighbor->closest_point_[DIM_Y] = vptr->closest_point_[DIM_Y];
-              neighbor->closest_point_[DIM_Z] = vptr->closest_point_[DIM_Z];
-              neighbor->location_[DIM_X] = loc[DIM_X];
-              neighbor->location_[DIM_Y] = loc[DIM_Y];
-              neighbor->location_[DIM_Z] = loc[DIM_Z];
-
-              // and put it in the queue:
-              bucket_queue_[new_distance_sq].push_back(neighbor);
-            }
-
-          }
-        }
-      }
-*/
       // select the neighborhood list based on the update direction:
       std::vector<std::vector<int> >* neighborhood;
       int D = i;
@@ -318,23 +270,6 @@ void DistanceField::initNeighborhoods()
     }
   }
 
-
-  /*int i=0;
-  for (int dx=-1; dx<=1; ++dx)
-  {
-    for (int dy=-1; dy<=1; ++dy)
-    {
-      for (int dz=-1; dz<=1; ++dz)
-      {
-        if (dx==0 && dy==0 && dz==0)
-          continue;
-        neighborhood_[i][DIM_X] = dx;
-        neighborhood_[i][DIM_Y] = dy;
-        neighborhood_[i][DIM_Z] = dz;
-        i++;
-      }
-    }
-  }*/
 }
 
 int DistanceField::getDirectionNumber(int dx, int dy, int dz) const
