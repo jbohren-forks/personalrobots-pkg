@@ -372,9 +372,13 @@ void HogWrapper::doComputation(IplImage* img, const Vector<KeyPoint>& points, vv
   }
   
   // -- Call opencv.
-  Vector<float> result;  
+  Vector<float> result;
+
+  double t = (double)cvGetTickCount();
   hog_.compute(img, result, Size(), Size(), locations); //winStride and padding are set to default
-  
+  t = (double)cvGetTickCount() - t;
+  printf("exec time for %s = %gms\n", name_.c_str(), t/(cvGetTickFrequency()*1000.));
+
   // -- Construct vvf from the long concatenation that hog_ produces.
   //    Assume that an all 0 vector was the result of an edge case.
   size_t sz = hog_.getDescriptorSize();
@@ -412,7 +416,22 @@ void HogWrapper::doComputation(IplImage* img, const Vector<KeyPoint>& points, vv
       }
       cout << endl;
 
-      commonDebug(points[i]);
+      IplImage* vis = cvCloneImage(img);
+      // -- Draw window.
+      cvRectangle(vis, cvPoint(points[i].pt.x + hog_.winSize.width/2, points[i].pt.y + hog_.winSize.height/2), 
+		  cvPoint(points[i].pt.x - hog_.winSize.width/2, points[i].pt.y - hog_.winSize.height/2), cvScalar(255,0,0));
+      // -- Draw block.
+      int ul_x = points[i].pt.x - hog_.winSize.width/2;
+      int ul_y = points[i].pt.y - hog_.winSize.height/2;
+      cvRectangle(vis, cvPoint(ul_x, ul_y), cvPoint(ul_x + hog_.blockSize.width, ul_y + hog_.blockSize.height), cvScalar(0,255,0));
+      
+      // -- Draw cell.
+      cvRectangle(vis, cvPoint(ul_x, ul_y), cvPoint(ul_x + hog_.cellSize.width, ul_y + hog_.cellSize.height), cvScalar(0,0,255));
+
+      //commonDebug(points[i], vis);
+      CVSHOW("Visualization", vis);
+      cvWaitKey(0);
+      cvReleaseImage(&vis);
     }
   }
 } 
