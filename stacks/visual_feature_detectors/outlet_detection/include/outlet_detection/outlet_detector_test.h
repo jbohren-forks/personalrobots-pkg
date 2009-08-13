@@ -55,7 +55,14 @@ int compareAllOutlets(vector<outlet_test_elem>& test_data, int accuracy = 3);
 //run test
 void runOutletDetectorTest(CvMat* intrinsic_matrix, CvMat* distortion_params, const outlet_template_t& outlet_templ,vector<outlet_test_elem>& test_data, char* output_path = 0);
 
+//run Ferns+L Detector test
 void runLOutletDetectorTest(CvMat* intrinsic_matrix, CvMat* distortion_params, 
 							const char* config_path, vector<outlet_test_elem>& test_data, char* output_path);
+
+void runFernsOutletDetectorTest(CvMat* intrinsic_matrix, CvMat* distortion_params, 
+							const char* config_path, vector<outlet_test_elem>& test_data, char* output_path);
+
+void runFernsOneWayOutletDetectorTest(CvMat* intrinsic_matrix, CvMat* distortion_params, const outlet_template_t& outlet_templ,
+						   char* config_path, vector<outlet_test_elem>& test_data, char* output_path = 0);
 
 #endif

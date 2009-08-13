@@ -198,13 +198,15 @@ int main(int argc,char** argv)
 	#endif
 	#endif //_VERBOSE
 			
-#if !defined(_L_DETECTOR)		
+#if !defined(_L_DETECTOR)	
+//#if !defined(_FERNS_DETECTOR)	
 		if ((argc !=7) && (strcmp(mode,"modify")!=0))
 		{
 
 			outlet_template.load(train_config);
 		}
-#endif
+//#endif //FERNS
+#endif //L
 
 		//Running the test
 		if (strcmp(mode,"modify")==0)
@@ -216,8 +218,13 @@ int main(int argc,char** argv)
 #if defined(_L_DETECTOR)
 			runLOutletDetectorTest(intrinsic_matrix, distortion_params, train_config, test_data, output_path);
 #else
+	#if defined(_FERNS_DETECTOR)
+			runFernsOneWayOutletDetectorTest(intrinsic_matrix, distortion_params,  outlet_template, train_config, test_data, output_path);
+			//runFernsOutletDetectorTest(intrinsic_matrix, distortion_params, train_config, test_data, output_path);
+	#else
 			runOutletDetectorTest(intrinsic_matrix, distortion_params, outlet_template, test_data, output_path);
-#endif
+	#endif //FERNS
+#endif //L
 
 		if (strcmp(mode,"generate")==0)
 		{

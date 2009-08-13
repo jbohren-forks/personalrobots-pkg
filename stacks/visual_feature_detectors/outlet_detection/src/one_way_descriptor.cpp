@@ -81,6 +81,8 @@ CvOneWayDescriptor::CvOneWayDescriptor()
     m_pca_coeffs = 0;
     m_affine_poses = 0;
     m_transforms = 0;
+	m_pca_dim_low = 100;
+	m_pca_dim_high = 100;
 }
 
 CvOneWayDescriptor::~CvOneWayDescriptor()

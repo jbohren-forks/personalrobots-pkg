@@ -7,6 +7,10 @@ Created by: Alexey Latyshev
 
 #include "outlet_detection/outlet_detector_test.h"
 #include "outlet_detection/ferns_detector_outlets.h"
+//#include "outlet_detection/one_way_descriptor.h"
+//#include "outlet_detection/one_way_descriptor_base.h"
+//#include "outlet_detection/one_way_outlets.h"
+#include "outlet_detection/constellation.h"
 
 #define DETECT_NA -1
 #define DETECT_SKIP -2
@@ -653,7 +657,7 @@ void runOutletDetectorTest(CvMat* intrinsic_matrix, CvMat* distortion_params,
 }
 
 //----------------------------
-//run L Detector test
+//run Ferns+L Detector test
 void runLOutletDetectorTest(CvMat* intrinsic_matrix, CvMat* distortion_params, 
 							const char* config_path, vector<outlet_test_elem>& test_data, char* output_path)
 {
@@ -672,12 +676,12 @@ void runLOutletDetectorTest(CvMat* intrinsic_matrix, CvMat* distortion_params,
 	Mat intrinsic(intrinsic_matrix,true);
 	Mat distortion(distortion_params,true);
 
-
 	PlanarObjectDetector detector;
     Size patchSize(32, 32);
     LDetector ldetector(7, 20, 2, 2000, patchSize.width, 2);
     ldetector.setVerbose(true);
-	ferns_detector_initialize(detector,ldetector,config_path,object, patchSize);
+
+	ferns_l_detector_initialize(detector,ldetector,config_path,object, patchSize);
 
 	for (int i=0;i<(size_t)test_data.size();i++)
 	{
@@ -703,16 +707,326 @@ void runLOutletDetectorTest(CvMat* intrinsic_matrix, CvMat* distortion_params,
 		undistort(image,undistortedImg,intrinsic,distortion);
 		if (output_path)
 		{
-			ferns_detect_outlets(undistortedImg, object, config_path, detector,ldetector,train_features,
+			ferns_l_detect_outlets(undistortedImg, object, config_path, detector,ldetector,train_features,
 				test_data[i].test_outlet, output_path, filename);
 
 		}
 		else
 		{
-			ferns_detect_outlets(undistortedImg, object, config_path, detector,ldetector,train_features,
+			ferns_l_detect_outlets(undistortedImg, object, config_path, detector,ldetector,train_features,
 				test_data[i].test_outlet);
 		}
+		
 			//detect_outlet_tuple(img,intrinsic_matrix,distortion_params,test_data[i].test_outlet,outlet_templ);
+        printf("Detected %d outlets, origin %d,%d, real origin %d,%d\n", (int)test_data[i].test_outlet.size(), test_data[i].test_outlet[0].ground_hole.x, 
+            test_data[i].test_outlet[0].ground_hole.y, test_data[i].real_outlet[0].ground_hole.x, test_data[i].real_outlet[0].ground_hole.y);
+	}	
+}
+//-------------
+void runFernsOutletDetectorTest(CvMat* intrinsic_matrix, CvMat* distortion_params, 
+							const char* config_path, vector<outlet_test_elem>& test_data, char* output_path)
+{
+	char filename[1024];
+
+	vector<feature_t> train_features;
+	char object_filename[1024];
+	char scene_filename[1024];
+	char outlet_filename[1024];
+	read_training_base(config_path,outlet_filename,train_features);	
+
+	sprintf(object_filename,"%s/%s",config_path,outlet_filename);
+
+	
+    Mat object = imread( object_filename, CV_LOAD_IMAGE_GRAYSCALE );
+	Mat intrinsic(intrinsic_matrix,true);
+	Mat distortion(distortion_params,true);
+
+	PatchGenerator gen(0,256,15,true,0.6,1.5,-CV_PI,CV_PI,-CV_PI,CV_PI);
+	FernClassifier detector;
+    Size patchSize(32, 32);
+    LDetector ldetector(7, 20, 2, 2000, patchSize.width, 2);
+    ldetector.setVerbose(true);
+	detector.setVerbose(true);
+	Vector<Point2f> image_keypoints;
+	Vector<Point2f> object_keypoints;
+
+	Vector<Mat> objpyr;
+	Vector<KeyPoint> objKeypoints;
+
+	Mat tempobj = object.clone();
+	GaussianBlur(tempobj, tempobj, Size(blurKSize, blurKSize), sigma, sigma);
+	buildPyramid(tempobj, objpyr, ldetector.nOctaves-1);
+	ldetector.setVerbose(true);
+	printf("Getting the most stable object points...");
+	ldetector.getMostStable2D(tempobj, objKeypoints, 100, gen);
+	printf("Done\n");
+
+	for (int i=0;i<(int)objKeypoints.size();i++)
+	{
+		object_keypoints.push_back(objKeypoints[i].pt);
+	}
+
+	if (!ferns_detector_load(detector,config_path))
+	{
+		printf("Ferns Classifier training...");
+		ferns_detector_initialize(object_keypoints,detector,config_path,object, patchSize,gen);
+		printf("Done\n");
+	}
+	//ferns_l_detector_initialize(detector,ldetector,config_path,object, patchSize);
+
+	for (int i=0;i<(size_t)test_data.size();i++)
+	{
+		if (test_data[i].n_matches == DETECT_SKIP)
+			continue;
+		if (output_path)
+		{
+			char* name = strrchr(test_data[i].filename,'/');
+			name++;
+			sprintf(filename,"%s",name);
+		}
+		//sprintf(scene_filename,"%s","D:/work/Argus/DATA/forearm_2009_06_17/cracked/frame0001.jpg");
+		
+		Mat image = imread( test_data[i].filename);
+
+		if((!image.data) || (!object.data))
+		{
+			printf("Unable to load image %s\n",test_data[i].filename);
+			continue;
+		}
+		printf("%s\n",filename);
+		Mat undistortedImg;
+		undistort(image,undistortedImg,intrinsic,distortion);
+
+		Vector<Mat> imgpyr;
+
+		Mat tempimg = undistortedImg.clone();
+		GaussianBlur(undistortedImg,tempimg, Size(blurKSize, blurKSize), sigma, sigma);
+		buildPyramid(tempimg, imgpyr, ldetector.nOctaves-1);
+
+		Vector<KeyPoint> imgKeypoints;
+		ldetector(imgpyr, imgKeypoints, 3000);
+		image_keypoints.clear();
+		for (int j=0;j<(int)imgKeypoints.size();j++)
+		{
+			image_keypoints.push_back(imgKeypoints[j].pt);
+		}
+		
+		for(int j = 0; j < (int)image_keypoints.size(); j++ )
+		{
+			circle( image, image_keypoints[j], 2, Scalar(0,0,255), -1 );
+			circle( image, image_keypoints[j], 7, Scalar(0,255,0), 1 );
+		}
+
+		char path[1024];
+		sprintf(path,"%s/features/1.jpg",output_path);
+		imwrite(path, image);
+
+
+		if (output_path)
+		{
+			ferns_detect_outlets(undistortedImg,object,config_path,detector,object_keypoints,image_keypoints,train_features,
+				test_data[i].test_outlet, output_path, filename);
+
+
+
+			//ferns_l_detect_outlets(undistortedImg, object, config_path, detector,ldetector,train_features,
+			//	test_data[i].test_outlet, output_path, filename);
+
+		}
+		else
+		{
+			ferns_detect_outlets(undistortedImg,object,config_path,detector,object_keypoints,image_keypoints,train_features,
+				test_data[i].test_outlet);
+			//ferns_l_detect_outlets(undistortedImg, object, config_path, detector,ldetector,train_features,
+			//	test_data[i].test_outlet);
+		}
+		
+			//detect_outlet_tuple(img,intrinsic_matrix,distortion_params,test_data[i].test_outlet,outlet_templ);
+        printf("Detected %d outlets, origin %d,%d, real origin %d,%d\n", (int)test_data[i].test_outlet.size(), test_data[i].test_outlet[0].ground_hole.x, 
+            test_data[i].test_outlet[0].ground_hole.y, test_data[i].real_outlet[0].ground_hole.x, test_data[i].real_outlet[0].ground_hole.y);
+	}	
+}
+
+
+
+void get_one_way_keypoints(Mat& image, const outlet_template_t& outlet_template,Vector<Point2f>& keypoints)
+{
+	IplImage _image = image;
+	IplImage* test_image = cvCloneImage(&_image);
+	const CvOneWayDescriptorObject* descriptors = outlet_template.get_one_way_descriptor_base();
+	int64 time1 = cvGetTickCount();
+    
+    vector<feature_t> features;
+    GetHoleFeatures(test_image, features, outlet_template.GetHoleContrast());
+    
+    int64 time2 = cvGetTickCount();
+    
+    printf("Found %d test features, time elapsed: %f\n", (int)features.size(), float(time2 - time1)/cvGetTickFrequency()*1e-6);
+   
+    vector<feature_t> hole_candidates;
+    int patch_width = descriptors->GetPatchSize().width/2;
+    int patch_height = descriptors->GetPatchSize().height/2; 
+    for(int i = 0; i < (int)features.size(); i++)
+	{
+        CvPoint center = features[i].pt;
+        float scale = features[i].size;
+        
+        CvRect roi = cvRect(center.x - patch_width/2, center.y - patch_height/2, patch_width, patch_height);
+        cvSetImageROI(test_image, roi);
+        roi = cvGetImageROI(test_image);
+        if(roi.width != patch_width || roi.height != patch_height)
+        {
+            continue;
+        }
+        
+        if(abs(center.x - 988/2) < 10 && abs(center.y - 1203/2) < 10)
+        {
+            int w = 1;
+        }
+      
+        int desc_idx = -1;
+        int pose_idx = -1;
+        float distance = 0;
+
+        if(i == 331)
+        {
+            int w = 1;
+        }
+        
+
+        descriptors->FindDescriptor(test_image, desc_idx, pose_idx, distance);
+        
+        CvPoint center_new = descriptors->GetDescriptor(desc_idx)->GetCenter();
+        CvScalar color = descriptors->IsDescriptorObject(desc_idx) ? CV_RGB(0, 255, 0) : CV_RGB(255, 0, 0);
+        int part_idx = descriptors->GetDescriptorPart(desc_idx);
+		
+		int min_ground_idx = (int)(descriptors->GetTrainFeatures().size()) * 2 / 3; // 3 there is number of holes in the outlet (including ground hole)
+        if(part_idx >= 0 && part_idx < min_ground_idx)
+        {
+            //color = CV_RGB(255, 255, 0);
+        }
+        
+        if((part_idx >= min_ground_idx) && (part_idx <  (int)(descriptors->GetTrainFeatures().size())))
+        {
+           // color = CV_RGB(0, 255, 255);
+        }
+        
+        if(part_idx >= 0)
+        {
+            feature_t candidate = features[i];
+            if(part_idx < min_ground_idx) candidate.class_id = 0;
+            else candidate.class_id = 1;
+            hole_candidates.push_back(candidate);                    
+        }    
+        cvResetImageROI(test_image);
+
+    }
+    
+    int64 time3 = cvGetTickCount();
+    printf("Features matched. Time elapsed: %f\n", float(time3 - time2)/cvGetTickFrequency()*1e-6);       
+    
+    //        printf("%d features before filtering\n", (int)hole_candidates.size());
+    vector<feature_t> hole_candidates_filtered;
+    float dist = calc_set_std(descriptors->_GetTrainFeatures());
+    FilterOutletFeatures(hole_candidates, hole_candidates_filtered, dist*4);
+    hole_candidates = hole_candidates_filtered;
+
+	keypoints.clear();
+	for (int i=0;i<(int)hole_candidates.size();i++)
+	{
+		keypoints.push_back(Point2f(hole_candidates[i].pt));
+	}
+
+	cvReleaseImage(&test_image);
+}
+
+void runFernsOneWayOutletDetectorTest(CvMat* intrinsic_matrix, CvMat* distortion_params, const outlet_template_t& outlet_template,
+						   char* config_path, vector<outlet_test_elem>& test_data, char* output_path)
+{
+	
+	char filename[1024];
+
+
+	vector<feature_t> train_features;
+	char object_filename[1024];
+	char scene_filename[1024];
+	char outlet_filename[1024];
+	read_training_base(config_path,outlet_filename,train_features);	
+
+	sprintf(object_filename,"%s/%s",config_path,outlet_filename);
+	
+    Mat object = imread( object_filename, CV_LOAD_IMAGE_GRAYSCALE );
+	Mat intrinsic(intrinsic_matrix,true);
+	Mat distortion(distortion_params,true);
+
+	PatchGenerator gen(0,256,15,true,0.6,1.5,-CV_PI,CV_PI,-CV_PI,CV_PI);
+	FernClassifier detector;
+    Size patchSize(32, 32);
+  
+	detector.setVerbose(true);
+	Vector<Point2f> image_keypoints;
+	Vector<Point2f> object_keypoints;
+
+	get_one_way_keypoints(object,outlet_template,object_keypoints);
+	//for (int i=0;i<(int)objKeypoints.size();i++)
+	//{
+	//	object_keypoints.push_back(objKeypoints[i].pt);
+	//}
+
+	if (!ferns_detector_load(detector,config_path))
+	{
+		printf("Ferns Classifier training...");
+		ferns_detector_initialize(object_keypoints,detector,config_path,object, patchSize,gen);
+		printf("Done\n");
+	}
+
+	for (int i=0;i<(size_t)test_data.size();i++)
+	{
+		if (test_data[i].n_matches == DETECT_SKIP)
+			continue;
+		if (output_path)
+		{
+			char* name = strrchr(test_data[i].filename,'/');
+			name++;
+			sprintf(filename,"%s",name);
+		}
+		
+		Mat image = imread( test_data[i].filename);
+
+		if((!image.data) || (!object.data))
+		{
+			printf("Unable to load image %s\n",test_data[i].filename);
+			continue;
+		}
+		printf("%s\n",filename);
+		Mat undistortedImg;
+		undistort(image,undistortedImg,intrinsic,distortion);
+
+
+		image_keypoints.clear();
+		get_one_way_keypoints(image,outlet_template,image_keypoints);
+
+		
+		for(int j = 0; j < (int)image_keypoints.size(); j++ )
+		{
+			circle( image, image_keypoints[j], 2, Scalar(0,0,255), -1 );
+			circle( image, image_keypoints[j], 7, Scalar(0,255,0), 1 );
+		}
+
+
+		if (output_path)
+		{
+			ferns_detect_outlets(undistortedImg,object,config_path,detector,object_keypoints,image_keypoints,train_features,
+				test_data[i].test_outlet, output_path, filename);
+
+		}
+		else
+		{
+			ferns_detect_outlets(undistortedImg,object,config_path,detector,object_keypoints,image_keypoints,train_features,
+				test_data[i].test_outlet);
+
+		}
+		
         printf("Detected %d outlets, origin %d,%d, real origin %d,%d\n", (int)test_data[i].test_outlet.size(), test_data[i].test_outlet[0].ground_hole.x, 
             test_data[i].test_outlet[0].ground_hole.y, test_data[i].real_outlet[0].ground_hole.x, test_data[i].real_outlet[0].ground_hole.y);
 	}	
