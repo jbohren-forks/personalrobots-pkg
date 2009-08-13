@@ -138,8 +138,8 @@ VoxelGrid<T>::VoxelGrid(double size_x, double size_y, double size_z, double reso
   }
   default_object_ = default_object;
 
-  stride1_ = size_[DIM_Y]*size_[DIM_Z];
-  stride2_ = size_[DIM_Z];
+  stride1_ = num_cells_[DIM_Y]*num_cells_[DIM_Z];
+  stride2_ = num_cells_[DIM_Z];
 
   // initialize the data:
   data_ = new T[num_cells_total_];
@@ -185,6 +185,7 @@ bool VoxelGrid<T>::isCellValid(Dimension dim, int cell)
 template<typename T>
 inline int VoxelGrid<T>::ref(int x, int y, int z)
 {
+//  printf("%d,%d,%d = %d", x, y, z, x*stride1_ + y*stride2_ + z);
   return x*stride1_ + y*stride2_ + z;
 }
 

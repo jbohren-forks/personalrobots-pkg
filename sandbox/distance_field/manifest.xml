@@ -13,6 +13,7 @@ its corresponding distance map.
   <url>http://pr.willowgarage.com/wiki/distance_field</url>
 
   <depend package="roscpp"/>
+  <depend package="visualization_msgs" />
   <depend package="bullet"/>
 
   <export>

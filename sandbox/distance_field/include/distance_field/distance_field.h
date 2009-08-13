@@ -41,6 +41,7 @@
 #include <LinearMath/btVector3.h>
 #include <vector>
 #include <list>
+#include <ros/ros.h>
 
 namespace distance_field
 {
@@ -69,10 +70,13 @@ public:
   void addPointsToField(std::vector<btVector3> points);
   void reset();
 
+  void visualize(double radius, std::string frame_id, ros::Time stamp);
+
 private:
-  std::vector<std::list<DistanceFieldVoxel*> > bucket_queue_;
+  std::vector<std::vector<DistanceFieldVoxel*> > bucket_queue_;
   double max_distance_;
   int max_distance_sq_;
+  ros::Publisher pub_viz_;
 
   int eucDistSq(int* point1, int* point2);
 };
