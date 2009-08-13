@@ -28,7 +28,7 @@
  */
 
 #include "pluginlib/plugin_macros.h"
-#include "mechanism_control/controller.h"
+#include "controller_interface/controller.h"
 
 #include "robot_mechanism_controllers/cartesian_hybrid_controller.h"
 #include "robot_mechanism_controllers/cartesian_pose_controller.h"

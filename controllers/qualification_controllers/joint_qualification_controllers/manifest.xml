@@ -4,6 +4,7 @@
   <author> Melonee Wise, Kevin Watts</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
+  <depend package="controller_interface" />
   <depend package="mechanism_model" />
   <depend package="wg_robot_description_parser" />
   <depend package="realtime_tools" />
@@ -17,7 +18,7 @@
   <repository>http://pr.willowgarage.com/repos</repository>
   <export>
     <cpp cflags='-I${prefix}/include -I${prefix}/msg/cpp -I${prefix}/srv/cpp' lflags='-Wl,-rpath,${prefix}/lib -L${prefix}/lib -ljoint_qualification_controllers'/>
-    <mechanism_control controller="${prefix}/controller_plugins.xml" />
+    <controller_interface controller="${prefix}/controller_plugins.xml" />
   </export>
 
 </package>

@@ -6,6 +6,7 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <depend package="roscpp" />
+  <depend package="controller_interface" />
   <depend package="mechanism_model" />
   <depend package="wg_robot_description_parser" />
   <depend package="misc_utils" />
@@ -34,7 +35,7 @@
   <export>
     <cpp cflags="-I${prefix}/include -I${prefix}/msg/cpp -I${prefix}/srv/cpp"
 	 lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lpr2_mechanism_controllers" />
-    <mechanism_control controller="${prefix}/controller_plugins.xml" />
+    <controller_interface controller="${prefix}/controller_plugins.xml" />
 
   </export>
 

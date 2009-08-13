@@ -28,7 +28,7 @@
  */
 
 #include "pluginlib/plugin_macros.h"
-#include "mechanism_control/controller.h"
+#include "controller_interface/controller.h"
 
 #include "joint_qualification_controllers/checkout_controller.h"
 #include "joint_qualification_controllers/hold_set_controller.h"

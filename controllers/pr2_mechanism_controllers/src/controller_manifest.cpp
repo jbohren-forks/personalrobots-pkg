@@ -28,7 +28,7 @@
  */
 
 #include "pluginlib/plugin_macros.h"
-#include "mechanism_control/controller.h"
+#include "controller_interface/controller.h"
 
 #include "pr2_mechanism_controllers/caster_calibration_controller.h"
 #include "pr2_mechanism_controllers/caster_controller.h"

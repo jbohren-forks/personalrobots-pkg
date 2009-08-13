@@ -28,7 +28,7 @@
  */
 
 #include "pluginlib/plugin_macros.h"
-#include "mechanism_control/controller.h"
+#include "controller_interface/controller.h"
 
 #include "experimental_controllers/joint_trajectory_controller2.h"
 #include "experimental_controllers/pid_position_velocity_controller.h"
