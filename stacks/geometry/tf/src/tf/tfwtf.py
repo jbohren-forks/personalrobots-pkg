@@ -70,14 +70,15 @@ def reparenting(ctx):
     parent_id_map = {}
     for m, stamp, callerid in _msgs:
         for t in m.transforms:
-            frame_id = t.header.frame_id
-            if frame_id in parent_id_map and parent_id_map[frame_id] != t.parent_id:
-                msg = "reparenting of [%s] to [%s] by [%s]"%(frame_id, t.parent_id, callerid)
-                parent_id_map[frame_id] = t.parent_id
+            frame_id = t.child_frame_id
+            parent_id = t.header.frame_id
+            if frame_id in parent_id_map and parent_id_map[frame_id] != parent_id:
+                msg = "reparenting of [%s] to [%s] by [%s]"%(frame_id, parent_id, callerid)
+                parent_id_map[frame_id] = parent_id
                 if msg not in errors:
                     errors.append(msg)
             else:
-                parent_id_map[frame_id] = t.parent_id
+                parent_id_map[frame_id] = parent_id
     return errors
 
 def cycle_detection(ctx):
@@ -86,8 +87,9 @@ def cycle_detection(ctx):
     parent_id_map = {}
     for m, stamp, callerid in _msgs:
         for t in m.transforms:
-            frame_id = t.header.frame_id
-            parent_id_map[frame_id] = t.parent_id
+            frame_id = t.child_frame_id
+            parent_id = t.header.frame_id
+            parent_id_map[frame_id] = parent_id
 
     for frame in parent_id_map:
         frame_list = []
@@ -112,9 +114,10 @@ def multiple_authority(ctx):
     authority_map = {}
     for m, stamp, callerid in _msgs:
         for t in m.transforms:
-            frame_id = t.header.frame_id
+            frame_id = t.child_frame_id
+            parent_id = t.header.frame_id 
             if frame_id in authority_map and authority_map[frame_id] != callerid:
-                msg = "node [%s] publishing transform [%s] with parent [%s] already published by node [%s]"%(callerid, frame_id, t.parent_id, authority_map[frame_id])
+                msg = "node [%s] publishing transform [%s] with parent [%s] already published by node [%s]"%(callerid, frame_id, parent_id, authority_map[frame_id])
                 authority_map[frame_id] = callerid
                 if msg not in errors:
                     errors.append(msg)
