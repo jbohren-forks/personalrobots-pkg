@@ -28,11 +28,14 @@
   <depend package="manipulation_msgs" />
   <depend package="diagnostic_updater" />
   <depend package="diagnostic_msgs" />
+  <depend package="mechanism_control" />
   <url>http://pr.willowgarage.com</url>
   <repository>http://pr.willowgarage.com/repos</repository>
   <export>
-    <cpp cflags='-I${prefix}/include -I${prefix}/msg/cpp -I${prefix}/srv/cpp'
-	 lflags='-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lpr2_mechanism_controllers'/>
+    <cpp cflags="-I${prefix}/include -I${prefix}/msg/cpp -I${prefix}/srv/cpp"
+	 lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lpr2_mechanism_controllers" />
+    <mechanism_control controller="${prefix}/controller_plugins.xml" />
+
   </export>
 
 </package>
