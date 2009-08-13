@@ -242,9 +242,9 @@ std::string DorylusDataset::status()
   }
 
   // -- Show example features.
-  for(fit = objs_[0]->features.begin(); fit != objs_[0]->features.end(); fit++) {
-    cout << "   " << fit->first << ": " << endl << fit->second->transpose() << endl;
-  }
+//   for(fit = objs_[0]->features.begin(); fit != objs_[0]->features.end(); fit++) {
+//     cout << "   " << fit->first << ": " << endl << fit->second->transpose() << endl;
+//   }
 
 
   return oss.str();
@@ -342,14 +342,22 @@ bool DorylusDataset::load(string filename, bool quiet)
       istringstream iss_ncols(line);
       iss_ncols >> nCols;
 
-      float buf;
-      pobj->features[descriptor] = new MatrixXf(nRows, nCols);
-      for(int i=0; i<nCols; i++) {
-	for (int j=0; j<nRows; j++) {
-	  f.read((char*)&buf, sizeof(float)); 
-	  (*(pobj->features[descriptor]))(j, i) = buf;
-	}
-      }
+      float* pbuf = (float*)malloc(sizeof(float)*nRows*nCols);
+      f.read((char*)pbuf, sizeof(float)*nRows*nCols); 
+      MatrixXf* tmp = new MatrixXf();
+      *tmp = Eigen::Map<MatrixXf>(pbuf, nRows, nCols);
+      pobj->features[descriptor] = tmp;
+
+
+//       float buf;
+//       pobj->features[descriptor] = new MatrixXf(nRows, nCols);
+//       for(int i=0; i<nCols; i++) {
+// 	for (int j=0; j<nRows; j++) {
+// 	  f.read((char*)&buf, sizeof(float)); 
+// 	  (*(pobj->features[descriptor]))(j, i) = buf;
+// 	}
+//       }
+
 
       getline(f, line); //Move off the line with the data.
     }
