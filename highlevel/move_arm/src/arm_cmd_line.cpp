@@ -760,7 +760,8 @@ int main(int argc, char **argv)
 		    std::cerr << "Failed achieving goal" << std::endl;
 		}
 	    }
-	    std::cerr << "A floating point value expected but '" << cmd.substr(5) << "' was given" << std::endl;
+	    else
+		std::cerr << "A floating point value expected but '" << cmd.substr(5) << "' was given" << std::endl;
 	}
 	else
 	if (goals.find(cmd) != goals.end())

@@ -91,9 +91,9 @@ namespace move_arm
 	/// A state with a cost attached to it. Used internally to sort states by cost
 	struct CostState
 	{
-	    planning_models::StateParams *state;
-	    double                        cost;
-	    unsigned int                  index;
+	    boost::shared_ptr<planning_models::StateParams> state;
+	    double                                          cost;
+	    unsigned int                                    index;
 	};
 	
 	/// Ordering function for states with cost attached
@@ -116,6 +116,13 @@ namespace move_arm
 	    
 	    double cost;
 	    double sum;
+	};
+	
+	/// Representation of a state and its corresponding joint constraints
+	struct StateAndConstraint
+	{
+	    boost::shared_ptr<planning_models::StateParams>    state;
+	    std::vector<motion_planning_msgs::JointConstraint> constraints;	    
 	};
 	
 	
@@ -176,95 +183,111 @@ namespace move_arm
 	}
 	
 	
+	bool findValidNearJointConstraint(const std::vector<motion_planning_msgs::KinematicJoint> &start_state,
+					  const motion_planning_msgs::KinematicSpaceParameters &params,
+					  const motion_planning_msgs::KinematicConstraints &constraints,
+					  const std::vector< boost::shared_ptr<planning_models::StateParams> > &hint_states,
+					  StateAndConstraint &sac)
+	{
+	    bool result = false;
+	    
+	    // we make a request to a service that attempts to find a valid state close to the input state
+	    motion_planning_msgs::ConvertToJointConstraint::Request c_req;
+	    c_req.params = params;
+	    c_req.start_state = start_state;
+	    c_req.constraints = constraints;
+	    c_req.names = setup_.groupJointNames_;
+	    c_req.states.resize(hint_states.size());
+	    c_req.allowed_time = 1.0;
+	    
+	    // if we have hints about where the valid input might be, we set them here
+	    for (unsigned int i = 0 ; i < hint_states.size() ; ++i)
+		hint_states[i]->copyParamsJoints(c_req.states[i].vals, setup_.groupJointNames_);
+	    
+	    motion_planning_msgs::ConvertToJointConstraint::Response c_res;
+	    ros::ServiceClient s_client = nh_.serviceClient<motion_planning_msgs::ConvertToJointConstraint>(SEARCH_VALID_STATE_NAME);
+	    if (s_client.call(c_req, c_res))
+	    {	
+		// if we found a valid state
+		if (!c_res.joint_constraint.empty())
+		{
+		    // construct a state representation from our found joint constraints
+		    sac.state.reset(new planning_models::StateParams(*planningMonitor_->getRobotState()));
+		    
+		    for (unsigned int i = 0 ; i < c_res.joint_constraint.size() ; ++i)
+		    {
+			const motion_planning_msgs::JointConstraint &kj = c_res.joint_constraint[i];
+			sac.state->setParamsJoint(kj.value, kj.joint_name);
+		    }
+		    sac.state->enforceBounds();
+		    sac.constraints = c_res.joint_constraint;
+		    result = true;
+		}
+	    }
+	    else
+		ROS_ERROR("Service for searching for valid states failed");
+	    
+	    return result;
+	}
+	
 	/** \brief If we have a complex goal for which we have not yet found a valid goal state, we use this function*/
 	ArmActionState solveGoalComplex(std::vector< boost::shared_ptr<planning_models::StateParams> > &states,
 					motion_planning_msgs::GetMotionPlan::Request &req)
 	{
 	    ROS_DEBUG("Acting on goal with unknown valid goal state ...");
 	    
+	    StateAndConstraint sac;
+	    bool found = findValidNearJointConstraint(req.start_state, req.params, req.goal_constraints, states, sac);
 	    
-	    // we make a request to a service that attempts to find a valid state close to the goal
-	    motion_planning_msgs::ConvertToJointConstraint::Request c_req;
-	    c_req.params = req.params;
-	    c_req.start_state = req.start_state;
-	    c_req.constraints = req.goal_constraints;
-	    c_req.names = setup_.groupJointNames_;
-	    c_req.states.resize(states.size());
-	    c_req.allowed_time = 1.0;
-	    
-	    // if we have hints about where the goal might be, we set them here
-	    for (unsigned int i = 0 ; i < states.size() ; ++i)
-		states[i]->copyParamsJoints(c_req.states[i].vals, setup_.groupJointNames_);
-	    
-	    motion_planning_msgs::ConvertToJointConstraint::Response c_res;
-	    ros::ServiceClient s_client = nh_.serviceClient<motion_planning_msgs::ConvertToJointConstraint>(SEARCH_VALID_STATE_NAME);
-	    if (s_client.call(c_req, c_res))
+	    if (found)
 	    {
-		// if we found a valid state
-		if (!c_res.joint_constraint.empty())
+		
+		// if the state is in fact in the goal region, simply run the LR planner
+		if (planningMonitor_->isStateValidAtGoal(sac.state.get()))
 		{
+		    ROS_DEBUG("Found valid goal state ...");
 		    
-		    // construct a state representation from our goal joint
-		    boost::shared_ptr<planning_models::StateParams> sp(new planning_models::StateParams(*planningMonitor_->getRobotState()));
+		    req.goal_constraints.joint_constraint = sac.constraints;
+		    req.goal_constraints.pose_constraint.clear();
 		    
-		    for (unsigned int i = 0 ; i < c_res.joint_constraint.size() ; ++i)
-		    {
-			const motion_planning_msgs::JointConstraint &kj = c_res.joint_constraint[i];
-			sp->setParamsJoint(kj.value, kj.joint_name);
-		    }
-		    sp->enforceBounds();
+		    // update the goal constraints for the planning monitor as well
+		    planningMonitor_->setGoalConstraints(req.goal_constraints);
 		    
-		    // if the state is in fact in the goal region, simply run the LR planner
-		    if (planningMonitor_->isStateValidAtGoal(sp.get()))
-		    {
-			ROS_DEBUG("Found valid goal state ...");
-			
-			req.goal_constraints.joint_constraint = c_res.joint_constraint;
-			req.goal_constraints.pose_constraint.clear();
-			
-			// update the goal constraints for the planning monitor as well
-			planningMonitor_->setGoalConstraints(req.goal_constraints);
-			
-			return runLRplanner(req);
-		    }
-		    else
-		    {
-			// if the state is valid but not in the goal region,
-			// we plan in two steps: first to this intermediate state
-			// that we hope is close to the goal and second to the final goal position
-			// using the SR planner
-			ROS_DEBUG("Found intermediate state ...");
-			
-			motion_planning_msgs::KinematicConstraints kc = req.goal_constraints;
-			
-			req.goal_constraints.joint_constraint = c_res.joint_constraint;
-			req.goal_constraints.pose_constraint.clear();
-			
-			// update the goal constraints for the planning monitor as well
-			planningMonitor_->setGoalConstraints(req.goal_constraints);
-			
-			ArmActionState result = runLRplanner(req);
-			
-			req.goal_constraints = kc;
-			planningMonitor_->setGoalConstraints(req.goal_constraints);
-			
-			// if reaching the intermediate state was succesful
-			if (result == SUCCESS)
-			    // run the short range planner to the original goal
-			    return runSRplanner(states, req);
-			else
-			    return result;
-		    }
+		    return runLRplanner(req);
 		}
 		else
-		    return runLRplanner(states, req);
+		{
+		    // if the state is valid but not in the goal region,
+		    // we plan in two steps: first to this intermediate state
+		    // that we hope is close to the goal (using LR planner) and 
+		    // second to the final goal position using the SR planner
+		    ROS_DEBUG("Found intermediate state ...");
+		    
+		    // backup for constraints
+		    motion_planning_msgs::KinematicConstraints kc = req.goal_constraints;
+		    
+		    req.goal_constraints.joint_constraint = sac.constraints;
+		    req.goal_constraints.pose_constraint.clear();
+		    
+		    // update the goal constraints for the planning monitor as well
+		    planningMonitor_->setGoalConstraints(req.goal_constraints);
+		    
+		    ArmActionState result = runLRplanner(req);
+		    
+		    // restore constraints
+		    req.goal_constraints = kc;
+		    planningMonitor_->setGoalConstraints(req.goal_constraints);
+		    
+		    // if reaching the intermediate state was succesful
+		    if (result == SUCCESS)
+			// run the short range planner to the original goal
+			return runSRplanner(states, req);
+		    else
+			return result;
+		}
 	    }
 	    else
-	    {
-		ROS_ERROR("Service for searching for valid states failed");
 		return runLRplanner(states, req);
-	    }
-	    
 	}
 	
 	/** \brief Extract the state specified by the goal and run a planner towards it, if it is valid */
@@ -328,7 +351,7 @@ namespace move_arm
 	    
 	    for (unsigned int i = 0 ; i < states.size() ; ++i)
 	    {
-		cstates[i].state = states[i].get();
+		cstates[i].state = states[i];
 		cstates[i].cost = computeStateCollisionCost(states[i].get());
 		cstates[i].index = i;
 	    }
@@ -339,9 +362,9 @@ namespace move_arm
 	    for (unsigned int i = 0 ; i < cstates.size() ; ++i)
 		ROS_DEBUG("Cost of hint state %d is %f", i, cstates[i].cost);
 	    
-	    if (planningMonitor_->isStateValidAtGoal(cstates[0].state))
+	    if (planningMonitor_->isStateValidAtGoal(cstates[0].state.get()))
 	    {
-		updateRequest(req, cstates[0].state);
+		updateRequest(req, cstates[0].state.get());
 		return runLRplanner(req);
 	    }
 	    else
@@ -724,6 +747,54 @@ namespace move_arm
 	    return state;
 	}
 	
+	ArmActionState moveToValidState(motion_planning_msgs::GetMotionPlan::Request &req)
+	{
+	    ROS_DEBUG("Trying to use short range planner to move to a valid state...");
+
+	    // construct a state representation + kinematic constraints from our start state
+	    boost::shared_ptr<planning_models::StateParams> sp(new planning_models::StateParams(*planningMonitor_->getRobotState()));
+	    motion_planning_msgs::KinematicConstraints constraints;
+	    
+	    for (unsigned int i = 0 ; i < req.start_state.size() ; ++i)
+	    {
+		const motion_planning_msgs::KinematicJoint &kj = req.start_state[i];
+		sp->setParamsJoint(kj.value, kj.joint_name);
+		motion_planning_msgs::JointConstraint jc;
+		jc.joint_name = kj.joint_name;
+		jc.value = kj.value;
+		jc.tolerance_above.resize(jc.value.size(), 0.0);
+		jc.tolerance_below.resize(jc.value.size(), 0.0);
+		constraints.joint_constraint.push_back(jc);
+	    }
+	    std::vector< boost::shared_ptr<planning_models::StateParams> > states;
+	    states.push_back(sp);
+	    
+	    // find valid state near by
+	    StateAndConstraint sac;
+	    bool found = findValidNearJointConstraint(req.start_state, req.params, constraints, states, sac);
+	    
+	    ArmActionState result = ABORTED;
+	    if (found)
+	    {
+		motion_planning_msgs::KinematicConstraints kc = req.goal_constraints;
+		
+		// move to that state (we update goal constraints temporarily)
+		req.goal_constraints.pose_constraint.clear();
+		req.goal_constraints.joint_constraint = sac.constraints;
+		
+		// try to move to the state
+		result = runSRplanner(req);
+		
+		// restore previous goal constraints
+		req.goal_constraints = kc;
+		
+		// refill with new start state
+		if (result == SUCCESS)
+		    fillStartState(req.start_state);
+	    }
+	    
+	    return result;
+	}
 	
 	void execute(const move_arm::MoveArmGoalConstPtr& goal)
 	{
@@ -752,15 +823,26 @@ namespace move_arm
 	    planningMonitor_->setGoalConstraints(req.goal_constraints);
 	    
 	    ROS_INFO("Received planning request");
+	    
 	    std::stringstream ss;
 	    planningMonitor_->printConstraints(ss);
+	    planningMonitor_->setAllowedContacts(req.params.contacts);
 	    planningMonitor_->printAllowedContacts(ss);
+	    planningMonitor_->clearAllowedContacts();
 	    ROS_DEBUG("%s", ss.str().c_str());
+
+	    ArmActionState result = SUCCESS;
 	    
-	    // fill the starting state
-	    fillStartState(req.start_state);
+	    // fill the starting state; if state is not valid, use short range planner to move out of it
+	    if (!fillStartState(req.start_state))
+		result = moveToValidState(req);
 	    
-	    ArmActionState result = solveGoal(req);
+	    if (as_.isPreemptRequested() || as_.isNewGoalAvailable())
+		result = PREEMPTED;
+	    
+	    // find & execute path to goal
+	    if (result != PREEMPTED)
+		result = solveGoal(req);
 	    
 	    if (result == SUCCESS)
 	    {
@@ -822,18 +904,6 @@ namespace move_arm
 		    count++;
 		} while (!planningMonitor_->isStateValidOnPath(&temp) && count < 50);
 		
-		// try 10% change in each component
-		if (!planningMonitor_->isStateValidOnPath(&temp))
-		{
-		    count = 0;
-		    do
-		    {
-			temp = st;
-			temp.perturbStateGroup(0.1, setup_.group_);
-			count++;
-		    } while (!planningMonitor_->isStateValidOnPath(&temp) && count < 50);
-		}
-		
 		if (!planningMonitor_->isStateValidOnPath(&temp))
 		    st = temp;
 		else
@@ -849,7 +919,7 @@ namespace move_arm
 	    bool result = fixStartState(st);
 	    
 	    if (!result)
-		ROS_ERROR("Starting state for the robot is in collision and attempting to fix it failed");
+		ROS_DEBUG("Starting state for the robot is in collision and attempting to fix it failed.");
 	    
 	    // fill in start state with current one
 	    std::vector<planning_models::KinematicModel::Joint*> joints;
