@@ -35,6 +35,8 @@
 #ifndef ACTIONLIB_ACTION_CLIENT_H_
 #define ACTIONLIB_ACTION_CLIENT_H_
 
+#include <boost/thread/condition.hpp>
+
 #include "ros/ros.h"
 #include "actionlib/client/client_helpers.h"
 
@@ -129,6 +131,46 @@ public:
     goal_pub_.publish(cancel_msg);
   }
 
+  /**
+   * \brief Waits for the ActionServer to connect to this client
+   * Often, it can take a second for the action server & client to negotiate
+   * a connection, thus, risking the first few goals to be dropped. This call lets
+   * the user wait until the network connection to the server is negotiated
+   */
+  bool waitForActionServerToStart(const ros::Duration& timeout = ros::Duration(0,0) )
+  {
+    if (timeout < ros::Duration(0,0))
+      ROS_WARN("Timeouts can't be negative. Timeout is [%.2fs]", timeout.toSec());
+
+    ros::Time timeout_time = ros::Time::now() + timeout;
+
+    boost::mutex::scoped_lock lock(server_connection_mutex_);
+
+    if (server_connected_)
+      return true;
+
+    // Hardcode how often we check for node.ok()
+    ros::Duration loop_period = ros::Duration().fromSec(.1);
+
+    while (n_.ok() && !server_connected_)
+    {
+      // Determine how long we should wait
+      ros::Duration time_left = timeout_time - ros::Time::now();
+
+      // Check if we're past the timeout time
+      if (timeout != ros::Duration(0,0) && time_left <= ros::Duration(0,0) )
+        break;
+
+      // Truncate the time left
+      if (time_left > loop_period)
+        time_left = loop_period;
+
+      server_connection_condition_.timed_wait(lock, boost::posix_time::milliseconds(time_left.toSec() * 1000.0f));
+    }
+
+    return server_connected_;
+  }
+
 private:
   ros::NodeHandle n_;
 
@@ -139,6 +181,10 @@ private:
   ros::Subscriber result_sub_;
 
   GoalManager<ActionSpec> manager_;
+
+  boost::mutex server_connection_mutex_;
+  boost::condition server_connection_condition_;
+  bool server_connected_;
 
   void sendGoalFunc(const ActionGoalConstPtr& action_goal)
   {
@@ -153,7 +199,8 @@ private:
   void initClient()
   {
     // Start publishers and subscribers
-    goal_pub_ = n_.advertise<ActionGoal>("goal", 1, true);
+    server_connected_ = false;
+    goal_pub_ = n_.advertise<ActionGoal>("goal", 1, boost::bind(&ActionClient::serverConnectionCb, this, _1));
     cancel_pub_ = n_.advertise<GoalID>("cancel", 1, true);
     manager_.registerSendGoalFunc(boost::bind(&ActionClientT::sendGoalFunc, this, _1));
     manager_.registerCancelFunc(boost::bind(&ActionClientT::sendCancelFunc, this, _1));
@@ -176,6 +223,13 @@ private:
   void resultCb(const ActionResultConstPtr& action_result)
   {
     manager_.updateResults(action_result);
+  }
+
+  void serverConnectionCb(const ros::SingleSubscriberPublisher& pub)
+  {
+    boost::mutex::scoped_lock lock(server_connection_mutex_);
+    server_connected_ = true;
+    server_connection_condition_.notify_all();
   }
 };
 

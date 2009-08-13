@@ -62,9 +62,15 @@ void feedbackCallback(ActionClient<MoveBaseAction>::GoalHandle gh, const MoveBas
   ROS_INFO("Got Feedback!");
 }
 
-void spinThread()
+
+void spinThread(ros::NodeHandle* n)
 {
-  ros::spin();
+  // I can't figure out how to cleanly exit ros::spin(), so I made this hack instead
+  while(n->ok())
+  {
+    ros::spinOnce();
+    usleep(10);
+  }
 }
 
 int main(int argc, char** argv)
@@ -73,19 +79,26 @@ int main(int argc, char** argv)
 
   ros::NodeHandle n;
 
-  boost::thread spinthread = boost::thread(boost::bind(&spinThread)) ;
+  boost::thread spinthread = boost::thread(boost::bind(&spinThread, &n)) ;
 
   MoveBaseClient ac("move_base");
 
-  //ros::Duration sleep_duration = ros::Duration().fromSec(1.0);
-  //sleep_duration.sleep();
-  sleep(2.0);
+  ROS_INFO("Waiting for action server to start");
+  if (ac.waitForActionServerToStart( ros::Duration(10,0)))
+    ROS_INFO("Connected to action server");
+  else
+  {
+    ROS_ERROR("Timed out waiting for action server");
+    n.shutdown();
+    spinthread.join();
+    return 0;
+  }
 
   MoveBaseGoal goal;
 
   ActionClient<MoveBaseAction>::GoalHandle gh = ac.sendGoal(goal, &transitionCallback, &feedbackCallback);
 
-  sleep(1.0);
+  sleep(3.0);
 
   gh.cancel();
 
@@ -105,8 +118,8 @@ int main(int argc, char** argv)
   while(n.ok())
     sleep(.1);
 
-  sleep(3);
-
+  n.shutdown();
+  spinthread.join();
 
   return 0;
 }

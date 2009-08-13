@@ -91,6 +91,13 @@ public:
   }
 
   /**
+   * \brief Blocks until the action server connects to this client
+   * \param timeout Max time to block before returning. A zero timeout is interpreted as an infinite timeout.
+   * \return True if the server connected in the allocated time. False on timeout
+   */
+  bool waitForActionServerToStart(const ros::Duration& timeout = ros::Duration(0,0) ) { return ac_.waitForActionServerToStart(timeout); }
+
+  /**
    * \brief Sends a goal to the ActionServer, and also registers callbacks
    *
    * If a previous goal is already active when this is called. We simply forget
