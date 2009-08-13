@@ -301,6 +301,7 @@
       <origin xyz="${-caster_offset_x} ${-caster_offset_y} ${caster_offset_z}" rpy="0 0 0" />
     </pr2_caster_alpha2_ext>
 
+    <pr2_base_alpha2_rviz name="${name}" />
     <pr2_caster_alpha2_rviz suffix="fl" parent="${name}_link" />
     <pr2_caster_alpha2_rviz suffix="fr" parent="${name}_link" />
     <pr2_caster_alpha2_rviz suffix="bl" parent="${name}_link" />
@@ -438,6 +439,7 @@
       <origin xyz="${-caster_offset_x} ${-caster_offset_y} ${caster_offset_z}" rpy="0 0 0" />
     </pr2_caster_ext>
     
+    <pr2_base_rviz name="${name}" />
     <pr2_caster_rviz suffix="fl" parent="${name}_link"/>
     <pr2_caster_rviz suffix="fr" parent="${name}_link"/>
     <pr2_caster_rviz suffix="bl" parent="${name}_link"/>

@@ -22,7 +22,7 @@
 
 
   <macro name="pr2_upper_arm_rviz" params="side">
-    <rviz reference="{side}_upper_arm_link">
+    <rviz reference="${side}_upper_arm_link">
       <material value="PR2/Green" />
     </rviz>
     <rviz reference="${side}_elbow_flex_link">
