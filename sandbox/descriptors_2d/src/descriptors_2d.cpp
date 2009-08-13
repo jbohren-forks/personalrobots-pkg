@@ -716,15 +716,15 @@ void ContourFragmentDescriptor::doComputation(IplImage* img, const cv::Vector<Ke
   IplImage *edge_img = cvCreateImage(cvGetSize(img), IPL_DEPTH_8U, 1);
   cvCvtColor(img, edge_img, CV_BGR2GRAY);
   cvCanny(edge_img, edge_img, 80, 160);
-  *matches_ = chamfer_->matchEdgeImage(edge_img);
+  *matches_ = chamfer_->matchEdgeImage(edge_img, SlidingWindowImageRange(edge_img->width, edge_img->height));
 
   if(debug_) {
     //IplImage* vis = cvCloneImage(edge_img);
     IplImage* vis = cvCreateImage(cvGetSize(img), IPL_DEPTH_8U, 3);
-    cvCvtColor(edge_img, vis, CV_GRAY2BGR);
+    cvCvtColor(edge_img, vis, CV_GRAY2RGB);
     matches_->show(vis, 100000);
     CVSHOW("vis", vis);
-    CVSHOW("edge", edge_img);
+//    CVSHOW("edge", edge_img);
     cvWaitKey(0);
     cvReleaseImage(&vis);
   }

@@ -3,7 +3,7 @@
     A chamfer matching library, using both edge distance and orientation.
   </description>
 
-  <author>Marius MUja</author>
+  <author>Marius Muja</author>
   <license>BSD</license>
   <url>http://pr.willowgarage.com</url>
   <review status="experimental" notes="beta"/>

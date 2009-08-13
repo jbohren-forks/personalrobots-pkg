@@ -1,36 +1,36 @@
 /*********************************************************************
- * Software License Agreement (BSD License)
- *
- *  Copyright (c) 2008, Willow Garage, Inc.
- *  All rights reserved.
- *
- *  Redistribution and use in source and binary forms, with or without
- *  modification, are permitted provided that the following conditions
- *  are met:
- *
- *   * Redistributions of source code must retain the above copyright
- *     notice, this list of conditions and the following disclaimer.
- *   * Redistributions in binary form must reproduce the above
- *     copyright notice, this list of conditions and the following
- *     disclaimer in the documentation and/or other materials provided
- *     with the distribution.
- *   * Neither the name of the Willow Garage nor the names of its
- *     contributors may be used to endorse or promote products derived
- *     from this software without specific prior written permission.
- *
- *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- *  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- *  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- *  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- *  POSSIBILITY OF SUCH DAMAGE.
- *********************************************************************/
+* Software License Agreement (BSD License)
+*
+*  Copyright (c) 2008, Willow Garage, Inc.
+*  All rights reserved.
+*
+*  Redistribution and use in source and binary forms, with or without
+*  modification, are permitted provided that the following conditions
+*  are met:
+*
+*   * Redistributions of source code must retain the above copyright
+*     notice, this list of conditions and the following disclaimer.
+*   * Redistributions in binary form must reproduce the above
+*     copyright notice, this list of conditions and the following
+*     disclaimer in the documentation and/or other materials provided
+*     with the distribution.
+*   * Neither the name of the Willow Garage nor the names of its
+*     contributors may be used to endorse or promote products derived
+*     from this software without specific prior written permission.
+*
+*  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+*  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+*  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+*  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+*  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+*  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+*  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+*  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+*  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+*  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+*  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+*  POSSIBILITY OF SUCH DAMAGE.
+*********************************************************************/
 
 // Author: Marius Muja
 
@@ -51,12 +51,201 @@
 
 
 
+
+
+class SlidingWindowImageIterator : public ImageIterator
+{
+	int x_;
+	int y_;
+	float scale_;
+	float scale_step_;
+	int scale_cnt_;
+
+	bool has_next_;
+
+
+	int width_;
+	int height_;
+	int x_step_;
+	int y_step_;
+	int scales_;
+	float min_scale_;
+	float max_scale_;
+
+
+public:
+
+	SlidingWindowImageIterator(int width, int height, int x_step = 3, int y_step = 3, int scales = 5, float min_scale = 0.6, float max_scale = 1.6) :
+		width_(width), height_(height), x_step_(x_step),y_step_(y_step), scales_(scales), min_scale_(min_scale), max_scale_(max_scale)
+	{
+		x_ = 0;
+		y_ = 0;
+		scale_cnt_ = 0;
+		scale_ = min_scale_;
+		has_next_ = true;
+		scale_step_ = (max_scale_-min_scale_)/scales_;
+	}
+
+	bool hasNext() const {
+		return has_next_;
+	}
+
+	location_scale_t next()
+	{
+		location_scale_t next_val = make_pair(cvPoint(x_,y_),scale_);
+
+		x_ += x_step_;
+
+		if (x_ >= width_) {
+			x_ = 0;
+			y_ += y_step_;
+
+			if (y_ >= height_) {
+				y_ = 0;
+				scale_ += scale_step_;
+				scale_cnt_++;
+
+				if (scale_cnt_ == scales_) {
+					has_next_ = false;
+					scale_cnt_ = 0;
+					scale_ = min_scale_;
+				}
+			}
+		}
+
+		return next_val;
+	}
+};
+
+
+ImageIterator* SlidingWindowImageRange::iterator() const
+{
+	return new SlidingWindowImageIterator(width_, height_, x_step_, y_step_, scales_, min_scale_, max_scale_);
+}
+
+
+
+
+class LocationImageIterator : public ImageIterator
+{
+	const vector<CvPoint>& locations_;
+
+	size_t iter_;
+
+	int scales_;
+	float min_scale_;
+	float max_scale_;
+
+	float scale_;
+	float scale_step_;
+	int scale_cnt_;
+
+	bool has_next_;
+
+public:
+	LocationImageIterator(const vector<CvPoint>& locations, int scales = 5, float min_scale = 0.6, float max_scale = 1.6) :
+		locations_(locations), scales_(scales), min_scale_(min_scale), max_scale_(max_scale)
+	{
+		iter_ = 0;
+		scale_cnt_ = 0;
+		scale_ = min_scale_;
+		has_next_ = (locations_.size()==0 ? false : true);
+		scale_step_ = (max_scale_-min_scale_)/scales_;
+	}
+
+	bool hasNext() const {
+		return has_next_;
+	}
+
+	location_scale_t next()
+	{
+		location_scale_t next_val = make_pair(locations_[iter_],scale_);
+
+		iter_ ++;
+		if (iter_==locations_.size()) {
+			iter_ = 0;
+			scale_ += scale_step_;
+			scale_cnt_++;
+
+			if (scale_cnt_ == scales_) {
+				has_next_ = false;
+				scale_cnt_ = 0;
+				scale_ = min_scale_;
+			}
+		}
+
+		return next_val;
+	}
+};
+
+
+ImageIterator* LocationImageRange::iterator() const
+{
+	return new LocationImageIterator(locations_, scales_, min_scale_, max_scale_);
+}
+
+
+
+
+
+class LocationScaleImageIterator : public ImageIterator
+{
+	const vector<CvPoint>& locations_;
+	const vector<float>& scales_;
+
+	size_t iter_;
+
+	bool has_next_;
+
+public:
+	LocationScaleImageIterator(const vector<CvPoint>& locations, const vector<float>& scales) :
+		locations_(locations), scales_(scales)
+	{
+		assert(locations.size()==scales.size());
+		reset();
+	}
+
+	void reset()
+	{
+		iter_ = 0;
+		has_next_ = (locations_.size()==0 ? false : true);
+	}
+
+	bool hasNext() const {
+		return has_next_;
+	}
+
+	location_scale_t next()
+	{
+		location_scale_t next_val = make_pair(locations_[iter_],scales_[iter_]);
+
+		iter_ ++;
+		if (iter_==locations_.size()) {
+			iter_ = 0;
+
+			has_next_ = false;
+		}
+
+		return next_val;
+	}
+};
+
+ImageIterator* LocationScaleImageRange::iterator() const
+{
+	return new LocationScaleImageIterator(locations_, scales_);
+}
+
+
+
+
+
+
 /**
- * Finds a point in the image from which to start contour following.
- * @param templ_img
- * @param p
- * @return
- */
+* Finds a point in the image from which to start contour following.
+* @param templ_img
+* @param p
+* @return
+*/
 bool findFirstContourPoint(IplImage* templ_img, coordinate_t& p)
 {
 	unsigned char* ptr = (unsigned char*) templ_img->imageData;
@@ -74,30 +263,29 @@ bool findFirstContourPoint(IplImage* templ_img, coordinate_t& p)
 
 
 /**
- * Method that extracts a single continuous contour from an image given a starting point.
- * When it extracts the contour it tries to maintain the same direction (at a T-join for example).
- *
- * @param templ_
- * @param coords
- * @param crt
- */
+* Method that extracts a single continuous contour from an image given a starting point.
+* When it extracts the contour it tries to maintain the same direction (at a T-join for example).
+*
+* @param templ_
+* @param coords
+* @param crt
+*/
 void followContour(IplImage* templ_img, template_coords_t& coords, int direction = -1)
 {
 	const int dir[][2] = { {-1,-1}, {-1,0}, {-1,1}, {0,1}, {1,1}, {1,0}, {1,-1}, {0,-1} };
 	coordinate_t next;
 	coordinate_t next_temp;
 	unsigned char* ptr;
-	unsigned char* ptr_temp;
 
 	assert (direction==-1 || !coords.empty());
 
 	coordinate_t crt = coords.back();
-//		printf("Enter followContour, point: (%d,%d)\n", crt.first, crt.second);
+	//		printf("Enter followContour, point: (%d,%d)\n", crt.first, crt.second);
 
 	// mark the current pixel as visited
 	CV_PIXEL(unsigned char, templ_img, crt.first, crt.second)[0] = 0;
 	if (direction==-1) {
-		for (int j = 0 ;j<7; ++j) {
+		for (int j = 0; j<7; ++j) {
 			next.first = crt.first + dir[j][1];
 			next.second = crt.second + dir[j][0];
 			ptr = CV_PIXEL(unsigned char, templ_img, next.first, next.second);
@@ -112,77 +300,57 @@ void followContour(IplImage* templ_img, template_coords_t& coords, int direction
 		}
 	}
 	else {
-		coordinate_t prev = coords.at(coords.size()-2);
 		int k = direction;
+		int k_cost = 3;
 		next.first = crt.first + dir[k][1];
 		next.second = crt.second + dir[k][0];
 		ptr = CV_PIXEL(unsigned char, templ_img, next.first, next.second);
-
 		if (*ptr!=0) {
-			next_temp.first = crt.first + dir[(k+7)%8][1];
-			next_temp.second = crt.second + dir[(k+7)%8][0];
-			ptr_temp = CV_PIXEL(unsigned char, templ_img,  next_temp.first, next_temp.second);
-			if (*ptr_temp!=0) {
-				*ptr_temp=0;
-				coords.push_back(next_temp);
+			k_cost = abs(dir[k][1])+abs(dir[k][0]);
+		}
+		int p = k;
+		int n = k;
+
+		for (int j = 0 ;j<3; ++j) {
+			p = (p + 7) % 8;
+			n = (n + 1) % 8;
+			next.first = crt.first + dir[p][1];
+			next.second = crt.second + dir[p][0];
+			ptr = CV_PIXEL(unsigned char, templ_img, next.first, next.second);
+			if (*ptr!=0) {
+				int p_cost = abs(dir[p][1])+abs(dir[p][0]);
+				if (p_cost<k_cost) {
+					k_cost = p_cost;
+					k = p;
+				}
 			}
-			next_temp.first = crt.first + dir[(k+1)%8][1];
-			next_temp.second = crt.second + dir[(k+1)%8][0];
-			ptr_temp = CV_PIXEL(unsigned char, templ_img,  next_temp.first, next_temp.second);
-			if (*ptr_temp!=0) {
-				*ptr_temp=0;
-				coords.push_back(next_temp);
+			next.first = crt.first + dir[n][1];
+			next.second = crt.second + dir[n][0];
+			ptr = CV_PIXEL(unsigned char, templ_img, next.first, next.second);
+			if (*ptr!=0) {
+				int n_cost = abs(dir[n][1])+abs(dir[n][0]);
+				if (n_cost<k_cost) {
+					k_cost = n_cost;
+					k = n;
+				}
 			}
+		}
+
+		if (k_cost!=3) {
+			next.first = crt.first + dir[k][1];
+			next.second = crt.second + dir[k][0];
 			coords.push_back(next);
 			followContour(templ_img, coords, k);
-		} else {
-			int p = k;
-			int n = k;
-
-			for (int j = 0 ;j<3; ++j) {
-				p = (p + 7) % 8;
-				n = (n + 1) % 8;
-				next.first = crt.first + dir[p][1];
-				next.second = crt.second + dir[p][0];
-				ptr = CV_PIXEL(unsigned char, templ_img, next.first, next.second);
-				if (*ptr!=0) {
-					next_temp.first = crt.first + dir[(p+7)%8][1];
-					next_temp.second = crt.second + dir[(p+7)%8][0];
-					ptr_temp = CV_PIXEL(unsigned char, templ_img,  next_temp.first, next_temp.second);
-					if (*ptr_temp!=0) {
-						*ptr_temp=0;
-						coords.push_back(next_temp);
-					}
-					coords.push_back(next);
-					followContour(templ_img, coords, p);
-					break;
-				}
-				next.first = crt.first + dir[n][1];
-				next.second = crt.second + dir[n][0];
-				ptr = CV_PIXEL(unsigned char, templ_img, next.first, next.second);
-				if (*ptr!=0) {
-					next_temp.first = crt.first + dir[(n+1)%8][1];
-					next_temp.second = crt.second + dir[(n+1)%8][0];
-					ptr_temp = CV_PIXEL(unsigned char, templ_img,  next_temp.first, next_temp.second);
-					if (*ptr_temp!=0) {
-						*ptr_temp=0;
-						coords.push_back(next_temp);
-					}
-					coords.push_back(next);
-					followContour(templ_img, coords, n);
-					break;
-				}
-			}
 		}
 	}
 }
 
 /**
- * Finds a contour in an edge image. The original image is altered by removing the found contour.
- * @param templ_img Edge image
- * @param coords Coordinates forming the contour.
- * @return True while a contour is still found in the image.
- */
+* Finds a contour in an edge image. The original image is altered by removing the found contour.
+* @param templ_img Edge image
+* @param coords Coordinates forming the contour.
+* @return True while a contour is still found in the image.
+*/
 bool findContour(IplImage* templ_img, template_coords_t& coords)
 {
 	coordinate_t start_point;
@@ -198,14 +366,14 @@ bool findContour(IplImage* templ_img, template_coords_t& coords)
 }
 
 /**
- * Computes the angle of a line segment.
- *
- * @param a One end of te line segment
- * @param b The other end.
- * @param dx
- * @param dy
- * @return Angle in radians.
- */
+* Computes the angle of a line segment.
+*
+* @param a One end of the line segment
+* @param b The other end.
+* @param dx
+* @param dy
+* @return Angle in radians.
+*/
 
 float getAngle(coordinate_t a, coordinate_t b, int& dx, int& dy)
 {
@@ -262,7 +430,7 @@ void findContourOrientations(const template_coords_t& coords, template_orientati
 		// get the middle two angles
 		nth_element(angles.begin(), angles.begin()+M-1,  angles.end());
 		nth_element(angles.begin()+M-1, angles.begin()+M,  angles.end());
-//		sort(angles.begin(), angles.end());
+		//		sort(angles.begin(), angles.end());
 
 		// average them to compute tangent
 		orientations[i] = (angles[M-1]+angles[M])/2;
@@ -270,7 +438,10 @@ void findContourOrientations(const template_coords_t& coords, template_orientati
 }
 
 
-ChamferTemplate::ChamferTemplate(IplImage* edge_image, float scale) : template_scale(scale)
+
+//////////////////////// ChamferTemplate /////////////////////////////////////
+
+ChamferTemplate::ChamferTemplate(IplImage* edge_image, float scale_) : addr_width(-1), scale(scale_)
 {
 	size = cvGetSize(edge_image);
 
@@ -286,12 +457,6 @@ ChamferTemplate::ChamferTemplate(IplImage* edge_image, float scale) : template_s
 		local_orientations.clear();
 	}
 
-	computeCenter();
-}
-
-
-void ChamferTemplate::computeCenter()
-{
 	center = cvPoint(0,0);
 	for (size_t i=0;i<coords.size();++i) {
 		center.x += coords[i].first;
@@ -305,29 +470,64 @@ void ChamferTemplate::computeCenter()
 		coords[i].first -= center.x;
 		coords[i].second -= center.y;
 	}
+//	printf("Template coords\n");
+//	for (size_t i=0;i<coords.size();++i) {
+//		printf("(%d,%d), ", coords[i].first, coords[i].second);
+//	}
+//	printf("\n");
 }
 
-/**
- * Resizes a template
- *
- * @param scale Scale to be resized to
- */
-void ChamferTemplate::rescale(float scale)
+
+vector<int>& ChamferTemplate::getTemplateAddresses(int width)
 {
-	if (scale==1) return;
+	if (addr_width!=width) {
+		addr.resize(coords.size());
+		addr_width = width;
 
-	template_scale *= scale;
-
-	center.x = int(center.x*scale+0.5);
-	center.y = int(center.y*scale+0.5);
-
-	size.width = int(size.width*scale+0.5);
-	size.height = int(size.height*scale+0.5);
-
-	for (size_t i=0;i<coords.size();++i) {
-		coords[i].first = int(coords[i].first*scale+0.5);
-		coords[i].second = int(coords[i].second*scale+0.5);
+		for (size_t i=0; i<coords.size();++i) {
+			addr[i] = coords[i].second*width+coords[i].first;
+		}
 	}
+	return addr;
+}
+
+
+/**
+* Resizes a template
+*
+* @param scale Scale to be resized to
+*/
+ChamferTemplate* ChamferTemplate::rescale(float new_scale)
+{
+	if (fabs(scale-new_scale)<1e-6) return this;
+
+	for (size_t i=0;i<scaled_templates.size();++i) {
+		if (fabs(scaled_templates[i]->scale-new_scale)<1e-6) {
+			return scaled_templates[i];
+		}
+	}
+
+	float scale_factor = new_scale/scale;
+
+	ChamferTemplate* tpl = new ChamferTemplate();
+	tpl->scale = new_scale;
+
+	tpl->center.x = int(center.x*scale_factor+0.5);
+	tpl->center.y = int(center.y*scale_factor+0.5);
+
+	tpl->size.width = int(size.width*scale_factor+0.5);
+	tpl->size.height = int(size.height*scale_factor+0.5);
+
+	tpl->coords.resize(coords.size());
+	tpl->orientations.resize(orientations.size());
+	for (size_t i=0;i<coords.size();++i) {
+		tpl->coords[i].first = int(coords[i].first*scale_factor+0.5);
+		tpl->coords[i].second = int(coords[i].second*scale_factor+0.5);
+		tpl->orientations[i] = orientations[i];
+	}
+	scaled_templates.push_back(tpl);
+
+	return tpl;
 
 }
 
@@ -364,151 +564,33 @@ void ChamferTemplate::show() const
 	cvNamedWindow("templ",1);
 	cvShowImage("templ",templ_color);
 
-//	cvWaitKey(0);
+	//	cvWaitKey(0);
 
 	cvReleaseImage(&templ_color);
 }
 
 
-// ----------------- ChamferMatching ---------------------
-
-
-/**
- * Add a template to the detector from an edge image.
- * @param templ An edge image
- */
-void ChamferMatching::addTemplateFromImage(IplImage* templ)
-{
-
-	//printf("Template height: %d\n", templ->height);
-//	printf("Real height: %f\n", real_height);
-
-	ChamferTemplate* cmt = new ChamferTemplate(templ);
-
-	for(int i = 0; i < count_scale; ++i) {
-		float scale = min_scale + (max_scale - min_scale)*i/count_scale;
-
-		ChamferTemplate* cmt_resized = new ChamferTemplate(*cmt);
-		cmt_resized->rescale(scale);
-
-		templates.push_back(cmt_resized);
-	}
-
-//	cmt->show();
-}
+//////////////////////// ChamferMatching /////////////////////////////////////
 
 
 void ChamferMatching::addTemplateFromImage(IplImage* templ, float scale)
 {
 	ChamferTemplate* cmt = new ChamferTemplate(templ, scale);
 	templates.push_back(cmt);
-	printf("Added a new template\n");
-
-//	for(int i = 0; i < count_scale; ++i) {
-//		float scale = min_scale + (max_scale - min_scale)*i/count_scale;
-//
-//		ChamferTemplate* cmt_resized = new ChamferTemplate(*cmt);
-//		cmt_resized->rescale(scale);
-//
-//		templates.push_back(cmt_resized);
-//	}
-
-//	cmt->show();
+//	printf("Added a new template\n");
+	//	cmt->show();
 }
 
 
 /**
- * Run matching usin an edge image.
- * @param edge_img Edge image
- * @return a match object
- */
-ChamferMatch ChamferMatching::matchEdgeImage(IplImage* edge_img)
-{
-	ChamferMatch cm;
-
-	IplImage* dist_img = cvCreateImage(cvSize(edge_img->width, edge_img->height), IPL_DEPTH_32F, 1);
-	IplImage* orientation_img = cvCreateImage(cvSize(edge_img->width, edge_img->height), IPL_DEPTH_32F, 1);
-	IplImage* annotated_img = cvCreateImage(cvSize(edge_img->width, edge_img->height), IPL_DEPTH_32S, 2);
-
-	// Computing distance transform
-	IplImage* edge_clone = cvCloneImage(edge_img);
-	computeEdgeOrientations(edge_clone, orientation_img );
-	cvReleaseImage(&edge_clone);
-	computeDistanceTransform(edge_img,dist_img, annotated_img, orientation_img, truncate);
-	fillNonContourOrientations(annotated_img, orientation_img);
-
-	// Template matching
-	matchTemplates(dist_img, orientation_img, cm);
-
-	cvReleaseImage(&dist_img);
-	cvReleaseImage(&orientation_img);
-	cvReleaseImage(&annotated_img);
-
-	return cm;
-}
-
-
-ChamferMatch ChamferMatching::matchEdgeImage(IplImage* edge_img, const vector<CvPoint>& locations, const vector<float>& scales)
-{
-	ChamferMatch cm;
-
-	IplImage* dist_img = cvCreateImage(cvSize(edge_img->width, edge_img->height), IPL_DEPTH_32F, 1);
-	IplImage* orientation_img = cvCreateImage(cvSize(edge_img->width, edge_img->height), IPL_DEPTH_32F, 1);
-	IplImage* annotated_img = cvCreateImage(cvSize(edge_img->width, edge_img->height), IPL_DEPTH_32S, 2);
-
-	// Computing distance transform
-	IplImage* edge_clone = cvCloneImage(edge_img);
-	computeEdgeOrientations(edge_clone, orientation_img );
-	cvReleaseImage(&edge_clone);
-	computeDistanceTransform(edge_img,dist_img, annotated_img, orientation_img, truncate);
-	fillNonContourOrientations(annotated_img, orientation_img);
-
-	// Template matching
-	matchTemplates(dist_img, orientation_img, cm, locations, scales);
-
-	cvReleaseImage(&dist_img);
-	cvReleaseImage(&orientation_img);
-	cvReleaseImage(&annotated_img);
-
-	return cm;
-}
-
-
-/**
- * Run matching using a regular image.
- *
- * Will run Canny edge detection and then the edge matching.
- * @param img
- * @param high_threshold The high edge threshold to use in Canny edge detector.
- * @param low_threshold The low edge threshold to use in Canny edge detector. If default (-1) is used it's computed as high_threshold/2.
- * @return a match object
- */
-ChamferMatch ChamferMatching::matchImage(IplImage* img, int high_threshold, int low_threshold)
-{
-	if (low_threshold==-1) {
-		low_threshold = high_threshold/2;
-	}
-	IplImage *edge_img = cvCreateImage(cvGetSize(img), IPL_DEPTH_8U, 1);
-	cvCvtColor(img, edge_img, CV_RGB2GRAY);
-	cvCanny(edge_img, edge_img, low_threshold, high_threshold);
-
-	ChamferMatch cm = matchEdgeImage(edge_img);
-
-	cvReleaseImage(&edge_img);
-	return cm;
-}
-
-
-
-/**
- * Alternative version of computeDistanceTransform, will probably be used to compute distance
- * transform annotated with edge orientation.
- */
-void ChamferMatching::computeDistanceTransform(IplImage* edges_img, IplImage* dist_img, IplImage* annotate_img, IplImage* orientation_img, float truncate, float a, float b)
+* Alternative version of computeDistanceTransform, will probably be used to compute distance
+* transform annotated with edge orientation.
+*/
+void computeDistanceTransform(IplImage* edges_img, IplImage* dist_img, IplImage* annotate_img, float truncate_dt, float a = 1.0, float b = 1.5)
 {
 	int d[][2] = { {-1,-1}, { 0,-1}, { 1,-1},
-				  {-1,0},          { 1,0},
-				  {-1,1}, { 0,1}, { 1,1} };
+			{-1,0},          { 1,0},
+			{-1,1}, { 0,1}, { 1,1} };
 
 
 	CvSize s = cvGetSize(edges_img);
@@ -520,17 +602,18 @@ void ChamferMatching::computeDistanceTransform(IplImage* edges_img, IplImage* di
 		for (int x=0;x<w;++x) {
 
 			unsigned char edge_val = CV_PIXEL(unsigned char, edges_img, x,y)[0];
-			float orientation_val =  CV_PIXEL(float, orientation_img, x,y)[0];
+//			float orientation_val =  CV_PIXEL(float, orientation_img, x,y)[0];
 
-			if ( (edge_val!=0) && !(orientation_val<-M_PI) ) {
+//			if ( (edge_val!=0) && !(orientation_val<-M_PI) ) {
+			if ( (edge_val!=0) ) {
 				q.push(make_pair(x,y));
-    			CV_PIXEL(float, dist_img, x, y)[0] = 0;
+				CV_PIXEL(float, dist_img, x, y)[0] = 0;
 
-    			if (annotate_img!=NULL) {
-    				int *aptr = CV_PIXEL(int,annotate_img,x,y);
-    				aptr[0] = x;
-    				aptr[1] = y;
-    			}
+				if (annotate_img!=NULL) {
+					int *aptr = CV_PIXEL(int,annotate_img,x,y);
+					aptr[0] = x;
+					aptr[1] = y;
+				}
 			}
 			else {
 				CV_PIXEL(float, dist_img, x, y)[0] = -1;
@@ -573,49 +656,50 @@ void ChamferMatching::computeDistanceTransform(IplImage* edges_img, IplImage* di
 					int *optr = CV_PIXEL(int,annotate_img,x,y);
 					aptr[0] = optr[0];
 					aptr[1] = optr[1];
-
 				}
-
-
 			}
 		}
-
 	}
-
 	// truncate dt
-	if (truncate>0) {
-		cvMinS(dist_img, truncate, dist_img);
+	if (truncate_dt>0) {
+		cvMinS(dist_img, truncate_dt, dist_img);
 	}
 }
 
 
-void ChamferMatching::computeEdgeOrientations(IplImage* edge_img, IplImage* orientation_img)
+void computeEdgeOrientations(IplImage* edge_img, IplImage* orientation_img)
 {
-	IplImage* img_color = cvCreateImage(cvSize(edge_img->width, edge_img->height), IPL_DEPTH_8U, 3);
-	cvCvtColor(edge_img, img_color, CV_GRAY2RGB);
+	IplImage* contour_img = cvCreateImage(cvGetSize(edge_img), IPL_DEPTH_8U, 1);
 
 	template_coords_t coords;
 	template_orientations_t orientations;
 
 	while (findContour(edge_img, coords)) {
+
 		findContourOrientations(coords, orientations);
 
 		// set orientation pixel in orientation image
 		for (size_t i = 0; i<coords.size();++i) {
 			int x = coords[i].first;
 			int y = coords[i].second;
+			//			if (orientations[i]>-M_PI)
+			{
+				CV_PIXEL(unsigned char, contour_img, x, y)[0] = 255;
+			}
 			CV_PIXEL(float, orientation_img, x, y)[0] = orientations[i];
 		}
+		//		cvNamedWindow("contours"); cvShowImage("contours", contour_img);
+		//		cvWaitKey(0);
 
 		coords.clear();
 		orientations.clear();
 	}
 
-	cvReleaseImage(&img_color);
+	cvSaveImage("contours.pgm", contour_img);
 }
 
 
-void ChamferMatching::fillNonContourOrientations(IplImage* annotated_img, IplImage* orientation_img)
+void fillNonContourOrientations(IplImage* annotated_img, IplImage* orientation_img)
 {
 	int width = annotated_img->width;
 	int height = annotated_img->height;
@@ -636,158 +720,132 @@ void ChamferMatching::fillNonContourOrientations(IplImage* annotated_img, IplIma
 	}
 }
 
-
 static float orientation_diff(float o1, float o2)
 {
 	return fabs(o1-o2);
 }
 
-float ChamferMatching::localChamferDistance(IplImage* dist_img, IplImage* orientation_img, const vector<int>& templ_addr, const vector<float>& templ_orientations, CvPoint offset, float alpha)
+
+
+void ChamferMatching::localChamferDistance(CvPoint offset, IplImage* dist_img, IplImage* orientation_img,
+			ChamferTemplate* tpl, ChamferMatch& cm, float alpha)
 {
 	int x = offset.x;
 	int y = offset.y;
-	float sum_distance = 0;
-	float sum_orientation = 0;
 
 	float beta = 1-alpha;
 
-	float* ptr = (float*) dist_img->imageData;
-	float* optr = (float*) orientation_img->imageData;
-	ptr += (y*dist_img->width+x);
-	optr += (y*orientation_img->width+x);
-	for (size_t i=0;i<templ_addr.size();++i) {
-		sum_distance += *(ptr+templ_addr[i]);
-	}
-	for (size_t i=0;i<templ_addr.size();++i) {
-		sum_orientation += orientation_diff(templ_orientations[i], *(optr+templ_addr[i]));
-	}
-	return (beta*sum_distance/truncate+alpha*sum_orientation/M_PI)/templ_addr.size();
-}
+	vector<int>& addr = tpl->getTemplateAddresses(dist_img->width);
+	vector<float> costs(addr.size());
 
+	float* ptr = CV_PIXEL(float, dist_img, x, y);
+	float sum_distance = 0;
+	for (size_t i=0;i<addr.size();++i) {
+//		if (x==279 && y==176 && fabs(tpl.template_scale-0.7)<0.01) {
+//			printf("%g, ", *(ptr+templ_addr[i]));
+//		}
 
-
-void ChamferMatching::matchTemplate(IplImage* dist_img, IplImage* orientation_img, const ChamferTemplate& tpl, ChamferMatch& cm)
-{
-	int width = dist_img->width;
-
-	const template_coords_t& coords = tpl.coords;
-	// compute template address offsets
-	vector<int> templ_addr;
-	templ_addr.clear();
-	for (size_t i= 0; i<coords.size();++i) {
-		templ_addr.push_back(coords[i].second*width+coords[i].first);
+		sum_distance += *(ptr+addr[i]);
+		costs[i] = *(ptr+addr[i]);
 	}
 
-	int x_start = tpl.center.x;
-	int x_end = dist_img->width - tpl.size.width + tpl.center.x;
-	int y_start = tpl.center.y;
-	int y_end = dist_img->height - tpl.size.height + tpl.center.y;
+	float cost = (sum_distance/truncate_)/addr.size();
 
-	if (candidate_locations.size()==0) {
-		// if no candidate locations, do sliding window
-		// do sliding window
-		for (int y=y_start ; y< y_end ; y+=5) {
-			for (int x=x_start ; x < x_end ; x+=5) {
-				CvPoint offset;
-				offset.x = x;
-				offset.y = y;
-				float cost = localChamferDistance(dist_img, orientation_img, templ_addr, tpl.orientations, offset);
-
-				cm.addMatch(cost, offset, tpl);
+	if (orientation_img!=NULL) {
+		float* optr = CV_PIXEL(float, orientation_img, x, y);
+		float sum_orientation = 0;
+		int cnt_orientation = 0;
+		for (size_t i=0;i<addr.size();++i) {
+			if (tpl->orientations[i]>=-M_PI && *(optr+addr[i])>=-M_PI) {
+				sum_orientation += orientation_diff(tpl->orientations[i], *(optr+addr[i]));
+				cnt_orientation++;
+				//			costs[i] = orientation_diff(tpl.orientations[i], *(optr+addr[i]));
 			}
 		}
-	}
-	else {
-		// look only at the candidate locations
 
-
-	}
-
-}
-
-
-void ChamferMatching::matchTemplates(IplImage* dist_img, IplImage* orientation_img, ChamferMatch& cm)
-{
-	   for(size_t i = 0; i < templates.size(); i++) {
-		   matchTemplate(dist_img, orientation_img, *templates[i],cm);
-	   }
-}
-
-
-
-void ChamferMatching::matchTemplates(IplImage* dist_img, IplImage* orientation_img, ChamferMatch& cm,
-		const vector<CvPoint>& locations, const vector<float>& scales)
-{
-	int width = dist_img->width;
-
-	for (size_t k=0;k<locations.size();++k) {
-
-		CvPoint best_offset;
-		float best_cost = -1;
-		ChamferTemplate* best_template = NULL;
-
-		for(size_t i = 0; i < templates.size(); i++) {
-
-			printf("Trying template: %d\n", i);
-
-
-			if (scales[k]>0 && templates[i]->template_scale>0) {
-
-				ChamferTemplate* tpl_resized = new ChamferTemplate(*templates[i]);
-				tpl_resized->rescale(scales[k]/templates[i]->template_scale);
-				ChamferTemplate& tpl = *tpl_resized;
-
-				int x_start = tpl.center.x;
-				int x_end = dist_img->width - tpl.size.width + tpl.center.x;
-				int y_start = tpl.center.y;
-				int y_end = dist_img->height - tpl.size.height + tpl.center.y;
-
-				const template_coords_t& coords = tpl.coords;
-				// compute template address offsets
-				vector<int> templ_addr;
-				templ_addr.clear();
-				for (size_t j= 0; j<coords.size();++j) {
-					templ_addr.push_back(coords[j].second*width+coords[j].first);
-				}
-
-				int region = 20;
-				int step = 5;
-				CvPoint location = locations[k];
-
-				for (int y=location.y-region;y<location.y+region;y+=step) {
-					for (int x=location.x-region;x<location.x+region;x+=step) {
-						if (x<x_start || x>=x_end) continue;
-						if (y<y_start || y>=y_end) continue;
-						CvPoint offset;
-						offset.x = x;
-						offset.y = y;
-						float cost = localChamferDistance(dist_img, orientation_img, templ_addr, tpl.orientations, offset);
-
-						if (best_cost<0 || cost<best_cost) {
-							best_cost = cost;
-							best_offset = offset;
-							best_template = tpl_resized;
-						}
-
-					}
-				}
-
-
-			}
+		if (cnt_orientation>0) {
+			cost = beta*cost+alpha*(sum_orientation/(2*M_PI))/cnt_orientation;
 		}
-		if (best_cost>0) {
-			cm.addMatch(best_cost, best_offset, *best_template);
+	}
+
+
+//	if (x>260 && x<300 && y>160 && y<190 && fabs(tpl->scale-1.0)<0.01) {
+//		printf("\nCost: %g\n", cost);
+//	}
+
+	cm.addMatch(cost, offset, tpl, addr, costs);
+
+}
+
+
+void ChamferMatching::matchTemplates(IplImage* dist_img, IplImage* orientation_img, ChamferMatch& cm, const ImageRange& range, float orientation_weight)
+{
+	// try each template
+	for(size_t i = 0; i < templates.size(); i++) {
+		ImageIterator* it = range.iterator();
+		while (it->hasNext()) {
+			location_scale_t crt = it->next();
+
+			CvPoint loc = crt.first;
+			float scale = crt.second;
+
+			if (loc.x-templates[i]->center.x<0 || loc.x+templates[i]->size.width-templates[i]->center.x>=dist_img->width) continue;
+			if (loc.y-templates[i]->center.y<0 || loc.y+templates[i]->size.height-templates[i]->center.y>=dist_img->height) continue;
+
+			localChamferDistance(loc, dist_img, orientation_img, templates[i]->rescale(scale), cm, orientation_weight);
 		}
 
+		delete it;
 	}
-
 }
 
-int CLUSTER_SIZE = 40;
 
 
+/**
+* Run matching using an edge image.
+* @param edge_img Edge image
+* @return a match object
+*/
+ChamferMatch ChamferMatching::matchEdgeImage(IplImage* edge_img, const ImageRange& range, float orientation_weight)
+{
+	CV_Assert(edge_img->nChannels==1);
 
-void ChamferMatch::addMatch(float cost, CvPoint offset, const ChamferTemplate& tpl)
+	IplImage* dist_img;
+	IplImage* annotated_img;
+	IplImage* orientation_img;
+	ChamferMatch cm;
+
+	dist_img = cvCreateImage(cvSize(edge_img->width, edge_img->height), IPL_DEPTH_32F, 1);
+	annotated_img = cvCreateImage(cvSize(edge_img->width, edge_img->height), IPL_DEPTH_32S, 2);
+
+	// Computing distance transform
+	computeDistanceTransform(edge_img,dist_img, annotated_img, truncate_);
+
+	orientation_img = NULL;
+	if (use_orientation_) {
+		orientation_img = cvCreateImage(cvSize(edge_img->width, edge_img->height), IPL_DEPTH_32F, 1);
+		IplImage* edge_clone = cvCloneImage(edge_img);
+		computeEdgeOrientations(edge_clone, orientation_img );
+		cvReleaseImage(&edge_clone);
+		fillNonContourOrientations(annotated_img, orientation_img);
+	}
+
+	// Template matching
+	matchTemplates(dist_img, orientation_img, cm, range, orientation_weight);
+
+	cvReleaseImage(&dist_img);
+	cvReleaseImage(&annotated_img);
+	if (use_orientation_) {
+		cvReleaseImage(&orientation_img);
+	}
+
+	return cm;
+}
+
+
+int CLUSTER_SIZE = 10;
+
+void ChamferMatch::addMatch(float cost, CvPoint offset, ChamferTemplate* tpl, const vector<int>& addr, const vector<float>& costs)
 {
 	bool new_match = true;
 
@@ -799,7 +857,9 @@ void ChamferMatch::addMatch(float cost, CvPoint offset, const ChamferTemplate& t
 			if (cost<matches[i].cost) {
 				matches[i].cost = cost;
 				matches[i].offset = offset;
-				matches[i].tpl = &tpl;
+				matches[i].tpl = tpl;
+				matches[i].costs = costs;
+				matches[i].img_offs = addr;
 			}
 			// re-bubble to keep ordered
 			int k = i;
@@ -819,7 +879,9 @@ void ChamferMatch::addMatch(float cost, CvPoint offset, const ChamferTemplate& t
 		if (count<MAX_MATCHES) {
 			matches[count].cost = cost;
 			matches[count].offset = offset;
-			matches[count].tpl = &tpl;
+			matches[count].tpl = tpl;
+			matches[count].costs = costs;
+			matches[count].img_offs = addr;
 			count++;
 		}
 		// otherwise find the right position to insert it
@@ -830,7 +892,7 @@ void ChamferMatch::addMatch(float cost, CvPoint offset, const ChamferTemplate& t
 			}
 
 			int j = 0;
-			// skip all matches better that current one
+			// skip all matches better than current one
 			while (matches[j].cost<cost) j++;
 
 			// shift matches one position
@@ -842,16 +904,18 @@ void ChamferMatch::addMatch(float cost, CvPoint offset, const ChamferTemplate& t
 
 			matches[j].cost = cost;
 			matches[j].offset = offset;
-			matches[j].tpl = &tpl;
+			matches[j].tpl = tpl;
+			matches[j].costs = costs;
+			matches[j].img_offs = addr;
 		}
 	}
 
 
-//
-//	for (int i=0;i<count;++i) {
-//		printf("Cost: %f\n", matches[i].cost);
-//	}
-//	printf("------------------------------------------------\n");
+	//
+	//	for (int i=0;i<count;++i) {
+	//		printf("Cost: %f\n", matches[i].cost);
+	//	}
+	//	printf("------------------------------------------------\n");
 
 }
 
@@ -863,12 +927,25 @@ void ChamferMatch::show(IplImage* img, int matches_no)
 
 	for (int i=0;i<show_cnt;++i) {
 		ChamferMatchInstance match = matches[i];
-		printf("Cost: %f\n", match.cost);
+		printf("Match at: (%d,%d), scale: %f, cost: %f\n", match.offset.x, match.offset.y, match.tpl->scale,  match.cost);
+
 		const template_coords_t& templ_coords = match.tpl->coords;
 		for (size_t i=0;i<templ_coords.size();++i) {
+			printf("%g, ", match.costs[i]);
 			int x = match.offset.x + templ_coords[i].first;
 			int y = match.offset.y + templ_coords[i].second;
-			CV_PIXEL(unsigned char, img,x,y)[1] = 255;
+
+//			printf("(%d,%d) + (%d,%d) = (%d,%d)\n", match.offset.x,match.offset.y, templ_coords[i].first, templ_coords[i].second, x,y);
+
+			unsigned char *p = CV_PIXEL(unsigned char, img,x,y);
+			p[0] = p[1] = p[2] = 0;
+
+			if (match.costs[i]>2) {
+				p[2] = 255;
+			} else {
+				p[1] = 255;
+			}
 		}
+		printf("\n");
 	}
 }

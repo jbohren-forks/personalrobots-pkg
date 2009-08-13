@@ -69,6 +69,81 @@ bool findContour(IplImage* templ_img, template_coords_t& coords);
 void findContourOrientations(const template_coords_t& coords, template_orientations_t& orientations);
 
 
+///////////////////////// Image iterators ////////////////////////////
+
+
+typedef pair<CvPoint, float> location_scale_t;
+
+
+class ImageIterator
+{
+public:
+	virtual bool hasNext() const = 0;
+	virtual location_scale_t next() = 0;
+};
+
+class ImageRange
+{
+public:
+	virtual ImageIterator* iterator() const = 0;
+};
+
+
+// Sliding window
+
+class SlidingWindowImageRange : public ImageRange
+{
+	int width_;
+	int height_;
+	int x_step_;
+	int y_step_;
+	int scales_;
+	float min_scale_;
+	float max_scale_;
+
+public:
+	SlidingWindowImageRange(int width, int height, int x_step = 3, int y_step = 3, int scales = 5, float min_scale = 0.6, float max_scale = 1.6) :
+		width_(width), height_(height), x_step_(x_step),y_step_(y_step), scales_(scales), min_scale_(min_scale), max_scale_(max_scale)
+	{
+	}
+
+	ImageIterator* iterator() const;
+};
+
+class LocationImageRange : public ImageRange
+{
+	const vector<CvPoint>& locations_;
+
+	int scales_;
+	float min_scale_;
+	float max_scale_;
+
+public:
+	LocationImageRange(const vector<CvPoint>& locations, int scales = 5, float min_scale = 0.6, float max_scale = 1.6) :
+		locations_(locations), scales_(scales), min_scale_(min_scale), max_scale_(max_scale)
+	{
+	}
+
+	ImageIterator* iterator() const;
+};
+
+
+class LocationScaleImageRange : public ImageRange
+{
+	const vector<CvPoint>& locations_;
+	const vector<float>& scales_;
+
+public:
+	LocationScaleImageRange(const vector<CvPoint>& locations, const vector<float>& scales) :
+		locations_(locations), scales_(scales)
+	{
+		assert(locations.size()==scales.size());
+	}
+
+	ImageIterator* iterator() const;
+};
+
+
 
 
 /**
@@ -76,36 +151,45 @@ void findContourOrientations(const template_coords_t& coords, template_orientati
  */
 class ChamferTemplate
 {
+	vector<ChamferTemplate*> scaled_templates;
+	vector<int> addr;
+	int addr_width;
 public:
 	template_coords_t coords;
 	template_orientations_t orientations;
 	CvSize size;
 	CvPoint center;
-	float template_scale;  // pixels per meter
+	float scale;
 
-	ChamferTemplate()
+	ChamferTemplate() : addr_width(-1)
 	{
 	}
 
-	ChamferTemplate(IplImage* edge_image, float scale = -1);
+	ChamferTemplate(IplImage* edge_image, float scale_ = 1);
 
+	~ChamferTemplate()
+	{
+		for (size_t i=0;i<scaled_templates.size();++i) {
+			delete scaled_templates[i];
+		}
+	}
 
+	vector<int>& getTemplateAddresses(int width);
 
 	/**
 	 * Resizes a template
 	 *
 	 * @param scale Scale to be resized to
 	 */
-	void rescale(float scale);
+	ChamferTemplate* rescale(float scale);
 
 	void show() const;
 
-private:
-	void computeCenter();
 };
 
 
-const int MAX_MATCHES = 20;
+
+const int MAX_MATCHES = 2;
 
 /**
  * Used to represent a matching result.
@@ -119,6 +203,8 @@ class ChamferMatch
 		float cost;
 		CvPoint offset;
 		const ChamferTemplate* tpl;
+		vector<float> costs;
+		vector<int> img_offs;
 	};
 
 //	int max_matches;
@@ -141,7 +227,7 @@ public:
 		matches.resize(MAX_MATCHES);
 	}
 
-	void addMatch(float cost, CvPoint offset, const ChamferTemplate& tpl);
+	void addMatch(float cost, CvPoint offset, ChamferTemplate* tpl, const vector<int>& addr, const vector<float>& costs);
 	void show(IplImage* img, int matches_no);
 };
 
@@ -156,20 +242,13 @@ public:
  */
 class ChamferMatching
 {
-	float min_scale;
-	float max_scale;
-	int count_scale;
-	float truncate;
-
+	float truncate_;
+	bool use_orientation_;
 
 	vector<ChamferTemplate*> templates;
-	vector<CvPoint> candidate_locations;
-
 public:
-	ChamferMatching(bool use_orientation_ = false) : min_scale(0.5), max_scale(1.5), count_scale(5),
-		truncate(20)
+	ChamferMatching(bool use_orientation = true, float truncate = 20) : truncate_(truncate), use_orientation_(use_orientation)
 	{
-
 	}
 
 	~ChamferMatching()
@@ -183,79 +262,17 @@ public:
 	 * Add a template to the detector from an edge image.
 	 * @param templ An edge image
 	 */
-	void addTemplateFromImage(IplImage* templ);
-	void addTemplateFromImage(IplImage* templ, float real_height);
-
+	void addTemplateFromImage(IplImage* templ, float scale = 1.0);
 
 	/**
-	 * In case we know where the object might be, we can add those locations to
-	 * speedup the search. Otherwise a classic sliding-window search will be
-	 * performed over the entire image.
-	 *
-	 * @param locations
-	 */
-	void addCandidateLocations(const vector<CvPoint>& locations)
-	{
-		candidate_locations = locations;
-	}
-
-	/**
-	 * Run matching usin an edge image.
+	 * Run matching using an edge image.
 	 * @param edge_img Edge image
 	 * @return a match object
 	 */
-	ChamferMatch matchEdgeImage(IplImage* edge_img);
+	ChamferMatch matchEdgeImage(IplImage* edge_img, const ImageRange& range, float orientation_weight = 0.5);
 
-	ChamferMatch matchEdgeImage(IplImage* edge_img, const vector<CvPoint>& locations, const vector<float>& scales);
-
-
-	/**
-	 * Run matching using a regular image.
-	 *
-	 * Will run Canny edge detection and then the edge matching.
-	 * @param img
-	 * @param high_threshold The high edge threshold to use in Canny edge detector.
-	 * @param low_threshold The low edge threshold to use in Canny edge detector. If default (-1) is used it's computed as high_threshold/2.
-	 * @return a match object
-	 */
-	ChamferMatch matchImage(IplImage* img, int high_threshold = 160, int low_threshold = -1);
 
 private:
-
-
-
-
-	/**
-	 * Computes annotated distance transform.
-	 *
-	 * @param edges_img Edge image.
-	 * @param dist_img Distance image, each pixel represents the distance to the nearest edge.
-	 * @param annotate_img Two channel int image, each 'pixel' represents the coordinate of the nearest edge.
-	 * @param orientation_img Orientation image, should contain the orientations of each edge pixel. Only pixels with
-	 * valid orientations are processed in the distance transform.
-	 * @param truncate Value to truncate the distance transform to, no value bigger than this is allowed in the output.
-	 * This helps when the contours of objects are interrupted, so we don't penalize the gaps too much.
-	 * @param a Horizontal distance.
-	 * @param b Diagonal distance.
-	 */
-	void computeDistanceTransform(IplImage* edges_img, IplImage* dist_img, IplImage* annotate_img, IplImage* orientation_img, float truncate = -1, float a = 1.0, float b = 1.5 );
-
-
-    /**
-     * Computes teh orientations of edges in an edge image,
-     * @param edge_img Edge image
-     * @param orientation_img Image of same size as edge image that will be filed in with the orientations of each edge pixel in the edge image.
-     */
-    void computeEdgeOrientations(IplImage* edge_img, IplImage* orientation_img);
-
-
-    /**
-     * For each non-edge pixels sets it's orientation the same with the closest edge pixel.
-     * @param annotated_img
-     * @param orientation_img
-     */
-    void fillNonContourOrientations(IplImage* annotated_img, IplImage* orientation_img);
-
 
     /**
      * Computes the chamfer matching cost for one position in the target image.
@@ -267,18 +284,7 @@ private:
      * @param alpha Weighting between distance cost and orientation cost.
      * @return Chamfer matching cost
      */
-    float localChamferDistance(IplImage* dist_img, IplImage* orientation_img, const vector<int>& templ_addr, const vector<float>& templ_orientations, CvPoint offset, float alpha = 0.5);
-
-
-    /**
-     * Matches a template throughout an image.
-     * @param dist_img Distance transform image.
-     * @param orientation_img Orientation image.
-     * @param tpl Template to match
-     * @param cm Matching result
-     */
-    void matchTemplate(IplImage* dist_img, IplImage* orientation_img, const ChamferTemplate& tpl, ChamferMatch& cm);
-
+    void localChamferDistance(CvPoint offset, IplImage* dist_img, IplImage* orientation_img, ChamferTemplate* tpl, ChamferMatch& cm, float orientation_weight);
 
     /**
      * Matches all templates.
@@ -286,20 +292,10 @@ private:
      * @param orientation_img Orientation image.
      * @param cm Matching result
      */
-    void matchTemplates(IplImage* dist_img, IplImage* orientation_img, ChamferMatch& cm);
-
-    void matchTemplates(IplImage* dist_img, IplImage* orientation_img, ChamferMatch& cm, const vector<CvPoint>& locations, const vector<float>& scales);
-
-
-//    void getMatches();
+    void matchTemplates(IplImage* dist_img, IplImage* orientation_img, ChamferMatch& cm, const ImageRange& range, float orientation_weight);
 
 
 };
-
-
-
-
-
 
 
 
