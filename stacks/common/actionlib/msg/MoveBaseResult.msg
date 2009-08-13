@@ -1,1 +1,0 @@
-geometry_msgs/PoseStamped final_pose

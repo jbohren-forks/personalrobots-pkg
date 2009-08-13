@@ -258,8 +258,8 @@ class CommStateMachine
 
 }
 
-#include "actionlib/client/goal_manager.ipp"
-#include "actionlib/client/client_goal_handle.ipp"
-#include "actionlib/client/comm_state_machine.ipp"
+#include "actionlib/client/goal_manager_imp.h"
+#include "actionlib/client/client_goal_handle_imp.h"
+#include "actionlib/client/comm_state_machine_imp.h"
 
 #endif // ACTIONLIB_GOAL_MANAGER_H_
