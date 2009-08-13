@@ -50,9 +50,8 @@
 #include <tabletop_msgs/Table.h>
 #include <tabletop_msgs/ObjectOnTable.h>
 
-#include <robot_actions/action_client.h>
-#include <move_arm/MoveArmGoal.h>
-#include <move_arm/MoveArmState.h>
+#include <actionlib/client/simple_action_client.h>
+#include <move_arm/MoveArmAction.h>
 
 namespace mturk_grab_object
 {
@@ -105,7 +104,7 @@ protected:
   
 public:
 
-  robot_actions::ActionClient<move_arm::MoveArmGoal, move_arm::MoveArmState, int32_t> move_arm;
+  actionlib::SimpleActionClient<move_arm::MoveArmAction> move_arm;
 
 public:
   GraspObjectNode();

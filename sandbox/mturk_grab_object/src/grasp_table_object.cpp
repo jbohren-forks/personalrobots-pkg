@@ -39,7 +39,7 @@
 using namespace std;
 using namespace mturk_grab_object;
 
-GraspObjectNode::GraspObjectNode():move_arm("move_right_arm"){}
+GraspObjectNode::GraspObjectNode():move_arm(n_, "move_right_arm"){}
 
 void GraspObjectNode::setup()
 {
@@ -142,32 +142,42 @@ void GraspObjectNode::imageCallback(const sensor_msgs::ImageConstPtr& the_image)
 
       move_arm::MoveArmGoal g;
       double allowed_time=30.0;
-      int32_t                         feedback;
 
       bool bOK=true;
+
       setupGoal(link_name, grasp_pose, g);
-      if (move_arm.execute(g, feedback, ros::Duration(allowed_time)) != robot_actions::SUCCESS)
-	{
-	  std::cerr << "Failed achieving goal" << std::endl;
-	  bOK=false;
-	}
+      bool finished_within_time;
+      move_arm.sendGoal(g);
+      finished_within_time = move_arm.waitForGoalToFinish(ros::Duration(allowed_time));
+      
+      if (!finished_within_time)
+      {
+	  move_arm.cancelGoal();
+	  std::cerr << "Timed out achieving goal" << std::endl;
+	  bOK = false;
+      }
       else
-	{
-	  std::cout << "Success!" << std::endl;
-	  ros::Duration d(5.0);
-	  d.sleep();
-	}
-
-
+      {
+	  std::cout << "Final state is " << move_arm.getTerminalState().toString() << std::endl;
+	  bOK = move_arm.getTerminalState() == actionlib::TerminalState::SUCCEEDED;
+      }
+      
       setupGoal(link_name, default_arm_pose, g);
-      if (move_arm.execute(g, feedback, ros::Duration(allowed_time)) != robot_actions::SUCCESS)      
-	{
-	  bOK=false;
-	  std::cerr << "Failed achieving DEFAULT GOAL" << std::endl;
-	}
+      move_arm.sendGoal(g);
+      finished_within_time = move_arm.waitForGoalToFinish(ros::Duration(allowed_time));
+      
+      if (!finished_within_time)
+      {
+	  move_arm.cancelGoal();
+	  std::cerr << "Timed out achieving DEFAULT goal" << std::endl;
+	  bOK = false;
+      }
       else
-	std::cout << "Success for default goal." << std::endl;
-
+      {
+	  std::cout << "Final state is " << move_arm.getTerminalState().toString() << std::endl;
+	  bOK = move_arm.getTerminalState() == actionlib::TerminalState::SUCCEEDED;
+      }
+      
       if(bOK)
 	  num_success++;
 
