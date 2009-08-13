@@ -17,6 +17,95 @@
 /* Author: Brian Gerkey */
 /* Modified by: Charles DuHadway */
 
+
+/**
+
+@mainpage slam_gmapping
+
+@htmlinclude manifest.html
+
+@b slam_gmapping is a wrapper around the GMapping SLAM library. It reads laser
+scans and odometry and computes a map. This map can be
+written to a file using e.g.
+
+  "rosrun map_server map_saver static_map:=dynamic_map"
+
+<hr>
+
+@section topic ROS topics
+
+Subscribes to (name/type):
+- @b "scan"/<a href="../../sensor_msgs/html/classstd__msgs_1_1LaserScan.html">sensor_msgs/LaserScan</a> : data from a laser range scanner 
+- @b "/tf_message": odometry from the robot
+
+
+Publishes to (name/type):
+- @b "/tf_message"/tf/tfMessage: position relative to the map
+
+
+@section services
+ - @b "~dynamic_map" : returns the map
+
+
+@section parameters ROS parameters
+
+Reads the following parameters from the parameter server
+
+Parameters used by our GMapping wrapper:
+
+- @b "~inverted_laser" : @b [bool] specifies if the laser is mounted upside-down
+- @b "~throttle_scans": @b [int] throw away every nth laser scan
+- @b "~base_frame": @b [string] the tf frame_id to use for the robot base pose
+- @b "~laser_frame": @b [string] the tf frame_id to use for the laser pose
+- @b "~map_frame": @b [string] the tf frame_id where the robot pose on the map is published
+- @b "~odom_frame": @b [string] the tf frame_id from which odometry is read
+- @b "~map_update_interval": @b [double] time in seconds between two recalculations of the map
+
+
+Parameters used by GMapping itself:
+
+Laser Parameters:
+- @b "~/maxRange" @b [double] maximum range of the laser scans. Rays beyond this range get discarded completely. (default: maximum laser range minus 1 cm, as received in the the first LaserScan message)
+- @b "~/maxUrange" @b [double] maximum range of the laser scanner that is used for map building (default: same as maxRange)
+- @b "~/sigma" @b [double] standard deviation for the scan matching process (cell)
+- @b "~/kernelSize" @b [double] search window for the scan matching process
+- @b "~/lstep" @b [double] initial search step for scan matching (linear)
+- @b "~/astep" @b [double] initial search step for scan matching (angular)
+- @b "~/iterations" @b [double] number of refinement steps in the scan matching. The final "precision" for the match is lstep*2^(-iterations) or astep*2^(-iterations), respectively.
+- @b "~/lsigma" @b [double] standard deviation for the scan matching process (single laser beam)
+- @b "~/ogain" @b [double] gain for smoothing the likelihood
+- @b "~/lskip" @b [int] take only every (n+1)th laser ray for computing a match (0 = take all rays)
+
+Motion Model Parameters (all standard deviations of a gaussian noise model)
+- @b "~/srr" @b [double] linear noise component (x and y)
+- @b "~/stt" @b [double] angular noise component (theta)
+- @b "~/srt" @b [double] linear -> angular noise component
+- @b "~/str" @b [double] angular -> linear noise component
+
+Others:
+- @b "~/linearUpdate" @b [double] the robot only processes new measurements if the robot has moved at least this many meters
+- @b "~/angularUpdate" @b [double] the robot only processes new measurements if the robot has turned at least this many rads
+
+- @b "~/resampleThreshold" @b [double] threshold at which the particles get resampled. Higher means more frequent resampling.
+- @b "~/particles" @b [int] (fixed) number of particles. Each particle represents a possible trajectory that the robot has traveled
+
+Likelihood sampling (used in scan matching)
+- @b "~/llsamplerange" @b [double] linear range
+- @b "~/lasamplerange" @b [double] linear step size
+- @b "~/llsamplestep" @b [double] linear range
+- @b "~/lasamplestep" @b [double] angular setp size
+
+Initial map dimensions and resolution:
+- @b "~/xmin" @b [double] minimum x position in the map [m]
+- @b "~/ymin" @b [double] minimum y position in the map [m]
+- @b "~/xmax" @b [double] maximum x position in the map [m]
+- @b "~/ymax" @b [double] maximum y position in the map [m]
+- @b "~/delta" @b [double] size of one pixel [m]
+
+*/
+
+
+
 #include "slam_gmapping.h"
 
 #include <iostream>
