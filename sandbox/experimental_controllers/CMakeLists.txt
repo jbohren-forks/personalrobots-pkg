@@ -22,6 +22,7 @@ genmsg()
 gensrv()
 
 rospack_add_library(experimental_controllers
+  src/controller_manifest.cpp
   src/joint_trajectory_controller2.cpp
   src/trajectory_controller.cpp
   src/pid_position_velocity_controller.cpp

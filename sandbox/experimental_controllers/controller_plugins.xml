@@ -1,0 +1,7 @@
+<library path="lib/libexperimental_controllers">
+
+  <plugin name="JointTrajectoryController2" class="JointTrajectoryController2" type="Controller" />
+  <plugin name="PIDPositionVelocityController" class="PIDPositionVelocityController" type="Controller" />
+  <plugin name="TrajectoryController" class="TrajectoryController" type="Controller" />
+
+</library>
