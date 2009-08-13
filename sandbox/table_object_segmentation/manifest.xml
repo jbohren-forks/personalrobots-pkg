@@ -1,0 +1,21 @@
+<package>
+  <description brief="table_object_segmentation">
+
+    Package to classify and segment objects from table tops using 
+    stereo data. 
+
+  </description>
+  <author>Daniel Munoz/ dmunoz@willowgarage.com</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/table_object_segmentation</url>
+
+  <depend package="roscpp" />
+  <depend package="point_cloud_mapping"/>
+  <depend package="point_cloud_clustering"/>
+  <depend package="descriptors_3d"/>
+  <depend package="descriptors_3d"/>
+  <depend package="functional_m3n"/>
+</package>
+
+
