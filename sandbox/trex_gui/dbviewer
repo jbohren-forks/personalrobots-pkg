@@ -13,6 +13,7 @@ import StringIO
 
 import time
 import threading
+import signal
 
 import gtk
 import gtk.gdk
@@ -1128,6 +1129,14 @@ def load_data():
 #   This instantiates all of the GUI windows, and loads the data from command
 #   line arguments.
 ##############################################################################
+import  wx
+
+class WxFrame(wx.Frame):
+  def __init__(self,parent,id,title):
+    wx.Frame.__init__(self, parent, id, title, size=(250, 180))
+    self.Show(True)
+
+
 def main():
   global log_path
   global tick
@@ -1152,6 +1161,9 @@ def main():
   else:
     tick = 0
 
+  # Set up signal handler
+  signal.signal(2,quit)
+
   # Create a new graph with GvGen
   global graph
   graph = GvGen()
@@ -1173,11 +1185,16 @@ def main():
   global control_window
   control_window = ControlWindow()
 
+  #app = wx.App()
+  #wxframe = WxFrame(None,-1,"WX WINDOW")
+  #wxthread = threading.Thread(target=app.MainLoop)
+  #wxthread.start()
+
   # Run gtk
   gtk.gdk.threads_init()
   gtk.main()
 
-def quit(widget=None):
+def quit(widget=None, frame=None):
   window.destroy()
   search_window.on_destroy(search_window,True)
   control_window.on_destroy(control_window,True)
