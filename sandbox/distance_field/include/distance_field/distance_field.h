@@ -46,30 +46,55 @@
 namespace distance_field
 {
 
+/**
+ * \brief Structure that holds voxel information for the DistanceField
+ */
 struct DistanceFieldVoxel
 {
   DistanceFieldVoxel();
   DistanceFieldVoxel(int distance_sq);
 
-  int distance_square_;
-  int location_[3];
-  int closest_point_[3];
+  int distance_square_;         /**< Squared distance from the closest obstacle */
+  int location_[3];             /**< Grid location of this voxel */
+  int closest_point_[3];        /**< Closes obstacle from this voxel */
+  int update_direction_;        /**< Direction from which this voxel was updated */
 
   static const int UNINITIALIZED=-1;
 };
 
+/**
+ * \brief A VoxelGrid that can convert a set of obstacle points into a distance field.
+ *
+ * It computes the distance transform of the input points, and stores the distance to
+ * the closest obstacle in each voxel. Also available is the location of the closest point,
+ * and the gradient of the field at a point. Expansion of obstacles is performed upto a given
+ * radius.
+ */
 class DistanceField: public VoxelGrid<DistanceFieldVoxel>
 {
 public:
-  //DistanceField();
+
+  /**
+   * \brief Constructor for the DistanceField
+   */
   DistanceField(double size_x, double size_y, double size_z, double resolution,
       double origin_x, double origin_y, double origin_z, double max_distance);
 
   virtual ~DistanceField();
 
+  /**
+   * \brief Add (and expand) a set of points to the distance field
+   */
   void addPointsToField(std::vector<btVector3> points);
+
+  /**
+   * \brief Resets the distance field to the max_distance
+   */
   void reset();
 
+  /**
+   * Publishes an iso-surface of the given radius as visualization markers for rviz
+   */
   void visualize(double radius, std::string frame_id, ros::Time stamp);
 
 private:
@@ -78,7 +103,18 @@ private:
   int max_distance_sq_;
   ros::Publisher pub_viz_;
 
-  int eucDistSq(int* point1, int* point2);
+  // neighborhoods:
+  // [0] - for expansion of d=0
+  // [1] - for expansion of d>=1
+  // Under this, we have the 27 directions
+  // Then, a list of neighborhoods for each direction
+  std::vector<std::vector<std::vector<std::vector<int> > > > neighborhoods_;
+
+  std::vector<std::vector<int> > direction_number_to_direction_;
+
+  int getDirectionNumber(int dx, int dy, int dz) const;
+  void initNeighborhoods();
+  static int eucDistSq(int* point1, int* point2);
 };
 
 ////////////////////////// inline functions follow ////////////////////////////////////////
@@ -88,6 +124,7 @@ inline DistanceFieldVoxel::DistanceFieldVoxel(int distance_sq):
 {
     for (int i=0; i<3; i++)
       closest_point_[i] = DistanceFieldVoxel::UNINITIALIZED;
+
 }
 
 inline DistanceFieldVoxel::DistanceFieldVoxel()
