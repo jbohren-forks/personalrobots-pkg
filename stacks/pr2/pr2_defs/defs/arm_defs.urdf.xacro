@@ -5,6 +5,7 @@
 
   <include filename="$(find pr2_defs)/defs/arm_ext.xacro" />
   <include filename="$(find pr2_defs)/defs/arm_cal.xacro" />
+  <include filename="$(find pr2_defs)/defs/arm_rviz.xacro" />
 
   <property name="M_PI" value="3.1415926535897931" />
   <property name="VELOCITY_LIMIT_SCALE" value="0.6" />
@@ -420,6 +421,11 @@
     </pr2_shoulder_ext>
     <pr2_upper_arm_ext side="${side}" reflect="${reflect}" parent="${side}_upper_arm_roll_link" />
     <pr2_forearm_ext side="${side}" reflect="${reflect}" parent="${side}_forearm_roll_link" />
+    
+    <!-- rviz extensions -->
+    <pr2_shoulder_rviz side="${side}" />
+    <pr2_upper_arm_rviz side="${side}" />
+    <pr2_forearm_rviz side="${side}" />
   </macro>
 
 

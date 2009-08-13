@@ -3,6 +3,8 @@
   
   <include filename="$(find pr2_defs)/defs/mono_cam_ext.xacro" />
   <include filename="$(find pr2_defs)/defs/mono_cam_cal.xacro" />
+  <include filename="$(find pr2_defs)/defs/mono_cam_rviz.xacro" />
+  
   <macro name="mono_cam" params="name parent *origin">
 
     <link name="${name}_frame">
@@ -70,6 +72,7 @@
 
     <!-- extensions -->
     <mono_cam_ext name="${name}" />
+    <mono_cam_rviz name="${name}" />
 
   </macro>
 

@@ -5,6 +5,7 @@
 
   <include filename="$(find pr2_defs)/defs/base_ext.xacro" />
   <include filename="$(find pr2_defs)/defs/base_cal.xacro" />
+  <include filename="$(find pr2_defs)/defs/base_rviz.xacro" />
 
   <property name="M_PI" value="3.1415926535897931" />
 
@@ -113,6 +114,8 @@
 
     <pr2_wheel_ext parent="${suffix}_caster" suffix="l" reflect="1" />
     <pr2_wheel_ext parent="${suffix}_caster" suffix="r" reflect="-1" />
+    <pr2_wheel_rviz parent="${suffix}_caster" suffix="l" />
+    <pr2_wheel_rviz parent="${suffix}_caster" suffix="r" />
   </macro>
 
   <!--                                                      -->
@@ -197,6 +200,9 @@
     <pr2_wheel_alpha2 parent="${suffix}_caster" suffix="r" reflect="-1" />
     <pr2_wheel_alpha2_ext parent="${suffix}_caster" suffix="l" reflect="1" />
     <pr2_wheel_alpha2_ext parent="${suffix}_caster" suffix="r" reflect="-1" />
+    
+    <pr2_wheel_alpha2_rviz parent="${suffix}_caster" suffix="l" />
+    <pr2_wheel_alpha2_rviz parent="${suffix}_caster" suffix="r" />
   </macro>
 
 
@@ -294,6 +300,11 @@
     <pr2_caster_alpha2_ext suffix="br" parent="${name}_link" ref_position="${cal_caster_br}"  >
       <origin xyz="${-caster_offset_x} ${-caster_offset_y} ${caster_offset_z}" rpy="0 0 0" />
     </pr2_caster_alpha2_ext>
+
+    <pr2_caster_alpha2_rviz suffix="fl" parent="${name}_link" />
+    <pr2_caster_alpha2_rviz suffix="fr" parent="${name}_link" />
+    <pr2_caster_alpha2_rviz suffix="bl" parent="${name}_link" />
+    <pr2_caster_alpha2_rviz suffix="br" parent="${name}_link" />
 
   </macro>
 
@@ -426,6 +437,11 @@
     <pr2_caster_ext suffix="br" parent="${name}_link">
       <origin xyz="${-caster_offset_x} ${-caster_offset_y} ${caster_offset_z}" rpy="0 0 0" />
     </pr2_caster_ext>
+    
+    <pr2_caster_rviz suffix="fl" parent="${name}_link"/>
+    <pr2_caster_rviz suffix="fr" parent="${name}_link"/>
+    <pr2_caster_rviz suffix="bl" parent="${name}_link"/>
+    <pr2_caster_rviz suffix="br" parent="${name}_link"/>
 
   </macro>
 

@@ -6,6 +6,7 @@
 
   <include filename="$(find pr2_defs)/defs/body_ext.xacro" />
   <include filename="$(find pr2_defs)/defs/body_cal.xacro" />
+  <include filename="$(find pr2_defs)/defs/body_rviz.xacro" />
 
   <macro name="pr2_torso" params="name parent *origin">
 
@@ -50,6 +51,8 @@
     <pr2_torso_ext name="${name}" parent="${parent}">
       <insert_block name="origin"/>
     </pr2_torso_ext>
+
+    <pr2_torso_rviz name="${name}" parent="${parent}"/>
 
   </macro>
 

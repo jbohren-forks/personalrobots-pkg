@@ -5,6 +5,7 @@
   
   <include filename="$(find pr2_defs)/defs/prosilica_ext.xacro" />
   <include filename="$(find pr2_defs)/defs/prosilica_cal.xacro" />
+  <include filename="$(find pr2_defs)/defs/prosilica_rviz.xacro" />
 
   <macro name="prosilica_cam" params="name parent *origin">
     <link name="${name}_frame">
@@ -74,6 +75,7 @@
 
     <!-- extensions -->
     <prosilica_cam_ext name="${name}"/>
+    <prosilica_cam_rviz name="${name}"/>
   </macro>
 
 </root>

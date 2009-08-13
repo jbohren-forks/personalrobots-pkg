@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<robot>
+  <macro name="pr2_finger_rviz" params="prefix">
+    <rviz reference="${prefix}_l_finger_link">
+      <material value="PR2/Grey" />
+    </rviz>
+    <rviz reference="${prefix}_r_finger_link">
+      <material value="PR2/Grey" />
+    </rviz>
+    <rviz reference="${prefix}_l_finger_tip_link">
+      <material value="PR2/Green" />
+    </rviz>
+    <rviz reference="${prefix}_r_finger_tip_link">
+      <material value="PR2/Green" />
+    </rviz>
+  </macro>
+
+
+
+  <macro name="pr2_gripper_rviz" params="side">
+    <rviz reference="${side}_gripper_palm_link">
+      <material value="PR2/Red" />
+    </rviz>
+    <rviz reference="${side}_gripper_float_link">
+      <material value="PR2/White" />
+    </rviz>
+    <rviz reference="${side}_gripper_tool_link">
+      <material value="PR2/Grey" />
+    </rviz>
+  </macro>
+
+
+</robot>

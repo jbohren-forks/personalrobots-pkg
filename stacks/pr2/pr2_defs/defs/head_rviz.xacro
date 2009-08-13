@@ -1,0 +1,125 @@
+<?xml version="1.0"?>
+
+<robot>
+
+  <macro name="pr2_tilting_laser_rviz" params="name parent *origin">
+
+    <rviz reference="${name}_mount_link">
+      <material value="PR2/Red" />
+    </rviz>
+  </macro>
+
+  <!-- Made by Kevin for A2 sensor package -->
+  <!-- Origin is center mount screw on sensor plate mount -->
+  <!-- When mounted properly, should have same origin as head plate frame -->
+  <macro name="pr2_head_sensor_package_rviz" params="name">
+    <rviz reference="${name}_sensor_link">
+      <material value="PR2/Blue" />
+    </rviz>
+  </macro>
+
+  <!-- Made by Kevin for double stereo camera for PR-2 Beta. -->
+  <!-- Needs calibration verification, and CAD check. -->
+  <macro name="double_stereo_camera_rviz" params="name">
+    <!-- Define link to stereo cameras, set origin relative to that -->
+    <rviz reference="${name}_double_stereo_link">
+      <material value="PR2/Blue" />
+    </rviz>
+  </macro>
+
+  <macro name="stereo_camera_rviz" params="name">
+    <rviz reference="${name}_link">
+      <material value="PR2/Blue" />
+    </rviz>
+    <rviz reference="${name}_optical_fixed_link">
+      <material value="PR2/Blue" />
+    </rviz>
+    <rviz reference="${name}_l_stereo_camera_link">
+      <material value="PR2/Blue" />
+    </rviz>
+    <rviz reference="${name}_r_stereo_camera_link">
+      <material value="PR2/Blue" />
+    </rviz>
+  </macro>
+
+
+  <macro name="pr2_head_pan_rviz" params="name">
+    <rviz reference="${name}_link">
+      <material value="PR2/Blue" />
+    </rviz>
+  </macro>
+
+
+
+  <macro name="pr2_head_tilt_rviz" params="name">
+    <rviz reference="${name}_link">
+      <material value="PR2/Green" />
+    </rviz>
+  </macro>
+
+
+
+  <macro name="pr2_head_rviz" params="name">
+    <rviz reference="${name}_plate_frame_link">
+      <material value="PR2/Blue" />
+    </rviz>
+  </macro>
+
+  <!-- Alpha 2.0 head -->
+  <!-- Different calibration values, effort/position limits and 
+       different joint link positions -->
+ <macro name="pr2_tilting_laser_alpha2_rviz" params="name">
+    <rviz reference="${name}_mount_link">
+      <material value="PR2/Red" />
+    </rviz>
+  </macro>
+
+  <macro name="pr2_head_pan_alpha2_rviz" params="name">
+    <rviz reference="${name}_link">
+      <material value="PR2/Blue" />
+    </rviz>
+  </macro>
+
+  <!-- Reverts to small tilt motor, still has same cal flags and limits -->
+  <macro name="pr2_head_tilt_alpha2_rviz" params="name">
+    <rviz reference="${name}_link">
+      <material value="PR2/Green" />
+    </rviz>
+  </macro>
+
+
+<macro name="pr2_head_tilt_alpha2a_rviz" params="name">
+    <!-- Motor must be configured with 148877 motor -->
+    <rviz reference="${name}_link">
+      <material value="PR2/Green" />
+    </rviz>
+  </macro>
+
+ <macro name="pr2_head_tilt_alpha2b_rviz" params="name parent *origin">
+    <rviz reference="${name}_link">
+      <material value="PR2/Green" />
+    </rviz>
+  </macro>
+
+ <macro name="pr2_head_alpha2_rviz" params="name parent *origin">
+    <rviz reference="${name}_plate_frame_link">
+      <material value="PR2/Blue" />
+    </rviz>
+  </macro>
+
+
+  <!-- Difference between two heads is motors and gearheads -->
+  <macro name="pr2_head_alpha2a_rviz" params="name parent *origin">
+    <rviz reference="${name}_plate_frame_link">
+      <material value="PR2/Blue" />
+    </rviz>
+  </macro>
+
+  <macro name="pr2_head_alpha2b_rviz" params="name parent *origin">
+    <rviz reference="${name}_plate_frame_link">
+      <material value="PR2/Blue" />
+    </rviz>
+  </macro>
+
+
+</robot>

@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<root>
+  
+<macro name="prosilica_cam_rviz" params="name">
+  <rviz reference="${name}_link">
+    <material value="PR2/Blue" />
+  </rviz>
+
+  <rviz reference="${name}_optical_link">
+    <material value="PR2/Blue" />
+  </rviz>
+  
+</macro>
+
+</root>

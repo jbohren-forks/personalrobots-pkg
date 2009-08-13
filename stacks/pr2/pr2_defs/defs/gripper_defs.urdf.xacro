@@ -6,6 +6,7 @@
 
   <include filename="$(find pr2_defs)/defs/gripper_ext.xacro" />
   <include filename="$(find pr2_defs)/defs/gripper_cal.xacro" />
+  <include filename="$(find pr2_defs)/defs/gripper_rviz.xacro" />
 
   <property name="M_PI" value="3.1415926535897931" />
 
@@ -182,6 +183,7 @@
 
     <!-- extensions -->
     <pr2_finger_ext prefix="${prefix}" />
+    <pr2_finger_rviz prefix="${prefix}" />
   </macro>
 
 
@@ -297,6 +299,7 @@
 
     <!-- extensions -->
     <pr2_gripper_ext side="${side}" />
+    <pr2_gripper_rviz side="${side}" />
 
   </macro>
 

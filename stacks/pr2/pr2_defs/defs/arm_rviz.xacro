@@ -1,0 +1,50 @@
+<?xml version="1.0"?>
+<robot>
+
+  <macro name="pr2_shoulder_rviz" params="side">
+    <rviz reference="${side}_shoulder_pan_link">
+      <material value="PR2/Blue" />
+    </rviz>
+    <rviz reference="${side}_shoulder_lift_link">
+      <material value="PR2/Grey" />
+    </rviz>
+    <rviz reference="${side}_upper_arm_roll_link">
+      <material value="PR2/RollLinks" />
+    </rviz>
+  </macro>
+
+
+
+  <!-- ============================   Upper Arm   ============================ -->
+
+
+  <macro name="pr2_upper_arm_rviz" params="side">
+    <rviz reference="{side}_upper_arm_link">
+      <material value="PR2/Green" />
+    </rviz>
+    <rviz reference="${side}_elbow_flex_link">
+      <material value="PR2/Grey" />
+    </rviz>
+    <rviz reference="${side}_forearm_roll_link">
+      <material value="PR2/RollLinks" />
+    </rviz>
+  </macro>
+
+
+  <!-- ============================   Forearm   ============================ -->
+
+  <macro name="pr2_forearm_rviz" params="side">
+    <rviz reference="${side}_forearm_link">
+      <material value="PR2/Blue" />
+    </rviz>
+    <rviz reference="${side}_wrist_flex_link">
+      <material value="PR2/Grey" />
+    </rviz>
+    <rviz reference="${side}_wrist_roll_link">
+      <material value="PR2/RollLinks" />
+    </rviz>
+  </macro>
+
+
+
+</robot>

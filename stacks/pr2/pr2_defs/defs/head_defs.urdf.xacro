@@ -6,6 +6,7 @@
 
   <include filename="$(find pr2_defs)/defs/head_ext.xacro" />
   <include filename="$(find pr2_defs)/defs/head_cal.xacro" />
+  <include filename="$(find pr2_defs)/defs/head_rviz.xacro" />
 
   <property name="M_PI" value="3.1415926535897931" />
 
@@ -81,6 +82,7 @@
     <pr2_tilting_laser_ext name="${name}" parent="${parent}">
       <insert_block name="origin"/>
     </pr2_tilting_laser_ext>
+    <pr2_tilting_laser_rviz name="${name}" parent="${parent}"/>
   </macro>
 
 
@@ -134,6 +136,7 @@
 
     <!-- extensions -->
     <pr2_head_sensor_package_ext name="${name}" />
+    <pr2_head_sensor_package_rviz name="${name}" />
 
     <!-- Prosilica Camera -->
     <prosilica_cam name="${hd_name}" parent="${name}_link" >
@@ -186,6 +189,7 @@
 
     <!-- extensions -->
     <double_stereo_camera_ext name="${name}" />
+    <double_stereo_camera_rviz name="${name}" />
     
     <!-- Wide camera is on robot right (hca1), narrow on left (hca2)? -->
     <!-- 15mm offset from center needs check with CAD -->
@@ -331,6 +335,7 @@
 
     <!-- extensions -->
     <stereo_camera_ext name="${name}" />
+    <stereo_camera_rviz name="${name}" />
   </macro>
 
 
@@ -375,6 +380,7 @@
 
     <!-- extensions -->
     <pr2_head_pan_ext name="${name}" />
+    <pr2_head_pan_rviz name="${name}" />
   </macro>
 
 
@@ -420,6 +426,7 @@
 
     <!-- extensions -->
     <pr2_head_tilt_ext name="${name}" />
+    <pr2_head_tilt_rviz name="${name}" />
   </macro>
 
 
@@ -467,6 +474,7 @@
 
     <!-- extensions -->
     <pr2_head_ext name="${name}" />
+    <pr2_head_rviz name="${name}" />
     
   </macro>
 
@@ -545,6 +553,7 @@
 
     <!-- extensions -->
     <pr2_tilting_laser_alpha2_ext name="${name}" />
+    <pr2_tilting_laser_alpha2_rviz name="${name}" />
   </macro>
 
 
@@ -590,6 +599,7 @@
 
     <!-- extensions -->
     <pr2_head_pan_alpha2_ext name="${name}" />
+    <pr2_head_pan_alpha2_rviz name="${name}" />
   </macro>
 
   <!-- Reverts to small tilt motor, still has same cal flags and limits -->
@@ -632,6 +642,7 @@
 
     <!-- extensions -->
     <pr2_head_tilt_alpha2_ext name="${name}" />
+    <pr2_head_tilt_alpha2_rviz name="${name}" />
   </macro>
 
 
@@ -674,6 +685,7 @@
 
     <!-- extensions -->
     <pr2_head_tilt_alpha2a_ext name="${name}"/>
+    <pr2_head_tilt_alpha2a_rviz name="${name}"/>
   </macro>
 
  <macro name="pr2_head_tilt_alpha2b" params="name parent *origin">
@@ -716,6 +728,7 @@
 
     <!-- extensions -->
     <pr2_head_tilt_alpha2b_ext name="${name}"/>
+    <pr2_head_tilt_alpha2b_rviz name="${name}"/>
   </macro>
 
  <macro name="pr2_head_alpha2" params="name parent *origin">
@@ -762,6 +775,7 @@
 
     <!-- extensions -->
     <pr2_head_alpha2_ext name="${name}"/>
+    <pr2_head_alpha2_rviz name="${name}"/>
   </macro>
 
 
@@ -809,6 +823,7 @@
 
     <!-- extensions -->
     <pr2_head_alpha2a_ext name="${name}"/>
+    <pr2_head_alpha2a_rviz name="${name}"/>
     
   </macro>
 
@@ -856,6 +871,7 @@
 
     <!-- extensions -->
     <pr2_head_alpha2b_ext name="${name}"/>
+    <pr2_head_alpha2b_rviz name="${name}"/>
     
   </macro>
 

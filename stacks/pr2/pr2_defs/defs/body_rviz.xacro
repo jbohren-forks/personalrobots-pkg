@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+
+<robot>
+
+  <macro name="pr2_torso_rviz" params="name parent">
+    <rviz reference="${name}_link">
+      <material value="PR2/Grey2" />
+    </rviz>
+  </macro>
+
+
+
+</robot>
