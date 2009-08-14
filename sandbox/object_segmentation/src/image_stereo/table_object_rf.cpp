@@ -43,6 +43,55 @@ const std::string TableObjectRF::CHANNEL_LABEL = "label";
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
+TableObjectRF::TableObjectRF()
+{
+  vector<Descriptor3D*> node_feature_descriptors;
+  vector<vector<Descriptor3D*> > clique_set_feature_descriptors;
+  vector<vector<pair<bool, point_cloud_clustering::PointCloudClustering*> > >
+      clique_set_clusterings;
+
+  // -----------------------------------------
+  // Node Features
+  SpectralAnalysis* sa_nodes = new SpectralAnalysis(0.15);
+  ShapeSpectral* ss_nodes = new ShapeSpectral(*sa_nodes);
+  OrientationNormal* on_nodes = new OrientationNormal(0, 0, 1.0, *sa_nodes);
+  //
+  node_feature_descriptors.push_back(ss_nodes);
+  node_feature_descriptors.push_back(on_nodes);
+
+  // -----------------------------------------
+  // Clique-set 0 features
+  SpectralAnalysis* sa_cs0 = new SpectralAnalysis(0.2286);
+  ShapeSpectral* ss_cs0 = new ShapeSpectral(*sa_cs0);
+  OrientationNormal* on_cs0 = new OrientationNormal(0, 0, 1.0, *sa_cs0);
+  SpinImageCustom* sic_cs0 = new SpinImageCustom(0, 0, 1.0, 0.0762, 0.0762, 5, 4, false);
+  BoundingBoxSpectral* bbs_cs0 = new BoundingBoxSpectral(-1.0, *sa_cs0);
+  vector<Descriptor3D*> cs0_feature_descriptors;
+  cs0_feature_descriptors.push_back(ss_cs0);
+  cs0_feature_descriptors.push_back(on_cs0);
+  cs0_feature_descriptors.push_back(sic_cs0);
+  cs0_feature_descriptors.push_back(bbs_cs0);
+  //
+  clique_set_feature_descriptors.push_back(cs0_feature_descriptors);
+
+  // -----------------------------------------
+  // Clique-set 0 clustering
+  point_cloud_clustering::KMeans* kmeans_cs0 = new point_cloud_clustering::KMeans(0.003, 1.0, 10);
+  vector<pair<bool, point_cloud_clustering::PointCloudClustering*> > cs0_clusterings(1);
+  cs0_clusterings[0].first = true; // true indicates to cluster over only the nodes
+  cs0_clusterings[0].second = kmeans_cs0;
+  //
+  clique_set_clusterings.push_back(cs0_clusterings);
+
+  // -----------------------------------------
+  // Initialize RFCreator3D with the above features and clustering
+  rf_creator_3d = new RFCreator3D(node_feature_descriptors, clique_set_feature_descriptors,
+      clique_set_clusterings);
+}
+
+// --------------------------------------------------------------
+/* See function definition */
+// --------------------------------------------------------------
 int TableObjectRF::loadStereoImageCloud(const string& fname_image,
                                         const string& fname_pcd,
                                         IplImage* image,
@@ -90,7 +139,8 @@ void TableObjectRF::downsampleStereoCloud(sensor_msgs::PointCloud& full_stereo_c
       full_stereo_cloud, TableObjectRF::CHANNEL_ARRAY_WIDTH)].values[0];
 
   // not guaranteed to exist
-  int label_channel = cloud_geometry::getChannelIndex(full_stereo_cloud, TableObjectRF::CHANNEL_LABEL);
+  int label_channel = cloud_geometry::getChannelIndex(full_stereo_cloud,
+      TableObjectRF::CHANNEL_LABEL);
 
   // create kdtree of original point cloud to find downsample's closest point
   cloud_kdtree::KdTreeANN full_cloud_kdtree(full_stereo_cloud);
@@ -108,7 +158,7 @@ void TableObjectRF::downsampleStereoCloud(sensor_msgs::PointCloud& full_stereo_c
 
   // For each downsampled point, find its closest point in the original full point cloud
   // and extract the point's image coordinates (and label if present)
-  pair<unsigned int, unsigned int> empty_coords(0,0);
+  pair<unsigned int, unsigned int> empty_coords(0, 0);
   for (int i = 0 ; i < nbr_downsampled_pts ; i++)
   {
     ds_idx2img_coords[i] = empty_coords;

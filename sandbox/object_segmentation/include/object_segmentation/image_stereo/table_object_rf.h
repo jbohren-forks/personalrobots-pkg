@@ -36,6 +36,7 @@
 
 #include <string>
 #include <map>
+#include <vector>
 
 #include <boost/shared_ptr.hpp>
 
@@ -76,8 +77,6 @@ class TableObjectRF
                                                      const string& fname_pcd);
 
   private:
-    void initRandomFieldCreator(RFCreator3D* rf_creator_3d);
-
     int loadStereoImageCloud(const string& fname_image,
                              const string& fname_pcd,
                              IplImage* image,
@@ -91,6 +90,8 @@ class TableObjectRF
                           const unsigned int voxel_z,
                           vector<unsigned int>& ds_labels,
                           map<unsigned int, pair<unsigned int, unsigned int> >& ds_idx2img_coords);
+
+    RFCreator3D* rf_creator_3d;
 };
 
 #endif
