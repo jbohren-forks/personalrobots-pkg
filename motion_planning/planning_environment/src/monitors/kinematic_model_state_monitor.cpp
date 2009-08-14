@@ -308,9 +308,6 @@ void planning_environment::KinematicModelStateMonitor::waitForState(void) const
 
 bool planning_environment::KinematicModelStateMonitor::isJointStateUpdated(double sec) const
 {  
-    if (!haveJointState_)
-	return false;
-    
     // less than 10us is considered 0 
     if (sec > 1e-5 && lastJointStateUpdate_ < ros::Time::now() - ros::Duration(sec))
 	return false;
@@ -320,9 +317,6 @@ bool planning_environment::KinematicModelStateMonitor::isJointStateUpdated(doubl
 
 bool planning_environment::KinematicModelStateMonitor::isPoseUpdated(double sec) const
 {  
-    if (!havePose_)
-	return false;
-    
     // less than 10us is considered 0 
     if (sec > 1e-5 && lastPoseUpdate_ < ros::Time::now() - ros::Duration(sec))
 	return false;
