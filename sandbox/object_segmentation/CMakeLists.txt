@@ -22,7 +22,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #gensrv()
 
 #common commands for building c++ executables and libraries
-rospack_add_library(${PROJECT_NAME} src/util/pt_cloud_rf_creator.cpp)
+rospack_add_library(${PROJECT_NAME} src/util/rf_creator_3d.cpp)
 #target_link_libraries(${PROJECT_NAME} another_library)
 rospack_add_boost_directories()
 #rospack_link_boost(${PROJECT_NAME} thread)

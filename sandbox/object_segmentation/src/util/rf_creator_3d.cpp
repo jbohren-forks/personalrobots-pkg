@@ -32,7 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include <object_segmentation/util/pt_cloud_rf_creator.h>
+#include <object_segmentation/util/rf_creator_3d.h>
 
 using namespace std;
 
@@ -41,12 +41,12 @@ using namespace std;
  * \brief Create nodes in the random field
  */
 // --------------------------------------------------------------
-void PtCloudRFCreator::createNodes(RandomField& rf,
-                                   const sensor_msgs::PointCloud& pt_cloud,
-                                   cloud_kdtree::KdTree& pt_cloud_kdtree,
-                                   const vector<unsigned int>& labels,
-                                   const bool use_only_labeled,
-                                   set<unsigned int>& node_indices)
+void RFCreator3D::createNodes(RandomField& rf,
+                              const sensor_msgs::PointCloud& pt_cloud,
+                              cloud_kdtree::KdTree& pt_cloud_kdtree,
+                              const vector<unsigned int>& labels,
+                              const bool use_only_labeled,
+                              set<unsigned int>& node_indices)
 
 {
   unsigned int nbr_cloud_pts = pt_cloud.points.size();
@@ -126,11 +126,11 @@ void PtCloudRFCreator::createNodes(RandomField& rf,
  * \brief Create clique set in the RandomField using kmeans clustering
  */
 // --------------------------------------------------------------
-void PtCloudRFCreator::createCliqueSet(RandomField& rf,
-                                       const sensor_msgs::PointCloud& pt_cloud,
-                                       cloud_kdtree::KdTree& pt_cloud_kdtree,
-                                       const set<unsigned int>& node_indices,
-                                       const unsigned int clique_set_idx)
+void RFCreator3D::createCliqueSet(RandomField& rf,
+                                  const sensor_msgs::PointCloud& pt_cloud,
+                                  cloud_kdtree::KdTree& pt_cloud_kdtree,
+                                  const set<unsigned int>& node_indices,
+                                  const unsigned int clique_set_idx)
 {
   const map<unsigned int, RandomField::Node*>& rf_nodes = rf.getNodesRandomFieldIDs();
   vector<pair<bool, point_cloud_clustering::PointCloudClustering*> >& clique_set_info =
@@ -264,9 +264,9 @@ void PtCloudRFCreator::createCliqueSet(RandomField& rf,
 // --------------------------------------------------------------
 /*! See function definition */
 // --------------------------------------------------------------
-boost::shared_ptr<RandomField> PtCloudRFCreator::createRandomField(const sensor_msgs::PointCloud& pt_cloud,
-                                                                   const vector<unsigned int>& labels,
-                                                                   const bool use_only_labeled)
+boost::shared_ptr<RandomField> RFCreator3D::createRandomField(const sensor_msgs::PointCloud& pt_cloud,
+                                                              const vector<unsigned int>& labels,
+                                                              const bool use_only_labeled)
 {
   cloud_kdtree::KdTreeANN pt_cloud_kdtree(pt_cloud);
 
@@ -294,7 +294,7 @@ boost::shared_ptr<RandomField> PtCloudRFCreator::createRandomField(const sensor_
 // --------------------------------------------------------------
 /*! See function definition */
 // --------------------------------------------------------------
-boost::shared_ptr<RandomField> PtCloudRFCreator::createRandomField(const sensor_msgs::PointCloud& pt_cloud)
+boost::shared_ptr<RandomField> RFCreator3D::createRandomField(const sensor_msgs::PointCloud& pt_cloud)
 {
   std::vector<unsigned int> labels(pt_cloud.points.size(), RandomField::UNKNOWN_LABEL);
   return createRandomField(pt_cloud, labels, false);
@@ -303,10 +303,10 @@ boost::shared_ptr<RandomField> PtCloudRFCreator::createRandomField(const sensor_
 // --------------------------------------------------------------
 /*! See function definition */
 // --------------------------------------------------------------
-PtCloudRFCreator::PtCloudRFCreator(const std::vector<Descriptor3D*>& node_feature_descriptors,
-                                   const std::vector<std::vector<Descriptor3D*> >& clique_set_feature_descriptors,
-                                   const std::vector<std::vector<std::pair<bool,
-                                       point_cloud_clustering::PointCloudClustering*> > >& clique_set_clusterings)
+RFCreator3D::RFCreator3D(const std::vector<Descriptor3D*>& node_feature_descriptors,
+                         const std::vector<std::vector<Descriptor3D*> >& clique_set_feature_descriptors,
+                         const std::vector<std::vector<std::pair<bool,
+                             point_cloud_clustering::PointCloudClustering*> > >& clique_set_clusterings)
 {
   if (clique_set_feature_descriptors.size() != clique_set_clusterings.size())
   {

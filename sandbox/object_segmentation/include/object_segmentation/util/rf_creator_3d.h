@@ -1,5 +1,5 @@
-#ifndef __PT_CLOUD_RF_CREATOR_H__
-#define __PT_CLOUD_RF_CREATOR_H__
+#ifndef __RF_CREATOR_3D_H__
+#define __RF_CREATOR_3D_H__
 /*********************************************************************
  * Software License Agreement (BSD License)
  *
@@ -50,7 +50,7 @@
 
 #include <functional_m3n/random_field.h>
 
-class PtCloudRFCreator
+class RFCreator3D
 {
   public:
     // --------------------------------------------------------------
@@ -63,10 +63,10 @@ class PtCloudRFCreator
      * \param clique_set_clusterings
      */
     // --------------------------------------------------------------
-        PtCloudRFCreator(const std::vector<Descriptor3D*>& node_feature_descriptors,
-                         const std::vector<std::vector<Descriptor3D*> >& clique_set_feature_descriptors,
-                         const std::vector<std::vector<std::pair<bool,
-                             point_cloud_clustering::PointCloudClustering*> > >& clique_set_clusterings);
+    RFCreator3D(const std::vector<Descriptor3D*>& node_feature_descriptors,
+                const std::vector<std::vector<Descriptor3D*> >& clique_set_feature_descriptors,
+                const std::vector<std::vector<std::pair<bool,
+                    point_cloud_clustering::PointCloudClustering*> > >& clique_set_clusterings);
 
     boost::shared_ptr<RandomField> createRandomField(const sensor_msgs::PointCloud& pt_cloud);
 
