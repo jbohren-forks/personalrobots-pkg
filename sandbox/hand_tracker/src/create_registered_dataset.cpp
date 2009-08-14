@@ -28,7 +28,10 @@
  *
  */
 
-/* This program reads in the bounding boxes output by the Mechanical Turk
+/* THIS PROGRAM IS DEPRECATED AND WILL EVENTUALLY BE DELETED. IT HAS BEEN
+ * REPLACED BY A PIPELINE ALLOWING EXTRACTION OF ORIENTED BOUNDING BOXES.
+ * 
+ * This program reads in the bounding boxes output by the Mechanical Turk
  * annotation pipeline, and crops the corresponding patches out of the
  * images, resizing them to a standard size.
  * It also extracts patches of the same size that do not overlap with the
