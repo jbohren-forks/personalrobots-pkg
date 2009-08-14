@@ -1,0 +1,16 @@
+<package>
+  <description brief="object_segmentation">
+
+     Package for segmenting objects from various vision
+     modalities: images, stereo point clouds, laser point clouds
+     and combinations of.
+
+  </description>
+  <author>Daniel Munoz\ dmunoz@willowgarage.com</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/object_segmentation</url>
+
+</package>
+
+
