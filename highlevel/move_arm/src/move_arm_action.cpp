@@ -591,16 +591,21 @@ namespace move_arm
 				    if (res.approximate)
 					ROS_INFO("Approximate path was found. Distance to goal is: %f", res.distance);
 				    ROS_INFO("Received path with %u states from motion planner", (unsigned int)res.path.states.size());
-				    currentPath = res.path;
-				    currentPos = 0;
-				    if (planningMonitor_->transformPathToFrame(currentPath, planningMonitor_->getFrameId()))
+				    if (res.path.states.size() > 1)
 				    {
-					displayPathPublisher_.publish(currentPath);
-					//				    printPath(currentPath);
-					
-					feedback->mode = move_arm::MoveArmFeedback::MOVING;
-					as_.publishFeedback(feedback);
+					currentPath = res.path;
+					currentPos = 0;
+					if (planningMonitor_->transformPathToFrame(currentPath, planningMonitor_->getFrameId()))
+					{
+					    displayPathPublisher_.publish(currentPath);
+					    //				    printPath(currentPath);
+					    
+					    feedback->mode = move_arm::MoveArmFeedback::MOVING;
+					    as_.publishFeedback(feedback);
+					}
 				    }
+				    else
+					ROS_ERROR("Received path is too short");
 				}
 			    }
 			}
@@ -891,20 +896,38 @@ namespace move_arm
 	void fillTrajectoryPath(const motion_planning_msgs::KinematicPath &path, manipulation_msgs::JointTraj &traj)
 	{
 	    traj.names = setup_.groupJointNames_;
-	    traj.points.resize(path.states.size() + 1);
+
+	    // get the current state
+	    double d = 0.0;
+	    std::vector<double> current;
+	    planningMonitor_->getRobotState()->copyParamsGroup(current, setup_.group_);
+	    for (unsigned int i = 0 ; i < current.size() ; ++i)
+	    {
+		double dif = current[i] - path.states[0].vals[i];
+		d += dif * dif;
+	    }
+	    d = sqrt(d);
 	    
-	    // add the current state at the start of the path, with an offset
-	    planningMonitor_->getRobotState()->copyParamsJoints(traj.points[0].positions, setup_.groupJointNames_);
-	    traj.points[0].time = 0.0;
-	    double offset = 0.5;
+	    // decide whether we place the current state in front of the path
+	    int includeFirst = (d > 0.1) ? 1 : 0;
+	    double offset = 0.0;
+	    traj.points.resize(path.states.size() + includeFirst);
+
+	    if (includeFirst)
+	    {
+		// add the current state at the start of the path, with an offset
+		planningMonitor_->getRobotState()->copyParamsJoints(traj.points[0].positions, setup_.groupJointNames_);
+		traj.points[0].time = 0.0;
+		offset = 0.3 + d;
+	    }
 	    
 	    // add the actual path
 	    planning_models::StateParams *sp = planningMonitor_->getKinematicModel()->newStateParams();
 	    for (unsigned int i = 0 ; i < path.states.size() ; ++i)
 	    {
-		traj.points[i + 1].time = offset + path.times[i];
+		traj.points[i + includeFirst].time = offset + path.times[i];
 		sp->setParamsGroup(path.states[i].vals, setup_.group_);
-		sp->copyParamsJoints(traj.points[i + 1].positions, setup_.groupJointNames_);
+		sp->copyParamsJoints(traj.points[i + includeFirst].positions, setup_.groupJointNames_);
 	    }
 	    delete sp;
 	}
