@@ -303,10 +303,10 @@ boost::shared_ptr<RandomField> PtCloudRFCreator::createRandomField(const sensor_
 // --------------------------------------------------------------
 /*! See function definition */
 // --------------------------------------------------------------
-PtCloudRFCreator::PtCloudRFCreator(std::vector<Descriptor3D*> node_feature_descriptors,
-                                   std::vector<std::vector<Descriptor3D*> > clique_set_feature_descriptors,
-                                   std::vector<std::vector<std::pair<bool,
-                                       point_cloud_clustering::PointCloudClustering*> > > clique_set_clusterings)
+PtCloudRFCreator::PtCloudRFCreator(const std::vector<Descriptor3D*>& node_feature_descriptors,
+                                   const std::vector<std::vector<Descriptor3D*> >& clique_set_feature_descriptors,
+                                   const std::vector<std::vector<std::pair<bool,
+                                       point_cloud_clustering::PointCloudClustering*> > >& clique_set_clusterings)
 {
   if (clique_set_feature_descriptors.size() != clique_set_clusterings.size())
   {

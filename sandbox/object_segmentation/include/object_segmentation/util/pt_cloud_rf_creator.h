@@ -41,7 +41,6 @@
 #include <ros/ros.h>
 
 #include <sensor_msgs/PointCloud.h>
-#include <geometry_msgs/Point32.h>
 
 #include <point_cloud_mapping/kdtree/kdtree_ann.h>
 
@@ -58,11 +57,16 @@ class PtCloudRFCreator
     /*!
      * \brief Instantiates creator to make RandomFields with the given
      *        feature and clustering parameters
+     *
+     * \param node_feature_descriptors
+     * \param clique_set_feature_descriptors
+     * \param clique_set_clusterings
      */
     // --------------------------------------------------------------
-    PtCloudRFCreator(std::vector<Descriptor3D*> node_feature_descriptors, std::vector<std::vector<
-        Descriptor3D*> > clique_set_feature_descriptors, std::vector<std::vector<std::pair<bool,
-        point_cloud_clustering::PointCloudClustering*> > > clique_set_clusterings);
+        PtCloudRFCreator(const std::vector<Descriptor3D*>& node_feature_descriptors,
+                         const std::vector<std::vector<Descriptor3D*> >& clique_set_feature_descriptors,
+                         const std::vector<std::vector<std::pair<bool,
+                             point_cloud_clustering::PointCloudClustering*> > >& clique_set_clusterings);
 
     boost::shared_ptr<RandomField> createRandomField(const sensor_msgs::PointCloud& pt_cloud);
 
