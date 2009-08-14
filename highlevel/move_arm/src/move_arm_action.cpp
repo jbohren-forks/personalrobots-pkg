@@ -114,8 +114,9 @@ namespace move_arm
 		sum  = 0.0;
 	    }
 	    
-	    double cost;
-	    double sum;
+	    std::string link;
+	    double      cost;
+	    double      sum;
 	};
 	
 	/// Representation of a state and its corresponding joint constraints
@@ -133,7 +134,14 @@ namespace move_arm
 	    double cdepth = fabs(contact.depth);
 	    
 	    if (ccost->cost < cdepth)
+	    {
 		ccost->cost = cdepth;
+		if (contact.link1)
+		    ccost->link = contact.link1->name;
+		else
+		    if (contact.link2)
+			ccost->link = contact.link2->name;
+	    }
 	    ccost->sum += cdepth;
 	    
 	    if (display)
@@ -635,7 +643,7 @@ namespace move_arm
 		    planningMonitor_->setOnCollisionContactCallback(NULL);
 		    
 		    if (!valid)
-			ROS_INFO("Maximum path contact penetration depth is %f, sum of all contact depths is %f", ccost.cost, ccost.sum);
+			ROS_INFO("Maximum path contact penetration depth is %f at link %s, sum of all contact depths is %f", ccost.cost, ccost.link.c_str(), ccost.sum);
 		    
 		    if (state == PREEMPTED || !safe || !valid)
 		    {
