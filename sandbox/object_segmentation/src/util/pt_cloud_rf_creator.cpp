@@ -269,7 +269,7 @@ void PtCloudRFCreator::createCliqueSet(RandomField& rf,
 // --------------------------------------------------------------
 boost::shared_ptr<RandomField> PtCloudRFCreator::createRandomField(const sensor_msgs::PointCloud& pt_cloud,
                                                                    const vector<unsigned int>& labels,
-                                                                   const bool used_only_labeled)
+                                                                   const bool use_only_labeled)
 {
   cloud_kdtree::KdTreeANN pt_cloud_kdtree(pt_cloud);
 
@@ -280,7 +280,7 @@ boost::shared_ptr<RandomField> PtCloudRFCreator::createRandomField(const sensor_
   // ----------------------------------------------------------
   // Create nodes
   set<unsigned int> node_indices;
-  createNodes(*rf, pt_cloud, pt_cloud_kdtree, labels, used_only_labeled, node_indices);
+  createNodes(*rf, pt_cloud, pt_cloud_kdtree, labels, use_only_labeled, node_indices);
 
   // ----------------------------------------------------------
   // Create clique sets
