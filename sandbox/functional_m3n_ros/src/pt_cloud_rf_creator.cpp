@@ -206,10 +206,11 @@ void PtCloudRFCreator::createNodes(RandomField& rf,
                                    const sensor_msgs::PointCloud& pt_cloud,
                                    cloud_kdtree::KdTree& pt_cloud_kdtree,
                                    const vector<float>& labels,
-                                   set<unsigned int>& successful_indices)
+                                   set<unsigned int>& node_indices)
 
 {
   bool use_labels = labels.size() != 0;
+  node_indices.clear();
 
   // ----------------------------------------------
   // Create interests points over the whole point cloud
@@ -225,8 +226,7 @@ void PtCloudRFCreator::createNodes(RandomField& rf,
   //vector<float*> concatenated_features(nbr_pts, NULL);
   vector<boost::shared_array<const float> > concatenated_features;
   unsigned int nbr_concatenated_vals = Descriptor3D::computeAndConcatFeatures(pt_cloud,
-      pt_cloud_kdtree, interest_pts, node_feature_descriptors_, concatenated_features,
-      successful_indices);
+      pt_cloud_kdtree, interest_pts, node_feature_descriptors_, concatenated_features);
   if (nbr_concatenated_vals == 0)
   {
     ROS_FATAL("Could not compute node features at all. This should never happen");
@@ -266,6 +266,7 @@ void PtCloudRFCreator::createNodes(RandomField& rf,
       }
       else
       {
+        node_indices.insert(i);
         nbr_created_nodes++;
       }
     }
@@ -338,10 +339,9 @@ void PtCloudRFCreator::createCliqueSet(RandomField& rf,
     // ----------------------------------------------
     // Compute features over clusters
     vector<boost::shared_array<const float> > concatenated_features;
-    set<unsigned int> successful_region_indices; // unused
     unsigned int nbr_concatenated_vals = Descriptor3D::computeAndConcatFeatures(pt_cloud,
         pt_cloud_kdtree, interest_region_indices, clique_set_feature_descriptors_[clique_set_idx],
-        concatenated_features, successful_region_indices);
+        concatenated_features);
     if (nbr_concatenated_vals == 0)
     {
       ROS_FATAL("Could not compute cluster features at all. This should never happen");
@@ -428,14 +428,14 @@ boost::shared_ptr<RandomField> PtCloudRFCreator::createRandomField(const sensor_
 
   // ----------------------------------------------------------
   // Create nodes
-  set<unsigned int> successful_indices;
-  createNodes(*rf, pt_cloud, pt_cloud_kdtree, labels, successful_indices);
+  set<unsigned int> node_indices;
+  createNodes(*rf, pt_cloud, pt_cloud_kdtree, labels, node_indices);
 
   // ----------------------------------------------------------
   // Create clique sets
   for (unsigned int i = 0 ; i < nbr_clique_sets ; i++)
   {
-    createCliqueSet(*rf, pt_cloud, pt_cloud_kdtree, successful_indices, i);
+    createCliqueSet(*rf, pt_cloud, pt_cloud_kdtree, node_indices, i);
   }
 
   ROS_INFO("=============== FINISHED RANDOM FIELD =================\n");

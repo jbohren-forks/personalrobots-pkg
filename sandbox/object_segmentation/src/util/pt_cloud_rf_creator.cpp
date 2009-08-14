@@ -83,11 +83,9 @@ void PtCloudRFCreator::createNodes(RandomField& rf,
 
   // ----------------------------------------------
   // Compute features over all point cloud
-  set<unsigned int> successful_indices; // unused
   vector<boost::shared_array<const float> > concatenated_features;
   unsigned int nbr_concatenated_vals = Descriptor3D::computeAndConcatFeatures(pt_cloud,
-      pt_cloud_kdtree, interest_pts, node_feature_descriptors_, concatenated_features,
-      successful_indices);
+      pt_cloud_kdtree, interest_pts, node_feature_descriptors_, concatenated_features);
   if (nbr_concatenated_vals == 0)
   {
     ROS_FATAL("Could not compute node features at all. This should never happen");
@@ -189,11 +187,10 @@ void PtCloudRFCreator::createCliqueSet(RandomField& rf,
     }
     // -----------------------------
     // Compute features over clusters
-    set<unsigned int> successful_region_indices; // unused
     vector<boost::shared_array<const float> > concatenated_features;
     unsigned int nbr_concatenated_vals = Descriptor3D::computeAndConcatFeatures(pt_cloud,
         pt_cloud_kdtree, interest_region_indices, clique_set_feature_descriptors_[clique_set_idx],
-        concatenated_features, successful_region_indices);
+        concatenated_features);
     if (nbr_concatenated_vals == 0)
     {
       ROS_FATAL("Could not compute cluster features at all. This should never happen");

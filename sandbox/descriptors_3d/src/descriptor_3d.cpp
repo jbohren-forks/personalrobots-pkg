@@ -114,10 +114,8 @@ void Descriptor3D::compute(const sensor_msgs::PointCloud& data,
 void Descriptor3D::concatenateFeatures(const vector<cv::Vector<cv::Vector<float> > >& all_descriptor_results,
                                        const unsigned int nbr_samples,
                                        const unsigned int nbr_concatenated_vals,
-                                       vector<boost::shared_array<const float> >& concatenated_features,
-                                       set<unsigned int>& successful_indices)
+                                       vector<boost::shared_array<const float> >& concatenated_features)
 {
-  successful_indices.clear();
   concatenated_features.assign(nbr_samples, boost::shared_array<const float>(NULL));
   unsigned int nbr_descriptors = all_descriptor_results.size();
 
@@ -172,10 +170,6 @@ void Descriptor3D::concatenateFeatures(const vector<cv::Vector<cv::Vector<float>
 
       // Save it
       concatenated_features[i].reset(static_cast<const float*> (curr_sample_concat_feats));
-#pragma omp critical
-      {
-        successful_indices.insert(i);
-      }
     }
     // Otherwise features not successful
     else
@@ -194,8 +188,7 @@ unsigned int Descriptor3D::computeAndConcatFeatures(const sensor_msgs::PointClou
                                                     cloud_kdtree::KdTree& data_kdtree,
                                                     const cv::Vector<const geometry_msgs::Point32*>& interest_pts,
                                                     vector<Descriptor3D*>& descriptors_3d,
-                                                    vector<boost::shared_array<const float> >& concatenated_features,
-                                                    set<unsigned int>& successful_indices)
+                                                    vector<boost::shared_array<const float> >& concatenated_features)
 
 {
   // ----------------------------------------------
@@ -225,7 +218,7 @@ unsigned int Descriptor3D::computeAndConcatFeatures(const sensor_msgs::PointClou
   }
 
   concatenateFeatures(all_descriptor_results, interest_pts.size(), nbr_concatenated_vals,
-      concatenated_features, successful_indices);
+      concatenated_features);
   return nbr_concatenated_vals;
 }
 
@@ -236,8 +229,7 @@ unsigned int Descriptor3D::computeAndConcatFeatures(const sensor_msgs::PointClou
                                                     cloud_kdtree::KdTree& data_kdtree,
                                                     const cv::Vector<const vector<int>*>& interest_region_indices,
                                                     vector<Descriptor3D*>& descriptors_3d,
-                                                    vector<boost::shared_array<const float> >& concatenated_features,
-                                                    set<unsigned int>& successful_indices)
+                                                    vector<boost::shared_array<const float> >& concatenated_features)
 
 {
   // ----------------------------------------------
@@ -268,7 +260,7 @@ unsigned int Descriptor3D::computeAndConcatFeatures(const sensor_msgs::PointClou
   }
 
   concatenateFeatures(all_descriptor_results, interest_region_indices.size(),
-      nbr_concatenated_vals, concatenated_features, successful_indices);
+      nbr_concatenated_vals, concatenated_features);
   return nbr_concatenated_vals;
 }
 
