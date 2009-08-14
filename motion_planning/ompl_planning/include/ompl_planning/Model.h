@@ -40,7 +40,6 @@
 #include "ompl_ros/ModelKinematic.h"
 #include "ompl_ros/ModelDynamic.h"
 #include "ompl_planning/planners/PlannerSetup.h"
-#include "ompl_planning/planners/IKSetup.h"
 
 #include <boost/shared_ptr.hpp>
 #include <string>
@@ -56,7 +55,6 @@ namespace ompl_planning
 	{
 	    planningMonitor = pMonitor;
 	    groupName = gName;
-	    ik = NULL;
 	    createMotionPlanningInstances(planningMonitor->getCollisionModels()->getGroupPlannersConfig(groupName));
 	}
 	
@@ -65,15 +63,12 @@ namespace ompl_planning
 	    for (std::map<std::string, PlannerSetup*>::iterator i = planners.begin(); i != planners.end() ; ++i)
 		if (i->second)
 		    delete i->second;
-	    if (ik)
-		delete ik;
 	}
 	
 	planning_environment::PlanningMonitor *planningMonitor;
 	std::string                            groupName;
 	
 	std::map<std::string, PlannerSetup*>   planners;
-	IKSetup                               *ik;
 	
     protected:
 	

@@ -1041,7 +1041,7 @@ namespace move_arm
     private:
 	
 	ros::NodeHandle                                  nh_;
-	MoveArmSetup                                     &setup_;
+	MoveArmSetup                                    &setup_;
 	actionlib::SingleGoalActionServer<MoveArmAction> as_;
 	
 	planning_environment::PlanningMonitor           *planningMonitor_;

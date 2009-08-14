@@ -34,36 +34,35 @@
 
 /** \author Ioan Sucan */
 
-#include "ompl_planning/Model.h"
-#include "request_handler/RequestHandler.h"
+#include <ros/ros.h>
+#include "SearchRequestHandler.h"
 
-using namespace ompl_planning;
+using namespace ompl_search;
 
-class OMPLPlanning 
+class OMPLSearching 
 {
 public:
     
-    OMPLPlanning(void)
+    OMPLSearching(void)
     {	
 	// register with ROS
 	collisionModels_ = new planning_environment::CollisionModels("robot_description");
-	if (nodeHandle_.hasParam("~planning_frame_id"))
+	if (nodeHandle_.hasParam("~environment_frame_id"))
 	{
-	    std::string frame; nodeHandle_.param("~planning_frame_id", frame, std::string(""));
+	    std::string frame; nodeHandle_.param("~environment_frame_id", frame, std::string(""));
 	    planningMonitor_ = new planning_environment::PlanningMonitor(collisionModels_, &tf_, frame);
 	}
 	else
 	    planningMonitor_ = new planning_environment::PlanningMonitor(collisionModels_, &tf_);
 	
-	nodeHandle_.param<double>("~state_delay", stateDelay_, 0.01);
-	
-	planKinematicPathService_ = nodeHandle_.advertiseService("~plan_kinematic_path", &OMPLPlanning::planToGoal, this);
+	findValidStateService_ = nodeHandle_.advertiseService("~find_valid_state", &OMPLSearching::findValidState, this);
     }
     
     /** Free the memory */
-    ~OMPLPlanning(void)
+    ~OMPLSearching(void)
     {
-	destroyPlanningModels(models_);
+	for (std::map<std::string, SearchModel*>::iterator it = models_.begin() ; it != models_.end() ; ++it)
+	    delete it->second;
 	delete planningMonitor_;
 	delete collisionModels_;
     }
@@ -75,9 +74,50 @@ public:
 	
 	if (collisionModels_->loadedModels())
 	{
-	    setupPlanningModels(planningMonitor_, models_);
 	    
-	    mlist = knownModels(models_);
+	    std::map< std::string, std::vector<std::string> > groups = planningMonitor_->getCollisionModels()->getPlanningGroups();
+	    for (std::map< std::string, std::vector<std::string> >::iterator it = groups.begin(); it != groups.end() ; ++it)
+	    {
+		std::vector< boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> > cfgs = planningMonitor_->getCollisionModels()->getGroupPlannersConfig(it->first);
+		for (unsigned int i = 0 ; i < cfgs.size() ; ++i)
+		{
+		    if (cfgs[i]->getParamString("type") != "GAIK")
+			continue;
+		    models_[it->first] = new SearchModel(planningMonitor_, it->first);
+		    ompl::kinematic::GAIK *gaik = models_[it->first]->gaik;
+		    if (cfgs[i]->hasParam("max_improve_steps"))
+		    {
+			gaik->setMaxImproveSteps(cfgs[i]->getParamInt("max_improve_steps", gaik->getMaxImproveSteps()));
+			ROS_DEBUG("Max improve steps is set to %u", gaik->getMaxImproveSteps());
+		    }
+		    
+		    if (cfgs[i]->hasParam("range"))
+		    {
+			gaik->setRange(cfgs[i]->getParamDouble("range", gaik->getRange()));
+			ROS_DEBUG("Range is set to %g", gaik->getRange());
+		    }
+		    
+		    if (cfgs[i]->hasParam("pool_size"))
+		    {
+			gaik->setPoolSize(cfgs[i]->getParamInt("pool_size", gaik->getPoolSize()));
+			ROS_DEBUG("Pool size is set to %u", gaik->getPoolSize());
+		    }
+		    
+		    if (cfgs[i]->hasParam("pool_expansion_size"))
+		    {
+			gaik->setPoolExpansionSize(cfgs[i]->getParamInt("pool_expansion_size", gaik->getPoolExpansionSize()));
+			ROS_DEBUG("Pool expansion size is set to %u", gaik->getPoolExpansionSize());
+		    }
+		    
+		    if (cfgs[i]->hasParam("max_improve_steps"))
+		    {
+			gaik->setMaxImproveSteps(cfgs[i]->getParamInt("max_improve_steps", gaik->getMaxImproveSteps()));
+			ROS_DEBUG("Max improve steps is set to %u", gaik->getMaxImproveSteps());
+		    }
+		    mlist.push_back(it->first);
+		}
+	    }
+	    
 	    ROS_INFO("Known models:");    
 	    for (unsigned int i = 0 ; i < mlist.size() ; ++i)
 		ROS_INFO("  * %s", mlist[i].c_str());    
@@ -85,7 +125,7 @@ public:
 	    execute = !mlist.empty();
 	    
 	    if (execute)
-		ROS_INFO("Motion planning running in frame '%s'", planningMonitor_->getFrameId().c_str());
+		ROS_INFO("State search running in frame '%s'", planningMonitor_->getFrameId().c_str());
 	}
 	
 	if (execute)
@@ -104,11 +144,12 @@ public:
 	}
 	else
 	    if (mlist.empty())
-		ROS_ERROR("No robot model loaded. OMPL planning node cannot start.");
+		ROS_ERROR("No robot model loaded. OMPL search node cannot start.");
     }
 
 private:
 
+	
     planning_models::StateParams* fillStartState(const std::vector<motion_planning_msgs::KinematicJoint> &given)
     {
 	planning_models::StateParams *s = planningMonitor_->getKinematicModel()->newStateParams();
@@ -143,38 +184,24 @@ private:
 	return NULL;
     }
     
-    bool planToGoal(motion_planning_msgs::GetMotionPlan::Request &req, motion_planning_msgs::GetMotionPlan::Response &res)
+    bool findValidState(motion_planning_msgs::ConvertToJointConstraint::Request &req, motion_planning_msgs::ConvertToJointConstraint::Response &res)
     {
-	ROS_INFO("Received request for planning");
+	ROS_INFO("Received request for searching a valid state");
 	bool st = false;
-	
-	res.path.states.clear();
-	res.path.names.clear();
-	res.path.times.clear();
-	res.path.start_state.clear();
-	res.path.model_id = req.params.model_id;
-	res.path.header.frame_id = planningMonitor_->getFrameId();
-	res.path.header.stamp = planningMonitor_->lastMapUpdate();
-	res.distance = -1.0;
-	res.approximate = 0;
-	
+
 	planning_models::StateParams *startState = fillStartState(req.start_state);
-	
 	if (startState)
 	{
 	    std::stringstream ss;
 	    startState->print(ss);
 	    ROS_DEBUG("Complete starting state:\n%s", ss.str().c_str());
-	    st = requestHandler_.computePlan(models_, startState, stateDelay_, req, res);
-	    if (st && !res.path.states.empty())
-	        if (!planningMonitor_->isPathValid(res.path, planning_environment::PlanningMonitor::COLLISION_TEST, true))
-		    ROS_ERROR("Reported solution appears to have already become invalidated");
+	    st = requestHandler_.findState(models_, startState, req, res);
 	    delete startState;
 	}
 	else
-	    ROS_ERROR("Starting robot state is unknown. Cannot start plan.");
+	    ROS_ERROR("Starting robot state is unknown. Cannot start search.");
 	
-	return st;	
+	return st;
     }
     
     // ROS interface 
@@ -182,21 +209,20 @@ private:
     planning_environment::CollisionModels *collisionModels_;
     planning_environment::PlanningMonitor *planningMonitor_;
     tf::TransformListener                  tf_;
-    ros::ServiceServer                     planKinematicPathService_;
-    double                                 stateDelay_;
-    
+    ros::ServiceServer                     findValidStateService_;    
+
     // planning data
-    ModelMap                               models_;
-    RequestHandler                         requestHandler_;
+    std::map<std::string, SearchModel*>    models_;
+    SearchRequestHandler                   requestHandler_;
 };
 
 
 int main(int argc, char **argv)
 { 
-    ros::init(argc, argv, "ompl_planning");
+    ros::init(argc, argv, "ompl_search");
 
-    OMPLPlanning planner;
-    planner.run();
+    OMPLSearching search;
+    search.run();
     
     return 0;
 }

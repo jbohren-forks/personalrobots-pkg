@@ -90,13 +90,7 @@ void ompl_planning::Model::createMotionPlanningInstances(std::vector< boost::sha
 	else
 	if (type == "GAIK")
 	{
-	    if (ik)
-	    {
-		ROS_WARN("Re-definition of '%s'", type.c_str());
-		delete ik;
-	    }
-	    ik = new IKSetup();
-	    ik->setup(planningMonitor, groupName, cfgs[i]);
+	    // skip this, but don't output error
 	}
 	else
 	    ROS_WARN("Unknown planner type: %s", type.c_str());
