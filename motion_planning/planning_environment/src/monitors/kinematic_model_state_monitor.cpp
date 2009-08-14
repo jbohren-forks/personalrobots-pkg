@@ -49,7 +49,8 @@ void planning_environment::KinematicModelStateMonitor::setupRSM(void)
     onAfterAttachBody_ = NULL;
     attachedBodyNotifier_ = NULL;
     havePose_ = haveJointState_ = false;
-
+    robotVelocity_ = 0.0;
+    
     if (rm_->loadedModels())
     {
 	kmodel_ = rm_->getKinematicModel().get();
@@ -118,7 +119,8 @@ void planning_environment::KinematicModelStateMonitor::jointStateCallback(const 
     bool change = !haveJointState_;
 
     static bool first_time = true;
-
+    
+    double totalv = 0.0;
     unsigned int n = jointState->get_joints_size();
     for (unsigned int i = 0 ; i < n ; ++i)
     {
@@ -128,6 +130,8 @@ void planning_environment::KinematicModelStateMonitor::jointStateCallback(const 
 	    if (joint->usedParams == 1)
 	    {
 		double pos = jointState->joints[i].position;
+		double vel = jointState->joints[i].velocity;
+		totalv += vel * vel;
 		planning_models::KinematicModel::RevoluteJoint* rjoint = dynamic_cast<planning_models::KinematicModel::RevoluteJoint*>(joint);
 		if (rjoint)
 		    if (rjoint->continuous)
@@ -147,7 +151,8 @@ void planning_environment::KinematicModelStateMonitor::jointStateCallback(const 
 		ROS_ERROR("Unknown joint: %s", jointState->joints[i].name.c_str());
 	}
     }
-
+    robotVelocity_ = sqrt(totalv);
+    
     first_time = false;
 
     lastJointStateUpdate_ = jointState->header.stamp;

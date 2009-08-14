@@ -52,6 +52,7 @@
 #include <planning_environment/util/construct_object.h>
 #include <geometric_shapes/bodies.h>
 
+#include <valarray>
 #include <algorithm>
 #include <cstdlib>
 
@@ -545,6 +546,9 @@ namespace move_arm
 	    ros::Duration                       eps(0.01);
 	    ros::Duration                       epsLong(0.1);
 	    
+	    std::valarray<double>               velocityHistory(3);
+	    unsigned int                        velocityHistoryIndex = 0;
+	    
 	    while (true)
 	    {
 		// if we have to stop, do so
@@ -624,7 +628,6 @@ namespace move_arm
 		if (feedback->mode == move_arm::MoveArmFeedback::MOVING)
 		{
 		    bool safe = planningMonitor_->isEnvironmentSafe();
-		    bool valid = true;
 		    
 		    // we don't want to check the part of the path that was already executed
 		    currentPos = planningMonitor_->closestStateOnPath(currentPath, currentPos, currentPath.states.size() - 1, planningMonitor_->getRobotState());
@@ -637,13 +640,23 @@ namespace move_arm
 		    CollisionCost ccost;
 		    planningMonitor_->setOnCollisionContactCallback(boost::bind(&MoveArm::contactFound, this, &ccost, true, _1), 0);
 		    planningMonitor_->setAllowedContacts(allowed_contacts);
-		    valid = planningMonitor_->isPathValid(currentPath, currentPos, currentPath.states.size() - 1, planning_environment::PlanningMonitor::COLLISION_TEST +
-							  planning_environment::PlanningMonitor::PATH_CONSTRAINTS_TEST, false);
+		    bool valid = planningMonitor_->isPathValid(currentPath, currentPos, currentPath.states.size() - 1, planning_environment::PlanningMonitor::COLLISION_TEST +
+							       planning_environment::PlanningMonitor::PATH_CONSTRAINTS_TEST, false);
 		    planningMonitor_->clearAllowedContacts();
 		    planningMonitor_->setOnCollisionContactCallback(NULL);
 		    
 		    if (!valid)
 			ROS_INFO("Maximum path contact penetration depth is %f at link %s, sum of all contact depths is %f", ccost.cost, ccost.link.c_str(), ccost.sum);
+		    
+		    if (velocityHistoryIndex >= velocityHistory.size())
+		    {
+			double sum = velocityHistory.sum();
+			if (sum < 1e-3)
+			{
+			    ROS_INFO("The total velocity of the robot over the last %d samples is %f. Self-preempting...", (int)velocityHistory.size(), sum);
+			    state = PREEMPTED;
+			}
+		    }
 		    
 		    if (state == PREEMPTED || !safe || !valid)
 		    {
@@ -703,6 +716,7 @@ namespace move_arm
 				break;
 			    }
 			    ROS_INFO("Sent trajectory %d to controller", trajectoryId);
+			    velocityHistoryIndex = 0;
 			}
 			else
 			{
@@ -710,6 +724,11 @@ namespace move_arm
 			    state = ABORTED;
 			    break;
 			}
+		    }
+		    else
+		    {
+			velocityHistory[velocityHistoryIndex % velocityHistory.size()] = planningMonitor_->getTotalVelocity();
+			velocityHistoryIndex++;
 		    }
 		    
 		    // monitor controller execution by calling trajectory query

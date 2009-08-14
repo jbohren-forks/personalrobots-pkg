@@ -46,6 +46,7 @@
 #include <boost/bind.hpp>
 #include <vector>
 #include <string>
+#include <map>
 
 namespace planning_environment
 {
@@ -123,6 +124,12 @@ namespace planning_environment
 	const planning_models::StateParams* getRobotState(void) const
 	{
 	    return robotState_;
+	}
+
+	/** \brief Return the maintained robot velocity (square root of sum of squares of velocity at each joint)*/
+	double getTotalVelocity(void) const
+	{
+	    return robotVelocity_;
 	}
 
 	/** \brief Return the transform listener */
@@ -204,6 +211,7 @@ namespace planning_environment
 	                                *attachedBodyNotifier_;
 
 	planning_models::StateParams    *robotState_;
+ 	double                           robotVelocity_;
 	tf::Pose                         pose_;
 	std::string                      robot_frame_;
 	std::string                      frame_id_;
