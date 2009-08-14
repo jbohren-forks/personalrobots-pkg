@@ -471,7 +471,7 @@ namespace move_arm
 	    
 	    // if the planner aborted and we have an idea about an invalid state that
 	    // may be in the goal region, we make one last try using the short range planner
-	    if (result == ABORTED && !states.empty())
+	    if (result == ABORTED && !states.empty() && !req.goal_constraints.pose_constraint.empty())
 	    {
 		// set the goal to be a state
 		ROS_INFO("Trying again with a state in the goal region (although the state is invalid)...");
@@ -498,7 +498,7 @@ namespace move_arm
 	    
 	    // if the planner aborted and we have an idea about an invalid state that
 	    // may be in the goal region, we make one last try using the short range planner
-	    if (result == ABORTED && !states.empty())
+	    if (result == ABORTED && !states.empty() && !req.goal_constraints.pose_constraint.empty())
 	    {
 		// set the goal to be a state
 		ROS_INFO("Trying again with a state in the goal region (although the state is invalid)...");
