@@ -83,6 +83,10 @@ def main(argv, stdout, environ):
     images_input_folder = os.path.join(folder,"images")
     positive_output_directory = os.path.join(folder, "positive")
     negative_output_directory = os.path.join(folder, "negative")
+    if not os.path.exists(positive_output_folder):
+      os.mkdir(positive_output_folder)
+    if not os.path.exists(negative_output_folder):
+      os.mkdir(negative_output_folder)
     image_filenames = os.listdir(images_input_folder)
   elif (len(args) > 0):
     bbox_input_folder = ""
