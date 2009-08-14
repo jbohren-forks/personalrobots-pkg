@@ -65,8 +65,10 @@ bool move_arm::MoveArmSetup::configure(void)
     else
 	ROS_INFO("Configuring action for '%s' (IK is %senabled)", group_.c_str(), perform_ik_ ? "" : "not ");
     
-    planningMonitor_->waitForState();
-    planningMonitor_->waitForMap();
+    if (planningMonitor_->getExpectedJointStateUpdateInterval() > 1e-3)
+	planningMonitor_->waitForState();
+    if (planningMonitor_->getExpectedMapUpdateInterval() > 1e-3)
+	planningMonitor_->waitForMap();
     
     if (!getControlJointNames(groupJointNames_))
 	return false;

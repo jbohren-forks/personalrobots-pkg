@@ -158,6 +158,24 @@ namespace planning_environment
 	    onCollisionContact_ = callback;
 	    maxCollisionContacts_ = maxContacts;
 	}
+
+	/** \brief Return the maximum amount of time that is allowed to pass between updates to the map. */
+	double getExpectedMapUpdateInterval(void) const
+	{
+	    return intervalCollisionMap_;
+	}
+
+	/** \brief Return the maximum amount of time that is allowed to pass between updates to the state. */
+	double getExpectedJointStateUpdateInterval(void) const
+	{
+	    return intervalState_;
+	}
+
+	/** \brief Return the maximum amount of time that is allowed to pass between updates to the pose. */
+	double getExpectedPoseUpdateInterval(void) const
+	{
+	    return intervalPose_;
+	}
 	
     protected:
 
