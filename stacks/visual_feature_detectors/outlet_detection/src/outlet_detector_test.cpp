@@ -723,7 +723,7 @@ void runLOutletDetectorTest(CvMat* intrinsic_matrix, CvMat* distortion_params,
 	}	
 }
 //-------------
-void runFernsOutletDetectorTest(CvMat* intrinsic_matrix, CvMat* distortion_params, 
+void runFernsLOutletDetectorTest(CvMat* intrinsic_matrix, CvMat* distortion_params, 
 							const char* config_path, vector<outlet_test_elem>& test_data, char* output_path)
 {
 	char filename[1024];
@@ -754,6 +754,7 @@ void runFernsOutletDetectorTest(CvMat* intrinsic_matrix, CvMat* distortion_param
 	Vector<KeyPoint> objKeypoints;
 
 	Mat tempobj = object.clone();
+
 	GaussianBlur(tempobj, tempobj, Size(blurKSize, blurKSize), sigma, sigma);
 	buildPyramid(tempobj, objpyr, ldetector.nOctaves-1);
 	ldetector.setVerbose(true);
@@ -799,8 +800,9 @@ void runFernsOutletDetectorTest(CvMat* intrinsic_matrix, CvMat* distortion_param
 
 		Vector<Mat> imgpyr;
 
-		Mat tempimg = undistortedImg.clone();
-		GaussianBlur(undistortedImg,tempimg, Size(blurKSize, blurKSize), sigma, sigma);
+		Mat tempimg(undistortedImg.rows,undistortedImg.cols, CV_8UC1);// = undistortedImg.clone();
+		cvtColor(undistortedImg,tempimg,CV_BGR2GRAY);
+		GaussianBlur(tempimg,tempimg, Size(blurKSize, blurKSize), sigma, sigma);
 		buildPyramid(tempimg, imgpyr, ldetector.nOctaves-1);
 
 		Vector<KeyPoint> imgKeypoints;
@@ -811,15 +813,15 @@ void runFernsOutletDetectorTest(CvMat* intrinsic_matrix, CvMat* distortion_param
 			image_keypoints.push_back(imgKeypoints[j].pt);
 		}
 		
-		for(int j = 0; j < (int)image_keypoints.size(); j++ )
-		{
-			circle( image, image_keypoints[j], 2, Scalar(0,0,255), -1 );
-			circle( image, image_keypoints[j], 7, Scalar(0,255,0), 1 );
-		}
+		//for(int j = 0; j < (int)image_keypoints.size(); j++ )
+		//{
+		//	circle( image, image_keypoints[j], 2, Scalar(0,0,255), -1 );
+		//	circle( image, image_keypoints[j], 7, Scalar(0,255,0), 1 );
+		//}
 
-		char path[1024];
-		sprintf(path,"%s/features/1.jpg",output_path);
-		imwrite(path, image);
+		//char path[1024];
+		//sprintf(path,"%s/features/1.jpg",output_path);
+		//imwrite(path, image);
 
 
 		if (output_path)

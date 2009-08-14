@@ -279,7 +279,7 @@ void detect_outlets_one_way(IplImage* test_image, const outlet_template_t& outle
     int patch_width = descriptors->GetPatchSize().width/2;
     int patch_height = descriptors->GetPatchSize().height/2; 
     for(int i = 0; i < (int)features.size(); i++)
-    {
+	{
         CvPoint center = features[i].pt;
         float scale = features[i].size;
         
