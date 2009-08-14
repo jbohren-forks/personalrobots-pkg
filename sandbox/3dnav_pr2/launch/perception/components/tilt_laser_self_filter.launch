@@ -13,7 +13,7 @@
      <param name="sensor_frame" type="string" value="laser_tilt_link" />
      
      <!-- The padding to be added for the body parts the robot can see -->
-     <param name="self_see_padd" type="double" value="0.02" />
+     <param name="self_see_padd" type="double" value="0.07" />
 
      <!-- The scaling to be added for the body parts the robot can see -->
      <param name="self_see_scale" type="double" value="1.0" />
