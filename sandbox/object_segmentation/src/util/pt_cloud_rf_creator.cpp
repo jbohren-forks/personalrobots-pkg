@@ -49,7 +49,8 @@ void PtCloudRFCreator::createNodes(RandomField& rf,
                                    set<unsigned int>& node_indices)
 
 {
-  if (labels.size() != pt_cloud.points.size())
+  unsigned int nbr_cloud_pts = pt_cloud.points.size();
+  if (labels.size() != nbr_cloud_pts)
   {
     ROS_FATAL("Number of labels does not match number of points");
     abort();
@@ -58,10 +59,9 @@ void PtCloudRFCreator::createNodes(RandomField& rf,
   // ----------------------------------------------
   // Create interests points over the whole point cloud
   cv::Vector<const geometry_msgs::Point32*> interest_pts;
+  interest_pts.reserve(nbr_cloud_pts);
   map<unsigned int, unsigned int> interest2cloud_idx;
   unsigned int interest_idx = 0;
-  unsigned int nbr_cloud_pts = pt_cloud.points.size();
-  interest_pts.reserve(nbr_cloud_pts);
   for (unsigned int i = 0 ; i < nbr_cloud_pts ; i++)
   {
     if (use_only_labeled)
@@ -94,9 +94,9 @@ void PtCloudRFCreator::createNodes(RandomField& rf,
 
   // ----------------------------------------------
   // Create nodes for features that were okay
+  node_indices.clear();
   unsigned int nbr_created_nodes = 0;
   unsigned int nbr_interest_pts = interest_pts.size();
-  node_indices.clear();
   for (unsigned int i = 0 ; i < nbr_interest_pts ; i++)
   {
     // NULL indicates couldnt compute features for interest point
@@ -246,7 +246,7 @@ void PtCloudRFCreator::createCliqueSet(RandomField& rf,
               curr_cluster_features, nbr_concatenated_vals, centroid[0], centroid[1], centroid[2])
               == NULL)
           {
-            ROS_FATAL("Could not create the %u clique for clique set %u", nbr_created_cliques, clique_set_idx);
+            ROS_FATAL("Could not create the %u 'th clique with id %u for clique set %u", nbr_created_cliques, curr_cluster_label, clique_set_idx);
             abort();
           }
           else
