@@ -76,6 +76,14 @@ class Position: public Descriptor3D
 
     // --------------------------------------------------------------
     /*!
+     * \brief This descriptor uses no shared precomputation, so this method
+     *        has no affect
+     */
+    // --------------------------------------------------------------
+    virtual void clearShared();
+
+    // --------------------------------------------------------------
+    /*!
      * \brief Instantiates the position descriptor such that the z coordinate
      *        is relative to the given height.  i.e. the feature is the
      *        interest point/region's z-coordinate minus ref_z

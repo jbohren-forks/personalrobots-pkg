@@ -73,6 +73,13 @@ SpinImageCustom::SpinImageCustom(const double ref_x,
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
+void SpinImageCustom::clearShared()
+{
+}
+
+// --------------------------------------------------------------
+/* See function definition */
+// --------------------------------------------------------------
 int SpinImageCustom::precompute(const sensor_msgs::PointCloud& data,
                                 cloud_kdtree::KdTree& data_kdtree,
                                 const cv::Vector<const geometry_msgs::Point32*>& interest_pts)

@@ -57,6 +57,14 @@ OrientationNormal::OrientationNormal(const double ref_x,
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
+void OrientationNormal::clearShared()
+{
+  spectral_information_->clearSpectral();
+}
+
+// --------------------------------------------------------------
+/* See function definition */
+// --------------------------------------------------------------
 int OrientationNormal::precompute(const sensor_msgs::PointCloud& data,
                                   cloud_kdtree::KdTree& data_kdtree,
                                   const cv::Vector<const geometry_msgs::Point32*>& interest_pts)

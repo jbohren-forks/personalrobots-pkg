@@ -79,6 +79,13 @@ class ShapeSpectral: public Descriptor3D
     // --------------------------------------------------------------
     ShapeSpectral(SpectralAnalysis& spectral_information);
 
+    // --------------------------------------------------------------
+    /*!
+     * \brief Clears any already-computed spectral information
+     */
+    // --------------------------------------------------------------
+    virtual void clearShared();
+
   protected:
     // --------------------------------------------------------------
     /*!

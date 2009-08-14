@@ -86,6 +86,14 @@ class BoundingBoxRaw: public NeighborhoodFeature
     // --------------------------------------------------------------
     BoundingBoxRaw(double bbox_radius);
 
+    // --------------------------------------------------------------
+    /*!
+     * \brief This descriptor uses no shared precomputation, so this method
+     *        has no affect
+     */
+    // --------------------------------------------------------------
+    virtual void clearShared();
+
   protected:
     // --------------------------------------------------------------
     /*!

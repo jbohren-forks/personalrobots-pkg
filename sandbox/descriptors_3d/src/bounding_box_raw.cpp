@@ -51,6 +51,13 @@ BoundingBoxRaw::BoundingBoxRaw(double bbox_radius)
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
+void BoundingBoxRaw::clearShared()
+{
+}
+
+// --------------------------------------------------------------
+/* See function definition */
+// --------------------------------------------------------------
 int BoundingBoxRaw::precompute(const sensor_msgs::PointCloud& data,
                                cloud_kdtree::KdTree& data_kdtree,
                                const cv::Vector<const geometry_msgs::Point32*>& interest_pts)

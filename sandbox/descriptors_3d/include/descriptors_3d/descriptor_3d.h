@@ -83,6 +83,15 @@ class Descriptor3D
 
     // --------------------------------------------------------------
     /*!
+     * \brief Clears the shared information this Descriptor3D is using
+     *        so the information is computed from scratch on the next
+     *        compute() call
+     */
+    // --------------------------------------------------------------
+    virtual void clearShared() = 0;
+
+    // --------------------------------------------------------------
+    /*!
      * \brief Computes feature values for each specified interest point
      *
      * See the inherited class constructor for the type of features computed
@@ -142,6 +151,9 @@ class Descriptor3D
      * \brief Utility function to compute multiple descriptor feature around
      *        interest points and concatenate the results into a single vector
      *
+     * This method clears out any pre-computed shared information among the
+     * descriptors before calculating the new features.
+     *
      * \param data See Descriptor3D::compute
      * \param data_kdtree See Descriptor3D::compute
      * \param interest_pts See Descriptor3D::compute
@@ -167,6 +179,9 @@ class Descriptor3D
     /*!
      * \brief Utility function to compute multiple descriptor feature around
      *        interest regions and concatenate the results into a single vector
+     *
+     * This method clears out any pre-computed shared information among the
+     * descriptors before calculating the new features.
      *
      * \param data See Descriptor3D::compute
      * \param data_kdtree See Descriptor3D::compute

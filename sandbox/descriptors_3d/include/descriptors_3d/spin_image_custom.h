@@ -103,6 +103,14 @@ class SpinImageCustom: public SpinImageGeneric
                     const unsigned int nbr_cols,
                     const bool use_interest_regions_only);
 
+    // --------------------------------------------------------------
+    /*!
+     * \brief This descriptor uses no shared precomputation, so this method
+     *        has no affect
+     */
+    // --------------------------------------------------------------
+    virtual void clearShared();
+
   protected:
     // --------------------------------------------------------------
     /*!

@@ -56,6 +56,14 @@ BoundingBoxSpectral::BoundingBoxSpectral(double bbox_radius, SpectralAnalysis& s
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
+void BoundingBoxSpectral::clearShared()
+{
+  spectral_information_->clearSpectral();
+}
+
+// --------------------------------------------------------------
+/* See function definition */
+// --------------------------------------------------------------
 int BoundingBoxSpectral::precompute(const sensor_msgs::PointCloud& data,
                                     cloud_kdtree::KdTree& data_kdtree,
                                     const cv::Vector<const geometry_msgs::Point32*>& interest_pts)
