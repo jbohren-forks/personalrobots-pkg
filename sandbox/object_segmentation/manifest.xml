@@ -11,6 +11,12 @@
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/object_segmentation</url>
 
+  <depend package="functional_m3n"/>
+  <depend package="point_cloud_mapping"/>
+  <depend package="point_cloud_clustering"/>
+  <depend package="descriptors_3d"/>
+  <depend package="opencv_latest"/>
+
 </package>
 
 
