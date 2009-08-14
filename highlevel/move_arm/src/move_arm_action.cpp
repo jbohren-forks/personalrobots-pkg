@@ -891,13 +891,20 @@ namespace move_arm
 	void fillTrajectoryPath(const motion_planning_msgs::KinematicPath &path, manipulation_msgs::JointTraj &traj)
 	{
 	    traj.names = setup_.groupJointNames_;
-	    traj.points.resize(path.states.size());
+	    traj.points.resize(path.states.size() + 1);
+	    
+	    // add the current state at the start of the path, with an offset
+	    planningMonitor_->getRobotState()->copyParamsJoints(traj.points[0].positions, setup_.groupJointNames_);
+	    traj.points[0].time = 0.0;
+	    double offset = 0.5;
+	    
+	    // add the actual path
 	    planning_models::StateParams *sp = planningMonitor_->getKinematicModel()->newStateParams();
 	    for (unsigned int i = 0 ; i < path.states.size() ; ++i)
 	    {
-		traj.points[i].time = path.times[i];
+		traj.points[i + 1].time = offset + path.times[i];
 		sp->setParamsGroup(path.states[i].vals, setup_.group_);
-		sp->copyParamsJoints(traj.points[i].positions, setup_.groupJointNames_);
+		sp->copyParamsJoints(traj.points[i + 1].positions, setup_.groupJointNames_);
 	    }
 	    delete sp;
 	}
