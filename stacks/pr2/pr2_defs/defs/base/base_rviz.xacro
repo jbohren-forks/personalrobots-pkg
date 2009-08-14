@@ -13,7 +13,7 @@
 
   <macro name="pr2_caster_rviz" params="suffix">
     <rviz reference="${suffix}_caster_rotation_link">
-      <elem key="material" value="PR2/Green" />
+      <material value="PR2/Green" />
     </rviz>
   </macro>
 
