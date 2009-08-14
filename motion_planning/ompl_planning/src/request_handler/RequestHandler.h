@@ -38,9 +38,11 @@
 #define OMPL_PLANNING_REQUEST_HANDLER_
 
 #include "ompl_planning/Model.h"
+
 #include <ros/ros.h>
 #include <motion_planning_msgs/GetMotionPlan.h>
 #include <motion_planning_msgs/ConvertToJointConstraint.h>
+#include <boost/bind.hpp>
 
 /** \brief Main namespace */
 namespace ompl_planning
@@ -55,31 +57,12 @@ namespace ompl_planning
 	
 	RequestHandler(void)
 	{
-	    debug_ = false;
-	    px_ = py_ = pz_ = -1;
+	    onFinishPlan_ = NULL;
 	}
 	
 	~RequestHandler(void)
 	{
 	}
-	
-	/** \brief Enable debug mode. Display markers consisting of a 1-D orthogonal projection of states */
-	void enableDebugMode(int idx)
-	{
-	    enableDebugMode(idx, -1, -1);
-	}
-
-	/** \brief Enable debug mode. Display markers consisting of a 2-D orthogonal projection of states */
-	void enableDebugMode(int idx1, int idx2)
-	{
-	    enableDebugMode(idx1, idx2, -1);
-	}
-
-	/** \brief Enable debug mode. Display markers consisting of a 3-D orthogonal projection of states */
-	void enableDebugMode(int idx1, int idx2, int idx3);
-	
-	/** \brief Disable debug mode */
-	void disableDebugMode(void);
 	
 	/** \brief Check if the request is valid */
 	bool isRequestValid(ModelMap &models, motion_planning_msgs::GetMotionPlan::Request &req);
@@ -93,6 +76,9 @@ namespace ompl_planning
 	/** \brief Find a state in the specified goal region. Return true if state was found */
 	bool findState(ModelMap &models, const planning_models::StateParams *start, motion_planning_msgs::ConvertToJointConstraint::Request &req, motion_planning_msgs::ConvertToJointConstraint::Response &res);
 
+	/** \brief Enable callback for when a motion plan computation is completed */
+	void setOnFinishPlan(const boost::function<void(PlannerSetup*)> &onFinishPlan);
+	
     private:
 
 	struct Solution
@@ -126,14 +112,8 @@ namespace ompl_planning
 	/** \brief Send visualization markers */
 	void display(PlannerSetup *psetup);
 	
-	/** \brief If true, broadcast tree structure as a set of visualization markers */
-	bool debug_;
-	
-	/** \brief The orthogonal projection to take when displaying states */
-	int  px_, py_, pz_;
-	
-	ros::Publisher  displayPublisher_;	
-	ros::NodeHandle nh_;
+	/** \brief Callback for when a plan computation is completed */
+	boost::function<void(PlannerSetup*)> onFinishPlan_;
 	
     };
     

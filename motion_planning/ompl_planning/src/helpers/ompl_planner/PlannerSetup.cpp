@@ -127,6 +127,5 @@ void ompl_planning::PlannerSetup::preSetup(planning_environment::PlanningMonitor
 void ompl_planning::PlannerSetup::postSetup(planning_environment::PlanningMonitor *planningMonitor, const std::string &groupName,
 					    boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
 {
-    ompl_model->si->setup();
     mp->setup();
 }
