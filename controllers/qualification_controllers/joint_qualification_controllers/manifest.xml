@@ -12,7 +12,8 @@
   <depend package="roscpp" />
   <depend package="robot_mechanism_controllers" />
   <depend package="mechanism_control" />
-  <url>http://pr.willowgarage.com</url>
+  <depend package="pluginlib" />
+  <url>http://pr.willowgarage.com/joint_qualification_controllers</url>
   <rosdep name="wxwidgets"/>
   <rosdep name="wxpython"/>
   <repository>http://pr.willowgarage.com/repos</repository>
