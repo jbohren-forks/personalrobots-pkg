@@ -22,7 +22,12 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #gensrv()
 
 #common commands for building c++ executables and libraries
-rospack_add_library(${PROJECT_NAME} src/util/rf_creator_3d.cpp)
+rospack_add_library(table_object_rf
+			src/image_stereo/table_object_rf.cpp
+			src/util/rf_creator_3d.cpp)
+rospack_add_openmp_flags (table_object_rf)
+
+
 #target_link_libraries(${PROJECT_NAME} another_library)
 rospack_add_boost_directories()
 #rospack_link_boost(${PROJECT_NAME} thread)
