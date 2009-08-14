@@ -71,7 +71,8 @@ namespace ompl_planning
 	bool isRequestValid(ModelMap &models, motion_planning_msgs::ConvertToJointConstraint::Request &req);
 
 	/** \brief Check and compute a motion plan. Return true if the plan was succesfully computed */
-	bool computePlan(ModelMap &models, const planning_models::StateParams *start, motion_planning_msgs::GetMotionPlan::Request &req, motion_planning_msgs::GetMotionPlan::Response &res);
+	bool computePlan(ModelMap &models, const planning_models::StateParams *start, double stateDelay,
+			 motion_planning_msgs::GetMotionPlan::Request &req, motion_planning_msgs::GetMotionPlan::Response &res);
 
 	/** \brief Find a state in the specified goal region. Return true if state was found */
 	bool findState(ModelMap &models, const planning_models::StateParams *start, motion_planning_msgs::ConvertToJointConstraint::Request &req, motion_planning_msgs::ConvertToJointConstraint::Response &res);
@@ -101,7 +102,8 @@ namespace ompl_planning
 	void setWorkspaceBounds(motion_planning_msgs::KinematicSpaceParameters &params, ompl_ros::ModelBase *ompl_model);
 	
 	/** \brief Fill the response with solution data */
-	void fillResult(PlannerSetup *psetup, const planning_models::StateParams *start, motion_planning_msgs::GetMotionPlan::Response &res, const Solution &sol);
+	void fillResult(PlannerSetup *psetup, const planning_models::StateParams *start, double stateDelay,
+			motion_planning_msgs::GetMotionPlan::Response &res, const Solution &sol);
 
 	/** \brief Fix the input states, if they are not valid */
 	bool fixInputStates(PlannerSetup *psetup, double value, unsigned int count);

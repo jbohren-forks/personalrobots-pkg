@@ -422,7 +422,7 @@ bool ompl_planning::RequestHandler::findState(ModelMap &models, const planning_m
     return true;
 }
 
-bool ompl_planning::RequestHandler::computePlan(ModelMap &models, const planning_models::StateParams *start, 
+bool ompl_planning::RequestHandler::computePlan(ModelMap &models, const planning_models::StateParams *start, double stateDelay,
 						motion_planning_msgs::GetMotionPlan::Request &req, motion_planning_msgs::GetMotionPlan::Response &res)
 {
     if (!isRequestValid(models, req))
@@ -458,7 +458,7 @@ bool ompl_planning::RequestHandler::computePlan(ModelMap &models, const planning
     /* copy the solution to the result */
     if (sol.path)
     {
-	fillResult(psetup, start, res, sol);
+	fillResult(psetup, start, stateDelay, res, sol);
 	delete sol.path;
 	if (!sol.approximate)
 	{
@@ -478,7 +478,8 @@ bool ompl_planning::RequestHandler::computePlan(ModelMap &models, const planning
     return true;
 }
 
-void ompl_planning::RequestHandler::fillResult(PlannerSetup *psetup, const planning_models::StateParams *start, motion_planning_msgs::GetMotionPlan::Response &res, const Solution &sol)
+void ompl_planning::RequestHandler::fillResult(PlannerSetup *psetup, const planning_models::StateParams *start, double stateDelay,
+					       motion_planning_msgs::GetMotionPlan::Response &res, const Solution &sol)
 {   
     std::vector<planning_models::KinematicModel::Joint*> joints;
     psetup->ompl_model->planningMonitor->getKinematicModel()->getJoints(joints);
@@ -501,7 +502,7 @@ void ompl_planning::RequestHandler::fillResult(PlannerSetup *psetup, const plann
 	const unsigned int dim = psetup->ompl_model->si->getStateDimension();
 	for (unsigned int i = 0 ; i < kpath->states.size() ; ++i)
 	{
-	    res.path.times[i] = i * 0.02;
+	    res.path.times[i] = i * stateDelay;
 	    res.path.states[i].vals.resize(dim);
 	    for (unsigned int j = 0 ; j < dim ; ++j)
 		res.path.states[i].vals[j] = kpath->states[i]->values[j];
@@ -519,7 +520,7 @@ void ompl_planning::RequestHandler::fillResult(PlannerSetup *psetup, const plann
 	const unsigned int dim = psetup->ompl_model->si->getStateDimension();
 	for (unsigned int i = 0 ; i < dpath->states.size() ; ++i)
 	{
-	    res.path.times[i] = i * 0.02;
+	    res.path.times[i] = i * stateDelay;
 	    res.path.states[i].vals.resize(dim);
 	    for (unsigned int j = 0 ; j < dim ; ++j)
 		res.path.states[i].vals[j] = dpath->states[i]->values[j];

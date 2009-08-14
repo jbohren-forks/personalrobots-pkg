@@ -55,6 +55,8 @@ public:
 	else
 	    planningMonitor_ = new planning_environment::PlanningMonitor(collisionModels_, &tf_);
 	
+	nodeHandle_.param<double>("~state_delay", stateDelay_, 0.01);
+	
 	planKinematicPathService_ = nodeHandle_.advertiseService("~plan_kinematic_path", &OMPLPlanning::planToGoal, this);
 	findValidStateService_    = nodeHandle_.advertiseService("find_valid_state", &OMPLPlanning::findValidState, this);
     }
@@ -164,7 +166,7 @@ private:
 	    std::stringstream ss;
 	    startState->print(ss);
 	    ROS_DEBUG("Complete starting state:\n%s", ss.str().c_str());
-	    st = requestHandler_.computePlan(models_, startState, req, res);
+	    st = requestHandler_.computePlan(models_, startState, stateDelay_, req, res);
 	    if (st && !res.path.states.empty())
 	        if (!planningMonitor_->isPathValid(res.path, planning_environment::PlanningMonitor::COLLISION_TEST, true))
 		    ROS_ERROR("Reported solution appears to have already become invalidated");
@@ -203,7 +205,8 @@ private:
     tf::TransformListener                  tf_;
     ros::ServiceServer                     planKinematicPathService_;
     ros::ServiceServer                     findValidStateService_;    
-
+    double                                 stateDelay_;
+    
     // planning data
     ModelMap                               models_;
     RequestHandler                         requestHandler_;
