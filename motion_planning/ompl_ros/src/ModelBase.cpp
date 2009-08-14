@@ -34,17 +34,37 @@
 
 /** \author Ioan Sucan */
 
-#include "ompl_planning/ModelBase.h"
+#include "ompl_ros/ModelBase.h"
 #include <boost/thread.hpp>
 #include <map>
 
-namespace ompl_planning
+namespace ompl_ros
 {
     static std::map<boost::thread::id, EnvironmentDescription*> ENVS;
     static boost::mutex                                         lockENVS;    
 }
 
-ompl_planning::EnvironmentDescription* ompl_planning::ModelBase::getEnvironmentDescription(void) const
+ompl_ros::ModelBase::ModelBase(planning_environment::PlanningMonitor *pMonitor, const std::string &gName)
+{
+    si = NULL;
+    groupName = gName;
+    planningMonitor = pMonitor;
+    groupID = planningMonitor->getKinematicModel()->getGroupID(groupName);
+}
+
+ompl_ros::ModelBase::~ModelBase(void)
+{
+    clearEnvironmentDescriptions();
+    for (std::map<std::string, ompl::base::StateDistanceEvaluator*>::iterator j = sde.begin(); j != sde.end() ; ++j)
+	if (j->second)
+	    delete j->second;
+    if (si->getStateValidityChecker())
+	delete si->getStateValidityChecker();
+    if (si)
+	delete si;
+}
+
+ompl_ros::EnvironmentDescription* ompl_ros::ModelBase::getEnvironmentDescription(void) const
 {
     boost::thread::id id = boost::this_thread::get_id();
     EnvironmentDescription *result = NULL;
@@ -79,7 +99,7 @@ ompl_planning::EnvironmentDescription* ompl_planning::ModelBase::getEnvironmentD
     return result;
 }
 
-void ompl_planning::ModelBase::clearEnvironmentDescriptions(void) const
+void ompl_ros::ModelBase::clearEnvironmentDescriptions(void) const
 {    
     lockENVS.lock();    
     for (std::map<boost::thread::id, EnvironmentDescription*>::iterator it = ENVS.begin() ; it != ENVS.end() ; ++it)

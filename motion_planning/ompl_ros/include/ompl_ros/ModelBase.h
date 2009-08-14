@@ -34,16 +34,21 @@
 
 /** \author Ioan Sucan */
 
-#ifndef OMPL_PLANNING_MODEL_BASE_
-#define OMPL_PLANNING_MODEL_BASE_
+#ifndef OMPL_ROS_MODEL_BASE_
+#define OMPL_ROS_MODEL_BASE_
 
 #include <planning_environment/monitors/planning_monitor.h>
 #include <planning_environment/util/kinematic_state_constraint_evaluator.h>
+#include <ompl/base/SpaceInformation.h>
 #include <string>
+#include <map>
 
-namespace ompl_planning
+namespace ompl_ros
 {
     
+    /** \brief A class that contains pointers to structures needed in
+	planning. The goal is to have multiple of these instances, one
+	for each thread. */
     struct EnvironmentDescription
     {
 	collision_space::EnvironmentModel                           *collisionSpace;
@@ -51,19 +56,14 @@ namespace ompl_planning
 	const planning_environment::KinematicConstraintEvaluatorSet *constraintEvaluator;	
     };
     
+    /** \brief The basic definition of a model (a group defined by the planning environment) we are planning for */
     class ModelBase
     {
     public:
-	ModelBase(void)
-	{
-	    groupID = -1;
-	    planningMonitor = NULL;
-	}
+	ModelBase(planning_environment::PlanningMonitor *pMonitor, const std::string &gName);
+	virtual ~ModelBase(void);
 	
-	virtual ~ModelBase(void)
-	{
-	    clearEnvironmentDescriptions();
-	}
+	virtual bool configure(void) = 0;
 	
 	/** \brief Thread safe function that returns the environment description corresponding to the active thread */
 	EnvironmentDescription* getEnvironmentDescription(void) const;
@@ -71,14 +71,24 @@ namespace ompl_planning
 	/** \brief Clear the created environment descriptions */
 	void clearEnvironmentDescriptions(void) const;
 	
-	planning_environment::PlanningMonitor                 *planningMonitor;
-	planning_environment::KinematicConstraintEvaluatorSet  constraintEvaluator;
-	
-	std::string                                            groupName;
-	int                                                    groupID;
-    };
+	/** \brief An instance of a planning monitor that knows about the planning groups */
+	planning_environment::PlanningMonitor                      *planningMonitor;
 
-} // ompl_planning
+	/** \brief An instance of a kinematic constraint evaluator */
+	planning_environment::KinematicConstraintEvaluatorSet       constraintEvaluator;
+	
+	/** \brief The group name */
+	std::string                                                 groupName;
+
+	/** \brief The group ID */
+	int                                                         groupID;
+	
+	/** \brief The instance of the space information maintained for this group. si->setup() will need to be called after configure() */
+	ompl::base::SpaceInformation                               *si;
+	std::map<std::string, ompl::base::StateDistanceEvaluator*>  sde;        // list of available distance evaluators
+    };
+    
+} // ompl_ros
 
 #endif
 

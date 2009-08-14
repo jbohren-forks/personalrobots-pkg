@@ -34,54 +34,45 @@
 
 /** \author Ioan Sucan */
 
-#include "ompl_planning/planners/kinematicpSBLSetup.h"
+#include "ompl_ros/dynamic/StateValidator.h"
 
-ompl_planning::kinematicpSBLSetup::kinematicpSBLSetup(void) : PlannerSetup()
+bool ompl_ros::ROSStateValidityPredicateDynamic::operator()(const ompl::base::State *s) const
 {
-    name = "kinematic::pSBL";
-    priority = 12;
-}
-
-ompl_planning::kinematicpSBLSetup::~kinematicpSBLSetup(void)
-{
-    if (dynamic_cast<ompl::kinematic::pSBL*>(mp))
-    {
-	ompl::base::ProjectionEvaluator *pe = dynamic_cast<ompl::kinematic::pSBL*>(mp)->getProjectionEvaluator();
-	if (pe)
-	    delete pe;
-    }
-}
-
-bool ompl_planning::kinematicpSBLSetup::setup(planning_environment::PlanningMonitor *planningMonitor, const std::string &groupName,
-					      boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
-{
-    preSetup(planningMonitor, groupName, options);
-    
-    ompl::kinematic::pSBL *sbl = new ompl::kinematic::pSBL(dynamic_cast<ompl::kinematic::SpaceInformationKinematic*>(ompl_model->si));
-    mp                         = sbl;	
-    
-    if (options->hasParam("range"))
-    {
-	sbl->setRange(options->getParamDouble("range", sbl->getRange()));
-	ROS_DEBUG("Range is set to %g", sbl->getRange());
-    }
-
-    if (options->hasParam("thread_count"))
-    {
-	sbl->setThreadCount(options->getParamInt("thread_count", sbl->getThreadCount()));
-	ROS_DEBUG("Thread count is set to %u", sbl->getThreadCount());
-    }
-
-    sbl->setProjectionEvaluator(getProjectionEvaluator(options));
-    
-    if (sbl->getProjectionEvaluator() == NULL)
-    {
-	ROS_WARN("Adding %s failed: need to set both 'projection' and 'celldim' for %s", name.c_str(), groupName.c_str());
+    if (!dsi_->satisfiesBounds(s))
 	return false;
-    }
-    else
+
+    EnvironmentDescription *ed = model_->getEnvironmentDescription();
+    return check(s, ed->collisionSpace, ed->kmodel, ed->constraintEvaluator);
+}
+
+void ompl_ros::ROSStateValidityPredicateDynamic::setConstraints(const motion_planning_msgs::KinematicConstraints &kc)
+{
+    clearConstraints();
+    model_->constraintEvaluator.add(model_->planningMonitor->getEnvironmentModel()->getRobotModel().get(), kc.pose_constraint);
+}
+
+void ompl_ros::ROSStateValidityPredicateDynamic::clearConstraints(void)
+{
+    model_->constraintEvaluator.clear();
+}
+
+void ompl_ros::ROSStateValidityPredicateDynamic::printSettings(std::ostream &out) const
+{    
+    out << "Path constraints:" << std::endl;
+    model_->constraintEvaluator.print(out);
+}
+
+bool ompl_ros::ROSStateValidityPredicateDynamic::check(const ompl::base::State *s, collision_space::EnvironmentModel *em, planning_models::KinematicModel *km,
+						       const planning_environment::KinematicConstraintEvaluatorSet *kce) const
+{
+    km->computeTransformsGroup(s->values, model_->groupID);
+    
+    bool valid = kce->decide(s->values, model_->groupID);
+    if (valid)
     {
-	postSetup(planningMonitor, groupName, options);
-	return true;
+	em->updateRobotModel();
+	valid = !em->isCollision();
     }
+    
+    return valid;
 }

@@ -34,46 +34,19 @@
 
 /** \author Ioan Sucan */
 
-#ifndef OMPL_PLANNING_EXTENSIONS_FORWARD_PROPAGATION_MODELS_
-#define OMPL_PLANNING_EXTENSIONS_FORWARD_PROPAGATION_MODELS_
+#include "ompl_ros/ModelDynamic.h"
 
-#include <ompl/base/StateForwardPropagator.h>
-#include <ompl/extension/dynamic/SpaceInformationControlsIntegrator.h>
-#include <boost/bind.hpp>
-
-namespace ompl_planning
+bool ompl_ros::ModelDynamic::configure(void)
 {
+    if (si)
+	return false;
     
-    /** \brief Propagate forward using Euler's method */
-    class EulerMethod
-    {
-    public:
-	
-	EulerMethod(const boost::function<void(const ompl::base::State*, const ompl::base::Control*, double*)> &ode, const unsigned int dim) : ode_(ode), dim_(dim)
-	{
-	}
-	
-	void step(const ompl::base::State *begin, const ompl::base::Control *ctrl, const double resolution, ompl::base::State *end) const;
-	
-    private:
-	
-	boost::function<void(const ompl::base::State*, const ompl::base::Control*, double*)> ode_;
-	unsigned int                                                                         dim_;
-    };
+    ROSSpaceInformationDynamic *ros_si = new ROSSpaceInformationDynamic(this);
+    ROSStateValidityPredicateDynamic *svc = new ROSStateValidityPredicateDynamic(ros_si, this);
+    ros_si->setStateValidityChecker(svc);
+    si = ros_si;
     
+    sde["L2Square"] = new ompl::base::L2SquareStateDistanceEvaluator(si);
     
-    /** \brief Base definition for a class that does forward propagation for a specific robot model */
-    class ForwardPropagationModel : public ompl::base::StateForwardPropagator
-    {
-    public:
-	
-	virtual void controlDefinition(std::vector<ompl::base::ControlComponent> &controlComponent, unsigned int *controlDimension,
-				       unsigned int *minDuration, unsigned int *maxDuration, double *resolution) = 0;
-
-	std::string name;
-    };
-    
+    return true;
 }
-
-
-#endif

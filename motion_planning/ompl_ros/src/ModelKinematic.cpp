@@ -34,54 +34,19 @@
 
 /** \author Ioan Sucan */
 
-#include "ompl_planning/planners/kinematicpSBLSetup.h"
+#include "ompl_ros/ModelKinematic.h"
 
-ompl_planning::kinematicpSBLSetup::kinematicpSBLSetup(void) : PlannerSetup()
+bool ompl_ros::ModelKinematic::configure(void)
 {
-    name = "kinematic::pSBL";
-    priority = 12;
-}
-
-ompl_planning::kinematicpSBLSetup::~kinematicpSBLSetup(void)
-{
-    if (dynamic_cast<ompl::kinematic::pSBL*>(mp))
-    {
-	ompl::base::ProjectionEvaluator *pe = dynamic_cast<ompl::kinematic::pSBL*>(mp)->getProjectionEvaluator();
-	if (pe)
-	    delete pe;
-    }
-}
-
-bool ompl_planning::kinematicpSBLSetup::setup(planning_environment::PlanningMonitor *planningMonitor, const std::string &groupName,
-					      boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
-{
-    preSetup(planningMonitor, groupName, options);
-    
-    ompl::kinematic::pSBL *sbl = new ompl::kinematic::pSBL(dynamic_cast<ompl::kinematic::SpaceInformationKinematic*>(ompl_model->si));
-    mp                         = sbl;	
-    
-    if (options->hasParam("range"))
-    {
-	sbl->setRange(options->getParamDouble("range", sbl->getRange()));
-	ROS_DEBUG("Range is set to %g", sbl->getRange());
-    }
-
-    if (options->hasParam("thread_count"))
-    {
-	sbl->setThreadCount(options->getParamInt("thread_count", sbl->getThreadCount()));
-	ROS_DEBUG("Thread count is set to %u", sbl->getThreadCount());
-    }
-
-    sbl->setProjectionEvaluator(getProjectionEvaluator(options));
-    
-    if (sbl->getProjectionEvaluator() == NULL)
-    {
-	ROS_WARN("Adding %s failed: need to set both 'projection' and 'celldim' for %s", name.c_str(), groupName.c_str());
+    if (si)
 	return false;
-    }
-    else
-    {
-	postSetup(planningMonitor, groupName, options);
-	return true;
-    }
+    
+    ROSSpaceInformationKinematic *ros_si = new ROSSpaceInformationKinematic(this);
+    ROSStateValidityPredicateKinematic *svc = new ROSStateValidityPredicateKinematic(ros_si, this);
+    ros_si->setStateValidityChecker(svc);
+    si = ros_si;
+    
+    sde["L2Square"] = new ompl::base::L2SquareStateDistanceEvaluator(si);
+    
+    return true;
 }

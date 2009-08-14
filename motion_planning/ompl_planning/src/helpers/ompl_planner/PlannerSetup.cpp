@@ -35,16 +35,15 @@
 /** \author Ioan Sucan */
 
 #include "ompl_planning/planners/PlannerSetup.h"
+#include "ompl_planning/Model.h"
 #include <boost/algorithm/string.hpp>
 #include <vector>
 #include <cassert>
 
-ompl_planning::PlannerSetup::PlannerSetup(ModelBase *m)
+ompl_planning::PlannerSetup::PlannerSetup(void)
 {
-    model = m;
+    ompl_model = NULL;
     mp = NULL;
-    si = NULL;
-    svc = NULL;
     smoother = NULL;
     priority = 0;
 }
@@ -53,22 +52,10 @@ ompl_planning::PlannerSetup::~PlannerSetup(void)
 {
     if (mp)
 	delete mp;
-    if (svc)
-	delete svc;
-    for (std::map<std::string, ompl::base::StateDistanceEvaluator*>::iterator j = sde.begin(); j != sde.end() ; ++j)
-	if (j->second)
-	    delete j->second;
     if (smoother)
 	delete smoother;
-    if (si)
-	delete si;
-}
-
-/** For each planner definition, define the set of distance metrics it can use */
-void ompl_planning::PlannerSetup::setupDistanceEvaluators(void)
-{
-    assert(si);
-    sde["L2Square"] = new ompl::base::L2SquareStateDistanceEvaluator(si);
+    if (ompl_model)
+	delete ompl_model;
 }
 	
 ompl::base::ProjectionEvaluator* ompl_planning::PlannerSetup::getProjectionEvaluator(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options) const
@@ -84,7 +71,7 @@ ompl::base::ProjectionEvaluator* ompl_planning::PlannerSetup::getProjectionEvalu
 	{
 	    std::string linkName = proj.substr(4);
 	    boost::trim(linkName);
-	    pe = new LinkPositionProjectionEvaluator(model, linkName);
+	    pe = new ompl_ros::LinkPositionProjectionEvaluator(ompl_model, linkName);
 	}
 	else
 	{
@@ -116,37 +103,30 @@ ompl::base::ProjectionEvaluator* ompl_planning::PlannerSetup::getProjectionEvalu
     return pe;
 }
 
-void ompl_planning::PlannerSetup::preSetup(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
+void ompl_planning::PlannerSetup::preSetup(planning_environment::PlanningMonitor *planningMonitor, const std::string &groupName,
+					   boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
 {
-    ROS_DEBUG("Adding %s instance for motion planning: %s", name.c_str(), model->groupName.c_str());
+    ROS_DEBUG("Adding %s instance for motion planning: %s", name.c_str(), groupName.c_str());
     bool dynamic = options->getParamString("type")[0] == 'd';
     
     if (dynamic)
-    {
-	SpaceInformationDynamicModel *sd = new SpaceInformationDynamicModel(model);
-	svc = new StateValidityPredicate(sd, model);
-	si = sd;
-    }
+	ompl_model = new ompl_ros::ModelDynamic(planningMonitor, groupName);
     else
-    {
-	SpaceInformationKinematicModel *sk = new SpaceInformationKinematicModel(model);
-	svc = new StateValidityPredicate(sk, model);
-	si = sk;
-    }
+	ompl_model = new ompl_ros::ModelKinematic(planningMonitor, groupName);
     
-    si->setStateValidityChecker(svc);
-
+    ompl_model->configure();
+    
     if (!dynamic)
     {
-	smoother = new ompl::kinematic::PathSmootherKinematic(dynamic_cast<ompl::kinematic::SpaceInformationKinematic*>(si));
+	smoother = new ompl::kinematic::PathSmootherKinematic(dynamic_cast<ompl::kinematic::SpaceInformationKinematic*>(ompl_model->si));
 	smoother->setMaxSteps(50);
 	smoother->setMaxEmptySteps(4);
     }
 }
 
-void ompl_planning::PlannerSetup::postSetup(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
+void ompl_planning::PlannerSetup::postSetup(planning_environment::PlanningMonitor *planningMonitor, const std::string &groupName,
+					    boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
 {
-    setupDistanceEvaluators();
-    si->setup();
-    mp->setup();	    
+    ompl_model->si->setup();
+    mp->setup();
 }

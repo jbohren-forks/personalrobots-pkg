@@ -34,22 +34,22 @@
 
 /** \author Ioan Sucan */
 
-#ifndef OMPL_PLANNING_EXTENSIONS_GOAL_DEFINITIONS_
-#define OMPL_PLANNING_EXTENSIONS_GOAL_DEFINITIONS_
+#ifndef OMPL_ROS_BASE_GOAL_DEFINITIONS_
+#define OMPL_ROS_BASE_GOAL_DEFINITIONS_
 
-#include "ompl_planning/ModelBase.h"
+#include "ompl_ros/ModelBase.h"
 #include <planning_environment/util/kinematic_state_constraint_evaluator.h>
 #include <ompl/extension/kinematic/SpaceInformationKinematic.h>
 
-namespace ompl_planning
+namespace ompl_ros
 {
     
     class GoalToState : public ompl::base::GoalState
     {
     public:
-	GoalToState(ompl::base::SpaceInformation *si, ModelBase *model, const std::vector<motion_planning_msgs::JointConstraint> &jc) : ompl::base::GoalState(si)
+	GoalToState(ModelBase *model, const std::vector<motion_planning_msgs::JointConstraint> &jc) : ompl::base::GoalState(model->si)
 	{
-	    setup(si, model, jc);
+	    setup(model, jc);
 	}
 	
 	virtual ~GoalToState(void)
@@ -63,7 +63,7 @@ namespace ompl_planning
 	
     protected:
 	
-	void setup(ompl::base::SpaceInformation *si, ModelBase *model, const std::vector<motion_planning_msgs::JointConstraint> &jc);
+	void setup(ModelBase *model, const std::vector<motion_planning_msgs::JointConstraint> &jc);
 
 	ompl::base::State                        *compState_;
 	double                                   *cVals_;
@@ -77,7 +77,7 @@ namespace ompl_planning
     {
     public:
 	
-        GoalToPosition(ompl::base::SpaceInformation *si, ModelBase *model, const std::vector<motion_planning_msgs::PoseConstraint> &pc) : ompl::base::GoalRegion(si)
+        GoalToPosition(ModelBase *model, const std::vector<motion_planning_msgs::PoseConstraint> &pc) : ompl::base::GoalRegion(model->si)
 	{
 	    model_ = model;
 	    for (unsigned int i = 0 ; i < pc.size() ; ++i)
@@ -111,8 +111,8 @@ namespace ompl_planning
     class GoalToMultipleConstraints : public ompl::kinematic::GoalRegionKinematic
     {
     public:
-	GoalToMultipleConstraints(ompl::kinematic::SpaceInformationKinematic *si, ModelBase *model, const motion_planning_msgs::KinematicConstraints &kc) : GoalRegionKinematic(si), sCore_(si),
-																			    gp_(si, model, kc.pose_constraint), gs_(si, model, kc.joint_constraint)
+	GoalToMultipleConstraints(ModelBase *model, const motion_planning_msgs::KinematicConstraints &kc) : GoalRegionKinematic(dynamic_cast<ompl::kinematic::SpaceInformationKinematic*>(model->si)), sCore_(model->si),
+													    gp_(model, kc.pose_constraint), gs_(model, kc.joint_constraint)
 	{
 	    threshold = gp_.threshold + gs_.threshold;
 	    std::vector< std::pair<double, double> > b = gs_.getBounds();
@@ -140,7 +140,7 @@ namespace ompl_planning
 	std::vector<double> rho_;
     };
     
-    ompl::base::Goal* computeGoalFromConstraints(ompl::base::SpaceInformation *si, ModelBase *model, const motion_planning_msgs::KinematicConstraints &kc);
+    ompl::base::Goal* computeGoalFromConstraints(ModelBase *model, const motion_planning_msgs::KinematicConstraints &kc);
 }
 
 #endif

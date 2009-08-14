@@ -34,12 +34,12 @@
 
 /** \author Ioan Sucan */
 
-#ifndef OMPL_PLANNING_EXTENSIONS_PR2_PROPAGATION_MODELS_
-#define OMPL_PLANNING_EXTENSIONS_PR2_PROPAGATION_MODELS_
+#ifndef OMPL_ROS_DYNAMIC_EXTENSIONS_PR2_PROPAGATION_MODELS_
+#define OMPL_ROS_DYNAMIC_EXTENSIONS_PR2_PROPAGATION_MODELS_
 
-#include "ompl_planning/extensions/ForwardPropagationModels.h"
+#include "ompl_ros/dynamic/ForwardPropagationModels.h"
 
-namespace ompl_planning
+namespace ompl_ros
 {
     
     /** \brief Model for PR2 Base */

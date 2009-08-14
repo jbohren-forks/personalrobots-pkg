@@ -36,7 +36,7 @@
 
 #include "ompl_planning/planners/kinematicLBKPIECESetup.h"
 
-ompl_planning::kinematicLBKPIECESetup::kinematicLBKPIECESetup(ModelBase *m) : PlannerSetup(m)
+ompl_planning::kinematicLBKPIECESetup::kinematicLBKPIECESetup(void) : PlannerSetup()
 {
     name = "kinematic::LBKPIECE";	    
     priority = 11;
@@ -52,11 +52,12 @@ ompl_planning::kinematicLBKPIECESetup::~kinematicLBKPIECESetup(void)
     }
 }
 
-bool ompl_planning::kinematicLBKPIECESetup::setup(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
+bool ompl_planning::kinematicLBKPIECESetup::setup(planning_environment::PlanningMonitor *planningMonitor, const std::string &groupName,
+						  boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
 {
-    preSetup(options);
+    preSetup(planningMonitor, groupName, options);
     
-    ompl::kinematic::LBKPIECE1 *kpiece = new ompl::kinematic::LBKPIECE1(dynamic_cast<ompl::kinematic::SpaceInformationKinematic*>(si));
+    ompl::kinematic::LBKPIECE1 *kpiece = new ompl::kinematic::LBKPIECE1(dynamic_cast<ompl::kinematic::SpaceInformationKinematic*>(ompl_model->si));
     mp                                 = kpiece;
     
     if (options->hasParam("range"))
@@ -69,12 +70,12 @@ bool ompl_planning::kinematicLBKPIECESetup::setup(boost::shared_ptr<planning_env
     
     if (kpiece->getProjectionEvaluator() == NULL)
     {
-	ROS_WARN("Adding %s failed: need to set both 'projection' and 'celldim' for %s", name.c_str(), model->groupName.c_str());
+	ROS_WARN("Adding %s failed: need to set both 'projection' and 'celldim' for %s", name.c_str(), groupName.c_str());
 	return false;
     }
     else
     {
-	postSetup(options);
+	postSetup(planningMonitor, groupName, options);
 	return true;
     }
 }

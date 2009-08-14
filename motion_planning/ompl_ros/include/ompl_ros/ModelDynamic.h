@@ -34,10 +34,33 @@
 
 /** \author Ioan Sucan */
 
-#ifndef OMPL_PLANNING_EXTENSIONS_PATH_DEFINITIONS_
-#define OMPL_PLANNING_EXTENSIONS_PATH_DEFINITIONS_
+#ifndef OMPL_ROS_MODEL_DYNAMIC_
+#define OMPL_ROS_MODEL_DYNAMIC_
 
-#include <ompl/extension/kinematic/PathKinematic.h>
-#include <ompl/extension/dynamic/PathDynamic.h>
+#include "ompl_ros/ModelBase.h"
+#include "ompl_ros/dynamic/DistanceEvaluators.h"
+#include "ompl_ros/dynamic/SpaceInformation.h"
+#include "ompl_ros/dynamic/StateValidator.h"
+
+namespace ompl_ros
+{
+    
+    /** \brief The kinematic definition of a model (a group defined by the planning environment) we are planning for */
+    class ModelDynamic : public ModelBase
+    {
+    public:
+	ModelDynamic(planning_environment::PlanningMonitor *pMonitor, const std::string &gName) : ModelBase(pMonitor, gName)
+	{
+	}
+	
+	virtual ~ModelDynamic(void)
+	{
+	}
+	
+	virtual bool configure(void);
+    };
+
+} // ompl_ros
 
 #endif
+

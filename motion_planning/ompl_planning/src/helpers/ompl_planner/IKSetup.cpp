@@ -37,36 +37,28 @@
 #include "ompl_planning/planners/IKSetup.h"
 #include <ros/console.h>
 
-ompl_planning::IKSetup::IKSetup(ModelBase *m)
+ompl_planning::IKSetup::IKSetup(void)
 {
-    model = m;
+    ompl_model = NULL;
     gaik = NULL;
-    si = NULL;
-    svc = NULL;
 }
 
 ompl_planning::IKSetup::~IKSetup(void)
 {
     if (gaik)
 	delete gaik;
-    if (svc)
-	delete svc;
-    for (std::map<std::string, ompl::base::StateDistanceEvaluator*>::iterator j = sde.begin(); j != sde.end() ; ++j)
-	if (j->second)
-	    delete j->second;
-    if (si)
-	delete si;
+    if (ompl_model)
+	delete ompl_model;
 }
 
-void ompl_planning::IKSetup::setup(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
+void ompl_planning::IKSetup::setup(planning_environment::PlanningMonitor *planningMonitor, const std::string &groupName,
+				   boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
 {
-    ROS_DEBUG("Adding IK instance for '%s'", model->groupName.c_str());
-    SpaceInformationKinematicModel *sk = new SpaceInformationKinematicModel(model);
-    svc = new StateValidityPredicate(sk, model);
-    si = sk;
-    si->setStateValidityChecker(svc);
-    sde["L2Square"] = new ompl::base::L2SquareStateDistanceEvaluator(si);
-    gaik = new ompl::kinematic::GAIK(si);
+    ROS_DEBUG("Adding IK instance for '%s'", groupName.c_str());
+    ompl_model = new ompl_ros::ModelKinematic(planningMonitor, groupName);
+    ompl_model->configure();
+    
+    gaik = new ompl::kinematic::GAIK(dynamic_cast<ompl::kinematic::SpaceInformationKinematic*>(ompl_model->si));
     
     if (options->hasParam("max_improve_steps"))
     {
@@ -98,4 +90,5 @@ void ompl_planning::IKSetup::setup(boost::shared_ptr<planning_environment::Robot
 	ROS_DEBUG("Max improve steps is set to %u", gaik->getMaxImproveSteps());
     }
     
+    ompl_model->si->setup();
 }

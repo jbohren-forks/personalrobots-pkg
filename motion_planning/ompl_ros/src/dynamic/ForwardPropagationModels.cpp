@@ -34,54 +34,13 @@
 
 /** \author Ioan Sucan */
 
-#include "ompl_planning/planners/kinematicpSBLSetup.h"
+#include "ompl_ros/dynamic/ForwardPropagationModels.h"
+#include <cmath>
 
-ompl_planning::kinematicpSBLSetup::kinematicpSBLSetup(void) : PlannerSetup()
+void ompl_ros::EulerMethod::step(const ompl::base::State *begin, const ompl::base::Control *ctrl, const double resolution, ompl::base::State *end) const
 {
-    name = "kinematic::pSBL";
-    priority = 12;
-}
-
-ompl_planning::kinematicpSBLSetup::~kinematicpSBLSetup(void)
-{
-    if (dynamic_cast<ompl::kinematic::pSBL*>(mp))
-    {
-	ompl::base::ProjectionEvaluator *pe = dynamic_cast<ompl::kinematic::pSBL*>(mp)->getProjectionEvaluator();
-	if (pe)
-	    delete pe;
-    }
-}
-
-bool ompl_planning::kinematicpSBLSetup::setup(planning_environment::PlanningMonitor *planningMonitor, const std::string &groupName,
-					      boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
-{
-    preSetup(planningMonitor, groupName, options);
-    
-    ompl::kinematic::pSBL *sbl = new ompl::kinematic::pSBL(dynamic_cast<ompl::kinematic::SpaceInformationKinematic*>(ompl_model->si));
-    mp                         = sbl;	
-    
-    if (options->hasParam("range"))
-    {
-	sbl->setRange(options->getParamDouble("range", sbl->getRange()));
-	ROS_DEBUG("Range is set to %g", sbl->getRange());
-    }
-
-    if (options->hasParam("thread_count"))
-    {
-	sbl->setThreadCount(options->getParamInt("thread_count", sbl->getThreadCount()));
-	ROS_DEBUG("Thread count is set to %u", sbl->getThreadCount());
-    }
-
-    sbl->setProjectionEvaluator(getProjectionEvaluator(options));
-    
-    if (sbl->getProjectionEvaluator() == NULL)
-    {
-	ROS_WARN("Adding %s failed: need to set both 'projection' and 'celldim' for %s", name.c_str(), groupName.c_str());
-	return false;
-    }
-    else
-    {
-	postSetup(planningMonitor, groupName, options);
-	return true;
-    }
+    double diff[dim_];
+    ode_(begin, ctrl, diff);
+    for (unsigned int i = 0 ; i < dim_ ; ++i)
+	end->values[i] = begin->values[i] + resolution * diff[i];
 }

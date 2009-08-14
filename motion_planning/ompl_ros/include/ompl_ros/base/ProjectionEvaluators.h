@@ -34,54 +34,34 @@
 
 /** \author Ioan Sucan */
 
-#include "ompl_planning/planners/kinematicpSBLSetup.h"
+#ifndef OMPL_ROS_BASE_PROJECTION_EVALUATORS_
+#define OMPL_ROS_BASE_PROJECTION_EVALUATORS_
 
-ompl_planning::kinematicpSBLSetup::kinematicpSBLSetup(void) : PlannerSetup()
+#include <ompl/base/ProjectionEvaluator.h>
+#include "ompl_ros/ModelBase.h"
+
+namespace ompl_ros
 {
-    name = "kinematic::pSBL";
-    priority = 12;
+
+    class LinkPositionProjectionEvaluator : public ompl::base::ProjectionEvaluator
+    {
+    public:
+
+        LinkPositionProjectionEvaluator(ModelBase *model, const std::string &linkName);
+	
+	/** \brief Return the dimension of the projection defined by this evaluator */
+	virtual unsigned int getDimension(void) const;
+	
+	/** \brief Compute the projection as an array of double values */
+	virtual void operator()(const ompl::base::State *state, double *projection) const;
+	
+    protected:
+	
+	ModelBase   *model_;
+	std::string  linkName_;
+	
+    };
+    
 }
 
-ompl_planning::kinematicpSBLSetup::~kinematicpSBLSetup(void)
-{
-    if (dynamic_cast<ompl::kinematic::pSBL*>(mp))
-    {
-	ompl::base::ProjectionEvaluator *pe = dynamic_cast<ompl::kinematic::pSBL*>(mp)->getProjectionEvaluator();
-	if (pe)
-	    delete pe;
-    }
-}
-
-bool ompl_planning::kinematicpSBLSetup::setup(planning_environment::PlanningMonitor *planningMonitor, const std::string &groupName,
-					      boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
-{
-    preSetup(planningMonitor, groupName, options);
-    
-    ompl::kinematic::pSBL *sbl = new ompl::kinematic::pSBL(dynamic_cast<ompl::kinematic::SpaceInformationKinematic*>(ompl_model->si));
-    mp                         = sbl;	
-    
-    if (options->hasParam("range"))
-    {
-	sbl->setRange(options->getParamDouble("range", sbl->getRange()));
-	ROS_DEBUG("Range is set to %g", sbl->getRange());
-    }
-
-    if (options->hasParam("thread_count"))
-    {
-	sbl->setThreadCount(options->getParamInt("thread_count", sbl->getThreadCount()));
-	ROS_DEBUG("Thread count is set to %u", sbl->getThreadCount());
-    }
-
-    sbl->setProjectionEvaluator(getProjectionEvaluator(options));
-    
-    if (sbl->getProjectionEvaluator() == NULL)
-    {
-	ROS_WARN("Adding %s failed: need to set both 'projection' and 'celldim' for %s", name.c_str(), groupName.c_str());
-	return false;
-    }
-    else
-    {
-	postSetup(planningMonitor, groupName, options);
-	return true;
-    }
-}
+#endif

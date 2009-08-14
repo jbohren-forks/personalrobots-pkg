@@ -34,13 +34,46 @@
 
 /** \author Ioan Sucan */
 
-#include "ompl_planning/extensions/ForwardPropagationModels.h"
-#include <cmath>
+#ifndef OMPL_ROS_DYNAMIC_EXTENSIONS_FORWARD_PROPAGATION_MODELS_
+#define OMPL_ROS_DYNAMIC_EXTENSIONS_FORWARD_PROPAGATION_MODELS_
 
-void ompl_planning::EulerMethod::step(const ompl::base::State *begin, const ompl::base::Control *ctrl, const double resolution, ompl::base::State *end) const
+#include <ompl/base/StateForwardPropagator.h>
+#include <ompl/extension/dynamic/SpaceInformationControlsIntegrator.h>
+#include <boost/bind.hpp>
+
+namespace ompl_ros
 {
-    double diff[dim_];
-    ode_(begin, ctrl, diff);
-    for (unsigned int i = 0 ; i < dim_ ; ++i)
-	end->values[i] = begin->values[i] + resolution * diff[i];
+    
+    /** \brief Propagate forward using Euler's method */
+    class EulerMethod
+    {
+    public:
+	
+	EulerMethod(const boost::function<void(const ompl::base::State*, const ompl::base::Control*, double*)> &ode, const unsigned int dim) : ode_(ode), dim_(dim)
+	{
+	}
+	
+	void step(const ompl::base::State *begin, const ompl::base::Control *ctrl, const double resolution, ompl::base::State *end) const;
+	
+    private:
+	
+	boost::function<void(const ompl::base::State*, const ompl::base::Control*, double*)> ode_;
+	unsigned int                                                                         dim_;
+    };
+    
+    
+    /** \brief Base definition for a class that does forward propagation for a specific robot model */
+    class ForwardPropagationModel : public ompl::base::StateForwardPropagator
+    {
+    public:
+	
+	virtual void controlDefinition(std::vector<ompl::base::ControlComponent> &controlComponent, unsigned int *controlDimension,
+				       unsigned int *minDuration, unsigned int *maxDuration, double *resolution) = 0;
+
+	std::string name;
+    };
+    
 }
+
+
+#endif

@@ -34,60 +34,42 @@
 
 /** \author Ioan Sucan */
 
-#ifndef OMPL_PLANNING_EXTENSIONS_STATE_VALIDATOR_
-#define OMPL_PLANNING_EXTENSIONS_STATE_VALIDATOR_
+#include "ompl_ros/kinematic/StateValidator.h"
 
-#include <ompl/base/StateValidityChecker.h>
-#include <collision_space/environment.h>
-
-#include "ompl_planning/ModelBase.h"
-#include "ompl_planning/extensions/SpaceInformation.h"
-
-#include <iostream>
-
-namespace ompl_planning
+bool ompl_ros::ROSStateValidityPredicateKinematic::operator()(const ompl::base::State *s) const
 {
+    EnvironmentDescription *ed = model_->getEnvironmentDescription();
+    return check(s, ed->collisionSpace, ed->kmodel, ed->constraintEvaluator);
+}
+
+void ompl_ros::ROSStateValidityPredicateKinematic::setConstraints(const motion_planning_msgs::KinematicConstraints &kc)
+{
+    clearConstraints();
+    model_->constraintEvaluator.add(model_->planningMonitor->getEnvironmentModel()->getRobotModel().get(), kc.pose_constraint);
+}
+
+void ompl_ros::ROSStateValidityPredicateKinematic::clearConstraints(void)
+{
+    model_->constraintEvaluator.clear();
+}
+
+void ompl_ros::ROSStateValidityPredicateKinematic::printSettings(std::ostream &out) const
+{    
+    out << "Path constraints:" << std::endl;
+    model_->constraintEvaluator.print(out);
+}
+
+bool ompl_ros::ROSStateValidityPredicateKinematic::check(const ompl::base::State *s, collision_space::EnvironmentModel *em, planning_models::KinematicModel *km,
+							 const planning_environment::KinematicConstraintEvaluatorSet *kce) const
+{
+    km->computeTransformsGroup(s->values, model_->groupID);
     
-    class StateValidityPredicate : public ompl::base::StateValidityChecker
+    bool valid = kce->decide(s->values, model_->groupID);
+    if (valid)
     {
-    public:
-        StateValidityPredicate(SpaceInformationKinematicModel *si, ModelBase *model) : ompl::base::StateValidityChecker()
-	{
-	    ksi_ = si;
-	    dsi_ = NULL;
-	    model_ = model;
-	}
-	
-        StateValidityPredicate(SpaceInformationDynamicModel *si, ModelBase *model) : ompl::base::StateValidityChecker()
-	{
-	    dsi_ = si;
-	    ksi_ = NULL;
-	    model_ = model;
-	}
-
-	virtual ~StateValidityPredicate(void)
-	{
-	}
-	
-	virtual bool operator()(const ompl::base::State *s) const;
-	void setConstraints(const motion_planning_msgs::KinematicConstraints &kc);
-	void clearConstraints(void);
-	void printSettings(std::ostream &out) const;
-	
-    protected:
-	
-	bool check(const ompl::base::State *s, collision_space::EnvironmentModel *em, planning_models::KinematicModel *km,
-		   const planning_environment::KinematicConstraintEvaluatorSet *kce) const;
-	
-	ModelBase                                             *model_;
-	
-	// one of the next two will be instantiated
-	SpaceInformationKinematicModel                        *ksi_;
-	SpaceInformationDynamicModel                          *dsi_;
-	
-    };
+	em->updateRobotModel();
+	valid = !em->isCollision();
+    }
     
-} // ompl_planning
-
-#endif
-    
+    return valid;
+}

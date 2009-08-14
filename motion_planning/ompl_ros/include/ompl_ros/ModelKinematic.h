@@ -34,9 +34,33 @@
 
 /** \author Ioan Sucan */
 
-#ifndef OMPL_PLANNING_EXTENSIONS_DISTANCE_EVALUATORS_
-#define OMPL_PLANNING_EXTENSIONS_DISTANCE_EVALUATORS_
+#ifndef OMPL_ROS_MODEL_KINEMATIC_
+#define OMPL_ROS_MODEL_KINEMATIC_
 
-#include <ompl/base/StateDistanceEvaluator.h>
+#include "ompl_ros/ModelBase.h"
+#include "ompl_ros/kinematic/DistanceEvaluators.h"
+#include "ompl_ros/kinematic/SpaceInformation.h"
+#include "ompl_ros/kinematic/StateValidator.h"
+
+namespace ompl_ros
+{
+    
+    /** \brief The kinematic definition of a model (a group defined by the planning environment) we are planning for */
+    class ModelKinematic : public ModelBase
+    {
+    public:
+	ModelKinematic(planning_environment::PlanningMonitor *pMonitor, const std::string &gName) : ModelBase(pMonitor, gName)
+	{
+	}
+	
+	virtual ~ModelKinematic(void)
+	{
+	}
+	
+	virtual bool configure(void);
+    };
+
+} // ompl_ros
 
 #endif
+

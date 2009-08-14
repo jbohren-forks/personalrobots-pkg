@@ -34,54 +34,54 @@
 
 /** \author Ioan Sucan */
 
-#include "ompl_planning/planners/kinematicpSBLSetup.h"
+#ifndef OMPL_ROS_DYNAMIC_STATE_VALIDATOR_
+#define OMPL_ROS_DYNAMIC_STATE_VALIDATOR_
 
-ompl_planning::kinematicpSBLSetup::kinematicpSBLSetup(void) : PlannerSetup()
+#include <ompl/base/StateValidityChecker.h>
+#include <collision_space/environment.h>
+
+#include "ompl_ros/ModelBase.h"
+#include "ompl_ros/dynamic/SpaceInformation.h"
+
+#include <iostream>
+
+namespace ompl_ros
 {
-    name = "kinematic::pSBL";
-    priority = 12;
-}
-
-ompl_planning::kinematicpSBLSetup::~kinematicpSBLSetup(void)
-{
-    if (dynamic_cast<ompl::kinematic::pSBL*>(mp))
-    {
-	ompl::base::ProjectionEvaluator *pe = dynamic_cast<ompl::kinematic::pSBL*>(mp)->getProjectionEvaluator();
-	if (pe)
-	    delete pe;
-    }
-}
-
-bool ompl_planning::kinematicpSBLSetup::setup(planning_environment::PlanningMonitor *planningMonitor, const std::string &groupName,
-					      boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
-{
-    preSetup(planningMonitor, groupName, options);
     
-    ompl::kinematic::pSBL *sbl = new ompl::kinematic::pSBL(dynamic_cast<ompl::kinematic::SpaceInformationKinematic*>(ompl_model->si));
-    mp                         = sbl;	
-    
-    if (options->hasParam("range"))
+    class ROSStateValidityPredicateDynamic : public ompl::base::StateValidityChecker
     {
-	sbl->setRange(options->getParamDouble("range", sbl->getRange()));
-	ROS_DEBUG("Range is set to %g", sbl->getRange());
-    }
+    public:
+        ROSStateValidityPredicateDynamic(ROSSpaceInformationDynamic *si, ModelBase *model) : ompl::base::StateValidityChecker()
+	{
+	    dsi_ = si;
+	    model_ = model;
+	}
+	virtual ~ROSStateValidityPredicateDynamic(void)
+	{
+	}
+	
+	virtual bool operator()(const ompl::base::State *s) const;
 
-    if (options->hasParam("thread_count"))
-    {
-	sbl->setThreadCount(options->getParamInt("thread_count", sbl->getThreadCount()));
-	ROS_DEBUG("Thread count is set to %u", sbl->getThreadCount());
-    }
+	/** \brief Used by the ROS space information to update constraints */
+	void setConstraints(const motion_planning_msgs::KinematicConstraints &kc);
 
-    sbl->setProjectionEvaluator(getProjectionEvaluator(options));
+	/** \brief Used by the ROS space information to update constraints */
+	void clearConstraints(void);
+
+	/** \brief Used by the ROS space information to print information */
+	void printSettings(std::ostream &out) const;
+	
+    protected:
+	
+	bool check(const ompl::base::State *s, collision_space::EnvironmentModel *em, planning_models::KinematicModel *km,
+		   const planning_environment::KinematicConstraintEvaluatorSet *kce) const;
+	
+	ModelBase                  *model_;
+	ROSSpaceInformationDynamic *dsi_;
+	
+    };
     
-    if (sbl->getProjectionEvaluator() == NULL)
-    {
-	ROS_WARN("Adding %s failed: need to set both 'projection' and 'celldim' for %s", name.c_str(), groupName.c_str());
-	return false;
-    }
-    else
-    {
-	postSetup(planningMonitor, groupName, options);
-	return true;
-    }
-}
+} // ompl_planning
+
+#endif
+    

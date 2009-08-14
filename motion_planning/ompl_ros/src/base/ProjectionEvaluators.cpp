@@ -34,59 +34,29 @@
 
 /** \author Ioan Sucan */
 
-#include "ompl_planning/extensions/StateValidator.h"
+#include "ompl_ros/base/ProjectionEvaluators.h"
+#include <ros/console.h>
 
-bool ompl_planning::StateValidityPredicate::operator()(const ompl::base::State *s) const
+ompl_ros::LinkPositionProjectionEvaluator::LinkPositionProjectionEvaluator(ModelBase *model, const std::string &linkName) : ompl::base::ProjectionEvaluator()
 {
-    // for dynamic state spaces, we may get outside bounds
-    if (dsi_)
-    {
-	if (!dsi_->satisfiesBounds(s))
-	    return false;
-    }
-    
+    model_ = model;
+    linkName_ = linkName;
+    if (model_->planningMonitor->getKinematicModel()->getLink(linkName) == NULL)
+	ROS_ERROR("Unknown link: '%s'", linkName.c_str());
+}
+
+unsigned int ompl_ros::LinkPositionProjectionEvaluator::getDimension(void) const
+{
+    return 3;
+}
+
+void ompl_ros::LinkPositionProjectionEvaluator::operator()(const ompl::base::State *state, double *projection) const
+{  
     EnvironmentDescription *ed = model_->getEnvironmentDescription();
-    return check(s, ed->collisionSpace, ed->kmodel, ed->constraintEvaluator);
+    ed->kmodel->computeTransformsGroup(state->values, model_->groupID);
+    const btVector3 &origin = ed->kmodel->getLink(linkName_)->globalTrans.getOrigin();
+    projection[0] = origin.x();
+    projection[1] = origin.y();
+    projection[2] = origin.z();
 }
 
-void ompl_planning::StateValidityPredicate::setConstraints(const motion_planning_msgs::KinematicConstraints &kc)
-{
-    clearConstraints();
-    model_->constraintEvaluator.add(model_->planningMonitor->getEnvironmentModel()->getRobotModel().get(), kc.pose_constraint);
-    
-    // joint constraints simply update the state space bounds
-    if (ksi_)
-	ksi_->setJointConstraints(kc.joint_constraint);
-    if (dsi_)
-	dsi_->setJointConstraints(kc.joint_constraint);
-}
-
-void ompl_planning::StateValidityPredicate::clearConstraints(void)
-{
-    model_->constraintEvaluator.clear();
-    if (ksi_)
-	ksi_->clearJointConstraints();
-    if (dsi_)
-	dsi_->clearJointConstraints();
-}
-
-void ompl_planning::StateValidityPredicate::printSettings(std::ostream &out) const
-{    
-    out << "Path constraints:" << std::endl;
-    model_->constraintEvaluator.print(out);
-}
-
-bool ompl_planning::StateValidityPredicate::check(const ompl::base::State *s, collision_space::EnvironmentModel *em, planning_models::KinematicModel *km,
-						  const planning_environment::KinematicConstraintEvaluatorSet *kce) const
-{
-    km->computeTransformsGroup(s->values, model_->groupID);
-    
-    bool valid = kce->decide(s->values, model_->groupID);
-    if (valid)
-    {
-	em->updateRobotModel();
-	valid = !em->isCollision();
-    }
-    
-    return valid;
-}

@@ -34,11 +34,11 @@
 
 /** \author Ioan Sucan */
 
-#include "ompl_planning/extensions/GoalDefinitions.h"
+#include "ompl_ros/base/GoalDefinitions.h"
 #include <ompl/extension/kinematic/SpaceInformationKinematic.h>
 #include <ros/console.h>
 
-double ompl_planning::GoalToState::distanceGoal(const ompl::base::State *s) const
+double ompl_ros::GoalToState::distanceGoal(const ompl::base::State *s) const
 {
     const double *vals = s->values;
     for (int i = 0 ; i < dim_; ++i)
@@ -52,12 +52,12 @@ double ompl_planning::GoalToState::distanceGoal(const ompl::base::State *s) cons
     return m_si->distance(compState_, state);
 }
 
-const std::vector< std::pair<double, double> >& ompl_planning::GoalToState::getBounds(void) const
+const std::vector< std::pair<double, double> >& ompl_ros::GoalToState::getBounds(void) const
 {
     return bounds_;
 }
 
-void ompl_planning::GoalToState::print(std::ostream &out) const
+void ompl_ros::GoalToState::print(std::ostream &out) const
 {
     ompl::base::GoalState::print(out);
     out << "Joint constraints: " << std::endl;
@@ -66,14 +66,14 @@ void ompl_planning::GoalToState::print(std::ostream &out) const
     out << std::endl;
 }
 	
-void ompl_planning::GoalToState::setup(ompl::base::SpaceInformation *si, ModelBase *model, const std::vector<motion_planning_msgs::JointConstraint> &jc) 
+void ompl_ros::GoalToState::setup(ModelBase *model, const std::vector<motion_planning_msgs::JointConstraint> &jc) 
 {
-    dim_ = si->getStateDimension();
+    dim_ = model->si->getStateDimension();
     
     // get the bounds for the state
     bounds_.resize(dim_);
     for (int i = 0 ; i < dim_ ; ++i)
-	bounds_[i] = std::make_pair(si->getStateComponent(i).minValue, si->getStateComponent(i).maxValue);
+	bounds_[i] = std::make_pair(model->si->getStateComponent(i).minValue, model->si->getStateComponent(i).maxValue);
 
     // keep track of the desired joint values
     std::vector<double> desiredValue(dim_);
@@ -140,12 +140,12 @@ void ompl_planning::GoalToState::setup(ompl::base::SpaceInformation *si, ModelBa
     threshold = ompl::STATE_EPSILON;	    
 }
 
-double ompl_planning::GoalToPosition::distanceGoal(const ompl::base::State *state) const
+double ompl_ros::GoalToPosition::distanceGoal(const ompl::base::State *state) const
 {
     return evaluateGoalAux(state, NULL);
 }
 
-bool ompl_planning::GoalToPosition::isSatisfied(const ompl::base::State *state, double *dist) const
+bool ompl_ros::GoalToPosition::isSatisfied(const ompl::base::State *state, double *dist) const
 {
     std::vector<bool> decision;
     double d = evaluateGoalAux(state, &decision);
@@ -158,7 +158,7 @@ bool ompl_planning::GoalToPosition::isSatisfied(const ompl::base::State *state, 
     return true;
 }
 
-void ompl_planning::GoalToPosition::print(std::ostream &out) const
+void ompl_ros::GoalToPosition::print(std::ostream &out) const
 {
     ompl::base::GoalRegion::print(out);
     out << "Pose constraints:" << std::endl;
@@ -166,7 +166,7 @@ void ompl_planning::GoalToPosition::print(std::ostream &out) const
 	pce_[i]->print(out);
 }
 	
-double ompl_planning::GoalToPosition::evaluateGoalAux(const ompl::base::State *state, std::vector<bool> *decision) const
+double ompl_ros::GoalToPosition::evaluateGoalAux(const ompl::base::State *state, std::vector<bool> *decision) const
 {
     EnvironmentDescription *ed = model_->getEnvironmentDescription();
     ed->kmodel->computeTransformsGroup(state->values, model_->groupID);
@@ -187,12 +187,12 @@ double ompl_planning::GoalToPosition::evaluateGoalAux(const ompl::base::State *s
     return distance;
 }
 	
-double ompl_planning::GoalToMultipleConstraints::distanceGoal(const ompl::base::State *s) const
+double ompl_ros::GoalToMultipleConstraints::distanceGoal(const ompl::base::State *s) const
 {
     return gp_.distanceGoal(s) + gs_.distanceGoal(s);
 }
 
-bool ompl_planning::GoalToMultipleConstraints::isSatisfied(const ompl::base::State *state, double *dist) const
+bool ompl_ros::GoalToMultipleConstraints::isSatisfied(const ompl::base::State *state, double *dist) const
 {
     if (dist)
     {
@@ -206,20 +206,20 @@ bool ompl_planning::GoalToMultipleConstraints::isSatisfied(const ompl::base::Sta
 	return gs_.isSatisfied(state) && gp_.isSatisfied(state);
 }
 
-void ompl_planning::GoalToMultipleConstraints::sampleNearGoal(ompl::base::State *s) const
+void ompl_ros::GoalToMultipleConstraints::sampleNearGoal(ompl::base::State *s) const
 {
     lock_.lock();
     sCore_.sampleNear(s, gs_.state, rho_);
     lock_.unlock();
 }
 
-void ompl_planning::GoalToMultipleConstraints::print(std::ostream &out) const
+void ompl_ros::GoalToMultipleConstraints::print(std::ostream &out) const
 {
     gs_.print(out);
     gp_.print(out);
 }
 
-ompl::base::Goal* ompl_planning::computeGoalFromConstraints(ompl::base::SpaceInformation *si, ModelBase *model, const motion_planning_msgs::KinematicConstraints &kc)
+ompl::base::Goal* ompl_ros::computeGoalFromConstraints(ModelBase *model, const motion_planning_msgs::KinematicConstraints &kc)
 {
     if (kc.joint_constraint.empty() && kc.pose_constraint.empty())
     {
@@ -230,16 +230,16 @@ ompl::base::Goal* ompl_planning::computeGoalFromConstraints(ompl::base::SpaceInf
     if (kc.joint_constraint.size() > 0 && kc.pose_constraint.empty())
 	// we have no pose constraints, only joint constraints
 	// we compute the 'middle state' and plan towards it
-	return new GoalToState(si, model, kc.joint_constraint);
+	return new GoalToState(model, kc.joint_constraint);
     
     if (kc.joint_constraint.empty() && kc.pose_constraint.size() > 0)
 	// we have no joint constraints, only pose constraints
 	// we know nothing of the state we want to get to (in terms of joint angles)
-	return new GoalToPosition(si, model, kc.pose_constraint);
+	return new GoalToPosition(model, kc.pose_constraint);
     
     // if we are doing kinematic planning, we have a special goal type we can use, that may speed things up a bit
-    if (dynamic_cast<ompl::kinematic::SpaceInformationKinematic*>(si))
-	return new GoalToMultipleConstraints(dynamic_cast<ompl::kinematic::SpaceInformationKinematic*>(si), model, kc);
+    if (dynamic_cast<ompl::kinematic::SpaceInformationKinematic*>(model->si))
+	return new GoalToMultipleConstraints(model, kc);
     else
-	return new GoalToPosition(si, model, kc.pose_constraint);
+	return new GoalToPosition(model, kc.pose_constraint);
 }

@@ -37,14 +37,10 @@
 #ifndef OMPL_PLANNING_PLANNERS_PLANNER_SETUP_
 #define OMPL_PLANNING_PLANNERS_PLANNER_SETUP_
 
-#include "ompl_planning/ModelBase.h"
-#include "ompl_planning/extensions/StateValidator.h"
-#include "ompl_planning/extensions/SpaceInformation.h"
-#include "ompl_planning/extensions/ProjectionEvaluators.h"
-#include "ompl_planning/extensions/DistanceEvaluators.h"
-#include "ompl_planning/extensions/GoalDefinitions.h"
-#include "ompl_planning/extensions/PathDefinitions.h"
-#include "ompl_planning/extensions/ForwardPropagationModels.h"
+#include "ompl_ros/ModelKinematic.h"
+#include "ompl_ros/ModelDynamic.h"
+#include "ompl_ros/base/GoalDefinitions.h"
+#include "ompl_ros/base/ProjectionEvaluators.h"
 
 #include <ompl/base/Planner.h>
 #include <ompl/extension/kinematic/PathSmootherKinematic.h>
@@ -54,36 +50,32 @@
 #include <map>
 
 namespace ompl_planning
-{
-    
+{    
     class PlannerSetup
     {
     public:
 	
-	PlannerSetup(ModelBase *m);
-	
+	PlannerSetup(void);
 	virtual ~PlannerSetup(void);
 	
-	/** For each planner definition, define the set of distance metrics it can use */
-	virtual void setupDistanceEvaluators(void);
-	
-	virtual ompl::base::ProjectionEvaluator* getProjectionEvaluator(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options) const;
-	
-	virtual void preSetup(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
-	virtual void postSetup(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
-	
-	virtual bool setup(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options) = 0;
-	
-	ModelBase                                                 *model;
+	virtual bool setup(planning_environment::PlanningMonitor *planningMonitor, const std::string &groupName,
+			   boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options) = 0;
 	
 	std::string                                                name;       // name of planner
+	ompl_ros::ModelBase                                       *ompl_model;       
 	ompl::base::Planner                                       *mp;         // pointer to OMPL instance of planner
 	int                                                        priority;   // priority of this planner when automatically selecting planners
-	ompl::base::SpaceInformation                              *si;         // space information for the planner
-	ompl::base::StateValidityChecker                          *svc;        // the state validation routine
-	std::map<std::string, ompl::base::StateDistanceEvaluator*> sde;        // list of available distance evaluators
 	ompl::kinematic::PathSmootherKinematic                    *smoother;   // pointer to an OMPL path smoother, if needed
 
+    protected:
+
+	virtual ompl::base::ProjectionEvaluator* getProjectionEvaluator(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options) const;
+	
+	virtual void preSetup(planning_environment::PlanningMonitor *planningMonitor, const std::string &groupName,
+			      boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
+	virtual void postSetup(planning_environment::PlanningMonitor *planningMonitor, const std::string &groupName,
+			       boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
+	
     };
 
     

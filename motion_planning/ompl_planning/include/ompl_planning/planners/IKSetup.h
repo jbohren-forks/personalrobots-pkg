@@ -37,32 +37,24 @@
 #ifndef OMPL_PLANNING_PLANNERS_IK_SETUP_
 #define OMPL_PLANNING_PLANNERS_IK_SETUP_
 
-#include "ompl_planning/ModelBase.h"
-#include "ompl_planning/extensions/StateValidator.h"
-#include "ompl_planning/extensions/SpaceInformation.h"
-#include "ompl_planning/extensions/DistanceEvaluators.h"
-#include "ompl_planning/extensions/GoalDefinitions.h"
-
+#include "ompl_ros/ModelKinematic.h"
 #include <ompl/extension/kinematic/extension/ik/GAIK.h>
-#include <map>
+#include <boost/shared_ptr.hpp>
 
 namespace ompl_planning
 {
- 
     class IKSetup
     {
     public:
-	IKSetup(ModelBase *m);
+	IKSetup(void);
 	~IKSetup(void);
 	
-	ModelBase                                                 *model;
-	
-	void setup(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
+	void setup(planning_environment::PlanningMonitor *planningMonitor, const std::string &groupName,
+		   boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
 	
 	ompl::kinematic::GAIK                                     *gaik;       // ik with genetic algorithms
-	ompl::kinematic::SpaceInformationKinematic                *si;         // space information for the planner
-	ompl::base::StateValidityChecker                          *svc;        // the state validation routine
-	std::map<std::string, ompl::base::StateDistanceEvaluator*> sde;        // list of available distance evaluators
+	ompl_ros::ModelBase                                       *ompl_model;
+	
     };
     
 }

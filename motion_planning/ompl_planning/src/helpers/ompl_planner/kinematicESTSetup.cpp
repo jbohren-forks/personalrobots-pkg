@@ -37,7 +37,7 @@
 #include "ompl_planning/planners/kinematicESTSetup.h"
 
 
-ompl_planning::kinematicESTSetup::kinematicESTSetup(ModelBase *m) : PlannerSetup(m)
+ompl_planning::kinematicESTSetup::kinematicESTSetup(void) : PlannerSetup()
 {
     name = "kinematic::EST";
     priority = 1;
@@ -53,11 +53,12 @@ ompl_planning::kinematicESTSetup::~kinematicESTSetup(void)
     }
 }
 
-bool ompl_planning::kinematicESTSetup::setup(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
+bool ompl_planning::kinematicESTSetup::setup(planning_environment::PlanningMonitor *planningMonitor, const std::string &groupName,
+					     boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
 {
-    preSetup(options);
+    preSetup(planningMonitor, groupName, options);
     
-    ompl::kinematic::EST *est = new ompl::kinematic::EST(dynamic_cast<ompl::kinematic::SpaceInformationKinematic*>(si));
+    ompl::kinematic::EST *est = new ompl::kinematic::EST(dynamic_cast<ompl::kinematic::SpaceInformationKinematic*>(ompl_model->si));
     mp                        = est;	
 
     if (options->hasParam("range"))
@@ -76,12 +77,12 @@ bool ompl_planning::kinematicESTSetup::setup(boost::shared_ptr<planning_environm
     
     if (est->getProjectionEvaluator() == NULL)
     {
-	ROS_WARN("Adding %s failed: need to set both 'projection' and 'celldim' for %s", name.c_str(), model->groupName.c_str());
+	ROS_WARN("Adding %s failed: need to set both 'projection' and 'celldim' for %s", name.c_str(), groupName.c_str());
 	return false;
     }
     else
     {
-	postSetup(options);
+	postSetup(planningMonitor, groupName, options);
 	return true;
     }
 }

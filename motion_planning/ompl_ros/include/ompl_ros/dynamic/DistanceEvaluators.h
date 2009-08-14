@@ -34,51 +34,9 @@
 
 /** \author Ioan Sucan */
 
-#ifndef OMPL_PLANNING_EXTENSIONS_PROJECTION_EVALUATORS_
-#define OMPL_PLANNING_EXTENSIONS_PROJECTION_EVALUATORS_
+#ifndef OMPL_ROS_DYNAMIC_DISTANCE_EVALUATORS_
+#define OMPL_ROS_DYNAMIC_DISTANCE_EVALUATORS_
 
-#include <ompl/base/ProjectionEvaluator.h>
-#include "ompl_planning/ModelBase.h"
-
-namespace ompl_planning
-{
-
-    class LinkPositionProjectionEvaluator : public ompl::base::ProjectionEvaluator
-    {
-    public:
-
-        LinkPositionProjectionEvaluator(ModelBase *model, const std::string &linkName) : ompl::base::ProjectionEvaluator()
-	{
-	    model_ = model;
-	    linkName_ = linkName;
-	    if (model_->planningMonitor->getKinematicModel()->getLink(linkName) == NULL)
-		ROS_ERROR("Unknown link: '%s'", linkName.c_str());
-	}
-	
-	/** Return the dimension of the projection defined by this evaluator */
-	virtual unsigned int getDimension(void) const
-	{
-	    return 3;
-	}
-		
-	/** Compute the projection as an array of double values */
-	virtual void operator()(const ompl::base::State *state, double *projection) const
-	{  
-	    EnvironmentDescription *ed = model_->getEnvironmentDescription();
-	    ed->kmodel->computeTransformsGroup(state->values, model_->groupID);
-	    const btVector3 &origin = ed->kmodel->getLink(linkName_)->globalTrans.getOrigin();
-	    projection[0] = origin.x();
-	    projection[1] = origin.y();
-	    projection[2] = origin.z();
-	}
-	
-    protected:
-	
-	ModelBase   *model_;
-	std::string  linkName_;
-	
-    };
-    
-}
+#include <ompl/base/StateDistanceEvaluator.h>
 
 #endif

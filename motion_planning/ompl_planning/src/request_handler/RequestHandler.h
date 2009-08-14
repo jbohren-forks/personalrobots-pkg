@@ -112,7 +112,7 @@ namespace ompl_planning
 	bool callPlanner(PlannerSetup *psetup, int times, double allowed_time, Solution &sol);
 	
 	/** \brief Set the workspace bounds based on the request */
-	void setWorkspaceBounds(motion_planning_msgs::KinematicSpaceParameters &params, ModelBase *model, ompl::base::SpaceInformation *si);
+	void setWorkspaceBounds(motion_planning_msgs::KinematicSpaceParameters &params, ompl_ros::ModelBase *ompl_model);
 	
 	/** \brief Fill the response with solution data */
 	void fillResult(PlannerSetup *psetup, const planning_models::StateParams *start, motion_planning_msgs::GetMotionPlan::Response &res, const Solution &sol);
