@@ -77,43 +77,57 @@ class Assembly():
     self.slots = {}
     self.vars = {}
 
-# Testing code
+  def is_empty(self):
+    return len(self.rules) + len(self.tokens) + len(self.slots) + len(self.vars) == 0
+
+# Test utilities
+def construct_test_assembly():
+  # Create assembly
+  assembly = Assembly()
+
+  # Instantiate some things
+  assembly.tokens[0] = Token(
+      0,
+      "test_token",
+      0,
+      0)
+  assembly.tokens[1] = Token(
+      1,
+      "test_slave_token",
+      1,
+      0)
+  assembly.tokens[2] = Token(
+      1,
+      "test_inactive_slave_token",
+      1,
+      1)
+  assembly.slots[0] = Slot(
+      0,
+      [assembly.tokens[0]])
+  assembly.slots[1] = Slot(
+      1,
+      [assembly.tokens[1],assembly.tokens[2]])
+  assembly.rules[1] = Rule(
+      2,
+      "test_rule",
+      assembly.tokens[0],
+      "/dev/null",
+      0,
+      [assembly.tokens[1]])
+  assembly.vars[0] = Variable(
+      3,
+      "test_var",
+      assembly.tokens[0],
+      "BOOL",
+      "[TRUE FALSE MAYBE]",
+      "ENUMERATED_DOMAIN")
+
+  return assembly
+  
+# Unit tests
 class TestAssemblyStructures(unittest.TestCase):
   def test_construct(self):
-    # Create assembly
-    assembly = Assembly()
-
-    # Instantiate some things
-    assembly.tokens[0] = Token(
-	0,
-	"test_token",
-	0,
-	0)
-    assembly.tokens[1] = Token(
-	1,
-	"test_slave_token",
-	1,
-	0)
-    assembly.slots[0] = Slot(
-	0,
-	[assembly.tokens[0]])
-    assembly.slots[1] = Slot(
-	1,
-	[assembly.tokens[1]])
-    assembly.rules[1] = Rule(
-	2,
-	"test_rule",
-	assembly.tokens[0],
-	"/dev/null",
-	0,
-	[assembly.tokens[1]])
-    assembly.vars[0] = Variable(
-	3,
-	"test_var",
-	assembly.tokens[0],
-	"BOOL",
-	"[TRUE FALSE MAYBE]",
-	"ENUMERATED_DOMAIN")
+    construct_test_assembly()
 
 if __name__ == '__main__':
   unittest.main()

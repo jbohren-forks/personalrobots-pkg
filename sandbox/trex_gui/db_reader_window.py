@@ -2,7 +2,7 @@
 
 # System modules
 import sys
-import os
+import os,stat
 
 import time
 import threading
@@ -10,17 +10,19 @@ import threading
 import gtk
 
 import unittest
-import traceback
 
 # TREX modules
 from db_reader import DbReader
+from assembly import Assembly
 
 ##############################################################################
-# DbViewerWindow
+# DbReaderWindow
 #   This window provides a user with controls to step to any tick and re-run
-#   the data loader.
+#   the data loader. It also does continuous polling of the file system in
+#   order to grab data for visualization as it is written to disk.
 ##############################################################################
 
+# DbReaderWindow GTK widget class
 class DbReaderWindow(gtk.Window):
   def __init__(self,db_reader,log_path="."):
     super(DbReaderWindow, self).__init__()
@@ -36,16 +38,19 @@ class DbReaderWindow(gtk.Window):
     self.reactor_names = []
     self.ticks = []
     self.tick = 0
-    self.assembly = None
+    self.status_text = ""
+    self.assembly = Assembly()
 
-    # Spin up the reload thread used to track the latest file
-    self.do_reload = False
-    self.running = True
-    self.reload_lock = threading.RLock()
-    self.reload_thread = threading.Thread(target=self.latest_reload_loop)
-    self.reload_thread.start()
+    # Listener structures
+    self.listeners = []
 
     vbox = gtk.VBox(False, 8)
+
+    ################################################
+
+    self.statusbar = gtk.Statusbar()
+    vbox.pack_end(self.statusbar, False, False, 0)
+
     ################################################
     mb = gtk.MenuBar()
 
@@ -124,29 +129,31 @@ class DbReaderWindow(gtk.Window):
     
     self.latest_but.connect("toggled",self.on_toggle_latest)
 
-    search_hbox = gtk.HBox(False,4)
+    nav_hbox = gtk.HBox(False,4)
 
-    search_hbox.pack_end(self.latest_but, False, False, 0)
-    search_hbox.pack_end(self.en_but, False, False, 0)
-    search_hbox.pack_end(self.fw_but, False, False, 0)
-    search_hbox.pack_end(self.tick_entry, True, True, 0)
-    search_hbox.pack_end(self.go_but, False, False, 0)
-    search_hbox.pack_end(self.bk_but, False, False, 0)
-    search_hbox.pack_end(self.st_but, False, False, 0)
+    nav_hbox.pack_end(self.latest_but, False, False, 0)
+    nav_hbox.pack_end(self.en_but, False, False, 0)
+    nav_hbox.pack_end(self.fw_but, False, False, 0)
+    nav_hbox.pack_end(self.tick_entry, True, True, 0)
+    nav_hbox.pack_end(self.go_but, False, False, 0)
+    nav_hbox.pack_end(self.bk_but, False, False, 0)
+    nav_hbox.pack_end(self.st_but, False, False, 0)
 
     padding = gtk.Alignment(1.0,0.5,1,1)
     padding.set_padding(4,4,4,4)
-    padding.add(search_hbox)
+    padding.add(nav_hbox)
 
     tick_frame.add(padding)
     vbox.pack_start(tick_frame, False, False, 4)
     
-    ################################################
-
-    self.statusbar = gtk.Statusbar()
-    vbox.pack_end(self.statusbar, False, False, 0)
-
     self.add(vbox)
+
+    # Spin up the reload thread used to track the latest file
+    self.do_reload = False
+    self.running = True
+    self.reload_lock = threading.RLock()
+    self.reload_thread = threading.Thread(target=self.latest_reload_loop)
+    self.reload_thread.start()
 
     # try to load the latest
     if len(self.ticks) > 0:
@@ -159,12 +166,12 @@ class DbReaderWindow(gtk.Window):
   # Event Handlers
   ############################################################################
   
+  # Destruction handler to clean up threads
   def on_destroy(self,widget):
     self.running = False
     self.reload_thread.join()
 
-  # Callback for updating the log_path when it is changed
-  # This also re-loads the available reactors and ticks
+  # Callback for updating the log_path and gui fields when the log_path is changed
   def on_change_log_path(self,widget):
     self.log_path = self.path_chooser.get_filename()
     self.load_available_reactors()
@@ -198,34 +205,8 @@ class DbReaderWindow(gtk.Window):
     self.update_available_buttons();
 
   ############################################################################
-  # Multi-threaded polling functions
+  # GUI interaction
   ############################################################################
-
-  # This function continuously reloads the available ticks in a given reactor path
-  def latest_reload_loop(self):
-    while self.running:
-      gtk.gdk.threads_enter()
-      self.reload_lock.acquire()
-      enabled = self.do_reload
-      if self.do_reload:
-	# Check the available ticks
-	self.load_available_ticks()
-	# Re-load if there is a newer tick available
-	if len(self.ticks) > 0 and self.ticks[-1] != self.tick:
-	  self.load_assembly(self.ticks[-1])
-      self.reload_lock.release()
-      gtk.gdk.threads_leave()
-      # Sleep before trying again
-      time.sleep(1.0)
-
-  ############################################################################
-  # DbReader interaction
-  ############################################################################
-
-  def update_fields(self):
-    # Load the available reactors and ticks based on an updated log path
-    self.load_available_reactors()
-    self.load_available_ticks()
 
   # Load the reactors in the current log path and update the drop-down list accordingly
   def load_available_reactors(self):
@@ -244,7 +225,9 @@ class DbReaderWindow(gtk.Window):
       # Set the first option in the list to be active
       self.reactor_chooser.set_active(0)
     except:
-      self.statusbar.push(0,"Failed to load reactor list from log path.")
+      self.set_status("Failed to load reactor list from log path.")
+      self.reactor_names = []
+      self.reactor_name = ""
 
   # Load the available ticks and update the buttons accordingly
   def load_available_ticks(self):
@@ -259,25 +242,21 @@ class DbReaderWindow(gtk.Window):
 	# Load the assembly
 	self.load_assembly(self.tick)
     except:
-      self.statusbar.push(0,"Failed to load any ticks from log path.")
+      if self.reactor_name != "":
+	self.set_status("Failed to load any ticks from log path.")
+      self.tick = None
+      self.ticks = []
 
     # Enable and disable buttons accordingly
     self.update_available_buttons()
-
-  # Calculate a new tick by incrementing current tick some indices forward or backward
-  def tick_increment(self, index_inc):
-    new_tick = 0
-    try:
-      cur_index = self.ticks.index(self.tick)
-      new_tick = self.ticks[cur_index + index_inc]
-    except:
-      self.statusbar.push(0,"Tick %d not available." % (new_tick))
-    return new_tick
 
   # This enables and disables the navigator buttons based on the available ticks
   def update_available_buttons(self):
     # Check if the latest tracking button is enabled
     latest_enabled = self.latest_but.get_active()
+
+    # If there are no reactors, disable the combobox
+    self.reactor_chooser.set_sensitive(len(self.reactor_names) > 0)
 
     # Set the button sensitivities
     if len(self.ticks) == 0 or latest_enabled:
@@ -310,6 +289,57 @@ class DbReaderWindow(gtk.Window):
   def update_tick_entry(self):
     self.tick_entry.set_text(str(self.tick))
 
+  # Set the status text
+  def set_status(self,text):
+    self.status_text = text
+    self.statusbar.pop(0)
+    self.statusbar.push(0,self.status_text)
+
+  ############################################################################
+  # Tick manipulation
+  ############################################################################
+
+  # Calculate a new tick by incrementing current tick some indices forward or backward
+  def tick_increment(self, index_inc):
+    new_tick = 0
+    try:
+      cur_index = self.ticks.index(self.tick)
+      new_tick = self.ticks[cur_index + index_inc]
+    except:
+      self.set_status("Tick %d not available." % (new_tick))
+    return new_tick
+
+  ############################################################################
+  # Multi-threaded polling functions
+  ############################################################################
+
+  # This function continuously reloads the available ticks in a given reactor path
+  def latest_reload_loop(self):
+    while self.running:
+      gtk.gdk.threads_enter()
+      self.reload_lock.acquire()
+
+      # Check the available reactors
+      self.load_available_reactors()
+
+      # Check the available ticks
+      self.load_available_ticks()
+
+      # Reload if there is a newer tick available
+      if self.do_reload:
+	if len(self.ticks) > 0 and self.ticks[-1] != self.tick:
+	  self.load_assembly(self.ticks[-1])
+
+      self.reload_lock.release()
+      gtk.gdk.threads_leave()
+
+      # Sleep before trying again
+      time.sleep(0.5)
+
+  ############################################################################
+  # DbReader interaction
+  ############################################################################
+
   # Get an assembly from the db reader
   def load_assembly(self,new_tick):
     try:
@@ -317,8 +347,7 @@ class DbReaderWindow(gtk.Window):
 
       # Check if this tick exists
       if new_tick not in self.ticks:
-	self.statusbar.push(0,"Tick %d not available." % (new_tick))
-	return
+	raise IOError
 
       # Load assembly
       self.assembly = self.db_reader.load_assembly(
@@ -328,58 +357,107 @@ class DbReaderWindow(gtk.Window):
 
       # If we get here, the tick was loaded successfully
       self.tick = new_tick
-      self.update_tick_entry()
-      self.update_available_buttons()
 
       # Post an update to the status bar
-      self.statusbar.push(0,"Loaded Tick [%d] from \"%s\"" % (self.tick,self.reactor_chooser.get_active_text()))
+      self.set_status("Loaded Tick [%d] from \"%s\"" % (self.tick,self.reactor_chooser.get_active_text()))
     except ValueError:
-      self.statusbar.push(0,"Invalid tick entry!")
+      self.set_status("Invalid tick entry!")
+      self.assembly = Assembly()
     except:
-      self.statusbar.push(0,"Could not load Tick [%d] from \"%s\"!" % (self.tick,self.reactor_chooser.get_active_text()))
+      self.set_status("Could not load Tick [%d] from \"%s\"!" % (new_tick,self.reactor_chooser.get_active_text()))
+      self.assembly = Assembly()
+
+    # Update gui
+    self.update_tick_entry()
+    self.update_available_buttons()
+
+    # Notify listeners
+    self.notify_listeners()
 
 
-# Testing code
-class TestDbReaderWindow(unittest.TestCase):
-  def setUp(self):
-    self.db_reader_window = None
+  ############################################################################
+  # Callback registration for classes that process loaded data
+  ############################################################################
 
+  # Function to register on load
+  def register_listener(self,listener_cb):
+    self.listeners.append(listener_cb)
+  
+  # Function to unregister a listener callback
+  def unregister_listener(self,listener_cb):
+    if listener_cb in self.listeners:
+      self.listeners.remove(listener_cb)
+
+  # Function that notifies listeners with new assembly when it is loaded
+  def notify_listeners(self):
+    for listener in self.listeners:
+      try:
+	listener(self.assembly)
+      except:
+	print "Failed to notify listener: "+str(listener)
+
+# Testing utilitie
+class GtkTester():
   def spawn_gtk_thread(self):
     # Spawn the window
-    gtk.gdk.threads_init()
     gtk_thread = threading.Thread(target=self.gtk_thread)
     gtk_thread.start()
 
   def gtk_thread(self):
+    # Spawn a thread to run gtk in
+    print "Spawning gtk thread..."
+    self.db_reader_window.connect("destroy",gtk.main_quit)
+    gtk.main()
+
+# Define a simple listener for callbacks
+class SimpleAssemblyListener():
+  def __init__(self):
+    self.rules = {}
+    self.tokens = {}
+
+  def cb_rules(self,assembly):
+    self.rules = assembly.rules
+
+  def cb_tokens(self,assembly):
+    self.tokens = assembly.tokens
+
+# Unit tests
+class TestDbReaderWindow(unittest.TestCase,GtkTester):
+  # Create the gtk thread and window structure
+  def setUp(self):
+    # Initialize GTK Python threading functionality
+    gtk.gdk.threads_init()
     # Create a new db reader
     self.db_reader = DbReader()
     # Create a new db reader window
     self.db_reader_window = DbReaderWindow(self.db_reader)
-    self.db_reader_window.connect("destroy",gtk.main_quit)
-    # Spawn a thread to run gtk in
-    print "Spawning gtk thread..."
-    gtk.main()
 
-  def test_display(self):
-    # Spawn the window
-    self.spawn_gtk_thread()
-    # Wait two seconds
-    time.sleep(2)
-    # kill the window
-    self.db_reader_window.destroy()
+    # Create a new listener
+    self.listener = SimpleAssemblyListener()
+    # Register callbacks
+    self.db_reader_window.register_listener(self.listener.cb_rules)
+    self.db_reader_window.register_listener(self.listener.cb_tokens)
 
-  def test_reading(self):
     # Spawn the window
     self.spawn_gtk_thread()
     
+  # Destroy window and kill gtk
+  def tearDown(self):
+    print "Killing The window..."
+    self.db_reader_window.destroy()
+    time.sleep(5)
+
+  # Test basic user-driven reading of logs
+  def test_reading(self):
     # Wait for the window to come up
     time.sleep(2)
 
+    # Define data constants
     LOG_PATH = os.path.abspath("./test/db_reader")
     REACTORS = ["pr2.doorman", "pr2.navigator"]
     TICKS = [100, 200, 300, 400, 500, 600, 700, 800, 900]
     GO_TICK = 500
-
+    
     print "Setting the log path..."
     self.db_reader_window.path_chooser.set_filename(LOG_PATH)
     time.sleep(2)
@@ -390,6 +468,7 @@ class TestDbReaderWindow(unittest.TestCase):
     # Assert the reactors were loaded properly
     self.assert_(REACTORS == self.db_reader_window.reactor_names)
     # Assert all the expected ticks were loaded properly
+    print self.db_reader_window.ticks
     self.assert_(TICKS == self.db_reader_window.ticks)
 
     print "Checking navigation buttons..."
@@ -404,21 +483,89 @@ class TestDbReaderWindow(unittest.TestCase):
     time.sleep(1)
     self.db_reader_window.fw_but.emit("clicked")
     self.assert_(self.db_reader_window.tick == TICKS[-1])
-    time.sleep(1)
-    self.db_reader_window.fw_but.emit("clicked")
-    self.assert_(self.db_reader_window.tick == TICKS[-1])
+
+    print "Checking listeners were notified..."
+    self.assert_(len(self.listener.rules) > 0)
+    self.assert_(len(self.listener.tokens) > 0)
 
     print "Checking tick entry..."
     self.db_reader_window.tick_entry.set_text(str(GO_TICK))
     time.sleep(1)
     self.db_reader_window.go_but.emit("clicked")
     time.sleep(1)
+    self.assert_(self.db_reader_window.tick == GO_TICK)
 
-    print "Waiting..."
-    time.sleep(5)
-    # kill the window
-    self.db_reader_window.destroy()
-    
+    print "Checking invalid tick entry reversion..."
+    self.db_reader_window.tick_entry.set_text("0")
+    time.sleep(1)
+    self.db_reader_window.go_but.emit("clicked")
+    time.sleep(1)
+    self.assert_(self.db_reader_window.tick == GO_TICK)
+
+    print "Moving to an empty path..."
+    self.db_reader_window.path_chooser.set_filename(".")
+    time.sleep(2)
+
+    print "Checking listeners were notified..."
+    self.assert_(len(self.listener.rules) == 0)
+    self.assert_(len(self.listener.tokens) == 0)
+    time.sleep(2)
+
+  # Test auto-reload functionality
+  def test_autoload(self):
+    # Wait for the window to come up
+    time.sleep(2)
+
+    LOG_PATH = os.path.abspath("./test")
+    DYNAMIC_REACTOR_NAME = "NOT_A_REAL_REACTOR"
+    DYNAMIC_REACTOR_ASSEMBLY_PATH = os.path.abspath("./test/assembly_dumps")
+    DYNAMIC_REACTOR_PATH = os.path.join(DYNAMIC_REACTOR_ASSEMBLY_PATH, DYNAMIC_REACTOR_NAME)
+    DYNAMIC_REACTOR_TICK_PATH = os.path.join(DYNAMIC_REACTOR_PATH,"tick100")
+    DYNAMIC_REACTOR_TICK_PATH_2 = os.path.join(DYNAMIC_REACTOR_PATH,"tick200")
+
+    print "Setting the log path..."
+    self.db_reader_window.path_chooser.set_filename(LOG_PATH)
+    time.sleep(2)
+
+    print "Making new reactor directory..."
+    try:
+      os.rmdir(DYNAMIC_REACTOR_TICK_PATH_2)
+      os.rmdir(DYNAMIC_REACTOR_TICK_PATH)
+      os.rmdir(DYNAMIC_REACTOR_PATH)
+      os.rmdir(DYNAMIC_REACTOR_ASSEMBLY_PATH)
+    except:
+      pass
+    os.makedirs(DYNAMIC_REACTOR_PATH)
+    time.sleep(4)
+
+    print "Checking for automatic reactor pick-up..."
+    self.assert_([DYNAMIC_REACTOR_NAME] == self.db_reader_window.reactor_names)
+
+    print "Making new tick directory"
+    os.makedirs(DYNAMIC_REACTOR_TICK_PATH)
+    time.sleep(4)
+
+    print "Checking for automatic tick pick-up..."
+    self.assert_([100] == self.db_reader_window.ticks)
+
+    print "Enabling automatic tick tracking..."
+    self.db_reader_window.latest_but.set_active(True)
+    self.db_reader_window.latest_but.emit("toggled")
+    os.makedirs(DYNAMIC_REACTOR_TICK_PATH_2)
+    time.sleep(4)
+
+    print "Checking for automatic tick tracking..."
+    self.assert_(self.db_reader_window.status_text == "Could not load Tick [%d] from \"%s\"!" % (200,DYNAMIC_REACTOR_NAME))
+
+    print "Removing new reactor directory..."
+    os.rmdir(DYNAMIC_REACTOR_TICK_PATH_2)
+    os.rmdir(DYNAMIC_REACTOR_TICK_PATH)
+    os.rmdir(DYNAMIC_REACTOR_PATH)
+    os.rmdir(DYNAMIC_REACTOR_ASSEMBLY_PATH)
+    time.sleep(4)
+
+    print "Checking for no reactor pick-up..."
+    self.assert_(len(self.db_reader_window.reactor_names) == 0)
 
 if __name__ == '__main__':
   unittest.main()

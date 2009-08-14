@@ -1,11 +1,5 @@
 #!/usr/bin/env python
 
-##############################################################################
-# DbReader
-#   This class complements the TREX DbWrtier. It loads files written out with
-#   the format that the DbWriter uses to export a database state.
-##############################################################################
-
 # System modules
 import sys,os
 import re
@@ -15,6 +9,13 @@ import unittest
 # TREX modules
 from assembly import Assembly,Entity,Rule,Token,Slot,Variable
 
+##############################################################################
+# DbReader
+#   This class complements the TREX DbWrtier. It loads files written out with
+#   the format that the DbWriter uses to export a database state.
+##############################################################################
+
+# DbReader
 class DbReader():
   ASSEMBLY_PATH = "assembly_dumps"
 
@@ -151,8 +152,7 @@ class DbReader():
     # Return constructed assembly database
     return assembly
 
-
-# Testing code
+# Unit tests
 class TestDbReader(unittest.TestCase):
   def test_read(self):
     # Create a db reader
