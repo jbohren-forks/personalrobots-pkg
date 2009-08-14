@@ -89,6 +89,4 @@ void ompl_planning::IKSetup::setup(planning_environment::PlanningMonitor *planni
 	gaik->setMaxImproveSteps(options->getParamInt("max_improve_steps", gaik->getMaxImproveSteps()));
 	ROS_DEBUG("Max improve steps is set to %u", gaik->getMaxImproveSteps());
     }
-    
-    ompl_model->si->setup();
 }
