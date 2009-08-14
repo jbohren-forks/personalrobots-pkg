@@ -760,6 +760,8 @@ namespace move_arm
 		const motion_planning_msgs::KinematicJoint &kj = req.start_state[i];
 		sp->setParamsJoint(kj.value, kj.joint_name);
 		motion_planning_msgs::JointConstraint jc;
+		jc.header.frame_id = planningMonitor_->getFrameId();
+		jc.header.stamp = ros::Time::now();
 		jc.joint_name = kj.joint_name;
 		jc.value = kj.value;
 		jc.tolerance_above.resize(jc.value.size(), 0.0);
