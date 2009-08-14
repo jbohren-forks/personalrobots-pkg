@@ -48,5 +48,7 @@ bool ompl_ros::ModelDynamic::configure(void)
     
     sde["L2Square"] = new ompl::base::L2SquareStateDistanceEvaluator(si);
     
+    ros_si->setup();
+    
     return true;
 }

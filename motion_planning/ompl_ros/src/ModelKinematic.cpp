@@ -47,6 +47,8 @@ bool ompl_ros::ModelKinematic::configure(void)
     si = ros_si;
     
     sde["L2Square"] = new ompl::base::L2SquareStateDistanceEvaluator(si);
+
+    ros_si->setup();
     
     return true;
 }
