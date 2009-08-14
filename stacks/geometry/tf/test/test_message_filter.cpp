@@ -260,6 +260,8 @@ TEST(MessageFilter, tolerance)
 	EXPECT_EQ(1, n.count_); // Latest message is off the end of the offset
 }
 
+// TODO: re-enable once ROS 0.7.3 is out and the Timer issues have been fixed
+#if 0
 TEST(MessageFilter, maxRate)
 {
   tf::TransformListener tf_client;
@@ -295,6 +297,7 @@ TEST(MessageFilter, maxRate)
 
   EXPECT_EQ(1, n.count_);
 }
+#endif
 
 int main(int argc, char** argv)
 {
