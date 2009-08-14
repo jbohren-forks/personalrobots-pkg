@@ -151,7 +151,7 @@ void setupGoal(const std::vector<std::string> &names, move_arm::MoveArmGoal &goa
     goal.contacts[0].links.push_back("r_gripper_r_finger_link");
     goal.contacts[0].links.push_back("r_gripper_l_finger_tip_link");
     goal.contacts[0].links.push_back("r_gripper_r_finger_tip_link");
-    goal.contacts[0].links.push_back("r_gripper_palm_link");
+    //    goal.contacts[0].links.push_back("r_gripper_palm_link");
     goal.contacts[0].depth = 0.04;
     goal.contacts[0].bound.type = mapping_msgs::Object::SPHERE;
     goal.contacts[0].bound.dimensions.push_back(0.5);
@@ -201,16 +201,22 @@ void setupGoalEEf(const std::string &link, const std::vector<double> &pz, move_a
     
     goal.goal_constraints.pose_constraint[0].orientation_importance = 0.2;
     
-    goal.contacts.resize(1);
+    goal.contacts.resize(2);
     goal.contacts[0].links.push_back("r_gripper_l_finger_link");
     goal.contacts[0].links.push_back("r_gripper_r_finger_link");
     goal.contacts[0].links.push_back("r_gripper_l_finger_tip_link");
     goal.contacts[0].links.push_back("r_gripper_r_finger_tip_link");
-    goal.contacts[0].links.push_back("r_gripper_palm_link");
-    goal.contacts[0].depth = 0.4;
+    //    goal.contacts[0].links.push_back("r_gripper_palm_link");
+    goal.contacts[0].depth = 0.04;
     goal.contacts[0].bound.type = mapping_msgs::Object::SPHERE;
     goal.contacts[0].bound.dimensions.push_back(0.3);
     goal.contacts[0].pose = goal.goal_constraints.pose_constraint[0].pose;
+
+    goal.contacts[1].links.push_back("r_gripper_palm_link");
+    goal.contacts[1].depth = 0.01;
+    goal.contacts[1].bound.type = mapping_msgs::Object::SPHERE;
+    goal.contacts[1].bound.dimensions.push_back(0.2);
+    goal.contacts[1].pose = goal.goal_constraints.pose_constraint[0].pose;
 }
 
 void setConfig(const planning_models::StateParams *_sp, const std::vector<std::string> &names, move_arm::MoveArmGoal &goal)
