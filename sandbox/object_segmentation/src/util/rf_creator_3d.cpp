@@ -175,7 +175,7 @@ void RFCreator3D::createCliqueSet(RandomField& rf,
         created_clusters, cluster_centroids);
 
     // !!!!!!!!!!!!!!! TEMPO Print: x y z cluster_label !!!!!!!!!!!!!!!!!!!!!!!!!
-    /*
+/*
     for (map<unsigned int, vector<int> >::iterator iter_created_clusters = created_clusters.begin() ; iter_created_clusters
         != created_clusters.end() ; iter_created_clusters++)
     {
@@ -188,7 +188,7 @@ void RFCreator3D::createCliqueSet(RandomField& rf,
             << pt_cloud.points[cluster_pt_indices[poop]].z << " " << curr_cluster_label << endl;
       }
     }
-    */
+*/
     // !!!!!!!!!!!!!!! TEMPO !!!!!!!!!!!!!!!!!!!!!!!!!
 
     // ----------------------------------------------
