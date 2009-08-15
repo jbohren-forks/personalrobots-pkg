@@ -30,11 +30,16 @@ gensrv()
 #target_link_libraries(example ${PROJECT_NAME})
 
 
-rospack_add_executable(image_server src/image_server_service.cpp)
-target_link_libraries(image_server lifelong_mapping)
+#rospack_add_executable(image_server src/image_server_service.cpp)
+#target_link_libraries(image_server lifelong_mapping)
 
-rospack_add_gtest(test_image_server test/image_server_test.cpp)
-set_target_properties(test_image_server PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/test)
+rospack_add_executable(image_server_fs src/image_server_service_fs.cpp)
+target_link_libraries(image_server_fs )
+
+#rospack_add_gtest(test_image_server test/image_server_test.cpp)
+#set_target_properties(test_image_server PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/test)
+
+
 
 rospack_add_rostest_future(test/test_image_server.launch)
 
