@@ -2,8 +2,8 @@ all: installed
 
 SVN_DIR = openrave_svn
 # Should really specify a revision
-SVN_REVISION = -r 849
-SVN_URL = https://openrave.svn.sourceforge.net/svnroot/openrave
+SVN_REVISION = -r 860
+SVN_URL = https://openrave.svn.sourceforge.net/svnroot/openrave/trunk
 #SVN_PATCH = fini_patch.patch
 include $(shell rospack find mk)/svn_checkout.mk
 
