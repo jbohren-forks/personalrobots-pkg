@@ -20,10 +20,32 @@
 17   couch
 18   ceiling
 19   column
+1    Error
+2    Floor
+3    Wall
+4    Outlet
+5    Door
+6    Door-handle
+7    Obstacle
+8    Cabinet
+8    Cabinets
+9    Whiteboard
+10   Window
+11   Robot
+12   Table
+13   Chair
+14   Light
+15   Trash-basket
+15   Trash_basket
+16   Monitor
+17   Couch
+18   Ceiling
+19   Column
 
 
 #People definitions are here
 100  person
+100  Person
 101  person/head
 102  person/arm
 103  person/torso
