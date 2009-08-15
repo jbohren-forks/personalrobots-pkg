@@ -44,8 +44,6 @@
 
 #include <functional_m3n/random_field.h>
 
-using namespace std;
-
 // --------------------------------------------------------------
 /**
  * \file m3n_logging.h
@@ -81,14 +79,14 @@ class M3NLogger
      * \brief Prints out classification rates per label
      */
     // --------------------------------------------------------------
-    void printClassificationRates(const map<unsigned int, RandomField::Node*>& nodes, const map<unsigned int,
-        unsigned int>& inferred_labels, const vector<unsigned int>& labels)
+    void printClassificationRates(const std::map<unsigned int, RandomField::Node*>& nodes, const std::map<unsigned int,
+        unsigned int>& inferred_labels, const std::vector<unsigned int>& labels)
     {
       // Initialize counters for each label
       // (map: label -> counter)
-      map<unsigned int, unsigned int> total_label_count; // how many nodes with gt label
-      map<unsigned int, unsigned int> correct_label_count; // how many correctly classified
-      map<unsigned int, unsigned int> false_pos_label_count; // how many wrongly classified
+      std::map<unsigned int, unsigned int> total_label_count; // how many nodes with gt label
+      std::map<unsigned int, unsigned int> correct_label_count; // how many correctly classified
+      std::map<unsigned int, unsigned int> false_pos_label_count; // how many wrongly classified
       for (unsigned int i = 0 ; i < labels.size() ; i++)
       {
         total_label_count[labels[i]] = 0;
@@ -103,7 +101,7 @@ class M3NLogger
       unsigned int curr_node_id = 0;
       unsigned int curr_gt_label = 0;
       unsigned int curr_infer_label = 0;
-      map<unsigned int, RandomField::Node*>::const_iterator iter_nodes;
+      std::map<unsigned int, RandomField::Node*>::const_iterator iter_nodes;
       for (iter_nodes = nodes.begin(); iter_nodes != nodes.end() ; iter_nodes++)
       {
         curr_node_id = iter_nodes->first;
@@ -137,9 +135,9 @@ class M3NLogger
       ROS_INFO("%s", ss.str().c_str());
     }
 
-    vector<double> timings_regressors;
-    vector<double> timings_inference;
-    vector<double> objective;
+    std::vector<double> timings_regressors;
+    std::vector<double> timings_inference;
+    std::vector<double> objective;
 };
 
 #endif
