@@ -52,7 +52,7 @@ TableObjectRF::TableObjectRF()
 
   // -----------------------------------------
   // Node Features
-  SpectralAnalysis* sa_nodes = new SpectralAnalysis(0.0254);
+  SpectralAnalysis* sa_nodes = new SpectralAnalysis(0.0254); // 0.0254 = inch
   ShapeSpectral* ss_nodes = new ShapeSpectral(*sa_nodes);
   OrientationNormal* on_nodes = new OrientationNormal(0, 0, 1.0, *sa_nodes);
   //
@@ -61,36 +61,37 @@ TableObjectRF::TableObjectRF()
 
   // -----------------------------------------
   // Clique-set 0 features
-  SpectralAnalysis* sa_cs0 = new SpectralAnalysis(0.2286);
+  SpectralAnalysis* sa_cs0 = new SpectralAnalysis(-1);
   ShapeSpectral* ss_cs0 = new ShapeSpectral(*sa_cs0);
   OrientationNormal* on_cs0 = new OrientationNormal(0, 0, 1.0, *sa_cs0);
   SpinImageCustom* sic_cs0 = new SpinImageCustom(0, 0, 1.0, 0.0762, 0.0762, 5, 4, false);
   BoundingBoxSpectral* bbs_cs0 = new BoundingBoxSpectral(-1.0, *sa_cs0);
   vector<Descriptor3D*> cs0_feature_descriptors;
   cs0_feature_descriptors.push_back(ss_cs0);
-  cs0_feature_descriptors.push_back(on_cs0);
-  cs0_feature_descriptors.push_back(sic_cs0);
-  cs0_feature_descriptors.push_back(bbs_cs0);
+  //cs0_feature_descriptors.push_back(on_cs0);
+  //cs0_feature_descriptors.push_back(sic_cs0);
+  //cs0_feature_descriptors.push_back(bbs_cs0);
   //
-  //clique_set_feature_descriptors.push_back(cs0_feature_descriptors);
+  clique_set_feature_descriptors.push_back(cs0_feature_descriptors);
 
   // -----------------------------------------
   // Clique-set 0 clustering
-  point_cloud_clustering::KMeans* kmeans_cs0 = new point_cloud_clustering::KMeans(0.003, 1.0, 10);
+  point_cloud_clustering::KMeans* kmeans_cs0 = new point_cloud_clustering::KMeans(0.03, 1.0, 10);
   vector<pair<bool, point_cloud_clustering::PointCloudClustering*> > cs0_clusterings(1);
   cs0_clusterings[0].first = true; // true indicates to cluster over only the nodes
   cs0_clusterings[0].second = kmeans_cs0;
   //
-  //clique_set_clusterings.push_back(cs0_clusterings);
+  clique_set_clusterings.push_back(cs0_clusterings);
 
   // -----------------------------------------
   // Initialize RFCreator3D with the above features and clustering
   rf_creator_3d = new RFCreator3D(node_feature_descriptors, clique_set_feature_descriptors,
       clique_set_clusterings);
 
-  voxel_x_ = 0.0127;
-  voxel_y_ = 0.0127;
-  voxel_z_ = 0.0127;
+  // 0.3 inch = 0.00762 m cells
+  voxel_x_ = 0.00762;
+  voxel_y_ = 0.00762;
+  voxel_z_ = 0.00762;
 }
 
 // --------------------------------------------------------------
@@ -100,7 +101,7 @@ boost::shared_ptr<RandomField> TableObjectRF::createRandomField(const string& fn
                                                                 const string& fname_pcd)
 {
   IplImage* image = NULL;
-  sensor_msgs::PointCloud* full_stereo_cloud = NULL;
+  sensor_msgs::PointCloud full_stereo_cloud;
   if (loadStereoImageCloud(fname_image, fname_pcd, image, full_stereo_cloud) < 0)
   {
     abort();
@@ -109,7 +110,7 @@ boost::shared_ptr<RandomField> TableObjectRF::createRandomField(const string& fn
   sensor_msgs::PointCloud ds_stereo_cloud;
   vector<unsigned int> ds_labels;
   map<unsigned int, pair<unsigned int, unsigned int> > ds_idx2img_coords;
-  downsampleStereoCloud(*full_stereo_cloud, ds_stereo_cloud, voxel_x_, voxel_y_, voxel_z_,
+  downsampleStereoCloud(full_stereo_cloud, ds_stereo_cloud, voxel_x_, voxel_y_, voxel_z_,
       ds_labels, ds_idx2img_coords);
   // downsampling will put all invalid points into one point
 
@@ -122,28 +123,30 @@ boost::shared_ptr<RandomField> TableObjectRF::createRandomField(const string& fn
 int TableObjectRF::loadStereoImageCloud(const string& fname_image,
                                         const string& fname_pcd,
                                         IplImage* image,
-                                        sensor_msgs::PointCloud* stereo_cloud)
+                                        sensor_msgs::PointCloud& stereo_cloud)
 {
+  ROS_INFO("Loading image....");
   image = cvLoadImage(fname_image.c_str());
   if (image == NULL)
   {
     return -1;
   }
+  ROS_INFO("done.");
 
-  stereo_cloud = new sensor_msgs::PointCloud();
-  if (cloud_io::loadPCDFile(fname_pcd.c_str(), *stereo_cloud) == -1)
+  ROS_INFO("Loading point cloud....");
+  if (cloud_io::loadPCDFile(fname_pcd.c_str(), stereo_cloud) == -1)
   {
     cvReleaseImage(&image);
     return -1;
   }
+  ROS_INFO("done.");
 
   // verify dimensions are contained in the pcd file
-  if (cloud_geometry::getChannelIndex(*stereo_cloud, TableObjectRF::CHANNEL_ARRAY_WIDTH) < 0
-      || cloud_geometry::getChannelIndex(*stereo_cloud, TableObjectRF::CHANNEL_ARRAY_HEIGHT) < 0)
+  if (cloud_geometry::getChannelIndex(stereo_cloud, TableObjectRF::CHANNEL_ARRAY_WIDTH) < 0
+      || cloud_geometry::getChannelIndex(stereo_cloud, TableObjectRF::CHANNEL_ARRAY_HEIGHT) < 0)
   {
     ROS_ERROR("Could not find stereo image dimensions from the cloud");
     cvReleaseImage(&image);
-    delete stereo_cloud;
     return -1;
   }
 

@@ -79,7 +79,7 @@ class TableObjectRF
     int loadStereoImageCloud(const std::string& fname_image,
                              const std::string& fname_pcd,
                              IplImage* image,
-                             sensor_msgs::PointCloud* stereo_cloud);
+                             sensor_msgs::PointCloud& stereo_cloud);
 
     void
     downsampleStereoCloud(sensor_msgs::PointCloud& full_stereo_cloud,

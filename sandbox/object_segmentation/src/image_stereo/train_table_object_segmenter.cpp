@@ -34,6 +34,10 @@
 
 #include <object_segmentation/image_stereo/table_object_rf.h>
 
+#include <vector>
+#include <map>
+#include <iostream>
+
 using namespace std;
 
 int main()
@@ -49,5 +53,6 @@ int main()
   boost::shared_ptr<RandomField> rf = table_object_rf.createRandomField(fname_img, fname_pcd);
 
   rf->saveNodeFeatures("testo");
+  rf->saveCliqueFeatures("clique_features");
   return 0;
 }
