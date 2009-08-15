@@ -82,7 +82,7 @@ void annotated_map_lib::transformAnyObject(const std::string & target_frame,
     {
       polyOut = &(polymapOut.polygons[iPoly]);
       polyOut->set_points_size(length);
-      polyOut->color=p->color;
+      //polyOut->color=p->color;
     }
     else
     {
@@ -100,9 +100,9 @@ void annotated_map_lib::transformAnyObject(const std::string & target_frame,
   if (! bSame )
   {
     polymapOut.header = polymapIn.header;
-    polymapOut.set_channels_size(polymapIn.get_channels_size());
-    for (unsigned int i = 0 ; i < polymapIn.get_channels_size() ; ++i)
-      polymapOut.channels[i] = polymapIn.channels[i];
+    polymapOut.set_chan_size(polymapIn.get_chan_size());
+    for (unsigned int i = 0 ; i < polymapIn.get_chan_size() ; ++i)
+      polymapOut.chan[i] = polymapIn.chan[i];
   }
   
   //Override the positions
@@ -151,7 +151,7 @@ void annotated_map_lib::transformAnyObject(const std::string & target_frame,
     {
       polyOut = &(polymapOut.polygons[iPoly]);
       polyOut->polygon.set_points_size(length);
-      polyOut->polygon.color=p->polygon.color;
+      //polyOut->polygon.color=p->polygon.color;
       polyOut->tags=p->tags;
       polyOut->tags_chan=p->tags_chan;
     }

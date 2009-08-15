@@ -40,6 +40,8 @@
 #include <stdlib.h>
 #include <string>
 
+
+
 #include <boost/numeric/ublas/matrix.hpp>
 
 #include "ros/node.h"
@@ -76,10 +78,15 @@
 
 #include "point_cloud_assembler/BuildCloud.h"
 
+
 #include "point_cloud_mapping/normal_estimation_in_proc.h"
 
 #include "image_server/SaveImage.h"
 
+
+#include <geometry_msgs/Polygon.h>
+#include "point_cloud_mapping/geometry/distances.h"
+#include "point_cloud_mapping/geometry/areas.h"
 
 using namespace std;
 using namespace tf;
@@ -306,11 +313,44 @@ public:
       object_colors[0]=blank_color;
     }
 
+    
+    std::vector<std::pair<double,int > > polygon_areas;
+    std::vector<geometry_msgs::Polygon > gPolygons;
 
-    int num_in=0;
+    polygon_areas.resize(num_poly);
+    gPolygons.resize(num_poly);
+
     for(unsigned int iAnnotatedPolygon=0;iAnnotatedPolygon<num_poly;iAnnotatedPolygon++)
     {
+      ROS_INFO_STREAM(iAnnotatedPolygon);
+      const cv_mech_turk::AnnotationPolygon &poly=annotation->polygons[iAnnotatedPolygon]; 
+      geometry_msgs::Polygon &poly2=gPolygons[iAnnotatedPolygon];
+      
+      unsigned int pt_count=poly.get_control_points_size();
+      poly2.points.resize(pt_count);
+      ROS_INFO_STREAM("RSZ: "<<iAnnotatedPolygon);
+      for (unsigned int iP=0;iP<pt_count;iP++){
+        ROS_INFO_STREAM("RSZ: "<<iP);
+        poly2.points[iP].x=poly.control_points[iP].x;
+        poly2.points[iP].y=poly.control_points[iP].y;
+      }
+      ROS_INFO_STREAM("start area ");
+      double a=cloud_geometry::areas::compute2DPolygonalArea(poly2);
+      ROS_INFO_STREAM("save ");
+      polygon_areas[iAnnotatedPolygon]=std::pair<double,int>(a,iAnnotatedPolygon);
+      ROS_INFO_STREAM(a << " / " << iAnnotatedPolygon);
+
+    }
+
+    sort(polygon_areas.begin(),polygon_areas.end());
+  
+    int num_in=0;
+    for(unsigned int ordered_polygon_idx=0;ordered_polygon_idx<num_poly;ordered_polygon_idx++)
+    {
+      int iAnnotatedPolygon=polygon_areas[ordered_polygon_idx].second;
       const cv_mech_turk::AnnotationPolygon &poly=annotation->polygons[iAnnotatedPolygon];    
+
+      ROS_INFO_STREAM(ordered_polygon_idx << " \\ " << iAnnotatedPolygon);
 	
       unsigned int pt_count=poly.get_control_points_size();
       if(pt_count<3)
@@ -394,7 +434,8 @@ public:
       CvPoint2D32f pt;
       pt.x=map_2D.points[iPt].x;
       pt.y=map_2D.points[iPt].y;
-      if(pt.x<0 || pt.y<0 || pt.x>=640 || pt.y>=480)
+      int border=400;
+      if(pt.x<-border || pt.y<-border || pt.x>=(border+640) || pt.y>=(border+480))
          continue;
 
       overlap[iPt]=0;

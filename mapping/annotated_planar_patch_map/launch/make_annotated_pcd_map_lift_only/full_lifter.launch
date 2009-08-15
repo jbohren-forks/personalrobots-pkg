@@ -1,0 +1,32 @@
+<launch>
+
+  <!-- Need a stereo to get StereoInfo -->
+  <include file="$(find annotated_planar_patch_map)/launch/make_annotated_pcd_map_lift_only/stereo.launch" />
+
+
+  <node pkg="point_cloud_assembler" type="laser_scan_assembler_srv" output="screen"
+        name="laser_scan_assembler" respawn="true">
+
+    <remap from="scan_in" to="tilt_scan"/>
+    <param name="tf_cache_time_secs" type="double" value="30.0" />
+    <param name="max_scans" type="int" value="4000" />
+    <param name="ignore_laser_skew" type="bool" value="true" />
+    <param name="fixed_frame" type="string" value="/base_link" />
+  </node>
+
+  <node pkg="point_cloud_assembler" type="point_cloud_snapshotter" output="screen" name="snapshotter">
+    <remap from="laser_scanner_signal" to="laser_tilt_controller/laser_scanner_signal"/>
+    <remap from="build_cloud" to="laser_scan_assembler/build_cloud" />
+    <remap from="full_cloud" to="snapshot_cloud" />
+    <param name="fixed_frame" type="string" value="/base_link" />
+    <param name="num_skips" type="int" value="5" />
+  </node>
+
+<!--  <node pkg="cv_mech_turk" type="republish_annotations.py" output="screen" respawn="true"/> -->
+
+
+<!--  <include file="$(find annotated_planar_patch_map)/launch/make_annotated_pcd_map/full_lifter_only.launch" />  -->
+
+
+
+</launch>
