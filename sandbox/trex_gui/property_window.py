@@ -42,6 +42,7 @@ class PropertyWindow(gtk.Window):
     self.set_size_request(500, 400)
     self.set_position(gtk.WIN_POS_CENTER)
 
+    # Remove this property window from the static store
     self.connect("destroy", self.on_destroy)
 
     # Store data structures

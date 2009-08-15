@@ -76,33 +76,32 @@ class TokenNetworkFilter():
     matched = False
 
     # Iterate over all entities
-    if len(self.filters) > 0:
-      for entity in entities:
-	# Iterate over all filters
-	for filter in self.filters:
-	  # Each filter has to match one property of each entity
-	  matched = False
+    for entity in entities:
+      # Iterate over all filters
+      for filter in self.filters:
+	# Each filter has to match one property of each entity
+	matched = False
 
-	  matched = matched or -1 != str(entity.name).find(filter)
-	  matched = matched or -1 != str(entity.key).find(filter)
+	matched = matched or -1 != str(entity.name).find(filter)
+	matched = matched or -1 != str(entity.key).find(filter)
 
-	  # Check variables
-	  for var in entity.vars:
-	    matched = matched or -1 != str(var.name).find(filter)
-	    matched = matched or -1 != str(var.key).find(filter)
-	    matched = matched or -1 != str(var.domain).find(filter)
-	    matched = matched or -1 != str(var.values).find(filter)
-	    matched = matched or -1 != str(var.type).find(filter)
-	  
-	  # Break if any filter does not match
-	  if not matched:
-	    break
-	  
-	# Set hilight based on match value
-	self.token_network.hilight(entity,matched)
+	# Check variables
+	for var in entity.vars:
+	  matched = matched or -1 != str(var.name).find(filter)
+	  matched = matched or -1 != str(var.key).find(filter)
+	  matched = matched or -1 != str(var.domain).find(filter)
+	  matched = matched or -1 != str(var.values).find(filter)
+	  matched = matched or -1 != str(var.type).find(filter)
+	
+	# Break if any filter does not match
+	if not matched:
+	  break
+	
+      # Set hilight based on match value
+      self.token_network.hilight(entity,matched)
 
-      # Re-post a notification to the network
-      self.token_network.notify_listeners()
+    # Re-post a notification to the network
+    self.token_network.notify_listeners()
 
 
 # Unit tests

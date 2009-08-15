@@ -37,9 +37,10 @@ class TokenNetworkFilterWindow(gtk.Window):
     # Create liststore model
     self.create_model()
 
+    # Create tree view
     self.filter_view = gtk.TreeView(self.store)
-    #self.filter_view.connect("row-activated", self.on_activated)
     self.filter_view.connect('key_press_event', self.on_key_press)
+
     self.filter_view.set_rules_hint(True)
     sw.add(self.filter_view)
 
@@ -133,24 +134,33 @@ class TokenNetworkFilterWindow(gtk.Window):
   def add_filter(self,widget):
     filter = self.filter_entry.get_text()
     self.store.append([ True, filter])
+    # Add the filter to the actual token network filter
     self.token_network_filter.add_filter(filter)
+
+  # Remove a filter from the list and the network_filter
+  def rem_filter(self, iter):
+    # Get the filter tex
+    filter = self.store.get_value(iter,1)
+    self.store.remove(iter)
+    # Remove the filter from the token network filter
+    self.token_network_filter.rem_filter(filter)
 
   # Remove the selected filter
   def remove_selected_filter(self):
     selection = self.filter_view.get_selection()
     model, iter = selection.get_selected()
-    if iter:
-      model.remove(iter)
+    self.rem_filter(iter)
 
   # Replace the currently selected filter
   def replace_filter(self,widget):
+    # Remove selected or first filter
     selection = self.filter_view.get_selection()
     model, iter = selection.get_selected()
-    first_iter = self.store.get_iter_first()
+    if not iter:
+      iter = self.store.get_iter_first()
     if iter:
-      self.store.remove(iter)
-    elif first_iter:
-      self.store.remove(first_iter)
+      self.rem_filter(iter)
+    # Add the new filter
     self.add_filter(widget)
 
   ############################################################################
