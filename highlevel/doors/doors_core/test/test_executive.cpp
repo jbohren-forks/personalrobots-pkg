@@ -143,12 +143,13 @@ int
   switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
   switchlist.start_controllers.push_back("laser_tilt_controller");
   if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
+  ROS_INFO("door detect");
   while (detect_door.execute(prior_door, tmp_door, timeout_long) != robot_actions::SUCCESS);
   res_detect_door = tmp_door;
 
   std::ostringstream os2; os2 << res_detect_door;
   ROS_INFO("detect door %s", os2.str().c_str());
-
+  
   // detect handle if door is latched
   ROS_INFO("begining detect handle");
   door_msgs::Door res_detect_handle;
@@ -156,6 +157,7 @@ int
   if (res_detect_door.latch_state == door_msgs::Door::UNLATCHED)
     open_by_pushing = true;
   if (!open_by_pushing){
+    ROS_INFO("Not opening by pushing - pointing head at handle and detecting");
     switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
     switchlist.start_controllers.push_back("head_controller");
     switchlist.start_controllers.push_back("head_pan_joint_position_controller");
@@ -189,7 +191,7 @@ int
     switchlist.start_controllers.push_back("r_arm_constraint_cartesian_wrench_controller");
     if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
     if (touch_door.execute(res_detect_door, tmp_door, timeout_long) != robot_actions::SUCCESS) return -1;
-    ROS_INFO("Foor touched");
+    ROS_INFO("Door touched");
 
     // push door in separate thread
     ROS_INFO("Open by pushing in seperate thread");
