@@ -85,9 +85,9 @@ class TableObjectRF
     void
     downsampleStereoCloud(sensor_msgs::PointCloud& full_stereo_cloud,
                           sensor_msgs::PointCloud& ds_stereo_cloud,
-                          const unsigned int voxel_x,
-                          const unsigned int voxel_y,
-                          const unsigned int voxel_z,
+                          const double voxel_x,
+                          const double voxel_y,
+                          const double voxel_z,
                           vector<unsigned int>& ds_labels,
                           map<unsigned int, pair<unsigned int, unsigned int> >& ds_idx2img_coords);
 

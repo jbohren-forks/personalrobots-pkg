@@ -92,6 +92,31 @@ TableObjectRF::TableObjectRF()
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
+boost::shared_ptr<RandomField> TableObjectRF::createRandomField(const string& fname_image,
+                                                                const string& fname_pcd)
+{
+  IplImage* image = NULL;
+  sensor_msgs::PointCloud* full_stereo_cloud = NULL;
+  if (loadStereoImageCloud(fname_image, fname_pcd, image, full_stereo_cloud) < 0)
+  {
+    abort();
+  }
+
+  double voxel_x = 0.0127;
+  double voxel_y = 0.0127;
+  double voxel_z = 0.0127;
+  sensor_msgs::PointCloud ds_stereo_cloud;
+  vector<unsigned int> ds_labels;
+  map<unsigned int, pair<unsigned int, unsigned int> > ds_idx2img_coords;
+  downsampleStereoCloud(*full_stereo_cloud, ds_stereo_cloud, voxel_x, voxel_y, voxel_z, ds_labels, ds_idx2img_coords);
+  // downsampling will put all invalid points into one point
+
+  return rf_creator_3d->createRandomField(ds_stereo_cloud, ds_labels, false);
+}
+
+// --------------------------------------------------------------
+/* See function definition */
+// --------------------------------------------------------------
 int TableObjectRF::loadStereoImageCloud(const string& fname_image,
                                         const string& fname_pcd,
                                         IplImage* image,
@@ -128,9 +153,9 @@ int TableObjectRF::loadStereoImageCloud(const string& fname_image,
 // --------------------------------------------------------------
 void TableObjectRF::downsampleStereoCloud(sensor_msgs::PointCloud& full_stereo_cloud,
                                           sensor_msgs::PointCloud& ds_stereo_cloud,
-                                          const unsigned int voxel_x,
-                                          const unsigned int voxel_y,
-                                          const unsigned int voxel_z,
+                                          const double voxel_x,
+                                          const double voxel_y,
+                                          const double voxel_z,
                                           vector<unsigned int>& ds_labels,
                                           map<unsigned int, pair<unsigned int, unsigned int> >& ds_idx2img_coords)
 {
