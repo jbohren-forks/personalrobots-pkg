@@ -74,7 +74,7 @@ class RandomField
 
   public:
     /*! \brief A constant value used when a Node has an unknown label */
-    const static unsigned int UNKNOWN_LABEL = 0;
+    const static unsigned int UNKNOWN_LABEL;
 
     // --------------------------------------------------------------
     /*! \see Node definition below */
