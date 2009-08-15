@@ -35,4 +35,4 @@ target_link_libraries(example ${PROJECT_NAME})
 
 rospack_add_executable(test_parser test/test_robot_model_parser.cpp)
 target_link_libraries(test_parser ${PROJECT_NAME})
-rospack_add_rostest(${PROJECT_SOURCE_DIR}/test/test_robot_model_parser.launch)
+#rospack_add_rostest(${PROJECT_SOURCE_DIR}/test/test_robot_model_parser.launch)
