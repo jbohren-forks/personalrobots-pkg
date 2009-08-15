@@ -66,6 +66,8 @@ public:
 
     nh_.param("~config_file", config_file_, std::string("N/A"));
 
+    nh_.param("~frame_suffix", frame_suffix_, std::string("_offset"));
+
     readConfig();
   }
 
@@ -155,6 +157,8 @@ public:
               virtual_offset_.getRotation().w());
     tf_.sendTransform(virtual_offset_, time, frame_id, parent_id);
   }
+protected:
+  std::string frame_suffix_;
 
 private:
   ros::NodeHandle nh_;

@@ -1,0 +1,16 @@
+
+<launch>
+
+  <!-- node type="spacenav_node" pkg="spacenav_node" name="spacenav_node" / -->
+  <node type="stereo_offsetter" pkg="camera_offsetter" name="narrow_stereo_offsetter" output="screen">
+    <remap from="~virtual_twist" to="keyboard_twist" />
+    <param name="cam_name" type="string" value="/narrow_stereo" />
+    <param name="position_scaling" type="double" value=".0001" />
+    <param name="angular_scaling"  type="double" value="1.0" />
+    <param name="cam_name" type="string" value="/narrow_stereo" />
+    <param name="config_file" type="string" value="$(find camera_offsetter)/config/$(env ROBOT).narrow_stereo_to_laser.offset" />
+    <param name="frame_suffix" type="string" value="_offset_laser" />
+
+  </node>
+
+</launch>
