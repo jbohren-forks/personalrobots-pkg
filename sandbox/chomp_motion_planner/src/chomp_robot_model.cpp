@@ -187,8 +187,10 @@ bool ChompRobotModel::init()
     if (node_handle_.getParam(link_param_root+"link_radius", link_radius))
     {
       double clearance;
+      double extension;
       node_handle_.param(link_param_root+"link_clearance", clearance, collision_clearance_default_);
-      addCollisionPointsFromLinkRadius(link_name, link_radius, clearance);
+      node_handle_.param(link_param_root+"link_extension", extension, 0.0);
+      addCollisionPointsFromLinkRadius(link_name, link_radius, clearance, extension);
     }
   }
 
@@ -231,7 +233,7 @@ bool ChompRobotModel::init()
   return true;
 }
 
-void ChompRobotModel::addCollisionPointsFromLinkRadius(std::string link_name, double radius, double clearance)
+void ChompRobotModel::addCollisionPointsFromLinkRadius(std::string link_name, double radius, double clearance, double extension)
 {
   // check if the link already exists in the map, if not, add it:
   if (link_collision_points_.find(link_name) == link_collision_points_.end())
@@ -285,6 +287,7 @@ void ChompRobotModel::addCollisionPointsFromLinkRadius(std::string link_name, do
     // generate equidistant collision points for this link:
     double spacing = radius;
     double distance = joint_origin.Norm();
+    distance+=extension;
     int num_points = ceil(distance/spacing)+1;
     spacing = distance/(num_points-1.0);
 

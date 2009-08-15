@@ -196,7 +196,7 @@ private:
   std::string reference_frame_;                                 /**< Reference frame for all kinematics operations */
   std::map<std::string, std::vector<ChompCollisionPoint> > link_collision_points_;    /**< Collision points associated with every link */
 
-  void addCollisionPointsFromLinkRadius(std::string link_name, double radius, double clearance);
+  void addCollisionPointsFromLinkRadius(std::string link_name, double radius, double clearance, double extension);
 };
 
 /////////////////////////////// inline functions follow ///////////////////////////////////

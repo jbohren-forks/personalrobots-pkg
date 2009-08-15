@@ -170,6 +170,7 @@ void ChompOptimizer::optimize()
     addIncrementsToTrajectory();
     handleJointLimits();
     updateFullTrajectory();
+    if (iteration_%10==0)
     ROS_INFO("Trajectory cost: %f", getTrajectoryCost());
     if (collision_free_iteration_ >= parameters_->getMaxIterationsAfterCollisionFree())
     {

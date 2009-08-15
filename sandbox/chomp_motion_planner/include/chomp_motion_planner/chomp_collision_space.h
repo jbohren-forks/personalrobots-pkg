@@ -95,6 +95,11 @@ private:
   std::string reference_frame_;
   ros::NodeHandle node_handle_;
   boost::mutex mutex_;
+  std::vector<btVector3> cuboid_points_;
+
+  double resolution_;
+  void initCollisionCuboids();
+  void addCollisionCuboid(const std::string param_name);
 };
 
 ///////////////////////////// inline functions follow ///////////////////////////////////
