@@ -40,14 +40,14 @@ namespace chomp
 {
 
 ChompCollisionSpace::ChompCollisionSpace():
-  voxel3d_(NULL)
+  distance_field_(NULL)
 {
 }
 
 ChompCollisionSpace::~ChompCollisionSpace()
 {
-  if (voxel3d_)
-    delete voxel3d_;
+  if (distance_field_)
+    delete distance_field_;
   delete collision_map_notifier_;
 }
 
@@ -57,10 +57,15 @@ void ChompCollisionSpace::collisionMapCallback(const mapping_msgs::CollisionMapC
   if (mutex_.try_lock())
   {
     ros::WallTime start = ros::WallTime::now();
-    voxel3d_->reset();
-    voxel3d_->updateWorld(*collision_map);
+    distance_field_->reset();
+    ROS_INFO("Reset prop distance_field in %f sec", (ros::WallTime::now() - start).toSec());
+    start = ros::WallTime::now();
+    distance_field_->addCollisionMapToField(*collision_map);
     mutex_.unlock();
-    ROS_INFO("Updated distance field in %f sec", (ros::WallTime::now() - start).toSec());
+    ROS_INFO("Updated prop distance_field in %f sec", (ros::WallTime::now() - start).toSec());
+
+    distance_field_->visualize(0.14, 0.15, collision_map->header.frame_id, collision_map->header.stamp);
+
   }
   else
   {
@@ -73,7 +78,6 @@ bool ChompCollisionSpace::init()
   double size_x, size_y, size_z;
   double origin_x, origin_y, origin_z;
   double resolution;
-  int size_x_int, size_y_int, size_z_int;
 
   node_handle_.param("~reference_frame", reference_frame_, std::string("base_link"));
   node_handle_.param("~collision_space/size_x", size_x, 2.0);
@@ -84,12 +88,7 @@ bool ChompCollisionSpace::init()
   node_handle_.param("~collision_space/origin_z", origin_z, -2.0);
   node_handle_.param("~collision_space/resolution", resolution, 0.02);
 
-  size_x_int = int(size_x/resolution);
-  size_y_int = int(size_y/resolution);
-  size_z_int = int(size_z/resolution);
-
-  voxel3d_ = new Voxel3d(size_x_int, size_y_int, size_z_int, resolution,
-      tf::Vector3(origin_x, origin_y, origin_z), true);
+  distance_field_ = new distance_field::PropagationDistanceField(size_x, size_y, size_z, resolution, origin_x, origin_y, origin_z, 0.16);
 
   collision_map_notifier_ = new tf::MessageNotifier<mapping_msgs::CollisionMap>(tf_,
       boost::bind(&ChompCollisionSpace::collisionMapCallback, this, _1),

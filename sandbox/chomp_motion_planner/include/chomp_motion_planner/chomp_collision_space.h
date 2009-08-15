@@ -45,6 +45,9 @@
 #include <boost/thread/mutex.hpp>
 #include <chomp_motion_planner/chomp_collision_point.h>
 #include <Eigen/Core>
+#include <distance_field/distance_field.h>
+#include <distance_field/propagation_distance_field.h>
+#include <distance_field/pf_distance_field.h>
 
 namespace chomp
 {
@@ -85,7 +88,7 @@ public:
       double& potential, Eigen::MatrixBase<DerivedOther>& gradient) const;
 
 private:
-  Voxel3d* voxel3d_;
+  distance_field::PropagationDistanceField* distance_field_;
   tf::TransformListener tf_;
   tf::MessageNotifier<mapping_msgs::CollisionMap> *collision_map_notifier_;
   //tf::MessageNotifier<mapping_msgs::CollisionMap> *collision_map_update_notifier_;
@@ -109,7 +112,7 @@ inline void ChompCollisionSpace::unlock()
 inline double ChompCollisionSpace::getDistanceGradient(double x, double y, double z,
     double& gradient_x, double& gradient_y, double& gradient_z) const
 {
-  return voxel3d_->getDistanceGradient(x, y, z, gradient_x, gradient_y, gradient_z);
+  return distance_field_->getDistanceGradient(x, y, z, gradient_x, gradient_y, gradient_z);
 }
 
 template<typename Derived, typename DerivedOther>
