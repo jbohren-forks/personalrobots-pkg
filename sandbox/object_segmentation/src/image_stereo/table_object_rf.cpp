@@ -52,7 +52,7 @@ TableObjectRF::TableObjectRF()
 
   // -----------------------------------------
   // Node Features
-  SpectralAnalysis* sa_nodes = new SpectralAnalysis(0.15);
+  SpectralAnalysis* sa_nodes = new SpectralAnalysis(0.0254);
   ShapeSpectral* ss_nodes = new ShapeSpectral(*sa_nodes);
   OrientationNormal* on_nodes = new OrientationNormal(0, 0, 1.0, *sa_nodes);
   //
@@ -72,7 +72,7 @@ TableObjectRF::TableObjectRF()
   cs0_feature_descriptors.push_back(sic_cs0);
   cs0_feature_descriptors.push_back(bbs_cs0);
   //
-  clique_set_feature_descriptors.push_back(cs0_feature_descriptors);
+  //clique_set_feature_descriptors.push_back(cs0_feature_descriptors);
 
   // -----------------------------------------
   // Clique-set 0 clustering
@@ -81,7 +81,7 @@ TableObjectRF::TableObjectRF()
   cs0_clusterings[0].first = true; // true indicates to cluster over only the nodes
   cs0_clusterings[0].second = kmeans_cs0;
   //
-  clique_set_clusterings.push_back(cs0_clusterings);
+  //clique_set_clusterings.push_back(cs0_clusterings);
 
   // -----------------------------------------
   // Initialize RFCreator3D with the above features and clustering

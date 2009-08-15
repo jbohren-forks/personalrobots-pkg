@@ -26,9 +26,9 @@ rospack_add_library(table_object_rf
 			src/util/rf_creator_3d.cpp)
 rospack_add_openmp_flags (table_object_rf)
 
-#rospack_add_executable(train_table_object_segmenter 
-#			src/image_stereo/train_table_object_segmenter.cpp)
-#target_link_libraries(train_table_object_segmenter table_object_rf)
+rospack_add_executable(train_table_object_segmenter 
+			src/image_stereo/train_table_object_segmenter.cpp)
+target_link_libraries(train_table_object_segmenter table_object_rf functional_m3n)
 
 
 #target_link_libraries(${PROJECT_NAME} another_library)
