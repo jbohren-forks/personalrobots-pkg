@@ -253,16 +253,19 @@ namespace planning_models
 	    }
 	    
 	    /** \brief The constant transform applied to the link (needs to be specified by user) */
-	    btTransform         attachTrans;
+	    btTransform               attachTrans;
 
 	    /** \brief The geometry of the attached body */
-	    shapes::Shape      *shape;
+	    shapes::Shape            *shape;
 
 	    /** \brief The global transform for this link (computed by forward kinematics) */
-	    btTransform         globalTrans;
+	    btTransform               globalTrans;
 	    
 	    /** \brief The link that owns this attached body */
-	    Link               *owner;
+	    Link                     *owner;
+
+	    /** \brief The set of links this body is allowed to touch */
+	    std::vector<std::string>  touch_links;
 
 	protected:
 	    /** \brief recompute globalTrans */

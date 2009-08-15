@@ -546,7 +546,7 @@ namespace move_arm
 	    ros::Duration                       eps(0.01);
 	    ros::Duration                       epsLong(0.1);
 	    
-	    std::valarray<double>               velocityHistory(3);
+	    std::valarray<double>               velocityHistory(20);
 	    unsigned int                        velocityHistoryIndex = 0;
 	    
 	    while (true)
@@ -654,8 +654,9 @@ namespace move_arm
 			ROS_INFO("Maximum path contact penetration depth is %f at link %s, sum of all contact depths is %f", ccost.cost, ccost.link.c_str(), ccost.sum);
 		    
 		    if (velocityHistoryIndex >= velocityHistory.size())
-		    {
+		      {
 			double sum = velocityHistory.sum();
+			ROS_DEBUG("vel = %f", sum);
 			if (sum < 1e-3)
 			{
 			    ROS_INFO("The total velocity of the robot over the last %d samples is %f. Self-preempting...", (int)velocityHistory.size(), sum);

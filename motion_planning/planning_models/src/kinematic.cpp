@@ -859,6 +859,7 @@ void planning_models::KinematicModel::cloneAfterLink(Robot *rb, Link *dest, cons
 	ab->attachTrans = src->attachedBodies[i]->attachTrans;
 	ab->shape = shapes::cloneShape(src->attachedBodies[i]->shape);
 	ab->globalTrans = src->attachedBodies[i]->globalTrans;
+	ab->touch_links = src->attachedBodies[i]->touch_links;
 	dest->attachedBodies.push_back(ab);
     }
     for (unsigned int i = 0 ; i < src->after.size() ; ++i)

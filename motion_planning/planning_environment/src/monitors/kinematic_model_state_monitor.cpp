@@ -270,6 +270,7 @@ bool planning_environment::KinematicModelStateMonitor::attachObject(const mappin
 		link->attachedBodies.push_back(new planning_models::KinematicModel::AttachedBody(link));
 		tf::poseMsgToTF(poseP.pose, link->attachedBodies[j]->attachTrans);
 		link->attachedBodies[j]->shape = shape;
+		link->attachedBodies[j]->touch_links = attachedObject->touch_links;
 	    }
 	    
 	    result = true;	    

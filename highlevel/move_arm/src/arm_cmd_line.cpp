@@ -41,6 +41,8 @@
 #include <move_arm/MoveArmAction.h>
 #include <move_arm/ActuateGripperAction.h>
 
+#include <mapping_msgs/AttachedObject.h>
+
 #include <planning_environment/monitors/kinematic_model_state_monitor.h>
 #include <motion_planning_msgs/KinematicPath.h>
 #include <manipulation_msgs/JointTraj.h>
@@ -301,6 +303,9 @@ int main(int argc, char **argv)
     actionlib::SimpleActionClient<move_arm::ActuateGripperAction> gripper(nh, "actuate_gripper_" + group);
     ros::Publisher view = nh.advertise<motion_planning_msgs::KinematicPath>("executing_kinematic_path", 1);
     
+    ros::Publisher pubAttach = nh.advertise<mapping_msgs::AttachedObject>("attach_object", 1);
+
+    
     std::map<std::string, move_arm::MoveArmGoal> goals;
     
     std::vector<std::string> names(7);
@@ -362,6 +367,50 @@ int main(int argc, char **argv)
 	    btTransform p = effPosition(km, temp);
 	    printPose(p);
 	}
+	else
+	  if (cmd == "att0")
+	    {
+	      mapping_msgs::AttachedObject ao;
+	      ao.header.frame_id = "r_wrist_roll_link";
+	      ao.header.stamp = ros::Time::now();
+	      ao.link_name = "r_wrist_roll_link";
+	      pubAttach.publish(ao);
+	    }
+	  else
+	  if (cmd == "att1")
+	    {
+	      mapping_msgs::AttachedObject ao;
+	      ao.header.frame_id = "r_wrist_roll_link";
+	      ao.header.stamp = ros::Time::now();
+	      ao.link_name = "r_wrist_roll_link";
+
+	      mapping_msgs::Object object;
+	      object.type = mapping_msgs::Object::CYLINDER;
+	      object.dimensions.push_back(0.02); // 4 cm diam
+	      object.dimensions.push_back(1.3); // 48 inch
+
+	      // identity transform should place the object in the center
+	      geometry_msgs::Pose pose;
+	      pose.position.x = 0.16;
+	      pose.position.y = 0;
+	      pose.position.z = 0;
+
+	      pose.orientation.x = 0;
+	      pose.orientation.y = 0;
+	      pose.orientation.z = 0;
+	      pose.orientation.w = 1;
+	      
+	      ao.objects.push_back(object);
+	      ao.poses.push_back(pose);
+	      
+	      ao.touch_links.push_back("r_gripper_l_finger_link");
+	      ao.touch_links.push_back("r_gripper_r_finger_link");
+	      ao.touch_links.push_back("r_gripper_l_finger_tip_link");
+	      ao.touch_links.push_back("r_gripper_r_finger_tip_link");
+	      ao.touch_links.push_back("r_gripper_palm_link");
+	      
+	      pubAttach.publish(ao);
+	    }
 	else
 	if (cmd == "time")
 	{
