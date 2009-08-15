@@ -65,8 +65,20 @@ namespace move_arm
 	
 	MoveArm(MoveArmSetup &setup) : setup_(setup), as_(nh_, "move_" + setup.group_, boost::bind(&MoveArm::execute, this, _1))
 	{
-	    if (setup_.show_collisions_)
+	    nh_.param<bool>("~perform_ik", perform_ik_, true);
+	    ROS_INFO("IK will %sbe performed", perform_ik_ ? "" : "not ");
+
+	    nh_.param<bool>("~show_collisions", show_collisions_, false);
+	    if (show_collisions_)
+	    {
+		ROS_INFO("Found collisions will be displayed as visualization markers");
 		visMarkerPublisher_ = nh_.advertise<visualization_msgs::Marker>("visualization_marker", 128);
+	    }
+	    
+	    nh_.param<bool>("~long_range_only", long_range_only_, false);
+	    
+	    if (long_range_only_)
+		ROS_INFO("Only long range planning will be used");
 	    
 	    // advertise the topic for displaying kinematic plans
 	    displayPathPublisher_ = nh_.advertise<motion_planning_msgs::KinematicPath>("executing_kinematic_path", 10);
@@ -246,7 +258,7 @@ namespace move_arm
 	    ROS_DEBUG("Acting on goal with unknown valid goal state ...");
 	    
 	    StateAndConstraint sac;
-	    bool found = findValidNearJointConstraint(req.start_state, req.params, req.goal_constraints, states, sac);
+	    bool found = long_range_only_ ? false : findValidNearJointConstraint(req.start_state, req.params, req.goal_constraints, states, sac);
 	    
 	    if (found)
 	    {
@@ -448,7 +460,7 @@ namespace move_arm
 	    ROS_DEBUG("Acting on goal...");
 	    
 	    // change pose constraints to joint constraints, if possible and so desired
-	    if (setup_.perform_ik_ && req.goal_constraints.joint_constraint.empty() &&         // we have no joint constraints on the goal,
+	    if (perform_ik_ && req.goal_constraints.joint_constraint.empty() &&         // we have no joint constraints on the goal,
 		req.goal_constraints.pose_constraint.size() == 1 &&      // we have a single pose constraint on the goal
 		req.goal_constraints.pose_constraint[0].type ==
 		motion_planning_msgs::PoseConstraint::POSITION_X + motion_planning_msgs::PoseConstraint::POSITION_Y + motion_planning_msgs::PoseConstraint::POSITION_Z +
@@ -643,7 +655,7 @@ namespace move_arm
 		    }
 		    
 		    CollisionCost ccost;
-		    planningMonitor_->setOnCollisionContactCallback(boost::bind(&MoveArm::contactFound, this, &ccost, true, _1), 0);
+		    planningMonitor_->setOnCollisionContactCallback(boost::bind(&MoveArm::contactFound, this, &ccost, show_collisions_, _1), 0);
 		    planningMonitor_->setAllowedContacts(allowed_contacts);
 		    bool valid = planningMonitor_->isPathValid(currentPath, currentPos, currentPath.states.size() - 1, planning_environment::PlanningMonitor::COLLISION_TEST +
 							       planning_environment::PlanningMonitor::PATH_CONSTRAINTS_TEST, false);
@@ -869,7 +881,7 @@ namespace move_arm
 	    ArmActionState result = SUCCESS;
 	    
 	    // fill the starting state; if state is not valid, use short range planner to move out of it
-	    if (!fillStartState(req.start_state))
+	    if (!fillStartState(req.start_state) && !long_range_only_)
 		result = moveToValidState(req);
 	    
 	    if (as_.isPreemptRequested() || as_.isNewGoalAvailable())
@@ -1050,6 +1062,10 @@ namespace move_arm
 	
 	ros::Publisher                                   displayPathPublisher_;
 	ros::Publisher                                   visMarkerPublisher_;
+	
+	bool                                             perform_ik_;
+	bool                                             show_collisions_;
+	bool                                             long_range_only_;
 	
     };
     
