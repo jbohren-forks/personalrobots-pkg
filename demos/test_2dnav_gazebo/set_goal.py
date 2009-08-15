@@ -199,9 +199,12 @@ class NavStackTest(unittest.TestCase):
     def amclInput(self, amcl_pose):
         if self.publish_initialpose:
           print "/amcl_pose received, ",amcl_pose
-          amcl_eul = tft.euler_from_quaternion([amcl_pose.pose.orientation.x,amcl_pose.pose.orientation.y,amcl_pose.pose.orientation.z,amcl_pose.pose.orientation.w])
-          if abs(amcl_pose.pose.position.x    - self.initialpose[0]) < AMCL_TOL and \
-             abs(amcl_pose.pose.position.y    - self.initialpose[1]) < AMCL_TOL and \
+          amcl_eul = tft.euler_from_quaternion([amcl_pose.pose.pose.orientation.x,\
+                                                amcl_pose.pose.pose.orientation.y,\
+                                                amcl_pose.pose.pose.orientation.z,\
+                                                amcl_pose.pose.pose.orientation.w])
+          if abs(amcl_pose.pose.pose.position.x    - self.initialpose[0]) < AMCL_TOL and \
+             abs(amcl_pose.pose.pose.position.y    - self.initialpose[1]) < AMCL_TOL and \
              abs(amcl_eul[2]                  - self.initialpose[2]) < AMCL_TOL:
             print "initial_pose matches, stop setPose begin publishing goal."
             self.publish_initialpose = False
@@ -218,11 +221,11 @@ class NavStackTest(unittest.TestCase):
         #pub_base = rospy.Publisher("cmd_vel", BaseVel)
         pub_goal = rospy.Publisher("/move_base/activate", PoseStamped)
         pub_pose = rospy.Publisher("initialpose" , PoseWithCovarianceStamped)
-        rospy.Subscriber("base_pose_ground_truth", Odometry            , self.p3dInput)
-        rospy.Subscriber("pr2_odometry/odom"     , Odometry            , self.odomInput)
-        rospy.Subscriber("base_bumper/info"      , String              , self.bumpedInput)
-        rospy.Subscriber("torso_lift_bumper/info", String              , self.bumpedInput)
-        rospy.Subscriber("/move_base/feedback"   , MoveBaseState       , self.stateInput)
+        rospy.Subscriber("base_pose_ground_truth", Odometry                   , self.p3dInput)
+        rospy.Subscriber("pr2_odometry/odom"     , Odometry                   , self.odomInput)
+        rospy.Subscriber("base_bumper/info"      , String                     , self.bumpedInput)
+        rospy.Subscriber("torso_lift_bumper/info", String                     , self.bumpedInput)
+        rospy.Subscriber("/move_base/feedback"   , MoveBaseState              , self.stateInput)
         rospy.Subscriber("/amcl_pose"            , PoseWithCovarianceStamped  , self.amclInput)
 
         # below only for debugging build 303, base not moving
