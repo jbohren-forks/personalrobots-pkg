@@ -65,10 +65,20 @@ void planning_environment::KinematicModelStateMonitor::setupRSM(void)
 	{
 	    // joints to update based on received pose
 	    if (dynamic_cast<planning_models::KinematicModel::PlanarJoint*>(kmodel_->getRobot(0)->chain))
+	    {
 		planarJoint_ = kmodel_->getRobot(0)->chain->name;
+		double params[3] = { 0.0, 0.0, 0.0 };
+		robotState_->setParamsJoint(params, planarJoint_);
+	    }
+	    
 	    if (dynamic_cast<planning_models::KinematicModel::FloatingJoint*>(kmodel_->getRobot(0)->chain))
+	    {
 		floatingJoint_ = kmodel_->getRobot(0)->chain->name;
-
+		double params[7] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0 };
+		robotState_->setParamsJoint(params, floatingJoint_);
+	    }
+	    kmodel_->getRobot(0)->rootTransform.setIdentity();
+	    
 	    robot_frame_ = kmodel_->getRobot(0)->chain->after->name;
 	    ROS_DEBUG("Robot frame is '%s'", robot_frame_.c_str());
 
@@ -178,36 +188,11 @@ void planning_environment::KinematicModelStateMonitor::jointStateCallback(const 
 	    
 	    if (ok)
 	    {		
-		pose_ = transf;
-		
-		if (!planarJoint_.empty())
+		if (!(pose_ == transf))
 		{
-		    double planar_joint[3];
-		    planar_joint[0] = pose_.getOrigin().x();
-		    planar_joint[1] = pose_.getOrigin().y();
-		    
-		    double yaw, pitch, roll;
-		    pose_.getBasis().getEulerZYX(yaw, pitch, roll);
-		    planar_joint[2] = yaw;
-		    
-		    bool this_changed = robotState_->setParamsJoint(planar_joint, planarJoint_);
-		    change = change || this_changed;
-		}
-		
-		if (!floatingJoint_.empty())
-		{
-		    double floating_joint[7];
-		    floating_joint[0] = pose_.getOrigin().x();
-		    floating_joint[1] = pose_.getOrigin().y();
-		    floating_joint[2] = pose_.getOrigin().z();
-		    btQuaternion q = pose_.getRotation();
-		    floating_joint[3] = q.x();
-		    floating_joint[4] = q.y();
-		    floating_joint[5] = q.z();
-		    floating_joint[6] = q.w();
-		    
-		    bool this_changed = robotState_->setParamsJoint(floating_joint, floatingJoint_);
-		    change = change || this_changed;
+		    pose_ = transf;
+		    kmodel_->getRobot(0)->rootTransform = pose_;
+		    change = true;
 		}
 		
 		lastPoseUpdate_ = tm;

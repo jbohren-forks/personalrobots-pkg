@@ -109,9 +109,6 @@ namespace planning_models
 	/** \brief Set all the parameters from a group to a given value */
 	void setAllInGroup(const double value, int groupID);
 	
-	/** \brief Set all planar & floating joints to 0, so that the robot is in its own frame */
-	void setInRobotFrame(void);
-	
 	/** \brief Set the parameters for the complete robot. */
 	bool setParams(const std::vector<double> &params);
 	

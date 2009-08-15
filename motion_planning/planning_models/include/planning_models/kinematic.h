@@ -434,16 +434,12 @@ namespace planning_models
 	    
 	    /** \brief Cumulative list of group roots */
 	    std::vector< std::vector<Joint*> >       groupChainStart;
-
-	    /** \brief True if this model has been set in the robot frame */
-	    bool                                     inRobotFrame;
 	};
 	
 
 	KinematicModel(void)
 	{
 	    m_mi.stateDimension = 0;
-	    m_mi.inRobotFrame = false;
 	    m_verbose = false;	    
 	    m_built = false;
 	}
@@ -541,10 +537,6 @@ namespace planning_models
 	/** \brief Perform forward kinematics for the entire robot */
 	void computeTransforms(const double *params);
 	
-	/** \brief Add transforms to the rootTransform such that the robot is in its planar/floating link frame.
-	 *  Such a transform is needed only if the root joint of the robot is planar or floating */
-	void reduceToRobotFrame(void);
-
 	/** \brief Provide interface to a lock. Use carefully! */
 	void lock(void)
 	{
