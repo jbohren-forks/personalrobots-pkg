@@ -51,9 +51,13 @@ PropagationDistanceField::PropagationDistanceField(double size_x, double size_y,
   max_distance_ = max_distance;
   int max_dist_int = int(max_distance_/resolution);
   max_distance_sq_ = (max_dist_int*max_dist_int);
-  ros::NodeHandle node;
-  pub_viz_ = node.advertise<visualization_msgs::Marker>("visualization_marker", 3);
+  inv_twice_resolution_ = 1.0/(2.0*resolution);
   initNeighborhoods();
+
+  // create a sqrt table:
+  sqrt_table_.resize(max_distance_sq_+1);
+  for (int i=0; i<=max_distance_sq_; ++i)
+    sqrt_table_[i] = sqrt(double(i))*resolution;
 }
 
 int PropagationDistanceField::eucDistSq(int* point1, int* point2)
@@ -64,7 +68,7 @@ int PropagationDistanceField::eucDistSq(int* point1, int* point2)
   return dx*dx + dy*dy + dz*dz;
 }
 
-void PropagationDistanceField::addPointsToField(std::vector<btVector3> points)
+void PropagationDistanceField::addPointsToField(const std::vector<btVector3> points)
 {
   // initialize the bucket queue
   bucket_queue_.resize(max_distance_sq_+1);
@@ -108,6 +112,14 @@ void PropagationDistanceField::addPointsToField(std::vector<btVector3> points)
       int D = i;
       if (D>1)
         D=1;
+      // avoid a possible segfault situation:
+      if (vptr->update_direction_<0 || vptr->update_direction_>26)
+      {
+        ROS_WARN("Invalid update direction detected: %d", vptr->update_direction_);
+        ++list_it;
+        continue;
+      }
+
       neighborhood = &neighborhoods_[D][vptr->update_direction_];
 
       for (unsigned int n=0; n<neighborhood->size(); n++)

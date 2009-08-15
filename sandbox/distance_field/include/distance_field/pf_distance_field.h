@@ -58,7 +58,7 @@ public:
   typedef std::vector<float> FloatArray;
   typedef std::vector<int>   IntArray;
 
-  virtual void addPointsToField(std::vector<btVector3> points);
+  virtual void addPointsToField(const std::vector<btVector3> points);
   virtual void reset();
 
   const float DT_INF;

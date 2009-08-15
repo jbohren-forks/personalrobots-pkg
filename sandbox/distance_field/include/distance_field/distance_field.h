@@ -43,6 +43,7 @@
 #include <list>
 #include <ros/ros.h>
 #include <visualization_msgs/Marker.h>
+#include <mapping_msgs/CollisionMap.h>
 
 namespace distance_field
 {
@@ -71,10 +72,17 @@ public:
 
   virtual ~DistanceField();
 
+
+
   /**
    * \brief Add (and expand) a set of points to the distance field
    */
-  virtual void addPointsToField(std::vector<btVector3> points)=0;
+  virtual void addPointsToField(const std::vector<btVector3> points)=0;
+
+  /**
+   * \brief Adds the points in a collision map to the distance field
+   */
+  void addCollisionMapToField(const mapping_msgs::CollisionMap &collision_map);
 
   /**
    * \brief Resets the distance field to the max_distance
@@ -85,6 +93,11 @@ public:
    * \brief Gets the distance to the closest obstacle at the given location
    */
   double getDistance(double x, double y, double z) const;
+
+  /**
+   * \brief Gets the distance at a location and the gradient of the field
+   */
+  //virtual double getDistanceGradient(double x, double y, double z, double& gradient_x, double& gradient_y, double& gradient_z) const;
 
   /**
    * \brief Gets the distance to the closest obstacle at the given integer cell location
@@ -175,6 +188,24 @@ void DistanceField<T>::visualize(double min_radius, double max_radius, std::stri
   ROS_DEBUG("Publishing markers: %d inflated", inf_marker.points.size());
   pub_viz_.publish(inf_marker);
 }
+
+template <typename T>
+void DistanceField<T>::addCollisionMapToField(const mapping_msgs::CollisionMap &collision_map)
+{
+  size_t num_boxes = collision_map.boxes.size();
+  std::vector<btVector3> points;
+  points.reserve(num_boxes);
+  for (size_t i=0; i<num_boxes; ++i)
+  {
+    points.push_back(btVector3(
+        collision_map.boxes[i].center.x,
+        collision_map.boxes[i].center.y,
+        collision_map.boxes[i].center.z
+        ));
+  }
+  addPointsToField(points);
+}
+
 
 }
 #endif /* DF_DISTANCE_FIELD_H_ */

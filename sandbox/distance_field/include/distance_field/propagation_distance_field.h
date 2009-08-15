@@ -86,18 +86,26 @@ public:
   /**
    * \brief Add (and expand) a set of points to the distance field
    */
-  virtual void addPointsToField(std::vector<btVector3> points);
+  virtual void addPointsToField(const std::vector<btVector3> points);
 
   /**
    * \brief Resets the distance field to the max_distance
    */
   virtual void reset();
 
+
+  /**
+   * \brief Gets the distance to the closest obstacle and the gradient of the field at a location
+   */
+  double getDistanceGradient(double x, double y, double z, double& gradient_x, double& gradient_y, double& gradient_z) const;
+
 private:
   std::vector<std::vector<PropDistanceFieldVoxel*> > bucket_queue_;
   double max_distance_;
   int max_distance_sq_;
-  ros::Publisher pub_viz_;
+  double inv_twice_resolution_;
+
+  std::vector<double> sqrt_table_;
 
   // neighborhoods:
   // [0] - for expansion of d=0
@@ -127,19 +135,33 @@ inline PropDistanceFieldVoxel::PropDistanceFieldVoxel()
 {
 }
 
-/*inline double PropagationDistanceField::getDistance(double x, double y, double z) const
-{
-  return sqrt((*this)(x,y,z).distance_square_);
-}
-
-inline double PropagationDistanceField::getDistanceFromCell(int x, int y, int z) const
-{
-  return sqrt(getCell(x,y,z).distance_square_);
-}*/
-
 inline double PropagationDistanceField::getDistance(const PropDistanceFieldVoxel& object) const
 {
-  return sqrt(object.distance_square_)*this->resolution_[DIM_X];
+  return sqrt_table_[object.distance_square_];
+}
+
+inline double PropagationDistanceField::getDistanceGradient(double x, double y, double z, double& gradient_x, double& gradient_y, double& gradient_z) const
+{
+  int gx, gy, gz;
+
+  worldToGrid(x, y, z, gx, gy, gz);
+
+  // if out of bounds, return max distance, and 0 gradient
+  // we need extra padding of 1 to get gradients
+  if (gx<1 || gy<1 || gz<1 || gx>=num_cells_[DIM_X]-1 || gy>=num_cells_[DIM_Y]-1 || gz>=num_cells_[DIM_Z]-1)
+  {
+    gradient_x = 0.0;
+    gradient_y = 0.0;
+    gradient_z = 0.0;
+    return max_distance_;
+  }
+
+  gradient_x = (getDistanceFromCell(gx+1,gy,gz) - getDistanceFromCell(gx-1,gy,gz))*inv_twice_resolution_;
+  gradient_y = (getDistanceFromCell(gx,gy+1,gz) - getDistanceFromCell(gx,gy-1,gz))*inv_twice_resolution_;
+  gradient_z = (getDistanceFromCell(gx,gy,gz+1) - getDistanceFromCell(gx,gy,gz-1))*inv_twice_resolution_;
+
+  return getDistanceFromCell(gx,gy,gz);
+
 }
 
 }
