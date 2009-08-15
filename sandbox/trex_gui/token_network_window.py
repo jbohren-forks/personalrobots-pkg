@@ -24,14 +24,15 @@ from token_network import TokenNetwork
 ##############################################################################
 
 class TokenNetworkWindow(xdot.DotWindow):
-  def __init__(self):
+  def __init__(self,token_network=TokenNetwork()):
     xdot.DotWindow.__init__(self)
 
     # Initialize listener list
     self.listeners = []
 
     # Initialize token network
-    self.token_network = TokenNetwork()
+    self.token_network = token_network
+    self.token_network.register_listener(self.set_token_network)
 
     # Initialize gui stuff
     self.set_title("Token Network")
@@ -164,7 +165,13 @@ class TestTokenNetworkWindow(unittest.TestCase,GtkTester):
 
     print "Updating assembly in token network..."
     token_network.set_assembly(assembly)
-    time.sleep(2)
+    time.sleep(1)
+
+    print "Changing a hilighted token..."
+    tok = assembly.tokens.values()[0]
+    token_network.hilight(tok,True)
+    token_network.notify_listeners()
+    time.sleep(1)
 
     print "Clearing assembly in token network..."
     token_network.set_assembly(Assembly())

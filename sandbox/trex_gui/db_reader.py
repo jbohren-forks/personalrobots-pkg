@@ -22,6 +22,7 @@ class DbReader():
   def __init__(self):
     # Compile expressions
     self.line_regex = re.compile("^(.+)\,([0-9]+)$")
+    self.number_range_regex = re.compile("\[*([^\]]+)\]*")
 
   def get_reactor_path(self, log_path, reactor_name):
     return os.path.join(log_path,DbReader.ASSEMBLY_PATH,reactor_name)
@@ -50,6 +51,10 @@ class DbReader():
   def load_assembly(self,log_path,reactor_name,tick):
     # Create a new Assembly for storing data
     assembly = Assembly()
+
+    # Set assembly properties
+    assembly.reactor_name = reactor_name
+    assembly.tick = tick
 
     # Generate the reactor_path
     reactor_path = os.path.join(log_path,DbReader.ASSEMBLY_PATH,reactor_name)
@@ -148,6 +153,11 @@ class DbReader():
       # Add variables to entity
       if entity:
 	entity.vars.append(assembly.vars[var_key])
+	# Add the start value if available:
+	if var_name == "start":
+	  start_bounds = self.number_range_regex.findall(var_values)
+	  start_bounds = start_bounds[0].split(" ")
+	  entity.start = float(start_bounds[1])
 
     # Return constructed assembly database
     return assembly

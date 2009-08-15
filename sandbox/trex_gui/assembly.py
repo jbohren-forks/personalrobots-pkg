@@ -31,6 +31,8 @@ class Token(Entity):
     self.slot_id = slot_id
     self.slot_index = slot_index
 
+    self.start = -1
+
   def __str__(self):
     return "%s (%d)" % (self.name, self.key)
 
@@ -70,6 +72,10 @@ class Assembly():
     self.slots = {}
     # Variables are properties of both rules, tokens, objects, and other structures
     self.vars = {}
+
+    # Initialize properties
+    self.tick = 0
+    self.reactor_name = ""
 
   def clear(self):
     self.rules = {}

@@ -11,6 +11,7 @@ sys.path.insert(0, os.path.abspath("./ext"))
 from gvgen import *
 
 # TREX modules
+from notifier import Notifier
 from assembly import Assembly,Entity,Rule,Token,Slot,Variable
 
 ##############################################################################
@@ -24,10 +25,15 @@ from assembly import Assembly,Entity,Rule,Token,Slot,Variable
 #
 #   Similarly, if an object wants to be notified when a new graph is
 #   available, said object can submit a callback method to a TokenNetwork.
+#
+#   When non-structural changes are made to the graph (hilighting etc) you can
+#   signal a new graph by calling token_network.notify_listeners(). This will
+#   post an update to all listeners.
 ##############################################################################
 
-class TokenNetwork():
+class TokenNetwork(Notifier):
   def __init__(self):
+    Notifier.__init__(self)
     # Create dicts for storing graph node structures
     # These dictionaries store key,value = entity instance, node
     # as opposed to the Assembly which stores entity id, entity instance
@@ -153,6 +159,8 @@ class TokenNetwork():
 	    style = "MergedToken"
 	else:
 	  style = "InactiveToken"
+	if entity.start > self.assembly.tick:
+	  style = "PlannedToken"
       # Set style
       self.graph.styleApply(style, self.token_nodes[entity])
     elif entity.__class__ == Rule:
@@ -161,6 +169,14 @@ class TokenNetwork():
     elif entity.__class__ == Slot:
       style = "Slot"
       self.graph.styleApply(style, self.slot_nodes[entity])
+  
+  # Function to reset the hilighting for the entire graph
+  def clear_hilights(self):
+    # Create list of all node entities
+    entities = self.token_nodes.values() + self.rule_nodes.values()
+
+    for entity in entities:
+      self.hilight(entity,False)
 
   ############################################################################
   # Hooks for setting the assembly used by the token network
@@ -192,27 +208,6 @@ class TokenNetwork():
     dotfile.close()
 
     return dotstring
-
-  ############################################################################
-  # Callback registration for classes that display loaded data
-  ############################################################################
-
-  # Function to register on load
-  def register_listener(self,listener_cb):
-    self.listeners.append(listener_cb)
-  
-  # Function to unregister a listener callback
-  def unregister_listener(self,listener_cb):
-    if listener_cb in self.listeners:
-      self.listeners.remove(listener_cb)
-
-  # Function that notifies listeners when a new graph has been populated
-  def notify_listeners(self):
-    for listener in self.listeners:
-      try:
-	listener(self)
-      except:
-	print "Failed to notify listener: "+str(listener)
 
 # Unit tests
 class TestTokenNetwork(unittest.TestCase):

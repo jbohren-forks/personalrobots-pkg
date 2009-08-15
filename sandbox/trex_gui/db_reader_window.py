@@ -24,7 +24,7 @@ from assembly import Assembly
 
 # DbReaderWindow GTK widget class
 class DbReaderWindow(gtk.Window):
-  def __init__(self,db_reader,log_path="."):
+  def __init__(self,db_reader=DbReader(),log_path="."):
     super(DbReaderWindow, self).__init__()
     self.set_title("Assembly Navigator Control")
     self.set_position(gtk.WIN_POS_CENTER)
@@ -155,10 +155,6 @@ class DbReaderWindow(gtk.Window):
     self.reload_thread = threading.Thread(target=self.latest_reload_loop)
     self.reload_thread.start()
 
-    # try to load the latest
-    if len(self.ticks) > 0:
-      self.load_assembly(self.ticks[-1])
-
     self.connect("destroy", self.on_destroy)
     self.show_all()
   
@@ -177,10 +173,16 @@ class DbReaderWindow(gtk.Window):
     self.load_available_reactors()
     self.load_available_ticks()
 
+    # Try to load the latest tick
+    if len(self.ticks) > 0:
+      self.load_assembly(self.ticks[-1])
+
   # Callback for updating the reactor path when a different reactor is selected
   def on_change_reactor(self,widget):
     self.reactor_name = self.reactor_chooser.get_active_text()
     # Note there is no need to re-load ticks because these are the same across reactors
+    if len(self.ticks) > 0:
+      self.load_assembly(self.tick)
 
   # Callback for setting the tick value
   def on_tick_set(self,widget):
@@ -211,41 +213,50 @@ class DbReaderWindow(gtk.Window):
   # Load the reactors in the current log path and update the drop-down list accordingly
   def load_available_reactors(self):
     try:
-      # Empty the dropdown list
-      for p in self.reactor_names:
-	self.reactor_chooser.remove_text(0)
-
       # Get the available reactors from the db reader
-      self.reactor_names = self.db_reader.get_available_reactors(self.log_path)
+      available_reactor_names = self.db_reader.get_available_reactors(self.log_path)
 
-      # Add the reactors to the dropdown list
-      for reactor_name in self.reactor_names:
-	self.reactor_chooser.append_text(reactor_name)
+      # If any one name has been removed, refresh the list entirely
+      if not all([name in self.reactor_names for name in available_reactor_names]):
+	# Empty the dropdown list
+	for name in self.reactor_names:
+	  self.reactor_chooser.remove_text(0)
+	self.reactor_names = []
+
+      # Append any names that are found but not already registered
+      for name in [name for name in available_reactor_names if name not in self.reactor_names]:
+	self.reactor_chooser.append_text(name)
+	self.reactor_names.append(name)
 
       # Set the first option in the list to be active
-      self.reactor_chooser.set_active(0)
+      if self.reactor_chooser.get_active() == -1:
+	self.reactor_chooser.set_active(0)
+    except OSError:
+      self.set_status("No reactor list at log path.")
     except:
       self.set_status("Failed to load reactor list from log path.")
       self.reactor_names = []
       self.reactor_name = ""
+      raise
 
   # Load the available ticks and update the buttons accordingly
   def load_available_ticks(self):
     try:
       self.ticks = self.db_reader.get_available_ticks(self.log_path,self.reactor_name)
-      # Make sure the selected tick is avaiable
-      if self.tick not in self.ticks and len(self.ticks) > 0:
-	# Set the tick to the latest tick
-	self.tick = self.ticks[-1]
-	# Update the display
-	self.update_tick_entry()
-	# Load the assembly
-	self.load_assembly(self.tick)
     except:
       if self.reactor_name != "":
 	self.set_status("Failed to load any ticks from log path.")
-      self.tick = None
+      self.tick = 0
       self.ticks = []
+
+    # Make sure the selected tick is avaiable
+    if self.tick not in self.ticks and len(self.ticks) > 0:
+      # Set the tick to the latest tick
+      self.tick = self.ticks[-1]
+      # Update the display
+      self.update_tick_entry()
+      # Load the assembly
+      self.load_assembly(self.tick)
 
     # Enable and disable buttons accordingly
     self.update_available_buttons()
@@ -350,22 +361,21 @@ class DbReaderWindow(gtk.Window):
 	raise IOError
 
       # Load assembly
-      self.assembly = self.db_reader.load_assembly(
+      assembly = self.db_reader.load_assembly(
 	  self.log_path,
 	  self.reactor_name,
-	  self.tick)
+	  new_tick)
 
       # If we get here, the tick was loaded successfully
+      self.assembly = assembly
       self.tick = new_tick
 
       # Post an update to the status bar
       self.set_status("Loaded Tick [%d] from \"%s\"" % (self.tick,self.reactor_chooser.get_active_text()))
     except ValueError:
       self.set_status("Invalid tick entry!")
-      self.assembly = Assembly()
     except:
-      self.set_status("Could not load Tick [%d] from \"%s\"!" % (new_tick,self.reactor_chooser.get_active_text()))
-      self.assembly = Assembly()
+      self.set_status("Could not load Tick [%s] from \"%s\"!" % (str(new_tick),self.reactor_chooser.get_active_text()))
 
     # Update gui
     self.update_tick_entry()
@@ -396,7 +406,7 @@ class DbReaderWindow(gtk.Window):
       except:
 	print "Failed to notify listener: "+str(listener)
 
-# Testing utilitie
+# Testing utilities
 class GtkTester():
   def spawn_gtk_thread(self):
     # Spawn the window

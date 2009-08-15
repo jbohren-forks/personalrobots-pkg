@@ -654,7 +654,6 @@ class ControlWindow(gtk.Window):
       # Sleep before trying again
       time.sleep(1.0)
 
-
   def load_log_path(self):
     global log_path
 
@@ -911,7 +910,6 @@ class Token():
     if len(start_bounds) != 1 and float(start_bounds[1]) > tick and self.slot_index==0:
       graph.styleApply("PlannedToken", self.node)
 
-
 class Rule():
   def __init__(self,key,name,token,filename,line,slaves=[],vars=[]):
     self.key = key
@@ -935,7 +933,6 @@ class Rule():
 
   def lolight(self):
     graph.styleApply("Rule", self.node)
-
 
 ##############################################################################
 # Hilight Functions
