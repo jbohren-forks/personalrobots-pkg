@@ -108,6 +108,21 @@ class TokenNetwork(Notifier):
     self.graph.styleAppend("Slot", "color", "#CCCCCC")
     self.graph.styleAppend("Slot", "fontcolor", "#444444")
 
+  # User data string serializatin 
+  def serialize(self,entity):
+    if entity.__class__ == Token:
+      return "Token:%d" % entity.key
+    elif entity.__class__ == Rule:
+      return "Rule:%d" % entity.key
+
+  # User data string deserialization
+  def deserialize(self,string):
+    st = string.split(":")
+    if st[0] == "Token":
+      return self.assembly.tokens[int(st[1])]
+    elif st[0] == "Rule":
+      return self.assembly.rules[int(st[1])]
+
   # Populate the gvgen graph from the stored assembly
   def populate_graph(self):
     # Create subgraphs for each slot
@@ -126,7 +141,7 @@ class TokenNetwork(Notifier):
 	self.token_nodes[token] = self.graph.newItem(str(token));
 
       # Set the user data to link up clickthroughs
-      self.graph.propertyAppend(self.token_nodes[token],"URL","Token:%d" % tid)
+      self.graph.propertyAppend(self.token_nodes[token],"URL",self.serialize(token))
       self.hilight(token,False)
 
     # Create nodes for each rule
@@ -140,7 +155,7 @@ class TokenNetwork(Notifier):
 	self.graph.newLink(self.rule_nodes[rule],self.token_nodes[token])
 
       # Set the user data to link up clickthroughs
-      self.graph.propertyAppend(self.rule_nodes[rule],"URL","Rule:%d" % rid)
+      self.graph.propertyAppend(self.rule_nodes[rule],"URL",self.serialize(rule))
       self.hilight(rule,False)
 
   # Toggle hilighting on a node

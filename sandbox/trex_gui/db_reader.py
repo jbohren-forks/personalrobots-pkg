@@ -66,14 +66,14 @@ class DbReader():
     rule_src_reader = csv.reader(open(os.path.join(reactor_path,"rules")),delimiter='\t')
 
     # Put the source code paths and line numbers into a temporary dictionary
-    rule_src = {}
+    assembly.rule_src = {}
     for row in rule_src_reader:
       rule_name = row[1]
       rule_path_line_str = row[2]
 
       # Get the rule path and line from the "rules" file
       rule_path_line = self.line_regex.findall(rule_path_line_str)
-      rule_src[rule_name] = rule_path_line[0]
+      assembly.rule_src[rule_name] = rule_path_line[0]
 
     # Read in tokens
     tokens_reader = csv.reader(open("%s.tokens" % step_path),delimiter='\t')
@@ -106,8 +106,8 @@ class DbReader():
       slave_token_keys = row[5]
       variable_keys = row[6]
 
-      rule_filename = rule_src[rule_name][0]
-      rule_line = rule_src[rule_name][1]
+      rule_filename = assembly.rule_src[rule_name][0]
+      rule_line = assembly.rule_src[rule_name][1]
       
       # Get rule slaves
       rule_slaves = [assembly.tokens[int(slave)] for slave in slave_token_keys.split(',') if slave != '' and slave != '\N'];

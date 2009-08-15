@@ -73,19 +73,10 @@ class TokenNetworkWindow(xdot.DotWindow):
   def on_node_clicked(self, widget, userdata, event):
     for listener in self.listeners:
       try:
-	listener(self.assembly)
+	listener(self.token_network.assembly,self.token_network.deserialize(userdata))
       except:
 	print "Failed to notify listener: "+str(listener)
-
-    if prop_windows.has_key(userdata):
-      prop_win = prop_windows[userdata]
-      prop_win.present()	
-    else:
-      prop_win = PropertyWindow(userdata)
-      prop_windows[userdata] = prop_win
-      prop_win.show()
-
-    return True
+	raise
 
 # Testing utilities
 class GtkTester():

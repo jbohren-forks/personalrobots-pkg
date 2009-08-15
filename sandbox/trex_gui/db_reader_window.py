@@ -405,6 +405,7 @@ class DbReaderWindow(gtk.Window):
 	listener(self.assembly)
       except:
 	print "Failed to notify listener: "+str(listener)
+	raise
 
 # Testing utilities
 class GtkTester():

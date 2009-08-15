@@ -15,6 +15,7 @@ from token_network import TokenNetwork
 from token_network_window import TokenNetworkWindow
 from token_network_filter import TokenNetworkFilter
 from token_network_filter_window import TokenNetworkFilterWindow
+from property_window import PropertyWindowFactory
 
 def main():
 
@@ -34,12 +35,13 @@ def main():
   db_reader_window = DbReaderWindow(log_path=log_path)
   db_reader_window.connect("destroy",gtk.main_quit)
 
-  # Create token network generator
+  # Create token network graph generator
   token_network = TokenNetwork()
   db_reader_window.register_listener(token_network.set_assembly)
 
   # Create token network window
   token_network_window = TokenNetworkWindow(token_network)
+  token_network_window.register_listener(PropertyWindowFactory)
 
   # Create token network filter window
   token_network_filter = TokenNetworkFilter(token_network)

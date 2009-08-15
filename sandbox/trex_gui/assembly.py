@@ -72,6 +72,8 @@ class Assembly():
     self.slots = {}
     # Variables are properties of both rules, tokens, objects, and other structures
     self.vars = {}
+    # Store a list of rule sources and line numbers for easy lookup
+    self.rule_src = {}
 
     # Initialize properties
     self.tick = 0
@@ -82,6 +84,7 @@ class Assembly():
     self.tokens = {}
     self.slots = {}
     self.vars = {}
+    self.rule_src = {}
 
   def is_empty(self):
     return len(self.rules) + len(self.tokens) + len(self.slots) + len(self.vars) == 0
@@ -103,7 +106,7 @@ def construct_test_assembly():
       1,
       0)
   assembly.tokens[2] = Token(
-      1,
+      2,
       "test_inactive_slave_token",
       1,
       1)
