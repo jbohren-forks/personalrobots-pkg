@@ -93,7 +93,7 @@ bool move_arm::MoveArmSetup::getControlJointNames(std::vector<std::string> &join
     if (!result)
     {
 	ROS_INFO("Querying controller for joint names ...");
-	ros::Duration(5.0).sleep();
+	ros::WallDuration(5.0).sleep();
 	result = client_query.call(req_query, res_query);
 	if (result)
 	    ROS_INFO("Joint names received");
