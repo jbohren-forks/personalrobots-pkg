@@ -87,6 +87,10 @@ TableObjectRF::TableObjectRF()
   // Initialize RFCreator3D with the above features and clustering
   rf_creator_3d = new RFCreator3D(node_feature_descriptors, clique_set_feature_descriptors,
       clique_set_clusterings);
+
+  voxel_x_ = 0.0127;
+  voxel_y_ = 0.0127;
+  voxel_z_ = 0.0127;
 }
 
 // --------------------------------------------------------------
@@ -102,13 +106,11 @@ boost::shared_ptr<RandomField> TableObjectRF::createRandomField(const string& fn
     abort();
   }
 
-  double voxel_x = 0.0127;
-  double voxel_y = 0.0127;
-  double voxel_z = 0.0127;
   sensor_msgs::PointCloud ds_stereo_cloud;
   vector<unsigned int> ds_labels;
   map<unsigned int, pair<unsigned int, unsigned int> > ds_idx2img_coords;
-  downsampleStereoCloud(*full_stereo_cloud, ds_stereo_cloud, voxel_x, voxel_y, voxel_z, ds_labels, ds_idx2img_coords);
+  downsampleStereoCloud(*full_stereo_cloud, ds_stereo_cloud, voxel_x_, voxel_y_, voxel_z_,
+      ds_labels, ds_idx2img_coords);
   // downsampling will put all invalid points into one point
 
   return rf_creator_3d->createRandomField(ds_stereo_cloud, ds_labels, false);

@@ -21,11 +21,14 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #uncomment if you have defined services
 #gensrv()
 
-#common commands for building c++ executables and libraries
 rospack_add_library(table_object_rf
 			src/image_stereo/table_object_rf.cpp
 			src/util/rf_creator_3d.cpp)
 rospack_add_openmp_flags (table_object_rf)
+
+#rospack_add_executable(train_table_object_segmenter 
+#			src/image_stereo/train_table_object_segmenter.cpp)
+#target_link_libraries(train_table_object_segmenter table_object_rf)
 
 
 #target_link_libraries(${PROJECT_NAME} another_library)

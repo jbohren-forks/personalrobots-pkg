@@ -70,9 +70,10 @@ class RFCreator3D
 
     boost::shared_ptr<RandomField> createRandomField(const sensor_msgs::PointCloud& pt_cloud);
 
+    // use_only_labeled = only create nodes for points with labels[i] != UNKNOWN_LABEL
     boost::shared_ptr<RandomField> createRandomField(const sensor_msgs::PointCloud& pt_cloud,
                                                      const std::vector<unsigned int>& labels,
-                                                     const bool used_only_labeled);
+                                                     const bool use_only_labeled);
 
   private:
     void createNodes(RandomField& rf,

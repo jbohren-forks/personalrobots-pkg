@@ -17,6 +17,10 @@
   <depend package="descriptors_3d"/>
   <depend package="opencv_latest"/>
 
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -ltable_object_rf" />
+  </export>
+
 </package>
 
 

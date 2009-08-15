@@ -59,7 +59,6 @@
 
 #include <descriptors_3d/all_descriptors.h>
 
-#include <functional_m3n/m3n_model.h>
 #include <functional_m3n/random_field.h>
 
 #include <object_segmentation/util/rf_creator_3d.h>
@@ -73,12 +72,12 @@ class TableObjectRF
 
     TableObjectRF();
 
-    boost::shared_ptr<RandomField> createRandomField(const string& fname_image,
-                                                     const string& fname_pcd);
+    boost::shared_ptr<RandomField> createRandomField(const std::string& fname_image,
+                                                     const std::string& fname_pcd);
 
   private:
-    int loadStereoImageCloud(const string& fname_image,
-                             const string& fname_pcd,
+    int loadStereoImageCloud(const std::string& fname_image,
+                             const std::string& fname_pcd,
                              IplImage* image,
                              sensor_msgs::PointCloud* stereo_cloud);
 
@@ -88,10 +87,13 @@ class TableObjectRF
                           const double voxel_x,
                           const double voxel_y,
                           const double voxel_z,
-                          vector<unsigned int>& ds_labels,
-                          map<unsigned int, pair<unsigned int, unsigned int> >& ds_idx2img_coords);
+                          std::vector<unsigned int>& ds_labels,
+                          std::map<unsigned int, std::pair<unsigned int, unsigned int> >& ds_idx2img_coords);
 
     RFCreator3D* rf_creator_3d;
+    double voxel_x_;
+    double voxel_y_;
+    double voxel_z_;
 };
 
 #endif
