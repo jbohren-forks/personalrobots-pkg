@@ -138,7 +138,7 @@ bool CartesianPoseTwistController::init(mechanism::RobotState *robot_state, cons
   node_.getParam("max_orientation_error", max_orientation_error_, 0.05);
 
   // subscribe to pose+twist commands
-  command_notifier_.reset(new MessageNotifier<geometry_msgs::PoseWithRatesStamped>(tf_,
+  command_notifier_.reset(new MessageNotifier<experimental_controllers::PoseTwistStamped>(tf_,
                                                                        boost::bind(&CartesianPoseTwistController::command, this, _1),
                                                                        node_.getNamespace() + "/command", root_name_, 10));
   // realtime publisher for control state
@@ -250,13 +250,13 @@ Frame CartesianPoseTwistController::getPose()
   return result;
 }
 
-void CartesianPoseTwistController::command(const tf::MessageNotifier<geometry_msgs::PoseWithRatesStamped>::MessagePtr& pose_msg)
+void CartesianPoseTwistController::command(const tf::MessageNotifier<experimental_controllers::PoseTwistStamped>::MessagePtr& pose_msg)
 {
   // convert message to transform
   Stamped<Pose> pose_stamped;
   geometry_msgs::PoseStamped ps_msg;
   ps_msg.header = pose_msg->header;
-  ps_msg.pose = pose_msg->pose_with_rates.pose;
+  ps_msg.pose = pose_msg->pose;
   poseStampedMsgToTF(ps_msg, pose_stamped);
 
   // convert to reference frame of root link of the controller chain
@@ -264,12 +264,12 @@ void CartesianPoseTwistController::command(const tf::MessageNotifier<geometry_ms
   poseToFrame(pose_stamped, pose_desi_);
 
   // just copy the twist directly
-  twist_desi_.vel(0) = pose_msg->pose_with_rates.velocity.linear.x;
-  twist_desi_.vel(1) = pose_msg->pose_with_rates.velocity.linear.y;
-  twist_desi_.vel(2) = pose_msg->pose_with_rates.velocity.linear.z;
-  twist_desi_.rot(0) = pose_msg->pose_with_rates.velocity.angular.x;
-  twist_desi_.rot(1) = pose_msg->pose_with_rates.velocity.angular.y;
-  twist_desi_.rot(2) = pose_msg->pose_with_rates.velocity.angular.z;
+  twist_desi_.vel(0) = pose_msg->twist.linear.x;
+  twist_desi_.vel(1) = pose_msg->twist.linear.y;
+  twist_desi_.vel(2) = pose_msg->twist.linear.z;
+  twist_desi_.rot(0) = pose_msg->twist.angular.x;
+  twist_desi_.rot(1) = pose_msg->twist.angular.y;
+  twist_desi_.rot(2) = pose_msg->twist.angular.z;
 
 }
 

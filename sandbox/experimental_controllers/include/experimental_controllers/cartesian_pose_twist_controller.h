@@ -41,7 +41,7 @@
 #include <tf/message_notifier.h>
 #include <ros/node.h>
 #include <geometry_msgs/PoseStamped.h>
-#include <geometry_msgs/PoseWithRatesStamped.h>
+#include <experimental_controllers/PoseTwistStamped.h>
 #include <geometry_msgs/Twist.h>
 #include <controller_interface/controller.h>
 #include <realtime_tools/realtime_publisher.h>
@@ -62,7 +62,7 @@ public:
   bool starting();
   void update();
 
-  void command(const tf::MessageNotifier<geometry_msgs::PoseWithRatesStamped>::MessagePtr& pose_msg);
+  void command(const tf::MessageNotifier<experimental_controllers::PoseTwistStamped>::MessagePtr& pose_msg);
 
   // input of the controller
   KDL::Frame pose_desi_, pose_meas_;
@@ -106,7 +106,7 @@ private:
   unsigned int loop_count_;
 
   tf::TransformListener tf_;
-  boost::scoped_ptr<tf::MessageNotifier<geometry_msgs::PoseWithRatesStamped> > command_notifier_;
+  boost::scoped_ptr<tf::MessageNotifier<experimental_controllers::PoseTwistStamped> > command_notifier_;
   ros::Subscriber sub_command_;
 
   // wrench controller
