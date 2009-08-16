@@ -43,6 +43,13 @@ rospack_add_executable(ex_train_m3n
 			examples/common.cpp)
 target_link_libraries(ex_train_m3n rf_creator_3d)
 
+# example program for training m3n
+rospack_add_executable(ex_classify_m3n
+                        examples/classify_m3n.cpp 
+                        examples/common.cpp)
+target_link_libraries(ex_classify_m3n rf_creator_3d)
+
+
 #target_link_libraries(${PROJECT_NAME} another_library)
 rospack_add_boost_directories()
 #rospack_link_boost(${PROJECT_NAME} thread)
