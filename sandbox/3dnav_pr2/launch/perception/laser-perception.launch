@@ -24,6 +24,11 @@
 <!-- define a frame that stays fixed for the known objects -->
 <!--    <param name="fixed_frame" type="string" value="/odom_combined" /> -->
 
+ <!-- The frame of the sensor used to obtain the data to be
+       filtered; This parameter is optional. If it is not specified,
+       shadow points will be considered outside -->
+    <param name="sensor_frame" type="string" value="laser_tilt_link" />
+
     <remap from="cloud_in" to="tilt_scan_cloud" />
     <remap from="cloud_out" to="tilt_scan_cloud_without_known_objects" />
     <param name="object_scale" type="double" value="1.0" />
