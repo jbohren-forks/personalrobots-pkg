@@ -18,7 +18,7 @@
     <param name="pan_output" type="string" value="head_pan_joint_position_controller" />
     <param name="tilt_output" type="string" value="head_tilt_joint_position_controller" />
   </group>
-  <group ns="head_tilt_joint_position_controller" clear_params="true">
+  <group ns="head_controller/pan_controller" clear_params="true">
     <param name="type" type="string" value="JointPositionController" />
     <param name="joint" type="string" value="head_tilt_joint" />
     <param name="pid/p" type="double" value="12.4" />
@@ -26,7 +26,7 @@
     <param name="pid/d" type="double" value="0.4" />
     <param name="pid/iClamp" type="double" value="0.1" />
   </group>
-  <group ns="head_pan_joint_position_controller" clear_params="true">
+  <group ns="head_controller/tilt_controller" clear_params="true">
     <param name="type" type="string" value="JointPositionController" />
     <param name="joint" type="string" value="head_pan_joint" />
     <param name="pid/p" type="double" value="12.4" />
@@ -34,7 +34,7 @@
     <param name="pid/d" type="double" value="0.4" />
     <param name="pid/iClamp" type="double" value="0.1" />
   </group>
-  <node pkg="mechanism_control" type="spawner.py" args="--stopped head_pan_joint_position_controller head_tilt_joint_position_controller head_controller" output="screen" />
+  <node pkg="mechanism_control" type="spawner.py" args="--stopped head_controller" output="screen" />
 
 <!-- Gripper effort controller -->
   <rosparam file="$(find pr2_default_controllers)/pr2_joint_effort_controllers.yaml" command="load" />
