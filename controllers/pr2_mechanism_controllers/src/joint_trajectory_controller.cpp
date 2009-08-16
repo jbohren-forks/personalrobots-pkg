@@ -166,7 +166,7 @@ void JointTrajectoryController::initializePublishers()
   diagnostics_publisher_ = new realtime_tools::RealtimePublisher <diagnostic_msgs::DiagnosticArray> ("/diagnostics", 2) ;
 
   last_diagnostics_publish_time_ = robot_->hw_->current_time_;
-  node_->param<double>(prefix_+"diagnostics_publish_delta_time",diagnostics_publish_delta_time_,0.05);
+  node_->param<double>(prefix_+"diagnostics_publish_delta_time",diagnostics_publish_delta_time_,1.0);
 
   controller_state_publisher_->msg_.name = name_;
   ROS_INFO("Initialized publishers.");
