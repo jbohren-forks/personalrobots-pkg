@@ -174,23 +174,6 @@ void RFCreator3D::createCliqueSet(RandomField& rf,
     point_cloud_clustering::PointCloudClustering::computeClusterCentroids(pt_cloud,
         created_clusters, cluster_centroids);
 
-    // !!!!!!!!!!!!!!! TEMPO Print: x y z cluster_label !!!!!!!!!!!!!!!!!!!!!!!!!
-/*
-    for (map<unsigned int, vector<int> >::iterator iter_created_clusters = created_clusters.begin() ; iter_created_clusters
-        != created_clusters.end() ; iter_created_clusters++)
-    {
-      unsigned int curr_cluster_label = iter_created_clusters->first;
-      vector<int>& cluster_pt_indices = iter_created_clusters->second;
-      for (unsigned int poop = 0 ; poop < cluster_pt_indices.size() ; poop++)
-      {
-        cout << pt_cloud.points[cluster_pt_indices[poop]].x << " "
-            << pt_cloud.points[cluster_pt_indices[poop]].y << " "
-            << pt_cloud.points[cluster_pt_indices[poop]].z << " " << curr_cluster_label << endl;
-      }
-    }
-*/
-    // !!!!!!!!!!!!!!! TEMPO !!!!!!!!!!!!!!!!!!!!!!!!!
-
     // ----------------------------------------------
     // Feature computation
     // -----------------------------
