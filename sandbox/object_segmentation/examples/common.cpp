@@ -142,7 +142,7 @@ extern RFCreator3D* initRFCreator()
 
   // ---------------------------------------------------------
   // Clique set 0 clusterings
-  point_cloud_clustering::KMeans* kmeans_cs0 = new point_cloud_clustering::KMeans(0.003, 1.0, 10);
+  point_cloud_clustering::KMeans* kmeans_cs0 = new point_cloud_clustering::KMeans(0.003, 2);
   std::vector<std::pair<bool, point_cloud_clustering::PointCloudClustering*> > cs0_clusterings(1);
   cs0_clusterings[0].first = false; // false means cluster over ALL points (not just nodes)
   cs0_clusterings[0].second = kmeans_cs0;
@@ -169,7 +169,7 @@ extern RFCreator3D* initRFCreator()
 
   // ---------------------------------------------------------
   // Clique set 1 clusterings
-  point_cloud_clustering::KMeans* kmeans_cs1 = new point_cloud_clustering::KMeans(0.001, 1.0, 10);
+  point_cloud_clustering::KMeans* kmeans_cs1 = new point_cloud_clustering::KMeans(0.001, 2);
   std::vector<std::pair<bool, point_cloud_clustering::PointCloudClustering*> > cs1_clusterings(1);
   cs1_clusterings[0].first = false; // false means cluster over ALL points (not just nodes)
   cs1_clusterings[0].second = kmeans_cs1;

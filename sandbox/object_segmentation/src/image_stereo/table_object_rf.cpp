@@ -76,7 +76,7 @@ TableObjectRF::TableObjectRF()
 
   // -----------------------------------------
   // Clique-set 0 clustering
-  point_cloud_clustering::KMeans* kmeans_cs0 = new point_cloud_clustering::KMeans(0.03, 1.0, 10);
+  point_cloud_clustering::KMeans* kmeans_cs0 = new point_cloud_clustering::KMeans(0.03, 2);
   vector<pair<bool, point_cloud_clustering::PointCloudClustering*> > cs0_clusterings(1);
   cs0_clusterings[0].first = true; // true indicates to cluster over only the nodes
   cs0_clusterings[0].second = kmeans_cs0;

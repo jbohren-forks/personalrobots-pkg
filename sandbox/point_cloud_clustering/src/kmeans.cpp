@@ -39,21 +39,20 @@ using namespace std;
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-point_cloud_clustering::KMeans::KMeans(double k_factor, double accuracy, unsigned int max_iter)
+point_cloud_clustering::KMeans::KMeans(double k_factor, unsigned int nbr_attempts)
 {
   if (k_factor < 0.0 || k_factor > 1.0)
   {
     throw "point_cloud_clustering::KMeans() invalid k_factor, must be between [0,1]";
   }
 
-  if (accuracy < 0.0 || accuracy > 1.0)
+  if (nbr_attempts == 0)
   {
-    throw "point_cloud_clustering::KMeans() invalid accuracy, must be between [0,1]";
+    throw "point_cloud_clustering::KMeans() invalid attempts, must be non-zero";
   }
 
   k_factor_ = k_factor;
-  accuracy_ = accuracy;
-  max_iter_ = max_iter;
+  nbr_attempts_ = nbr_attempts;
 }
 
 // --------------------------------------------------------------
@@ -68,7 +67,6 @@ int point_cloud_clustering::KMeans::cluster(const sensor_msgs::PointCloud& pt_cl
 
   // ----------------------------------------------------------
   // Calculate clustering information
-  const unsigned int nbr_total_pts = pt_cloud.points.size();
   const unsigned int nbr_cluster_samples = indices_to_cluster.size();
   const unsigned int cluster_feature_dim = 3; // x y z
 
@@ -90,32 +88,25 @@ int point_cloud_clustering::KMeans::cluster(const sensor_msgs::PointCloud& pt_cl
   for (set<unsigned int>::const_iterator iter_indices_to_cluster = indices_to_cluster.begin() ; iter_indices_to_cluster
       != indices_to_cluster.end() ; iter_indices_to_cluster++)
   {
-    // Verify the index to cluster is contained in the point cloud
     const unsigned int curr_pt_cloud_idx = *iter_indices_to_cluster;
-    if (curr_pt_cloud_idx >= nbr_total_pts)
-    {
-      ROS_ERROR("Invalid index to cluster: %u out of %u", curr_pt_cloud_idx, nbr_total_pts);
-      return -1;
-    }
+    const geometry_msgs::Point32& curr_pt = pt_cloud.points.at(curr_pt_cloud_idx);
 
     // offset over previous samples in feature_matrix
     const unsigned int curr_offset = curr_sample_idx * cluster_feature_dim;
 
     // copy xyz coordinates
-    feature_matrix[curr_offset] = pt_cloud.points[curr_pt_cloud_idx].x;
-    feature_matrix[curr_offset + 1] = pt_cloud.points[curr_pt_cloud_idx].y;
-    feature_matrix[curr_offset + 2] = pt_cloud.points[curr_pt_cloud_idx].z;
+    feature_matrix[curr_offset] = curr_pt.x;
+    feature_matrix[curr_offset + 1] = curr_pt.y;
+    feature_matrix[curr_offset + 2] = curr_pt.z;
 
     curr_sample_idx++;
   }
 
   // ----------------------------------------------------------
   // Do kmeans clustering
-  CvMat cv_feature_matrix;
-  cvInitMatHeader(&cv_feature_matrix, nbr_cluster_samples, cluster_feature_dim, CV_32F, feature_matrix);
-  CvMat* cluster_labels = cvCreateMat(nbr_cluster_samples, 1, CV_32SC1);
-  cvKMeans2(&cv_feature_matrix, nbr_clusters, cluster_labels, cvTermCriteria(CV_TERMCRIT_ITER
-      + CV_TERMCRIT_EPS, max_iter_, accuracy_));
+  int cluster_labels[nbr_cluster_samples];
+  RunKMeansPlusPlus(nbr_cluster_samples, nbr_clusters, cluster_feature_dim, feature_matrix,
+      nbr_attempts_, NULL, cluster_labels);
 
   // ----------------------------------------------------------
   // Associate each point with its cluster label
@@ -125,8 +116,7 @@ int point_cloud_clustering::KMeans::cluster(const sensor_msgs::PointCloud& pt_cl
   {
     // retrieve the current point index and its cluster label
     const unsigned int curr_pt_cloud_idx = *iter_indices_to_cluster;
-    const unsigned int curr_cluster_label = starting_label_
-        + static_cast<unsigned int> (cluster_labels->data.i[curr_sample_idx]);
+    const unsigned int curr_cluster_label = starting_label_ + cluster_labels[curr_sample_idx];
 
     // Instantiate container if never encountered label before
     if (created_clusters.count(curr_cluster_label) == 0)
@@ -135,13 +125,11 @@ int point_cloud_clustering::KMeans::cluster(const sensor_msgs::PointCloud& pt_cl
     }
 
     // Associate point index with the cluster label
-    created_clusters[curr_cluster_label].push_back(static_cast<int> (curr_pt_cloud_idx));
+    created_clusters.find(curr_cluster_label)->second.push_back(
+        static_cast<int> (curr_pt_cloud_idx));
 
     curr_sample_idx++;
   }
 
-  // ----------------------------------------------------------
-  // Cleanup
-  cvReleaseMat(&cluster_labels);
   return 0;
 }

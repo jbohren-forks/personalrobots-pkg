@@ -40,15 +40,13 @@
 #include <map>
 #include <vector>
 
-#include <opencv/cxcore.h>
-#include <opencv/cv.h>
-#include <opencv/cvaux.hpp>
-
 #include <sensor_msgs/PointCloud.h>
 
 #include <point_cloud_mapping/kdtree/kdtree.h>
 
 #include <point_cloud_clustering/point_cloud_clustering.h>
+
+#include <point_cloud_clustering/3rd_party/KMeans.h>
 
 // --------------------------------------------------------------
 /*!
@@ -64,7 +62,13 @@ namespace point_cloud_clustering
   // --------------------------------------------------------------
   /*!
    * \brief A KMeans clustering performs k-means clustering on the point
-   *        cloud where the features are the x,y,z coordinates
+   *        cloud where the features are the x,y,z coordinates.
+   *
+   * This class wraps around the k-means++ approach as implemented in: \n
+   * k-means++: The advantages of careful seeding \n
+   * D. Arthur and S. Vassilvitskii \n
+   * SODA 2007 \n
+   * http://www.stanford.edu/~darthur/kmpp.zip
    */
   // --------------------------------------------------------------
   class KMeans: public PointCloudClustering
@@ -72,21 +76,14 @@ namespace point_cloud_clustering
     public:
       // --------------------------------------------------------------
       /*!
-       * \brief Instantiates the k-means clustering with the specified
-       *        parameters
-       *
-       * This method wraps around OpenCV's k-means implementation:
-       * http://opencv.willowgarage.com/documentation/miscellaneous_functions.html?highlight=kmeans#cvKMeans2
+       * \brief Instantiates the k-means++ clustering
        *
        * \param k_factor Defines the number of clusters to produce where
        *                 k = k_factor * [number of points to cluster over]
-       * \param accuracy The termination accuracy criterea, see OpenCV
-       *                 documentation
-       * \param max_iter The maximum number of iterations before terminating,
-       *                 see OpenCV documentation
+       * \param nbr_attempts
        */
       // --------------------------------------------------------------
-      KMeans(double k_factor, double accuracy, unsigned int max_iter);
+      KMeans(double k_factor, unsigned int nbr_attempts);
 
       // --------------------------------------------------------------
       /*!
@@ -103,8 +100,7 @@ namespace point_cloud_clustering
 
     private:
       double k_factor_;
-      double accuracy_;
-      unsigned int max_iter_;
+      unsigned int nbr_attempts_;
   };
 }
 #endif
