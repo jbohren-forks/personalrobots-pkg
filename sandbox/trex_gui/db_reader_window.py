@@ -8,6 +8,7 @@ import time
 import threading
 
 import gtk
+import gtk.glade
 
 import unittest
 
@@ -23,12 +24,8 @@ from assembly import Assembly
 ##############################################################################
 
 # DbReaderWindow GTK widget class
-class DbReaderWindow(gtk.Window):
+class DbReaderWindow():
   def __init__(self,db_reader=DbReader(),log_path="."):
-    super(DbReaderWindow, self).__init__()
-    self.set_title("Assembly Navigator Control")
-    self.set_position(gtk.WIN_POS_CENTER)
-
     # Store db reader
     self.db_reader = db_reader
 
@@ -44,109 +41,37 @@ class DbReaderWindow(gtk.Window):
     # Listener structures
     self.listeners = []
 
-    vbox = gtk.VBox(False, 8)
+    # Create glade window
+    tree = gtk.glade.XML("db_reader_window.glade")
+    self.w = tree.get_widget("db_reader_window")
+    self.w.set_title("Assembly Navigator Control")
 
-    ################################################
+    # Add references to all widgets
+    for w in tree.get_widget_prefix('_'):
+      name = w.get_name()[1:]
+      # Make sure we don't clobber existing attributes
+      assert not hasattr(self, name)
+      setattr(self, name, w)
 
-    self.statusbar = gtk.Statusbar()
-    vbox.pack_end(self.statusbar, False, False, 0)
+    self.path_chooser.set_filename(self.log_path)
 
-    ################################################
-    mb = gtk.MenuBar()
-
-    file_menu = gtk.Menu()
-    file_menu_item = gtk.MenuItem("File")
-    file_menu_item.set_submenu(file_menu)
-
-    exit = gtk.MenuItem("Exit")
-    exit.connect("activate",quit)
-    file_menu.append(exit)
-
-    mb.append(file_menu_item)
-
-    vbox.pack_start(mb,False,False,0)
-
-    ################################################
-    source_frame = gtk.Frame("Source: ")
-    source_table = gtk.Table(2,2,homogeneous=False)
-
-
-    self.fc_dialog = gtk.FileChooserDialog(
-	"Select a TREX log path...",
-	action=gtk.FILE_CHOOSER_ACTION_OPEN | gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER,
-	buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_OPEN,gtk.RESPONSE_OK))
-    self.fc_dialog.set_default_response(gtk.RESPONSE_OK)
-    self.fc_dialog.set_filename(self.log_path)
-
-    self.path_chooser = gtk.FileChooserButton(self.fc_dialog)
     self.path_chooser.connect("selection-changed",self.on_change_log_path)
-    path_label = gtk.Label("Path: ")
-
-    halign = gtk.Alignment(1,0.5,0,0.5)
-    halign.add(path_label)
-
-    source_table.attach(halign, 0,1,0,1, gtk.FILL, gtk.FILL,0,0)
-    source_table.attach(self.path_chooser, 1,2,0,1, gtk.FILL|gtk.EXPAND, gtk.SHRINK)
-
-    self.reactor_chooser = gtk.combo_box_new_text()
     self.reactor_chooser.connect("changed",self.on_change_reactor)
 
-    reactor_label = gtk.Label("Reactor: ")
+    self.tick_combo_model = gtk.ListStore(str)
+    self.tick_combo_entry.set_model(self.tick_combo_model)
+    self.tick_combo_entry.set_text_column(0)
 
-    source_table.attach(reactor_label, 0,1,1,2, gtk.SHRINK, gtk.SHRINK)
-    source_table.attach(self.reactor_chooser, 1,2,1,2, gtk.FILL|gtk.EXPAND, gtk.SHRINK)
-
-    padding = gtk.Alignment(1.0,0.5,1,1)
-    padding.set_padding(4,4,4,4)
-    padding.add(source_table)
-
-    source_frame.add(padding)
-    vbox.pack_start(source_frame, False, False, 4)
-
-    ################################################
-
-    tick_frame = gtk.Frame("Tick Control")
-
-    self.tick_entry = gtk.Entry()
-    self.tick_entry.set_activates_default(True)
     self.tick_entry.set_text(str(self.tick))
-    self.go_but = gtk.Button("go:")
-    self.go_but.set_flags(gtk.CAN_DEFAULT)
-    self.set_default(self.go_but)
+    self.w.set_default(self.go_but)
     self.go_but.connect("clicked",self.on_tick_set)
-
-    self.en_but = gtk.Button(">|")
-    self.fw_but = gtk.Button(">")
-    self.bk_but = gtk.Button("<")
-    self.st_but = gtk.Button("|<")
-
-    self.latest_but = gtk.ToggleButton("Latest")
 
     self.st_but.connect("clicked",self.on_tick_set_index,0)
     self.bk_but.connect("clicked",self.on_tick_inc_index,-1)
     self.fw_but.connect("clicked",self.on_tick_inc_index,1)
     self.en_but.connect("clicked",self.on_tick_set_index,-1)
     
-    self.latest_but.connect("toggled",self.on_toggle_latest)
-
-    nav_hbox = gtk.HBox(False,4)
-
-    nav_hbox.pack_end(self.latest_but, False, False, 0)
-    nav_hbox.pack_end(self.en_but, False, False, 0)
-    nav_hbox.pack_end(self.fw_but, False, False, 0)
-    nav_hbox.pack_end(self.tick_entry, True, True, 0)
-    nav_hbox.pack_end(self.go_but, False, False, 0)
-    nav_hbox.pack_end(self.bk_but, False, False, 0)
-    nav_hbox.pack_end(self.st_but, False, False, 0)
-
-    padding = gtk.Alignment(1.0,0.5,1,1)
-    padding.set_padding(4,4,4,4)
-    padding.add(nav_hbox)
-
-    tick_frame.add(padding)
-    vbox.pack_start(tick_frame, False, False, 4)
-    
-    self.add(vbox)
+    self.latest_toggle.connect("toggled",self.on_toggle_latest)
 
     # Spin up the reload thread used to track the latest file
     self.do_reload = False
@@ -155,8 +80,8 @@ class DbReaderWindow(gtk.Window):
     self.reload_thread = threading.Thread(target=self.latest_reload_loop)
     self.reload_thread.start()
 
-    self.connect("destroy", self.on_destroy)
-    self.show_all()
+    self.w.connect("destroy", self.on_destroy)
+    self.w.show()
   
   ############################################################################
   # Event Handlers
@@ -199,7 +124,7 @@ class DbReaderWindow(gtk.Window):
 
   # Callback for toggling latest tick tracking
   def on_toggle_latest(self,widget):
-    enabled = self.latest_but.get_active()
+    enabled = self.latest_toggle.get_active()
     self.reload_lock.acquire()
     self.do_reload = enabled
     self.reload_lock.release()
@@ -212,42 +137,54 @@ class DbReaderWindow(gtk.Window):
 
   # Load the reactors in the current log path and update the drop-down list accordingly
   def load_available_reactors(self):
+    # Initialize available reactir names
+    available_reactor_names = []
+
     try:
       # Get the available reactors from the db reader
       available_reactor_names = self.db_reader.get_available_reactors(self.log_path)
 
-      # If any one name has been removed, refresh the list entirely
-      if not all([name in self.reactor_names for name in available_reactor_names]):
-	# Empty the dropdown list
-	for name in self.reactor_names:
-	  self.reactor_chooser.remove_text(0)
-	self.reactor_names = []
-
-      # Append any names that are found but not already registered
-      for name in [name for name in available_reactor_names if name not in self.reactor_names]:
-	self.reactor_chooser.append_text(name)
-	self.reactor_names.append(name)
-
-      # Set the first option in the list to be active
-      if self.reactor_chooser.get_active() == -1:
-	self.reactor_chooser.set_active(0)
     except OSError:
       self.set_status("No reactor list at log path.")
     except:
       self.set_status("Failed to load reactor list from log path.")
       self.reactor_names = []
       self.reactor_name = ""
-      raise
+
+    # If any one name has been removed, refresh the list entirely
+    if len(self.reactor_names) != len(available_reactor_names) or not all([name in self.reactor_names for name in available_reactor_names]):
+      # Empty the dropdown list
+      for name in self.reactor_names:
+	self.reactor_chooser.remove_text(0)
+      self.reactor_names = []
+
+    # Append any names that are found but not already registered
+    for name in [name for name in available_reactor_names if name not in self.reactor_names]:
+      self.reactor_chooser.append_text(name)
+      self.reactor_names.append(name)
+
+    # Set the first option in the list to be active
+    if self.reactor_chooser.get_active() == -1:
+      self.reactor_chooser.set_active(0)
 
   # Load the available ticks and update the buttons accordingly
   def load_available_ticks(self):
+    # Initialize available ticks
+    available_ticks = []
+
     try:
-      self.ticks = self.db_reader.get_available_ticks(self.log_path,self.reactor_name)
+      available_ticks = self.db_reader.get_available_ticks(self.log_path,self.reactor_name)
     except:
       if self.reactor_name != "":
 	self.set_status("Failed to load any ticks from log path.")
       self.tick = 0
-      self.ticks = []
+      available_ticks = []
+
+    if len(available_ticks) != len(self.ticks):
+      # Append any names that are found but not already registered
+      for t in [t for t in available_ticks if t not in self.ticks]:
+	self.tick_combo_model.append([str(t)])
+      self.ticks = available_ticks
 
     # Make sure the selected tick is avaiable
     if self.tick not in self.ticks and len(self.ticks) > 0:
@@ -264,7 +201,7 @@ class DbReaderWindow(gtk.Window):
   # This enables and disables the navigator buttons based on the available ticks
   def update_available_buttons(self):
     # Check if the latest tracking button is enabled
-    latest_enabled = self.latest_but.get_active()
+    latest_enabled = self.latest_toggle.get_active()
 
     # If there are no reactors, disable the combobox
     self.reactor_chooser.set_sensitive(len(self.reactor_names) > 0)
@@ -560,8 +497,8 @@ class TestDbReaderWindow(unittest.TestCase,GtkTester):
     self.assert_([100] == self.db_reader_window.ticks)
 
     print "Enabling automatic tick tracking..."
-    self.db_reader_window.latest_but.set_active(True)
-    self.db_reader_window.latest_but.emit("toggled")
+    self.db_reader_window.latest_toggle.set_active(True)
+    self.db_reader_window.latest_toggle.emit("toggled")
     os.makedirs(DYNAMIC_REACTOR_TICK_PATH_2)
     time.sleep(4)
 

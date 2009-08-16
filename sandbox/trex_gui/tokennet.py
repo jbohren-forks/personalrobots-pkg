@@ -33,7 +33,7 @@ def main():
 
   # Create db reader window
   db_reader_window = DbReaderWindow(log_path=log_path)
-  db_reader_window.connect("destroy",gtk.main_quit)
+  db_reader_window.w.connect("destroy",gtk.main_quit)
 
   # Create token network graph generator
   token_network = TokenNetwork()
@@ -47,7 +47,7 @@ def main():
   token_network_filter = TokenNetworkFilter(token_network)
   token_network_filter_window = TokenNetworkFilterWindow(token_network_filter)
 
-  db_reader_window.present()
+  db_reader_window.w.present()
 
   gtk.main()
 

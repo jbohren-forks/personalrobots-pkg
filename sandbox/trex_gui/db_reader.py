@@ -144,8 +144,8 @@ class DbReader():
       # Append variable to vars dict
       assembly.vars[var_key] = Variable(
 	  var_key,
-	  entity,
 	  var_name,
+	  entity,
 	  var_domain,
 	  var_values,
 	  var_type)
