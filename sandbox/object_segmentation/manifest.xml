@@ -18,7 +18,7 @@
   <depend package="opencv_latest"/>
 
   <export>
-    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -ltable_object_rf" />
+    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lrf_creator_3d -ltable_object_rf" />
   </export>
 
 </package>

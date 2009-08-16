@@ -21,15 +21,27 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #uncomment if you have defined services
 #gensrv()
 
-rospack_add_library(table_object_rf
-			src/image_stereo/table_object_rf.cpp
-			src/util/rf_creator_3d.cpp)
-rospack_add_openmp_flags (table_object_rf)
+# Library to generate RandomFields from 3-D point clouds
+rospack_add_library(rf_creator_3d
+                        src/util/rf_creator_3d.cpp)
+rospack_add_openmp_flags (rf_creator_3d)
 
+# Library to create RandomFields from Stereo point cloud + image data
+rospack_add_library(table_object_rf
+			src/image_stereo/table_object_rf.cpp)
+rospack_add_openmp_flags (table_object_rf)
+target_link_libraries(table_object_rf rf_creator_3d)
+
+# table object segmenter
 rospack_add_executable(train_table_object_segmenter 
 			src/image_stereo/train_table_object_segmenter.cpp)
-target_link_libraries(train_table_object_segmenter table_object_rf functional_m3n)
+target_link_libraries(train_table_object_segmenter table_object_rf)
 
+# example program for training m3n
+rospack_add_executable(ex_train_m3n
+                        examples/train_m3n.cpp 
+			examples/common.cpp)
+target_link_libraries(ex_train_m3n rf_creator_3d)
 
 #target_link_libraries(${PROJECT_NAME} another_library)
 rospack_add_boost_directories()
