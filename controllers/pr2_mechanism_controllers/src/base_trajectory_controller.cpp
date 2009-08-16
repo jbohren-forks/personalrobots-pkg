@@ -268,7 +268,7 @@ namespace pr2_mechanism_controllers
       last_update_time_ = current_time_;
 
       if (!control_rate.sleep())
-        ROS_WARN("Control loop missed its desired cycle rate of %.4f Hz", controller_frequency_);
+        ROS_DEBUG("Control loop missed its desired cycle rate of %.4f Hz", controller_frequency_);
     }
   }
 
