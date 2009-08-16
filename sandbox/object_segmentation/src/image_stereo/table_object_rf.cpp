@@ -52,7 +52,7 @@ TableObjectRF::TableObjectRF()
 
   // -----------------------------------------
   // Node Features
-  SpectralAnalysis* sa_nodes = new SpectralAnalysis(0.0254); // 0.0254 = inch
+  SpectralAnalysis* sa_nodes = new SpectralAnalysis(0.0254); // 0.0254 = 1 inch
   ShapeSpectral* ss_nodes = new ShapeSpectral(*sa_nodes);
   OrientationNormal* on_nodes = new OrientationNormal(0, 0, 1.0, *sa_nodes);
   //
@@ -61,25 +61,38 @@ TableObjectRF::TableObjectRF()
 
   // -----------------------------------------
   // Clique-set 0 features
-  SpectralAnalysis* sa_cs0 = new SpectralAnalysis(-1);
-  ShapeSpectral* ss_cs0 = new ShapeSpectral(*sa_cs0);
-  OrientationNormal* on_cs0 = new OrientationNormal(0, 0, 1.0, *sa_cs0);
-  SpinImageCustom* sic_cs0 = new SpinImageCustom(0, 0, 1.0, 0.0762, 0.0762, 5, 4, false);
-  BoundingBoxSpectral* bbs_cs0 = new BoundingBoxSpectral(-1.0, *sa_cs0);
+  SpectralAnalysis* sa_cluster_cs0 = new SpectralAnalysis(-1);
+  SpectralAnalysis* sa_radius_cs0 = new SpectralAnalysis(0.4445); // 1.75 inch = 0.04445 meters
+  ShapeSpectral* ss_cluster_cs0 = new ShapeSpectral(*sa_cluster_cs0);
+  ShapeSpectral* ss_radius_cs0 = new ShapeSpectral(*sa_radius_cs0);
+  OrientationNormal* on_cluster_cs0 = new OrientationNormal(0, 0, 1.0, *sa_cluster_cs0);
+  OrientationNormal* on_radius_cs0 = new OrientationNormal(0, 0, 1.0, *sa_radius_cs0);
+  // 0.5 inch = 0.0127 m
+  SpinImageCustom* sic_cs0 = new SpinImageCustom(0, 0, 1.0, 0.0127, 0.0127, 5, 5, false);
+  SpinImageNormal* sin_cs0 = new SpinImageNormal(0.0127, 0.0127, 5, 5, false, *sa_cluster_cs0);
+  BoundingBoxSpectral* bbs_cluster_cs0 = new BoundingBoxSpectral(-1.0, *sa_cluster_cs0);
+  BoundingBoxSpectral* bbs_radius_cs0 = new BoundingBoxSpectral(-1.0, *sa_radius_cs0);
   vector<Descriptor3D*> cs0_feature_descriptors;
-  cs0_feature_descriptors.push_back(ss_cs0);
-  //cs0_feature_descriptors.push_back(on_cs0);
-  //cs0_feature_descriptors.push_back(sic_cs0);
-  //cs0_feature_descriptors.push_back(bbs_cs0);
+  cs0_feature_descriptors.push_back(ss_cluster_cs0);
+  cs0_feature_descriptors.push_back(ss_radius_cs0);
+  cs0_feature_descriptors.push_back(on_cluster_cs0);
+  cs0_feature_descriptors.push_back(on_radius_cs0);
+  cs0_feature_descriptors.push_back(sic_cs0);
+  cs0_feature_descriptors.push_back(sin_cs0);
+  cs0_feature_descriptors.push_back(bbs_cluster_cs0);
+  cs0_feature_descriptors.push_back(bbs_radius_cs0);
   //
   clique_set_feature_descriptors.push_back(cs0_feature_descriptors);
 
   // -----------------------------------------
   // Clique-set 0 clustering
-  point_cloud_clustering::KMeans* kmeans_cs0 = new point_cloud_clustering::KMeans(0.03, 2);
-  vector<pair<bool, point_cloud_clustering::PointCloudClustering*> > cs0_clusterings(1);
+  point_cloud_clustering::KMeans* kmeans0_cs0 = new point_cloud_clustering::KMeans(0.005, 2);
+  point_cloud_clustering::KMeans* kmeans1_cs0 = new point_cloud_clustering::KMeans(0.008, 2);
+  vector<pair<bool, point_cloud_clustering::PointCloudClustering*> > cs0_clusterings(2);
   cs0_clusterings[0].first = true; // true indicates to cluster over only the nodes
-  cs0_clusterings[0].second = kmeans_cs0;
+  cs0_clusterings[0].second = kmeans0_cs0;
+  cs0_clusterings[0].first = true; // true indicates to cluster over only the nodes
+  cs0_clusterings[0].second = kmeans1_cs0;
   //
   clique_set_clusterings.push_back(cs0_clusterings);
 
@@ -107,14 +120,15 @@ boost::shared_ptr<RandomField> TableObjectRF::createRandomField(const string& fn
     abort();
   }
 
+  // downsampling will put all invalid points into one point
   sensor_msgs::PointCloud ds_stereo_cloud;
   vector<unsigned int> ds_labels;
   map<unsigned int, pair<unsigned int, unsigned int> > ds_idx2img_coords;
   downsampleStereoCloud(full_stereo_cloud, ds_stereo_cloud, voxel_x_, voxel_y_, voxel_z_,
       ds_labels, ds_idx2img_coords);
-  // downsampling will put all invalid points into one point
 
-  return rf_creator_3d->createRandomField(ds_stereo_cloud, ds_labels, false);
+  boost::shared_ptr<RandomField> created_rf = rf_creator_3d->createRandomField(ds_stereo_cloud, ds_labels, false);
+  return created_rf;
 }
 
 // --------------------------------------------------------------
