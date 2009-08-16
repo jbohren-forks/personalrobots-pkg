@@ -127,14 +127,14 @@ boost::shared_ptr<RandomField> TableObjectRF::createRandomField(const string& fn
   // downsampling will put all invalid points into one point
   sensor_msgs::PointCloud ds_stereo_cloud;
   vector<unsigned int> ds_labels;
-  map<unsigned int, pair<unsigned int, unsigned int> > ds_idx2img_coords;
+  vector<pair<unsigned int, unsigned int> > ds_idx2img_coords;
   downsampleStereoCloud(full_stereo_cloud, ds_stereo_cloud, voxel_x_, voxel_y_, voxel_z_,
       ds_labels, ds_idx2img_coords);
 
   // --------------------------------------------------
   // Create random field from point cloud only
-  boost::shared_ptr<RandomField> created_rf = rf_creator_3d_->createRandomField(ds_stereo_cloud, ds_labels, false);
-
+  boost::shared_ptr<RandomField> created_rf = rf_creator_3d_->createRandomField(ds_stereo_cloud,
+      ds_labels, false);
 
   cvReleaseImage(&image);
   return created_rf;
@@ -185,7 +185,7 @@ void TableObjectRF::downsampleStereoCloud(sensor_msgs::PointCloud& full_stereo_c
                                           const double voxel_y,
                                           const double voxel_z,
                                           vector<unsigned int>& ds_labels,
-                                          map<unsigned int, pair<unsigned int, unsigned int> >& ds_idx2img_coords)
+                                          vector<pair<unsigned int, unsigned int> >& ds_idx2img_coords)
 {
   // guaranteed to exist
   unsigned int width = full_stereo_cloud.channels[cloud_geometry::getChannelIndex(
@@ -212,10 +212,7 @@ void TableObjectRF::downsampleStereoCloud(sensor_msgs::PointCloud& full_stereo_c
   // For each downsampled point, find its closest point in the original full point cloud
   // and extract the point's image coordinates (and label if present)
   pair<unsigned int, unsigned int> empty_coords(0, 0);
-  for (int i = 0 ; i < nbr_downsampled_pts ; i++)
-  {
-    ds_idx2img_coords[i] = empty_coords;
-  }
+  ds_idx2img_coords.assign(nbr_downsampled_pts, empty_coords);
 #pragma omp parallel for
   for (int i = 0 ; i < nbr_downsampled_pts ; i++)
   {
@@ -239,7 +236,14 @@ void TableObjectRF::downsampleStereoCloud(sensor_msgs::PointCloud& full_stereo_c
     unsigned int x = closest_full_idx % width;
 
     // associate downsample index with image coords
-    ds_idx2img_coords.find(i)->second.first = x;
-    ds_idx2img_coords.find(i)->second.first = y;
+    ds_idx2img_coords[i].first = x;
+    ds_idx2img_coords[i].second = y;
   }
+}
+
+// TODO change ds_idx2img_coords into a vector
+void TableObjectRF::createImageFeatures(IplImage& image, const std::vector<std::pair<unsigned int,
+    unsigned int> >& ds_idx2img_coords, std::vector<std::vector<float> >& ds_image_features)
+{
+
 }
