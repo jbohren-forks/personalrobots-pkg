@@ -98,7 +98,7 @@ TableObjectRF::TableObjectRF()
 
   // -----------------------------------------
   // Initialize RFCreator3D with the above features and clustering
-  rf_creator_3d = new RFCreator3D(node_feature_descriptors, clique_set_feature_descriptors,
+  rf_creator_3d_ = new RFCreator3D(node_feature_descriptors, clique_set_feature_descriptors,
       clique_set_clusterings);
 
   // 0.3 inch = 0.00762 m cells
@@ -113,6 +113,8 @@ TableObjectRF::TableObjectRF()
 boost::shared_ptr<RandomField> TableObjectRF::createRandomField(const string& fname_image,
                                                                 const string& fname_pcd)
 {
+  // --------------------------------------------------
+  // Load point cloud and image
   IplImage* image = NULL;
   sensor_msgs::PointCloud full_stereo_cloud;
   if (loadStereoImageCloud(fname_image, fname_pcd, image, full_stereo_cloud) < 0)
@@ -120,6 +122,8 @@ boost::shared_ptr<RandomField> TableObjectRF::createRandomField(const string& fn
     abort();
   }
 
+  // --------------------------------------------------
+  // Downsample the point cloud
   // downsampling will put all invalid points into one point
   sensor_msgs::PointCloud ds_stereo_cloud;
   vector<unsigned int> ds_labels;
@@ -127,7 +131,12 @@ boost::shared_ptr<RandomField> TableObjectRF::createRandomField(const string& fn
   downsampleStereoCloud(full_stereo_cloud, ds_stereo_cloud, voxel_x_, voxel_y_, voxel_z_,
       ds_labels, ds_idx2img_coords);
 
-  boost::shared_ptr<RandomField> created_rf = rf_creator_3d->createRandomField(ds_stereo_cloud, ds_labels, false);
+  // --------------------------------------------------
+  // Create random field from point cloud only
+  boost::shared_ptr<RandomField> created_rf = rf_creator_3d_->createRandomField(ds_stereo_cloud, ds_labels, false);
+
+
+  cvReleaseImage(&image);
   return created_rf;
 }
 

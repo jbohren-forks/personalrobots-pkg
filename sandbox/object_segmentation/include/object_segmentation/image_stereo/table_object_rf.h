@@ -90,7 +90,7 @@ class TableObjectRF
                           std::vector<unsigned int>& ds_labels,
                           std::map<unsigned int, std::pair<unsigned int, unsigned int> >& ds_idx2img_coords);
 
-    RFCreator3D* rf_creator_3d;
+    RFCreator3D* rf_creator_3d_;
     double voxel_x_;
     double voxel_y_;
     double voxel_z_;
