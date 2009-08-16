@@ -52,7 +52,7 @@ int main()
 
   boost::shared_ptr<RandomField> rf = table_object_rf.createRandomField(fname_img, fname_pcd);
 
-  rf->saveNodeFeatures("testo");
+  rf->saveNodeFeatures("node_features");
   rf->saveCliqueFeatures("clique_features");
   return 0;
 }
