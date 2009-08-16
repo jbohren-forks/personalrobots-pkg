@@ -602,22 +602,25 @@ namespace move_arm
 				    approx = res.approximate;
 				    if (res.approximate)
 					ROS_INFO("Approximate path was found. Distance to goal is: %f", res.distance);
-				    ROS_INFO("Received path with %u states from motion planner", (unsigned int)res.path.states.size());
-				    if (res.path.states.size() > 1)
+				    if (res.distance < 0.1)
 				    {
-					currentPath = res.path;
-					currentPos = 0;
-					if (planningMonitor_->transformPathToFrame(currentPath, planningMonitor_->getFrameId()))
+					ROS_INFO("Received path with %u states from motion planner", (unsigned int)res.path.states.size());
+					if (res.path.states.size() > 1)
 					{
-					    displayPathPublisher_.publish(currentPath);
-					    //				    printPath(currentPath);
-					    
-					    feedback->mode = move_arm::MoveArmFeedback::MOVING;
-					    as_.publishFeedback(feedback);
+					    currentPath = res.path;
+					    currentPos = 0;
+					    if (planningMonitor_->transformPathToFrame(currentPath, planningMonitor_->getFrameId()))
+					    {
+						displayPathPublisher_.publish(currentPath);
+						//				    printPath(currentPath);
+						
+						feedback->mode = move_arm::MoveArmFeedback::MOVING;
+						as_.publishFeedback(feedback);
+					    }
 					}
+					else
+					    ROS_ERROR("Received path is too short");
 				    }
-				    else
-					ROS_ERROR("Received path is too short");
 				}
 			    }
 			}
@@ -666,9 +669,8 @@ namespace move_arm
 			ROS_INFO("Maximum path contact penetration depth is %f at link %s, sum of all contact depths is %f", ccost.cost, ccost.link.c_str(), ccost.sum);
 		    
 		    if (velocityHistoryIndex >= velocityHistory.size())
-		      {
+		    {
 			double sum = velocityHistory.sum();
-			ROS_DEBUG("vel = %f", sum);
 			if (sum < 1e-3)
 			{
 			    ROS_INFO("The total velocity of the robot over the last %d samples is %f. Self-preempting...", (int)velocityHistory.size(), sum);
@@ -863,7 +865,7 @@ namespace move_arm
 	    req.times = 1;
 	    
 	    // do not spend more than this amount of time
-	    req.allowed_time = 1.0;
+	    req.allowed_time = 5.0;
 	    
 	    // tell the planning monitor about the constraints we will be following
 	    planningMonitor_->setPathConstraints(req.path_constraints);
