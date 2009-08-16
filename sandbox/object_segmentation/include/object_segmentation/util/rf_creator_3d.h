@@ -37,6 +37,7 @@
 #include <vector>
 
 #include <boost/shared_ptr.hpp>
+#include <boost/shared_array.hpp>
 
 #include <ros/ros.h>
 
@@ -60,13 +61,16 @@ class RFCreator3D
      *
      * \param node_feature_descriptors
      * \param clique_set_feature_descriptors
-     * \param clique_set_clusterings
+     * \param clique_set_clusterings clique_set->[(cluster_only_nodes, clustering]
      */
     // --------------------------------------------------------------
     RFCreator3D(const std::vector<Descriptor3D*>& node_feature_descriptors,
                 const std::vector<std::vector<Descriptor3D*> >& clique_set_feature_descriptors,
                 const std::vector<std::vector<std::pair<bool,
                     point_cloud_clustering::PointCloudClustering*> > >& clique_set_clusterings);
+
+    // only be done on clique-sets that contain edges (cliques of size 2)
+    void setCSConcatenateNodeFeatures(const std::set<unsigned int> cs_indices);
 
     boost::shared_ptr<RandomField> createRandomField(const sensor_msgs::PointCloud& pt_cloud);
 
@@ -81,7 +85,7 @@ class RFCreator3D
                      cloud_kdtree::KdTree& pt_cloud_kdtree,
                      const std::vector<unsigned int>& labels,
                      const bool use_only_labeled,
-                     std::set<unsigned int>& successful_indices);
+                     std::set<unsigned int>& node_indices);
 
     void createCliqueSet(RandomField& rf,
                          const sensor_msgs::PointCloud& pt_cloud,
@@ -89,11 +93,18 @@ class RFCreator3D
                          const std::set<unsigned int>& node_indices,
                          const unsigned int clique_set_idx);
 
+    unsigned int
+    concatenateNodeFeatures(const RandomField& rf,
+                            const std::map<unsigned int, std::vector<int> >& created_clusters,
+                            std::vector<boost::shared_array<const float> >& concatenated_features);
+
     unsigned int nbr_clique_sets_;
     std::vector<Descriptor3D*> node_feature_descriptors_;
     std::vector<std::vector<Descriptor3D*> > clique_set_feature_descriptors_;
     std::vector<std::vector<std::pair<bool, point_cloud_clustering::PointCloudClustering*> > >
         clique_set_clusterings_;
+
+    std::set<unsigned int> concat_nodes_cs_indices_;
 };
 
 #endif

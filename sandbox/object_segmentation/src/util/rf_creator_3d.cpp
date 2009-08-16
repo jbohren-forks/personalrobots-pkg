@@ -177,31 +177,40 @@ void RFCreator3D::createCliqueSet(RandomField& rf,
     // ----------------------------------------------
     // Feature computation
     // -----------------------------
-    // Create interests regions from the clustering
-    cv::Vector<const vector<int>*> interest_region_indices(curr_nbr_clusters, NULL);
-    size_t cluster_idx = 0;
-    for (map<unsigned int, vector<int> >::iterator iter_created_clusters = created_clusters.begin() ; iter_created_clusters
-        != created_clusters.end() ; iter_created_clusters++, cluster_idx++)
-    {
-      interest_region_indices[cluster_idx] = (&iter_created_clusters->second);
-    }
-    // -----------------------------
-    // Compute features over clusters
     vector<boost::shared_array<const float> > concatenated_features;
-    unsigned int nbr_concatenated_vals = Descriptor3D::computeAndConcatFeatures(pt_cloud,
-        pt_cloud_kdtree, interest_region_indices, clique_set_feature_descriptors_[clique_set_idx],
-        concatenated_features);
-    if (nbr_concatenated_vals == 0)
+    unsigned int nbr_concatenated_vals = 0;
+    if (concat_nodes_cs_indices_.count(clique_set_idx) != 0)
     {
-      ROS_FATAL("Could not compute cluster features at all. This should never happen");
-      abort();
+      // concat nodes
+      nbr_concatenated_vals = concatenateNodeFeatures(rf, created_clusters, concatenated_features);
+    }
+    else
+    {
+      // Create interests regions from the clustering
+      cv::Vector<const vector<int>*> interest_region_indices(curr_nbr_clusters, NULL);
+      size_t cluster_idx = 0;
+      for (map<unsigned int, vector<int> >::iterator iter_created_clusters =
+          created_clusters.begin() ; iter_created_clusters != created_clusters.end() ; iter_created_clusters++, cluster_idx++)
+      {
+        interest_region_indices[cluster_idx] = (&iter_created_clusters->second);
+      }
+      // -----------------------------
+      // Compute features over clusters
+      nbr_concatenated_vals = Descriptor3D::computeAndConcatFeatures(pt_cloud, pt_cloud_kdtree,
+          interest_region_indices, clique_set_feature_descriptors_[clique_set_idx],
+          concatenated_features);
+      if (nbr_concatenated_vals == 0)
+      {
+        ROS_FATAL("Could not compute cluster features at all. This should never happen");
+        abort();
+      }
     }
 
     // ----------------------------------------------
     // Clique construction
     // Assumes that point index in point cloud is equivalent to random field node id
     // -----------------------------
-    cluster_idx = 0;
+    size_t cluster_idx = 0;
     for (map<unsigned int, vector<int> >::iterator iter_created_clusters = created_clusters.begin() ; iter_created_clusters
         != created_clusters.end() ; iter_created_clusters++, cluster_idx++)
     {
@@ -318,4 +327,62 @@ RFCreator3D::RFCreator3D(const std::vector<Descriptor3D*>& node_feature_descript
   clique_set_feature_descriptors_ = clique_set_feature_descriptors;
   clique_set_clusterings_ = clique_set_clusterings;
   nbr_clique_sets_ = clique_set_feature_descriptors_.size();
+}
+
+// --------------------------------------------------------------
+/*! See function definition */
+// --------------------------------------------------------------
+unsigned int RFCreator3D::concatenateNodeFeatures(const RandomField& rf,
+                                                  const map<unsigned int, vector<int> >& created_clusters,
+                                                  vector<boost::shared_array<const float> >& concatenated_features)
+{
+  concatenated_features.assign(created_clusters.size(), boost::shared_array<const float>(NULL));
+
+  // Retrieve the nodes in the random field, verify there is at least 2
+  const map<unsigned int, RandomField::Node*>& rf_nodes = rf.getNodesRandomFieldIDs();
+  if (rf_nodes.size() < 2)
+  {
+    ROS_ERROR("RFCreator3D::concatenateNodeFeatures random field doesnt have at least 2 nodes");
+    return 0;
+  }
+
+  // Determine the size of the concatenated feature vector
+  unsigned int single_feature_length = rf_nodes.begin()->second->getNumberFeatureVals();
+  unsigned int nbr_concatenated_features = single_feature_length * 2;
+
+  // for each cluster (edge), determine if both nodes exist in the random field, if they do
+  // then concatenate teh values
+  unsigned int sample_idx = 0;
+  for (map<unsigned int, vector<int> >::const_iterator iter_created_clusters =
+      created_clusters.begin() ; iter_created_clusters != created_clusters.end() ; iter_created_clusters++, sample_idx++)
+  {
+    // retrieve the node ids associated with the cluster
+    const vector<int>& cluster_node_ids = iter_created_clusters->second;
+    unsigned int nbr_nodes = cluster_node_ids.size();
+    if (nbr_nodes != 2)
+    {
+      ROS_ERROR("Concatenating node features for cluster of size not 2 (edge): %u", nbr_nodes);
+      return 0;
+    }
+
+    bool both_nodes_exist = (rf_nodes.count(cluster_node_ids[0]) != 0) && (rf_nodes.count(
+        cluster_node_ids[1]) != 0);
+    if (both_nodes_exist)
+    {
+      float* curr_concatenated_vals = new float[nbr_concatenated_features];
+
+      const boost::shared_array<const float> node0_features =
+          rf_nodes.find(cluster_node_ids[0])->second->getFeatureVals();
+      const boost::shared_array<const float> node1_features =
+          rf_nodes.find(cluster_node_ids[1])->second->getFeatureVals();
+
+      memcpy(curr_concatenated_vals, node0_features.get(), single_feature_length);
+      memcpy(curr_concatenated_vals + single_feature_length, node1_features.get(),
+          single_feature_length);
+
+      concatenated_features[sample_idx].reset(static_cast<const float*> (curr_concatenated_vals));
+    }
+  }
+
+  return nbr_concatenated_features;
 }
