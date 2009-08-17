@@ -7,7 +7,7 @@ Helper functions for manipulating Lasers Scans
 <author>Tully Foote</author>
 <license>BSD</license>
 <review status="API cleared" notes=""/>
-<url>http://pr.willowgarage.com/wiki/laser_scan</url>
+<url>http://ros.org/wiki/laser_scan</url>
 <depend package="sensor_msgs"/>
 <depend package="roscpp"/>
 <depend package="tf"/>

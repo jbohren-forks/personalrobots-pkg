@@ -1,13 +1,15 @@
 <package>
   <description brief="Visualization Messages">
 
-    A place to put all visualization-specific messages.
+visualization_msgs is a set of messages used by higher level packages, such as <a href="/wiki/rviz">rviz</a>, that deal in visualization-specific data.   
+
+The main message in visualization_msgs is <strong>visualization_msgs::Marker</strong>.  The marker message is used to send visualization "markers" such as boxes, spheres, arrows, lines, etc. to a visualization environment such as <a href="http:///www.ros.org/wiki/rviz">rviz</a>.  See the rviz tutorial <a href="http://www.ros.org/wiki/rviz/Tutorials/UsingVisualizationMarkers">rviz/Tutorials/UsingVisualizationMarkers</a> for more information.
 
   </description>
   <author>Josh Faust/jfaust@willowgarage.com</author>
   <license>BSD</license>
-  <review status="unreviewed" notes=""/>
-  <url>http://pr.willowgarage.com/wiki/visualization_msgs</url>
+  <review status="API reviewed" notes=""/>
+  <url>http://ros.org/wiki/visualization_msgs</url>
 
   <export>
     <cpp cflags="-I${prefix}/msg/cpp"/>

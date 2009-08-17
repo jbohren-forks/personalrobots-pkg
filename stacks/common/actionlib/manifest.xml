@@ -5,7 +5,7 @@
   <author>Eitan Marder-Eppstein, Vijay Pradeep</author>
   <license>BSD</license>
   <review status="api cleared" notes=""/>
-  <url>http://pr.willowgarage.com/wiki/actionlib</url>
+  <url>http://ros.org/wiki/actionlib</url>
 
   <depend package="geometry_msgs" />
   <depend package="roscpp" />
