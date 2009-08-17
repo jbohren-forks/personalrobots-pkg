@@ -76,6 +76,7 @@ namespace move_arm
     class MoveArmSetup
     {
 	friend class MoveArm;
+	friend class TeleopArm;
 	
     public:
 	
