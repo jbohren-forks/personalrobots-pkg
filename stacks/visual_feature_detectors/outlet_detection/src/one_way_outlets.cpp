@@ -147,7 +147,7 @@ void detect_outlets_2x1_one_way(IplImage* test_image, const CvOneWayDescriptorOb
     
     //        printf("%d features before filtering\n", (int)hole_candidates.size());
     vector<feature_t> hole_candidates_filtered;
-    float dist = calc_set_std(descriptors->_GetTrainFeatures());
+    float dist = calc_set_std(descriptors->_GetLabeledFeatures());
     FilterOutletFeatures(hole_candidates, hole_candidates_filtered, dist*4);
     hole_candidates = hole_candidates_filtered;
     //        printf("Set size is %f\n", dist);
@@ -172,7 +172,7 @@ void detect_outlets_2x1_one_way(IplImage* test_image, const CvOneWayDescriptorOb
         vector<feature_t> clustered_features;
         SelectNeighborFeatures(hole_candidates, clusters[k].pt, clustered_features, dist*4);
         
-        DetectObjectConstellation(descriptors->_GetTrainFeatures(), clustered_features, homography, indices);
+        DetectObjectConstellation(descriptors->_GetLabeledFeatures(), clustered_features, homography, indices);
         
         // print statistics
         int parts = 0;
@@ -189,7 +189,7 @@ void detect_outlets_2x1_one_way(IplImage* test_image, const CvOneWayDescriptorOb
         if(parts > 0)
         {
             holes.clear();
-            InferMissingObjects(descriptors->_GetTrainFeatures(), clustered_features, homography, indices, holes);
+            InferMissingObjects(descriptors->_GetLabeledFeatures(), clustered_features, homography, indices, holes);
         }
     }
     
@@ -320,13 +320,13 @@ void detect_outlets_one_way(IplImage* test_image, const outlet_template_t& outle
         CvScalar color = descriptors->IsDescriptorObject(desc_idx) ? CV_RGB(0, 255, 0) : CV_RGB(255, 0, 0);
         int part_idx = descriptors->GetDescriptorPart(desc_idx);
 		
-		int min_ground_idx = (int)(descriptors->GetTrainFeatures().size()) * 2 / 3; // 3 there is number of holes in the outlet (including ground hole)
+		int min_ground_idx = (int)(descriptors->GetLabeledFeatures().size()) * 2 / 3; // 3 there is number of holes in the outlet (including ground hole)
         if(part_idx >= 0 && part_idx < min_ground_idx)
         {
             color = CV_RGB(255, 255, 0);
         }
         
-        if((part_idx >= min_ground_idx) && (part_idx <  (int)(descriptors->GetTrainFeatures().size())))
+        if((part_idx >= min_ground_idx) && (part_idx <  (int)(descriptors->GetLabeledFeatures().size())))
         {
             color = CV_RGB(0, 255, 255);
         }
@@ -375,7 +375,7 @@ void detect_outlets_one_way(IplImage* test_image, const outlet_template_t& outle
     
     //        printf("%d features before filtering\n", (int)hole_candidates.size());
     vector<feature_t> hole_candidates_filtered;
-    float dist = calc_set_std(descriptors->_GetTrainFeatures());
+    float dist = calc_set_std(descriptors->_GetLabeledFeatures());
     FilterOutletFeatures(hole_candidates, hole_candidates_filtered, dist*4);
     hole_candidates = hole_candidates_filtered;
     //        printf("Set size is %f\n", dist);
@@ -417,7 +417,7 @@ void detect_outlets_one_way(IplImage* test_image, const outlet_template_t& outle
     for(int i = 0; i < descriptors->GetPyrLevels(); i++)
     {
         vector<feature_t> train_features;
-        ScaleFeatures(descriptors->_GetTrainFeatures(), train_features, 1.0f/(1<<i));
+        ScaleFeatures(descriptors->_GetLabeledFeatures(), train_features, 1.0f/(1<<i));
         
         vector<outlet_t> _holes;
                 
@@ -436,6 +436,10 @@ void detect_outlets_one_way(IplImage* test_image, const outlet_template_t& outle
 #if defined(_VERBOSE)
             cvCopy(_image1, image1);
 #endif //_VERBOSE
+            
+            cvNamedWindow("1", 1);
+            cvShowImage("1", image1);
+            cvWaitKey();
         }
     }
 #if defined(_VERBOSE)

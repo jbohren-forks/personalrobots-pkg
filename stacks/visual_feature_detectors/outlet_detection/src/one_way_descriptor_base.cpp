@@ -455,7 +455,7 @@ CvOneWayDescriptorObject::~CvOneWayDescriptorObject()
     delete m_part_id;
 }
 
-vector<feature_t> CvOneWayDescriptorObject::_GetTrainFeatures() const
+vector<feature_t> CvOneWayDescriptorObject::_GetLabeledFeatures() const
 {
     vector<feature_t> features;
     for(size_t i = 0; i < m_train_features.size(); i++)

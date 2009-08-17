@@ -902,13 +902,13 @@ void get_one_way_keypoints(Mat& image, const outlet_template_t& outlet_template,
         CvScalar color = descriptors->IsDescriptorObject(desc_idx) ? CV_RGB(0, 255, 0) : CV_RGB(255, 0, 0);
         int part_idx = descriptors->GetDescriptorPart(desc_idx);
 		
-		int min_ground_idx = (int)(descriptors->GetTrainFeatures().size()) * 2 / 3; // 3 there is number of holes in the outlet (including ground hole)
+		int min_ground_idx = (int)(descriptors->GetLabeledFeatures().size()) * 2 / 3; // 3 there is number of holes in the outlet (including ground hole)
         if(part_idx >= 0 && part_idx < min_ground_idx)
         {
             //color = CV_RGB(255, 255, 0);
         }
         
-        if((part_idx >= min_ground_idx) && (part_idx <  (int)(descriptors->GetTrainFeatures().size())))
+        if((part_idx >= min_ground_idx) && (part_idx <  (int)(descriptors->GetLabeledFeatures().size())))
         {
            // color = CV_RGB(0, 255, 255);
         }
@@ -929,7 +929,7 @@ void get_one_way_keypoints(Mat& image, const outlet_template_t& outlet_template,
     
     //        printf("%d features before filtering\n", (int)hole_candidates.size());
     vector<feature_t> hole_candidates_filtered;
-    float dist = calc_set_std(descriptors->_GetTrainFeatures());
+    float dist = calc_set_std(descriptors->_GetLabeledFeatures());
     FilterOutletFeatures(hole_candidates, hole_candidates_filtered, dist*4);
     hole_candidates = hole_candidates_filtered;
 
