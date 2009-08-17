@@ -44,9 +44,6 @@
 using namespace ros;
 using namespace sensor_msgs;
 
-
-static const unsigned int last_seq = 76500 ;
-
 int g_argc;
 char** g_argv;
 
@@ -54,7 +51,7 @@ class TestAssembler : public testing::Test
 {
 public:
 
-  Node* node_;
+  NodeHandle n_;
 
   sensor_msgs::PointCloud cloud_msg_ ;
   boost::mutex cloud_mutex_ ;
@@ -67,21 +64,22 @@ public:
   int scan_counter_ ;
 
 
-  void CloudCallback()
+  void CloudCallback(const PointCloudConstPtr& cloud_msg)
   {
     cloud_mutex_.lock() ;
     cloud_counter_++ ;
-    safe_cloud_ = cloud_msg_ ;
+    safe_cloud_ = *cloud_msg ;
     cloud_mutex_.unlock() ;
     ROS_INFO("Got Cloud with %u points", cloud_msg_.get_points_size()) ;
   }
 
-  void ScanCallback()
+  void ScanCallback(const LaserScanConstPtr& scan_msg)
   {
     scan_mutex_.lock() ;
     scan_counter_++ ;
-    safe_scan_ = scan_msg_ ;
+    safe_scan_ = *scan_msg ;
     scan_mutex_.unlock() ;
+    //ROS_INFO("Got Scan") ;
   }
 
 protected:
@@ -90,66 +88,53 @@ protected:
   {
     cloud_counter_ = 0 ;
     scan_counter_ = 0 ;
-
-    init(g_argc, g_argv);
-    node_ = new Node("TestAssembler");
   }
 
   /// Destructor
   ~TestAssembler()
   {
-    delete node_;
+
   }
 };
 
 
 TEST_F(TestAssembler, test)
 {
-  ASSERT_TRUE(node_->subscribe("snapshot_cloud", cloud_msg_, &TestAssembler::CloudCallback,
-                               (TestAssembler*)this, 10)) ;
-  ASSERT_TRUE(node_->subscribe("tilt_scan", scan_msg_, &TestAssembler::ScanCallback,
-                               (TestAssembler*)this, 10)) ;
+  ROS_INFO("Starting test F");
+  ros::Subscriber cloud_sub = n_.subscribe("dummy_cloud", 10, &TestAssembler::CloudCallback, (TestAssembler*)this);
+  ros::Subscriber scan_sub  = n_.subscribe("dummy_scan",  10, &TestAssembler::ScanCallback,  (TestAssembler*)this);
 
-  // wait while bag is played back
-
-  int local_scan_counter_ ;
-
-  scan_mutex_.lock() ;
-  local_scan_counter_ = scan_counter_ ;
-  scan_mutex_.unlock() ;
-
-  while (scan_counter_ == 0)
-    usleep(1e6) ;
-
-  bool waiting = true ;
-  while( waiting )
+  bool waiting = true;
+  while(n_.ok() && waiting )
   {
-    usleep(1e4) ;
+    ros::spinOnce();
+    usleep(1e2) ;
 
     scan_mutex_.lock() ;
-    waiting = (scan_msg_.header.seq < last_seq) ;
+    waiting = (scan_counter_ < 55) ;
     scan_mutex_.unlock() ;
-
   }
 
   usleep(1e6) ;
 
-  ASSERT_EQ(cloud_counter_, 5) ;
+  ASSERT_GT(cloud_counter_, 0) ;
 
   unsigned int cloud_size ;
   cloud_mutex_.lock() ;
   cloud_size = safe_cloud_.get_points_size() ;
   cloud_mutex_.unlock() ;
 
-  ASSERT_TRUE(cloud_size > 0) ;
+  EXPECT_EQ((unsigned int) 1000, cloud_size) ;
 
   SUCCEED();
 }
 
 int main(int argc, char** argv)
 {
+  printf("******* Starting application *********\n");
+
   testing::InitGoogleTest(&argc, argv);
-  g_argc = argc;
-  g_argv = argv;
+  ros::init(argc, argv, "test_assembler_node");
+
   return RUN_ALL_TESTS();
 }
