@@ -44,30 +44,66 @@
 namespace neighborhood_index
 {
 
-  class Index {
-    virtual void knnSearch(const geometry_msgs::Point32 &point, int k,
-                           std::vector<int> &k_indices, std::vector<float> &k_distances) = 0;
-    virtual void knnSearch(const sensor_msgs::PointCloud &pointsToFind, int k,
-                           std::vector<std::vector<int> > &k_indices_array, std::vector<std::vector<float> > &k_distances_array) = 0;
+class Index {
+public:
 
-    virtual bool radiusSearch (const geometry_msgs::Point32 &p_q, double radius,
-                               std::vector<int> &k_indices, std::vector<float> &k_distances, int max_nn = INT_MAX) = 0;
-    virtual bool radiusSearch (const sensor_msgs::PointCloud &points, double radius,
-                               std::vector<std::vector<int> > &k_indices_array, std::vector<std::vector<float> > &k_distances_array, int max_nn = INT_MAX) = 0;
+	virtual void buildIndex(const sensor_msgs::PointCloud& points) = 0;
 
-  };
+	virtual void knnSearch(const geometry_msgs::Point32 &point, int k,
+			std::vector<int> &indices, std::vector<float> &distances) = 0;
+	virtual void knnSearch(const sensor_msgs::PointCloud &pointsToFind, int k,
+			std::vector<std::vector<int> > &indices_array, std::vector<std::vector<float> > &distances_array)
+	{
+		// default implementation
+		indices_array.resize(pointsToFind.get_points_size());
+		distances_array.resize(pointsToFind.get_points_size());
+		for (size_t i=0; i<pointsToFind.get_points_size();++i) {
+			knnSearch(pointsToFind.points[i], k, indices_array[i], distances_array[i]);
+		}
+	}
 
-  //Version of Index which supports dynamic resizing
-  class DynamicIndex : public Index {
-    virtual void add(const geometry_msgs::Point32 &point) = 0;
-    virtual void add(const sensor_msgs::PointCloud &points) = 0;
+	virtual bool radiusSearch (const geometry_msgs::Point32 &p_q, double radius,
+			std::vector<int> &indices, std::vector<float> &istances, int max_nn = INT_MAX) = 0;
+	virtual bool radiusSearch (const sensor_msgs::PointCloud &points, double radius,
+			std::vector<std::vector<int> > &indices_array, std::vector<std::vector<float> > &distances_array, int max_nn = INT_MAX)
+	{
+		bool found = false;
+		// default implementation
+		indices_array.resize(points.get_points_size());
+		distances_array.resize(points.get_points_size());
+		for (size_t i=0; i<points.get_points_size();++i) {
+			found |= radiusSearch(points.points[i], radius, indices_array[i], distances_array[i], max_nn);
+		}
 
-    virtual void remove(const geometry_msgs::Point32 &point) = 0;
-    virtual void remove(const sensor_msgs::PointCloud &points) = 0;
+		return found;
+	}
 
-    virtual bool canRemove() = 0;
-    virtual bool optimize(int optimizationLevel = 0) = 0;
-  };
+};
+
+//Version of Index which supports dynamic resizing
+class DynamicIndex : public Index {
+public:
+	virtual void add(const geometry_msgs::Point32 &point) = 0;
+	virtual void add(const sensor_msgs::PointCloud &points)
+	{
+		// default implementation
+		for (size_t i=0; i<points.get_points_size();++i) {
+			add(points.points[i]);
+		}
+	}
+
+	virtual void remove(const geometry_msgs::Point32 &point) = 0;
+	virtual void remove(const sensor_msgs::PointCloud &points)
+	{
+		// default implementation
+		for (size_t i=0; i<points.get_points_size();++i) {
+			remove(points.points[i]);
+		}
+	}
+
+	virtual bool canRemove() = 0;
+	virtual bool optimize(int optimizationLevel = 0) = 0;
+};
 
 }
 
