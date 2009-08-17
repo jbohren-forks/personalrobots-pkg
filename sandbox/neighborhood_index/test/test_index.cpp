@@ -77,7 +77,7 @@ public:
 		index = new VoxelGridIndex(0.1,0.1,0.1); // 10 cm cells
 		index->buildIndex(*point_cloud);
 
-		clock_t start_time = clock();
+		start_time = clock();
 		index->knnSearch(*point_cloud, 10, indices, distances);
 		ROS_INFO("Searching took: %g seconds", double(clock()-start_time)/CLOCKS_PER_SEC);
 		delete index;
