@@ -91,8 +91,8 @@ TableObjectRF::TableObjectRF()
   vector<pair<bool, point_cloud_clustering::PointCloudClustering*> > cs0_clusterings(2);
   cs0_clusterings[0].first = true; // true indicates to cluster over only the nodes
   cs0_clusterings[0].second = kmeans0_cs0;
-  cs0_clusterings[0].first = true; // true indicates to cluster over only the nodes
-  cs0_clusterings[0].second = kmeans1_cs0;
+  cs0_clusterings[1].first = true; // true indicates to cluster over only the nodes
+  cs0_clusterings[1].second = kmeans1_cs0;
   //
   clique_set_clusterings.push_back(cs0_clusterings);
 
@@ -130,6 +130,10 @@ boost::shared_ptr<RandomField> TableObjectRF::createRandomField(const string& fn
   vector<pair<unsigned int, unsigned int> > ds_img_coords;
   downsampleStereoCloud(full_stereo_cloud, ds_stereo_cloud, voxel_x_, voxel_y_, voxel_z_,
       ds_labels, ds_img_coords);
+
+  // TODO compute image features
+  // set rf_creator_3d_ to use image features for node features
+  // TODO implement augmentation of node features in RFCreator3D.  should lookout for when vector.size() == 0
 
   // --------------------------------------------------
   // Create random field from point cloud only
