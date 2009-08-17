@@ -127,9 +127,9 @@ boost::shared_ptr<RandomField> TableObjectRF::createRandomField(const string& fn
   // downsampling will put all invalid points into one point
   sensor_msgs::PointCloud ds_stereo_cloud;
   vector<unsigned int> ds_labels;
-  vector<pair<unsigned int, unsigned int> > ds_idx2img_coords;
+  vector<pair<unsigned int, unsigned int> > ds_img_coords;
   downsampleStereoCloud(full_stereo_cloud, ds_stereo_cloud, voxel_x_, voxel_y_, voxel_z_,
-      ds_labels, ds_idx2img_coords);
+      ds_labels, ds_img_coords);
 
   // --------------------------------------------------
   // Create random field from point cloud only
@@ -185,7 +185,7 @@ void TableObjectRF::downsampleStereoCloud(sensor_msgs::PointCloud& full_stereo_c
                                           const double voxel_y,
                                           const double voxel_z,
                                           vector<unsigned int>& ds_labels,
-                                          vector<pair<unsigned int, unsigned int> >& ds_idx2img_coords)
+                                          vector<pair<unsigned int, unsigned int> >& ds_img_coords)
 {
   // guaranteed to exist
   unsigned int width = full_stereo_cloud.channels[cloud_geometry::getChannelIndex(
@@ -207,12 +207,12 @@ void TableObjectRF::downsampleStereoCloud(sensor_msgs::PointCloud& full_stereo_c
   int nbr_downsampled_pts = ds_stereo_cloud.points.size();
 
   ds_labels.assign(nbr_downsampled_pts, RandomField::UNKNOWN_LABEL);
-  ds_idx2img_coords.clear();
+  ds_img_coords.clear();
 
   // For each downsampled point, find its closest point in the original full point cloud
   // and extract the point's image coordinates (and label if present)
   pair<unsigned int, unsigned int> empty_coords(0, 0);
-  ds_idx2img_coords.assign(nbr_downsampled_pts, empty_coords);
+  ds_img_coords.assign(nbr_downsampled_pts, empty_coords);
 #pragma omp parallel for
   for (int i = 0 ; i < nbr_downsampled_pts ; i++)
   {
@@ -224,20 +224,19 @@ void TableObjectRF::downsampleStereoCloud(sensor_msgs::PointCloud& full_stereo_c
     full_cloud_kdtree.nearestKSearch(curr_ds_pt, 1, k_indices, k_distances);
     const unsigned int closest_full_idx = static_cast<unsigned int> (k_indices.at(0));
 
+    // associate downsample index with image coords
+    // lookup the full point cloud's image (x,y) coords
+    // (OpenCV: x = left to right, y = top to bottom)
+    unsigned int y = closest_full_idx / width;
+    unsigned int x = closest_full_idx % width;
+    ds_img_coords[i].first = x;
+    ds_img_coords[i].second = y;
+
     // if present, assign the down sampled point the label of the closest point in the original point cloud
     if (label_channel >= 0)
     {
       ds_labels[i] = full_stereo_cloud.channels[label_channel].values[closest_full_idx];
     }
-
-    // lookup the full point cloud's image (x,y) coords
-    // (OpenCV: x = left to right, y = top to bottom)
-    unsigned int y = closest_full_idx / width;
-    unsigned int x = closest_full_idx % width;
-
-    // associate downsample index with image coords
-    ds_idx2img_coords[i].first = x;
-    ds_idx2img_coords[i].second = y;
   }
 }
 
@@ -245,19 +244,23 @@ void TableObjectRF::downsampleStereoCloud(sensor_msgs::PointCloud& full_stereo_c
 /* See function definition */
 // --------------------------------------------------------------
 unsigned int TableObjectRF::createImageFeatures(IplImage& image, const vector<pair<unsigned int,
-    unsigned int> >& ds_idx2img_coords, vector<vector<float> >& ds_image_features)
+    unsigned int> >& ds_img_coords, vector<vector<float> >& ds_img_features)
 {
   unsigned int nbr_image_features = 2;
-  unsigned int nbr_pts = ds_idx2img_coords.size();
-  ds_image_features.assign(nbr_pts, vector<float> (nbr_image_features, 0.0)); // TODO change this when doing features that can fail
+  unsigned int nbr_pts = ds_img_coords.size();
+
+  // TODO change this when doing features that can fail
+  ds_img_features.assign(nbr_pts, vector<float> (nbr_image_features, 0.0));
+
   for (unsigned int i = 0 ; i < nbr_pts ; i++)
   {
-    const pair<unsigned int, unsigned int>& curr_img_coords = ds_idx2img_coords[i];
+    const pair<unsigned int, unsigned int>& curr_img_coords = ds_img_coords[i];
     unsigned int w = curr_img_coords.first;
     unsigned int h = curr_img_coords.second;
 
-    ds_image_features[i][0] = h;
-    ds_image_features[i][1] = *(image.imageData + (h * image.widthStep) + w);
+    // height and value of pixel
+    ds_img_features[i][0] = h;
+    ds_img_features[i][1] = *(image.imageData + (h * image.widthStep) + w);
   }
 
   return nbr_image_features;

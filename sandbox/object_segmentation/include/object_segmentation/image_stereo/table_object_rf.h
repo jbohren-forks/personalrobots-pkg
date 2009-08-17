@@ -88,10 +88,10 @@ class TableObjectRF
                           const double voxel_y,
                           const double voxel_z,
                           std::vector<unsigned int>& ds_labels,
-                          std::vector<std::pair<unsigned int, unsigned int> >& ds_idx2img_coords);
+                          std::vector<std::pair<unsigned int, unsigned int> >& ds_img_coords);
 
     unsigned int createImageFeatures(IplImage& image, const std::vector<std::pair<unsigned int,
-        unsigned int> >& ds_idx2img_coords, std::vector<std::vector<float> >& ds_image_features);
+        unsigned int> >& ds_img_coords, std::vector<std::vector<float> >& ds_img_features);
 
     RFCreator3D* rf_creator_3d_;
     double voxel_x_;
