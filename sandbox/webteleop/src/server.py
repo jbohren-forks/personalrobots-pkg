@@ -24,6 +24,8 @@ import rosjson
 from tf import *
 import bullet
 
+import roslaunch
+import roslaunch.pmon
 import wg_hardware_roslaunch.roslaunch_caller as roslaunch_caller
 
 from nav_msgs import *
