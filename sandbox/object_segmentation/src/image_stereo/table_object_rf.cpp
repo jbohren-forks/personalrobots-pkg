@@ -85,7 +85,7 @@ TableObjectRF::TableObjectRF()
   clique_set_feature_descriptors.push_back(cs0_feature_descriptors);
 
   // -----------------------------------------
-  // Clique-set 0 clustering
+  // Clique-set 0 clustering (kmeans)
   point_cloud_clustering::KMeans* kmeans0_cs0 = new point_cloud_clustering::KMeans(0.005, 2);
   point_cloud_clustering::KMeans* kmeans1_cs0 = new point_cloud_clustering::KMeans(0.008, 2);
   vector<pair<bool, point_cloud_clustering::PointCloudClustering*> > cs0_clusterings(2);
@@ -95,6 +95,20 @@ TableObjectRF::TableObjectRF()
   cs0_clusterings[1].second = kmeans1_cs0;
   //
   clique_set_clusterings.push_back(cs0_clusterings);
+
+  // -----------------------------------------
+  // Clique-set 1 features (edges)
+  vector<Descriptor3D*> cs1_feature_descriptors; // intentionally empty since using edges
+  clique_set_feature_descriptors.push_back(cs1_feature_descriptors);
+
+  // -----------------------------------------
+  // Clique-set 1 clustering (edges)
+  // 0.5 inch = 0.0127m
+  point_cloud_clustering::PairwiseNeighbors* pn_cs1 = new point_cloud_clustering::PairwiseNeighbors(0.0127, 3);
+  vector<pair<bool, point_cloud_clustering::PointCloudClustering*> > cs1_clusterings(1);
+  cs1_clusterings[0].first = true; // true indicates to cluster over only the nodes
+  cs1_clusterings[0].second = pn_cs1;
+  clique_set_clusterings.push_back(cs1_clusterings);
 
   // -----------------------------------------
   // Initialize RFCreator3D with the above features and clustering
