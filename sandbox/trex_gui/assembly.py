@@ -31,7 +31,9 @@ class Token(Entity):
     self.slot_id = slot_id
     self.slot_index = slot_index
 
-    self.start = -1
+    # Special temporal variables
+    self.start = [-1,-1]
+    self.end = [-1,-1]
 
   def __str__(self):
     return "%s (%d)" % (self.name, self.key)
@@ -54,7 +56,16 @@ class Variable():
     self.type = type
 
   def __str__(self):
-    return "%s = %s (%s)" % (self.name, self.values, self.key)
+    return "%s = %s (%d)" % (self.name, self.values, self.key)
+
+class Object():
+  def __init__(self,key,name,tokens):
+    self.key = key
+    self.name = name
+    self.tokens = tokens
+
+  def __str__(self):
+    return "%s (%d)" % (self.name, self.key)
 
 ##############################################################################
 # Assembly
@@ -64,6 +75,13 @@ class Variable():
 class Assembly():
   def __init__(self):
     # Create storage structures
+    self.clear()
+
+    # Initialize properties
+    self.tick = 0
+    self.reactor_name = ""
+
+  def clear(self):
     # Rules are predicates defined in NDDL
     self.rules = {}
     # Tokens are instantiations of rules
@@ -74,17 +92,8 @@ class Assembly():
     self.vars = {}
     # Store a list of rule sources and line numbers for easy lookup
     self.rule_src = {}
-
-    # Initialize properties
-    self.tick = 0
-    self.reactor_name = ""
-
-  def clear(self):
-    self.rules = {}
-    self.tokens = {}
-    self.slots = {}
-    self.vars = {}
-    self.rule_src = {}
+    # Objects are containers of tokens and other entities
+    self.objects = {}
 
   def is_empty(self):
     return len(self.rules) + len(self.tokens) + len(self.slots) + len(self.vars) == 0

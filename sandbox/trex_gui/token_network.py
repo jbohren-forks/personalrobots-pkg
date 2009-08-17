@@ -174,7 +174,7 @@ class TokenNetwork(Notifier):
 	    style = "MergedToken"
 	else:
 	  style = "InactiveToken"
-	if entity.start > self.assembly.tick:
+	if entity.start[0] > self.assembly.tick:
 	  style = "PlannedToken"
       # Set style
       self.graph.styleApply(style, self.token_nodes[entity])

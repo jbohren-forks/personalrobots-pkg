@@ -179,6 +179,8 @@ class DbReaderWindow():
 	self.set_status("Failed to load any ticks from log path.")
       self.tick = 0
       available_ticks = []
+      self.assembly = Assembly()
+      self.notify_listeners()
 
     if len(available_ticks) != len(self.ticks):
       # Append any names that are found but not already registered

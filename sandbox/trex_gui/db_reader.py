@@ -156,8 +156,32 @@ class DbReader():
 	# Add the start value if available:
 	if var_name == "start":
 	  start_bounds = self.number_range_regex.findall(var_values)
-	  start_bounds = start_bounds[0].split(" ")
-	  entity.start = float(start_bounds[1])
+	  entity.start = [float(s) for s in start_bounds[0].split(" ")]
+
+    # Read in objects
+    obj_reader = csv.reader(open("%s.objects" % step_path),delimiter='\t')
+    for row in vars_reader:
+      obj_key = int(row[0])
+      obj_name = row[4]
+
+      # Parse object variables
+      if row[6] == '\N':
+	obj_vars = []
+      else:
+	obj_vars = [assembly.vars[int(key_str)] for key_str in row[6].split(",")]
+
+      # Parse object tokens 
+      if row[7] == '\N':
+	obj_tokens = []
+      else:
+	obj_tokens = [assembly.tokens[int(key_str)] for key_str in row[7].split(",")]
+
+      # Append variable to vars dict
+      assembly.objects[obj_key] = Object(
+	  obj_key,
+	  obj_name,
+	  obj_vars,
+	  obj_tokens)
 
     # Return constructed assembly database
     return assembly
