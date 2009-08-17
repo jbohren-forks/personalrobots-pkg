@@ -37,22 +37,75 @@
 #include <vector>
 #include <map>
 #include <iostream>
-
+#include <fstream>
+#include <string>
 using namespace std;
 
-int main()
+int main(int argc, char *argv[])
 {
   TableObjectRF table_object_rf;
+  /*
+  if (argc != 3)
+  {
+    ROS_WARN("%s usage: <file list> <output dir/>", argv[0]);
+    return -1;
+  }
 
+  ifstream file_list(argv[1]);
+  if (file_list.is_open() == false)
+  {
+    ROS_FATAL("Could not open file %s", argv[1]);
+    return -1;
+  }
+
+  // yaw pitch roll
+  // base-path
+  // [filenames]
+  double yaw = 0.0;
+  double pitch = 0.0;
+  double roll = 0.0;
+  file_list >> yaw;
+  file_list >> pitch;
+  file_list >> roll;
+  char base_path[256];
+  file_list >> base_path;
+  while (file_list.eof() == false)
+  {
+    // basename = filename without .extension
+    char basename[256];
+    file_list >> basename;
+
+    // full_path/basename-LR.png
+    string img_fname(base_path);
+    img_fname.append(basename);
+    img_fname.append("-LR.png");
+
+    // full_path/basename.pcd_dan
+    string pcd_fname(base_path);
+    pcd_fname.append(basename);
+    pcd_fname.append(".pcd_dan");
+
+    boost::shared_ptr<RandomField> rf = table_object_rf.createRandomField(img_fname, pcd_fname,
+        yaw, pitch, roll);
+
+    // out_path/basename (.random-field)
+    string rf_fname(argv[2]);
+    rf_fname.append(basename);
+    if (rf->saveRandomField(rf_fname) < 0)
+    {
+      abort();
+    }
+  }
+*/
   string path("/u/msun/data/texture_light_3d_dataset/stapler/stapler_8");
   string fname_pcd = path;
   fname_pcd.append("/stapler_8_A8_H1_S1.pcd_dan");
   string fname_img = path;
   fname_img.append("/stapler_8_A8_H1_S1-LR.png");
 
-  boost::shared_ptr<RandomField> rf = table_object_rf.createRandomField(fname_img, fname_pcd, 0,0,1.9);
+  boost::shared_ptr<RandomField> rf = table_object_rf.createRandomField(fname_img, fname_pcd, 0, 0,
+      1.9);
+  rf->saveNodeFeatures("the_nodes");
 
-  rf->saveNodeFeatures("node_features");
-  rf->saveCliqueFeatures("clique_features");
   return 0;
 }
