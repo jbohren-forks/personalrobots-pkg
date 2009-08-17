@@ -4,7 +4,7 @@
 import sys,os
 import unittest
 import threading, time
-import gtk
+import gtk, gtk.glade
 
 # TREX modules
 from assembly import Assembly,Entity,Rule,Token,Slot,Variable
@@ -17,83 +17,39 @@ from token_network_filter import TokenNetworkFilter
 #   TokenNetworkFilter.
 ##############################################################################
 
-class TokenNetworkFilterWindow(gtk.Window):
+class TokenNetworkFilterWindow():
   def __init__(self,token_network_filter=TokenNetworkFilter()):
-    super(TokenNetworkFilterWindow, self).__init__()
-    self.set_title("Search Filters")
-    self.set_size_request(400, 300)
-    self.set_position(gtk.WIN_POS_CENTER)
-
+    # Set up token network filter
     self.token_network_filter = token_network_filter
     self.set_token_network_filter(token_network_filter)
 
-    vbox = gtk.VBox(False, 8)
-    ###################################################
-    sw = gtk.ScrolledWindow()
-    sw.set_shadow_type(gtk.SHADOW_ETCHED_IN)
-    sw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+    # Create glade window
+    tree = gtk.glade.XML("token_network_filter_window.glade")
+    self.w = tree.get_widget("token_network_filter_window")
+    self.w.set_title("Search Filters")
 
+    # Add references to all widgets
+    for w in tree.get_widget_prefix('_'):
+      name = w.get_name()[1:]
+      # Make sure we don't clobber existing attributes
+      assert not hasattr(self, name)
+      setattr(self, name, w)
 
     # Create liststore model
     self.create_model()
 
     # Create tree view
-    self.filter_view = gtk.TreeView(self.store)
+    self.filter_view.set_model(self.store)
     self.filter_view.connect('key_press_event', self.on_key_press)
-
-    self.filter_view.set_rules_hint(True)
-    sw.add(self.filter_view)
-
     self.create_columns(self.filter_view)
-    vbox.pack_start(sw, True, True, 0)
 
-    ################################################
-    filter_hbox = gtk.HBox(False,4)
-
-    self.add_but = gtk.Button("Add")
     self.add_but.connect("clicked",self.add_filter)
-
-    self.rep_but = gtk.Button("Replace")
     self.rep_but.connect("clicked",self.replace_filter)
-    self.rep_but.set_flags(gtk.CAN_DEFAULT)
 
-    self.filter_entry = gtk.Entry()
     self.filter_entry.set_activates_default(True)
-    self.set_default(self.rep_but)
+    self.w.set_default(self.rep_but)
 
-
-    filter_hbox.pack_start(self.filter_entry, True, True, 0)
-    filter_hbox.pack_start(self.rep_but, False, False, 0)
-    filter_hbox.pack_start(self.add_but, False, False, 0)
-
-    vbox.pack_start(filter_hbox, False, False, 4)
-    
-    #################################################
-
-    opt_frame = gtk.Frame("Options")
-    opt_table = gtk.Table(2,1,homogeneous=False)
-
-    ignore_check = gtk.CheckButton("Ignore Case ")
-    halign = gtk.Alignment(1,0.5,0,0.5)
-    halign.add(ignore_check)
-    opt_table.attach(halign, 0,1,0,1, gtk.FILL, gtk.FILL,0,0)
-
-    regex_check = gtk.CheckButton("Use Regex")
-    halign = gtk.Alignment(1,0.5,0,0.5)
-    halign.add(regex_check)
-    opt_table.attach(halign, 1,2,0,1, gtk.FILL, gtk.FILL,0,0)
-
-
-    padding = gtk.Alignment(1.0,0.5,1,1)
-    padding.set_padding(4,4,4,4)
-    padding.add(opt_table)
-    opt_frame.add(padding)
-
-    vbox.pack_start(opt_frame, False, False, 4)
-
-    self.add(vbox)
-
-    self.show_all()
+    self.w.show()
 
   ############################################################################
   # Construction utilities
@@ -191,7 +147,7 @@ class GtkTester():
   def gtk_thread(self):
     # Spawn a thread to run gtk in
     print "Spawning gtk thread..."
-    self.filter_window.connect("destroy",gtk.main_quit)
+    self.filter_window.w.connect("destroy",gtk.main_quit)
     gtk.main()
 
 # Unit tests
@@ -208,7 +164,7 @@ class TestTokenNetworkFilterWindow(unittest.TestCase,GtkTester):
   # Destroy window and kill gtk
   def tearDown(self):
     print "Killing The window..."
-    self.filter_window.destroy()
+    self.filter_window.w.destroy()
     time.sleep(5)
 
   # Test basic addition and removal of filters
@@ -223,7 +179,7 @@ class TestTokenNetworkFilterWindow(unittest.TestCase,GtkTester):
     token_network.set_assembly(assembly)
 
     # Create token network filter
-    token_network_filter = TokenNetworkFilter(assembly,token_network)
+    token_network_filter = TokenNetworkFilter(token_network)
     
     # Attach token network window to token network
     self.filter_window.set_token_network_filter(token_network_filter)
