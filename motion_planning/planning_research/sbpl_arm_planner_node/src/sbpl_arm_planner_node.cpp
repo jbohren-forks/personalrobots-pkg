@@ -976,6 +976,9 @@ bool SBPLArmPlannerNode::plan(motion_planning_msgs::KinematicPath &arm_path)
   clock_t start_time = clock();
   tf::Pose tf_pose;
 
+	std::vector<std::vector<double> > path_in;
+	std::vector<std::vector<double> > path_out;
+			
   //reinitialize the search space - search from scratch
   planner_->costs_changed();
 
@@ -994,6 +997,30 @@ bool SBPLArmPlannerNode::plan(motion_planning_msgs::KinematicPath &arm_path)
   {
 		ROS_INFO("*** a path was found ***");
 		
+		ROS_INFO("extending path... from %i waypoints", solution_state_ids_v.size());
+		path_in.resize(solution_state_ids_v.size());
+		for(i = 0; i < solution_state_ids_v.size(); i++)
+		{
+			path_in[i].resize(num_joints_);
+			sbpl_arm_env_.StateID2Angles(solution_state_ids_v[i], angles_r);
+			for (unsigned int p = 0; p < (unsigned int) num_joints_; ++p)
+				path_in[i][p] = angles_r[p];
+		}
+		
+		if(!addWaypointsToPath(path_in, path_out, 0.0175))
+			ROS_WARN("Couldn't add waypoints to path");
+					
+		arm_path.set_states_size(path_out.size());
+		for(i = 0; i < path_out.size(); i++)
+			arm_path.states[i].set_vals_size(num_joints_);
+
+		for(i = 0; i < arm_path.get_states_size(); i++)
+		{
+			for (unsigned int p = 0; p < (unsigned int) num_joints_; ++p)
+				arm_path.states[i].vals[p] = path_out[i][p];
+		}
+		
+/*
     arm_path.set_states_size(solution_state_ids_v.size());
     for(i = 0; i < solution_state_ids_v.size(); i++)
       arm_path.states[i].set_vals_size(num_joints_);
@@ -1003,7 +1030,7 @@ bool SBPLArmPlannerNode::plan(motion_planning_msgs::KinematicPath &arm_path)
       sbpl_arm_env_.StateID2Angles(solution_state_ids_v[i], angles_r);
       for (unsigned int p = 0; p < (unsigned int) num_joints_; ++p)
 				arm_path.states[i].vals[p] = angles_r[p];
-    }
+    }*/
 
 		printPath(arm_path);
 		/** testing jacobian calculation code */
@@ -1528,6 +1555,65 @@ bool SBPLArmPlannerNode::interpolatePathToGoal(std::vector<std::vector<double> >
 	return true;
 }
 
+bool SBPLArmPlannerNode::addWaypointsToPath(std::vector<std::vector<double> > path_in, std::vector<std::vector<double> > &path_out, double inc)
+{
+	unsigned int i = 0, completed_joints = 0, i_out = 1;
+	double diff;
+	std::vector<double> waypoint(path_in[0].size(), 0);
+	
+	if(path_in[0].size() != (unsigned int)num_joints_)
+		ROS_WARN("number of angles in path is not equal to the number of joints planned for");
+	
+	path_out.push_back(path_in[0]);
+	
+	for(unsigned int i_in = 0; i_in < path_in.size(); ++i_in)
+	{
+		path_out.push_back(path_in[i_in]);
+		
+		completed_joints = 0;
+		while(num_joints_ != completed_joints)
+		{
+// 			ROS_DEBUG("%i: %.3f %.3f %.3f %.3f %.3f %.3f %.3f",pind,path[pind][0],path[pind][1],path[pind][2],path[pind][3],path[pind][4],path[pind][5],path[pind][6]);
+// 			completed_joints = 0;
+			for(i = 0; i < num_joints_; ++i)
+			{
+				//if the ith angle in this waypoint is the same as the ith angle in the previous waypoint
+				if(path_out[i_out][i] == path_out[i_out-1][i])
+				{
+					waypoint[i] = path_out[i_out][i];
+					++completed_joints;
+				}
+				else
+				{
+					diff = path_out[i_out][i] - path_out[i_out-1][i];
+					if(diff < 0) // the current goal is higher than the goal angle
+					{
+						if(min(fabs(diff), inc) == inc)
+							waypoint[i]= path_out[i_out][i] - inc;
+						else
+							waypoint[i]= path_out[i_out][i] + diff;
+					}
+					else //the current angle is lower than the goal angle
+					{
+						if(min(fabs(diff), inc) == inc)
+							waypoint[i]= path_out[i_out][i] + inc;
+						else
+							waypoint[i]= path_out[i_out][i] + diff;
+					}
+				}
+			}
+			++i_out;
+			
+			path_out.push_back(waypoint);
+		}
+	}
+	
+	ROS_DEBUG("original path: %i  extended path: %i",path_in.size(),path_out.size()); 
+	for(unsigned int j = 0; j < path_out.size(); ++j)
+		ROS_DEBUG("%i: %.2f %.2f %.2f %.2f %.2f %.2f %.2f", j, path_out[j][0],path_out[j][1],path_out[j][2],path_out[j][3],path_out[j][4],path_out[j][5],path_out[j][6]);
+	return true;
+}
+
 // void SBPLArmPlannerNode::computeFK(std::vector<double> angles, )
 
 void SBPLArmPlannerNode::displayExpandedStates()
@@ -1535,7 +1621,7 @@ void SBPLArmPlannerNode::displayExpandedStates()
   std::vector<int> states;
 	int last = 0;
 	KDL::Frame current_frame;
-	double angles[num_joints_], xyz_m[3], rpy_r[3];
+	double angles[num_joints_];//, xyz_m[3], rpy_r[3];
 	visualization_msgs::Marker obs_marker;
 
 	KDL::JntArray jnt_pos;

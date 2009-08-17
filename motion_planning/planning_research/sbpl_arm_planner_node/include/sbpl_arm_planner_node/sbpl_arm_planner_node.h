@@ -290,6 +290,7 @@ class SBPLArmPlannerNode
 			
 			/** Temp */
 			std::vector<std::vector<double> > sbpl_obstacles_;
+			bool addWaypointsToPath(std::vector<std::vector<double> > path_in, std::vector<std::vector<double> > &path_out, double inc);
 
   };
 }
