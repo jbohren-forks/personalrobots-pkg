@@ -1,0 +1,23 @@
+<package>
+  <description brief="dallas_controller">
+
+     Control Dallas (or his robotic incarnation).
+
+  </description>
+  <author>Stuart Glaser</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/dallas_controller</url>
+  
+  <depend package="controller_interface" />
+  <depend package="mechanism_control" />
+  <depend package="pr2_mechanism_controllers" />
+  <depend package="geometry_msgs" />
+
+  <export>
+    <controller_interface controller="${prefix}/controller_plugins.xml" />
+  </export>
+
+</package>
+
+

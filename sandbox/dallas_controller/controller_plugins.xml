@@ -1,0 +1,3 @@
+<library path="lib/libdallas_controller">
+  <plugin name="DallasController" class="DallasController" type="Controller" />
+</library>
