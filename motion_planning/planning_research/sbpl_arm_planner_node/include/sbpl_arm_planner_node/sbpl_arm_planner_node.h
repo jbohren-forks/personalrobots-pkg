@@ -49,6 +49,7 @@
 #include <kdl/chain.hpp>
 #include <kdl/frames.hpp>
 #include <kdl/chainjnttojacsolver.hpp>
+#include <angles/angles.h>
 
 /** Messages **/
 #include <geometry_msgs/Wrench.h>
@@ -290,7 +291,8 @@ class SBPLArmPlannerNode
 			
 			/** Temp */
 			std::vector<std::vector<double> > sbpl_obstacles_;
-			bool addWaypointsToPath(std::vector<std::vector<double> > path_in, std::vector<std::vector<double> > &path_out, double inc);
+			
+			bool interpolatePath(std::vector<std::vector<double> > path_in, std::vector<std::vector<double> > &path_out, double inc);
 
   };
 }

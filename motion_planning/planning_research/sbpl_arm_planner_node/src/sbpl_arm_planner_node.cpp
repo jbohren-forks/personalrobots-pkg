@@ -893,9 +893,9 @@ bool SBPLArmPlannerNode::planToPosition(motion_planning_msgs::GetMotionPlan::Req
 				for(i = 1; i < res.path.get_times_size(); i++)
 					res.path.times[i] = res.path.times[i-1] + waypoint_time_;
 
-				ROS_DEBUG("planToPosition()");
-				for(int p = 0; p < res.path.get_times_size(); ++p)
-					ROS_DEBUG("%i: time:%f:",p,res.path.times[p]);
+// 				ROS_DEBUG("planToPosition()");
+// 				for(unsigned int p = 0; p < res.path.get_times_size(); ++p)
+// 					ROS_DEBUG("%i: time:%f:",p,res.path.times[p]);
 				
 				res.path.set_names_size(num_joints_);
 				for(i = 0; i < (unsigned int)num_joints_; i++)
@@ -1007,13 +1007,13 @@ bool SBPLArmPlannerNode::plan(motion_planning_msgs::KinematicPath &arm_path)
 			for (unsigned int p = 0; p < (unsigned int) num_joints_; ++p)
 				path_in[i][p] = angles_r[p];
 
-			ROS_INFO("%i: %.3f %.3f %.3f %.3f %.3f %.3f %.3f",
+			ROS_INFO("%i: %.4f %.4f %.4f %.4f %.4f %.4f %.4f",
 				i, path_in[i][0],path_in[i][1],path_in[i][2],path_in[i][3],path_in[i][4],path_in[i][5],path_in[i][6]);
 		}
 
 		ROS_INFO("original path done\n");
 
-		if(!addWaypointsToPath(path_in, path_out, 0.035))
+		if(!interpolatePath(path_in, path_out, 0.035))
 			ROS_WARN("Couldn't add waypoints to path");
 
 		ROS_INFO("a path was returned with %i waypoints",path_out.size());
@@ -1561,9 +1561,9 @@ bool SBPLArmPlannerNode::interpolatePathToGoal(std::vector<std::vector<double> >
 	return true;
 }
 
-bool SBPLArmPlannerNode::addWaypointsToPath(std::vector<std::vector<double> > path_in, std::vector<std::vector<double> > &path_out, double inc)
+bool SBPLArmPlannerNode::interpolatePath(std::vector<std::vector<double> > path_in, std::vector<std::vector<double> > &path_out, double inc)
 {
-	unsigned int i = 0, completed_joints = 0, i_out = 0, equal_waypoint = 0;
+	int i = 0, completed_joints = 0, i_out = 0;
 	double diff;
 	std::vector<double> waypoint(path_in[0].size(), 0);
 
@@ -1572,16 +1572,14 @@ bool SBPLArmPlannerNode::addWaypointsToPath(std::vector<std::vector<double> > pa
 
 	path_out.push_back(path_in[0]);
 
-	ROS_INFO("added points:");
+	ROS_DEBUG("added points:");
 	for(unsigned int i_in = 1; i_in < path_in.size(); i_in++)
 	{
-		ROS_INFO("%i:", i_in);
-		// path_out.push_back(path_in[i_in]);
+		ROS_DEBUG("%i:", i_in);
 
 		completed_joints = 0;
 		while(num_joints_ != completed_joints)
 		{
-// 			ROS_DEBUG("%i: %.3f %.3f %.3f %.3f %.3f %.3f %.3f",pind,path[pind][0],path[pind][1],path[pind][2],path[pind][3],path[pind][4],path[pind][5],path[pind][6]);
  			completed_joints = 0;
 			for(i = 0; i < num_joints_; ++i)
 			{
@@ -1593,46 +1591,42 @@ bool SBPLArmPlannerNode::addWaypointsToPath(std::vector<std::vector<double> > pa
 				}
 				else
 				{
-					diff = path_in[i_in][i] - path_out[i_out][i];
-					if(diff < 0) // the current angle is lower than the p_in angle
+// 					diff = path_in[i_in][i] - path_out[i_out][i];
+					diff = angles::shortest_angular_distance(path_out[i_out][i], path_in[i_in][i]);
+					//ROS_DEBUG("joint %i:  diff: %lf   path_out: %f  path_in: %f",i,diff,path_out[i_out][i], path_in[i_in][i]);
+					if(diff < 0) // the current path_out angle is higher than the current path_in angle, so reduce it
 					{
 						if(min(fabs(diff), inc) == inc)
 							waypoint[i]= path_out[i_out][i] - inc;
 						else
-							waypoint[i]= path_out[i_out][i] + diff;
+						{
+							waypoint[i]= path_in[i_in][i]; //path_out[i_out][i] + diff;
+							++completed_joints;
+						}
 					}
-					else //the current angle is lower than the goal angle
+					else
 					{
 						if(min(fabs(diff), inc) == inc)
 							waypoint[i]= path_out[i_out][i] + inc;
 						else
-							waypoint[i]= path_out[i_out][i] + diff;
+						{
+							waypoint[i]= path_in[i_in][i]; //path_out[i_out][i] + diff;
+							++completed_joints;
+						}
 					}
 				}
 			}
-			if(num_joints_ != completed_joints)
-			{
+// 			if(num_joints_ != completed_joints)
+// 			{
 				i_out++;
 				path_out.push_back(waypoint);
-			}
-/*
-			equal_waypoint = 0;
-			for(unsigned int g = 0; g < num_joints_; ++g)
-			{
-				if(waypoint[g] == path_in[i_in][g])
-					equal_waypoint++;
-			}
-			if(equal_waypoint < num_joints_)
-				path_out.push_back(waypoint);
-*/
-			ROS_INFO("in:%i, out:%i: %.4f %.4f %.4f %.4f %.4f %.4f %.4f", i_in, 
-i_out,path_out[i_out][0],path_out[i_out][1],path_out[i_out][2],path_out[i_out][3],path_out[i_out][4],path_out[i_out][5],path_out[i_out][6]);
+// 			}
+			
+			ROS_DEBUG("in:%i, out:%i: %.4f %.4f %.4f %.4f %.4f %.4f %.4f", i_in,i_out,path_out[i_out][0],path_out[i_out][1],path_out[i_out][2],path_out[i_out][3],path_out[i_out][4],path_out[i_out][5],path_out[i_out][6]);
 		}
 	}
 
 	ROS_DEBUG("original path: %i  extended path: %i",path_in.size(),path_out.size()); 
-	for(unsigned int j = 0; j < path_out.size(); ++j)
-		ROS_DEBUG("%i: %.2f %.2f %.2f %.2f %.2f %.2f %.2f", j, path_out[j][0],path_out[j][1],path_out[j][2],path_out[j][3],path_out[j][4],path_out[j][5],path_out[j][6]);
 	return true;
 }
 
@@ -1688,6 +1682,42 @@ void SBPLArmPlannerNode::displayExpandedStates()
 
 	ROS_DEBUG("published markers for %d expanded nodes",obs_marker.points.size());
 	marker_publisher_.publish(obs_marker);
+/*	
+	
+	marker_array.set_markers_size(states.size());
+	for(unsigned int i = 0; i < states.size(); ++i)
+	{
+		marker_array.markers[i].header.frame_id = planning_frame_;
+		marker_array.markers[i].header.stamp = ros::Time();
+		marker_array.markers[i].ns = "sbpl_arm_planner";
+		marker_array.markers[i].id = 3;
+		marker_array.markers[i].type = visualization_msgs::Marker::ARROW;
+		marker_array.markers[i].action =  visualization_msgs::Marker::ADD;
+		marker_array.markers[i].scale.x = 3*env_resolution_;
+		marker_array.markers[i].scale.y = 3*env_resolution_;
+		marker_array.markers[i].scale.z = 3*env_resolution_;
+		marker_array.markers[i].color.r = 1.0;
+		marker_array.markers[i].color.g = 0.0;
+		marker_array.markers[i].color.b = 0.5;
+		marker_array.markers[i].color.a = 0.5;
+		marker_array.markers[i].lifetime = ros::Duration(40.0);
+
+		sbpl_arm_env_.StateID2Angles(states[k], angles);
+		for (unsigned int p = 0; p < (unsigned int) num_joints_; p++)
+			jnt_pos(p) = angles[p];
+
+		jnt_to_pose_solver_->JntToCart(jnt_pos, current_frame, -1);
+		
+		marker_array.markers[i].pose.position.x = current_frame.p(0);
+		marker_array.markers[i].pose.position.y = current_frame.p(1);
+		marker_array.markers[i].pose.position.z = current_frame.p(2);
+
+		marker_array.markers[i].pose.orientation.x = current_frame.p(0);
+		marker_array.markers[i].pose.orientation.y = current_frame.p(1);
+		marker_array.markers[i].pose.orientation.z = current_frame.p(2);
+		marker_array.markers[i].pose.orientation.w = current_frame.p(2);
+		}
+	}*/
 }
 
 void SBPLArmPlannerNode::printPath(const motion_planning_msgs::KinematicPath &arm_path)
