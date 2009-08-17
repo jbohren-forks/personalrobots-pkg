@@ -31,67 +31,93 @@
 
 namespace tf {
 
-void VectorTFToKDL(const tf::Vector3& t, KDL::Vector& k)
-{
-  k = KDL::Vector(t[0], t[1], t[2]);
-}
+  void VectorTFToKDL(const tf::Vector3& t, KDL::Vector& k)
+  {
+    k = KDL::Vector(t[0], t[1], t[2]);
+  }
 
-void RotationTFToKDL(const tf::Quaternion& t, KDL::Rotation& k)
-{
-  k.Quaternion(t[0], t[1], t[2], t[3]);
-}
+  void RotationTFToKDL(const tf::Quaternion& t, KDL::Rotation& k)
+  {
+    k.Quaternion(t[0], t[1], t[2], t[3]);
+  }
 
-void TransformTFToKDL(const tf::Transform &t, KDL::Frame &k)
-{
-  for (unsigned int i = 0; i < 3; ++i)
-    k.p.data[i] = t.getOrigin()[i];
-  for (unsigned int i = 0; i < 9; ++i)
-    k.M.data[i] = t.getBasis()[i/3][i%3];
-}
+  void TransformTFToKDL(const tf::Transform &t, KDL::Frame &k)
+  {
+    for (unsigned int i = 0; i < 3; ++i)
+      k.p.data[i] = t.getOrigin()[i];
+    for (unsigned int i = 0; i < 9; ++i)
+      k.M.data[i] = t.getBasis()[i/3][i%3];
+  }
 
-void TransformKDLToTF(const KDL::Frame &k, tf::Transform &t)
-{
-  t.setOrigin(tf::Vector3(k.p.data[0], k.p.data[1], k.p.data[2]));
-  t.setBasis(btMatrix3x3(k.M.data[0], k.M.data[1], k.M.data[2],
-                         k.M.data[3], k.M.data[4], k.M.data[5],
-                         k.M.data[6], k.M.data[7], k.M.data[8]));
-}
+  void TransformKDLToTF(const KDL::Frame &k, tf::Transform &t)
+  {
+    t.setOrigin(tf::Vector3(k.p.data[0], k.p.data[1], k.p.data[2]));
+    t.setBasis(btMatrix3x3(k.M.data[0], k.M.data[1], k.M.data[2],
+                           k.M.data[3], k.M.data[4], k.M.data[5],
+                           k.M.data[6], k.M.data[7], k.M.data[8]));
+  }
 
-void PoseTFToKDL(const tf::Pose& t, KDL::Frame& k)
-{
-  for (unsigned int i = 0; i < 3; ++i)
-    k.p.data[i] = t.getOrigin()[i];
-  for (unsigned int i = 0; i < 9; ++i)
-    k.M.data[i] = t.getBasis()[i/3][i%3];
-}
+  void PoseTFToKDL(const tf::Pose& t, KDL::Frame& k)
+  {
+    for (unsigned int i = 0; i < 3; ++i)
+      k.p.data[i] = t.getOrigin()[i];
+    for (unsigned int i = 0; i < 9; ++i)
+      k.M.data[i] = t.getBasis()[i/3][i%3];
+  }
 
-void PoseKDLToTF(const KDL::Frame& k, tf::Pose& t)
-{
-  t.getOrigin()[0] = k.p.data[0];
-  t.getOrigin()[1] = k.p.data[1];
-  t.getOrigin()[2] = k.p.data[2];
-  for (unsigned int i = 0; i < 9; ++i)
-    t.getBasis()[i/3][i%3] = k.M.data[i];
-}
+  void PoseKDLToTF(const KDL::Frame& k, tf::Pose& t)
+  {
+    t.getOrigin()[0] = k.p.data[0];
+    t.getOrigin()[1] = k.p.data[1];
+    t.getOrigin()[2] = k.p.data[2];
+    for (unsigned int i = 0; i < 9; ++i)
+      t.getBasis()[i/3][i%3] = k.M.data[i];
+  }
 
-void TwistKDLToMsg(const KDL::Twist &t, geometry_msgs::Twist &m)
-{
-  m.linear.x = t.vel.data[0];
-  m.linear.y = t.vel.data[1];
-  m.linear.z = t.vel.data[2];
-  m.angular.x = t.rot.data[0];
-  m.angular.y = t.rot.data[1];
-  m.angular.z = t.rot.data[2];
-}
+  void TwistKDLToMsg(const KDL::Twist &t, geometry_msgs::Twist &m)
+  {
+    m.linear.x = t.vel.data[0];
+    m.linear.y = t.vel.data[1];
+    m.linear.z = t.vel.data[2];
+    m.angular.x = t.rot.data[0];
+    m.angular.y = t.rot.data[1];
+    m.angular.z = t.rot.data[2];
+  }
 
-void TwistMsgToKDL(const geometry_msgs::Twist &m, KDL::Twist &t)
-{
-  t.vel.data[0] = m.linear.x;
-  t.vel.data[1] = m.linear.y;
-  t.vel.data[2] = m.linear.z;
-  t.rot.data[0] = m.angular.x;
-  t.rot.data[1] = m.angular.y;
-  t.rot.data[2] = m.angular.z;
-}
+  void TwistMsgToKDL(const geometry_msgs::Twist &m, KDL::Twist &t)
+  {
+    t.vel.data[0] = m.linear.x;
+    t.vel.data[1] = m.linear.y;
+    t.vel.data[2] = m.linear.z;
+    t.rot.data[0] = m.angular.x;
+    t.rot.data[1] = m.angular.y;
+    t.rot.data[2] = m.angular.z;
+  }
 
+  void PoseMsgToKDL(const geometry_msgs::Pose &p, KDL::Frame &t)
+  {
+    tf::Pose pose_tf;
+    tf::poseMsgToTF(p,pose_tf);
+    PoseTFToKDL(pose_tf,t);
+  }
+
+  void PoseKDLToMsg(const KDL::Frame &t, geometry_msgs::Pose &p)
+  {
+    tf::Pose pose_tf;
+    PoseKDLToTF(t,pose_tf);
+    tf::poseTFToMsg(pose_tf,p);
+  }
+
+  geometry_msgs::Pose addDelta(const geometry_msgs::Pose &pose, const geometry_msgs::Twist &twist, const double &t)
+  {
+    geometry_msgs::Pose result;
+    KDL::Twist kdl_twist;
+    KDL::Frame kdl_pose;
+
+    PoseMsgToKDL(pose,kdl_pose);
+    TwistMsgToKDL(twist,kdl_twist);
+
+    PoseKDLToMsg(KDL::addDelta(kdl_pose,kdl_twist,t),result);
+    return result;
+  }
 }
