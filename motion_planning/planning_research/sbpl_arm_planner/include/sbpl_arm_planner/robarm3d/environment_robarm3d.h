@@ -35,6 +35,11 @@
 #include <kdl/chainfksolverpos_recursive.hpp>
 #include <voxel3d/voxel3d.h>
 #include "boost/shared_ptr.hpp"
+
+#include <kdl/chain.hpp>
+#include <kdl/frames.hpp>
+#include <kdl/chainjnttojacsolver.hpp>
+
 // #include <yaml-cpp/yaml.h>
 #include <sbpl_pm_wrapper/pm_wrapper.h>
 
@@ -43,7 +48,7 @@
 
 #define NUMOFLINKS 7
 
-#define UNIFORM_COST 0      // all the joint actions have the same costs when set
+#define UNIFORM_COST 1      // all the joint actions have the same costs when set
 
 #define NUM_TRANS_MATRICES 360 //precomputed matrices
 
@@ -256,7 +261,8 @@ typedef struct ENV_ROBARM_CONFIG
     double ApplyRPYCost_m;
     bool use_selective_actions;
     bool exact_gripper_collision_checking;
-
+		bool use_jacobian_motion_prim;
+		
 /* Motion Primitives */
     //successor actions
     double ** SuccActions;
@@ -324,12 +330,18 @@ class EnvironmentROBARM3D: public DiscreteSpaceInformation
 		std::vector<int> expanded_states;
 		bool save_expanded_states;
 
+		KDL::Twist twist;
+		KDL::JntArray jnt_pos, jnt_eff;
+		KDL::Jacobian jacobian;
+		KDL::Frame goal_frame, current_frame;
+		boost::scoped_ptr<KDL::ChainJntToJacSolver> jnt_to_jac_solver;
+		boost::scoped_ptr<KDL::ChainFkSolverPos_recursive> jnt_to_pose_solver;
+
     boost::shared_ptr<Voxel3d> voxel_grid;
     boost::shared_ptr<Voxel3d> lowres_voxel_grid;
 
 		
-		
-    EnvironmentROBARM3D();
+		EnvironmentROBARM3D();
     ~EnvironmentROBARM3D(){};
 
     //environment related
@@ -415,7 +427,12 @@ class EnvironmentROBARM3D: public DiscreteSpaceInformation
     void copyVoxelGrid(const boost::shared_ptr<Voxel3d> &voxel_grid, unsigned char *** Grid3D);
 
 		std::vector<int> debugExpandedStates();
-
+		
+		void getGridPtr(unsigned char*** grid);
+		
+		std::vector<std::vector<double> > getAllObstacleVoxels();
+		void computeJacobian(const double jnt_angles[], const double rad_timestep, double jnt_vel[]);
+		
   private:
 
     /** member data */
@@ -469,6 +486,7 @@ class EnvironmentROBARM3D: public DiscreteSpaceInformation
     bool isValidCell(const int xyz[], const int &radius, unsigned char ***Grid, const boost::shared_ptr<Voxel3d> vGrid);
     bool isValidCell(const short unsigned int xyz[], const int &radius, unsigned char ***Grid, const boost::shared_ptr<Voxel3d> vGrid);
     bool isValidCell(const int x, const int y, const int z, const int &radius, unsigned char ***Grid, const boost::shared_ptr<Voxel3d> vGrid);
+		int IsValidLineSegment(const short unsigned int a[],const short unsigned int b[],const unsigned int radius,vector<CELLV>* pTestedCells, unsigned char *** Grid3D, unsigned char &dist);
 
     /** planning */
     void GetJointSpaceSuccs(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV);
@@ -601,12 +619,15 @@ inline void EnvironmentROBARM3D::Cell2ContXYZ(int x, int y, int z, double *pX, d
 inline void EnvironmentROBARM3D::ContXYZ2Cell(double x, double y, double z, short unsigned int *pX, short unsigned int *pY, short unsigned int *pZ)
 {
 	*pX = (int)((x - EnvROBARMCfg.origin_m[0]) / EnvROBARMCfg.GridCellWidth);
+	if(x < EnvROBARMCfg.origin_m[0]) *pX = 0;
 	if(*pX >= EnvROBARMCfg.EnvWidth_c) *pX = EnvROBARMCfg.EnvWidth_c-1;
-
+	
 	*pY = (int)((y - EnvROBARMCfg.origin_m[1]) / EnvROBARMCfg.GridCellWidth);
-	if(*pX >= EnvROBARMCfg.EnvWidth_c) *pX = EnvROBARMCfg.EnvWidth_c-1;
-
+	if(y < EnvROBARMCfg.origin_m[1]) *pY = 0;
+	if(*pY >= EnvROBARMCfg.EnvHeight_c) *pY = EnvROBARMCfg.EnvHeight_c-1;
+		
 	*pZ = (int)((z - EnvROBARMCfg.origin_m[2]) / EnvROBARMCfg.GridCellWidth);
+	if(z < EnvROBARMCfg.origin_m[2]) *pZ = 0;
 	if(*pZ >= EnvROBARMCfg.EnvDepth_c) *pZ = EnvROBARMCfg.EnvDepth_c-1;
 }
 
