@@ -32,10 +32,10 @@ rospack_add_library(table_object_rf
 rospack_add_openmp_flags (table_object_rf)
 target_link_libraries(table_object_rf rf_creator_3d)
 
-# table object segmenter
-rospack_add_executable(train_table_object_segmenter 
-			src/image_stereo/train_table_object_segmenter.cpp)
-target_link_libraries(train_table_object_segmenter table_object_rf)
+# random field creator for table object segmenter
+rospack_add_executable(rf_table_object_segmenter 
+			src/image_stereo/rf_table_object_segmenter.cpp)
+target_link_libraries(rf_table_object_segmenter table_object_rf)
 
 # example program for training m3n
 rospack_add_executable(ex_train_m3n
