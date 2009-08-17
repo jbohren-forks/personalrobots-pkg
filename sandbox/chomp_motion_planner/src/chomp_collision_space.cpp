@@ -66,7 +66,7 @@ void ChompCollisionSpace::collisionMapCallback(const mapping_msgs::CollisionMapC
     mutex_.unlock();
     ROS_INFO("Updated prop distance_field in %f sec", (ros::WallTime::now() - start).toSec());
 
-    distance_field_->visualize(0.14, 0.15, collision_map->header.frame_id, collision_map->header.stamp);
+    distance_field_->visualize(0.8*max_expansion_, 0.9*max_expansion_, collision_map->header.frame_id, collision_map->header.stamp);
 
   }
   else
@@ -75,7 +75,7 @@ void ChompCollisionSpace::collisionMapCallback(const mapping_msgs::CollisionMapC
   }
 }
 
-bool ChompCollisionSpace::init()
+bool ChompCollisionSpace::init(double max_radius_clearance)
 {
   double size_x, size_y, size_z;
   double origin_x, origin_y, origin_z;
@@ -90,15 +90,16 @@ bool ChompCollisionSpace::init()
   node_handle_.param("~collision_space/origin_z", origin_z, -2.0);
   node_handle_.param("~collision_space/resolution", resolution, 0.02);
   resolution_ = resolution;
+  max_expansion_ = max_radius_clearance;
 
   initCollisionCuboids();
 
-  distance_field_ = new distance_field::PropagationDistanceField(size_x, size_y, size_z, resolution, origin_x, origin_y, origin_z, 0.16);
+  distance_field_ = new distance_field::PropagationDistanceField(size_x, size_y, size_z, resolution, origin_x, origin_y, origin_z, max_expansion_);
 
   collision_map_notifier_ = new tf::MessageNotifier<mapping_msgs::CollisionMap>(tf_,
       boost::bind(&ChompCollisionSpace::collisionMapCallback, this, _1),
       "collision_map", reference_frame_, 1);
-  ROS_INFO("Initialized chomp collision space in %s reference frame.", reference_frame_.c_str());
+  ROS_INFO("Initialized chomp collision space in %s reference frame with %f expansion radius.", reference_frame_.c_str(), max_expansion_);
   return true;
 }
 

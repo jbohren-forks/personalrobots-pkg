@@ -59,6 +59,8 @@ bool ChompRobotModel::init()
 {
   node_handle_.param("~reference_frame", reference_frame_, std::string("base_link"));
 
+  max_radius_clearance_ = 0.0;
+
   // create the robot model
   robot_models_ = new planning_environment::RobotModels("robot_description");
 
@@ -132,6 +134,8 @@ bool ChompRobotModel::init()
     int num_links = it->second.size();
     group.num_joints_ = 0;
     group.link_names_.resize(num_links);
+    std::vector<bool> active_joints;
+    active_joints.resize(num_kdl_joints_, false);
     for (int i=0; i<num_links; i++)
     {
       std::string link_name = it->second[i];
@@ -169,10 +173,11 @@ bool ChompRobotModel::init()
 
         group.num_joints_++;
         group.chomp_joints_.push_back(joint);
+        active_joints[joint.kdl_joint_index_] = true;
       }
 
     }
-
+    group.fk_solver_.reset(new KDL::TreeFkSolverJointPosAxisPartial(kdl_tree_, reference_frame_, active_joints));
     planning_groups_.insert(make_pair(it->first, group));
   }
 
@@ -191,6 +196,9 @@ bool ChompRobotModel::init()
       node_handle_.param(link_param_root+"link_clearance", clearance, collision_clearance_default_);
       node_handle_.param(link_param_root+"link_extension", extension, 0.0);
       addCollisionPointsFromLinkRadius(link_name, link_radius, clearance, extension);
+      double new_max_rc = link_radius + clearance;
+      if (max_radius_clearance_ < new_max_rc)
+        max_radius_clearance_ = new_max_rc;
     }
   }
 

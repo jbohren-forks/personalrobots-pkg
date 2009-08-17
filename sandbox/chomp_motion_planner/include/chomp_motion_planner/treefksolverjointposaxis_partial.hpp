@@ -43,14 +43,19 @@
 
 namespace KDL {
 
+/**
+ * \brief A solver which can perform forward kinematics for a limited set of joints
+ * Returns the joint positions, joint axes and segment frames
+ */
 class TreeFkSolverJointPosAxisPartial
 
 {
 public:
-  TreeFkSolverJointPosAxisPartial(const Tree& tree, const std::string& reference_frame);
+  TreeFkSolverJointPosAxisPartial(const Tree& tree, const std::string& reference_frame, const std::vector<bool>& active_joints);
   ~TreeFkSolverJointPosAxisPartial();
 
-  int JntToCart(const JntArray& q_in, std::vector<Vector>& joint_pos, std::vector<Vector>& joint_axis, std::vector<Frame>& segment_frames) const;
+  int JntToCartFull(const JntArray& q_in, std::vector<Vector>& joint_pos, std::vector<Vector>& joint_axis, std::vector<Frame>& segment_frames);
+  int JntToCartPartial(const JntArray& q_in, std::vector<Vector>& joint_pos, std::vector<Vector>& joint_axis, std::vector<Frame>& segment_frames) const;
 
   const std::vector<std::string> getSegmentNames() const;
   const std::map<std::string, int> getSegmentNameToIndex() const;
@@ -59,7 +64,7 @@ public:
 
 private:
   int treeRecursiveFK(const JntArray& q_in, std::vector<Vector>& joint_pos, std::vector<Vector>& joint_axis, std::vector<Frame>& segment_frames,
-      const Frame& previous_frame, const SegmentMap::const_iterator this_segment, int segment_nr) const;
+      const Frame& previous_frame, const SegmentMap::const_iterator this_segment, int segment_nr, int parent_segment_nr, bool active);
 
   std::vector<std::string> segment_names_;
   std::map<std::string, int> segment_name_to_index_;
@@ -68,6 +73,15 @@ private:
   int reference_frame_index_;
   int num_joints_;
   int num_segments_;
+
+  std::vector<Frame> segment_frames_;           /**< local cache of all segment frames needed for partial FK */
+  std::vector<int> segment_evaluation_order_;   /**< what order should we evaluate segments in */
+  std::vector<int> segment_parent_frame_nr_;            /**< the parent frame number for each segment */
+  std::vector<const TreeElement*> segment_parent_;            /**< the parent segment for each segment */
+  std::vector<int> joint_parent_frame_nr_;            /**< the parent frame number for each joint */
+  std::vector<const TreeElement*> joint_parent_;            /**< the parent segment for each joint */
+  std::vector<bool> active_joints_;             /**< which are the joints that will change in calls to partial FK */
+  std::vector<bool> joint_calc_pos_axis_;       /**< which joints should we calculate the position and axis for */
 
   void assignSegmentNumber(const SegmentMap::const_iterator this_segment);
 

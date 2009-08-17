@@ -429,7 +429,16 @@ void ChompOptimizer::performForwardKinematics()
   {
     int full_traj_index = group_trajectory_.getFullTrajectoryIndex(i);
     full_trajectory_->getTrajectoryPointKDL(full_traj_index, kdl_joint_array_);
-    robot_model_->getForwardKinematicsSolver()->JntToCart(kdl_joint_array_, joint_pos_[i], joint_axis_[i], segment_frames_[i]);
+
+    if (iteration_==0)
+    {
+      planning_group_->fk_solver_->JntToCartFull(kdl_joint_array_, joint_pos_[i], joint_axis_[i], segment_frames_[i]);
+    }
+    else
+    {
+      planning_group_->fk_solver_->JntToCartPartial(kdl_joint_array_, joint_pos_[i], joint_axis_[i], segment_frames_[i]);
+    }
+    //robot_model_->getForwardKinematicsSolver()->JntToCart(kdl_joint_array_, joint_pos_[i], joint_axis_[i], segment_frames_[i]);
 
     state_is_in_collision_[i] = false;
 
@@ -553,7 +562,7 @@ void ChompOptimizer::animatePath()
 void ChompOptimizer::visualizeState(int index)
 {
   visualization_msgs::MarkerArray msg;
-  msg.markers.resize(num_collision_points_);
+  msg.markers.resize(num_collision_points_ + num_joints_);
   int num_arrows = 0;
   double potential_threshold = 1e-10;
   for (int i=0; i<num_collision_points_; i++)
@@ -581,6 +590,34 @@ void ChompOptimizer::visualizeState(int index)
     msg.markers[i].color.b = 0.3;
     if (collision_point_potential_[index][i] > potential_threshold)
       num_arrows++;
+  }
+  for (int j=0; j<num_joints_; ++j)
+  {
+    int i=num_collision_points_+j;
+    int joint_index = planning_group_->chomp_joints_[j].kdl_joint_index_;
+    msg.markers[i].header.frame_id = robot_model_->getReferenceFrame();
+    msg.markers[i].header.stamp = ros::Time();
+    msg.markers[i].ns = "chomp_collisions";
+    msg.markers[i].id = i;
+    msg.markers[i].type = visualization_msgs::Marker::ARROW;
+    msg.markers[i].action = visualization_msgs::Marker::ADD;
+    msg.markers[i].points.resize(2);
+    double scale=0.2;
+    double sx = joint_axis_[index][joint_index].x()*scale;
+    double sy = joint_axis_[index][joint_index].y()*scale;
+    double sz = joint_axis_[index][joint_index].z()*scale;
+    msg.markers[i].points[0].x = joint_pos_[index][joint_index].x() - sx;
+    msg.markers[i].points[0].y = joint_pos_[index][joint_index].y() - sy;
+    msg.markers[i].points[0].z = joint_pos_[index][joint_index].z() - sz;
+    msg.markers[i].points[1].x = joint_pos_[index][joint_index].x() + sx;
+    msg.markers[i].points[1].y = joint_pos_[index][joint_index].y() + sy;
+    msg.markers[i].points[1].z = joint_pos_[index][joint_index].z() + sz;
+    msg.markers[i].scale.x = 0.03;
+    msg.markers[i].scale.y = 0.06;
+    msg.markers[i].color.a = 1.0;
+    msg.markers[i].color.r = 1.0;
+    msg.markers[i].color.g = 0.5;
+    msg.markers[i].color.b = 0.5;
   }
   vis_pub_.publish(msg);
 

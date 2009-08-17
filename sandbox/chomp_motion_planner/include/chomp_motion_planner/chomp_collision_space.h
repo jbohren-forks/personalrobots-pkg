@@ -68,7 +68,7 @@ public:
    *
    * \return false if not successful
    */
-  bool init();
+  bool init(double max_radius_clearance);
 
   /**
    * \brief Lock the collision space from updating/reading
@@ -97,6 +97,7 @@ private:
   boost::mutex mutex_;
   std::vector<btVector3> cuboid_points_;
 
+  double max_expansion_;
   double resolution_;
   void initCollisionCuboids();
   void addCollisionCuboid(const std::string param_name);
