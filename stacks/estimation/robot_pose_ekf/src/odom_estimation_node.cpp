@@ -90,24 +90,24 @@ namespace estimation
 
     // subscribe to odom messages
     if (odom_used_){
-      ROS_INFO("Odom sensor can be used");
+      ROS_DEBUG("Odom sensor can be used");
       odom_sub_ = node_.subscribe("odom", 10, &OdomEstimationNode::odomCallback, this);
     }
-    else ROS_INFO("Odom sensor will NOT be used");
+    else ROS_DEBUG("Odom sensor will NOT be used");
 
     // subscribe to imu messages
     if (imu_used_){
-      ROS_INFO("Imu sensor can be used");
+      ROS_DEBUG("Imu sensor can be used");
       imu_sub_ = node_.subscribe("imu_data", 10,  &OdomEstimationNode::imuCallback, this);
     }
-    else ROS_INFO("Imu sensor will NOT be used");
+    else ROS_DEBUG("Imu sensor will NOT be used");
 
     // subscribe to vo messages
     if (vo_used_){
-      ROS_INFO("VO sensor can be used");
+      ROS_DEBUG("VO sensor can be used");
       vo_notifier_ = new MessageNotifier<deprecated_msgs::VOPose>(robot_state_,  boost::bind(&OdomEstimationNode::voCallback, this, _1), "vo", "base_link", 10);
     }
-    else ROS_INFO("VO sensor will NOT be used");
+    else ROS_DEBUG("VO sensor will NOT be used");
 
 
 #ifdef __EKF_DEBUG_FILE__
@@ -339,7 +339,7 @@ namespace estimation
     // check for timing problems
     if ( (odom_initializing_ || odom_active_) && (imu_initializing_ || imu_active_) ){
       double diff = fabs( Duration(odom_stamp_ - imu_stamp_).toSec() );
-      if (diff > 1.0) ROS_ERROR("SYSTEM HAS TIMING PROBLEMS: timestamps of odometry and imu are %f seconds apart.", diff);
+      if (diff > 1.0) ROS_ERROR("Timestamps of odometry and imu are %f seconds apart.", diff);
     }
     
     // initial value for filter stamp; keep this stamp when no sensors are active
@@ -396,7 +396,7 @@ namespace estimation
 #endif
         }
         if (!diagnostics)
-          ROS_ERROR("Robot pose ekf diagnostics discovered a potential problem");
+          ROS_WARN("Robot pose ekf diagnostics discovered a potential problem");
       }
       // initialize filer with odometry frame
       if ( odom_active_ && !my_filter_.isInitialized()){
