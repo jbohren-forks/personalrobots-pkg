@@ -109,7 +109,7 @@ public:
    * \param data_out A reference to the data output location
    * This funciton must be implemented in the derived class.
    */
-  //virtual bool update(const std::vector<T>& data_in, std::vector<T>& data_out)=0;
+  //  virtual bool update(const std::vector<T>& data_in, std::vector<T>& data_out)=0;
 
   /** \brief Get the typeid of the Templated Datatype as a string */
   std::string getType() {return typeid(T).name();};

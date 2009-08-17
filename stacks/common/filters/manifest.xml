@@ -12,6 +12,7 @@ implementations of commonly used filters.
 <depend package="tinyxml"/>
 <depend package="rosconsole" />
 <depend package="loki" />
+<depend package="pluginlib" />
 <export>
 <cpp cflags="-I${prefix}/include `rosboost-cfg --cflags`"
      lflags="-lloki -Wl,-rpath,${prefix}/lib -L${prefix}/lib -lfilter"/>
