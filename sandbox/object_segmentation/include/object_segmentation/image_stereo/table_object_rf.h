@@ -76,7 +76,10 @@ class TableObjectRF
     TableObjectRF();
 
     boost::shared_ptr<RandomField> createRandomField(const std::string& fname_image,
-                                                     const std::string& fname_pcd);
+                                                     const std::string& fname_pcd,
+                                                     const float yaw,
+                                                     const float pitch,
+                                                     const float roll);
 
   private:
     int loadStereoImageCloud(const std::string& fname_image,
@@ -97,9 +100,9 @@ class TableObjectRF
         unsigned int> >& ds_img_coords, std::vector<std::vector<float> >& ds_img_features);
 
     void rotatePointCloud(sensor_msgs::PointCloud& pc_in,
-                          const double yaw,
-                          const double pitch,
-                          const double roll);
+                          const float yaw,
+                          const float pitch,
+                          const float roll);
 
     RFCreator3D* rf_creator_3d_;
     double voxel_x_;

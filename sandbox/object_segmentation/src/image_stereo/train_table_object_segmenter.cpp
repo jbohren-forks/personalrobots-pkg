@@ -50,7 +50,7 @@ int main()
   string fname_img = path;
   fname_img.append("/stapler_8_A8_H1_S1-LR.png");
 
-  boost::shared_ptr<RandomField> rf = table_object_rf.createRandomField(fname_img, fname_pcd);
+  boost::shared_ptr<RandomField> rf = table_object_rf.createRandomField(fname_img, fname_pcd, 0,0,1.9);
 
   rf->saveNodeFeatures("node_features");
   rf->saveCliqueFeatures("clique_features");

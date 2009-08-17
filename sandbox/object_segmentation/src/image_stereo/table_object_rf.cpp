@@ -126,7 +126,10 @@ TableObjectRF::TableObjectRF()
 /* See function definition */
 // --------------------------------------------------------------
 boost::shared_ptr<RandomField> TableObjectRF::createRandomField(const string& fname_image,
-                                                                const string& fname_pcd)
+                                                                const string& fname_pcd,
+                                                                const float yaw,
+                                                                const float pitch,
+                                                                const float roll)
 {
   // --------------------------------------------------
   // Load point cloud and image
@@ -145,6 +148,10 @@ boost::shared_ptr<RandomField> TableObjectRF::createRandomField(const string& fn
   vector<pair<unsigned int, unsigned int> > ds_img_coords;
   downsampleStereoCloud(full_stereo_cloud, ds_stereo_cloud, voxel_x_, voxel_y_, voxel_z_,
       ds_labels, ds_img_coords);
+
+  // --------------------------------------------------
+  // Rotate point cloud
+  rotatePointCloud(ds_stereo_cloud, yaw, pitch, roll);
 
   // --------------------------------------------------
   // Compute image features for each downsampled point
@@ -291,11 +298,11 @@ unsigned int TableObjectRF::createImageFeatures(IplImage& image, const vector<pa
 /* See function definition */
 // --------------------------------------------------------------
 void TableObjectRF::rotatePointCloud(sensor_msgs::PointCloud& pc_in,
-                                     const double yaw,
-                                     const double pitch,
-                                     const double roll)
+                                     const float yaw,
+                                     const float pitch,
+                                     const float roll)
 {
-  btTransform transform(btQuaternion (yaw, pitch, roll), btVector3 (0, 0, 0));
+  btTransform transform(btQuaternion(yaw, pitch, roll), btVector3(0, 0, 0));
   btVector3 curr_pt(0.0, 0.0, 0.0);
   btVector3 rotated_pt(0.0, 0.0, 0.0);
 
