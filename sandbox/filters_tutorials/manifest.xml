@@ -11,7 +11,7 @@
   <depend package="pluginlib"/>
   <depend package="filters"/>
   <export>
-    <filters polygon="${prefix}/example_filters.xml"/>
+    <filters double_filter="${prefix}/example_filters.xml"/>
   </export>
 
 </package>
