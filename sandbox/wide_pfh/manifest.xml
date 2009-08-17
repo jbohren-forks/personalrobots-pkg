@@ -1,0 +1,18 @@
+<package>
+  <description brief="wide_pfh">
+
+     Wide PFH 3D feature
+
+  </description>
+  <author>Gary Bradski</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/wide_pfh</url>
+  <depend package="opencv_latest" />
+  <depend package="rosconsole" />
+  <depend package="geometry_msgs" />
+  <depend package="point_cloud_mapping" />
+
+</package>
+
+
