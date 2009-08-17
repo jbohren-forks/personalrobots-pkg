@@ -20,7 +20,7 @@ TEST(Dorylus, training) {
   d2.load("test/sanity.d");
   cout << d.status() << endl;
   cout << d2.status() << endl;
-  EXPECT_TRUE(d2.compare(d));
+  EXPECT_TRUE(d2.compare(d, true));
 }
 
 

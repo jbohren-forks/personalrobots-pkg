@@ -170,20 +170,22 @@ class Dorylus {
   int max_wc_;
 
   //! debugHook will be called each time a new weak classifier is learned. 
-  void train(int nCandidates, int max_secs, int max_wcs, void (*debugHook)(weak_classifier)=NULL);
+  void train(int num_candidates, int max_secs, int max_wcs, void (*debugHook)(weak_classifier)=NULL);
   void useDataset(DorylusDataset *dd);
   bool save(std::string filename, std::string *user_data_str=NULL);
   bool load(std::string filename, bool quiet=false, std::string *user_data_str=NULL);
   std::string status();
-  bool learnWC(int nCandidates, std::map<std::string, float> max_thetas, std::vector<std::string> *desc_ignore=NULL);
+
   Eigen::VectorXf classify(object &obj);
   float classify(DorylusDataset &dd);
   std::map<std::string, float> computeMaxThetas(const DorylusDataset &dd);
   float computeUtility(const weak_classifier& wc, const Eigen::VectorXf& mmt);
   float computeObjective();
-  //void train(int nCandidates, int max_secs, int max_wcs);
+  //void train(int num_candidates, int max_secs, int max_wcs);
   std::vector<weak_classifier*>* findActivatedWCs(const std::string &descriptor, const Eigen::MatrixXf &pt);
-  bool compare(const Dorylus& d);
+  bool compare(const Dorylus& d, bool verbose = false);
+  std::vector<weak_classifier*> createRandomWeakClassifiers(int num_candidates);
+  void learnWC(int num_candidates);
 
  Dorylus() : dd_(NULL), nClasses_(0), max_wc_(0)
     {
@@ -195,6 +197,7 @@ class Dorylus {
       delete pwcs_[i];
     }
   }
+
 };
 
 class Function {
