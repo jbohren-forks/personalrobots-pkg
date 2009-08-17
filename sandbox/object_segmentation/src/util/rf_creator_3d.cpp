@@ -411,6 +411,12 @@ unsigned int RFCreator3D::addExternalNodeFeatures(vector<boost::shared_array<con
   // add each external node feature to the concatenated_features
   for (unsigned int i = 0 ; i < nbr_external_node_features ; i++)
   {
+    // skip invalid 3d features
+    if (concatenated_features[i].get() == NULL)
+    {
+      continue;
+    }
+
     // retrieve the external features for the current node
     const vector<float>& curr_external_features = external_node_features_[i];
     unsigned int curr_nbr_vals = curr_external_features.size();

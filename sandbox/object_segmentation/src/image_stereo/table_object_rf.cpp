@@ -135,9 +135,7 @@ boost::shared_ptr<RandomField> TableObjectRF::createRandomField(const string& fn
   // Compute image features for each downsampled point
   vector<vector<float> > ds_img_features;
   unsigned int nbr_image_features = createImageFeatures(*image, ds_img_coords, ds_img_features);
-  // TODO compute image features
-  // set rf_creator_3d_ to use image features for node features
-  // TODO implement augmentation of node features in RFCreator3D.  should lookout for when vector.size() == 0
+  rf_creator_3d_->addExternalNodeFeatures(ds_img_features);
 
   // --------------------------------------------------
   // Create random field from point cloud only
