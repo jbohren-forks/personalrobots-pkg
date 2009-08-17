@@ -60,7 +60,7 @@ class RFCreator3D
      *        feature and clustering parameters
      *
      * \param node_feature_descriptors
-     * \param clique_set_feature_descriptors
+     * \param clique_set_feature_descriptors vector<Descripptor3D*>.size() == 0 means concatenate
      * \param clique_set_clusterings clique_set->[(cluster_only_nodes, clustering]
      */
     // --------------------------------------------------------------
@@ -69,8 +69,11 @@ class RFCreator3D
                 const std::vector<std::vector<std::pair<bool,
                     point_cloud_clustering::PointCloudClustering*> > >& clique_set_clusterings);
 
-    // only be done on clique-sets that contain edges (cliques of size 2)
-    void setCSConcatenateNodeFeatures(const std::set<unsigned int> cs_indices);
+    // invariant: features for invalid indices have size 0, all else have the same size
+    void addExternalNodeFeatures(const std::vector<std::vector<float> >& external_features)
+    {
+      external_node_features_ = external_features;
+    }
 
     boost::shared_ptr<RandomField> createRandomField(const sensor_msgs::PointCloud& pt_cloud);
 
@@ -98,13 +101,17 @@ class RFCreator3D
                             const std::map<unsigned int, std::vector<int> >& created_clusters,
                             std::vector<boost::shared_array<const float> >& concatenated_features);
 
+    unsigned int
+    addExternalNodeFeatures(std::vector<boost::shared_array<const float> >& concatenated_features,
+                            const unsigned int nbr_concatenated_vals);
+
     unsigned int nbr_clique_sets_;
     std::vector<Descriptor3D*> node_feature_descriptors_;
     std::vector<std::vector<Descriptor3D*> > clique_set_feature_descriptors_;
     std::vector<std::vector<std::pair<bool, point_cloud_clustering::PointCloudClustering*> > >
         clique_set_clusterings_;
 
-    std::set<unsigned int> concat_nodes_cs_indices_;
+    std::vector<std::vector<float> > external_node_features_;
 };
 
 #endif

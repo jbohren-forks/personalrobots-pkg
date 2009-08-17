@@ -92,6 +92,8 @@ void RFCreator3D::createNodes(RandomField& rf,
     abort();
   }
 
+  nbr_concatenated_vals = addExternalNodeFeatures(concatenated_features, nbr_concatenated_vals);
+
   // ----------------------------------------------
   // Create nodes for features that were okay
   node_indices.clear();
@@ -179,9 +181,9 @@ void RFCreator3D::createCliqueSet(RandomField& rf,
     // -----------------------------
     vector<boost::shared_array<const float> > concatenated_features;
     unsigned int nbr_concatenated_vals = 0;
-    if (concat_nodes_cs_indices_.count(clique_set_idx) != 0)
+    if (clique_set_feature_descriptors_[clique_set_idx].size() == 0)
     {
-      // concat nodes
+      // 0 means to concatenate node features
       nbr_concatenated_vals = concatenateNodeFeatures(rf, created_clusters, concatenated_features);
     }
     else
@@ -376,13 +378,74 @@ unsigned int RFCreator3D::concatenateNodeFeatures(const RandomField& rf,
       const boost::shared_array<const float> node1_features =
           rf_nodes.find(cluster_node_ids[1])->second->getFeatureVals();
 
-      memcpy(curr_concatenated_vals, node0_features.get(), single_feature_length);
-      memcpy(curr_concatenated_vals + single_feature_length, node1_features.get(),
-          single_feature_length);
+      memcpy(curr_concatenated_vals, node0_features.get(), sizeof(float) * single_feature_length);
+      memcpy(curr_concatenated_vals + single_feature_length, node1_features.get(), sizeof(float)
+          * single_feature_length);
 
       concatenated_features[sample_idx].reset(static_cast<const float*> (curr_concatenated_vals));
     }
   }
 
   return nbr_concatenated_features;
+}
+
+//
+unsigned int RFCreator3D::addExternalNodeFeatures(vector<boost::shared_array<const float> >& concatenated_features,
+                                                  const unsigned int nbr_concatenated_vals)
+{
+  // holds the new total concatenated length after added externals
+  unsigned int nbr_new_features = 0;
+
+  // retrieve the number of external node features and verify it is consistent
+  unsigned int nbr_external_node_features = external_node_features_.size();
+  if (nbr_external_node_features == 0)
+  {
+    return nbr_concatenated_vals;
+  }
+  if (nbr_external_node_features != concatenated_features.size())
+  {
+    ROS_FATAL("Inconsistent external node features with concatenated: %u %u", nbr_external_node_features, concatenated_features.size());
+    abort();
+  }
+
+  // add each external node feature to the concatenated_features
+  for (unsigned int i = 0 ; i < nbr_external_node_features ; i++)
+  {
+    // retrieve the external features for the current node
+    const vector<float>& curr_external_features = external_node_features_[i];
+    unsigned int curr_nbr_vals = curr_external_features.size();
+
+    // if size is 0, indiciates it is invalid, so make the node have no features
+    if (curr_nbr_vals == 0)
+    {
+      concatenated_features[i].reset(static_cast<const float*> (NULL));
+    }
+    // otherwise augment with the external features
+    else
+    {
+      // verify the number of external features are consistent
+      if (nbr_new_features == 0)
+      {
+        nbr_new_features = curr_nbr_vals;
+      }
+      else if (nbr_new_features != curr_nbr_vals)
+      {
+        ROS_FATAL("Inconsistent external node features: %u %u", nbr_new_features, curr_nbr_vals);
+        abort();
+      }
+
+      // augment the external featuers
+      float* augmented_feature_vals = new float[nbr_concatenated_vals + nbr_new_features];
+      memcpy(augmented_feature_vals, concatenated_features[i].get(), sizeof(float)
+          * nbr_concatenated_vals);
+      for (unsigned int j = 0 ; j < nbr_new_features ; j++)
+      {
+        augmented_feature_vals[nbr_concatenated_vals + j] = curr_external_features[j];
+      }
+      concatenated_features[i].reset(static_cast<const float*> (augmented_feature_vals));
+    }
+  }
+
+  external_node_features_.clear();
+  return nbr_new_features + nbr_concatenated_vals;
 }

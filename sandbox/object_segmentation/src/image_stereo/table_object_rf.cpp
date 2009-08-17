@@ -131,6 +131,10 @@ boost::shared_ptr<RandomField> TableObjectRF::createRandomField(const string& fn
   downsampleStereoCloud(full_stereo_cloud, ds_stereo_cloud, voxel_x_, voxel_y_, voxel_z_,
       ds_labels, ds_img_coords);
 
+  // --------------------------------------------------
+  // Compute image features for each downsampled point
+  vector<vector<float> > ds_img_features;
+  unsigned int nbr_image_features = createImageFeatures(*image, ds_img_coords, ds_img_features);
   // TODO compute image features
   // set rf_creator_3d_ to use image features for node features
   // TODO implement augmentation of node features in RFCreator3D.  should lookout for when vector.size() == 0
@@ -138,7 +142,7 @@ boost::shared_ptr<RandomField> TableObjectRF::createRandomField(const string& fn
   // --------------------------------------------------
   // Create random field from point cloud only
   boost::shared_ptr<RandomField> created_rf = rf_creator_3d_->createRandomField(ds_stereo_cloud,
-      ds_labels, false);
+      ds_labels, true);
 
   cvReleaseImage(&image);
   return created_rf;
@@ -250,7 +254,7 @@ void TableObjectRF::downsampleStereoCloud(sensor_msgs::PointCloud& full_stereo_c
 unsigned int TableObjectRF::createImageFeatures(IplImage& image, const vector<pair<unsigned int,
     unsigned int> >& ds_img_coords, vector<vector<float> >& ds_img_features)
 {
-  unsigned int nbr_image_features = 2;
+  unsigned int nbr_image_features = 1;
   unsigned int nbr_pts = ds_img_coords.size();
 
   // TODO change this when doing features that can fail
@@ -264,7 +268,7 @@ unsigned int TableObjectRF::createImageFeatures(IplImage& image, const vector<pa
 
     // height and value of pixel
     ds_img_features[i][0] = h;
-    ds_img_features[i][1] = *(image.imageData + (h * image.widthStep) + w);
+    //ds_img_features[i][1] = *(image.imageData + (h * image.widthStep) + w);
   }
 
   return nbr_image_features;
