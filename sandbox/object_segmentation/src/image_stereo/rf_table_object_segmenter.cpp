@@ -31,6 +31,7 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
+#include <stdlib.h>
 
 #include <object_segmentation/image_stereo/table_object_rf.h>
 
@@ -44,11 +45,17 @@ using namespace std;
 int main(int argc, char *argv[])
 {
   TableObjectRF table_object_rf;
+  int label_to_ignore = -1;
 
-  if (argc != 3)
+  if (argc != 3 && argc != 4)
   {
-    ROS_WARN("%s usage: <file list> <output dir/>", argv[0]);
+    ROS_WARN("%s usage: <file list> <output dir/> (label to ignore)", argv[0]);
     return -1;
+  }
+
+  if (argc == 4)
+  {
+    label_to_ignore = atoi(argv[3]);
   }
 
   ifstream file_list(argv[1]);
@@ -86,7 +93,7 @@ int main(int argc, char *argv[])
     pcd_fname.append(".pcd_dan");
 
     boost::shared_ptr<RandomField> rf = table_object_rf.createRandomField(img_fname, pcd_fname,
-        yaw, pitch, roll);
+        yaw, pitch, roll, label_to_ignore);
 
     // out_path/basename (.random-field)
     string rf_fname(argv[2]);

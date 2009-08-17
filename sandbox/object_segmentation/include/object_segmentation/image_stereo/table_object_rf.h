@@ -37,6 +37,7 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <set>
 
 #include <boost/shared_ptr.hpp>
 
@@ -75,11 +76,13 @@ class TableObjectRF
 
     TableObjectRF();
 
+    // label_to_ignore will be ignored if value < 0
     boost::shared_ptr<RandomField> createRandomField(const std::string& fname_image,
                                                      const std::string& fname_pcd,
                                                      const float yaw,
                                                      const float pitch,
-                                                     const float roll);
+                                                     const float roll,
+                                                     const int label_to_ignore);
 
   private:
     int loadStereoImageCloud(const std::string& fname_image,
@@ -87,17 +90,24 @@ class TableObjectRF
                              IplImage** image,
                              sensor_msgs::PointCloud& stereo_cloud);
 
+    // ds_stereo_cloud loses all channels
+    // label_to_ignore will be ignored if value < 0
+    // will set ds_labels[i] = UNKNOWN if original label in full_stereo_cloud equals label_to_ignore
     void
     downsampleStereoCloud(sensor_msgs::PointCloud& full_stereo_cloud,
                           sensor_msgs::PointCloud& ds_stereo_cloud,
                           const double voxel_x,
                           const double voxel_y,
                           const double voxel_z,
+                          const int label_to_ignore,
                           std::vector<unsigned int>& ds_labels,
-                          std::vector<std::pair<unsigned int, unsigned int> >& ds_img_coords);
+                          std::vector<std::pair<unsigned int, unsigned int> >& ds_img_coords,
+                          std::set<unsigned int>& ignore_ds_indices);
 
+    // ds_img_features.size() = ds_img_coords.size() - ignore_ds_indices.size();
     void
     createImageFeatures(IplImage& image,
+                        const std::set<unsigned int>& ignore_ds_indices,
                         const std::vector<std::pair<unsigned int, unsigned int> >& ds_img_coords,
                         std::vector<std::vector<float> >& ds_img_features);
 

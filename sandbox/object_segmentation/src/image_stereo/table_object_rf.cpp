@@ -129,7 +129,8 @@ boost::shared_ptr<RandomField> TableObjectRF::createRandomField(const string& fn
                                                                 const string& fname_pcd,
                                                                 const float yaw,
                                                                 const float pitch,
-                                                                const float roll)
+                                                                const float roll,
+                                                                const int label_to_ignore)
 {
   // --------------------------------------------------
   // Load point cloud and image
@@ -143,11 +144,15 @@ boost::shared_ptr<RandomField> TableObjectRF::createRandomField(const string& fn
   // --------------------------------------------------
   // Downsample the point cloud
   // downsampling will put all invalid points into one point
+  // ds_ignore_indices: the indices in ds_stereo_cloud where the closest label in
+  //                    full_stereo_cloud == label_to_ignore, and now ds_labels[i]
+  //                    equals RandomField::UNKNOWN
   sensor_msgs::PointCloud ds_stereo_cloud;
   vector<unsigned int> ds_labels;
   vector<pair<unsigned int, unsigned int> > ds_img_coords;
+  set<unsigned int> ds_ignore_indices;
   downsampleStereoCloud(full_stereo_cloud, ds_stereo_cloud, voxel_x_, voxel_y_, voxel_z_,
-      ds_labels, ds_img_coords);
+      label_to_ignore, ds_labels, ds_img_coords, ds_ignore_indices);
 
   // --------------------------------------------------
   // Rotate point cloud
@@ -155,8 +160,9 @@ boost::shared_ptr<RandomField> TableObjectRF::createRandomField(const string& fn
 
   // --------------------------------------------------
   // Compute image features for each downsampled point
+  // ds_img_features = ds_img_coords.size() - ds_ignore_indices.size();
   vector<vector<float> > ds_img_features;
-  createImageFeatures(*image, ds_img_coords, ds_img_features);
+  createImageFeatures(*image, ds_ignore_indices, ds_img_coords, ds_img_features);
   rf_creator_3d_->addExternalNodeFeatures(ds_img_features);
 
   // --------------------------------------------------
@@ -212,8 +218,10 @@ void TableObjectRF::downsampleStereoCloud(sensor_msgs::PointCloud& full_stereo_c
                                           const double voxel_x,
                                           const double voxel_y,
                                           const double voxel_z,
+                                          const int label_to_ignore,
                                           vector<unsigned int>& ds_labels,
-                                          vector<pair<unsigned int, unsigned int> >& ds_img_coords)
+                                          vector<pair<unsigned int, unsigned int> >& ds_img_coords,
+                                          set<unsigned int>& ignore_ds_indices)
 {
   // guaranteed to exist
   unsigned int width = full_stereo_cloud.channels[cloud_geometry::getChannelIndex(
@@ -234,14 +242,14 @@ void TableObjectRF::downsampleStereoCloud(sensor_msgs::PointCloud& full_stereo_c
   cloud_geometry::downsamplePointCloud(full_stereo_cloud, ds_stereo_cloud, voxel_dim);
   int nbr_downsampled_pts = ds_stereo_cloud.points.size();
 
+  // Initialize all down sample points' labels to RandomField::UNKNOWN_LABEL
   ds_labels.assign(nbr_downsampled_pts, RandomField::UNKNOWN_LABEL);
-  ds_img_coords.clear();
+  pair<unsigned int, unsigned int> empty_coords(0, 0);
+  ds_img_coords.assign(nbr_downsampled_pts, empty_coords);
+  ignore_ds_indices.clear();
 
   // For each downsampled point, find its closest point in the original full point cloud
   // and extract the point's image coordinates (and label if present)
-  pair<unsigned int, unsigned int> empty_coords(0, 0);
-  ds_img_coords.assign(nbr_downsampled_pts, empty_coords);
-#pragma omp parallel for
   for (int i = 0 ; i < nbr_downsampled_pts ; i++)
   {
     const geometry_msgs::Point32& curr_ds_pt = ds_stereo_cloud.points[i];
@@ -263,7 +271,18 @@ void TableObjectRF::downsampleStereoCloud(sensor_msgs::PointCloud& full_stereo_c
     // if present, assign the down sampled point the label of the closest point in the original point cloud
     if (label_channel >= 0)
     {
-      ds_labels[i] = full_stereo_cloud.channels[label_channel].values[closest_full_idx];
+      unsigned int closest_label =
+          full_stereo_cloud.channels[label_channel].values[closest_full_idx];
+      // but only do it for labels we arent ignoring
+      if (label_to_ignore != static_cast<int> (closest_label))
+      {
+        ds_labels[i] = closest_label;
+      }
+      else
+      {
+        // ds_labels initialized to all RandomField::UNKNOWN_LABEL
+        ignore_ds_indices.insert(i);
+      }
     }
   }
 }
@@ -271,25 +290,41 @@ void TableObjectRF::downsampleStereoCloud(sensor_msgs::PointCloud& full_stereo_c
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-void TableObjectRF::createImageFeatures(IplImage& image, const vector<pair<unsigned int,
-    unsigned int> >& ds_img_coords, vector<vector<float> >& ds_img_features)
+void TableObjectRF::createImageFeatures(IplImage& image,
+                                        const set<unsigned int>& ignore_ds_indices,
+                                        const vector<pair<unsigned int, unsigned int> >& ds_img_coords,
+                                        vector<vector<float> >& ds_img_features)
 {
+  // ds_img_features needs to match the same number of interest points that rf_creator_3d uses
+  // during training, rf_creator_3d only looks at labels != RandomField::UNKNOWN_LABEL,
+  // so if the user specifies to ignore a label for training, it is set to RandomField::UNKNOWN_LABEL;
+  // however, during test-time we want to create nodes for points that dont have a label so need to
+  // make explicit which indices to ignore
+
   unsigned int nbr_image_features = 2;
+
   unsigned int nbr_pts = ds_img_coords.size();
-
-  // TODO change this when doing features that can fail
-  ds_img_features.assign(nbr_pts, vector<float> (nbr_image_features, 0.0));
-
+  ds_img_features.clear();
+  ds_img_features.reserve(nbr_pts);
+  vector<float> curr_img_feats(nbr_image_features, 0.0);
   for (unsigned int i = 0 ; i < nbr_pts ; i++)
   {
-    const pair<unsigned int, unsigned int>& curr_img_coords = ds_img_coords[i];
-    unsigned int w = curr_img_coords.first;
-    unsigned int h = curr_img_coords.second;
+    if (ignore_ds_indices.count(i) == 0)
+    {
+      // retrieve coordinates of pixel
+      const pair<unsigned int, unsigned int>& curr_img_coords = ds_img_coords[i];
+      unsigned int w = curr_img_coords.first;
+      unsigned int h = curr_img_coords.second;
 
-    // height and value of pixel
-    ds_img_features[i][0] = h;
-    unsigned char* tempo = (unsigned char*)(image.imageData + (h * image.widthStep));
-    ds_img_features[i][1] = static_cast<float>(tempo[w]);
+      // height of pixel
+      curr_img_feats[0] = h;
+
+      // intensity of pixel
+      unsigned char* tempo = (unsigned char*) (image.imageData + (h * image.widthStep));
+      curr_img_feats[1] = static_cast<float> (tempo[w]);
+
+      ds_img_features.push_back(curr_img_feats);
+    }
   }
 }
 
