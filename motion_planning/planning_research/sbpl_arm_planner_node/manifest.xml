@@ -19,6 +19,7 @@
     <depend package="pr2_ik" />
     <depend package="kdl"/>
     <depend package="voxel3d"/>
+		<depend package="robot_voxelizer"/>
     <depend package="sbpl_pm_wrapper"/>
   <url></url>
 
