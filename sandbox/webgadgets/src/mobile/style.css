@@ -1,7 +1,7 @@
 body
 {
   font-family: arial, helvetica, sans-serif;
-  font-size: 12px;
+  font-size: 8px;
 }
 
 a
@@ -17,11 +17,11 @@ a:hover
 
 #xbutton
 {
-  line-height: 10px;
-  display: inline;
+  line-height: 5px;
+  display: none;
   float: left;
   margin-right: 5px;
-  margin-top: 2px;
+  margin-top: 1px;
 }
 
 #xbutton img
@@ -31,8 +31,8 @@ a:hover
 
 #mainheader
 {
-  border-bottom: 5px solid #1e2a47;
-  margin-bottom: 10px;
+  border-bottom: 1px solid #1e2a47;
+  margin-bottom: 1px;
 }
 
 #mainheader #title

@@ -1,0 +1,22 @@
+body
+{
+  font-family: arial, helvetica, sans-serif;
+  font-size: 8px;
+}
+
+a
+{
+  text-decoration: none;
+  color: #2c3c53;
+}
+
+a:hover
+{
+  color: #6f98ee;
+}
+
+#mainheader
+{
+  border-bottom: 0px solid #1e2a47;
+  margin-bottom: 10px;
+}
