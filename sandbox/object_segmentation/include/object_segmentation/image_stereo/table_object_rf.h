@@ -63,6 +63,9 @@
 
 #include <object_segmentation/util/rf_creator_3d.h>
 
+#include <LinearMath/btTransform.h>
+#include <LinearMath/btVector3.h>
+
 class TableObjectRF
 {
   public:
@@ -92,6 +95,11 @@ class TableObjectRF
 
     unsigned int createImageFeatures(IplImage& image, const std::vector<std::pair<unsigned int,
         unsigned int> >& ds_img_coords, std::vector<std::vector<float> >& ds_img_features);
+
+    void rotatePointCloud(sensor_msgs::PointCloud& pc_in,
+                          const double yaw,
+                          const double pitch,
+                          const double roll);
 
     RFCreator3D* rf_creator_3d_;
     double voxel_x_;

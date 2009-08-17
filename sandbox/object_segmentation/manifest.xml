@@ -16,6 +16,7 @@
   <depend package="point_cloud_clustering"/>
   <depend package="descriptors_3d"/>
   <depend package="opencv_latest"/>
+  <depend package="bullet"/>
 
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lrf_creator_3d -ltable_object_rf" />

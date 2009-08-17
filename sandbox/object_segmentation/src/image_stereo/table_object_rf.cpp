@@ -104,7 +104,8 @@ TableObjectRF::TableObjectRF()
   // -----------------------------------------
   // Clique-set 1 clustering (edges)
   // 0.5 inch = 0.0127m
-  point_cloud_clustering::PairwiseNeighbors* pn_cs1 = new point_cloud_clustering::PairwiseNeighbors(0.0127, 3);
+  point_cloud_clustering::PairwiseNeighbors* pn_cs1 =
+      new point_cloud_clustering::PairwiseNeighbors(0.0127, 3);
   vector<pair<bool, point_cloud_clustering::PointCloudClustering*> > cs1_clusterings(1);
   cs1_clusterings[0].first = true; // true indicates to cluster over only the nodes
   cs1_clusterings[0].second = pn_cs1;
@@ -284,4 +285,29 @@ unsigned int TableObjectRF::createImageFeatures(IplImage& image, const vector<pa
   }
 
   return nbr_image_features;
+}
+
+// --------------------------------------------------------------
+/* See function definition */
+// --------------------------------------------------------------
+void TableObjectRF::rotatePointCloud(sensor_msgs::PointCloud& pc_in,
+                                     const double yaw,
+                                     const double pitch,
+                                     const double roll)
+{
+  btTransform transform(btQuaternion (yaw, pitch, roll), btVector3 (0, 0, 0));
+  btVector3 curr_pt(0.0, 0.0, 0.0);
+  btVector3 rotated_pt(0.0, 0.0, 0.0);
+
+  unsigned int nbr_pts = pc_in.points.size();
+  for (unsigned int i = 0 ; i < nbr_pts ; i++)
+  {
+    curr_pt.setX(pc_in.points[i].x);
+    curr_pt.setY(pc_in.points[i].y);
+    curr_pt.setZ(pc_in.points[i].z);
+    btVector3 rotated_pt = transform * curr_pt;
+    pc_in.points[i].x = rotated_pt.getX();
+    pc_in.points[i].y = rotated_pt.getY();
+    pc_in.points[i].z = rotated_pt.getZ();
+  }
 }
