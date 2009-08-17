@@ -135,7 +135,7 @@ boost::shared_ptr<RandomField> TableObjectRF::createRandomField(const string& fn
   // Load point cloud and image
   IplImage* image = NULL;
   sensor_msgs::PointCloud full_stereo_cloud;
-  if (loadStereoImageCloud(fname_image, fname_pcd, image, full_stereo_cloud) < 0)
+  if (loadStereoImageCloud(fname_image, fname_pcd, &image, full_stereo_cloud) < 0)
   {
     abort();
   }
@@ -173,11 +173,11 @@ boost::shared_ptr<RandomField> TableObjectRF::createRandomField(const string& fn
 // --------------------------------------------------------------
 int TableObjectRF::loadStereoImageCloud(const string& fname_image,
                                         const string& fname_pcd,
-                                        IplImage* image,
+                                        IplImage** image,
                                         sensor_msgs::PointCloud& stereo_cloud)
 {
   ROS_INFO("Loading image....");
-  image = cvLoadImage(fname_image.c_str(), CV_LOAD_IMAGE_GRAYSCALE);
+  *image = cvLoadImage(fname_image.c_str(), CV_LOAD_IMAGE_GRAYSCALE);
   if (image == NULL)
   {
     return -1;
@@ -187,7 +187,7 @@ int TableObjectRF::loadStereoImageCloud(const string& fname_image,
   ROS_INFO("Loading point cloud....");
   if (cloud_io::loadPCDFile(fname_pcd.c_str(), stereo_cloud) == -1)
   {
-    cvReleaseImage(&image);
+    cvReleaseImage(image);
     return -1;
   }
   ROS_INFO("done.");
@@ -197,7 +197,7 @@ int TableObjectRF::loadStereoImageCloud(const string& fname_image,
       || cloud_geometry::getChannelIndex(stereo_cloud, TableObjectRF::CHANNEL_ARRAY_HEIGHT) < 0)
   {
     ROS_ERROR("Could not find stereo image dimensions from the cloud");
-    cvReleaseImage(&image);
+    cvReleaseImage(image);
     return -1;
   }
 
@@ -274,7 +274,7 @@ void TableObjectRF::downsampleStereoCloud(sensor_msgs::PointCloud& full_stereo_c
 void TableObjectRF::createImageFeatures(IplImage& image, const vector<pair<unsigned int,
     unsigned int> >& ds_img_coords, vector<vector<float> >& ds_img_features)
 {
-  unsigned int nbr_image_features = 1;
+  unsigned int nbr_image_features = 2;
   unsigned int nbr_pts = ds_img_coords.size();
 
   // TODO change this when doing features that can fail
@@ -288,7 +288,8 @@ void TableObjectRF::createImageFeatures(IplImage& image, const vector<pair<unsig
 
     // height and value of pixel
     ds_img_features[i][0] = h;
-    //ds_img_features[i][1] = *(image.imageData + (h * image.widthStep) + w);
+    unsigned char* tempo = (unsigned char*)(image.imageData + (h * image.widthStep));
+    ds_img_features[i][1] = static_cast<float>(tempo[w]);
   }
 }
 

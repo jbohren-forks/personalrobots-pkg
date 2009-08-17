@@ -84,7 +84,7 @@ class TableObjectRF
   private:
     int loadStereoImageCloud(const std::string& fname_image,
                              const std::string& fname_pcd,
-                             IplImage* image,
+                             IplImage** image,
                              sensor_msgs::PointCloud& stereo_cloud);
 
     void
