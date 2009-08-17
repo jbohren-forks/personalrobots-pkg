@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
   // ----------------------------
   if (argc != 6)
   {
-    ROS_WARN("%s usage: <random field file list> <tree depth factor> <learning rate> <number of iterations> <model basename>", argv[0]);
+    ROS_WARN("%s usage: <train random field file list> <tree depth factor> <learning rate> <number of iterations> <model basename>", argv[0]);
     return -1;
   }
   char* rf_file_list = argv[1];
@@ -45,6 +45,7 @@ int main(int argc, char *argv[])
 
   // ----------------------------------------------------------
   // Load random fields
+  ROS_INFO("Loading random fields");
   vector<const RandomField*> training_rfs;
   while (file_list.eof() == false)
   {
@@ -57,6 +58,7 @@ int main(int argc, char *argv[])
     }
     training_rfs.push_back(curr_rf);
   }
+  ROS_INFO("Done");
 
   // ----------------------------------------------
   // Define learning parameters
