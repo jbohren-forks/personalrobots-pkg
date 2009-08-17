@@ -40,7 +40,7 @@
 #include "experimental_controllers/cartesian_hybrid_controller.h"
 #include "experimental_controllers/cartesian_twist_controller_ik.h"
 #include "experimental_controllers/dynamic_loader_controller.h"
-#include "experimental_controllers/endeffector_constraint_controller.h"
+//#include "experimental_controllers/endeffector_constraint_controller.h"
 #include "experimental_controllers/joint_autotuner.h"
 #include "experimental_controllers/joint_blind_calibration_controller.h"
 #include "experimental_controllers/joint_calibration_controller.h"
@@ -67,8 +67,8 @@ REGISTER_PLUGIN(Probe)
 REGISTER_PLUGIN(CartesianTFFController)
 REGISTER_PLUGIN(CartesianHybridController)
 REGISTER_PLUGIN(CartesianHybridControllerNode)
-REGISTER_PLUGIN(EndeffectorConstraintController)
-REGISTER_PLUGIN(EndeffectorConstraintControllerNode)
+//REGISTER_PLUGIN(EndeffectorConstraintController)
+//REGISTER_PLUGIN(EndeffectorConstraintControllerNode)
 REGISTER_PLUGIN(JointChainConstraintControllerNode)
 REGISTER_PLUGIN(JointInverseDynamicsController);
 REGISTER_PLUGIN(JointPositionSmoothController)
