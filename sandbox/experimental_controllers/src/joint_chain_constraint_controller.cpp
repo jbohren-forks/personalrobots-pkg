@@ -31,7 +31,7 @@
  * Author: Melonee Wise
  */
 
-#include "robot_mechanism_controllers/joint_chain_constraint_controller.h"
+#include "experimental_controllers/joint_chain_constraint_controller.h"
 #include <algorithm>
 #include "angles/angles.h"
 #include <kdl/chainfksolvervel_recursive.hpp>

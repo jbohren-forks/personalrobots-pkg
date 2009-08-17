@@ -32,7 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include <robot_mechanism_controllers/joint_autotuner.h>
+#include <experimental_controllers/joint_autotuner.h>
 #include <fstream>
 using namespace std;
 using namespace controller;

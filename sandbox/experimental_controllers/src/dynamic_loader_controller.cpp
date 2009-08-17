@@ -31,7 +31,7 @@
  * Author: Rob Wheeler
  */
 
-#include "robot_mechanism_controllers/dynamic_loader_controller.h"
+#include "experimental_controllers/dynamic_loader_controller.h"
 #include "mechanism_msgs/SpawnController.h"
 #include "mechanism_msgs/KillController.h"
 #include <iostream>

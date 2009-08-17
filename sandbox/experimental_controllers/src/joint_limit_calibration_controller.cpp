@@ -32,24 +32,22 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include <robot_mechanism_controllers/joint_blind_calibration_controller.h>
+#include "experimental_controllers/joint_limit_calibration_controller.h"
 #include <ros/time.h>
 
 using namespace std;
 using namespace controller;
 
-ROS_REGISTER_CONTROLLER(JointBlindCalibrationController)
-
-JointBlindCalibrationController::JointBlindCalibrationController()
+JointLimitCalibrationController::JointLimitCalibrationController()
 : state_(INITIALIZED), joint_(NULL)
 {
 }
 
-JointBlindCalibrationController::~JointBlindCalibrationController()
+JointLimitCalibrationController::~JointLimitCalibrationController()
 {
 }
 
-bool JointBlindCalibrationController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+bool JointLimitCalibrationController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
   assert(robot);
   assert(config);
@@ -57,7 +55,7 @@ bool JointBlindCalibrationController::initXml(mechanism::RobotState *robot, TiXm
   TiXmlElement *cal = config->FirstChildElement("calibrate");
   if (!cal)
   {
-    std::cerr<<"JointBlindCalibrationController was not given calibration parameters"<<std::endl;
+    std::cerr<<"JointLimitCalibrationController was not given calibration parameters"<<std::endl;
     return false;
   }
 
@@ -71,7 +69,7 @@ bool JointBlindCalibrationController::initXml(mechanism::RobotState *robot, TiXm
   joint_ = joint_name ? robot->getJointState(joint_name) : NULL;
   if (!joint_)
   {
-    fprintf(stderr, "Error: JointBlindCalibrationController could not find joint \"%s\"\n",
+    fprintf(stderr, "Error: JointLimitCalibrationController could not find joint \"%s\"\n",
             joint_name);
     return false;
   }
@@ -80,7 +78,7 @@ bool JointBlindCalibrationController::initXml(mechanism::RobotState *robot, TiXm
   actuator_ = actuator_name ? robot->model_->getActuator(actuator_name) : NULL;
   if (!actuator_)
   {
-    fprintf(stderr, "Error: JointBlindCalibrationController could not find actuator \"%s\"\n",
+    fprintf(stderr, "Error: JointLimitCalibrationController could not find actuator \"%s\"\n",
             actuator_name);
     return false;
   }
@@ -89,7 +87,7 @@ bool JointBlindCalibrationController::initXml(mechanism::RobotState *robot, TiXm
   transmission_ = transmission_name ? robot->model_->getTransmission(transmission_name) : NULL;
   if (!transmission_)
   {
-    fprintf(stderr, "Error: JointBlindCalibrationController could not find transmission \"%s\"\n",
+    fprintf(stderr, "Error: JointCalibrationController could not find transmission \"%s\"\n",
             transmission_name);
     return false;
   }
@@ -98,7 +96,7 @@ bool JointBlindCalibrationController::initXml(mechanism::RobotState *robot, TiXm
   TiXmlElement *pid_el = config->FirstChildElement("pid");
   if (!pid_el)
   {
-    fprintf(stderr, "Error: JointBlindCalibrationController was not given a pid element.\n");
+    fprintf(stderr, "Error: JointLimitCalibrationController was not given a pid element.\n");
     return false;
   }
   if (!pid.initXml(pid_el))
@@ -110,128 +108,120 @@ bool JointBlindCalibrationController::initXml(mechanism::RobotState *robot, TiXm
   return true;
 }
 
-void JointBlindCalibrationController::update()
+void JointLimitCalibrationController::update()
 {
   assert(joint_);
   assert(actuator_);
 
-  static int count = 0;
-  static double joint_max_raw, joint_min_raw;  // Joint angles at the bumps
-
   switch (state_)
   {
   case INITIALIZED:
+    state_ = BEGINNING;
     return;
   case BEGINNING:
-    state_ = STARTING_UP;
-    count = 0;
+    count_ = 0;
     joint_->calibrated_ = false;
     actuator_->state_.zero_offset_ = 0.0;
-    break;
-  case STARTING_UP:
     vc_.setCommand(search_velocity_);
-    if (++count > 500)
+    state_ = STARTING;
+    break;
+  case STARTING:
+    // Makes sure we start moving for a bit before checking if we've stopped.
+    if (++count_ > 500)
     {
-      count = 0;
-      state_ = MOVING_UP;
+      count_ = 0;
+      state_ = STOPPING;
     }
     break;
-  case MOVING_UP:
+  case STOPPING:
     if (fabs(joint_->velocity_) < 0.001)
     {
-      joint_max_raw = joint_->position_;
-      state_ = STARTING_DOWN;
-      count = 0;
-    }
-    break;
-  case STARTING_DOWN:
-    vc_.setCommand(-search_velocity_);
-    if (++count > 500)
-    {
-      state_ = MOVING_DOWN;
-      count = 0;
-    }
-    break;
-  case MOVING_DOWN:
-    if (fabs(joint_->velocity_) < 0.001)
-    {
-      joint_min_raw = joint_->position_;
-
-      // Sets the desired joint zero based on where we bumped the limits.
-      double joint_zero = ((joint_max_raw - joint_->joint_->joint_limit_max_) +
-                           (joint_min_raw - joint_->joint_->joint_limit_min_)) / 2.0;
+      // Need to set zero offset correctly
+      Actuator a;
+      mechanism::JointState j;
       std::vector<Actuator*> fake_a;
       std::vector<mechanism::JointState*> fake_j;
-      fake_a.push_back(new Actuator);
-      fake_j.push_back(new mechanism::JointState);
-      fake_j[0]->position_ = joint_zero;
-      transmission_->propagatePositionBackwards(fake_j, fake_a);
-      actuator_->state_.zero_offset_ = fake_a[0]->state_.position_;
+      fake_a.push_back(&a);
+      fake_j.push_back(&j);
 
-      state_ = BACKING_OFF;
-      count = 0;
-    }
-    break;
-  case BACKING_OFF:
-    vc_.setCommand(search_velocity_);
-    if (++count > 1000)
-    {
+      fake_a[0]->state_.position_ = actuator_->state_.position_;
+
+      transmission_->propagatePosition(fake_a, fake_j);
+
+      // What is the actuator position at the joint's max or min?
+      double ref_position;
+      if (search_velocity_ > 0)
+      {
+        ref_position = joint_->joint_->joint_limit_max_;
+      }
+      else
+      {
+        ref_position = joint_->joint_->joint_limit_min_;
+      }
+
+      fake_j[0]->position_ = fake_j[0]->position_ - ref_position;
+
+      transmission_->propagatePositionBackwards(fake_j, fake_a);
+
+      actuator_->state_.zero_offset_ = fake_a[0]->state_.position_;
+      state_ = CALIBRATED;
       joint_->calibrated_ = true;
-      state_ = DONE;
+      vc_.setCommand(0);
     }
     break;
-  case DONE:
-    vc_.setCommand(0.0);
+  case CALIBRATED:
     break;
   }
 
-  vc_.update();
+  if (state_ != CALIBRATED)
+    vc_.update();
 }
 
 
-ROS_REGISTER_CONTROLLER(JointBlindCalibrationControllerNode)
+ROS_REGISTER_CONTROLLER(JointLimitCalibrationControllerNode)
 
-JointBlindCalibrationControllerNode::JointBlindCalibrationControllerNode()
+JointLimitCalibrationControllerNode::JointLimitCalibrationControllerNode()
+: robot_(NULL), last_publish_time_(0)
 {
-  c_ = new JointBlindCalibrationController();
 }
 
-JointBlindCalibrationControllerNode::~JointBlindCalibrationControllerNode()
+JointLimitCalibrationControllerNode::~JointLimitCalibrationControllerNode()
 {
-  delete c_;
 }
 
-void JointBlindCalibrationControllerNode::update()
+void JointLimitCalibrationControllerNode::update()
 {
-  c_->update();
+  c_.update();
+
+  if (c_.calibrated())
+  {
+    if (last_publish_time_ + 0.5 < robot_->hw_->current_time_)
+    {
+      assert(pub_calibrated_);
+      if (pub_calibrated_->trylock())
+      {
+        last_publish_time_ = robot_->hw_->current_time_;
+        pub_calibrated_->unlockAndPublish();
+      }
+    }
+  }
 }
 
-
-  bool JointBlindCalibrationControllerNode::calibrateCommand(robot_mechanism_controllers::CalibrateJoint::Request &req, robot_mechanism_controllers::CalibrateJoint::Response &resp)
+bool JointLimitCalibrationControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
-  c_->beginCalibration();
-  ros::Duration d = ros::Duration(0,1000000);
-  while(!c_->calibrated())
-    d.sleep();
-  resp.offset = 0.0;
-  return true;
-}
+  robot_ = robot;
 
-bool JointBlindCalibrationControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
-{
-  ros::Node *node = ros::Node::instance();
-
-  std::string topic = config->Attribute("topic") ? config->Attribute("topic") : "";
+  std::string topic = config->Attribute("name") ? config->Attribute("name") : "";
   if (topic == "")
   {
-    fprintf(stderr, "No topic given to JointBlindCalibrationController\n");
+    fprintf(stderr, "No name given to JointLimitCalibrationController\n");
     return false;
   }
 
-  if (!c_->initXml(robot, config))
+  if (!c_.initXml(robot, config))
     return false;
 
-  node->advertiseService(topic + "/calibrate", &JointBlindCalibrationControllerNode::calibrateCommand, this);
-  guard_calibrate_.set(topic + "/calibrate");
+  pub_calibrated_ = new realtime_tools::RealtimePublisher<std_msgs::Empty>(topic + "/calibrated", 1);
+
   return true;
 }

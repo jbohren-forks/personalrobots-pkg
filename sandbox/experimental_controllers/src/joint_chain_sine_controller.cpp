@@ -43,7 +43,7 @@
 #include <boost/random/normal_distribution.hpp>
 #include <boost/random/mersenne_twister.hpp>
 
-#include <robot_mechanism_controllers/joint_chain_sine_controller.h>
+#include <experimental_controllers/joint_chain_sine_controller.h>
 #include <kdl/chainfksolverpos_recursive.hpp>
 #include <kdl/frames.hpp>
 

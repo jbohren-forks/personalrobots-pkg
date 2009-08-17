@@ -32,7 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include <robot_mechanism_controllers/joint_calibration_controller.h>
+#include <experimental_controllers/joint_calibration_controller.h>
 #include <ros/time.h>
 
 using namespace std;

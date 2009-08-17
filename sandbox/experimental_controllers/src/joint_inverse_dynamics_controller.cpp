@@ -33,7 +33,7 @@
  */
 
 #include <algorithm>
-#include <robot_mechanism_controllers/joint_inverse_dynamics_controller.h>
+#include <experimental_controllers/joint_inverse_dynamics_controller.h>
 #include <kdl/kinfam_io.hpp>
 #include <filters/transfer_function.h>
 #include <filters/filter_chain.h>
@@ -125,10 +125,10 @@ bool JointInverseDynamicsController::init(mechanism::RobotState *robot_state, co
   diagnostics_.status[0].values.resize(2);
   diagnostics_.status[0].values[0].value = "3";
   diagnostics_.status[0].values[0].key = "TestValueLabel";
-  
+
   diagnostics_.status[0].values[1].value = "TestValue";
   diagnostics_.status[0].values[1].key = "TestLabel";
-  
+
   diagnostics_time_ = ros::Time::now();
   diagnostics_interval_ = ros::Duration().fromSec(1.0);
 
@@ -153,9 +153,9 @@ bool JointInverseDynamicsController::starting()
 {
   // set desired wrench to 0
   SetToZero(jnt_posvelacc_desi_);
-  
+
   last_time_ = robot_state_->hw_->current_time_;
- 
+
    return true;
 }
 
@@ -172,7 +172,7 @@ void JointInverseDynamicsController::update()
 
   // get joint positions and velocities
   chain_.getVelocities(robot_state_->joint_states_, jnt_posvel_meas_);
-  
+
 
   //Calculate qdotdot_out
   SetToZero(jnt_acc_out_);
@@ -218,7 +218,7 @@ void JointInverseDynamicsController::update()
     jnt_msg_std_[i]=jnt_tau_(i);
   jnt_msg_.set_data_vec(jnt_msg_std_);
   pub_eff_calculated_.publish(jnt_msg_);
-  
+
   chain_.getEfforts(robot_state_->joint_states_,jnt_msg_std_);
   jnt_msg_.set_data_vec(jnt_eff_std_);
   pub_eff_sent_.publish(jnt_msg_);
@@ -232,7 +232,7 @@ void JointInverseDynamicsController::update()
     jnt_msg_std_[i]=jnt_posvel_meas_.qdot(i);
   jnt_msg_.set_data_vec(jnt_eff_std_);
   pub_vel_meas_.publish(jnt_msg_);
-  
+
   for(unsigned int i=0;i<kdl_chain_.getNrOfJoints();i++)
     jnt_msg_std_[i]=jnt_posvelacc_desi_.qdotdot(i);
   jnt_msg_.set_data_vec(jnt_msg_std_);

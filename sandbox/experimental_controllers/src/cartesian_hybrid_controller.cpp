@@ -32,7 +32,7 @@
 #ifndef CARTESIAN_HYBRID_CONTROLLER_H
 #define CARTESIAN_HYBRID_CONTROLLER_H
 
-#include "robot_mechanism_controllers/cartesian_hybrid_controller.h"
+#include "experimental_controllers/cartesian_hybrid_controller.h"
 #include <kdl/chainfksolverpos_recursive.hpp>
 #include <kdl/chainfksolvervel_recursive.hpp>
 #include <kdl/chainjnttojacsolver.hpp>
@@ -504,7 +504,7 @@ bool CartesianHybridControllerNode::initXml(mechanism::RobotState *robot, TiXmlE
                             boost::bind(&CartesianHybridControllerNode::command, this, _1),
                             name_ + "/command", c_.kdl_chain_.getSegment(0).getName(), 100));
 
-  pub_state_.reset(new realtime_tools::RealtimePublisher<robot_mechanism_controllers::CartesianHybridState>(name_ + "/state", 1));
+  pub_state_.reset(new realtime_tools::RealtimePublisher<experimental_controllers::CartesianHybridState>(name_ + "/state", 1));
   pub_tf_.reset(new realtime_tools::RealtimePublisher<tf::tfMessage>("/tf_message", 5));
   pub_tf_->msg_.transforms.resize(1);
 
@@ -533,7 +533,7 @@ bool CartesianHybridControllerNode::init(mechanism::RobotState *robot, const ros
                             node_.getNamespace() + "/command", c_.kdl_chain_.getSegment(0).getName(),
                             100));
 
-  pub_state_.reset(new realtime_tools::RealtimePublisher<robot_mechanism_controllers::CartesianHybridState>
+  pub_state_.reset(new realtime_tools::RealtimePublisher<experimental_controllers::CartesianHybridState>
                    (node_, "state", 1));
   pub_tf_.reset(new realtime_tools::RealtimePublisher<tf::tfMessage>("/tf_message", 5));
   pub_tf_->msg_.transforms.resize(1);

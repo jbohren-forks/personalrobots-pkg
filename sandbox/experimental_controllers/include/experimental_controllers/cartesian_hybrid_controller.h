@@ -45,7 +45,7 @@
 
 #include "robot_mechanism_controllers/SetPoseStamped.h"
 #include "manipulation_msgs/TaskFrameFormalism.h"
-#include "robot_mechanism_controllers/CartesianHybridState.h"
+#include "experimental_controllers/CartesianHybridState.h"
 
 namespace controller {
 
@@ -128,7 +128,7 @@ private:
   std::string task_frame_name_;
 
   unsigned int loop_count_;
-  boost::scoped_ptr<realtime_tools::RealtimePublisher<robot_mechanism_controllers::CartesianHybridState> > pub_state_;
+  boost::scoped_ptr<realtime_tools::RealtimePublisher<experimental_controllers::CartesianHybridState> > pub_state_;
   boost::scoped_ptr<realtime_tools::RealtimePublisher<tf::tfMessage> > pub_tf_;
 };
 

@@ -32,7 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include <robot_mechanism_controllers/joint_position_smoothing_controller.h>
+#include <experimental_controllers/joint_position_smoothing_controller.h>
 #include <angles/angles.h>
 
 using namespace std;

@@ -7,35 +7,19 @@ genmsg()
 gensrv()
 set(_srcs
     src/controller_manifest.cpp
-    src/cartesian_tff_controller.cpp
     src/cartesian_trajectory_controller.cpp
     src/cartesian_pose_controller.cpp
     src/cartesian_twist_controller.cpp
-    src/cartesian_twist_controller_ik.cpp
     src/cartesian_wrench_controller.cpp
-    src/cartesian_hybrid_controller.cpp
-    src/dynamic_loader_controller.cpp
     src/joint_effort_controller.cpp
     src/joint_position_controller.cpp
-    src/joint_position_smoothing_controller.cpp
     src/joint_velocity_controller.cpp
-    src/joint_inverse_dynamics_controller.cpp
-    src/joint_autotuner.cpp
     src/joint_pd_controller.cpp
-    src/joint_calibration_controller.cpp
     src/joint_ud_calibration_controller.cpp
-    src/joint_limit_calibration_controller.cpp
-    src/joint_blind_calibration_controller.cpp
-    src/joint_chain_constraint_controller.cpp
-    src/joint_chain_sine_controller.cpp
     src/trigger_controller.cpp
-    src/probe.cpp
 )
 
 # For some reason, the endeffector_constraint_controller won't build on OSX
-if(NOT APPLE)
- set(_srcs ${_srcs} src/endeffector_constraint_controller.cpp)
-endif(NOT APPLE)
 rospack_add_library(robot_mechanism_controllers ${_srcs})
 rospack_remove_compile_flags(robot_mechanism_controllers -W)
 target_link_libraries(robot_mechanism_controllers ltdl)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Ruben Smits and Willow Garage, Inc.
+ * Copyright (c) 2008, Willow Garage, Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,67 +29,72 @@
 
 /*
  * Author: Wim Meeussen
- *         Ruben Smits
  */
 
-#ifndef CARTESIAN_TWIST_CONTROLLER_IK_H
-#define CARTESIAN_TWIST_CONTROLLER_IK_H
+#ifndef CARTESIAN_TFF_CONTROLLER_H
+#define CARTESIAN_TFF_CONTROLLER_H
 
 #include <vector>
-#include <boost/scoped_ptr.hpp>
 #include <kdl/chain.hpp>
-#include <kdl/frames.hpp>
 #include <kdl/chainfksolver.hpp>
-#include <kdl/chainiksolver.hpp>
+#include <kdl/frames.hpp>
 #include <ros/node.h>
+#include <manipulation_msgs/TaskFrameFormalism.h>
 #include <geometry_msgs/Twist.h>
 #include <controller_interface/controller.h>
-#include <mechanism_model/chain.h>
 #include <tf/transform_datatypes.h>
 #include <control_toolbox/pid.h>
-
-#include "robot_mechanism_controllers/joint_inverse_dynamics_controller.h"
+#include <boost/scoped_ptr.hpp>
+#include "robot_mechanism_controllers/cartesian_wrench_controller.h"
 
 namespace controller {
 
-  class CartesianTwistControllerIk : public Controller
-  {
-  public:
-    CartesianTwistControllerIk();
-    ~CartesianTwistControllerIk();
+class CartesianTFFController : public Controller
+{
+public:
+  CartesianTFFController();
+  ~CartesianTFFController();
 
-    bool init(mechanism::RobotState *robot_state, const ros::NodeHandle& n);
-    bool starting();
-    void update();
+  bool init(mechanism::RobotState *robot_state, const ros::NodeHandle& n);
+  bool starting();
+  void update();
 
-    void command(const geometry_msgs::TwistConstPtr& twist_msg);
+  void command(const manipulation_msgs::TaskFrameFormalismConstPtr& tff_msg);
 
-    // input of the controller
-    KDL::Twist twist_desi_;
+private:
+  ros::NodeHandle node_;
+  ros::Subscriber sub_command_;
+  double last_time_;
 
-  private:
-    KDL::Twist twist_meas_,error,twist_out_;
-  
-    ros::NodeHandle node_;
-    ros::Subscriber sub_command_;
+  // pid controllers
+  std::vector<control_toolbox::Pid> vel_pid_controller_, pos_pid_controller_;
 
-    double last_time_,ff_trans_,ff_rot_;
+  // robot description
+  mechanism::RobotState *robot_state_;
+  mechanism::Chain chain_;
 
-    // pid controllers
-    std::vector<control_toolbox::Pid> fb_pid_controller_;
+  // kdl stuff for kinematics
+  KDL::Chain             kdl_chain_;
+  boost::scoped_ptr<KDL::ChainFkSolverVel> jnt_to_twist_solver_;
+  KDL::JntArrayVel       jnt_posvel_;
 
-    // robot description
-    mechanism::RobotState *robot_state_;
-    mechanism::Chain chain_;
+  // command for tff
+  std::vector<int> mode_;
+  std::vector<double> value_, twist_to_wrench_;
 
-    // kdl stuff for kinematics
-    KDL::Chain             kdl_chain_;
-    boost::scoped_ptr<KDL::ChainFkSolverVel> jnt_to_twist_solver_;
-    boost::scoped_ptr<KDL::ChainIkSolverVel> twist_to_jnt_solver_;
-    KDL::JntArrayVel          jnt_posvel_;
+  // output of the controller
+  KDL::Wrench wrench_desi_;
 
-    JointInverseDynamicsController* id_controller_;
-  };
+  KDL::Twist position_, twist_meas_;
+  KDL::Frame pose_meas_, pose_meas_old_;
+
+  boost::scoped_ptr<realtime_tools::RealtimePublisher<geometry_msgs::Twist> > state_position_publisher_;
+  unsigned int loop_count_;
+
+  // internal wrench controller
+  CartesianWrenchController* wrench_controller_;
+};
+
 
 } // namespace
 

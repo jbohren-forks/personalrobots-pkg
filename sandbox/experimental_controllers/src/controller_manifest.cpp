@@ -35,6 +35,22 @@
 //#include "experimental_controllers/plug_controller.h"
 #include "experimental_controllers/trajectory_controller.h"
 
+#include "experimental_controllers/cartesian_tff_controller.h"
+
+#include "experimental_controllers/cartesian_hybrid_controller.h"
+#include "experimental_controllers/cartesian_twist_controller_ik.h"
+#include "experimental_controllers/dynamic_loader_controller.h"
+#include "experimental_controllers/endeffector_constraint_controller.h"
+#include "experimental_controllers/joint_autotuner.h"
+#include "experimental_controllers/joint_blind_calibration_controller.h"
+#include "experimental_controllers/joint_calibration_controller.h"
+#include "experimental_controllers/joint_chain_constraint_controller.h"
+#include "experimental_controllers/joint_chain_sine_controller.h"
+#include "experimental_controllers/joint_inverse_dynamics_controller.h"
+#include "experimental_controllers/joint_limit_calibration_controller.h"
+#include "experimental_controllers/joint_position_smoothing_controller.h"
+#include "experimental_controllers/probe.h"
+
 using namespace controller;
 
 BEGIN_PLUGIN_LIST(Controller)
@@ -44,6 +60,29 @@ REGISTER_PLUGIN(PIDPositionVelocityController)
 //REGISTER_PLUGIN(PlugController)
 //REGISTER_PLUGIN(PlugControllerNode)
 REGISTER_PLUGIN(TrajectoryController)
+
+REGISTER_PLUGIN(DynamicLoaderController)
+
+REGISTER_PLUGIN(Probe)
+REGISTER_PLUGIN(CartesianTFFController)
+REGISTER_PLUGIN(CartesianHybridController)
+REGISTER_PLUGIN(CartesianHybridControllerNode)
+REGISTER_PLUGIN(EndeffectorConstraintController)
+REGISTER_PLUGIN(EndeffectorConstraintControllerNode)
+REGISTER_PLUGIN(JointChainConstraintControllerNode)
+REGISTER_PLUGIN(JointInverseDynamicsController);
+REGISTER_PLUGIN(JointPositionSmoothController)
+REGISTER_PLUGIN(JointPositionSmoothControllerNode)
+
+REGISTER_PLUGIN(JointAutotuner)
+REGISTER_PLUGIN(JointAutotunerNode)
+REGISTER_PLUGIN(JointBlindCalibrationController)
+REGISTER_PLUGIN(JointBlindCalibrationControllerNode)
+REGISTER_PLUGIN(JointCalibrationControllerNode)
+REGISTER_PLUGIN(JointChainSineController)
+REGISTER_PLUGIN(JointLimitCalibrationControllerNode)
+REGISTER_PLUGIN(CartesianTwistControllerIk)
+
 
 END_PLUGIN_LIST
 

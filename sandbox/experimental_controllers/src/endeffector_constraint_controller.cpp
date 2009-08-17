@@ -31,7 +31,7 @@
  * Author: Melonee Wise
  */
 
-#include "robot_mechanism_controllers/endeffector_constraint_controller.h"
+#include "experimental_controllers/endeffector_constraint_controller.h"
 #include <algorithm>
 #include "angles/angles.h"
 #include "urdf/parser.h"

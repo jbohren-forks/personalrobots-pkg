@@ -27,7 +27,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "robot_mechanism_controllers/probe.h"
+#include "experimental_controllers/probe.h"
 #include "robot_mechanism_controllers/JointTuningMsg.h"
 
 namespace controller {

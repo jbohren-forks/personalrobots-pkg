@@ -32,7 +32,7 @@
  *         Ruben Smits
  */
 
-#include <robot_mechanism_controllers/cartesian_twist_controller_ik.h>
+#include <experimental_controllers/cartesian_twist_controller_ik.h>
 #include <algorithm>
 #include <mechanism_control/mechanism_control.h>
 
