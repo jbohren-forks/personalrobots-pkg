@@ -69,7 +69,7 @@
  <!-- The frame of the sensor used to obtain the data to be
        filtered; This parameter is optional. If it is not specified,
        shadow points will be considered outside -->
-    <param name="sensor_frame" type="string" value="base_link" />
+    <param name="sensor_frame" type="string" value="base_laser" />
 
     <remap from="cloud_in" to="base_scan_cloud" />
     <remap from="cloud_out" to="base_scan_cloud_without_known_objects" />
