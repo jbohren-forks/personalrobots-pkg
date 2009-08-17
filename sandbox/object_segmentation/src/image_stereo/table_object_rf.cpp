@@ -149,7 +149,7 @@ int TableObjectRF::loadStereoImageCloud(const string& fname_image,
                                         sensor_msgs::PointCloud& stereo_cloud)
 {
   ROS_INFO("Loading image....");
-  image = cvLoadImage(fname_image.c_str());
+  image = cvLoadImage(fname_image.c_str(), CV_LOAD_IMAGE_GRAYSCALE);
   if (image == NULL)
   {
     return -1;
@@ -241,9 +241,24 @@ void TableObjectRF::downsampleStereoCloud(sensor_msgs::PointCloud& full_stereo_c
   }
 }
 
-// TODO change ds_idx2img_coords into a vector
-void TableObjectRF::createImageFeatures(IplImage& image, const std::vector<std::pair<unsigned int,
-    unsigned int> >& ds_idx2img_coords, std::vector<std::vector<float> >& ds_image_features)
+// --------------------------------------------------------------
+/* See function definition */
+// --------------------------------------------------------------
+unsigned int TableObjectRF::createImageFeatures(IplImage& image, const vector<pair<unsigned int,
+    unsigned int> >& ds_idx2img_coords, vector<vector<float> >& ds_image_features)
 {
+  unsigned int nbr_image_features = 2;
+  unsigned int nbr_pts = ds_idx2img_coords.size();
+  ds_image_features.assign(nbr_pts, vector<float> (nbr_image_features, 0.0)); // TODO change this when doing features that can fail
+  for (unsigned int i = 0 ; i < nbr_pts ; i++)
+  {
+    const pair<unsigned int, unsigned int>& curr_img_coords = ds_idx2img_coords[i];
+    unsigned int w = curr_img_coords.first;
+    unsigned int h = curr_img_coords.second;
 
+    ds_image_features[i][0] = h;
+    ds_image_features[i][1] = *(image.imageData + (h * image.widthStep) + w);
+  }
+
+  return nbr_image_features;
 }
