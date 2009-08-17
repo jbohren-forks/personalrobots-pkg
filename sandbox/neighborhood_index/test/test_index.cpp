@@ -58,15 +58,29 @@ public:
 
 	void cloudCallback(const sensor_msgs::PointCloud::ConstPtr& point_cloud)
 	{
-		ROS_INFO("I got a point cloud\n");
+		ROS_INFO("I got a point cloud with: %d points\n", point_cloud->get_points_size());
 
-		Index* index = new LinearIndex();
-
-		index->buildIndex(*point_cloud);
+		Index* index;
 		vector<vector<int> > indices;
 		vector<vector<float> >distances;
 
+		ROS_INFO("Linear index\n");
+		index = new LinearIndex();
+		index->buildIndex(*point_cloud);
+
+		clock_t start_time = clock();
 		index->knnSearch(*point_cloud, 10, indices, distances);
+		ROS_INFO("Searching took: %g seconds", double(clock()-start_time)/CLOCKS_PER_SEC);
+		delete index;
+
+		ROS_INFO("Voxel gridindex\n");
+		index = new VoxelGridIndex(0.1,0.1,0.1); // 10 cm cells
+		index->buildIndex(*point_cloud);
+
+		clock_t start_time = clock();
+		index->knnSearch(*point_cloud, 10, indices, distances);
+		ROS_INFO("Searching took: %g seconds", double(clock()-start_time)/CLOCKS_PER_SEC);
+		delete index;
 	}
 
 
