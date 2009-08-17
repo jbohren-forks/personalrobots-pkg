@@ -133,7 +133,7 @@ void SelectNeighborFeatures(vector<feature_t>& features, const vector<feature_t>
     features = filtered;
 }
 
-int CalcFeatures(IplImage* image, Vector<Vector<feature_t> >& features, Vector<Ptr<IplImage> >& images)
+int CalcFeatures(IplImage* image, Vector<Vector<feature_t> >& features, Vector<IplImage*>& images)
 {    
     size_t pyr_levels = features.size();
     images.resize(pyr_levels);
@@ -160,7 +160,7 @@ int CalcFeatures(IplImage* image, Vector<Vector<feature_t> >& features, Vector<P
     return feature_count;
 }
 
-int LoadFeatures(const char* filename, Vector<Vector<feature_t> >& features, Vector<Ptr<IplImage> >& images)
+int LoadFeatures(const char* filename, Vector<Vector<feature_t> >& features, Vector<IplImage*>& images)
 {
     IplImage* image = loadImageRed(filename);
 
@@ -187,6 +187,14 @@ IplImage* loadImageRed(const char* filename)
     return red;
 }
 
+void ReleaseImageVector(Vector<IplImage*>& images)
+{
+    for(size_t i = 0; i < images.size(); i++)
+    {
+        cvReleaseImage(&images[i]);
+    }
+}
+
 void LoadTrainingFeatures(CvOneWayDescriptorObject& descriptors, const char* train_image_filename_object, const char* train_image_filename_background)
 {
     
@@ -195,11 +203,11 @@ void LoadTrainingFeatures(CvOneWayDescriptorObject& descriptors, const char* tra
     
     Vector<Vector<feature_t> > object_features;
     object_features.resize(descriptors.GetPyrLevels());
-    Vector<Ptr<IplImage> > images;
+    Vector<IplImage*> images;
     int object_feature_count = LoadFeatures(train_image_filename_object, object_features, images);
     
     Vector<Vector<feature_t> > background_features;
-    Vector<Ptr<IplImage> > background_images;
+    Vector<IplImage*> background_images;
     background_features.resize(1);
     int background_feature_count = LoadFeatures(train_image_filename_background, background_features, background_images);
     
@@ -222,6 +230,9 @@ void LoadTrainingFeatures(CvOneWayDescriptorObject& descriptors, const char* tra
     
     cvReleaseImage(&train_image_object);
     cvReleaseImage(&train_image_background);
+    
+    ReleaseImageVector(images);
+    ReleaseImageVector(background_images);
 }
 
 void ScaleFeatures(const vector<feature_t>& src, vector<feature_t>& dst, float scale)

@@ -89,7 +89,7 @@ template<> inline void Ptr<IplImage>::delete_obj()
 { cvReleaseImage(&obj); }
 }
 
-int LoadFeatures(const char* filename, Vector<Vector<feature_t> >& features, Vector<Ptr<IplImage> >& images);
+int LoadFeatures(const char* filename, Vector<Vector<feature_t> >& features, Vector<IplImage*>& images);
 void LoadTrainingFeatures(CvOneWayDescriptorObject& descriptors, const char* train_image_filename_object, const char* train_image_filename_background);
 
 IplImage* loadImageRed(const char* filename);
