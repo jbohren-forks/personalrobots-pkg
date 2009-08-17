@@ -1,0 +1,13 @@
+freeimage:
+  ubuntu: libfreeimage-dev
+  macports: freeimage
+  debian: libfreeimage-dev
+  arch: freeimage
+  gentoo: freeimage
+nvidia-cg:
+  ubuntu: nvidia-cg-toolkit
+  debian: nvidia-cg-toolkit
+  arch: |
+    if ! pacman -Q nvidia-cg-toolkit ; then yaourt -S nvidia-cg-toolkit; fi
+  gentoo: nvidia-cg-toolkit
+  debian: nvidia-cg-toolkit
