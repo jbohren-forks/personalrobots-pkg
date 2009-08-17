@@ -78,6 +78,10 @@ class RobotVoxelizer
 		/** \brief Publish the visualization markers to be displayed in rviz. */
 		void updateVisualizations(const std::vector<btVector3> &voxels);
 
+		void updateSCGBodies(int group, int subgroup);
+		
+		void getVoxelsInSCG(int group, int subgroup, std::vector<btVector3> &voxels);
+				
 	private:
 	
 		ros::NodeHandle node_;
@@ -102,6 +106,8 @@ class RobotVoxelizer
 		std::vector<std::string> link_names_;
 		std::vector<btVector3> occupied_cells_;
 		std::vector<std::vector<double> > cells_;
+		std::vector< std::pair < std::vector<std::string>, std::vector<std::string> > > scg_link_names_;
+		std::vector< std::pair < std::vector<bodies::Body *>, std::vector<bodies::Body *> > > scg_bodies_;
 		
 		/** \brief Callback function for mechanismState that updates the pose of the bodies. */
 		void jointStatesCallback(const mechanism_msgs::JointStatesConstPtr &joint_states);

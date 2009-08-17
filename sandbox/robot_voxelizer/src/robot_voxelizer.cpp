@@ -39,9 +39,9 @@
 RobotVoxelizer::RobotVoxelizer()
 {
 	node_.param("~padding", padding_, .01);
-	node_.param("~visualize", bVisualize_, true);
+	node_.param("~visualize", bVisualize_, false);
 	node_.param("~resolution", resolution_, .02);
-	node_.param<std::string>("~working_frame", working_frame_, "base_link");
+	node_.param<std::string>("~working_frame", working_frame_, "torso_lift_link");
 	node_.param<std::string>("~robot_description_param", robot_description_, "robot_description");
 
 	inv_resolution_ = 1.0 / resolution_;
@@ -63,29 +63,54 @@ RobotVoxelizer::~RobotVoxelizer()
 
 bool RobotVoxelizer::init()
 {
-	link_names_ = robot_model_->getCollisionCheckLinks();
-	kmodel_ = robot_model_->getKinematicModel();
-	bodies_.resize(link_names_.size());
-
+	unsigned int i,j;
+// 	link_names_ = robot_model_->getCollisionCheckLinks();
+	scg_link_names_ = robot_model_->getSelfCollisionGroups();
 	
-	for(unsigned int i = 0; i < link_names_.size(); ++i)
+// 	for(unsigned int i = 0; i < self_collision_groups_.size(); ++i)
+// 	{
+// 		ROS_INFO("\nfirst:\n");
+// 		for(unsigned int j = 0; j < self_collision_groups_[i].first.size(); ++j)
+// 			ROS_INFO("%s",self_collision_groups_[i].first[j].c_str());
+// 		
+// 		ROS_INFO("\nsecond:\n");
+// 		
+// 		for(unsigned int j = 0; j < self_collision_groups_[i].second.size(); ++j)	
+// 			ROS_INFO("%s",self_collision_groups_[i].second[j].c_str());
+// 	}
+						
+	
+	kmodel_ = robot_model_->getKinematicModel();
+// 	bodies_.resize(link_names_.size());
+	
+/*	for(unsigned int i = 0; i < link_names_.size(); ++i)
 	{
 		bodies_[i] = bodies::createBodyFromShape(monitor_->getKinematicModel()->getLink(link_names_[i])->shape);
 		bodies_[i]->setPadding(padding_);
+	}*/
+	scg_bodies_.resize(scg_link_names_.size());
+
+	for(i = 0; i < scg_link_names_.size(); ++i)
+	{
+		scg_bodies_[i].first.resize(scg_link_names_[i].first.size());
+		for(j = 0; j < scg_link_names_[i].first.size(); ++j)
+		{
+			scg_bodies_[i].first[j] = bodies::createBodyFromShape(monitor_->getKinematicModel()->getLink(scg_link_names_[i].first[j])->shape);
+			scg_bodies_[i].first[j]->setPadding(padding_);
+		}
+		scg_bodies_[i].second.resize(scg_link_names_[i].second.size());
+		for(j = 0; j < scg_link_names_[i].second.size(); ++j)
+		{
+			scg_bodies_[i].second[j] = bodies::createBodyFromShape(monitor_->getKinematicModel()->getLink(scg_link_names_[i].second[j])->shape);
+			scg_bodies_[i].second[j]->setPadding(padding_);
+		}
 	}
 	
 	ROS_DEBUG("Pose is %sincluded in the robot state.", monitor_->isPoseIncluded() ? "" : "not ");
 	ROS_DEBUG("Pose is %supdated.", monitor_->isPoseUpdated(1) ? "" : "not ");
 	ROS_DEBUG("Robot state monitor is %sstarted.", monitor_->isStateMonitorStarted() ? "" : "not ");
 
-	updateSelfCollisionBodies();
-
-	if(bVisualize_)
-	{
-		self_collision_voxels_.clear();
-		getVoxelsInSelfCollisionBodies(self_collision_voxels_);
-		updateVisualizations(self_collision_voxels_);
-	}
+// 	updateSelfCollisionBodies();
 	
 	return true;
 }
@@ -106,6 +131,29 @@ void RobotVoxelizer::updateSelfCollisionBodies()
 	monitor_->getKinematicModel()->unlock();
 }
 
+void RobotVoxelizer::updateSCGBodies(int group, int subgroup)
+{
+	unsigned int j;
+	monitor_->getKinematicModel()->lock();
+	monitor_->getKinematicModel()->computeTransforms(monitor_->getRobotState()->getParams());
+
+// 	for(i = 0; i < scg_bodies_[group].size(); ++i)
+// 	{
+		if(subgroup == 0)
+		{
+			for(j = 0; j < scg_bodies_[group].first.size(); ++j)
+				scg_bodies_[group].first[j]->setPose(monitor_->getKinematicModel()->getLink(scg_link_names_[group].first[j])->globalTrans);
+		}
+		else
+		{
+			for(j = 0; j < scg_bodies_[group].second.size(); ++j)
+				scg_bodies_[group].second[j]->setPose(monitor_->getKinematicModel()->getLink(scg_link_names_[group].second[j])->globalTrans);
+		}
+// 	}
+
+	monitor_->getKinematicModel()->unlock();
+}
+
 void RobotVoxelizer::getVoxelsInSelfCollisionBodies(std::vector<btVector3> &voxels)
 {
 	monitor_->getKinematicModel()->lock();
@@ -118,16 +166,36 @@ void RobotVoxelizer::getVoxelsInSelfCollisionBodies(std::vector<btVector3> &voxe
 	monitor_->getKinematicModel()->unlock();
 }
 
+void RobotVoxelizer::getVoxelsInSCG(int group, int subgroup, std::vector<btVector3> &voxels)
+{
+	unsigned int j;
+	monitor_->getKinematicModel()->lock();
+
+	if(subgroup == 0)
+	{
+		for(j = 0; j < scg_bodies_[group].first.size(); ++j)
+			getVoxelsInBody(*(scg_bodies_[group].first[j]), voxels);
+	}
+	else
+	{
+		for(j = 0; j < scg_bodies_[group].second.size(); ++j)
+			getVoxelsInBody(*(scg_bodies_[group].second[j]), voxels);
+	}
+	
+	monitor_->getKinematicModel()->unlock();
+}
+
 void RobotVoxelizer::jointStatesCallback(const mechanism_msgs::JointStatesConstPtr &joint_states)
 {
-	updateSelfCollisionBodies();
+// 	updateSelfCollisionBodies();
 
-	if(bVisualize_)
-	{
-		self_collision_voxels_.clear();
-		getVoxelsInSelfCollisionBodies(self_collision_voxels_);
-		updateVisualizations(self_collision_voxels_);
-	}
+// 	if(bVisualize_)
+// 	{
+// 		self_collision_voxels_.clear();
+// 		getVoxelsInSelfCollisionBodies(self_collision_voxels_);
+// 		if(!self_collision_voxels_.empty())
+// 			updateVisualizations(self_collision_voxels_);
+// 	}
 }
 
 void RobotVoxelizer::getVoxelsInBody(const bodies::Body &body, std::vector<std::vector<double> > &voxels)
@@ -172,7 +240,7 @@ void RobotVoxelizer::getVoxelsInBody(const bodies::Body &body, std::vector<btVec
 	worldToGrid(bounding_sphere_.center,bounding_sphere_.center.x()+bounding_sphere_.radius,bounding_sphere_.center.y()+bounding_sphere_.radius,	
 							bounding_sphere_.center.z()+bounding_sphere_.radius, x_max,y_max,z_max);
 	
-	ROS_INFO("xyz_min: %i %i %i xyz_max: %i %i %i",x_min,y_min,z_min,x_max,y_max,z_max);
+// 	ROS_INFO("xyz_min: %i %i %i xyz_max: %i %i %i",x_min,y_min,z_min,x_max,y_max,z_max);
 	
 	voxels.reserve(30000);
 	for(x = x_min; x <= x_max; ++x)
@@ -196,6 +264,7 @@ void RobotVoxelizer::getVoxelsInBody(const bodies::Body &body, std::vector<btVec
 // 	ROS_INFO("number of occupied voxels in bounding sphere: %i", voxels.size());
 }
 
+/*
 void RobotVoxelizer::updateVisualizations(const std::vector<std::vector<double> > &voxels)
 {
 	std::string frame_id = "base_link";
@@ -228,14 +297,18 @@ void RobotVoxelizer::updateVisualizations(const std::vector<std::vector<double> 
 	ROS_DEBUG("publishing markers: %d obstacles", obs_marker.points.size());
 	marker_publisher_.publish(obs_marker);
 }
+*/
 
 void RobotVoxelizer::updateVisualizations(const std::vector<btVector3> &voxels)
 {
-	std::string frame_id = "base_link";
+	if(voxels.empty())
+		return;
+
+	std::string frame_id = working_frame_;
 	visualization_msgs::Marker obs_marker;
 	obs_marker.header.frame_id = frame_id;
 	obs_marker.header.stamp = ros::Time::now();
-	obs_marker.ns = "mesh_voxelizer";
+	obs_marker.ns = "robot_voxelizer";
 	obs_marker.id = 0;
 	obs_marker.type = visualization_msgs::Marker::CUBE_LIST;
 	obs_marker.action = 0;
@@ -264,9 +337,9 @@ void RobotVoxelizer::updateVisualizations(const std::vector<btVector3> &voxels)
 
 int main(int argc, char *argv[])
 {
-  ros::init(argc, argv, "mesh_voxelizer_node");
-  RobotVoxelizer mesh_voxelizer;
-  if(!mesh_voxelizer.init())
+  ros::init(argc, argv, "robot_voxelizer_node");
+  RobotVoxelizer robot_voxelizer;
+  if(!robot_voxelizer.init())
     return 1;
 
   ros::spin();
