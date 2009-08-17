@@ -44,7 +44,7 @@ using namespace std;
 int main(int argc, char *argv[])
 {
   TableObjectRF table_object_rf;
-  /*
+
   if (argc != 3)
   {
     ROS_WARN("%s usage: <file list> <output dir/>", argv[0]);
@@ -96,16 +96,18 @@ int main(int argc, char *argv[])
       abort();
     }
   }
-*/
-  string path("/u/msun/data/texture_light_3d_dataset/stapler/stapler_8");
-  string fname_pcd = path;
-  fname_pcd.append("/stapler_8_A8_H1_S1.pcd_dan");
-  string fname_img = path;
-  fname_img.append("/stapler_8_A8_H1_S1-LR.png");
 
-  boost::shared_ptr<RandomField> rf = table_object_rf.createRandomField(fname_img, fname_pcd, 0, 0,
-      1.9);
-  rf->saveNodeFeatures("the_nodes");
+  // --------------  Debugging -------------------------
+  /*
+   string path("/u/msun/data/texture_light_3d_dataset/stapler/stapler_8");
+   string fname_pcd = path;
+   fname_pcd.append("/stapler_8_A8_H1_S1.pcd_dan");
+   string fname_img = path;
+   fname_img.append("/stapler_8_A8_H1_S1-LR.png");
 
+   boost::shared_ptr<RandomField> rf = table_object_rf.createRandomField(fname_img, fname_pcd, 0, 0,
+   1.9);
+   rf->saveNodeFeatures("the_nodes");
+   */
   return 0;
 }
