@@ -37,10 +37,14 @@ target_link_libraries(table_object_rf rf_creator_3d)
 rospack_add_executable(rf_table_object_segmenter 
 			src/image_stereo/rf_table_object_segmenter.cpp)
 target_link_libraries(rf_table_object_segmenter table_object_rf)
-
+# trainer for table object segmenter
 rospack_add_executable(train_table_object_segmenter 
                         src/image_stereo/train_table_object_segmenter.cpp)
 target_link_libraries(train_table_object_segmenter table_object_rf)
+# classifier for table object segmenter
+rospack_add_executable(classify_table_object_segmenter 
+                        src/image_stereo/classify_table_object_segmenter.cpp)
+target_link_libraries(classify_table_object_segmenter table_object_rf)
 
 
 # -------------------------------------------------------------
