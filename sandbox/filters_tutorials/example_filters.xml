@@ -1,0 +1,8 @@
+<library path="lib/libmean">
+  <plugin name="DoubleMeanFilter" class="filters::DoubleMeanFilter" type="filters::DoubleFilter">
+    <description>
+    A mean filter which works on doubles.
+    </description>
+  </plugin>
+  
+</library>

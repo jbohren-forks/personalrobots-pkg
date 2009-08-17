@@ -1,0 +1,19 @@
+<package>
+  <description brief="filters_tutorials">
+
+     filters_tutorials
+
+  </description>
+  <author>Tully Foote</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/filters_tutorials</url>
+  <depend package="pluginlib"/>
+  <depend package="filters"/>
+  <export>
+    <filters polygon="${prefix}/example_filters.xml"/>
+  </export>
+
+</package>
+
+
