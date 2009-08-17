@@ -1813,8 +1813,8 @@ if (resImage)
 		{
 			
 			CvScalar pointColor = res_features[i].class_id == 0 ? cvScalar(0,255,50) : cvScalar(255,0,50);
-			cvLine(resImage, cvPoint((int)(hole_features[i].pt.x+7), (int)(hole_features[i].pt.y)), cvPoint((int)(hole_features[i].pt.x-7),(int)(hole_features[i].pt.y)),pointColor,2); 
-			cvLine(resImage, cvPoint((int)(hole_features[i].pt.x), (int)(hole_features[i].pt.y+7)), cvPoint((int)(hole_features[i].pt.x), (int)(hole_features[i].pt.y-7)),pointColor,2); 
+			cvLine(resImage, cvPoint((int)(res_features[i].pt.x+7), (int)(res_features[i].pt.y)), cvPoint((int)(res_features[i].pt.x-7),(int)(res_features[i].pt.y)),pointColor,2); 
+			cvLine(resImage, cvPoint((int)(res_features[i].pt.x), (int)(res_features[i].pt.y+7)), cvPoint((int)(res_features[i].pt.x), (int)(res_features[i].pt.y-7)),pointColor,2); 
 		}
 }
 
