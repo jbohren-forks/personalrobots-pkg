@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.5 on Sat Aug 15 19:19:06 2009 -->
+<!--Generated with glade3 3.4.5 on Mon Aug 17 09:15:10 2009 -->
 <glade-interface>
   <widget class="GtkWindow" id="db_reader_window">
     <property name="window_position">GTK_WIN_POS_CENTER</property>
@@ -279,6 +279,8 @@
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
+                            <property name="has_tooltip">True</property>
+                            <property name="tooltip_text">Go to first available tick</property>
                             <property name="response_id">0</property>
                             <child>
                               <widget class="GtkImage" id="image5">
@@ -297,6 +299,8 @@
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
+                            <property name="has_tooltip">True</property>
+                            <property name="tooltip_text">Go to the previous available tick</property>
                             <property name="response_id">0</property>
                             <child>
                               <widget class="GtkImage" id="image4">
@@ -317,6 +321,8 @@
                             <property name="can_focus">True</property>
                             <property name="can_default">True</property>
                             <property name="receives_default">True</property>
+                            <property name="has_tooltip">True</property>
+                            <property name="tooltip_text">Go to the entered tick, if available</property>
                             <property name="response_id">0</property>
                             <child>
                               <widget class="GtkImage" id="image3">
@@ -351,6 +357,8 @@
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
+                            <property name="has_tooltip">True</property>
+                            <property name="tooltip_text">Go to the next available tick</property>
                             <property name="response_id">0</property>
                             <child>
                               <widget class="GtkImage" id="image2">
@@ -370,6 +378,8 @@
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
+                            <property name="has_tooltip">True</property>
+                            <property name="tooltip_text">Go to the last available tick</property>
                             <property name="response_id">0</property>
                             <child>
                               <widget class="GtkImage" id="image1">
@@ -389,6 +399,8 @@
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
+                            <property name="has_tooltip">True</property>
+                            <property name="tooltip_text">Automatically load the latest tick as it is created</property>
                             <property name="label" translatable="yes">Latest</property>
                             <property name="response_id">0</property>
                           </widget>

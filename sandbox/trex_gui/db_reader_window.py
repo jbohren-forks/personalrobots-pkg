@@ -356,7 +356,7 @@ class GtkTester():
   def gtk_thread(self):
     # Spawn a thread to run gtk in
     print "Spawning gtk thread..."
-    self.db_reader_window.connect("destroy",gtk.main_quit)
+    self.db_reader_window.w.connect("destroy",gtk.main_quit)
     gtk.main()
 
 # Define a simple listener for callbacks
@@ -394,7 +394,7 @@ class TestDbReaderWindow(unittest.TestCase,GtkTester):
   # Destroy window and kill gtk
   def tearDown(self):
     print "Killing The window..."
-    self.db_reader_window.destroy()
+    self.db_reader_window.w.destroy()
     time.sleep(5)
 
   # Test basic user-driven reading of logs

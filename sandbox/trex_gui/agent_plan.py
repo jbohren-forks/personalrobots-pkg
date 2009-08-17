@@ -71,8 +71,10 @@ class AgentPlan():
 
     # Determine tokens that 
     
+# Unit tests
+class TestAssemblyStructures(unittest.TestCase):
+  def test_construct(self):
+    construct_test_assembly()
 
-
-
-
-    
+if __name__ == '__main__':
+  unittest.main()
