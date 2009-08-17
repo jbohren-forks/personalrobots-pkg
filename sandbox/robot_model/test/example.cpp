@@ -39,18 +39,18 @@
 
 using namespace robot_model;
 
-void printTree(boost::shared_ptr<Link> link,int level = 0)
+void printTree(boost::shared_ptr<const Link> link,int level = 0)
 {
   level+=2;
   int count = 0;
-  for (std::vector<boost::shared_ptr<Link> >::iterator child = link->child_links_.begin(); child != link->child_links_.end(); child++)
+  for (std::vector<boost::shared_ptr<Link> >::const_iterator child = link->child_links.begin(); child != link->child_links.end(); child++)
   {
     if (*child)
     {
       for(int j=0;j<level;j++) std::cout << " "; //indent
-      std::cout << "child(" << count++ << "):  " << (*child)->name_
-                << " with parent joint: " << (*child)->parent_joint_->name_
-                << " with mass: " << (*child)->inertial_->mass_
+      std::cout << "child(" << count++ << "):  " << (*child)->name
+                << " with parent joint: " << (*child)->parent_joint->name
+                << " with mass: " << (*child)->inertial->mass
                 << std::endl;
       // first grandchild
       printTree(*child,level);
@@ -58,7 +58,7 @@ void printTree(boost::shared_ptr<Link> link,int level = 0)
     else
     {
       for(int j=0;j<level;j++) std::cout << " "; //indent
-      std::cout << "root link: " << link->name_ << " has a null child!" << *child << std::endl;
+      std::cout << "root link: " << link->name << " has a null child!" << *child << std::endl;
     }
   }
 
@@ -90,11 +90,11 @@ int main(int argc, char** argv)
   // get info from parser
   std::cout << "---------- Finished Loading from RobotModel XML, Now Checking RobotModel structure ------------" << std::endl;
   // get root link
-  boost::shared_ptr<Link> root_link=robot.getRoot();
-  std::cout << "root Link: " << root_link->name_ << " has " << root_link->child_links_.size() << " children" << std::endl;
-  std::cout << "root Link: " << root_link->name_ << " has parent joint: " << root_link->parent_joint_->name_ << std::endl;
-  if (root_link->parent_link_)
-    std::cout << "root Link: " << root_link->name_ << " has parent Link: " << root_link->parent_link_->name_ << std::endl << std::endl;
+  boost::shared_ptr<const Link> root_link=robot.getRoot();
+  std::cout << "root Link: " << root_link->name << " has " << root_link->child_links.size() << " children" << std::endl;
+  std::cout << "root Link: " << root_link->name << " has parent joint: " << root_link->parent_joint->name << std::endl;
+  if (root_link->parent_link)
+    std::cout << "root Link: " << root_link->name << " has parent Link: " << root_link->parent_link->name << std::endl << std::endl;
   if (!root_link) return -1;
 
 

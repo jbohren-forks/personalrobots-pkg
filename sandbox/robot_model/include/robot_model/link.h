@@ -49,7 +49,7 @@ namespace robot_model{
 class Geometry
 {
 public:
-  enum {SPHERE, BOX, CYLINDER, MESH} type_;
+  enum {SPHERE, BOX, CYLINDER, MESH} type;
 
   virtual bool initXml(TiXmlElement *) = 0;
 
@@ -59,117 +59,103 @@ class Sphere : public Geometry
 {
 public:
   Sphere() { this->clear(); };
-  double radius_;
-protected:
+  double radius;
+
   void clear()
   {
-    radius_ = 0;
+    radius = 0;
   };
   bool initXml(TiXmlElement *);
-
-  friend class Link;
 };
 
 class Box : public Geometry
 {
 public:
   Box() { this->clear(); };
-  boost::shared_ptr<Vector3> dim_;
-protected:
+  Vector3 dim;
+
   void clear()
   {
-    dim_.reset();
+    dim.clear();
   };
   bool initXml(TiXmlElement *);
-
-  friend class Link;
 };
 
 class Cylinder : public Geometry
 {
 public:
   Cylinder() { this->clear(); };
-  double length_;
-  double radius_;
-protected:
+  double length;
+  double radius;
+
   void clear()
   {
-    length_ = 0;
-    radius_ = 0;
+    length = 0;
+    radius = 0;
   };
   bool initXml(TiXmlElement *);
-
-  friend class Link;
 };
 
 class Mesh : public Geometry
 {
 public:
   Mesh() { this->clear(); };
-  std::string filename_;
-  boost::shared_ptr<Vector3> scale_;
-protected:
+  std::string filename;
+  Vector3 scale;
+
   void clear()
   {
-    filename_.clear();
-    scale_.reset();
+    filename.clear();
+    scale.clear();
   };
   bool initXml(TiXmlElement *);
-
-  friend class Link;
 };
 
 class Inertial
 {
 public:
   Inertial() { this->clear(); };
-  boost::shared_ptr<Pose> origin_;
-  double mass_;
-  double ixx_,ixy_,ixz_,iyy_,iyz_,izz_;
-protected:
+  Pose origin;
+  double mass;
+  double ixx,ixy,ixz,iyy,iyz,izz;
+
   void clear()
   {
-    origin_.reset();
-    mass_ = 0;
-    ixx_ = ixy_ = ixz_ = iyy_ = iyz_ = izz_ = 0;
+    origin.clear();
+    mass = 0;
+    ixx = ixy = ixz = iyy = iyz = izz = 0;
   };
   bool initXml(TiXmlElement* config);
-
-  friend class Link;
 };
 
 class Visual
 {
 public:
   Visual() { this->clear(); };
-  boost::shared_ptr<Pose> origin_;
-  boost::shared_ptr<Geometry> geometry_;
-protected:
+  Pose origin;
+  boost::shared_ptr<Geometry> geometry;
+
   void clear()
   {
-    origin_.reset();
-    geometry_.reset();
+    origin.clear();
+    geometry.reset();
   };
   bool initXml(TiXmlElement* config);
-
-  friend class Link;
 };
 
 class Collision
 {
 public:
   Collision() { this->clear(); };
-  boost::shared_ptr<Pose> origin_;
-  boost::shared_ptr<Geometry> geometry_;
-protected:
+  Pose origin;
+  boost::shared_ptr<Geometry> geometry;
+
   void clear()
   {
-    origin_.reset();
-    geometry_.reset();
+    origin.clear();
+    geometry.reset();
   };
   bool initXml(TiXmlElement* config);
-
-  friend class Link;
 };
 
 
@@ -178,48 +164,44 @@ class Link
 public:
   Link() { this->clear(); };
 
-  std::string name_;
+  std::string name;
 
   /// inertial element
-  boost::shared_ptr<Inertial> inertial_;
+  boost::shared_ptr<Inertial> inertial;
 
   /// visual element
-  boost::shared_ptr<Visual> visual_;
+  boost::shared_ptr<Visual> visual;
 
   /// collision element
-  boost::shared_ptr<Collision> collision_;
+  boost::shared_ptr<Collision> collision;
 
   /// Parent Joint element
   ///   explicitly stating "parent" because we want directional-ness for tree structure
   ///   every link can have one parent
-  boost::shared_ptr<Joint> parent_joint_;
+  boost::shared_ptr<Joint> parent_joint;
 
   /// Get Parent Link throught the Parent Joint
-  boost::shared_ptr<Link> parent_link_;
+  boost::shared_ptr<Link> parent_link;
 
-  std::vector<boost::shared_ptr<Joint> > child_joints_;
-  std::vector<boost::shared_ptr<Link> > child_links_;
+  std::vector<boost::shared_ptr<Joint> > child_joints;
+  std::vector<boost::shared_ptr<Link> > child_links;
 
-protected:
   bool initXml(TiXmlElement* config);
   void setParent(boost::shared_ptr<Link> parent);
 
-private:
   void clear()
   {
-    this->name_.clear();
-    this->inertial_.reset();
-    this->visual_.reset();
-    this->collision_.reset();
-    this->parent_joint_.reset();
-    this->parent_link_.reset();
-    this->child_joints_.clear();
-    this->child_links_.clear();
+    this->name.clear();
+    this->inertial.reset();
+    this->visual.reset();
+    this->collision.reset();
+    this->parent_joint.reset();
+    this->parent_link.reset();
+    this->child_joints.clear();
+    this->child_links.clear();
   };
   void addChild(boost::shared_ptr<Link> child);
   void addChildJoint(boost::shared_ptr<Joint> child);
-
-  friend class RobotModel;
 };
 
 

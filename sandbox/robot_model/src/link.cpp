@@ -36,6 +36,7 @@
 
 
 #include "robot_model/link.h"
+#include <ros/ros.h>
 
 namespace robot_model{
 
@@ -47,7 +48,7 @@ Geometry *parseGeometry(TiXmlElement *g)
   TiXmlElement *shape = g->FirstChildElement();
   if (!shape)
   {
-    std::cerr << "ERROR: Geometry tag contains no child element." << std::endl;
+    ROS_ERROR("Geometry tag contains no child element.");
     return NULL;
   }
 
@@ -62,7 +63,7 @@ Geometry *parseGeometry(TiXmlElement *g)
     geom.reset(new Mesh);
   else
   {
-    std::cerr << "ERROR: Unknown geometry type: " << type_name << std::endl;
+    ROS_ERROR("Unknown geometry type '%s'", type_name.c_str());
     return NULL;
   }
 
@@ -80,54 +81,51 @@ bool Inertial::initXml(TiXmlElement *config)
   TiXmlElement *o = config->FirstChildElement("origin");
   if (!o)
   {
-    std::cout << "WARN: origin tag not present for inertial element, checking old RobotModel format com: " << std::endl;
-    o = config->FirstChildElement("com");
-    if (!o)
+    ROS_INFO("Origin tag not present for inertial element, using default (Identity)");
+    this->origin.clear();
+  }
+  else
+  {
+    if (!this->origin.initXml(o))
     {
-      std::cerr << "ERROR: Inertial missing origin or com tag" << std::endl;
+      ROS_ERROR("Inertial has a malformed origin tag");
+      this->origin.clear();
       return false;
     }
-  }
-  this->origin_.reset(new Pose());
-  if (!this->origin_->initXml(o))
-  {
-    std::cerr << "ERROR: Inertial has a malformed origin tag" << std::endl;
-    this->origin_.reset();
-    return false;
   }
 
   TiXmlElement *mass_xml = config->FirstChildElement("mass");
   if (!mass_xml)
   {
-    std::cerr << "ERROR: Inertial element must have mass element" << std::endl;
+    ROS_ERROR("Inertial element must have mass element");
     return false;
   }
   if (!mass_xml->Attribute("value"))
   {
-    std::cerr << "ERROR: Inertial: mass element must have value attributes" << std::endl;
+    ROS_ERROR("Inertial: mass element must have value attributes");
     return false;
   }
-  mass_ = atof(mass_xml->Attribute("value"));
+  mass = atof(mass_xml->Attribute("value"));
 
   TiXmlElement *inertia_xml = config->FirstChildElement("inertia");
   if (!inertia_xml)
   {
-    std::cerr << "ERROR: Inertial element must have inertia element" << std::endl;
+    ROS_ERROR("Inertial element must have inertia element");
     return false;
   }
   if (!(inertia_xml->Attribute("ixx") && inertia_xml->Attribute("ixy") && inertia_xml->Attribute("ixz") &&
         inertia_xml->Attribute("iyy") && inertia_xml->Attribute("iyz") &&
         inertia_xml->Attribute("izz")))
   {
-    std::cerr << "ERROR: Inertial: inertia element must have ixx,ixy,ixz,iyy,iyz,izz attributes" << std::endl;
+    ROS_ERROR("Inertial: inertia element must have ixx,ixy,ixz,iyy,iyz,izz attributes");
     return false;
   }
-  ixx_  = atof(inertia_xml->Attribute("ixx"));
-  ixy_  = atof(inertia_xml->Attribute("ixy"));
-  ixz_  = atof(inertia_xml->Attribute("ixz"));
-  iyy_  = atof(inertia_xml->Attribute("iyy"));
-  iyz_  = atof(inertia_xml->Attribute("iyz"));
-  izz_  = atof(inertia_xml->Attribute("izz"));
+  ixx  = atof(inertia_xml->Attribute("ixx"));
+  ixy  = atof(inertia_xml->Attribute("ixy"));
+  ixz  = atof(inertia_xml->Attribute("ixz"));
+  iyy  = atof(inertia_xml->Attribute("iyy"));
+  iyz  = atof(inertia_xml->Attribute("iyz"));
+  izz  = atof(inertia_xml->Attribute("izz"));
 
   return true;
 }
@@ -138,20 +136,24 @@ bool Visual::initXml(TiXmlElement *config)
 
   // Origin
   TiXmlElement *o = config->FirstChildElement("origin");
-  this->origin_.reset(new Pose());
-  if (!this->origin_->initXml(o))
+  if (!o)
   {
-    std::cerr << "ERROR: Visual has a malformed origin tag" << std::endl;
-    this->origin_.reset();
+    ROS_INFO("Origin tag not present for visual element, using default (Identity)");
+    this->origin.clear();
+  }
+  else if (!this->origin.initXml(o))
+  {
+    ROS_ERROR("Visual has a malformed origin tag");
+    this->origin.clear();
     return false;
   }
 
   // Geometry
   TiXmlElement *geom = config->FirstChildElement("geometry");
-  geometry_.reset(parseGeometry(geom));
-  if (!geometry_)
+  geometry.reset(parseGeometry(geom));
+  if (!geometry)
   {
-    std::cerr << "ERROR: Malformed geometry for Visual element" << std::endl;
+    ROS_ERROR("Malformed geometry for Visual element");
     return false;
   }
 
@@ -164,20 +166,24 @@ bool Collision::initXml(TiXmlElement* config)
 
   // Origin
   TiXmlElement *o = config->FirstChildElement("origin");
-  this->origin_.reset(new Pose());
-  if (!this->origin_->initXml(o))
+  if (!o)
   {
-    std::cerr << "ERROR: Collision has a malformed origin tag" << std::endl;
-    this->origin_.reset();
+    ROS_INFO("Origin tag not present for collision element, using default (Identity)");
+    this->origin.clear();
+  }
+  else if (!this->origin.initXml(o))
+  {
+    ROS_ERROR("Collision has a malformed origin tag");
+    this->origin.clear();
     return false;
   }
 
   // Geometry
   TiXmlElement *geom = config->FirstChildElement("geometry");
-  geometry_.reset(parseGeometry(geom));
-  if (!geometry_)
+  geometry.reset(parseGeometry(geom));
+  if (!geometry)
   {
-    std::cerr << "ERROR: Malformed geometry for Collision element" << std::endl;
+    ROS_ERROR("Malformed geometry for Collision element");
     return false;
   }
 
@@ -188,14 +194,14 @@ bool Sphere::initXml(TiXmlElement *c)
 {
   this->clear();
 
-  this->type_ = SPHERE;
+  this->type = SPHERE;
   if (!c->Attribute("radius"))
   {
-    std::cerr << "ERROR: Sphere shape must have a radius attribute" << std::endl;
+    ROS_ERROR("Sphere shape must have a radius attribute");
     return false;
   }
 
-  radius_ = atof(c->Attribute("radius"));
+  radius = atof(c->Attribute("radius"));
   return false;
 }
 
@@ -203,17 +209,16 @@ bool Box::initXml(TiXmlElement *c)
 {
   this->clear();
 
-  this->type_ = BOX;
+  this->type = BOX;
   if (!c->Attribute("size"))
   {
-    std::cerr << "ERROR: Box shape has no size attribute" << std::endl;
+    ROS_ERROR("Box shape has no size attribute");
     return false;
   }
-  dim_.reset(new Vector3());
-  if (!dim_->init(c->Attribute("size")))
+  if (!dim.init(c->Attribute("size")))
   {
-    std::cerr << "ERROR: Box shape has malformed size attribute" << std::endl;
-    dim_.reset();
+    ROS_ERROR("Box shape has malformed size attribute");
+    dim.clear();
     return false;
   }
   return true;
@@ -223,16 +228,16 @@ bool Cylinder::initXml(TiXmlElement *c)
 {
   this->clear();
 
-  this->type_ = CYLINDER;
+  this->type = CYLINDER;
   if (!c->Attribute("length") ||
       !c->Attribute("radius"))
   {
-    std::cerr << "ERROR: Cylinder shape must have both length and radius attributes" << std::endl;
+    ROS_ERROR("Cylinder shape must have both length and radius attributes");
     return false;
   }
 
-  length_ = atof(c->Attribute("length"));
-  radius_ = atof(c->Attribute("radius"));
+  length = atof(c->Attribute("length"));
+  radius = atof(c->Attribute("radius"));
   return true;
 }
 
@@ -240,22 +245,21 @@ bool Mesh::initXml(TiXmlElement *c)
 {
   this->clear();
 
-  this->type_ = MESH;
+  this->type = MESH;
   if (!c->Attribute("filename"))
   {
-    std::cerr << "ERROR: Mesh must contain a filename attribute" << std::endl;
+    ROS_ERROR("Mesh must contain a filename attribute");
     return false;
   }
 
-  filename_ = c->Attribute("filename");
+  filename = c->Attribute("filename");
 
   if (c->Attribute("scale"))
   {
-    this->scale_.reset(new Vector3());
-    if (!this->scale_->init(c->Attribute("scale")))
+    if (!this->scale.init(c->Attribute("scale")))
     {
-      std::cerr << "ERROR: Mesh scale was specified, but could not be parsed" << std::endl;
-      this->scale_.reset();
+      ROS_ERROR("Mesh scale was specified, but could not be parsed");
+      this->scale.clear();
       return false;
     }
   }
@@ -268,24 +272,23 @@ bool Link::initXml(TiXmlElement* config)
 {
   this->clear();
 
-  const char *name = config->Attribute("name");
-  if (!name)
+  const char *name_char = config->Attribute("name");
+  if (!name_char)
   {
-    std::cerr << "ERROR: No name given for the link." << std::endl;
+    ROS_ERROR("No name given for the link.");
     return false;
   }
-  name_ = std::string(name);
+  name = std::string(name_char);
 
   // Inertial
   TiXmlElement *i = config->FirstChildElement("inertial");
   if (i)
   {
-    inertial_.reset(new Inertial);
-    if (!inertial_->initXml(i))
+    inertial.reset(new Inertial);
+    if (!inertial->initXml(i))
     {
-      std::cerr << "ERROR: Could not parse inertial element for Link:"
-                << this->name_ << std::endl;
-      inertial_.reset();
+      ROS_ERROR("Could not parse inertial element for Link '%s'", this->name.c_str());
+      inertial.reset();
     }
   }
 
@@ -293,12 +296,11 @@ bool Link::initXml(TiXmlElement* config)
   TiXmlElement *v = config->FirstChildElement("visual");
   if (v)
   {
-    visual_.reset(new Visual);
-    if (!visual_->initXml(v))
+    visual.reset(new Visual);
+    if (!visual->initXml(v))
     {
-      std::cerr << "ERROR: Could not parse visual element for Link:"
-                << this->name_ << std::endl;
-      visual_.reset();
+      ROS_ERROR("Could not parse visual element for Link '%s'", this->name.c_str());
+      visual.reset();
     }
   }
 
@@ -306,12 +308,11 @@ bool Link::initXml(TiXmlElement* config)
   TiXmlElement *col = config->FirstChildElement("collision");
   if (col)
   {
-    collision_.reset(new Collision);
-    if (!collision_->initXml(col))
+    collision.reset(new Collision);
+    if (!collision->initXml(col))
     {
-      std::cerr << "ERROR: Could not parse collision element for Link:"
-                << this->name_ << std::endl;
-      collision_.reset();
+      ROS_ERROR("Could not parse collision element for Link '%s'", this->name.c_str());
+      collision.reset();
     }
   }
 
@@ -319,17 +320,17 @@ bool Link::initXml(TiXmlElement* config)
   TiXmlElement *joi = config->FirstChildElement("joint");
   if (joi)
   {
-    parent_joint_.reset(new Joint);
-    if (!parent_joint_->initXml(joi))
+    parent_joint.reset(new Joint);
+    if (!parent_joint->initXml(joi))
     {
-      std::cerr << "ERROR: Could not parse joint element for Link:"
-                << this->name_ << std::endl;
-      parent_joint_.reset();
+      ROS_ERROR("Could not parse joint element for Link '%s'", this->name.c_str());
+      parent_joint.reset();
+      return false;
     }
     else
     {
-      parent_joint_->link_ = (boost::shared_ptr<Link>)this;
-      parent_joint_->link_name_ = name_;
+      //parent_joint->link.reset(this); /// @todo: not sure how to assign a shared_ptr link to parent link
+      parent_joint->link_name = name;
     }
   }
 
@@ -338,20 +339,20 @@ bool Link::initXml(TiXmlElement* config)
 
 void Link::setParent(boost::shared_ptr<Link> parent)
 {
-  this->parent_link_ = parent;
-  std::cout << "INFO: set parent Link: " << parent->name_ << " for Link: " << this->name_ << std::endl;
+  this->parent_link = parent;
+  ROS_DEBUG("set parent Link '%s' for Link '%s'", parent->name.c_str(), this->name.c_str());
 }
 
 void Link::addChild(boost::shared_ptr<Link> child)
 {
-  this->child_links_.push_back(child);
-  std::cout << "INFO: added child Link: " << child->name_ << " to Link: " << this->name_ << std::endl;
+  this->child_links.push_back(child);
+  ROS_DEBUG("added child Link '%s' to Link '%s'",  child->name.c_str(), this->name.c_str());
 }
 
 void Link::addChildJoint(boost::shared_ptr<Joint> child)
 {
-  this->child_joints_.push_back(child);
-  std::cout << "INFO: added child Joint " << child->name_ << " to Link: " << this->name_ << std::endl;
+  this->child_joints.push_back(child);
+  ROS_DEBUG("added child Joint '%s' to Link '%s'", child->name.c_str(), this->name.c_str());
 }
 
 
