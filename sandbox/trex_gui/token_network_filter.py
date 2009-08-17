@@ -3,6 +3,7 @@
 # System modules
 import sys,os
 import unittest
+import re
 
 # TREX modules
 from notifier import Notifier
@@ -27,6 +28,10 @@ class TokenNetworkFilter():
   def __init__(self,token_network=TokenNetwork()):
     # Initialize filter list
     self.filters = []
+    self.regex_filters = []
+
+    # Initialize flags
+    self.use_regex = False
 
     # Initialize assembly
     self.assembly = Assembly()
@@ -35,11 +40,29 @@ class TokenNetworkFilter():
     self.token_network = token_network
     self.token_network.register_listener(self.network_listener)
 
+  # Toggle regex
+  def toggle_regex(self,enabled):
+    # Set the regex flag
+    self.use_regex = enabled
+    if enabled:
+      # Compile all of the current filters
+      for filter in self.filters:
+	regex = re.compile(filter)
+	self.regex_filters.append(regex)
+    else:
+      self.regex_filters = []
+
+    # Refilter the network
+    self.filter_network()
+
   # Add a filter
   def add_filter(self,filter):
     self.filters.append(filter)
     # Refilter the network
     self.filter_network()
+
+  def add_regex_filter(self,filter):
+    pass
 
   # Remove a filter by value
   def rem_filter(self,filter):
@@ -78,24 +101,44 @@ class TokenNetworkFilter():
     # Iterate over all entities
     for entity in entities:
       # Iterate over all filters
-      for filter in self.filters:
-	# Each filter has to match one property of each entity
-	matched = False
+      if not self.use_regex:
+	for filter in self.filters:
+	  # Each filter has to match one property of each entity
+	  matched = False
 
-	matched = matched or -1 != str(entity.name).find(filter)
-	matched = matched or -1 != str(entity.key).find(filter)
+	  matched = matched or -1 != str(entity.name).find(filter)
+	  matched = matched or -1 != str(entity.key).find(filter)
 
-	# Check variables
-	for var in entity.vars:
-	  matched = matched or -1 != str(var.name).find(filter)
-	  matched = matched or -1 != str(var.key).find(filter)
-	  matched = matched or -1 != str(var.domain).find(filter)
-	  matched = matched or -1 != str(var.values).find(filter)
-	  matched = matched or -1 != str(var.type).find(filter)
-	
-	# Break if any filter does not match
-	if not matched:
-	  break
+	  # Check variables
+	  for var in entity.vars:
+	    matched = matched or -1 != str(var.name).find(filter)
+	    matched = matched or -1 != str(var.key).find(filter)
+	    matched = matched or -1 != str(var.domain).find(filter)
+	    matched = matched or -1 != str(var.values).find(filter)
+	    matched = matched or -1 != str(var.type).find(filter)
+	  
+	  # Break if any filter does not match
+	  if not matched:
+	    break
+      else:
+	for filter in self.regex_filters:
+	  # Each filter has to match one property of each entity
+	  matched = False
+
+	  matched = matched or filter.search(str(entity.name))
+	  matched = matched or filter.search(str(entity.key))
+
+	  # Check variables
+	  for var in entity.vars:
+	    matched = matched or filter.search(str(var.name))
+	    matched = matched or filter.search(str(var.key))
+	    matched = matched or filter.search(str(var.domain))
+	    matched = matched or filter.search(str(var.values))
+	    matched = matched or filter.search(str(var.type))
+	  
+	  # Break if any filter does not match
+	  if not matched:
+	    break
 	
       # Set hilight based on match value
       self.token_network.hilight(entity,matched)

@@ -91,6 +91,7 @@ class DbReaderWindow():
   def on_destroy(self,widget):
     self.running = False
     self.reload_thread.join()
+    return True
 
   # Callback for updating the log_path and gui fields when the log_path is changed
   def on_change_log_path(self,widget):

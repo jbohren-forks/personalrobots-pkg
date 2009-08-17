@@ -46,6 +46,8 @@ class TokenNetworkFilterWindow():
     self.add_but.connect("clicked",self.add_filter)
     self.rep_but.connect("clicked",self.replace_filter)
 
+    self.use_regex_check.connect("toggled",self.on_toggle_regex)
+
     self.filter_entry.set_activates_default(True)
     self.w.set_default(self.rep_but)
 
@@ -136,6 +138,10 @@ class TokenNetworkFilterWindow():
       self.token_network_filter.add_filter(model[row][1])
     else:
       self.token_network_filter.rem_filter(model[row][1])
+
+  # Toggle regex
+  def on_toggle_regex(self,widget):
+    self.token_network_filter.toggle_regex(self.use_regex_check.get_active())
 
 # Testing utilities
 class GtkTester():

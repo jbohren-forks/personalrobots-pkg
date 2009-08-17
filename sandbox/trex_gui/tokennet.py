@@ -25,8 +25,6 @@ def main():
   else:
     log_path = "."
 
-  # Set up signal handler
-  #signal.signal(2,gtk.main_quit)
 
   # Initialize gtk multithread support
   gtk.gdk.threads_init()
@@ -48,6 +46,9 @@ def main():
   token_network_filter_window = TokenNetworkFilterWindow(token_network_filter)
 
   db_reader_window.w.present()
+
+  # Set up signal handler
+  signal.signal(signal.SIGINT, signal.SIG_DFL) 
 
   gtk.main()
 

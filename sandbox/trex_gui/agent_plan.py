@@ -69,7 +69,6 @@ class AgentPlan():
     # Set new assembly in reactor
     self.reactor[assembly.reactor_name].assembly = assembly
 
-    # Determine tokens that 
     
 # Unit tests
 class TestAssemblyStructures(unittest.TestCase):

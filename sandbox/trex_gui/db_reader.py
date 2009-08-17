@@ -157,6 +157,9 @@ class DbReader():
 	if var_name == "start":
 	  start_bounds = self.number_range_regex.findall(var_values)
 	  entity.start = [float(s) for s in start_bounds[0].split(" ")]
+	elif var_name == "end":
+	  end_bounds = self.number_range_regex.findall(var_values)
+	  entity.end = [float(s) for s in end_bounds[0].split(" ")]
 
     # Read in objects
     obj_reader = csv.reader(open("%s.objects" % step_path),delimiter='\t')
