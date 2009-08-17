@@ -623,7 +623,7 @@ EnvironmentROBARM3D::EnvironmentROBARM3D()
     EnvROBARMCfg.object_grasped = 0;
     EnvROBARMCfg.enforce_upright_gripper = 0;
     EnvROBARMCfg.num_joints = 7;
-    EnvROBARMCfg.gripper_m[0] = .20;
+    EnvROBARMCfg.gripper_m[0] = .21;
     EnvROBARMCfg.gripper_m[1] = 0;
     EnvROBARMCfg.gripper_m[2] = 0;
 
@@ -684,9 +684,9 @@ EnvironmentROBARM3D::EnvironmentROBARM3D()
 
     //hard coded temporarily (meters)
     EnvROBARMCfg.arm_length = 1.3;
-    EnvROBARMCfg.link_radius.push_back(.08);
-    EnvROBARMCfg.link_radius.push_back(.08);
-    EnvROBARMCfg.link_radius.push_back(.07);
+    EnvROBARMCfg.link_radius.push_back(.09);
+    EnvROBARMCfg.link_radius.push_back(.09);
+    EnvROBARMCfg.link_radius.push_back(.09);
 
     EnvROBARMCfg.exact_gripper_collision_checking = false;
     EnvROBARMCfg.use_voxel3d_occupancy_grid = false;
