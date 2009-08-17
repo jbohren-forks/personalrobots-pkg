@@ -280,7 +280,7 @@ void SurfWrapper::doComputation(IplImage* img, const cv::Vector<KeyPoint>& point
        kp->pt.y != points[i].pt.y) {
       
       assert(results[i].empty());
-      cout << "Skipped" << endl;
+      //cout << "Skipped" << endl;
       continue;
     }
 
@@ -344,16 +344,22 @@ HogWrapper::HogWrapper() :
   result_size_ = hog_.getDescriptorSize();
 }
 
+//! All units are pixels.
+//! @param winSize The size of the HOG window.  Must be a multiple of cellSize.
+//! @param blockSize The size of block (the unit of normalization in HOG).  Must be a multiple of cellSize.
+//! @param blockStride How much the block should move as it slides around the window. Must be a multiple of cellSize.
+//! @param cellSize The size of the cell (the patch that histograms are computed for).
+//! @param num_bins Number of bins to use in the cell histogram.
 HogWrapper::HogWrapper(Size winSize, Size blockSize, Size blockStride, Size cellSize,
-			int nbins, int derivAperture, double winSigma,
+			int num_bins, int derivAperture, double winSigma,
 			int histogramNormType, double L2HysThreshold, bool gammaCorrection) : 
   ImageDescriptor(), 
-  hog_(winSize, blockSize, blockStride, cellSize, nbins, derivAperture, winSigma, histogramNormType, L2HysThreshold, gammaCorrection)
+  hog_(winSize, blockSize, blockStride, cellSize, num_bins, derivAperture, winSigma, histogramNormType, L2HysThreshold, gammaCorrection)
 {
   char buf[400];
   sprintf(buf, "Hog_winSize%dx%d_blockSize%dx%d_blockStride%dx%d_cellSize%dx%d_nBins%d_derivAperture%d_winSigma%g_histNormType%d_L2HysThreshold%g_gammaCorrection%d", 
 	  winSize.width, winSize.height, blockSize.width, blockSize.height, blockStride.width, blockStride.height, cellSize.width, cellSize.height,
-	  nbins, derivAperture, winSigma, histogramNormType, L2HysThreshold, gammaCorrection);
+	  num_bins, derivAperture, winSigma, histogramNormType, L2HysThreshold, gammaCorrection);
   name_.assign(buf);
   result_size_ = hog_.getDescriptorSize();
 }
@@ -377,7 +383,6 @@ void HogWrapper::doComputation(IplImage* img, const Vector<KeyPoint>& points, vv
   double t = (double)cvGetTickCount();
   hog_.compute(img, result, Size(), Size(), locations); //winStride and padding are set to default
   t = (double)cvGetTickCount() - t;
-  printf("exec time for %s = %gms\n", name_.c_str(), t/(cvGetTickFrequency()*1000.));
 
   // -- Construct vvf from the long concatenation that hog_ produces.
   //    Assume that an all 0 vector was the result of an edge case.
@@ -399,6 +404,7 @@ void HogWrapper::doComputation(IplImage* img, const Vector<KeyPoint>& points, vv
 
   if(debug_) {
     cout << "debugging" << endl;
+    printf("exec time for %s = %gms\n", name_.c_str(), t/(cvGetTickFrequency()*1000.));
     // -- Find first returned descriptor.
     size_t i;
     for(i=0; i<results.size(); i++) {
@@ -1057,6 +1063,17 @@ void SuperpixelColorHistogram::doComputation(IplImage* img, const Vector<KeyPoin
   for(size_t i=0; i<points.size(); i++) {
     doComputation(img, points[i], results[i]);
   }
+
+  if(debug_) {
+    cout << name_ << endl;;
+    cout << "cv hist: " << endl;
+    for(size_t i=0; i<results[0].size(); ++i)
+      cout << results[0][i] << " " << endl;
+
+    cout << endl;
+    commonDebug(points[0]);
+  }
+
 }
 
 
@@ -1078,18 +1095,6 @@ void SuperpixelColorHistogram::doComputation(IplImage* img, const KeyPoint& poin
       result[ctr] = cvQueryHistValue_2D(histograms_cv_[label], i, j);
       ctr++;
     }
-  }
-
-  if(debug_) {
-    cout << name_ << endl;;
-    cout << "cv hist: " << endl;
-    for(int i=0; i<num_bins_; i++) {
-      for(int j=0; j<num_bins_; j++) {
-      cout << cvQueryHistValue_2D(histograms_cv_[label], i, j) << " ";
-      }
-    }
-    cout << endl;
-    commonDebug(point);
   }
 }
 
