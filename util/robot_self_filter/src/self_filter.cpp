@@ -46,6 +46,7 @@ public:
     SelfFilter(void)
     {
 	nh_.param<std::string>("~sensor_frame", sensor_frame_, std::string());
+	nh_.param<double>("~min_sensor_dist", min_sensor_dist_, 0.01);
 
 	std::vector<std::string> links;	
 	std::string link_names;
@@ -77,7 +78,7 @@ public:
 	if (!annotate_.empty())
 	    ROS_INFO("Self filter is adding annotation channel '%s'", annotate_.c_str());
 	if (!sensor_frame_.empty())
-	    ROS_INFO("Self filter is removing shadow points for sensor in frame '%s'", sensor_frame_.c_str());
+	    ROS_INFO("Self filter is removing shadow points for sensor in frame '%s'. Minimum distance to sensor is %f.", sensor_frame_.c_str(), min_sensor_dist_);
     }
     
     ~SelfFilter(void)
@@ -101,7 +102,7 @@ private:
 	if (sensor_frame_.empty())
 	    sf_->maskContainment(*cloud, mask);
 	else
-	    sf_->maskIntersection(*cloud, sensor_frame_, mask);
+	    sf_->maskIntersection(*cloud, sensor_frame_, min_sensor_dist_, mask);
 	
 	double sec = (ros::WallTime::now() - tm).toSec();
 
@@ -183,6 +184,8 @@ private:
     std::string                                   sensor_frame_;
     ros::NodeHandle                               nh_;
     std::string                                   annotate_;
+    double                                        min_sensor_dist_;
+    
 };
 
     

@@ -266,7 +266,7 @@ private:
 	    currentMap_ = obstacles;
 
 	    // find out which of these points are now occluded 
-	    sf_->assumeFrame(header_, bi_.sensor_frame);
+	    sf_->assumeFrame(header_, bi_.sensor_frame, 0.05);
 	    
 	    // OpenMP need an int as the lookup variable, but for set,
 	    // this is not possible, so we copy to a vector
