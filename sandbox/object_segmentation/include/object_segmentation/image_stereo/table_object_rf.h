@@ -96,8 +96,10 @@ class TableObjectRF
                           std::vector<unsigned int>& ds_labels,
                           std::vector<std::pair<unsigned int, unsigned int> >& ds_img_coords);
 
-    unsigned int createImageFeatures(IplImage& image, const std::vector<std::pair<unsigned int,
-        unsigned int> >& ds_img_coords, std::vector<std::vector<float> >& ds_img_features);
+    void
+    createImageFeatures(IplImage& image,
+                        const std::vector<std::pair<unsigned int, unsigned int> >& ds_img_coords,
+                        std::vector<std::vector<float> >& ds_img_features);
 
     void rotatePointCloud(sensor_msgs::PointCloud& pc_in,
                           const float yaw,

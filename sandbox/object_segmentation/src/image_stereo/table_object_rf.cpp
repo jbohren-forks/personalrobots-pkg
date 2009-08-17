@@ -156,7 +156,7 @@ boost::shared_ptr<RandomField> TableObjectRF::createRandomField(const string& fn
   // --------------------------------------------------
   // Compute image features for each downsampled point
   vector<vector<float> > ds_img_features;
-  unsigned int nbr_image_features = createImageFeatures(*image, ds_img_coords, ds_img_features);
+  createImageFeatures(*image, ds_img_coords, ds_img_features);
   rf_creator_3d_->addExternalNodeFeatures(ds_img_features);
 
   // --------------------------------------------------
@@ -271,7 +271,7 @@ void TableObjectRF::downsampleStereoCloud(sensor_msgs::PointCloud& full_stereo_c
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
-unsigned int TableObjectRF::createImageFeatures(IplImage& image, const vector<pair<unsigned int,
+void TableObjectRF::createImageFeatures(IplImage& image, const vector<pair<unsigned int,
     unsigned int> >& ds_img_coords, vector<vector<float> >& ds_img_features)
 {
   unsigned int nbr_image_features = 1;
@@ -290,8 +290,6 @@ unsigned int TableObjectRF::createImageFeatures(IplImage& image, const vector<pa
     ds_img_features[i][0] = h;
     //ds_img_features[i][1] = *(image.imageData + (h * image.widthStep) + w);
   }
-
-  return nbr_image_features;
 }
 
 // --------------------------------------------------------------
