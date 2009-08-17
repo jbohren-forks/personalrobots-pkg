@@ -96,7 +96,7 @@ bool SBPLArmPlannerNode::init()
   node_.param ("~voxel_grid_height_", env_height_, 220);
   node_.param ("~voxel_grid_depth_", env_depth_, 200);
   node_.param ("~voxel_grid_resolution_", env_resolution_, 0.01);
-	node_.param ("~upright_gripper_only", upright_gripper_only_, false);
+  node_.param ("~upright_gripper_only", upright_gripper_only_, false);
 
   // topic names
   node_.param<std::string>("~point_cloud", point_cloud_topic_, "full_cloud_filtered");
@@ -108,7 +108,7 @@ bool SBPLArmPlannerNode::init()
 // 	col_map_subscriber_ = node_.subscribe(collision_map_topic_, 1, &SBPLArmPlannerNode::collisionMapCallback, this);
 	collision_map_notifier_ = new tf::MessageNotifier<mapping_msgs::CollisionMap>(tf_, boost::bind(&SBPLArmPlannerNode::collisionMapCallback, this, _1), collision_map_topic_, planning_frame_, 1);
 	ROS_INFO("Listening to %s with message notifier for target frame %s", collision_map_topic_.c_str(), collision_map_notifier_->getTargetFramesString().c_str());
-	
+
   // main planning service
   planning_service_ = node_.advertiseService("plan_kinematic_path", &SBPLArmPlannerNode::planKinematicPath,this);
 
@@ -147,7 +147,7 @@ bool SBPLArmPlannerNode::init()
   planner_ = new ARAPlanner(&sbpl_arm_env_, forward_search_);
   if(!initializePlannerAndEnvironment())
     return false;
-	
+
   //initialize the planning monitor
   initializePM();
 
@@ -978,7 +978,7 @@ bool SBPLArmPlannerNode::plan(motion_planning_msgs::KinematicPath &arm_path)
 
 	std::vector<std::vector<double> > path_in;
 	std::vector<std::vector<double> > path_out;
-			
+
   //reinitialize the search space - search from scratch
   planner_->costs_changed();
 
@@ -998,6 +998,7 @@ bool SBPLArmPlannerNode::plan(motion_planning_msgs::KinematicPath &arm_path)
 		ROS_INFO("*** a path was found ***");
 		
 		ROS_INFO("extending path... from %i waypoints", solution_state_ids_v.size());
+		ROS_INFO("current path");
 		path_in.resize(solution_state_ids_v.size());
 		for(i = 0; i < solution_state_ids_v.size(); i++)
 		{
@@ -1005,11 +1006,17 @@ bool SBPLArmPlannerNode::plan(motion_planning_msgs::KinematicPath &arm_path)
 			sbpl_arm_env_.StateID2Angles(solution_state_ids_v[i], angles_r);
 			for (unsigned int p = 0; p < (unsigned int) num_joints_; ++p)
 				path_in[i][p] = angles_r[p];
+
+			ROS_INFO("%i: %.3f %.3f %.3f %.3f %.3f %.3f %.3f",
+				i, path_in[i][0],path_in[i][1],path_in[i][2],path_in[i][3],path_in[i][4],path_in[i][5],path_in[i][6]);
 		}
-		
-		if(!addWaypointsToPath(path_in, path_out, 0.0175))
+
+		ROS_INFO("original path done\n");
+
+		if(!addWaypointsToPath(path_in, path_out, 0.035))
 			ROS_WARN("Couldn't add waypoints to path");
-					
+
+		ROS_INFO("a path was returned with %i waypoints",path_out.size());
 		arm_path.set_states_size(path_out.size());
 		for(i = 0; i < path_out.size(); i++)
 			arm_path.states[i].set_vals_size(num_joints_);
@@ -1019,7 +1026,7 @@ bool SBPLArmPlannerNode::plan(motion_planning_msgs::KinematicPath &arm_path)
 			for (unsigned int p = 0; p < (unsigned int) num_joints_; ++p)
 				arm_path.states[i].vals[p] = path_out[i][p];
 		}
-		
+
 /*
     arm_path.set_states_size(solution_state_ids_v.size());
     for(i = 0; i < solution_state_ids_v.size(); i++)
@@ -1036,7 +1043,6 @@ bool SBPLArmPlannerNode::plan(motion_planning_msgs::KinematicPath &arm_path)
 		/** testing jacobian calculation code */
 // 		finishPath(arm_path, goal_pose_constraint_[0]);
 
-	
     if(bCartesianPlanner_)
     {
       std::vector<double> jnt_pos(num_joints_,0);
@@ -1557,36 +1563,38 @@ bool SBPLArmPlannerNode::interpolatePathToGoal(std::vector<std::vector<double> >
 
 bool SBPLArmPlannerNode::addWaypointsToPath(std::vector<std::vector<double> > path_in, std::vector<std::vector<double> > &path_out, double inc)
 {
-	unsigned int i = 0, completed_joints = 0, i_out = 1;
+	unsigned int i = 0, completed_joints = 0, i_out = 0, equal_waypoint = 0;
 	double diff;
 	std::vector<double> waypoint(path_in[0].size(), 0);
-	
+
 	if(path_in[0].size() != (unsigned int)num_joints_)
 		ROS_WARN("number of angles in path is not equal to the number of joints planned for");
-	
+
 	path_out.push_back(path_in[0]);
-	
-	for(unsigned int i_in = 0; i_in < path_in.size(); ++i_in)
+
+	ROS_INFO("added points:");
+	for(unsigned int i_in = 1; i_in < path_in.size(); i_in++)
 	{
-		path_out.push_back(path_in[i_in]);
-		
+		ROS_INFO("%i:", i_in);
+		// path_out.push_back(path_in[i_in]);
+
 		completed_joints = 0;
 		while(num_joints_ != completed_joints)
 		{
 // 			ROS_DEBUG("%i: %.3f %.3f %.3f %.3f %.3f %.3f %.3f",pind,path[pind][0],path[pind][1],path[pind][2],path[pind][3],path[pind][4],path[pind][5],path[pind][6]);
-// 			completed_joints = 0;
+ 			completed_joints = 0;
 			for(i = 0; i < num_joints_; ++i)
 			{
 				//if the ith angle in this waypoint is the same as the ith angle in the previous waypoint
-				if(path_out[i_out][i] == path_out[i_out-1][i])
+				if(path_in[i_in][i] == path_out[i_out][i])
 				{
 					waypoint[i] = path_out[i_out][i];
 					++completed_joints;
 				}
 				else
 				{
-					diff = path_out[i_out][i] - path_out[i_out-1][i];
-					if(diff < 0) // the current goal is higher than the goal angle
+					diff = path_in[i_in][i] - path_out[i_out][i];
+					if(diff < 0) // the current angle is lower than the p_in angle
 					{
 						if(min(fabs(diff), inc) == inc)
 							waypoint[i]= path_out[i_out][i] - inc;
@@ -1602,12 +1610,26 @@ bool SBPLArmPlannerNode::addWaypointsToPath(std::vector<std::vector<double> > pa
 					}
 				}
 			}
-			++i_out;
-			
-			path_out.push_back(waypoint);
+			if(num_joints_ != completed_joints)
+			{
+				i_out++;
+				path_out.push_back(waypoint);
+			}
+/*
+			equal_waypoint = 0;
+			for(unsigned int g = 0; g < num_joints_; ++g)
+			{
+				if(waypoint[g] == path_in[i_in][g])
+					equal_waypoint++;
+			}
+			if(equal_waypoint < num_joints_)
+				path_out.push_back(waypoint);
+*/
+			ROS_INFO("in:%i, out:%i: %.4f %.4f %.4f %.4f %.4f %.4f %.4f", i_in, 
+i_out,path_out[i_out][0],path_out[i_out][1],path_out[i_out][2],path_out[i_out][3],path_out[i_out][4],path_out[i_out][5],path_out[i_out][6]);
 		}
 	}
-	
+
 	ROS_DEBUG("original path: %i  extended path: %i",path_in.size(),path_out.size()); 
 	for(unsigned int j = 0; j < path_out.size(); ++j)
 		ROS_DEBUG("%i: %.2f %.2f %.2f %.2f %.2f %.2f %.2f", j, path_out[j][0],path_out[j][1],path_out[j][2],path_out[j][3],path_out[j][4],path_out[j][5],path_out[j][6]);
@@ -1625,8 +1647,8 @@ void SBPLArmPlannerNode::displayExpandedStates()
 	visualization_msgs::Marker obs_marker;
 
 	KDL::JntArray jnt_pos;
-  jnt_pos.resize(arm_chain_.getNrOfJoints());
-	
+	jnt_pos.resize(arm_chain_.getNrOfJoints());
+
 	//get expanded state IDs
 	states = sbpl_arm_env_.debugExpandedStates();
 
@@ -1684,7 +1706,7 @@ void SBPLArmPlannerNode::printPath(const motion_planning_msgs::KinematicPath &ar
 			angles_r[j] = arm_path.states[i].vals[j];
 
 		sbpl_arm_env_.ComputeEndEffectorPos(angles_r, xyz_m, rpy_r);
-		ROS_INFO("        xyz: %.3f %.3f %.3f   rpy: %.3f %.3f %.3f", xyz_m[0],xyz_m[1],xyz_m[2],rpy_r[0],rpy_r[1],rpy_r[2]);
+		// ROS_INFO("        xyz: %.3f %.3f %.3f   rpy: %.3f %.3f %.3f", xyz_m[0],xyz_m[1],xyz_m[2],rpy_r[0],rpy_r[1],rpy_r[2]);
 	}
 
 	// prints out the error between the final waypoint of the path and the goal pose
