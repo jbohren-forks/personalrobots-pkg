@@ -56,7 +56,7 @@ bool DallasController::init(mechanism::RobotState *robot, const ros::NodeHandle 
   if (!cc_.init(robot, node_))
     return false;
 
-  node_.param<double> ("kp_caster_steer_", kp_caster_steer_, 40.0);
+  node_.param<double> ("kp_caster_steer", kp_caster_steer_, 40.0);
 
   sub_command_ = node_.subscribe<geometry_msgs::Twist>(
     "cmd_vel", 1, &DallasController::command, this);
@@ -66,6 +66,8 @@ bool DallasController::init(mechanism::RobotState *robot, const ros::NodeHandle 
 
 bool DallasController::starting()
 {
+  if (!cc_.starting())
+    return false;
   return true;
 }
 
@@ -76,21 +78,25 @@ void DallasController::update()
 
 
   Command &command = infuser_.next();
-  if (command.received_time <= time + 1.0)
+  if (true || command.received_time <= time + 1.0)
   {
     // Where should the caster be facing?
     double caster_angle = cc_.getSteerPosition();
     double caster_angle_desi = atan2(command.va, DALLAS_R * command.vx);
-    if (angles::shortest_angular_distance(caster_angle_desi, caster_angle) <
-        angles::shortest_angular_distance(caster_angle_desi + M_PI, caster_angle))
+    if (abs(angles::shortest_angular_distance(caster_angle_desi, caster_angle)) <
+        abs(angles::shortest_angular_distance(caster_angle_desi + M_PI, caster_angle)))
     {
       caster_angle_desi += M_PI;
     }
     double caster_angle_error =
       angles::shortest_angular_distance(caster_angle_desi, caster_angle);
+    ROS_ERROR("Angle desi = %.3lf  (From %.3lf)  Error: %.3lf", caster_angle_desi, cc_.getSteerPosition(), caster_angle_error);
 
-    cc_.steer_velocity_ = -kp_caster_steer_ * caster_angle_error;
+    cc_.steer_velocity_ = kp_caster_steer_ * caster_angle_error;
     cc_.drive_velocity_ = command.vx * cos(caster_angle_error);
+    //cc_.steer_velocity_ = 0.0;
+    cc_.drive_velocity_ = 0.0;
+    cc_.update();
   }
 
   last_time_ = time;
@@ -102,6 +108,7 @@ void DallasController::command(const geometry_msgs::TwistConstPtr &msg)
   c.received_time = last_time_;
   c.vx = msg->linear.x;
   c.va = msg->angular.z;
+  ROS_ERROR("Command: %.3lf   (%.3lf, %.3lf)", c.received_time, c.vx, c.va);
   infuser_.set(c);
 }
 
