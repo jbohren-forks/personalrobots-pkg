@@ -112,12 +112,12 @@ namespace tf {
   {
     geometry_msgs::Pose result;
     KDL::Twist kdl_twist;
-    KDL::Frame kdl_pose;
+    KDL::Frame kdl_pose_id, kdl_pose;
 
     PoseMsgToKDL(pose,kdl_pose);
     TwistMsgToKDL(twist,kdl_twist);
-
-    PoseKDLToMsg(KDL::addDelta(kdl_pose,kdl_twist,t),result);
+    kdl_pose = KDL::addDelta(kdl_pose_id,kdl_twist,t)*kdl_pose;
+    PoseKDLToMsg(kdl_pose,result);
     return result;
   }
 }
