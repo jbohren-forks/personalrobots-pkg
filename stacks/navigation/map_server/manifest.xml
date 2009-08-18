@@ -1,13 +1,13 @@
 <package>
   <description brief="Static map server">
 
-    This package reads and writes bitmap representations of occupancy grid maps.
+    This package reads and writes bitmap representations of occupancy grid maps. It also provides the map_saver command-line utility, which allows dynamically generated maps to be saved to file.
 
   </description>
   <author>Brian Gerkey, Tony Pratkanis</author>
   <license>BSD</license>
   <review status="proposal cleared" notes="API review in progress (Brian)"/>
-  <url>http://pr.willowgarage.com/wiki/map_server</url>
+  <url>http://ros.org/wiki/map_server</url>
   <depend package="rosconsole"/>
   <depend package="roscpp"/>
   <depend package="rospy" />
