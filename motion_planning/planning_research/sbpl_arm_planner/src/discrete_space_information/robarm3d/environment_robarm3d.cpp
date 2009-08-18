@@ -5282,7 +5282,7 @@ int EnvironmentROBARM3D::IsValidCoord(const short unsigned int coord[], const st
 }
 */
 
-void EnvironmentROBARM3D::initPlanningMonitor(sbpl_arm_planner_node::pm_wrapper *pm)
+void EnvironmentROBARM3D::initPlanningMonitor(pm_wrapper *pm)
 {
   planning_monitor = pm;
 }

@@ -41,7 +41,7 @@
 #include <kdl/chainjnttojacsolver.hpp>
 
 // #include <yaml-cpp/yaml.h>
-#include <sbpl_pm_wrapper/pm_wrapper.h>
+#include <pm_wrapper/pm_wrapper.h>
 
 #ifndef __ENVIRONMENT_ROBARM3D_H_
 #define __ENVIRONMENT_ROBARM3D_H_
@@ -421,7 +421,7 @@ class EnvironmentROBARM3D: public DiscreteSpaceInformation
     void SetGoalConfigurationTolerance(const std::vector<std::vector<double> > &tolerance_above, const std::vector<std::vector<double> > &tolerance_below);
 
     bool updateVoxelGrid(const boost::shared_ptr<Voxel3d> envgrid, const boost::shared_ptr<Voxel3d> lowres_envgrid);
-    void initPlanningMonitor(sbpl_arm_planner_node::pm_wrapper * pm);
+    void initPlanningMonitor(pm_wrapper * pm);
     bool isValidJointConfiguration(const double  * angles);
 
     void copyVoxelGrid(const boost::shared_ptr<Voxel3d> &voxel_grid, unsigned char *** Grid3D);
@@ -439,7 +439,7 @@ class EnvironmentROBARM3D: public DiscreteSpaceInformation
     EnvROBARMConfig_t EnvROBARMCfg;          /**< environment configuration struct (stores environment details)> */
     EnvironmentROBARM3D_t EnvROBARM;
 
-    sbpl_arm_planner_node::pm_wrapper *planning_monitor;
+    pm_wrapper *planning_monitor;
 
     /** hash table */
     unsigned int GETHASHBIN(short unsigned int* coord, int numofcoord);
