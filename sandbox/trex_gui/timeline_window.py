@@ -47,6 +47,10 @@ class Timeline():
     # Store a list of active tokens
     self.tokens = []
 
+    # Store a list of region boundaries for hit-testing
+    self.hit_boundaries = []
+    self.hit_tokens = []
+
     # Drawing variables
     self.earliest_tick = float("Inf")
     self.earliest_start = 0
@@ -71,8 +75,6 @@ class Timeline():
     # Sort the list of tokens
     self.tokens.sort(lambda a,b: int(a.start[0] - b.start[0]))
 
-
-  
   # Get the color for this timeline
   def get_color(self):
     if self.reactor_panel:
@@ -82,6 +84,14 @@ class Timeline():
       rgb = (0.3,0.3,0.3)
 
     return rgb
+
+  # Get the token that was hit
+  def get_hit_token(self,x):
+    token_index = bisect.bisect_left(self.hit_boundaries, x)
+    if token_index < len(self.hit_tokens):
+      return self.hit_tokens[token_index]
+    else:
+      return None
 
 class ReactorPanel():
   # Constants for drawing
@@ -126,6 +136,7 @@ class ReactorPanel():
     self.needs_redraw = True
     self.timelines_group = None
     self.color = (0,0,0)
+    self.hilight_keys = []
 
     # Initialize tab index (used for keeping track of where this reactor is in the notebook)
     self.tab_index = 0
@@ -241,20 +252,34 @@ class ReactorPanel():
 
   # Callback to process click events on the timeline view
   def on_timeline_click(self, widget, event, data):
+    # Calculate row
+    row = int(event.y/ReactorPanel.ROW_STEP)
+    if row > self.n_timelines-1:
+      return False
+
+    # Get timeline
+    timeline = (self.int_timelines+self.ext_timelines)[row]
+
+    # Do hit test
+    token = timeline.get_hit_token(event.x)
+    if not token:
+      return False
+
     if event.button == 1:
-      ReactorPanel.Ruler = event.x
+      #ReactorPanel.Ruler = event.x
+      if token.key not in self.hilight_keys:
+	self.hilight_keys.append(token.key)
+      else:
+	self.hilight_keys.remove(token.key)
       self.draw()
+      # Get hit region
     elif event.button == 2:
       pass
     elif event.button == 3:
-      # Calculate row
-      row = int(event.y/ReactorPanel.ROW_STEP)
 
-      if row > self.n_timelines-1:
-	return False
 
       m = gtk.Menu()
-      pos = gtk.MenuItem("%s Pixel: %d" % ((self.int_timelines+self.ext_timelines)[row], event.x),False)
+      pos = gtk.MenuItem("%s Pixel: %d" % (timeline.obj.name, event.x),False)
       pos.set_sensitive(False)
       t_net = gtk.MenuItem("Token network")
       t_vars = gtk.MenuItem("Token variables")
@@ -337,10 +362,11 @@ class ReactorPanel():
     
     # Reset earliest start and latest end for each reactor
     for tl in self.int_timelines + self.ext_timelines:
+      tl.hit_boundaries = []
+      tl.hit_tokens = []
       tl.earliest_tick = float("Inf")
       tl.earliest_start = 0
       tl.latest_end = 0
-
 
     # Iterate over all token keys
     for key in self.started_token_keys[::-1] + self.planned_token_keys:
@@ -451,9 +477,19 @@ class ReactorPanel():
       tok_x0 = tok_x0 +ReactorPanel.PastWidth + ReactorPanel.Center
       tok_y0 = ReactorPanel.ROW_STEP*timeline.row + ReactorPanel.ROW_SPACE
 
+      # Store the token hit region
+      if token.start[0] == token.start[1]:
+	timeline.hit_boundaries.insert(0,tok_x0)
+	timeline.hit_tokens.insert(0,token)
+      else:
+	timeline.hit_boundaries.append(tok_x0)
+	timeline.hit_tokens.append(token)
+
       # Draw token
       # Set the color for the appropriate reactors
-      if self.token_ticks[key] < self.assembly.tick:
+      if key in self.hilight_keys:
+	cr.set_source_rgba(1.0, 0.7, 0.07, 1.0)
+      elif self.token_ticks[key] < self.assembly.tick:
 	cr.set_source_rgba(0.3, 0.3, 0.3, 0.7)
       else:
 	cr.set_source_rgba(r, g, b, 0.7)
