@@ -105,6 +105,7 @@ class ReactorPanel():
 
   # Interaction
   Ruler = 0
+  H_adj = gtk.Adjustment()
 
   # Static variables
   LabelWidth = 200
@@ -161,6 +162,9 @@ class ReactorPanel():
     self.v_adj = gtk.Adjustment()
     self.timeline_sw.set_vadjustment(self.v_adj)
     self.timeline_label_sw.set_vadjustment(self.v_adj)
+
+    # Make all windows share the same timeline position
+    self.timeline_sw.set_hadjustment(ReactorPanel.H_adj)
 
     # Bind the drawingarea widgets
     self.timeline_da = tree.get_widget("timeline_da")
