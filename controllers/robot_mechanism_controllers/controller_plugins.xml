@@ -21,9 +21,6 @@
   <plugin name="JointPDController" class="JointPDController" type="Controller" />
   <plugin name="JointPDControllerNode" class="JointPDControllerNode" type="Controller" />
   <plugin name="CartesianTwistControllerIk" class="CartesianTwistControllerIk" type="Controller" />
-  <plugin name="CartesianTFFController" class="CartesianTFFController" type="Controller" />
-  <plugin name="CartesianHybridController" class="CartesianHybridController" type="Controller" />
-  <plugin name="CartesianHybridControllerNode" class="CartesianHybridControllerNode" type="Controller" />
   <plugin name="EndeffectorConstraintController" class="EndeffectorConstraintController" type="Controller" />
   <plugin name="EndeffectorConstraintControllerNode" class="EndeffectorConstraintControllerNode" type="Controller" />
   <plugin name="JointChainConstraintControllerNode" class="JointChainConstraintControllerNode" type="Controller" />
