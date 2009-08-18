@@ -7,7 +7,7 @@ import csv
 import unittest
 
 # TREX modules
-from assembly import Assembly,Entity,Rule,Token,Slot,Variable
+from assembly import Assembly,Entity,Rule,Token,Slot,Variable,Object
 
 ##############################################################################
 # DbReader
@@ -163,7 +163,7 @@ class DbReader():
 
     # Read in objects
     obj_reader = csv.reader(open("%s.objects" % step_path),delimiter='\t')
-    for row in vars_reader:
+    for row in obj_reader:
       obj_key = int(row[0])
       obj_name = row[4]
 
@@ -171,13 +171,13 @@ class DbReader():
       if row[6] == '\N':
 	obj_vars = []
       else:
-	obj_vars = [assembly.vars[int(key_str)] for key_str in row[6].split(",")]
+	obj_vars = [assembly.vars[int(key_str)] for key_str in row[6].split(",") if key_str]
 
       # Parse object tokens 
       if row[7] == '\N':
 	obj_tokens = []
       else:
-	obj_tokens = [assembly.tokens[int(key_str)] for key_str in row[7].split(",")]
+	obj_tokens = [assembly.tokens[int(key_str)] for key_str in row[7].split(",") if key_str]
 
       # Append variable to vars dict
       assembly.objects[obj_key] = Object(

@@ -36,7 +36,9 @@ class DbReaderWindow():
     self.ticks = []
     self.tick = 0
     self.status_text = ""
-    self.assembly = Assembly()
+
+    # Initialize assembly dict self.assemblies[reactor_name]
+    self.assemblies = {}
 
     # Listener structures
     self.listeners = []
@@ -180,7 +182,8 @@ class DbReaderWindow():
 	self.set_status("Failed to load any ticks from log path.")
       self.tick = 0
       available_ticks = []
-      self.assembly = Assembly()
+      self.assemblies = {}
+      self.reactor_name = ""
       self.notify_listeners()
 
     if len(available_ticks) != len(self.ticks):
@@ -300,14 +303,17 @@ class DbReaderWindow():
       if new_tick not in self.ticks:
 	raise IOError
 
-      # Load assembly
-      assembly = self.db_reader.load_assembly(
-	  self.log_path,
-	  self.reactor_name,
-	  new_tick)
+      # Load assemblies
+      assemblies = {}
+      for reactor_name in self.reactor_names:
+	assembly = self.db_reader.load_assembly(
+	    self.log_path,
+	    reactor_name,
+	    new_tick)
+	assemblies[reactor_name] = assembly
 
       # If we get here, the tick was loaded successfully
-      self.assembly = assembly
+      self.assemblies = assemblies
       self.tick = new_tick
 
       # Post an update to the status bar
@@ -342,7 +348,7 @@ class DbReaderWindow():
   def notify_listeners(self):
     for listener in self.listeners:
       try:
-	listener(self.assembly)
+	listener(self.assemblies, self.reactor_name)
       except:
 	print "Failed to notify listener: "+str(listener)
 	raise
@@ -366,11 +372,14 @@ class SimpleAssemblyListener():
     self.rules = {}
     self.tokens = {}
 
-  def cb_rules(self,assembly):
-    self.rules = assembly.rules
+  def cb_rules(self,assemblies,reactor_name):
+    print assemblies
+    if reactor_name:
+      self.rules = assemblies[reactor_name].rules
 
-  def cb_tokens(self,assembly):
-    self.tokens = assembly.tokens
+  def cb_tokens(self,assemblies,reactor_name):
+    if reactor_name:
+      self.tokens = assemblies[reactor_name].tokens
 
 # Unit tests
 class TestDbReaderWindow(unittest.TestCase,GtkTester):

@@ -198,9 +198,12 @@ class TokenNetwork(Notifier):
   ############################################################################
 
   # A function to push the assembly
-  def set_assembly(self,assembly):
-    # replace current assembly with new assembly
-    self.assembly = assembly
+  def set_assembly(self,assemblies,reactor_name):
+    if reactor_name:
+      # replace current assembly with new assembly
+      self.assembly = assemblies[reactor_name]
+    else:
+      self.assembly = Assembly()
     # create a new graph
     self.create_graph()
 
@@ -233,8 +236,9 @@ class TestTokenNetwork(unittest.TestCase):
     pass
 
   def test_empty_assembly(self):
-    assembly = Assembly()
-    self.network.set_assembly(assembly)
+    assemblies = {}
+    assemblies["empty"] = Assembly()
+    self.network.set_assembly(assemblies,"empty")
     self.assert_(len(self.network.slot_nodes) == 0)
     self.assert_(len(self.network.rule_nodes) == 0)
     self.assert_(len(self.network.token_nodes) == 0)
@@ -243,11 +247,12 @@ class TestTokenNetwork(unittest.TestCase):
     from assembly import construct_test_assembly
 
     # Create assembly
-    assembly = construct_test_assembly()
+    assemblies = {}
+    assemblies["test"] = construct_test_assembly()
 
     # Create token network
     token_network = TokenNetwork()
-    token_network.set_assembly(assembly)
+    token_network.set_assembly(assemblies,"test")
 
 if __name__ == "__main__":
   unittest.main()

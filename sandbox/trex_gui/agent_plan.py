@@ -7,6 +7,7 @@ import threading, time
 import math
 
 # TREX modules
+from notifier import Notifier
 from assembly import Assembly,Entity,Rule,Token,Slot,Variable,Object
 
 ##############################################################################
@@ -50,24 +51,21 @@ class Reactor():
 #   maintains a representation of the current and past partial plan.
 ##############################################################################
 
-class AgentPlan():
+class AgentPlan(Notifier):
   def __init__(self):
     # Initialize dict of reactors
     self.reactors = {}
 
     # Initialize static assembly
-    self.assembly = Assembly()
+    self.assemblies = {}
 
-  def add_reactor(self,reactor_name):
-    self.reactors[reactor_name] = Reactor(reactor_name)
+  # Load new assemblies 
+  def set_assemblies(self,assemblies,reactor_name):
+    # Set new assemblies
+    self.assemblies = assemblies
 
-  def rem_reactor(self,reactor_name):
-    del self.reactors[reactor_name]
-  
-  # Load a new assembly 
-  def set_assembly(self,assembly):
-    # Set new assembly in reactor
-    self.reactor[assembly.reactor_name].assembly = assembly
+    # Notify listeners that assemblies have been updated
+    self.notify_listeners()
 
     
 # Unit tests

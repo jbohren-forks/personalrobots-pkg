@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.5 on Mon Aug 17 09:12:42 2009 -->
+<!--Generated with glade3 3.4.5 on Mon Aug 17 18:48:52 2009 -->
 <glade-interface>
   <widget class="GtkWindow" id="timeline_window">
     <property name="window_position">GTK_WIN_POS_CENTER</property>
@@ -159,10 +159,12 @@
                 <property name="tab_pos">GTK_POS_RIGHT</property>
                 <property name="scrollable">True</property>
                 <property name="tab_hborder">4</property>
-                <property name="tab_vborder">0</property>
                 <property name="group_id">0</property>
                 <child>
                   <widget class="GtkAlignment" id="timeline_panel">
+                    <property name="top_padding">4</property>
+                    <property name="bottom_padding">4</property>
+                    <property name="left_padding">4</property>
                     <property name="right_padding">16</property>
                     <child>
                       <widget class="GtkHBox" id="hbox2">
@@ -173,14 +175,14 @@
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <property name="vscrollbar_policy">GTK_POLICY_AUTOMATIC</property>
+                            <property name="window_placement">GTK_CORNER_TOP_RIGHT</property>
+                            <property name="window_placement_set">True</property>
                             <child>
-                              <widget class="GtkViewport" id="viewport3">
-                                <property name="width_request">100</property>
+                              <widget class="GtkViewport" id="timeline_label_vp">
                                 <property name="visible">True</property>
                                 <property name="resize_mode">GTK_RESIZE_QUEUE</property>
                                 <child>
                                   <widget class="GtkDrawingArea" id="timeline_label_da">
-                                    <property name="width_request">100</property>
                                     <property name="visible">True</property>
                                   </widget>
                                 </child>
@@ -218,29 +220,35 @@
                   </widget>
                 </child>
                 <child>
-                  <widget class="GtkHBox" id="tab_label">
+                  <widget class="GtkAlignment" id="tab_label">
+                    <property name="visible">True</property>
+                    <property name="top_padding">1</property>
                     <child>
-                      <widget class="GtkImage" id="tab_icon">
-                        <property name="stock">gtk-missing-image</property>
-                      </widget>
-                      <packing>
-                        <property name="expand">False</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <widget class="GtkAlignment" id="tab_alignment">
-                        <property name="xalign">0</property>
-                        <property name="xscale">0</property>
-                        <property name="left_padding">4</property>
+                      <widget class="GtkHBox" id="tab_label_hbox">
                         <child>
-                          <widget class="GtkLabel" id="tab_text">
-                            <property name="label" translatable="yes">a very long label</property>
+                          <widget class="GtkImage" id="tab_icon">
+                            <property name="stock">gtk-missing-image</property>
                           </widget>
+                          <packing>
+                            <property name="expand">False</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <widget class="GtkAlignment" id="tab_alignment">
+                            <property name="xalign">0</property>
+                            <property name="xscale">0</property>
+                            <property name="left_padding">4</property>
+                            <child>
+                              <widget class="GtkLabel" id="tab_text">
+                                <property name="label" translatable="yes">a very long label</property>
+                              </widget>
+                            </child>
+                          </widget>
+                          <packing>
+                            <property name="position">1</property>
+                          </packing>
                         </child>
                       </widget>
-                      <packing>
-                        <property name="position">1</property>
-                      </packing>
                     </child>
                   </widget>
                   <packing>

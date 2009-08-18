@@ -59,10 +59,13 @@ class Variable():
     return "%s = %s (%d)" % (self.name, self.values, self.key)
 
 class Object():
-  def __init__(self,key,name,tokens):
+  def __init__(self,key,name,vars,tokens):
     self.key = key
     self.name = name
+    self.vars = vars
     self.tokens = tokens
+
+    self.mode = ""
 
   def __str__(self):
     return "%s (%d)" % (self.name, self.key)
