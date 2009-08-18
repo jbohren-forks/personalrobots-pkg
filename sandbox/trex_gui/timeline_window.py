@@ -42,6 +42,9 @@ class Timeline():
     # Store the reactor that this timeline belongs to
     self.reactor_panel = None
 
+    # Store a list of active tokens
+    self.tokens = []
+
     # Internal timelines must be declared as internal or external
     for var in obj.vars:
       # Check the mode value
@@ -51,6 +54,27 @@ class Timeline():
 	  self.mode = Timeline.INTERNAL
 	else:
 	  self.mode = Timeline.EXTERNAL
+    
+    # Copy only active tokens onto the token list
+    for token in obj.tokens:
+      if token.slot_index == 0:
+	self.tokens.append(token)
+
+    # Sort the list of tokens
+    self.tokens.sort(lambda a,b: int(b.start[0] - a.start[0]))
+
+
+  
+  # Get the color for this timeline
+  def get_color(self):
+    if self.reactor_panel:
+      rgb = self.reactor_panel.color
+    else:
+      # No parent
+      rgb = (0.3,0.3,0.3)
+
+    return rgb
+
 
 class ReactorPanel():
   # Constants for drawing
@@ -61,6 +85,9 @@ class ReactorPanel():
   # Constants for labeling
   LABEL_MARGIN = 8
 
+  # Static variables
+  LabelWidth = 200
+
   def __init__(self):
     # Initialize data structures
     self.assembly = Assembly()
@@ -70,7 +97,6 @@ class ReactorPanel():
 
     # Drawing variables
     self.color = (0,0,0)
-    self.label_width = 150
 
     # Initialize tab index (used for keeping track of where this reactor is in the notebook)
     self.tab_index = 0
@@ -168,17 +194,62 @@ class ReactorPanel():
     cr.set_source_rgba(1.0, 1.0, 1.0, 1.0)
     cr.paint()
 
+    # Initialize row counter
+    row = 0
+
     # Print rows
-    cr.set_source_rgba(0, 0, 0, 0.1)
-    for row in range(self.n_timelines):
-      cr.rectangle(0,row*ReactorPanel.ROW_STEP+ReactorPanel.ROW_SPACE,1000,ReactorPanel.ROW_HEIGHT)
+    for timeline in self.int_timelines + self.ext_timelines:
+      y = row*ReactorPanel.ROW_STEP + ReactorPanel.ROW_SPACE
+
+      # Draw timeline background
+      cr.set_source_rgba(0, 0, 0, 0.1)
+      cr.rectangle(0,y,1000,ReactorPanel.ROW_HEIGHT)
       cr.fill()
-      cr.stroke()
+
+      # Get timeline color
+      (r,g,b) = timeline.get_color()
+
+      # Draw tokens
+      x = 500
+      self.set_font(cr)
+      for token in timeline.tokens:
+	# Determine label width
+	name = token.name.split(".")[1]
+	xb,yb,tw,th,xa,ya = cr.text_extents(name)
+	
+	# Draw box
+	bw = tw+(2*ReactorPanel.LABEL_MARGIN)
+	cr.set_source_rgba(r, g, b, 1.0)
+	cr.rectangle(x,y,-bw,ReactorPanel.ROW_HEIGHT)
+	cr.fill()
+
+	tx = x -tw - ReactorPanel.LABEL_MARGIN
+	ty = y+ReactorPanel.ROW_HEIGHT-4
+
+	# Draw label
+	cr.move_to(tx,ty)
+	cr.set_source_rgba(1.0, 1.0, 1.0, 0.5)
+	cr.show_text(name)
+
+	x = x-bw-1
+
+
+      # Increment row counter
+      row = row+1
+
 
     return False
 
+  # Draw a token on a given row
   def draw_token(self,cr,row,start,end):
     pass
+
+  def set_font(self,cr):
+    cr.select_font_face(
+	"Sans",
+	cairo.FONT_SLANT_NORMAL, 
+	cairo.FONT_WEIGHT_NORMAL)
+    cr.set_font_size(13)
 
   #############################################################################
   # Drawing timeline labels
@@ -197,37 +268,31 @@ class ReactorPanel():
     cr.paint()
     
     # Determine width needed to show all labels
-    cr.select_font_face(
-	"Sans",
-	cairo.FONT_SLANT_NORMAL, 
-	cairo.FONT_WEIGHT_NORMAL)
-    cr.set_font_size(13)
     max_width = 0
+    self.set_font(cr)
     for timeline in self.int_timelines + self.ext_timelines:
       # Get extents
       xb,yb,w,h,xa,ya = cr.text_extents(timeline.obj.name)
       max_width = max(w,max_width)
 
     # Set the width
-    self.label_width = max_width + (2*ReactorPanel.LABEL_MARGIN)
+    ReactorPanel.LabelWidth = max(ReactorPanel.LabelWidth, max_width + (2*ReactorPanel.LABEL_MARGIN))
 
     # Draw rows
     row = 0
     for timeline in self.int_timelines + self.ext_timelines:
       y = row*ReactorPanel.ROW_STEP + ReactorPanel.ROW_SPACE
 
-      if timeline.reactor_panel:
-	(r, g, b) = timeline.reactor_panel.color
-      else:
-	# No parent
-	(r, g, b) = (0.3,0.3,0.3)
+      # Get color based on parent
+      (r,g,b) = timeline.get_color()
       cr.set_source_rgba(r, g, b, 1.0)
       cr.rectangle(0,y,1000,ReactorPanel.ROW_HEIGHT)
       cr.fill()
 
+      # Determine extents of text string
       xb,yb,w,h,xa,ya = cr.text_extents(timeline.obj.name)
 
-      tx = self.label_width - w - ReactorPanel.LABEL_MARGIN
+      tx = ReactorPanel.LabelWidth - w - ReactorPanel.LABEL_MARGIN
       ty = y+ReactorPanel.ROW_HEIGHT-4
       cr.move_to(tx,ty)
       cr.set_source_rgba(1.0, 1.0, 1.0, 0.5)
@@ -240,8 +305,8 @@ class ReactorPanel():
     self.timeline_da.set_size_request(1000,win_height_px)
 
     # Resize drawing area for token width
-    self.timeline_label_da.set_size_request(int(self.label_width),win_height_px)
-    self.timeline_label_sw.set_size_request(int(self.label_width+20),-1)
+    self.timeline_label_da.set_size_request(int(ReactorPanel.LabelWidth),win_height_px)
+    self.timeline_label_sw.set_size_request(int(ReactorPanel.LabelWidth+20),-1)
 
     return False
 
@@ -388,7 +453,7 @@ class TimelineWindow():
 	# Decrease tab index by one
 	reactor_panel.tab_index = reactor_panel.tab_index - 1
 	# Update the index
-	reactor_indices[reactor_panel.tab_index] = reactor_panel
+	self.reactor_indices[reactor_panel.tab_index] = reactor_panel
 
     # Update the colors
     self.update_icons()

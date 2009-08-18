@@ -65,8 +65,6 @@ class Object():
     self.vars = vars
     self.tokens = tokens
 
-    self.mode = ""
-
   def __str__(self):
     return "%s (%d)" % (self.name, self.key)
 
