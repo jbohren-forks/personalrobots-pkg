@@ -26,8 +26,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef PLUGINLIB_PLUGIN_LOADER_H
-#define PLUGINLIB_PLUGIN_LOADER_H
+#ifndef PLUGINLIB_CLASS_LOADER_H
+#define PLUGINLIB_CLASS_LOADER_H
 
 #include "ros/console.h"
 
@@ -180,6 +180,7 @@ namespace pluginlib
         // map from library to plugin's descriptions  
         // This is all available plugins found in xml
         std::map<std::string, Plugin> plugins_available_;
+        std::string plugin_type_;
 
         Poco::ClassLoader<T> poco_class_loader_;  
     };

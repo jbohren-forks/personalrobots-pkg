@@ -44,7 +44,7 @@
 
 namespace pluginlib {
   template <class T>
-  PluginLoader<T>::PluginLoader(std::string package, std::string plugin_type)
+  PluginLoader<T>::PluginLoader(std::string package, std::string plugin_type) : plugin_type_(plugin_type)
   {
     //Pull possible files from manifests of packages which depend on this package and export plugin
     std::vector<std::string> paths;
@@ -98,15 +98,20 @@ namespace pluginlib {
         TiXmlElement* plugin = library->FirstChildElement( "plugin" );
         while (plugin)
         {
-          // register plugin here
-          TiXmlElement* description = plugin->FirstChildElement( "description" );
-          std::string description_str = description ? description->GetText() : "";
+          std::string type = plugin->Attribute("type");
 
-          std::string plugin_name = plugin->Attribute("name");
-          std::string plugin_class_name = plugin->Attribute("class");
+          //make sure that this plugin is of the right type before registering it
+          if(type == plugin_type){
 
-          plugins_available_.insert(std::pair<std::string, Plugin>(plugin_name, Plugin(plugin_name, plugin_class_name, plugin_type, package_name, description_str, full_library_path.string())));
+            // register plugin here
+            TiXmlElement* description = plugin->FirstChildElement( "description" );
+            std::string description_str = description ? description->GetText() : "";
 
+            std::string plugin_name = plugin->Attribute("name");
+            std::string plugin_class_name = plugin->Attribute("class");
+
+            plugins_available_.insert(std::pair<std::string, Plugin>(plugin_name, Plugin(plugin_name, plugin_class_name, plugin_type, package_name, description_str, full_library_path.string())));
+          }
 
           //step to next plugin
           plugin = plugin->NextSiblingElement( "plugin" );
@@ -288,7 +293,7 @@ namespace pluginlib {
 
   template <class T>
   void PluginLoader<T>::loadPluginLibraryInternal(const std::string& library_path) {
-    poco_class_loader_.loadLibrary(library_path);
+    poco_class_loader_.loadLibrary(library_path, plugin_type_);
     LibraryCountMap::iterator it = loaded_libraries_.find(library_path);
     if (it == loaded_libraries_.end())
       loaded_libraries_[library_path] = 1;  //for correct destruction and access
