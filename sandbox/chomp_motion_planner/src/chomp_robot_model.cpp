@@ -222,6 +222,8 @@ bool ChompRobotModel::init()
   std::vector<KDL::Vector> joint_pos;
 
   ros::WallTime start_time = ros::WallTime::now();
+
+  boost::shared_ptr<KDL::TreeFkSolverJointPosAxisPartial> fks = planning_groups_["right_arm"].fk_solver_;
   double q=0.0;
   int n = kdl_tree_.getNrOfJoints();
   for (int i=0; i<100000; i++)
@@ -231,7 +233,10 @@ bool ChompRobotModel::init()
       q_in(j) += q;
       q+=0.1;
     }
-    fk_solver_->JntToCart(q_in, joint_pos, joint_axis, segment_frames);
+    if (i==0)
+      fks->JntToCartFull(q_in, joint_pos, joint_axis, segment_frames);
+    else
+      fks->JntToCartPartial(q_in, joint_pos, joint_axis, segment_frames);
   }
   ROS_INFO("100000 FK calls in %f wall-seconds.", (ros::WallTime::now() - start_time).toSec());
 */

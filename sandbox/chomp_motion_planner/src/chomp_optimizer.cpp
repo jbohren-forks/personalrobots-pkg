@@ -133,6 +133,15 @@ void ChompOptimizer::initialize()
 
   last_improvement_iteration_ = -1;
 
+  // HMC initialization:
+  momentum_ = Eigen::MatrixXd::Zero(num_vars_free_, num_joints_);
+  random_momentum_ = Eigen::MatrixXd::Zero(num_vars_free_, num_joints_);
+  multivariate_gaussian_.clear();
+  for (int i=0; i<num_joints_; i++)
+  {
+    multivariate_gaussian_.push_back(MultivariateGaussian(Eigen::VectorXd::Zero(num_vars_free_), joint_costs_[i].getQuadraticCostInverse()));
+  }
+
 }
 
 ChompOptimizer::~ChompOptimizer()
@@ -546,6 +555,14 @@ void ChompOptimizer::perturbTrajectory()
   {
     group_trajectory_.getFreeJointTrajectoryBlock(i) +=
         joint_costs_[i].getQuadraticCostInverse().col(mp_free_vars_index) * random_state_(i);
+  }
+}
+
+void ChompOptimizer::getRandomMomentum()
+{
+  for (int i=0; i<num_joints_; ++i)
+  {
+    //multivariate_gaussian_[i].sample(
   }
 }
 

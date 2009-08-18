@@ -34,34 +34,64 @@
 
 /** \author Mrinal Kalakrishnan */
 
-#include <chomp_motion_planner/chomp_parameters.h>
+#ifndef MULTIVARIATE_GAUSSIAN_H_
+#define MULTIVARIATE_GAUSSIAN_H_
+
+#include <Eigen/Core>
+#include <Eigen/Cholesky>
+#include <boost/random/variate_generator.hpp>
+#include <boost/random/normal_distribution.hpp>
+#include <boost/random/mersenne_twister.hpp>
+#include <cstdlib>
 
 namespace chomp
 {
 
-ChompParameters::ChompParameters()
+/**
+ * \brief Generates samples from a multivariate gaussian distribution
+ */
+class MultivariateGaussian
 {
+public:
+  template <typename Derived1, typename Derived2>
+  MultivariateGaussian(const Eigen::MatrixBase<Derived1>& mean, const Eigen::MatrixBase<Derived2>& covariance);
+
+  template <typename Derived>
+  void sample(Eigen::MatrixBase<Derived>& output);
+
+private:
+  Eigen::VectorXd mean_;                /**< Mean of the gaussian distribution */
+  Eigen::MatrixXd covariance_;          /**< Covariance of the gaussian distribution */
+  Eigen::MatrixXd covariance_cholesky_; /**< Cholesky decomposition (LL^T) of the covariance */
+
+  int size_;
+  boost::mt19937 rng_;
+  boost::normal_distribution<> normal_dist_;
+  boost::variate_generator<boost::mt19937, boost::normal_distribution<> > gaussian_;
+};
+
+//////////////////////// template function definitions follow //////////////////////////////
+
+template <typename Derived1, typename Derived2>
+MultivariateGaussian::MultivariateGaussian(const Eigen::MatrixBase<Derived1>& mean, const Eigen::MatrixBase<Derived2>& covariance):
+  mean_(mean),
+  covariance_(covariance),
+  covariance_cholesky_(covariance_.llt().matrixL()),
+  normal_dist_(0.0,1.0),
+  gaussian_(rng_, normal_dist_)
+{
+  rng_.seed(rand());
+  size_ = mean.rows();
 }
 
-ChompParameters::~ChompParameters()
+template <typename Derived>
+void MultivariateGaussian::sample(Eigen::MatrixBase<Derived>& output)
 {
+  for (int i=0; i<size_; ++i)
+    output(i) = gaussian_();
+  output = mean_ + covariance_cholesky_*output;
 }
 
-void ChompParameters::initFromNodeHandle()
-{
-  ros::NodeHandle node_handle;
-  node_handle.param("~planning_time_limit", planning_time_limit_, 1.0);
-  node_handle.param("~max_iterations", max_iterations_, 500);
-  node_handle.param("~max_iterations_after_collision_free", max_iterations_after_collision_free_, 100);
-  node_handle.param("~smoothness_cost_weight", smoothness_cost_weight_, 0.1);
-  node_handle.param("~obstacle_cost_weight", obstacle_cost_weight_, 1.0);
-  node_handle.param("~learning_rate", learning_rate_, 0.01);
-  node_handle.param("~animate_path", animate_path_, false);
-  node_handle.param("~add_randomness", add_randomness_, true);
-  node_handle.param("~smoothness_cost_velocity", smoothness_cost_velocity_, 0.0);
-  node_handle.param("~smoothness_cost_acceleration", smoothness_cost_acceleration_, 1.0);
-  node_handle.param("~smoothness_cost_jerk", smoothness_cost_jerk_, 0.0);
 }
 
-
-} // namespace chomp
+#endif /* MULTIVARIATE_GAUSSIAN_H_ */
