@@ -3,10 +3,12 @@
 # System modules
 import sys,os
 import random
-import colorsys
 import unittest
 import threading, time
+
+import colorsys
 import math
+import bisect
 
 import cairo, pangocairo
 import gtk, gtk.glade
@@ -45,7 +47,12 @@ class Timeline():
     # Store a list of active tokens
     self.tokens = []
 
-    # Internal timelines must be declared as internal or external
+    # Drawing variables
+    self.earliest_start = 0
+    self.latest_end = 0
+    self.row = 0
+
+    # Timelines must be declared as internal or external
     for var in obj.vars:
       # Check the mode value
       if var.name[-5:] == ".mode":
@@ -61,7 +68,7 @@ class Timeline():
 	self.tokens.append(token)
 
     # Sort the list of tokens
-    self.tokens.sort(lambda a,b: int(b.start[0] - a.start[0]))
+    self.tokens.sort(lambda a,b: int(a.start[0] - b.start[0]))
 
 
   
@@ -75,11 +82,10 @@ class Timeline():
 
     return rgb
 
-
 class ReactorPanel():
   # Constants for drawing
   ROW_HEIGHT = 16
-  ROW_SPACE = 8
+  ROW_SPACE = 12
   ROW_STEP = ROW_HEIGHT+ROW_SPACE
 
   # Constants for labeling
@@ -87,6 +93,9 @@ class ReactorPanel():
 
   # Static variables
   LabelWidth = 200
+  TickBehind = 50
+  HorzOffset = 500
+  TokenSpace = 5
 
   def __init__(self):
     # Initialize data structures
@@ -94,6 +103,16 @@ class ReactorPanel():
     self.int_timelines = []
     self.ext_timelines = []
     self.n_timelines = 0
+
+    # Token structures
+    self.all_tokens = {}
+    self.token_ticks = {}
+    self.token_timelines = {}
+    self.started_token_keys = []
+    self.planned_token_keys = []
+
+    self.started_token_times = []
+    self.planned_token_times = []
 
     # Drawing variables
     self.color = (0,0,0)
@@ -131,6 +150,9 @@ class ReactorPanel():
 
   # Create timeline structures for all of the timelines in an assembly
   def process_timelines(self, assembly):
+    # Save assembly
+    self.assembly = assembly
+
     # Clear timeline vars
     self.n_timelines = 0
     self.int_timelines = []
@@ -149,8 +171,55 @@ class ReactorPanel():
 	else:
 	  self.ext_timelines.append(timeline)
 
+	# Add all tokens to this reactor
+	##############################################################
+
+	for new_token in timeline.tokens:
+	  if self.all_tokens.has_key(new_token.key):
+	    # Check if this token is planned from the previous tick
+	    # This means that it might have started on this one, also it's start time is not yet closed,
+	    # so we need to remove it before sorting
+	    if new_token.key in self.planned_token_keys:
+	      # Get the index in the sorted lists of this token
+	      sorted_index = self.planned_token_keys.index(new_token.key)
+	      # Remove from the sorted lists
+	      self.planned_token_times.pop(sorted_index)
+	      self.planned_token_keys.pop(sorted_index)
+
+	  # Update last updated tick for this token
+	  self.all_tokens[new_token.key] = new_token
+	  self.token_ticks[new_token.key] = assembly.tick
+
+	  # Store this token's timeline
+	  self.token_timelines[new_token.key] = timeline
+
+	  # Insort this token to the appropriate sorted token list
+	  if new_token.start[0] == new_token.start[1]:
+	    # Check if we need to add this to started_tokens
+	    insert_index_start = bisect.bisect_left(self.started_token_times, new_token.start[0])
+	    insert_index_end = bisect.bisect_right(self.started_token_times, new_token.start[0])
+
+	    if insert_index_start >= len(self.started_token_keys) or new_token.key not in self.started_token_keys[insert_index_start:insert_index_end]:
+	      self.started_token_keys.insert(insert_index_start,new_token.key)
+	      self.started_token_times.insert(insert_index_start,new_token.start[0])
+	  else:
+	    # Check if we need to add this to planned_tokens
+	    insert_index_start = bisect.bisect_left(self.planned_token_times, new_token.start[0])
+	    insert_index_end = bisect.bisect_right(self.planned_token_times, new_token.start[0])
+
+	    if insert_index_start >= len(self.planned_token_keys) or new_token.key not in self.planned_token_keys[insert_index_start:insert_index_end]:
+	      self.planned_token_keys.insert(insert_index_start,new_token.key)
+	      self.planned_token_times.insert(insert_index_start,new_token.start[0])
+
+	##############################################################
+    # Set the row in each timeline 
+    row = 0
+    for timeline in self.int_timelines + self.ext_timelines:
+      timeline.row = row
+      row = row + 1
+
     # Set the number of timelines
-    self.n_timelines = len(self.int_timelines) + len(self.ext_timelines)
+    self.n_timelines = row
 
   # Callback to process click events on the timeline view
   def on_timeline_click(self, widget, event, data):
@@ -197,7 +266,7 @@ class ReactorPanel():
     # Initialize row counter
     row = 0
 
-    # Print rows
+    # Draw row backgrounds
     for timeline in self.int_timelines + self.ext_timelines:
       y = row*ReactorPanel.ROW_STEP + ReactorPanel.ROW_SPACE
 
@@ -205,37 +274,134 @@ class ReactorPanel():
       cr.set_source_rgba(0, 0, 0, 0.1)
       cr.rectangle(0,y,1000,ReactorPanel.ROW_HEIGHT)
       cr.fill()
+      row = row+1
 
+    # Set global earliest start and latest end
+    earliest_start = 0
+    latest_end = 0
+    
+    # Reset earliest start and latest end for each reactor
+    for tl in self.int_timelines + self.ext_timelines:
+      tl.earliest_start = 0
+      tl.latest_end = 0
+
+    # Set the font style
+
+    # Iterate over all token keys
+    for key in self.started_token_keys[::-1] + self.planned_token_keys:
+
+      # Get token
+      token = self.all_tokens[key]
+      timeline = self.token_timelines[key]
+      
       # Get timeline color
       (r,g,b) = timeline.get_color()
 
-      # Draw tokens
-      x = 500
-      self.set_font(cr)
-      for token in timeline.tokens:
-	# Determine label width
-	name = token.name.split(".")[1]
-	xb,yb,tw,th,xa,ya = cr.text_extents(name)
-	
-	# Draw box
-	bw = tw+(2*ReactorPanel.LABEL_MARGIN)
-	cr.set_source_rgba(r, g, b, 1.0)
-	cr.rectangle(x,y,-bw,ReactorPanel.ROW_HEIGHT)
-	cr.fill()
+      # Skip tokens that are older than the tickbehind and newer than the current tick
+      if self.token_ticks[key] < self.assembly.tick-ReactorPanel.TickBehind:
+	continue
+      elif self.token_ticks[key] > self.assembly.tick:
+	continue
 
-	tx = x -tw - ReactorPanel.LABEL_MARGIN
-	ty = y+ReactorPanel.ROW_HEIGHT-4
+      # Do not draw BaseState (HACK)
+      if token.name == "BaseState.Holds":
+	continue
 
-	# Draw label
-	cr.move_to(tx,ty)
-	cr.set_source_rgba(1.0, 1.0, 1.0, 0.5)
-	cr.show_text(name)
+      #print "TICK: %d, EARLIEST_START: %d, LATEST_END: %d" % (self.assembly.tick, earliest_start, latest_end)
 
-	x = x-bw-1
+      # Create the label string, and get the length of the label
+      self.set_label_font(cr)
+      label_str = " %s " % (token.name.split('.')[1])#, int(str(token.key)))
+      _xb,_yb,w_label,_th,_xa,_ya = cr.text_extents(label_str)
 
+      # Create the time bound string and get its length
+      self.set_times_font(cr)
+      end_str = "[%d, %d]" % (token.start[0], token.end[0])
+      _xb,_yb,w_end_str,_th,_xa,_ya = cr.text_extents(end_str)
 
-      # Increment row counter
-      row = row+1
+      # Get the max width of the label
+      tok_width_label = max(w_label,w_end_str)
+      tok_width_label = tok_width_label + ReactorPanel.LABEL_MARGIN
+
+      tok_x0 = 0
+      tok_y0 = 0
+
+      # Switch draw ordering behavior if this token has started or is planned
+      if token.start[0] == token.start[1]:
+	# Has started
+	# Calculate the token pixel width
+	# Get the width if this token were to be drawn between the latest point on this timeline, and the earliest point for all timelines
+	tok_width_sync = abs(timeline.earliest_start - earliest_start)
+
+	# Get the larger of the two widths
+	tok_width = ReactorPanel.TokenSpace + max(tok_width_label, tok_width_sync)
+
+	# Calculate the token end point
+	# This is the start of the earliest token on the timeline that this token is being drawn onto
+	tok_end = timeline.earliest_start
+
+	# Do not draw token if it ends before the visible window
+	if tok_end < -ReactorPanel.HorzOffset:
+	  continue
+
+	# Increment earliest start for this timelines
+	timeline.earliest_start = timeline.earliest_start - tok_width
+	# Set the new earliest start for all timelines
+	earliest_start = min(earliest_start, timeline.earliest_start)
+
+	# Calculate the position top-right corner of the token
+	tok_x0 = ReactorPanel.HorzOffset+math.ceil(tok_end)
+
+	#print "TOKEN \"%s\" ADD WIDTH: %d = max( abs( %d - %d ), %d )" % (token.name,tok_width, timeline.earliest_start, earliest_start, tok_width_label)
+      else:
+	# Is planned
+	# Calculate the token pixel width
+	# Get the width if this token were to be drawn between the latest point on this timeline, and the earliest point for all timelines
+	tok_width_sync = abs(latest_end - timeline.latest_end)
+
+	# Get the larger of the two widths
+	tok_width = ReactorPanel.TokenSpace + max(tok_width_label, tok_width_sync)
+
+	# Calculate the token end point
+	# This is the start of the earliest token on the timeline that this token is being drawn onto
+	tok_start = timeline.latest_end
+
+	# Increment earliest start for this timelines
+	timeline.latest_end = timeline.latest_end + tok_width
+	# Set the new earliest start for all timelines
+	latest_end = max(latest_end, timeline.latest_end)
+
+	# Calculate the position top-right corner of the token
+	tok_x0 = ReactorPanel.HorzOffset+math.ceil(tok_start+tok_width)
+
+      tok_y0 = ReactorPanel.ROW_STEP*timeline.row + ReactorPanel.ROW_SPACE
+
+      # Draw token
+      # Set the color for the appropriate reactors
+      if self.token_ticks[key] < self.assembly.tick:
+	cr.set_source_rgba(0.3, 0.3, 0.3, 0.7)
+      else:
+	cr.set_source_rgba(r, g, b, 0.7)
+
+      # Draw the token rectangle
+      cr.rectangle(tok_x0, tok_y0, -tok_width+2, ReactorPanel.ROW_HEIGHT)
+      cr.fill()
+
+      # Draw the token label
+      self.set_label_font(cr)
+      tx = tok_x0 - w_label - ReactorPanel.LABEL_MARGIN
+      ty = tok_y0 + ReactorPanel.ROW_HEIGHT - 4
+      cr.move_to(tx,ty)
+      cr.set_source_rgba(1.0, 1.0, 1.0, 1.0)
+      cr.show_text(label_str)
+
+      # Draw the time bounds
+      self.set_times_font(cr)
+      cr.set_source_rgba(0, 0, 0, 0.7)
+      tx = tok_x0 - w_end_str - ReactorPanel.LABEL_MARGIN
+      ty = tok_y0 + ReactorPanel.ROW_STEP - 3
+      cr.move_to(tx,ty)
+      cr.show_text(end_str)
 
 
     return False
@@ -244,12 +410,19 @@ class ReactorPanel():
   def draw_token(self,cr,row,start,end):
     pass
 
-  def set_font(self,cr):
+  def set_label_font(self,cr):
     cr.select_font_face(
 	"Sans",
 	cairo.FONT_SLANT_NORMAL, 
 	cairo.FONT_WEIGHT_NORMAL)
-    cr.set_font_size(13)
+    cr.set_font_size(12)
+
+  def set_times_font(self,cr):
+    cr.select_font_face(
+	"Monospace",
+	cairo.FONT_SLANT_NORMAL, 
+	cairo.FONT_WEIGHT_NORMAL)
+    cr.set_font_size(8)
 
   #############################################################################
   # Drawing timeline labels
@@ -269,7 +442,7 @@ class ReactorPanel():
     
     # Determine width needed to show all labels
     max_width = 0
-    self.set_font(cr)
+    self.set_label_font(cr)
     for timeline in self.int_timelines + self.ext_timelines:
       # Get extents
       xb,yb,w,h,xa,ya = cr.text_extents(timeline.obj.name)
@@ -295,7 +468,7 @@ class ReactorPanel():
       tx = ReactorPanel.LabelWidth - w - ReactorPanel.LABEL_MARGIN
       ty = y+ReactorPanel.ROW_HEIGHT-4
       cr.move_to(tx,ty)
-      cr.set_source_rgba(1.0, 1.0, 1.0, 0.5)
+      cr.set_source_rgba(1.0, 1.0, 1.0, 1.0)
       cr.show_text(timeline.obj.name)
 
       row = row+1
