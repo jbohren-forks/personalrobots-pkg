@@ -136,11 +136,11 @@
   <!-- Origin is center mount screw on sensor plate mount -->
   <!-- When mounted properly, should have same origin as head plate frame -->
   <macro name="pr2_head_sensor_package" params="name hd_name stereo_name parent *origin">
-    <joint name="${name}_fixed_joint" type="fixed" />
+    <joint name="${name}_frame_joint" type="fixed" />
     <link name="${name}_link" >
       <parent name="${parent}" />
       <insert_block name="origin" />
-      <joint name="${name}_fixed_joint" />
+      <joint name="${name}_frame_joint" />
       <inertial>
 	<!-- Needs verification with CAD -->	
 	<mass value="0.05" />
@@ -185,11 +185,11 @@
   <!-- Needs calibration verification, and CAD check. -->
   <macro name="double_stereo_camera" params="name parent *origin">
     <!-- Define link to stereo cameras, set origin relative to that -->
-    <joint name="${name}_fixed_joint" type="fixed" />
+    <joint name="${name}_frame_joint" type="fixed" />
     <link name="${name}_link">
       <parent name="${parent}" />
       <insert_block name="origin" />
-      <joint name="${name}_fixed_joint" />
+      <joint name="${name}_frame_joint" />
       <inertial>
 	<!-- Needs verification with CAD -->	
 	<mass value="0.1" />
@@ -231,11 +231,11 @@
 
   <macro name="stereo_camera" params="name parent *origin">
     
-    <joint name="${name}_fixed_joint" type="fixed" />
+    <joint name="${name}_frame_joint" type="fixed" />
     <link name="${name}_link">
       <parent name="${parent}" />
       <insert_block name="origin" />
-      <joint name="${name}_fixed_joint" />
+      <joint name="${name}_frame_joint" />
       
       <inertial>
         <mass value="0.1" />
@@ -264,12 +264,12 @@
     </link>
 
 
-    <joint name="${name}_optical_fixed_joint" type="fixed" />
+    <joint name="${name}_optical_frame_joint" type="fixed" />
     <link name="${name}_optical_frame" type="camera">
       <parent name="${name}_link" />
       <origin xyz="${cal_stereo_x}            ${0.045+cal_stereo_y}   ${.0305+cal_stereo_z}"
               rpy="${-M_PI/2+cal_stereo_roll} ${0.0+cal_stereo_pitch} ${-M_PI/2+cal_stereo_yaw}" />
-      <joint name="${name}_optical_fixed_joint" />
+      <joint name="${name}_optical_frame_joint" />
 
       <inertial>
         <mass value="0.01" />
@@ -284,25 +284,25 @@
         <map name="gazebo_material" flag="gazebo">
           <elem key="material" value="PR2/Blue" />
         </map>
-        <geometry name="${name}_optical_fixed_visual">
+        <geometry name="${name}_optical_frame_visual">
           <box size="0.01 0.01 0.01" />
         </geometry>
       </visual>
 
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <geometry name="${name}_optical_fixed_collision">
+        <geometry name="${name}_optical_frame_collision">
           <box size="0.01 0.01 0.01" />
         </geometry>
       </collision>
 
     </link>
 
-    <joint name="${name}_l_stereo_camera_fixed_joint" type="fixed" />
+    <joint name="${name}_l_stereo_camera_frame_joint" type="fixed" />
     <link name="${name}_l_stereo_camera_frame">
       <parent name="${name}_optical_frame" />
       <origin xyz="0 0 0" rpy="0 ${-M_PI/2} ${M_PI/2}" />
-      <joint name="${name}_l_stereo_camera_fixed_joint" />
+      <joint name="${name}_l_stereo_camera_frame_joint" />
       
       <inertial>
         <mass value="0.01" />
@@ -350,12 +350,12 @@
       </map>
     </link>
 
-    <joint name="${name}_r_stereo_camera_fixed_joint" type="fixed" />
+    <joint name="${name}_r_stereo_camera_frame_joint" type="fixed" />
     <link name="${name}_r_stereo_camera_frame">
       <parent name="${name}_l_stereo_camera_frame" />
       <origin xyz="${stereo_dx} ${stereo_dy} ${stereo_dz}"
               rpy="${stereo_rx} ${stereo_ry} ${stereo_rz}" />
-      <joint name="${name}_r_stereo_camera_fixed_joint" />
+      <joint name="${name}_r_stereo_camera_frame_joint" />
       
       <inertial>
         <mass value="0.01" />
@@ -550,11 +550,11 @@
     </pr2_head_tilt>
 
     <!-- Head plate frame -->
-    <joint name="${name}_plate_fixed_joint" type="fixed" />
+    <joint name="${name}_plate_frame_joint" type="fixed" />
     <link name="${name}_plate_frame">
       <parent name="${name}_tilt_link" />
       <origin xyz="0.0232 0 0.0645" rpy="0 0 0" />     
-      <joint name="${name}_plate_fixed_joint" />
+      <joint name="${name}_plate_frame_joint" />
 
       <inertial>
         <mass value="0.01" />
@@ -918,11 +918,11 @@
     </pr2_head_tilt_alpha2>
 
     <!-- Head plate frame -->
-    <joint name="${name}_plate_fixed_joint" type="fixed" />
+    <joint name="${name}_plate_frame_joint" type="fixed" />
     <link name="${name}_plate_frame">
       <parent name="${name}_tilt_link" />
       <origin xyz="0.0232 0 0.0645" rpy="0 0 0" />
-      <joint name="${name}_plate_fixed_joint" />
+      <joint name="${name}_plate_frame_joint" />
 
       <inertial>
         <mass value="0.01" />
@@ -968,11 +968,11 @@
     </pr2_head_tilt_alpha2a>
 
     <!-- Head plate frame -->
-    <joint name="${name}_plate_fixed_joint" type="fixed" />
+    <joint name="${name}_plate_frame_joint" type="fixed" />
     <link name="${name}_plate_frame">
       <parent name="${name}_tilt_link" />
       <origin xyz="0.0232 0 0.0645" rpy="0 0 0" />     
-      <joint name="${name}_plate_fixed_joint" />
+      <joint name="${name}_plate_frame_joint" />
 
       <inertial>
         <mass value="0.01" />
@@ -1013,11 +1013,11 @@
     </pr2_head_tilt_alpha2b>
 
     <!-- Head plate frame -->
-    <joint name="${name}_plate_fixed_joint" type="fixed" />
+    <joint name="${name}_plate_frame_joint" type="fixed" />
     <link name="${name}_plate_frame">
       <parent name="${name}_tilt_link" />
       <origin xyz="0.0232 0 0.0645" rpy="0 0 0" />     
-      <joint name="${name}_plate_fixed_joint" />
+      <joint name="${name}_plate_frame_joint" />
 
       <inertial>
         <mass value="0.01" />

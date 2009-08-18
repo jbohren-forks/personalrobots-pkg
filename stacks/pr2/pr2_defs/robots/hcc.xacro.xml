@@ -9,6 +9,7 @@
   <resource type="ogre"       location="$(find pr2_ogre)/Media/models"/>
   
   <include filename="$(find pr2_defs)/defs/alpha2_head_defs.xml" />
+  <include filename="$(find pr2_defs)/defs/head_defs.xml" />
   <include filename="$(find pr2_defs)/defs/prosilica_defs.xml" />
   <include filename="$(find pr2_defs)/defs/gazebo_defs.xml" />
 

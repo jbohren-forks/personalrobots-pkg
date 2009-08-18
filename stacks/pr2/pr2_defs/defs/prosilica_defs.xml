@@ -4,11 +4,11 @@
       xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface">
   
 <macro name="prosilica_cam" params="name parent *origin">
-  <joint name="${name}_fixed_joint" type="fixed" />
+  <joint name="${name}_frame_joint" type="fixed" />
   <link name="${name}_frame">
     <insert_block name="origin" />
     <parent name="${parent}" />
-    <joint name="${name}_fixed_joint" />
+    <joint name="${name}_frame_joint" />
 
     <inertial>
       <mass value="0.01" />
@@ -70,10 +70,10 @@
 
   </link>
 
-  <joint name="${name}_optical_fixed_joint" type="fixed" />
+  <joint name="${name}_optical_frame_joint" type="fixed" />
   <link name="${name}_optical_frame">
     <parent name="${name}_frame" />
-    <joint name="${name}_optical_fixed_joint" />
+    <joint name="${name}_optical_frame_joint" />
     <origin xyz="${cal_high_def_x}            ${cal_high_def_y}         ${cal_high_def_z}"
             rpy="${-M_PI/2+cal_high_def_roll} ${0.0+cal_high_def_pitch} ${-M_PI/2+cal_high_def_yaw}" />
 

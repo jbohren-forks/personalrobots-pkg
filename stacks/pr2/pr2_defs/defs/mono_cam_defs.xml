@@ -6,11 +6,11 @@
   
 <macro name="mono_cam" params="name parent *origin">
 
-  <joint name="${name}_fixed_joint" type="fixed" />
+  <joint name="${name}_frame_joint" type="fixed" />
   <link name="${name}_frame">
     <insert_block name="origin" />
     <parent name="${parent}" />
-    <joint name="${name}_fixed_joint" />
+    <joint name="${name}_frame_joint" />
 
     <inertial>
       <mass value="0.01" />
@@ -41,10 +41,10 @@
     </map>
   </link>
 
-  <joint name="${name}_optical_fixed_joint" type="fixed" />
+  <joint name="${name}_optical_frame_joint" type="fixed" />
   <link name="${name}_optical_frame">
     <parent name="${name}_frame" />
-    <joint name="${name}_optical_fixed_joint" />
+    <joint name="${name}_optical_frame_joint" />
     <origin xyz="0 0 0"
             rpy="${-M_PI/2} 0.0 ${-M_PI/2}" />
 
