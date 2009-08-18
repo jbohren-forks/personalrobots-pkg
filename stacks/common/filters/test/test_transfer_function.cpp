@@ -40,10 +40,10 @@ TEST(TransferFunctionDoubleFilter, LowPass)
   double epsilon = 1e-4;
   
   TiXmlDocument doc;
-  doc.Parse("<filter type=\"TransferFunctionDoubleFilter\" name=\"transferfunction_test\"> <params a=\"1.0 -0.509525449494429\" b=\" 0.245237275252786 0.245237275252786\"/></filter>"); 
+  doc.Parse("<filter type=\"TransferFunctionFilter<double>\" name=\"transferfunction_test\"> <params a=\"1.0 -0.509525449494429\" b=\" 0.245237275252786 0.245237275252786\"/></filter>"); 
   TiXmlElement *config = doc.RootElement();
   
-  FilterBase<double> * filter = new TransferFunctionDoubleFilter ();
+  MultiChannelFilterBase<double> * filter = new TransferFunctionFilter<double> ();
   EXPECT_TRUE(filter->configure(1, config ));
   
 
@@ -74,10 +74,10 @@ TEST(TransferFunctionDoubleFilter, LowPassNonUnity)
   double epsilon = 1e-4;
 
   TiXmlDocument doc;
-  doc.Parse("<filter type=\"TransferFunctionDoubleFilter\" name=\"transferfunction_test\"> <params a=\"2.0 -0.509525449494429\" b=\" 0.245237275252786 0.245237275252786\"/></filter>"); 
+  doc.Parse("<filter type=\"TransferFunctionFilter<double>\" name=\"transferfunction_test\"> <params a=\"2.0 -0.509525449494429\" b=\" 0.245237275252786 0.245237275252786\"/></filter>"); 
   TiXmlElement *config = doc.RootElement();
   
-  FilterBase<double> * filter = new TransferFunctionDoubleFilter ();
+  MultiChannelFilterBase<double> * filter = new TransferFunctionFilter<double> ();
   EXPECT_TRUE(filter->configure(1, config ));
     
   std::vector<double> in1,in2,in3,in4,in5,in6,in7;
@@ -107,10 +107,10 @@ TEST(TransferFunctionDoubleFilter, LowPassMulti)
   double epsilon = 1e-4;
 
   TiXmlDocument doc;
-  doc.Parse("<filter type=\"TransferFunctionDoubleFilter\" name=\"transferfunction_test\"> <params a=\"1.0 -1.760041880343169 1.182893262037831 -0.278059917634546\" b=\"0.018098933007514 0.245237275252786 0.054296799022543 0.018098933007514\"/></filter>"); 
+  doc.Parse("<filter type=\"TransferFunctionFilter<double>\" name=\"transferfunction_test\"> <params a=\"1.0 -1.760041880343169 1.182893262037831 -0.278059917634546\" b=\"0.018098933007514 0.245237275252786 0.054296799022543 0.018098933007514\"/></filter>"); 
   TiXmlElement *config = doc.RootElement();
   
-  FilterBase<double> * filter = new TransferFunctionDoubleFilter ();
+  MultiChannelFilterBase<double> * filter = new TransferFunctionFilter<double> ();
   EXPECT_TRUE(filter->configure(3, config ));
 
   std::vector<double> in1,in2,in3,in4,in5,in6,in7;
@@ -166,10 +166,10 @@ TEST(TransferFunctionDoubleFilter, LowPassIrrational)
   double epsilon = 1e-4;
  
   TiXmlDocument doc;
-  doc.Parse("<filter type=\"TransferFunctionDoubleFilter\" name=\"transferfunction_test\"> <params a=\"1.0 -1.760041880343169 1.182893262037831 \" b=\"0.018098933007514 0.054296799022543 0.054296799022543 0.018098933007514\"/></filter>"); 
+  doc.Parse("<filter type=\"TransferFunctionFilter<double>\" name=\"transferfunction_test\"> <params a=\"1.0 -1.760041880343169 1.182893262037831 \" b=\"0.018098933007514 0.054296799022543 0.054296799022543 0.018098933007514\"/></filter>"); 
   TiXmlElement *config = doc.RootElement();
   
-  FilterBase<double> * filter = new TransferFunctionDoubleFilter ();
+  MultiChannelFilterBase<double> * filter = new TransferFunctionFilter<double> ();
   EXPECT_TRUE(filter->configure(3, config ));
  
   std::vector<double> in1,in2,in3,in4,in5,in6,in7;

@@ -7,17 +7,17 @@ rospack_add_boost_directories()
 #Plugins
 rospack_add_library(mean src/mean.cpp)
 rospack_add_library(median src/median.cpp)
-#rospack_add_library(transfer_function src/transfer_function.cpp)
+rospack_add_library(transfer_function src/transfer_function.cpp)
 
-
+# Test median filter
 rospack_add_gtest(median_test test/test_median.cpp)
 target_link_libraries(median_test median) 
 
-# broken, needs to go to the new form factor
-#rospack_add_gtest(transfer_function_test test/test_transfer_function.cpp)
-#target_link_libraries(transfer_function_test transfer_function)
+#test transfer function filter
+rospack_add_gtest(transfer_function_test test/test_transfer_function.cpp)
+target_link_libraries(transfer_function_test transfer_function)
 
-
+#test mean filter
 rospack_add_gtest(mean_test test/test_mean.cpp)
 target_link_libraries(mean_test mean)
 
