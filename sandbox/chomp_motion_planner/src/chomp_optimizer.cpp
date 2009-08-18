@@ -188,6 +188,12 @@ void ChompOptimizer::optimize()
     }
 
     // make a random jump if the trajectory is in collision:
+    if (parameters_->getAddRandomness())
+    {
+      getRandomMomentum();
+
+    }
+
     if (!is_collision_free_ && parameters_->getAddRandomness())
     {
       performForwardKinematics();
@@ -562,7 +568,8 @@ void ChompOptimizer::getRandomMomentum()
 {
   for (int i=0; i<num_joints_; ++i)
   {
-    //multivariate_gaussian_[i].sample(
+    multivariate_gaussian_[i].sample(random_joint_momentum_);
+    random_momentum_.col(i) = random_joint_momentum_;
   }
 }
 
