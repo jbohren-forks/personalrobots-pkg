@@ -17,15 +17,14 @@
   <macro name="pr2_head_pan_alpha2" params="name parent *origin">
 
     <joint name="${name}_joint" type="revolute">
-      <origin xyz="0 0 0" rpy="0 0 0" />
       <axis xyz="0 0 1" />
       <limit lower="-2.92" upper="2.92" effort="2.645" velocity="6" />
       <safety_controller k_velocity="1.5" soft_lower_limit="${-2.92+0.15}" soft_upper_limit="${2.92-0.15}" k_position="100" />
       <calibration reference_position="${0.0+cal_head_pan_flag_alpha2}" />
       <dynamics damping="1.0" />
-      <parent name="${parent}">
-        <insert_block name="origin" />
-      </parent>
+      <insert_block name="origin" />
+      <parent link="${parent}"/>
+      <child link="${name}_link"/>
     </joint>
     <link name="${name}_link">
 
@@ -63,15 +62,14 @@
   <macro name="pr2_head_tilt_alpha2" params="name parent *origin">
 
     <joint name="${name}_joint" type="revolute">
-      <origin xyz="0 0 0" rpy="0 0 0" />
       <axis xyz="0 1 0" />
       <limit lower="-0.45" upper="1.37" effort="12" velocity="5" />
       <safety_controller k_velocity="100" soft_lower_limit="${-0.45+0.02}" soft_upper_limit="${1.37-0.02}" k_position="100" />
       <calibration reference_position="${0.0+cal_head_tilt_flag}" />
       <dynamics damping="1.0" />
-      <parent name="${parent}">
-        <insert_block name="origin" />
-      </parent>
+      <insert_block name="origin" />
+      <parent link="${parent}"/>
+      <child link="${name}_link"/>
     </joint>
     <link name="${name}_link">
 
@@ -107,15 +105,14 @@
   <macro name="pr2_head_tilt_alpha2a" params="name parent *origin">
     <!-- Motor must be configured with 148877 motor -->
     <joint name="${name}_joint" type="revolute">
-      <origin xyz="0 0 0" rpy="0 0 0" />
       <axis xyz="0 1 0" />
       <limit lower="-0.45" upper="1.37" effort="12.0" velocity="5" />
       <safety_controller k_velocity="10" soft_lower_limit="${-0.45+0.02}" soft_upper_limit="${1.37-0.02}" k_position="100" />
       <calibration reference_position="${0.0+cal_head_tilt_flag_alpha2}" />
       <dynamics damping="1.0" />
-      <parent name="${parent}">
-        <insert_block name="origin" />
-      </parent>
+      <insert_block name="origin" />
+      <parent link="${parent}"/>
+      <child link="${name}_link"/>
     </joint>
     <link name="${name}_link">
 
@@ -149,15 +146,14 @@
 
  <macro name="pr2_head_tilt_alpha2b" params="name parent *origin">
     <joint name="${name}_joint" type="revolute">
-      <origin xyz="0 0 0" rpy="0 0 0" />
       <axis xyz="0 1 0" />
       <limit lower="-0.45" upper="1.37" effort="12.0" velocity="5" />
       <safety_controller k_velocity="10" soft_lower_limit="${-0.45+0.02}" soft_upper_limit="${1.37-0.02}" k_position="100" />
       <calibration reference_position="${0.0+cal_head_tilt_flag_alpha2}" />
       <dynamics damping="1.0" />
-      <parent name="${parent}">
-        <insert_block name="origin" />
-      </parent>
+      <insert_block name="origin" />
+      <parent link="${parent}"/>
+      <child link="${name}_link"/>
     </joint>
     <link name="${name}_link">
 
@@ -203,10 +199,9 @@
 
     <!-- Head plate frame -->
     <joint name="${name}_plate_frame_joint" type="fixed">
-      <origin xyz="0 0 0" rpy="0 0 0" />
-      <parent name="${name}_tilt_link">
-        <origin xyz="0.0232 0 0.0645" rpy="0 0 0" />
-      </parent>
+      <origin xyz="0.0232 0 0.0645" rpy="0 0 0" />
+      <parent link="${name}_tilt_link"/>
+      <child link="${name}_plate_frame"/>
     </joint>
     <link name="${name}_plate_frame">
 
@@ -252,9 +247,9 @@
 
     <!-- Head plate frame -->
     <joint name="${name}_plate_frame_joint" type="fixed">
-      <parent name="${name}_tilt_link">
-        <origin xyz="0.0232 0 0.0645" rpy="0 0 0" />     
-      </parent>
+      <origin xyz="0.0232 0 0.0645" rpy="0 0 0" />     
+      <parent link="${name}_tilt_link"/>
+      <child link="${name}_plate_frame"/>
     </joint>
     <link name="${name}_plate_frame">
 
@@ -300,10 +295,9 @@
 
     <!-- Head plate frame -->
     <joint name="${name}_plate_frame_joint" type="fixed">
-      <origin xyz="0 0 0" rpy="0 0 0" />
-      <parent name="${name}_tilt_link">
-        <origin xyz="0.0232 0 0.0645" rpy="0 0 0" />     
-      </parent>
+      <origin xyz="0.0232 0 0.0645" rpy="0 0 0" />     
+      <parent link="${name}_tilt_link"/>
+      <child link="${name}_plate_frame"/>
     </joint>
     <link name="${name}_plate_frame">
 

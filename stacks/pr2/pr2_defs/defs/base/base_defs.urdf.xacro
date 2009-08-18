@@ -39,14 +39,13 @@
   <macro name="pr2_wheel" params="suffix parent reflect">
 
     <joint name="${parent}_${suffix}_wheel_joint" type="continuous">
-      <origin xyz="0 0 0" rpy="0 0 0" />
       <axis xyz="0 1 0" />
       <limit effort="100" velocity="100"/>
       <safety_controller k_velocity="10" />
       <dynamics damping="0.0" friction="0.0" />
-      <parent name="${parent}_rotation_link">
-        <origin xyz="0 ${reflect*caster_wheel_offset_y} 0" rpy="0 0 0" />
-      </parent>
+      <origin xyz="0 ${reflect*caster_wheel_offset_y} 0" rpy="0 0 0" />
+      <parent link="${parent}_rotation_link"/>
+      <child link="${parent}_${suffix}_wheel_link"/>
     </joint>
     <link name="${parent}_${suffix}_wheel_link">
       <inertial>
@@ -80,15 +79,14 @@
   <macro name="pr2_caster" params="suffix parent *origin">
 
     <joint name="${suffix}_caster_rotation_joint" type="continuous">
-      <origin xyz="0 0 0" rpy="0 0 0" />
       <axis xyz="0 0 1" />
       <limit effort="100" velocity="100"/>
       <safety_controller k_velocity="10" />
       <calibration reference_position="0.0" />
       <dynamics damping="0.0" friction="0.0" />
-      <parent name="${parent}">
-        <insert_block name="origin"/>
-      </parent>
+      <insert_block name="origin"/>
+      <parent link="${parent}"/>
+      <child link="${suffix}_caster_rotation_link"/>
     </joint>
     <link name="${suffix}_caster_rotation_link">
 
@@ -133,10 +131,9 @@
 
 
     <joint name="${name}_joint" type="planar">
-      <origin xyz="0 0 0" rpy="0 0 0" />
-      <parent name="world">
-        <insert_block name="origin" />
-      </parent>
+      <insert_block name="origin" />
+      <parent link="world"/>
+      <child link="${name}_link"/>
     </joint>
     <link name="${name}_link">
 
@@ -164,11 +161,10 @@
 
     <!-- base laser -->
     <joint name="base_laser_joint" type="fixed">
-      <origin xyz="0 0 0" rpy="0 0 0" />
       <axis xyz="0 1 0" />
-      <parent name="${name}_link">
-        <origin xyz="${base_laser_x} ${base_laser_y} ${base_height_offset+base_laser_z}" rpy="0 0 0" />
-      </parent>
+      <origin xyz="${base_laser_x} ${base_laser_y} ${base_height_offset+base_laser_z}" rpy="0 0 0" />
+      <parent link="${name}_link"/>
+      <child link="base_laser"/>
     </joint>
     <link name="base_laser" type="laser">
 
@@ -197,12 +193,11 @@
 
     <!-- modeling plug on base holder magnet location -->
     <joint name="plug_magnet_joint" type="fixed">
-      <origin xyz="0 0 0" rpy="0 0 0" />
       <axis xyz="0 1 0" />
       <anchor xyz="0 0 0" />
-      <parent name="${name}_link">
-        <origin xyz="0.18 0 ${base_height_offset+0.235}" rpy="0 0 0" />
-      </parent>
+      <origin xyz="0.18 0 ${base_height_offset+0.235}" rpy="0 0 0" />
+      <parent link="${name}_link"/>
+      <child link="plug_magnet"/>
     </joint>
     <link name="plug_magnet" type="laser">
 

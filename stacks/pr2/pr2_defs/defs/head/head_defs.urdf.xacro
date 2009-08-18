@@ -15,15 +15,14 @@
   <macro name="pr2_head_pan" params="name parent *origin">
 
     <joint name="${name}_joint" type="revolute">
-      <origin xyz="0 0 0" rpy="0 0 0" />
       <axis xyz="0 0 1" />
       <limit lower="-2.92" upper="2.92" effort="2.645" velocity="6" />
       <safety_controller k_velocity="1.5" soft_lower_limit="${-2.92+0.15}" soft_upper_limit="${2.92-0.15}" k_position="100" />
       <calibration reference_position="${-2.79+cal_head_pan_flag}" />
       <dynamics damping="1.0" />
-      <parent name="${parent}">
-        <insert_block name="origin" />
-      </parent>
+      <insert_block name="origin" />
+      <parent link="${parent}"/>
+      <child link="${name}_link"/>
     </joint>
     <link name="${name}_link">
 
@@ -62,15 +61,14 @@
   <macro name="pr2_head_tilt" params="name parent *origin">
 
     <joint name="${name}_joint" type="revolute">
-      <origin xyz="0 0 0" rpy="0 0 0" />
       <axis xyz="0 1 0" />
       <limit lower="-0.55" upper="1.047" effort="12.21" velocity="100" />
       <safety_controller k_velocity="1.5" soft_lower_limit="${-0.55+0.02}" soft_upper_limit="${1.047-0.002}" k_position="100" />
       <calibration reference_position="${-0.195+cal_head_tilt_flag}" />
       <dynamics damping="1.0" />
-      <parent name="${parent}">
-        <insert_block name="origin" />
-      </parent>
+      <insert_block name="origin" />
+      <parent link="${parent}"/>
+      <child link="${name}_link"/>
     </joint>
     <link name="${name}_link">
 
@@ -117,10 +115,9 @@
 
     <!-- Head plate frame -->
     <joint name="${name}_plate_frame_joint" type="fixed">
-      <origin xyz="0 0 0" rpy="0 0 0" />
-      <parent name="${name}_tilt_link">
-        <origin xyz="0.0232 0 0.0645" rpy="0 0 0" />     
-      </parent>
+      <origin xyz="0.0232 0 0.0645" rpy="0 0 0" />     
+      <parent link="${name}_tilt_link"/>
+      <child link="${name}_plate_frame"/>
     </joint>
     <link name="${name}_plate_frame">
 

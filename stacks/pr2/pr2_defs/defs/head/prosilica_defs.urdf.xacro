@@ -8,10 +8,9 @@
 
   <macro name="prosilica_cam" params="name parent *origin">
     <joint name="${name}_frame_joint" type="fixed">
-      <origin xyz="0 0 0" rpy="0 0 0"/>
-      <parent name="${parent}">
-        <insert_block name="origin" />
-      </parent>
+      <insert_block name="origin" />
+      <parent link="${parent}"/>
+      <child link="${name}_frame"/>
     </joint>
     <link name="${name}_frame">
 
@@ -41,11 +40,10 @@
     </link>
 
     <joint name="${name}_optical_frame_joint" type="fixed">
-      <origin xyz="0 0 0" rpy="0 0 0"/>
-      <parent name="${name}_frame">
-        <origin xyz="${cal_high_def_x}            ${cal_high_def_y}         ${cal_high_def_z}"
+      <origin xyz="${cal_high_def_x}            ${cal_high_def_y}         ${cal_high_def_z}"
                 rpy="${-M_PI/2+cal_high_def_roll} ${0.0+cal_high_def_pitch} ${-M_PI/2+cal_high_def_yaw}" />
-      </parent>
+      <parent link="${name}_frame"/>
+      <child link="${name}_optical_frame"/>
     </joint>
     <link name="${name}_optical_frame">
 

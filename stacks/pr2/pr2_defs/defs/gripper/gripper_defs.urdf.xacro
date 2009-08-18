@@ -29,15 +29,14 @@
 
     <!-- Finger proximal digit -->
     <joint name="${prefix}_l_finger_joint" type="revolute">
-      <origin xyz="0 0 0" rpy="0 0 0" />
       <axis xyz="0 0 1" />
 
       <pr2_finger_limits reflect="1" />
 
-      <joint_properties damping="${finger_damping}" />
-      <parent name="${parent}">
-        <origin xyz="0.07691 0.01 0" rpy="0 0 0" />
-      </parent>
+      <dynamics damping="${finger_damping}" />
+      <origin xyz="0.07691 0.01 0" rpy="0 0 0" />
+      <parent link="${parent}"/>
+      <child link="${prefix}_l_finger_link"/>
     </joint>
     <link name="${prefix}_l_finger_link">
 
@@ -73,11 +72,11 @@
       <axis xyz="0 0 -1" />
       <origin xyz="0 0 0" rpy="0 0 0" />
       <pr2_finger_limits reflect="1" />
-      <joint_properties damping="${finger_damping}" />
+      <dynamics damping="${finger_damping}" />
       <mimic name="${prefix}_l_finger_joint" mult="1" offset="0"/>
-      <parent name="${parent}">
-        <origin xyz="0.07691 -0.01 0" rpy="0 0 0" />
-      </parent>
+      <origin xyz="0.07691 -0.01 0" rpy="0 0 0" />
+      <parent link="${parent}"/>
+      <child link="${prefix}_r_finger_link"/>
     </joint>
     <link name="${prefix}_r_finger_link">
 
@@ -113,11 +112,11 @@
       <axis xyz="0 0 -1" />
       <origin xyz="0 0 0" rpy="0 0 0" />
       <pr2_finger_limits reflect="1" />
-      <joint_properties damping="${finger_tip_damping}" />
+      <dynamics damping="${finger_tip_damping}" />
       <mimic name="${prefix}_l_finger_joint" mult="1" offset="0"/>
-      <parent name="${prefix}_l_finger_link">
-        <origin xyz="0.09137 0.00495 0" rpy="0 0 0" />
-      </parent>
+      <origin xyz="0.09137 0.00495 0" rpy="0 0 0" />
+      <parent link="${prefix}_l_finger_link"/>
+      <child link="${prefix}_l_finger_tip_link"/>
     </joint>
     <link name="${prefix}_l_finger_tip_link">
 
@@ -150,11 +149,11 @@
       <axis xyz="0 0 1" />
       <origin xyz="0 0 0" rpy="0 0 0" />
       <pr2_finger_limits reflect="1" />
-      <joint_properties damping="${finger_tip_damping}" />
+      <dynamics damping="${finger_tip_damping}" />
       <mimic name="${prefix}_l_finger_joint" mult="1" offset="0"/>
-      <parent name="${prefix}_r_finger_link">
-        <origin xyz="${0.09137} ${-0.00495} 0" rpy="0 0 0" />
-      </parent>
+      <origin xyz="${0.09137} ${-0.00495} 0" rpy="0 0 0" />
+      <parent link="${prefix}_r_finger_link"/>
+      <child link="${prefix}_r_finger_tip_link"/>
     </joint>
     <link name="${prefix}_r_finger_tip_link">
 
@@ -191,10 +190,9 @@
   <macro name="pr2_gripper" params="side parent *origin gear_ratio screw_reduction">
 
     <joint name="${side}_gripper_palm_joint" type="fixed">
-      <origin xyz="0 0 0" rpy="0 0 0" />
-      <parent name="${parent}">
-        <insert_block name="origin"/>
-      </parent>
+      <insert_block name="origin"/>
+      <parent link="${parent}"/>
+      <child link="${side}_gripper_palm_link"/>
     </joint>
     <link name="${side}_gripper_palm_link">
       <inertial>
@@ -222,14 +220,13 @@
 
     <!-- floating link for simulating gripper constraints -->
     <joint name="${side}_gripper_float_joint" type="prismatic">
-      <origin xyz="0 0 0" rpy="0 0 0" />
       <limit lower="-0.05" upper="0.001" effort="0" />
       <safety_controller soft_lower_limit="${-0.05+0.0}" soft_upper_limit="${0.001-0.0}" />
       <axis xyz="1 0 0" />
-      <joint_properties damping="10.0" />
-      <parent name="${side}_gripper_palm_link">
-        <origin xyz="0.05 0 0" rpy="0 0 0" />
-      </parent>
+      <dynamics damping="10.0" />
+      <origin xyz="0.05 0 0" rpy="0 0 0" />
+      <parent link="${side}_gripper_palm_link"/>
+      <child link="${side}_gripper_float_link"/>
     </joint>
     <link name="${side}_gripper_float_link">
 
@@ -256,10 +253,9 @@
     </link>
 
     <joint name="${side}_gripper_tool_joint" type="fixed">
-      <origin xyz="0 0 0" rpy="0 0 0" />
-      <parent name="${side}_gripper_palm_link">
-        <origin xyz="0.18 0 0" rpy="0 0 0" />
-      </parent>
+      <origin xyz="0.18 0 0" rpy="0 0 0" />
+      <parent link="${side}_gripper_palm_link"/>
+      <child link="${side}_gripper_tool_frame"/>
     </joint>
     <link name="${side}_gripper_tool_frame">
 

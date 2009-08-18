@@ -38,13 +38,10 @@
 
     <!-- Shoulder pan -->
     <joint name="${side}_shoulder_pan_joint" type="revolute">
-      <!-- transform from link to joint frame -->
-      <origin xyz="0 0 0" rpy="0 0 0"/>
       <axis xyz="0 0 1" />
-      <parent name="${parent}">
-        <!-- transform from parent link to this joint frame -->
-        <insert_block name="origin" />
-      </parent>
+      <insert_block name="origin" /> <!-- transform from parent link to this joint frame -->
+      <parent link="${parent}"/>
+      <child link="${side}_shoulder_pan_link"/>
       <limit lower="${reflect*M_PI/4-1.5}"  upper="${reflect*M_PI/4+1.5}"
              effort="30" velocity="${VELOCITY_LIMIT_SCALE*3.48}" />
 
@@ -87,7 +84,6 @@
 
     <!-- Shoulder lift -->
     <joint name="${side}_shoulder_lift_joint" type="revolute">
-      <origin xyz="0 0 0" rpy="0 0 0"/>
       <axis xyz="0 1 0"/>
 
       <!-- Limits updated from Function's CAD values as of 2009_02_24 (link_data.xls) -->
@@ -98,9 +94,9 @@
                          soft_lower="${-0.5236+0.17}" soft_upper="${1.3963-0.05}" />
       <calibration reference_position="${cal_r_shoulder_lift_flag}" />
       <dynamics damping="10.0" />
-      <parent name="${side}_shoulder_pan_link">
-        <origin xyz="0.1 0 0" rpy="0 0 0" />
-      </parent>
+      <origin xyz="0.1 0 0" rpy="0 0 0" />
+      <parent link="${side}_shoulder_pan_link"/>
+      <child link="${side}_shoulder_lift_link"/>
     </joint>
     <link name="${side}_shoulder_lift_link">
 
@@ -131,11 +127,10 @@
     <!-- Upperarm roll: internal fixed attchment point for upper arm -->
 
     <joint name="${side}_upper_arm_roll_joint" type="revolute">
-      <origin xyz="0 0 0" rpy="0 0 0" />
       <axis xyz="1 0 0" />
-      <parent name="${side}_shoulder_lift_link" >
-        <origin xyz="0 0 0" rpy="0 0 0" />
-      </parent>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <parent link="${side}_shoulder_lift_link" />
+      <child link="${side}_upper_arm_roll_link"/>
       <limit lower="${reflect*1.55-2.35}" upper="${reflect*1.55+2.35}" effort="30" velocity="${VELOCITY_LIMIT_SCALE*5.45}" />
       <safety_controller k_position="100" k_velocity="2" soft_lower_limit="${reflect*1.55-2.35+0.15}" soft_upper_limit="${reflect*1.55+2.35-0.15}" />
       <calibration reference_position="${(reflect*M_PI/2)*cal_r_upper_arm_roll_gearing + cal_r_upper_arm_roll_flag}" />
@@ -179,9 +174,8 @@
 
     <joint name="${side}_upper_arm_joint" type="fixed">
       <origin xyz="0 0 0" rpy="0 0 0" />
-      <parent name="${parent}">
-        <origin xyz="0 0 0" rpy="0 0 0" />
-      </parent>
+      <parent link="${parent}"/>
+      <child link="${side}_upper_arm_link"/>
     </joint>
     <link name="${side}_upper_arm_link">
 
@@ -216,15 +210,14 @@
     <!-- Elbow flex -->
 
     <joint name="${side}_elbow_flex_joint" type="revolute">
-      <origin xyz="0 0 0" rpy="0 0 0" />
       <axis xyz="0 1 0" />
       <limit lower="-2.3" upper="0.1" effort="30" velocity="${VELOCITY_LIMIT_SCALE*5.5}" />
       <safety_controller k_position="100" k_velocity="3" soft_lower_limit="${-2.3+0.25}" soft_upper_limit="${0.1-0.1}" />
       <calibration reference_position="${-1.1606 + cal_r_elbow_flex_flag}"/>
       <dynamics damping="1.0" />
-      <parent name="${side}_upper_arm_link">
-        <origin xyz="0.4 0 0" rpy="0 0 0" />
-      </parent>
+      <origin xyz="0.4 0 0" rpy="0 0 0" />
+      <parent link="${side}_upper_arm_link"/>
+      <child link="${side}_elbow_flex_link"/>
     </joint>
     <link name="${side}_elbow_flex_link">
 
@@ -255,7 +248,6 @@
     <!-- Forearm roll -->
 
     <joint name="${side}_forearm_roll_joint" type="continuous">
-      <origin xyz="0 0 0" rpy="0 0 0" />
       <axis xyz="-1 0 0" />
 
       <limit effort="30" velocity="${VELOCITY_LIMIT_SCALE*6}" />
@@ -263,9 +255,9 @@
       <calibration reference_position="${cal_r_forearm_roll_flag}" />
 
       <dynamics damping="0.1" />
-      <parent name="${side}_elbow_flex_link">
-        <origin xyz="0 0 0" rpy="0 0 0" />
-      </parent>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <parent link="${side}_elbow_flex_link"/>
+      <child link="${side}_forearm_roll_link"/>
     </joint>
     <link name="${side}_forearm_roll_link">
 
@@ -300,9 +292,8 @@
 
     <joint name="${side}_forearm_joint" type="fixed">
       <origin xyz="0 0 0" rpy="0 0 0" />
-      <parent name="${parent}">
-        <origin xyz="0 0 0" rpy="0 0 0" />
-      </parent>
+      <parent link="${parent}"/>
+      <child link="${side}_forearm_link"/>
     </joint>
     <link name="${side}_forearm_link">
 
@@ -332,15 +323,14 @@
     <!-- Wrist flex -->
 
     <joint name="${side}_wrist_flex_joint" type="revolute">
-      <origin xyz="0 0 0" rpy="0 0 0" />
       <axis xyz="0 -1 0" />
       <limit lower="-0.1" upper="2.2" effort="200" velocity="${VELOCITY_LIMIT_SCALE*5.13}" />
       <safety_controller k_position="20" k_velocity="4" soft_lower_limit="${-0.1+0.2}" soft_upper_limit="${2.2-0.2}" />
       <dynamics damping="0.1" />
       <calibration reference_position="${0.4363+cal_r_wrist_flex_flag}" />
-      <parent name="${side}_forearm_link">
-        <origin xyz="0.32025 0 0" rpy="0 0 0" />
-      </parent>
+      <origin xyz="0.32025 0 0" rpy="0 0 0" />
+      <parent link="${side}_forearm_link"/>
+      <child link="${side}_wrist_flex_link"/>
     </joint>
     <link name="${side}_wrist_flex_link">
 
@@ -369,14 +359,13 @@
 
     <!-- Wrist roll -->
     <joint name="${side}_wrist_roll_joint" type="continuous">
-      <origin xyz="0 0 0" rpy="0 0 0" />
       <axis xyz="1 0 0" />
       <limit effort="10" velocity="${VELOCITY_LIMIT_SCALE*6}" k_velocity="2" />
       <dynamics damping="0.1" />
       <calibration reference_position="${1.27+cal_r_wrist_roll_flag}" values="1.5 -1" />
-      <parent name="${side}_wrist_flex_link">
-        <origin xyz="0 0 0" rpy="0 0 0" />
-      </parent>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <parent link="${side}_wrist_flex_link"/>
+      <child link="${side}_wrist_roll_link"/>
     </joint>
     <link name="${side}_wrist_roll_link">
       <inertial>
