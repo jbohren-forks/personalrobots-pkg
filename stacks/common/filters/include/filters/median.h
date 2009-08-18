@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 2008, Willow Garage, Inc.
+ * Copyright (c) 2009, Willow Garage, Inc.
  * All rights reserved.
- *
+ * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- *
+ * 
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
  *     * Redistributions in binary form must reproduce the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Willow Garage, Inc. nor the names of its
  *       contributors may be used to endorse or promote products derived from
  *       this software without specific prior written permission.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -27,8 +27,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef FILTERS_MEDIAN_H_
-#define FILTERS_MEDIAN_H_
+#ifndef FILTERS_MEDIAN_H
+#define FILTERS_MEDIAN_H
 
 #include <stdint.h>
 #include <sstream>
@@ -39,6 +39,8 @@
 
 #include "filters/realtime_circular_buffer.h"
 
+
+/*********************************************************************/
 /*
  * Algorithm from N. Wirth's book, implementation by N. Devillard.
  * This code in public domain.
@@ -86,19 +88,21 @@ elem_type kth_smallest(elem_type a[], int n, int k)
 #define median(a,n) kth_smallest(a,n,(((n)&1)?((n)/2):(((n)/2)-1)))
 #undef ELEM_SWAP
 
+
+/********************************************************************/
+
 /** \brief A median filter which works on arrays.
  *
  */
-template <typename T>
-class MedianFilter: public filters::FilterBase <T>
+class MedianDoubleFilter: public filters::FilterBase <double>
 {
 public:
   /** \brief Construct the filter with the expected width and height */
-  MedianFilter();
+  MedianDoubleFilter();
 
   /** \brief Destructor to clean up
    */
-  ~MedianFilter();
+  ~MedianDoubleFilter();
 
   virtual bool configure();
 
@@ -106,105 +110,18 @@ public:
    * \param data_in double array with length width
    * \param data_out double array with length width
    */
-  virtual bool update(const T& data_in, T& data_out);
-  virtual bool update(const std::vector<T>& data_in, std::vector<T>& data_out);
+  virtual bool update(const double& data_in, double& data_out);
+  virtual bool update(const std::vector<double>& data_in, std::vector<double>& data_out);
   
 protected:
-  std::vector<T> temp_storage_;                       ///< Preallocated storage for the list to sort
-  boost::scoped_ptr<RealtimeCircularBuffer<std::vector<T> > > data_storage_;                       ///< Storage for data between updates
+  std::vector<double> temp_storage_;                       ///< Preallocated storage for the list to sort
+  boost::scoped_ptr<RealtimeCircularBuffer<std::vector<double> > > data_storage_;                       ///< Storage for data between updates
   
-  std::vector<T> temp;  //used for preallocation and copying from non vector source
+  std::vector<double> temp;  //used for preallocation and copying from non vector source
 
 
   uint32_t number_of_observations_;             ///< Number of observations over which to filter
 
 };
-
-template <typename T>
-MedianFilter<T>::MedianFilter():
-  number_of_observations_(0)
-{
-  
-};
-
-template <typename T>
-MedianFilter<T>::~MedianFilter()
-{
-};
-
-
-template <typename T>
-bool MedianFilter<T>::configure()
-{
-  int no_obs;
-  if (!FilterBase<T>::getIntParam(std::string("number_of_observations"), no_obs, 0))
-  {
-    fprintf(stderr, "Error: MedianFilter was not given params.\n");
-    return false;
-  }
-  number_of_observations_ = no_obs;
-    
-  temp.resize(this->number_of_channels_);
-  data_storage_.reset( new RealtimeCircularBuffer<std::vector<T> >(number_of_observations_, temp));
-  temp_storage_.resize(number_of_observations_);
-  
-  return true;
-};
-
-template <typename T>
-bool MedianFilter<T>::update(const std::vector<T>& data_in, std::vector<T>& data_out)
-{
-  //  printf("Expecting width %d, got %d and %d\n", width_, data_in.size(),data_out.size());
-  if (data_in.size() != this->number_of_channels_ || data_out.size() != this->number_of_channels_)
-    return false;
-  if (!this->configured_)
-    return false;
-
-  data_storage_->push_back(data_in);
-
-
-  unsigned int length = data_storage_->size();
- 
-
-  for (uint32_t i = 0; i < this->number_of_channels_; i++)
-  {
-    for (uint32_t row = 0; row < length; row ++)
-    {
-      temp_storage_[row] = (*data_storage_)[row][i];
-    }
-    data_out[i] = median(&temp_storage_[0], length);
-  }
-
-  return true;
-};
-
-template <typename T>
-bool MedianFilter<T>::update(const T& data_in, T& data_out)
-{
-  //  printf("Expecting width %d, got %d and %d\n", width_, data_in.size(),data_out.size());
-  if (this->number_of_channels_ != 1)
-    return false;
-  if (!this->configured_)
-    return false;
-
-  temp[0] = data_in;
-
-  data_storage_->push_back(temp);
-  ///\todo standardize on calling to vector class
-
-  unsigned int length = data_storage_->size();
- 
-
-  for (uint32_t row = 0; row < length; row ++)
-  {
-    temp_storage_[row] = (*data_storage_)[row][0];
-  }
-  data_out = median(&temp_storage_[0], length);
-
-
-  return true;
-};
 }
-
-
-#endif //#ifndef FILTERS_MEDIAN_H_
+#endif// FILTERS_MEDIAN_H

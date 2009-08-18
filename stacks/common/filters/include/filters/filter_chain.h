@@ -31,6 +31,7 @@
 #define FILTERS_FILTER_CHAIN_H_
 
 #include "filters/filter_base.h"
+#include <pluginlib/plugin_loader.h>
 #include <sstream>
 #include <vector>
 #include <tinyxml/tinyxml.h>
@@ -45,9 +46,20 @@ namespace filters
 template <typename T>
 class FilterChain
 {
+private:
+  pluginlib::PluginLoader<filters::FilterBase<T> > loader_;
 public:
   /** \brief Create the filter chain object */
-  FilterChain():  configured_(false){};
+  FilterChain(std::string package, std::string base_class): loader_(package, base_class), configured_(false)
+  {
+    std::string lib_string = "";
+    std::vector<std::string> libs = loader_.getDeclaredPlugins();
+    for (unsigned int i = 0 ; i < libs.size(); i ++)
+    {
+      lib_string = lib_string + std::string(", ") + libs[i];
+    }    
+    ROS_ERROR("Declared libs: %s", lib_string.c_str());
+  };
 
   /** \brief Configure the filter chain 
    * This will call configure on all filters which have been added
@@ -125,20 +137,23 @@ public:
         
     std::stringstream constructor_string;
     constructor_string << config->Attribute("type") << typeid(T).name();
-    try
+    //try
     {
-      boost::shared_ptr<filters::FilterBase<T> > p( filters::FilterFactory<T>::Instance().CreateObject(constructor_string.str()));
+      //boost::shared_ptr<filters::FilterBase<T> > p( filters::FilterFactory<T>::Instance().CreateObject(constructor_string.str()));
+      boost::shared_ptr<filters::FilterBase<T> > p( loader_.createPluginInstance(config->Attribute("type")));
+      if (p.get() == NULL)
+        return false;
       result = result &&  p.get()->configure(size, config);    
       reference_pointers_.push_back(p);
       ROS_INFO("Configured %s:%s filter at %p\n", config->Attribute("type"),
              config->Attribute("name"),  p.get());
    }
-    catch (typename Loki::DefaultFactoryError<std::string, filters::FilterBase<T> >::Exception & ex)
+    /*    catch (typename Loki::DefaultFactoryError<std::string, filters::FilterBase<T> >::Exception & ex)
     {
       std::stringstream ss;
-      ss /*<< ex.what()*/ << " A Filter of type \"" << config->Attribute("type") << "\" cannot be constructed with string " <<constructor_string.str() ;
+      ss << " A Filter of type \"" << config->Attribute("type") << "\" cannot be constructed with string " <<constructor_string.str() ;
       throw std::runtime_error(ss.str());
-    }
+      }*/
         
         
     
@@ -220,10 +235,16 @@ bool FilterChain<T>::update (const std::vector<T>& data_in, std::vector<T>& data
   }
   else if (list_size == 1)
     result = reference_pointers_[0]->update(data_in, data_out);
+  else if (list_size == 2)
+  {
+    result = reference_pointers_[0]->update(data_in, buffer0_);
+    if (result == false) {return false; };//don't keep processing on failure
+    result = result && reference_pointers_[1]->update(buffer0_, data_out);
+  }
   else
   {
     result = reference_pointers_[0]->update(data_in, buffer0_);  //first copy in
-    for (unsigned int i = 1; i <  reference_pointers_.size() - 1; i++) // all but first and last (this loop never gets executed if size==2)
+    for (unsigned int i = 1; i <  reference_pointers_.size() - 1; i++) // all but first and last
     {
       if (i %2 == 1)
         result = result && reference_pointers_[i]->update(buffer0_, buffer1_);
@@ -232,10 +253,10 @@ bool FilterChain<T>::update (const std::vector<T>& data_in, std::vector<T>& data
 
       if (result == false) {return false; }; //don't keep processing on failure
     }
-    if (list_size % 2 == 1) // odd number last deposit was in buffer1
-      result = result && reference_pointers_.back()->update(buffer1_, data_out);
-    else
+    if (list_size % 2 == 1) // odd number last deposit was in buffer0
       result = result && reference_pointers_.back()->update(buffer0_, data_out);
+    else
+      result = result && reference_pointers_.back()->update(buffer1_, data_out);
   }
   return result;
             

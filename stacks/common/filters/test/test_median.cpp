@@ -53,24 +53,24 @@ void generate_rand_vectors(double scale, uint64_t runs, std::vector<double>& xva
   }
 }
 
-TEST(MedianFilter, ConfirmIdentityNRows)
+TEST(MedianDoubleFilter, ConfirmIdentityNRows)
 {
   double epsilon = 1e-6;
   int length = 5;
   int rows = 5;
   
   TiXmlDocument doc;
-  doc.Parse("<filter type=\"MedianFilter\" name=\"median_test\"> <params number_of_observations=\"5\"/></filter>"); 
+  doc.Parse("<filter type=\"MedianDoubleFilter\" name=\"median_test\"> <params number_of_observations=\"5\"/></filter>"); 
   TiXmlElement *config = doc.RootElement();
   
-  FilterBase<float > * filter = new MedianFilter<float>();
+  FilterBase<double > * filter = new filters::MedianDoubleFilter();
   filter->configure(rows, config );
   
 
-  float input1[] = {1,2,3,4,5};
-  float input1a[] = {1,2,3,4,5};
-  std::vector<float> v1 (input1, input1 + sizeof(input1) / sizeof(float));
-  std::vector<float> v1a (input1a, input1a + sizeof(input1a) / sizeof(float));
+  double input1[] = {1,2,3,4,5};
+  double input1a[] = {1,2,3,4,5};
+  std::vector<double> v1 (input1, input1 + sizeof(input1) / sizeof(double));
+  std::vector<double> v1a (input1a, input1a + sizeof(input1a) / sizeof(double));
 
   for (int i =0; i < rows*10; i++)
   {
@@ -85,26 +85,26 @@ TEST(MedianFilter, ConfirmIdentityNRows)
   delete filter;
 }
 
-TEST(MedianFilter, ThreeRows)
+TEST(MedianDoubleFilter, ThreeRows)
 {
   double epsilon = 1e-6;
   int length = 5;
   int rows = 5;
   TiXmlDocument doc;
-  doc.Parse("<filter type=\"MedianFilter\" name=\"median_test\"> <params number_of_observations=\"5\"/></filter>"); 
+  doc.Parse("<filter type=\"MedianDoubleFilter\" name=\"median_test\"> <params number_of_observations=\"5\"/></filter>"); 
   TiXmlElement *config = doc.RootElement();
   
-  FilterBase<float > * filter = new MedianFilter<float>();
+  FilterBase<double > * filter = new MedianDoubleFilter();
   filter->configure(rows, config );
   
-  float input1[] = {0,1,2,3,4};
-  std::vector<float> v1 (input1, input1 + sizeof(input1) / sizeof(float));
-  float input2[] = {1,2,3,4,5};
-  std::vector<float> v2 (input2, input2 + sizeof(input2) / sizeof(float));
-  float input3[] = {2,3,4,5,6};
-  std::vector<float> v3 (input3, input3 + sizeof(input3) / sizeof(float));
-  float input1a[] = {1,2,3,4,5};
-  std::vector<float> v1a (input1a, input1a + sizeof(input1a) / sizeof(float));
+  double input1[] = {0,1,2,3,4};
+  std::vector<double> v1 (input1, input1 + sizeof(input1) / sizeof(double));
+  double input2[] = {1,2,3,4,5};
+  std::vector<double> v2 (input2, input2 + sizeof(input2) / sizeof(double));
+  double input3[] = {2,3,4,5,6};
+  std::vector<double> v3 (input3, input3 + sizeof(input3) / sizeof(double));
+  double input1a[] = {1,2,3,4,5};
+  std::vector<double> v1a (input1a, input1a + sizeof(input1a) / sizeof(double));
 
   filter->update(v1, v1a);
   filter->update(v2, v1a);

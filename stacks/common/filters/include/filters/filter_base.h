@@ -32,7 +32,6 @@
 
 #include <tinyxml/tinyxml.h>
 #include <typeinfo>
-#include <loki/Factory.h>
 #include "ros/assert.h"
 #include "ros/console.h"
 
@@ -81,6 +80,7 @@ public:
     };
     configured_ = false;
     number_of_channels_ = number_of_channels;
+    ROS_ERROR("Base onfigured with %d channels", number_of_channels_);
     bool retval = true;
 
     retval = retval && loadXml(config);
@@ -95,7 +95,7 @@ public:
    * \param data_in A reference to the data to be input to the filter
    * \param data_out A reference to the data output location
    */
-  virtual bool update(const T& data_in, T& data_out);/*
+  virtual bool update(const T& data_in, T& data_out)
   {
     std::vector<T> temp_in(1);
     std::vector<T> temp_out(1);
@@ -103,13 +103,13 @@ public:
     bool retval =  update(temp_in, temp_out);
     data_out = temp_out[0];
     return retval;
-    };*/
+  };
   /** \brief Update the filter and return the data seperately
    * \param data_in A reference to the data to be input to the filter
    * \param data_out A reference to the data output location
    * This funciton must be implemented in the derived class.
    */
-  //  virtual bool update(const std::vector<T>& data_in, std::vector<T>& data_out)=0;
+  virtual bool update(const std::vector<T>& data_in, std::vector<T>& data_out)=0;
 
   /** \brief Get the typeid of the Templated Datatype as a string */
   std::string getType() {return typeid(T).name();};
@@ -324,36 +324,5 @@ private:
   };
   
 };
-
-/**\brief The FilterFactory which generates any type of Filter */
-template <typename T>
-class FilterFactory : public Loki::SingletonHolder < Loki::Factory< filters::FilterBase<T>, std::string >,
-                                                     Loki::CreateUsingNew,
-                                                     Loki::LongevityLifetime::DieAsSmallObjectChild >
-{
-  //empty
-};
-  
-
-/** The Macro which makes registering a Filter with it's type easy */
-#define FILTERS_REGISTER_FILTER(c,t) \
-  filters::FilterBase<t> * Filters_New_##c##__##t() {return new c< t >;}; \
-  bool ROS_FILTER_## c ## _ ## t =                                                    \
-    filters::FilterFactory<t>::Instance().Register(filters::getFilterID<t>(std::string(#c)), Filters_New_##c##__##t); 
-
-/** An additional macro equivalent to the above, but for use with a non-templated filter class */
-#define FILTERS_REGISTER_FILTER_NONTEMPLATE(c,t) \
-  filters::FilterBase<t> * Filters_New_##c##__##t() {return new c;}; \
-  bool ROS_FILTER_## c ## _ ## t =                                                    \
-    filters::FilterFactory<t>::Instance().Register(filters::getFilterID<t>(std::string(#c)), Filters_New_##c##__##t);
-
-class DoubleFilter : public FilterBase<double>
-{
-
-};
-
 }
-
-
-
 #endif //#ifndef FILTERS_FILTER_BASE_H_

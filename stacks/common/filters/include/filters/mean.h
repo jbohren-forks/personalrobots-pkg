@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 2008, Willow Garage, Inc.
+ * Copyright (c) 2009, Willow Garage, Inc.
  * All rights reserved.
- *
+ * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- *
+ * 
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
  *     * Redistributions in binary form must reproduce the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Willow Garage, Inc. nor the names of its
  *       contributors may be used to endorse or promote products derived from
  *       this software without specific prior written permission.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -27,8 +27,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef FILTERS_MEAN_H_
-#define FILTERS_MEAN_H_
+#ifndef FILTERS_MEAN_H
+#define FILTERS_MEAN_H
 
 #include <stdint.h>
 #include <cstring>
@@ -40,6 +40,8 @@
 #include "ros/assert.h"
 
 #include "filters/realtime_circular_buffer.h"
+
+#include <pluginlib/plugin_macros.h>
 
 namespace filters
 {
@@ -74,7 +76,7 @@ protected:
   std::vector<T> temp;  //used for preallocation and copying from non vector source
 
   uint32_t number_of_observations_;             ///< Number of observations over which to filter
-  uint32_t number_of_channels_;           ///< Number of elements per observation
+  using FilterBase<T>::number_of_channels_;           ///< Number of elements per observation
 
   
   
@@ -83,8 +85,7 @@ protected:
 
 template <typename T>
 MeanFilter<T>::MeanFilter():
-  number_of_observations_(0),
-  number_of_channels_(0)
+  number_of_observations_(0)
 {
 }
 
@@ -150,7 +151,10 @@ bool MeanFilter<T>::update(const std::vector<T> & data_in, std::vector<T>& data_
   //  ROS_ASSERT(data_in.size() == width_);
   //ROS_ASSERT(data_out.size() == width_);
   if (data_in.size() != number_of_channels_ || data_out.size() != number_of_channels_)
+  {
+    ROS_ERROR("Configured with wrong size config:%d in:%d out:%d", number_of_channels_, data_in.size(), data_out.size());
     return false;
+  }
 
   //update active row
   if (last_updated_row_ >= number_of_observations_ - 1)
@@ -176,7 +180,5 @@ bool MeanFilter<T>::update(const std::vector<T> & data_in, std::vector<T>& data_
 
   return true;
 };
-
 }
-
-#endif //#ifndef FILTERS_MEDIAN_H_
+#endif// FILTERS_MEAN_H

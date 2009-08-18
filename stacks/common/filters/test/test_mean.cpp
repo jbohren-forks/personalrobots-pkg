@@ -29,7 +29,6 @@
 
 #include <gtest/gtest.h>
 #include <sys/time.h>
-
 #include "filters/mean.h"
 
 using namespace filters ;
@@ -53,17 +52,17 @@ void generate_rand_vectors(double scale, uint64_t runs, std::vector<double>& xva
   }
 }
 
-TEST(MeanFilter, ConfirmIdentityNRows)
+TEST(MeanDoubleFilter, ConfirmIdentityNRows)
 {
   double epsilon = 1e-6;
   int length = 5;
   int rows = 5;
   
   TiXmlDocument doc;
-  doc.Parse("<filter type=\"MeanFilter\" name=\"mean_test\"> <params number_of_observations=\"5\"/></filter>"); 
+  doc.Parse("<filter type=\"MeanFilter<double> \" name=\"mean_test\"> <params number_of_observations=\"5\"/></filter>"); 
   TiXmlElement *config = doc.RootElement();
   
-  FilterBase<double > * filter = new MeanFilter<double > ();
+  FilterBase<double > * filter = new MeanFilter<double>  ();
   filter->configure(rows, config );
 
   double input1[] = {1,2,3,4,5};
@@ -83,17 +82,17 @@ TEST(MeanFilter, ConfirmIdentityNRows)
   }
 }
 
-TEST(MeanFilter, ThreeRows)
+TEST(MeanDoubleFilter, ThreeRows)
 {
   double epsilon = 1e-6;
   int length = 5;
   int rows = 5;
   
   TiXmlDocument doc;
-  doc.Parse("<filter type=\"MeanFilter\" name=\"mean_test\"> <params number_of_observations=\"5\"/></filter>"); 
+  doc.Parse("<filter type=\"MeanFilter<double> \" name=\"mean_test\"> <params number_of_observations=\"5\"/></filter>"); 
   TiXmlElement *config = doc.RootElement();
   
-  FilterBase<double > * filter = new MeanFilter<double > ();
+  FilterBase<double > * filter = new MeanFilter<double> ();
   filter->configure(rows, config);
 
   double input1[] = {0,1,2,3,4};
