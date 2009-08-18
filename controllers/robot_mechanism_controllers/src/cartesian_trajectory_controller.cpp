@@ -270,7 +270,7 @@ Frame CartesianTrajectoryController::getPose()
 bool CartesianTrajectoryController::moveTo(deprecated_srvs::MoveToPose::Request &req,
 					   deprecated_srvs::MoveToPose::Response &resp)
 {
-  ROS_INFO("in cartesian traj move_to service");
+  ROS_DEBUG("in cartesian traj move_to service");
 
   if (!moveTo(req.pose, req.tolerance, 0.0)){
     ROS_ERROR("CartesianTrajectoryController: not starting trajectory because either previous one is still running or the transform frame could not be found");
@@ -299,7 +299,7 @@ bool CartesianTrajectoryController::moveTo(deprecated_srvs::MoveToPose::Request 
     return false;
   }
   else{
-    ROS_INFO("CartesianTrajectoryController: moveto finished successfully");
+    ROS_DEBUG("CartesianTrajectoryController: moveto finished successfully");
     return true;
   }
 }
