@@ -113,6 +113,8 @@ class ReactorPanel():
   Center = 0
   PastWidth = 500
   FutureWidth = 500
+  MetricTime = False
+  TimeScale = 1.0
 
   TokenSpace = 0
 
@@ -436,6 +438,9 @@ class ReactorPanel():
 	# Get the larger of the two widths
 	tok_width = ReactorPanel.TokenSpace + max(tok_width_label, tok_width_sync)
 
+	if ReactorPanel.MetricTime:
+	  tok_width = ReactorPanel.TimeScale*(token.end[0]-token.start[0])
+
 	# Calculate the token end point
 	# This is the start of the earliest token on the timeline that this token is being drawn onto
 	tok_end = timeline.earliest_start
@@ -467,10 +472,6 @@ class ReactorPanel():
 	  # Increase spacing if this tick happened before the earliest tick in this view
 	  tok_width_sync = ReactorPanel.ROW_HEIGHT/2
 
-	if timeline.latest_tick < latest_tick and token.start[0] > latest_tick:
-	  # A token is missing, re-sync to create a space for it
-	  timeline.latest_end = latest_end
-
 	# Calculate the token pixel width
 	# Get the width if this token were to be drawn between the latest point on this timeline, and the earliest point for all timelines
 	tok_width_sync = tok_width_sync + abs(latest_end - timeline.latest_end)
@@ -486,6 +487,10 @@ class ReactorPanel():
 	if tok_start < -ReactorPanel.FutureWidth:
 	  continue
 
+	# Update latest tick
+	latest_tick = token.end[0]
+	# Set timeline latest tick
+	timeline.latest_tick = latest_tick
 	# Increment earliest start for this timelines
 	timeline.latest_end = timeline.latest_end + tok_width
 	# Set the new earliest start for all timelines
@@ -672,14 +677,16 @@ class TimelineWindow():
     # add tabs
     random.seed(4)
 
-    self.time_scale_slider.connect("change-value",self.redraw_viewport)
-    self.viewport_da.connect("expose-event",self.expose_viewport)
+    #self.time_scale_slider.connect("change-value",self.redraw_viewport)
+    #self.viewport_da.connect("expose-event",self.expose_viewport)
 
     # connect view controls
     self.past_width_spin.connect("value-changed",self.on_change_view_controls)
     self.center_spin.connect("value-changed",self.on_change_view_controls)
     self.future_width_spin.connect("value-changed",self.on_change_view_controls)
     self.token_history_spin.connect("value-changed",self.on_change_view_controls)
+    self.metric_time_check.connect("toggled",self.on_change_view_controls)
+    self.time_scale_spin.connect("value-changed",self.on_change_view_controls)
 
     self.w.show()
 
@@ -689,6 +696,8 @@ class TimelineWindow():
     ReactorPanel.FutureWidth = self.future_width_spin.get_value()
     ReactorPanel.Center = self.center_spin.get_value()
     ReactorPanel.TokenHistory = self.token_history_spin.get_value()
+    ReactorPanel.MetricTime = self.metric_time_check.get_active()
+    ReactorPanel.TimeScale = self.time_scale_spin.get_value()
 
     self.draw_active_reactor()
 
