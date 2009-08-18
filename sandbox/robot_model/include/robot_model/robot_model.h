@@ -76,6 +76,9 @@ private:
   /// non-const getLink()
   void getLink(const std::string& name,boost::shared_ptr<Link> &link) const;
 
+  /// non-const getMaterial()
+  boost::shared_ptr<Material> getMaterial(const std::string& name) const;
+
   /// in initXml(), onece all links are loaded,
   /// it's time to build a tree
   bool initTree(std::map<std::string, std::string> &parent_link_tree);
@@ -90,6 +93,7 @@ private:
   ///   should define a tree (i.e. 1 parent link, 0+ children links)
   std::map<std::string, boost::shared_ptr<Link> > links_;
   std::map<std::string, boost::shared_ptr<Joint> > joints_;
+  std::map<std::string, boost::shared_ptr<Material> > materials_;
 
   /// RobotModel is restricted to a tree for now, which means there exists one root link
   ///  typically, root link is the world(inertial).  Where world is a special link

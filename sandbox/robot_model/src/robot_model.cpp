@@ -50,9 +50,10 @@ RobotModel::RobotModel()
 void RobotModel::clear()
 {
   name_.clear();
-  links_.clear();
-  joints_.clear();
-  root_link_.reset();
+  this->links_.clear();
+  this->joints_.clear();
+  this->materials_.clear();
+  this->root_link_.reset();
 }
 
 
@@ -107,6 +108,33 @@ bool RobotModel::initXml(TiXmlElement *robot_xml)
   }
   this->name_ = std::string(name);
 
+  // Get all Material elements
+  for (TiXmlElement* material_xml = robot_xml->FirstChildElement("material"); material_xml; material_xml = material_xml->NextSiblingElement("material"))
+  {
+    boost::shared_ptr<Material> material;
+    material.reset(new Material);
+
+    if (material->initXml(material_xml))
+    {
+      if (this->getMaterial(material->name))
+      {
+        ROS_ERROR("material '%s' is not unique.", material->name.c_str());
+        material.reset();
+        return false;
+      }
+      else
+      {
+        this->materials_.insert(make_pair(material->name,material));
+        ROS_DEBUG("successfully added a new material '%s'", material->name.c_str());
+      }
+    }
+    else
+    {
+      ROS_ERROR("material xml is not initialized correctly");
+      material.reset();
+    }
+  }
+
   // Get all Link elements
   for (TiXmlElement* link_xml = robot_xml->FirstChildElement("link"); link_xml; link_xml = link_xml->NextSiblingElement("link"))
   {
@@ -123,7 +151,20 @@ bool RobotModel::initXml(TiXmlElement *robot_xml)
       }
       else
       {
-        links_.insert(make_pair(link->name,link));
+        // set link visual material
+        ROS_DEBUG("setting link '%s' material", link->name.c_str());
+        if (link->visual)
+          if (!link->visual->material_name.empty())
+            if (this->getMaterial(link->visual->material_name))
+            {
+              ROS_DEBUG("setting link '%s' material to '%s'", link->name.c_str(),link->visual->material_name);
+              link->visual->material = this->getMaterial( link->visual->material_name );
+            }
+            else
+            {
+            }
+
+        this->links_.insert(make_pair(link->name,link));
         ROS_DEBUG("successfully added a new link '%s'", link->name.c_str());
       }
     }
@@ -149,7 +190,7 @@ bool RobotModel::initXml(TiXmlElement *robot_xml)
       }
       else
       {
-        joints_.insert(make_pair(joint->name,joint));
+        this->joints_.insert(make_pair(joint->name,joint));
         ROS_DEBUG("successfully added a new joint '%s'", joint->name.c_str());
       }
     }
@@ -202,13 +243,13 @@ bool RobotModel::initTree(std::map<std::string, std::string> &parent_link_tree)
       link->name = "world";
       if (this->getLink(link->name))
       {
-        ROS_ERROR("multiple joints have parent 'world'!", link->name.c_str());
+        ROS_ERROR("multiple joints have parent '%s'!", link->name.c_str());
         link.reset();
         return false;
       }
       else
       {
-        links_.insert(make_pair(link->name,link));
+        this->links_.insert(make_pair(link->name,link));
         ROS_DEBUG("successfully added a new link '%s'", link->name.c_str());
       }
     }
@@ -301,6 +342,16 @@ bool RobotModel::initRoot(std::map<std::string, std::string> &parent_link_tree)
   ROS_DEBUG("Link '%s' is the root link", this->root_link_->name.c_str());
 
   return true;
+}
+
+boost::shared_ptr<Material> RobotModel::getMaterial(const std::string& name) const
+{
+  boost::shared_ptr<Material> ptr;
+  if (this->materials_.find(name) == this->materials_.end())
+    ptr.reset();
+  else
+    ptr = this->materials_.find(name)->second;
+  return ptr;
 }
 
 boost::shared_ptr<const Link> RobotModel::getLink(const std::string& name) const
