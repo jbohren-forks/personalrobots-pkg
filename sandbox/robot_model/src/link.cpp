@@ -319,13 +319,11 @@ bool Link::initXml(TiXmlElement* config)
   return true;
 }
 
-/*
 void Link::setParent(boost::shared_ptr<Link> parent)
 {
   this->parent_link = parent;
   ROS_DEBUG("set parent Link '%s' for Link '%s'", parent->name.c_str(), this->name.c_str());
 }
-*/
 
 void Link::setParentJoint(boost::shared_ptr<Joint> parent)
 {

@@ -245,6 +245,9 @@ bool RobotModel::initTree(std::map<std::string, std::string> &parent_link_tree)
         }
         else
         {
+          //set parent link for child link
+          child_link->setParent(parent_link);
+
           //set parent joint for child link
           child_link->setParentJoint(joint->second);
 
