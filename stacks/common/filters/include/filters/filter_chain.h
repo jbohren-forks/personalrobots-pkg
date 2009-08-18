@@ -58,7 +58,7 @@ public:
     {
       lib_string = lib_string + std::string(", ") + libs[i];
     }    
-    ROS_ERROR("Declared libs: %s", lib_string.c_str());
+    ROS_DEBUG("In FilterChain ClassLoader found the following libs: %s", lib_string.c_str());
   };
 
   /** \brief Configure the filter chain 
@@ -145,7 +145,7 @@ public:
         return false;
       result = result &&  p.get()->configure(size, config);    
       reference_pointers_.push_back(p);
-      ROS_INFO("Configured %s:%s filter at %p\n", config->Attribute("type"),
+      ROS_DEBUG("Configured %s:%s filter at %p\n", config->Attribute("type"),
              config->Attribute("name"),  p.get());
    }
     /*    catch (typename Loki::DefaultFactoryError<std::string, filters::FilterBase<T> >::Exception & ex)

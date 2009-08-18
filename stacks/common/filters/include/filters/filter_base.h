@@ -80,7 +80,7 @@ public:
     };
     configured_ = false;
     number_of_channels_ = number_of_channels;
-    ROS_ERROR("Base onfigured with %d channels", number_of_channels_);
+    ROS_DEBUG("filter_base configured with %d channels", number_of_channels_);
     bool retval = true;
 
     retval = retval && loadXml(config);
@@ -279,7 +279,7 @@ private:
     }
     filter_name_ = std::string(name);
     filter_type_ = std::string(type);
-    ROS_INFO("Configuring Filter of Type: %s with name %s", type, name);
+    ROS_DEBUG("Configuring Filter of Type: %s with name %s", type, name);
     return true;
   };
 

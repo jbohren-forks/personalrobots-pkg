@@ -71,7 +71,6 @@ static std::string median_filter_5 = "<filter type=\"median_double_filter\" name
 
 TEST(FilterChain, configuring){
   double epsilon = 1e-9;
-  printf("Chain test starting\n");
   filters::FilterChain<double> chain("filters", "double_filter");
   //filters::FilterChain<float> chain;
 
