@@ -133,6 +133,7 @@ void CommStateMachine<ActionSpec>::updateResult(GoalHandleT& gh, const ActionRes
     case CommState::PENDING:
     case CommState::ACTIVE:
     case CommState::WAITING_FOR_RESULT:
+    case CommState::WAITING_FOR_CANCEL_ACK:
     case CommState::RECALLING:
     case CommState::PREEMPTING:
       transitionToState(gh, CommState::DONE);
