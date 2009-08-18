@@ -47,9 +47,8 @@ void printTree(boost::shared_ptr<const Link> link,int level = 0)
   {
     if (*child)
     {
-      for(int j=0;j<level;j++) std::cout << " "; //indent
+      for(int j=0;j<level;j++) std::cout << "  "; //indent
       std::cout << "child(" << count++ << "):  " << (*child)->name
-                << " with parent joint: " << (*child)->parent_joint->name
                 << " with mass: " << (*child)->inertial->mass
                 << std::endl;
       // first grandchild
@@ -91,11 +90,11 @@ int main(int argc, char** argv)
   std::cout << "---------- Finished Loading from RobotModel XML, Now Checking RobotModel structure ------------" << std::endl;
   // get root link
   boost::shared_ptr<const Link> root_link=robot.getRoot();
-  std::cout << "root Link: " << root_link->name << " has " << root_link->child_links.size() << " children" << std::endl;
-  std::cout << "root Link: " << root_link->name << " has parent joint: " << root_link->parent_joint->name << std::endl;
-  if (root_link->parent_link)
-    std::cout << "root Link: " << root_link->name << " has parent Link: " << root_link->parent_link->name << std::endl << std::endl;
   if (!root_link) return -1;
+
+  std::cout << "root Link: " << root_link->name << std::endl;
+  if (!root_link->child_links.empty())
+    std::cout << "root Link: " << root_link->name << " has " << root_link->child_links.size() << " children" << std::endl;
 
 
   // print entire tree

@@ -39,27 +39,27 @@
 
 namespace robot_model{
 
-bool JointProperties::initXml(TiXmlElement* config)
+bool JointDynamics::initXml(TiXmlElement* config)
 {
   this->clear();
 
   // Get joint damping
   const char* damping_str = config->Attribute("damping");
   if (damping_str == NULL)
-    ROS_DEBUG("joint_properties: no damping");
+    ROS_DEBUG("joint dynamics: no damping");
   else
     this->damping = atof(damping_str);
 
   // Get joint friction
   const char* friction_str = config->Attribute("friction");
   if (friction_str == NULL)
-    ROS_DEBUG("joint_properties: no friction");
+    ROS_DEBUG("joint dynamics: no friction");
   else
     this->friction = atof(friction_str);
 
   if (damping_str == NULL && friction_str == NULL)
   {
-    ROS_ERROR("joint_properties element specified with no damping and no friction");
+    ROS_ERROR("joint dynamics element specified with no damping and no friction");
     return false;
   }
   else
@@ -184,33 +184,48 @@ bool Joint::initXml(TiXmlElement* config)
   }
   this->name = name;
 
+  // Get transform from Parent Link to Joint Frame
+  TiXmlElement *origin_xml = config->FirstChildElement("origin");
+  if (!origin_xml)
+  {
+    ROS_DEBUG("Joint '%s' missing origin tag under parent describing transform from Parent Link to Joint Frame, (using Identity transform).", this->name.c_str());
+    this->parent_to_joint_origin_transform.clear();
+  }
+  else
+  {
+    if (!this->parent_to_joint_origin_transform.initXml(origin_xml))
+    {
+      ROS_ERROR("Malformed parent origin element for joint '%s'", this->name.c_str());
+      this->parent_to_joint_origin_transform.clear();
+      return false;
+    }
+  }
+
   // Get Parent Link
   TiXmlElement *parent_xml = config->FirstChildElement("parent");
   if (parent_xml)
   {
-    const char *pname = parent_xml->Attribute("name");
+    const char *pname = parent_xml->Attribute("link");
     if (!pname)
-      ROS_INFO("parent name for Joint link '%s'. this might be the root?", this->name.c_str());
+      ROS_INFO("no parent link name specified for Joint link '%s'. this might be the root?", this->name.c_str());
     else
     {
       this->parent_link_name = std::string(pname);
 
-      // Get transform from Parent Link to Joint Frame
-      TiXmlElement *origin_xml = parent_xml->FirstChildElement("origin");
-      if (!origin_xml)
-      {
-        ROS_DEBUG("Joint '%s' missing origin tag under parent describing transform from Parent Link to Joint Frame, (using Identity transform).", this->name.c_str());
-        this->parent_origin.clear();
-      }
-      else
-      {
-        if (!this->parent_origin.initXml(origin_xml))
-        {
-          ROS_ERROR("Malformed parent origin element for joint '%s'", this->name.c_str());
-          this->parent_origin.clear();
-          return false;
-        }
-      }
+    }
+  }
+
+  // Get Child Link
+  TiXmlElement *child_xml = config->FirstChildElement("child");
+  if (child_xml)
+  {
+    const char *pname = child_xml->Attribute("link");
+    if (!pname)
+      ROS_INFO("no child link name specified for Joint link '%s'.", this->name.c_str());
+    else
+    {
+      this->child_link_name = std::string(pname);
+
     }
   }
 
@@ -266,23 +281,6 @@ bool Joint::initXml(TiXmlElement* config)
     }
   }
 
-  // Get transform from Link Frame to Joint Frame
-  TiXmlElement *origin_xml = config->FirstChildElement("origin");
-  if (!origin_xml)
-  {
-    ROS_DEBUG("Joint '%s' missing origin tag describing transform from Link Frame to Joint Frame (using identity).", this->name.c_str());
-    this->origin.clear();
-  }
-  else
-  {
-    if (!this->origin.initXml(origin_xml))
-    {
-      ROS_ERROR("Malformed origin element for joint '%s'", this->name.c_str());
-      this->origin.clear();
-      return false;
-    }
-  }
-
   // Get limit
   TiXmlElement *limit_xml = config->FirstChildElement("limit");
   if (limit_xml)
@@ -319,15 +317,15 @@ bool Joint::initXml(TiXmlElement* config)
     }
   }
 
-  // Get properties
-  TiXmlElement *prop_xml = config->FirstChildElement("joint_properties");
+  // Get Dynamics
+  TiXmlElement *prop_xml = config->FirstChildElement("dynamics");
   if (prop_xml)
   {
-    properties.reset(new JointProperties);
-    if (!properties->initXml(prop_xml))
+    dynamics.reset(new JointDynamics);
+    if (!dynamics->initXml(prop_xml))
     {
-      ROS_ERROR("Could not parse joint_properties element for joint '%s'", this->name.c_str());
-      properties.reset();
+      ROS_ERROR("Could not parse joint_dynamics element for joint '%s'", this->name.c_str());
+      dynamics.reset();
     }
   }
 

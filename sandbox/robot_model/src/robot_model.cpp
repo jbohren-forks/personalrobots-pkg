@@ -107,10 +107,7 @@ bool RobotModel::initXml(TiXmlElement *robot_xml)
   }
   this->name_ = std::string(name);
 
-  // Get all Link elements, connectivity information stored as
-  //   parent link name
-  //   parent joint name
-  //   parent link origin
+  // Get all Link elements
   for (TiXmlElement* link_xml = robot_xml->FirstChildElement("link"); link_xml; link_xml = link_xml->NextSiblingElement("link"))
   {
     boost::shared_ptr<Link> link;
@@ -128,12 +125,6 @@ bool RobotModel::initXml(TiXmlElement *robot_xml)
       {
         links_.insert(make_pair(link->name,link));
         ROS_DEBUG("successfully added a new link '%s'", link->name.c_str());
-        // add list of joints to a vector
-        if (link->parent_joint)
-        {
-          joints_.insert(make_pair(link->parent_joint->name,link->parent_joint));
-          ROS_DEBUG("successfully added a new joint '%s'", link->parent_joint->name.c_str());
-        }
       }
     }
     else
@@ -142,74 +133,134 @@ bool RobotModel::initXml(TiXmlElement *robot_xml)
       link.reset();
     }
   }
+  // Get all Joint elements
+  for (TiXmlElement* joint_xml = robot_xml->FirstChildElement("joint"); joint_xml; joint_xml = joint_xml->NextSiblingElement("joint"))
+  {
+    boost::shared_ptr<Joint> joint;
+    joint.reset(new Joint);
+
+    if (joint->initXml(joint_xml))
+    {
+      if (this->getJoint(joint->name))
+      {
+        ROS_ERROR("joint '%s' is not unique.", joint->name.c_str());
+        joint.reset();
+        return false;
+      }
+      else
+      {
+        joints_.insert(make_pair(joint->name,joint));
+        ROS_DEBUG("successfully added a new joint '%s'", joint->name.c_str());
+      }
+    }
+    else
+    {
+      ROS_ERROR("joint xml is not initialized correctly");
+      joint.reset();
+    }
+  }
 
 
-  /// for convenience keep a map of link names and their parent names
-  std::map<std::string, std::string> link_tree;
-  link_tree.clear();
+  // every link has children links and joints, but no parents, so we create a
+  // local convenience data structure for keeping child->parent relations
+  std::map<std::string, std::string> parent_link_tree;
+  parent_link_tree.clear();
 
   // building tree: name mapping
-  if (!this->initTree(link_tree))
+  if (!this->initTree(parent_link_tree))
   {
     ROS_ERROR("failed to build tree");
     return false;
   }
-      
+
   // find the root link
-  if (!this->initRoot(link_tree))
+  if (!this->initRoot(parent_link_tree))
   {
     ROS_ERROR("failed to find root link");
     return false;
   }
-
+ 
   return true;
 }
 
-bool RobotModel::initTree(std::map<std::string, std::string> &link_tree)
+bool RobotModel::initTree(std::map<std::string, std::string> &parent_link_tree)
 {
-  // find link/parent mapping
-  for (std::map<std::string,boost::shared_ptr<Link> >::iterator link = this->links_.begin();link != this->links_.end(); link++)
+  // loop through all joints, for every link, assign children links and children joints
+  for (std::map<std::string,boost::shared_ptr<Joint> >::iterator joint = this->joints_.begin();joint != this->joints_.end(); joint++)
   {
-    std::string parent_link_name = link->second->parent_joint->parent_link_name;
-    ROS_DEBUG("build tree: '%s' is a child of '%s'", link->first.c_str(), parent_link_name.c_str());
+    std::string parent_link_name = joint->second->parent_link_name;
+    std::string child_link_name = joint->second->child_link_name;
 
-    if (parent_link_name.c_str() == NULL)
+    ROS_DEBUG("build tree: joint: '%s' has parent link '%s' and child  link '%s'", joint->first.c_str(), parent_link_name.c_str(),child_link_name.c_str());
+
+    /// add an empty "world" link
+    if (parent_link_name == "world")
     {
-      ROS_ERROR("parent link name is not valid!");
-      return false;
+      ROS_WARN("    parent link '%s' is a special case, adding fake link.", parent_link_name.c_str());
+      boost::shared_ptr<Link> link;
+      link.reset(new Link);
+      link->name = "world";
+      if (this->getLink(link->name))
+      {
+        ROS_ERROR("multiple joints have parent 'world'!", link->name.c_str());
+        link.reset();
+        return false;
+      }
+      else
+      {
+        links_.insert(make_pair(link->name,link));
+        ROS_DEBUG("successfully added a new link '%s'", link->name.c_str());
+      }
+    }
+
+    if (parent_link_name.empty())
+    {
+      ROS_INFO("    parent link name is not specified! SKIPPING TO NEXT JOINT");
+    }
+    else if (child_link_name.empty())
+    {
+      ROS_INFO("    child link name is not specified! SKIPPING TO NEXT JOINT");
     }
     else
     {
-
+      // find parent link
       boost::shared_ptr<Link> parent_link;
       this->getLink(parent_link_name, parent_link);
 
       if (!parent_link)
       {
-        if (parent_link_name == "world")
-        {
-          ROS_DEBUG("parent link '%s' is a special case", parent_link_name.c_str());
-        }
-        else
-        {
-          ROS_ERROR("parent link '%s' is not found", parent_link_name.c_str());
-          return false;
-        }
+        ROS_ERROR("    parent link '%s' is not found", parent_link_name.c_str());
+        return false;
       }
       else
       {
-        // fill in child/parent string map
-        link_tree[link->second->name] = parent_link_name;
+        // find child link
+        boost::shared_ptr<Link> child_link;
+        this->getLink(child_link_name, child_link);
 
-        // set parent_ link for child Link element
-        link->second->setParent(parent_link);
+        if (!child_link)
+        {
+          ROS_ERROR("    for joint: %s child link '%s' is not found",joint->first.c_str(),parent_link_name.c_str());
+          return false;
+        }
+        else
+        {
+          //set parent joint for child link
+          child_link->setParentJoint(joint->second);
 
-        // add child link in parent Link element
-        parent_link->addChild(link->second);
-        ROS_DEBUG("now Link '%s' has %i children ", parent_link->name.c_str(), parent_link->child_links.size());
+          //set child joint for parent link
+          parent_link->addChildJoint(joint->second);
+
+          //set child link for parent link
+          parent_link->addChild(child_link);
+
+          // fill in child/parent string map
+          parent_link_tree[child_link->name] = parent_link_name;
+
+          ROS_DEBUG("    now Link '%s' has %i children ", parent_link->name.c_str(), parent_link->child_links.size());
+        }
       }
     }
-
   }
 
   return true;
@@ -217,33 +268,34 @@ bool RobotModel::initTree(std::map<std::string, std::string> &link_tree)
 
 
 
-bool RobotModel::initRoot(std::map<std::string, std::string> &link_tree)
+bool RobotModel::initRoot(std::map<std::string, std::string> &parent_link_tree)
 {
-  std::string root_name = "NoRootSpecified";
-  for (std::map<std::string, std::string>::iterator p=link_tree.begin(); p!=link_tree.end(); p++)
+
+  this->root_link_.reset();
+
+  for (std::map<std::string, std::string>::iterator p=parent_link_tree.begin(); p!=parent_link_tree.end(); p++)
   {
-    if (link_tree.find(p->second) == link_tree.end())
+    if (parent_link_tree.find(p->second) == parent_link_tree.end())
     {
-      if (root_name != "NoRootSpecified")
+      if (this->root_link_)
       {
-        ROS_DEBUG("child '%s', parent '%s', root '%s'", p->first.c_str(), p->second.c_str(), root_name.c_str());
-        if (root_name != p->second)
+        ROS_DEBUG("child '%s', parent '%s', root '%s'", p->first.c_str(), p->second.c_str(), this->root_link_->name.c_str());
+        if (this->root_link_->name != p->second)
         {
-          ROS_ERROR("Two root links found: '%s' and '%s'", root_name.c_str(), p->second.c_str());
+          ROS_ERROR("Two root links found: '%s' and '%s'", this->root_link_->name.c_str(), p->second.c_str());
           return false;
         }
       }
       else
-        root_name = p->second;
+         getLink(p->second,this->root_link_);
     }
   }
-  if (root_name == "NoRootSpecified")
+  if (!this->root_link_)
   {
-    ROS_ERROR("No root link found. The robot xml contains a graph instead of a tree.");
+    ROS_ERROR("No root link found. The robot xml is empty or not a tree.");
     return false;
   }
-  ROS_DEBUG("Link '%s' is the root link", root_name.c_str());
-  getLink(root_name,this->root_link_); // set root link
+  ROS_DEBUG("Link '%s' is the root link", this->root_link_->name.c_str());
 
   return true;
 }

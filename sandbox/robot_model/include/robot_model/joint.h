@@ -48,10 +48,10 @@ namespace robot_model{
 
 class Link;
 
-class JointProperties
+class JointDynamics
 {
 public:
-  JointProperties() { this->clear(); };
+  JointDynamics() { this->clear(); };
   double damping;
   double friction;
 
@@ -139,19 +139,21 @@ public:
   Vector3 axis;
 
   /// child Link element
-  //boost::shared_ptr<Link> link; /// @todo: not sure how to assign a shared_ptr link to parent link
-  std::string link_name;
-  /// transform from Link frame to Joint frame
-  Pose origin;
+  ///   child link frame is the same as the Joint frame
+  std::string child_link_name;
 
   /// parent Link element
-  boost::shared_ptr<Link> parent_link;
+  ///   origin specifies the transform from Parent Link to Joint Frame
   std::string parent_link_name;
-  ///   transform from parent Link to Joint frame
-  Pose  parent_origin;
+  /// transform from Parent Link frame to Joint frame
+  Pose  parent_to_joint_origin_transform;
 
-  /// Joint Properties
-  boost::shared_ptr<JointProperties> properties;
+  /// @todo: should use weak pointer here
+  //boost::shared_ptr<Link> link;
+  //boost::shared_ptr<Link> parent_link;
+
+  /// Joint Dynamics
+  boost::shared_ptr<JointDynamics> dynamics;
 
   /// Joint Limits
   boost::shared_ptr<JointLimits> limits;
@@ -162,21 +164,14 @@ public:
   /// Unsupported Hidden Feature
   boost::shared_ptr<JointCalibration> calibration;
 
-  // Joint element has one parent and one child Link
-  void setParentLink(boost::shared_ptr<Link> parent) {this->parent_link = parent;};
-  void setParentPose(Pose pose) {this->parent_origin = pose;};
-
   bool initXml(TiXmlElement* xml);
   void clear()
   {
     this->axis.clear();
-    this->link_name.clear();
-    this->origin.clear();
-    this->parent_link.reset();
+    this->child_link_name.clear();
     this->parent_link_name.clear();
-    this->parent_origin.clear();
-    //this->link.reset(); /// @todo: not sure how to assign a shared_ptr link to parent link
-    this->properties.reset();
+    this->parent_to_joint_origin_transform.clear();
+    this->dynamics.reset();
     this->limits.reset();
     this->safety.reset();
     this->calibration.reset();

@@ -62,6 +62,12 @@ public:
   boost::shared_ptr<const Joint> getJoint(const std::string& name) const;
   const std::string& getName() const {return name_;};
 
+  /// Some accessor functions
+  boost::shared_ptr<const Link> getParentLink(const std::string& name) const;
+  boost::shared_ptr<const Joint> getParentJoint(const std::string& name) const;
+  boost::shared_ptr<const Link> getChildLink(const std::string& name) const;
+  boost::shared_ptr<const Joint> getChildJoint(const std::string& name) const;
+
 private:
   void clear();
 
@@ -72,11 +78,11 @@ private:
 
   /// in initXml(), onece all links are loaded,
   /// it's time to build a tree
-  bool initTree(std::map<std::string, std::string> &link_tree);
+  bool initTree(std::map<std::string, std::string> &parent_link_tree);
 
   /// in initXml(), onece tree is built,
   /// it's time to find the root Link
-  bool initRoot(std::map<std::string, std::string> &link_tree);
+  bool initRoot(std::map<std::string, std::string> &parent_link_tree);
 
   /// Every Robot Description File can be described as a
   ///   list of Links and Joints

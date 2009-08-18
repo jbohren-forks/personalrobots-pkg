@@ -316,31 +316,21 @@ bool Link::initXml(TiXmlElement* config)
     }
   }
 
-  // Joint
-  TiXmlElement *joi = config->FirstChildElement("joint");
-  if (joi)
-  {
-    parent_joint.reset(new Joint);
-    if (!parent_joint->initXml(joi))
-    {
-      ROS_ERROR("Could not parse joint element for Link '%s'", this->name.c_str());
-      parent_joint.reset();
-      return false;
-    }
-    else
-    {
-      //parent_joint->link.reset(this); /// @todo: not sure how to assign a shared_ptr link to parent link
-      parent_joint->link_name = name;
-    }
-  }
-
   return true;
 }
 
+/*
 void Link::setParent(boost::shared_ptr<Link> parent)
 {
   this->parent_link = parent;
   ROS_DEBUG("set parent Link '%s' for Link '%s'", parent->name.c_str(), this->name.c_str());
+}
+*/
+
+void Link::setParentJoint(boost::shared_ptr<Joint> parent)
+{
+  this->parent_joint = parent;
+  ROS_DEBUG("set parent joint '%s' to Link '%s'",  parent->name.c_str(), this->name.c_str());
 }
 
 void Link::addChild(boost::shared_ptr<Link> child)
