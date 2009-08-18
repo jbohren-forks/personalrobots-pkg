@@ -1,7 +1,7 @@
 <plugin_libraries>
   <library path="lib/libmedian">
-    <plugin name="median_double_filter" class="filters::MedianDoubleFilter" 
-	    type="filters::filter_base<double>">
+    <plugin name="median_double_filter" class="filters::MedianFilter<double>" 
+	    type="filters::MultiChannelFilterBase<double>">
       <description>
 	THis is a median filter which works on a stream of doubles.  
       </description>
@@ -9,7 +9,7 @@
   </library>
   <library path="lib/libmean">
     <plugin name="mean_double_filter" class="filters::MeanFilter<double>" 
-	    type="filters::filter_base<double>">
+	    type="filters::MultiChannelFilterBase<double>">
       <description>
 	THis is a mean filter which works on a stream of doubles.  
       </description>
@@ -17,9 +17,9 @@
   </library>
   <library path="lib/libtransfer_function">
     <plugin name="transfer_function_double_filter" class="filters::TransferFunctionDoubleFilter" 
-	    type="filters::filter_base<double>">
+	    type="filters::MultiChannelFilterBase<double>">
       <description>
-	THis is a mean filter which works on a stream of doubles.  
+	THis is a transfer filter which works on a stream of doubles.  
       </description>
     </plugin>
   </library>

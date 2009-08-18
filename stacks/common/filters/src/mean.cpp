@@ -32,7 +32,7 @@
 
 
 
-BEGIN_PLUGIN_LIST(filters::FilterBase<double>)
+BEGIN_PLUGIN_LIST(filters::MultiChannelFilterBase<double>)
 REGISTER_PLUGIN(filters::MeanFilter<double>)
 END_PLUGIN_LIST
 

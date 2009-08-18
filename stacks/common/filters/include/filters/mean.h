@@ -50,7 +50,7 @@ namespace filters
  *
  */
 template <typename T>
-class MeanFilter: public FilterBase <T>
+class MeanFilter: public MultiChannelFilterBase <T>
 {
 public:
   /** \brief Construct the filter with the expected width and height */
@@ -66,7 +66,6 @@ public:
    * \param data_in T array with length width
    * \param data_out T array with length width
    */
-  virtual bool update( const T & data_in, T& data_out);
   virtual bool update( const std::vector<T> & data_in, std::vector<T>& data_out);
   
 protected:
@@ -76,7 +75,7 @@ protected:
   std::vector<T> temp;  //used for preallocation and copying from non vector source
 
   uint32_t number_of_observations_;             ///< Number of observations over which to filter
-  using FilterBase<T>::number_of_channels_;           ///< Number of elements per observation
+  using MultiChannelFilterBase<T>::number_of_channels_;           ///< Number of elements per observation
 
   
   
@@ -111,40 +110,6 @@ MeanFilter<T>::~MeanFilter()
 }
 
 
-template <typename T>
-bool MeanFilter<T>::update(const T & data_in, T& data_out)
-{
-  //  ROS_ASSERT(data_in.size() == width_);
-  //ROS_ASSERT(data_out.size() == width_);
-  if (number_of_channels_ != 1)
-    return false;
-
-  temp[0] = data_in;
-
-  //update active row
-  if (last_updated_row_ >= number_of_observations_ - 1)
-    last_updated_row_ = 0;
-  else
-    last_updated_row_++;
-
-  data_storage_->push_back(temp);
-
-
-  unsigned int length = data_storage_->size();
-  
-  //Return each value
-  for (uint32_t i = 0; i < number_of_channels_; i++)
-  {
-    data_out = 0;
-    for (uint32_t row = 0; row < length; row ++)
-    {
-      data_out += data_storage_->at(row)[i];
-    }
-    data_out /= length;
-  }
-
-  return true;
-};
 template <typename T>
 bool MeanFilter<T>::update(const std::vector<T> & data_in, std::vector<T>& data_out)
 {

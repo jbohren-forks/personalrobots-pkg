@@ -62,25 +62,22 @@ class FilterBase
 public:
   /** \brief Default constructor used by Filter Factories
    */
-  FilterBase():number_of_channels_(0), configured_(false){};
+  FilterBase():configured_(false){};
 
   /** \brief Virtual Destructor
    */
   virtual ~FilterBase(){};
 
   /** \brief The public method to configure a filter from XML 
-   * \param number_of_channels How many parallel channels the filter will process
    * \param config The XML to initialize the filter with including name, type, and any parameters
    */
-  bool configure(unsigned int number_of_channels, TiXmlElement *config)
+  bool configure(TiXmlElement *config)
   {
     if (configured_)
     {
       ROS_WARN("Filter %s of type %s already being reconfigured", filter_name_.c_str(), filter_type_.c_str());
     };
     configured_ = false;
-    number_of_channels_ = number_of_channels;
-    ROS_DEBUG("filter_base configured with %d channels", number_of_channels_);
     bool retval = true;
 
     retval = retval && loadXml(config);
@@ -95,21 +92,7 @@ public:
    * \param data_in A reference to the data to be input to the filter
    * \param data_out A reference to the data output location
    */
-  virtual bool update(const T& data_in, T& data_out)
-  {
-    std::vector<T> temp_in(1);
-    std::vector<T> temp_out(1);
-    temp_in[0] = data_in;
-    bool retval =  update(temp_in, temp_out);
-    data_out = temp_out[0];
-    return retval;
-  };
-  /** \brief Update the filter and return the data seperately
-   * \param data_in A reference to the data to be input to the filter
-   * \param data_out A reference to the data output location
-   * This funciton must be implemented in the derived class.
-   */
-  virtual bool update(const std::vector<T>& data_in, std::vector<T>& data_out)=0;
+  virtual bool update(const T& data_in, T& data_out)=0;
 
   /** \brief Get the typeid of the Templated Datatype as a string */
   std::string getType() {return typeid(T).name();};
@@ -251,8 +234,6 @@ protected:
   std::string filter_name_;
   ///The type of the filter (Used by FilterChain for Factory construction)
   std::string filter_type_;
-  /// How many parallel inputs for which the filter is to be configured
-  unsigned int number_of_channels_;
   /// Whether the filter has been configured.  
   bool configured_;
 
@@ -283,7 +264,7 @@ private:
     return true;
   };
 
-
+protected:
   /** \brief Read in the XML and do basic configuration of FilterBase
    * \param config The XML to parse */
   bool loadXml(TiXmlElement* config)
@@ -324,5 +305,70 @@ private:
   };
   
 };
+
+
+template <typename T>
+class MultiChannelFilterBase : public FilterBase<T>
+{
+  using FilterBase<T>::configured_;
+  using FilterBase<T>::filter_type_;
+  using FilterBase<T>::filter_name_;
+public:
+  MultiChannelFilterBase():number_of_channels_(0){};
+  
+
+  /** \brief The public method to configure a filter from XML 
+   * \param number_of_channels How many parallel channels the filter will process
+   * \param config The XML to initialize the filter with including name, type, and any parameters
+   */
+  bool configure(unsigned int number_of_channels, TiXmlElement *config)
+  {
+    if (configured_)
+    {
+      ROS_WARN("Filter %s of type %s already being reconfigured", filter_name_.c_str(), filter_type_.c_str());
+    };
+    configured_ = false;
+    number_of_channels_ = number_of_channels;
+    ROS_DEBUG("MultiChannelFilterBase configured with %d channels", number_of_channels_);
+    bool retval = true;
+
+    retval = retval && FilterBase<T>::loadXml(config);
+    retval = retval && configure();
+    configured_ = retval;
+    return retval;
+  };
+
+
+  /** \brief A method to hide the base class method and warn if improperly called */
+  bool configure(TiXmlElement *config)
+  {
+    ROS_ERROR("MultiChannelFilterBase configure should be called with a number of channels argument, assuming 1");
+    return configure(1, config);
+  }
+
+  virtual bool configure()=0;
+  
+
+  /** \brief Update the filter and return the data seperately
+   * \param data_in A reference to the data to be input to the filter
+   * \param data_out A reference to the data output location
+   * This funciton must be implemented in the derived class.
+   */
+  virtual bool update(const std::vector<T>& data_in, std::vector<T>& data_out)=0;
+
+  virtual bool update(const T& data_in, T& data_out)
+  {
+    ROS_ERROR("THIS IS A MULTI FILTER DON'T CALL SINGLE FORM OF UPDATE");
+    return false;
+  };
+
+
+protected:
+  /// How many parallel inputs for which the filter is to be configured
+  unsigned int number_of_channels_;
+  
+
+};
+
 }
 #endif //#ifndef FILTERS_FILTER_BASE_H_

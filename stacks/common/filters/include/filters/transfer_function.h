@@ -71,7 +71,7 @@ namespace filters
 
 */
 /***************************************************/
-class TransferFunctionDoubleFilter: public FilterBase <double>
+class TransferFunctionDoubleFilter: public MultiChannelFilterBase <double>
 {
 public:
   /**

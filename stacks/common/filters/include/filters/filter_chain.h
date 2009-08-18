@@ -47,7 +47,7 @@ template <typename T>
 class FilterChain
 {
 private:
-  pluginlib::PluginLoader<filters::FilterBase<T> > loader_;
+  pluginlib::PluginLoader<filters::MultiChannelFilterBase<T> > loader_;
 public:
   /** \brief Create the filter chain object */
   FilterChain(std::string package, std::string base_class): loader_(package, base_class), configured_(false)
@@ -140,7 +140,7 @@ public:
     //try
     {
       //boost::shared_ptr<filters::FilterBase<T> > p( filters::FilterFactory<T>::Instance().CreateObject(constructor_string.str()));
-      boost::shared_ptr<filters::FilterBase<T> > p( loader_.createPluginInstance(config->Attribute("type")));
+      boost::shared_ptr<filters::MultiChannelFilterBase<T> > p( loader_.createPluginInstance(config->Attribute("type")));
       if (p.get() == NULL)
         return false;
       result = result &&  p.get()->configure(size, config);    
@@ -204,7 +204,7 @@ public:
 
 private:
 
-  std::vector<boost::shared_ptr<filters::FilterBase<T> > > reference_pointers_;   ///<! A vector of pointers to currently constructed filters
+  std::vector<boost::shared_ptr<filters::MultiChannelFilterBase<T> > > reference_pointers_;   ///<! A vector of pointers to currently constructed filters
 
   std::vector<T> buffer0_; ///<! A temporary intermediate buffer
   std::vector<T> buffer1_; ///<! A temporary intermediate buffer
