@@ -48,6 +48,7 @@ class Timeline():
     self.tokens = []
 
     # Drawing variables
+    self.earliest_tick = float("Inf")
     self.earliest_start = 0
     self.latest_end = 0
     self.row = 0
@@ -91,11 +92,18 @@ class ReactorPanel():
   # Constants for labeling
   LABEL_MARGIN = 8
 
+  # Interaction
+  Ruler = 0
+
   # Static variables
   LabelWidth = 200
-  TickBehind = 50
-  HorzOffset = 500
-  TokenSpace = 5
+  TokenHistory = 50
+  
+  Center = 0
+  PastWidth = 500
+  FutureWidth = 500
+
+  TokenSpace = 0
 
   def __init__(self):
     # Initialize data structures
@@ -115,6 +123,8 @@ class ReactorPanel():
     self.planned_token_times = []
 
     # Drawing variables
+    self.needs_redraw = True
+    self.timelines_group = None
     self.color = (0,0,0)
 
     # Initialize tab index (used for keeping track of where this reactor is in the notebook)
@@ -147,6 +157,7 @@ class ReactorPanel():
 
     self.timeline_da.connect("expose-event",self.expose_timeline_da)
     self.timeline_da.connect("button-press-event", self.on_timeline_click,None)
+    self.timeline_da.connect("motion-notify-event", self.on_timelines_rollover,None)
 
   # Create timeline structures for all of the timelines in an assembly
   def process_timelines(self, assembly):
@@ -222,8 +233,18 @@ class ReactorPanel():
     self.n_timelines = row
 
   # Callback to process click events on the timeline view
+  def on_timelines_rollover(self, widget, event, data):
+    #ReactorPanel.Ruler = event.x
+
+    #self.draw()
+    pass
+
+  # Callback to process click events on the timeline view
   def on_timeline_click(self, widget, event, data):
-    if event.button == 2:
+    if event.button == 1:
+      ReactorPanel.Ruler = event.x
+      self.draw()
+    elif event.button == 2:
       pass
     elif event.button == 3:
       # Calculate row
@@ -251,13 +272,35 @@ class ReactorPanel():
 
   # Callback to re-draw a timeline cr when necessary
   def expose_timeline_da(self, widget, event):
-
     # Create the cairo context
     cr = widget.window.cairo_create()
 
     # Set a clip region for the expose event
     cr.rectangle(event.area.x, event.area.y,event.area.width, event.area.height)
     cr.clip()
+
+    # Determine if a redraw is necessary
+    """
+    if self.needs_redraw:
+      cr.push_group()
+      self.draw_timeline_da(cr)
+      self.timelines_group = cr.pop_group()
+      self.needs_redraw = False
+    
+    # Draw the stored timelines group
+    cr.set_source(self.timelines_group)
+    cr.rectangle(event.area.x, event.area.y,event.area.width, event.area.height)
+    cr.fill()
+    """
+    
+    # Draw timelines
+    self.draw_timeline_da(cr)
+
+  # Draws the group from scratch
+  def draw_timeline_da(self, cr):
+
+    # Get visible width of timeline drawing area
+    timeline_da_width = self.timeline_sw.get_allocation().width
 
     # Clear the image
     cr.set_source_rgba(1.0, 1.0, 1.0, 1.0)
@@ -266,26 +309,38 @@ class ReactorPanel():
     # Initialize row counter
     row = 0
 
+    # Draw ruler
+    cr.set_source_rgba(0, 0, 0, 0.5)
+    cr.rectangle(ReactorPanel.Ruler,0,2,(self.n_timelines)*ReactorPanel.ROW_STEP)
+    cr.fill()
+
     # Draw row backgrounds
+    row_width = ReactorPanel.PastWidth + ReactorPanel.FutureWidth + timeline_da_width
     for timeline in self.int_timelines + self.ext_timelines:
-      y = row*ReactorPanel.ROW_STEP + ReactorPanel.ROW_SPACE
+      row_y = row*ReactorPanel.ROW_STEP + ReactorPanel.ROW_SPACE
 
       # Draw timeline background
-      cr.set_source_rgba(0, 0, 0, 0.1)
-      cr.rectangle(0,y,1000,ReactorPanel.ROW_HEIGHT)
+      cr.set_source_rgba(0.8, 0.8, 0.8, 0.7)
+      cr.rectangle(0,row_y,row_width,ReactorPanel.ROW_HEIGHT)
       cr.fill()
       row = row+1
 
+    # Draw the execution frontier
+    cr.set_source_rgba(0, 0, 0, 0.2)
+    cr.rectangle(ReactorPanel.PastWidth + ReactorPanel.Center,0,row_width,(self.n_timelines)*ReactorPanel.ROW_STEP)
+    cr.fill()
+
     # Set global earliest start and latest end
+    earliest_tick = float("Inf")
     earliest_start = 0
     latest_end = 0
     
     # Reset earliest start and latest end for each reactor
     for tl in self.int_timelines + self.ext_timelines:
+      tl.earliest_tick = float("Inf")
       tl.earliest_start = 0
       tl.latest_end = 0
 
-    # Set the font style
 
     # Iterate over all token keys
     for key in self.started_token_keys[::-1] + self.planned_token_keys:
@@ -293,25 +348,26 @@ class ReactorPanel():
       # Get token
       token = self.all_tokens[key]
       timeline = self.token_timelines[key]
+      tick = self.token_ticks[key]
       
       # Get timeline color
       (r,g,b) = timeline.get_color()
 
       # Skip tokens that are older than the tickbehind and newer than the current tick
-      if self.token_ticks[key] < self.assembly.tick-ReactorPanel.TickBehind:
+      if tick < self.assembly.tick-ReactorPanel.TokenHistory:
 	continue
-      elif self.token_ticks[key] > self.assembly.tick:
+      elif tick > self.assembly.tick:
 	continue
 
       # Do not draw BaseState (HACK)
       if token.name == "BaseState.Holds":
-	continue
+	pass#continue
 
       #print "TICK: %d, EARLIEST_START: %d, LATEST_END: %d" % (self.assembly.tick, earliest_start, latest_end)
 
       # Create the label string, and get the length of the label
       self.set_label_font(cr)
-      label_str = " %s " % (token.name.split('.')[1])#, int(str(token.key)))
+      label_str = "%s" % (token.name.split('.')[1])#, int(str(token.key)))
       _xb,_yb,w_label,_th,_xa,_ya = cr.text_extents(label_str)
 
       # Create the time bound string and get its length
@@ -321,7 +377,7 @@ class ReactorPanel():
 
       # Get the max width of the label
       tok_width_label = max(w_label,w_end_str)
-      tok_width_label = tok_width_label + ReactorPanel.LABEL_MARGIN
+      tok_width_label = tok_width_label + 2*ReactorPanel.LABEL_MARGIN
 
       tok_x0 = 0
       tok_y0 = 0
@@ -329,9 +385,23 @@ class ReactorPanel():
       # Switch draw ordering behavior if this token has started or is planned
       if token.start[0] == token.start[1]:
 	# Has started
+	
+	# Initialize token synchronization width
+	tok_width_sync = 0
+
+	if token.start[0] < earliest_tick:
+	  # Increase spacing if this tick happened before the earliest tick in this view
+	  tok_width_sync = ReactorPanel.ROW_HEIGHT/2
+
+	if timeline.earliest_tick > earliest_tick and token.end[0] < earliest_tick:
+	  # A token is missing, re-sync to create a space for it
+	  timeline.earliest_start = earliest_start
+
+	#print "[%s, %s] earliest: %s (%s)" % (str(token.start[0]),str(token.end[0]), str(earliest_tick), label_str)
+
 	# Calculate the token pixel width
 	# Get the width if this token were to be drawn between the latest point on this timeline, and the earliest point for all timelines
-	tok_width_sync = abs(timeline.earliest_start - earliest_start)
+	tok_width_sync = tok_width_sync + abs(timeline.earliest_start - earliest_start)
 
 	# Get the larger of the two widths
 	tok_width = ReactorPanel.TokenSpace + max(tok_width_label, tok_width_sync)
@@ -341,16 +411,20 @@ class ReactorPanel():
 	tok_end = timeline.earliest_start
 
 	# Do not draw token if it ends before the visible window
-	if tok_end < -ReactorPanel.HorzOffset:
+	if tok_end < -ReactorPanel.PastWidth:
 	  continue
 
-	# Increment earliest start for this timelines
+	# Set the earliest tick for this timeline
+	earliest_tick = token.start[0]
+	# Set the earliest tick for this timeline
+	timeline.earliest_tick = earliest_tick
+	# Increment earliest start for this timeline
 	timeline.earliest_start = timeline.earliest_start - tok_width
-	# Set the new earliest start for all timelines
+	# Set the new earliest start for all timeline
 	earliest_start = min(earliest_start, timeline.earliest_start)
 
 	# Calculate the position top-right corner of the token
-	tok_x0 = ReactorPanel.HorzOffset+math.ceil(tok_end)
+	tok_x0 = math.ceil(tok_end)
 
 	#print "TOKEN \"%s\" ADD WIDTH: %d = max( abs( %d - %d ), %d )" % (token.name,tok_width, timeline.earliest_start, earliest_start, tok_width_label)
       else:
@@ -372,8 +446,9 @@ class ReactorPanel():
 	latest_end = max(latest_end, timeline.latest_end)
 
 	# Calculate the position top-right corner of the token
-	tok_x0 = ReactorPanel.HorzOffset+math.ceil(tok_start+tok_width)
+	tok_x0 = math.ceil(tok_start+tok_width)
 
+      tok_x0 = tok_x0 +ReactorPanel.PastWidth + ReactorPanel.Center
       tok_y0 = ReactorPanel.ROW_STEP*timeline.row + ReactorPanel.ROW_SPACE
 
       # Draw token
@@ -397,7 +472,7 @@ class ReactorPanel():
 
       # Draw the time bounds
       self.set_times_font(cr)
-      cr.set_source_rgba(0, 0, 0, 0.7)
+      cr.set_source_rgba(0, 0, 0, 0.5)
       tx = tok_x0 - w_end_str - ReactorPanel.LABEL_MARGIN
       ty = tok_y0 + ReactorPanel.ROW_STEP - 3
       cr.move_to(tx,ty)
@@ -415,7 +490,7 @@ class ReactorPanel():
 	"Sans",
 	cairo.FONT_SLANT_NORMAL, 
 	cairo.FONT_WEIGHT_NORMAL)
-    cr.set_font_size(12)
+    cr.set_font_size(10)
 
   def set_times_font(self,cr):
     cr.select_font_face(
@@ -475,7 +550,7 @@ class ReactorPanel():
 
     # Resize drawing area for the current number of tokens
     win_height_px = ReactorPanel.ROW_SPACE + ReactorPanel.ROW_STEP*self.n_timelines
-    self.timeline_da.set_size_request(1000,win_height_px)
+    self.timeline_da.set_size_request(int(ReactorPanel.PastWidth + ReactorPanel.FutureWidth),win_height_px)
 
     # Resize drawing area for token width
     self.timeline_label_da.set_size_request(int(ReactorPanel.LabelWidth),win_height_px)
@@ -483,7 +558,10 @@ class ReactorPanel():
 
     return False
 
-  def draw(self):
+  def draw(self, redraw = True):
+    # Set the needs_redraw flag
+    self.needs_redraw = redraw
+
     # Redraw the timelines drawingarea
     if self.timeline_da.window:
       # Refresh view
@@ -534,7 +612,22 @@ class TimelineWindow():
     self.time_scale_slider.connect("change-value",self.redraw_viewport)
     self.viewport_da.connect("expose-event",self.expose_viewport)
 
+    # connect view controls
+    self.past_width_spin.connect("value-changed",self.on_change_view_controls)
+    self.center_spin.connect("value-changed",self.on_change_view_controls)
+    self.future_width_spin.connect("value-changed",self.on_change_view_controls)
+    self.token_history_spin.connect("value-changed",self.on_change_view_controls)
+
     self.w.show()
+
+  def on_change_view_controls(self,widget):
+    # Get control values
+    ReactorPanel.PastWidth = self.past_width_spin.get_value()
+    ReactorPanel.FutureWidth = self.future_width_spin.get_value()
+    ReactorPanel.Center = self.center_spin.get_value()
+    ReactorPanel.TokenHistory = self.token_history_spin.get_value()
+
+    self.draw_active_reactor()
 
   #############################################################################
   # Data manipulation
