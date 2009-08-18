@@ -3,5 +3,9 @@
   <plugin name="JointTrajectoryController2" class="JointTrajectoryController2" type="Controller" />
   <plugin name="PIDPositionVelocityController" class="PIDPositionVelocityController" type="Controller" />
   <plugin name="TrajectoryController" class="TrajectoryController" type="Controller" />
+  <plugin name="CartesianTFFController" class="CartesianTFFController" type="Controller" />
+  <plugin name="CartesianHybridController" class="CartesianHybridController" type="Controller" />
+  <plugin name="CartesianHybridControllerNode" class="CartesianHybridControllerNode" type="Controller" />
+
 
 </library>
