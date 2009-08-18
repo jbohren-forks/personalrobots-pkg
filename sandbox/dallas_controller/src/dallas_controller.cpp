@@ -37,10 +37,6 @@ namespace controller {
 
 const double DALLAS_R = 0.5;
 
-BEGIN_PLUGIN_LIST(Controller)
-REGISTER_PLUGIN(DallasController)
-END_PLUGIN_LIST
-
 DallasController::DallasController()
   : robot_(NULL), last_time_(0)
 {
@@ -110,4 +106,9 @@ void DallasController::command(const geometry_msgs::TwistConstPtr &msg)
 }
 
 } // namespace
+
+using namespace controller;
+BEGIN_PLUGIN_LIST(Controller)
+REGISTER_PLUGIN(DallasController)
+END_PLUGIN_LIST
 
