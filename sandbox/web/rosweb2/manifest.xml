@@ -1,0 +1,20 @@
+<package>
+  <description brief="rosweb2">
+
+     rosweb2 is a temporary package to replace the original rosweb in the ROS
+     repository.  It is placed in the sandbox while development is ongoing, so
+     we are not gated on ROS stack releases.  When the server is more stable,
+     it will be moved to the ROS repository and replace the old rosweb.
+
+  </description>
+  <author>Ken Conley, Scott Hassan, Rob Wheeler, Nate Kaeding</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/rosweb2</url>
+  <depend package="roslib"/>
+  <depend package="rospy"/>
+  <depend package="rosservice"/>
+  <depend package="rosjson"/>
+</package>
+
+
