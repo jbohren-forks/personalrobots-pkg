@@ -162,6 +162,9 @@ bool RobotModel::initXml(TiXmlElement *robot_xml)
             }
             else
             {
+              ROS_ERROR("link '%s' material '%s' undefined.", link->name.c_str(),link->visual->material_name);
+              link.reset();
+              return false;
             }
 
         this->links_.insert(make_pair(link->name,link));
