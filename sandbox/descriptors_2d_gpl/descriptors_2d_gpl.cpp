@@ -48,9 +48,14 @@ void Daisy::doComputation(IplImage* img, const cv::Vector<KeyPoint>& points, vvf
   }
   else {
     char filename[] = "temp.pgm";
-    IplImage* gray = cvCreateImage(cvGetSize(img), IPL_DEPTH_8U, 1);
-    cvCvtColor(img, gray, CV_BGR2GRAY);
-    cvSaveImage(filename, gray);
+    if(img->nChannels == 1) {
+      cvSaveImage(filename, img);
+    }else{
+      IplImage* gray = cvCreateImage(cvGetSize(img), IPL_DEPTH_8U, 1);
+      cvCvtColor(img, gray, CV_BGR2GRAY);
+      cvSaveImage(filename, gray);
+      cvReleaseImage(&gray);
+    }
     load_gray_image(filename, im_, img->height, img->width);
   }
   dai_.verbose(0);
