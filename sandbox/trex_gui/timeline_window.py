@@ -55,6 +55,7 @@ class Timeline():
     self.earliest_tick = float("Inf")
     self.earliest_start = 0
     self.latest_end = 0
+    self.latest_tick = float("Inf")
     self.row = 0
 
     # Timelines must be declared as internal or external
@@ -89,9 +90,9 @@ class Timeline():
   def get_hit_token(self,x):
     token_index = bisect.bisect_left(self.hit_boundaries, x)
     if token_index < len(self.hit_tokens):
-      return self.hit_tokens[token_index]
+      return (self.hit_tokens[token_index], self.hit_boundaries[token_index])
     else:
-      return None
+      return (None,0)
 
 class ReactorPanel():
   # Constants for drawing
@@ -261,33 +262,39 @@ class ReactorPanel():
     timeline = (self.int_timelines+self.ext_timelines)[row]
 
     # Do hit test
-    token = timeline.get_hit_token(event.x)
-    if not token:
-      return False
+    token,hit_edge = timeline.get_hit_token(event.x)
 
-    if event.button == 1:
-      #ReactorPanel.Ruler = event.x
-      if token.key not in self.hilight_keys:
-	self.hilight_keys.append(token.key)
-      else:
-	self.hilight_keys.remove(token.key)
-      self.draw()
-      # Get hit region
-    elif event.button == 2:
-      pass
-    elif event.button == 3:
+    # Process click type
+    if event.type == gtk.gdk._2BUTTON_PRESS:
+      if event.button == 1:
+	if token:
+	  if token.key not in self.hilight_keys:
+	    self.hilight_keys.append(token.key)
+	  else:
+	    self.hilight_keys.remove(token.key)
+	  self.draw()
+    elif event.type == gtk.gdk.BUTTON_PRESS: 
+      if event.button == 1:
+	pass
+      elif event.button == 2:
+	# Set the ruler
+	if ReactorPanel.Ruler == hit_edge:
+	  ReactorPanel.Ruler = 0
+	else:
+	  ReactorPanel.Ruler = hit_edge
+	self.draw()
+      elif event.button == 3:
+	m = gtk.Menu()
+	pos = gtk.MenuItem("Timeline: %s\nToken: %s" % (timeline.obj.name, token),False)
+	pos.set_sensitive(False)
+	t_net = gtk.MenuItem("Token network")
+	t_vars = gtk.MenuItem("Token variables")
+	m.append(pos)
+	m.append(t_net)
+	m.append(t_vars)
+	m.show_all()
+	m.popup(None, None, None, event.button, event.time, None)
 
-
-      m = gtk.Menu()
-      pos = gtk.MenuItem("%s Pixel: %d" % (timeline.obj.name, event.x),False)
-      pos.set_sensitive(False)
-      t_net = gtk.MenuItem("Token network")
-      t_vars = gtk.MenuItem("Token variables")
-      m.append(pos)
-      m.append(t_net)
-      m.append(t_vars)
-      m.show_all()
-      m.popup(None, None, None, event.button, event.time, None)
 
     return False
 
@@ -334,11 +341,6 @@ class ReactorPanel():
     # Initialize row counter
     row = 0
 
-    # Draw ruler
-    cr.set_source_rgba(0, 0, 0, 0.5)
-    cr.rectangle(ReactorPanel.Ruler,0,2,(self.n_timelines)*ReactorPanel.ROW_STEP)
-    cr.fill()
-
     # Draw row backgrounds
     row_width = ReactorPanel.PastWidth + ReactorPanel.FutureWidth + timeline_da_width
     for timeline in self.int_timelines + self.ext_timelines:
@@ -359,14 +361,16 @@ class ReactorPanel():
     earliest_tick = float("Inf")
     earliest_start = 0
     latest_end = 0
+    latest_tick = 0
     
     # Reset earliest start and latest end for each reactor
     for tl in self.int_timelines + self.ext_timelines:
-      tl.hit_boundaries = []
-      tl.hit_tokens = []
+      tl.hit_boundaries = [0]
+      tl.hit_tokens = [None]
       tl.earliest_tick = float("Inf")
       tl.earliest_start = 0
       tl.latest_end = 0
+      tl.latest_tick = 0
 
     # Iterate over all token keys
     for key in self.started_token_keys[::-1] + self.planned_token_keys:
@@ -455,9 +459,21 @@ class ReactorPanel():
 	#print "TOKEN \"%s\" ADD WIDTH: %d = max( abs( %d - %d ), %d )" % (token.name,tok_width, timeline.earliest_start, earliest_start, tok_width_label)
       else:
 	# Is planned
+
+	# Initialize token synchronization width
+	tok_width_sync = 0
+
+	if token.end[0] > latest_tick:
+	  # Increase spacing if this tick happened before the earliest tick in this view
+	  tok_width_sync = ReactorPanel.ROW_HEIGHT/2
+
+	if timeline.latest_tick < latest_tick and token.start[0] > latest_tick:
+	  # A token is missing, re-sync to create a space for it
+	  timeline.latest_end = latest_end
+
 	# Calculate the token pixel width
 	# Get the width if this token were to be drawn between the latest point on this timeline, and the earliest point for all timelines
-	tok_width_sync = abs(latest_end - timeline.latest_end)
+	tok_width_sync = tok_width_sync + abs(latest_end - timeline.latest_end)
 
 	# Get the larger of the two widths
 	tok_width = ReactorPanel.TokenSpace + max(tok_width_label, tok_width_sync)
@@ -465,6 +481,10 @@ class ReactorPanel():
 	# Calculate the token end point
 	# This is the start of the earliest token on the timeline that this token is being drawn onto
 	tok_start = timeline.latest_end
+
+	# Do not draw token if it start outside the visible window
+	if tok_start < -ReactorPanel.FutureWidth:
+	  continue
 
 	# Increment earliest start for this timelines
 	timeline.latest_end = timeline.latest_end + tok_width
@@ -479,11 +499,14 @@ class ReactorPanel():
 
       # Store the token hit region
       if token.start[0] == token.start[1]:
-	timeline.hit_boundaries.insert(0,tok_x0)
-	timeline.hit_tokens.insert(0,token)
+	timeline.hit_boundaries.insert(1,tok_x0)
+	timeline.hit_tokens.insert(1,token)
       else:
 	timeline.hit_boundaries.append(tok_x0)
 	timeline.hit_tokens.append(token)
+
+      # Update the edge of the hit region
+      timeline.hit_boundaries[0] = ReactorPanel.PastWidth + ReactorPanel.Center + timeline.earliest_start
 
       # Draw token
       # Set the color for the appropriate reactors
@@ -514,6 +537,10 @@ class ReactorPanel():
       cr.move_to(tx,ty)
       cr.show_text(end_str)
 
+    # Draw ruler
+    cr.set_source_rgba(0, 0, 0, 0.5)
+    cr.rectangle(ReactorPanel.Ruler,0,2,(self.n_timelines)*ReactorPanel.ROW_STEP)
+    cr.fill()
 
     return False
 
