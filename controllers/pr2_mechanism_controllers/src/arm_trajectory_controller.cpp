@@ -44,6 +44,8 @@ using namespace std;
 ROS_REGISTER_CONTROLLER(ArmTrajectoryController);
 
 
+static const std::string JointTrajectoryStatusString[7] = {"0 - ACTIVE","1 - DONE","2 - QUEUED","3 - DELETED","4 - FAILED","5 - CANCELED","6 - NUM_STATUS"};
+
 ArmTrajectoryController::ArmTrajectoryController() :
   refresh_rt_vals_(false),trajectory_type_("linear"),trajectory_wait_time_(0.0), max_update_time_(0.0)
 {
@@ -359,6 +361,32 @@ void ArmTrajectoryControllerNode::updateTrajectoryQueue(int last_trajectory_fini
   }
 }
 
+
+bool ArmTrajectoryControllerNode::init(mechanism::RobotState *robot, const ros::NodeHandle& n)
+{
+  // get xml from parameter server
+  string xml_string;
+  if (!n.getParam("xml", xml_string)){
+    ROS_ERROR("Could not read xml from parameter server");
+    return false;
+  }
+
+  TiXmlDocument xml_doc;
+  xml_doc.Parse(xml_string.c_str());
+  if (xml_doc.Error())
+  {
+    ROS_ERROR("Error when parsing XML: %d (%d,%d)  %s\n%s", xml_doc.ErrorId(),
+              xml_doc.ErrorRow(), xml_doc.ErrorCol(), xml_doc.ErrorDesc(), xml_string.c_str());
+    return false;
+  }
+  TiXmlElement *xml = xml_doc.FirstChildElement("controller");
+  if (!xml){
+    ROS_ERROR("could not parse xml: %s\n %s", xml_doc.ErrorDesc(),xml_string.c_str());
+    return false;
+  }
+
+  return initXml(robot, xml);
+}
 
 bool ArmTrajectoryControllerNode::initXml(mechanism::RobotState * robot, TiXmlElement * config)
 {
@@ -709,7 +737,7 @@ void ArmTrajectoryControllerNode::publishDiagnostics()
       status.add(c_->joint_pd_controllers_[i]->getJointName() + "/Position/Command",
           cmd.positions[0]);
 
-      status.add(c_->joint_pd_controllers_[i]->getJointName() + "/Position/Error (Command-Actual)", 
+      status.add(c_->joint_pd_controllers_[i]->getJointName() + "/Position/Error (Command-Actual)",
       cmd.positions[0] - c_->joint_pd_controllers_[i]->joint_state_->position_);
 
 //      ROS_INFO("Diagnostics %d: 2",i);
@@ -729,12 +757,12 @@ void ArmTrajectoryControllerNode::publishDiagnostics()
 
 //    ROS_INFO("Diagnostics 3");
 
-    status.add("Trajectory Current Time", 
+    status.add("Trajectory Current Time",
         c_->current_time_-c_->trajectory_start_time_);
 
 //    ROS_INFO("Diagnostics 4");
 
-    status.add("Trajectory Expected End Time (computed)", 
+    status.add("Trajectory Expected End Time (computed)",
         c_->trajectory_end_time_-c_->trajectory_start_time_);
 
 //    ROS_INFO("Diagnostics 5");

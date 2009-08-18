@@ -73,9 +73,6 @@
 namespace controller
 {
 
-  const std::string JointTrajectoryStatusString[7] = {"0 - ACTIVE","1 - DONE","2 - QUEUED","3 - DELETED","4 - FAILED","5 - CANCELED","6 - NUM_STATUS"};
-
-
   #define GOAL_REACHED_THRESHOLD 0.01
 
 
@@ -205,6 +202,7 @@ namespace controller
 
     void update();
 
+    bool init(mechanism::RobotState *robot, const ros::NodeHandle& n);
     bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
     /** @brief service that returns the goal of the controller

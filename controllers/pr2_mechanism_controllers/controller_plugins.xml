@@ -12,4 +12,5 @@
   <plugin name="Pr2BaseController" class="Pr2BaseController" type="Controller" />
   <plugin name="Pr2Odometry" class="Pr2Odometry" type="Controller" />
   <plugin name="WristCalibrationController" class="WristCalibrationController" type="Controller" />
+  <plugin name="ArmTrajectoryControllerNode" class="ArmTrajectoryControllerNode" type="Controller" />
 </library>
