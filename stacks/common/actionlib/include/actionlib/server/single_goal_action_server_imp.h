@@ -154,6 +154,12 @@ namespace actionlib {
   }
 
   template <class ActionSpec>
+  void SingleGoalActionServer<ActionSpec>::publishFeedback(const Feedback& feedback)
+  {
+    current_goal_.publishFeedback(feedback);
+  }
+
+  template <class ActionSpec>
   void SingleGoalActionServer<ActionSpec>::goalCallback(GoalHandle goal){
     boost::recursive_mutex::scoped_lock lock(lock_);
     ROS_DEBUG("A new goal has been recieved by the single goal action server");

@@ -120,9 +120,16 @@ namespace actionlib {
 
 
       /**
-       *
-       */
+      * @brief  Publishes feedback for a given goal
+      * @param  feedback Shared pointer to the feedback to publish
+      */
       void publishFeedback(const FeedbackConstPtr& feedback);
+
+      /**
+      * @brief  Publishes feedback for a given goal
+      * @param  feedback The feedback to publish
+      */
+      void publishFeedback(const Feedback& feedback);
 
       /**
        * @brief  Sets the status of the active goal to preempted
