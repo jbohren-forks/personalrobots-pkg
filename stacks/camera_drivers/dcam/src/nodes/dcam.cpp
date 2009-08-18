@@ -35,6 +35,7 @@
 #include <cstdio>
 
 #include "dcam/dcam.h"
+#include "cam_bridge.h"
 
 #include "ros/node.h"
 #include "sensor_msgs/Image.h"
@@ -199,69 +200,30 @@ public:
     publishImages("~", cam_->camIm);
   }
 
-  void publishImages(std::string base_name, cam::ImageData* img_data)
+  void publishImage(const std::string& topic, color_coding_t type,
+                    int height, int width, void* data, size_t data_size)
   {
-    if (img_data->imRawType != COLOR_CODING_NONE)
-    {
-      fillImage(img_,  sensor_msgs::image_encodings::TYPE_8UC1,
-                img_data->imHeight, img_data->imWidth, img_data->imWidth,
-                img_data->imRaw);
+    if (type == COLOR_CODING_NONE)
+      return;
+    std::string encoding = cam_bridge::ColorCodingToImageEncoding(type);
+    fillImage(img_, encoding, height, width, data_size / height, data);
+    img_.header.stamp = ros::Time().fromNSec(cam_->camIm->im_time * 1000);
+    timestamp_diag_.tick(img_.header.stamp);
+    publish(topic, img_);
+  }
 
-      img_.header.stamp = ros::Time().fromNSec(cam_->camIm->im_time * 1000);
-      timestamp_diag_.tick(img_.header.stamp);
-      publish(base_name + std::string("image_raw"), img_);
-    }
-
-    if (img_data->imType != COLOR_CODING_NONE)
-    {
-      fillImage(img_,  sensor_msgs::image_encodings::TYPE_8UC1,
-                img_data->imHeight, img_data->imWidth, img_data->imWidth,
-                img_data->im);
-      img_.header.stamp = ros::Time().fromNSec(cam_->camIm->im_time * 1000);
-      timestamp_diag_.tick(img_.header.stamp);
-      publish(base_name + std::string("image"), img_);
-    }
-
-    if (img_data->imColorType != COLOR_CODING_NONE && img_data->imColorType == COLOR_CODING_RGB8)
-    {
-      fillImage(img_,  sensor_msgs::image_encodings::TYPE_8UC3,
-                img_data->imHeight, img_data->imWidth, 3 * img_data->imWidth,
-                img_data->imColor );
-
-      img_.header.stamp = ros::Time().fromNSec(cam_->camIm->im_time * 1000);
-      timestamp_diag_.tick(img_.header.stamp);
-      publish(base_name + std::string("image_color"), img_);
-    }
-
-    if (img_data->imRectType != COLOR_CODING_NONE)
-    {
-      fillImage(img_,  sensor_msgs::image_encodings::TYPE_8UC1,
-                img_data->imHeight, img_data->imWidth,  img_data->imWidth,
-                img_data->imRect );
-      img_.header.stamp = ros::Time().fromNSec(cam_->camIm->im_time * 1000);
-      timestamp_diag_.tick(img_.header.stamp);
-      publish(base_name + std::string("image_rect"), img_);
-    }
-
-    if (img_data->imRectColorType != COLOR_CODING_NONE && img_data->imRectColorType == COLOR_CODING_RGB8)
-    {
-      fillImage(img_,  sensor_msgs::image_encodings::TYPE_8UC3,
-                img_data->imHeight, img_data->imWidth, 3 * img_data->imWidth,
-                img_data->imRectColor );
-      img_.header.stamp = ros::Time().fromNSec(cam_->camIm->im_time * 1000);
-      timestamp_diag_.tick(img_.header.stamp);
-      publish(base_name + std::string("image_rect_color"), img_);
-    }
-
-    if (img_data->imRectColorType != COLOR_CODING_NONE && img_data->imRectColorType == COLOR_CODING_RGBA8)
-    {
-      fillImage(img_,sensor_msgs::image_encodings::TYPE_8UC4,
-                img_data->imHeight, img_data->imWidth, 4 * img_data->imWidth,
-                img_data->imRectColor );
-      img_.header.stamp = ros::Time().fromNSec(cam_->camIm->im_time * 1000);
-      timestamp_diag_.tick(img_.header.stamp);
-      publish(base_name + std::string("image_rect_color"), img_);
-    }
+  void publishImages(const std::string& base_name, cam::ImageData* img_data)
+  {
+    publishImage(base_name + "image_raw", img_data->imRawType, img_data->imHeight,
+                 img_data->imWidth, img_data->imRaw, img_data->imRawSize);
+    publishImage(base_name + "image", img_data->imType, img_data->imHeight,
+                 img_data->imWidth, img_data->im, img_data->imSize);
+    publishImage(base_name + "image_color", img_data->imColorType, img_data->imHeight,
+                 img_data->imWidth, img_data->imColor, img_data->imColorSize);
+    publishImage(base_name + "image_rect", img_data->imRectType, img_data->imHeight,
+                 img_data->imWidth, img_data->imRect, img_data->imRectSize);
+    publishImage(base_name + "image_rect_color", img_data->imRectColorType, img_data->imHeight,
+                 img_data->imWidth, img_data->imRectColor, img_data->imRectColorSize);
 
     cam_info_.header.stamp = ros::Time().fromNSec(cam_->camIm->im_time * 1000);
     cam_info_.height = img_data->imHeight;
@@ -274,7 +236,6 @@ public:
 
     timestamp_diag_.tick(img_.header.stamp);
     publish(base_name + std::string("cam_info"), cam_info_);
-
   }
 
 

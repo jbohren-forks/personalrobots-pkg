@@ -176,6 +176,7 @@ namespace cam
     // the Type info is COLOR_CODING_NONE if the data is not current
     // the Size info gives the buffer size, for allocation logic
     // NOTE: all data buffers should be 16-byte aligned
+    // @todo: can we just use IplImages for these...
     uint8_t *imRaw;		// raw image
     color_coding_t imRawType;	// type of raw data
     size_t imRawSize;

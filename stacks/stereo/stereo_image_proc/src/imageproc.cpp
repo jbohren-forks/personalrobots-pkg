@@ -76,7 +76,7 @@ public:
     node_.subscribe(cam_name_ + "image_raw", raw_img_, &ImageProc::rawCb, this, 1);
   }
 
-  // TODO: should the callbacks actually be synchronized? is there a use case?
+  // @todo: synchronize callbacks
   void camInfoCb()
   {
     boost::lock_guard<boost::mutex> guard(cam_info_mutex_);
@@ -85,11 +85,10 @@ public:
   
   void rawCb()
   {
+    // @todo: move publishing into here, only do processing if topics have subscribers
     boost::lock_guard<boost::mutex> guard(cam_info_mutex_);
 
     cam_bridge::RawStereoToCamData(raw_img_, cam_info_, stereo_msgs::RawStereo::IMAGE_RAW, &img_data_);
-    // @todo: stop hardcoding this to what forearm cam happens to use
-    img_data_.imRawType = COLOR_CODING_BAYER8_BGGR;
 
     if (do_colorize_) {
       //img_data_.colorConvertType = COLOR_CONVERSION_EDGE;
@@ -103,50 +102,27 @@ public:
     publishImages();
   }
 
+  void publishImage(color_coding_t coding, void* data, size_t dataSize, const std::string& topic)
+  {
+    if (coding == COLOR_CODING_NONE)
+      return;
+
+    // @todo: step calculation is a little hacky
+    fillImage(img_, cam_bridge::ColorCodingToImageEncoding(coding),
+              img_data_.imHeight, img_data_.imWidth,
+              dataSize / img_data_.imHeight /*step*/, data);
+    node_.publish(cam_name_ + topic, img_);
+  }
+
   void publishImages()
   {
     img_.header.stamp = raw_img_.header.stamp;
     img_.header.frame_id = raw_img_.header.frame_id;
-    
-    if (img_data_.imType != COLOR_CODING_NONE)
-    {
-      fillImage(img_, sensor_msgs::image_encodings::MONO8,
-                img_data_.imHeight, img_data_.imWidth, img_data_.imWidth,
-                img_data_.im );
-      node_.publish(cam_name_ + "image", img_);
-    }
 
-    if (img_data_.imColorType == COLOR_CODING_RGB8)
-    {
-      fillImage(img_,sensor_msgs::image_encodings::RGB8,
-                img_data_.imHeight, img_data_.imWidth, 3 * img_data_.imWidth,
-                img_data_.imColor );
-      node_.publish(cam_name_ + "image_color", img_);
-    }
-
-    if (img_data_.imRectType != COLOR_CODING_NONE)
-    {
-      fillImage(img_,  sensor_msgs::image_encodings::MONO8,
-                img_data_.imHeight, img_data_.imWidth, img_data_.imWidth,
-                img_data_.imRect );
-      node_.publish(cam_name_ + "image_rect", img_);
-    }
-
-    if (img_data_.imRectColorType == COLOR_CODING_RGB8)
-    {
-      fillImage(img_,  sensor_msgs::image_encodings::RGB8,
-                img_data_.imHeight, img_data_.imWidth, 3 * img_data_.imWidth,
-                img_data_.imRectColor );
-      node_.publish(cam_name_ + "image_rect_color", img_);
-    }
-
-    if (img_data_.imRectColorType == COLOR_CODING_RGBA8)
-    {
-      fillImage(img_, sensor_msgs::image_encodings::RGBA8,
-                img_data_.imHeight, img_data_.imWidth, 4 * img_data_.imWidth,
-                img_data_.imRectColor);
-      node_.publish(cam_name_ + "image_rect_color", img_);
-    }
+    publishImage(img_data_.imType, img_data_.im, img_data_.imSize, "image");
+    publishImage(img_data_.imColorType, img_data_.imColor, img_data_.imColorSize, "image_color");
+    publishImage(img_data_.imRectType, img_data_.imRect, img_data_.imRectSize, "image_rect");
+    publishImage(img_data_.imRectColorType, img_data_.imRectColor, img_data_.imRectColorSize, "image_rect_color");
   }
 
   void advertiseImages()
@@ -161,7 +137,7 @@ public:
 int main(int argc, char **argv)
 {
   ros::init(argc, argv);
-  ros::Node n("stereoproc");
+  ros::Node n("imageproc");
   ImageProc ip(n);
 
   n.spin();
