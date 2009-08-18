@@ -107,7 +107,6 @@ bool SBPLArmPlannerNode::init()
 
 	//initialize the planning monitor
 	initializePM();
-	ROS_INFO("about to run clearBox()");
 	
 // 	col_map_subscriber_ = node_.subscribe(collision_map_topic_, 1, &SBPLArmPlannerNode::collisionMapCallback, this);
 	collision_map_notifier_ = new tf::MessageNotifier<mapping_msgs::CollisionMap>(tf_, boost::bind(&SBPLArmPlannerNode::collisionMapCallback, this, _1), collision_map_topic_, planning_frame_, 1);
@@ -365,9 +364,7 @@ void SBPLArmPlannerNode::updateMapFromCollisionMap(const mapping_msgs::Collision
 			return;
 		}
   }
-
-
-	ROS_INFO("[updateMapFromCollisionMap] completed in %lf seconds. exiting. (header.seq = %i   internal_seq = %i)\n", (ros::Time::now() - start).toSec(), collision_map->header.seq, cm_seq);
+	ROS_DEBUG("[updateMapFromCollisionMap] completed in %lf seconds. exiting. (header.seq = %i   internal_seq = %i)\n", (ros::Time::now() - start).toSec(), collision_map->header.seq, cm_seq);
 }
 
 void SBPLArmPlannerNode::pointCloudCallback(const sensor_msgs::PointCloudConstPtr &point_cloud)
@@ -432,34 +429,6 @@ void SBPLArmPlannerNode::updateMapFromPointCloud(const sensor_msgs::PointCloudCo
 
     mCopyingVoxel_.unlock();
   }
-}
-
-void SBPLArmPlannerNode::dummyCallback(const mechanism_msgs::MechanismStateConstPtr &mechanism_state)
-{
-//   if(mPlanning_.try_lock())
-//   {
-//     if(bPlanning_)
-//     {
-//       mPlanning_.unlock();
-//       return;
-//     }
-//     mPlanning_.unlock();
-//   }
-//   else
-//     return;
-//   double xyz_m[3], rpy_r[3], angles_r[7];
-//   std::vector <double> joint_angles;
-//   getCurrentJointAngles(joint_names_, &joint_angles);
-  // 	
-//   ROS_INFO("Current: %.3f %.3f %.3f %.3f %.3f %.3f %.3f",
-// 	   joint_angles.at(0), joint_angles.at(1), joint_angles.at(2), joint_angles.at(3), joint_angles.at(4), joint_angles.at(5),joint_angles.at(6));
-  // 
-//   for(unsigned int a = 0; a < joint_angles.size(); a++)
-//     angles_r[a] = joint_angles.at(a);
-  // 
-//   sbpl_arm_env_.ComputeEndEffectorPos(angles_r, xyz_m, rpy_r);
-//   ROS_INFO("        xyz: %.3f %.3f %.3f   rpy: %.3f %.3f %.3f",
-// 	   xyz_m[0],xyz_m[1],xyz_m[2],rpy_r[0],rpy_r[1],rpy_r[2]);
 }
 
 void SBPLArmPlannerNode::jointStatesCallback(const mechanism_msgs::JointStatesConstPtr &joint_states)
@@ -652,7 +621,7 @@ bool SBPLArmPlannerNode::setGoalState(const std::vector<motion_planning_msgs::Jo
 
   delete angles;
 
-
+	ROS_INFO("about to set goal configuration");
   if(!sbpl_arm_env_.SetGoalConfiguration(sbpl_goal,sbpl_tolerance_above,sbpl_tolerance_below))
   {
     ROS_INFO("Planner failed to set goal configuration");
@@ -678,7 +647,7 @@ bool SBPLArmPlannerNode::planToState(motion_planning_msgs::GetMotionPlan::Reques
   motion_planning_msgs::KinematicPath arm_path;
 
   bCartesianPlanner_ = false;
-//   ROS_INFO("[planToState] Planning...");
+  ROS_DEBUG("[planToState] Planning...");
 
   //check for an empty start state
   if(req.start_state.empty())
@@ -688,7 +657,7 @@ bool SBPLArmPlannerNode::planToState(motion_planning_msgs::GetMotionPlan::Reques
   }
 
 //   for(i = 0; i < req.get_start_state_size(); i++)
-//     ROS_INFO("%s: %.3f",req.start_state[i].joint_name.c_str(),req.start_state[i].value[0]);
+//     ROS_DEBUG("%s: %.3f",req.start_state[i].joint_name.c_str(),req.start_state[i].value[0]);
 
   // update the planning monitor's starting position
   updatePMWrapper(req);
@@ -709,11 +678,13 @@ bool SBPLArmPlannerNode::planToState(motion_planning_msgs::GetMotionPlan::Reques
 
   starttime = clock();
   
+	ROS_DEBUG("About to set start configuration\n");
   if(setStart(start))
   {
     ROS_INFO("[planToState] successfully set starting configuration");
 
-    //updateOccupancyGrid();
+    updateOccupancyGrid();
+		
 		mPlanning_.lock();
 		bPlanning_ = true;
 		
@@ -723,6 +694,9 @@ bool SBPLArmPlannerNode::planToState(motion_planning_msgs::GetMotionPlan::Reques
 
       if(plan(arm_path))
       {
+				if(print_path_)
+					printPath(arm_path);
+				
 				ROS_INFO("Planning took %lf seconds",(clock() - starttime) / (double)CLOCKS_PER_SEC);
 				bPlanning_ = false;
 				mPlanning_.unlock();
@@ -738,10 +712,12 @@ bool SBPLArmPlannerNode::planToState(motion_planning_msgs::GetMotionPlan::Reques
 				else
 					res.path.header.frame_id = planning_frame_;
 			
+				ROS_DEBUG("path is in %s",res.path.header.frame_id.c_str());
+				
 				res.path.set_times_size(res.path.get_states_size());
 				res.path.times[0] = 0;
-				for(i = 1; i < res.path.get_states_size(); i++)
-					res.path.times[i] = res.path.times[i-1] + 0.001;
+				for(i = 1; i < res.path.get_times_size(); i++)
+					res.path.times[i] = res.path.times[i-1] + waypoint_time_;
 			
 				res.path.set_names_size(num_joints_);
 				for(i = 0; i < (unsigned int)num_joints_; i++)
@@ -750,7 +726,6 @@ bool SBPLArmPlannerNode::planToState(motion_planning_msgs::GetMotionPlan::Reques
 				res.path.start_state = req.start_state;
 				res.approximate = 0;
 				res.distance = 0;
-
 				return true;
       }
       else
@@ -784,7 +759,6 @@ bool SBPLArmPlannerNode::planToPosition(motion_planning_msgs::GetMotionPlan::Req
   motion_planning_msgs::KinematicPath arm_path;
   motion_planning_msgs::KinematicState start;
   tf::Stamped<tf::Pose> pose_stamped;
-//   std::vector<motion_planning_msgs::PoseConstraint> pose_constraint_torso_link(req.goal_constraints.get_pose_constraint_size());
 
   bCartesianPlanner_ = true;
 
@@ -907,8 +881,7 @@ bool SBPLArmPlannerNode::planToPosition(motion_planning_msgs::GetMotionPlan::Req
 				res.path.start_state = req.start_state;
 				res.approximate = 0;
 				res.distance = 0;
-
-			return true;
+				return true;
       }
       else
       {

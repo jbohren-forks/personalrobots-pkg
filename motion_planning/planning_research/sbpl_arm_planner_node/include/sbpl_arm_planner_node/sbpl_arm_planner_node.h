@@ -259,8 +259,6 @@ class SBPLArmPlannerNode
 
       void pointCloudCallback(const sensor_msgs::PointCloudConstPtr &point_cloud);
 
-      void dummyCallback(const mechanism_msgs::MechanismStateConstPtr &mechanism_state);
-
 			void jointStatesCallback(const mechanism_msgs::JointStatesConstPtr &joint_states);
 					
       void createOccupancyGrid();
