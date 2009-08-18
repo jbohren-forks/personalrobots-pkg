@@ -1,0 +1,30 @@
+sensors:
+  type: GenericAnalyzer
+  prefix: Sensors
+  contains: [
+    'hokuyo',
+    'prosilica',
+    'imu' ]
+computers:
+  type: GenericAnalyzer
+  prefix: Computers
+  contains: [
+    'HD Temp',
+    'CPU Usage',
+    'CPU Temperature',
+    'HD Usage',
+    'NFS']
+motors:
+  type: GenericAnalyzer
+  prefix: Motors
+  startswith: [
+    'EtherCAT']
+joints:
+  type: GenericAnalyzer
+  prefix: Joints
+  startswith: [
+    'Joint']
+other:
+  prefix: Other
+  type: GenericAnalyzer
+  other: true
