@@ -59,7 +59,7 @@
 #include <point_cloud_clustering/all_clusterings.h>
 
 #include <descriptors_3d/all_descriptors.h>
-
+#include <descriptors_2d/descriptors_2d.h>
 #include <functional_m3n/random_field.h>
 
 #include <object_segmentation/util/rf_creator_3d.h>

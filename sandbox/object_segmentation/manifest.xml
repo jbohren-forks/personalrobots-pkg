@@ -17,6 +17,7 @@
   <depend package="descriptors_3d"/>
   <depend package="opencv_latest"/>
   <depend package="bullet"/>
+  <depend package="descriptors_2d"/>
 
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lrf_creator_3d -ltable_object_rf" />

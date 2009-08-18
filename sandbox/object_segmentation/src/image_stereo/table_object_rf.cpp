@@ -86,8 +86,8 @@ TableObjectRF::TableObjectRF()
 
   // -----------------------------------------
   // Clique-set 0 clustering (kmeans)
-  point_cloud_clustering::KMeans* kmeans0_cs0 = new point_cloud_clustering::KMeans(0.005, 2);
-  point_cloud_clustering::KMeans* kmeans1_cs0 = new point_cloud_clustering::KMeans(0.008, 2);
+  point_cloud_clustering::KMeans* kmeans0_cs0 = new point_cloud_clustering::KMeans(0.005, 2); // TODO 1
+  point_cloud_clustering::KMeans* kmeans1_cs0 = new point_cloud_clustering::KMeans(0.008, 2); // 1
   vector<pair<bool, point_cloud_clustering::PointCloudClustering*> > cs0_clusterings(2);
   cs0_clusterings[0].first = true; // true indicates to cluster over only the nodes
   cs0_clusterings[0].second = kmeans0_cs0;
@@ -117,6 +117,9 @@ TableObjectRF::TableObjectRF()
       clique_set_clusterings);
 
   // 0.3 inch = 0.00762 m cells
+  //voxel_x_ = 0.006; // TODO
+  //voxel_y_ = 0.006;
+  //voxel_z_ = 0.006;
   voxel_x_ = 0.00762;
   voxel_y_ = 0.00762;
   voxel_z_ = 0.00762;
@@ -301,29 +304,52 @@ void TableObjectRF::createImageFeatures(IplImage& image,
   // however, during test-time we want to create nodes for points that dont have a label so need to
   // make explicit which indices to ignore
 
-  unsigned int nbr_image_features = 2;
-
-  unsigned int nbr_pts = ds_img_coords.size();
-  ds_img_features.clear();
-  ds_img_features.reserve(nbr_pts);
-  vector<float> curr_img_feats(nbr_image_features, 0.0);
-  for (unsigned int i = 0 ; i < nbr_pts ; i++)
+  unsigned int nbr_ds_pts = ds_img_coords.size();
+  cv::Vector<cv::KeyPoint> keypoints;
+  for (unsigned int i = 0 ; i < nbr_ds_pts ; i++)
   {
     if (ignore_ds_indices.count(i) == 0)
     {
       // retrieve coordinates of pixel
       const pair<unsigned int, unsigned int>& curr_img_coords = ds_img_coords[i];
-      unsigned int w = curr_img_coords.first;
-      unsigned int h = curr_img_coords.second;
+      unsigned int x = curr_img_coords.first;
+      unsigned int y = curr_img_coords.second;
+      keypoints.push_back(cv::KeyPoint(x, y, 1));
+    }
+  }
 
-      // height of pixel
-      curr_img_feats[0] = h;
+  // Compute hog for each key point
+  HogWrapper hog_descriptor(cv::Size(64, 64), cv::Size(32, 32), cv::Size(16, 16), cv::Size(16, 16),
+      7, 1, -1, 0, 0.2, true);
+  cv::Vector<cv::Vector<float> > hog_results;
+  hog_descriptor.compute(&image, keypoints, hog_results);
 
-      // intensity of pixel
-      unsigned char* tempo = (unsigned char*) (image.imageData + (h * image.widthStep));
-      curr_img_feats[1] = static_cast<float> (tempo[w]);
+  // For each key point, compute image features and insert into ds_img_features
+  unsigned int nbr_keypoints = keypoints.size();
+  ds_img_features.assign(nbr_keypoints, vector<float> ());
+  for (size_t i = 0 ; i < nbr_keypoints ; i++)
+  {
+    size_t curr_hog_length = hog_results[i].size();
+    curr_hog_length = 0;
+    if (1)
+    //if (curr_hog_length != 0)
+    {
+      ds_img_features[i].resize(curr_hog_length + 2);
 
-      ds_img_features.push_back(curr_img_feats);
+      for (size_t j = 0 ; j < curr_hog_length ; j++)
+      {
+        ds_img_features[i][j] = hog_results[i][j];
+      }
+
+      unsigned int x = static_cast<float>(keypoints[i].pt.x);
+      unsigned int y = static_cast<float>(keypoints[i].pt.y);
+
+      // height in image
+      ds_img_features[i][curr_hog_length] = y;
+
+      // intensity of pixel at location (x,y)
+      unsigned char* tempo = (unsigned char*) (image.imageData + (y * image.widthStep));
+      ds_img_features[i][curr_hog_length + 1] = static_cast<float> (tempo[x]);
     }
   }
 }

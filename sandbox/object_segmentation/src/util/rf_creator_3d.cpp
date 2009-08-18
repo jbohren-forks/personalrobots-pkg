@@ -348,9 +348,21 @@ unsigned int RFCreator3D::concatenateNodeFeatures(const RandomField& rf,
     return 0;
   }
 
+  // TODO REMOVE
+  vector<unsigned int> HARD_CODED_FEATURES;
+  HARD_CODED_FEATURES.push_back(0);
+  HARD_CODED_FEATURES.push_back(1);
+  HARD_CODED_FEATURES.push_back(2);
+  HARD_CODED_FEATURES.push_back(3);
+  HARD_CODED_FEATURES.push_back(4);
+  HARD_CODED_FEATURES.push_back(5);
+  ROS_WARN("CONCATENATING HARD CODED NODE FEATURES (0-5)");
+  unsigned int nbr_concatenated_features = HARD_CODED_FEATURES.size() * 2;
+  // TODO REMOVE
+
   // Determine the size of the concatenated feature vector
-  unsigned int single_feature_length = rf_nodes.begin()->second->getNumberFeatureVals();
-  unsigned int nbr_concatenated_features = single_feature_length * 2;
+  //unsigned int single_feature_length = rf_nodes.begin()->second->getNumberFeatureVals();
+  //unsigned int nbr_concatenated_features = single_feature_length * 2;
 
   // for each cluster (edge), determine if both nodes exist in the random field, if they do
   // then concatenate teh values
@@ -378,9 +390,20 @@ unsigned int RFCreator3D::concatenateNodeFeatures(const RandomField& rf,
       const boost::shared_array<const float> node1_features =
           rf_nodes.find(cluster_node_ids[1])->second->getFeatureVals();
 
-      memcpy(curr_concatenated_vals, node0_features.get(), sizeof(float) * single_feature_length);
-      memcpy(curr_concatenated_vals + single_feature_length, node1_features.get(), sizeof(float)
-          * single_feature_length);
+      // TODO REMOVE
+      for (unsigned int i = 0 ; i < HARD_CODED_FEATURES.size() ; i++)
+      {
+        curr_concatenated_vals[i] = node0_features[HARD_CODED_FEATURES[i]];
+      }
+      for (unsigned int i = 0 ; i < HARD_CODED_FEATURES.size() ; i++)
+      {
+        curr_concatenated_vals[i + HARD_CODED_FEATURES.size()] = node1_features[HARD_CODED_FEATURES[i]];
+      }
+      // TODO REMOVE
+
+      //memcpy(curr_concatenated_vals, node0_features.get(), sizeof(float) * single_feature_length);
+      //memcpy(curr_concatenated_vals + single_feature_length, node1_features.get(), sizeof(float)
+      //    * single_feature_length);
 
       concatenated_features[sample_idx].reset(static_cast<const float*> (curr_concatenated_vals));
     }
