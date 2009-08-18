@@ -39,7 +39,7 @@
   </node>
 
   <!-- Laser scan assembler for tilt laser -->
-  <node pkg="point_cloud_assembler" type="laser_scan_assembler_srv" output="screen" name="laser_scan_assembler" respawn="true">
+  <node pkg="point_cloud_assembler" type="laser_scan_assembler_srv" name="laser_scan_assembler" respawn="true">
     <remap from="scan_in" to="tilt_scan"/>
     <param name="filters" textfile="$(find laser_scan)/default_scan_shadows.xml" />
     <param name="tf_cache_time_secs" type="double" value="10.0" />
@@ -50,7 +50,7 @@
   </node>
 
    <!-- Setup for detecting the plug on the base -->
-  <node pkg="point_cloud_assembler" type="laser_scan_assembler_srv" output="screen"  name="plugs_laser_scan_assembler" respawn="true">
+  <node pkg="point_cloud_assembler" type="laser_scan_assembler_srv" name="plugs_laser_scan_assembler" respawn="true">
     <remap from="scan_in" to="tilt_scan"/>
     <param name="tf_cache_time_secs" type="double" value="10.0" />
     <param name="max_scans" type="int" value="400" />
@@ -59,7 +59,7 @@
     <param name="downsample_factor" type="int" value="2" />
   </node>
 
-  <node pkg="point_cloud_assembler" type="point_cloud_snapshotter" output="screen" name="plugs_snapshotter" respawn="true">
+  <node pkg="point_cloud_assembler" type="point_cloud_snapshotter" name="plugs_snapshotter" respawn="true">
     <remap from="laser_scanner_signal" to="laser_tilt_controller/laser_scanner_signal"/>
     <remap from="build_cloud" to="plugs_laser_scan_assembler/build_cloud" />
     <remap from="full_cloud" to="plug_snapshot_cloud" />
@@ -83,11 +83,11 @@
     <param name="board_height" type="int" value="5"/>
 
   </group>
-  <node pkg="outlet_detection" type="plug_node" respawn="false" output="screen" machine="four"/>
+  <node pkg="outlet_detection" type="plug_node" respawn="false" machine="four"/>
 
 
   <!-- Generate single sweep scan -->
-  <node pkg="point_cloud_assembler" type="point_cloud_srv" output="screen" name="point_cloud_srv" />
+  <node pkg="point_cloud_assembler" type="point_cloud_srv" name="point_cloud_srv" />
 
 
 
