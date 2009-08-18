@@ -65,8 +65,8 @@ class RegressionTreeWrapperParams
      * regression_accuracy \n
      * nbr_xvalidation_folds \n
      *
-     * max_allocation The max size (bytes) of the matrix used to train the
-     *                regressor (used to avoid bad malloc from OpenCV)
+     * max_allocation The max size of the matrix (number of float values) used
+     *                to train the regressor (used to avoid bad malloc from OpenCV)
      */
     // --------------------------------------------------------------
     RegressionTreeWrapperParams() :
