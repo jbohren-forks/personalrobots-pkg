@@ -1003,7 +1003,7 @@ void runFernsOneWayOutletDetectorTest(CvMat* intrinsic_matrix, CvMat* distortion
 		printf("Done\n");
 	}
 //!!!!!!!!!!!!!!!!!!!!!
-	for (int i=0;i<1/*(size_t)test_data.size()*/;i++)
+	for (int i=0;i<(size_t)test_data.size();i++)
 	{
 		if (test_data[i].n_matches == DETECT_SKIP)
 			continue;
