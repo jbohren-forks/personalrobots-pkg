@@ -262,6 +262,7 @@ typedef struct ENV_ROBARM_CONFIG
     bool use_selective_actions;
     bool exact_gripper_collision_checking;
 		bool use_jacobian_motion_prim;
+		bool enable_direct_primitive;
 		
 /* Motion Primitives */
     //successor actions
