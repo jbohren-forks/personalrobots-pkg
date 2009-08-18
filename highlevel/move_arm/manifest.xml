@@ -9,6 +9,7 @@
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/move_arm</url>
 
+  <depend package="joy"/>
   <depend package="roscpp"/>
   <depend package="rosconsole"/>
   <depend package="std_msgs"/>

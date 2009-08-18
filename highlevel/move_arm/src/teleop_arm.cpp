@@ -41,6 +41,7 @@
 #include <tf_conversions/tf_kdl.h>
 #include <tf/transform_datatypes.h>
 #include <manipulation_srvs/IKService.h>
+#include <joy/Joy.h>
 
 namespace move_arm
 {
@@ -50,8 +51,9 @@ namespace move_arm
     public:
 	TeleopArm(MoveArmSetup &setup) : setup_(setup)
 	{
+	    pubTwist_ = nh_.advertise<geometry_msgs::Twist>("/r_arm_cartesian_twist_controller/command", 1);
 	    ctrl_ = nh_.serviceClient<pr2_mechanism_controllers::TrajectoryStart>("/r_arm_joint_waypoint_controller/TrajectoryStart", true);
-	    subSpaceNav_ = nh_.subscribe("/spacenav/twist", 1, &TeleopArm::twistCallback, this);
+	    subSpaceNav_ = nh_.subscribe("/spacenav/joy", 1, &TeleopArm::twistCallback, this);
 	    planningMonitor_ = setup_.planningMonitor_;
 	}
 	
@@ -66,18 +68,39 @@ namespace move_arm
 	
     private:
 	
-	void twistCallback(const geometry_msgs::TwistConstPtr &twist)
+        void twistCallback(const joy::JoyConstPtr &joy)
 	{
-	    planningMonitor_->getKinematicModel()->lock();
+	    static int call = 0;
+	    call = (call + 1) % 100;
+	    if (call != 0)
+	        return;
+	    
+	    geometry_msgs::Twist tw;
+	    tw.linear.x = joy->axes[0];
+	    tw.linear.y = joy->axes[1];
+	    tw.linear.z = joy->axes[2];
+	    tw.angular.x = joy->axes[3];
+	    tw.angular.y = joy->axes[4];
+	    tw.angular.z = joy->axes[5];
+
+
+	    ROS_INFO("Got twist: %f, %f, %f : %f, %f, %f", tw.linear.x, tw.linear.y, tw.linear.z, tw.angular.x, tw.angular.y, tw.angular.z);
+
+	    //	    pubTwist_.publish(tw);
+
+	    //	    return ;
+
+	    planning_models::KinematicModel *kmodel = planningMonitor_->getKinematicModel()->clone();
+	    
 	    boost::shared_ptr<planning_models::StateParams> start(new planning_models::StateParams(*planningMonitor_->getRobotState()));
 	    start->enforceBounds();
-	    planningMonitor_->getKinematicModel()->computeTransforms(start->getParams());
+	    kmodel->computeTransforms(start->getParams());
 
-	    tf::Pose currentEff = planningMonitor_->getKinematicModel()->getLink(setup_.groupJointNames_.back())->globalTrans;
+	    tf::Pose currentEff = kmodel->getJoint(setup_.groupJointNames_.back())->after->globalTrans;
 	    geometry_msgs::Pose currentEffMsg;
 	    tf::poseTFToMsg(currentEff, currentEffMsg);
-	    
-	    geometry_msgs::Pose destEffMsg = tf::addDelta(currentEffMsg, *twist, 0.01);
+
+	    geometry_msgs::Pose destEffMsg = tf::addDelta(currentEffMsg, tw, 0.75);
 	    
 	    ros::ServiceClient ik_client = nh_.serviceClient<manipulation_srvs::IKService>("pr2_ik_right_arm/ik_service", true);
 	    geometry_msgs::PoseStamped destEffMsgStmp;
@@ -88,21 +111,36 @@ namespace move_arm
 	    std::vector<double> solution;
 	    if (computeIK(ik_client, destEffMsgStmp, solution))
 	    {
+	        ROS_INFO("Starting at %f, %f, %f", currentEff.getOrigin().x(), currentEff.getOrigin().y(), currentEff.getOrigin().z());
 		boost::shared_ptr<planning_models::StateParams> goal(new planning_models::StateParams(*start));
 		goal->setParamsJoints(solution, setup_.groupJointNames_);
 		goal->enforceBounds();
-		
+
+		kmodel->computeTransforms(goal->getParams());
+		tf::Pose goalEff = kmodel->getJoint(setup_.groupJointNames_.back())->after->globalTrans;
+		ROS_INFO("Going to %f, %f, %f", goalEff.getOrigin().x(), goalEff.getOrigin().y(), goalEff.getOrigin().z());
+
 		std::vector< boost::shared_ptr<planning_models::StateParams> > path;
-		interpolatePath(start, goal, 10, path);
+		interpolatePath(start, goal, 20, path);
 		
+		ROS_INFO("Generated path with %d states", (int)path.size());
+
 		unsigned int valid = findFirstInvalid(path);
 		if (valid < path.size())
-		    path.resize(valid);
+		{
+		    if (valid > 4)
+		      path.resize(valid - 2);
+		    else
+		      path.clear();
+		}
+
+		ROS_INFO("Valid part has %d states", (int)path.size());
 		
-		executePath(path);
+		if (!path.empty())
+		    executePath(path);
 	    }
 	    
-	    planningMonitor_->getKinematicModel()->unlock();
+	    delete kmodel;
 	}
 	
 	void interpolatePath(boost::shared_ptr<planning_models::StateParams> &start, boost::shared_ptr<planning_models::StateParams> &goal, unsigned int count,
@@ -144,7 +182,7 @@ namespace move_arm
 	{
 	    manipulation_msgs::JointTraj traj;
 	    traj.names = setup_.groupJointNames_;
-	    
+	    traj.points.resize(path.size());
 	    for (unsigned int i = 0 ; i < path.size() ; ++i)
 	    {
 		traj.points[i].time = 0.1 * i;
@@ -180,7 +218,7 @@ namespace move_arm
 	    request.data.joint_names = setup_.groupJointNames_;
 	    
 	    planning_models::StateParams *sp = planningMonitor_->getKinematicModel()->newStateParams();
-	    sp->randomStateGroup(setup_.group_);
+	    sp->defaultState();
 	    for(unsigned int i = 0; i < setup_.groupJointNames_.size() ; ++i)
 	    {
 		const double *params = sp->getParamsJoint(setup_.groupJointNames_[i]);
@@ -215,6 +253,7 @@ namespace move_arm
 	ros::NodeHandle                        nh_;
 	ros::Subscriber                        subSpaceNav_;
 	ros::ServiceClient                     ctrl_;
+        ros::Publisher                         pubTwist_;
 	planning_environment::PlanningMonitor *planningMonitor_;
     };
 }

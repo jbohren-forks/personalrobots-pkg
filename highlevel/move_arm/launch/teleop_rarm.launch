@@ -3,13 +3,12 @@
 
     <remap from="collision_map" to="collision_map_occ" />
     <remap from="collision_map_update" to="collision_map_occ_update" />
-<!--
+
     <remap from="arm_ik" to="pr2_ik_right_arm/ik_service" />	
     
     <remap from="controller_start"  to="/r_arm_joint_waypoint_controller/TrajectoryStart" />
     <remap from="controller_query"  to="/r_arm_joint_waypoint_controller/TrajectoryQuery" />
     <remap from="controller_cancel" to="/r_arm_joint_waypoint_controller/TrajectoryCancel" />
--->
 
     <param name="group" type="string" value="right_arm" />
 
