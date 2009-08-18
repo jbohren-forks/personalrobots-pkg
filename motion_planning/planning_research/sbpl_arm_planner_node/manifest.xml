@@ -20,8 +20,10 @@
     <depend package="kdl"/>
     <depend package="voxel3d"/>
 		<depend package="robot_voxelizer"/>
-    <depend package="sbpl_pm_wrapper"/>
+    <depend package="pm_wrapper"/>
 		<depend package="angles"/>
+		<depend package="geometric_shapes" />
+		<depend package="bullet" />
   <url></url>
 
   <export>

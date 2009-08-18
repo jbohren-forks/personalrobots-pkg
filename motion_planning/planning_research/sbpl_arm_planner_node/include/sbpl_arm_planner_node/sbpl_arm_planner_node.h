@@ -62,6 +62,7 @@
 #include <motion_planning_msgs/PoseConstraint.h>
 #include <mechanism_msgs/MechanismState.h>
 #include <visualization_msgs/Marker.h>
+#include <geometric_shapes/shapes.h>
 
 #include <robot_voxelizer/robot_voxelizer.h>
 
@@ -206,7 +207,7 @@ class SBPLArmPlannerNode
 			
 			std::vector<btVector3> robot_voxels_;
 
-      sbpl_arm_planner_node::pm_wrapper *pm_;
+      pm_wrapper *pm_;
 
       boost::scoped_ptr<KDL::ChainJntToJacSolver> jnt_to_jac_solver_;
 
@@ -294,6 +295,8 @@ class SBPLArmPlannerNode
 			
 			bool interpolatePath(std::vector<std::vector<double> > path_in, std::vector<std::vector<double> > &path_out, double inc);
 
+			shapes::Shape *box_;
+			void clearBox();
   };
 }
 

@@ -8,7 +8,7 @@ rospack(sbpl_arm_planner_node)
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
 rospack_add_executable(sbpl_arm_planner_node src/sbpl_arm_planner_node.cpp)
-target_link_libraries(sbpl_arm_planner_node sbpl_pm_wrapper)
+target_link_libraries(sbpl_arm_planner_node pm_wrapper)
 
 # rospack_add_executable(test_fk test/test_fk.cpp)
 # rospack_add_executable(sbpl_dh_regression_test test/test_dh_regress.cpp)

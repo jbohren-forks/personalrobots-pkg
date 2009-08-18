@@ -105,6 +105,10 @@ bool SBPLArmPlannerNode::init()
   // visualization parameters
   node_.param ("~visualize_goal", visualize_goal_, true);
 
+	//initialize the planning monitor
+	initializePM();
+	ROS_INFO("about to run clearBox()");
+	
 // 	col_map_subscriber_ = node_.subscribe(collision_map_topic_, 1, &SBPLArmPlannerNode::collisionMapCallback, this);
 	collision_map_notifier_ = new tf::MessageNotifier<mapping_msgs::CollisionMap>(tf_, boost::bind(&SBPLArmPlannerNode::collisionMapCallback, this, _1), collision_map_topic_, planning_frame_, 1);
 	ROS_INFO("Listening to %s with message notifier for target frame %s", collision_map_topic_.c_str(), collision_map_notifier_->getTargetFramesString().c_str());
@@ -148,8 +152,7 @@ bool SBPLArmPlannerNode::init()
   if(!initializePlannerAndEnvironment())
     return false;
 
-  //initialize the planning monitor
-  initializePM();
+
 
 	initSelfCollision();
 			
@@ -273,7 +276,6 @@ void SBPLArmPlannerNode::updateMapFromCollisionMap(const mapping_msgs::Collision
 {
 	cm_seq++;
 	ROS_DEBUG("[updateMapFromCollisionMap] collisionMapCallback called (header.seq = %i   internal_seq = %i).", collision_map->header.seq, cm_seq);
-
 	
   if(mPlanning_.try_lock())
   {
@@ -364,7 +366,8 @@ void SBPLArmPlannerNode::updateMapFromCollisionMap(const mapping_msgs::Collision
 		}
   }
 
-	ROS_DEBUG("[updateMapFromCollisionMap] completed in %lf seconds. exiting. (header.seq = %i   internal_seq = %i)\n", (ros::Time::now() - start).toSec(), collision_map->header.seq, cm_seq);
+
+	ROS_INFO("[updateMapFromCollisionMap] completed in %lf seconds. exiting. (header.seq = %i   internal_seq = %i)\n", (ros::Time::now() - start).toSec(), collision_map->header.seq, cm_seq);
 }
 
 void SBPLArmPlannerNode::pointCloudCallback(const sensor_msgs::PointCloudConstPtr &point_cloud)
@@ -1288,7 +1291,7 @@ bool SBPLArmPlannerNode::updateOccupancyGrid()
 /** \brief Initialize the planning monitor used for collision checking */
 void SBPLArmPlannerNode::initializePM()
 {
-  pm_ = new sbpl_arm_planner_node::pm_wrapper();
+  pm_ = new pm_wrapper();
 
   std::vector<std::string> links;
   links.push_back("r_gripper_palm_link");
@@ -1297,9 +1300,27 @@ void SBPLArmPlannerNode::initializePM()
   links.push_back("r_gripper_l_finger_tip_link");
   links.push_back("r_gripper_r_finger_tip_link");
 
-  pm_->initPlanningMonitor(links, &tf_);
+  pm_->initPlanningMonitor(links, &tf_, planning_frame_);
 
+// 	box_ = new shapes::Box(2, 2, 2);
+	
   ROS_DEBUG("initialized PM()");
+}
+
+void SBPLArmPlannerNode::clearBox()
+{
+	
+	btTransform pose;
+	pose.setIdentity();
+	btVector3 origin;
+	origin.setX(2.0);
+	origin.setY(0.0);
+	origin.setZ(0.0);
+	pose.setOrigin(origin);
+	
+	ROS_INFO("calling setObject()");
+	pm_->setObject(box_, pose);
+	ROS_INFO("setObject() finished");
 }
 
 /** \brief Update the planning monitor with the current goal request message */
