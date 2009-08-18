@@ -56,9 +56,23 @@ namespace pluginlib {
     {
       TiXmlDocument document;
       document.LoadFile(*it);
+      TiXmlElement * config = document.RootElement();
+      if (config->ValueStr() != "library" &&
+          config->ValueStr() != "plugin_libraries")
+      {
+        ROS_ERROR("The XML given to add must have either \"library\" or \
+  \"plugin_libraries\" as the root tag");
+        return ;
+      }
+      //Step into the filter list if necessary
+      if (config->ValueStr() == "plugin_libraries")
+      {
+        config = config->FirstChildElement("library");
+      }
+      
 
-      TiXmlElement* library = document.FirstChildElement( "library" );
-      if ( library )
+      TiXmlElement* library = config;//       library = document.FirstChildElement( "library" );
+      while ( library != NULL)
       {
         std::string library_path = library->Attribute("path");
         if (library_path.size() == 0)
@@ -112,7 +126,7 @@ namespace pluginlib {
           plugin = plugin->NextSiblingElement( "plugin" );
         }
 
-
+        library = library->NextSiblingElement( "library" );
       }
     }
 
