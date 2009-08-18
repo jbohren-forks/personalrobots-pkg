@@ -43,6 +43,8 @@
 #include <manipulation_srvs/IKService.h>
 #include <visualization_msgs/Marker.h>
 #include <joy/Joy.h>
+#include <move_arm/MoveArmAction.h>
+#include <actionlib/client/simple_action_client.h>
 
 namespace move_arm
 {
@@ -50,8 +52,9 @@ namespace move_arm
     class TeleopArm
     {
     public:
-	TeleopArm(MoveArmSetup &setup) : setup_(setup)
-	{
+      TeleopArm(MoveArmSetup &setup) : setup_(setup), move_arm(nh_, "move_" + setup_.group_)
+        {	    
+	    nh_.param<bool>("~use_planning", use_planning_, false);
 	    pubTwist_ = nh_.advertise<geometry_msgs::Twist>("/r_arm_cartesian_twist_controller/command", 1);
 	    vizPub_ = nh_.advertise<visualization_msgs::Marker>("visualization_marker", 1024);
 	    ctrl_ = nh_.serviceClient<pr2_mechanism_controllers::TrajectoryStart>("/r_arm_joint_waypoint_controller/TrajectoryStart", true);
@@ -70,29 +73,10 @@ namespace move_arm
 	
     private:
 	
-        void twistCallback(const joy::JoyConstPtr &joy)
-	{
-	    static int call = 0;
-	    call = (call + 1) % 100;
-	    if (call != 0)
-	        return;
-	    
-	    geometry_msgs::Twist tw;
-	    tw.linear.x = joy->axes[0];
-	    tw.linear.y = joy->axes[1];
-	    tw.linear.z = joy->axes[2];
-	    tw.angular.x = joy->axes[3];
-	    tw.angular.y = joy->axes[4];
-	    tw.angular.z = joy->axes[5];
-
-
-	    ROS_INFO("Got twist: %f, %f, %f : %f, %f, %f", tw.linear.x, tw.linear.y, tw.linear.z, tw.angular.x, tw.angular.y, tw.angular.z);
-
-	    //	    pubTwist_.publish(tw);
-
-	    //	    return ;
-
-	    planning_models::KinematicModel *kmodel = planningMonitor_->getKinematicModel()->clone();
+      bool tryTwist(const geometry_msgs::Twist &tw, double frac)
+      {
+	bool res = true;
+	planning_models::KinematicModel *kmodel = planningMonitor_->getKinematicModel()->clone();
 	    
 	    boost::shared_ptr<planning_models::StateParams> start(new planning_models::StateParams(*planningMonitor_->getRobotState()));
 	    start->enforceBounds();
@@ -102,8 +86,9 @@ namespace move_arm
 	    geometry_msgs::Pose currentEffMsg;
 	    tf::poseTFToMsg(currentEff, currentEffMsg);
 
-	    geometry_msgs::Pose destEffMsg = tf::addDelta(currentEffMsg, tw, 0.75);
+	    geometry_msgs::Pose destEffMsg = tf::addDelta(currentEffMsg, tw, frac);
 	    
+
 	    ros::ServiceClient ik_client = nh_.serviceClient<manipulation_srvs::IKService>("pr2_ik_right_arm/ik_service", true);
 	    geometry_msgs::PoseStamped destEffMsgStmp;
 	    destEffMsgStmp.pose = destEffMsg;
@@ -113,37 +98,100 @@ namespace move_arm
 	    
 	    std::vector<double> solution;
 	    if (computeIK(ik_client, destEffMsgStmp, solution))
-	    {
-	        ROS_INFO("Starting at %f, %f, %f", currentEff.getOrigin().x(), currentEff.getOrigin().y(), currentEff.getOrigin().z());
+	      {
+		ROS_INFO("Starting at %f, %f, %f", currentEff.getOrigin().x(), currentEff.getOrigin().y(), currentEff.getOrigin().z());
 		boost::shared_ptr<planning_models::StateParams> goal(new planning_models::StateParams(*start));
 		goal->setParamsJoints(solution, setup_.groupJointNames_);
 		goal->enforceBounds();
-
+		
 		kmodel->computeTransforms(goal->getParams());
 		tf::Pose goalEff = kmodel->getJoint(setup_.groupJointNames_.back())->after->globalTrans;
 		ROS_INFO("Going to %f, %f, %f", goalEff.getOrigin().x(), goalEff.getOrigin().y(), goalEff.getOrigin().z());
-
+		
 		std::vector< boost::shared_ptr<planning_models::StateParams> > path;
 		interpolatePath(start, goal, 20, path);
 		
 		ROS_INFO("Generated path with %d states", (int)path.size());
-
+		
 		unsigned int valid = findFirstInvalid(path);
 		if (valid < path.size())
-		{
-		    if (valid > 4)
-		      path.resize(valid - 2);
+		  {
+		    if (valid > 6)
+		      path.resize(valid - 4);
 		    else
 		      path.clear();
-		}
-
+		  }
+		
 		ROS_INFO("Valid part has %d states", (int)path.size());
 		
 		if (!path.empty())
-		    executePath(path);
-	    }
+		  executePath(path);
+		else
+		  {
+		    geometry_msgs::PoseStamped destEffMsgStmp;
+		    destEffMsgStmp.pose = destEffMsg;
+		    destEffMsgStmp.header.stamp = planningMonitor_->lastJointStateUpdate();
+		    destEffMsgStmp.header.frame_id = planningMonitor_->getFrameId();
+		    showArrow(destEffMsgStmp);
+		    
+		    move_arm::MoveArmGoal goal;
+		goal.goal_constraints.pose_constraint.resize(1);
+		goal.goal_constraints.pose_constraint[0].type = motion_planning_msgs::PoseConstraint::POSITION_X + motion_planning_msgs::PoseConstraint::POSITION_Y + motion_planning_msgs::PoseConstraint::POSITION_Z +
+		  + motion_planning_msgs::PoseConstraint::ORIENTATION_R + motion_planning_msgs::PoseConstraint::ORIENTATION_P + motion_planning_msgs::PoseConstraint::ORIENTATION_Y;
+		goal.goal_constraints.pose_constraint[0].link_name = "r_wrist_roll_link";
+		goal.goal_constraints.pose_constraint[0].pose = destEffMsgStmp;
+		
+		goal.goal_constraints.pose_constraint[0].position_tolerance_above.x = 0.005;
+		goal.goal_constraints.pose_constraint[0].position_tolerance_above.y = 0.005;
+		goal.goal_constraints.pose_constraint[0].position_tolerance_above.z = 0.005;
+		goal.goal_constraints.pose_constraint[0].position_tolerance_below.x = 0.005;
+		goal.goal_constraints.pose_constraint[0].position_tolerance_below.y = 0.005;
+		goal.goal_constraints.pose_constraint[0].position_tolerance_below.z = 0.005;
+
+		goal.goal_constraints.pose_constraint[0].orientation_tolerance_above.x = 0.005;
+		goal.goal_constraints.pose_constraint[0].orientation_tolerance_above.y = 0.005;
+		goal.goal_constraints.pose_constraint[0].orientation_tolerance_above.z = 0.005;
+		goal.goal_constraints.pose_constraint[0].orientation_tolerance_below.x = 0.005;
+		goal.goal_constraints.pose_constraint[0].orientation_tolerance_below.y = 0.005;
+		goal.goal_constraints.pose_constraint[0].orientation_tolerance_below.z = 0.005;
+
+		goal.goal_constraints.pose_constraint[0].orientation_importance = 0.2;
+
+		move_arm.sendGoal(goal);
+
+		  }
+	      }
+	    else
+	      res = false;
 	    
-	    delete kmodel;
+	    delete kmodel;	
+	    return res;
+      }
+      
+        void twistCallback(const joy::JoyConstPtr &joy)
+	{
+	    static int call = 0;
+	    call = (call + 1) % 100;
+	    if (call != 0)
+	        return;
+	    
+	    if (!joy->buttons[0] && !joy->buttons[1])
+	      return;
+
+	    geometry_msgs::Twist tw;
+	    tw.linear.x = joy->axes[0];
+	    tw.linear.y = joy->axes[1];
+	    tw.linear.z = joy->axes[2];
+	    tw.angular.x = joy->axes[3];
+	    tw.angular.y = joy->axes[4];
+	    tw.angular.z = joy->axes[5];
+
+	    
+	    ROS_INFO("Got twist: %f, %f, %f : %f, %f, %f", tw.linear.x, tw.linear.y, tw.linear.z, tw.angular.x, tw.angular.y, tw.angular.z);
+	    
+	    bool r = true;
+	    for (int i = 0; i < 5 && r; i++)
+	      r = !tryTwist(tw, 0.75 / (i + 1.0));
 	}
 	
 	void showArrow(const geometry_msgs::PoseStamped &pose)
@@ -155,12 +203,12 @@ namespace move_arm
 	    marker.type = visualization_msgs::Marker::ARROW;
 	    marker.action = visualization_msgs::Marker::ADD;
 	    marker.pose = pose.pose;
-	    marker.scale.x = 0.10;
-	    marker.scale.y = 0.05;
-	    marker.scale.z = 0.05;
+	    marker.scale.x = 0.25;
+	    marker.scale.y = 0.4;
+	    marker.scale.z = 0.4;
 	    marker.color.a = 1.0;
-	    marker.color.r = 0.0;
-	    marker.color.g = 1.0;
+	    marker.color.r = 1.0;
+	    marker.color.g = 0.0;
 	    marker.color.b = 0.0;
 	    vizPub_.publish(marker);
 	}
@@ -273,11 +321,13 @@ namespace move_arm
 	
 	MoveArmSetup                          &setup_;
 	ros::NodeHandle                        nh_;
+        actionlib::SimpleActionClient<move_arm::MoveArmAction> move_arm;
 	ros::Subscriber                        subSpaceNav_;
 	ros::ServiceClient                     ctrl_;
         ros::Publisher                         pubTwist_;
 	ros::Publisher                         vizPub_;
 	planning_environment::PlanningMonitor *planningMonitor_;
+        bool                                   use_planning_;
     };
 }
 
