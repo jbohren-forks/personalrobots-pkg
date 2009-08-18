@@ -52,49 +52,69 @@ This package is only temporary. I'll eventually replace it with a better solutio
 #include <motion_planning_msgs/KinematicJoint.h>
 #include <motion_planning_msgs/GetMotionPlan.h>
 #include <planning_models/kinematic_state_params.h>
+#include <mapping_msgs/CollisionMap.h>
+#include <collision_space/environment.h>
+#include <geometric_shapes/shapes.h>
 
-
-namespace sbpl_arm_planner_node
+class pm_wrapper
 {
-  class pm_wrapper
-  {
-    public:
+	public:
 
-      pm_wrapper();
+		pm_wrapper();
 
-      ~pm_wrapper();
+		~pm_wrapper();
 
-      bool initPlanningMonitor(const std::vector<std::string> &links, tf::TransformListener  * tfl);
+		/** \brief Initialize the planning monitor - choose the links to be checked for collision, set the groupID (must be called first) */
+		bool initPlanningMonitor(const std::vector<std::string> &links, tf::TransformListener  * tfl, std::string frame_id);
 
-      bool areLinksValid(const double * angles);
+		/** \brief Check if a set of links and their joint angles are a valid configuration in the environment */
+		bool areLinksValid(const double * angles);
 
-      void updatePM(const motion_planning_msgs::GetMotionPlan::Request &req);
+		/** \brief Update the current configuration of the robot model in the planning monitor and lock it */
+		void updatePM(const motion_planning_msgs::GetMotionPlan::Request &req);
 
-      void unlockPM();
+		/** \brief Unlock the lock around the planning monitor (call after planning completes) */
+		void unlockPM();
+					
+		/** \brief Set the size of the object to be removed from the collision map and it's pose in the planning frame */
+		void setObject(shapes::Shape *object, btTransform pose);
 
-    private:
+	private:
 
-      ros::NodeHandle node_;
+		ros::NodeHandle node_;
 
-      ros::Subscriber col_map_subscriber_;
+		ros::Subscriber col_map_subscriber_;
+		
+		ros::Publisher col_map_publisher_;
+		
+		mapping_msgs::CollisionMap col_map_;
 
-      planning_models::StateParams *start_state_;
+		planning_models::StateParams *start_state_;
 
-      std::string arm_name_;
+		std::string group_name_;
 
-      std::string robot_description_;
+		std::string robot_description_;
+		
+		int groupID_;
 
-      int groupID_;
+		std::string planning_frame_;
+		
+		shapes::Shape *object_;
+		
+		btTransform object_pose_;
+		
+		bool remove_objects_from_collision_map_;
 
-      std::string frame_;
+		std::vector<std::string> collision_check_links_;
 
-      std::vector<std::string> collision_check_links_;
+		planning_environment::CollisionModels *collision_model_;
 
-      planning_environment::CollisionModels *collision_model_;
+		planning_environment::PlanningMonitor *planning_monitor_;
+			
+		void publishMapWithoutObject(const mapping_msgs::CollisionMapConstPtr &collisionMap, bool clear);
 
-      planning_environment::PlanningMonitor *planning_monitor_;
+		/** \brief Fill the start state of the planning monitor with the current state of the robot in the request message */
+		planning_models::StateParams* fillStartState(const std::vector<motion_planning_msgs::KinematicJoint> &given);
+};
 
-      planning_models::StateParams* fillStartState(const std::vector<motion_planning_msgs::KinematicJoint> &given);
-  };
-}
 

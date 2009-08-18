@@ -34,17 +34,18 @@
 
 /** \Author: Benjamin Cohen  **/
 
-#include <sbpl_pm_wrapper/pm_wrapper.h>
+#include <pm_wrapper/pm_wrapper.h>
 
-using namespace sbpl_arm_planner_node;
+// using namespace sbpl_arm_planner_node;
 
 pm_wrapper::pm_wrapper()
 {
-  node_.param<std::string>("~planning_frame_id", frame_, "base_link");
+	node_.param("~publish_custom_collision_map", remove_objects_from_collision_map_, false);
+  node_.param<std::string>("~planning_frame_id", planning_frame_, "base_link");
   std::string pr2_urdf_param;
   node_.searchParam("robot_description",pr2_urdf_param);
   node_.param<std::string>(pr2_urdf_param, robot_description_,"robot_description");
-  node_.param<std::string>("~arm", arm_name_,"right_arm");
+  node_.param<std::string>("~group_name", group_name_,"right_arm");
 };
 
 pm_wrapper::~pm_wrapper()
@@ -53,15 +54,17 @@ pm_wrapper::~pm_wrapper()
   delete planning_monitor_;
 };
 
-/** \brief initialize the planning monitor - choose the links to be checked for collision, set the groupID (must be called first) */
-bool pm_wrapper::initPlanningMonitor(const std::vector<std::string> &links, tf::TransformListener * tfl)
+bool pm_wrapper::initPlanningMonitor(const std::vector<std::string> &links, tf::TransformListener * tfl, std::string frame_id)
 {
   collision_check_links_ = links;
-	collision_model_ = new planning_environment::CollisionModels("robot_description"/*robot_description_*/, collision_check_links_);
-  planning_monitor_ = new planning_environment::PlanningMonitor(collision_model_, tfl);
+	planning_frame_ = frame_id;
+	// these links will be checked for self collision against the links in the yaml file
+	collision_model_ = new planning_environment::CollisionModels("robot_description", collision_check_links_);
+  planning_monitor_ = new planning_environment::PlanningMonitor(collision_model_, tfl, planning_frame_);
 
-  groupID_ = planning_monitor_->getKinematicModel()->getGroupID(arm_name_);
-
+	//error checking
+  groupID_ = planning_monitor_->getKinematicModel()->getGroupID(group_name_);\
+	ROS_DEBUG("groupID = %i", groupID_);
   std::vector<std::string> joint_names;
   planning_monitor_->getKinematicModel()->getJointsInGroup(joint_names, groupID_);
   if(joint_names.empty())
@@ -71,12 +74,23 @@ bool pm_wrapper::initPlanningMonitor(const std::vector<std::string> &links, tf::
   }
   ROS_DEBUG("[pm_wrapper] joint names in group #%i",groupID_);
   for(unsigned int i = 0; i < joint_names.size(); i++)
-    ROS_DEBUG("[pm_wrapper]%i: %s", i, joint_names[i].c_str());
+		ROS_DEBUG("[pm_wrapper]%i: %s", i, joint_names[i].c_str());
 
+	if(remove_objects_from_collision_map_)
+	{
+		if (collision_model_->loadedModels())
+		{
+			col_map_publisher_ = node_.advertise<mapping_msgs::CollisionMap>("collision_map_with_removed_object", 1);
+			planning_monitor_->setOnAfterMapUpdateCallback(boost::bind(&pm_wrapper::publishMapWithoutObject, this, _1, _2));
+		}
+		else
+			ROS_DEBUG("collision_model_ didn't properly load the robot model");
+	}
+	
+	ROS_DEBUG("initialized planning monitor");
   return true;
 }
 
-/** \brief fill the start state of the planning monitor with the current state of the robot in the request message */
 planning_models::StateParams* pm_wrapper::fillStartState(const std::vector<motion_planning_msgs::KinematicJoint> &given)
 {
   planning_models::StateParams *s = planning_monitor_->getKinematicModel()->newStateParams();
@@ -112,7 +126,6 @@ planning_models::StateParams* pm_wrapper::fillStartState(const std::vector<motio
   return NULL;
 }
 
-/** \brief update the planning monitor with the current robot state and lock it (call right before planning) */
 void pm_wrapper::updatePM(const motion_planning_msgs::GetMotionPlan::Request &req)
 {
   start_state_ = fillStartState(req.start_state);
@@ -126,10 +139,9 @@ void pm_wrapper::updatePM(const motion_planning_msgs::GetMotionPlan::Request &re
   planning_monitor_->getEnvironmentModel()->lock();
   planning_monitor_->getKinematicModel()->lock();
 
-  ROS_INFO("updatedPM()");
+  ROS_DEBUG("updatedPM()");
 }
 
-/** \brief check if links in collision_check_links_ are free of collision */
 bool pm_wrapper::areLinksValid(const double * angles)
 {
 //   ROS_INFO("checking %.3f %.3f %.3f %.3f %.3f %.3f %.3f",angles[0],angles[1],angles[2],angles[3],angles[4],angles[5],angles[6]);
@@ -140,10 +152,56 @@ bool pm_wrapper::areLinksValid(const double * angles)
   return !(planning_monitor_->getEnvironmentModel()->isCollision());
 }
 
-/** \brief unlock the planning monitor mutexes (call after planning completes) */
 void pm_wrapper::unlockPM()
 {
   // after done planning
   planning_monitor_->getEnvironmentModel()->unlock();
   planning_monitor_->getKinematicModel()->unlock();
 }
+
+void pm_wrapper::setObject(shapes::Shape *object, btTransform pose)
+{
+	object_ = object;
+	object_pose_ = pose;
+}
+
+//copied straight from remove_object_example.cpp in planning_environment
+ void pm_wrapper::publishMapWithoutObject(const mapping_msgs::CollisionMapConstPtr &collisionMap, bool clear)
+{
+	ROS_DEBUG("in publishMapWithoutObject()");
+	if(!remove_objects_from_collision_map_)
+		return;
+	
+	// we do not care about incremental updates, only re-writes of the map
+	if (!clear)
+		return;
+	
+	// at this point, the environment model has the collision map inside it
+	
+	// get exclusive access
+	planning_monitor_->getEnvironmentModel()->lock();
+	ROS_DEBUG("locked environment model");
+	
+	// get a copy of our own, to play with :)
+	collision_space::EnvironmentModel *env = planning_monitor_->getEnvironmentModel()->clone();
+	ROS_DEBUG("cloned environmentmodel");
+	
+	// release our hold
+	planning_monitor_->getEnvironmentModel()->unlock();
+	ROS_DEBUG("unlocked environment model");
+
+	// remove the objects colliding with the box
+	ROS_DEBUG("object removed has type %i (origin: %.2f %.2f %.2f) in frame %s", object_->type, object_pose_.getOrigin().getX(), object_pose_.getOrigin().getY(), object_pose_.getOrigin().getZ(), planning_monitor_->getFrameId().c_str());
+	env->removeCollidingObjects(object_, object_pose_);	
+	
+	// forward the updated map	
+	planning_monitor_->recoverCollisionMap(env, col_map_);
+	col_map_publisher_.publish(col_map_);
+
+	// throw away our copy
+	delete env;
+	
+	ROS_INFO("Received collision map with %d points and published one with %d points", 
+					 (int)collisionMap->get_boxes_size(), (int)col_map_.get_boxes_size());
+}
+
