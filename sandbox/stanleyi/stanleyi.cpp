@@ -480,22 +480,34 @@ void Stanleyi::makeClassificationVideo(string bagfile, Dorylus& d, int samples_p
     jpeg_filename_format.parse("classification_results/img%d.jpg");
   }
 
-
+  int frame_step = 1;
   int skip_frames = 0;
   if(getenv("SKIP_FRAMES") != NULL) 
     skip_frames = atoi(getenv("SKIP_FRAMES"));
 
+  if(getenv("FRAME_STEP") != NULL) 
+    frame_step = atoi(getenv("FRAME_STEP"));
+
 
   lp_.open(bagfile, ros::Time());
-  ROS_INFO_STREAM("Skipping " << skip_frames << "frames");
+  ROS_INFO_STREAM("Skipping " << skip_frames << " frames");
   for(int i=0; i<skip_frames; i++) {
     lp_.nextMsg();
     frame_num++;
   }
 
   int nFrames = 0;
+  int num_to_skip=0;
   while(lp_.nextMsg()) {
     frame_num++;
+    if(frame_step>1){
+      if(num_to_skip>0) {
+	num_to_skip--;
+	continue;
+      }else{
+	num_to_skip=frame_step-1;
+      }
+    }
     nFrames++;
     ROS_INFO_STREAM("Frame "<<frame_num);
 
@@ -866,9 +878,9 @@ vector<ImageDescriptor*> setupImageDescriptors() {
 
 
   d.push_back(new HogWrapper(Size(16,16), Size(16,16), Size(8,8), Size(8,8), 7, 1, -1, 0, 0.2, true));
-  //d.push_back(new HogWrapper(Size(32,32), Size(16,16), Size(8,8), Size(8,8), 7, 1, -1, 0, 0.2, true));
-  //d.push_back(new HogWrapper(Size(64,64), Size(32,32), Size(16,16), Size(16,16), 7, 1, -1, 0, 0.2, true));
-  //d.push_back(new HogWrapper(Size(128,128), Size(64,64), Size(32,32), Size(32,32), 7, 1, -1, 0, 0.2, true));
+  d.push_back(new HogWrapper(Size(32,32), Size(16,16), Size(8,8), Size(8,8), 7, 1, -1, 0, 0.2, true));
+  d.push_back(new HogWrapper(Size(64,64), Size(32,32), Size(16,16), Size(16,16), 7, 1, -1, 0, 0.2, true));
+  d.push_back(new HogWrapper(Size(128,128), Size(64,64), Size(32,32), Size(32,32), 7, 1, -1, 0, 0.2, true));
 
   SuperpixelColorHistogram* sch1 = new SuperpixelColorHistogram(20, 0.5, 10);
   SuperpixelColorHistogram* sch2 = new SuperpixelColorHistogram(5, 0.5, 10, NULL, sch1);
@@ -879,20 +891,26 @@ vector<ImageDescriptor*> setupImageDescriptors() {
   //d.push_back(sch3);
   //d.push_back(sch4);
  
-  //d.push_back(new SurfWrapper(true, 150));
-  //d.push_back(new SurfWrapper(true, 100));
-  //d.push_back(new SurfWrapper(true, 50));
+  d.push_back(new SurfWrapper(true, 150));
+  d.push_back(new SurfWrapper(true, 100));
+  d.push_back(new SurfWrapper(true, 50));
   d.push_back(new SurfWrapper(true, 25));
-  //d.push_back(new SurfWrapper(true, 10));
+  d.push_back(new SurfWrapper(true, 10));
   
 
   Daisy* base_daisy = new Daisy(25, 3, 8, 8, NULL);
   d.push_back(base_daisy);
   d.push_back(new Daisy(50, 3, 8, 8, base_daisy));
-  //d.push_back(new Daisy(75, 3, 8, 8, base_daisy));
+  d.push_back(new Daisy(75, 3, 8, 8, base_daisy));
   d.push_back(new Daisy(100, 3, 8, 8, base_daisy));
-  //d.push_back(new Daisy(150, 3, 8, 8, base_daisy));
+  d.push_back(new Daisy(150, 3, 8, 8, base_daisy));
 
+
+  // -- First run of classifier
+  //d.push_back(new HogWrapper(Size(16,16), Size(16,16), Size(8,8), Size(8,8), 7, 1, -1, 0, 0.2, true));
+  //d.push_back(new HogWrapper(Size(128,128), Size(64,64), Size(32,32), Size(32,32), 7, 1, -1, 0, 0.2, true));
+  //d.push_back(new Daisy(100, 3, 8, 8, base_daisy));
+  //d.push_back(base_daisy);
   return d;
 }
 
@@ -1065,7 +1083,8 @@ void findLabelPolys(double stamp, string results_dir, Vector< Vector<Point> >& p
 	 files[i].find(string(".xml")) != string::npos)
 	{
 	  cout << "Found polys for " << sbuf << ": " << files[i] << endl;
-	  getPolysFromTinyXMLBoundingBox(results_dir + "/annotations/" + files[i], polys, poly_labels);
+	  //getPolysFromTinyXMLBoundingBox(results_dir + "/annotations/" + files[i], polys, poly_labels);
+	  getContoursFromTinyXML(results_dir + "/annotations/" + files[i], polys, poly_labels);
 	  break;
 	}
     }
