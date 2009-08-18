@@ -41,6 +41,7 @@
 #include <tf_conversions/tf_kdl.h>
 #include <tf/transform_datatypes.h>
 #include <manipulation_srvs/IKService.h>
+#include <visualization_msgs/Marker.h>
 #include <joy/Joy.h>
 
 namespace move_arm
@@ -52,6 +53,7 @@ namespace move_arm
 	TeleopArm(MoveArmSetup &setup) : setup_(setup)
 	{
 	    pubTwist_ = nh_.advertise<geometry_msgs::Twist>("/r_arm_cartesian_twist_controller/command", 1);
+	    vizPub_ = nh_.advertise<visualization_msgs::Marker>("visualization_marker", 1024);
 	    ctrl_ = nh_.serviceClient<pr2_mechanism_controllers::TrajectoryStart>("/r_arm_joint_waypoint_controller/TrajectoryStart", true);
 	    subSpaceNav_ = nh_.subscribe("/spacenav/joy", 1, &TeleopArm::twistCallback, this);
 	    planningMonitor_ = setup_.planningMonitor_;
@@ -107,6 +109,7 @@ namespace move_arm
 	    destEffMsgStmp.pose = destEffMsg;
 	    destEffMsgStmp.header.stamp = planningMonitor_->lastJointStateUpdate();
 	    destEffMsgStmp.header.frame_id = planningMonitor_->getFrameId();
+	    showArrow(destEffMsgStmp);
 	    
 	    std::vector<double> solution;
 	    if (computeIK(ik_client, destEffMsgStmp, solution))
@@ -141,6 +144,25 @@ namespace move_arm
 	    }
 	    
 	    delete kmodel;
+	}
+	
+	void showArrow(const geometry_msgs::PoseStamped &pose)
+	{
+	    visualization_msgs::Marker marker;
+	    marker.header = pose.header;
+	    marker.ns = "~";
+	    marker.id = 1;
+	    marker.type = visualization_msgs::Marker::ARROW;
+	    marker.action = visualization_msgs::Marker::ADD;
+	    marker.pose = pose.pose;
+	    marker.scale.x = 0.10;
+	    marker.scale.y = 0.05;
+	    marker.scale.z = 0.05;
+	    marker.color.a = 1.0;
+	    marker.color.r = 0.0;
+	    marker.color.g = 1.0;
+	    marker.color.b = 0.0;
+	    vizPub_.publish(marker);
 	}
 	
 	void interpolatePath(boost::shared_ptr<planning_models::StateParams> &start, boost::shared_ptr<planning_models::StateParams> &goal, unsigned int count,
@@ -254,6 +276,7 @@ namespace move_arm
 	ros::Subscriber                        subSpaceNav_;
 	ros::ServiceClient                     ctrl_;
         ros::Publisher                         pubTwist_;
+	ros::Publisher                         vizPub_;
 	planning_environment::PlanningMonitor *planningMonitor_;
     };
 }
