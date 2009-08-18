@@ -7,13 +7,13 @@
   <include filename="$(find pr2_defs)/defs/head/prosilica_rviz.xacro" />
 
   <macro name="prosilica_cam" params="name parent *origin">
+    <joint name="${name}_frame_joint" type="fixed">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <parent name="${parent}">
+        <insert_block name="origin" />
+      </parent>
+    </joint>
     <link name="${name}_frame">
-      <joint name="${name}_frame_joint" type="fixed">
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <parent name="${parent}">
-          <insert_block name="origin" />
-        </parent>
-      </joint>
 
       <inertial>
         <mass value="0.01" />
@@ -40,14 +40,14 @@
 
     </link>
 
+    <joint name="${name}_optical_frame_joint" type="fixed">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <parent name="${name}_frame">
+        <origin xyz="${cal_high_def_x}            ${cal_high_def_y}         ${cal_high_def_z}"
+                rpy="${-M_PI/2+cal_high_def_roll} ${0.0+cal_high_def_pitch} ${-M_PI/2+cal_high_def_yaw}" />
+      </parent>
+    </joint>
     <link name="${name}_optical_frame">
-      <joint name="${name}_optical_frame_joint" type="fixed">
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <parent name="${name}_frame">
-          <origin xyz="${cal_high_def_x}            ${cal_high_def_y}         ${cal_high_def_z}"
-                  rpy="${-M_PI/2+cal_high_def_roll} ${0.0+cal_high_def_pitch} ${-M_PI/2+cal_high_def_yaw}" />
-        </parent>
-      </joint>
 
       <inertial>
         <mass value="0.01" />

@@ -22,18 +22,18 @@
 
   <macro name="pr2_tilting_laser" params="name parent *origin">
 
+    <joint name="${name}_mount_joint" type="revolute">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <axis xyz="0 1 0" />
+      <limit lower="-0.785" upper="1.57" effort="0.5292" velocity="100" />
+      <safety_controller k_position="100" k_velocity="0.05" soft_lower_limit="${-0.785+0.0}" soft_upper_limit="${1.57-0.0}" />
+      <calibration reference_position="-0.35" />
+      <dynamics damping="0.008" />
+      <parent name="${parent}">
+        <insert_block name="origin" />
+      </parent>
+    </joint>
     <link name="${name}_mount_link">
-      <joint name="${name}_mount_joint" type="revolute">
-        <origin xyz="0 0 0" rpy="0 0 0" />
-        <axis xyz="0 1 0" />
-        <limit lower="-0.785" upper="1.57" effort="0.5292" velocity="100" />
-        <safety_controller k_position="100" k_velocity="0.05" soft_lower_limit="${-0.785+0.0}" soft_upper_limit="${1.57-0.0}" />
-        <calibration reference_position="-0.35" />
-        <joint_properties damping="0.008" />
-        <parent name="${parent}">
-          <insert_block name="origin" />
-        </parent>
-      </joint>
 
       <inertial>
         <mass value="0.05" />
@@ -58,14 +58,14 @@
       </collision>
     </link>
 
+    <joint name="${name}_joint" type="fixed">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <axis xyz="0 1 0" />
+      <parent name="${name}_mount_link">
+        <origin xyz="0 0 0.03" rpy="0 0 0" />
+      </parent>
+    </joint>
     <link name="${name}_link" type="laser">
-      <joint name="${name}_joint" type="fixed">
-        <origin xyz="0 0 0" rpy="0 0 0" />
-        <axis xyz="0 1 0" />
-        <parent name="${name}_mount_link">
-          <origin xyz="0 0 0.03" rpy="0 0 0" />
-        </parent>
-      </joint>
 
       <inertial>
         <mass value="0.001" />
@@ -101,13 +101,13 @@
   <!-- Origin is center mount screw on sensor plate mount -->
   <!-- When mounted properly, should have same origin as head plate frame -->
   <macro name="pr2_head_sensor_package" params="name hd_name stereo_name parent *origin">
+    <joint name="${name}_frame_joint" type="fixed">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <parent name="${parent}">
+        <insert_block name="origin" />
+      </parent>
+    </joint>
     <link name="${name}_link" >
-      <joint name="${name}_frame_joint" type="fixed">
-        <origin xyz="0 0 0" rpy="0 0 0" />
-        <parent name="${parent}">
-          <insert_block name="origin" />
-        </parent>
-      </joint>
 
       <inertial>
         <!-- Needs verification with CAD -->
@@ -155,13 +155,13 @@
   <!-- Needs calibration verification, and CAD check. -->
   <macro name="double_stereo_camera" params="name parent *origin">
     <!-- Define link to stereo cameras, set origin relative to that -->
+    <joint name="${name}_frame_joint" type="fixed">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <parent name="${parent}">
+        <insert_block name="origin" />
+      </parent>
+    </joint>
     <link name="${name}_link">
-      <joint name="${name}_frame_joint" type="fixed">
-        <origin xyz="0 0 0" rpy="0 0 0" />
-        <parent name="${parent}">
-          <insert_block name="origin" />
-        </parent>
-      </joint>
 
       <inertial>
         <!-- Needs verification with CAD -->
@@ -205,13 +205,13 @@
 
   <macro name="stereo_camera" params="name parent *origin">
     
+    <joint name="${name}_frame_joint" type="fixed">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <parent name="${parent}">
+        <insert_block name="origin" />
+      </parent>
+    </joint>
     <link name="${name}_link">
-      <joint name="${name}_frame_joint" type="fixed">
-        <origin xyz="0 0 0" rpy="0 0 0" />
-        <parent name="${parent}">
-          <insert_block name="origin" />
-        </parent>
-      </joint>
       
       <inertial>
         <mass value="0.1" />
@@ -236,14 +236,14 @@
       
     </link>
 
+    <joint name="${name}_optical_frame_joint" type="fixed">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <parent name="${name}_link">
+        <origin xyz="${cal_stereo_x}            ${0.045+cal_stereo_y}   ${.0305+cal_stereo_z}"
+                rpy="${-M_PI/2+cal_stereo_roll} ${0.0+cal_stereo_pitch} ${-M_PI/2+cal_stereo_yaw}" />
+      </parent>
+    </joint>
     <link name="${name}_optical_frame" type="camera">
-      <joint name="${name}_optical_frame_joint" type="fixed">
-        <origin xyz="0 0 0" rpy="0 0 0" />
-        <parent name="${name}_link">
-          <origin xyz="${cal_stereo_x}            ${0.045+cal_stereo_y}   ${.0305+cal_stereo_z}"
-                  rpy="${-M_PI/2+cal_stereo_roll} ${0.0+cal_stereo_pitch} ${-M_PI/2+cal_stereo_yaw}" />
-        </parent>
-      </joint>
 
       <inertial>
         <mass value="0.01" />
@@ -269,13 +269,13 @@
 
     </link>
 
+    <joint name="${name}_l_stereo_camera_frame_joint" type="fixed">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <parent name="${name}_optical_frame">
+        <origin xyz="0 0 0" rpy="0 ${-M_PI/2} ${M_PI/2}" />
+      </parent>
+    </joint>
     <link name="${name}_l_stereo_camera_frame">
-      <joint name="${name}_l_stereo_camera_frame_joint" type="fixed">
-        <origin xyz="0 0 0" rpy="0 0 0" />
-        <parent name="${name}_optical_frame">
-          <origin xyz="0 0 0" rpy="0 ${-M_PI/2} ${M_PI/2}" />
-        </parent>
-      </joint>
       
       <inertial>
         <mass value="0.01" />
@@ -301,14 +301,14 @@
       
     </link>
 
+    <joint name="${name}_r_stereo_camera_frame_joint" type="fixed">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <parent name="${name}_l_stereo_camera_frame">
+        <origin xyz="${stereo_dx} ${stereo_dy} ${stereo_dz}"
+                rpy="${stereo_rx} ${stereo_ry} ${stereo_rz}" />
+      </parent>
+    </joint>
     <link name="${name}_r_stereo_camera_frame">
-      <joint name="${name}_r_stereo_camera_frame_joint" type="fixed">
-        <origin xyz="0 0 0" rpy="0 0 0" />
-        <parent name="${name}_l_stereo_camera_frame">
-          <origin xyz="${stereo_dx} ${stereo_dy} ${stereo_dz}"
-                  rpy="${stereo_rx} ${stereo_ry} ${stereo_rz}" />
-        </parent>
-      </joint>
       
       <inertial>
         <mass value="0.01" />

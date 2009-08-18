@@ -1,17 +1,17 @@
 <?xml version="1.0"?>
-<root>
+<robot>
   
   <include filename="$(find pr2_defs)/defs/arm/mono_cam_rviz.xacro" />
   <include filename="$(find pr2_defs)/defs/arm/mono_cam_gazebo.xacro" />
   <macro name="mono_cam" params="name parent *origin">
 
+    <joint name="${name}_frame_joint" type="fixed">
+      <origin xyz="0 0 0" />
+      <parent name="${parent}">
+        <insert_block name="origin" />
+      </parent>
+    </joint>
     <link name="${name}_frame">
-      <joint name="${name}_frame_joint" type="fixed">
-        <origin xyz="0 0 0" />
-        <parent name="${parent}">
-          <insert_block name="origin" />
-        </parent>
-      </joint>
 
       <inertial>
         <mass value="0.01" />
@@ -36,14 +36,14 @@
       </collision>
     </link>
 
+    <joint name="${name}_optical_frame_joint" type="fixed" />
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <parent name="${name}_frame" />
+        <origin xyz="0 0 0" rpy="${-M_PI/2} 0.0 ${-M_PI/2}" />
+      </parent>
+    </joint>
     <link name="${name}_optical_frame">
 
-      <joint name="${name}_optical_frame_joint" type="fixed" />
-        <origin xyz="0 0 0" rpy="0 0 0" />
-        <parent name="${name}_frame" />
-          <origin xyz="0 0 0" rpy="${-M_PI/2} 0.0 ${-M_PI/2}" />
-        </parent>
-      </joint>
 
       <inertial>
         <mass value="0.01" />
@@ -74,4 +74,4 @@
 
   </macro>
 
-</root>
+</robot>

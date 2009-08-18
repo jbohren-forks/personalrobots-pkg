@@ -11,20 +11,20 @@
   <macro name="pr2_torso" params="name parent *origin">
 
 
+    <joint name="${name}_joint" type="prismatic">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <axis xyz="0 0 1" />
+      <!-- KWatts: Max should be 0.31, changed to 0.20 to prevent jamming -->
+      <!-- HW ticket 481, will examine spine to determine failures -->
+      <limit lower="0.0" upper="0.20" effort="10000" velocity="0.015"/>
+      <safety_controller  k_velocity="400000" soft_lower_limit="${0.0+0.005}" soft_upper_limit="${0.20-0.005}" k_position="1000" />
+      <calibration reference_position="0.00536" />
+      <dynamics damping="10.0" />
+      <parent name="${parent}">
+        <insert_block name="origin" />
+      </parent>
+    </joint>
     <link name="${name}_link">
-      <joint name="${name}_joint" type="prismatic">
-        <origin xyz="0 0 0" rpy="0 0 0" />
-        <axis xyz="0 0 1" />
-        <!-- KWatts: Max should be 0.31, changed to 0.20 to prevent jamming -->
-        <!-- HW ticket 481, will examine spine to determine failures -->
-        <limit lower="0.0" upper="0.20" effort="10000" velocity="0.015"/>
-        <safety_controller  k_velocity="400000" soft_lower_limit="${0.0+0.005}" soft_upper_limit="${0.20-0.005}" k_position="1000" />
-        <calibration reference_position="0.00536" />
-        <joint_properties damping="10.0" />
-        <parent name="${parent}">
-          <insert_block name="origin" />
-        </parent>
-      </joint>
 
       <inertial>
         <mass value="36.248046" />

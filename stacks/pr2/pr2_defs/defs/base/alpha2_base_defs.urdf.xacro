@@ -41,17 +41,17 @@
   <!--                                                      -->
   <macro name="pr2_wheel_alpha2" params="suffix parent reflect">
 
+    <joint name="${parent}_${suffix}_wheel_joint" type="continuous">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <axis xyz="0 1 0" />
+      <limit effort="100" velocity="100"/>
+      <safety_controller  k_velocity="10" />
+      <dynamics damping="0.0" friction="0.0" />
+      <parent name="${parent}_rotation_link">
+        <origin xyz="0 ${reflect*caster_wheel_offset_y} 0" rpy="0 0 0" />
+      </parent>
+    </joint>
     <link name="${parent}_${suffix}_wheel_link">
-      <joint name="${parent}_${suffix}_wheel_joint" type="continuous">
-        <origin xyz="0 0 0" rpy="0 0 0" />
-        <axis xyz="0 1 0" />
-        <limit effort="100" velocity="100"/>
-        <safety_controller  k_velocity="10" />
-        <joint_properties damping="0.0" friction="0.0" />
-        <parent name="${parent}_rotation_link">
-          <origin xyz="0 ${reflect*caster_wheel_offset_y} 0" rpy="0 0 0" />
-        </parent>
-      </joint>
       <inertial>
         <mass value="0.44036" /> <!-- check jmh 20081205 -->
         <origin xyz="0 0 0" />
@@ -81,18 +81,18 @@
 
   <macro name="pr2_caster_alpha2" params="suffix parent *origin ref_position">
 
+    <joint name="${suffix}_caster_rotation_joint" type="continuous">
+      <origin xyz="0 0 0" rpy="0 0 0 0"/>
+      <axis xyz="0 0 1" />
+      <limit effort="100" velocity="100"/>
+      <safety_controller  k_velocity="10" />
+      <calibration reference_position="${ref_position}" />
+      <dynamics damping="0.0" friction="0.0" />
+      <parent name="${parent}">
+        <insert_block name="origin" />
+      </parent>
+    </joint>
     <link name="${suffix}_caster_rotation_link">
-      <joint name="${suffix}_caster_rotation_joint" type="continuous">
-        <origin xyz="0 0 0" rpy="0 0 0 0"/>
-        <axis xyz="0 0 1" />
-        <limit effort="100" velocity="100"/>
-        <safety_controller  k_velocity="10" />
-        <calibration reference_position="${ref_position}" />
-        <joint_properties damping="0.0" friction="0.0" />
-        <parent name="${parent}">
-          <insert_block name="origin" />
-        </parent>
-      </joint>
 
       <inertial>
         <mass value="3.473082"/>
@@ -130,13 +130,13 @@
   <macro name="pr2_base_alpha2" params="name *origin">
 
 
+    <joint name="${name}_joint" type="planar">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <parent name="world">
+        <insert_block name="origin" />
+      </parent>
+    </joint>
     <link name="${name}_link">
-      <joint name="${name}_joint" type="planar">
-        <origin xyz="0 0 0" rpy="0 0 0" />
-        <parent name="world">
-          <insert_block name="origin" />
-        </parent>
-      </joint>
 
       <inertial>
         <mass value="${base_mass}" />
@@ -162,15 +162,15 @@
 
 
     <!-- base laser -->
+    <joint name="base_laser_joint" type="fixed">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <axis xyz="0 1 0" />
+      <parent name="${name}_link">
+        <origin xyz="${base_laser_x} ${base_laser_y} ${base_height_offset+base_laser_z}" rpy="0 0 0" />
+      </parent>
+    </joint>
     <link name="base_laser" type="laser">
 
-      <joint name="base_laser_joint" type="fixed">
-        <origin xyz="0 0 0" rpy="0 0 0" />
-        <axis xyz="0 1 0" />
-        <parent name="${name}_link">
-          <origin xyz="${base_laser_x} ${base_laser_y} ${base_height_offset+base_laser_z}" rpy="0 0 0" />
-        </parent>
-      </joint>
 
       <inertial>
         <mass value="1.0" />
