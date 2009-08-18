@@ -36,7 +36,7 @@ int _LoadCameraParams(char* filename, CvMat** intrinsic_matrix, CvMat** distorti
 }
 
 int main(int argc,char** argv)
-{    
+{   
 
 
 	char mode[1024], config_filename[1024], camera_filename[1024], output_path[1024], 

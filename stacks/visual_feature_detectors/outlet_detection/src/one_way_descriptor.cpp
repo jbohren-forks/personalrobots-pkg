@@ -394,7 +394,6 @@ void CvOneWayDescriptor::EstimatePosePCA(IplImage* patch, int& pose_idx, float& 
     IplImage* patch_32f = cvCreateImage(cvSize(roi.width, roi.height), IPL_DEPTH_32F, 1);
     float sum = cvSum(patch).val[0];
     cvConvertScale(patch, patch_32f, 1.0f/sum);
- 
     ProjectPCASample(patch_32f, avg, eigenvectors, pca_coeffs);
 
     distance = 1e10;

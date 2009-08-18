@@ -631,6 +631,7 @@ void runOutletDetectorTest(CvMat* intrinsic_matrix, CvMat* distortion_params,
 			name++;
 			sprintf(filename,"%s",name);
 		}
+		//printf("%s",test_data[i].filename);
 		IplImage* img = cvLoadImage(test_data[i].filename);
 		if (img == NULL)
 		{
@@ -718,8 +719,11 @@ void runLOutletDetectorTest(CvMat* intrinsic_matrix, CvMat* distortion_params,
 		}
 		
 			//detect_outlet_tuple(img,intrinsic_matrix,distortion_params,test_data[i].test_outlet,outlet_templ);
-        printf("Detected %d outlets, origin %d,%d, real origin %d,%d\n", (int)test_data[i].test_outlet.size(), test_data[i].test_outlet[0].ground_hole.x, 
-            test_data[i].test_outlet[0].ground_hole.y, test_data[i].real_outlet[0].ground_hole.x, test_data[i].real_outlet[0].ground_hole.y);
+       	if ((size_t)test_data[i].test_outlet.size() > 0)
+			printf("Detected %d outlets, origin %d,%d, real origin %d,%d\n", (int)test_data[i].test_outlet.size(), test_data[i].test_outlet[0].ground_hole.x, 
+				test_data[i].test_outlet[0].ground_hole.y, test_data[i].real_outlet[0].ground_hole.x, test_data[i].real_outlet[0].ground_hole.y);
+		else
+			printf ("Unable to detect outlet\n");    
 	}	
 }
 //-------------
@@ -844,8 +848,11 @@ void runFernsLOutletDetectorTest(CvMat* intrinsic_matrix, CvMat* distortion_para
 		}
 		
 			//detect_outlet_tuple(img,intrinsic_matrix,distortion_params,test_data[i].test_outlet,outlet_templ);
-        printf("Detected %d outlets, origin %d,%d, real origin %d,%d\n", (int)test_data[i].test_outlet.size(), test_data[i].test_outlet[0].ground_hole.x, 
-            test_data[i].test_outlet[0].ground_hole.y, test_data[i].real_outlet[0].ground_hole.x, test_data[i].real_outlet[0].ground_hole.y);
+       	if ((size_t)test_data[i].test_outlet.size() > 0)
+			printf("Detected %d outlets, origin %d,%d, real origin %d,%d\n", (int)test_data[i].test_outlet.size(), test_data[i].test_outlet[0].ground_hole.x, 
+				test_data[i].test_outlet[0].ground_hole.y, test_data[i].real_outlet[0].ground_hole.x, test_data[i].real_outlet[0].ground_hole.y);
+		else
+			printf ("Unable to detect outlet\n");
 	}	
 }
 
@@ -854,7 +861,17 @@ void runFernsLOutletDetectorTest(CvMat* intrinsic_matrix, CvMat* distortion_para
 void get_one_way_keypoints(Mat& image, const outlet_template_t& outlet_template,Vector<Point2f>& keypoints)
 {
 	IplImage _image = image;
-	IplImage* test_image = cvCloneImage(&_image);
+	IplImage* test_image; 
+	if (_image.nChannels == 3)
+	{
+		test_image = cvCreateImage(cvSize(_image.width, _image.height), IPL_DEPTH_8U, 1);
+		cvCvtColor(&_image, test_image, CV_RGB2GRAY);
+	}
+	else
+	{
+		test_image = cvCloneImage(&_image);
+	}
+
 	const CvOneWayDescriptorObject* descriptors = outlet_template.get_one_way_descriptor_base();
 	int64 time1 = cvGetTickCount();
     
@@ -868,6 +885,7 @@ void get_one_way_keypoints(Mat& image, const outlet_template_t& outlet_template,
     vector<feature_t> hole_candidates;
     int patch_width = descriptors->GetPatchSize().width/2;
     int patch_height = descriptors->GetPatchSize().height/2; 
+
     for(int i = 0; i < (int)features.size(); i++)
 	{
         CvPoint center = features[i].pt;
@@ -881,20 +899,9 @@ void get_one_way_keypoints(Mat& image, const outlet_template_t& outlet_template,
             continue;
         }
         
-        if(abs(center.x - 988/2) < 10 && abs(center.y - 1203/2) < 10)
-        {
-            int w = 1;
-        }
-      
         int desc_idx = -1;
         int pose_idx = -1;
         float distance = 0;
-
-        if(i == 331)
-        {
-            int w = 1;
-        }
-        
 
         descriptors->FindDescriptor(test_image, desc_idx, pose_idx, distance);
         
@@ -938,6 +945,10 @@ void get_one_way_keypoints(Mat& image, const outlet_template_t& outlet_template,
 	{
 		keypoints.push_back(Point2f(hole_candidates[i].pt));
 	}
+	//for (int i=0;i<(int)features.size();i++)
+	//{
+	//	keypoints.push_back(Point2f(features[i].pt));
+	//}
 
 	cvReleaseImage(&test_image);
 }
@@ -969,11 +980,21 @@ void runFernsOneWayOutletDetectorTest(CvMat* intrinsic_matrix, CvMat* distortion
 	Vector<Point2f> image_keypoints;
 	Vector<Point2f> object_keypoints;
 
-	get_one_way_keypoints(object,outlet_template,object_keypoints);
-	//for (int i=0;i<(int)objKeypoints.size();i++)
+	//get_one_way_keypoints(object,outlet_template,object_keypoints);
+
+	//2nd version - only labeled points
+	vector<KeyPointEx> objKeypoints = outlet_template.get_one_way_descriptor_base()->GetLabeledFeatures();
+	for (int i=0;i<(int)objKeypoints.size();i++)
+	{
+		object_keypoints.push_back(objKeypoints[i].pt);
+	}
+
+	////3d version - all points
+	//for (int i=0;i<outlet_template.get_one_way_descriptor_base()->GetObjectFeatureCount();i++)
 	//{
-	//	object_keypoints.push_back(objKeypoints[i].pt);
+	//	object_keypoints.push_back(Point2f(outlet_template.get_one_way_descriptor_base()->GetDescriptor(i)->GetCenter()));
 	//}
+	
 
 	if (!ferns_detector_load(detector,config_path))
 	{
@@ -981,8 +1002,8 @@ void runFernsOneWayOutletDetectorTest(CvMat* intrinsic_matrix, CvMat* distortion
 		ferns_detector_initialize(object_keypoints,detector,config_path,object, patchSize,gen);
 		printf("Done\n");
 	}
-
-	for (int i=0;i<(size_t)test_data.size();i++)
+//!!!!!!!!!!!!!!!!!!!!!
+	for (int i=0;i<1/*(size_t)test_data.size()*/;i++)
 	{
 		if (test_data[i].n_matches == DETECT_SKIP)
 			continue;
@@ -1006,6 +1027,7 @@ void runFernsOneWayOutletDetectorTest(CvMat* intrinsic_matrix, CvMat* distortion
 
 
 		image_keypoints.clear();
+		
 		get_one_way_keypoints(image,outlet_template,image_keypoints);
 
 		
@@ -1029,7 +1051,10 @@ void runFernsOneWayOutletDetectorTest(CvMat* intrinsic_matrix, CvMat* distortion
 
 		}
 		
-        printf("Detected %d outlets, origin %d,%d, real origin %d,%d\n", (int)test_data[i].test_outlet.size(), test_data[i].test_outlet[0].ground_hole.x, 
-            test_data[i].test_outlet[0].ground_hole.y, test_data[i].real_outlet[0].ground_hole.x, test_data[i].real_outlet[0].ground_hole.y);
+		if ((size_t)test_data[i].test_outlet.size() > 0)
+			printf("Detected %d outlets, origin %d,%d, real origin %d,%d\n", (int)test_data[i].test_outlet.size(), test_data[i].test_outlet[0].ground_hole.x, 
+				test_data[i].test_outlet[0].ground_hole.y, test_data[i].real_outlet[0].ground_hole.x, test_data[i].real_outlet[0].ground_hole.y);
+		else
+			printf ("Unable to detect outlet\n");
 	}	
 }
