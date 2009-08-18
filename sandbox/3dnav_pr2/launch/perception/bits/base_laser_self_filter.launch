@@ -16,7 +16,7 @@
      <param name="min_sensor_dist" type="double" value="0.05" />
      
      <!-- The padding to be added for the body parts the robot can see -->
-     <param name="self_see_padd" type="double" value="0.02" />
+     <param name="self_see_padd" type="double" value="0.0" />
 
      <!-- The scaling to be added for the body parts the robot can see -->
      <param name="self_see_scale" type="double" value="1.0" />
