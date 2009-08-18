@@ -181,6 +181,9 @@ namespace actionlib {
 
       boost::condition execute_condition_;
       boost::thread* execute_thread_;
+
+      boost::mutex terminate_mutex_;
+      bool need_to_terminate_;
   };
 };
 
