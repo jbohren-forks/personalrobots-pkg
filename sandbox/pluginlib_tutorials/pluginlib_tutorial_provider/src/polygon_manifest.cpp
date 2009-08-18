@@ -35,14 +35,16 @@
 * Author: Eitan Marder-Eppstein
 *********************************************************************/
 #include "pluginlib/plugin_macros.h"
-#include "polygon.h"
-#include "square.h"
-#include "triangle.h"
+#include "pluginlib_tutorial_interfaces/polygon.h"
+#include "pluginlib_tutorial_provider/square.h"
+#include "pluginlib_tutorial_provider/triangle.h"
 
 //polygon plugin list 
-BEGIN_PLUGIN_LIST(polygon)
+//BEGIN_PLUGIN_LIST(polygon)
+POCO_BEGIN_NAMED_MANIFEST(one, polygon)
 
 REGISTER_PLUGIN(triangle)
 REGISTER_PLUGIN(square)
 
 END_PLUGIN_LIST 
+

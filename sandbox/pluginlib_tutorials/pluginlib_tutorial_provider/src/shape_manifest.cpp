@@ -35,11 +35,12 @@
 * Author: Eitan Marder-Eppstein
 *********************************************************************/
 #include "pluginlib/plugin_macros.h"
-#include "shape.h"
-#include "line.h"
+#include "pluginlib_tutorial_interfaces/shape.h"
+#include "pluginlib_tutorial_provider/line.h"
 
 //shape plugin list 
-BEGIN_PLUGIN_LIST(shape)
+//BEGIN_PLUGIN_LIST(shape)
+POCO_BEGIN_NAMED_MANIFEST(two, shape)
 
 REGISTER_PLUGIN(line)
 

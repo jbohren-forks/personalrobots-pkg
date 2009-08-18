@@ -27,7 +27,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "line.h"
+#include "pluginlib_tutorial_provider/line.h"
 
 #include <cmath>
 

@@ -34,17 +34,13 @@
 *
 * Author: Eitan Marder-Eppstein
 *********************************************************************/
-#ifndef PLUGINLIB_CLASS_MACROS_H_
-#define PLUGINLIB_CLASS_MACROS_H_
+#ifndef PLUGINLIB_CLASS_LIST_MACROS_H_
+#define PLUGINLIB_CLASS_LIST_MACROS_H_
 #include "Poco/ClassLibrary.h"
 
-#define BEGIN_CLASS_LIST(list_name, base_class) \
-  POCO_BEGIN_NAMED_MANIFEST(list_name, base_class)
-
-#define REGISTER_CLASS(plugin_class) \
-  POCO_EXPORT_CLASS(plugin_class) 
-
-#define END_CLASS_LIST \
+#define REGISTER_CLASS(class_name, class_type, base_class_type) \
+  POCO_BEGIN_NAMED_MANIFEST(class_name, base_class_type) \
+  POCO_EXPORT_CLASS(class_type) \
   POCO_END_MANIFEST
 
 #endif

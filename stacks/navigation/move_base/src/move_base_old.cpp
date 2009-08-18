@@ -76,7 +76,7 @@ namespace move_base {
 
     //initialize the global planner
     try {
-      planner_ = bgp_loader_.createPluginInstance(global_planner);
+      planner_ = bgp_loader_.createClassInstance(global_planner);
       planner_->initialize(global_planner, planner_costmap_ros_);
     } catch (const std::runtime_error& ex)
     {
@@ -91,7 +91,7 @@ namespace move_base {
 
     //create a local planner
     try {
-      tc_ = blp_loader_.createPluginInstance(local_planner);
+      tc_ = blp_loader_.createClassInstance(local_planner);
       tc_->initialize(local_planner, &tf_, controller_costmap_ros_);
     } catch (const std::runtime_error& ex)
     {

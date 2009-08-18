@@ -38,7 +38,7 @@
 #include <base_local_planner/trajectory_planner_ros.h>
 #include <ros/console.h>
 #include <sys/time.h>
-#include <pluginlib/plugin_macros.h>
+#include <pluginlib/class_list_macros.h>
 
 #include "geometry_msgs/PolygonStamped.h"
 #include "nav_msgs/Path.h"
@@ -47,9 +47,7 @@ using namespace std;
 using namespace costmap_2d;
 
 //register this planner as a BaseLocalPlanner plugin
-BEGIN_PLUGIN_LIST(nav_core::BaseLocalPlanner)
-REGISTER_PLUGIN(base_local_planner::TrajectoryPlannerROS)
-END_PLUGIN_LIST
+REGISTER_CLASS(trajectory_planner_ros, base_local_planner::TrajectoryPlannerROS, nav_core::BaseLocalPlanner)
 
 namespace base_local_planner {
 
