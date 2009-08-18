@@ -86,12 +86,12 @@ TableObjectRF::TableObjectRF()
 
   // -----------------------------------------
   // Clique-set 0 clustering (kmeans)
-  point_cloud_clustering::KMeans* kmeans0_cs0 = new point_cloud_clustering::KMeans(0.005, 2); // TODO 1
-  point_cloud_clustering::KMeans* kmeans1_cs0 = new point_cloud_clustering::KMeans(0.008, 2); // 1
+  point_cloud_clustering::KMeans* kmeans0_cs0 = new point_cloud_clustering::KMeans(0.005, 1); // TODO 1
+  point_cloud_clustering::KMeans* kmeans1_cs0 = new point_cloud_clustering::KMeans(0.008, 1); // 1
   vector<pair<bool, point_cloud_clustering::PointCloudClustering*> > cs0_clusterings(2);
-  cs0_clusterings[0].first = true; // true indicates to cluster over only the nodes
+  cs0_clusterings[0].first = false; // true indicates to cluster over only the nodes
   cs0_clusterings[0].second = kmeans0_cs0;
-  cs0_clusterings[1].first = true; // true indicates to cluster over only the nodes
+  cs0_clusterings[1].first = false; // true indicates to cluster over only the nodes
   cs0_clusterings[1].second = kmeans1_cs0;
   //
   clique_set_clusterings.push_back(cs0_clusterings);
@@ -117,12 +117,12 @@ TableObjectRF::TableObjectRF()
       clique_set_clusterings);
 
   // 0.3 inch = 0.00762 m cells
-  //voxel_x_ = 0.006; // TODO
-  //voxel_y_ = 0.006;
-  //voxel_z_ = 0.006;
-  voxel_x_ = 0.00762;
-  voxel_y_ = 0.00762;
-  voxel_z_ = 0.00762;
+  voxel_x_ = 0.006; // TODO
+  voxel_y_ = 0.006;
+  voxel_z_ = 0.006;
+  //voxel_x_ = 0.00762;
+  //voxel_y_ = 0.00762;
+  //voxel_z_ = 0.00762;
 }
 
 // --------------------------------------------------------------
@@ -311,6 +311,8 @@ void TableObjectRF::createImageFeatures(IplImage& image,
     if (ignore_ds_indices.count(i) == 0)
     {
       // retrieve coordinates of pixel
+      // (x = left to right (column))
+      // (y = top to bottom (row))
       const pair<unsigned int, unsigned int>& curr_img_coords = ds_img_coords[i];
       unsigned int x = curr_img_coords.first;
       unsigned int y = curr_img_coords.second;
@@ -330,9 +332,7 @@ void TableObjectRF::createImageFeatures(IplImage& image,
   for (size_t i = 0 ; i < nbr_keypoints ; i++)
   {
     size_t curr_hog_length = hog_results[i].size();
-    curr_hog_length = 0;
-    if (1)
-    //if (curr_hog_length != 0)
+    if (curr_hog_length != 0)
     {
       ds_img_features[i].resize(curr_hog_length + 2);
 
@@ -341,6 +341,8 @@ void TableObjectRF::createImageFeatures(IplImage& image,
         ds_img_features[i][j] = hog_results[i][j];
       }
 
+      // (x = left to right (column))
+      // (y = top to bottom (row))
       unsigned int x = static_cast<float>(keypoints[i].pt.x);
       unsigned int y = static_cast<float>(keypoints[i].pt.y);
 
