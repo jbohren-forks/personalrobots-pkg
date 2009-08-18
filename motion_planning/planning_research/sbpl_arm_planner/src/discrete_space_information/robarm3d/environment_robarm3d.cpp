@@ -1828,7 +1828,7 @@ void EnvironmentROBARM3D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vect
 	unsigned char dist;
 	short unsigned int k, succcoord[EnvROBARMCfg.num_joints], wrist[3], elbow[3], endeff[3];
 	double axis_angle, orientation [3][3], angles[EnvROBARMCfg.num_joints], s_angles[EnvROBARMCfg.num_joints];
-// 	double jnt_vel[EnvROBARMCfg.num_joints];
+	double jnt_vel[EnvROBARMCfg.num_joints];
 	
 	//to support two sets of succesor actions
 	int actions_i_min = 0, actions_i_max = EnvROBARMCfg.nLowResActions;
@@ -1864,17 +1864,17 @@ void EnvironmentROBARM3D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vect
 		}
 	}
 	
-// 	if(EnvROBARMCfg.use_jacobian_motion_prim)
-// 	{
-// 		if (GetDistToClosestGoal(HashEntry->endeff,&closest_goal) <= EnvROBARMCfg.HighResActionsThreshold_c)
-// 			computeJacobian(s_angles, 0.05, jnt_vel);
-// 		else
-// 			computeJacobian(s_angles, 0.104, jnt_vel);
-// 		
-// // 		printf("velocities: %.2f %.2f %.2f %.2f %.2f %.2f %.2f\n",
-// // 					 RAD2DEG(jnt_vel[0]),RAD2DEG(jnt_vel[1]),RAD2DEG(jnt_vel[2]),RAD2DEG(jnt_vel[3]),RAD2DEG(jnt_vel[4]),RAD2DEG(jnt_vel[5]),RAD2DEG(jnt_vel[6]));
-// 		actions_i_max++;
-// 	}
+	if(EnvROBARMCfg.use_jacobian_motion_prim)
+	{
+		if (GetDistToClosestGoal(HashEntry->endeff,&closest_goal) <= EnvROBARMCfg.HighResActionsThreshold_c)
+			computeJacobian(s_angles, 0.05, jnt_vel);
+		else
+			computeJacobian(s_angles, 0.104, jnt_vel);
+		
+// 		printf("velocities: %.2f %.2f %.2f %.2f %.2f %.2f %.2f\n",
+// 					 RAD2DEG(jnt_vel[0]),RAD2DEG(jnt_vel[1]),RAD2DEG(jnt_vel[2]),RAD2DEG(jnt_vel[3]),RAD2DEG(jnt_vel[4]),RAD2DEG(jnt_vel[5]),RAD2DEG(jnt_vel[6]));
+		actions_i_max++;
+	}
 
 	#if DEBUG
 		fprintf(fDeb, "\nstate %d: %.2f %.2f %.2f %.2f %.2f %.2f %.2f   endeff: %d %d %d\n",SourceStateID,
@@ -1887,8 +1887,8 @@ void EnvironmentROBARM3D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vect
 	//iterate through successors of s (possible actions)
 	for (i = actions_i_min; i < actions_i_max; i++)
 	{
-// 		if(i< actions_i_max - 1)
-// 		{
+		if(i< actions_i_max - 1)
+		{
 			for(a = 0; a < EnvROBARMCfg.num_joints; a++)
 			{
 				if((HashEntry->coord[a] + int(EnvROBARMCfg.SuccActions[i][a])) < 0)
@@ -1896,20 +1896,20 @@ void EnvironmentROBARM3D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vect
 				else
 					succcoord[a] = ((int)(HashEntry->coord[a] + int(EnvROBARMCfg.SuccActions[i][a])) % EnvROBARMCfg.anglevals[a]);
 			}
-// 		}
-// 		else
-// 		{
-// 			for(a = 0; a < EnvROBARMCfg.num_joints; a++)
-// 			{
-// 				if((HashEntry->coord[a] + int(RAD2DEG(jnt_vel[a]))) < 0)
-// 					succcoord[a] = ((EnvROBARMCfg.anglevals[a] + HashEntry->coord[a] + int(RAD2DEG(jnt_vel[a]))) % EnvROBARMCfg.anglevals[a]);
-// 				else
-// 					succcoord[a] = ((int)(HashEntry->coord[a] + int(RAD2DEG(jnt_vel[a]))) % EnvROBARMCfg.anglevals[a]);
-// 			}
-// // 			printf("%i %i %i %i %i %i %i  -->  %i %i %i %i %i %i %i\n",
-// // 						 HashEntry->coord[0],HashEntry->coord[1],HashEntry->coord[2], HashEntry->coord[3],HashEntry->coord[4],HashEntry->coord[5],HashEntry->coord[6],
-// // 			 				succcoord[0],succcoord[1],succcoord[2],succcoord[3],succcoord[4],succcoord[5],succcoord[6]);
-// 		}
+		}
+		else
+		{
+			for(a = 0; a < EnvROBARMCfg.num_joints; a++)
+			{
+				if((HashEntry->coord[a] + int(RAD2DEG(jnt_vel[a]))) < 0)
+					succcoord[a] = ((EnvROBARMCfg.anglevals[a] + HashEntry->coord[a] + int(RAD2DEG(jnt_vel[a]))) % EnvROBARMCfg.anglevals[a]);
+				else
+					succcoord[a] = ((int)(HashEntry->coord[a] + int(RAD2DEG(jnt_vel[a]))) % EnvROBARMCfg.anglevals[a]);
+			}
+// 			printf("%i %i %i %i %i %i %i  -->  %i %i %i %i %i %i %i\n",
+// 						 HashEntry->coord[0],HashEntry->coord[1],HashEntry->coord[2], HashEntry->coord[3],HashEntry->coord[4],HashEntry->coord[5],HashEntry->coord[6],
+// 			 				succcoord[0],succcoord[1],succcoord[2],succcoord[3],succcoord[4],succcoord[5],succcoord[6]);
+		}
 
 		//get the successor
 		EnvROBARMHashEntry_t* OutHashEntry;
@@ -1979,7 +1979,7 @@ void EnvironmentROBARM3D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vect
 
 		//put successor on successor list with the proper cost
 		SuccIDV->push_back(OutHashEntry->stateID);
-		CostV->push_back(cost(HashEntry,OutHashEntry,bSuccisGoal) + EnvROBARMCfg.ActiontoActionCosts[HashEntry->action][OutHashEntry->action]);
+		CostV->push_back(cost(HashEntry,OutHashEntry,bSuccisGoal)); // + EnvROBARMCfg.ActiontoActionCosts[HashEntry->action][OutHashEntry->action]);
 	}
 	
 	if(save_expanded_states)
@@ -2234,7 +2234,7 @@ bool EnvironmentROBARM3D::isGoalPosition(const short unsigned int endeff[3], con
     {
       time_to_goal_region = (clock() - starttime) / (double)CLOCKS_PER_SEC;
       near_goal = true;
-      printf("Search is within %d cells of the goal after %.4f sec.\n", goal.xyz_tolerance, time_to_goal_region);
+      printf("Search is within %d cells of the goal after %.4f sec. error in orientation: %.4f\n", goal.xyz_tolerance, time_to_goal_region, axis_angle);
     }
     
 		// roll, pitch, yaw of orientation is considered
@@ -4999,7 +4999,7 @@ int EnvironmentROBARM3D::IsValidCoord(short unsigned int coord[], short unsigned
 	vector<CELLV>* pTestedCells = NULL;
 	ComputeContAngles(coord, angles);
 
-// 	double pX,pY,pZ,pX2,pY2,pZ2;
+	double pX,pY,pZ,pX2,pY2,pZ2;
 	boost::shared_ptr<Voxel3d> vGrid = voxel_grid;
 
   //for low resolution collision checking
@@ -5335,7 +5335,7 @@ bool EnvironmentROBARM3D::isPathValid(double** path, int num_waypoints)
 
 void EnvironmentROBARM3D::getGridPtr(unsigned char*** grid)
 {
-// 	grid = EnvROBARMCfg.Grid3D;
+	grid = EnvROBARMCfg.Grid3D;
 // 	printf("Grid3D's address: %u", EnvROBARMCfg.Grid3D);
 // 	printf("grid's address: %u", grid);
 }
