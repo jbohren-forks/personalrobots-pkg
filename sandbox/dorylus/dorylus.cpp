@@ -727,6 +727,19 @@ vector<weak_classifier*> Dorylus::createRandomWeakClassifiers(int num_candidates
   return cand;
 }
 
+vector< pair<double, int> >* DorylusDataset::computeSortedDistances(string descriptor, VectorXf center) {
+  vector< pair<double, int> >* distance_idx = new vector< pair<double, int> >(objs_.size());
+  for(size_t j=0; j<objs_.size(); ++j) {
+    MatrixXf* f = objs_[j]->features[descriptor];
+    assert(f->cols() == 1);
+    float dist = euc(*f, center);
+    (*distance_idx)[j].first = dist;
+    (*distance_idx)[j].second = j; 
+  }
+  sort(distance_idx->begin(), distance_idx->end());
+
+  return distance_idx;
+}
 
 void Dorylus::learnWC(int num_candidates) {
   assert(dd_);
@@ -744,15 +757,7 @@ void Dorylus::learnWC(int num_candidates) {
   int num_tr_ex_in_best = 0;
   for(unsigned int i=0; i<cand.size(); ++i) {
     // -- Get all distances and sort.
-    vector< pair<double, int> >* distance_idx = new vector< pair<double, int> >(objs.size()); // (*distance_idx)[j] is distance, idx (i.e. objs_[idx])
-    for(unsigned int j=0; j<objs.size(); ++j) {
-      MatrixXf* f = objs[j]->features[cand[i]->descriptor];
-      assert(f->cols() == 1);
-      float dist = euc(*f, cand[i]->center);
-      (*distance_idx)[j] = pair<double, int>(dist, j);
-    }
-    sort(distance_idx->begin(), distance_idx->end());
-
+    vector< pair<double, int> >* distance_idx = dd_->computeSortedDistances(cand[i]->descriptor, cand[i]->center);  // (*distance_idx)[j] is distance, idx (i.e. objs_[idx])
 
     // -- Setup vars for evaluating weak classifiers efficiently.
     vector<double> weight_sum_pos(nClasses_); // sum of weight inside hypersphere for each class
@@ -783,10 +788,11 @@ void Dorylus::learnWC(int num_candidates) {
 	else
 	  weight_sum_neg[c] += exp(log_weights_(c,idx));
 	
-	utility += (1-exp(-cand[i]->vals(c))) * weight_sum_pos[c] + (1-exp(cand[i]->vals(c))) * weight_sum_neg[c];
+	utility += ((1-exp(-cand[i]->vals(c))) * weight_sum_pos[c] + (1-exp(cand[i]->vals(c))) * weight_sum_neg[c]) / (objs.size() * nClasses_);
       }
-      utility /= objs.size() * nClasses_;
-      
+      // Doing the division here makes 32bit vs 64bit give different answers.
+      // utility /= objs.size() * nClasses_;
+
       // -- If this is the best so far, make a copy.
       if(utility > max_utility) {
 	max_utility = utility;

@@ -149,6 +149,7 @@ class DorylusDataset {
   bool load(std::string filename, bool quiet=false);
   bool join(const DorylusDataset& dd2);
   bool compare(const DorylusDataset& dd);
+  std::vector< std::pair<double, int> >* computeSortedDistances(std::string descriptor, Eigen::VectorXf center);
 };
 
 

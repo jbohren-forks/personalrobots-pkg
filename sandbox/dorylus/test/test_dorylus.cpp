@@ -23,7 +23,6 @@ TEST(Dorylus, training) {
   EXPECT_TRUE(d2.compare(d, true));
 }
 
-
 TEST(Dorylus, loadAndSave) {
   Dorylus d, d2, d3;
   d.load("test/sanity.d");
