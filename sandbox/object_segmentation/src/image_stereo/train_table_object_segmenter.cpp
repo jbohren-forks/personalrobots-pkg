@@ -18,6 +18,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <algorithm>
 
 using namespace std;
 
@@ -59,6 +60,7 @@ int main(int argc, char *argv[])
     training_rfs.push_back(curr_rf);
   }
   ROS_INFO("Done");
+  random_shuffle(training_rfs.begin(), training_rfs.end());
 
   // ----------------------------------------------
   // Define learning parameters
@@ -67,6 +69,7 @@ int main(int argc, char *argv[])
 
   RegressionTreeWrapperParams regression_tree_params;
   regression_tree_params.max_tree_depth_factor = max_tree_depth;
+  regression_tree_params.max_allocation = 1e8; // 400 mb
 
   M3NParams m3n_learning_params;
   m3n_learning_params.setLearningRate(learning_rate);
