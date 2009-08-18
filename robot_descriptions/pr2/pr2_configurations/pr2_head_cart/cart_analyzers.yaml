@@ -3,6 +3,7 @@ sensors:
   prefix: Sensors
   contains: [
     'hokuyo',
+    'stereodcam',
     'prosilica',
     'imu' ]
 computers:
@@ -13,6 +14,7 @@ computers:
     'CPU Usage',
     'CPU Temperature',
     'HD Usage',
+    'NTP',
     'NFS']
 motors:
   type: GenericAnalyzer
