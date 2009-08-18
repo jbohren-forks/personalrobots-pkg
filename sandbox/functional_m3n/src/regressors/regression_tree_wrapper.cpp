@@ -335,6 +335,8 @@ int RegressionTreeWrapper::train()
   interm_start_idx_.clear();
   interm_lengths_.clear();
   interm_target_.clear();
+  cvReleaseMat(&var_type);
+  cvReleaseMat(&target_vals);
 
   if (train_success)
   {
