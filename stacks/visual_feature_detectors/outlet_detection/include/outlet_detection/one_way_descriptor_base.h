@@ -208,6 +208,9 @@ class CvOneWayDescriptorObject : public CvOneWayDescriptorBase
         
         void InitializeObjectDescriptors(IplImage* train_image, const Vector<KeyPointEx>& features, 
                                          const char* feature_label, int desc_start_idx = 0, float scale = 1.0f);
+    
+        // GetObjectFeatureCount: returns the number of object features
+        int GetObjectFeatureCount() const {return m_object_feature_count;};
         
     protected:
         int* m_part_id; // contains part id for each of object descriptors
