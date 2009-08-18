@@ -13,6 +13,7 @@
     <script type="text/javascript" src="startup_gadget.js"></script>
     <script type="text/javascript" src="joystick_gadget.js"></script>
     <script type="text/javascript" src="demo_gadget.js"></script>
+    <script type="text/javascript" src="action_select_gadget.js"></script>
     <script type="text/javascript">
 
       function showGadgets()
@@ -68,6 +69,7 @@
       function init()
       {
         gadget = new ROSImageGadget();
+        gadget = new ROSActionSelectGadget();
       }
 
       google.load('visualization', '1', {packages:['gauge']});
