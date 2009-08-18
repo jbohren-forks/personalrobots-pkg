@@ -17,13 +17,14 @@ find_ros_package(ivcon)
 find_ros_package(convex_decomposition)
 
 file(GLOB urdf_xacro_files ${CMAKE_CURRENT_SOURCE_DIR}/defs/*.urdf.xacro)
+file(GLOB urdf_def_files ${CMAKE_CURRENT_SOURCE_DIR}/defs/*/*.xacro)
 set(pr2xacro "${CMAKE_CURRENT_SOURCE_DIR}/robots/pr2.urdf.xacro")
 set(pr2urdf  "${CMAKE_CURRENT_SOURCE_DIR}/robots/pr2.urdf")
 add_custom_command(
   OUTPUT ${pr2urdf}
   COMMAND ${xacro_PACKAGE_PATH}/xacro.py
   ARGS ${pr2xacro} > ${pr2urdf}
-  DEPENDS ${pr2xacro} ${urdf_xacro_files})
+  DEPENDS ${pr2xacro} ${urdf_xacro_files} ${urdf_def_files})
 
 
 #TODO: following files are needed by openrave
