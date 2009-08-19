@@ -115,7 +115,7 @@ void PropagationDistanceField::addPointsToField(const std::vector<btVector3> poi
       // avoid a possible segfault situation:
       if (vptr->update_direction_<0 || vptr->update_direction_>26)
       {
-        ROS_WARN("Invalid update direction detected: %d", vptr->update_direction_);
+   //     ROS_WARN("Invalid update direction detected: %d", vptr->update_direction_);
         ++list_it;
         continue;
       }
