@@ -31,7 +31,7 @@
 #define FILTERS_FILTER_CHAIN_H_
 
 #include "filters/filter_base.h"
-#include <pluginlib/plugin_loader.h>
+#include <pluginlib/class_loader.h>
 #include <sstream>
 #include <vector>
 #include <tinyxml/tinyxml.h>
@@ -47,13 +47,13 @@ template <typename T>
 class FilterChain
 {
 private:
-  pluginlib::PluginLoader<filters::MultiChannelFilterBase<T> > loader_;
+  pluginlib::ClassLoader<filters::MultiChannelFilterBase<T> > loader_;
 public:
   /** \brief Create the filter chain object */
   FilterChain(std::string package, std::string base_class): loader_(package, base_class), configured_(false)
   {
     std::string lib_string = "";
-    std::vector<std::string> libs = loader_.getDeclaredPlugins();
+    std::vector<std::string> libs = loader_.getDeclaredClasses();
     for (unsigned int i = 0 ; i < libs.size(); i ++)
     {
       lib_string = lib_string + std::string(", ") + libs[i];
@@ -140,7 +140,7 @@ public:
     //try
     {
       //boost::shared_ptr<filters::FilterBase<T> > p( filters::FilterFactory<T>::Instance().CreateObject(constructor_string.str()));
-      boost::shared_ptr<filters::MultiChannelFilterBase<T> > p( loader_.createPluginInstance(config->Attribute("type")));
+      boost::shared_ptr<filters::MultiChannelFilterBase<T> > p( loader_.createClassInstance(config->Attribute("type")));
       if (p.get() == NULL)
         return false;
       result = result &&  p.get()->configure(size, config);    

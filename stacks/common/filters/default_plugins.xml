@@ -1,4 +1,4 @@
-<plugin_libraries>
+<class_libraries>
   <library path="lib/libmedian">
     <class name="MedianFilterMultiDouble" type="filters::MedianFilter<double>" 
 	    base_class_type="filters::MultiChannelFilterBase<double>">
@@ -23,4 +23,4 @@
       </description>
     </class>
   </library>
-</plugin_libraries>
+</class_libraries>

@@ -64,14 +64,14 @@ public:
 */
 
 
-static std::string mean_filter_5 = "<filter type=\"mean_double_filter\" name=\"mean_test_5\"> <params number_of_observations=\"5\"/></filter>";
-static std::string median_filter_5 = "<filter type=\"median_double_filter\" name=\"median_test_5\"> <params number_of_observations=\"5\"/></filter>";
+static std::string mean_filter_5 = "<filter type=\"MeanFilterMultiDouble\" name=\"mean_test_5\"> <params number_of_observations=\"5\"/></filter>";
+static std::string median_filter_5 = "<filter type=\"MedianFilterMultiDouble\" name=\"median_test_5\"> <params number_of_observations=\"5\"/></filter>";
 
 
 
 TEST(FilterChain, configuring){
   double epsilon = 1e-9;
-  filters::FilterChain<double> chain("filters", "double_filter");
+  filters::FilterChain<double> chain("filters", "filters::MultiChannelFilterBase<double>");
   //filters::FilterChain<float> chain;
 
   // EXPECT_TRUE(chain.add(mean_filter_5));
@@ -99,7 +99,7 @@ TEST(FilterChain, configuring){
 }
 
 TEST(FilterChain, MisconfiguredNumberOfChannels){
-  filters::FilterChain<double> chain("filters", "double_filter");
+  filters::FilterChain<double> chain("filters", "filters::MultiChannelFilterBase<double>");
 
 
   //  EXPECT_TRUE(chain.add(mean_filter_5));
@@ -123,7 +123,7 @@ TEST(FilterChain, MisconfiguredNumberOfChannels){
 
 }
 TEST(FilterChain, OverlappingNames){
-  filters::FilterChain<double> chain("filters", "double_filter");
+  filters::FilterChain<double> chain("filters", "filters::MultiChannelFilterBase<double>");
 
 
   std::string bad_xml = "<filters> <filter type=\"MeanFilter\" name=\"mean_test\"> <params number_of_observations=\"5\"/></filter><filter type=\"MedianFilter\" name=\"mean_test\"> <params number_of_observations=\"5\"/></filter></filters>";

@@ -14,6 +14,6 @@ implementations of commonly used filters.
 <depend package="pluginlib" />
 <export>
   <cpp cflags="-I${prefix}/include `rosboost-cfg --cflags`" lflags=""/> <!--lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lfilter"/-->
-  <filters double_filter="${prefix}/default_plugins.xml" />
+  <filters plugin="${prefix}/default_plugins.xml" />
 </export>
 </package>
