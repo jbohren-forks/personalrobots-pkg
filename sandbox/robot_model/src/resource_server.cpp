@@ -36,67 +36,45 @@
 #include <robot_model/GetResource.h>
 #include <fstream>
 
-class ResourceServer
+bool getResource(robot_model::GetResource::Request &req, robot_model::GetResource::Response &res)
 {
-public:
-  ResourceServer(void)
+  bool result = false;
+
+  ROS_DEBUG("Serving '%s'", req.identifier.c_str());
+  std::ifstream in(req.identifier.c_str(), std::ios::in | std::ios::binary);
+
+  if (in.good())
   {
-    serveRes_ = nh_.advertiseService("get_resource", &ResourceServer::getResource, this);
-  }
-
-  ~ResourceServer(void)
-  {
-  }
-
-  void run(void)
-  {
-    ros::spin();
-  }
-
-private:
-
-  bool getResource(robot_model::GetResource::Request &req, robot_model::GetResource::Response &res)
-  {
-    bool result = false;
-
-    ROS_DEBUG("Serving '%s'", req.identifier.c_str());
-    std::ifstream in(req.identifier.c_str(), std::ios::in | std::ios::binary);
-
-    if (in.good())
+    in.seekg(0, std::ios::end);
+    std::streampos sz = in.tellg();
+    in.seekg(0, std::ios::beg);
+    if (sz > 0)
     {
-      in.seekg(0, std::ios::end);
-      std::streampos sz = in.tellg();
-      in.seekg(0, std::ios::beg);
-      if (sz > 0)
-      {
-        res.content.resize(sz);
-        in.read(reinterpret_cast<char*> (&res.content[0]), sz);
-        if (in.gcount() != sz)
-          res.content.clear();
-        else
-          result = true;
-      }
-      else if (sz == 0)
+      res.content.resize(sz);
+      in.read(reinterpret_cast<char*> (&res.content[0]), sz);
+      if (in.gcount() != sz)
+        res.content.clear();
+      else
         result = true;
-      in.close();
     }
-
-    if (!result)
-      ROS_ERROR("Errors encountered while loading '%s'", req.identifier.c_str());
-    return result;
+    else if (sz == 0)
+      result = true;
+    in.close();
   }
 
-  ros::NodeHandle nh_;
-  ros::ServiceServer serveRes_;
-
-};
+  if (!result)
+    ROS_ERROR("Errors encountered while loading '%s'", req.identifier.c_str());
+  return result;
+}
 
 int main(int argc, char **argv)
 {
   ros::init(argc, argv, "resource_server");
 
-  ResourceServer rs;
-  rs.run();
+  ros::NodeHandle nh;
+  ros::ServiceServer resource_service = nh.advertiseService("get_resource", getResource);
+
+  ros::spin();
 
   return 0;
 }
