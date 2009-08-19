@@ -32,9 +32,9 @@ using namespace color_blob_track;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Constructor
-CMVisionBF::CMVisionBF(ros::Node *_node)
+CMVisionBF::CMVisionBF(ros::NodeHandle *nh)
 {
-  this->node = _node;
+  this->nodeHandle = nh;
   this->uyvyImage = NULL;
   this->width = 0;
   this->height = 0;
@@ -46,28 +46,35 @@ CMVisionBF::CMVisionBF(ros::Node *_node)
   this->blobMessage.blobCount = 0;
 
   // Get the color file. This defines what colors to track
-  this->node->param("/cmvision/color_file",this->colorFilename,
-                    std::string("colors.txt"));
+  if (!this->nodeHandle->getParam("/cmvision/color_file",this->colorFilename))
+    this->colorFilename = std::string("colors.txt");
 
   // Get the level of debug output
-  this->node->param("/cmvision/debug_on",this->debugOn,true);
+  if (!this->nodeHandle->getParam("/cmvision/debug_on",this->debugOn))
+    this->debugOn = true;
 
   // Turn color calibration on or off
-  this->node->param("/cmvision/color_cal_on",this->colorCalOn,false);
+  if (!this->nodeHandle->getParam("/cmvision/color_cal_on",this->colorCalOn))
+    this->colorCalOn = false;
 
   // Mean shift stuff
-  this->node->param("/cmvision/mean_shift_on", this->meanShiftOn, false);
-  this->node->param("/cmvision/spatial_radius_pix", this->spatialRadius, 2.0);
-  this->node->param("/cmvision/color_radius_pix", this->colorRadius, 40.0);
+  if (!this->nodeHandle->getParam("/cmvision/mean_shift_on", this->meanShiftOn))
+    this->meanShiftOn = false;
+
+  if (!this->nodeHandle->getParam("/cmvision/spatial_radius_pix", this->spatialRadius))
+    this->spatialRadius = 2.0;
+
+  if (this->nodeHandle->getParam("/cmvision/color_radius_pix", this->colorRadius))
+    this->colorRadius = 40.0;
 
   // Subscribe to an image stream
-  this->node->subscribe("image", this->image, &CMVisionBF::imageCB, this, 1);
+  this->nodeHandle->subscribe("image", 1, &CMVisionBF::imageCB, this );
 
   // Advertise our blobs
-  this->node->advertise("blobs",this->blobMessage, 1);
+  this->publisher = this->nodeHandle->advertise<cmvision::Blobs>("blobs", 1);
 
-  if (this->colorCalOn)
-    this->colorCal = new color_calib::Calibration(this->node);
+  //if (this->colorCalOn)
+    //this->colorCal = new color_calib::Calibration(this->nodeHandle);
 
   if (this->debugOn)
     cvNamedWindow("Image");
@@ -84,10 +91,12 @@ CMVisionBF::~CMVisionBF()
 
 ////////////////////////////////////////////////////////////////////////////////
 // The image callback
-void CMVisionBF::imageCB()
+void CMVisionBF::imageCB(const sensor_msgs::ImageConstPtr& msg)
 {
   IplImage *cvImage;
   CvSize size;
+
+  const sensor_msgs::Image img = *msg;
 
   // Timing
   struct timeval timeofday;
@@ -95,11 +104,7 @@ void CMVisionBF::imageCB()
   ros::Time startt = ros::Time().fromNSec(1e9*timeofday.tv_sec + 1e3*timeofday.tv_usec);
 
   // Get the image as and RGB image
-  if (this->image.encoding == "bgr8")
-    this->imageBridge.fromImage(this->image,"bgr8");
-  else
-    this->imageBridge.fromImage(this->image,"rgb8");
-
+  this->imageBridge.fromImage(img, "bgr8");
   cvImage = this->imageBridge.toIpl();
 
   size = cvGetSize(cvImage);
@@ -139,7 +144,7 @@ void CMVisionBF::imageCB()
   }
 
   // Perform color calibration if turned on
-  if (this->colorCalOn)
+  /*if (this->colorCalOn)
   {
     if ( this->colorCal->getFromParam("stereo/left/image_rect_color"))
     {
@@ -149,7 +154,7 @@ void CMVisionBF::imageCB()
     {
       ROS_DEBUG_STREAM_NAMED("cmvision","Color calibration not available");
     }
-  }
+  }*/
 
   // Smooth the image, if turned on
   if (this->meanShiftOn) 
@@ -215,7 +220,7 @@ void CMVisionBF::imageCB()
 
   this->blobMessage.blobCount = this->blobCount;
 
-  this->node->publish("blobs", this->blobMessage);
+  this->publisher.publish(this->blobMessage);
 
   // Timing
   gettimeofday(&timeofday,NULL);
