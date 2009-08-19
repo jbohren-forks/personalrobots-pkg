@@ -10,6 +10,7 @@
   <depend package="roscpp"/>
   <depend package="sensor_msgs"/>
   <depend package="opencv_latest"/>
-  <depend package="color_calib"/>
+  <rosdep name="fltk"/>
+  <!--<depend package="color_calib"/>-->
 
 </package>
