@@ -36,7 +36,7 @@
 ## Simple demo of a rospy service client that calls a service to add
 ## two integers. 
 
-PKG = 'taskman' # this package name
+PKG = 'launchman' # this package name
 
 import roslib; roslib.load_manifest(PKG) 
 
@@ -46,7 +46,7 @@ import string
 
 import rospy
 
-from taskman.srv import *
+from launchman.srv import *
 
 def stopTask(task):
     rospy.wait_for_service('stop_task')

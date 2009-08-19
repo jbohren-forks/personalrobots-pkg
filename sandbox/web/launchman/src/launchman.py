@@ -33,13 +33,13 @@
 #
 # Revision $Id$
 
-PKG = 'taskman' # this package name
-NAME = 'taskman'
+PKG = 'launchman' # this package name
+NAME = 'launchman'
 
 import roslib; roslib.load_manifest(PKG) 
 
-from taskman.srv import *
-from taskman.msg import *
+from launchman.srv import *
+from launchman.msg import *
 import rospy 
 
 import roslib.names
@@ -52,7 +52,7 @@ from roslaunch.xmlloader import *
 
 import subprocess
 
-from taskman import app
+from launchman import app
 
 def getPackagePath(pkg):
   pkgpath = subprocess.Popen(["rospack", "find", pkg], stdout=subprocess.PIPE).communicate()[0].strip()
