@@ -9,6 +9,14 @@
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/hanoi</url>
   <depend package="cmvision"/>
+  <depend package="roscpp"/>
+  <depend package="prosilica_cam"/>
+
+  <export>
+    <cpp lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lprosilica"
+      cflags="-I${prefix}/include -I${prefix}/srv/cpp"/>
+  </export>
+
 
 </package>
 

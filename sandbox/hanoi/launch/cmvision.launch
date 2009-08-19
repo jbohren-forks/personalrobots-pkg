@@ -1,6 +1,6 @@
 <launch>
 
-  <include file="$(find pr2_alpha)/stereo.launch"/>
+  <!--<include file="$(find pr2_alpha)/stereo.launch"/>-->
 
   <!-- Location of the cmvision color file -->
   <param name="cmvision/color_file" type="string" 
@@ -21,7 +21,6 @@
   <!-- Color bandwidth: Bigger = smoother image-->
   <param name="cmvision/color_radius_pix" type="double" value="40.0"/>
 
-  <node pkg="cmvision" type="cmvision" args="image:=stereo/left_image" 
-        output="screen" />
+  <node pkg="cmvision" type="cmvision" args="image:=wide_stereo/left/image_rect_color" output="screen" />
 
 </launch>
