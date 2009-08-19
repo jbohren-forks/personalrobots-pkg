@@ -57,6 +57,11 @@ namespace pluginlib {
       TiXmlDocument document;
       document.LoadFile(*it);
       TiXmlElement * config = document.RootElement();
+      if (config == NULL)
+      {
+        ROS_ERROR("XML Document had no Root Element.  This likely means the XML is malformed or missing.");
+        return;
+      }
       if (config->ValueStr() != "library" &&
           config->ValueStr() != "class_libraries")
       {
