@@ -13,10 +13,10 @@ genmsg()
 #uncomment if you have defined services
 #gensrv()
 
+add_subdirectory(simple_action_servers)
+add_subdirectory(simple_action_clients)
 
-rospack_add_executable(fibonacci_action src/fibonacci_action.cpp)
 
-rospack_add_executable(fibonacci_client src/fibonacci_client.cpp)
 
 #common commands for building c++ executables and libraries
 #rospack_add_library(${PROJECT_NAME} src/example.cpp)

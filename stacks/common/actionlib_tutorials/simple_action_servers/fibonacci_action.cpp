@@ -55,23 +55,29 @@ public:
 
     void execute(const actionlib_tutorials::FibonacciGoalConstPtr &goal)
     {
+      // create the action messages that will use published for feeback and result
+      actionlib_tutorials::FibonacciFeedback feedback;
+      actionlib_tutorials::FibonacciResult result;
+      // create come helper variables for computing the fibonacci sequence
       ros::Rate r(100);
       std::vector<int> sequence;
       int temp;  
-      actionlib_tutorials::FibonacciFeedback feedback;
-      actionlib_tutorials::FibonacciResult result;
       bool success = true;
+      // push_back the seeds for the fibonacci sequence
       sequence.push_back(0);
       sequence.push_back(1);
 
+      // publish some info to the console for the user to see when the action starts
 	    ROS_INFO("%s: Executing, creating fibonacci sequence of order %i with seeds %i, %i", action_name_.c_str(), goal->order, sequence[0], sequence[1]);
           
-    
+      // start executing the action
       for(int i=1; i<=goal->order; i++)
       {        
+        // check to make sure that preempt has not been requested by the client
         if (as_.isPreemptRequested())
 	      {
           ROS_INFO("%s: Preempted", action_name_.c_str());
+          // set the action state to preempted
           as_.setPreempted();
           success = false;
           break;
@@ -79,7 +85,9 @@ public:
         temp = sequence[i] + sequence[i-1];
         sequence.push_back(temp);
         feedback.set_sequence_vec(sequence);
+        // publish the feedback 
         as_.publishFeedback(feedback);
+        // this sleep is not necessary, it is just to slow down the action for demonstration purposes
         r.sleep(); 
       }
 
@@ -87,6 +95,7 @@ public:
       {
         result.set_sequence_vec(sequence);
         ROS_INFO("%s: Succeeded", action_name_.c_str());
+        // set the action state to succeeded
         as_.setSucceeded(result);
       }
     }

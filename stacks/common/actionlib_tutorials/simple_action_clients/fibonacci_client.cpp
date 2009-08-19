@@ -38,25 +38,17 @@
 #include <ros/node.h>
 #include <actionlib/client/simple_action_client.h>
 #include <actionlib_tutorials/FibonacciAction.h>
-#include <boost/thread.hpp>
 
-void spinThread()
-{
-  ros::spin();
-}
+
 
 int main (int argc, char **argv)
 {
   ros::init(argc, argv, "test_fibonacci");
   ros::NodeHandle nh;    
 
-  boost::thread spin_thread(&spinThread);
-
   ros::Duration timeout(30.0);
 
-  typedef actionlib::SimpleActionClient<actionlib_tutorials::FibonacciAction> FibonacciClient;
-  
-  FibonacciClient ac("fibonacci");
+  actionlib::SimpleActionClient<actionlib_tutorials::FibonacciAction> ac("fibonacci", true);
   sleep(1);
   actionlib_tutorials::FibonacciGoal goal;
   goal.order = 5;
@@ -68,7 +60,7 @@ int main (int argc, char **argv)
   else  
     ROS_INFO("TimedOut");
 
-  spin_thread.join();
+
 
   return 0;
 }
