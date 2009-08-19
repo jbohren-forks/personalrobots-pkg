@@ -28,6 +28,7 @@ a:hover
 {
   border: none;
 }
+
 #mainheader
 {
   border-bottom: 5px solid #1e2a47;
@@ -98,19 +99,7 @@ a:hover
   text-align: center;
   vertical-align: middle;
   overflow: auto;
-  /*padding-left: 10px;
-  padding-right: 10px;
-  padding-bottom: 10px;
-  */
 }
-
-/*#displaybox h1
-{
-  display:block; 
-  color: #1e2a47; 
-  background-color:#7cbd47;
-}*/
-
 
 #displaybox #gadgetdesc
 {
@@ -138,11 +127,10 @@ a:hover
 
 #gadget
 {
-  min-width: 400px;
+  min-width: 320px;
   position: relative;
   padding: 10px;
   position: fixed;
-  /*left: 10px;*/
 }
 
 #gadget #header

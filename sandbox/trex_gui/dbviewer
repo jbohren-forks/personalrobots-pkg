@@ -59,34 +59,11 @@ progress = None
 number_bound_regex = re.compile("\[*([^\]]+)\]*")
 
 ##############################################################################
-# ProgressTracker
-#   This class tracks the prorgess of the currently active task.
-##############################################################################
-
-class ProgressTracker():
-  def __init__(self):
-    self.total_steps = 0.0
-    self.current_step = 0.0
-
-  def reset(self):
-    self.current_step = 0.0
-
-  def total(self,total_steps):
-    self.total_steps = float(total_steps)
-
-  def step(self):
-    self.current_step = self.current_step + 1.0
-
-  def status(self):
-    return self.current_step/self.total_steps
-
-
-##############################################################################
 # MyDotWindow
 #   This window allows the user to browse and interact with the token network.
 ##############################################################################
 
-class MyDotWindow(xdot.DotWindow):
+class TokenNetworkWindow(xdot.DotWindow):
   def __init__(self):
     xdot.DotWindow.__init__(self)
     self.set_title("TREX DbViewer")
@@ -525,6 +502,20 @@ class ControlWindow(gtk.Window):
     self.reload_thread.start()
 
     vbox = gtk.VBox(False, 8)
+    ################################################
+    mb = gtk.MenuBar()
+
+    file_menu = gtk.Menu()
+    file_menu_item = gtk.MenuItem("File")
+    file_menu_item.set_submenu(file_menu)
+
+    exit = gtk.MenuItem("Exit")
+    exit.connect("activate",quit)
+    file_menu.append(exit)
+
+    mb.append(file_menu_item)
+
+    vbox.pack_start(mb,False,False,0)
 
     ################################################
     source_frame = gtk.Frame("Source: ")
@@ -662,7 +653,6 @@ class ControlWindow(gtk.Window):
       gtk.gdk.threads_leave()
       # Sleep before trying again
       time.sleep(1.0)
-
 
   def load_log_path(self):
     global log_path
@@ -920,7 +910,6 @@ class Token():
     if len(start_bounds) != 1 and float(start_bounds[1]) > tick and self.slot_index==0:
       graph.styleApply("PlannedToken", self.node)
 
-
 class Rule():
   def __init__(self,key,name,token,filename,line,slaves=[],vars=[]):
     self.key = key
@@ -944,7 +933,6 @@ class Rule():
 
   def lolight(self):
     graph.styleApply("Rule", self.node)
-
 
 ##############################################################################
 # Hilight Functions
@@ -1173,7 +1161,7 @@ def main():
 
   # Spawn the dot window
   global window
-  window = MyDotWindow()
+  window = TokenNetworkWindow()
   window.set_filter('dot')
   window.connect('destroy', quit)
 

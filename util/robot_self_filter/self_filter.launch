@@ -1,4 +1,7 @@
-<launch>
+<launch>  
+
+   <include file="$(find 3dnav_pr2)/launch/pr2_planning_environment.launch" />
+
    <node pkg="robot_self_filter" type="self_filter" respawn="true" output="screen">
 
      <!-- The topic for the input cloud -->
@@ -11,7 +14,10 @@
        filtered; This parameter is optional. If it is not specified,
        shadow points will be considered outside -->
      <param name="sensor_frame" type="string" value="laser_tilt_link" />
-     
+
+     <!-- Minimum distance to sensor (for point not to be considered inside) -->
+     <param name="min_sensor_dist" type="double" value="0.01" />
+
      <!-- The padding to be added for the body parts the robot can see -->
      <param name="self_see_padd" type="double" value="0.02" />
 
@@ -19,7 +25,7 @@
      <param name="self_see_scale" type="double" value="1.0" />
      
      <!-- The names of the links the sensor can see -->
-     <param name="sefl_see_links" type="string" value="l_upper_arm_link
+     <param name="self_see_links" type="string" value="l_upper_arm_link
 						       l_upper_arm_roll_link
 						       l_elbow_flex_link
 						       l_forearm_link

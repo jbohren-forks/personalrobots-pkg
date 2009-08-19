@@ -55,7 +55,7 @@ namespace chomp
       return false;
 
     // initialize the collision space
-    if (!chomp_collision_space_.init())
+    if (!chomp_collision_space_.init(chomp_robot_model_.getMaxRadiusClearance()))
       return false;
 
     // initialize the visualization publisher:

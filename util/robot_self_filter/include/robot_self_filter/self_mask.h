@@ -108,8 +108,8 @@ namespace robot_self_filter
 	    the origin of the sensor. A callback can be registered for
 	    the first intersection point on each body.
 	 */
-	void maskIntersection(const sensor_msgs::PointCloud& data_in, const std::string &sensor_frame, std::vector<int> &mask,
-			      const boost::function<void(const btVector3&)> &intersectionCallback = NULL);
+	void maskIntersection(const sensor_msgs::PointCloud& data_in, const std::string &sensor_frame, const double min_sensor_dist,
+			      std::vector<int> &mask, const boost::function<void(const btVector3&)> &intersectionCallback = NULL);
 
 	/** \brief Compute the intersection mask for a given pointcloud. If a mask
 	    element can have one of the values INSIDE, OUTSIDE or SHADOW. If the value is SHADOW,
@@ -117,16 +117,20 @@ namespace robot_self_filter
 	    been seen. If the mask element is INSIDE, the point is inside
 	    the robot. The origin of the sensor is specified as well.
 	 */
-	void maskIntersection(const sensor_msgs::PointCloud& data_in, const btVector3 &sensor, std::vector<int> &mask,
-			      const boost::function<void(const btVector3&)> &intersectionCallback = NULL);
+	void maskIntersection(const sensor_msgs::PointCloud& data_in, const btVector3 &sensor, const double min_sensor_dist,
+			      std::vector<int> &mask, const boost::function<void(const btVector3&)> &intersectionCallback = NULL);
 	
 	/** \brief Assume subsequent calls to getMaskX() will be in the frame passed to this function.
 	 *   The frame in which the sensor is located is optional */
-	void assumeFrame(const roslib::Header& header, const std::string &sensor_frame = std::string());
+	void assumeFrame(const roslib::Header& header);
 	
 	/** \brief Assume subsequent calls to getMaskX() will be in the frame passed to this function.
+	 *   The frame in which the sensor is located is optional */
+	void assumeFrame(const roslib::Header& header, const std::string &sensor_frame, const double min_sensor_dist);
+
+	/** \brief Assume subsequent calls to getMaskX() will be in the frame passed to this function.
 	 *  Also specify which possition to assume for the sensor (frame is not needed) */
-	void assumeFrame(const roslib::Header& header, const btVector3 &sensor_pos);
+	void assumeFrame(const roslib::Header& header, const btVector3 &sensor_pos, const double min_sensor_dist);
 	
 	/** \brief Get the containment mask (INSIDE or OUTSIDE) value for an individual point. No
 	    setup is performed, assumeFrame() should be called before use */
@@ -171,6 +175,7 @@ namespace robot_self_filter
 	ros::NodeHandle                     nh_;
 	
 	btVector3                           sensor_pos_;
+	double                              min_sensor_dist_;
 	
 	std::vector<SeeLink>                bodies_;
 	std::vector<double>                 bspheresRadius2_;

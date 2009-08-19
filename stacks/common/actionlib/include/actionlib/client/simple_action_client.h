@@ -37,8 +37,10 @@
 
 #include <boost/thread/condition.hpp>
 #include <boost/thread/mutex.hpp>
+#include <boost/scoped_ptr.hpp>
 
 #include "ros/ros.h"
+#include "ros/callback_queue.h"
 #include "actionlib/client/action_client.h"
 #include "actionlib/client/simple_goal_state.h"
 #include "actionlib/client/terminal_state.h"
@@ -71,10 +73,12 @@ public:
    *
    * Constructs a SingleGoalActionClient and sets up the necessary ros topics for the ActionInterface
    * \param name The action name. Defines the namespace in which the action communicates
+   * \param spin_thread If true, spins up a thread to service this action's subscriptions. If false,
+   *                    then the user has to call ros::spin().
    */
-  SimpleActionClient(const std::string& name) : ac_(name), cur_simple_state_(SimpleGoalState::PENDING)
+  SimpleActionClient(const std::string& name, bool spin_thread = false) : cur_simple_state_(SimpleGoalState::PENDING)
   {
-    initSimpleClient();
+    initSimpleClient(nh_, name, spin_thread);
   }
 
   /**
@@ -84,18 +88,23 @@ public:
    * the ActionInterface, and namespaces them according the a specified NodeHandle
    * \param n The node handle on top of which we want to namespace our action
    * \param name The action name. Defines the namespace in which the action communicates
+   * \param spin_thread If true, spins up a thread to service this action's subscriptions. If false,
+   *                    then the user has to call ros::spin().
    */
-  SimpleActionClient(const ros::NodeHandle& n, const std::string& name) : ac_(n, name), cur_simple_state_(SimpleGoalState::PENDING)
+  SimpleActionClient(const ros::NodeHandle& n, const std::string& name, bool spin_thread = false) : cur_simple_state_(SimpleGoalState::PENDING)
   {
-    initSimpleClient();
+    initSimpleClient(n, name, spin_thread);
+
   }
+
+  ~SimpleActionClient();
 
   /**
    * \brief Blocks until the action server connects to this client
    * \param timeout Max time to block before returning. A zero timeout is interpreted as an infinite timeout.
    * \return True if the server connected in the allocated time. False on timeout
    */
-  bool waitForActionServerToStart(const ros::Duration& timeout = ros::Duration(0,0) ) { return ac_.waitForActionServerToStart(timeout); }
+  bool waitForActionServerToStart(const ros::Duration& timeout = ros::Duration(0,0) ) { return ac_->waitForActionServerToStart(timeout); }
 
   /**
    * \brief Sends a goal to the ActionServer, and also registers callbacks
@@ -170,7 +179,7 @@ public:
 private:
   typedef ActionClient<ActionSpec> ActionClientT;
   ros::NodeHandle nh_;
-  ActionClientT ac_;
+  boost::scoped_ptr<ActionClientT> ac_;
   GoalHandleT gh_;
 
   SimpleGoalState cur_simple_state_;
@@ -184,20 +193,66 @@ private:
   SimpleActiveCallback active_cb_;
   SimpleFeedbackCallback feedback_cb_;
 
+  // Spin Thread Stuff
+  boost::mutex terminate_mutex_;
+  bool need_to_terminate_;
+  boost::thread* spin_thread_;
+  ros::CallbackQueue callback_queue;
+
   // ***** Private Funcs *****
-  void initSimpleClient();
+  void initSimpleClient(ros::NodeHandle& n, const std::string& name, bool spin_thread);
   void handleTransition(GoalHandleT gh);
   void handleFeedback(GoalHandleT gh, const FeedbackConstPtr& feedback);
   void setSimpleState(const SimpleGoalState::StateEnum& next_state);
   void setSimpleState(const SimpleGoalState& next_state);
+  void spinThread();
 };
 
 
 
 template<class ActionSpec>
-void SimpleActionClient<ActionSpec>::initSimpleClient()
+void SimpleActionClient<ActionSpec>::initSimpleClient(ros::NodeHandle& n, const std::string& name, bool spin_thread)
 {
+  if (spin_thread)
+  {
+    ROS_DEBUG("Spinning up a thread for the SimpleActionClient");
+    need_to_terminate_ = false;
+    spin_thread_ = new boost::thread(boost::bind(&SimpleActionClient<ActionSpec>::spinThread, this));
+    ac_.reset(new ActionClientT(n, name, &callback_queue));
+  }
+  else
+  {
+    spin_thread_ = NULL;
+    ac_.reset(new ActionClientT(n, name));
+  }
+}
 
+template<class ActionSpec>
+SimpleActionClient<ActionSpec>::~SimpleActionClient()
+{
+  if (spin_thread_)
+  {
+    {
+      boost::mutex::scoped_lock terminate_lock(terminate_mutex_);
+      need_to_terminate_ = true;
+    }
+    spin_thread_->join();
+    delete spin_thread_;
+  }
+}
+
+template<class ActionSpec>
+void SimpleActionClient<ActionSpec>::spinThread()
+{
+  while (nh_.ok())
+  {
+    {
+      boost::mutex::scoped_lock terminate_lock(terminate_mutex_);
+      if (need_to_terminate_)
+        break;
+    }
+    callback_queue.callAvailable();
+  }
 }
 
 template<class ActionSpec>
@@ -232,8 +287,8 @@ void SimpleActionClient<ActionSpec>::sendGoal(const Goal& goal,
   cur_simple_state_ = SimpleGoalState::PENDING;
 
   // Send the goal to the ActionServer
-  gh_ = ac_.sendGoal(goal, boost::bind(&SimpleActionClientT::handleTransition, this, _1),
-                           boost::bind(&SimpleActionClientT::handleFeedback, this, _1, _2));
+  gh_ = ac_->sendGoal(goal, boost::bind(&SimpleActionClientT::handleTransition, this, _1),
+                            boost::bind(&SimpleActionClientT::handleFeedback, this, _1, _2));
 }
 
 template<class ActionSpec>
@@ -289,13 +344,13 @@ typename SimpleActionClient<ActionSpec>::ResultConstPtr SimpleActionClient<Actio
 template<class ActionSpec>
 void SimpleActionClient<ActionSpec>::cancelAllGoals()
 {
-  ac_.cancelAllGoals();
+  ac_->cancelAllGoals();
 }
 
 template<class ActionSpec>
 void SimpleActionClient<ActionSpec>::cancelGoalsAtAndBeforeTime(const ros::Time& time)
 {
-  ac_.cancelAllGoalsBeforeTime(time);
+  ac_->cancelAllGoalsBeforeTime(time);
 }
 
 template<class ActionSpec>

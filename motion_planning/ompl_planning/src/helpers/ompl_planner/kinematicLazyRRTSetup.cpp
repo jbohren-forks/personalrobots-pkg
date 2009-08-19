@@ -36,7 +36,7 @@
 
 #include "ompl_planning/planners/kinematicLazyRRTSetup.h"
 
-ompl_planning::kinematicLazyRRTSetup::kinematicLazyRRTSetup(ModelBase *m) : PlannerSetup(m)
+ompl_planning::kinematicLazyRRTSetup::kinematicLazyRRTSetup(void) : PlannerSetup()
 {
     name = "kinematic::LazyRRT";
     priority = 2;
@@ -46,11 +46,12 @@ ompl_planning::kinematicLazyRRTSetup::~kinematicLazyRRTSetup(void)
 {
 }
 
-bool ompl_planning::kinematicLazyRRTSetup::setup(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
+bool ompl_planning::kinematicLazyRRTSetup::setup(planning_environment::PlanningMonitor *planningMonitor, const std::string &groupName,
+						 boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
 {
-    preSetup(options);
+    preSetup(planningMonitor, groupName, options);
     
-    ompl::kinematic::LazyRRT *rrt = new ompl::kinematic::LazyRRT(dynamic_cast<ompl::kinematic::SpaceInformationKinematic*>(si));
+    ompl::kinematic::LazyRRT *rrt = new ompl::kinematic::LazyRRT(dynamic_cast<ompl::kinematic::SpaceInformationKinematic*>(ompl_model->si));
     mp                            = rrt;    
 
     if (options->hasParam("range"))
@@ -65,7 +66,7 @@ bool ompl_planning::kinematicLazyRRTSetup::setup(boost::shared_ptr<planning_envi
 	ROS_DEBUG("Goal bias is set to %g", rrt->getGoalBias());
     }
     
-    postSetup(options);
+    postSetup(planningMonitor, groupName, options);
     
     return true;
 }

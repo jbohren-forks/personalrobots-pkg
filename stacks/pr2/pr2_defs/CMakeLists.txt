@@ -10,94 +10,63 @@ rospack_add_gtest(test_prg_update test/test_prg_update.cpp)
 find_ros_package(pr2_defs)
 
 file(GLOB def_files ${CMAKE_CURRENT_SOURCE_DIR}/defs/*.xml)
-file(GLOB urdf_xacro_files ${CMAKE_CURRENT_SOURCE_DIR}/defs/*.urdf.xacro)
 
 # xacro file generation
 find_ros_package(xacro)
 find_ros_package(ivcon)
 find_ros_package(convex_decomposition)
 
-#TODO: following files are needed by openrave
-set(pr2xacro "${CMAKE_CURRENT_SOURCE_DIR}/robots/pr2.urdf.xacro")
-set(pr2urdf  "${CMAKE_CURRENT_SOURCE_DIR}/robots/pr2.urdf")
-add_custom_command(
-  OUTPUT ${pr2urdf}
-  COMMAND ${xacro_PACKAGE_PATH}/xacro.py
-  ARGS ${pr2xacro} > ${pr2urdf}
-  DEPENDS ${pr2xacro} ${urdf_xacro_files})
+set(pr2_robot_files "")
 
 #TODO: following files are needed by openrave
-set(pr2robot "${CMAKE_CURRENT_SOURCE_DIR}/robots/pr2.xacro.xml")
-set(pr2robot_expanded "${CMAKE_CURRENT_SOURCE_DIR}/robots/pr2.expanded.xml")
-add_custom_command(
-  OUTPUT ${pr2robot_expanded}
-  COMMAND ${xacro_PACKAGE_PATH}/xacro.py
-  ARGS ${pr2robot} > ${pr2robot_expanded}
-  DEPENDS ${pr2robot} ${def_files})
+# iterate through all the robot/*.xacro.xml files and generate *.mesh and *.iv files
+file(GLOB urdf_def_files ${CMAKE_CURRENT_SOURCE_DIR}/defs/*/*.xacro)
+file(GLOB robot_urdf_files ${CMAKE_CURRENT_SOURCE_DIR}/robots/*.urdf.xacro)
+
+foreach(it ${robot_urdf_files})
+  get_filename_component(basepath ${it} PATH)
+  get_filename_component(basename ${it} NAME_WE)
+
+  message(" processing robot urdf file :",${basepath}," : ",${basename})
+
+  set(expanded_file "${basepath}/${basename}.urdf")
+  message("    produce expanded file :",${expanded_file})
+
+  add_custom_command(
+    OUTPUT ${expanded_file}
+    COMMAND ${xacro_PACKAGE_PATH}/xacro.py
+    ARGS ${it} > ${expanded_file}
+    DEPENDS ${it} ${urdf_def_files})
+
+  set(pr2_robot_files ${pr2_robot_files} ${expanded_file})
+endforeach(it)
+
 
 #TODO: following files are needed by openrave
-set(prfrobot "${CMAKE_CURRENT_SOURCE_DIR}/robots/prf.xacro.xml")
-set(prfrobot_expanded "${CMAKE_CURRENT_SOURCE_DIR}/robots/prf.expanded.xml")
-add_custom_command(
-  OUTPUT ${prfrobot_expanded}
-  COMMAND ${xacro_PACKAGE_PATH}/xacro.py
-  ARGS ${prfrobot} > ${prfrobot_expanded}
-  DEPENDS ${prfrobot} ${def_files})
+# iterate through all the robot/*.xacro.xml files and generate *.mesh and *.iv files
+file(GLOB robot_xacro_files ${CMAKE_CURRENT_SOURCE_DIR}/robots/*.xacro.xml)
 
-#TODO: following files are needed by openrave
-set(prgrobot "${CMAKE_CURRENT_SOURCE_DIR}/robots/prg.xacro.xml")
-set(prgrobot_expanded "${CMAKE_CURRENT_SOURCE_DIR}/robots/prg.expanded.xml")
-add_custom_command(
-  OUTPUT ${prgrobot_expanded}
-  COMMAND ${xacro_PACKAGE_PATH}/xacro.py
-  ARGS ${prgrobot} > ${prgrobot_expanded}
-  DEPENDS ${prgrobot} ${def_files})
+foreach(it ${robot_xacro_files})
+  get_filename_component(basepath ${it} PATH)
+  get_filename_component(basename ${it} NAME_WE)
 
-# Replace the COMMAND block with a call to a version of xacro that reads in
-# a .deps file and a xacro.xml file, determines the dependencies of the
-# latter, and writes any changed dependencies to the .deps file.
-#add_custom_target(pr2prototype1_target ALL
-#  COMMAND touch ${pr2prototype1}.xacro.deps)
+  message(" processing robot xacro file :",${basepath}," : ",${basename})
 
-set(pr2prototype1 "${CMAKE_CURRENT_SOURCE_DIR}/robots/prototype1.xacro.xml")
-set(pr2prototype1_expanded "${CMAKE_CURRENT_SOURCE_DIR}/robots/prototype1.expanded.xml")
-add_custom_command(
-  OUTPUT ${pr2prototype1_expanded}
-  COMMAND ${xacro_PACKAGE_PATH}/xacro.py
-  ARGS ${pr2prototype1} > ${pr2prototype1_expanded}
-  DEPENDS ${pr2prototype1} ${def_files})
+  set(expanded_file "${basepath}/${basename}.expanded.xml")
+  message("    produce expanded file :",${expanded_file})
 
-set(pr2larm "${CMAKE_CURRENT_SOURCE_DIR}/robots/l_arm.xacro.xml")
-set(pr2larm_expanded "${CMAKE_CURRENT_SOURCE_DIR}/robots/l_arm.expanded.xml")
-add_custom_command(
-  OUTPUT ${pr2larm_expanded}
-  COMMAND ${xacro_PACKAGE_PATH}/xacro.py
-  ARGS ${pr2larm} > ${pr2larm_expanded}
-  DEPENDS ${pr2larm} ${def_files})
+  add_custom_command(
+    OUTPUT ${expanded_file}
+    COMMAND ${xacro_PACKAGE_PATH}/xacro.py
+    ARGS ${it} > ${expanded_file}
+    DEPENDS ${it} ${def_files})
 
-set(pr2rarm "${CMAKE_CURRENT_SOURCE_DIR}/robots/r_arm.xacro.xml")
-set(pr2rarm_expanded "${CMAKE_CURRENT_SOURCE_DIR}/robots/r_arm.expanded.xml")
-add_custom_command(
-  OUTPUT ${pr2rarm_expanded}
-  COMMAND ${xacro_PACKAGE_PATH}/xacro.py
-  ARGS ${pr2rarm} > ${pr2rarm_expanded}
-  DEPENDS ${pr2rarm} ${def_files})
+  set(pr2_robot_files ${pr2_robot_files} ${expanded_file})
+endforeach(it)
 
-set(pr2lgripper "${CMAKE_CURRENT_SOURCE_DIR}/robots/l_gripper.xacro.xml")
-set(pr2lgripper_expanded "${CMAKE_CURRENT_SOURCE_DIR}/robots/l_gripper.expanded.xml")
-add_custom_command(
-  OUTPUT ${pr2lgripper_expanded}
-  COMMAND ${xacro_PACKAGE_PATH}/xacro.py
-  ARGS ${pr2lgripper} > ${pr2lgripper_expanded}
-  DEPENDS ${pr2lgripper} ${def_files})
 
-set(pr2rgripper "${CMAKE_CURRENT_SOURCE_DIR}/robots/r_gripper.xacro.xml")
-set(pr2rgripper_expanded "${CMAKE_CURRENT_SOURCE_DIR}/robots/r_gripper.expanded.xml")
-add_custom_command(
-  OUTPUT ${pr2rgripper_expanded}
-  COMMAND ${xacro_PACKAGE_PATH}/xacro.py
-  ARGS ${pr2rgripper} > ${pr2rgripper_expanded}
-  DEPENDS ${pr2rgripper} ${def_files})
+
+
 
 
 
@@ -107,77 +76,77 @@ file(GLOB pr2_stl_files ${CMAKE_CURRENT_SOURCE_DIR}/meshes/*.stl)
 set(pr2_gen_files "")
 
 foreach(it ${pr2_stl_files})
-get_filename_component(basepath ${it} PATH)
-get_filename_component(basename ${it} NAME_WE)
+  get_filename_component(basepath ${it} PATH)
+  get_filename_component(basename ${it} NAME_WE)
 
-IF ( ${basename} MATCHES "_convex" )
+  IF ( ${basename} MATCHES "_convex" )
 
-  message("ignoring stale .._convex.stl file:",${basename})
+    message("ignoring stale .._convex.stl file:",${basename})
 
-ELSE ( ${basename} MATCHES "_convex" )
+  ELSE ( ${basename} MATCHES "_convex" )
 
-#convex decomposition obj files
-add_custom_command(
-  OUTPUT ${basepath}/convex
-  # CMake 2.4 doesn't offer the make_directory command.
-  #COMMAND ${CMAKE_COMMAND} -E make_directory
-  COMMAND mkdir -p
-  ARGS ${basepath}/convex)
+    #convex decomposition obj files
+    add_custom_command(
+      OUTPUT ${basepath}/convex
+      # CMake 2.4 doesn't offer the make_directory command.
+      #COMMAND ${CMAKE_COMMAND} -E make_directory
+      COMMAND mkdir -p
+      ARGS ${basepath}/convex)
 
-#create obj files for convex decomposition from stl files
-add_custom_command(
-  OUTPUT ${basepath}/convex/${basename}.obj
-  COMMAND ${ivcon_PACKAGE_PATH}/bin/ivcon
-  ARGS ${it} ${basepath}/convex/${basename}.obj
-  DEPENDS ${it} ${basepath}/convex)
+    #create obj files for convex decomposition from stl files
+    add_custom_command(
+      OUTPUT ${basepath}/convex/${basename}.obj
+      COMMAND ${ivcon_PACKAGE_PATH}/bin/ivcon
+      ARGS ${it} ${basepath}/convex/${basename}.obj
+      DEPENDS ${it} ${basepath}/convex)
 
-set(pr2_gen_files ${pr2_gen_files} ${basepath}/convex/${basename}.obj)
+    set(pr2_gen_files ${pr2_gen_files} ${basepath}/convex/${basename}.obj)
 
-add_custom_command(
-  OUTPUT ${basepath}/convex/${basename}_convex.obj
-  COMMAND ${convex_decomposition_PACKAGE_PATH}/convex_decomposition/bin/convex_decomposition
-  ARGS ${basepath}/convex/${basename}.obj -v12 -p10
-  DEPENDS ${basepath}/convex/${basename}.obj ${basepath}/convex)
+    add_custom_command(
+      OUTPUT ${basepath}/convex/${basename}_convex.obj
+      COMMAND ${convex_decomposition_PACKAGE_PATH}/convex_decomposition/bin/convex_decomposition
+      ARGS ${basepath}/convex/${basename}.obj -v12 -p10
+      DEPENDS ${basepath}/convex/${basename}.obj ${basepath}/convex)
 
-set(pr2_gen_files ${pr2_gen_files} ${basepath}/convex/${basename}_convex.obj)
+    set(pr2_gen_files ${pr2_gen_files} ${basepath}/convex/${basename}_convex.obj)
 
-#convert obj files back to stlb, put in directory named convex
-add_custom_command(
-  OUTPUT ${basepath}/convex/${basename}_convex.stlb
-  COMMAND ${ivcon_PACKAGE_PATH}/bin/ivcon
-  ARGS ${basepath}/convex/${basename}_convex.obj ${basepath}/convex/${basename}_convex.stlb
-  DEPENDS ${it} ${basepath}/convex ${basepath}/convex/${basename}_convex.obj)
+    #convert obj files back to stlb, put in directory named convex
+    add_custom_command(
+      OUTPUT ${basepath}/convex/${basename}_convex.stlb
+      COMMAND ${ivcon_PACKAGE_PATH}/bin/ivcon
+      ARGS ${basepath}/convex/${basename}_convex.obj ${basepath}/convex/${basename}_convex.stlb
+      DEPENDS ${it} ${basepath}/convex ${basepath}/convex/${basename}_convex.obj)
 
-set(pr2_gen_files ${pr2_gen_files} ${basepath}/convex/${basename}_convex.stlb)
+    set(pr2_gen_files ${pr2_gen_files} ${basepath}/convex/${basename}_convex.stlb)
 
-#convert obj files back to stla, put in directory named convex
-add_custom_command(
-  OUTPUT ${basepath}/convex/${basename}_convex.stla
-  COMMAND ${ivcon_PACKAGE_PATH}/bin/ivcon
-  ARGS ${basepath}/convex/${basename}_convex.obj ${basepath}/convex/${basename}_convex.stla
-  DEPENDS ${it} ${basepath}/convex ${basepath}/convex/${basename}_convex.obj)
+    #convert obj files back to stla, put in directory named convex
+    add_custom_command(
+      OUTPUT ${basepath}/convex/${basename}_convex.stla
+      COMMAND ${ivcon_PACKAGE_PATH}/bin/ivcon
+      ARGS ${basepath}/convex/${basename}_convex.obj ${basepath}/convex/${basename}_convex.stla
+      DEPENDS ${it} ${basepath}/convex ${basepath}/convex/${basename}_convex.obj)
 
-set(pr2_gen_files ${pr2_gen_files} ${basepath}/convex/${basename}_convex.stla)
+    set(pr2_gen_files ${pr2_gen_files} ${basepath}/convex/${basename}_convex.stla)
 
-#iv files
-add_custom_command(
-  OUTPUT ${basepath}/${basename}.iv
-  COMMAND ${ivcon_PACKAGE_PATH}/bin/ivcon
-  ARGS ${it} ${basepath}/${basename}.iv
-  DEPENDS ${it})
-add_custom_command(
-  OUTPUT ${basepath}/convex/${basename}_convex.iv
-  COMMAND ${ivcon_PACKAGE_PATH}/bin/ivcon
-  ARGS ${basepath}/convex/${basename}_convex.obj ${basepath}/convex/${basename}_convex.iv
-  DEPENDS ${it} ${basepath}/convex ${basepath}/convex/${basename}_convex.obj)
- 
-set(pr2_gen_files ${pr2_gen_files} ${basepath}/${basename}.iv ${basepath}/convex/${basename}_convex.iv)
+    #iv files
+    add_custom_command(
+      OUTPUT ${basepath}/${basename}.iv
+      COMMAND ${ivcon_PACKAGE_PATH}/bin/ivcon
+      ARGS ${it} ${basepath}/${basename}.iv
+      DEPENDS ${it})
+    add_custom_command(
+      OUTPUT ${basepath}/convex/${basename}_convex.iv
+      COMMAND ${ivcon_PACKAGE_PATH}/bin/ivcon
+      ARGS ${basepath}/convex/${basename}_convex.obj ${basepath}/convex/${basename}_convex.iv
+      DEPENDS ${it} ${basepath}/convex ${basepath}/convex/${basename}_convex.obj)
+     
+    set(pr2_gen_files ${pr2_gen_files} ${basepath}/${basename}.iv ${basepath}/convex/${basename}_convex.iv)
 
 
   ENDIF ( ${basename} MATCHES "_convex" )
 
 endforeach(it)
 
-add_custom_target(media_files ALL DEPENDS ${pr2urdf} ${pr2robot_expanded} ${prfrobot_expanded} ${prgrobot_expanded} ${pr2prototype1_expanded} ${pr2larm_expanded} ${pr2rarm_expanded} ${pr2lgripper_expanded} ${pr2rgripper_expanded} ${pr2_gen_files})
+add_custom_target(media_files ALL DEPENDS ${pr2urdf} ${pr2robot_expanded} ${prfrobot_expanded} ${prgrobot_expanded} ${pr2prototype1_expanded} ${pr2larm_expanded} ${pr2rarm_expanded} ${pr2lgripper_expanded} ${pr2rgripper_expanded} ${pr2_gen_files} ${pr2_robot_files})
 
 #TODO; stop bin and lib from being generated

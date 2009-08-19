@@ -1,0 +1,67 @@
+<launch>
+
+   <!-- videre_mode should be one of the following:
+         disparity:     Disparity and rectification done on chip.
+                        Provides: Disparity and left mono image
+         disparity_raw: Disparity done on chip (debayer and rectification in software).
+                        Provides: disparity and left color image.
+         none:          No stereo on chip (all processing done in software).
+                        Provides: all 3 images available
+         rectified:     Rectification on chip
+                        Provides: all 3 images available but no color
+          -->
+  <!-- stereo processing parameters
+       texture_thresh:  Threshold for removing bad disparities based on texture
+                        Default value: 30
+       unique_thresh:   Threshold for removing bad disparities based on ambiguity
+                        Default value: 36
+       speckle_diff:    Threshold for region-growing (1/16 pixel disparity)
+                        Default value: 10
+       speckle_size:    Threshold for disparity region size (pixels)
+                        Default value: 100
+       horopter:        X offset for close-in stereo (pixels)
+                        Default value: 0
+       corr_size:       Correlation window size (pixels)
+                        Default value: 15
+       num_disp:        Number of disparities (pixels)
+                        Default value: 64
+       -->
+
+   <node type="stereo_offsetter" pkg="camera_offsetter" name="narrow_stereo_offsetter" output="screen">
+    <!--ap from="~virtual_twist" to="keyboard_twist" /-->
+    <param name="cam_name" type="string" value="/narrow_stereo" />
+    <param name="position_scaling" type="double" value=".000" />
+    <param name="angular_scaling"  type="double" value="0.0" />
+    <param name="config_file" type="string" value="/u/prdata/annotated_maps/hcb_aug_12/calibration/narrow_stereo.offset" />
+    <remap from="/narrow_stereo/raw_stereo" to="/narrow_stereo/raw_stereo_throttle"/>
+  </node>
+
+   <node type="stereo_offsetter" pkg="camera_offsetter" name="narrow_stereo_offsetter2" output="screen">
+    <remap from="~virtual_twist" to="keyboard_twist" />
+    <param name="cam_name" type="string" value="/narrow_stereo_offset" />
+    <param name="position_scaling" type="double" value=".0001" />
+    <param name="angular_scaling"  type="double" value="1.0" />
+    <param name="config_file" type="string" value="/u/prdata/annotated_maps/hcb_aug_12/calibration/narrow_stereo2.offset" />
+  </node>
+      
+
+
+
+  <group ns="narrow_stereo_offset_offset">
+
+
+
+    <node pkg="stereo_image_proc" type="stereoproc" respawn="false" output="screen" name="stereoproc">
+
+        <remap from="raw_stereo" to="/narrow_stereo_offset/raw_stereo"/>
+
+      <param name="videre_mode" type="str" value="none"/>
+      <param name="do_colorize" type="bool" value="True"/>
+      <param name="do_rectify" type="bool" value="True"/>
+      <param name="do_stereo" type="bool" value="True"/>
+      <param name="do_calc_points" type="bool" value="False"/>
+      <param name="do_keep_coords" type="bool" value="False"/>
+      <param name="num_disp" type="int" value="64"/>
+    </node>
+  </group>
+</launch>

@@ -16,15 +16,6 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 #set the default path for built libraries to the "lib" directory
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
-#uncomment if you have defined messages
-#genmsg()
-#uncomment if you have defined services
-#gensrv()
+rospack_add_library(neighborhood_index src/voxel_grid_index.cpp src/linear_index.cpp)
 
-#common commands for building c++ executables and libraries
-#rospack_add_library(${PROJECT_NAME} src/example.cpp)
-#target_link_libraries(${PROJECT_NAME} another_library)
-#rospack_add_boost_directories()
-#rospack_link_boost(${PROJECT_NAME} thread)
-#rospack_add_executable(example examples/example.cpp)
-#target_link_libraries(example ${PROJECT_NAME})
+rospack_add_executable(test_index test/test_index.cpp src/voxel_grid_index.cpp src/linear_index.cpp)

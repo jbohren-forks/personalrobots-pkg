@@ -102,6 +102,13 @@ class SpinImageNormal: public SpinImageGeneric
                     const bool use_interest_regions_only,
                     SpectralAnalysis& spectral_information);
 
+    // --------------------------------------------------------------
+    /*!
+     * \brief Clears any already-computed spectral information
+     */
+    // --------------------------------------------------------------
+    virtual void clearShared();
+
   protected:
     // --------------------------------------------------------------
     /*!

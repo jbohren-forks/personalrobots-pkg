@@ -30,6 +30,7 @@ on the effort/velocity/position of each joint.
 <depend package="rosconsole" />
 <depend package="diagnostic_msgs" />
 <depend package="diagnostic_updater" />
+<depend package="pluginlib" />
 <export>
     <cpp cflags='-I${prefix}/include'
 	 lflags='-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lmechanism_control'/>

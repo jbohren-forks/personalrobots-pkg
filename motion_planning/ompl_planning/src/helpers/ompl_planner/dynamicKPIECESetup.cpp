@@ -36,7 +36,7 @@
 
 #include "ompl_planning/planners/dynamicKPIECESetup.h"
 
-ompl_planning::dynamicKPIECESetup::dynamicKPIECESetup(ModelBase *m) : PlannerSetup(m)
+ompl_planning::dynamicKPIECESetup::dynamicKPIECESetup(void) : PlannerSetup()
 {
     name = "dynamic::KPIECE";	    
     priority = 3;
@@ -52,11 +52,12 @@ ompl_planning::dynamicKPIECESetup::~dynamicKPIECESetup(void)
     }
 }
 
-bool ompl_planning::dynamicKPIECESetup::setup(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
+bool ompl_planning::dynamicKPIECESetup::setup(planning_environment::PlanningMonitor *planningMonitor, const std::string &groupName,
+					      boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
 {
-    preSetup(options);
+    preSetup(planningMonitor, groupName, options);
     
-    ompl::dynamic::KPIECE1 *kpiece = new ompl::dynamic::KPIECE1(dynamic_cast<ompl::dynamic::SpaceInformationControlsIntegrator*>(si));
+    ompl::dynamic::KPIECE1 *kpiece = new ompl::dynamic::KPIECE1(dynamic_cast<ompl::dynamic::SpaceInformationControlsIntegrator*>(ompl_model->si));
     mp                             = kpiece;	
     
     if (options->hasParam("goal_bias"))
@@ -69,12 +70,12 @@ bool ompl_planning::dynamicKPIECESetup::setup(boost::shared_ptr<planning_environ
     
     if (kpiece->getProjectionEvaluator() == NULL)
     {
-	ROS_WARN("Adding %s failed: need to set both 'projection' and 'celldim' for %s", name.c_str(), model->groupName.c_str());
+	ROS_WARN("Adding %s failed: need to set both 'projection' and 'celldim' for %s", name.c_str(), groupName.c_str());
 	return false;
     }
     else
     {
-	postSetup(options);
+	postSetup(planningMonitor, groupName, options);
 	return true;
     }
 }

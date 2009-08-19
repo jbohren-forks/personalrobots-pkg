@@ -49,6 +49,7 @@
 #include <kdl/chain.hpp>
 #include <kdl/frames.hpp>
 #include <kdl/chainjnttojacsolver.hpp>
+#include <angles/angles.h>
 
 /** Messages **/
 #include <geometry_msgs/Wrench.h>
@@ -61,6 +62,9 @@
 #include <motion_planning_msgs/PoseConstraint.h>
 #include <mechanism_msgs/MechanismState.h>
 #include <visualization_msgs/Marker.h>
+#include <geometric_shapes/shapes.h>
+
+#include <robot_voxelizer/robot_voxelizer.h>
 
 /** Services **/
 #include <manipulation_srvs/IKService.h>
@@ -110,6 +114,10 @@ class SBPLArmPlannerNode
       double torso_arm_offset_z_;
 
       double allocated_time_;
+			
+			double waypoint_time_;
+			
+			double grid_origin_[3];
 
       bool lowres_cc_;
 
@@ -130,6 +138,8 @@ class SBPLArmPlannerNode
       bool search_mode_;
 
       bool use_voxel3d_grid_;
+			
+			bool visualize_voxel3d_;
 
       bool use_collision_map_;
 
@@ -162,6 +172,8 @@ class SBPLArmPlannerNode
       std::vector<std::string> joint_names_;
 
       mapping_msgs::CollisionMap collision_map_;
+			
+			mapping_msgs::CollisionMap sbpl_map_;
 
       mapping_msgs::CollisionMap sbpl_collision_map_;
 
@@ -190,8 +202,12 @@ class SBPLArmPlannerNode
       boost::mutex mPlanning_;
 
       bool bPlanning_;
+			
+			RobotVoxelizer robot_voxelizer_;
+			
+			std::vector<btVector3> robot_voxels_;
 
-      sbpl_arm_planner_node::pm_wrapper *pm_;
+      pm_wrapper *pm_;
 
       boost::scoped_ptr<KDL::ChainJntToJacSolver> jnt_to_jac_solver_;
 
@@ -243,8 +259,6 @@ class SBPLArmPlannerNode
 
       void pointCloudCallback(const sensor_msgs::PointCloudConstPtr &point_cloud);
 
-      void dummyCallback(const mechanism_msgs::MechanismStateConstPtr &mechanism_state);
-
 			void jointStatesCallback(const mechanism_msgs::JointStatesConstPtr &joint_states);
 					
       void createOccupancyGrid();
@@ -268,6 +282,19 @@ class SBPLArmPlannerNode
 			void displayExpandedStates();
 
 			void printPath(const motion_planning_msgs::KinematicPath &arm_path);
+			
+			/** Collision Map */ 
+			bool initSelfCollision();
+			void updateSelfCollision();
+			void displayPlanningGrid();
+			
+			/** Temp */
+			std::vector<std::vector<double> > sbpl_obstacles_;
+			
+			bool interpolatePath(std::vector<std::vector<double> > path_in, std::vector<std::vector<double> > &path_out, double inc);
+
+			shapes::Shape *box_;
+			void clearBox();
   };
 }
 

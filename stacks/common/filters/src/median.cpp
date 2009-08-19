@@ -29,13 +29,11 @@
 
 
 #include "filters/median.h"
-#include <pluginlib/plugin_macros.h>
+#include <pluginlib/class_list_macros.h>
 
 
 
-BEGIN_PLUGIN_LIST(filters::MultiChannelFilterBase<double>)
-REGISTER_PLUGIN(filters::MedianFilter<double>)
-END_PLUGIN_LIST
+PLUGINLIB_REGISTER_CLASS(MedianFilterMultiDouble, filters::MedianFilter<double>,filters::MultiChannelFilterBase<double>)
 
 
 

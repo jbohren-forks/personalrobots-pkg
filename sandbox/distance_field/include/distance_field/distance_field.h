@@ -34,33 +34,19 @@
 
 /** \author Mrinal Kalakrishnan */
 
-#ifndef DISTANCE_FIELD_H_
-#define DISTANCE_FIELD_H_
+#ifndef DF_DISTANCE_FIELD_H_
+#define DF_DISTANCE_FIELD_H_
 
 #include <distance_field/voxel_grid.h>
 #include <LinearMath/btVector3.h>
 #include <vector>
 #include <list>
 #include <ros/ros.h>
+#include <visualization_msgs/Marker.h>
+#include <mapping_msgs/CollisionMap.h>
 
 namespace distance_field
 {
-
-/**
- * \brief Structure that holds voxel information for the DistanceField
- */
-struct DistanceFieldVoxel
-{
-  DistanceFieldVoxel();
-  DistanceFieldVoxel(int distance_sq);
-
-  int distance_square_;         /**< Squared distance from the closest obstacle */
-  int location_[3];             /**< Grid location of this voxel */
-  int closest_point_[3];        /**< Closes obstacle from this voxel */
-  int update_direction_;        /**< Direction from which this voxel was updated */
-
-  static const int UNINITIALIZED=-1;
-};
 
 /**
  * \brief A VoxelGrid that can convert a set of obstacle points into a distance field.
@@ -69,8 +55,12 @@ struct DistanceFieldVoxel
  * the closest obstacle in each voxel. Also available is the location of the closest point,
  * and the gradient of the field at a point. Expansion of obstacles is performed upto a given
  * radius.
+ *
+ * This is an abstract base class, current implementations include PropagationDistanceField
+ * and PFDistanceField
  */
-class DistanceField: public VoxelGrid<DistanceFieldVoxel>
+template <typename T>
+class DistanceField: public VoxelGrid<T>
 {
 public:
 
@@ -78,59 +68,144 @@ public:
    * \brief Constructor for the DistanceField
    */
   DistanceField(double size_x, double size_y, double size_z, double resolution,
-      double origin_x, double origin_y, double origin_z, double max_distance);
+      double origin_x, double origin_y, double origin_z, T default_object);
 
   virtual ~DistanceField();
+
+
 
   /**
    * \brief Add (and expand) a set of points to the distance field
    */
-  void addPointsToField(std::vector<btVector3> points);
+  virtual void addPointsToField(const std::vector<btVector3> points)=0;
+
+  /**
+   * \brief Adds the points in a collision map to the distance field
+   */
+  void addCollisionMapToField(const mapping_msgs::CollisionMap &collision_map);
 
   /**
    * \brief Resets the distance field to the max_distance
    */
-  void reset();
+  virtual void reset()=0;
 
   /**
-   * Publishes an iso-surface of the given radius as visualization markers for rviz
+   * \brief Gets the distance to the closest obstacle at the given location
    */
-  void visualize(double radius, std::string frame_id, ros::Time stamp);
+  double getDistance(double x, double y, double z) const;
+
+  /**
+   * \brief Gets the distance at a location and the gradient of the field
+   */
+  //virtual double getDistanceGradient(double x, double y, double z, double& gradient_x, double& gradient_y, double& gradient_z) const;
+
+  /**
+   * \brief Gets the distance to the closest obstacle at the given integer cell location
+   */
+  double getDistanceFromCell(int x, int y, int z) const;
+
+  /**
+   * Publishes an iso-surface containing points between min_radius and max_radius
+   * as visualization markers for rviz
+   */
+  void visualize(double min_radius, double max_radius, std::string frame_id, ros::Time stamp);
+
+protected:
+  virtual double getDistance(const T& object) const=0;
 
 private:
-  std::vector<std::vector<DistanceFieldVoxel*> > bucket_queue_;
-  double max_distance_;
-  int max_distance_sq_;
   ros::Publisher pub_viz_;
-
-  // neighborhoods:
-  // [0] - for expansion of d=0
-  // [1] - for expansion of d>=1
-  // Under this, we have the 27 directions
-  // Then, a list of neighborhoods for each direction
-  std::vector<std::vector<std::vector<std::vector<int> > > > neighborhoods_;
-
-  std::vector<std::vector<int> > direction_number_to_direction_;
-
-  int getDirectionNumber(int dx, int dy, int dz) const;
-  void initNeighborhoods();
-  static int eucDistSq(int* point1, int* point2);
 };
 
-////////////////////////// inline functions follow ////////////////////////////////////////
+//////////////////////////// template function definitions follow //////////////
 
-inline DistanceFieldVoxel::DistanceFieldVoxel(int distance_sq):
-  distance_square_(distance_sq)
+template <typename T>
+DistanceField<T>::~DistanceField()
 {
-    for (int i=0; i<3; i++)
-      closest_point_[i] = DistanceFieldVoxel::UNINITIALIZED;
 
 }
 
-inline DistanceFieldVoxel::DistanceFieldVoxel()
+template <typename T>
+DistanceField<T>::DistanceField(double size_x, double size_y, double size_z, double resolution,
+    double origin_x, double origin_y, double origin_z, T default_object):
+      VoxelGrid<T>(size_x, size_y, size_z, resolution, origin_x, origin_y, origin_z, default_object)
 {
+  ros::NodeHandle node;
+  pub_viz_ = node.advertise<visualization_msgs::Marker>("visualization_marker", 3);
 }
 
+template <typename T>
+double DistanceField<T>::getDistance(double x, double y, double z) const
+{
+  return getDistance((*this)(x,y,z));
 }
 
-#endif /* DISTANCE_FIELD_H_ */
+template <typename T>
+double DistanceField<T>::getDistanceFromCell(int x, int y, int z) const
+{
+  return getDistance(this->getCell(x,y,z));
+}
+
+template <typename T>
+void DistanceField<T>::visualize(double min_radius, double max_radius, std::string frame_id, ros::Time stamp)
+{
+  visualization_msgs::Marker inf_marker; // Marker for the inflation
+  inf_marker.header.frame_id = frame_id;
+  inf_marker.header.stamp = stamp;
+  inf_marker.ns = "distance_field";
+  inf_marker.id = 1;
+  inf_marker.type = visualization_msgs::Marker::CUBE_LIST;
+  inf_marker.action = 0;
+  inf_marker.scale.x = this->resolution_[VoxelGrid<T>::DIM_X];
+  inf_marker.scale.y = this->resolution_[VoxelGrid<T>::DIM_Y];
+  inf_marker.scale.z = this->resolution_[VoxelGrid<T>::DIM_Z];
+  inf_marker.color.r = 1.0;
+  inf_marker.color.g = 0.0;
+  inf_marker.color.b = 0.0;
+  inf_marker.color.a = 0.1;
+  inf_marker.lifetime = ros::Duration(30.0);
+
+  inf_marker.points.reserve(100000);
+  for (int x = 0; x < this->num_cells_[VoxelGrid<T>::DIM_X]; ++x)
+  {
+    for (int y = 0; y < this->num_cells_[VoxelGrid<T>::DIM_Y]; ++y)
+    {
+      for (int z = 0; z < this->num_cells_[VoxelGrid<T>::DIM_Z]; ++z)
+      {
+        double dist = getDistanceFromCell(x,y,z);
+        if (dist >= min_radius && dist <= max_radius)
+        {
+          int last = inf_marker.points.size();
+          inf_marker.points.resize(last + 1);
+          this->gridToWorld(x,y,z,
+                      inf_marker.points[last].x,
+                      inf_marker.points[last].y,
+                      inf_marker.points[last].z);
+        }
+      }
+    }
+  }
+  ROS_DEBUG("Publishing markers: %d inflated", inf_marker.points.size());
+  pub_viz_.publish(inf_marker);
+}
+
+template <typename T>
+void DistanceField<T>::addCollisionMapToField(const mapping_msgs::CollisionMap &collision_map)
+{
+  size_t num_boxes = collision_map.boxes.size();
+  std::vector<btVector3> points;
+  points.reserve(num_boxes);
+  for (size_t i=0; i<num_boxes; ++i)
+  {
+    points.push_back(btVector3(
+        collision_map.boxes[i].center.x,
+        collision_map.boxes[i].center.y,
+        collision_map.boxes[i].center.z
+        ));
+  }
+  addPointsToField(points);
+}
+
+
+}
+#endif /* DF_DISTANCE_FIELD_H_ */

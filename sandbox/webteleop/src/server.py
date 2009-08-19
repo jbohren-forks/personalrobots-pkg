@@ -24,6 +24,8 @@ import rosjson
 from tf import *
 import bullet
 
+import roslaunch
+import roslaunch.pmon
 import wg_hardware_roslaunch.roslaunch_caller as roslaunch_caller
 
 from nav_msgs import *
@@ -472,27 +474,15 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
     if cmd == "startup":
       print "Startup[%s]" % topic
 
+      self.send_response(200)
+      self.send_header( "Content-type", "text/html" )
+      self.end_headers()
+      self.wfile.write("started")
+
       robot = commands.getoutput('hostname')
 
       if rosCoreUp == False:
-        print "***************************************************************"
-        print "***************************************************************"
-        print "***************************************************************"
-        print "Launching core..."
-        print "***************************************************************"
-        print "***************************************************************"
-        print "***************************************************************"
-
         core_launcher = roslaunch_caller.launch_core()
-
-        print "***************************************************************"
-        print "***************************************************************"
-        print "***************************************************************"
-        print "done"
-        print "***************************************************************"
-        print "***************************************************************"
-        print "***************************************************************"
-
 
         time.sleep(5)
         
@@ -508,21 +498,16 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
         launchers[startupScript] = launch
         time.sleep(20)
 
-        launch = launchScript(scriptDir + '2dnav_pr2.launch')
-        launchers['2dnav_pr2.launch'] = launch
-        time.sleep(10)
-
+        #launch = launchScript(scriptDir + '2dnav_pr2.launch')
+        #launchers['2dnav_pr2.launch'] = launch
+        #time.sleep(20)
+ 
       rospy.init_node(CALLER_ID, disable_signals=True)
       time.sleep(1)
 
       if tfclient == None:
-        tfclient = TransformListener()
-
-      self.send_response(200)
-      self.send_header( "Content-type", "text/html" )
-      self.end_headers()
-      self.wfile.write("started")
-
+       tfclient = TransformListener()
+      
     elif cmd == "shutdown":
       print "Shutdown[%s]" % topic
 

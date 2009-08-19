@@ -190,9 +190,10 @@ class CvOneWayDescriptorObject : public CvOneWayDescriptorBase
         void Allocate(int train_feature_count, int object_feature_count);
         
         
-        void SetLabeledFeatures(const Vector<KeyPointEx>& features) {m_train_features = features;};
-        Vector<KeyPointEx>& GetLabeledFeatures() {return m_train_features;};
-        const Vector<KeyPointEx>& GetLabeledFeatures() const {return m_train_features;};
+        void SetLabeledFeatures(const vector<KeyPointEx>& features) {m_train_features = features;};
+        vector<KeyPointEx>& GetLabeledFeatures() {return m_train_features;};
+        const vector<KeyPointEx>& GetLabeledFeatures() const {return m_train_features;};
+        vector<feature_t> _GetLabeledFeatures() const;
         
         // IsDescriptorObject: returns 1 if descriptor with specified index is positive, otherwise 0
         int IsDescriptorObject(int desc_idx) const;
@@ -204,16 +205,17 @@ class CvOneWayDescriptorObject : public CvOneWayDescriptorBase
         // - desc_idx: descriptor index
         int GetDescriptorPart(int desc_idx) const;
         
-        // GetTrainFeatures: returns a set of training features
-        const Vector<KeyPointEx>& GetTrainFeatures() const {return m_train_features;};
-        vector<feature_t> _GetTrainFeatures() const;
         
         void InitializeObjectDescriptors(IplImage* train_image, const Vector<KeyPointEx>& features, 
-                                         const char* feature_label, int desc_start_idx = 0, float scale = 1.0f);
+                                         const char* feature_label, int desc_start_idx = 0, float scale = 1.0f, 
+                                        int is_background = 0);
+    
+        // GetObjectFeatureCount: returns the number of object features
+        int GetObjectFeatureCount() const {return m_object_feature_count;};
         
     protected:
         int* m_part_id; // contains part id for each of object descriptors
-        Vector<KeyPointEx> m_train_features; // train features
+        vector<KeyPointEx> m_train_features; // train features
         int m_object_feature_count; // the number of the positive features
         
 };

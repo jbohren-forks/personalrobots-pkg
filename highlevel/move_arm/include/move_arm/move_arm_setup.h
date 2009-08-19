@@ -76,6 +76,7 @@ namespace move_arm
     class MoveArmSetup
     {
 	friend class MoveArm;
+	friend class TeleopArm;
 	
     public:
 	
@@ -107,8 +108,6 @@ namespace move_arm
 	
 	std::string                            group_;
 	std::vector<std::string>               groupJointNames_;
-	bool                                   perform_ik_;
-	bool                                   show_collisions_;
 	
     };
     

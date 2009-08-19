@@ -1,0 +1,40 @@
+collision_clearance: 0.08
+
+collision_links:
+  r_gripper_l_finger_link:
+    link_radius: 0.03
+    link_clearance: 0.10
+    link_extension: 0.05
+  r_gripper_r_finger_link:
+    link_radius: 0.03
+    link_clearance: 0.10
+    link_extension: 0.05
+  r_gripper_palm_link:
+    link_radius: 0.05
+    link_clearance: 0.10
+  r_forearm_link:
+    link_radius: 0.065
+    link_clearance: 0.08
+  r_upper_arm_link:
+    link_radius: 0.07
+    link_clearance: 0.08
+
+reference_frame: base_link
+
+collision_space:
+  size_x: 1.2
+  size_y: 2.0
+  size_z: 2.2
+  origin_x: -0.1
+  origin_y: -1.5
+  origin_z: -0.3
+  resolution: 0.01
+  cuboids:
+    cuboid1:
+      size_x: 0.6
+      size_y: 0.6
+      size_z: 0.3
+      origin_x: -0.3
+      origin_y: -0.3
+      origin_z: 0.0
+      

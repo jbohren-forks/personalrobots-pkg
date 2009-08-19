@@ -42,6 +42,7 @@
 #include <chomp_motion_planner/chomp_robot_model.h>
 #include <chomp_motion_planner/chomp_cost.h>
 #include <chomp_motion_planner/chomp_collision_space.h>
+#include <chomp_motion_planner/multivariate_gaussian.h>
 
 #include <Eigen/Core>
 
@@ -99,6 +100,12 @@ private:
   double best_group_trajectory_cost_;
   int last_improvement_iteration_;
 
+  // HMC stuff:
+  Eigen::MatrixXd momentum_;
+  Eigen::MatrixXd random_momentum_;
+  Eigen::VectorXd random_joint_momentum_; //temporary variable
+  std::vector<MultivariateGaussian> multivariate_gaussian_;
+
   std::vector<int> state_is_in_collision_;      /**< Array containing a boolean about collision info for each point in the trajectory */
   std::vector<std::vector<int> > point_is_in_collision_;
   bool is_collision_free_;
@@ -119,6 +126,7 @@ private:
   void initialize();
   void calculateSmoothnessIncrements();
   void calculateCollisionIncrements();
+  void calculateTotalIncrements();
   void performForwardKinematics();
   void addIncrementsToTrajectory();
   void updateFullTrajectory();
@@ -131,6 +139,9 @@ private:
   double getSmoothnessCost();
   double getCollisionCost();
   void perturbTrajectory();
+  void getRandomMomentum();
+  void updateMomentum();
+  void updatePositionFromMomentum();
 
 };
 

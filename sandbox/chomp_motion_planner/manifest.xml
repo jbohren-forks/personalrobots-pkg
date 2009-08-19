@@ -19,6 +19,7 @@
   <depend package="visualization_msgs" />
   <depend package="voxel3d" />
   <depend package="tf" />
+  <depend package="distance_field" />
 
  <export>
     <cpp cflags="-I${prefix}/include -I${prefix}/srv/cpp  -I${prefix}/msg/cpp"/>

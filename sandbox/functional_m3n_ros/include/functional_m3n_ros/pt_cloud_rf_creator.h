@@ -40,23 +40,18 @@
 
 #include <sensor_msgs/PointCloud.h>
 
-#include <point_cloud_clustering/kmeans.h>
+#include <point_cloud_clustering/all_clusterings.h>
 
-#include <point_cloud_mapping/kdtree/kdtree.h>
-#include <point_cloud_mapping/kdtree/kdtree_ann.h>
-
-//#include <new_descriptors_3d/all_descriptors.h>
 #include <descriptors_3d/all_descriptors.h>
 
 #include <functional_m3n/random_field.h>
 
+#include <object_segmentation/util/rf_creator_3d.h>
+
 class PtCloudRFCreator
 {
   public:
-    PtCloudRFCreator()
-    {
-      nbr_clique_sets_ = 2;
-    }
+    PtCloudRFCreator();
 
     boost::shared_ptr<RandomField> createRandomField(const sensor_msgs::PointCloud& pt_cloud);
 
@@ -64,26 +59,7 @@ class PtCloudRFCreator
                                                      const std::vector<float>& labels);
 
   private:
-    void createDescriptors();
-
-    void createNodes(RandomField& rf,
-                     const sensor_msgs::PointCloud& pt_cloud,
-                     cloud_kdtree::KdTree& pt_cloud_kdtree,
-                     const std::vector<float>& labels,
-                     std::set<unsigned int>& successful_indices);
-
-    void createCliqueSet(RandomField& rf,
-                         const sensor_msgs::PointCloud& pt_cloud,
-                         cloud_kdtree::KdTree& pt_cloud_kdtree,
-                         const std::set<unsigned int>& node_indices,
-                         const unsigned int clique_set_idx);
-
-    unsigned int nbr_clique_sets_;
-    std::vector<Descriptor3D*> node_feature_descriptors_;
-    std::vector<std::vector<Descriptor3D*> > clique_set_feature_descriptors_;
-    // use only nodes for clustering
-    std::vector<std::vector<std::pair<bool, point_cloud_clustering::PointCloudClustering*> > >
-        clique_set_clusterings_;
+    RFCreator3D* rf_creator_3d_;
 };
 
 #endif

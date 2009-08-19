@@ -9,6 +9,7 @@
 
   <depend package="kdl_parser"/>
   <depend package="rospy"/>
+  <depend package="controller_interface" />
   <depend package="mechanism_model" />
   <depend package="mechanism_control" />
   <depend package="control_toolbox" />
@@ -28,10 +29,13 @@
   <depend package="filters" />
   <depend package="manipulation_srvs" />
   <depend package="robot_mechanism_controllers" />
+  <depend package="pr2_mechanism_controllers" />
+  <depend package="geometry_msgs" />
 
   <export>
     <cpp cflags="-I${prefix}/include -I${prefix}/msg/cpp -I${prefix}/srv/cpp"
 	 lflags="-Wl,-rpath,${prefix}/lib/ -L${prefix}/lib -lexperimental_controllers" />
+   <controller_interface controller="${prefix}/controller_plugins.xml" />
   </export>
   <sysdepend os="ubuntu" version="8.04-hardy" package="libltdl3-dev"/>
   <rosdep name="libtool"/>

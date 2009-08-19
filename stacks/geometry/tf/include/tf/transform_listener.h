@@ -44,6 +44,9 @@
 
 namespace tf{
 
+/** \brief remap names \todo document me */
+std::string remap(const std::string& frame_id);
+
 /** \brief This class inherits from Transformer and automatically subscribes to ROS transform messages */
 class TransformListener : public Transformer { //subscribes to message and automatically stores incoming data
 

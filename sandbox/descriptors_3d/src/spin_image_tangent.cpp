@@ -69,6 +69,14 @@ SpinImageTangent::SpinImageTangent(const double row_res,
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
+void SpinImageTangent::clearShared()
+{
+  spectral_information_->clearSpectral();
+}
+
+// --------------------------------------------------------------
+/* See function definition */
+// --------------------------------------------------------------
 int SpinImageTangent::precompute(const sensor_msgs::PointCloud& data,
                                  cloud_kdtree::KdTree& data_kdtree,
                                  const cv::Vector<const geometry_msgs::Point32*>& interest_pts)

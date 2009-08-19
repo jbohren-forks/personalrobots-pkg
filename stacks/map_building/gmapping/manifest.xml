@@ -1,9 +1,8 @@
 <package>
 <description brief="GMapping">
-This package contains GMapping, from OpenSlam, with a ROS wrapper.  This
-package builds a binary, slam_gmapping, which can be used in a ROS system
-to provide a running pose estimate and an occupany grid map, given
-pose-stamped laser scans.
+
+This package contains GMapping, from OpenSlam, and a ROS wrapper. The gmapping package provides laser-based SLAM (Simultaneous Localization and Mapping), as a ROS node called slam_gmapping. Using slam_gmapping, you can create a 2-D occupancy grid map (like a building floorplan) from laser and pose data collected by a mobile robot.
+
 </description>
 <author>Giorgio Grisetti, Cyrill Stachniss, Wolfram Burgard; ROS wrapper by
 Brian Gerkey</author>

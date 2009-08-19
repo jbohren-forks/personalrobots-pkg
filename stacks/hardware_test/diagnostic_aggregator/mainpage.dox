@@ -7,7 +7,7 @@
 
 \section codeapi Code API
 
-The aggregator loads "analyzers" which perform analysis on the incoming diagnostics data. Each analyzer is initialized by an XML node by the aggregator.
+The DiagnosticAggregator class loads "analyzers" which perform analysis on the incoming diagnostics data. Each analyzer is initialized by an XML node by the aggregator.
 
 All analyzers work by grouping diagnostics data by status name. Each group is pushed into a namespace using '/'. For example:
 \verbatim
@@ -18,74 +18,57 @@ All analyzers work by grouping diagnostics data by status name. Each group is pu
 
 Forms a tree with the trunk "Robot" and the child branch "Motors" and the grandchild "EtherCAT Device (head_tilt_motor)". This allows graphical display of diagnostics data.
 
-Analyzers can choose the error state for the parents. It should be related to the state of the children, but can follow any rule.
-
 The aggregator will publish the DiagnosticArray on the /diagnostics_agg topic at 1 Hz.
 
+\subsection analyzers Analyzers
+
+The DiagnosticAggregator will create analyzers to store and process the diagnostic data. Each analyzer inherits from the base class diagnostic_analyzer/DiagnosticAnalyzer. Analyzers should be in packages that depend directly on "pluginlib", "diagnostic_aggregator", and "diagnostic_analyzer". 
+
+See the DiagnosticAnalyzer base class and the example generic_analyzer/GenericAnalyzer for more information.
+
+\subsubsecion analyzer_behavior Analyzer Behavior
+
+Analyzers can choose the error state for the parents. It should be related to the state of the children, but can follow any rule. The header ("/Robot" above) will have the diagnostic level of the greatest of its immediate children, so an error in "Motors" will give an error in "Robot".
 
 \section rosapi ROS API
 
 Nodes:
-- \b diagnostic_aggregator
-
-
-<!-- START: copy from here to 'END' for each node 
+- \b aggregator_node
+- \b py_agg_node.py (Don't use)
 
 <hr>
 
-\subsection diagnostic_aggregator diagnostic_aggregator
+\subsection aggregator_node aggregator_node
 
-diagnostic_aggregator subscribes to "/diagnstics" and publishes an aggregated set of data to "/diagnostics_agg"
+aggregator_node subscribes to "/diagnstics" and publishes an aggregated set of data to "/diagnostics_agg"
 
 \subsubsection Usage
 \verbatim
-$ diagnostic_aggregator -p Robot -f '$(find diagnostic_aggregator)/test/robot_analyzers.xml'
+$ aggregator_node Robot
 \endverbatim
 
 \par Example
 
-Using the above usage, the diagnostic aggregator will spawn analyzers that group the robot's data by category. The analyzer code is as follows:
-
+Using the above usage, the diagnostic aggregator will spawn analyzers that group the robot's data by category. The analyzer parameters are as follows:
 \verbatim
-<aggregator>
-  <analyzer type="GenericAnalyzer" pkg="diagnostic_aggregator" 
-            file="generic_analyzer"       prefix="Motors" >
-    <topic startswith="EtherCAT" />
-    <topic startswith="Power Node" />
-  </analyzer>
-
-  <analyzer type="GenericAnalyzer" pkg="diagnostic_aggregator"
-            file="generic_analyzer"       prefix="Joints" >
-    <topic startswith="Joint" />
-  </analyzer>
-  <analyzer type="GenericAnalyzer" pkg="diagnostic_aggregator"
-            file="generic_analyzer"       prefix="Computers" >
-    <topic contains="CPU Temp" />
-    <topic contains="HD Temp" />
-    <topic contains="HD Usage" />
-    <topic contains="CPU Usage" />
-    <topic contains="CPU Temp" />
-    <topic contains="NFS I/O" />
-    <topic contains="NTP" />
-  </analyzer>
-
-  <analyzer type="GenericAnalyzer" pkg="diagnostic_aggregator"
-            file="generic_analyzer"       prefix="Sensors" >
-    <topic contains="prosilica" />
-    <topic contains="hokuyo" />
-  </analyzer>
-
-</aggregator>
+sensors:
+  type: GenericAnalyzer
+  prefix: Sensors
+  contains: [
+    'hokuyo']
+motors:
+  type: PR2MotorsDiagnosticAnalyzer
+joints:
+  type: PR2JointsDiagnosticAnalyzer
+other:
+  type: GenericAnalyzer
+  other: true
 \endverbatim
+Each analyzer is started with a namespace, and must have the parameter "type" in that namespace. Analyzers are loaded as plugins with "pluginlib" and inherit from the base class diagnostic_analyzer/DiagnosticAnalyzer. 
 
-Analyzers are dynamically loaded by the aggregator. The 'type', 'pkg', 'file'
-and 'prefix' fields are mandatory, and are used to intialize the aggregator.
+An analyzer with the namespace "other" will be called last so that it can process only data that hasn't been handled by other analyzers.
 
-- \b type : Class name of analyzer
-- \b pkg : ROS-PKG location of analyzer
-- \b file : File name of analyzer. Must be in src/PKG_NAME path
-- \b prefix : Prepended to all analyzed topics, used to group together
-
+If any analyzer is not properly specified, or returns false on initialization, the aggregator program will exit.
 
 \subsubsection topics ROS topics
 
@@ -95,7 +78,11 @@ Subscribes to:
 Publishes to:
 - \b "/diagnostics_agg": [diagnostics_msgs/DiagnosticArray] 
 
+\subsubsection parameters ROS parameters
 
+Reads the following parameters from the parameter server
+
+- \b "~" : \b [YAML instructions] Instructions, like in the above example, for loading analyzers.
 
 
 */

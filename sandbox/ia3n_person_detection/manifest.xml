@@ -1,0 +1,17 @@
+<package>
+  <description>
+  Ian Goodfellow's sandbox person detection code
+  </description>
+  <author>Ian Goodfellow</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <depend package="opencv_latest"/>
+  <depend package="std_msgs"/>
+  <depend package="std_srvs"/>
+  <depend package="sensor_msgs"/>
+  <depend package="visualization_msgs"/>
+  <depend package="roscpp"/>
+  <depend package="topic_synchronizer"/>
+  <depend package="color_calib"/>
+  <depend package="stereo_utils"/>
+</package>

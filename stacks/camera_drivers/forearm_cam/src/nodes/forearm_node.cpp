@@ -957,7 +957,8 @@ private:
 
   int publishImage(size_t width, size_t height, uint8_t *frameData, ros::Time t)
   {
-    fillImage(image_, sensor_msgs::image_encodings::TYPE_8UC1, height, width, width, frameData);
+    // Raw data is bayer BGGR pattern
+    fillImage(image_, sensor_msgs::image_encodings::BAYER_BGGR8, height, width, width, frameData);
     
     image_.header.stamp = t;
     cam_pub_.publish(image_);

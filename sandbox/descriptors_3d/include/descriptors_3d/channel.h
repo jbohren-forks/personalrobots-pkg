@@ -78,6 +78,14 @@ class Channel: public Descriptor3D
     // --------------------------------------------------------------
     Channel(const std::string& channel_name);
 
+    // --------------------------------------------------------------
+    /*!
+     * \brief This descriptor uses no shared precomputation, so this method
+     *        has no affect
+     */
+    // --------------------------------------------------------------
+    virtual void clearShared();
+
   protected:
     // --------------------------------------------------------------
     /*!

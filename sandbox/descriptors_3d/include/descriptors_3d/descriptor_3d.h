@@ -83,6 +83,15 @@ class Descriptor3D
 
     // --------------------------------------------------------------
     /*!
+     * \brief Clears the shared information this Descriptor3D is using
+     *        so the information is computed from scratch on the next
+     *        compute() call
+     */
+    // --------------------------------------------------------------
+    virtual void clearShared() = 0;
+
+    // --------------------------------------------------------------
+    /*!
      * \brief Computes feature values for each specified interest point
      *
      * See the inherited class constructor for the type of features computed
@@ -142,6 +151,9 @@ class Descriptor3D
      * \brief Utility function to compute multiple descriptor feature around
      *        interest points and concatenate the results into a single vector
      *
+     * This method clears out any pre-computed shared information among the
+     * descriptors before calculating the new features.
+     *
      * \param data See Descriptor3D::compute
      * \param data_kdtree See Descriptor3D::compute
      * \param interest_pts See Descriptor3D::compute
@@ -149,8 +161,6 @@ class Descriptor3D
      * \param concatenated_features List containing the concatenated features from the descriptors if
      *                              they were ALL successful for the interest point.  If one descriptor
      *                              failed for interest point i, then concatenated_features[i].get() == NULL
-     * \param successful_indices The indices into interest_region_indices where features were
-     *                           successfully computed
      *
      * \return The total number of concatenated feature values
      */
@@ -160,13 +170,14 @@ class Descriptor3D
                              cloud_kdtree::KdTree& data_kdtree,
                              const cv::Vector<const geometry_msgs::Point32*>& interest_pts,
                              std::vector<Descriptor3D*>& descriptors_3d,
-                             std::vector<boost::shared_array<const float> >& concatenated_features,
-                             std::set<unsigned int>& successful_indices);
-
+                             std::vector<boost::shared_array<const float> >& concatenated_features);
     // --------------------------------------------------------------
     /*!
      * \brief Utility function to compute multiple descriptor feature around
      *        interest regions and concatenate the results into a single vector
+     *
+     * This method clears out any pre-computed shared information among the
+     * descriptors before calculating the new features.
      *
      * \param data See Descriptor3D::compute
      * \param data_kdtree See Descriptor3D::compute
@@ -175,8 +186,6 @@ class Descriptor3D
      * \param concatenated_features List containing the concatenated features from the descriptors if
      *                              they were ALL successful for the interest region.  If one descriptor
      *                              failed for interest region i, then concatenated_features[i].get() == NULL
-     * \param successful_indices The indices into interest_region_indices where features were
-     *                           successfully computed
      *
      * \return The total number of concatenated feature values
      */
@@ -186,8 +195,7 @@ class Descriptor3D
                              cloud_kdtree::KdTree& data_kdtree,
                              const cv::Vector<const std::vector<int>*>& interest_region_indices,
                              std::vector<Descriptor3D*>& descriptors_3d,
-                             std::vector<boost::shared_array<const float> >& concatenated_features,
-                             std::set<unsigned int>& successful_indices);
+                             std::vector<boost::shared_array<const float> >& concatenated_features);
     //@}
 
   protected:
@@ -266,16 +274,13 @@ class Descriptor3D
      *                              each descriptor
      * \param concatenated_features The concatenated features.  NULL indicates could not
      *                              successfully compute descriptor for sample
-     * \param successful_indices The indices in concatenated_features that contain
-     *                           computed features
      */
     // --------------------------------------------------------------
     static void
     concatenateFeatures(const std::vector<cv::Vector<cv::Vector<float> > >& all_descriptor_results,
                         const unsigned int nbr_samples,
                         const unsigned int nbr_concatenated_vals,
-                        std::vector<boost::shared_array<const float> >& concatenated_features,
-                        std::set<unsigned int>& successful_indices);
+                        std::vector<boost::shared_array<const float> >& concatenated_features);
 };
 
 #endif

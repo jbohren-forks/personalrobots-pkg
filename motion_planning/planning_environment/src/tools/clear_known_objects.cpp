@@ -65,6 +65,7 @@ public:
 	    nh_.param<std::string>("~fixed_frame", fixed_frame_, kmsm_->getFrameId());
 	    nh_.param<double>("~object_scale", scale_, 1.0);
 	    nh_.param<double>("~object_padd", padd_, 0.02);
+	    nh_.param<std::string>("~sensor_frame", sensor_frame_, std::string());
 	    
 	    ROS_INFO("Clearing points on known objects using '%s' as fixed frame, %f padding and %f scaling", fixed_frame_.c_str(), padd_, scale_);
 	    
@@ -183,6 +184,24 @@ private:
 	    cloudTransf = &temp;
 	}
 	
+	btVector3 sensor_pos(0, 0, 0);
+	
+	// compute the origin of the sensor in the frame of the cloud
+	if (!sensor_frame_.empty())
+	{
+	    try
+	    {
+		tf::Stamped<btTransform> transf;
+		tf_.lookupTransform(fixed_frame_, sensor_frame_, cloudTransf->header.stamp, transf);
+		sensor_pos = transf.getOrigin();
+	    }
+	    catch(...)
+	    {
+		sensor_pos.setValue(0, 0, 0);
+		ROS_ERROR("Unable to lookup transform from %s to %s", sensor_frame_.c_str(), fixed_frame_.c_str());
+	    }
+	}
+	
 	// compute mask for cloud
 	int n = cloud.points.size();
 	mask.resize(n);
@@ -191,16 +210,18 @@ private:
 	for (int i = 0 ; i < n ; ++i)
 	{
 	    btVector3 pt = btVector3(cloudTransf->points[i].x, cloudTransf->points[i].y, cloudTransf->points[i].z);
+	    btVector3 dir(sensor_pos - pt);
+	    dir.normalize();
 	    int out = 1;
 	    
 	    for (unsigned int j = 0 ; out && j < attachedObjects_.size() ; ++j)
 		if (attachedObjects_[j].bsphere.center.distance2(pt) < attachedObjects_[j].rsquare)
-		    if (attachedObjects_[j].body->containsPoint(pt))
+		    if (attachedObjects_[j].body->containsPoint(pt) || attachedObjects_[j].body->intersectsRay(pt, dir))
 			out = 0;
 
 	    for (std::map<std::string, KnownObject>::iterator it = objectsInMap_.begin() ; out && it != objectsInMap_.end() ; ++it)
 		if (it->second.bsphere.center.distance2(pt) < it->second.rsquare)
-		    if (it->second.body->containsPoint(pt))
+		    if (it->second.body->containsPoint(pt) || it->second.body->intersectsRay(pt, dir))
 			out = 0;
 	    
 	    mask[i] = out;
@@ -346,6 +367,7 @@ private:
     boost::mutex                                                 updateObjects_;
     ros::Publisher                                               cloudPublisher_;    
 
+    std::string                                                  sensor_frame_;
     double                                                       scale_;
     double                                                       padd_;
     std::vector<planning_models::KinematicModel::AttachedBody*>  attached_;

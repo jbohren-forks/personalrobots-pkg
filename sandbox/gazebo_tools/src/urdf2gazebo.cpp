@@ -452,15 +452,12 @@ void URDF2Gazebo::convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, 
                 btVector3 rotatedJointAxis = currentTransformCopy * btVector3( link->joint->axis[0], link->joint->axis[1], link->joint->axis[2] );
                 double rotatedJointAxisArray[3] = { rotatedJointAxis.x(), rotatedJointAxis.y(), rotatedJointAxis.z() };
                 addKeyValue(joint, "axis", values2str(3, rotatedJointAxisArray));
-                
-                double tmpAnchor[3];
-                
-                for (int j = 0 ; j < 3 ; ++j)
-                {
-                    // undo Gazebo's shift of object anchor to geom cg center, stay in body cs
-                    tmpAnchor[j] = (link->joint->anchor)[j]; // - (link->inertial->com)[j] - 0*(link->collision->xyz)[j];
-                }
-                
+ 
+                btTransform currentAnchorTransform( currentTransform ); 
+                currentAnchorTransform.setOrigin( btVector3(0, 0, 0) ); 
+                btVector3 jointAnchor = currentAnchorTransform * btVector3( link->joint->anchor[0], link->joint->anchor[1], link->joint->anchor[2] ); 
+                double tmpAnchor[3] =  { jointAnchor.x(), jointAnchor.y(), jointAnchor.z() };
+
                 addKeyValue(joint, "anchorOffset", values2str(3, tmpAnchor));
                 
                 if (enforce_limits && link->joint->isSet["limit"])

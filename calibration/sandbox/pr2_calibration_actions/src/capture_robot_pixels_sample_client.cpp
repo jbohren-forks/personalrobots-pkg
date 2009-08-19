@@ -37,10 +37,52 @@
 #include <pr2_calibration_actions/CaptureRobotPixelsAction.h>
 #include <pr2_calibration_actions/robot_pixels_capture.h>
 
+
+#include <move_arm/MoveArmAction.h>
+
 using namespace pr2_calibration_actions;
 
 
-RobotPixelsConfig buildCommand()
+
+move_arm::MoveArmGoal buildArmCommand()
+{
+  move_arm::MoveArmGoal goal;
+  goal.goal_constraints.joint_constraint.resize(7);
+
+  for (unsigned int i=0; i<goal.goal_constraints.joint_constraint.size(); i++)
+  {
+    goal.goal_constraints.joint_constraint[i].value.resize(1);
+    goal.goal_constraints.joint_constraint[i].tolerance_above.resize(1);
+    goal.goal_constraints.joint_constraint[i].tolerance_below.resize(1);
+    goal.goal_constraints.joint_constraint[i].tolerance_above[0] = 0.001;
+    goal.goal_constraints.joint_constraint[i].tolerance_below[0] = 0.001;
+  }
+
+  goal.goal_constraints.joint_constraint[0].joint_name         = "r_shoulder_pan_joint";
+  goal.goal_constraints.joint_constraint[0].value[0]           = 0.0;
+
+  goal.goal_constraints.joint_constraint[1].joint_name         = "r_shoulder_lift_joint";
+  goal.goal_constraints.joint_constraint[1].value[0]           = 0.0;
+
+  goal.goal_constraints.joint_constraint[2].joint_name         = "r_upper_arm_roll_joint";
+  goal.goal_constraints.joint_constraint[2].value[0]           = 0.0;
+
+  goal.goal_constraints.joint_constraint[3].joint_name         = "r_elbow_flex_joint";
+  goal.goal_constraints.joint_constraint[3].value[0]           = 0.0;
+
+  goal.goal_constraints.joint_constraint[4].joint_name         = "r_forearm_roll_joint";
+  goal.goal_constraints.joint_constraint[4].value[0]           = 0.0;
+
+  goal.goal_constraints.joint_constraint[5].joint_name         = "r_wrist_flex_joint";
+  goal.goal_constraints.joint_constraint[5].value[0]           = 0.1;
+
+  goal.goal_constraints.joint_constraint[6].joint_name         = "r_wrist_roll_joint";
+  goal.goal_constraints.joint_constraint[6].value[0]           = 0.0;
+
+  return goal;
+}
+
+RobotPixelsConfig buildCaptureCommand()
 {
   RobotPixelsConfig config;
 
@@ -102,12 +144,12 @@ RobotPixelsConfig buildCommand()
   return config;
 }
 
-void activeCallback()
+void activeCaptureCallback()
 {
-  ROS_INFO("Request transitioned to ACTIVE!");
+  ROS_INFO("Capture Request transitioned to ACTIVE!");
 }
 
-void feedbackCallback(const CaptureRobotPixelsFeedbackConstPtr& feedback)
+void feedbackCaptureCallback(const CaptureRobotPixelsFeedbackConstPtr& feedback)
 {
   printf("%s:\n", feedback->feedback.joint_states_channel.channel_name.c_str());
   for (unsigned int i=0; i<feedback->feedback.joint_states_channel.ranges.size(); i++)
@@ -125,9 +167,74 @@ void feedbackCallback(const CaptureRobotPixelsFeedbackConstPtr& feedback)
   }
 }
 
-void doneCallback(const actionlib::TerminalState& terminal_state, const CaptureRobotPixelsResultConstPtr& result)
+void doneCaptureCallback(const actionlib::TerminalState& terminal_state, const CaptureRobotPixelsResultConstPtr& result)
 {
-  ROS_INFO("DONE! With terminal_state [%s]", terminal_state.toString().c_str());
+  ROS_INFO("Capture DONE! With terminal_state [%s]", terminal_state.toString().c_str());
+}
+
+void activeArmCallback()
+{
+  ROS_INFO("Arm Request transitioned to ACTIVE!");
+}
+
+
+void feedbackArmCallback(const move_arm::MoveArmFeedbackConstPtr& feedback)
+{
+  ROS_INFO("Got move arm feedback");
+}
+
+void doneArmCallback(const actionlib::TerminalState& terminal_state, const move_arm::MoveArmResultConstPtr& result)
+{
+  ROS_INFO("Arm DONE! With terminal_state [%s]", terminal_state.toString().c_str());
+}
+
+void execThread()
+{
+  ros::NodeHandle nh;
+
+  actionlib::SimpleActionClient<move_arm::MoveArmAction> arm_client(nh, "move_right_arm");
+  actionlib::SimpleActionClient<CaptureRobotPixelsAction> capture_client(nh, "capture_robot_pixels");
+
+  ROS_INFO("Waiting 10s for [move_rarm] to come up");
+  sleep(1);
+  if (arm_client.waitForActionServerToStart(ros::Duration(10,0)))
+    ROS_INFO("[move_rarm] started");
+  else
+  {
+    ROS_ERROR("[move_rarm] is not started");
+    return;
+  }
+
+  move_arm::MoveArmGoal arm_goal = buildArmCommand();
+  arm_client.sendGoal(arm_goal, &doneArmCallback, &activeArmCallback, &feedbackArmCallback);
+
+  ROS_INFO("Waiting 20s for arm command to finish");
+  if (arm_client.waitForGoalToFinish(ros::Duration(20, 0)))
+    ROS_INFO("Arm finished with status [%s]", arm_client.getTerminalState().toString().c_str());
+  else
+  {
+    ROS_ERROR("Arm timed out");
+    return;
+  }
+
+  ROS_INFO("Waiting Capture action to come up");
+  if (capture_client.waitForActionServerToStart(ros::Duration(10,0)))
+    ROS_INFO("Capture action came up!");
+  else
+  {
+    ROS_INFO("Capture action is not started");
+    return;
+  }
+
+  RobotPixelsConfig capture_goal = buildCaptureCommand();
+  CaptureRobotPixelsGoal full_capture_goal;
+  full_capture_goal.config = capture_goal;
+
+  capture_client.sendGoal(full_capture_goal, &doneCaptureCallback, &activeCaptureCallback, &feedbackCaptureCallback);
+  if (capture_client.waitForGoalToFinish(ros::Duration(20, 0)))
+    ROS_INFO("Capture finished with status [%s]", capture_client.getTerminalState().toString().c_str());
+  else
+    ROS_ERROR("Capture timed out");
 }
 
 int main(int argc, char** argv)
@@ -136,18 +243,9 @@ int main(int argc, char** argv)
 
   ros::NodeHandle nh;
 
-  actionlib::SimpleActionClient<CaptureRobotPixelsAction> ac(nh, "capture_robot_pixels");
-
-  RobotPixelsConfig config = buildCommand();
-  CaptureRobotPixelsGoal full_goal;
-  full_goal.config = config;
-
-  sleep(1);
-
-  ac.sendGoal(full_goal, &doneCallback, &activeCallback, &feedbackCallback);
+  boost::thread exec_thread(&execThread);
 
   ros::spin();
-
 }
 
 

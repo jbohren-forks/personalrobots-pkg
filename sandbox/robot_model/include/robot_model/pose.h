@@ -40,6 +40,7 @@
 #include <string>
 #include <vector>
 #include <math.h>
+#include <ros/ros.h>
 #include <boost/algorithm/string.hpp>
 
 namespace robot_model{
@@ -48,11 +49,11 @@ class Vector3
 {
 public:
   Vector3() {this->clear();};
-  double x_;
-  double y_;
-  double z_;
-protected:
-  void clear() {this->x_=this->y_=this->z_=0.0;};
+  double x;
+  double y;
+  double z;
+
+  void clear() {this->x=this->y=this->z=0.0;};
   bool init(const std::string &vector_str)
   {
     this->clear();
@@ -67,37 +68,28 @@ protected:
     }
 
     if (xyz.size() != 3) {
-      std::cerr << "Vector did not contain 3 pieces:" << std::endl; 
-      for (unsigned int i = 0; i < xyz.size(); ++i)
-        std::cerr << "  " << i << ": '" << xyz[i] << "'" << std::endl;
+      ROS_ERROR("Vector contains %i elements instead of 3 elements", xyz.size()); 
       return false;
     }
 
-    this->x_ = xyz[0];
-    this->y_ = xyz[1];
-    this->z_ = xyz[2];
+    this->x = xyz[0];
+    this->y = xyz[1];
+    this->z = xyz[2];
 
     return true;
   };
-  friend class Geometry;
-  friend class Rotation;
-  friend class Pose;
-  friend class Joint;
-  friend class Box;
-  friend class Mesh;
-
 };
 
 class Rotation
 {
 public:
   Rotation() {this->clear();};
-  void getQuaternion(double &w,double &x,double &y,double &z)
+  void getQuaternion(double &quat_x,double &quat_y,double &quat_z, double &quat_w)
   {
-    w = this->w_;
-    x = this->x_;
-    y = this->y_;
-    z = this->z_;
+    quat_x = this->x;
+    quat_y = this->y;
+    quat_z = this->z;
+    quat_w = this->w;
   };
   void getRPY(double &roll,double &pitch,double &yaw)
   {
@@ -106,22 +98,22 @@ public:
     double sqy;
     double sqz;
 
-    sqw = this->w_ * this->w_;
-    sqx = this->x_ * this->x_;
-    sqy = this->y_ * this->y_;
-    sqz = this->z_ * this->z_;
+    sqx = this->x * this->x;
+    sqy = this->y * this->y;
+    sqz = this->z * this->z;
+    sqw = this->w * this->w;
 
-    roll  = atan2(2 * (this->y_*this->z_ + this->w_*this->x_), sqw - sqx - sqy + sqz);
-    pitch = asin(-2 * (this->x_*this->z_ - this->w_ * this->y_));
-    yaw   = atan2(2 * (this->x_*this->y_ + this->w_*this->z_), sqw + sqx - sqy - sqz);
+    roll  = atan2(2 * (this->y*this->z + this->w*this->x), sqw - sqx - sqy + sqz);
+    pitch = asin(-2 * (this->x*this->z - this->w*this->y));
+    yaw   = atan2(2 * (this->x*this->y + this->w*this->z), sqw + sqx - sqy - sqz);
 
   };
-  void setFromQuaternion(double w,double x,double y,double z)
+  void setFromQuaternion(double quat_x,double quat_y,double quat_z,double quat_w)
   {
-    this->w_ = w;
-    this->x_ = x;
-    this->y_ = y;
-    this->z_ = z;
+    this->x = quat_x;
+    this->y = quat_y;
+    this->z = quat_z;
+    this->w = quat_w;
     this->normalize();
   };
   void setFromRPY(double roll, double pitch, double yaw)
@@ -132,16 +124,16 @@ public:
     the = pitch / 2.0;
     psi = yaw / 2.0;
 
-    this->w_ = cos(phi) * cos(the) * cos(psi) + sin(phi) * sin(the) * sin(psi);
-    this->x_ = sin(phi) * cos(the) * cos(psi) - cos(phi) * sin(the) * sin(psi);
-    this->y_ = cos(phi) * sin(the) * cos(psi) + sin(phi) * cos(the) * sin(psi);
-    this->z_ = cos(phi) * cos(the) * sin(psi) - sin(phi) * sin(the) * cos(psi);
+    this->x = sin(phi) * cos(the) * cos(psi) - cos(phi) * sin(the) * sin(psi);
+    this->y = cos(phi) * sin(the) * cos(psi) + sin(phi) * cos(the) * sin(psi);
+    this->z = cos(phi) * cos(the) * sin(psi) - sin(phi) * sin(the) * cos(psi);
+    this->w = cos(phi) * cos(the) * cos(psi) + sin(phi) * sin(the) * sin(psi);
 
     this->normalize();
   };
 
-  double w_,x_,y_,z_;
-protected:
+  double x,y,z,w;
+
   bool init(const std::string &rotation_str)
   {
     this->clear();
@@ -152,25 +144,24 @@ protected:
       return false;
     else
     {
-      this->setFromRPY(rpy.x_,rpy.y_,rpy.z_);
+      this->setFromRPY(rpy.x,rpy.y,rpy.z);
       return true;
     }
       
   };
-  friend class Pose;
-private:
-  void clear() { this->w_=1.0;this->x_=this->y_=this->z_=0.0; }
+
+  void clear() { this->x=this->y=this->z=0.0;this->w=1.0; }
 
   void normalize()
   {
-    double s = sqrt(this->w_ * this->w_ +
-                    this->x_ * this->x_ +
-                    this->y_ * this->y_ +
-                    this->z_ * this->z_);
-    this->w_ /= s;
-    this->x_ /= s;
-    this->y_ /= s;
-    this->z_ /= s;
+    double s = sqrt(this->x * this->x +
+                    this->y * this->y +
+                    this->z * this->z +
+                    this->w * this->w);
+    this->x /= s;
+    this->y /= s;
+    this->z /= s;
+    this->w /= s;
   };
 };
 
@@ -179,66 +170,59 @@ class Pose
 public:
   Pose() { this->clear(); };
 
-  boost::shared_ptr<Vector3>  pos_;
-  boost::shared_ptr<Rotation> rot_;
-protected:
+  Vector3  position;
+  Rotation rotation;
+
   void clear()
   {
-    this->pos_.reset();
-    this->rot_.reset();
+    this->position.clear();
+    this->rotation.clear();
   };
   bool initXml(TiXmlElement* xml)
   {
     this->clear();
     if (!xml)
     {
-      std::cout << "parsing pose: xml empty" << std::endl;
+      ROS_DEBUG("parsing pose: xml empty");
       return false;
     }
     else
     {
       const char* xyz_str = xml->Attribute("xyz");
-      this->pos_.reset(new Vector3());
       if (xyz_str == NULL)
       {
-        std::cout << "INFO: parsing pose: no xyz, using default values." << std::endl;
+        ROS_DEBUG("parsing pose: no xyz, using default values.");
         return true;
       }
       else
       {
-        if (!this->pos_->init(xyz_str))
+        if (!this->position.init(xyz_str))
         {
-          std::cerr << "ERROR: malformed xyz" << std::endl;
-          this->pos_.reset();
+          ROS_ERROR("malformed xyz");
+          this->position.clear();
           return false;
         }
       }
 
       const char* rpy_str = xml->Attribute("rpy");
-      this->rot_.reset(new Rotation());
       if (rpy_str == NULL)
       {
-        std::cout << "INFO: parsing pose: no rpy, using default values." << std::endl;
+        ROS_DEBUG("parsing pose: no rpy, using default values.");
         return true;
       }
       else
       {
-        if (!this->rot_->init(rpy_str))
+        if (!this->rotation.init(rpy_str))
         {
-          std::cerr << "ERROR: malformed rpy" << std::endl;
+          ROS_ERROR("malformed rpy");
           return false;
-          this->rot_.reset();
+          this->rotation.clear();
         }
       }
 
       return true;
     }
   };
-  friend class Link;
-  friend class Joint;
-  friend class Inertial;
-  friend class Visual;
-  friend class Collision;
 };
 
 }

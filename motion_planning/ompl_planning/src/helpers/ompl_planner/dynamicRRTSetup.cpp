@@ -36,7 +36,7 @@
 
 #include "ompl_planning/planners/dynamicRRTSetup.h"
 
-ompl_planning::dynamicRRTSetup::dynamicRRTSetup(ModelBase *m) : PlannerSetup(m)
+ompl_planning::dynamicRRTSetup::dynamicRRTSetup(void) : PlannerSetup()
 {
     name = "dynamic::RRT";
     priority = 2;
@@ -46,11 +46,12 @@ ompl_planning::dynamicRRTSetup::~dynamicRRTSetup(void)
 {
 }
 
-bool ompl_planning::dynamicRRTSetup::setup(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
+bool ompl_planning::dynamicRRTSetup::setup(planning_environment::PlanningMonitor *planningMonitor, const std::string &groupName,
+					   boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
 {
-    preSetup(options);
+    preSetup(planningMonitor, groupName, options);
     
-    ompl::dynamic::RRT *rrt = new ompl::dynamic::RRT(dynamic_cast<ompl::dynamic::SpaceInformationControlsIntegrator*>(si));
+    ompl::dynamic::RRT *rrt = new ompl::dynamic::RRT(dynamic_cast<ompl::dynamic::SpaceInformationControlsIntegrator*>(ompl_model->si));
     mp                      = rrt;
     
     if (options->hasParam("goal_bias"))
@@ -65,7 +66,7 @@ bool ompl_planning::dynamicRRTSetup::setup(boost::shared_ptr<planning_environmen
 	ROS_DEBUG("Goal bias is set to %g", rrt->getHintBias());
     }
 
-    postSetup(options);
+    postSetup(planningMonitor, groupName, options);
     
     return true;
 }

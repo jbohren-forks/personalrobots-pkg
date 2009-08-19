@@ -9,6 +9,7 @@
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/move_arm</url>
 
+  <depend package="joy"/>
   <depend package="roscpp"/>
   <depend package="rosconsole"/>
   <depend package="std_msgs"/>
@@ -22,6 +23,7 @@
   <depend package="planning_environment" />
   <depend package="actionlib"/>
   <depend package="pr2_mechanism_controllers"/>
+  <depend package="tf_conversions"/>
 
   <export>
     <cpp cflags="-I${prefix}/msg/cpp" />

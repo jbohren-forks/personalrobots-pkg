@@ -6,6 +6,7 @@ import xml.dom.minidom
 import os
 import cv
 from numpy import *
+import random
 
 #----------------------------------------------------------------------
 #                         Helper functions
@@ -106,7 +107,7 @@ def single_hand_outline_to_oriented_box(points, margin, aspect_ratio):
   box_center_in_image = C + array([x,y])  # top_left is in image coordinates, while upper_left is in local coordinates
 
   # Return the box
-  # TODO: UPDATE EXPLANATION
+  # TODO: EXPLAIN BETTER
   # We give pi minus the angle because the coordinates of the image have (0,0) in the
   # top left corner, thus we are doing trigonometric operations on the upside-
   # down image. A vertical hand will appear upside down, so we need to take minus
@@ -118,7 +119,8 @@ def single_hand_outline_to_oriented_box(points, margin, aspect_ratio):
 # The results from the Mechanical Turk task to label hands returns results in a nested way,
 # with a loose bounding box for each hand, then a polygon whose coordinates are given
 # relative to the bounding box. This function converts it to (absolute) image coordinates.
-# DEPRECATED: THE CONVERSION PERFORMED BY THIS FUNCTION IS NO LONGER NEEDED.
+# THE CONVERSION PERFORMED BY THIS FUNCTION IS NO LONGER NEEDED, IT HAS BEEN DISABLED
+# SO THIS FUNCTION SIMPLY EXTRACTS <oriented_box> ANNOTATIONS
 def convert_polygons_to_absolute_coord(xml_filename):
   # Open empty xml document to receive the converted data
   output_doc = xml.dom.minidom.getDOMImplementation().createDocument(None, "annotations", None)
@@ -221,24 +223,94 @@ def create_transform(x, y, angle, flip):
   return transform
 
 
-def cropped_oriented_boxes(xml_filename, image_filename):
+# A generator to read all oriented box descriptions from an xml file
+# The expected format is:
+# <oriented_box angle="3.09" height="137.75" width="106.65" x="467.43" y="52.61"/>
+def read_oriented_boxes(xml_filename):
   input_doc = xml.dom.minidom.parse(xml_filename)
   attribute_names = ["x", "y", "width", "height", "angle", "flip"]
   for box in input_doc.getElementsByTagName("oriented_box"):
-    attributes = []
+    oriented_box = []
     for attribute_name in attribute_names:
-      #print box.getAttribute(attribute_name)
-      attributes.append(float(box.getAttribute(attribute_name)))
-    x, y, width, height, angle, flip = attributes
-    width = int(ceil(width))
-    height = int(ceil(height))
-    image = cv.LoadImage(image_filename)
-    # GetQuadrangleSubPix uses coordinates for the destination image that are
-    # centered in the middle of the image.
-    cropped = cv.CreateImage([width, height], image.depth, image.nChannels)
-    transform = create_transform(x, y, angle, flip)
-    cv.GetQuadrangleSubPix(image, cropped, transform)
-    yield cropped
+      oriented_box.append(float(box.getAttribute(attribute_name)))
+    yield oriented_box
+
+# Takes a [x,y,w,h,angle,flip] oriented box, and an OpenCV image, and returns
+# the cropped box as an OpenCV image
+def crop_single_oriented_box(oriented_box, image):
+  x, y, width, height, angle, flip = oriented_box
+  width = int(ceil(width))
+  height = int(ceil(height))
+  # GetQuadrangleSubPix uses coordinates for the destination image that are
+  # centered in the middle of the image.
+  cropped = cv.CreateImage([width, height], image.depth, image.nChannels)
+  transform = create_transform(x, y, angle, flip)
+  cv.GetQuadrangleSubPix(image, cropped, transform)
+  return cropped
+
+
+# A generator returning OpenCV images cropped from the image provided
+# in argument. The xml file contains descriptions of oriented boxes.
+def cropped_oriented_boxes(xml_filename, image_filename):
+  image = cv.LoadImage(image_filename)
+  for oriented_box in read_oriented_boxes(xml_filename):
+    yield crop_single_oriented_box(oriented_box, image)
+
+# Determines whether two oriented boxes overlap
+def oriented_boxes_overlap(box1, box2):
+  def a_and_b_are_separated_by_an_edge_of_b(a, b):
+    x, y, width, height, angle, flip = b
+    center = array([x, y], dtype=float)
+    orientations = [angle, angle+pi/2, angle+pi, angle-pi/2]
+    distances = [width/2, height/2, width/2, height/2]
+    for orientation, distance in zip(orientations, distances):
+      for corner_tuple in getCorners(a):
+        corner = array(corner_tuple)  # convert to array
+        edge_normal = array([cos(angle), sin(angle)])
+        if dot_product(corner-center, edge_normal) < distance:
+          # This edge is not a separating line
+          break
+      else:
+        # This edge is a separating line ==> the two boxes do not overlap
+        return True
+    # No edge of b is a separating line
+    return False
+  separated = a_and_b_are_separated_by_an_edge_of_b(box1, box2) or \
+              a_and_b_are_separated_by_an_edge_of_b(box2, box1)
+  return not separated
+
+# A generator returning OpenCV images cropped from the image provided
+# in argument, at random locations and orientations that do *not* overlap with
+# the oriented boxes given in the xml file, but with the same size.
+# The purpose of this function is to create negative training sets.
+# It is unnecessarily slow, but it is usually run only once anyway.
+def negative_cropped_oriented_boxes(xml_filename, image_filename):
+  image = cv.LoadImage(image_filename)
+  size = cv.GetSize(image)
+  # Transform the generator to a list, to avoid reparsing the xml file
+  oriented_boxes = list(read_oriented_boxes(xml_filename))
+  taboo_list = list(oriented_boxes)
+  for i in range(3):
+    for box in oriented_boxes:
+      x, y, width, height, angle, flip = box
+      for trial in range(10):
+        # Propose a negative box (it can extend outside the image a little)
+        n_angle = random.uniform(-pi,pi)
+        n_x = random.uniform(width/2, size[0]-1-width/2)
+        n_y = random.uniform(height/2, size[1]-1-height/2)
+        n_flip = random.choice([0,1])
+        candidate = [n_x, n_y, width, height, n_angle, n_flip]
+        for b in taboo_list:
+          if oriented_boxes_overlap(b, candidate):
+            # Candidate is invalid. Try another random location
+            break
+        else:
+          # No overlap with any other box, this is a valid negative example
+          taboo_list.append(candidate)  # We dont want to resample the same
+          yield crop_single_oriented_box(candidate, image)
+          # Exit the rejection sampling loop and move on to the next box
+          break
+      
 
 #----------------------------------------------------------------------
 #                   Test functions (for debugging)

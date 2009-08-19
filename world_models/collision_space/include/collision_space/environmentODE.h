@@ -55,6 +55,9 @@ namespace collision_space
         EnvironmentModelODE(void);
 	virtual ~EnvironmentModelODE(void);
 
+	/** \brief Add a group of links to be checked for self collision */
+	virtual void addSelfCollisionGroup(const std::vector<std::string> &links);
+
 	/** \brief Get the list of contacts (collisions) */
 	virtual bool getCollisionContacts(const std::vector<AllowedContact> &allowedContacts, std::vector<Contact> &contacts, unsigned int max_count = 1);
 
@@ -212,6 +215,7 @@ namespace collision_space
 	struct kGeom
 	{
 	    std::vector<dGeomID>                   geom;
+	    std::vector< std::vector<bool> >       allowedTouch;
 	    bool                                   enabled;
 	    planning_models::KinematicModel::Link *link;
 	    unsigned int                           index;
@@ -329,7 +333,9 @@ namespace collision_space
 	dGeomID createODEGeom(dSpaceID space, ODEStorage &storage, const shapes::StaticShape *shape);
 	void    updateGeom(dGeomID geom, const btTransform &pose) const;	
 	void    removeCollidingObjects(const dGeomID geom);
-	
+
+	void    updateAllowedTouch(void);
+
 	/** \brief Check if thread-specific routines have been called */
 	void    checkThreadInit(void) const;	
 	void    freeMemory(void);	

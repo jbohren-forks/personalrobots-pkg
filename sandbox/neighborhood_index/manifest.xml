@@ -14,6 +14,13 @@
   </export>
   <depend package="sensor_msgs" />
   <depend package="geometry_msgs" />
+  <depend package="point_cloud_mapping" />
+
+
+  <export>
+      <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lneighborhood_index"/>
+  </export>
+
 </package>
 
 

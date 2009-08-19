@@ -37,9 +37,9 @@
 #ifndef OMPL_PLANNING_MODEL_
 #define OMPL_PLANNING_MODEL_
 
-#include "ompl_planning/ModelBase.h"
+#include "ompl_ros/ModelKinematic.h"
+#include "ompl_ros/ModelDynamic.h"
 #include "ompl_planning/planners/PlannerSetup.h"
-#include "ompl_planning/planners/IKSetup.h"
 
 #include <boost/shared_ptr.hpp>
 #include <string>
@@ -47,13 +47,15 @@
 
 namespace ompl_planning
 {
-    
-    class Model : public ModelBase
+    class Model
     {
     public:
-        Model(void) : ModelBase()
+	
+        Model(planning_environment::PlanningMonitor *pMonitor, const std::string &gName)
 	{
-	    ik = NULL;
+	    planningMonitor = pMonitor;
+	    groupName = gName;
+	    createMotionPlanningInstances(planningMonitor->getCollisionModels()->getGroupPlannersConfig(groupName));
 	}
 	
 	virtual ~Model(void)
@@ -61,18 +63,18 @@ namespace ompl_planning
 	    for (std::map<std::string, PlannerSetup*>::iterator i = planners.begin(); i != planners.end() ; ++i)
 		if (i->second)
 		    delete i->second;
-	    if (ik)
-		delete ik;
 	}
 	
-	/* instantiate the planners that can be used  */
-	void createMotionPlanningInstances(std::vector< boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> > cfgs);
+	planning_environment::PlanningMonitor *planningMonitor;
+	std::string                            groupName;
 	
-	std::map<std::string, PlannerSetup*>  planners;
-	IKSetup                              *ik;
+	std::map<std::string, PlannerSetup*>   planners;
 	
     protected:
-
+	
+	/** \brief Instantiate the planners that can be used  */
+	void createMotionPlanningInstances(std::vector< boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> > cfgs);
+	
 	template<typename _T>
 	void add_planner(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
 	
@@ -92,4 +94,3 @@ namespace ompl_planning
 } // ompl_planning
 
 #endif
-

@@ -15,6 +15,9 @@ rospack_link_boost(move_arm_action thread)
 # actuate gripper action
 rospack_add_executable(actuate_gripper_action src/actuate_gripper_action.cpp)
 
+# teleoperation
+rospack_add_executable(teleop_arm src/teleop_arm.cpp src/move_arm_setup.cpp)
+
 
 # debugging tools
 

@@ -68,7 +68,7 @@ class SimpleNameServer:
             self.name2id[name]=float(id);
             int_id=int(round(float(id)));
             if int_id in self.id2name:
-                rospy.logerr("ID %d already exists. Note that IDs must be unique after rounding.",id)
+                rospy.logwarn("ID %d already exists. Note that IDs must be unique after rounding. The first name %s is used.",int_id,self.id2name[int_id])
                 continue
             self.id2name[int_id]=name;
         fIndex.close();

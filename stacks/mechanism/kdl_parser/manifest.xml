@@ -1,7 +1,10 @@
 <package>
   <description brief="Package to parse urdf in to kdl tree">
+
+   The Kinematics and Dynamics Library (KDL) defines a tree structure to represent the kinematic and dynamic parameters of a robot mechanism. This package provides tools to construct a KDL tree from the robot representation in the Robot Model package.
+
   </description>
-  <author>Wim Meeussen</author>
+  <author>Wim Meeussen meeussen@willowgarage.com </author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/</url>

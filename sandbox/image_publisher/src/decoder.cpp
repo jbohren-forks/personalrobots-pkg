@@ -35,6 +35,7 @@
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/CompressedImage.h>
+#include <sensor_msgs/image_encodings.h>
 #include <opencv_latest/CvBridge.h>
 #include <opencv/cvwimage.h>
 #include <opencv/highgui.h>
@@ -49,11 +50,12 @@ void imageCB(const sensor_msgs::CompressedImageConstPtr &msg)
   sensor_msgs::Image image;
   if ( sensor_msgs::CvBridge::fromIpltoRosImage(decompressed.Ipl(), image) ) {
     image.header = msg->header;
+    // @todo: don't assume 8-bit channels
     if (decompressed.Channels() == 1) {
-      // image.encoding = "mono"; XXX JCB - there is no encoding field in changed image message
+      image.encoding = sensor_msgs::image_encodings::MONO8;
     }
     else if (decompressed.Channels() == 3) {
-      // image.encoding = "rgb"; XXX JCB - there is no encoding field in changed image message
+      image.encoding = sensor_msgs::image_encodings::RGB8;
     }
     else {
       ROS_ERROR("Unsupported number of channels: %i", decompressed.Channels());

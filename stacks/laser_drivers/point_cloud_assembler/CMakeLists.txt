@@ -13,14 +13,13 @@ rospack_add_executable(point_cloud_srv src/point_cloud_srv.cpp)
 rospack_add_executable(merge_clouds src/merge_clouds.cpp)
 rospack_link_boost(merge_clouds thread)
 
+# Needed to run rostests
+rospack_add_executable(dummy_scan_producer test/dummy_scan_producer.cpp)
+
 rospack_add_executable(test_assembler 
                        test/test_assembler.cpp)
 rospack_link_boost(test_assembler thread)
 
 rospack_add_rostest(${CMAKE_CURRENT_SOURCE_DIR}/test/test_laser_assembler.launch)
-rospack_add_rostest(${CMAKE_CURRENT_SOURCE_DIR}/test/test_cloud_assembler.launch)
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
-
-# Download needed data file
-rospack_download_test_data(http://pr.willowgarage.com/data/point_cloud_assembler/test_assembler_2009_04_24.bag.new test/test_assembler_2009_04_24.bag.new2)

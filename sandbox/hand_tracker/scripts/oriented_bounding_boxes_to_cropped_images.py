@@ -81,12 +81,18 @@ def main(argv, stdout, environ):
   if folder:
     bbox_input_folder = os.path.join(folder,"bbox")
     images_input_folder = os.path.join(folder,"images")
-    cropped_output_directory = os.path.join(folder, "cropped")
+    positive_output_directory = os.path.join(folder, "positive")
+    negative_output_directory = os.path.join(folder, "negative")
+    if not os.path.exists(positive_output_folder):
+      os.mkdir(positive_output_folder)
+    if not os.path.exists(negative_output_folder):
+      os.mkdir(negative_output_folder)
     image_filenames = os.listdir(images_input_folder)
   elif (len(args) > 0):
     bbox_input_folder = ""
     images_input_folder = ""
-    cropped_output_directory = ""
+    positive_output_directory = ""
+    negative_output_directory = ""
     image_filenames = args
   else:
     usage(progname)
@@ -99,13 +105,15 @@ def main(argv, stdout, environ):
       full_xml_input_filename = os.path.join(bbox_input_folder, xml_input_filename)
       full_image_filename = os.path.join(images_input_folder, image_filename)
       if os.path.exists(full_xml_input_filename):
-        box_num = 0
-        for cropped_image in oriented_bounding_boxes.cropped_oriented_boxes(full_xml_input_filename,
-                                                                            full_image_filename):
-          box_num += 1
-          cropped_filename = os.path.join(cropped_output_directory, image_filename[0:-4] + "_%03d.jpg" % box_num)
-          cv.SaveImage(cropped_filename, cropped_image)
-          print "Wrote " + cropped_filename
+        for i, positive_image in enumerate(oriented_bounding_boxes.cropped_oriented_boxes(full_xml_input_filename,
+                                                                                          full_image_filename)):
+          positive_filename = os.path.join(positive_output_directory, image_filename[0:-4] + "_%03d.jpg" % (i+1))
+          cv.SaveImage(positive_filename, positive_image)
+        for j, negative_image in enumerate(oriented_bounding_boxes.negative_cropped_oriented_boxes(full_xml_input_filename,
+                                                                                                   full_image_filename)):
+          negative_filename = os.path.join(negative_output_directory, image_filename[0:-4] + "_%03d.jpg" % (j+1))
+          cv.SaveImage(negative_filename, negative_image)
+        print image_filename + " --> %d positive, %d negative" % (i+1, j+1)
 
 
 if __name__ == "__main__":

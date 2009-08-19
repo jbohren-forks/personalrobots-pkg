@@ -35,6 +35,9 @@
  * Author: Sachin Chitta and Matthew Piccoli
  */
 
+#ifndef PR2_BASE_KINEMATICS_H
+#define PR2_BASE_KINEMATICS_H
+
 #include <mechanism_model/robot.h>
 #include <controller_interface/controller.h>
 #include <geometry_msgs/Twist.h>
@@ -301,8 +304,9 @@ namespace controller
       double MAX_DT_;
 
       /*!
-       * \brief Name(string id) of the robot base frame 
+       * \brief Name(string id) of the robot base frame
        */
       std::string robot_base_id_;
   };
-}
+} // namespace
+#endif

@@ -1,0 +1,6 @@
+<launch>
+  
+  <include file="$(find 3dnav_pr2)/launch/prX.machine" />
+  <node machine="two" pkg="fake_motion_planning" type="fake_motion_planner" respawn="true" output="screen" />
+  
+</launch>	 

@@ -51,14 +51,14 @@ public:
   //! \brief Defines the various states the Communication State Machine can be in
   enum StateEnum
   {
-    WAITING_FOR_GOAL_ACK,
-    PENDING,
-    ACTIVE,
-    WAITING_FOR_RESULT,
-    WAITING_FOR_CANCEL_ACK,
-    RECALLING,
-    PREEMPTING,
-    DONE
+    WAITING_FOR_GOAL_ACK    = 0,
+    PENDING                 = 1,
+    ACTIVE                  = 2,
+    WAITING_FOR_RESULT      = 3,
+    WAITING_FOR_CANCEL_ACK  = 4,
+    RECALLING               = 5,
+    PREEMPTING              = 6,
+    DONE                    = 7
   } ;
 
   CommState(const StateEnum& state) : state_(state) { }

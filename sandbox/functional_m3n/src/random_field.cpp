@@ -36,6 +36,8 @@
 
 using namespace std;
 
+const unsigned int RandomField::UNKNOWN_LABEL = 0;
+
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------

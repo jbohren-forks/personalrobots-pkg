@@ -12,8 +12,8 @@
   <node pkg="mechanism_bringup" type="calibrate.py" output="screen"
         args="cal_head_pan cal_head_tilt cal_laser_tilt" />
 
-<!-- Power Board Control Node -->
- <node pkg="pr2_power_board" type="power_node"  respawn="true"/>
+  <!-- Power Board Control Node -->
+  <node pkg="pr2_power_board" type="power_node"  respawn="true"/>
 
   <!-- Robot state publisher -->
   <node machine="two" pkg="robot_state_publisher" type="state_publisher" name="robot_state_publisher">
@@ -21,6 +21,9 @@
    <param name="tf_prefix" type="string" value="" />
   </node>
 
+  <!-- Joint states diagnostics logging -->
+  <node pkg="mechanism_control" type="joints_to_diagnostics.py" machine="realtime" />
+  
   <include file="$(find pr2_head_cart)/cart_sensors.launch" />
   <include file="$(find pr2_head_cart)/cart_monitors.launch" />
 
@@ -31,4 +34,11 @@
   <!-- Runtime Diagnostics Logging -->
   <node pkg="rosrecord" type="rosrecord" args="-f /hwlog/hcb_runtime_automatic /diagnostics" />
 
+  <!-- Head cart diagnostic aggregation -->
+  <node pkg="diagnostic_aggregator" type="aggregator_node"
+        name="diag_agg_hcb" args="HCB" output="screen" >
+    <rosparam command="load" 
+              file="$(find pr2_head_cart)/cart_analyzers.yaml" />
+  </node>
+  
 </launch>

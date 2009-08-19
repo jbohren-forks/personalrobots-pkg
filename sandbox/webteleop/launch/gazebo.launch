@@ -8,7 +8,7 @@
   <include file="$(find gazebo)/launch/wg_world.launch"/>
 
   <!-- start up robot -->
-  <include file="$(find pr2_gazebo)/pr2.launch"/>
+  <!--<include file="$(find pr2_gazebo)/pr2.launch"/>-->
 
   <!-- load map -->
   <node pkg="map_server" type="map_server" args="$(find gazebo_worlds)/Media/materials/textures/willowMap.png 0.1" respawn="true" machine="three" />

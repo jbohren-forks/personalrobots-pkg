@@ -20,6 +20,9 @@
    <param name="publish_frequency" type="double" value="50.0" />
    <param name="tf_prefix" type="string" value="" />
   </node>
+  
+  <!-- Joint states diagnostics logging -->
+  <node pkg="mechanism_control" type="joints_to_diagnostics.py" machine="realtime" />
 
   <include file="$(find pr2_head_cart)/cart_sensors.launch" />
   <include file="$(find pr2_head_cart)/cart_monitors.launch" />
@@ -30,5 +33,12 @@
 
   <!-- Runtime Diagnostics Logging -->
   <node pkg="rosrecord" type="rosrecord" args="-f /hwlog/hcc_runtime_automatic /diagnostics" />
+
+  <!-- Head cart diagnostic aggregation -->
+  <node pkg="diagnostic_aggregator" type="aggregator_node"
+        name="diag_agg_hcc" args="HCC" output="screen" >
+    <rosparam command="load" 
+              file="$(find pr2_head_cart)/cart_analyzers.yaml" />
+  </node>
 
 </launch>

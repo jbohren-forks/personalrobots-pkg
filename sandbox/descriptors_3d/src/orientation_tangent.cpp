@@ -57,6 +57,14 @@ OrientationTangent::OrientationTangent(const double ref_x,
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
+void OrientationTangent::clearShared()
+{
+  spectral_information_->clearSpectral();
+}
+
+// --------------------------------------------------------------
+/* See function definition */
+// --------------------------------------------------------------
 int OrientationTangent::precompute(const sensor_msgs::PointCloud& data,
                                    cloud_kdtree::KdTree& data_kdtree,
                                    const cv::Vector<const geometry_msgs::Point32*>& interest_pts)

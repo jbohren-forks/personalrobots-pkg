@@ -48,79 +48,73 @@ namespace robot_model{
 
 class Link;
 
-class JointProperties
+class JointDynamics
 {
 public:
-  JointProperties() { this->clear(); };
-  double damping_;
-  double friction_;
-protected:
+  JointDynamics() { this->clear(); };
+  double damping;
+  double friction;
+
   void clear()
   {
-    damping_ = 0;
-    friction_ = 0;
+    damping = 0;
+    friction = 0;
   };
   bool initXml(TiXmlElement* config);
-
-  friend class Joint;
 };
 
 class JointLimits
 {
 public:
   JointLimits() { this->clear(); };
-  double lower_;
-  double upper_;
-  double effort_;
-  double velocity_;
-protected:
+  double lower;
+  double upper;
+  double effort;
+  double velocity;
+
   void clear()
   {
-    lower_ = 0;
-    upper_ = 0;
-    effort_ = 0;
-    velocity_ = 0;
+    lower = 0;
+    upper = 0;
+    effort = 0;
+    velocity = 0;
   };
   bool initXml(TiXmlElement* config);
-
-  friend class Joint;
 };
 
 class JointSafety
 {
 public:
   JointSafety() { this->clear(); };
-  double soft_upper_limit_;
-  double soft_lower_limit_;
-  double k_p_;
-  double k_v_;
-protected:
+  double soft_upper_limit;
+  double soft_lower_limit;
+  double k_p;
+  double k_v;
+
   void clear()
   {
-    soft_upper_limit_ = 0;
-    soft_lower_limit_ = 0;
-    k_p_ = 0;
-    k_v_ = 0;
+    soft_upper_limit = 0;
+    soft_lower_limit = 0;
+    k_p = 0;
+    k_v = 0;
   };
   bool initXml(TiXmlElement* config);
-
-  friend class Joint;
 };
+
 
 class JointCalibration
 {
 public:
   JointCalibration() { this->clear(); };
-  double reference_position_;
-protected:
+  double reference_position;
+
   void clear()
   {
-    reference_position_ = 0;
+    reference_position = 0;
   };
   bool initXml(TiXmlElement* config);
-
-  friend class Joint;
 };
+
 
 class Joint
 {
@@ -128,11 +122,11 @@ public:
 
   Joint() { this->clear(); };
 
-  std::string name_;
+  std::string name;
   enum
   {
     UNKNOWN, REVOLUTE, CONTINUOUS, PRISMATIC, FLOATING, PLANAR, FIXED
-  } type_;
+  } type;
 
   /// \brief     type_       meaning of axis_
   /// ------------------------------------------------------
@@ -142,55 +136,47 @@ public:
   ///            FLOATING    N/A
   ///            PLANAR      plane normal axis
   ///            FIXED       N/A
-  boost::shared_ptr<Vector3> axis_;
+  Vector3 axis;
 
   /// child Link element
-  boost::shared_ptr<Link> link_;
-  std::string link_name_;
-  ///   transform from Link frame to Joint frame
-  boost::shared_ptr<Pose>  origin_;
+  ///   child link frame is the same as the Joint frame
+  std::string child_link_name;
 
   /// parent Link element
-  boost::shared_ptr<Link> parent_link_;
-  std::string parent_link_name_;
-  ///   transform from parent Link to Joint frame
-  boost::shared_ptr<Pose>  parent_origin_;
+  ///   origin specifies the transform from Parent Link to Joint Frame
+  std::string parent_link_name;
+  /// transform from Parent Link frame to Joint frame
+  Pose  parent_to_joint_origin_transform;
 
-  /// Joint Properties
-  boost::shared_ptr<JointProperties> joint_properties_;
+  /// @todo: should use weak pointer here
+  //boost::shared_ptr<Link> link;
+  //boost::shared_ptr<Link> parent_link;
+
+  /// Joint Dynamics
+  boost::shared_ptr<JointDynamics> dynamics;
 
   /// Joint Limits
-  boost::shared_ptr<JointLimits> joint_limits_;
+  boost::shared_ptr<JointLimits> limits;
 
   /// Unsupported Hidden Feature
-  boost::shared_ptr<JointSafety> joint_safety_;
+  boost::shared_ptr<JointSafety> safety;
 
   /// Unsupported Hidden Feature
-  boost::shared_ptr<JointCalibration> joint_calibration_;
+  boost::shared_ptr<JointCalibration> calibration;
 
-  // Joint element has one parent and one child Link
-  void setParentLink(boost::shared_ptr<Link> parent) {this->parent_link_ = parent;};
-  void setParentPose(boost::shared_ptr<Pose> pose) {this->parent_origin_ = pose;};
-
-protected:
   bool initXml(TiXmlElement* xml);
-
-private:
   void clear()
   {
-    this->name_.clear();
-    this->parent_link_.reset();
-    this->axis_.reset();
-    this->origin_.reset();
-    this->parent_link_name_.clear();
-    this->parent_origin_.reset();
-    this->link_.reset();
-    this->joint_properties_.reset();
-    this->joint_limits_.reset();
-    type_ = UNKNOWN;
+    this->axis.clear();
+    this->child_link_name.clear();
+    this->parent_link_name.clear();
+    this->parent_to_joint_origin_transform.clear();
+    this->dynamics.reset();
+    this->limits.reset();
+    this->safety.reset();
+    this->calibration.reset();
+    this->type = UNKNOWN;
   };
-
-  friend class Link;
 };
 
 }

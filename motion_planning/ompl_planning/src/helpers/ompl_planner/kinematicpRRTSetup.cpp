@@ -36,7 +36,7 @@
 
 #include "ompl_planning/planners/kinematicpRRTSetup.h"
 
-ompl_planning::kinematicpRRTSetup::kinematicpRRTSetup(ModelBase *m) : PlannerSetup(m)
+ompl_planning::kinematicpRRTSetup::kinematicpRRTSetup(void) : PlannerSetup()
 {
     name = "kinematic::pRRT";
     priority = 3;
@@ -46,11 +46,12 @@ ompl_planning::kinematicpRRTSetup::~kinematicpRRTSetup(void)
 {
 }
 
-bool ompl_planning::kinematicpRRTSetup::setup(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
+bool ompl_planning::kinematicpRRTSetup::setup(planning_environment::PlanningMonitor *planningMonitor, const std::string &groupName,
+					      boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
 {
-    preSetup(options);
+    preSetup(planningMonitor, groupName, options);
     
-    ompl::kinematic::pRRT *rrt = new ompl::kinematic::pRRT(dynamic_cast<ompl::kinematic::SpaceInformationKinematic*>(si));
+    ompl::kinematic::pRRT *rrt = new ompl::kinematic::pRRT(dynamic_cast<ompl::kinematic::SpaceInformationKinematic*>(ompl_model->si));
     mp                         = rrt;
     
     if (options->hasParam("range"))
@@ -71,7 +72,7 @@ bool ompl_planning::kinematicpRRTSetup::setup(boost::shared_ptr<planning_environ
 	ROS_DEBUG("Thread count is set to %u", rrt->getThreadCount());
     }
 
-    postSetup(options);
+    postSetup(planningMonitor, groupName, options);
     
     return true;
 }

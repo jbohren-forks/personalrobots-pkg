@@ -52,6 +52,7 @@
 #include <planning_environment/util/construct_object.h>
 #include <geometric_shapes/bodies.h>
 
+#include <valarray>
 #include <algorithm>
 #include <cstdlib>
 
@@ -64,8 +65,20 @@ namespace move_arm
 	
 	MoveArm(MoveArmSetup &setup) : setup_(setup), as_(nh_, "move_" + setup.group_, boost::bind(&MoveArm::execute, this, _1))
 	{
-	    if (setup_.show_collisions_)
+	    nh_.param<bool>("~perform_ik", perform_ik_, true);
+	    ROS_INFO("IK will %sbe performed", perform_ik_ ? "" : "not ");
+
+	    nh_.param<bool>("~show_collisions", show_collisions_, false);
+	    if (show_collisions_)
+	    {
+		ROS_INFO("Found collisions will be displayed as visualization markers");
 		visMarkerPublisher_ = nh_.advertise<visualization_msgs::Marker>("visualization_marker", 128);
+	    }
+	    
+	    nh_.param<bool>("~long_range_only", long_range_only_, false);
+	    
+	    if (long_range_only_)
+		ROS_INFO("Only long range planning will be used");
 	    
 	    // advertise the topic for displaying kinematic plans
 	    displayPathPublisher_ = nh_.advertise<motion_planning_msgs::KinematicPath>("executing_kinematic_path", 10);
@@ -114,8 +127,9 @@ namespace move_arm
 		sum  = 0.0;
 	    }
 	    
-	    double cost;
-	    double sum;
+	    std::string link;
+	    double      cost;
+	    double      sum;
 	};
 	
 	/// Representation of a state and its corresponding joint constraints
@@ -133,7 +147,14 @@ namespace move_arm
 	    double cdepth = fabs(contact.depth);
 	    
 	    if (ccost->cost < cdepth)
+	    {
 		ccost->cost = cdepth;
+		if (contact.link1)
+		    ccost->link = contact.link1->name;
+		else
+		    if (contact.link2)
+			ccost->link = contact.link2->name;
+	    }
 	    ccost->sum += cdepth;
 	    
 	    if (display)
@@ -237,7 +258,7 @@ namespace move_arm
 	    ROS_DEBUG("Acting on goal with unknown valid goal state ...");
 	    
 	    StateAndConstraint sac;
-	    bool found = findValidNearJointConstraint(req.start_state, req.params, req.goal_constraints, states, sac);
+	    bool found = long_range_only_ ? false : findValidNearJointConstraint(req.start_state, req.params, req.goal_constraints, states, sac);
 	    
 	    if (found)
 	    {
@@ -439,7 +460,7 @@ namespace move_arm
 	    ROS_DEBUG("Acting on goal...");
 	    
 	    // change pose constraints to joint constraints, if possible and so desired
-	    if (setup_.perform_ik_ && req.goal_constraints.joint_constraint.empty() &&         // we have no joint constraints on the goal,
+	    if (perform_ik_ && req.goal_constraints.joint_constraint.empty() &&         // we have no joint constraints on the goal,
 		req.goal_constraints.pose_constraint.size() == 1 &&      // we have a single pose constraint on the goal
 		req.goal_constraints.pose_constraint[0].type ==
 		motion_planning_msgs::PoseConstraint::POSITION_X + motion_planning_msgs::PoseConstraint::POSITION_Y + motion_planning_msgs::PoseConstraint::POSITION_Z +
@@ -471,7 +492,7 @@ namespace move_arm
 	    
 	    // if the planner aborted and we have an idea about an invalid state that
 	    // may be in the goal region, we make one last try using the short range planner
-	    if (result == ABORTED && !states.empty())
+	    if (result == ABORTED && !states.empty() && !req.goal_constraints.pose_constraint.empty())
 	    {
 		// set the goal to be a state
 		ROS_INFO("Trying again with a state in the goal region (although the state is invalid)...");
@@ -498,7 +519,7 @@ namespace move_arm
 	    
 	    // if the planner aborted and we have an idea about an invalid state that
 	    // may be in the goal region, we make one last try using the short range planner
-	    if (result == ABORTED && !states.empty())
+	    if (result == ABORTED && !states.empty() && !req.goal_constraints.pose_constraint.empty())
 	    {
 		// set the goal to be a state
 		ROS_INFO("Trying again with a state in the goal region (although the state is invalid)...");
@@ -536,6 +557,9 @@ namespace move_arm
 	    int                                 trajectoryId = -1;
 	    ros::Duration                       eps(0.01);
 	    ros::Duration                       epsLong(0.1);
+	    
+	    std::valarray<double>               velocityHistory(20);
+	    unsigned int                        velocityHistoryIndex = 0;
 	    
 	    while (true)
 	    {
@@ -578,16 +602,24 @@ namespace move_arm
 				    approx = res.approximate;
 				    if (res.approximate)
 					ROS_INFO("Approximate path was found. Distance to goal is: %f", res.distance);
-				    ROS_INFO("Received path with %u states from motion planner", (unsigned int)res.path.states.size());
-				    currentPath = res.path;
-				    currentPos = 0;
-				    if (planningMonitor_->transformPathToFrame(currentPath, planningMonitor_->getFrameId()))
+				    if (res.distance < 0.1)
 				    {
-					displayPathPublisher_.publish(currentPath);
-					//				    printPath(currentPath);
-					
-					feedback->mode = move_arm::MoveArmFeedback::MOVING;
-					as_.publishFeedback(feedback);
+					ROS_INFO("Received path with %u states from motion planner", (unsigned int)res.path.states.size());
+					if (res.path.states.size() > 1)
+					{
+					    currentPath = res.path;
+					    currentPos = 0;
+					    if (planningMonitor_->transformPathToFrame(currentPath, planningMonitor_->getFrameId()))
+					    {
+						displayPathPublisher_.publish(currentPath);
+						//				    printPath(currentPath);
+						
+						feedback->mode = move_arm::MoveArmFeedback::MOVING;
+						as_.publishFeedback(feedback);
+					    }
+					}
+					else
+					    ROS_ERROR("Received path is too short");
 				    }
 				}
 			    }
@@ -616,7 +648,6 @@ namespace move_arm
 		if (feedback->mode == move_arm::MoveArmFeedback::MOVING)
 		{
 		    bool safe = planningMonitor_->isEnvironmentSafe();
-		    bool valid = true;
 		    
 		    // we don't want to check the part of the path that was already executed
 		    currentPos = planningMonitor_->closestStateOnPath(currentPath, currentPos, currentPath.states.size() - 1, planningMonitor_->getRobotState());
@@ -627,15 +658,25 @@ namespace move_arm
 		    }
 		    
 		    CollisionCost ccost;
-		    planningMonitor_->setOnCollisionContactCallback(boost::bind(&MoveArm::contactFound, this, &ccost, true, _1), 0);
+		    planningMonitor_->setOnCollisionContactCallback(boost::bind(&MoveArm::contactFound, this, &ccost, show_collisions_, _1), 0);
 		    planningMonitor_->setAllowedContacts(allowed_contacts);
-		    valid = planningMonitor_->isPathValid(currentPath, currentPos, currentPath.states.size() - 1, planning_environment::PlanningMonitor::COLLISION_TEST +
-							  planning_environment::PlanningMonitor::PATH_CONSTRAINTS_TEST, false);
+		    bool valid = planningMonitor_->isPathValid(currentPath, currentPos, currentPath.states.size() - 1, planning_environment::PlanningMonitor::COLLISION_TEST +
+							       planning_environment::PlanningMonitor::PATH_CONSTRAINTS_TEST, false);
 		    planningMonitor_->clearAllowedContacts();
 		    planningMonitor_->setOnCollisionContactCallback(NULL);
 		    
 		    if (!valid)
-			ROS_INFO("Maximum path contact penetration depth is %f, sum of all contact depths is %f", ccost.cost, ccost.sum);
+			ROS_INFO("Maximum path contact penetration depth is %f at link %s, sum of all contact depths is %f", ccost.cost, ccost.link.c_str(), ccost.sum);
+		    
+		    if (velocityHistoryIndex >= velocityHistory.size())
+		    {
+			double sum = velocityHistory.sum();
+			if (sum < 1e-3)
+			{
+			    ROS_INFO("The total velocity of the robot over the last %d samples is %f. Self-preempting...", (int)velocityHistory.size(), sum);
+			    state = PREEMPTED;
+			}
+		    }
 		    
 		    if (state == PREEMPTED || !safe || !valid)
 		    {
@@ -695,6 +736,7 @@ namespace move_arm
 				break;
 			    }
 			    ROS_INFO("Sent trajectory %d to controller", trajectoryId);
+			    velocityHistoryIndex = 0;
 			}
 			else
 			{
@@ -702,6 +744,11 @@ namespace move_arm
 			    state = ABORTED;
 			    break;
 			}
+		    }
+		    else
+		    {
+			velocityHistory[velocityHistoryIndex % velocityHistory.size()] = planningMonitor_->getTotalVelocity();
+			velocityHistoryIndex++;
 		    }
 		    
 		    // monitor controller execution by calling trajectory query
@@ -760,6 +807,8 @@ namespace move_arm
 		const motion_planning_msgs::KinematicJoint &kj = req.start_state[i];
 		sp->setParamsJoint(kj.value, kj.joint_name);
 		motion_planning_msgs::JointConstraint jc;
+		jc.header.frame_id = planningMonitor_->getFrameId();
+		jc.header.stamp = ros::Time::now();
 		jc.joint_name = kj.joint_name;
 		jc.value = kj.value;
 		jc.tolerance_above.resize(jc.value.size(), 0.0);
@@ -816,7 +865,7 @@ namespace move_arm
 	    req.times = 1;
 	    
 	    // do not spend more than this amount of time
-	    req.allowed_time = 1.0;
+	    req.allowed_time = 5.0;
 	    
 	    // tell the planning monitor about the constraints we will be following
 	    planningMonitor_->setPathConstraints(req.path_constraints);
@@ -834,7 +883,7 @@ namespace move_arm
 	    ArmActionState result = SUCCESS;
 	    
 	    // fill the starting state; if state is not valid, use short range planner to move out of it
-	    if (!fillStartState(req.start_state))
+	    if (!fillStartState(req.start_state) && !long_range_only_)
 		result = moveToValidState(req);
 	    
 	    if (as_.isPreemptRequested() || as_.isNewGoalAvailable())
@@ -862,13 +911,38 @@ namespace move_arm
 	void fillTrajectoryPath(const motion_planning_msgs::KinematicPath &path, manipulation_msgs::JointTraj &traj)
 	{
 	    traj.names = setup_.groupJointNames_;
-	    traj.points.resize(path.states.size());
+
+	    // get the current state
+	    double d = 0.0;
+	    std::vector<double> current;
+	    planningMonitor_->getRobotState()->copyParamsGroup(current, setup_.group_);
+	    for (unsigned int i = 0 ; i < current.size() ; ++i)
+	    {
+		double dif = current[i] - path.states[0].vals[i];
+		d += dif * dif;
+	    }
+	    d = sqrt(d);
+	    
+	    // decide whether we place the current state in front of the path
+	    int includeFirst = (d > 0.1) ? 1 : 0;
+	    double offset = 0.0;
+	    traj.points.resize(path.states.size() + includeFirst);
+
+	    if (includeFirst)
+	    {
+		// add the current state at the start of the path, with an offset
+		planningMonitor_->getRobotState()->copyParamsJoints(traj.points[0].positions, setup_.groupJointNames_);
+		traj.points[0].time = 0.0;
+		offset = 0.3 + d;
+	    }
+	    
+	    // add the actual path
 	    planning_models::StateParams *sp = planningMonitor_->getKinematicModel()->newStateParams();
 	    for (unsigned int i = 0 ; i < path.states.size() ; ++i)
 	    {
-		traj.points[i].time = path.times[i];
+		traj.points[i + includeFirst].time = offset + path.times[i];
 		sp->setParamsGroup(path.states[i].vals, setup_.group_);
-		sp->copyParamsJoints(traj.points[i].positions, setup_.groupJointNames_);
+		sp->copyParamsJoints(traj.points[i + includeFirst].positions, setup_.groupJointNames_);
 	    }
 	    delete sp;
 	}
@@ -982,7 +1056,7 @@ namespace move_arm
     private:
 	
 	ros::NodeHandle                                  nh_;
-	MoveArmSetup                                     &setup_;
+	MoveArmSetup                                    &setup_;
 	actionlib::SingleGoalActionServer<MoveArmAction> as_;
 	
 	planning_environment::PlanningMonitor           *planningMonitor_;
@@ -990,6 +1064,10 @@ namespace move_arm
 	
 	ros::Publisher                                   displayPathPublisher_;
 	ros::Publisher                                   visMarkerPublisher_;
+	
+	bool                                             perform_ik_;
+	bool                                             show_collisions_;
+	bool                                             long_range_only_;
 	
     };
     

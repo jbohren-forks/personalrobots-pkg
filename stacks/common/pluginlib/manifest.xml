@@ -1,13 +1,13 @@
 <package>
   <description brief="Tools for creating and using plugins with ROS">
 
-     Tools for creating and using plugins with ROS, leveraging ROS manifests for automatic discovery of plugins.
+The pluginlib package provides tools for writing and dynamically loading plugins using the ROS build infrastructure. To work, these tools require plugin providers to register their plugins in the manifest.xml of their package. 
 
   </description>
   <author>Tully Foote and Eitan Marder-Eppstein</author>
   <license>BSD</license>
   <review status="experimental" notes=""/>
-  <url>http://pr.willowgarage.com/wiki/pluginlib</url>
+  <url>http://ros.org/wiki/pluginlib</url>
 
   <depend package="roslib"/>
   <depend package="tinyxml"/>

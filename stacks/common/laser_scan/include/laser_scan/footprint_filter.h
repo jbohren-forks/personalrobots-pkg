@@ -52,7 +52,6 @@ This is useful for ground plane extraction
 namespace laser_scan
 {
 
-template <typename T>
 class LaserScanFootprintFilter : public filters::FilterBase<sensor_msgs::LaserScan>
 {
 public:
@@ -69,18 +68,8 @@ public:
 
   }
 
-  bool update(const std::vector<sensor_msgs::LaserScan>& data_in, std::vector<sensor_msgs::LaserScan>& data_out)
+  bool update(const sensor_msgs::LaserScan& input_scan, sensor_msgs::LaserScan& filtered_scan)
   {
-    if (data_in.size() != 1 || data_out.size() != 1)
-    {
-      ROS_ERROR("LaserScanFootprintFilter is not vectorized");
-      return false;
-    }
-    
-    const sensor_msgs::LaserScan& input_scan = data_in[0];
-    sensor_msgs::LaserScan& filtered_scan = data_out[0];
-
-
     filtered_scan = input_scan ;
     sensor_msgs::PointCloud laser_cloud;
 
@@ -134,8 +123,6 @@ private:
   double inscribed_radius_;
 } ;
 
-typedef sensor_msgs::LaserScan sensor_msgs_laser_scan;
-FILTERS_REGISTER_FILTER(LaserScanFootprintFilter, sensor_msgs_laser_scan);
 }
 
 #endif // LASER_SCAN_FOOTPRINT_FILTER_H

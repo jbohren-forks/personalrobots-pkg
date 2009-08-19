@@ -4,18 +4,22 @@
   <author> Melonee Wise, Kevin Watts</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
+  <depend package="controller_interface" />
   <depend package="mechanism_model" />
   <depend package="wg_robot_description_parser" />
   <depend package="realtime_tools" />
   <depend package="control_toolbox" />
   <depend package="roscpp" />
   <depend package="robot_mechanism_controllers" />
-  <url>http://pr.willowgarage.com</url>
+  <depend package="mechanism_control" />
+  <depend package="pluginlib" />
+  <url>http://pr.willowgarage.com/joint_qualification_controllers</url>
   <rosdep name="wxwidgets"/>
   <rosdep name="wxpython"/>
   <repository>http://pr.willowgarage.com/repos</repository>
   <export>
     <cpp cflags='-I${prefix}/include -I${prefix}/msg/cpp -I${prefix}/srv/cpp' lflags='-Wl,-rpath,${prefix}/lib -L${prefix}/lib -ljoint_qualification_controllers'/>
+    <controller_interface plugin="${prefix}/controller_plugins.xml" />
   </export>
 
 </package>

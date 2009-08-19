@@ -44,6 +44,7 @@
 #include <realtime_tools/realtime_publisher.h>
 #include <ros/node.h>
 #include <controller_interface/controller_provider.h>
+#include "pluginlib/class_loader.h"
 #include <mechanism_msgs/ListControllerTypes.h>
 #include <mechanism_msgs/ListControllers.h>
 #include <mechanism_msgs/SpawnController.h>
@@ -86,6 +87,7 @@ private:
   void getControllerSchedule(std::vector<size_t> &schedule);
 
   ros::NodeHandle node_;
+  pluginlib::ClassLoader<controller::Controller> controller_loader_;
 
   // for controller switching
   std::vector<controller::Controller*> start_request_, stop_request_;
@@ -123,7 +125,7 @@ private:
                           mechanism_msgs::SpawnController::Response &resp);
   bool killControllerSrv(mechanism_msgs::KillController::Request &req,
                          mechanism_msgs::KillController::Response &resp);
-  boost::mutex services_lock_; 
+  boost::mutex services_lock_;
   ros::ServiceServer srv_list_controllers_, srv_list_controller_types_, srv_spawn_controller_;
   ros::ServiceServer srv_kill_controller_, srv_switch_controller_;
 };

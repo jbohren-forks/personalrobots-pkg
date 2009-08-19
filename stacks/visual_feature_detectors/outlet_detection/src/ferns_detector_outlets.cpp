@@ -312,7 +312,8 @@ void ferns_detector_initialize(Vector<Point2f>& object_keypoints, FernClassifier
 	Vector<int> labels=Vector<int>();
 	for (int i=0;i<(int)object_keypoints.size();i++)
 	{
-		refimgs.push_back(&object);
+		Mat* mat = new Mat(object);
+		refimgs.push_back(mat);
 	}
 
 	detector.train(object_keypoints,refimgs,labels,
@@ -432,19 +433,23 @@ int ferns_detect_outlets(Mat& _image, Mat& object, const char* outlet_config_pat
 	vector<CvPoint> features_points;
 	train_points.clear();
 	features_points.clear();
-
-	for( i = 0; i < (int)pairs.size(); i += 2 )
-	{
-		train_points.push_back(object_keypoints[pairs[i]]);
-		features_points.push_back(image_keypoints[pairs[i+1]]);
-	}
-
-	CvMat* homography = cvCreateMat(2, 3, CV_32FC1);
-	FindAffineTransform(train_points, features_points, homography);
 	dst_outlet.clear();
-	MapFeaturesAffine(train_features, dst_outlet, homography);
-	//reprojectionError =	CalcAffineReprojectionError(train_points, features_points, homography);
-	cvReleaseMat(&homography);
+	holes.clear();
+
+	if (found)
+	{
+		for( i = 0; i < (int)pairs.size(); i += 2 )
+		{
+			train_points.push_back(object_keypoints[pairs[i]]);
+			features_points.push_back(image_keypoints[pairs[i+1]]);
+		}
+
+		CvMat* homography = cvCreateMat(2, 3, CV_32FC1);
+		FindAffineTransform(train_points, features_points, homography);
+		MapFeaturesAffine(train_features, dst_outlet, homography);
+		//reprojectionError =	CalcAffineReprojectionError(train_points, features_points, homography);
+		cvReleaseMat(&homography);
+	}
 
 	if ((int)(dst_outlet.size()) > 0)
 	{

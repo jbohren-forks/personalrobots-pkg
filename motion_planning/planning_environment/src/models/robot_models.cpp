@@ -113,7 +113,6 @@ void planning_environment::RobotModels::loadRobot(void)
 	    // make sure the kinematic model is in the frame of the link that connects it to the environment
 	    // (remove all transforms caused by planar or floating
 	    // joints)
-	    kmodel_->reduceToRobotFrame();
 	    kmodel_->defaultState();
 
 	    getCollisionCheckLinks(collision_check_links_);	

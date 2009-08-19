@@ -41,8 +41,6 @@
 
 #include "filters/realtime_circular_buffer.h"
 
-#include <pluginlib/plugin_macros.h>
-
 namespace filters
 {
 

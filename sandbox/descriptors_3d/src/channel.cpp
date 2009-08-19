@@ -49,6 +49,13 @@ Channel::Channel(const string& channel_name)
 // --------------------------------------------------------------
 /* See function definition */
 // --------------------------------------------------------------
+void Channel::clearShared()
+{
+}
+
+// --------------------------------------------------------------
+/* See function definition */
+// --------------------------------------------------------------
 int Channel::precompute(const sensor_msgs::PointCloud& data,
                         cloud_kdtree::KdTree& data_kdtree,
                         const cv::Vector<const geometry_msgs::Point32*>& interest_pts)

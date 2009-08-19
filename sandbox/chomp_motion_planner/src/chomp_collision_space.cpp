@@ -35,19 +35,20 @@
 /** \author Mrinal Kalakrishnan */
 
 #include <chomp_motion_planner/chomp_collision_space.h>
+#include <sstream>
 
 namespace chomp
 {
 
 ChompCollisionSpace::ChompCollisionSpace():
-  voxel3d_(NULL)
+  distance_field_(NULL)
 {
 }
 
 ChompCollisionSpace::~ChompCollisionSpace()
 {
-  if (voxel3d_)
-    delete voxel3d_;
+  if (distance_field_)
+    delete distance_field_;
   delete collision_map_notifier_;
 }
 
@@ -57,10 +58,16 @@ void ChompCollisionSpace::collisionMapCallback(const mapping_msgs::CollisionMapC
   if (mutex_.try_lock())
   {
     ros::WallTime start = ros::WallTime::now();
-    voxel3d_->reset();
-    voxel3d_->updateWorld(*collision_map);
+    distance_field_->reset();
+    ROS_INFO("Reset prop distance_field in %f sec", (ros::WallTime::now() - start).toSec());
+    start = ros::WallTime::now();
+    distance_field_->addPointsToField(cuboid_points_);
+    distance_field_->addCollisionMapToField(*collision_map);
     mutex_.unlock();
-    ROS_INFO("Updated distance field in %f sec", (ros::WallTime::now() - start).toSec());
+    ROS_INFO("Updated prop distance_field in %f sec", (ros::WallTime::now() - start).toSec());
+
+    distance_field_->visualize(0.8*max_expansion_, 0.9*max_expansion_, collision_map->header.frame_id, collision_map->header.stamp);
+
   }
   else
   {
@@ -68,12 +75,11 @@ void ChompCollisionSpace::collisionMapCallback(const mapping_msgs::CollisionMapC
   }
 }
 
-bool ChompCollisionSpace::init()
+bool ChompCollisionSpace::init(double max_radius_clearance)
 {
   double size_x, size_y, size_z;
   double origin_x, origin_y, origin_z;
   double resolution;
-  int size_x_int, size_y_int, size_z_int;
 
   node_handle_.param("~reference_frame", reference_frame_, std::string("base_link"));
   node_handle_.param("~collision_space/size_x", size_x, 2.0);
@@ -83,19 +89,68 @@ bool ChompCollisionSpace::init()
   node_handle_.param("~collision_space/origin_y", origin_y, -1.5);
   node_handle_.param("~collision_space/origin_z", origin_z, -2.0);
   node_handle_.param("~collision_space/resolution", resolution, 0.02);
+  resolution_ = resolution;
+  max_expansion_ = max_radius_clearance;
 
-  size_x_int = int(size_x/resolution);
-  size_y_int = int(size_y/resolution);
-  size_z_int = int(size_z/resolution);
+  initCollisionCuboids();
 
-  voxel3d_ = new Voxel3d(size_x_int, size_y_int, size_z_int, resolution,
-      tf::Vector3(origin_x, origin_y, origin_z), true);
+  distance_field_ = new distance_field::PropagationDistanceField(size_x, size_y, size_z, resolution, origin_x, origin_y, origin_z, max_expansion_);
 
   collision_map_notifier_ = new tf::MessageNotifier<mapping_msgs::CollisionMap>(tf_,
       boost::bind(&ChompCollisionSpace::collisionMapCallback, this, _1),
       "collision_map", reference_frame_, 1);
-  ROS_INFO("Initialized chomp collision space in %s reference frame.", reference_frame_.c_str());
+  ROS_INFO("Initialized chomp collision space in %s reference frame with %f expansion radius.", reference_frame_.c_str(), max_expansion_);
   return true;
+}
+
+static std::string intToString(int i)
+{
+  std::ostringstream oss;
+  oss << i;
+  return oss.str();
+}
+
+void ChompCollisionSpace::initCollisionCuboids()
+{
+  int index=1;
+  while (node_handle_.hasParam(std::string("~collision_space/cuboids/cuboid")+intToString(index)+"/size_x"))
+  {
+    addCollisionCuboid(std::string("~collision_space/cuboids/cuboid")+intToString(index));
+    index++;
+  }
+
+}
+
+void ChompCollisionSpace::addCollisionCuboid(const std::string param_name)
+{
+  double size_x, size_y, size_z;
+  double origin_x, origin_y, origin_z;
+  if (!node_handle_.getParam(param_name+"/size_x", size_x))
+    return;
+  if (!node_handle_.getParam(param_name+"/size_y", size_y))
+    return;
+  if (!node_handle_.getParam(param_name+"/size_z", size_z))
+    return;
+  if (!node_handle_.getParam(param_name+"/origin_x", origin_x))
+    return;
+  if (!node_handle_.getParam(param_name+"/origin_y", origin_y))
+    return;
+  if (!node_handle_.getParam(param_name+"/origin_z", origin_z))
+    return;
+
+  if (size_x<0 || size_y<0 || size_z<0)
+    return;
+
+  // add points:
+  int num_points=0;
+  for (double x=origin_x; x<=origin_x+size_x; x+=resolution_)
+    for (double y=origin_y; y<=origin_y+size_y; y+=resolution_)
+      for (double z=origin_z; z<=origin_z+size_z; z+=resolution_)
+      {
+        cuboid_points_.push_back(btVector3(x,y,z));
+        ++num_points;
+      }
+  ROS_INFO("Added %d points for collision cuboid %s", num_points, param_name.c_str());
 }
 
 }

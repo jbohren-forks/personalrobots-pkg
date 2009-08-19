@@ -115,15 +115,15 @@ void robot_self_filter::SelfMask::maskContainment(const sensor_msgs::PointCloud&
     }
 }
 
-void robot_self_filter::SelfMask::maskIntersection(const sensor_msgs::PointCloud& data_in, const std::string &sensor_frame, std::vector<int> &mask,
-						   const boost::function<void(const btVector3&)> &callback)
+void robot_self_filter::SelfMask::maskIntersection(const sensor_msgs::PointCloud& data_in, const std::string &sensor_frame, const double min_sensor_dist,
+						   std::vector<int> &mask, const boost::function<void(const btVector3&)> &callback)
 {
     mask.resize(data_in.points.size());
     if (bodies_.empty())
 	std::fill(mask.begin(), mask.end(), (int)OUTSIDE);
     else
     {
-	assumeFrame(data_in.header, sensor_frame);
+	assumeFrame(data_in.header, sensor_frame, min_sensor_dist);
 	if (sensor_frame.empty())
 	    maskAuxContainment(data_in, mask);
 	else
@@ -131,15 +131,15 @@ void robot_self_filter::SelfMask::maskIntersection(const sensor_msgs::PointCloud
     }
 }
 
-void robot_self_filter::SelfMask::maskIntersection(const sensor_msgs::PointCloud& data_in, const btVector3 &sensor, std::vector<int> &mask,
-						   const boost::function<void(const btVector3&)> &callback)
+void robot_self_filter::SelfMask::maskIntersection(const sensor_msgs::PointCloud& data_in, const btVector3 &sensor_pos, const double min_sensor_dist,
+						   std::vector<int> &mask, const boost::function<void(const btVector3&)> &callback)
 {
     mask.resize(data_in.points.size());
     if (bodies_.empty())
 	std::fill(mask.begin(), mask.end(), (int)OUTSIDE);
     else
     {
-	assumeFrame(data_in.header, sensor);
+	assumeFrame(data_in.header, sensor_pos, min_sensor_dist);
 	maskAuxIntersection(data_in, mask, callback);
     }
 }
@@ -154,13 +154,34 @@ void robot_self_filter::SelfMask::computeBoundingSpheres(void)
     }
 }
 
-void robot_self_filter::SelfMask::assumeFrame(const roslib::Header& header, const btVector3 &sensor)
+void robot_self_filter::SelfMask::assumeFrame(const roslib::Header& header, const btVector3 &sensor_pos, double min_sensor_dist)
 {
     assumeFrame(header);
-    sensor_pos_ = sensor;
+    sensor_pos_ = sensor_pos;
+    min_sensor_dist_ = min_sensor_dist;
 }
 
-void robot_self_filter::SelfMask::assumeFrame(const roslib::Header& header, const std::string &sensor_frame)
+void robot_self_filter::SelfMask::assumeFrame(const roslib::Header& header, const std::string &sensor_frame, double min_sensor_dist)
+{
+    assumeFrame(header);
+    
+    // compute the origin of the sensor in the frame of the cloud
+    try
+    {
+	tf::Stamped<btTransform> transf;
+	tf_.lookupTransform(header.frame_id, sensor_frame, header.stamp, transf);
+	sensor_pos_ = transf.getOrigin();
+    }
+    catch(...)
+    {
+	sensor_pos_.setValue(0, 0, 0);
+	ROS_ERROR("Unable to lookup transform from %s to %s", sensor_frame.c_str(), header.frame_id.c_str());
+    }
+    
+    min_sensor_dist_ = min_sensor_dist;
+}
+
+void robot_self_filter::SelfMask::assumeFrame(const roslib::Header& header)
 {
     const unsigned int bs = bodies_.size();
     
@@ -185,22 +206,6 @@ void robot_self_filter::SelfMask::assumeFrame(const roslib::Header& header, cons
     }
     
     computeBoundingSpheres();
-
-    // compute the origin of the sensor in the frame of the cloud
-    if (!sensor_frame.empty())
-    {
-	try
-	{
-	    tf::Stamped<btTransform> transf;
-	    tf_.lookupTransform(header.frame_id, sensor_frame, header.stamp, transf);
-	    sensor_pos_ = transf.getOrigin();
-	}
-	catch(...)
-	{
-	    sensor_pos_.setValue(0, 0, 0);
-	    ROS_ERROR("Unable to lookup transform from %s to %s", sensor_frame.c_str(), header.frame_id.c_str());
-	}
-    }
 }
 
 void robot_self_filter::SelfMask::maskAuxContainment(const sensor_msgs::PointCloud& data_in, std::vector<int> &mask)
@@ -257,29 +262,35 @@ void robot_self_filter::SelfMask::maskAuxIntersection(const sensor_msgs::PointCl
 	{
 	    // we check it the point is a shadow point 
 	    btVector3 dir(sensor_pos_ - pt);
-	    dir.normalize();
-	    if (callback)
-	    {
-		std::vector<btVector3> intersections;
-		for (unsigned int j = 0 ; out == OUTSIDE && j < bs ; ++j)
-		    if (bodies_[j].body->intersectsRay(pt, dir, &intersections, 1))
-		    {
-			callback(intersections[0]);
-			out = SHADOW;
-		    }
-	    }
+	    btScalar  lng = dir.length();
+	    if (lng < min_sensor_dist_)
+		out = INSIDE;
 	    else
-	    {
-		for (unsigned int j = 0 ; out == OUTSIDE && j < bs ; ++j)
-		    if (bodies_[j].body->intersectsRay(pt, dir))
-			out = SHADOW;
+	    {		
+		dir /= lng;
+		if (callback)
+		{
+		    std::vector<btVector3> intersections;
+		    for (unsigned int j = 0 ; out == OUTSIDE && j < bs ; ++j)
+			if (bodies_[j].body->intersectsRay(pt, dir, &intersections, 1))
+			{
+			    callback(intersections[0]);
+			    out = SHADOW;
+			}
+		}
+		else
+		{
+		    for (unsigned int j = 0 ; out == OUTSIDE && j < bs ; ++j)
+			if (bodies_[j].body->intersectsRay(pt, dir))
+			    out = SHADOW;
+		}
+		
+		// if it is not a shadow point, we check if it is inside the scaled body
+		if (out == OUTSIDE && bound.center.distance2(pt) < radiusSquared)
+		    for (unsigned int j = 0 ; out == OUTSIDE && j < bs ; ++j)
+			if (bodies_[j].body->containsPoint(pt))
+			    out = INSIDE;
 	    }
-
-	    // if it is not a shadow point, we check if it is inside the scaled body
-	    if (out == OUTSIDE && bound.center.distance2(pt) < radiusSquared)
-		for (unsigned int j = 0 ; out == OUTSIDE && j < bs ; ++j)
-		    if (bodies_[j].body->containsPoint(pt))
-			out = INSIDE;
 	}
 	
 	mask[i] = out;
@@ -317,28 +328,35 @@ int robot_self_filter::SelfMask::getMaskIntersection(const btVector3 &pt, const 
 
 	// we check it the point is a shadow point 
 	btVector3 dir(sensor_pos_ - pt);
-	dir.normalize();
-	if (callback)
-	{
-	    std::vector<btVector3> intersections;
-	    for (unsigned int j = 0 ; out == OUTSIDE && j < bs ; ++j)
-		if (bodies_[j].body->intersectsRay(pt, dir, &intersections, 1))
-		{
-		    callback(intersections[0]);
-		    out = SHADOW;
-		}
-	}
+	btScalar  lng = dir.length();
+	if (lng < min_sensor_dist_)
+	    out = INSIDE;
 	else
 	{
+	    dir /= lng;
+	    
+	    if (callback)
+	    {
+		std::vector<btVector3> intersections;
+		for (unsigned int j = 0 ; out == OUTSIDE && j < bs ; ++j)
+		    if (bodies_[j].body->intersectsRay(pt, dir, &intersections, 1))
+		    {
+			callback(intersections[0]);
+			out = SHADOW;
+		    }
+	    }
+	    else
+	    {
+		for (unsigned int j = 0 ; out == OUTSIDE && j < bs ; ++j)
+		    if (bodies_[j].body->intersectsRay(pt, dir))
+			out = SHADOW;
+	    }
+	    
+	    // if it is not a shadow point, we check if it is inside the scaled body
 	    for (unsigned int j = 0 ; out == OUTSIDE && j < bs ; ++j)
-		if (bodies_[j].body->intersectsRay(pt, dir))
-		    out = SHADOW;
+		if (bodies_[j].body->containsPoint(pt))
+		    out = INSIDE;
 	}
-
-	// if it is not a shadow point, we check if it is inside the scaled body
-	for (unsigned int j = 0 ; out == OUTSIDE && j < bs ; ++j)
-	    if (bodies_[j].body->containsPoint(pt))
-		out = INSIDE;
     }
     return out;
 }

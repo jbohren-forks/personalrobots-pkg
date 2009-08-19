@@ -36,9 +36,7 @@ public:
     class XMLData : public XMLReadable
     {
     public:
-        XMLData() {}
-        virtual const char* GetXMLId() { return XMLID::GetXMLId(); }
-
+    XMLData() : XMLReadable(XMLID::GetXMLId()) {}
         virtual void copy(const XMLData* pdata) {
             assert( pdata != NULL );
             *this = *pdata;
@@ -199,10 +197,10 @@ public:
     static void RegisterXMLReader(EnvironmentBase* penv)
     {
         if( penv != NULL )
-            penv->RegisterXMLReader(XMLID::GetXMLId(), SimpleSensorSystem<XMLID>::CreateMocapReader);
+            penv->RegisterXMLReader(PT_KinBody,XMLID::GetXMLId(), SimpleSensorSystem<XMLID>::CreateMocapReader);
     }
 
-    static BaseXMLReader* CreateMocapReader(KinBody* parent, const char **atts)
+    static BaseXMLReader* CreateMocapReader(InterfaceBase* parent, const char **atts)
     {
         return new SimpleXMLReader(NULL, atts);
     }
@@ -234,7 +232,7 @@ public:
     {
         // go through all bodies in the environment and check for mocap data
         FOREACHC(itbody, vbodies) {
-            XMLData* pmocapdata = (XMLData*)((*itbody)->GetExtraInterface(XMLID::GetXMLId()));
+            XMLData* pmocapdata = (XMLData*)(*itbody)->GetReadableInterface(XMLID::GetXMLId());
             if( pmocapdata != NULL ) {
                 BODY* p = AddKinBody(*itbody, pmocapdata);
                 if( p != NULL ) {
@@ -253,7 +251,7 @@ public:
     
         const XMLData* pdata = (const XMLData*)_pdata;
         if( pdata == NULL ) {
-            pdata = (const XMLData*)(pbody->GetExtraInterface(XMLID::GetXMLId()));
+            pdata = (const XMLData*)pbody->GetReadableInterface(XMLID::GetXMLId());
             if( pdata == NULL ) {
                 RAVELOG_ERRORA("failed to find mocap data for body %S\n", pbody->GetName());
                 return NULL;

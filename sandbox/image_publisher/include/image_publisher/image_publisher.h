@@ -117,8 +117,8 @@ public:
   void shutdown();
 
 private:
-  void publishThumbnailImage(sensor_msgs::Image& thumbnail) const;
-  void publishCompressedImage(sensor_msgs::CompressedImage& compressed) const;
+  void publishThumbnailImage(const sensor_msgs::Image& message) const;
+  void publishCompressedImage(const sensor_msgs::Image& message) const;
   
   ros::NodeHandle node_handle_;
   ros::Publisher image_pub_;

@@ -54,7 +54,7 @@ namespace costmap_2d {
     ros_node_.param("publish_voxel_map", publish_voxel_, false);
 
     if(publish_voxel_ && map_type == "voxel")
-      voxel_pub_ = ros_node_.advertise<costmap_2d::VoxelGrid>("~/voxel_grid", 1);
+      voxel_pub_ = ros_node_.advertise<costmap_2d::VoxelGrid>("voxel_grid", 1);
     else
       publish_voxel_ = false;
 

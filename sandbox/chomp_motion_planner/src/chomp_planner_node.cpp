@@ -71,8 +71,10 @@ bool ChompPlannerNode::init()
   // load chomp parameters:
   chomp_parameters_.initFromNodeHandle();
 
+  double max_radius_clearance = chomp_robot_model_.getMaxRadiusClearance();
+
   // initialize the collision space
-  if (!chomp_collision_space_.init())
+  if (!chomp_collision_space_.init(max_radius_clearance))
     return false;
 
   // initialize the visualization publisher:

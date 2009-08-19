@@ -34,7 +34,7 @@
 *
 * Author: Eitan Marder-Eppstein
 *********************************************************************/
-#include "triangle.h"
+#include "pluginlib_tutorial_provider/triangle.h"
 #include <cmath>
 
 triangle::triangle(){}

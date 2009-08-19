@@ -35,6 +35,7 @@
 /* Author: Wim Meeussen */
 
 #include <boost/algorithm/string.hpp>
+#include <ros/ros.h>
 #include <vector>
 #include "robot_model/robot_model.h"
 
@@ -49,137 +50,264 @@ RobotModel::RobotModel()
 void RobotModel::clear()
 {
   name_.clear();
-  links_.clear();
-  root_link_.reset();
-  link_parent_.clear();
+  this->links_.clear();
+  this->joints_.clear();
+  this->materials_.clear();
+  this->root_link_.reset();
 }
 
 
 bool RobotModel::initFile(const std::string& filename)
 {
-  TiXmlDocument urdf_xml;
-  urdf_xml.LoadFile(filename);
-  TiXmlElement *robot_xml = urdf_xml.FirstChildElement("robot");
-  if (!robot_xml)
-  {std::cerr << "Could not parse the xml" << std::endl; return false;}
+  TiXmlDocument xml_doc;
+  xml_doc.LoadFile(filename);
 
-  return initXml(robot_xml);
+  return initXml(&xml_doc);
 }
 
 
 bool RobotModel::initString(const std::string& xml_string)
 {
-  TiXmlDocument urdf_xml;
-  urdf_xml.Parse(xml_string.c_str());
-  TiXmlElement *robot_xml = urdf_xml.FirstChildElement("robot");
-  if (!robot_xml)
-  {std::cerr << "Could not parse the xml" << std::endl; return false;}
+  TiXmlDocument xml_doc;
+  xml_doc.Parse(xml_string.c_str());
 
+  return initXml(&xml_doc);
+}
+
+
+bool RobotModel::initXml(TiXmlDocument *xml_doc)
+{
+  if (!xml_doc)
+  {
+    ROS_ERROR("Could not parse the xml");
+    return false;
+  }
+
+  TiXmlElement *robot_xml = xml_doc->FirstChildElement("robot");
+  if (!robot_xml)
+  {
+    ROS_ERROR("Could not find the 'robot' element in the xml file");
+    return false;
+  }
   return initXml(robot_xml);
 }
 
 bool RobotModel::initXml(TiXmlElement *robot_xml)
 {
-  links_.clear();
-  root_link_.reset();
-  link_parent_.clear();
+  this->clear();
 
-  std::cout << "INFO: Parsing robot xml" << std::endl;
+  ROS_DEBUG("Parsing robot xml");
   if (!robot_xml) return false;
 
   // Get robot name
   const char *name = robot_xml->Attribute("name");
   if (!name)
   {
-    std::cerr << "ERROR: No name given for the robot." << std::endl;
+    ROS_ERROR("No name given for the robot.");
     return false;
   }
   this->name_ = std::string(name);
 
-  // Get all Link elements, connectivity information stored as
-  //   parent link name
-  //   parent joint name
-  //   parent link origin
+  // Get all Material elements
+  for (TiXmlElement* material_xml = robot_xml->FirstChildElement("material"); material_xml; material_xml = material_xml->NextSiblingElement("material"))
+  {
+    boost::shared_ptr<Material> material;
+    material.reset(new Material);
+
+    if (material->initXml(material_xml))
+    {
+      if (this->getMaterial(material->name))
+      {
+        ROS_ERROR("material '%s' is not unique.", material->name.c_str());
+        material.reset();
+        return false;
+      }
+      else
+      {
+        this->materials_.insert(make_pair(material->name,material));
+        ROS_DEBUG("successfully added a new material '%s'", material->name.c_str());
+      }
+    }
+    else
+    {
+      ROS_ERROR("material xml is not initialized correctly");
+      material.reset();
+    }
+  }
+
+  // Get all Link elements
   for (TiXmlElement* link_xml = robot_xml->FirstChildElement("link"); link_xml; link_xml = link_xml->NextSiblingElement("link"))
   {
-    boost::shared_ptr<Link> link(new Link());
+    boost::shared_ptr<Link> link;
+    link.reset(new Link);
 
     if (link->initXml(link_xml))
     {
-      links_.insert(make_pair(link->name_,link));
-      std::cout << "INFO: successfully added a new link (" << link->name_ << ")" << std::endl;
+      if (this->getLink(link->name))
+      {
+        ROS_ERROR("link '%s' is not unique.", link->name.c_str());
+        link.reset();
+        return false;
+      }
+      else
+      {
+        // set link visual material
+        ROS_DEBUG("setting link '%s' material", link->name.c_str());
+        if (link->visual)
+          if (!link->visual->material_name.empty())
+            if (this->getMaterial(link->visual->material_name))
+            {
+              ROS_DEBUG("setting link '%s' material to '%s'", link->name.c_str(),link->visual->material_name);
+              link->visual->material = this->getMaterial( link->visual->material_name );
+            }
+            else
+            {
+              ROS_ERROR("link '%s' material '%s' undefined.", link->name.c_str(),link->visual->material_name);
+              link.reset();
+              return false;
+            }
+
+        this->links_.insert(make_pair(link->name,link));
+        ROS_DEBUG("successfully added a new link '%s'", link->name.c_str());
+      }
     }
     else
     {
-      std::cout << "INFO: link xml is not initialized correctly" << std::endl;
+      ROS_ERROR("link xml is not initialized correctly");
       link.reset();
     }
   }
-
-
-  // building tree: name mapping
-  if (!this->initTree())
+  // Get all Joint elements
+  for (TiXmlElement* joint_xml = robot_xml->FirstChildElement("joint"); joint_xml; joint_xml = joint_xml->NextSiblingElement("joint"))
   {
-    std::cerr << "failed to find build tree" << std::endl;
-    return false;
-  }
-      
-  // find the root link
-  if (!this->initRoot())
-  {
-    std::cerr << "failed to find root link" << std::endl;
-    return false;
-  }
+    boost::shared_ptr<Joint> joint;
+    joint.reset(new Joint);
 
-  return true;
-}
-
-bool RobotModel::initTree()
-{
-  // find link/parent mapping
-  for (std::map<std::string,boost::shared_ptr<Link> >::iterator link = this->links_.begin();link != this->links_.end(); link++)
-  {
-    std::string parent_link_name = link->second->parent_joint_->parent_link_name_;
-    std::cout << "INFO: build tree: " << link->first << " is a child of " << parent_link_name << std::endl;
-
-    if (parent_link_name.c_str() == NULL)
+    if (joint->initXml(joint_xml))
     {
-        std::cerr << "ERROR: parent link name is not valid!" << std::endl;
+      if (this->getJoint(joint->name))
+      {
+        ROS_ERROR("joint '%s' is not unique.", joint->name.c_str());
+        joint.reset();
         return false;
+      }
+      else
+      {
+        this->joints_.insert(make_pair(joint->name,joint));
+        ROS_DEBUG("successfully added a new joint '%s'", joint->name.c_str());
+      }
     }
     else
     {
+      ROS_ERROR("joint xml is not initialized correctly");
+      joint.reset();
+    }
+  }
 
-      boost::shared_ptr<Link> parent_link = this->getLink(parent_link_name);
+
+  // every link has children links and joints, but no parents, so we create a
+  // local convenience data structure for keeping child->parent relations
+  std::map<std::string, std::string> parent_link_tree;
+  parent_link_tree.clear();
+
+  // building tree: name mapping
+  if (!this->initTree(parent_link_tree))
+  {
+    ROS_ERROR("failed to build tree");
+    return false;
+  }
+
+  // find the root link
+  if (!this->initRoot(parent_link_tree))
+  {
+    ROS_ERROR("failed to find root link");
+    return false;
+  }
+ 
+  return true;
+}
+
+bool RobotModel::initTree(std::map<std::string, std::string> &parent_link_tree)
+{
+  // loop through all joints, for every link, assign children links and children joints
+  for (std::map<std::string,boost::shared_ptr<Joint> >::iterator joint = this->joints_.begin();joint != this->joints_.end(); joint++)
+  {
+    std::string parent_link_name = joint->second->parent_link_name;
+    std::string child_link_name = joint->second->child_link_name;
+
+    ROS_DEBUG("build tree: joint: '%s' has parent link '%s' and child  link '%s'", joint->first.c_str(), parent_link_name.c_str(),child_link_name.c_str());
+
+    /// add an empty "world" link
+    if (parent_link_name == "world")
+    {
+      ROS_WARN("    parent link '%s' is a special case, adding fake link.", parent_link_name.c_str());
+      boost::shared_ptr<Link> link;
+      link.reset(new Link);
+      link->name = "world";
+      if (this->getLink(link->name))
+      {
+        ROS_ERROR("multiple joints have parent '%s'!", link->name.c_str());
+        link.reset();
+        return false;
+      }
+      else
+      {
+        this->links_.insert(make_pair(link->name,link));
+        ROS_DEBUG("successfully added a new link '%s'", link->name.c_str());
+      }
+    }
+
+    if (parent_link_name.empty())
+    {
+      ROS_INFO("    parent link name is not specified! SKIPPING TO NEXT JOINT");
+    }
+    else if (child_link_name.empty())
+    {
+      ROS_INFO("    child link name is not specified! SKIPPING TO NEXT JOINT");
+    }
+    else
+    {
+      // find parent link
+      boost::shared_ptr<Link> parent_link;
+      this->getLink(parent_link_name, parent_link);
 
       if (!parent_link)
       {
-        if (parent_link_name == "world")
+        ROS_ERROR("    parent link '%s' is not found", parent_link_name.c_str());
+        return false;
+      }
+      else
+      {
+        // find child link
+        boost::shared_ptr<Link> child_link;
+        this->getLink(child_link_name, child_link);
+
+        if (!child_link)
         {
-          std::cout << "INFO: parent link: " << parent_link_name << " is a special case." << std::endl;
+          ROS_ERROR("    for joint: %s child link '%s' is not found",joint->first.c_str(),parent_link_name.c_str());
+          return false;
         }
         else
         {
-          std::cerr << "ERROR: parent link: " << parent_link_name << " is not found!" << std::endl;
-          return false;
+          //set parent link for child link
+          child_link->setParent(parent_link);
+
+          //set parent joint for child link
+          child_link->setParentJoint(joint->second);
+
+          //set child joint for parent link
+          parent_link->addChildJoint(joint->second);
+
+          //set child link for parent link
+          parent_link->addChild(child_link);
+
+          // fill in child/parent string map
+          parent_link_tree[child_link->name] = parent_link_name;
+
+          ROS_DEBUG("    now Link '%s' has %i children ", parent_link->name.c_str(), parent_link->child_links.size());
         }
       }
-      else
-      {
-        // fill in child/parent string map
-        this->link_parent_[link->second->name_] = parent_link_name;
-
-        // set parent_ link for child Link element
-        link->second->setParent(parent_link);
-
-        // add child link in parent Link element
-        parent_link->addChild(link->second);
-        std::cout << "INFO: now Link: " << parent_link->name_ << " has " << parent_link->child_links_.size() << " children" << std::endl;
-
-
-      }
     }
-
   }
 
   return true;
@@ -187,40 +315,84 @@ bool RobotModel::initTree()
 
 
 
-bool RobotModel::initRoot()
+bool RobotModel::initRoot(std::map<std::string, std::string> &parent_link_tree)
 {
-  std::string root_name = "NoRootSpecified";
-  for (std::map<std::string, std::string>::const_iterator p=link_parent_.begin(); p!=link_parent_.end(); p++)
+
+  this->root_link_.reset();
+
+  for (std::map<std::string, std::string>::iterator p=parent_link_tree.begin(); p!=parent_link_tree.end(); p++)
   {
-    if (link_parent_.find(p->second) == link_parent_.end())
+    if (parent_link_tree.find(p->second) == parent_link_tree.end())
     {
-      if (root_name != "NoRootSpecified")
+      if (this->root_link_)
       {
-        std::cout << "INFO: child: " << p->first << " parent: " << p->second << " root: " << root_name << std::endl;
-        if (root_name != p->second)
+        ROS_DEBUG("child '%s', parent '%s', root '%s'", p->first.c_str(), p->second.c_str(), this->root_link_->name.c_str());
+        if (this->root_link_->name != p->second)
         {
-          std::cerr << "ERROR: Two root links found: " << root_name << " and " << p->second << std::endl;
+          ROS_ERROR("Two root links found: '%s' and '%s'", this->root_link_->name.c_str(), p->second.c_str());
           return false;
         }
       }
       else
-        root_name = p->second;
+         getLink(p->second,this->root_link_);
     }
   }
-  if (root_name == "NoRootSpecified")
-  {std::cerr << "ERROR: No root link found. The robot xml contains a graph instead of a tree." << std::endl; return false;}
-  std::cout << "INFO: Link: " << root_name << " is the root Link " << std::endl;
-  this->root_link_ = getLink(root_name); // set root link
+  if (!this->root_link_)
+  {
+    ROS_ERROR("No root link found. The robot xml is empty or not a tree.");
+    return false;
+  }
+  ROS_DEBUG("Link '%s' is the root link", this->root_link_->name.c_str());
 
   return true;
 }
 
-const boost::shared_ptr<Link> RobotModel::getLink(const std::string& name) const
+boost::shared_ptr<Material> RobotModel::getMaterial(const std::string& name) const
 {
-  if (this->links_.find(name) == this->links_.end())
-    return boost::shared_ptr<Link>();
+  boost::shared_ptr<Material> ptr;
+  if (this->materials_.find(name) == this->materials_.end())
+    ptr.reset();
   else
-    return this->links_.find(name)->second;
+    ptr = this->materials_.find(name)->second;
+  return ptr;
+}
+
+boost::shared_ptr<const Link> RobotModel::getLink(const std::string& name) const
+{
+  boost::shared_ptr<const Link> ptr;
+  if (this->links_.find(name) == this->links_.end())
+    ptr.reset();
+  else
+    ptr = this->links_.find(name)->second;
+  return ptr;
+}
+
+void RobotModel::getLinks(std::vector<boost::shared_ptr<Link> >& links) const
+{
+  for (std::map<std::string,boost::shared_ptr<Link> >::const_iterator link = this->links_.begin();link != this->links_.end(); link++)
+  {
+    links.push_back(link->second);
+  }
+}
+
+void RobotModel::getLink(const std::string& name,boost::shared_ptr<Link> &link) const
+{
+  boost::shared_ptr<Link> ptr;
+  if (this->links_.find(name) == this->links_.end())
+    ptr.reset();
+  else
+    ptr = this->links_.find(name)->second;
+  link = ptr;
+}
+
+boost::shared_ptr<const Joint> RobotModel::getJoint(const std::string& name) const
+{
+  boost::shared_ptr<const Joint> ptr;
+  if (this->joints_.find(name) == this->joints_.end())
+    ptr.reset();
+  else
+    ptr = this->joints_.find(name)->second;
+  return ptr;
 }
 
 }

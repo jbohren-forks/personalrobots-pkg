@@ -52,7 +52,7 @@
 #include <visualization_msgs/Marker.h>
 #include <geometry_msgs/Twist.h>
 
-#include <pluginlib/plugin_loader.h>
+#include <pluginlib/class_loader.h>
 
 namespace move_base {
   //typedefs to help us out with the action server so that we don't hace to type so much
@@ -183,8 +183,8 @@ namespace move_base {
       ClearingState clearing_state_;
 
       ros::Time last_valid_plan_, last_valid_control_;
-      pluginlib::PluginLoader<nav_core::BaseGlobalPlanner> bgp_loader_;
-      pluginlib::PluginLoader<nav_core::BaseLocalPlanner> blp_loader_;
+      pluginlib::ClassLoader<nav_core::BaseGlobalPlanner> bgp_loader_;
+      pluginlib::ClassLoader<nav_core::BaseLocalPlanner> blp_loader_;
 
   };
 };

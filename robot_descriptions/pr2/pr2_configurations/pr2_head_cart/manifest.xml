@@ -17,4 +17,8 @@
   <depend package="pr2_computer_monitor" />
   <depend package="pr2_power_board" />
   <depend package="mechanism_bringup" />
+  <depend package="generic_analyzer" />
+  <depend package="diagnostic_aggregator" />
+  <depend package="robot_mechanism_controllers" />
+  <depend package="pr2_mechanism_controllers" />
 </package>

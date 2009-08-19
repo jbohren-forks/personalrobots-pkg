@@ -67,6 +67,11 @@ public:
   T& getCell(int x, int y, int z);
 
   /**
+   * \brief Sets the value at an integer location
+   */
+  void setCell(int x, int y, int z, T& obj);
+
+  /**
    * \brief Gets the value at a given integer location (const version)
    */
   const T& getCell(int x, int y, int z) const;
@@ -252,6 +257,12 @@ template<typename T>
 inline const T& VoxelGrid<T>::getCell(int x, int y, int z) const
 {
   return data_[ref(x,y,z)];
+}
+
+template<typename T>
+inline void VoxelGrid<T>::setCell(int x, int y, int z, T& obj)
+{
+  data_[ref(x,y,z)] = obj;
 }
 
 template<typename T>

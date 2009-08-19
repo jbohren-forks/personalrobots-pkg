@@ -1,14 +1,14 @@
 <launch>
 
 <!-- action interface to switch controllers -->
-  <node pkg="mechanism_control" type="action_runner" output="screen" />
+  <node pkg="mechanism_control" type="action_runner" />
 
 <!-- Base controller and odometry-->
   <rosparam file="$(find pr2_default_controllers)/pr2_base_controller.yaml" command="load" ns="pr2_base_controller" />
-  <node pkg="mechanism_control" type="spawner.py" args="pr2_base_controller" output="screen"/>
+  <node pkg="mechanism_control" type="spawner.py" args="pr2_base_controller" />
 
   <rosparam file="$(find pr2_default_controllers)/pr2_odometry.yaml" command="load" ns="pr2_base_odometry" />
-  <node pkg="mechanism_control" type="spawner.py" args="pr2_base_odometry" output="screen"/>
+  <node pkg="mechanism_control" type="spawner.py" args="pr2_base_odometry" />
 
 <!-- Head controller -->
   <group ns="head_controller" clear_params="true">
@@ -18,7 +18,7 @@
     <param name="pan_output" type="string" value="head_pan_joint_position_controller" />
     <param name="tilt_output" type="string" value="head_tilt_joint_position_controller" />
   </group>
-  <group ns="head_tilt_joint_position_controller" clear_params="true">
+  <group ns="head_controller/pan_controller" clear_params="true">
     <param name="type" type="string" value="JointPositionController" />
     <param name="joint" type="string" value="head_tilt_joint" />
     <param name="pid/p" type="double" value="12.4" />
@@ -26,7 +26,7 @@
     <param name="pid/d" type="double" value="0.4" />
     <param name="pid/iClamp" type="double" value="0.1" />
   </group>
-  <group ns="head_pan_joint_position_controller" clear_params="true">
+  <group ns="head_controller/tilt_controller" clear_params="true">
     <param name="type" type="string" value="JointPositionController" />
     <param name="joint" type="string" value="head_pan_joint" />
     <param name="pid/p" type="double" value="12.4" />
@@ -34,7 +34,7 @@
     <param name="pid/d" type="double" value="0.4" />
     <param name="pid/iClamp" type="double" value="0.1" />
   </group>
-  <node pkg="mechanism_control" type="spawner.py" args="--stopped head_pan_joint_position_controller head_tilt_joint_position_controller head_controller" output="screen" />
+  <node pkg="mechanism_control" type="spawner.py" args="--stopped head_controller" />
 
 <!-- Gripper effort controller -->
   <rosparam file="$(find pr2_default_controllers)/pr2_joint_effort_controllers.yaml" command="load" />
@@ -46,7 +46,7 @@
 
 <!-- Torso controller -->
   <rosparam file="$(find pr2_default_controllers)/pr2_joint_velocity_controllers.yaml" command="load" />
-  <node pkg="mechanism_control" type="spawner.py" args="torso_lift_velocity_controller" output="screen" />
+  <node pkg="mechanism_control" type="spawner.py" args="torso_lift_velocity_controller" />
 
 <!-- Cartesian wrench controller -->
   <group ns="r_arm_cartesian_wrench_controller" clear_params="true">
@@ -191,8 +191,8 @@
     <param name="pos_rot/i_clamp" value="0.2" />
   </group>
 
-  <node pkg="mechanism_control" type="spawner.py" args="--stopped r_arm_constraint_cartesian_wrench_controller r_arm_constraint_cartesian_twist_controller r_arm_constraint_cartesian_pose_controller r_arm_constraint_cartesian_trajectory_controller r_arm_cartesian_tff_controller" output="screen" />
-  <node pkg="mechanism_control" type="spawner.py" args="--stopped  r_arm_cartesian_wrench_controller r_arm_cartesian_twist_controller r_arm_cartesian_pose_controller r_arm_cartesian_trajectory_controller" output="screen" />
+  <node pkg="mechanism_control" type="spawner.py" args="--stopped r_arm_constraint_cartesian_wrench_controller r_arm_constraint_cartesian_twist_controller r_arm_constraint_cartesian_pose_controller r_arm_constraint_cartesian_trajectory_controller r_arm_cartesian_tff_controller" />
+  <node pkg="mechanism_control" type="spawner.py" args="--stopped  r_arm_cartesian_wrench_controller r_arm_cartesian_twist_controller r_arm_cartesian_pose_controller r_arm_cartesian_trajectory_controller" />
 
 
 <!-- Cartesian Hybrid Controller --> 

@@ -5,6 +5,7 @@
   </description>
   <author>John Hsu, Ioan Sucan</author>
   <license>BSD</license>
+  <url>http://ros.org/wiki/angles</url>
   <review status="cleared" notes="2009-02-25"/>
   <export>
     <cpp cflags="-I${prefix}/include" lflags=""/>

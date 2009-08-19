@@ -46,8 +46,8 @@ namespace move_base {
   MoveBase::MoveBase(std::string name, tf::TransformListener& tf) :
     Action<geometry_msgs::PoseStamped, geometry_msgs::PoseStamped>(name), tf_(tf),
     tc_(NULL), planner_costmap_ros_(NULL), controller_costmap_ros_(NULL), 
-    planner_(NULL), bgp_loader_("nav_core", "BaseGlobalPlanner"),
-    blp_loader_("nav_core", "BaseLocalPlanner") {
+    planner_(NULL), bgp_loader_("nav_core", "nav_core::BaseGlobalPlanner"),
+    blp_loader_("nav_core", "nav_core::BaseLocalPlanner") {
 
     //get some parameters that will be global to the move base node
     std::string global_planner, local_planner;
@@ -76,7 +76,7 @@ namespace move_base {
 
     //initialize the global planner
     try {
-      planner_ = bgp_loader_.createPluginInstance(global_planner);
+      planner_ = bgp_loader_.createClassInstance(global_planner);
       planner_->initialize(global_planner, planner_costmap_ros_);
     } catch (const std::runtime_error& ex)
     {
@@ -91,7 +91,7 @@ namespace move_base {
 
     //create a local planner
     try {
-      tc_ = blp_loader_.createPluginInstance(local_planner);
+      tc_ = blp_loader_.createClassInstance(local_planner);
       tc_->initialize(local_planner, &tf_, controller_costmap_ros_);
     } catch (const std::runtime_error& ex)
     {

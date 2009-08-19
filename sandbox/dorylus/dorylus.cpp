@@ -34,10 +34,9 @@
 *
 * Author: Alex Teichman
 *********************************************************************/
-
-#include <algorithm>
-#include <dorylus.h>
+#include <dorylus/dorylus.h>
 #include <signal.h>
+
 
 using namespace std;
 USING_PART_OF_NAMESPACE_EIGEN
@@ -391,7 +390,8 @@ bool Dorylus::save(string filename, string *user_data_str)
   }
   f << "End classes." << endl;
 
-  float buf;
+  float fbuf;
+  double dbuf;
   map<string, vector<weak_classifier*> >::iterator bit;
   for(bit = battery_.begin(); bit != battery_.end(); bit++) {
     vector<weak_classifier*> &wcs = bit->second;
@@ -403,14 +403,26 @@ bool Dorylus::save(string filename, string *user_data_str)
       f << "Utility" << endl << wcs[t]->utility << endl;
       f << "Center" << endl << wcs[t]->center.rows() << endl;
       for(int i=0; i<wcs[t]->center.rows(); i++) {
-	buf = wcs[t]->center(i,0);
-	f.write((char*)&buf, sizeof(float));
+	fbuf = wcs[t]->center(i,0);
+	f.write((char*)&fbuf, sizeof(float));
       }
       f << endl;
       f << "Vals" << endl << wcs[t]->vals.rows() << endl;
       for(int i=0; i<wcs[t]->vals.rows(); ++i) {
-	buf = wcs[t]->vals(i);
-	f.write((char*)&buf, sizeof(float));
+	fbuf = wcs[t]->vals(i);
+	f.write((char*)&fbuf, sizeof(float));
+      }
+      f << endl;
+      f << "Numerators" << endl << wcs[t]->numerators.rows() << endl;
+      for(int i=0; i<wcs[t]->numerators.rows(); ++i) {
+	dbuf = wcs[t]->numerators(i);
+	f.write((char*)&dbuf, sizeof(double));
+      }
+      f << endl;
+      f << "Denominators" << endl << wcs[t]->denominators.rows() << endl;
+      for(int i=0; i<wcs[t]->denominators.rows(); ++i) {
+	dbuf = wcs[t]->denominators(i);
+	f.write((char*)&dbuf, sizeof(double));
       }
       f << endl;
     }
@@ -522,11 +534,11 @@ bool Dorylus::load(string filename, bool quiet, string *user_data_str)
       istringstream iss_nEle(line);
       int nElements;
       iss_nEle >> nElements;
-      float buf;
+      float fbuf;
       pwc->center = MatrixXf(nElements, 1);
       for(int i=0; i<nElements; i++) {
-	f.read((char*)&buf, sizeof(float));
-	pwc->center(i,0) = buf;
+	f.read((char*)&fbuf, sizeof(float));
+	pwc->center(i,0) = fbuf;
       }
       getline(f, line); //Move off the line with the data.
 
@@ -539,8 +551,31 @@ bool Dorylus::load(string filename, bool quiet, string *user_data_str)
       iss_nEleVals >> nClasses_;
       pwc->vals = VectorXf::Zero(nClasses_);
       for(unsigned int i=0; i<nClasses_; ++i) {
-	f.read((char*)&buf, sizeof(float));
-	pwc->vals(i) = buf;
+	f.read((char*)&fbuf, sizeof(float));
+	pwc->vals(i) = fbuf;
+      }
+      getline(f, line); //Move off the line with the data.
+
+      // -- Numerators
+      double dbuf;
+      getline(f, line);
+      assert(line.compare("Numerators") == 0);
+      getline(f, line); // This line has nClasses_ but we already know it.
+      pwc->numerators = VectorXd::Zero(nClasses_);
+      for(unsigned int i=0; i<nClasses_; ++i) {
+	f.read((char*)&dbuf, sizeof(double));
+	pwc->numerators(i) = dbuf;
+      }
+      getline(f, line); //Move off the line with the data.
+
+      // -- Denominators
+      getline(f, line);
+      assert(line.compare("Denominators") == 0);
+      getline(f, line);
+      pwc->denominators = VectorXd::Zero(nClasses_);
+      for(unsigned int i=0; i<nClasses_; ++i) {
+	f.read((char*)&dbuf, sizeof(double));
+	pwc->denominators(i) = dbuf;
       }
       getline(f, line); //Move off the line with the data.
     }
@@ -583,10 +618,11 @@ vector<weak_classifier*>* Dorylus::findActivatedWCs(const string &descriptor, co
 
 
 void sigint(int none) {
+  cout << "Caught user signal." << endl;
   g_int = true;
 }
 
-void Dorylus::train(int nCandidates, int max_secs, int max_wcs, void (*debugHook)(weak_classifier)) {
+void Dorylus::train(int num_candidates, int max_secs, int max_wcs, double min_util, void (*debugHook)(weak_classifier)) {
   signal(SIGINT,sigint);
   time_t start, end;
   time(&start);
@@ -596,13 +632,9 @@ void Dorylus::train(int nCandidates, int max_secs, int max_wcs, void (*debugHook
   cout << "Objective: " << obj << endl;
   cout << "Objective (from classify()): " << classify(*dd_) << endl;
     	  
-  map<string, float> max_thetas = computeMaxThetas(*dd_);
   int wcs=0;
   while(true) {
-    bool found_better = learnWC(nCandidates, max_thetas);
-    if(!found_better) {
-      continue;
-    }
+    learnWC(num_candidates);
     wcs++;
     time(&end);
     if(debugHook != NULL)
@@ -613,21 +645,35 @@ void Dorylus::train(int nCandidates, int max_secs, int max_wcs, void (*debugHook
 
     assert(obj2 < obj);
 
-    if(max_secs != 0 && difftime(end,start) > max_secs)
+    if(max_secs != 0 && difftime(end,start) > max_secs) {
+      cout << "Ending training because max time has been reached." << endl;
       break;
-    if(max_wcs != 0 && wcs >= max_wcs)
+    }
+    if(max_wcs != 0 && wcs >= max_wcs) {
+      cout << "Ending training because max number of weak classifiers has been reached." << endl;
       break;
-    if(g_int)
+    }
+    if(g_int) {
+      cout << "Ending training because of user control-c." << endl;
       break;
+    }
+    if(pwcs_.back()->utility < min_util) {
+      cout << "Ending training because of min utility criterion: " << pwcs_.back()->utility << " < min util of " << min_util << endl;
+      break;
+    }
   }
 
   cout << "Done training." << endl;
 }
 
 //! Comprehensive with high probability, but not guaranteed.
-bool Dorylus::compare(const Dorylus& d) {
-  if(pwcs_.size() != d.pwcs_.size()) 
+bool Dorylus::compare(const Dorylus& d, bool verbose) {
+  if(pwcs_.size() != d.pwcs_.size()) {
+    if(verbose)
+      cout << "Different number of weak classifiers!" << endl;
     return false;
+  }
+    
 
 
   for(size_t i=0; i<pwcs_.size(); ++i) {
@@ -635,24 +681,27 @@ bool Dorylus::compare(const Dorylus& d) {
 //     cout << i << " utility " << pwcs_[i]->utility << " " <<  d.pwcs_[i]->utility << endl;
 //     cout << i << " id " << pwcs_[i]->id << " " <<  d.pwcs_[i]->id << endl;
 
-    if(abs(pwcs_[i]->theta - d.pwcs_[i]->theta) > 1e-4) 
+    if(abs(pwcs_[i]->theta - d.pwcs_[i]->theta) > 1e-4) {
+      if(verbose)
+	cout << "thetas for wc " << i << ": " << pwcs_[i]->theta << ", " << d.pwcs_[i]->theta << endl;
       return false;
-    if(abs(pwcs_[i]->utility - d.pwcs_[i]->utility) > 1e-4) 
+    }
+    if(abs(pwcs_[i]->utility - d.pwcs_[i]->utility) > 1e-4) {
+      if(verbose)
+	cout << "utilities for wc " << i << ": " << pwcs_[i]->utility << ", " << d.pwcs_[i]->utility << endl;
       return false;
-    if(abs(pwcs_[i]->id - d.pwcs_[i]->id) > 1e-4) 
+    }
+    if(abs(pwcs_[i]->id - d.pwcs_[i]->id) > 1e-4) {
+      if(verbose)
+	cout << "ids for wc " << i << ": " << pwcs_[i]->id << ", " << d.pwcs_[i]->id << endl;
       return false;
+    }
   }
 
   return true;
 }
 
-bool Dorylus::learnWC(int nCandidates, map<string, float> max_thetas, vector<string> *desc_ignore) {
-  int nThetas = 100;
-  assert(dd_!=NULL);
-  weak_classifier* best = new weak_classifier;
-  time_t start, end;
-  time(&start);
-
+vector<weak_classifier*> Dorylus::createRandomWeakClassifiers(int num_candidates) {
   // -- Get a weights matrix that does not include the bg pts.
   map<int, unsigned int>:: iterator it = dd_->num_objs_of_class_.begin();
   int nNonBGObjs = 0;
@@ -674,7 +723,7 @@ bool Dorylus::learnWC(int nCandidates, map<string, float> max_thetas, vector<str
 
   // -- Choose wc candidates from the distribution of weights over the non-background objects.
   vector<weak_classifier*> cand;
-  for(int iCand=0; iCand<nCandidates; iCand++) {
+  for(int iCand=0; iCand<num_candidates; iCand++) {
     double dice = (double)rand() / (double)RAND_MAX * non_bg_weights.sum(); //The weights aren't necessarily normalized.
     double w = 0.0;
     int obj_id=-1;
@@ -695,32 +744,19 @@ bool Dorylus::learnWC(int nCandidates, map<string, float> max_thetas, vector<str
     }
     assert(obj_id >= 0);
 
-    // -- Get a random descriptor from the object.
+    // -- Get a random descriptor space from the object.
     map<string, MatrixXf*> &ft = dd_->objs_[obj_id]->features;
     MatrixXf* v;
     string desc;
-    while(true) {
-      int desc_id = rand() % (int)ft.size();
+    int desc_id = rand() % (int)ft.size();
 
-
-      map<string, MatrixXf*>::iterator it = ft.begin();
-      for(int i=0; i<desc_id; i++) {
-	it++;
-      }
-      v = (*it).second;
-      desc = (*it).first;
-
-      //Make sure it's not in the ignore list.
-      if(desc_ignore == NULL) {
-	break;
-      }
-      else {
-	if(find(desc_ignore->begin(), desc_ignore->end(), desc) == desc_ignore->end()) {
-	  break;
-	}
-      }
+    map<string, MatrixXf*>::iterator it = ft.begin();
+    for(int i=0; i<desc_id; i++) {
+      it++;
     }
-
+    v = (*it).second;
+    desc = (*it).first;
+    
     //Get a random feature.
     int feature_id = (rand() % (int)v->cols());
 
@@ -728,200 +764,123 @@ bool Dorylus::learnWC(int nCandidates, map<string, float> max_thetas, vector<str
     weak_classifier* wc = new weak_classifier;
     wc->descriptor = desc;
     wc->center = v->col(feature_id);
+    wc->theta = 0;
+    wc->vals = VectorXf::Zero(dd_->nClasses_);
+    wc->id = -1;
+    wc->utility = 0;
+    wc->numerators = VectorXd::Zero(nClasses_);
+    wc->denominators = VectorXd::Zero(nClasses_);
     cand.push_back(wc);
   }
-  cout << "Added " << nCandidates << " candidate wcs" << endl;
+  return cand;
+}
 
+vector< pair<double, int> >* DorylusDataset::computeSortedDistances(string descriptor, VectorXf center) {
+  vector< pair<double, int> >* distance_idx = new vector< pair<double, int> >(objs_.size());
+  for(size_t j=0; j<objs_.size(); ++j) {
+    MatrixXf* f = objs_[j]->features[descriptor];
+    assert(f->cols() == 1);
+    float dist = euc(*f, center);
+    (*distance_idx)[j].first = dist;
+    (*distance_idx)[j].second = j; 
+  }
+  sort(distance_idx->begin(), distance_idx->end());
 
-  // -- For all candidates, try several thetas and get their utilities.
-  float max_util = 0.0;
-  VectorXf best_mmt;
-  bool found_better = false;
-  for(unsigned int i=0; i<cand.size(); i++) {
+  return distance_idx;
+}
 
-    // -- Get the distances from this candidate to all other points.
-    vector<VectorXf> dists; // dists[i](j) is the distance to the jth feature vector for object i.
-    int nPts = 0;
-    dists.reserve(dd_->objs_.size());
-    for(unsigned int j=0; j<dd_->objs_.size(); j++) {
-      MatrixXf* f = dd_->objs_[j]->features[cand[i]->descriptor];
-      dists.push_back(VectorXf::Zero(f->cols()));
-      nPts += f->cols();
-    }
+void Dorylus::learnWC(int num_candidates) {
+  assert(dd_);
 
-    int j=0,k=0;
-    MatrixXf *f;
+  time_t start, end;
+  time(&start);
 
-    for(j=0; j<(int)dd_->objs_.size(); j++) {
-      f = dd_->objs_[j]->features[cand[i]->descriptor];
-      for(k=0; k<f->cols(); k++) {
-	dists[j](k) = euc(f->col(k), cand[i]->center);
-      }
-    }
+  vector<weak_classifier*> cand = createRandomWeakClassifiers(num_candidates);
+  cout << "Added " << num_candidates << " candidate wcs" << endl;
 
+  vector<object*>& objs = dd_->objs_;
+  weak_classifier* best_wc = new weak_classifier;
+  double max_utility = 0;
+  vector< pair<double, int> >* best_distance_idx = NULL;
+  int num_tr_ex_in_best = 0;
+  for(unsigned int i=0; i<cand.size(); ++i) {
+    // -- Get all distances and sort.
+    vector< pair<double, int> >* distance_idx = dd_->computeSortedDistances(cand[i]->descriptor, cand[i]->center);  // (*distance_idx)[j] is distance, idx (i.e. objs_[idx])
 
-    cand[i]->theta = 0;
-    for(int iTheta=0; iTheta<nThetas; iTheta++) {
-      float MAX_THETA = max_thetas[cand[i]->descriptor];
+    // -- Setup vars for evaluating weak classifiers efficiently.
+    vector<double> weight_sum_pos(nClasses_); // sum of weight inside hypersphere for each class
+    vector<double> weight_sum_neg(nClasses_); // sum of weight inside hypersphere for all y_m^c == -1
 
-      // -- Rejection sampling to take small thetas more often.
-      while(true) {
-	cand[i]->theta = ((float)rand() / (float)RAND_MAX) * MAX_THETA;
-	float probability = -2 / (MAX_THETA * MAX_THETA) * cand[i]->theta + 2 / MAX_THETA;
-	float random = (float)rand() / (float)RAND_MAX;
-	if(random < probability)
-	  break;
-      }
+    // -- For all training examples in order of distance.
+    for(size_t m=0; m<distance_idx->size(); ++m) {
+      if(m>0)
+	assert((*distance_idx)[m-1].first <= (*distance_idx)[m].first);
 
-      //Get the M_m^t, number of points in the hypersphere of cand[i] for each object.
-      VectorXf mmt = VectorXf::Zero(dd_->objs_.size());
-      for(unsigned int j=0; j<dists.size(); j++) {
-	for(int k=0; k<dists[j].rows(); k++) {
-	  if(dists[j](k) < cand[i]->theta)
-	    mmt(j)++;
-	}
-      }
-
-      // -- GentleBoost: take a single newton step to set the a_t^c's.
-      cand[i]->vals = VectorXf::Zero(dd_->nClasses_);
-
-      int M = dd_->objs_.size();
-
-      VectorXf numerators = VectorXf::Zero(nClasses_);
-      VectorXf denominators = VectorXf::Zero(nClasses_);
-      for(int m=0; m<M; m++) {
-	if(mmt(m) == 0)
-	  continue;
-	for(unsigned int c=0; c<dd_->nClasses_; c++) {
-	  numerators(c) += exp(log_weights_(c, m)) * dd_->ymc_(c, m) * mmt(m);
-	  denominators(c) += exp(log_weights_(c, m)) * mmt(m) * mmt(m);
-	}
-      }
-      for(unsigned int c=0; c<dd_->nClasses_; c++) {
-	if(denominators(c) == 0)
+      int idx = (*distance_idx)[m].second; // object idx of the mth closest training example
+      double utility = 0;
+      for(size_t c=0; c<nClasses_; ++c) {
+	// -- Update the response.
+	cand[i]->denominators(c) += exp(log_weights_(c,idx));
+	cand[i]->numerators(c) += exp(log_weights_(c,idx)) * dd_->ymc_(c,idx);
+	if(cand[i]->denominators(c) == 0)
 	  cand[i]->vals(c) = 0;
 	else
-	  cand[i]->vals(c) = numerators(c) / denominators(c);
+	  cand[i]->vals(c) = cand[i]->numerators(c) / cand[i]->denominators(c);
+
+	// -- Update the sum of weights in the hypersphere.
+	assert(dd_->ymc_(c,idx) == 1 || dd_->ymc_(c,idx) == -1);
+	if(dd_->ymc_(c,idx) == 1) 
+	  weight_sum_pos[c] += exp(log_weights_(c,idx));
+	else
+	  weight_sum_neg[c] += exp(log_weights_(c,idx));
+	
+	utility += ((1-exp(-cand[i]->vals(c))) * weight_sum_pos[c] + (1-exp(cand[i]->vals(c))) * weight_sum_neg[c]) / (objs.size() * nClasses_);
       }
+      // Doing the division here makes 32bit vs 64bit give different answers.
+      // utility /= objs.size() * nClasses_;
 
+      // -- If this is the best so far, make a copy.
+      if(utility > max_utility) {
+	max_utility = utility;
+	cand[i]->theta = (*distance_idx)[m].first; // Set theta to be exactly the distance to this training example.
+	cand[i]->utility = utility;
+	*best_wc = *cand[i];
 
-      //Get the utility.
-  //     float new_objective = computeNewObjective(cand[i], mmt, ppweights);
-//       float util = objective - new_objective;
-      float util = computeUtility(*cand[i], mmt);
-      //      cout << "util " << util << " " << util2 << endl;
-
-      if(util > max_util) {
-	found_better = true;
-	max_util = util;
-	*best = *cand[i];
-	best->utility = util;
-	//best_weights = **ppweights;
-	best_mmt = mmt;
+	if(!best_distance_idx)
+	  best_distance_idx = distance_idx;
+	if(best_distance_idx != distance_idx) {
+	  delete best_distance_idx;
+	  best_distance_idx = distance_idx;
+	}
+	num_tr_ex_in_best = m;
       }
-      //delete *ppweights; *ppweights = NULL;
     }
     cout << "."; cout.flush();
   }
   cout << endl;
-
-  if(!found_better) {
-    cout << "Did not find a weak classifier that improves the classification!" << endl;
-    return false;
-    delete best;
-  }
-
-  cout << "Found wc with utility " << max_util << endl;
-
-  // -- Add the best to the strong classifier.
-  best->id = pwcs_.size()+1;
-  battery_[best->descriptor].push_back(best);
-  pwcs_.push_back(best);
-
-  time(&end);
-  cout << "Took " << difftime(end,start) << " seconds to try " << nCandidates << " wcs with " << nThetas << " thetas each." << endl;
-  cout << displayWeakClassifier(*best) << endl;
-  int nObjs_encompassed = 0;
-  for(int i=0; i<best_mmt.rows(); i++) {
-    if(best_mmt(i) != 0)
-      nObjs_encompassed++;
-  }
-  cout << "WC encompasses at least one point from " << nObjs_encompassed << " out of " << best_mmt.rows() << " objects." << endl;
-
+  
+  // -- Add the new weak classifier.
+  cout << "Found weak classifier with utility " << max_utility << endl;
+  assert(max_utility > 0);
+  best_wc->id = pwcs_.size()+1;
+  battery_[best_wc->descriptor].push_back(best_wc);
+  pwcs_.push_back(best_wc);
+  
   // -- Compute the new log weights.
-  for(unsigned int m=0; m<dd_->objs_.size(); m++) {
-    if(best_mmt(m) == 0)
-      continue;
-    for(unsigned int c=0; c<dd_->nClasses_; c++) {
-      log_weights_(c, m) += -dd_->ymc_(c, m) * best->vals(c) * best_mmt(m);
+  for(int m=0; m<num_tr_ex_in_best; ++m) {
+    int idx = (*best_distance_idx)[m].second;
+    for(unsigned int c=0; c<dd_->nClasses_; ++c) {
+      log_weights_(c, idx) += -dd_->ymc_(c, idx) * best_wc->vals(c);
     }
   }
-  //  delete *ppweights; *ppweights = NULL;
-  return true;
+
+
+  // -- Display stats about the weak classifier.
+  time(&end);
+  cout << "Took " << difftime(end,start) << " seconds to try " << num_candidates << " wcs." << endl;
+  cout << displayWeakClassifier(*best_wc) << endl;
+  cout << "WC encompasses at least one point from " << num_tr_ex_in_best << " out of " << objs.size() << " objects." << endl;
 }
-
-// Choose MAX_THETA by fitting a multidimensional gaussian using MLE.
-map<string, float> Dorylus::computeMaxThetas(const DorylusDataset &dd) {
-  map<string, float> max_thetas;
-  map<string, float> variances;
-  map<string, VectorXf> means;
-  map<string, float> nPts;
-
-  // -- Get the means and the nPts for each descriptor space.
-  for(unsigned int m=0; m<dd.objs_.size(); m++) {
-    map<string, MatrixXf*>::const_iterator fit = dd.objs_[m]->features.begin();
-    for(; fit!=dd.objs_[m]->features.end(); fit++) {
-      string const& descr = fit->first;
-      MatrixXf* f = fit->second;
-      if(means.find(descr) == means.end()) {
-	means[descr] = VectorXf::Zero(f->rows());
-      }
-      if(nPts.find(descr) == nPts.end())
-	nPts[descr] = 0;
-
-      for(int k=0; k<f->cols(); k++) {
-	means[descr] += f->col(k);
-	nPts[descr]++;
-      }
-    }
-  }
-
-  map<string, VectorXf>::iterator mit;
-  for(mit = means.begin(); mit != means.end(); mit++) {
-    mit->second = mit->second / nPts[mit->first];
-  }
-
-  // -- Get the variances for each descriptor space.
-  for(unsigned int m=0; m<dd.objs_.size(); m++) {
-    map<string, MatrixXf*>::const_iterator fit = dd.objs_[m]->features.begin();
-    for(; fit!=dd.objs_[m]->features.end(); fit++) {
-      string const& descr = fit->first;
-      if(variances.find(descr) == variances.end())
-	variances[descr] = 0;
-
-      MatrixXf* f = fit->second;
-      for(int k=0; k<f->cols(); k++) {
-	VectorXf zeroed = f->col(k) - means[descr];
-	//cout << "zeroed = " << zeroed<<endl;
-	variances[descr] += zeroed.dot(zeroed);
-      }
-    }
-  }
-
-  map<string, float>::iterator vit;
-  for(vit = variances.begin(); vit != variances.end(); vit++) {
-    vit->second = vit->second / (nPts[vit->first]); // * means[vit->first].Nrows());  Use E[x^T x] for zero-mean data.
-    max_thetas[vit->first] = 2*sqrt(vit->second); //2 stdev.
-  }
-
-  // -- Display some statistics.
-  for(vit = variances.begin(); vit != variances.end(); vit++) {
-    cout << vit->first << " variance: " << vit->second << ", nPts: " << nPts[vit->first] << ", max_theta: " << max_thetas[vit->first] << endl;
-  }
-
-  return max_thetas;
-}
-
 
 
 string displayWeakClassifier(const weak_classifier &wc) {
@@ -950,7 +909,7 @@ float Dorylus::computeUtility(const weak_classifier& wc, const VectorXf& mmt) {
     }
   }
 
-  return util / (M * dd_->nClasses_);
+  return util / (M * dd_->nClasses_); 
 }
 
 VectorXf Dorylus::classify(object &obj) {

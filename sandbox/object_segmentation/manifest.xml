@@ -1,0 +1,28 @@
+<package>
+  <description brief="object_segmentation">
+
+     Package for segmenting objects from various vision
+     modalities: images, stereo point clouds, laser point clouds
+     and combinations of.
+
+  </description>
+  <author>Daniel Munoz\ dmunoz@willowgarage.com</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/object_segmentation</url>
+
+  <depend package="functional_m3n"/>
+  <depend package="point_cloud_mapping"/>
+  <depend package="point_cloud_clustering"/>
+  <depend package="descriptors_3d"/>
+  <depend package="opencv_latest"/>
+  <depend package="bullet"/>
+  <depend package="descriptors_2d"/>
+
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lrf_creator_3d -ltable_object_rf" />
+  </export>
+
+</package>
+
+

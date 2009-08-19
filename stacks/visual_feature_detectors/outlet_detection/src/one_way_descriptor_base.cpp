@@ -398,7 +398,7 @@ void CvOneWayDescriptorObject::Allocate(int train_feature_count, int object_feat
 
 
 void CvOneWayDescriptorObject::InitializeObjectDescriptors(IplImage* train_image, const Vector<KeyPointEx>& features, 
-                                                           const char* feature_label, int desc_start_idx, float scale)
+                                                           const char* feature_label, int desc_start_idx, float scale, int is_background)
 {
     InitializeDescriptors(train_image, features, feature_label, desc_start_idx);
     
@@ -406,7 +406,7 @@ void CvOneWayDescriptorObject::InitializeObjectDescriptors(IplImage* train_image
     {
         CvPoint center = features[i].pt;
         
-        if(m_part_id)
+        if(is_background)
         {
             // remember descriptor part id
             CvPoint center_scaled = cvPoint(round(center.x*scale), round(center.y*scale));
@@ -452,10 +452,10 @@ CvOneWayDescriptorBase(patch_size, pose_count, train_path, pca_config, pca_hr_co
 
 CvOneWayDescriptorObject::~CvOneWayDescriptorObject()
 {
-    delete m_part_id;
+    delete []m_part_id;
 }
 
-vector<feature_t> CvOneWayDescriptorObject::_GetTrainFeatures() const
+vector<feature_t> CvOneWayDescriptorObject::_GetLabeledFeatures() const
 {
     vector<feature_t> features;
     for(size_t i = 0; i < m_train_features.size(); i++)

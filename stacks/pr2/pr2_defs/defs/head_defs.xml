@@ -284,14 +284,14 @@
         <map name="gazebo_material" flag="gazebo">
           <elem key="material" value="PR2/Blue" />
         </map>
-        <geometry name="${name}_optical_fixed_visual">
+        <geometry name="${name}_optical_frame_visual">
           <box size="0.01 0.01 0.01" />
         </geometry>
       </visual>
 
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <geometry name="${name}_optical_fixed_collision">
+        <geometry name="${name}_optical_frame_collision">
           <box size="0.01 0.01 0.01" />
         </geometry>
       </collision>

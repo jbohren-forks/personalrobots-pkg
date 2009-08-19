@@ -44,17 +44,18 @@ roslib.load_manifest('rostest')
 
 import sys, unittest
 import os, os.path, threading, time
-import rospy, rostest
+import rospy, rostest, string
 from sensor_msgs.msg import Image as image_msg
 from sensor_msgs.msg import CameraInfo as camerainfo_msg
 from PIL import Image      as pili
 from PIL import ImageChops as pilic
+from geometry_msgs.msg import PointStamped, Point
 
 FRAME_TARGET = "cam_sen-0050.ppm"
 FRAME_DIR = "test_camera_frames"
 TOTAL_ERROR_TOL = 5
 TEST_DURATION   = 70
-TEST_INIT_WAIT  = 30
+TEST_INIT_WAIT  = 20
 
 class PollCameraThread(threading.Thread):
     def __init__(self, target, dir):
@@ -184,6 +185,7 @@ class TestCameras(unittest.TestCase):
           self.success = False
 
     def test_camera(self):
+        head_angles = rospy.Publisher('head_controller/point_head', PointStamped)
         print " wait ",TEST_INIT_WAIT," sec for objects and head tilt to settle."
         time.sleep(TEST_INIT_WAIT)
         print " subscribe stereo left image from ROS "
@@ -192,6 +194,7 @@ class TestCameras(unittest.TestCase):
         rospy.init_node(NAME, anonymous=True)
         timeout_t = time.time() + TEST_DURATION
         while not rospy.is_shutdown() and not self.success and time.time() < timeout_t:
+            head_angles.publish(PointStamped(rospy.Header(None, rospy.get_rostime(), 'base_link'), Point(10, 0, 1)))
             time.sleep(1.0)
         self.assert_(self.success)
         

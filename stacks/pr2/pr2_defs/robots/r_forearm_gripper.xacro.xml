@@ -13,7 +13,9 @@
        xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
        xmlns:physics="http://playerstage.sourceforge.net/gazebo/xmlschema/#physics">
 
-
+  <!-- Include file with calibration parameters -->
+  <include filename="$(find pr2_defs)/calibration/default_cal.xml" />
+  
   <!-- declare the path where all models/textures/materials are stored -->
   <resource type="stl_meshes" location="$(find pr2_defs)/meshes"/>
   <resource type="ogre"       location="$(find pr2_ogre)/Media/models"/>

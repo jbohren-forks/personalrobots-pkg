@@ -1,0 +1,13 @@
+<library path="lib/libpr2_mechanism_controllers">
+  <plugin name="CasterCalibrationController" class="CasterCalibrationController" type="Controller" />
+  <plugin name="CasterController" class="CasterController" type="Controller" />
+  <plugin name="CasterControllerNode" class="CasterControllerNode" type="Controller" />
+  <plugin name="GripperCalibrationController" class="GripperCalibrationController" type="Controller" />
+  <plugin name="GripperCalibrationControllerNode" class="GripperCalibrationControllerNode" type="Controller" />
+  <plugin name="HeadPositionController" class="HeadPositionController" type="Controller" />
+  <plugin name="LaserScannerTrajController" class="LaserScannerTrajController" type="Controller" />
+  <plugin name="LaserScannerTrajControllerNode" class="LaserScannerTrajControllerNode" type="Controller" />
+  <plugin name="Pr2BaseController" class="Pr2BaseController" type="Controller" />
+  <plugin name="Pr2Odometry" class="Pr2Odometry" type="Controller" />
+  <plugin name="WristCalibrationController" class="WristCalibrationController" type="Controller" />
+</library>

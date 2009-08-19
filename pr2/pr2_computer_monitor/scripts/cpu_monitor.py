@@ -469,7 +469,7 @@ class CPUMonitor():
                                     KeyValue(key = 'Time Since Last Update', value = 'N/A') ]
 
         self._nfs_stat = DiagnosticStatus()
-        self._nfs_stat.name = '%s NFS I/O' % hostname
+        self._nfs_stat.name = '%s NFS IO' % hostname
         self._nfs_stat.level = 2
         self._nfs_stat.hardware_id = hostname
         self._nfs_stat.message = 'No Data'
@@ -690,9 +690,11 @@ if __name__ == '__main__':
     hostname = socket.gethostname()
 
     cpu_node = CPUMonitor(hostname)
+
+    rate = rospy.Rate(1.0)
     try:
         while not rospy.is_shutdown():
-            sleep(1.0)
+            rate.sleep()
             cpu_node.publish_stats()
     except Exception, e:
         rospy.logerr(traceback.format_exc())

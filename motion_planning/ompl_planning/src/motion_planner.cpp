@@ -45,9 +45,6 @@ public:
     
     OMPLPlanning(void)
     {	
-	// display the first 3 coordinates of states in diffusion trees
-	//	requestHandler_.enableDebugMode(0, 1);
-	
 	// register with ROS
 	collisionModels_ = new planning_environment::CollisionModels("robot_description");
 	if (nodeHandle_.hasParam("~planning_frame_id"))
@@ -58,8 +55,9 @@ public:
 	else
 	    planningMonitor_ = new planning_environment::PlanningMonitor(collisionModels_, &tf_);
 	
+	nodeHandle_.param<double>("~state_delay", stateDelay_, 0.01);
+	
 	planKinematicPathService_ = nodeHandle_.advertiseService("~plan_kinematic_path", &OMPLPlanning::planToGoal, this);
-	findValidStateService_    = nodeHandle_.advertiseService("find_valid_state", &OMPLPlanning::findValidState, this);
     }
     
     /** Free the memory */
@@ -167,7 +165,7 @@ private:
 	    std::stringstream ss;
 	    startState->print(ss);
 	    ROS_DEBUG("Complete starting state:\n%s", ss.str().c_str());
-	    st = requestHandler_.computePlan(models_, startState, req, res);
+	    st = requestHandler_.computePlan(models_, startState, stateDelay_, req, res);
 	    if (st && !res.path.states.empty())
 	        if (!planningMonitor_->isPathValid(res.path, planning_environment::PlanningMonitor::COLLISION_TEST, true))
 		    ROS_ERROR("Reported solution appears to have already become invalidated");
@@ -179,34 +177,14 @@ private:
 	return st;	
     }
     
-    bool findValidState(motion_planning_msgs::ConvertToJointConstraint::Request &req, motion_planning_msgs::ConvertToJointConstraint::Response &res)
-    {
-	ROS_INFO("Received request for searching a valid state");
-	bool st = false;
-
-	planning_models::StateParams *startState = fillStartState(req.start_state);
-	if (startState)
-	{
-	    std::stringstream ss;
-	    startState->print(ss);
-	    ROS_DEBUG("Complete starting state:\n%s", ss.str().c_str());
-	    st = requestHandler_.findState(models_, startState, req, res);
-	    delete startState;
-	}
-	else
-	    ROS_ERROR("Starting robot state is unknown. Cannot start search.");
-	
-	return st;
-    }
-    
     // ROS interface 
     ros::NodeHandle                        nodeHandle_;
     planning_environment::CollisionModels *collisionModels_;
     planning_environment::PlanningMonitor *planningMonitor_;
     tf::TransformListener                  tf_;
     ros::ServiceServer                     planKinematicPathService_;
-    ros::ServiceServer                     findValidStateService_;    
-
+    double                                 stateDelay_;
+    
     // planning data
     ModelMap                               models_;
     RequestHandler                         requestHandler_;

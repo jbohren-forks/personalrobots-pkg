@@ -36,380 +36,82 @@
 
 using namespace std;
 
-// --------------------------------------------------------------
-/* Features for the nodes */
-// --------------------------------------------------------------
-vector<Descriptor3D*> initNodeFeatures()
+PtCloudRFCreator::PtCloudRFCreator()
 {
-  //
-  SpectralAnalysis* sa = new SpectralAnalysis(0.15);
-  //
-  ShapeSpectral* spectral_shape = new ShapeSpectral(*sa);
-  //
-  OrientationTangent* o_tangent = new OrientationTangent(0, 0, 1.0, *sa);
-  //
-  OrientationNormal* o_normal = new OrientationNormal(0, 0, 1.0, *sa);
-  //
-  Position* position = new Position();
-
-  // ---------------
   vector<Descriptor3D*> node_feature_descriptors;
-  node_feature_descriptors.push_back(spectral_shape);
-  node_feature_descriptors.push_back(o_tangent);
-  node_feature_descriptors.push_back(o_normal);
-  node_feature_descriptors.push_back(position);
-  //   */
-  return node_feature_descriptors;
-}
+  vector<vector<Descriptor3D*> > clique_set_feature_descriptors;
+  vector<vector<pair<bool, point_cloud_clustering::PointCloudClustering*> > >
+      clique_set_clusterings;
 
-// --------------------------------------------------------------
-/* Features for clique set 0 */
-// --------------------------------------------------------------
-vector<Descriptor3D*> initCS0Features()
-{
+  // ---------------------------------------------------------
+  // Node features
+  SpectralAnalysis* sa_nodes = new SpectralAnalysis(0.15);
+  ShapeSpectral* ss_nodes = new ShapeSpectral(*sa_nodes);
+  OrientationTangent* ot_nodes = new OrientationTangent(0, 0, 1.0, *sa_nodes);
+  OrientationNormal* on_nodes = new OrientationNormal(0, 0, 1.0, *sa_nodes);
+  Position* p_nodes = new Position();
   //
-  SpectralAnalysis* sa = new SpectralAnalysis(0.2286);
-  //
-  ShapeSpectral* spectral_shape = new ShapeSpectral(*sa);
-  //
-  OrientationTangent* o_tangent = new OrientationTangent(0, 0, 1.0, *sa);
-  //
-  OrientationNormal* o_normal = new OrientationNormal(0, 0, 1.0, *sa);
-  //
-  Position* position = new Position();
-  //
-  SpinImageCustom* spin_image = new SpinImageCustom(0, 0, 1.0, 0.0762, 0.0762, 5, 4, false);
-  //
-  BoundingBoxSpectral* bbox_spectral = new BoundingBoxSpectral(-1.0, *sa);
+  node_feature_descriptors.push_back(ss_nodes);
+  node_feature_descriptors.push_back(ot_nodes);
+  node_feature_descriptors.push_back(on_nodes);
+  node_feature_descriptors.push_back(p_nodes);
 
-  // ---------------
+  // ---------------------------------------------------------
+  // Clique set 0 features
+  SpectralAnalysis* sa_cs0 = new SpectralAnalysis(0.2286);
+  ShapeSpectral* ss_cs0 = new ShapeSpectral(*sa_cs0);
+  OrientationTangent* ot_cs0 = new OrientationTangent(0, 0, 1.0, *sa_cs0);
+  OrientationNormal* on_cs0 = new OrientationNormal(0, 0, 1.0, *sa_cs0);
+  Position* p_cs0 = new Position();
+  SpinImageCustom* sic_cs0 = new SpinImageCustom(0, 0, 1.0, 0.0762, 0.0762, 5, 4, false);
+  BoundingBoxSpectral* bbs_cs0 = new BoundingBoxSpectral(-1.0, *sa_cs0);
+  //
   vector<Descriptor3D*> cs0_feature_descriptors;
-  cs0_feature_descriptors.push_back(spectral_shape);
-  cs0_feature_descriptors.push_back(o_tangent);
-  cs0_feature_descriptors.push_back(o_normal);
-  cs0_feature_descriptors.push_back(position);
-  cs0_feature_descriptors.push_back(spin_image);
-  cs0_feature_descriptors.push_back(bbox_spectral);
+  cs0_feature_descriptors.push_back(ss_cs0);
+  cs0_feature_descriptors.push_back(ot_cs0);
+  cs0_feature_descriptors.push_back(on_cs0);
+  cs0_feature_descriptors.push_back(p_cs0);
+  cs0_feature_descriptors.push_back(sic_cs0);
+  cs0_feature_descriptors.push_back(bbs_cs0);
+  clique_set_feature_descriptors.push_back(cs0_feature_descriptors);
 
-  return cs0_feature_descriptors;
-}
-
-// --------------------------------------------------------------
-/* Features for clique set 1 */
-// --------------------------------------------------------------
-vector<Descriptor3D*> initCS1Features()
-{
-  //
-  SpectralAnalysis* sa = new SpectralAnalysis(-1);
-  //
-  ShapeSpectral* spectral_shape = new ShapeSpectral(*sa);
-  //
-  OrientationTangent* o_tangent = new OrientationTangent(0, 0, 1.0, *sa);
-  //
-  OrientationNormal* o_normal = new OrientationNormal(0, 0, 1.0, *sa);
-  //
-  Position* position = new Position();
-  //
-  SpinImageNormal* spin_image = new SpinImageNormal(0.0762, 0.0762, 7, 5, false, *sa);
-  //
-  BoundingBoxSpectral* bbox_spectral = new BoundingBoxSpectral(-1.0, *sa);
-
-  // ---------------
-  vector<Descriptor3D*> cs1_feature_descriptors;
-  cs1_feature_descriptors.push_back(spectral_shape);
-  cs1_feature_descriptors.push_back(o_tangent);
-  cs1_feature_descriptors.push_back(o_normal);
-  cs1_feature_descriptors.push_back(position);
-  cs1_feature_descriptors.push_back(spin_image);
-  cs1_feature_descriptors.push_back(bbox_spectral);
-  return cs1_feature_descriptors;
-}
-
-// --------------------------------------------------------------
-/* Clusters for clique set 0 */
-// --------------------------------------------------------------
-std::vector<std::pair<bool, point_cloud_clustering::PointCloudClustering*> > initCS0Clusters()
-{
-  //
-  point_cloud_clustering::KMeans* kmeans_cluster = new point_cloud_clustering::KMeans(0.003, 1.0,
-      10);
-
-  // ---------------
+  // ---------------------------------------------------------
+  // Clique set 0 clusterings
+  point_cloud_clustering::KMeans* kmeans_cs0 = new point_cloud_clustering::KMeans(0.003, 2);
   std::vector<std::pair<bool, point_cloud_clustering::PointCloudClustering*> > cs0_clusterings(1);
-  bool cluster_only_nodes = false;
-  cs0_clusterings[0].first = cluster_only_nodes;
-  cs0_clusterings[0].second = kmeans_cluster;
-  return cs0_clusterings;
-}
+  cs0_clusterings[0].first = false; // false means cluster over ALL points (not just nodes)
+  cs0_clusterings[0].second = kmeans_cs0;
+  clique_set_clusterings.push_back(cs0_clusterings);
 
-// --------------------------------------------------------------
-/* Clusters for clique set 1 */
-// --------------------------------------------------------------
-std::vector<std::pair<bool, point_cloud_clustering::PointCloudClustering*> > initCS1Clusters()
-{
+  // ---------------------------------------------------------
+  // Clique set 1 features
+  SpectralAnalysis* sa_cs1 = new SpectralAnalysis(-1);
+  ShapeSpectral* ss_cs1 = new ShapeSpectral(*sa_cs1);
+  OrientationTangent* ot_cs1 = new OrientationTangent(0, 0, 1.0, *sa_cs1);
+  OrientationNormal* on_cs1 = new OrientationNormal(0, 0, 1.0, *sa_cs1);
+  Position* p_cs1 = new Position();
+  SpinImageNormal* sin_cs1 = new SpinImageNormal(0.0762, 0.0762, 7, 5, false, *sa_cs1);
+  BoundingBoxSpectral* bbs_cs1 = new BoundingBoxSpectral(-1.0, *sa_cs1);
   //
-  point_cloud_clustering::KMeans* kmeans_cluster = new point_cloud_clustering::KMeans(0.001, 1.0,
-      10);
+  vector<Descriptor3D*> cs1_feature_descriptors;
+  cs1_feature_descriptors.push_back(ss_cs1);
+  cs1_feature_descriptors.push_back(ot_cs1);
+  cs1_feature_descriptors.push_back(on_cs1);
+  cs1_feature_descriptors.push_back(p_cs1);
+  cs1_feature_descriptors.push_back(sin_cs1);
+  cs1_feature_descriptors.push_back(bbs_cs1);
+  clique_set_feature_descriptors.push_back(cs1_feature_descriptors);
 
-  // ---------------
+  // ---------------------------------------------------------
+  // Clique set 1 clusterings
+  point_cloud_clustering::KMeans* kmeans_cs1 = new point_cloud_clustering::KMeans(0.001, 2);
   std::vector<std::pair<bool, point_cloud_clustering::PointCloudClustering*> > cs1_clusterings(1);
-  bool cluster_only_nodes = false;
-  cs1_clusterings[0].first = cluster_only_nodes;
-  cs1_clusterings[0].second = kmeans_cluster;
-  return cs1_clusterings;
-}
+  cs1_clusterings[0].first = false; // false means cluster over ALL points (not just nodes)
+  cs1_clusterings[0].second = kmeans_cs1;
+  clique_set_clusterings.push_back(cs1_clusterings);
 
-// -------------------------------------------------------------------------------------
-// /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
-// /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
-// /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
-// -------------------------------------------------------------------------------------
-
-// --------------------------------------------------------------
-/* Instantiate the parameters for the how the random field is constructed */
-// --------------------------------------------------------------
-void PtCloudRFCreator::createDescriptors()
-{
-  const unsigned int nbr_clique_sets = 2;
-
-  for (unsigned int i = 0 ; i < node_feature_descriptors_.size() ; i++)
-  {
-    delete node_feature_descriptors_[i];
-  }
-  for (unsigned int i = 0 ; i < clique_set_feature_descriptors_.size() ; i++)
-  {
-    for (unsigned int j = 0 ; j < clique_set_feature_descriptors_[i].size() ; j++)
-    {
-      delete clique_set_feature_descriptors_[i][j];
-    }
-  }
-  node_feature_descriptors_.clear();
-  clique_set_feature_descriptors_.clear();
-  clique_set_clusterings_.clear();
-
-  node_feature_descriptors_ = initNodeFeatures();
-
-  clique_set_feature_descriptors_.resize(nbr_clique_sets);
-  clique_set_clusterings_.resize(nbr_clique_sets);
-  clique_set_feature_descriptors_[0] = initCS0Features();
-  clique_set_feature_descriptors_[1] = initCS1Features();
-  clique_set_clusterings_[0] = initCS0Clusters();
-  clique_set_clusterings_[1] = initCS1Clusters();
-}
-
-// --------------------------------------------------------------
-/*
- * \brief Create nodes in the random field
- */
-// --------------------------------------------------------------
-void PtCloudRFCreator::createNodes(RandomField& rf,
-                                   const sensor_msgs::PointCloud& pt_cloud,
-                                   cloud_kdtree::KdTree& pt_cloud_kdtree,
-                                   const vector<float>& labels,
-                                   set<unsigned int>& successful_indices)
-
-{
-  bool use_labels = labels.size() != 0;
-
-  // ----------------------------------------------
-  // Create interests points over the whole point cloud
-  unsigned int nbr_pts = pt_cloud.points.size();
-  cv::Vector<const geometry_msgs::Point32*> interest_pts(nbr_pts, NULL);
-  for (unsigned int i = 0 ; i < nbr_pts ; i++)
-  {
-    interest_pts[(size_t) i] = &(pt_cloud.points[i]);
-  }
-
-  // ----------------------------------------------
-  // Compute features over all point cloud
-  //vector<float*> concatenated_features(nbr_pts, NULL);
-  vector<boost::shared_array<const float> > concatenated_features;
-  unsigned int nbr_concatenated_vals = Descriptor3D::computeAndConcatFeatures(pt_cloud,
-      pt_cloud_kdtree, interest_pts, node_feature_descriptors_, concatenated_features,
-      successful_indices);
-  if (nbr_concatenated_vals == 0)
-  {
-    ROS_FATAL("Could not compute node features at all. This should never happen");
-    abort();
-  }
-
-  // ----------------------------------------------
-  // Create nodes for features that were okay
-  unsigned int nbr_created_nodes = 0;
-  for (unsigned int i = 0 ; i < nbr_pts ; i++)
-  {
-    // NULL indicates couldnt compute features for interest point
-    if (concatenated_features[i].get() != NULL)
-    {
-      const RandomField::Node* created_node = NULL;
-      if (use_labels)
-      {
-        if (labels[i] == RandomField::UNKNOWN_LABEL)
-        {
-          continue;
-        }
-        created_node = rf.createNode(i, concatenated_features[i], nbr_concatenated_vals,
-            static_cast<unsigned int> (labels[i]), pt_cloud.points[i].x, pt_cloud.points[i].y,
-            pt_cloud.points[i].z);
-      }
-      else
-      {
-        created_node = rf.createNode(i, concatenated_features[i], nbr_concatenated_vals,
-            RandomField::UNKNOWN_LABEL, pt_cloud.points[i].x, pt_cloud.points[i].y,
-            pt_cloud.points[i].z);
-      }
-
-      if (created_node == NULL)
-      {
-        ROS_FATAL("Could not create node for point %u.  This should never happen (conflicting ids probably)", i);
-        abort();
-      }
-      else
-      {
-        nbr_created_nodes++;
-      }
-    }
-  }
-
-  ROS_INFO("    @@@@@@@@@@ Created %u nodes from %u total points @@@@@@@@@@", nbr_created_nodes, nbr_pts);
-}
-
-// --------------------------------------------------------------
-/*!
- * \brief Create clique set in the RandomField using kmeans clustering
- */
-// --------------------------------------------------------------
-void PtCloudRFCreator::createCliqueSet(RandomField& rf,
-                                       const sensor_msgs::PointCloud& pt_cloud,
-                                       cloud_kdtree::KdTree& pt_cloud_kdtree,
-                                       const set<unsigned int>& node_indices,
-                                       const unsigned int clique_set_idx)
-{
-  const map<unsigned int, RandomField::Node*>& rf_nodes = rf.getNodesRandomFieldIDs();
-  vector<pair<bool, point_cloud_clustering::PointCloudClustering*> >& clique_set_info =
-      clique_set_clusterings_[clique_set_idx];
-
-  // total number of clusters and cliques created from this function call
-  unsigned int nbr_created_cliques = 0;
-  unsigned int nbr_created_clusters = 0;
-
-  unsigned int nbr_constructions = clique_set_info.size();
-  for (unsigned int i = 0 ; i < nbr_constructions ; i++)
-  {
-    // ----------------------------------------------
-    // Clustering
-    // ----------------------------------------------
-    // create new clusters starting from previous count
-    clique_set_info[i].second->setStartingClusterLabel(nbr_created_clusters);
-    map<unsigned int, vector<int> > created_clusters;
-    bool cluster_only_nodes = clique_set_info[i].first;
-    int cluster_ret_val = -1;
-    if (cluster_only_nodes)
-    {
-      cluster_ret_val = clique_set_info[i].second->cluster(pt_cloud, pt_cloud_kdtree, node_indices,
-          created_clusters);
-    }
-    else
-    {
-      cluster_ret_val = clique_set_info[i].second->cluster(pt_cloud, pt_cloud_kdtree,
-          created_clusters);
-    }
-    if (cluster_ret_val < 0)
-    {
-      abort();
-    }
-    map<unsigned int, vector<float> > cluster_centroids;
-    point_cloud_clustering::PointCloudClustering::computeClusterCentroids(pt_cloud,
-        created_clusters, cluster_centroids);
-    unsigned int curr_nbr_clusters = created_clusters.size();
-    nbr_created_clusters += curr_nbr_clusters;
-
-    // ----------------------------------------------
-    // Feature computation
-    // ----------------------------------------------
-    // Create interests regions from the clustering
-    cv::Vector<const vector<int>*> interest_region_indices(curr_nbr_clusters, NULL);
-    size_t cluster_idx = 0;
-    for (map<unsigned int, vector<int> >::iterator iter_created_clusters = created_clusters.begin() ; iter_created_clusters
-        != created_clusters.end() ; iter_created_clusters++, cluster_idx++)
-    {
-      interest_region_indices[cluster_idx] = (&iter_created_clusters->second);
-    }
-    // ----------------------------------------------
-    // Compute features over clusters
-    vector<boost::shared_array<const float> > concatenated_features;
-    set<unsigned int> successful_region_indices; // unused
-    unsigned int nbr_concatenated_vals = Descriptor3D::computeAndConcatFeatures(pt_cloud,
-        pt_cloud_kdtree, interest_region_indices, clique_set_feature_descriptors_[clique_set_idx],
-        concatenated_features, successful_region_indices);
-    if (nbr_concatenated_vals == 0)
-    {
-      ROS_FATAL("Could not compute cluster features at all. This should never happen");
-      abort();
-    }
-
-    // ----------------------------------------------
-    // Clique construction
-    // Assumes that point index in point cloud is equivalent to random field node id
-    // ----------------------------------------------
-    cluster_idx = 0;
-    for (map<unsigned int, vector<int> >::iterator iter_created_clusters = created_clusters.begin() ; iter_created_clusters
-        != created_clusters.end() ; iter_created_clusters++, cluster_idx++)
-    {
-      boost::shared_array<const float> curr_cluster_features = concatenated_features[cluster_idx];
-
-      // Only create cliques where could compute cluster features
-      if (curr_cluster_features.get() != NULL)
-      {
-        // Retrieve point cloud indices within the cluster.
-        const vector<int>& curr_cluster_pt_indices = iter_created_clusters->second;
-        unsigned int nbr_pts_in_cluster = curr_cluster_pt_indices.size();
-
-        // For each point, find its corresponding node (it may not exist if clusting over all points),
-        // and create a list of the nodes that represent the points in the cluster
-        list<const RandomField::Node*> clique_nodes;
-        unsigned int nbr_nodes_in_clique = 0;
-        for (unsigned int j = 0 ; j < nbr_pts_in_cluster ; j++)
-        {
-          unsigned int curr_pt_idx = curr_cluster_pt_indices[j];
-          if (rf_nodes.count(curr_pt_idx) != 0)
-          {
-            clique_nodes.push_back(rf_nodes.find(curr_pt_idx)->second);
-            nbr_nodes_in_clique++;
-          }
-        }
-
-        // Ensure the clique has at least two nodes
-        if (nbr_nodes_in_clique < 2)
-        {
-          //free(curr_cluster_features);
-          ROS_DEBUG("Skipping clique of size less than 2");
-        }
-        else
-        {
-          // Retrieve the cluster's label
-          const unsigned int curr_cluster_label = iter_created_clusters->first;
-
-          // Retrieve the cluster's centroid
-          const vector<float>& centroid = cluster_centroids.find(curr_cluster_label)->second;
-
-          // Create clique using the cluster label as the clique id
-          if (rf.createClique(curr_cluster_label, clique_set_idx, clique_nodes,
-              curr_cluster_features, nbr_concatenated_vals, centroid[0], centroid[1], centroid[2])
-              == NULL)
-          {
-            abort();
-          }
-          else
-          {
-            nbr_created_cliques++;
-          }
-        }
-      } // end if (curr_cluster_features != NULL)
-    } // end iterate over clusters
-  }
-
-  ROS_INFO("    ########### Created clique set %u with %u cliques from %u clusters #############", clique_set_idx, nbr_created_cliques, nbr_created_clusters);
+  rf_creator_3d_ = new RFCreator3D(node_feature_descriptors, clique_set_feature_descriptors,
+      clique_set_clusterings);
 }
 
 // --------------------------------------------------------------
@@ -418,32 +120,11 @@ void PtCloudRFCreator::createCliqueSet(RandomField& rf,
 boost::shared_ptr<RandomField> PtCloudRFCreator::createRandomField(const sensor_msgs::PointCloud& pt_cloud,
                                                                    const vector<float>& labels)
 {
-  createDescriptors();
-  unsigned int nbr_clique_sets = clique_set_clusterings_.size();
-
-  cloud_kdtree::KdTreeANN pt_cloud_kdtree(pt_cloud);
-  boost::shared_ptr<RandomField> rf(new RandomField(nbr_clique_sets));
-
-  ROS_INFO("=============== CREATING RANDOM FIELD =================");
-
-  // ----------------------------------------------------------
-  // Create nodes
-  set<unsigned int> successful_indices;
-  createNodes(*rf, pt_cloud, pt_cloud_kdtree, labels, successful_indices);
-
-  // ----------------------------------------------------------
-  // Create clique sets
-  for (unsigned int i = 0 ; i < nbr_clique_sets ; i++)
-  {
-    createCliqueSet(*rf, pt_cloud, pt_cloud_kdtree, successful_indices, i);
-  }
-
-  ROS_INFO("=============== FINISHED RANDOM FIELD =================\n");
-  return rf;
+  vector<unsigned int> uint_labels(labels.begin(), labels.end());
+  return rf_creator_3d_->createRandomField(pt_cloud, uint_labels, true);
 }
 
 boost::shared_ptr<RandomField> PtCloudRFCreator::createRandomField(const sensor_msgs::PointCloud& pt_cloud)
 {
-  std::vector<float> labels;
-  return createRandomField(pt_cloud, labels);
+  return rf_creator_3d_->createRandomField(pt_cloud);
 }

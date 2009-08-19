@@ -118,7 +118,7 @@ public:
 	
 	ros::WallTime tm = ros::WallTime::now();
 	std::vector<int> mask;
-	sf_->maskIntersection(in, "laser_tilt_mount_link", mask, boost::bind(&TestSelfFilter::gotIntersection, this, _1) );
+	sf_->maskIntersection(in, "laser_tilt_mount_link", 0.01, mask, boost::bind(&TestSelfFilter::gotIntersection, this, _1) );
 	//	sf_->maskContainment(in, mask);
 	printf("%f points per second\n", (double)N/(ros::WallTime::now() - tm).toSec());
 

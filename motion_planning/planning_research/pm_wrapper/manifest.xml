@@ -1,0 +1,21 @@
+<package>
+  <description brief="A wrapper for the planning monitor class (written by Ioan Sucan). To be used as a simple collision checker.">
+
+  </description>
+  <author>Benjamin Cohen /bcohen@willowgarage.com</author>
+  <license>BSD</license>
+    <depend package="roscpp"/>
+    <depend package="motion_planning_msgs" />
+    <depend package="planning_environment" />
+    <depend package="planning_models" />
+		<depend package="geometric_shapes" />
+		<depend package="bullet" />
+    <depend package="tf" />
+  <url></url>
+
+  <export>
+    <cpp cflags="-I${prefix}/include -O3 -g" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lpm_wrapper" />
+  </export>
+
+</package>
+

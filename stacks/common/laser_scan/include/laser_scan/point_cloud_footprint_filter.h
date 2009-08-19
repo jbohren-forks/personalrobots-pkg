@@ -41,7 +41,7 @@ This is useful for ground plane extraction
 
 **/
 
-
+#include "laser_scan/laser_scan.h"
 #include "filters/filter_base.h"
 #include "tf/transform_listener.h"
 #include "sensor_msgs/PointCloud.h"
@@ -50,7 +50,6 @@ This is useful for ground plane extraction
 namespace laser_scan
 {
 
-template <typename T>
 class PointCloudFootprintFilter : public filters::FilterBase<sensor_msgs::PointCloud>
 {
 public:
@@ -67,21 +66,12 @@ public:
 
   }
 
-  bool update(const std::vector<sensor_msgs::PointCloud>& data_in, std::vector<sensor_msgs::PointCloud>& data_out)
+  bool update(const sensor_msgs::PointCloud& input_scan, sensor_msgs::PointCloud& filtered_scan)
   {
-    if(&data_in == &data_out){
+    if(&input_scan == &filtered_scan){
       ROS_ERROR("This filter does not currently support in place copying");
       return false;
     }
-    if (data_in.size() != 1 || data_out.size() != 1)
-    {
-      ROS_ERROR("PointCloudFootprintFilter is not vectorized");
-      return false;
-    }
-    
-    const sensor_msgs::PointCloud& input_scan = data_in[0];
-    sensor_msgs::PointCloud& filtered_scan = data_out[0];
-
     sensor_msgs::PointCloud laser_cloud;
 
     try{
@@ -128,12 +118,10 @@ public:
 
 private:
   tf::TransformListener tf_;
-  LaserProjection projector_;
+  laser_scan::LaserProjection projector_;
   double inscribed_radius_;
 } ;
 
-typedef sensor_msgs::PointCloud RM_POINT_CLOUD;
-FILTERS_REGISTER_FILTER(PointCloudFootprintFilter, RM_POINT_CLOUD);
 }
 
 #endif // LASER_SCAN_FOOTPRINT_FILTER_H

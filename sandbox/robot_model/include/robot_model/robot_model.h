@@ -53,41 +53,55 @@ public:
   RobotModel();
 
   bool initXml(TiXmlElement *xml);
+  bool initXml(TiXmlDocument *xml);
   bool initFile(const std::string& filename);
   bool initString(const std::string& xmlstring);
 
-  const boost::shared_ptr<Link> getRoot(void) const{return (const boost::shared_ptr<Link>)this->root_link_;};
-  const boost::shared_ptr<Link> getLink(const std::string& name) const;
+  boost::shared_ptr<const Link> getRoot(void) const{return this->root_link_;};
+  boost::shared_ptr<const Link> getLink(const std::string& name) const;
+  boost::shared_ptr<const Joint> getJoint(const std::string& name) const;
   const std::string& getName() const {return name_;};
+
+  void getLinks(std::vector<boost::shared_ptr<Link> >& links) const;
+
+  /// Some accessor functions
+  boost::shared_ptr<const Link> getParentLink(const std::string& name) const;
+  boost::shared_ptr<const Joint> getParentJoint(const std::string& name) const;
+  boost::shared_ptr<const Link> getChildLink(const std::string& name) const;
+  boost::shared_ptr<const Joint> getChildJoint(const std::string& name) const;
 
 private:
   void clear();
 
   std::string name_;
 
+  /// non-const getLink()
+  void getLink(const std::string& name,boost::shared_ptr<Link> &link) const;
+
+  /// non-const getMaterial()
+  boost::shared_ptr<Material> getMaterial(const std::string& name) const;
+
   /// in initXml(), onece all links are loaded,
   /// it's time to build a tree
-  bool initTree();
+  bool initTree(std::map<std::string, std::string> &parent_link_tree);
 
   /// in initXml(), onece tree is built,
   /// it's time to find the root Link
-  bool initRoot();
+  bool initRoot(std::map<std::string, std::string> &parent_link_tree);
 
   /// Every Robot Description File can be described as a
   ///   list of Links and Joints
   /// The connection between links(nodes) and joints(edges)
   ///   should define a tree (i.e. 1 parent link, 0+ children links)
-  /// RobotModel currently do not support 
   std::map<std::string, boost::shared_ptr<Link> > links_;
+  std::map<std::string, boost::shared_ptr<Joint> > joints_;
+  std::map<std::string, boost::shared_ptr<Material> > materials_;
 
   /// RobotModel is restricted to a tree for now, which means there exists one root link
   ///  typically, root link is the world(inertial).  Where world is a special link
   /// or is the root_link_ the link attached to the world by PLANAR/FLOATING joint?
   ///  hmm...
   boost::shared_ptr<Link> root_link_;
-
-  /// for convenience keep a map of link names and their parent names
-  std::map<std::string, std::string> link_parent_;
 
 };
 

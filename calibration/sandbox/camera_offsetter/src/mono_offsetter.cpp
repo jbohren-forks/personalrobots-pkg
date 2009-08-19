@@ -59,7 +59,7 @@ public:
   void imageCb(const sensor_msgs::ImageConstPtr& msg)
   {
     sensor_msgs::Image next_image = *msg;
-    next_image.header.frame_id = msg->header.frame_id + "_offset";
+    next_image.header.frame_id = msg->header.frame_id + frame_suffix_;
     image_pub_.publish(next_image);
 
     publishTransform(msg->header.stamp, next_image.header.frame_id, msg->header.frame_id);
@@ -68,7 +68,7 @@ public:
   void infoCb(const sensor_msgs::CameraInfoConstPtr& msg)
   {
     sensor_msgs::CameraInfo next_info = *msg;
-    next_info.header.frame_id = msg->header.frame_id + "_offset";
+    next_info.header.frame_id = msg->header.frame_id + frame_suffix_;
     info_pub_.publish(next_info);
   }
 

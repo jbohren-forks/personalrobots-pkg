@@ -253,16 +253,19 @@ namespace planning_models
 	    }
 	    
 	    /** \brief The constant transform applied to the link (needs to be specified by user) */
-	    btTransform         attachTrans;
+	    btTransform               attachTrans;
 
 	    /** \brief The geometry of the attached body */
-	    shapes::Shape      *shape;
+	    shapes::Shape            *shape;
 
 	    /** \brief The global transform for this link (computed by forward kinematics) */
-	    btTransform         globalTrans;
+	    btTransform               globalTrans;
 	    
 	    /** \brief The link that owns this attached body */
-	    Link               *owner;
+	    Link                     *owner;
+
+	    /** \brief The set of links this body is allowed to touch */
+	    std::vector<std::string>  touch_links;
 
 	protected:
 	    /** \brief recompute globalTrans */
@@ -431,16 +434,12 @@ namespace planning_models
 	    
 	    /** \brief Cumulative list of group roots */
 	    std::vector< std::vector<Joint*> >       groupChainStart;
-
-	    /** \brief True if this model has been set in the robot frame */
-	    bool                                     inRobotFrame;
 	};
 	
 
 	KinematicModel(void)
 	{
 	    m_mi.stateDimension = 0;
-	    m_mi.inRobotFrame = false;
 	    m_verbose = false;	    
 	    m_built = false;
 	}
@@ -538,10 +537,6 @@ namespace planning_models
 	/** \brief Perform forward kinematics for the entire robot */
 	void computeTransforms(const double *params);
 	
-	/** \brief Add transforms to the rootTransform such that the robot is in its planar/floating link frame.
-	 *  Such a transform is needed only if the root joint of the robot is planar or floating */
-	void reduceToRobotFrame(void);
-
 	/** \brief Provide interface to a lock. Use carefully! */
 	void lock(void)
 	{

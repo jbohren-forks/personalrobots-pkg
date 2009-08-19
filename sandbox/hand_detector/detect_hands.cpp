@@ -24,16 +24,32 @@ int main(int argc, char** argv) {
   if(getenv("NCANDIDATES") != NULL)
     num_candidates = atoi(getenv("NCANDIDATES"));
 
+  if(getenv("EXPERIMENT") != NULL)
+    hd.experiment_ = getenv("EXPERIMENT");
+
   // -- Parse cmd line args.
-  if(argc > 3 && !strcmp(argv[1], "--collectDataset")) {
+  if(argc > 3 && !strcmp(argv[1], "--collectDatasetFromPolygons")) {
     cout << "Collecting a dataset for labels dir " << argv[2] << ", saving with name " << argv[3] << endl;  
-    DorylusDataset* dd = hd.collectDataset(argv[2], num_samples);
+    DorylusDataset* dd = hd.collectDatasetFromPolygons(argv[2], num_samples);
     if(!dd) {
       ROS_WARN("Dataset collection failed.");
     }
     else {
       cout << dd->status() << endl;
       dd->save(argv[3]);
+      delete dd;
+    }
+  }
+  if(argc > 4 && !strcmp(argv[1], "--collectDatasetFromDirs")) {
+    cout << "Collecting a dataset for positive labels in " << argv[2] << " and negative labels in " << argv[3] << ", saving with name " << argv[3] << endl;  
+    bool only_odd = false;
+    DorylusDataset* dd = hd.collectDatasetFromDirs(argv[2], argv[3], num_samples, &only_odd);
+    if(!dd) {
+      ROS_WARN("Dataset collection failed.");
+    }
+    else {
+      cout << dd->status() << endl;
+      dd->save(argv[4]);
       delete dd;
     }
   }
@@ -46,10 +62,16 @@ int main(int argc, char** argv) {
     else 
       d->save(argv[3]);    
   }
-  else if(argc > 3 && !strcmp(argv[1], "--visualize")) {
+  else if(argc > 3 && !strcmp(argv[1], "--test")) {
     cout << "Visualizing results for classifier " << argv[3] << " on labeled data in " << argv[2] << endl;
-    hd.visualize(argv[3], argv[2], num_samples);
+    hd.test(argv[3], argv[2], num_samples);
   }
+
+  else if(argc == 5 && !strcmp(argv[1], "--testOnDirs")) {
+    cout << "Visualizing results for classifier " << argv[4] << " on labeled data in " << argv[2] << " and " << argv[3] << endl;
+    hd.testOnDirs(argv[4], argv[2], argv[3], num_samples);
+  }
+
   else if(argc > 2 && !strcmp(argv[1], "--showLabels")) {
     cout << "Visualizing labels in " << argv[2] << endl;
     hd.showLabels(argv[2]);
@@ -59,19 +81,33 @@ int main(int argc, char** argv) {
   else {
     cout << "usage: " << endl;
 
-    cout << argv[0] << " --collectDataset LABELS DATASET_SAVENAME" << endl;
+    cout << argv[0] << " --collectDatasetFromPolygons LABELS DATASET_SAVENAME" << endl;
     cout << " Environment variable options: " << endl;
     cout << "   DEBUG= sets the debugging flag." << endl;
     cout << "   NSAMPLES=x is the number of points per image to sample." << endl;
     cout << endl;
 
+    cout << argv[0] << " --test LABELS CLASSIFIER" << endl;
+    cout << " Environment variable options: " << endl;
+    cout << "   NSAMPLES=x is the number of points per image to sample." << endl;
+    cout << "   EXP=x is the experiment name.  Results will go into experiments/x/" << endl;
+    cout << endl;
+
+    cout << argv[0] << " --collectDatasetFromDirs POSITIVES_DIR NEGATIVES_DIR DATASET_SAVENAME" << endl;
+    cout << " Environment variable options: " << endl;
+    cout << "   DEBUG= sets the debugging flag." << endl;
+    cout << "   NSAMPLES=x is the number of points per image to sample." << endl;
+    cout << endl;
+
+    cout << argv[0] << " --testOnDirs POSITIVES_DIR NEGATIVES_DIR CLASSIFIER" << endl;
+    cout << " Environment variable options: " << endl;
+    cout << "   NSAMPLES=x is the number of points per image to sample." << endl;
+    cout << "   EXP=x is the experiment name.  Results will go into experiments/x/" << endl;
+    cout << endl;
+
     cout << argv[0] << " --showLabels LABELS" << endl;
     cout << endl;
 
-    cout << argv[0] << " --visualize LABELS CLASSIFIER" << endl;
-    cout << " Environment variable options: " << endl;
-    cout << "   NSAMPLES=x is the number of points per image to sample." << endl;
-    cout << endl;
 
     cout << argv[0] << " --train DATASET CLASSIFIER_SAVENAME" << endl;
     cout << " Environment variable options: " << endl;

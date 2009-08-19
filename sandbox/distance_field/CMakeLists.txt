@@ -32,7 +32,8 @@ rospack(distance_field)
 #target_link_libraries(example ${PROJECT_NAME})
 
 rospack_add_library(distance_field
-	src/distance_field.cpp
+	src/pf_distance_field.cpp
+	src/propagation_distance_field.cpp
 )
 
 rospack_add_gtest(test/test_distance_field

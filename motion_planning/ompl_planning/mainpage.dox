@@ -87,6 +87,7 @@ Subscribes to:
 
 \subsubsection parameters ROS parameters
 - @b "~planning_frame_id"/string : if the default frame is not to be used when planning, this parameter allows changing that frame. 
+- @b "~state_delay"/double : the time interval assumed between states on the solution path. A lower value of this parameter makes the path execution faster.
 
 \subsubsection services ROS services
 

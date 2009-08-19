@@ -134,6 +134,7 @@ void collision_space::EnvironmentModelODE::createODERobotModel(void)
 	}
 	m_modelGeom.linkGeom.push_back(kg);
     } 
+    updateAllowedTouch();
 }
 
 dGeomID collision_space::EnvironmentModelODE::createODEGeom(dSpaceID space, ODEStorage &storage, const shapes::StaticShape *shape)
@@ -275,6 +276,7 @@ void collision_space::EnvironmentModelODE::updateAttachedBodies(void)
 	    kg->geom.push_back(ga);
 	}
     }
+    updateAllowedTouch();
 }
 
 void collision_space::EnvironmentModelODE::updateRobotModel(void)
@@ -491,12 +493,40 @@ namespace collision_space
 		EnvironmentModelODE::kGeom* kg2 = reinterpret_cast<EnvironmentModelODE::kGeom*>(dGeomGetData(o2));
 		if (kg1 && kg2)
 		{
-		    if (cdata->selfCollisionTest->at(kg1->index)[kg2->index] == false)
-			return;
+		    // if we have two body parts (it is the first in the list of geoms for the link), check if they are allowed to collide
+		    if (cdata->selfCollisionTest->at(kg1->index)[kg2->index] == false && kg1->geom[0] == o1 && kg2->geom[0] == o2)
+		        return;
 		    else
 		    {
-			cdata->link1 = kg1->link;
-			cdata->link2 = kg2->link;
+		        // if we are looking at a link and an attached object
+		        if ((kg1->geom[0] == o1 && kg2->geom[0] != o2) || (kg1->geom[0] != o1 && kg2->geom[0] == o2))
+			{
+			    int p1 = -1, p2 = -1;
+			    for (unsigned int i = 0 ; i < kg1->geom.size() ; ++i)
+			        if (kg1->geom[i] == o1)
+				{
+				    p1 = i;
+				    break;
+				}
+			    for (unsigned int i = 0 ; i < kg2->geom.size() ; ++i)
+			        if (kg2->geom[i] == o2)
+				{
+				    p2 = i;
+				    break;
+				}
+			    assert(p1 >= 0 && p2 >= 0);
+			    if (p1 == 0)
+			        if (kg2->allowedTouch[p2][kg1->index])
+				  return;
+			    if (p2 == 0)
+			        if (kg1->allowedTouch[p1][kg2->index])
+				  return;
+			}
+			else
+			{
+			    cdata->link1 = kg1->link;
+			    cdata->link2 = kg2->link;
+			}
 		    }
 		}
 	    }
@@ -785,6 +815,49 @@ void collision_space::EnvironmentModelODE::clearObjects(const std::string &ns)
     if (it != m_collNs.end())
 	it->second->clear();
     m_objects->clearObjects(ns);
+}
+
+void collision_space::EnvironmentModelODE::updateAllowedTouch(void)
+{
+    const unsigned int n = m_modelGeom.linkGeom.size();    
+    for (unsigned int i = 0 ; i < n ; ++i)
+    {
+	kGeom *kg = m_modelGeom.linkGeom[i];
+	kg->allowedTouch.resize(kg->geom.size());
+	
+	if (kg->geom.empty())
+	    continue;
+	
+	kg->allowedTouch[0].resize(n);
+	
+	// compute the allowed touch for robot links
+	for (unsigned int j = 0 ; j < n ; ++j)
+	    // if self collision checking with link j is disabled, we are allowed to touch link i with geom 0
+	    // otherwise, we are not
+	    kg->allowedTouch[0][j] = !m_selfCollisionTest[kg->index][j];
+
+	const unsigned int nab = kg->link->attachedBodies.size();
+	for (unsigned int k = 0 ; k < nab ; ++k)
+	{
+ 	    kg->allowedTouch[k + 1].clear();
+	    kg->allowedTouch[k + 1].resize(n, false);
+	    for (unsigned int j = 0 ; j < kg->link->attachedBodies[k]->touch_links.size() ; ++j)
+	    {
+	        const std::string &tlink = kg->link->attachedBodies[k]->touch_links[j];
+	        std::map<std::string, unsigned int>::const_iterator it = m_collisionLinkIndex.find(tlink);
+		if (it != m_collisionLinkIndex.end())
+		    kg->allowedTouch[k + 1][it->second] = true;
+		else
+		  m_msg.error("Unknown link '%s'", tlink.c_str());
+	    }
+	}
+    }
+}
+
+void collision_space::EnvironmentModelODE::addSelfCollisionGroup(const std::vector<std::string> &links)
+{
+    EnvironmentModel::addSelfCollisionGroup(links);
+    updateAllowedTouch();
 }
 
 void collision_space::EnvironmentModelODE::removeCollidingObjects(const shapes::StaticShape *shape)

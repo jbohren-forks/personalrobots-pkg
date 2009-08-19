@@ -90,13 +90,7 @@ void ompl_planning::Model::createMotionPlanningInstances(std::vector< boost::sha
 	else
 	if (type == "GAIK")
 	{
-	    if (ik)
-	    {
-		ROS_WARN("Re-definition of '%s'", type.c_str());
-		delete ik;
-	    }
-	    ik = new IKSetup(dynamic_cast<ModelBase*>(this));
-	    ik->setup(cfgs[i]);
+	    // skip this, but don't output error
 	}
 	else
 	    ROS_WARN("Unknown planner type: %s", type.c_str());
@@ -106,8 +100,8 @@ void ompl_planning::Model::createMotionPlanningInstances(std::vector< boost::sha
 template<typename _T>
 void ompl_planning::Model::add_planner(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
 {
-    PlannerSetup *p = new _T(dynamic_cast<ModelBase*>(this));
-    if (p->setup(options))
+    PlannerSetup *p = new _T();
+    if (p->setup(planningMonitor, groupName, options))
     {
 	std::string location = p->name + "[" + options->getName() + "]";
 	if (planners.find(location) != planners.end())
@@ -123,24 +117,16 @@ void ompl_planning::Model::add_planner(boost::shared_ptr<planning_environment::R
 
 void ompl_planning::setupPlanningModels(planning_environment::PlanningMonitor *planningMonitor, ompl_planning::ModelMap &models)
 {
-    ROS_DEBUG("=======================================");	
     std::stringstream ss;
+    ss << "=======================================" << std::endl;
     planningMonitor->getKinematicModel()->printModelInfo(ss);
-    ROS_DEBUG("%s", ss.str().c_str());	
-    ROS_DEBUG("=======================================");
+    ss << "=======================================" << std::endl;
+    ROS_DEBUG("%s", ss.str().c_str());
     
     /* create a model for each group */
     std::map< std::string, std::vector<std::string> > groups = planningMonitor->getCollisionModels()->getPlanningGroups();
-    
     for (std::map< std::string, std::vector<std::string> >::iterator it = groups.begin(); it != groups.end() ; ++it)
-    {
-	Model *model = new Model();
-	model->planningMonitor = planningMonitor;
-	model->groupID = planningMonitor->getKinematicModel()->getGroupID(it->first);
-	model->groupName = it->first;
-	model->createMotionPlanningInstances(planningMonitor->getCollisionModels()->getGroupPlannersConfig(model->groupName));
-	models[model->groupName] = model;
-    }
+	models[it->first] = new Model(planningMonitor, it->first);
 }
 
 std::vector<std::string> ompl_planning::knownModels(ompl_planning::ModelMap &models)

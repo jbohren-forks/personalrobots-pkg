@@ -3,7 +3,8 @@
 
 <include file="$(find pr2_default_controllers)/pr2_base_controller_odom.launch"/>
 
-<node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/torso_lift_vel_controller.xml" output="screen" />
+<rosparam file="$(find pr2_default_controllers)/pr2_joint_velocity_controller.yaml" command="load"/>
+<node pkg="mechanism_control" type="spawner.py" args="torso_lift_velocity_controller" output="screen" />
 
 <node pkg="backup_safetysound" type="backingup.py" machine="four" />
 

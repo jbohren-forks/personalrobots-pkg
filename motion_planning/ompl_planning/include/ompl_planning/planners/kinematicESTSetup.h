@@ -47,9 +47,10 @@ namespace ompl_planning
     {
     public:
 	
-        kinematicESTSetup(ModelBase *m);
+        kinematicESTSetup(void);
 	virtual ~kinematicESTSetup(void);
-	virtual bool setup(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
+	virtual bool setup(planning_environment::PlanningMonitor *planningMonitor, const std::string &groupName,
+			   boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options);
     };
     
 } // ompl_planning

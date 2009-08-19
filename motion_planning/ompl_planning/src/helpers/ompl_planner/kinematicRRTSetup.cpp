@@ -36,7 +36,7 @@
 
 #include "ompl_planning/planners/kinematicRRTSetup.h"
 
-ompl_planning::kinematicRRTSetup::kinematicRRTSetup(ModelBase *m) : PlannerSetup(m)
+ompl_planning::kinematicRRTSetup::kinematicRRTSetup(void) : PlannerSetup()
 {
     name = "kinematic::RRT";
     priority = 2;
@@ -46,11 +46,12 @@ ompl_planning::kinematicRRTSetup::~kinematicRRTSetup(void)
 {
 }
 
-bool ompl_planning::kinematicRRTSetup::setup(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
+bool ompl_planning::kinematicRRTSetup::setup(planning_environment::PlanningMonitor *planningMonitor, const std::string &groupName,
+					     boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
 {
-    preSetup(options);
+    preSetup(planningMonitor, groupName, options);
     
-    ompl::kinematic::RRT *rrt = new ompl::kinematic::RRT(dynamic_cast<ompl::kinematic::SpaceInformationKinematic*>(si));
+    ompl::kinematic::RRT *rrt = new ompl::kinematic::RRT(dynamic_cast<ompl::kinematic::SpaceInformationKinematic*>(ompl_model->si));
     mp                        = rrt;
     
     if (options->hasParam("range"))
@@ -65,7 +66,7 @@ bool ompl_planning::kinematicRRTSetup::setup(boost::shared_ptr<planning_environm
 	ROS_DEBUG("Goal bias is set to %g", rrt->getGoalBias());
     }
 
-    postSetup(options);
+    postSetup(planningMonitor, groupName, options);
     
     return true;
 }

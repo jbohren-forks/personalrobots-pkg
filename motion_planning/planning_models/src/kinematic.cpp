@@ -330,19 +330,6 @@ planning_models::StateParams* planning_models::KinematicModel::newStateParams(vo
     return new StateParams(this);
 }
 
-void planning_models::KinematicModel::reduceToRobotFrame(void)
-{
-    if (!m_mi.inRobotFrame)
-    {
-	for (unsigned int i = 0 ; i < m_robots.size() ; ++i)
-	    if (dynamic_cast<PlanarJoint*>(m_robots[i]->chain) || dynamic_cast<FloatingJoint*>(m_robots[i]->chain))
-		m_robots[i]->rootTransform *= m_robots[i]->chain->after->constTrans.inverse();
-	
-	m_mi.inRobotFrame = true;
-    }
-    defaultState();
-}
-
 void planning_models::KinematicModel::build(const std::string &description, const std::map< std::string, std::vector<std::string> > &groups)
 {	    
     robot_desc::URDF *file = new robot_desc::URDF();
@@ -377,6 +364,7 @@ void planning_models::KinematicModel::build(const robot_desc::URDF &model, const
 	rb->groupChainStart.resize(m_groups.size());
 	rb->chain = createJoint(link);
 	buildChainJ(rb, NULL, rb->chain, link, model);
+	rb->chain->after->constTrans.setIdentity();
 	m_robots.push_back(rb);
     }
     
@@ -859,6 +847,7 @@ void planning_models::KinematicModel::cloneAfterLink(Robot *rb, Link *dest, cons
 	ab->attachTrans = src->attachedBodies[i]->attachTrans;
 	ab->shape = shapes::cloneShape(src->attachedBodies[i]->shape);
 	ab->globalTrans = src->attachedBodies[i]->globalTrans;
+	ab->touch_links = src->attachedBodies[i]->touch_links;
 	dest->attachedBodies.push_back(ab);
     }
     for (unsigned int i = 0 ; i < src->after.size() ; ++i)
@@ -903,7 +892,6 @@ planning_models::KinematicModel* planning_models::KinematicModel::clone(void) co
     km->m_groupsMap = m_groupsMap;
     km->m_groupContent = m_groupContent;
     
-    km->m_mi.inRobotFrame = m_mi.inRobotFrame;
     km->m_mi.groupStateIndexList.resize(m_groups.size());
     km->m_mi.groupChainStart.resize(m_groups.size());
     

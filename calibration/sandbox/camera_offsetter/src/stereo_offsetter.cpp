@@ -56,7 +56,7 @@ public:
   void rawStereoCb(const stereo_msgs::RawStereoConstPtr& msg)
   {
     stereo_msgs::RawStereo next_raw_stereo = *msg;
-    next_raw_stereo.header.frame_id = msg->header.frame_id + "_offset";
+    next_raw_stereo.header.frame_id = msg->header.frame_id + frame_suffix_;
     raw_stereo_pub_.publish(next_raw_stereo);
 
     publishTransform(msg->header.stamp, next_raw_stereo.header.frame_id, msg->header.frame_id);

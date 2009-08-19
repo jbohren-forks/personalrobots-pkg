@@ -6,7 +6,7 @@
     <param name="env_config" textfile="$(find sbpl_arm_planner)/env_examples/robarm3d/r_arm.cfg" />
     <param name="planner_config" textfile="$(find sbpl_arm_planner)/params.cfg" />
 
-    <param name="allocated_time" value="20.0" />
+    <param name="allocated_time" value="35.0" />
     <param name="forward_search" value="true" />
     <param name="search_mode" value="true" />
     <param name="num_joints" value="7" />
@@ -24,6 +24,8 @@
     <param name="use_collision_map_occ_to_update_voxel" value="true" />
     <param name="use_exact_gripper_collision_checking" value="true" />
     <param name="use_voxel3d_grid" value="true" />
+    <param name="seconds_per_waypoint" value="0.075" />
+    <param name="planning_frame" type="string" value="torso_lift_link" />
 
     <!-- planning monitor -->
     <remap from="robot_description" to="robot_description" />
@@ -31,11 +33,19 @@
     <remap from="collision_map_update" to="collision_map_occ_update" />
 
     <param name="arm" type="string" value="right_arm" />
-    <param name="planning_frame_id" type="string" value="torso_lift_link" />
+    <param name="planning_frame_id" type="string" value="base_link" />
     <param name="refresh_interval_collision_map" type="double" value="5.0" />
     <param name="refresh_interval_kinematic_state" type="double" value="1.0" />
     <param name="bounding_planes" type="string" value="0 0 1 -0.01" />
 
   </node>
-
+  
+  <node pkg="robot_voxelizer" type="robot_voxelizer_node" name="robot_voxelizer" respawn="false" >
+  	<param name="padding" value=".01" />
+  	<param name="visualize" value="false" />
+  	<param name="resolution" value=".02" />
+  	<param name="visualize" value="false" />
+  	<param name="working_frame" type="string" value="torso_lift_link" />
+	</node>
+	
 </launch>

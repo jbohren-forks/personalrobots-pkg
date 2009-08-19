@@ -1,0 +1,7 @@
+<launch>
+  
+  <include file="$(find 3dnav_pr2)/launch/planning/bits/ompl_planning.launch" />
+  <include file="$(find 3dnav_pr2)/launch/planning/bits/fake_planning.launch" />
+  <include file="$(find 3dnav_pr2)/launch/planning/bits/ompl_search.launch" />
+
+</launch>

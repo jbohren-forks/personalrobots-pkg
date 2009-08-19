@@ -74,6 +74,13 @@ class Curvature: public Descriptor3D
     // --------------------------------------------------------------
     Curvature(SpectralAnalysis& spectral_information);
 
+    // --------------------------------------------------------------
+    /*!
+     * \brief Clears any already-computed spectral information
+     */
+    // --------------------------------------------------------------
+    virtual void clearShared();
+
   protected:
     // --------------------------------------------------------------
     /*!

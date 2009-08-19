@@ -36,7 +36,7 @@
 
 #include "ompl_planning/planners/kinematicIKSBLSetup.h"
 
-ompl_planning::kinematicIKSBLSetup::kinematicIKSBLSetup(ModelBase *m) : PlannerSetup(m)
+ompl_planning::kinematicIKSBLSetup::kinematicIKSBLSetup(void) : PlannerSetup()
 {
     name = "kinematic::IKSBL";	 
     priority = 4;
@@ -52,11 +52,12 @@ ompl_planning::kinematicIKSBLSetup::~kinematicIKSBLSetup(void)
     }
 }
 
-bool ompl_planning::kinematicIKSBLSetup::setup(boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
+bool ompl_planning::kinematicIKSBLSetup::setup(planning_environment::PlanningMonitor *planningMonitor, const std::string &groupName,
+					       boost::shared_ptr<planning_environment::RobotModels::PlannerConfig> &options)
 {
-    preSetup(options);
+    preSetup(planningMonitor, groupName, options);
     
-    ompl::kinematic::IKSBL* sbl = new ompl::kinematic::IKSBL(dynamic_cast<ompl::kinematic::SpaceInformationKinematic*>(si));
+    ompl::kinematic::IKSBL* sbl = new ompl::kinematic::IKSBL(dynamic_cast<ompl::kinematic::SpaceInformationKinematic*>(ompl_model->si));
     mp                          = sbl;	
 
     if (options->hasParam("range"))
@@ -75,12 +76,12 @@ bool ompl_planning::kinematicIKSBLSetup::setup(boost::shared_ptr<planning_enviro
     
     if (sbl->getProjectionEvaluator() == NULL)
     {
-	ROS_WARN("Adding %s failed: need to set both 'projection' and 'celldim' for %s", name.c_str(), model->groupName.c_str());
+	ROS_WARN("Adding %s failed: need to set both 'projection' and 'celldim' for %s", name.c_str(), groupName.c_str());
 	return false;
     }
     else
     {
-	postSetup(options);
+	postSetup(planningMonitor, groupName, options);
 	return true;
     }
 }

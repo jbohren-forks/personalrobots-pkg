@@ -44,8 +44,8 @@ namespace move_base {
     tf_(tf),
     as_(ros::NodeHandle(), name, boost::bind(&MoveBase::executeCb, this, _1)),
     tc_(NULL), planner_costmap_ros_(NULL), controller_costmap_ros_(NULL),
-    planner_(NULL), bgp_loader_("nav_core", "BaseGlobalPlanner"),
-    blp_loader_("nav_core", "BaseLocalPlanner"){
+    planner_(NULL), bgp_loader_("nav_core", "nav_core::BaseGlobalPlanner"),
+    blp_loader_("nav_core", "nav_core::BaseLocalPlanner"){
 
     //get some parameters that will be global to the move base node
     std::string global_planner, local_planner;
@@ -83,7 +83,7 @@ namespace move_base {
 
     //initialize the global planner
     try {
-      planner_ = bgp_loader_.createPluginInstance(global_planner);
+      planner_ = bgp_loader_.createClassInstance(global_planner);
       planner_->initialize(global_planner, planner_costmap_ros_);
     } catch (const std::runtime_error& ex)
     {
@@ -98,7 +98,7 @@ namespace move_base {
 
     //create a local planner
     try {
-      tc_ = blp_loader_.createPluginInstance(local_planner);
+      tc_ = blp_loader_.createClassInstance(local_planner);
       tc_->initialize(local_planner, &tf_, controller_costmap_ros_);
     } catch (const std::runtime_error& ex)
     {
@@ -386,6 +386,10 @@ namespace move_base {
     std::vector<geometry_msgs::PoseStamped> global_plan;
 
     ros::Rate r(controller_frequency_);
+    if(shutdown_costmaps_){
+      planner_costmap_ros_->start();
+      controller_costmap_ros_->start();
+    }
 
     while(as_.isActive())
     {
@@ -456,7 +460,7 @@ namespace move_base {
 
     //check that the observation buffers for the costmap are current, we don't want to drive blind
     if(!controller_costmap_ros_->isCurrent()){
-      ROS_WARN("Sensor data is out of date, we're not going to allow commanding of the base for safety");
+      ROS_WARN("[%s]:Sensor data is out of date, we're not going to allow commanding of the base for safety",ros_node_.getName().c_str());
       publishZeroVelocity();
       return;
     }

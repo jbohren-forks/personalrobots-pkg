@@ -39,11 +39,13 @@
 
 
 #include <chomp_motion_planner/treefksolverjointposaxis.hpp>
+#include <chomp_motion_planner/treefksolverjointposaxis_partial.hpp>
 #include <chomp_motion_planner/chomp_collision_point.h>
 #include <ros/ros.h>
 #include <planning_environment/models/robot_models.h>
 #include <kdl/tree.hpp>
 #include <kdl/chain.hpp>
+#include <boost/shared_ptr.hpp>
 
 #include <map>
 #include <vector>
@@ -93,6 +95,7 @@ public:
     std::vector<std::string> link_names_;                       /**< Links used in planning */
     std::vector<std::string> collision_link_names_;             /**< Links used in collision checking */
     std::vector<ChompCollisionPoint> collision_points_;         /**< Ordered list of collision checking points (from root to tip) */
+    boost::shared_ptr<KDL::TreeFkSolverJointPosAxisPartial> fk_solver_;           /**< Forward kinematics solver for the group */
 
     /**
      * Gets a random state vector within the joint limits
@@ -180,6 +183,11 @@ public:
 
   void getLinkCollisionPoints(std::string link_name, std::vector<ChompCollisionPoint>& points);
 
+  /**
+   * \brief Gets the max value of radius+clearance for all the collision points
+   */
+  double getMaxRadiusClearance() const;
+
 private:
   ros::NodeHandle node_handle_;                                 /**< ROS Node handle */
   planning_environment::RobotModels *robot_models_;             /**< Robot model */
@@ -195,8 +203,9 @@ private:
   double collision_clearance_default_;                          /**< Default clearance for all collision links */
   std::string reference_frame_;                                 /**< Reference frame for all kinematics operations */
   std::map<std::string, std::vector<ChompCollisionPoint> > link_collision_points_;    /**< Collision points associated with every link */
+  double max_radius_clearance_;                                 /**< Maximum value of radius + clearance for any of the collision points */
 
-  void addCollisionPointsFromLinkRadius(std::string link_name, double radius, double clearance);
+  void addCollisionPointsFromLinkRadius(std::string link_name, double radius, double clearance, double extension);
 };
 
 /////////////////////////////// inline functions follow ///////////////////////////////////
@@ -298,6 +307,11 @@ void ChompRobotModel::jointMsgToArray(T& msg_vector, KDL::JntArray& joint_array)
     if (kdl_number>=0)
       joint_array(kdl_number) = it->value[0];   //@TODO we assume a single joint value per joint now
   }
+}
+
+inline double ChompRobotModel::getMaxRadiusClearance() const
+{
+  return max_radius_clearance_;
 }
 
 

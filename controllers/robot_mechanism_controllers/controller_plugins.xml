@@ -1,0 +1,20 @@
+<library path="lib/librobot_mechanism_controllers">
+  <class name="JointEffortController" type="JointEffortController" base_class_type="Controller" />
+
+  <class name="JointVelocityController" type="JointVelocityController" base_class_type="Controller" />
+  <class name="JointPositionController" type="JointPositionController" base_class_type="Controller" />
+
+  <class name="CartesianWrenchController" type="CartesianWrenchController" base_class_type="Controller" />
+  <class name="CartesianTwistController" type="CartesianTwistController" base_class_type="Controller" />
+  <class name="CartesianPoseController" type="CartesianPoseController" base_class_type="Controller" />
+
+  <class name="JointUDCalibrationController" type="JointUDCalibrationController" base_class_type="Controller" />
+
+  <class name="CartesianTrajectoryController" type="CartesianTrajectoryController" base_class_type="Controller" />
+
+  <class name="TriggerController" type="TriggerController" type="Controller" />
+  <class name="TriggerControllerNode" type="TriggerControllerNode" base_class_type="Controller" />
+
+  <class name="JointPDController" type="JointPDController" base_class_type="Controller" />
+  <class name="JointPDControllerNode" type="JointPDControllerNode" base_class_type="Controller" />
+</library>

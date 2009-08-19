@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   version="1.0"
+   width="900"
+   height="900"
+   id="svg2"
+   sodipodi:version="0.32"
+   inkscape:version="0.46"
+   sodipodi:docname="estop.svg"
+   sodipodi:docbase="C:\Documents and Settings\Flanker\Desktop\Temporanei\Segnali"
+   inkscape:output_extension="org.inkscape.output.svg.inkscape">
+  <metadata
+     id="metadata12">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <sodipodi:namedview
+     inkscape:window-height="1290"
+     inkscape:window-width="1904"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     guidetolerance="10.0"
+     gridtolerance="10.0"
+     objecttolerance="10.0"
+     borderopacity="1.0"
+     bordercolor="#666666"
+     pagecolor="#ffffff"
+     id="base"
+     inkscape:zoom="0.3395"
+     inkscape:cx="126.18795"
+     inkscape:cy="-173.34555"
+     inkscape:window-x="196"
+     inkscape:window-y="75"
+     inkscape:current-layer="svg2"
+     width="200px"
+     height="200px"
+     showgrid="false"
+     inkscape:showpageshadow="false" />
+  <defs
+     id="defs4">
+    <inkscape:perspective
+       sodipodi:type="inkscape:persp3d"
+       inkscape:vp_x="0 : 450 : 1"
+       inkscape:vp_y="0 : 1000 : 0"
+       inkscape:vp_z="900 : 450 : 1"
+       inkscape:persp3d-origin="450 : 300 : 1"
+       id="perspective2445" />
+  </defs>
+  <path
+     style="fill: rgb(255, 255, 255); fill-opacity: 1; fill-rule: nonzero; stroke: rgb(0, 0, 0); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; stroke-miterlimit: 2; stroke-dasharray: none; stroke-dashoffset: 0pt; stroke-opacity: 1;"
+     d="M 264.21875,1.5 L 1.5,264.21875 L 1.5,635.78125 L 264.21875,898.5 L 635.78125,898.5 L 898.5,635.78125 L 898.5,264.21875 L 635.78125,1.5 L 264.21875,1.5 z"
+     id="rect2380" />
+  <path
+     id="path2526"
+     d="M 276.02424,29.999999 L 30,276.02424 L 30,623.97575 L 276.02424,870 L 623.97575,870 L 870,623.97575 L 870,276.02424 L 623.97575,29.999999 L 276.02424,29.999999 z"
+     style="fill: rgb(212, 0, 0); fill-opacity: 1; fill-rule: nonzero; stroke: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; stroke-miterlimit: 2; stroke-dasharray: none; stroke-dashoffset: 0pt; stroke-opacity: 1;" />
+  <text
+     xml:space="preserve"
+     style="font-size:40px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Bitstream Vera Sans"
+     x="562.59204"
+     y="661.41382"
+     id="text2462"><tspan
+       sodipodi:role="line"
+       id="tspan2464"></tspan></text>
+  <g
+     id="g2470"
+     transform="translate(0,47.960951)">
+    <text
+       transform="scale(0.7842824,1.2750509)"
+       id="text2447"
+       y="278.94562"
+       x="304.36502"
+       style="font-size:247.6424408px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Bitstream Vera Sans"
+       xml:space="preserve"><tspan
+         id="tspan2458"
+         style="fill:#ffffff;fill-opacity:1"
+         y="278.94562"
+         x="304.36502"
+         sodipodi:role="line">RUN</tspan></text>
+    <text
+       transform="scale(0.7842824,1.2750509)"
+       id="text2466"
+       y="528.70435"
+       x="243.42177"
+       style="font-size:247.6424408px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Bitstream Vera Sans"
+       xml:space="preserve"><tspan
+         id="tspan2468"
+         style="fill:#ffffff;fill-opacity:1"
+         y="528.70435"
+         x="243.42177"
+         sodipodi:role="line">STOP</tspan></text>
+  </g>
+</svg>

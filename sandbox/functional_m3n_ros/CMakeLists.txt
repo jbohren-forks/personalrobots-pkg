@@ -20,19 +20,6 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #uncomment if you have defined services
 gensrv()
 
-# example for classifying a point cloud
-rospack_add_executable (classify_m3n
-                        examples/classify_m3n.cpp
-			src/pt_cloud_rf_creator.cpp)
-target_link_libraries (classify_m3n functional_m3n)
-rospack_add_openmp_flags (classify_m3n)
-
-# example for training from a point cloud
-rospack_add_executable (train_m3n
-                        examples/train_m3n.cpp
-			src/pt_cloud_rf_creator.cpp)
-target_link_libraries (train_m3n functional_m3n)
-rospack_add_openmp_flags (train_m3n)
 #rospack_add_link_flags(train_m3n "-lprofiler")
 
 #common commands for building c++ executables and libraries

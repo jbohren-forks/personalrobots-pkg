@@ -59,6 +59,8 @@ bool ChompRobotModel::init()
 {
   node_handle_.param("~reference_frame", reference_frame_, std::string("base_link"));
 
+  max_radius_clearance_ = 0.0;
+
   // create the robot model
   robot_models_ = new planning_environment::RobotModels("robot_description");
 
@@ -132,6 +134,8 @@ bool ChompRobotModel::init()
     int num_links = it->second.size();
     group.num_joints_ = 0;
     group.link_names_.resize(num_links);
+    std::vector<bool> active_joints;
+    active_joints.resize(num_kdl_joints_, false);
     for (int i=0; i<num_links; i++)
     {
       std::string link_name = it->second[i];
@@ -169,10 +173,11 @@ bool ChompRobotModel::init()
 
         group.num_joints_++;
         group.chomp_joints_.push_back(joint);
+        active_joints[joint.kdl_joint_index_] = true;
       }
 
     }
-
+    group.fk_solver_.reset(new KDL::TreeFkSolverJointPosAxisPartial(kdl_tree_, reference_frame_, active_joints));
     planning_groups_.insert(make_pair(it->first, group));
   }
 
@@ -187,8 +192,13 @@ bool ChompRobotModel::init()
     if (node_handle_.getParam(link_param_root+"link_radius", link_radius))
     {
       double clearance;
+      double extension;
       node_handle_.param(link_param_root+"link_clearance", clearance, collision_clearance_default_);
-      addCollisionPointsFromLinkRadius(link_name, link_radius, clearance);
+      node_handle_.param(link_param_root+"link_extension", extension, 0.0);
+      addCollisionPointsFromLinkRadius(link_name, link_radius, clearance, extension);
+      double new_max_rc = link_radius + clearance;
+      if (max_radius_clearance_ < new_max_rc)
+        max_radius_clearance_ = new_max_rc;
     }
   }
 
@@ -212,6 +222,8 @@ bool ChompRobotModel::init()
   std::vector<KDL::Vector> joint_pos;
 
   ros::WallTime start_time = ros::WallTime::now();
+
+  boost::shared_ptr<KDL::TreeFkSolverJointPosAxisPartial> fks = planning_groups_["right_arm"].fk_solver_;
   double q=0.0;
   int n = kdl_tree_.getNrOfJoints();
   for (int i=0; i<100000; i++)
@@ -221,7 +233,10 @@ bool ChompRobotModel::init()
       q_in(j) += q;
       q+=0.1;
     }
-    fk_solver_->JntToCart(q_in, joint_pos, joint_axis, segment_frames);
+    if (i==0)
+      fks->JntToCartFull(q_in, joint_pos, joint_axis, segment_frames);
+    else
+      fks->JntToCartPartial(q_in, joint_pos, joint_axis, segment_frames);
   }
   ROS_INFO("100000 FK calls in %f wall-seconds.", (ros::WallTime::now() - start_time).toSec());
 */
@@ -231,7 +246,7 @@ bool ChompRobotModel::init()
   return true;
 }
 
-void ChompRobotModel::addCollisionPointsFromLinkRadius(std::string link_name, double radius, double clearance)
+void ChompRobotModel::addCollisionPointsFromLinkRadius(std::string link_name, double radius, double clearance, double extension)
 {
   // check if the link already exists in the map, if not, add it:
   if (link_collision_points_.find(link_name) == link_collision_points_.end())
@@ -283,8 +298,9 @@ void ChompRobotModel::addCollisionPointsFromLinkRadius(std::string link_name, do
     //printf("joint origin for %s is %f %f %f\n", (*child_iter)->first.c_str(), joint_origin.x(), joint_origin.y(), joint_origin.z());
 
     // generate equidistant collision points for this link:
-    double spacing = radius;
+    double spacing = radius/2.0;
     double distance = joint_origin.Norm();
+    distance+=extension;
     int num_points = ceil(distance/spacing)+1;
     spacing = distance/(num_points-1.0);
 

@@ -6,6 +6,7 @@
   <review status="unreviewed" notes=""/>
   <depend package="kdl_parser"/>
   <depend package="rospy"/>
+  <depend package="controller_interface" />
   <depend package="mechanism_model" />
   <depend package="mechanism_control" />
   <depend package="control_toolbox" />
@@ -26,11 +27,13 @@
   <depend package="eigen" />
   <depend package="filters" />
   <depend package="diagnostic_msgs" />
+  <depend package="pluginlib" />
   <url>http://pr.willowgarage.com</url>
   <repository>http://pr.willowgarage.com/repos</repository>
   <export>
     <cpp cflags="-I${prefix}/include -I${prefix}/msg/cpp -I${prefix}/srv/cpp"
 	 lflags="-Wl,-rpath,${prefix}/lib/ -L${prefix}/lib -lrobot_mechanism_controllers" />
+    <controller_interface plugin="${prefix}/controller_plugins.xml" />
   </export>
   <rosdep name="libtool"/>
 </package>

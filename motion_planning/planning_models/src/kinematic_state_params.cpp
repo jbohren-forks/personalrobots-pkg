@@ -47,8 +47,6 @@ planning_models::StateParams::StateParams(KinematicModel *model) : m_owner(model
     m_params = m_mi.stateDimension > 0 ? new double[m_mi.stateDimension] : NULL;
     setAll(0);
     reset();
-    if (m_mi.inRobotFrame)
-	setInRobotFrame();
 }
 
 planning_models::StateParams::StateParams(const StateParams &sp) : m_owner(sp.m_owner), m_mi(sp.m_mi), m_params(NULL)
@@ -412,21 +410,6 @@ void planning_models::StateParams::setAll(const double value)
 	m_params[i] = value;
 	m_seen[i] = true;
     }   
-}
-
-void planning_models::StateParams::setInRobotFrame(void)
-{
-    for (unsigned int j = 0 ; j < m_mi.floatingJoints.size() ; ++j)
-    {
-	double vals[7] = {0, 0, 0, 0, 0, 0, 1};
-	setParamsJoint(vals, m_mi.parameterName[m_mi.floatingJoints[j]]);
-    }
-    
-    for (unsigned int j = 0 ; j < m_mi.planarJoints.size() ; ++j)
-    {
-	double vals[3] = {0, 0, 0};
-	setParamsJoint(vals, m_mi.parameterName[m_mi.planarJoints[j]]);
-    }
 }
 
 const double* planning_models::StateParams::getParams(void) const

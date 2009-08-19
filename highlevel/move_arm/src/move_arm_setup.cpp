@@ -54,27 +54,22 @@ bool move_arm::MoveArmSetup::configure(void)
     
     if (!collisionModels_->loadedModels())
 	return false;
-    
-    nodeHandle_.param<bool>("~perform_ik", perform_ik_, true);
-    
+        
     if (collisionModels_->getKinematicModel()->getGroupID(group_) < 0)
     {
 	ROS_ERROR("Group '%s' is not known", group_.c_str());
 	return false;
     }
     else
-	ROS_INFO("Configuring action for '%s' (IK is %senabled)", group_.c_str(), perform_ik_ ? "" : "not ");
+	ROS_INFO("Configuring action for '%s'", group_.c_str());
     
-    planningMonitor_->waitForState();
-    planningMonitor_->waitForMap();
+    if (planningMonitor_->getExpectedJointStateUpdateInterval() > 1e-3)
+	planningMonitor_->waitForState();
+    if (planningMonitor_->getExpectedMapUpdateInterval() > 1e-3)
+	planningMonitor_->waitForMap();
     
     if (!getControlJointNames(groupJointNames_))
 	return false;
-    
-    nodeHandle_.param<bool>("~show_collisions", show_collisions_, false);
-    
-    if (show_collisions_)
-	ROS_INFO("Found collisions will be displayed as visualization markers");
     
     return true;
 }
@@ -91,7 +86,7 @@ bool move_arm::MoveArmSetup::getControlJointNames(std::vector<std::string> &join
     if (!result)
     {
 	ROS_INFO("Querying controller for joint names ...");
-	ros::Duration(5.0).sleep();
+	ros::WallDuration(5.0).sleep();
 	result = client_query.call(req_query, res_query);
 	if (result)
 	    ROS_INFO("Joint names received");
