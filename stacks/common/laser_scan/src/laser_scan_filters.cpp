@@ -34,12 +34,10 @@
 #include "sensor_msgs/LaserScan.h"
 #include "filters/filter_base.h"
 
-#include "pluginlib/plugin_macros.h"
+#include "pluginlib/class_list_macros.h"
 
 
-BEGIN_PLUGIN_LIST(filters::FilterBase<sensor_msgs::LaserScan>)
-REGISTER_PLUGIN(laser_scan::LaserMedianFilter)
-REGISTER_PLUGIN(laser_scan::LaserScanIntensityFilter)
-REGISTER_PLUGIN(laser_scan::LaserScanFootprintFilter)
-REGISTER_PLUGIN(laser_scan::ScanShadowsFilter)
-END_PLUGIN_LIST
+PLUGINLIB_REGISTER_CLASS(LaserMedianFilter, laser_scan::LaserMedianFilter, filters::FilterBase<sensor_msgs::LaserScan>)
+PLUGINLIB_REGISTER_CLASS(LaserIntensityFilter, laser_scan::LaserScanIntensityFilter, filters::FilterBase<sensor_msgs::LaserScan>)
+PLUGINLIB_REGISTER_CLASS(LaserScanFootprintFilter, laser_scan::LaserScanFootprintFilter, filters::FilterBase<sensor_msgs::LaserScan>)
+PLUGINLIB_REGISTER_CLASS(ScanShadowsFilter, laser_scan::ScanShadowsFilter, filters::FilterBase<sensor_msgs::LaserScan>)
