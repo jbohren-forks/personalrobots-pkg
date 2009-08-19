@@ -66,7 +66,7 @@ public:
 
 static std::string mean_filter_5 = "<filter type=\"MeanFilterMultiDouble\" name=\"mean_test_5\"> <params number_of_observations=\"5\"/></filter>";
 static std::string median_filter_5 = "<filter type=\"MedianFilterMultiDouble\" name=\"median_test_5\"> <params number_of_observations=\"5\"/></filter>";
-
+static std::string two_filters = "<filters><filter type=\"MeanFilterMultiDouble\" name=\"mean_test_5\"> <params number_of_observations=\"5\"/></filter><filter type=\"MedianFilterMultiDouble\" name=\"median_test_5\"> <params number_of_observations=\"5\"/></filter></filters";
 
 
 TEST(FilterChain, configuring){
@@ -122,6 +122,36 @@ TEST(FilterChain, MisconfiguredNumberOfChannels){
   chain.clear();
 
 }
+
+TEST(FilterChain, TwoFilters){
+  double epsilon = 1e-9;
+  filters::FilterChain<double> chain("filters", "filters::MultiChannelFilterBase<double>");
+  //filters::FilterChain<float> chain;
+
+  // EXPECT_TRUE(chain.add(mean_filter_5));
+ 
+  //  EXPECT_TRUE(chain.add(median_filter_5));
+  TiXmlDocument chain_def = TiXmlDocument();
+  chain_def.Parse(two_filters.c_str());
+  TiXmlElement * config = chain_def.RootElement();
+  EXPECT_TRUE(chain.configure(5, config));
+ 
+  double input1[] = {1,2,3,4,5};
+  double input1a[] = {9,9,9,9,9};//seed w/incorrect values
+  std::vector<double> v1 (input1, input1 + sizeof(input1) / sizeof(double));
+  std::vector<double> v1a (input1a, input1a + sizeof(input1a) / sizeof(double));
+
+  
+  EXPECT_TRUE(chain.update(v1, v1a));
+
+  chain.clear();
+
+  for (unsigned int i = 1; i < v1.size(); i++)
+  {
+    EXPECT_NEAR(input1[i], v1a[i], epsilon);
+  }
+}
+
 TEST(FilterChain, OverlappingNames){
   filters::FilterChain<double> chain("filters", "filters::MultiChannelFilterBase<double>");
 
