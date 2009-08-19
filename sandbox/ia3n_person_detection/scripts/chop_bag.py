@@ -180,7 +180,6 @@ def find_gaps(inbags):
 	for topic in prevtime:
 		assert prevtime[topic] <= endOfTime
 		if prevtime[topic] < endOfTime - long_duration:
-			print "Attempting to warn"
 			rospy.logerr(topic+" ended "+str(roslib.rostime.Duration.to_seconds(endOfTime-prevtime[topic]))+" seconds before the final topic")
 		gaps[topic].append((prevtime[topic],endOfTime+epsilon))
 			
@@ -198,7 +197,6 @@ def find_gaps(inbags):
 		gaps[topic][0] = (beginningOfTime - epsilon, first)
 			
 		if first - long_duration > beginningOfTime:
-			print "Attempting to warn"
 			rospy.logerr(topic+" began "+str(roslib.rostime.Duration.to_seconds(first-beginningOfTime))+" seconds after the first topic")
 
 	return gaps

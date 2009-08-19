@@ -75,7 +75,7 @@ def plot_ranges(ranges, output):
 		rightmost = roslib.rostime.Time.to_seconds(rightmost)
 		midpoint = 0.5*leftmost + 0.5*rightmost
 		midpoint = roslib.rostime.Time.from_seconds(midpoint)
-		of.write("text("+str(midpoint)+","+str(ycoord+0.5)+", \""+latex_escaped_str(topic)+"\");\n")
+		of.write("text("+str(midpoint)+","+str(ycoord+0.5)+", \'"+latex_escaped_str(topic)+"\');\n")
 		ycoord += 1
 
 	#draw 2 points to expand the window vertically and make everything visible
