@@ -1,6 +1,6 @@
 <library path="lib/libjoint_qualification_controllers">
-  <plugin name="CheckoutController" class="CheckoutController" type="Controller" />
-  <plugin name="HoldSetController" class="HoldSetController" type="Controller" />
-  <plugin name="HysteresisController" class="HysteresisController" type="Controller" />
-  <plugin name="SineSweepController" class="SineSweepController" type="Controller" />
+  <class name="CheckoutController" type="CheckoutController" base_class_type="Controller" />
+  <class name="HoldSetController" type="HoldSetController" base_class_type="Controller" />
+  <class name="HysteresisController" type="HysteresisController" base_class_type="Controller" />
+  <class name="SineSweepController" type="SineSweepController" base_class_type="Controller" />
 </library>

@@ -27,7 +27,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "pluginlib/plugin_macros.h"
+#include "pluginlib/class_list_macros.h"
 #include "controller_interface/controller.h"
 
 #include "joint_qualification_controllers/checkout_controller.h"
@@ -37,12 +37,7 @@
 
 using namespace controller;
 
-BEGIN_PLUGIN_LIST(Controller)
-
-REGISTER_PLUGIN(CheckoutController)
-REGISTER_PLUGIN(HoldSetController)
-REGISTER_PLUGIN(HysteresisController)
-REGISTER_PLUGIN(SineSweepController)
-
-END_PLUGIN_LIST
-
+REGISTER_CLASS(CheckoutController, CheckoutController, Controller)
+REGISTER_CLASS(HoldSetController, HoldSetController, Controller)
+REGISTER_CLASS(HysteresisController, HysteresisController, Controller)
+REGISTER_CLASS(SineSweepController, SineSweepController, Controller)
