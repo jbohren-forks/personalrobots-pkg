@@ -64,6 +64,7 @@ public:
   bool getAddRandomness() const;
   double getHmcDiscretization() const;
   double getHmcStochasticity() const;
+  double getHmcAnnealingFactor() const;
 
 private:
   double planning_time_limit_;
@@ -79,6 +80,7 @@ private:
   bool add_randomness_;
   double hmc_stochasticity_;
   double hmc_discretization_;
+  double hmc_annealing_factor_;
 
 };
 
@@ -152,6 +154,11 @@ inline double ChompParameters::getHmcDiscretization() const
 inline double ChompParameters::getHmcStochasticity() const
 {
   return hmc_stochasticity_;
+}
+
+inline double ChompParameters::getHmcAnnealingFactor() const
+{
+  return hmc_annealing_factor_;
 }
 
 } // namespace chomp

@@ -63,6 +63,7 @@ void ChompParameters::initFromNodeHandle()
   node_handle.param("~smoothness_cost_jerk", smoothness_cost_jerk_, 0.0);
   node_handle.param("~hmc_discretization", hmc_discretization_, 0.01);
   node_handle.param("~hmc_stochasticity", hmc_stochasticity_, 0.01);
+  node_handle.param("~hmc_annealing_factor", hmc_annealing_factor_, 0.99);
 }
 
 
