@@ -28,7 +28,7 @@
  */
 
 #include "dallas_controller/dallas_controller.h"
-#include "pluginlib/plugin_macros.h"
+#include "pluginlib/class_list_macros.h"
 #include "controller_interface/controller.h"
 #include <angles/angles.h>
 
@@ -116,6 +116,6 @@ void DallasController::command(const geometry_msgs::TwistConstPtr &msg)
 
 using namespace controller;
 
-REGISTER_PLUGIN(DallasController, DallasController, Controller)
+PLUGINLIB_REGISTER_CLASS(DallasController, DallasController, Controller)
 
 
