@@ -73,11 +73,13 @@ public:
       // create the action messages that will use published for feeback and result
       actionlib_tutorials::FibonacciFeedback feedback;
       actionlib_tutorials::FibonacciResult result;
-      // create come helper variables for computing the fibonacci sequence
+
+      // helper variables
       ros::Rate r(50); 
       std::vector<int> sequence;
       int temp;  
       bool success = true;
+
       // push_back the seeds for the fibonacci sequence
       sequence.push_back(seed0_);
       sequence.push_back(seed1_);

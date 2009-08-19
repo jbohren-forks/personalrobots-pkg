@@ -43,16 +43,21 @@
 
 int main (int argc, char **argv)
 {
-  ros::init(argc, argv, "test_fibonacci");
-  ros::NodeHandle nh;    
+  // helper variables
+  ros::Duration timeout(30.0); //create the timeout for the action
 
-  ros::Duration timeout(30.0);
+  ros::init(argc, argv, "test_fibonacci"); 
 
-  actionlib::SimpleActionClient<actionlib_tutorials::FibonacciAction> ac("fibonacci", true);
+  // create the action client
+  actionlib::SimpleActionClient<actionlib_tutorials::FibonacciAction> ac("fibonacci", true); // true causes the client to spin it's own thread
   sleep(1);
+
+  // send a goal to the action 
   actionlib_tutorials::FibonacciGoal goal;
-  goal.order = 10;
+  goal.order = 5;
   ac.sendGoal(goal);
+  
+  //wait for the action to return
   bool finished_before_timeout = ac.waitForGoalToFinish(timeout);
 
   if (finished_before_timeout)
@@ -60,7 +65,6 @@ int main (int argc, char **argv)
   else  
     ROS_INFO("TimedOut");
 
-
-
+  //exit
   return 0;
 }

@@ -47,26 +47,31 @@ void spinThread()
 
 int main (int argc, char **argv)
 {
-  ros::init(argc, argv, "test_fibonacci");
-  ros::NodeHandle nh;    
-
-  boost::thread spin_thread(&spinThread);
-
+  // helper variables
   ros::Duration timeout(30.0);
 
-  typedef actionlib::SimpleActionClient<actionlib_tutorials::FibonacciAction> FibonacciClient;
-  
-  FibonacciClient ac("fibonacci");
+  ros::init(argc, argv, "test_fibonacci");  
+  // start thread to spin node
+  boost::thread spin_thread(&spinThread);
+
+  // create the action client
+  actionlib::SimpleActionClient<actionlib_tutorials::FibonacciAction> ac("fibonacci");
   sleep(1);
+  
+  // send a goal to the action 
   actionlib_tutorials::FibonacciGoal goal;
   goal.order = 10;
   ac.sendGoal(goal);
+
+  // wait for the action to resturn 
   bool finished_before_timeout = ac.waitForGoalToFinish(timeout);
 
   if (finished_before_timeout)
     ROS_INFO("Finished");
   else  
     ROS_INFO("TimedOut");
+
+  // shutdown the node and join the thread back before exiting
   ros::shutdown();
   spin_thread.join();
 
