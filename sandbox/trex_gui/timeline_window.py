@@ -96,6 +96,9 @@ class Timeline():
       return (None,0)
 
 class ReactorPanel():
+  # HACK
+  token_network_filter_window = None
+
   # Constants for drawing
   ROW_HEIGHT = 16
   ROW_SPACE = 12
@@ -294,8 +297,8 @@ class ReactorPanel():
 	m = gtk.Menu()
 	pos = gtk.MenuItem("Timeline: %s\nToken: %s" % (timeline.obj.name, token),False)
 	pos.set_sensitive(False)
-	t_net = gtk.MenuItem("Token network")
-	#t_net.connect("activate",self.view_token_network,token)
+	t_net = gtk.MenuItem("Hilight in token network")
+	t_net.connect("activate",self.hilight_in_token_network,token)
 	t_vars = gtk.MenuItem("Token variables")
 	t_vars.connect("activate",self.spawn_property_window,token)
 	m.append(pos)
@@ -307,8 +310,13 @@ class ReactorPanel():
 
     return False
 
+  # Spawn a property window for a given token
   def spawn_property_window(self,menuitem,token):
     PropertyWindowFactory(self.assembly, token)
+
+  def hilight_in_token_network(self,menuitem,token):
+    ReactorPanel.token_network_filter_window.filter_entry.set_text(str(token.key))
+    ReactorPanel.token_network_filter_window.rep_but.emit("clicked")
 
 
   #############################################################################
