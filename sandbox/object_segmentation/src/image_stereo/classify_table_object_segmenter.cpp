@@ -26,6 +26,7 @@ void FilterNoise(const map<unsigned int, RandomField::Node*>& nodes, const map<u
     unsigned int>& inferred_labels, double max_single_link_radius, string fnamed_filtered)
 {
   unsigned int BACKGROUND_LABEL = 1000;
+  unsigned int FILTERED_LABEL = 999;
 
   // Point cloud of the nodes
   sensor_msgs::PointCloud pt_cloud;
@@ -114,16 +115,32 @@ void FilterNoise(const map<unsigned int, RandomField::Node*>& nodes, const map<u
     }
   }
 
-  // Output the coordinates of the biggest cluster
-  unsigned int biggest_cluster_label = ordered_cluster_volumes.rbegin()->second.first;
-  vector<int> biggest_cluster_indices = ordered_cluster_volumes.rbegin()->second.second;
-  for (unsigned int i = 0 ; i < biggest_cluster_indices.size() ; i++)
+  bool is_first = true;
+  for (map<float, pair<unsigned int, vector<int> > >::reverse_iterator iter_ordered_cluster_volumes =
+      ordered_cluster_volumes.rbegin() ; iter_ordered_cluster_volumes
+      != ordered_cluster_volumes.rend() ; iter_ordered_cluster_volumes++)
   {
-    filtered_pc << pt_cloud.points[biggest_cluster_indices[i]].x << " "
-        << pt_cloud.points[biggest_cluster_indices[i]].y << " "
-        << pt_cloud.points[biggest_cluster_indices[i]].z << " " << biggest_cluster_label << endl;
+    unsigned int label_of_cluster = iter_ordered_cluster_volumes->second.first;
+    vector<int>& curr_pt_indices = iter_ordered_cluster_volumes->second.second;
+    for (unsigned int i = 0 ; i < curr_pt_indices.size() ; i++)
+    {
+      filtered_pc << pt_cloud.points[curr_pt_indices[i]].x << " "
+          << pt_cloud.points[curr_pt_indices[i]].y << " " << pt_cloud.points[curr_pt_indices[i]].z;
+
+      // only print label for biggest cluster
+      if (is_first)
+      {
+        filtered_pc << " " << label_of_cluster << endl;
+      }
+      else
+      {
+        filtered_pc << " " << FILTERED_LABEL << endl;
+      }
+    }
+    is_first = false;
   }
   filtered_pc.close();
+
 }
 
 int main(int argc, char *argv[])
