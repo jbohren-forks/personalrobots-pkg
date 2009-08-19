@@ -36,16 +36,15 @@
 
 #include <pm_wrapper/pm_wrapper.h>
 
-// using namespace sbpl_arm_planner_node;
 
 pm_wrapper::pm_wrapper()
 {
-	node_.param("~publish_custom_collision_map", remove_objects_from_collision_map_, false);
+	node_.param("~publish_internal_collision_map", visualize_map_,false);
   node_.param<std::string>("~planning_frame_id", planning_frame_, "base_link");
   std::string pr2_urdf_param;
   node_.searchParam("robot_description",pr2_urdf_param);
   node_.param<std::string>(pr2_urdf_param, robot_description_,"robot_description");
-  node_.param<std::string>("~group_name", group_name_,"right_arm");
+	node_.param<std::string>("~group_name", group_name_,"right_arm");
 };
 
 pm_wrapper::~pm_wrapper()
@@ -76,12 +75,12 @@ bool pm_wrapper::initPlanningMonitor(const std::vector<std::string> &links, tf::
   for(unsigned int i = 0; i < joint_names.size(); i++)
 		ROS_DEBUG("[pm_wrapper]%i: %s", i, joint_names[i].c_str());
 
-	if(remove_objects_from_collision_map_)
+	if(visualize_map_)
 	{
 		if (collision_model_->loadedModels())
 		{
-			col_map_publisher_ = node_.advertise<mapping_msgs::CollisionMap>("collision_map_with_removed_object", 1);
-			planning_monitor_->setOnAfterMapUpdateCallback(boost::bind(&pm_wrapper::publishMapWithoutObject, this, _1, _2));
+			col_map_publisher_ = node_.advertise<mapping_msgs::CollisionMap>("edited_collision_map", 1);
+		//	planning_monitor_->setOnAfterMapUpdateCallback(boost::bind(&pm_wrapper::publishInternalCollisionMap, this, _1, _2));
 		}
 		else
 			ROS_DEBUG("collision_model_ didn't properly load the robot model");
@@ -116,9 +115,9 @@ planning_models::StateParams* pm_wrapper::fillStartState(const std::vector<motio
       std::vector<planning_models::KinematicModel::Joint*> joints;
       planning_monitor_->getKinematicModel()->getJoints(joints);
       for (unsigned int i = 0 ; i < joints.size() ; ++i)
-	if (!s->seenJoint(joints[i]->name))
-	  s->setParamsJoint(planning_monitor_->getRobotState()->getParamsJoint(joints[i]->name), joints[i]->name);
-      return s;
+				if (!s->seenJoint(joints[i]->name))
+				  s->setParamsJoint(planning_monitor_->getRobotState()->getParamsJoint(joints[i]->name), joints[i]->name);
+    	  return s;
     }
   }
   delete s;
@@ -126,7 +125,7 @@ planning_models::StateParams* pm_wrapper::fillStartState(const std::vector<motio
   return NULL;
 }
 
-void pm_wrapper::updateRobotState(const std::vector <motion_planning_msgs::KinematicJoint> robot_state)
+void pm_wrapper::updateRobotState(const std::vector <motion_planning_msgs::KinematicJoint> &robot_state)
 {
 	planning_models::StateParams *start_state = fillStartState(robot_state);
 	
@@ -199,6 +198,9 @@ void pm_wrapper::removeObject(shapes::Shape *object, const btTransform &pose)
 	
 	planning_monitor_->getEnvironmentModel()->removeCollidingObjects(object, pose);	
 	
+	if(visualize_map_)
+		publishInternalCollisionMap();
+
 	// release our hold
 	planning_monitor_->getEnvironmentModel()->unlock();
 }
@@ -214,6 +216,9 @@ void pm_wrapper::addObject(const std::string &ns, shapes::Shape *object, const b
 	
 	planning_monitor_->getEnvironmentModel()->addObject(ns, object, pose);
 	
+	if(visualize_map_)
+		publishInternalCollisionMap();
+
 	// release our hold
 	planning_monitor_->getEnvironmentModel()->unlock();
 }
@@ -229,7 +234,7 @@ void pm_wrapper::publishInternalCollisionMap()
  void pm_wrapper::publishMapWithoutObject(const mapping_msgs::CollisionMapConstPtr &collisionMap, bool clear)
 {
 	ROS_DEBUG("in publishMapWithoutObject()");
-	if(!remove_objects_from_collision_map_)
+	if(!visualize_map_)
 		return;
 	
 	// we do not care about incremental updates, only re-writes of the map
@@ -264,7 +269,7 @@ void pm_wrapper::publishInternalCollisionMap()
  void pm_wrapper::publishMapWithObject(const mapping_msgs::CollisionMapConstPtr &collisionMap, bool clear)
 {
 	ROS_DEBUG("in publishMapWithObject()");
-	if(!remove_objects_from_collision_map_)
+	if(!visualize_map_)
 		return;
 	
 	// we do not care about incremental updates, only re-writes of the map
@@ -306,5 +311,6 @@ void pm_wrapper::publishInternalCollisionMap()
 /*
 
 
-create a ModelKinematic in ompl_ros and pass into the constructor a planning environment. then create a smooother and pass into the constructor the model kinematic. then use setParams to organize the joint angles in the right order */
+create a ModelKinematic in ompl_ros and pass into the constructor a planning environment. then create a smooother and pass into the constructor the model kinematic. then use setParams 
+to organize the joint angles in the right order */
 

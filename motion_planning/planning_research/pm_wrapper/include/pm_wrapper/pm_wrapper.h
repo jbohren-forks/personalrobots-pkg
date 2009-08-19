@@ -77,7 +77,7 @@ class pm_wrapper
 		void setObject(shapes::Shape *object, btTransform pose);
 
 		/** \brief Update the current configuration of the robot model in the planning monitor and lock it */
-		void updateRobotState(const std::vector <motion_planning_msgs::KinematicJoint> robot_state);
+		void updateRobotState(const std::vector <motion_planning_msgs::KinematicJoint> &robot_state);
 
 		/** \brief Set the state of specific joints & links in the robot. The rest of the joint & links will be remain the current values. */
 		void setRobotJointStates(const std::vector<std::string> &joint_names, const std::vector<double> &params);
@@ -92,19 +92,17 @@ class pm_wrapper
 
 		ros::NodeHandle node_;
 
-		ros::Subscriber col_map_subscriber_;
-		
 		ros::Publisher col_map_publisher_;
 		
 		mapping_msgs::CollisionMap col_map_;
-
-		planning_models::StateParams *start_state_;
 
 		std::string group_name_;
 
 		std::string robot_description_;
 		
 		int groupID_;
+		
+		bool visualize_map_;
 
 		std::string planning_frame_;
 		
@@ -112,7 +110,7 @@ class pm_wrapper
 		
 		btTransform object_pose_;
 		
-		bool remove_objects_from_collision_map_;
+// 		bool remove_objects_from_collision_map_;
 
 		std::vector<std::string> collision_check_links_;
 
