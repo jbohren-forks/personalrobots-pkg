@@ -115,7 +115,7 @@ void DallasController::command(const geometry_msgs::TwistConstPtr &msg)
 } // namespace
 
 using namespace controller;
-BEGIN_PLUGIN_LIST(Controller)
-REGISTER_PLUGIN(DallasController)
-END_PLUGIN_LIST
+
+REGISTER_PLUGIN(DallasController, DallasController, Controller)
+
 
