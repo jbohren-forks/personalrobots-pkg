@@ -12,6 +12,7 @@
   <depend package="controller_interface" />
   <depend package="mechanism_model" />
   <depend package="mechanism_control" />
+  <depend package="pluginlib" />
   <depend package="control_toolbox" />
   <depend package="tinyxml" />
   <depend package="misc_utils" />
