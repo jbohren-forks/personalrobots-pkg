@@ -367,6 +367,14 @@ boost::shared_ptr<const Link> RobotModel::getLink(const std::string& name) const
   return ptr;
 }
 
+void RobotModel::getLinks(std::vector<boost::shared_ptr<Link> >& links) const
+{
+  for (std::map<std::string,boost::shared_ptr<Link> >::const_iterator link = this->links_.begin();link != this->links_.end(); link++)
+  {
+    links.push_back(link->second);
+  }
+}
+
 void RobotModel::getLink(const std::string& name,boost::shared_ptr<Link> &link) const
 {
   boost::shared_ptr<Link> ptr;

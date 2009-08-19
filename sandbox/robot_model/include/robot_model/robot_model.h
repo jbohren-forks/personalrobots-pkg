@@ -62,6 +62,8 @@ public:
   boost::shared_ptr<const Joint> getJoint(const std::string& name) const;
   const std::string& getName() const {return name_;};
 
+  void getLinks(std::vector<boost::shared_ptr<Link> >& links) const;
+
   /// Some accessor functions
   boost::shared_ptr<const Link> getParentLink(const std::string& name) const;
   boost::shared_ptr<const Joint> getParentJoint(const std::string& name) const;
