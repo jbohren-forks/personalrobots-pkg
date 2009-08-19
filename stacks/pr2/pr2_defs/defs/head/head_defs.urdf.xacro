@@ -5,7 +5,6 @@
        xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface">
 
   <include filename="$(find pr2_defs)/defs/head/head_gazebo.xacro" />
-  <include filename="$(find pr2_defs)/defs/head/head_rviz.xacro" />
   <include filename="$(find pr2_defs)/defs/head/head_transmission.xacro" />
 
   <property name="M_PI" value="3.1415926535897931" />
@@ -39,6 +38,8 @@
         <geometry name="${name}_visual_geom">
           <mesh filename="$(find pr2_defs)/meshes/head_pan.stl" />
         </geometry>
+        
+        <material name="Blue" />
       </visual>
 
       <collision name="${name}_collision">
@@ -53,7 +54,6 @@
     <!-- extensions -->
     <pr2_head_pan_gazebo name="${name}" />
     <pr2_head_pan_transmission name="${name}" />
-    <pr2_head_pan_rviz name="${name}" />
   </macro>
 
 
@@ -86,6 +86,8 @@
         <geometry name="${name}_visual_geom">
           <mesh filename="$(find pr2_defs)/meshes/head_tilt.stl" />
         </geometry>
+        
+        <material name="Green" />
       </visual>
 
       <collision name="${name}_collision">
@@ -98,7 +100,6 @@
 
     <!-- extensions -->
     <pr2_head_tilt_gazebo name="${name}" />
-    <pr2_head_tilt_rviz name="${name}" />
     <pr2_head_tilt_transmission name="${name}" />
   </macro>
 
@@ -134,6 +135,8 @@
         <geometry name="${name}_plate_frame_visual_geom">
           <box size="0.01 0.01 0.01" />
         </geometry>
+        
+        <material name="Blue" />
       </visual>
 
       <collision name="${name}_plate_frame_collision">
@@ -146,7 +149,6 @@
 
     <!-- extensions -->
     <pr2_head_gazebo name="${name}" />
-    <pr2_head_rviz name="${name}" />
     
   </macro>
 
