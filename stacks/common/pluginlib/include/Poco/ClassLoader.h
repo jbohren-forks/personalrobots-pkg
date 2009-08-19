@@ -47,7 +47,7 @@
 #include "Poco/Mutex.h"
 #include "Poco/Exception.h"
 #include <map>
-
+#include <vector>
 
 namespace Poco {
 
@@ -79,10 +79,12 @@ public:
 	typedef void (*UninitializeLibraryFunc)();
 	typedef bool (*BuildManifestFunc)(ManifestBase*);
 
+        typedef std::pair<const Manif*, std::string> manifest_pair;
+
 	struct LibraryInfo
 	{
 		SharedLibrary* pLibrary;
-		const Manif*   pManifest;
+                std::vector< manifest_pair >   vpManifest;
 		int            refCount;
 	};
 	typedef std::map<std::string, LibraryInfo> LibraryMap;
@@ -91,7 +93,7 @@ public:
 		/// The ClassLoader's very own iterator class.
 	{
 	public:
-		typedef std::pair<std::string, const Manif*> Pair;
+                typedef std::pair<std::string, std::vector<manifest_pair> > Pair;
 
 		Iterator(const typename LibraryMap::const_iterator& it)
 		{
@@ -131,13 +133,13 @@ public:
 		inline const Pair* operator * () const
 		{
 			_pair.first  = _it->first;
-			_pair.second = _it->second.pManifest;
+			_pair.second = _it->second.vpManifest;
 			return &_pair;
 		}
 		inline const Pair* operator -> () const
 		{
 			_pair.first  = _it->first;
-			_pair.second = _it->second.pManifest;
+			_pair.second = _it->second.vpManifest;
 			return &_pair;
 		}
 
@@ -157,7 +159,10 @@ public:
 		for (typename LibraryMap::const_iterator it = _map.begin(); it != _map.end(); ++it)
 		{
 			delete it->second.pLibrary;
-			delete it->second.pManifest;
+                        for (unsigned int i = 0 ; i < it->second.vpManifest.size(); i++)
+                        {
+                          delete it->second.vpManifest[i].first;
+                        }
 		}
 	}
 
@@ -179,7 +184,7 @@ public:
 		{
 			LibraryInfo li;
 			li.pLibrary  = new SharedLibrary(path);
-			li.pManifest = new Manif();
+			li.vpManifest.push_back( manifest_pair(new Manif(), manifest));
 			li.refCount  = 1;
 			try
 			{
@@ -193,7 +198,7 @@ public:
 				if (li.pLibrary->hasSymbol(pocoBuildManifestSymbol))
 				{
 					BuildManifestFunc buildManifest = (BuildManifestFunc) li.pLibrary->getSymbol(pocoBuildManifestSymbol);
-					if (buildManifest(const_cast<Manif*>(li.pManifest)))
+					if (buildManifest(const_cast<Manif*>(li.vpManifest.back().first)))
 						_map[path] = li;
 					else
 						throw LibraryLoadException(std::string("Manifest class mismatch in ") + path, manifest);
@@ -203,12 +208,51 @@ public:
 			catch (...)
 			{
 				delete li.pLibrary;
-				delete li.pManifest;
+				delete li.vpManifest.back().first; //known only one long
+                                li.vpManifest.pop_back();
 				throw;
 			}
 		}
 		else
 		{
+                  bool found = false;
+                  for (unsigned int i = 0; i < it->second.vpManifest.size(); i++)
+                  {
+                    if (manifest == it->second.vpManifest[i].second)
+                    {
+                      found = true;
+                      break;
+                    }
+                  }
+                  if ( !found)
+                  {
+                    //\TODO make this a function call for cut and paste from above
+                    try
+			{
+				std::string pocoBuildManifestSymbol("pocoBuildManifest");
+				pocoBuildManifestSymbol.append(manifest);
+				if (it->second.pLibrary->hasSymbol("pocoInitializeLibrary"))
+				{
+					InitializeLibraryFunc initializeLibrary = (InitializeLibraryFunc) it->second.pLibrary->getSymbol("pocoInitializeLibrary");
+					initializeLibrary();
+				}
+				if (it->second.pLibrary->hasSymbol(pocoBuildManifestSymbol))
+				{
+					BuildManifestFunc buildManifest = (BuildManifestFunc) it->second.pLibrary->getSymbol(pocoBuildManifestSymbol);
+					if (!buildManifest(const_cast<Manif*>(it->second.vpManifest.back().first)))
+						throw LibraryLoadException(std::string("Manifest class mismatch in ") + path, manifest);
+				}
+				else throw LibraryLoadException(std::string("No manifest in ") + path, manifest);
+			}
+			catch (...)
+			{
+                          // don't delete here for there are other manifests using it delete it->second.pLibrary;
+				delete it->second.vpManifest.back().first; //only last one
+                                it->second.vpManifest.pop_back();
+				throw;
+			}
+                  }
+                  
 			++it->second.refCount;
 		}
 	}
@@ -252,7 +296,13 @@ public:
 					UninitializeLibraryFunc uninitializeLibrary = (UninitializeLibraryFunc) it->second.pLibrary->getSymbol("pocoUninitializeLibrary");
 					uninitializeLibrary();
 				}
-				delete it->second.pManifest;
+
+
+                                for (unsigned int i = 0 ; i < it->second.vpManifest.size(); i++)
+                                {
+                                  delete it->second.vpManifest[i].first;
+                                }
+                                
 				it->second.pLibrary->unload();
 				delete it->second.pLibrary;
 				_map.erase(it);
@@ -269,10 +319,14 @@ public:
 
 		for (typename LibraryMap::const_iterator it = _map.begin(); it != _map.end(); ++it)
 		{
-			const Manif* pManif = it->second.pManifest;
+                  for (unsigned int i = 0 ; i < it->second.vpManifest.size(); i++)
+                  {
+                  
+			const Manif* pManif = it->second.vpManifest[i].first;
 			typename Manif::Iterator itm = pManif->find(className);
 			if (itm != pManif->end())
 				return *itm;
+                  }
 		}
 		return 0;
 	}
@@ -328,7 +382,7 @@ public:
 		return classFor(className).isAutoDelete(pObject);
 	}
 	
-	const Manif* findManifest(const std::string& path) const
+        std::vector<manifest_pair> findManifest(const std::string& path) const
 		/// Returns a pointer to the Manifest for the given
 		/// library, or a null pointer if the library has not been loaded.
 	{
@@ -336,7 +390,7 @@ public:
 
 		typename LibraryMap::const_iterator it = _map.find(path);
 		if (it != _map.end())
-			return it->second.pManifest;
+			return it->second.vpManifest;
 		else
 			return 0;
 	}
