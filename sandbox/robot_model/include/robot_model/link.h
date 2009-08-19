@@ -43,6 +43,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include <robot_model/joint.h>
+#include <robot_model/color.h>
 
 namespace robot_model{
 
@@ -117,11 +118,11 @@ public:
   Material() { this->clear(); };
   std::string name;
   std::string texture_filename;
-  Vector3 rgb;
+  Color color;
 
   void clear()
   {
-    rgb.clear();
+    color.clear();
     texture_filename.clear();
     name.clear();
   };
@@ -153,7 +154,6 @@ public:
   boost::shared_ptr<Geometry> geometry;
 
   std::string material_name;
-
   boost::shared_ptr<Material> material;
 
   void clear()
