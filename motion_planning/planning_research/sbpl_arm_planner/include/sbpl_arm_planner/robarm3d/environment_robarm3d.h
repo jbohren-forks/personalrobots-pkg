@@ -434,6 +434,7 @@ class EnvironmentROBARM3D: public DiscreteSpaceInformation
 		
 		void OutputActionCostTable(FILE* fOut);
 		void OutputActions(FILE* fOut);
+		void PrintStateDetails(FILE * fOut, int stateID);
 		
   private:
 
@@ -525,6 +526,7 @@ class EnvironmentROBARM3D: public DiscreteSpaceInformation
     int XYZTO3DIND(int x, int y, int z);
     void Search3DwithQueue(State3D*** statespace, int* HeurGrid, const vector< GoalPos> &Goals);
 
+		
     /** distance */
     int GetDistToClosestGoal(short unsigned int* xyz, int *goal_num);
     double GetDistToClosestGoal(double *xyz,int *goal_num);
@@ -544,6 +546,10 @@ class EnvironmentROBARM3D: public DiscreteSpaceInformation
     void ComputeForwardKinematics_ROS(const double angles[], int f_num, double *x, double *y, double *z);
 
     double getDistanceToGoal(const double angles[]);
+		
+		/** TEMPORARY CRAP */
+		int GetHeuristics(int FromStateID, int &heur_xyz, int &heur_rpy);
+		
 };
 
 inline bool EnvironmentROBARM3D::isValidCell(const int xyz[], const int &radius, unsigned char ***Grid, const boost::shared_ptr<Voxel3d> vGrid)

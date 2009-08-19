@@ -1556,6 +1556,57 @@ int EnvironmentROBARM3D::GetFromToHeuristic(int FromStateID, int ToStateID)
     return heur;
 }
 
+//NOTE temporary for debugging output
+int EnvironmentROBARM3D::GetHeuristics(int FromStateID, int &heur_xyz, int &heur_rpy)
+{
+#if USE_HEUR==0
+	return 0;
+#endif
+
+	int heur = 0, closest_goal = 0;
+	double FromEndEff_m[3];
+	double edist_to_goal_m, heur_axis_angle;
+
+    //get X, Y, Z for the state
+	EnvROBARMHashEntry_t* FromHashEntry = EnvROBARM.StateID2CoordTable[FromStateID];
+	short unsigned int FromEndEff[3] = {FromHashEntry->endeff[0], FromHashEntry->endeff[1], FromHashEntry->endeff[2]};
+
+    //distance to closest goal in meters
+	Cell2ContXYZ(FromHashEntry->endeff[0],FromHashEntry->endeff[1],FromHashEntry->endeff[2],&(FromEndEff_m[0]),&(FromEndEff_m[1]),&(FromEndEff_m[2]));
+	edist_to_goal_m = GetDistToClosestGoal(FromEndEff_m, &closest_goal);
+
+	//get distance heuristic
+	if(EnvROBARMCfg.dijkstra_heuristic)
+	{
+		if(EnvROBARMCfg.lowres_collision_checking)
+		{
+			HighResGrid2LowResGrid(FromHashEntry->endeff, FromEndEff);
+
+      //fetch precomputed heuristic
+			heur = EnvROBARM.Heur[XYZTO3DIND(FromEndEff[0], FromEndEff[1], FromEndEff[2])];
+		}
+		else
+      //fetch precomputed heuristic
+			heur = EnvROBARM.Heur[XYZTO3DIND(FromEndEff[0], FromEndEff[1], FromEndEff[2])];
+	}
+	else
+	{
+		heur = edist_to_goal_m * 1000.0 * EnvROBARMCfg.cost_per_mm;
+	}
+
+	heur_xyz = heur;
+
+	if(FromHashEntry->axis_angle > EnvROBARMCfg.EndEffGoals[closest_goal].rpy_tolerance)
+		heur_axis_angle = (FromHashEntry->axis_angle - EnvROBARMCfg.EndEffGoals[0].rpy_tolerance) * EnvROBARMCfg.cost_per_rad;
+	else
+		heur_axis_angle = FromHashEntry->axis_angle * EnvROBARMCfg.cost_per_rad;
+
+	heur_rpy = heur_axis_angle;
+	
+	return 1;
+}
+
+
 //for debugging. remove later
 int EnvironmentROBARM3D::GetFromToHeuristic(int FromStateID, int ToStateID, FILE* fOut)
 {
@@ -3184,6 +3235,14 @@ std::vector<int> EnvironmentROBARM3D::debugExpandedStates()
 	return expanded_states;
 }
 
+void EnvironmentROBARM3D::PrintStateDetails(FILE *fOut, int stateID)
+{
+	int heur_xyz = 0, heur_rpy = 0;
+	EnvROBARMHashEntry_t* HashEntry = EnvROBARM.StateID2CoordTable[stateID];
+	
+	GetHeuristics(stateID, heur_xyz, heur_rpy);
+	fprintf(fOut," heur_xyz: %i  heur_rpy: %i  axis_angle: %.3f action: %i ", heur_xyz, heur_rpy, HashEntry->axis_angle, HashEntry->action);
+}
 
 /**------------------------------------------------------------------------*/
                         /** Forward Kinematics */
