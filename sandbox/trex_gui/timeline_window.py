@@ -34,7 +34,8 @@ class Timeline():
     self.reactor_panel = None
 
     # Store a list of active tokens
-    self.tokens = []
+    self.active_tokens = []
+    self.new_active_tokens = []
 
     # Store a list of region boundaries for hit-testing
     self.hit_boundaries = []
@@ -56,14 +57,21 @@ class Timeline():
 	  self.mode = Timeline.INTERNAL
 	else:
 	  self.mode = Timeline.EXTERNAL
-    
-    # Copy only active tokens onto the token list
-    for token in obj.tokens:
-      if token.slot_index == 0:
-	self.tokens.append(token)
 
+    # Add tokens
+    self.add_tokens(obj.tokens)
+    
     # Sort the list of tokens
-    self.tokens.sort(lambda a,b: int(a.start[0] - b.start[0]))
+    #self.tokens.sort(lambda a,b: int(a.start[0] - b.start[0]))
+
+  def add_tokens(self,tokens):
+    # Copy new active tokens into active tokens, reset new active tokens
+    self.active_tokens = self.active_tokens + self.new_active_tokens
+    self.new_active_tokens = []
+    # Copy only active tokens onto the token list
+    for token in tokens:
+      if token.slot_index == 0:
+	self.new_active_tokens.append(token)
 
   # Get the color for this timeline
   def get_color(self):
@@ -113,7 +121,8 @@ class ReactorPanel():
 
   # Static variables
   LabelWidth = 200
-  TokenHistory = 50
+  TokenCache = 50
+  TokenHistory = 25
   
   Center = 0
   PastWidth = 500
@@ -138,6 +147,7 @@ class ReactorPanel():
     self.assembly = Assembly()
     self.int_timelines = []
     self.ext_timelines = []
+    self.timelines = {}
     self.n_timelines = 0
 
     # Token structures
@@ -197,26 +207,37 @@ class ReactorPanel():
 
     # Clear timeline vars
     self.n_timelines = 0
-    self.int_timelines = []
-    self.ext_timelines = []
 
     # Create timeline objects for all timelines
     # This also classifies all timelines as internal or external
     for object in assembly.objects.values():
       # Timelines must have tokens
       if len(object.tokens) > 0:
-	# Create a new timeline object
-	timeline = Timeline(object)
-	if timeline.mode == Timeline.INTERNAL:
-	  timeline.reactor_panel = self
-	  self.int_timelines.append(timeline)
+	# Check if this is a new timeline
+	if not self.timelines.has_key(object.name):
+	  # Create a new timeline object
+	  timeline = Timeline(object)
+
+	  # Add the timeline
+	  self.timelines[timeline.obj.name] = timeline
+
+	  if timeline.mode == Timeline.INTERNAL:
+	    timeline.reactor_panel = self
+	    self.int_timelines.append(timeline)
+	  else:
+	    self.ext_timelines.append(timeline)
 	else:
-	  self.ext_timelines.append(timeline)
+	  # Retrieve the timeline object
+	  timeline = self.timelines[object.name]
+	  # Update the object
+	  timeline.add_tokens(object.tokens)
+
 
 	# Add all tokens to this reactor
 	##############################################################
 
-	for new_token in timeline.tokens:
+	for new_token in timeline.new_active_tokens:
+	  # Check if this token existed in a previously viewed tick
 	  if self.all_tokens.has_key(new_token.key):
 	    # Check if this token is planned from the previous tick
 	    # This means that it might have started on this one, also it's start time is not yet closed,
@@ -227,31 +248,38 @@ class ReactorPanel():
 	      # Remove from the sorted lists
 	      self.planned_token_times.pop(sorted_index)
 	      self.planned_token_keys.pop(sorted_index)
+	    else:
+	      # We're travelling backwards
+	      # Get the index in the sorted lists of this token
+	      sorted_index = self.started_token_keys.index(new_token.key)
+	      # Remove from the sorted lists
+	      self.started_token_times.pop(sorted_index)
+	      self.started_token_keys.pop(sorted_index)
+	      pass
 
-	  # Update last updated tick for this token
+	  # Store / update this token
 	  self.all_tokens[new_token.key] = new_token
+	  # Update last updated tick for this token
 	  self.token_ticks[new_token.key] = assembly.tick
-
 	  # Store this token's timeline
 	  self.token_timelines[new_token.key] = timeline
 
-	  # Insort this token to the appropriate sorted token list
+	  # Insert this token to the appropriate sorted token list
 	  if new_token.start[0] == new_token.start[1]:
-	    # Check if we need to add this to started_tokens
-	    insert_index_start = bisect.bisect_left(self.started_token_times, new_token.start[0])
-	    insert_index_end = bisect.bisect_right(self.started_token_times, new_token.start[0])
-
-	    if insert_index_start >= len(self.started_token_keys) or new_token.key not in self.started_token_keys[insert_index_start:insert_index_end]:
-	      self.started_token_keys.insert(insert_index_start,new_token.key)
-	      self.started_token_times.insert(insert_index_start,new_token.start[0])
+	    keys = self.started_token_keys
+	    times = self.started_token_times
 	  else:
-	    # Check if we need to add this to planned_tokens
-	    insert_index_start = bisect.bisect_left(self.planned_token_times, new_token.start[0])
-	    insert_index_end = bisect.bisect_right(self.planned_token_times, new_token.start[0])
+	    keys = self.planned_token_keys
+	    times = self.planned_token_times
 
-	    if insert_index_start >= len(self.planned_token_keys) or new_token.key not in self.planned_token_keys[insert_index_start:insert_index_end]:
-	      self.planned_token_keys.insert(insert_index_start,new_token.key)
-	      self.planned_token_times.insert(insert_index_start,new_token.start[0])
+	  # Get insertion indices
+	  insert_index_start = bisect.bisect_left(times, new_token.start[0])
+	  insert_index_end = bisect.bisect_right(times, new_token.start[0])
+
+	  # Insert token
+	  if insert_index_start >= len(keys) or new_token.key not in keys[insert_index_start:insert_index_end]:
+	    keys.insert(insert_index_start,new_token.key)
+	    times.insert(insert_index_start,new_token.start[0])
 
 	##############################################################
     # Set the row in each timeline 
@@ -398,6 +426,8 @@ class ReactorPanel():
       tl.latest_tick = 0
 
     # Iterate over all token keys
+    #print "STARTED TOKENS: %d" % len(self.started_token_keys)
+    #print "PLANNED TOKENS: %d" % len(self.planned_token_keys)
     for key in self.started_token_keys[::-1] + self.planned_token_keys:
 
       # Get token
@@ -469,8 +499,8 @@ class ReactorPanel():
 	tok_end = timeline.earliest_start
 
 	# Do not draw token if it ends before the visible window
-	if tok_end < -ReactorPanel.PastWidth:
-	  continue
+	#if tok_end < -ReactorPanel.PastWidth:
+	#  continue
 
 	# Set the earliest tick for this timeline
 	earliest_tick = token.start[0]
@@ -541,7 +571,7 @@ class ReactorPanel():
       if key in self.hilight_keys:
 	cr.set_source_rgba(1.0, 0.7, 0.07, 1.0)
       elif self.token_ticks[key] < self.assembly.tick:
-	cr.set_source_rgba(0.3, 0.3, 0.3, 0.7)
+	cr.set_source_rgba(r,g,b, 0.3)
       else:
 	cr.set_source_rgba(r, g, b, 0.7)
 
