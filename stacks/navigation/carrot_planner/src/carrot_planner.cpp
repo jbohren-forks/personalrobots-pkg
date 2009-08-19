@@ -52,6 +52,7 @@ namespace carrot_planner {
   
   void CarrotPlanner::initialize(std::string name, costmap_2d::Costmap2DROS* costmap_ros){
     if(!initialized_){
+      costmap_ros_ = costmap_ros;
       ros::NodeHandle n(name);
       n.param("~step_size", step_size_, costmap_ros_->getResolution());
       n.param("~min_dist_from_robot", min_dist_from_robot_, 0.10);
