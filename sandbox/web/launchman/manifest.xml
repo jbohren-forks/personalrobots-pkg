@@ -1,9 +1,9 @@
 <package>
-  <description>Task Manager</description>
+  <description>Launch Manager</description>
   <author>Scott Hassan</author>
   <license>BSD</license>
   <review status="na" notes=""/>
-  <url>http://pr.willowgarage.com/wiki/taskman</url>
+  <url>http://pr.willowgarage.com/wiki/launchman</url>
 
   <depend package="rospy"/>
   <depend package="roslaunch"/>
