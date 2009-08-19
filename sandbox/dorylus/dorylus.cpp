@@ -34,10 +34,9 @@
 *
 * Author: Alex Teichman
 *********************************************************************/
-
-#include <algorithm>
-#include <dorylus.h>
+#include <dorylus/dorylus.h>
 #include <signal.h>
+
 
 using namespace std;
 USING_PART_OF_NAMESPACE_EIGEN
@@ -391,7 +390,8 @@ bool Dorylus::save(string filename, string *user_data_str)
   }
   f << "End classes." << endl;
 
-  float buf;
+  float fbuf;
+  double dbuf;
   map<string, vector<weak_classifier*> >::iterator bit;
   for(bit = battery_.begin(); bit != battery_.end(); bit++) {
     vector<weak_classifier*> &wcs = bit->second;
@@ -403,14 +403,26 @@ bool Dorylus::save(string filename, string *user_data_str)
       f << "Utility" << endl << wcs[t]->utility << endl;
       f << "Center" << endl << wcs[t]->center.rows() << endl;
       for(int i=0; i<wcs[t]->center.rows(); i++) {
-	buf = wcs[t]->center(i,0);
-	f.write((char*)&buf, sizeof(float));
+	fbuf = wcs[t]->center(i,0);
+	f.write((char*)&fbuf, sizeof(float));
       }
       f << endl;
       f << "Vals" << endl << wcs[t]->vals.rows() << endl;
       for(int i=0; i<wcs[t]->vals.rows(); ++i) {
-	buf = wcs[t]->vals(i);
-	f.write((char*)&buf, sizeof(float));
+	fbuf = wcs[t]->vals(i);
+	f.write((char*)&fbuf, sizeof(float));
+      }
+      f << endl;
+      f << "Numerators" << endl << wcs[t]->numerators.rows() << endl;
+      for(int i=0; i<wcs[t]->numerators.rows(); ++i) {
+	dbuf = wcs[t]->numerators(i);
+	f.write((char*)&dbuf, sizeof(double));
+      }
+      f << endl;
+      f << "Denominators" << endl << wcs[t]->denominators.rows() << endl;
+      for(int i=0; i<wcs[t]->denominators.rows(); ++i) {
+	dbuf = wcs[t]->denominators(i);
+	f.write((char*)&dbuf, sizeof(double));
       }
       f << endl;
     }
@@ -522,11 +534,11 @@ bool Dorylus::load(string filename, bool quiet, string *user_data_str)
       istringstream iss_nEle(line);
       int nElements;
       iss_nEle >> nElements;
-      float buf;
+      float fbuf;
       pwc->center = MatrixXf(nElements, 1);
       for(int i=0; i<nElements; i++) {
-	f.read((char*)&buf, sizeof(float));
-	pwc->center(i,0) = buf;
+	f.read((char*)&fbuf, sizeof(float));
+	pwc->center(i,0) = fbuf;
       }
       getline(f, line); //Move off the line with the data.
 
@@ -539,8 +551,31 @@ bool Dorylus::load(string filename, bool quiet, string *user_data_str)
       iss_nEleVals >> nClasses_;
       pwc->vals = VectorXf::Zero(nClasses_);
       for(unsigned int i=0; i<nClasses_; ++i) {
-	f.read((char*)&buf, sizeof(float));
-	pwc->vals(i) = buf;
+	f.read((char*)&fbuf, sizeof(float));
+	pwc->vals(i) = fbuf;
+      }
+      getline(f, line); //Move off the line with the data.
+
+      // -- Numerators
+      double dbuf;
+      getline(f, line);
+      assert(line.compare("Numerators") == 0);
+      getline(f, line); // This line has nClasses_ but we already know it.
+      pwc->numerators = VectorXd::Zero(nClasses_);
+      for(unsigned int i=0; i<nClasses_; ++i) {
+	f.read((char*)&dbuf, sizeof(double));
+	pwc->numerators(i) = dbuf;
+      }
+      getline(f, line); //Move off the line with the data.
+
+      // -- Denominators
+      getline(f, line);
+      assert(line.compare("Denominators") == 0);
+      getline(f, line);
+      pwc->denominators = VectorXd::Zero(nClasses_);
+      for(unsigned int i=0; i<nClasses_; ++i) {
+	f.read((char*)&dbuf, sizeof(double));
+	pwc->denominators(i) = dbuf;
       }
       getline(f, line); //Move off the line with the data.
     }
@@ -583,10 +618,11 @@ vector<weak_classifier*>* Dorylus::findActivatedWCs(const string &descriptor, co
 
 
 void sigint(int none) {
+  cout << "Caught user signal." << endl;
   g_int = true;
 }
 
-void Dorylus::train(int num_candidates, int max_secs, int max_wcs, void (*debugHook)(weak_classifier)) {
+void Dorylus::train(int num_candidates, int max_secs, int max_wcs, double min_util, void (*debugHook)(weak_classifier)) {
   signal(SIGINT,sigint);
   time_t start, end;
   time(&start);
@@ -609,12 +645,22 @@ void Dorylus::train(int num_candidates, int max_secs, int max_wcs, void (*debugH
 
     assert(obj2 < obj);
 
-    if(max_secs != 0 && difftime(end,start) > max_secs)
+    if(max_secs != 0 && difftime(end,start) > max_secs) {
+      cout << "Ending training because max time has been reached." << endl;
       break;
-    if(max_wcs != 0 && wcs >= max_wcs)
+    }
+    if(max_wcs != 0 && wcs >= max_wcs) {
+      cout << "Ending training because max number of weak classifiers has been reached." << endl;
       break;
-    if(g_int)
+    }
+    if(g_int) {
+      cout << "Ending training because of user control-c." << endl;
       break;
+    }
+    if(pwcs_.back()->utility < min_util) {
+      cout << "Ending training because of min utility criterion: " << pwcs_.back()->utility << " < min util of " << min_util << endl;
+      break;
+    }
   }
 
   cout << "Done training." << endl;
@@ -722,6 +768,8 @@ vector<weak_classifier*> Dorylus::createRandomWeakClassifiers(int num_candidates
     wc->vals = VectorXf::Zero(dd_->nClasses_);
     wc->id = -1;
     wc->utility = 0;
+    wc->numerators = VectorXd::Zero(nClasses_);
+    wc->denominators = VectorXd::Zero(nClasses_);
     cand.push_back(wc);
   }
   return cand;
@@ -762,8 +810,6 @@ void Dorylus::learnWC(int num_candidates) {
     // -- Setup vars for evaluating weak classifiers efficiently.
     vector<double> weight_sum_pos(nClasses_); // sum of weight inside hypersphere for each class
     vector<double> weight_sum_neg(nClasses_); // sum of weight inside hypersphere for all y_m^c == -1
-    vector<double> numerators(nClasses_); //Signed sum of weights of training examples inside the hypersphere (for each class).
-    vector<double> denominators(nClasses_); //Sum of weights of training examples inside the hypersphere (for each class).
 
     // -- For all training examples in order of distance.
     for(size_t m=0; m<distance_idx->size(); ++m) {
@@ -774,12 +820,12 @@ void Dorylus::learnWC(int num_candidates) {
       double utility = 0;
       for(size_t c=0; c<nClasses_; ++c) {
 	// -- Update the response.
-	denominators[c] += exp(log_weights_(c,idx));
-	numerators[c] += exp(log_weights_(c,idx)) * dd_->ymc_(c,idx);
-	if(denominators[c] == 0)
+	cand[i]->denominators(c) += exp(log_weights_(c,idx));
+	cand[i]->numerators(c) += exp(log_weights_(c,idx)) * dd_->ymc_(c,idx);
+	if(cand[i]->denominators(c) == 0)
 	  cand[i]->vals(c) = 0;
 	else
-	  cand[i]->vals(c) = numerators[c] / denominators[c];
+	  cand[i]->vals(c) = cand[i]->numerators(c) / cand[i]->denominators(c);
 
 	// -- Update the sum of weights in the hypersphere.
 	assert(dd_->ymc_(c,idx) == 1 || dd_->ymc_(c,idx) == -1);

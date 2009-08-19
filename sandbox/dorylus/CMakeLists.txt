@@ -16,10 +16,10 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 rospack_add_library(dorylus dorylus.cpp)
 rospack_add_executable(eigentest eigentest.cpp)
+rospack_add_executable(dtools dtools.cpp)
+target_link_libraries(dtools dorylus)
 
 rospack_download_test_data(http://pr.willowgarage.com/data/dorylus/sanity.d test/sanity.d)
 rospack_download_test_data(http://pr.willowgarage.com/data/dorylus/sanity.dd test/sanity.dd)
-rospack_download_test_data(http://pr.willowgarage.com/data/dorylus/test.dd test/test.dd)
-rospack_download_test_data(http://pr.willowgarage.com/data/dorylus/test.d test/test.d)
 rospack_add_gtest(test/test_dorylus test/test_dorylus.cpp)
 target_link_libraries(test/test_dorylus dorylus)

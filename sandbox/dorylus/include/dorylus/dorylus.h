@@ -58,6 +58,8 @@
 #include <cmath>
 #include <string>
 
+#include <algorithm>
+
 typedef struct
 {
   //! The name of the descriptor this weak classifier is concerned with.
@@ -66,6 +68,10 @@ typedef struct
   float theta;
   //! The a_t^c's, i.e. the values of the weak classifier responses.
   Eigen::VectorXf vals;
+  //! Numerators of the expression to compute a_t^c for each class.
+  Eigen::VectorXd numerators;
+  //! Denominators of the expression to compute a_t^c for each class.
+  Eigen::VectorXd denominators;
   //! to identify which was learned first, second, third, etc.
   int id;
   //! For centroid voting, boundary fragments, etc.  Not yet fully supported.
@@ -137,7 +143,6 @@ class DorylusDataset {
  DorylusDataset() : nClasses_(0)
   {
     version_string_ = std::string("#DORYLUS DATASET LOG v0.1");
-    std::cout << "DorylusDataset(), version_string_ = "<< version_string_ << std::endl;
   }
 
   std::string status();
@@ -171,7 +176,9 @@ class Dorylus {
   int max_wc_;
 
   //! debugHook will be called each time a new weak classifier is learned. 
-  void train(int num_candidates, int max_secs, int max_wcs, void (*debugHook)(weak_classifier)=NULL);
+  void train(int num_candidates, int max_secs, int max_wcs, double min_util=0, void (*debugHook)(weak_classifier)=NULL);
+  //! Updates the weak classifier responses given a new labeled dataset using the greedy method.  
+  void greedyResponseUpdate(const DorylusDataset& dd);
   void useDataset(DorylusDataset *dd);
   bool save(std::string filename, std::string *user_data_str=NULL);
   bool load(std::string filename, bool quiet=false, std::string *user_data_str=NULL);
@@ -190,7 +197,7 @@ class Dorylus {
 
  Dorylus() : dd_(NULL), nClasses_(0), max_wc_(0)
     {
-      version_string_ = std::string("#DORYLUS CLASSIFIER LOG v0.2");
+      version_string_ = std::string("#DORYLUS CLASSIFIER LOG v0.3");
     }
 
   ~Dorylus() {

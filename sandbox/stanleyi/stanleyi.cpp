@@ -35,7 +35,7 @@
 * Author: Alex Teichman
 *********************************************************************/
 
-#include <dorylus.h>
+#include <dorylus/dorylus.h>
 #include <iostream>
 #include <sensor_msgs/Image.h>
 #include <rosrecord/Player.h>

@@ -7,7 +7,7 @@
 #include <tinyxml/tinyxml.h>
 #include <descriptors_2d/descriptors_2d.h>
 #include <descriptors_2d_gpl/descriptors_2d_gpl.h>
-#include <dorylus.h>
+#include <dorylus/dorylus.h>
 
 class HandDetector {
  public:

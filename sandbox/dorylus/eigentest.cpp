@@ -1,4 +1,4 @@
-#include <dorylus.h>
+#include <dorylus/dorylus.h>
 
 USING_PART_OF_NAMESPACE_EIGEN;
 using namespace std;
