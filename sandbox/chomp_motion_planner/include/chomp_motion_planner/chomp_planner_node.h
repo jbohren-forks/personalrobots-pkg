@@ -92,7 +92,6 @@ private:
   double trajectory_discretization_;                    /**< Default discretization of the planned motion */
   ros::Publisher vis_marker_array_publisher_;           /**< Publisher for marker arrays */
 
-
 };
 
 }
