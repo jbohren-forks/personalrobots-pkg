@@ -298,7 +298,7 @@ void ChompRobotModel::addCollisionPointsFromLinkRadius(std::string link_name, do
     //printf("joint origin for %s is %f %f %f\n", (*child_iter)->first.c_str(), joint_origin.x(), joint_origin.y(), joint_origin.z());
 
     // generate equidistant collision points for this link:
-    double spacing = radius;
+    double spacing = radius/2.0;
     double distance = joint_origin.Norm();
     distance+=extension;
     int num_points = ceil(distance/spacing)+1;
