@@ -31,24 +31,24 @@
 
 #include "pluginlib_tutorial_interfaces/polygon.h"
 #include "pluginlib_tutorial_interfaces/shape.h"
-#include "pluginlib/plugin_loader.h"
+#include "pluginlib/class_loader.h"
 
 int main() {
   
-  pluginlib::PluginLoader<polygon> cl("pluginlib_tutorial_interfaces", "polygon");
+  pluginlib::ClassLoader<polygon> cl("pluginlib_tutorial_interfaces", "polygon");
 
   ROS_INFO("Created Class Loader of polygon");
   ROS_INFO("Available plugins are:");
-  std::vector<std::string> plugins = cl.getDeclaredPlugins();
+  std::vector<std::string> plugins = cl.getDeclaredClasses();
   for (std::vector<std::string>::iterator it = plugins.begin(); it != plugins.end() ; ++it)
   {
-    ROS_INFO("%s is in package %s and is of type %s", it->c_str(), cl.getPluginPackage(*it).c_str(), cl.getPluginType(*it).c_str());
-    ROS_INFO("It does \"%s\"", cl.getPluginDescription(*it).c_str());
-    ROS_INFO("It is found in library %s", cl.getPluginLibraryPath(*it).c_str());
+    ROS_INFO("%s is in package %s and is of type %s", it->c_str(), cl.getClassPackage(*it).c_str(), cl.getClassType(*it).c_str());
+    ROS_INFO("It does \"%s\"", cl.getClassDescription(*it).c_str());
+    //ROS_INFO("It is found in library %s", cl.getClassLibraryPath(*it).c_str());
   }
 
 
-  if (cl.loadPlugin("square"))
+  if (cl.loadClass("square"))
   {
     ROS_INFO("Loaded library with plugin square inside");
   }
@@ -57,39 +57,39 @@ int main() {
     ROS_INFO("Failed to load library with plugin square inside");
   }
   
-  if (cl.isPluginLoaded("square"))
+  if (cl.isClassLoaded("square"))
   { 
     ROS_INFO("Can create square");
-    polygon * poly = cl.createPluginInstance("square");
+    polygon * poly = cl.createClassInstance("square");
     // use the class
     poly->set_side_length(7);
     ROS_INFO("The square area is: %.2f", poly->area());
   }
-  else ROS_INFO("Square Plugin not loaded");
+  else ROS_INFO("Square Class not loaded");
   
   ROS_INFO("Created square, trying triangle next");
-  if (cl.isPluginLoaded("triangle"))
+  if (cl.isClassLoaded("triangle"))
   { 
-    polygon * tri = cl.createPluginInstance("triangle");
+    polygon * tri = cl.createClassInstance("triangle");
 
   // use the class
   tri->set_side_length(7);
   ROS_INFO("The triangle area is: %.2f", tri->area());
   }
-  else ROS_INFO("Triangle Plugin not loaded");
+  else ROS_INFO("Triangle Class not loaded");
   
   
-  if (!cl.loadPlugin("line"))
+  if (!cl.loadClass("line"))
     ROS_ERROR("Correctly failed to load line in polygon loader");
 
-  pluginlib::PluginLoader<shape> ph("pluginlib_tutorial_interfaces", "shape");
+  pluginlib::ClassLoader<shape> ph("pluginlib_tutorial_interfaces", "shape");
 
-  if (!ph.loadPlugin("line"))
+  if (!ph.loadClass("line"))
     ROS_ERROR("Failed to load line");
 
-  if (ph.isPluginLoaded("line"))
+  if (ph.isClassLoaded("line"))
     {
-      shape * sh = ph.createPluginInstance("line");
+      shape * sh = ph.createClassInstance("line");
       // use the class
       sh->set_side_length(7);
       ROS_INFO("The line area is: %.2f", sh->area()); 
@@ -97,18 +97,18 @@ int main() {
     else
       ROS_ERROR("Cloudn't find line lib");
 
-  std::vector<std::string> libs = cl.getLoadedLibraries();
-  ROS_INFO("Libraries in cl are:");
-  for (std::vector<std::string>::iterator it = libs.begin(); it != libs.end() ; ++it)
-  {
-    ROS_INFO("Library name %s", it->c_str());
-    std::vector<std::string> plugins = cl.getPluginsInLibrary(*it);
-    ROS_INFO("  With plugins:");
-    for (std::vector<std::string>::iterator it2 = plugins.begin(); it2 != plugins.end() ; ++it2)
-    {
-      ROS_INFO("   %s", it2->c_str());
-    }
-  }
+  //std::vector<std::string> libs = cl.getLoadedLibraries();
+  //ROS_INFO("Libraries in cl are:");
+  //for (std::vector<std::string>::iterator it = libs.begin(); it != libs.end() ; ++it)
+  //{
+  //  ROS_INFO("Library name %s", it->c_str());
+  //  std::vector<std::string> plugins = cl.getClassesInLibrary(*it);
+  //  ROS_INFO("  With plugins:");
+  //  for (std::vector<std::string>::iterator it2 = plugins.begin(); it2 != plugins.end() ; ++it2)
+  //  {
+  //    ROS_INFO("   %s", it2->c_str());
+  //  }
+  //}
 
   return 0;
 }

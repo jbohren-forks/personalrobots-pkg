@@ -34,15 +34,13 @@
 *
 * Author: Eitan Marder-Eppstein
 *********************************************************************/
-#include "pluginlib/plugin_macros.h"
-#include "polygon.h"
-#include "square.h"
-#include "triangle.h"
+#ifndef PLUGINLIB_CLASS_LIST_MACROS_H_
+#define PLUGINLIB_CLASS_LIST_MACROS_H_
+#include "Poco/ClassLibrary.h"
 
-//polygon plugin list 
-BEGIN_PLUGIN_LIST(polygon)
+#define PLUGINLIB_REGISTER_CLASS(class_name, class_type, base_class_type) \
+  POCO_BEGIN_NAMED_MANIFEST(class_name, base_class_type) \
+  POCO_EXPORT_CLASS(class_type) \
+  POCO_END_MANIFEST
 
-REGISTER_PLUGIN(triangle)
-REGISTER_PLUGIN(square)
-
-END_PLUGIN_LIST 
+#endif

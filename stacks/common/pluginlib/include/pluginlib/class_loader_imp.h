@@ -37,28 +37,41 @@
 
 //NOTE: this should really never be included on its own, but just in case someone is bad we'll guard
 
-#ifndef PLUGINLIB_PLUGIN_LOADER_IMP_H_
-#define PLUGINLIB_PLUGIN_LOADER_IMP_H_
+#ifndef PLUGINLIB_CLASS_LOADER_IMP_H_
+#define PLUGINLIB_CLASS_LOADER_IMP_H_
 
 #include <stdexcept>
 
 namespace pluginlib {
   template <class T>
-  PluginLoader<T>::PluginLoader(std::string package, std::string plugin_type)
+  ClassLoader<T>::ClassLoader(std::string package, std::string base_class, std::string attrib_name) : base_class_(base_class)
   {
-    //Pull possible files from manifests of packages which depend on this package and export plugin
+    //Pull possible files from manifests of packages which depend on this package and export class
     std::vector<std::string> paths;
 
-    ros::package::getPlugins(package, plugin_type, paths);
+    ros::package::getPlugins(package, attrib_name, paths);
 
     //The poco factory for base class T
     for (std::vector<std::string>::iterator it = paths.begin(); it != paths.end(); ++it)
     {
       TiXmlDocument document;
       document.LoadFile(*it);
+      TiXmlElement * config = document.RootElement();
+      if (config->ValueStr() != "library" &&
+          config->ValueStr() != "class_libraries")
+      {
+        ROS_ERROR("The XML given to add must have either \"library\" or \
+            \"class_libraries\" as the root tag");
+        return ;
+      }
+      //Step into the filter list if necessary
+      if (config->ValueStr() == "class_libraries")
+      {
+        config = config->FirstChildElement("library");
+      }
 
-      TiXmlElement* library = document.FirstChildElement( "library" );
-      if ( library )
+      TiXmlElement* library = config;
+      while ( library != NULL)
       {
         std::string library_path = library->Attribute("path");
         if (library_path.size() == 0)
@@ -71,7 +84,7 @@ namespace pluginlib {
 
         fs::path p(*it);
         fs::path parent = p.parent_path();
-        // figure out the package this plugin is part of
+        // figure out the package this class is part of
         while (true)
         {
           if (fs::exists(parent / "manifest.xml"))
@@ -89,52 +102,55 @@ namespace pluginlib {
 
           if (parent.string().empty())
           {
-            ROS_ERROR("Could not find package name for plugin %s", it->c_str());
+            ROS_ERROR("Could not find package name for class %s", it->c_str());
             break;
           }
         }
         fs::path full_library_path(parent / library_path);
 
-        TiXmlElement* plugin = library->FirstChildElement( "plugin" );
-        while (plugin)
+        TiXmlElement* class_element = library->FirstChildElement("class");
+        while (class_element)
         {
-          // register plugin here
-          TiXmlElement* description = plugin->FirstChildElement( "description" );
-          std::string description_str = description ? description->GetText() : "";
+          std::string base_class_type = class_element->Attribute("base_class_type");
 
-          std::string plugin_name = plugin->Attribute("name");
-          std::string plugin_class_name = plugin->Attribute("class");
+          //make sure that this class is of the right type before registering it
+          if(base_class_type == base_class){
 
-          plugins_available_.insert(std::pair<std::string, Plugin>(plugin_name, Plugin(plugin_name, plugin_class_name, plugin_type, package_name, description_str, full_library_path.string())));
+            // register class here
+            TiXmlElement* description = class_element->FirstChildElement("description");
+            std::string description_str = description ? description->GetText() : "";
 
+            std::string lookup_name = class_element->Attribute("name");
+            std::string derived_class = class_element->Attribute("type");
 
-          //step to next plugin
-          plugin = plugin->NextSiblingElement( "plugin" );
+            classes_available_.insert(std::pair<std::string, ClassDesc>(lookup_name, ClassDesc(lookup_name, derived_class, base_class_type, package_name, description_str, full_library_path.string())));
+          }
+          //step to next class_element
+          class_element = class_element->NextSiblingElement( "class" );
         }
-
-
+        library = library->NextSiblingElement( "library" );
       }
     }
-
   }
 
   template <class T>
-  bool PluginLoader<T>::loadPlugin(const std::string & plugin_name)
+  bool ClassLoader<T>::loadClass(const std::string & lookup_name)
   {
     std::string library_path;
-    PluginMapIterator it = plugins_available_.find(plugin_name);
-    if (it != plugins_available_.end())
+    ClassMapIterator it = classes_available_.find(lookup_name);
+    if (it != classes_available_.end()){
       library_path = it->second.library_path_;
+    }
     else
     {
-      ROS_ERROR("Couldn't find plugin %s", plugin_name.c_str());
+      ROS_ERROR("Couldn't find class %s", lookup_name.c_str());
       return false;
     }
     library_path.append(Poco::SharedLibrary::suffix());
     ROS_DEBUG("Loading library %s", library_path.c_str());
     try
     {
-      loadPluginLibraryInternal(library_path);
+      loadClassLibraryInternal(library_path, lookup_name);
     }
     catch (Poco::LibraryLoadException &ex)
     {
@@ -150,22 +166,22 @@ namespace pluginlib {
   }
 
   template <class T>
-  PluginLoader<T>::~PluginLoader()
+  ClassLoader<T>::~ClassLoader()
   {
     for (LibraryCountMap::iterator it = loaded_libraries_.begin(); it != loaded_libraries_.end(); ++it)
     {
       if ( it->second > 0)
-        unloadPluginLibrary(it->first);
+        unloadClassLibrary(it->first);
     }
   }
 
 
   template <class T>
-  bool PluginLoader<T>::isPluginLoaded(const std::string& name)
+  bool ClassLoader<T>::isClassLoaded(const std::string& lookup_name)
   {
     try
     {
-      return poco_class_loader_.canCreate(getPluginClass(name));
+      return poco_class_loader_.canCreate(getClassType(lookup_name));
     }
     catch (Poco::RuntimeException &ex)
     {
@@ -174,85 +190,83 @@ namespace pluginlib {
   }
 
   template <class T>
-  std::vector<std::string> PluginLoader<T>::getDeclaredPlugins()
+  std::vector<std::string> ClassLoader<T>::getDeclaredClasses()
   {
-    std::vector<std::string> plugin_names;
-    for (PluginMapIterator it = plugins_available_.begin(); it != plugins_available_.end(); ++it)
+    std::vector<std::string> lookup_names;
+    for (ClassMapIterator it = classes_available_.begin(); it != classes_available_.end(); ++it)
     {
-      plugin_names.push_back(it->first);
+      lookup_names.push_back(it->first);
     }
-    return plugin_names;
+    return lookup_names;
   }
 
   template <class T>
-  std::string PluginLoader<T>::getPluginClass(const std::string& plugin_name)
+  std::string ClassLoader<T>::getClassType(const std::string& lookup_name)
   {
-    PluginMapIterator it = plugins_available_.find(plugin_name);
-    if (it != plugins_available_.end())
-      return it->second.class_name_;
+    ClassMapIterator it = classes_available_.find(lookup_name);
+    if (it != classes_available_.end())
+      return it->second.derived_class_;
     return "";
   }
 
   template <class T>
-  std::string PluginLoader<T>::getPluginDescription(const std::string& plugin_name)
+  std::string ClassLoader<T>::getClassDescription(const std::string& lookup_name)
   {
-    PluginMapIterator it = plugins_available_.find(plugin_name);
-    if (it != plugins_available_.end())
+    ClassMapIterator it = classes_available_.find(lookup_name);
+    if (it != classes_available_.end())
       return it->second.description_;
     return "";
   }
 
   template <class T>
-  std::string PluginLoader<T>::getPluginType(const std::string& plugin_name)
+  std::string ClassLoader<T>::getBaseClassType(const std::string& lookup_name)
   {
-    PluginMapIterator it = plugins_available_.find(plugin_name);
-    if (it != plugins_available_.end())
-      return it->second.type_;
+    ClassMapIterator it = classes_available_.find(lookup_name);
+    if (it != classes_available_.end())
+      return it->second.base_class_;
     return "";
   }
 
   template <class T>
-  std::string PluginLoader<T>::getPluginLibraryPath(const std::string& plugin_name)
+  std::string ClassLoader<T>::getClassLibraryPath(const std::string& lookup_name)
   {
-    PluginMapIterator it = plugins_available_.find(plugin_name);
-    if (it != plugins_available_.end())
+    ClassMapIterator it = classes_available_.find(lookup_name);
+    if (it != classes_available_.end())
       return it->second.library_path_;
     return "";
   }
 
   template <class T>
-  std::string PluginLoader<T>::getPluginPackage(const std::string& plugin_name)
+  std::string ClassLoader<T>::getClassPackage(const std::string& lookup_name)
   {
-    PluginMapIterator it = plugins_available_.find(plugin_name);
-    if (it != plugins_available_.end())
+    ClassMapIterator it = classes_available_.find(lookup_name);
+    if (it != classes_available_.end())
       return it->second.package_;
     return "";
   }
 
   template <class T>
-  T* PluginLoader<T>::createPluginInstance(const std::string& name, bool auto_load_plugin)
+  T* ClassLoader<T>::createClassInstance(const std::string& lookup_name, bool auto_load)
   {
-    if ( auto_load_plugin && !isPluginLoaded(name))
-      if(!loadPlugin(name))
+    if ( auto_load && !isClassLoaded(lookup_name))
+      if(!loadClass(lookup_name))
       {
         //\todo THROW HERE
         ROS_ERROR("Failed to auto load library");
-        return NULL;
-        throw std::runtime_error("Failed to auto load library for plugin " + name + ".");
+        throw std::runtime_error("Failed to auto load library for class " + lookup_name + ".");
       }
 
     try{
-      return poco_class_loader_.create(getPluginClass(name));
+      return poco_class_loader_.create(getClassType(lookup_name));
     }
     catch(const Poco::RuntimeException& ex){
-      ROS_ERROR("Poco exception: %s (plugin: %s)", ex.what(), name.c_str());
-      return NULL;
+      ROS_ERROR("Poco exception: %s (class: %s)", ex.what(), lookup_name.c_str());
       throw std::runtime_error(ex.what());
     }
   }
 
   template <class T>
-  bool PluginLoader<T>::unloadPluginLibrary(const std::string& library_path)
+  bool ClassLoader<T>::unloadClassLibrary(const std::string& library_path)
   {
     LibraryCountMap::iterator it = loaded_libraries_.find(library_path);
     if (it == loaded_libraries_.end())
@@ -270,10 +284,10 @@ namespace pluginlib {
   }
 
   template <class T>
-  bool PluginLoader<T>::loadPluginLibrary(const std::string& library_path){
+  bool ClassLoader<T>::loadClassLibrary(const std::string& library_path){
     try
     {
-      loadPluginLibraryInternal(library_path);
+      loadClassLibraryInternal(library_path);
     }
     catch (Poco::LibraryLoadException &ex)
     {
@@ -287,8 +301,8 @@ namespace pluginlib {
   }
 
   template <class T>
-  void PluginLoader<T>::loadPluginLibraryInternal(const std::string& library_path) {
-    poco_class_loader_.loadLibrary(library_path);
+  void ClassLoader<T>::loadClassLibraryInternal(const std::string& library_path, const std::string& list_name) {
+    poco_class_loader_.loadLibrary(library_path, list_name);
     LibraryCountMap::iterator it = loaded_libraries_.find(library_path);
     if (it == loaded_libraries_.end())
       loaded_libraries_[library_path] = 1;  //for correct destruction and access
@@ -297,24 +311,24 @@ namespace pluginlib {
   }
 
   template <class T>
-  std::vector<std::string> PluginLoader<T>::getPluginsInLibrary(const std::string & library_path)
+  std::vector<std::string> ClassLoader<T>::getClassesInLibrary(const std::string & library_path)
   {
-    std::vector<std::string> plugin_names;
+    std::vector<std::string> lookup_names;
 
 
     const Poco::Manifest<T> * manifest = poco_class_loader_.findManifest(library_path);
     if (manifest == NULL)
-      return plugin_names;
+      return lookup_names;
 
     for (typename Poco::Manifest<T>::Iterator it = manifest->begin(); it != manifest->end(); ++it)
     {
-      plugin_names.push_back(it->name());
+      lookup_names.push_back(it->name());
     }
-    return plugin_names;
+    return lookup_names;
   }
 
   template <class T>
-  std::vector<std::string> PluginLoader<T>::getLoadedLibraries()
+  std::vector<std::string> ClassLoader<T>::getLoadedLibraries()
   {
     std::vector<std::string> library_names;
 
@@ -335,4 +349,5 @@ namespace pluginlib {
     return library_names;
   }
 };
+
 #endif

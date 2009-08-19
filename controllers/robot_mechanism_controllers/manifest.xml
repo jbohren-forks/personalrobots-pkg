@@ -33,7 +33,7 @@
   <export>
     <cpp cflags="-I${prefix}/include -I${prefix}/msg/cpp -I${prefix}/srv/cpp"
 	 lflags="-Wl,-rpath,${prefix}/lib/ -L${prefix}/lib -lrobot_mechanism_controllers" />
-    <controller_interface controller="${prefix}/controller_plugins.xml" />
+    <controller_interface plugin="${prefix}/controller_plugins.xml" />
   </export>
   <rosdep name="libtool"/>
 </package>

@@ -51,7 +51,7 @@
 #include <visualization_msgs/Marker.h>
 #include <geometry_msgs/Twist.h>
 
-#include <pluginlib/plugin_loader.h>
+#include <pluginlib/class_loader.h>
 
 namespace move_base {
   enum MoveBaseState {
@@ -164,8 +164,8 @@ namespace move_base {
       MoveBaseState state_;
       ClearingState clearing_state_;
 
-      pluginlib::PluginLoader<nav_core::BaseGlobalPlanner> bgp_loader_; 
-      pluginlib::PluginLoader<nav_core::BaseLocalPlanner> blp_loader_; 
+      pluginlib::ClassLoader<nav_core::BaseGlobalPlanner> bgp_loader_; 
+      pluginlib::ClassLoader<nav_core::BaseLocalPlanner> blp_loader_; 
       
   };
 };

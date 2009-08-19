@@ -243,7 +243,7 @@ bool MechanismControl::spawnController(const std::string& name)
   if (c_node.getParam("type", type))
   {
     ROS_DEBUG("Constructing controller '%s' of type '%s'", name.c_str(), type.c_str());
-    c = controller_loader_.createPluginInstance(type, true);
+    c = controller_loader_.createClassInstance(type, true);
   }
 
   // checks if controller was constructed
@@ -591,7 +591,7 @@ bool MechanismControl::listControllerTypesSrv(
 {
   (void) req;
   //std::vector<std::string> types = controller::ControllerHandleFactory::Instance().RegisteredIds();
-  std::vector<std::string> types = controller_loader_.getDeclaredPlugins();
+  std::vector<std::string> types = controller_loader_.getDeclaredClasses();
 
   resp.set_types_vec(types);
   return true;

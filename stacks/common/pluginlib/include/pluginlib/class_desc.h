@@ -34,41 +34,40 @@
 *
 * Author: Eitan Marder-Eppstein
 *********************************************************************/
-#ifndef PLUGINLIB_PLUGIN_H_
-#define PLUGINLIB_PLUGIN_H_
+#ifndef PLUGINLIB_CLASS_DESC_H_
+#define PLUGINLIB_CLASS_DESC_H_
 namespace pluginlib {
   /**
-   * @class Plugin
-   * @brief Storage for information about a given plugin
+   * @class ClassDesc
+   * @brief Storage for information about a given class
    */
-  class Plugin
+  class ClassDesc
   {
     public:
       /**
-       * @brief  Constructor for a Plugin
-       * @param name The name of the plugin 
-       * @param class_name The name of the derived class of the plugin
-       * @param type The type of the plugin, corresponds to the type of the base class
-       * @param package The package the plugin lives in
-       * @param description A description for the plugin
-       * @param library_path The path to the containing library for the plugin
+       * @brief  Constructor for a ClassDesc
+       * @param lookup_name The lookup name of the class 
+       * @param derived_class The type of the derived class of the class
+       * @param base_class The type of the class, corresponds to the type of the base class
+       * @param package The package the class lives in
+       * @param description A description for the class
+       * @param library_path The path to the containing library for the class
        */
-      Plugin(const std::string& name, const std::string& class_name, const std::string& type, const std::string& package, 
+      ClassDesc(const std::string& lookup_name, const std::string& derived_class, const std::string& base_class, const std::string& package, 
           const std::string& description, const std::string& library_path):
-        name_(name), 
-        class_name_(class_name),
-        type_(type),
+        lookup_name_(lookup_name), 
+        derived_class_(derived_class),
+        base_class_(base_class),
         package_(package),
         description_(description), 
         library_path_ (library_path){};
 
-      std::string name_;
-      std::string class_name_;
-      std::string type_;
+      std::string lookup_name_;
+      std::string derived_class_;
+      std::string base_class_;
       std::string package_;
       std::string description_;
       std::string library_path_;
-
   };
 };
 #endif

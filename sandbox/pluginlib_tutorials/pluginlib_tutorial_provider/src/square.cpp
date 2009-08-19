@@ -27,7 +27,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "square.h"
+#include "pluginlib_tutorial_provider/square.h"
 
 #include <cmath>
 

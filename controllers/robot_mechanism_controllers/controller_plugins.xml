@@ -1,20 +1,20 @@
 <library path="lib/librobot_mechanism_controllers">
-  <plugin name="JointEffortController" class="JointEffortController" type="Controller" />
+  <class name="JointEffortController" type="JointEffortController" base_class_type="Controller" />
 
-  <plugin name="JointVelocityController" class="JointVelocityController" type="Controller" />
-  <plugin name="JointPositionController" class="JointPositionController" type="Controller" />
+  <class name="JointVelocityController" type="JointVelocityController" base_class_type="Controller" />
+  <class name="JointPositionController" type="JointPositionController" base_class_type="Controller" />
 
-  <plugin name="CartesianWrenchController" class="CartesianWrenchController" type="Controller" />
-  <plugin name="CartesianTwistController" class="CartesianTwistController" type="Controller" />
-  <plugin name="CartesianPoseController" class="CartesianPoseController" type="Controller" />
+  <class name="CartesianWrenchController" type="CartesianWrenchController" base_class_type="Controller" />
+  <class name="CartesianTwistController" type="CartesianTwistController" base_class_type="Controller" />
+  <class name="CartesianPoseController" type="CartesianPoseController" base_class_type="Controller" />
 
-  <plugin name="JointUDCalibrationController" class="JointUDCalibrationController" type="Controller" />
+  <class name="JointUDCalibrationController" type="JointUDCalibrationController" base_class_type="Controller" />
 
-  <plugin name="CartesianTrajectoryController" class="CartesianTrajectoryController" type="Controller" />
+  <class name="CartesianTrajectoryController" type="CartesianTrajectoryController" base_class_type="Controller" />
 
-  <plugin name="TriggerController" class="TriggerController" type="Controller" />
-  <plugin name="TriggerControllerNode" class="TriggerControllerNode" type="Controller" />
+  <class name="TriggerController" type="TriggerController" type="Controller" />
+  <class name="TriggerControllerNode" type="TriggerControllerNode" base_class_type="Controller" />
 
-  <plugin name="JointPDController" class="JointPDController" type="Controller" />
-  <plugin name="JointPDControllerNode" class="JointPDControllerNode" type="Controller" />
+  <class name="JointPDController" type="JointPDController" base_class_type="Controller" />
+  <class name="JointPDControllerNode" type="JointPDControllerNode" base_class_type="Controller" />
 </library>

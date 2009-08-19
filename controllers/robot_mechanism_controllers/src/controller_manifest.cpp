@@ -27,7 +27,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "pluginlib/plugin_macros.h"
+#include "pluginlib/class_list_macros.h"
 #include "controller_interface/controller.h"
 
 #include "robot_mechanism_controllers/cartesian_pose_controller.h"
@@ -43,25 +43,22 @@
 
 using namespace controller;
 
-BEGIN_PLUGIN_LIST(Controller)
 
-REGISTER_PLUGIN(JointEffortController)
-REGISTER_PLUGIN(JointVelocityController)
-REGISTER_PLUGIN(JointPositionController)
+PLUGINLIB_REGISTER_CLASS(JointEffortController, JointEffortController, Controller)
+PLUGINLIB_REGISTER_CLASS(JointVelocityController, JointVelocityController, Controller)
+PLUGINLIB_REGISTER_CLASS(JointPositionController, JointPositionController, Controller)
 
-REGISTER_PLUGIN(CartesianWrenchController)
-REGISTER_PLUGIN(CartesianTwistController)
-REGISTER_PLUGIN(CartesianPoseController)
+PLUGINLIB_REGISTER_CLASS(CartesianWrenchController, CartesianWrenchController, Controller)
+PLUGINLIB_REGISTER_CLASS(CartesianTwistController, CartesianTwistController, Controller)
+PLUGINLIB_REGISTER_CLASS(CartesianPoseController, CartesianPoseController, Controller)
 
-REGISTER_PLUGIN(JointUDCalibrationController)
+PLUGINLIB_REGISTER_CLASS(JointUDCalibrationController, JointUDCalibrationController, Controller)
 
-REGISTER_PLUGIN(CartesianTrajectoryController)
+PLUGINLIB_REGISTER_CLASS(CartesianTrajectoryController, CartesianTrajectoryController, Controller)
 
-REGISTER_PLUGIN(TriggerController);
-REGISTER_PLUGIN(TriggerControllerNode);
+PLUGINLIB_REGISTER_CLASS(TriggerController, TriggerController, Controller)
+PLUGINLIB_REGISTER_CLASS(TriggerControllerNode, TriggerControllerNode, Controller)
 
-REGISTER_PLUGIN(JointPDController)
-REGISTER_PLUGIN(JointPDControllerNode)
-
-END_PLUGIN_LIST
+PLUGINLIB_REGISTER_CLASS(JointPDController, JointPDController, Controller)
+PLUGINLIB_REGISTER_CLASS(JointPDControllerNode, JointPDControllerNode, Controller)
 
