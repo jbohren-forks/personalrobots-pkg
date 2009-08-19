@@ -81,8 +81,6 @@
 
 #include "topic_synchronizer2/topic_synchronizer.h"
 
-#include "CvStereoCamModel.h"
-
 #include <boost/thread.hpp>
 
 #include "chamfer_matching/chamfer_matching.h"

@@ -22,17 +22,14 @@ from tabletop_objects.srv import *
 
 
 def call_service():
-
     print "Waiting for service"
     rospy.wait_for_service('table_top/find_object_poses')
-
     try:
         # create a handle to the add_two_ints service
         find_object_poses = rospy.ServiceProxy('table_top/find_object_poses', FindObjectPoses)
 
         # simplified style
         resp = find_object_poses()
-
 
 #        for p in resp.objects:
 #            print p
@@ -109,8 +106,6 @@ class MyFrame(wx.Frame):
     def onClose(self, event): # wxGlade: MyFrame.<event_handler>
         sys.exit(0)
         event.Skip()
-
-
 
     def onListSelected(self, event): # wxGlade: MyFrame.<event_handler>
         dir = str(self.dir_picker.GetPath())

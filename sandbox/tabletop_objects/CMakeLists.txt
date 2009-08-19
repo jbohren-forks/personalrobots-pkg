@@ -32,5 +32,6 @@ add_custom_target(media_files ALL DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/meshes)
 
 
 rosbuild_add_executable(tabletop_detector src/tabletop_detector.cpp) 
-rosbuild_add_executable(model_fitter src/model_fitter.cpp src/ply.c)
+rosbuild_add_executable(model_fitter src/model_fitter.cpp src/ply.c src/mesh_loader.cpp)
+rosbuild_add_executable(publish_scene src/publish_scene.cpp)
 rosbuild_link_boost(model_fitter filesystem)

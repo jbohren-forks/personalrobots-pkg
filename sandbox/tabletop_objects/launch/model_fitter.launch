@@ -1,7 +1,7 @@
 
 <launch>
     <node pkg="tabletop_objects" name="tabletop_detector" type="tabletop_detector" respawn="true" output="screen">
-        <remap from="stereo" to="narrow_stereo" />
+        <!--remap from="stereo" to="narrow_stereo" /-->
         <param name="display" type="bool" value="false" />
         <param name="target_frame" value="base_link" />
     </node>
