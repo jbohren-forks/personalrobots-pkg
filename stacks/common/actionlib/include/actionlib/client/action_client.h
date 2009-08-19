@@ -38,6 +38,7 @@
 #include <boost/thread/condition.hpp>
 
 #include "ros/ros.h"
+#include "ros/callback_queue_interface.h"
 #include "actionlib/client/client_helpers.h"
 
 namespace actionlib
@@ -69,10 +70,12 @@ public:
    *
    * Constructs an ActionClient and sets up the necessary ros topics for the ActionInterface
    * \param name The action name. Defines the namespace in which the action communicates
+   * \param queue CallbackQueue from which this action will process messages.
+   *              The default (NULL) is to use the global queue
    */
-  ActionClient(const std::string& name) : n_(name)
+  ActionClient(const std::string& name, ros::CallbackQueueInterface* queue = NULL) : n_(name)
   {
-    initClient();
+    initClient(queue);
   }
 
   /**
@@ -82,10 +85,12 @@ public:
    * and namespaces them according the a specified NodeHandle
    * \param n The node handle on top of which we want to namespace our action
    * \param name The action name. Defines the namespace in which the action communicates
+   * \param queue CallbackQueue from which this action will process messages.
+   *              The default (NULL) is to use the global queue
    */
-  ActionClient(const ros::NodeHandle& n, const std::string& name) : n_(n, name)
+  ActionClient(const ros::NodeHandle& n, const std::string& name, ros::CallbackQueueInterface* queue = NULL) : n_(n, name)
   {
-    initClient();
+    initClient(queue);
   }
 
   /**
@@ -196,7 +201,7 @@ private:
     cancel_pub_.publish(cancel_msg);
   }
 
-  void initClient()
+  void initClient(ros::CallbackQueueInterface* queue)
   {
     // Start publishers and subscribers
     server_connected_ = false;
@@ -205,9 +210,19 @@ private:
     manager_.registerSendGoalFunc(boost::bind(&ActionClientT::sendGoalFunc, this, _1));
     manager_.registerCancelFunc(boost::bind(&ActionClientT::sendCancelFunc, this, _1));
 
-    status_sub_   = n_.subscribe("status",   1, &ActionClientT::statusCb, this);
-    feedback_sub_ = n_.subscribe("feedback", 1, &ActionClientT::feedbackCb, this);
-    result_sub_   = n_.subscribe("result",   1, &ActionClientT::resultCb, this);
+    status_sub_   = queue_subscribe("status",   1, &ActionClientT::statusCb,   this, queue);
+    feedback_sub_ = queue_subscribe("feedback", 1, &ActionClientT::feedbackCb, this, queue);
+    result_sub_   = queue_subscribe("result",   1, &ActionClientT::resultCb,   this, queue);
+  }
+
+  template<class M, class T>
+  ros::Subscriber queue_subscribe(const std::string& topic, uint32_t queue_size, void(T::*fp)(const boost::shared_ptr<M const>&), T* obj, ros::CallbackQueueInterface* queue)
+  {
+    ros::SubscribeOptions ops;
+    ops.init<M>(topic, queue_size, boost::bind(fp, obj, _1));
+    ops.transport_hints = ros::TransportHints();
+    ops.callback_queue = queue;
+    return n_.subscribe(ops);
   }
 
   void statusCb(const GoalStatusArrayConstPtr& status_array)

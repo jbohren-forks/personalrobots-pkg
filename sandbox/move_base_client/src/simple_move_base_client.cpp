@@ -60,10 +60,10 @@ void feedbackCallback(const MoveBaseFeedbackConstPtr& fb)
   ROS_INFO("Got Feedback!");
 }
 
-void spinThread()
+/*void spinThread()
 {
   ros::spin();
-}
+}*/
 
 int main(int argc, char** argv)
 {
@@ -71,9 +71,9 @@ int main(int argc, char** argv)
 
   ros::NodeHandle n;
 
-  boost::thread spinthread = boost::thread(boost::bind(&spinThread)) ;
+  //boost::thread spinthread = boost::thread(boost::bind(&spinThread)) ;
 
-  MoveBaseClient ac("move_base");
+  MoveBaseClient ac("move_base", true);
 
   sleep(2.0);
 
