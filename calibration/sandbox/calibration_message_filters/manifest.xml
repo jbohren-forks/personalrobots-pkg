@@ -3,10 +3,14 @@
   <author>Vijay Pradeep (vpradeep@willowgarage.com)</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
+
+  <!-- ROS -->
   <depend package="roscpp" />
   <depend package="message_filters" />
+
+  <!-- mechanism -->
   <depend package="mechanism_msgs" />
-  
+
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lcalibration_message_filters" />
   </export>

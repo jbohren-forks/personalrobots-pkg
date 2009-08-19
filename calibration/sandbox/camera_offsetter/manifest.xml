@@ -7,11 +7,16 @@
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/camera_offsetter</url>
 
+  <!-- ROS -->
+  <depend package="roscpp" />
+
+  <!-- geometry -->
   <depend package="tf" />
+
+  <!-- common_msgs -->
   <depend package="geometry_msgs" />
   <depend package="sensor_msgs" />
-  <depend package="roscpp" />
-  <depend package="stereo_msgs" />  
+
+  <!-- stereo -->
+  <depend package="stereo_msgs" />
 </package>
-
-

@@ -7,19 +7,33 @@
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/calibration_msgs</url>
 
+  <!-- ROS -->
   <depend package="std_msgs" />
+  <depend package="message_filters" />
+
+  <!-- common_msgs -->
   <depend package="sensor_msgs" />
+
+  <!-- calibration -->
   <depend package="calibration_msgs" />
+
+  <!-- common -->
+  <depend package="actionlib" />
+
+  <!-- mechanism -->
+  <depend package="mechanism_msgs" />
+
+  <!-- calibration -->
+  <depend package="calibration_msgs" />
+  <depend package="calibration_message_filters" />
+
+  <!-- *********** Stackless *********** -->
   <depend package="pr2_msgs" />
 
-  <depend package="robot_actions" />
-  <depend package="actionlib" />
+  <!-- Should be removed -->
   <depend package="move_arm" />
-  <depend package="message_filters" />
-  <depend package="calibration_msgs" />
-  <depend package="mechanism_msgs" />
-  <depend package="calibration_message_filters" />
-    
+  <depend package="robot_actions" />
+
   <export>
     <cpp cflags="-I${prefix}/msg/cpp" />
   </export>
