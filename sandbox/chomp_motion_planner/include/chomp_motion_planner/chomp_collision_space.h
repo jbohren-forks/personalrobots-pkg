@@ -99,6 +99,10 @@ private:
 
   double max_expansion_;
   double resolution_;
+  double field_bias_x_;
+  double field_bias_y_;
+  double field_bias_z_;
+
   void initCollisionCuboids();
   void addCollisionCuboid(const std::string param_name);
 };
@@ -129,6 +133,10 @@ bool ChompCollisionSpace::getCollisionPointPotentialGradient(const ChompCollisio
   double field_distance = getDistanceGradient(
       collision_point_pos(0), collision_point_pos(1), collision_point_pos(2),
       field_gradient(0), field_gradient(1), field_gradient(2));
+
+  field_gradient(0) += field_bias_x_;
+  field_gradient(1) += field_bias_y_;
+  field_gradient(2) += field_bias_z_;
 
   double d = field_distance - collision_point.getRadius();
 

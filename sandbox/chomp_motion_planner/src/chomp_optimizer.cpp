@@ -180,7 +180,8 @@ void ChompOptimizer::optimize()
     calculateCollisionIncrements();
     calculateTotalIncrements();
 
-    if (!parameters_->getAddRandomness())
+      addIncrementsToTrajectory();
+/*    if (!parameters_->getAddRandomness())
     {
       // non-stochastic version:
       addIncrementsToTrajectory();
@@ -193,18 +194,18 @@ void ChompOptimizer::optimize()
       updatePositionFromMomentum();
       stochasticity_factor_ *= parameters_->getHmcAnnealingFactor();
     }
-
+*/
     handleJointLimits();
     updateFullTrajectory();
     if (iteration_%10==0)
-    ROS_INFO("Trajectory cost: %f", getTrajectoryCost());
+    ROS_INFO("Trajectory cost: %f (s=%f, c=%f)", getTrajectoryCost(), getSmoothnessCost(), getCollisionCost());
     if (collision_free_iteration_ >= parameters_->getMaxIterationsAfterCollisionFree())
     {
       iteration_++;
       break;
     }
 
-/*    if (!is_collision_free_ && parameters_->getAddRandomness())
+    if (!is_collision_free_ && parameters_->getAddRandomness())
     {
       performForwardKinematics();
       double original_cost = getTrajectoryCost();
@@ -226,7 +227,7 @@ void ChompOptimizer::optimize()
       }
 
     }
-*/
+
     if (parameters_->getAnimatePath() && iteration_%10 == 0)
     {
       ROS_INFO("Animating iteration %d", iteration_);
@@ -236,7 +237,7 @@ void ChompOptimizer::optimize()
   }
   group_trajectory_.getTrajectory() = best_group_trajectory_;
   updateFullTrajectory();
-  ROS_INFO("Terminated after %d iterations", iteration_);
+  ROS_INFO("Terminated after %d iterations, using path from iteration %d", iteration_, last_improvement_iteration_);
   ROS_INFO("Optimization core finished in %f sec", (ros::WallTime::now() - start_time).toSec());
 
   collision_space_->unlock();
@@ -284,7 +285,8 @@ void ChompOptimizer::calculateCollisionIncrements()
       normalized_velocity = collision_point_vel_eigen_[i][j] / vel_mag;
       orthogonal_projector = Matrix3d::Identity() - (normalized_velocity * normalized_velocity.transpose());
       curvature_vector = (orthogonal_projector * collision_point_acc_eigen_[i][j]) / vel_mag_sq;
-      cartesian_gradient = planning_group_->collision_points_[j].getVolume() *
+      //cartesian_gradient = planning_group_->collision_points_[j].getVolume() *
+      cartesian_gradient =
           vel_mag*(orthogonal_projector*potential_gradient - potential*curvature_vector);
 
       // pass it through the jacobian transpose to get the increments
@@ -577,6 +579,9 @@ void ChompOptimizer::perturbTrajectory()
 
 void ChompOptimizer::getRandomMomentum()
 {
+  if (is_collision_free_)
+    random_momentum_.setZero(num_vars_free_, num_joints_);
+  else
   for (int i=0; i<num_joints_; ++i)
   {
     multivariate_gaussian_[i].sample(random_joint_momentum_);

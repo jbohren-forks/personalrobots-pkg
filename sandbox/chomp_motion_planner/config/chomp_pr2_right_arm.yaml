@@ -19,6 +19,15 @@ collision_links:
     link_radius: 0.07
     link_clearance: 0.08
 
+joint_costs:
+  r_shoulder_pan_joint: 1.0
+  r_shoulder_lift_joint: 1.0
+  r_upper_arm_roll_joint: 0.7
+  r_elbow_flex_joint: 0.5
+  r_forearm_roll_joint: 0.5
+  r_wrist_flex_joint: 0.2
+  r_wrist_roll_joint: 0.2
+
 reference_frame: base_link
 
 collision_space:
@@ -29,11 +38,14 @@ collision_space:
   origin_y: -1.5
   origin_z: -0.3
   resolution: 0.01
+  field_bias_x: 0.3
+  field_bias_y: 0.0
+  field_bias_z: 0.0
   cuboids:
     cuboid1:
       size_x: 0.6
       size_y: 0.6
-      size_z: 0.3
+      size_z: 0.25
       origin_x: -0.3
       origin_y: -0.3
       origin_z: 0.0
