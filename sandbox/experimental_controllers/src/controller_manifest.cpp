@@ -27,7 +27,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "pluginlib/plugin_macros.h"
+#include "pluginlib/class_list_macros.h"
 #include "controller_interface/controller.h"
 
 #include "experimental_controllers/joint_trajectory_controller2.h"
@@ -58,40 +58,37 @@
 
 using namespace controller;
 
-BEGIN_PLUGIN_LIST(Controller)
 
-REGISTER_PLUGIN(JointTrajectoryController2)
-REGISTER_PLUGIN(PIDPositionVelocityController)
-//REGISTER_PLUGIN(PlugController)
-//REGISTER_PLUGIN(PlugControllerNode)
-REGISTER_PLUGIN(TrajectoryController)
+PLUGINLIB_REGISTER_CLASS(JointTrajectoryController2, JointTrajectoryController2, Controller)
+PLUGINLIB_REGISTER_CLASS(PIDPositionVelocityController, PIDPositionVelocityController, Controller)
+//PLUGINLIB_REGISTER_CLASS(PlugController, PlugController, Controller)
+//PLUGINLIB_REGISTER_CLASS(PlugControllerNode, PlugControllerNode, Controller)
+PLUGINLIB_REGISTER_CLASS(TrajectoryController, TrajectoryController, Controller)
 
-REGISTER_PLUGIN(DynamicLoaderController)
+PLUGINLIB_REGISTER_CLASS(DynamicLoaderController, DynamicLoaderController, Controller)
 
-REGISTER_PLUGIN(Probe)
-REGISTER_PLUGIN(CartesianTFFController)
-REGISTER_PLUGIN(CartesianHybridController)
-REGISTER_PLUGIN(CartesianHybridControllerNode)
-//REGISTER_PLUGIN(EndeffectorConstraintController)
-//REGISTER_PLUGIN(EndeffectorConstraintControllerNode)
-REGISTER_PLUGIN(JointChainConstraintControllerNode)
-REGISTER_PLUGIN(JointInverseDynamicsController);
-REGISTER_PLUGIN(JointPositionSmoothController)
-REGISTER_PLUGIN(JointPositionSmoothControllerNode)
+PLUGINLIB_REGISTER_CLASS(Probe, Probe, Controller)
+PLUGINLIB_REGISTER_CLASS(CartesianTFFController, CartesianTFFController, Controller)
+PLUGINLIB_REGISTER_CLASS(CartesianHybridController, CartesianHybridController, Controller)
+PLUGINLIB_REGISTER_CLASS(CartesianHybridControllerNode, CartesianHybridControllerNode, Controller)
+//PLUGINLIB_REGISTER_CLASS(EndeffectorConstraintController, EndeffectorConstraintController, Controller)
+//PLUGINLIB_REGISTER_CLASS(EndeffectorConstraintControllerNode, EndeffectorConstraintControllerNode, Controller)
+PLUGINLIB_REGISTER_CLASS(JointChainConstraintControllerNode, JointChainConstraintControllerNode, Controller)
+PLUGINLIB_REGISTER_CLASS(JointInverseDynamicsController, JointInverseDynamicsController, Controller);
+PLUGINLIB_REGISTER_CLASS(JointPositionSmoothController, JointPositionSmoothController, Controller)
+PLUGINLIB_REGISTER_CLASS(JointPositionSmoothControllerNode, JointPositionSmoothControllerNode, Controller)
 
-REGISTER_PLUGIN(JointAutotuner)
-REGISTER_PLUGIN(JointAutotunerNode)
-REGISTER_PLUGIN(JointBlindCalibrationController)
-REGISTER_PLUGIN(JointBlindCalibrationControllerNode)
-REGISTER_PLUGIN(JointCalibrationControllerNode)
-REGISTER_PLUGIN(JointChainSineController)
-REGISTER_PLUGIN(JointLimitCalibrationControllerNode)
-REGISTER_PLUGIN(CartesianTwistControllerIk)
+PLUGINLIB_REGISTER_CLASS(JointAutotuner, JointAutotuner, Controller)
+PLUGINLIB_REGISTER_CLASS(JointAutotunerNode, JointAutotunerNode, Controller)
+PLUGINLIB_REGISTER_CLASS(JointBlindCalibrationController, JointBlindCalibrationController, Controller)
+PLUGINLIB_REGISTER_CLASS(JointBlindCalibrationControllerNode,JointBlindCalibrationControllerNode, Controller)
+PLUGINLIB_REGISTER_CLASS(JointCalibrationControllerNode,JointCalibrationControllerNode, Controller)
+PLUGINLIB_REGISTER_CLASS(JointChainSineController,JointChainSineController, Controller)
+PLUGINLIB_REGISTER_CLASS(JointLimitCalibrationControllerNode,JointLimitCalibrationControllerNode, Controller)
+PLUGINLIB_REGISTER_CLASS(CartesianTwistControllerIk,CartesianTwistControllerIk, Controller)
 
-REGISTER_PLUGIN(HeadServoingController)
-REGISTER_PLUGIN(JointTrajectoryController)
-REGISTER_PLUGIN(ArmTrajectoryControllerNode)
+PLUGINLIB_REGISTER_CLASS(HeadServoingController, HeadServoingController, Controller)
+PLUGINLIB_REGISTER_CLASS(JointTrajectoryController,JointTrajectoryController, Controller)
+PLUGINLIB_REGISTER_CLASS(ArmTrajectoryControllerNode,ArmTrajectoryControllerNode, Controller)
 
-
-END_PLUGIN_LIST
 
