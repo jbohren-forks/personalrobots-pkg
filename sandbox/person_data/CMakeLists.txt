@@ -29,6 +29,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #rospack_add_executable(example examples/example.cpp)
 #target_link_libraries(example ${PROJECT_NAME})
 
+rospack_add_executable(stereo_view src/stereo_view.cpp)
 rospack_add_executable(talker src/talker.cpp)
 rospack_add_executable(debugger src/debugger.cpp)
 rospack_add_executable(joylistener src/joylistener.cpp)

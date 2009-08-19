@@ -10,7 +10,7 @@
     <param name="do_calc_points" type="bool" value="True"/>
   </node>
   </group>
-  <node pkg="stereo_view" output="screen" type="stereo_view" respawn="false">
+  <node pkg="person_data" output="screen" type="stereo_view" respawn="false">
     
   </node>
     

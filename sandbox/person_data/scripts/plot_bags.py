@@ -32,7 +32,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 #Author: Ian Goodfellow
-PKG = 'ia3n_person_detection'
+PKG = 'person_data'
 import roslib; roslib.load_manifest(PKG)
 import rospy
 import rosrecord

@@ -82,14 +82,6 @@ print args
 print "Corresponding topics to listen to:"
 print topics
 
-"""
-for i in range(0,len(rosplayArgs)):
-	print "Running rosplay "+rosplayArgs[i]+" and listening to "+topics[i]
-	command = "export PBARGS=\""+ rosplayArgs[i]+"\";"
-	command += "export PBTOPIC="+topics[i] + ";"
-	command += "roslaunch `rospack find ia3n_person_detection`/stereo_playback.launch"
-	os.popen(command)
-"""
 
 of = open("/tmp/multiview.launch","w")
 of.writelines([
@@ -110,7 +102,7 @@ for i in range(0,len(topics)):
 			"\t\t\t<param name=\"do_calc_points\" type=\"bool\" value=\"True\"/>\n",	
 		"\t\t</node>\n",
 		"\t</group>\n",
-		"\t<node pkg=\"ia3n_person_detection\" type=\"stereo_view\" name=\"multiplay_stereo_view"+str(i)+"\" output=\"screen\" respawn=\"false\" >\n",
+		"\t<node pkg=\"person_data\" type=\"stereo_view\" name=\"multiplay_stereo_view"+str(i)+"\" output=\"screen\" respawn=\"false\" >\n",
 			"\t\t<remap to=\"/"+namespace+"/right/image_rect_color\" from=\"/stereo/right/image_rect_color\" />\n",
 			"\t\t<remap to=\"/"+namespace+"/left/image_rect_color\" from=\"/stereo/left/image_rect_color\" />\n",
 			"\t\t<remap to=\"/"+namespace+"/right/image_rect\" from=\"/stereo/right/image_rect\" />\n",
