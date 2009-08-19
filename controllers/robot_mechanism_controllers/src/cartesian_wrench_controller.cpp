@@ -44,8 +44,7 @@ ROS_REGISTER_CONTROLLER(CartesianWrenchController)
 
 CartesianWrenchController::CartesianWrenchController()
 : robot_state_(NULL),
-  jnt_to_jac_solver_(NULL),
-  diagnostics_publisher_(node_, "/diagnostics", 2)
+  jnt_to_jac_solver_(NULL)
 {}
 
 
@@ -114,19 +113,6 @@ bool CartesianWrenchController::init(mechanism::RobotState *robot, const ros::No
   jnt_eff_.resize(kdl_chain_.getNrOfJoints());
   jacobian_.resize(kdl_chain_.getNrOfJoints());
 
-  // diagnostics messages
-  diagnostics_.status.resize(1);
-  diagnostics_.status[0].name  = "Wrench Controller";
-  diagnostics_.status[0].values.resize(2);
-  diagnostics_.status[0].values[0].value = "3";
-  diagnostics_.status[0].values[0].key = "TestValueLabel";
-
-  diagnostics_.status[0].values[1].value = "TestValue";
-  diagnostics_.status[0].values[1].key = "TestLabel";
-
-  diagnostics_time_ = ros::Time::now();
-  diagnostics_interval_ = ros::Duration().fromSec(1.0);
-
 
   // subscribe to wrench commands
   sub_command_ = node_.subscribe<geometry_msgs::Wrench>
@@ -149,10 +135,8 @@ void CartesianWrenchController::update()
 {
   // check if joints are calibrated
   if (!chain_.allCalibrated(robot_state_->joint_states_)){
-    publishDiagnostics(2, "Not all joints are calibrated");
     return;
   }
-  publishDiagnostics(0, "No problems detected");
 
   // get joint positions
   chain_.getPositions(robot_state_->joint_states_, jnt_pos_);
@@ -178,26 +162,6 @@ void CartesianWrenchController::update()
 
   // set effort to joints
   chain_.setEfforts(jnt_eff_, robot_state_->joint_states_);
-}
-
-
-
-bool CartesianWrenchController::publishDiagnostics(int level, const std::string& message)
-{
-  if (diagnostics_time_ + diagnostics_interval_ < ros::Time::now())
-  {
-    if (!diagnostics_publisher_.trylock())
-      return false;
-
-    diagnostics_.status[0].level = level;
-    diagnostics_.status[0].message  = message;
-
-    diagnostics_publisher_.unlockAndPublish();
-    diagnostics_time_ = ros::Time::now();
-    return true;
-  }
-
-  return false;
 }
 
 
