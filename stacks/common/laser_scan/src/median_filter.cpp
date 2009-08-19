@@ -10,8 +10,6 @@ LaserMedianFilter::LaserMedianFilter():
 
 bool LaserMedianFilter::configure()
 {
-  ROS_ASSERT(this->number_of_channels_ == 1);
-
   TiXmlNode * child_node = this->raw_xml_.get()->FirstChild("filters");
   if (!child_node)
   {
