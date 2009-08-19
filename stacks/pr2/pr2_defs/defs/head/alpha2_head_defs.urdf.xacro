@@ -38,7 +38,7 @@
       <visual name="${name}_visual">
         <origin xyz="0 0 0.0" rpy="0 0 0 " />
         <geometry name="${name}_visual_geom">
-          <mesh filename="$(find pr2_defs)/meshes/head_pan.stl" />
+          <mesh filename="package://pr2_defs/meshes/head_pan.stl" />
         </geometry>
         
         <material name="Blue" />
@@ -83,7 +83,7 @@
       <visual name="${name}_visual">
         <origin xyz="0 0 0" rpy="0.0 0.0 0.0 " />
         <geometry name="${name}_visual_geom">
-          <mesh filename="$(find pr2_defs)/meshes/head_tilt.stl" />
+          <mesh filename="package://pr2_defs/meshes/head_tilt.stl" />
         </geometry>
         
         <material name="Green" />
@@ -127,7 +127,7 @@
       <visual name="${name}_visual">
         <origin xyz="0 0 0" rpy="0.0 0.0 0.0" />
         <geometry name="${name}_visual_geom">
-          <mesh filename="$(find pr2_defs)/meshes/head_tilt.stl" />
+          <mesh filename="package://pr2_defs/meshes/head_tilt.stl" />
         </geometry>
         
         <material name="Green" />
@@ -171,7 +171,7 @@
       <visual name="${name}_visual">
         <origin xyz="0 0 0" rpy="0.0 0.0 0.0 " />
         <geometry name="${name}_visual_geom">
-          <mesh filename="$(find pr2_defs)/meshes/head_tilt.stl" />
+          <mesh filename="package://pr2_defs/meshes/head_tilt.stl" />
         </geometry>
         
         <material name="Green" />

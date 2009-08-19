@@ -26,15 +26,15 @@
   </material>
   
   <material name="Caster_l">
-    <texture filename="$(find pr2_ogre)/Media/materials/textures/pr2_wheel_left.png" />
+    <texture filename="package://pr2_ogre/Media/materials/textures/pr2_wheel_left.png" />
   </material>
   
   <material name="Caster_r">
-    <texture filename="$(find pr2_ogre)/Media/materials/textures/pr2_wheel_right.png" />
+    <texture filename="package://pr2_ogre/Media/materials/textures/pr2_wheel_right.png" />
   </material>
 
   <material name="RollLinks">
-    <texture filename="$(find pr2_ogre)/Media/materials/textures/pr2_wheel_left.png" />
+    <texture filename="package://pr2_ogre/Media/materials/textures/pr2_wheel_left.png" />
   </material>
 
 </robot>

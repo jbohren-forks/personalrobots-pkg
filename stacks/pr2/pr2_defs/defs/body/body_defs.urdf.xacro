@@ -34,7 +34,7 @@
       <visual name="${name}_visual">
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${name}_visual_geom">
-          <mesh filename="$(find pr2_defs)/meshes/torso.stl" />
+          <mesh filename="package://pr2_defs/meshes/torso.stl" />
         </geometry>
         
         <material name="Grey2" />
