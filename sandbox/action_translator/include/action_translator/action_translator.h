@@ -68,17 +68,27 @@ public:
   ActionTranslator(const std::string& new_action_name,
                    FromOldGoalFunc from_old_goal_func,
                    FromActionFeedbackFunc from_action_feedback_func = FromActionFeedbackFunc(),
-                   FromActionResultFunc from_action_result_func     = FromActionResultFunc(),
-                   const std::string& old_action_name = std::string(new_action_name + "_old")) :
+                   FromActionResultFunc from_action_result_func     = FromActionResultFunc()):
+    robot_actions::Action<OldGoal, OldFeedback>(new_action_name + "_old"),
+    ac_(new_action_name),
+    from_old_goal_func_(from_old_goal_func),
+    from_action_feedback_func_(from_action_feedback_func),
+    from_action_result_func_(from_action_result_func)
+  {
+  };
+
+  ActionTranslator(const std::string& new_action_name,
+                   const std::string& old_action_name,
+                   FromOldGoalFunc from_old_goal_func,
+                   FromActionFeedbackFunc from_action_feedback_func = FromActionFeedbackFunc(),
+                   FromActionResultFunc from_action_result_func     = FromActionResultFunc()):
     robot_actions::Action<OldGoal, OldFeedback>(old_action_name),
     ac_(new_action_name),
     from_old_goal_func_(from_old_goal_func),
     from_action_feedback_func_(from_action_feedback_func),
     from_action_result_func_(from_action_result_func)
   {
-
-
-  }
+  };
 
   /**
    * \brief Blocking call to actionlib with a goal request
