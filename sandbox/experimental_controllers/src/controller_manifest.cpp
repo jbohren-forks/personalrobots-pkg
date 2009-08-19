@@ -30,7 +30,6 @@
 #include "pluginlib/class_list_macros.h"
 #include "controller_interface/controller.h"
 
-#include "experimental_controllers/joint_trajectory_controller2.h"
 #include "experimental_controllers/pid_position_velocity_controller.h"
 //#include "experimental_controllers/plug_controller.h"
 #include "experimental_controllers/trajectory_controller.h"
@@ -59,7 +58,6 @@
 using namespace controller;
 
 
-PLUGINLIB_REGISTER_CLASS(JointTrajectoryController2, JointTrajectoryController2, Controller)
 PLUGINLIB_REGISTER_CLASS(PIDPositionVelocityController, PIDPositionVelocityController, Controller)
 //PLUGINLIB_REGISTER_CLASS(PlugController, PlugController, Controller)
 //PLUGINLIB_REGISTER_CLASS(PlugControllerNode, PlugControllerNode, Controller)

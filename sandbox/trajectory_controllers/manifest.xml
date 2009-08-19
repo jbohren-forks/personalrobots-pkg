@@ -1,0 +1,23 @@
+<package>
+  <description brief="trajectory_controllers">
+
+     trajectory_controllers
+
+  </description>
+  <author>Stuart Glaser</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/trajectory_controllers</url>
+
+  <depend package="controller_interface" />
+  <depend package="pluginlib" />
+  <depend package="robot_mechanism_controllers" />
+
+  <export>
+    <cpp cflags="-I${prefix}/include -I${prefix}/msg/cpp -I${prefix}/srv/cpp"
+	 lflags="-Wl,-rpath,${prefix}/lib/ -L${prefix}/lib -ltrajectory_controllers" />
+   <controller_interface plugin="${prefix}/controller_plugins.xml" />
+  </export>
+</package>
+
+

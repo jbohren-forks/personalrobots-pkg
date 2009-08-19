@@ -31,9 +31,12 @@
  * Author: Stuart Glaser
  */
 
-#include <experimental_controllers/joint_trajectory_controller2.h>
+#include <trajectory_controllers/joint_trajectory_controller2.h>
 #include <sstream>
 #include <angles/angles.h>
+#include "pluginlib/class_list_macros.h"
+
+PLUGINLIB_REGISTER_CLASS(JointTrajectoryController2, controller::JointTrajectoryController2, controller::Controller)
 
 namespace controller {
 
@@ -121,7 +124,6 @@ bool JointTrajectoryController2::starting()
 
 void JointTrajectoryController2::update()
 {
-
   // Checks if all the joints are calibrated.
 
   double time = robot_->hw_->current_time_;
