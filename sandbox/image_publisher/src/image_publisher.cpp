@@ -34,6 +34,8 @@
 
 #include <image_publisher/image_publisher.h>
 
+#include <sensor_msgs/image_encodings.h>
+
 #include <opencv/cvwimage.h>
 #include <opencv/highgui.h>
 
@@ -93,22 +95,24 @@ void ImagePublisher::publish(const sensor_msgs::Image& message) const
   if (thumb_subscribers == 0 && compressed_subscribers == 0)
     return;
 
-  // XXX JCB - make special case path for mono images
-  if (!cv_bridge_.fromImage(message, "rgb8")) {
-    ROS_ERROR("Could not convert image");
+  // @todo: this probably misses some cases
+  if (cv_bridge_.encoding_as_fmt(message.encoding) == "GRAY") {
+    if (!cv_bridge_.fromImage(message, sensor_msgs::image_encodings::MONO8)) {
+      ROS_ERROR("Could not convert image from %s to mono8", message.encoding.c_str());
+      return;
+    }
+  }
+  else if (!cv_bridge_.fromImage(message, sensor_msgs::image_encodings::RGB8)) {
+    ROS_ERROR("Could not convert image from %s to rgb8", message.encoding.c_str());
     return;
   }
   
   if (thumb_subscribers > 0) {
-    sensor_msgs::Image thumbnail;
-    thumbnail.header = message.header;
-    publishThumbnailImage(thumbnail);
+    publishThumbnailImage(message);
   }
 
   if (compressed_subscribers > 0) {
-    sensor_msgs::CompressedImage compressed;
-    compressed.header = message.header;
-    publishCompressedImage(compressed);
+    publishCompressedImage(message);
   }
 }
 
@@ -124,8 +128,11 @@ void ImagePublisher::shutdown()
   compressed_pub_.shutdown();
 }
 
-void ImagePublisher::publishThumbnailImage(sensor_msgs::Image& thumbnail) const
+void ImagePublisher::publishThumbnailImage(const sensor_msgs::Image& message) const
 {
+  sensor_msgs::Image thumbnail;
+  thumbnail.header = message.header;
+  
   // Update settings from parameter server
   int thumbnail_size = 128;
   node_handle_.getParam("thumbnail_size", thumbnail_size, true);
@@ -143,14 +150,18 @@ void ImagePublisher::publishThumbnailImage(sensor_msgs::Image& thumbnail) const
 
   // Set up message and publish
   if (sensor_msgs::CvBridge::fromIpltoRosImage(buffer.Ipl(), thumbnail)) {
+    thumbnail.encoding = message.encoding; // otherwise RGB8->TYPE_8UC1, etc.
     thumbnail_pub_.publish(thumbnail);
   } else {
     ROS_ERROR("Unable to create thumbnail image message");
   }
 }
 
-void ImagePublisher::publishCompressedImage(sensor_msgs::CompressedImage& compressed) const
+void ImagePublisher::publishCompressedImage(const sensor_msgs::Image& message) const
 {
+  sensor_msgs::CompressedImage compressed;
+  compressed.header = message.header;
+  
   // Update settings from parameter server
   int params[3] = {0};
   std::string format;

@@ -4,9 +4,9 @@
        xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
        xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface">
 
-  <include filename="$(find pr2_defs)/defs/alpha2_head_rviz.xacro" />
-  <include filename="$(find pr2_defs)/defs/alpha2_head_gazebo.xacro" />
-  <include filename="$(find pr2_defs)/defs/alpha2_head_transmission.xacro" />
+  <include filename="$(find pr2_defs)/defs/head/alpha2_head_rviz.xacro" />
+  <include filename="$(find pr2_defs)/defs/head/alpha2_head_gazebo.xacro" />
+  <include filename="$(find pr2_defs)/defs/head/alpha2_head_transmission.xacro" />
 
   <property name="M_PI" value="3.1415926535897931" />
 

@@ -16,21 +16,35 @@ find_ros_package(xacro)
 find_ros_package(ivcon)
 find_ros_package(convex_decomposition)
 
-file(GLOB urdf_xacro_files ${CMAKE_CURRENT_SOURCE_DIR}/defs/*.urdf.xacro)
+set(pr2_robot_files "")
+
+#TODO: following files are needed by openrave
+# iterate through all the robot/*.xacro.xml files and generate *.mesh and *.iv files
 file(GLOB urdf_def_files ${CMAKE_CURRENT_SOURCE_DIR}/defs/*/*.xacro)
-set(pr2xacro "${CMAKE_CURRENT_SOURCE_DIR}/robots/pr2.urdf.xacro")
-set(pr2urdf  "${CMAKE_CURRENT_SOURCE_DIR}/robots/pr2.urdf")
-add_custom_command(
-  OUTPUT ${pr2urdf}
-  COMMAND ${xacro_PACKAGE_PATH}/xacro.py
-  ARGS ${pr2xacro} > ${pr2urdf}
-  DEPENDS ${pr2xacro} ${urdf_xacro_files} ${urdf_def_files})
+file(GLOB robot_urdf_files ${CMAKE_CURRENT_SOURCE_DIR}/robots/*.urdf.xacro)
+
+foreach(it ${robot_urdf_files})
+  get_filename_component(basepath ${it} PATH)
+  get_filename_component(basename ${it} NAME_WE)
+
+  message(" processing robot urdf file :",${basepath}," : ",${basename})
+
+  set(expanded_file "${basepath}/${basename}.urdf")
+  message("    produce expanded file :",${expanded_file})
+
+  add_custom_command(
+    OUTPUT ${expanded_file}
+    COMMAND ${xacro_PACKAGE_PATH}/xacro.py
+    ARGS ${it} > ${expanded_file}
+    DEPENDS ${it} ${urdf_def_files})
+
+  set(pr2_robot_files ${pr2_robot_files} ${expanded_file})
+endforeach(it)
 
 
 #TODO: following files are needed by openrave
 # iterate through all the robot/*.xacro.xml files and generate *.mesh and *.iv files
 file(GLOB robot_xacro_files ${CMAKE_CURRENT_SOURCE_DIR}/robots/*.xacro.xml)
-set(pr2_robot_files "")
 
 foreach(it ${robot_xacro_files})
   get_filename_component(basepath ${it} PATH)

@@ -3,12 +3,15 @@
        xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
        xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface">
 
-  <!--include filename="$(find pr2_defs)/defs/base_rviz.xacro" /-->
-  <include filename="$(find pr2_defs)/defs/base/alpha_base_rviz.xacro" />
-  <include filename="$(find pr2_defs)/defs/base/alpha_base_gazebo.xacro" />
-  <include filename="$(find pr2_defs)/defs/base/alpha_base_transmission.xacro" />
+  <include filename="$(find pr2_defs)/defs/base/alpha2_base_rviz.xacro" />
+  <include filename="$(find pr2_defs)/defs/base/alpha2_base_gazebo.xacro" />
+  <include filename="$(find pr2_defs)/defs/base/alpha2_base_transmission.xacro" />
 
   <property name="M_PI" value="3.1415926535897931" />
+
+  <property name="caster_offset_x" value="0.2225" />
+  <property name="caster_offset_y" value="0.2225" />
+  <property name="caster_offset_z" value="0.0282" />
 
   <property name="caster_wheel_offset_y" value="0.049" /> <!-- from function spreadsheet -->
   <property name="wheel_length" value="0.03" />  <!-- FIXME -->
@@ -17,7 +20,7 @@
   <!-- based on 090224_link_data from function engineering -->
   <property name="base_cg_x" value="-0.061" />
   <property name="base_cg_y" value="0.0" />
-  <property name="base_cg_z" value="0.293" //>
+  <property name="base_cg_z" value="0.293" />
   <property name="base_mass" value="116.0" />
 
   <!-- base appears "raised" from our initial geom def from function -->

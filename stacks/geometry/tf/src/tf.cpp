@@ -32,6 +32,8 @@
 #include "tf/tf.h"
 #include <sys/time.h>
 #include "ros/assert.h"
+#include "ros/ros.h"
+
 using namespace tf;
 
 // Must provide storage for non-integral static const class members.

@@ -19,6 +19,7 @@
   <macro name="pr2_head_tilt_alpha2_gazebo" params="name">
     <gazebo reference="${name}_link">
       <material value="PR2/Green" />
+    </gazebo>
   </macro>
 
 
