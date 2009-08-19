@@ -1,13 +1,13 @@
 <library path="lib/libpr2_mechanism_controllers">
-  <plugin name="CasterCalibrationController" class="CasterCalibrationController" type="Controller" />
-  <plugin name="CasterController" class="CasterController" type="Controller" />
-  <plugin name="CasterControllerNode" class="CasterControllerNode" type="Controller" />
-  <plugin name="GripperCalibrationController" class="GripperCalibrationController" type="Controller" />
-  <plugin name="GripperCalibrationControllerNode" class="GripperCalibrationControllerNode" type="Controller" />
-  <plugin name="HeadPositionController" class="HeadPositionController" type="Controller" />
-  <plugin name="LaserScannerTrajController" class="LaserScannerTrajController" type="Controller" />
-  <plugin name="LaserScannerTrajControllerNode" class="LaserScannerTrajControllerNode" type="Controller" />
-  <plugin name="Pr2BaseController" class="Pr2BaseController" type="Controller" />
-  <plugin name="Pr2Odometry" class="Pr2Odometry" type="Controller" />
-  <plugin name="WristCalibrationController" class="WristCalibrationController" type="Controller" />
+  <class name="CasterCalibrationController" type="CasterCalibrationController" base_class_type="Controller" />
+  <class name="CasterController" type="CasterController" base_class_type="Controller" />
+  <class name="CasterControllerNode" type="CasterControllerNode" base_class_type="Controller" />
+  <class name="GripperCalibrationController" type="GripperCalibrationController" base_class_type="Controller" />
+  <class name="GripperCalibrationControllerNode" type="GripperCalibrationControllerNode" base_class_type="Controller" />
+  <class name="HeadPositionController" type="HeadPositionController" base_class_type="Controller" />
+  <class name="LaserScannerTrajController" type="LaserScannerTrajController" base_class_type="Controller" />
+  <class name="LaserScannerTrajControllerNode" type="LaserScannerTrajControllerNode" base_class_type="Controller" />
+  <class name="Pr2BaseController" type="Pr2BaseController" base_class_type="Controller" />
+  <class name="Pr2Odometry" type="Pr2Odometry" base_class_type="Controller" />
+  <class name="WristCalibrationController" type="WristCalibrationController" base_class_type="Controller" />
 </library>
