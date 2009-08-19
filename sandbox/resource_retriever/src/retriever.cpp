@@ -69,9 +69,12 @@ MemoryResource Retriever::get(const std::string& url)
 
         if (fread(r.data.get(), 1, size, f) != size)
         {
+          fclose(f);
           ROS_ERROR("Error reading from file [%s]", file.c_str());
           return MemoryResource();
         }
+
+        fclose(f);
 
         return r;
       }
