@@ -1,7 +1,7 @@
 <library path="lib/libcarrot_planner">
-  <plugin name="CarrotPlanner" type="carrot_planner::CarrotPlanner" base_class_type="nav_core::BaseGlobalPlanner">
+  <class name="CarrotPlanner" type="carrot_planner::CarrotPlanner" base_class_type="nav_core::BaseGlobalPlanner">
     <description>
       A simple planner that seeks to place a legal carrot in-front of the robot
     </description>
-  </plugin>
+  </class>
 </library>
