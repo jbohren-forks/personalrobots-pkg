@@ -183,7 +183,7 @@ private:
 		if (texture_light_on_flag){
 			cout << "led on" << endl;
 			system("pwd");
-			system("../ros-pkg/sandbox/texture_light_on_off/led_ctrl eth2 on");
+			system("./led_ctrl eth2 on");
 			texture_light_on_flag = false;
 			image_sequence_count = 0;
 			n.setParam("/narrow_stereo/stereodcam/exposure", 
@@ -191,7 +191,7 @@ private:
 		}else{
 			cout << "led off" << endl;
 			system("pwd");
-			system("../ros-pkg/sandbox/texture_light_on_off/led_ctrl eth2 off");
+			system("./led_ctrl eth2 off");
 			texture_light_on_flag = true;
 			image_sequence_count = 0;
 			n.setParam("/narrow_stereo/stereodcam/exposure", 
