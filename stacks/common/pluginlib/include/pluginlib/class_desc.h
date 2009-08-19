@@ -54,14 +54,13 @@ namespace pluginlib {
        * @param library_path The path to the containing library for the class
        */
       ClassDesc(const std::string& lookup_name, const std::string& derived_class, const std::string& base_class, const std::string& package, 
-          const std::string& description, const std::string& library_path, const std::string& class_list):
+          const std::string& description, const std::string& library_path):
         lookup_name_(lookup_name), 
         derived_class_(derived_class),
         base_class_(base_class),
         package_(package),
         description_(description), 
-        library_path_ (library_path),
-        class_list_(class_list){};
+        library_path_ (library_path){};
 
       std::string lookup_name_;
       std::string derived_class_;
@@ -69,8 +68,6 @@ namespace pluginlib {
       std::string package_;
       std::string description_;
       std::string library_path_;
-      std::string class_list_;
-
   };
 };
 #endif

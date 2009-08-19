@@ -1,9 +1,7 @@
 <library path="lib/libnavfn">
-  <class_list name="base_global_planner" base_class="nav_core::BaseGlobalPlanner">
-    <class name="NavfnROS" derived_class="navfn::NavfnROS">
-      <description>
-        A implementation of a grid based planner using Dijkstra
-      </description>
-    </class>
-  </class_list>
+  <class name="NavfnROS" type="navfn::NavfnROS" base_class_type="nav_core::BaseGlobalPlanner">
+    <description>
+      A implementation of a grid based planner using Dijkstra
+    </description>
+  </class>
 </library>

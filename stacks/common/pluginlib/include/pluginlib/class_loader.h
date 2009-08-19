@@ -66,8 +66,9 @@ namespace pluginlib
          * @brief  Constructor for a ClassLoader
          * @param package The package containing the base class
          * @param base_class The type of the base class for classes to be loaded
+         * @param attrib_name The attribute to search for in manifext.xml files, defaults to "plugin"
          */
-        ClassLoader(std::string package, std::string base_class);
+        ClassLoader(std::string package, std::string base_class, std::string attrib_name = std::string("plugin"));
 
         /**
          * @brief  Destructor for ClassLoader 
@@ -85,7 +86,7 @@ namespace pluginlib
          * @param lookup_name The name of the class 
          * @return The name of the associated derived class
          */
-        std::string getDerivedClassType(const std::string& lookup_name);
+        std::string getClassType(const std::string& lookup_name);
 
         /**
          * @brief  Given the lookup name of a class, returns its description
@@ -117,13 +118,12 @@ namespace pluginlib
          */
         T* createClassInstance(const std::string& lookup_name, bool auto_load = true);
 
-      private:
         /**
-         * @brief  Given the name of a class, returns the path to its associated library
-         * @param lookup_name The name of the class 
-         * @return The path to the associated library
+         * @brief Checks if a given class is currently loaded
+         * @param  lookup_name The lookup name of the class to query
+         * @return True if the class is loaded, false otherwise
          */
-        std::string getClassLibraryPath(const std::string& lookup_name);
+        bool isClassLoaded(const std::string& lookup_name);
 
         /**
          * @brief  Attempts to load a class with a given name
@@ -132,13 +132,13 @@ namespace pluginlib
          */
         bool loadClass(const std::string & lookup_name);
 
+      private:
         /**
-         * @brief Checks if a given class is currently loaded
-         * @param  lookup_name The lookup name of the class to query
-         * @return True if the class is loaded, false otherwise
+         * @brief  Given the name of a class, returns the path to its associated library
+         * @param lookup_name The name of the class 
+         * @return The path to the associated library
          */
-        bool isClassLoaded(const std::string& lookup_name);
-
+        std::string getClassLibraryPath(const std::string& lookup_name);
 
         /**
          * @brief  Unloads a previously dynamically loaded lobrary

@@ -44,12 +44,12 @@
 
 namespace pluginlib {
   template <class T>
-  ClassLoader<T>::ClassLoader(std::string package, std::string base_class) : base_class_(base_class)
+  ClassLoader<T>::ClassLoader(std::string package, std::string base_class, std::string attrib_name) : base_class_(base_class)
   {
     //Pull possible files from manifests of packages which depend on this package and export class
     std::vector<std::string> paths;
 
-    ros::package::getPlugins(package, base_class, paths);
+    ros::package::getPlugins(package, attrib_name, paths);
 
     //The poco factory for base class T
     for (std::vector<std::string>::iterator it = paths.begin(); it != paths.end(); ++it)
@@ -108,31 +108,25 @@ namespace pluginlib {
         }
         fs::path full_library_path(parent / library_path);
 
-        TiXmlElement* class_list = library->FirstChildElement("class_list");
-        while(class_list){
+        TiXmlElement* class_element = library->FirstChildElement("class");
+        while (class_element)
+        {
+          std::string base_class_type = class_element->Attribute("base_class_type");
 
-          std::string list_name = class_list->Attribute("name");
-          std::string list_base_class = class_list->Attribute("base_class");
+          //make sure that this class is of the right type before registering it
+          if(base_class_type == base_class){
 
-          TiXmlElement* class_element = class_list->FirstChildElement("class");
-          while (class_element)
-          {
-            //make sure that this class is of the right type before registering it
-            if(list_base_class == base_class){
+            // register class here
+            TiXmlElement* description = class_element->FirstChildElement("description");
+            std::string description_str = description ? description->GetText() : "";
 
-              // register class here
-              TiXmlElement* description = class_element->FirstChildElement("description");
-              std::string description_str = description ? description->GetText() : "";
+            std::string lookup_name = class_element->Attribute("name");
+            std::string derived_class = class_element->Attribute("type");
 
-              std::string lookup_name = class_element->Attribute("name");
-              std::string derived_class = class_element->Attribute("derived_class");
-
-              classes_available_.insert(std::pair<std::string, ClassDesc>(lookup_name, ClassDesc(lookup_name, derived_class, list_base_class, package_name, description_str, full_library_path.string(), list_name)));
-            }
-            //step to next class_element
-            class_element = class_element->NextSiblingElement( "class" );
+            classes_available_.insert(std::pair<std::string, ClassDesc>(lookup_name, ClassDesc(lookup_name, derived_class, base_class_type, package_name, description_str, full_library_path.string())));
           }
-          class_list = class_list->NextSiblingElement("class_list");
+          //step to next class_element
+          class_element = class_element->NextSiblingElement( "class" );
         }
         library = library->NextSiblingElement( "library" );
       }
@@ -142,11 +136,10 @@ namespace pluginlib {
   template <class T>
   bool ClassLoader<T>::loadClass(const std::string & lookup_name)
   {
-    std::string library_path, list_name;
+    std::string library_path;
     ClassMapIterator it = classes_available_.find(lookup_name);
     if (it != classes_available_.end()){
       library_path = it->second.library_path_;
-      list_name = it->second.class_list_;
     }
     else
     {
@@ -157,7 +150,7 @@ namespace pluginlib {
     ROS_DEBUG("Loading library %s", library_path.c_str());
     try
     {
-      loadClassLibraryInternal(library_path, list_name);
+      loadClassLibraryInternal(library_path, lookup_name);
     }
     catch (Poco::LibraryLoadException &ex)
     {
@@ -184,11 +177,11 @@ namespace pluginlib {
 
 
   template <class T>
-  bool ClassLoader<T>::isClassLoaded(const std::string& name)
+  bool ClassLoader<T>::isClassLoaded(const std::string& lookup_name)
   {
     try
     {
-      return poco_class_loader_.canCreate(getDerivedClassType(name));
+      return poco_class_loader_.canCreate(getClassType(lookup_name));
     }
     catch (Poco::RuntimeException &ex)
     {
@@ -208,7 +201,7 @@ namespace pluginlib {
   }
 
   template <class T>
-  std::string ClassLoader<T>::getDerivedClassType(const std::string& lookup_name)
+  std::string ClassLoader<T>::getClassType(const std::string& lookup_name)
   {
     ClassMapIterator it = classes_available_.find(lookup_name);
     if (it != classes_available_.end())
@@ -253,23 +246,21 @@ namespace pluginlib {
   }
 
   template <class T>
-  T* ClassLoader<T>::createClassInstance(const std::string& name, bool auto_load)
+  T* ClassLoader<T>::createClassInstance(const std::string& lookup_name, bool auto_load)
   {
-    if ( auto_load && !isClassLoaded(name))
-      if(!loadClass(name))
+    if ( auto_load && !isClassLoaded(lookup_name))
+      if(!loadClass(lookup_name))
       {
         //\todo THROW HERE
         ROS_ERROR("Failed to auto load library");
-        return NULL;
-        throw std::runtime_error("Failed to auto load library for class " + name + ".");
+        throw std::runtime_error("Failed to auto load library for class " + lookup_name + ".");
       }
 
     try{
-      return poco_class_loader_.create(getDerivedClassType(name));
+      return poco_class_loader_.create(getClassType(lookup_name));
     }
     catch(const Poco::RuntimeException& ex){
-      ROS_ERROR("Poco exception: %s (class: %s)", ex.what(), name.c_str());
-      return NULL;
+      ROS_ERROR("Poco exception: %s (class: %s)", ex.what(), lookup_name.c_str());
       throw std::runtime_error(ex.what());
     }
   }

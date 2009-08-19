@@ -44,7 +44,7 @@
 #include <realtime_tools/realtime_publisher.h>
 #include <ros/node.h>
 #include <controller_interface/controller_provider.h>
-#include "pluginlib/plugin_loader.h"
+#include "pluginlib/class_loader.h"
 #include <mechanism_msgs/ListControllerTypes.h>
 #include <mechanism_msgs/ListControllers.h>
 #include <mechanism_msgs/SpawnController.h>
@@ -87,7 +87,7 @@ private:
   void getControllerSchedule(std::vector<size_t> &schedule);
 
   ros::NodeHandle node_;
-  pluginlib::PluginLoader<controller::Controller> controller_loader_;
+  pluginlib::ClassLoader<controller::Controller> controller_loader_;
 
   // for controller switching
   std::vector<controller::Controller*> start_request_, stop_request_;

@@ -25,6 +25,6 @@ This package provides implementations of the Trajectory Rollout and Dynamic Wind
   <repository>http://pr.willowgarage.com/repos</repository>
   <export>
     <cpp cflags="-I${prefix}/include -I${prefix}/msg/cpp" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lbase_local_planner" />
-    <nav_core nav_core::BaseLocalPlanner="${prefix}/blp_plugin.xml" />
+    <nav_core plugin="${prefix}/blp_plugin.xml" />
   </export>
 </package>

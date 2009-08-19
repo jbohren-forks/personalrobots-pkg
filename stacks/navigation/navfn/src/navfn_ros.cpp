@@ -38,9 +38,7 @@
 #include <pluginlib/class_list_macros.h>
 
 //register this planner as a BaseGlobalPlanner plugin
-BEGIN_CLASS_LIST(base_global_planner, nav_core::BaseGlobalPlanner)
-REGISTER_CLASS(navfn::NavfnROS)
-END_CLASS_LIST
+REGISTER_CLASS(NavfnROS, navfn::NavfnROS, nav_core::BaseGlobalPlanner)
 
 namespace navfn {
 
