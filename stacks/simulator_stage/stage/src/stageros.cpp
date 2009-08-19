@@ -308,11 +308,14 @@ StageNode::Update()
         sim_time, mapName("base_footprint", r), mapName("odom", r));
     this->tf.sendTransform(tx);
       
-    // Also publish the ground truth pose
+    // Also publish the ground truth pose and velocity
     Stg::stg_pose_t gpose = this->positionmodels[r]->GetGlobalPose();
+    Stg::stg_velocity_t gvel = this->positionmodels[r]->GetGlobalVelocity();
     // Note that we correct for Stage's screwed-up coord system.
     tf::Transform gt(tf::Quaternion(gpose.a-M_PI/2.0, 0, 0), 
         tf::Point(gpose.y, -gpose.x, 0.0));
+    tf::Transform gv(tf::Quaternion(gvel.a-M_PI/2.0, 0, 0), 
+        tf::Point(gvel.y, -gvel.x, 0.0));
 
     this->groundTruthMsgs[r].pose.pose.position.x     = gt.getOrigin().x();
     this->groundTruthMsgs[r].pose.pose.position.y     = gt.getOrigin().y();
@@ -321,6 +324,12 @@ StageNode::Update()
     this->groundTruthMsgs[r].pose.pose.orientation.y  = gt.getRotation().y();
     this->groundTruthMsgs[r].pose.pose.orientation.z  = gt.getRotation().z();
     this->groundTruthMsgs[r].pose.pose.orientation.w  = gt.getRotation().w();
+    this->groundTruthMsgs[r].twist.twist.linear.x = gv.getOrigin().x();
+    this->groundTruthMsgs[r].twist.twist.linear.y = gv.getOrigin().y();
+    //this->groundTruthMsgs[r].twist.twist.angular.z = tf::getYaw(gv.getRotation());
+    //this->groundTruthMsgs[r].twist.twist.linear.x = gvel.x;
+    //this->groundTruthMsgs[r].twist.twist.linear.y = gvel.y;
+    this->groundTruthMsgs[r].twist.twist.angular.z = gvel.a;
 
     this->groundTruthMsgs[r].header.frame_id = mapName("odom", r);
     this->groundTruthMsgs[r].header.stamp = sim_time;
