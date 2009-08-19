@@ -1,68 +1,68 @@
 cmake_minimum_required(VERSION 2.4.6)
 include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 set(ROS_BUILD_TYPE Debug)
-rospack(tf)
+rosbuild_init()
 
-rospack_add_boost_directories()
+rosbuild_add_boost_directories()
 
-genmsg()
-gensrv()
+rosbuild_genmsg()
+rosbuild_gensrv()
 
-rospack_add_library(tf src/tf.cpp src/transform_listener.cpp src/cache.cpp src/message_notifier.cpp src/transform_broadcaster.cpp)
-rospack_link_boost(tf thread signals)
+rosbuild_add_library(tf src/tf.cpp src/transform_listener.cpp src/cache.cpp src/message_notifier.cpp src/transform_broadcaster.cpp)
+rosbuild_link_boost(tf thread signals)
 
-rospack_add_executable(bin/tf_echo src/tf_echo.cpp)
+rosbuild_add_executable(bin/tf_echo src/tf_echo.cpp)
 target_link_libraries(bin/tf_echo tf)
 
-rospack_add_executable(bin/change_notifier src/change_notifier.cpp)
+rosbuild_add_executable(bin/change_notifier src/change_notifier.cpp)
 target_link_libraries(bin/change_notifier tf)
 
-rospack_add_executable(bin/tf_monitor src/tf_monitor.cpp)
+rosbuild_add_executable(bin/tf_monitor src/tf_monitor.cpp)
 target_link_libraries(bin/tf_monitor tf)
 
-rospack_add_gtest(test/tf_unittest test/tf_unittest.cpp)
+rosbuild_add_gtest(test/tf_unittest test/tf_unittest.cpp)
 target_link_libraries(test/tf_unittest tf)
 
-rospack_add_executable(test/transform_listener_unittest test/transform_listener_unittest.cpp)
+rosbuild_add_executable(test/transform_listener_unittest test/transform_listener_unittest.cpp)
 target_link_libraries(test/transform_listener_unittest tf)
 rosbuild_add_gtest_build_flags(test/transform_listener_unittest)
 rosbuild_add_rostest(test/transform_listener_unittest.launch)
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL Linux)
-  rospack_add_gtest(test/wait_for_transform_death test/wait_for_transform_death.cpp)
+  rosbuild_add_gtest(test/wait_for_transform_death test/wait_for_transform_death.cpp)
   target_link_libraries(test/wait_for_transform_death tf)
 endif(${CMAKE_SYSTEM_NAME} STREQUAL Linux)
 
-rospack_add_gtest_future(test/tf_unittest_future test/tf_unittest_future.cpp)
+rosbuild_add_gtest_future(test/tf_unittest_future test/tf_unittest_future.cpp)
 target_link_libraries(test/tf_unittest_future tf)
-rospack_add_gtest(test/cache_unittest test/cache_unittest.cpp)
+rosbuild_add_gtest(test/cache_unittest test/cache_unittest.cpp)
 target_link_libraries(test/cache_unittest tf)
 
 
 ### Benchmarking
-rospack_add_gtest_future(test/tf_benchmark test/tf_benchmark.cpp)
+rosbuild_add_gtest_future(test/tf_benchmark test/tf_benchmark.cpp)
 target_link_libraries(test/tf_benchmark tf)
 
-rospack_add_executable(test/btTest test/quaternion.cpp)
-rospack_add_executable(test/testListener test/testListener.cpp)
+rosbuild_add_executable(test/btTest test/quaternion.cpp)
+rosbuild_add_executable(test/testListener test/testListener.cpp)
 target_link_libraries(test/testListener tf)
                                  
-rospack_add_executable(test/testBroadcaster test/testBroadcaster.cpp)
+rosbuild_add_executable(test/testBroadcaster test/testBroadcaster.cpp)
 target_link_libraries(test/testBroadcaster tf)
-rospack_add_executable(bin/transform_sender src/transform_sender.cpp)
+rosbuild_add_executable(bin/transform_sender src/transform_sender.cpp)
 target_link_libraries(bin/transform_sender tf)
 
-rospack_add_executable(test/test_notifier EXCLUDE_FROM_ALL test/test_notifier.cpp)
-rospack_declare_test(test/test_notifier)
-rospack_add_gtest_build_flags(test/test_notifier)
+rosbuild_add_executable(test/test_notifier EXCLUDE_FROM_ALL test/test_notifier.cpp)
+rosbuild_declare_test(test/test_notifier)
+rosbuild_add_gtest_build_flags(test/test_notifier)
 target_link_libraries(test/test_notifier tf ${Boost_LIBRARIES})
-rospack_add_rostest_future(test/test_notifier.xml)
+rosbuild_add_rostest_future(test/test_notifier.xml)
 
-rospack_add_executable(test/test_message_filter EXCLUDE_FROM_ALL test/test_message_filter.cpp)
-rospack_declare_test(test/test_message_filter)
-rospack_add_gtest_build_flags(test/test_message_filter)
+rosbuild_add_executable(test/test_message_filter EXCLUDE_FROM_ALL test/test_message_filter.cpp)
+rosbuild_declare_test(test/test_message_filter)
+rosbuild_add_gtest_build_flags(test/test_message_filter)
 target_link_libraries(test/test_message_filter tf ${Boost_LIBRARIES})
-rospack_add_rostest(test/test_message_filter.xml)
+rosbuild_add_rostest(test/test_message_filter.xml)
 
 find_package(PythonLibs REQUIRED)
 include_directories(${PYTHON_INCLUDE_PATH})
@@ -82,9 +82,9 @@ include_directories(${PYTHON_INCLUDE_PATH})
 # so build with the objects directly instead.
 
 link_libraries(${PYTHON_LIBRARIES})
-rospack_add_library(pytf_py src/pytf.cpp src/tf.cpp src/transform_listener.cpp src/cache.cpp)
+rosbuild_add_library(pytf_py src/pytf.cpp src/tf.cpp src/transform_listener.cpp src/cache.cpp)
 find_package(PythonLibs REQUIRED)
 set_target_properties(pytf_py PROPERTIES OUTPUT_NAME tf PREFIX "_" SUFFIX ".so")
 # target_link_libraries(pytf_py tf)
-rospack_add_compile_flags(pytf_py -g -Wno-missing-field-initializers -msse3)
-rospack_add_pyunit(test/testPython.py)
+rosbuild_add_compile_flags(pytf_py -g -Wno-missing-field-initializers -msse3)
+rosbuild_add_pyunit(test/testPython.py)
