@@ -59,7 +59,7 @@ namespace pluginlib {
       TiXmlElement * config = document.RootElement();
       if (config == NULL)
       {
-        ROS_ERROR("XML Document had no Root Element.  This likely means the XML is malformed or missing.");
+        ROS_ERROR("XML Document \"%s\" had no Root Element.  This likely means the XML is malformed or missing.", it->c_str());
         return;
       }
       if (config->ValueStr() != "library" &&
@@ -117,7 +117,11 @@ namespace pluginlib {
         while (class_element)
         {
           std::string base_class_type = class_element->Attribute("base_class_type");
+          std::string lookup_name = class_element->Attribute("name");
+          std::string derived_class = class_element->Attribute("type");
 
+          
+          
           //make sure that this class is of the right type before registering it
           if(base_class_type == base_class){
 
@@ -125,10 +129,15 @@ namespace pluginlib {
             TiXmlElement* description = class_element->FirstChildElement("description");
             std::string description_str = description ? description->GetText() : "";
 
-            std::string lookup_name = class_element->Attribute("name");
-            std::string derived_class = class_element->Attribute("type");
-
             classes_available_.insert(std::pair<std::string, ClassDesc>(lookup_name, ClassDesc(lookup_name, derived_class, base_class_type, package_name, description_str, full_library_path.string())));
+            ROS_DEBUG("MATCHED Base type for class with name: %s type: %s base_class_type: %s Expecting base_class_type %s", 
+                      lookup_name.c_str(), derived_class.c_str(), base_class_type.c_str(), base_class.c_str());
+          }
+          else
+          {
+            ROS_DEBUG("UNMATCHED Base type for class with name: %s type: %s base_class_type: %s Expecting base_class_type %s", 
+                      lookup_name.c_str(), derived_class.c_str(), base_class_type.c_str(), base_class.c_str());
+            
           }
           //step to next class_element
           class_element = class_element->NextSiblingElement( "class" );
@@ -152,19 +161,21 @@ namespace pluginlib {
       return false;
     }
     library_path.append(Poco::SharedLibrary::suffix());
-    ROS_DEBUG("Loading library %s", library_path.c_str());
     try
     {
+      ROS_DEBUG("Attempting to load library %s for class %s",
+                library_path.c_str(), lookup_name.c_str());
+      
       loadClassLibraryInternal(library_path, lookup_name);
     }
     catch (Poco::LibraryLoadException &ex)
     {
-      ROS_ERROR("Failed to load library %s %s", library_path.c_str(), ex.what());
+      ROS_ERROR("Failed to load library %s Error string: %s", library_path.c_str(), ex.what());
       return false;
     }
     catch (Poco::NotFoundException &ex)
     {
-      ROS_ERROR("Failed to find library %s %s", library_path.c_str(), ex.what());
+      ROS_ERROR("Failed to find library %s Error string: %s", library_path.c_str(), ex.what());
       return false;
     }
     return true;
