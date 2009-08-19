@@ -46,6 +46,8 @@
 #include <descriptors_3d/spin_image_custom.h>
 #include <descriptors_3d/spin_image_normal.h>
 #include <descriptors_3d/spin_image_tangent.h>
+#include <descriptors_3d/curvature.h>
+#include <descriptors_3d/channel.h>
 
 #endif
 
