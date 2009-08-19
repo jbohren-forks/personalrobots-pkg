@@ -63,7 +63,7 @@ bool pm_wrapper::initPlanningMonitor(const std::vector<std::string> &links, tf::
   planning_monitor_ = new planning_environment::PlanningMonitor(collision_model_, tfl, planning_frame_);
 
 	//error checking
-  groupID_ = planning_monitor_->getKinematicModel()->getGroupID(group_name_);\
+  groupID_ = planning_monitor_->getKinematicModel()->getGroupID(group_name_);
 	ROS_DEBUG("groupID = %i", groupID_);
   std::vector<std::string> joint_names;
   planning_monitor_->getKinematicModel()->getJointsInGroup(joint_names, groupID_);
@@ -126,20 +126,43 @@ planning_models::StateParams* pm_wrapper::fillStartState(const std::vector<motio
   return NULL;
 }
 
-void pm_wrapper::updatePM(const motion_planning_msgs::GetMotionPlan::Request &req)
+void pm_wrapper::updateRobotState(const std::vector <motion_planning_msgs::KinematicJoint> robot_state)
 {
-  start_state_ = fillStartState(req.start_state);
+	planning_models::StateParams *start_state = fillStartState(robot_state);
+	
+	if(start_state == NULL)
+		ROS_WARN("start_state_ == NULL");
 
-  if(start_state_ == NULL)
-    ROS_WARN("start_state_ == NULL");
+	planning_monitor_->getKinematicModel()->computeTransforms(start_state->getParams());
+	planning_monitor_->getEnvironmentModel()->updateRobotModel();
 
-  planning_monitor_->getKinematicModel()->computeTransforms(start_state_->getParams());
-  planning_monitor_->getEnvironmentModel()->updateRobotModel();
+	planning_monitor_->getEnvironmentModel()->lock();
+	planning_monitor_->getKinematicModel()->lock();
 
-  planning_monitor_->getEnvironmentModel()->lock();
-  planning_monitor_->getKinematicModel()->lock();
+	delete start_state;
+	
+	ROS_DEBUG("updatedRobotState()");
+}
 
-  ROS_DEBUG("updatedPM()");
+void pm_wrapper::setRobotJointStates(const std::vector<std::string> &joint_names, const std::vector<double> &params)
+{
+	/** planar links have 3 params {x,y,theta} and joints have 1 param */
+	
+	planning_models::StateParams robot_state = *(planning_monitor_->getRobotState());
+	
+	if(!robot_state.setParamsJoints(params, joint_names))
+	{
+		ROS_WARN("No changes were made to the robot state");
+		return;
+	}
+	
+	planning_monitor_->getKinematicModel()->computeTransforms(robot_state.getParams());
+	planning_monitor_->getEnvironmentModel()->updateRobotModel();
+
+	planning_monitor_->getEnvironmentModel()->lock();
+	planning_monitor_->getKinematicModel()->lock();
+
+	ROS_DEBUG("setJointState()");
 }
 
 bool pm_wrapper::areLinksValid(const double * angles)
@@ -165,6 +188,43 @@ void pm_wrapper::setObject(shapes::Shape *object, btTransform pose)
 	object_pose_ = pose;
 }
 
+void pm_wrapper::removeObject(shapes::Shape *object, const btTransform &pose)
+{
+	// at this point, the environment model has the collision map inside it
+	// get exclusive access
+	planning_monitor_->getEnvironmentModel()->lock();
+	
+	// remove the objects colliding with the box
+	ROS_DEBUG("object removed has type %i (origin: %.2f %.2f %.2f) in frame %s", object->type, pose.getOrigin().getX(), pose.getOrigin().getY(), pose.getOrigin().getZ(), planning_monitor_->getFrameId().c_str());
+	
+	planning_monitor_->getEnvironmentModel()->removeCollidingObjects(object, pose);	
+	
+	// release our hold
+	planning_monitor_->getEnvironmentModel()->unlock();
+}
+
+void pm_wrapper::addObject(const std::string &ns, shapes::Shape *object, const btTransform &pose)
+{
+	// at this point, the environment model has the collision map inside it
+	// get exclusive access
+	planning_monitor_->getEnvironmentModel()->lock();
+	
+	// remove the objects colliding with the box
+	ROS_DEBUG("object removed has type %i (origin: %.2f %.2f %.2f) in frame %s", object->type, pose.getOrigin().getX(), pose.getOrigin().getY(), pose.getOrigin().getZ(), planning_monitor_->getFrameId().c_str());
+	
+	planning_monitor_->getEnvironmentModel()->addObject(ns, object, pose);
+	
+	// release our hold
+	planning_monitor_->getEnvironmentModel()->unlock();
+}
+
+void pm_wrapper::publishInternalCollisionMap()
+{
+	//publish the collision map
+	planning_monitor_->recoverCollisionMap(planning_monitor_->getEnvironmentModel(), col_map_);
+	col_map_publisher_.publish(col_map_);	
+}
+
 //copied straight from remove_object_example.cpp in planning_environment
  void pm_wrapper::publishMapWithoutObject(const mapping_msgs::CollisionMapConstPtr &collisionMap, bool clear)
 {
@@ -177,18 +237,14 @@ void pm_wrapper::setObject(shapes::Shape *object, btTransform pose)
 		return;
 	
 	// at this point, the environment model has the collision map inside it
-	
 	// get exclusive access
 	planning_monitor_->getEnvironmentModel()->lock();
-	ROS_DEBUG("locked environment model");
 	
 	// get a copy of our own, to play with :)
 	collision_space::EnvironmentModel *env = planning_monitor_->getEnvironmentModel()->clone();
-	ROS_DEBUG("cloned environmentmodel");
 	
 	// release our hold
 	planning_monitor_->getEnvironmentModel()->unlock();
-	ROS_DEBUG("unlocked environment model");
 
 	// remove the objects colliding with the box
 	ROS_DEBUG("object removed has type %i (origin: %.2f %.2f %.2f) in frame %s", object_->type, object_pose_.getOrigin().getX(), object_pose_.getOrigin().getY(), object_pose_.getOrigin().getZ(), planning_monitor_->getFrameId().c_str());
@@ -204,4 +260,51 @@ void pm_wrapper::setObject(shapes::Shape *object, btTransform pose)
 	ROS_INFO("Received collision map with %d points and published one with %d points", 
 					 (int)collisionMap->get_boxes_size(), (int)col_map_.get_boxes_size());
 }
+
+ void pm_wrapper::publishMapWithObject(const mapping_msgs::CollisionMapConstPtr &collisionMap, bool clear)
+{
+	ROS_DEBUG("in publishMapWithObject()");
+	if(!remove_objects_from_collision_map_)
+		return;
+	
+	// we do not care about incremental updates, only re-writes of the map
+	if (!clear)
+		return;
+	
+	// at this point, the environment model has the collision map inside it
+	// get exclusive access
+	planning_monitor_->getEnvironmentModel()->lock();
+	
+	// get a copy of our own, to play with :)
+	collision_space::EnvironmentModel *env = planning_monitor_->getEnvironmentModel()->clone();
+	
+	// release our hold
+	planning_monitor_->getEnvironmentModel()->unlock();
+
+	// remove the objects colliding with the box
+	ROS_DEBUG("object added has type %i (origin: %.2f %.2f %.2f) in frame %s", object_->type, object_pose_.getOrigin().getX(), object_pose_.getOrigin().getY(), object_pose_.getOrigin().getZ(), planning_monitor_->getFrameId().c_str());
+	
+	std::vector<shapes::Shape*> objects(1);
+	objects[1] = object_;
+	std::vector<btTransform> poses(1);
+	poses[0] = object_pose_;
+	
+	env->addObjects(std::string("added_objects"), objects, poses);	
+	
+	// forward the updated map
+	planning_monitor_->recoverCollisionMap(env, col_map_);
+	col_map_publisher_.publish(col_map_);
+
+	// throw away our copy
+	delete env;
+	
+	ROS_INFO("Received collision map with %d points and published one with %d points", 
+					 (int)collisionMap->get_boxes_size(), (int)col_map_.get_boxes_size());
+}
+
+
+/*
+
+
+create a ModelKinematic in ompl_ros and pass into the constructor a planning environment. then create a smooother and pass into the constructor the model kinematic. then use setParams to organize the joint angles in the right order */
 
