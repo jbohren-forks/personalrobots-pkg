@@ -47,13 +47,14 @@
 #include <vector>
 
 #include <boost/scoped_ptr.hpp>
+#include <boost/thread/recursive_mutex.hpp>
 #include <ros/node_handle.h>
 #include <control_toolbox/pid.h>
 #include <mechanism_control/recorder.h>
 #include <controller_interface/controller.h>
 #include <realtime_tools/realtime_infuser.h>
 
-#include <manipulation_msgs/SplineTraj.h>
+#include "trajectory_controllers/Trajectory.h"
 
 namespace controller {
 
@@ -77,21 +78,40 @@ private:
 
   ros::NodeHandle node_;
 
-  void commandCB(const manipulation_msgs::SplineTrajConstPtr &msg);
+  void commandCB(const trajectory_controllers::TrajectoryConstPtr &msg);
   ros::Subscriber sub_command_;
 
-  // The trajectory that we're currently following
-  struct SpecifiedTrajectory
+  // ------ Mechanisms for passing the trajectory into realtime
+
+  // coef[0] + coef[1]*t + ... + coef[5]*t^5
+  struct Spline
   {
-    std::vector<double> start_times;  // Cache of segment start times, computed from segment durations
-    std::vector<manipulation_msgs::SplineTrajSegment> segments;
+    std::vector<double> coef;
+
+    Spline() : coef(6, 0.0) {}
   };
+
+  struct Segment
+  {
+    double start_time;
+    double duration;
+    std::vector<Spline> splines;
+  };
+
+  typedef std::vector<Segment> SpecifiedTrajectory;
   realtime_tools::RealtimeInfuser<SpecifiedTrajectory> incoming_trajectory_;
+  boost::recursive_mutex incoming_trajectory_lock_;  // For non-realtime only
 
   std::vector<double> q, qd, qdd;  // Preallocated in init
 
   enum { QS };
   mechanism::Recorder recorder_;
+
+  // Samples, but handling time bounds.  When the time is past the end
+  // of the spline duration, the position is the last valid position,
+  // and the derivatives are all 0.
+  static void sampleSplineWithTimeBounds(std::vector<double>& coefficients, double duration, double time,
+                                         double& position, double& velocity, double& acceleration);
 };
 
 }

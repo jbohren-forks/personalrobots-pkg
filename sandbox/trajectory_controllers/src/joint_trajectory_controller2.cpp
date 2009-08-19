@@ -31,10 +31,11 @@
  * Author: Stuart Glaser
  */
 
-#include <trajectory_controllers/joint_trajectory_controller2.h>
+#include "trajectory_controllers/joint_trajectory_controller2.h"
 #include <sstream>
-#include <angles/angles.h>
+#include "angles/angles.h"
 #include "pluginlib/class_list_macros.h"
+#include "spline_smoother/splines.h"
 
 PLUGINLIB_REGISTER_CLASS(JointTrajectoryController2, controller::JointTrajectoryController2, controller::Controller)
 
@@ -136,8 +137,8 @@ void JointTrajectoryController2::update()
 
   // Determines which segment of the trajectory to use.  (Not particularly realtime friendly).
   int seg = -1;
-  while (seg + 1 < (int)traj.start_times.size() &&
-         traj.start_times[seg + 1] < time)
+  while (seg + 1 < (int)traj.size() &&
+         traj[seg+1].start_time < time)
   {
     ++seg;
   }
@@ -146,47 +147,11 @@ void JointTrajectoryController2::update()
 
   // ------ Trajectory Generation
 
-  if (traj.start_times[seg] + traj.segments[seg].duration.toSec() < time)
+  for (size_t i = 0; i < q.size(); ++i)
   {
-    // Done with this segment, but not ready for the next one.  Hold here.
-    double t = traj.segments[seg].duration.toSec();
-    for (size_t i = 0; i < q.size(); ++i)
-    {
-      q[i] =
-        traj.segments[seg].a[i] +
-        traj.segments[seg].b[i] * t +
-        traj.segments[seg].c[i] * pow(t, 2) +
-        traj.segments[seg].d[i] * pow(t, 3) +
-        traj.segments[seg].e[i] * pow(t, 4) +
-        traj.segments[seg].f[i] * pow(t, 5);
-      qd[i] = 0;
-      qdd[i] = 0;
-    }
-  }
-  else
-  {
-    double t = time - traj.start_times[seg];
-    for (size_t i = 0; i < q.size(); ++i)
-    {
-      q[i] =
-        traj.segments[seg].a[i] +
-        traj.segments[seg].b[i] * t +
-        traj.segments[seg].c[i] * pow(t, 2) +
-        traj.segments[seg].d[i] * pow(t, 3) +
-        traj.segments[seg].e[i] * pow(t, 4) +
-        traj.segments[seg].f[i] * pow(t, 5);
-      qd[i] =
-        traj.segments[seg].b[i] +
-        2 * traj.segments[seg].c[i] * t +
-        3 * traj.segments[seg].d[i] * pow(t, 2) +
-        4 * traj.segments[seg].e[i] * pow(t, 3) +
-        5 * traj.segments[seg].f[i] * pow(t, 4);
-      qdd[i] =
-        2 * traj.segments[seg].c[i] +
-        6 * traj.segments[seg].d[i] * t +
-        12 * traj.segments[seg].e[i] * pow(t, 2) +
-        20 * traj.segments[seg].f[i] * pow(t, 3);
-    }
+    sampleSplineWithTimeBounds(traj[seg].splines[i].coef, traj[seg].duration,
+                               time - traj[seg].start_time,
+                               q[i], qd[i], qdd[i]);
   }
 
   for (size_t i = 0; i < q.size(); ++i)
@@ -222,7 +187,7 @@ void JointTrajectoryController2::update()
   }
 }
 
-void JointTrajectoryController2::commandCB(const manipulation_msgs::SplineTrajConstPtr &msg)
+void JointTrajectoryController2::commandCB(const trajectory_controllers::TrajectoryConstPtr &msg)
 {
   double time = last_time_;
   ROS_DEBUG("Figuring out new trajectory at %.3lf, with data from %.3lf",
@@ -231,59 +196,118 @@ void JointTrajectoryController2::commandCB(const manipulation_msgs::SplineTrajCo
   SpecifiedTrajectory new_traj;
 
   // Makes sure the realtime process is using the latest trajectory
+  boost::recursive_mutex::scoped_lock guard(incoming_trajectory_lock_);
   while (incoming_trajectory_.has_next())
     usleep(1000);
   SpecifiedTrajectory &prev_traj = incoming_trajectory_.next();
 
-  // Copies over the segments from the previous trajectory that are still useful.
-  for (size_t i = 0; i < prev_traj.start_times.size(); ++i)
+  // ------ Copies over the segments from the previous trajectory that are still useful.
+
+  for (size_t i = 0; i < prev_traj.size(); ++i)
   {
     // If this segment lasts beyond the current time and starts before the new trajectory.
-    if (prev_traj.start_times[i] + prev_traj.segments[i].duration.toSec() > time &&
-        prev_traj.start_times[i] < msg->header.stamp.toSec())
+    if (prev_traj[i].start_time + prev_traj[i].duration > time &&
+        prev_traj[i].start_time < msg->header.stamp.toSec())
     {
-      new_traj.start_times.push_back(prev_traj.start_times[i]);
-      new_traj.segments.push_back(prev_traj.segments[i]);
+      new_traj.push_back(prev_traj[i]);
 
       ROS_DEBUG("Saving segment %2d: %.3lf for %.3lf",
-                i, prev_traj.start_times[i], prev_traj.segments[i].duration.toSec());
+                i, prev_traj[i].start_time, prev_traj[i].duration);
     }
     else
     {
       ROS_DEBUG("Removing segment %2d: %.3lf for %.3lf",
-                i, prev_traj.start_times[i], prev_traj.segments[i].duration.toSec());
+                i, prev_traj[i].start_time, prev_traj[i].duration);
     }
   }
 
-  // Tacks on the new segments
+  // ------ Determines when and where the new segments start
+
   double start_time = msg->header.stamp.toSec();
-  for (size_t i = 0; i < msg->segments.size(); ++i)
+
+  // Finds the end conditions of the final segment
+  Segment &last = new_traj[new_traj.size() - 1];
+  std::vector<double> prev_positions(joints_.size());
+  std::vector<double> prev_velocities(joints_.size());
+  std::vector<double> prev_accelerations(joints_.size());
+
+  for (size_t i = 0; i < joints_.size(); ++i)
   {
-    new_traj.start_times.push_back(start_time);
-    new_traj.segments.push_back(msg->segments[i]);
+    sampleSplineWithTimeBounds(last.splines[i].coef, last.duration,
+                               start_time,
+                               prev_positions[i], prev_velocities[i], prev_accelerations[i]);
+  }
 
-    // Makes sure the trajectory is quintic
-    int n = new_traj.segments.size() - 1;
-    if (new_traj.segments[n].a.size() != joints_.size())
-      new_traj.segments[n].a.resize(joints_.size(), 0.0);
-    if (new_traj.segments[n].b.size() != joints_.size())
-      new_traj.segments[n].b.resize(joints_.size(), 0.0);
-    if (new_traj.segments[n].c.size() != joints_.size())
-      new_traj.segments[n].c.resize(joints_.size(), 0.0);
-    if (new_traj.segments[n].d.size() != joints_.size())
-      new_traj.segments[n].d.resize(joints_.size(), 0.0);
-    if (new_traj.segments[n].e.size() != joints_.size())
-      new_traj.segments[n].e.resize(joints_.size(), 0.0);
-    if (new_traj.segments[n].f.size() != joints_.size())
-      new_traj.segments[n].f.resize(joints_.size(), 0.0);
+  // ------ Tacks on the new segments
 
-    start_time += msg->segments[i].duration.toSec();
+  for (size_t i = 0; i < msg->points.size(); ++i)
+  {
+    Segment seg;
+
+    seg.start_time = start_time;
+    seg.duration = msg->points[i].duration;
+    seg.splines.resize(joints_.size());
+
+    //! \todo Need to use the "names" field in the message to reorder the splines
+
+    for (size_t j = 0; j < joints_.size(); ++i)
+    {
+      if (prev_accelerations.size() > 0 && msg->points[i].accelerations.size() > 0)
+      {
+        spline_smoother::getQuinticSplineCoefficients(
+          prev_positions[j], prev_velocities[j], prev_accelerations[j],
+          msg->points[i].positions[j], msg->points[i].velocities[j], msg->points[i].accelerations[j],
+          msg->points[i].duration,
+          seg.splines[j].coef);
+      }
+      else
+      {
+        spline_smoother::getCubicSplineCoefficients(
+          prev_positions[j], prev_velocities[j],
+          msg->points[i].positions[j], msg->points[i].velocities[j],
+          msg->points[i].duration,
+          seg.splines[j].coef);
+      }
+    }
+
+    new_traj.push_back(seg);
+
+    // Computes the starting conditions for the next segment
+    start_time += msg->points[i].duration;
+    prev_positions = msg->points[i].positions;
+    prev_velocities = msg->points[i].velocities;
+    prev_accelerations = msg->points[i].accelerations;
   }
 
   // Sends the new set of segments to the realtime process
   incoming_trajectory_.set(new_traj);
 
-  ROS_DEBUG("The new trajectory has %d segments", new_traj.segments.size());
+  ROS_DEBUG("The new trajectory has %d segments", new_traj.size());
+}
+
+void JointTrajectoryController2::sampleSplineWithTimeBounds(
+  std::vector<double>& coefficients, double duration, double time,
+  double& position, double& velocity, double& acceleration)
+{
+  if (time < 0)
+  {
+    double _;
+    spline_smoother::sampleQuinticSpline(coefficients, 0.0, position, _, _);
+    velocity = 0;
+    acceleration = 0;
+  }
+  else if (time > duration)
+  {
+    double _;
+    spline_smoother::sampleQuinticSpline(coefficients, duration, position, _, _);
+    velocity = 0;
+    acceleration = 0;
+  }
+  else
+  {
+    spline_smoother::sampleQuinticSpline(coefficients, time,
+                                         position, velocity, acceleration);
+  }
 }
 
 }
