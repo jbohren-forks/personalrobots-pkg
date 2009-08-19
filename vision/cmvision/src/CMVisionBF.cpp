@@ -68,7 +68,7 @@ CMVisionBF::CMVisionBF(ros::NodeHandle *nh)
     this->colorRadius = 40.0;
 
   // Subscribe to an image stream
-  this->nodeHandle->subscribe("image", 1, &CMVisionBF::imageCB, this );
+  this->subscriber = this->nodeHandle->subscribe("image", 1, &CMVisionBF::imageCB, this );
 
   // Advertise our blobs
   this->publisher = this->nodeHandle->advertise<cmvision::Blobs>("blobs", 1);
@@ -104,7 +104,11 @@ void CMVisionBF::imageCB(const sensor_msgs::ImageConstPtr& msg)
   ros::Time startt = ros::Time().fromNSec(1e9*timeofday.tv_sec + 1e3*timeofday.tv_usec);
 
   // Get the image as and RGB image
-  this->imageBridge.fromImage(img, "bgr8");
+  if (img.encoding == "bgr8")
+    this->imageBridge.fromImage(img, "bgr8");
+  else
+    this->imageBridge.fromImage(img, "rgb8");
+
   cvImage = this->imageBridge.toIpl();
 
   size = cvGetSize(cvImage);
