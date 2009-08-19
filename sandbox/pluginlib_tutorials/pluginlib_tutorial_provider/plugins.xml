@@ -1,0 +1,19 @@
+<library path="lib/libpolyShapes">
+  <class name="square" type="square" base_class_type="polygon">
+    <description>
+      this is a square class
+    </description>
+  </class>
+  
+  <class name="triangle" type="triangle" base_class_type="polygon">
+    <description>
+      this is a triangle class
+    </description>
+  </class>
+
+  <class name="line" type="line" base_class_type="shape">
+    <description>
+      this is a line class
+    </description>
+  </class>
+</library>
