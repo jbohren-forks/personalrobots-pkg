@@ -94,9 +94,12 @@ void CMVisionBF::imageCB()
   gettimeofday(&timeofday,NULL);
   ros::Time startt = ros::Time().fromNSec(1e9*timeofday.tv_sec + 1e3*timeofday.tv_usec);
 
-      
   // Get the image as and RGB image
-  this->imageBridge.fromImage(this->image,"bgr8");
+  if (this->image.encoding == "bgr8")
+    this->imageBridge.fromImage(this->image,"bgr8");
+  else
+    this->imageBridge.fromImage(this->image,"rgb8");
+
   cvImage = this->imageBridge.toIpl();
 
   size = cvGetSize(cvImage);
