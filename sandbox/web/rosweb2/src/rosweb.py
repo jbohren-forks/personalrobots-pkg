@@ -388,7 +388,7 @@ class ROSWebHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         service_class = rosservice.get_service_class_by_name("/" + name)
         request = service_class._request_class()
 
-        args = eval(qdict.get('args', [''])[0])
+        args = eval(qdict.get('args', ['{}'])[0])
         try:
           roslib.message.fill_message_args(request, args)
         except ROSMessageException:
@@ -399,6 +399,7 @@ class ROSWebHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         logging.debug("service call: name=%s, args=%s" % (name, args))
         rospy.wait_for_service(name)
         service_proxy = rospy.ServiceProxy(name, service_class)
+        print "request = %s" % str(request)
         msg = service_proxy(request)
         msg = rosjson.ros_message_to_json(msg)
 
@@ -468,7 +469,7 @@ class ROSWebHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                   out = self.connection
                 else:
                   out = soc
-                data = i.recv(8192)
+                data = i.recv(819200)
                 if data:
                   out.send(data)
                   count = 0
