@@ -31,7 +31,8 @@
 #include <sbpl_arm_planner_node/sbpl_arm_planner_node.h>
 clock_t starttime;
 
-
+FILE* fPaths = fopen("paths.txt", "w");
+		
 using namespace std;
 using namespace sbpl_arm_planner_node;
 
@@ -261,6 +262,8 @@ bool SBPLArmPlannerNode::initializePlannerAndEnvironment()
     return false;
   }
 
+	sbpl_arm_env_.OutputActions(fPaths);
+	sbpl_arm_env_.OutputActionCostTable(fPaths);
   ROS_INFO("Initialized planning environment.");
   return true;
 }
@@ -569,7 +572,6 @@ bool SBPLArmPlannerNode::setGoalState(const std::vector<motion_planning_msgs::Jo
   std::vector<std::vector<double> > sbpl_tolerance_above(1);
   std::vector<std::vector<double> > sbpl_tolerance_below(1);
 
-
   if((int)(joint_constraint.size()) < num_joints_)
   {
     ROS_INFO("The goal state does not describe all of the planning joints");
@@ -581,14 +583,12 @@ bool SBPLArmPlannerNode::setGoalState(const std::vector<motion_planning_msgs::Jo
   sbpl_tolerance_above[0].resize(num_joints_);
   sbpl_tolerance_below[0].resize(num_joints_);
 
-//   ROS_INFO("goal state:");
-//   for(i = 0; i < joint_constraint.size(); i++)
-//   {
-//     for(unsigned int k = 0; k < joint_constraint[i].value.size(); k++)
-//       ROS_INFO("%s: %f", joint_constraint[i].joint_name.c_str(), joint_constraint[i].value[k]);
-//   }
+	ROS_DEBUG("[setGoalState] goal state:");
+  for(i = 0; i < joint_constraint.size(); i++)
+    for(unsigned int k = 0; k < joint_constraint[i].value.size(); k++)
+      ROS_INFO("%s: %f", joint_constraint[i].joint_name.c_str(), joint_constraint[i].value[k]);
 
-  goal_joint_constraint_.resize(num_joints_);
+	goal_joint_constraint_.resize(num_joints_);
 
   for(i = 0; i < joint_constraint.size(); i++)
   {
@@ -621,20 +621,20 @@ bool SBPLArmPlannerNode::setGoalState(const std::vector<motion_planning_msgs::Jo
 
   delete angles;
 
-	ROS_INFO("about to set goal configuration");
+	ROS_DEBUG("[setGoalState] about to set goal configuration");
   if(!sbpl_arm_env_.SetGoalConfiguration(sbpl_goal,sbpl_tolerance_above,sbpl_tolerance_below))
   {
-    ROS_INFO("Planner failed to set goal configuration");
+		ROS_ERROR("[setGoalState] Planner failed to set goal configuration");
     return false;
   }
 
   if(planner_->set_goal(mdp_cfg_.goalstateid) == 0)
   {
-    ROS_ERROR("Failed to set goal state\n");
+		ROS_ERROR("[setGoalState] Failed to set goal state\n");
     return false;
   }
 
-//   printf("[setGoalState] Successfully set goal state.\n");
+  ROS_INFO("[setGoalState] Successfully set goal state.\n");
   return true;
 }
 
@@ -691,17 +691,17 @@ bool SBPLArmPlannerNode::planToState(motion_planning_msgs::GetMotionPlan::Reques
     if(setGoalState(req.goal_constraints.joint_constraint))
     {
       ROS_INFO("[planToState] Goal configuration has been set.");
-
+			
       if(plan(arm_path))
       {
-				if(print_path_)
-					printPath(arm_path);
-				
-				ROS_INFO("Planning took %lf seconds",(clock() - starttime) / (double)CLOCKS_PER_SEC);
 				bPlanning_ = false;
 				mPlanning_.unlock();
 				pm_->unlockPM();
-				ROS_INFO("[planToPosition] Planning successful.");
+				
+// 				if(print_path_)
+// 					printPath(arm_path);
+				ROS_INFO("[planToState] Planning took %lf seconds. The extended path has %i states.",(clock() - starttime) / (double)CLOCKS_PER_SEC, arm_path.get_states_size());
+				ROS_INFO("[planToState] Planning successful.");
 					
 				res.path = arm_path;
 				res.path.model_id = req.params.model_id;
@@ -712,7 +712,7 @@ bool SBPLArmPlannerNode::planToState(motion_planning_msgs::GetMotionPlan::Reques
 				else
 					res.path.header.frame_id = planning_frame_;
 			
-				ROS_DEBUG("path is in %s",res.path.header.frame_id.c_str());
+				ROS_DEBUG("[planToState] path is in %s",res.path.header.frame_id.c_str());
 				
 				res.path.set_times_size(res.path.get_states_size());
 				res.path.times[0] = 0;
@@ -726,6 +726,7 @@ bool SBPLArmPlannerNode::planToState(motion_planning_msgs::GetMotionPlan::Reques
 				res.path.start_state = req.start_state;
 				res.approximate = 0;
 				res.distance = 0;
+				displayPlanningGrid();
 				return true;
       }
       else
@@ -743,10 +744,11 @@ bool SBPLArmPlannerNode::planToState(motion_planning_msgs::GetMotionPlan::Reques
     ROS_INFO("[planToState] Set start unsuccessful.");
   }
 
-  ROS_INFO("Planning took %lf seconds",(clock() - starttime) / (double)CLOCKS_PER_SEC);
-  pm_->unlockPM();
-  bPlanning_ = false;
-  mPlanning_.unlock();
+	bPlanning_ = false;
+	mPlanning_.unlock();
+	pm_->unlockPM();
+	displayPlanningGrid();
+	ROS_INFO("[planToState] Planning took %lf seconds",(clock() - starttime) / (double)CLOCKS_PER_SEC);
 
   return false;
 }
@@ -839,19 +841,18 @@ bool SBPLArmPlannerNode::planToPosition(motion_planning_msgs::GetMotionPlan::Req
     {
       ROS_INFO("[planToPosition] successfully sent goal constraints");
 			
-			
 			displayPlanningGrid();
-			ROS_INFO("[planToPosition] displaying planning collision map");
 
       if(plan(arm_path))
       {
-				if(print_path_)
-					printPath(arm_path);
 
-				ROS_INFO("Planning took %lf seconds",(clock() - starttime) / (double)CLOCKS_PER_SEC);
 				bPlanning_ = false;
 				mPlanning_.unlock();
 				pm_->unlockPM();
+				
+				// 				if(print_path_)
+				// 					printPath(arm_path);
+				ROS_INFO("[planToPosition] Planning took %lf seconds. The extended path has %i states.",(clock() - starttime) / (double)CLOCKS_PER_SEC, arm_path.get_states_size());
 				ROS_INFO("[planToPosition] Planning successful.");
 
 				res.path = arm_path;
@@ -898,10 +899,11 @@ bool SBPLArmPlannerNode::planToPosition(motion_planning_msgs::GetMotionPlan::Req
     ROS_INFO("[planToPosition] Set start unsuccessful.");
   }
 
-  ROS_INFO("Planning took %lf seconds",(clock() - starttime) / (double)CLOCKS_PER_SEC);
-  pm_->unlockPM();
-  bPlanning_ = false;
-  mPlanning_.unlock();
+	bPlanning_ = false;
+	pm_->unlockPM();
+	mPlanning_.unlock();
+	displayPlanningGrid();
+	ROS_INFO("[planToPosition] Planning took %lf seconds",(clock() - starttime) / (double)CLOCKS_PER_SEC);
 
   return false;
 }
@@ -973,8 +975,8 @@ bool SBPLArmPlannerNode::plan(motion_planning_msgs::KinematicPath &arm_path)
   {
 		ROS_INFO("*** a path was found ***");
 		
-		ROS_INFO("extending path... from %i waypoints", solution_state_ids_v.size());
-		ROS_INFO("current path");
+		ROS_DEBUG("extending path... from %i waypoints", solution_state_ids_v.size());
+		ROS_DEBUG("current path");
 		path_in.resize(solution_state_ids_v.size());
 		for(i = 0; i < solution_state_ids_v.size(); i++)
 		{
@@ -983,16 +985,16 @@ bool SBPLArmPlannerNode::plan(motion_planning_msgs::KinematicPath &arm_path)
 			for (unsigned int p = 0; p < (unsigned int) num_joints_; ++p)
 				path_in[i][p] = angles_r[p];
 
-			ROS_INFO("%i: %.4f %.4f %.4f %.4f %.4f %.4f %.4f",
+			ROS_DEBUG("%i: %.4f %.4f %.4f %.4f %.4f %.4f %.4f",
 				i, path_in[i][0],path_in[i][1],path_in[i][2],path_in[i][3],path_in[i][4],path_in[i][5],path_in[i][6]);
 		}
 
-		ROS_INFO("original path done\n");
+		ROS_DEBUG("original path done\n");
 
 		if(!interpolatePath(path_in, path_out, 0.035))
 			ROS_WARN("Couldn't add waypoints to path");
 
-		ROS_INFO("a path was returned with %i waypoints",path_out.size());
+		ROS_DEBUG("a path was returned with %i waypoints",path_out.size());
 		arm_path.set_states_size(path_out.size());
 		for(i = 0; i < path_out.size(); i++)
 			arm_path.states[i].set_vals_size(num_joints_);
@@ -1014,8 +1016,7 @@ bool SBPLArmPlannerNode::plan(motion_planning_msgs::KinematicPath &arm_path)
       for (unsigned int p = 0; p < (unsigned int) num_joints_; ++p)
 				arm_path.states[i].vals[p] = angles_r[p];
     }*/
-
-		printPath(arm_path);
+		
 		/** testing jacobian calculation code */
 // 		finishPath(arm_path, goal_pose_constraint_[0]);
 
@@ -1148,10 +1149,12 @@ bool SBPLArmPlannerNode::plan(motion_planning_msgs::KinematicPath &arm_path)
 		}
   }
 
+	planner_->print_searchpath(fPaths);
   return b_ret;
 }
 
 /** \brief Initialize the occupancy grid used by the SBPL planner. */
+
 void SBPLArmPlannerNode::createOccupancyGrid()
 {
   mCopyingVoxel_.lock();
@@ -1164,19 +1167,6 @@ void SBPLArmPlannerNode::createOccupancyGrid()
 		lowres_planning_grid_.reset(new Voxel3d(env_width_/2,env_height_/2,env_depth_/2, env_resolution_*2, tf::Vector3(grid_origin_[0], grid_origin_[1], grid_origin_[2]), false));
   }
 
-//   if(!point_cloud_.header.frame_id.empty())
-//   {
-//     ROS_DEBUG("About to transform point cloud from %s frame into %s frame",point_cloud_.header.frame_id.c_str(), planning_frame_.c_str());
-//     tf_.transformPointCloud(planning_frame_, point_cloud_, tf_point_cloud_);
-//     ROS_DEBUG("Transformed point cloud successfully");
-//     env_grid_->updateWorld(point_cloud_);
-// 
-//     if(lowres_cc_)
-//       lowres_env_grid_->updateWorld(point_cloud_);
-// 
-//     //just for display purposes
-//     planning_grid_.swap(env_grid_);
-//   }
   mCopyingVoxel_.unlock();
 }
 
@@ -1274,32 +1264,14 @@ void SBPLArmPlannerNode::initializePM()
   links.push_back("r_gripper_r_finger_tip_link");
 
   pm_->initPlanningMonitor(links, &tf_, planning_frame_);
-
-// 	box_ = new shapes::Box(2, 2, 2);
 	
   ROS_DEBUG("initialized PM()");
-}
-
-void SBPLArmPlannerNode::clearBox()
-{
-	
-	btTransform pose;
-	pose.setIdentity();
-	btVector3 origin;
-	origin.setX(2.0);
-	origin.setY(0.0);
-	origin.setZ(0.0);
-	pose.setOrigin(origin);
-	
-	ROS_INFO("calling setObject()");
-	pm_->setObject(box_, pose);
-	ROS_INFO("setObject() finished");
 }
 
 /** \brief Update the planning monitor with the current goal request message */
 void SBPLArmPlannerNode::updatePMWrapper(motion_planning_msgs::GetMotionPlan::Request &req)
 {
-  pm_->updatePM(req);
+  pm_->updateRobotState(req.start_state);
 }
 
 void SBPLArmPlannerNode::finishPath(motion_planning_msgs::KinematicPath &arm_path, motion_planning_msgs::PoseConstraint &goal)
@@ -1462,9 +1434,9 @@ void SBPLArmPlannerNode::updateSelfCollision()
 	robot_voxelizer_.updateSCGBodies(0,1);
 	robot_voxelizer_.getVoxelsInSCG(0,1,robot_voxels_);
 	
+	ROS_DEBUG("[updateSelfCollision] %i voxels will be added for self collision",robot_voxels_.size());
 	for(unsigned int i = 0; i < robot_voxels_.size(); ++i)
 	{
-		//temporary hack to convert to torso lift link
 		env_grid_->putWorldObstacle(robot_voxels_[i].x(),robot_voxels_[i].y(),robot_voxels_[i].z());		
 		if(lowres_cc_)
 			lowres_env_grid_->putWorldObstacle(robot_voxels_[i].x(),robot_voxels_[i].y(),robot_voxels_[i].z());
@@ -1476,6 +1448,11 @@ void SBPLArmPlannerNode::displayPlanningGrid()
 	sbpl_obstacles_.clear();
 	sbpl_obstacles_ = sbpl_arm_env_.getAllObstacleVoxels();
 	
+	if(sbpl_obstacles_.empty())
+	{
+		ROS_WARN("[displayPlanningGrid] Internal collision map is empty (?)");
+		return;
+	}
 	sbpl_map_.set_boxes_size(sbpl_obstacles_.size());
 
 	sbpl_map_.header.frame_id = planning_frame_;
@@ -1501,7 +1478,6 @@ void SBPLArmPlannerNode::displayPlanningGrid()
 	sbpl_map_publisher_.publish(sbpl_map_);
 	ROS_INFO("published sbpl_collision_map with %u points", sbpl_obstacles_.size());
 }
-
 
 bool SBPLArmPlannerNode::interpolatePathToGoal(std::vector<std::vector<double> > &path, double inc)
 {

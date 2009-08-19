@@ -22,7 +22,6 @@
 		<depend package="robot_voxelizer"/>
     <depend package="pm_wrapper"/>
 		<depend package="angles"/>
-		<depend package="geometric_shapes" />
 		<depend package="bullet" />
   <url></url>
 
