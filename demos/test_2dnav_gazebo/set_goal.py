@@ -309,7 +309,7 @@ class NavStackTest(unittest.TestCase):
               tmpq = tft.quaternion_from_euler(0,0,self.initialpose[2],'rxyz')
               q = Quaternion(tmpq[0],tmpq[1],tmpq[2],tmpq[3])
               pose = Pose(p,q)
-              print "publishing initialpose",h,p,COV[0]
+              #print "publishing initialpose",h,p,COV[0]
               pub_pose.publish(PoseWithCovarianceStamped(h, PoseWithCovariance(pose,COV)))
             else:
               # send goal until state /move_base/feedback indicates goal is received
@@ -319,7 +319,7 @@ class NavStackTest(unittest.TestCase):
               pose = Pose(p,q)
               if self.publish_goal:
                 pub_goal.publish(PoseStamped(h, pose))
-                print "publishing goal"
+                #print "publishing goal",h,p,q
 
             time.sleep(1.0)
 
