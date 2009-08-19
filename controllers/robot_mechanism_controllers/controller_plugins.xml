@@ -12,7 +12,7 @@
 
   <class name="CartesianTrajectoryController" type="CartesianTrajectoryController" base_class_type="Controller" />
 
-  <class name="TriggerController" type="TriggerController" type="Controller" />
+  <class name="TriggerController" type="TriggerController" base_class_type="Controller" />
   <class name="TriggerControllerNode" type="TriggerControllerNode" base_class_type="Controller" />
 
   <class name="JointPDController" type="JointPDController" base_class_type="Controller" />
