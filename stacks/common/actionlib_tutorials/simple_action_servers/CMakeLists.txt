@@ -1,1 +1,2 @@
 rospack_add_executable(fibonacci_action fibonacci_action.cpp)
+rospack_add_executable(configureable_fibonacci_action configureable_fibonacci_action.cpp)
