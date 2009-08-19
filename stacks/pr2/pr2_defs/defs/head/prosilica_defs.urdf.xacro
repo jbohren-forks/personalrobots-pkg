@@ -4,7 +4,6 @@
       xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface">
   
   <include filename="$(find pr2_defs)/defs/head/prosilica_gazebo.xacro" />
-  <include filename="$(find pr2_defs)/defs/head/prosilica_rviz.xacro" />
 
   <macro name="prosilica_cam" params="name parent *origin">
     <joint name="${name}_frame_joint" type="fixed">
@@ -27,6 +26,8 @@
         <geometry name="${name}_visual_geom">
           <box size="0.01 0.01 0.01" />
         </geometry>
+        
+        <material name="Blue" />
       </visual>
 
       <collision name="${name}_collision">
@@ -60,6 +61,8 @@
         <geometry name="${name}_optical_visual_geom">
           <box size="0.01 0.01 0.01" />
         </geometry>
+        
+        <material name="Blue" />
       </visual>
 
       <collision name="${name}_optical_collision">
@@ -72,7 +75,6 @@
 
     <!-- extensions -->
     <prosilica_cam_gazebo name="${name}"/>
-    <prosilica_cam_rviz name="${name}"/>
   </macro>
 
 </root>

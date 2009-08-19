@@ -5,7 +5,6 @@
        xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface">
 
   <include filename="$(find pr2_defs)/defs/head/head_sensor_package_gazebo.xacro" />
-  <include filename="$(find pr2_defs)/defs/head/head_sensor_package_rviz.xacro" />
   <include filename="$(find pr2_defs)/defs/head/head_sensor_package_transmission.xacro" />
 
   <property name="stereo_size_x" value="0.005" />
@@ -47,6 +46,8 @@
         <geometry name="${name}_mount_visual_geom">
           <mesh filename="$(find pr2_defs)/meshes/hok_tilt.stl" />
         </geometry>
+        
+        <material name="Red" />
       </visual>
 
       <collision name="${name}_mount_collision">
@@ -76,6 +77,8 @@
         <geometry name="${name}_visual_geom">
           <box size="0.001 0.001 0.001" />
         </geometry>
+        
+        <material name="Red" />
       </visual>
 
       <collision name="${name}_collision">
@@ -89,7 +92,6 @@
 
     <!-- extensions -->
     <pr2_tilting_laser_gazebo name="${name}"/>
-    <pr2_tilting_laser_rviz name="${name}"/>
     <pr2_tilting_laser_transmission name="${name}"/>
   </macro>
 
@@ -120,6 +122,8 @@
         <geometry name="${name}_sensor_visual_geom">
           <box size="0.01 0.01 0.01" />
         </geometry>
+        
+        <material name="Blue" />
       </visual>
 
       <collision name="${name}_sensor_collision">
@@ -144,7 +148,6 @@
 
     <!-- extensions -->
     <pr2_head_sensor_package_gazebo name="${name}" />
-    <pr2_head_sensor_package_rviz name="${name}" />
 
   </macro>
 
@@ -173,6 +176,8 @@
         <geometry name="${name}_double_stereo_visual_geom">
           <box size="0.01 0.01 0.01" />
         </geometry>
+        
+        <material name="Blue" />
       </visual>
 
       <collision name="${name}_double_stereo_collision">
@@ -195,7 +200,6 @@
 
     <!-- extensions -->
     <double_stereo_camera_gazebo name="${name}" />
-    <double_stereo_camera_rviz name="${name}" />
     
   </macro>
 
@@ -220,6 +224,8 @@
         <geometry name="${name}_visual_geom">
           <box size="${stereo_size_x} ${stereo_size_y} ${stereo_size_z}" />
         </geometry>
+        
+        <material name="Blue" />
       </visual>
 
       <collision name="${name}_collision">
@@ -251,6 +257,8 @@
         <geometry name="${name}_optical_frame_visual_geom">
           <box size="0.01 0.01 0.01" />
         </geometry>
+        
+        <material name="Blue" />
       </visual>
 
       <collision name="${name}_optical_frame_collision">
@@ -282,6 +290,8 @@
         <geometry name="${name}_l_stereo_camera_visual_geom">
           <box size="0.01 0.01 0.01" />
         </geometry>
+        
+        <material name="Blue" />
       </visual>
 
       <collision name="${name}_l_stereo_camera_collision">
@@ -313,6 +323,8 @@
         <geometry name="${name}_r_stereo_camera_visual_geom">
           <box size="0.01 0.01 0.01" />
         </geometry>
+        
+        <material name="Blue" />
       </visual>
 
       <collision name="${name}_r_stereo_camera_collision">
@@ -326,7 +338,6 @@
 
     <!-- extensions -->
     <stereo_camera_gazebo name="${name}" />
-    <stereo_camera_rviz name="${name}" />
   </macro>
 
 </robot>

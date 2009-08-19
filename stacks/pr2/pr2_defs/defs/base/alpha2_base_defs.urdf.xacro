@@ -3,7 +3,6 @@
        xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
        xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface">
 
-  <include filename="$(find pr2_defs)/defs/base/alpha2_base_rviz.xacro" />
   <include filename="$(find pr2_defs)/defs/base/alpha2_base_gazebo.xacro" />
   <include filename="$(find pr2_defs)/defs/base/alpha2_base_transmission.xacro" />
 
@@ -65,6 +64,8 @@
         <geometry name="${parent}_${suffix}_wheel_visual_geom">
           <mesh filename="$(find pr2_defs)/meshes/pr2_wheel.stl" />
         </geometry>
+        
+        <material name="Caster_${suffix}" />
       </visual>
       <collision name="${parent}_${suffix}_wheel_collision">
         <origin xyz="0 0 0" rpy="${M_PI/2} 0 0" />
@@ -76,7 +77,6 @@
 
     <!-- extensions -->
     <pr2_wheel_alpha2_gazebo parent="${parent}" suffix="${suffix}" />
-    <pr2_wheel_alpha2_rviz parent="${parent}" suffix="${suffix}" />
     <pr2_wheel_alpha2_transmission parent="${parent}" suffix="${suffix}" reflect="${reflect}" />
 
   </macro>
@@ -107,6 +107,8 @@
         <geometry name="${suffix}_caster_rotation_visual_geom">
           <mesh filename="$(find pr2_defs)/meshes/caster.stl" />
         </geometry>
+        
+        <material name="Green" />
       </visual>
 
       <collision name="${suffix}_caster_rotation_collision">
@@ -123,7 +125,6 @@
 
     <!-- extensions -->
     <pr2_caster_alpha2_transmission suffix="${suffix}" />
-    <pr2_caster_alpha2_rviz suffix="${suffix}" />
 
   </macro>
 
@@ -150,6 +151,8 @@
         <geometry name="${name}_visual_geom">
           <mesh filename="$(find pr2_defs)/meshes/base.stl" />
         </geometry>
+        
+        <material name="Green" />
       </visual>
 
       <collision name="${name}_collision">
@@ -182,6 +185,8 @@
         <geometry name="base_laser_visual_geom">
           <box size="${base_laser_size_x} ${base_laser_size_y} ${base_laser_size_z}"/>
         </geometry>
+        
+        <material name="Red" />
       </visual>
 
       <collision name="base_lcollision">
@@ -209,7 +214,6 @@
 
     <!-- gazebo extensions -->
     <pr2_base_alpha2_gazebo name="${name}" />
-    <pr2_base_alpha2_rviz name="${name}" />
 
   </macro>
 

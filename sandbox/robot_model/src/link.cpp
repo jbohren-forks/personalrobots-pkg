@@ -86,15 +86,11 @@ bool Material::initXml(TiXmlElement *config)
     return false;
   }
 
-  this->name = config->Attribute("filename");
+  this->name = config->Attribute("name");
 
   // texture
   TiXmlElement *t = config->FirstChildElement("texture");
-  if (!t)
-  {
-    ROS_INFO("no texture in Matrial");
-  }
-  else
+  if (t)
   {
     if (t->Attribute("filename"))
     {
@@ -102,24 +98,21 @@ bool Material::initXml(TiXmlElement *config)
       has_filename = true;
     }
     else
-      ROS_INFO("texture has no filename for Matrial %s",this->name.c_str());
+    {
+      ROS_ERROR("texture has no filename for Material %s",this->name.c_str());
+    }
   }
 
   // color
   TiXmlElement *c = config->FirstChildElement("color");
-  if (!c)
+  if (c)
   {
-    ROS_INFO("Material %s has no color tag",this->name.c_str());
-    this->rgb.clear();
-  }
-  else
-  {
-    if (c->Attribute("rgb"))
+    if (c->Attribute("rgba"))
     {
-      if (!this->rgb.init(c->Attribute("rgb")))
+      if (!this->color.init(c->Attribute("rgba")))
       {
-        ROS_ERROR("Material %s has malformed color rgb values.",this->name.c_str());
-        this->rgb.clear();
+        ROS_ERROR("Material %s has malformed color rgba values.",this->name.c_str());
+        this->color.clear();
         return false;
       }
       else
@@ -127,7 +120,7 @@ bool Material::initXml(TiXmlElement *config)
     }
     else
     {
-      ROS_INFO("Matrial % color has no rgb",this->name.c_str());
+      ROS_ERROR("Material %s color has no rgba",this->name.c_str());
     }
   }
 
@@ -199,7 +192,7 @@ bool Visual::initXml(TiXmlElement *config)
   TiXmlElement *o = config->FirstChildElement("origin");
   if (!o)
   {
-    ROS_INFO("Origin tag not present for visual element, using default (Identity)");
+    ROS_DEBUG("Origin tag not present for visual element, using default (Identity)");
     this->origin.clear();
   }
   else if (!this->origin.initXml(o))

@@ -5,7 +5,6 @@
        xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface">
 
   <include filename="$(find pr2_defs)/defs/head/alpha2_head_sensor_package_gazebo.xacro" />
-  <include filename="$(find pr2_defs)/defs/head/alpha2_head_sensor_package_rviz.xacro" />
   <include filename="$(find pr2_defs)/defs/head/alpha2_head_sensor_package_transmission.xacro" />
 
   <!-- in alpha2 head sensor package, only tilting laser is different, stereo's are the same as alpha1, not repeated -->
@@ -36,6 +35,8 @@
         <geometry name="${name}_mount_visual_geom">
           <mesh filename="$(find pr2_defs)/meshes/hok_tilt.stl" />
         </geometry>
+        
+        <material name="Red" />
       </visual>
 
       <collision name="${name}_mount_collision">
@@ -65,6 +66,8 @@
         <geometry name="${name}_visual_geom">
           <box size="0.001 0.001 0.001" />
         </geometry>
+        
+        <material name="Red" />
       </visual>
 
       <collision name="${name}_collision">
@@ -77,7 +80,6 @@
 
     <!-- extensions -->
     <pr2_tilting_laser_alpha2_gazebo name="${name}"/>
-    <pr2_tilting_laser_alpha2_rviz name="${name}"/>
     <pr2_tilting_laser_alpha2_transmission name="${name}"/>
   </macro>
 

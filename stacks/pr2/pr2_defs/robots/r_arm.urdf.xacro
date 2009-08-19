@@ -23,6 +23,7 @@
   <include filename="$(find pr2_defs)/defs/arm/arm_defs.urdf.xacro" />
   <include filename="$(find pr2_defs)/defs/gripper/gripper_defs.urdf.xacro" />
   <include filename="$(find pr2_defs)/defs/gazebo/gazebo_defs.urdf.xacro" />
+  <include filename="$(find pr2_defs)/defs/materials.urdf.xacro" />
 
   <pr2_arm side="r" reflect="-1" parent="torso_lift_link">
     <origin xyz="0.0 0.0 1.0" rpy="0 0 0" />

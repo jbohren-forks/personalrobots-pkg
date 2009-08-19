@@ -5,7 +5,6 @@
        xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface">
 
   <include filename="$(find pr2_defs)/defs/body/body_gazebo.xacro" />
-  <include filename="$(find pr2_defs)/defs/body/body_rviz.xacro" />
   <include filename="$(find pr2_defs)/defs/body/body_transmission.xacro" />
 
   <macro name="pr2_torso" params="name parent *origin">
@@ -37,6 +36,8 @@
         <geometry name="${name}_visual_geom">
           <mesh filename="$(find pr2_defs)/meshes/torso.stl" />
         </geometry>
+        
+        <material name="Grey2" />
       </visual>
 
       <collision name="${name}_collision">
@@ -50,7 +51,6 @@
     <!-- extensions -->
     <pr2_torso_gazebo name="${name}" />
     <pr2_torso_transmission name="${name}" />
-    <pr2_torso_rviz name="${name}" />
 
   </macro>
 

@@ -91,7 +91,7 @@ public:
    * \param spin_thread If true, spins up a thread to service this action's subscriptions. If false,
    *                    then the user has to call ros::spin().
    */
-  SimpleActionClient(const ros::NodeHandle& n, const std::string& name, bool spin_thread = false) : cur_simple_state_(SimpleGoalState::PENDING)
+  SimpleActionClient(ros::NodeHandle& n, const std::string& name, bool spin_thread = false) : cur_simple_state_(SimpleGoalState::PENDING)
   {
     initSimpleClient(n, name, spin_thread);
 

@@ -138,6 +138,7 @@ void ChompOptimizer::initialize()
   random_momentum_ = Eigen::MatrixXd::Zero(num_vars_free_, num_joints_);
   random_joint_momentum_ = Eigen::VectorXd::Zero(num_vars_free_);
   multivariate_gaussian_.clear();
+  stochasticity_factor_ = 1.0;
   for (int i=0; i<num_joints_; i++)
   {
     multivariate_gaussian_.push_back(MultivariateGaussian(Eigen::VectorXd::Zero(num_vars_free_), joint_costs_[i].getQuadraticCostInverse()));
@@ -190,6 +191,7 @@ void ChompOptimizer::optimize()
       getRandomMomentum();
       updateMomentum();
       updatePositionFromMomentum();
+      stochasticity_factor_ *= parameters_->getHmcAnnealingFactor();
     }
 
     handleJointLimits();
@@ -578,7 +580,7 @@ void ChompOptimizer::getRandomMomentum()
   for (int i=0; i<num_joints_; ++i)
   {
     multivariate_gaussian_[i].sample(random_joint_momentum_);
-    random_momentum_.col(i) = random_joint_momentum_;
+    random_momentum_.col(i) = stochasticity_factor_ * random_joint_momentum_;
   }
 }
 

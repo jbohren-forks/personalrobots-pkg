@@ -4,7 +4,6 @@
        xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface">
 
   <include filename="$(find pr2_defs)/defs/arm/arm_gazebo.xacro" />
-  <include filename="$(find pr2_defs)/defs/arm/arm_rviz.xacro" />
   <include filename="$(find pr2_defs)/defs/arm/arm_transmission.xacro" />
 
   <property name="M_PI" value="3.1415926535897931" />
@@ -71,7 +70,7 @@
         <geometry name="${side}_shoulder_pan_visual_geom">
           <mesh filename="$(find pr2_defs)/meshes/shoulder_yaw.stl" />
         </geometry>
-        <texture name="PR2/Blue" />
+        <material name="Blue" />
       </visual>
 
       <collision name="${side}_shoulder_pan_collision">
@@ -113,7 +112,7 @@
         <geometry name="${side}_shoulder_lift_visual_geom">
           <mesh filename="$(find pr2_defs)/meshes/shoulder_lift.stl" />
         </geometry>
-        <texture name="PR2/Grey" />
+        <material name="Grey" />
       </visual>
 
       <collision name="${side}_shoulder_lift_collision">
@@ -153,6 +152,8 @@
         <geometry name="${side}_upper_arm_roll_visual_geom">
           <mesh filename="$(find pr2_defs)/meshes/upper_arm_roll.stl" />
         </geometry>
+        
+        <material name="RollLinks" />
       </visual>
       <collision name="${side}_upper_arm_roll_collision">
         <!-- TODO: collision tag should be optional -->
@@ -196,6 +197,8 @@
         <geometry name="${side}_upper_arm_visual_geom">
           <mesh filename="$(find pr2_defs)/meshes/upper_arm.stl" />
         </geometry>
+        
+        <material name="Green" />
       </visual>
 
       <collision name="${side}_upper_arm_collision">
@@ -235,6 +238,8 @@
         <geometry name="${side}_elbow_flex_visual_geom">
           <mesh filename="$(find pr2_defs)/meshes/elbow_flex.stl" />
         </geometry>
+        
+        <material name="Grey" />
       </visual>
 
       <collision name="${side}_elbow_flex_collision">
@@ -274,6 +279,8 @@
         <geometry name="${side}_forearm_roll_visual_geom">
           <mesh filename="$(find pr2_defs)/meshes/forearm_roll.stl" />
         </geometry>
+        
+        <material name="RollLinks" />
       </visual>
       <collision name="${side}_forearm_roll_collision"> <!-- TODO: collision tag should be optional -->
         <origin xyz="0 0 0" rpy="0 0 0" />
@@ -310,6 +317,8 @@
         <geometry name="${side}_forearm_visual_geom">
           <mesh filename="$(find pr2_defs)/meshes/forearm.stl" />
         </geometry>
+        
+        <material name="Blue" />
       </visual>
 
       <collision name="${side}_forearm_collision">
@@ -347,6 +356,8 @@
         <geometry name="${side}_wrist_flex_visual_geom">
           <mesh filename="$(find pr2_defs)/meshes/wrist_flex.stl" />
         </geometry>
+        
+        <material name="Grey" />
       </visual>
 
       <collision name="${side}_wrist_flex_collision">
@@ -381,6 +392,8 @@
         <geometry name="${side}_wrist_roll_visual_geom">
           <mesh filename="$(find pr2_defs)/meshes/wrist_roll.stl" />
         </geometry>
+        
+        <material name="RollLinks" />
       </visual>
       <collision name="${side}_wrist_roll_collision">
         <origin xyz="0.0 0 0" rpy="0 0 0" />
@@ -411,11 +424,6 @@
     <pr2_shoulder_transmission side="${side}" />
     <pr2_upper_arm_transmission side="${side}" />
     <pr2_forearm_transmission side="${side}" />
-
-    <!-- rviz extensions -->
-    <pr2_shoulder_rviz side="${side}" />
-    <pr2_upper_arm_rviz side="${side}" />
-    <pr2_forearm_rviz side="${side}" />
   </macro>
 
 

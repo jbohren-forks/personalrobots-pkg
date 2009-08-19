@@ -154,18 +154,22 @@ bool RobotModel::initXml(TiXmlElement *robot_xml)
         // set link visual material
         ROS_DEBUG("setting link '%s' material", link->name.c_str());
         if (link->visual)
+        {
           if (!link->visual->material_name.empty())
+          {
             if (this->getMaterial(link->visual->material_name))
             {
-              ROS_DEBUG("setting link '%s' material to '%s'", link->name.c_str(),link->visual->material_name);
-              link->visual->material = this->getMaterial( link->visual->material_name );
+              ROS_DEBUG("setting link '%s' material to '%s'", link->name.c_str(),link->visual->material_name.c_str());
+              link->visual->material = this->getMaterial( link->visual->material_name.c_str() );
             }
             else
             {
-              ROS_ERROR("link '%s' material '%s' undefined.", link->name.c_str(),link->visual->material_name);
+              ROS_ERROR("link '%s' material '%s' undefined.", link->name.c_str(),link->visual->material_name.c_str());
               link.reset();
               return false;
             }
+          }
+        }
 
         this->links_.insert(make_pair(link->name,link));
         ROS_DEBUG("successfully added a new link '%s'", link->name.c_str());

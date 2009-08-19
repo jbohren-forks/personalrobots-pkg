@@ -46,7 +46,7 @@ This package is only temporary. I'll eventually replace it with a better solutio
  **/
 
 #include <ros/ros.h>
-#include "ros/node_handle.h"
+#include <ros/node_handle.h>
 #include <planning_environment/monitors/planning_monitor.h>
 #include <planning_environment/models/collision_models.h>
 #include <motion_planning_msgs/KinematicJoint.h>
@@ -70,32 +70,39 @@ class pm_wrapper
 		/** \brief Check if a set of links and their joint angles are a valid configuration in the environment */
 		bool areLinksValid(const double * angles);
 
-		/** \brief Update the current configuration of the robot model in the planning monitor and lock it */
-		void updatePM(const motion_planning_msgs::GetMotionPlan::Request &req);
-
 		/** \brief Unlock the lock around the planning monitor (call after planning completes) */
 		void unlockPM();
 					
-		/** \brief Set the size of the object to be removed from the collision map and it's pose in the planning frame */
+		// old function and will be removed */
 		void setObject(shapes::Shape *object, btTransform pose);
 
+		/** \brief Update the current configuration of the robot model in the planning monitor and lock it */
+		void updateRobotState(const std::vector <motion_planning_msgs::KinematicJoint> &robot_state);
+
+		/** \brief Set the state of specific joints & links in the robot. The rest of the joint & links will be remain the current values. */
+		void setRobotJointStates(const std::vector<std::string> &joint_names, const std::vector<double> &params);
+
+		/** \brief Add an object with the specified pose to the internal collision map */
+		void addObject(const std::string &ns, shapes::Shape *object, const btTransform &pose);
+		
+		/** \brief Removed the object with the specified pose from the internal collision map */
+		void removeObject(shapes::Shape *object, const btTransform &pose);
+		
 	private:
 
 		ros::NodeHandle node_;
 
-		ros::Subscriber col_map_subscriber_;
-		
 		ros::Publisher col_map_publisher_;
 		
 		mapping_msgs::CollisionMap col_map_;
-
-		planning_models::StateParams *start_state_;
 
 		std::string group_name_;
 
 		std::string robot_description_;
 		
 		int groupID_;
+		
+		bool visualize_map_;
 
 		std::string planning_frame_;
 		
@@ -103,16 +110,22 @@ class pm_wrapper
 		
 		btTransform object_pose_;
 		
-		bool remove_objects_from_collision_map_;
+// 		bool remove_objects_from_collision_map_;
 
 		std::vector<std::string> collision_check_links_;
 
 		planning_environment::CollisionModels *collision_model_;
 
 		planning_environment::PlanningMonitor *planning_monitor_;
+		
+		void publishInternalCollisionMap();
 			
-		void publishMapWithoutObject(const mapping_msgs::CollisionMapConstPtr &collisionMap, bool clear);
+		// old function and will be removed
+		void publishMapWithoutObject(const mapping_msgs::CollisionMapConstPtr &collisionMap, bool clear);     
 
+		// old function and will be removed
+		void publishMapWithObject(const mapping_msgs::CollisionMapConstPtr &collisionMap, bool clear);
+		
 		/** \brief Fill the start state of the planning monitor with the current state of the robot in the request message */
 		planning_models::StateParams* fillStartState(const std::vector<motion_planning_msgs::KinematicJoint> &given);
 };

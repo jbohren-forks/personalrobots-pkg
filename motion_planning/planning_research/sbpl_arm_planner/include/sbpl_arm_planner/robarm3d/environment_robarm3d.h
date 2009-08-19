@@ -429,10 +429,11 @@ class EnvironmentROBARM3D: public DiscreteSpaceInformation
 
 		std::vector<int> debugExpandedStates();
 		
-		void getGridPtr(unsigned char*** grid);
-		
 		std::vector<std::vector<double> > getAllObstacleVoxels();
 		void computeJacobian(const double jnt_angles[], const double rad_timestep, double jnt_vel[]);
+		
+		void OutputActionCostTable(FILE* fOut);
+		void OutputActions(FILE* fOut);
 		
   private:
 
@@ -480,6 +481,8 @@ class EnvironmentROBARM3D: public DiscreteSpaceInformation
 					 const short unsigned int l2a[],const short unsigned int l2b[]);
 		unsigned char IsValidLineSegment(const short unsigned int a[],const short unsigned int b[],const unsigned int radius,vector<CELLV>* pTestedCells, unsigned char *** Grid3D);
 		
+		int IsValidCoord(short unsigned int coord[], short unsigned int endeff_pos[3], short unsigned int wrist_pos[3], short unsigned int elbow_pos[3], double orientation[3][3], unsigned char &dist, bool bVerbose);
+				
     inline unsigned char getVoxel(const int x, const int y, const int z, const boost::shared_ptr<Voxel3d> grid)
       { return (*grid)(x,y,z);  }
 		inline unsigned char getCell(const int xyz[], unsigned char ***Grid);
@@ -509,8 +512,8 @@ class EnvironmentROBARM3D: public DiscreteSpaceInformation
     void PrintConfiguration(FILE* fOut);
     void printangles(FILE* fOut, short unsigned int* coord, bool bGoal, bool bVerbose, bool bLocal);
     void PrintSuccGoal(int SourceStateID, int costtogoal, bool bVerbose, bool bLocal /*=false*/, FILE* fOut /*=NULL*/);
-    void OutputActionCostTable(FILE* fOut);
-    void OutputActions(FILE* fOut);
+//     void OutputActionCostTable(FILE* fOut);
+//     void OutputActions(FILE* fOut);
     void PrintAnglesWithAction(FILE* fOut, EnvROBARMHashEntry_t* HashEntry, bool bGoal, bool bVerbose, bool bLocal);
 
     /** heuristic */

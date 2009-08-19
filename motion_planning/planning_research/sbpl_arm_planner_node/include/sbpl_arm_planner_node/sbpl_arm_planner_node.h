@@ -62,7 +62,6 @@
 #include <motion_planning_msgs/PoseConstraint.h>
 #include <mechanism_msgs/MechanismState.h>
 #include <visualization_msgs/Marker.h>
-#include <geometric_shapes/shapes.h>
 
 #include <robot_voxelizer/robot_voxelizer.h>
 
@@ -292,9 +291,6 @@ class SBPLArmPlannerNode
 			std::vector<std::vector<double> > sbpl_obstacles_;
 			
 			bool interpolatePath(std::vector<std::vector<double> > path_in, std::vector<std::vector<double> > &path_out, double inc);
-
-			shapes::Shape *box_;
-			void clearBox();
   };
 }
 

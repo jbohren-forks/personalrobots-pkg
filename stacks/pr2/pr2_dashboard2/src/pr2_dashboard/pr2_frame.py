@@ -152,6 +152,16 @@ class BreakerControl(wx.Window):
     self.Bind(wx.EVT_LEFT_DOWN, self.on_left_down)
     
     self._power_control = rospy.ServiceProxy('power_board_control', PowerBoardCommand)
+    self._serial = 0
+    try:
+      param = rospy.search_param("power_board_serial")
+      
+      if (len(param) > 0):
+        self._serial = int(rospy.get_param(param))
+    except rospy.ROSException, e:
+      pass
+    except KeyError, e:
+      pass
 
   def on_paint(self, evt):
     dc = wx.BufferedPaintDC(self)
@@ -174,6 +184,7 @@ class BreakerControl(wx.Window):
       power_cmd = PowerBoardCommandRequest()
       power_cmd.breaker_number = breaker
       power_cmd.command = cmd
+      power_cmd.serial_number = self._serial
       self._power_control(power_cmd)
       
       return True
