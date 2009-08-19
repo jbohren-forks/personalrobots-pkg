@@ -1,0 +1,16 @@
+<package>
+  <description brief="resource_retriever">
+
+     resource_retriever
+
+  </description>
+  <author>Josh Faust (jfaust@willowgarage.com)</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/resource_retriever</url>
+  <depend package="roslib"/>
+  <depend package="rosconsole"/>
+
+</package>
+
+
