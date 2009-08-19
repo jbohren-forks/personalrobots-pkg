@@ -105,6 +105,7 @@ private:
   Eigen::MatrixXd random_momentum_;
   Eigen::VectorXd random_joint_momentum_; //temporary variable
   std::vector<MultivariateGaussian> multivariate_gaussian_;
+  double stochasticity_factor_;
 
   std::vector<int> state_is_in_collision_;      /**< Array containing a boolean about collision info for each point in the trajectory */
   std::vector<std::vector<int> > point_is_in_collision_;
