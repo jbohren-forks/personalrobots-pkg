@@ -86,18 +86,18 @@ class NavStackTest(unittest.TestCase):
         self.publish_initialpose = False
         self.publish_goal = True
 
-        self.odom_xi = 0
-        self.odom_yi = 0
-        self.odom_qi = [0,0,0,1]
+        self.odom_x_initial = 0
+        self.odom_y_initial = 0
+        self.odom_q_initial = [0,0,0,1]
         self.odom_initialized = False;
 
         self.odom_x = 0
         self.odom_y = 0
         self.odom_q = [0,0,0,1]
 
-        self.p3d_xi = 0
-        self.p3d_yi = 0
-        self.p3d_qi = [0,0,0,1]
+        self.p3d_x_initial = 0
+        self.p3d_y_initial = 0
+        self.p3d_q_initial = [0,0,0,1]
         self.p3d_initialized = False;
 
         self.p3d_x = 0
@@ -154,9 +154,9 @@ class NavStackTest(unittest.TestCase):
         # initialize odom
         if self.odom_initialized == False or self.p3d_initialized == False:
             self.odom_initialized = True
-            self.odom_xi = odom.pose.pose.position.x
-            self.odom_yi = odom.pose.pose.position.y
-            self.odom_qi = self.quaternionMsgToList(odom.pose.pose.orientation)
+            self.odom_x_initial = odom.pose.pose.position.x
+            self.odom_y_initial = odom.pose.pose.position.y
+            self.odom_q_initial = self.quaternionMsgToList(odom.pose.pose.orientation)
         else:
             # update odom
             self.odom_x = odom.pose.pose.position.x
@@ -169,9 +169,9 @@ class NavStackTest(unittest.TestCase):
         #print "init ", self.odom_initialized , " " , self.p3d_initialized, " " ,self.p3d_x
         if self.odom_initialized == False or self.p3d_initialized == False:
             self.p3d_initialized = True
-            self.p3d_xi =  p3d.pose.pose.position.x
-            self.p3d_yi =  p3d.pose.pose.position.y
-            self.p3d_qi = self.quaternionMsgToList(p3d.pose.pose.orientation)
+            self.p3d_x_initial =  p3d.pose.pose.position.x
+            self.p3d_y_initial =  p3d.pose.pose.position.y
+            self.p3d_q_initial = self.quaternionMsgToList(p3d.pose.pose.orientation)
         else:
             # update ground truth
             self.p3d_x  =  p3d.pose.pose.position.x
@@ -324,46 +324,58 @@ class NavStackTest(unittest.TestCase):
             time.sleep(1.0)
 
             # compute angular error between deltas in odom and p3d
-            # compute delta in odom from initial pose
+
             print "========================"
-            tmpoqi = tft.quaternion_inverse(self.odom_qi)
+            print "time: remaining: ", timeout_t - time.time()
+            # compute delta in odom from initial pose
+            tmpoqi = tft.quaternion_inverse(self.odom_q_initial)
             odom_q_delta = tft.quaternion_multiply(tmpoqi,self.odom_q)
-            print "debug odom_qi:" , self.odom_qi
-            print "debug tmpoqi:" ,  tmpoqi
-            print "debug odom_q_delta:" ,  odom_q_delta
-            print "odom delta:" , tft.euler_from_quaternion(odom_q_delta)
+            #if self.odom_initialized == False:
+            #  print "pr2_odometry/odom not received"
+            #else:
+            #  print "euler: odom delta:" , tft.euler_from_quaternion(odom_q_delta)
+
             # compute delta in p3d from initial pose
-            tmppqi = tft.quaternion_inverse(self.p3d_qi)
+            tmppqi = tft.quaternion_inverse(self.p3d_q_initial)
             p3d_q_delta = tft.quaternion_multiply(tmppqi,self.p3d_q)
-            print "p3d delta:" , tft.euler_from_quaternion(p3d_q_delta)
+            #if self.p3d_initialized == False:
+            #  print "base_pose_ground_truth not received"
+            #else:
+            #  print "euler: ground truth delta:" , tft.euler_from_quaternion(p3d_q_delta)
+
+
             # compute delta between odom and p3d
             tmpdqi = tft.quaternion_inverse(p3d_q_delta)
             delta = tft.quaternion_multiply(tmpdqi,odom_q_delta)
             delta_euler = tft.euler_from_quaternion(delta)
             odom_drift_dyaw = delta_euler[2]
-            print "odom drift from p3d:" , tft.euler_from_quaternion(delta)
+            #if self.p3d_initialized == True and self.odom_initialized == True:
+            #  print "euler: odom drift from ground truth:" , tft.euler_from_quaternion(delta)
 
             # compute delta between target and p3d
             tmptqi = tft.quaternion_inverse(self.target_q)
             navdq = tft.quaternion_multiply(tmptqi,self.p3d_q)
             navde = tft.euler_from_quaternion(navdq)
             nav_dyaw = navde[2]
-            print "nav euler off target:" , navde
+            #print "euler: ground truth off target:" , navde
+
+
 
             # check odom error (odom error from ground truth)
-            odom_xy_err =  max(abs(self.odom_x - self.p3d_x - self.odom_xi + self.p3d_xi ),abs(self.odom_y - self.p3d_y - self.odom_yi + self.p3d_yi ))
+            odom_xy_err =  max(abs(self.odom_x - self.p3d_x - self.odom_x_initial + self.p3d_x_initial ),abs(self.odom_y - self.p3d_y - self.odom_y_initial + self.p3d_y_initial ))
             odom_t_err  =  abs(odom_drift_dyaw)
 
             # check total error (difference between ground truth and target)
             nav_xy_err  =  max(abs(self.p3d_x - self.target_x),abs(self.p3d_y - self.target_y))
             nav_t_err   =  abs(nav_dyaw)
 
-            print "odom drift error: (",self.odom_x - self.p3d_x - self.odom_xi + self.p3d_xi,",",self.odom_y - self.p3d_y - self.odom_yi + self.p3d_yi,")"
-            print "nav translation error: (",self.p3d_x - self.target_x,",",self.p3d_y - self.target_y,")"
-            print "time remaining: ", timeout_t - time.time()
+            print "odom drift error:"
+            print "    translation: ",self.odom_x - self.p3d_x - self.odom_x_initial + self.p3d_x_initial,",",self.odom_y - self.p3d_y - self.odom_y_initial + self.p3d_y_initial
+            print "    heading: " + str(odom_t_err) + " odom_t_tol: " + str(self.odom_t_tol)
 
-            print "nav theta error:" + str(nav_t_err) + " nav_t_tol:" + str(self.nav_t_tol)
-            print "odom theta error:" + str(odom_t_err) + " odom_t_tol: " + str(self.odom_t_tol)
+            print "ground truth - target error:"
+            print "    translation: ",self.p3d_x - self.target_x,",",self.p3d_y - self.target_y
+            print "    heading: " + str(nav_t_err) + " nav_t_tol:" + str(self.nav_t_tol)
 
             self.success = True
             # check to see if collision happened
