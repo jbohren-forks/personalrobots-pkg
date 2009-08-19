@@ -346,7 +346,7 @@ time stamp
 string frame_id
 """
 
-	new_type = "sensor_msgs/StereoInfo"
+	new_type = "stereo_msgs/StereoInfo"
 	new_full_text = """
 # This message defines meta information for a stereo pair. It should
 # be in a stereo namespace and accompanied by 2 camera namespaces, and
