@@ -34,7 +34,7 @@
 #ifndef CASTER_CALIBRATION_CONTROLLER_EFFORT_H
 #define CASTER_CALIBRATION_CONTROLLER_EFFORT_H
 
-#include "pr2_mechanism_controllers/caster_controller_effort.h"
+#include "experimental_controllers/caster_controller_effort.h"
 #include "realtime_tools/realtime_publisher.h"
 #include "std_msgs/Empty.h"
 #include <robot_mechanism_controllers/CalibrateJoint.h>

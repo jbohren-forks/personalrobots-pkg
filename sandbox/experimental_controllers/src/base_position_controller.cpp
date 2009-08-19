@@ -32,7 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include "pr2_mechanism_controllers/base_position_controller.h"
+#include "experimental_controllers/base_position_controller.h"
 
 using namespace pr2_mechanism_controllers ;
 using namespace std ;
@@ -48,22 +48,22 @@ BasePositionControllerNode::BasePositionControllerNode() : node_(ros::Node::inst
 
 BasePositionControllerNode::~BasePositionControllerNode()
 {
-  
+
 }
 
 bool BasePositionControllerNode::initXml(mechanism::RobotState *robot_state, TiXmlElement *config)
 {
   ROS_INFO("BasePositionControllerNode:: initXml()") ;
-  
-  
+
+
   bool success ;
-  
+
   last_time_ = robot_state->hw_->current_time_ ;
-  
+
   string service_prefix = config->Attribute("name") ;
-  
+
   robot_state_ = robot_state ;
-  
+
   // Initialize the BasePositionControlUtil
   TiXmlElement *base_pos_pid_elem = config->FirstChildElement("base_position_pid") ;
   if (!base_pos_pid_elem)
@@ -71,7 +71,7 @@ bool BasePositionControllerNode::initXml(mechanism::RobotState *robot_state, TiX
     ROS_ERROR("Cannot start BasePositionControllerNode. Cannot find xml element BasePositionPid") ;
     return false ;
   }
-  success = base_position_pid_.initXml(base_pos_pid_elem) ;  
+  success = base_position_pid_.initXml(base_pos_pid_elem) ;
   if (!success)
   {
     ROS_ERROR("Cannot start BasePositionControllerNode. Error initializing XML for BasePositionPid") ;
@@ -93,25 +93,25 @@ bool BasePositionControllerNode::initXml(mechanism::RobotState *robot_state, TiX
     ROS_ERROR("Cannot start BasePositionControllerNode. Cannot find xml element 'controller' within 'base_controller_node'") ;
     return false ;
   }
-  
+
   base_controller_node_.initXml(robot_state, base_controller_node_controllers_elem) ;
-  
+
   // Initialize the BasePositionControllerNode
   TiXmlElement *odom_frame_elem = config->FirstChildElement("odometry_frame") ;
   const char* odom_frame = odom_frame_elem->Attribute("name") ;
   if (odom_frame == NULL)
   {
     ROS_ERROR("Cannot start BasePositionControllerNode. odometry_frame element not defined with attribute name") ;
-    return false ;    
+    return false ;
   }
   odom_frame_name_ = odom_frame ;
-  
+
   node_->subscribe(service_prefix + "/set_pose_command", pose_cmd_, &BasePositionControllerNode::setPoseCommandCallback, this, 1) ;
   guard_set_pose_command_.set(service_prefix + "/set_pose_command") ;
 
   node_->subscribe(service_prefix + "/set_pose_odom_frame_command", pose_odom_frame_cmd_, &BasePositionControllerNode::setPoseOdomFrameCommandCallback, this, 1) ;
   guard_set_pose_odom_frame_command_.set(service_prefix + "/set_pose_odom_frame_command") ;
-  
+
   return true ;
 }
 
@@ -121,21 +121,21 @@ void BasePositionControllerNode::update()
   double x, y, w, vx, vy, vw ;
   base_controller_node_.getOdometry(x, y, w, vx, vy, vw) ;
   tf::Vector3 xyt_current(x, y, w) ;
-  
+
   // Determine Elapsed Time
   double cur_time = robot_state_->hw_->current_time_ ;
   double time_elapsed = cur_time - last_time_ ;
   last_time_ = cur_time ;
-  
+
   // Determine next velocity to command
   tf::Vector3 vel_cmd ;
   vel_cmd = base_position_pid_.updateControl(xyt_target_, xyt_current, time_elapsed) ;
-  
+
   // Command the velocity
   base_controller_node_.setCommand(vel_cmd.x(), vel_cmd.y(), vel_cmd.z()) ;
-  
+
   base_controller_node_.update() ;
-  
+
   //static unsigned int count = 0 ;
   //count++ ;
   //if (count % 500 == 0)
@@ -180,7 +180,7 @@ void BasePositionControllerNode::setPoseCommand(geometry_msgs::PoseStamped cmd)
     z_rot = 2*z ;
   else
     z_rot = 2*acos(w)*z / sqrt(x*x+y*y+z*z) ;
-  
+
   setPoseOdomFrameCommand(pose_odom.pose.position.x,
                           pose_odom.pose.position.y,
                           0.0) ;
@@ -190,7 +190,7 @@ void BasePositionControllerNode::setPoseCommand(geometry_msgs::PoseStamped cmd)
 void BasePositionControllerNode::setPoseOdomFrameCommand(double x, double y, double w)
 {
   ROS_INFO("BasePositionControllerNode:: Odom Frame Position Command: %f %f %f\n", x, y, w) ;
-  
+
   //! \todo Mutex this data type
   xyt_target_.setX(x) ;
   xyt_target_.setY(y) ;

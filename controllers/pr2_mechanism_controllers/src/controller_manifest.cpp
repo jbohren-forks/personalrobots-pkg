@@ -34,9 +34,6 @@
 #include "pr2_mechanism_controllers/caster_controller.h"
 #include "pr2_mechanism_controllers/gripper_calibration_controller.h"
 #include "pr2_mechanism_controllers/head_position_controller.h"
-#include "pr2_mechanism_controllers/head_servoing_controller.h"
-#include "pr2_mechanism_controllers/joint_trajectory_controller.h"
-#include "pr2_mechanism_controllers/arm_trajectory_controller.h"
 #include "pr2_mechanism_controllers/laser_scanner_traj_controller.h"
 #include "pr2_mechanism_controllers/pr2_base_controller.h"
 //#include "pr2_mechanism_controllers/pr2_gripper_controller.h"
@@ -54,8 +51,6 @@ REGISTER_PLUGIN(CasterControllerNode)
 REGISTER_PLUGIN(GripperCalibrationController)
 REGISTER_PLUGIN(GripperCalibrationControllerNode)
 REGISTER_PLUGIN(HeadPositionController)
-REGISTER_PLUGIN(HeadServoingController)
-REGISTER_PLUGIN(JointTrajectoryController)
 REGISTER_PLUGIN(LaserScannerTrajController)
 REGISTER_PLUGIN(LaserScannerTrajControllerNode)
 REGISTER_PLUGIN(Pr2BaseController)
@@ -64,7 +59,6 @@ REGISTER_PLUGIN(Pr2Odometry)
 REGISTER_PLUGIN(WristCalibrationController)
 REGISTER_PLUGIN(WristCalibrationControllerNode)
 REGISTER_PLUGIN(WristCalibrationControllerNode)
-REGISTER_PLUGIN(ArmTrajectoryControllerNode)
 
 END_PLUGIN_LIST
 

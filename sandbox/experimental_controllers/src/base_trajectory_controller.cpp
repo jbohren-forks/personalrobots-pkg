@@ -34,7 +34,7 @@
 *
 * Author: Sachin Chitta
 *********************************************************************/
-#include <pr2_mechanism_controllers/base_trajectory_controller.h>
+#include <experimental_controllers/base_trajectory_controller.h>
 #include <diagnostic_msgs/DiagnosticArray.h>
 #include <diagnostic_updater/DiagnosticStatusWrapper.h>
 #include <ros/rate.h>
@@ -128,7 +128,7 @@ namespace pr2_mechanism_controllers
 
   void BaseTrajectoryController::pathCallback()
   {
-    this->ros_lock_.lock();    
+    this->ros_lock_.lock();
     path_msg_ = path_msg_in_;
     this->ros_lock_.unlock();
     path_updated_time_ = ros::Time::now().toSec();
@@ -144,17 +144,17 @@ namespace pr2_mechanism_controllers
 
     try
     {
-      tf_.transformPose(global_frame_, robot_pose, global_pose_);      
+      tf_.transformPose(global_frame_, robot_pose, global_pose_);
     }
-    catch(tf::LookupException& ex) 
+    catch(tf::LookupException& ex)
     {
       ROS_DEBUG("No Transform available Error: %s\n", ex.what());
     }
-    catch(tf::ConnectivityException& ex) 
+    catch(tf::ConnectivityException& ex)
     {
       ROS_DEBUG("Connectivity Error: %s\n", ex.what());
     }
-    catch(tf::ExtrapolationException& ex) 
+    catch(tf::ExtrapolationException& ex)
     {
       ROS_DEBUG("Extrapolation Error: %s\n", ex.what());
     }
@@ -261,7 +261,7 @@ namespace pr2_mechanism_controllers
         control_state_ = "WATCHDOG - MOTION STOPPED";
       }
 
-      ros::Time control_time = ros::Time::now();        
+      ros::Time control_time = ros::Time::now();
       updateControl();
       ROS_DEBUG("Full control cycle: %.9f", (ros::Time::now() - control_time).toSec());
 

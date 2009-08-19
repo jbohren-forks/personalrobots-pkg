@@ -34,7 +34,7 @@
 
 // Original version: Sachin Chitta <sachinc@willowgarage.com>
 
-#include "pr2_mechanism_controllers/joint_trajectory_controller.h"
+#include "experimental_controllers/joint_trajectory_controller.h"
 #include <diagnostic_updater/DiagnosticStatusWrapper.h>
 
 using namespace controller;
@@ -951,7 +951,7 @@ void JointTrajectoryController::publishDiagnostics()
       joint_pv_controllers_[i]->getCommand(cmd);
       status.add(joint_pv_controllers_[i]->getJointName() + "/Position/Command",
           cmd.positions[0]);
-      status.add(joint_pv_controllers_[i]->getJointName() + "/Position/Error (Command-Actual)", 
+      status.add(joint_pv_controllers_[i]->getJointName() + "/Position/Error (Command-Actual)",
           cmd.positions[0] - joint_pv_controllers_[i]->joint_state_->position_);
     }
 
@@ -965,12 +965,12 @@ void JointTrajectoryController::publishDiagnostics()
     }
     else
     {
-      status.add(key + JointTrajectoryStatusString[joint_trajectory_status_[current_trajectory_id_]], 
+      status.add(key + JointTrajectoryStatusString[joint_trajectory_status_[current_trajectory_id_]],
           joint_trajectory_status_[current_trajectory_id_]);
     }
 
     status.add("Trajectory Current Time", current_time_-trajectory_start_time_);
-    status.add("Trajectory Expected End Time (computed)", 
+    status.add("Trajectory Expected End Time (computed)",
         trajectory_end_time_-trajectory_start_time_);
     status.add("Current trajectory queue index", current_trajectory_index_);
     status.add("Number queued trajectories", num_trajectory_available_);
@@ -985,7 +985,7 @@ void JointTrajectoryController::publishDiagnostics()
     status.add("Trajectory set service", name_ + "/TrajectoryStart");
     status.add("Trajectory query service", name_ + "/TrajectoryQuery");
     status.add("Trajectory cancel service", name_ + "/TrajectoryCancel");
-    
+
     statuses.push_back(status);
 
     last_diagnostics_publish_time_ = current_time_;

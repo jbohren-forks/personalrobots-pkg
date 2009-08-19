@@ -31,7 +31,7 @@
  * Author: Wim Meeussen
  */
 
-#include "pr2_mechanism_controllers/caster_calibration_controller_effort.h"
+#include "experimental_controllers/caster_calibration_controller_effort.h"
 
 namespace controller {
 

@@ -36,7 +36,7 @@
 #define PR2_MECHANISM_CONTROLLERS_BASE_POSITION_CONTROLLER_H
 
 #include "control_toolbox/base_position_pid.h"
-#include "pr2_mechanism_controllers/base_controller.h"
+#include "experimental_controllers/base_controller.h"
 #include "tf/transform_listener.h"
 #include "geometry_msgs/PoseStamped.h"
 #include "geometry_msgs/Point.h"
@@ -55,13 +55,13 @@ public :
   /**
    * Initializes the Controller.
    * A list of XML sections are necessary for this to work
-   * 
-   * 
-   * 
-   * 
+   *
+   *
+   *
+   *
    */
   bool initXml(mechanism::RobotState *robot_state, TiXmlElement *config) ;
-  
+
   /**
    * Realtime safe update method called from the realtime loop. Compares the target position to the current position,
    * generates error terms, and then uses these to generate a Velocity command for BaseController
@@ -84,27 +84,27 @@ public :
    * \param w The theta angle that we want to reach [in the odometric frame]
    */
   void setPoseOdomFrameCommand(double x, double y, double w) ;
-  
+
 private :
   control_toolbox::BasePositionPid base_position_pid_ ;        // Does the math to compute a command velocity
   controller::BaseControllerNode base_controller_node_ ;       // Converts a commanded velocity into a wheel velocities and turret angles
   ros::Node *node_ ;
 
   mechanism::RobotState *robot_state_ ;
-  
+
   double last_time_ ;                                          // Store the last time that we called the update
-  
+
   SubscriptionGuard guard_set_pose_command_ ;                  // Automatically unsubscribes set_pose_cmd
   void setPoseCommandCallback() ;                              // Ros callback for "set_pose_command" messages
 
   SubscriptionGuard guard_set_pose_odom_frame_command_ ;       // Automatically unsubscribes set_pose_odom_frame_cmd
   void setPoseOdomFrameCommandCallback() ;                     // Ros callback for "set_pose_command_odom_frame" messages
-  
+
   tf::Vector3 xyt_target_ ;                                    // The current x,y,theta target in position space (NOT velocity space)
-  
+
   tf::TransformListener tf_ ;                                  // Transformer used to convert commands from native frame into odometric frame
   std::string odom_frame_name_ ;                               // Stores the name of the odometric frame. This is the frame that we control in
-  
+
   // Message Holders
   geometry_msgs::PoseStamped pose_cmd_ ;
   geometry_msgs::Point pose_odom_frame_cmd_ ;

@@ -43,7 +43,7 @@
 
 #include <algorithm>
 
-#include <pr2_mechanism_controllers/laser_scanner_qualification.h>
+#include <experimental_controllers/laser_scanner_qualification.h>
 
 using namespace std;
 using namespace controller;

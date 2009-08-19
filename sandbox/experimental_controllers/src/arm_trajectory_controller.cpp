@@ -34,7 +34,7 @@
 
 // Original version: Sachin Chitta <sachinc@willowgarage.com>
 
-#include "pr2_mechanism_controllers/arm_trajectory_controller.h"
+#include "experimental_controllers/arm_trajectory_controller.h"
 #include "angles/angles.h"
 #include <diagnostic_updater/DiagnosticStatusWrapper.h>
 

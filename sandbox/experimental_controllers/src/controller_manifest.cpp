@@ -51,6 +51,11 @@
 #include "experimental_controllers/joint_position_smoothing_controller.h"
 #include "experimental_controllers/probe.h"
 
+#include "experimental_controllers/head_servoing_controller.h"
+#include "experimental_controllers/joint_trajectory_controller.h"
+#include "experimental_controllers/arm_trajectory_controller.h"
+
+
 using namespace controller;
 
 BEGIN_PLUGIN_LIST(Controller)
@@ -82,6 +87,10 @@ REGISTER_PLUGIN(JointCalibrationControllerNode)
 REGISTER_PLUGIN(JointChainSineController)
 REGISTER_PLUGIN(JointLimitCalibrationControllerNode)
 REGISTER_PLUGIN(CartesianTwistControllerIk)
+
+REGISTER_PLUGIN(HeadServoingController)
+REGISTER_PLUGIN(JointTrajectoryController)
+REGISTER_PLUGIN(ArmTrajectoryControllerNode)
 
 
 END_PLUGIN_LIST
