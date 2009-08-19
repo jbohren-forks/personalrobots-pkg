@@ -1,1 +1,2 @@
 rospack_add_executable(fibonacci_client fibonacci_client.cpp)
+rospack_add_executable(threaded_fibonacci_client fibonacci_client.cpp)

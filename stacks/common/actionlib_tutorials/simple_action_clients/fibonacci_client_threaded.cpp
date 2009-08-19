@@ -59,7 +59,7 @@ int main (int argc, char **argv)
   FibonacciClient ac("fibonacci");
   sleep(1);
   actionlib_tutorials::FibonacciGoal goal;
-  goal.order = 5;
+  goal.order = 10;
   ac.sendGoal(goal);
   bool finished_before_timeout = ac.waitForGoalToFinish(timeout);
 
@@ -67,7 +67,7 @@ int main (int argc, char **argv)
     ROS_INFO("Finished");
   else  
     ROS_INFO("TimedOut");
-
+  ros::shutdown();
   spin_thread.join();
 
   return 0;

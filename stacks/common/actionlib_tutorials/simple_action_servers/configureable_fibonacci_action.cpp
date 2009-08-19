@@ -74,7 +74,7 @@ public:
       actionlib_tutorials::FibonacciFeedback feedback;
       actionlib_tutorials::FibonacciResult result;
       // create come helper variables for computing the fibonacci sequence
-      ros::Rate r(100);
+      ros::Rate r(50); 
       std::vector<int> sequence;
       int temp;  
       bool success = true;
