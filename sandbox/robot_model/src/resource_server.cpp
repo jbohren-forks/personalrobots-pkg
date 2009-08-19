@@ -41,7 +41,7 @@ class ResourceServer
 public:
   ResourceServer(void)
   {
-    serveRes_ = nh_.advertiseService("~get_resource", &ResourceServer::getResource, this);
+    serveRes_ = nh_.advertiseService("get_resource", &ResourceServer::getResource, this);
   }
 
   ~ResourceServer(void)
@@ -59,7 +59,7 @@ private:
   {
     bool result = false;
 
-    ROS_INFO("Serving '%s'", req.identifier.c_str());
+    ROS_DEBUG("Serving '%s'", req.identifier.c_str());
     std::ifstream in(req.identifier.c_str(), std::ios::in | std::ios::binary);
 
     if (in.good())
