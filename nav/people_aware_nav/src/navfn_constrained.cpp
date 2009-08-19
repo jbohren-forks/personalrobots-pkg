@@ -37,11 +37,9 @@
 #include <people_aware_nav/navfn_constrained.h>
 #include <visualization_msgs/Marker.h>
 #include <ros/ros.h>
-#include <pluginlib/plugin_macros.h>
+#include <pluginlib/class_list_macros.h>
 
-BEGIN_PLUGIN_LIST(nav_core::BaseGlobalPlanner);
-REGISTER_PLUGIN(people_aware_nav::NavfnROSConstrained);
-END_PLUGIN_LIST
+REGISTER_CLASS(NavfnROSConstrained, people_aware_nav::NavfnROSConstrained, nav_core::BaseGlobalPlanner);
 
 namespace people_aware_nav {
 

@@ -1,5 +1,5 @@
 <library path="lib/libnavfn_constrained">
-  <plugin name="NavfnROSConstrained" class="people_aware_nav::NavfnROSConstrained" type="nav_core::BaseGlobalPlanner">
+  <plugin name="NavfnROSConstrained" type="people_aware_nav::NavfnROSConstrained" base_class_type="nav_core::BaseGlobalPlanner">
     <description>
       A constrained version of the navfn planner
     </description>
