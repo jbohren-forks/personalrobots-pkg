@@ -518,10 +518,25 @@ void URDF2Gazebo::convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, 
         convertLink(root, link->children[i], currentTransform, enforce_limits);
 }
 
-void URDF2Gazebo::convert(robot_desc::URDF &wgxml, TiXmlDocument &doc, bool enforce_limits)
+void URDF2Gazebo::convert(TiXmlDocument &urdf_in, TiXmlDocument &gazebo_xml_out, bool enforce_limits)
 {
+
+    // copy model to a string
+    std::ostringstream stream_in;
+    stream_in << urdf_in;
+
+    /* Create a RobotModel from string */
+    robot_desc::URDF robot_model;
+
+    if (!robot_model.loadString(stream_in.str().c_str()))
+    {
+        ROS_ERROR("Unable to load robot model from param server robot_description\n");  
+        exit(2);
+    }
+
+
     TiXmlDeclaration *decl = new TiXmlDeclaration("1.0", "", "");
-    doc.LinkEndChild(decl);
+    gazebo_xml_out.LinkEndChild(decl);
     
     /* create root element and define needed namespaces */
     TiXmlElement *robot = new TiXmlElement("model:physical");
@@ -545,13 +560,13 @@ void URDF2Gazebo::convert(robot_desc::URDF &wgxml, TiXmlDocument &doc, bool enfo
     btTransform transform;    
     transform.setIdentity();    
     
-    for (unsigned int k = 0 ; k < wgxml.getDisjointPartCount() ; ++k)
-        convertLink(robot, wgxml.getDisjointPart(k), transform, enforce_limits);
+    for (unsigned int k = 0 ; k < robot_model.getDisjointPartCount() ; ++k)
+        convertLink(robot, robot_model.getDisjointPart(k), transform, enforce_limits);
     
     /* find all data item types */
-    copyGazeboMap(wgxml.getMap(), robot);
+    copyGazeboMap(robot_model.getMap(), robot);
     
-    doc.LinkEndChild(robot);
+    gazebo_xml_out.LinkEndChild(robot);
 }
 
 

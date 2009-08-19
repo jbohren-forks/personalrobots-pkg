@@ -13,8 +13,8 @@
   <depend package="angles" />
   <depend package="tinyxml" />
   <depend package="bullet" />
-  <depend package="wg_robot_description_parser" />
   <depend package="robot_model" />
+  <depend package="wg_robot_description_parser" />
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib" />
   </export>

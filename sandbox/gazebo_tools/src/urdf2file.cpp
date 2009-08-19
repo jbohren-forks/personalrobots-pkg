@@ -36,8 +36,6 @@
 #include <cstdlib>
 #include <cmath>
 
-#include <urdf/URDF.h>
-
 #include <gazebo_tools/urdf2gazebo.h>
 
 using namespace urdf2gazebo;
@@ -65,20 +63,13 @@ int main(int argc, char **argv)
         enforce_limits = false;
     }
     
-    robot_desc::URDF wgxml;
-    
-    if (!wgxml.loadFile(argv[1]))
-    {
-        printf("Unable to load robot model from %s\n", argv[1]);  
-        exit(2);
-    }
-    
-    TiXmlDocument doc;
+    TiXmlDocument urdf_in(argv[1]), xml_out;
+    urdf_in.LoadFile();
     
     URDF2Gazebo u2g(std::string("pr2_model"));
-    u2g.convert(wgxml, doc, enforce_limits);
+    u2g.convert(urdf_in, xml_out, enforce_limits);
     
-    if (!doc.SaveFile(argv[2]))
+    if (!xml_out.SaveFile(argv[2]))
     {
         printf("Unable to save gazebo model in %s\n", argv[2]);  
         exit(3);
