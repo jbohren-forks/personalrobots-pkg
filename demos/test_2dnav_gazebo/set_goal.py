@@ -317,9 +317,9 @@ class NavStackTest(unittest.TestCase):
               tmpq = tft.quaternion_from_euler(0,0,self.target_t,'rxyz')
               q = Quaternion(tmpq[0],tmpq[1],tmpq[2],tmpq[3])
               pose = Pose(p,q)
-              print "publishing goal",self.publish_goal
               if self.publish_goal:
                 pub_goal.publish(PoseStamped(h, pose))
+                print "publishing goal"
 
             time.sleep(1.0)
 
@@ -377,24 +377,25 @@ class NavStackTest(unittest.TestCase):
             print "    translation: ",self.p3d_x - self.target_x,",",self.p3d_y - self.target_y
             print "    heading: " + str(nav_t_err) + " nav_t_tol:" + str(self.nav_t_tol)
 
+            print "summary:"
             self.success = True
             # check to see if collision happened
             if self.bumped == True:
                 self.success = False
-                print "Hit the wall."
+                print "    Hit the wall."
             # check to see if nav tolerance is ok
             if self.nav_t_tol > 0 and nav_t_err > self.nav_t_tol:
                 self.success = False
-                print "Nav theta out of tol."
+                print "    Target heading out of tol."
             if self.nav_xy_tol > 0 and nav_xy_err > self.nav_xy_tol:
                 self.success = False
-                print "Nav xy out of tol."
+                print "    Target xy out of tol."
             # check to see if odom drift from ground truth tolerance is ok
             if self.odom_t_tol > 0 and odom_t_err > self.odom_t_tol:
                 self.success = False
-                print "Odom theata out of tol."
+                print "    Odom drift heading out of tol."
             if self.odom_xy_tol > 0 and odom_xy_err > self.odom_xy_tol:
-                print "Odom xy out of tol."
+                print "    Odom drift xy out of tol."
                 self.success = False
 
         self.assert_(self.success)
