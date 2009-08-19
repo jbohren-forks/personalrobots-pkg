@@ -1,33 +1,40 @@
 <package>
   <description>
 
+<p>
     PCML - Point Cloud Mapping Library: a complete package for 3D point
     cloud processing, oferring both generic libraries and specific purpose
     nodes.
-
+</p>
+<p>
     To keep things modular, PCML is split into a list of smaller libraries, including:
+<ul>
+    <li>cloud_geometry: areas, distances, intersections, 3D normals/features estimation, norms, projections, statistics,
+                      transformations, etc</li>
 
-    - cloud_geometry: areas, distances, intersections, 3D normals/features estimation, norms, projections, statistics,
-                      transformations, etc
+    <li>cloud_io: a library for Input/Output PCD (Point Cloud Data) processing</li>
 
-    - cloud_io: a library for Input/Output PCD (Point Cloud Data) processing
+    <li>cloud_kdtree: a library for nD spatial decomposition and nearest neighbors searches for PointCloud messages using k-D
+                    trees.</li>
 
-    - cloud_kdtree: a library for nD spatial decomposition and nearest neighbors searches for PointCloud messages using k-D
-                    trees.
+    <li>cloud_octree: a library for 3D spatial decomposition of PointCloud messages using octree data structures.</li>
 
-    - cloud_octree: a library for 3D spatial decomposition of PointCloud messages using octree data structures.
-
-    - sample_consensus: a library for SAmple Consensus (SAC) like methods (RANSAC, MSAC, MLESAC, etc,) and geometric shape
-                        models (planes, cylinders, cones, torii, lines, spheres, etc)
-
+    <li>sample_consensus: a library for SAmple Consensus (SAC) like methods (RANSAC, MSAC, MLESAC, etc,) and geometric shape
+                        models (planes, cylinders, cones, torii, lines, spheres, etc)</li>
+</ul>
+</p>
+<p>
    The list of nodes includes:
 
-   - cloud_downsampler_node: a node which uniformly downsamples a 3D point cloud
+<ul>
+   <li>cloud_downsampler_node: a node which uniformly downsamples a 3D point cloud</li>
 
-   - normal_estimation_node: a node which estimates local surface properties at each point such as surface normals,
-                             curvature changes, moment invariants, etc.
+   <li>normal_estimation_node: a node which estimates local surface properties at each point such as surface normals,
+                             curvature changes, moment invariants, etc.</li>
 
-   - planar_fit_node: a node that segments the best plane for a given dataset using a variety of methods
+   <li>planar_fit_node: a node that segments the best plane for a given dataset using a variety of methods</li>
+</ul>
+</p>
 
   </description>
 
