@@ -216,7 +216,7 @@ typedef struct ENV_ROBARM_CONFIG
     unsigned int gripper_radius;
 		unsigned int forearm_radius;
 		unsigned int upper_arm_radius;
-	
+
     //for kinematic library use
     KDL::JntArray jnt_pos_in;
     KDL::Frame p_out;
@@ -261,9 +261,9 @@ typedef struct ENV_ROBARM_CONFIG
     double ApplyRPYCost_m;
     bool use_selective_actions;
     bool exact_gripper_collision_checking;
-		bool use_jacobian_motion_prim;
-		bool enable_direct_primitive;
-		
+    bool use_jacobian_motion_prim;
+    bool enable_direct_primitive;
+
 /* Motion Primitives */
     //successor actions
     double ** SuccActions;
