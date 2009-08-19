@@ -27,7 +27,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "pluginlib/plugin_macros.h"
+#include "pluginlib/class_list_macros.h"
 #include "controller_interface/controller.h"
 
 #include "pr2_mechanism_controllers/caster_calibration_controller.h"
@@ -43,22 +43,19 @@
 
 using namespace controller;
 
-BEGIN_PLUGIN_LIST(Controller)
 
-REGISTER_PLUGIN(CasterCalibrationController)
-REGISTER_PLUGIN(CasterController)
-REGISTER_PLUGIN(CasterControllerNode)
-REGISTER_PLUGIN(GripperCalibrationController)
-REGISTER_PLUGIN(GripperCalibrationControllerNode)
-REGISTER_PLUGIN(HeadPositionController)
-REGISTER_PLUGIN(LaserScannerTrajController)
-REGISTER_PLUGIN(LaserScannerTrajControllerNode)
-REGISTER_PLUGIN(Pr2BaseController)
-//REGISTER_PLUGIN(Pr2GripperController)
-REGISTER_PLUGIN(Pr2Odometry)
-REGISTER_PLUGIN(WristCalibrationController)
-REGISTER_PLUGIN(WristCalibrationControllerNode)
-REGISTER_PLUGIN(WristCalibrationControllerNode)
+PLUGINLIB_REGISTER_CLASS(CasterCalibrationController, CasterCalibrationController, Controller)
+PLUGINLIB_REGISTER_CLASS(CasterController, CasterController, Controller)
+PLUGINLIB_REGISTER_CLASS(CasterControllerNode, CasterControllerNode, Controller)
+PLUGINLIB_REGISTER_CLASS(GripperCalibrationController, GripperCalibrationController, Controller)
+PLUGINLIB_REGISTER_CLASS(GripperCalibrationControllerNode, GripperCalibrationControllerNode, Controller)
+PLUGINLIB_REGISTER_CLASS(HeadPositionController, HeadPositionController, Controller)
+PLUGINLIB_REGISTER_CLASS(LaserScannerTrajController, LaserScannerTrajController, Controller)
+PLUGINLIB_REGISTER_CLASS(LaserScannerTrajControllerNode, LaserScannerTrajControllerNode, Controller)
+PLUGINLIB_REGISTER_CLASS(Pr2BaseController, Pr2BaseController, Controller)
+//PLUGINLIB_REGISTER_CLASS(Pr2GripperController, Pr2GripperController, Controller)
+PLUGINLIB_REGISTER_CLASS(Pr2Odometry, Pr2Odometry, Controller)
+PLUGINLIB_REGISTER_CLASS(WristCalibrationController, WristCalibrationController, Controller)
+PLUGINLIB_REGISTER_CLASS(WristCalibrationControllerNode, WristCalibrationControllerNode, Controller)
 
-END_PLUGIN_LIST
 
