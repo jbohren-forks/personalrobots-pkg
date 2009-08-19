@@ -52,7 +52,7 @@ from roslaunch.xmlloader import *
 
 import subprocess
 
-import app
+from taskman import app
 
 def getPackagePath(pkg):
   pkgpath = subprocess.Popen(["rospack", "find", pkg], stdout=subprocess.PIPE).communicate()[0].strip()
