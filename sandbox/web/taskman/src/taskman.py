@@ -52,6 +52,8 @@ from roslaunch.xmlloader import *
 
 import subprocess
 
+import app
+
 def getPackagePath(pkg):
   pkgpath = subprocess.Popen(["rospack", "find", pkg], stdout=subprocess.PIPE).communicate()[0].strip()
   return pkgpath
@@ -104,23 +106,6 @@ class TaskGroup:
   def __repr__(self):
     return "<TaskGroup %s %s %s>" % (self.app.provides, self.app.taskid, len(self.childGroups))
 
-class App:
-  def __init__(self, taskid):
-    # TODO catch file system exception
-    package, app_file = taskid.split('/', 1)
-    path = getPackagePath(package)
-    doc = yaml.load(open(os.path.join(path, app_file)))
-    try:
-      self.taskid = taskid
-      self.app_file = app_file
-      self.name = doc['name']
-      self.package = doc['package']
-      self.provides = doc['provides']
-      self.launch_file = doc['launch_file']
-      self.depends = doc['depends']
-    except KeyError:
-      print "Invalid YAML file"
-
 
 
 class TaskManager:
@@ -130,7 +115,7 @@ class TaskManager:
     self._apps = {}
 
   def start_task(self, req):
-    app = App(req.taskid)
+    app = app.App(req.taskid)
     pgroup = None
     group = self._taskGroups.get(app.provides, None)
     if group:
