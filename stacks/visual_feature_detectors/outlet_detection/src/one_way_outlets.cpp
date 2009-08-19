@@ -437,11 +437,6 @@ void detect_outlets_one_way(IplImage* test_image, const outlet_template_t& outle
             cvCopy(_image1, image1);
 #endif //_VERBOSE
 
-#if 0
-            cvNamedWindow("1", 1);
-            cvShowImage("1", image1);
-            cvWaitKey();
-#endif
         }
     }
 #if defined(_VERBOSE)
