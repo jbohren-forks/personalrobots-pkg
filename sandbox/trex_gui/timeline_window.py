@@ -15,23 +15,11 @@ import gtk, gtk.glade
 
 # TREX modules
 from assembly import Assembly,Entity,Rule,Token,Slot,Variable
-from token_network import TokenNetwork
-from token_network_filter import TokenNetworkFilter
-from property_window import PropertyWindowFactory
 
 ##############################################################################
-# ReactorPanel
-#   This is a GTK widget container class that draws all of the timelines for
-#   a given reactor. It has two cairo drawing contexts which are separated by
-#   a slider.
-#   
-#   ReactorPanel currently has two drawing modes for timelines:
-#     Compact:	All tokens are compressed to the smallest area necessary to
-#		print their names. This shows only temporal ordering.
-#     Metric:	All tokens are expanded (or compressed) to maintiain relative
-#		scale over time. This shows both temporal ordering and
-#		temporal scale, which makes it harder to observe terse tokens
-#		in the same context as long-running ones.
+# Timeline
+#   This class represents a TREX timeline and is used for keeping track of
+#   tokens and drawing state.
 ##############################################################################
 
 class Timeline():
@@ -95,10 +83,22 @@ class Timeline():
     else:
       return (None,0)
 
-class ReactorPanel():
-  # HACK
-  token_network_filter_window = None
+##############################################################################
+# ReactorPanel
+#   This is a GTK widget container class that draws all of the timelines for
+#   a given reactor. It has two cairo drawing contexts which are separated by
+#   a slider.
+#   
+#   ReactorPanel currently has two drawing modes for timelines:
+#     Compact:	All tokens are compressed to the smallest area necessary to
+#		print their names. This shows only temporal ordering.
+#     Metric:	All tokens are expanded (or compressed) to maintiain relative
+#		scale over time. This shows both temporal ordering and
+#		temporal scale, which makes it harder to observe terse tokens
+#		in the same context as long-running ones.
+##############################################################################
 
+class ReactorPanel():
   # Constants for drawing
   ROW_HEIGHT = 16
   ROW_SPACE = 12
@@ -122,6 +122,16 @@ class ReactorPanel():
   TimeScale = 1.0
 
   TokenSpace = 0
+
+  # Callback containers
+  # ContextCallbacks is a dictionary used for registrating extensions to
+  # the TREX gui. This dict stores callbacks with string keys. At runtime
+  # when a user right-clicks a token, he or she is presented with a the
+  # string keys from this dict. When one of the labels is activated,
+  # the function in the value part of the dict is called with the arguments:
+  #   assembly
+  #   token
+  ContextCallbacks = {}
 
   def __init__(self):
     # Initialize data structures
@@ -179,7 +189,6 @@ class ReactorPanel():
 
     self.timeline_da.connect("expose-event",self.expose_timeline_da)
     self.timeline_da.connect("button-press-event", self.on_timeline_click,None)
-    self.timeline_da.connect("motion-notify-event", self.on_timelines_rollover,None)
 
   # Create timeline structures for all of the timelines in an assembly
   def process_timelines(self, assembly):
@@ -255,13 +264,6 @@ class ReactorPanel():
     self.n_timelines = row
 
   # Callback to process click events on the timeline view
-  def on_timelines_rollover(self, widget, event, data):
-    #ReactorPanel.Ruler = event.x
-
-    #self.draw()
-    pass
-
-  # Callback to process click events on the timeline view
   def on_timeline_click(self, widget, event, data):
     # Calculate row
     row = int(event.y/ReactorPanel.ROW_STEP)
@@ -294,30 +296,32 @@ class ReactorPanel():
 	  ReactorPanel.Ruler = hit_edge
 	self.draw()
       elif event.button == 3:
-	m = gtk.Menu()
-	pos = gtk.MenuItem("Timeline: %s\nToken: %s" % (timeline.obj.name, token),False)
-	pos.set_sensitive(False)
-	t_net = gtk.MenuItem("Hilight in token network")
-	t_net.connect("activate",self.hilight_in_token_network,token)
-	t_vars = gtk.MenuItem("Token variables")
-	t_vars.connect("activate",self.spawn_property_window,token)
-	m.append(pos)
-	m.append(t_net)
-	m.append(t_vars)
-	m.show_all()
-	m.popup(None, None, None, event.button, event.time, None)
+	if token:
+	  # Create context menu
+	  m = gtk.Menu()
+
+	  # Create info label menu item
+	  info = gtk.MenuItem("Timeline: %s\nToken: %s\nKey: %s" % (timeline.obj.name, token.name, str(token.key)),False)
+	  info.set_sensitive(False)
+	  m.append(info)
+	  m.append(gtk.SeparatorMenuItem())
+
+	  # Iterate over extensions
+	  for label_str,cb in ReactorPanel.ContextCallbacks.items():
+	    menu_ext = gtk.MenuItem(label_str)
+	    menu_ext.connect("activate",self.callback_wrapper,cb,self.assembly,token)
+	    m.append(menu_ext)
+
+	  # Show the menu, and pop it up
+	  m.show_all()
+	  m.popup(None, None, None, event.button, event.time, None)
 
 
     return False
 
-  # Spawn a property window for a given token
-  def spawn_property_window(self,menuitem,token):
-    PropertyWindowFactory(self.assembly, token)
-
-  def hilight_in_token_network(self,menuitem,token):
-    ReactorPanel.token_network_filter_window.filter_entry.set_text(str(token.key))
-    ReactorPanel.token_network_filter_window.rep_but.emit("clicked")
-
+  # Wrap the callback to keep it from receiving the menuitem
+  def callback_wrapper(self,menuitem,cb,assembly,token):
+    cb(assembly, token)
 
   #############################################################################
   # Drawing timelines
@@ -699,6 +703,9 @@ class TimelineWindow():
     #self.time_scale_slider.connect("change-value",self.redraw_viewport)
     #self.viewport_da.connect("expose-event",self.expose_viewport)
 
+    # Connect menu view check
+    self.show_view_options_menu_item.connect("toggled",self.on_toggle_view_controls)
+
     # connect view controls
     self.past_width_spin.connect("value-changed",self.on_change_view_controls)
     self.center_spin.connect("value-changed",self.on_change_view_controls)
@@ -709,6 +716,18 @@ class TimelineWindow():
 
     self.w.show()
 
+  #############################################################################
+  # UI Event handlers
+  #############################################################################
+
+  # Callback to hide and show the view controls
+  def on_toggle_view_controls(self,widget):
+    if self.show_view_options_menu_item.get_active():
+      self.view_options_box.show()
+    else:
+      self.view_options_box.hide()
+
+  # Callback to propagate the view control settings into the reactor panel and redraw
   def on_change_view_controls(self,widget):
     # Get control values
     ReactorPanel.PastWidth = self.past_width_spin.get_value()
@@ -753,7 +772,6 @@ class TimelineWindow():
 		
     # Redraw the active reactor
     self.draw_active_reactor()
-
 
   #############################################################################
   # Methods for manipulating reactor views
@@ -873,45 +891,18 @@ class TimelineWindow():
       icon.set_from_pixbuf(pixbuf)
 
   #############################################################################
-  # Methods for drawing the viewport
-  # The viewport is the widget used to specify what part of the history can be
-  # seen
+  # Extension API
   #############################################################################
 
-  # Callback when the viewport changes size
-  def expose_viewport(self, widget, event):
-    cr = widget.window.cairo_create()
+  def register_context_extension(self,label_str,cb):
+    # Add or replace callback in dictionary
+    ReactorPanel.ContextCallbacks[label_str] = cb
 
-    # set a clip region for the expose event
-    cr.rectangle(event.area.x, event.area.y,event.area.width, event.area.height)
-    cr.clip()
+  def unregister_context_extension(self,label_str,cb):
+    # Remove callback from dictionary
+    if ReactorPanel.has_key(label_str):
+      del ReactorPanel[label_str]
 
-    self.draw_viewport(cr)
-
-    return False
-
-  # Method to manually redraw the viewport
-  def redraw_viewport(self,widget, event, value):
-    cr = self.viewport_da.window.cairo_create()
-    self.draw_viewport(cr)
-
-  # Draw the viewport based on the current view and time scale
-  def draw_viewport(self, context):
-    context.set_source_rgba(1.0, 1.0, 1.0, 1.0)
-    context.paint()
-
-    rect = self.viewport_da.get_allocation()
-    x = rect.x + rect.width / 2
-    y = rect.y + rect.height / 2
-
-    radius = self.time_scale_slider.get_value()#min(rect.width / 2, rect.height / 2) - 5
-
-    # clock back
-    context.arc(x, y, radius, 0, 2 * math.pi)
-    context.set_source_rgb(1, 1, 1)
-    context.fill_preserve()
-    context.set_source_rgb(0, 0, 0)
-    context.stroke()
 
 # Unit tests
 class TestTokenNetworkWindow(unittest.TestCase):
