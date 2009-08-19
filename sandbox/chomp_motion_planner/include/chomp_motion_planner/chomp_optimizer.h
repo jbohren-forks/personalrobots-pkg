@@ -126,6 +126,7 @@ private:
   void initialize();
   void calculateSmoothnessIncrements();
   void calculateCollisionIncrements();
+  void calculateTotalIncrements();
   void performForwardKinematics();
   void addIncrementsToTrajectory();
   void updateFullTrajectory();
@@ -139,6 +140,8 @@ private:
   double getCollisionCost();
   void perturbTrajectory();
   void getRandomMomentum();
+  void updateMomentum();
+  void updatePositionFromMomentum();
 
 };
 

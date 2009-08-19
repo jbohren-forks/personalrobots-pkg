@@ -136,6 +136,7 @@ void ChompOptimizer::initialize()
   // HMC initialization:
   momentum_ = Eigen::MatrixXd::Zero(num_vars_free_, num_joints_);
   random_momentum_ = Eigen::MatrixXd::Zero(num_vars_free_, num_joints_);
+  random_joint_momentum_ = Eigen::VectorXd::Zero(num_vars_free_);
   multivariate_gaussian_.clear();
   for (int i=0; i<num_joints_; i++)
   {
@@ -176,7 +177,21 @@ void ChompOptimizer::optimize()
 
     calculateSmoothnessIncrements();
     calculateCollisionIncrements();
-    addIncrementsToTrajectory();
+    calculateTotalIncrements();
+
+    if (!parameters_->getAddRandomness())
+    {
+      // non-stochastic version:
+      addIncrementsToTrajectory();
+    }
+    else
+    {
+      // hamiltonian monte carlo updates:
+      getRandomMomentum();
+      updateMomentum();
+      updatePositionFromMomentum();
+    }
+
     handleJointLimits();
     updateFullTrajectory();
     if (iteration_%10==0)
@@ -187,14 +202,7 @@ void ChompOptimizer::optimize()
       break;
     }
 
-    // make a random jump if the trajectory is in collision:
-    if (parameters_->getAddRandomness())
-    {
-      getRandomMomentum();
-
-    }
-
-    if (!is_collision_free_ && parameters_->getAddRandomness())
+/*    if (!is_collision_free_ && parameters_->getAddRandomness())
     {
       performForwardKinematics();
       double original_cost = getTrajectoryCost();
@@ -216,7 +224,7 @@ void ChompOptimizer::optimize()
       }
 
     }
-
+*/
     if (parameters_->getAnimatePath() && iteration_%10 == 0)
     {
       ROS_INFO("Animating iteration %d", iteration_);
@@ -290,12 +298,10 @@ void ChompOptimizer::calculateCollisionIncrements()
   //cout << collision_increments_ << endl;
 }
 
-void ChompOptimizer::addIncrementsToTrajectory()
+void ChompOptimizer::calculateTotalIncrements()
 {
-  double scale = 1.0;
   for (int i=0; i<num_joints_; i++)
   {
-    //scale = 1.0;
     final_increments_.col(i) = parameters_->getLearningRate() *
         (
             joint_costs_[i].getQuadraticCostInverse() *
@@ -304,6 +310,15 @@ void ChompOptimizer::addIncrementsToTrajectory()
                 parameters_->getObstacleCostWeight() * collision_increments_.col(i)
             )
         );
+  }
+
+}
+
+void ChompOptimizer::addIncrementsToTrajectory()
+{
+  double scale = 1.0;
+  for (int i=0; i<num_joints_; i++)
+  {
     double max = final_increments_.col(i).maxCoeff();
     double min = final_increments_.col(i).minCoeff();
     double max_scale = planning_group_->chomp_joints_[i].joint_update_limit_ / fabs(max);
@@ -312,13 +327,8 @@ void ChompOptimizer::addIncrementsToTrajectory()
       scale = max_scale;
     if (min_scale < scale)
       scale = min_scale;
-
-    //group_trajectory_.getFreeJointTrajectoryBlock(i) += scale * final_increments_.col(i);
   }
-  for (int i=0; i<num_joints_; i++)
-  {
-    group_trajectory_.getFreeJointTrajectoryBlock(i) += scale * final_increments_.col(i);
-  }
+  group_trajectory_.getFreeTrajectoryBlock() += scale * final_increments_;
 }
 
 void ChompOptimizer::updateFullTrajectory()
@@ -365,7 +375,6 @@ double ChompOptimizer::getCollisionCost()
 
   return parameters_->getObstacleCostWeight() * collision_cost;
 }
-
 
 void ChompOptimizer::handleJointLimits()
 {
@@ -571,6 +580,19 @@ void ChompOptimizer::getRandomMomentum()
     multivariate_gaussian_[i].sample(random_joint_momentum_);
     random_momentum_.col(i) = random_joint_momentum_;
   }
+}
+
+void ChompOptimizer::updateMomentum()
+{
+  double alpha = 1.0 - parameters_->getHmcStochasticity();
+  double eps = parameters_->getHmcDiscretization();
+  momentum_ = alpha * (momentum_ + eps*final_increments_) + sqrt(1.0-alpha*alpha)*random_momentum_;
+}
+
+void ChompOptimizer::updatePositionFromMomentum()
+{
+  double eps = parameters_->getHmcDiscretization();
+  group_trajectory_.getFreeTrajectoryBlock() += eps * momentum_;
 }
 
 void ChompOptimizer::animatePath()
