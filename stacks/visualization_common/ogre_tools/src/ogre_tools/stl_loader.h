@@ -45,6 +45,7 @@ public:
   ~STLLoader();
 
   bool load(const std::string& path);
+  bool load(uint8_t* buffer);
 
   Ogre::MeshPtr toMesh(const std::string& name);
 
