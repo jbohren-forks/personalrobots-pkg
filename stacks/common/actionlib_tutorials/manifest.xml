@@ -9,6 +9,8 @@
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/actionlib_tutorials</url>
   <depend package="roscpp"/>
+  <depend package="rospy"/>
+  <depend package="roslib"/>
   <depend package="std_msgs"/>
   <depend package="rosconsole"/>
   <depend package="actionlib"/>
