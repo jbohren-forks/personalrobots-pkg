@@ -35,7 +35,7 @@
 * Author: Alex Teichman
 *********************************************************************/
 
-#include <dorylus.h>
+#include <dorylus/dorylus.h>
 #include <iostream>
 #include <sensor_msgs/Image.h>
 #include <rosrecord/Player.h>
@@ -50,7 +50,7 @@
 #include <string>
 #include <fstream>
 #include <tinyxml/tinyxml.h>
-
+#include <boost/format.hpp>
 
 #include <descriptors_2d/descriptors_2d.h>
 #include <descriptors_2d_gpl/descriptors_2d_gpl.h>
@@ -69,6 +69,7 @@ void findLabelPolys(double stamp, string results_dir, Vector< Vector<Point> >& p
 map<string, int> createLabelMap();
 void showLabelPolys(IplImage* img, const Vector< Vector<Point> >& polys);
 void createLabelMaps(map<string, int>* str2int, vector<string>* int2str);
+void getPolysFromTinyXMLBoundingBox(string filename, Vector< Vector<Point> >& polys, vector<int>& poly_labels);
   
 /***************************************************************************
 ***********  Stanleyi
@@ -85,7 +86,8 @@ public:
   DorylusDataset* collectDataset(string bagfile, int samples_per_img, string results_dir);
   DorylusDataset* collectDatasetXML(string bagfile, int samples_per_img, string results_dir);
   void viewLabels(string bagfile, string results_dir);
-  void makeClassificationVideo(string bagfile, Dorylus& d, int samples_per_img, string results_dir);
+
+  void makeClassificationVideo(string bagfile, Dorylus& d, int samples_per_img, bool show_results=true);
 
 private:
   ros::record::Player lp_;
@@ -103,7 +105,13 @@ private:
 Stanleyi::Stanleyi()
   : img_(NULL), mask_(NULL)
 {
-  lp_.addHandler<sensor_msgs::Image>(string("/narrow_stereo/left/image_rect_color"), &copyMsg<sensor_msgs::Image>, (void*)(&img_msg_));
+
+  if(getenv("STANLEY_IMAGE_TOPIC") != NULL) {
+    lp_.addHandler<sensor_msgs::Image>(string(getenv("STANLEY_IMAGE_TOPIC")), &copyMsg<sensor_msgs::Image>, (void*)(&img_msg_));
+  }else{
+    lp_.addHandler<sensor_msgs::Image>(string("/image"), &copyMsg<sensor_msgs::Image>, (void*)(&img_msg_));
+  }
+
   descriptor_ = setupImageDescriptors();
   if(getenv("DEBUG") != NULL) {
     for(size_t i=0; i<descriptor_.size(); i++) { 
@@ -137,7 +145,7 @@ DorylusDataset* Stanleyi::collectDataset(string bagfile, int samples_per_img, st
     frame_id++;
 
     // -- Get the next img with a label mask.
-    if (!img_bridge_.fromImage(img_msg_, "bgr"))  {
+    if (!img_bridge_.fromImage(img_msg_))  {
        ROS_ERROR("Could not convert message to ipl.");
       continue;
     }
@@ -177,7 +185,7 @@ DorylusDataset* Stanleyi::collectDatasetXML(string bagfile, int samples_per_img,
     frame_id++;
 
     // -- Get the next img with a label mask.
-    if (!img_bridge_.fromImage(img_msg_, "bgr"))  {
+    if (!img_bridge_.fromImage(img_msg_))  {
       ROS_ERROR("Could not convert message to ipl.");
       continue;
     }
@@ -362,7 +370,7 @@ void Stanleyi::sanityCheck(string bagfile, string results_dir) {
 
   while(lp_.nextMsg()) {
     // -- Get next image from the bag.
-    if (!img_bridge_.fromImage(img_msg_, "bgr")) {
+    if (!img_bridge_.fromImage(img_msg_)) {
       ROS_ERROR("Could not convert message to ipl.");
       break;
     }  
@@ -436,7 +444,9 @@ void Stanleyi::drawResponse(IplImage* img, float response, CvPoint pt) {
     cvCircle(img, pt, size, cvScalar(0,0,255), -1);
 }
 
-void Stanleyi::makeClassificationVideo(string bagfile, Dorylus& d, int samples_per_img, string results_dir) {
+
+void Stanleyi::makeClassificationVideo(string bagfile, Dorylus& d, int samples_per_img, bool show_results) {
+
   //vector<ImageDescriptor*> desc = setupImageDescriptors();
   //d.exclude_descriptors_.push_back(desc[4]->name_);
   if(getenv("MAX_WC") != NULL)
@@ -445,48 +455,82 @@ void Stanleyi::makeClassificationVideo(string bagfile, Dorylus& d, int samples_p
   if(getenv("MAX_FRAMES") != NULL)
     max_frames = atoi(getenv("MAX_FRAMES"));
   
+  bool have_display=!show_results;
+  if(have_display)
+    { 
+      cvNamedWindow("Classification Visualization", CV_WINDOW_AUTOSIZE);
+    }
 
-  cvNamedWindow("Classification Visualization", CV_WINDOW_AUTOSIZE);
   
 
   int row = 0, col = 0;
   IplImage* vis = NULL;
-  MatrixXf response;
+  VectorXf response;
   int frame_num = 0;
   CvVideoWriter* writer = NULL;
   vector<object*> objects;
 
-  int skip_frames = 184;
+  bool use_mpeg=false;
+  boost::format jpeg_filename_format;
+  if(getenv("JPEG_IMAGE_FORMAT")!=NULL) {
+    use_mpeg=false;			
+    jpeg_filename_format.parse(getenv("JPEG_IMAGE_FORMAT"));
+  }else{
+    mkdir("classification_results", S_IRWXG | S_IRWXU | S_IRWXO);
+    jpeg_filename_format.parse("classification_results/img%d.jpg");
+  }
+
+  int frame_step = 1;
+  int skip_frames = 0;
   if(getenv("SKIP_FRAMES") != NULL) 
     skip_frames = atoi(getenv("SKIP_FRAMES"));
 
+  if(getenv("FRAME_STEP") != NULL) 
+    frame_step = atoi(getenv("FRAME_STEP"));
+
 
   lp_.open(bagfile, ros::Time());
+  ROS_INFO_STREAM("Skipping " << skip_frames << " frames");
   for(int i=0; i<skip_frames; i++) {
     lp_.nextMsg();
     frame_num++;
   }
 
   int nFrames = 0;
+  int num_to_skip=0;
   while(lp_.nextMsg()) {
     frame_num++;
+    if(frame_step>1){
+      if(num_to_skip>0) {
+	num_to_skip--;
+	continue;
+      }else{
+	num_to_skip=frame_step-1;
+      }
+    }
     nFrames++;
+    ROS_INFO_STREAM("Frame "<<frame_num);
 
     // -- Get next image from the bag.
-    if (!img_bridge_.fromImage(img_msg_, "bgr")) {
+    if (!img_bridge_.fromImage(img_msg_)) {
       ROS_ERROR("Could not convert message to ipl.");
       break;
     }  
     img_ = img_bridge_.toIpl();
-    vis = cvCloneImage(img_);
-
-    if(writer == NULL) {
-      writer = cvCreateVideoWriter("output.mpg", CV_FOURCC('P','I','M','1'), 30, cvGetSize(img_));
+    if(img_->nChannels == 1) {
+      vis = cvCreateImage(cvGetSize(img_), IPL_DEPTH_8U, 3);
+      cvCvtColor(img_, vis, CV_GRAY2BGR);
+    }else{
+      vis = cvCloneImage(img_);
     }
 
-    IplImage* mask = findLabelMask(img_msg_.header.stamp.toSec(), results_dir);
-    if(getenv("DEBUG_POSITIVES") != NULL &&  mask == NULL)
-      continue;
+    if(use_mpeg)
+      {
+	if(writer == NULL ) {
+	  writer = cvCreateVideoWriter("output.mpg", CV_FOURCC('P','I','M','1'), 30, cvGetSize(img_));
+	}
+      }
+
 
 
     Vector<KeyPoint> keypoints;
@@ -495,7 +539,6 @@ void Stanleyi::makeClassificationVideo(string bagfile, Dorylus& d, int samples_p
     objects.clear();
     collectObjectsFromImageVectorized(samples_per_img, &objects, &keypoints);
 
-    int tp=0, fp=0, tn=0, fn=0;
     for(size_t i=0; i<objects.size(); i++) {
       if(objects[i] == NULL) 
 	continue;
@@ -504,56 +547,61 @@ void Stanleyi::makeClassificationVideo(string bagfile, Dorylus& d, int samples_p
       col = keypoints[i].pt.x;
       row = keypoints[i].pt.y;
 
-      if(mask) {
-	CvScalar s = cvGet2D(mask, row, col);
-	//cout << s.val[0] << " " << s.val[1] << " " << s.val[2] << " " << s.val[3] << endl;
-	int label = s.val[0];
-	if(label != 0 && response(0,0) > 0)
-	  tp++;
-	else if(label == 0 && response(0,0) > 0)
-	  fp++;
-	else if(label == 0 && response(0,0) <= 0)
-	  tn++;
-	else// if(label == 0 && response(0,0) > 0)
-	  fn++;
+      // -- Draw on the vis.
+      float max = 0;
+      int size = 2;
+      int idx = response.rows(); //Unlabeled.
+      assert(response.rows() == 3);
+      for(int j=0; j<response.rows(); ++j) {
+	if(response(j) > max) {
+	  max = response(j);
+	  size = ceil(log(ceil(max)));
+	  idx = j;
+	}
       }
-
-      //cout << response_nm.Nrows() << " " << response_nm.Ncols() << endl;
-
-      int size = ceil(log(ceil(abs(response(0,0)))));
-      if(response(0,0) > 0) {
-	cvCircle(vis, cvPoint(col, row), size, cvScalar(0,255,0), -1);
-	if(mask)
-	  cvCircle(mask, cvPoint(col, row), size, cvScalar(0,255,0), -1);
-      }
-      else {
-	cvCircle(vis, cvPoint(col, row), size, cvScalar(0,0,255), -1);
-	if(mask)
-	  cvCircle(mask, cvPoint(col, row), size, cvScalar(0,0,255), -1);
-      }
+      vector<CvScalar> colors;
+      colors.push_back(cvScalar(255,0,0));
+      colors.push_back(cvScalar(0,255,0));
+      colors.push_back(cvScalar(0,0,255));
+      colors.push_back(cvScalar(0,0,0));
+      cvCircle(vis, cvPoint(col, row), size, colors[idx], -1);
     }
 
-    if(mask) {
-      cvNamedWindow("Mask", CV_WINDOW_AUTOSIZE);
-      cvShowImage("Mask", mask);
-      printf("TP: %d, TN: %d, FP: %d, FN: %d\n", tp, tn, fp, fn);
-    }
 
-    cvWriteFrame(writer, vis);
+    // -- Save to dir.
+    cout << "Writing video frame " << frame_num << endl;
+    if(use_mpeg)
+      {
+	cvWriteFrame(writer, vis);
+      }
+    else
+      {
+	std::string filename = (jpeg_filename_format % frame_num).str();
+	cvSaveImage(filename.c_str(), vis);
+      }
 
-    cout << "Showing results for frame " << frame_num << endl;
-    cvShowImage("Classification Visualization", vis);
+    if(have_display)
+      {
+	cout << "Showing results for frame " << frame_num << endl;
+	cvShowImage("Classification Visualization", vis);
+      }
+
+
 
     // -- Clean up.
     cvReleaseImage(&vis);
     for(size_t i=0; i<objects.size(); ++i)
       delete objects[i];
 
-    if(cvWaitKey(500) == 'q' || nFrames == max_frames) {
-      break;
-    }
+    if(have_display)
+      {
+	if(cvWaitKey(500) == 'q' || nFrames == max_frames) {
+	  break;
+	}
+      }
   }
-  cvReleaseVideoWriter(&writer);
+  if(writer)
+    cvReleaseVideoWriter(&writer);
 }
 
 
@@ -648,7 +696,7 @@ void Stanleyi::viewLabels(string bagfile, string results_dir) {
     
   while(lp_.nextMsg()) {
     cout << "Next msg." << endl;
-    if (img_bridge_.fromImage(img_msg_, "bgr")) {
+    if (img_bridge_.fromImage(img_msg_)) {
       img_ = img_bridge_.toIpl();
       mask_ = findLabelMask(img_msg_.header.stamp.toSec(), results_dir);
       if(mask_ != NULL) {
@@ -667,7 +715,7 @@ void Stanleyi::testContours(string bagfile, string label_dir) {
 
   lp_.open(bagfile, ros::Time());
   while(lp_.nextMsg()) {
-    if (!img_bridge_.fromImage(img_msg_, "bgr")) {
+    if (!img_bridge_.fromImage(img_msg_)) {
       ROS_ERROR("Could not convert message to ipl.");
       break;
     }
@@ -699,8 +747,8 @@ int main(int argc, char** argv)
   if(getenv("NSAMPLES") != NULL) 
     samples_per_img = atoi(getenv("NSAMPLES"));
   int nCandidates = 2;
-  if(getenv("NCAND") != NULL) 
-    nCandidates = atoi(getenv("NCAND"));
+  if(getenv("NCANDIDATES") != NULL) 
+    nCandidates = atoi(getenv("NCANDIDATES"));
   int max_secs = 0;
   if(getenv("MAX_SECS") != NULL) 
     max_secs = atoi(getenv("MAX_SECS"));
@@ -783,12 +831,20 @@ int main(int argc, char** argv)
     d.train(nCandidates, max_secs, max_wcs);
     d.save(argv[4]);
   }
-  else if(argc > 4 && !strcmp(argv[1], "--makeClassificationVideo")) {
-    cout << "Showing video classification for classifier " << argv[2] << " on bag " << argv[3] << " using the label masks in " << argv[4] <<  endl;
+  else if(argc > 3 && !strcmp(argv[1], "--makeClassificationVideo")) {
+    cout << "Showing video classification for classifier " << argv[2] << " on bag " << argv[3] <<  endl;
+
     Dorylus d;
     if(!d.load(argv[2]))
       return 1;
-    s.makeClassificationVideo(argv[3], d, samples_per_img, argv[4]);
+    
+    bool have_display=true;
+    if(argc>5 && !strcmp(argv[5],"false"))
+      {
+	have_display=false;
+      }
+    s.makeClassificationVideo(argv[3], d, samples_per_img,  have_display);
+
   }
   else if(argc > 3 && !strcmp(argv[1], "--cf")) {
     cout << "Learning contour fragments for bagfile " << argv[2] << " and labels in " << argv[3] << endl;
@@ -802,7 +858,7 @@ int main(int argc, char** argv)
 
   else {
     cout << "usage: " << endl;
-    cout << argv[0] << " --makeClassificationVideo CLASSIFIER BAGFILE [LABELS]" << endl;
+    cout << argv[0] << " --makeClassificationVideo CLASSIFIER BAGFILE" << endl;
     cout << argv[0] << " --collectDataset BAGFILE LABELS DATASET" << endl;
     cout << argv[0] << " --collectDatasetXML BAGFILE LABELS DATASET" << endl;
     cout << argv[0] << " --collectAndTrain BAGFILE LABELS CLASSIFIER" << endl;
@@ -820,35 +876,41 @@ int main(int argc, char** argv)
 vector<ImageDescriptor*> setupImageDescriptors() {
   vector<ImageDescriptor*> d;
 
-//   d.push_back(new HogWrapper(Size(16,16), Size(16,16), Size(8,8), Size(8,8), 7, 1, -1, 0, 0.2, true));
-//   d.push_back(new HogWrapper(Size(32,32), Size(16,16), Size(8,8), Size(8,8), 7, 1, -1, 0, 0.2, true));
-//   d.push_back(new HogWrapper(Size(64,64), Size(32,32), Size(16,16), Size(16,16), 7, 1, -1, 0, 0.2, true));
-//   d.push_back(new HogWrapper(Size(128,128), Size(64,64), Size(32,32), Size(32,32), 7, 1, -1, 0, 0.2, true));
+
+  d.push_back(new HogWrapper(Size(16,16), Size(16,16), Size(8,8), Size(8,8), 7, 1, -1, 0, 0.2, true));
+  d.push_back(new HogWrapper(Size(32,32), Size(16,16), Size(8,8), Size(8,8), 7, 1, -1, 0, 0.2, true));
+  d.push_back(new HogWrapper(Size(64,64), Size(32,32), Size(16,16), Size(16,16), 7, 1, -1, 0, 0.2, true));
+  d.push_back(new HogWrapper(Size(128,128), Size(64,64), Size(32,32), Size(32,32), 7, 1, -1, 0, 0.2, true));
 
   SuperpixelColorHistogram* sch1 = new SuperpixelColorHistogram(20, 0.5, 10);
-//   SuperpixelColorHistogram* sch2 = new SuperpixelColorHistogram(5, 0.5, 10, NULL, sch1);
-//   SuperpixelColorHistogram* sch3 = new SuperpixelColorHistogram(5, 1, 10, NULL, sch1);
-//   SuperpixelColorHistogram* sch4 = new SuperpixelColorHistogram(5, .25, 10, NULL, sch1);
-  d.push_back(sch1);
-//   d.push_back(sch2);
-//   d.push_back(sch3);
-//   d.push_back(sch4);
+  SuperpixelColorHistogram* sch2 = new SuperpixelColorHistogram(5, 0.5, 10, NULL, sch1);
+  SuperpixelColorHistogram* sch3 = new SuperpixelColorHistogram(5, 1, 10, NULL, sch1);
+  SuperpixelColorHistogram* sch4 = new SuperpixelColorHistogram(5, .25, 10, NULL, sch1);
+//  d.push_back(sch1);
+  //d.push_back(sch2);
+  //d.push_back(sch3);
+  //d.push_back(sch4);
  
-//   d.push_back(new SurfWrapper(true, 150));
-//   d.push_back(new SurfWrapper(true, 100));
-//   d.push_back(new SurfWrapper(true, 50));
-//   d.push_back(new SurfWrapper(true, 25));
-//   d.push_back(new SurfWrapper(true, 10));
+  d.push_back(new SurfWrapper(true, 150));
+  d.push_back(new SurfWrapper(true, 100));
+  d.push_back(new SurfWrapper(true, 50));
+  d.push_back(new SurfWrapper(true, 25));
+  d.push_back(new SurfWrapper(true, 10));
   
-//   Daisy* base_daisy = new Daisy(25, 3, 8, 8, NULL);
-//   d.push_back(base_daisy);
-//   d.push_back(new Daisy(50, 3, 8, 8, base_daisy));
-//   d.push_back(new Daisy(75, 3, 8, 8, base_daisy));
-//   d.push_back(new Daisy(100, 3, 8, 8, base_daisy));
-//  d.push_back(new Daisy(150, 3, 8, 8, base_daisy));
 
-  // d.push_back(new ContourFragmentDescriptor(0, "contour_fragments"));
+  Daisy* base_daisy = new Daisy(25, 3, 8, 8, NULL);
+  d.push_back(base_daisy);
+  d.push_back(new Daisy(50, 3, 8, 8, base_daisy));
+  d.push_back(new Daisy(75, 3, 8, 8, base_daisy));
+  d.push_back(new Daisy(100, 3, 8, 8, base_daisy));
+  d.push_back(new Daisy(150, 3, 8, 8, base_daisy));
 
+
+  // -- First run of classifier
+  //d.push_back(new HogWrapper(Size(16,16), Size(16,16), Size(8,8), Size(8,8), 7, 1, -1, 0, 0.2, true));
+  //d.push_back(new HogWrapper(Size(128,128), Size(64,64), Size(32,32), Size(32,32), 7, 1, -1, 0, 0.2, true));
+  //d.push_back(new Daisy(100, 3, 8, 8, base_daisy));
+  //d.push_back(base_daisy);
   return d;
 }
 
@@ -910,10 +972,36 @@ void getContoursFromTinyXML(string filename, Vector< Vector<Point> >& contours, 
     return;
   } 
 
-  TiXmlElement *annotations, *annotation, *polygon, *results, *pt;
+  TiXmlElement *annotations, *annotation, *bbox, *bbox_annotation, *polygon, *results, *pt;
   annotations = XMLdoc.FirstChildElement("annotations");
   results = annotations->FirstChildElement("results");
   annotation = results->FirstChildElement("annotation");
+
+  bbox = annotation->FirstChildElement("bbox");
+  while(bbox)
+    {
+      bbox_annotation = bbox->FirstChildElement("annotation");
+
+      polygon = bbox_annotation->FirstChildElement("polygon");
+
+      // -- For each poly, get the label and the contour.
+      while(polygon) {
+	poly_labels.push_back(label_str2int[polygon->Attribute("name")]);
+	//cout << "polygon " << polygon->Attribute("name") << " " << polygon->Attribute("sqn") << endl;
+	pt = polygon->FirstChildElement("pt");
+	Vector<Point> contour;
+	while(pt) {
+	  //cout << "pt " << pt->Attribute("x") << " " << pt->Attribute("y") << endl;
+	  contour.push_back(Point(atoi(pt->Attribute("x")), atoi(pt->Attribute("y"))));
+	  pt = pt->NextSiblingElement("pt");
+	}
+	contours.push_back(contour);
+	polygon = polygon->NextSiblingElement("polygon");
+      }
+      bbox = bbox->NextSiblingElement("bbox");
+    }
+
+
   polygon = annotation->FirstChildElement("polygon");
 
   // -- For each poly, get the label and the contour.
@@ -929,6 +1017,49 @@ void getContoursFromTinyXML(string filename, Vector< Vector<Point> >& contours, 
     }
     contours.push_back(contour);
     polygon = polygon->NextSiblingElement("polygon");
+  }
+
+}
+
+void getPolysFromTinyXMLBoundingBox(string filename, Vector< Vector<Point> >& polys, vector<int>& poly_labels) {
+
+  assert(poly_labels.empty());
+  assert(polys.empty());
+
+  map<string, int> label_str2int;
+  vector<string> label_int2str;
+  createLabelMaps(&label_str2int, &label_int2str);
+
+
+  // -- Setup XML.
+  TiXmlDocument XMLdoc(filename);
+  bool loadOkay = XMLdoc.LoadFile();
+  if (!loadOkay) {
+    cout << "Could not load " << filename << endl;
+    return;
+  } 
+
+  TiXmlElement *annotations, *annotation, *polygon, *results, *pt, *bbox, *ann2;
+  annotations = XMLdoc.FirstChildElement("annotations");
+  results = annotations->FirstChildElement("results");
+  annotation = results->FirstChildElement("annotation");
+  bbox = annotation->FirstChildElement("bbox");
+
+  // -- For each bbox, get the label and the poly.
+  while(bbox) {
+    ann2 = bbox->FirstChildElement("annotation");
+    polygon = ann2->FirstChildElement("polygon");
+    poly_labels.push_back(label_str2int[polygon->Attribute("name")]);
+    //cout << "polygon " << polygon->Attribute("name") << " " << polygon->Attribute("sqn") << endl;
+    pt = polygon->FirstChildElement("pt");
+    Vector<Point> poly;
+    while(pt) {
+      //cout << "pt " << pt->Attribute("x") << " " << pt->Attribute("y") << endl;
+      poly.push_back(Point(atoi(pt->Attribute("x")), atoi(pt->Attribute("y"))));
+      pt = pt->NextSiblingElement("pt");
+    }
+    polys.push_back(poly);
+    bbox = bbox->NextSiblingElement("bbox");
   }
 }
 
@@ -952,6 +1083,7 @@ void findLabelPolys(double stamp, string results_dir, Vector< Vector<Point> >& p
 	 files[i].find(string(".xml")) != string::npos)
 	{
 	  cout << "Found polys for " << sbuf << ": " << files[i] << endl;
+	  //getPolysFromTinyXMLBoundingBox(results_dir + "/annotations/" + files[i], polys, poly_labels);
 	  getContoursFromTinyXML(results_dir + "/annotations/" + files[i], polys, poly_labels);
 	  break;
 	}
@@ -959,6 +1091,8 @@ void findLabelPolys(double stamp, string results_dir, Vector< Vector<Point> >& p
   
   if(polys.size() > 0) { 
     cout << " Found " << polys.size() << " polygon labels in " << results_dir << endl;
+  }else{
+    cout << " Found no labels" << endl;
   }
 }
 
@@ -1002,17 +1136,17 @@ void showLabelPolys(IplImage* img, const Vector< Vector<Point> >& polys) {
 void createLabelMaps(map<string, int>* str2int, vector<string>* int2str) {
   if(str2int) {
     map<string, int>& s2i = *str2int;
-    s2i["Unlabeled"] = 0;
-    s2i["Odwalla"] = 1;
-    s2i["Naked"] = 2;
-    s2i["Water"] = 3;
+    s2i["unlabeled"] = 0;
+    s2i["water"] = 1;
+    s2i["juice"] = 2;
+    s2i["can"] = 3;
   }
 
   if(int2str) {
     vector<string>& i2s = *int2str;
-    i2s.push_back("Unlabeled");
-    i2s.push_back("Odwalla");
-    i2s.push_back("Naked");
-    i2s.push_back("Water");
+    i2s.push_back("unlabeled");
+    i2s.push_back("water");
+    i2s.push_back("juice");
+    i2s.push_back("can");
   }
 }

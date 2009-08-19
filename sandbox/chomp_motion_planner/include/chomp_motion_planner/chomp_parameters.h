@@ -62,6 +62,8 @@ public:
   double getSmoothnessCostAcceleration() const;
   double getSmoothnessCostJerk() const;
   bool getAddRandomness() const;
+  double getHmcDiscretization() const;
+  double getHmcStochasticity() const;
 
 private:
   double planning_time_limit_;
@@ -75,6 +77,8 @@ private:
   double smoothness_cost_acceleration_;
   double smoothness_cost_jerk_;
   bool add_randomness_;
+  double hmc_stochasticity_;
+  double hmc_discretization_;
 
 };
 
@@ -138,6 +142,16 @@ inline double ChompParameters::getSmoothnessCostAcceleration() const
 inline double ChompParameters::getSmoothnessCostJerk() const
 {
   return smoothness_cost_jerk_;
+}
+
+inline double ChompParameters::getHmcDiscretization() const
+{
+  return hmc_discretization_;
+}
+
+inline double ChompParameters::getHmcStochasticity() const
+{
+  return hmc_stochasticity_;
 }
 
 } // namespace chomp

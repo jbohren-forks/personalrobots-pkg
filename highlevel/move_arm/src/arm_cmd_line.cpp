@@ -233,6 +233,57 @@ void setConfig(const planning_models::StateParams *_sp, const std::vector<std::s
     }
 }
 
+void getIK(bool r, ros::NodeHandle &nh, planning_environment::KinematicModelStateMonitor &km, move_arm::MoveArmGoal &goal, planning_models::StateParams &sp,
+	   const std::vector<std::string> &names, double x, double y, double z)
+{
+    ros::ServiceClient client = nh.serviceClient<manipulation_srvs::IKService>("arm_ik");
+    manipulation_srvs::IKService::Request request;
+    manipulation_srvs::IKService::Response response;
+    request.data.pose_stamped.header.stamp = ros::Time::now();
+    request.data.pose_stamped.header.frame_id = km.getFrameId();
+    request.data.pose_stamped.pose.position.x = x;
+    request.data.pose_stamped.pose.position.y = y;
+    request.data.pose_stamped.pose.position.z = z;
+    request.data.pose_stamped.pose.orientation.x = 0;
+    request.data.pose_stamped.pose.orientation.y = 0;
+    request.data.pose_stamped.pose.orientation.z = 0;
+    request.data.pose_stamped.pose.orientation.w = 1;
+    request.data.joint_names = names;
+    
+    planning_models::StateParams rs(*km.getRobotState());
+    if (r)
+	rs.randomState();
+    
+    for(unsigned int i = 0; i < names.size() ; ++i)
+    {
+	const double *params = rs.getParamsJoint(names[i]);
+	const unsigned int u = km.getKinematicModel()->getJoint(names[i])->usedParams;
+	for (unsigned int j = 0 ; j < u ; ++j)
+	    request.data.positions.push_back(params[j]);
+    }
+    if (client.call(request, response))
+    {
+	sp = *km.getRobotState();
+	unsigned int n = 0;
+	for (unsigned int i = 0 ; i < names.size() ; ++i)
+	{
+	    unsigned int u = km.getKinematicModel()->getJoint(names[i])->usedParams;
+	    for (unsigned int j = 0 ; j < u ; ++j)
+	    {
+		std::vector<double> params(response.solution.begin() + n, response.solution.begin() + n + u);
+		sp.setParamsJoint(params, names[i]);
+		std::cout << names[i] << " = " << params[0] << std::endl;
+	    }
+	    n += u;
+	}
+	setConfig(&sp, names, goal);
+	std::cout << "Success!" << std::endl;
+    }
+    else
+	std::cerr << "IK Failed" << std::endl;
+}
+
+			   
 void diffConfig(const planning_environment::KinematicModelStateMonitor &km, move_arm::MoveArmGoal &goal)
 {
     std::vector<std::string> names;
@@ -368,49 +419,49 @@ int main(int argc, char **argv)
 	    printPose(p);
 	}
 	else
-	  if (cmd == "att0")
-	    {
-	      mapping_msgs::AttachedObject ao;
-	      ao.header.frame_id = "r_wrist_roll_link";
-	      ao.header.stamp = ros::Time::now();
-	      ao.link_name = "r_wrist_roll_link";
-	      pubAttach.publish(ao);
-	    }
-	  else
-	  if (cmd == "att1")
-	    {
-	      mapping_msgs::AttachedObject ao;
-	      ao.header.frame_id = "r_wrist_roll_link";
-	      ao.header.stamp = ros::Time::now();
-	      ao.link_name = "r_wrist_roll_link";
-
-	      mapping_msgs::Object object;
-	      object.type = mapping_msgs::Object::CYLINDER;
-	      object.dimensions.push_back(0.02); // 4 cm diam
-	      object.dimensions.push_back(1.3); // 48 inch
-
-	      // identity transform should place the object in the center
-	      geometry_msgs::Pose pose;
-	      pose.position.x = 0.16;
-	      pose.position.y = 0;
-	      pose.position.z = 0;
-
-	      pose.orientation.x = 0;
-	      pose.orientation.y = 0;
-	      pose.orientation.z = 0;
-	      pose.orientation.w = 1;
-	      
-	      ao.objects.push_back(object);
-	      ao.poses.push_back(pose);
-	      
-	      ao.touch_links.push_back("r_gripper_l_finger_link");
-	      ao.touch_links.push_back("r_gripper_r_finger_link");
-	      ao.touch_links.push_back("r_gripper_l_finger_tip_link");
-	      ao.touch_links.push_back("r_gripper_r_finger_tip_link");
-	      ao.touch_links.push_back("r_gripper_palm_link");
-	      
-	      pubAttach.publish(ao);
-	    }
+	if (cmd == "att0")
+	{
+	    mapping_msgs::AttachedObject ao;
+	    ao.header.frame_id = "r_wrist_roll_link";
+	    ao.header.stamp = ros::Time::now();
+	    ao.link_name = "r_wrist_roll_link";
+	    pubAttach.publish(ao);
+	}
+	else
+	if (cmd == "att1")
+	{
+	    mapping_msgs::AttachedObject ao;
+	    ao.header.frame_id = "r_wrist_roll_link";
+	    ao.header.stamp = ros::Time::now();
+	    ao.link_name = "r_wrist_roll_link";
+	    
+	    mapping_msgs::Object object;
+	    object.type = mapping_msgs::Object::CYLINDER;
+	    object.dimensions.push_back(0.02); // 4 cm diam
+	    object.dimensions.push_back(1.3); // 48 inch
+	    
+	    // identity transform should place the object in the center
+	    geometry_msgs::Pose pose;
+	    pose.position.x = 0.16;
+	    pose.position.y = 0;
+	    pose.position.z = 0;
+	    
+	    pose.orientation.x = 0;
+	    pose.orientation.y = 0;
+	    pose.orientation.z = 0;
+	    pose.orientation.w = 1;
+	    
+	    ao.objects.push_back(object);
+	    ao.poses.push_back(pose);
+	    
+	    ao.touch_links.push_back("r_gripper_l_finger_link");
+	    ao.touch_links.push_back("r_gripper_r_finger_link");
+	    ao.touch_links.push_back("r_gripper_l_finger_tip_link");
+	    ao.touch_links.push_back("r_gripper_r_finger_tip_link");
+	    ao.touch_links.push_back("r_gripper_palm_link");
+	    
+	    pubAttach.publish(ao);
+	}
 	else
 	if (cmd == "time")
 	{
@@ -446,6 +497,49 @@ int main(int argc, char **argv)
 	{
 	    planning_models::StateParams st(*km.getRobotState());
 	    viewState(view, km, st);
+	}
+	else
+	if (cmd.length() > 4 && cmd.substr(0, 4) == "fwd ")
+	{
+	    std::stringstream ss(cmd.substr(4));
+	    double fwd = 0.0;
+	    if (ss.good() && !ss.eof())
+	    {
+		ss >> fwd;
+		
+		manipulation_msgs::JointTraj traj;	    
+		traj.names = names;
+		traj.points.resize(2);
+		traj.points[0].time = 0;
+		traj.points[1].time = 3;
+		
+		km.getRobotState()->copyParamsJoints(traj.points[0].positions, names);
+
+
+		move_arm::MoveArmGoal temp;
+		setConfig(km.getRobotState(), names, temp);
+		btTransform p = effPosition(km, temp);
+		
+		planning_models::StateParams sp(*km.getRobotState());
+		getIK(false, nh, km, temp, sp, names, p.getOrigin().x() + fwd, p.getOrigin().y(), p.getOrigin().z());
+		
+		sp.copyParamsJoints(traj.points[1].positions, names);
+
+		std::cout << "Executing forward path for " << fwd << "m" << std::endl;
+		ros::ServiceClient clientStart = nh.serviceClient<pr2_mechanism_controllers::TrajectoryStart>("/r_arm_joint_waypoint_controller/TrajectoryStart");
+		
+		pr2_mechanism_controllers::TrajectoryStart::Request  send_traj_start_req;
+		pr2_mechanism_controllers::TrajectoryStart::Response send_traj_start_res;
+		send_traj_start_req.traj = traj;
+		send_traj_start_req.hastiming = 0;
+		send_traj_start_req.requesttiming = 0;
+		if (clientStart.call(send_traj_start_req, send_traj_start_res))
+		    std::cout << "Success!" << std::endl;
+		else
+		    std::cout << "Failure!" << std::endl;
+	    }
+	    else
+	        std::cerr << "Unable to parse value " << ss.str() << std::endl;
 	}
 	else
 	if (cmd.length() > 5 && cmd.substr(0, 5) == "view ")
@@ -530,51 +624,8 @@ int main(int argc, char **argv)
 			    ss >> z;
 			    err = false;
 			    std::cout << "Performing IK to " << x << ", " << y << ", " << z << ", 0, 0, 0, 1..." << std::endl;
-
-			    ros::ServiceClient client = nh.serviceClient<manipulation_srvs::IKService>("arm_ik");
-			    manipulation_srvs::IKService::Request request;
-			    manipulation_srvs::IKService::Response response;
-			    request.data.pose_stamped.header.stamp = ros::Time::now();
-			    request.data.pose_stamped.header.frame_id = km.getFrameId();
-			    request.data.pose_stamped.pose.position.x = x;
-			    request.data.pose_stamped.pose.position.y = y;
-			    request.data.pose_stamped.pose.position.z = z;
-			    request.data.pose_stamped.pose.orientation.x = 0;
-			    request.data.pose_stamped.pose.orientation.y = 0;
-			    request.data.pose_stamped.pose.orientation.z = 0;
-			    request.data.pose_stamped.pose.orientation.w = 1;
-			    request.data.joint_names = names;
-
-			    planning_models::StateParams rs(*km.getRobotState());
-			    rs.randomState();
-
-			    for(unsigned int i = 0; i < names.size() ; ++i)
-			    {
-				const double *params = rs.getParamsJoint(names[i]);
-				const unsigned int u = km.getKinematicModel()->getJoint(names[i])->usedParams;
-				for (unsigned int j = 0 ; j < u ; ++j)
-				    request.data.positions.push_back(params[j]);
-			    }
-			    if (client.call(request, response))
-			    {
-				planning_models::StateParams sp(*km.getRobotState());
-				unsigned int n = 0;
-				for (unsigned int i = 0 ; i < names.size() ; ++i)
-				{
-				    unsigned int u = km.getKinematicModel()->getJoint(names[i])->usedParams;
-				    for (unsigned int j = 0 ; j < u ; ++j)
-				    {
-					std::vector<double> params(response.solution.begin() + n, response.solution.begin() + n + u);
-					sp.setParamsJoint(params, names[i]);
-					std::cout << names[i] << " = " << params[0] << std::endl;
-				    }
-				    n += u;
-				}
-				setConfig(&sp, names, goals[config]);
-				std::cout << "Success!" << std::endl;
-			    }
-			    else
-				std::cerr << "IK Failed" << std::endl;
+			    planning_models::StateParams sp(*km.getRobotState());
+			    getIK(true, nh, km, goals[config], sp, names, x, y, z);
 			}
 		    }
 		}

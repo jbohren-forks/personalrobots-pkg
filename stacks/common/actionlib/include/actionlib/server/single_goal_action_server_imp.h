@@ -39,7 +39,7 @@
 namespace actionlib {
   template <class ActionSpec>
   SingleGoalActionServer<ActionSpec>::SingleGoalActionServer(ros::NodeHandle n, std::string name, ExecuteCallback execute_callback)
-    : n_(n), new_goal_(false), preempt_request_(false), new_goal_preempt_request_(false), execute_callback_(execute_callback) {
+    : n_(n), new_goal_(false), preempt_request_(false), new_goal_preempt_request_(false), execute_callback_(execute_callback), need_to_terminate_(false) {
 
     //create the action server
     as_ = boost::shared_ptr<ActionServer<ActionSpec> >(new ActionServer<ActionSpec>(n, name,
@@ -57,6 +57,11 @@ namespace actionlib {
   {
     if (execute_callback_)
     {
+      {
+        boost::mutex::scoped_lock terminate_lock(terminate_mutex_);
+        need_to_terminate_ = true;
+      }
+
       assert(execute_thread_);
       execute_thread_->join();
       delete execute_thread_;
@@ -218,6 +223,12 @@ namespace actionlib {
 
     while (n_.ok())
     {
+      {
+        boost::mutex::scoped_lock terminate_lock(terminate_mutex_);
+        if (need_to_terminate_)
+          break;
+      }
+
       boost::recursive_mutex::scoped_lock lock(lock_);
       if (isActive())
         ROS_ERROR("Should never reach this code with an active goal");

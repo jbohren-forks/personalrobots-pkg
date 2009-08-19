@@ -5,27 +5,27 @@
 
   <!-- load pr2 -->
   <param name="robot_description" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/prf.xacro.xml'" />
-  <node pkg="gazebo_tools" type="urdf2factory" args="robot_description" respawn="false" output="screen" />
+  <node pkg="gazebo_tools" type="urdf2factory" args="robot_description" respawn="false"  />
 
   <!-- Robot state publisher -->
   <node pkg="robot_state_publisher" type="state_publisher" name="robot_state_publisher">
     <param name="publish_frequency" type="double" value="50.0" />
     <param name="tf_prefix" type="string" value="" />
   </node>
-  <!--<node pkg="pr2_default_controllers" type="tuckarm.py" args="l" respawn="false" output="screen" />-->
+  <!--<node pkg="pr2_default_controllers" type="tuckarm.py" args="l" respawn="false" />-->
 
   <!-- load door -->
   <param name="door_description" command="$(find xacro)/xacro.py '$(find door_demos_gazebo)/door_defs/door_defs.xml'" />
-  <node pkg="gazebo_tools" type="urdf2factory" args="door_description 0 0 0 0 0 0 doorbot" respawn="false" output="screen" />
+  <node pkg="gazebo_tools" type="urdf2factory" args="door_description 0 0 0 0 0 0 doorbot" respawn="false" />
 
   <!-- load door and handle controllers
-  <node pkg="mechanism_control" type="spawner.py" args="$(find door_demos_gazebo)/door_defs/door_controllers.xml" respawn="false" output="screen" />
-  <node pkg="door_demos_gazebo" type="set_door.py" output="screen"/>
+  <node pkg="mechanism_control" type="spawner.py" args="$(find door_demos_gazebo)/door_defs/door_controllers.xml" respawn="false"/>
+  <node pkg="door_demos_gazebo" type="set_door.py"/>
   -->
 
   <!-- uncomment for visualization -->
   <!--
-  <node pkg="rviz" type="rviz" output="screen"/>
+  <node pkg="rviz" type="rviz"/>
   <include file="$(find gazebo_worlds)/launch/light.launch" />
   -->
 </launch>

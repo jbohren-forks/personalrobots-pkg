@@ -41,7 +41,6 @@
 
  **/
 
-// ROS core
 #include <ros/node.h>
 // ROS messages
 #include <door_handle_detector/DoorsDetector.h>
@@ -53,7 +52,6 @@
 #include <geometry_msgs/Point32.h>
 #include <door_msgs/Door.h>
 #include <visualization_msgs/Marker.h>
-
 #include <std_msgs/String.h>
 
 // Sample Consensus
@@ -102,42 +100,30 @@ inline bool
 class DoorTracker
 {
   public:
-
-    ros::Node *node_;
-
+    ros::NodeHandle node_handle_;
     sensor_msgs::PointCloud cloud_;
     laser_scan::LaserProjection projector_; // Used to project laser scans into point clouds
-
-    tf::TransformListener *tf_;
-
-    tf::MessageNotifier<sensor_msgs::LaserScan>* message_notifier_;
-
+    tf::TransformListener tf_;
+    boost::scoped_ptr<tf::MessageNotifier<sensor_msgs::LaserScan> > message_notifier_;
     door_msgs::Door door_msg_;
-
     door_msgs::Door door_msg_in_;
-
     boost::mutex door_msg_mutex_ ;
-
     boost::mutex cloud_msg_mutex_ ;
-
     bool active_;
-
     filters::FilterChain<sensor_msgs::LaserScan> filter_chain_;
-
     tf::Stamped<tf::Pose> global_pose_;
 
     double global_yaw_;
-
     double global_x_;
-
     double global_y_;
-
     bool done_detection_;
-
     double euclidean_cluster_angle_tolerance_;
     double  euclidean_cluster_min_pts_;               // 1000 points
     double  euclidean_cluster_distance_tolerance_;               // 5 cm
 
+    ros::Publisher viz_pub_;
+    ros::Publisher door_pub_;
+    ros::ServiceServer door_srv_;
 
     /********** Parameters that need to be gotten from the param server *******/
     std::string door_msg_topic_, base_laser_topic_,fixed_frame_;
@@ -151,27 +137,24 @@ class DoorTracker
     int num_clouds_received_;
     bool continuous_detection_;
 
+    bool first_time_;
+
     DoorTracker():message_notifier_(NULL)
     {
-      node_ = ros::Node::instance();
-      tf_ = new tf::TransformListener(*node_);
       num_clouds_received_ = 0;
       continuous_detection_ = false;
       active_ = false;
-      node_->subscribe("~activate",activate_msg_,&DoorTracker::activate,this,1);
+      node_handle_.subscribe("~activate",1,&DoorTracker::activate,this);
       ROS_DEBUG("Started door tracker");
-
       //Laser Scan Filtering
       std::string filter_xml;
-      node_->param("~filters", filter_xml,std::string("<filters><!--NO Filters defined--></filters>"));
+      node_handle_.param("~filters", filter_xml,std::string("<filters><!--NO Filters defined--></filters>"));
       //ROS_INFO("Got ~filters as: %s\n", filter_xml.c_str());
       TiXmlDocument xml_doc;
       xml_doc.Parse(filter_xml.c_str());
       TiXmlElement * config = xml_doc.RootElement();
-
       filter_chain_.configure(1, config);
       done_detection_ = true;
-
       euclidean_cluster_angle_tolerance_    = angles::from_degrees (25.0);
       euclidean_cluster_min_pts_            = 20;               // 1000 points
       euclidean_cluster_distance_tolerance_ = 0.03;               // 5 cm
@@ -179,10 +162,7 @@ class DoorTracker
 
     ~DoorTracker()
     {
-//      node_->unsubscribe(base_laser_topic_,&DoorTracker::laserCallBack,this);
     }
-
-
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /** \brief Decompose a region of space into clusters based on the euclidean distance between points, and the normal
@@ -222,15 +202,12 @@ class DoorTracker
         vector<int> seed_queue;
         int sq_idx = 0;
         seed_queue.push_back (i);
-
 //    double norm_a = 0.0;
 //    if (nx_idx != -1)         // If we use normal indices...
 //      norm_a = sqrt (points->channels[nx_idx].values[indices->at (i)] * points->channels[nx_idx].values[indices->at (i)] +
 //                     points->channels[ny_idx].values[indices->at (i)] * points->channels[ny_idx].values[indices->at (i)] +
 //                     points->channels[nz_idx].values[indices->at (i)] * points->channels[nz_idx].values[indices->at (i)]);
-
         processed[i] = true;
-
         while (sq_idx < (int)seed_queue.size ())
         {
           // Search for sq_idx
@@ -265,10 +242,8 @@ class DoorTracker
               seed_queue.push_back (nn_indices[j]);
             }
           }
-
           sq_idx++;
         }
-
         // If this queue is satisfactory, add to the clusters
         if (seed_queue.size () >= min_pts_per_cluster)
         {
@@ -282,81 +257,45 @@ class DoorTracker
           clusters.push_back (r);
         }
       }
-
       // Destroy the tree
       delete tree;
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     void start()
     {
-      if(!active_)
+      if(first_time_)
       {
-        node_->param<std::string>("~p_door_msg_topic_", door_msg_topic_, "door_message");                              // 10 degrees
-        node_->param<std::string>("~p_base_laser_topic_", base_laser_topic_, "base_scan");                              // 10 degrees
+        node_handle_.param<std::string>("~p_door_msg_topic_", door_msg_topic_, "door_message");                              // 10 degrees
+        node_handle_.param<std::string>("~p_base_laser_topic_", base_laser_topic_, "base_scan");                              // 10 degrees
 
-        node_->param ("~p_sac_min_points_per_model", sac_min_points_per_model_, 50);  // 100 points at high resolution
-        node_->param ("~p_sac_distance_threshold", sac_distance_threshold_, 0.03);     // 3 cm
-        node_->param ("~p_eps_angle_", eps_angle_, 10.0);                              // 10 degrees
-        node_->param ("~p_frame_multiplier_", frame_multiplier_,6.0);
-        node_->param ("~p_sac_min_points_left", sac_min_points_left_, 10);
-        node_->param ("~p_door_min_width", door_min_width_, 0.8);                    // minimum width of a door: 0.8m
-        node_->param ("~p_door_max_width", door_max_width_, 0.9);                    // maximum width of a door: 1.4m
-        node_->param("~p_fixed_frame", fixed_frame_, string("map"));
+        node_handle_.param ("~p_sac_min_points_per_model", sac_min_points_per_model_, 50);  // 100 points at high resolution
+        node_handle_.param ("~p_sac_distance_threshold", sac_distance_threshold_, 0.03);     // 3 cm
+        node_handle_.param ("~p_eps_angle_", eps_angle_, 10.0);                              // 10 degrees
+        node_handle_.param ("~p_frame_multiplier_", frame_multiplier_,6.0);
+        node_handle_.param ("~p_sac_min_points_left", sac_min_points_left_, 10);
+        node_handle_.param ("~p_door_min_width", door_min_width_, 0.8);                    // minimum width of a door: 0.8m
+        node_handle_.param ("~p_door_max_width", door_max_width_, 0.9);                    // maximum width of a door: 1.4m
+        node_handle_.param("~p_fixed_frame", fixed_frame_, string("map"));
 
         eps_angle_ = angles::from_degrees (eps_angle_);                      // convert to radians
 
         double tmp; int tmp2;
-        node_->param("~p_door_frame_p1_x", tmp, 0.5); door_msg_.frame_p1.x = tmp;
-        node_->param("~p_door_frame_p1_y", tmp, -0.5); door_msg_.frame_p1.y = tmp;
-        node_->param("~p_door_frame_p2_x", tmp, 0.5); door_msg_.frame_p2.x = tmp;
-        node_->param("~p_door_frame_p2_y", tmp, 0.5); door_msg_.frame_p2.y = tmp;
-        node_->param("~p_door_hinge" , tmp2, -1); door_msg_.hinge = tmp2;
-        node_->param("~p_door_rot_dir" , tmp2, -1); door_msg_.rot_dir = tmp2;
+        node_handle_.param("~p_door_frame_p1_x", tmp, 0.5); door_msg_.frame_p1.x = tmp;
+        node_handle_.param("~p_door_frame_p1_y", tmp, -0.5); door_msg_.frame_p1.y = tmp;
+        node_handle_.param("~p_door_frame_p2_x", tmp, 0.5); door_msg_.frame_p2.x = tmp;
+        node_handle_.param("~p_door_frame_p2_y", tmp, 0.5); door_msg_.frame_p2.y = tmp;
+        node_handle_.param("~p_door_hinge" , tmp2, -1); door_msg_.hinge = tmp2;
+        node_handle_.param("~p_door_rot_dir" , tmp2, -1); door_msg_.rot_dir = tmp2;
         door_msg_.header.frame_id = "base_link";
-
-        node_->param("~publish_all_candidates" , publish_all_candidates_, false);
-
-//      node_->subscribe(door_msg_topic_,door_msg_in_, &DoorTracker::doorMsgCallBack,this,1);
-        node_->advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
-        node_->advertise<door_msgs::Door>( "~door_message", 0 );
-        node_->advertiseService ("~doors_detector", &DoorTracker::detectDoorService, this);
-
-        message_notifier_ = new tf::MessageNotifier<sensor_msgs::LaserScan> (tf_, node_,  boost::bind(&DoorTracker::laserCallBack, this, _1), base_laser_topic_.c_str (), fixed_frame_, 1);
+        node_handle_.param("~publish_all_candidates" , publish_all_candidates_, false);
+        viz_pub_ = node_handle_.advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
+        door_pub_ = node_handle_.advertise<door_msgs::Door>( "~door_message", 0 );
+        door_srv_ = node_handle_.advertiseService ("~doors_detector", &DoorTracker::detectDoorService, this);
+        message_notifier_.reset(new tf::MessageNotifier<sensor_msgs::LaserScan> (tf_, boost::bind(&DoorTracker::laserCallBack, this, _1), base_laser_topic_, fixed_frame_, 1));
         message_notifier_->setTolerance(ros::Duration(.02));
-        active_ = true;
+        first_time_ = false;
       }
+      active_ = true;
     }
 
     void shutdown()
@@ -365,15 +304,8 @@ class DoorTracker
       {
         active_ = false;
         num_clouds_received_ = 0;
-//        node_->unsubscribe(door_msg_topic_,&DoorTracker::doorMsgCallBack,this);
-        node_->unadvertise("~doors_detector");
-        node_->unadvertise("~door_message");
-        node_->unadvertise("visualization_marker");
-        delete message_notifier_;
-        delete tf_;
       }
     }
-
 
     void updateGlobalPose()
     {
@@ -381,9 +313,8 @@ class DoorTracker
       robotPose.setIdentity();
       robotPose.frame_id_ = "base_link";
       robotPose.stamp_ = ros::Time();
-
       try{
-        tf_->transformPose(fixed_frame_, robotPose, global_pose_);
+        tf_.transformPose(fixed_frame_, robotPose, global_pose_);
       }
       catch(tf::LookupException& ex) {
         ROS_ERROR("No Transform available Error: %s\n", ex.what());
@@ -394,47 +325,34 @@ class DoorTracker
       catch(tf::ExtrapolationException& ex) {
         ROS_ERROR("Extrapolation Error: %s\n", ex.what());
       }
-
       double useless_pitch, useless_roll, yaw;
-
       global_pose_.getBasis().getEulerZYX(yaw, useless_pitch, useless_roll);
       global_yaw_ = yaw;
       global_x_ = global_pose_.getOrigin().x();
       global_y_ = global_pose_.getOrigin().y();
-
-//      ROS_DEBUG("Received new position (x=%f, y=%f, th=%f)", global_pose_.getOrigin().x(), global_pose_.getOrigin().y(), yaw);
     }
-
-
 
     void laserCallBack(const tf::MessageNotifier<sensor_msgs::LaserScan>::MessagePtr& scan_msg)
     {
       if(!active_)
         return;
-
       if(!done_detection_)
         return;
-
       cloud_msg_mutex_.lock();
-
       done_detection_  = false;
       sensor_msgs::LaserScan filtered_scan;
-      filter_chain_.update (*scan_msg, filtered_scan);
-      // Transform into a PointCloud message
+      filter_chain_.update (*scan_msg, filtered_scan);// Transform into a PointCloud message
       int mask = laser_scan::MASK_INTENSITY | laser_scan::MASK_DISTANCE | laser_scan::MASK_INDEX | laser_scan::MASK_TIMESTAMP;
-      try {
-        projector_.transformLaserScanToPointCloud(fixed_frame_, cloud_, filtered_scan, *tf_, mask);
+      try 
+      {
+        projector_.transformLaserScanToPointCloud(fixed_frame_, cloud_, filtered_scan, tf_, mask);
       }
       catch (tf::TransformException& e) {
         ROS_ERROR ("TF exception transforming scan to cloud: %s", e.what());
-      cloud_msg_mutex_.unlock();
+        cloud_msg_mutex_.unlock();
         return;
       }
-
       num_clouds_received_++;
-
-//      cloud_msg_mutex_.lock();
-//      cloud_ = *cloud;
       ROS_DEBUG("Received a point cloud with %d points in frame: %s",(int) cloud_.points.size(),cloud_.header.frame_id.c_str());
       if(cloud_.points.empty())
       {
@@ -447,8 +365,6 @@ class DoorTracker
         cloud_msg_mutex_.unlock();
         return;
       }
-//      cloud_msg_mutex_.unlock();
-
       if(continuous_detection_) // do this on every laser callback
       {
         findDoor();
@@ -472,19 +388,15 @@ class DoorTracker
       marker.color.a = 1.0;
       marker.color.b = 1.0;
       marker.set_points_size(2);
-
       marker.points[0].x = min_p.x;
       marker.points[0].y = min_p.y;
       marker.points[0].z = min_p.z;
-
       marker.points[1].x = max_p.x;
       marker.points[1].y = max_p.y;
       marker.points[1].z = max_p.z;
       ROS_DEBUG("Publishing line between: p1: %f %f %f, p2: %f %f %f",marker.points[0].x,marker.points[0].y,marker.points[0].z,marker.points[1].x,marker.points[1].y,marker.points[1].z);
-
-      node_->publish( "visualization_marker", marker );
+      viz_pub_.publish(marker );
     }
-
 
     void transform2DInverse(const geometry_msgs::Point32 &fp_in, geometry_msgs::Point32 &fp_out, const double &robot_x, const double &robot_y, const double &robot_theta)
     {
@@ -503,14 +415,11 @@ class DoorTracker
       //cloud_msg_mutex_.unlock();
 
       updateGlobalPose();
-
       vector<int> indices;
       vector<int> possible_door_points;
       int inliers_size_max = 0;
       int inliers_size_max_index = -1;
-
       indices.resize(cloud.points.size());
-
       for(unsigned int i=0; i < cloud.points.size(); i++)      //Use all the indices
       {
         indices[i] = i;
@@ -519,12 +428,9 @@ class DoorTracker
       // Find the dominant lines
       vector<vector<int> > inliers;
       vector<vector<double> > coeff;
-
       vector<geometry_msgs::Point32> line_segment_min;
       vector<geometry_msgs::Point32> line_segment_max;
-
       fitSACLines(&cloud,indices,inliers,coeff,line_segment_min,line_segment_max);
-
       if(publish_all_candidates_)
       {
         for(unsigned int i=0; i < inliers.size(); i++)
@@ -541,11 +447,9 @@ class DoorTracker
           ROS_DEBUG("This candidate line has the wrong width: %f which is outside the (min,max) limits: (%f,%f)",door_frame_width,door_min_width_,door_max_width_);
           continue;
         }
-
         geometry_msgs::Point32 temp_min,temp_max;
         transform2DInverse(line_segment_min[i],temp_min,global_x_,global_y_,global_yaw_);
         transform2DInverse(line_segment_max[i],temp_max,global_x_,global_y_,global_yaw_);
-
         double door_pt_angle_1 = atan2(temp_max.y,temp_max.x);
         double door_pt_angle_2 = atan2(temp_min.y,temp_min.x);
 
@@ -556,7 +460,6 @@ class DoorTracker
           continue;
         }
       }
-
       for(unsigned int i=0; i < inliers.size(); i++)
       {
         if((int) inliers[i].size() > inliers_size_max)
@@ -577,10 +480,9 @@ class DoorTracker
         door_tmp.door_p2.z = line_segment_max[inliers_size_max_index].z;
         door_tmp.header = cloud.header;
         door_tmp.header.frame_id = fixed_frame_;
-        node_->publish( "~door_message", door_tmp);
+        door_pub_.publish(door_tmp);
       }
       ROS_DEBUG("Done finding door");
-
       done_detection_ = true;
     }
 
@@ -601,11 +503,12 @@ class DoorTracker
       return true;
     }
 
-    void activate()
+    void activate(const std_msgs::StringConstPtr &activate_msg)
     {
-      ROS_DEBUG("Trying to activate: %s",activate_msg_.data.c_str());
+      std_msgs::String msg = *activate_msg;
+      ROS_DEBUG("Trying to activate: %s",msg.data.c_str());
 
-      if (activate_msg_.data == std::string("activate"))
+      if (msg.data == std::string("activate"))
       {
         if(!continuous_detection_)
         {
@@ -614,7 +517,7 @@ class DoorTracker
           start();
         }
       }
-      else if (activate_msg_.data == std::string("deactivate"))
+      else if (msg.data == std::string("deactivate"))
       {
         if(continuous_detection_)
         {
@@ -668,8 +571,6 @@ class DoorTracker
           std::vector<double> new_coeff;
           sac->computeCoefficients(new_coeff);
           sac->refineCoefficients(new_coeff);
-//          coeff.push_back(sac->computeCoefficients());
-
           vector<int> inliers_local;
           model->selectWithinDistance(new_coeff, sac_distance_threshold_,inliers_local);
 
@@ -699,7 +600,6 @@ class DoorTracker
               cloud_geometry::statistics::getLargestXYPoints (*points, inliers.back(), minP, maxP);
               line_segment_min.push_back(minP);
               line_segment_max.push_back(maxP);
-//              fprintf (stderr, "> Found a model supported by %d inliers: [%g, %g, %g, %g]\n", (int)sac->getInliers ().size (), coeff[coeff.size () - 1][0], coeff[coeff.size () - 1][1], coeff[coeff.size () - 1][2], coeff[coeff.size () - 1][3]);
             }
           }
           // Remove the current inliers in the model
@@ -727,7 +627,7 @@ class DoorTracker
       transformPoint (tf,cloud_frame, frame_p2, frame_p2);
 
       ROS_DEBUG ("Start detecting door at points in frame %s [%g, %g, %g] -> [%g, %g, %g]",
-                cloud_frame.c_str (), frame_p1.x, frame_p1.y, frame_p1.z, frame_p2.x, frame_p2.y, frame_p2.z);
+                 cloud_frame.c_str (), frame_p1.x, frame_p1.y, frame_p1.z, frame_p2.x, frame_p2.y, frame_p2.z);
 
       // Obtain the bounding box information in the reference frame of the laser scan
       geometry_msgs::Point32 min_bbox, max_bbox;
@@ -760,42 +660,6 @@ class DoorTracker
       }
       ROS_DEBUG ("Number of points in bounds [%f,%f,%f] -> [%f,%f,%f]: %d.",min_bbox.x, min_bbox.y, min_bbox.z, max_bbox.x, max_bbox.y, max_bbox.z, (int)indices.size ());
     }
-
-
-/*
-  void get3DBounds (geometry_msgs::Point32 *p1, geometry_msgs::Point32 *p2, geometry_msgs::Point32 &min_b, geometry_msgs::Point32 &max_b, int multiplier)
-  {
-  // Get the door_frame distance in the X-Y plane
-  float door_frame = sqrt ( (p1->x - p2->x) * (p1->x - p2->x) + (p1->y - p2->y) * (p1->y - p2->y) );
-
-  float center[2];
-  center[0] = (p1->x + p2->x) / 2.0;
-  center[1] = (p1->y + p2->y) / 2.0;
-
-  // Obtain the bounds (doesn't matter which is min and which is max at this point)
-  min_b.x = center[0] + (multiplier * door_frame) / 2.0;
-  min_b.y = center[1] + (multiplier * door_frame) / 2.0;
-  min_b.z = -FLT_MAX;
-
-  max_b.x = center[0] - (multiplier * door_frame) / 2.0;
-  max_b.y = center[1] - (multiplier * door_frame) / 2.0;
-  max_b.z = FLT_MAX;
-
-  // Order min/max
-  if (min_b.x > max_b.x)
-  {
-  float tmp = min_b.x;
-  min_b.x = max_b.x;
-  max_b.x = tmp;
-  }
-  if (min_b.y > max_b.y)
-  {
-  float tmp = min_b.y;
-  min_b.y = max_b.y;
-  max_b.y = tmp;
-  }
-  }
-*/
 
     void get3DBounds (geometry_msgs::Point32 *p1, geometry_msgs::Point32 *p2, geometry_msgs::Point32 &min_b, geometry_msgs::Point32 &max_b, int multiplier)
     {
@@ -830,14 +694,13 @@ class DoorTracker
       }
     }
 
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/** \brief Transform a given point from its current frame to a given target frame
- * \param tf a pointer to a TransformListener object
- * \param target_frame the target frame to transform the point into
- * \param stamped_in the input point
- * \param stamped_out the output point
- */
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Transform a given point from its current frame to a given target frame
+     * \param tf a pointer to a TransformListener object
+     * \param target_frame the target frame to transform the point into
+     * \param stamped_in the input point
+     * \param stamped_out the output point
+    */
     inline void
     transformPoint (tf::TransformListener *tf, const std::string &target_frame,
                     const tf::Stamped< geometry_msgs::Point32 > &stamped_in, tf::Stamped< geometry_msgs::Point32 > &stamped_out)
@@ -860,20 +723,12 @@ class DoorTracker
 };
 
 
-/* ---[ */
-int
-main (int argc, char** argv)
+int main(int argc, char** argv)
 {
-  ros::init (argc, argv);
-
-  ros::Node n("door_tracker");
-
+  ros::init (argc, argv, "door_tracker");
   DoorTracker p;
-
   ROS_INFO("Waiting for tracker to finish");
-
-  n.spin ();
+  ros::spin ();
   return (0);
 }
-/* ]--- */
 

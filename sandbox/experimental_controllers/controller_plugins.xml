@@ -26,5 +26,8 @@
   <plugin name="JointChainSineController" class="JointChainSineController" type="Controller" />
   <plugin name="JointLimitCalibrationControllerNode" class="JointLimitCalibrationControllerNode" type="Controller" />
 
+  <plugin name="HeadServoingController" class="HeadServoingController" type="Controller" />
+  <plugin name="JointTrajectoryController" class="JointTrajectoryController" type="Controller" />
+  <plugin name="ArmTrajectoryControllerNode" class="ArmTrajectoryControllerNode" type="Controller" />
 
 </library>

@@ -111,6 +111,23 @@ public:
   bool initXml(TiXmlElement *);
 };
 
+class Material
+{
+public:
+  Material() { this->clear(); };
+  std::string name;
+  std::string texture_filename;
+  Vector3 rgb;
+
+  void clear()
+  {
+    rgb.clear();
+    texture_filename.clear();
+    name.clear();
+  };
+  bool initXml(TiXmlElement* config);
+};
+
 class Inertial
 {
 public:
@@ -135,9 +152,15 @@ public:
   Pose origin;
   boost::shared_ptr<Geometry> geometry;
 
+  std::string material_name;
+
+  boost::shared_ptr<Material> material;
+
   void clear()
   {
     origin.clear();
+    material_name.clear();
+    material.reset();
     geometry.reset();
   };
   bool initXml(TiXmlElement* config);

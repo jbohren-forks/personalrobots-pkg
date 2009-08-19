@@ -9,7 +9,6 @@
  - @ref utilities
  - @ref python
  - @ref cpp
- - @ref tutorial
  - @ref faq
 
 
@@ -25,7 +24,7 @@ This node will echo the latest transform between two frames.
 
 \todo WRITE ME
 
-@subsection viewFrames viewFrames.py
+@subsection view_frames view_frames
 This node will generate a pdf of the current transform tree.  
 
 \todo WRITE ME
@@ -166,7 +165,7 @@ It is a simple command-line utility that repeatedly publishes the fixed-offset t
 @subsection introspection Introspection Methods
  - How can I see what transforms are in the system?
 
-Use the script viewframes.py in the tf package.  By default, it listens
+Use the script view_frames in the tf package.  By default, it listens
 to tf messages for 5 seconds and produces a pdf (frames.pdf) that graphs
 all frames heard from. 
 The "--node=NODE_NAME" option can assist with debugging transform issues with a
@@ -210,8 +209,8 @@ to do this.
 
 Yes, if there there is any outdated or delayed source of transforms this may appear. 
 The error message will tell you what is the authority which is sending the 
-outdated data.  If it is running in a ros node you can use viewFrames.py to 
-determine the more recent authority. See \ref viewFrames.
+outdated data.  If it is running in a ros node you can use view_frames to 
+determine the more recent authority. See \ref view_frames.
 
 @subsection tf_no_frame_id TF_NO_FRAME_ID
  - What does the error TF_NO_FRAME_ID mean?
@@ -284,7 +283,7 @@ authority is not publishing an intermediate transform required
 to get between the source and target frame.  If you are running
 a large launch script look carefully for any nodes crashing 
 or failing to start.  The best utility to see what is being
-published is viewFrames.py see \ref viewFrames for usage.
+published is view_frames see \ref view_frames for usage.
 
  - What do the different versions of ConnectivityExceptions mean?
 

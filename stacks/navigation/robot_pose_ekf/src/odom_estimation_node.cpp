@@ -53,8 +53,7 @@ namespace estimation
 {
   // constructor
   OdomEstimationNode::OdomEstimationNode()
-    : vo_notifier_(NULL),
-      vel_desi_(2),
+    : vel_desi_(2),
       vel_active_(false),
       odom_active_(false),
       imu_active_(false),
@@ -105,7 +104,7 @@ namespace estimation
     // subscribe to vo messages
     if (vo_used_){
       ROS_DEBUG("VO sensor can be used");
-      vo_notifier_ = new MessageNotifier<deprecated_msgs::VOPose>(robot_state_,  boost::bind(&OdomEstimationNode::voCallback, this, _1), "vo", "base_link", 10);
+      vo_sub_ = node_.subscribe("vo", 10, &OdomEstimationNode::voCallback, this);
     }
     else ROS_DEBUG("VO sensor will NOT be used");
 
@@ -126,7 +125,6 @@ namespace estimation
 
   // destructor
   OdomEstimationNode::~OdomEstimationNode(){
-    if (vo_notifier_) delete vo_notifier_;
 
 #ifdef __EKF_DEBUG_FILE__
     // close files for debugging
@@ -159,18 +157,6 @@ namespace estimation
     for (unsigned int i=0; i<6; i++)
       for (unsigned int j=0; j<6; j++)
         odom_covariance_(i+1, j+1) = odom->pose.covariance[6*i+j];
-
-    // manually set covariance
-    /*
-    SymmetricMatrix measNoiseOdom_Cov(6);  measNoiseOdom_Cov = 0;
-    measNoiseOdom_Cov(1,1) = pow(0.002,2);    // = 2 mm / sec
-    measNoiseOdom_Cov(2,2) = pow(0.002,2);    // = 2 mm / sec
-    measNoiseOdom_Cov(3,3) = pow(999.9,2);    // = large
-    measNoiseOdom_Cov(4,4) = pow(999.9,2);    // = large
-    measNoiseOdom_Cov(5,5) = pow(999.9,2);    // = large
-    measNoiseOdom_Cov(6,6) = pow(0.017,2);    // = 1 degree / sec
-    odom_covariance_ = measNoiseOdom_Cov;
-    */
 
     my_filter_.addMeasurement(Stamped<Transform>(odom_meas_, odom_stamp_,"wheelodom", "base_footprint"), odom_covariance_);
     
@@ -251,7 +237,7 @@ namespace estimation
 
 
   // callback function for VO data
-  void OdomEstimationNode::voCallback(const MessageNotifier<deprecated_msgs::VOPose>::MessagePtr& vo)
+  void OdomEstimationNode::voCallback(const VoConstPtr& vo)
   {
     assert(vo_used_);
 
@@ -259,30 +245,11 @@ namespace estimation
     boost::mutex::scoped_lock lock(vo_mutex_);
     vo_stamp_ = vo->header.stamp;
     vo_time_  = Time::now();
-    if (!robot_state_.canTransform("stereo_link","base_link", vo_stamp_)){
-      ROS_ERROR("Cannot transform between stereo_link and base_link. Ignoring the incoming VO message");
-      return;
-    }
-    robot_state_.lookupTransform("stereo_link","base_link", vo_stamp_, camera_base_);
-    poseMsgToTF(vo->pose, vo_meas_);
-
-    // manually set covariance
-    SymmetricMatrix measNoiseVo_Cov(6);  measNoiseVo_Cov = 0;
-    measNoiseVo_Cov(1,1) = pow(0.01,2);  // = 1 cm / sec
-    measNoiseVo_Cov(2,2) = pow(0.01,2);  // = 1 cm / sec
-    measNoiseVo_Cov(3,3) = pow(0.01,2);  // = 1 cm / sec
-    measNoiseVo_Cov(4,4) = pow(0.003,2); // = 0.2 degrees / sec
-    measNoiseVo_Cov(5,5) = pow(0.003,2); // = 0.2 degrees / sec
-    measNoiseVo_Cov(6,6) = pow(0.003,2); // = 0.2 degrees / sec
-    vo_covariance_ = measNoiseVo_Cov;
-    
-    // initialize
-    if (!vo_active_ && !vo_initializing_){
-      base_vo_init_ = camera_base_.inverse() * vo_camera_.inverse() * vo_meas_.inverse();
-    }
-    Transform vo_meas_base = base_vo_init_ * vo_meas_ * vo_camera_ * camera_base_;
-
-    my_filter_.addMeasurement(Stamped<Transform>(vo_meas_base, vo_stamp_, "vo", "base_footprint"), vo_covariance_);
+    poseMsgToTF(vo->pose.pose, vo_meas_);
+    for (unsigned int i=0; i<6; i++)
+      for (unsigned int j=0; j<6; j++)
+        vo_covariance_(i+1, j+1) = vo->pose.covariance[6*i+j];
+    my_filter_.addMeasurement(Stamped<Transform>(vo_meas_, vo_stamp_, "vo", "base_footprint"), vo_covariance_);
     
     // activate vo
     if (!vo_active_) {

@@ -73,6 +73,67 @@ Geometry *parseGeometry(TiXmlElement *g)
   return geom.release();
 }
 
+bool Material::initXml(TiXmlElement *config)
+{
+  bool has_rgb = false;
+  bool has_filename = true;
+
+  this->clear();
+
+  if (!config->Attribute("name"))
+  {
+    ROS_ERROR("Material must contain a name attribute");
+    return false;
+  }
+
+  this->name = config->Attribute("filename");
+
+  // texture
+  TiXmlElement *t = config->FirstChildElement("texture");
+  if (!t)
+  {
+    ROS_INFO("no texture in Matrial");
+  }
+  else
+  {
+    if (t->Attribute("filename"))
+    {
+      this->texture_filename = t->Attribute("filename");
+      has_filename = true;
+    }
+    else
+      ROS_INFO("texture has no filename for Matrial %s",this->name.c_str());
+  }
+
+  // color
+  TiXmlElement *c = config->FirstChildElement("color");
+  if (!c)
+  {
+    ROS_INFO("Material %s has no color tag",this->name.c_str());
+    this->rgb.clear();
+  }
+  else
+  {
+    if (c->Attribute("rgb"))
+    {
+      if (!this->rgb.init(c->Attribute("rgb")))
+      {
+        ROS_ERROR("Material %s has malformed color rgb values.",this->name.c_str());
+        this->rgb.clear();
+        return false;
+      }
+      else
+        has_rgb = true;
+    }
+    else
+    {
+      ROS_INFO("Matrial % color has no rgb",this->name.c_str());
+    }
+  }
+
+  return (has_rgb || has_filename);
+}
+
 bool Inertial::initXml(TiXmlElement *config)
 {
   this->clear();
@@ -155,6 +216,22 @@ bool Visual::initXml(TiXmlElement *config)
   {
     ROS_ERROR("Malformed geometry for Visual element");
     return false;
+  }
+
+  // Material
+  TiXmlElement *mat = config->FirstChildElement("material");
+  if (!mat)
+  {
+    ROS_DEBUG("visual element has no material tag.");
+  }
+  else
+  {
+    if (!mat->Attribute("name"))
+    {
+      ROS_ERROR("Visual material must contain a name attribute");
+      return false;
+    }
+    this->material_name = mat->Attribute("name");
   }
 
   return true;

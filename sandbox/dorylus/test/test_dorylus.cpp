@@ -1,4 +1,4 @@
-#include <dorylus.h>
+#include <dorylus/dorylus.h>
 #include <gtest/gtest.h>
 
 USING_PART_OF_NAMESPACE_EIGEN;
@@ -16,6 +16,7 @@ TEST(Dorylus, training) {
   int max_wcs = 5;
   srand(0);
   d.train(nCandidates, max_secs, max_wcs);
+  d.save("test/sanity_save.d");
 
   d2.load("test/sanity.d");
   cout << d.status() << endl;
@@ -23,27 +24,22 @@ TEST(Dorylus, training) {
   EXPECT_TRUE(d2.compare(d, true));
 }
 
-
 TEST(Dorylus, loadAndSave) {
-  Dorylus d, d2, d3;
-  d.load("test/sanity.d");
+  Dorylus d, d2;
+  EXPECT_TRUE(d.load("test/sanity.d"));
   d.save("test/sanity_dupe.d");
-  d2.load("test/sanity_dupe.d");
-  d3.load("test/test.d");
+  EXPECT_TRUE(d2.load("test/sanity_dupe.d"));
   system("rm test/sanity_dupe.d");
   EXPECT_TRUE(d2.compare(d));
-  EXPECT_FALSE(d2.compare(d3));
 }
 
 TEST(DorylusDataset, loadAndSave) {
-  DorylusDataset dd, dd2, dd3;
+  DorylusDataset dd, dd2;
   dd.load("test/sanity.dd");
   dd.save("test/sanity_dupe.dd");
   dd2.load("test/sanity_dupe.dd");
-  dd3.load("test/test.dd");
   system("rm test/sanity_dupe.dd");
   EXPECT_TRUE(dd2.compare(dd));
-  EXPECT_FALSE(dd2.compare(dd3));
 }
 
 void testDatasetSave()

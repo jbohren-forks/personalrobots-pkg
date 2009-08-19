@@ -5,8 +5,6 @@
   <plugin name="GripperCalibrationController" class="GripperCalibrationController" type="Controller" />
   <plugin name="GripperCalibrationControllerNode" class="GripperCalibrationControllerNode" type="Controller" />
   <plugin name="HeadPositionController" class="HeadPositionController" type="Controller" />
-  <plugin name="HeadServoingController" class="HeadServoingController" type="Controller" />
-  <plugin name="JointTrajectoryController" class="JointTrajectoryController" type="Controller" />
   <plugin name="LaserScannerTrajController" class="LaserScannerTrajController" type="Controller" />
   <plugin name="LaserScannerTrajControllerNode" class="LaserScannerTrajControllerNode" type="Controller" />
   <plugin name="Pr2BaseController" class="Pr2BaseController" type="Controller" />

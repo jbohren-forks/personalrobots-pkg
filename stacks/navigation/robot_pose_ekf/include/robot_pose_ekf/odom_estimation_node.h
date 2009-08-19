@@ -41,7 +41,6 @@
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
 #include <tf/transform_broadcaster.h>
-#include <tf/message_notifier.h>
 #include "odom_estimation.h"
 
 // messages
@@ -49,7 +48,6 @@
 #include "geometry_msgs/Twist.h"
 #include "sensor_msgs/Imu.h"
 #include "geometry_msgs/PoseStamped.h"
-#include "deprecated_msgs/VOPose.h"
 #include "geometry_msgs/PoseWithCovarianceStamped.h"
 
 #include <boost/thread/mutex.hpp>
@@ -71,6 +69,7 @@ namespace estimation
 
 typedef boost::shared_ptr<nav_msgs::Odometry const> OdomConstPtr;
 typedef boost::shared_ptr<sensor_msgs::Imu const> ImuConstPtr;
+typedef boost::shared_ptr<nav_msgs::Odometry const> VoConstPtr;
 typedef boost::shared_ptr<geometry_msgs::Twist const> VelConstPtr;
 
 class OdomEstimationNode
@@ -96,13 +95,13 @@ private:
   void imuCallback(const ImuConstPtr& imu);
 
   /// callback function for vo data
-  void voCallback(const tf::MessageNotifier<deprecated_msgs::VOPose>::MessagePtr& vo);
+  void voCallback(const VoConstPtr& vo);
 
 
   ros::NodeHandle node_;
   ros::Timer timer_;
   ros::Publisher pose_pub_;
-  ros::Subscriber cmd_vel_sub_, odom_sub_, imu_sub_;
+  ros::Subscriber cmd_vel_sub_, odom_sub_, imu_sub_, vo_sub_;
 
   // ekf filter
   OdomEstimation my_filter_;
@@ -113,9 +112,6 @@ private:
   // robot state
   tf::TransformListener    robot_state_;
   tf::TransformBroadcaster odom_broadcaster_;
-
-  // message notifier for vo
-  tf::MessageNotifier<deprecated_msgs::VOPose>*  vo_notifier_;
 
   // vectors
   MatrixWrapper::ColumnVector vel_desi_;

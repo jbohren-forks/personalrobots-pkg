@@ -434,7 +434,7 @@ void HogWrapper::doComputation(IplImage* img, const Vector<KeyPoint>& points, vv
       // -- Draw cell.
       cvRectangle(vis, cvPoint(ul_x, ul_y), cvPoint(ul_x + hog_.cellSize.width, ul_y + hog_.cellSize.height), cvScalar(0,0,255));
 
-      //commonDebug(points[i], vis);
+      cout << "Showing window (blue), block (green), and cell (red)." << endl;
       CVSHOW("Visualization", vis);
       cvWaitKey(0);
       cvReleaseImage(&vis);

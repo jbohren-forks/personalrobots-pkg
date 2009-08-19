@@ -42,6 +42,11 @@ rospack_add_library(experimental_controllers
   src/joint_chain_constraint_controller.cpp
   src/joint_chain_sine_controller.cpp
   src/probe.cpp
+
+  src/head_servoing_controller.cpp
+  src/arm_trajectory_controller.cpp
+  src/joint_trajectory_controller.cpp
+
 )
 target_link_libraries(experimental_controllers ltdl)
 
