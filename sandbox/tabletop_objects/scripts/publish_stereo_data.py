@@ -9,12 +9,12 @@ import string
 import re
 from threading import Thread
 
-import roslib; roslib.load_manifest('recognition_lambertian')
+import roslib; roslib.load_manifest('tabletop_objects')
 
 from std_msgs.msg import String
 import rospy
 
-from recognition_lambertian.srv import *
+from tabletop_objects.srv import *
 
 
 # begin wxGlade: extracode

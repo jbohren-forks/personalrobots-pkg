@@ -2,7 +2,7 @@
 
 
 import numpy
-import roslib; roslib.load_manifest('recognition_lambertian')
+import roslib; roslib.load_manifest('tabletop_objects')
 import rospy
 import os
 import ply_import

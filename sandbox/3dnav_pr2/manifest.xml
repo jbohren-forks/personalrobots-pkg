@@ -34,7 +34,7 @@
 
   <!-- object recognition -->
   <depend package="table_object_detector"/>
-  <depend package="recognition_lambertian" />
+  <depend package="tabletop_objects" />
 
   
   <!-- planning -->

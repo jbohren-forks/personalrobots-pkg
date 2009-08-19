@@ -39,7 +39,7 @@
 #include <ply.h>
 
 #include <ros/ros.h>
-#include "recognition_lambertian/ModelFit.h"
+#include "tabletop_objects/ModelFit.h"
 
 #include "geometry_msgs/Point.h"
 #include "visualization_msgs/Marker.h"
@@ -113,6 +113,8 @@ public:
 		int i,j;
 		int elem_count;
 		char *elem_name;
+
+		mesh.type = mapping_msgs::Object::MESH;
 
 		/*** Read in the original PLY object ***/
 
@@ -438,7 +440,6 @@ void TemplateModel::load(const string& file, const string& name)
 	bfs::path reduced_path = file_path.parent_path() / "reduced" / ply_file;
 	PLYMesh ply_mesh;
 	ply_mesh.readFromFile(reduced_path.string(),mesh_);
-	mesh_.type = mesh_.MESH;
 }
 
 
@@ -569,7 +570,7 @@ public:
 	ModelFitter()
 	{
 		nh_.param<string>("~template_path", template_path, "");
-		service_ = nh_.advertiseService("recognition_lambertian/model_fit", &ModelFitter::fitModel, this);
+		service_ = nh_.advertiseService("tabletop_objects/model_fit", &ModelFitter::fitModel, this);
 
 		marker_pub_ = nh_.advertise<visualization_msgs::Marker>("visualization_marker",1);
 
@@ -617,8 +618,8 @@ public:
 		}
 	}
 
-	bool fitModel(recognition_lambertian::ModelFit::Request& req,
-			recognition_lambertian::ModelFit::Response& resp)
+	bool fitModel(tabletop_objects::ModelFit::Request& req,
+			tabletop_objects::ModelFit::Response& resp)
 	{
 		ROS_INFO("Service called");
 

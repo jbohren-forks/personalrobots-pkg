@@ -2,13 +2,13 @@
 
 
 import numpy
-import roslib; roslib.load_manifest('recognition_lambertian')
+import roslib; roslib.load_manifest('tabletop_objects')
 import rospy
 import os
 import ply_import
 
 from geometry_msg.msg import Point
-from recognition_lambertian.srv import *
+from tabletop_objects.srv import *
 from visualization_msgs.msg import Marker
 
 #import psyco
@@ -172,7 +172,7 @@ class ModelFitNode():
     
     def __init__(self):
         rospy.init_node('model_fit')
-        service = rospy.Service("recognition_lambertian/model_fit", ModelFit, self.model_fit)
+        service = rospy.Service("tabletop_objects/model_fit", ModelFit, self.model_fit)
         self.maker_pub = rospy.Publisher("visualization_marker",Marker)
         print "Initialized"
         self.cnt = 0

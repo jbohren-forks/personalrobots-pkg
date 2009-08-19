@@ -86,9 +86,9 @@
 #include <boost/thread.hpp>
 
 #include "chamfer_matching/chamfer_matching.h"
-#include "recognition_lambertian/ModelFit.h"
-#include "recognition_lambertian/FindObjectPoses.h"
-#include "recognition_lambertian/TableTopObject.h"
+#include "tabletop_objects/ModelFit.h"
+#include "tabletop_objects/FindObjectPoses.h"
+#include "tabletop_msgs/TableTopObject.h"
 
 //#include "flann.h"
 
@@ -96,7 +96,7 @@ using namespace std;
 
 #define CV_PIXEL(type,img,x,y) (((type*)(img->imageData+y*img->widthStep))+x*img->nChannels)
 
-class RecognitionLambertian
+class TabletopDetector
 {
 public:
 
@@ -162,8 +162,8 @@ public:
 	boost::condition_variable data_cv_;
 	bool got_data_;
 
-	RecognitionLambertian()
-	: left(NULL), right(NULL), disp(NULL), disp_clone(NULL), sync_(&RecognitionLambertian::syncCallback, this), got_data_(false)
+	TabletopDetector()
+	: left(NULL), right(NULL), disp(NULL), disp_clone(NULL), sync_(&TabletopDetector::syncCallback, this), got_data_(false)
 	{
 		// define node parameters
 		nh_.param("~display", display_, false);
@@ -188,12 +188,12 @@ public:
 		}
 
 		// subscribe to topics
-		left_image_sub_ = nh_.subscribe(nh_.resolveName("stereo")+"/left/image_rect", 1, sync_.synchronize(&RecognitionLambertian::leftImageCallback, this));
-		left_caminfo_image_sub_ = nh_.subscribe(nh_.resolveName("stereo")+"/left/cam_info", 1, sync_.synchronize(&RecognitionLambertian::leftCameraInfoCallback, this));
-		right_image_sub_ = nh_.subscribe(nh_.resolveName("stereo")+"/right/image_rect", 1, sync_.synchronize(&RecognitionLambertian::rightImageCallback, this));
-		disparity_sub_ = nh_.subscribe(nh_.resolveName("stereo")+"/disparity", 1, sync_.synchronize(&RecognitionLambertian::disparityImageCallback, this));
-		cloud_sub_ = nh_.subscribe(nh_.resolveName("stereo")+"/cloud", 1, sync_.synchronize(&RecognitionLambertian::cloudCallback, this));
-		dispinfo_sub_ = nh_.subscribe(nh_.resolveName("stereo")+"/disparity_info", 1, sync_.synchronize(&RecognitionLambertian::dispinfoCallback, this));
+		left_image_sub_ = nh_.subscribe(nh_.resolveName("stereo")+"/left/image_rect", 1, sync_.synchronize(&TabletopDetector::leftImageCallback, this));
+		left_caminfo_image_sub_ = nh_.subscribe(nh_.resolveName("stereo")+"/left/cam_info", 1, sync_.synchronize(&TabletopDetector::leftCameraInfoCallback, this));
+		right_image_sub_ = nh_.subscribe(nh_.resolveName("stereo")+"/right/image_rect", 1, sync_.synchronize(&TabletopDetector::rightImageCallback, this));
+		disparity_sub_ = nh_.subscribe(nh_.resolveName("stereo")+"/disparity", 1, sync_.synchronize(&TabletopDetector::disparityImageCallback, this));
+		cloud_sub_ = nh_.subscribe(nh_.resolveName("stereo")+"/cloud", 1, sync_.synchronize(&TabletopDetector::cloudCallback, this));
+		dispinfo_sub_ = nh_.subscribe(nh_.resolveName("stereo")+"/disparity_info", 1, sync_.synchronize(&TabletopDetector::dispinfoCallback, this));
 
 		// advertise topics
 		objects_pub_ = nh_.advertise<sensor_msgs::PointCloud> ("~objects", 1);
@@ -202,21 +202,19 @@ public:
 //		advertise<sensor_msgs::PointCloud> ("~inliers", 1);
 		marker_pub_ = nh_.advertise<visualization_msgs::Marker>("visualization_marker",1);
 
-		ros::AdvertiseServiceOptions service_opts = ros::AdvertiseServiceOptions::create<recognition_lambertian::FindObjectPoses>("table_top/find_object_poses",
-							boost::bind(&RecognitionLambertian::findObjectPoses, this, _1, _2),ros::VoidPtr(), &service_queue_);
-
+		ros::AdvertiseServiceOptions service_opts = ros::AdvertiseServiceOptions::create<tabletop_objects::FindObjectPoses>("table_top/find_object_poses",
+							boost::bind(&TabletopDetector::findObjectPoses, this, _1, _2),ros::VoidPtr(), &service_queue_);
 		service_ = nh_.advertiseService(service_opts);
-		//		service_ = nh_.advertiseService("table_top/find_object_poses", &RecognitionLambertian::findObjectPoses, this);
 
 //        loadTemplates(template_path);
-    	service_thread_ = new boost::thread(boost::bind(&RecognitionLambertian::serviceThread, this));
+    	service_thread_ = new boost::thread(boost::bind(&TabletopDetector::serviceThread, this));
 
-    	model_fit_service_ = ros::service::createClient<recognition_lambertian::ModelFit::Request, recognition_lambertian::ModelFit::Response>("recognition_lambertian/model_fit", true);
+    	model_fit_service_ = ros::service::createClient<tabletop_objects::ModelFit::Request, tabletop_objects::ModelFit::Response>("tabletop_objects/model_fit", true);
 
 		cm = new ChamferMatching();
 	}
 
-	~RecognitionLambertian()
+	~TabletopDetector()
 	{
 		service_thread_->join();
 		delete service_thread_;
@@ -236,7 +234,7 @@ private:
 			cvCvtScale(dbridge_.toIpl(), disp, 4.0/dispinfo_->dpp);
 		}
 
-//		runRecognitionLambertian();
+//		runTabletopDetection();
 		got_data_ = true;
 		data_cv_.notify_all();
 	}
@@ -299,8 +297,8 @@ private:
 	}
 
 
-	bool findObjectPoses(recognition_lambertian::FindObjectPoses::Request& req,
-			recognition_lambertian::FindObjectPoses::Response& resp)
+	bool findObjectPoses(tabletop_objects::FindObjectPoses::Request& req,
+			tabletop_objects::FindObjectPoses::Response& resp)
 	{
 		got_data_ = false;
 		ROS_INFO("FindObjectPoses: Service called");
@@ -639,7 +637,7 @@ private:
 		visualization_msgs::Marker marker;
 		marker.header.frame_id = cloud.header.frame_id;
 		marker.header.stamp = cloud.header.stamp;
-		marker.ns = "recognition_lambertian_clusters";
+		marker.ns = "tabletop_clusters";
 		marker.id = 111;
 		marker.type = visualization_msgs::Marker::LINE_STRIP;
 		marker.action = visualization_msgs::Marker::ADD;
@@ -694,7 +692,7 @@ private:
 		visualization_msgs::Marker marker;
 		marker.header.frame_id = "table_frame";
 		marker.header.stamp = stamp;
-		marker.ns = "recognition_lambertian_clusters";
+		marker.ns = "tabletop_clusters";
 		marker.id = 200+idx;
 		marker.type = visualization_msgs::Marker::SPHERE;
 		marker.action = visualization_msgs::Marker::ADD;
@@ -1132,7 +1130,7 @@ private:
 	}
 
 
-	void fitModels(const vector<sensor_msgs::PointCloud>& clouds, vector<recognition_lambertian::TableTopObject>& objects)
+	void fitModels(const vector<sensor_msgs::PointCloud>& clouds, vector<tabletop_msgs::TableTopObject>& objects)
 	{
 
 		int count = 0;
@@ -1144,12 +1142,8 @@ private:
 				object_pub_.publish(clouds[k]);
 			}
 
-			recognition_lambertian::ModelFit::Request req;
-			recognition_lambertian::ModelFit::Response resp;
-
-			if (k==0) {
-				req.reset = 1;
-			}
+			tabletop_objects::ModelFit::Request req;
+			tabletop_objects::ModelFit::Response resp;
 
 			req.cloud = clouds[k];
 			if (model_fit_service_.call(req, resp)) {
@@ -1169,7 +1163,7 @@ private:
 	}
 
 
-	void findTableTopObjectPoses(vector<recognition_lambertian::TableTopObject>& objects)
+	void findTableTopObjectPoses(vector<tabletop_msgs::TableTopObject>& objects)
 	{
 		// find the table plane
 		vector<double> plane;
@@ -1306,7 +1300,7 @@ private:
 
 
 
-	void runRecognitionLambertian()
+	void runtTabletopDetection()
 	{
 		// acquire cv_mutex lock
 		//        boost::unique_lock<boost::mutex> images_lock(cv_mutex);
@@ -1319,7 +1313,7 @@ private:
 		vector<float> scales;
 		findObjectPositionsFromStereo(positions, scales);
 
-		ROS_INFO("runRecognitionLambertian done");
+		ROS_INFO("runTabletopDetection done");
 //		doChamferMatching(left, positions, scales);
 
 	}
@@ -1365,9 +1359,9 @@ public:
 
 int main(int argc, char **argv)
 {
-	ros::init(argc, argv, "recognition_lambertian");
+	ros::init(argc, argv, "tabletop_detector");
 
-	RecognitionLambertian node;
+	TabletopDetector node;
 	node.spin();
 
 	return 0;

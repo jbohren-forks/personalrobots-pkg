@@ -36,7 +36,7 @@
 ## Simple demo of a rospy service client that calls a service to add
 ## two integers. 
 
-PKG = 'recognition_lambertian' # this package name
+PKG = 'tabletop_objects' # this package name
 
 import roslib; roslib.load_manifest(PKG) 
 
@@ -47,7 +47,7 @@ import string
 import rospy
 
 # imports the AddTwoInts service 
-from recognition_lambertian.srv import *
+from tabletop_objects.srv import *
 
 def call_service():
 
