@@ -296,18 +296,34 @@ void Stanleyi::collectObjectsFromImageVectorizedXML(int samples_per_img, const V
   keypoints->reserve(samples_per_img);
   desired.reserve(samples_per_img);
   vector<int> labels(samples_per_img);
+
+  bool collect_only_objects=false;
+
+  if( (getenv("COLLET_ONLY_OBJECTS") != NULL) && !strcmp(getenv("COLLET_ONLY_OBJECTS"),"true") ) {
+      collect_only_objects=true;
+      assert(polys.size()>0);
+  }
   for(int i=0; i<samples_per_img; i++)  {
     int r = rand() % img_->height;
     int c = rand() % img_->width;
     int size = 1;
-    desired.push_back(KeyPoint(c, r, size));
 
+    int label=0;
     // -- Find the label.  (0 for bg).
     for(size_t j=0; j<polys.size(); ++j) {
       if(pointPolygonTest(polys[j], Point2f(c, r), 0) >= 0) {
-	labels[i] = poly_labels[j];
+	label = poly_labels[j];
+	break;
       }
     }
+    if(collect_only_objects && label==0)
+      {
+	i--;
+	continue;
+      }
+
+    desired.push_back(KeyPoint(c, r, size));
+    labels[i] = label;
 
     // -- Show the labels.
 //     vector<string> label_int2str;
