@@ -66,7 +66,7 @@ class Timeline():
 
   def add_tokens(self,tokens):
     # Copy new active tokens into active tokens, reset new active tokens
-    self.active_tokens = self.active_tokens + self.new_active_tokens
+    #self.active_tokens = self.active_tokens + self.new_active_tokens
     self.new_active_tokens = []
     # Copy only active tokens onto the token list
     for token in tokens:
@@ -154,6 +154,9 @@ class ReactorPanel():
     self.all_tokens = {}
     self.token_ticks = {}
     self.token_timelines = {}
+    self.tokens_to_remove = []
+
+    # Sorted token structures
     self.started_token_keys = []
     self.planned_token_keys = []
 
@@ -207,6 +210,32 @@ class ReactorPanel():
 
     # Clear timeline vars
     self.n_timelines = 0
+
+    # Remove tokens that were tagged for removal
+    for token in self.tokens_to_remove:
+      # Get token key
+      key = token.key
+
+      if self.all_tokens.has_key(key):
+	# Remove from all token map
+	del self.all_tokens[key]
+
+	# Remove from sorted lists
+	if token.key in self.planned_token_keys:
+	  times = self.planned_token_times
+	  keys = self.planned_token_keys
+	else:
+	  times = self.started_token_times
+	  keys = self.started_token_keys
+
+	# Get the index in the sorted lists of this token
+	sorted_index = keys.index(key)
+	# Remove from the sorted lists
+	times.pop(sorted_index)
+	keys.pop(sorted_index)
+      
+    # Clear tokens to remove list
+    self.tokens_to_remove = []
 
     # Create timeline objects for all timelines
     # This also classifies all timelines as internal or external
@@ -440,6 +469,10 @@ class ReactorPanel():
 
       # Skip tokens that are older than the tickbehind and newer than the current tick
       if tick < self.assembly.tick-ReactorPanel.TokenHistory:
+	# Check if this is older than the cache
+	if tick < self.assembly.tick-ReactorPanel.TokenCache:
+	  # Add this token to the removal list
+	  self.tokens_to_remove.append(token)
 	continue
       elif tick > self.assembly.tick:
 	continue
@@ -602,10 +635,6 @@ class ReactorPanel():
 
     return False
 
-  # Draw a token on a given row
-  def draw_token(self,cr,row,start,end):
-    pass
-
   def set_label_font(self,cr):
     cr.select_font_face(
 	"Sans",
@@ -740,9 +769,11 @@ class TimelineWindow():
     self.past_width_spin.connect("value-changed",self.on_change_view_controls)
     self.center_spin.connect("value-changed",self.on_change_view_controls)
     self.future_width_spin.connect("value-changed",self.on_change_view_controls)
-    self.token_history_spin.connect("value-changed",self.on_change_view_controls)
     self.metric_time_check.connect("toggled",self.on_change_view_controls)
     self.time_scale_spin.connect("value-changed",self.on_change_view_controls)
+
+    self.token_cache_spin.connect("value-changed",self.on_change_view_controls)
+    self.token_history_spin.connect("value-changed",self.on_change_view_controls)
 
     self.w.show()
 
@@ -763,11 +794,19 @@ class TimelineWindow():
     ReactorPanel.PastWidth = self.past_width_spin.get_value()
     ReactorPanel.FutureWidth = self.future_width_spin.get_value()
     ReactorPanel.Center = self.center_spin.get_value()
-    ReactorPanel.TokenHistory = self.token_history_spin.get_value()
     ReactorPanel.MetricTime = self.metric_time_check.get_active()
     ReactorPanel.TimeScale = self.time_scale_spin.get_value()
 
+    ReactorPanel.TokenCache = self.token_cache_spin.get_value()
+    ReactorPanel.TokenHistory = self.token_history_spin.get_value()
+
     self.draw_active_reactor()
+
+  # Set the status text
+  def set_status(self,text):
+    self.status_text = text
+    self.statusbar.pop(0)
+    self.statusbar.push(0,self.status_text)
 
   #############################################################################
   # Data manipulation

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.5 on Wed Aug 19 10:39:42 2009 -->
+<!--Generated with glade3 3.4.5 on Wed Aug 19 10:46:40 2009 -->
 <glade-interface>
   <widget class="GtkWindow" id="timeline_window">
     <property name="window_position">GTK_WIN_POS_CENTER</property>
@@ -307,6 +307,8 @@
                                   <widget class="GtkSpinButton" id="_time_scale_spin">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
+                                    <property name="has_tooltip">True</property>
+                                    <property name="tooltip_text">When "Expand to metric time" is enabled, this controls the pixels per tick.</property>
                                     <property name="adjustment">1 1 200 1 10 10</property>
                                   </widget>
                                   <packing>
@@ -369,8 +371,8 @@
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="has_tooltip">True</property>
-                                    <property name="tooltip_text">The width in pixels to the left of center</property>
-                                    <property name="adjustment">500 0 100000 50 10 10</property>
+                                    <property name="tooltip_text">The width in pixels to the left of center.</property>
+                                    <property name="adjustment">500 0 2000 50 10 10</property>
                                     <property name="numeric">True</property>
                                   </widget>
                                   <packing>
@@ -435,8 +437,8 @@
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="has_tooltip">True</property>
-                                    <property name="tooltip_text">The width in pixels to the right of center</property>
-                                    <property name="adjustment">500 0 100000 50 10 10</property>
+                                    <property name="tooltip_text">The width in pixels to the right of center.</property>
+                                    <property name="adjustment">500 0 2000 50 10 10</property>
                                     <property name="numeric">True</property>
                                   </widget>
                                   <packing>
@@ -493,7 +495,9 @@
                                   <widget class="GtkSpinButton" id="_token_history_spin">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
-                                    <property name="adjustment">50 0 100 1 10 10</property>
+                                    <property name="has_tooltip">True</property>
+                                    <property name="tooltip_text">This controls how old displayed ticks can be. When a tick is garbage collected, it is no longer part of the current plan, but if it has been observed here, it will be displayed faded out.</property>
+                                    <property name="adjustment">25 0 100 1 10 10</property>
                                     <property name="numeric">True</property>
                                   </widget>
                                   <packing>
@@ -525,6 +529,8 @@
                                   <widget class="GtkSpinButton" id="_token_cache_spin">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
+                                    <property name="has_tooltip">True</property>
+                                    <property name="tooltip_text">This is the time window of the cache that stores tokens after they have been garbage collected.</property>
                                     <property name="adjustment">50 0 100 1 10 10</property>
                                     <property name="numeric">True</property>
                                   </widget>
