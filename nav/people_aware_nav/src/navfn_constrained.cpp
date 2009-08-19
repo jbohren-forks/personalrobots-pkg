@@ -39,7 +39,7 @@
 #include <ros/ros.h>
 #include <pluginlib/class_list_macros.h>
 
-REGISTER_CLASS(NavfnROSConstrained, people_aware_nav::NavfnROSConstrained, nav_core::BaseGlobalPlanner);
+PLUGINLIB_REGISTER_CLASS(NavfnROSConstrained, people_aware_nav::NavfnROSConstrained, nav_core::BaseGlobalPlanner);
 
 namespace people_aware_nav {
 

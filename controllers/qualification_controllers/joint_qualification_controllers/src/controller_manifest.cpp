@@ -37,7 +37,7 @@
 
 using namespace controller;
 
-REGISTER_CLASS(CheckoutController, CheckoutController, Controller)
-REGISTER_CLASS(HoldSetController, HoldSetController, Controller)
-REGISTER_CLASS(HysteresisController, HysteresisController, Controller)
-REGISTER_CLASS(SineSweepController, SineSweepController, Controller)
+PLUGINLIB_REGISTER_CLASS(CheckoutController, CheckoutController, Controller)
+PLUGINLIB_REGISTER_CLASS(HoldSetController, HoldSetController, Controller)
+PLUGINLIB_REGISTER_CLASS(HysteresisController, HysteresisController, Controller)
+PLUGINLIB_REGISTER_CLASS(SineSweepController, SineSweepController, Controller)

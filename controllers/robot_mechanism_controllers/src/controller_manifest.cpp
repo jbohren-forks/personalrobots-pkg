@@ -44,21 +44,21 @@
 using namespace controller;
 
 
-REGISTER_CLASS(JointEffortController, JointEffortController, Controller)
-REGISTER_CLASS(JointVelocityController, JointVelocityController, Controller)
-REGISTER_CLASS(JointPositionController, JointPositionController, Controller)
+PLUGINLIB_REGISTER_CLASS(JointEffortController, JointEffortController, Controller)
+PLUGINLIB_REGISTER_CLASS(JointVelocityController, JointVelocityController, Controller)
+PLUGINLIB_REGISTER_CLASS(JointPositionController, JointPositionController, Controller)
 
-REGISTER_CLASS(CartesianWrenchController, CartesianWrenchController, Controller)
-REGISTER_CLASS(CartesianTwistController, CartesianTwistController, Controller)
-REGISTER_CLASS(CartesianPoseController, CartesianPoseController, Controller)
+PLUGINLIB_REGISTER_CLASS(CartesianWrenchController, CartesianWrenchController, Controller)
+PLUGINLIB_REGISTER_CLASS(CartesianTwistController, CartesianTwistController, Controller)
+PLUGINLIB_REGISTER_CLASS(CartesianPoseController, CartesianPoseController, Controller)
 
-REGISTER_CLASS(JointUDCalibrationController, JointUDCalibrationController, Controller)
+PLUGINLIB_REGISTER_CLASS(JointUDCalibrationController, JointUDCalibrationController, Controller)
 
-REGISTER_CLASS(CartesianTrajectoryController, CartesianTrajectoryController, Controller)
+PLUGINLIB_REGISTER_CLASS(CartesianTrajectoryController, CartesianTrajectoryController, Controller)
 
-REGISTER_CLASS(TriggerController, TriggerController, Controller)
-REGISTER_CLASS(TriggerControllerNode, TriggerControllerNode, Controller)
+PLUGINLIB_REGISTER_CLASS(TriggerController, TriggerController, Controller)
+PLUGINLIB_REGISTER_CLASS(TriggerControllerNode, TriggerControllerNode, Controller)
 
-REGISTER_CLASS(JointPDController, JointPDController, Controller)
-REGISTER_CLASS(JointPDControllerNode, JointPDControllerNode, Controller)
+PLUGINLIB_REGISTER_CLASS(JointPDController, JointPDController, Controller)
+PLUGINLIB_REGISTER_CLASS(JointPDControllerNode, JointPDControllerNode, Controller)
 

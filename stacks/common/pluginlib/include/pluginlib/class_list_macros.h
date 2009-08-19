@@ -38,7 +38,7 @@
 #define PLUGINLIB_CLASS_LIST_MACROS_H_
 #include "Poco/ClassLibrary.h"
 
-#define REGISTER_CLASS(class_name, class_type, base_class_type) \
+#define PLUGINLIB_REGISTER_CLASS(class_name, class_type, base_class_type) \
   POCO_BEGIN_NAMED_MANIFEST(class_name, base_class_type) \
   POCO_EXPORT_CLASS(class_type) \
   POCO_END_MANIFEST

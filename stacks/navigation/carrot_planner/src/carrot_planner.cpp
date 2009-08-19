@@ -38,7 +38,7 @@
 #include <pluginlib/class_list_macros.h>
 
 //register this planner as a BaseGlobalPlanner plugin
-REGISTER_CLASS(CarrotPlanner, carrot_planner::CarrotPlanner, nav_core::BaseGlobalPlanner)
+PLUGINLIB_REGISTER_CLASS(CarrotPlanner, carrot_planner::CarrotPlanner, nav_core::BaseGlobalPlanner)
 
 namespace carrot_planner {
 
