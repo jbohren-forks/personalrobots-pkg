@@ -1,0 +1,1 @@
+rospack_add_executable(prosilica_poll prosilica_poll.cpp)

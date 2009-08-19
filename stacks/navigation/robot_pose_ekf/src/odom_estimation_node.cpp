@@ -270,8 +270,8 @@ namespace estimation
 #ifdef __EKF_DEBUG_FILE__
     // write to file
     double Rx, Ry, Rz;
-    vo_meas_base.getBasis().getEulerZYX(Rz, Ry, Rx);
-    vo_file_ << vo_meas_base.getOrigin().x() << " " << vo_meas_base.getOrigin().y() << " " << vo_meas_base.getOrigin().z() << " "
+    vo_meas_.getBasis().getEulerZYX(Rz, Ry, Rx);
+    vo_file_ << vo_meas_.getOrigin().x() << " " << vo_meas_.getOrigin().y() << " " << vo_meas_.getOrigin().z() << " "
 	     << Rx << " " << Ry << " " << Rz << endl;
 #endif
   };

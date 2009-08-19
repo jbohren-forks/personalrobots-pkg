@@ -66,7 +66,7 @@ void ChompCollisionSpace::collisionMapCallback(const mapping_msgs::CollisionMapC
     mutex_.unlock();
     ROS_INFO("Updated prop distance_field in %f sec", (ros::WallTime::now() - start).toSec());
 
-    distance_field_->visualize(0.8*max_expansion_, 0.9*max_expansion_, collision_map->header.frame_id, collision_map->header.stamp);
+//    distance_field_->visualize(0.8*max_expansion_, 0.9*max_expansion_, collision_map->header.frame_id, collision_map->header.stamp);
 
   }
   else
@@ -89,6 +89,9 @@ bool ChompCollisionSpace::init(double max_radius_clearance)
   node_handle_.param("~collision_space/origin_y", origin_y, -1.5);
   node_handle_.param("~collision_space/origin_z", origin_z, -2.0);
   node_handle_.param("~collision_space/resolution", resolution, 0.02);
+  node_handle_.param("~collision_space/field_bias_x", field_bias_x_, 0.3);
+  node_handle_.param("~collision_space/field_bias_y", field_bias_y_, 0.0);
+  node_handle_.param("~collision_space/field_bias_z", field_bias_z_, 0.0);
   resolution_ = resolution;
   max_expansion_ = max_radius_clearance;
 

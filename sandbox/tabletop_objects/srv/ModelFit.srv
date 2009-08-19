@@ -1,0 +1,4 @@
+sensor_msgs/PointCloud cloud
+---
+tabletop_msgs/TableTopObject object
+float32 score

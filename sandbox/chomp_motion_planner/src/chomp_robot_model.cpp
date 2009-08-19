@@ -59,6 +59,9 @@ bool ChompRobotModel::init()
 {
   node_handle_.param("~reference_frame", reference_frame_, std::string("base_link"));
 
+  // listen to attached objects
+  attached_object_subscriber_ = node_handle_.subscribe(std::string("attach_object"), 1, &ChompRobotModel::attachedObjectCallback, this);
+
   max_radius_clearance_ = 0.0;
 
   // create the robot model
@@ -348,6 +351,11 @@ void ChompRobotModel::getLinkCollisionPoints(std::string link_name, std::vector<
     return;
 
   points = it->second;
+}
+
+void ChompRobotModel::attachedObjectCallback(const mapping_msgs::AttachedObjectConstPtr& attached_object)
+{
+  attached_objects_.insert(std::make_pair(attached_object->link_name, *attached_object));
 }
 
 } // namespace chomp

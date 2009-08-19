@@ -1,6 +1,6 @@
 <launch>
 
-    <include file="$(find recognition_lambertian)/launch/model_fitter.launch" />
+    <include file="$(find tabletop_objects)/launch/model_fitter.launch" />
     <node pkg="point_cloud_tutorials" type="test_table_model_fitter.py" respawn="true" output="screen" />
     <node pkg="rviz" type="rviz" args="-d $(find point_cloud_tutorials)/launch/table_model_fitter.vcg" />
 

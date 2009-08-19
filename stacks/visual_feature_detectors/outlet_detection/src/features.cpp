@@ -226,7 +226,8 @@ void LoadTrainingFeatures(CvOneWayDescriptorObject& descriptors, const char* tra
         descriptor_count += object_features[i].size();
     }
     
-    descriptors.InitializeObjectDescriptors(background_images[0], background_features[0], train_image_filename_background, object_feature_count, 1);
+    descriptors.InitializeObjectDescriptors(background_images[0], background_features[0], 
+                                            train_image_filename_background, object_feature_count, 1.0f, 1);
     
     cvReleaseImage(&train_image_object);
     cvReleaseImage(&train_image_background);

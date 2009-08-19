@@ -51,7 +51,7 @@ Loki::Factory< controller::Controller, std::string >& getControllerFactoryInstan
 
 MechanismControl::MechanismControl(HardwareInterface *hw) :
   state_(NULL), hw_(hw),
-  controller_loader_("controller_interface", "controller"),
+  controller_loader_("controller_interface", "Controller"),
   start_request_(0),
   stop_request_(0),
   please_switch_(false),

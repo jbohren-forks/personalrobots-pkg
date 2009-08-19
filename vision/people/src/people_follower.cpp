@@ -36,12 +36,9 @@
 
 #include "people_follower.h"
 
-
 using namespace std;
 using namespace ros;
 using namespace tf;
-
-
 
 namespace estimation
 {
@@ -69,7 +66,7 @@ namespace estimation
     people_notifier_ = new MessageNotifier<people::PositionMeasurement>(&robot_state_, this,  boost::bind(&PeopleFollower::callback, this, _1), 
                                                                "people_tracker_filter", fixed_frame_, 10);
     // advertise robot poses
-    advertise<pr2_robot_actions::Pose2D>("/move_base_node/activate", 10);
+    advertise<geometry_msgs::PoseStamped>("/move_base_local/activate", 10);
 
     // initialize goal
     people_pos_.header.frame_id = fixed_frame_;
@@ -102,6 +99,8 @@ namespace estimation
   // callback for messages
   void PeopleFollower::callback(const MessageNotifier<people::PositionMeasurement>::MessagePtr& people_pos_msg)
   {
+    ROS_INFO("Got callback in PeopleFollower.");
+
     // get people pos in fixed frame
     Stamped<tf::Vector3> people_pos_rel, people_pos_fixed_frame;
     people_pos_rel.setData(tf::Vector3(people_pos_msg->pos.x, people_pos_msg->pos.y, people_pos_msg->pos.z));
@@ -154,7 +153,16 @@ namespace estimation
 
       // send goal to planner
       if ((Time::now() - time_last_publish_).toSec() > 1.0/publish_rate_){
-        publish("goal", robot_pos_);
+        //publish("goal", robot_pos_);
+	geometry_msgs::PoseStamped goal_pos_;
+        goal_pos_.header = people_pos_.header;
+        goal_pos_.pose.position.x = robot_pos_.x; //people_pose_ or robot_pos_?
+        goal_pos_.pose.position.y = robot_pos_.y;
+        goal_pos_.pose.position.z = robot_pos_.z;
+        goal_pos_.pose.orientation.x = 1.0;
+
+        publish("move_base_local/activate", goal_pos_);
+
         time_last_publish_ = Time::now();
       }
 

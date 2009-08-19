@@ -76,7 +76,7 @@ namespace urdf2gazebo
 
       void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const btTransform &transform, bool enforce_limits);
 
-      void convert(robot_desc::URDF &wgxml, TiXmlDocument &doc, bool enforce_limits);
+      void convert( TiXmlDocument &urdf_in, TiXmlDocument &gazebo_xml_out, bool enforce_limits);
 
       std::string robot_model_name_;
   };

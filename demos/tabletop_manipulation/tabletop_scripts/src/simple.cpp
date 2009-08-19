@@ -46,7 +46,7 @@
 #include <move_arm/ActuateGripperAction.h>
 
 #include <boost/thread/thread.hpp>
-#include <recognition_lambertian/FindObjectPoses.h>
+#include <tabletop_objects/FindObjectPoses.h>
 #include <visualization_msgs/Marker.h>
 
 
@@ -87,12 +87,12 @@ public:
 	vmPub.publish(mk);
     }
     
-    bool findObject(recognition_lambertian::TableTopObject &obj)
+    bool findObject(tabletop_msgs::TableTopObject &obj)
     {
-	recognition_lambertian::FindObjectPoses::Request  req;
-	recognition_lambertian::FindObjectPoses::Response res;
+	tabletop_objects::FindObjectPoses::Request  req;
+	tabletop_objects::FindObjectPoses::Response res;
 	
-	ros::ServiceClient client = nh.serviceClient<recognition_lambertian::FindObjectPoses>("table_top/find_object_poses");
+	ros::ServiceClient client = nh.serviceClient<tabletop_objects::FindObjectPoses>("table_top/find_object_poses");
 	if (client.call(req, res))
 	{
 	    ROS_INFO("Found %d objects", (int)res.objects.size());
@@ -150,7 +150,7 @@ public:
 	}
     }
     
-    bool moveTo(recognition_lambertian::TableTopObject &obj)
+    bool moveTo(tabletop_msgs::TableTopObject &obj)
     {
 	move_arm::MoveArmGoal goal;
 	
@@ -239,7 +239,7 @@ public:
 	}
     }
 
-    bool graspObject(recognition_lambertian::TableTopObject &obj)
+    bool graspObject(tabletop_msgs::TableTopObject &obj)
     {
 	if (gripClose())
 	{
@@ -303,7 +303,7 @@ int main(int argc, char **argv)
     
     CleanTable ct;
     
-    recognition_lambertian::TableTopObject obj;
+    tabletop_msgs::TableTopObject obj;
     
     if (ct.findObject(obj))
     {
@@ -311,7 +311,7 @@ int main(int argc, char **argv)
 	if (ct.moveTo(obj))
 	{
 	    ct.graspObject(obj);
-	    recognition_lambertian::TableTopObject obj2 = obj;
+	    tabletop_msgs::TableTopObject obj2 = obj;
 	    obj2.grasp_pose.pose.position.y -= 0.25;
 	    if (ct.moveTo(obj2))
 	    {

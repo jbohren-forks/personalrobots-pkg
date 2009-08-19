@@ -28,12 +28,12 @@
 // Main function
 int main( int argc, char **argv)
 {
-  ros::init(argc, argv);
-  ros::Node node("cmvision");
+  ros::init(argc, argv, "cmvision");
+  ros::NodeHandle nh;
 
-  color_blob_track::CMVisionBF cmvision(&node);
+  color_blob_track::CMVisionBF cmvision(&nh);
 
-  node.spin();
-  node.shutdown();
+  ros::spin();
+
   return 0;
 }

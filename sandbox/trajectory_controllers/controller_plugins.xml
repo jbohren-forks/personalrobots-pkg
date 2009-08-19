@@ -1,0 +1,3 @@
+<library path="lib/libtrajectory_controllers">
+  <class name="JointTrajectoryController2" type="JointTrajectoryController2" base_class_type="Controller" />
+</library>

@@ -6,17 +6,26 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <!-- url>http://pr.willowgarage.com/wiki/laser_cb_detection</url -->
-  
-  <depend package="topic_synchronizer" />
-  <depend package="opencv_latest" />
+
+  <!-- common_msgs -->
   <depend package="sensor_msgs" />
-  <depend package="dense_laser_assembler" />
-  
-  <!-- For the pr2 tilt-laser projector -->
-  <depend package="mechanism_model" />
+
+  <!-- util -->
+  <depend package="topic_synchronizer" />
+
+  <!-- common -->
   <depend package="tinyxml" />
+
+  <!-- opencv -->
+  <depend package="opencv_latest" />
+
+  <!-- drivers -->
+  <depend package="dense_laser_assembler" />
+
+  <!-- mechanism -->
+  <depend package="mechanism_model" />
   <depend package="hardware_interface" />
-  
+
 </package>
 
 

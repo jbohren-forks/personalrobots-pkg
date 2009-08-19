@@ -276,69 +276,33 @@ public:
     publish("stereo_info", stereo_info_);
   }
 
-  void publishImages(std::string base_name, cam::ImageData* img_data)
+  void publishImage(const std::string& topic, color_coding_t coding, int height,
+                    int width, void* data, size_t dataSize)
   {
-    if (img_data->imRawType != COLOR_CODING_NONE)
-    {
-      fillImage(img_, sensor_msgs::image_encodings::TYPE_8UC1, img_data->imHeight, img_data->imWidth, img_data->imWidth, img_data->imRaw);
+    if (coding == COLOR_CODING_NONE)
+      return;
 
-      img_.header.stamp = raw_stereo_.header.stamp;
-      img_.header.frame_id = raw_stereo_.header.frame_id;
+    // @todo: step calculation is a little hacky
+    fillImage(img_, cam_bridge::ColorCodingToImageEncoding(coding),
+              height, width, dataSize / height /*step*/, data);
+    publish(topic, img_);
+  }
 
-      publish(base_name + std::string("image_raw"), img_);
-    }
-
-    if (img_data->imType != COLOR_CODING_NONE)
-    {
-      fillImage(img_,  sensor_msgs::image_encodings::TYPE_8UC1,
-                img_data->imHeight, img_data->imWidth, img_data->imWidth, 
-                img_data->im);
-      img_.header.stamp = raw_stereo_.header.stamp;
-      img_.header.frame_id = raw_stereo_.header.frame_id;
-      publish(base_name + std::string("image"), img_);
-    }
-
-    if (img_data->imColorType != COLOR_CODING_NONE && img_data->imColorType == COLOR_CODING_RGB8)
-    {
-      fillImage(img_,  sensor_msgs::image_encodings::TYPE_8UC3,
-                img_data->imHeight, img_data->imWidth, 3 * img_data->imWidth,
-                img_data->imColor );
-
-      img_.header.stamp = raw_stereo_.header.stamp;
-      img_.header.frame_id = raw_stereo_.header.frame_id;
-      publish(base_name + std::string("image_color"), img_);
-    }
-
-    if (img_data->imRectType != COLOR_CODING_NONE)
-    {
-      fillImage(img_,  sensor_msgs::image_encodings::TYPE_8UC1,
-                img_data->imHeight, img_data->imWidth, img_data->imWidth,
-                img_data->imRect );
-      img_.header.stamp = raw_stereo_.header.stamp;
-      img_.header.frame_id = raw_stereo_.header.frame_id;
-      publish(base_name + std::string("image_rect"), img_);
-    }
-
-    if (img_data->imRectColorType != COLOR_CODING_NONE && img_data->imRectColorType == COLOR_CODING_RGB8)
-    {
-      fillImage(img_,  sensor_msgs::image_encodings::TYPE_8UC3,
-                img_data->imHeight, img_data->imWidth, 3 * img_data->imWidth,
-                img_data->imRectColor);
-      img_.header.stamp = raw_stereo_.header.stamp;
-      img_.header.frame_id = raw_stereo_.header.frame_id;
-      publish(base_name + std::string("image_rect_color"), img_);
-    }
-
-    if (img_data->imRectColorType != COLOR_CODING_NONE && img_data->imRectColorType == COLOR_CODING_RGBA8)
-    {
-      fillImage(img_,  sensor_msgs::image_encodings::TYPE_8UC4,
-                img_data->imHeight, img_data->imWidth, 4 * img_data->imWidth,
-                img_data->imRectColor );
-      img_.header.stamp = raw_stereo_.header.stamp;
-      img_.header.frame_id = raw_stereo_.header.frame_id;
-      publish(base_name + std::string("image_rect_color"), img_);
-    }
-
+  void publishImages(const std::string& base_name, cam::ImageData* img_data)
+  {
+    img_.header.stamp = raw_stereo_.header.stamp;
+    img_.header.frame_id = raw_stereo_.header.frame_id;
+    
+    publishImage(base_name + "image_raw", img_data->imRawType, img_data->imHeight,
+                 img_data->imWidth, img_data->imRaw, img_data->imRawSize);
+    publishImage(base_name + "image", img_data->imType, img_data->imHeight,
+                 img_data->imWidth, img_data->im, img_data->imSize);
+    publishImage(base_name + "image_color", img_data->imColorType, img_data->imHeight,
+                 img_data->imWidth, img_data->imColor, img_data->imColorSize);
+    publishImage(base_name + "image_rect", img_data->imRectType, img_data->imHeight,
+                 img_data->imWidth, img_data->imRect, img_data->imRectSize);
+    publishImage(base_name + "image_rect_color", img_data->imRectColorType, img_data->imHeight,
+                 img_data->imWidth, img_data->imRectColor, img_data->imRectColorSize);
 
     cam_info_.header.stamp = raw_stereo_.header.stamp;
     cam_info_.header.frame_id = raw_stereo_.header.frame_id;
@@ -351,11 +315,10 @@ public:
     memcpy((char*)(&cam_info_.P[0]), (char*)(img_data->P), 12*sizeof(double));
 
     publish(base_name + std::string("cam_info"), cam_info_);
-
   }
 
 
-  void advertiseImages(std::string base_name, cam::ImageData* img_data)
+  void advertiseImages(const std::string& base_name, cam::ImageData* img_data)
   {
     advertise<sensor_msgs::CameraInfo>(base_name + std::string("cam_info"), 1);
 

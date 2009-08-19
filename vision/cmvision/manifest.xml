@@ -10,6 +10,15 @@
   <depend package="roscpp"/>
   <depend package="sensor_msgs"/>
   <depend package="opencv_latest"/>
-  <depend package="color_calib"/>
+  <rosdep name="fltk"/>
+  <!--<depend package="color_calib"/>-->
+
+  <export>
+    <cpp lflags="`rosboost-cfg --lflags thread`
+      -Wl,-rpath,${prefix}/cmvision/lib -L${prefix}/cmvision/lib" 
+      cflags="`rosboost-cfg --cflags` -I${prefix}/cmvision/include"/>
+  </export>
+
+
 
 </package>

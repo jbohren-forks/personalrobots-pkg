@@ -53,17 +53,23 @@ The main two classes are
 - \b RandomField
 - \b M3NModel
 
+A RandomField is a data structure that wraps around pre-computed features from your application.
+A RandomField::Node represents the primitive (e.g. pixel in an image) that you wish to classify.  
+A RandomField::Clique creates dependencies among multiple RandomField::Node that should try to 
+be classified the same label (e.g. segments in an image).  Once you've created (multiple) 
+RandomField (s) you can train a M3NModel and then classify other RandomFields.
+
 <hr>
 
-\subsection usage Creating RandomFields
+\subsection rf Creating RandomFields
 
 See RandomField::createNode and RandomField::createClique 
 
-\subsection usage Training M3NModels
+\subsection train Training M3NModels
 
 See M3NModel::train
 
-\subsection usage Classifying with the M3NModel
+\subsection classify Classifying with the M3NModel
 
 See M3NModel::infer
 

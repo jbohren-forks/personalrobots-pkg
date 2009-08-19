@@ -4,12 +4,24 @@
   <author>Vijay Pradeep</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
-  <depend package="kdl" />
-  <depend package="mechanism_msgs" />
+
+  <!-- ros -->
   <depend package="std_msgs" />
+
+  <!-- geometry -->
+  <depend package="kdl" />
   <depend package="tf" />
+
+  <!-- mechanism -->
+  <depend package="mechanism_msgs" />
+
+  <!-- common -->
   <depend package="laser_scan" />
+
+  <!-- common_msgs -->
   <depend package="sensor_msgs" />
+
+  <!-- stereo -->
   <depend package="stereo_msgs"/>
-  
+
 </package>

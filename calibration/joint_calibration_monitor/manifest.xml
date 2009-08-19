@@ -3,11 +3,15 @@
   <author>Vijay Pradeep</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
+
+  <!-- ROS -->
   <depend package="std_msgs" />
   <depend package="rospy" />
+
+  <!-- common_msgs -->
   <depend package="diagnostic_msgs" />
+
+  <!-- mechanism -->
   <depend package="mechanism_msgs" />
-  <!-- export>
-    <cpp cflags="-I${prefix}/msg/cpp"/>
-  </export -->
+
 </package>

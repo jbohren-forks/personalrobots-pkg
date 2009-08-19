@@ -43,8 +43,6 @@
 
 #include "ros/ros.h"
 
-#include <urdf/URDF.h>
-
 #include <gazebo_tools/urdf2gazebo.h>
 
 using namespace urdf2gazebo;
@@ -143,29 +141,23 @@ int main(int argc, char **argv)
     rosnode.getParam(full_urdf_param_name.c_str(),xml_content);
     ROS_DEBUG("%s content\n%s\n", full_urdf_param_name.c_str(), xml_content.c_str());
 
-    // Parse URDF from param server
+    // set flag to enforce joint limits, this is hardcoded to true because we do want a model with
+    // joint limits enforced.
     bool enforce_limits = true;
-    robot_desc::URDF wgxml;
-    if (!wgxml.loadString(xml_content.c_str()))
-    {
-        ROS_ERROR("Unable to load robot model from param server robot_description\n");  
-        exit(2);
-    }
-
-
     //
     // init a parser library
     //
     URDF2Gazebo u2g(robot_model_name);
     // do the number crunching to make gazebo.model file
-    TiXmlDocument doc;
-    u2g.convert(wgxml, doc, enforce_limits);
+    TiXmlDocument urdf_in, xml_out;
+    urdf_in.Parse(xml_content.c_str());
+    u2g.convert(urdf_in, xml_out, enforce_limits);
 
-    //std::cout << " doc " << doc << std::endl << std::endl;
+    //std::cout << " xml_out " << xml_out << std::endl << std::endl;
 
     // copy model to a string
     std::ostringstream stream;
-    stream << doc;
+    stream << xml_out;
     std::string xml_string = stream.str();
 
     // strip <? ... xml version="1.0" ... ?> from xml_string

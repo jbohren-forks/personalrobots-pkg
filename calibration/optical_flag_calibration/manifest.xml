@@ -10,7 +10,11 @@
   <!-- depend package="topic_synchronizer" / -->
   <!-- depend package="sensor_msgs" / -->
   <!-- depend package="newmat10"/ -->
+
+  <!-- controllers -->
   <depend package="pr2_mechanism_controllers" />
+
+  <!-- Stackless -->
   <depend package="manipulation_msgs" />
 
   <export>

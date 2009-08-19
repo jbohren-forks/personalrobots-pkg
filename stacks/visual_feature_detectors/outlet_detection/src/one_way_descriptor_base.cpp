@@ -392,6 +392,7 @@ void CvOneWayDescriptorBase::CreateDescriptorsFromImage(IplImage* src, const Vec
 void CvOneWayDescriptorObject::Allocate(int train_feature_count, int object_feature_count)
 {
     CvOneWayDescriptorBase::Allocate(train_feature_count);
+    m_object_feature_count = object_feature_count;
     
     m_part_id = new int[m_object_feature_count];
 }
@@ -406,7 +407,7 @@ void CvOneWayDescriptorObject::InitializeObjectDescriptors(IplImage* train_image
     {
         CvPoint center = features[i].pt;
         
-        if(is_background)
+        if(!is_background)
         {
             // remember descriptor part id
             CvPoint center_scaled = cvPoint(round(center.x*scale), round(center.y*scale));

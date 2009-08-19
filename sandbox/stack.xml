@@ -1,0 +1,11 @@
+<stack name="sandbox" version="0.1.0">
+  <description brief="sandbox">
+
+     The sandbox stack is purely for new package development. It is not for distribution. As such, the dependencies for this stack are not listed.
+
+  </description>
+  <author>Maintained by Ken Conley</author>
+  <license>N/A</license>  
+  <review status="n/a" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/sandbox</url>
+</stack>

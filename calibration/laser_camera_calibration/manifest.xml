@@ -9,12 +9,24 @@
   <url>http://pr.willowgarage.com/wiki/laser_camera_calibration</url>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
+
+  <!-- ros -->
   <depend package="std_msgs"/>
-  <depend package="sensor_msgs"/>
   <depend package="rospy"/>
   <depend package="rosoct"/>
-  <depend package="openraveros"/>
-  <depend package="checkerboard_detector"/>
+
+  <!-- common -->
+  <depend package="sensor_msgs"/>
+
+  <!-- pr2 -->
   <depend package="pr2_default_controllers"/>
+
+  <!-- openrave_planning -->
+  <depend package="openraveros"/>
+
+  <!-- visual feature detectors -->
+  <depend package="checkerboard_detector"/>
+
+  <!-- Stackless -->
   <depend package="openrave_robot_description"/>
 </package>

@@ -25,7 +25,6 @@ rospack_add_library(experimental_controllers
   src/cartesian_pose_twist_controller.cpp
   src/cartesian_spline_trajectory_controller.cpp
   src/controller_manifest.cpp
-  src/joint_trajectory_controller2.cpp
   src/trajectory_controller.cpp
   src/pid_position_velocity_controller.cpp
 

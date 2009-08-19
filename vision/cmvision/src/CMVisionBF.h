@@ -32,7 +32,7 @@
 #include "opencv_latest/CvBridge.h"
 
 #include "cmvision/Blobs.h"
-#include "color_calib.h"
+//#include "color_calib.h"
 #include "conversions.h"
 #include "cmvision.h"
 #include "capture.h"
@@ -51,16 +51,18 @@ namespace color_blob_track
   class CMVisionBF
   {
     /// \brief Constructor
-    public: CMVisionBF(ros::Node *node);
+    public: CMVisionBF(ros::NodeHandle *nh);
 
     /// \brief Destructor
     public: virtual ~CMVisionBF();
 
     /// \brief Image callback
-    public: void imageCB();
+    public: void imageCB(const sensor_msgs::ImageConstPtr& msg);
 
-    private: ros::Node *node;
-    private: sensor_msgs::Image image;
+    private: ros::NodeHandle *nodeHandle;
+    private: ros::Publisher publisher;
+
+    //private: sensor_msgs::Image image;
     private: sensor_msgs::CvBridge imageBridge;
 
     private: bool  debugOn;
@@ -80,7 +82,7 @@ namespace color_blob_track
     private: double colorRadius;
 
     private: bool colorCalOn;
-    private: color_calib::Calibration *colorCal;
+    //private: color_calib::Calibration *colorCal;
   };
   
 }

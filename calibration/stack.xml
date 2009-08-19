@@ -17,5 +17,6 @@
   <depend stack="common"/> <!-- tinyxml, robot_actions, laser_scan, manipulation_msgs --> 
   <depend stack="ros"/>
   <depend stack="common_msgs"/> <!-- geometry_msgs, sensor_msgs, diagnostic_msgs --> 
-
+  <depend stack="visual_feature_detectors"/> <!-- checkerboard_detector -->
+  <depend stack="stereo" /> <!-- stereo_msgs -->
 </stack>

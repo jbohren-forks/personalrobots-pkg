@@ -43,7 +43,6 @@
 #include <controller_interface/controller.h>
 #include <mechanism_model/chain.h>
 #include <tf/transform_datatypes.h>
-#include <diagnostic_msgs/DiagnosticArray.h>
 #include <realtime_tools/realtime_publisher.h>
 #include <boost/scoped_ptr.hpp>
 
@@ -66,8 +65,6 @@ public:
   KDL::Wrench wrench_desi_;
 
 private:
-  bool publishDiagnostics(int level, const std::string& message);
-
   ros::NodeHandle node_;
   ros::Subscriber sub_command_;
   void command(const geometry_msgs::WrenchConstPtr& wrench_msg);
@@ -78,11 +75,6 @@ private:
   boost::scoped_ptr<KDL::ChainJntToJacSolver> jnt_to_jac_solver_;
   KDL::JntArray jnt_pos_, jnt_eff_;
   KDL::Jacobian jacobian_;
-
-  diagnostic_msgs::DiagnosticArray diagnostics_;
-  realtime_tools::RealtimePublisher <diagnostic_msgs::DiagnosticArray> diagnostics_publisher_;
-  ros::Time diagnostics_time_;
-  ros::Duration diagnostics_interval_;
 
   struct joint_constraint{
     int joint;

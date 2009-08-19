@@ -382,13 +382,19 @@ class ROSWebHandler(BaseHTTPServer.BaseHTTPRequestHandler):
           username = parts[0]
 
       ## Make a service call
-      ## /ros/service/<service_name>?args=<json-encoded dictionary of args>
+      ##   Args can be passed as an ordered list of parameters:
+      ##     /ros/service/<service_name>?args=<arg1>&args=<arg2>&<...>
+      ##   or as a dictionary of named parameters
+      ##     /ros/service/<service_name>?json=<json-encoded dictionary of args>
       if cmd == "service":
         name = path_parts[3]
         service_class = rosservice.get_service_class_by_name("/" + name)
         request = service_class._request_class()
 
-        args = eval(qdict.get('args', ['{}'])[0])
+        args = qdict.get('args', None)
+        if not args:
+          args = qdict.get('json', ['{}'])[0]
+          args = eval(args)
         try:
           roslib.message.fill_message_args(request, args)
         except ROSMessageException:
@@ -399,7 +405,6 @@ class ROSWebHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         logging.debug("service call: name=%s, args=%s" % (name, args))
         rospy.wait_for_service(name)
         service_proxy = rospy.ServiceProxy(name, service_class)
-        print "request = %s" % str(request)
         msg = service_proxy(request)
         msg = rosjson.ros_message_to_json(msg)
 
