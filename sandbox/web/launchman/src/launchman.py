@@ -50,13 +50,7 @@ from roslaunch.launch import ROSLaunchRunner
 from roslaunch.pmon import pmon_shutdown as _pmon_shutdown
 from roslaunch.xmlloader import *
 
-import subprocess
-
 from launchman import app
-
-def getPackagePath(pkg):
-  pkgpath = subprocess.Popen(["rospack", "find", pkg], stdout=subprocess.PIPE).communicate()[0].strip()
-  return pkgpath
 
 class TaskGroup:
   def __init__(self, manager):
@@ -73,7 +67,7 @@ class TaskGroup:
   def launch(self):
     config = ROSLaunchConfig()
     loader = XmlLoader()
-    path = getPackagePath(self.app.package)
+    path = app.getPackagePath(self.app.package)
     print "pkgpath", path
     print "launchfile", self.app.launch_file
     #os.chdir(pkgpath)
@@ -115,9 +109,9 @@ class TaskManager:
     self._apps = {}
 
   def start_task(self, req):
-    app = app.App(req.taskid)
+    a = app.App(req.taskid)
     pgroup = None
-    group = self._taskGroups.get(app.provides, None)
+    group = self._taskGroups.get(a.provides, None)
     if group:
       if group.task.taskid == req.taskid:
         print "already running"
@@ -125,23 +119,23 @@ class TaskManager:
 
       self._stopTask(group)
 
-    if app.depends and app.depends.strip():
-      print "depends", app.depends
-      pgroup = self._taskGroups.get(app.depends, None)
+    if a.depends and a.depends.strip():
+      print "depends", a.depends
+      pgroup = self._taskGroups.get(a.depends, None)
       if not pgroup:
-        print "no parent task group %s running." % str(app.depends)
-        return StartTaskResponse("no parent task group %s running." % str(app.depends))
+        print "no parent task group %s running." % str(a.depends)
+        return StartTaskResponse("no parent task group %s running." % str(a.depends))
 
-    self._apps[req.taskid] = app
+    self._apps[req.taskid] = a
     group = TaskGroup(self)
-    group.app = app
-    if app.provides:
-      self._taskGroups[app.provides] = group
+    group.app = a
+    if a.provides:
+      self._taskGroups[a.provides] = group
 
     if pgroup:
       pgroup.childGroups.append(group)
 
-    print "startTask [%s, %s, %s]" % (req.taskid, app.name, req.username)
+    print "startTask [%s, %s, %s]" % (req.taskid, a.name, req.username)
     group.task.taskid = req.taskid
     group.task.username = req.username
     group.task.started = rospy.get_rostime()
