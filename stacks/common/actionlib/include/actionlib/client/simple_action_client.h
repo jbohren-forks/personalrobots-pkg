@@ -221,7 +221,10 @@ void SimpleActionClient<ActionSpec>::initSimpleClient(ros::NodeHandle& n, const 
     ac_.reset(new ActionClientT(n, name, &callback_queue));
   }
   else
+  {
+    spin_thread_ = NULL;
     ac_.reset(new ActionClientT(n, name));
+  }
 }
 
 template<class ActionSpec>
