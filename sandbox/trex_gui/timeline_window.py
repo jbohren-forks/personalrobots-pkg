@@ -17,6 +17,7 @@ import gtk, gtk.glade
 from assembly import Assembly,Entity,Rule,Token,Slot,Variable
 from token_network import TokenNetwork
 from token_network_filter import TokenNetworkFilter
+from property_window import PropertyWindowFactory
 
 ##############################################################################
 # ReactorPanel
@@ -294,7 +295,9 @@ class ReactorPanel():
 	pos = gtk.MenuItem("Timeline: %s\nToken: %s" % (timeline.obj.name, token),False)
 	pos.set_sensitive(False)
 	t_net = gtk.MenuItem("Token network")
+	#t_net.connect("activate",self.view_token_network,token)
 	t_vars = gtk.MenuItem("Token variables")
+	t_vars.connect("activate",self.spawn_property_window,token)
 	m.append(pos)
 	m.append(t_net)
 	m.append(t_vars)
@@ -303,6 +306,10 @@ class ReactorPanel():
 
 
     return False
+
+  def spawn_property_window(self,menuitem,token):
+    PropertyWindowFactory(self.assembly, token)
+
 
   #############################################################################
   # Drawing timelines
