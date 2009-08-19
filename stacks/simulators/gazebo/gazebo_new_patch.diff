@@ -28,6 +28,19 @@ Index: libgazebo/Iface.cc
  
    if (this->mMap == MAP_FAILED)
    {
+Index: server/Simulator.cc
+===================================================================
+--- server/Simulator.cc	(revision 8208)
++++ server/Simulator.cc	(working copy)
+@@ -358,7 +358,7 @@
+       }
+ 
+       World::Instance()->ProcessEntitiesToLoad();
+-      World::Instance()->GraphicsUpdate();
++      //World::Instance()->GraphicsUpdate();
+ 
+       currTime = this->GetWallTime();
+ 
 Index: CMakeLists.txt
 ===================================================================
 --- CMakeLists.txt	(revision 8208)
