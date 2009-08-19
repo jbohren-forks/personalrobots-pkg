@@ -20,6 +20,7 @@
 
   <include filename="$(find pr2_defs)/defs/gripper/gripper_defs.urdf.xacro" />
   <include filename="$(find pr2_defs)/defs/gazebo/gazebo_defs.urdf.xacro" />
+  <include filename="$(find pr2_defs)/defs/materials.urdf.xacro" />
 
   <!-- for new gripper gear_ratio="29.16*22.0/16.0*0.9" screw_reduction="4.0/1000.0" -->
   <pr2_gripper screw_reduction="${2.0/1000.0}" gear_ratio="${29.16}" side="r" parent="base_link" >
