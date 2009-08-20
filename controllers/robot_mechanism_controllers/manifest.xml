@@ -25,7 +25,6 @@
   <depend package="angles" />
   <depend package="joy" />
   <depend package="eigen" />
-  <depend package="filters" />
   <depend package="diagnostic_msgs" />
   <depend package="pluginlib" />
   <url>http://pr.willowgarage.com</url>
