@@ -342,6 +342,7 @@ public:
     if (img_data->imRectColorType != COLOR_CODING_NONE)
       advertise<sensor_msgs::Image>(base_name + std::string("image_rect_color"), 1);
 
+    ROS_INFO("DEBUG FOR GAZEBO IMTYPE: %d %d %d %d %d %d", COLOR_CODING_NONE, img_data->imRawType, img_data->imType, img_data->imColorType, img_data->imRectType, img_data->imRectColorType);
   }
 
   void advertiseCam()
