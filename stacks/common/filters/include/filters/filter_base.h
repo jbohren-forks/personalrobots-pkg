@@ -34,6 +34,7 @@
 #include <typeinfo>
 #include "ros/assert.h"
 #include "ros/console.h"
+#include "ros/ros.h"
 
 #include "boost/scoped_ptr.hpp"
 #include <boost/algorithm/string.hpp>
@@ -67,6 +68,24 @@ public:
   /** \brief Virtual Destructor
    */
   virtual ~FilterBase(){};
+
+  /** \brief The public method to configure a filter from XML 
+   * \param param_name The parameter name from which the filter should be initialized
+   */
+  bool configure(std::string param_name)
+  {
+    if (configured_)
+    {
+      ROS_WARN("Filter %s of type %s already being reconfigured", filter_name_.c_str(), filter_type_.c_str());
+    };
+    configured_ = false;
+    bool retval = true;
+
+    retval = retval && loadParameters(param_name);
+    retval = retval && configure();
+    configured_ = retval;
+    return retval;
+  }
 
   /** \brief The public method to configure a filter from XML 
    * \param config The XML to initialize the filter with including name, type, and any parameters
@@ -241,6 +260,30 @@ protected:
   string_map_t params_;
 
 private:
+  /**\brief Set the name and type of the filter from the parameter server
+   * \param param_name The parameter from which to read
+   */
+  bool setNameAndType(std::string param_name, ros::NodeHandle node)
+  {
+    std::string name, type;
+    if(!node.getParam(param_name + "/name", name))
+    {
+      ROS_ERROR("Filter didn't have name defined");
+      return false;
+    }
+
+    if(!node.getParam(param_name + "/type", type))
+    {
+      ROS_ERROR("Filter %s didn't have type defined", name.c_str());
+      return false;
+    }
+
+    filter_name_ = name;
+    filter_type_ = type;
+    ROS_DEBUG("Configuring Filter of Type: %s with name %s", type.c_str(), name.c_str());
+    return true;
+  }
+
   /**\brief Set the name and type of the filter from XML 
    * \param config The XML from which to read
    */
@@ -265,6 +308,51 @@ private:
   };
 
 protected:
+  bool loadParameters(std::string param_name)
+  {
+    XmlRpc::XmlRpcValue filter_configuration;
+    ros::NodeHandle node;
+    //make sure that the parameter is actually set on the parameter server
+    if(node.getParam(param_name, filter_configuration)){
+    }
+    else{
+      ROS_ERROR("The filter configuration parameter specified %s, is not set on the parameter server", param_name.c_str());
+      return false;
+    }
+
+    //if (std::string(config->Value()) != std::string("filter"))
+    //{
+    //  ROS_ERROR("Filter not being constructed with filter xml, type is %s", config->Value());
+    //}
+    ////Store a copy of the xml
+    //raw_xml_.reset(config->Clone()->ToElement());
+
+    if (!setNameAndType(param_name, node))
+    {
+      return false;
+    }
+
+    XmlRpc::XmlRpcValue params;
+    node.getParam(param_name + "/params", params);
+    if (params)
+    {
+      if(params.getType() != XmlRpc::XmlRpcValue::TypeStruct)
+      {
+        ROS_ERROR("Using params as a primitive type has no meaning");
+      }
+      else{
+        //Load params into map
+        for (XmlRpc::XmlRpcValue::iterator it = params.begin(); it != params.end(); ++it)
+        {
+          ROS_DEBUG("Loading param %s with value %s\n", it->first, it->second);
+          params_[it->first] = it->second;
+        } 
+      }
+      
+    }
+
+    return true;    
+  }
   /** \brief Read in the XML and do basic configuration of FilterBase
    * \param config The XML to parse */
   bool loadXml(TiXmlElement* config)
