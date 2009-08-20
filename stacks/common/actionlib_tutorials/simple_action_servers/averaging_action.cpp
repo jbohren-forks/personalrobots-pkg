@@ -62,6 +62,7 @@ public:
 
     void goalCB()
     {
+      // reset helper variables
       data_count_ = 0;
       sum_ = 0;
       sum_sq_ = 0;
@@ -78,18 +79,21 @@ public:
 
     void analysisCB(const std_msgs::Float32::ConstPtr& msg)
     {
+      // make sure that the action hasn't been preempted
       if (!as_.isActive())
         return;
-
+      
       data_count_++;
-    
+      feedback_.sample = data_count_;
+      feedback_.data = msg->data;
+      //compute the std_dev and mean of the data 
       sum_ += msg->data;
       feedback_.mean = sum_ / data_count_;
       sum_sq_ += pow(msg->data, 2);
       feedback_.std_dev = sqrt(fabs((sum_sq_/data_count_) - pow(feedback_.mean, 2)));
       as_.publishFeedback(feedback_);
 
-      if(data_count_ > 50) 
+      if(data_count_ > goal_) 
       {
         result_.mean = feedback_.mean;
         result_.std_dev = feedback_.std_dev;

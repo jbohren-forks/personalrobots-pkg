@@ -54,7 +54,7 @@ int main (int argc, char **argv)
 
   // send a goal to the action 
   actionlib_tutorials::AveragingGoal goal;
-  goal.samples = 50;
+  goal.samples = 40;
   ac.sendGoal(goal);
   
   //wait for the action to return
