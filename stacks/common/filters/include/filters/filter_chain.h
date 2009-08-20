@@ -175,7 +175,7 @@ public:
     xml_doc.Parse(filter_xml.c_str());
     TiXmlElement * config = xml_doc.RootElement();
       
-    return this->configure(1, config);
+    return this->configure(size, config);
 
   };
 
