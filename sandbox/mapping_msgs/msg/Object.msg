@@ -7,6 +7,7 @@ byte type
 
 
 #### define sphere, box, cylinder ####
+# the origin of each shape is considered at the shape's center
 
 # for sphere
 # radius := dimensions[0]
@@ -14,6 +15,7 @@ byte type
 # for cylinder
 # radius := dimensions[0]
 # length := dimensions[1]
+# the length is along the Z axis
 
 # for box
 # size_x := dimensions[0]
