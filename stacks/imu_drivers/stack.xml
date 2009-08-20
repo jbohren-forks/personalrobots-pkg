@@ -7,7 +7,7 @@
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/imu_drivers</url>
   <depend stack="geometry"/> <!-- tf --> 
-  <depend stack="hardware_test"/> <!-- self_test, diagnostic_updater --> 
+  <depend stack="diagnostics"/> <!-- self_test, diagnostic_updater --> 
   <depend stack="ros"/> <!-- roscpp, std_msgs, std_srvs, rosconsole --> 
   <depend stack="common_msgs"/> <!-- robot_srvs --> 
 
