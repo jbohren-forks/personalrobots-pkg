@@ -620,13 +620,6 @@ string PerfStats::statString() {
 void Stanleyi::evaluateClassifier(string labels_dir, string index_filename, string classifier_filename, string featureset, 
 				  string results_dir) {
 
-  bool use_polygons=true;
-  bool use_boxes=false;
-  if( (getenv("USE_BOXES") != NULL) && !strcmp(getenv("USE_BOXES"),"true") ) {
-    use_boxes=true;
-    use_polygons=false;
-  }
-
   Dorylus d;
   d.load(classifier_filename);
 
@@ -642,12 +635,15 @@ void Stanleyi::evaluateClassifier(string labels_dir, string index_filename, stri
   PerfStats box_stats(class_names);
   PerfStats point_stats(class_names);
   while(true) {
-
     getline(index,file);
     if(file.size() == 0)
       break;
 
-    assert(file.find(".xml") != string::npos); 
+    if(file.find(".xml") == string::npos) {
+      cout << file << " is not an xml file.  Skipping... " << endl;
+      continue;
+    }
+
     string base = file.substr(0, file.size()-4);
     cout << "Working on " << base << endl;
 
@@ -686,17 +682,21 @@ void Stanleyi::evaluateClassifier(string labels_dir, string index_filename, stri
     vector<CvRect> boxes;
     vector<int> box_labels;
 
-    if(use_polygons){ 
-      if(!getContoursFromTinyXML(annotation_filename, polys, poly_labels)) {
-	cout << "Failed to load " << annotation_filename << endl;
-	return;
-      }
-    }else if(use_boxes){
-      if(!getBoundingBoxesFromXML(annotation_filename, boxes, box_labels)) {
-	cout << "Failed to load " << annotation_filename << endl;
-	return;
-      }
+    if(!getContoursFromTinyXML(annotation_filename, polys, poly_labels)) {
+      cout << "Failed to load " << annotation_filename << endl;
+      return;
     }
+
+    if(!getBoundingBoxesFromXML(annotation_filename, boxes, box_labels)) {
+      cout << "Failed to load " << annotation_filename << endl;
+      return;
+    }
+    if(boxes.size() == 0) {
+      cout << "No boxes found in this image." << endl;
+    }
+
+    vector<VectorXf> cumulative_responses(boxes.size(), VectorXf::Zero(class_names.size()-1));
+    vector<int> num_kp_per_box(boxes.size(), 0);
 
     // -- Make predictions.
     vector<CvScalar> colors;
@@ -721,48 +721,74 @@ void Stanleyi::evaluateClassifier(string labels_dir, string index_filename, stri
       }
       cvCircle(img, cvPoint(xs[i], ys[i]), size, colors[idx], -1);
 
-
-      if(use_polygons){ 
 	
-	// -- Find the label of this point using the polys.  (0 for bg).
-	int label=0;
-	for(size_t j=0; j<polys.size(); ++j) {
-	  if(pointPolygonTest(polys[j], Point2f(xs[i], ys[i]), 0) >= 0) {
-	    label = poly_labels[j];
-	    break;
-	  }
+      // -- Find the label of this point using the polys.  (0 for bg).
+      int label=0;
+      for(size_t j=0; j<polys.size(); ++j) {
+	if(pointPolygonTest(polys[j], Point2f(xs[i], ys[i]), 0) >= 0) {
+	  label = poly_labels[j];
+	  break;
 	}
+      }
+      
+      // -- Increment point stats.
+      // Why are the response values flipped? 
+      VectorXf response2 = response;
+      response2(0) = response(2); 
+      response2(2) = response(0);
+      point_stats.incrementStats(label, response2);
 
-	// -- Increment stats.
-	// Why are the response values flipped? 
-	VectorXf response2 = response;
-	response2(0) = response(2); 
-	response2(2) = response(0);
-	point_stats.incrementStats(label, response2);
-      }else if(use_boxes){
 
-	// -- Find the label of this point using the boxes.  (0 for bg).
-	int label=0;
-	for(size_t j=0; j<boxes.size(); ++j) {
-	  if(xs[i] >= boxes[j].x && xs[i] <= boxes[j].x + boxes[j].width &&
-	     ys[i] >= boxes[j].y && ys[i] <= boxes[j].y + boxes[j].height) {
-	    label = box_labels[j];
-	    break;	
-	  }
+
+      // -- Find the label of this point using the boxes. 
+      int box_id=-1; // -1 for no box.
+      for(size_t j=0; j<boxes.size(); ++j) {
+	if(xs[i] >= boxes[j].x && xs[i] <= boxes[j].x + boxes[j].width &&
+	   ys[i] >= boxes[j].y && ys[i] <= boxes[j].y + boxes[j].height) {
+	  box_id = j;
+	  break;	
 	}
+      }
+      if(box_id != -1) {
+	VectorXf r2 = response;
+	for(int j=0; j<r2.rows(); ++j) {
+	  if(r2(j) < 0) // Interpret bg as "unknown": no prediction.
+	    r2(j) = 0;
+	}
+	cumulative_responses[box_id] += r2;
+	num_kp_per_box[box_id]++;
+      }
+    }
 
-	// -- Increment stats.
-	// Why are the response values flipped? 
-	VectorXf response2 = response;
-	response2(0) = response(2); 
-	response2(2) = response(0);
-	point_stats.incrementStats(label, response2);
+    // -- Increment box stats.
+    for(size_t i=0; i<cumulative_responses.size(); ++i) { 
+      if(num_kp_per_box[i] < 10)
+	continue;
+      VectorXf cr = cumulative_responses[i];
+      // Why are the response values flipped?
+      cr(0) = cumulative_responses[i](2);
+      cr(2) = cumulative_responses[i](0);
+      
+      // -- Kill off nonmax response.
+      double max = 0;
+      int idx = -1;
+      for(int j=0; j<cr.rows(); ++j) {
+	if(cr(j) > max)  {
+	  max = cr(j);
+	  idx = j;
+	}
+      }
+      for(int j=0; j<cr.rows(); ++j) {
+	if(j != idx)
+	  cr(j) = 0;
       }
 
-
-//       // -- Increment stats.
-//       box_stats.incrementStats(label, response);	
+      box_stats.incrementStats(box_labels[i], cr);
     }
+
+//     cout << box_stats.statString() << endl;
+//     CVSHOW("img", img);
+//     cvWaitKey(0);
 
     // -- Save image to dir.
     mkdir(results_dir.c_str(), S_IRWXG | S_IRWXU | S_IRWXO);
@@ -772,8 +798,14 @@ void Stanleyi::evaluateClassifier(string labels_dir, string index_filename, stri
   index.close();
 
   // -- Save text results file.
-  ofstream results_file((results_dir + "/results.txt").c_str());
-  results_file << point_stats.statString() << endl;
+  ofstream box_results_file((results_dir + "/box_results.txt").c_str());
+  box_results_file << box_stats.statString() << endl;
+  box_results_file.close();
+  
+  ofstream point_results_file((results_dir + "/point_results.txt").c_str());
+  point_results_file << point_stats.statString() << endl;
+  point_results_file.close();
+  
 }
 
 void Stanleyi::makeClassificationVideo(string bagfile, Dorylus& d, int samples_per_img, bool show_results) {
@@ -1441,7 +1473,7 @@ bool getBoundingBoxesFromXML(string filename, vector<CvRect>& boxes, vector<int>
     return false;
   } 
 
-  TiXmlElement *annotations, *annotation, *polygon, *results, *pt, *bbox, *ann2;
+  TiXmlElement *annotations, *annotation, *results, *bbox;
   annotations = XMLdoc.FirstChildElement("annotations");
   results = annotations->FirstChildElement("results");
   annotation = results->FirstChildElement("annotation");
