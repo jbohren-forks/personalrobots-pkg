@@ -32,7 +32,7 @@
 clock_t starttime;
 
 FILE* fPaths = fopen("paths.txt", "w");
-		
+
 using namespace std;
 using namespace sbpl_arm_planner_node;
 
@@ -64,7 +64,7 @@ bool SBPLArmPlannerNode::init()
   node_.param<std::string>("~planner_type", planner_type_, "cartesian"); //"cartesian" or "joint_space"
   node_.param<std::string>("~planning_frame", planning_frame_, std::string("torso_lift_link"));
 	node_.param ("~seconds_per_waypoint", waypoint_time_, 0.06);
-	
+
   // robot parameters
   node_.param<std::string>("~arm_name", arm_name_, "right_arm");
 
@@ -108,7 +108,7 @@ bool SBPLArmPlannerNode::init()
 
 	//initialize the planning monitor
 	initializePM();
-	
+
 // 	col_map_subscriber_ = node_.subscribe(collision_map_topic_, 1, &SBPLArmPlannerNode::collisionMapCallback, this);
 	collision_map_notifier_ = new tf::MessageNotifier<mapping_msgs::CollisionMap>(tf_, boost::bind(&SBPLArmPlannerNode::collisionMapCallback, this, _1), collision_map_topic_, planning_frame_, 1);
 	ROS_INFO("Listening to %s with message notifier for target frame %s", collision_map_topic_.c_str(), collision_map_notifier_->getTargetFramesString().c_str());
@@ -123,13 +123,13 @@ bool SBPLArmPlannerNode::init()
     marker_publisher_ = node_.advertise<visualization_msgs::Marker>("visualization_marker", 3);
 
 
-			
+
   //initialize voxel grid  & subscribe to correct collision map topic
   if(use_voxel3d_grid_)
   {
     createOccupancyGrid();
 
-		
+
 /*    else
 		{
       point_cloud_subscriber_ = node_.subscribe(point_cloud_topic_, 1, &SBPLArmPlannerNode::pointCloudCallback, this);
@@ -963,7 +963,7 @@ bool SBPLArmPlannerNode::plan(motion_planning_msgs::KinematicPath &arm_path)
   //plan
   b_ret = planner_->replan(allocated_time_, &solution_state_ids_v);
 
-  ROS_INFO("[plan] retrieving of the plan completed in %.4f seconds", double(clock()-start_time) / CLOCKS_PER_SEC);
+  ROS_INFO("[plan] retrieving of the plan completed in %.4f seconds with %i states", double(clock()-start_time) / CLOCKS_PER_SEC, solution_state_ids_v.size());
   ROS_DEBUG("[plan] size of solution = %d", solution_state_ids_v.size());
 
 	ROS_INFO("[plan] displaying expanded states....");
@@ -973,8 +973,12 @@ bool SBPLArmPlannerNode::plan(motion_planning_msgs::KinematicPath &arm_path)
   // if a path is returned, then pack it into msg form
   if(b_ret)
   {
+		planner_->print_searchpath(fPaths);
+
+		sleep(2);
+
 		ROS_INFO("*** a path was found ***");
-		
+
 		ROS_DEBUG("extending path... from %i waypoints", solution_state_ids_v.size());
 		ROS_DEBUG("current path");
 		path_in.resize(solution_state_ids_v.size());
@@ -1149,7 +1153,7 @@ bool SBPLArmPlannerNode::plan(motion_planning_msgs::KinematicPath &arm_path)
 		}
   }
 
-	planner_->print_searchpath(fPaths);
+//	planner_->print_searchpath(fPaths);
   return b_ret;
 }
 
@@ -1204,8 +1208,8 @@ void SBPLArmPlannerNode::visualizeGoalPosition(geometry_msgs::PoseStamped pose)
   goal_marker_.color.r = 0.0;
   goal_marker_.color.g = 0.7;
   goal_marker_.color.b = 0.6;
-  goal_marker_.color.a = 0.5;
-  goal_marker_.lifetime = ros::Duration(40.0);
+  goal_marker_.color.a = 0.7;
+  goal_marker_.lifetime = ros::Duration(90.0);
 
   marker_publisher_.publish(goal_marker_);
 
@@ -1221,8 +1225,8 @@ void SBPLArmPlannerNode::visualizeGoalPosition(geometry_msgs::PoseStamped pose)
   goal_marker_.color.r = 1.0;
   goal_marker_.color.g = 0.0;
   goal_marker_.color.b = 0.6;
-  goal_marker_.color.a = 0.5;
-  goal_marker_.lifetime = ros::Duration(40.0);
+  goal_marker_.color.a = 0.7;
+  goal_marker_.lifetime = ros::Duration(90.0);
 
   marker_publisher_.publish(goal_marker_);
 }
@@ -1632,7 +1636,7 @@ void SBPLArmPlannerNode::displayExpandedStates()
 	obs_marker.color.g = 1.0;
 	obs_marker.color.b = 0.5;
 	obs_marker.color.a = 0.5;
-	obs_marker.lifetime = ros::Duration(40.0);
+	obs_marker.lifetime = ros::Duration(70.0);
 
 	obs_marker.points.reserve(50000);
 	for (unsigned int k = 0; k < states.size(); ++k) 
