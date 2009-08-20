@@ -1,0 +1,224 @@
+
+body { 
+  margin: 0px;
+  background-color: #000;
+  color: #fff;
+}
+
+A:hover { text-decoration: underline; color: red;}
+A:active { text-decoration: none}
+A:visited { text-decoration: none; color: #aaf;}
+A:link { text-decoration: none; color: #aaf;} 
+
+td.field { 
+  font-weight: bold;
+  vertical-align: top;
+  white-space: nowrap;
+  width: 8%;  
+  background-color: #ddffdd;
+  border-right: 2px solid #000000;
+  border-bottom: 2px solid #000000;
+}
+
+tr.value { 
+  background-color: #f0f0f0;
+}
+td.value { 
+  vertical-align: top;
+  white-space: nowrap;
+  background-color: #f0f0f0;
+}
+
+td.failvalue { 
+  vertical-align: top;
+  white-space: nowrap;
+  font-weight: bold;
+  color: #ffffff;
+  text-decoration: blink;
+  background-color: #aa0000;
+}
+
+tr.actions { 
+}
+td.actions { 
+  vertical-align: top;
+  white-space: nowrap;
+  background-color: #cccccc;
+}
+
+
+div.title { 
+  font-size: medium;
+  font-weight: bold;
+}
+
+table.moveTable { 
+  font-size: medium;
+  font-weight: bold;
+}
+
+div.title { 
+  font-size: medium;
+  font-weight: bold;
+}
+
+table.head_buttons { 
+  border-spacing: 7px;
+}
+
+td.head_buttons { 
+  font-family: Arial, Helvetica, Verdana, sans-serif; 
+  text-align: center; 
+  background-color: #aaaaaa;
+  border-style: solid;
+  border-width: 2px;
+  border-color: #dddddd;
+  color: #000;
+  width: 6em;
+  height: 1em;
+}
+
+td.head_buttons:hover {
+  border-color: #555555;
+}
+
+table.sortable { 
+  border-style: solid;
+  text-align: left;
+  vertical-align: top;
+  border-spacing: 0px;
+  width: 95%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+th { 
+  background-color: #ddffdd;
+  color: black;
+}
+
+td.money { 
+  text-align: right;
+  border-left: 1px solid #000000;
+}
+
+table.multiple { 
+  border-style: solid;
+  text-align: left;
+  vertical-align: top;
+  border-spacing: 0px;
+
+  width: 95%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+table.single { 
+  border-style: solid;
+  text-align: left;
+  vertical-align: top;
+  border-spacing: 0px;
+
+  width: 95%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+
+tr.grey { 
+  background-color: #222;
+}
+
+
+body {
+  margin: 0px;
+  color: white;
+  font-size: 12px;
+}
+
+a.tablink {
+  color: white;
+}
+
+td.buttonOff:hover {
+  border-color: #555555;
+}
+
+
+td.buttonOff { 
+  font-family: Arial, Helvetica, Verdana, sans-serif; 
+  text-align: center; 
+  background-color: #aaaaaa;
+  font-size: 16px;
+  border-style: solid;
+  border-width: 2px;
+  border-color: #dddddd;
+  width: 4em;
+  cursor: pointer;
+}
+td.buttonOff:hover {
+  border-color: #555555;
+}
+td.buttonOn:hover {
+  border-color: #555555;
+}
+td.buttonOn { 
+  font-family: Arial, Helvetica, Verdana, sans-serif; 
+  color: #555555;
+  text-align: center; 
+  background-color: #dddddd;
+  font-size: 16px;
+  border-style: solid;
+  border-width: 2px;
+  border-color: #aaaaaa;
+  width: 4em;
+}
+
+buttonStatus {
+  font-size: 10pt;
+}
+
+
+table.powerboard { 
+  border: 1px solid #fff;
+  background-color: #555;
+  font-size: 10px;
+}
+
+td.powerboard { 
+  width: 7em;
+  text-align: center;
+}
+
+.powerboard_breaker_On { 
+  background: green; 
+  border: 1px solid #fff;
+}
+.powerboard_breaker_Standby { 
+  background: orange; 
+  border: 1px solid #fff;
+}
+.powerboard_breaker_Disabled { 
+  background: red; 
+  border: 1px solid #fff;
+}
+
+.powerboard_runstop_stop { 
+  background-color: red;
+}
+
+.powerboard_runstop_unknown { 
+  background-color: red;
+}
+
+.powerboard_runstop_run { 
+  background-color: green;
+}
+
+.powerboard_runstop_stall { 
+  background-color: gray;
+}
+
+input.pbbutton { 
+  width: 6em;
+}

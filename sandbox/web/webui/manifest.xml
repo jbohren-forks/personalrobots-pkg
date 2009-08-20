@@ -1,0 +1,14 @@
+<package>
+<description brief="PR2 Web UI">
+A web interface to install and launch applications for the PR2.
+</description>
+<author>Scott Hassan/hassan@willowgarage.com</author>
+<license>BSD</license>
+<review status="experimental" notes=""/>
+<url>http://pr.willowgarage.com/wiki/iros</url>
+  <depend package="roslib"/>
+  <depend package="rospy"/>
+  <depend package="launchman"/>
+  <depend package="pyclearsilver"/>
+</package>
+
