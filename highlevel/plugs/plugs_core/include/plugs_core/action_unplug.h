@@ -45,7 +45,7 @@
 #include <std_msgs/Empty.h>
 #include "geometry_msgs/PoseStamped.h"
 #include "manipulation_msgs/TaskFrameFormalism.h"
-#include "robot_mechanism_controllers/CartesianHybridState.h"
+#include "experimental_controllers/CartesianHybridState.h"
 
 // Srvs
 #include <mechanism_msgs/SwitchController.h>
@@ -83,10 +83,10 @@ private:
 
   std_msgs::Empty empty_;
 
-  robot_mechanism_controllers::CartesianHybridState first_state_;
+  experimental_controllers::CartesianHybridState first_state_;
 
   manipulation_msgs::TaskFrameFormalism tff_msg_;
-  robot_mechanism_controllers::CartesianHybridState controller_state_msg_;
+  experimental_controllers::CartesianHybridState controller_state_msg_;
 
 };
 

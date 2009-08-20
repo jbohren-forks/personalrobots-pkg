@@ -45,7 +45,7 @@
 #include "geometry_msgs/PoseStamped.h"
 #include "manipulation_msgs/TaskFrameFormalism.h"
 #include "plugs_core/PlugInState.h"
-#include "robot_mechanism_controllers/CartesianHybridState.h"
+#include "experimental_controllers/CartesianHybridState.h"
 
 //TF
 #include <tf/transform_listener.h>
@@ -73,7 +73,7 @@ private:
   boost::scoped_ptr<tf::MessageNotifier<geometry_msgs::PoseStamped> > notifier_;
   void plugMeasurementCB(const tf::MessageNotifier<geometry_msgs::PoseStamped>::MessagePtr &msg);
 
-  robot_mechanism_controllers::CartesianHybridState c_state_msg_;
+  experimental_controllers::CartesianHybridState c_state_msg_;
   void controllerStateCB();
   /*
   void measure();
