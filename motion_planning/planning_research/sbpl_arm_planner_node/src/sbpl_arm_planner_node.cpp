@@ -248,6 +248,7 @@ bool SBPLArmPlannerNode::initializePlannerAndEnvironment()
   sbpl_arm_env_.SetEnvParameter("useMultiResolutionMotionPrimitives", use_multires_primitives_);
 	sbpl_arm_env_.SetEnvParameter("saveExpandedStateIDs", true);
 	sbpl_arm_env_.SetEnvParameter("uprightGripperOnly", upright_gripper_only_);
+	sbpl_arm_env_.SetEnvParameter("useJacobianMotionPrimitive", true);
 
   //set epsilon
   planner_->set_initialsolution_eps(sbpl_arm_env_.GetEpsilon());
@@ -902,7 +903,6 @@ bool SBPLArmPlannerNode::planToPosition(motion_planning_msgs::GetMotionPlan::Req
 	bPlanning_ = false;
 	pm_->unlockPM();
 	mPlanning_.unlock();
-	displayPlanningGrid();
 	ROS_INFO("[planToPosition] Planning took %lf seconds",(clock() - starttime) / (double)CLOCKS_PER_SEC);
 
   return false;
@@ -968,12 +968,12 @@ bool SBPLArmPlannerNode::plan(motion_planning_msgs::KinematicPath &arm_path)
 
 	ROS_INFO("[plan] displaying expanded states....");
 	displayExpandedStates();
-
+	ROS_INFO("[plan] finished displaying states....");
 
   // if a path is returned, then pack it into msg form
   if(b_ret)
   {
-		planner_->print_searchpath(fPaths);
+		// planner_->print_searchpath(fPaths);
 
 		ROS_INFO("*** a path was found ***");
 
@@ -990,9 +990,6 @@ bool SBPLArmPlannerNode::plan(motion_planning_msgs::KinematicPath &arm_path)
 			ROS_DEBUG("%i: %.4f %.4f %.4f %.4f %.4f %.4f %.4f",
 				i, path_in[i][0],path_in[i][1],path_in[i][2],path_in[i][3],path_in[i][4],path_in[i][5],path_in[i][6]);
 		}
-
-		ROS_DEBUG("original path done\n");
-
 
 		ROS_INFO("calling smooth path");
 		path_out = pm_->smoothPath(path_in, joint_names_);
@@ -1609,8 +1606,6 @@ bool SBPLArmPlannerNode::interpolatePath(std::vector<std::vector<double> > path_
 	ROS_DEBUG("original path: %i  extended path: %i",path_in.size(),path_out.size()); 
 	return true;
 }
-
-// void SBPLArmPlannerNode::computeFK(std::vector<double> angles, )
 
 void SBPLArmPlannerNode::displayExpandedStates()
 {
