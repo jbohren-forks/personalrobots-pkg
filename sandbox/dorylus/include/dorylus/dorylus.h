@@ -77,6 +77,8 @@ typedef struct
   //! For centroid voting, boundary fragments, etc.  Not yet fully supported.
   std::map<std::string, void*> user_data;
   float utility;
+  //! The number of training examples that have been used to compute the response values.
+  unsigned int num_training_examples;
 } weak_classifier;
 
 std::string displayWeakClassifier(const weak_classifier &wc);
@@ -145,6 +147,8 @@ class DorylusDataset {
     version_string_ = std::string("#DORYLUS DATASET LOG v0.1");
   }
 
+  ~DorylusDataset();
+
   std::string status();
   std::string displayObjects();
   std::string displayYmc();
@@ -177,18 +181,19 @@ class Dorylus {
 
   //! debugHook will be called each time a new weak classifier is learned. 
   void train(int num_candidates, int max_secs, int max_wcs, double min_util=0, void (*debugHook)(weak_classifier)=NULL);
-  //! Updates the weak classifier responses given a new labeled dataset using the greedy method.  
-  void greedyResponseUpdate(const DorylusDataset& dd);
+  //! Continues training a classifier, possibly on a new dataset.
+  void resumeTraining(int num_candidates, int max_secs, int max_wcs, double min_util, void (*debugHook)(weak_classifier)=NULL);
+  //! Relearns the weak classifier responses on a new labeled dataset
+  void relearnResponses(DorylusDataset& dd);
+  //! Sets log_weights_, classes_, nClasses_, and dd_.
   void useDataset(DorylusDataset *dd);
   bool save(std::string filename, std::string *user_data_str=NULL);
   bool load(std::string filename, bool quiet=false, std::string *user_data_str=NULL);
   std::string status();
 
   Eigen::VectorXf classify(object &obj);
-  float classify(DorylusDataset &dd);
-  std::map<std::string, float> computeMaxThetas(const DorylusDataset &dd);
-  float computeUtility(const weak_classifier& wc, const Eigen::VectorXf& mmt);
-  float computeObjective();
+  double classify(DorylusDataset &dd);
+  double computeObjective();
   //void train(int num_candidates, int max_secs, int max_wcs);
   std::vector<weak_classifier*>* findActivatedWCs(const std::string &descriptor, const Eigen::MatrixXf &pt);
   bool compare(const Dorylus& d, bool verbose = false);

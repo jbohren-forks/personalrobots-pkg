@@ -300,7 +300,6 @@ bool DorylusDataset::load(string filename, bool quiet)
     return false;
   }
 
-  cout << "Loading " << filename << endl;
 
   vector<object*> objs;
   int nRows, nCols;
@@ -341,12 +340,13 @@ bool DorylusDataset::load(string filename, bool quiet)
       istringstream iss_ncols(line);
       iss_ncols >> nCols;
 
+      // TODO: Don't copy. 
       float* pbuf = (float*)malloc(sizeof(float)*nRows*nCols);
       f.read((char*)pbuf, sizeof(float)*nRows*nCols); 
       MatrixXf* tmp = new MatrixXf();
       *tmp = Eigen::Map<MatrixXf>(pbuf, nRows, nCols);
       pobj->features[descriptor] = tmp;
-
+      free(pbuf);
 
 //       float buf;
 //       pobj->features[descriptor] = new MatrixXf(nRows, nCols);
@@ -369,10 +369,14 @@ bool DorylusDataset::load(string filename, bool quiet)
 
   f.close();
   setObjs(objs);
-  cout << "Done loading " << filename << endl;
   return true;
 }
 
+DorylusDataset::~DorylusDataset() {
+  for(size_t i=0; i<objs_.size(); ++i) { 
+    delete objs_[i];
+  }
+}
 
 bool Dorylus::save(string filename, string *user_data_str)
 {
@@ -392,46 +396,48 @@ bool Dorylus::save(string filename, string *user_data_str)
 
   float fbuf;
   double dbuf;
-  map<string, vector<weak_classifier*> >::iterator bit;
-  for(bit = battery_.begin(); bit != battery_.end(); bit++) {
-    vector<weak_classifier*> &wcs = bit->second;
-    for(unsigned int t=0; t<wcs.size(); t++) {
-      f << "New weak classifier." << endl;
-      f << "ID" << endl << wcs[t]->id << endl;
-      f << bit->first << endl;
-      f << "Theta" << endl << wcs[t]->theta << endl;
-      f << "Utility" << endl << wcs[t]->utility << endl;
-      f << "Center" << endl << wcs[t]->center.rows() << endl;
-      for(int i=0; i<wcs[t]->center.rows(); i++) {
-	fbuf = wcs[t]->center(i,0);
-	f.write((char*)&fbuf, sizeof(float));
-      }
-      f << endl;
-      f << "Vals" << endl << wcs[t]->vals.rows() << endl;
-      for(int i=0; i<wcs[t]->vals.rows(); ++i) {
-	fbuf = wcs[t]->vals(i);
-	f.write((char*)&fbuf, sizeof(float));
-      }
-      f << endl;
-      f << "Numerators" << endl << wcs[t]->numerators.rows() << endl;
-      for(int i=0; i<wcs[t]->numerators.rows(); ++i) {
-	dbuf = wcs[t]->numerators(i);
-	f.write((char*)&dbuf, sizeof(double));
-      }
-      f << endl;
-      f << "Denominators" << endl << wcs[t]->denominators.rows() << endl;
-      for(int i=0; i<wcs[t]->denominators.rows(); ++i) {
-	dbuf = wcs[t]->denominators(i);
-	f.write((char*)&dbuf, sizeof(double));
-      }
-      f << endl;
+  for(size_t t=0; t<pwcs_.size(); ++t) {
+    //   map<string, vector<weak_classifier*> >::iterator bit;
+    //   for(bit = battery_.begin(); bit != battery_.end(); bit++) {
+    //    vector<weak_classifier*> &wcs = bit->second;
+    //    for(unsigned int t=0; t<pwcs_.size(); t++) {
+    f << "New weak classifier." << endl;
+    assert(pwcs_[t]->id == (int)t);
+    f << "ID" << endl << pwcs_[t]->id << endl;
+    f << pwcs_[t]->descriptor << endl;
+    f << "Theta" << endl << setprecision(20) << pwcs_[t]->theta << endl;
+    f << "Utility" << endl << setprecision(20) << pwcs_[t]->utility << endl;
+    f << "Center" << endl << pwcs_[t]->center.rows() << endl;
+    for(int i=0; i<pwcs_[t]->center.rows(); i++) {
+      fbuf = pwcs_[t]->center(i,0);
+      f.write((char*)&fbuf, sizeof(float));
     }
+    f << endl;
+    f << "Vals" << endl << pwcs_[t]->vals.rows() << endl;
+    for(int i=0; i<pwcs_[t]->vals.rows(); ++i) {
+      fbuf = pwcs_[t]->vals(i);
+      f.write((char*)&fbuf, sizeof(float));
+    }
+    f << endl;
+    f << "Numerators" << endl << pwcs_[t]->numerators.rows() << endl;
+    for(int i=0; i<pwcs_[t]->numerators.rows(); ++i) {
+      dbuf = pwcs_[t]->numerators(i);
+      f.write((char*)&dbuf, sizeof(double));
+    }
+    f << endl;
+    f << "Denominators" << endl << pwcs_[t]->denominators.rows() << endl;
+    for(int i=0; i<pwcs_[t]->denominators.rows(); ++i) {
+      dbuf = pwcs_[t]->denominators(i);
+      f.write((char*)&dbuf, sizeof(double));
+    }
+    f << endl;
   }
+  
   f << "User data." << endl;
   if(user_data_str)
     f << *user_data_str << endl;
   f << "End user data." << endl;
-
+  
   f.close();
   return true;
 }
@@ -453,8 +459,6 @@ bool Dorylus::load(string filename, bool quiet, string *user_data_str)
     cerr << "First line is: " << line << " instead of " << version_string_ << endl;
     return false;
   }
-
-  cout << "Loading " << filename << endl;
 
   // -- Read the classes.
   getline(f, line);
@@ -587,18 +591,16 @@ bool Dorylus::load(string filename, bool quiet, string *user_data_str)
   }
 
   f.close();
-  cout << "Done loading " << filename << endl;
   return true;
 }
 
 
 void Dorylus::useDataset(DorylusDataset *dd) {
   dd_ = dd;
-
-  log_weights_ = MatrixXf::Zero(dd_->nClasses_, dd_->objs_.size());
-
   nClasses_ = dd_->nClasses_;
   classes_ = dd->classes_;
+
+  log_weights_ = MatrixXf::Zero(dd_->nClasses_, dd_->objs_.size());
 }
 
 vector<weak_classifier*>* Dorylus::findActivatedWCs(const string &descriptor, const MatrixXf &pt) {
@@ -622,16 +624,93 @@ void sigint(int none) {
   g_int = true;
 }
 
+void Dorylus::relearnResponses(DorylusDataset& dd) {
+  bool this_function_works = false;
+  cout << "This doesn't work yet." << endl;
+  assert(this_function_works);
+
+  assert(dd.nClasses_ == nClasses_);
+  useDataset(&dd);
+  vector<object*>& objs = dd_->objs_;
+  cout << "Objective before response relearning: " << classify(dd) << endl;
+
+  for(size_t t=0; t<pwcs_.size(); ++t) {
+    weak_classifier& wc = *pwcs_[t];
+    assert(wc.id == (int)t);
+
+    for(size_t c=0; c<nClasses_; ++c) {
+      wc.numerators(c) = 0;
+      wc.denominators(c) = 0;
+      wc.vals(c) = 0;
+    }
+
+    // -- Find which training examples fall in the hypersphere and increment numerators, denominators, responses, and utility.
+    for(size_t m=0; m<objs.size(); ++m) {
+
+      // -- If no descriptor of this type, ignore.
+      if(objs[m]->features.count(wc.descriptor) == 0)
+	continue;
+
+      // -- If not in the hypersphere, ignore.
+      if(euc(wc.center, *objs[m]->features[wc.descriptor]) > wc.theta) 
+	continue;
+
+      for(size_t c=0; c<nClasses_; ++c) {
+	double weight = exp(log_weights_(c,m));
+	wc.numerators(c) += weight * dd_->ymc_(c,m);
+	wc.denominators(c) += weight;
+	if(wc.denominators(c) == 0)
+	  wc.vals(c) = 0;
+	else
+	  wc.vals(c) = wc.numerators(c) / wc.denominators(c);
+	
+
+	// Total weight of training examples in hypersphere (from *all* datasets, not just this one) which have ymc={1, -1}
+// 	double sum_weights_pos = (wc.denominators(c) + wc.numerators(c)) / 2;
+// 	double sum_weights_neg = (wc.denominators(c) - wc.numerators(c)) / 2;
+
+// 	wc.utility += ((1-exp(-wc.vals(c))) * sum_weights_pos + (1-exp(wc.vals(c))) * sum_weights_neg) / (nClasses_ * objs.size());
+
+	// -- Update the weights for each training example.
+	log_weights_(c,m) += -dd_->ymc_(c,m) * wc.vals(c);
+      }
+
+    }
+  }
+  cout << "Objective after response updating: " << computeObjective() << endl;
+  cout << "Objective after response updating: " << classify(dd) << endl;
+}
+
+void Dorylus::resumeTraining(int num_candidates, int max_secs, int max_wcs, double min_util, void (*debugHook)(weak_classifier)) {
+  assert(dd_);
+
+  // -- Update the weights.
+  vector<object*>& objs = dd_->objs_;
+  for(size_t m=0; m<objs.size(); ++m) {
+    VectorXf response = classify(*objs[m]);
+    for(size_t c=0; c<nClasses_; ++c) {
+      assert(log_weights_(c,m) == 0);
+      log_weights_(c,m) = -response(c) * dd_->ymc_(c,m);
+    }
+  }
+
+  train(num_candidates, max_secs, max_wcs, min_util, debugHook);
+
+}
+
 void Dorylus::train(int num_candidates, int max_secs, int max_wcs, double min_util, void (*debugHook)(weak_classifier)) {
   signal(SIGINT,sigint);
   time_t start, end;
   time(&start);
   float obj, obj2;
-
+  
   obj = computeObjective();
-  cout << "Objective: " << obj << endl;
-  cout << "Objective (from classify()): " << classify(*dd_) << endl;
-    	  
+  obj2 = classify(*dd_);
+  cout << setprecision(20) << "Objective (from log_weights_): " << obj << endl;
+  cout << setprecision(20) << "Objective (from classify())  : " << obj2 << endl;
+  assert(abs(obj - obj2) / min(obj, obj2) < 1e-6);
+  
+
   int wcs=0;
   while(true) {
     learnWC(num_candidates);
@@ -641,9 +720,10 @@ void Dorylus::train(int num_candidates, int max_secs, int max_wcs, double min_ut
       debugHook(*pwcs_.back());
 
     obj2 = computeObjective();
-    cout << "Objective: " << obj2 << endl;
-
     assert(obj2 < obj);
+
+    cout << "Total weak classifiers: " << pwcs_.size() << endl;
+    cout << "Objective (from log_weights_): " << computeObjective() << endl;
 
     if(max_secs != 0 && difftime(end,start) > max_secs) {
       cout << "Ending training because max time has been reached." << endl;
@@ -663,38 +743,85 @@ void Dorylus::train(int num_candidates, int max_secs, int max_wcs, double min_ut
     }
   }
 
+  cout << "Objective (from classify()): " << classify(*dd_) << endl;
   cout << "Done training." << endl;
+
+//   save("tmp.d");
+//   Dorylus d;
+//   d.load("tmp.d");
+//   cout << "Objective (from classify() of saved and loaded): " << d.classify(*dd_) << endl;
+//   cout << "Compare? " << compare(d, true) << endl;
+//   cout << status() << endl;
+//   cout << d.status() << endl;
 }
 
 //! Comprehensive with high probability, but not guaranteed.
 bool Dorylus::compare(const Dorylus& d, bool verbose) {
+  double tol = 1e-6;
+
   if(pwcs_.size() != d.pwcs_.size()) {
     if(verbose)
       cout << "Different number of weak classifiers!" << endl;
     return false;
   }
-    
 
-
+  if(d.nClasses_ != nClasses_) {
+    if(verbose)
+      cout << "Different number of classes!" << endl;
+    return false;
+  }
+ 
+   
   for(size_t i=0; i<pwcs_.size(); ++i) {
 //     cout << i << " theta " << pwcs_[i]->theta << " " <<  d.pwcs_[i]->theta << endl;
 //     cout << i << " utility " << pwcs_[i]->utility << " " <<  d.pwcs_[i]->utility << endl;
 //     cout << i << " id " << pwcs_[i]->id << " " <<  d.pwcs_[i]->id << endl;
 
-    if(abs(pwcs_[i]->theta - d.pwcs_[i]->theta) > 1e-4) {
-      if(verbose)
-	cout << "thetas for wc " << i << ": " << pwcs_[i]->theta << ", " << d.pwcs_[i]->theta << endl;
+    if(abs(pwcs_[i]->theta - d.pwcs_[i]->theta) > tol) {
+      if(verbose) {
+	cout << "thetas for wc " << i << ": " << pwcs_[i]->theta << ", " << d.pwcs_[i]->theta 
+	     << ".  Difference: " << pwcs_[i]->theta - d.pwcs_[i]->theta << endl;
+      }
       return false;
     }
-    if(abs(pwcs_[i]->utility - d.pwcs_[i]->utility) > 1e-4) {
+    if(abs(pwcs_[i]->utility - d.pwcs_[i]->utility) > tol) {
       if(verbose)
 	cout << "utilities for wc " << i << ": " << pwcs_[i]->utility << ", " << d.pwcs_[i]->utility << endl;
       return false;
     }
-    if(abs(pwcs_[i]->id - d.pwcs_[i]->id) > 1e-4) {
+    if(abs(pwcs_[i]->id - d.pwcs_[i]->id) > tol) {
       if(verbose)
 	cout << "ids for wc " << i << ": " << pwcs_[i]->id << ", " << d.pwcs_[i]->id << endl;
       return false;
+    }
+    
+    for(size_t c=0; c<nClasses_; ++c) {
+
+      if(abs(pwcs_[i]->vals[c] - d.pwcs_[i]->vals[c]) > tol) {
+	if(verbose) {
+	  cout << "Vals are different." << endl;
+	  cout << pwcs_[i]->vals << endl;
+	  cout << d.pwcs_[i]->vals << endl;
+	}
+	return false;
+      }
+
+      if(abs(pwcs_[i]->numerators[c] - d.pwcs_[i]->numerators[c]) > tol) {
+	if(verbose) {
+	  cout << "Numerators are different." << endl;
+	  cout << pwcs_[i]->numerators << endl;
+	  cout << d.pwcs_[i]->numerators << endl;
+	}
+	return false;
+      }
+      if(abs(pwcs_[i]->denominators[c] - d.pwcs_[i]->denominators[c]) > tol) {
+	if(verbose) {
+	  cout << pwcs_[i]->denominators << endl;
+	  cout << d.pwcs_[i]->denominators << endl;
+	  cout << "Denominators are different." << endl;
+	}
+	return false;
+      }
     }
   }
 
@@ -804,8 +931,11 @@ void Dorylus::learnWC(int num_candidates) {
   vector< pair<double, int> >* best_distance_idx = NULL;
   int num_tr_ex_in_best = 0;
   for(unsigned int i=0; i<cand.size(); ++i) {
+    weak_classifier& wc = *cand[i];
+
     // -- Get all distances and sort.
-    vector< pair<double, int> >* distance_idx = dd_->computeSortedDistances(cand[i]->descriptor, cand[i]->center);  // (*distance_idx)[j] is distance, idx (i.e. objs_[idx])
+    bool found_better = false;
+    vector< pair<double, int> >* distance_idx = dd_->computeSortedDistances(wc.descriptor, wc.center);  // (*distance_idx)[j] is distance, idx (i.e. objs_[idx])
 
     // -- Setup vars for evaluating weak classifiers efficiently.
     vector<double> weight_sum_pos(nClasses_); // sum of weight inside hypersphere for each class
@@ -820,12 +950,12 @@ void Dorylus::learnWC(int num_candidates) {
       double utility = 0;
       for(size_t c=0; c<nClasses_; ++c) {
 	// -- Update the response.
-	cand[i]->denominators(c) += exp(log_weights_(c,idx));
-	cand[i]->numerators(c) += exp(log_weights_(c,idx)) * dd_->ymc_(c,idx);
-	if(cand[i]->denominators(c) == 0)
-	  cand[i]->vals(c) = 0;
+	wc.denominators(c) += exp(log_weights_(c,idx));
+	wc.numerators(c) += exp(log_weights_(c,idx)) * dd_->ymc_(c,idx);
+	if(wc.denominators(c) == 0)
+	  wc.vals(c) = 0;
 	else
-	  cand[i]->vals(c) = cand[i]->numerators(c) / cand[i]->denominators(c);
+	  wc.vals(c) = wc.numerators(c) / wc.denominators(c);
 
 	// -- Update the sum of weights in the hypersphere.
 	assert(dd_->ymc_(c,idx) == 1 || dd_->ymc_(c,idx) == -1);
@@ -834,16 +964,17 @@ void Dorylus::learnWC(int num_candidates) {
 	else
 	  weight_sum_neg[c] += exp(log_weights_(c,idx));
 	
-	utility += ((1-exp(-cand[i]->vals(c))) * weight_sum_pos[c] + (1-exp(cand[i]->vals(c))) * weight_sum_neg[c]) / (objs.size() * nClasses_);
+	utility += ((1-exp(-wc.vals(c))) * weight_sum_pos[c] + (1-exp(wc.vals(c))) * weight_sum_neg[c]) / (objs.size() * nClasses_);
       }
       // Doing the division here makes 32bit vs 64bit give different answers.
       // utility /= objs.size() * nClasses_;
 
       // -- If this is the best so far, make a copy.
       if(utility > max_utility) {
+	found_better = true;
 	max_utility = utility;
-	cand[i]->theta = (*distance_idx)[m].first; // Set theta to be exactly the distance to this training example.
-	cand[i]->utility = utility;
+	wc.theta = (*distance_idx)[m].first; // Set theta to be exactly the distance to this training example.
+	wc.utility = utility;
 	*best_wc = *cand[i];
 
 	if(!best_distance_idx)
@@ -852,20 +983,24 @@ void Dorylus::learnWC(int num_candidates) {
 	  delete best_distance_idx;
 	  best_distance_idx = distance_idx;
 	}
-	num_tr_ex_in_best = m;
+	num_tr_ex_in_best = m+1;
       }
     }
     cout << "."; cout.flush();
+
+    if(!found_better)
+      delete distance_idx;
   }
   cout << endl;
   
   // -- Add the new weak classifier.
   cout << "Found weak classifier with utility " << max_utility << endl;
   assert(max_utility > 0);
-  best_wc->id = pwcs_.size()+1;
+  best_wc->id = pwcs_.size();
   battery_[best_wc->descriptor].push_back(best_wc);
   pwcs_.push_back(best_wc);
-  
+
+
   // -- Compute the new log weights.
   for(int m=0; m<num_tr_ex_in_best; ++m) {
     int idx = (*best_distance_idx)[m].second;
@@ -873,6 +1008,29 @@ void Dorylus::learnWC(int num_candidates) {
       log_weights_(c, idx) += -dd_->ymc_(c, idx) * best_wc->vals(c);
     }
   }
+
+  // -- Clean up.
+  delete best_distance_idx; 
+  for(size_t i=0; i<cand.size(); ++i) {
+    delete cand[i];
+  }
+
+// MatrixXf log_weights2 = log_weights_;
+//   for(size_t m=0; m<best_distance_idx->size(); ++m) {
+//     if((*best_distance_idx)[m].first > best_wc->theta)
+//       break;
+//     int idx = (*best_distance_idx)[m].second;
+//     for(unsigned int c=0; c<dd_->nClasses_; ++c) {
+//       log_weights2(c, idx) += -dd_->ymc_(c, idx) * best_wc->vals(c);
+//     }
+//   }
+
+// cout << log_weights_ << endl << endl;
+// cout << log_weights2 << endl;
+
+// assert(log_weights_ == log_weights2);
+
+
 
 
   // -- Display stats about the weak classifier.
@@ -892,25 +1050,21 @@ string displayWeakClassifier(const weak_classifier &wc) {
 }
 
 
-float Dorylus::computeObjective() {
-  return log_weights_.cwise().exp().sum() / (log_weights_.rows() * log_weights_.cols());
+double Dorylus::computeObjective() {
+  double obj1 = log_weights_.cwise().exp().sum() / (log_weights_.rows() * log_weights_.cols());
+//   double obj2 = 0;
+//   for(size_t m=0; m<dd_->objs_.size(); ++m) { 
+//     for(size_t c=0; c<nClasses_; ++c) { 
+//       obj2 += exp(log_weights_(c,m));
+//     }
+//   }
+//   obj2 /= dd_->objs_.size() * nClasses_;
+//   cout << obj1 << " " << obj2 << endl;
+//   assert(abs(obj2 - obj1) < 1e-4);
+   
+  return obj1;
 }
 
-
-float Dorylus::computeUtility(const weak_classifier& wc, const VectorXf& mmt) {
-
-  float util=0;
-  int M = dd_->objs_.size();
-  for(int m=0; m<M; m++) {
-    if(mmt(m) == 0)
-      continue;
-    for(unsigned int c=0; c<dd_->nClasses_; c++) {
-      util += exp(log_weights_(c, m)) * (1 - exp(-dd_->ymc_(c,m) * wc.vals(c) * mmt(m)));
-    }
-  }
-
-  return util / (M * dd_->nClasses_); 
-}
 
 VectorXf Dorylus::classify(object &obj) {
   assert(nClasses_ > 0);
@@ -921,8 +1075,6 @@ VectorXf Dorylus::classify(object &obj) {
   map<string, vector<weak_classifier*> >::iterator bit = battery_.begin();
   for(bit = battery_.begin(); bit != battery_.end(); bit++) {
     string descriptor = bit->first;
-    //cout << obj.status(false) << endl;
-    //cout << descriptor << endl;
     if(obj.features.find(descriptor) == obj.features.end()) {
       cout << "Skipping " << descriptor << " descriptor, as the object has no feature of that type." << endl;
       continue;
@@ -944,19 +1096,16 @@ VectorXf Dorylus::classify(object &obj) {
   return response;
 }
 
-float Dorylus::classify(DorylusDataset &dd) {
-
-  float objective=0.0;
+double Dorylus::classify(DorylusDataset &dd) {
+  double objective=0.0;
   VectorXf response = VectorXf::Zero(nClasses_);
-  for(unsigned int m=0; m<dd.objs_.size(); m++) {
-    object *obj = dd.objs_[m];
-    response = classify(*obj);
+  for(size_t m=0; m<dd.objs_.size(); ++m) {
+    response = classify(*dd.objs_[m]);
     assert((int)nClasses_ == response.rows());
-    for(unsigned int c=0; c<nClasses_; c++) {
+    for(size_t c=0; c<nClasses_; ++c) {
       objective += exp(-dd.ymc_(c, m) * response(c));
     }
   }
-
-  objective /= dd.objs_.size() * nClasses_;
+  objective /=  (dd.objs_.size() * nClasses_);
   return objective;
 }
