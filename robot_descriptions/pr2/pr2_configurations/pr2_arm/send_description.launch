@@ -1,5 +1,6 @@
 <launch>
 
-  <param name="robot_description" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/r_arm.xacro.xml'" />
+  <!-- FIXME: whoever includes this file should include the file below directly -->
+  <include file="$(find pr2_defs)/launch/upload_r_arm.launch" />
 
 </launch>
