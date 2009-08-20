@@ -118,7 +118,7 @@ public:
 
 
 
-  HallwayTracker():message_notifier_(NULL)
+  HallwayTracker():filter_chain_("filters", "filters::FilterBase<sensor_msgs::LaserScan>"), message_notifier_(NULL)
   {
     node_ = ros::Node::instance();
     tf_ = new tf::TransformListener(*node_);
@@ -143,7 +143,7 @@ public:
     xml_doc.Parse(filter_xml.c_str());
     TiXmlElement * config = xml_doc.RootElement();
 
-    filter_chain_.configure(1, config);
+    filter_chain_.configure(config);
 
 
     // Visualization:
