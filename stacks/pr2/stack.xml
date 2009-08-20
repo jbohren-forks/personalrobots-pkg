@@ -20,7 +20,7 @@
   <depend stack="estimation"/> <!-- robot_pose_ekf --> 
   <depend stack="ros"/> <!-- std_msgs, roscpp, std_msgs, rxtools, rospy, roslib, std_srvs --> 
   <depend stack="common_msgs"/> <!-- geometry_msgs, diagnostic_msgs --> 
-  <depend stack="hardware_test"/> <!-- runtime_monitor --> 
+  <depend stack="diagnostics"/> <!-- runtime_monitor --> 
   <depend stack="highlevel"/> <!-- door_msgs, plugs_msgs --> 
   <depend stack="pr2_common"/>
 
