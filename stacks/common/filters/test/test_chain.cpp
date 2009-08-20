@@ -69,10 +69,10 @@ static std::string median_filter_5 = "<filter type=\"MedianFilterMultiDouble\" n
 static std::string two_filters = "<filters><filter type=\"MeanFilterMultiDouble\" name=\"mean_test_5\"> <params number_of_observations=\"5\"/></filter><filter type=\"MedianFilterMultiDouble\" name=\"median_test_5\"> <params number_of_observations=\"5\"/></filter></filters";
 
 
-TEST(FilterChain, configuring){
+TEST(MultiChannelFilterChain, configuring){
   double epsilon = 1e-9;
-  filters::FilterChain<double> chain("filters", "filters::MultiChannelFilterBase<double>");
-  //filters::FilterChain<float> chain;
+  filters::MultiChannelFilterChain<double> chain("filters", "filters::MultiChannelFilterBase<double>");
+  //filters::MultiChannelFilterChain<float> chain;
 
   // EXPECT_TRUE(chain.add(mean_filter_5));
  
@@ -98,8 +98,8 @@ TEST(FilterChain, configuring){
   }
 }
 
-TEST(FilterChain, MisconfiguredNumberOfChannels){
-  filters::FilterChain<double> chain("filters", "filters::MultiChannelFilterBase<double>");
+TEST(MultiChannelFilterChain, MisconfiguredNumberOfChannels){
+  filters::MultiChannelFilterChain<double> chain("filters", "filters::MultiChannelFilterBase<double>");
 
 
   //  EXPECT_TRUE(chain.add(mean_filter_5));
@@ -123,10 +123,10 @@ TEST(FilterChain, MisconfiguredNumberOfChannels){
 
 }
 
-TEST(FilterChain, TwoFilters){
+TEST(MultiChannelFilterChain, TwoFilters){
   double epsilon = 1e-9;
-  filters::FilterChain<double> chain("filters", "filters::MultiChannelFilterBase<double>");
-  //filters::FilterChain<float> chain;
+  filters::MultiChannelFilterChain<double> chain("filters", "filters::MultiChannelFilterBase<double>");
+  //filters::MultiChannelFilterChain<float> chain;
 
   // EXPECT_TRUE(chain.add(mean_filter_5));
  
@@ -152,8 +152,8 @@ TEST(FilterChain, TwoFilters){
   }
 }
 
-TEST(FilterChain, OverlappingNames){
-  filters::FilterChain<double> chain("filters", "filters::MultiChannelFilterBase<double>");
+TEST(MultiChannelFilterChain, OverlappingNames){
+  filters::MultiChannelFilterChain<double> chain("filters", "filters::MultiChannelFilterBase<double>");
 
 
   std::string bad_xml = "<filters> <filter type=\"MeanFilter\" name=\"mean_test\"> <params number_of_observations=\"5\"/></filter><filter type=\"MedianFilter\" name=\"mean_test\"> <params number_of_observations=\"5\"/></filter></filters>";
