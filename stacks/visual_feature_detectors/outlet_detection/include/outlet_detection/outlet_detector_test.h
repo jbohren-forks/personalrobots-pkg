@@ -22,6 +22,14 @@ typedef struct
 	int n_matches;
 } outlet_test_elem;
 
+typedef struct
+{
+	int total;
+	int skipped;
+	int correct;
+	int incorrect;
+} TestResult;
+
 
 //Reading test file from the hard drive
 //Returns number of outlets in the test template
@@ -47,7 +55,7 @@ IplImage* getRealOutletImage(const outlet_test_elem& test_elem, CvMat* intrinsic
 void setRealOutlet(outlet_test_elem& test_elem, CvMat* intrinsic_matrix = 0, CvMat* distortion_params = 0);
 
 // Writes the file with test resultes
-int writeTestResults(char* filename, const vector<outlet_test_elem>& test_data);
+int writeTestResults(char* filename, const vector<outlet_test_elem>& test_data, TestResult* result = 0);
 
 int compareOutlets(outlet_test_elem& test_elem, int accuracy = 3);
 int compareAllOutlets(vector<outlet_test_elem>& test_data, int accuracy = 3);
