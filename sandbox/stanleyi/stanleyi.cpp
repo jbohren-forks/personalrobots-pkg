@@ -69,7 +69,7 @@ void findLabelPolys(double stamp, string results_dir, Vector< Vector<Point> >& p
 map<string, int> createLabelMap();
 void showLabelPolys(IplImage* img, const Vector< Vector<Point> >& polys);
 void createLabelMaps(map<string, int>* str2int, vector<string>* int2str);
-void getPolysFromTinyXMLBoundingBox(string filename, Vector< Vector<Point> >& polys, vector<int>& poly_labels);
+bool getPolysFromTinyXMLBoundingBox(string filename, Vector< Vector<Point> >& polys, vector<int>& poly_labels, vector<CvRect>& boxes);
   
 /***************************************************************************
 ***********  Stanleyi
@@ -88,6 +88,9 @@ public:
   void viewLabels(string bagfile, string results_dir);
 
   void makeClassificationVideo(string bagfile, Dorylus& d, int samples_per_img, bool show_results=true);
+  void evaluateClassifier(string labels_dir, string index_filename, string classifier_filename, string featureset, string results_dir);
+  void precomputeFeatures(string labels_dir, string featureset, int samples_per_img);
+			  
 
 private:
   ros::record::Player lp_;
@@ -285,7 +288,8 @@ void Stanleyi::collectObjectsFromImageVectorized(int samples_per_img, vector<obj
 
 
 //! Appends to objects.  If an object is invalid, a NULL pointer is used so that keypoints[i] corresponds to objects[i].
-void Stanleyi::collectObjectsFromImageVectorizedXML(int samples_per_img, const Vector< Vector<Point> >& polys, const vector<int>& poly_labels, vector<object*>* objects, Vector<KeyPoint>* keypoints) {
+void Stanleyi::collectObjectsFromImageVectorizedXML(int samples_per_img, const Vector< Vector<Point> >& polys, 
+						    const vector<int>& poly_labels, vector<object*>* objects, Vector<KeyPoint>* keypoints) {
   assert(polys.size() == poly_labels.size());
 
   vector<vvf> results(descriptor_.size());
@@ -460,6 +464,263 @@ void Stanleyi::drawResponse(IplImage* img, float response, CvPoint pt) {
     cvCircle(img, pt, size, cvScalar(0,0,255), -1);
 }
 
+void Stanleyi::precomputeFeatures(string labels_dir, string featureset, int samples_per_img) {
+  // -- Make features dir.
+  string features_dir = labels_dir + "/features-" + featureset;
+  mkdir(features_dir.c_str(), S_IRWXG | S_IRWXU | S_IRWXO);
+
+
+  string images_dir = labels_dir + "/images/";
+  vector<string> files;
+  getDir(images_dir, files);
+  for(size_t i=0; i<files.size(); ++i) {
+    if(files[i].find(".jpg") == string::npos) 
+      continue;
+
+    cout << "Working on " << files[i] << ", " << i+1 << " out of " << files.size() << endl;
+    string img_name = images_dir + files[i];
+    IplImage* img = cvLoadImage(img_name.c_str());
+    if(!img) {
+      cout << "Failed to load " << img_name << endl;
+      return;
+    }
+    img_ = img;
+
+    // -- Collect the features.
+    Vector< Vector<Point> > polys; // These are empty - all will be label 0.  
+    vector<int> poly_labels;
+    Vector<KeyPoint> keypoints;
+    vector<object*> objs;
+    collectObjectsFromImageVectorizedXML(samples_per_img, polys, poly_labels, &objs, &keypoints);
+
+    // -- Save features.
+    DorylusDataset dd;
+    dd.setObjs(objs);
+    string base = files[i].substr(0, files[i].size()-4);
+    dd.save(features_dir + "/" + base + ".dd");
+
+    // -- Save corresponding keypoints.
+    string kpfilename = features_dir + "/" + base + ".kp";
+    ofstream kpfile(kpfilename.c_str(), ios::binary);
+    if(!kpfile.is_open()) {
+      cout << "Failed to open " << kpfilename << endl;
+      return;
+    }
+    int buf = keypoints.size();
+    kpfile.write((char*)&buf, sizeof(int));
+    for(size_t j=0; j<keypoints.size(); ++j) {
+      buf = keypoints[j].pt.x;
+      kpfile.write((char*)&buf, sizeof(int));
+    }
+    for(size_t j=0; j<keypoints.size(); ++j) {
+      buf = keypoints[j].pt.y;
+      kpfile.write((char*)&buf, sizeof(int));
+    }
+    kpfile.close();
+  }
+}
+
+class PerfStats
+{
+public:
+  int num_classes_;
+  vector<string> class_names_;
+  vector<double> tp_; // For each class. 0 is unlabeled.
+  vector<double> tn_;
+  vector<double> fp_;
+  vector<double> fn_;
+  vector<double> num_test_examples_; 
+  vector<double> total_response_;
+  int total_test_examples_;
+
+  PerfStats(vector<string> class_names) :
+    num_classes_(class_names.size()),
+    class_names_(class_names),
+    tp_(vector<double>(num_classes_)),
+    tn_(vector<double>(num_classes_)),
+    fp_(vector<double>(num_classes_)),
+    fn_(vector<double>(num_classes_)),
+    num_test_examples_(vector<double>(num_classes_)), 
+    total_response_(vector<double>(num_classes_)),
+    total_test_examples_(0)
+  {
+  }
+
+  void incrementStats(int label, VectorXf response);
+  void finalizeStats();
+  string statString();
+};
+
+void PerfStats::incrementStats(int label, VectorXf response) {
+
+  assert(response.rows()+1 == num_classes_);
+  total_test_examples_++;
+  num_test_examples_[label]++;
+  if(label != 0)
+    total_response_[label] += response(label-1);
+
+  for(int c=1; c<num_classes_; ++c) { // "Unknown" is indicated by all responses being negative.
+    if(label == c && response(c-1) > 0)
+      tp_[c]++;
+    if(label != c && response(c-1) > 0)
+      fp_[c]++;
+    if(label != c && response(c-1) <= 0)
+      tn_[c]++;
+    if(label == c && response(c-1) <= 0)
+      fn_[c]++;
+  }
+}
+
+
+string PerfStats::statString() {
+  ostringstream oss(ostringstream::out);
+
+  oss << "Total test examples:\t\t" << total_test_examples_ << endl;
+  for(int c=1; c<num_classes_; ++c) {
+    oss << endl << "Class " << class_names_[c] << endl;
+    oss << "Test examples:\t\t\t" << num_test_examples_[c] << endl;
+    oss << "Average response:\t\t" << total_response_[c] / num_test_examples_[c] << endl;
+    oss << "True positives:\t\t\t" << tp_[c] << endl;
+    oss << "True negatives:\t\t\t" << tn_[c] << endl;
+    oss << "False positives:\t\t" << fp_[c] << endl;
+    oss << "False negatives:\t\t" << fn_[c] << endl;
+    oss << "Precision (tp/(tp+fp)):\t\t" << tp_[c] / (tp_[c] + fp_[c]) << endl;
+    oss << "Recall (tp/(tp+fn)):\t\t" << tp_[c] / (tp_[c] + fn_[c]) << endl;
+  }
+  return oss.str();
+}
+
+
+//! Runs the classifier on labeled images and saves quantitative results.
+void Stanleyi::evaluateClassifier(string labels_dir, string index_filename, string classifier_filename, string featureset, 
+				  string results_dir) {
+
+  Dorylus d;
+  d.load(classifier_filename);
+
+  ifstream index(index_filename.c_str());
+  if(!index.is_open()) {
+    cout << "Could not open file " << index_filename << endl;
+    return;
+  }
+
+  string file;
+  vector<string> class_names;
+  createLabelMaps(NULL, &class_names);
+  PerfStats box_stats(class_names);
+  PerfStats point_stats(class_names);
+  while(true) {
+
+    getline(index,file);
+    if(file.size() == 0)
+      break;
+
+    assert(file.find(".xml") != string::npos); 
+    string base = file.substr(0, file.size()-4);
+    cout << "Working on " << base << endl;
+
+    // -- Load the image for marking.
+    string img_name = labels_dir + "/images/" + base + ".jpg";
+    IplImage* img = cvLoadImage(img_name.c_str());
+    if(!img) {
+      cout << "Failed to load " << img_name << endl;
+      return;
+    }
+
+    // -- Get the precomputed dataset.
+    DorylusDataset dd;
+    string dd_filename = labels_dir + "/features-" + featureset + "/" + base + ".dd";
+    if(!dd.load(dd_filename)) {
+      cout << "Failed to load dorylus dataset " << dd_filename << endl;
+      return;
+    }
+
+    // -- Get the x,y points.
+    string kp_filename = labels_dir + "/features-" + featureset + "/" + base + ".kp";
+    ifstream kpfile(kp_filename.c_str(), ios::in|ios::binary);
+    int num_kp = 0;
+    kpfile.read((char*)&num_kp, sizeof(int));
+    int xs[num_kp];
+    int ys[num_kp];
+    kpfile.read((char*)xs, sizeof(int)*num_kp);
+    kpfile.read((char*)ys, sizeof(int)*num_kp);
+    assert(num_kp == (int)dd.objs_.size());
+
+    // -- Get the labels.
+    string annotation_filename = labels_dir + "/annotations/" + base + ".xml";
+    Vector< Vector<Point> > polys;
+    vector<int> poly_labels;
+    vector<CvRect> boxes;
+    if(!getPolysFromTinyXMLBoundingBox(annotation_filename, polys, poly_labels, boxes)) {
+      cout << "Failed to load " << annotation_filename << endl;
+      return;
+    }
+    
+    // -- Make predictions.
+    vector<CvScalar> colors;
+    colors.push_back(cvScalar(255,0,0));
+    colors.push_back(cvScalar(0,255,0));
+    colors.push_back(cvScalar(0,0,255));
+    colors.push_back(cvScalar(0,0,0));
+    for(int i=0; i<num_kp; ++i) {
+      VectorXf response = d.classify(*dd.objs_[i]);
+
+      // -- Draw on the vis.
+      float max = 0;
+      int size = 2;
+      int idx = response.rows(); //Unlabeled.
+      assert(response.rows() == 3);
+      for(int j=0; j<response.rows(); ++j) {
+	if(response(j) > max) {
+	  max = response(j);
+	  size = ceil(log(ceil(max)));
+	  idx = j;
+	}
+      }
+      cvCircle(img, cvPoint(xs[i], ys[i]), size, colors[idx], -1);
+
+      // -- Find the label of this point using the polys.  (0 for bg).
+      int label=0;
+      for(size_t j=0; j<polys.size(); ++j) {
+	if(pointPolygonTest(polys[j], Point2f(xs[i], ys[i]), 0) >= 0) {
+	  label = poly_labels[j];
+	  break;
+	}
+      }
+
+      // -- Increment stats.
+      // Why are the response values flipped? 
+      VectorXf response2 = response;
+      response2(0) = response(2); 
+      response2(2) = response(0);
+      point_stats.incrementStats(label, response2);
+      
+
+      // -- Find the label of this point using the boxes.  (0 for bg).
+//       int label=0;
+//       for(size_t j=0; j<boxes.size(); ++j) {
+// 	if(xs[i] >= boxes[j].x && xs[i] <= boxes[j].x + boxes[j].width &&
+// 	   ys[i] >= boxes[j].y && ys[i] <= boxes[j].y + boxes[j].height) {
+// 	  label = poly_labels[j];
+// 	  break;
+// 	}
+//       }
+
+//       // -- Increment stats.
+//       box_stats.incrementStats(label, response);	
+    }
+
+    // -- Save image to dir.
+    mkdir(results_dir.c_str(), S_IRWXG | S_IRWXU | S_IRWXO);
+    mkdir((results_dir + "/images/").c_str(), S_IRWXG | S_IRWXU | S_IRWXO);
+    cvSaveImage((results_dir + "/images/" + base + ".jpg").c_str(), img);
+  }
+  index.close();
+
+  // -- Save text results file.
+  ofstream results_file((results_dir + "/results.txt").c_str());
+  results_file << point_stats.statString() << endl;
+}
 
 void Stanleyi::makeClassificationVideo(string bagfile, Dorylus& d, int samples_per_img, bool show_results) {
 
@@ -797,6 +1058,7 @@ int main(int argc, char** argv)
       dd->save(argv[4]);
       delete dd;
     }
+
   
   else if(argc > 2 && !strcmp(argv[1], "--status")) {
     cout << "Examining " << argv[2] << endl;
@@ -870,7 +1132,16 @@ int main(int argc, char** argv)
     cout << "Doing sanity check on " << argv[2] << " with labels in " << argv[3] << endl;
     s.sanityCheck(argv[2], argv[3]);
   }
+  else if(argc == 4 && !strcmp(argv[1], "--precomputeFeatures")) {
+    cout << "Precomputing features for images in labels dir " << argv[2] << ", using featureset name " << argv[3] << endl;
+    s.precomputeFeatures(argv[2], argv[3], samples_per_img);
+  }
 
+  else if(argc == 7 && !strcmp(argv[1], "--evaluateClassifier")) {
+    cout << "Evaluating classifier " << argv[4] << ", using featureset name " << argv[5] << " on labels " << argv[2] 
+	 << " with index " << argv[3] << ". Putting results in " << argv[6] << endl;
+    s.evaluateClassifier(argv[2], argv[3], argv[4], argv[5], argv[6]);
+  }
 
   else {
     cout << "usage: " << endl;
@@ -883,8 +1154,22 @@ int main(int argc, char** argv)
     cout << argv[0] << " --status CLASSIFIER" << endl;
     cout << argv[0] << " --cf BAGFILE LABELS" << endl;
     cout << argv[0] << " --sanityCheck BAGFILE LABELS" << endl;
-    cout << "  where LABELS might take the form of `rospack find cv_mech_turk`/results/single-object-s " << endl;
-    cout << "Environment variable options: " << endl;
+
+    cout << endl;
+    cout << argv[0] << " --precomputeFeatures LABELS FEATURESET_NAME" << endl;
+    cout << " Environment variable options:" << endl;
+    cout << "   NSAMPLES=x is the number of samples per image to use." << endl;
+    cout << endl;
+
+
+    cout << endl;
+    cout << argv[0] << " --evaluateClassifier LABELS INDEX CLASSIFIER FEATURESET_NAME RESULTS_DIR" << endl;
+    cout << " INDEX is a file that contains a list of annotation file names in LABELS/annotations/ (without path) to operate on." << endl;
+    cout << " FEATURESET_NAME identifies which precomputed features to use." << endl;
+    cout << endl;
+
+
+    cout << "  where LABELS has the images/ and annotations/ dirs in it." << endl;
   }
   
 }
@@ -892,20 +1177,19 @@ int main(int argc, char** argv)
 vector<ImageDescriptor*> setupImageDescriptors() {
   vector<ImageDescriptor*> d;
 
-
   d.push_back(new HogWrapper(Size(16,16), Size(16,16), Size(8,8), Size(8,8), 7, 1, -1, 0, 0.2, true));
   d.push_back(new HogWrapper(Size(32,32), Size(16,16), Size(8,8), Size(8,8), 7, 1, -1, 0, 0.2, true));
   d.push_back(new HogWrapper(Size(64,64), Size(32,32), Size(16,16), Size(16,16), 7, 1, -1, 0, 0.2, true));
   d.push_back(new HogWrapper(Size(128,128), Size(64,64), Size(32,32), Size(32,32), 7, 1, -1, 0, 0.2, true));
 
-  SuperpixelColorHistogram* sch1 = new SuperpixelColorHistogram(20, 0.5, 10);
-  SuperpixelColorHistogram* sch2 = new SuperpixelColorHistogram(5, 0.5, 10, NULL, sch1);
-  SuperpixelColorHistogram* sch3 = new SuperpixelColorHistogram(5, 1, 10, NULL, sch1);
-  SuperpixelColorHistogram* sch4 = new SuperpixelColorHistogram(5, .25, 10, NULL, sch1);
-//  d.push_back(sch1);
-  //d.push_back(sch2);
-  //d.push_back(sch3);
-  //d.push_back(sch4);
+//   SuperpixelColorHistogram* sch1 = new SuperpixelColorHistogram(20, 0.5, 10);
+//   SuperpixelColorHistogram* sch2 = new SuperpixelColorHistogram(5, 0.5, 10, NULL, sch1);
+//   SuperpixelColorHistogram* sch3 = new SuperpixelColorHistogram(5, 1, 10, NULL, sch1);
+//   SuperpixelColorHistogram* sch4 = new SuperpixelColorHistogram(5, .25, 10, NULL, sch1);
+//   d.push_back(sch1);
+//   d.push_back(sch2);
+//   d.push_back(sch3);
+//   d.push_back(sch4);
  
   d.push_back(new SurfWrapper(true, 150));
   d.push_back(new SurfWrapper(true, 100));
@@ -1037,10 +1321,11 @@ void getContoursFromTinyXML(string filename, Vector< Vector<Point> >& contours, 
 
 }
 
-void getPolysFromTinyXMLBoundingBox(string filename, Vector< Vector<Point> >& polys, vector<int>& poly_labels) {
+bool getPolysFromTinyXMLBoundingBox(string filename, Vector< Vector<Point> >& polys, vector<int>& poly_labels, vector<CvRect>& boxes) {
 
   assert(poly_labels.empty());
   assert(polys.empty());
+  assert(boxes.empty());
 
   map<string, int> label_str2int;
   vector<string> label_int2str;
@@ -1052,7 +1337,7 @@ void getPolysFromTinyXMLBoundingBox(string filename, Vector< Vector<Point> >& po
   bool loadOkay = XMLdoc.LoadFile();
   if (!loadOkay) {
     cout << "Could not load " << filename << endl;
-    return;
+    return false;
   } 
 
   TiXmlElement *annotations, *annotation, *polygon, *results, *pt, *bbox, *ann2;
@@ -1063,6 +1348,7 @@ void getPolysFromTinyXMLBoundingBox(string filename, Vector< Vector<Point> >& po
 
   // -- For each bbox, get the label and the poly.
   while(bbox) {
+    boxes.push_back(cvRect(atoi(bbox->Attribute("left")), atoi(bbox->Attribute("top")), atoi(bbox->Attribute("width")), atoi(bbox->Attribute("height"))));
     ann2 = bbox->FirstChildElement("annotation");
     polygon = ann2->FirstChildElement("polygon");
     poly_labels.push_back(label_str2int[polygon->Attribute("name")]);
@@ -1077,6 +1363,7 @@ void getPolysFromTinyXMLBoundingBox(string filename, Vector< Vector<Point> >& po
     polys.push_back(poly);
     bbox = bbox->NextSiblingElement("bbox");
   }
+  return true;
 }
 
 void findLabelPolys(double stamp, string results_dir, Vector< Vector<Point> >& polys, vector<int>& poly_labels) {
