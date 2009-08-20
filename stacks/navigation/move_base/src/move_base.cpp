@@ -441,8 +441,9 @@ namespace move_base {
         as_.setPreempted();
       }
 
+      r.sleep();
       //make sure to sleep for the remainder of our cycle time
-      if(!r.sleep() && state_ == CONTROLLING)
+      if(r.cycleTime() > ros::Duration(1 / controller_frequency_) && state_ == CONTROLLING)
         ROS_WARN("Control loop missed its desired rate of %.4fHz... the loop actually took %.4f seconds", controller_frequency_, r.cycleTime().toSec());
     }
   }
