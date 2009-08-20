@@ -38,7 +38,6 @@
 #include "pr2_mechanism_controllers/caster_controller.h"
 #include "realtime_tools/realtime_publisher.h"
 #include "std_msgs/Empty.h"
-#include <robot_mechanism_controllers/CalibrateJoint.h>
 
 namespace controller {
 

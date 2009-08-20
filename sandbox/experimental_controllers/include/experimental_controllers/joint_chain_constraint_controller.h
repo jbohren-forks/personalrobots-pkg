@@ -60,8 +60,8 @@
 #include "ros/node.h"
 #include "control_toolbox/pid.h"
 #include "geometry_msgs/Wrench.h"
-#include "robot_mechanism_controllers/ChangeConstraints.h"
-#include "robot_mechanism_controllers/JointConstraint.h"
+#include "experimental_controllers/ChangeConstraints.h"
+#include "experimental_controllers/JointConstraint.h"
 #include "controller_interface/controller.h"
 #include "mechanism_model/chain.h"
 
@@ -119,8 +119,8 @@ private:
   void computeConstraintTorques();
   void computeConstraintJacobian();
   void computeConstraintNullSpace();
-  bool addConstraint(robot_mechanism_controllers::ChangeConstraints::Request &req,
-                     robot_mechanism_controllers::ChangeConstraints::Response &resp);
+  bool addConstraint(experimental_controllers::ChangeConstraints::Request &req,
+                     experimental_controllers::ChangeConstraints::Response &resp);
 
   ros::Node* node_;
   Eigen::Matrix<float,6,1> task_wrench_;

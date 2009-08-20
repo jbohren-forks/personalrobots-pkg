@@ -63,14 +63,10 @@
 #include <controller_interface/controller.h>
 #include <control_toolbox/pid.h>
 #include "control_toolbox/pid_gains_setter.h"
-
-// Services
-#include <std_msgs/Float64.h>
-
-//Realtime publisher
-#include <robot_mechanism_controllers/JointControllerState.h>
-#include <robot_mechanism_controllers/JointTuningMsg.h>
 #include <realtime_tools/realtime_publisher.h>
+
+#include <std_msgs/Float64.h>
+#include <robot_mechanism_controllers/JointControllerState.h>
 
 namespace controller
 {

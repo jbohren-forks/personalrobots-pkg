@@ -38,7 +38,7 @@
 #include <controller_interface/controller.h>
 
 #include <robot_mechanism_controllers/JointControllerState.h>
-#include <robot_mechanism_controllers/JointTuningMsg.h>
+#include <experimental_controllers/JointTuningMsg.h>
 
 namespace controller
 {

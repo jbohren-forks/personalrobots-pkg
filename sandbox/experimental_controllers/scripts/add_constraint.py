@@ -1,11 +1,11 @@
 #! /usr/bin/env python
 
 import roslib
-roslib.load_manifest('robot_mechanism_controllers')
+roslib.load_manifest('experimental_controllers')
 
 import rospy, sys
-from robot_mechanism_controllers.srv import *
-from robot_mechanism_controllers.msg import *
+from experimental_controllers.srv import *
+from experimental_controllers.msg import *
 
 
 def print_usage(exit_code = 0):
@@ -16,11 +16,11 @@ def print_usage(exit_code = 0):
 
 '''
     sys.exit(exit_code)
-    
+
 if __name__ == '__main__':
     if len(sys.argv) == 1:
         print_usage()
-    else: # Call the service 
+    else: # Call the service
       rospy.wait_for_service('/arm_constraint/add_constraints')
       s = rospy.ServiceProxy('/arm_constraint/add_constraints', ChangeConstraints )
       # params:  constraint_id, joint, start force, start nulspace, max force, p, i, d, i_clamp, not_used_param

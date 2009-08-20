@@ -50,8 +50,8 @@
 #include <control_toolbox/pid.h>
 
 // Services
-#include <robot_mechanism_controllers/SetCommand.h>
-#include <robot_mechanism_controllers/GetActual.h>
+#include <experimental_controllers/SetCommand.h>
+#include <experimental_controllers/GetActual.h>
 
 namespace controller
 {
@@ -182,11 +182,11 @@ public:
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
   // Services
-  bool setCommand(robot_mechanism_controllers::SetCommand::Request &req,
-                  robot_mechanism_controllers::SetCommand::Response &resp);
+  bool setCommand(experimental_controllers::SetCommand::Request &req,
+                  experimental_controllers::SetCommand::Response &resp);
 
-  bool getActual(robot_mechanism_controllers::GetActual::Request &req,
-                  robot_mechanism_controllers::GetActual::Response &resp);
+  bool getActual(experimental_controllers::GetActual::Request &req,
+                  experimental_controllers::GetActual::Response &resp);
 
 private:
   JointAutotuner *c_;

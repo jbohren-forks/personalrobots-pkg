@@ -48,7 +48,7 @@
 
 // Srvs
 #include <deprecated_srvs/MoveToPose.h>
-#include "robot_mechanism_controllers/SetPoseStamped.h"
+#include "experimental_controllers/SetPoseStamped.h"
 //TF
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
