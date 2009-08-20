@@ -995,7 +995,11 @@ bool SBPLArmPlannerNode::plan(motion_planning_msgs::KinematicPath &arm_path)
 
 		ROS_DEBUG("original path done\n");
 
-		if(!interpolatePath(path_in, path_out, 0.035))
+		pm_->smoothPath(path_in, joint_names_);
+
+		
+		
+		if(!interpolatePath(path_in, path_out, 0.2))
 			ROS_WARN("Couldn't add waypoints to path");
 
 		ROS_DEBUG("a path was returned with %i waypoints",path_out.size());
@@ -1023,6 +1027,7 @@ bool SBPLArmPlannerNode::plan(motion_planning_msgs::KinematicPath &arm_path)
 		
 		/** testing jacobian calculation code */
 // 		finishPath(arm_path, goal_pose_constraint_[0]);
+
 
     if(bCartesianPlanner_)
     {
@@ -1275,7 +1280,8 @@ void SBPLArmPlannerNode::initializePM()
 /** \brief Update the planning monitor with the current goal request message */
 void SBPLArmPlannerNode::updatePMWrapper(motion_planning_msgs::GetMotionPlan::Request &req)
 {
-  pm_->updateRobotState(req.start_state);
+  pm_->updatePM(req);
+// 	pm_->updateRobotState(req.start_state);
 }
 
 void SBPLArmPlannerNode::finishPath(motion_planning_msgs::KinematicPath &arm_path, motion_planning_msgs::PoseConstraint &goal)
