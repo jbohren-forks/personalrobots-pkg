@@ -1,16 +1,3 @@
-Index: include/ode/common.h
-===================================================================
---- include/ode/common.h	(revision 1689)
-+++ include/ode/common.h	(working copy)
-@@ -31,6 +31,8 @@
- #endif
- 
- 
-+#define dSINGLE
-+
- /* configuration stuff */
- 
- /* constants */
 Index: ode/src/quickstep.cpp
 ===================================================================
 --- ode/src/quickstep.cpp	(revision 1689)

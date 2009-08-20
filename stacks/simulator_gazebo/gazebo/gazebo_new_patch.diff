@@ -11,6 +11,26 @@ Index: cmake/SearchForStuff.cmake
    IF (NOT PLAYER_FOUND)
      SET (INCLUDE_PLAYER OFF CACHE BOOL "Build gazebo plugin for player" FORCE)
      MESSAGE (STATUS "Warning: Player not found. The gazebo plugin for player will not be built. See the following website: http://playerstage.sourceforge.net")
+Index: cmake/FindOde.cmake
+===================================================================
+--- cmake/FindOde.cmake	(revision 8208)
++++ cmake/FindOde.cmake	(working copy)
+@@ -36,6 +36,15 @@
+ IF (NOT ODE_FOUND)
+   MESSAGE (SEND_ERROR "\nError: ODE and development files not found. See the following website: http://www.ode.org")
+ ELSE (NOT ODE_FOUND)
++  #SET (CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} ${ODE_CFLAGS_OTHER}" CACHE INTERNAL "added dSINGLE" FORCE)
++  #SET (CMAKE_C_FLAGS_DEBUG   "${CMAKE_C_FLAGS_DEBUG}   ${ODE_CFLAGS_OTHER}" CACHE INTERNAL "added dSINGLE" FORCE)
++  #SET (CMAKE_C_FLAGS_PROFILE "${CMAKE_C_FLAGS_PROFILE} ${ODE_CFLAGS_OTHER}" CACHE INTERNAL "added dSINGLE" FORCE)
++  #MESSAGE (STATUS "\n\ndebug\n" ${CMAKE_C_FLAGS_DEBUG} "\n\n")
++
++  APPEND_TO_CACHED_LIST(gazeboserver_cflags
++                        ${gazeboserver_cflags_desc}
++                        ${ODE_CFLAGS_OTHER})
++
+   APPEND_TO_CACHED_LIST(gazeboserver_include_dirs 
+                         ${gazeboserver_include_dirs_desc} 
+                         ${ODE_INCLUDE_DIRS})
 Index: libgazebo/Iface.cc
 ===================================================================
 --- libgazebo/Iface.cc	(revision 8208)
@@ -41,6 +61,36 @@ Index: server/Simulator.cc
  
      if (this->timeout > 0 && this->GetRealTime() > this->timeout)
      {
+Index: server/rendering/CMakeLists.txt
+===================================================================
+--- server/rendering/CMakeLists.txt	(revision 8208)
++++ server/rendering/CMakeLists.txt	(working copy)
+@@ -1,5 +1,3 @@
+-include (${gazebo_cmake_dir}/GazeboUtils.cmake)
+-
+ SET (sources OgreMovableText.cc
+              OgreCreator.cc
+              OgreAdaptor.cc
+Index: server/gui/CMakeLists.txt
+===================================================================
+--- server/gui/CMakeLists.txt	(revision 8208)
++++ server/gui/CMakeLists.txt	(working copy)
+@@ -1,3 +1,5 @@
++INCLUDE (${gazebo_cmake_dir}/GazeboUtils.cmake)
++
+ SET (sources Gui.cc
+              GLWindow.cc
+              MainMenu.cc
+@@ -16,6 +18,9 @@
+              GLFrame.hh
+ )
+ 
++LIST_TO_STRING(GAZEBO_CFLAGS "${gazeboserver_cflags}")
++SET_SOURCE_FILES_PROPERTIES(${sources} PROPERTIES COMPILE_FLAGS "${GAZEBO_CFLAGS} ${CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE}}")
++
+ #ADD_LIBRARY(gazebo_gui STATIC ${sources})
+ ADD_LIBRARY(gazebo_gui-shared SHARED ${sources})
+ 
 Index: server/World.hh
 ===================================================================
 --- server/World.hh	(revision 8208)
