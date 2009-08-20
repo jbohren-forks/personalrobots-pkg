@@ -78,7 +78,7 @@ void WrenchKDLToMsg(const KDL::Wrench &k, geometry_msgs::Wrench &m)
 }
 
 CartesianHybridController::CartesianHybridController()
-  : robot_(NULL), last_time_(0), use_filter_(false)
+  : robot_(NULL), last_time_(0), use_filter_(false), twist_filter_("filter", "filters::MultiChannelFilterBase<double>")
 {
 }
 
