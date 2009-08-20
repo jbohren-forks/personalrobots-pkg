@@ -975,8 +975,6 @@ bool SBPLArmPlannerNode::plan(motion_planning_msgs::KinematicPath &arm_path)
   {
 		planner_->print_searchpath(fPaths);
 
-		sleep(2);
-
 		ROS_INFO("*** a path was found ***");
 
 		ROS_DEBUG("extending path... from %i waypoints", solution_state_ids_v.size());
@@ -995,14 +993,16 @@ bool SBPLArmPlannerNode::plan(motion_planning_msgs::KinematicPath &arm_path)
 
 		ROS_DEBUG("original path done\n");
 
-		pm_->smoothPath(path_in, joint_names_);
 
-		
-		
-		if(!interpolatePath(path_in, path_out, 0.2))
-			ROS_WARN("Couldn't add waypoints to path");
+		ROS_INFO("calling smooth path");
+		path_out = pm_->smoothPath(path_in, joint_names_);
+		ROS_INFO("smoothpath completed with a path of length %i", path_out.size());
 
-		ROS_DEBUG("a path was returned with %i waypoints",path_out.size());
+
+//		if(!interpolatePath(path_in, path_out, 0.2))
+//			ROS_WARN("Couldn't add waypoints to path");
+//		ROS_DEBUG("a path was returned with %i waypoints",path_out.size());
+
 		arm_path.set_states_size(path_out.size());
 		for(i = 0; i < path_out.size(); i++)
 			arm_path.states[i].set_vals_size(num_joints_);
@@ -1024,7 +1024,7 @@ bool SBPLArmPlannerNode::plan(motion_planning_msgs::KinematicPath &arm_path)
       for (unsigned int p = 0; p < (unsigned int) num_joints_; ++p)
 				arm_path.states[i].vals[p] = angles_r[p];
     }*/
-		
+
 		/** testing jacobian calculation code */
 // 		finishPath(arm_path, goal_pose_constraint_[0]);
 
