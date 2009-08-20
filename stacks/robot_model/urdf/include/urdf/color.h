@@ -34,8 +34,8 @@
 
 /* Author: Josh Faust */
 
-#ifndef RobotModel_PARSER_COLOR_H
-#define RobotModel_PARSER_COLOR_H
+#ifndef URDF_COLOR_H
+#define URDF_COLOR_H
 
 #include <string>
 #include <vector>
@@ -43,7 +43,7 @@
 #include <ros/ros.h>
 #include <boost/algorithm/string.hpp>
 
-namespace robot_model
+namespace urdf
 {
 
 class Color

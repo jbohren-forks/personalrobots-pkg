@@ -34,10 +34,10 @@
 
 /* Author: Wim Meeussen */
 
-#include "robot_model/robot_model.h"
+#include "urdf/model.h"
 #include <iostream>
 
-using namespace robot_model;
+using namespace urdf;
 
 void printTree(boost::shared_ptr<const Link> link,int level = 0)
 {
@@ -78,16 +78,16 @@ int main(int argc, char** argv)
     return -1;
   }
 
-  RobotModel robot;
+  Model robot;
   if (!robot.initXml(robot_xml)){
-    std::cerr << "ERROR: RobotModel Parsing the xml failed" << std::endl;
+    std::cerr << "ERROR: Model Parsing the xml failed" << std::endl;
     return -1;
   }
 
   std::cout << "robot name is: " << robot.getName() << std::endl;
 
   // get info from parser
-  std::cout << "---------- Finished Loading from RobotModel XML, Now Checking RobotModel structure ------------" << std::endl;
+  std::cout << "---------- Finished Loading from Model XML, Now Checking Model structure ------------" << std::endl;
   // get root link
   boost::shared_ptr<const Link> root_link=robot.getRoot();
   if (!root_link) return -1;

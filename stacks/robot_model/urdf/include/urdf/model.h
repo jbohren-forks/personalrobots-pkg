@@ -41,16 +41,16 @@
 #include <map>
 #include <tinyxml/tinyxml.h>
 #include <boost/function.hpp>
-#include "robot_model/link.h"
+#include "link.h"
 
 
-namespace robot_model{
+namespace urdf{
 
 
-class RobotModel
+class Model
 {
 public:
-  RobotModel();
+  Model();
 
   bool initXml(TiXmlElement *xml);
   bool initXml(TiXmlDocument *xml);
@@ -97,7 +97,7 @@ private:
   std::map<std::string, boost::shared_ptr<Joint> > joints_;
   std::map<std::string, boost::shared_ptr<Material> > materials_;
 
-  /// RobotModel is restricted to a tree for now, which means there exists one root link
+  /// Model is restricted to a tree for now, which means there exists one root link
   ///  typically, root link is the world(inertial).  Where world is a special link
   /// or is the root_link_ the link attached to the world by PLANAR/FLOATING joint?
   ///  hmm...

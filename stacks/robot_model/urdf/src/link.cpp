@@ -35,10 +35,10 @@
 /* Author: Wim Meeussen */
 
 
-#include "robot_model/link.h"
+#include "urdf/link.h"
 #include <ros/ros.h>
 
-namespace robot_model{
+namespace urdf{
 
 Geometry *parseGeometry(TiXmlElement *g)
 {

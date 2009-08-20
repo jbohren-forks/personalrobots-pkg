@@ -34,17 +34,17 @@
 
 /* Author: Wim Meeussen */
 
-#ifndef RobotModel_PARSER_JOINT_H
-#define RobotModel_PARSER_JOINT_H
+#ifndef URDF_JOINT_H
+#define URDF_JOINT_H
 
 #include <string>
 #include <vector>
 #include <tinyxml/tinyxml.h>
 #include <boost/shared_ptr.hpp>
 
-#include <robot_model/pose.h>
+#include "pose.h"
 
-namespace robot_model{
+namespace urdf{
 
 class Link;
 

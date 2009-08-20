@@ -36,9 +36,9 @@
 
 #include <string>
 #include <gtest/gtest.h>
-#include "robot_model/robot_model.h"
+#include "urdf/model.h"
 
-using namespace robot_model;
+using namespace urdf;
 
 int g_argc;
 char** g_argv;
@@ -46,7 +46,7 @@ char** g_argv;
 class TestParser : public testing::Test
 {
 public:
-  RobotModel robot;
+  Model robot;
 
 protected:
   /// constructor

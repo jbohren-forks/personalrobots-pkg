@@ -34,10 +34,10 @@
 
 /* Author: John Hsu */
 
-#include <robot_model/joint.h>
+#include <urdf/joint.h>
 #include <ros/ros.h>
 
-namespace robot_model{
+namespace urdf{
 
 bool JointDynamics::initXml(TiXmlElement* config)
 {

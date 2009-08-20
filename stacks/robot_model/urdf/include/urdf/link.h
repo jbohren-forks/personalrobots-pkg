@@ -34,18 +34,18 @@
 
 /* Author: Wim Meeussen */
 
-#ifndef RobotModel_PARSER_LINK_H
-#define RobotModel_PARSER_LINK_H
+#ifndef URDF_LINK_H
+#define URDF_LINK_H
 
 #include <string>
 #include <vector>
 #include <tinyxml/tinyxml.h>
 #include <boost/shared_ptr.hpp>
 
-#include <robot_model/joint.h>
-#include <robot_model/color.h>
+#include "joint.h"
+#include "color.h"
 
-namespace robot_model{
+namespace urdf{
 
 class Geometry
 {

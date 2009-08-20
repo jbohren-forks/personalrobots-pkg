@@ -37,17 +37,17 @@
 #include <boost/algorithm/string.hpp>
 #include <ros/ros.h>
 #include <vector>
-#include "robot_model/robot_model.h"
+#include "urdf/model.h"
 
-namespace robot_model{
+namespace urdf{
 
 
-RobotModel::RobotModel()
+Model::Model()
 {
   this->clear();
 }
 
-void RobotModel::clear()
+void Model::clear()
 {
   name_.clear();
   this->links_.clear();
@@ -57,7 +57,7 @@ void RobotModel::clear()
 }
 
 
-bool RobotModel::initFile(const std::string& filename)
+bool Model::initFile(const std::string& filename)
 {
   TiXmlDocument xml_doc;
   xml_doc.LoadFile(filename);
@@ -66,7 +66,7 @@ bool RobotModel::initFile(const std::string& filename)
 }
 
 
-bool RobotModel::initString(const std::string& xml_string)
+bool Model::initString(const std::string& xml_string)
 {
   TiXmlDocument xml_doc;
   xml_doc.Parse(xml_string.c_str());
@@ -75,7 +75,7 @@ bool RobotModel::initString(const std::string& xml_string)
 }
 
 
-bool RobotModel::initXml(TiXmlDocument *xml_doc)
+bool Model::initXml(TiXmlDocument *xml_doc)
 {
   if (!xml_doc)
   {
@@ -92,7 +92,7 @@ bool RobotModel::initXml(TiXmlDocument *xml_doc)
   return initXml(robot_xml);
 }
 
-bool RobotModel::initXml(TiXmlElement *robot_xml)
+bool Model::initXml(TiXmlElement *robot_xml)
 {
   this->clear();
 
@@ -231,7 +231,7 @@ bool RobotModel::initXml(TiXmlElement *robot_xml)
   return true;
 }
 
-bool RobotModel::initTree(std::map<std::string, std::string> &parent_link_tree)
+bool Model::initTree(std::map<std::string, std::string> &parent_link_tree)
 {
   // loop through all joints, for every link, assign children links and children joints
   for (std::map<std::string,boost::shared_ptr<Joint> >::iterator joint = this->joints_.begin();joint != this->joints_.end(); joint++)
@@ -319,7 +319,7 @@ bool RobotModel::initTree(std::map<std::string, std::string> &parent_link_tree)
 
 
 
-bool RobotModel::initRoot(std::map<std::string, std::string> &parent_link_tree)
+bool Model::initRoot(std::map<std::string, std::string> &parent_link_tree)
 {
 
   this->root_link_.reset();
@@ -351,7 +351,7 @@ bool RobotModel::initRoot(std::map<std::string, std::string> &parent_link_tree)
   return true;
 }
 
-boost::shared_ptr<Material> RobotModel::getMaterial(const std::string& name) const
+boost::shared_ptr<Material> Model::getMaterial(const std::string& name) const
 {
   boost::shared_ptr<Material> ptr;
   if (this->materials_.find(name) == this->materials_.end())
@@ -361,7 +361,7 @@ boost::shared_ptr<Material> RobotModel::getMaterial(const std::string& name) con
   return ptr;
 }
 
-boost::shared_ptr<const Link> RobotModel::getLink(const std::string& name) const
+boost::shared_ptr<const Link> Model::getLink(const std::string& name) const
 {
   boost::shared_ptr<const Link> ptr;
   if (this->links_.find(name) == this->links_.end())
@@ -371,7 +371,7 @@ boost::shared_ptr<const Link> RobotModel::getLink(const std::string& name) const
   return ptr;
 }
 
-void RobotModel::getLinks(std::vector<boost::shared_ptr<Link> >& links) const
+void Model::getLinks(std::vector<boost::shared_ptr<Link> >& links) const
 {
   for (std::map<std::string,boost::shared_ptr<Link> >::const_iterator link = this->links_.begin();link != this->links_.end(); link++)
   {
@@ -379,7 +379,7 @@ void RobotModel::getLinks(std::vector<boost::shared_ptr<Link> >& links) const
   }
 }
 
-void RobotModel::getLink(const std::string& name,boost::shared_ptr<Link> &link) const
+void Model::getLink(const std::string& name,boost::shared_ptr<Link> &link) const
 {
   boost::shared_ptr<Link> ptr;
   if (this->links_.find(name) == this->links_.end())
@@ -389,7 +389,7 @@ void RobotModel::getLink(const std::string& name,boost::shared_ptr<Link> &link) 
   link = ptr;
 }
 
-boost::shared_ptr<const Joint> RobotModel::getJoint(const std::string& name) const
+boost::shared_ptr<const Joint> Model::getJoint(const std::string& name) const
 {
   boost::shared_ptr<const Joint> ptr;
   if (this->joints_.find(name) == this->joints_.end())
