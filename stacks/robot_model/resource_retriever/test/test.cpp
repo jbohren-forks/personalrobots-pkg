@@ -42,7 +42,7 @@ using namespace resource_retriever;
 TEST(Retriever, getByPackage)
 {
   Retriever r;
-  MemoryResource res = r.get("package://resource_retriever/test/test.txt");
+  MemoryResource res = r.get("package://"ROS_PACKAGE_NAME"/test/test.txt");
 
   ASSERT_EQ(res.size, 1);
   ASSERT_EQ(res.data[0], 'A');
@@ -63,9 +63,17 @@ TEST(Retriever, largeFile)
   fclose(f);
 
   Retriever r;
-  MemoryResource res = r.get("package://resource_retriever/test/large_file.dat");
+  MemoryResource res = r.get("package://"ROS_PACKAGE_NAME"/test/large_file.dat");
 
   ASSERT_EQ(res.size, 1024*1024*50);
+}
+
+TEST(Retriever, http)
+{
+  Retriever r;
+  MemoryResource res = r.get("http://pr.willowgarage.com/downloads/svnmerge.py");
+
+  ASSERT_GT(res.size, 0);
 }
 
 int main(int argc, char **argv){
