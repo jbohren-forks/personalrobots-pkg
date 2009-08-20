@@ -684,9 +684,9 @@ EnvironmentROBARM3D::EnvironmentROBARM3D()
 
     //hard coded temporarily (meters)
     EnvROBARMCfg.arm_length = 1.3;
-    EnvROBARMCfg.link_radius.push_back(.09);
-    EnvROBARMCfg.link_radius.push_back(.09);
-    EnvROBARMCfg.link_radius.push_back(.09);
+    EnvROBARMCfg.link_radius.push_back(.08);
+    EnvROBARMCfg.link_radius.push_back(.07);
+    EnvROBARMCfg.link_radius.push_back(.07);
 
     EnvROBARMCfg.exact_gripper_collision_checking = false;
     EnvROBARMCfg.use_voxel3d_occupancy_grid = false;
@@ -3239,9 +3239,9 @@ void EnvironmentROBARM3D::PrintStateDetails(FILE *fOut, int stateID)
 {
 	int heur_xyz = 0, heur_rpy = 0;
 	EnvROBARMHashEntry_t* HashEntry = EnvROBARM.StateID2CoordTable[stateID];
-	
+
 	GetHeuristics(stateID, heur_xyz, heur_rpy);
-	fprintf(fOut," heur_xyz: %i  heur_rpy: %i  axis_angle: %.3f action: %i ", heur_xyz, heur_rpy, HashEntry->axis_angle, HashEntry->action);
+	fprintf(fOut,"  heur_xyz: %i  heur_rpy: %i   axis_angle: %.3f   action: %i    ", heur_xyz, heur_rpy, HashEntry->axis_angle,HashEntry->action);
 }
 
 /**------------------------------------------------------------------------*/
