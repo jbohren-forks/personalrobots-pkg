@@ -33,7 +33,7 @@
 *********************************************************************/
 
 #include <ros/ros.h>
-#include <actionlib/server/single_goal_action_server.h>
+#include <actionlib/server/simple_action_server.h>
 #include <pr2_calibration_actions/robot_pixels_capture.h>
 #include <pr2_calibration_actions/CaptureRobotPixelsAction.h>
 
@@ -93,7 +93,7 @@ public:
 
 
 private:
-  actionlib::SingleGoalActionServer<pr2_calibration_actions::CaptureRobotPixelsAction> as_;
+  actionlib::SimpleActionServer<pr2_calibration_actions::CaptureRobotPixelsAction> as_;
 
   boost::mutex capture_mutex_;
   boost::shared_ptr<RobotPixelsCapture> capture_;

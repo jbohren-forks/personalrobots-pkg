@@ -36,7 +36,7 @@
 #include <sstream>
 
 #include <ros/ros.h>
-#include <actionlib/server/single_goal_action_server.h>
+#include <actionlib/server/simple_action_server.h>
 #include <actionlib_tutorials/FibonacciAction.h>
 
 class FibonacciAction
@@ -120,7 +120,7 @@ public:
 protected:
     
     ros::NodeHandle nh_;
-    actionlib::SingleGoalActionServer<actionlib_tutorials::FibonacciAction> as_;
+    actionlib::SimpleActionServer<actionlib_tutorials::FibonacciAction> as_;
     std::string action_name_;
     int seed0_, seed1_;
 };

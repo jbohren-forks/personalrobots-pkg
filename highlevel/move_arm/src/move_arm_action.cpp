@@ -37,7 +37,7 @@
 
 #include "move_arm/move_arm_setup.h"
 
-#include <actionlib/server/single_goal_action_server.h>
+#include <actionlib/server/simple_action_server.h>
 #include <move_arm/MoveArmAction.h>
 
 #include <manipulation_msgs/JointTraj.h>
@@ -1057,7 +1057,7 @@ namespace move_arm
 	
 	ros::NodeHandle                                  nh_;
 	MoveArmSetup                                    &setup_;
-	actionlib::SingleGoalActionServer<MoveArmAction> as_;
+	actionlib::SimpleActionServer<MoveArmAction>     as_;
 	
 	planning_environment::PlanningMonitor           *planningMonitor_;
 	tf::TransformListener                           *tf_;

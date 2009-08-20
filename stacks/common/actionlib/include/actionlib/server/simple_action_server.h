@@ -34,8 +34,8 @@
 *
 * Author: Eitan Marder-Eppstein
 *********************************************************************/
-#ifndef ACTIONLIB_SINGLE_GOAL_ACTION_SERVER_H_
-#define ACTIONLIB_SINGLE_GOAL_ACTION_SERVER_H_
+#ifndef ACTIONLIB_SIMPLE_ACTION_SERVER_H_
+#define ACTIONLIB_SIMPLE_ACTION_SERVER_H_
 
 #include <boost/thread/condition.hpp>
 #include <ros/ros.h>
@@ -43,7 +43,7 @@
 #include <actionlib/action_definition.h>
 
 namespace actionlib {
-  /** @class SingleGoalActionServer @brief The SingleGoalActionServer
+  /** @class SimpleActionServer @brief The SimpleActionServer
    * implements a singe goal policy on top of the ActionServer class. The
    * specification of the policy is as follows: only one goal can have an
    * active status at a time, new goals preempt previous goals based on the
@@ -54,7 +54,7 @@ namespace actionlib {
    * old goal will be change automatically to reflect this.
    */
   template <class ActionSpec>
-  class SingleGoalActionServer {
+  class SimpleActionServer {
     public:
       //generates typedefs that we'll use to make our lives easier
       ACTION_DEFINITION(ActionSpec);
@@ -63,16 +63,16 @@ namespace actionlib {
       typedef boost::function<void (const GoalConstPtr&)> ExecuteCallback;
 
       /**
-       * @brief  Constructor for a SingleGoalActionServer
+       * @brief  Constructor for a SimpleActionServer
        * @param n A NodeHandle to create a namespace under
        * @param name A name for the action server
        * @param execute_cb Optional callback that gets called in a separate thread whenever
        *                   a new goal is received, allowing users to have blocking callbacks.
        *                   Adding an execute callback also deactivates the goalCallback.
        */
-      SingleGoalActionServer(ros::NodeHandle n, std::string name, ExecuteCallback execute_cb = NULL);
+      SimpleActionServer(ros::NodeHandle n, std::string name, ExecuteCallback execute_cb = NULL);
 
-      ~SingleGoalActionServer();
+      ~SimpleActionServer();
 
       /**
        * @brief  Accepts a new goal when one is available The status of this
@@ -188,5 +188,5 @@ namespace actionlib {
 };
 
 //include the implementation here
-#include <actionlib/server/single_goal_action_server_imp.h>
+#include <actionlib/server/simple_action_server_imp.h>
 #endif

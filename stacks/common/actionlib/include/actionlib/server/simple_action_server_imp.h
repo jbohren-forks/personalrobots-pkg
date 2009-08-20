@@ -34,26 +34,25 @@
 *
 * Author: Eitan Marder-Eppstein
 *********************************************************************/
-#ifndef ACTION_LIB_SINGLE_GOAL_ACTION_SERVER_H_
-#define ACTION_LIB_SINGLE_GOAL_ACTION_SERVER_H_
+
 namespace actionlib {
   template <class ActionSpec>
-  SingleGoalActionServer<ActionSpec>::SingleGoalActionServer(ros::NodeHandle n, std::string name, ExecuteCallback execute_callback)
+  SimpleActionServer<ActionSpec>::SimpleActionServer(ros::NodeHandle n, std::string name, ExecuteCallback execute_callback)
     : n_(n), new_goal_(false), preempt_request_(false), new_goal_preempt_request_(false), execute_callback_(execute_callback), need_to_terminate_(false) {
 
     //create the action server
     as_ = boost::shared_ptr<ActionServer<ActionSpec> >(new ActionServer<ActionSpec>(n, name,
-          boost::bind(&SingleGoalActionServer::goalCallback, this, _1),
-          boost::bind(&SingleGoalActionServer::preemptCallback, this, _1)));
+          boost::bind(&SimpleActionServer::goalCallback, this, _1),
+          boost::bind(&SimpleActionServer::preemptCallback, this, _1)));
 
     if (execute_callback_ != NULL)
     {
-      execute_thread_ = new boost::thread(boost::bind(&SingleGoalActionServer::executeLoop, this));
+      execute_thread_ = new boost::thread(boost::bind(&SimpleActionServer::executeLoop, this));
     }
   }
 
   template <class ActionSpec>
-  SingleGoalActionServer<ActionSpec>::~SingleGoalActionServer()
+  SimpleActionServer<ActionSpec>::~SimpleActionServer()
   {
     if (execute_callback_)
     {
@@ -69,7 +68,7 @@ namespace actionlib {
   }
 
   template <class ActionSpec>
-  boost::shared_ptr<const typename SingleGoalActionServer<ActionSpec>::Goal> SingleGoalActionServer<ActionSpec>::acceptNewGoal(){
+  boost::shared_ptr<const typename SimpleActionServer<ActionSpec>::Goal> SimpleActionServer<ActionSpec>::acceptNewGoal(){
     boost::recursive_mutex::scoped_lock lock(lock_);
 
     if(!new_goal_ || !next_goal_.getGoal()){
@@ -101,18 +100,18 @@ namespace actionlib {
   }
 
   template <class ActionSpec>
-  bool SingleGoalActionServer<ActionSpec>::isNewGoalAvailable(){
+  bool SimpleActionServer<ActionSpec>::isNewGoalAvailable(){
     return new_goal_;
   }
 
 
   template <class ActionSpec>
-  bool SingleGoalActionServer<ActionSpec>::isPreemptRequested(){
+  bool SimpleActionServer<ActionSpec>::isPreemptRequested(){
     return preempt_request_;
   }
 
   template <class ActionSpec>
-  bool SingleGoalActionServer<ActionSpec>::isActive(){
+  bool SimpleActionServer<ActionSpec>::isActive(){
     if(!current_goal_.getGoal())
       return false;
     unsigned int status = current_goal_.getGoalStatus().status;
@@ -120,52 +119,52 @@ namespace actionlib {
   }
 
   template <class ActionSpec>
-  void SingleGoalActionServer<ActionSpec>::setSucceeded(const Result& result){
+  void SimpleActionServer<ActionSpec>::setSucceeded(const Result& result){
     boost::recursive_mutex::scoped_lock lock(lock_);
     current_goal_.setSucceeded(result);
   }
 
   template <class ActionSpec>
-  void SingleGoalActionServer<ActionSpec>::setAborted(const Result& result){
+  void SimpleActionServer<ActionSpec>::setAborted(const Result& result){
     boost::recursive_mutex::scoped_lock lock(lock_);
     current_goal_.setAborted(result);
   }
 
   template <class ActionSpec>
-  void SingleGoalActionServer<ActionSpec>::setPreempted(const Result& result){
+  void SimpleActionServer<ActionSpec>::setPreempted(const Result& result){
     boost::recursive_mutex::scoped_lock lock(lock_);
     ROS_DEBUG("Setting the current goal as canceled");
     current_goal_.setCanceled(result);
   }
 
   template <class ActionSpec>
-  void SingleGoalActionServer<ActionSpec>::registerGoalCallback(boost::function<void ()> cb){
+  void SimpleActionServer<ActionSpec>::registerGoalCallback(boost::function<void ()> cb){
     // Cannot register a goal callback if an execute callback exists
     if (execute_callback_)
-      ROS_WARN("Cannot call SingleGoalActionServer::registerGoalCallback() because an executeCallback exists. Not going to register it.");
+      ROS_WARN("Cannot call SimpleActionServer::registerGoalCallback() because an executeCallback exists. Not going to register it.");
     else
       goal_callback_ = cb;
   }
 
   template <class ActionSpec>
-  void SingleGoalActionServer<ActionSpec>::registerPreemptCallback(boost::function<void ()> cb){
+  void SimpleActionServer<ActionSpec>::registerPreemptCallback(boost::function<void ()> cb){
     preempt_callback_ = cb;
   }
 
   template <class ActionSpec>
-  void SingleGoalActionServer<ActionSpec>::publishFeedback(const FeedbackConstPtr& feedback)
+  void SimpleActionServer<ActionSpec>::publishFeedback(const FeedbackConstPtr& feedback)
   {
     current_goal_.publishFeedback(*feedback);
   }
 
   template <class ActionSpec>
-  void SingleGoalActionServer<ActionSpec>::publishFeedback(const Feedback& feedback)
+  void SimpleActionServer<ActionSpec>::publishFeedback(const Feedback& feedback)
   {
     current_goal_.publishFeedback(feedback);
   }
 
   template <class ActionSpec>
-  void SingleGoalActionServer<ActionSpec>::goalCallback(GoalHandle goal){
+  void SimpleActionServer<ActionSpec>::goalCallback(GoalHandle goal){
     boost::recursive_mutex::scoped_lock lock(lock_);
     ROS_DEBUG("A new goal has been recieved by the single goal action server");
 
@@ -196,9 +195,9 @@ namespace actionlib {
   }
 
   template <class ActionSpec>
-  void SingleGoalActionServer<ActionSpec>::preemptCallback(GoalHandle preempt){
+  void SimpleActionServer<ActionSpec>::preemptCallback(GoalHandle preempt){
     boost::recursive_mutex::scoped_lock lock(lock_);
-    ROS_DEBUG("A preempt has been received by the SingleGoalActionServer");
+    ROS_DEBUG("A preempt has been received by the SimpleActionServer");
 
     //if the preempt is for the current goal, then we'll set the preemptRequest flag and call the user's preempt callback
     if(preempt == current_goal_){
@@ -217,7 +216,7 @@ namespace actionlib {
   }
 
   template <class ActionSpec>
-  void SingleGoalActionServer<ActionSpec>::executeLoop(){
+  void SimpleActionServer<ActionSpec>::executeLoop(){
 
     ros::Duration loop_duration = ros::Duration().fromSec(.1);
 
@@ -236,7 +235,7 @@ namespace actionlib {
       {
         GoalConstPtr goal = acceptNewGoal();
 
-        ROS_FATAL_COND(!execute_callback_, "execute_callback_ must exist. This is a bug in SingleGoalActionServer");
+        ROS_FATAL_COND(!execute_callback_, "execute_callback_ must exist. This is a bug in SimpleActionServer");
 
         // Make sure we're not locked when we call execute
         lock.unlock();
@@ -257,4 +256,4 @@ namespace actionlib {
   }
 
 };
-#endif
+
