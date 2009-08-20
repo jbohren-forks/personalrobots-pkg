@@ -51,6 +51,7 @@ namespace joint_waypoint_controller
 
 class JointWaypointController
 {
+
 public:
   JointWaypointController();
   virtual ~JointWaypointController();
@@ -99,13 +100,15 @@ private:
   ros::ServiceClient query_spline_traj_client_;
   ros::ServiceClient cancel_spline_traj_client_;
 
+  std::map<std::string, manipulation_msgs::Limits> joint_limits_;
+
   filters::FilterChain<manipulation_msgs::WaypointTrajWithLimits> filter_chain_;
   enum {
     TRAJECTORY_TYPE_CUBIC,
     TRAJECTORY_TYPE_QUINTIC
   } trajectory_type_;
 
-  void jointTrajToWaypointTraj(const manipulation_msgs::JointTraj& joint_traj, manipulation_msgs::WaypointTrajWithLimits& waypoint_traj) const;
+  void jointTrajToWaypointTraj(const manipulation_msgs::JointTraj& joint_traj, manipulation_msgs::WaypointTrajWithLimits& waypoint_traj);
   void waypointTrajToSplineTraj(const manipulation_msgs::WaypointTrajWithLimits& waypoint_traj, manipulation_msgs::SplineTraj& spline_traj) const;
 };
 

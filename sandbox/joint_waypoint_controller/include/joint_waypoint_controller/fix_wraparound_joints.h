@@ -37,7 +37,7 @@
 #ifndef FIX_WRAPAROUND_JOINTS_H_
 #define FIX_WRAPAROUND_JOINTS_H_
 
-#include <joint_waypoint_controller/waypoint_traj_filters.h>
+#include <spline_smoother/spline_smoother.h>
 
 namespace joint_waypoint_controller
 {
@@ -45,14 +45,13 @@ namespace joint_waypoint_controller
 /**
  * \brief This class converts a trajectory to remove all wrap-arounds, so that spline processing is easier
  */
-class FixWraparoundJoints: public filters::FilterBase<manipulation_msgs::WaypointTrajWithLimits>
+class FixWraparoundJoints: public spline_smoother::SplineSmoother
 {
 public:
   FixWraparoundJoints();
   virtual ~FixWraparoundJoints();
 
-  virtual bool configure();
-  virtual bool update(const std::vector<manipulation_msgs::WaypointTrajWithLimits>& data_in, std::vector<manipulation_msgs::WaypointTrajWithLimits>& data_out);
+  virtual bool smooth(const manipulation_msgs::WaypointTrajWithLimits& trajectory_in, manipulation_msgs::WaypointTrajWithLimits& trajectory_out) const;
 
 };
 

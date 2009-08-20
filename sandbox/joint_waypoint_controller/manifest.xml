@@ -18,6 +18,7 @@ spline trajectories to the real controller.
 	<depend package="roscpp" />
 	<depend package="manipulation_msgs" />
 	<depend package="manipulation_srvs" />
+	<depend package="angles" />
 
 </package>
 
