@@ -81,12 +81,12 @@ class pm_wrapper
 
 		/** \brief Unlock the lock around the planning monitor (call after planning completes) */
 		void unlockPM();
-					
+
 		/** \brief Set the size of the object to be removed from the collision map and it's pose in the planning frame */
 		void setObject(shapes::Shape *object, btTransform pose);
 
-		void smoothPath(std::vector<std::vector<double> > &path, std::vector<std::string> joint_names);
-		
+		std::vector<std::vector<double> >  smoothPath(std::vector<std::vector<double> > &path, std::vector<std::string> joint_names);
+
 	private:
 
 		ros::NodeHandle node_;
