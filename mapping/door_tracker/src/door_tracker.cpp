@@ -139,7 +139,7 @@ class DoorTracker
 
     bool first_time_;
 
-  DoorTracker():filter_chain_("filters", "filters::FilterBase<sensor_msgs::LaserScan>"), message_notifier_(NULL)
+  DoorTracker():filter_chain_("sensor_msgs::LaserScan"), message_notifier_(NULL)
     {
       num_clouds_received_ = 0;
       continuous_detection_ = false;

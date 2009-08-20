@@ -72,7 +72,7 @@ static std::string mean_filter_single = "<filter type=\"MeanFilterDouble\" name=
 
 TEST(MultiChannelFilterChain, configuring){
   double epsilon = 1e-9;
-  filters::MultiChannelFilterChain<double> chain("filters", "filters::MultiChannelFilterBase<double>");
+  filters::MultiChannelFilterChain<double> chain("double");
   //filters::MultiChannelFilterChain<float> chain;
 
   // EXPECT_TRUE(chain.add(mean_filter_5));
@@ -100,7 +100,7 @@ TEST(MultiChannelFilterChain, configuring){
 }
 TEST(FilterChain, configuring){
   double epsilon = 1e-9;
-  filters::FilterChain<double> chain("filters", "filters::FilterBase<double>");
+  filters::FilterChain<double> chain("double");
   
   TiXmlDocument chain_def = TiXmlDocument();
   chain_def.Parse(mean_filter_single.c_str());
@@ -119,7 +119,7 @@ TEST(FilterChain, configuring){
   }
 
 TEST(MultiChannelFilterChain, MisconfiguredNumberOfChannels){
-  filters::MultiChannelFilterChain<double> chain("filters", "filters::MultiChannelFilterBase<double>");
+  filters::MultiChannelFilterChain<double> chain("double");
 
 
   //  EXPECT_TRUE(chain.add(mean_filter_5));
@@ -145,7 +145,7 @@ TEST(MultiChannelFilterChain, MisconfiguredNumberOfChannels){
 
 TEST(MultiChannelFilterChain, TwoFilters){
   double epsilon = 1e-9;
-  filters::MultiChannelFilterChain<double> chain("filters", "filters::MultiChannelFilterBase<double>");
+  filters::MultiChannelFilterChain<double> chain("double");
   //filters::MultiChannelFilterChain<float> chain;
 
   // EXPECT_TRUE(chain.add(mean_filter_5));
@@ -173,7 +173,7 @@ TEST(MultiChannelFilterChain, TwoFilters){
 }
 
 TEST(MultiChannelFilterChain, OverlappingNames){
-  filters::MultiChannelFilterChain<double> chain("filters", "filters::MultiChannelFilterBase<double>");
+  filters::MultiChannelFilterChain<double> chain("double");
 
 
   std::string bad_xml = "<filters> <filter type=\"MultiChannelMeanFilterDouble\" name=\"mean_test\"> <params number_of_observations=\"5\"/></filter><filter type=\"MedianFilter\" name=\"mean_test\"> <params number_of_observations=\"5\"/></filter></filters>";

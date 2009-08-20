@@ -41,7 +41,7 @@ static std::string median_filter_xml = "<!-- NO FILTER DEFINED-->";
 class GenericLaserScanFilterNode 
 {
 public:
-  GenericLaserScanFilterNode(ros::Node& anode) :  filter_chain_("filters", "filters::FilterBase<sensor_msgs::LaserScan>"), node_(anode), notifier_(NULL)
+  GenericLaserScanFilterNode(ros::Node& anode) :  filter_chain_("sensor_msgs::LaserScan"), node_(anode), notifier_(NULL)
   {
     node_.advertise<sensor_msgs::LaserScan>("~output", 1000);
     notifier_ = new tf::MessageNotifier<sensor_msgs::LaserScan>(&tf_, &node_, 

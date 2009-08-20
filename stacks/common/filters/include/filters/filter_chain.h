@@ -50,7 +50,7 @@ private:
   pluginlib::ClassLoader<filters::FilterBase<T> > loader_;
 public:
   /** \brief Create the filter chain object */
-  FilterChain(std::string package, std::string base_class): loader_(package, base_class), configured_(false)
+  FilterChain(std::string data_type): loader_("filters", std::string("filters::FilterBase<") + data_type + std::string(">")), configured_(false)
   {
     std::string lib_string = "";
     std::vector<std::string> libs = loader_.getDeclaredClasses();
@@ -248,7 +248,7 @@ private:
   pluginlib::ClassLoader<filters::MultiChannelFilterBase<T> > loader_;
 public:
   /** \brief Create the filter chain object */
-  MultiChannelFilterChain(std::string package, std::string base_class): loader_(package, base_class), configured_(false)
+  MultiChannelFilterChain(std::string data_type): loader_("filters", std::string("filters::MultiChannelFilterBase<") + data_type + std::string(">")), configured_(false)
   {
     std::string lib_string = "";
     std::vector<std::string> libs = loader_.getDeclaredClasses();

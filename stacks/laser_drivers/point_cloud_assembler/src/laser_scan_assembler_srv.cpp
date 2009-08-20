@@ -61,7 +61,7 @@ namespace point_cloud_assembler
 class LaserScanAssemblerSrv : public BaseAssemblerSrv<sensor_msgs::LaserScan>
 {
 public:
-  LaserScanAssemblerSrv() : BaseAssemblerSrv<sensor_msgs::LaserScan>("laser_scan_assembler"), filter_chain_("filters", "filters::FilterBase<sensor_msgs::LaserScan>")
+  LaserScanAssemblerSrv() : BaseAssemblerSrv<sensor_msgs::LaserScan>("laser_scan_assembler"), filter_chain_("sensor_msgs::LaserScan")
   {
     // ***** Set Laser Projection Method *****
     ros::Node::instance()->param("~ignore_laser_skew", ignore_laser_skew_, true) ;

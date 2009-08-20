@@ -21,11 +21,11 @@ bool LaserMedianFilter::configure()
   latest_xml_.reset( child->Clone()->ToElement());
   
   if (range_filter_) delete range_filter_;
-  range_filter_ = new filters::MultiChannelFilterChain<float>("filters", "filters::MultiChannelFilterBase<float>");
+  range_filter_ = new filters::MultiChannelFilterChain<float>("float");
   if (!range_filter_->configure(num_ranges_, latest_xml_.get())) return false;
   
   if (intensity_filter_) delete intensity_filter_;
-  intensity_filter_ = new filters::MultiChannelFilterChain<float>("filters", "filters::MultiChannelFilterBase<float>");
+  intensity_filter_ = new filters::MultiChannelFilterChain<float>("float");
   if (!intensity_filter_->configure(num_ranges_, latest_xml_.get())) return false;
   return true;
 };
@@ -56,10 +56,10 @@ bool LaserMedianFilter::update(const sensor_msgs::LaserScan& scan_in, sensor_msg
 
     num_ranges_ = scan_in.get_ranges_size();
     
-    range_filter_ = new filters::MultiChannelFilterChain<float>("filters", "filters::MultiChannelFilterBase<float>");
+    range_filter_ = new filters::MultiChannelFilterChain<float>("float");
     if (!range_filter_->configure(num_ranges_, latest_xml_.get())) return false;
     
-    intensity_filter_ = new filters::MultiChannelFilterChain<float>("filters", "filters::MultiChannelFilterBase<float>");
+    intensity_filter_ = new filters::MultiChannelFilterChain<float>("float");
     if (!intensity_filter_->configure(num_ranges_, latest_xml_.get())) return false;
     
   }

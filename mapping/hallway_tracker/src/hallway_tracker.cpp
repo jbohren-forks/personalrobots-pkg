@@ -118,7 +118,7 @@ public:
 
 
 
-  HallwayTracker():filter_chain_("filters", "filters::FilterBase<sensor_msgs::LaserScan>"), message_notifier_(NULL)
+  HallwayTracker():filter_chain_("sensor_msgs::LaserScan"), message_notifier_(NULL)
   {
     node_ = ros::Node::instance();
     tf_ = new tf::TransformListener(*node_);
