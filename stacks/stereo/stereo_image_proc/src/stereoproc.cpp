@@ -96,6 +96,8 @@ public:
 
     param("~do_keep_coords", do_keep_coords_, false);
 
+    ROS_INFO("DEBUG FOR GAZEBO: %d %d %d %d %d", do_colorize_, do_rectify_, do_stereo_, do_calc_points_, do_keep_coords_);
+
     if (do_keep_coords_) {
     	ROS_INFO("I'm keeping the image coordonate in the point cloud\n");
     }
