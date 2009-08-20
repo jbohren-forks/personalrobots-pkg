@@ -139,7 +139,7 @@ class DoorTracker
 
     bool first_time_;
 
-    DoorTracker():message_notifier_(NULL)
+  DoorTracker():filter_chain_("filters", "filters::FilterBase<sensor_msgs::LaserScan>"), message_notifier_(NULL)
     {
       num_clouds_received_ = 0;
       continuous_detection_ = false;
@@ -153,7 +153,7 @@ class DoorTracker
       TiXmlDocument xml_doc;
       xml_doc.Parse(filter_xml.c_str());
       TiXmlElement * config = xml_doc.RootElement();
-      filter_chain_.configure(1, config);
+      filter_chain_.configure(config);
       done_detection_ = true;
       euclidean_cluster_angle_tolerance_    = angles::from_degrees (25.0);
       euclidean_cluster_min_pts_            = 20;               // 1000 points
