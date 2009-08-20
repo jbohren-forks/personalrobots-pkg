@@ -104,11 +104,7 @@ void CMVisionBF::imageCB(const sensor_msgs::ImageConstPtr& msg)
   ros::Time startt = ros::Time().fromNSec(1e9*timeofday.tv_sec + 1e3*timeofday.tv_usec);
 
   // Get the image as and RGB image
-  if (img.encoding == "bgr8")
-    this->imageBridge.fromImage(img, "bgr8");
-  else
-    this->imageBridge.fromImage(img, "rgb8");
-
+  this->imageBridge.fromImage(img, "bgr8");
   cvImage = this->imageBridge.toIpl();
 
   size = cvGetSize(cvImage);
@@ -215,6 +211,9 @@ void CMVisionBF::imageCB(const sensor_msgs::ImageConstPtr& msg)
       this->blobCount++;
     }
   }
+
+  this->imageBridge.fromImage(img, "rgb8");
+  cvImage = this->imageBridge.toIpl();
 
   if (this->debugOn)
   {

@@ -16,7 +16,7 @@
   <export>
     <cpp lflags="`rosboost-cfg --lflags thread`
       -Wl,-rpath,${prefix}/cmvision/lib -L${prefix}/cmvision/lib" 
-      cflags="`rosboost-cfg --cflags` -I${prefix}/cmvision/include"/>
+      cflags="`rosboost-cfg --cflags` -I${prefix}/msg/cpp"/>
   </export>
 
 
