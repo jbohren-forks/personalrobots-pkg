@@ -102,17 +102,26 @@ MemoryResource Retriever::get(const std::string& url)
     size_t pos = mod_url.find("/");
     if (pos == std::string::npos)
     {
-      return MemoryResource();
+      throw Exception(url, "Could not parse package:// format into file:// format");
     }
 
     std::string package = mod_url.substr(0, pos);
     mod_url.erase(0, pos);
     std::string package_path = ros::package::getPath(package);
+
+    if (package_path.empty())
+    {
+      throw Exception(url, "Package [" + package + "] does not exist");
+    }
+
     mod_url = "file://" + package_path + mod_url;
   }
 
   curl_easy_setopt(curl_handle_, CURLOPT_URL, mod_url.c_str());
   curl_easy_setopt(curl_handle_, CURLOPT_WRITEFUNCTION, curlWriteFunc);
+
+  char error_buffer[CURL_ERROR_SIZE];
+  curl_easy_setopt(curl_handle_, CURLOPT_ERRORBUFFER , error_buffer);
 
   MemoryResource res;
   MemoryBuffer buf;
@@ -121,7 +130,7 @@ MemoryResource Retriever::get(const std::string& url)
   CURLcode ret = curl_easy_perform(curl_handle_);
   if (ret != 0)
   {
-    ROS_ERROR("Error retrieving file [%s], CURL error code [%d]", mod_url.c_str(), ret);
+    throw Exception(mod_url, error_buffer);
   }
   else if (!buf.v.empty())
   {

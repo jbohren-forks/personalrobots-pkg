@@ -36,44 +36,101 @@
 
 #include <resource_retriever/retriever.h>
 #include <ros/package.h>
+#include <ros/console.h>
 
 using namespace resource_retriever;
 
 TEST(Retriever, getByPackage)
 {
-  Retriever r;
-  MemoryResource res = r.get("package://"ROS_PACKAGE_NAME"/test/test.txt");
+  try
+  {
+    Retriever r;
+    MemoryResource res = r.get("package://"ROS_PACKAGE_NAME"/test/test.txt");
 
-  ASSERT_EQ(res.size, 1);
-  ASSERT_EQ(res.data[0], 'A');
+    ASSERT_EQ(res.size, 1);
+    ASSERT_EQ(res.data[0], 'A');
+  }
+  catch (Exception& e)
+  {
+    FAIL();
+  }
 }
 
 TEST(Retriever, largeFile)
 {
-  std::string path = ros::package::getPath(ROS_PACKAGE_NAME) + "/test/large_file.dat";
-
-  FILE* f = fopen(path.c_str(), "w");
-
-  ASSERT_TRUE(f);
-
-  for (int i = 0; i < 1024*1024*50; ++i)
+  try
   {
-    fprintf(f, "A");
+    std::string path = ros::package::getPath(ROS_PACKAGE_NAME) + "/test/large_file.dat";
+
+    FILE* f = fopen(path.c_str(), "w");
+
+    ASSERT_TRUE(f);
+
+    for (int i = 0; i < 1024*1024*50; ++i)
+    {
+      fprintf(f, "A");
+    }
+    fclose(f);
+
+    Retriever r;
+    MemoryResource res = r.get("package://"ROS_PACKAGE_NAME"/test/large_file.dat");
+
+    ASSERT_EQ(res.size, 1024*1024*50);
   }
-  fclose(f);
-
-  Retriever r;
-  MemoryResource res = r.get("package://"ROS_PACKAGE_NAME"/test/large_file.dat");
-
-  ASSERT_EQ(res.size, 1024*1024*50);
+  catch (Exception& e)
+  {
+    FAIL();
+  }
 }
 
 TEST(Retriever, http)
 {
-  Retriever r;
-  MemoryResource res = r.get("http://pr.willowgarage.com/downloads/svnmerge.py");
+  try
+  {
+    Retriever r;
+    MemoryResource res = r.get("http://pr.willowgarage.com/downloads/svnmerge.py");
 
-  ASSERT_GT(res.size, 0);
+    ASSERT_GT(res.size, 0);
+  }
+  catch (Exception& e)
+  {
+    FAIL();
+  }
+}
+
+TEST(Retriever, invalidFiles)
+{
+  Retriever r;
+
+  try
+  {
+    r.get("file://fail");
+    FAIL();
+  }
+  catch (Exception& e)
+  {
+    ROS_INFO("%s", e.what());
+  }
+
+  try
+  {
+    r.get("package://roscpp");
+    FAIL();
+  }
+  catch (Exception& e)
+  {
+    ROS_INFO("%s", e.what());
+  }
+
+  try
+  {
+    r.get("package://invalid_package_blah/test.xml");
+    FAIL();
+  }
+  catch (Exception& e)
+  {
+    ROS_INFO("%s", e.what());
+  }
 }
 
 int main(int argc, char **argv){

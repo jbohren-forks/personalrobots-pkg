@@ -30,11 +30,20 @@
 
 #include <string>
 #include <boost/shared_array.hpp>
+#include <stdexcept>
 
 typedef void CURL;
 
 namespace resource_retriever
 {
+
+class Exception : public std::runtime_error
+{
+public:
+  Exception(const std::string& file, const std::string& error_msg)
+  : std::runtime_error("Error retrieving file [" + file + "]: " + error_msg)
+  {}
+};
 
 struct MemoryResource
 {
