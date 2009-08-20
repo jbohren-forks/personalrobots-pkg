@@ -27,9 +27,6 @@ rospack_add_library(${PROJECT_NAME} src/robot_model.cpp src/link.cpp src/joint.c
 rospack_add_boost_directories()
 #rospack_link_boost(${PROJECT_NAME} thread)
 
-rospack_add_executable(resource_server src/resource_server.cpp)
-target_link_libraries(resource_server ${PROJECT_NAME})
-
 rospack_add_executable(example test/example.cpp)
 target_link_libraries(example ${PROJECT_NAME})
 
