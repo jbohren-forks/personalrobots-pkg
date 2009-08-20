@@ -216,6 +216,9 @@ private:
 
   void generateCollisionPoints();
   void addCollisionPointsFromLinkRadius(std::string link_name, double radius, double clearance, double extension);
+  void addCollisionPointsFromAttachedObject(std::string link_name, mapping_msgs::AttachedObject& attached_object);
+  void getLinkInformation(const std::string link_name, std::vector<int>& active_joints, int& segment_number);
+
 //  void getActiveJointsSegmentNumberForLink(std::string link_name, 
 };
 

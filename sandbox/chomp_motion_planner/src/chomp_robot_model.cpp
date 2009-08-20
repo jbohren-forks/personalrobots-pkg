@@ -219,7 +219,7 @@ bool ChompRobotModel::init()
   return true;
 }
 
-void ChompRobotModel::addCollisionPointsFromLinkRadius(std::string link_name, double radius, double clearance, double extension)
+void ChompRobotModel::getLinkInformation(const std::string link_name, std::vector<int>& active_joints, int& segment_number)
 {
   // check if the link already exists in the map, if not, add it:
   if (link_collision_points_.find(link_name) == link_collision_points_.end())
@@ -227,10 +227,8 @@ void ChompRobotModel::addCollisionPointsFromLinkRadius(std::string link_name, do
     link_collision_points_.insert(make_pair(link_name, std::vector<ChompCollisionPoint>()));
   }
 
-  std::vector<ChompCollisionPoint>& collision_points_vector = link_collision_points_.find(link_name)->second;
-
-  // first, identify the joints that contribute to this link
-  std::vector<int> active_joints;
+  // identify the joints that contribute to this link
+  active_joints.clear();
   KDL::SegmentMap::const_iterator segment_iter = kdl_tree_.getSegment(link_name);
 
   // go up the tree until we find the root:
@@ -243,23 +241,23 @@ void ChompRobotModel::addCollisionPointsFromLinkRadius(std::string link_name, do
       if ((int)active_joints.size() < (joint_num+1))
         active_joints.resize(joint_num+1, 0);
       active_joints[joint_num] = 1;
-/*      // find the CHOMP joint index, if any:
-      for (int i=0; i<group.num_joints_; i++)
-      {
-        if (group.chomp_joints_[i].joint_name_ == segment_joint_mapping_[segment_iter->first])
-        {
-          active_joints[i] = 1;
-//          printf("Found %s as parent of %s\n", group.chomp_joints_[i].joint_name_.c_str(),
-//              link_name.c_str());
-        }
-      }*/
     }
     segment_iter = segment_iter->second.parent;
   }
 
-  segment_iter = kdl_tree_.getSegment(link_name);
-  // get the segment number w.r.t to the FK solver:
-  int segment_number = fk_solver_->segmentNameToIndex(link_name);
+  segment_number = fk_solver_->segmentNameToIndex(link_name);
+
+}
+
+void ChompRobotModel::addCollisionPointsFromLinkRadius(std::string link_name, double radius, double clearance, double extension)
+{
+  std::vector<int> active_joints(num_kdl_joints_, 0);
+  KDL::SegmentMap::const_iterator segment_iter = kdl_tree_.getSegment(link_name);
+  int segment_number;
+
+  getLinkInformation(link_name, active_joints, segment_number);
+  std::vector<ChompCollisionPoint>& collision_points_vector = link_collision_points_.find(link_name)->second;
+
   int first_child=1;
   // find the child:
   for (std::vector<KDL::SegmentMap::const_iterator>::const_iterator child_iter = segment_iter->second.children.begin();
@@ -326,6 +324,7 @@ void ChompRobotModel::getLinkCollisionPoints(std::string link_name, std::vector<
 void ChompRobotModel::attachedObjectCallback(const mapping_msgs::AttachedObjectConstPtr& attached_object)
 {
   attached_objects_.insert(std::make_pair(attached_object->link_name, *attached_object));
+  generateCollisionPoints();
 }
 
 void ChompRobotModel::generateCollisionPoints()
@@ -357,17 +356,7 @@ void ChompRobotModel::generateCollisionPoints()
     if (attached_objects_.find(link_name)!=attached_objects_.end())
     {
       AttachedObject& ao = (attached_objects_.find(link_name))->second;
-      for (int i=0; i<ao.objects.size(); ++i)
-      {
-        if (ao.poses.size()<=i)
-          break;
-        Object& object = ao.objects[i];
-        geometry_msgs::Pose& pose = ao.poses[i];
-        if (object.type == Object::CYLINDER)
-        {
-
-        }
-      }
+      addCollisionPointsFromAttachedObject(link_name, ao);
     }
   }
 
@@ -385,6 +374,53 @@ void ChompRobotModel::generateCollisionPoints()
       }
     }
     ROS_INFO("Group %s has %d collision points", group_it->second.name_.c_str(), group_it->second.collision_points_.size());
+  }
+
+}
+
+void ChompRobotModel::addCollisionPointsFromAttachedObject(std::string link_name, mapping_msgs::AttachedObject& attached_object)
+{
+  std::vector<int> active_joints(num_kdl_joints_, 0);
+  int segment_number;
+
+  getLinkInformation(link_name, active_joints, segment_number);
+  std::vector<ChompCollisionPoint>& collision_points_vector = link_collision_points_.find(link_name)->second;
+
+  for (size_t i=0; i<attached_object.objects.size(); ++i)
+  {
+    if (attached_object.poses.size()<=i)
+      break;
+    Object& object = attached_object.objects[i];
+    geometry_msgs::Pose& pose = attached_object.poses[i];
+    if (object.type == Object::CYLINDER)
+    {
+      if (object.dimensions.size()<2)
+        continue;
+      KDL::Rotation rotation = KDL::Rotation::Quaternion(pose.orientation.x,
+          pose.orientation.y,
+          pose.orientation.z,
+          pose.orientation.w);
+      KDL::Vector position(pose.position.x, pose.position.y, pose.position.z);
+      KDL::Frame f(rotation, position);
+      // generate points:
+      double radius = object.dimensions[0];
+      double length = object.dimensions[1];
+      KDL::Vector p(0,0,0);
+      KDL::Vector p2;
+      double spacing = radius/2.0;
+      int num_points = ceil(length/spacing)+1;
+      spacing = length/(num_points-1.0);
+      for (int i=0; i<num_points; ++i)
+      {
+        p(2) = -length/2.0 + i*spacing;
+        p2 = f*p;
+        collision_points_vector.push_back(ChompCollisionPoint(active_joints, radius, collision_clearance_default_, segment_number, p2));
+      }
+    }
+    else
+    {
+      ROS_WARN("Attaching objects of non-cylinder types is not supported yet!");
+    }
   }
 
 }
