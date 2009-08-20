@@ -8,7 +8,6 @@
 <depend package="tinyxml" />
 <depend package="deprecated_msgs" />
 <depend package="rosconsole" />
-<depend package="tinyxml" />
 <depend package="tf" />
 <depend package="roslib" />
 <depend package="sbpl" />
@@ -19,4 +18,5 @@
 <export>
 <cpp cflags="-I${prefix}/include -I${prefix}/srv/cpp"  lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -ltopological_graph" />
 </export>
+<url>http://ros.org/wiki/topological_map</url>
 </package>
