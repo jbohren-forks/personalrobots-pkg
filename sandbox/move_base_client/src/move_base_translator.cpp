@@ -45,7 +45,7 @@
 
 using namespace geometry_msgs;
 
-move_base::MoveBaseGoal fromOldGoal(const PoseStamped& old_goal)
+move_base_msgs::MoveBaseGoal fromOldGoal(const PoseStamped& old_goal)
 {
   move_base_msgs::MoveBaseGoal new_goal;
   new_goal.target_pose = old_goal;
