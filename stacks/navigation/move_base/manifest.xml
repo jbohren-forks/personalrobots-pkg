@@ -12,6 +12,7 @@ The move_base package provides an implementation of a robot_action that, given a
  <depend package="roscpp"/>
  <depend package="rosconsole"/>
  <depend package="std_msgs"/>
+ <depend package="move_base_msgs"/>
  <depend package="geometry_msgs"/>
  <depend package="visualization_msgs"/>
  <depend package="robot_actions"/>

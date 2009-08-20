@@ -7,7 +7,8 @@
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/move_base_client</url>
 
-  <depend package="move_base" />
+  <depend package="move_base_msgs" />
+  <depend package="nav_robot_actions" />
   <depend package="actionlib" />
   <depend package="action_translator" />
   <depend package="geometry_msgs" />

@@ -63,7 +63,7 @@ namespace move_base {
     position_pub_ = ros_node_.advertise<geometry_msgs::PoseStamped>("~current_position", 1);
 
     ros::NodeHandle action_node(ros_node_, name);
-    action_goal_pub_ = action_node.advertise<MoveBaseActionGoal>("goal", 1);
+    action_goal_pub_ = action_node.advertise<move_base_msgs::MoveBaseActionGoal>("goal", 1);
 
     //we'll provide a mechanism for some people to send goals as PoseStamped messages over a topic
     //they won't get any useful information back about its status, but this is useful for tools
@@ -130,7 +130,7 @@ namespace move_base {
 
   void MoveBase::goalCB(const geometry_msgs::PoseStamped::ConstPtr& goal){
     ROS_DEBUG("In ROS goal callback, wrapping the PoseStamped in the action message and re-sending to the server.");
-    MoveBaseActionGoal action_goal;
+    move_base_msgs::MoveBaseActionGoal action_goal;
     action_goal.goal.target_pose = *goal;
 
     action_goal_pub_.publish(action_goal);
@@ -381,7 +381,7 @@ namespace move_base {
 
   }
 
-  void MoveBase::executeCb(const MoveBaseGoalConstPtr& move_base_goal)
+  void MoveBase::executeCb(const move_base_msgs::MoveBaseGoalConstPtr& move_base_goal)
   {
     geometry_msgs::PoseStamped goal = move_base_goal->target_pose;
     std::vector<geometry_msgs::PoseStamped> global_plan;
@@ -462,7 +462,7 @@ namespace move_base {
 
     //check that the observation buffers for the costmap are current, we don't want to drive blind
     if(!controller_costmap_ros_->isCurrent()){
-      ROS_WARN("[%s]:Sensor data is out of date, we're not going to allow commanding of the base for safety",ros_node_.getName().c_str());
+      ROS_WARN("[%s]:Sensor data is out of date, we're not going to allow commanding of the base for safety",ros::this_node::getName().c_str());
       publishZeroVelocity();
       return;
     }

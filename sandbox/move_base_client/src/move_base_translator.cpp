@@ -37,7 +37,7 @@
 #include "geometry_msgs/PoseStamped.h"
 #include "nav_robot_actions/MoveBaseState.h"
 
-#include "move_base/MoveBaseAction.h"
+#include "move_base_msgs/MoveBaseAction.h"
 #include "actionlib/client/action_client.h"
 #include "action_translator/action_translator.h"
 #include "robot_actions/action_runner.h"
@@ -47,17 +47,17 @@ using namespace geometry_msgs;
 
 move_base::MoveBaseGoal fromOldGoal(const PoseStamped& old_goal)
 {
-  move_base::MoveBaseGoal new_goal;
+  move_base_msgs::MoveBaseGoal new_goal;
   new_goal.target_pose = old_goal;
   return new_goal;
 }
 
-/*PoseStamped fromActionFeedback(const move_base::MoveBaseFeedback& action_feedback)
+/*PoseStamped fromActionFeedback(const move_base_msgs::MoveBaseFeedback& action_feedback)
 {
   return action_feedback.cur_pose;
 }*/
 
-PoseStamped fromActionResult(const move_base::MoveBaseResult& action_result)
+PoseStamped fromActionResult(const move_base_msgs::MoveBaseResult& action_result)
 {
   return action_result.final_pose;
 }
@@ -68,7 +68,7 @@ int main(int argc, char** argv)
 
   ros::NodeHandle n;
 
-  action_translator::ActionTranslator<move_base::MoveBaseAction, PoseStamped, PoseStamped>
+  action_translator::ActionTranslator<move_base_msgs::MoveBaseAction, PoseStamped, PoseStamped>
                               translator("move_base", &fromOldGoal, NULL, &fromActionResult);
 
   robot_actions::ActionRunner runner(10.0);
