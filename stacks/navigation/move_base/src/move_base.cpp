@@ -115,6 +115,7 @@ namespace move_base {
 
     //if we shutdown our costmaps when we're deactivated... we'll do that now
     if(shutdown_costmaps_){
+      ROS_DEBUG("Stopping costmaps initially");
       planner_costmap_ros_->stop();
       controller_costmap_ros_->stop();
     }
@@ -387,6 +388,7 @@ namespace move_base {
 
     ros::Rate r(controller_frequency_);
     if(shutdown_costmaps_){
+      ROS_DEBUG("Starting up costmaps that were shut down previously");
       planner_costmap_ros_->start();
       controller_costmap_ros_->start();
     }
@@ -622,6 +624,7 @@ namespace move_base {
 
     //if we shutdown our costmaps when we're deactivated... we'll do that now
     if(shutdown_costmaps_){
+      ROS_DEBUG("Stopping costmaps");
       planner_costmap_ros_->stop();
       controller_costmap_ros_->stop();
     }
