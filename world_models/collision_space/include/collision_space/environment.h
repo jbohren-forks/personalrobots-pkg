@@ -224,9 +224,6 @@ namespace collision_space
 	/** \brief Flag to indicate whether verbose mode is on */
 	bool                                                     m_verbose;
 
-	/** \brief Interface to printing information */
-	planning_models::msg::Interface                          m_msg;
-	
 	/** \brief Loaded robot model */	
 	boost::shared_ptr<planning_models::KinematicModel>       m_robotModel;
 
