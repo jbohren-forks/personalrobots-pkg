@@ -181,6 +181,8 @@ public:
       stdata_->doCalcPts();
     }
 
+    ROS_INFO("DEBUG FOR GAZEBO: %d %d %d %d %d", do_colorize_, do_rectify_, do_stereo_, do_calc_points_, do_keep_coords_);
+
     advertiseCam();
     publishCam();
 
@@ -275,6 +277,7 @@ public:
     memcpy((char*)(&stereo_info_.Om[0]), (char*)(stdata_->Om),  3*sizeof(double));
     memcpy((char*)(&stereo_info_.RP[0]), (char*)(stdata_->RP), 16*sizeof(double));
 
+    ROS_INFO("DEBUG FOR GAZEBO: %d %d %d %d %d", do_colorize_, do_rectify_, do_stereo_, do_calc_points_, do_keep_coords_);
     publish("stereo_info", stereo_info_);
   }
 
