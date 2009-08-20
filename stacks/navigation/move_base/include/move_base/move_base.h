@@ -39,7 +39,7 @@
 #include <ros/ros.h>
 
 #include <actionlib/server/single_goal_action_server.h>
-#include <move_base/MoveBaseAction.h>
+#include <move_base_msgs/MoveBaseAction.h>
 
 #include <nav_core/base_local_planner.h>
 #include <nav_core/base_global_planner.h>
@@ -56,7 +56,7 @@
 
 namespace move_base {
   //typedefs to help us out with the action server so that we don't hace to type so much
-  typedef actionlib::SingleGoalActionServer<MoveBaseAction> MoveBaseActionServer;
+  typedef actionlib::SingleGoalActionServer<move_base_msgs::MoveBaseAction> MoveBaseActionServer;
 
   enum MoveBaseState {
     PLANNING,
@@ -155,7 +155,7 @@ namespace move_base {
 
       void goalCB(const geometry_msgs::PoseStamped::ConstPtr& goal);
 
-      void executeCb(const MoveBaseGoalConstPtr& move_base_goal);
+      void executeCb(const move_base_msgs::MoveBaseGoalConstPtr& move_base_goal);
 
       geometry_msgs::PoseStamped goalToGlobalFrame(const geometry_msgs::PoseStamped& goal_pose_msg);
 

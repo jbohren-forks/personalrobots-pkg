@@ -7,6 +7,7 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
 
+  <depend package="rosconsole"/>
   <depend package="planning_models"/>
   <depend package="geometric_shapes"/>
   <depend package="opende"/>

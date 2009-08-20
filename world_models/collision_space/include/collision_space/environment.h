@@ -39,7 +39,6 @@
 
 #include "collision_space/environment_objects.h"
 #include <planning_models/kinematic.h>
-#include <planning_models/output.h>
 #include <geometric_shapes/bodies.h>
 #include <LinearMath/btVector3.h>
 #include <boost/thread/mutex.hpp>
@@ -224,9 +223,6 @@ namespace collision_space
 	/** \brief Flag to indicate whether verbose mode is on */
 	bool                                                     m_verbose;
 
-	/** \brief Interface to printing information */
-	planning_models::msg::Interface                          m_msg;
-	
 	/** \brief Loaded robot model */	
 	boost::shared_ptr<planning_models::KinematicModel>       m_robotModel;
 

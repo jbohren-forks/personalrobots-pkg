@@ -34,14 +34,14 @@
 
 #include "ros/ros.h"
 
-#include "move_base/MoveBaseAction.h"
+#include "move_base_msgs/MoveBaseAction.h"
 #include "actionlib/client/simple_action_client.h"
 
 #include "boost/thread.hpp"
 
 using namespace actionlib;
 using namespace geometry_msgs;
-using namespace move_base;
+using namespace move_base_msgs;
 
 typedef SimpleActionClient<MoveBaseAction> MoveBaseClient;
 

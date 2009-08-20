@@ -1,0 +1,114 @@
+Index: ode/src/quickstep.cpp
+===================================================================
+--- ode/src/quickstep.cpp	(revision 1689)
++++ ode/src/quickstep.cpp	(working copy)
+@@ -63,6 +63,9 @@
+ 
+ #define RANDOMLY_REORDER_CONSTRAINTS 1
+ 
++
++#undef TIMING
++
+ //****************************************************************************
+ // special matrix multipliers
+ 
+@@ -876,6 +879,87 @@
+ 
+     dReal *cforce = context->AllocateArray<dReal> (nb*6);
+ 
++#ifdef TIMING
++		std::cout << " m: total constraint dimention " << m
++		          << " nb: number of bounded variables " << nb
++		          << " nub: number of unbounded variables " << nb
++		          << " jb: array of body numbers for each joint row " << jb
++		          << " lo " << lo
++		          << " hi " << hi
++		          << " findex " << findex
++                          << std::endl;
++
++                FILE* fJ = fopen("/tmp/J.mat","a");
++		//std::cout << " J " << J << std::endl;
++                fprintf(fJ,"\n");
++                dPrintMatrix(J,m,12,"%10.4f",fJ);
++                fclose(fJ);
++
++                FILE* finvI = fopen("/tmp/invI.mat","a");
++		//std::cout << " invI " << invI << std::endl;
++                fprintf(finvI,"\n");
++                dPrintMatrix(invI,3*nb,4,"%10.4f",finvI);
++                fclose(finvI);
++
++//                FILE* ftmpI = fopen("/tmp/tmpI.mat","a");
++//		//std::cout << " tmpI " << tmpI << std::endl;
++//                fprintf(ftmpI,"\n");
++//                dPrintMatrix(tmpI,3*nb,4,"%10.4f",ftmpI);
++//                fclose(ftmpI);
++
++//                FILE* ftmpM = fopen("/tmp/tmpM.mat","a");
++//		//std::cout << " tmpM " << tmpM << std::endl;
++//                fprintf(ftmpM,"\n");
++//                dPrintMatrix(tmpM,nb,4,"%10.4f",ftmpM);
++//                fclose(ftmpM);
++
++                FILE* fc = fopen("/tmp/c.mat","a");
++		//std::cout << " c " << c << std::endl;
++                fprintf(fc,"\n");
++                dPrintMatrix(c,1,m,"%10.4f",fc);
++                fclose(fc);
++
++                FILE* flambda = fopen("/tmp/lambda.mat","a");
++		//std::cout << " lambda " << lambda << std::endl;
++                fprintf(flambda,"\n");
++                dPrintMatrix(lambda,1,m,"%10.4f",flambda);
++                fclose(flambda);
++
++                FILE* fcforce = fopen("/tmp/cforce.mat","a");
++                fprintf(fcforce,"\n");
++		//std::cout << " cforce " << cforce << std::endl;
++                dPrintMatrix(cforce,nb,6,"%10.4f",fcforce);
++                fclose(fcforce);
++
++                FILE* frhs = fopen("/tmp/rhs.mat","a");
++		//std::cout << " rhs " << rhs << std::endl;
++                fprintf(frhs,"\n");
++                dPrintMatrix(rhs,1,m,"%10.4f",frhs);
++                fclose(frhs);
++
++                // constraint forc mixing vector
++                FILE* flo = fopen("/tmp/lo.mat","a");
++		//std::cout << " lo " << lo << std::endl;
++                fprintf(flo,"\n");
++                dPrintMatrix(lo,1,m,"%10.4f",flo);
++                fclose(flo);
++
++                // constraint forc mixing vector
++                FILE* fhi = fopen("/tmp/hi.mat","a");
++		//std::cout << " hi " << hi << std::endl;
++                fprintf(fhi,"\n");
++                dPrintMatrix(hi,1,m,"%10.4f",fhi);
++                fclose(fhi);
++
++                // constraint forc mixing vector
++                FILE* fcfm = fopen("/tmp/cfm.mat","a");
++		//std::cout << " cfm " << cfm << std::endl;
++                fprintf(fcfm,"\n");
++                dPrintMatrix(cfm,1,m,"%10.4f",fcfm);
++                fclose(fcfm);
++#endif
++
++
+     BEGIN_STATE_SAVE(context, lcpstate) {
+       IFTIMING (dTimerNow ("solving LCP problem"));
+       // solve the LCP problem and get lambda and invM*constraint_force
+Index: ode/src/util.h
+===================================================================
+--- ode/src/util.h	(revision 1689)
++++ ode/src/util.h	(working copy)
+@@ -23,6 +23,7 @@
+ #ifndef _ODE_UTIL_H_
+ #define _ODE_UTIL_H_
+ 
++#define SIZE_MAX ((size_t)(-1))
+ #include "objects.h"
+ 
+ 

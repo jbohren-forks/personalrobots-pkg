@@ -35,6 +35,7 @@
 /** \author Ioan Sucan */
 
 #include "collision_space/environment.h"
+#include <ros/console.h>
 
 bool collision_space::EnvironmentModel::getCollisionContacts(std::vector<Contact> &contacts, unsigned int max_count)
 {
@@ -92,14 +93,14 @@ void collision_space::EnvironmentModel::addSelfCollisionGroup(const std::vector<
     {
 	if (m_collisionLinkIndex.find(links[i]) == m_collisionLinkIndex.end())
 	{
-	    m_msg.error("Unknown link '%s'", links[i].c_str());
+	    ROS_ERROR("Unknown link '%s'", links[i].c_str());
 	    continue;
 	}
 	for (unsigned int j = i + 1 ; j < links.size() ; ++j)
 	{
 	    if (m_collisionLinkIndex.find(links[j]) == m_collisionLinkIndex.end())
 	    {
-		m_msg.error("Unknown link '%s'", links[j].c_str());
+		ROS_ERROR("Unknown link '%s'", links[j].c_str());
 		continue;
 	    }
 	    m_selfCollisionTest[m_collisionLinkIndex[links[i]]][m_collisionLinkIndex[links[j]]] = true;

@@ -35,6 +35,7 @@
 /** \author Ioan Sucan */
 
 #include "collision_space/environmentODE.h"
+#include <ros/console.h>
 #include <boost/thread.hpp>
 #include <cassert>
 #include <cstdio>
@@ -53,7 +54,7 @@ collision_space::EnvironmentModelODE::EnvironmentModelODE(void) : EnvironmentMod
     ODEInitCountLock.lock();
     if (ODEInitCount == 0)
     {
-	m_msg.message("Initializing ODE");
+	ROS_DEBUG("Initializing ODE");
 	dInitODE2(0);
     }
     ODEInitCount++;
@@ -71,7 +72,7 @@ collision_space::EnvironmentModelODE::~EnvironmentModelODE(void)
     ODEInitCount--;
     if (ODEInitCount == 0)
     {
-	m_msg.message("Closing ODE");
+	ROS_DEBUG("Closing ODE");
 	dCloseODE();
     }
     ODEInitCountLock.unlock();
@@ -84,7 +85,7 @@ void collision_space::EnvironmentModelODE::checkThreadInit(void) const
     if (ODEThreadMap.find(id) == ODEThreadMap.end())
     {
 	ODEThreadMap[id] = 1;
-	m_msg.message("Initializing new thread (%d total)", (int)ODEThreadMap.size());
+	ROS_DEBUG("Initializing new thread (%d total)", (int)ODEThreadMap.size());
 	dAllocateODEDataForThread(dAllocateMaskAll);
     }
     ODEThreadMapLock.unlock();
@@ -695,8 +696,8 @@ void collision_space::EnvironmentModelODE::testBodyCollision(CollisionNamespace 
 			dSpaceCollide2(g1, g2, cdata, nearCallbackFn);
 		    
 		    if (cdata->collides && m_verbose)
-			m_msg.inform("Collision between body in namespace '%s' and link '%s'\n",
-				     cn->name.c_str(), m_modelGeom.linkGeom[i]->link->name.c_str());
+			ROS_INFO("Collision between body in namespace '%s' and link '%s'\n",
+				 cn->name.c_str(), m_modelGeom.linkGeom[i]->link->name.c_str());
 		}
 	    }
 	}
@@ -713,8 +714,8 @@ void collision_space::EnvironmentModelODE::testBodyCollision(CollisionNamespace 
 		{
 		    cn->collide2.collide(m_modelGeom.linkGeom[i]->geom[ig], cdata, nearCallbackFn);
 		    if (cdata->collides && m_verbose)
-			m_msg.inform("Collision between body in namespace '%s' and link '%s'\n",
-				     cn->name.c_str(), m_modelGeom.linkGeom[i]->link->name.c_str());
+			ROS_INFO("Collision between body in namespace '%s' and link '%s'\n",
+				 cn->name.c_str(), m_modelGeom.linkGeom[i]->link->name.c_str());
 		}
 	    }
     }
@@ -848,7 +849,7 @@ void collision_space::EnvironmentModelODE::updateAllowedTouch(void)
 		if (it != m_collisionLinkIndex.end())
 		    kg->allowedTouch[k + 1][it->second] = true;
 		else
-		  m_msg.error("Unknown link '%s'", tlink.c_str());
+		    ROS_ERROR("Unknown link '%s'", tlink.c_str());
 	    }
 	}
     }

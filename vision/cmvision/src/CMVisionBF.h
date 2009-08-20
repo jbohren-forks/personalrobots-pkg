@@ -61,6 +61,7 @@ namespace color_blob_track
 
     private: ros::NodeHandle *nodeHandle;
     private: ros::Publisher publisher;
+    private: ros::Subscriber subscriber;
 
     //private: sensor_msgs::Image image;
     private: sensor_msgs::CvBridge imageBridge;

@@ -36,6 +36,60 @@ int main(int argc, char** argv) {
     d.train(num_candidates, max_secs, max_wcs, min_util);
     d.save(argv[3]);
   }
+
+  else if(argc == 4 && !strcmp(argv[1], "--classify")) {
+    cout << "Running classifier " << argv[3] <<  " on dataset "  << argv[2] << endl;
+    Dorylus d;
+    DorylusDataset dd;
+    if(!dd.load(argv[2])) {
+      cout << "Failed to load dataset " << argv[2] << endl;
+      return 1;
+    }
+    if(!d.load(argv[3])) {
+      cout << "Failed to load classifier " << argv[3] << endl;
+      return 1;
+    }
+    cout << "Objective: " << d.classify(dd) << endl;
+  }
+
+  else if(argc == 5 && !strcmp(argv[1], "--relearnResponses")) {
+    cout << "Relearning responses on classifier " << argv[3] << " using dataset " << argv[2] 
+	 << ", saving new classifier with name " << argv[4] << endl;
+    Dorylus d;
+    DorylusDataset dd;
+    if(!dd.load(argv[2])) {
+      cout << "Failed to load dataset " << argv[2] << endl;
+      return 1;
+    }
+    if(!d.load(argv[3])) {
+      cout << "Failed to load classifier " << argv[3] << endl;
+      return 1;
+    }
+    
+    d.relearnResponses(dd);
+    d.save(argv[4]);
+  }
+
+
+  else if(argc == 5 && !strcmp(argv[1], "--resumeTraining")) {
+    cout << "Resuming learning of weak classifiers on " << argv[3] << " using dataset " << argv[2] 
+	 << ", saving new classifier with name " << argv[4] << endl;
+    Dorylus d;
+    DorylusDataset dd;
+    if(!dd.load(argv[2])) {
+      cout << "Failed to load dataset " << argv[2] << endl;
+      return 1;
+    }
+    if(!d.load(argv[3])) {
+      cout << "Failed to load classifier " << argv[3] << endl;
+      return 1;
+    }
+    
+    d.useDataset(&dd);
+    d.resumeTraining(num_candidates, max_secs, max_wcs, min_util);
+    d.save(argv[4]);
+  }
+
   else if(argc == 3 && !strcmp(argv[1], "--status")) {
     cout << "Examining " << argv[2] << endl;
 
@@ -79,5 +133,16 @@ int main(int argc, char** argv) {
     cout << "   MIN_UTIL=x is the minimum utility that an added weak classifier must have to continue training.  Default 0." << endl;
     cout << "   NCANDIDATES=x is the max number of weak classifier candidates to use at each stage. Default 10." << endl;
     cout << endl;
+
+//     cout << argv[0] << " --relearnResponses DATASET OLD_CLASSIFIER NEW_CLASSIFIER_SAVENAME" << endl;
+//     cout << endl;
+
+    cout << argv[0] << " --resumeTraining DATASET OLD_CLASSIFIER NEW_CLASSIFIER_SAVENAME" << endl;
+    cout << endl;
+
+    cout << argv[0] << " --classify DATASET CLASSIFIER" << endl;
+    cout << " Runs CLASSIFIER on DATASET and prints the objective." << endl;
+    cout << endl;
+
   }
 }

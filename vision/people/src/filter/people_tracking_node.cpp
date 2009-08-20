@@ -116,6 +116,7 @@ namespace estimation
   // callback for messages
   void PeopleTrackingNode::callbackRcv(const boost::shared_ptr<people::PositionMeasurement>& message)
   {
+	ROS_DEBUG("Tracking node got a people position measurement (%f,%f,%f)", message->pos.x, message->pos.y, message->pos.z);
     // get measurement in fixed frame
     Stamped<tf::Vector3> meas_rel, meas;
     meas_rel.setData(tf::Vector3(message->pos.x, message->pos.y, message->pos.z));
@@ -221,6 +222,8 @@ namespace estimation
 	people::PositionMeasurement est_pos;
 	(*it)->getEstimate(est_pos);
 	est_pos.header.frame_id = fixed_frame_;
+
+	ROS_DEBUG("Publishing people tracker filter.");
 	publish("people_tracker_filter", est_pos);
 
 	// visualize filter result

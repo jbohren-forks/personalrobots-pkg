@@ -354,9 +354,7 @@ unsigned int RFCreator3D::concatenateNodeFeatures(const RandomField& rf,
   HARD_CODED_FEATURES.push_back(1);
   HARD_CODED_FEATURES.push_back(2);
   HARD_CODED_FEATURES.push_back(3);
-  HARD_CODED_FEATURES.push_back(4);
-  HARD_CODED_FEATURES.push_back(5);
-  ROS_WARN("CONCATENATING HARD CODED NODE FEATURES (0-5)");
+  ROS_WARN("CONCATENATING HARD CODED NODE FEATURES (0-3)");
   unsigned int nbr_concatenated_features = HARD_CODED_FEATURES.size() * 2;
   // TODO REMOVE
 

@@ -32,6 +32,15 @@ rospack_add_library(table_object_rf
 rospack_add_openmp_flags (table_object_rf)
 target_link_libraries(table_object_rf rf_creator_3d)
 
+
+# Library to create RandomFields from laser point cloud
+rospack_add_library(room_object_rf
+                        src/laser/room_object_rf.cpp)
+rospack_add_openmp_flags (room_object_rf)
+target_link_libraries(room_object_rf rf_creator_3d)
+
+
+
 # -------------------------------------------------------------
 # random field creator for table object segmenter
 rospack_add_executable(rf_table_object_segmenter 
@@ -45,6 +54,21 @@ target_link_libraries(train_table_object_segmenter table_object_rf)
 rospack_add_executable(classify_table_object_segmenter 
                         src/image_stereo/classify_table_object_segmenter.cpp)
 target_link_libraries(classify_table_object_segmenter table_object_rf)
+
+
+# -------------------------------------------------------------
+# random field creator for room object segmenter
+rospack_add_executable(rf_room_object_segmenter 
+                        src/laser/rf_room_object_segmenter.cpp)
+target_link_libraries(rf_room_object_segmenter room_object_rf)
+#trainer for room object segmenter
+rospack_add_executable(train_room_object_segmenter 
+                        src/laser/train_room_object_segmenter.cpp)
+target_link_libraries(train_room_object_segmenter room_object_rf)
+# classifier for room object segmenter
+rospack_add_executable(classify_room_object_segmenter 
+                        src/laser/classify_room_object_segmenter.cpp)
+target_link_libraries(classify_room_object_segmenter room_object_rf)
 
 
 # -------------------------------------------------------------

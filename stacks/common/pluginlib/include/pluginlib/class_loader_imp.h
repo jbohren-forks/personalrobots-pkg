@@ -170,12 +170,12 @@ namespace pluginlib {
     }
     catch (Poco::LibraryLoadException &ex)
     {
-      ROS_ERROR("Failed to load library %s Error string: %s", library_path.c_str(), ex.what());
+      ROS_ERROR("Failed to load library %s Error string: %s", library_path.c_str(), ex.displayText().c_str());
       return false;
     }
     catch (Poco::NotFoundException &ex)
     {
-      ROS_ERROR("Failed to find library %s Error string: %s", library_path.c_str(), ex.what());
+      ROS_ERROR("Failed to find library %s Error string: %s", library_path.c_str(), ex.displayText().c_str());
       return false;
     }
     return true;
@@ -276,7 +276,7 @@ namespace pluginlib {
       return poco_class_loader_.create(getClassType(lookup_name));
     }
     catch(const Poco::RuntimeException& ex){
-      ROS_ERROR("Poco exception: %s (class: %s)", ex.what(), lookup_name.c_str());
+      ROS_ERROR("Poco exception: %s (class: %s)", ex.displayText().c_str(), lookup_name.c_str());
       throw std::runtime_error(ex.what());
     }
   }

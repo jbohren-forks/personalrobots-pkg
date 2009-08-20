@@ -34,6 +34,12 @@
 # Revision $Id$
 
 import yaml
+import subprocess
+import os.path
+
+def getPackagePath(pkg):
+  pkgpath = subprocess.Popen(["rospack", "find", pkg], stdout=subprocess.PIPE).communicate()[0].strip()
+  return pkgpath
 
 class App:
   def __init__(self, taskid):

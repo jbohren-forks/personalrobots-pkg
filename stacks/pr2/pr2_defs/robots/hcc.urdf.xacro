@@ -15,11 +15,12 @@
   <include filename="$(find pr2_defs)/defs/materials.urdf.xacro" />
 
   <!-- Make base joint for visualization -->
-  <joint name="base_joint" type="fixed" />
+  <joint name="base_joint" type="fixed">
+    <origin xyz="0 0 0.53" rpy="0 0 0" />
+    <parent link="world" />
+    <child link="base_link" />
+  </joint>
   <link name="base_link">
-    <parent name="world" />
-    <origin xyz=" 0 0 0.53 " rpy=" 0 0 0" />
-    <joint name="base_joint" />
     <inertial>
       <mass value="100" />
       <com xyz=" 0 0 0 " />

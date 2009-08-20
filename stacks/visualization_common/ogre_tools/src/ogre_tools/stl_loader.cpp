@@ -73,12 +73,19 @@ bool STLLoader::load(const std::string& path)
   long long fileSize = ftell( input );
   fseek( input, 0, SEEK_SET );
 
-  char* buffer = new char[ fileSize ];
+  uint8_t* buffer = new uint8_t[ fileSize ];
   fread( buffer, fileSize, 1, input );
-
   fclose( input );
 
-  char* pos = buffer;
+  bool success = load(buffer);
+  delete [] buffer;
+
+  return success;
+}
+
+bool STLLoader::load(uint8_t* buffer)
+{
+  uint8_t* pos = buffer;
   pos += 80; // skip the 80 byte header
 
   unsigned int numTriangles = *(unsigned int*)pos;

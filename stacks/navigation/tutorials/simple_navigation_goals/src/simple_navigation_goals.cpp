@@ -38,12 +38,12 @@
 * http://pr.willowgarage.com/wiki/navigation/Tutorials/SendingSimpleGoals
 *********************************************************************/
 #include <ros/ros.h>
-#include <move_base/MoveBaseAction.h>
+#include <move_base_msgs/MoveBaseAction.h>
 #include <actionlib/client/simple_action_client.h>
 
 #include <boost/thread.hpp>
 
-typedef actionlib::SimpleActionClient<move_base::MoveBaseAction> MoveBaseClient;
+typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseClient;
 
 void spinThread(){
   ros::spin();
@@ -61,7 +61,7 @@ int main(int argc, char** argv){
   //give some time for connections to register
   sleep(2.0);
 
-  move_base::MoveBaseGoal goal;
+  move_base_msgs::MoveBaseGoal goal;
 
   //we'll send a goal to the robot to move 2 meters forward
   goal.target_pose.header.frame_id = "base_link";
