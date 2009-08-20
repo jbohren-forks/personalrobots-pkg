@@ -38,6 +38,6 @@
 
 
 PLUGINLIB_REGISTER_CLASS(LaserMedianFilter, laser_scan::LaserMedianFilter, filters::FilterBase<sensor_msgs::LaserScan>)
-PLUGINLIB_REGISTER_CLASS(LaserIntensityFilter, laser_scan::LaserScanIntensityFilter, filters::FilterBase<sensor_msgs::LaserScan>)
+PLUGINLIB_REGISTER_CLASS(LaserScanIntensityFilter, laser_scan::LaserScanIntensityFilter, filters::FilterBase<sensor_msgs::LaserScan>)
 PLUGINLIB_REGISTER_CLASS(LaserScanFootprintFilter, laser_scan::LaserScanFootprintFilter, filters::FilterBase<sensor_msgs::LaserScan>)
 PLUGINLIB_REGISTER_CLASS(ScanShadowsFilter, laser_scan::ScanShadowsFilter, filters::FilterBase<sensor_msgs::LaserScan>)
