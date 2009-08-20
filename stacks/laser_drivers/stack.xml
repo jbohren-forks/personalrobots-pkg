@@ -6,7 +6,7 @@
   <license>BSD,LGPL</license>  
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/laser_drivers</url>
-  <depend stack="hardware_test"/> <!-- self_test, diagnostic_updater --> 
+  <depend stack="diagnostics"/> <!-- self_test, diagnostic_updater --> 
   <depend stack="ros"/> <!-- roscpp, roscpp --> 
   <depend stack="common_msgs"/> <!-- sensor_msgs, sensor_msgs --> 
 

@@ -122,7 +122,7 @@ class ReactorPanel():
   # Static variables
   LabelWidth = 200
   TokenCache = 50
-  TokenHistory = 25
+  TokenHistory = 1
   
   Center = 0
   PastWidth = 500
@@ -130,7 +130,7 @@ class ReactorPanel():
   MetricTime = False
   TimeScale = 1.0
 
-  TokenSpace = 0
+  TokenSpace = 2
 
   # Callback containers
   # ContextCallbacks is a dictionary used for registrating extensions to
@@ -236,6 +236,8 @@ class ReactorPanel():
       
     # Clear tokens to remove list
     self.tokens_to_remove = []
+
+    # TODO:Clear timelines that are not represented in the assembly
 
     # Create timeline objects for all timelines
     # This also classifies all timelines as internal or external
@@ -444,6 +446,11 @@ class ReactorPanel():
     earliest_start = 0
     latest_end = 0
     latest_tick = 0
+
+    if ReactorPanel.MetricTime:
+      token_space = min(2,ReactorPanel.TimeScale/2)
+    else:
+      token_space = ReactorPanel.TokenSpace
     
     # Reset earliest start and latest end for each reactor
     for tl in self.int_timelines + self.ext_timelines:
@@ -522,7 +529,7 @@ class ReactorPanel():
 	tok_width_sync = tok_width_sync + abs(timeline.earliest_start - earliest_start)
 
 	# Get the larger of the two widths
-	tok_width = ReactorPanel.TokenSpace + max(tok_width_label, tok_width_sync)
+	tok_width = max(tok_width_label, tok_width_sync)
 
 	if ReactorPanel.MetricTime:
 	  tok_width = ReactorPanel.TimeScale*(token.end[0]-token.start[0])
@@ -563,7 +570,7 @@ class ReactorPanel():
 	tok_width_sync = tok_width_sync + abs(latest_end - timeline.latest_end)
 
 	# Get the larger of the two widths
-	tok_width = ReactorPanel.TokenSpace + max(tok_width_label, tok_width_sync)
+	tok_width = max(tok_width_label, tok_width_sync)
 
 	# Calculate the token end point
 	# This is the start of the earliest token on the timeline that this token is being drawn onto
@@ -609,24 +616,27 @@ class ReactorPanel():
 	cr.set_source_rgba(r, g, b, 0.7)
 
       # Draw the token rectangle
-      cr.rectangle(tok_x0, tok_y0, -tok_width+2, ReactorPanel.ROW_HEIGHT)
+      cr.rectangle(tok_x0, tok_y0, -tok_width+token_space, ReactorPanel.ROW_HEIGHT)
       cr.fill()
 
-      # Draw the token label
-      self.set_label_font(cr)
-      tx = tok_x0 - w_label - ReactorPanel.LABEL_MARGIN
-      ty = tok_y0 + ReactorPanel.ROW_HEIGHT - 4
-      cr.move_to(tx,ty)
-      cr.set_source_rgba(1.0, 1.0, 1.0, 1.0)
-      cr.show_text(label_str)
+      # Only draw the labels if there is space for them
+      if tok_width-2-ReactorPanel.LABEL_MARGIN > w_label:
+	# Draw the token label
+	self.set_label_font(cr)
+	tx = tok_x0 - w_label - ReactorPanel.LABEL_MARGIN
+	ty = tok_y0 + ReactorPanel.ROW_HEIGHT - 4
+	cr.move_to(tx,ty)
+	cr.set_source_rgba(1.0, 1.0, 1.0, 1.0)
+	cr.show_text(label_str)
 
-      # Draw the time bounds
-      self.set_times_font(cr)
-      cr.set_source_rgba(0, 0, 0, 0.5)
-      tx = tok_x0 - w_end_str - ReactorPanel.LABEL_MARGIN
-      ty = tok_y0 + ReactorPanel.ROW_STEP - 3
-      cr.move_to(tx,ty)
-      cr.show_text(end_str)
+      if tok_width-2-ReactorPanel.LABEL_MARGIN > w_end_str:
+	# Draw the time bounds
+	self.set_times_font(cr)
+	cr.set_source_rgba(0, 0, 0, 0.5)
+	tx = tok_x0 - w_end_str - ReactorPanel.LABEL_MARGIN
+	ty = tok_y0 + ReactorPanel.ROW_STEP - 3
+	cr.move_to(tx,ty)
+	cr.show_text(end_str)
 
     # Draw ruler
     cr.set_source_rgba(0, 0, 0, 0.5)

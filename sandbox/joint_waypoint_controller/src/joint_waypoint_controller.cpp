@@ -42,6 +42,7 @@
 #include <spline_smoother/splines.h>
 #include <algorithm>
 #include <string>
+#include <limits>
 
 namespace joint_waypoint_controller
 {
@@ -89,8 +90,6 @@ bool JointWaypointController::init()
   set_spline_traj_client_ = node_handle_.serviceClient<manipulation_srvs::SetSplineTraj>(spline_controller_prefix_+"SetSplineTrajectory", false);
   query_spline_traj_client_ = node_handle_.serviceClient<manipulation_srvs::QuerySplineTraj>(spline_controller_prefix_+"QuerySplineTrajectory", false);
   cancel_spline_traj_client_ = node_handle_.serviceClient<manipulation_srvs::CancelSplineTraj>(spline_controller_prefix_+"CancelSplineTrajectory", false);
-
-
 
   // advertise services:
   trajectory_start_server_ = node_handle_.advertiseService("~TrajectoryStart", &JointWaypointController::trajectoryStart, this);
@@ -174,7 +173,7 @@ bool JointWaypointController::trajectoryCancel(pr2_mechanism_controllers::Trajec
   return result;
 }
 
-void JointWaypointController::jointTrajToWaypointTraj(const manipulation_msgs::JointTraj& joint_traj, manipulation_msgs::WaypointTrajWithLimits& waypoint_traj) const
+void JointWaypointController::jointTrajToWaypointTraj(const manipulation_msgs::JointTraj& joint_traj, manipulation_msgs::WaypointTrajWithLimits& waypoint_traj)
 {
   waypoint_traj.names = joint_traj.names;
   int size = joint_traj.points.size();
@@ -187,6 +186,34 @@ void JointWaypointController::jointTrajToWaypointTraj(const manipulation_msgs::J
     waypoint_traj.points[i].time = joint_traj.points[i].time;
     waypoint_traj.points[i].velocities.resize(num_joints, 0.0);
     waypoint_traj.points[i].accelerations.resize(num_joints, 0.0);
+  }
+
+  // fill in the joint limits in a "lazy loading" fashion:
+  waypoint_traj.limits.resize(num_joints);
+  for (int i=0; i<num_joints; ++i)
+  {
+    std::map<std::string, manipulation_msgs::Limits>::const_iterator limit_it = joint_limits_.find(joint_traj.names[i]);
+    manipulation_msgs::Limits limits;
+    if (limit_it == joint_limits_.end())
+    {
+      // load the limits from the param server
+      node_handle_.param("~joint_limits/"+joint_traj.names[i]+"/min_position", limits.min_position, -std::numeric_limits<double>::max());
+      node_handle_.param("~joint_limits/"+joint_traj.names[i]+"/max_position", limits.max_position, std::numeric_limits<double>::max());
+      node_handle_.param("~joint_limits/"+joint_traj.names[i]+"/max_velocity", limits.max_velocity, std::numeric_limits<double>::max());
+      bool boolean;
+      node_handle_.param("~joint_limits/"+joint_traj.names[i]+"/has_position_limits", boolean, false);
+      limits.has_position_limits = boolean?1:0;
+      node_handle_.param("~joint_limits/"+joint_traj.names[i]+"/has_velocity_limits", boolean, false);
+      limits.has_velocity_limits = boolean?1:0;
+      node_handle_.param("~joint_limits/"+joint_traj.names[i]+"/angle_wraparound", boolean, false);
+      limits.angle_wraparound = boolean?1:0;
+      joint_limits_.insert(make_pair(joint_traj.names[i], limits));
+    }
+    else
+    {
+      limits = limit_it->second;
+    }
+    waypoint_traj.limits[i] = limits;
   }
 }
 

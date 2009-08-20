@@ -35,20 +35,24 @@ int _LoadCameraParams(char* filename, CvMat** intrinsic_matrix, CvMat** distorti
 	return 1;
 }
 
-int main(int argc,char** argv)
-{   
-
-
+int run(int argc,char** argv, TestResult* result = 0)
+{
 	char mode[1024], config_filename[1024], camera_filename[1024], output_path[1024], 
         test_path[1024], train_config[1024], pca_config[1024], output_test_config[1024];
 	int accuracy = 5;
+
+	if (result)
+	{
+		result->correct = 0;
+		result->skipped = 0;
+		result->total = 0;
+		result->incorrect = 0;
+	}
 	
     
 	if(argc != 7 && argc != 8)
 	{
-		printf("Usage: detection_test <mode[test|modify|generate]> <images_path> <test_config_filename> <camera_config> <output_path> <accuracy|output_test_config_filename|output_test_config_filename>\n");
-        printf("Usage: detection_test <mode[test|modify|generate]> <images_path> <test_config_filename> <camera_config> <train_config_path> <output_path> <accuracy|output_test_config_filename|output_test_config_filename>\n");
-		return(0);
+		return -1;
 	}
     
 	
@@ -201,7 +205,6 @@ int main(int argc,char** argv)
 #if !defined(_L_DETECTOR)	
 		if ((argc !=7) && (strcmp(mode,"modify")!=0))
 		{
-
 			outlet_template.load(train_config);
 		}
 #endif //L
@@ -241,7 +244,7 @@ int main(int argc,char** argv)
 				sprintf(filename,"%s/results.txt",output_path);
 			else
 				sprintf(filename,"results.txt",output_path);
-			writeTestResults(filename,test_data);
+			writeTestResults(filename,test_data,result);
 			printf ("Test results were successfully written into %s\n", filename);
 		}
 	    
@@ -256,6 +259,193 @@ int main(int argc,char** argv)
 	}
 		
 	return 0;
+}
+
+int main(int argc,char** argv)
+{   
+	char mode[1024];
+	int accuracy = 5;
+	
+	
+	if(argc != 7 && argc != 8 && argc!=3 && argc!=4)
+	{
+		printf("Usage: detection_test <mode[test|modify|generate]> <images_path> <test_config_filename> <camera_config> <output_path> <accuracy|output_test_config_filename|output_test_config_filename>\n");
+        printf("Usage: detection_test <mode[test|modify|generate]> <images_path> <test_config_filename> <camera_config> <train_config_path> <output_path> <accuracy|output_test_config_filename|output_test_config_filename>\n");
+		printf("Usage: detection_test <mode[test|modify|generate]> <test_set_path>\n");
+		return 0;
+	}
+	else
+	{
+		strcpy(mode, argv[1]);
+		if ((argc ==4) && (strcmp(mode,"test")!=0))
+		{
+			printf("Usage: detection_test <mode[test|modify|generate]> <images_path> <test_config_filename> <camera_config> <output_path> <accuracy|output_test_config_filename|output_test_config_filename>\n");
+			printf("Usage: detection_test <mode[test|modify|generate]> <images_path> <test_config_filename> <camera_config> <train_config_path> <output_path> <accuracy|output_test_config_filename|output_test_config_filename>\n");
+			printf("Usage: detection_test <mode[test|modify|generate]> <test_set_path>\n");
+			return 0;
+		}
+		else
+		{
+			if (argc == 4)
+			{
+				sscanf(argv[argc-1],"%d",&accuracy);
+			}
+		}
+	}
+
+	if ((argc == 3)||(argc==4))
+	{
+		char test_set_path[1024];
+		char** command_line;
+
+		char images_path[1024];
+		char test_config_filename[1024];
+		char camera_config[1024];
+		char train_config[1024];
+		char output_path[1024];
+		char datalist_path[1024];
+
+		strcpy(test_set_path,argv[2]);
+		sprintf(datalist_path,"%s/data/datalist.txt",test_set_path);
+
+		FILE* f = fopen(datalist_path,"r");
+		if (f)
+		{
+			char pathname[1024];
+			sprintf(pathname, "mkdir %s/results", test_set_path);
+			system(pathname);
+
+			char image_dir[1024];
+			vector<TestResult*> test_results;
+			vector<char*> dataset_names;
+			while (fscanf(f,"%s\n",image_dir) !=EOF)
+			{
+				printf("======Working on dataset %s======\n",image_dir);
+				sprintf(pathname, "mkdir %s/results/%s", test_set_path,image_dir);
+				system(pathname);
+				sprintf(images_path,"%s/data/%s/images",test_set_path,image_dir);
+				sprintf(test_config_filename,"%s/data/%s/images/list.txt",test_set_path,image_dir);
+				sprintf(camera_config,"%s/data/%s/configs/camera.yml",test_set_path,image_dir);
+				sprintf(train_config,"%s/data/%s/configs",test_set_path,image_dir);
+				sprintf(output_path,"%s/results/%s",test_set_path,image_dir);
+				
+				command_line = new char*[8];
+				
+				if (argc == 3)
+				{
+					//sprintf(command_line,"%s %s %s %s %s %s %s %s",argv[0],mode,images_path,test_config_filename,camera_config,train_config,test_set_path,test_config_filename);
+					command_line[0] = new char[strlen(argv[0])];
+					strcpy(command_line[0],argv[0]);
+					command_line[1] = new char[strlen(mode)];
+					strcpy(command_line[1],mode);
+					command_line[2] = new char[strlen(images_path)];
+					strcpy(command_line[2],images_path);
+					command_line[3] = new char[strlen(test_config_filename)];
+					strcpy(command_line[3],test_config_filename);
+					command_line[4] = new char[strlen(camera_config)];
+					strcpy(command_line[4],camera_config);
+					command_line[5] = new char[strlen(train_config)];
+					strcpy(command_line[5],train_config);
+					command_line[6] = new char[strlen(output_path)];
+					strcpy(command_line[6],output_path);
+					command_line[7] = new char[strlen(test_config_filename)];
+					strcpy(command_line[7],test_config_filename);
+
+
+					run(8,command_line);
+				}
+				else
+				{
+					//sprintf(command_line,"%s %s %s %s %s %s %s %d",argv[0],mode,images_path,test_config_filename,camera_config,train_config,test_set_path,accuracy);
+					command_line[0] = new char[strlen(argv[0])];
+					strcpy(command_line[0],argv[0]);
+					command_line[1] = new char[strlen(mode)];
+					strcpy(command_line[1],mode);
+					command_line[2] = new char[strlen(images_path)];
+					strcpy(command_line[2],images_path);
+					command_line[3] = new char[strlen(test_config_filename)];
+					strcpy(command_line[3],test_config_filename);
+					command_line[4] = new char[strlen(camera_config)];
+					strcpy(command_line[4],camera_config);				
+					command_line[5] = new char[strlen(train_config)];			
+					strcpy(command_line[5],train_config);	
+					command_line[6] = new char[strlen(output_path)];
+					strcpy(command_line[6],output_path);												
+					command_line[7] = new char[strlen(argv[argc-1])];
+					strcpy(command_line[7],argv[argc-1]);
+
+					TestResult* res = new TestResult();
+					if (run(8,command_line,res) < 0 )
+					{
+						printf("Unable to %s dataset %s\n",mode,image_dir);
+					}
+					else
+					{
+						test_results.push_back(res);
+						char* name = new char[strlen(image_dir)];
+						strcpy(name,image_dir);
+						dataset_names.push_back(name);
+					}
+				}
+
+			}
+
+			if (argc == 4)
+			{
+				char res_path[1024];
+				sprintf(res_path,"%s/results/results.txt",test_set_path);
+				FILE* fres = fopen(res_path,"w");
+				if (fres)
+				{
+					printf("---------------------\nAll tests completed\nSummary:\n");
+					int nTotal = 0;
+					int nSkipped = 0;
+					int nCorrect = 0;
+					int nIncorrect = 0;
+					for (int i=0;i<(int)test_results.size();i++)
+					{
+						TestResult* res = test_results[i];
+						nTotal += res->total;
+						nCorrect += res->correct;
+						nIncorrect += res->incorrect;
+						nSkipped += res->skipped;
+						fprintf(fres,"%s (correct/total): %d/%d\n",dataset_names[i],res->correct,res->correct+res->incorrect);
+						printf("%s (correct/total): %d/%d\n",dataset_names[i],res->correct,res->correct+res->incorrect);
+					}
+
+					fprintf(fres,"---------------\n");
+					printf("---------------\n");
+					fprintf(fres,"Total images processed: %d\n",nTotal);
+					fprintf(fres,"Images skipped: %d\n",nSkipped);
+					fprintf(fres,"Correct detections: %d\n",nCorrect);
+					fprintf(fres,"Incorrect detections: %d\n",nIncorrect);
+					printf("Total images processed: %d\n",nTotal);
+					printf("Images skipped: %d\n",nSkipped);
+					printf("Correct detections: %d\n",nCorrect);
+					printf("Incorrect detections: %d\n",nIncorrect);
+					fclose(fres);
+
+				}
+				
+			}
+			fclose(f);
+
+		}
+		else
+		{
+			printf("Unable to open %s",datalist_path);
+			return 0;
+		}
+		
+	}
+	else
+	{
+		run(argc,argv);
+	}
+
+	
+	return 0;
+
 }
 
 

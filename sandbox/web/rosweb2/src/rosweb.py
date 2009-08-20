@@ -433,6 +433,8 @@ class ROSWebHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         (scm, netloc, path, params, query, fragment) = urlparse.urlparse(
             self.path, 'http')
         qdict = cgi.parse_qs(query)
+        pdict = cgi.parse_qs(self.rfile._rbuf)
+        qdict.update(pdict)
 
         #self.log_request()
 
@@ -474,7 +476,7 @@ class ROSWebHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                   out = self.connection
                 else:
                   out = soc
-                data = i.recv(819200)
+                data = i.recv(8192)
                 if data:
                   out.send(data)
                   count = 0

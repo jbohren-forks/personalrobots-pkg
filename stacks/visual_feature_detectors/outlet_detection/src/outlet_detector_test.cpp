@@ -518,7 +518,7 @@ void setRealOutlet(outlet_test_elem& test_elem, CvMat* intrinsic_matrix, CvMat* 
 	}
 }
 //--------------------------------
-int writeTestResults(char* filename, const vector<outlet_test_elem>& test_data)
+int writeTestResults(char* filename, const vector<outlet_test_elem>& test_data, TestResult* result)
 {
 	FILE* f = fopen(filename,"w");
 	if (f)
@@ -556,6 +556,13 @@ int writeTestResults(char* filename, const vector<outlet_test_elem>& test_data)
 			fprintf(f,"---------------------\n");
 		fprintf(f,"Total images:%d\nSkipped:%d\nCorrect:%d\nIncorrect:%d\nNA:%d",nTotal,nSkipped,nCorrect,(int)test_data.size()-nCorrect-nNA,nNA);
 		fclose(f);
+		if (result)
+		{
+			result->total = nTotal;
+			result->correct = nCorrect;
+			result->skipped = nSkipped;
+			result->incorrect = (int)test_data.size()-nCorrect-nNA;
+		}
 		return nTotal-nSkipped;
 	}
 
@@ -619,10 +626,12 @@ int compareAllOutlets(vector<outlet_test_elem>& test_data, int accuracy)
 void runOutletDetectorTest(CvMat* intrinsic_matrix, CvMat* distortion_params, 
 							const outlet_template_t& outlet_templ,vector<outlet_test_elem>& test_data, char* output_path)
 {
+	IplImage* img1 = cvLoadImage(test_data[0].filename);
 	char filename[1024];
 
 	for (int i=0;i<(size_t)test_data.size();i++)
 	{
+		IplImage* img = cvLoadImage(test_data[i].filename);
 		if (test_data[i].n_matches == DETECT_SKIP)
 			continue;
 		if (output_path)
@@ -632,7 +641,7 @@ void runOutletDetectorTest(CvMat* intrinsic_matrix, CvMat* distortion_params,
 			sprintf(filename,"%s",name);
 		}
 		//printf("%s",test_data[i].filename);
-		IplImage* img = cvLoadImage(test_data[i].filename);
+		
 		if (img == NULL)
 		{
 			printf("Unable to load image %s\n",test_data[i].filename);

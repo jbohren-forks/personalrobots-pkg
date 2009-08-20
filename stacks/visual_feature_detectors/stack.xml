@@ -17,7 +17,7 @@
   <depend stack="opencv"/> <!-- opencv_latest, opencv_latest, opencv_latest, opencv_latest --> 
   <depend stack="common"/> <!-- robot_actions --> 
   <depend stack="pr2"/> <!-- pr2_robot_actions --> 
-  <depend stack="visualization_core"/> <!-- visualization_msgs --> 
+  <depend stack="visualization_common"/> <!-- visualization_msgs --> 
   <depend stack="common_msgs"/> <!-- sensor_msgs, geometry_msgs, geometry_msgs, sensor_msgs --> 
 
 </stack>

@@ -9,7 +9,7 @@
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/stereo</url>
   <depend stack="opencv"/> <!-- opencvpython, opencv_latest, opencv_latest --> 
-  <depend stack="hardware_test"/> <!-- diagnostic_updater --> 
+  <depend stack="diagnostics"/> <!-- diagnostic_updater --> 
   <depend stack="ros"/> <!-- roscpp, rostest, rosrecord, roscpp --> 
   <depend stack="common_msgs"/> <!-- sensor_msgs --> 
   <depend stack="camera_drivers"/> <!-- libdc1394v2 --> 

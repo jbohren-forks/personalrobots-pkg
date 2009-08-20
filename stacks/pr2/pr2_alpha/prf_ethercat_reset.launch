@@ -1,10 +1,10 @@
 <launch>
 
   <!-- Calibrated Robot -->
-  <param name="robot_description" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/prf.xacro.xml'" />
+  <include file="$(find pr2_defs)/launch/upload_prf.launch" />
 
   <!-- Uncalibrated Robot -->
-  <!-- param name="robot_description" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/pr2.xacro.xml'" / -->
+  <!-- <include file="$(find pr2_defs)/launch/upload_pr2.launch" /> -->
 
   <include file="$(find pr2_alpha)/prf.machine" />
 

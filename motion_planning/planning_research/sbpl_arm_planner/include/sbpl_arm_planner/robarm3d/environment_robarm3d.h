@@ -263,6 +263,7 @@ typedef struct ENV_ROBARM_CONFIG
     bool exact_gripper_collision_checking;
     bool use_jacobian_motion_prim;
     bool enable_direct_primitive;
+		double max_mprim;
 
 /* Motion Primitives */
     //successor actions
@@ -549,7 +550,8 @@ class EnvironmentROBARM3D: public DiscreteSpaceInformation
 		
 		/** TEMPORARY CRAP */
 		int GetHeuristics(int FromStateID, int &heur_xyz, int &heur_rpy);
-		
+		int ComputeActionToActionCost(double *action_in, double *action_out);
+
 };
 
 inline bool EnvironmentROBARM3D::isValidCell(const int xyz[], const int &radius, unsigned char ***Grid, const boost::shared_ptr<Voxel3d> vGrid)

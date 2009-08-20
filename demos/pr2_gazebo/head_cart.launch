@@ -1,6 +1,6 @@
 <launch>
   <!-- send head_cart.xml to param server -->
-  <param name="robot_description" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/hca.xacro.xml'" />
+  <include file="$(find pr2_defs)/launch/upload_hca.launch" />
 
   <!-- push robot_description to factory and spawn robot in gazebo -->
   <node pkg="gazebo_tools" type="urdf2factory" args="robot_description" respawn="false" output="screen" />

@@ -4,7 +4,8 @@
   <machine name="realtime" address="texas" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" default="true"/>
 
   <!-- Uses special defs file for Alpha 2.0 hardware on PRE -->
-  <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find texas)/texas.xml'" />
+  <param name="robot_description" command="$(find xacro)/xacro.py '$(find texas)/texas.xml'" />
+  <param name="robot_description_new" command="$(find xacro)/xacro.py '$(find texas)/texas.urdf.xacro'" />
 
 <!-- pr2_etherCAT -->
   <node machine="realtime_root" pkg="pr2_etherCAT" type="pr2_etherCAT" args="-i eth0 -x /robotdesc/pr2"/>

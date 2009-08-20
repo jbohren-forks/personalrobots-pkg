@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.5 on Sun Aug 16 13:22:41 2009 -->
+<!--Generated with glade3 3.4.5 on Thu Aug 20 10:57:40 2009 -->
 <glade-interface>
   <widget class="GtkWindow" id="token_network_filter_window">
     <property name="window_position">GTK_WIN_POS_CENTER</property>
-    <property name="default_width">1</property>
+    <property name="default_width">300</property>
     <property name="default_height">400</property>
     <child>
       <widget class="GtkVBox" id="vbox1">

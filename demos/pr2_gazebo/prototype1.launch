@@ -1,7 +1,7 @@
 <launch>
 
-  <!-- send urdf to param server -->
-  <param name="robot_description" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/prototype1.xacro.xml'" />
+  <!-- send prototype1 urdf to param server -->
+  <include file="$(find pr2_defs)/launch/upload_prototype1.launch" />
 
   <!-- push robot_description to factory and spawn robot in gazebo -->
   <node pkg="gazebo_tools" type="urdf2factory" args="robot_description 0 0 0 0 0 0 prototype1_model" respawn="false" />

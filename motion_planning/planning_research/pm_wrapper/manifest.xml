@@ -11,6 +11,8 @@
 		<depend package="geometric_shapes" />
 		<depend package="bullet" />
     <depend package="tf" />
+		<depend package="ompl_ros" />
+		<depend package="ompl" />
   <url></url>
 
   <export>

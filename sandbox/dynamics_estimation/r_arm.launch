@@ -1,13 +1,11 @@
 <launch>
-  <!--
-    Run a PR2 left arm in simulation
-  -->
-  <group name="wg">
-
+    <!--
+      Run a PR2 right arm in simulation
+    -->
     <param name="/ros_gazebo/publish_rate_mechanism_state" value="1000"/>
 
-    <!-- send pr2_l_arm.xml to param server -->
-    <param name="robot_description" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/r_arm.xacro.xml'" />
+    <!-- send pr2 right arm urdf to parameter server -->
+    <include file="$(find pr2_defs)/launch/upload_r_arm.launch" />
 
     <!-- push robot_description to factory and spawn robot in gazebo -->
     <node pkg="gazebo_plugin" type="urdf2factory" args="robot_description" respawn="false" output="screen"/>
@@ -35,6 +33,5 @@
     <include file="$(find arm_gazebo)/debug_plot.launch"/>
     -->
 
-  </group>
 </launch>
 

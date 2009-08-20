@@ -107,7 +107,11 @@ public:
     time_ = loc.stamp_;
     meas_time_ = loc.stamp_;
 
+    try {
     tfl_.transformPoint(fixed_frame, loc, loc);
+    } catch(...) {
+      ROS_WARN("TF exception spot 6.");
+    }
     Stamped<Transform> pose( btTransform(Quaternion(), loc), loc.stamp_, id_, loc.frame_id_);
     tfl_.setTransform(pose);
 
@@ -301,8 +305,12 @@ public:
     // For each tracker, get the distance to this person.
     for (it1 = begin; it1 != end; ++it1) 
     {
+      try {
       tfl_.transformPoint((*it1)->id_, people_meas->header.stamp,
 			  person_loc, fixed_frame, dest_loc);
+      } catch(...) {
+        ROS_WARN("TF exception spot 7.");
+      }
       (*it1)->dist_to_person_ = dest_loc.length();
     }
 
@@ -361,7 +369,11 @@ public:
 	  continue;
 	
 	// Get the distance between the two legs
-	tfl_.transformPoint((*it1)->id_, (*it2)->position_.stamp_, (*it2)->position_, fixed_frame, dest_loc);
+	try {
+		tfl_.transformPoint((*it1)->id_, (*it2)->position_.stamp_, (*it2)->position_, fixed_frame, dest_loc);
+	} catch(...) {
+		ROS_WARN("TF exception getting distance between legs.");
+	}
 	dist_between_legs = dest_loc.length();
 
 	// If this is the closest dist (and within range), and the legs are close together and unlabeled, mark it.
@@ -419,7 +431,11 @@ public:
 	  continue;
    
 	// Get the distance between the two legs
+    try {
 	tfl_.transformPoint((*it1)->id_, (*it2)->position_.stamp_, (*it2)->position_, fixed_frame, dest_loc);
+    } catch(...) {
+		ROS_WARN("TF exception getting distance between legs in spot 2.");
+	}
 	dist_between_legs = dest_loc.length();
 
 	// Ensure that this pair of legs is the closest pair to the tracker, and that the distance between the legs isn't too large.
@@ -516,7 +532,11 @@ public:
     for (list<SampleSet*>::iterator cf_iter = candidates.begin();
          cf_iter != candidates.end(); cf_iter++){
       Stamped<Point> loc((*cf_iter)->center(), scan->header.stamp, scan->header.frame_id);
-      tfl_.transformPoint(fixed_frame, loc, loc);
+		try {
+		  tfl_.transformPoint(fixed_frame, loc, loc);
+		} catch(...) {
+    		ROS_WARN("TF exception spot 3.");
+    	}
 
       list<SavedFeature*>::iterator closest = propagated.end();
       float closest_dist = max_track_jump_m;
@@ -560,7 +580,11 @@ public:
         {
 	  // Transform candidate to fixed frame
           Stamped<Point> loc(matched_iter->candidate_->center(), scan->header.stamp, scan->header.frame_id);
-          tfl_.transformPoint(fixed_frame, loc, loc);          
+          try {
+          tfl_.transformPoint(fixed_frame, loc, loc);
+          } catch(...) {
+          	ROS_WARN("TF exception spot 4.");
+          }
 
 	  // Update the tracker with the candidate location
           matched_iter->closest_->update(loc);
@@ -583,7 +607,11 @@ public:
       if (!found)
       {
         Stamped<Point> loc(matched_iter->candidate_->center(), scan->header.stamp, scan->header.frame_id);
-        tfl_.transformPoint(fixed_frame, loc, loc);
+        try {
+        	tfl_.transformPoint(fixed_frame, loc, loc);
+        } catch(...) {
+        	ROS_WARN("TF exception spot 5.");
+        }
 
         list<SavedFeature*>::iterator closest = propagated.end();
         float closest_dist = max_track_jump_m;

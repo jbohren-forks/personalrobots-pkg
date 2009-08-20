@@ -180,8 +180,7 @@ void ChompOptimizer::optimize()
     calculateCollisionIncrements();
     calculateTotalIncrements();
 
-      addIncrementsToTrajectory();
-/*    if (!parameters_->getAddRandomness())
+    if (!parameters_->getUseHamiltonianMonteCarlo())
     {
       // non-stochastic version:
       addIncrementsToTrajectory();
@@ -194,7 +193,7 @@ void ChompOptimizer::optimize()
       updatePositionFromMomentum();
       stochasticity_factor_ *= parameters_->getHmcAnnealingFactor();
     }
-*/
+
     handleJointLimits();
     updateFullTrajectory();
     if (iteration_%10==0)
@@ -285,9 +284,7 @@ void ChompOptimizer::calculateCollisionIncrements()
       normalized_velocity = collision_point_vel_eigen_[i][j] / vel_mag;
       orthogonal_projector = Matrix3d::Identity() - (normalized_velocity * normalized_velocity.transpose());
       curvature_vector = (orthogonal_projector * collision_point_acc_eigen_[i][j]) / vel_mag_sq;
-      //cartesian_gradient = planning_group_->collision_points_[j].getVolume() *
-      cartesian_gradient =
-          vel_mag*(orthogonal_projector*potential_gradient - potential*curvature_vector);
+      cartesian_gradient = vel_mag*(orthogonal_projector*potential_gradient - potential*curvature_vector);
 
       // pass it through the jacobian transpose to get the increments
       planning_group_->collision_points_[j].getJacobian(joint_pos_eigen_[i], joint_axis_eigen_[i],
@@ -320,9 +317,9 @@ void ChompOptimizer::calculateTotalIncrements()
 
 void ChompOptimizer::addIncrementsToTrajectory()
 {
-  double scale = 1.0;
   for (int i=0; i<num_joints_; i++)
   {
+    double scale = 1.0;
     double max = final_increments_.col(i).maxCoeff();
     double min = final_increments_.col(i).minCoeff();
     double max_scale = planning_group_->chomp_joints_[i].joint_update_limit_ / fabs(max);
@@ -331,8 +328,8 @@ void ChompOptimizer::addIncrementsToTrajectory()
       scale = max_scale;
     if (min_scale < scale)
       scale = min_scale;
+    group_trajectory_.getFreeTrajectoryBlock().col(i) += scale * final_increments_.col(i);
   }
-  group_trajectory_.getFreeTrajectoryBlock() += scale * final_increments_;
 }
 
 void ChompOptimizer::updateFullTrajectory()
@@ -367,13 +364,22 @@ double ChompOptimizer::getCollisionCost()
 {
   double collision_cost = 0.0;
 
+  double worst_collision_cost = 0.0;
+  worst_collision_cost_state_ = -1;
+
   // collision costs:
   for (int i=free_vars_start_; i<=free_vars_end_; i++)
   {
+    double state_collision_cost = 0.0;
     for (int j=0; j<num_collision_points_; j++)
     {
-      collision_cost += collision_point_potential_[i][j] * collision_point_vel_mag_[i][j] *
-          planning_group_->collision_points_[j].getVolume();
+      state_collision_cost += collision_point_potential_[i][j] * collision_point_vel_mag_[i][j];
+    }
+    collision_cost += state_collision_cost;
+    if (state_collision_cost > worst_collision_cost)
+    {
+      worst_collision_cost = state_collision_cost;
+      worst_collision_cost_state_ = i;
     }
   }
 
@@ -558,7 +564,10 @@ void ChompOptimizer::eigenMapTest()
 
 void ChompOptimizer::perturbTrajectory()
 {
-  int mid_point = (free_vars_start_ + free_vars_end_) / 2;
+  //int mid_point = (free_vars_start_ + free_vars_end_) / 2;
+  if (worst_collision_cost_state_ < 0)
+    return;
+  int mid_point = worst_collision_cost_state_;
   planning_group_->getRandomState(random_state_);
 
   // convert the state into an increment

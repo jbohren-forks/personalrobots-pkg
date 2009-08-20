@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.4.6)
-set(ROS_BUILD_TYPE Release)
+set(ROS_BUILD_TYPE debug)
 include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 rospack(sbpl_arm_planner_node)
 # gensrv()

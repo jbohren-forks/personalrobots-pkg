@@ -89,7 +89,7 @@ bool ChompCollisionSpace::init(double max_radius_clearance)
   node_handle_.param("~collision_space/origin_y", origin_y, -1.5);
   node_handle_.param("~collision_space/origin_z", origin_z, -2.0);
   node_handle_.param("~collision_space/resolution", resolution, 0.02);
-  node_handle_.param("~collision_space/field_bias_x", field_bias_x_, 0.3);
+  node_handle_.param("~collision_space/field_bias_x", field_bias_x_, 0.0);
   node_handle_.param("~collision_space/field_bias_y", field_bias_y_, 0.0);
   node_handle_.param("~collision_space/field_bias_z", field_bias_z_, 0.0);
   resolution_ = resolution;

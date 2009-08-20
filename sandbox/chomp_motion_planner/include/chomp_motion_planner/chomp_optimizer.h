@@ -110,6 +110,7 @@ private:
   std::vector<int> state_is_in_collision_;      /**< Array containing a boolean about collision info for each point in the trajectory */
   std::vector<std::vector<int> > point_is_in_collision_;
   bool is_collision_free_;
+  double worst_collision_cost_state_;
 
   Eigen::MatrixXd smoothness_increments_;
   Eigen::MatrixXd collision_increments_;

@@ -44,7 +44,7 @@ class FibonacciAction
 public:
     
     FibonacciAction(std::string name) : 
-      as_(nh_, name, boost::bind(&FibonacciAction::execute, this, _1)),
+      as_(nh_, name, boost::bind(&FibonacciAction::executeCB, this, _1)),
       action_name_(name)
     {
     }
@@ -53,7 +53,7 @@ public:
     {
     }
 
-    void execute(const actionlib_tutorials::FibonacciGoalConstPtr &goal)
+    void executeCB(const actionlib_tutorials::FibonacciGoalConstPtr &goal)
     {
       // create the action messages that will use published for feeback and result
       actionlib_tutorials::FibonacciFeedback feedback;

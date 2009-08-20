@@ -1,6 +1,6 @@
-<stack name="simulators" version="0.1">
-  <description brief="Stage and Gazebo Simulators">
-    Simulators for ROS both Stage and Gazebo
+<stack name="simulator_gazebo" version="0.1">
+  <description brief="Gazebo Simulators">
+    Simulator for using ROS with Gazebo
   </description>
   <author>John Hsu johnhsu@willowgarage.com</author>
   <license>BSD</license>
@@ -10,7 +10,9 @@
 
   <depend stack="geometry"/> <!-- bullet, tf --> 
   <depend stack="ros"/> <!-- roscpp, std_msgs --> 
-  <depend stack="visualization_core"/> <!-- ogre --> 
+  <depend stack="visualization_common"/> <!-- ogre --> 
   <depend stack="common_msgs"/> <!-- sensor_msgs --> 
+  <depend stack="common"/> <!-- sensor_msgs --> 
+  <depend stack="robot_model"/> <!-- sensor_msgs --> 
 
 </stack>

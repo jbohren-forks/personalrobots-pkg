@@ -54,7 +54,7 @@ namespace estimation
 	node_.param("~/follow_distance", follow_distance_, 1.0);
 	node_.param("~/distance_threshold", distance_threshold_, 0.1);
 	node_.param("~/fixed_frame", fixed_frame_, string("map"));
-	node_.param("~/publish_rate", publish_rate_, 1.0);
+	node_.param("~/publish_rate", publish_rate_, 0.25);
 
 	// advertise filter output
 	filter_output_pub_ = node_.advertise<people::PositionMeasurement>("people_tracker_filter",10);
@@ -66,7 +66,7 @@ namespace estimation
     people_notifier_ = new MessageNotifier<people::PositionMeasurement>(robot_state_, boost::bind(&PeopleFollower::callback, this, _1),
                                                                "people_tracker_filter", fixed_frame_, 10);
     // advertise robot poses
-    goal_pub_ = node_.advertise<pr2_robot_actions::Pose2D>("/move_base_local/activate", 10);
+    goal_pub_ = node_.advertise<geometry_msgs::PoseStamped>("/move_base_local/activate", 10);
 
     marker_pub_ = node_.advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
 
@@ -179,21 +179,32 @@ namespace estimation
                                                     pow(people_pos_.goal.y-robot_pos_.goal.y,2) ) << endl;
       */
 
-
+      double timeElapsed;
       // send goal to planner
-      if ((Time::now() - time_last_publish_).toSec() > 1.0/publish_rate_){
+      if ((timeElapsed = (Time::now() - time_last_publish_).toSec()) > 1.0/publish_rate_){
+    	ROS_INFO("Enough time has passed: %f seconds.", timeElapsed);
         //publish("goal", robot_pos_);
 	    geometry_msgs::PoseStamped goal_pos_;
         goal_pos_.header = people_pos_.header;
+        goal_pos_.header.frame_id = "/odom_combined";
+        goal_pos_.header.stamp = Time::now();
         goal_pos_.pose.position.x = robot_pos_.x; //people_pose_ or robot_pos_?
         goal_pos_.pose.position.y = robot_pos_.y;
         goal_pos_.pose.position.z = robot_pos_.z;
-        goal_pos_.pose.orientation.x = 1.0;
+        tf::Quaternion quat(tf::Vector3(0.0,0.0,1.0),robot_pos_.th); //TODO: sort out robot_pos_ vs people_pos_ (i.e. why is robot_pos_.th set to the desired angle?)
+        goal_pos_.pose.orientation.x = quat.x();
+        goal_pos_.pose.orientation.y = quat.y();
+        goal_pos_.pose.orientation.z = quat.z();
+        goal_pos_.pose.orientation.w = quat.w();
 
         visualizeGoalPose( goal_pos_ );
         goal_pub_.publish( goal_pos_);
 
         time_last_publish_ = Time::now();
+      }
+      else
+      {
+    	  ROS_INFO("Only %f seconds have passed.", timeElapsed);
       }
 
       // visualize goal

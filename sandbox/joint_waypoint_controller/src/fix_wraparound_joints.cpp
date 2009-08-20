@@ -35,6 +35,8 @@
 /** \author Mrinal Kalakrishnan */
 
 #include <joint_waypoint_controller/fix_wraparound_joints.h>
+#include <spline_smoother/spline_smoother_utils.h>
+#include <angles/angles.h>
 
 namespace joint_waypoint_controller
 {
@@ -48,17 +50,33 @@ FixWraparoundJoints::~FixWraparoundJoints()
 {
 }
 
-bool FixWraparoundJoints::configure()
-{
-  return true;
-}
-
-bool FixWraparoundJoints::update(const std::vector<manipulation_msgs::WaypointTrajWithLimits>& data_in, std::vector<manipulation_msgs::WaypointTrajWithLimits>& data_out)
+bool FixWraparoundJoints::smooth(const manipulation_msgs::WaypointTrajWithLimits& data_in, manipulation_msgs::WaypointTrajWithLimits& data_out) const
 {
   data_out = data_in;
+
+  int size = data_in.points.size();
+  int num_joints = data_in.names.size();
+
+  if (!spline_smoother::checkTrajectoryConsistency(data_out))
+    return false;
+
+  for (int i=0; i<num_joints; ++i)
+  {
+    if (data_out.limits[i].angle_wraparound)
+    {
+      for (int j=1; j<size; ++j)
+      {
+        double& cur = data_out.points[j].positions[i];
+        double prev = data_out.points[j-1].positions[i];
+
+        cur = prev + angles::shortest_angular_distance(prev, cur);
+      }
+    }
+  }
+
   return true;
 }
 
-REGISTER_WAYPOINTTRAJ_FILTER(FixWraparoundJoints)
+REGISTER_SPLINE_SMOOTHER(FixWraparoundJoints)
 
 }

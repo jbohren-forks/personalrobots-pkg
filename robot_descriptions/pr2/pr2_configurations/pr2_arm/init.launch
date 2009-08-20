@@ -1,5 +1,5 @@
 <launch>
-  <param name="robot_description" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/r_arm.xacro.xml'" />
+  <include file="$(find pr2_defs)/launch/upload_r_arm.launch" />
   <include file="$(find pr2_arm)/calibrate.launch" />
   <group name="wg">
     <node pkg="pr2_etherCAT" type="pr2_etherCAT" args="-i rteth0 -x /robot_description"
