@@ -64,10 +64,11 @@ public:
 */
 
 
-static std::string mean_filter_5 = "<filter type=\"MeanFilterMultiDouble\" name=\"mean_test_5\"> <params number_of_observations=\"5\"/></filter>";
-static std::string median_filter_5 = "<filter type=\"MedianFilterMultiDouble\" name=\"median_test_5\"> <params number_of_observations=\"5\"/></filter>";
-static std::string two_filters = "<filters><filter type=\"MeanFilterMultiDouble\" name=\"mean_test_5\"> <params number_of_observations=\"5\"/></filter><filter type=\"MedianFilterMultiDouble\" name=\"median_test_5\"> <params number_of_observations=\"5\"/></filter></filters";
+static std::string mean_filter_5 = "<filter type=\"MultiChannelMeanFilterDouble\" name=\"mean_test_5\"> <params number_of_observations=\"5\"/></filter>";
+static std::string median_filter_5 = "<filter type=\"MultiChannelMedianFilterDouble\" name=\"median_test_5\"> <params number_of_observations=\"5\"/></filter>";
+static std::string two_filters = "<filters><filter type=\"MultiChannelMeanFilterDouble\" name=\"mean_test_5\"> <params number_of_observations=\"5\"/></filter><filter type=\"MultiChannelMedianFilterDouble\" name=\"median_test_5\"> <params number_of_observations=\"5\"/></filter></filters";
 
+static std::string mean_filter_single = "<filter type=\"MeanFilterDouble\" name=\"mean_test_single\"> <params number_of_observations=\"5\"/></filter>";
 
 TEST(MultiChannelFilterChain, configuring){
   double epsilon = 1e-9;
@@ -97,6 +98,25 @@ TEST(MultiChannelFilterChain, configuring){
     EXPECT_NEAR(input1[i], v1a[i], epsilon);
   }
 }
+TEST(FilterChain, configuring){
+  double epsilon = 1e-9;
+  filters::FilterChain<double> chain("filters", "filters::FilterBase<double>");
+  
+  TiXmlDocument chain_def = TiXmlDocument();
+  chain_def.Parse(mean_filter_single.c_str());
+  TiXmlElement * config = chain_def.RootElement();
+  EXPECT_TRUE(chain.configure(config));
+ 
+  double v1 = 1;
+  double v1a = 9;
+
+  EXPECT_TRUE(chain.update(v1, v1a));
+
+  chain.clear();
+
+  EXPECT_NEAR(v1, v1a, epsilon);
+  
+  }
 
 TEST(MultiChannelFilterChain, MisconfiguredNumberOfChannels){
   filters::MultiChannelFilterChain<double> chain("filters", "filters::MultiChannelFilterBase<double>");
@@ -156,7 +176,7 @@ TEST(MultiChannelFilterChain, OverlappingNames){
   filters::MultiChannelFilterChain<double> chain("filters", "filters::MultiChannelFilterBase<double>");
 
 
-  std::string bad_xml = "<filters> <filter type=\"MeanFilter\" name=\"mean_test\"> <params number_of_observations=\"5\"/></filter><filter type=\"MedianFilter\" name=\"mean_test\"> <params number_of_observations=\"5\"/></filter></filters>";
+  std::string bad_xml = "<filters> <filter type=\"MultiChannelMeanFilterDouble\" name=\"mean_test\"> <params number_of_observations=\"5\"/></filter><filter type=\"MedianFilter\" name=\"mean_test\"> <params number_of_observations=\"5\"/></filter></filters>";
 
   TiXmlDocument chain_def = TiXmlDocument();
   chain_def.Parse(bad_xml.c_str());

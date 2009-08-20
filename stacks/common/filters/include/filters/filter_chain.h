@@ -135,7 +135,7 @@ public:
     //try
     {
       //boost::shared_ptr<filters::FilterBase<T> > p( filters::FilterFactory<T>::Instance().CreateObject(constructor_string.str()));
-      boost::shared_ptr<filters::MultiChannelFilterBase<T> > p( loader_.createClassInstance(config->Attribute("type")));
+      boost::shared_ptr<filters::FilterBase<T> > p( loader_.createClassInstance(config->Attribute("type")));
       if (p.get() == NULL)
         return false;
       result = result &&  p.get()->configure(config);    

@@ -93,7 +93,7 @@ elem_type kth_smallest(elem_type a[], int n, int k)
  *
  */
 template <typename T>
-class MedianFilter: public filters::MultiChannelFilterBase <T>
+class MedianFilter: public filters::FilterBase <T>
 {
 public:
   /** \brief Construct the filter with the expected width and height */
@@ -109,13 +109,13 @@ public:
    * \param data_in double array with length width
    * \param data_out double array with length width
    */
-  virtual bool update(const std::vector<T>& data_in, std::vector<T>& data_out);
+  virtual bool update(const T& data_in, T& data_out);
   
 protected:
   std::vector<T> temp_storage_;                       ///< Preallocated storage for the list to sort
-  boost::scoped_ptr<RealtimeCircularBuffer<std::vector<T> > > data_storage_;                       ///< Storage for data between updates
+  boost::scoped_ptr<RealtimeCircularBuffer<T > > data_storage_;                       ///< Storage for data between updates
   
-  std::vector<T> temp;  //used for preallocation and copying from non vector source
+  T temp;  //used for preallocation and copying from non vector source
 
 
   uint32_t number_of_observations_;             ///< Number of observations over which to filter
@@ -146,6 +146,90 @@ bool MedianFilter<T>::configure()
   }
   number_of_observations_ = no_obs;
     
+  data_storage_.reset( new RealtimeCircularBuffer<T >(number_of_observations_, temp));
+  temp_storage_.resize(number_of_observations_);
+  
+  return true;
+};
+
+template <typename T>
+bool MedianFilter<T>::update(const T& data_in, T& data_out)
+{
+  if (!this->configured_)
+    return false;
+
+  data_storage_->push_back(data_in);
+
+
+  unsigned int length = data_storage_->size();
+ 
+
+  for (uint32_t row = 0; row < length; row ++)
+  {
+    temp_storage_[row] = (*data_storage_)[row];
+  }
+  data_out = median(&temp_storage_[0], length);
+  
+
+  return true;
+};
+/** \brief A median filter which works on arrays.
+ *
+ */
+template <typename T>
+class MultiChannelMedianFilter: public filters::MultiChannelFilterBase <T>
+{
+public:
+  /** \brief Construct the filter with the expected width and height */
+  MultiChannelMedianFilter();
+
+  /** \brief Destructor to clean up
+   */
+  ~MultiChannelMedianFilter();
+
+  virtual bool configure();
+
+  /** \brief Update the filter and return the data seperately
+   * \param data_in double array with length width
+   * \param data_out double array with length width
+   */
+  virtual bool update(const std::vector<T>& data_in, std::vector<T>& data_out);
+  
+protected:
+  std::vector<T> temp_storage_;                       ///< Preallocated storage for the list to sort
+  boost::scoped_ptr<RealtimeCircularBuffer<std::vector<T> > > data_storage_;                       ///< Storage for data between updates
+  
+  std::vector<T> temp;  //used for preallocation and copying from non vector source
+
+
+  uint32_t number_of_observations_;             ///< Number of observations over which to filter
+
+};
+
+template <typename T>
+MultiChannelMedianFilter<T>::MultiChannelMedianFilter():
+  number_of_observations_(0)
+{
+  
+};
+
+template <typename T>
+MultiChannelMedianFilter<T>::~MultiChannelMedianFilter()
+{
+};
+
+
+template <typename T>
+bool MultiChannelMedianFilter<T>::configure()
+{
+  int no_obs;
+  if (!FilterBase<T>::getIntParam(std::string("number_of_observations"), no_obs, 0))
+  {
+    fprintf(stderr, "Error: MultiChannelMedianFilter was not given params.\n");
+    return false;
+  }
+  number_of_observations_ = no_obs;
+    
   temp.resize(this->number_of_channels_);
   data_storage_.reset( new RealtimeCircularBuffer<std::vector<T> >(number_of_observations_, temp));
   temp_storage_.resize(number_of_observations_);
@@ -154,7 +238,7 @@ bool MedianFilter<T>::configure()
 };
 
 template <typename T>
-bool MedianFilter<T>::update(const std::vector<T>& data_in, std::vector<T>& data_out)
+bool MultiChannelMedianFilter<T>::update(const std::vector<T>& data_in, std::vector<T>& data_out)
 {
   //  printf("Expecting width %d, got %d and %d\n", width_, data_in.size(),data_out.size());
   if (data_in.size() != this->number_of_channels_ || data_out.size() != this->number_of_channels_)

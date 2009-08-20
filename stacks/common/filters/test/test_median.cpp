@@ -63,7 +63,7 @@ TEST(MedianDoubleFilter, ConfirmIdentityNRows)
   doc.Parse("<filter type=\"MedianDoubleFilter\" name=\"median_test\"> <params number_of_observations=\"5\"/></filter>"); 
   TiXmlElement *config = doc.RootElement();
   
-  MultiChannelFilterBase<double > * filter = new filters::MedianFilter<double>();
+  MultiChannelFilterBase<double > * filter = new filters::MultiChannelMedianFilter<double>();
   filter->configure(rows, config );
   
 
@@ -94,7 +94,7 @@ TEST(MedianDoubleFilter, ThreeRows)
   doc.Parse("<filter type=\"MedianDoubleFilter\" name=\"median_test\"> <params number_of_observations=\"5\"/></filter>"); 
   TiXmlElement *config = doc.RootElement();
   
-  MultiChannelFilterBase<double > * filter = new MedianFilter<double>();
+  MultiChannelFilterBase<double > * filter = new MultiChannelMedianFilter<double>();
   filter->configure(rows, config );
   
   double input1[] = {0,1,2,3,4};

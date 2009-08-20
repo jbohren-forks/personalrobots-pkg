@@ -33,7 +33,8 @@
 
 
 
-PLUGINLIB_REGISTER_CLASS(MedianFilterMultiDouble, filters::MedianFilter<double>,filters::MultiChannelFilterBase<double>)
+PLUGINLIB_REGISTER_CLASS(MedianFilterDouble, filters::MedianFilter<double>,filters::FilterBase<double>)
+PLUGINLIB_REGISTER_CLASS(MultiChannelMedianFilterDouble, filters::MultiChannelMedianFilter<double>,filters::MultiChannelFilterBase<double>)
 
 
 

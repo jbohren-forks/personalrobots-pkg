@@ -32,5 +32,6 @@
 
 
 
-PLUGINLIB_REGISTER_CLASS(MeanFilterMultiDouble, filters::MeanFilter<double>, filters::MultiChannelFilterBase<double>)
+PLUGINLIB_REGISTER_CLASS(MeanFilterDouble, filters::MeanFilter<double>, filters::FilterBase<double>)
+PLUGINLIB_REGISTER_CLASS(MultiChannelMeanFilterDouble, filters::MultiChannelMeanFilter<double>, filters::MultiChannelFilterBase<double>)
 

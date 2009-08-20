@@ -44,11 +44,11 @@
 namespace filters
 {
 
-/** \brief A median filter which works on double arrays.
+/** \brief A mean filter which works on doubles.
  *
  */
 template <typename T>
-class MeanFilter: public MultiChannelFilterBase <T>
+class MeanFilter: public FilterBase <T>
 {
 public:
   /** \brief Construct the filter with the expected width and height */
@@ -57,6 +57,89 @@ public:
   /** \brief Destructor to clean up
    */
   ~MeanFilter();
+
+  virtual bool configure();
+
+  /** \brief Update the filter and return the data seperately
+   * \param data_in T array with length width
+   * \param data_out T array with length width
+   */
+  virtual bool update( const T & data_in, T& data_out);
+  
+protected:
+  boost::scoped_ptr<RealtimeCircularBuffer<T > > data_storage_; ///< Storage for data between updates
+  uint32_t last_updated_row_;                     ///< The last row to have been updated by the filter
+  T temp_; /// Temporary storage
+  uint32_t number_of_observations_;             ///< Number of observations over which to filter
+  
+};
+
+
+template <typename T>
+MeanFilter<T>::MeanFilter():
+  number_of_observations_(0)
+{
+}
+
+template <typename T>
+bool MeanFilter<T>::configure()
+{
+  
+  if (!FilterBase<T>::getUIntParam("number_of_observations", number_of_observations_, 0))
+  {
+    ROS_ERROR("MeanFilter did not find param number_of_observations");
+    return false;
+  }
+  
+  data_storage_.reset(new RealtimeCircularBuffer<T >(number_of_observations_, temp_));
+
+  return true;
+}
+
+template <typename T>
+MeanFilter<T>::~MeanFilter()
+{
+}
+
+
+template <typename T>
+bool MeanFilter<T>::update(const T & data_in, T& data_out)
+{
+  //update active row
+  if (last_updated_row_ >= number_of_observations_ - 1)
+    last_updated_row_ = 0;
+  else
+    last_updated_row_++;
+
+  data_storage_->push_back(data_in);
+
+
+  unsigned int length = data_storage_->size();
+  
+  data_out = 0;
+  for (uint32_t row = 0; row < length; row ++)
+  {
+    data_out += data_storage_->at(row);
+  }
+  data_out /= length;
+  
+
+  return true;
+};
+
+/** \brief A mean filter which works on double arrays.
+ *
+ */
+template <typename T>
+class MultiChannelMeanFilter: public MultiChannelFilterBase <T>
+{
+public:
+  /** \brief Construct the filter with the expected width and height */
+  MultiChannelMeanFilter();
+
+  /** \brief Destructor to clean up
+   */
+  ~MultiChannelMeanFilter();
 
   virtual bool configure();
 
@@ -81,18 +164,18 @@ protected:
 
 
 template <typename T>
-MeanFilter<T>::MeanFilter():
+MultiChannelMeanFilter<T>::MultiChannelMeanFilter():
   number_of_observations_(0)
 {
 }
 
 template <typename T>
-bool MeanFilter<T>::configure()
+bool MultiChannelMeanFilter<T>::configure()
 {
   
   if (!FilterBase<T>::getUIntParam("number_of_observations", number_of_observations_, 0))
   {
-    ROS_ERROR("MeanFilter did not find param number_of_observations");
+    ROS_ERROR("MultiChannelMeanFilter did not find param number_of_observations");
     return false;
   }
   
@@ -103,13 +186,13 @@ bool MeanFilter<T>::configure()
 }
 
 template <typename T>
-MeanFilter<T>::~MeanFilter()
+MultiChannelMeanFilter<T>::~MultiChannelMeanFilter()
 {
 }
 
 
 template <typename T>
-bool MeanFilter<T>::update(const std::vector<T> & data_in, std::vector<T>& data_out)
+bool MultiChannelMeanFilter<T>::update(const std::vector<T> & data_in, std::vector<T>& data_out)
 {
   //  ROS_ASSERT(data_in.size() == width_);
   //ROS_ASSERT(data_out.size() == width_);
@@ -143,5 +226,6 @@ bool MeanFilter<T>::update(const std::vector<T> & data_in, std::vector<T>& data_
 
   return true;
 };
+
 }
 #endif// FILTERS_MEAN_H

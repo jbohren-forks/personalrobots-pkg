@@ -59,10 +59,10 @@ TEST(MeanDoubleFilter, ConfirmIdentityNRows)
   int rows = 5;
   
   TiXmlDocument doc;
-  doc.Parse("<filter type=\"MeanFilter<double> \" name=\"mean_test\"> <params number_of_observations=\"5\"/></filter>"); 
+  doc.Parse("<filter type=\"MultiChannelMeanFilter<double> \" name=\"mean_test\"> <params number_of_observations=\"5\"/></filter>"); 
   TiXmlElement *config = doc.RootElement();
   
-  MultiChannelFilterBase<double > * filter = new MeanFilter<double>  ();
+  MultiChannelFilterBase<double > * filter = new MultiChannelMeanFilter<double>  ();
   filter->configure(rows, config );
 
   double input1[] = {1,2,3,4,5};
@@ -89,10 +89,10 @@ TEST(MeanDoubleFilter, ThreeRows)
   int rows = 5;
   
   TiXmlDocument doc;
-  doc.Parse("<filter type=\"MeanFilter<double> \" name=\"mean_test\"> <params number_of_observations=\"5\"/></filter>"); 
+  doc.Parse("<filter type=\"MultiChannelMeanFilter<double> \" name=\"mean_test\"> <params number_of_observations=\"5\"/></filter>"); 
   TiXmlElement *config = doc.RootElement();
   
-  MultiChannelFilterBase<double > * filter = new MeanFilter<double> ();
+  MultiChannelFilterBase<double > * filter = new MultiChannelMeanFilter<double> ();
   filter->configure(rows, config);
 
   double input1[] = {0,1,2,3,4};
