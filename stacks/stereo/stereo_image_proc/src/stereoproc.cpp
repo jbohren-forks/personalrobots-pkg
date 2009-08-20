@@ -96,8 +96,6 @@ public:
 
     param("~do_keep_coords", do_keep_coords_, false);
 
-    ROS_INFO("DEBUG FOR GAZEBO: %d %d %d %d %d", do_colorize_, do_rectify_, do_stereo_, do_calc_points_, do_keep_coords_);
-
     if (do_keep_coords_) {
     	ROS_INFO("I'm keeping the image coordonate in the point cloud\n");
     }
@@ -180,8 +178,6 @@ public:
     {
       stdata_->doCalcPts();
     }
-
-    ROS_INFO("DEBUG FOR GAZEBO: %d %d %d %d %d", do_colorize_, do_rectify_, do_stereo_, do_calc_points_, do_keep_coords_);
 
     advertiseCam();
     publishCam();
@@ -277,7 +273,6 @@ public:
     memcpy((char*)(&stereo_info_.Om[0]), (char*)(stdata_->Om),  3*sizeof(double));
     memcpy((char*)(&stereo_info_.RP[0]), (char*)(stdata_->RP), 16*sizeof(double));
 
-    ROS_INFO("DEBUG FOR GAZEBO: %d %d %d %d %d", do_colorize_, do_rectify_, do_stereo_, do_calc_points_, do_keep_coords_);
     publish("stereo_info", stereo_info_);
   }
 
@@ -342,7 +337,6 @@ public:
     if (img_data->imRectColorType != COLOR_CODING_NONE)
       advertise<sensor_msgs::Image>(base_name + std::string("image_rect_color"), 1);
 
-    ROS_INFO("DEBUG FOR GAZEBO IMTYPE: %d %d %d %d %d %d", COLOR_CODING_NONE, img_data->imRawType, img_data->imType, img_data->imColorType, img_data->imRectType, img_data->imRectColorType);
   }
 
   void advertiseCam()
