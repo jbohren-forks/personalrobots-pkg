@@ -36,6 +36,8 @@
 
 #include "people_follower.h"
 
+#include <visualization_msgs/Marker.h>
+
 using namespace std;
 using namespace ros;
 using namespace tf;
@@ -44,29 +46,29 @@ namespace estimation
 {
   // constructor
   PeopleFollower::PeopleFollower(const string& node_name)
-    : ros::Node(node_name),
-      node_name_(node_name),
-      robot_state_(*this, true),
+    : node_name_(node_name),
       people_notifier_(NULL),
       initialized_(false)
   {
     // get parameters
-    param("~/follow_distance", follow_distance_, 1.0);
-    param("~/distance_threshold", distance_threshold_, 0.1);
-    param("~/fixed_frame", fixed_frame_, string("map"));
-    param("~/publish_rate", publish_rate_, 1.0);
+	node_.param("~/follow_distance", follow_distance_, 1.0);
+	node_.param("~/distance_threshold", distance_threshold_, 0.1);
+	node_.param("~/fixed_frame", fixed_frame_, string("map"));
+	node_.param("~/publish_rate", publish_rate_, 1.0);
 
-    // advertise filter output
-    advertise<people::PositionMeasurement>("people_tracker_filter",10);
+	// advertise filter output
+	filter_output_pub_ = node_.advertise<people::PositionMeasurement>("people_tracker_filter",10);
 
     // advertise visualization
-    advertise<sensor_msgs::PointCloud>("goal_pos",10);
+	viz_pub_ = node_.advertise<sensor_msgs::PointCloud>("goal_pos",10);
 
     // register message sequencer
-    people_notifier_ = new MessageNotifier<people::PositionMeasurement>(&robot_state_, this,  boost::bind(&PeopleFollower::callback, this, _1), 
+    people_notifier_ = new MessageNotifier<people::PositionMeasurement>(robot_state_, boost::bind(&PeopleFollower::callback, this, _1),
                                                                "people_tracker_filter", fixed_frame_, 10);
     // advertise robot poses
-    advertise<geometry_msgs::PoseStamped>("/move_base_local/activate", 10);
+    goal_pub_ = node_.advertise<pr2_robot_actions::Pose2D>("/move_base_local/activate", 10);
+
+    marker_pub_ = node_.advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
 
     // initialize goal
     people_pos_.header.frame_id = fixed_frame_;
@@ -93,13 +95,40 @@ namespace estimation
     delete people_notifier_;
   };
 
+  void PeopleFollower::visualizeGoalPose(const geometry_msgs::PoseStamped& poseStamped)
+  {
+      cout<<"Sending vizualization message!"<<endl;
+    visualization_msgs::Marker marker;
+    marker.header = poseStamped.header;
+    marker.ns = "follower";
+    marker.id = 0;
+    marker.type = visualization_msgs::Marker::ARROW;
+    marker.action = visualization_msgs::Marker::ADD; //Add and update are the same enum
+    marker.pose = poseStamped.pose;
+    marker.scale.x = 1;
+    marker.scale.y = 1;
+    marker.scale.z = 1;
+    marker.color.a = 0.7;
+    marker.color.r = 0.0;
+    marker.color.g = 0.8;
+    marker.color.b = 0.3;
 
+    ROS_INFO("setting viz: Position(%.3f, %.3f, %.3f), Orientation(%.3f, %.3f, %.3f, %.3f)\n",
+	     marker.pose.position.x,
+	     marker.pose.position.y,
+	     marker.pose.position.z,
+	     marker.pose.orientation.x,
+	     marker.pose.orientation.y,
+	     marker.pose.orientation.z,
+	     marker.pose.orientation.w);
 
+    marker_pub_.publish( marker );
+  }
 
   // callback for messages
   void PeopleFollower::callback(const MessageNotifier<people::PositionMeasurement>::MessagePtr& people_pos_msg)
   {
-    ROS_INFO("Got callback in PeopleFollower.");
+	ROS_DEBUG("Got a people position measurement callback!");
 
     // get people pos in fixed frame
     Stamped<tf::Vector3> people_pos_rel, people_pos_fixed_frame;
@@ -154,14 +183,15 @@ namespace estimation
       // send goal to planner
       if ((Time::now() - time_last_publish_).toSec() > 1.0/publish_rate_){
         //publish("goal", robot_pos_);
-	geometry_msgs::PoseStamped goal_pos_;
+	    geometry_msgs::PoseStamped goal_pos_;
         goal_pos_.header = people_pos_.header;
         goal_pos_.pose.position.x = robot_pos_.x; //people_pose_ or robot_pos_?
         goal_pos_.pose.position.y = robot_pos_.y;
         goal_pos_.pose.position.z = robot_pos_.z;
         goal_pos_.pose.orientation.x = 1.0;
 
-        publish("move_base_local/activate", goal_pos_);
+        visualizeGoalPose( goal_pos_ );
+        goal_pub_.publish( goal_pos_);
 
         time_last_publish_ = Time::now();
       }
@@ -171,7 +201,7 @@ namespace estimation
       robot_goal_cloud_.points[0].y = robot_pos_.y;
       robot_goal_cloud_.points[0].z = 0.0;
       robot_goal_cloud_.header.frame_id = fixed_frame_;
-      publish("goal_pos",robot_goal_cloud_);
+      viz_pub_.publish(robot_goal_cloud_);
     }
     
 
@@ -193,14 +223,16 @@ namespace estimation
 using namespace estimation;
 int main(int argc, char **argv)
 {
+  std::string node_name = "people_follower";
+
   // Initialize ROS
-  ros::init(argc, argv);
+  ros::init(argc, argv, node_name);
 
   // create people follower
-  PeopleFollower my_people_follower("people_follower");
+  PeopleFollower my_people_follower(node_name);
 
   // wait for filter to finish
-  my_people_follower.spin();
+  ros::spin();
 
   return 0;
 }

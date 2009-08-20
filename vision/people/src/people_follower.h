@@ -41,7 +41,7 @@
 #include <boost/thread/mutex.hpp>
 
 // ros stuff
-#include <ros/node.h>
+#include <ros/ros.h>
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
 #include <tf/message_notifier.h>
@@ -58,7 +58,7 @@
 namespace estimation
 {
 
-class PeopleFollower: public ros::Node
+class PeopleFollower
 {
 public:
   /// constructor
@@ -72,6 +72,9 @@ public:
 
 
 private:
+  // Viz marker
+  void visualizeGoalPose(const geometry_msgs::PoseStamped& poseStamped);
+
   // name
   std::string node_name_, fixed_frame_;
 
@@ -93,6 +96,12 @@ private:
   double follow_distance_, publish_rate_, distance_threshold_;
   bool initialized_;
   sensor_msgs::PointCloud  robot_goal_cloud_; 
+
+  ros::NodeHandle node_;
+  ros::Publisher filter_output_pub_;
+  ros::Publisher viz_pub_;
+  ros::Publisher goal_pub_;
+  ros::Publisher marker_pub_;
 
 
 }; // class
