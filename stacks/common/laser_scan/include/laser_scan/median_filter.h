@@ -70,10 +70,10 @@ private:
 
   boost::mutex data_lock; /// Protection from multi threaded programs
   sensor_msgs::LaserScan temp_scan_; /** \todo cache only shallow info not full scan */
-
-  filters::FilterChain<float> * range_filter_;
-  filters::FilterChain<float> * intensity_filter_;
-
+  
+  filters::MultiChannelFilterChain<float> * range_filter_;
+  filters::MultiChannelFilterChain<float> * intensity_filter_;
+  
   boost::scoped_ptr<TiXmlElement>  latest_xml_;
 };
 

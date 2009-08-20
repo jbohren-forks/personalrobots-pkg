@@ -41,7 +41,7 @@ static std::string median_filter_xml = "<!-- NO FILTER DEFINED-->";
 class GenericLaserScanFilterNode 
 {
 public:
-  GenericLaserScanFilterNode(ros::Node& anode) :  filter_chain_("filters", "filter_laser_scan"), node_(anode), notifier_(NULL)
+  GenericLaserScanFilterNode(ros::Node& anode) :  filter_chain_("filters", "filters::FilterBase<sensor_msgs::LaserScan>"), node_(anode), notifier_(NULL)
   {
     node_.advertise<sensor_msgs::LaserScan>("~output", 1000);
     notifier_ = new tf::MessageNotifier<sensor_msgs::LaserScan>(&tf_, &node_, 
@@ -52,7 +52,7 @@ public:
     node_.param("~filters", filter_xml, std::string("<filters><!--Filter Parameter Not Set--></filters>"));
     ROS_INFO("Got parameter'~filters' as: %s\n", filter_xml.c_str());
     
-    filter_chain_.configureFromXMLString(1, filter_xml);
+    filter_chain_.configureFromXMLString(filter_xml);
     //node_.subscribe("scan_in", msg, &GenericLaserScanFilterNode::callback,this, 3);
   }
 

@@ -103,13 +103,13 @@ class ScanShadowsFilter
       std::string cloud_filter_xml;
       ros::Node::instance()->param("~cloud_filters", cloud_filter_xml, std::string("<filters><!--Filter Parameter Not Set--></filters>"));
       ROS_INFO("Got parameter'~cloud_filters' as: %s\n", cloud_filter_xml.c_str());
-      cloud_filter_chain_.configureFromXMLString(1, cloud_filter_xml);
+      cloud_filter_chain_.configureFromXMLString(cloud_filter_xml);
 
     std::string scan_filter_xml;
     ros::Node::instance()->param("~scan_filters", scan_filter_xml, std::string("<filters><!--Filter Parameter Not Set--></filters>"));
     ROS_INFO("Got parameter'~scan_filters' as: %s\n", scan_filter_xml.c_str());
     
-    scan_filter_chain_.configureFromXMLString(1, scan_filter_xml);
+    scan_filter_chain_.configureFromXMLString(scan_filter_xml);
     }
 
     ////////////////////////////////////////////////////////////////////////////////
