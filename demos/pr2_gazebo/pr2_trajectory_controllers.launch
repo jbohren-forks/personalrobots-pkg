@@ -1,6 +1,6 @@
 <launch>
   <!-- launch a set of trajectory controllers -->
-  <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_gazebo)/controllers/pr2_joint_trajectory_controllers.xml" output="screen"/>
+  <include file="$(find pr2_gazebo)/controllers/pr2_trajectory_controllers.launch"/>
 
   <!-- launch base trajectory controller -->
   <param name="base_trajectory_controller/controller_frequency" value="20.0" type="double" />
