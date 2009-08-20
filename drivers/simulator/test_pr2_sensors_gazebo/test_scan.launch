@@ -1,4 +1,5 @@
 <launch>
+  <include file="$(find pr2_alpha)/sim.machine" />
 
   <include file="$(find gazebo)/launch/scan_world.launch" />
 
