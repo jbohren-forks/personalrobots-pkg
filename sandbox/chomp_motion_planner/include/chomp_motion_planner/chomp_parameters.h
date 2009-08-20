@@ -62,6 +62,7 @@ public:
   double getSmoothnessCostAcceleration() const;
   double getSmoothnessCostJerk() const;
   bool getAddRandomness() const;
+  bool getUseHamiltonianMonteCarlo() const;
   double getHmcDiscretization() const;
   double getHmcStochasticity() const;
   double getHmcAnnealingFactor() const;
@@ -78,6 +79,7 @@ private:
   double smoothness_cost_acceleration_;
   double smoothness_cost_jerk_;
   bool add_randomness_;
+  bool use_hamiltonian_monte_carlo_;
   double hmc_stochasticity_;
   double hmc_discretization_;
   double hmc_annealing_factor_;
@@ -159,6 +161,11 @@ inline double ChompParameters::getHmcStochasticity() const
 inline double ChompParameters::getHmcAnnealingFactor() const
 {
   return hmc_annealing_factor_;
+}
+
+inline bool ChompParameters::getUseHamiltonianMonteCarlo() const
+{
+  return use_hamiltonian_monte_carlo_;
 }
 
 } // namespace chomp

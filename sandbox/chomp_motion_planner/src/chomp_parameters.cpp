@@ -64,6 +64,7 @@ void ChompParameters::initFromNodeHandle()
   node_handle.param("~hmc_discretization", hmc_discretization_, 0.01);
   node_handle.param("~hmc_stochasticity", hmc_stochasticity_, 0.01);
   node_handle.param("~hmc_annealing_factor", hmc_annealing_factor_, 0.99);
+  node_handle.param("~use_hamiltonian_monte_carlo", use_hamiltonian_monte_carlo_, false);
 }
 
 

@@ -323,7 +323,7 @@ void ChompRobotModel::getLinkCollisionPoints(std::string link_name, std::vector<
 
 void ChompRobotModel::attachedObjectCallback(const mapping_msgs::AttachedObjectConstPtr& attached_object)
 {
-  attached_objects_.insert(std::make_pair(attached_object->link_name, *attached_object));
+  attached_objects_[attached_object->link_name] =  *attached_object;
   generateCollisionPoints();
 }
 
