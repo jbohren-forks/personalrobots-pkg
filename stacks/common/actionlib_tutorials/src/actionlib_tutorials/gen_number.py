@@ -9,7 +9,7 @@ def gen_number():
 
     while not rospy.is_shutdown():
         pub.publish(Float32(random.normalvariate(5, 1)))
-        rospy.sleep(1.0)
+        rospy.sleep(0.5)
 
 if __name__ == '__main__':
   try:
