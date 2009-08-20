@@ -52,7 +52,7 @@ void generate_rand_vectors(double scale, uint64_t runs, std::vector<double>& xva
   }
 }
 
-TEST(MeanDoubleFilter, ConfirmIdentityNRows)
+TEST(MultiChannelMeanFilterDouble, ConfirmIdentityNRows)
 {
   double epsilon = 1e-6;
   int length = 5;
@@ -82,7 +82,7 @@ TEST(MeanDoubleFilter, ConfirmIdentityNRows)
   }
 }
 
-TEST(MeanDoubleFilter, ThreeRows)
+TEST(MultiChannelMeanFilterDouble, ThreeRows)
 {
   double epsilon = 1e-6;
   int length = 5;
@@ -113,6 +113,63 @@ TEST(MeanDoubleFilter, ThreeRows)
   {
     EXPECT_NEAR(v2[i], v1a[i], epsilon);
   }
+
+}
+
+TEST(MeanFilterDouble, ConfirmIdentityNRows)
+{
+  double epsilon = 1e-6;
+  int length = 5;
+  int rows = 5;
+  
+  TiXmlDocument doc;
+  doc.Parse("<filter type=\"MeanFilter<double> \" name=\"mean_test\"> <params number_of_observations=\"5\"/></filter>"); 
+  TiXmlElement *config = doc.RootElement();
+  
+  FilterBase<double > * filter = new MeanFilter<double>  ();
+  filter->configure(config );
+
+  double input = 1;
+  double output = 0;
+
+
+  for (int32_t i =0; i < rows*10; i++)
+  {
+    EXPECT_TRUE(filter->update(input, output));
+    
+    for (int i = 1; i < length; i++)
+    {
+      EXPECT_NEAR(input, output, epsilon);
+    }
+  }
+}
+
+TEST(MeanFilterDouble, ThreeRows)
+{
+  double epsilon = 1e-6;
+  int length = 5;
+  int rows = 5;
+  
+  TiXmlDocument doc;
+  doc.Parse("<filter type=\"MeanFilter<double> \" name=\"mean_test\"> <params number_of_observations=\"5\"/></filter>"); 
+  TiXmlElement *config = doc.RootElement();
+  
+  FilterBase<double > * filter = new MeanFilter<double> ();
+  filter->configure(config);
+
+  double input1 = 0;
+  double input2 =1;
+  double input3 = 2;
+  double output = 3;
+
+
+  EXPECT_TRUE(filter->update(input1, output));
+  EXPECT_NEAR(input1, output, epsilon);
+  EXPECT_TRUE(filter->update(input2, output));
+  EXPECT_NEAR((input1+ input2)/2.0, output, epsilon);
+  EXPECT_TRUE(filter->update(input3, output));
+  EXPECT_NEAR((input1 + input2 + input3)/3, output, epsilon);
+
 
 }
 
