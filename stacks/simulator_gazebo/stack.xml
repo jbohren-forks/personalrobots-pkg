@@ -10,7 +10,7 @@
 
   <depend stack="geometry"/> <!-- bullet, tf --> 
   <depend stack="ros"/> <!-- roscpp, std_msgs --> 
-  <depend stack="visualization_core"/> <!-- ogre --> 
+  <depend stack="visualization_common"/> <!-- ogre --> 
   <depend stack="common_msgs"/> <!-- sensor_msgs --> 
 
 </stack>

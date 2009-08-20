@@ -10,7 +10,7 @@
 
   <depend stack="geometry"/> 
   <depend stack="ros"/> 
-  <depend stack="visualization_core"/> 
+  <depend stack="visualization_common"/> 
   <depend stack="common"/> 
   <depend stack="common_msgs"/> 
 

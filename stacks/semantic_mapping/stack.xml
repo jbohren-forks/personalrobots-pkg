@@ -15,7 +15,7 @@
   <depend stack="opencv"/> <!-- opencv_latest --> 
   <depend stack="common"/> <!-- robot_actions --> 
   <depend stack="ros"/> <!-- std_msgs, std_srvs, roscpp --> 
-  <depend stack="visualization_core"/> <!-- visualization_msgs --> 
+  <depend stack="visualization_common"/> <!-- visualization_msgs --> 
   <depend stack="highlevel"/> <!-- plugs_msgs, door_msgs, door_functions --> 
 
 </stack>

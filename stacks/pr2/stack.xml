@@ -11,7 +11,7 @@
   <depend stack="util"/> <!-- realtime_tools --> 
   <depend stack="camera_drivers"/> <!-- dcam, prosilica_cam --> 
   <depend stack="calibration"/> <!-- joint_calibration_monitor --> 
-  <depend stack="visualization_core"/> <!-- ogre_tools --> 
+  <depend stack="visualization_common"/> <!-- ogre_tools --> 
   <depend stack="drivers"/> <!-- forearm_cam --> 
   <depend stack="mechanism"/> <!-- mechanism_control, hardware_interface, mechanism_control, mechanism_model, convex_decomposition, ivcon, robot_state_publisher, mechanism_bringup, convex_decomposition, ivcon --> 
   <depend stack="controllers"/> <!-- robot_mechanism_controllers, pr2_mechanism_controllers, joint_qualification_controllers, dynamic_verification_controllers, pr2_mechanism_controllers --> 
