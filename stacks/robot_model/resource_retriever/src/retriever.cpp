@@ -26,62 +26,111 @@
  */
 
 #include "resource_retriever/retriever.h"
+
 #include <ros/package.h>
 #include <ros/console.h>
+
+#include <curl/curl.h>
 
 namespace resource_retriever
 {
 
+class CURLStaticInit
+{
+public:
+  CURLStaticInit()
+  : initialized_(false)
+  {
+    CURLcode ret = curl_global_init(CURL_GLOBAL_ALL);
+    if (ret != 0)
+    {
+      ROS_ERROR("Error initializing libcurl! retcode = %d", ret);
+    }
+    else
+    {
+      initialized_ = true;
+    }
+  }
+
+  ~CURLStaticInit()
+  {
+    if (initialized_)
+    {
+      curl_global_cleanup();
+    }
+  }
+
+  bool initialized_;
+};
+static CURLStaticInit g_curl_init;
+
 Retriever::Retriever()
 {
-
+  curl_handle_ = curl_easy_init();
 }
 
 Retriever::~Retriever()
 {
+  if (curl_handle_)
+  {
+    curl_easy_cleanup(curl_handle_);
+  }
+}
 
+struct MemoryBuffer
+{
+  std::vector<uint8_t> v;
+};
+
+size_t curlWriteFunc(void* buffer, size_t size, size_t nmemb, void* userp)
+{
+  MemoryBuffer* membuf = (MemoryBuffer*)userp;
+
+  size_t prev_size = membuf->v.size();
+  membuf->v.resize(prev_size + size * nmemb);
+  memcpy(&membuf->v[prev_size], buffer, size * nmemb);
+
+  return size * nmemb;
 }
 
 MemoryResource Retriever::get(const std::string& url)
 {
+  std::string mod_url = url;
   if (url.find("package://") == 0)
   {
-    std::string file = url;
-    file.erase(0, strlen("package://"));
-    size_t pos = file.find("/");
-    if (pos != std::string::npos)
+    mod_url.erase(0, strlen("package://"));
+    size_t pos = mod_url.find("/");
+    if (pos == std::string::npos)
     {
-      std::string package = file.substr(0, pos);
-      file.erase(0, pos);
-      std::string package_path = ros::package::getPath(package);
-      file = package_path + file;
-
-      FILE* f = fopen(file.c_str(), "r");
-      if (f)
-      {
-        fseek(f, 0, SEEK_END);
-        uint32_t size = ftell(f);
-        fseek(f, 0, SEEK_SET);
-
-        MemoryResource r;
-        r.size = size;
-        r.data.reset(new uint8_t[size]);
-
-        if (fread(r.data.get(), 1, size, f) != size)
-        {
-          fclose(f);
-          ROS_ERROR("Error reading from file [%s]", file.c_str());
-          return MemoryResource();
-        }
-
-        fclose(f);
-
-        return r;
-      }
+      return MemoryResource();
     }
+
+    std::string package = mod_url.substr(0, pos);
+    mod_url.erase(0, pos);
+    std::string package_path = ros::package::getPath(package);
+    mod_url = "file://" + package_path + mod_url;
   }
 
-  return MemoryResource();
+  curl_easy_setopt(curl_handle_, CURLOPT_URL, mod_url.c_str());
+  curl_easy_setopt(curl_handle_, CURLOPT_WRITEFUNCTION, curlWriteFunc);
+
+  MemoryResource res;
+  MemoryBuffer buf;
+  curl_easy_setopt(curl_handle_, CURLOPT_WRITEDATA, &buf);
+
+  CURLcode ret = curl_easy_perform(curl_handle_);
+  if (ret != 0)
+  {
+    ROS_ERROR("Error retrieving file [%s], CURL error code [%d]", mod_url.c_str(), ret);
+  }
+  else if (!buf.v.empty())
+  {
+    res.size = buf.v.size();
+    res.data.reset(new uint8_t[res.size]);
+    memcpy(res.data.get(), &buf.v[0], res.size);
+  }
+
+  return res;
 }
 
 }

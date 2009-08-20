@@ -35,6 +35,7 @@
 #include <gtest/gtest.h>
 
 #include <resource_retriever/retriever.h>
+#include <ros/package.h>
 
 using namespace resource_retriever;
 
@@ -45,6 +46,26 @@ TEST(Retriever, getByPackage)
 
   ASSERT_EQ(res.size, 1);
   ASSERT_EQ(res.data[0], 'A');
+}
+
+TEST(Retriever, largeFile)
+{
+  std::string path = ros::package::getPath(ROS_PACKAGE_NAME) + "/test/large_file.dat";
+
+  FILE* f = fopen(path.c_str(), "w");
+
+  ASSERT_TRUE(f);
+
+  for (int i = 0; i < 1024*1024*50; ++i)
+  {
+    fprintf(f, "A");
+  }
+  fclose(f);
+
+  Retriever r;
+  MemoryResource res = r.get("package://resource_retriever/test/large_file.dat");
+
+  ASSERT_EQ(res.size, 1024*1024*50);
 }
 
 int main(int argc, char **argv){

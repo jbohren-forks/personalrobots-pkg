@@ -21,6 +21,15 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #uncomment if you have defined services
 #rosbuild_gensrv()
 
+include(FindCURL)
+
+if(NOT CURL_FOUND)
+message("CURL not found!  Aborting...")
+fail()
+endif(NOT CURL_FOUND)
+
+include_directories(${CURL_INCLUDE_DIRS})
 rosbuild_add_library(${PROJECT_NAME} src/retriever.cpp)
+target_link_libraries(${PROJECT_NAME} ${CURL_LIBRARIES})
 
 add_subdirectory(test EXCLUDE_FROM_ALL)

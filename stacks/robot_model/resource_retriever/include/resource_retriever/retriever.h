@@ -31,6 +31,8 @@
 #include <string>
 #include <boost/shared_array.hpp>
 
+typedef void CURL;
+
 namespace resource_retriever
 {
 
@@ -51,6 +53,9 @@ public:
   ~Retriever();
 
   MemoryResource get(const std::string& url);
+
+private:
+  CURL* curl_handle_;
 };
 
 } // namespace resource_retriever
