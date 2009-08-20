@@ -51,7 +51,7 @@
 #define TORSO_TOPIC "/torso_lift_controller/set_command"
 #define HEAD_TOPIC "/head_controller/command"
 
-class TeleopGoalProjection: public ros::Node
+class TeleopGoalProjection
 {
   public:
     geometry_msgs::PoseStamped cmd_;
@@ -69,43 +69,46 @@ class TeleopGoalProjection: public ros::Node
     tf::TransformListener tf;
     std::string global_frame_;
     std::string base_frame_;
+    ros::NodeHandle node_handle_;
+
+    ros::Publisher torso_pub_,goal_pub_,head_pub_;
+    ros::Subscriber joy_sub_;
     // Set pan, tilt steps as params
 
-    TeleopGoalProjection(bool deadman_no_publish = false) :
-      Node("teleop_goal_projection"), pan_step(0.1), tilt_step(0.1), deadman_no_publish_(deadman_no_publish)
+    TeleopGoalProjection(bool deadman_no_publish = false):pan_step(0.1), tilt_step(0.1), deadman_no_publish_(deadman_no_publish)
     {
       torso_vel.data = 0;
       cmd_.pose.position.x = cmd_.pose.position.y = cmd_.pose.orientation.z = 0;
       req_pan = req_tilt = 0;
       last_sent_command_time_ = ros::Time::now();
-      ros::Node::instance()->param("max_vx", max_vx, 0.6);
-      ros::Node::instance()->param("max_vw", max_vw, 0.8);
-      ros::Node::instance()->param("max_vy", max_vy, 0.6);
+      node_handle_.param("~max_vx", max_vx, 0.6);
+      node_handle_.param("~max_vw", max_vw, 0.8);
+      node_handle_.param("~max_vy", max_vy, 0.6);
 
-      ros::Node::instance()->param("max_pan", max_pan, 2.7);
-      ros::Node::instance()->param("max_tilt", max_tilt, 1.4);
-      ros::Node::instance()->param("min_tilt", min_tilt, -0.4);
+      node_handle_.param("~max_pan", max_pan, 2.7);
+      node_handle_.param("~max_tilt", max_tilt, 1.4);
+      node_handle_.param("~min_tilt", min_tilt, -0.4);
 
-      ros::Node::instance()->param("tilt_step", tilt_step, 0.1);
-      ros::Node::instance()->param("pan_step", pan_step, 0.1);
+      node_handle_.param("~tilt_step", tilt_step, 0.1);
+      node_handle_.param("~pan_step", pan_step, 0.1);
 
-      ros::Node::instance()->param("~global_frame", global_frame_, std::string("/map"));
-      ros::Node::instance()->param("~base_frame", base_frame_, std::string("/base_link"));
+      node_handle_.param("~global_frame", global_frame_, std::string("/map"));
+      node_handle_.param("~base_frame", base_frame_, std::string("/base_link"));
 
-      ros::Node::instance()->param<int> ("axis_pan", axis_pan, 0);
-      ros::Node::instance()->param<int> ("axis_tilt", axis_tilt, 2);
+      node_handle_.param<int> ("~axis_pan", axis_pan, 0);
+      node_handle_.param<int> ("~axis_tilt", axis_tilt, 2);
 
-      ros::Node::instance()->param<int> ("axis_vx", axis_vx, 3);
-      ros::Node::instance()->param<int> ("axis_vw", axis_vw, 0);
-      ros::Node::instance()->param<int> ("axis_vy", axis_vy, 2);
+      node_handle_.param<int> ("~axis_vx", axis_vx, 3);
+      node_handle_.param<int> ("~axis_vw", axis_vw, 0);
+      node_handle_.param<int> ("~axis_vy", axis_vy, 2);
 
-      ros::Node::instance()->param<int> ("deadman_button", deadman_button, 0);
-      ros::Node::instance()->param<int> ("torso_dn_button", torso_dn_button, 0);
-      ros::Node::instance()->param<int> ("torso_up_button", torso_up_button, 0);
-      ros::Node::instance()->param<int> ("head_button", head_button, 0);
+      node_handle_.param<int> ("~deadman_button", deadman_button, 0);
+      node_handle_.param<int> ("~torso_dn_button", torso_dn_button, 0);
+      node_handle_.param<int> ("~torso_up_button", torso_up_button, 0);
+      node_handle_.param<int> ("~head_button", head_button, 0);
 
       double send_cmd_hz;
-      ros::Node::instance()->param ("send_cmd_hz", send_cmd_hz, -1.0); //As fast as possible
+      node_handle_.param ("~send_cmd_hz", send_cmd_hz, -1.0); //As fast as possible
       if(send_cmd_hz <= 0)
       {
         send_cmd_time_interval_ = ros::Duration().fromSec(0.0);//DURATION_MAX;
@@ -114,11 +117,11 @@ class TeleopGoalProjection: public ros::Node
       else
       {
         send_cmd_time_interval_.fromSec(1.0/send_cmd_hz);
-        ROS_DEBUG("send_cmd_time_interval_: %.3f", send_cmd_time_interval_.toSec());
+        ROS_INFO("send_cmd_time_interval: %.3f", send_cmd_time_interval_.toSec());
       }
 
       double joy_msg_timeout;
-      ros::Node::instance()->param<double> ("joy_msg_timeout", joy_msg_timeout, -1.0); //default to no timeout
+      node_handle_.param<double> ("~joy_msg_timeout", joy_msg_timeout, -1.0); //default to no timeout
       if(joy_msg_timeout <= 0)
       {
         joy_msg_timeout_ = ros::Duration().fromSec(9999999);//DURATION_MAX;
@@ -152,28 +155,21 @@ class TeleopGoalProjection: public ros::Node
       ROS_DEBUG("joy_msg_timeout: %f\n", joy_msg_timeout);
 
       if(torso_dn_button != 0)
-        ros::Node::instance()->advertise<std_msgs::Float64> (TORSO_TOPIC, 1);
+        torso_pub_ = node_handle_.advertise<std_msgs::Float64> (TORSO_TOPIC, 1);
       if(head_button != 0)
-        ros::Node::instance()->advertise<mechanism_msgs::JointStates> (HEAD_TOPIC, 1);
-      ros::Node::instance()->advertise<geometry_msgs::PoseStamped> ("goal", 1);
-      ros::Node::instance()->subscribe("joy", joy, &TeleopGoalProjection::joy_cb, 1);
+        head_pub_ = node_handle_.advertise<mechanism_msgs::JointStates> (HEAD_TOPIC, 1);
+      goal_pub_ = node_handle_.advertise<geometry_msgs::PoseStamped> ("/goal", 1);
+      joy_sub_ = node_handle_.subscribe("joy",1,&TeleopGoalProjection::joy_cb,this);
       ROS_DEBUG("done with ctor\n");
     }
 
-    ~TeleopGoalProjection()
+    ~TeleopGoalProjection()     
     {
-      ros::Node::instance()->unsubscribe("joy");
-      ros::Node::instance()->unadvertise("goal");
-
-      if(torso_dn_button != 0)
-        ros::Node::instance()->unadvertise(TORSO_TOPIC);
-      if(head_button != 0)
-        ros::Node::instance()->unadvertise(HEAD_TOPIC);
-
     }
 
-    void joy_cb()
+    void joy_cb(const joy::JoyConstPtr &joy_msg)
     {
+      joy = *joy_msg;
       //Record this message reciept
       last_recieved_joy_message_time_ = ros::Time::now();
 
@@ -238,8 +234,10 @@ class TeleopGoalProjection: public ros::Node
     }
     void send_cmd_vel()
     {
+      ROS_INFO("Inside send cmd %f %f %f",send_cmd_time_interval_.toSec(),last_sent_command_time_.toSec(),ros::Time::now().toSec());
       if(last_sent_command_time_ + send_cmd_time_interval_ < ros::Time::now())
       {
+        ROS_INFO("Trying to send command");
         //ROS_INFO("last %f, interval %f, now %f", last_sent_command_time_.toSec(), send_cmd_time_interval_.toSec(), ros::Time::now().toSec());
         //ROS_INFO("last %f, interval %f, now %f", last_recieved_joy_message_time_.toSec(), joy_msg_timeout_.toSec(), ros::Time::now().toSec());
         joy.lock();
@@ -256,14 +254,33 @@ class TeleopGoalProjection: public ros::Node
           local_cmd.pose.orientation.w = sqrt(1 - local_cmd.pose.orientation.z * local_cmd.pose.orientation.z);
           local_cmd.header.frame_id = base_frame_;
           local_cmd.header.stamp = ros::Time();
-          tf.transformPose(global_frame_, local_cmd, cmd_);
+          try
+          {
+            tf.transformPose(global_frame_, local_cmd, cmd_);
+          }
+          catch(tf::LookupException& ex) {
+            ROS_ERROR("No Transform available Error: %s\n", ex.what());
+            joy.unlock();
+            return;
+          }
+          catch(tf::ConnectivityException& ex) {
+            ROS_ERROR("Connectivity Error: %s\n", ex.what());
+            joy.unlock();
+            return;
+          }
+          catch(tf::ExtrapolationException& ex) {
+            ROS_ERROR("Extrapolation Error: %s\n", ex.what());
+            joy.unlock();
+            return;
+          }
+
           cmd_.header.stamp = ros::Time::now();
-          ros::Node::instance()->publish("goal", cmd_);
+          goal_pub_.publish(cmd_);
 
           // Torso
           torso_vel.data = req_torso;
           if(torso_dn_button != 0)
-            ros::Node::instance()->publish(TORSO_TOPIC, torso_vel);
+            torso_pub_.publish(torso_vel);
 
           // Head
           if(head_button != 0)
@@ -277,7 +294,7 @@ class TeleopGoalProjection: public ros::Node
 	    joint_cmd.name="head_tilt_joint";
 	    joint_cmd.position = req_tilt;
 	    joint_cmds.joints.push_back(joint_cmd);
-            ros::Node::instance()->publish(HEAD_TOPIC, joint_cmds);
+            head_pub_.publish(joint_cmds);
           }
 
           /*if(req_torso != 0)
@@ -294,10 +311,27 @@ class TeleopGoalProjection: public ros::Node
           local_cmd.pose.orientation.w = sqrt(1 - local_cmd.pose.orientation.z * local_cmd.pose.orientation.z);
           local_cmd.header.frame_id = base_frame_;
           local_cmd.header.stamp = ros::Time();
-          tf.transformPose(global_frame_, local_cmd, cmd_);
 
-          ros::Node::instance()->publish("goal", cmd_);
-
+          try
+          {
+            tf.transformPose(global_frame_, local_cmd, cmd_);
+          }
+          catch(tf::LookupException& ex) {
+            ROS_ERROR("No Transform available Error: %s\n", ex.what());
+            joy.unlock();
+            return;
+          }
+          catch(tf::ConnectivityException& ex) {
+            ROS_ERROR("Connectivity Error: %s\n", ex.what());
+            joy.unlock();
+            return;
+          }
+          catch(tf::ExtrapolationException& ex) {
+            ROS_ERROR("Extrapolation Error: %s\n", ex.what());
+            joy.unlock();
+            return;
+          }
+          goal_pub_.publish(cmd_);
           deadman_pressed_previous_iteration = false;
         }
         else
@@ -306,9 +340,9 @@ class TeleopGoalProjection: public ros::Node
           torso_vel.data = 0;
           if(!deadman_no_publish_)
           {
-            ros::Node::instance()->publish("goal", cmd_);//Only publish if deadman_no_publish is enabled
+            goal_pub_.publish(cmd_);//Only publish if deadman_no_publish is enabled
             if(torso_dn_button != 0)
-              ros::Node::instance()->publish(TORSO_TOPIC, torso_vel);
+              torso_pub_.publish(torso_vel);
 
             // Publish head
             if(head_button != 0)
@@ -322,7 +356,7 @@ class TeleopGoalProjection: public ros::Node
 	      joint_cmd.name="head_tilt_joint";
 	      joint_cmd.position = req_tilt;
 	      joint_cmds.joints.push_back(joint_cmd);
-              ros::Node::instance()->publish(HEAD_TOPIC, joint_cmds);
+              head_pub_.publish(joint_cmds);
             }
 
           }
@@ -330,12 +364,18 @@ class TeleopGoalProjection: public ros::Node
         last_sent_command_time_ = ros::Time::now();
         joy.unlock();
       }
+      else
+      {
+        ROS_INFO("Not sending command");
+      }
+      ROS_INFO("Done sending command");
     }
 };
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv);
+  ros::init(argc, argv, "teleop_goal_projection");
+  ros::spinOnce();
   const char* opt_no_publish = "--deadman_no_publish";
 
   bool no_publish = false;
@@ -345,9 +385,12 @@ int main(int argc, char **argv)
       no_publish = true;
   }
   TeleopGoalProjection teleop_goal_projection(no_publish);
-  while(teleop_goal_projection.ok())
+  ros::Duration sleep_time(0.25);
+  while(true)
   {
-    usleep(50000);
+    ROS_INFO("Sending out command");
+    sleep_time.sleep();
+    ros::spinOnce();
     teleop_goal_projection.send_cmd_vel();
   }
 

@@ -17,6 +17,9 @@
   <depend package="tf" />
   <depend package="trajectory" />
 
+  <depend package="actionlib" />
+  <depend package="move_base_msgs" />
+
   <depend package="mechanism_msgs" />
   <depend package="std_msgs" /><depend package="joy"></depend>
  <export>

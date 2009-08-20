@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+  <!-- 2dnav_anti_collision -->
+<launch>
+  <group name="wg">
+    <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
+    <include file="$(find teleop_anti_collision)/launch/anti_collision_position/base_odom_teleop.xml" />
+    <include file="$(find 2dnav_pr2)/config/lasers_and_filters.xml" />
+    <include file="$(find 2dnav_pr2)/config/ground_plane.xml" />
+
+    <!-- The naviagtion stack and associated parameters -->
+    <include file="$(find teleop_anti_collision)/launch/anti_collision_position/safe_teleop.xml" />
+    <node pkg="mux" type="throttle" args="3.0 /move_base_local/local_costmap/voxel_grid /move_base_local/local_costmap/voxel_grid_throttled" />
+  </group>
+</launch>
