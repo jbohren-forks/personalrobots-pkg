@@ -12,6 +12,18 @@
 	THis is a median filter which works on a stream of doubles.  
       </description>
     </class>
+    <class name="MultiChannelMedianFilterFloat" type="filters::MultiChannelMedianFilter<float>" 
+	    base_class_type="filters::MultiChannelFilterBase<float>">
+      <description>
+	THis is a median filter which works on a stream of std::vector of floats.  
+      </description>
+    </class>
+    <class name="MedianFilterFloat" type="filters::MedianFilter<float>" 
+	    base_class_type="filters::FilterBase<float>">
+      <description>
+	THis is a median filter which works on a stream of floats.  
+      </description>
+    </class>
   </library>
   <library path="lib/libmean">
     <class name="MeanFilterDouble" type="filters::MeanFilter<double>" 
