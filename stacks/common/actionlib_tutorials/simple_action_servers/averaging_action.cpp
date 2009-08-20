@@ -79,7 +79,7 @@ public:
 
     void analysisCB(const std_msgs::Float32::ConstPtr& msg)
     {
-      // make sure that the action hasn't been preempted
+      // make sure that the action hasn't been 
       if (!as_.isActive())
         return;
       
