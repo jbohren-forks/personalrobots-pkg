@@ -115,7 +115,7 @@ bool LaserScannerTrajController::initXml(mechanism::RobotState *robot, TiXmlElem
     return false ;
   }
 
-  d_error_filter.FilterBase<double>::configure((unsigned int)1, filter_elem) ;
+  d_error_filter.FilterBase<double>::configure(filter_elem) ;
 
   // ***** Max Rate and Acceleration Elements *****
   TiXmlElement *max_rate_elem = config->FirstChildElement("max_rate") ;
