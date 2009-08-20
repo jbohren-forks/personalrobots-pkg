@@ -214,7 +214,9 @@ private:
   double max_radius_clearance_;                                 /**< Maximum value of radius + clearance for any of the collision points */
   std::map<std::string, mapping_msgs::AttachedObject> attached_objects_;        /**< Map of links -> attached objects */
 
+  void generateCollisionPoints();
   void addCollisionPointsFromLinkRadius(std::string link_name, double radius, double clearance, double extension);
+//  void getActiveJointsSegmentNumberForLink(std::string link_name, 
 };
 
 /////////////////////////////// inline functions follow ///////////////////////////////////
