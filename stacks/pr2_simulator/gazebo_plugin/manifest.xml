@@ -31,8 +31,8 @@
   <depend package="mechanism_model" />
   <depend package="tinyxml" />
   <depend package="bullet" />
+  <depend package="urdf" />
   <depend package="wg_robot_description_parser" />
-  <depend package="axis_cam" />
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib" />
   </export>
