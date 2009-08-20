@@ -57,7 +57,12 @@ int main (int argc, char **argv)
   // create the action client
   actionlib::SimpleActionClient<actionlib_tutorials::FibonacciAction> ac("fibonacci");
   sleep(1);
-  
+
+  ROS_INFO("Waiting for action server to start.");
+  // wait for the action server to start
+  ac.waitForActionServerToStart(); //will wait for infinite time 
+  ROS_INFO("Action server started, sending goal.");  
+
   // send a goal to the action 
   actionlib_tutorials::FibonacciGoal goal;
   goal.order = 10;

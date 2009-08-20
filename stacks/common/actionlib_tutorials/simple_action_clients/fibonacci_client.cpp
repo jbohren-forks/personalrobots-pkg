@@ -48,11 +48,11 @@ int main (int argc, char **argv)
   // create the action client
   // true causes the client to spin it's own thread
   actionlib::SimpleActionClient<actionlib_tutorials::FibonacciAction> ac("fibonacci", true); 
-  sleep(1);
+  sleep(2);
 
   ROS_INFO("Waiting for action server to start.");
   // wait for the action server to start
-  bool started = ac.waitForActionServerToStart(ros::Duration(0)); //will wait for infinite time 
+  ac.waitForActionServerToStart(); //will wait for infinite time 
   ROS_INFO("Action server started, sending goal.");
 
   // send a goal to the action 
