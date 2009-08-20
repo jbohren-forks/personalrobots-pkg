@@ -37,7 +37,7 @@ class DbReader():
     return ticks
 
   ############################################################################
-  # get_assembly(log_path,reactor_name,tick)
+  # load_assembly(log_path,reactor_name,tick)
   #   This function takes a file path to load the files relevant to a specific
   #   reactor and tick. The file path is the full path through the reactor.
   #   Note that if the parameters are incorrect, the get_assembly call will
