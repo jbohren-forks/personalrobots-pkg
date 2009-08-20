@@ -205,7 +205,7 @@ private:
   {
     // Start publishers and subscribers
     server_connected_ = false;
-    goal_pub_ = n_.advertise<ActionGoal>("goal", 1, boost::bind(&ActionClient::serverConnectionCb, this, _1));
+    goal_pub_ = queue_advertise<ActionGoal>("goal", 1, boost::bind(&ActionClient::serverConnectionCb, this, _1), queue);
     cancel_pub_ = n_.advertise<GoalID>("cancel", 1, true);
     manager_.registerSendGoalFunc(boost::bind(&ActionClientT::sendGoalFunc, this, _1));
     manager_.registerCancelFunc(boost::bind(&ActionClientT::sendCancelFunc, this, _1));
@@ -213,6 +213,19 @@ private:
     status_sub_   = queue_subscribe("status",   1, &ActionClientT::statusCb,   this, queue);
     feedback_sub_ = queue_subscribe("feedback", 1, &ActionClientT::feedbackCb, this, queue);
     result_sub_   = queue_subscribe("result",   1, &ActionClientT::resultCb,   this, queue);
+  }
+
+  template <class M>
+  ros::Publisher queue_advertise(const std::string& topic, uint32_t queue_size,
+                                 const ros::SubscriberStatusCallback& connect_cb,
+                                 ros::CallbackQueueInterface* queue)
+  {
+    ros::AdvertiseOptions ops;
+    ops.init<M>(topic, queue_size, connect_cb, NULL);
+    ops.tracked_object = ros::VoidPtr();
+    ops.latch = false;
+    ops.callback_queue = queue;
+    return n_.advertise(ops);
   }
 
   template<class M, class T>
