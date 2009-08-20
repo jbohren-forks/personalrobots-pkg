@@ -27,11 +27,12 @@
   </pr2_gripper>
 
   <!-- Solid Base -->
-  <joint name="base_joint" type="fixed"/> 
-  <link name="base_link">
-    <parent name=" world" />
+  <joint name="base_joint" type="fixed">
     <origin xyz="0 0 0" rpy="0 0 0" />
-    <joint name="base_joint" />
+    <parent link="world" />
+    <child link="base_link" />
+  </joint>
+  <link name="base_link">
     <inertial>
       <mass value="1000" />
       <com xyz="0 0 1" />
