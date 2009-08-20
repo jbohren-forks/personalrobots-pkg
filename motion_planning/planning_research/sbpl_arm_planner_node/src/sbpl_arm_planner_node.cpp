@@ -991,9 +991,13 @@ bool SBPLArmPlannerNode::plan(motion_planning_msgs::KinematicPath &arm_path)
 				i, path_in[i][0],path_in[i][1],path_in[i][2],path_in[i][3],path_in[i][4],path_in[i][5],path_in[i][6]);
 		}
 
-		ROS_INFO("calling smooth path");
+		ROS_INFO("the path has %i states. calling smooth path.", path_in.size());
 		path_out = pm_->smoothPath(path_in, joint_names_);
-		ROS_INFO("smoothpath completed with a path of length %i", path_out.size());
+		ROS_INFO("the path has %i states. calling smooth path again.", path_out.size());
+		path_in = pm_->smoothPath(path_out, joint_names_);
+		ROS_INFO("the path has %i states. calling smooth path again.", path_in.size());
+		path_out = pm_->smoothPath(path_in, joint_names_);
+		ROS_INFO("smoothing completed with a path of length %i", path_out.size());
 
 
 //		if(!interpolatePath(path_in, path_out, 0.2))
@@ -1010,23 +1014,8 @@ bool SBPLArmPlannerNode::plan(motion_planning_msgs::KinematicPath &arm_path)
 				arm_path.states[i].vals[p] = path_out[i][p];
 		}
 
-/*
-    arm_path.set_states_size(solution_state_ids_v.size());
-    for(i = 0; i < solution_state_ids_v.size(); i++)
-      arm_path.states[i].set_vals_size(num_joints_);
 
-    for(i = 0; i < arm_path.get_states_size(); i++)
-    {
-      sbpl_arm_env_.StateID2Angles(solution_state_ids_v[i], angles_r);
-      for (unsigned int p = 0; p < (unsigned int) num_joints_; ++p)
-				arm_path.states[i].vals[p] = angles_r[p];
-    }*/
-
-		/** testing jacobian calculation code */
-// 		finishPath(arm_path, goal_pose_constraint_[0]);
-
-
-    if(bCartesianPlanner_)
+		if(bCartesianPlanner_)
     {
       std::vector<double> jnt_pos(num_joints_,0);
       for(int j=0; j<num_joints_; ++j)
@@ -1071,12 +1060,6 @@ bool SBPLArmPlannerNode::plan(motion_planning_msgs::KinematicPath &arm_path)
 					angles_r[j] = arm_path.states[arm_path.get_states_size()-1].vals[j];
 				}
 
-// 				arm_path.set_times_size((int)arm_path.get_states_size());
-// 				arm_path.times[arm_path.get_times_size()-1] = arm_path.times[arm_path.get_times_size()-1] +0.15;
-				
-// 				for(int p = 0; p < arm_path.get_times_size(); ++p)
-// 					ROS_INFO("%i: time:%f:",p,arm_path.times[p]);
-
 				// print out difference in goal configuration between found IK solution and final waypoint in path
 				i = arm_path.get_states_size() - 1;
 				ROS_INFO("IK Solution:");
@@ -1099,9 +1082,16 @@ bool SBPLArmPlannerNode::plan(motion_planning_msgs::KinematicPath &arm_path)
 				ROS_INFO("    xyz: %.3f %.3f %.3f   rpy: %.3f %.3f %.3f",
 								 xyz_m[0],xyz_m[1],xyz_m[2],rpy_r[0],rpy_r[1],rpy_r[2]);
 			}
+			
 			// print out error to goal position
 			for(unsigned int j = 0; j < goal_pose_constraint_.size(); ++j)
 			{
+				
+				for(int p = 0; p < num_joints_; ++p)
+					angles_r[j] = arm_path.states[arm_path.get_states_size() - 1].vals[p];
+
+				sbpl_arm_env_.ComputeEndEffectorPos(angles_r, xyz_m, rpy_r);
+				
 				tf::poseMsgToTF(goal_pose_constraint_[j].pose.pose, tf_pose);
 				btMatrix3x3 mat = tf_pose.getBasis();
 				mat.getEulerZYX(yaw,pitch,roll);
@@ -1115,6 +1105,7 @@ bool SBPLArmPlannerNode::plan(motion_planning_msgs::KinematicPath &arm_path)
 				ROS_INFO("error: %.4fm, %.4f rad (%.4f deg)\n\n", error_m, error_r, (error_r*180.0)/PI_CONST);
 			}
     }
+		
     else //joint space planner
     {
       if(goal_joint_constraint_.empty())
@@ -1122,6 +1113,7 @@ bool SBPLArmPlannerNode::plan(motion_planning_msgs::KinematicPath &arm_path)
 				ROS_INFO("goal joint constraint is empty");
         return false;
       }
+
       final_waypoint.resize(num_joints_,0);
       for(int j=0; j<num_joints_; ++j)
 				final_waypoint[j] = goal_joint_constraint_[j].value[0];
