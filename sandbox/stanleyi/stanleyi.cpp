@@ -69,7 +69,9 @@ void findLabelPolys(double stamp, string results_dir, Vector< Vector<Point> >& p
 map<string, int> createLabelMap();
 void showLabelPolys(IplImage* img, const Vector< Vector<Point> >& polys);
 void createLabelMaps(map<string, int>* str2int, vector<string>* int2str);
-bool getPolysFromTinyXMLBoundingBox(string filename, Vector< Vector<Point> >& polys, vector<int>& poly_labels, vector<CvRect>& boxes);
+bool getPolysFromXMLBoundingBox(string filename, Vector< Vector<Point> >& polys, vector<int>& poly_labels, vector<CvRect>& boxes);
+bool getContoursFromTinyXML(string filename, Vector< Vector<Point> >& contours, vector<int>& poly_labels);
+bool getBoundingBoxesFromXML(string filename, vector<CvRect>& boxes, vector<int>& box_labels);
   
 /***************************************************************************
 ***********  Stanleyi
@@ -465,10 +467,23 @@ void Stanleyi::drawResponse(IplImage* img, float response, CvPoint pt) {
 }
 
 void Stanleyi::precomputeFeatures(string labels_dir, string featureset, int samples_per_img) {
+  // -- Get computation settings
+
+  int frame_step = 1;
+  int skip_frames = 0;
+  if(getenv("SKIP_FRAMES") != NULL)
+    skip_frames = atoi(getenv("SKIP_FRAMES"));
+
+  if(getenv("FRAME_STEP") != NULL)
+    frame_step = atoi(getenv("FRAME_STEP"));
+
+
+  int num_to_skip=skip_frames;
+
+
   // -- Make features dir.
   string features_dir = labels_dir + "/features-" + featureset;
   mkdir(features_dir.c_str(), S_IRWXG | S_IRWXU | S_IRWXO);
-
 
   string images_dir = labels_dir + "/images/";
   vector<string> files;
@@ -476,6 +491,16 @@ void Stanleyi::precomputeFeatures(string labels_dir, string featureset, int samp
   for(size_t i=0; i<files.size(); ++i) {
     if(files[i].find(".jpg") == string::npos) 
       continue;
+
+    if(frame_step>1){
+      if(num_to_skip>0) {
+        num_to_skip--;
+        continue;
+      }else{
+        num_to_skip=frame_step-1;
+      }
+    }
+
 
     cout << "Working on " << files[i] << ", " << i+1 << " out of " << files.size() << endl;
     string img_name = images_dir + files[i];
@@ -595,6 +620,13 @@ string PerfStats::statString() {
 void Stanleyi::evaluateClassifier(string labels_dir, string index_filename, string classifier_filename, string featureset, 
 				  string results_dir) {
 
+  bool use_polygons=true;
+  bool use_boxes=false;
+  if( (getenv("USE_BOXES") != NULL) && !strcmp(getenv("USE_BOXES"),"true") ) {
+    use_boxes=true;
+    use_polygons=false;
+  }
+
   Dorylus d;
   d.load(classifier_filename);
 
@@ -648,14 +680,24 @@ void Stanleyi::evaluateClassifier(string labels_dir, string index_filename, stri
 
     // -- Get the labels.
     string annotation_filename = labels_dir + "/annotations/" + base + ".xml";
+
     Vector< Vector<Point> > polys;
     vector<int> poly_labels;
     vector<CvRect> boxes;
-    if(!getPolysFromTinyXMLBoundingBox(annotation_filename, polys, poly_labels, boxes)) {
-      cout << "Failed to load " << annotation_filename << endl;
-      return;
+    vector<int> box_labels;
+
+    if(use_polygons){ 
+      if(!getContoursFromTinyXML(annotation_filename, polys, poly_labels)) {
+	cout << "Failed to load " << annotation_filename << endl;
+	return;
+      }
+    }else if(use_boxes){
+      if(!getBoundingBoxesFromXML(annotation_filename, boxes, box_labels)) {
+	cout << "Failed to load " << annotation_filename << endl;
+	return;
+      }
     }
-    
+
     // -- Make predictions.
     vector<CvScalar> colors;
     colors.push_back(cvScalar(255,0,0));
@@ -679,32 +721,44 @@ void Stanleyi::evaluateClassifier(string labels_dir, string index_filename, stri
       }
       cvCircle(img, cvPoint(xs[i], ys[i]), size, colors[idx], -1);
 
-      // -- Find the label of this point using the polys.  (0 for bg).
-      int label=0;
-      for(size_t j=0; j<polys.size(); ++j) {
-	if(pointPolygonTest(polys[j], Point2f(xs[i], ys[i]), 0) >= 0) {
-	  label = poly_labels[j];
-	  break;
+
+      if(use_polygons){ 
+	
+	// -- Find the label of this point using the polys.  (0 for bg).
+	int label=0;
+	for(size_t j=0; j<polys.size(); ++j) {
+	  if(pointPolygonTest(polys[j], Point2f(xs[i], ys[i]), 0) >= 0) {
+	    label = poly_labels[j];
+	    break;
+	  }
 	}
+
+	// -- Increment stats.
+	// Why are the response values flipped? 
+	VectorXf response2 = response;
+	response2(0) = response(2); 
+	response2(2) = response(0);
+	point_stats.incrementStats(label, response2);
+      }else if(use_boxes){
+
+	// -- Find the label of this point using the boxes.  (0 for bg).
+	int label=0;
+	for(size_t j=0; j<boxes.size(); ++j) {
+	  if(xs[i] >= boxes[j].x && xs[i] <= boxes[j].x + boxes[j].width &&
+	     ys[i] >= boxes[j].y && ys[i] <= boxes[j].y + boxes[j].height) {
+	    label = box_labels[j];
+	    break;	
+	  }
+	}
+
+	// -- Increment stats.
+	// Why are the response values flipped? 
+	VectorXf response2 = response;
+	response2(0) = response(2); 
+	response2(2) = response(0);
+	point_stats.incrementStats(label, response2);
       }
 
-      // -- Increment stats.
-      // Why are the response values flipped? 
-      VectorXf response2 = response;
-      response2(0) = response(2); 
-      response2(2) = response(0);
-      point_stats.incrementStats(label, response2);
-      
-
-      // -- Find the label of this point using the boxes.  (0 for bg).
-//       int label=0;
-//       for(size_t j=0; j<boxes.size(); ++j) {
-// 	if(xs[i] >= boxes[j].x && xs[i] <= boxes[j].x + boxes[j].width &&
-// 	   ys[i] >= boxes[j].y && ys[i] <= boxes[j].y + boxes[j].height) {
-// 	  label = poly_labels[j];
-// 	  break;
-// 	}
-//       }
 
 //       // -- Increment stats.
 //       box_stats.incrementStats(label, response);	
@@ -1254,7 +1308,7 @@ IplImage* findLabelMask(double stamp, string results_dir)
   return mask;
 }
 
-void getContoursFromTinyXML(string filename, Vector< Vector<Point> >& contours, vector<int>& poly_labels) {
+bool getContoursFromTinyXML(string filename, Vector< Vector<Point> >& contours, vector<int>& poly_labels) {
 
   assert(poly_labels.empty());
   assert(contours.empty());
@@ -1269,7 +1323,7 @@ void getContoursFromTinyXML(string filename, Vector< Vector<Point> >& contours, 
   bool loadOkay = XMLdoc.LoadFile();
   if (!loadOkay) {
     cout << "Could not load " << filename << endl;
-    return;
+    return false;
   } 
 
   TiXmlElement *annotations, *annotation, *bbox, *bbox_annotation, *polygon, *results, *pt;
@@ -1319,6 +1373,8 @@ void getContoursFromTinyXML(string filename, Vector< Vector<Point> >& contours, 
     polygon = polygon->NextSiblingElement("polygon");
   }
 
+  return true;
+
 }
 
 bool getPolysFromTinyXMLBoundingBox(string filename, Vector< Vector<Point> >& polys, vector<int>& poly_labels, vector<CvRect>& boxes) {
@@ -1361,6 +1417,40 @@ bool getPolysFromTinyXMLBoundingBox(string filename, Vector< Vector<Point> >& po
       pt = pt->NextSiblingElement("pt");
     }
     polys.push_back(poly);
+    bbox = bbox->NextSiblingElement("bbox");
+  }
+  return true;
+}
+
+
+bool getBoundingBoxesFromXML(string filename, vector<CvRect>& boxes, vector<int>& box_labels ) {
+
+  assert(box_labels.empty());
+  assert(boxes.empty());
+
+  map<string, int> label_str2int;
+  vector<string> label_int2str;
+  createLabelMaps(&label_str2int, &label_int2str);
+
+
+  // -- Setup XML.
+  TiXmlDocument XMLdoc(filename);
+  bool loadOkay = XMLdoc.LoadFile();
+  if (!loadOkay) {
+    cout << "Could not load " << filename << endl;
+    return false;
+  } 
+
+  TiXmlElement *annotations, *annotation, *polygon, *results, *pt, *bbox, *ann2;
+  annotations = XMLdoc.FirstChildElement("annotations");
+  results = annotations->FirstChildElement("results");
+  annotation = results->FirstChildElement("annotation");
+  bbox = annotation->FirstChildElement("bbox");
+
+  // -- For each bbox, get the label and the poly.
+  while(bbox) {
+    boxes.push_back(cvRect(atoi(bbox->Attribute("left")), atoi(bbox->Attribute("top")), atoi(bbox->Attribute("width")), atoi(bbox->Attribute("height"))));
+    box_labels.push_back(label_str2int[bbox->Attribute("name")]);
     bbox = bbox->NextSiblingElement("bbox");
   }
   return true;
