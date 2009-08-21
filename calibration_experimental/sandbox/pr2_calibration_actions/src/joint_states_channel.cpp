@@ -68,7 +68,7 @@ JointStatesChannel::JointStatesChannel(const JointStatesChannelConfig& config, S
 
   channel_name_ = config.channel_name;
 
-  joint_states_sub_ = nh_.subscribe(config.joint_states_topic, 1, &JointStatesChannel::jointStatesCallback, this);
+  joint_states_sub_ = nh_.subscribe(config.topic, 1, &JointStatesChannel::jointStatesCallback, this);
 }
 
 void JointStatesChannel::registerStationaryCallback(StationaryCallback cb)

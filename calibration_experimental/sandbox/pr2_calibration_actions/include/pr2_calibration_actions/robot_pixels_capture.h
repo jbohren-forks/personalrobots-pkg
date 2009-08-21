@@ -39,9 +39,9 @@
 #include "joint_states_channel.h"
 
 // messages
-#include "pr2_calibration_actions/RobotPixelsConfig.h"
-#include "pr2_calibration_actions/RobotPixelsResult.h"
-#include "pr2_calibration_actions/RobotPixelsFeedback.h"
+#include "pr2_calibration_actions/CaptureRobotPixelsGoal.h"
+#include "pr2_calibration_actions/CaptureRobotPixelsResult.h"
+#include "pr2_calibration_actions/CaptureRobotPixelsFeedback.h"
 
 namespace pr2_calibration_actions
 {
@@ -51,10 +51,10 @@ class RobotPixelsCapture
 public:
   typedef calibration_message_filters::DeflatedMsg<mechanism_msgs::JointStates> DeflatedJointStates;
   typedef calibration_message_filters::DeflatedMsg<sensor_msgs::Image> DeflatedImage;
-  typedef boost::function<void(const RobotPixelsResult&)> CompletionCallback;
-  typedef boost::function<void(const RobotPixelsFeedback&)> FeedbackCallback;
+  typedef boost::function<void(const CaptureRobotPixelsResult&)> CompletionCallback;
+  typedef boost::function<void(const CaptureRobotPixelsFeedback&)> FeedbackCallback;
 
-  RobotPixelsCapture(const RobotPixelsConfig& config,
+  RobotPixelsCapture(const CaptureRobotPixelsGoal& config,
                      CompletionCallback completion_cb = NULL,
                      FeedbackCallback feedback_cb_ = NULL);
 
@@ -84,7 +84,7 @@ private:
   CompletionCallback completion_cb_;
   FeedbackCallback feedback_cb_;
 
-  RobotPixelsFeedback cur_feedback_;
+  CaptureRobotPixelsFeedback cur_feedback_;
 
   // Mutexes
   boost::mutex joint_states_mutex_;

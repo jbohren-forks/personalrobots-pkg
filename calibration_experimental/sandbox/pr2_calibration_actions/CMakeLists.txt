@@ -4,6 +4,7 @@ set(ROS_BUILD_TYPE Debug)
 rospack(pr2_calibration_actions)
 
 genmsg()
+gensrv()
 
 rospack_add_library(${PROJECT_NAME} src/pixel_channel.cpp
                                     src/joint_states_channel.cpp
@@ -29,6 +30,9 @@ target_link_libraries(capture_robot_pixels_action_server ${PROJECT_NAME})
 
 rospack_add_executable(capture_robot_pixels_sample_client src/capture_robot_pixels_sample_client.cpp)
 target_link_libraries(capture_robot_pixels_sample_client ${PROJECT_NAME})
+
+rospack_add_executable(capture_robot_pixels_client src/capture_robot_pixels_client.cpp)
+target_link_libraries(capture_robot_pixels_client ${PROJECT_NAME})
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 

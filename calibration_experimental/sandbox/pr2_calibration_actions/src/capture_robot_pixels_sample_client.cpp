@@ -86,7 +86,7 @@ RobotPixelsConfig buildCaptureCommand()
 {
   RobotPixelsConfig config;
 
-  config.joint_states_config.joint_states_topic = "joint_states";
+  config.joint_states_config.topic = "joint_states";
   config.joint_states_config.joint_names.resize(9);
   config.joint_states_config.joint_names[0] = "head_pan_joint";
   config.joint_states_config.joint_names[1] = "head_tilt_joint";

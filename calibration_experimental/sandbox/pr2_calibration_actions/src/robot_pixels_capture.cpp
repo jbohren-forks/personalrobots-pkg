@@ -38,7 +38,7 @@ using namespace calibration_message_filters;
 using namespace pr2_calibration_actions;
 using namespace std;
 
-RobotPixelsCapture::RobotPixelsCapture(const RobotPixelsConfig& config, CompletionCallback completion_cb, FeedbackCallback feedback_cb)
+RobotPixelsCapture::RobotPixelsCapture(const CaptureRobotPixelsGoal& config, CompletionCallback completion_cb, FeedbackCallback feedback_cb)
 {
   completion_cb_ = completion_cb;
   feedback_cb_ = feedback_cb;
@@ -221,7 +221,7 @@ void RobotPixelsCapture::searchForMatch(const ros::Time& time)
 void RobotPixelsCapture::processMatch(const DeflatedJointStates& deflated_joint_states,
                                       const std::vector<DeflatedImage>& deflated_images)
 {
-  RobotPixelsResult result;
+  CaptureRobotPixelsResult result;
   joint_states_channel_->buildResult(deflated_joint_states, result.joint_states_result);
 
   const unsigned int N = deflated_images.size();

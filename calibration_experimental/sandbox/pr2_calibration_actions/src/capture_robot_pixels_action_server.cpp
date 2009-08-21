@@ -71,20 +71,18 @@ public:
 
     cur_goal_ = as_.acceptNewGoal();
 
-    capture_.reset(new RobotPixelsCapture(cur_goal_->config,
+    capture_.reset(new RobotPixelsCapture(cur_goal_,
                                           boost::bind(&CaptureRobotPixelsActionServer::completionCallback, this, _1),
                                           boost::bind(&CaptureRobotPixelsActionServer::sendFeedback, this, _1)));
   }
 
-  void completionCallback(const RobotPixelsResult& result)
+  void completionCallback(const CaptureRobotPixelsResult& result)
   {
     capture_->shutdown();
-    CaptureRobotPixelsResult full_result;
-    full_result.result = result;
-    as_.setSucceeded(full_result);
+    as_.setSucceeded(result);
   }
 
-  void sendFeedback(const RobotPixelsFeedback& feedback)
+  void sendFeedback(const CaptureRobotPixelsFeedback& feedback)
   {
     CaptureRobotPixelsFeedback full_feedback;
     full_feedback.feedback = feedback;
