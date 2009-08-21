@@ -7,6 +7,9 @@ usage: %(progname)s [args]
 import nstart
 import os, sys, string, time, getopt
 
+PKG = 'webui' # this package name
+import roslib; roslib.load_manifest(PKG) 
+
 from pyclearsilver.log import *
 
 import config
@@ -145,8 +148,9 @@ def initSchema(create=0, timeout=None):
     db.synchronizeSchema()
     db.createIndices()
 
-    if config.gWebUserID is not None and config.gWebGroupID is not None:
-      config.webChown(fullDBPath(path))
+    if 0:
+      if config.gWebUserID is not None and config.gWebGroupID is not None:
+        config.webChown(fullDBPath(path))
 
   return db
 

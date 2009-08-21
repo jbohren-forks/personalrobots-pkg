@@ -84,8 +84,9 @@ def initSchema(create=0, timeout=None):
     db.synchronizeSchema()
     db.createIndices()
 
-    if config.gWebUserID is not None and config.gWebGroupID is not None:
-      config.webChown(fullDBPath(path))
+    if 0:
+      if config.gWebUserID is not None and config.gWebGroupID is not None:
+        config.webChown(fullDBPath(path))
 
 
   return db

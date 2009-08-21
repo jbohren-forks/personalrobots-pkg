@@ -15,14 +15,11 @@ gBaseURL = "/webui/"
 gAuthVCode = 1574444059
 gAuthSalt = "ir"
 
-import socket
-hostname = socket.gethostname()
-
 gWebUserID = 33  # apache
 gWebGroupID = 33 # apache
 
 _path,_fn = os.path.split(__file__)
-gDBPath = os.path.join(_path, "..", "db")
+gDBPath = os.path.join(_path, "..", "..", "db")
 
 gDomain = "willowgarage.com"
 
@@ -44,7 +41,7 @@ def getDBPath(module):
 def createDBPath(path):
   if not os.path.isdir(path):
     os.makedirs(path, 0700)
-    webChown(path)
+    #webChown(path)
   
 def webChown(path):
   if gWebUserID is not None and gWebGroupID is not None:
