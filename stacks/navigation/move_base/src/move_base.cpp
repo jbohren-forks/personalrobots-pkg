@@ -393,15 +393,9 @@ namespace move_base {
       controller_costmap_ros_->start();
     }
 
-    while(as_.isActive())
+    while(ros_node_.ok())
     {
-      if (!ros_node_.ok())
-      {
-        as_.setAborted();
-        break;
-      }
-
-      if(!as_.isPreemptRequested()){
+      if(as_.isPreemptRequested()){
         if(as_.isNewGoalAvailable()){
           //if we're active and a new goal is available, we'll accept it, but we won't shut anything down
           goal = goalToGlobalFrame((*as_.acceptNewGoal()).target_pose);
@@ -418,37 +412,51 @@ namespace move_base {
           last_valid_control_ = ros::Time::now();
           last_valid_plan_ = ros::Time::now();
         }
-        //for timing that gives real time even in simulation
-        struct timeval start, end;
-        double start_t, end_t, t_diff;
-        gettimeofday(&start, NULL);
+        else {
+          //if we've been preempted explicitly we need to shut things down
+          resetState();
 
-        //the real work on pursuing a goal is done here
-        executeCycle(goal, global_plan);
+          //notify the ActionServer that we've successfully preemted
+          ROS_DEBUG("Move base preempting the current goal");
+          as_.setPreempted();
 
-        gettimeofday(&end, NULL);
-        start_t = start.tv_sec + double(start.tv_usec) / 1e6;
-        end_t = end.tv_sec + double(end.tv_usec) / 1e6;
-        t_diff = end_t - start_t;
-        ROS_DEBUG("Full control cycle time: %.9f\n", t_diff);
+          //we'll actually return from exedcute after preempting
+          return;
+        }
       }
-      else{
-        //if we've been preempted explicitly we need to shut things down
-        resetState();
 
-        //notify the ActionServer that we've successfully preemted
-        ROS_DEBUG("Move base preempting the current goal");
-        as_.setPreempted();
-      }
+      //for timing that gives real time even in simulation
+      struct timeval start, end;
+      double start_t, end_t, t_diff;
+      gettimeofday(&start, NULL);
+
+      //the real work on pursuing a goal is done here
+      bool done = executeCycle(goal, global_plan);
+
+      //if we're done, then we'll return from execute
+      if(done)
+        return;
+
+      //check if execution of the goal has completed in some way
+
+      gettimeofday(&end, NULL);
+      start_t = start.tv_sec + double(start.tv_usec) / 1e6;
+      end_t = end.tv_sec + double(end.tv_usec) / 1e6;
+      t_diff = end_t - start_t;
+      ROS_DEBUG("Full control cycle time: %.9f\n", t_diff);
 
       r.sleep();
       //make sure to sleep for the remainder of our cycle time
       if(r.cycleTime() > ros::Duration(1 / controller_frequency_) && state_ == CONTROLLING)
         ROS_WARN("Control loop missed its desired rate of %.4fHz... the loop actually took %.4f seconds", controller_frequency_, r.cycleTime().toSec());
     }
+
+    //if the node is killed then we'll abort and return
+    as_.setAborted();
+    return;
   }
 
-  void MoveBase::executeCycle(geometry_msgs::PoseStamped& goal, std::vector<geometry_msgs::PoseStamped>& global_plan){
+  bool MoveBase::executeCycle(geometry_msgs::PoseStamped& goal, std::vector<geometry_msgs::PoseStamped>& global_plan){
     //we need to be able to publish velocity commands
     geometry_msgs::Twist cmd_vel;
 
@@ -465,7 +473,7 @@ namespace move_base {
     if(!controller_costmap_ros_->isCurrent()){
       ROS_WARN("[%s]:Sensor data is out of date, we're not going to allow commanding of the base for safety",ros::this_node::getName().c_str());
       publishZeroVelocity();
-      return;
+      return false;
     }
 
     //the move_base state machine, handles the control logic for navigation
@@ -479,7 +487,7 @@ namespace move_base {
             ROS_ERROR("Failed to pass global plan to the controller, aborting.");
             resetState();
             as_.setAborted();
-            return;
+            return true;
           }
           ROS_DEBUG("Generated a plan from the base_global_planner");
           last_valid_plan_ = ros::Time::now();
@@ -512,7 +520,7 @@ namespace move_base {
           ROS_DEBUG("Goal reached!");
           resetState();
           as_.setSucceeded();
-          return;
+          return true;
         }
 
         if(tc_->computeVelocityCommands(cmd_vel)){
@@ -528,7 +536,7 @@ namespace move_base {
             ROS_ERROR("Aborting because of failure to find a valid control for %.2f seconds", controller_patience_);
             resetState();
             as_.setAborted();
-            return;
+            return true;
           }
 
           //otherwise, if we can't find a valid control, we'll go back to planning
@@ -599,23 +607,23 @@ namespace move_base {
             ROS_ERROR("Aborting because a valid plan could not be found. Even after attempting to reset costmaps and rotating in place");
             resetState();
             as_.setAborted();
-            return;
+            return true;
           default:
             ROS_ERROR("This case should never be reached, something is wrong, aborting");
             resetState();
             as_.setAborted();
-            return;
+            return true;
         }
         break;
       default:
         ROS_ERROR("This case should never be reached, something is wrong, aborting");
         resetState();
         as_.setAborted();
-        return;
+        return true;
     }
 
-
-
+    //we aren't done yet
+    return false;
   }
 
   void MoveBase::resetState(){
