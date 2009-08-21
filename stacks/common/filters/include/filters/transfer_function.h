@@ -210,7 +210,7 @@ bool TransferFunctionFilter<T>::update(const std::vector<T>  & data_in, std::vec
   // Ensure the correct number of inputs
   if (data_in.size() != this->number_of_channels_ || data_out.size() != this->number_of_channels_ )
   {
-    ROS_ERROR("Number of channels is %d, but data_in.size() = %d and data_out.size() = %d.  They must match", this->number_of_channels_, data_in.size(), data_out.size());
+    ROS_ERROR("Number of channels is %d, but data_in.size() = %d and data_out.size() = %d.  They must match", this->number_of_channels_, (int)data_in.size(), (int)data_out.size());
     return false;
   }
   // Copy data to prevent mutation if in and out are the same ptr

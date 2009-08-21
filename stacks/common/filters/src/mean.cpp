@@ -33,5 +33,7 @@
 
 
 PLUGINLIB_REGISTER_CLASS(MeanFilterDouble, filters::MeanFilter<double>, filters::FilterBase<double>)
+PLUGINLIB_REGISTER_CLASS(MeanFilterFloat, filters::MeanFilter<float>, filters::FilterBase<float>)
 PLUGINLIB_REGISTER_CLASS(MultiChannelMeanFilterDouble, filters::MultiChannelMeanFilter<double>, filters::MultiChannelFilterBase<double>)
+PLUGINLIB_REGISTER_CLASS(MultiChannelMeanFilterFloat, filters::MultiChannelMeanFilter<float>, filters::MultiChannelFilterBase<float>)
 

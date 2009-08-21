@@ -68,10 +68,12 @@ public:
   };
 
   /**@brief Configure the filter chain from a configuration stored on the parameter server
-   * @param param_name The name of the filter chain to load*/
-  bool configure(std::string param_name)
+   * @param param_name The name of the filter chain to load
+   * @param node The node handle to use if a different namespace is required
+   */
+  bool configure(std::string param_name, ros::NodeHandle node = ros::NodeHandle())
   {
-    ros::NodeHandle node("~/");
+
     XmlRpc::XmlRpcValue config;
     if(!node.getParam(param_name, config))
     {
@@ -119,13 +121,21 @@ public:
     return result;
     
   };
+  /** \brief Clear all filters from this chain */
+  bool clear() 
+  {
+    configured_ = false;
+    reference_pointers_.clear();
+    return true;
+  };
+  
 
 
 private:
 
   /** \brief Configure the filter chain 
    * This will call configure on all filters which have been added */
-  bool configure(const XmlRpc::XmlRpcValue& config)
+  bool configure(XmlRpc::XmlRpcValue& config)
   {
     /*************************** Parse the XmlRpcValue ***********************************/
 
@@ -137,7 +147,7 @@ private:
     }
 
     //Iterate over all filter in filters (may be just one)
-    for (unsigned int i = 0; i < config.size(); ++i)
+    for (int i = 0; i < config.size(); ++i)
     {
       if(config[i].getType() != XmlRpc::XmlRpcValue::TypeStruct)
       {
@@ -157,7 +167,7 @@ private:
       else
       {
         //Check for name collisions within the list itself.
-        for (unsigned int j = i + 1; j < config.size(); ++j)
+        for (int j = i + 1; j < config.size(); ++j)
         {
           if(config[j].getType() != XmlRpc::XmlRpcValue::TypeStruct)
           {
@@ -173,9 +183,11 @@ private:
             return false;
           }
 
-          if (!strcmp(config[i]["name"], config[j]["name"]))
+          std::string namei = config[i]["name"];
+          std::string namej = config[j]["name"];
+          if (namei == namej)
           {
-            ROS_ERROR("A self_filter with the name %s already exists", config[i]["name"]);
+            ROS_ERROR("A self_filter with the name %s already exists", namei.c_str());
             return false;
           }
         }
@@ -186,15 +198,17 @@ private:
     bool result = true;    
 
        
-    for (unsigned int i = 0; i < config.size(); ++i)
+    for (int i = 0; i < config.size(); ++i)
     {
       boost::shared_ptr<filters::FilterBase<T> > p(loader_.createClassInstance(config[i]["type"]));
       if (p.get() == NULL)
         return false;
       result = result &&  p.get()->configure(config[i]);    
       reference_pointers_.push_back(p);
-      ROS_DEBUG("Configured %s:%s filter at %p\n", config[i]["type"],
-             config[i]["name"],  p.get());
+      std::string type = config[i]["type"];
+      std::string name = config[i]["name"];
+      ROS_DEBUG("Configured %s:%s filter at %p\n", type.c_str(),
+                name.c_str(),  p.get());
     }
     
     if (result == true)
@@ -204,14 +218,6 @@ private:
     return result;
   };
 
-  /** \brief Clear all filters from this chain */
-  bool clear() 
-  {
-    configured_ = false;
-    reference_pointers_.clear();
-    return true;
-  };
-  
   std::vector<boost::shared_ptr<filters::FilterBase<T> > > reference_pointers_;   ///<! A vector of pointers to currently constructed filters
 
   T buffer0_; ///<! A temporary intermediate buffer
@@ -242,10 +248,12 @@ public:
   };
 
   /**@brief Configure the filter chain from a configuration stored on the parameter server
-   * @param param_name The name of the filter chain to load*/
-  bool configure(unsigned int size, std::string param_name)
+   * @param param_name The name of the filter chain to load
+   * @param node The node handle to use if a different namespace is required
+   */
+  bool configure(unsigned int size, std::string param_name, ros::NodeHandle node = ros::NodeHandle())
   {
-    ros::NodeHandle node("~/");
+
     XmlRpc::XmlRpcValue config;
     if(!node.getParam(param_name, config))
     {
@@ -301,8 +309,6 @@ public:
 
   };
 
-private:
-
   /** \brief Clear all filters from this chain */
   bool clear() 
   {
@@ -314,10 +320,12 @@ private:
   };
   
 
+private:
+
   /** \brief Configure the filter chain 
    * This will call configure on all filters which have been added
    * as well as allocate the buffers*/
-  bool configure(unsigned int size, const XmlRpc::XmlRpcValue& config)
+  bool configure(unsigned int size, XmlRpc::XmlRpcValue& config)
   {
     /*************************** Parse the XmlRpcValue ***********************************/
 
@@ -329,7 +337,7 @@ private:
     }
 
     //Iterate over all filter in filters (may be just one)
-    for (unsigned int i = 0; i < config.size(); ++i)
+    for (int i = 0; i < config.size(); ++i)
     {
       if(config[i].getType() != XmlRpc::XmlRpcValue::TypeStruct)
       {
@@ -349,7 +357,7 @@ private:
       else
       {
         //Check for name collisions within the list itself.
-        for (unsigned int j = i + 1; j < config.size(); ++j)
+        for (int j = i + 1; j < config.size(); ++j)
         {
           if(config[j].getType() != XmlRpc::XmlRpcValue::TypeStruct)
           {
@@ -365,9 +373,12 @@ private:
             return false;
           }
 
-          if (!strcmp(config[i]["name"], config[j]["name"]))
+          std::string namei = config[i]["name"];
+          std::string namej = config[j]["name"];
+          if (namei == namej)
           {
-            ROS_ERROR("A self_filter with the name %s already exists", config[i]["name"]);
+            std::string name = config[i]["name"];
+            ROS_ERROR("A self_filter with the name %s already exists", name.c_str());
             return false;
           }
         }
@@ -381,15 +392,17 @@ private:
     bool result = true;    
 
        
-    for (unsigned int i = 0; i < config.size(); ++i)
+    for (int i = 0; i < config.size(); ++i)
     {
-      boost::shared_ptr<filters::FilterBase<T> > p(loader_.createClassInstance(config[i]["type"]));
+      boost::shared_ptr<filters::MultiChannelFilterBase<T> > p(loader_.createClassInstance(config[i]["type"]));
       if (p.get() == NULL)
         return false;
       result = result &&  p.get()->configure(size, config[i]);    
       reference_pointers_.push_back(p);
-      ROS_DEBUG("Configured %s:%s filter at %p\n", config[i]["type"],
-             config[i]["name"],  p.get());
+      std::string type = config[i]["type"];
+      std::string name = config[i]["name"];
+      ROS_DEBUG("Configured %s:%s filter at %p\n", type.c_str(),
+                name.c_str(),  p.get());
     }
     
     if (result == true)

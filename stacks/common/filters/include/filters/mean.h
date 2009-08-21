@@ -198,7 +198,7 @@ bool MultiChannelMeanFilter<T>::update(const std::vector<T> & data_in, std::vect
   //ROS_ASSERT(data_out.size() == width_);
   if (data_in.size() != number_of_channels_ || data_out.size() != number_of_channels_)
   {
-    ROS_ERROR("Configured with wrong size config:%d in:%d out:%d", number_of_channels_, data_in.size(), data_out.size());
+    ROS_ERROR("Configured with wrong size config:%d in:%d out:%d", number_of_channels_, (int)data_in.size(), (int)data_out.size());
     return false;
   }
 

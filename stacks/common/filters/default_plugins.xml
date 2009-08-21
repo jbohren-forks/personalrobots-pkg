@@ -32,6 +32,12 @@
 	THis is a mean filter which works on a stream of doubles.  
       </description>
     </class>
+    <class name="MeanFilterFloat" type="filters::MeanFilter<float>" 
+	    base_class_type="filters::FilterBase<float>">
+      <description>
+	THis is a mean filter which works on a stream of floats.  
+      </description>
+    </class>
     <class name="MultiChannelMeanFilterDouble" type="filters::MultiChannelMeanFilter<double>" 
 	    base_class_type="filters::MultiChannelFilterBase<double>">
       <description>

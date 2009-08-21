@@ -59,7 +59,7 @@ TEST(MultiChannelMeanFilterDouble, ConfirmIdentityNRows)
   int rows = 5;
   
   MultiChannelFilterBase<double > * filter = new MultiChannelMeanFilter<double>  ();
-  filter->configure(rows, "MultiChannelMeanFilterDouble5");
+  EXPECT_TRUE(filter->configure(rows, "MultiChannelMeanFilterDouble5"));
 
   double input1[] = {1,2,3,4,5};
   double input1a[] = {1,2,3,4,5};
@@ -69,7 +69,7 @@ TEST(MultiChannelMeanFilterDouble, ConfirmIdentityNRows)
 
   for (int32_t i =0; i < rows*10; i++)
   {
-    filter->update(v1, v1a);
+    EXPECT_TRUE(filter->update(v1, v1a));
 
     for (int i = 1; i < length; i++)
     {
@@ -85,7 +85,7 @@ TEST(MultiChannelMeanFilterDouble, ThreeRows)
   int rows = 5;
   
   MultiChannelFilterBase<double > * filter = new MultiChannelMeanFilter<double> ();
-  filter->configure(rows, "MultiChannelMeanFilterDouble5");
+  EXPECT_TRUE(filter->configure(rows, "MultiChannelMeanFilterDouble5"));
 
   double input1[] = {0,1,2,3,4};
   std::vector<double> v1 (input1, input1 + sizeof(input1) / sizeof(double));
@@ -97,9 +97,9 @@ TEST(MultiChannelMeanFilterDouble, ThreeRows)
   std::vector<double> v1a (input1a, input1a + sizeof(input1a) / sizeof(double));
 
 
-  filter->update(v1, v1a);
-  filter->update(v2, v1a);
-  filter->update(v3, v1a);
+  EXPECT_TRUE(filter->update(v1, v1a));
+  EXPECT_TRUE(filter->update(v2, v1a));
+  EXPECT_TRUE(filter->update(v3, v1a));
 
   for (int i = 1; i < length; i++)
   {
@@ -115,7 +115,7 @@ TEST(MeanFilterDouble, ConfirmIdentityNRows)
   int rows = 5;
   
   FilterBase<double > * filter = new MeanFilter<double>  ();
-  filter->configure("MeanFilterDouble5");
+  EXPECT_TRUE(filter->configure("MeanFilterDouble5"));
 
   double input = 1;
   double output = 0;
@@ -139,7 +139,7 @@ TEST(MeanFilterDouble, ThreeRows)
   int rows = 5;
   
   FilterBase<double > * filter = new MeanFilter<double> ();
-  filter->configure("MeanFilterDouble5");
+  EXPECT_TRUE(filter->configure("MeanFilterDouble5"));
 
   double input1 = 0;
   double input2 =1;
@@ -160,5 +160,6 @@ TEST(MeanFilterDouble, ThreeRows)
 
 int main(int argc, char **argv){
   testing::InitGoogleTest(&argc, argv);
+  ros::init(argc, argv, "test_mean");
   return RUN_ALL_TESTS();
 }

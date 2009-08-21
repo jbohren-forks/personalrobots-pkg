@@ -58,10 +58,26 @@ public:
    */
   virtual ~FilterBase(){};
 
+  /** \brief Configure the filter from the parameter server 
+   * \param The parameter from which to read the configuration
+   * \param node_handle The optional node handle, useful if operating in a different namespace.
+   */
+  bool configure(const std::string& param_name, ros::NodeHandle node_handle = ros::NodeHandle())
+  {
+    XmlRpc::XmlRpcValue config;
+    if (!node_handle.getParam(param_name, config))
+    {
+      ROS_ERROR("Could not find parameter %s on the server, are you sure that it was pushed up correctly?", param_name.c_str());
+      return false;
+    }
+    return configure(config);
+    
+  }
+
   /** \brief The public method to configure a filter from XML 
    * \param config The XmlRpcValue from which the filter should be initialized
    */
-  bool configure(const XmlRpc::XmlRpcValue& config)
+  bool configure(XmlRpc::XmlRpcValue& config)
   {
     if (configured_)
     {
@@ -173,6 +189,7 @@ protected:
     if (signed_value < 0)
       return false;
     value = signed_value;
+    return true;
   };
 
   /** \brief Get a filter parameter as a std::vector<double>
@@ -196,7 +213,7 @@ protected:
 
     XmlRpc::XmlRpcValue double_array = it->second;
 
-    for (unsigned int i = 0; i < double_array.size(); ++i){
+    for (int i = 0; i < double_array.size(); ++i){
       if(double_array[i].getType() != XmlRpc::XmlRpcValue::TypeDouble && double_array[i].getType() != XmlRpc::XmlRpcValue::TypeInt)
       {
         return false;
@@ -256,7 +273,7 @@ private:
   /**\brief Set the name and type of the filter from the parameter server
    * \param param_name The parameter from which to read
    */
-  bool setNameAndType(const XmlRpc::XmlRpcValue& config)
+  bool setNameAndType(XmlRpc::XmlRpcValue& config)
   {
     if(!config.hasMember("name"))
     {
@@ -281,7 +298,7 @@ private:
   }
 
 protected:
-  bool loadConfiguration(const XmlRpc::XmlRpcValue& config)
+  bool loadConfiguration(XmlRpc::XmlRpcValue& config)
   {
     if(config.getType() != XmlRpc::XmlRpcValue::TypeStruct)
     {
@@ -309,7 +326,7 @@ protected:
         //Load params into map
         for(XmlRpc::XmlRpcValue::iterator it = params.begin(); it != params.end(); ++it)
         {
-          ROS_DEBUG("Loading param %s\n", it->first);
+          ROS_DEBUG("Loading param %s\n", it->first.c_str());
           params_[it->first] = it->second;
         } 
       }
@@ -329,12 +346,29 @@ class MultiChannelFilterBase : public FilterBase<T>
 public:
   MultiChannelFilterBase():number_of_channels_(0){};
   
+  /** \brief Configure the filter from the parameter server 
+   * \param number_of_channels How many parallel channels the filter will process
+   * \param The parameter from which to read the configuration
+   * \param node_handle The optional node handle, useful if operating in a different namespace.
+   */
+  bool configure(unsigned int number_of_channels, const std::string& param_name, ros::NodeHandle node_handle = ros::NodeHandle())
+  {
+    XmlRpc::XmlRpcValue config;
+    if (!node_handle.getParam(param_name, config))
+    {
+      ROS_ERROR("Could not find parameter %s on the server, are you sure that it was pushed up correctly?", param_name.c_str());
+      return false;
+    }
+    return configure(number_of_channels, config);
+    
+  }
+
 
   /** \brief The public method to configure a filter from XML 
    * \param number_of_channels How many parallel channels the filter will process
    * \param config The XmlRpcValue to load the configuration from 
    */
-  bool configure(unsigned int number_of_channels, const XmlRpc::XmlRpcValue& config)
+  bool configure(unsigned int number_of_channels, XmlRpc::XmlRpcValue& config)
   {
     if (configured_)
     {
@@ -353,7 +387,7 @@ public:
 
 
   /** \brief A method to hide the base class method and warn if improperly called */
-  bool configure(const XmlRpc::XmlRpcValue& config)
+  bool configure(XmlRpc::XmlRpcValue& config)
   {
     ROS_ERROR("MultiChannelFilterBase configure should be called with a number of channels argument, assuming 1");
     return configure(1, config);

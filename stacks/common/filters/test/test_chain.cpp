@@ -64,24 +64,11 @@ public:
 */
 
 
-static std::string mean_filter_5 = "<filter type=\"MultiChannelMeanFilterDouble\" name=\"mean_test_5\"> <params number_of_observations=\"5\"/></filter>";
-static std::string median_filter_5 = "<filter type=\"MultiChannelMedianFilterDouble\" name=\"median_test_5\"> <params number_of_observations=\"5\"/></filter>";
-static std::string two_filters = "<filters><filter type=\"MultiChannelMeanFilterDouble\" name=\"mean_test_5\"> <params number_of_observations=\"5\"/></filter><filter type=\"MultiChannelMedianFilterDouble\" name=\"median_test_5\"> <params number_of_observations=\"5\"/></filter></filters";
-
-static std::string mean_filter_single = "<filter type=\"MeanFilterDouble\" name=\"mean_test_single\"> <params number_of_observations=\"5\"/></filter>";
-
 TEST(MultiChannelFilterChain, configuring){
   double epsilon = 1e-9;
   filters::MultiChannelFilterChain<double> chain("double");
-  //filters::MultiChannelFilterChain<float> chain;
 
-  // EXPECT_TRUE(chain.add(mean_filter_5));
- 
-  //  EXPECT_TRUE(chain.add(median_filter_5));
-  TiXmlDocument chain_def = TiXmlDocument();
-  chain_def.Parse(mean_filter_5.c_str());
-  TiXmlElement * config = chain_def.RootElement();
-  EXPECT_TRUE(chain.configure(5, config));
+  EXPECT_TRUE(chain.configure(5, "MultiChannelMeanFilterDouble5"));
  
   double input1[] = {1,2,3,4,5};
   double input1a[] = {9,9,9,9,9};//seed w/incorrect values
@@ -102,10 +89,7 @@ TEST(FilterChain, configuring){
   double epsilon = 1e-9;
   filters::FilterChain<double> chain("double");
   
-  TiXmlDocument chain_def = TiXmlDocument();
-  chain_def.Parse(mean_filter_single.c_str());
-  TiXmlElement * config = chain_def.RootElement();
-  EXPECT_TRUE(chain.configure(config));
+  EXPECT_TRUE(chain.configure("MeanFilterFloat5"));
  
   double v1 = 1;
   double v1a = 9;
@@ -121,13 +105,7 @@ TEST(FilterChain, configuring){
 TEST(MultiChannelFilterChain, MisconfiguredNumberOfChannels){
   filters::MultiChannelFilterChain<double> chain("double");
 
-
-  //  EXPECT_TRUE(chain.add(mean_filter_5));
-  //EXPECT_TRUE(chain.add(median_filter_5));
-  TiXmlDocument chain_def = TiXmlDocument();
-  chain_def.Parse(median_filter_5.c_str());
-  TiXmlElement * config = chain_def.RootElement();
-  EXPECT_TRUE(chain.configure(10, config));
+  EXPECT_TRUE(chain.configure(10, "MultiChannelMedianFilterDouble5"));
 
   //  EXPECT_TRUE(chain.configure(10));
 
@@ -146,15 +124,8 @@ TEST(MultiChannelFilterChain, MisconfiguredNumberOfChannels){
 TEST(MultiChannelFilterChain, TwoFilters){
   double epsilon = 1e-9;
   filters::MultiChannelFilterChain<double> chain("double");
-  //filters::MultiChannelFilterChain<float> chain;
 
-  // EXPECT_TRUE(chain.add(mean_filter_5));
- 
-  //  EXPECT_TRUE(chain.add(median_filter_5));
-  TiXmlDocument chain_def = TiXmlDocument();
-  chain_def.Parse(two_filters.c_str());
-  TiXmlElement * config = chain_def.RootElement();
-  EXPECT_TRUE(chain.configure(5, config));
+  EXPECT_TRUE(chain.configure(5, "TwoFilters"));
  
   double input1[] = {1,2,3,4,5};
   double input1a[] = {9,9,9,9,9};//seed w/incorrect values
@@ -171,7 +142,7 @@ TEST(MultiChannelFilterChain, TwoFilters){
     EXPECT_NEAR(input1[i], v1a[i], epsilon);
   }
 }
-
+/*
 TEST(MultiChannelFilterChain, OverlappingNames){
   filters::MultiChannelFilterChain<double> chain("double");
 
@@ -185,9 +156,10 @@ TEST(MultiChannelFilterChain, OverlappingNames){
   EXPECT_FALSE(chain.configure(5, config));
 
 }
-
+*/
 
 int main(int argc, char **argv){
   testing::InitGoogleTest(&argc, argv);
+  ros::init(argc, argv, "test_chain");
   return RUN_ALL_TESTS();
 }

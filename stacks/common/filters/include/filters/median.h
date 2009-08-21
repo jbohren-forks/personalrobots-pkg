@@ -138,7 +138,7 @@ MedianFilter<T>::~MedianFilter()
 template <typename T>
 bool MedianFilter<T>::configure()
 {
-  int no_obs;
+  int no_obs = -1;
   if (!FilterBase<T>::getParam(std::string("number_of_observations"), no_obs))
   {
     fprintf(stderr, "Error: MedianFilter was not given params.\n");
@@ -222,7 +222,7 @@ MultiChannelMedianFilter<T>::~MultiChannelMedianFilter()
 template <typename T>
 bool MultiChannelMedianFilter<T>::configure()
 {
-  int no_obs;
+  int no_obs = -1;
   if (!FilterBase<T>::getParam("number_of_observations", no_obs))
   {
     fprintf(stderr, "Error: MultiChannelMedianFilter was not given params.\n");
