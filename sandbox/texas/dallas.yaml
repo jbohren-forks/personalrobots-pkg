@@ -8,6 +8,6 @@ dallas_controller:
  caster_pid:
    p: 3
  wheel_pid:
-   p: 5
+   p: 2
 
 

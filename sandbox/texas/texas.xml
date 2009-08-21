@@ -2,7 +2,7 @@
   <include filename="$(find pr2_defs)/calibration/default_cal.xml" />
   <include filename="$(find pr2_defs)/defs/alpha2_base_defs.xml" />
 
-<pr2_caster_alpha2 suffix="bl" parent="base_link" ref_position="0">
+<pr2_caster_alpha2 suffix="bl" parent="base_link" ref_position="-0.785">
       <origin xyz="0 0 0" rpy="0 0 0" />
 </pr2_caster_alpha2>
 
