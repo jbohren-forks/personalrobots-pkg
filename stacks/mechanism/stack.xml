@@ -10,7 +10,7 @@
 
   <!--depend stack="util"/--> <!-- realtime_tools --> 
   <depend stack="geometry"/> <!-- kdl, tf, bullet, angles --> 
-  <depend stack="common"/> <!-- tinyxml, loki, actionlib --> 
+  <depend stack="common"/> <!-- tinyxml, actionlib --> 
   <depend stack="ros"/> <!-- gtest, roscpp, rospy, std_srvs, rosconsole, std_msgs --> 
   <depend stack="common_msgs"/> <!-- diagnostic_msgs, robot_srvs --> 
   <depend stack="diagnostics"/> <!-- diagnostic_updater --> 

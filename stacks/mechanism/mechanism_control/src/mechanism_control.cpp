@@ -42,13 +42,6 @@ using namespace boost::accumulators;
 using namespace ros;
 
 
-namespace controller {
-Loki::Factory< controller::Controller, std::string >& getControllerFactoryInstance()
-{
-  return controller::ControllerFactory::Instance();
-}
-}
-
 MechanismControl::MechanismControl(HardwareInterface *hw) :
   state_(NULL), hw_(hw),
   controller_loader_("controller_interface", "Controller"),

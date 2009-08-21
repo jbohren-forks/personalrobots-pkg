@@ -44,7 +44,6 @@
 
 #include <ros/node_handle.h>
 #include <mechanism_model/robot.h>
-#include <loki/Factory.h>
 #include "controller_interface/controller_provider.h"
 
 
@@ -159,27 +158,7 @@ private:
 
 };
 
-typedef Loki::SingletonHolder
-<
-  Loki::Factory< Controller, std::string >,
-  Loki::CreateUsingNew,
-  Loki::LongevityLifetime::DieAsSmallObjectParent
-  > ControllerFactory;
 
-Loki::Factory< controller::Controller, std::string >& getControllerFactoryInstance();
-#define ROS_REGISTER_CONTROLLER(c)                                      \
-  extern Loki::Factory< controller::Controller, std::string >& getControllerFactoryInstance(); \
-  controller::Controller *ROS_New_##c() { return new c(); }             \
-  class RosController##c {                                              \
-  public:                                                               \
-  RosController##c()                                                    \
-    {                                                                   \
-      controller::getControllerFactoryInstance().Register(#c, ROS_New_##c); \
-    }                                                                   \
-  ~RosController##c()                                                   \
-    {                                                                   \
-      controller::getControllerFactoryInstance().Unregister(#c);        \
-    }                                                                   \
-  };                                                                    \
-  static RosController##c ROS_CONTROLLER_##c;
+// @ TODO: remove macro call from controllers
+#define ROS_REGISTER_CONTROLLER(c)
 }
