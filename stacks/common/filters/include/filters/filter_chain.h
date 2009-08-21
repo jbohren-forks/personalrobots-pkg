@@ -77,8 +77,9 @@ public:
     XmlRpc::XmlRpcValue config;
     if(!node.getParam(param_name, config))
     {
-      ROS_ERROR("Could not load the configuration for %s, are you sure it was pushed to the parameter server?", param_name.c_str());
-      return false;
+      ROS_DEBUG("Could not load the configuration for %s, are you sure it was pushed to the parameter server? Assuming that you meant to leave it empty.", param_name.c_str());
+      configured_ = true;
+      return true;
     }
     return this->configure(config);
   }
@@ -258,7 +259,11 @@ public:
     XmlRpc::XmlRpcValue config;
     if(!node.getParam(param_name, config))
     {
-      ROS_ERROR("Could not load the configuration for %s, are you sure it was pushed to the parameter server?", param_name.c_str());
+      ROS_ERROR("Could not load the configuration for %s, are you sure it was pushed to the parameter server? Assuming that you meant to leave it blank.", param_name.c_str());
+      /********************** Do the allocation *********************/
+      buffer0_.resize(size);
+      buffer1_.resize(size);
+      configured_ = true;
       return false;
     }
     return this->configure(size, config);
