@@ -38,7 +38,7 @@
 #include <ros/node.h>
 #include <ros/time.h>
 #include <termios.h>
-#include <pr2_mechanism_controllers/GripperControllerCmd.h>
+#include <experimental_controllers/GripperControllerCmd.h>
 
 //TODO::#ifndef PACKAGE_PATH_FILE_H me!
 #define KEYCODE_0 0x30
@@ -84,8 +84,8 @@
 class TGK_Node
 {
   private:
-    pr2_mechanism_controllers::GripperControllerCmd cmd_val_;
-    pr2_mechanism_controllers::GripperControllerCmd cmd_evnt_;
+    experimental_controllers::GripperControllerCmd cmd_val_;
+    experimental_controllers::GripperControllerCmd cmd_evnt_;
     std::string topic_;
     double direction_;
     double val_mult_;
@@ -98,8 +98,8 @@ class TGK_Node
       cmd_val_.cmd = "move";
       cmd_evnt_.cmd = "event";
       topic_ = "pr2_gripper_controller/cmd";
-      ros::Node::instance()->advertise<pr2_mechanism_controllers::GripperControllerCmd> ("l_gripper_cmd", 1);
-      ros::Node::instance()->advertise<pr2_mechanism_controllers::GripperControllerCmd> (topic_, 1);
+      ros::Node::instance()->advertise<experimental_controllers::GripperControllerCmd> ("l_gripper_cmd", 1);
+      ros::Node::instance()->advertise<experimental_controllers::GripperControllerCmd> (topic_, 1);
     }
     ~TGK_Node()
     {
