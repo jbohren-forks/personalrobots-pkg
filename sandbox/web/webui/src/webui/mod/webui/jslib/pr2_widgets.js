@@ -31,7 +31,7 @@ var BatteryMonitor = Class.create({
 
   init: function() {
     this.img = new Image();  
-    this.img.src = 'battery_gray.png';  
+    this.img.src = 'templates/images/toolbar/battery_gray.png';  
     this.domobj.innerHTML = '<canvas width=41 height=16></canvas><span style="font-size:11px;position:relative;top:-3"></span>'
 
     var width = this.domobj.getAttribute("width");
