@@ -1,0 +1,10 @@
+cal_r_gripper:
+  type: GripperCalibrationController
+  actuator: r_gripper_motor
+  joint: r_gripper_joint
+  velocity: -0.01
+  pid:
+    d: 0
+    i: 25.0
+    i_clamp: 100.0
+    p: 1500

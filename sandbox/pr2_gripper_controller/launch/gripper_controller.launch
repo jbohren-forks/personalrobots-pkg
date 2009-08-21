@@ -1,0 +1,18 @@
+<launch>
+
+  <param name="pr2_gripper_controller/break_stiction_amplitude" type="double" value = "30" />
+  <param name="pr2_gripper_controller/break_stiction_period" type="double" value = "1.0" />
+  <param name="pr2_gripper_controller/break_stiction_velocity" type="double" value = "0.01" />
+  <param name="pr2_gripper_controller/default_effort" type="double" value = "130.0" />
+  <param name="pr2_gripper_controller/proportional_offset" type="double" value = ".08" />
+  <param name="pr2_gripper_controller/break_stiction_type" type="string" value = "ramp" />
+  <param name="pr2_gripper_controller/timeout" type="double" value = "0.0" />
+  <param name="pr2_gripper_controller/force" type="double" value = "17.0" />
+  <param name="pr2_gripper_controller/force_increase" type="double" value = "3.0" />
+  
+  <!-- Gripper effort controller -->
+  <rosparam file="$(find pr2_default_controllers)/pr2_gripper_controller.yaml" command="load" ns="pr2_gripper_controller" />
+  <node pkg="mechanism_control" type="spawner.py" args="pr2_gripper_controller" />
+  
+</launch>
+
