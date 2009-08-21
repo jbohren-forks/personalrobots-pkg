@@ -10,5 +10,6 @@ A web interface to install and launch applications for the PR2.
   <depend package="rospy"/>
   <depend package="launchman"/>
   <depend package="pyclearsilver"/>
+  <rosdep name="python-clearsilver"/>
 </package>
 
