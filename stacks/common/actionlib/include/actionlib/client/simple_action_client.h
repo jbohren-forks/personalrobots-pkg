@@ -134,7 +134,7 @@ public:
 
   /**
    * \brief Get the Result of the current goal
-   * \return shared pointer to the result
+   * \return shared pointer to the result. Note that this pointer will NEVER be NULL
    */
   //ResultConstPtr getResult();
   ResultConstPtr getResult();
@@ -337,7 +337,11 @@ typename SimpleActionClient<ActionSpec>::ResultConstPtr SimpleActionClient<Actio
 {
   if (gh_.isExpired())
     ROS_ERROR("Trying to getResult() when no goal is running. You are incorrectly using SimpleActionClient");
-  return gh_.getResult();
+
+  if (gh_.getResult())
+    return gh_.getResult();
+
+  return ResultConstPtr(new Result);
 }
 
 
