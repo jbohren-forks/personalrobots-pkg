@@ -3,7 +3,7 @@
   <include file="$(find milestone2_actions)/milestone2.launch" />
   <node pkg="doors_core" type="test_executive"/>
   <!--<node pkg="rosrecord" type="rosrecord" args=" -f door_demos_test.bag " />-->
-  <test test-name="door_demos_test_open_door" pkg="door_demos_gazebo" type="door_demo_test_exec_test.py" time-limit="500" />
+  <test test-name="door_demos_test_open_door" pkg="door_demos_gazebo" type="door_demo_test_exec_test.py" time-limit="1000" />
   <node pkg="rostopic" type="rostopic" args="list" output="screen" />
 </launch>
  

@@ -44,7 +44,7 @@ import time
 import rospy, rostest
 from nav_msgs.msg import *
 
-TEST_DURATION = 500.0
+TEST_DURATION = 1000.0
 TARGET_X = 27.3951120107
 TARGET_Y = 25.7213763143
 TARGET_Z = 0.0454657205029
