@@ -547,9 +547,9 @@ namespace move_arm
 	    
 	    motion_planning_msgs::GetMotionPlan::Response res;
 	    
-	    ros::ServiceClient clientStart  = nh_.serviceClient<pr2_mechanism_controllers::TrajectoryStart>(CONTROL_START_NAME, true);
-	    ros::ServiceClient clientQuery  = nh_.serviceClient<pr2_mechanism_controllers::TrajectoryQuery>(CONTROL_QUERY_NAME, true);
-	    ros::ServiceClient clientCancel = nh_.serviceClient<pr2_mechanism_controllers::TrajectoryCancel>(CONTROL_CANCEL_NAME, true);
+	    ros::ServiceClient clientStart  = nh_.serviceClient<experimental_controllers::TrajectoryStart>(CONTROL_START_NAME, true);
+	    ros::ServiceClient clientQuery  = nh_.serviceClient<experimental_controllers::TrajectoryQuery>(CONTROL_QUERY_NAME, true);
+	    ros::ServiceClient clientCancel = nh_.serviceClient<experimental_controllers::TrajectoryCancel>(CONTROL_CANCEL_NAME, true);
 	    
 	    motion_planning_msgs::KinematicPath currentPath;
 	    int                                 currentPos   = 0;
@@ -691,8 +691,8 @@ namespace move_arm
 			if (trajectoryId != -1)
 			{
 			    // we are already executing the path; we need to stop it
-			    pr2_mechanism_controllers::TrajectoryCancel::Request  send_traj_cancel_req;
-			    pr2_mechanism_controllers::TrajectoryCancel::Response send_traj_cancel_res;
+			    experimental_controllers::TrajectoryCancel::Request  send_traj_cancel_req;
+			    experimental_controllers::TrajectoryCancel::Response send_traj_cancel_res;
 			    send_traj_cancel_req.trajectoryid = trajectoryId;
 			    if (clientCancel.call(send_traj_cancel_req, send_traj_cancel_res))
 				ROS_INFO("Stopped trajectory %d", trajectoryId);
@@ -719,8 +719,8 @@ namespace move_arm
 		    // start the controller if we have to, using trajectory start
 		    if (trajectoryId == -1)
 		    {
-			pr2_mechanism_controllers::TrajectoryStart::Request  send_traj_start_req;
-			pr2_mechanism_controllers::TrajectoryStart::Response send_traj_start_res;
+			experimental_controllers::TrajectoryStart::Request  send_traj_start_req;
+			experimental_controllers::TrajectoryStart::Response send_traj_start_res;
 			
 			fillTrajectoryPath(currentPath, send_traj_start_req.traj);
 			send_traj_start_req.hastiming = 0;
@@ -753,13 +753,13 @@ namespace move_arm
 		    
 		    // monitor controller execution by calling trajectory query
 		    
-		    pr2_mechanism_controllers::TrajectoryQuery::Request  send_traj_query_req;
-		    pr2_mechanism_controllers::TrajectoryQuery::Response send_traj_query_res;
+		    experimental_controllers::TrajectoryQuery::Request  send_traj_query_req;
+		    experimental_controllers::TrajectoryQuery::Response send_traj_query_res;
 		    send_traj_query_req.trajectoryid = trajectoryId;
 		    if (clientQuery.call(send_traj_query_req, send_traj_query_res))
 		    {
 			// we are done; exit with success
-			if (send_traj_query_res.done == pr2_mechanism_controllers::TrajectoryQuery::Response::State_Done)
+			if (send_traj_query_res.done == experimental_controllers::TrajectoryQuery::Response::State_Done)
 			{
 			    if (approx && !planningMonitor_->isStateValidAtGoal(planningMonitor_->getRobotState()))
 			    {
@@ -773,8 +773,8 @@ namespace move_arm
 			    break;
 			}
 			// something bad happened in the execution
-			if (send_traj_query_res.done != pr2_mechanism_controllers::TrajectoryQuery::Response::State_Active &&
-			    send_traj_query_res.done != pr2_mechanism_controllers::TrajectoryQuery::Response::State_Queued)
+			if (send_traj_query_res.done != experimental_controllers::TrajectoryQuery::Response::State_Active &&
+			    send_traj_query_res.done != experimental_controllers::TrajectoryQuery::Response::State_Queued)
 			{
 			    ROS_ERROR("Unable to execute trajectory %d: query returned status %d", trajectoryId, (int)send_traj_query_res.done);
 			    state = ABORTED;
