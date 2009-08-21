@@ -69,6 +69,8 @@
 #define KEYCODE_h 0x68
 #define KEYCODE_B 0x42
 #define KEYCODE_b 0x62
+#define KEYCODE_G 0x47
+#define KEYCODE_g 0x67
 #define KEYCODE_SPACE 0x20
 #define KEYCODE_PERIOD 0x2E
 #define KEYCODE_MINUS 0x2D
@@ -95,7 +97,7 @@ class TGK_Node
       direction_ = 1.0;
       cmd_val_.cmd = "move";
       cmd_evnt_.cmd = "event";
-      topic_ = "r_gripper_cmd";
+      topic_ = "pr2_gripper_controller/cmd";
       ros::Node::instance()->advertise<pr2_mechanism_controllers::GripperControllerCmd> ("l_gripper_cmd", 1);
       ros::Node::instance()->advertise<pr2_mechanism_controllers::GripperControllerCmd> (topic_, 1);
     }
@@ -193,9 +195,7 @@ void TGK_Node::keyboardLoop()
     {
       case KEYCODE_T: //touching object, but not holding it yet!
       case KEYCODE_t:
-        cmd_evnt_.val = 1.0;
-        cmd_evnt_.time = ros::Time::now().toSec();
-        ros::Node::instance()->publish(topic_, cmd_evnt_);
+        cmd_val_.cmd = "moveTo";
         break;
       case KEYCODE_H: //holding object, but not crushing it yet!
       case KEYCODE_h:
@@ -226,6 +226,10 @@ void TGK_Node::keyboardLoop()
       case KEYCODE_c:
         cmd_val_.cmd = "close";
         dirty = true;
+        break;
+      case KEYCODE_G:
+      case KEYCODE_g:
+        cmd_val_.cmd = "grasp";
         break;
       case KEYCODE_L:
       case KEYCODE_l:

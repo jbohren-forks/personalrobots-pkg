@@ -1,4 +1,4 @@
 <launch>
-  <!-- pr2_etherCAT -->
-  <node machine="realtime" pkg="pr2_etherCAT" type="pr2_etherCAT" args="-i eth0 -x robot_description"/>
+  <include file="$(find pr2_gripper_controller)/launch/init.machine" />
+  <node machine="realtime" pkg="pr2_etherCAT" type="pr2_etherCAT" args="-i eth0 -x robot_description" />
 </launch>

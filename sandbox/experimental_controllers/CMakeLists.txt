@@ -45,6 +45,7 @@ rospack_add_library(experimental_controllers
   src/head_servoing_controller.cpp
   src/arm_trajectory_controller.cpp
   src/joint_trajectory_controller.cpp
+  src/pr2_gripper_controller.cpp
 
 )
 target_link_libraries(experimental_controllers ltdl)

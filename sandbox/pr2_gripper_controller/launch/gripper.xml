@@ -5,7 +5,10 @@
  <include filename="$(find pr2_defs)/defs/gripper_defs.xml" />
 
 
-<pr2_gripper side="r" parent="base_link" />
+  <!-- for new faster gripper -->
+  <pr2_gripper screw_reduction="${4.0/1000.0}" gear_ratio="${29.16*22.0/16.0*0.9}" side="r" parent="base_link" >
+    <origin xyz="0 0 0" rpy="0 0 0" />
+  </pr2_gripper>
 
   <!-- Solid Base for visualizer -->
   <joint name="base_joint" type="planar" />

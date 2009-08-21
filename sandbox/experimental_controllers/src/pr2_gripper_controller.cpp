@@ -35,7 +35,7 @@
  * Author: Sachin Chitta and Matthew Piccoli
  */
 
-#include <pr2_mechanism_controllers/pr2_gripper_controller.h>
+#include <experimental_controllers/pr2_gripper_controller.h>
 #include <fstream> //TODO:now that I have something better, should I delete this?
 #define pi 3.1415926
 
@@ -44,18 +44,16 @@ ROS_REGISTER_CONTROLLER(Pr2GripperController)
 
 Pr2GripperController::Pr2GripperController()
 {
-  state_publisher_ = NULL;
 }
 
 Pr2GripperController::~Pr2GripperController()
 {
-  //TODO::delete state_publisher
-  service_thread_->join();
+  node_.shutdown();
+  service_thread_.join();
 }
-//TODO::switch to node handles
+
 bool Pr2GripperController::init(mechanism::RobotState *robot_state, const ros::NodeHandle &node)
 {
-  double timeout_duration_double, timeout_duration_double_steady;
   double p, i, d, i1, i2;
   pthread_mutex_init(&pr2_gripper_controller_lock_,NULL);
   node_ = node;
@@ -66,24 +64,39 @@ bool Pr2GripperController::init(mechanism::RobotState *robot_state, const ros::N
   //name_ = config->Attribute("name"); //"l_gripper" or "r_gripper" expected
   name_ = node.getNamespace();
 //  mechanism::Link *link = robot_state_->model_->getLink(name_ + "_link");
-  joint_ = robot_state->getJointState(name_ + "_joint");
-  joint_controller_.init(robot_state_, name_ + "_joint");
+  std::string joint_name, fingertip_sensor_topic;
+  node_.param<std::string>("joint_name",joint_name,"r_gripper_joint");
+  node_.param<std::string>("fingertip_sensor_topic",fingertip_sensor_topic,"/pressure/r_gripper_motor");
+  joint_ = NULL;
+  joint_ = robot_state_->getJointState(joint_name);
+  if(!joint_)
+  {
+    ROS_ERROR("Could not initialize joint");
+    return false;
+  }
+  if(!joint_controller_.init(robot_state_,joint_name))
+  {
+    ROS_ERROR("Could not initialize joint controller");
+    return false;
+  }
+
+  node_.param<double>("publish_rate",publish_rate_,25.0);
   node_.param<double>("default_effort",default_effort_,joint_->joint_->effort_limit_);
   node_.param<double>("timeout", timeout_, 0.0);
   node_.param<double>("break_stiction_amplitude", break_stiction_amplitude_, 0.0);
   node_.param<double>("break_stiction_period", break_stiction_period_, 0.1);
   node_.param<double>("break_stiction_velocity", break_stiction_velocity_, 0.005);
   node_.param<double>("proportional_offset", proportional_offset_, 0.01);
-  node_.param<double>("stopped_threshold", stopped_threshold_, 0.001);
-  node_.param<double>("timeout_duration_", timeout_duration_double, 10.0);
-  node_.param<double>("timeout_duration_steady", timeout_duration_double_steady, 3.0);
-  node_.param<double>("low_force", low_force_, 15.0);
-  node_.param<double>("high_force", high_force_, 20.0);
+  node_.param<double>("stopped_threshold", stopped_threshold_, 0.0001);
+  node_.param<double>("timeout_duration_", timeout_duration_, 10.0);
+  node_.param<double>("timeout_duration_steady", timeout_duration_steady_, 3.0);
+  node_.param<double>("force", force_, 20.0);
+  node_.param<double>("force_increase", force_increase_, 5.0);
   node_.param<double>("vel_p", p, 15000.0);
   node_.param<double>("vel_i", i, 25.0);
   node_.param<double>("vel_d", d, 0.0);
-  node_.param<double>("vel_p", i1, 100.0);
-  node_.param<double>("vel_p", i2, -100.0);
+  node_.param<double>("vel_iclamp_high", i1, 100.0);
+  node_.param<double>("vel_iclamp_low", i2, -100.0);
   node_.param<double>("default_low_speed", default_low_speed_, 0.01);
   node_.param<double>("default_high_speed", default_high_speed_, 0.015);
   node_.param<int>("contact_threshold", contact_threshold_, 1000);
@@ -91,19 +104,15 @@ bool Pr2GripperController::init(mechanism::RobotState *robot_state, const ros::N
   node_.param<int>("num_pressure_pads_front", num_pressure_pads_front_, 15);
   node_.param<int>("num_pressure_pads_side", num_pressure_pads_side_, 7);
   node_.param<std::string>("break_stiction_type", break_stiction_type_, "none");
-  node_.param<std::string>("fingertip_sensor_topic", fingertip_sensor_topic_, "/pressure/" + name_ + "_motor");
-  ros::AdvertiseServiceOptions ops = ros::AdvertiseServiceOptions::create<manipulation_srvs::GraspClosedLoop>("/grasp_closed_loop", boost::bind(&Pr2GripperController::grasp_cl_srv, this, _1, _2), ros::VoidPtr(), &service_queue_);
+  node_.param<std::string>("fingertip_sensor_topic", fingertip_sensor_topic_,"/pressure/r_gripper_motor");
+
+  ros::AdvertiseServiceOptions ops = ros::AdvertiseServiceOptions::create<experimental_controllers::GraspClosedLoop>("/grasp_closed_loop", boost::bind(&Pr2GripperController::grasp_cl_srv, this, _1, _2), ros::VoidPtr(), &service_queue_);
   grasp_service_ = node_.advertiseService(ops);
-  service_thread_ = new boost::thread(boost::bind(&Pr2GripperController::callbackThread, this));
-  //grasp_service_ = node_.advertiseService("/grasp_closed_loop", &Pr2GripperController::grasp_cl_srv, this);
-  //TODO::find out why these can only be done with node_ and not node
-  cmd_sub_ = node_.subscribe<pr2_mechanism_controllers::GripperControllerCmd>("/" + name_+"_cmd", 1, &Pr2GripperController::command_callback, this);
-  pressure_sub_ = node_.subscribe<ethercat_hardware::PressureState>(fingertip_sensor_topic_, 1, &Pr2GripperController::pressure_state_callback, this);
-  timeout_duration_ = ros::Duration().fromSec(timeout_duration_double);
-  timeout_duration_steady_ = ros::Duration().fromSec(timeout_duration_double_steady);
-  if (state_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
-    delete state_publisher_;
-  state_publisher_ = new realtime_tools::RealtimePublisher <pr2_msgs::GripperControllerState> (name_ + "/state", 1);
+  service_thread_ = boost::thread(boost::bind(&Pr2GripperController::callbackThread, this));
+  cmd_sub_ = node_.subscribe<experimental_controllers::GripperControllerCmd>("cmd", 1, &Pr2GripperController::command_callback, this);
+  pressure_sub_ = node_.subscribe<pr2_msgs::PressureState>(fingertip_sensor_topic, 1, &Pr2GripperController::pressure_state_callback, this);
+  state_publisher_.reset(new realtime_tools::RealtimePublisher <pr2_msgs::GripperControllerState> (name_+"/state", 1));
+
   pressure_state_.data0.resize(num_pressure_pads_front_+num_pressure_pads_side_);
   pressure_state_.data1.resize(num_pressure_pads_front_+num_pressure_pads_side_);
   fingertip_sensor_start0_.resize(num_pressure_pads_front_);
@@ -119,6 +128,7 @@ bool Pr2GripperController::init(mechanism::RobotState *robot_state, const ros::N
   fingertip_sensor_sides_start0_.resize(num_pressure_pads_side_);
   fingertip_sensor_sides_start1_.resize(num_pressure_pads_side_);
   p_i_d_.initPid(p,i,d,i1,i2);
+
   return true;
 }
 
@@ -195,11 +205,11 @@ void Pr2GripperController::update()
       {
         if(last_commanded_command >= 0.0)
         {
-          p_i_d_.setCurrentCmd(low_force_);
+          p_i_d_.setCurrentCmd(force_);
         }
         else
         {
-          p_i_d_.setCurrentCmd(-1.0*low_force_);
+          p_i_d_.setCurrentCmd(-1.0*force_);
         }
         joint_controller_.command_ = p_i_d_.updatePid(joint_->velocity_ - last_commanded_command, 0.0);
       }
@@ -221,7 +231,7 @@ void Pr2GripperController::update()
   }
 
   //Publish state
-  if(state_publisher_->trylock())
+  if(current_time > last_published_time_ + 1.0/publish_rate_ && state_publisher_->trylock())
   {
     state_publisher_->msg_.joint_commanded_effort = joint_->commanded_effort_;
     state_publisher_->msg_.joint_applied_effort = joint_->applied_effort_;
@@ -229,6 +239,7 @@ void Pr2GripperController::update()
     state_publisher_->msg_.joint_velocity = joint_->velocity_;
     state_publisher_->msg_.joint_position = joint_->position_;
     state_publisher_->unlockAndPublish() ;
+    last_published_time_ = current_time;
   }
   last_time_ = current_time;
 }
@@ -242,11 +253,11 @@ bool Pr2GripperController::starting()
 
 bool Pr2GripperController::stopping()
 {
-  if(state_publisher_)
+  /*  if(state_publisher_)
   {
     state_publisher_->stop();
     delete state_publisher_;
-  }
+    }*/
   return true;
 }
 
@@ -290,15 +301,19 @@ double Pr2GripperController::grasp(bool service_callback, bool closed_loop)
       fingertip_sensor_sides_start1_[i] = 0;
     }
     position_first_contact=-1;
-    position_second_contact=-1;
+    //position_second_contact=-1;
     position_first_compression=-1;
-    position_second_compression=-1;
+    //position_second_compression=-1;
     spring_const=-1;
     peak_force_first_grasp = 0;
-    peak_force_second_grasp = 0;
-    grasp_open_close_timestamp = ros::Time::now();
+    //peak_force_second_grasp = 0;
+    peak_distance_first_grasp = 0.0;
+    //peak_distance_second_grasp = 0.0;
+    grasp_open_close_timestamp = robot_state_->hw_->current_time_;
     closed_loop_grasp_state = open0;
     velocity_mode_ = false;
+    if(service_callback && closed_loop_trail_ > 0)
+      return (force_+force_increase_*(closed_loop_trail_-1));
     return default_effort_;
   }
 
@@ -306,7 +321,7 @@ double Pr2GripperController::grasp(bool service_callback, bool closed_loop)
   else if(closed_loop_grasp_state == open0)
   {
     //check for any timeouts
-    if(grasp_open_close_timestamp + timeout_duration_ < ros::Time::now())
+    if(grasp_open_close_timestamp + timeout_duration_ < robot_state_->hw_->current_time_)
     {
       ROS_WARN("grasp failed due to a timeout");
       closed_loop_grasp_state = failed;
@@ -314,22 +329,26 @@ double Pr2GripperController::grasp(bool service_callback, bool closed_loop)
       if(service_callback)
       {
         service_response_.result = 1;
-        service_response_.distance = joint_->position_;
-        service_response_.effort = default_effort_;
-        service_response_.stiffness = -1.0;
-        service_response_.force_peak0 = -1.0;
-        service_response_.force_steady0 = -1.0;
-        service_response_.force_peak1 = -1.0;
-        service_response_.force_steady1 = -1.0;
-        service_response_.distance_compressed_first = -1.0;
-        service_response_.distance_compressed_second = -1.0;
+        service_response_.distance[closed_loop_trail_] = joint_->position_;
+        service_response_.effort[closed_loop_trail_] = default_effort_;
+        service_response_.velocity = default_low_speed_;
+        service_response_.time[closed_loop_trail_] = -1.0;
+        //don't do time_to_first because it's closed_loop_trial_ - 1
+        service_response_.force_peak0[closed_loop_trail_] = -1.0;
+        service_response_.force_steady0[closed_loop_trail_] = -1.0;
+        service_response_.force_peak1[closed_loop_trail_] = -1.0;
+        service_response_.force_steady1[closed_loop_trail_] = -1.0;
+        service_response_.distance_compressed[closed_loop_trail_] = -1.0;
+        service_response_.distance_peak[closed_loop_trail_] = -1.0;
+        service_response_.stiffness[closed_loop_trail_] = -1.0;
       }
       velocity_mode_ = false;
       return default_effort_;
     }
-    //if the gripper is done opening
-    else if(joint_->velocity_ < stopped_threshold_ && grasp_open_close_timestamp.toSec() + .1 < ros::Time::now().toSec())
+
+    if (service_callback_ && closed_loop_trail_ > 0 && joint_->position_ - .01 > service_response_.distance[0]) //if it's outside of the gripper
     {
+      service_response_.time_to_return[closed_loop_trail_ - 1] = robot_state_->hw_->current_time_ - grasp_open_close_timestamp;
       //read the gripper pads to zero them
       for(int i = 0; i < num_pressure_pads_front_; i++) //the front pads are 7-21
       {
@@ -343,13 +362,45 @@ double Pr2GripperController::grasp(bool service_callback, bool closed_loop)
       }
       //chage state
       closed_loop_grasp_state = close0_closing;
-      grasp_open_close_timestamp = ros::Time::now();
+      grasp_open_close_timestamp = robot_state_->hw_->current_time_;
+      velocity_mode_ = true;
+      return -1.0*default_low_speed_;
+    }
+    //if the gripper is done opening
+    else if(joint_->velocity_ < stopped_threshold_ && joint_->velocity_ > -1.0*stopped_threshold_ && grasp_open_close_timestamp + .1 < robot_state_->hw_->current_time_)
+    {
+      if(service_callback_ && closed_loop_trail_ > 0)
+      {
+        //if it stopped while it is within touching distance of the bottle + 1 mm
+        if(joint_->position_ - .01 < service_response_.distance[0])
+        {
+          service_response_.time_to_return[closed_loop_trail_ - 1] = -1;
+          return default_effort_;
+        }
+      }
+
+      //read the gripper pads to zero them
+      for(int i = 0; i < num_pressure_pads_front_; i++) //the front pads are 7-21
+      {
+        fingertip_sensor_start0_[i] = pressure_state_.data0[i+num_pressure_pads_side_];
+        fingertip_sensor_start1_[i] = pressure_state_.data1[i+num_pressure_pads_side_];
+      }
+      for(int i = 0; i < num_pressure_pads_side_; i++)
+      {
+        fingertip_sensor_sides_start0_[i] = pressure_state_.data0[i];
+        fingertip_sensor_sides_start1_[i] = pressure_state_.data1[i];
+      }
+      //chage state
+      closed_loop_grasp_state = close0_closing;
+      grasp_open_close_timestamp = robot_state_->hw_->current_time_;
       velocity_mode_ = true;
       return -1.0*default_low_speed_;
     }
     else
     {
       velocity_mode_ = false;
+      if(service_callback && closed_loop_trail_ > 0)
+        return (force_+force_increase_*(closed_loop_trail_-1));
       return default_effort_;
     }
   }
@@ -381,20 +432,23 @@ double Pr2GripperController::grasp(bool service_callback, bool closed_loop)
           if(service_callback)
           {
             service_response_.result = 2;
-            service_response_.distance = joint_->position_;
-            service_response_.effort = default_effort_;
+            service_response_.distance[closed_loop_trail_] = joint_->position_;
+            service_response_.effort[closed_loop_trail_] = default_effort_;
+            service_response_.velocity = default_low_speed_;
             for(int j = 0; j < num_pressure_pads_side_; j++)
             {
               service_response_.fingertip_profile0[j] = pressure_state_.data0[j] - fingertip_sensor_sides_start0_[j];
               service_response_.fingertip_profile1[j] = pressure_state_.data1[j] - fingertip_sensor_sides_start1_[j];
             }
-            service_response_.stiffness = -1.0;
-            service_response_.force_peak0 = -1.0;
-            service_response_.force_steady0 = -1.0;
-            service_response_.force_peak1 = -1.0;
-            service_response_.force_steady1 = -1.0;
-            service_response_.distance_compressed_first = -1.0;
-            service_response_.distance_compressed_second = -1.0;
+            service_response_.time[closed_loop_trail_] = -1.0;
+            //don't do time_to_first because it's closed_loop_trial_ - 1
+            service_response_.force_peak0[closed_loop_trail_] = -1.0;
+            service_response_.force_steady0[closed_loop_trail_] = -1.0;
+            service_response_.force_peak1[closed_loop_trail_] = -1.0;
+            service_response_.force_steady1[closed_loop_trail_] = -1.0;
+            service_response_.distance_compressed[closed_loop_trail_] = -1.0;
+            service_response_.distance_peak[closed_loop_trail_] = -1.0;
+            service_response_.stiffness[closed_loop_trail_] = -1.0;
           }
           velocity_mode_ = false;
           return default_effort_;
@@ -408,20 +462,23 @@ double Pr2GripperController::grasp(bool service_callback, bool closed_loop)
       closed_loop_grasp_state = failed;
       //report that there was a failure
       service_response_.result = 3;
-      service_response_.distance = joint_->position_;
-      service_response_.effort = default_effort_;
-      service_response_.stiffness = -1.0;
-      service_response_.force_peak0 = -1.0;
-      service_response_.force_steady0 = -1.0;
-      service_response_.force_peak1 = -1.0;
-      service_response_.force_steady1 = -1.0;
-      service_response_.distance_compressed_first = -1.0;
-      service_response_.distance_compressed_second = -1.0;
+      service_response_.distance[closed_loop_trail_] = joint_->position_;
+      service_response_.effort[closed_loop_trail_] = default_effort_;
+      service_response_.velocity = default_low_speed_;
+      service_response_.time[closed_loop_trail_] = -1.0;
+      //don't do time_to_first because it's closed_loop_trial_ - 1
+      service_response_.force_peak0[closed_loop_trail_] = -1.0;
+      service_response_.force_steady0[closed_loop_trail_] = -1.0;
+      service_response_.force_peak1[closed_loop_trail_] = -1.0;
+      service_response_.force_steady1[closed_loop_trail_] = -1.0;
+      service_response_.distance_compressed[closed_loop_trail_] = -1.0;
+      service_response_.distance_peak[closed_loop_trail_] = -1.0;
+      service_response_.stiffness[closed_loop_trail_] = -1.0;
       velocity_mode_ = false;
       return default_effort_;
     }
     //check for any timeouts
-    if(grasp_open_close_timestamp + timeout_duration_ < ros::Time::now())
+    if(grasp_open_close_timestamp + timeout_duration_ < robot_state_->hw_->current_time_)
     {
       ROS_WARN("grasp failed due to a timeout");
       closed_loop_grasp_state = failed;
@@ -429,15 +486,18 @@ double Pr2GripperController::grasp(bool service_callback, bool closed_loop)
       if(service_callback)
       {
         service_response_.result = 1;
-        service_response_.distance = joint_->position_;
-        service_response_.effort = default_effort_;
-        service_response_.stiffness = -1.0;
-        service_response_.force_peak0 = -1.0;
-        service_response_.force_steady0 = -1.0;
-        service_response_.force_peak1 = -1.0;
-        service_response_.force_steady1 = -1.0;
-        service_response_.distance_compressed_first = -1.0;
-        service_response_.distance_compressed_second = -1.0;
+        service_response_.distance[closed_loop_trail_] = joint_->position_;
+        service_response_.effort[closed_loop_trail_] = default_effort_;
+        service_response_.velocity = default_low_speed_;
+        service_response_.time[closed_loop_trail_] = -1.0;
+        //don't do time_to_first because it's closed_loop_trial_ - 1
+        service_response_.force_peak0[closed_loop_trail_] = -1.0;
+        service_response_.force_steady0[closed_loop_trail_] = -1.0;
+        service_response_.force_peak1[closed_loop_trail_] = -1.0;
+        service_response_.force_steady1[closed_loop_trail_] = -1.0;
+        service_response_.distance_compressed[closed_loop_trail_] = -1.0;
+        service_response_.distance_peak[closed_loop_trail_] = -1.0;
+        service_response_.stiffness[closed_loop_trail_] = -1.0;
       }
       velocity_mode_ = false;
       return default_effort_;
@@ -447,22 +507,25 @@ double Pr2GripperController::grasp(bool service_callback, bool closed_loop)
     {
       position_first_contact = joint_->position_;
       closed_loop_grasp_state = close0_contact;
-      grasp_open_close_timestamp = ros::Time::now();
+      grasp_open_close_timestamp = robot_state_->hw_->current_time_;
       if(closed_loop && service_callback && joint_->position_ > service_request_.distance + service_request_.distance_tolerance)
       {
         ROS_WARN("grasp failed due to closing too little before impacting object");
         closed_loop_grasp_state = failed;
         //report that there was a failure
         service_response_.result = 4;
-        service_response_.distance = joint_->position_;
-        service_response_.effort = default_effort_;
-        service_response_.stiffness = -1.0;
-        service_response_.force_peak0 = -1.0;
-        service_response_.force_steady0 = -1.0;
-        service_response_.force_peak1 = -1.0;
-        service_response_.force_steady1 = -1.0;
-        service_response_.distance_compressed_first = -1.0;
-        service_response_.distance_compressed_second = -1.0;
+        service_response_.distance[closed_loop_trail_] = joint_->position_;
+        service_response_.effort[closed_loop_trail_] = default_effort_;
+        service_response_.velocity = default_low_speed_;
+        service_response_.time[closed_loop_trail_] = -1.0;
+        //don't do time_to_first because it's closed_loop_trial_ - 1
+        service_response_.force_peak0[closed_loop_trail_] = -1.0;
+        service_response_.force_steady0[closed_loop_trail_] = -1.0;
+        service_response_.force_peak1[closed_loop_trail_] = -1.0;
+        service_response_.force_steady1[closed_loop_trail_] = -1.0;
+        service_response_.distance_compressed[closed_loop_trail_] = -1.0;
+        service_response_.distance_peak[closed_loop_trail_] = -1.0;
+        service_response_.stiffness[closed_loop_trail_] = -1.0;
         velocity_mode_ = false;
         return default_effort_;
       }
@@ -486,6 +549,7 @@ double Pr2GripperController::grasp(bool service_callback, bool closed_loop)
     //record peak contact info
     if(peak_force_first_grasp < current_force_sum - starting_force_sum)
     {
+      peak_distance_first_grasp = joint_->position_;
       peak_force_first_grasp = current_force_sum - starting_force_sum;
       for(int i = 0; i < num_pressure_pads_front_; i++)
       {
@@ -493,8 +557,16 @@ double Pr2GripperController::grasp(bool service_callback, bool closed_loop)
         fingertip_sensor_first_peak1_[i] = pressure_state_.data1[i+num_pressure_pads_side_];
       }
     }
+
+    //record time to first steady state info
+    if(service_callback && closed_loop_trail_ > 0 && service_response_.time_to_first[closed_loop_trail_-1] < 0.0 && joint_->position_ < service_response_.distance_compressed[0])
+    {
+      service_response_.time_to_first[closed_loop_trail_ - 1] = robot_state_->hw_->current_time_- grasp_open_close_timestamp;
+      ROS_WARN("Assigning time to first %i to be %f", closed_loop_trail_-1, robot_state_->hw_->current_time_- grasp_open_close_timestamp);
+    }
+
     //record final contact info
-    if(grasp_open_close_timestamp + timeout_duration_steady_ < ros::Time::now())
+    if(joint_->velocity_ < stopped_threshold_ && joint_->velocity_ > -1.0*stopped_threshold_)
     {
       for(int i = 0; i < num_pressure_pads_front_; i++)
       {
@@ -506,10 +578,13 @@ double Pr2GripperController::grasp(bool service_callback, bool closed_loop)
       //if the grasp was of a known object, and want to compare for accuracy or unknown object, and want to store info
       if(service_callback)
       {
-        //TODO::do we analyze the fingertip sensors here?
         service_response_.result = 0;
-        service_response_.distance = position_first_contact;
-        service_response_.effort = service_request_.effort;
+        service_response_.distance[closed_loop_trail_] = position_first_contact;
+        if(closed_loop)
+          service_response_.effort[closed_loop_trail_] = service_request_.effort;
+        else
+          service_response_.effort[closed_loop_trail_] = -1.0*(force_+force_increase_*closed_loop_trail_);
+        service_response_.velocity = default_low_speed_;
         int force_peak0 = 0;
         int force_steady0 = 0;
         int force_peak1 = 0;
@@ -528,15 +603,23 @@ double Pr2GripperController::grasp(bool service_callback, bool closed_loop)
           service_response_.fingertip_profile0[i] = pressure_state_.data0[i]-fingertip_sensor_sides_start0_[i];
           service_response_.fingertip_profile1[i] = pressure_state_.data1[i]-fingertip_sensor_sides_start1_[i];
         }
-        service_response_.stiffness = position_first_contact/joint_->position_;
-        service_response_.force_peak0 = force_peak0;
-        service_response_.force_steady0 = force_steady0;
-        service_response_.force_peak1 = force_peak1;
-        service_response_.force_steady1 = force_steady1;
-        service_response_.distance_compressed_first = joint_->position_;
-        service_response_.distance_compressed_second = -1.0;
-        if(!closed_loop || service_response_.stiffness < service_request_.stiffness +service_request_.stiffness_threshold && service_response_.stiffness > service_request_.stiffness - service_request_.stiffness_threshold)
+        service_response_.time[closed_loop_trail_] = robot_state_->hw_->current_time_- grasp_open_close_timestamp;
+        service_response_.force_peak0[closed_loop_trail_] = force_peak0;
+        service_response_.force_steady0[closed_loop_trail_] = force_steady0;
+        service_response_.force_peak1[closed_loop_trail_] = force_peak1;
+        service_response_.force_steady1[closed_loop_trail_] = force_steady1;
+        service_response_.distance_compressed[closed_loop_trail_] = joint_->position_;
+        service_response_.distance_peak[closed_loop_trail_] = peak_distance_first_grasp;
+        service_response_.stiffness[closed_loop_trail_] = joint_->position_/position_first_contact;
+        if(!closed_loop || service_response_.stiffness[closed_loop_trail_] < service_request_.stiffness +service_request_.stiffness_threshold && service_response_.stiffness[closed_loop_trail_] > service_request_.stiffness - service_request_.stiffness_threshold)
         {
+          if(closed_loop_trail_ < service_request_.trials - 1 )
+          {
+            closed_loop_trail_++;
+            closed_loop_grasp_state = unstarted;
+            velocity_mode_ = false;
+            return (force_+force_increase_*(closed_loop_trail_-1));
+          }
           closed_loop_grasp_state = complete;
           service_success_ = true;
           velocity_mode_ = false;
@@ -556,22 +639,44 @@ double Pr2GripperController::grasp(bool service_callback, bool closed_loop)
       else
       {
         //closed_loop_grasp_state = open1;
-        //grasp_open_close_timestamp = ros::Time::now();
+        //grasp_open_close_timestamp = robot_state_->hw_->current_time_;
         closed_loop_grasp_state = complete;
       }
     }
+    else if(grasp_open_close_timestamp + timeout_duration_steady_ < robot_state_->hw_->current_time_)
+    {
+      ROS_WARN("grasp failed due to a timeout");
+      closed_loop_grasp_state = failed;
+      //report that there was a failure
+      if(service_callback)
+      {
+        service_response_.result = 1;
+        service_response_.distance[closed_loop_trail_] = joint_->position_;
+        service_response_.effort[closed_loop_trail_] = default_effort_;
+        service_response_.velocity = default_low_speed_;
+        service_response_.time[closed_loop_trail_] = -1.0;
+        //don't do time_to_first because it's closed_loop_trial_ - 1
+        service_response_.force_peak0[closed_loop_trail_] = -1.0;
+        service_response_.force_steady0[closed_loop_trail_] = -1.0;
+        service_response_.force_peak1[closed_loop_trail_] = -1.0;
+        service_response_.force_steady1[closed_loop_trail_] = -1.0;
+        service_response_.distance_compressed[closed_loop_trail_] = -1.0;
+        service_response_.distance_peak[closed_loop_trail_] = -1.0;
+        service_response_.stiffness[closed_loop_trail_] = -1.0;
+      }
+    }
     velocity_mode_ = false;
-    return -1.0*low_force_;
+    return -1.0*(force_+force_increase_*closed_loop_trail_);
   }
 /*
   //open
   else if(closed_loop_grasp_state == open1)
   {
     //if I'm done opening
-    if(ros::Time::now().toSec() > grasp_open_close_timestamp.toSec() + break_stiction_period_)
+    if(robot_state_->hw_->current_time_ > grasp_open_close_timestamp.toSec() + break_stiction_period_)
     {
       closed_loop_grasp_state = close1_closing;
-      grasp_open_close_timestamp = ros::Time::now();
+      grasp_open_close_timestamp = robot_state_->hw_->current_time_;
       velocity_mode_ = true;
       return -1.0*default_high_speed_;
     }
@@ -597,7 +702,7 @@ double Pr2GripperController::grasp(bool service_callback, bool closed_loop)
       starting_force_sum += fingertip_sensor_start1_[i];
     }
     //check for any timeouts
-    if(grasp_open_close_timestamp + timeout_duration_ < ros::Time::now())
+    if(grasp_open_close_timestamp + timeout_duration_ < robot_state_->hw_->current_time_)
     {
       ROS_WARN("grasp failed due to a timeout");
       closed_loop_grasp_state = failed;
@@ -640,7 +745,7 @@ double Pr2GripperController::grasp(bool service_callback, bool closed_loop)
     {
       position_second_contact = joint_->position_;
       closed_loop_grasp_state = close1_contact;
-      grasp_open_close_timestamp = ros::Time::now();
+      grasp_open_close_timestamp = robot_state_->hw_->current_time_;
     }
     velocity_mode_ = true;
     return -1.0*default_high_speed_;
@@ -669,7 +774,7 @@ double Pr2GripperController::grasp(bool service_callback, bool closed_loop)
       }
     }
     //record final contact info
-    if(grasp_open_close_timestamp + timeout_duration_steady_ < ros::Time::now())
+    if(grasp_open_close_timestamp + timeout_duration_steady_ < robot_state_->hw_->current_time_)
     {
       for(int i = 0; i < num_pressure_pads_front_; i++)
       {
@@ -678,7 +783,7 @@ double Pr2GripperController::grasp(bool service_callback, bool closed_loop)
       }
       position_second_compression = joint_->position_;
       closed_loop_grasp_state = complete;
-      grasp_open_close_timestamp = ros::Time::now();
+      grasp_open_close_timestamp = robot_state_->hw_->current_time_;
       //compute k
       spring_const = (high_force_-low_force_)/(position_second_compression - position_first_compression);
 
@@ -818,12 +923,14 @@ double Pr2GripperController::grasp(bool service_callback, bool closed_loop)
   {
     velocity_mode_ = false;
     service_flag_ = true;
-    if(service_callback && closed_loop)
+    if(service_callback)
     {
-      return service_request_.effort;
+      if(closed_loop)
+        return service_request_.effort;
+      return -1.0*(force_+force_increase_*(closed_loop_trail_-1));
     }
     //TODO::determine a good output force
-    return -1.0*high_force_;  //because we're done
+    return -1.0*(force_);  //because we're done
   }
 
   else if(closed_loop_grasp_state == failed)
@@ -837,7 +944,7 @@ double Pr2GripperController::grasp(bool service_callback, bool closed_loop)
 
 }
 
-double Pr2GripperController::parseMessage(pr2_mechanism_controllers::GripperControllerCmd desired_msg)
+double Pr2GripperController::parseMessage(experimental_controllers::GripperControllerCmd desired_msg)
 {
   if(desired_msg.cmd.compare("grasp_cl") == 0)
   {
@@ -904,7 +1011,7 @@ double Pr2GripperController::effortLimit(double desiredEffort)
   return desiredEffort;
 }
 
-void Pr2GripperController::command_callback(const pr2_mechanism_controllers::GripperControllerCmdConstPtr& grasp_cmd)
+void Pr2GripperController::command_callback(const experimental_controllers::GripperControllerCmdConstPtr& grasp_cmd)
 {
   pthread_mutex_lock(&pr2_gripper_controller_lock_);
   grasp_cmd_.cmd = grasp_cmd->cmd;
@@ -912,12 +1019,13 @@ void Pr2GripperController::command_callback(const pr2_mechanism_controllers::Gri
   grasp_cmd_.end = grasp_cmd->end;
   grasp_cmd_.time = grasp_cmd->time;
   grasp_cmd_.val = grasp_cmd->val;
+  closed_loop_trail_ = 0;
   cmd_received_timestamp_ = robot_state_->hw_->current_time_;
   new_cmd_available_ = true;
   pthread_mutex_unlock(&pr2_gripper_controller_lock_);
 }
 
-void Pr2GripperController::pressure_state_callback(const ethercat_hardware::PressureStateConstPtr& pressure_state)
+void Pr2GripperController::pressure_state_callback(const pr2_msgs::PressureStateConstPtr& pressure_state)
 {
   if((int)pressure_state->data0.size() != num_pressure_pads_front_+num_pressure_pads_side_)
     ROS_WARN("fingertip pressure data is different size than expected");
@@ -930,16 +1038,33 @@ void Pr2GripperController::pressure_state_callback(const ethercat_hardware::Pres
   pthread_mutex_unlock(&pr2_gripper_controller_lock_);
 }
 
-bool Pr2GripperController::grasp_cl_srv(manipulation_srvs::GraspClosedLoop::Request &req, manipulation_srvs::GraspClosedLoop::Response &res)
+bool Pr2GripperController::grasp_cl_srv(experimental_controllers::GraspClosedLoop::Request &req, experimental_controllers::GraspClosedLoop::Response &res)
 {
   pthread_mutex_lock(&pr2_gripper_controller_lock_);
   grasp_cmd_.cmd = req.cmd;
   service_request_ = req;
   new_cmd_available_ = true;
   closed_loop_grasp_state = unstarted;
+  closed_loop_trail_ = 0;
+  if(req.trials < 1)
+    return false;
   cmd_received_timestamp_ = robot_state_->hw_->current_time_;
   service_response_.fingertip_profile0.resize(num_pressure_pads_front_+num_pressure_pads_side_);
   service_response_.fingertip_profile1.resize(num_pressure_pads_front_+num_pressure_pads_side_);
+  service_response_.distance.resize(req.trials);
+  service_response_.effort.resize(req.trials);
+  service_response_.stiffness.resize(req.trials);
+  service_response_.force_peak0.resize(req.trials);
+  service_response_.force_steady0.resize(req.trials);
+  service_response_.force_peak1.resize(req.trials);
+  service_response_.force_steady1.resize(req.trials);
+  service_response_.distance_compressed.resize(req.trials);
+  service_response_.distance_peak.resize(req.trials);
+  service_response_.time.resize(req.trials);
+  service_response_.time_to_first.resize(req.trials-1);
+  service_response_.time_to_return.resize(req.trials-1);
+  for(int i = 0; i < req.trials - 1; i++)
+    service_response_.time_to_first[i] = -1.0;
   pthread_mutex_unlock(&pr2_gripper_controller_lock_);
   service_flag_ = false;
   service_success_ = false;
@@ -959,8 +1084,7 @@ void Pr2GripperController::callbackThread()
 {
   //ROS_INFO_STREAM("Callback thread id=" << boost::this_thread::get_id());
 
-  ros::NodeHandle n;
-  while (n.ok())
+  while (node_.ok())
   {
     service_queue_.callAvailable(ros::WallDuration(0.01));
   }

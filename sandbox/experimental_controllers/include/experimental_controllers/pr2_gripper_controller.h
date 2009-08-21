@@ -39,14 +39,16 @@
 #include <mechanism_model/robot.h>
 #include <controller_interface/controller.h>
 #include <robot_mechanism_controllers/joint_effort_controller.h>
-#include <pr2_mechanism_controllers/GripperControllerCmd.h>
+#include <experimental_controllers/GripperControllerCmd.h>
 #include <pr2_msgs/GripperControllerState.h>
-#include <ethercat_hardware/PressureState.h>
+#include <pr2_msgs/PressureState.h>
 #include <realtime_tools/realtime_publisher.h>
 #include <control_toolbox/pid.h>
-#include <manipulation_srvs/GraspClosedLoop.h>
+#include <experimental_controllers/GraspClosedLoop.h>
 #include <boost/thread.hpp>
 #include "ros/callback_queue.h"
+
+#include <boost/shared_ptr.hpp>
 
 namespace controller
 {
@@ -100,27 +102,19 @@ namespace controller
 
       double default_high_speed_;
 
-      ros::Subscriber cmd_sub_;
+      void command_callback(const experimental_controllers::GripperControllerCmdConstPtr& grasp_cmd);
 
-      ros::Subscriber pressure_sub_;
+      void pressure_state_callback(const pr2_msgs::PressureStateConstPtr& pressure_state);
 
-      ros::NodeHandle node_;
+      bool grasp_cl_srv(experimental_controllers::GraspClosedLoop::Request &req, experimental_controllers::GraspClosedLoop::Response &res);
 
-      ros::ServiceServer grasp_service_;
+      experimental_controllers::GripperControllerCmd grasp_cmd_desired_;
 
-      void command_callback(const pr2_mechanism_controllers::GripperControllerCmdConstPtr& grasp_cmd);
-
-      void pressure_state_callback(const ethercat_hardware::PressureStateConstPtr& pressure_state);
-
-      bool grasp_cl_srv(manipulation_srvs::GraspClosedLoop::Request &req, manipulation_srvs::GraspClosedLoop::Response &res);
-
-      pr2_mechanism_controllers::GripperControllerCmd grasp_cmd_desired_;
-
-      pr2_mechanism_controllers::GripperControllerCmd grasp_cmd_;
+      experimental_controllers::GripperControllerCmd grasp_cmd_;
 
       //pr2_mechanism_controllers::GripperControllerCmd grasp_cmd;
 
-      ethercat_hardware::PressureState pressure_state_;
+      pr2_msgs::PressureState pressure_state_;
 
       //ethercat_hardware::PressureState pressure_state;
 
@@ -143,6 +137,16 @@ namespace controller
        * \brief time corresponding to when update was last called
        */
       double last_time_;
+
+      /*!
+       * \brief time corresponding to last publish
+       */
+      double last_published_time_;
+
+      /*!
+       * \brief rate at which states are published
+       */
+      double publish_rate_;
 
       /*!
       * \brief timestamp remembering when the last command was received
@@ -187,17 +191,17 @@ namespace controller
       /*!
        * \brief remembers last time it was commanded to close or open
        */
-      ros::Time grasp_open_close_timestamp;
+      double grasp_open_close_timestamp;
 
       /*!
        * \brief remembers last time it was commanded to close or open
        */
-      ros::Duration timeout_duration_;
+      double timeout_duration_;
 
       /*!
       * \brief time after the object has been sqeezed that can be considered steady
       */
-      ros::Duration timeout_duration_steady_;
+      double timeout_duration_steady_;
 
       /*!
        * \brief remembers the state of the closed loop grasp
@@ -221,14 +225,14 @@ namespace controller
        */
       double stopped_threshold_;
 
-      double parseMessage(pr2_mechanism_controllers::GripperControllerCmd desired_msg);
+      double parseMessage(experimental_controllers::GripperControllerCmd desired_msg);
 
       double effortLimit(double desiredEffort);
 
       /*!
        * \brief publishes information about the caster and wheel controllers
        */
-      realtime_tools::RealtimePublisher<pr2_msgs::GripperControllerState>* state_publisher_;
+      boost::scoped_ptr<realtime_tools::RealtimePublisher<pr2_msgs::GripperControllerState> > state_publisher_;
 
       std::vector<int> fingertip_sensor_start0_;
       std::vector<int> fingertip_sensor_start1_;
@@ -244,14 +248,16 @@ namespace controller
       std::vector<int> fingertip_sensor_sides_start1_;
 
       double position_first_contact;
-      double position_second_contact;
+      //double position_second_contact;
       double position_first_compression;
-      double position_second_compression;
+      //double position_second_compression;
       int peak_force_first_grasp;
-      int peak_force_second_grasp;
+      //int peak_force_second_grasp;
+      double peak_distance_first_grasp;
+      //double peak_distance_second_grasp;
 
-      double low_force_;
-      double high_force_;
+      double force_;
+      double force_increase_;
 
       double spring_const;
 
@@ -268,8 +274,8 @@ namespace controller
        */
       bool service_callback_;
 
-      manipulation_srvs::GraspClosedLoop::Request service_request_;
-      manipulation_srvs::GraspClosedLoop::Response service_response_;
+      experimental_controllers::GraspClosedLoop::Request service_request_;
+      experimental_controllers::GraspClosedLoop::Response service_response_;
 
       int num_pressure_pads_side_;
       int num_pressure_pads_front_;
@@ -285,7 +291,17 @@ namespace controller
 
       ros::CallbackQueue service_queue_;
 
-      boost::thread* service_thread_;
+      boost::thread service_thread_;
+
+      ros::Subscriber cmd_sub_;
+
+      ros::Subscriber pressure_sub_;
+
+      ros::NodeHandle node_;
+
+      ros::ServiceServer grasp_service_;
+
+      int closed_loop_trail_;
   };
 }
 

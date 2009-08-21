@@ -29,5 +29,6 @@
   <class name="HeadServoingController" type="HeadServoingController" base_class_type="Controller" />
   <class name="JointTrajectoryController" type="JointTrajectoryController" base_class_type="Controller" />
   <class name="ArmTrajectoryControllerNode" type="ArmTrajectoryControllerNode" base_class_type="Controller" />
+  <class name="Pr2GripperController" type="Pr2GripperController" base_class_type="Controller" />
 
 </library>

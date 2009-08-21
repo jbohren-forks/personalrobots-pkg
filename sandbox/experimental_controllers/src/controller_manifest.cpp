@@ -53,6 +53,7 @@
 #include "experimental_controllers/head_servoing_controller.h"
 #include "experimental_controllers/joint_trajectory_controller.h"
 #include "experimental_controllers/arm_trajectory_controller.h"
+#include "experimental_controllers/pr2_gripper_controller.h"
 
 
 using namespace controller;
@@ -88,5 +89,6 @@ PLUGINLIB_REGISTER_CLASS(CartesianTwistControllerIk,CartesianTwistControllerIk, 
 PLUGINLIB_REGISTER_CLASS(HeadServoingController, HeadServoingController, Controller)
 PLUGINLIB_REGISTER_CLASS(JointTrajectoryController,JointTrajectoryController, Controller)
 PLUGINLIB_REGISTER_CLASS(ArmTrajectoryControllerNode,ArmTrajectoryControllerNode, Controller)
+PLUGINLIB_REGISTER_CLASS(Pr2GripperController,Pr2GripperController, Controller)
 
 
