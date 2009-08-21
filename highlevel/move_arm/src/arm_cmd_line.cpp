@@ -577,10 +577,10 @@ int main(int argc, char **argv)
 		sp.copyParamsJoints(traj.points[1].positions, names);
 
 		std::cout << "Executing upward path for " << up << "m" << std::endl;
-		ros::ServiceClient clientStart = nh.serviceClient<pr2_mechanism_controllers::TrajectoryStart>("/r_arm_joint_waypoint_controller/TrajectoryStart");
+		ros::ServiceClient clientStart = nh.serviceClient<experimental_controllers::TrajectoryStart>("/r_arm_joint_waypoint_controller/TrajectoryStart");
 		
-		pr2_mechanism_controllers::TrajectoryStart::Request  send_traj_start_req;
-		pr2_mechanism_controllers::TrajectoryStart::Response send_traj_start_res;
+		experimental_controllers::TrajectoryStart::Request  send_traj_start_req;
+		experimental_controllers::TrajectoryStart::Response send_traj_start_res;
 		send_traj_start_req.traj = traj;
 		send_traj_start_req.hastiming = 0;
 		send_traj_start_req.requesttiming = 0;
