@@ -157,7 +157,7 @@ namespace pluginlib {
     }
     else
     {
-      ROS_ERROR("Couldn't find class %s", lookup_name.c_str());
+      ROS_ERROR("According to the loaded plugin descriptions the class %s with base class type %s does not exist", lookup_name.c_str(), base_class_.c_str());
       return false;
     }
     library_path.append(Poco::SharedLibrary::suffix());
@@ -267,7 +267,6 @@ namespace pluginlib {
     if ( auto_load && !isClassLoaded(lookup_name))
       if(!loadClass(lookup_name))
       {
-        //\todo THROW HERE
         ROS_ERROR("Failed to auto load library");
         throw std::runtime_error("Failed to auto load library for class " + lookup_name + ".");
       }
