@@ -46,7 +46,6 @@
 // Services
 #include <experimental_controllers/GetJointPosCmd.h>
 
-#include <pr2_mechanism_controllers/SetJointTarget.h>
 #include <experimental_controllers/JointPosCmd.h>
 
 #include <manipulation_msgs/JointTraj.h>
