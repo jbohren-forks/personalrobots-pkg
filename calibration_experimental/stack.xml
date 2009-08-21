@@ -19,4 +19,5 @@
   <depend stack="common_msgs"/> <!-- geometry_msgs, sensor_msgs, diagnostic_msgs --> 
   <depend stack="visual_feature_detectors"/> <!-- checkerboard_detector -->
   <depend stack="stereo" /> <!-- stereo_msgs -->
+  <depend stack="pr2_common" />
 </stack>
