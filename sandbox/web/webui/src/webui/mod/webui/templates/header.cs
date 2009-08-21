@@ -1,6 +1,18 @@
-<table width=100%>
+<table class=toolbar width=100% cellspacing=0 cellpadding=2 style="background-image:url('templates/images/toolbar/tb-bg.gif');">
 <tr>
-<td><?cs var:CGI.ServerName?></td>
+<td width=1%><nobr>Robot: <?cs var:CGI.ServerName?></td>
+<td width=1%><img src="templates/images/toolbar/grid-blue-split.gif"></td>
+<td width=90%>Core Status: <font color=green>Running</td>
+<td width=1%><img src="templates/images/toolbar/grid-blue-split.gif"></td>
+<td width=1%><nobr>Circuits:</td>
+<td width=1%><img src="templates/images/toolbar/grid-blue-split.gif"></td>
+<td width=1%><nobr><div objtype=BatteryMonitor topic="/battery_state" key=energy_remaining key2=energy_capacity></td>
+<td width=1%><img src="templates/images/toolbar/grid-blue-split.gif"></td>
+<?cs if:CGI.Login ?>
+<td align=right><a href="<?cs var:CGI.ScriptName ?>/login/signin.py?signout=1" class=tablink>Logout</a>(<?cs var:CGI.Login ?>)</td>
+<?cs else ?>
+<td align=right><a href="<?cs var:CGI.ScriptName ?>/login/signin0.py?q=1" class=tablink>Login</a></td>
+<?cs /if ?>
 </tr>
 </table>
 
@@ -17,11 +29,6 @@
 
 <?cs if:CGI.Login=="hassan"?><td width=1%><a href="<?cs var:CGI.ScriptName ?>/webui/tables.py/" class=tablink>Tables</a></td><?cs /if ?>
 
-<?cs if:CGI.Login ?>
-<td align=right><a href="<?cs var:CGI.ScriptName ?>/login/signin.py?signout=1" class=tablink>Logout</a>(<?cs var:CGI.Login ?>)</td>
-<?cs else ?>
-<td align=right><a href="<?cs var:CGI.ScriptName ?>/login/signin0.py?q=1" class=tablink>Login</a></td>
-<?cs /if ?>
 </tr>
 </table>
 

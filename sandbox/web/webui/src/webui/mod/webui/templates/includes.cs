@@ -8,6 +8,7 @@
     <script type="text/javascript" src="jslib/ros.js"></script> 
     <script type="text/javascript" src="jslib/pr2_graph.js"></script> 
     <script type="text/javascript" src="jslib/pr2_pb.js"></script> 
+    <script type="text/javascript" src="jslib/pr2_widgets.js"></script> 
 
     <script type='text/javascript' src='http://www.google.com/jsapi'></script>
     <script type='text/javascript'>
