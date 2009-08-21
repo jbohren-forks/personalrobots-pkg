@@ -27,8 +27,28 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- * Author: Wim Meeussen
+/**
+   @class controller::CartesianWrenchController
+   @author Wim Meeussen
+
+   @brief Cartesian wrench controller
+
+   Controls the wrench at the end effector of a chain of the robot.
+
+   @section ROS ROS interface
+
+   @param type Must be "CartesianWrenchController"
+
+   @param root_name The name of the root link of the chain of links
+   that you wish to control.
+
+   @param tip_name The name of the tip link (end effector) of the
+   chain of links that you wish to control.
+
+   Subscribes to:
+
+   - @b command (geometry_msgs::Wrench) : The desired wrench to achieve
+
  */
 
 #ifndef CARTESIAN_WRENCH_CONTROLLER_H
