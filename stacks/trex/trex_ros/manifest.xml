@@ -9,7 +9,6 @@
   <depend package="robot_actions" />
   <depend package="std_msgs" />
   <depend package="geometry_msgs" />
-  <depend package="gtest" />
 
   <export>
     <nddl iflags="-I${prefix}/nddl -I${prefix}/deprecated -I${prefix}"/>
