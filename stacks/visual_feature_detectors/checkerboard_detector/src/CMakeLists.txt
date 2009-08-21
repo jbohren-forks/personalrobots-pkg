@@ -15,18 +15,21 @@ _rospack_invoke(checkerboard_detector checkerboard_detector cflags export --lang
 _rospack_invoke(checkerboard_detector checkerboard_detector lflags export --lang=cpp --attrib=lflags)
 foreach(arg ${checkerboard_detector_cflags})
   set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} ${arg}")
-endforeach()
+endforeach(arg ${checkerboard_detector_cflags})
+
 foreach(arg ${checkerboard_detector_lflags})
   set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} ${arg}")
   set(_used_lflags "${_used_lflags} ${arg}")
-endforeach()
+endforeach(arg ${checkerboard_detector_lflags})
+
 string(REGEX MATCHALL "(^| )-l([./+-_\\a-zA-Z]*)" _used_libs "${_used_lflags}")
 string(REGEX REPLACE "(^| )-l" "" _used_libs "${_used_libs}")
 set(CMAKE_REQUIRED_LIBRARIES ${_used_libs})
 check_function_exists(cvInitUndistortRectifyMap HAVE_CV_UNDISTORT_RECTIFY_MAP)
+
 if( HAVE_CV_UNDISTORT_RECTIFY_MAP )
   add_definitions("-DHAVE_CV_UNDISTORT_RECTIFY_MAP")
-endif()
+endif (HAVE_CV_UNDISTORT_RECTIFY_MAP)
 
 if( WIN32 )
   CHECK_INCLUDE_FILE(omp.h HAVE_OMP_H)

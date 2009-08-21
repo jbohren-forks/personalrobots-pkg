@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 2.4.6)
 #set( CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS TRUE )
 include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 
