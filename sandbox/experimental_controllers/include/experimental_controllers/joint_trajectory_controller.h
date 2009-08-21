@@ -45,13 +45,13 @@
 #include <manipulation_msgs/JointTrajPoint.h>
 #include <diagnostic_msgs/DiagnosticArray.h>
 
-#include <pr2_mechanism_controllers/TrajectoryStart.h>
-#include <pr2_mechanism_controllers/TrajectoryQuery.h>
-#include <pr2_mechanism_controllers/TrajectoryCancel.h>
+#include <experimental_controllers/TrajectoryStart.h>
+#include <experimental_controllers/TrajectoryQuery.h>
+#include <experimental_controllers/TrajectoryCancel.h>
 
 //Kinematics
 #include <trajectory/trajectory.h>
-#include <pr2_mechanism_controllers/ControllerState.h>
+#include <experimental_controllers/ControllerState.h>
 
 #include <realtime_tools/realtime_publisher.h>
 #include <std_msgs/String.h>
@@ -166,7 +166,7 @@ namespace controller
 
     std::vector<double> goal_reached_threshold_; /**< Threshold within which the joints must be before goal is declared to have been reached */
 
-    realtime_tools::RealtimePublisher <pr2_mechanism_controllers::ControllerState>* controller_state_publisher_ ;  /**< Publishes controller information */
+    realtime_tools::RealtimePublisher <experimental_controllers::ControllerState>* controller_state_publisher_ ;  /**< Publishes controller information */
 
     double max_update_time_; /**< maximum time (over the complete history of the run) taken for the update loop of this controller*/
 
@@ -363,8 +363,8 @@ namespace controller
      * @param req The request containing the trajectory to be queued up
      * @param resp The response contains the id assigned to the trajectory
      */
-    bool setJointTrajSrv(pr2_mechanism_controllers::TrajectoryStart::Request &req,
-                                                pr2_mechanism_controllers::TrajectoryStart::Response &resp);
+    bool setJointTrajSrv(experimental_controllers::TrajectoryStart::Request &req,
+                                                experimental_controllers::TrajectoryStart::Response &resp);
 
     /**
      * @brief Service provided to set trajectories
@@ -375,15 +375,15 @@ namespace controller
      *             (c) jointnames: the names of the joints controlled by this controller
      *             (d) jointpositions: the current joint positions
      */
-    bool queryJointTrajSrv(pr2_mechanism_controllers::TrajectoryQuery::Request &req,
-                                                  pr2_mechanism_controllers::TrajectoryQuery::Response &resp);
+    bool queryJointTrajSrv(experimental_controllers::TrajectoryQuery::Request &req,
+                                                  experimental_controllers::TrajectoryQuery::Response &resp);
 
     /**
      * @brief Service provided to cancel trajectories
      * @param req The request contains the id of the trajectory which needs to be canceled (Use the rosmsg tool to see the fields required for the request. e.g. rosmsg show TrajectoryCancel)
      */
-    bool cancelJointTrajSrv(pr2_mechanism_controllers::TrajectoryCancel::Request &req,
-                                                   pr2_mechanism_controllers::TrajectoryCancel::Response &resp);
+    bool cancelJointTrajSrv(experimental_controllers::TrajectoryCancel::Request &req,
+                                                   experimental_controllers::TrajectoryCancel::Response &resp);
 
 
     /**

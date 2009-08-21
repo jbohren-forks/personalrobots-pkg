@@ -5,8 +5,8 @@ roslib.load_manifest('kinematic_calibration')
 import rospy
 import sys
 from std_msgs.msg import Empty
-from pr2_mechanism_controllers.srv import *
-from pr2_mechanism_controllers.msg import *
+from experimental_controllers.srv import *
+from experimental_controllers.msg import *
 from mechanism_msgs import JointState, JointStates
 
 cmd_count = 0
@@ -16,7 +16,7 @@ def goto_next_callback(data, callback_args):
 	start_topic = callback_args[1]
 	head_cmd = callback_args[2]
 	head_pub = callback_args[3]
-	
+
 	global cmd_count
 	print "Callback Called"
 	print "  Waiting for Service:\n  (%s)..." % start_topic
@@ -34,7 +34,7 @@ def goto_next_callback(data, callback_args):
 		print "  Timestamps:"
 		print start_resp.timestamps
 
-		print "  ***  Head Command ***"		
+		print "  ***  Head Command ***"
 		print head_cmd[cmd_count]
     ps = JointState()
     ps.name = 'head_pan_joint'
@@ -54,7 +54,7 @@ def goto_next_callback(data, callback_args):
 
 	print "************"
 	cmd_count = cmd_count + 1
-        
+
 
 if __name__ == '__main__':
 	print "Running python code"

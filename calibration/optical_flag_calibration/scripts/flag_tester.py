@@ -6,8 +6,8 @@ import time
 import rospy
 import sys
 from std_msgs.msg import Empty
-from pr2_mechanism_controllers.srv import *
-from pr2_mechanism_controllers.msg import *
+from experimental_controllers.srv import *
+from experimental_controllers.msg import *
 from manipulation_msgs.msg import *
 
 cmd_count = 0
@@ -71,7 +71,7 @@ if __name__ == '__main__':
 
   print "  Response:"
   print "    Traj ID: %u" % start_resp.trajectoryid
-  
+
   prev_id = start_resp.trajectoryid
 
   while (not rospy.is_shutdown()) :
@@ -93,10 +93,10 @@ if __name__ == '__main__':
     print "*** Arm Command 0 ***"
     joint_traj = JointTraj([JointTrajPoint(arm_cmd[0],0)])
     start_resp = start_srv.call(TrajectoryStartRequest(joint_traj,0,1))
-    
+
     print "  Response:"
     print "    Traj ID: %u" % start_resp.trajectoryid
-  
+
     prev_id = start_resp.trajectoryid
 
   #rospy.spin()

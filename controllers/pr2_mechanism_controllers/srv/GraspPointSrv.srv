@@ -1,3 +1,0 @@
-geometry_msgs/PoseStamped transform
----
-manipulation_msgs/JointTraj traj

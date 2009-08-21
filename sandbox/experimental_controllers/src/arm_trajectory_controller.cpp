@@ -162,7 +162,7 @@ void ArmTrajectoryController::setTrajectoryCmd(const std::vector<trajectory::Tra
   arm_controller_lock_.unlock();
 }
 
-void ArmTrajectoryController::getJointPosCmd(pr2_mechanism_controllers::JointPosCmd & cmd) const
+void ArmTrajectoryController::getJointPosCmd(experimental_controllers::JointPosCmd & cmd) const
 {
 }
 
@@ -434,7 +434,7 @@ bool ArmTrajectoryControllerNode::initXml(mechanism::RobotState * robot, TiXmlEl
 
   if (c_->controller_state_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
     delete c_->controller_state_publisher_ ;
-  c_->controller_state_publisher_ = new realtime_tools::RealtimePublisher <pr2_mechanism_controllers::ControllerState> (service_prefix_+"/controller_state", 1) ;
+  c_->controller_state_publisher_ = new realtime_tools::RealtimePublisher <experimental_controllers::ControllerState> (service_prefix_+"/controller_state", 1) ;
 
   if (diagnostics_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
     delete diagnostics_publisher_ ;
@@ -525,18 +525,18 @@ void ArmTrajectoryControllerNode::CmdTrajectoryReceived()
 }
 
 
-bool ArmTrajectoryControllerNode::getJointPosCmd(pr2_mechanism_controllers::GetJointPosCmd::Request &req,
-                    pr2_mechanism_controllers::GetJointPosCmd::Response &resp)
+bool ArmTrajectoryControllerNode::getJointPosCmd(experimental_controllers::GetJointPosCmd::Request &req,
+                    experimental_controllers::GetJointPosCmd::Response &resp)
 {
-  pr2_mechanism_controllers::JointPosCmd cmd;
+  experimental_controllers::JointPosCmd cmd;
   c_->getJointPosCmd(cmd);
   resp.command = cmd;
   return true;
 }
 
 
-bool ArmTrajectoryControllerNode::setJointTrajSrv(pr2_mechanism_controllers::TrajectoryStart::Request &req,
-                    pr2_mechanism_controllers::TrajectoryStart::Response &resp)
+bool ArmTrajectoryControllerNode::setJointTrajSrv(experimental_controllers::TrajectoryStart::Request &req,
+                    experimental_controllers::TrajectoryStart::Response &resp)
 {
   addTrajectoryToQueue(req.traj, request_trajectory_id_);
   resp.trajectoryid = request_trajectory_id_;
@@ -561,8 +561,8 @@ bool ArmTrajectoryControllerNode::setJointTrajSrv(pr2_mechanism_controllers::Tra
   return true;
 }
 
-bool ArmTrajectoryControllerNode::queryJointTrajSrv(pr2_mechanism_controllers::TrajectoryQuery::Request &req,
-                                                    pr2_mechanism_controllers::TrajectoryQuery::Response &resp)
+bool ArmTrajectoryControllerNode::queryJointTrajSrv(experimental_controllers::TrajectoryQuery::Request &req,
+                                                    experimental_controllers::TrajectoryQuery::Response &resp)
 {
   resp.set_jointnames_size(c_->dimension_);
   resp.set_jointpositions_size(c_->dimension_);
@@ -607,8 +607,8 @@ bool ArmTrajectoryControllerNode::queryJointTrajSrv(pr2_mechanism_controllers::T
   return true;
 }
 
-bool ArmTrajectoryControllerNode::cancelJointTrajSrv(pr2_mechanism_controllers::TrajectoryCancel::Request &req,
-                                                     pr2_mechanism_controllers::TrajectoryCancel::Response &resp)
+bool ArmTrajectoryControllerNode::cancelJointTrajSrv(experimental_controllers::TrajectoryCancel::Request &req,
+                                                     experimental_controllers::TrajectoryCancel::Response &resp)
 {
   int status = ArmTrajectoryControllerNode::NUM_STATUS;
 

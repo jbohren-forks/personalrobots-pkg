@@ -45,9 +45,9 @@
 #include <robot_actions/action.h>
 
 #include <manipulation_msgs/JointTraj.h>
-#include <pr2_mechanism_controllers/TrajectoryStart.h>
-#include <pr2_mechanism_controllers/TrajectoryQuery.h>
-#include <pr2_mechanism_controllers/TrajectoryCancel.h>
+#include <experimental_controllers/TrajectoryStart.h>
+#include <experimental_controllers/TrajectoryQuery.h>
+#include <experimental_controllers/TrajectoryCancel.h>
 
 namespace plugs_core{
 
@@ -63,14 +63,14 @@ private:
   // average the last couple plug centroids
   bool isTrajectoryDone();
   void cancelTrajectory();
-  
+
   std::string action_name_;
-  
+
   ros::Node* node_;
 
-  pr2_mechanism_controllers::TrajectoryStart::Request right_traj_req_;
-  pr2_mechanism_controllers::TrajectoryStart::Request left_traj_req_;
-  pr2_mechanism_controllers::TrajectoryStart::Response traj_res_;  
+  experimental_controllers::TrajectoryStart::Request right_traj_req_;
+  experimental_controllers::TrajectoryStart::Request left_traj_req_;
+  experimental_controllers::TrajectoryStart::Response traj_res_;
 
   std_msgs::Empty empty_;
 
@@ -80,10 +80,10 @@ private:
   std::string right_arm_controller_;
   std::string left_arm_controller_;
   std::string current_controller_name_;
-  
-  
-  int traj_id_; 
- 
+
+
+  int traj_id_;
+
 };
 
 }

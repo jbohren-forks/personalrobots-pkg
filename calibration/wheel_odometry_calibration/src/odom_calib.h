@@ -38,7 +38,7 @@
 #include <ros/node.h>
 #include <boost/thread/mutex.hpp>
 #include <tf/tf.h>
-#include <pr2_mechanism_controllers/WheelRadiusMultiplier.h>
+#include <experimental_controllers/WheelRadiusMultiplier.h>
 
 
 // messages
@@ -87,7 +87,7 @@ private:
   geometry_msgs::Twist               _vel;
 
   // service messages
-  pr2_mechanism_controllers::WheelRadiusMultiplier::Request _srv_snd, _srv_rsp;
+  experimental_controllers::WheelRadiusMultiplier::Request _srv_snd, _srv_rsp;
 
   // active sensors
   bool _odom_active, _imu_active, _mech_active,  _completed;

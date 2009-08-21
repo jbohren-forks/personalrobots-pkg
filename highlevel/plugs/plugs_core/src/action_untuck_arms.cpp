@@ -42,7 +42,7 @@ UntuckArmsAction::UntuckArmsAction() :
   robot_actions::Action<std_msgs::Empty, std_msgs::Empty>("plugs_untuck_arms"),
   action_name_("plugs_untuck_arms"),
   node_(ros::Node::instance()),
-  traj_error_(false),  
+  traj_error_(false),
   which_arms_("right"),
   right_arm_controller_("r_arm_joint_trajectory_controller"),
   left_arm_controller_("l_arm_joint_trajectory_controller")
@@ -59,8 +59,8 @@ UntuckArmsAction::UntuckArmsAction() :
   // Get the controller names
   if((which_arms_ == "both") || (which_arms_ == "right"))
   {
-    node_->param(action_name_ + "/right_arm_controller", right_arm_controller_, right_arm_controller_); 
-   
+    node_->param(action_name_ + "/right_arm_controller", right_arm_controller_, right_arm_controller_);
+
     if(right_arm_controller_ == "")
     {
       ROS_ERROR("%s: Aborted, right arm controller param was not set.", action_name_.c_str());
@@ -68,11 +68,11 @@ UntuckArmsAction::UntuckArmsAction() :
       return;
     }
   }
-  
+
   if((which_arms_ == "both") || (which_arms_ == "left"))
   {
     node_->param(action_name_ + "/left_arm_controller", left_arm_controller_, left_arm_controller_);
-    
+
     if(left_arm_controller_ == "")
     {
       ROS_ERROR("%s: Aborted, left arm controller param was not set.", action_name_.c_str());
@@ -81,19 +81,19 @@ UntuckArmsAction::UntuckArmsAction() :
     }
   }
 
-  
+
   double right_arm_traj[2][7] = {{0.0,1.57,-1.57,-2.25,M_PI,0.0,-M_PI_2},{-2.04, 1.11, -1.07, -2.05, 1.03, 1.66, 0.15}};
   //TODO: this is wrong fixme
   double left_arm_traj[2][7] = {{0.0,1.57,1.57,-2.25,0.0,0.0,0.0}, {-2.04, 1.11, 1.07, -2.05, 1.03, 1.66, 0.15}};
-                     
+
   right_traj_req_.hastiming = 0;
   right_traj_req_.requesttiming = 0;
   right_traj_req_.traj.set_points_size(2);
-     
+
   left_traj_req_.hastiming = 0;
   left_traj_req_.requesttiming = 0;
-  left_traj_req_.traj.set_points_size(2);  
-                
+  left_traj_req_.traj.set_points_size(2);
+
   for (unsigned int i = 0 ; i < 2 ; ++i)
   {
     right_traj_req_.traj.points[i].set_positions_size(7);
@@ -102,13 +102,13 @@ UntuckArmsAction::UntuckArmsAction() :
     {
       right_traj_req_.traj.points[i].positions[j] = right_arm_traj[i][j];
       left_traj_req_.traj.points[i].positions[j] = left_arm_traj[i][j];
-      
+
     }
     right_traj_req_.traj.points[i].time = 0.0;
     left_traj_req_.traj.points[i].time = 0.0;
-  }	
+  }
 
-  
+
 };
 
 UntuckArmsAction::~UntuckArmsAction()
@@ -116,7 +116,7 @@ UntuckArmsAction::~UntuckArmsAction()
 };
 
 robot_actions::ResultStatus UntuckArmsAction::execute(const std_msgs::Empty& empty, std_msgs::Empty& feedback)
-{ 
+{
   traj_error_=false;
   ROS_DEBUG("%s: executing.", action_name_.c_str());
   if(!ros::service::call(right_arm_controller_ + "/TrajectoryStart", right_traj_req_, traj_res_))
@@ -128,7 +128,7 @@ robot_actions::ResultStatus UntuckArmsAction::execute(const std_msgs::Empty& emp
 
   traj_id_ = traj_res_.trajectoryid;
   current_controller_name_ = right_arm_controller_;
-    
+
   while(!isTrajectoryDone() && !traj_error_)
     {
       if (isPreemptRequested())
@@ -140,8 +140,8 @@ robot_actions::ResultStatus UntuckArmsAction::execute(const std_msgs::Empty& emp
 
       sleep(0.5);
     }
-  
-  
+
+
   if((which_arms_ == "both") || (which_arms_ == "left") && !traj_error_)
     {
       if(!ros::service::call(left_arm_controller_ + "/TrajectoryStart", left_traj_req_, traj_res_))
@@ -149,10 +149,10 @@ robot_actions::ResultStatus UntuckArmsAction::execute(const std_msgs::Empty& emp
 	  ROS_ERROR("%s: Aborted, failed to start left arm  trajectory.", action_name_.c_str());
     ROS_DEBUG("%s: aborted.", action_name_.c_str());
 	  return robot_actions::ABORTED;
-	}  
+	}
       traj_id_ = traj_res_.trajectoryid;
       current_controller_name_ = left_arm_controller_;
-    
+
       while(!isTrajectoryDone() && !traj_error_)
 	{
 	  if (isPreemptRequested()){
@@ -164,7 +164,7 @@ robot_actions::ResultStatus UntuckArmsAction::execute(const std_msgs::Empty& emp
 	  sleep(0.5);
 	}
     }
-  
+
   if(traj_error_)
     {
       ROS_ERROR("%s: Aborted, trajectory controller failed to reach goal.", action_name_.c_str());
@@ -178,18 +178,18 @@ robot_actions::ResultStatus UntuckArmsAction::execute(const std_msgs::Empty& emp
 bool UntuckArmsAction::isTrajectoryDone()
 {
   bool done = false;
-   
-  pr2_mechanism_controllers::TrajectoryQuery::Request req;
-  pr2_mechanism_controllers::TrajectoryQuery::Response res;
-  
+
+  experimental_controllers::TrajectoryQuery::Request req;
+  experimental_controllers::TrajectoryQuery::Response res;
+
   req.trajectoryid = traj_id_;
-  
+
   if(!ros::service::call(current_controller_name_ + "/TrajectoryQuery", req, res))
   {
     ROS_ERROR("%s: Error, failed to query trajectory completion", action_name_.c_str());
     traj_error_ = true;
     return done;
-  }   
+  }
   else if(res.done == res.State_Done)
   {
     done = true;
@@ -199,17 +199,17 @@ bool UntuckArmsAction::isTrajectoryDone()
     ROS_ERROR("%s: Error, failed to complete trajectory", action_name_.c_str());
     traj_error_ = true;
   }
-  
+
 
   return done;
 }
 
 void UntuckArmsAction::cancelTrajectory()
 {
-  pr2_mechanism_controllers::TrajectoryCancel::Request cancel;
-  pr2_mechanism_controllers::TrajectoryCancel::Response dummy;
+  experimental_controllers::TrajectoryCancel::Request cancel;
+  experimental_controllers::TrajectoryCancel::Response dummy;
   cancel.trajectoryid = traj_id_;
-  
+
   if(!ros::service::call(current_controller_name_ + "/TrajectoryCancel", cancel, dummy))
   {
     ROS_ERROR("%s: Error, failed to cancel trajectory", action_name_.c_str());

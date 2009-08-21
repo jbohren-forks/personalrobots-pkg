@@ -38,8 +38,8 @@ import time
 import rospy
 import sys
 #from std_msgs.msg import Empty
-from pr2_mechanism_controllers.srv import *
-#from pr2_mechanism_controllers.msg import 
+from experimental_controllers.srv import *
+#from experimental_controllers.msg import
 from manipulation_msgs.msg import *
 
 
@@ -54,7 +54,7 @@ class ArmCommander() :
         self.init_joint_headers(joint_headers_string)
         self.init_joint_data(joint_data_string)
 
-        
+
         rospy.wait_for_service(arm_controller_name + '/TrajectoryQuery')
 
         # Build service proxies for arm controller
@@ -68,7 +68,7 @@ class ArmCommander() :
 
     def init_joint_headers(self, joint_headers) :
         self.joint_headers = joint_headers.split()
-    
+
     def init_joint_data(self, joint_data) :
 	joint_data_all = [[float(x) for x in cur_line.split()] for cur_line in joint_data.split("\n")]
         self.joint_data = [x for x in joint_data_all if len(x)==len(self.joint_headers)]

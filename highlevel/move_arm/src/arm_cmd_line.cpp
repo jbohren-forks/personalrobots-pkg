@@ -47,7 +47,7 @@
 #include <motion_planning_msgs/KinematicPath.h>
 #include <manipulation_msgs/JointTraj.h>
 #include <manipulation_srvs/IKService.h>
-#include <pr2_mechanism_controllers/TrajectoryStart.h>
+#include <experimental_controllers/TrajectoryStart.h>
 
 #include <boost/thread/thread.hpp>
 #include <boost/algorithm/string.hpp>
@@ -88,7 +88,7 @@ void printHelp(void)
 void printJoints(const planning_environment::KinematicModelStateMonitor &km, const std::vector<std::string> &names)
 {
     const planning_models::KinematicModel::ModelInfo &mi = km.getKinematicModel()->getModelInfo();
-    
+
     for (unsigned int i = 0 ; i < names.size(); ++i)
     {
 	int idx = km.getKinematicModel()->getJointIndex(names[i]);
@@ -147,7 +147,7 @@ void setupGoal(const std::vector<std::string> &names, move_arm::MoveArmGoal &goa
 	goal.goal_constraints.joint_constraint[i].tolerance_below[0] = 0.0;
 	goal.goal_constraints.joint_constraint[i].tolerance_above[0] = 0.0;
     }
-    
+
     goal.contacts.resize(1);
     goal.contacts[0].links.push_back("r_gripper_l_finger_link");
     goal.contacts[0].links.push_back("r_gripper_r_finger_link");
@@ -157,13 +157,13 @@ void setupGoal(const std::vector<std::string> &names, move_arm::MoveArmGoal &goa
     goal.contacts[0].depth = 0.04;
     goal.contacts[0].bound.type = mapping_msgs::Object::SPHERE;
     goal.contacts[0].bound.dimensions.push_back(0.5);
-    
+
     goal.contacts[0].pose.header.stamp = ros::Time::now();
     goal.contacts[0].pose.header.frame_id = "/base_link";
     goal.contacts[0].pose.pose.position.x = 1;
     goal.contacts[0].pose.pose.position.y = 0;
     goal.contacts[0].pose.pose.position.z = 0.5;
-    
+
     goal.contacts[0].pose.pose.orientation.x = 0;
     goal.contacts[0].pose.pose.orientation.y = 0;
     goal.contacts[0].pose.pose.orientation.z = 0;
@@ -181,28 +181,28 @@ void setupGoalEEf(const std::string &link, const std::vector<double> &pz, move_a
     goal.goal_constraints.pose_constraint[0].pose.pose.position.x = pz[0];
     goal.goal_constraints.pose_constraint[0].pose.pose.position.y = pz[1];
     goal.goal_constraints.pose_constraint[0].pose.pose.position.z = pz[2];
-    
+
     goal.goal_constraints.pose_constraint[0].pose.pose.orientation.x = pz[3];
     goal.goal_constraints.pose_constraint[0].pose.pose.orientation.y = pz[4];
     goal.goal_constraints.pose_constraint[0].pose.pose.orientation.z = pz[5];
     goal.goal_constraints.pose_constraint[0].pose.pose.orientation.w = pz[6];
-    
+
     goal.goal_constraints.pose_constraint[0].position_tolerance_above.x = 0.005;
     goal.goal_constraints.pose_constraint[0].position_tolerance_above.y = 0.005;
     goal.goal_constraints.pose_constraint[0].position_tolerance_above.z = 0.01;
     goal.goal_constraints.pose_constraint[0].position_tolerance_below.x = 0.005;
     goal.goal_constraints.pose_constraint[0].position_tolerance_below.y = 0.005;
     goal.goal_constraints.pose_constraint[0].position_tolerance_below.z = 0.005;
-    
+
     goal.goal_constraints.pose_constraint[0].orientation_tolerance_above.x = 0.005;
     goal.goal_constraints.pose_constraint[0].orientation_tolerance_above.y = 0.005;
     goal.goal_constraints.pose_constraint[0].orientation_tolerance_above.z = 0.005;
     goal.goal_constraints.pose_constraint[0].orientation_tolerance_below.x = 0.005;
     goal.goal_constraints.pose_constraint[0].orientation_tolerance_below.y = 0.005;
     goal.goal_constraints.pose_constraint[0].orientation_tolerance_below.z = 0.005;
-    
+
     goal.goal_constraints.pose_constraint[0].orientation_importance = 0.2;
-    
+
     goal.contacts.resize(2);
     goal.contacts[0].links.push_back("r_gripper_l_finger_link");
     goal.contacts[0].links.push_back("r_gripper_r_finger_link");
@@ -249,11 +249,11 @@ void getIK(bool r, ros::NodeHandle &nh, planning_environment::KinematicModelStat
     request.data.pose_stamped.pose.orientation.z = 0;
     request.data.pose_stamped.pose.orientation.w = 1;
     request.data.joint_names = names;
-    
+
     planning_models::StateParams rs(*km.getRobotState());
     if (r)
 	rs.randomState();
-    
+
     for(unsigned int i = 0; i < names.size() ; ++i)
     {
 	const double *params = rs.getParamsJoint(names[i]);
@@ -283,7 +283,7 @@ void getIK(bool r, ros::NodeHandle &nh, planning_environment::KinematicModelStat
 	std::cerr << "IK Failed" << std::endl;
 }
 
-			   
+
 void diffConfig(const planning_environment::KinematicModelStateMonitor &km, move_arm::MoveArmGoal &goal)
 {
     std::vector<std::string> names;
@@ -294,7 +294,7 @@ void diffConfig(const planning_environment::KinematicModelStateMonitor &km, move
 		  << std::endl;
 	names.push_back(goal.goal_constraints.joint_constraint[i].joint_name);
     }
-    
+
     btTransform pose1 = effPosition(km, goal);
     move_arm::MoveArmGoal temp;
     setConfig(km.getRobotState(), names, temp);
@@ -309,14 +309,14 @@ void diffConfig(const planning_environment::KinematicModelStateMonitor &km, move
 void viewState(ros::Publisher &view, const planning_environment::KinematicModelStateMonitor &km, const planning_models::StateParams &st)
 {
     motion_planning_msgs::KinematicPath kp;
-    
+
     kp.header.frame_id = km.getFrameId();
     kp.header.stamp = km.lastJointStateUpdate();
-    
+
     // fill in start state with current one
     std::vector<planning_models::KinematicModel::Joint*> joints;
     km.getKinematicModel()->getJoints(joints);
-    
+
     kp.start_state.resize(joints.size());
     for (unsigned int i = 0 ; i < joints.size() ; ++i)
     {
@@ -341,24 +341,24 @@ void spinThread(void)
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "cmd_line_move_arm", ros::init_options::NoSigintHandler | ros::init_options::AnonymousName);
-    
+
     std::string arm = "r";
     if (argc >= 2)
 	if (argv[1][0] == 'l')
 	    arm = "l";
-    
+
     ros::NodeHandle nh;
-    
+
     std::string group = arm == "r" ? "right_arm" : "left_arm";
     actionlib::SimpleActionClient<move_arm::MoveArmAction> move_arm(nh, "move_" + group);
     actionlib::SimpleActionClient<move_arm::ActuateGripperAction> gripper(nh, "actuate_gripper_" + group);
     ros::Publisher view = nh.advertise<motion_planning_msgs::KinematicPath>("executing_kinematic_path", 1);
-    
+
     ros::Publisher pubAttach = nh.advertise<mapping_msgs::AttachedObject>("attach_object", 1);
 
-    
+
     std::map<std::string, move_arm::MoveArmGoal> goals;
-    
+
     std::vector<std::string> names(7);
     names[0] = arm + "_shoulder_pan_joint";
     names[1] = arm + "_shoulder_lift_joint";
@@ -367,22 +367,22 @@ int main(int argc, char **argv)
     names[4] = arm + "_forearm_roll_joint";
     names[5] = arm + "_wrist_flex_joint";
     names[6] = arm + "_wrist_roll_joint";
-    
-    
+
+
     planning_environment::RobotModels rm("robot_description");
     if (!rm.loadedModels())
 	return 0;
-    
+
     boost::thread th(&spinThread);
     tf::TransformListener tf;
     planning_environment::KinematicModelStateMonitor km(&rm, &tf);
     km.waitForState();
-    
+
     std::cout << std::endl << std::endl << "Using joints:" << std::endl;
     printJoints(km, names);
     std::cout << std::endl;
     double allowed_time = 10.0;
-    
+
     while (nh.ok() && std::cin.good() && !std::cin.eof())
     {
 	std::cout << "command> ";
@@ -434,32 +434,32 @@ int main(int argc, char **argv)
 	    ao.header.frame_id = "r_wrist_roll_link";
 	    ao.header.stamp = ros::Time::now();
 	    ao.link_name = "r_wrist_roll_link";
-	    
+
 	    mapping_msgs::Object object;
 	    object.type = mapping_msgs::Object::CYLINDER;
 	    object.dimensions.push_back(0.02); // 4 cm diam
 	    object.dimensions.push_back(1.3); // 48 inch
-	    
+
 	    // identity transform should place the object in the center
 	    geometry_msgs::Pose pose;
 	    pose.position.x = 0.16;
 	    pose.position.y = 0;
 	    pose.position.z = 0;
-	    
+
 	    pose.orientation.x = 0;
 	    pose.orientation.y = 0;
 	    pose.orientation.z = 0;
 	    pose.orientation.w = 1;
-	    
+
 	    ao.objects.push_back(object);
 	    ao.poses.push_back(pose);
-	    
+
 	    ao.touch_links.push_back("r_gripper_l_finger_link");
 	    ao.touch_links.push_back("r_gripper_r_finger_link");
 	    ao.touch_links.push_back("r_gripper_l_finger_tip_link");
 	    ao.touch_links.push_back("r_gripper_r_finger_tip_link");
 	    ao.touch_links.push_back("r_gripper_palm_link");
-	    
+
 	    pubAttach.publish(ao);
 	}
 	else
@@ -506,30 +506,30 @@ int main(int argc, char **argv)
 	    if (ss.good() && !ss.eof())
 	    {
 		ss >> fwd;
-		
-		manipulation_msgs::JointTraj traj;	    
+
+		manipulation_msgs::JointTraj traj;
 		traj.names = names;
 		traj.points.resize(2);
 		traj.points[0].time = 0;
 		traj.points[1].time = 3;
-		
+
 		km.getRobotState()->copyParamsJoints(traj.points[0].positions, names);
 
 
 		move_arm::MoveArmGoal temp;
 		setConfig(km.getRobotState(), names, temp);
 		btTransform p = effPosition(km, temp);
-		
+
 		planning_models::StateParams sp(*km.getRobotState());
 		getIK(false, nh, km, temp, sp, names, p.getOrigin().x() + fwd, p.getOrigin().y(), p.getOrigin().z());
-		
+
 		sp.copyParamsJoints(traj.points[1].positions, names);
 
 		std::cout << "Executing forward path for " << fwd << "m" << std::endl;
-		ros::ServiceClient clientStart = nh.serviceClient<pr2_mechanism_controllers::TrajectoryStart>("/r_arm_joint_waypoint_controller/TrajectoryStart");
-		
-		pr2_mechanism_controllers::TrajectoryStart::Request  send_traj_start_req;
-		pr2_mechanism_controllers::TrajectoryStart::Response send_traj_start_res;
+		ros::ServiceClient clientStart = nh.serviceClient<experimental_controllers::TrajectoryStart>("/r_arm_joint_waypoint_controller/TrajectoryStart");
+
+		experimental_controllers::TrajectoryStart::Request  send_traj_start_req;
+		experimental_controllers::TrajectoryStart::Response send_traj_start_res;
 		send_traj_start_req.traj = traj;
 		send_traj_start_req.hastiming = 0;
 		send_traj_start_req.requesttiming = 0;
@@ -640,7 +640,7 @@ int main(int argc, char **argv)
 	    boost::trim(state);
 	    std::string fnm = getenv("HOME") + ("/states/" + state);
 	    std::ifstream in(fnm.c_str());
-	    
+
 	    planning_models::StateParams sp(*km.getRobotState());
 	    std::vector<double> params;
 	    while (in.good() && !in.eof())
@@ -654,18 +654,18 @@ int main(int argc, char **argv)
 	    sp.setParamsGroup(params, group);
 	    move_arm::MoveArmGoal g;
 	    setConfig(&sp, names, g);
-	    
+
 	    printConfig(g);
 	    std::cout << std::endl;
 	    btTransform p = effPosition(km, g);
 	    printPose(p);
-	    
+
 	    std::cout << "Moving to saved state " << state << "..." << std::endl;
 
 	    bool finished_within_time;
 	    move_arm.sendGoal(g);
 	    finished_within_time = move_arm.waitForGoalToFinish(ros::Duration(allowed_time));
-	    
+
 	    if (!finished_within_time)
 	    {
 		move_arm.cancelGoal();
@@ -690,8 +690,8 @@ int main(int argc, char **argv)
 	    {
 		std::string fnm = getenv("HOME") + ("/paths/" + path);
 		std::ifstream in(fnm.c_str());
-		
-		manipulation_msgs::JointTraj traj;	    
+
+		manipulation_msgs::JointTraj traj;
 		traj.names = names;
 		while (in.good() && !in.eof())
 		{
@@ -706,19 +706,19 @@ int main(int argc, char **argv)
 		    std::cout << std::endl;
 		    if (params.size() != 7)
 			break;
-		    
-		    unsigned int pz = traj.points.size();		
+
+		    unsigned int pz = traj.points.size();
 		    traj.points.resize(pz + 1);
 		    traj.points[pz].positions = params;
 		    traj.points[pz].time = time * pz;
 		}
 		in.close();
-		
+
 		std::cout << "Executing path " << fnm << " with " << traj.points.size() << " points at " << time << " seconds apart  ..." << std::endl;
-		ros::ServiceClient clientStart = nh.serviceClient<pr2_mechanism_controllers::TrajectoryStart>("/r_arm_joint_waypoint_controller/TrajectoryStart");
-		
-		pr2_mechanism_controllers::TrajectoryStart::Request  send_traj_start_req;
-		pr2_mechanism_controllers::TrajectoryStart::Response send_traj_start_res;
+		ros::ServiceClient clientStart = nh.serviceClient<experimental_controllers::TrajectoryStart>("/r_arm_joint_waypoint_controller/TrajectoryStart");
+
+		experimental_controllers::TrajectoryStart::Request  send_traj_start_req;
+		experimental_controllers::TrajectoryStart::Response send_traj_start_res;
 		send_traj_start_req.traj = traj;
 		send_traj_start_req.hastiming = 0;
 		send_traj_start_req.requesttiming = 0;
@@ -743,7 +743,7 @@ int main(int argc, char **argv)
 		    ss >> value;
 		    nrs.push_back(value);
 		}
-		
+
 		bool err = true;
 		if (nrs.size() == 3)
 		{
@@ -752,22 +752,22 @@ int main(int argc, char **argv)
 		    nrs.push_back(0);
 		    nrs.push_back(1);
 		}
-		
+
 		if (nrs.size() == 7)
 		{
 		    err = false;
-		    
+
 		    std::string link = km.getKinematicModel()->getJoint(names.back())->after->name;
 		    std::cout << "Moving " << link << " to " << nrs[0] << ", " << nrs[1] << ", " << nrs[2] << ", " <<
 			nrs[3] << ", " << nrs[4] << ", " << nrs[5] << ", " << nrs[6] << "..." << std::endl;
 		    move_arm::MoveArmGoal g;
 		    setupGoalEEf(link, nrs, g);
-		    
-		    
+
+
 		    bool finished_within_time;
 		    move_arm.sendGoal(g);
 		    finished_within_time = move_arm.waitForGoalToFinish(ros::Duration(allowed_time));
-		    
+
 		    if (!finished_within_time)
 		    {
 			move_arm.cancelGoal();
@@ -779,15 +779,15 @@ int main(int argc, char **argv)
 		if (err)
 		    std::cout << "Configuration '" << config << "' not found" << std::endl;
 	    }
-	    
+
 	    else
 	    {
 		std::cout << "Moving to " << config << "..." << std::endl;
-		
+
 		bool finished_within_time;
 		move_arm.sendGoal(goals[config]);
 		finished_within_time = move_arm.waitForGoalToFinish(ros::Duration(allowed_time));
-		
+
 		if (!finished_within_time)
 		{
 		    move_arm.cancelGoal();
@@ -855,7 +855,7 @@ int main(int argc, char **argv)
 	    {
 		move_arm::ActuateGripperGoal g;
 		ss >> g.data;
-		
+
 		gripper.sendGoal(g);
 		bool finished_before_timeout = gripper.waitForGoalToFinish(ros::Duration(allowed_time));
 		if (finished_before_timeout)

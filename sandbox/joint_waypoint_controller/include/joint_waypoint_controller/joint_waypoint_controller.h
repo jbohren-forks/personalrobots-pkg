@@ -37,9 +37,9 @@
 #ifndef JOINT_WAYPOINT_CONTROLLER_H_
 #define JOINT_WAYPOINT_CONTROLLER_H_
 
-#include <pr2_mechanism_controllers/TrajectoryStart.h>
-#include <pr2_mechanism_controllers/TrajectoryCancel.h>
-#include <pr2_mechanism_controllers/TrajectoryQuery.h>
+#include <experimental_controllers/TrajectoryStart.h>
+#include <experimental_controllers/TrajectoryCancel.h>
+#include <experimental_controllers/TrajectoryQuery.h>
 #include <ros/ros.h>
 #include <filters/filter_chain.h>
 #include <manipulation_msgs/WaypointTrajWithLimits.h>
@@ -64,8 +64,8 @@ public:
    * @param req The request containing the trajectory to be executed
    * @param resp The response contains the id assigned to the trajectory
    */
-  bool trajectoryStart(pr2_mechanism_controllers::TrajectoryStart::Request &req,
-                                              pr2_mechanism_controllers::TrajectoryStart::Response &resp);
+  bool trajectoryStart(experimental_controllers::TrajectoryStart::Request &req,
+                                              experimental_controllers::TrajectoryStart::Response &resp);
 
   /**
    * @brief Service provided to query trajectories
@@ -76,15 +76,15 @@ public:
    *             (c) jointnames: the names of the joints controlled by this controller
    *             (d) jointpositions: the current joint positions
    */
-  bool trajectoryQuery(pr2_mechanism_controllers::TrajectoryQuery::Request &req,
-                                                pr2_mechanism_controllers::TrajectoryQuery::Response &resp);
+  bool trajectoryQuery(experimental_controllers::TrajectoryQuery::Request &req,
+                                                experimental_controllers::TrajectoryQuery::Response &resp);
 
   /**
    * @brief Service provided to cancel trajectories
    * @param req The request contains the id of the trajectory which needs to be canceled (Use the rosmsg tool to see the fields required for the request. e.g. rosmsg show TrajectoryCancel)
    */
-  bool trajectoryCancel(pr2_mechanism_controllers::TrajectoryCancel::Request &req,
-                                                 pr2_mechanism_controllers::TrajectoryCancel::Response &resp);
+  bool trajectoryCancel(experimental_controllers::TrajectoryCancel::Request &req,
+                                                 experimental_controllers::TrajectoryCancel::Response &resp);
 
 
 

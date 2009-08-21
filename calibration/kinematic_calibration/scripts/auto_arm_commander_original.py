@@ -6,8 +6,8 @@ import time
 import rospy
 import sys
 from std_msgs.msg import Empty
-from pr2_mechanism_controllers.srv import *
-from pr2_mechanism_controllers.msg import *
+from experimental_controllers.srv import *
+from experimental_controllers.msg import *
 from mechanism_msgs.msg import MechanismState
 from kinematic_calibration.msg import *
 from manipulation_msgs.msg import *

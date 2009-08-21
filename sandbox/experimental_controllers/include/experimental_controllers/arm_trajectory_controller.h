@@ -44,29 +44,22 @@
 #include <robot_mechanism_controllers/joint_pd_controller.h>
 
 // Services
-#include <pr2_mechanism_controllers/SetJointPosCmd.h>
-#include <pr2_mechanism_controllers/GetJointPosCmd.h>
-
-#include <pr2_mechanism_controllers/SetJointGains.h>
-#include <pr2_mechanism_controllers/GetJointGains.h>
-
-#include <pr2_mechanism_controllers/SetCartesianPosCmd.h>
-#include <pr2_mechanism_controllers/GetCartesianPosCmd.h>
+#include <experimental_controllers/GetJointPosCmd.h>
 
 #include <pr2_mechanism_controllers/SetJointTarget.h>
-#include <pr2_mechanism_controllers/JointPosCmd.h>
+#include <experimental_controllers/JointPosCmd.h>
 
 #include <manipulation_msgs/JointTraj.h>
 #include <manipulation_msgs/JointTrajPoint.h>
 #include <diagnostic_msgs/DiagnosticArray.h>
 
-#include <pr2_mechanism_controllers/TrajectoryStart.h>
-#include <pr2_mechanism_controllers/TrajectoryQuery.h>
-#include <pr2_mechanism_controllers/TrajectoryCancel.h>
+#include <experimental_controllers/TrajectoryStart.h>
+#include <experimental_controllers/TrajectoryQuery.h>
+#include <experimental_controllers/TrajectoryCancel.h>
 
 #include <trajectory/trajectory.h>
 
-#include <pr2_mechanism_controllers/ControllerState.h>
+#include <experimental_controllers/ControllerState.h>
 #include <realtime_tools/realtime_publisher.h>
 #include <std_msgs/String.h>
 
@@ -108,7 +101,7 @@ namespace controller
      */
     void setTrajectoryCmd(const std::vector<trajectory::Trajectory::TPoint>& joint_trajectory);
 
-    void getJointPosCmd(pr2_mechanism_controllers::JointPosCmd & cmd) const;
+    void getJointPosCmd(experimental_controllers::JointPosCmd & cmd) const;
 
     /*!
      * \brief Issues commands to the joint. Should be called at regular intervals
@@ -166,7 +159,7 @@ namespace controller
 
     std::vector<double> goal_reached_threshold_;
 
-    realtime_tools::RealtimePublisher <pr2_mechanism_controllers::ControllerState>* controller_state_publisher_ ;  //!< Publishes controller information
+    realtime_tools::RealtimePublisher <experimental_controllers::ControllerState>* controller_state_publisher_ ;  //!< Publishes controller information
 
 
     double max_update_time_;
@@ -211,17 +204,17 @@ namespace controller
      * @param resp the response, contains a JointPosCmd message with the goal of the controller
      * @return
      */
-    bool getJointPosCmd(pr2_mechanism_controllers::GetJointPosCmd::Request &req,
-                        pr2_mechanism_controllers::GetJointPosCmd::Response &resp);
+    bool getJointPosCmd(experimental_controllers::GetJointPosCmd::Request &req,
+                        experimental_controllers::GetJointPosCmd::Response &resp);
 
-    bool setJointTrajSrv(pr2_mechanism_controllers::TrajectoryStart::Request &req,
-                         pr2_mechanism_controllers::TrajectoryStart::Response &resp);
+    bool setJointTrajSrv(experimental_controllers::TrajectoryStart::Request &req,
+                         experimental_controllers::TrajectoryStart::Response &resp);
 
-    bool queryJointTrajSrv(pr2_mechanism_controllers::TrajectoryQuery::Request &req,
-                           pr2_mechanism_controllers::TrajectoryQuery::Response &resp);
+    bool queryJointTrajSrv(experimental_controllers::TrajectoryQuery::Request &req,
+                           experimental_controllers::TrajectoryQuery::Response &resp);
 
-    bool cancelJointTrajSrv(pr2_mechanism_controllers::TrajectoryCancel::Request &req,
-                            pr2_mechanism_controllers::TrajectoryCancel::Response &resp);
+    bool cancelJointTrajSrv(experimental_controllers::TrajectoryCancel::Request &req,
+                            experimental_controllers::TrajectoryCancel::Response &resp);
 
     void deleteTrajectoryFromQueue(int id);
 
@@ -246,7 +239,7 @@ namespace controller
 
     manipulation_msgs::JointTraj traj_msg_;
 
-    pr2_mechanism_controllers::JointPosCmd msg_;   //The message used by the ROS callback
+    experimental_controllers::JointPosCmd msg_;   //The message used by the ROS callback
     ArmTrajectoryController *c_;
 
     /*!

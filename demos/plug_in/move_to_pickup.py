@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import roslib
-roslib.load_manifest('pr2_mechanism_controllers')
+roslib.load_manifest('experimental_controllers')
 roslib.load_manifest('mechanism_control')
 roslib.load_manifest('mechanism_bringup')
 import numpy
@@ -12,7 +12,7 @@ from geometry_msgs.msg import Point, PoseStamped
 from mechanism_msgs.msg import JointTraj, JointTrajPoint
 from mechanism_control import mechanism
 from robot_mechanism_controllers.srv import *
-from pr2_mechanism_controllers.srv import *
+from experimental_controllers.srv import *
 from std_msgs.msg import *
 from robot_srvs.srv import *
 from deprecated_srvs.srv import *

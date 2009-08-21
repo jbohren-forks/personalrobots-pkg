@@ -159,7 +159,7 @@ void JointTrajectoryController::initializePublishers()
 {
   if (controller_state_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
     delete controller_state_publisher_ ;
-  controller_state_publisher_ = new realtime_tools::RealtimePublisher <pr2_mechanism_controllers::ControllerState> (prefix_+"controller_state", 1) ;
+  controller_state_publisher_ = new realtime_tools::RealtimePublisher <experimental_controllers::ControllerState> (prefix_+"controller_state", 1) ;
 
   if (diagnostics_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
     delete diagnostics_publisher_ ;
@@ -725,8 +725,8 @@ void JointTrajectoryController::TrajectoryReceivedOnTopic()
 }
 
 
-bool JointTrajectoryController::setJointTrajSrv(pr2_mechanism_controllers::TrajectoryStart::Request &req,
-                                                pr2_mechanism_controllers::TrajectoryStart::Response &resp)
+bool JointTrajectoryController::setJointTrajSrv(experimental_controllers::TrajectoryStart::Request &req,
+                                                experimental_controllers::TrajectoryStart::Response &resp)
 {
   addTrajectoryToQueue(req.traj, request_trajectory_id_);
   last_traj_req_time_ = current_time_;
@@ -752,8 +752,8 @@ bool JointTrajectoryController::setJointTrajSrv(pr2_mechanism_controllers::Traje
   return true;
 }
 
-bool JointTrajectoryController::queryJointTrajSrv(pr2_mechanism_controllers::TrajectoryQuery::Request &req,
-                                                  pr2_mechanism_controllers::TrajectoryQuery::Response &resp)
+bool JointTrajectoryController::queryJointTrajSrv(experimental_controllers::TrajectoryQuery::Request &req,
+                                                  experimental_controllers::TrajectoryQuery::Response &resp)
 {
   resp.set_jointnames_size(num_joints_);
   resp.set_jointpositions_size(num_joints_);
@@ -763,7 +763,7 @@ bool JointTrajectoryController::queryJointTrajSrv(pr2_mechanism_controllers::Tra
     resp.jointpositions[i] = current_joint_position_[i];
     ROS_DEBUG("Joint name: %s",joint_name_[i].c_str());
   }
-  if(req.trajectoryid >= (int)joint_trajectory_status_.size() || req.trajectoryid == pr2_mechanism_controllers::TrajectoryQuery::Request::Query_Joint_Names)
+  if(req.trajectoryid >= (int)joint_trajectory_status_.size() || req.trajectoryid == experimental_controllers::TrajectoryQuery::Request::Query_Joint_Names)
   {
     resp.trajectorytime = 0.0;
     resp.done = JointTrajectoryController::DOES_NOT_EXIST;
@@ -789,8 +789,8 @@ bool JointTrajectoryController::queryJointTrajSrv(pr2_mechanism_controllers::Tra
   return true;
 }
 
-bool JointTrajectoryController::cancelJointTrajSrv(pr2_mechanism_controllers::TrajectoryCancel::Request &req,
-                                                   pr2_mechanism_controllers::TrajectoryCancel::Response &resp)
+bool JointTrajectoryController::cancelJointTrajSrv(experimental_controllers::TrajectoryCancel::Request &req,
+                                                   experimental_controllers::TrajectoryCancel::Response &resp)
 {
   int status = JointTrajectoryController::NUM_STATUS;
   std::vector<trajectory::Trajectory::TPoint> trajectory_points_vector;
