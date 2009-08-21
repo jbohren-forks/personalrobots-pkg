@@ -19,7 +19,7 @@ rosbuild_add_executable(test_robot_pose_ekf
 rosbuild_link_boost(test_robot_pose_ekf thread)
 rosbuild_add_gtest_build_flags(test_robot_pose_ekf)
 
-rosbuild_add_rostest_future(${CMAKE_CURRENT_SOURCE_DIR}/test/test_robot_pose_ekf.launch)
+rosbuild_add_rostest(${CMAKE_CURRENT_SOURCE_DIR}/test/test_robot_pose_ekf.launch)
 
 # Download needed data file
 rosbuild_download_test_data(http://pr.willowgarage.com/data/robot_pose_ekf/ekf_test.bag test/ekf_test.bag)
