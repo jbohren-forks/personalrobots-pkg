@@ -19,7 +19,7 @@ MultiChannelMeanFilterDouble5:
 TwoFilters:
   -
     name: median_test_unique
-    type: MultiChannelMedianFilterFloat
+    type: MultiChannelMedianFilterDouble
     params: {number_of_observations: 5}
   - 
     name: median_test2

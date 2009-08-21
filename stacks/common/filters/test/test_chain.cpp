@@ -87,12 +87,12 @@ TEST(MultiChannelFilterChain, configuring){
 }
 TEST(FilterChain, configuring){
   double epsilon = 1e-9;
-  filters::FilterChain<double> chain("double");
+  filters::FilterChain<float> chain("float");
   
   EXPECT_TRUE(chain.configure("MeanFilterFloat5"));
  
-  double v1 = 1;
-  double v1a = 9;
+  float v1 = 1;
+  float v1a = 9;
 
   EXPECT_TRUE(chain.update(v1, v1a));
 
