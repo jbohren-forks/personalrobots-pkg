@@ -243,7 +243,13 @@ bool MechanismControl::spawnController(const std::string& name)
   if (c_node.getParam("type", type))
   {
     ROS_DEBUG("Constructing controller '%s' of type '%s'", name.c_str(), type.c_str());
-    c = controller_loader_.createClassInstance(type, true);
+    try {
+      c = controller_loader_.createClassInstance(type, true);
+    }
+    catch (const std::runtime_error &ex)
+    {
+      ROS_ERROR("Could not load class %s: %s", type.c_str(), ex.what());
+    }
   }
 
   // checks if controller was constructed
