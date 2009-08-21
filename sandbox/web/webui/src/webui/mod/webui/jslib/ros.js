@@ -20,6 +20,23 @@ function clearSelection() {
 }
 
 // *******************************************************
+function getDataFromServer(id, url, callback) { 
+  var oScript = document.getElementById(id); 
+  var head = document.getElementsByTagName("head").item(0); 
+  if (oScript) { 
+    // Destory object 
+    head.removeChild(oScript); 
+  }
+  // Create object 
+  oScript = document.createElement("script"); 
+  oScript.setAttribute("type","text/javascript");
+  oScript.setAttribute("charset","utf-8");
+  oScript.setAttribute("src",url)
+  oScript.setAttribute("id",id); 
+  head.appendChild(oScript); 
+} 
+
+// *******************************************************
 
 var MessagePump = Class.create({
  initialize: function(urlprefix) {
@@ -45,8 +62,18 @@ var MessagePump = Class.create({
    }
   },
 
+ receive: function(json_result) {
+   try {
+     this.evalMessages(json_result);
+   } catch (e) {
+     ros_debug("Error with evalMessages.");
+   }
+   this.lastTime = json_result.since;
+   this.pump(); 
+ },
+      
  evalMessages: function(json_result) {
-      // ros_debug("evalMessages()");
+      //       ros_debug("evalMessages()");
 
   for(var i=0; i<json_result.msgs.length; i++) {
     var msgEnv = json_result.msgs[i];
@@ -92,17 +119,32 @@ var MessagePump = Class.create({
     var urlprefix = this.urlprefix;
     this.topicListeners.each(function(pair) {
        var uri = urlprefix + "/subscribe";
-       new Ajax.Request(uri, {parameters: {topic:pair.key}, method: "get"});
+       //       new Ajax.Request(uri, {parameters: {topic:pair.key}, method: "get"});
+       uri = uri + "?" + "topic=" + pair.key;
+       //       getDataFromServer("_ros_subscribe", uri);
     });
   },
 
   service_call: function(service_name, parameterList) {
     var parameters = {args: parameterList};
 
-    new Ajax.Request(this.urlprefix + "/service/" + service_name, {parameters: parameters, method: 'get'});
+    var uri = this.urlprefix + "/service/" + service_name;
+    //new Ajax.Request(uri, {parameters: parameters, method: 'get'});
+    uri = uri + "?callback=gPump.receive_service&args=" + parameterList;
+    getDataFromServer("_ros_service_pump", uri);
+  },
+  receive_server: function(msg) {
+    alert('receive_server');
   },
 
   pump: function() {
+      var uri = this.urlprefix + "/receive?callback=gPump.receive&since=" + this.lastTime;
+      this.topicListeners.each(function(pair) {uri = uri + "&topic=" + pair.key; });
+
+      getDataFromServer("_ros_pump", uri);
+    },
+
+  pump_old: function() {
     var uri = this.urlprefix + "/receive?since=" + this.lastTime;
     this.topicListeners.each(function(pair) {
       uri = uri + "&topic=" + pair.key;
@@ -133,7 +175,7 @@ var gPump = null;
 
 function ros_handleOnLoad(prefix) 
 {
-  gPump = new MessagePump(prefix);
+  gPump = new MessagePump("http://" + window.location.hostname + ":8080" + prefix);
   gPump.setupWidgets();
   gPump.pump();
 }
