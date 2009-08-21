@@ -153,7 +153,8 @@ void setupGoal(const std::vector<std::string> &names, move_arm::MoveArmGoal &goa
     goal.contacts[0].links.push_back("r_gripper_r_finger_link");
     goal.contacts[0].links.push_back("r_gripper_l_finger_tip_link");
     goal.contacts[0].links.push_back("r_gripper_r_finger_tip_link");
-    //    goal.contacts[0].links.push_back("r_gripper_palm_link");
+    goal.contacts[0].links.push_back("r_gripper_palm_link");
+    goal.contacts[0].links.push_back("r_wrist_roll_link");
     goal.contacts[0].depth = 0.04;
     goal.contacts[0].bound.type = mapping_msgs::Object::SPHERE;
     goal.contacts[0].bound.dimensions.push_back(0.5);
@@ -208,14 +209,15 @@ void setupGoalEEf(const std::string &link, const std::vector<double> &pz, move_a
     goal.contacts[0].links.push_back("r_gripper_r_finger_link");
     goal.contacts[0].links.push_back("r_gripper_l_finger_tip_link");
     goal.contacts[0].links.push_back("r_gripper_r_finger_tip_link");
-    //    goal.contacts[0].links.push_back("r_gripper_palm_link");
+
     goal.contacts[0].depth = 0.04;
     goal.contacts[0].bound.type = mapping_msgs::Object::SPHERE;
     goal.contacts[0].bound.dimensions.push_back(0.3);
     goal.contacts[0].pose = goal.goal_constraints.pose_constraint[0].pose;
 
     goal.contacts[1].links.push_back("r_gripper_palm_link");
-    goal.contacts[1].depth = 0.01;
+    goal.contacts[1].links.push_back("r_wrist_roll_link");
+    goal.contacts[1].depth = 0.02;
     goal.contacts[1].bound.type = mapping_msgs::Object::SPHERE;
     goal.contacts[1].bound.dimensions.push_back(0.2);
     goal.contacts[1].pose = goal.goal_constraints.pose_constraint[0].pose;
@@ -428,8 +430,14 @@ int main(int argc, char **argv)
 	    pubAttach.publish(ao);
 	}
 	else
-	if (cmd == "att1")
+	if (cmd.substr(0, 5) == "att1 " && cmd.length() > 5)
 	{
+	    std::stringstream ss(cmd.substr(5));
+	    double rad;
+	    ss >> rad;
+	    double len;
+	    ss >> len;
+
 	    mapping_msgs::AttachedObject ao;
 	    ao.header.frame_id = "r_wrist_roll_link";
 	    ao.header.stamp = ros::Time::now();
@@ -437,8 +445,8 @@ int main(int argc, char **argv)
 
 	    mapping_msgs::Object object;
 	    object.type = mapping_msgs::Object::CYLINDER;
-	    object.dimensions.push_back(0.02); // 4 cm diam
-	    object.dimensions.push_back(1.3); // 48 inch
+	    object.dimensions.push_back(rad); // 4 cm diam
+	    object.dimensions.push_back(len); // 48 inch
 
 	    // identity transform should place the object in the center
 	    geometry_msgs::Pose pose;
@@ -530,6 +538,49 @@ int main(int argc, char **argv)
 
 		experimental_controllers::TrajectoryStart::Request  send_traj_start_req;
 		experimental_controllers::TrajectoryStart::Response send_traj_start_res;
+		send_traj_start_req.traj = traj;
+		send_traj_start_req.hastiming = 0;
+		send_traj_start_req.requesttiming = 0;
+		if (clientStart.call(send_traj_start_req, send_traj_start_res))
+		    std::cout << "Success!" << std::endl;
+		else
+		    std::cout << "Failure!" << std::endl;
+	    }
+	    else
+	        std::cerr << "Unable to parse value " << ss.str() << std::endl;
+	}
+	else
+	if (cmd.length() > 3 && cmd.substr(0, 3) == "up ")
+	{
+	    std::stringstream ss(cmd.substr(3));
+	    double up = 0.0;
+	    if (ss.good() && !ss.eof())
+	    {
+		ss >> up;
+		
+		manipulation_msgs::JointTraj traj;	    
+		traj.names = names;
+		traj.points.resize(2);
+		traj.points[0].time = 0;
+		traj.points[1].time = 3;
+		
+		km.getRobotState()->copyParamsJoints(traj.points[0].positions, names);
+
+
+		move_arm::MoveArmGoal temp;
+		setConfig(km.getRobotState(), names, temp);
+		btTransform p = effPosition(km, temp);
+		
+		planning_models::StateParams sp(*km.getRobotState());
+		getIK(false, nh, km, temp, sp, names, p.getOrigin().x(), p.getOrigin().y(), p.getOrigin().z() + up);
+		
+		sp.copyParamsJoints(traj.points[1].positions, names);
+
+		std::cout << "Executing upward path for " << up << "m" << std::endl;
+		ros::ServiceClient clientStart = nh.serviceClient<pr2_mechanism_controllers::TrajectoryStart>("/r_arm_joint_waypoint_controller/TrajectoryStart");
+		
+		pr2_mechanism_controllers::TrajectoryStart::Request  send_traj_start_req;
+		pr2_mechanism_controllers::TrajectoryStart::Response send_traj_start_res;
 		send_traj_start_req.traj = traj;
 		send_traj_start_req.hastiming = 0;
 		send_traj_start_req.requesttiming = 0;
