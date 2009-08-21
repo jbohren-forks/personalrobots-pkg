@@ -42,6 +42,8 @@
 #include <chomp_motion_planner/chomp_robot_model.h>
 #include <chomp_motion_planner/chomp_parameters.h>
 #include <chomp_motion_planner/chomp_collision_space.h>
+#include <map>
+#include <string>
 
 namespace chomp
 {
@@ -91,6 +93,7 @@ private:
   double trajectory_duration_;                          /**< Default duration of the planned motion */
   double trajectory_discretization_;                    /**< Default discretization of the planned motion */
   ros::Publisher vis_marker_array_publisher_;           /**< Publisher for marker arrays */
+  std::map<std::string, double> joint_velocity_limits_; /**< Map of joints to velocity limits */
 
 };
 

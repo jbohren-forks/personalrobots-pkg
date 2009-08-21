@@ -50,9 +50,9 @@ static const int DIFF_RULE_LENGTH = 7;
 
 // the differentiation rules (centered at the center)
 static const double DIFF_RULES[3][DIFF_RULE_LENGTH] = {
-    {0, 0, -2/6.0, -3/6.0, 6/6.0, -1/6.0, 0},
-    {0, -1/12.0, 16/12.0, -30/12.0, 16/12.0, -1/12.0, 0},
-    {0, 1/12.0, -17/12.0, 46/12.0, -46/12.0, 17/12.0, -1/12.0}
+    {0, 0, -2/6.0, -3/6.0, 6/6.0, -1/6.0, 0},                   // velocity
+    {0, -1/12.0, 16/12.0, -30/12.0, 16/12.0, -1/12.0, 0},       // acceleration
+    {0, 1/12.0, -17/12.0, 46/12.0, -46/12.0, 17/12.0, -1/12.0}  // jerk
 };
 
 inline void debugJointArray(KDL::JntArray& joint_array)
@@ -64,23 +64,13 @@ inline void debugJointArray(KDL::JntArray& joint_array)
   std::cout << std::endl;
 }
 
-/*template<typename KDLType, typename EigenType>
-void kdlToEigen(KDLType& kdl_t, Eigen::Map<EigenType>& eigen_t, int rows, int cols)
-{
-  eigen_t = Eigen::Map<EigenType>(kdl_t.data, rows, cols);
-}*/
-
-
 template<typename KDLType, typename EigenType>
 void kdlVecToEigenVec(std::vector<KDLType>& kdl_v, std::vector<Eigen::Map<EigenType> >& eigen_v, int rows, int cols)
 {
   int size = kdl_v.size();
-  //typename Eigen::Map<EigenType>::Scalar dummy[rows*cols];
-  //eigen_v.resize(size, Eigen::Map<EigenType>(dummy, rows, cols));
   eigen_v.clear();
   for (int i=0; i<size; i++)
   {
-    //kdlToEigen(kdl_v[i], eigen_v[i], rows, cols);
     eigen_v.push_back(Eigen::Map<EigenType>(kdl_v[i].data, rows, cols));
   }
 }

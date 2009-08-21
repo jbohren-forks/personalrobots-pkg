@@ -156,11 +156,19 @@ bool ChompPlannerNode::planKinematicPath(motion_planning_msgs::GetMotionPlan::Re
   res.approximate = 0;
   res.path.start_state = req.start_state;
 
+  std::vector<double> velocity_limits(group->num_joints_, std::numeric_limits<double>::max());
+
   // fill in joint names:
   res.path.names.resize(group->num_joints_);
   for (int i=0; i<group->num_joints_; i++)
   {
     res.path.names[i] = group->chomp_joints_[i].joint_name_;
+    // try to retrieve the joint limits:
+    if (joint_velocity_limits_.find(res.path.names[i])==joint_velocity_limits_.end())
+    {
+      node_handle_.param("~joint_velocity_limits/"+res.path.names[i], joint_velocity_limits_[res.path.names[i]], std::numeric_limits<double>::max());
+    }
+    velocity_limits[i] = joint_velocity_limits_[res.path.names[i]];
   }
 
   res.path.header = req.start_state[0].header; // @TODO this is probably a hack
@@ -170,21 +178,34 @@ bool ChompPlannerNode::planKinematicPath(motion_planning_msgs::GetMotionPlan::Re
   res.path.states.resize(trajectory.getNumPoints());
   for (int i=0; i<=goal_index; i++)
   {
-    res.path.times[i] = i*trajectory.getDiscretization();
     res.path.states[i].vals.resize(group->num_joints_);
     for (int j=0; j<group->num_joints_; j++)
     {
       int kdl_joint_index = chomp_robot_model_.urdfNameToKdlNumber(res.path.names[j]);
       res.path.states[i].vals[j] = trajectory(i, kdl_joint_index);
     }
+    if (i==0)
+      res.path.times[i] = 0;
+    else
+    {
+      double duration = trajectory.getDiscretization();
+      // check with all the joints if this duration is ok, else push it up
+      for (int j=0; j<group->num_joints_; j++)
+      {
+        double d = fabs(res.path.states[i].vals[j] - res.path.states[i-1].vals[j]) / velocity_limits[j];
+        if (d > duration)
+          duration = d;
+      }
+      res.path.times[i] = res.path.times[i-1] + duration;
+    }
   }
 
-  ROS_INFO("Serviced planning request in %f wall-seconds.", (ros::WallTime::now() - start_time).toSec());
+  ROS_INFO("Serviced planning request in %f wall-seconds, trajectory duration is %f", (ros::WallTime::now() - start_time).toSec(), res.path.times[goal_index]);
   return true;
 }
 
 
-}
+} // namespace chomp
 
 int main(int argc, char** argv)
 {

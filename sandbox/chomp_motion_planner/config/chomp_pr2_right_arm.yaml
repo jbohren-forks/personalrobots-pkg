@@ -28,6 +28,16 @@ joint_costs:
   r_wrist_flex_joint: 0.2
   r_wrist_roll_joint: 0.2
 
+joint_velocity_limits:
+  r_shoulder_pan_joint: 0.5
+  r_shoulder_lift_joint: 0.5
+  r_upper_arm_roll_joint: 0.7
+  r_elbow_flex_joint: 0.8
+  r_forearm_roll_joint: 1.0
+  r_wrist_flex_joint: 1.0
+  r_wrist_roll_joint: 1.0
+
+
 reference_frame: base_link
 
 collision_space:
