@@ -4,9 +4,9 @@
 <td width=1%><img src="templates/images/toolbar/grid-blue-split.gif"></td>
 <td width=90%>Core Status: <font color=green>Running</td>
 <td width=1%><img src="templates/images/toolbar/grid-blue-split.gif"></td>
-<td width=1%><nobr>Circuits:</td>
+<td width=1%><nobr><div objtype=CircuitMonitor topic="/power_board_state"/></td>
 <td width=1%><img src="templates/images/toolbar/grid-blue-split.gif"></td>
-<td width=1%><nobr><div objtype=BatteryMonitor topic="/battery_state" key=energy_remaining key2=energy_capacity></td>
+<td width=1%><nobr><div objtype=BatteryMonitor topic="/battery_state"/></td>
 <td width=1%><img src="templates/images/toolbar/grid-blue-split.gif"></td>
 <?cs if:CGI.Login ?>
 <td align=right><a href="<?cs var:CGI.ScriptName ?>/login/signin.py?signout=1" class=tablink>Logout</a>(<?cs var:CGI.Login ?>)</td>

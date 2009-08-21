@@ -2,9 +2,6 @@ var BatteryMonitor = Class.create({
   initialize: function(domobj) {
     this.domobj = domobj;
     this.topics = [domobj.getAttribute("topic")];
-
-    this.key = domobj.getAttribute("key");
-    this.key2 = domobj.getAttribute("key2");
   },
 
   draw: function() {
@@ -47,8 +44,8 @@ var BatteryMonitor = Class.create({
   },
 
   receive: function(msg) {
-    if(msg[this.key] != null) {
-      this.percent = Math.round(100. * parseFloat(msg[this.key]) / parseFloat(msg[this.key2]));
+    if(msg['energy_remaining'] != null) {
+      this.percent = Math.round(100. * parseFloat(msg['energy_remaining']) / parseFloat(msg['energy_capacity']));
       if (this.percent > 100) this.percent = 100;
       else if (this.percent < 0) this.percent = 0;
       this.draw();
@@ -58,5 +55,39 @@ var BatteryMonitor = Class.create({
 
 gRosClasses["BatteryMonitor"] = function(dom){
   return new BatteryMonitor(dom);
+}
+
+var CircuitMonitor = Class.create({
+  initialize: function(domobj) {
+    this.domobj = domobj;
+    this.topics = [domobj.getAttribute("topic")];
+  },
+
+  init: function() {
+    var html = '<span style="font-size:11px;position:relative;top:-3">Circuits:';
+    html += '</span>';
+    this.domobj.innerHTML = html;
+  },
+
+  receive: function(msg) {
+    var html = '<span style="font-size:11px;position:relative;top:-3">Circuits:</span><span>';
+    var states = msg['circuit_state'];
+    for (var i = 0; i < 3; ++i) {
+      var src;
+      if (states[i] == 3) // Running
+        src = 'green_ball.png';
+      else if (states[i] == 1) // Standby
+        src = 'orange_ball.png';
+      else
+        src = 'red_ball.png';
+      html += '<img src="templates/images/toolbar/' + src + '"> ';
+    }
+    html += '</span>';
+    this.domobj.innerHTML = html;
+  }
+});
+
+gRosClasses["CircuitMonitor"] = function(dom){
+  return new CircuitMonitor(dom);
 }
 
