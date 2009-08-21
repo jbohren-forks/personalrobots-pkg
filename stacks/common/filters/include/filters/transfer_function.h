@@ -125,14 +125,14 @@ bool TransferFunctionFilter<T>::configure()
 {
   std::vector<double> temp_default;
   // Parse a and b into a std::vector<double>.
-  if (!FilterBase<T>::getDoubleVectorParam("a", a_, temp_default))
+  if (!FilterBase<T>::getParam("a", a_))
   {
     ROS_ERROR("TransferFunctionFilter, \"%s\", params has no attribute a.", FilterBase<T>::getName().c_str());
     return false;
   }///\todo check length
 
 
-  if (!FilterBase<T>::getDoubleVectorParam("b", b_, temp_default))
+  if (!FilterBase<T>::getParam("b", b_))
   {
     ROS_ERROR("TransferFunctionFilter, \"%s\", params has no attribute b.", FilterBase<T>::getName().c_str());
     return false;

@@ -85,7 +85,7 @@ template <typename T>
 bool MeanFilter<T>::configure()
 {
   
-  if (!FilterBase<T>::getUIntParam("number_of_observations", number_of_observations_, 0))
+  if (!FilterBase<T>::getParam("number_of_observations", number_of_observations_))
   {
     ROS_ERROR("MeanFilter did not find param number_of_observations");
     return false;
@@ -173,7 +173,7 @@ template <typename T>
 bool MultiChannelMeanFilter<T>::configure()
 {
   
-  if (!FilterBase<T>::getUIntParam("number_of_observations", number_of_observations_, 0))
+  if (!FilterBase<T>::getParam("number_of_observations", number_of_observations_))
   {
     ROS_ERROR("MultiChannelMeanFilter did not find param number_of_observations");
     return false;
