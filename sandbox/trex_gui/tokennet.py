@@ -35,7 +35,7 @@ def main():
 
   # Create token network graph generator
   token_network = TokenNetwork()
-  db_reader_window.register_listener(token_network.set_assembly)
+  db_reader_window.register_listener(token_network.set_db_cores)
 
   # Create token network window
   token_network_window = TokenNetworkWindow(token_network)

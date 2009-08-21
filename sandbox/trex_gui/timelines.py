@@ -35,7 +35,7 @@ def main():
 
   # Create token network graph generator
   timeline_window = TimelineWindow()
-  db_reader_window.register_listener(timeline_window.set_assemblies)
+  db_reader_window.register_listener(timeline_window.set_db_cores)
 
   ############################################################
 
@@ -50,9 +50,9 @@ def main():
   token_network_filter = TokenNetworkFilter(token_network)
   token_network_filter_window = TokenNetworkFilterWindow(token_network_filter)
 
-  def HilightInTokenNetwork(assembly,token):
+  def HilightInTokenNetwork(db_cores,token):
     # Set assembly in token network
-    token_network.set_assembly({assembly.reactor_name : assembly},assembly.reactor_name)
+    token_network.set_db_cores({db_core.reactor_name : db_core},db_core.reactor_name)
     
     # Set the filter for the token key
     token_network_filter_window.filter_entry.set_text(str(token.key))

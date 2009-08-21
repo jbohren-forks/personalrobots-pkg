@@ -16,6 +16,7 @@ sys.path.insert(0, os.path.abspath("./ext"))
 import xdot
 
 # TREX modules
+from db_core import DbCore
 from token_network import TokenNetwork
 
 ##############################################################################
@@ -128,11 +129,13 @@ class TestTokenNetworkWindow(unittest.TestCase,GtkTester):
     from assembly import construct_test_assembly
 
     # Create assembly
-    assembly = construct_test_assembly()
+    db_cores = {}
+    db_cores["test"] = DbCore()
+    db_cores["test"].assembly = construct_test_assembly()
 
     # Create token network
     token_network = TokenNetwork()
-    token_network.set_assembly(assembly)
+    token_network.set_db_cores(db_cores,"test")
     
     # Attach token network window to token network
     self.token_network_window.set_token_network(token_network)
@@ -144,7 +147,9 @@ class TestTokenNetworkWindow(unittest.TestCase,GtkTester):
     from assembly import Assembly,construct_test_assembly
 
     # Create assembly
-    assembly = construct_test_assembly()
+    db_cores = {}
+    db_cores["test"] = DbCore()
+    db_cores["test"].assembly = construct_test_assembly()
 
     # Create token network
     token_network = TokenNetwork()
@@ -155,17 +160,17 @@ class TestTokenNetworkWindow(unittest.TestCase,GtkTester):
     time.sleep(1)
 
     print "Updating assembly in token network..."
-    token_network.set_assembly(assembly)
+    token_network.set_db_cores(db_cores,"test")
     time.sleep(1)
 
     print "Changing a hilighted token..."
-    tok = assembly.tokens.values()[0]
+    tok = db_cores["test"].assembly.tokens.values()[0]
     token_network.hilight(tok,True)
     token_network.notify_listeners()
     time.sleep(1)
 
     print "Clearing assembly in token network..."
-    token_network.set_assembly(Assembly())
+    token_network.set_db_cores({},None)
     time.sleep(1)
 
 if __name__ == '__main__':

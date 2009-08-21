@@ -7,6 +7,7 @@ import threading, time
 import gtk, gtk.glade
 
 # TREX modules
+from db_core import DbCore
 from assembly import Assembly,Entity,Rule,Token,Slot,Variable
 from token_network import TokenNetwork
 from token_network_filter import TokenNetworkFilter
@@ -178,11 +179,13 @@ class TestTokenNetworkFilterWindow(unittest.TestCase,GtkTester):
     from assembly import construct_test_assembly
 
     # Create assembly
-    assembly = construct_test_assembly()
+    db_cores = {}
+    db_cores["test"] = DbCore()
+    db_cores["test"].assembly = construct_test_assembly()
 
     # Create token network
     token_network = TokenNetwork()
-    token_network.set_assembly(assembly)
+    token_network.set_db_cores(db_cores,"test")
 
     # Create token network filter
     token_network_filter = TokenNetworkFilter(token_network)
