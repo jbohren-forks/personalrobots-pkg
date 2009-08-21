@@ -2,12 +2,9 @@ dallas_controller:
  type: DallasController
  kp_caster_steer: 10.0
  joints:
-#   caster: bl_caster_rotation_joint
-#   wheel_l: bl_caster_l_wheel_joint
-#   wheel_r: bl_caster_r_wheel_joint
-   caster: bl_caster_l_wheel_joint
-   wheel_l: bl_caster_r_wheel_joint
-   wheel_r: bl_caster_rotation_joint
+   caster: bl_caster_rotation_joint
+   wheel_l: bl_caster_l_wheel_joint
+   wheel_r: bl_caster_r_wheel_joint
  caster_pid:
    p: 3
  wheel_pid:

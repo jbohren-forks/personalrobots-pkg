@@ -1,7 +1,9 @@
 <launch>
   
   <machine name="realtime_root" user="root" address="texas" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" default="never"/>
-  <machine name="realtime" address="texas" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" default="true"/>
+  <machine name="realtime" address="texas" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" default="true">
+    <env name="PATH" value="$(env PATH):$(env ROS_ROOT)/bin" /> <!-- HACK.  Depends on ROS bug #1586.  Remove when closed -->
+  </machine>
 
   <!-- Uses special defs file for Alpha 2.0 hardware on PRE -->
   <param name="robot_description" command="$(find xacro)/xacro.py '$(find texas)/texas.xml'" />
