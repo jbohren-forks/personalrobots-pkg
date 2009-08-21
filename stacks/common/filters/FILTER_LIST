@@ -1,4 +1,4 @@
-robot_self_filter
+robot_self_filter E*
 3dnav_pr2
 iir_filters
 trex_pr2_writing_test
