@@ -29,6 +29,7 @@
   <depend package="eigen" />
   <depend package="filters" />
   <depend package="manipulation_srvs" />
+  <depend package="deprecated_srvs" />
   <depend package="robot_mechanism_controllers" />
   <depend package="pr2_mechanism_controllers" />
   <depend package="geometry_msgs" />
