@@ -12,7 +12,7 @@
   <!-- convert tilt laser scan to pointcloud -->
   <node machine="three" pkg="laser_scan" type="scan_to_cloud" output="screen" name="scan_to_cloud_tilt_laser">
     <param name="scan_topic" type="string" value="tilt_scan" />
-    <param name="scan_filters" textfile="$(find laser_scan)/default_scan_shadows.xml" />
+    <rosparam command="load" ns="scan_filters" file="$(find laser_scan)/default_scan_shadows.yaml" />
     <param name="cloud_topic" type="string" value="tilt_scan_cloud" />
   </node>
 
