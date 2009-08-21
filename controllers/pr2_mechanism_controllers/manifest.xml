@@ -5,31 +5,35 @@
   <author>Sachin Chita, John Hsu, David Li, Jimmy Sastra, Melonee Wise</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
-  <depend package="roscpp" />
-  <depend package="controller_interface" />
-  <depend package="mechanism_model" />
-  <depend package="wg_robot_description_parser" />
-  <depend package="misc_utils" />
-  <depend package="realtime_tools" />
-  <depend package="robot_mechanism_controllers" />
-  <depend package="rospy" />
+
+  <!-- ROS Interfaces -->
   <depend package="std_msgs" />
-  <depend package="pluginlib" />
+  <depend package="geometry_msgs" />
   <depend package="mechanism_msgs" />
   <depend package="nav_msgs" />
   <depend package="pr2_msgs" />
   <depend package="visualization_msgs" />
+  <depend package="diagnostic_msgs" />
+
+  <!-- Plugins -->
+  <depend package="controller_interface" />
+  
+  <depend package="roscpp" />
+  <depend package="mechanism_model" />
+  <depend package="wg_robot_description_parser" />
+  <depend package="realtime_tools" />
+  <depend package="robot_mechanism_controllers" />
+  <depend package="rospy" />
+  <depend package="pluginlib" />
   <depend package="robot_actions" />
   <depend package="rosconsole" />
   <depend package="trajectory" />
   <depend package="angles" />
   <depend package="control_toolbox" />
   <depend package="filters" />
-  <depend package="geometry_msgs" />
-  <depend package="manipulation_msgs" />
   <depend package="diagnostic_updater" />
-  <depend package="diagnostic_msgs" />
   <depend package="mechanism_control" />
+  
   <url>http://pr.willowgarage.com</url>
   <repository>http://pr.willowgarage.com/repos</repository>
   <export>

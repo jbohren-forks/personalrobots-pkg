@@ -196,48 +196,4 @@ void CasterController::update()
   wheel_r_vel_.update();
 }
 
-
-
-ROS_REGISTER_CONTROLLER(CasterControllerNode);
-
-CasterControllerNode::CasterControllerNode()
-{
-}
-
-CasterControllerNode::~CasterControllerNode()
-{
-}
-
-bool CasterControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
-{
-  ros::Node *node = ros::Node::instance();
-  assert(node);
-
-  std::string name = config->Attribute("name") ? config->Attribute("name") : "";
-  if (name == "")
-  {
-    fprintf(stderr, "Error: No name given for CasterControllerNode\n");
-    return false;
-  }
-
-  if (!c_.initXml(robot, config))
-    return false;
-
-  node->subscribe(name + "/steer_velocity", steer_velocity_msg_,
-                  &CasterControllerNode::setSteerVelocity, this, 2);
-  guard_steer_velocity_.set(name + "/steer_velocity");
-  node->subscribe(name + "/drive_velocity", drive_velocity_msg_,
-                  &CasterControllerNode::setDriveVelocity, this, 2);
-  guard_drive_velocity_.set(name + "/drive_velocity");
-
-  return true;
-}
-
-void CasterControllerNode::update()
-{
-  if (!c_.caster_->calibrated_)
-    return;
-  c_.update();
-}
-
 }

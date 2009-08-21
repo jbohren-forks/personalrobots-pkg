@@ -54,3 +54,5 @@ target_link_libraries(experimental_controllers ltdl)
 
 rospack_add_executable(test_trajectory_controller test/test_trajectory_srv.cpp)
 target_link_libraries(test_trajectory_controller experimental_controllers)
+
+rospack_add_executable(base_trajectory_controller src/base_trajectory_controller.cpp)

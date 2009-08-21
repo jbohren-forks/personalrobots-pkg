@@ -46,7 +46,6 @@ using namespace controller;
 
 PLUGINLIB_REGISTER_CLASS(CasterCalibrationController, CasterCalibrationController, Controller)
 PLUGINLIB_REGISTER_CLASS(CasterController, CasterController, Controller)
-PLUGINLIB_REGISTER_CLASS(CasterControllerNode, CasterControllerNode, Controller)
 PLUGINLIB_REGISTER_CLASS(GripperCalibrationController, GripperCalibrationController, Controller)
 PLUGINLIB_REGISTER_CLASS(GripperCalibrationControllerNode, GripperCalibrationControllerNode, Controller)
 PLUGINLIB_REGISTER_CLASS(HeadPositionController, HeadPositionController, Controller)
