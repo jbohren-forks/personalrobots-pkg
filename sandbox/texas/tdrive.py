@@ -65,7 +65,7 @@ def main():
     last_state = LastMessage('/joint_states', JointStates)
     tx_cmd = LastMessage('texas_cmd', TexasCmd)
 
-    pub_steer = rospy.Publisher("/caster/steer_velocity", Float64)
+    pub_steer = rospy.Publisher("/caster_bl/caster/set_command", Float64)
     pub_drive = rospy.Publisher("/caster/drive_velocity", Float64)
     pub_steer.publish(Float64(0.0))
     pub_drive.publish(Float64(0.0))
