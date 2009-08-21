@@ -50,16 +50,21 @@ def main():
   token_network_filter = TokenNetworkFilter(token_network)
   token_network_filter_window = TokenNetworkFilterWindow(token_network_filter)
 
-  def HilightInTokenNetwork(db_cores,token):
+  def SpawnPropertyWindow(db_core, token):
+    PropertyWindowFactory(db_core.assembly, db_core.assembly.tokens[token.key])
+
+  def HilightInTokenNetwork(db_core,token):
     # Set assembly in token network
     token_network.set_db_cores({db_core.reactor_name : db_core},db_core.reactor_name)
     
     # Set the filter for the token key
-    token_network_filter_window.filter_entry.set_text(str(token.key))
+    token_network_filter_window.filter_entry.set_text("^"+str(token.key)+"$")
     token_network_filter_window.rep_but.emit("clicked")
+    token_network_filter_window.use_regex_check.set_active(True)
+    token_network_filter_window.use_regex_check.emit("toggled")
 
   # Register context extensions
-  timeline_window.register_context_extension("View token properties...",PropertyWindowFactory)
+  timeline_window.register_context_extension("View token properties...",SpawnPropertyWindow)
   timeline_window.register_context_extension("Hilight in token network...",HilightInTokenNetwork)
 
   # Bring the db reader forward

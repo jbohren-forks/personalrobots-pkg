@@ -80,7 +80,7 @@ class DbReaderWindow():
     self.load_available_assembly_check.connect("toggled",self.on_change_load_settings)
 
     self.assembly_ticks_only = False
-    self.load_available_assemblies = False
+    self.load_available_assemblies = True
 
     # Spin up the reload thread used to track the latest file
     self.do_reload = False

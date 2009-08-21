@@ -294,6 +294,20 @@ class ReactorPanel():
 	insert_index_start = bisect.bisect_left(times, new_token.start[0])
 	insert_index_end = bisect.bisect_right(times, new_token.start[0])
 
+	# Get list of times
+	if insert_index_start != insert_index_end and insert_index_start < len(keys) and insert_index_end < len(keys):
+	  local_token_keys = keys[insert_index_start:insert_index_end]
+	  #print local_token_keys
+	  #local_end_times = self.all_tokens[local_token_keys]
+	  #print local_end_times
+	  #print "NEW TOKEN ENDING: %d [%s]" % (new_token.end[0],str(new_token))
+
+	  # Sort based on end time
+	  for index in range(insert_index_start,insert_index_end):
+	    #print self.all_tokens[keys[index]]
+	    if self.all_tokens[keys[index]].end[0] > new_token.end[0]:
+	      insert_index_start = insert_index_start + 1
+
 	# Insert token
 	if insert_index_start >= len(keys) or new_token.key not in keys[insert_index_start:insert_index_end]:
 	  keys.insert(insert_index_start,new_token.key)
@@ -510,7 +524,7 @@ class ReactorPanel():
 	  # A token is missing, re-sync to create a space for it
 	  timeline.earliest_start = earliest_start
 
-	#print "[%s, %s] earliest: %s (%s)" % (str(token.start[0]),str(token.end[0]), str(earliest_tick), label_str)
+	#print "[%s, %s] earliest: %s [%s]" % (str(token.start[0]),str(token.end[0]), str(earliest_tick), str(token))
 
 	# Calculate the token pixel width
 	# Get the width if this token were to be drawn between the latest point on this timeline, and the earliest point for all timelines

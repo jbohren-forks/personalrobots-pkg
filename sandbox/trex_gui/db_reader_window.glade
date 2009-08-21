@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.5 on Thu Aug 20 16:17:59 2009 -->
+<!--Generated with glade3 3.4.5 on Thu Aug 20 22:49:14 2009 -->
 <glade-interface>
   <widget class="GtkWindow" id="db_reader_window">
     <property name="window_position">GTK_WIN_POS_CENTER</property>
@@ -284,6 +284,7 @@
                             <property name="can_focus">True</property>
                             <property name="label" translatable="yes">Load full plan if available</property>
                             <property name="response_id">0</property>
+                            <property name="active">True</property>
                             <property name="draw_indicator">True</property>
                           </widget>
                         </child>
