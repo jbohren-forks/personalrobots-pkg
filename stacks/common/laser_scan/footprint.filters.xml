@@ -1,5 +1,5 @@
-<filters>
-  <filter type="LaserScanFootprintFilter" name="footprint_filter"> 
-    <params inscribed_radius="0.325" />
-  </filter>
-</filters>
+filters:
+- name: footprint_filter
+  type: LaserScanFootprintFilter
+  params:
+    inscribed_radius: 0.325

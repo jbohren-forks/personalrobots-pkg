@@ -1,10 +1,8 @@
-<filters>
-  <filter type="LaserMedianFilter" name="laser_median_test_5_from_file"> 
-    <filters>
-      <filter type="MultiChannelMedianFilterFloat" name="median_test_5_from_file"> 
-	<params number_of_observations="5"/>
-      </filter>
-    </filters>
-
-  </filter>
-</filters>
+filters:
+- type=LaserMedianFilter
+  name: laser_median_test_5_from_file
+  filters:
+    - name: median_test_5_from_file
+      type: MultiChannelMedianFilterFloat 
+      params:
+        number_of_observations: 5
