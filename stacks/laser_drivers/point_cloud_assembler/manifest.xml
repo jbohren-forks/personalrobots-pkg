@@ -12,7 +12,6 @@
   <depend package="laser_scan"/>
   <depend package="sensor_msgs"/>
   <depend package="tf"/>
-  <depend package="pr2_srvs"/>
   <depend package="pr2_msgs"/>
   # For Testing
   <depend package="rostest"/>

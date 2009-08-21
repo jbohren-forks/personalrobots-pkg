@@ -536,8 +536,8 @@ bool LaserScannerTrajControllerNode::init(mechanism::RobotState *robot,
 }
 
 
-bool LaserScannerTrajControllerNode::setPeriodicSrv(pr2_srvs::SetPeriodicCmd::Request &req,
-                                                    pr2_srvs::SetPeriodicCmd::Response &res)
+bool LaserScannerTrajControllerNode::setPeriodicSrv(pr2_msgs::SetPeriodicCmd::Request &req,
+                                                    pr2_msgs::SetPeriodicCmd::Response &res)
 {
   ROS_INFO("LaserScannerTrajControllerNode: set periodic command");
 
@@ -557,8 +557,8 @@ void LaserScannerTrajControllerNode::setPeriodicCmd()
   prev_profile_segment_ = -1 ;
 }
 
-bool LaserScannerTrajControllerNode::setTrajSrv(pr2_srvs::SetLaserTrajCmd::Request &req,
-                                                pr2_srvs::SetLaserTrajCmd::Response &res)
+bool LaserScannerTrajControllerNode::setTrajSrv(pr2_msgs::SetLaserTrajCmd::Request &req,
+                                                pr2_msgs::SetLaserTrajCmd::Response &res)
 {
   ROS_INFO("LaserScannerTrajControllerNode: set traj command");
 

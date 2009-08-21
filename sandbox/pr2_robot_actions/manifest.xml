@@ -11,7 +11,6 @@
  <depend package="geometry_msgs"/>
  <depend package="door_msgs"/>
  <depend package="pr2_msgs"/>
- <depend package="pr2_srvs"/>
  <depend package="plugs_msgs"/>
 
  <export>

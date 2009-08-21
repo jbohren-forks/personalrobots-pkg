@@ -37,7 +37,7 @@
 #include <robot_actions/action.h>
 #include <robot_actions/action_runner.h>
 #include <pr2_msgs/LaserTrajCmd.h>
-#include <pr2_srvs/SetLaserTrajCmd.h>
+#include <pr2_msgs/SetLaserTrajCmd.h>
 #include <pr2_robot_actions/SetLaserTiltState.h>
 #include <std_msgs/Empty.h>
 #include <robot_actions/NoArgumentsActionState.h>
@@ -57,8 +57,8 @@ namespace pr2_robot_actions {
       //first... set the hokuyo node to the desired frequency for navigation
       pr2_robot_actions::setHokuyoMode("tilt_hokuyo_node", "navigate");
 
-      pr2_srvs::SetLaserTrajCmd::Request req_laser;
-      pr2_srvs::SetLaserTrajCmd::Response res_laser;
+      pr2_msgs::SetLaserTrajCmd::Request req_laser;
+      pr2_msgs::SetLaserTrajCmd::Response res_laser;
       req_laser.command.profile = "linear";
       req_laser.command.max_rate = 5;
       req_laser.command.max_accel = 5;
