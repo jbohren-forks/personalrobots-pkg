@@ -259,11 +259,11 @@ class ROSWebHandler(BaseHTTPServer.BaseHTTPRequestHandler):
           return None
         return rwt
 
-    def _do_GET_topic(self, topics, since):
+    def _do_GET_topic(self, topics, since, callback=None):
         rwttopics = []
 
-        if "/topics" not in topics:
-          topics.append("/topics")
+#        if "/topics" not in topics:
+#          topics.append("/topics")
 
         for topic in topics:
           rwt = self.server.factory.get(topic)
@@ -312,7 +312,6 @@ class ROSWebHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         finally:
             self.server.factory.cond.release()
             
-        self.send_response(200)
         buf = cStringIO.StringIO()
         buf.write("{")
         buf.write('"since": %s,' % lastSince)
@@ -328,15 +327,10 @@ class ROSWebHandler(BaseHTTPServer.BaseHTTPRequestHandler):
           buf.write("}")
         buf.write(']')
         buf.write('}')
-
+          
         buf = buf.getvalue()
 
-        # serialize message to JSON
-        self.send_header('Content-Type', 'application/json')
-        self.send_header('Content-Length', str(len(buf)))
-        self.end_headers()
-        
-        self.wfile.write(buf)
+        self.send_success(buf, callback)
 
     def _connect_to(self, netloc, soc):
         i = netloc.find(':')
@@ -354,11 +348,16 @@ class ROSWebHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             return 0
         return 1
 
-    def send_success(self, buf = "{}"):
+    def send_success(self, buf = "{}", callback = None):
       self.send_response(200)
-      self.send_header('Content-Type', 'application/json')
+      if callback:
+        buf = callback + "(" + buf + ");"
+        self.send_header('Content-Type', 'text/javascript')
+      else:
+        self.send_header('Content-Type', 'application/json')
       self.send_header('Content-Length', str(len(buf)))
       self.end_headers()
+      
       self.wfile.write(buf)
 
     def handle_ROS(self, path, qdict):
@@ -391,6 +390,8 @@ class ROSWebHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         service_class = rosservice.get_service_class_by_name("/" + name)
         request = service_class._request_class()
 
+        callback = qdict.get("callback", [''])[0]
+
         args = qdict.get('args', None)
         if not args:
           args = qdict.get('json', ['{}'])[0]
@@ -409,24 +410,14 @@ class ROSWebHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         msg = rosjson.ros_message_to_json(msg)
 
         logging.debug("service call: name=%s, resp=%s" % (name, msg))
-        self.send_success(msg)
-        return
-
-      if cmd == "subscribe":
-        topic = qdict.get('topic', [''])[0]
-        try:
-          self.subscribe(topic)
-        except ROSWebException, e:
-          self.send_response(404)
-          return
-
-        self.send_success()
+        self.send_success(msg, callback=callback)
         return
 
       if cmd == "receive":
         since = int(qdict.get('since', ['0'])[0])
         topics = qdict.get("topic", "")
-        self._do_GET_topic(topics, since)
+        callback = qdict.get("callback", [''])[0]
+        self._do_GET_topic(topics, since, callback)
         return
       
     def do_GET(self):
@@ -436,7 +427,7 @@ class ROSWebHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         pdict = cgi.parse_qs(self.rfile._rbuf)
         qdict.update(pdict)
 
-        #self.log_request()
+        self.log_request()
 
         if path.startswith("/ros"):
           self.handle_ROS(path, qdict)
@@ -463,9 +454,10 @@ class ROSWebHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.connection.close()
 
     def _read_write(self, soc, max_idling=20):
-        iw = [self.connection, soc]
-        ow = []
+        iw = (self.connection, soc)
+        ow = ()
         count = 0
+
         while 1:
             count += 1
             (ins, _, exs) = select.select(iw, ow, iw, 3)
@@ -474,8 +466,10 @@ class ROSWebHandler(BaseHTTPServer.BaseHTTPRequestHandler):
               for i in ins:
                 if i is soc:
                   out = self.connection
-                else:
+                elif i is self.connection:
                   out = soc
+                else:
+                  print "error"
                 data = i.recv(8192)
                 if data:
                   bytes_sent = 0
