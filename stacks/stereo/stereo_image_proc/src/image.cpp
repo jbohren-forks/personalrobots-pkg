@@ -1334,6 +1334,10 @@ ImageData::doBayerColorRGB()
       imColorSize = size*3;
     }
   switch (imRawType) {
+    case COLOR_CODING_MONO8:
+      memcpy(im, imRaw, size);
+      imType = COLOR_CODING_MONO8;
+      return;
     case COLOR_CODING_BAYER8_GRBG:
       convertBayerGRBGColorRGB(imRaw, imColor, im, imWidth, imHeight, colorConvertType);
       break;
@@ -1342,7 +1346,8 @@ ImageData::doBayerColorRGB()
       break;
       
     default:
-      return; // unsupported color coding
+      PRINTF("Unsupported color coding %i", imRawType);
+      return;
   }
   imType = COLOR_CODING_MONO8;
   imColorType = COLOR_CODING_RGB8;
@@ -1372,6 +1377,9 @@ ImageData::doBayerMono()
       imSize = size;
     }
   switch (imRawType) {
+    case COLOR_CODING_MONO8:
+      memcpy(im, imRaw, size);
+      break;
     case COLOR_CODING_BAYER8_GRBG:
       convertBayerGRBGMono(imRaw, im, imWidth, imHeight, colorConvertType);
       break;
@@ -1380,7 +1388,8 @@ ImageData::doBayerMono()
       break;
       
     default:
-      return; // unsupported color coding
+      PRINTF("Unsupported color coding %i", imRawType);
+      return;
   }
   imType = COLOR_CODING_MONO8;
 }
