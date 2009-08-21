@@ -75,7 +75,7 @@ public:
   {
 
     XmlRpc::XmlRpcValue config;
-    if(!node.getParam(param_name, config))
+    if(!node.getParam(param_name + "/filter_chain", config))
     {
       ROS_DEBUG("Could not load the configuration for %s, are you sure it was pushed to the parameter server? Assuming that you meant to leave it empty.", param_name.c_str());
       configured_ = true;
@@ -257,7 +257,7 @@ public:
   {
 
     XmlRpc::XmlRpcValue config;
-    if(!node.getParam(param_name, config))
+    if(!node.getParam(param_name + "/filter_chain", config))
     {
       ROS_ERROR("Could not load the configuration for %s, are you sure it was pushed to the parameter server? Assuming that you meant to leave it blank.", param_name.c_str());
       /********************** Do the allocation *********************/
