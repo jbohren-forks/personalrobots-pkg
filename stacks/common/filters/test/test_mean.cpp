@@ -58,12 +58,8 @@ TEST(MultiChannelMeanFilterDouble, ConfirmIdentityNRows)
   int length = 5;
   int rows = 5;
   
-  TiXmlDocument doc;
-  doc.Parse("<filter type=\"MultiChannelMeanFilter<double> \" name=\"mean_test\"> <params number_of_observations=\"5\"/></filter>"); 
-  TiXmlElement *config = doc.RootElement();
-  
   MultiChannelFilterBase<double > * filter = new MultiChannelMeanFilter<double>  ();
-  filter->configure(rows, config );
+  filter->configure(rows, "MultiChannelMeanFilterDouble5");
 
   double input1[] = {1,2,3,4,5};
   double input1a[] = {1,2,3,4,5};
@@ -88,12 +84,8 @@ TEST(MultiChannelMeanFilterDouble, ThreeRows)
   int length = 5;
   int rows = 5;
   
-  TiXmlDocument doc;
-  doc.Parse("<filter type=\"MultiChannelMeanFilter<double> \" name=\"mean_test\"> <params number_of_observations=\"5\"/></filter>"); 
-  TiXmlElement *config = doc.RootElement();
-  
   MultiChannelFilterBase<double > * filter = new MultiChannelMeanFilter<double> ();
-  filter->configure(rows, config);
+  filter->configure(rows, "MultiChannelMeanFilterDouble5");
 
   double input1[] = {0,1,2,3,4};
   std::vector<double> v1 (input1, input1 + sizeof(input1) / sizeof(double));
@@ -122,12 +114,8 @@ TEST(MeanFilterDouble, ConfirmIdentityNRows)
   int length = 5;
   int rows = 5;
   
-  TiXmlDocument doc;
-  doc.Parse("<filter type=\"MeanFilter<double> \" name=\"mean_test\"> <params number_of_observations=\"5\"/></filter>"); 
-  TiXmlElement *config = doc.RootElement();
-  
   FilterBase<double > * filter = new MeanFilter<double>  ();
-  filter->configure(config );
+  filter->configure("MeanFilterDouble5");
 
   double input = 1;
   double output = 0;
@@ -150,12 +138,8 @@ TEST(MeanFilterDouble, ThreeRows)
   int length = 5;
   int rows = 5;
   
-  TiXmlDocument doc;
-  doc.Parse("<filter type=\"MeanFilter<double> \" name=\"mean_test\"> <params number_of_observations=\"5\"/></filter>"); 
-  TiXmlElement *config = doc.RootElement();
-  
   FilterBase<double > * filter = new MeanFilter<double> ();
-  filter->configure(config);
+  filter->configure("MeanFilterDouble5");
 
   double input1 = 0;
   double input2 =1;

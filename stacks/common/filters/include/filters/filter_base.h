@@ -161,6 +161,19 @@ protected:
     return true;
   }
 
+  /** \brief Get a filter parameter as an unsigned int
+   * \param name The name of the parameter
+   * \param value The int to set with the value
+   * \return Whether or not the parameter of name/type was set */
+  bool getParam(const std::string&name, unsigned  int& value)
+  {
+    int signed_value;
+    if (!getParam(name, signed_value))
+      return false;
+    if (signed_value < 0)
+      return false;
+    value = signed_value;
+  };
 
   /** \brief Get a filter parameter as a std::vector<double>
    * \param name The name of the parameter
@@ -273,7 +286,7 @@ protected:
     if(config.getType() != XmlRpc::XmlRpcValue::TypeStruct)
     {
       ROS_ERROR("A filter configuration must be a map with fields name, type, and params");
-      return;
+      return false;
     } 
 
     if (!setNameAndType(config))

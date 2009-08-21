@@ -85,7 +85,7 @@ template <typename T>
 bool MeanFilter<T>::configure()
 {
   
-  if (!FilterBase<T>::getParam("number_of_observations", number_of_observations_))
+  if (!FilterBase<T>::getParam(std::string("number_of_observations"), number_of_observations_))
   {
     ROS_ERROR("MeanFilter did not find param number_of_observations");
     return false;

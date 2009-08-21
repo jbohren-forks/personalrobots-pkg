@@ -80,18 +80,15 @@ TEST(MultiChannelMedianFilterDouble, ConfirmIdentityNRows)
 
   delete filter;
 }
-/*
+
 TEST(MultiChannelMedianFilterDouble, ThreeRows)
 {
   double epsilon = 1e-6;
   int length = 5;
   int rows = 5;
-  TiXmlDocument doc;
-  doc.Parse("<filter type=\"MultiChannelMedianFilterDouble\" name=\"median_test\"> <params number_of_observations=\"5\"/></filter>"); 
-  TiXmlElement *config = doc.RootElement();
-  
+
   MultiChannelFilterBase<double > * filter = new MultiChannelMedianFilter<double>();
-  filter->configure(rows, config );
+  filter->configure(rows, "MultiChannleMedianFilterDouble5" );
   
   double input1[] = {0,1,2,3,4};
   std::vector<double> v1 (input1, input1 + sizeof(input1) / sizeof(double));
@@ -119,13 +116,8 @@ TEST(MultiChannelMedianFilterFloat, ConfirmIdentityNRows)
   int length = 5;
   int rows = 5;
   
-  TiXmlDocument doc;
-  doc.Parse("<filter type=\"MultiChannelMedianFilterFloat\" name=\"median_test\"> <params number_of_observations=\"5\"/></filter>"); 
-  TiXmlElement *config = doc.RootElement();
-  
   MultiChannelFilterBase<float > * filter = new filters::MultiChannelMedianFilter<float>();
-  filter->configure(rows, config );
-  
+  filter->configure(rows, "MultiChannleMedianFilterFloat5" );
 
   float input1[] = {1,2,3,4,5};
   float input1a[] = {1,2,3,4,5};
@@ -150,12 +142,9 @@ TEST(MultiChannelMedianFilterFloat, ThreeRows)
   float epsilon = 1e-6;
   int length = 5;
   int rows = 5;
-  TiXmlDocument doc;
-  doc.Parse("<filter type=\"MultiChannelMedianFilterFloat\" name=\"median_test\"> <params number_of_observations=\"5\"/></filter>"); 
-  TiXmlElement *config = doc.RootElement();
   
   MultiChannelFilterBase<float > * filter = new MultiChannelMedianFilter<float>();
-  filter->configure(rows, config );
+  filter->configure(rows, "MultiChannleMedianFilterFloat5");
   
   float input1[] = {0,1,2,3,4};
   std::vector<float> v1 (input1, input1 + sizeof(input1) / sizeof(float));
@@ -177,7 +166,6 @@ TEST(MultiChannelMedianFilterFloat, ThreeRows)
 
 }
 
-*/
 
 int main(int argc, char **argv){
   testing::InitGoogleTest(&argc, argv);
