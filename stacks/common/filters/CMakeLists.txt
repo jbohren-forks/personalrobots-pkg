@@ -17,8 +17,11 @@ rosbuild_add_gtest_build_flags(median_test)
 rosbuild_add_rostest(test/test_median.launch)
 
 #test transfer function filter
-#rosbuild_add_gtest(transfer_function_test test/test_transfer_function.cpp)
-#target_link_libraries(transfer_function_test transfer_function)
+rosbuild_add_executable(transfer_function_test test/test_transfer_function.cpp)
+target_link_libraries(transfer_function_test transfer_function)
+rosbuild_declare_test(transfer_function_test)
+rosbuild_add_gtest_build_flags(transfer_function_test)
+rosbuild_add_rostest(test/test_transfer_function.launch)
 
 #test mean filter
 rosbuild_add_executable(mean_test test/test_mean.cpp)

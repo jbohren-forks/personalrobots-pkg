@@ -93,7 +93,6 @@ public:
    * \param data_in vector<T> with number_of_channels elements
    * \param data_out vector<T> with number_of_channels elements
    */
-  virtual bool update(const T & data_in, T& data_out) ;
   virtual bool update(const std::vector<T> & data_in, std::vector<T>& data_out) ;
 
 
@@ -167,41 +166,6 @@ bool TransferFunctionFilter<T>::configure()
   return true;
 };
 
-
-template <typename T>
-bool TransferFunctionFilter<T>::update(const T & data_in, T& data_out)
-{
-  // Ensure the correct number of inputs
-  if (this->number_of_channels_ != 1)
-  {
-    ROS_ERROR("Number of channels is %d, to use non vector constructor it must be 1", this->number_of_channels_);
-    return false;
-  }
-  // Copy data to prevent mutation if in and out are the same ptr
-  temp[0] = data_in;
-  std::vector<T> temp_in(1);
-  temp_in[0] = data_in;
-  std::vector<T> temp_out(1);
-
-  for (uint32_t i = 0; i < temp_in.size(); i++)
-  {
-    temp_out[i]=(b_[0]) * (temp_in[i]);
-
-    for (uint32_t row = 1; row <= input_buffer_->size(); row++)
-    {
-      (temp_out)[i] += b_[row] * (*input_buffer_)[row-1][i];
-    }
-    for (uint32_t row = 1; row <= output_buffer_->size(); row++)
-    {
-      (temp_out)[i] -= a_[row] * (*output_buffer_)[row-1][i];
-    }
-  }
-  input_buffer_->push_front(temp_in);
-  output_buffer_->push_front(temp_out);
-
-  data_out = temp_out[0];
-  return true;
-}
 
 template <typename T>
 bool TransferFunctionFilter<T>::update(const std::vector<T>  & data_in, std::vector<T> & data_out)

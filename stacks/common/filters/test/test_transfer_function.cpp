@@ -27,6 +27,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <ros/ros.h>
 #include <gtest/gtest.h>
 #include <sys/time.h>
 #include <vector>
@@ -39,12 +40,8 @@ TEST(TransferFunctionDoubleFilter, LowPass)
 {
   double epsilon = 1e-4;
   
-  TiXmlDocument doc;
-  doc.Parse("<filter type=\"TransferFunctionFilter<double>\" name=\"transferfunction_test\"> <params a=\"1.0 -0.509525449494429\" b=\" 0.245237275252786 0.245237275252786\"/></filter>"); 
-  TiXmlElement *config = doc.RootElement();
-  
   MultiChannelFilterBase<double> * filter = new TransferFunctionFilter<double> ();
-  EXPECT_TRUE(filter->configure(1, config ));
+  EXPECT_TRUE(filter->configure(1, "LowPass" ));
   
 
   std::vector<double> in1,in2,in3,in4,in5,in6,in7;
@@ -73,12 +70,8 @@ TEST(TransferFunctionDoubleFilter, LowPassNonUnity)
 {
   double epsilon = 1e-4;
 
-  TiXmlDocument doc;
-  doc.Parse("<filter type=\"TransferFunctionFilter<double>\" name=\"transferfunction_test\"> <params a=\"2.0 -0.509525449494429\" b=\" 0.245237275252786 0.245237275252786\"/></filter>"); 
-  TiXmlElement *config = doc.RootElement();
-  
   MultiChannelFilterBase<double> * filter = new TransferFunctionFilter<double> ();
-  EXPECT_TRUE(filter->configure(1, config ));
+  EXPECT_TRUE(filter->configure(1, "LowPassNonUnity" ));
     
   std::vector<double> in1,in2,in3,in4,in5,in6,in7;
   std::vector<double> out1;
@@ -106,12 +99,8 @@ TEST(TransferFunctionDoubleFilter, LowPassMulti)
 {
   double epsilon = 1e-4;
 
-  TiXmlDocument doc;
-  doc.Parse("<filter type=\"TransferFunctionFilter<double>\" name=\"transferfunction_test\"> <params a=\"1.0 -1.760041880343169 1.182893262037831 -0.278059917634546\" b=\"0.018098933007514 0.245237275252786 0.054296799022543 0.018098933007514\"/></filter>"); 
-  TiXmlElement *config = doc.RootElement();
-  
   MultiChannelFilterBase<double> * filter = new TransferFunctionFilter<double> ();
-  EXPECT_TRUE(filter->configure(3, config ));
+  EXPECT_TRUE(filter->configure(3, "LowPassMulti" ));
 
   std::vector<double> in1,in2,in3,in4,in5,in6,in7;
   std::vector<double> out1;
@@ -165,12 +154,8 @@ TEST(TransferFunctionDoubleFilter, LowPassIrrational)
 {
   double epsilon = 1e-4;
  
-  TiXmlDocument doc;
-  doc.Parse("<filter type=\"TransferFunctionFilter<double>\" name=\"transferfunction_test\"> <params a=\"1.0 -1.760041880343169 1.182893262037831 \" b=\"0.018098933007514 0.054296799022543 0.054296799022543 0.018098933007514\"/></filter>"); 
-  TiXmlElement *config = doc.RootElement();
-  
   MultiChannelFilterBase<double> * filter = new TransferFunctionFilter<double> ();
-  EXPECT_TRUE(filter->configure(3, config ));
+  EXPECT_TRUE(filter->configure(3, "LowPassIrrational" ));
  
   std::vector<double> in1,in2,in3,in4,in5,in6,in7;
   std::vector<double> out1;
@@ -222,5 +207,6 @@ TEST(TransferFunctionDoubleFilter, LowPassIrrational)
 
 int main(int argc, char **argv){
   testing::InitGoogleTest(&argc, argv);
+  ros::init(argc, argv, "test_transfer_function");
   return RUN_ALL_TESTS();
 }
