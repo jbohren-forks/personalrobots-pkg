@@ -44,8 +44,9 @@ using namespace KDL;
 using namespace tf;
 using namespace ros;
 
+using namespace controller;
 
-PLUGINLIB_REGISTER_CLASS(CartesianTrajectoryController, controller::CartesianTrajectoryController, controller::Controller)
+PLUGINLIB_REGISTER_CLASS(CartesianTrajectoryController, CartesianTrajectoryController, Controller)
 
 namespace controller {
 
