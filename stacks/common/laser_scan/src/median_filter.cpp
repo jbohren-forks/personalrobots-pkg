@@ -3,30 +3,27 @@
 namespace laser_scan
 {
 LaserMedianFilter::LaserMedianFilter():
-  num_ranges_(1)
+  num_ranges_(1), xmlrpc_value_()
 {
   
 };
 
 bool LaserMedianFilter::configure()
 {
-  TiXmlNode * child_node = this->raw_xml_.get()->FirstChild("filters");
-  if (!child_node)
+  
+  if (!getParam("filter", xmlrpc_value_))
   {
     ROS_ERROR("Cannot Configure LaserMedianFilter: Didn't find filters tag within LaserMedianFilter. Filter definitions needed inside for processing range and intensity");
     return false;
   }
-  TiXmlElement * child = child_node->ToElement();
-  
-  latest_xml_.reset( child->Clone()->ToElement());
   
   if (range_filter_) delete range_filter_;
   range_filter_ = new filters::MultiChannelFilterChain<float>("float");
-  if (!range_filter_->configure(num_ranges_, latest_xml_.get())) return false;
+  if (!range_filter_->configure(num_ranges_, xmlrpc_value_)) return false;
   
   if (intensity_filter_) delete intensity_filter_;
   intensity_filter_ = new filters::MultiChannelFilterChain<float>("float");
-  if (!intensity_filter_->configure(num_ranges_, latest_xml_.get())) return false;
+  if (!intensity_filter_->configure(num_ranges_, xmlrpc_value_)) return false;
   return true;
 };
 
@@ -57,10 +54,10 @@ bool LaserMedianFilter::update(const sensor_msgs::LaserScan& scan_in, sensor_msg
     num_ranges_ = scan_in.get_ranges_size();
     
     range_filter_ = new filters::MultiChannelFilterChain<float>("float");
-    if (!range_filter_->configure(num_ranges_, latest_xml_.get())) return false;
+    if (!range_filter_->configure(num_ranges_, xmlrpc_value_)) return false;
     
     intensity_filter_ = new filters::MultiChannelFilterChain<float>("float");
-    if (!intensity_filter_->configure(num_ranges_, latest_xml_.get())) return false;
+    if (!intensity_filter_->configure(num_ranges_, xmlrpc_value_)) return false;
     
   }
 

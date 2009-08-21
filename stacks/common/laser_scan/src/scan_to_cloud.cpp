@@ -79,7 +79,7 @@ class ScanShadowsFilter
     filters::FilterChain<sensor_msgs::LaserScan> scan_filter_chain_;
 
     ////////////////////////////////////////////////////////////////////////////////
-  ScanShadowsFilter () : cloud_filter_chain_("sensor_msgs::PointCloud"), scan_filter_chain_("sensor_msgs::Laserscan"), laser_max_range_ (DBL_MAX), notifier_(NULL)
+  ScanShadowsFilter () : laser_max_range_ (DBL_MAX), notifier_(NULL), cloud_filter_chain_("sensor_msgs::PointCloud"), scan_filter_chain_("sensor_msgs::Laserscan")
     {
       tf_ = new tf::TransformListener() ;
 
@@ -101,15 +101,9 @@ class ScanShadowsFilter
       ros::Node::instance()->advertise<sensor_msgs::PointCloud> (cloud_topic_, 10);
 
       std::string cloud_filter_xml;
-      ros::Node::instance()->param("~cloud_filters", cloud_filter_xml, std::string("<filters><!--Filter Parameter Not Set--></filters>"));
-      ROS_INFO("Got parameter'~cloud_filters' as: %s\n", cloud_filter_xml.c_str());
-      cloud_filter_chain_.configureFromXMLString(cloud_filter_xml);
+      cloud_filter_chain_.configure("~cloud_filters");
 
-    std::string scan_filter_xml;
-    ros::Node::instance()->param("~scan_filters", scan_filter_xml, std::string("<filters><!--Filter Parameter Not Set--></filters>"));
-    ROS_INFO("Got parameter'~scan_filters' as: %s\n", scan_filter_xml.c_str());
-    
-    scan_filter_chain_.configureFromXMLString(scan_filter_xml);
+      scan_filter_chain_.configure("~scan_filters");
     }
 
     ////////////////////////////////////////////////////////////////////////////////

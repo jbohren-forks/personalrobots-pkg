@@ -74,7 +74,7 @@ private:
   filters::MultiChannelFilterChain<float> * range_filter_;
   filters::MultiChannelFilterChain<float> * intensity_filter_;
   
-  boost::scoped_ptr<TiXmlElement>  latest_xml_;
+  XmlRpc::XmlRpcValue xmlrpc_value_;
 };
 
 

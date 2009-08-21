@@ -48,11 +48,7 @@ public:
         boost::bind(&GenericLaserScanFilterNode::callback, this, _1), "scan_in", "base_link", 50);
     notifier_->setTolerance(ros::Duration(0.03));
 
-    std::string filter_xml;
-    node_.param("~filters", filter_xml, std::string("<filters><!--Filter Parameter Not Set--></filters>"));
-    ROS_INFO("Got parameter'~filters' as: %s\n", filter_xml.c_str());
-    
-    filter_chain_.configureFromXMLString(filter_xml);
+    filter_chain_.configure("~filters");
     //node_.subscribe("scan_in", msg, &GenericLaserScanFilterNode::callback,this, 3);
   }
 

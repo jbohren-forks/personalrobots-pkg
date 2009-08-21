@@ -57,7 +57,11 @@ public:
 
   bool configure()
   {
-    getDoubleParam("inscribed_radius", inscribed_radius_, 0.325);
+    if(!getParam("inscribed_radius", inscribed_radius_))
+    {
+      ROS_ERROR("LaserScanFootprintFilter needs inscribed_radius to be set");
+      return false;
+    }
     return true;
   }
 

@@ -57,9 +57,12 @@ public:
 
   bool configure()
   {
-    getDoubleParam("lower_threshold", lower_threshold_, 8000.0) ;
-    getDoubleParam("upper_threshold", upper_threshold_, 100000.0) ;
-    getIntParam("disp_histogram",  disp_hist_, 1) ;
+    lower_threshold_ = 8000.0;
+    upper_threshold_ = 100000.0;
+    disp_hist_ = 1;
+    getParam("lower_threshold", lower_threshold_);
+    getParam("upper_threshold", upper_threshold_) ;
+    getParam("disp_histogram",  disp_hist_) ;
     return true;
   }
 

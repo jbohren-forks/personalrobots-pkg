@@ -67,22 +67,23 @@ public:
   /**@b Configure the filter from XML */
   bool configure()
   {
-    if (!filters::FilterBase<sensor_msgs::LaserScan>::getDoubleParam(std::string("min_angle"), min_angle_, 10))
+    if (!filters::FilterBase<sensor_msgs::LaserScan>::getParam(std::string("min_angle"), min_angle_))
     {
       ROS_ERROR("Error: ShadowsFilter was not given min_angle.\n");
       return false;
     }
-    if (!filters::FilterBase<sensor_msgs::LaserScan>::getDoubleParam(std::string("max_angle"), max_angle_, 170))
+    if (!filters::FilterBase<sensor_msgs::LaserScan>::getParam(std::string("max_angle"), max_angle_))
     {
       ROS_ERROR("Error: ShadowsFilter was not given min_angle.\n");
       return false;
     }
-    if (!filters::FilterBase<sensor_msgs::LaserScan>::getIntParam(std::string("window"), window_, 1))
+    if (!filters::FilterBase<sensor_msgs::LaserScan>::getParam(std::string("window"), window_))
     {
       ROS_ERROR("Error: ShadowsFilter was not given window.\n");
       return false;
     }
-    if (!filters::FilterBase<sensor_msgs::LaserScan>::getIntParam(std::string("neighbors"), neighbors_, 0))
+    neighbors_ = 0;//default value
+    if (!filters::FilterBase<sensor_msgs::LaserScan>::getParam(std::string("neighbors"), neighbors_))
     {
       ROS_INFO("Error: ShadowsFilter was not given neighbors.\n");
     }
@@ -137,7 +138,7 @@ public:
       }
     }
 
-    ROS_DEBUG("ScanShadowsFilter removing %d Points from scan", indices_to_delete.size());
+    ROS_DEBUG("ScanShadowsFilter removing %d Points from scan", (int)indices_to_delete.size());
     for ( std::set<int>::iterator it = indices_to_delete.begin(); it != indices_to_delete.end(); ++it)
       {
 	scan_out.ranges[*it] = -1.0 * fabs(scan_in.ranges[*it]); //Failed test so set the ranges to invalid value
