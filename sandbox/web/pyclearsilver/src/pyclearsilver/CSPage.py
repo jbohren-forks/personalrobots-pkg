@@ -58,7 +58,7 @@ class CSPage:
         domain = self.ncgi.hdf.getValue("CGI.ServerName","")
         domain = self.ncgi.hdf.getValue("HTTP.Host", domain)
         self.domain = domain
-        self.subclassinit()
+        
         self.setPaths([self.ncgi.hdf.getValue("CGI.DocumentRoot","")])
 
         self._sent_headers = 0
@@ -69,6 +69,17 @@ class CSPage:
           self.http = "https://"
         else:
           self.http = "http://"
+
+        try:
+          self.subclassinit()
+        except:
+            SHOULD_DISPLAY = 0
+            DISPLAY_ERROR = 1
+            
+            import handle_error
+            handle_error.handleException("Display Failed!")
+            ERROR_MESSAGE = handle_error.exceptionString()
+            return
 
     def __setitem__(self, key, value):
       self._reply_headers[string.lower(key)] = value

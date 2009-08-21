@@ -43,7 +43,11 @@ class Connection(odb.Connection):
   def __init__(self, *args, **kwargs):
     odb.Connection.__init__(self)
 
-    self._conn = apply(sqlite.connect, args, kwargs)
+    try:
+      self._conn = apply(sqlite.connect, args, kwargs)
+    except:
+      warn("unable to open db", args)
+      raise
 
     self.SQLError = sqlite.Error
 
