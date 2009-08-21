@@ -70,9 +70,9 @@ public:
   virtual ~FilterBase(){};
 
   /** \brief The public method to configure a filter from XML 
-   * \param param_name The parameter name from which the filter should be initialized
+   * \param config The XmlRpcValue from which the filter should be initialized
    */
-  bool configure(std::string param_name)
+  bool configure(const XmlRpc::XmlRpcValue& config)
   {
     if (configured_)
     {
@@ -81,7 +81,7 @@ public:
     configured_ = false;
     bool retval = true;
 
-    retval = retval && loadParameters(param_name);
+    retval = retval && loadConfiguration(config);
     retval = retval && configure();
     configured_ = retval;
     return retval;
@@ -263,20 +263,29 @@ private:
   /**\brief Set the name and type of the filter from the parameter server
    * \param param_name The parameter from which to read
    */
-  bool setNameAndType(std::string param_name, ros::NodeHandle node)
+  bool setNameAndType(const XmlRpc::XmlRpcValue& config)
   {
-    std::string name, type;
-    if(!node.getParam(param_name + "/name", name))
+    if(config.size() < 1)
     {
-      ROS_ERROR("Filter didn't have name defined");
+      ROS_ERROR("A filter must have both a name and a type defined");
       return false;
     }
 
-    if(!node.getParam(param_name + "/type", type))
+    if(!config.hasMember("name"))
     {
-      ROS_ERROR("Filter %s didn't have type defined", name.c_str());
+      ROS_ERROR("Filter didn't have name defined, other strings are not allowed");
       return false;
     }
+
+    std::string name = config["name"];
+
+    if(!config.hasMember("type"))
+    {
+      ROS_ERROR("Filter %s didn't have type defined, other strings are not allowed", name.c_str());
+      return false;
+    }
+
+    std::string type = config["type"];
 
     filter_name_ = name;
     filter_type_ = type;
@@ -308,51 +317,42 @@ private:
   };
 
 protected:
-  bool loadParameters(std::string param_name)
+  bool loadConfiguration(const XmlRpc::XmlRpcValue& config)
   {
-    XmlRpc::XmlRpcValue filter_configuration;
-    ros::NodeHandle node;
-    //make sure that the parameter is actually set on the parameter server
-    if(node.getParam(param_name, filter_configuration)){
-    }
-    else{
-      ROS_ERROR("The filter configuration parameter specified %s, is not set on the parameter server", param_name.c_str());
-      return false;
-    }
-
-    //if (std::string(config->Value()) != std::string("filter"))
-    //{
-    //  ROS_ERROR("Filter not being constructed with filter xml, type is %s", config->Value());
-    //}
-    ////Store a copy of the xml
-    //raw_xml_.reset(config->Clone()->ToElement());
-
-    if (!setNameAndType(param_name, node))
+    if (!setNameAndType(config))
     {
       return false;
     }
 
-    XmlRpc::XmlRpcValue params;
-    node.getParam(param_name + "/params", params);
-    if (params)
+    //check to see if we have parameters in our list
+    if(config.size() > 2 && config.hasMember("params"))
     {
+      //get the params map
+      XmlRpc::XmlRpcValue params = config["params"];
+
       if(params.getType() != XmlRpc::XmlRpcValue::TypeStruct)
       {
-        ROS_ERROR("Using params as a primitive type has no meaning");
+        ROS_ERROR("params must be a map");
+        return false;
+      }
+      else if(config.size() > 2)
+      {
+        ROS_ERROR("The third element of the configuration list was not named params, not sure what to do with it so failing");
+        return false;
       }
       else{
         //Load params into map
-        for (XmlRpc::XmlRpcValue::iterator it = params.begin(); it != params.end(); ++it)
+        for(XmlRpc::XmlRpcValue::iterator it = params.begin(); it != params.end(); ++it)
         {
-          ROS_DEBUG("Loading param %s with value %s\n", it->first, it->second);
+          ROS_DEBUG("Loading param %s\n", it->first);
           params_[it->first] = it->second;
         } 
       }
-      
     }
 
     return true;    
   }
+
   /** \brief Read in the XML and do basic configuration of FilterBase
    * \param config The XML to parse */
   bool loadXml(TiXmlElement* config)
