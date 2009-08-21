@@ -19,7 +19,6 @@
   <depend package="door_msgs" />
   <depend package="plugs_msgs" />
   <depend package="deprecated_msgs" />
-  <depend package="gtest" />
   <depend package="trex_ros" />
   <depend package="tf" />
 
