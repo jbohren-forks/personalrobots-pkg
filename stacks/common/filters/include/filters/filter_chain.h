@@ -71,7 +71,7 @@ public:
    * @param param_name The name of the filter chain to load*/
   bool configure(std::string param_name)
   {
-    ros::Node node("~/");
+    ros::NodeHandle node("~/");
     XmlRpc::XmlRpcValue config;
     if(!node.getParam(param_name, config))
     {
@@ -245,7 +245,7 @@ public:
    * @param param_name The name of the filter chain to load*/
   bool configure(unsigned int size, std::string param_name)
   {
-    ros::Node node("~/");
+    ros::NodeHandle node("~/");
     XmlRpc::XmlRpcValue config;
     if(!node.getParam(param_name, config))
     {

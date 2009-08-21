@@ -205,7 +205,6 @@ protected:
     string_map_t::iterator it = params_.find(name);
     if (it == params_.end())
     {
-      value = default_value;
       return false;
     }
 
