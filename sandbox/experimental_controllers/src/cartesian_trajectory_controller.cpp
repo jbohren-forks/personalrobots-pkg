@@ -36,7 +36,8 @@
 #include <algorithm>
 #include <mechanism_control/mechanism_control.h>
 #include "kdl/chainfksolverpos_recursive.hpp"
-#include "robot_mechanism_controllers/cartesian_trajectory_controller.h"
+#include "experimental_controllers/cartesian_trajectory_controller.h"
+#include "pluginlib/class_list_macros.h"
 
 
 using namespace KDL;
@@ -44,10 +45,11 @@ using namespace tf;
 using namespace ros;
 
 
+PLUGINLIB_REGISTER_CLASS(CartesianTrajectoryController, controller::CartesianTrajectoryController, controller::Controller)
+
 namespace controller {
 
 ROS_REGISTER_CONTROLLER(CartesianTrajectoryController)
-
 
 CartesianTrajectoryController::CartesianTrajectoryController()
 : jnt_to_pose_solver_(NULL),

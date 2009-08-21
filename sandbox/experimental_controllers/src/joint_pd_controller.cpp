@@ -32,11 +32,17 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include <robot_mechanism_controllers/joint_pd_controller.h>
+#include <experimental_controllers/joint_pd_controller.h>
 #include <angles/angles.h>
+#include "pluginlib/class_list_macros.h"
 
 using namespace std;
 using namespace controller;
+
+
+PLUGINLIB_REGISTER_CLASS(JointPDController, JointPDController, Controller)
+PLUGINLIB_REGISTER_CLASS(JointPDControllerNode, JointPDControllerNode, Controller)
+
 
 ROS_REGISTER_CONTROLLER(JointPDController)
 

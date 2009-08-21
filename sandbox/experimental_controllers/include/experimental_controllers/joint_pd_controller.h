@@ -59,8 +59,8 @@
 #include "misc_utils/subscription_guard.h"
 
 // Services
-#include <robot_mechanism_controllers/SetPDCommand.h>
-#include <robot_mechanism_controllers/GetPDCommand.h>
+#include <experimental_controllers/SetPDCommand.h>
+#include <experimental_controllers/GetPDCommand.h>
 #include <deprecated_msgs/JointCmd.h>
 
 namespace controller

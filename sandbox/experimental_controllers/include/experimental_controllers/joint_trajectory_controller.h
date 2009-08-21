@@ -38,7 +38,7 @@
 #include <boost/thread/mutex.hpp>
 
 #include <controller_interface/controller.h>
-#include <robot_mechanism_controllers/joint_pd_controller.h>
+#include <experimental_controllers/joint_pd_controller.h>
 
 // Services
 #include <manipulation_msgs/JointTraj.h>

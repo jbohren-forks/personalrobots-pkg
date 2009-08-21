@@ -41,7 +41,7 @@
 #include <robot_mechanism_controllers/joint_position_controller.h>
 #include <robot_mechanism_controllers/joint_velocity_controller.h>
 #include <robot_mechanism_controllers/joint_effort_controller.h>
-#include <robot_mechanism_controllers/joint_pd_controller.h>
+#include <experimental_controllers/joint_pd_controller.h>
 
 // Services
 #include <experimental_controllers/GetJointPosCmd.h>
