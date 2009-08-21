@@ -181,6 +181,14 @@ namespace actionlib {
       new_goal_ = true;
       new_goal_preempt_request_ = false;
 
+      //if the server is active, we'll want to call the preempt callback for the current goal
+      if(isActive()){
+        preempt_request_ = true;
+        //if the user has registered a preempt callback, we'll call it now
+        if(preempt_callback_)
+          preempt_callback_();
+      }
+
       //if the user has defined a goal callback, we'll call it now
       if(goal_callback_)
         goal_callback_();
