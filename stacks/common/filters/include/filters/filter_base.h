@@ -319,6 +319,12 @@ private:
 protected:
   bool loadConfiguration(const XmlRpc::XmlRpcValue& config)
   {
+    if(config.getType() != XmlRpc::XmlRpcValue::TypeStruct)
+    {
+      ROS_ERROR("A filter configuration must be a map with fields name, type, and params");
+      return;
+    } 
+
     if (!setNameAndType(config))
     {
       return false;

@@ -63,6 +63,87 @@ public:
 
   /** \brief Configure the filter chain 
    * This will call configure on all filters which have been added */
+  bool configure(const XmlRpc::XmlRpcValue& config)
+  {
+    /*************************** Parse the XmlRpcValue ***********************************/
+
+    //Verify proper naming and structure    
+    if (config.getType() != XmlRpc::XmlRpcValue::TypeArray)
+    {
+      ROS_ERROR("The filter chain specification must be a list.");
+      return false;
+    }
+
+    //Iterate over all filter in filters (may be just one)
+    for (unsigned int i = 0; i < config.size(); ++i)
+    {
+      if(config[i].getType() != XmlRpc::XmlRpcValue::TypeStruct)
+      {
+        ROS_ERROR("Filters must be specified as maps");
+        return false;
+      }
+      else if (!config[i].hasMember("type"))
+      {
+        ROS_ERROR("Could not add a filter because no type was given");
+        return false;
+      }
+      else if (!config[i].hasMember("name"))
+      {
+        ROS_ERROR("Could not add a filter because no name was given");
+        return false;
+      }
+      else
+      {
+        //Check for name collisions within the list itself.
+        for (unsigned int j = i + 1; j < config.size(); ++j)
+        {
+          if(config[j].getType() != XmlRpc::XmlRpcValue::TypeStruct)
+          {
+            ROS_ERROR("Filters must be specified as maps");
+            return false;
+          }
+
+          if(!config[j].hasMember("name")
+              ||config[i]["name"].getType() != XmlRpc::XmlRpcValue::TypeString
+              || config[j]["name"].getType() != XmlRpc::XmlRpcValue::TypeString)
+          {
+            ROS_ERROR("Filters names must be strings");
+            return false;
+          }
+
+          if (!strcmp(config[i]["name"], config[j]["name"]))
+          {
+            ROS_ERROR("A self_filter with the name %s already exists", config[i]["name"]);
+            return false;
+          }
+        }
+      }
+    }
+
+
+    bool result = true;    
+
+       
+    for (unsigned int i = 0; i < config.size(); ++i)
+    {
+      boost::shared_ptr<filters::FilterBase<T> > p(loader_.createClassInstance(config[i]["type"]));
+      if (p.get() == NULL)
+        return false;
+      result = result &&  p.get()->configure(config[i]);    
+      reference_pointers_.push_back(p);
+      ROS_DEBUG("Configured %s:%s filter at %p\n", config[i]["type"],
+             config[i]["name"],  p.get());
+    }
+    
+    if (result == true)
+    {
+      configured_ = true;
+    }
+    return result;
+  };
+
+  /** \brief Configure the filter chain 
+   * This will call configure on all filters which have been added */
   bool configure(TiXmlElement* config_arg)
   {
     /*************************** Parse the XML ***********************************/
