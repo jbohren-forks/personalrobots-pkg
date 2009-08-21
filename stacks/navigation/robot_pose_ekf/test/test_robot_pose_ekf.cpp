@@ -153,7 +153,7 @@ TEST_F(TestEKF, test)
   EXPECT_NEAR(ekf_end_->header.stamp.toSec(), time_end, 1.0);
 
   // check filter result
-  ROS_ERROR("%f %f %f %f %f %f %f -- %f",ekf_end_->pose.pose.position.x, ekf_end_->pose.pose.position.y, ekf_end_->pose.pose.position.z,
+  ROS_INFO("%f %f %f %f %f %f %f -- %f",ekf_end_->pose.pose.position.x, ekf_end_->pose.pose.position.y, ekf_end_->pose.pose.position.z,
             ekf_end_->pose.pose.orientation.x, ekf_end_->pose.pose.orientation.y, ekf_end_->pose.pose.orientation.z, ekf_end_->pose.pose.orientation.w,
             ekf_end_->header.stamp.toSec());
   EXPECT_NEAR(ekf_end_->pose.pose.position.x, 3.835345, EPS_trans_x);
