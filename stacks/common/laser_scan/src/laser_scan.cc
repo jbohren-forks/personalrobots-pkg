@@ -49,7 +49,7 @@ namespace laser_scan
 
     //Do the projection
     //    NEWMAT::Matrix output = NEWMAT::SP(ranges, getUnitVectors(scan_in.angle_min, scan_in.angle_max, scan_in.angle_increment));
-    boost::numeric::ublas::matrix<double> output = element_prod(ranges, getUnitVectors(scan_in.angle_min, scan_in.angle_max, scan_in.angle_increment));
+    boost::numeric::ublas::matrix<double> output = element_prod(ranges, getUnitVectors(scan_in.angle_min, scan_in.angle_max, scan_in.angle_increment, scan_in.get_ranges_size()));
 
     //Stuff the output cloud
     cloud_out.header = scan_in.header;
@@ -150,7 +150,7 @@ namespace laser_scan
       cloud_out.channels[d].set_values_size(count);
   };
 
-  const boost::numeric::ublas::matrix<double>& LaserProjection::getUnitVectors(float angle_min, float angle_max, float angle_increment)
+const boost::numeric::ublas::matrix<double>& LaserProjection::getUnitVectors(float angle_min, float angle_max, float angle_increment, unsigned int length)
   {
     if (angle_min >= angle_max)
     {
@@ -161,14 +161,13 @@ namespace laser_scan
     }
     //construct string for lookup in the map
     std::stringstream anglestring;
-    anglestring <<angle_min<<","<<angle_max<<","<<angle_increment;
+    anglestring <<angle_min<<","<<angle_max<<","<<angle_increment<<","<<length;
     std::map<std::string, boost::numeric::ublas::matrix<double>* >::iterator it;
     it = unit_vector_map_.find(anglestring.str());
     //check the map for presense
     if (it != unit_vector_map_.end())
       return *((*it).second);     //if present return
-    //else calculate
-    unsigned int length = (unsigned int) round((angle_max - angle_min)/angle_increment) + 1; ///\todo Codify how this parameter will be calculated in all cases
+
     boost::numeric::ublas::matrix<double> * tempPtr = new boost::numeric::ublas::matrix<double>(2,length);
     for (unsigned int index = 0;index < length; index++)
       {

@@ -86,7 +86,7 @@ namespace laser_scan
        * Return the unit vectors for this configuration. 
        * These are dynamically generated and allocated on first request
        * and will be valid until destruction of this node. */
-      const boost::numeric::ublas::matrix<double>& getUnitVectors(float angle_max, float angle_min, float angle_increment);
+      const boost::numeric::ublas::matrix<double>& getUnitVectors(float angle_max, float angle_min, float angle_increment, unsigned int length);
 
     private:
 
