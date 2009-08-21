@@ -131,7 +131,6 @@ public:
   
 
 
-private:
 
   /** \brief Configure the filter chain 
    * This will call configure on all filters which have been added */
@@ -217,6 +216,8 @@ private:
     }
     return result;
   };
+
+private:
 
   std::vector<boost::shared_ptr<filters::FilterBase<T> > > reference_pointers_;   ///<! A vector of pointers to currently constructed filters
 
@@ -320,7 +321,6 @@ public:
   };
   
 
-private:
 
   /** \brief Configure the filter chain 
    * This will call configure on all filters which have been added
@@ -412,6 +412,7 @@ private:
     return result;
   };
 
+private:
 
   std::vector<boost::shared_ptr<filters::MultiChannelFilterBase<T> > > reference_pointers_;   ///<! A vector of pointers to currently constructed filters
 
