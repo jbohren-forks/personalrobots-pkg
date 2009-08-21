@@ -48,7 +48,7 @@ var BatteryMonitor = Class.create({
 
   receive: function(msg) {
     if(msg[this.key] != null) {
-      this.percent = 100. * parseFloat(msg[this.key]) / parseFloat(msg[this.key2]);
+      this.percent = Math.round(100. * parseFloat(msg[this.key]) / parseFloat(msg[this.key2]));
       if (this.percent > 100) this.percent = 100;
       else if (this.percent < 0) this.percent = 0;
       this.draw();
