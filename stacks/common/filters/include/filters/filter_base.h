@@ -258,6 +258,22 @@ protected:
 
     return true;
   }
+
+  /** \brief Get a filter parameter as a XmlRpcValue
+   * \param name The name of the parameter
+   * \param value The XmlRpcValue to set with the value
+   * \return Whether or not the parameter of name/type was set */
+  bool getParam(const std::string& name, XmlRpc::XmlRpcValue& value)
+  {
+    string_map_t::iterator it = params_.find(name);
+    if (it == params_.end())
+    {
+      return false;
+    }
+
+    value = it->second;
+    return true;
+  }
   
   ///The name of the filter
   std::string filter_name_;
