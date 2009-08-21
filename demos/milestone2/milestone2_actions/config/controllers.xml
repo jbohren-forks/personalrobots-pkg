@@ -2,6 +2,7 @@
 
 <!-- action interface to switch controllers -->
   <node pkg="mechanism_control" type="action_runner" />
+  <node pkg="switch_controller_translator" type="switch_controller_translator" />
 
 <!-- Base controller and odometry-->
   <rosparam file="$(find pr2_default_controllers)/pr2_base_controller.yaml" command="load" ns="pr2_base_controller" />

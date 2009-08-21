@@ -1,4 +1,4 @@
-  /*********************************************************************
+/*********************************************************************
  * Software License Agreement (BSD License)
  *
  *  Copyright (c) 2008, Willow Garage, Inc.
@@ -38,47 +38,59 @@
 
 using namespace ros;
 using namespace std;
+using namespace mechanism_msgs;
+
 
 namespace mechanism_control{
 
 ActionMechanismControl::ActionMechanismControl():
-  robot_actions::Action<pr2_robot_actions::SwitchControllers, std_msgs::Empty>("switch_controllers")
+  action_server_(node_, "switch_controller", boost::bind(&ActionMechanismControl::execute, this, _1))
 {
-  NodeHandle node;
-  switch_controller_srv_ = node.serviceClient<mechanism_msgs::SwitchController>("switch_controller");
+  switch_controller_srv_ = node_.serviceClient<mechanism_msgs::SwitchController>("switch_controller");
 };
 
 
 ActionMechanismControl::~ActionMechanismControl(){};
 
 
-robot_actions::ResultStatus ActionMechanismControl::execute(const pr2_robot_actions::SwitchControllers& c, std_msgs::Empty&)
+void ActionMechanismControl::execute(const SwitchControllerGoalConstPtr& switch_goal)
 {
   ROS_DEBUG("ActionMechanismControl: received request to start %i controllers and stop %i controllers",
-           c.start_controllers.size(), c.stop_controllers.size());
-  for (unsigned int i=0; i<c.start_controllers.size(); i++)
-    ROS_DEBUG("ActionMechanismControl:   - starting controller %s", c.start_controllers[i].c_str());
-  for (unsigned int i=0; i<c.stop_controllers.size(); i++)
-    ROS_DEBUG("ActionMechanismControl:   - stopping controller %s", c.stop_controllers[i].c_str());
+           switch_goal->start_controllers.size(), switch_goal->stop_controllers.size());
+  for (unsigned int i=0; i<switch_goal->start_controllers.size(); i++)
+    ROS_DEBUG("ActionMechanismControl:   - starting controller %s", switch_goal->start_controllers[i].c_str());
+  for (unsigned int i=0; i<switch_goal->stop_controllers.size(); i++)
+    ROS_DEBUG("ActionMechanismControl:   - stopping controller %s", switch_goal->stop_controllers[i].c_str());
   mechanism_msgs::SwitchController::Request req;
   mechanism_msgs::SwitchController::Response resp;
-  req.start_controllers = c.start_controllers;
-  req.stop_controllers  = c.stop_controllers;
+  req.start_controllers = switch_goal->start_controllers;
+  req.stop_controllers  = switch_goal->stop_controllers;
   if (!switch_controller_srv_.call(req, resp)){
     ROS_ERROR("ActionMechanismControl: failed to communicate with mechanism control to switch controllers");
-    return robot_actions::ABORTED;
+    action_server_.setAborted();
   }
   else{
     if (resp.ok){
       ROS_DEBUG("ActionMechanismControl: controlers switched succesfully");
-      return robot_actions::SUCCESS;
+      action_server_.setSucceeded();
     }
     else{
       ROS_ERROR("ActionMechanismControl: failed to switch controllers");
-      return robot_actions::ABORTED;
+      action_server_.setAborted();
     }
   }
 }
 
 }
 
+
+
+int main(int argc, char** argv)
+{
+  ros::init(argc,argv,"mechanism_control_action_container");
+
+  mechanism_control::ActionMechanismControl act;
+
+  ros::spin();
+  return 0;
+}
