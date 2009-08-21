@@ -16,4 +16,5 @@
 
   <!-- controller -->
   <depend package="pr2_mechanism_controllers" />
+  <depend package="experimental_controllers" />
 </package>
