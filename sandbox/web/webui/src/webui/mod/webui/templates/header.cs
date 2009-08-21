@@ -18,7 +18,6 @@
 
 <table class=head_buttons width=100%>
 <tr>
-<td class=pagetitle><?cs var:CGI.ServerName?>: <?cs var:CGI.cur.pageName ?></td>
 <td class=head_buttons width=1% onclick="javascript:location.href='apps.py'">Apps</a></td>
 <td class=head_buttons width=1% onclick="javascript:location.href='move.py'">Move</td>
 <td class=head_buttons width=1% onclick="javascript:location.href='topics.py'">Topics</a></td>
