@@ -12,12 +12,15 @@
   </description>
   <author>Rosen Diankov (rdiankov@cs.cmu.edu)</author>
   <license>BSD</license>
-  <export>
-    <cpp cflags="-I${prefix}/msg/cpp"/>
-  </export>
+
   <depend package="roscpp"/>
   <depend package="std_msgs"/>
   <depend package="geometry_msgs"/>
   <depend package="opencv_latest"/>
   <depend package="sensor_msgs"/>
+
+  <export>
+    <cpp cflags="-I${prefix}/msg/cpp"/>
+  </export>
+
 </package>
