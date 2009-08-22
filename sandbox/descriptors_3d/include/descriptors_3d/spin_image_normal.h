@@ -95,6 +95,7 @@ class SpinImageNormal: public SpinImageGeneric
      *                             each interest point/region
      */
     // --------------------------------------------------------------
+    SpinImageNormal(){}
     SpinImageNormal(const double row_res,
                     const double col_res,
                     const unsigned int nbr_rows,
