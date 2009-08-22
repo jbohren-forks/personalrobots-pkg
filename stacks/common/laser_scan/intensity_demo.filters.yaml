@@ -4,4 +4,4 @@ filter_chain:
   params:
     lower_threshold: 8000
     upper_threshold: 100000
-    disp_histogram: 1
+    disp_histogram: 0

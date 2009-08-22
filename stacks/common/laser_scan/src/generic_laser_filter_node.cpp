@@ -35,8 +35,6 @@
 #include "laser_scan/footprint_filter.h"
 #include "tf/message_notifier.h"
 
-static std::string median_filter_xml = "<!-- NO FILTER DEFINED-->";
-
 
 class GenericLaserScanFilterNode 
 {
@@ -48,7 +46,7 @@ public:
         boost::bind(&GenericLaserScanFilterNode::callback, this, _1), "scan_in", "base_link", 50);
     notifier_->setTolerance(ros::Duration(0.03));
 
-    filter_chain_.configure("~filters");
+    filter_chain_.configure("~");
     //node_.subscribe("scan_in", msg, &GenericLaserScanFilterNode::callback,this, 3);
   }
 

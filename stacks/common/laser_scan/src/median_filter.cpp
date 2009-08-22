@@ -11,9 +11,9 @@ LaserMedianFilter::LaserMedianFilter():
 bool LaserMedianFilter::configure()
 {
   
-  if (!getParam("filter", xmlrpc_value_))
+  if (!getParam("internal_filter", xmlrpc_value_))
   {
-    ROS_ERROR("Cannot Configure LaserMedianFilter: Didn't find filters tag within LaserMedianFilter. Filter definitions needed inside for processing range and intensity");
+    ROS_ERROR("Cannot Configure LaserMedianFilter: Didn't find \"internal_filter\" tag within LaserMedianFilter params. Filter definitions needed inside for processing range and intensity");
     return false;
   }
   
