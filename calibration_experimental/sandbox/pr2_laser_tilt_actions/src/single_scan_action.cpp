@@ -34,7 +34,7 @@
 
 #include "pr2_laser_tilt_actions/single_scan_action.h"
 
-#include "pr2_srvs/SetLaserTrajCmd.h"
+#include "pr2_msgs/SetLaserTrajCmd.h"
 
 using namespace std;
 using namespace pr2_laser_tilt_actions;
@@ -48,8 +48,8 @@ SingleScanAction::SingleScanAction() : robot_actions::Action<SingleScanCmd, Inte
 
 robot_actions::ResultStatus SingleScanAction::execute(const SingleScanCmd& goal, Interval& feedback)
 {
-  pr2_srvs::SetLaserTrajCmd::Request req ;
-  pr2_srvs::SetLaserTrajCmd::Response resp ;
+  pr2_msgs::SetLaserTrajCmd::Request req ;
+  pr2_msgs::SetLaserTrajCmd::Response resp ;
   req.command.profile = "linear" ;
   req.command.pos.resize(3) ;
   req.command.time.resize(3) ;

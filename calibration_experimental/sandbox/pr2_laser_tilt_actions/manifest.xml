@@ -11,7 +11,6 @@
 
   <!-- ******* Stackless ******* -->
   <depend package="pr2_msgs" />
-  <depend package="pr2_srvs" />
 
   <!-- To be removed -->
   <depend package="robot_actions" />
