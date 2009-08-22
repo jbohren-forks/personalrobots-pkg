@@ -115,6 +115,23 @@ public:
   bool initXml(TiXmlElement* config);
 };
 
+class JointMimic
+{
+public:
+  JointMimic() { this->clear(); };
+  double offset;
+  double multiplier;
+  std::string joint_name;
+
+  void clear()
+  {
+    offset = 0;
+    multiplier = 0;
+    joint_name.clear();
+  };
+  bool initXml(TiXmlElement* config);
+};
+
 
 class Joint
 {
@@ -163,6 +180,9 @@ public:
 
   /// Unsupported Hidden Feature
   boost::shared_ptr<JointCalibration> calibration;
+
+  /// Option to Mimic another Joint
+  boost::shared_ptr<JointMimic> mimic;
 
   bool initXml(TiXmlElement* xml);
   void clear()
