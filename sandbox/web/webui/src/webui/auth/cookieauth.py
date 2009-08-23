@@ -104,7 +104,7 @@ class LoginCookie:
 def parseLoginCookie(ncgi):
   cookie = ncgi.hdf.getValue("Cookie.MB_L1","")
   if not cookie:
-    warn("cookieauth.py", "no cookie!")
+    #warn("cookieauth.py", "no cookie!")
     return 0
 
   version, restCookie = string.split(cookie, "/", 1)

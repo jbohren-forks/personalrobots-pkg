@@ -7,9 +7,6 @@ usage: %(progname)s [args]
 
 import os, sys, string, time, getopt
 
-PKG = 'webui' # this package name
-import roslib; roslib.load_manifest(PKG) 
-
 from pyclearsilver.log import *
 
 from webui import config
@@ -23,6 +20,25 @@ from pyclearsilver import odb
 from pyclearsilver import hdfhelp
 
 from launchman import app
+
+def path2taskid(path):
+  p = []
+  package = None
+
+  while path != "/":
+    base, fn = os.path.split(path)
+
+    p.insert(0, fn)
+    if os.path.exists(os.path.join(base, "manifest.xml")):
+      base, package = os.path.split(base)
+      break
+    path = base
+    if path == "/":
+      return None
+
+  fn = apply(os.path.join, p)
+
+  return os.path.join(package, fn)
 
 class WebUIDB(odb.Database):
   def __init__(self,conn,debug=0):
@@ -57,10 +73,20 @@ class ApplicationTable(odb.Table):
     self.d_addColumn("category", kVarString)
 
   def installApp(self, appfn):
-    pass
+    appfn = os.path.abspath(appfn)
+
+    taskid = path2taskid(appfn)
+
+    row = self.newRow()
+    row.taskid = taskid
+    row.save()
 
 class Application(hdfhelp.HdfRow):
-  pass
+  def fetchApp(self, prefix, hdf):
+    warn('taskid', self.taskid)
+    _app = app.App(self.taskid)
+    
+    hdf.setValue(prefix + ".name", _app.name)
   
     
 def fullDBPath(path_to_store):

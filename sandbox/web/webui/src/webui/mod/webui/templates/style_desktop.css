@@ -13,7 +13,10 @@ A:link { text-decoration: none; color: #00f;}
 .toolbar { 
   font-size: 11px; 
   font-family: arial,tahoma,helvetica,sans-serif;
+  background-image: url('images/toolbar/tb-bg.gif');
 }
+
+
 
 td.field { 
   font-weight: bold;
@@ -228,8 +231,14 @@ input.pbbutton {
   width: 8em;
 }
 
+.rosout { 
+  font-size: 10px; 
+  font-family: arial,tahoma,helvetica,sans-serif;
+}
+
 table.rosout {
   table-layout: fixed;
+  width: 100%;
 }
 
 tr.rosout {
@@ -240,6 +249,7 @@ td.rosoutHeading {
   white-space: nowrap;
   padding-right: 5px;
   padding-left: 5px;
+  background-image: url('images/toolbar/tb-bg.gif');
 }
 
 td.rosout {

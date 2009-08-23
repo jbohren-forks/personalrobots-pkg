@@ -23,8 +23,13 @@ class MyPage(MBPage.MBPage):
   def display(self, hdf):
     hdf.setValue("CGI.now", str(time.time()))
 
-    rows = self.db.apps.fetchAllRows()
-    rows.hdfExport("CGI.cur.apps", hdf)
+    apps = self.db.apps.fetchAllRows()
+    prefix = "CGI.cur.apps"
+    i = 0
+    for app in apps:
+      aprefix = prefix + ".%d" % i
+      app.hdfExport(aprefix, hdf)
+      app.fetchApp(aprefix, hdf)
 
 def run(context):
   return MyPage(context, pagename="apps", nologin=1)

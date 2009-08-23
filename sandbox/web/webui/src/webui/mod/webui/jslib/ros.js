@@ -130,7 +130,7 @@ var MessagePump = Class.create({
 
     var uri = this.urlprefix + "/service/" + service_name;
     //new Ajax.Request(uri, {parameters: parameters, method: 'get'});
-    uri = uri + "?callback=gPump.receive_service&args=" + parameterList;
+    uri = uri + "?callback=gPump.receive_service&json=" + Object.toJSON(parameterList);
     getDataFromServer("_ros_service_pump", uri);
   },
   receive_server: function(msg) {
@@ -228,9 +228,9 @@ var OnOffButtonWidget = Class.create({
     var newstate = !this.state;
 
     if(newstate) {
-      this.pump.service_call("start_task", [this.taskid, 'anonymous']);
+      this.pump.service_call("start_task", {'taskid':this.taskid, 'username':'anonymous'});
     } else {
-      this.pump.service_call("stop_task", [this.taskid, 'anonymous']);
+      this.pump.service_call("stop_task", {'taskid':this.taskid, 'username':'anonymous'});
     }
     clearSelection();
   }
@@ -456,7 +456,7 @@ var RosOut_Widget = Class.create({
 
       c = row.insertCell(1);
       c.className = "rosout";
-      c.style.width = "10%";
+      c.style.width = "5%";
       var level = "";
       if(msg.level == "16") level="Info";
       if(msg.level == "8") level="Debug";
@@ -472,13 +472,13 @@ var RosOut_Widget = Class.create({
       tn = document.createTextNode(msg.name);
       c.appendChild(tn);
 
-      c = row.insertCell(3);
-      c.style.width = "20%";
-      c.className = "rosout";
-      tn = document.createTextNode(msg.file + ":" + msg.line);
-      c.appendChild(tn);
+      //      c = row.insertCell(3);
+      //      c.style.width = "5%";
+      //      c.className = "rosout";
+      //      tn = document.createTextNode(msg.file + ":" + msg.line);
+      //      c.appendChild(tn);
 
-      c = row.insertCell(4);
+      c = row.insertCell(3);
       c.style.width = "10%";
       c.className = "rosout";
       tn = document.createTextNode(Object.toJSON(msg.topics));

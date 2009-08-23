@@ -3,7 +3,8 @@
     <?cs include:"includes.cs" ?>
     <title>webui</title>
   </head>
-<body>
+<body onload="ros_handleOnLoad('/ros')">
+
 <?cs include:"header.cs" ?>
 
     

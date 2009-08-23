@@ -7,9 +7,6 @@ usage: %(progname)s [args]
 import nstart
 import os, sys, string, time, getopt
 
-PKG = 'webui' # this package name
-import roslib; roslib.load_manifest(PKG) 
-
 from pyclearsilver.log import *
 
 import config

@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
 """
-usage: %(progname)s [args]
+usage: %(progname)s
 """
 
 
@@ -25,9 +25,7 @@ def main(argv, stdout, environ):
   optlist, args = getopt.getopt(argv[1:], "", ["help", "test", "debug"])
 
   testflag = 0
-  if len(args) == 0:
-    usage(progname)
-    return
+
   for (field, val) in optlist:
     if field == "--help":
       usage(progname)
@@ -41,13 +39,7 @@ def main(argv, stdout, environ):
     test()
     return
 
-  db = db_webui.initSchema()
-
-  appfn = args[0]
-
-  db.apps.installApp(appfn)
-  
-
+  db = db_webui.initSchema(create=1)
 
 if __name__ == "__main__":
   main(sys.argv, sys.stdout, os.environ)

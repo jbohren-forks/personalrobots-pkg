@@ -1,10 +1,11 @@
 #! /usr/bin/env python
 
 """
-usage: %(progname)s [args]
+usage: %(progname)s username
 """
 
 
+import nstart
 import os, sys, string, time, getopt
 
 PKG = 'webui' # this package name
@@ -12,10 +13,10 @@ import roslib; roslib.load_manifest(PKG)
 
 from pyclearsilver.log import *
 
-import db_webui
+import config
 
-def test():
-  pass
+from pyclearsilver.odb import *
+import db_auth
 
 def usage(progname):
   print __doc__ % vars()
@@ -25,9 +26,10 @@ def main(argv, stdout, environ):
   optlist, args = getopt.getopt(argv[1:], "", ["help", "test", "debug"])
 
   testflag = 0
-  if len(args) == 0:
+  if len(args) != 1:
     usage(progname)
     return
+
   for (field, val) in optlist:
     if field == "--help":
       usage(progname)
@@ -41,13 +43,11 @@ def main(argv, stdout, environ):
     test()
     return
 
-  db = db_webui.initSchema()
-
-  appfn = args[0]
-
-  db.apps.installApp(appfn)
-  
+  db = db_auth.initSchema(create=1)
 
 
 if __name__ == "__main__":
   main(sys.argv, sys.stdout, os.environ)
+
+  
+  

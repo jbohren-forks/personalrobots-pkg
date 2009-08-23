@@ -1,4 +1,4 @@
-<table class=toolbar width=100% cellspacing=0 cellpadding=2 style="background-image:url('templates/images/toolbar/tb-bg.gif');">
+<table class=toolbar width=100% cellspacing=0 cellpadding=2>
 <tr>
 <td width=1%><nobr>Robot: <?cs var:CGI.ServerName?></td>
 <td width=1%><img src="templates/images/toolbar/grid-blue-split.gif"></td>
@@ -19,7 +19,7 @@
 <table class=head_buttons width=100%>
 <tr>
 <td class=head_buttons width=1% onclick="javascript:location.href='apps.py'">Apps</a></td>
-<td class=head_buttons width=1% onclick="javascript:location.href='move.py'">Move</td>
+<!--<td class=head_buttons width=1% onclick="javascript:location.href='move.py'">Move</td> -->
 <td class=head_buttons width=1% onclick="javascript:location.href='topics.py'">Topics</a></td>
 <td class=head_buttons width=1% onclick="javascript:location.href='nodes.py'">Nodes</td>
 <td class=head_buttons width=1% onclick="javascript:location.href='powerboard.py'">Power</td>
@@ -32,21 +32,6 @@
 </table>
 
 <table style="border: 0px; width: 150px; float: right">
-<tr><td>
-
-<div objtype=BatteryGauge topic="/battery_state" key=energy_remaining key2=energy_capacity width=150 height=150></div>
-
-</td></tr>
-<tr><td>
-<table style="border: 2px solid #fff; width: 100%">
-<tr><td colspan=2 style="background-color: #aaa; color: #000">Powerboard:</td></tr>
-<?cs include:"powerboard_status2.cs" ?>
-</td></tr>
-</table>
-</tr>
-<tr><td>
-<table style="border: 2px solid #fff; width: 100%;">
-<tr><td style="background-color: #aaa; color: #000">Users:</td></tr>
 <tr>
 <td objtype="ListWidget" topic="/users" key="users">
   __item__<br>
