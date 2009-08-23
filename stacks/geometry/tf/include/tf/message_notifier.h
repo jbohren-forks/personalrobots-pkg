@@ -183,7 +183,9 @@ public:
   ~MessageNotifier()
   {
     NOTIFIER_DEBUG("Successful Transforms: %llu, Failed Transforms: %llu, Discarded due to age: %llu, Transform messages received: %llu, Messages received: %llu, Total dropped: %llu",
-                        successful_transform_count_, failed_transform_count_, failed_out_the_back_count_, transform_message_count_, incoming_message_count_, dropped_message_count_);
+                   (long long unsigned int)successful_transform_count_, (long long unsigned int)failed_transform_count_, 
+                   (long long unsigned int)failed_out_the_back_count_, (long long unsigned int)transform_message_count_, 
+                   (long long unsigned int)incoming_message_count_, (long long unsigned int)dropped_message_count_);
 
     unsubscribeFromMessage();
 
