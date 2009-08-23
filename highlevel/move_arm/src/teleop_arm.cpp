@@ -57,7 +57,7 @@ namespace move_arm
 	    nh_.param<bool>("~use_planning", use_planning_, false);
 	    pubTwist_ = nh_.advertise<geometry_msgs::Twist>("/r_arm_cartesian_twist_controller/command", 1);
 	    vizPub_ = nh_.advertise<visualization_msgs::Marker>("visualization_marker", 1024);
-	    ctrl_ = nh_.serviceClient<pr2_mechanism_controllers::TrajectoryStart>("/r_arm_joint_waypoint_controller/TrajectoryStart", true);
+	    ctrl_ = nh_.serviceClient<experimental_controllers::TrajectoryStart>("/r_arm_joint_waypoint_controller/TrajectoryStart", true);
 	    subSpaceNav_ = nh_.subscribe("/spacenav/joy", 1, &TeleopArm::twistCallback, this);
 	    planningMonitor_ = setup_.planningMonitor_;
 	}
@@ -259,8 +259,8 @@ namespace move_arm
 		path[i]->copyParamsJoints(traj.points[i].positions, setup_.groupJointNames_);
 	    }
 	    
-	    pr2_mechanism_controllers::TrajectoryStart::Request  send_traj_start_req;
-	    pr2_mechanism_controllers::TrajectoryStart::Response send_traj_start_res;
+	    experimental_controllers::TrajectoryStart::Request  send_traj_start_req;
+	    experimental_controllers::TrajectoryStart::Response send_traj_start_res;
 
 	    send_traj_start_req.traj = traj;	    
 	    send_traj_start_req.hastiming = 0;

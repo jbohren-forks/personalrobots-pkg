@@ -48,7 +48,7 @@ class TopicThread(threading.Thread):
     subtopics.sort()
 
     nodes = []
-    import itertools
+
     for s in state:
         for t, l in s:
             nodes.extend(l)

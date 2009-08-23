@@ -3,7 +3,7 @@
 <launch>
 
   <!-- start up gazebo -->
-  <include file="$(find gazebo)/launch/simple_office.launch"/>
+  <include file="$(find gazebo)/launch/simple_world.launch"/>
 
   <!-- start up robot -->
   <include file="$(find pr2_gazebo)/pr2.launch"/>

@@ -185,7 +185,7 @@ void CasterCalibrationControllerEffortNode::update()
 }
 
 
-  bool CasterCalibrationControllerEffortNode::calibrateCommand(robot_mechanism_controllers::CalibrateJoint::Request &req, robot_mechanism_controllers::CalibrateJoint::Response &resp)
+  bool CasterCalibrationControllerEffortNode::calibrateCommand(experimental_controllers::CalibrateJoint::Request &req, experimental_controllers::CalibrateJoint::Response &resp)
 {
   c_.beginCalibration();
   ros::Duration d=ros::Duration(0,1000000);

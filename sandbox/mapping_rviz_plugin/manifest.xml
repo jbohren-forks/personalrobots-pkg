@@ -1,0 +1,22 @@
+<package>
+  <description brief="mapping_rviz_plugin">
+
+     mapping_rviz_plugin
+
+  </description>
+  <author>Josh Faust</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/mapping_rviz_plugin</url>
+  <depend package="rviz"/>
+  <depend package="roscpp"/>
+  <depend package="mapping_msgs"/>
+  <depend package="tf"/>
+  
+  <export>
+    <rviz plugin="${prefix}/lib/rviz_plugin.yaml"/>
+  </export>
+
+</package>
+
+

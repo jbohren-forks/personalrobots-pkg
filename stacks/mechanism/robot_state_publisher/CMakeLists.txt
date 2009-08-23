@@ -9,8 +9,8 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 #  MinSizeRel     : w/o debug symbols, w/ optimization, stripped binaries
 #set(ROS_BUILD_TYPE RelWithDebInfo)
 
-rospack(robot_state_publisher)
-rospack_add_boost_directories()
+rosbuild_init()
+rosbuild_add_boost_directories()
 
 #set the default path for built executables to the "bin" directory
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
@@ -22,15 +22,17 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #uncomment if you have defined services
 #gensrv()
 
-rospack_add_library(${PROJECT_NAME} src/joint_state_listener.cpp src/robot_state_publisher.cpp src/treefksolverposfull_recursive.cpp)
+rosbuild_add_library(${PROJECT_NAME} src/joint_state_listener.cpp src/robot_state_publisher.cpp src/treefksolverposfull_recursive.cpp)
 
-rospack_add_executable(state_publisher src/state_publisher.cpp )
+rosbuild_add_executable(state_publisher src/state_publisher.cpp )
 target_link_libraries(state_publisher ${PROJECT_NAME})
 
-rospack_add_executable(test_publisher test/test_publisher.cpp )
+rosbuild_add_executable(test_publisher test/test_publisher.cpp )
 target_link_libraries(test_publisher ${PROJECT_NAME})
+rosbuild_add_gtest_build_flags(test_publisher)
+rosbuild_declare_test(test_publisher)
 
-rospack_add_rostest(${CMAKE_CURRENT_SOURCE_DIR}/test/test_publisher.launch)
+rosbuild_add_rostest(${CMAKE_CURRENT_SOURCE_DIR}/test/test_publisher.launch)
 
 # Download needed data file
-rospack_download_test_data(http://pr.willowgarage.com/data/robot_state_publisher/joint_states.bag test/joint_states.bag)
+rosbuild_download_test_data(http://pr.willowgarage.com/data/robot_state_publisher/joint_states.bag test/joint_states.bag)

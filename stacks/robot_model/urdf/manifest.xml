@@ -8,7 +8,6 @@
   <url>http://pr.willowgarage.com/wiki/robot_model</url>
 
   <depend package="tinyxml" />
-  <depend package="gtest" />
   <depend package="roscpp" />
 
   <export>

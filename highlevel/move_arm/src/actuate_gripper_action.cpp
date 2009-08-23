@@ -36,7 +36,7 @@
 
 #include <ros/ros.h>
 
-#include <actionlib/server/single_goal_action_server.h>
+#include <actionlib/server/simple_action_server.h>
 #include <move_arm/ActuateGripperAction.h>
 #include <std_msgs/Float64.h>
 
@@ -82,7 +82,7 @@ public:
 protected:
     
     ros::NodeHandle                                                   nh_;
-    actionlib::SingleGoalActionServer<move_arm::ActuateGripperAction> as_;
+    actionlib::SimpleActionServer<move_arm::ActuateGripperAction>     as_;
     ros::Publisher                                                    pub_;
     
 };

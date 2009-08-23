@@ -11,20 +11,15 @@
   <depend package="mechanism_control" />
   <depend package="control_toolbox" />
   <depend package="tinyxml" />
-  <depend package="misc_utils" />
   <depend package="realtime_tools" />
   <depend package="roscpp" />
   <depend package="std_msgs" />
-  <depend package="deprecated_srvs" />
   <depend package="geometry_msgs" />
-  <depend package="manipulation_msgs" />
   <depend package="visualization_msgs" />
   <depend package="tf" />
   <depend package="tf_conversions" />
   <depend package="kdl" />
   <depend package="angles" />
-  <depend package="joy" />
-  <depend package="eigen" />
   <depend package="diagnostic_msgs" />
   <depend package="pluginlib" />
   <url>http://pr.willowgarage.com</url>

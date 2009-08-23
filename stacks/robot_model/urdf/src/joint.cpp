@@ -171,6 +171,43 @@ bool JointCalibration::initXml(TiXmlElement* config)
   return true;
 }
 
+bool JointMimic::initXml(TiXmlElement* config)
+{
+  this->clear();
+
+  // Get name of joint to mimic
+  const char* joint_name_str = config->Attribute("joint");
+  if (joint_name_str == NULL)
+  {
+    ROS_ERROR("joint mimic: no mimic joint specified");
+    return false;
+  }
+  else
+    this->joint_name = joint_name_str;
+
+  // Get mimic multiplier
+  const char* multiplier_str = config->Attribute("multiplier");
+  if (multiplier_str == NULL)
+  {
+    ROS_DEBUG("joint mimic: no multiplier, using default value of 1");
+    this->multiplier = 1;
+  }
+  else
+    this->multiplier = atof(multiplier_str);
+
+  // Get mimic offset
+  const char* offset_str = config->Attribute("offset");
+  if (offset_str == NULL)
+  {
+    ROS_DEBUG("joint mimic: no offset, using default value of 0");
+    this->offset = 0;
+  }
+  else
+    this->offset = atof(offset_str);
+
+  return true;
+}
+
 bool Joint::initXml(TiXmlElement* config)
 {
   this->clear();
@@ -314,6 +351,18 @@ bool Joint::initXml(TiXmlElement* config)
     {
       ROS_ERROR("Could not parse calibration element for joint  '%s'", this->name.c_str());
       calibration.reset();
+    }
+  }
+
+  // Get Joint Mimic
+  TiXmlElement *mimic_xml = config->FirstChildElement("mimic");
+  if (mimic_xml)
+  {
+    mimic.reset(new JointMimic);
+    if (!mimic->initXml(mimic_xml))
+    {
+      ROS_ERROR("Could not parse mimic element for joint  '%s'", this->name.c_str());
+      mimic.reset();
     }
   }
 

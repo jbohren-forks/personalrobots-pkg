@@ -31,11 +31,9 @@
 #include "controller_interface/controller.h"
 
 #include "robot_mechanism_controllers/cartesian_pose_controller.h"
-#include "robot_mechanism_controllers/cartesian_trajectory_controller.h"
 #include "robot_mechanism_controllers/cartesian_twist_controller.h"
 #include "robot_mechanism_controllers/cartesian_wrench_controller.h"
 #include "robot_mechanism_controllers/joint_effort_controller.h"
-#include "robot_mechanism_controllers/joint_pd_controller.h"
 #include "robot_mechanism_controllers/joint_position_controller.h"
 #include "robot_mechanism_controllers/joint_ud_calibration_controller.h"
 #include "robot_mechanism_controllers/joint_velocity_controller.h"
@@ -54,11 +52,5 @@ PLUGINLIB_REGISTER_CLASS(CartesianPoseController, CartesianPoseController, Contr
 
 PLUGINLIB_REGISTER_CLASS(JointUDCalibrationController, JointUDCalibrationController, Controller)
 
-PLUGINLIB_REGISTER_CLASS(CartesianTrajectoryController, CartesianTrajectoryController, Controller)
-
 PLUGINLIB_REGISTER_CLASS(TriggerController, TriggerController, Controller)
 PLUGINLIB_REGISTER_CLASS(TriggerControllerNode, TriggerControllerNode, Controller)
-
-PLUGINLIB_REGISTER_CLASS(JointPDController, JointPDController, Controller)
-PLUGINLIB_REGISTER_CLASS(JointPDControllerNode, JointPDControllerNode, Controller)
-

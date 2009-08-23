@@ -16,6 +16,10 @@
   <depend package="nav_msgs" />
   <depend package="tf" />
   <depend package="trajectory" />
+  <depend package="experimental_controllers" />
+
+  <depend package="actionlib" />
+  <depend package="move_base_msgs" />
 
   <depend package="mechanism_msgs" />
   <depend package="std_msgs" /><depend package="joy"></depend>

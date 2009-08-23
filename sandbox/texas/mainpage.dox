@@ -2,18 +2,19 @@
 \mainpage
 \htmlinclude manifest.html
 
-\b texas is ... 
-
-<!-- 
-In addition to providing an overview of your package,
-this is the section where the specification and design/architecture 
-should be detailed. While the original specification may be done on the
-wiki, it should be transferred here once your package starts to take shape.
-You can then link to this documentation page from the Wiki. 
--->
-
+\b texas contains the scripts necessary to launch and drive the DallasBot/SkypeBot.
 
 \section codeapi Code API
+
+Launching the DallasBot:
+\verbatim
+roslaunch texas.launch
+\endverbatim
+
+Driving the Dallas Bot:
+\verbatim
+roslaunch drive.launch
+\endverbatim
 
 <!--
 Provide links to specific auto-generated API documentation within your

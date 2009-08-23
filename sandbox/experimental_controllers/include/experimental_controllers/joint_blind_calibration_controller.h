@@ -61,7 +61,7 @@
 #include "misc_utils/advertised_service_guard.h"
 
 // Services
-#include <robot_mechanism_controllers/CalibrateJoint.h>
+#include <experimental_controllers/CalibrateJoint.h>
 
 
 namespace controller
@@ -144,8 +144,8 @@ public:
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
   // Services
-  bool calibrateCommand(robot_mechanism_controllers::CalibrateJoint::Request &req,
-                        robot_mechanism_controllers::CalibrateJoint::Response &resp);
+  bool calibrateCommand(experimental_controllers::CalibrateJoint::Request &req,
+                        experimental_controllers::CalibrateJoint::Response &resp);
 
 private:
   JointBlindCalibrationController *c_;

@@ -12,7 +12,6 @@
   <depend package="door_msgs" />
   <depend package="kdl"/>
   <depend package="tf"/>
-  <depend package="gtest"/>
 
 
  <export>

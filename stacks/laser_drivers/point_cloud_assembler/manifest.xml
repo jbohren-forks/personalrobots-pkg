@@ -5,19 +5,16 @@
   <author>Caroline Pantofaru, Jeremy Leibs, Vijay Pradeep</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
-  <url>http://pr.willowgarage.com/wiki/point_cloud_assembler</url>
+  <url>http://ros.org/wiki/point_cloud_assembler</url>
   <depend package="roscpp"/>
   <depend package="std_msgs"/>
-  <depend package="sensor_msgs"/>
   <depend package="geometry_msgs"/>
   <depend package="laser_scan"/>
   <depend package="sensor_msgs"/>
   <depend package="tf"/>
-  <depend package="pr2_srvs"/>
   <depend package="pr2_msgs"/>
   # For Testing
   <depend package="rostest"/>
-  <depend package="gtest"/>
   <depend package="filters"/>
 
  <export>

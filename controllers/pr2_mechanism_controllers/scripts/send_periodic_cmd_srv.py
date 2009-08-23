@@ -12,7 +12,7 @@ import rospy
 from std_msgs import *
 
 from pr2_msgs.msg import PeriodicCmd
-from pr2_srvs.srv import *
+from pr2_msgs.srv import *
 from time import sleep
 
 def print_usage(exit_code = 0):

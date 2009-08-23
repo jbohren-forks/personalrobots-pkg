@@ -36,7 +36,7 @@
 
 #include <ros/ros.h>
 
-#include <actionlib/server/single_goal_action_server.h>
+#include <actionlib/server/simple_action_server.h>
 #include <actionlib_tutorials/AveragingAction.h>
 #include <std_msgs/Float32.h>
 
@@ -79,7 +79,7 @@ public:
 
     void analysisCB(const std_msgs::Float32::ConstPtr& msg)
     {
-      // make sure that the action hasn't been preempted
+      // make sure that the action hasn't been 
       if (!as_.isActive())
         return;
       
@@ -107,7 +107,7 @@ public:
 protected:
     
     ros::NodeHandle nh_;
-    actionlib::SingleGoalActionServer<actionlib_tutorials::AveragingAction> as_;
+    actionlib::SimpleActionServer<actionlib_tutorials::AveragingAction> as_;
     std::string action_name_;
     int data_count_, goal_;
     float sum_, sum_sq_;

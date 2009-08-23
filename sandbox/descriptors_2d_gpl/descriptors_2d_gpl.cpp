@@ -62,7 +62,7 @@ void Daisy::doComputation(IplImage* img, const cv::Vector<KeyPoint>& points, vvf
   dai_.set_image(im_, img->height, img->width);
   dai_.set_parameters(rad_, rad_q_no_, th_q_no_, hist_th_q_no_);
   dai_.initialize_single_descriptor_mode();
-
+  dai_.verbose(0);
 
   int nValid = 0;
   //START_TIMER();

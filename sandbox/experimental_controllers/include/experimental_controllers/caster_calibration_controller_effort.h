@@ -37,7 +37,7 @@
 #include "experimental_controllers/caster_controller_effort.h"
 #include "realtime_tools/realtime_publisher.h"
 #include "std_msgs/Empty.h"
-#include <robot_mechanism_controllers/CalibrateJoint.h>
+#include <experimental_controllers/CalibrateJoint.h>
 
 namespace controller {
 
@@ -88,8 +88,8 @@ public:
 
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
-  bool calibrateCommand(robot_mechanism_controllers::CalibrateJoint::Request &req,
-                        robot_mechanism_controllers::CalibrateJoint::Response &resp);
+  bool calibrateCommand(experimental_controllers::CalibrateJoint::Request &req,
+                        experimental_controllers::CalibrateJoint::Response &resp);
 
 private:
   mechanism::RobotState *robot_;

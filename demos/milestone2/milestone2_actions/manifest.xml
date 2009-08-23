@@ -14,5 +14,6 @@
   <depend package="pr2_alpha"/>
 
   <depend package="pr2_experimental_controllers"/>
+  <depend package="switch_controller_translator"/>
   <depend package="mux"/>
 </package>

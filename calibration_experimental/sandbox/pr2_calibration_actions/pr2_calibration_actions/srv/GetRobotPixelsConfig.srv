@@ -1,0 +1,4 @@
+uint32 command_num
+---
+CaptureRobotPixelsGoal config
+float64[] command

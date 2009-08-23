@@ -1,0 +1,11 @@
+<package>
+<description brief="Python Clearsilver">
+Converts ROS topics to JSON for Web requests.
+</description>
+<author>Scott Hassan/hassan@willowgarage.com</author>
+<license>BSD</license>
+<review status="experimental" notes=""/>
+<url>http://pr.willowgarage.com/wiki/iros</url>
+<sysdepend os="ubuntu" package="python-clearsilver"/>
+</package>
+

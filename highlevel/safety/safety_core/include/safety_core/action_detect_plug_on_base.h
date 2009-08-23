@@ -41,7 +41,7 @@
 
 #include <ros/node.h>
 #include <plugs_msgs/PlugStow.h>
-#include <pr2_srvs/SetPeriodicCmd.h>
+#include <pr2_msgs/SetPeriodicCmd.h>
 #include <std_msgs/Empty.h>
 #include <robot_actions/action.h>
 #include <plug_onbase_detector/plug_onbase_detector.h>
@@ -86,8 +86,8 @@ private:
   double std_y_;
   double std_z_;
 
-  pr2_srvs::SetPeriodicCmd::Request req_laser_;
-  pr2_srvs::SetPeriodicCmd::Response res_laser_;
+  pr2_msgs::SetPeriodicCmd::Request req_laser_;
+  pr2_msgs::SetPeriodicCmd::Response res_laser_;
 };
 
 }

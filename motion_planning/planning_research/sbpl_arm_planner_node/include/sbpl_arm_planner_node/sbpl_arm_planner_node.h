@@ -62,6 +62,7 @@
 #include <motion_planning_msgs/PoseConstraint.h>
 #include <mechanism_msgs/MechanismState.h>
 #include <visualization_msgs/Marker.h>
+#include <boost/numeric/ublas/matrix.hpp>
 
 #include <robot_voxelizer/robot_voxelizer.h>
 
@@ -155,6 +156,8 @@ class SBPLArmPlannerNode
 			bool print_path_;
 			
 			bool upright_gripper_only_;
+			
+			bool use_jacobian_mp_;
 
       int num_joints_;
 

@@ -27,6 +27,8 @@ rospack_add_library(experimental_controllers
   src/controller_manifest.cpp
   src/trajectory_controller.cpp
   src/pid_position_velocity_controller.cpp
+  src/cartesian_trajectory_controller.cpp
+  src/joint_pd_controller.cpp
 
   src/cartesian_tff_controller.cpp
   src/cartesian_twist_controller_ik.cpp
@@ -45,9 +47,12 @@ rospack_add_library(experimental_controllers
   src/head_servoing_controller.cpp
   src/arm_trajectory_controller.cpp
   src/joint_trajectory_controller.cpp
+  src/pr2_gripper_controller.cpp
 
 )
 target_link_libraries(experimental_controllers ltdl)
 
 rospack_add_executable(test_trajectory_controller test/test_trajectory_srv.cpp)
 target_link_libraries(test_trajectory_controller experimental_controllers)
+
+rospack_add_executable(base_trajectory_controller src/base_trajectory_controller.cpp)

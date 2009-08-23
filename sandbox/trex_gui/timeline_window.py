@@ -14,6 +14,7 @@ import cairo, pangocairo
 import gtk, gtk.glade
 
 # TREX modules
+from db_core import DbCore,Timeline
 from assembly import Assembly,Entity,Rule,Token,Slot,Variable
 
 ##############################################################################
@@ -22,13 +23,13 @@ from assembly import Assembly,Entity,Rule,Token,Slot,Variable
 #   tokens and drawing state.
 ##############################################################################
 
-class Timeline():
+class TimelineSprite():
   # Timeline constants
   INTERNAL, EXTERNAL = range(2)
 
-  def __init__(self,obj):
+  def __init__(self,timeline):
     # Store this object
-    self.obj = obj
+    self.tl = timeline
 
     # Store the reactor that this timeline belongs to
     self.reactor_panel = None
@@ -48,22 +49,10 @@ class Timeline():
     self.latest_tick = float("Inf")
     self.row = 0
 
-    # Timelines must be declared as internal or external
-    for var in obj.vars:
-      # Check the mode value
-      if var.name[-5:] == ".mode":
-	# Internal timeline
-	if -1 != var.values.find("Internal"):
-	  self.mode = Timeline.INTERNAL
-	else:
-	  self.mode = Timeline.EXTERNAL
-
     # Add tokens
-    self.add_tokens(obj.tokens)
-    
-    # Sort the list of tokens
-    #self.tokens.sort(lambda a,b: int(a.start[0] - b.start[0]))
+    self.add_tokens(timeline.tokens)
 
+  # Add new tokens to this timeline
   def add_tokens(self,tokens):
     # Copy new active tokens into active tokens, reset new active tokens
     #self.active_tokens = self.active_tokens + self.new_active_tokens
@@ -144,7 +133,7 @@ class ReactorPanel():
 
   def __init__(self):
     # Initialize data structures
-    self.assembly = Assembly()
+    self.db_core = DbCore()
     self.int_timelines = []
     self.ext_timelines = []
     self.timelines = {}
@@ -204,9 +193,9 @@ class ReactorPanel():
     self.timeline_da.connect("button-press-event", self.on_timeline_click,None)
 
   # Create timeline structures for all of the timelines in an assembly
-  def process_timelines(self, assembly):
-    # Save assembly
-    self.assembly = assembly
+  def process_timelines(self, db_core):
+    # Save db_core
+    self.db_core = db_core
 
     # Clear timeline vars
     self.n_timelines = 0
@@ -241,78 +230,91 @@ class ReactorPanel():
 
     # Create timeline objects for all timelines
     # This also classifies all timelines as internal or external
-    for object in assembly.objects.values():
-      # Timelines must have tokens
-      if len(object.tokens) > 0:
-	# Check if this is a new timeline
-	if not self.timelines.has_key(object.name):
-	  # Create a new timeline object
-	  timeline = Timeline(object)
+    for tl in db_core.int_timelines.values() + db_core.ext_timelines.values():
+      # Check if this is a new timeline
+      if not self.timelines.has_key(tl.name):
+	# Create a new timeline object
+	timeline = TimelineSprite(tl)
 
-	  # Add the timeline
-	  self.timelines[timeline.obj.name] = timeline
+	# Add the timeline
+	self.timelines[timeline.tl.name] = timeline
 
-	  if timeline.mode == Timeline.INTERNAL:
-	    timeline.reactor_panel = self
-	    self.int_timelines.append(timeline)
-	  else:
-	    self.ext_timelines.append(timeline)
+	if timeline.tl.mode == Timeline.INTERNAL:
+	  timeline.reactor_panel = self
+	  self.int_timelines.append(timeline)
 	else:
-	  # Retrieve the timeline object
-	  timeline = self.timelines[object.name]
-	  # Update the object
-	  timeline.add_tokens(object.tokens)
+	  self.ext_timelines.append(timeline)
+      else:
+	# Retrieve the timeline object
+	timeline = self.timelines[tl.name]
+	# Update the object
+	timeline.add_tokens(tl.tokens)
 
 
-	# Add all tokens to this reactor
-	##############################################################
+      # Add all tokens to this reactor
+      ##############################################################
 
-	for new_token in timeline.new_active_tokens:
-	  # Check if this token existed in a previously viewed tick
-	  if self.all_tokens.has_key(new_token.key):
-	    # Check if this token is planned from the previous tick
-	    # This means that it might have started on this one, also it's start time is not yet closed,
-	    # so we need to remove it before sorting
-	    if new_token.key in self.planned_token_keys:
-	      # Get the index in the sorted lists of this token
-	      sorted_index = self.planned_token_keys.index(new_token.key)
-	      # Remove from the sorted lists
-	      self.planned_token_times.pop(sorted_index)
-	      self.planned_token_keys.pop(sorted_index)
-	    else:
-	      # We're travelling backwards
-	      # Get the index in the sorted lists of this token
-	      sorted_index = self.started_token_keys.index(new_token.key)
-	      # Remove from the sorted lists
-	      self.started_token_times.pop(sorted_index)
-	      self.started_token_keys.pop(sorted_index)
-	      pass
-
-	  # Store / update this token
-	  self.all_tokens[new_token.key] = new_token
-	  # Update last updated tick for this token
-	  self.token_ticks[new_token.key] = assembly.tick
-	  # Store this token's timeline
-	  self.token_timelines[new_token.key] = timeline
-
-	  # Insert this token to the appropriate sorted token list
-	  if new_token.start[0] == new_token.start[1]:
-	    keys = self.started_token_keys
-	    times = self.started_token_times
+      for new_token in timeline.new_active_tokens:
+	# Check if this token existed in a previously viewed tick
+	if self.all_tokens.has_key(new_token.key):
+	  # Check if this token is planned from the previous tick
+	  # This means that it might have started on this one, also it's start time is not yet closed,
+	  # so we need to remove it before sorting
+	  if new_token.key in self.planned_token_keys:
+	    # Get the index in the sorted lists of this token
+	    sorted_index = self.planned_token_keys.index(new_token.key)
+	    # Remove from the sorted lists
+	    self.planned_token_times.pop(sorted_index)
+	    self.planned_token_keys.pop(sorted_index)
 	  else:
-	    keys = self.planned_token_keys
-	    times = self.planned_token_times
+	    # We're travelling backwards
+	    # Get the index in the sorted lists of this token
+	    sorted_index = self.started_token_keys.index(new_token.key)
+	    # Remove from the sorted lists
+	    self.started_token_times.pop(sorted_index)
+	    self.started_token_keys.pop(sorted_index)
+	    pass
 
-	  # Get insertion indices
-	  insert_index_start = bisect.bisect_left(times, new_token.start[0])
-	  insert_index_end = bisect.bisect_right(times, new_token.start[0])
+	# Store / update this token
+	self.all_tokens[new_token.key] = new_token
+	# Update last updated tick for this token
+	self.token_ticks[new_token.key] = db_core.tick
+	# Store this token's timeline
+	self.token_timelines[new_token.key] = timeline
 
-	  # Insert token
-	  if insert_index_start >= len(keys) or new_token.key not in keys[insert_index_start:insert_index_end]:
-	    keys.insert(insert_index_start,new_token.key)
-	    times.insert(insert_index_start,new_token.start[0])
+	# Insert this token to the appropriate sorted token list
+	if new_token.start[0] == new_token.start[1]:
+	  keys = self.started_token_keys
+	  times = self.started_token_times
+	else:
+	  keys = self.planned_token_keys
+	  times = self.planned_token_times
 
-	##############################################################
+	# Get insertion indices
+	insert_index_start = bisect.bisect_left(times, new_token.start[0])
+	insert_index_end = bisect.bisect_right(times, new_token.start[0])
+
+	# Get list of times
+	if insert_index_start != insert_index_end and insert_index_start < len(keys) and insert_index_end < len(keys):
+	  local_token_keys = keys[insert_index_start:insert_index_end]
+	  #print local_token_keys
+	  #local_end_times = self.all_tokens[local_token_keys]
+	  #print local_end_times
+	  #print "NEW TOKEN ENDING: %d [%s]" % (new_token.end[0],str(new_token))
+
+	  # Sort based on end time
+	  for index in range(insert_index_start,insert_index_end):
+	    #print self.all_tokens[keys[index]]
+	    if self.all_tokens[keys[index]].end[0] > new_token.end[0]:
+	      insert_index_start = insert_index_start + 1
+
+	# Insert token
+	if insert_index_start >= len(keys) or new_token.key not in keys[insert_index_start:insert_index_end]:
+	  keys.insert(insert_index_start,new_token.key)
+	  times.insert(insert_index_start,new_token.start[0])
+
+      ##############################################################
+
     # Set the row in each timeline 
     row = 0
     for timeline in self.int_timelines + self.ext_timelines:
@@ -360,7 +362,7 @@ class ReactorPanel():
 	  m = gtk.Menu()
 
 	  # Create info label menu item
-	  info = gtk.MenuItem("Timeline: %s\nToken: %s\nKey: %s" % (timeline.obj.name, token.name, str(token.key)),False)
+	  info = gtk.MenuItem("Timeline: %s\nToken: %s\nKey: %s" % (timeline.tl.name, token.name, str(token.key)),False)
 	  info.set_sensitive(False)
 	  m.append(info)
 	  m.append(gtk.SeparatorMenuItem())
@@ -368,7 +370,7 @@ class ReactorPanel():
 	  # Iterate over extensions
 	  for label_str,cb in ReactorPanel.ContextCallbacks.items():
 	    menu_ext = gtk.MenuItem(label_str)
-	    menu_ext.connect("activate",self.callback_wrapper,cb,self.assembly,token)
+	    menu_ext.connect("activate",self.callback_wrapper,cb,self.db_core,token)
 	    m.append(menu_ext)
 
 	  # Show the menu, and pop it up
@@ -379,8 +381,8 @@ class ReactorPanel():
     return False
 
   # Wrap the callback to keep it from receiving the menuitem
-  def callback_wrapper(self,menuitem,cb,assembly,token):
-    cb(assembly, token)
+  def callback_wrapper(self,menuitem,cb,db_core,token):
+    cb(db_core, token)
 
   #############################################################################
   # Drawing timelines
@@ -475,13 +477,13 @@ class ReactorPanel():
       (r,g,b) = timeline.get_color()
 
       # Skip tokens that are older than the tickbehind and newer than the current tick
-      if tick < self.assembly.tick-ReactorPanel.TokenHistory:
+      if tick < self.db_core.tick-ReactorPanel.TokenHistory:
 	# Check if this is older than the cache
-	if tick < self.assembly.tick-ReactorPanel.TokenCache:
+	if tick < self.db_core.tick-ReactorPanel.TokenCache:
 	  # Add this token to the removal list
 	  self.tokens_to_remove.append(token)
 	continue
-      elif tick > self.assembly.tick:
+      elif tick > self.db_core.tick:
 	continue
 
       # Do not draw BaseState (HACK)
@@ -522,7 +524,7 @@ class ReactorPanel():
 	  # A token is missing, re-sync to create a space for it
 	  timeline.earliest_start = earliest_start
 
-	#print "[%s, %s] earliest: %s (%s)" % (str(token.start[0]),str(token.end[0]), str(earliest_tick), label_str)
+	#print "[%s, %s] earliest: %s [%s]" % (str(token.start[0]),str(token.end[0]), str(earliest_tick), str(token))
 
 	# Calculate the token pixel width
 	# Get the width if this token were to be drawn between the latest point on this timeline, and the earliest point for all timelines
@@ -610,7 +612,7 @@ class ReactorPanel():
       # Set the color for the appropriate reactors
       if key in self.hilight_keys:
 	cr.set_source_rgba(1.0, 0.7, 0.07, 1.0)
-      elif self.token_ticks[key] < self.assembly.tick:
+      elif self.token_ticks[key] < self.db_core.tick:
 	cr.set_source_rgba(r,g,b, 0.3)
       else:
 	cr.set_source_rgba(r, g, b, 0.7)
@@ -680,7 +682,7 @@ class ReactorPanel():
     self.set_label_font(cr)
     for timeline in self.int_timelines + self.ext_timelines:
       # Get extents
-      xb,yb,w,h,xa,ya = cr.text_extents(timeline.obj.name)
+      xb,yb,w,h,xa,ya = cr.text_extents(timeline.tl.name)
       max_width = max(w,max_width)
 
     # Set the width
@@ -698,13 +700,13 @@ class ReactorPanel():
       cr.fill()
 
       # Determine extents of text string
-      xb,yb,w,h,xa,ya = cr.text_extents(timeline.obj.name)
+      xb,yb,w,h,xa,ya = cr.text_extents(timeline.tl.name)
 
       tx = ReactorPanel.LabelWidth - w - ReactorPanel.LABEL_MARGIN
       ty = y+ReactorPanel.ROW_HEIGHT-4
       cr.move_to(tx,ty)
       cr.set_source_rgba(1.0, 1.0, 1.0, 1.0)
-      cr.show_text(timeline.obj.name)
+      cr.show_text(timeline.tl.name)
 
       row = row+1
 
@@ -823,17 +825,17 @@ class TimelineWindow():
   #############################################################################
 
   # Load new assemblies 
-  def set_assemblies(self,assemblies,selected_reactor_name):
+  def set_db_cores(self,db_cores,selected_reactor_name):
     # Add and remove reactors as necessary
-    for reactor_name,assembly in assemblies.items():
+    for reactor_name,db_core in db_cores.items():
       # Check if this reactor exists
       if not self.reactor_panels.has_key(reactor_name):
 	self.add_reactor(reactor_name)
       # Set this reactor's assembly
-      self.reactor_panels[reactor_name].process_timelines(assembly)
+      self.reactor_panels[reactor_name].process_timelines(db_core)
 
     # Remove reactors that were not updated
-    removed_reactors = [rname for rname in self.reactor_panels.keys() if rname not in assemblies.keys()]
+    removed_reactors = [rname for rname in self.reactor_panels.keys() if rname not in db_cores.keys()]
     for reactor_name in removed_reactors:
       self.rem_reactor(reactor_name)
 
@@ -844,8 +846,8 @@ class TimelineWindow():
 	  # Only compare to reactors that aren't the current one
 	  if tl_parent != reactor_panel:
 	    # Generate a list of the internal timeline names for this candidate parent
-	    tl_names = [tl.obj.name for tl in tl_parent.int_timelines]
-	    if timeline.obj.name in tl_names:
+	    tl_names = [tl.tl.name for tl in tl_parent.int_timelines]
+	    if timeline.tl.name in tl_names:
 	      # Set this timeline's reactor panel to it's parent
 	      timeline.reactor_panel = tl_parent
 		

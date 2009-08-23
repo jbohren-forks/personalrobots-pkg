@@ -774,9 +774,12 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
             out = self.connection
           else:
             out = soc
-          data = i.recv(8192*100)
+          data = i.recv(8192)
           if data:
-            out.send(data)
+            bytes_sent = 0
+            while bytes_sent != len(data):
+              n = out.send(data[bytes_sent:])
+              bytes_sent += n
             
             count = 0
       else:

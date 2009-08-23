@@ -48,7 +48,6 @@
 #include "mechanism_model/robot.h"
 #include "control_toolbox/pid.h"
 #include "robot_mechanism_controllers/joint_velocity_controller.h"
-#include "misc_utils/subscription_guard.h"
 #include "std_msgs/Float64.h"
 
 namespace controller {
@@ -82,35 +81,6 @@ public:
 private:
   ros::NodeHandle node_;
   JointVelocityController caster_vel_, wheel_l_vel_, wheel_r_vel_;
-};
-
-
-/*
- * Listens on /name/steer_velocity and /name/drive_velocity
- */
-
-class CasterControllerNode : public Controller
-{
-public:
-  CasterControllerNode();
-  ~CasterControllerNode();
-
-  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
-
-  void update();
-
-  void setSteerVelocity() {
-    c_.steer_velocity_ = steer_velocity_msg_.data;
-  }
-  void setDriveVelocity() {
-    c_.drive_velocity_ = drive_velocity_msg_.data;
-  }
-
-private:
-  CasterController c_;
-
-  SubscriptionGuard guard_steer_velocity_, guard_drive_velocity_;
-  std_msgs::Float64 steer_velocity_msg_, drive_velocity_msg_;
 };
 
 }

@@ -36,7 +36,7 @@
 // Services
 #include "point_cloud_assembler/BuildCloud.h"
 #include "point_cloud_assembler/BuildCloudAngle.h"
-#include "pr2_srvs/SetPeriodicCmd.h"
+#include "pr2_msgs/SetPeriodicCmd.h"
 
 // Messages
 #include "sensor_msgs/PointCloud.h"
@@ -87,8 +87,8 @@ public:
                              point_cloud_assembler::BuildCloudAngle::Response &res)
   {
     // send command to tilt laser scanner
-    pr2_srvs::SetPeriodicCmd::Request scan_req;
-    pr2_srvs::SetPeriodicCmd::Response scan_res;
+    pr2_msgs::SetPeriodicCmd::Request scan_req;
+    pr2_msgs::SetPeriodicCmd::Response scan_res;
     scan_req.command.amplitude  = fabs(req.angle_end - req.angle_begin)/2.0;
     scan_req.command.offset = (req.angle_end + req.angle_begin)/2.0;
     scan_req.command.period = req.duration*2.0;

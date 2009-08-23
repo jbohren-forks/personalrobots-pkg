@@ -8,6 +8,7 @@ import unittest
 
 # TREX modules
 from assembly import Assembly,Entity,Rule,Token,Slot,Variable,Object
+from db_core import DbCore,Timeline
 
 ##############################################################################
 # DbReader
@@ -17,24 +18,85 @@ from assembly import Assembly,Entity,Rule,Token,Slot,Variable,Object
 
 # DbReader
 class DbReader():
-  ASSEMBLY_PATH = "assembly_dumps"
+  DB_PATH = "reactor_states"
+  DB_EXT = "reactorstate"
+  ASSEMBLY_PATH = "plans"
 
   def __init__(self):
     # Compile expressions
     self.line_regex = re.compile("^(.+)\,([0-9]+)$")
     self.number_range_regex = re.compile("\[*([^\]]+)\]*")
 
-  def get_reactor_path(self, log_path, reactor_name):
+  # Get the full path to the reactor states of a specific reactor
+  def get_db_path(self, log_path, reactor_name):
+    return os.path.join(log_path,DbReader.DB_PATH,reactor_name)
+
+  # Get the full path to the assemblies of a specific reactor
+  def get_assembly_path(self, log_path, reactor_name):
     return os.path.join(log_path,DbReader.ASSEMBLY_PATH,reactor_name)
 
+  # Get the list of reactors for which there is reactor output
   def get_available_reactors(self, log_path):
-    return os.listdir(os.path.join(log_path,DbReader.ASSEMBLY_PATH))
+    return os.listdir(os.path.join(log_path,DbReader.DB_PATH))
 
-  def get_available_ticks(self,log_path,reactor_name):
-    tick_paths = os.listdir(self.get_reactor_path(log_path,reactor_name))
+  # Read the contents of the DB_PATH to get the ticks that are available
+  def get_available_db_cores(self,log_path,reactor_name):
+    tick_paths = os.listdir(self.get_db_path(log_path,reactor_name))
+    ticks = [int(os.path.basename(s)[0:-13]) for s in tick_paths if s[-12:] == DbReader.DB_EXT]
+    ticks.sort()
+    return ticks
+
+  def get_available_assemblies(self,log_path,reactor_name):
+    tick_paths = os.listdir(self.get_assembly_path(log_path,reactor_name))
     ticks = [int(os.path.basename(s)[4:]) for s in tick_paths if s[0:4] == "tick"]
     ticks.sort()
     return ticks
+
+  ############################################################################
+  # load_db(log_path,reactor_name,tick)
+  #   This loads a reactor plan (dbcore) from the given log path.
+  ############################################################################
+
+  def load_db(self,log_path,reactor_name,tick):
+    # Create a new Assembly for storing data
+    db_core = DbCore(tick,reactor_name)
+
+    # Generate the reactor_path
+    db_path = self.get_db_path(log_path, reactor_name)
+
+    # Read in the tick
+    db_file = open(os.path.join(db_path,"%d.%s" % (tick,DbReader.DB_EXT)))
+
+    # Mode translation
+    modes = {'I':Timeline.INTERNAL, 'E':Timeline.EXTERNAL}
+
+    # Temporary timeline object
+    timeline = None
+
+    for line in db_file:
+      if line[0] != '\t':
+	# New Timeline
+	key,name,mode = line[0:-1].split('\t');
+	mode = modes[mode]
+	timeline = Timeline(int(key),name,mode)
+
+	# Store it in the db_core
+	if mode == Timeline.INTERNAL:
+	  db_core.int_timelines[name] = timeline
+	else:
+	  db_core.ext_timelines[name] = timeline
+      else:
+	# Token
+	a,key,name,sl,su,el,eu = line[0:-1].split('\t')
+	token = Token(int(key),name,0,0)
+	token.start = [float(sl),float(su)]
+	token.end = [float(el),float(eu)]
+
+	# Store it in the current timeline
+	timeline.tokens.append(token)
+    
+    # Return constructed db_core
+    return db_core
 
   ############################################################################
   # load_assembly(log_path,reactor_name,tick)
@@ -57,7 +119,7 @@ class DbReader():
     assembly.tick = tick
 
     # Generate the reactor_path
-    reactor_path = os.path.join(log_path,DbReader.ASSEMBLY_PATH,reactor_name)
+    reactor_path = self.get_assembly_path(log_path, reactor_name)
 
     # Generate the step path
     step_path = os.path.join(reactor_path, "tick%d" % tick, "tick%d" % tick)
@@ -191,7 +253,7 @@ class DbReader():
 
 # Unit tests
 class TestDbReader(unittest.TestCase):
-  def test_read(self):
+  def test_read_assembly(self):
     # Create a db reader
     db_reader = DbReader()
     # Define the log path
@@ -199,9 +261,21 @@ class TestDbReader(unittest.TestCase):
     # Get the available reactor names
     reactor_names = db_reader.get_available_reactors(log_path)
     # Get the available ticks
-    ticks = db_reader.get_available_ticks(log_path,reactor_names[0])
+    ticks = db_reader.get_available_assemblies(log_path,reactor_names[0])
     # Load in the assembly from that tick
     assembly = db_reader.load_assembly(log_path,reactor_names[0],ticks[0])
+
+  def test_read_db_core(self):
+    # Create a db reader
+    db_reader = DbReader()
+    # Define the log path
+    log_path = "./test/db_reader"
+    # Get the available reactor names
+    reactor_names = db_reader.get_available_reactors(log_path)
+    # Get the available ticks
+    ticks = db_reader.get_available_db_cores(log_path,reactor_names[0])
+    # Load in the assembly from that tick
+    assembly = db_reader.load_db(log_path,reactor_names[0],ticks[0])
 
 if __name__ == '__main__':
   unittest.main()

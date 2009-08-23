@@ -82,20 +82,25 @@ void DallasController::update()
   {
     // Where should the caster be facing?
     double caster_angle = cc_.getSteerPosition();
-    double caster_angle_desi = atan2(command.va, DALLAS_R * command.vx);
-    if (abs(angles::shortest_angular_distance(caster_angle_desi, caster_angle)) <
-        abs(angles::shortest_angular_distance(caster_angle_desi + M_PI, caster_angle)))
+    double caster_angle_desi = atan2(-DALLAS_R * command.va, command.vx);
+    double direction = 1.0;
+    if (fabs(angles::shortest_angular_distance(caster_angle_desi, caster_angle)) >
+        fabs(angles::shortest_angular_distance(caster_angle_desi + M_PI, caster_angle)))
     {
       caster_angle_desi += M_PI;
+      direction = -1.0;
     }
     double caster_angle_error =
       angles::shortest_angular_distance(caster_angle_desi, caster_angle);
-    ROS_ERROR("Angle desi = %.3lf  (From %.3lf)  Error: %.3lf", caster_angle_desi, cc_.getSteerPosition(), caster_angle_error);
+    //ROS_ERROR("Angle desi = %.3lf  (From %.3lf)  Error: %.3lf", caster_angle_desi, cc_.getSteerPosition(), caster_angle_error);
 
-    cc_.steer_velocity_ = kp_caster_steer_ * caster_angle_error;
-    cc_.drive_velocity_ = command.vx * cos(caster_angle_error);
+    cc_.steer_velocity_ = -kp_caster_steer_ * caster_angle_error;
+    cc_.drive_velocity_ = -direction * cos(caster_angle_error) *
+      sqrt(pow(command.vx, 2.0) + pow(DALLAS_R * command.va, 2.0));
+    //ROS_ERROR("Drive: %.3lf, %.3lf", command.vx, cos(caster_angle_error));
+    //ROS_ERROR("Vels: %.3lf, %.3lf", cc_.steer_velocity_, cc_.drive_velocity_);
     //cc_.steer_velocity_ = 0.0;
-    cc_.drive_velocity_ = 0.0;
+    //cc_.drive_velocity_ = 0.0;
     cc_.update();
   }
 

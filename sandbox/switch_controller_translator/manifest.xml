@@ -1,0 +1,18 @@
+<package>
+  <description brief="switch_controller_translator">
+
+     switch_controller_translator
+
+  </description>
+  <author>Wim Meeussen</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/switch_controller_translator</url>
+
+  <depend package="mechanism_msgs" />
+  <depend package="pr2_robot_actions" />
+  <depend package="action_translator" />
+
+</package>
+
+

@@ -1,0 +1,4 @@
+<launch>
+  <!-- pr2_etherCAT -->
+  <param name="robot_description" command="$(find xacro)/xacro.py '$(find pr2_gripper_controller)/launch/gripper.xml'" />
+</launch>

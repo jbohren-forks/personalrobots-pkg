@@ -25,9 +25,13 @@
   <class name="JointCalibrationControllerNode" type="JointCalibrationControllerNode" base_class_type="Controller" />
   <class name="JointChainSineController" type="JointChainSineController" base_class_type="Controller" />
   <class name="JointLimitCalibrationControllerNode" type="JointLimitCalibrationControllerNode" base_class_type="Controller" />
+  <class name="JointPDController" type="JointPDController" base_class_type="Controller" />
+  <class name="JointPDControllerNode" type="JointPDControllerNode" base_class_type="Controller" />
+  <class name="CartesianTrajectoryController" type="CartesianTrajectoryController" base_class_type="Controller" />
 
   <class name="HeadServoingController" type="HeadServoingController" base_class_type="Controller" />
   <class name="JointTrajectoryController" type="JointTrajectoryController" base_class_type="Controller" />
   <class name="ArmTrajectoryControllerNode" type="ArmTrajectoryControllerNode" base_class_type="Controller" />
+  <class name="Pr2GripperController" type="Pr2GripperController" base_class_type="Controller" />
 
 </library>

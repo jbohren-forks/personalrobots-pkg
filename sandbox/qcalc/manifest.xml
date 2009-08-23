@@ -1,0 +1,17 @@
+<package>
+  <description brief="qcalc">
+
+     qcalc
+
+  </description>
+  <author>Nate Koenig</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/qcalc</url>
+  <depend package="roscpp"/>
+  <depend package="bullet"/>
+  <rosdep package="fltk"/>
+
+</package>
+
+

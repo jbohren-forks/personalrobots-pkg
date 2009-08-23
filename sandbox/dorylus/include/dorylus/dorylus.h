@@ -116,8 +116,10 @@ inline float euc(const Eigen::MatrixXf& a, const Eigen::MatrixXf& b)
   assert(a.rows() == b.rows());
 
   float r = 0;
+  float tmp = 0;
   for(int i=0; i<a.rows(); i++) {
-    r += pow(a.coeff(i,0) - b.coeff(i,0), 2);
+    tmp = a.coeff(i,0) - b.coeff(i,0);
+    r += tmp * tmp;
   }
 
   //assert(abs((float)((a-b).NormFrobenius() - sqrt(r))) < 1e-3);  

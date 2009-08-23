@@ -247,8 +247,8 @@ void JointChainConstraintController::computeConstraintNullSpace()
 }
 
 
-bool JointChainConstraintController::addConstraint(robot_mechanism_controllers::ChangeConstraints::Request &req,
-                                                   robot_mechanism_controllers::ChangeConstraints::Response &resp)
+bool JointChainConstraintController::addConstraint(experimental_controllers::ChangeConstraints::Request &req,
+                                                   experimental_controllers::ChangeConstraints::Response &resp)
 {
   ConstraintState temp;
   bool found = false;

@@ -33,18 +33,21 @@
 #
 # Revision $Id$
 
+import sys
 import yaml
 import subprocess
 import os.path
 
 def getPackagePath(pkg):
-  pkgpath = subprocess.Popen(["rospack", "find", pkg], stdout=subprocess.PIPE).communicate()[0].strip()
+  cmd = ["rospack", "find", pkg]
+  pkgpath = subprocess.Popen(cmd, stdout=subprocess.PIPE).communicate()[0].strip()
   return pkgpath
 
 class App:
   def __init__(self, taskid):
     # TODO catch file system exception
     package, app_file = taskid.split('/', 1)
+    sys.stderr.write(package + "\n")
     path = getPackagePath(package)
     doc = yaml.load(open(os.path.join(path, app_file)))
     try:

@@ -7,14 +7,12 @@ genmsg()
 gensrv()
 set(_srcs
     src/controller_manifest.cpp
-    src/cartesian_trajectory_controller.cpp
     src/cartesian_pose_controller.cpp
     src/cartesian_twist_controller.cpp
     src/cartesian_wrench_controller.cpp
     src/joint_effort_controller.cpp
     src/joint_position_controller.cpp
     src/joint_velocity_controller.cpp
-    src/joint_pd_controller.cpp
     src/joint_ud_calibration_controller.cpp
     src/trigger_controller.cpp
 )

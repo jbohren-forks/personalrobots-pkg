@@ -291,15 +291,15 @@ double LaserScannerQualificationNode::getMeasuredPosition()
 }
 
 bool LaserScannerQualificationNode::setCommand(
-  robot_mechanism_controllers::SetCommand::Request &req,
-  robot_mechanism_controllers::SetCommand::Response &resp)
+  experimental_controllers::SetCommand::Request &req,
+  experimental_controllers::SetCommand::Response &resp)
 {
   return true;
 }
 
 bool LaserScannerQualificationNode::getCommand(
-  robot_mechanism_controllers::GetCommand::Request &req,
-  robot_mechanism_controllers::GetCommand::Response &resp)
+  experimental_controllers::GetCommand::Request &req,
+  experimental_controllers::GetCommand::Response &resp)
 {
   return true;
 }
@@ -316,8 +316,8 @@ bool LaserScannerQualificationNode::initXml(mechanism::Robot *robot, TiXmlElemen
   return true;
 }
 bool LaserScannerQualificationNode::getActual(
-  robot_mechanism_controllers::GetActual::Request &req,
-  robot_mechanism_controllers::GetActual::Response &resp)
+  experimental_controllers::GetActual::Request &req,
+  experimental_controllers::GetActual::Response &resp)
 {
   resp.command = c_->getMeasuredPosition();
   resp.time = c_->getTime();

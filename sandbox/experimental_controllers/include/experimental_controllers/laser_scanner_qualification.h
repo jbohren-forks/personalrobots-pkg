@@ -40,8 +40,9 @@
 #include <robot_mechanism_controllers/joint_velocity_controller.h>
 
 // Services
-#include <robot_mechanism_controllers/SetCommand.h>
-#include <robot_mechanism_controllers/GetCommand.h>
+#include <experimental_controllers/SetCommand.h>
+#include <experimental_controllers/GetCommand.h>
+#include <experimental_controllers/GetActual.h>
 #include <robot_mechanism_controllers/SetProfile.h>
 namespace controller
 {
@@ -153,14 +154,14 @@ public:
   bool initXml(mechanism::Robot *robot, TiXmlElement *config);
 
   // Services
-  bool setCommand(robot_mechanism_controllers::SetCommand::Request &req,
-                  robot_mechanism_controllers::SetCommand::Response &resp);
+  bool setCommand(experimental_controllers::SetCommand::Request &req,
+                  experimental_controllers::SetCommand::Response &resp);
 
-  bool getCommand(robot_mechanism_controllers::GetCommand::Request &req,
-                  robot_mechanism_controllers::GetCommand::Response &resp);
+  bool getCommand(experimental_controllers::GetCommand::Request &req,
+                  experimental_controllers::GetCommand::Response &resp);
 
-  bool getActual(robot_mechanism_controllers::GetActual::Request &req,
-                  robot_mechanism_controllers::GetActual::Response &resp);
+  bool getActual(experimental_controllers::GetActual::Request &req,
+                  experimental_controllers::GetActual::Response &resp);
 
 
 

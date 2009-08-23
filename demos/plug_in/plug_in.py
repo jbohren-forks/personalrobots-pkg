@@ -34,7 +34,7 @@ import roslib
 roslib.load_manifest('plug_in')
 import rospy
 from geometry.msg import PoseStamped
-from robot_mechanism_controllers.srv import SetPoseStamped
+from experimental_controllers.srv import SetPoseStamped
 
 CONTROLLER = 'arm_constraint'
 

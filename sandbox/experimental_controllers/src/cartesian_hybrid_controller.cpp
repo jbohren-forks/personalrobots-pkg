@@ -630,8 +630,8 @@ void CartesianHybridControllerNode::command(
 }
 
 bool CartesianHybridControllerNode::setToolFrame(
-  robot_mechanism_controllers::SetPoseStamped::Request &req,
-  robot_mechanism_controllers::SetPoseStamped::Response &resp)
+  experimental_controllers::SetPoseStamped::Request &req,
+  experimental_controllers::SetPoseStamped::Response &resp)
 {
   if (!TF.canTransform(c_.kdl_chain_.getSegment(c_.kdl_chain_.getNrOfSegments()-1).getName(), req.p.header.frame_id,
                        req.p.header.stamp, ros::Duration(3.0)))

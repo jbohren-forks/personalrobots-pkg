@@ -27,8 +27,35 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- * Author: Wim Meeussen
+/**
+   @class controller::CartesianTwistController
+   @author Wim Meeussen
+
+   @brief Cartesian twist controller
+
+   Controls the twist at the end effector of a chain of the robot.
+
+   @section ROS ROS interface
+
+   @param type Must be "CartesianTwistController"
+
+   @param root_name The name of the root link of the chain of links
+   that you wish to control.
+
+   @param tip_name The name of the tip link (end effector) of the
+   chain of links that you wish to control.
+
+   @param fb_trans The gains for the PID loop around linear velocity.  See: control_toolbox::Pid
+
+   @param fb_rot The gains for the PID loop around angular velocity.  See: control_toolbox::Pid
+
+   @param output The name of the CartesianWrenchController which will
+   achieve the desired wrench computed by this controller.
+
+   Subscribes to:
+
+   - @b command (geometry_msgs::Twist) : The desired twist to
+     achieve.
  */
 
 #ifndef CARTESIAN_TWIST_CONTROLLER_H

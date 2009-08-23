@@ -40,16 +40,16 @@
 
 namespace urdf{
 
-Geometry *parseGeometry(TiXmlElement *g)
+boost::shared_ptr<Geometry> parseGeometry(TiXmlElement *g)
 {
-  if (!g) return NULL;
-  std::auto_ptr<Geometry> geom;
+  boost::shared_ptr<Geometry> geom;
+  if (!g) return geom;
 
   TiXmlElement *shape = g->FirstChildElement();
   if (!shape)
   {
     ROS_ERROR("Geometry tag contains no child element.");
-    return NULL;
+    return geom;
   }
 
   std::string type_name = shape->ValueStr();
@@ -64,13 +64,13 @@ Geometry *parseGeometry(TiXmlElement *g)
   else
   {
     ROS_ERROR("Unknown geometry type '%s'", type_name.c_str());
-    return NULL;
+    return geom;
   }
 
   if (!geom->initXml(shape))
-    return NULL;
+    return geom;
 
-  return geom.release();
+  return geom;
 }
 
 bool Material::initXml(TiXmlElement *config)
@@ -204,7 +204,7 @@ bool Visual::initXml(TiXmlElement *config)
 
   // Geometry
   TiXmlElement *geom = config->FirstChildElement("geometry");
-  geometry.reset(parseGeometry(geom));
+  geometry = parseGeometry(geom);
   if (!geometry)
   {
     ROS_ERROR("Malformed geometry for Visual element");
@@ -250,7 +250,7 @@ bool Collision::initXml(TiXmlElement* config)
 
   // Geometry
   TiXmlElement *geom = config->FirstChildElement("geometry");
-  geometry.reset(parseGeometry(geom));
+  geometry = parseGeometry(geom);
   if (!geometry)
   {
     ROS_ERROR("Malformed geometry for Collision element");

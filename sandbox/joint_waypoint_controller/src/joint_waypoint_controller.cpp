@@ -105,8 +105,8 @@ int JointWaypointController::run()
   return 0;
 }
 
-bool JointWaypointController::trajectoryStart(pr2_mechanism_controllers::TrajectoryStart::Request &req,
-                                            pr2_mechanism_controllers::TrajectoryStart::Response &resp)
+bool JointWaypointController::trajectoryStart(experimental_controllers::TrajectoryStart::Request &req,
+                                            experimental_controllers::TrajectoryStart::Response &resp)
 {
   // first convert the input into a "WaypointTrajWithLimits" message
   manipulation_msgs::WaypointTrajWithLimits trajectory;
@@ -135,8 +135,8 @@ bool JointWaypointController::trajectoryStart(pr2_mechanism_controllers::Traject
   return true;
 }
 
-bool JointWaypointController::trajectoryQuery(pr2_mechanism_controllers::TrajectoryQuery::Request &req,
-                                              pr2_mechanism_controllers::TrajectoryQuery::Response &resp)
+bool JointWaypointController::trajectoryQuery(experimental_controllers::TrajectoryQuery::Request &req,
+                                              experimental_controllers::TrajectoryQuery::Response &resp)
 {
   manipulation_srvs::QuerySplineTraj::Request sreq;
   manipulation_srvs::QuerySplineTraj::Response sresp;
@@ -156,8 +156,8 @@ bool JointWaypointController::trajectoryQuery(pr2_mechanism_controllers::Traject
   return result;
 }
 
-bool JointWaypointController::trajectoryCancel(pr2_mechanism_controllers::TrajectoryCancel::Request &req,
-                                               pr2_mechanism_controllers::TrajectoryCancel::Response &resp)
+bool JointWaypointController::trajectoryCancel(experimental_controllers::TrajectoryCancel::Request &req,
+                                               experimental_controllers::TrajectoryCancel::Response &resp)
 {
   manipulation_srvs::CancelSplineTraj::Request sreq;
   manipulation_srvs::CancelSplineTraj::Response sresp;

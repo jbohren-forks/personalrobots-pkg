@@ -52,11 +52,9 @@
 #include <pr2_msgs/LaserTrajCmd.h>
 
 // Services
-#include <robot_mechanism_controllers/SetCommand.h>
-#include <robot_mechanism_controllers/GetCommand.h>
 #include <pr2_mechanism_controllers/SetProfile.h>
-#include <pr2_srvs/SetPeriodicCmd.h>
-#include <pr2_srvs/SetLaserTrajCmd.h>
+#include <pr2_msgs/SetPeriodicCmd.h>
+#include <pr2_msgs/SetLaserTrajCmd.h>
 
 #include "boost/thread/mutex.hpp"
 #include "trajectory/trajectory.h"
@@ -142,10 +140,10 @@ public:
   void setPeriodicCmd() ;
   void setTrajCmd() ;
   //void setTrackLinkCmd() ;
-  bool setPeriodicSrv(pr2_srvs::SetPeriodicCmd::Request &req,
-                      pr2_srvs::SetPeriodicCmd::Response &res);
-  bool setTrajSrv(pr2_srvs::SetLaserTrajCmd::Request &req,
-                  pr2_srvs::SetLaserTrajCmd::Response &res);
+  bool setPeriodicSrv(pr2_msgs::SetPeriodicCmd::Request &req,
+                      pr2_msgs::SetPeriodicCmd::Response &res);
+  bool setTrajSrv(pr2_msgs::SetLaserTrajCmd::Request &req,
+                  pr2_msgs::SetLaserTrajCmd::Response &res);
 
 
 private:

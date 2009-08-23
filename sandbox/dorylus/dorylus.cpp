@@ -625,9 +625,8 @@ void sigint(int none) {
 }
 
 void Dorylus::relearnResponses(DorylusDataset& dd) {
-  bool this_function_works = false;
   cout << "This doesn't work yet." << endl;
-  assert(this_function_works);
+  return;
 
   assert(dd.nClasses_ == nClasses_);
   useDataset(&dd);
@@ -757,7 +756,7 @@ void Dorylus::train(int num_candidates, int max_secs, int max_wcs, double min_ut
 
 //! Comprehensive with high probability, but not guaranteed.
 bool Dorylus::compare(const Dorylus& d, bool verbose) {
-  double tol = 1e-6;
+  double tol = 1e-4;
 
   if(pwcs_.size() != d.pwcs_.size()) {
     if(verbose)
@@ -788,13 +787,7 @@ bool Dorylus::compare(const Dorylus& d, bool verbose) {
       if(verbose)
 	cout << "utilities for wc " << i << ": " << pwcs_[i]->utility << ", " << d.pwcs_[i]->utility << endl;
       return false;
-    }
-    if(abs(pwcs_[i]->id - d.pwcs_[i]->id) > tol) {
-      if(verbose)
-	cout << "ids for wc " << i << ": " << pwcs_[i]->id << ", " << d.pwcs_[i]->id << endl;
-      return false;
-    }
-    
+    }    
     for(size_t c=0; c<nClasses_; ++c) {
 
       if(abs(pwcs_[i]->vals[c] - d.pwcs_[i]->vals[c]) > tol) {
@@ -823,6 +816,12 @@ bool Dorylus::compare(const Dorylus& d, bool verbose) {
 	return false;
       }
     }
+    if(abs(pwcs_[i]->id - d.pwcs_[i]->id) > tol) {
+      if(verbose)
+	cout << "ids for wc " << i << ": " << pwcs_[i]->id << ", " << d.pwcs_[i]->id << endl;
+      return false;
+    }
+
   }
 
   return true;

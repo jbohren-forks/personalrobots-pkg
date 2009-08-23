@@ -322,8 +322,8 @@ void JointAutotunerNode::update()
 }
 
 bool JointAutotunerNode::setCommand(
-  robot_mechanism_controllers::SetCommand::Request &req,
-  robot_mechanism_controllers::SetCommand::Response &resp)
+  experimental_controllers::SetCommand::Request &req,
+  experimental_controllers::SetCommand::Response &resp)
 {
   c_->setCommand(req.command);
   resp.command = c_->getCommand();
@@ -332,8 +332,8 @@ bool JointAutotunerNode::setCommand(
 }
 
 bool JointAutotunerNode::getActual(
-  robot_mechanism_controllers::GetActual::Request &req,
-  robot_mechanism_controllers::GetActual::Response &resp)
+  experimental_controllers::GetActual::Request &req,
+  experimental_controllers::GetActual::Response &resp)
 {
   resp.command = c_->getMeasuredState();
   resp.time = c_->getTime();

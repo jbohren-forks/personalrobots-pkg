@@ -37,4 +37,5 @@ rospack_download_test_data(http://pr.willowgarage.com/data/descriptors_2d/frame0
 rospack_download_test_data(http://pr.willowgarage.com/data/descriptors_2d/correct-output/daisy.results test/correct-output/daisy.results)
 
 rospack_add_gtest(test/test_descriptors_2d_gpl test/test_descriptors_2d_gpl.cpp)
+rosbuild_add_gtest_build_flags(test/test_descriptors_2d_gpl)
 target_link_libraries(test/test_descriptors_2d_gpl descriptors_2d_gpl)

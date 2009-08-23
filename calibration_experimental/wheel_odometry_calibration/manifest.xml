@@ -1,0 +1,20 @@
+<package>
+  <description>Node for calibrating wheel odometry</description>
+  <author>Wim Meeussen</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+
+  <!-- ros -->
+  <depend package="roscpp" />
+
+  <!-- geometry -->
+  <depend package="tf" />
+
+  <!-- common msgs -->
+  <depend package="nav_msgs" />
+  <depend package="sensor_msgs" />
+
+  <!-- controller -->
+  <depend package="pr2_mechanism_controllers" />
+  <depend package="experimental_controllers" />
+</package>

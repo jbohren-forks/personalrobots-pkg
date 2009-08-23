@@ -138,6 +138,12 @@ int main(int argc, char** argv) {
 //     cout << endl;
 
     cout << argv[0] << " --resumeTraining DATASET OLD_CLASSIFIER NEW_CLASSIFIER_SAVENAME" << endl;
+    cout << " C^c to end training manually." << endl;
+    cout << " Environment variable options: " << endl;
+    cout << "   MAX_WCS=x is the max number of weak classifiers to add to the boosting classifier. Default infinite." << endl;
+    cout << "   MAX_SECS=x is the max number of seconds to train for.  Default infinite." << endl;
+    cout << "   MIN_UTIL=x is the minimum utility that an added weak classifier must have to continue training.  Default 0." << endl;
+    cout << "   NCANDIDATES=x is the max number of weak classifier candidates to use at each stage. Default 10." << endl;
     cout << endl;
 
     cout << argv[0] << " --classify DATASET CLASSIFIER" << endl;

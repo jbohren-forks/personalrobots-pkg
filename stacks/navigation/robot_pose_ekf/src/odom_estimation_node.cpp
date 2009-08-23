@@ -62,7 +62,7 @@ namespace estimation
       imu_initializing_(false),
       vo_initializing_(false),
       odom_covariance_(6),
-      imu_covariance_(6),
+      imu_covariance_(3),
       vo_covariance_(6)
   {
     // paramters
@@ -199,13 +199,18 @@ namespace estimation
     btQuaternion orientation;
     quaternionMsgToTF(imu->orientation, orientation);
     imu_meas_ = btTransform(orientation, btVector3(0,0,0));
+    for (unsigned int i=0; i<3; i++)
+      for (unsigned int j=0; j<3; j++)
+        imu_covariance_(i+1, j+1) = imu->orientation_covariance[3*i+j];
 
-    // manually set covariance
-    SymmetricMatrix measNoiseImu_Cov(3);  measNoiseImu_Cov = 0;
-    measNoiseImu_Cov(1,1) = pow(0.00017,2);  // = 0.01 degrees / sec
-    measNoiseImu_Cov(2,2) = pow(0.00017,2);  // = 0.01 degrees / sec
-    measNoiseImu_Cov(3,3) = pow(0.00017,2);  // = 0.01 degrees / sec
-    imu_covariance_ = measNoiseImu_Cov;
+    // manually set covariance untile imu sends covariance
+    if (imu_covariance_(1,1) == 0.0){
+      SymmetricMatrix measNoiseImu_Cov(3);  measNoiseImu_Cov = 0;
+      measNoiseImu_Cov(1,1) = pow(0.00017,2);  // = 0.01 degrees / sec
+      measNoiseImu_Cov(2,2) = pow(0.00017,2);  // = 0.01 degrees / sec
+      measNoiseImu_Cov(3,3) = pow(0.00017,2);  // = 0.01 degrees / sec
+      imu_covariance_ = measNoiseImu_Cov;
+    }
 
     my_filter_.addMeasurement(Stamped<Transform>(imu_meas_, imu_stamp_, "imu", "base_footprint"), imu_covariance_);
     

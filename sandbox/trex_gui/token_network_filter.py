@@ -7,6 +7,7 @@ import re
 
 # TREX modules
 from notifier import Notifier
+from db_core import DbCore
 from assembly import Assembly,Entity,Rule,Token,Slot,Variable
 from token_network import TokenNetwork
 
@@ -159,7 +160,9 @@ class TestTokenNetworkFilter(unittest.TestCase):
     from assembly import construct_test_assembly
 
     # Create assembly
-    assembly = construct_test_assembly()
+    db_cores = {}
+    db_cores["test"] = DbCore()
+    db_cores["test"].assembly = construct_test_assembly()
 
     # Create token network
     network = TokenNetwork()
@@ -171,7 +174,7 @@ class TestTokenNetworkFilter(unittest.TestCase):
     network.register_listener(network_filter.network_listener)
 
     # Update assembly
-    network.set_assembly(assembly)
+    network.set_db_cores(db_cores,"test")
 
     # Add a filter
     network_filter.add_filter("merged")

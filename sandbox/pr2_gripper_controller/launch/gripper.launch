@@ -4,12 +4,23 @@
 
   <!-- Loads realtime machine and PR2_etherCAT -->
   <include file="$(find pr2_gripper_controller)/launch/init.machine" />
-  <include file="$(find pr2_gripper_controller)/launch/pr2_etherCAT.launch" />
+  <include file="$(find pr2_gripper_controller)/launch/pr2_etherCAT.launch"/>
+
+  <node pkg="robot_state_publisher" type="state_publisher" name="robot_state_publisher">
+   <param name="publish_frequency" type="double" value="50.0" />
+   <param name="tf_prefix" type="string" value="" />
+  </node>
 
   <!-- Gripper Calibration -->
-  <node pkg="mechanism_bringup" type="calibrate.py" args="$(find pr2_gripper_controller)/launch/gripper_cal.xml" />
-  
+  <include file="$(find pr2_gripper_controller)/launch/gripper_cal.launch"/>
+
   <!-- GUI -->
-  <include file="$(find fingertip_pressure)/demo/fingertip_demo_no_sim.launch" />
+  <!--include file="$(find fingertip_pressure)/demo/fingertip_demo_no_sim.launch" /-->
+  
+  <!-- DMM reader -->
+  <node pkg="pr2_gripper_controller" type="agilent_node" name="agilent_node">
+    <param name="ip_adress" type="string" value="10.0.1.68"/>
+    <param name="hz" type="double" value="25.0"/>
+  </node>
 
 </launch>

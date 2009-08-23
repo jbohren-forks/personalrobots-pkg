@@ -90,6 +90,7 @@ class SpectralAnalysis
      *                       for spectral analysis
      */
     // --------------------------------------------------------------
+    SpectralAnalysis(){}
     SpectralAnalysis(double support_radius);
 
     ~SpectralAnalysis();

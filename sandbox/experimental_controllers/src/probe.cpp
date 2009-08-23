@@ -28,7 +28,7 @@
  */
 
 #include "experimental_controllers/probe.h"
-#include "robot_mechanism_controllers/JointTuningMsg.h"
+#include "experimental_controllers/JointTuningMsg.h"
 
 namespace controller {
 
@@ -61,7 +61,7 @@ bool Probe::initXml(mechanism::RobotState *robot, TiXmlElement *config)
     return false;
   }
 
-  pub_probe_ = node_.advertise<robot_mechanism_controllers::JointTuningMsg>("/probe/" + joint_->joint_->name_, 100);
+  pub_probe_ = node_.advertise<experimental_controllers::JointTuningMsg>("/probe/" + joint_->joint_->name_, 100);
 
   ROS_WARN("Probe initialized on joint %s.  Prepare for realtime breakage.", joint_name);
 
@@ -70,7 +70,7 @@ bool Probe::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 
 void Probe::update()
 {
-  robot_mechanism_controllers::JointTuningMsg msg;
+  experimental_controllers::JointTuningMsg msg;
   msg.position = joint_->position_;
   msg.velocity = joint_->velocity_;
   msg.torque = joint_->commanded_effort_;

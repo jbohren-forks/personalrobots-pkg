@@ -27,6 +27,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 # Author: Dallas Goecker
+
 import time
 import random
 import roslib
@@ -64,15 +65,17 @@ def main():
     last_state = LastMessage('/joint_states', JointStates)
     tx_cmd = LastMessage('texas_cmd', TexasCmd)
 
-    pub_steer = rospy.Publisher("/caster/steer_velocity", Float64)
+    pub_steer = rospy.Publisher("/caster_bl/caster/set_command", Float64)
     pub_drive = rospy.Publisher("/caster/drive_velocity", Float64)
     pub_steer.publish(Float64(0.0))
     pub_drive.publish(Float64(0.0))
-    print "Waiting for a mechanism_state message..."
+    print "tdrive.py: Waiting for robot JointStates publication..."
     while not last_state.msg and not rospy.is_shutdown(): pass
+    print "tdrive.py: Waiting for TexasCmd publication..."
     while not tx_cmd.msg and not rospy.is_shutdown(): pass
+    print "tdrive.py: looping..."
     while not rospy.is_shutdown():
-        time.sleep(0.01)
+        time.sleep(0.10)
         
         # Get angle, velocity from command
         drive_cmd = tx_cmd.last()

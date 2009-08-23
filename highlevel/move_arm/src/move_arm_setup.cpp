@@ -41,20 +41,20 @@
 bool move_arm::MoveArmSetup::configure(void)
 {
     nodeHandle_.param<std::string>("~group", group_, std::string());
-    
+
     if (group_.empty())
     {
 	ROS_ERROR("No '~group' parameter specified. Without the name of the group of joints to plan for, action cannot start");
 	return false;
     }
-    
+
     // monitor robot
     collisionModels_ = new planning_environment::CollisionModels("robot_description");
     planningMonitor_ = new planning_environment::PlanningMonitor(collisionModels_, &tf_);
-    
+
     if (!collisionModels_->loadedModels())
 	return false;
-        
+
     if (collisionModels_->getKinematicModel()->getGroupID(group_) < 0)
     {
 	ROS_ERROR("Group '%s' is not known", group_.c_str());
@@ -62,27 +62,27 @@ bool move_arm::MoveArmSetup::configure(void)
     }
     else
 	ROS_INFO("Configuring action for '%s'", group_.c_str());
-    
+
     if (planningMonitor_->getExpectedJointStateUpdateInterval() > 1e-3)
 	planningMonitor_->waitForState();
     if (planningMonitor_->getExpectedMapUpdateInterval() > 1e-3)
 	planningMonitor_->waitForMap();
-    
+
     if (!getControlJointNames(groupJointNames_))
 	return false;
-    
+
     return true;
 }
 
 bool move_arm::MoveArmSetup::getControlJointNames(std::vector<std::string> &joint_names)
 {
-    ros::ServiceClient client_query = nodeHandle_.serviceClient<pr2_mechanism_controllers::TrajectoryQuery>(CONTROL_QUERY_NAME);
-    pr2_mechanism_controllers::TrajectoryQuery::Request  req_query;
-    pr2_mechanism_controllers::TrajectoryQuery::Response res_query;
-    req_query.trajectoryid = pr2_mechanism_controllers::TrajectoryQuery::Request::Query_Joint_Names;
-    
+    ros::ServiceClient client_query = nodeHandle_.serviceClient<experimental_controllers::TrajectoryQuery>(CONTROL_QUERY_NAME);
+    experimental_controllers::TrajectoryQuery::Request  req_query;
+    experimental_controllers::TrajectoryQuery::Response res_query;
+    req_query.trajectoryid = experimental_controllers::TrajectoryQuery::Request::Query_Joint_Names;
+
     bool result = client_query.call(req_query, res_query);
-    
+
     if (!result)
     {
 	ROS_INFO("Querying controller for joint names ...");
@@ -91,15 +91,15 @@ bool move_arm::MoveArmSetup::getControlJointNames(std::vector<std::string> &join
 	if (result)
 	    ROS_INFO("Joint names received");
     }
-    
+
     if (!result)
     {
 	ROS_ERROR("Unable to retrieve controller joint names from control query service");
 	return false;
     }
-    
+
     joint_names = res_query.jointnames;
-    
+
     // make sure we have the right joint names
     for(unsigned int i = 0; i < joint_names.size() ; ++i)
     {
@@ -115,7 +115,7 @@ bool move_arm::MoveArmSetup::getControlJointNames(std::vector<std::string> &join
 	    return false;
 	}
     }
-    
+
     std::vector<std::string> groupNames;
     planningMonitor_->getKinematicModel()->getJointsInGroup(groupNames, group_);
     if (groupNames.size() != joint_names.size())
@@ -123,7 +123,7 @@ bool move_arm::MoveArmSetup::getControlJointNames(std::vector<std::string> &join
 	ROS_ERROR("The group '%s' does not have the same number of joints as the controller can handle", group_.c_str());
 	return false;
     }
-    
+
     return true;
 }
 

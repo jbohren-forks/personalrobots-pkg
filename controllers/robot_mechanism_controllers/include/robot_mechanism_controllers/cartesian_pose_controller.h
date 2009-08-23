@@ -30,6 +30,7 @@
 /**
    @class controller::CartesianPoseController
    @author Wim Meeussen
+
    @brief Cartesian pose controller
 
    Controls the pose of the end effector of a chain of the robot.

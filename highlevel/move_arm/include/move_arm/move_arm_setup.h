@@ -41,51 +41,51 @@
 
 #include <ros/ros.h>
 
-#include <pr2_mechanism_controllers/TrajectoryStart.h>
-#include <pr2_mechanism_controllers/TrajectoryQuery.h>
-#include <pr2_mechanism_controllers/TrajectoryCancel.h>
+#include <experimental_controllers/TrajectoryStart.h>
+#include <experimental_controllers/TrajectoryQuery.h>
+#include <experimental_controllers/TrajectoryCancel.h>
 
 #include <planning_environment/monitors/planning_monitor.h>
 
 namespace move_arm
 {
-    
+
     /// the string used internally to access control starting service; this should be remaped in the launch file
     static const std::string CONTROL_START_NAME      = "controller_start";
-    
+
     /// the string used internally to access control querying service; this should be remaped in the launch file
     static const std::string CONTROL_QUERY_NAME      = "controller_query";
-    
+
     /// the string used internally to access control canceling service; this should be remaped in the launch file
     static const std::string CONTROL_CANCEL_NAME     = "controller_cancel";
-    
+
     /// the string used internally to access the long range motion planning service; this should be remaped in the launch file
     static const std::string LR_MOTION_PLAN_NAME     = "get_motion_plan_lr";
-    
+
     /// the string used internally to access the short range motion planning service; this should be remaped in the launch file
     static const std::string SR_MOTION_PLAN_NAME     = "get_motion_plan_sr";
-    
+
     /// the string used internally to access valid state searching service; this should be remaped in the launch file
     static const std::string SEARCH_VALID_STATE_NAME = "get_valid_state";
-    
+
     /// the string used internally to access inverse kinematics service; this should be remaped in the launch file
     static const std::string ARM_IK_NAME             = "arm_ik";
-    
-    
+
+
     /** \brief Configuration of actions that need to actuate parts of the robot */
     class MoveArmSetup
     {
 	friend class MoveArm;
 	friend class TeleopArm;
-	
+
     public:
-	
+
 	MoveArmSetup(void)
 	{
 	    collisionModels_ = NULL;
 	    planningMonitor_ = NULL;
 	}
-	
+
 	virtual ~MoveArmSetup(void)
 	{
 	    if (planningMonitor_)
@@ -93,24 +93,24 @@ namespace move_arm
 	    if (collisionModels_)
 		delete collisionModels_;
 	}
-	
-	
+
+
 	bool configure(void);
-	
+
     protected:
-	
+
 	bool getControlJointNames(std::vector<std::string> &joint_names);
-	
+
 	ros::NodeHandle                        nodeHandle_;
 	tf::TransformListener                  tf_;
 	planning_environment::CollisionModels *collisionModels_;
 	planning_environment::PlanningMonitor *planningMonitor_;
-	
+
 	std::string                            group_;
 	std::vector<std::string>               groupJointNames_;
-	
+
     };
-    
+
 }
 
 #endif

@@ -13,10 +13,13 @@
   <depend stack="drivers"/> <!-- dense_laser_assembler, phase_space --> 
   <depend stack="mechanism"/> <!-- mechanism_model, hardware_interface, mechanism_msgs --> 
   <depend stack="util"/> <!-- topic_synchronizer --> 
-  <depend stack="openrave_planning"/> <!-- openraveros --> 
+
   <depend stack="common"/> <!-- tinyxml, robot_actions, laser_scan, manipulation_msgs --> 
   <depend stack="ros"/>
   <depend stack="common_msgs"/> <!-- geometry_msgs, sensor_msgs, diagnostic_msgs --> 
   <depend stack="visual_feature_detectors"/> <!-- checkerboard_detector -->
   <depend stack="stereo" /> <!-- stereo_msgs -->
+  <depend stack="pr2_common" />
+
+  <!--depend stack="openrave_planning"/--> <!-- openraveros --> 
 </stack>

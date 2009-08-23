@@ -7,7 +7,6 @@
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/controller_interface</url>
   <depend package="roscpp"/>
-  <depend package="loki"/>
 
   <export>
     <cpp cflags='-I${prefix}/include'
