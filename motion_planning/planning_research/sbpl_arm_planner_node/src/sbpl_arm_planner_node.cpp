@@ -98,6 +98,7 @@ bool SBPLArmPlannerNode::init()
   node_.param ("~voxel_grid_depth_", env_depth_, 200);
   node_.param ("~voxel_grid_resolution_", env_resolution_, 0.01);
   node_.param ("~upright_gripper_only", upright_gripper_only_, false);
+	node_.param ("~use_jacobian_motion_primitive", use_jacobian_mp_, false);
 
   // topic names
   node_.param<std::string>("~point_cloud", point_cloud_topic_, "full_cloud_filtered");
@@ -151,8 +152,6 @@ bool SBPLArmPlannerNode::init()
   planner_ = new ARAPlanner(&sbpl_arm_env_, forward_search_);
   if(!initializePlannerAndEnvironment())
     return false;
-
-
 
 	initSelfCollision();
 			
@@ -248,7 +247,7 @@ bool SBPLArmPlannerNode::initializePlannerAndEnvironment()
   sbpl_arm_env_.SetEnvParameter("useMultiResolutionMotionPrimitives", use_multires_primitives_);
 	sbpl_arm_env_.SetEnvParameter("saveExpandedStateIDs", true);
 	sbpl_arm_env_.SetEnvParameter("uprightGripperOnly", upright_gripper_only_);
-	sbpl_arm_env_.SetEnvParameter("useJacobianMotionPrimitive", true);
+	sbpl_arm_env_.SetEnvParameter("useJacobianMotionPrimitive", use_jacobian_mp_);
 
   //set epsilon
   planner_->set_initialsolution_eps(sbpl_arm_env_.GetEpsilon());
@@ -800,10 +799,8 @@ bool SBPLArmPlannerNode::planToPosition(motion_planning_msgs::GetMotionPlan::Req
       ROS_ERROR("[sbpl_arm_planner_node] Cannot transform from %s to %s",pose_stamped.frame_id_.c_str(), planning_frame_.c_str());
       return false;
     }
-
     ROS_DEBUG("[planToPosition] attempting to call transformPose()...");
     tf_.transformPose(planning_frame_, goal_pose_constraint_[i].pose, goal_pose_constraint_[i].pose);
-//     goal_pose_constraint_.push_back(goal_pose_constraint_[i]);
     ROS_DEBUG("[planToPosition] successfully transformed pose from %s to %s",pose_stamped.frame_id_.c_str(), planning_frame_.c_str());
   }
 
@@ -993,12 +990,6 @@ bool SBPLArmPlannerNode::plan(motion_planning_msgs::KinematicPath &arm_path)
 
 		ROS_INFO("the path has %i states. calling smooth path.", path_in.size());
 		path_out = pm_->smoothPath(path_in, joint_names_);
-		ROS_INFO("the path has %i states. calling smooth path again.", path_out.size());
-		path_in = pm_->smoothPath(path_out, joint_names_);
-		ROS_INFO("the path has %i states. calling smooth path again.", path_in.size());
-		path_out = pm_->smoothPath(path_in, joint_names_);
-		ROS_INFO("smoothing completed with a path of length %i", path_out.size());
-
 
 //		if(!interpolatePath(path_in, path_out, 0.2))
 //			ROS_WARN("Couldn't add waypoints to path");
@@ -1152,7 +1143,6 @@ bool SBPLArmPlannerNode::plan(motion_planning_msgs::KinematicPath &arm_path)
 }
 
 /** \brief Initialize the occupancy grid used by the SBPL planner. */
-
 void SBPLArmPlannerNode::createOccupancyGrid()
 {
   mCopyingVoxel_.lock();
@@ -1727,6 +1717,61 @@ void SBPLArmPlannerNode::printPath(const motion_planning_msgs::KinematicPath &ar
 	}
 }
 
+/*
+bool transformMap(const mapping_msgs::CollisionMap &map_in, mapping_msgs::CollisionMap &map_out, std::string from_frame, std::string to_frame)
+{
+	tf::Stamped<btTransform> transf;
+	try
+	{
+		tf_.lookupTransform(to_frame, from_frame, map.header.stamp, transf);
+	}
+	catch(...)
+	{
+		ROS_WARN("Unable to transform collision map from %s into %s", from_frame.c_str(), to_frame.c_str());
+		return false;
+	}
+	
+	map_out = map_in;
+	boost::numeric::ublas::matrix<double> transform = transformAsMatrix(transf);
+	unsigned int length = map_in.get_boxes_size();
+	boost::numeric::ublas::matrix<double> matIn(4, length);
+	double * matrixPtr = matIn.data().begin();
+
+	for (unsigned int i = 0; i < length ; i++)
+	{
+		matrixPtr[i] = map_in.boxes[i].center.x;
+		matrixPtr[i+length] = map_in.boxes[i].center.y;
+		matrixPtr[i+ 2* length] = map_in.boxes[i].center.z;
+		matrixPtr[i+ 3* length] = 1;
+	}
+
+	boost::numeric::ublas::matrix<double> matOut = prod(transform, matIn);
+
+  // Copy relevant data from cloudIn, if needed
+// 	if (&map_in != &map_out)
+// 	{
+// 		map_out.header = cloudIn.header;
+// 		cloudOut.set_points_size(length);
+// 		cloudOut.set_channels_size(cloudIn.get_channels_size());
+// 		for (unsigned int i = 0 ; i < cloudIn.get_channels_size() ; ++i)
+// 			cloudOut.channels[i] = cloudIn.channels[i];
+// 	}
+
+	matrixPtr = map_out.data().begin();
+
+  //Override the positions
+	cloudOut.header.stamp = target_time;
+	cloudOut.header.frame_id = target_frame;
+	for (unsigned int i = 0; i < length ; i++)
+	{
+		cloudOut.points[i].x = matrixPtr[i];
+		cloudOut.points[i].y = matrixPtr[i + length];
+		cloudOut.points[i].z = matrixPtr[i + 2* length];
+	}
+	
+	return true;
+}
+*/
 
 int main(int argc, char *argv[])
 {
