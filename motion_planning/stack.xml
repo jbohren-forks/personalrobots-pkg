@@ -1,0 +1,24 @@
+<stack name="motion_planning" version="0.1.0">
+  <description brief="motion_planning">
+
+     Motion Planning Algorithms
+
+  </description>
+  <author>Maintained by Ioan Sucan</author>
+  <license>BSD</license>  
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/motion_planning</url>
+  <depend stack="visualization"/> <!-- rviz --> 
+  <depend stack="3rdparty"/> <!-- nepumuk, libsunflower --> 
+  <depend stack="geometry"/> <!-- tf, kdl, bullet, angles --> 
+  <depend stack="semantic_mapping"/> <!-- door_handle_detector --> 
+  <depend stack="visualization_common"/> <!-- visualization_msgs --> 
+  <depend stack="mechanism"/> <!-- kdl_parser, mechanism_msgs --> 
+  <depend stack="util"/> <!-- geometric_shapes, pr2_ik --> 
+  <depend stack="sandbox"/> <!-- robot_voxelizer, pr2_robot_actions, manipulation_srvs, mapping_msgs, manipulation_msgs, voxel3d --> 
+  <depend stack="highlevel"/> <!-- door_msgs, door_functions --> 
+  <depend stack="ros"/> <!-- rosconsole, roslib, std_msgs, roscpp --> 
+  <depend stack="navigation"/> <!-- navfn, costmap_2d --> 
+  <depend stack="common_msgs"/> <!-- geometry_msgs --> 
+
+</stack>
