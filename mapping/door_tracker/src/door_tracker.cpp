@@ -139,7 +139,7 @@ class DoorTracker
 
     bool first_time_;
 
-  DoorTracker():filter_chain_("sensor_msgs::LaserScan"), message_notifier_(NULL)
+  DoorTracker():message_notifier_(NULL), filter_chain_("sensor_msgs::LaserScan")
     {
       num_clouds_received_ = 0;
       continuous_detection_ = false;
@@ -147,13 +147,7 @@ class DoorTracker
       node_handle_.subscribe("~activate",1,&DoorTracker::activate,this);
       ROS_DEBUG("Started door tracker");
       //Laser Scan Filtering
-      std::string filter_xml;
-      node_handle_.param("~filters", filter_xml,std::string("<filters><!--NO Filters defined--></filters>"));
-      //ROS_INFO("Got ~filters as: %s\n", filter_xml.c_str());
-      TiXmlDocument xml_doc;
-      xml_doc.Parse(filter_xml.c_str());
-      TiXmlElement * config = xml_doc.RootElement();
-      filter_chain_.configure(config);
+      filter_chain_.configure("~filters");
       done_detection_ = true;
       euclidean_cluster_angle_tolerance_    = angles::from_degrees (25.0);
       euclidean_cluster_min_pts_            = 20;               // 1000 points
@@ -587,7 +581,7 @@ class DoorTracker
             ROS_DEBUG("Found zero clusters");
             continue;
           }
-          ROS_DEBUG("Found %d clusters",clusters.size());
+          ROS_DEBUG("Found %d clusters",(int)clusters.size());
           for(int i=0; i < (int) clusters.size(); i++)
           {
             if((int) clusters[i].size() >  sac_min_points_per_model_)
