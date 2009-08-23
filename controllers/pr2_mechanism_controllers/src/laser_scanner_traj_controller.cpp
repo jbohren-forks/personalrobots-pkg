@@ -115,12 +115,11 @@ bool LaserScannerTrajController::initXml(mechanism::RobotState *robot, TiXmlElem
     return false ;
   }
 
-  int offest = 0;
   std::string xml_string;
   TiXmlElement *xmlrpc_elem = filter_elem->FirstChildElement("struct");
-  xmlrpc_elem->Print(xml_string, 10);
-  XmlRpc::XmlRpcValue config(filter_elem->FirstChildElement("struct"), &offset);
-  d_error_filter.FilterBase<double>::configure(config) ;
+  //xmlrpc_elem->Print(xml_string, 10);
+  XmlRpc::XmlRpcValue rpc_config(filter_elem->FirstChildElement("struct"), 0);
+  d_error_filter.filters::FilterBase<double>::configure(rpc_config) ;
 
   // ***** Max Rate and Acceleration Elements *****
   TiXmlElement *max_rate_elem = config->FirstChildElement("max_rate") ;
@@ -227,11 +226,17 @@ void LaserScannerTrajController::update()
                                                 joint_state_->joint_->joint_limit_min_,
                                                 joint_state_->joint_->joint_limit_max_,
                                                 error) ;
+  
+
   double dt = time - last_time_ ;
   double d_error = (error-last_error_)/dt ;
-  double filtered_d_error ;
+  std::vector<double> vin;
+  vin.push_back(d_error);
+  std::vector<double> vout = vin;
+  
+  d_error_filter.update(vin, vout) ;
 
-  d_error_filter.update(d_error, filtered_d_error) ;
+  double filtered_d_error  = vout[0];
 
   // Add filtering step
   // Update pid with d_error added
