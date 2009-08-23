@@ -79,7 +79,7 @@ class ScanShadowsFilter
     filters::FilterChain<sensor_msgs::LaserScan> scan_filter_chain_;
 
     ////////////////////////////////////////////////////////////////////////////////
-  ScanShadowsFilter () : laser_max_range_ (DBL_MAX), notifier_(NULL), cloud_filter_chain_("sensor_msgs::PointCloud"), scan_filter_chain_("sensor_msgs::Laserscan")
+  ScanShadowsFilter () : laser_max_range_ (DBL_MAX), notifier_(NULL), cloud_filter_chain_("sensor_msgs::PointCloud"), scan_filter_chain_("sensor_msgs::LaserScan")
     {
       tf_ = new tf::TransformListener() ;
 
