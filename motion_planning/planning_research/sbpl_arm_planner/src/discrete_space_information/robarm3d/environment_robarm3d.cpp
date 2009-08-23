@@ -84,8 +84,8 @@ int dz[DIRECTIONS] = {-1, -1, -1, -1, -1, -1, -1, -1, -1,    0,  0,  0,  0,  0, 
 #if DEBUG_HEURISTIC
     FILE* fDeb = fopen("debug_environment.txt", "w");
     FILE* fHeur = fopen("debug_heur.txt", "w");
-    FILE* fHeurExpansions = fopen("debug_heur_expansions.txt", "w");
-    FILE* fHuh = fopen("time_to_goal_range.txt","a");
+//     FILE* fHeurExpansions = fopen("debug_heur_expansions.txt", "w");
+//     FILE* fHuh = fopen("time_to_goal_range.txt","a");
 #endif
 
 //Statistics
@@ -936,6 +936,7 @@ bool EnvironmentROBARM3D::InitGeneral()
 			jacobian.resize(EnvROBARMCfg.arm_chain.getNrOfJoints());
 		}
 		
+		printf("RPYHeuristicDistance = %i cells\n", EnvROBARMCfg.RPYHeuristicDistance_c);
     return true;
 }
 
@@ -1509,51 +1510,67 @@ bool EnvironmentROBARM3D::SetEnvParameter(std::string param, double value)
 /**------------------------------------------------------------------------*/
 int EnvironmentROBARM3D::GetFromToHeuristic(int FromStateID, int ToStateID)
 {
-    if(EnvROBARMCfg.PlanInJointSpace)
-        return GetJointSpaceHeuristic(FromStateID,ToStateID);
+	#if DEBUG_HEURISTIC
+		fprintf(fHeur,"%i: to %i\n",FromStateID, ToStateID);
+	#endif
+
+	if(EnvROBARMCfg.PlanInJointSpace)
+			return GetJointSpaceHeuristic(FromStateID,ToStateID);
 
 #if USE_HEUR==0
     return 0;
 #endif
 
-    int heur = 0, closest_goal = 0;
-    double FromEndEff_m[3];
-		double edist_to_goal_m, heur_axis_angle, rpy_weight;
+	int heur = 0, closest_goal = 0;
+	double FromEndEff_m[3];
+	double edist_to_goal_m, heur_axis_angle, rpy_weight = 0;
 
-    //get X, Y, Z for the state
-    EnvROBARMHashEntry_t* FromHashEntry = EnvROBARM.StateID2CoordTable[FromStateID];
-    short unsigned int FromEndEff[3] = {FromHashEntry->endeff[0], FromHashEntry->endeff[1], FromHashEntry->endeff[2]};
+	//get X, Y, Z for the state
+	EnvROBARMHashEntry_t* FromHashEntry = EnvROBARM.StateID2CoordTable[FromStateID];
+	short unsigned int FromEndEff[3] = {FromHashEntry->endeff[0], FromHashEntry->endeff[1], FromHashEntry->endeff[2]};
 
-    //distance to closest goal in meters
-    Cell2ContXYZ(FromHashEntry->endeff[0],FromHashEntry->endeff[1],FromHashEntry->endeff[2],&(FromEndEff_m[0]),&(FromEndEff_m[1]),&(FromEndEff_m[2]));
-    edist_to_goal_m = GetDistToClosestGoal(FromEndEff_m, &closest_goal);
+	//distance to closest goal in meters
+	Cell2ContXYZ(FromHashEntry->endeff[0],FromHashEntry->endeff[1],FromHashEntry->endeff[2],&(FromEndEff_m[0]),&(FromEndEff_m[1]),&(FromEndEff_m[2]));
+	edist_to_goal_m = GetDistToClosestGoal(FromEndEff_m, &closest_goal);
 
+
+	if(EnvROBARMCfg.lowres_collision_checking)
+		HighResGrid2LowResGrid(FromHashEntry->endeff, FromEndEff);
+
+	//get distance heuristic
+	if(EnvROBARMCfg.dijkstra_heuristic)
+		heur = EnvROBARM.Heur[XYZTO3DIND(FromEndEff[0], FromEndEff[1], FromEndEff[2])];
+	else
+		heur = edist_to_goal_m * 1000.0 * EnvROBARMCfg.cost_per_mm;
+
+	#if DEBUG_HEURISTIC
+		fprintf(fHeur,"heur_xyz: %i   euclidean_distance: %.3f\n",heur, edist_to_goal_m);
+	#endif
+	
+	//get orientation heuristic
+	if(EnvROBARMCfg.checkEndEffGoalOrientation)
+	{
+		if(FromHashEntry->axis_angle > EnvROBARMCfg.EndEffGoals[closest_goal].rpy_tolerance)
+			heur_axis_angle = (FromHashEntry->axis_angle - EnvROBARMCfg.EndEffGoals[0].rpy_tolerance) * EnvROBARMCfg.cost_per_rad;
+		else
+			heur_axis_angle = FromHashEntry->axis_angle * EnvROBARMCfg.cost_per_rad;
+
+
+		rpy_weight = double(EnvROBARMCfg.RPYHeuristicDistance_c - heur) / (double)EnvROBARMCfg.RPYHeuristicDistance_c;
 		
-		if(EnvROBARMCfg.lowres_collision_checking)
-			HighResGrid2LowResGrid(FromHashEntry->endeff, FromEndEff);
-				
-    //get distance heuristic
-    if(EnvROBARMCfg.dijkstra_heuristic)
-	    heur = EnvROBARM.Heur[XYZTO3DIND(FromEndEff[0], FromEndEff[1], FromEndEff[2])];
-    else
-			heur = edist_to_goal_m * 1000.0 * EnvROBARMCfg.cost_per_mm;
-  
-    //get orientation heuristic
-    if(EnvROBARMCfg.checkEndEffGoalOrientation)
-    {
-      if(FromHashEntry->axis_angle > EnvROBARMCfg.EndEffGoals[closest_goal].rpy_tolerance)
-				heur_axis_angle = (FromHashEntry->axis_angle - EnvROBARMCfg.EndEffGoals[0].rpy_tolerance) * EnvROBARMCfg.cost_per_rad;
-      else
-	  		heur_axis_angle = FromHashEntry->axis_angle * EnvROBARMCfg.cost_per_rad;
+		fprintf(fHeur,"rpy_weight: %lf\n" ,rpy_weight);
+		if(rpy_weight < 0)
+			rpy_weight = 0;
 
-			
-			rpy_weight = (EnvROBARMCfg.RPYHeuristicDistance_c - heur) / EnvROBARMCfg.RPYHeuristicDistance_c;
-			if(rpy_weight < 0)
-				rpy_weight = 0;
-			
-			heur += heur_axis_angle*rpy_weight;
-    }
-    return heur;
+		heur += int(heur_axis_angle*rpy_weight);
+
+		#if DEBUG_HEURISTIC
+				fprintf(fHeur,"heur_rpy: %.3f  axis_angle: %.3f  weight: %.5f (rpy_heur_distance: %i)\n",heur_axis_angle, FromHashEntry->axis_angle, rpy_weight, EnvROBARMCfg.RPYHeuristicDistance_c);
+				fprintf(fHeur,"heur: %i\n",heur);
+		#endif
+	}
+	
+	return heur;
 }
 
 //NOTE temporary for debugging output
@@ -1605,6 +1622,7 @@ int EnvironmentROBARM3D::GetHeuristics(int FromStateID, int &heur_xyz, int &heur
 	
 	return 1;
 }
+
 
 //for debugging. remove later
 int EnvironmentROBARM3D::GetFromToHeuristic(int FromStateID, int ToStateID, FILE* fOut)
@@ -1861,9 +1879,9 @@ void EnvironmentROBARM3D::PrintHeader(FILE* fOut)
 /** \brief Get successors when searching towards a cartesian goal. */
 void EnvironmentROBARM3D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV)
 {
-	#if DEBUG_HEURISTIC
-			GetFromToHeuristic(SourceStateID,EnvROBARM.goalHashEntry->stateID, fHeurExpansions);
-	#endif
+// 	#if DEBUG_HEURISTIC
+// 			GetFromToHeuristic(SourceStateID,EnvROBARM.goalHashEntry->stateID, fHeurExpansions);
+// 	#endif
 
 	if(EnvROBARMCfg.PlanInJointSpace)
 	{
@@ -4277,23 +4295,14 @@ void EnvironmentROBARM3D::InitializeEnvGrid()
 
 std::vector<std::vector<double> >* EnvironmentROBARM3D::getCollisionMap()
 {
-//     for(unsigned int i=0; i < EnvROBARMCfg.cubes.size(); i++)
-//     {
-//         printf("[getCollisionMap] cube %i: ",i);
-//         for(unsigned int k=0; k < EnvROBARMCfg.cubes[i].size(); k++)
-//             printf("%.3f ",EnvROBARMCfg.cubes[i][k]);
-//         printf("\n");
-//     }
-
   if(EnvROBARMCfg.mCopyingGrid.try_lock())
   {
     EnvROBARMCfg.sbpl_cubes = EnvROBARMCfg.cubes;
     EnvROBARMCfg.mCopyingGrid.unlock();
   }
   else
-  {
     printf("[getCollisionMap] Could not acquire mutex...\n");
-  }
+
   return &(EnvROBARMCfg.sbpl_cubes);
 }
 

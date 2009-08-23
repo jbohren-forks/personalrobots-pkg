@@ -258,7 +258,7 @@ typedef struct ENV_ROBARM_CONFIG
     double grasped_object_length_m;
     bool use_voxel3d_occupancy_grid;
 		double RPYHeuristicDistance_m;
-		double RPYHeuristicDistance_c;
+		int RPYHeuristicDistance_c;
     bool use_selective_actions;
     bool exact_gripper_collision_checking;
     bool use_jacobian_motion_prim;
