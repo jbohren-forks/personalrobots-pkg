@@ -11,7 +11,7 @@
 <table align=center cellspacing=5>
 <tr>
 <?cs each:_app=CGI.cur.apps ?>
-  <td class=buttonOff height=100 bgcolor=white objtype="OnOffButtonWidget" topic="/TaskStatus" taskid="<?cs var:_app.taskid ?>"><div valign=top style="height: 70%;"><font color=black><?cs var:_app.appname ?></div><div style="position: relative; bottom: 0px; font-size: 10pt;" objtype=TextWidget topic="/TaskStatus" key=status selector="taskid" selectorValue="<?cs var:_app.taskid?>">&nbsp;</div></td>
+  <td class=buttonOff height=100 bgcolor=white objtype="OnOffButtonWidget" topic="/TaskStatus" taskid="<?cs var:_app.taskid ?>"><div valign=top style="height: 70%;"><font color=black><nobr><?cs var:_app.name ?></div><div style="position: relative; bottom: 0px; font-size: 10pt;" objtype=TextWidget topic="/TaskStatus" key=status selector="taskid" selectorValue="<?cs var:_app.taskid?>">&nbsp;</div></td>
 <?cs /each ?>
 </tr>
 </table>

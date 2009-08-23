@@ -31,7 +31,7 @@
 </tr>
 </table>
 
-<table style="border: 0px; width: 150px; float: right">
+<table style="border: 1px solid black; width: 150px; float: right">
 <tr>
 <td objtype="ListWidget" topic="/users" key="users">
   __item__<br>

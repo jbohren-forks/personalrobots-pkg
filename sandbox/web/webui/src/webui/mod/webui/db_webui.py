@@ -84,7 +84,8 @@ class ApplicationTable(odb.Table):
 class Application(hdfhelp.HdfRow):
   def fetchApp(self, prefix, hdf):
     warn('taskid', self.taskid)
-    _app = app.App(self.taskid)
+    warn('taskid', repr(self.taskid))
+    _app = app.App(str(self.taskid))
     
     hdf.setValue(prefix + ".name", _app.name)
   

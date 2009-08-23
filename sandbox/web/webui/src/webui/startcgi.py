@@ -21,6 +21,8 @@ if 0:
 
 PKG = 'webui' # this package name
 import roslib; roslib.load_manifest(PKG) 
+ros_root = os.environ['ROS_ROOT']
+os.environ['PATH'] = os.path.join(ros_root, "bin") + ":" + os.environ['PATH']
 
 from pyclearsilver import cgistarter, log
 

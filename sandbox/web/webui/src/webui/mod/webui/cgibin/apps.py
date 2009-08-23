@@ -15,7 +15,6 @@ from pyclearsilver import odb
 import MBPage
 import db_webui
 
-
 class MyPage(MBPage.MBPage):
   def setup(self, hdf):
     self.db = db_webui.initSchema()
@@ -27,6 +26,7 @@ class MyPage(MBPage.MBPage):
     prefix = "CGI.cur.apps"
     i = 0
     for app in apps:
+      i = i + 1
       aprefix = prefix + ".%d" % i
       app.hdfExport(aprefix, hdf)
       app.fetchApp(aprefix, hdf)
