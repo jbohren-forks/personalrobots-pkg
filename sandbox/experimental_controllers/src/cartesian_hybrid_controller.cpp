@@ -163,19 +163,8 @@ bool CartesianHybridController::init(mechanism::RobotState *robot, const ros::No
   if (node_.hasParam("twist_filter"))
   {
     use_filter_ = true;
-    std::string filter_xml;
-    node_.getParam("twist_filter", filter_xml);
 
-    TiXmlDocument doc;
-    doc.Parse(filter_xml.c_str());
-    if (!doc.RootElement())
-    {
-      ROS_ERROR("Could not parse twist_filter xml (namespace: %s)",
-                node_.getNamespace().c_str());
-      return false;
-    }
-
-    if (!twist_filter_.configure(6, doc.RootElement()))
+    if (!twist_filter_.configure(6, "twist_filter", node_))
       return false;
     ROS_INFO("Successfully configured twist_filter (namespace: %s)",
              node_.getNamespace().c_str());
