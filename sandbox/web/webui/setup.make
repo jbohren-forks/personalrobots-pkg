@@ -1,8 +1,8 @@
 all: db/webui/webui.db3 db/auth/auth.db3
 
 db/webui/webui.db3: 
-	(cd src/webui/mod/webui/; ./db_webui.py)
+	(cd src/webui/mod/webui/; ./createdb.py)
 
 db/auth/auth.db3:
-	(cd src/webui/auth/; ./db_auth.py)
+	(cd src/webui/auth/; ./createdb.py)
 
