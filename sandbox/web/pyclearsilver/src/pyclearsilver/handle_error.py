@@ -2,6 +2,8 @@
 import traceback, sys, string, time, socket, os
 import who_calls
 
+import cgitb
+
 #DUMP_DIR = "/neo/data/bugs"
 DUMP_DIR = "/tmp/bugs"
 if os.environ.has_key('PYCLEARSILVER_BUGS_PATH'):
@@ -23,16 +25,15 @@ def exceptionReason():
   return "%s.%s" % (str(sys.exc_type), str(sys.exc_value))
 
 def exceptionString():
-  tb_list = traceback.format_exception(sys.exc_type,sys.exc_value,sys.exc_traceback)
-  return string.join(tb_list,"")
-
-  #### old way
-  import StringIO
-  ## get the traceback message  
-  sfp = StringIO.StringIO()
-  traceback.print_exc(file=sfp)
+  import cStringIO
+  sfp = cStringIO.StringIO()
+  handler = cgitb.Hook(file=sfp, display=True)
+  handler.handle()
   exception = sfp.getvalue()
-  sfp.close()
+  return exception
+
+  #tb_list = traceback.format_exception(sys.exc_type,sys.exc_value,sys.exc_traceback)
+  #return string.join(tb_list,"")
 
   return exception
 
@@ -48,6 +49,7 @@ def handleException (msg=None, lvl=LV_ERROR, dump = 1):
     msg = "Unhandled Exception"
         
   sys.stderr.write (string.join(tb_list,""))
+
   try:
     if dump: dump_bug(lvl, "handleException", msg, string.join(tb_list, ""))
   except:

@@ -219,14 +219,52 @@ Redirect
             self['Content-Type'] = "text/html"
 
             # print the page
+            self.push("<head>")
+            self.push('''
+<script type="text/javascript">
+function toggleDebugInfo() {
+    var tb = document.getElementById('%s');
+    if (tb == null) return;
+    tb.style.display = tb.style.display ? '' : 'none';
+}
+</script>
+<style type="text/css">
+.cgitb {background: #E6EAF0; border: 1px solid #4D6180; direction: ltr;}
+.cgitb p {margin: 0.5em 0; padding: 5px 10px; text-align: left;}
+.cgitb ol {margin: 0}
+.cgitb li {margin: 0.25em 0;}
+.cgitb h1, .cgitb h2, .cgitb h3 {padding: 5px 10px; margin: 0; background: #4D6180; color: white;}
+.cgitb h1 {font-size: 1.3em;}
+.cgitb h2 {font-size: 1em; margin-top: 1em;}
+.cgitb h3 {font-size: 1em;}
+.cgitb .frames {margin: 0; padding: 0; color: #606060}
+.cgitb .frames li {display: block;}
+.cgitb .call {padding: 5px 10px; background: #A3B4CC; color: black}
+.cgitb .context {padding: 0; font-family: monospace; }
+.cgitb .context li {display: block; white-space: pre;}
+.cgitb .context li.highlight {background: #C0D3F0; color: black}
+.cgitb .variables {padding: 5px 10px; font-family: monospace;}
+.cgitb .variables li {display: inline;}
+.cgitb .variables li:after {content: ", ";}
+.cgitb .variables li:last-child:after {content: "";}
+.cgitb .exception {border: 1px solid #4D6180; margin: 10px}
+.cgitb .exception h3 {background: #4D6180; color: white;}
+.cgitb .exception p {color: black;}
+.cgitb .exception ul {padding: 0 10px; font-family: monospace;}
+.cgitb .exception li {display: block;}
+
+.cgitb .buttons {margin: 0.5em 0; padding: 5px 10px;}
+.cgitb .buttons li {display: inline; margin: 0; padding: 0 0.25em;}
+</style>
+''')
+
+            self.push("</head>")
 
             self.push("<H1> Error in Page </H1>\n")
             self.push("A copy of this error report has been submitted to the developers. ")
             self.push("The details of the error report are below.")
 
-            self.push("<PRE>")
             self.push(handle_error.exceptionString())
-            self.push("</PRE>\n")
 
             # print debug info always on page error...
             self.push("<HR>\n")
