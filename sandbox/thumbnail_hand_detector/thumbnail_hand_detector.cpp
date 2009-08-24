@@ -132,12 +132,13 @@ private:
   int count_;
   
   bool visualize_;
+  bool save_;
   Dorylus classifier_;
   vector<ImageDescriptor*> descriptors_;
 
 public:
-  ThumbnailHandDetector(const ros::NodeHandle& node_handle, string classifier_filename, bool visualize)
-    : node_handle_(node_handle), filename_format_(""), count_(0), visualize_(visualize)
+  ThumbnailHandDetector(const ros::NodeHandle& node_handle, string classifier_filename, bool visualize, bool save)
+    : node_handle_(node_handle), filename_format_(""), count_(0), visualize_(visualize), save_(save)
   {
     node_handle_.param("~window_name", window_name_, node_handle_.resolveName("image"));
 
@@ -239,12 +240,17 @@ public:
 	}
       }
 
+      
       if(total_response > 0) {
-	char buf[100];
-	sprintf(buf, "hands/hand%05d.jpg", count_);
-	cvSaveImage(buf, small);
-	cout << "Saved " << buf << ".  Response: " << total_response << endl;
-	count_++;
+	cout << "Found hand.  Response: " << total_response;
+	if(save_) {
+	  char buf[100];
+	  sprintf(buf, "hands/hand%05d.jpg", count_);
+	  cvSaveImage(buf, small);
+	  cout << "   Saved " << buf;
+	  count_++;
+	}
+	cout << endl;
       }
 
       if(visualize_) {
@@ -337,15 +343,22 @@ int main(int argc, char **argv)
     cout << "usage: " << argv[0] << " CLASSIFIER_FILENAME image:=<image topic>" << endl;
     cout << " Environment variable options:" << endl;
     cout << "   VISUALIZE= Turns on visualization." << endl;
+    cout << "   SAVE= Turns on saving of hand images." << endl;
 
     return 1;
   }
+
+
 
   bool visualize = false;
   if(getenv("VISUALIZE") != NULL) 
     visualize = true;
 
-  ThumbnailHandDetector view(n, argv[1], visualize);
+  bool save = false;
+  if(getenv("SAVE") != NULL) 
+    save = true;
+
+  ThumbnailHandDetector view(n, argv[1], visualize, save);
   ros::spin();
   return 0;
 }
