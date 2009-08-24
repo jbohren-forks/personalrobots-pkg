@@ -147,11 +147,13 @@ public:
     std::string format_string;
     node_handle_.param("~filename_format", format_string, std::string("frame%04i.jpg"));
     filename_format_.parse(format_string);
-    
-    cvNamedWindow(window_name_.c_str(), autosize ? CV_WINDOW_AUTOSIZE : 0);
-    cvNamedWindow("small", CV_WINDOW_AUTOSIZE);
-    cvNamedWindow("Classification", CV_WINDOW_AUTOSIZE);
-    cvStartWindowThread();
+
+    if(visualize_) {    
+      cvNamedWindow(window_name_.c_str(), autosize ? CV_WINDOW_AUTOSIZE : 0);
+      cvNamedWindow("small", CV_WINDOW_AUTOSIZE);
+      cvNamedWindow("Classification", CV_WINDOW_AUTOSIZE);
+      cvStartWindowThread();
+    }
 
     subs_.push_back( node_handle_.subscribe("image", 1, &ThumbnailHandDetector::image_cb, this) );
 
@@ -237,12 +239,11 @@ public:
       }
 
       if(total_response > 0) {
-	cout << "Hand: " << total_response << endl;	
 	if(visualize_) {
 	  char buf[100];
 	  sprintf(buf, "hands/hand%05d.jpg", count_);
 	  cvSaveImage(buf, small);
-	  cout << "Saved " << buf << endl;
+	  cout << "Saved " << buf << ".  Response: " << total_response << endl;
 	  count_++;
 	}
       }
@@ -261,7 +262,7 @@ public:
       
 
       t_vis = (double)cvGetTickCount() - t_vis;
-      printf("Took %g ms for this image.\n", t_vis/(cvGetTickFrequency()*1000.) );
+      //printf("Took %g ms for this image.\n", t_vis/(cvGetTickFrequency()*1000.) );
     }
     else
       ROS_ERROR("Unable to convert %s image to bgr8", msg->encoding.c_str());
@@ -338,7 +339,7 @@ int main(int argc, char **argv)
     return 1;
   }
 
-  ThumbnailHandDetector view(n, argv[1], false);
+  ThumbnailHandDetector view(n, argv[1], true);
   ros::spin();
   return 0;
 }
