@@ -1,0 +1,19 @@
+<package>
+  <description brief="geometric_blur">
+
+     geometric_blur
+
+  </description>
+  <author>Min Sun</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/geometric_blur</url>
+  <depend package="roscpp"/>
+  <depend package="opencv_latest"/>
+  <depend package="std_msgs"/>
+  <export>
+      <cpp cflags="-I${prefix}/include/" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lgeometric_blur"/>
+  </export>
+</package>
+
+
