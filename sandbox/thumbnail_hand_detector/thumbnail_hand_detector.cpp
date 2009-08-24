@@ -131,12 +131,13 @@ private:
   boost::format filename_format_;
   int count_;
   
+  bool visualize_;
   Dorylus classifier_;
   vector<ImageDescriptor*> descriptors_;
 
 public:
-  ThumbnailHandDetector(const ros::NodeHandle& node_handle, string classifier_filename)
-    : node_handle_(node_handle), filename_format_(""), count_(0)
+  ThumbnailHandDetector(const ros::NodeHandle& node_handle, string classifier_filename, bool visualize)
+    : node_handle_(node_handle), filename_format_(""), count_(0), visualize_(visualize)
   {
     node_handle_.param("~window_name", window_name_, node_handle_.resolveName("image"));
 
@@ -193,10 +194,10 @@ public:
       msg->encoding = "mono";
 #endif
 
-    if (img_bridge_.fromImage(*msg, "bgr8")) {
+    if(img_bridge_.fromImage(*msg, "bgr8")) {
+      double t_vis = (double)cvGetTickCount();
       IplImage* img = img_bridge_.toIpl();
-      cvShowImage(window_name_.c_str(), img);
-      
+
       // -- Crop and resize to 128x128.
       int h = img->height;
       int w = img->width;
@@ -208,35 +209,59 @@ public:
       cvResetImageROI(img);
       cvShowImage("small", small);
 
+      IplImage* vis = NULL;
+      if(visualize_) 
+	vis = cvCloneImage(small);
+
+
       // -- Collect features. 
       Vector<KeyPoint> keypoints;
       vector<object*> objects;
-      collectRandomFeatures(small, 1000, &keypoints, &objects);
-      IplImage* vis = cvCloneImage(small);
+      collectRandomFeatures(small, 40, &keypoints, &objects);
 
       // -- Make predictions.
       double total_response = 0;
       for(size_t j=0; j<objects.size(); ++j) {
-	
 	MatrixXf response = classifier_.classify(*objects[j]);
 	total_response += response(0,0);
 	int size = ceil(log(ceil(abs(response(0,0))+.001)));
 	int x = keypoints[j].pt.x;
 	int y = keypoints[j].pt.y;
-	if(response(0,0) > 0)
-	  cvCircle(vis, cvPoint(x, y), size, cvScalar(0,255,0), -1);
-	else
-	  cvCircle(vis, cvPoint(x, y), size, cvScalar(0,0,255), -1);
+	
+	if(visualize_) {
+	  if(response(0,0) > 0)
+	    cvCircle(vis, cvPoint(x, y), size, cvScalar(0,255,0), -1);
+	  else
+	    cvCircle(vis, cvPoint(x, y), size, cvScalar(0,0,255), -1);
+	}
       }
-      cvShowImage("Classification", vis);
+
       if(total_response > 0) {
 	cout << "Hand: " << total_response << endl;	
-	char buf[100];
-	sprintf(buf, "hands/hand%05d.jpg", count_);
-	cvSaveImage(buf, small);
-	cout << "Saved " << buf << endl;
-	count_++;
+	if(visualize_) {
+	  char buf[100];
+	  sprintf(buf, "hands/hand%05d.jpg", count_);
+	  cvSaveImage(buf, small);
+	  cout << "Saved " << buf << endl;
+	  count_++;
+	}
       }
+
+      if(visualize_) {
+	cvShowImage(window_name_.c_str(), img);
+	cvShowImage("Classification", vis);
+      }
+
+      // -- Cleanup.
+      cvReleaseImage(&small);
+      if(vis)
+	cvReleaseImage(&vis);
+      for(size_t i=0; i<objects.size(); ++i)
+	delete objects[i];
+      
+
+      t_vis = (double)cvGetTickCount() - t_vis;
+      printf("Took %g ms for this image.\n", t_vis/(cvGetTickFrequency()*1000.) );
     }
     else
       ROS_ERROR("Unable to convert %s image to bgr8", msg->encoding.c_str());
@@ -279,13 +304,18 @@ public:
     *keypoints = actual_keypoints; 
   }
 
+
+  // Hacked for speed: assuming we only want to sample the middle 28x28 pixels.
   void getRandomKeypoints(IplImage* img, int num_samples, Vector<KeyPoint>* keypoints) { 
     assert(keypoints->empty());
     
     keypoints->reserve(num_samples);
     for(int i=0; i<num_samples; i++)  {
-      int x = rand() % img->width;
-      int y = rand() % img->height;
+//       int x = rand() % img->width;
+//       int y = rand() % img->height;
+      int x = 50 + rand() % 28;
+      int y = 50 + rand() % 28;
+      
       int size = 1;
     
       keypoints->push_back(KeyPoint(x, y, size));
@@ -308,7 +338,7 @@ int main(int argc, char **argv)
     return 1;
   }
 
-  ThumbnailHandDetector view(n, argv[1]);
+  ThumbnailHandDetector view(n, argv[1], false);
   ros::spin();
   return 0;
 }
