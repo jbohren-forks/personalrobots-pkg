@@ -115,7 +115,7 @@ bool SBPLArmPlannerNode::init()
 	ROS_INFO("Listening to %s with message notifier for target frame %s", collision_map_topic_.c_str(), collision_map_notifier_->getTargetFramesString().c_str());
 
   // main planning service
-  planning_service_ = node_.advertiseService("plan_kinematic_path", &SBPLArmPlannerNode::planKinematicPath,this);
+  planning_service_ = node_.advertiseService("/sbpl_planning/plan_kinematic_path", &SBPLArmPlannerNode::planKinematicPath,this);
 
 //   mechanism_subscriber_ = node_.subscribe("/mechanism_state", 1, &SBPLArmPlannerNode::dummyCallback, this);
 	joint_states_subscriber_ = node_.subscribe("/joint_states", 1, &SBPLArmPlannerNode::jointStatesCallback, this);
@@ -758,12 +758,13 @@ bool SBPLArmPlannerNode::planToPosition(motion_planning_msgs::GetMotionPlan::Req
 {
   unsigned int i;
   int nind = 0;
+	double angles[num_joints_], xyz_m[3], rpy_r[3];
   motion_planning_msgs::KinematicPath arm_path;
   motion_planning_msgs::KinematicState start;
   tf::Stamped<tf::Pose> pose_stamped;
-
   bCartesianPlanner_ = true;
-
+	bGoalPositionConstraint_ = true;
+	
   //empty old goals
   goal_pose_constraint_.resize(0);
   goal_pose_constraint_.resize(req.goal_constraints.get_pose_constraint_size());
@@ -780,30 +781,79 @@ bool SBPLArmPlannerNode::planToPosition(motion_planning_msgs::GetMotionPlan::Req
   //check if goal constraint is empty
   if(req.goal_constraints.get_pose_constraint_size() <= 0)
   {
-    ROS_INFO("[planToPosition] No pose constraints given. Unable to plan.");
-    return false;
+		ROS_INFO("[planToPosition] No pose constraints given but there might be joint constraints...");
+		
+		if(req.goal_constraints.get_joint_constraint_size() >= (unsigned int)num_joints_)
+		{
+			unsigned int nind = 0;
+			for(i = 0; i < req.goal_constraints.get_joint_constraint_size(); ++i)
+			{
+				if(joint_names_[nind].compare(req.goal_constraints.joint_constraint[i].joint_name) == 0)
+				{
+					angles[nind] =  req.goal_constraints.joint_constraint[i].value[0];
+					nind++;
+				}
+				if(nind == num_joints_)
+				{
+					ROS_INFO("[planToPosition] No pose constraints given the proper joint constraints are given. Running FK.");
+					break;
+				}
+			}
+			
+			// run forward kinematics to get pose
+			ROS_INFO("Running FK to compute end effector goal position");
+			sbpl_arm_env_.ComputeEndEffectorPos(angles, xyz_m, rpy_r);
+			ROS_INFO("goal position: xyz: %.3f %.3f %.3f   rpy: %.3f %.3f %.3f", xyz_m[0],xyz_m[1],xyz_m[2],rpy_r[0],rpy_r[1],rpy_r[2]);
+		}
+
+		else
+		{
+			ROS_INFO("[planToPosition] No pose constraints given. Unable to plan.");
+    	return false;
+		}
+		
+		bGoalPositionConstraint_ = false;
   }
 
   // update the planning monitor's starting position
   updatePMWrapper(req);
 
   //transform goal into planning_frame_
-  for(i = 0; i < req.goal_constraints.get_pose_constraint_size(); i++)
-  {
-    goal_pose_constraint_[i] = req.goal_constraints.pose_constraint[i];
-    poseStampedMsgToTF( goal_pose_constraint_[i].pose, pose_stamped);
-    ROS_DEBUG("[planToPosition] converted pose_constraint to tf");
-
-    if (!tf_.canTransform(planning_frame_, pose_stamped.frame_id_, pose_stamped.stamp_, ros::Duration(3.0)))
-    {
-      ROS_ERROR("[sbpl_arm_planner_node] Cannot transform from %s to %s",pose_stamped.frame_id_.c_str(), planning_frame_.c_str());
-      return false;
-    }
-    ROS_DEBUG("[planToPosition] attempting to call transformPose()...");
-    tf_.transformPose(planning_frame_, goal_pose_constraint_[i].pose, goal_pose_constraint_[i].pose);
-    ROS_DEBUG("[planToPosition] successfully transformed pose from %s to %s",pose_stamped.frame_id_.c_str(), planning_frame_.c_str());
-  }
-
+	if(bGoalPositionConstraint_)
+	{
+		for(i = 0; i < req.goal_constraints.get_pose_constraint_size(); i++)
+		{
+			goal_pose_constraint_[i] = req.goal_constraints.pose_constraint[i];
+			poseStampedMsgToTF( goal_pose_constraint_[i].pose, pose_stamped);
+			ROS_DEBUG("[planToPosition] converted pose_constraint to tf");
+	
+			if (!tf_.canTransform(planning_frame_, pose_stamped.frame_id_, pose_stamped.stamp_, ros::Duration(3.0)))
+			{
+				ROS_ERROR("[sbpl_arm_planner_node] Cannot transform from %s to %s",pose_stamped.frame_id_.c_str(), planning_frame_.c_str());
+				return false;
+			}
+			ROS_DEBUG("[planToPosition] attempting to call transformPose()...");
+			tf_.transformPose(planning_frame_, goal_pose_constraint_[i].pose, goal_pose_constraint_[i].pose);
+			ROS_DEBUG("[planToPosition] successfully transformed pose from %s to %s",pose_stamped.frame_id_.c_str(), planning_frame_.c_str());
+		}
+	}
+	else
+	{
+		goal_pose_constraint_[0] = req.goal_constraints.pose_constraint[0];
+		goal_pose_constraint_[0].pose.pose.position.x = xyz_m[0];
+		goal_pose_constraint_[0].pose.pose.position.y = xyz_m[1];
+		goal_pose_constraint_[0].pose.pose.position.z = xyz_m[2];
+		
+		// get orientation as a quaternion
+		btQuaternion joint_pos_goal(rpy_r[0],rpy_r[1],rpy_r[2]);
+		goal_pose_constraint_[0].pose.pose.orientation.x = joint_pos_goal.getX();
+		goal_pose_constraint_[0].pose.pose.orientation.y = joint_pos_goal.getY();
+		goal_pose_constraint_[0].pose.pose.orientation.z = joint_pos_goal.getZ();
+		goal_pose_constraint_[0].pose.pose.orientation.w = joint_pos_goal.getW();
+		
+		ROS_INFO("goal position: %.3f %.3f %.3f  goal quaternion: X: %.3f Y:%.3f Z:%.3f W:%.3f",
+	}
+	
   // get the starting position of the specific arm joints the planner will be planning for
   start.set_vals_size(num_joints_);
   for(i = 0; i < req.get_start_state_size(); i++)
@@ -929,7 +979,9 @@ bool SBPLArmPlannerNode::planKinematicPath(motion_planning_msgs::GetMotionPlan::
     if(req.goal_constraints.get_pose_constraint_size() <= 0)
     {
       ROS_INFO("There are no pose_constraints in the request message");
-      return false;
+			
+			if(req.goal_constraints.get_joint_constraint_size() == 0)
+				return false;
     }
     if(!planToPosition(req, res))
       return false;

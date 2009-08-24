@@ -71,7 +71,7 @@
 
 /** Planner **/
 #include <sbpl_arm_planner/headers.h>
-
+// #include <bullet/btQuaternion.h>
 
 namespace sbpl_arm_planner_node
 {
@@ -124,6 +124,8 @@ class SBPLArmPlannerNode
       bool dijkstra_heuristic_;
 
       bool use_cm_for_voxel_;
+			
+			bool bGoalPositionConstraint_;
 
       int env_width_;
 
