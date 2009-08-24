@@ -41,7 +41,7 @@
     <visual>
       <origin xyz="0 0 0.0" rpy="0 0 0" />
       <geometry name="plug_visual_geom">
-        <mesh scale="${plug_x_size} ${plug_y_size} ${plug_z_size}" />
+        <box size="${plug_x_size} ${plug_y_size} ${plug_z_size}" />
       </geometry>
     </visual> 
     <collision>

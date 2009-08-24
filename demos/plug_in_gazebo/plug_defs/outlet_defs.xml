@@ -42,7 +42,7 @@
     <visual>
       <origin xyz="4 0 0.001" rpy="0 0 0" />
       <geometry name="floor_visual_geom">
-        <mesh scale="8 8 0.002" />
+        <box size="8 8 0.002" />
       </geometry>
     </visual> 
     <collision>
@@ -76,7 +76,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry name="wall_visual_geom">
-        <mesh scale="0.4 10 2" />
+        <box size="0.4 10 2" />
       </geometry>
     </visual> 
     <collision>
@@ -110,7 +110,7 @@
     <visual >
       <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
       <geometry name="outlet_visual">
-        <mesh scale="0.01 ${outlet_size_w} ${outlet_size_h}" />
+        <box size="0.01 ${outlet_size_w} ${outlet_size_h}" />
       </geometry>
     </visual>
     <collision >
@@ -144,7 +144,7 @@
     <visual >
       <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
       <geometry name="jack1_visual">
-        <mesh scale="0.01 ${jack_width} ${jack_height}" />
+        <box size="0.01 ${jack_width} ${jack_height}" />
       </geometry>
     </visual>
     <collision >
@@ -177,7 +177,7 @@
     <visual >
       <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
       <geometry name="jack2_visual">
-        <mesh scale="0.01 ${jack_width} ${jack_height}" />
+        <box size="0.01 ${jack_width} ${jack_height}" />
       </geometry>
     </visual>
     <collision >
@@ -210,7 +210,7 @@
     <visual >
       <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
       <geometry name="jack3_visual">
-        <mesh scale="0.01 ${jack_width} ${jack_height}" />
+        <box size="0.01 ${jack_width} ${jack_height}" />
       </geometry>
     </visual>
     <collision >
@@ -243,7 +243,7 @@
     <visual >
       <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
       <geometry name="jack4_visual">
-        <mesh scale="0.01 ${jack_width} ${jack_height}" />
+        <box size="0.01 ${jack_width} ${jack_height}" />
       </geometry>
     </visual>
     <collision >
