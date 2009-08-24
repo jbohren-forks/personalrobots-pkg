@@ -62,6 +62,7 @@
 #include <boost/format.hpp>
 #include <driver_base/driver.h>
 #include <driver_base/driver_node.h>
+#include <camera_calibration_parsers/parse.h>
 
 #include "forearm_cam/fcamlib.h"
 #include "forearm_cam/host_netutil.h"
@@ -810,26 +811,8 @@ end_image_thread:
   }
 
   // TODO: parsing is basically duplicated in prosilica_node
-  bool loadIntrinsics(double* D, double* K, double* R, double* P)
+  bool loadIntrinsics(double* K, double* D, double* R, double* P)
   {
-//#define FOREARM_FLASH_IS_BUGGY
-#ifdef FOREARM_FLASH_IS_BUGGY
-    static const double D_[] = {-0.34949, 0.13668, 0.00039, -0.00110, 0.00000};
-    static const double K_[] = {427.31441, 0.00000, 275.80804,
-                                0.00000, 427.37949, 238.88978,
-                                0.00000, 0.00000, 1.00000};
-    static const double R_[] = {1.00000, 0.00000, 0.00000,
-                                0.00000, 1.00000, 0.00000,
-                                0.00000, 0.00000, 1.00000};
-    static const double P_[] = {427.31441, 0.00000, 275.80804, 0.00000,
-                                0.00000, 427.37949, 238.88978, 0.00000,
-                                0.00000, 0.00000, 1.00000, 0.00000};
-    memcpy(D, D_, sizeof(D_));
-    memcpy(K, K_, sizeof(K_));
-    memcpy(R, R_, sizeof(R_));
-    memcpy(P, P_, sizeof(P_));
-    return true;
-#else
     // Retrieve contents of user memory
     std::string calbuff(2 * FLASH_PAGE_SIZE, 0);
 
@@ -846,59 +829,15 @@ end_image_thread:
       ROS_WARN("Camera intrinsics have a bad checksum. They have probably never been set.\n");
     }                                             
 
-    // Separate into lines
-    typedef boost::tokenizer<boost::char_separator<char> > Tok;
-    boost::char_separator<char> sep("\n");
-    Tok tok(calbuff, sep);
-
-    // Check "header"
-    Tok::iterator iter = tok.begin();
-    if (*iter++ != "# Forearm camera intrinsics") {
-      ROS_WARN("Header doesn't match");
-      return false;
+    std::string name;
+    int width, height;
+    bool success = camera_calibration_parsers::parseCalibration(calbuff, "ini", name, width, height, K, D, R, P);
+    // @todo: rescale intrinsics as needed?
+    if (success && (width != width_ || height != height_)) {
+      ROS_WARN("Image resolution from intrinsics file does not match current video setting, "
+               "intrinsics expect %ix%i but running at %ix%i", width, height, width_, height_);
     }
-
-    // Read calibration matrices
-    int width = 0, height = 0;
-    int items_read = 0;
-    static const int EXPECTED_ITEMS = 9 + 5 + 9 + 12;
-    for (Tok::iterator ie = tok.end(); iter != ie; ++iter) {
-      if (*iter == "width") {
-        ++iter;
-        width = atoi(iter->c_str());
-      }
-      else if (*iter == "height") {
-        ++iter;
-        height = atoi(iter->c_str());
-      }
-      else if (*iter == "camera matrix")
-        for (int i = 0; i < 3; ++i) {
-          ++iter;
-          items_read += sscanf(iter->c_str(), "%lf %lf %lf",
-                               &K[3*i], &K[3*i+1], &K[3*i+2]);
-        }
-      else if (*iter == "distortion") {
-        ++iter;
-        items_read += sscanf(iter->c_str(), "%lf %lf %lf %lf %lf",
-                             D, D+1, D+2, D+3, D+4);
-      }
-      else if (*iter == "rectification")
-        for (int i = 0; i < 3; ++i) {
-          ++iter;
-          items_read += sscanf(iter->c_str(), "%lf %lf %lf",
-                               &R[3*i], &R[3*i+1], &R[3*i+2]);
-        }
-      else if (*iter == "projection")
-        for (int i = 0; i < 3; ++i) {
-          ++iter;
-          items_read += sscanf(iter->c_str(), "%lf %lf %lf %lf",
-                               &P[4*i], &P[4*i+1], &P[4*i+2], &P[4*i+3]);
-        }
-    }
-
-    // Check we got everything
-    return items_read == EXPECTED_ITEMS && width != 0 && height != 0;
-#endif
+    return success;
   }
 
   bool boardConfig(forearm_cam::BoardConfig::Request &req, forearm_cam::BoardConfig::Response &rsp)
@@ -985,7 +924,7 @@ private:
   void postOpenHook()
   {
     // Try to load camera intrinsics from flash memory
-    calibrated_ = driver_.loadIntrinsics(&cam_info_.D[0], &cam_info_.K[0],
+    calibrated_ = driver_.loadIntrinsics(&cam_info_.K[0], &cam_info_.D[0],
         &cam_info_.R[0], &cam_info_.P[0]);
     if (calibrated_)
       ROS_INFO("Loaded intrinsics from camera");
