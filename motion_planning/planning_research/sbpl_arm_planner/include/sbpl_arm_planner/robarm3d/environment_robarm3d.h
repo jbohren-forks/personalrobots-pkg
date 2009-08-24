@@ -216,7 +216,7 @@ typedef struct ENV_ROBARM_CONFIG
     unsigned int gripper_radius;
 		unsigned int forearm_radius;
 		unsigned int upper_arm_radius;
-
+	
     //for kinematic library use
     KDL::JntArray jnt_pos_in;
     KDL::Frame p_out;
@@ -247,6 +247,7 @@ typedef struct ENV_ROBARM_CONFIG
     bool multires_succ_actions;
     bool enforce_motor_limits;
     bool dijkstra_heuristic;
+    bool endeff_check_only;
     bool use_smooth_actions;
     bool enforce_upright_gripper;
     bool checkEndEffGoalOrientation;
@@ -257,15 +258,14 @@ typedef struct ENV_ROBARM_CONFIG
     double gripper_orientation_moe; //gripper orientation margin of error
     double grasped_object_length_m;
     bool use_voxel3d_occupancy_grid;
-		double RPYHeuristicDistance_m;
-		int RPYHeuristicDistance_c;
+    double ApplyRPYCost_m;
     bool use_selective_actions;
     bool exact_gripper_collision_checking;
-    bool use_jacobian_motion_prim;
-    bool enable_direct_primitive;
-		double max_mprim;
-		double exact_collision_checking_dist;
-
+		bool use_jacobian_motion_prim;
+		bool enable_direct_primitive;
+		int RPYHeuristicDistance_c;
+		double RPYHeuristicDistance_m;
+		
 /* Motion Primitives */
     //successor actions
     double ** SuccActions;
@@ -431,13 +431,12 @@ class EnvironmentROBARM3D: public DiscreteSpaceInformation
 
 		std::vector<int> debugExpandedStates();
 		
+		void getGridPtr(unsigned char*** grid);
+		
 		std::vector<std::vector<double> > getAllObstacleVoxels();
 		void computeJacobian(const double jnt_angles[], const double rad_timestep, double jnt_vel[]);
-		
 		void OutputActionCostTable(FILE* fOut);
 		void OutputActions(FILE* fOut);
-		void PrintStateDetails(FILE * fOut, int stateID);
-		
   private:
 
     /** member data */
@@ -472,28 +471,28 @@ class EnvironmentROBARM3D: public DiscreteSpaceInformation
     void HighResGrid2LowResGrid(short unsigned int * XYZ_hr, short unsigned int * XYZ_lr);
 
     /** collision checking */
-    int IsValidCoord(short unsigned int coord[NUMOFLINKS], short unsigned int endeff_pos[3], short unsigned int wrist_pos[3], short unsigned int elbow_pos[3], double orientation[3][3]);
-    int IsValidCoord(short unsigned int coord[], short unsigned int endeff_pos[3], short unsigned int wrist_pos[3], short unsigned int elbow_pos[3], double orientation[3][3], unsigned char &dist);
-		int IsValidCoord(short unsigned int coord[], short unsigned int endeff_pos[3], short unsigned int wrist_pos[3], short unsigned int elbow_pos[3], double orientation[3][3], unsigned char &dist, bool bVerbose);
-    int IsValidLineSegment(short unsigned int x0, short unsigned int y0, short unsigned int z0, short unsigned int x1, short unsigned int y1, short unsigned int z1, unsigned char ***Grid3D, vector<CELLV>* pTestedCells);
+		bool isValidCell(const int xyz[], const int &radius, unsigned char ***Grid, const boost::shared_ptr<Voxel3d> vGrid);
+		bool isValidCell(const short unsigned int xyz[], const int &radius, unsigned char ***Grid, const boost::shared_ptr<Voxel3d> vGrid);
+		bool isValidCell(const int x, const int y, const int z, const int &radius, unsigned char ***Grid, const boost::shared_ptr<Voxel3d> vGrid);
+    
+		int IsValidCoord(short unsigned int coord[NUMOFLINKS], short unsigned int endeff_pos[3], short unsigned int wrist_pos[3], short unsigned int elbow_pos[3], double orientation[3][3]);
+//    int IsValidCoord(const short unsigned int coord[], const std::vector<std::vector<short unsigned int> > &joints, double orientation[3][3], unsigned char ***Grid, const short unsigned int grid_dims[]);
+		int IsValidCoord(short unsigned int coord[], short unsigned int endeff_pos[3], short unsigned int wrist_pos[3], short unsigned int elbow_pos[3], double orientation[3][3], unsigned char &dist);
+		
+		int IsValidLineSegment(short unsigned int x0, short unsigned int y0, short unsigned int z0, short unsigned int x1, short unsigned int y1, short unsigned int z1, unsigned char ***Grid3D, vector<CELLV>* pTestedCells);
+    int IsValidLineSegment(const short unsigned int xyz0[], const short unsigned int xyz1[], const int &radius, unsigned char*** Grid3D, const int grid_dims[], vector<CELLV>* pTestedCells);
+    int IsValidLineSegment(const short unsigned int a[], const short unsigned int b[], int radius, vector<CELLV>* pTestedCells, unsigned char *** Grid3D,const  boost::shared_ptr<Voxel3d> vGrid);
 		int IsValidLineSegment(const short unsigned int a[],const short unsigned int b[],const unsigned int radius,vector<CELLV>* pTestedCells, unsigned char *** Grid3D, unsigned char &dist);
 		
-    
-    void UpdateEnvironment();
+		void UpdateEnvironment();
     void AddObstacleToGrid(double* obstacle, int type, unsigned char*** grid, double gridcell_m);
-    double distanceBetween3DLineSegments(const short unsigned int l1a[],const short unsigned int l1b[],const short unsigned int l2a[],const short unsigned int l2b[]);
-				
+    double distanceBetween3DLineSegments(const short unsigned int l1a[],const short unsigned int l1b[], const short unsigned int l2a[],const short unsigned int l2b[]);
 		
-				
-    inline unsigned char getVoxel(const int x, const int y, const int z, const boost::shared_ptr<Voxel3d> grid)
-      { return (*grid)(x,y,z);  }
+		
+    inline unsigned char getVoxel(const int x, const int y, const int z, const boost::shared_ptr<Voxel3d> grid)  { return (*grid)(x,y,z);  }
 		inline unsigned char getCell(const int xyz[], unsigned char ***Grid);
 
-    bool isValidCell(const int xyz[], const int &radius, unsigned char ***Grid, const boost::shared_ptr<Voxel3d> vGrid);
-    bool isValidCell(const short unsigned int xyz[], const int &radius, unsigned char ***Grid, const boost::shared_ptr<Voxel3d> vGrid);
-    bool isValidCell(const int x, const int y, const int z, const int &radius, unsigned char ***Grid, const boost::shared_ptr<Voxel3d> vGrid);
 		
-
     /** planning */
     void GetJointSpaceSuccs(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV);
     bool isGoalPosition(const short unsigned int endeff[3], const double orientation[3][3], const GoalPos &goal, const double &axis_angle);
@@ -525,7 +524,6 @@ class EnvironmentROBARM3D: public DiscreteSpaceInformation
     int XYZTO3DIND(int x, int y, int z);
     void Search3DwithQueue(State3D*** statespace, int* HeurGrid, const vector< GoalPos> &Goals);
 
-		
     /** distance */
     int GetDistToClosestGoal(short unsigned int* xyz, int *goal_num);
     double GetDistToClosestGoal(double *xyz,int *goal_num);
@@ -545,16 +543,10 @@ class EnvironmentROBARM3D: public DiscreteSpaceInformation
     void ComputeForwardKinematics_ROS(const double angles[], int f_num, double *x, double *y, double *z);
 
     double getDistanceToGoal(const double angles[]);
-		
-		/** TEMPORARY CRAP */
-		int GetHeuristics(int FromStateID, int &heur_xyz, int &heur_rpy);
-		int ComputeActionToActionCost(double *action_in, double *action_out);
-
 };
 
 inline bool EnvironmentROBARM3D::isValidCell(const int xyz[], const int &radius, unsigned char ***Grid, const boost::shared_ptr<Voxel3d> vGrid)
 {
-// 	printf("(%i %i %i) = %u\n",xyz[0], xyz[1], xyz[2], Grid[xyz[0]][xyz[1]][xyz[2]]);
 	if(Grid[xyz[0]][xyz[1]][xyz[2]] <= radius)
 		return false;
 
@@ -563,7 +555,6 @@ inline bool EnvironmentROBARM3D::isValidCell(const int xyz[], const int &radius,
 
 inline bool EnvironmentROBARM3D::isValidCell(const int x, const int y, const int z, const int &radius, unsigned char ***Grid, const boost::shared_ptr<Voxel3d> vGrid)
 {
-// 	printf("(%i %i %i) = %u\n",x,y,z, Grid[x][y][z]);
 	if(Grid[x][y][z] <= radius)
 		return false;
 	
@@ -572,7 +563,6 @@ inline bool EnvironmentROBARM3D::isValidCell(const int x, const int y, const int
 
 inline bool EnvironmentROBARM3D::isValidCell(const short unsigned int xyz[], const int &radius, unsigned char ***Grid, const boost::shared_ptr<Voxel3d> vGrid)
 {
-// 	printf("(%i %i %i) = %u\n",xyz[0], xyz[1], xyz[2], Grid[xyz[0]][xyz[1]][xyz[2]]);
 	if(Grid[xyz[0]][xyz[1]][xyz[2]] <= radius)
 		return false;
 
