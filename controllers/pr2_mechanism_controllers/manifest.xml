@@ -6,6 +6,8 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
 
+  <depend package="trajectory" />
+
   <!-- ROS Interfaces -->
   <depend package="std_msgs" />
   <depend package="geometry_msgs" />
@@ -20,14 +22,13 @@
   
   <depend package="roscpp" />
   <depend package="mechanism_model" />
-  <depend package="wg_robot_description_parser" />
   <depend package="realtime_tools" />
   <depend package="robot_mechanism_controllers" />
   <depend package="rospy" />
   <depend package="pluginlib" />
   <depend package="robot_actions" />
   <depend package="rosconsole" />
-  <depend package="trajectory" />
+  <depend package="eigen" />
   <depend package="angles" />
   <depend package="control_toolbox" />
   <depend package="filters" />

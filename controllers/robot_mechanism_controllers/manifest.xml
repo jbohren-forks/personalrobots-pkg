@@ -10,12 +10,10 @@
   <depend package="mechanism_model" />
   <depend package="mechanism_control" />
   <depend package="control_toolbox" />
-  <depend package="tinyxml" />
   <depend package="realtime_tools" />
   <depend package="roscpp" />
   <depend package="std_msgs" />
   <depend package="geometry_msgs" />
-  <depend package="visualization_msgs" />
   <depend package="tf" />
   <depend package="tf_conversions" />
   <depend package="kdl" />
