@@ -7,7 +7,7 @@ SVN_URL = http://yaml-cpp.googlecode.com/svn/trunk
 SVN_PATCH = yaml_cmake.patch
 INSTALL_DIR = yaml-cpp
 CMAKE = cmake
-CMAKE_ARGS = 	-DCMAKE_INSTALL_PREFIX=$(PWD)/$(INSTALL_DIR)/ \
+CMAKE_ARGS = 	-DCMAKE_INSTALL_PREFIX=$(CURDIR)/$(INSTALL_DIR)/ \
 		-DOROCOS_TARGET=gnulinux \
 		-DBOOST_DIR=$(BOOST_INCLUDE)
 
