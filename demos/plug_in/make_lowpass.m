@@ -15,6 +15,8 @@ b = [alpha 0];
 
 printf('<filter>');
 printf('<value>');
+printf('<array>');
+printf('<data>');
 printf('<struct>');
 printf('<member>');
 printf('<name>%s</name>', filter_name);
@@ -54,5 +56,7 @@ printf('</struct>');
 printf('</value>');
 printf('</member>');
 printf('</struct>');
+printf('</data>');
+printf('</array>');
 printf('</value>');
 printf('</filter>');

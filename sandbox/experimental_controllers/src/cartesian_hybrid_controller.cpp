@@ -164,8 +164,17 @@ bool CartesianHybridController::init(mechanism::RobotState *robot, const ros::No
   {
     use_filter_ = true;
 
+    // \TODO remove when ticket https://prdev.willowgarage.com/trac/personalrobots/ticket/2575 is resolved
+    std::string filter_xml;
+    node_.getParam("twist_filter", filter_xml);
+    int offset = 0;
+    XmlRpc::XmlRpcValue filter_xmlrpc(filter_xml, &offset);
+    if (!twist_filter_.configure(6, filter_xmlrpc))
+      return false;
+    /* Replace with below
     if (!twist_filter_.configure(6, "twist_filter", node_))
       return false;
+      end Replace */
     ROS_INFO("Successfully configured twist_filter (namespace: %s)",
              node_.getNamespace().c_str());
   }
