@@ -741,7 +741,7 @@ void URDF2Gazebo::convertLink(TiXmlElement *root, boost::shared_ptr<const urdf::
                         addKeyValue(joint, "lowStop",  values2str(1, &link->parent_joint->limits->lower       ));
                         addKeyValue(joint, "highStop", values2str(1, &link->parent_joint->limits->upper       ));
                     }
-                    else
+                    else if (link->parent_joint->type != urdf::Joint::CONTINUOUS)
                     {
                         double *lowstop  = &link->parent_joint->limits->lower;
                         double *highstop = &link->parent_joint->limits->upper;
