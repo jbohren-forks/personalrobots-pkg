@@ -1,7 +1,7 @@
 <package>
   <description brief="resource_retriever">
 
-     A package for retrieving resources used in a urdf.  Uses libcurl to support both url-format files, such as http://, ftp://, etc.  Translates package:// to a local file://
+     A package for retrieving resources used in a urdf.  Uses libcurl to support url-format files, such as http://, ftp://, etc.  Translates package:// to a local file://
 
   </description>
   <author>Josh Faust (jfaust@willowgarage.com)</author>
