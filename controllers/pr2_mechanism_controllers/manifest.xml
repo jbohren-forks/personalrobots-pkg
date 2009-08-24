@@ -26,7 +26,6 @@
   <depend package="robot_mechanism_controllers" />
   <depend package="rospy" />
   <depend package="pluginlib" />
-  <depend package="robot_actions" />
   <depend package="rosconsole" />
   <depend package="eigen" />
   <depend package="angles" />
