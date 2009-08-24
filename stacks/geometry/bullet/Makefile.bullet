@@ -49,7 +49,7 @@ build_tarball: $(SVN_DIR) patched
 
 
 installed: $(SOURCE_DIR)/unpacked
-	cd $(SOURCE_DIR) && cmake -DCMAKE_INSTALL_PREFIX=$(PWD)/build -DCMAKE_CXX_FLAGS="-fPIC -DBT_USE_DOUBLE_PRECISION" . 
+	cd $(SOURCE_DIR) && cmake -DCMAKE_INSTALL_PREFIX=$(CURDIR)/build -DCMAKE_CXX_FLAGS="-fPIC -DBT_USE_DOUBLE_PRECISION" . 
 	# Bullet appears not be parallel-make safe
 	#cd $(SOURCE_DIR) && make $(PARALLEL_JOBS) 
 	cd $(SOURCE_DIR) && make $(BULLET_TARGETS) 
