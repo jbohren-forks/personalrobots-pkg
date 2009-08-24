@@ -18,7 +18,17 @@
  </node>
 
 <!-- Battery Monitor -->
-  <node machine="two" pkg="ocean_battery_driver" type="monitor" respawn="true"/>
+  <node machine="two" pkg="ocean_battery_driver" type="ocean_server"  respawn="true">
+    <param name="number_of_ports" type="int" value="4" />
+    <param name="port0" type="string" value="/dev/ttyUSB0" />
+    <param name="port1" type="string" value="/dev/ttyUSB1" />
+    <param name="port2" type="string" value="/dev/ttyUSB2" />
+    <param name="port3" type="string" value="/dev/ttyUSB3" />
+    <param name="debug_level" type="int" value="0" />
+  </node>
+
+  <node pkg="power_monitor" type="power_monitor"  respawn="true"/>
+
 
 <!-- Base Laser -->
   <node machine="two" pkg="hokuyo_node" type="hokuyo_node" name="base_hokuyo_node" args="scan:=base_scan">
