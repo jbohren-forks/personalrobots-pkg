@@ -6,6 +6,7 @@
 <td width=1%><img src="templates/images/toolbar/grid-blue-split.gif"></td>
 <td width=1%><nobr><div objtype=CircuitMonitor topic="/power_board_state"/></td>
 <td width=1%><img src="templates/images/toolbar/grid-blue-split.gif"></td>
+<td width=1%><nobr><div objtype=ChargeMonitor topic="/power_board_state"/></td>
 <td width=1%><nobr><div objtype=BatteryMonitor topic="/battery_state"/></td>
 <td width=1%><img src="templates/images/toolbar/grid-blue-split.gif"></td>
 <?cs if:CGI.Login ?>

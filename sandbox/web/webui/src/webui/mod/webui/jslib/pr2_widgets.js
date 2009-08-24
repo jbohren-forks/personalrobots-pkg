@@ -91,3 +91,29 @@ gRosClasses["CircuitMonitor"] = function(dom){
   return new CircuitMonitor(dom);
 }
 
+var ChargeMonitor = Class.create({
+  initialize: function(domobj) {
+    this.domobj = domobj;
+    this.topics = [domobj.getAttribute("topic")];
+  },
+
+  init: function() {
+  },
+
+  receive: function(msg) {
+    var voltage = msg['input_voltage'];
+    var src;
+
+    if (voltage >= 68.0) {
+      src = 'ac_power.png';
+    } else {
+      src = 'battery_power.png';
+    }
+    this.domobj.innerHTML = '<img src="templates/images/toolbar/' + src + '"> ';
+  }
+});
+
+gRosClasses["ChargeMonitor"] = function(dom){
+  return new ChargeMonitor(dom);
+}
+
