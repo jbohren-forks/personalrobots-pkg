@@ -20,4 +20,7 @@
   <depend package="semantic_point_annotator"/>
   <depend package="or_robot_self_filter"/>
   <depend package="rviz"/>
+
+  <!-- Adding experimental controllers as a dependency b/c of tuckarm move -->
+  <depend package="experimental_controllers"/>
 </package>
