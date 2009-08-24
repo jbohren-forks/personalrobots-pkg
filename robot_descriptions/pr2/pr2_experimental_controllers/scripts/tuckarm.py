@@ -34,7 +34,7 @@
 # Modified by Kevin Watts for two arm use
 
 import roslib
-roslib.load_manifest('pr2_default_controllers')
+roslib.load_manifest('pr2_experimental_controllers')
 
 import rospy
 import os

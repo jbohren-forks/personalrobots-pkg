@@ -9,27 +9,22 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 #  MinSizeRel     : w/o debug symbols, w/ optimization, stripped binaries
 #set(ROS_BUILD_TYPE RelWithDebInfo)
 
-rospack(geometric_blur)
+rosbuild_init()
 
 #set the default path for built executables to the "bin" directory
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 #set the default path for built libraries to the "lib" directory
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
-rospack_add_library (${PROJECT_NAME} src/gb.cpp)
-
-rospack_add_executable (gb_test example/cal_gb_des.cpp)
-target_link_libraries (gb_test geometric_blur)
-
 #uncomment if you have defined messages
-#genmsg()
+#rosbuild_genmsg()
 #uncomment if you have defined services
-#gensrv()
+#rosbuild_gensrv()
 
 #common commands for building c++ executables and libraries
-#rospack_add_library(${PROJECT_NAME} src/example.cpp)
+#rosbuild_add_library(${PROJECT_NAME} src/example.cpp)
 #target_link_libraries(${PROJECT_NAME} another_library)
-#rospack_add_boost_directories()
-#rospack_link_boost(${PROJECT_NAME} thread)
-#rospack_add_executable(example examples/example.cpp)
+#rosbuild_add_boost_directories()
+#rosbuild_link_boost(${PROJECT_NAME} thread)
+#rosbuild_add_executable(example examples/example.cpp)
 #target_link_libraries(example ${PROJECT_NAME})

@@ -18,11 +18,15 @@
   <rosdep name="coin"/>
   <rosdep name="qhull"/>
   <rosdep name="qt3"/> <!--ubuntu 8.04: libqt3-headers libqt3-mt libqt3-mt-dev qt3-dev-tools-->
-  <rosdep name="qwt"/> <!--ubuntu 8.04: libqwt-dev -->
   <rosdep name="atlas"/> <!--ubuntu 8.04: libatlas3gf-base libatlas-base-dev libatlas-headers -->
-  <rosdep name="lapack"/> <!--ubuntu 8.04: libblas3gf libblas-dev liblapack3gf liblapack-dev -->
-  <rosdep name="soqt"/> <!--ubuntu 8.04: libsoqt20 libsoqt-dev -->
   <rosdep name="pkg-config"/>
+
+  <!-- Commenting out dependencies that are not yet in the rosdep database.
+  Uncomment them when this package has been unblacklisted and the database
+  updated. -->
+  <!--rosdep name="qwt"/--> <!--ubuntu 8.04: libqwt-dev -->
+  <!--rosdep name="lapack"/--> <!--ubuntu 8.04: libblas3gf libblas-dev liblapack3gf liblapack-dev -->
+  <!--rosdep name="soqt"/--> <!--ubuntu 8.04: libsoqt20 libsoqt-dev -->
 </package>
 
 

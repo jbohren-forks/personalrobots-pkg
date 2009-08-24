@@ -1,0 +1,13 @@
+<package>
+  <description brief="Tools to synchronize robot cameras with the texture projector.">
+    Tools to synchronize the robot's cameras with the texture projector.
+  </description>
+  <author>Blaise Gassend</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/pr2_camera_synchronization</url>
+  <depend package="robot_mechanism_controllers"/>
+
+</package>
+
+

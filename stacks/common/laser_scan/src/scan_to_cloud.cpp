@@ -75,6 +75,7 @@ class ScanShadowsFilter
     // TF
     tf::TransformListener* tf_;
     tf::MessageNotifier<sensor_msgs::LaserScan>* notifier_;
+    double tf_tolerance_;
     filters::FilterChain<sensor_msgs::PointCloud> cloud_filter_chain_;
     filters::FilterChain<sensor_msgs::LaserScan> scan_filter_chain_;
 
@@ -93,10 +94,11 @@ class ScanShadowsFilter
       ros::Node::instance()->param ("~scan_topic", scan_topic_, std::string("tilt_scan"));
       ros::Node::instance()->param ("~cloud_topic", cloud_topic_, std::string("tilt_laser_cloud_filtered"));
       ros::Node::instance()->param ("~laser_max_range", laser_max_range_, DBL_MAX);
+      ros::Node::instance()->param ("~notifier_tolerance", tf_tolerance_, 0.03);
 
       notifier_ = new tf::MessageNotifier<sensor_msgs::LaserScan>(tf_, ros::Node::instance(), 
           boost::bind(&ScanShadowsFilter::scanCallback, this, _1), scan_topic_, "base_link", 50);
-      notifier_->setTolerance(ros::Duration(0.03));
+      notifier_->setTolerance(ros::Duration(tf_tolerance_));
 
       ros::Node::instance()->advertise<sensor_msgs::PointCloud> (cloud_topic_, 10);
 
