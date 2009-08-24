@@ -228,7 +228,6 @@ bool gb::load_orient_edges( string& orient_edges_filename, vector<Mat>& fbr ){
 
 void gb::compute_sample_rois(Size CurrImgSize, vector<Rect>& rois, vector<Point>& roi_center){
     if (DenseSample){
-//        cout << CurrImgSize.width << " " << winSize.width << " " << CurrImgSize.height << " " << winSize.height;
         for ( int x=0; x<std::max(CurrImgSize.width-winSize.width,1); x+=winStride.width){
             for ( int y=0; y<std::max(CurrImgSize.height-winSize.height,1); y+=winStride.height){
                 rois.push_back(Rect(x,y,winSize.width,winSize.height));
@@ -266,8 +265,6 @@ void gb::compute_gb(vector<Mat>& fbr, vector< vector<float> > & features){
     levelScale.resize(levels);
 
     for ( int sid = 0; sid< (int)levelScale.size(); sid++){
-    //        if (winSize.width>=imgSize.width*2 || winSize.height >= imgSize.height*2)// hacky 2, since some training images do have winSize.width >= imgSize.width
-    //            return; // the winSize is relatively too big
         Size CurrImgSize;
         CurrImgSize.width = imgSize.width/levelScale[sid];
         CurrImgSize.height = imgSize.height/levelScale[sid];
@@ -289,11 +286,7 @@ void gb::compute_gb(vector<Mat>& fbr, vector< vector<float> > & features){
         // save roi
         ROI.insert(ROI.end(),rois.begin(), rois.end());
 
-//        imgSize.width /= ScaleRatio;
-//        imgSize.height /= ScaleRatio;
         acc_scale *= ScaleRatio;
-//        roi_center.clear();
-//        rois.clear();
     }
 
     // L2 normalized the feature
@@ -327,8 +320,6 @@ void gb::compute_gb_single_scale(vector<Mat>& fbr, vector< vector<float> > & fea
     gb::compute_sample_points( sample_points, sample_points_sigma_level);
     unsigned int nFeaOffset = features.size();
     features.resize(nFeaOffset+roi_center.size());
-//    cout << "nFeaOffset "<<nFeaOffset;//<<  " sample_points.size() "<< sample_points.size() <<endl;
-//    cout << "feaDim " << features[0].size() << " nSamples " << features.size() <<endl;
 
     // extracting gb features
     float sigma, hs;
@@ -359,13 +350,6 @@ void gb::compute_gb_single_scale(vector<Mat>& fbr, vector< vector<float> > & fea
             }
     }
 
-
-//        //show patches
-//        Mat smallerfbr_sum(CurrImgSize, fbr[0].type());
-//        float Max_fbr_sum = 0;
-
-
-
     for ( int bin_id=0; bin_id< nbins; bin_id++){
         // rescale fbr
         if (CurrImgSize == Orifbrsize)
@@ -373,18 +357,6 @@ void gb::compute_gb_single_scale(vector<Mat>& fbr, vector< vector<float> > & fea
         else
             resize( fbr[bin_id], smallerfbr, CurrImgSize);
 
-//        for (unsigned des_idy=0; des_idy< smallerfbr_sum.rows; des_idy++){
-//            float* smallerfbr_ptr = (float*)smallerfbr.ptr(des_idy);
-//            float* smallerfbr_sum_ptr = (float*)smallerfbr_sum.ptr(des_idy);
-//            for (unsigned des_idx=0; des_idx< smallerfbr_sum.rows; des_idx++){
-//                smallerfbr_sum_ptr[des_idx] += smallerfbr_ptr[des_idx];
-//                if (smallerfbr_sum_ptr[des_idx]>Max_fbr_sum)
-//                    Max_fbr_sum = smallerfbr_sum_ptr[des_idx];
-//            }
-//        }
-
-
-//        cout << "smallerfbr size=" << smallerfbr.rows <<" " << smallerfbr.cols << endl;
         for (unsigned int sigma_id=0; sigma_id< numSigma; sigma_id++){
 
             anchor.x = kernelHor[sigma_id].cols/2+1;
@@ -398,23 +370,6 @@ void gb::compute_gb_single_scale(vector<Mat>& fbr, vector< vector<float> > & fea
             filter2D( des, des, -1,
             kernelVert[sigma_id], anchor,
             0, BORDER_REPLICATE);
-//            for (unsigned des_idy=0; des_idy< des.rows; des_idy++){
-//                float* des_ptr_new = (float*)des.ptr(des_idy);
-//                for (unsigned des_idx=0; des_idx< des.rows; des_idx++){
-//                    cout << " " << des_ptr_new[des_idx];
-//                }
-//            }
-//            cout << endl;
-
-//            cout << "des.cols" << des.cols << "des.rows" << des.rows << endl;
-//            namedWindow("blur image", 1);
-//            imshow("blur image", des);
-////            namedWindow("edge image", 1);
-////            imshow("edge image", smallerfbr);
-//            cv::waitKey(0);
-//            namedWindow("blur image", 1);
-//            imshow("blur image", des);
-//            cv::waitKey(0);
 
             // get sampled value
             for (unsigned int cid = 0; cid< roi_center.size(); cid++){
