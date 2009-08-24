@@ -386,7 +386,7 @@ public:
    */
   bool configure(unsigned int number_of_channels, XmlRpc::XmlRpcValue& config)
   {
-    ROS_ERROR("Xml rpc xml: %s type: %d", config.toXml().c_str(), config.getType());
+    ROS_DEBUG("FilterBase being configured with XmlRpc xml: %s type: %d", config.toXml().c_str(), config.getType());
     if (configured_)
     {
       ROS_WARN("Filter %s of type %s already being reconfigured", filter_name_.c_str(), filter_type_.c_str());
