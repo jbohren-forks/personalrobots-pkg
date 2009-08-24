@@ -132,20 +132,20 @@ bool JointSafety::initXml(TiXmlElement* config)
     this->soft_upper_limit = atof(soft_upper_limit_str);
 
   // Get k_p_ safety "position" gain - not exactly position gain
-  const char* k_p_str = config->Attribute("k_p");
+  const char* k_p_str = config->Attribute("k_position");
   if (k_p_str == NULL)
   {
-    ROS_DEBUG("joint safety: no k_p, using default value");
+    ROS_DEBUG("joint safety: no k_position, using default value");
     this->k_p = 0;
   }
   else
     this->k_p = atof(k_p_str);
 
   // Get k_v_ safety velocity gain
-  const char* k_v_str = config->Attribute("k_v");
+  const char* k_v_str = config->Attribute("k_velocity");
   if (k_v_str == NULL)
   {
-    ROS_DEBUG("joint safety: no k_v, using default value");
+    ROS_DEBUG("joint safety: no k_velocity, using default value");
     this->k_v = 0;
   }
   else

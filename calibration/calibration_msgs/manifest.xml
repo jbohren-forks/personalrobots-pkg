@@ -1,0 +1,14 @@
+<package>
+  <description brief="calibration_msgs">
+
+     calibration_msgs
+
+  </description>
+  <author>Vijay Pradeep</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/calibration_msgs</url>
+
+</package>
+
+

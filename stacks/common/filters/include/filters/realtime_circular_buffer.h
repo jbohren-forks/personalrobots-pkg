@@ -36,7 +36,6 @@
 #include <vector>
 
 #include <algorithm>
-//#define BOOST_CB_DISABLE_DEBUG in ros CMakeFlags now
 #include <boost/circular_buffer.hpp>
 
 namespace filters

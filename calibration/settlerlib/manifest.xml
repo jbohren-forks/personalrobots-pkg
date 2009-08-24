@@ -1,0 +1,14 @@
+<package>
+  <description brief="A set of routines to help with creating a settler">
+    Defines helper functions and routines that greatly help when trying to create a settler
+    for a specific sensor channel.
+  </description>
+  <author>Vijay Pradeep</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/settlerlib</url>
+  <depend package="roscpp"/>
+
+</package>
+
+

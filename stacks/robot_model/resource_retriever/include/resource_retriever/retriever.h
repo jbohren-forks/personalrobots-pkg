@@ -45,6 +45,9 @@ public:
   {}
 };
 
+/**
+ * \brief A combination of a pointer to data in memory along with the data's size.
+ */
 struct MemoryResource
 {
   MemoryResource()
@@ -55,12 +58,22 @@ struct MemoryResource
   uint32_t size;
 };
 
+/**
+ * \brief Retrieves files from from a url.  Caches a CURL handle so multiple accesses to a single url
+ * will keep connections open.
+ */
 class Retriever
 {
 public:
   Retriever();
   ~Retriever();
 
+  /**
+   * \brief Get a file and store it in memory
+   * \param url The url to retrieve.  package://package/file will be turned into the correct file:// invocation
+   * \return The file, loaded into memory
+   * \throws resource_retriever::Exception if anything goes wrong.
+   */
   MemoryResource get(const std::string& url);
 
 private:

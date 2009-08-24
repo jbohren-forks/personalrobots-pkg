@@ -1020,6 +1020,8 @@ int outlet_template_t::load(const char* path)
         node = cvGetFileNodeByName(fs, 0, buf);
         _outlet_centers[i].y = cvReadReal(node);
     }
+    
+    initialize(_outlet_count, _outlet_centers);
         
     node = cvGetFileNodeByName(fs, 0, "train config");
     if(node)
@@ -1091,7 +1093,6 @@ int outlet_template_t::load(const char* path)
     cvReleaseFileStorage(&fs);
     cvReleaseMemStorage(&storage);
     
-    initialize(_outlet_count, _outlet_centers);
     create_one_way_descriptor_base();
     
     delete [] _outlet_centers;

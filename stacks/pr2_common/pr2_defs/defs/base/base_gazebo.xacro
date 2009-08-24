@@ -17,7 +17,7 @@
 
     <gazebo reference="${parent}_${suffix}_wheel_link">
       <sensor:contact name="${parent}_${suffix}_wheel_contact_sensor">
-        <geom>${parent}_${suffix}_wheel_collision</geom>
+        <geom>${parent}_${suffix}_wheel_link_geom</geom>
         <updateRate>100.0</updateRate>
         <controller:ros_bumper name="${parent}_${suffix}_wheel_ros_bumper_controller" plugin="libros_bumper.so">
           <alwaysOn>true</alwaysOn>
@@ -38,7 +38,7 @@
 
     <gazebo reference="${name}_link">
       <sensor:contact name="${name}_contact_sensor">
-        <geom>${name}_collision</geom>
+        <geom>${name}_link_geom</geom>
         <updateRate>100.0</updateRate>
         <controller:ros_bumper name="${name}_ros_bumper_controller" plugin="libros_bumper.so">
           <alwaysOn>true</alwaysOn>
@@ -52,6 +52,8 @@
       <kp  value="100000000.0" />
       <kd  value="1.0" />
       <material value="PR2/Green" />
+    </gazebo>
+    <gazebo>
       <controller:ros_p3d name="p3d_base_controller" plugin="libros_p3d.so">
         <alwaysOn>true</alwaysOn>
         <updateRate>100.0</updateRate>
@@ -62,6 +64,17 @@
         <xyzOffsets>25.7 25.7 0</xyzOffsets> <!-- initialize odometry for fake localization-->
         <rpyOffsets>0 0 0</rpyOffsets>
         <interface:position name="p3d_base_position"/>
+      </controller:ros_p3d>
+      <controller:ros_p3d name="p3d_plug_magnet_controller" plugin="libros_p3d.so">
+        <alwaysOn>true</alwaysOn>
+        <updateRate>100.0</updateRate>
+        <bodyName>plug_magnet</bodyName>
+        <topicName>plug_magnet_pose_ground_truth</topicName>
+        <gaussianNoise>0.01</gaussianNoise>
+        <frameName>map</frameName>
+        <xyzOffsets>0 0 0</xyzOffsets> <!-- initialize odometry for fake localization-->
+        <rpyOffsets>0 0 0</rpyOffsets>
+        <interface:position name="p3d_plug_magnet_position"/>
       </controller:ros_p3d>
     </gazebo>
 
@@ -98,17 +111,6 @@
 
     <gazebo reference="plug_magnet">
       <material value="PR2/Red" />
-      <controller:ros_p3d name="p3d_plug_magnet_controller" plugin="libros_p3d.so">
-        <alwaysOn>true</alwaysOn>
-        <updateRate>100.0</updateRate>
-        <bodyName>plug_magnet</bodyName>
-        <topicName>plug_magnet_pose_ground_truth</topicName>
-        <gaussianNoise>0.01</gaussianNoise>
-        <frameName>map</frameName>
-        <xyzOffsets>0 0 0</xyzOffsets> <!-- initialize odometry for fake localization-->
-        <rpyOffsets>0 0 0</rpyOffsets>
-        <interface:position name="p3d_plug_magnet_position"/>
-      </controller:ros_p3d>
     </gazebo>
 
 

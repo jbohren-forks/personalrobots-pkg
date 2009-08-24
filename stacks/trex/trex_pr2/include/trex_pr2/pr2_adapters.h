@@ -45,7 +45,7 @@
 #include <nav_msgs/Odometry.h>
 #include <geometry_msgs/Pose.h>
 #include <door_msgs/Door.h>
-#include <pr2_msgs/BatteryState.h>
+#include <pr2_msgs/PowerState.h>
 #include <plugs_msgs/PlugStow.h>
 #include <robot_actions/action_runner.h>
 #include <robot_actions/action.h>

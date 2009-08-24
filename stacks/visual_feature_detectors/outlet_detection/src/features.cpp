@@ -197,9 +197,13 @@ void ReleaseImageVector(Vector<IplImage*>& images)
 
 void LoadTrainingFeatures(CvOneWayDescriptorObject& descriptors, const char* train_image_filename_object, const char* train_image_filename_background)
 {
-    
+#if defined(_RED)
     IplImage* train_image_object = loadImageRed(train_image_filename_object);
     IplImage* train_image_background = loadImageRed(train_image_filename_background);
+#else
+    IplImage* train_image_object = cvLoadImage(train_image_filename_object, CV_LOAD_IMAGE_GRAYSCALE);
+    IplImage* train_image_background = cvLoadImage(train_image_filename_background, CV_LOAD_IMAGE_GRAYSCALE);
+#endif
     
     Vector<Vector<feature_t> > object_features;
     object_features.resize(descriptors.GetPyrLevels());

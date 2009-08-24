@@ -56,7 +56,7 @@ pm_wrapper::~pm_wrapper()
 bool pm_wrapper::initPlanningMonitor(const std::vector<std::string> &links, tf::TransformListener * tfl, std::string frame_id)
 {
 	collision_check_links_ = links;
-	planning_frame_ = frame_id;
+	planning_frame_ = frame_id;		//must be base link
 
 	// these links will be checked for self collision against the links in the yaml file
 	collision_model_ = new planning_environment::CollisionModels("robot_description", collision_check_links_);
@@ -89,9 +89,19 @@ bool pm_wrapper::initPlanningMonitor(const std::vector<std::string> &links, tf::
 
 	//instantiate a ModelKinematic class to be used by the smoother
 
+	planning_monitor_->getEnvironmentModel()->setVerbose(true);
+	
 	ROS_DEBUG("initialized planning monitor");
 	return true;
 }
+
+/*
+[ INFO] 1410.850999974: Collision between body in namespace 'bounds' and link 'r_gripper_r_finger_tip_link'
+
+[ INFO] 1410.850999974: Collision between body in namespace 'bounds' and link 'r_gripper_r_finger_tip_link'
+
+[ INFO] 1410.850999974: Collision between body in namespace 'bounds' and link 'r_gripper_r_finger_tip_link'
+*/
 
 planning_models::StateParams* pm_wrapper::fillStartState(const std::vector<motion_planning_msgs::KinematicJoint> &given)
 {
@@ -258,13 +268,6 @@ std::vector<std::vector<double> >  pm_wrapper::smoothPath(std::vector<std::vecto
 	ROS_INFO("[smoothPath] the length of the path before smoothing is %.1f",path_kinematic->length());
 	path_smoother_->smoothMax(path_kinematic);
 	ROS_INFO("[smoothPath] the length of the path after smoothing is %.1f",path_kinematic->length());
-
-	path_smoother_->smoothMax(path_kinematic);
-	ROS_INFO("second smoothing made the length of the path be %i", path_kinematic->length());
-
-	path_smoother_->smoothMax(path_kinematic);
-
-	ROS_INFO("third smoothing made the length of the path be %i", path_kinematic->length());
 
 	path_out.resize(path_kinematic->length());
 	for(unsigned int  i = 0; i < path_kinematic->length(); ++i)
@@ -554,7 +557,4 @@ void pm_wrapper::setObject(shapes::Shape *object, btTransform pose)
 					 (int)collisionMap->get_boxes_size(), (int)col_map_.get_boxes_size());
 }
 */
-
-/* create a ModelKinematic in ompl_ros and pass into the constructor a planning environment. then create a smooother and pass into the constructor the model kinematic. then use setParams 
-to organize the joint angles in the right order */
 

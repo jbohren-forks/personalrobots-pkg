@@ -38,7 +38,6 @@
 #include <string>
 #include <vector>
 #include <controller_interface/controller.h>
-#define BOOST_CB_DISABLE_DEBUG
 #include <boost/circular_buffer.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/accumulators/accumulators.hpp>

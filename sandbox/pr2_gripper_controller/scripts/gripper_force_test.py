@@ -1,15 +1,15 @@
 import roslib
 roslib.load_manifest('pr2_gripper_controller')
-from pr2_mechanism_controllers.msg import GripperControllerCmd
+from experimental_controllers.msg import GripperControllerCmd
 from pr2_msgs.msg import GripperControllerState
-from ethercat_hardware.msg import PressureState
+from pr2_msgs.msg import PressureState
 from std_msgs.msg import Float64
 import rospy
 import time
 
 open_between = 1
 voltage = 10.0 #volts
-load_cell_max = 50 #lbs
+load_cell_max = 222.41 #N = 50 lbf
 load_cell_mV_per_V = 2 #mV/V
 vel_threshold = .001
 text_file = open("pressure_values.txt", "w")
@@ -29,9 +29,9 @@ def load_cell_callback(data):
   global load_cell_V
   load_cell_V = data.data
   
-pub = rospy.Publisher('r_gripper_cmd', GripperControllerCmd)
+pub = rospy.Publisher('pr2_gripper_controller/cmd', GripperControllerCmd)
 rospy.Subscriber("agilent_measure", Float64, load_cell_callback)
-rospy.Subscriber("r_gripper/state", GripperControllerState, gripper_state_callback)
+rospy.Subscriber("pr2_gripper_controller/state", GripperControllerState, gripper_state_callback)
 rospy.Subscriber("pressure/r_gripper_motor", PressureState, pressure_callback)
   
 rospy.init_node('gripper_force_test')
@@ -51,7 +51,7 @@ for j in range(7, 21):
   starting_sum0 = starting_sum0 + data0[j]
   starting_sum1 = starting_sum1 + data1[j]
 
-for i in range (13, 130):
+for i in range (10, 200):
   print "i is %i", i
   ending_sum0 = 0
   ending_sum1 = 0
@@ -81,7 +81,7 @@ for i in range (13, 130):
     ending_sum0 = ending_sum0 + data0[j]
     ending_sum1 = ending_sum1 + data1[j]
   print "force is %f", (load_cell_V * 1000.0 - starting_offset_voltage) * load_cell_max / (load_cell_mV_per_V * voltage)
-  text_file.write("%f %f %f %f %f %f\n" %(cmd.val, actual_effort, ending_sum0-starting_sum0, ending_sum1-starting_sum1, load_cell_V, (load_cell_V * 1000.0 - starting_offset_voltage) * load_cell_max / (load_cell_mV_per_V * voltage)));
+  text_file.write("%f %f %f %f %f %f\n" %(cmd.val, actual_effort, ending_sum0-starting_sum0, ending_sum1-starting_sum1, load_cell_V, (load_cell_V - starting_offset_voltage) * load_cell_max / (load_cell_mV_per_V/1000.0 * voltage)))
 text_file.close()
 cmd.cmd = 'open'
 pub.publish(cmd)

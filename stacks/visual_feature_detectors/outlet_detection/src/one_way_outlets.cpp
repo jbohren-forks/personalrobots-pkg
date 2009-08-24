@@ -274,7 +274,7 @@ void detect_outlets_one_way(IplImage* test_image, const outlet_template_t& outle
     cvCvtColor(test_image, test_image_features, CV_GRAY2RGB);
     DrawFeatures(test_image_features, features);
     
-    const CvOneWayDescriptorObject* descriptors = outlet_template.get_one_way_descriptor_base();
+    CvOneWayDescriptorObject* descriptors = const_cast<CvOneWayDescriptorObject*>(outlet_template.get_one_way_descriptor_base());
     vector<feature_t> hole_candidates;
     int patch_width = descriptors->GetPatchSize().width/2;
     int patch_height = descriptors->GetPatchSize().height/2; 
@@ -290,31 +290,68 @@ void detect_outlets_one_way(IplImage* test_image, const outlet_template_t& outle
         {
             continue;
         }
-        
-        if(abs(center.x - 988/2) < 10 && abs(center.y - 1203/2) < 10)
-        {
-            int w = 1;
-        }
-        /*        else
-         {
-         continue;
-         }
-         */        
+
+        roi = resize_rect(roi, 1.0f);
+        cvSetImageROI(test_image, roi);
+
         int desc_idx = -1;
         int pose_idx = -1;
         float distance = 0;
-        //        printf("i = %d\n", i);
-        if(i == 331)
-        {
-            int w = 1;
-        }
         
+        CvMat* avg = 0;
+        CvMat* eigenvectors = 0;
+        descriptors->GetLowPCA(&avg, &eigenvectors);
+
 #if 0
-        cvNamedWindow("1", 1);
-        cvShowImage("1", test_image);
-        cvWaitKey(0);
+        if(abs(center.x - 433) < 10 && abs(center.y - 177) < 10)
+        {
+            for(int k = 0; k < descriptors->GetDescriptorCount(); k++)
+            {
+                int part_id = descriptors->GetDescriptorPart(k);
+                if(part_id < 0) continue;
+                CvPoint center = descriptors->GetDescriptor(k)->GetCenter();
+                descriptors->GetDescriptor(k)->EstimatePosePCA(test_image, pose_idx, distance, avg, eigenvectors);
+                printf("k = %d, part_id = %d, center = (%d, %d), distance = %f\n", k, part_id, center.x, center.y, distance);
+            }
+            printf("\n");
+        }
 #endif
+
         descriptors->FindDescriptor(test_image, desc_idx, pose_idx, distance);
+
+#if 0  
+        if(abs(center.x - 433) < 10 && abs(center.y - 177) < 10)
+        {
+            IplImage* img_match = const_cast<CvOneWayDescriptor*>(descriptors->GetDescriptor(desc_idx))->GetPatch(pose_idx);
+            IplImage* img_match_8u = cvCreateImage(cvSize(img_match->width, img_match->height), IPL_DEPTH_8U, 1);
+            double maxval1;
+            cvMinMaxLoc(img_match, 0, &maxval1);
+            
+            int _pose_idx;
+            float _distance;
+            descriptors->GetDescriptor(0)->EstimatePosePCA(test_image, _pose_idx, _distance, avg, eigenvectors);
+            IplImage* img_correct_match = const_cast<CvOneWayDescriptor*>(descriptors->GetDescriptor(0))->GetPatch(_pose_idx);
+            IplImage* img_correct_match_8u = cvCreateImage(cvSize(img_match->width, img_match->height), IPL_DEPTH_8U, 1);
+            double maxval2;
+            cvMinMaxLoc(img_correct_match, 0, &maxval2);
+            double maxval = MAX(maxval1, maxval2);
+            
+            cvConvertScale(img_match, img_match_8u, 255.0/maxval);
+            cvConvertScale(img_correct_match, img_correct_match_8u, 255.0/maxval);
+            
+            cvMinMaxLoc(test_image, 0, &maxval);
+            cvConvertScale(test_image, test_image, 255.0/maxval);
+            
+            cvNamedWindow("match", 1);
+            cvShowImage("match", img_match_8u);
+            cvNamedWindow("correct", 1);
+            cvShowImage("correct", img_correct_match_8u);
+            cvNamedWindow("src", 1);
+            cvShowImage("src", test_image);
+            cvWaitKey(0);
+            
+        }
+#endif
         
         CvPoint center_new = descriptors->GetDescriptor(desc_idx)->GetCenter();
         CvScalar color = descriptors->IsDescriptorObject(desc_idx) ? CV_RGB(0, 255, 0) : CV_RGB(255, 0, 0);

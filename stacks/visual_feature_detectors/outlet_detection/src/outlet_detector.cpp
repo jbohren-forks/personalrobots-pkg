@@ -61,14 +61,28 @@ int detect_outlet_tuple(IplImage* src, CvMat* intrinsic_matrix, CvMat* distortio
     }
 #else
     IplImage* red = cvCreateImage(cvSize(src->width, src->height), IPL_DEPTH_8U, 1);
+#if defined(RED)
     cvSetImageCOI(src, 3);
     cvCopy(src, red);
     cvSetImageCOI(src, 0);
+#else
+    cvSetZero(red);
+    cvSetImageCOI(src, 3);
+    cvCopy(src, red);
+    cvConvertScale(red, red, 0.5);
+    IplImage* red1 = cvCloneImage(red);
+    cvSetImageCOI(src, 2);
+    cvCopy(src, red1);
+    cvConvertScale(red1, red1, 0.5);
+    cvAdd(red, red1, red);
+    cvReleaseImage(&red1);
+    cvSetImageCOI(src, 0);
+#endif //_RED
     detect_outlets_one_way(red, outlet_templ, outlets, src, output_path, filename);
     cvReleaseImage(&red);
 #endif
     
-    if(outlets.size() != outlet_templ.get_count())
+    if(outlets.size() != (size_t)outlet_templ.get_count())
     {
         // template not found
         return 0;

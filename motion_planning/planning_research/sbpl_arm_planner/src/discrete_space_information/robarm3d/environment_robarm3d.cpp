@@ -53,7 +53,6 @@
 #define DEBUG_JOINTSPACE_PLANNING 0
 #define DEBUG_HEURISTIC 1
 #define DEBUG 1
-#define DEBUG_JACOBIAN 1
 
 //for ComputeForwardKinematics_DH - to rotate DH frames to PR2 frames
 #define ELBOW_JOINT 2
@@ -73,27 +72,16 @@ int dz[DIRECTIONS] = {-1, -1, -1, -1, -1, -1, -1, -1, -1,    0,  0,  0,  0,  0, 
     FILE* fSucc = fopen("debugsuccs.txt", "w");
 #endif
 
-#if DEBUG_JOINTSPACE_PLANNING
-	FILE* fJS = fopen("debug_jointspace.txt", "w");
-#endif
-
-#if DEBUG_JACOBIAN
-	FILE* fJac = fopen("debug_jacobian.txt","w");
-#endif
-
 #if DEBUG_HEURISTIC
     FILE* fDeb = fopen("debug_environment.txt", "w");
     FILE* fHeur = fopen("debug_heur.txt", "w");
-//     FILE* fHeurExpansions = fopen("debug_heur_expansions.txt", "w");
-//     FILE* fHuh = fopen("time_to_goal_range.txt","a");
+    FILE* fHeurExpansions = fopen("debug_heur_expansions.txt", "w");
 #endif
-
+		
 //Statistics
 bool near_goal = false;
 clock_t starttime;
 double time_to_goal_region;
-
-// JOINTSPACE goal tolerances are hardcoded
 
 
 /**------------------------------------------------------------------------*/
@@ -630,6 +618,7 @@ EnvironmentROBARM3D::EnvironmentROBARM3D()
     EnvROBARMCfg.bInitialized = false;
     EnvROBARMCfg.use_DH = 0;
     EnvROBARMCfg.enforce_motor_limits = 1;
+    EnvROBARMCfg.endeff_check_only = 0;
     EnvROBARMCfg.object_grasped = 0;
     EnvROBARMCfg.enforce_upright_gripper = 0;
     EnvROBARMCfg.num_joints = 7;
@@ -646,8 +635,8 @@ EnvironmentROBARM3D::EnvironmentROBARM3D()
 
     /* HEURISTIC */
     EnvROBARMCfg.dijkstra_heuristic = 1;
-    EnvROBARMCfg.RPYHeuristicDistance_m = 1.0;
-				
+    EnvROBARMCfg.ApplyRPYCost_m = .1;
+
     /* GOALS */
     EnvROBARMCfg.bGoalIsSet = false;
     EnvROBARMCfg.gripper_orientation_moe = .0175; // 0.0125;
@@ -669,7 +658,7 @@ EnvironmentROBARM3D::EnvironmentROBARM3D()
 
     //default map size is geared towards a planted 1 meter long robotic arm
     EnvROBARMCfg.EnvWidth_m = 1.4;
-    EnvROBARMCfg.EnvHeight_m = 2.2;
+    EnvROBARMCfg.EnvHeight_m = 2;
     EnvROBARMCfg.EnvDepth_m = 2;
 
     EnvROBARMCfg.EnvWidth_c = EnvROBARMCfg.EnvWidth_m / EnvROBARMCfg.GridCellWidth;
@@ -694,20 +683,19 @@ EnvironmentROBARM3D::EnvironmentROBARM3D()
 
     //hard coded temporarily (meters)
     EnvROBARMCfg.arm_length = 1.3;
-    EnvROBARMCfg.link_radius.push_back(.08);
-    EnvROBARMCfg.link_radius.push_back(.07);
-    EnvROBARMCfg.link_radius.push_back(.07);
+    EnvROBARMCfg.link_radius.push_back(.09);
+    EnvROBARMCfg.link_radius.push_back(.09);
+    EnvROBARMCfg.link_radius.push_back(.09);
 
     EnvROBARMCfg.exact_gripper_collision_checking = false;
     EnvROBARMCfg.use_voxel3d_occupancy_grid = false;
 
-    EnvROBARMCfg.use_jacobian_motion_prim = false;
-    save_expanded_states = true;
-
-    EnvROBARMCfg.enable_direct_primitive = true; //enable the jacobian as an additional motion primitive
-		EnvROBARMCfg.max_mprim = 0.4; //radians
+		EnvROBARMCfg.use_jacobian_motion_prim = true;
+		save_expanded_states = false;
 		
-		EnvROBARMCfg.exact_collision_checking_dist = .3; //meters
+		EnvROBARMCfg.enable_direct_primitive = true;
+		
+		EnvROBARMCfg.RPYHeuristicDistance_m = 1;
 }
 
 void EnvironmentROBARM3D::InitializeEnvConfig()
@@ -863,8 +851,6 @@ bool EnvironmentROBARM3D::InitEnvFromFilePtr(FILE* eCfg, FILE* pCfg, const std::
     //for statistics purposes
     starttime = clock();
 
-		OutputPlanningStats();
-		OutputActionCostTable(stdout);
     printf("[InitEnvFromFilePtr] Environment has been initialized.\n");
     return true;
 }
@@ -889,6 +875,19 @@ bool EnvironmentROBARM3D::InitGeneral()
     EnvROBARMCfg.LowResGrid3D_dims[0] = EnvROBARMCfg.LowResEnvWidth_c;
     EnvROBARMCfg.LowResGrid3D_dims[1] = EnvROBARMCfg.LowResEnvHeight_c;
     EnvROBARMCfg.LowResGrid3D_dims[2] = EnvROBARMCfg.LowResEnvDepth_c;
+
+		if(EnvROBARMCfg.lowres_collision_checking)
+		{
+			EnvROBARMCfg.upper_arm_radius = EnvROBARMCfg.link_radius.at(0) / EnvROBARMCfg.LowResGridCellWidth;
+			EnvROBARMCfg.forearm_radius = EnvROBARMCfg.link_radius.at(1) / EnvROBARMCfg.LowResGridCellWidth;
+			EnvROBARMCfg.gripper_radius = EnvROBARMCfg.link_radius.at(2) / EnvROBARMCfg.LowResGridCellWidth;
+		}
+		else
+		{
+			EnvROBARMCfg.upper_arm_radius = EnvROBARMCfg.link_radius.at(0) / EnvROBARMCfg.GridCellWidth;
+			EnvROBARMCfg.forearm_radius = EnvROBARMCfg.link_radius.at(1) / EnvROBARMCfg.GridCellWidth;
+			EnvROBARMCfg.gripper_radius = EnvROBARMCfg.link_radius.at(2) / EnvROBARMCfg.GridCellWidth;
+		}
 		
     //mark continuous joints (temporary hack)
     for(int i = 0; i < EnvROBARMCfg.num_joints; i++)
@@ -913,30 +912,10 @@ bool EnvironmentROBARM3D::InitGeneral()
     ComputeCostPerCell();
 
 		if(EnvROBARMCfg.lowres_collision_checking)
-		{
-			EnvROBARMCfg.upper_arm_radius = EnvROBARMCfg.link_radius.at(0) / EnvROBARMCfg.LowResGridCellWidth;
-			EnvROBARMCfg.forearm_radius = EnvROBARMCfg.link_radius.at(1) / EnvROBARMCfg.LowResGridCellWidth;
-			EnvROBARMCfg.gripper_radius = EnvROBARMCfg.link_radius.at(2) / EnvROBARMCfg.LowResGridCellWidth;
 			EnvROBARMCfg.RPYHeuristicDistance_c = EnvROBARMCfg.cost_per_cell * (EnvROBARMCfg.RPYHeuristicDistance_m/EnvROBARMCfg.LowResGridCellWidth);
-		}
 		else
-		{
-			EnvROBARMCfg.upper_arm_radius = EnvROBARMCfg.link_radius.at(0) / EnvROBARMCfg.GridCellWidth;
-			EnvROBARMCfg.forearm_radius = EnvROBARMCfg.link_radius.at(1) / EnvROBARMCfg.GridCellWidth;
-			EnvROBARMCfg.gripper_radius = EnvROBARMCfg.link_radius.at(2) / EnvROBARMCfg.GridCellWidth;
 			EnvROBARMCfg.RPYHeuristicDistance_c = EnvROBARMCfg.cost_per_cell * (EnvROBARMCfg.RPYHeuristicDistance_m/EnvROBARMCfg.GridCellWidth);
-		}
 		
-		if(EnvROBARMCfg.use_jacobian_motion_prim)
-		{
-			jnt_to_jac_solver.reset(new KDL::ChainJntToJacSolver(EnvROBARMCfg.arm_chain));
-			jnt_to_pose_solver.reset(new KDL::ChainFkSolverPos_recursive(EnvROBARMCfg.arm_chain));
-			jnt_pos.resize(EnvROBARMCfg.arm_chain.getNrOfJoints());
-			jnt_eff.resize(EnvROBARMCfg.arm_chain.getNrOfJoints());
-			jacobian.resize(EnvROBARMCfg.arm_chain.getNrOfJoints());
-		}
-		
-		printf("RPYHeuristicDistance = %i cells\n", EnvROBARMCfg.RPYHeuristicDistance_c);
     return true;
 }
 
@@ -1259,16 +1238,16 @@ void EnvironmentROBARM3D::ReadParamsFile(FILE* fCfg)
       fscanf(fCfg, "%s", sTemp);
       EnvROBARMCfg.dijkstra_heuristic = atoi(sTemp);
     }
+    else if(strcmp(sTemp, "Collision_Checking_on_EndEff_only:") == 0)
+    {
+      fscanf(fCfg, "%s", sTemp);
+      EnvROBARMCfg.endeff_check_only = atoi(sTemp);
+    }
     else if(strcmp(sTemp, "Obstacle_Padding(meters):") == 0)
     {
       fscanf(fCfg, "%s", sTemp);
       EnvROBARMCfg.padding = atof(sTemp);
     }
-		else if(strcmp(sTemp, "Maximum_size_Motion_Primitive(radians):") == 0)
-		{
-			fscanf(fCfg, "%s", sTemp);
-			EnvROBARMCfg.max_mprim = atof(sTemp);
-		}
     else if(strcmp(sTemp, "Smoothing_Weight:") == 0)
     {
       fscanf(fCfg, "%s", sTemp);
@@ -1304,16 +1283,16 @@ void EnvironmentROBARM3D::ReadParamsFile(FILE* fCfg)
       fscanf(fCfg, "%s", sTemp);
       EnvROBARMCfg.object_grasped = atoi(sTemp);
     }
+//         else if(strcmp(sTemp,"EndEffGoal_MarginOfError(meters):") == 0)
+//         {
+//             fscanf(fCfg, "%s", sTemp);
+//             EnvROBARMCfg.goal_moe_m = atof(sTemp);
+//         }
     else if(strcmp(sTemp,"LowRes_Collision_Checking:") == 0)
     {
       fscanf(fCfg, "%s", sTemp);
       EnvROBARMCfg.lowres_collision_checking = atoi(sTemp);
     }
-		else if(strcmp(sTemp,"Use_Jacobian_Motion_Primitive:") == 0)
-		{
-			fscanf(fCfg, "%s", sTemp);
-			EnvROBARMCfg.use_jacobian_motion_prim = atoi(sTemp);
-		}
 		else if(strcmp(sTemp,"MultiRes_Successor_Actions:") == 0)
     {
       fscanf(fCfg, "%s", sTemp);
@@ -1342,7 +1321,7 @@ void EnvironmentROBARM3D::ReadParamsFile(FILE* fCfg)
     else if(strcmp(sTemp,"Dist_from_goal_to_plan_for_RPY(meters):") == 0)
     {
       fscanf(fCfg, "%s", sTemp);
-      EnvROBARMCfg.RPYHeuristicDistance_m = atof(sTemp);
+			EnvROBARMCfg.RPYHeuristicDistance_m = atof(sTemp);
     }
     else if(strcmp(sTemp,"Use_selective_actions(js_planner_only):") == 0)
     {
@@ -1354,7 +1333,7 @@ void EnvironmentROBARM3D::ReadParamsFile(FILE* fCfg)
       fscanf(fCfg, "%s", sTemp);
       EnvROBARMCfg.PlanInJointSpace = atoi(sTemp);
     }
-		//parse actions - it must be the last thing in the file
+        //parse actions - it must be the last thing in the file
     else if(strcmp(sTemp, "Actions:") == 0)
     {
       break;
@@ -1388,13 +1367,13 @@ void EnvironmentROBARM3D::ReadParamsFile(FILE* fCfg)
       fscanf(fCfg, "%s", sTemp);
       if(!feof(fCfg) && strlen(sTemp) != 0)
       {
-				EnvROBARMCfg.SuccActions[x][y] = atof(sTemp);
-				EnvROBARMCfg.SuccActions[x+1][y] = -1 * atof(sTemp);
+	EnvROBARMCfg.SuccActions[x][y] = atof(sTemp);
+	EnvROBARMCfg.SuccActions[x+1][y] = -1 * atof(sTemp);
       }
       else
       {
-				printf("ERROR: End of parameter file reached prematurely. Check for newline.\n");
-				exit(1);
+	printf("ERROR: End of parameter file reached prematurely. Check for newline.\n");
+	exit(1);
       }
     }
   }
@@ -1451,10 +1430,6 @@ bool EnvironmentROBARM3D::SetEnvParameter(std::string param, double value)
   {
     EnvROBARMCfg.smoothing_weight = value;
   }
-	else if(param.compare("useJacobianMotionPrimitive") == 0)
-	{
-		EnvROBARMCfg.use_jacobian_motion_prim = value;
-	}
   else if(param.compare("usePathSmoothing") == 0)
   {
     EnvROBARMCfg.use_smooth_actions = value;
@@ -1510,15 +1485,12 @@ bool EnvironmentROBARM3D::SetEnvParameter(std::string param, double value)
 /**------------------------------------------------------------------------*/
 int EnvironmentROBARM3D::GetFromToHeuristic(int FromStateID, int ToStateID)
 {
-	#if DEBUG_HEURISTIC
-		fprintf(fHeur,"%i: to %i\n",FromStateID, ToStateID);
-	#endif
 
 	if(EnvROBARMCfg.PlanInJointSpace)
-			return GetJointSpaceHeuristic(FromStateID,ToStateID);
+		return GetJointSpaceHeuristic(FromStateID,ToStateID);
 
 #if USE_HEUR==0
-    return 0;
+	return 0;
 #endif
 
 	int heur = 0, closest_goal = 0;
@@ -1529,10 +1501,14 @@ int EnvironmentROBARM3D::GetFromToHeuristic(int FromStateID, int ToStateID)
 	EnvROBARMHashEntry_t* FromHashEntry = EnvROBARM.StateID2CoordTable[FromStateID];
 	short unsigned int FromEndEff[3] = {FromHashEntry->endeff[0], FromHashEntry->endeff[1], FromHashEntry->endeff[2]};
 
+	
+#if DEBUG_HEURISTIC
+	fprintf(fHeur,"%i:\n",FromStateID);
+#endif
+	
 	//distance to closest goal in meters
 	Cell2ContXYZ(FromHashEntry->endeff[0],FromHashEntry->endeff[1],FromHashEntry->endeff[2],&(FromEndEff_m[0]),&(FromEndEff_m[1]),&(FromEndEff_m[2]));
 	edist_to_goal_m = GetDistToClosestGoal(FromEndEff_m, &closest_goal);
-
 
 	if(EnvROBARMCfg.lowres_collision_checking)
 		HighResGrid2LowResGrid(FromHashEntry->endeff, FromEndEff);
@@ -1543,86 +1519,116 @@ int EnvironmentROBARM3D::GetFromToHeuristic(int FromStateID, int ToStateID)
 	else
 		heur = edist_to_goal_m * 1000.0 * EnvROBARMCfg.cost_per_mm;
 
-	#if DEBUG_HEURISTIC
-		fprintf(fHeur,"heur_xyz: %i   euclidean_distance: %.3f\n",heur, edist_to_goal_m);
-	#endif
+#if DEBUG_HEURISTIC
+	fprintf(fHeur,"heur_xyz: %i   euclidean_distance: %.3f\n",heur, edist_to_goal_m);
+#endif
 	
 	//get orientation heuristic
 	if(EnvROBARMCfg.checkEndEffGoalOrientation)
 	{
+		if(heur == INFINITECOST)
+			return heur;
+	
 		if(FromHashEntry->axis_angle > EnvROBARMCfg.EndEffGoals[closest_goal].rpy_tolerance)
 			heur_axis_angle = (FromHashEntry->axis_angle - EnvROBARMCfg.EndEffGoals[0].rpy_tolerance) * EnvROBARMCfg.cost_per_rad;
 		else
 			heur_axis_angle = FromHashEntry->axis_angle * EnvROBARMCfg.cost_per_rad;
 
-
 		rpy_weight = double(EnvROBARMCfg.RPYHeuristicDistance_c - heur) / (double)EnvROBARMCfg.RPYHeuristicDistance_c;
 		
-		fprintf(fHeur,"rpy_weight: %lf\n" ,rpy_weight);
+		fprintf(fHeur,"rpy_weight: %f\n" ,rpy_weight);
 		if(rpy_weight < 0)
 			rpy_weight = 0;
 
-		heur += int(heur_axis_angle*rpy_weight);
+// 		heur += int(heur_axis_angle*rpy_weight);
+		
+				heur += heur_axis_angle;
 
-		#if DEBUG_HEURISTIC
-				fprintf(fHeur,"heur_rpy: %.3f  axis_angle: %.3f  weight: %.5f (rpy_heur_distance: %i)\n",heur_axis_angle, FromHashEntry->axis_angle, rpy_weight, EnvROBARMCfg.RPYHeuristicDistance_c);
-				fprintf(fHeur,"heur: %i\n",heur);
-		#endif
+#if DEBUG_HEURISTIC
+		fprintf(fHeur,"heur_rpy: %.3f  axis_angle: %.3f  weight: %.5f (rpy_heur_distance: %i)\n",heur_axis_angle, FromHashEntry->axis_angle, rpy_weight, EnvROBARMCfg.RPYHeuristicDistance_c);
+		fprintf(fHeur,"heur: %i\n",heur);
+#endif
 	}
 	
 	return heur;
 }
 
-//NOTE temporary for debugging output
-int EnvironmentROBARM3D::GetHeuristics(int FromStateID, int &heur_xyz, int &heur_rpy)
+/*
+int EnvironmentROBARM3D::GetFromToHeuristic(int FromStateID, int ToStateID)
 {
+    if(EnvROBARMCfg.PlanInJointSpace)
+        return GetJointSpaceHeuristic(FromStateID,ToStateID);
+
 #if USE_HEUR==0
-	return 0;
+    return 0;
 #endif
 
-	int heur = 0, closest_goal = 0;
-	double FromEndEff_m[3];
-	double edist_to_goal_m, heur_axis_angle;
+    int heur = 0, closest_goal = 0;
+    double FromEndEff_m[3];
+    double edist_to_goal_m, heur_axis_angle;
 
     //get X, Y, Z for the state
-	EnvROBARMHashEntry_t* FromHashEntry = EnvROBARM.StateID2CoordTable[FromStateID];
-	short unsigned int FromEndEff[3] = {FromHashEntry->endeff[0], FromHashEntry->endeff[1], FromHashEntry->endeff[2]};
+    EnvROBARMHashEntry_t* FromHashEntry = EnvROBARM.StateID2CoordTable[FromStateID];
+    short unsigned int FromEndEff[3] = {FromHashEntry->endeff[0], FromHashEntry->endeff[1], FromHashEntry->endeff[2]};
 
     //distance to closest goal in meters
-	Cell2ContXYZ(FromHashEntry->endeff[0],FromHashEntry->endeff[1],FromHashEntry->endeff[2],&(FromEndEff_m[0]),&(FromEndEff_m[1]),&(FromEndEff_m[2]));
-	edist_to_goal_m = GetDistToClosestGoal(FromEndEff_m, &closest_goal);
+    Cell2ContXYZ(FromHashEntry->endeff[0],FromHashEntry->endeff[1],FromHashEntry->endeff[2],&(FromEndEff_m[0]),&(FromEndEff_m[1]),&(FromEndEff_m[2]));
+    edist_to_goal_m = GetDistToClosestGoal(FromEndEff_m, &closest_goal);
 
-	//get distance heuristic
-	if(EnvROBARMCfg.dijkstra_heuristic)
-	{
-		if(EnvROBARMCfg.lowres_collision_checking)
-		{
-			HighResGrid2LowResGrid(FromHashEntry->endeff, FromEndEff);
+    //get distance heuristic
+    if(EnvROBARMCfg.dijkstra_heuristic)
+    {
+        if(EnvROBARMCfg.lowres_collision_checking)
+        {
+            HighResGrid2LowResGrid(FromHashEntry->endeff, FromEndEff);
 
-      //fetch precomputed heuristic
-			heur = EnvROBARM.Heur[XYZTO3DIND(FromEndEff[0], FromEndEff[1], FromEndEff[2])];
-		}
-		else
-      //fetch precomputed heuristic
-			heur = EnvROBARM.Heur[XYZTO3DIND(FromEndEff[0], FromEndEff[1], FromEndEff[2])];
-	}
-	else
-	{
-		heur = edist_to_goal_m * 1000.0 * EnvROBARMCfg.cost_per_mm;
-	}
+            //fetch precomputed heuristic
+            heur = EnvROBARM.Heur[XYZTO3DIND(FromEndEff[0], FromEndEff[1], FromEndEff[2])];
 
-	heur_xyz = heur;
+//             double dist_to_goal_c = GetDistToClosestGoal(FromHashEntry->endeff, &closest_goal);
+// 
+//             //if the distance to the goal is very small, then we need a more informative heuristic when using the lowres collision detection
+//             if(dist_to_goal_c * EnvROBARMCfg.GridCellWidth < MAX_EUCL_DIJK_m)
+//             {
+//                 if ((dist_to_goal_c * EnvROBARMCfg.cost_per_cell) > heur)
+//                     heur =  dist_to_goal_c * EnvROBARMCfg.cost_per_cell;
+//             }
+        }
+        else
+            //fetch precomputed heuristic
+            heur = EnvROBARM.Heur[XYZTO3DIND(FromEndEff[0], FromEndEff[1], FromEndEff[2])];
+    }
+    else
+    {
+        heur = edist_to_goal_m * 1000.0 * EnvROBARMCfg.cost_per_mm;
+    }
 
-	if(FromHashEntry->axis_angle > EnvROBARMCfg.EndEffGoals[closest_goal].rpy_tolerance)
-		heur_axis_angle = (FromHashEntry->axis_angle - EnvROBARMCfg.EndEffGoals[0].rpy_tolerance) * EnvROBARMCfg.cost_per_rad;
-	else
-		heur_axis_angle = FromHashEntry->axis_angle * EnvROBARMCfg.cost_per_rad;
+    //get orientation heuristic
+    if(EnvROBARMCfg.checkEndEffGoalOrientation)
+    {
+      if(FromHashEntry->axis_angle > EnvROBARMCfg.EndEffGoals[closest_goal].rpy_tolerance)
+				heur_axis_angle = (FromHashEntry->axis_angle - EnvROBARMCfg.EndEffGoals[0].rpy_tolerance) * EnvROBARMCfg.cost_per_rad;
+      else
+	  		heur_axis_angle = FromHashEntry->axis_angle * EnvROBARMCfg.cost_per_rad;
 
-	heur_rpy = heur_axis_angle;
-	
-	return 1;
+      if(EnvROBARMCfg.sum_heuristics)
+      {
+
+					heur += heur_axis_angle;
+      }
+      else
+      {
+				//if close enough to goal, use max heuristic
+				if(edist_to_goal_m < EnvROBARMCfg.ApplyRPYCost_m)
+				{
+					if(heur_axis_angle > heur)
+							heur = heur_axis_angle;
+				}
+      }
+    }
+    return heur;
 }
-
+*/
 
 //for debugging. remove later
 int EnvironmentROBARM3D::GetFromToHeuristic(int FromStateID, int ToStateID, FILE* fOut)
@@ -1694,7 +1700,7 @@ int EnvironmentROBARM3D::GetFromToHeuristic(int FromStateID, int ToStateID, FILE
             heur_axis_angle = FromHashEntry->axis_angle * EnvROBARMCfg.cost_per_rad;
 
         //if close enough to goal, apply cost to gripper orientation
-        if(edist_to_goal_m < EnvROBARMCfg.RPYHeuristicDistance_m)
+        if(edist_to_goal_m < EnvROBARMCfg.ApplyRPYCost_m)
         {
             //use max(heuristic_xyz, heuristic_rpy)
             if(heur_axis_angle > heur)
@@ -1806,7 +1812,6 @@ void EnvironmentROBARM3D::PrintSuccGoal(int SourceStateID, int costtogoal, bool 
     short unsigned int succcoord[NUMOFLINKS];
     double angles[NUMOFLINKS],orientation[3][3];
     short unsigned int endeff[3],wrist[3],elbow[3];
-		unsigned char dist;
     int i, inc;
 
     if(fOut == NULL)
@@ -1841,8 +1846,7 @@ void EnvironmentROBARM3D::PrintSuccGoal(int SourceStateID, int costtogoal, bool 
             ComputeEndEffectorPos(angles,endeff,wrist,elbow,orientation);
 
             //skip invalid successors
-						
-            if(!IsValidCoord(succcoord,endeff,wrist,elbow,orientation,dist,false))
+            if(!IsValidCoord(succcoord,endeff,wrist,elbow,orientation))
                 continue;
 
             if(endeff[0] == EnvROBARMCfg.EndEffGoals[0].xyz[0] && endeff[1] == EnvROBARMCfg.EndEffGoals[0].xyz[1] && endeff[2] ==  EnvROBARMCfg.EndEffGoals[0].xyz[2])
@@ -1879,9 +1883,9 @@ void EnvironmentROBARM3D::PrintHeader(FILE* fOut)
 /** \brief Get successors when searching towards a cartesian goal. */
 void EnvironmentROBARM3D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV)
 {
-// 	#if DEBUG_HEURISTIC
-// 			GetFromToHeuristic(SourceStateID,EnvROBARM.goalHashEntry->stateID, fHeurExpansions);
-// 	#endif
+	#if DEBUG_HEURISTIC
+			GetFromToHeuristic(SourceStateID,EnvROBARM.goalHashEntry->stateID, fHeurExpansions);
+	#endif
 
 	if(EnvROBARMCfg.PlanInJointSpace)
 	{
@@ -1893,11 +1897,11 @@ void EnvironmentROBARM3D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vect
 		return;
 
 	int i, a, closest_goal;
-	unsigned char dist = 255;
+	unsigned char dist;
 	short unsigned int k, succcoord[EnvROBARMCfg.num_joints], wrist[3], elbow[3], endeff[3];
 	double axis_angle, orientation [3][3], angles[EnvROBARMCfg.num_joints], s_angles[EnvROBARMCfg.num_joints];
 	double jnt_vel[EnvROBARMCfg.num_joints];
-
+	
 	//to support two sets of succesor actions
 	int actions_i_min = 0, actions_i_max = EnvROBARMCfg.nLowResActions;
 
@@ -1907,7 +1911,10 @@ void EnvironmentROBARM3D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vect
 
 	//goal state should be absorbing
 	if(SourceStateID == EnvROBARM.goalHashEntry->stateID)
+	{
+		// printf("goal state is absorbing...\n");
 		return;
+	}
 
 	//get X, Y, Z for the state
 	EnvROBARMHashEntry_t* HashEntry = EnvROBARM.StateID2CoordTable[SourceStateID];
@@ -1915,7 +1922,7 @@ void EnvironmentROBARM3D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vect
 
 	//default coords of successor
 	for(i = 0; i < EnvROBARMCfg.num_joints; i++)
-		succcoord[i] = HashEntry->coord[i];
+			succcoord[i] = HashEntry->coord[i];
 
 	ComputeContAngles(succcoord, angles);
 
@@ -1928,19 +1935,17 @@ void EnvironmentROBARM3D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vect
 			actions_i_max = EnvROBARMCfg.nSuccActions;
 		}
 	}
-
+	
 	if(EnvROBARMCfg.use_jacobian_motion_prim)
 	{
-		computeJacobian(s_angles, EnvROBARMCfg.max_mprim, jnt_vel);
-
- 		fprintf(fSucc,"velocities: %.2f %.2f %.2f %.2f %.2f %.2f %.2f\n", RAD2DEG(jnt_vel[0]),RAD2DEG(jnt_vel[1]),RAD2DEG(jnt_vel[2]),RAD2DEG(jnt_vel[3]),RAD2DEG(jnt_vel[4]),RAD2DEG(jnt_vel[5]),RAD2DEG(jnt_vel[6]));
-		actions_i_max++;
+			//computeJacobian(s_angles, 0.104, jnt_vel);
+			//actions_i_max++;
 	}
 
 	#if DEBUG
 		fprintf(fDeb, "\nstate %d: %.2f %.2f %.2f %.2f %.2f %.2f %.2f   endeff: %d %d %d\n",SourceStateID,
 				angles[0],angles[1],angles[2],angles[3],angles[4],angles[5],angles[6], HashEntry->endeff[0],HashEntry->endeff[1],HashEntry->endeff[2]);
-
+	
 		fprintf(fSucc, "\nstate %d: %.2f %.2f %.2f %.2f %.2f %.2f %.2f   endeff: %d %d %d\n",SourceStateID,
 				angles[0],angles[1],angles[2],angles[3],angles[4],angles[5],angles[6], HashEntry->endeff[0],HashEntry->endeff[1],HashEntry->endeff[2]);
 	#endif
@@ -1948,31 +1953,8 @@ void EnvironmentROBARM3D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vect
 	//iterate through successors of s (possible actions)
 	for (i = actions_i_min; i < actions_i_max; i++)
 	{
-		if(EnvROBARMCfg.use_jacobian_motion_prim)
-		{
-			if(i < actions_i_max - 1)
-			{
-				for(a = 0; a < EnvROBARMCfg.num_joints; a++)
-				{
-					if((HashEntry->coord[a] + int(EnvROBARMCfg.SuccActions[i][a])) < 0)
-						succcoord[a] = ((EnvROBARMCfg.anglevals[a] + HashEntry->coord[a] + int(EnvROBARMCfg.SuccActions[i][a])) % EnvROBARMCfg.anglevals[a]);
-					else
-						succcoord[a] = ((int)(HashEntry->coord[a] + int(EnvROBARMCfg.SuccActions[i][a])) % EnvROBARMCfg.anglevals[a]);
-				}
-			}
-			else
-			{
-				for(a = 0; a < EnvROBARMCfg.num_joints; a++)
-				{
-					if((HashEntry->coord[a] + int(RAD2DEG(jnt_vel[a]))) < 0)
-						succcoord[a] = ((EnvROBARMCfg.anglevals[a] + HashEntry->coord[a] + int(RAD2DEG(jnt_vel[a]))) % EnvROBARMCfg.anglevals[a]);
-					else
-						succcoord[a] = ((int)(HashEntry->coord[a] + int(RAD2DEG(jnt_vel[a]))) % EnvROBARMCfg.anglevals[a]);
-				}
-			}
-		}
-		else
-		{
+// 		if(i< actions_i_max - 1)
+// 		{
 			for(a = 0; a < EnvROBARMCfg.num_joints; a++)
 			{
 				if((HashEntry->coord[a] + int(EnvROBARMCfg.SuccActions[i][a])) < 0)
@@ -1980,7 +1962,20 @@ void EnvironmentROBARM3D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vect
 				else
 					succcoord[a] = ((int)(HashEntry->coord[a] + int(EnvROBARMCfg.SuccActions[i][a])) % EnvROBARMCfg.anglevals[a]);
 			}
-		}
+// 		}
+// 		else
+// 		{
+// 			for(a = 0; a < EnvROBARMCfg.num_joints; a++)
+// 			{
+// 				if((HashEntry->coord[a] + int(RAD2DEG(jnt_vel[a]))) < 0)
+// 					succcoord[a] = ((EnvROBARMCfg.anglevals[a] + HashEntry->coord[a] + int(RAD2DEG(jnt_vel[a]))) % EnvROBARMCfg.anglevals[a]);
+// 				else
+// 					succcoord[a] = ((int)(HashEntry->coord[a] + int(RAD2DEG(jnt_vel[a]))) % EnvROBARMCfg.anglevals[a]);
+// 			}
+// 			printf("%i %i %i %i %i %i %i  -->  %i %i %i %i %i %i %i\n",
+// 						 HashEntry->coord[0],HashEntry->coord[1],HashEntry->coord[2], HashEntry->coord[3],HashEntry->coord[4],HashEntry->coord[5],HashEntry->coord[6],
+// 			 				succcoord[0],succcoord[1],succcoord[2],succcoord[3],succcoord[4],succcoord[5],succcoord[6]);
+// 		}
 
 		//get the successor
 		EnvROBARMHashEntry_t* OutHashEntry;
@@ -1991,15 +1986,28 @@ void EnvironmentROBARM3D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vect
 
 		//get forward kinematics
 		if(!ComputeEndEffectorPos(angles, endeff, wrist, elbow, orientation))
+		{
+		#if DEBUG
+				fprintf(fDeb,"fk invalid: %.2f %.2f %.2f %.2f %.2f %.2f %.2f   endeff (%i %i %i) wrist(%i %i %i)\n",
+								angles[0],angles[1],angles[2],angles[3],angles[4],angles[5],angles[6],endeff[0],endeff[1],endeff[2],wrist[0],wrist[1],wrist[2]);
+		#endif
 				continue;
+		}
 
-		//check for collisions in the arm
-		if(SourceStateID == EnvROBARM.startHashEntry->stateID)
-			if(!IsValidCoord(succcoord, endeff, wrist, elbow, orientation, dist, true))
+		// 	fprintf(fSucc, "%5i: action: %i axis_angle: %.3f  endeff: %3d %3d %3d\n",
+		// 		OutHashEntry->stateID, i, axis_angle,OutHashEntry->endeff[0],OutHashEntry->endeff[1],OutHashEntry->endeff[2]);
+
+		//do collision checking
+		if(!IsValidCoord(succcoord, endeff, wrist, elbow, orientation, dist))
+// 		dist = 255;
+// 		if(!IsValidCoord(succcoord, endeff, wrist, elbow, orientation))
+		{
+		#if DEBUG
+				fprintf(fDeb,"cc invalid: %.2f %.2f %.2f %.2f %.2f %.2f %.2f   endeff (%i %i %i) wrist(%i %i %i)\n",
+								angles[0],angles[1],angles[2],angles[3],angles[4],angles[5],angles[6],endeff[0],endeff[1],endeff[2],wrist[0],wrist[1],wrist[2]);
+		#endif
 				continue;
-		else
-			if(!IsValidCoord(succcoord, endeff, wrist, elbow, orientation, dist, false))
-				continue;
+		}
 
 		GetAxisAngle(orientation, EnvROBARM.goalHashEntry->orientation, &axis_angle);
 
@@ -2009,7 +2017,7 @@ void EnvironmentROBARM3D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vect
 			{
 				bSuccisGoal = true;
 				// printf("goal succ is generated\n");
-				for (unsigned int j = 0; j < EnvROBARMCfg.num_joints; ++j)
+				for (int j = 0; j < NUMOFLINKS; j++)
 				{
 					EnvROBARMCfg.goalcoords[j] = succcoord[j];
 					EnvROBARM.goalHashEntry->coord[j] = succcoord[j];
@@ -2028,30 +2036,18 @@ void EnvironmentROBARM3D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vect
 				OutHashEntry = CreateNewHashEntry(succcoord, EnvROBARMCfg.num_joints, endeff, i, orientation);
 				OutHashEntry->axis_angle = axis_angle;
 				OutHashEntry->dist = dist;
-
+				
 				#if DEBUG
-					fprintf(fSucc, "%5i: %.3f %.3f %.3f %.3f %.3f %.3f %.3f action: %i  axis_angle: %.3f dist: %u endeff: %3d %3d %3d\n",
-								OutHashEntry->stateID, angles[0],angles[1],angles[2],angles[3],angles[4],angles[5],angles[6], i, axis_angle, dist, OutHashEntry->endeff[0],OutHashEntry->endeff[1],OutHashEntry->endeff[2]);
+					fprintf(fSucc, "%5i: action: %i axis_angle: %.3f dist: %u endeff: %3d %3d %3d\n",
+											OutHashEntry->stateID, i, axis_angle, dist, OutHashEntry->endeff[0],OutHashEntry->endeff[1],OutHashEntry->endeff[2]);
 				#endif
 		}
 
 		//put successor on successor list with the proper cost
 		SuccIDV->push_back(OutHashEntry->stateID);
-		
-		if(!EnvROBARMCfg.use_jacobian_motion_prim)
-			CostV->push_back(cost(HashEntry,OutHashEntry,bSuccisGoal) + EnvROBARMCfg.ActiontoActionCosts[HashEntry->action][OutHashEntry->action]);
-		else
-		{
-			if(i < actions_i_max - 1)
-				CostV->push_back(cost(HashEntry,OutHashEntry,bSuccisGoal) + EnvROBARMCfg.ActiontoActionCosts[HashEntry->action][OutHashEntry->action]);
-			else
-			{
-				ComputeContAngles(succcoord, angles);
-				CostV->push_back(cost(HashEntry,OutHashEntry,bSuccisGoal) + ComputeActionToActionCost(s_angles, angles));
-			}
-		}
+		CostV->push_back(cost(HashEntry,OutHashEntry,bSuccisGoal) + EnvROBARMCfg.ActiontoActionCosts[HashEntry->action][OutHashEntry->action]);
 	}
-
+	
 	if(save_expanded_states)
 		expanded_states.push_back(SourceStateID);
 }
@@ -2061,8 +2057,8 @@ void EnvironmentROBARM3D::GetJointSpaceSuccs(int SourceStateID, vector<int>* Suc
 {
   short unsigned int succcoord[NUMOFLINKS];
   short unsigned int k, wrist[3], elbow[3], endeff[3];
-	int i, a;
-	double orientation [3][3];
+  double orientation [3][3];
+  int i, a;
   double angles[NUMOFLINKS], s_angles[NUMOFLINKS];
 
   //to support two sets of succesor actions
@@ -2093,56 +2089,47 @@ void EnvironmentROBARM3D::GetJointSpaceSuccs(int SourceStateID, vector<int>* Suc
 
   ComputeContAngles(succcoord, angles);
 
-	double dist_to_goal = getDistanceToGoal(s_angles);
-	
   //check if cell is close to enough to goal to use higher resolution actions
   if(EnvROBARMCfg.multires_succ_actions)
   {
-    if (dist_to_goal <= EnvROBARMCfg.HighResActionsThreshold_r)
+    if (getDistanceToGoal(s_angles) <= EnvROBARMCfg.HighResActionsThreshold_r)
     {
       actions_i_min = EnvROBARMCfg.nLowResActions;
       actions_i_max = EnvROBARMCfg.nSuccActions;
-			if(!near_goal)
-			{
-      	printf("%.3f radians away from goal.... using high resolution actions.\n", dist_to_goal);
-				near_goal = true;
-			}
+      // printf("%.3f radians away from goal.\n", getDistanceToGoal(s_angles));
     }
   }
 
 	#if DEBUG_JOINTSPACE_PLANNING
-		fprintf(fJS, "\n%i:\n",SourceStateID);
+		printf("\n%i:\n",SourceStateID);
 	#endif
 		
-	double direct_mprim[EnvROBARMCfg.num_joints], mprim_size = 0.4;
-	double mprim_dist = 0;
+	double direct_mprim[EnvROBARMCfg.num_joints], max_diff = 0, mprim_size = 0.1;
 	//NOTE hardcoded to only work with one goal
 	if(EnvROBARMCfg.enable_direct_primitive)	
 	{
-		
 		for(unsigned int p = 0; p < EnvROBARMCfg.num_joints; ++p)
 		{
 			if(!EnvROBARMCfg.joints[p].cont)
 			{
 				if(!angles::shortest_angular_distance_with_limits(s_angles[p],  EnvROBARMCfg.JointSpaceGoals[0].pos[p], EnvROBARMCfg.joints[p].negative_limit, EnvROBARMCfg.joints[p].positive_limit, direct_mprim[p]))
-				{
-					printf("error: one of the goal joints (#%i) is not within the limits\n",p);
 					direct_mprim[p] = 0;
-				}
+				else
+					direct_mprim[p] = angles::shortest_angular_distance(s_angles[p],  EnvROBARMCfg.JointSpaceGoals[0].pos[p]);
 			}
 			else
 				direct_mprim[p] = angles::shortest_angular_distance(s_angles[p],  EnvROBARMCfg.JointSpaceGoals[0].pos[p]);
 			
-			mprim_dist += direct_mprim[p]*direct_mprim[p];
+			if(fabs(direct_mprim[p]) > max_diff)
+				max_diff = fabs(direct_mprim[p]);
 		}
 		
-		mprim_dist = sqrt(mprim_dist);
-		double scale = mprim_size/dist_to_goal;
-		if (scale < 1)
-		{
-			for (unsigned int h = 0; h < EnvROBARMCfg.num_joints; ++h)
-				direct_mprim[h] *= scale;
-		}
+		double scale = mprim_size/max_diff;
+		if (scale > 1)
+			scale = 1;
+	
+		for (unsigned int h = 0; h < EnvROBARMCfg.num_joints; ++h)
+			direct_mprim[h] *= scale;
 		
 		actions_i_max++;
 	}
@@ -2195,13 +2182,6 @@ void EnvironmentROBARM3D::GetJointSpaceSuccs(int SourceStateID, vector<int>* Suc
     //have to create a new entry
     ComputeContAngles(succcoord, angles);
 
-		#if DEBUG_JOINTSPACE_PLANNING
-			if(i == actions_i_max - 1)
-			{
-				fprintf(fJS, "%i: %.3f %.3f %.3f %.3f %.3f %.3f %.3f (%.4f rad to goal) has motion prim: %.3f %.3f %.3f %.3f %.3f %.3f %.3f\n",
-							SourceStateID, s_angles[0],s_angles[1],s_angles[2],s_angles[3],s_angles[4],s_angles[5],s_angles[6], dist_to_goal, direct_mprim[0],direct_mprim[1],direct_mprim[2],direct_mprim[3],direct_mprim[4],direct_mprim[5],direct_mprim[6]);
-			}	
-		#endif
     //get forward kinematics
     if(!ComputeEndEffectorPos(angles, endeff, wrist, elbow, orientation))
     {
@@ -2209,23 +2189,13 @@ void EnvironmentROBARM3D::GetJointSpaceSuccs(int SourceStateID, vector<int>* Suc
       continue;
     }
 
-//     //do collision checking
-//     if(!IsValidCoord(succcoord, endeff, wrist, elbow, orientation))
-//     {
-// //       printf("[GetJointSpaceSuccs] endeff (%u %u %u) successor is not valid.\n",endeff[0],endeff[1],endeff[2]);
-//       continue;
-//     }
+    //do collision checking
+    if(!IsValidCoord(succcoord, endeff, wrist, elbow, orientation))
+    {
+//       printf("[GetJointSpaceSuccs] endeff (%u %u %u) successor is not valid.\n",endeff[0],endeff[1],endeff[2]);
+      continue;
+    }
 
-		unsigned char dist;
-		if(!IsValidCoord(succcoord, endeff, wrist, elbow, orientation, dist))
-		{
-		#if DEBUG
-			fprintf(fDeb,"cc invalid: %.2f %.2f %.2f %.2f %.2f %.2f %.2f   endeff (%i %i %i) wrist(%i %i %i)\n",
-							angles[0],angles[1],angles[2],angles[3],angles[4],angles[5],angles[6],endeff[0],endeff[1],endeff[2],wrist[0],wrist[1],wrist[2]);
-		#endif
-			continue;
-		}
-		
     //check if at goal configuration
     for(k = 0; k < EnvROBARMCfg.JointSpaceGoals.size(); k++)
     {
@@ -2251,16 +2221,12 @@ void EnvironmentROBARM3D::GetJointSpaceSuccs(int SourceStateID, vector<int>* Suc
     if((OutHashEntry = GetHashEntry(succcoord, EnvROBARMCfg.num_joints, i, bSuccisGoal)) == NULL)
     {
       OutHashEntry = CreateNewHashEntry(succcoord, EnvROBARMCfg.num_joints, endeff, i, orientation);
-
     }
 
     //put successor on successor list with cost
     SuccIDV->push_back(OutHashEntry->stateID);
     CostV->push_back(cost(HashEntry,OutHashEntry,bSuccisGoal)); // + EnvROBARMCfg.ActiontoActionCosts[HashEntry->action][OutHashEntry->action]);
   }
-	
-	if(save_expanded_states)
-		expanded_states.push_back(SourceStateID);
 }
 
 int EnvironmentROBARM3D::GetJointSpaceHeuristic(int FromStateID, int ToStateID)
@@ -2309,8 +2275,12 @@ int EnvironmentROBARM3D::GetJointSpaceHeuristic(int FromStateID, int ToStateID)
   h = min_dist * EnvROBARMCfg.cost_per_rad_js;
 
 #if DEBUG_JOINTSPACE_PLANNING
-	fprintf(fJS, "%i:  %.3f %.3f %.3f %.3f %.3f %.3f %.3f  ssd(rad): %.3f  heur: %i  action: %i\n",
-					FromStateID,FromAngles[0],FromAngles[1],FromAngles[2],FromAngles[3],FromAngles[4],FromAngles[5],FromAngles[6],min_dist,h, FromHashEntry->action);
+  printf("%i:  %.3f %.3f %.3f %.3f %.3f %.3f %.3f  -->  %.3f %.3f %.3f %.3f %.3f %.3f %.3f  ssd(rad): %.3f  h: %i\n",
+	 FromStateID,FromAngles[0],FromAngles[1],FromAngles[2],FromAngles[3],FromAngles[4],FromAngles[5],FromAngles[6],
+  EnvROBARMCfg.JointSpaceGoals[closest_goal].pos[0],EnvROBARMCfg.JointSpaceGoals[closest_goal].pos[1],
+  EnvROBARMCfg.JointSpaceGoals[closest_goal].pos[2],EnvROBARMCfg.JointSpaceGoals[closest_goal].pos[3],
+  EnvROBARMCfg.JointSpaceGoals[closest_goal].pos[4],EnvROBARMCfg.JointSpaceGoals[closest_goal].pos[5],
+  EnvROBARMCfg.JointSpaceGoals[closest_goal].pos[6],min_dist,h);
 #endif
   return h;
 }
@@ -2412,13 +2382,12 @@ bool EnvironmentROBARM3D::isGoalPosition(const short unsigned int endeff[3], con
 	return false;
 }
 
-/** \brief check if a joint configuration is within the goal tolerance -- NOTE HACK AHCK HACK HACK */
+/** \brief check if a joint configuration is within the goal tolerance */
 bool EnvironmentROBARM3D::isGoalState(const double angles[], const GoalConfig &goal)
 {
-	//NOTE hack change from 0 to a
   for(unsigned int a = 0; a < EnvROBARMCfg.num_joints; a++)
   {
-    if(fabs(angles::shortest_angular_distance(angles[a], goal.pos[a])) > 0.30)
+    if(fabs(angles::shortest_angular_distance(angles[a], goal.pos[a])) > goal.tolerance_above[a])
       return false;
   }
 
@@ -2654,9 +2623,6 @@ bool EnvironmentROBARM3D::SetGoalPosition(const std::vector <std::vector<double>
 
   EnvROBARMCfg.bGoalIsSet = true;
 
-	//must be set to false for output at the terminal when expanding nodes close to goal
-	near_goal = false;
-	
 	expanded_states.clear();
 // 	expanded_states.reserve(5000);
 
@@ -2744,6 +2710,7 @@ bool EnvironmentROBARM3D::SetGoalConfiguration(const std::vector <std::vector<do
   short unsigned  int i, k, coord[NUMOFLINKS], elbow[3] = {0}, wrist[3] = {0}, endeff[3] = {0};
   EnvROBARMCfg.PlanInJointSpace = true;
 
+	printf("about to copy environment\n");
 	EnvROBARMCfg.mCopyingGrid.lock();
 	UpdateEnvironment();
 	EnvROBARMCfg.mCopyingGrid.unlock();
@@ -2751,11 +2718,13 @@ bool EnvironmentROBARM3D::SetGoalConfiguration(const std::vector <std::vector<do
   //resize goal list
   EnvROBARMCfg.JointSpaceGoals.resize(goals.size());
 
+	printf("about to copy goals\n");
   for(i = 0; i < EnvROBARMCfg.JointSpaceGoals.size(); i++)
   {
     EnvROBARMCfg.JointSpaceGoals[i].pos.resize(goals[i].size());
     EnvROBARMCfg.JointSpaceGoals[i].pos = goals[i];
 
+		printf("about to copy angles\n");
     for(k = 0; k < EnvROBARMCfg.num_joints; k++)
     {
       EnvROBARMCfg.JointSpaceGoals[i].pos[k] = goals[i][k];
@@ -2765,6 +2734,7 @@ bool EnvironmentROBARM3D::SetGoalConfiguration(const std::vector <std::vector<do
         angles[k] = 2*PI_CONST + EnvROBARMCfg.JointSpaceGoals[i].pos[k];
     }
 
+		printf("about to run fk\n");
     //get joint positions of starting configuration
     if(!ComputeEndEffectorPos(angles, endeff, wrist, elbow, orientation))
     {
@@ -2798,7 +2768,7 @@ bool EnvironmentROBARM3D::SetGoalConfiguration(const std::vector <std::vector<do
 
     //check if goal position is valid
 		unsigned char dist = 255;
-    if(!IsValidCoord(coord,endeff,wrist,elbow,orientation,dist, true))
+    if(!IsValidCoord(coord,endeff,wrist,elbow,orientation,dist))
     {
       printf("[SetGoalConfiguration] goal angles: %.2f %.2f %.2f %.2f %.2f %.2f %.2f is invalid.\n",
 	    angles[0],angles[1],angles[2],angles[3],angles[4],angles[5],angles[6]);
@@ -2834,23 +2804,18 @@ bool EnvironmentROBARM3D::SetGoalConfiguration(const std::vector <std::vector<do
     }
     //set goal tolerances
 		
-//		printf("tolerance_above.size(): %i    tolerance_below.size(): %i\n",tolerance_above.size(),tolerance_below.size());
-//		printf("tolerance_above[0].size(): %i    tolerance_below[0].size(): %i\n",tolerance_above[0].size(),tolerance_below[0].size());
+		printf("tolerance_above.size(): %i    tolerance_below.size(): %i\n",tolerance_above.size(),tolerance_below.size());
+		printf("tolerance_above[0].size(): %i    tolerance_below[0].size(): %i\n",tolerance_above[0].size(),tolerance_below[0].size());
     SetGoalConfigurationTolerance(tolerance_above, tolerance_below);
 
     #if DEBUG
-      printf("[SetGoalConfiguration] goal: %.2f %.2f %.2f %.2f  %.2f %.2f %.2f tolerance: %.4f %.4f \n",
+      printf("[SetGoalConfiguration] goal: %.2f %.2f %.2f %.2f  %.2f %.2f %.2f tolerance: %.3f %.3f \n",
 	     EnvROBARMCfg.JointSpaceGoals[0].pos[0],EnvROBARMCfg.JointSpaceGoals[0].pos[1],EnvROBARMCfg.JointSpaceGoals[0].pos[2],
               EnvROBARMCfg.JointSpaceGoals[0].pos[3],EnvROBARMCfg.JointSpaceGoals[0].pos[4],EnvROBARMCfg.JointSpaceGoals[0].pos[5],EnvROBARMCfg.JointSpaceGoals[0].pos[6],
               EnvROBARMCfg.JointSpaceGoals[0].tolerance_above[0],EnvROBARMCfg.JointSpaceGoals[0].tolerance_below[0]);
     #endif
   }
 
-	//must be set to false for output at the terminal when expanding nodes close to goal
-	near_goal = false;
-	
-	expanded_states.clear();
-	
   //if one of the joints starts out within the goal tolerance then remove any successors that change that joint angle
 /*  if(EnvROBARMCfg.use_selective_actions)
   {
@@ -2890,23 +2855,23 @@ void EnvironmentROBARM3D::SetGoalConfigurationTolerance(const std::vector<std::v
     if(tolerance_above.size() >= i)
     {
       EnvROBARMCfg.JointSpaceGoals[i].tolerance_above.resize(tolerance_above[i].size());
-      EnvROBARMCfg.JointSpaceGoals[i].tolerance_above[0] = 0.2; //tolerance_above[i];
+      EnvROBARMCfg.JointSpaceGoals[i].tolerance_above = tolerance_above[i];
     }
     else
     {
       EnvROBARMCfg.JointSpaceGoals[i].tolerance_above.resize(tolerance_above[0].size());
-      EnvROBARMCfg.JointSpaceGoals[i].tolerance_above[0] = 0.2; //tolerance_above[0];
+      EnvROBARMCfg.JointSpaceGoals[i].tolerance_above = tolerance_above[0];
     }
 
     if(tolerance_below.size() >= i)
     {
       EnvROBARMCfg.JointSpaceGoals[i].tolerance_below.resize(tolerance_below[i].size());
-      EnvROBARMCfg.JointSpaceGoals[i].tolerance_below[0] = 0.2; //tolerance_below[i];
+      EnvROBARMCfg.JointSpaceGoals[i].tolerance_below = tolerance_below[i];
     }
     else
     {
       EnvROBARMCfg.JointSpaceGoals[i].tolerance_below.resize(tolerance_below[0].size());
-      EnvROBARMCfg.JointSpaceGoals[i].tolerance_below[0] = 0.2; //tolerance_below[0];
+      EnvROBARMCfg.JointSpaceGoals[i].tolerance_below = tolerance_below[0];
     }
   }
 }
@@ -3094,7 +3059,7 @@ void EnvironmentROBARM3D::PrintConfiguration(FILE* fOut)
     fprintf(fOut, "Use Dijkstra for Heuristic Function: %i\n", EnvROBARMCfg.dijkstra_heuristic);
     fprintf(fOut, "Smoothness Weight: %.3f\n", EnvROBARMCfg.smoothing_weight);
     fprintf(fOut, "Obstacle Padding(meters): %.2f\n", EnvROBARMCfg.padding);
-    fprintf(fOut, "Distance from goal to use max(H_orientation, H_position)(meters): %.2f\n", EnvROBARMCfg.RPYHeuristicDistance_m);
+    fprintf(fOut, "Distance from goal to use max(H_orientation, H_position)(meters): %.2f\n", EnvROBARMCfg.ApplyRPYCost_m);
     fprintf(fOut, "\n");
 
     fprintf(fOut, "------------------------Start & Goal------------------------\n");
@@ -3214,30 +3179,18 @@ void EnvironmentROBARM3D::PrintAbridgedConfiguration()
     printf("\n");
 }
 
-// display action cost table
+//display action cost table
 void EnvironmentROBARM3D::OutputActionCostTable(FILE* fOut)
 {
     int x,y;
-		fprintf(fOut, "\n------------------------Costs------------------------\n");
-		fprintf(fOut, "Cells per Action: %1.3f\n", EnvROBARMCfg.CellsPerAction);
-		fprintf(fOut, "Cost per Cell: %.2f\n", EnvROBARMCfg.cost_per_cell);
-		fprintf(fOut, "Cost per sqrt(2) Cells: %.2f\n",EnvROBARMCfg.cost_sqrt2_move);
-		fprintf(fOut, "Cost per sqrt(3) Cells: %.2f\n",EnvROBARMCfg.cost_sqrt3_move);
-		fprintf(fOut, "Cost per Radian:  %.4f\n",EnvROBARMCfg.cost_per_rad);
-		
-		if(EnvROBARMCfg.use_smooth_actions)
-		{
-			fprintf(fOut,"Action Cost Table\n");
-			for (x = 0; x < EnvROBARMCfg.nSuccActions; x++)
-			{
-					fprintf(fOut,"%i: ",x); 
-					for (y = 0; y < EnvROBARMCfg.nSuccActions; y++)
-							fprintf(fOut,"%i  ",EnvROBARMCfg.ActiontoActionCosts[x][y]);
-					fprintf(fOut,"\n");
-			}
-		}
-		else
-			fprintf(fOut, "Smoothing is disabled.\n");
+    fprintf(fOut,"Action Cost Table\n");
+    for (x = 0; x < EnvROBARMCfg.nSuccActions; x++)
+    {
+        fprintf(fOut,"%i: ",x); 
+        for (y = 0; y < EnvROBARMCfg.nSuccActions; y++)
+            fprintf(fOut,"%i  ",EnvROBARMCfg.ActiontoActionCosts[x][y]);
+        fprintf(fOut,"\n");
+    }
 }
 
 //display successor actions
@@ -3276,14 +3229,6 @@ std::vector<int> EnvironmentROBARM3D::debugExpandedStates()
 	return expanded_states;
 }
 
-void EnvironmentROBARM3D::PrintStateDetails(FILE *fOut, int stateID)
-{
-	int heur_xyz = 0, heur_rpy = 0;
-	EnvROBARMHashEntry_t* HashEntry = EnvROBARM.StateID2CoordTable[stateID];
-
-	GetHeuristics(stateID, heur_xyz, heur_rpy);
-	fprintf(fOut,"  heur_xyz: %i  heur_rpy: %i   axis_angle: %.3f   action: %i    ", heur_xyz, heur_rpy, HashEntry->axis_angle,HashEntry->action);
-}
 
 /**------------------------------------------------------------------------*/
                         /** Forward Kinematics */
@@ -3647,7 +3592,7 @@ int EnvironmentROBARM3D::ComputeEndEffectorPos(const double angles[], double end
   return retval;
 }
 
-//returns end effector position in meters and orientation in radians
+//returns end effector position in meters
 int EnvironmentROBARM3D::ComputeEndEffectorPos(const double angles[], double endeff_m[3], double rpy_r[3])
 {
   int retval = 1;
@@ -3846,21 +3791,11 @@ void EnvironmentROBARM3D::ComputeActionCosts()
       temp = 0.0;
       for (i = 0; i < NUMOFLINKS; i++)
       {
-				temp += ((EnvROBARMCfg.SuccActions[x][i]-EnvROBARMCfg.SuccActions[y][i])*(EnvROBARMCfg.SuccActions[x][i]-EnvROBARMCfg.SuccActions[y][i]));
+	temp += ((EnvROBARMCfg.SuccActions[x][i]-EnvROBARMCfg.SuccActions[y][i])*(EnvROBARMCfg.SuccActions[x][i]-EnvROBARMCfg.SuccActions[y][i]));
       }
       EnvROBARMCfg.ActiontoActionCosts[x][y] = temp * COSTMULT * EnvROBARMCfg.smoothing_weight * EnvROBARMCfg.use_smooth_actions;
     }
   }
-}
-
-int EnvironmentROBARM3D::ComputeActionToActionCost(double *action_in, double *action_out)
-{
-	double temp = 0.0;
-
-	for (int i = 0; i < EnvROBARMCfg.num_joints; ++i)
-		temp += (action_in[i]-action_out[i])*(action_in[i]-action_out[i]);
-
-	return temp * COSTMULT * EnvROBARMCfg.smoothing_weight * EnvROBARMCfg.use_smooth_actions;
 }
 
 /** \brief pre-compute cost per cell traversed and cost per radian */
@@ -3886,12 +3821,12 @@ void EnvironmentROBARM3D::ComputeCostPerCell()
     for(int j = 0; j < EnvROBARMCfg.num_joints; j++)
       angles[j] = DEG2RAD(EnvROBARMCfg.SuccActions[i][j]);// * (360.0/ANGLEDELTA));
 
-		//starting at zeroed angles, find end effector position after each action
+        //starting at zeroed angles, find end effector position after each action
     ComputeEndEffectorPos(angles,endeff_m);
 
     eucl_dist = sqrt((start_endeff_m[0]-endeff_m[0])*(start_endeff_m[0]-endeff_m[0]) +
-								(start_endeff_m[1]-endeff_m[1])*(start_endeff_m[1]-endeff_m[1]) +
-								(start_endeff_m[2]-endeff_m[2])*(start_endeff_m[2]-endeff_m[2]));
+	(start_endeff_m[1]-endeff_m[1])*(start_endeff_m[1]-endeff_m[1]) +
+	(start_endeff_m[2]-endeff_m[2])*(start_endeff_m[2]-endeff_m[2]));
 
     if (eucl_dist > max_dist)
     {
@@ -4025,7 +3960,7 @@ double EnvironmentROBARM3D::getAngularEuclDist(double rpy1[3], double rpy2[3])
 double EnvironmentROBARM3D::getDistanceToGoal(const double angles[])
 {
   int a;
-  double ang_diff = 0, sum = 0, min_dist = 100000000.0;
+  double ang_diff = 0, sum = 0, min_dist = 100000000;
 
   //find euclidean distance to closest goal
   for(unsigned int k = 0; k < EnvROBARMCfg.JointSpaceGoals.size(); k++)
@@ -4035,21 +3970,22 @@ double EnvironmentROBARM3D::getDistanceToGoal(const double angles[])
     {
       if(!EnvROBARMCfg.joints[a].cont)
       {
-				if(!angles::shortest_angular_distance_with_limits(angles[a],  EnvROBARMCfg.JointSpaceGoals[k].pos[a], EnvROBARMCfg.joints[a].negative_limit, EnvROBARMCfg.joints[a].positive_limit, ang_diff))
-				{
-					printf("[GetDistanceToGoal]%i: from %f -> to %f does not lie within the bounds [%f %f].\n",
-								a, angles[a],  EnvROBARMCfg.JointSpaceGoals[k].pos[a], EnvROBARMCfg.joints[a].negative_limit, EnvROBARMCfg.joints[a].positive_limit);
-					ang_diff = 0; //2.0*M_PI;
-				}
-			}
-			else
-				ang_diff = angles::shortest_angular_distance(angles[a],  EnvROBARMCfg.JointSpaceGoals[k].pos[a]);
+	if(!angles::shortest_angular_distance_with_limits(angles[a],  EnvROBARMCfg.JointSpaceGoals[k].pos[a], EnvROBARMCfg.joints[a].negative_limit, EnvROBARMCfg.joints[a].positive_limit, ang_diff))
+	{
+	  printf("[GetJointSpaceHeuristic]%i: from %f -> to %f does not lie within the bounds [%f %f].\n",
+		 a, angles[a],  EnvROBARMCfg.JointSpaceGoals[k].pos[a], EnvROBARMCfg.joints[a].negative_limit, EnvROBARMCfg.joints[a].positive_limit);
+	  ang_diff = 2.0*M_PI;
+	}
+	else
+	  ang_diff = angles::shortest_angular_distance(angles[a],  EnvROBARMCfg.JointSpaceGoals[k].pos[a]);
+      }
 
       sum += (ang_diff*ang_diff);
     }
 
     if(sqrt(sum) < min_dist)
       min_dist = sqrt(sum);
+
   }
 
   return min_dist;
@@ -4295,14 +4231,23 @@ void EnvironmentROBARM3D::InitializeEnvGrid()
 
 std::vector<std::vector<double> >* EnvironmentROBARM3D::getCollisionMap()
 {
+//     for(unsigned int i=0; i < EnvROBARMCfg.cubes.size(); i++)
+//     {
+//         printf("[getCollisionMap] cube %i: ",i);
+//         for(unsigned int k=0; k < EnvROBARMCfg.cubes[i].size(); k++)
+//             printf("%.3f ",EnvROBARMCfg.cubes[i][k]);
+//         printf("\n");
+//     }
+
   if(EnvROBARMCfg.mCopyingGrid.try_lock())
   {
     EnvROBARMCfg.sbpl_cubes = EnvROBARMCfg.cubes;
     EnvROBARMCfg.mCopyingGrid.unlock();
   }
   else
+  {
     printf("[getCollisionMap] Could not acquire mutex...\n");
-
+  }
   return &(EnvROBARMCfg.sbpl_cubes);
 }
 
@@ -4732,7 +4677,8 @@ bool EnvironmentROBARM3D::updateVoxelGrid(const boost::shared_ptr<Voxel3d> envgr
 /**------------------------------------------------------------------------*/
                           /** Collision Checking */
 /**------------------------------------------------------------------------*/
-//if pTestedCells is NULL, then the tested points are not saved and it is more efficient as it returns as soon as it sees first invalid point
+//if pTestedCells is NULL, then the tested points are not saved and it is more
+//efficient as it returns as soon as it sees first invalid point
 int EnvironmentROBARM3D::IsValidLineSegment(short unsigned int x0, short unsigned int y0, short unsigned int z0, short unsigned int x1, short unsigned int y1, short unsigned int z1, unsigned char*** Grid3D, vector<CELLV>* pTestedCells)
 {
   printf("entering old isValidLineSeg\n");
@@ -4790,24 +4736,56 @@ int EnvironmentROBARM3D::IsValidLineSegment(short unsigned int x0, short unsigne
   printf("exiting old isValidLineSeg\n");
   return retvalue;
 }
-		
+
+int EnvironmentROBARM3D::IsValidLineSegment(const short unsigned int a[], const short unsigned int b[], int radius, vector<CELLV>* pTestedCells, unsigned char *** Grid3D, const boost::shared_ptr<Voxel3d> vGrid)
+{
+//   printf("entering isValidLineSeg\n");
+  bresenham_param_t params;
+  int nXYZ[3];
+  int retvalue = 1;
+  CELLV tempcell;
+
+  //iterate through the points on the segment
+  get_bresenham_parameters3d(a[0], a[1], a[2], b[0], b[1], b[2], &params);
+  do {
+    get_current_point3d(&params, &(nXYZ[0]), &(nXYZ[1]), &(nXYZ[2]));
+
+		if(!isValidCell(nXYZ, radius, Grid3D, vGrid))
+    {
+      if(pTestedCells == NULL)
+				return 0;
+			else
+				retvalue = 0;
+    }
+
+    //insert the tested point
+    if(pTestedCells)
+    {
+      tempcell.bIsObstacle = isValidCell(nXYZ, radius, Grid3D, vGrid);
+      tempcell.x = nXYZ[0];
+      tempcell.y = nXYZ[1];
+      tempcell.z = nXYZ[2];
+      pTestedCells->push_back(tempcell);
+    }
+  } while (get_next_point3d(&params));
+
+//   printf("exiting isValidLineSeg\n");
+  return retvalue;
+}
+
 int EnvironmentROBARM3D::IsValidLineSegment(const short unsigned int a[],const short unsigned int b[],const unsigned int radius,vector<CELLV>* pTestedCells, unsigned char *** Grid3D, unsigned char &dist)
 {
-	/** \brief The radius must be in cells with the same resolution as the grid. */
-
 	bresenham_param_t params;
 	int nXYZ[3], retvalue = 1;
-	unsigned char cell_val = 255, min_dist = 255;
+	unsigned char cell_val, min_dist = 255;
 	CELLV tempcell;
 
-  // iterate through the points on the segment
+  //iterate through the points on the segment
 	get_bresenham_parameters3d(a[0], a[1], a[2], b[0], b[1], b[2], &params);
 	do {
 		get_current_point3d(&params, &(nXYZ[0]), &(nXYZ[1]), &(nXYZ[2]));
 
 		cell_val = getCell(nXYZ,Grid3D);
-		
-		// if the cell is invalid then return 0, if not then see its distance to the closest obstacle
 		if(cell_val <= radius)
 		{
 			if(pTestedCells == NULL)
@@ -4815,13 +4793,11 @@ int EnvironmentROBARM3D::IsValidLineSegment(const short unsigned int a[],const s
 			else
 				retvalue = 0;
 		}
-		else
-		{
-			if(cell_val < min_dist)
-				min_dist = cell_val;
-		}
-		
-    // insert the tested point
+
+		if(cell_val < min_dist)
+			min_dist = cell_val;
+
+    //insert the tested point
 		if(pTestedCells)
 		{
 			if(cell_val <= radius)
@@ -4835,10 +4811,259 @@ int EnvironmentROBARM3D::IsValidLineSegment(const short unsigned int a[],const s
 		}
 	} while (get_next_point3d(&params));
 
-	// return the distance to the nearest obstacle
-	dist = min_dist;
-	
 	return retvalue;
+}
+
+int EnvironmentROBARM3D::IsValidLineSegment(const short unsigned int xyz0[], const short unsigned int xyz1[], const int &radius, unsigned char*** Grid3D, const int grid_dims[], vector<CELLV>* pTestedCells)
+{
+  bresenham_param_t params;
+  int nXYZ[3];
+  int retvalue = 1;
+  CELLV tempcell;
+
+  printf("WARNING: NOT IN USE YET\n");
+  //make sure the line segment is inside the environment
+  if(xyz0[0] >= grid_dims[0] || xyz1[0] >= grid_dims[0] ||
+     xyz0[1] >= grid_dims[1] || xyz1[1] >= grid_dims[1] ||
+     xyz0[2] >= grid_dims[2] || xyz1[2] >= grid_dims[2])
+    return 0;
+
+  //iterate through the points on the segment
+  get_bresenham_parameters3d(xyz0[0], xyz0[1], xyz0[2], xyz1[0], xyz1[1], xyz1[2], &params);
+  do {
+    get_current_point3d(&params, &(nXYZ[0]), &(nXYZ[1]), &(nXYZ[2]));
+
+    if(!isValidCell(nXYZ, radius, Grid3D, voxel_grid))
+    {
+      if(pTestedCells == NULL)
+	return 0;
+      else
+	retvalue = 0;
+    }
+
+    //insert the tested point
+    if(pTestedCells)
+    {
+      tempcell.bIsObstacle = isValidCell(nXYZ, radius, Grid3D, voxel_grid);
+      tempcell.x = nXYZ[0];
+      tempcell.y = nXYZ[1];
+      tempcell.z = nXYZ[2];
+      pTestedCells->push_back(tempcell);
+    }
+  } while (get_next_point3d(&params));
+
+  return retvalue;
+}
+
+int EnvironmentROBARM3D::IsValidCoord(short unsigned int coord[], short unsigned int endeff_pos[3], short unsigned int wrist_pos[3], short unsigned int elbow_pos[3], double orientation[3][3])
+{
+  int grid_dims[3] = {EnvROBARMCfg.EnvWidth_c, EnvROBARMCfg.EnvHeight_c, EnvROBARMCfg.EnvDepth_c};
+  short unsigned int endeff[3] = {endeff_pos[0],endeff_pos[1],endeff_pos[2]};
+  short unsigned int wrist[3] = {wrist_pos[0],wrist_pos[1],wrist_pos[2]};
+  short unsigned int elbow[3] = {elbow_pos[0], elbow_pos[1], elbow_pos[2]};
+  short unsigned int shoulder[3];
+	ContXYZ2Cell(0,-0.188,0,&(shoulder[0]),&(shoulder[1]),&(shoulder[2]));
+  short unsigned int gripper[3];
+
+  //use high resolution grid by default
+  unsigned char*** Grid3D = EnvROBARMCfg.Grid3D;
+  double grid_cell_m = EnvROBARMCfg.GridCellWidth;
+  double angles[NUMOFLINKS];
+  int retvalue = 1;
+  vector<CELLV>* pTestedCells = NULL;
+  ComputeContAngles(coord, angles);
+  boost::shared_ptr<Voxel3d> vGrid = voxel_grid;
+
+  //for low resolution collision checking
+  if(EnvROBARMCfg.lowres_collision_checking)
+  {
+    grid_dims[0] = EnvROBARMCfg.LowResEnvWidth_c;
+    grid_dims[1] = EnvROBARMCfg.LowResEnvHeight_c;
+    grid_dims[2] = EnvROBARMCfg.LowResEnvDepth_c;
+    Grid3D = EnvROBARMCfg.LowResGrid3D;
+    grid_cell_m = EnvROBARMCfg.LowResGridCellWidth;
+
+    HighResGrid2LowResGrid(endeff, endeff);
+    HighResGrid2LowResGrid(wrist, wrist);
+    HighResGrid2LowResGrid(elbow, elbow);
+    HighResGrid2LowResGrid(shoulder, shoulder);
+    vGrid = lowres_voxel_grid;
+  }
+
+    // check motor position limits
+  if(EnvROBARMCfg.enforce_motor_limits)
+  {
+      // check if joint position angle is unreachable
+    for (int i = 0; i < EnvROBARMCfg.num_joints; i++)
+    {
+      if(!EnvROBARMCfg.joints[i].cont)
+      {
+				// normalize angle
+				if(angles[i] >= M_PI)
+					angles[i] += -2.0*M_PI;
+
+				if(angles[i] > EnvROBARMCfg.joints[i].positive_limit || angles[i] < EnvROBARMCfg.joints[i].negative_limit)
+				{
+				#if DEBUG_VALID_COORD
+						printf("[IsValidCoord] joint %i: %s limit failed: %.3f [%.3f, %3f]\n", i, EnvROBARMCfg.joints[i].name.c_str(), angles[i], EnvROBARMCfg.joints[i].negative_limit,EnvROBARMCfg.joints[i].positive_limit);
+				#endif
+					return 0;
+				}
+      }
+    }
+  }
+
+  //bounds checking on upper bound of map - should really only check end effector not other joints
+  if(endeff[0] >= grid_dims[0] || endeff[1] >= grid_dims[1] || endeff[2] >= grid_dims[2] ||
+     wrist[0] >= grid_dims[0] || wrist[1] >= grid_dims[1] || wrist[2] >= grid_dims[2] ||
+     elbow[0] >= grid_dims[0] || elbow[1] >= grid_dims[1] || elbow[2] >= grid_dims[2])
+  {
+  #if DEBUG_VALID_COORD
+      printf("[IsValidCoord] One of the joints is outside of the grid dimensions (%i %i %i).\n", grid_dims[0],grid_dims[1],grid_dims[2]);
+      printf("[IsValidCoord] elbow: (%i %i %i)\n",elbow[0],elbow[1],elbow[2]);
+      printf("[IsValidCoord] wrist: (%i %i %i)\n",wrist[0],wrist[1],wrist[2]);
+      printf("[IsValidCoord] endeff: (%i %i %i)\n",endeff[0],endeff[1],endeff[2]);
+      printf("[IsValidCoord] gripper: (%i %i %i)\n",gripper[0],gripper[1],gripper[2]);
+  #endif
+    return 0;
+  }
+
+  //check if joints are hitting obstacle
+//   if(!isValidCell(endeff,6,Grid3D,vGrid) || !isValidCell(wrist,6,Grid3D,vGrid) || !isValidCell(elbow,6,Grid3D,vGrid))
+//     return 0;
+
+    //check the validity of the corresponding arm links (line segments)
+/*  if(!IsValidLineSegment(shoulder, elbow, EnvROBARMCfg.upper_arm_radius, pTestedCells, Grid3D, vGrid) ||
+      !IsValidLineSegment(elbow,wrist, EnvROBARMCfg.forearm_radius, pTestedCells, Grid3D, vGrid) ||
+      !IsValidLineSegment(wrist,endeff, EnvROBARMCfg.forearm_radius, pTestedCells, Grid3D, vGrid))
+  {
+    if(pTestedCells == NULL)
+    {
+    #if DEBUG_VALID_COORD
+			printf("[IsValidCoord] shoulder: (%i %i %i) --> elbow: (%i %i %i)\n",shoulder[0],shoulder[1],shoulder[2],elbow[0],elbow[1],elbow[2]);
+      printf("[IsValidCoord] wrist: (%i %i %i)\n",wrist[0],wrist[1],wrist[2]);
+      printf("[IsValidCoord] endeff: (%i %i %i)\n",endeff[0],endeff[1],endeff[2]);
+      printf("[IsValidCoord] Arm link collision checking failed.\n");
+    #endif
+      return 0;
+    }
+    else
+    {
+    #if DEBUG_VALID_COORD
+		  printf("[IsValidCoord] Arm link collision checking failed..\n");
+    #endif
+      retvalue = 0;
+    }
+  }
+*/
+
+	if(!IsValidLineSegment(shoulder, elbow, EnvROBARMCfg.upper_arm_radius, pTestedCells, Grid3D, vGrid))
+	{
+		if(pTestedCells == NULL)
+		{
+		#if DEBUG_VALID_COORD
+			double pX,pY,pZ,pX2,pY2,pZ2;
+			Cell2ContXYZ(shoulder[0],shoulder[1],shoulder[2], &pX,&pY,&pZ,grid_cell_m);
+			Cell2ContXYZ(elbow[0],elbow[1],elbow[2], &pX2,&pY2,&pZ2,grid_cell_m);
+			printf("[IsValidCoord] shoulder: (%i %i %i)(%.2f %.2f %.2f) --> elbow: (%i %i %i)(%.2f %.2f %.2f) is in collision\n",shoulder[0],shoulder[1],shoulder[2],pX,pY,pZ,elbow[0],elbow[1],elbow[2],pX2,pY2,pZ2);
+		#endif
+			return 0;
+		}
+		else
+		{
+		#if DEBUG_VALID_COORD
+			printf("[IsValidCoord] Arm link collision checking failed..\n");
+		#endif
+			retvalue = 0;
+		}
+	}
+
+	pTestedCells = NULL;
+
+	if(!IsValidLineSegment(elbow,wrist, EnvROBARMCfg.forearm_radius, pTestedCells, Grid3D, vGrid))
+	{
+		if(pTestedCells == NULL)
+		{
+		#if DEBUG_VALID_COORD
+			printf("[IsValidCoord] elbow: (%i %i %i) --> wrist: (%i %i %i) is in collision\n",elbow[0],elbow[1],elbow[2],wrist[0],wrist[1],wrist[2]);
+		#endif
+			return 0;
+		}
+		else
+		{
+		#if DEBUG_VALID_COORD
+			printf("[IsValidCoord] elbow: (%i %i %i) --> wrist: (%i %i %i) is in collision\n",elbow[0],elbow[1],elbow[2],wrist[0],wrist[1],wrist[2]);
+		#endif
+		  retvalue = 0;
+		}
+	}
+
+	pTestedCells = NULL;
+
+	if(!IsValidLineSegment(wrist,endeff, EnvROBARMCfg.forearm_radius, pTestedCells, Grid3D, vGrid))
+	{
+		if(pTestedCells == NULL)
+		{
+		#if DEBUG_VALID_COORD
+			printf("[IsValidCoord] wrist: (%i %i %i) --> endeff: (%i %i %i) is in collision\n",wrist[0],wrist[1],wrist[2],endeff[0],endeff[1],endeff[2]);
+		#endif
+			return 0;
+		}
+		else
+		{
+		#if DEBUG_VALID_COORD
+			printf("[IsValidCoord] wrist: (%i %i %i) --> endeff: (%i %i %i) is in collision\n",wrist[0],wrist[1],wrist[2],endeff[0],endeff[1],endeff[2]);
+		#endif
+			retvalue = 0;
+		}
+	}
+
+//   clock_t pm_start;
+
+  //check gripper for collision
+	if(!EnvROBARMCfg.exact_gripper_collision_checking)
+  {
+    //get position of gripper in torso_lift_link frame
+    gripper[0] = (endeff[0] + (orientation[0][0]*EnvROBARMCfg.gripper_m[0] + orientation[0][1]*EnvROBARMCfg.gripper_m[1] + orientation[0][2]*EnvROBARMCfg.gripper_m[2]) / grid_cell_m) + 0.5;
+    gripper[1] = (endeff[1] + (orientation[1][0]*EnvROBARMCfg.gripper_m[0] + orientation[1][1]*EnvROBARMCfg.gripper_m[1] + orientation[1][2]*EnvROBARMCfg.gripper_m[2]) / grid_cell_m) + 0.5;
+    gripper[2] = (endeff[2] + (orientation[2][0]*EnvROBARMCfg.gripper_m[0] + orientation[2][1]*EnvROBARMCfg.gripper_m[1] + orientation[2][2]*EnvROBARMCfg.gripper_m[2]) / grid_cell_m) + 0.5;;
+
+		if(gripper[0] >= grid_dims[0] || gripper[1] >= grid_dims[1] || gripper[2] >= grid_dims[2] || !isValidCell(gripper,EnvROBARMCfg.gripper_radius,Grid3D,vGrid))
+      return 0;
+
+    if(!IsValidLineSegment(endeff, gripper, EnvROBARMCfg.gripper_radius, pTestedCells, Grid3D, vGrid))
+      return 0;
+  }
+  else
+  {
+    int num = 0;
+		if(GetDistToClosestGoal(endeff_pos, &num) <= .3/EnvROBARMCfg.GridCellWidth)
+    { 
+//       printf("planning monitor: distance of endeff(%u %u %u) to goal #%i is %i\n", endeff_pos[0],endeff_pos[1],endeff_pos[2], num, GetDistToClosestGoal(endeff_pos, &num));
+      // printf("checking %.3f %.3f %.3f %.3f %.3f %.3f %.3f\n",angles[0],angles[1],angles[2],angles[3],angles[4],angles[5],angles[6]);
+//       pm_start = clock();
+      if(!planning_monitor->areLinksValid(angles))
+				return 0;
+//       printf("planning monitor took %lf seconds to check the gripper for collisions\n",(clock() - pm_start) / (double)CLOCKS_PER_SEC);
+    }
+    else
+    {
+//       printf("basic check: distance of endeff(%u %u %u) to goal #%i is %i\n", endeff_pos[0],endeff_pos[1],endeff_pos[2], num, GetDistToClosestGoal(endeff_pos, &num));
+      //get position of gripper in torso_lift_link frame
+      gripper[0] = (endeff[0] + (orientation[0][0]*EnvROBARMCfg.gripper_m[0] + orientation[0][1]*EnvROBARMCfg.gripper_m[1] + orientation[0][2]*EnvROBARMCfg.gripper_m[2]) / grid_cell_m) + 0.5;
+      gripper[1] = (endeff[1] + (orientation[1][0]*EnvROBARMCfg.gripper_m[0] + orientation[1][1]*EnvROBARMCfg.gripper_m[1] + orientation[1][2]*EnvROBARMCfg.gripper_m[2]) / grid_cell_m) + 0.5;
+      gripper[2] = (endeff[2] + (orientation[2][0]*EnvROBARMCfg.gripper_m[0] + orientation[2][1]*EnvROBARMCfg.gripper_m[1] + orientation[2][2]*EnvROBARMCfg.gripper_m[2]) / grid_cell_m) + 0.5;;
+
+			if(gripper[0] >= grid_dims[0] || gripper[1] >= grid_dims[1] || gripper[2] >= grid_dims[2] || !isValidCell(gripper,EnvROBARMCfg.gripper_radius,Grid3D,vGrid))
+				return 0;
+
+			pTestedCells = NULL;
+      if(!IsValidLineSegment(endeff, gripper, EnvROBARMCfg.gripper_radius, pTestedCells, Grid3D, vGrid))
+				return 0;
+    }
+  }
+
+  return retvalue;
 }
 
 int EnvironmentROBARM3D::IsValidCoord(short unsigned int coord[], short unsigned int endeff_pos[3], short unsigned int wrist_pos[3], short unsigned int elbow_pos[3], double orientation[3][3], unsigned char &dist)
@@ -4890,20 +5115,14 @@ int EnvironmentROBARM3D::IsValidCoord(short unsigned int coord[], short unsigned
 			if(!EnvROBARMCfg.joints[i].cont)
 			{
 				// normalize angle
-				if(i!= 2 && angles[i] >= M_PI)
+				if(angles[i] >= M_PI)
 					angles[i] += -2.0*M_PI;
-				
-				if(i == 2)
-				{
-					if(angles[i] >= M_PI || angles[i] > EnvROBARMCfg.joints[i].positive_limit)
-						angles[i] += -2.0*M_PI;
-				}
-								
+
 				if(angles[i] > EnvROBARMCfg.joints[i].positive_limit || angles[i] < EnvROBARMCfg.joints[i].negative_limit)
 				{
-				#if DEBUG_VALID_COORD
+#if DEBUG_VALID_COORD
 					printf("[IsValidCoord] joint %i: %s limit failed: %.3f [%.3f, %3f]\n", i, EnvROBARMCfg.joints[i].name.c_str(), angles[i], EnvROBARMCfg.joints[i].negative_limit,EnvROBARMCfg.joints[i].positive_limit);
-				#endif
+#endif
 					return 0;
 				}
 			}
@@ -4927,28 +5146,55 @@ int EnvironmentROBARM3D::IsValidCoord(short unsigned int coord[], short unsigned
 		return 0;
 	}
 
+  //check if joints are hitting obstacle
+//   if(!isValidCell(endeff,6,Grid3D,vGrid) || !isValidCell(wrist,6,Grid3D,vGrid) || !isValidCell(elbow,6,Grid3D,vGrid))
+//     return 0;
 
+    //check the validity of the corresponding arm links (line segments)
+/*  if(!IsValidLineSegment(shoulder, elbow, EnvROBARMCfg.upper_arm_radius, pTestedCells, Grid3D, vGrid) ||
+	!IsValidLineSegment(elbow,wrist, EnvROBARMCfg.forearm_radius, pTestedCells, Grid3D, vGrid) ||
+	!IsValidLineSegment(wrist,endeff, EnvROBARMCfg.forearm_radius, pTestedCells, Grid3D, vGrid))
+	{
+	if(pTestedCells == NULL)
+	{
+#if DEBUG_VALID_COORD
+	printf("[IsValidCoord] shoulder: (%i %i %i) --> elbow: (%i %i %i)\n",shoulder[0],shoulder[1],shoulder[2],elbow[0],elbow[1],elbow[2]);
+	printf("[IsValidCoord] wrist: (%i %i %i)\n",wrist[0],wrist[1],wrist[2]);
+	printf("[IsValidCoord] endeff: (%i %i %i)\n",endeff[0],endeff[1],endeff[2]);
+	printf("[IsValidCoord] Arm link collision checking failed.\n");
+#endif
+	return 0;
+}
+	else
+	{
+#if DEBUG_VALID_COORD
+	printf("[IsValidCoord] Arm link collision checking failed..\n");
+#endif
+	retvalue = 0;
+}
+}
+*/
 // 	dist_temp = IsValidLineSegment(shoulder, elbow, EnvROBARMCfg.upper_arm_radius, pTestedCells, Grid3D);
 	if(!IsValidLineSegment(shoulder, elbow, EnvROBARMCfg.upper_arm_radius, pTestedCells, Grid3D,dist_temp))
 // 	if(dist_temp <= EnvROBARMCfg.upper_arm_radius)
 	{
 		if(pTestedCells == NULL)
 		{
-		#if DEBUG_VALID_COORD
+#if DEBUG_VALID_COORD
 			Cell2ContXYZ(shoulder[0],shoulder[1],shoulder[2], &pX,&pY,&pZ,grid_cell_m);
 			Cell2ContXYZ(elbow[0],elbow[1],elbow[2], &pX2,&pY2,&pZ2,grid_cell_m);
 			printf("[IsValidCoord] shoulder: (%i %i %i)(%.2f %.2f %.2f) --> elbow: (%i %i %i)(%.2f %.2f %.2f) is in collision\n",shoulder[0],shoulder[1],shoulder[2],pX,pY,pZ,elbow[0],elbow[1],elbow[2],pX2,pY2,pZ2);
 			Cell2ContXYZ(elbow[0],elbow[1],elbow[2], &pX,&pY,&pZ,grid_cell_m);
 			Cell2ContXYZ(wrist[0],wrist[1],wrist[2], &pX2,&pY2,&pZ2,grid_cell_m);
 			printf("[IsValidCoord] elbow: (%i %i %i)(%.2f %.2f %.2f) --> wrist: (%i %i %i)(%.2f %.2f %.2f) is in collision\n",elbow[0],elbow[1],elbow[2],pX,pY,pZ,wrist[0],wrist[1],wrist[2],pX2,pY2,pZ2);
-		#endif
+#endif
 			return 0;
 		}
 		else
 		{
-		#if DEBUG_VALID_COORD
+#if DEBUG_VALID_COORD
 			printf("[IsValidCoord] Arm link collision checking failed..\n");
-		#endif
+#endif
 			retvalue = 0;
 		}
 	}
@@ -4964,16 +5210,16 @@ int EnvironmentROBARM3D::IsValidCoord(short unsigned int coord[], short unsigned
 	{
 		if(pTestedCells == NULL)
 		{
-		#if DEBUG_VALID_COORD
+#if DEBUG_VALID_COORD
 			printf("[IsValidCoord] elbow: (%i %i %i) --> wrist: (%i %i %i) is in collision\n",elbow[0],elbow[1],elbow[2],wrist[0],wrist[1],wrist[2]);
-		#endif
+#endif
 			return 0;
 		}
 		else
 		{
-		#if DEBUG_VALID_COORD
+#if DEBUG_VALID_COORD
 			printf("[IsValidCoord] elbow: (%i %i %i) --> wrist: (%i %i %i) is in collision\n",elbow[0],elbow[1],elbow[2],wrist[0],wrist[1],wrist[2]);
-		#endif
+#endif
 			retvalue = 0;
 		}
 	}
@@ -4989,16 +5235,16 @@ int EnvironmentROBARM3D::IsValidCoord(short unsigned int coord[], short unsigned
 	{
 		if(pTestedCells == NULL)
 		{
-		#if DEBUG_VALID_COORD
+#if DEBUG_VALID_COORD
 			printf("[IsValidCoord] wrist: (%i %i %i) --> endeff: (%i %i %i) is in collision\n",wrist[0],wrist[1],wrist[2],endeff[0],endeff[1],endeff[2]);
-		#endif
+#endif
 			return 0;
 		}
 		else
 		{
-		#if DEBUG_VALID_COORD
+#if DEBUG_VALID_COORD
 			printf("[IsValidCoord] wrist: (%i %i %i) --> endeff: (%i %i %i) is in collision\n",wrist[0],wrist[1],wrist[2],endeff[0],endeff[1],endeff[2]);
-		#endif
+#endif
 			retvalue = 0;
 		}
 	}
@@ -5063,248 +5309,6 @@ int EnvironmentROBARM3D::IsValidCoord(short unsigned int coord[], short unsigned
 	return retvalue;
 }
 
-int EnvironmentROBARM3D::IsValidCoord(short unsigned int coord[], short unsigned int endeff_pos[3], short unsigned int wrist_pos[3], short unsigned int elbow_pos[3], double orientation[3][3], unsigned char &dist, bool bVerbose)
-{
-	int grid_dims[3] = {EnvROBARMCfg.EnvWidth_c, EnvROBARMCfg.EnvHeight_c, EnvROBARMCfg.EnvDepth_c};
-	short unsigned int endeff[3] = {endeff_pos[0],endeff_pos[1],endeff_pos[2]};
-	short unsigned int wrist[3] = {wrist_pos[0],wrist_pos[1],wrist_pos[2]};
-	short unsigned int elbow[3] = {elbow_pos[0], elbow_pos[1], elbow_pos[2]};
-	short unsigned int shoulder[3];
-	ContXYZ2Cell(0,-0.188,0,&(shoulder[0]),&(shoulder[1]),&(shoulder[2]));
-	short unsigned int gripper[3];
-
-  //use high resolution grid by default
-	unsigned char*** Grid3D = EnvROBARMCfg.Grid3D;
-	unsigned char dist_temp = 0;
-	double grid_cell_m = EnvROBARMCfg.GridCellWidth;
-	double angles[NUMOFLINKS];
-	int retvalue = 1;
-	vector<CELLV>* pTestedCells = NULL;
-	ComputeContAngles(coord, angles);
-
-	double pX,pY,pZ,pX2,pY2,pZ2;
-
-	boost::shared_ptr<Voxel3d> vGrid = voxel_grid;
-
-	dist = 255;
-	
-  //for low resolution collision checking
-	if(EnvROBARMCfg.lowres_collision_checking)
-	{
-		grid_dims[0] = EnvROBARMCfg.LowResEnvWidth_c;
-		grid_dims[1] = EnvROBARMCfg.LowResEnvHeight_c;
-		grid_dims[2] = EnvROBARMCfg.LowResEnvDepth_c;
-		Grid3D = EnvROBARMCfg.LowResGrid3D;
-		grid_cell_m = EnvROBARMCfg.LowResGridCellWidth;
-
-		HighResGrid2LowResGrid(endeff, endeff);
-		HighResGrid2LowResGrid(wrist, wrist);
-		HighResGrid2LowResGrid(elbow, elbow);
-		HighResGrid2LowResGrid(shoulder, shoulder);
-		vGrid = lowres_voxel_grid;
-	}
-
-	// check joint motor position limits
-	if(EnvROBARMCfg.enforce_motor_limits)
-	{
-		// check if joint position angle is unreachable
-		for (int i = 0; i < EnvROBARMCfg.num_joints; ++i)
-		{
-			if(!EnvROBARMCfg.joints[i].cont)
-			{
-				if(i == 2) // a hack to deal with the negative joint limit of the upperarm roll being less than -pi
-				{
-					if(angles[i] > EnvROBARMCfg.joints[i].positive_limit)
-						angles[i] += -2.0*M_PI;
-				}
-				else
-				{
-					if(angles[i] >= M_PI)
-						angles[i] += -2.0*M_PI;
-				}
-				
-				if(angles[i] > EnvROBARMCfg.joints[i].positive_limit || angles[i] < EnvROBARMCfg.joints[i].negative_limit)
-				{
-					if(bVerbose)
-						printf("[IsValidCoord] %s joint limit failed.  current value: %.3f  limits: [%.3f, %3f]\n", EnvROBARMCfg.joints[i].name.c_str(), angles[i], EnvROBARMCfg.joints[i].negative_limit,EnvROBARMCfg.joints[i].positive_limit);
-					return 0;
-				}
-			}
-		}
-	}
-
-  // bounds checking on upper bound of map - should really only check end effector not other joints
-	if(endeff[0] >= grid_dims[0] || endeff[1] >= grid_dims[1] || endeff[2] >= grid_dims[2] ||
-			wrist[0] >= grid_dims[0] || wrist[1] >= grid_dims[1] || wrist[2] >= grid_dims[2] ||
-			elbow[0] >= grid_dims[0] || elbow[1] >= grid_dims[1] || elbow[2] >= grid_dims[2])
-	{
-		if(bVerbose)
-		{
-			printf("[IsValidCoord] One of the joints is outside of the grid dimensions (%i %i %i).\n", grid_dims[0],grid_dims[1],grid_dims[2]);
-			printf("[IsValidCoord] elbow: (%i %i %i)\n",elbow[0],elbow[1],elbow[2]);
-			printf("[IsValidCoord] wrist: (%i %i %i)\n",wrist[0],wrist[1],wrist[2]);
-			printf("[IsValidCoord] endeff: (%i %i %i)\n",endeff[0],endeff[1],endeff[2]);
-			printf("[IsValidCoord] gripper: (%i %i %i)\n",gripper[0],gripper[1],gripper[2]);
-		}
-		return 0;
-	}
-
-  // before we check the whole arm links for collisions, check if joints are in collision to possibly save time
-	if(!isValidCell(endeff,EnvROBARMCfg.forearm_radius,Grid3D,vGrid) || !isValidCell(wrist,EnvROBARMCfg.forearm_radius,Grid3D,vGrid) || !isValidCell(elbow,EnvROBARMCfg.upper_arm_radius,Grid3D,vGrid))
-    return 0;
-
-	// check if upper arm is in collision
-	if(!IsValidLineSegment(shoulder, elbow, EnvROBARMCfg.upper_arm_radius, pTestedCells, Grid3D,dist_temp))
-	{
-		if(pTestedCells == NULL)
-		{
-			if(bVerbose)
-			{
-				Cell2ContXYZ(shoulder[0],shoulder[1],shoulder[2], &pX,&pY,&pZ,grid_cell_m);
-				Cell2ContXYZ(elbow[0],elbow[1],elbow[2], &pX2,&pY2,&pZ2,grid_cell_m);
-				printf("[IsValidCoord] shoulder: (%i %i %i)(%.2f %.2f %.2f) --> elbow: (%i %i %i)(%.2f %.2f %.2f) is in collision\n",shoulder[0],shoulder[1],shoulder[2],pX,pY,pZ,elbow[0],elbow[1],elbow[2],pX2,pY2,pZ2);
-
-			}
-			return 0;
-		}
-		else
-		{
-			if(bVerbose)
-				printf("[IsValidCoord] Upper arm collision checking failed.\n");
-			retvalue = 0;
-		}
-	}
-
-	if(dist_temp < dist)
-		dist = dist_temp;
-	
-	pTestedCells = NULL;
-
-	// check if forearm is in collision
-	if(!IsValidLineSegment(elbow,wrist, EnvROBARMCfg.forearm_radius, pTestedCells, Grid3D, dist_temp))
-	{
-		if(pTestedCells == NULL)
-		{
-			if(bVerbose)
-			{
-				Cell2ContXYZ(elbow[0],elbow[1],elbow[2], &pX,&pY,&pZ,grid_cell_m);
-				Cell2ContXYZ(wrist[0],wrist[1],wrist[2], &pX2,&pY2,&pZ2,grid_cell_m);
-				printf("[IsValidCoord] elbow: (%i %i %i)(%.2f %.2f %.2f) --> wrist: (%i %i %i)(%.2f %.2f %.2f) is in collision\n",elbow[0],elbow[1],elbow[2],pX,pY,pZ,wrist[0],wrist[1],wrist[2],pX2,pY2,pZ2);
-			}
-			return 0;
-		}
-		else
-		{
-			if(bVerbose)
-				printf("[IsValidCoord] Forearm link collision checking failed.\n");
-			retvalue = 0;
-		}
-	}
-
-	if(dist_temp < dist)
-		dist = dist_temp;
-	
-	pTestedCells = NULL;
-
-	// check if end effector is in collision (this is truly unneccesary because the endeff is defined as the wrist here)
-	if(!IsValidLineSegment(wrist,endeff, EnvROBARMCfg.forearm_radius, pTestedCells, Grid3D, dist_temp))
-	{
-		if(pTestedCells == NULL)
-		{
-			if(bVerbose)
-			{
-				Cell2ContXYZ(wrist[0],wrist[1],wrist[2], &pX,&pY,&pZ,grid_cell_m);
-				Cell2ContXYZ(endeff[0],endeff[1],endeff[2], &pX2,&pY2,&pZ2,grid_cell_m);
-				printf("[IsValidCoord] wrist: (%i %i %i)(%.2f %.2f %.2f) --> endeff: (%i %i %i)(%.2f %.2f %.2f) is in collision\n",wrist[0],wrist[1],wrist[2],pX,pY,pZ,endeff[0],endeff[1],endeff[2],pX2,pY2,pZ2);
-			}
-			return 0;
-		}
-		else
-		{
-			if(bVerbose)
-				printf("[IsValidCoord] End effector collision checking failed.\n");
-			retvalue = 0;
-		}
-	}
-
-	if(dist_temp < dist)
-		dist = dist_temp;
-	
-	// check gripper for collision
-	if(!EnvROBARMCfg.exact_gripper_collision_checking)
-	{
-    //get position of fingertips of the gripper in torso_lift_link frame
-		gripper[0] = (endeff[0] + (orientation[0][0]*EnvROBARMCfg.gripper_m[0] + orientation[0][1]*EnvROBARMCfg.gripper_m[1] + orientation[0][2]*EnvROBARMCfg.gripper_m[2]) / grid_cell_m) + 0.5;
-		gripper[1] = (endeff[1] + (orientation[1][0]*EnvROBARMCfg.gripper_m[0] + orientation[1][1]*EnvROBARMCfg.gripper_m[1] + orientation[1][2]*EnvROBARMCfg.gripper_m[2]) / grid_cell_m) + 0.5;
-		gripper[2] = (endeff[2] + (orientation[2][0]*EnvROBARMCfg.gripper_m[0] + orientation[2][1]*EnvROBARMCfg.gripper_m[1] + orientation[2][2]*EnvROBARMCfg.gripper_m[2]) / grid_cell_m) + 0.5;
-
-		if(gripper[0] >= grid_dims[0] || gripper[1] >= grid_dims[1] || gripper[2] >= grid_dims[2] || !isValidCell(gripper,EnvROBARMCfg.gripper_radius,Grid3D,vGrid))
-			return 0;
-
-		pTestedCells = NULL;
-		
-		if(!IsValidLineSegment(endeff, gripper, EnvROBARMCfg.gripper_radius, pTestedCells, Grid3D, dist_temp))
-		{
-			if(bVerbose)
-			{
-				Cell2ContXYZ(endeff[0],endeff[1],endeff[2], &pX,&pY,&pZ,grid_cell_m);
-				Cell2ContXYZ(gripper[0],gripper[1],gripper[2], &pX2,&pY2,&pZ2,grid_cell_m);
-				printf("[IsValidCoord] endeff: (%i %i %i)(%.2f %.2f %.2f) --> gripper: (%i %i %i)(%.2f %.2f %.2f) is in collision\n",endeff[0],endeff[1],endeff[2],pX,pY,pZ,gripper[0],gripper[1],gripper[2],pX2,pY2,pZ2);
-			}
-			return 0;
-		}
-
-		if(dist_temp < dist)
-			dist = dist_temp;
-	}
-	else
-	{
-		int num = 0;
-		if(GetDistToClosestGoal(endeff_pos, &num) <= EnvROBARMCfg.exact_collision_checking_dist / EnvROBARMCfg.GridCellWidth)
-		{ 
-			if(bVerbose)
-			{
-				printf("[IsValidCoord] distance of wrist(%u %u %u) to goal #%i is %.3f meters.\n", endeff_pos[0],endeff_pos[1],endeff_pos[2], num, GetDistToClosestGoal(endeff_pos, &num)*grid_cell_m);
-				printf("[IsValidCoord] using planning monitor to check joint configuration: %.3f %.3f %.3f %.3f %.3f %.3f %.3f\n",angles[0],angles[1],angles[2],angles[3],angles[4],angles[5],angles[6]);
-			}
-			if(!planning_monitor->areLinksValid(angles))
-			{ 
-				if(bVerbose)
-					printf("[IsValidCoord] planning monitor returned that the gripper is in collision.\n");
-				return 0;
-			}
-		}
-		else
-		{
-			//get position of fingertips of the gripper in torso_lift_link frame
-			gripper[0] = (endeff[0] + (orientation[0][0]*EnvROBARMCfg.gripper_m[0] + orientation[0][1]*EnvROBARMCfg.gripper_m[1] + orientation[0][2]*EnvROBARMCfg.gripper_m[2]) / grid_cell_m) + 0.5;
-			gripper[1] = (endeff[1] + (orientation[1][0]*EnvROBARMCfg.gripper_m[0] + orientation[1][1]*EnvROBARMCfg.gripper_m[1] + orientation[1][2]*EnvROBARMCfg.gripper_m[2]) / grid_cell_m) + 0.5;
-			gripper[2] = (endeff[2] + (orientation[2][0]*EnvROBARMCfg.gripper_m[0] + orientation[2][1]*EnvROBARMCfg.gripper_m[1] + orientation[2][2]*EnvROBARMCfg.gripper_m[2]) / grid_cell_m) + 0.5;
-
-			if(gripper[0] >= grid_dims[0] || gripper[1] >= grid_dims[1] || gripper[2] >= grid_dims[2] || !isValidCell(gripper,EnvROBARMCfg.gripper_radius,Grid3D,vGrid))
-				return 0;
-
-			pTestedCells = NULL;
-		
-			if(!IsValidLineSegment(endeff, gripper, EnvROBARMCfg.gripper_radius, pTestedCells, Grid3D, dist_temp))
-			{
-				if(bVerbose)
-				{
-					Cell2ContXYZ(endeff[0],endeff[1],endeff[2], &pX,&pY,&pZ,grid_cell_m);
-					Cell2ContXYZ(gripper[0],gripper[1],gripper[2], &pX2,&pY2,&pZ2,grid_cell_m);
-					printf("[IsValidCoord] endeff: (%i %i %i)(%.2f %.2f %.2f) --> gripper: (%i %i %i)(%.2f %.2f %.2f) is in collision\n",endeff[0],endeff[1],endeff[2],pX,pY,pZ,gripper[0],gripper[1],gripper[2],pX2,pY2,pZ2);
-				}
-				return 0;
-			}
-
-			if(dist_temp < dist)
-				dist = dist_temp;
-		}
-	}
-	
-	return retvalue;
-}
-
 void EnvironmentROBARM3D::initPlanningMonitor(pm_wrapper *pm)
 {
   planning_monitor = pm;
@@ -5314,18 +5318,16 @@ bool EnvironmentROBARM3D::isValidJointConfiguration(const double * angles)
 {
   short unsigned int endeff[3], wrist[3], elbow[3], coord[NUMOFLINKS];
   double orientation[3][3];
-	unsigned char dist;
 
   ComputeEndEffectorPos(angles,endeff,wrist,elbow,orientation);
 
   ComputeCoord(angles, coord);
 
-  return IsValidCoord(coord,endeff,wrist,elbow,orientation,dist,false);
+  return IsValidCoord(coord,endeff,wrist,elbow,orientation);
 }
 
 bool EnvironmentROBARM3D::isPathValid(double** path, int num_waypoints)
 {
-	unsigned char dist;
   double angles[NUMOFLINKS], orientation[3][3];
   short unsigned int endeff[3], wrist[3], elbow[3], coord[NUMOFLINKS];
 
@@ -5343,11 +5345,11 @@ bool EnvironmentROBARM3D::isPathValid(double** path, int num_waypoints)
 	     angles[k] += 360;
     }
 
-		//compute coords
+        //compute coords
     ComputeCoord(angles, coord);
 
-		//check if valid
-    if(!IsValidCoord(coord,endeff, wrist, elbow, orientation, dist, false))
+        //check if valid
+    if(!IsValidCoord(coord,endeff, wrist, elbow, orientation))
     {
       printf("[isPathValid] Path is invalid.\n");
       return false;
@@ -5358,6 +5360,13 @@ bool EnvironmentROBARM3D::isPathValid(double** path, int num_waypoints)
   return true;
 }
 
+void EnvironmentROBARM3D::getGridPtr(unsigned char*** grid)
+{
+	grid = EnvROBARMCfg.Grid3D;
+// 	printf("Grid3D's address: %u", EnvROBARMCfg.Grid3D);
+// 	printf("grid's address: %u", grid);
+}
+ 
 std::vector<std::vector<double> > EnvironmentROBARM3D::getAllObstacleVoxels()
 {
 	double xw,yw,zw;
@@ -5387,27 +5396,28 @@ std::vector<std::vector<double> > EnvironmentROBARM3D::getAllObstacleVoxels()
 	return voxels;
 }
 
+
 void EnvironmentROBARM3D::computeJacobian(const double jnt_angles[], const double rad_timestep, double jnt_vel[])
 {
+	jnt_to_jac_solver.reset(new KDL::ChainJntToJacSolver(EnvROBARMCfg.arm_chain));
+	jnt_to_pose_solver.reset(new KDL::ChainFkSolverPos_recursive(EnvROBARMCfg.arm_chain));
+	jnt_pos.resize(EnvROBARMCfg.arm_chain.getNrOfJoints());
+	jnt_eff.resize(EnvROBARMCfg.arm_chain.getNrOfJoints());
+	jacobian.resize(EnvROBARMCfg.arm_chain.getNrOfJoints());
+
 	for (unsigned int p = 0; p < (unsigned int) EnvROBARMCfg.num_joints; p++)
 		jnt_pos(p) = jnt_angles[p];
-
-	#if DEBUG_JACOBIAN
-		double xyz[3];
-		double rpy[3];
-		ComputeEndEffectorPos(jnt_angles, xyz, rpy);
-		fprintf(fJac, "current position: %.3f %.3f %.3f %.3f %.3f %.3f %.3f     xyz: %.3f %.3f %.3f     rpy: %.3f %.3f %.3f\n", jnt_angles[0],jnt_angles[1],jnt_angles[2],jnt_angles[3],jnt_angles[4],jnt_angles[5],jnt_angles[6], xyz[0],xyz[1],xyz[2],rpy[0],rpy[1],rpy[2]);
-	#endif
 
   // get the chain jacobian
 	jnt_to_jac_solver->JntToJac(jnt_pos, jacobian);
 
+// 	printf("arm_chain_ has %i joints and %i segments\n", EnvROBARMCfg.arm_chain.getNrOfJoints(), EnvROBARMCfg.arm_chain.getNrOfSegments());
+// 	printf("jnt_pos has %i rows\n",jnt_pos.rows());
+ 
   //get pose of final waypoint in path
 	if(jnt_to_pose_solver->JntToCart(jnt_pos, current_frame, EnvROBARMCfg.arm_chain.getNrOfSegments()) < 0)
 	{
-		#if DEBUG_JACOBIAN
-			printf("JntToCart returned < 0. Will not finish the path.\n");
-		#endif
+		printf("JntToCart returned < 0. Will not finish the path.\n");
 		return;
 	}
 
@@ -5415,53 +5425,45 @@ void EnvironmentROBARM3D::computeJacobian(const double jnt_angles[], const doubl
 	goal_frame.p(0) = EnvROBARMCfg.EndEffGoals[0].pos[0];
 	goal_frame.p(1) = EnvROBARMCfg.EndEffGoals[0].pos[1];
 	goal_frame.p(2) = EnvROBARMCfg.EndEffGoals[0].pos[2];
-	goal_frame.M = KDL::Rotation::RPY(EnvROBARMCfg.EndEffGoals[0].rpy[0],EnvROBARMCfg.EndEffGoals[0].rpy[1],EnvROBARMCfg.EndEffGoals[0].rpy[2]);
 	
-	// KDL::Rotation goal_rotation(goalHashEntry->orientation[0][0],goalHashEntry->orientation[0][1],goalHashEntry->orientation[0][2],goalHashEntry->orientation[1][0],goalHashEntry->orientation[1][1],goalHashEntry->orientation[1][2],goalHashEntry->orientation[2][0],goalHashEntry->orientation[2][1],goalHashEntry->orientation[2][2]);
-		
+	KDL::Rotation goal_rotation(1,0,0,0,1,0,0,0,1);
+	goal_frame.M = goal_rotation;
+
   // convert the difference in the poses into a twist
 	twist = diff(goal_frame, current_frame);
 
-	#if DEBUG_JACOBIAN
-		fprintf(fJac, "  twist velocity: %f %f %f    twist rotation: %f %f %f\n", twist.vel(0), twist.vel(1), twist.vel(2), twist.rot(0), twist.rot(1), twist.rot(2));
-	#endif
+// 	printf("vel: %f %f %f    rot: %f %f %f\n", twist.vel(0),twist.vel(1),twist.vel(2),twist.rot(0),twist.rot(1),twist.rot(2));
 
   // convert the twist into joint efforts
-	double eucl = 0;
-	for(unsigned int i = 0; i < EnvROBARMCfg.num_joints; ++i)
+	double max_effort = 0;
+	for (unsigned int i = 0; i < EnvROBARMCfg.num_joints; ++i)
 	{
 		jnt_eff(i) = 0;
-		for(unsigned int j=0; j<6; ++j)
+		for (unsigned int j=0; j<6; j++)
 			jnt_eff(i) += (jacobian(j,i) * twist(j));
+
+// 		printf("%f  ", jnt_eff(i));
 		
-		eucl += jnt_eff(i)*jnt_eff(i);
+		if (fabs(jnt_eff(i)) > max_effort)
+			max_effort = fabs(jnt_eff(i));
 	}
 	
-	#if DEBUG_JACOBIAN
-		fprintf(fJac, "   joint efforts: %.3f %.3f %.3f %.3f %.3f %.3f %.3f\n",  jnt_eff(0),jnt_eff(1),jnt_eff(2),jnt_eff(3),jnt_eff(4),jnt_eff(5),jnt_eff(6));
-	#endif
-		
-	double scale = 100;
-	if(sqrt(eucl) > 0)
-	 	scale = rad_timestep/(sqrt(eucl));
-	
-	if(scale > 1)
+	double scale = rad_timestep/max_effort;
+	if (scale > 1)
 		scale = 1;
 	
-	for(unsigned int i = 0; i < EnvROBARMCfg.num_joints; ++i)
+	for (unsigned int i = 0; i < EnvROBARMCfg.num_joints; ++i)
+	{
 		jnt_vel[i] = jnt_eff(i) * scale;
+	}
+// 	printf("%.3f %.3f %.3f %.3f %.3f %.3f %.3f scale = %.3f\n",
+// 				 jnt_eff(0),jnt_eff(1),jnt_eff(2),jnt_eff(3),jnt_eff(4),jnt_eff(5),jnt_eff(6), scale);
+	
+	
+// 	printf("%.3f %.3f %.3f %.3f %.3f %.3f %.3f\n\n",
+// 				 jnt_vel[0],jnt_vel[1],jnt_vel[2],jnt_vel[3],jnt_vel[4],jnt_vel[5],jnt_vel[6]);
+// 	printf("\n");
 
-	#if DEBUG_JACOBIAN
-		fprintf(fJac, "     scaled down: %.3f %.3f %.3f %.3f %.3f %.3f %.3f (scale = %.3f)\n", jnt_vel[0],jnt_vel[1],jnt_vel[2],jnt_vel[3],jnt_vel[4],jnt_vel[5],jnt_vel[6], scale);
-		
-		double mprim[EnvROBARMCfg.num_joints];
-		for(unsigned int i = 0; i < EnvROBARMCfg.num_joints; ++i)
-			mprim[i] = jnt_vel[i] + jnt_angles[i];
-
-		ComputeEndEffectorPos(mprim, xyz, rpy);
-		fprintf(fJac, "       successor: %.3f %.3f %.3f %.3f %.3f %.3f %.3f     xyz: %.3f %.3f %.3f     rpy: %.3f %.3f %.3f\n\n", jnt_vel[0]+jnt_angles[0],jnt_vel[1]+jnt_angles[1],jnt_vel[2]+jnt_angles[2],jnt_vel[3]+jnt_angles[3],jnt_vel[4]+jnt_angles[4],jnt_vel[5]+jnt_angles[5],jnt_vel[6]+jnt_angles[6], xyz[0],xyz[1],xyz[2],rpy[0],rpy[1],rpy[2]);
-	#endif
 }
-
 
 

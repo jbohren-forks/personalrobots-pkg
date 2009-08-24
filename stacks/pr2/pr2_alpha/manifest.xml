@@ -18,6 +18,7 @@
   <depend package="pr2_power_board"/>
   <depend package="pr2_computer_monitor" />
   <depend package="ocean_battery_driver"/>
+  <depend package="power_monitor"/>
   <depend package="joy"/>
   <depend package="ps3joy"/>
   <depend package="hokuyo_node"/>

@@ -1,0 +1,17 @@
+<package>
+  <description brief="joint_states_settler">
+
+     joint_states_settler
+
+  </description>
+  <author>Vijay Pradeep</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/joint_states_settler</url>
+  <depend package="roscpp"/>
+  <depend package="actionlib"/>
+  <depend package="mechanism_msgs"/>
+
+</package>
+
+

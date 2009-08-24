@@ -333,6 +333,8 @@ bool Mesh::initXml(TiXmlElement *c)
       return false;
     }
   }
+  else
+    ROS_WARN("Mesh scale was not specified, default to (1,1,1)");
 
   return true;
 }

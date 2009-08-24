@@ -89,10 +89,7 @@ class PlayerLogToMsg
       long int nr_lines = count (istreambuf_iterator<char>(logfile_stream_), istreambuf_iterator<char> (), '\n');
 
       if (nr_lines == 0)
-      {
-        logfile_stream_.close ();
-        return (-1);
-      }
+        ROS_WARN ("No lines found in %s", file_name_.c_str ());
       logfile_stream_.seekg (0, ios::beg);
       ROS_INFO ("Extracting points from %s ...", file_name_.c_str ());
       msg_scan_.header.frame_id = tf_frame_;
@@ -105,7 +102,7 @@ class PlayerLogToMsg
       spin ()
     {
       double ti, tj = 0, tdif = 0;
-      int total_nr_points = 0;
+      int total_nr_points = 0, total_laser_scans = 0;
       string line;
       vector<string> st;
 
@@ -173,10 +170,11 @@ class PlayerLogToMsg
           j++;
         }
         total_nr_points += msg_scan_.ranges.size ();
+        ++total_laser_scans;
 
         if (is_file_)
-          ROS_DEBUG ("Publishing data (%d points) on topic %s in frame %s. Angle min/max/resulution: %f/%f/%f, Range min/max: %f/%f",
-                     (int)msg_scan_.ranges.size (), nh_.resolveName (msg_topic_).c_str (), msg_scan_.header.frame_id.c_str (),
+          ROS_DEBUG ("Publishing data (%d) with %d points on topic %s in frame %s (%f). Angle min/max/resulution: %f/%f/%f, Range min/max: %f/%f",
+                     total_laser_scans, (int)msg_scan_.ranges.size (), nh_.resolveName (msg_topic_).c_str (), msg_scan_.header.frame_id.c_str (), msg_scan_.header.stamp.toSec (), 
                      msg_scan_.angle_min, msg_scan_.angle_max, msg_scan_.angle_increment, msg_scan_.range_min, msg_scan_.range_max);
         scan_pub_.publish (msg_scan_);
 
@@ -195,7 +193,7 @@ class PlayerLogToMsg
 
       // Close the file and finish the movie
       logfile_stream_.close ();
-      ROS_INFO ("[done : %d measurements extracted]", total_nr_points);
+      ROS_INFO ("[done : %d measurements with %d points extracted]", total_laser_scans, total_nr_points);
 
       return (true);
     }

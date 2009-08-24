@@ -37,14 +37,14 @@
 import roslib
 roslib.load_manifest('executive_python')
 import rospy
-from pr2_msgs.msg import BatteryState
+from pr2_msgs.msg import PowerState
 import os
 
 class BatteryMonitorAdapter:
   def __init__(self, discharge_limit, charge_limit, state_topic, email_addresses, robot_name, mail_program):
     self.discharge_limit = discharge_limit
     self.charge_limit = charge_limit
-    rospy.Subscriber(state_topic, BatteryState, self.update)
+    rospy.Subscriber(state_topic, PowerState, self.update)
     self.state = None
     self.state_topic = state_topic
     self.email_addresses = email_addresses
@@ -59,14 +59,15 @@ class BatteryMonitorAdapter:
     self.state = state
 
   def chargeNeeded(self):
-    if self.state.energy_capacity == 0.0 or self.state.energy_remaining == 0.0:
+    if self.state.time_remaining == 0:
       return False
-    return (self.state.energy_remaining / self.state.energy_capacity) < self.discharge_limit
+    return (self.state.time_remaining) < self.discharge_limit
 
   def chargeDone(self):
-    if self.state.energy_capacity == 0.0 or self.state.energy_remaining == 0.0:
-      return False
-    return (self.state.energy_remaining / self.state.energy_capacity) > self.charge_limit
+    if self.state.time_remaining == 0:
+      return True
+    return False  # Hmm, we need a good method to determine when we are done charging. -Curt
+    #return (self.state.energy_remaining / self.state.energy_capacity) > self.charge_limit
 
   def sendPluggedEmail(self):
     mail_string = "To: "
@@ -96,7 +97,7 @@ class BatteryMonitorAdapter:
     mail_string = "To: "
     for address in self.email_addresses: mail_string += address + ", "
     mail_string += "\nFrom: %s@willowgarage.com" % self.robot_name
-    mail_string += "\nSubject: Battery level on robot below %.2f" % self.discharge_limit
+    mail_string += "\nSubject: Battery discharge time on robot below %d" % self.discharge_limit
     mail_string += "\n\nMy battery level has fallen below the notification level. You should probably think about plugging me in. \n\nThanks much,\n%s" % self.robot_name
 
     #since the robot's have mail servers installed on them... we'll just pipe out our e-mail
@@ -141,4 +142,4 @@ class BatteryMonitorAdapter:
     pipe.close()
 
   def pluggedIn(self):
-    return self.state.power_consumption >= -100.0
+    return self.state.AC_present > 0

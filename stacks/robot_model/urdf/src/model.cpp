@@ -244,20 +244,18 @@ bool Model::initTree(std::map<std::string, std::string> &parent_link_tree)
     /// add an empty "world" link
     if (parent_link_name == "world")
     {
-      ROS_WARN("    parent link '%s' is a special case, adding fake link.", parent_link_name.c_str());
-      boost::shared_ptr<Link> link;
-      link.reset(new Link);
-      link->name = "world";
-      if (this->getLink(link->name))
+      if (this->getLink(parent_link_name))
       {
-        ROS_ERROR("multiple joints have parent '%s'!", link->name.c_str());
-        link.reset();
-        return false;
+        ROS_DEBUG("    parent link '%s' already exists.", parent_link_name.c_str());
       }
       else
       {
+        ROS_WARN("    parent link '%s' is a special case, adding fake link.", parent_link_name.c_str());
+        boost::shared_ptr<Link> link;
+        link.reset(new Link);
+        link->name = "world";
         this->links_.insert(make_pair(link->name,link));
-        ROS_DEBUG("successfully added a new link '%s'", link->name.c_str());
+        ROS_DEBUG("        successfully added new link '%s'", link->name.c_str());
       }
     }
 

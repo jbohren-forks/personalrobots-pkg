@@ -43,9 +43,9 @@ def main(argv, stdout, environ):
 
   db = db_webui.initSchema()
 
-  appfn = args[0]
 
-  db.apps.installApp(appfn)
+  for appfn in args:
+    db.apps.installApp(appfn)
   
 
 

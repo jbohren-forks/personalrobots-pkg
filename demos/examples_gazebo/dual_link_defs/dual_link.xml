@@ -13,73 +13,55 @@
        xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
        xmlns:physics="http://playerstage.sourceforge.net/gazebo/xmlschema/#physics">
 
-  <!-- joint blocks -->
-  <joint name="base_block_joint" type="fixed" /> 
 
-  <!-- joint blocks -->
-  <joint name="link1_joint" type="revolute" >
-    <axis xyz="0 0 1" />
-    <anchor xyz="0 0 0" />
-    <limit min="0.0" max="0.0" effort="100" velocity="5"
-           k_position="0.0" k_velocity="0.0"
-           safety_length_min="0.0" safety_length_max="0.0" />
-    <calibration values="1.5 -1 " />
-    <joint_properties damping="0.0" />
-  </joint>
   
-  <!-- joint blocks -->
-  <joint name="link2_joint" type="revolute" >
-    <axis xyz="0 1 0" />
-    <anchor xyz="0 0 0" />
-    <limit effort="100" velocity="5" k_velocity="1000" />
-    <calibration values="1.5 -1 " />
-    <joint_properties damping="0.0" friction="0.0" />
-  </joint>
 
 
-  <!-- link blocks -->
-  <link name="base_block">
-    <parent name="world" />
+  <joint name="base_block_joint" type="fixed">
+    <parent link="world" />
     <origin xyz="0 0 0" rpy="0 0 0" />
-    <joint name="base_block_joint" />
+    <child link="base_block" />
+  </joint> 
+  <link name="base_block">
     <inertial>
       <mass value="1000" />
-      <com xyz="0 0 0" />
+      <origin xyz="0 0 0" />
       <inertia ixx="100"  ixy="0"  ixz="0" iyy="100" iyz="0" izz="100" />
     </inertial> 
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0" />
-      <map name="gazebo_material" flag="gazebo">
-        <elem key="material">Gazebo/GrassFloor</elem>
-      </map>
       <geometry name="base_block_visual_geom">
-        <box scale="0.001 0.001 0.001" />
+        <box size="0.001 0.001 0.001" />
       </geometry>
     </visual> 
     <collision>
       <origin xyz="0 0 0" rpy="0.0 0.0 0.0" />
       <geometry name="base_block_collision_geom">
-        <box scale="0.001 0.001 0.001" />
+        <box size="0.001 0.001 0.001" />
       </geometry>
     </collision>
   </link>
+  <gazebo reference="base_block">
+    <material>Gazebo/GrassFloor</material>
+  </gazebo>
   
-  <link name="link1">
-    <parent name="base_block" />
+  <joint name="link1_joint" type="revolute" >
+    <axis xyz="0 0 1" />
+    <limit lower="0.0" upper="0.0" effort="100" velocity="5" />
+    <parent link="base_block" />
     <origin xyz="0 0 2" rpy="0 0 0" />
-    <joint name="link1_joint" />
+    <child link="link1" />
+  </joint>
+  <link name="link1">
     <inertial >
       <mass value="0.1" />
-      <com xyz="0 0 -0.5" /> 
+      <origin xyz="0 0 -0.5" /> 
       <inertia  ixx="0.1" ixy="0.0"  ixz="0.0"  iyy="0.1"  iyz="0.0"  izz="0.1" />
     </inertial>
     <visual >
       <origin xyz="0 0 -0.5" rpy="0 0 0" />
-      <map name="gazebo_material" flag="gazebo">
-        <elem key="material">Gazebo/Red</elem>
-      </map>
       <geometry name="link1_visual_geom">
-        <mesh scale="0.1 0.1 1.0" />
+        <box size="0.1 0.1 1.0" />
       </geometry>
     </visual>
     <collision >
@@ -88,28 +70,31 @@
         <box size="0.1 0.1 1.0" />
       </geometry>
     </collision>
-    <map name="link1_gravity" flag="gazebo">
-      <elem key="turnGravityOff">false</elem>
-    </map>
   </link>
+  <gazebo reference="link1">
+    <material>Gazebo/Red</material>
+    <turnGravityOff>false</turnGravityOff>
+  </gazebo>
 
 
-  <link name="link2">
-    <parent name="link1" />
+  <joint name="link2_joint" type="revolute" >
+    <axis xyz="0 1 0" />
+    <limit effort="100" velocity="5" />
+    <dynamics damping="0.0" friction="0.0" />
+    <parent link="link1" />
     <origin xyz="0 0 0" rpy="0 90 0" />
-    <joint name="link2_joint" />
+    <child link="link2" />
+  </joint>
+  <link name="link2">
     <inertial >
       <mass value="1.0" />
-      <com xyz="0 0 0.5" /> 
+      <origin xyz="0 0 0.5" /> 
       <inertia  ixx="1.0" ixy="0.0"  ixz="0.0"  iyy="1.0"  iyz="0.0"  izz="1.0" />
     </inertial>
     <visual >
       <origin xyz="0 0 0.5" rpy="0 0 0" />
-      <map name="gazebo_material" flag="gazebo">
-        <elem key="material">Gazebo/Blue</elem>
-      </map>
       <geometry name="link2_visual_geom">
-        <mesh scale="0.1 0.1 1.0" />
+        <cylinder radius="0.05" length="1.0" />
       </geometry>
     </visual>
     <collision >
@@ -118,10 +103,11 @@
         <cylinder radius="0.05" length="1.0" />
       </geometry>
     </collision>
-    <map name="link2_gravity" flag="gazebo">
-      <elem key="turnGravityOff">false</elem>
-    </map>
   </link>
+  <gazebo reference="link2">
+    <material>Gazebo/Blue</material>
+    <turnGravityOff>false</turnGravityOff>
+  </gazebo>
 
 
   <!-- Define groups of links; a link may be part of multiple groups -->
@@ -129,9 +115,7 @@
   <!-- mechanism controls -->
   <include filename="./transmissions_dual_link.xml" />
   
-  <map name="sensor" flag="gazebo">
-    <verbatim key="mechanism_control_simulation">
-
+  <gazebo>
       <controller:ros_time name="ros_time" plugin="libros_time.so">
         <alwaysOn>true</alwaysOn>
         <updateRate>1000.0</updateRate>
@@ -167,7 +151,5 @@
           <frameName>map</frameName>
           <interface:position name="p3d_link2_position"/>
       </controller:ros_p3d>
-
-    </verbatim>
-  </map>
+  </gazebo>
 </robot>
