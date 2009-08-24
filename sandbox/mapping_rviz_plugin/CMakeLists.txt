@@ -18,9 +18,16 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 #set the default path for built libraries to the "lib" directory
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
-rospack_add_library(${PROJECT_NAME} MODULE src/collision_map_display.cpp
+set(SOURCE_FILES src/collision_map_display.cpp
                                     src/polygonal_map_display.cpp
                                     src/init.cpp)
+
+include(CMakeDetermineSystem)
+if(CMAKE_SYSTEM_NAME MATCHES "Darwin")
+  rospack_add_library(${PROJECT_NAME} MODULE ${SOURCE_FILES})
+else(CMAKE_SYSTEM_NAME MATCHES "Darwin")
+  rospack_add_library(${PROJECT_NAME} ${SOURCE_FILES})
+endif(CMAKE_SYSTEM_NAME MATCHES "Darwin")
                                     
 find_package(wxWidgets REQUIRED)
 include(${wxWidgets_USE_FILE})
