@@ -25,20 +25,13 @@
   <property name="jack_width"    value="0.033" />
   <property name="jack_height"   value="0.028" />
 
-  <!-- joint blocks -->
-  <joint name="floor_joint" type="planar" /> 
-  <joint name="outlet_joint" type="fixed" />
-  <joint name="wall_joint" type="fixed" />
-  <joint name="jack1_joint" type="fixed" />
-  <joint name="jack2_joint" type="fixed" />
-  <joint name="jack3_joint" type="fixed" />
-  <joint name="jack4_joint" type="fixed" />
-
+  <joint name="floor_joint" type="planar" > 
+    <parent link="world" />
+    <origin xyz="${wall_x_loc} 0.0 0.01" rpy="0 0 0" />
+    <child link="floor_link" />
+  </joint>
   <!-- link blocks -->
   <link name="floor_link">
-    <parent name="world" />
-    <origin xyz="${wall_x_loc} 0.0 0.01" rpy="0 0 0" />
-    <joint name="floor_joint" />
     <inertial>
       <mass value="100" />
       <com xyz="4 0 0.001" />
@@ -48,9 +41,6 @@
     </inertial> 
     <visual>
       <origin xyz="4 0 0.001" rpy="0 0 0" />
-      <map name="gazebo_material" flag="gazebo">
-        <elem key="material" value="Gazebo/Grey" />
-      </map>
       <geometry name="floor_visual_geom">
         <mesh scale="8 8 0.002" />
       </geometry>
@@ -60,19 +50,22 @@
       <geometry name="floor_collision_geom">
         <box size="8 8 0.002" />
       </geometry>
-      <map name="friction_coefficients" flag="gazebo">
-        <elem key="mu1" value="50.0" />
-        <elem key="mu2" value="50.0" />
-        <elem key="kp"  value="100000000.0" />
-        <elem key="kd"  value="1.0" />
-      </map>
     </collision>
   </link>
+  <gazebo reference="floor_link">
+    <material>Gazebo/Grey</material>
+    <mu1>50.0</mu1>
+    <mu2>50.0</mu2>
+    <kp>100000000.0</kp>
+    <kd>1.0</kd>
+  </gazebo>
 
-  <link name="wall_link">
-    <parent name="floor_link" />
+  <joint name="wall_joint" type="fixed" >
+    <parent link="floor_link" />
     <origin xyz="0 0 1" rpy="0 0 0" />
-    <joint name="wall_joint" />
+    <child link="wall_link" />
+  </joint>
+  <link name="wall_link">
     <inertial>
       <mass value="100" />
       <com xyz="0 0 1" />
@@ -82,9 +75,6 @@
     </inertial> 
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0" />
-      <map name="gazebo_material" flag="gazebo">
-        <elem key="material" value="PR2/Yellow" />
-      </map>
       <geometry name="wall_visual_geom">
         <mesh scale="0.4 10 2" />
       </geometry>
@@ -94,20 +84,22 @@
       <geometry name="wall_collision_geom">
         <box size="0.4 10 2" />
       </geometry>
-      <map name="wall_intensity" flag="gazebo">
-        <elem key="laserRetro" value="0.5" />
-      </map>
     </collision>
-    <map name="wall_collide" flag="gazebo">
-      <elem key="selfCollide" value="true" />
-    </map>
   </link>
 
+  <gazebo reference="wall_link">
+    <material>PR2/Yellow</material>
+    <laserRetro>0.5</laserRetro>
+    <selfCollide>true</selfCollide>
+  </gazebo>
+
   
-  <link name="outlet_link">
-    <parent name="wall_link" />
+  <joint name="outlet_joint" type="fixed" >
+    <parent link="wall_link" />
     <origin xyz="-0.20 0.0 ${-1.0+outlet_height}" rpy="0 0 0" />
-    <joint name="outlet_joint" />
+    <child link="outlet_link" />
+  </joint>
+  <link name="outlet_link">
     <inertial >
       <mass value="1" />
       <com xyz="0.0 0.0 0.0" /> 
@@ -117,9 +109,6 @@
     </inertial>
     <visual >
       <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
-      <map name="gazebo_material" flag="gazebo">
-        <elem key="material" value="PR2/Outlet" />
-      </map>
       <geometry name="outlet_visual">
         <mesh scale="0.01 ${outlet_size_w} ${outlet_size_h}" />
       </geometry>
@@ -129,21 +118,22 @@
       <geometry name="outlet_collision_geom">
         <box size="0.01 ${outlet_size_w} ${outlet_size_h}" />
       </geometry>
-      <map name="outlet_intensity" flag="gazebo">
-        <elem key="laserRetro" value="10.0" />
-      </map>
     </collision>
-    <map name="outlet_gravity" flag="gazebo">
-      <elem key="turnGravityOff" value="true" />
-      <elem key="selfCollide" value="true" />
-    </map>
   </link>
+  <gazebo reference="outlet_link">
+    <material>PR2/Outlet</material>
+    <laserRetro>10.0</laserRetro>
+    <turnGravityOff>true</turnGravityOff>
+    <selfCollide>true</selfCollide>
+  </gazebo>
 
   <!--
-  <link name="jack1_link">
-    <parent name="outlet_link" />
+  <joint name="jack1_joint" type="fixed" >
+    <parent link="outlet_link" />
     <origin xyz="-0.006 ${-jack_offset_y} ${-jack_offset_z}" rpy="0 0 0" />
-    <joint name="jack1_joint" />
+    <child link="jack1_link" />
+  </joint>
+  <link name="jack1_link">
     <inertial >
       <mass value="1.0" />
       <com xyz="0.0 0.0 0.0" /> 
@@ -153,9 +143,6 @@
     </inertial>
     <visual >
       <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
-      <map name="gazebo_material" flag="gazebo">
-        <elem key="material" value="PR2/Jack" />
-      </map>
       <geometry name="jack1_visual">
         <mesh scale="0.01 ${jack_width} ${jack_height}" />
       </geometry>
@@ -165,20 +152,21 @@
       <geometry name="jack1_collision_geom">
         <box size="0.01 ${jack_width} ${jack_height}" />
       </geometry>
-      <map name="jack1_intensity" flag="gazebo">
-        <elem key="laserRetro" value="10.0" />
-      </map>
     </collision>
-    <map name="jack1_gravity" flag="gazebo">
-      <elem key="turnGravityOff" value="true" />
-      <elem key="selfCollide" value="true" />
-    </map>
   </link>
+  <gazebo reference="jack1_link">
+    <material>PR2/Jack</material>
+    <laserRetro>10.0</laserRetro>
+    <turnGravityOff>true</turnGravityOff>
+    <selfCollide>true</selfCollide>
+  </gazebo>
 
-  <link name="jack2_link">
-    <parent name="outlet_link" />
+  <joint name="jack2_joint" type="fixed" >
+    <parent link="outlet_link" />
     <origin xyz="-0.006 ${ jack_offset_y} ${-jack_offset_z}" rpy="0 0 0" />
-    <joint name="jack2_joint" />
+    <child link="jack2_link" />
+  </joint>
+  <link name="jack2_link">
     <inertial >
       <mass value="1.0" />
       <com xyz="0.0 0.0 0.0" /> 
@@ -188,9 +176,6 @@
     </inertial>
     <visual >
       <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
-      <map name="gazebo_material" flag="gazebo">
-        <elem key="material" value="PR2/Jack" />
-      </map>
       <geometry name="jack2_visual">
         <mesh scale="0.01 ${jack_width} ${jack_height}" />
       </geometry>
@@ -200,20 +185,21 @@
       <geometry name="jack2_collision_geom">
         <box size="0.01 ${jack_width} ${jack_height}" />
       </geometry>
-      <map name="jack2_intensity" flag="gazebo">
-        <elem key="laserRetro" value="10.0" />
-      </map>
     </collision>
-    <map name="jack2_gravity" flag="gazebo">
-      <elem key="turnGravityOff" value="true" />
-      <elem key="selfCollide" value="true" />
-    </map>
   </link>
+  <gazebo reference="jack2_link">
+    <material>PR2/Jack</material>
+    <laserRetro>10.0</laserRetro>
+    <turnGravityOff>true</turnGravityOff>
+    <selfCollide>true</selfCollide>
+  </gazebo>
 
-  <link name="jack3_link">
-    <parent name="outlet_link" />
+  <joint name="jack3_joint" type="fixed" >
+    <parent link="outlet_link" />
     <origin xyz="-0.006 ${-jack_offset_y} ${ jack_offset_z}" rpy="0 0 0" />
-    <joint name="jack3_joint" />
+    <child link="jack3_link" />
+  </joint>
+  <link name="jack3_link">
     <inertial >
       <mass value="1.0" />
       <com xyz="0.0 0.0 0.0" /> 
@@ -223,9 +209,6 @@
     </inertial>
     <visual >
       <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
-      <map name="gazebo_material" flag="gazebo">
-        <elem key="material" value="PR2/Jack" />
-      </map>
       <geometry name="jack3_visual">
         <mesh scale="0.01 ${jack_width} ${jack_height}" />
       </geometry>
@@ -235,20 +218,21 @@
       <geometry name="jack3_collision_geom">
         <box size="0.01 ${jack_width} ${jack_height}" />
       </geometry>
-      <map name="jack3_intensity" flag="gazebo">
-        <elem key="laserRetro" value="10.0" />
-      </map>
     </collision>
-    <map name="jack3_gravity" flag="gazebo">
-      <elem key="turnGravityOff" value="true" />
-      <elem key="selfCollide" value="true" />
-    </map>
   </link>
+  <gazebo reference="jack3_link" flag="gazebo">
+    <material>PR2/Jack</material>
+    <laserRetro>10.0</laserRetro>
+    <turnGravityOff>true</turnGravityOff>
+    <selfCollide>true</selfCollide>
+  </gazebo>
 
-  <link name="jack4_link">
-    <parent name="outlet_link" />
+  <joint name="jack4_joint" type="fixed" >
+    <parent link="outlet_link" />
     <origin xyz="-0.006 ${ jack_offset_y} ${ jack_offset_z}" rpy="0 0 0" />
-    <joint name="jack4_joint" />
+    <child link="jack4_link" />
+  </joint>
+  <link name="jack4_link">
     <inertial >
       <mass value="1.0" />
       <com xyz="0.0 0.0 0.0" /> 
@@ -258,9 +242,6 @@
     </inertial>
     <visual >
       <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
-      <map name="gazebo_material" flag="gazebo">
-        <elem key="material" value="PR2/Jack" />
-      </map>
       <geometry name="jack4_visual">
         <mesh scale="0.01 ${jack_width} ${jack_height}" />
       </geometry>
@@ -270,30 +251,27 @@
       <geometry name="jack4_collision_geom">
         <box size="0.01 ${jack_width} ${jack_height}" />
       </geometry>
-      <map name="jack4_intensity" flag="gazebo">
-        <elem key="laserRetro" value="10.0" />
-      </map>
     </collision>
-    <map name="jack4_gravity" flag="gazebo">
-      <elem key="turnGravityOff" value="true" />
-      <elem key="selfCollide" value="true" />
-    </map>
   </link>
+  <gazebo reference="jack4_link">
+    <material>PR2/Jack</material>
+    <laserRetro>10.0</laserRetro>
+    <turnGravityOff>true</turnGravityOff>
+    <selfCollide>true</selfCollide>
+  </gazebo>
   -->
 
 
-  <map name="sensor" flag="gazebo">
-    <verbatim key="outlet_p3d_block">
-      <!-- ros_p3d for position groundtruth -->
-      <controller:ros_p3d name="p3d_outlet_controller" plugin="libros_p3d.so">
-          <alwaysOn>true</alwaysOn>
-          <updateRate>100.0</updateRate>
-          <bodyName>outlet_link</bodyName>
-          <topicName>outlet_pose_ground_truth</topicName>
-          <frameName>map</frameName>
-          <interface:position name="p3d_outlet_position"/>
-      </controller:ros_p3d>
-    </verbatim>
-  </map>
+  <gazebo>
+    <!-- ros_p3d for position groundtruth -->
+    <controller:ros_p3d name="p3d_outlet_controller" plugin="libros_p3d.so">
+        <alwaysOn>true</alwaysOn>
+        <updateRate>100.0</updateRate>
+        <bodyName>outlet_link</bodyName>
+        <topicName>outlet_pose_ground_truth</topicName>
+        <frameName>map</frameName>
+        <interface:position name="p3d_outlet_position"/>
+    </controller:ros_p3d>
+  </gazebo>
 
 </robot>
