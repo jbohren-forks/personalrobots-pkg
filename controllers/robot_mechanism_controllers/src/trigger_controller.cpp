@@ -76,7 +76,7 @@ TriggerController::~TriggerController()
 
 double TriggerController::getTick()
 {
-  return getTick(robot_->hw_->current_time_, config_);
+  return getTick(robot_->getTime(), config_);
 }
 
 void TriggerController::update()
@@ -101,7 +101,7 @@ void TriggerController::update()
   }
   
   //if (actuator_command_->digital_out_ && !(active ^ config_.active_low))
-  //    ROS_DEBUG("digital out falling at time %f", robot_->hw_->current_time_);
+  //    ROS_DEBUG("digital out falling at time %f", robot_->getTime());
 
   actuator_command_->digital_out_ = active ^ config_.active_low;
 

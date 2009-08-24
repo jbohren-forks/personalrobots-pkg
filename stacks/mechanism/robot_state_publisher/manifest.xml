@@ -7,6 +7,7 @@
   <url>http://pr.willowgarage.com/wiki/</url>
 
   <depend package="kdl_parser" />
+  <depend package="urdf" />
   <depend package="mechanism_msgs" />
   <depend package="roscpp" />
   <depend package="tf" />

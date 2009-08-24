@@ -23,12 +23,16 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #uncomment if you have defined services
 #gensrv()
 
-rosbuild_add_library(${PROJECT_NAME} src/tree_parser.cpp)
+rosbuild_add_library(${PROJECT_NAME} src/xml_parser.cpp src/dom_parser.cpp)
 
-rosbuild_add_executable(example test/example.cpp )
-target_link_libraries(example ${PROJECT_NAME})
+rosbuild_add_executable(example_xml test/example_xml.cpp  )
+target_link_libraries(example_xml ${PROJECT_NAME})
+
+rosbuild_add_executable(example_dom test/example_dom.cpp )
+target_link_libraries(example_dom ${PROJECT_NAME})
 
 rosbuild_add_executable(test_parser test/test_kdl_parser.cpp )
 target_link_libraries(test_parser ${PROJECT_NAME})
+
 rosbuild_add_gtest_build_flags(test_parser)
 rosbuild_add_rostest(${PROJECT_SOURCE_DIR}/test/test_kdl_parser.launch)

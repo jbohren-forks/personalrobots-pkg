@@ -57,7 +57,7 @@ protected:
 TEST_F(ShortChainTest, FKShouldMatchOnShortChainWhenStraight)
 {
   TiXmlDocument urdf_xml;
-  urdf_xml.LoadFile("pr2_desc.xml");
+  urdf_xml.LoadFile("pr2.urdf");
   TiXmlElement *root = urdf_xml.FirstChildElement("robot");
   ASSERT_TRUE(root != NULL);
   Robot model;

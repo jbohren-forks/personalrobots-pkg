@@ -28,62 +28,68 @@
  */
 
 /*
- * Author: Stuart Glaser
+ * Author: Stuart Glaser, Wim Meeussen
  */
 
 #include "mechanism_model/robot.h"
 #include "tinyxml/tinyxml.h"
-#include <kdl_parser/tree_parser.hpp>
+#include <kdl_parser/dom_parser.hpp>
+#include <urdf/model.h>
 
 
 namespace mechanism {
 
 bool Robot::initXml(TiXmlElement *root)
 {
-  // Constructs the kdl tree.
-  if (!treeFromXml(root, tree_))
+  // Gets the actuator list from the hardware interface
+  if (!hw_){
+    ROS_ERROR("Mechanism Model got an invalid pointer to the hardware interface");
     return false;
+  }
+  actuators_ = hw_->actuators_;
 
-  // Constructs the joints.
-  TiXmlElement *xit = NULL;
-  for (xit = root->FirstChildElement("joint"); xit;
-       xit = xit->NextSiblingElement("joint"))
-  {
-    Joint *j = new Joint;
-    if (j->initXml(xit))
-    {
-      joints_.push_back(j);
-    }
-    else
-      delete j;
+  // Parses the xml into a robot model
+  urdf::Model robot_description;
+  if (!robot_description.initXml(root)){
+    ROS_ERROR("Mechanism Model failed to parse the URDF xml into a robot model");
+    return false;
   }
 
-  // Constructs the transmissions.
+  // Constructs a kdl robot model from the robot description.
+  if (!treeFromRobotModel(robot_description, robot_model_)){
+    ROS_ERROR("Mechanism Model failed to construct a kdl tree from the robot model");
+    return false;
+  }
+
+  // Constructs the joints from the robot description.
+  for (std::map<std::string, boost::shared_ptr<urdf::Joint> >::const_iterator it = robot_description.joints_.begin();
+       it != robot_description.joints_.end(); it++){
+    Joint* jnt = new Joint;
+    if (!jnt->init(it->second)){
+      ROS_ERROR("Mechanism Model failed to initialize joint");
+      delete jnt;
+      return false;
+    }
+    joints_.push_back(jnt);
+  }
+
+  // Constructs the transmissions by parsing custom xml.
+  TiXmlElement *xit = NULL;
   for (xit = root->FirstChildElement("transmission"); xit;
        xit = xit->NextSiblingElement("transmission"))
   {
     const char *type = xit->Attribute("type");
     Transmission *t = type ? TransmissionFactory::Instance().CreateObject(type) : NULL;
     if (!t)
-      fprintf(stderr, "Unknown transmission type: \"%s\"\n", type);
-    else if (!t->initXml(xit, this))
+      ROS_ERROR("Unknown transmission type: %s", type);
+    else if (!t->initXml(xit, this)){
+      ROS_ERROR("Failed to initialize transmission");
       delete t;
+    }
     else // Success!
       transmissions_.push_back(t);
   }
 
-  // Constructs the links.
-  for (xit = root->FirstChildElement("link"); xit;
-       xit = xit->NextSiblingElement("link"))
-  {
-    Link *link = new Link;
-    if (link->initXml(xit, this))
-      links_.push_back(link);
-    else
-      delete link;
-  }
-
-  /// @todo add checks here to see if MCN is setup correctly, or have a good viewer
 
   return true;
 }
@@ -101,19 +107,12 @@ int findIndexByName(const std::vector<T*>& v, const std::string &name)
 
 int Robot::getActuatorIndex(const std::string &name) const
 {
-  if (!hw_)
-    return -1;
-  return findIndexByName(hw_->actuators_, name);
+  return findIndexByName(actuators_, name);
 }
 
 int Robot::getJointIndex(const std::string &name) const
 {
   return findIndexByName(joints_, name);
-}
-
-int Robot::getLinkIndex(const std::string &name) const
-{
-  return findIndexByName(links_, name);
 }
 
 int Robot::getTransmissionIndex(const std::string &name) const
@@ -130,13 +129,7 @@ Joint* Robot::getJoint(const std::string &name) const
 Actuator* Robot::getActuator(const std::string &name) const
 {
   int i = getActuatorIndex(name);
-  return i >= 0 ? hw_->actuators_[i] : NULL;
-}
-
-Link* Robot::getLink(const std::string &name) const
-{
-  int i = getLinkIndex(name);
-  return i >= 0 ? links_[i] : NULL;
+  return i >= 0 ? actuators_[i] : NULL;
 }
 
 Transmission* Robot::getTransmission(const std::string &name) const
@@ -145,6 +138,10 @@ Transmission* Robot::getTransmission(const std::string &name) const
   return i >= 0 ? transmissions_[i] : NULL;
 }
 
+
+
+
+
 RobotState::RobotState(Robot *model, HardwareInterface *hw)
   : model_(model), hw_(hw)
 {
@@ -152,24 +149,18 @@ RobotState::RobotState(Robot *model, HardwareInterface *hw)
   assert(hw_);
 
   joint_states_.resize(model->joints_.size());
-  link_states_.resize(model->links_.size());
   transmissions_in_.resize(model->transmissions_.size());
   transmissions_out_.resize(model->transmissions_.size());
-  links_joint_.resize(model_->links_.size(), NULL);
-  links_parent_.resize(model_->links_.size(), NULL);
-  links_children_.resize(model_->links_.size());
 
   // Points each state object at the corresponding model object
   for (unsigned int i = 0; i < joint_states_.size(); ++i)
   {
     joint_states_[i].joint_ = model->joints_[i];
-
-      // Only because I'm feeling really nice today.
-      if (model->joints_[i]->type_ == JOINT_FIXED)
-        joint_states_[i].calibrated_ = true;
+    
+    // Only because I'm feeling really nice today.
+    if (model->joints_[i]->type_ == urdf::Joint::FIXED)
+      joint_states_[i].calibrated_ = true;
   }
-  for (unsigned int i = 0; i < link_states_.size(); ++i)
-    link_states_[i].link_ = model->links_[i];
 
   // Wires up the transmissions to the state
   for (unsigned int i = 0; i < model_->transmissions_.size(); ++i)
@@ -188,25 +179,6 @@ RobotState::RobotState(Robot *model, HardwareInterface *hw)
       transmissions_out_[i].push_back(&joint_states_[index]);
     }
   }
-
-  // Wires up each link to its joint, its parent, and its children.
-  for (unsigned int i = 0; i < model_->links_.size(); ++i)
-  {
-    int joint_index = model_->getJointIndex(model_->links_[i]->joint_name_);
-    int parent_index = model_->getLinkIndex(model_->links_[i]->parent_name_);
-
-    if (joint_index >= 0 && parent_index >= 0)
-    {
-      links_joint_[i] = joint_index;
-      links_parent_[i] = parent_index;
-      links_children_[parent_index].push_back(i);
-    }
-    else
-    {
-      links_joint_[i] = -1;
-      links_parent_[i] = -1;
-    }
-  }
 }
 
 
@@ -220,12 +192,6 @@ const JointState *RobotState::getJointState(const std::string &name) const
 {
   int i = model_->getJointIndex(name);
   return i >= 0 ? &joint_states_[i] : NULL;
-}
-
-LinkState *RobotState::getLinkState(const std::string &name)
-{
-  int i = model_->getLinkIndex(name);
-  return i >= 0 ? &link_states_[i] : NULL;
 }
 
 void RobotState::propagateState()

@@ -30,7 +30,6 @@
 // Author: Stuart Glaser, Wim Meeussen
 
 #include "mechanism_model/chain.h"
-#include "tf_conversions/tf_kdl.h"
 
 namespace mechanism {
 
@@ -42,18 +41,23 @@ bool Chain::init(Robot *robot, const std::string &root, const std::string &tip)
   robot_ = robot;
 
   // Constructs the kdl chain
-  if (!robot_->tree_.getChain(root, tip, kdl_chain_)) return false;
+  if (!robot_->robot_model_.getChain(root, tip, kdl_chain_)) return false;
 
   // Pulls out all the joint indices
   joint_indices_.clear();
   all_joint_indices_.clear();
   for (size_t i=0; i<kdl_chain_.getNrOfSegments(); i++){
     int jnt_index = robot_->getJointIndex(kdl_chain_.getSegment(i).getJoint().getName());
+    if (jnt_index == -1){
+      ROS_ERROR("Could not find joint n%s", kdl_chain_.getSegment(i).getJoint().getName().c_str());
+      return false;
+    }
     ROS_DEBUG("Index of joint %s at link %s is %i", 
               kdl_chain_.getSegment(i).getJoint().getName().c_str(), kdl_chain_.getSegment(i).getName().c_str(), jnt_index);
-    if (jnt_index == -1) return false;
     all_joint_indices_.push_back(jnt_index);
-    if (robot_->joints_[jnt_index]->type_ != JOINT_FIXED)
+    if (robot_->joints_[jnt_index]->type_ == urdf::Joint::REVOLUTE || 
+        robot_->joints_[jnt_index]->type_ == urdf::Joint::CONTINUOUS || 
+        robot_->joints_[jnt_index]->type_ == urdf::Joint::PRISMATIC)
       joint_indices_.push_back(jnt_index);
   }
   ROS_DEBUG("Added %i joints", joint_indices_.size());

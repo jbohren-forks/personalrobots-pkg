@@ -37,51 +37,49 @@
 #include <string>
 #include <vector>
 #include <cfloat>
-#include "urdf/parser.h"
+//#include "urdf/parser.h"
 
 using namespace std;
 using namespace mechanism;
 
-static const pair<string, int> types[] = {
-  pair<string, int>("none", JOINT_NONE),
-  pair<string, int>("revolute", JOINT_ROTARY),
-  pair<string, int>("prismatic", JOINT_PRISMATIC),
-  pair<string, int>("fixed", JOINT_FIXED),
-  pair<string, int>("planar", JOINT_PLANAR),
+static const pair<int, int> types[] = {
+  pair<int, int>(urdf::Joint::UNKNOWN, JOINT_NONE),
+  pair<int, int>(urdf::Joint::REVOLUTE, JOINT_ROTARY),
+  pair<int, int>(urdf::Joint::CONTINUOUS, JOINT_CONTINUOUS),
+  pair<int, int>(urdf::Joint::PRISMATIC, JOINT_PRISMATIC),
+  pair<int, int>(urdf::Joint::FIXED, JOINT_FIXED),
+  pair<int, int>(urdf::Joint::PLANAR, JOINT_PLANAR),
 };
 
-static map<string, int> g_type_map(types, types + sizeof(types)/sizeof(types[0]));
+static map<int, int> g_type_map(types, types + sizeof(types)/sizeof(types[0]));
+
+
 
 void Joint::enforceLimits(JointState *s)
 {
-  double vel_high, vel_low;
-  double effort_high, effort_low;
+  double vel_high = velocity_limit_;
+  double vel_low = -velocity_limit_;
+  double effort_high = effort_limit_;
+  double effort_low = -effort_limit_;
 
-  if (!has_safety_limits_)
+  // only enforce joints that specify joint limits and safety code
+  if (!has_safety_code_ || !has_joint_limits_)
     return;
 
-  if(s->calibrated_ && s->joint_->type_ != JOINT_CONTINUOUS)
+  // enforce position bounds on rotary and prismatic joints that are calibrated
+  if (s->calibrated_ && (type_ == JOINT_ROTARY || type_ == JOINT_PRISMATIC))
   {
-    // Computes the position bounds based on the safety lengths.
-    double pos_high = joint_limit_max_ - safety_length_max_;
-    double pos_low = joint_limit_min_ + safety_length_min_;
-
     // Computes the velocity bounds based on the absolute limit and the
     // proximity to the joint limit.
     vel_high = max(-velocity_limit_,
                    min(velocity_limit_,
-                       -k_position_limit_ * (s->position_ - pos_high)));
+                       -k_position_limit_ * (s->position_ - safety_limit_max_)));
     vel_low = min(velocity_limit_,
                   max(-velocity_limit_,
-                      -k_position_limit_ * (s->position_ - pos_low)));
-  }
-  else
-  {
-    vel_high = velocity_limit_;
-    vel_low = -velocity_limit_;
+                      -k_position_limit_ * (s->position_ - safety_limit_min_)));
   }
 
-  // Computes the effort bounds based on the velocity bounds.
+  // Computes the effort bounds based on the optional velocity bounds.
   if (velocity_limit_ >= 0.0)
   {
     effort_high = max(-effort_limit_,
@@ -91,135 +89,64 @@ void Joint::enforceLimits(JointState *s)
                      max(-effort_limit_,
                          -k_velocity_limit_ * (s->velocity_ - vel_low)));
   }
-  else
-  {
-    effort_high = effort_limit_;
-    effort_low = -effort_limit_;
-  }
 
+
+  // limit the commanded effort based on position, velocity and effort limits
   s->commanded_effort_ =
     min( max(s->commanded_effort_, effort_low), effort_high);
 }
 
-bool Joint::initXml(TiXmlElement *elt)
+
+
+
+
+bool Joint::init(const boost::shared_ptr<urdf::Joint> jnt)
 {
-  const char *name = elt->Attribute("name");
-  if (!name)
-  {
-    ROS_ERROR("unnamed joint found\n");
-    return false;
-  }
-  name_ = name;
+  if (!jnt) return false;
 
-  const char *type = elt->Attribute("type");
-  if (!type)
-  {
-    ROS_ERROR("Joint \"%s\" has no type.\n", name_.c_str());
-    return false;
-  }
-  type_ = g_type_map[type];
-  TiXmlElement *limits;
+  name_ = jnt->name;
+  type_ = g_type_map[jnt->type];
 
-  if (type_ != JOINT_PLANAR && type_ != JOINT_FIXED)
-  {
-    limits = elt->FirstChildElement("limit");
-    if (!limits)
-    {
-      ROS_ERROR("Joint \"%s\" has no limits specified.\n", name_.c_str());
-      return false;
-    }
-
-    if (limits->QueryDoubleAttribute("effort", &effort_limit_) != TIXML_SUCCESS)
-    {
-      ROS_ERROR("no effort limit specified for joint \"%s\"\n", name_.c_str());
-      return false;
-    }
-
-    if (limits->QueryDoubleAttribute("velocity", &velocity_limit_) != TIXML_SUCCESS)
-      velocity_limit_ = -1.0;
-    else
-    {
-      if (limits->QueryDoubleAttribute("k_velocity", &k_velocity_limit_) != TIXML_SUCCESS)
-      {
-        ROS_ERROR("No k_velocity for joint %s\n", name_.c_str());
-        return false;
-      }
-    }
-
-
-    TiXmlElement *calibration = elt->FirstChildElement("calibration");
-    if(calibration)
-    {
-      if(calibration->QueryDoubleAttribute("reference_position", &reference_position_) == TIXML_SUCCESS)
-        ROS_DEBUG_STREAM("Found reference point at " <<reference_position_<<std::endl);
-    }
-
-
-    int min_ret = limits->QueryDoubleAttribute("min", &joint_limit_min_);
-    int max_ret = limits->QueryDoubleAttribute("max", &joint_limit_max_);
-
-    if (type_ == JOINT_ROTARY && min_ret == TIXML_NO_ATTRIBUTE && max_ret == TIXML_NO_ATTRIBUTE)
-    {
-      type_ = JOINT_CONTINUOUS;
-      has_safety_limits_ = true;
-    }
-    else if (min_ret == TIXML_NO_ATTRIBUTE || max_ret == TIXML_NO_ATTRIBUTE)
-    {
-      ROS_ERROR("Error: no min and max limits specified for joint \"%s\"\n", name_.c_str());
-      return false;
-    }
-
-    if (type_ == JOINT_ROTARY || type_ == JOINT_PRISMATIC)
-    {
-      if (limits->QueryDoubleAttribute("k_position", &k_position_limit_) != TIXML_SUCCESS)
-        ROS_DEBUG("No k_position for joint %s\n", name_.c_str());
-      if (limits->QueryDoubleAttribute("safety_length_min", &safety_length_min_) != TIXML_SUCCESS)
-        ROS_DEBUG("No safety_length_min_ for joint %s\n", name_.c_str());
-      if (limits->QueryDoubleAttribute("safety_length_max", &safety_length_max_) != TIXML_SUCCESS)
-        ROS_DEBUG("No safety_lenght_max_ for joint %s\n", name_.c_str());
-
-      has_safety_limits_ = true;
-    }
+  // get the optional safety parameters
+  has_safety_code_ = false;
+  if (jnt->safety){
+    k_position_limit_ = jnt->safety->k_position;
+    k_velocity_limit_ = jnt->safety->k_velocity;
+    safety_limit_min_ = jnt->safety->soft_lower_limit;
+    safety_limit_max_ = jnt->safety->soft_upper_limit;
+    has_safety_code_ = true;
   }
 
-
-  // Parses out the joint properties, this is done for all joints by default
-  TiXmlElement *prop_el = elt->FirstChildElement("joint_properties");
-  if (!prop_el)
-  {
-    ROS_INFO("Joint \"%s\" did not specify any joint properties, default to 0.\n", name_.c_str());
-    joint_damping_coefficient_ = 0.0;
-    joint_friction_coefficient_ = 0.0;
-  }
-  else
-  {
-    if (prop_el->QueryDoubleAttribute("damping", &joint_damping_coefficient_) != TIXML_SUCCESS)
-      ROS_DEBUG("damping is not specified\n");
-    if (prop_el->QueryDoubleAttribute("friction", &joint_friction_coefficient_) != TIXML_SUCCESS)
-      ROS_DEBUG("friction is not specified\n");
+  // get the optional joint limits 
+  has_joint_limits_ = false;
+  if (jnt->limits){
+    joint_limit_min_ = jnt->limits->lower;
+    joint_limit_max_ = jnt->limits->upper;
+    effort_limit_ = jnt->limits->effort;
+    velocity_limit_ = jnt->limits->velocity;
+    has_joint_limits_ = true;
   }
 
-  if (type_ == JOINT_ROTARY || type_ == JOINT_CONTINUOUS || type_ == JOINT_PRISMATIC)
-  {
-    // Parses out the joint axis
-    TiXmlElement *axis_el = elt->FirstChildElement("axis");
-    if (!axis_el)
-    {
-      ROS_ERROR("Joint \"%s\" did not specify an axis\n", name_.c_str());
-      return false;
-    }
-    std::vector<double> axis_pieces;
-    urdf::queryVectorAttribute(axis_el, "xyz", &axis_pieces);
-    if (axis_pieces.size() != 3)
-    {
-      ROS_ERROR("The axis for joint \"%s\" must have 3 value\n", name_.c_str());
-      return false;
-    }
-    axis_[0] = axis_pieces[0];
-    axis_[1] = axis_pieces[1];
-    axis_[2] = axis_pieces[2];
-    axis_.normalize();
+  // get the optional calibration reference position
+  if (jnt->calibration){
+    reference_position_ = jnt->calibration->reference_position;
   }
+
+  // get the optional joint properties
+  if (jnt->dynamics){
+    joint_damping_coefficient_ = jnt->dynamics->damping;
+    joint_friction_coefficient_ = jnt->dynamics->friction;
+  }
+  
+  if (has_safety_code_ && has_joint_limits_)
+    ROS_DEBUG("Joint %s of type %i has safety code and limits: %f %f %f %f %f %f %f %f %f",  
+              name_.c_str(), type_, safety_limit_min_, safety_limit_max_,
+              k_position_limit_, k_velocity_limit_, joint_limit_min_, joint_limit_max_, 
+              effort_limit_, velocity_limit_, joint_damping_coefficient_);
+  else 
+    ROS_DEBUG("Joint %s has not safety code or limits", name_.c_str()); 
+  
+
   return true;
 }
 

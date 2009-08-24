@@ -35,7 +35,7 @@
 /* Author: Wim Meeussen */
 
 #include <boost/algorithm/string.hpp>
-#include "kdl_parser/tree_parser.hpp"
+#include "kdl_parser/xml_parser.hpp"
 
 using namespace std;
 

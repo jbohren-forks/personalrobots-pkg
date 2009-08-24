@@ -142,7 +142,7 @@ bool CartesianTwistController::starting()
     fb_pid_controller_[i].reset();
 
   // time
-  last_time_ = robot_state_->hw_->current_time_;
+  last_time_ = robot_state_->getTime();
 
   // set disired twist to 0
   twist_desi_ = Twist::Zero();
@@ -159,7 +159,7 @@ void CartesianTwistController::update()
     return;
 
   // get time
-  double time = robot_state_->hw_->current_time_;
+  double time = robot_state_->getTime();
   double dt = time - last_time_;
   last_time_ = time;
 

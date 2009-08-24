@@ -88,15 +88,15 @@ public:
   JointSafety() { this->clear(); };
   double soft_upper_limit;
   double soft_lower_limit;
-  double k_p;
-  double k_v;
+  double k_position;
+  double k_velocity;
 
   void clear()
   {
     soft_upper_limit = 0;
     soft_lower_limit = 0;
-    k_p = 0;
-    k_v = 0;
+    k_position = 0;
+    k_velocity = 0;
   };
   bool initXml(TiXmlElement* config);
 };

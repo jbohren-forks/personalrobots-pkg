@@ -73,7 +73,7 @@ bool JointChainSineController::initXml(mechanism::RobotState *robot_state, TiXml
   robot_state_ = robot_state;
 
   // initialize the time
-  last_time_ = robot_state_->hw_->current_time_;
+  last_time_ = robot_state_->getTime();
 
   // get the controller name
   controller_name_ = config->Attribute("name");
@@ -236,7 +236,7 @@ void JointChainSineController::update()
   }
 
   // update the time
-  double time = robot_state_->hw_->current_time_;
+  double time = robot_state_->getTime();
   double dt = time - last_time_;
 
   // calculate the desired positions and velocities for all joints:

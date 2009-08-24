@@ -11,6 +11,7 @@
 
   <depend package="kdl" />
   <depend package="tinyxml" />
+  <depend package="urdf" />
   <depend package="roscpp" />
   
 <export>

@@ -41,7 +41,7 @@
 //#include <robot_mechanism_controllers/joint_position_smoothing_controller.h>
 
 #include <realtime_tools/realtime_publisher.h>
-
+#include <tf/tf.h>
 
 #include "filters/transfer_function.h"
 
@@ -102,7 +102,7 @@ private:
   //boost::mutex track_link_lock_ ;
   //bool track_link_enabled_ ;
   //mechanism::LinkState* target_link_ ;
-  mechanism::LinkState* mount_link_ ;
+  //mechanism::LinkState* mount_link_ ;
   tf::Vector3 track_point_ ;
 
   //JointPositionSmoothController joint_position_controller_ ;            // The PID position controller that is doing all the under-the-hood controls stuff

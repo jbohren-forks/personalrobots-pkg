@@ -61,7 +61,7 @@ namespace controller
   {
     assert(robot);
     robot_ = robot;
-    last_time_ = robot->hw_->current_time_;
+    last_time_ = robot->getTime();
 
     joint_state_ = robot_->getJointState(joint_name);
     if (!joint_state_)
@@ -140,7 +140,7 @@ namespace controller
   {
     assert(robot_ != NULL);
     double error(0),error_dot(0);
-    double time = robot_->hw_->current_time_;
+    double time = robot_->getTime();
 
     error_dot = joint_state_->velocity_ - command_dot_;
 

@@ -62,18 +62,8 @@ Joint *quickJoint(const std::string &name, const tf::Vector3 &axis)
 {
   Joint *j = new Joint;
   j->name_ = name;
-  j->axis_ = axis.normalized();
   j->type_ = JOINT_CONTINUOUS;
   return j;
-}
-
-Link *quickLink(const std::string &name, const std::string &parent, const std::string &joint,
-                const tf::Vector3 &xyz, const tf::Vector3 &rpy)
-{
-  Link *l = new Link();
-  l->name_ = name;  l->parent_name_ = parent;  l->joint_name_ = joint;
-  l->origin_xyz_ = xyz;  l->origin_rpy_ = rpy;
-  return l;
 }
 
 void setJoint(RobotState *state, int index, double pos, double vel = 0.0)

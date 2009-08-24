@@ -36,7 +36,7 @@
 
 #include <kdl/chainfksolverpos_recursive.hpp>
 #include <kdl/frames_io.hpp>
-#include "kdl_parser/tree_parser.hpp"
+#include "kdl_parser/xml_parser.hpp"
 #include <iostream>
 
 using namespace KDL;
@@ -49,8 +49,7 @@ int main()
   if (!treeFromFile("pr2_desc.xml", my_tree)) return -1;
 
   // walk through tree
-  //SegmentMap::const_iterator root = my_tree.getRootSegment();
-  SegmentMap::const_iterator root = my_tree.getSegment("base_link");
+  SegmentMap::const_iterator root = my_tree.getRootSegment();
   cout << "Found root " << root->second.segment.getName() << " with " << root->second.children.size() << " children" << endl;
   for (unsigned int i=0; i<root->second.children.size(); i++){
     SegmentMap::const_iterator child = root->second.children[i];

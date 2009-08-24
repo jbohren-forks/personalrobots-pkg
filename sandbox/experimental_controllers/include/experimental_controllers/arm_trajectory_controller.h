@@ -126,6 +126,7 @@ namespace controller
     std::vector<int> joint_type_;
 
     mechanism::Robot* robot_;
+    mechanism::RobotState* robot_state_;
 
     void updateJointControllers(void);
 

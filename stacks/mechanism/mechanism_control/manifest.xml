@@ -26,7 +26,6 @@ on the effort/velocity/position of each joint.
 <depend package="actionlib" />
 <depend package="mechanism_msgs" />
 <depend package="std_srvs" />
-<depend package="rosconsole" />
 <depend package="diagnostic_msgs" />
 <depend package="diagnostic_updater" />
 <depend package="pluginlib" />

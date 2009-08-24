@@ -105,15 +105,15 @@ bool Pr2Odometry::initXml(mechanism::RobotState *robot_state, TiXmlElement *conf
 
 bool Pr2Odometry::starting()
 {
-  current_time_ = base_kin_.robot_state_->hw_->current_time_;
-  last_time_ = base_kin_.robot_state_->hw_->current_time_;
-  last_publish_time_ = base_kin_.robot_state_->hw_->current_time_;
+  current_time_ = base_kin_.robot_state_->getTime();
+  last_time_ = base_kin_.robot_state_->getTime();
+  last_publish_time_ = base_kin_.robot_state_->getTime();
   return true;
 }
 
 void Pr2Odometry::update()
 {
-  current_time_ = base_kin_.robot_state_->hw_->current_time_;
+  current_time_ = base_kin_.robot_state_->getTime();
   updateOdometry();
   publish();
   last_time_ = current_time_;

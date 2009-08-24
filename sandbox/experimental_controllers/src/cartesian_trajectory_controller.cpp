@@ -185,7 +185,7 @@ bool CartesianTrajectoryController::moveTo(const geometry_msgs::PoseStamped& pos
 bool CartesianTrajectoryController::starting()
 {
   // time
-  last_time_ = robot_state_->hw_->current_time_;
+  last_time_ = robot_state_->getTime();
 
   // set desired pose to current pose
   pose_current_ = getPose();
@@ -204,7 +204,7 @@ bool CartesianTrajectoryController::starting()
 void CartesianTrajectoryController::update()
 {
   // get time
-  double time = robot_state_->hw_->current_time_;
+  double time = robot_state_->getTime();
   double dt = time - last_time_;
   last_time_ = time;
 

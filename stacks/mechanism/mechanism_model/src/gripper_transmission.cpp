@@ -55,7 +55,7 @@ bool GripperTransmission::initXml(TiXmlElement *config, Robot *robot)
   const char *actuator_name = ael ? ael->Attribute("name") : NULL;
   if (!actuator_name || !robot->getActuator(actuator_name))
   {
-    ROS_WARN("GripperTransmission could not find actuator named \"%s\"", actuator_name);
+    ROS_ERROR("GripperTransmission could not find actuator named \"%s\"", actuator_name);
     return false;
   }
   robot->getActuator(actuator_name)->command_.enable_ = true;
@@ -66,7 +66,7 @@ bool GripperTransmission::initXml(TiXmlElement *config, Robot *robot)
     const char *joint_name = j->Attribute("name");
     if (!joint_name || !robot->getJoint(joint_name))
     {
-      ROS_WARN("GripperTransmission could not find joint named \"%s\"", joint_name);
+      ROS_ERROR("GripperTransmission could not find joint named \"%s\"", joint_name);
       return false;
     }
     joint_names_.push_back(joint_name);
@@ -74,7 +74,7 @@ bool GripperTransmission::initXml(TiXmlElement *config, Robot *robot)
     const char *joint_pred = j->Attribute("preduction");
     if (!joint_pred)
     {
-      ROS_WARN("GripperTransmission's joint \"%s\" was not given a reduction.", joint_name);
+      ROS_ERROR("GripperTransmission's joint \"%s\" was not given a reduction.", joint_name);
       return false;
     }
     preductions_.push_back(atof(joint_pred));
@@ -82,20 +82,10 @@ bool GripperTransmission::initXml(TiXmlElement *config, Robot *robot)
     const char *joint_ered = j->Attribute("ereduction");
     if (!joint_ered)
     {
-      ROS_WARN("GripperTransmission's joint \"%s\" was not given a reduction.", joint_name);
+      ROS_ERROR("GripperTransmission's joint \"%s\" was not given a reduction.", joint_name);
       return false;
     }
     ereductions_.push_back(atof(joint_ered));
-  }
-
-  pids_.resize(joint_names_.size());
-  TiXmlElement *pel = config->FirstChildElement("pid");
-  if (pel)
-  {
-    control_toolbox::Pid pid;
-    pid.initXml(pel);
-    for (unsigned int i = 0; i < pids_.size(); ++i)
-      pids_[i] = pid;
   }
 
   return true;
@@ -174,13 +164,12 @@ void GripperTransmission::propagateEffortBackwards(
   for (unsigned int i = 0; i < js.size(); ++i)
     scaled_positions[i] = (sin(js[i]->position_ * preductions_[i])-B_)/A_;
 
-  double mean = std::accumulate(scaled_positions.begin(), scaled_positions.end(), 0.0)
-    / scaled_positions.size();
+  //double mean = std::accumulate(scaled_positions.begin(), scaled_positions.end(), 0.0)
+  //  / scaled_positions.size();
 
   for (unsigned int i = 0; i < js.size(); ++i)
   {
-    double err = scaled_positions[i] - mean;
-    /*double pid_effort =*/ pids_[i].updatePid(err, 0.001);
+    //double err = scaled_positions[i] - mean;
 
     js[i]->commanded_effort_ =
         /*pid_effort / ereductions_[i] + */as[0]->command_.effort_ * ereductions_[i];

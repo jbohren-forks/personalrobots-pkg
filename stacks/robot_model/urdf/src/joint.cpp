@@ -62,8 +62,10 @@ bool JointDynamics::initXml(TiXmlElement* config)
     ROS_ERROR("joint dynamics element specified with no damping and no friction");
     return false;
   }
-  else
+  else{
+    ROS_DEBUG("joint dynamics: damping %f and friction %f", damping, friction);
     return true;
+  }
 }
 
 bool JointLimits::initXml(TiXmlElement* config)
@@ -131,25 +133,24 @@ bool JointSafety::initXml(TiXmlElement* config)
   else
     this->soft_upper_limit = atof(soft_upper_limit_str);
 
-  // Get k_p_ safety "position" gain - not exactly position gain
-  const char* k_p_str = config->Attribute("k_position");
-  if (k_p_str == NULL)
+  // Get k_position_ safety "position" gain - not exactly position gain
+  const char* k_position_str = config->Attribute("k_position");
+  if (k_position_str == NULL)
   {
     ROS_DEBUG("joint safety: no k_position, using default value");
-    this->k_p = 0;
+    this->k_position = 0;
   }
   else
-    this->k_p = atof(k_p_str);
-
-  // Get k_v_ safety velocity gain
-  const char* k_v_str = config->Attribute("k_velocity");
-  if (k_v_str == NULL)
+    this->k_position = atof(k_position_str);
+  // Get k_velocity_ safety velocity gain
+  const char* k_velocity_str = config->Attribute("k_velocity");
+  if (k_velocity_str == NULL)
   {
     ROS_DEBUG("joint safety: no k_velocity, using default value");
-    this->k_v = 0;
+    this->k_velocity = 0;
   }
   else
-    this->k_v = atof(k_v_str);
+    this->k_velocity = atof(k_velocity_str);
 
   return true;
 }

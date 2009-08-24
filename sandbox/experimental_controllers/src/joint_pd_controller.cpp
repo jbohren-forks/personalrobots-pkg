@@ -62,7 +62,7 @@ bool JointPDController::init(mechanism::RobotState *robot, const std::string &jo
 {
   assert(robot);
   robot_ = robot;
-  last_time_ = robot->hw_->current_time_;
+  last_time_ = robot->getTime();
 
   joint_state_ = robot_->getJointState(joint_name);
   if (!joint_state_)
@@ -146,7 +146,7 @@ void JointPDController::reset()
 void JointPDController::update()
 {
   double error(0), error_dot(0);
-  double time = robot_->hw_->current_time_;
+  double time = robot_->getTime();
 
   if(pthread_mutex_trylock(&joint_pd_controller_lock_) == 0)
   {

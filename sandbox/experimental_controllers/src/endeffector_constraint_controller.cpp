@@ -34,7 +34,6 @@
 #include "experimental_controllers/endeffector_constraint_controller.h"
 #include <algorithm>
 #include "angles/angles.h"
-#include "urdf/parser.h"
 #include "kdl/chainfksolverpos_recursive.hpp"
 #include "kdl/chainjnttojacsolver.hpp"
 

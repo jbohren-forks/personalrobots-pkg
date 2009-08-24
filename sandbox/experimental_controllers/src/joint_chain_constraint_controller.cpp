@@ -95,7 +95,7 @@ bool JointChainConstraintController::init(mechanism::RobotState *robot_state,
   task_torque_ = Eigen::MatrixXf::Zero(kdl_chain_.getNrOfJoints(), 1);
   identity_ = Eigen::MatrixXf::Identity(kdl_chain_.getNrOfJoints(), kdl_chain_.getNrOfJoints());
   chain_eigen_jacobian_ = Eigen::MatrixXf::Zero(6, kdl_chain_.getNrOfJoints());
-  last_time_ = robot_state->hw_->current_time_;
+  last_time_ = robot_state->getTime();
 
   // advertise service
   node_->advertiseService(controller_name_ + "/add_constraints", &JointChainConstraintController::addConstraint, this);
@@ -162,7 +162,7 @@ void JointChainConstraintController::computeConstraintTorques()
     return;
   }
 
-  double time = robot_state_->hw_->current_time_;
+  double time = robot_state_->getTime();
   double error(0);
   std::list<ConstraintState>::iterator it = constraint_list_.begin();
   for(int i = 0 ; i < list_size_; ++i)

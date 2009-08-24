@@ -63,8 +63,8 @@
 #include <controller_interface/controller.h>
 #include <control_toolbox/pid.h>
 #include "control_toolbox/pid_gains_setter.h"
+#include <boost/scoped_ptr.hpp>
 #include <realtime_tools/realtime_publisher.h>
-
 #include <std_msgs/Float64.h>
 #include <robot_mechanism_controllers/JointControllerState.h>
 

@@ -153,9 +153,7 @@ bool JointInverseDynamicsController::starting()
 {
   // set desired wrench to 0
   SetToZero(jnt_posvelacc_desi_);
-
-  last_time_ = robot_state_->hw_->current_time_;
-
+  last_time_ = robot_state_->getTime();
    return true;
 }
 

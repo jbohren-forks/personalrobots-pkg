@@ -104,7 +104,7 @@ bool LaserScannerTrajController::initXml(mechanism::RobotState *robot, TiXmlElem
     ROS_ERROR("%s:: Error initializing pid element", name_.c_str()) ;
     return false ;
   }
-  last_time_ = robot->hw_->current_time_ ;
+  last_time_ = robot->getTime() ;
   last_error_ = 0.0 ;
 
   // ***** Derivative Error Filter Element *****
@@ -216,7 +216,7 @@ void LaserScannerTrajController::update()
   // ***** Run the position control loop *****
   double cmd = traj_command_ + tracking_offset_ ;
 
-  double time = robot_->hw_->current_time_ ;
+  double time = robot_->getTime() ;
   double error(0.0) ;
   angles::shortest_angular_distance_with_limits(cmd, joint_state_->position_,
                                                 joint_state_->joint_->joint_limit_min_,
@@ -237,7 +237,7 @@ void LaserScannerTrajController::update()
 
 double LaserScannerTrajController::getCurProfileTime()
 {
-  double time = robot_->hw_->current_time_ ;
+  double time = robot_->getTime() ;
   double time_from_start = time - traj_start_time_ ;
   double mod_time = time_from_start - floor(time_from_start/traj_.getTotalTime())*traj_.getTotalTime() ;
   return mod_time ;
@@ -273,7 +273,7 @@ bool LaserScannerTrajController::setTrajectory(const std::vector<trajectory::Tra
 
   traj_.setTrajectory(traj_points) ;
 
-  traj_start_time_ = robot_->hw_->current_time_ ;
+  traj_start_time_ = robot_->getTime() ;
 
   traj_duration_ = traj_.getTotalTime() ;
 
@@ -291,8 +291,8 @@ bool LaserScannerTrajController::setPeriodicCmd(const pr2_msgs::PeriodicCmd& cmd
     double low_pt = -cmd.amplitude + cmd.offset ;
 
 
-    double soft_limit_low  = joint_state_->joint_->joint_limit_min_ + joint_state_->joint_->safety_length_min_ ;
-    double soft_limit_high = joint_state_->joint_->joint_limit_max_ - joint_state_->joint_->safety_length_max_ ;
+    double soft_limit_low  = joint_state_->joint_->safety_limit_min_;
+    double soft_limit_high = joint_state_->joint_->safety_limit_max_;
 
     if (low_pt < soft_limit_low)
     {
@@ -461,7 +461,7 @@ void LaserScannerTrajControllerNode::update()
   {
     // Should we be populating header.stamp here? Or, we can simply let ros take care of the timestamp
     ros::Time cur_time ;
-    cur_time.fromSec(robot_->hw_->current_time_) ;
+    cur_time.fromSec(robot_->getTime()) ;
     m_scanner_signal_.header.stamp = cur_time ;
     m_scanner_signal_.signal = cur_profile_segment ;
     need_to_send_msg_ = true ;

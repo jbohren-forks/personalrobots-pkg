@@ -34,20 +34,18 @@
 
 /* Author: Wim Meeussen */
 
-#ifndef TREE_PARSER_H
-#define TREE_PARSER_H
+#ifndef DOM_PARSER_H
+#define DOM_PARSER_H
 
 #include <kdl/tree.hpp>
 #include <string>
-#include <tinyxml/tinyxml.h>
+#include <urdf/model.h>
 
 using namespace std;
 
 namespace KDL{
 
-bool treeFromFile(const string& file, Tree& tree);
-bool treeFromString(const string& xml, Tree& tree);
-bool treeFromXml(TiXmlElement *root, Tree& tree);
+bool treeFromRobotModel(urdf::Model& robot_model, Tree& tree);
 }
 
 #endif

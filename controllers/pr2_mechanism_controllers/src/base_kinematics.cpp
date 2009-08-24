@@ -49,21 +49,23 @@ bool Wheel::init(mechanism::RobotState *robot_state, const ros::NodeHandle &node
   wheel_speed_cmd_ = 0;
   wheel_speed_actual_ = 0;
 
-  mechanism::Link *link = robot_state->model_->getLink(link_name);
-  if(!link)
-  {
+  KDL::SegmentMap::const_iterator link;
+  try{
+    link = robot_state->model_->robot_model_.getSegment(link_name);
+  }
+  catch (KDL::Tree::segment_name_exception& ex){
     ROS_ERROR("Could not find link with name %s",link_name.c_str());
     return false;
   }
   ROS_DEBUG("wheel name: %s",link_name.c_str());
   link_name_ = link_name;
-  joint_name_ = link->joint_name_;
+  joint_name_ = link->second.segment.getJoint().getName();
 
   joint_ = robot_state->getJointState(joint_name_);
-  tf::Transform offset = link->getOffset();
-  offset_.x = offset.getOrigin().x();
-  offset_.y = offset.getOrigin().y();
-  offset_.z = offset.getOrigin().z();
+  KDL::Vector offset = link->second.segment.pose(0.0).p;
+  offset_.x = offset.x();
+  offset_.y = offset.y();
+  offset_.z = offset.z();
   node.param<double> ("wheel_radius_scaler", wheel_radius_scaler_, 1.0);
   ROS_DEBUG("Loading wheel: %s",link_name_.c_str());
   ROS_DEBUG("offset_.x: %f, offset_.y: %f, offset_.z: %f", offset_.x, offset_.y, offset_.z);
@@ -82,26 +84,27 @@ bool Caster::init(mechanism::RobotState *robot_state,  const ros::NodeHandle &no
   steer_angle_actual_ = 0;
   num_children_ = 0;
 
-  ROS_DEBUG("caster name: %s",link_name.c_str());
-  link_name_ = link_name;
-  mechanism::Link *link = robot_state->model_->getLink(link_name);
-  if(!link)
-  {
+  KDL::SegmentMap::const_iterator link;
+  try{
+    link = robot_state->model_->robot_model_.getSegment(link_name);
+  }
+  catch (KDL::Tree::segment_name_exception& ex){
     ROS_ERROR("Could not find link with name %s",link_name.c_str());
     return false;
   }
-  joint_name_ = link->joint_name_;
+  ROS_DEBUG("caster name: %s",link_name.c_str());
+  link_name_ = link_name;
+
+  joint_name_ = link->second.segment.getJoint().getName();
   joint_ = robot_state->getJointState(joint_name_);
-  tf::Transform offset = link->getOffset();
-  offset_.x = offset.getOrigin().x();
-  offset_.y = offset.getOrigin().y();
-  offset_.z = offset.getOrigin().z();
+  KDL::Vector offset = link->second.segment.pose(0.0).p;
+  offset_.x = offset.x();
+  offset_.y = offset.y();
+  offset_.z = offset.z();
 
-  KDL::SegmentMap::const_iterator root = robot_state->model_->tree_.getSegment(link_name); 
-
-  for(unsigned int i=0; i < root->second.children.size(); i++)
+  for(unsigned int i=0; i < link->second.children.size(); i++)
   {
-    KDL::SegmentMap::const_iterator child = root->second.children[i];
+    KDL::SegmentMap::const_iterator child = link->second.children[i];
     Wheel tmp;
     parent_->wheel_.push_back(tmp);
     if(!parent_->wheel_[parent_->num_wheels_].init(robot_state, node.getNamespace(), child->second.segment.getName()))

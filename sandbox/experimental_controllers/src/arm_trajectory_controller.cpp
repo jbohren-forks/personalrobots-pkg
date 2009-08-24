@@ -64,6 +64,7 @@ bool ArmTrajectoryController::initXml(mechanism::RobotState * robot, TiXmlElemen
   ROS_INFO("Initializing trajectory controller");
 
   robot_ = robot->model_;
+  robot_state_ = robot;
   mechanism::Joint *joint;
 //  std::vector<double> joint_velocity_limits;
   std::vector<trajectory::Trajectory::TPoint> trajectory_points_vector;
@@ -139,7 +140,7 @@ bool ArmTrajectoryController::initXml(mechanism::RobotState * robot, TiXmlElemen
   if(!joint_trajectory_->setTrajectory(trajectory_points_vector))
     ROS_WARN("Trajectory not set correctly");
 
-  trajectory_start_time_ = robot_->hw_->current_time_;
+  trajectory_start_time_ = robot_state_->getTime();
   trajectory_end_time_ = trajectory_start_time_;
 
   ROS_INFO("ArmTrajectoryController:: Done loading controller");
@@ -199,11 +200,11 @@ void ArmTrajectoryController::update(void)
 
   double sample_time(0.0);
 
-  current_time_ = robot_->hw_->current_time_;
+  current_time_ = robot_state_->getTime();
 
   if(refresh_rt_vals_)
   {
-    trajectory_start_time_ = robot_->hw_->current_time_;
+    trajectory_start_time_ = robot_state_->getTime();
     trajectory_wait_time_ = 0.0;
     trajectory_end_time_ = joint_trajectory_->getTotalTime()+trajectory_start_time_;
     refresh_rt_vals_ = false;
@@ -211,7 +212,7 @@ void ArmTrajectoryController::update(void)
   }
   if(arm_controller_lock_.try_lock())
   {
-    sample_time = robot_->hw_->current_time_ - trajectory_start_time_;
+    sample_time = robot_state_->getTime() - trajectory_start_time_;
     joint_trajectory_->sample(trajectory_point_,sample_time);
 
 //    ROS_INFO("sample_time: %f", sample_time);
@@ -224,9 +225,9 @@ void ArmTrajectoryController::update(void)
 //    cout << endl;
     arm_controller_lock_.unlock();
 
-    if(robot_->hw_->current_time_ >= trajectory_end_time_ && trajectory_done_ == false)
+    if(robot_state_->getTime() >= trajectory_end_time_ && trajectory_done_ == false)
     {
-      trajectory_wait_time_ = robot_->hw_->current_time_ - trajectory_end_time_;
+      trajectory_wait_time_ = robot_state_->getTime() - trajectory_end_time_;
       if(reachedGoalPosition(joint_cmd_rt_))
       {
         trajectory_wait_time_ = 0.0;
@@ -440,7 +441,7 @@ bool ArmTrajectoryControllerNode::initXml(mechanism::RobotState * robot, TiXmlEl
     delete diagnostics_publisher_ ;
   diagnostics_publisher_ = new realtime_tools::RealtimePublisher <diagnostic_msgs::DiagnosticArray> ("/diagnostics", 2) ;
 
-  last_diagnostics_publish_time_ = c_->robot_->hw_->current_time_;
+  last_diagnostics_publish_time_ = c_->robot_state_->getTime();
   node_->param<double>(service_prefix_ + "/diagnostics_publish_delta_time",diagnostics_publish_delta_time_,0.05);
 
   ROS_DEBUG("Initialized publisher");

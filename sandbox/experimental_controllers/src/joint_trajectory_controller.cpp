@@ -134,7 +134,7 @@ bool JointTrajectoryController::initXml(mechanism::RobotState * robot, TiXmlElem
 
 bool JointTrajectoryController::starting()
 {
-  current_time_ = robot_->hw_->current_time_;
+  current_time_ = robot_state_->getTime();
   updateJointValues();
   last_time_ = current_time_;
   setTrajectoryCmdToCurrentValues();
@@ -165,7 +165,7 @@ void JointTrajectoryController::initializePublishers()
     delete diagnostics_publisher_ ;
   diagnostics_publisher_ = new realtime_tools::RealtimePublisher <diagnostic_msgs::DiagnosticArray> ("/diagnostics", 2) ;
 
-  last_diagnostics_publish_time_ = robot_->hw_->current_time_;
+  last_diagnostics_publish_time_ = robot_state_->getTime();
   node_->param<double>(prefix_+"diagnostics_publish_delta_time",diagnostics_publish_delta_time_,1.0);
 
   controller_state_publisher_->msg_.name = name_;
@@ -215,7 +215,7 @@ bool JointTrajectoryController::loadXmlFile(mechanism::RobotState * robot, TiXml
 
   robot_ = robot->model_;
   robot_state_ = robot;
-  current_time_ = robot_->hw_->current_time_;
+  current_time_ = robot_state_->getTime();
   TiXmlElement *elt = config->FirstChildElement("controller");
   while (elt)
   {
@@ -463,7 +463,7 @@ void JointTrajectoryController::update(void)
 #ifdef PUBLISH_MAX_TIME
   double start_time = ros::Time::now().toSec();
 #endif
-  current_time_ = robot_->hw_->current_time_;
+  current_time_ = robot_state_->getTime();
   updateJointValues();
   int get_trajectory_index = 0;
 

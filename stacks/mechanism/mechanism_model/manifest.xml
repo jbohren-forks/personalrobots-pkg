@@ -7,16 +7,11 @@
 <depend package="roscpp" />
 <depend package="hardware_interface" />
 <depend package="tinyxml" />
-<depend package="wg_robot_description_parser" />
+<depend package="urdf" />
 <depend package="kdl_parser" />
-<depend package="tf" />
-<depend package="tf_conversions" />
 <depend package="std_srvs" />
-<depend package="control_toolbox" />
-<depend package="bullet" />
 <depend package="loki" />
 <depend package="angles" />
-<depend package="kdl" />
 <url>http://pr.willowgarage.com</url>
 <export>
   <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lmechanism_model -Wl,-rpath,${prefix}/lib -lloki"/>

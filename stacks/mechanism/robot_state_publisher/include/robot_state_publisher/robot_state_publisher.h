@@ -37,7 +37,6 @@
 #ifndef ROBOT_STATE_PUBLISHER_H
 #define ROBOT_STATE_PUBLISHER_H
 
-#include <kdl_parser/tree_parser.hpp>
 #include <ros/ros.h>
 #include <boost/scoped_ptr.hpp>
 #include <tf/tf.h>

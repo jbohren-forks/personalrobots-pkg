@@ -250,7 +250,7 @@ void CartesianHybridController::update()
 {
   if (!chain_.allCalibrated(robot_->joint_states_))
     return;
-  double time = robot_->hw_->current_time_;
+  double time = robot_->getTime();
   double dt = time - last_time_;
   last_time_ = time;
 

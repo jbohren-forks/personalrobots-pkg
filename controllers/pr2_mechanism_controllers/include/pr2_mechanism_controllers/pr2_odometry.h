@@ -37,6 +37,7 @@
 #include <nav_msgs/Odometry.h>
 #include <realtime_tools/realtime_publisher.h>
 #include <tf/tfMessage.h>
+#include <tf/tf.h>
 #include <pr2_mechanism_controllers/base_kinematics.h>
 #include <angles/angles.h>
 

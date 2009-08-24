@@ -39,7 +39,6 @@
 
 #include <kdl/tree.hpp>
 #include <ros/ros.h>
-#include <kdl_parser/tree_parser.hpp>
 #include <mechanism_msgs/JointStates.h>
 #include "robot_state_publisher/robot_state_publisher.h"
 

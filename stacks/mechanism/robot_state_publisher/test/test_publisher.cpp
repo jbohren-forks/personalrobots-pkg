@@ -39,6 +39,8 @@
 #include <ros/node.h>
 #include <tf/transform_listener.h>
 #include <boost/thread/thread.hpp>
+#include <urdf/model.h>
+#include <kdl_parser/dom_parser.hpp>
 #include "robot_state_publisher/joint_state_listener.h"
 
 
@@ -60,13 +62,19 @@ protected:
   /// constructor
   TestPublisher()
   {
-    Tree tree;
+    // constructs a robot model from the xml file
+    urdf::Model robot_model;
     if (g_argc == 2){
-      if (!treeFromFile(g_argv[1], tree))
+      if (!robot_model.initFile(g_argv[1]))
         ROS_ERROR("Failed to construct robot model from xml string");
     }
     else
       ROS_ERROR("No robot model as argument given");
+
+    // constructs a kdl tree from the robot model
+    Tree tree;
+    if (!treeFromRobotModel(robot_model, tree))
+      ROS_ERROR("Failed to extract kdl tree from robot model");
 
     publisher = new JointStateListener(tree);
   }

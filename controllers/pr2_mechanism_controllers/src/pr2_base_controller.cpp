@@ -171,7 +171,7 @@ void Pr2BaseController::setCommand(geometry_msgs::Twist cmd_vel)
     cmd_vel_t_.linear.y = 0.0;
   }
   cmd_vel_t_.angular.z = filters::clamp(cmd_vel.angular.z, -max_vel_.angular.z, max_vel_.angular.z);
-  cmd_received_timestamp_ = base_kin_.robot_state_->hw_->current_time_;
+  cmd_received_timestamp_ = base_kin_.robot_state_->getTime();
 
   ROS_DEBUG("BaseController:: command received: %f %f %f",cmd_vel.linear.x,cmd_vel.linear.y,cmd_vel.angular.z);
   ROS_DEBUG("BaseController:: command current: %f %f %f", cmd_vel_.linear.x,cmd_vel_.linear.y,cmd_vel_.angular.z);
@@ -250,8 +250,8 @@ bool Pr2BaseController::starting()
     }
   }
 
-  last_time_ = base_kin_.robot_state_->hw_->current_time_;
-  cmd_received_timestamp_ = base_kin_.robot_state_->hw_->current_time_;
+  last_time_ = base_kin_.robot_state_->getTime();
+  cmd_received_timestamp_ = base_kin_.robot_state_->getTime();
   for(int i = 0; i < base_kin_.num_casters_; i++)
   {
     caster_controller_[i]->starting();
@@ -266,7 +266,7 @@ bool Pr2BaseController::starting()
 void Pr2BaseController::update()
 {
 
-  double current_time = base_kin_.robot_state_->hw_->current_time_;
+  double current_time = base_kin_.robot_state_->getTime();
   double dT = std::min<double>(current_time - last_time_, base_kin_.MAX_DT_);
 
   if(new_cmd_available_)

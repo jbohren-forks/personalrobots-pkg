@@ -159,7 +159,7 @@ bool CartesianPoseTwistController::starting()
   twist_ff_ = Twist::Zero();
   pose_desi_ = getPose();
   twist_desi_ = Twist::Zero();
-  last_time_ = robot_state_->hw_->current_time_;
+  last_time_ = robot_state_->getTime();
 
   loop_count_ = 0;
   return true;
@@ -168,7 +168,7 @@ bool CartesianPoseTwistController::starting()
 void CartesianPoseTwistController::update()
 {
   // get time
-  double time = robot_state_->hw_->current_time_;
+  double time = robot_state_->getTime();
   double dt = time - last_time_;
   last_time_ = time;
 

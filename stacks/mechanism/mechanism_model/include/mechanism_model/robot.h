@@ -37,7 +37,7 @@
  *
  * State path:
  *               +---------------+
- * Actuators --> | Transmissions | --> Joints --> Links
+ * Actuators --> | Transmissions | --> Joints 
  *               +---------------+
  *
  * Author: Stuart Glaser
@@ -50,7 +50,6 @@
 #include <map>
 #include <string>
 #include <kdl/tree.hpp>
-#include "mechanism_model/link.h"
 #include "mechanism_model/joint.h"
 #include "mechanism_model/transmission.h"
 #include "hardware_interface/hardware_interface.h"
@@ -60,42 +59,69 @@ class TiXmlElement;
 namespace mechanism
 {
 
+/** \brief This class provides the controllers with an interface to the robot model. 
+ *  
+ * Most controllers that need the robot model should use the 'robot_model_', which is
+ * a kinematic/dynamic model of the robot, represented by a KDL Tree structure. 
+ * 
+ * Some specialized controllers (such as the calibration controllers) can get access
+ * to actuators, transmissions and special joint parameters.
+ */
 class Robot
 {
 public:
-  Robot() : hw_(NULL) {}
+  /// Constructor
+  Robot(HardwareInterface *hw): hw_(hw) {}
 
+  /// Destructor
   ~Robot()
   {
     deleteElements(&transmissions_);
     deleteElements(&joints_);
-    deleteElements(&links_);
   }
 
+  /// Initialize the robot model form xml
   bool initXml(TiXmlElement *root);
 
-  HardwareInterface *hw_;  // Holds the array of actuators
-  KDL::Tree tree_;
-  std::vector<Transmission*> transmissions_;
-  std::vector<Joint*> joints_;
-  std::vector<Link*> links_;
+  /// The kinematic/dynamic model of the robot, represented by a KDL tree
+  KDL::Tree robot_model_;
 
-  // All return -1 on failure.
+  /// The list of actuators
+  std::vector<Actuator*> actuators_;
+  /// The list of transmissions
+  std::vector<Transmission*> transmissions_;
+  /// The list of joints
+  std::vector<Joint* > joints_;
+
+  /// get the joint index based on the joint name. Returns -1 on failure
   int getJointIndex(const std::string &name) const;
+  /// get the actuator index based on the actuator name. Returns -1 on failure
   int getActuatorIndex(const std::string &name) const;
-  int getLinkIndex(const std::string &name) const;
+  /// get the transmission index based on the transmission name. Returns -1 on failure
   int getTransmissionIndex(const std::string &name) const;
 
-  // All return NULL on failure
+  /// get a joint pointer based on the joint name. Returns NULL on failure
   Joint* getJoint(const std::string &name) const;
+  /// get an actuator pointer based on the actuator name. Returns NULL on failure
   Actuator* getActuator(const std::string &name) const;
-  Link* getLink(const std::string &name) const;
+  /// get a transmission pointer based on the transmission name. Returns NULL on failure
   Transmission* getTransmission(const std::string &name) const;
 
-  // For debugging
-  void printLinkTree();
+private:
+  HardwareInterface *hw_;
 };
 
+
+
+/** \brief This class provides the controllers with an interface to the robot state
+ *  
+ * Most controllers that need the robot state should use the joint states, to get
+ * access to the joint position/velocity/effort, and to command the effort a joint
+ * should apply. Controllers can get access to the hard realtime clock through getTime()
+ * 
+ * Some specialized controllers (such as the calibration controllers) can get access
+ * to actuator states, and transmission states.
+ */
 class RobotState
 {
 public:
@@ -103,9 +129,11 @@ public:
 
   Robot *model_;
 
-  HardwareInterface *hw_;  // Actuator states
   std::vector<JointState> joint_states_;
-  std::vector<LinkState> link_states_;
+  JointState *getJointState(const std::string &name);
+  const JointState *getJointState(const std::string &name) const;
+
+  double getTime() {return hw_->current_time_;};
 
  /**
   * Each transmission refers to the actuators and joints it connects by name.
@@ -115,14 +143,6 @@ public:
   std::vector<std::vector<Actuator*> > transmissions_in_;
   std::vector<std::vector<JointState*> > transmissions_out_;
 
-  std::vector<int> links_joint_;
-  std::vector<int> links_parent_;
-  std::vector<std::vector<int> > links_children_;
-
-  JointState *getJointState(const std::string &name);
-  const JointState *getJointState(const std::string &name) const;
-  LinkState *getLinkState(const std::string &name);
-
   void propagateState();
   void propagateEffort();
   void enforceSafety();
@@ -131,6 +151,8 @@ public:
   void propagateStateBackwards();
   void propagateEffortBackwards();
 
+private:
+  HardwareInterface *hw_; 
 };
 
 }

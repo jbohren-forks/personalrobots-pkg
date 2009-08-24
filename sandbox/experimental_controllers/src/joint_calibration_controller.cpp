@@ -191,12 +191,12 @@ void JointCalibrationControllerNode::update()
 
   if (c_.calibrated())
   {
-    if (last_publish_time_ + 0.5 < robot_->hw_->current_time_)
+    if (last_publish_time_ + 0.5 < robot_->getTime())
     {
       assert(pub_calibrated_);
       if (pub_calibrated_->trylock())
       {
-        last_publish_time_ = robot_->hw_->current_time_;
+        last_publish_time_ = robot_->getTime();
         pub_calibrated_->unlockAndPublish();
       }
     }

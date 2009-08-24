@@ -1,4 +1,4 @@
-/////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
 // Copyright (C) 2008, Willow Garage, Inc.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -43,7 +43,8 @@ using namespace ros;
 
 
 MechanismControl::MechanismControl(HardwareInterface *hw) :
-  state_(NULL), hw_(hw),
+  model_(hw),
+  state_(NULL), hw_(hw), 
   controller_loader_("controller_interface", "Controller"),
   start_request_(0),
   stop_request_(0),
@@ -56,9 +57,7 @@ MechanismControl::MechanismControl(HardwareInterface *hw) :
   pub_mech_state_(node_, "mechanism_state", 1),
   last_published_state_(ros::Time::now().toSec()),
   last_published_diagnostics_(ros::Time::now().toSec())
-{
-  model_.hw_ = hw;
-}
+{}
 
 MechanismControl::~MechanismControl()
 {
@@ -78,7 +77,7 @@ bool MechanismControl::initXml(TiXmlElement* config)
   for (unsigned int i = 0; i < model_.joints_.size(); ++i)
   {
     int type = state_->joint_states_[i].joint_->type_;
-    if (type == JOINT_ROTARY || type == JOINT_CONTINUOUS || type == JOINT_PRISMATIC)
+    if (type == urdf::Joint::REVOLUTE || type == urdf::Joint::CONTINUOUS || type == urdf::Joint::PRISMATIC)
       ++joints_size;
   }
   pub_joints_.msg_.set_joints_size(joints_size);
@@ -224,7 +223,7 @@ bool MechanismControl::spawnController(const std::string& name)
     if (to[j].name == name)
     {
       to.clear();
-      ROS_ERROR("A controller named \"%s\" already exists", name.c_str());
+      ROS_ERROR("A controller named \"%s\" was already spawned inside mechanism control", name.c_str());
       return false;
     }
   }
@@ -347,7 +346,8 @@ bool MechanismControl::killController(const std::string &name)
   if (!removed)
   {
     to.clear();
-    ROS_ERROR("Could not find controller named \"%s\" to remove", name.c_str());
+    ROS_ERROR("Could not kill controller with name %s because no controller with this name exists",
+              name.c_str());
     return false;
   }
 
@@ -510,7 +510,7 @@ void MechanismControl::publishState()
       for (unsigned int i = 0; i < model_.joints_.size(); ++i)
       {
         int type = state_->joint_states_[i].joint_->type_;
-        if (type == JOINT_ROTARY || type == JOINT_CONTINUOUS || type == JOINT_PRISMATIC)
+        if (type == urdf::Joint::REVOLUTE || type == urdf::Joint::CONTINUOUS || type == urdf::Joint::PRISMATIC)
         {
           assert(j < pub_mech_state_.msg_.get_joint_states_size());
           mechanism_msgs::JointState *out = &pub_mech_state_.msg_.joint_states[j++];
@@ -563,7 +563,7 @@ void MechanismControl::publishState()
       for (unsigned int i = 0; i < model_.joints_.size(); ++i)
       {
         int type = state_->joint_states_[i].joint_->type_;
-        if (type == JOINT_ROTARY || type == JOINT_CONTINUOUS || type == JOINT_PRISMATIC)
+        if (type == urdf::Joint::REVOLUTE || type == urdf::Joint::CONTINUOUS || type == urdf::Joint::PRISMATIC)
         {
           assert(j < pub_joints_.msg_.get_joints_size());
           mechanism_msgs::JointState *out = &pub_joints_.msg_.joints[j++];

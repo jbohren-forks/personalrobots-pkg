@@ -45,7 +45,6 @@
 #include <diagnostic_updater/DiagnosticStatusWrapper.h>
 #include <mechanism_control/mechanism_control.h>
 #include <ethercat_hardware/ethercat_hardware.h>
-#include <urdf/parser.h>
 
 #include <ros/ros.h>
 #include <std_srvs/Empty.h>
@@ -182,7 +181,6 @@ void *controlLoop(void *)
       ROS_FATAL("Could not parse the xml from %s\n", g_options.xml_);
       return (void *)-1;
   }
-  urdf::normalizeXml(root_element);
 
   // Initialize mechanism control from robot description
   mc.initXml(root);

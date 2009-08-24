@@ -136,7 +136,7 @@ bool CartesianSplineTrajectoryController::starting()
   new_cmd_available_ = false;
   trajectory_status_ = manipulation_srvs::QuerySplineTraj::Response::State_Done;
   spline_done_ = false;
-  last_time_ = robot_state_->hw_->current_time_;
+  last_time_ = robot_state_->getTime();
   goal_ = getCommand(spline_rt_.segments.back(), spline_rt_.segments.back().duration.toSec());
       spline_time_ = spline_rt_.segments.back().duration.toSec();
   setGoalPose(goal_);
@@ -147,7 +147,7 @@ bool CartesianSplineTrajectoryController::starting()
 
 void CartesianSplineTrajectoryController::update()
 {
-  spline_time_ += (robot_state_->hw_->current_time_ - last_time_);
+  spline_time_ += (robot_state_->getTime() - last_time_);
 
   if(new_cmd_available_)
   {
@@ -190,7 +190,7 @@ void CartesianSplineTrajectoryController::update()
 
   setCommand(joint_cmd);
 
-  last_time_ = robot_state_->hw_->current_time_;
+  last_time_ = robot_state_->getTime();
 }
 
 manipulation_msgs::Waypoint CartesianSplineTrajectoryController::getCommand(const manipulation_msgs::SplineTrajSegment &spline, const double t)

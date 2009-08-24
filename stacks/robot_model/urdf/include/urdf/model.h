@@ -70,6 +70,14 @@ public:
   boost::shared_ptr<const Link> getChildLink(const std::string& name) const;
   boost::shared_ptr<const Joint> getChildJoint(const std::string& name) const;
 
+  /// Every Robot Description File can be described as a
+  ///   list of Links and Joints
+  /// The connection between links(nodes) and joints(edges)
+  ///   should define a tree (i.e. 1 parent link, 0+ children links)
+  std::map<std::string, boost::shared_ptr<Link> > links_;
+  std::map<std::string, boost::shared_ptr<Joint> > joints_;
+  std::map<std::string, boost::shared_ptr<Material> > materials_;
+
 private:
   void clear();
 
@@ -89,13 +97,6 @@ private:
   /// it's time to find the root Link
   bool initRoot(std::map<std::string, std::string> &parent_link_tree);
 
-  /// Every Robot Description File can be described as a
-  ///   list of Links and Joints
-  /// The connection between links(nodes) and joints(edges)
-  ///   should define a tree (i.e. 1 parent link, 0+ children links)
-  std::map<std::string, boost::shared_ptr<Link> > links_;
-  std::map<std::string, boost::shared_ptr<Joint> > joints_;
-  std::map<std::string, boost::shared_ptr<Material> > materials_;
 
   /// Model is restricted to a tree for now, which means there exists one root link
   ///  typically, root link is the world(inertial).  Where world is a special link

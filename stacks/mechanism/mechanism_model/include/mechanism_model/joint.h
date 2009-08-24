@@ -38,7 +38,7 @@
 #define JOINT_H
 
 #include <tinyxml/tinyxml.h>
-#include "tf/tf.h"
+#include <urdf/joint.h>
 
 namespace mechanism {
 
@@ -51,49 +51,37 @@ public:
     joint_limit_min_(0.0), joint_limit_max_(0.0),
     effort_limit_(0.0), velocity_limit_(0.0),
     joint_damping_coefficient_(0.0), joint_friction_coefficient_(0.0),
-    reference_position_(0.0),
-    has_safety_limits_(false),
     k_position_limit_(0.0), k_velocity_limit_(0.0),
-    spring_constant_min_(0.0), damping_constant_min_(0.0), safety_length_min_(0.0),
-    spring_constant_max_(0.0), damping_constant_max_(0.0), safety_length_max_(0.0) {}
+    safety_limit_min_(0.0),safety_limit_max_(0.0),
+    reference_position_(0.0) {}
   ~Joint() {}
 
   void enforceLimits(JointState *s);
-  bool initXml(TiXmlElement *elt);
+  bool init(const boost::shared_ptr<urdf::Joint> jnt);
 
   std::string name_;
   int type_;
 
-  // Constants
+  // Joint limits
   double joint_limit_min_;  // In radians
   double joint_limit_max_;  // In radians
   double effort_limit_;
   double velocity_limit_;
+  bool has_joint_limits_;
 
   // Joint Properites
   double joint_damping_coefficient_; // non-dimensional
   double joint_friction_coefficient_;
 
-
-  // Calibration parameters
-  double reference_position_; // The reading of the reference position, in radians
-
-  bool has_safety_limits_;
-
+  // safety controller parameters
   double k_position_limit_;
   double k_velocity_limit_;
+  double safety_limit_min_;
+  double safety_limit_max_;
+  bool has_safety_code_;
 
-  double spring_constant_min_;
-  double damping_constant_min_;
-  double safety_length_min_;
-
-  double spring_constant_max_;
-  double damping_constant_max_;
-  double safety_length_max_;
-
-  // Axis of motion (x,y,z).  Axis of rotation for revolute/continuous
-  // joints, axis of translation for prismatic joints.
-  tf::Vector3 axis_;
+  // calibration parameters
+  double reference_position_;
 };
 
 
@@ -118,7 +106,6 @@ public:
     : joint_(s.joint_), position_(s.position_), velocity_(s.velocity_),
       applied_effort_(s.applied_effort_), commanded_effort_(s.commanded_effort_), calibrated_(s.calibrated_)
   {}
-
 };
 
 enum
@@ -131,10 +118,6 @@ enum
   JOINT_PLANAR,
   JOINT_TYPES_MAX
 };
-
-/** Some joints do not advertise their minimum and maximum values, or do not advertise safety limit infomrations. When set to true, this behaviour is considered illegal and generates an assertion failure. */
-static const bool SAFETY_LIMS_STRICTLY_ENFORCED = false;
-
 
 }
 

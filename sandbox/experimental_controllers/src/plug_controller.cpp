@@ -115,7 +115,7 @@ bool PlugController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
   pitch_pid_.initParam(controller_name_+"/pose_pid");
   yaw_pid_.initParam(controller_name_+"/pose_pid");
   line_pid_.initParam(controller_name_+"/line_pid");
-  last_time_ = robot->model_->hw_->current_time_;
+  last_time_ = robot->model_->getTime();
 
 
   // Constructs solvers and allocates matrices.
@@ -204,7 +204,7 @@ void PlugController::update()
 
 void PlugController::computeConstraintJacobian()
 {
-  double time = robot_->model_->hw_->current_time_;
+  double time = robot_->model_->getTime();
   // Clear force vector
   f_r_ = 0;
   f_roll_ = 0;

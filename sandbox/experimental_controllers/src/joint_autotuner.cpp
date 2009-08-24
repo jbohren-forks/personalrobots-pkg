@@ -75,7 +75,7 @@ bool JointAutotuner::initXml(mechanism::RobotState *robot, TiXmlElement *config)
   assert(robot);
   robot_ = robot->model_;
   robot_state_ = robot;
-  last_time_ = robot->hw_->current_time_;
+  last_time_ = robot->getTime();
   cycle_start_time_ = getTime();
    TiXmlElement *j = config->FirstChildElement("joint");
   if (!j)
@@ -148,7 +148,7 @@ double JointAutotuner::getMeasuredState()
 
 double JointAutotuner::getTime()
 {
-  return robot_state_->hw_->current_time_;
+  return robot_state_->getTime();
 }
 
 void JointAutotuner::update()

@@ -84,13 +84,13 @@ void Recorder::record(unsigned int index, float value)
     return; // init wasn't called
   assert(index >= 0 && index < msg_[filling_].channels.size());
 
-  int ms = (int)fmod(robot_->hw_->current_time_ * 1000.0, 1000.0);
+  int ms = (int)fmod(robot_->getTime() * 1000.0, 1000.0);
   if (ms % 100 == 0)
   {
     if (publishing_ != other(filling_))
     {
       filling_ = other(filling_);
-      msg_[filling_].header.stamp.fromSec(robot_->hw_->current_time_);
+      msg_[filling_].header.stamp.fromSec(robot_->getTime());
     }
   }
 

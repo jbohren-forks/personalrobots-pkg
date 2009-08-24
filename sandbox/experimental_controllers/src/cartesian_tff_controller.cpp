@@ -144,7 +144,7 @@ bool CartesianTFFController::init(mechanism::RobotState *robot_state, const ros:
 bool CartesianTFFController::starting()
 {
   // time
-  last_time_ = robot_state_->hw_->current_time_;
+  last_time_ = robot_state_->getTime();
 
   // set initial modes and values
   for (unsigned int i=0; i<6; i++){
@@ -173,7 +173,7 @@ bool CartesianTFFController::starting()
 void CartesianTFFController::update()
 {
   // get time
-  double time = robot_state_->hw_->current_time_;
+  double time = robot_state_->getTime();
   double dt = time - last_time_;
   last_time_ = time;
 

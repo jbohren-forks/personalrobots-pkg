@@ -50,7 +50,7 @@ bool PR2GripperTransmission::initXml(TiXmlElement *config, Robot *robot)
   const char *actuator_name = ael ? ael->Attribute("name") : NULL;
   if (!actuator_name || !robot->getActuator(actuator_name))
   {
-    ROS_WARN("PR2GripperTransmission could not find actuator named \"%s\"", actuator_name);
+    ROS_ERROR("PR2GripperTransmission could not find actuator named \"%s\"", actuator_name);
     return false;
   }
   robot->getActuator(actuator_name)->command_.enable_ = true;
@@ -61,7 +61,7 @@ bool PR2GripperTransmission::initXml(TiXmlElement *config, Robot *robot)
     const char *joint_name = j->Attribute("name");
     if (!joint_name || !robot->getJoint(joint_name))
     {
-      ROS_WARN("PR2GripperTransmission could not find joint named \"%s\"", joint_name);
+      ROS_ERROR("PR2GripperTransmission could not find joint named \"%s\"", joint_name);
       return false;
     }
     gap_joint_ = std::string(joint_name);
@@ -71,7 +71,7 @@ bool PR2GripperTransmission::initXml(TiXmlElement *config, Robot *robot)
     const char *joint_reduction = j->Attribute("mechanical_reduction");
     if (!joint_reduction)
     {
-      ROS_WARN("PR2GripperTransmission's joint \"%s\" was not given a reduction.", joint_name);
+      ROS_ERROR("PR2GripperTransmission's joint \"%s\" was not given a reduction.", joint_name);
       return false;
     }
     gap_mechanical_reduction_ = atof(joint_reduction);
@@ -102,7 +102,7 @@ bool PR2GripperTransmission::initXml(TiXmlElement *config, Robot *robot)
     const char *joint_name = j->Attribute("name");
     if (!joint_name || !robot->getJoint(joint_name))
     {
-      ROS_WARN("PR2GripperTransmission could not find joint named \"%s\"", joint_name);
+      ROS_ERROR("PR2GripperTransmission could not find joint named \"%s\"", joint_name);
       return false;
     }
     else

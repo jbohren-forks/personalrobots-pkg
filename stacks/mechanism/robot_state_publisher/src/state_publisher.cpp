@@ -36,7 +36,8 @@
 
 #include <kdl/tree.hpp>
 #include <ros/ros.h>
-#include <kdl_parser/tree_parser.hpp>
+#include <kdl_parser/dom_parser.hpp>
+#include <urdf/model.h>
 #include <mechanism_msgs/MechanismState.h>
 #include "robot_state_publisher/joint_state_listener.h"
 
@@ -56,17 +57,28 @@ int main(int argc, char** argv)
   ros::init(argc, argv, "robot_state_publisher");
   NodeHandle node;
 
-  // build robot model
-  Tree tree;
+  // gets the location of the robot description on the parameter server
   string param_name, full_param_name;
-  node.param("~/robot_desc_param", param_name, string("robot_description"));
+  node.param("~/robot_desc_param", param_name, string("robot_description_new"));
   node.searchParam(param_name,full_param_name);
   string robot_desc;
+
+  // constructs a robot model from the xml string
+  urdf::Model robot_model;
   node.param(full_param_name, robot_desc, string());
-  if (!treeFromString(robot_desc, tree)){
+  if (!robot_model.initString(robot_desc)){
     ROS_ERROR("Failed to construct robot model from xml string");
     return -1;
   }
+
+  // constructs a kdl tree from the robot model
+  Tree tree;
+  if (!treeFromRobotModel(robot_model, tree)){
+    ROS_ERROR("Failed to extract kdl tree from robot model");
+    return -1;
+  }
+
+
   JointStateListener state_publisher(tree);
 
   ros::spin();
