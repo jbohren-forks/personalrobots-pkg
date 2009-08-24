@@ -30,11 +30,10 @@
 #ifndef FILTERS_FILTER_BASE_H_
 #define FILTERS_FILTER_BASE_H_
 
-#include <tinyxml/tinyxml.h>
 #include <typeinfo>
-#include <loki/Factory.h>
 #include "ros/assert.h"
 #include "ros/console.h"
+#include "ros/ros.h"
 
 #include "boost/scoped_ptr.hpp"
 #include <boost/algorithm/string.hpp>
@@ -42,17 +41,7 @@
 namespace filters
 {
 
-typedef std::map<std::string, std::string> string_map_t;
-
-template <typename T>
-std::string getFilterID(const std::string & filter_name)
-{
-  return filter_name + typeid(T).name();
-  
-}
-
-
-
+typedef std::map<std::string, XmlRpc::XmlRpcValue> string_map_t;
 
 /** \brief A Base filter class to provide a standard interface for all filters
  *
@@ -63,56 +52,55 @@ class FilterBase
 public:
   /** \brief Default constructor used by Filter Factories
    */
-  FilterBase():number_of_channels_(0), configured_(false){};
+  FilterBase():configured_(false){};
 
   /** \brief Virtual Destructor
    */
   virtual ~FilterBase(){};
 
-  /** \brief The public method to configure a filter from XML 
-   * \param number_of_channels How many parallel channels the filter will process
-   * \param config The XML to initialize the filter with including name, type, and any parameters
+  /** \brief Configure the filter from the parameter server 
+   * \param The parameter from which to read the configuration
+   * \param node_handle The optional node handle, useful if operating in a different namespace.
    */
-  bool configure(unsigned int number_of_channels, TiXmlElement *config)
+  bool configure(const std::string& param_name, ros::NodeHandle node_handle = ros::NodeHandle())
+  {
+    XmlRpc::XmlRpcValue config;
+    if (!node_handle.getParam(param_name, config))
+    {
+      ROS_ERROR("Could not find parameter %s on the server, are you sure that it was pushed up correctly?", param_name.c_str());
+      return false;
+    }
+    return configure(config);
+    
+  }
+
+  /** \brief The public method to configure a filter from XML 
+   * \param config The XmlRpcValue from which the filter should be initialized
+   */
+  bool configure(XmlRpc::XmlRpcValue& config)
   {
     if (configured_)
     {
       ROS_WARN("Filter %s of type %s already being reconfigured", filter_name_.c_str(), filter_type_.c_str());
     };
     configured_ = false;
-    number_of_channels_ = number_of_channels;
     bool retval = true;
 
-    retval = retval && loadXml(config);
+    retval = retval && loadConfiguration(config);
     retval = retval && configure();
     configured_ = retval;
     return retval;
-  };
-
+  }
 
   /** \brief Update the filter and return the data seperately
    * This is an inefficient way to do this and can be overridden in the derived class
    * \param data_in A reference to the data to be input to the filter
    * \param data_out A reference to the data output location
    */
-  virtual bool update(const T& data_in, T& data_out)
-  {
-    std::vector<T> temp_in(1);
-    std::vector<T> temp_out(1);
-    temp_in[0] = data_in;
-    bool retval =  update(temp_in, temp_out);
-    data_out = temp_out[0];
-    return retval;
-  };
-  /** \brief Update the filter and return the data seperately
-   * \param data_in A reference to the data to be input to the filter
-   * \param data_out A reference to the data output location
-   * This funciton must be implemented in the derived class.
-   */
-  virtual bool update(const std::vector<T>& data_in, std::vector<T>& data_out)=0;
+  virtual bool update(const T& data_in, T& data_out)=0;
 
-  /** \brief Get the typeid of the Templated Datatype as a string */
-  std::string getType() {return typeid(T).name();};
+  /** \brief Get the type of the filter as a string */
+  std::string getType() {return filter_type_;};
 
   /** \brief Get the name of the filter as a string */
   inline const std::string& getName(){return filter_name_;};
@@ -129,16 +117,20 @@ protected:
   /** \brief Get a filter parameter as a string 
    * \param name The name of the parameter
    * \param value The string to set with the value
-   * \param default_value The string to set the value to if the parameter of name doesn't exist
-   * \return Whether or not the parameter of name existed */
-  bool getStringParam(const std::string& name, std::string& value, const std::string& default_value)
+   * \return Whether or not the parameter of name/type was set */
+  bool getParam(const std::string& name, std::string& value)
   {
     string_map_t::iterator it = params_.find(name);
     if (it == params_.end())
     {
-      value = default_value;
       return false;
     }
+
+    if(it->second.getType() != XmlRpc::XmlRpcValue::TypeString)
+    {
+      return false;
+    }
+
     value = it->second;
     return true;
   }
@@ -146,77 +138,90 @@ protected:
   /** \brief Get a filter parameter as a double
    * \param name The name of the parameter
    * \param value The double to set with the value
-   * \param default_value The double to set the value to if the parameter of name doesn't exist
-   * \return Whether or not the parameter of name existed */
-  bool getDoubleParam(const std::string&name, double& value, const double& default_value)
+   * \return Whether or not the parameter of name/type was set */
+  bool getParam(const std::string&name, double& value)
   {
     string_map_t::iterator it = params_.find(name);
     if (it == params_.end())
     {
-      value = default_value;
       return false;
     }
-    value = atof(it->second.c_str());
+
+    if(it->second.getType() != XmlRpc::XmlRpcValue::TypeDouble && it->second.getType() != XmlRpc::XmlRpcValue::TypeInt)
+    {
+      return false;
+    }
+
+    value = it->second.getType() == XmlRpc::XmlRpcValue::TypeInt ? (int)(it->second) : (double)(it->second);
     return true;
   }
 
   /** \brief Get a filter parameter as a int
    * \param name The name of the parameter
    * \param value The int to set with the value
-   * \param default_value The int to set the value to if the parameter of name doesn't exist
-   * \return Whether or not the parameter of name existed */
-  bool getIntParam(const std::string&name, int& value, const int& default_value)
+   * \return Whether or not the parameter of name/type was set */
+  bool getParam(const std::string&name, int& value)
   {
     string_map_t::iterator it = params_.find(name);
     if (it == params_.end())
     {
-      value = default_value;
       return false;
     }
-    value = atoi(it->second.c_str());
+
+    if(it->second.getType() != XmlRpc::XmlRpcValue::TypeInt)
+    {
+      return false;
+    }
+
+    value = it->second;
     return true;
   }
 
-
-  /** \brief Get a filter parameter as a unsigned int
+  /** \brief Get a filter parameter as an unsigned int
    * \param name The name of the parameter
-   * \param value The unsignd int to set with the value
-   * \param default_value The unsigned int to set the value to if the parameter of name doesn't exist
-   * \return Whether or not the parameter of name existed */
-  bool getUIntParam(const std::string&name, unsigned int& value, const unsigned int& default_value)
+   * \param value The int to set with the value
+   * \return Whether or not the parameter of name/type was set */
+  bool getParam(const std::string&name, unsigned  int& value)
   {
-    string_map_t::iterator it = params_.find(name);
-    if (it == params_.end())
-    {
-      value = default_value;
+    int signed_value;
+    if (!getParam(name, signed_value))
       return false;
-    }
-    value = atoi(it->second.c_str());
+    if (signed_value < 0)
+      return false;
+    value = signed_value;
     return true;
-  }
-  
+  };
 
   /** \brief Get a filter parameter as a std::vector<double>
    * \param name The name of the parameter
    * \param value The std::vector<double> to set with the value
-   * \param default_value The std::vector<double> to set the value to if the parameter of name doesn't exist
-   * \return Whether or not the parameter of name existed */
-  bool getDoubleVectorParam(const std::string&name, std::vector<double>& value, const std::vector<double>& default_value)
+   * \return Whether or not the parameter of name/type was set */
+  bool getParam(const std::string&name, std::vector<double>& value)
   {
     string_map_t::iterator it = params_.find(name);
     if (it == params_.end())
     {
-      value = default_value;
       return false;
     }
 
     value.clear();
-    std::vector<std::string> pieces;
-    
-    boost::split( pieces, it->second, boost::is_any_of(" "));
-    for (unsigned int i = 0; i < pieces.size(); ++i)
-      if (pieces[i].size() > 0)
-        value.push_back(atof(pieces[i].c_str()));
+
+    if(it->second.getType() != XmlRpc::XmlRpcValue::TypeArray)
+    {
+      return false;
+    }
+
+    XmlRpc::XmlRpcValue double_array = it->second;
+
+    for (int i = 0; i < double_array.size(); ++i){
+      if(double_array[i].getType() != XmlRpc::XmlRpcValue::TypeDouble && double_array[i].getType() != XmlRpc::XmlRpcValue::TypeInt)
+      {
+        return false;
+      }
+
+      double double_value = double_array[i].getType() == XmlRpc::XmlRpcValue::TypeInt ? (int)(double_array[i]) : (double)(double_array[i]);
+      value.push_back(double_value);
+    }
     
     return true;
   }
@@ -224,35 +229,56 @@ protected:
   /** \brief Get a filter parameter as a std::vector<string>
    * \param name The name of the parameter
    * \param value The std::vector<sgring> to set with the value
-   * \param default_value The std::vector<string> to set the value to if the parameter of name doesn't exist
-   * \return Whether or not the parameter of name existed */
-  bool getStringVectorParam(const std::string&name, std::vector<std::string>& value, const std::vector<std::string>& default_value)
+   * \return Whether or not the parameter of name/type was set */
+  bool getParam(const std::string&name, std::vector<std::string>& value)
   {
     string_map_t::iterator it = params_.find(name);
     if (it == params_.end())
     {
-      value = default_value;
       return false;
     }
 
     value.clear();
-    std::vector<std::string> pieces;
+
+    if(it->second.getType() != XmlRpc::XmlRpcValue::TypeArray)
+    {
+      return false;
+    }
+
+    XmlRpc::XmlRpcValue string_array = it->second;
     
-    boost::split( pieces, it->second, boost::is_any_of(" "));
-    value = pieces;
+    for (unsigned int i = 0; i < string_array.size(); ++i){
+      if(string_array[i].getType() != XmlRpc::XmlRpcValue::TypeString)
+      {
+        return false;
+      }
+
+      value.push_back(string_array[i]);
+    }
+
+    return true;
+  }
+
+  /** \brief Get a filter parameter as a XmlRpcValue
+   * \param name The name of the parameter
+   * \param value The XmlRpcValue to set with the value
+   * \return Whether or not the parameter of name/type was set */
+  bool getParam(const std::string& name, XmlRpc::XmlRpcValue& value)
+  {
+    string_map_t::iterator it = params_.find(name);
+    if (it == params_.end())
+    {
+      return false;
+    }
+
+    value = it->second;
     return true;
   }
   
-
-  ///Storage for a pointer to the xml used to configure the filter
-  ///This can be used by advanced filters using more than the param tags
-  boost::scoped_ptr<TiXmlElement>  raw_xml_;
   ///The name of the filter
   std::string filter_name_;
   ///The type of the filter (Used by FilterChain for Factory construction)
   std::string filter_type_;
-  /// How many parallel inputs for which the filter is to be configured
-  unsigned int number_of_channels_;
   /// Whether the filter has been configured.  
   bool configured_;
 
@@ -260,94 +286,153 @@ protected:
   string_map_t params_;
 
 private:
-  /**\brief Set the name and type of the filter from XML 
-   * \param config The XML from which to read
+  /**\brief Set the name and type of the filter from the parameter server
+   * \param param_name The parameter from which to read
    */
-  bool setNameAndType(TiXmlElement * config)
-  {  
-    const char *name = config->Attribute("name");
-    const char *type = config->Attribute("type");
-    if (!name) 
-    {
-      ROS_ERROR("Filter didn't have name defined");
-      return false;
-    }
-    if (!type) 
-    {
-      ROS_ERROR("Filter %s didn't have type defined", name);
-      return false;
-    }
-    filter_name_ = std::string(name);
-    filter_type_ = std::string(type);
-    ROS_INFO("Configuring Filter of Type: %s with name %s", type, name);
-    return true;
-  };
-
-
-  /** \brief Read in the XML and do basic configuration of FilterBase
-   * \param config The XML to parse */
-  bool loadXml(TiXmlElement* config)
+  bool setNameAndType(XmlRpc::XmlRpcValue& config)
   {
-    if (!config)
+    if(!config.hasMember("name"))
     {
-      ROS_ERROR("Filter Configured w/o xml element");
+      ROS_ERROR("Filter didn't have name defined, other strings are not allowed");
       return false;
     }
-    
-    if (std::string(config->Value()) != std::string("filter"))
+
+    std::string name = config["name"];
+
+    if(!config.hasMember("type"))
     {
-      ROS_ERROR("Filter not being constructed with filter xml, type is %s", config->Value());
+      ROS_ERROR("Filter %s didn't have type defined, other strings are not allowed", name.c_str());
+      return false;
     }
-    //Store a copy of the xml
-    raw_xml_.reset(config->Clone()->ToElement());
+
+    std::string type = config["type"];
+
+    filter_name_ = name;
+    filter_type_ = type;
+    ROS_DEBUG("Configuring Filter of Type: %s with name %s", type.c_str(), name.c_str());
+    return true;
+  }
+
+protected:
+  bool loadConfiguration(XmlRpc::XmlRpcValue& config)
+  {
+    if(config.getType() != XmlRpc::XmlRpcValue::TypeStruct)
+    {
+      ROS_ERROR("A filter configuration must be a map with fields name, type, and params");
+      return false;
+    } 
 
     if (!setNameAndType(config))
     {
-      ROS_ERROR("Filter Configured w/o name");
       return false;
     }
 
-    TiXmlElement * params = config->FirstChildElement("params");
-    if (params)
+    //check to see if we have parameters in our list
+    if(config.hasMember("params"))
     {
-      //Load params into map
-      for (TiXmlAttribute * it = params->FirstAttribute(); it; it = it->Next())
+      //get the params map
+      XmlRpc::XmlRpcValue params = config["params"];
+
+      if(params.getType() != XmlRpc::XmlRpcValue::TypeStruct)
       {
-        ROS_DEBUG("Loading param %s with value %s\n", it->Name(), it->Value());
-        params_[it->Name()] = it->Value();
-      }; 
-      
+        ROS_ERROR("params must be a map");
+        return false;
+      }
+      else{
+        //Load params into map
+        for(XmlRpc::XmlRpcValue::iterator it = params.begin(); it != params.end(); ++it)
+        {
+          ROS_DEBUG("Loading param %s\n", it->first.c_str());
+          params_[it->first] = it->second;
+        } 
+      }
     }
 
-    
     return true;    
-  };
-  
+  }
 };
 
-/**\brief The FilterFactory which generates any type of Filter */
+
 template <typename T>
-class FilterFactory : public Loki::SingletonHolder < Loki::Factory< filters::FilterBase<T>, std::string >,
-                                                     Loki::CreateUsingNew,
-                                                     Loki::LongevityLifetime::DieAsSmallObjectChild >
+class MultiChannelFilterBase : public FilterBase<T>
 {
-  //empty
-};
+  using FilterBase<T>::configured_;
+  using FilterBase<T>::filter_type_;
+  using FilterBase<T>::filter_name_;
+public:
+  MultiChannelFilterBase():number_of_channels_(0){};
+  
+  /** \brief Configure the filter from the parameter server 
+   * \param number_of_channels How many parallel channels the filter will process
+   * \param The parameter from which to read the configuration
+   * \param node_handle The optional node handle, useful if operating in a different namespace.
+   */
+  bool configure(unsigned int number_of_channels, const std::string& param_name, ros::NodeHandle node_handle = ros::NodeHandle())
+  {
+    XmlRpc::XmlRpcValue config;
+    if (!node_handle.getParam(param_name, config))
+    {
+      ROS_ERROR("Could not find parameter %s on the server, are you sure that it was pushed up correctly?", param_name.c_str());
+      return false;
+    }
+    return configure(number_of_channels, config);
+    
+  }
+
+
+  /** \brief The public method to configure a filter from XML 
+   * \param number_of_channels How many parallel channels the filter will process
+   * \param config The XmlRpcValue to load the configuration from 
+   */
+  bool configure(unsigned int number_of_channels, XmlRpc::XmlRpcValue& config)
+  {
+    ROS_DEBUG("FilterBase being configured with XmlRpc xml: %s type: %d", config.toXml().c_str(), config.getType());
+    if (configured_)
+    {
+      ROS_WARN("Filter %s of type %s already being reconfigured", filter_name_.c_str(), filter_type_.c_str());
+    };
+    configured_ = false;
+    number_of_channels_ = number_of_channels;
+    ROS_DEBUG("MultiChannelFilterBase configured with %d channels", number_of_channels_);
+    bool retval = true;
+
+    retval = retval && FilterBase<T>::loadConfiguration(config);
+    retval = retval && configure();
+    configured_ = retval;
+    return retval;
+  };
+
+
+  /** \brief A method to hide the base class method and warn if improperly called */
+  bool configure(XmlRpc::XmlRpcValue& config)
+  {
+    ROS_ERROR("MultiChannelFilterBase configure should be called with a number of channels argument, assuming 1");
+    return configure(1, config);
+  }
+
+  virtual bool configure()=0;
   
 
-/** The Macro which makes registering a Filter with it's type easy */
-#define FILTERS_REGISTER_FILTER(c,t) \
-  filters::FilterBase<t> * Filters_New_##c##__##t() {return new c< t >;}; \
-  bool ROS_FILTER_## c ## _ ## t =                                                    \
-    filters::FilterFactory<t>::Instance().Register(filters::getFilterID<t>(std::string(#c)), Filters_New_##c##__##t); 
+  /** \brief Update the filter and return the data seperately
+   * \param data_in A reference to the data to be input to the filter
+   * \param data_out A reference to the data output location
+   * This funciton must be implemented in the derived class.
+   */
+  virtual bool update(const std::vector<T>& data_in, std::vector<T>& data_out)=0;
 
-/** An additional macro equivalent to the above, but for use with a non-templated filter class */
-#define FILTERS_REGISTER_FILTER_NONTEMPLATE(c,t) \
-  filters::FilterBase<t> * Filters_New_##c##__##t() {return new c;}; \
-  bool ROS_FILTER_## c ## _ ## t =                                                    \
-    filters::FilterFactory<t>::Instance().Register(filters::getFilterID<t>(std::string(#c)), Filters_New_##c##__##t);
+  virtual bool update(const T& data_in, T& data_out)
+  {
+    ROS_ERROR("THIS IS A MULTI FILTER DON'T CALL SINGLE FORM OF UPDATE");
+    return false;
+  };
 
+
+protected:
+  /// How many parallel inputs for which the filter is to be configured
+  unsigned int number_of_channels_;
+  
+
+};
 
 }
-
 #endif //#ifndef FILTERS_FILTER_BASE_H_

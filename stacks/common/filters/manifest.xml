@@ -11,9 +11,10 @@ implementations of commonly used filters.
 <url>http://pr.willowgarage.com</url>
 <depend package="tinyxml"/>
 <depend package="rosconsole" />
-<depend package="loki" />
+<depend package="roscpp" />
+<depend package="pluginlib" />
 <export>
-<cpp cflags="-I${prefix}/include `rosboost-cfg --cflags`"
-     lflags="-lloki -Wl,-rpath,${prefix}/lib -L${prefix}/lib -lfilter"/>
+  <cpp cflags="-I${prefix}/include `rosboost-cfg --cflags`" lflags=""/> <!--lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lfilter"/-->
+  <filters plugin="${prefix}/default_plugins.xml" />
 </export>
 </package>

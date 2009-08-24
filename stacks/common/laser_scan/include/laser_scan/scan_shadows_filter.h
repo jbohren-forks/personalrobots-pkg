@@ -47,8 +47,8 @@ namespace laser_scan{
 
 /** @b ScanShadowsFilter is a simple filter that filters shadow points in a laser scan line 
  */
-template <typename T>
-class ScanShadowsFilter : public filters::FilterBase<T>
+
+class ScanShadowsFilter : public filters::FilterBase<sensor_msgs::LaserScan>
 {
 public:
 
@@ -67,22 +67,23 @@ public:
   /**@b Configure the filter from XML */
   bool configure()
   {
-    if (!filters::FilterBase<T>::getDoubleParam(std::string("min_angle"), min_angle_, 10))
+    if (!filters::FilterBase<sensor_msgs::LaserScan>::getParam(std::string("min_angle"), min_angle_))
     {
       ROS_ERROR("Error: ShadowsFilter was not given min_angle.\n");
       return false;
     }
-    if (!filters::FilterBase<T>::getDoubleParam(std::string("max_angle"), max_angle_, 170))
+    if (!filters::FilterBase<sensor_msgs::LaserScan>::getParam(std::string("max_angle"), max_angle_))
     {
       ROS_ERROR("Error: ShadowsFilter was not given min_angle.\n");
       return false;
     }
-    if (!filters::FilterBase<T>::getIntParam(std::string("window"), window_, 1))
+    if (!filters::FilterBase<sensor_msgs::LaserScan>::getParam(std::string("window"), window_))
     {
       ROS_ERROR("Error: ShadowsFilter was not given window.\n");
       return false;
     }
-    if (!filters::FilterBase<T>::getIntParam(std::string("neighbors"), neighbors_, 0))
+    neighbors_ = 0;//default value
+    if (!filters::FilterBase<sensor_msgs::LaserScan>::getParam(std::string("neighbors"), neighbors_))
     {
       ROS_INFO("Error: ShadowsFilter was not given neighbors.\n");
     }
@@ -109,23 +110,8 @@ public:
    * \param scan_in the input LaserScan message
    * \param scan_out the output LaserScan message
    */
-  bool update(const std::vector<sensor_msgs::LaserScan>& scans_in, std::vector<sensor_msgs::LaserScan>& scans_out)
+  bool update(const sensor_msgs::LaserScan& scan_in, sensor_msgs::LaserScan& scan_out)
   {
-    if (scans_in.size() != 1)
-    {
-      ROS_ERROR("ScanShadowsFilter is not vectorized");
-      return false;
-    }
-    if (scans_out.size() != 1)
-    {
-      ROS_WARN("ScanShadowsFilter had to resize output data");
-      scans_out.resize(1);
-    }
-    
-    //Local references for ease of use
-    const sensor_msgs::LaserScan& scan_in = scans_in[0];
-    sensor_msgs::LaserScan& scan_out = scans_out[0];
-
     //copy across all data first
     scan_out = scan_in;
 
@@ -152,7 +138,7 @@ public:
       }
     }
 
-    ROS_DEBUG("ScanShadowsFilter removing %d Points from scan", indices_to_delete.size());
+    ROS_DEBUG("ScanShadowsFilter removing %d Points from scan", (int)indices_to_delete.size());
     for ( std::set<int>::iterator it = indices_to_delete.begin(); it != indices_to_delete.end(); ++it)
       {
 	scan_out.ranges[*it] = -1.0 * fabs(scan_in.ranges[*it]); //Failed test so set the ranges to invalid value
@@ -163,8 +149,6 @@ public:
   ////////////////////////////////////////////////////////////////////////////////
 
 } ;
-typedef sensor_msgs::LaserScan sensor_msgs_laser_scan;
-FILTERS_REGISTER_FILTER(ScanShadowsFilter, sensor_msgs_laser_scan);
 }
 
 #endif //LASER_SCAN_SHADOWS_FILTER_H

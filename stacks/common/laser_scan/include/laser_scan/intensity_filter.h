@@ -47,7 +47,6 @@
 namespace laser_scan
 {
 
-template <typename T>
 class LaserScanIntensityFilter : public filters::FilterBase<sensor_msgs::LaserScan>
 {
 public:
@@ -58,9 +57,12 @@ public:
 
   bool configure()
   {
-    getDoubleParam("lower_threshold", lower_threshold_, 8000.0) ;
-    getDoubleParam("upper_threshold", upper_threshold_, 100000.0) ;
-    getIntParam("disp_histogram",  disp_hist_, 1) ;
+    lower_threshold_ = 8000.0;
+    upper_threshold_ = 100000.0;
+    disp_hist_ = 1;
+    getParam("lower_threshold", lower_threshold_);
+    getParam("upper_threshold", upper_threshold_) ;
+    getParam("disp_histogram",  disp_hist_) ;
     return true;
   }
 
@@ -69,17 +71,8 @@ public:
 
   }
 
-  bool update(const std::vector<sensor_msgs::LaserScan>& data_in, std::vector<sensor_msgs::LaserScan>& data_out)
+  bool update(const sensor_msgs::LaserScan& input_scan, sensor_msgs::LaserScan& filtered_scan)
   {
-    if (data_in.size() != 1 || data_out.size() != 1)
-    {
-      ROS_ERROR("LaserScanIntensityFilter is not vectorized");
-      return false;
-    }
-    
-    const sensor_msgs::LaserScan& input_scan = data_in[0];
-    sensor_msgs::LaserScan& filtered_scan = data_out[0];
-
     const double hist_max = 4*12000.0 ;
     const int num_buckets = 24 ;
     int histogram[num_buckets] ;
@@ -117,8 +110,7 @@ public:
     return true;
   }
 } ;
-typedef sensor_msgs::LaserScan sensor_msgs_laser_scan;
-FILTERS_REGISTER_FILTER(LaserScanIntensityFilter, sensor_msgs_laser_scan);
+
 }
 
 #endif // LASER_SCAN_INTENSITY_FILTER_H

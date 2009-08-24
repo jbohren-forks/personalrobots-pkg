@@ -46,8 +46,7 @@
 namespace laser_scan{
 
 /** \brief A class to provide median filtering of laser scans in time*/
-template <typename T>
-class LaserMedianFilter : public filters::FilterBase<T> 
+class LaserMedianFilter : public filters::FilterBase<sensor_msgs::LaserScan> 
 {
 public:
   /** \brief Constructor
@@ -62,7 +61,7 @@ public:
    * \param scan_in The new scan to filter
    * \param scan_out The filtered scan
    */
-  bool update(const std::vector<sensor_msgs::LaserScan>& scan_in, std::vector<sensor_msgs::LaserScan>& scan_out);
+  bool update(const sensor_msgs::LaserScan& scan_in, sensor_msgs::LaserScan& scan_out);
 
 
 private:
@@ -71,100 +70,14 @@ private:
 
   boost::mutex data_lock; /// Protection from multi threaded programs
   sensor_msgs::LaserScan temp_scan_; /** \todo cache only shallow info not full scan */
-
-  filters::FilterChain<float> * range_filter_;
-  filters::FilterChain<float> * intensity_filter_;
-
-  boost::scoped_ptr<TiXmlElement>  latest_xml_;
+  
+  filters::MultiChannelFilterChain<float> * range_filter_;
+  filters::MultiChannelFilterChain<float> * intensity_filter_;
+  
+  XmlRpc::XmlRpcValue xmlrpc_value_;
 };
 
-typedef sensor_msgs::LaserScan sensor_msgs_laser_scan;
 
-FILTERS_REGISTER_FILTER(LaserMedianFilter, sensor_msgs_laser_scan);
-
-template <typename T>
-LaserMedianFilter<T>::LaserMedianFilter():
-  num_ranges_(1)
-{
-  
-};
-
-template <typename T>
-bool LaserMedianFilter<T>::configure()
-{
-  ROS_ASSERT(this->number_of_channels_ == 1);
-
-  TiXmlNode * child_node = this->raw_xml_.get()->FirstChild("filters");
-  if (!child_node)
-  {
-    ROS_ERROR("Cannot Configure LaserMedianFilter: Didn't find filters tag within LaserMedianFilter. Filter definitions needed inside for processing range and intensity");
-    return false;
-  }
-  TiXmlElement * child = child_node->ToElement();
-  
-  latest_xml_.reset( child->Clone()->ToElement());
-  
-  if (range_filter_) delete range_filter_;
-  range_filter_ = new filters::FilterChain<float>();
-  if (!range_filter_->configure(num_ranges_, latest_xml_.get())) return false;
-  
-  if (intensity_filter_) delete intensity_filter_;
-  intensity_filter_ = new filters::FilterChain<float>();
-  if (!intensity_filter_->configure(num_ranges_, latest_xml_.get())) return false;
-  return true;
-};
-
-template <typename T>
-LaserMedianFilter<T>::~LaserMedianFilter()
-{
-  delete range_filter_;
-  delete intensity_filter_;
-};
-
-template <typename T>
-bool LaserMedianFilter<T>::update(const std::vector<sensor_msgs::LaserScan>& data_in, std::vector<sensor_msgs::LaserScan>& data_out)
-{
-  if (!this->configured_) 
-  {
-    ROS_ERROR("LaserMedianFilter not configured");
-    return false;
-  }
-  if (data_in.size() != 1 || data_out.size() != 1)
-  {
-    ROS_ERROR("LaserMedianFilter is not vectorized");
-    return false;
-  }
-  const sensor_msgs::LaserScan & scan_in = data_in[0];
-  sensor_msgs::LaserScan & scan_out = data_out[0];
-  
-  boost::mutex::scoped_lock lock(data_lock);
-  scan_out = scan_in; ///Quickly pass through all data \todo don't copy data too
-
-
-  if (scan_in.get_ranges_size() != num_ranges_) //Reallocating
-  {
-    ROS_INFO("Laser filter clearning and reallocating due to larger scan size");
-    delete range_filter_;
-    delete intensity_filter_;
-
-
-    num_ranges_ = scan_in.get_ranges_size();
-    
-    range_filter_ = new filters::FilterChain<float>();
-    if (!range_filter_->configure(num_ranges_, latest_xml_.get())) return false;
-  
-    intensity_filter_ = new filters::FilterChain<float>();
-    if (!intensity_filter_->configure(num_ranges_, latest_xml_.get())) return false;
-    
-  }
-
-  /** \todo check for length of intensities too */
-  range_filter_->update(scan_in.ranges, scan_out.ranges);
-  intensity_filter_->update(scan_in.intensities, scan_out.intensities);
-
-
-  return true;
-}
 
 
 

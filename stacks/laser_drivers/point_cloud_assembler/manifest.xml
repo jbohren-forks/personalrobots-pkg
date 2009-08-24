@@ -15,6 +15,7 @@
   <depend package="pr2_msgs"/>
   # For Testing
   <depend package="rostest"/>
+  <depend package="filters"/>
 
  <export>
     <cpp cflags="-I${prefix}/srv/cpp -I${prefix}/include" />

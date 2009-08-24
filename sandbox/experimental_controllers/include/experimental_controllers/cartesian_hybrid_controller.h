@@ -95,7 +95,7 @@ public:
   double saturated_velocity_, saturated_rot_velocity_;
 
   bool use_filter_;
-  filters::FilterChain<double> twist_filter_;
+  filters::MultiChannelFilterChain<double> twist_filter_;
 
   ros::NodeHandle node_;
 };

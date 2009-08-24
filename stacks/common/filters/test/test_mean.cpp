@@ -29,7 +29,6 @@
 
 #include <gtest/gtest.h>
 #include <sys/time.h>
-
 #include "filters/mean.h"
 
 using namespace filters ;
@@ -53,18 +52,14 @@ void generate_rand_vectors(double scale, uint64_t runs, std::vector<double>& xva
   }
 }
 
-TEST(MeanFilter, ConfirmIdentityNRows)
+TEST(MultiChannelMeanFilterDouble, ConfirmIdentityNRows)
 {
   double epsilon = 1e-6;
   int length = 5;
   int rows = 5;
   
-  TiXmlDocument doc;
-  doc.Parse("<filter type=\"MeanFilter\" name=\"mean_test\"> <params number_of_observations=\"5\"/></filter>"); 
-  TiXmlElement *config = doc.RootElement();
-  
-  FilterBase<double > * filter = new MeanFilter<double > ();
-  filter->configure(rows, config );
+  MultiChannelFilterBase<double > * filter = new MultiChannelMeanFilter<double>  ();
+  EXPECT_TRUE(filter->configure(rows, "MultiChannelMeanFilterDouble5"));
 
   double input1[] = {1,2,3,4,5};
   double input1a[] = {1,2,3,4,5};
@@ -74,7 +69,7 @@ TEST(MeanFilter, ConfirmIdentityNRows)
 
   for (int32_t i =0; i < rows*10; i++)
   {
-    filter->update(v1, v1a);
+    EXPECT_TRUE(filter->update(v1, v1a));
 
     for (int i = 1; i < length; i++)
     {
@@ -83,18 +78,14 @@ TEST(MeanFilter, ConfirmIdentityNRows)
   }
 }
 
-TEST(MeanFilter, ThreeRows)
+TEST(MultiChannelMeanFilterDouble, ThreeRows)
 {
   double epsilon = 1e-6;
   int length = 5;
   int rows = 5;
   
-  TiXmlDocument doc;
-  doc.Parse("<filter type=\"MeanFilter\" name=\"mean_test\"> <params number_of_observations=\"5\"/></filter>"); 
-  TiXmlElement *config = doc.RootElement();
-  
-  FilterBase<double > * filter = new MeanFilter<double > ();
-  filter->configure(rows, config);
+  MultiChannelFilterBase<double > * filter = new MultiChannelMeanFilter<double> ();
+  EXPECT_TRUE(filter->configure(rows, "MultiChannelMeanFilterDouble5"));
 
   double input1[] = {0,1,2,3,4};
   std::vector<double> v1 (input1, input1 + sizeof(input1) / sizeof(double));
@@ -106,9 +97,9 @@ TEST(MeanFilter, ThreeRows)
   std::vector<double> v1a (input1a, input1a + sizeof(input1a) / sizeof(double));
 
 
-  filter->update(v1, v1a);
-  filter->update(v2, v1a);
-  filter->update(v3, v1a);
+  EXPECT_TRUE(filter->update(v1, v1a));
+  EXPECT_TRUE(filter->update(v2, v1a));
+  EXPECT_TRUE(filter->update(v3, v1a));
 
   for (int i = 1; i < length; i++)
   {
@@ -117,8 +108,58 @@ TEST(MeanFilter, ThreeRows)
 
 }
 
+TEST(MeanFilterDouble, ConfirmIdentityNRows)
+{
+  double epsilon = 1e-6;
+  int length = 5;
+  int rows = 5;
+  
+  FilterBase<double > * filter = new MeanFilter<double>  ();
+  EXPECT_TRUE(filter->configure("MeanFilterDouble5"));
+
+  double input = 1;
+  double output = 0;
+
+
+  for (int32_t i =0; i < rows*10; i++)
+  {
+    EXPECT_TRUE(filter->update(input, output));
+    
+    for (int i = 1; i < length; i++)
+    {
+      EXPECT_NEAR(input, output, epsilon);
+    }
+  }
+}
+
+TEST(MeanFilterDouble, ThreeRows)
+{
+  double epsilon = 1e-6;
+  int length = 5;
+  int rows = 5;
+  
+  FilterBase<double > * filter = new MeanFilter<double> ();
+  EXPECT_TRUE(filter->configure("MeanFilterDouble5"));
+
+  double input1 = 0;
+  double input2 =1;
+  double input3 = 2;
+  double output = 3;
+
+
+  EXPECT_TRUE(filter->update(input1, output));
+  EXPECT_NEAR(input1, output, epsilon);
+  EXPECT_TRUE(filter->update(input2, output));
+  EXPECT_NEAR((input1+ input2)/2.0, output, epsilon);
+  EXPECT_TRUE(filter->update(input3, output));
+  EXPECT_NEAR((input1 + input2 + input3)/3, output, epsilon);
+
+
+}
+
 
 int main(int argc, char **argv){
   testing::InitGoogleTest(&argc, argv);
+  ros::init(argc, argv, "test_mean");
   return RUN_ALL_TESTS();
 }

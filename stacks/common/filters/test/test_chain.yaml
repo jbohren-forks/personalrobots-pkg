@@ -1,0 +1,39 @@
+MultiChannelMedianFilterDouble5:
+  filter_chain:
+    -
+      name: median_test
+      type: MultiChannelMedianFilterDouble
+      params: {number_of_observations: 5}
+
+MultiChannelMedianFilterFloat5:
+  filter_chain:
+  - 
+    name: median_test
+    type: MultiChannelMedianFilterFloat
+    params: {number_of_observations: 5}
+
+MultiChannelMeanFilterDouble5:
+  filter_chain:
+    -
+      name: mean_test
+      type: MultiChannelMeanFilterDouble
+      params: {number_of_observations: 5}
+
+TwoFilters:
+  filter_chain:
+    -
+      name: median_test_unique
+      type: MultiChannelMedianFilterDouble
+      params: {number_of_observations: 5}
+    - 
+      name: median_test2
+      type: MultiChannelMedianFilterDouble
+      params: {number_of_observations: 5}
+    
+MeanFilterFloat5:
+  filter_chain:
+    - 
+      name: mean_test
+      type: MeanFilterFloat
+      params: {number_of_observations: 5}
+

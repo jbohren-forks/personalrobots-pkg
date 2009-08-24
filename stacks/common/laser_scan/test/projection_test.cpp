@@ -67,12 +67,12 @@ sensor_msgs::LaserScan build_constant_scan(double range, double intensity,
 };
 
 
-void test_getUnitVectors (float angle_min, float angle_max, float angle_increment)
+void test_getUnitVectors (float angle_min, float angle_max, float angle_increment, unsigned int length)
 {
   double tolerance = 1e-6;
   laser_scan::LaserProjection projector;  
   
-  const boost::numeric::ublas::matrix<double> & mat = projector.getUnitVectors(angle_min, angle_max, angle_increment);
+  const boost::numeric::ublas::matrix<double> & mat = projector.getUnitVectors(angle_min, angle_max, angle_increment, length);
   
   
 
@@ -129,7 +129,9 @@ TEST(laser_scan, getUnitVectors)
   {
     try
     {
-      test_getUnitVectors(min_angle, max_angle, angle_increment);
+      test_getUnitVectors(min_angle, max_angle, angle_increment, round((max_angle - min_angle)/ angle_increment));
+      test_getUnitVectors(min_angle, max_angle, angle_increment, (max_angle - min_angle)/ angle_increment);
+      test_getUnitVectors(min_angle, max_angle, angle_increment, (max_angle - min_angle)/ angle_increment + 1);
     }
     catch (std::runtime_error &ex)
     {

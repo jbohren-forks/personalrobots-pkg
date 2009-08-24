@@ -53,28 +53,24 @@ void generate_rand_vectors(double scale, uint64_t runs, std::vector<double>& xva
   }
 }
 
-TEST(MedianFilter, ConfirmIdentityNRows)
+TEST(MultiChannelMedianFilterDouble, ConfirmIdentityNRows)
 {
   double epsilon = 1e-6;
   int length = 5;
   int rows = 5;
   
-  TiXmlDocument doc;
-  doc.Parse("<filter type=\"MedianFilter\" name=\"median_test\"> <params number_of_observations=\"5\"/></filter>"); 
-  TiXmlElement *config = doc.RootElement();
-  
-  FilterBase<float > * filter = new MedianFilter<float>();
-  filter->configure(rows, config );
+  MultiChannelFilterBase<double > * filter = new filters::MultiChannelMedianFilter<double>();
+  EXPECT_TRUE(filter->configure(rows, "MultiChannelMedianFilterDouble5"));
   
 
-  float input1[] = {1,2,3,4,5};
-  float input1a[] = {1,2,3,4,5};
-  std::vector<float> v1 (input1, input1 + sizeof(input1) / sizeof(float));
-  std::vector<float> v1a (input1a, input1a + sizeof(input1a) / sizeof(float));
+  double input1[] = {1,2,3,4,5};
+  double input1a[] = {11,12,13,14,15};
+  std::vector<double> v1 (input1, input1 + sizeof(input1) / sizeof(double));
+  std::vector<double> v1a (input1a, input1a + sizeof(input1a) / sizeof(double));
 
   for (int i =0; i < rows*10; i++)
   {
-    filter->update(v1, v1a);
+    EXPECT_TRUE(filter->update(v1, v1a));
 
     for (int j = 1; j < length; j++)
     {
@@ -85,17 +81,70 @@ TEST(MedianFilter, ConfirmIdentityNRows)
   delete filter;
 }
 
-TEST(MedianFilter, ThreeRows)
+TEST(MultiChannelMedianFilterDouble, ThreeRows)
 {
   double epsilon = 1e-6;
   int length = 5;
   int rows = 5;
-  TiXmlDocument doc;
-  doc.Parse("<filter type=\"MedianFilter\" name=\"median_test\"> <params number_of_observations=\"5\"/></filter>"); 
-  TiXmlElement *config = doc.RootElement();
+
+  MultiChannelFilterBase<double > * filter = new MultiChannelMedianFilter<double>();
+  EXPECT_TRUE(filter->configure(rows, "MultiChannelMedianFilterDouble5" ));
   
-  FilterBase<float > * filter = new MedianFilter<float>();
-  filter->configure(rows, config );
+  double input1[] = {0,1,2,3,4};
+  std::vector<double> v1 (input1, input1 + sizeof(input1) / sizeof(double));
+  double input2[] = {1,2,3,4,5};
+  std::vector<double> v2 (input2, input2 + sizeof(input2) / sizeof(double));
+  double input3[] = {2,3,4,5,6};
+  std::vector<double> v3 (input3, input3 + sizeof(input3) / sizeof(double));
+  double input1a[] = {1,2,3,4,5};
+  std::vector<double> v1a (input1a, input1a + sizeof(input1a) / sizeof(double));
+
+  EXPECT_TRUE(filter->update(v1, v1a));
+  EXPECT_TRUE(filter->update(v2, v1a));
+  EXPECT_TRUE(filter->update(v3, v1a));
+
+  for (int i = 1; i < length; i++)
+  {
+    EXPECT_NEAR(v2[i], v1a[i], epsilon);
+  }
+
+}
+
+TEST(MultiChannelMedianFilterFloat, ConfirmIdentityNRows)
+{
+  float epsilon = 1e-6;
+  int length = 5;
+  int rows = 5;
+  
+  MultiChannelFilterBase<float > * filter = new filters::MultiChannelMedianFilter<float>();
+  EXPECT_TRUE(filter->configure(rows, "MultiChannelMedianFilterFloat5" ));
+
+  float input1[] = {1,2,3,4,5};
+  float input1a[] = {1,2,3,4,5};
+  std::vector<float> v1 (input1, input1 + sizeof(input1) / sizeof(float));
+  std::vector<float> v1a (input1a, input1a + sizeof(input1a) / sizeof(float));
+
+  for (int i =0; i < rows*10; i++)
+  {
+    EXPECT_TRUE(filter->update(v1, v1a));
+
+    for (int j = 1; j < length; j++)
+    {
+       EXPECT_NEAR(input1[j], v1a[j], epsilon);
+    }
+  }
+
+  delete filter;
+}
+
+TEST(MultiChannelMedianFilterFloat, ThreeRows)
+{
+  float epsilon = 1e-6;
+  int length = 5;
+  int rows = 5;
+  
+  MultiChannelFilterBase<float > * filter = new MultiChannelMedianFilter<float>();
+  EXPECT_TRUE(filter->configure(rows, "MultiChannelMedianFilterFloat5"));
   
   float input1[] = {0,1,2,3,4};
   std::vector<float> v1 (input1, input1 + sizeof(input1) / sizeof(float));
@@ -106,9 +155,9 @@ TEST(MedianFilter, ThreeRows)
   float input1a[] = {1,2,3,4,5};
   std::vector<float> v1a (input1a, input1a + sizeof(input1a) / sizeof(float));
 
-  filter->update(v1, v1a);
-  filter->update(v2, v1a);
-  filter->update(v3, v1a);
+  EXPECT_TRUE(filter->update(v1, v1a));
+  EXPECT_TRUE(filter->update(v2, v1a));
+  EXPECT_TRUE(filter->update(v3, v1a));
 
   for (int i = 1; i < length; i++)
   {
@@ -118,8 +167,8 @@ TEST(MedianFilter, ThreeRows)
 }
 
 
-
 int main(int argc, char **argv){
   testing::InitGoogleTest(&argc, argv);
+  ros::init(argc, argv, "test_median");
   return RUN_ALL_TESTS();
 }

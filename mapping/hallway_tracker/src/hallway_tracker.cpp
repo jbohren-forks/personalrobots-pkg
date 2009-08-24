@@ -104,8 +104,8 @@ public:
   laser_scan::LaserProjection projector_; // Used to project laser scans into point clouds
 
   tf::TransformListener *tf_;
-  tf::MessageNotifier<sensor_msgs::LaserScan>* message_notifier_;
   filters::FilterChain<sensor_msgs::LaserScan> filter_chain_;
+  tf::MessageNotifier<sensor_msgs::LaserScan>* message_notifier_;
 
   /********** Parameters from the param server *******/
   std::string base_laser_topic_; // Topic for the laser scan message.
@@ -118,7 +118,7 @@ public:
 
 
 
-  HallwayTracker():message_notifier_(NULL)
+  HallwayTracker():filter_chain_("sensor_msgs::LaserScan"), message_notifier_(NULL)
   {
     node_ = ros::Node::instance();
     tf_ = new tf::TransformListener(*node_);
@@ -136,14 +136,8 @@ public:
     //eps_angle_ = cloud_geometry::deg2rad (eps_angle_);                      // convert to radians
 
     //Laser Scan Filtering
-    std::string filter_xml;
-    node_->param("~filters", filter_xml,std::string("<filters><!--NO Filters defined--></filters>"));
-    //ROS_INFO("Got ~filters as: %s\n", filter_xml.c_str());
-    TiXmlDocument xml_doc;
-    xml_doc.Parse(filter_xml.c_str());
-    TiXmlElement * config = xml_doc.RootElement();
 
-    filter_chain_.configure(1, config);
+    filter_chain_.configure("~filters");
 
 
     // Visualization:

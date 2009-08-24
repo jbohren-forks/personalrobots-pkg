@@ -71,7 +71,7 @@ namespace filters
 */
 /***************************************************/
 template <typename T>
-class TransferFunctionFilter: public FilterBase <T>
+class TransferFunctionFilter: public MultiChannelFilterBase <T>
 {
 public:
   /**
@@ -93,7 +93,6 @@ public:
    * \param data_in vector<T> with number_of_channels elements
    * \param data_out vector<T> with number_of_channels elements
    */
-  virtual bool update(const T & data_in, T& data_out) ;
   virtual bool update(const std::vector<T> & data_in, std::vector<T>& data_out) ;
 
 
@@ -125,14 +124,14 @@ bool TransferFunctionFilter<T>::configure()
 {
   std::vector<double> temp_default;
   // Parse a and b into a std::vector<double>.
-  if (!FilterBase<T>::getDoubleVectorParam("a", a_, temp_default))
+  if (!FilterBase<T>::getParam("a", a_))
   {
     ROS_ERROR("TransferFunctionFilter, \"%s\", params has no attribute a.", FilterBase<T>::getName().c_str());
     return false;
   }///\todo check length
 
 
-  if (!FilterBase<T>::getDoubleVectorParam("b", b_, temp_default))
+  if (!FilterBase<T>::getParam("b", b_))
   {
     ROS_ERROR("TransferFunctionFilter, \"%s\", params has no attribute b.", FilterBase<T>::getName().c_str());
     return false;
@@ -169,48 +168,13 @@ bool TransferFunctionFilter<T>::configure()
 
 
 template <typename T>
-bool TransferFunctionFilter<T>::update(const T & data_in, T& data_out)
-{
-  // Ensure the correct number of inputs
-  if (this->number_of_channels_ != 1)
-  {
-    ROS_ERROR("Number of channels is %d, to use non vector constructor it must be 1", this->number_of_channels_);
-    return false;
-  }
-  // Copy data to prevent mutation if in and out are the same ptr
-  temp[0] = data_in;
-  std::vector<T> temp_in(1);
-  temp_in[0] = data_in;
-  std::vector<T> temp_out(1);
-
-  for (uint32_t i = 0; i < temp_in.size(); i++)
-  {
-    temp_out[i]=(b_[0]) * (temp_in[i]);
-
-    for (uint32_t row = 1; row <= input_buffer_->size(); row++)
-    {
-      (temp_out)[i] += b_[row] * (*input_buffer_)[row-1][i];
-    }
-    for (uint32_t row = 1; row <= output_buffer_->size(); row++)
-    {
-      (temp_out)[i] -= a_[row] * (*output_buffer_)[row-1][i];
-    }
-  }
-  input_buffer_->push_front(temp_in);
-  output_buffer_->push_front(temp_out);
-
-  data_out = temp_out[0];
-  return true;
-}
-
-template <typename T>
 bool TransferFunctionFilter<T>::update(const std::vector<T>  & data_in, std::vector<T> & data_out)
 {
 
   // Ensure the correct number of inputs
   if (data_in.size() != this->number_of_channels_ || data_out.size() != this->number_of_channels_ )
   {
-    ROS_ERROR("Number of channels is %d, but data_in.size() = %d and data_out.size() = %d.  They must match", this->number_of_channels_, data_in.size(), data_out.size());
+    ROS_ERROR("Number of channels is %d, but data_in.size() = %d and data_out.size() = %d.  They must match", this->number_of_channels_, (int)data_in.size(), (int)data_out.size());
     return false;
   }
   // Copy data to prevent mutation if in and out are the same ptr

@@ -1,28 +1,40 @@
 cmake_minimum_required(VERSION 2.4.6)
 include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
-rospack(filters)
+rosbuild_init()
 
-rospack_add_boost_directories()
+rosbuild_add_boost_directories()
 
-rospack_add_library(filter
-  src/transfer_function.cpp)
+#Plugins
+rosbuild_add_library(mean src/mean.cpp)
+rosbuild_add_library(median src/median.cpp)
+rosbuild_add_library(transfer_function src/transfer_function.cpp)
 
-rospack_add_gtest(median_test test/test_median.cpp)
-target_link_libraries(median_test loki) 
+# Test median filter
+rosbuild_add_executable(median_test test/test_median.cpp)
+target_link_libraries(median_test median) 
+rosbuild_declare_test(median_test)
+rosbuild_add_gtest_build_flags(median_test)
+rosbuild_add_rostest(test/test_median.launch)
 
-# broken, needs to go to the new form factor
-rospack_add_gtest(transfer_function_test test/test_transfer_function.cpp)
-rospack_add_link_flags(transfer_function_test "-lloki")
+#test transfer function filter
+rosbuild_add_executable(transfer_function_test test/test_transfer_function.cpp)
+target_link_libraries(transfer_function_test transfer_function)
+rosbuild_declare_test(transfer_function_test)
+rosbuild_add_gtest_build_flags(transfer_function_test)
+rosbuild_add_rostest(test/test_transfer_function.launch)
 
+#test mean filter
+rosbuild_add_executable(mean_test test/test_mean.cpp)
+target_link_libraries(mean_test mean)
+rosbuild_declare_test(mean_test)
+rosbuild_add_gtest_build_flags(mean_test)
+rosbuild_add_rostest(test/test_mean.launch)
 
-rospack_add_gtest(mean_test test/test_mean.cpp)
-target_link_libraries(mean_test loki)
+#Test plugin loading into filter chain
+rosbuild_add_executable(chain_test test/test_chain.cpp)
+rosbuild_declare_test(chain_test)
+rosbuild_add_gtest_build_flags(chain_test)
+rosbuild_add_rostest(test/test_chain.launch)
 
-rospack_add_gtest(factory_test test/test_factory.cpp)
-target_link_libraries(factory_test loki)
-
-rospack_add_gtest(chain_test test/test_chain.cpp)
-target_link_libraries(chain_test loki)
-
-rospack_add_gtest(realtime_buffer_test test/test_realtime_circular_buffer.cpp)
-target_link_libraries(realtime_buffer_test loki)
+# Test reltime safe buffer class
+rosbuild_add_gtest(realtime_buffer_test test/test_realtime_circular_buffer.cpp)

@@ -61,16 +61,13 @@ namespace point_cloud_assembler
 class LaserScanAssemblerSrv : public BaseAssemblerSrv<sensor_msgs::LaserScan>
 {
 public:
-  LaserScanAssemblerSrv() : BaseAssemblerSrv<sensor_msgs::LaserScan>("laser_scan_assembler")
+  LaserScanAssemblerSrv() : BaseAssemblerSrv<sensor_msgs::LaserScan>("laser_scan_assembler"), filter_chain_("sensor_msgs::LaserScan")
   {
     // ***** Set Laser Projection Method *****
     ros::Node::instance()->param("~ignore_laser_skew", ignore_laser_skew_, true) ;
 
-    // get filter xml from parameter server
-    std::string filter_xml;
-    node_.param("~filters", filter_xml, std::string("<filters><!--Filter Parameter Not Set--></filters>"));
-    ROS_DEBUG("Got parameter'~filters' as: %s\n", filter_xml.c_str());
-    filter_chain_.configureFromXMLString(1, filter_xml);
+    // configure the filter chain from the parameter server
+    filter_chain_.configure("~filters");
   }
 
   ~LaserScanAssemblerSrv()

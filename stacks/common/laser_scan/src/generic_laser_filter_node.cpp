@@ -35,24 +35,18 @@
 #include "laser_scan/footprint_filter.h"
 #include "tf/message_notifier.h"
 
-static std::string median_filter_xml = "<!-- NO FILTER DEFINED-->";
-
 
 class GenericLaserScanFilterNode 
 {
 public:
-  GenericLaserScanFilterNode(ros::Node& anode) :  filter_chain_(), node_(anode), notifier_(NULL)
+  GenericLaserScanFilterNode(ros::Node& anode) :  filter_chain_("sensor_msgs::LaserScan"), node_(anode), notifier_(NULL)
   {
     node_.advertise<sensor_msgs::LaserScan>("~output", 1000);
     notifier_ = new tf::MessageNotifier<sensor_msgs::LaserScan>(&tf_, &node_, 
         boost::bind(&GenericLaserScanFilterNode::callback, this, _1), "scan_in", "base_link", 50);
     notifier_->setTolerance(ros::Duration(0.03));
 
-    std::string filter_xml;
-    node_.param("~filters", filter_xml, std::string("<filters><!--Filter Parameter Not Set--></filters>"));
-    ROS_INFO("Got parameter'~filters' as: %s\n", filter_xml.c_str());
-    
-    filter_chain_.configureFromXMLString(1, filter_xml);
+    filter_chain_.configure("~");
     //node_.subscribe("scan_in", msg, &GenericLaserScanFilterNode::callback,this, 3);
   }
 

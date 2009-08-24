@@ -78,7 +78,7 @@ void WrenchKDLToMsg(const KDL::Wrench &k, geometry_msgs::Wrench &m)
 }
 
 CartesianHybridController::CartesianHybridController()
-  : robot_(NULL), last_time_(0), use_filter_(false)
+  : robot_(NULL), last_time_(0), use_filter_(false), twist_filter_("double")
 {
 }
 
@@ -163,20 +163,18 @@ bool CartesianHybridController::init(mechanism::RobotState *robot, const ros::No
   if (node_.hasParam("twist_filter"))
   {
     use_filter_ = true;
+
+    // \TODO remove when ticket https://prdev.willowgarage.com/trac/personalrobots/ticket/2575 is resolved
     std::string filter_xml;
     node_.getParam("twist_filter", filter_xml);
-
-    TiXmlDocument doc;
-    doc.Parse(filter_xml.c_str());
-    if (!doc.RootElement())
-    {
-      ROS_ERROR("Could not parse twist_filter xml (namespace: %s)",
-                node_.getNamespace().c_str());
+    int offset = 0;
+    XmlRpc::XmlRpcValue filter_xmlrpc(filter_xml, &offset);
+    if (!twist_filter_.configure(6, filter_xmlrpc))
       return false;
-    }
-
-    if (!twist_filter_.configure(6, doc.RootElement()))
+    /* Replace with below
+    if (!twist_filter_.configure(6, "twist_filter", node_))
       return false;
+      end Replace */
     ROS_INFO("Successfully configured twist_filter (namespace: %s)",
              node_.getNamespace().c_str());
   }

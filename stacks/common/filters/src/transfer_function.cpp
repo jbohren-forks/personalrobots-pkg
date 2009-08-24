@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Willow Garage, Inc.
+ * Copyright (c) 2008, Willow Garage, Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,8 +28,6 @@
  */
 
 #include "filters/transfer_function.h"
+#include "pluginlib/class_list_macros.h"
 
-using namespace filters;
-
-FILTERS_REGISTER_FILTER(TransferFunctionFilter, double)
-FILTERS_REGISTER_FILTER(TransferFunctionFilter, float)
+PLUGINLIB_REGISTER_CLASS(TransferFunctionMultiDouble, filters::TransferFunctionFilter<double>, filters::MultiChannelFilterBase<double>)
