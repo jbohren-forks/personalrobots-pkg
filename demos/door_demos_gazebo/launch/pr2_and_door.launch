@@ -4,8 +4,8 @@
   <include file="$(find gazebo)/launch/empty_world.launch"/>
 
   <!-- load pr2 -->
-  <param name="robot_description" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/prf.xacro.xml'" />
-  <node pkg="gazebo_tools" type="urdf2factory" args="robot_description" respawn="false"  />
+  <include file="$(find pr2_defs)/launch/upload_pr2.launch" />
+  <node pkg="gazebo_tools" type="urdf2factory" args="robot_description_new" respawn="false"  />
 
   <!-- Robot state publisher -->
   <node pkg="robot_state_publisher" type="state_publisher" name="robot_state_publisher">
