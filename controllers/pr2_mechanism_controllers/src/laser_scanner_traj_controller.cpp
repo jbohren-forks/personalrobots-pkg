@@ -116,10 +116,23 @@ bool LaserScannerTrajController::initXml(mechanism::RobotState *robot, TiXmlElem
   }
 
   std::string xml_string;
-  TiXmlElement *xmlrpc_elem = filter_elem->FirstChildElement("struct");
+  TiXmlElement *struct_elem = filter_elem->FirstChildElement("value");
+  if(!struct_elem)
+  {
+    ROS_ERROR("Xml is missing a <value> tag inside filter spec, cannot parse!");
+    return false;
+  }
+
+  TiXmlPrinter printer;
+  printer.SetIndent("  ");
+  struct_elem->Accept(&printer);
+  std::string filter_str = printer.Str();
+  ROS_DEBUG("Constructing filter with XML: %s", filter_str.c_str());
   //xmlrpc_elem->Print(xml_string, 10);
-  XmlRpc::XmlRpcValue rpc_config(filter_elem->FirstChildElement("struct"), 0);
-  d_error_filter.filters::FilterBase<double>::configure(rpc_config) ;
+  int offset = 0;
+  XmlRpc::XmlRpcValue rpc_config(filter_str, &offset);
+  ROS_DEBUG("XmlRpc parsed xml: %s type: %d", rpc_config.toXml().c_str(), rpc_config.getType());
+  d_error_filter.MultiChannelFilterBase<double>::configure((unsigned int)1, rpc_config) ;
 
   // ***** Max Rate and Acceleration Elements *****
   TiXmlElement *max_rate_elem = config->FirstChildElement("max_rate") ;
