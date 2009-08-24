@@ -5,10 +5,9 @@
   <author>Blaise Gassend</author>
   <license>BSD,LGPL</license>  
   <review status="unreviewed" notes=""/>
-  <url>http://pr.willowgarage.com/wiki/imu_drivers</url>
-  <depend stack="geometry"/> <!-- tf --> 
-  <depend stack="diagnostics"/> <!-- self_test, diagnostic_updater --> 
-  <depend stack="ros"/> <!-- roscpp, std_msgs, std_srvs, rosconsole --> 
-  <depend stack="common_msgs"/> <!-- robot_srvs --> 
-
+  <url>http://ros.org/wiki/imu_drivers</url>
+  <depend stack="geometry"/> <!-- tf -->
+  <depend stack="diagnostics"/> <!-- self_test, diagnostic_updater -->
+  <depend stack="ros"/> <!-- rosconsole, std_srvs, roscpp -->
+  <depend stack="common_msgs"/> <!-- sensor_msgs -->
 </stack>
