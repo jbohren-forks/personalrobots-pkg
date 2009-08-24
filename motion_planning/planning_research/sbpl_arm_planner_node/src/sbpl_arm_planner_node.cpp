@@ -1251,7 +1251,7 @@ void SBPLArmPlannerNode::initializePM()
   links.push_back("r_gripper_l_finger_tip_link");
   links.push_back("r_gripper_r_finger_tip_link");
 
-  pm_->initPlanningMonitor(links, &tf_, planning_frame_);
+	pm_->initPlanningMonitor(links, &tf_, "base_link"); // planning_frame_
 	
   ROS_DEBUG("initialized PM()");
 }
@@ -1260,7 +1260,6 @@ void SBPLArmPlannerNode::initializePM()
 void SBPLArmPlannerNode::updatePMWrapper(motion_planning_msgs::GetMotionPlan::Request &req)
 {
   pm_->updatePM(req);
-// 	pm_->updateRobotState(req.start_state);
 }
 
 void SBPLArmPlannerNode::finishPath(motion_planning_msgs::KinematicPath &arm_path, motion_planning_msgs::PoseConstraint &goal)
