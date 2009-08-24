@@ -62,7 +62,7 @@ Subscribes to (name/type):
 
 Publishes to (name / type):
 - @b "odom"/Odometry : odometry data from the robot.
-- @b "battery_state"/BatteryState : battery data. Since the robot does not have any charge detector, it uses the empirical result that the robot is charging if V>12.98
+- @b "battery_state"/PowerState : battery data. Since the robot does not have any charge detector, it uses the empirical result that the robot is charging if V>12.98
 
 <hr>
 
@@ -89,7 +89,7 @@ Publishes to (name / type):
 #include <nav_msgs/Odometry.h>
 //#include <std_msgs/RobotBase2DCmdVel.h>
 #include <geometry_msgs/Twist.h>
-#include <pr2_msgs/BatteryState.h>
+#include <pr2_msgs/PowerState.h>
 
 #define PLAYER_QUEUE_LEN 32
 
@@ -119,7 +119,7 @@ class ErraticNode: public ros::Node
       playerxdr_ftable_init();
 
       advertise<nav_msgs::Odometry>("odom", 1);
-      advertise<pr2_msgs::BatteryState>("battery_state", 1);
+      advertise<pr2_msgs::PowerState>("battery_state", 1);
 
       // The Player address that will be assigned to this device.  The format
       // is interface:index.  The interface must match what the driver is
@@ -339,12 +339,12 @@ class ErraticNode: public ros::Node
 	      (hdr->addr.interf == PLAYER_POWER_CODE))  
       {
 	player_power_data_t* pdata = (player_power_data_t*)msg->GetPayload();  
-	pr2_msgs::BatteryState state;
+	pr2_msgs::PowerState state;
 	state.header.stamp = ros::Time::now();
-	state.energy_remaining = pdata->volts; //Not Correct, in volts
-	state.energy_capacity = pdata->volts / pdata->percent * 100; //Returns max number of volts.
+	state.time_remaining = (pdata->volts < 11.5) ? 0:60; //need to calculate the remaing runtime based on the batteries discharge curve, for now stop when voltage is below 11.5. -Curt
 	state.power_consumption = (pdata->volts > charging_threshold_) ? watts_charging_ : watts_unplugged_; //Does not work, as they don't publish this.
-	publish("battery_state", state);
+  state.AC_present = (pdata->volts > charging_threshold_) ? 1 :0; // are we charging?
+	publish("power_state", state);
       }
       else
       { 
