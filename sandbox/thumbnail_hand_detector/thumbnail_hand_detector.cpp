@@ -91,14 +91,14 @@ vector<ImageDescriptor*> setupImageDescriptors() {
 //   d.push_back(new HogWrapper(Size(32,32), Size(16,16), Size(8,8), Size(4,4), 9, 1, -1, 0, 0.2, true));
 //   d.push_back(new HogWrapper(Size(16,16), Size(16,16), Size(8,8), Size(4,4), 9, 1, -1, 0, 0.2, true));
  
-//   SuperpixelColorHistogram* sch1 = new SuperpixelColorHistogram(20, 0.5, 10);
-//   SuperpixelColorHistogram* sch2 = new SuperpixelColorHistogram(5, 0.5, 10, NULL, sch1);
-//   SuperpixelColorHistogram* sch3 = new SuperpixelColorHistogram(5, 1, 10, NULL, sch1);
-//   SuperpixelColorHistogram* sch4 = new SuperpixelColorHistogram(5, .25, 10, NULL, sch1);
-//   d.push_back(sch1);
-//   d.push_back(sch2);
-//   d.push_back(sch3);
-//   d.push_back(sch4);
+  SuperpixelColorHistogram* sch1 = new SuperpixelColorHistogram(20, 0.5, 10);
+  SuperpixelColorHistogram* sch2 = new SuperpixelColorHistogram(5, 0.5, 10, NULL, sch1);
+  SuperpixelColorHistogram* sch3 = new SuperpixelColorHistogram(5, 1, 10, NULL, sch1);
+  SuperpixelColorHistogram* sch4 = new SuperpixelColorHistogram(5, .25, 10, NULL, sch1);
+  d.push_back(sch1);
+  d.push_back(sch2);
+  d.push_back(sch3);
+  d.push_back(sch4);
  
 //   d.push_back(new SurfWrapper(true, 150));
 //   d.push_back(new SurfWrapper(true, 100));
@@ -149,6 +149,7 @@ public:
     filename_format_.parse(format_string);
 
     if(visualize_) {    
+      cout << "Starting visualization." << endl;
       cvNamedWindow(window_name_.c_str(), autosize ? CV_WINDOW_AUTOSIZE : 0);
       cvNamedWindow("small", CV_WINDOW_AUTOSIZE);
       cvNamedWindow("Classification", CV_WINDOW_AUTOSIZE);
