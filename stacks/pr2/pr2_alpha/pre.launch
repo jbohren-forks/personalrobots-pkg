@@ -13,6 +13,7 @@
 -->
 
 <!-- Power Board Control Node -->
+  <param name="power_board_serial" value="1021"/>
   <node machine="two" pkg="pr2_power_board" type="power_node"  respawn="true"/>
 
 <!-- Robot state publisher -->
