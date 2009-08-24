@@ -47,7 +47,7 @@ except ImportError:
 import runtime_monitor
 import hardware_panel
 from runtime_monitor.monitor_panel import MonitorPanel
-from pr2_msgs.msg import BatteryState
+from pr2_msgs.msg import PowerState
 from pr2_power_board.srv import PowerBoardCommand, PowerBoardCommandRequest 
 
 import rospy
@@ -83,10 +83,9 @@ class BatteryStateControl(wx.Window):
     
     self.Bind(wx.EVT_PAINT, self.on_paint)
     
-    self._pct = 0.0
     self._power_consumption = 0.0
-    self._energy_remaining = 0.0
-    self._energy_capacity = 0.0
+    self._time_remaining = 0
+    self._ac_present = 0
     
     self._left_bitmap = wx.Bitmap(path.join(icons_path, "battery_left.png"), wx.BITMAP_TYPE_PNG)
     self._right_bitmap = wx.Bitmap(path.join(icons_path, "battery_right.png"), wx.BITMAP_TYPE_PNG)
@@ -107,9 +106,9 @@ class BatteryStateControl(wx.Window):
     green = [0.0, 255, 0.0]
     
     color = None
-    if (self._pct > 50):
+    if (self._time_remaing > 10):
       color = wx.Colour(green[0], green[1], green[2])
-    elif (self._pct > 25):
+    elif (self._time_remaing > 5):
       color = wx.Colour(yellow[0], yellow[1], yellow[2])
     else:
       color = wx.Colour(red[0], red[1], red[2])
@@ -120,17 +119,19 @@ class BatteryStateControl(wx.Window):
     
     dc.SetBrush(wx.Brush(color))
     dc.SetPen(wx.Pen(color))
-    dc.DrawRectangle(self._start_x, 0, self._width * (self._pct/100.0), h)
+    if (self._time_remaining > 60): # lets start counting down below 60 minutes predicted time left
+      dc.DrawRectangle(self._start_x, 0, self._width, h)
+    else:
+      dc.DrawRectangle(self._start_x, 0, self._width * (self._time_remaining/60.0), h)
     dc.DrawBitmap(self._left_bitmap, 0, 0, True)
     dc.DrawBitmap(self._right_bitmap, self._end_x, 0, True)
       
   def set_battery_state(self, msg):
-    self._pct = msg.energy_remaining / max(msg.energy_capacity, 0.0001) * 100.0
     self._power_consumption = msg.power_consumption
-    self._energy_remaining = msg.energy_remaining
-    self._energy_capacity = msg.energy_capacity
+    self._time_remaining = msg.time_remaining
+    self._ac_present = msg.AC_present
     
-    self.SetToolTip(wx.ToolTip("Battery: %.2f%% Remaining"%(self._pct)))
+    self.SetToolTip(wx.ToolTip("Battery: %d minutes Remaining"%(self._time_remaining)))
     
     self.Refresh()
     
@@ -332,7 +333,7 @@ class PR2Frame(wx.Frame):
         self._timer.Start(100)
         
         self._mutex = threading.Lock()
-        rospy.Subscriber("battery_state", BatteryState, self.battery_callback)
+        rospy.Subscriber("power_state", PowerState, self.battery_callback)
         
     def on_timer(self, evt):
       if (self._diagnostics_frame._diagnostics_panel.get_num_errors() > 0):
