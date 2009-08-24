@@ -239,13 +239,11 @@ public:
       }
 
       if(total_response > 0) {
-	if(visualize_) {
-	  char buf[100];
-	  sprintf(buf, "hands/hand%05d.jpg", count_);
-	  cvSaveImage(buf, small);
-	  cout << "Saved " << buf << ".  Response: " << total_response << endl;
-	  count_++;
-	}
+	char buf[100];
+	sprintf(buf, "hands/hand%05d.jpg", count_);
+	cvSaveImage(buf, small);
+	cout << "Saved " << buf << ".  Response: " << total_response << endl;
+	count_++;
       }
 
       if(visualize_) {
@@ -336,10 +334,17 @@ int main(int argc, char **argv)
 
   if(argc != 2) {
     cout << "usage: " << argv[0] << " CLASSIFIER_FILENAME image:=<image topic>" << endl;
+    cout << " Environment variable options:" << endl;
+    cout << "   VISUALIZE= Turns on visualization." << endl;
+
     return 1;
   }
 
-  ThumbnailHandDetector view(n, argv[1], true);
+  bool visualize = false;
+  if(getenv("VISUALIZE") != NULL) 
+    visualize = true;
+
+  ThumbnailHandDetector view(n, argv[1], visualize);
   ros::spin();
   return 0;
 }
