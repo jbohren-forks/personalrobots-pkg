@@ -851,7 +851,8 @@ bool SBPLArmPlannerNode::planToPosition(motion_planning_msgs::GetMotionPlan::Req
 		goal_pose_constraint_[0].pose.pose.orientation.z = joint_pos_goal.getZ();
 		goal_pose_constraint_[0].pose.pose.orientation.w = joint_pos_goal.getW();
 		
-		ROS_INFO("goal position: %.3f %.3f %.3f  goal quaternion: X: %.3f Y:%.3f Z:%.3f W:%.3f",
+		ROS_INFO("goal position: %.3f %.3f %.3f  goal quaternion: X: %.3f Y:%.3f Z:%.3f W:%.3f",goal_pose_constraint_[0].pose.pose.position.x,goal_pose_constraint_[0].pose.pose.position.y,goal_pose_constraint_[0].pose.pose.position.z,
+						 goal_pose_constraint_[0].pose.pose.orientation.x = joint_pos_goal.getX(),goal_pose_constraint_[0].pose.pose.orientation.x = joint_pos_goal.getY(),goal_pose_constraint_[0].pose.pose.orientation.x = joint_pos_goal.getZ(),goal_pose_constraint_[0].pose.pose.orientation.x = joint_pos_goal.getW());
 	}
 	
   // get the starting position of the specific arm joints the planner will be planning for
