@@ -71,6 +71,16 @@ namespace control_toolbox {
     <LI>  p_error_ = p_state-p_target.
     </UL>
 
+    @section ROS ROS interface
+
+    @param p Proportional gain
+
+    @param d Derivative gain
+
+    @param i Integral gain
+
+    @param i_clamp Min/max bounds for the integral windup
+
 */
 /***************************************************/
 
