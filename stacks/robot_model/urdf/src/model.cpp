@@ -286,7 +286,7 @@ bool Model::initTree(std::map<std::string, std::string> &parent_link_tree)
 
         if (!child_link)
         {
-          ROS_ERROR("    for joint: %s child link '%s' is not found",joint->first.c_str(),parent_link_name.c_str());
+          ROS_ERROR("    for joint: %s child link '%s' is not found",joint->first.c_str(),child_link_name.c_str());
           return false;
         }
         else
