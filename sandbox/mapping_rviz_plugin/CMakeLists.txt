@@ -18,7 +18,7 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 #set the default path for built libraries to the "lib" directory
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
-rospack_add_library(${PROJECT_NAME} src/collision_map_display.cpp
+rospack_add_library(${PROJECT_NAME} MODULE src/collision_map_display.cpp
                                     src/polygonal_map_display.cpp
                                     src/init.cpp)
                                     
