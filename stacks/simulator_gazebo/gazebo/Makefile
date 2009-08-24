@@ -12,7 +12,6 @@ include $(shell rospack find mk)/svn_checkout.mk
 OGRE_PKG = $(shell rospack find ogre)/ogre/lib/pkgconfig
 PLAYER_PKG = $(shell rospack find player)/player/lib/pkgconfig
 ODE_PKG = $(shell rospack find opende)/opende/lib/pkgconfig
-FI_PKG = $(shell rospack find freeimage)/freeimage/lib/pkgconfig
 ODE_PATH = $(shell rospack find opende)/opende/bin
 
 BOOST_INCLUDE_DIRS = $(shell rosboost-cfg --include_dirs)
@@ -26,7 +25,7 @@ BULLET_SOFTBODY_DIRS  = $(shell rospack find bullet)/build/lib
 BULLET_MATH_DIRS      = $(shell rospack find bullet)/build/lib
 
 
-PKG_PATHS = PKG_CONFIG_PATH=${ODE_PKG}:${FI_PKG}:${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH}
+PKG_PATHS = PKG_CONFIG_PATH=${ODE_PKG}:${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH}
 PATHS = PATH=${ODE_PATH}:${PATH}
 
 CMAKE = cmake
@@ -54,7 +53,7 @@ installed: $(SVN_DIR) patched
 	rm -f $(SVN_DIR)/build/server/gazebo
 
 clean:
-	-cd $(SVN_DIR) && PKG_CONFIG_PATH=${ODE_PKG}:${FI_PKG}:${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH} PATH=${ODE_PATH}:${PATH} make clean
+	-cd $(SVN_DIR) && PKG_CONFIG_PATH=${ODE_PKG}:${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH} PATH=${ODE_PATH}:${PATH} make clean
 	rm -rf gazebo installed
 wipe: clean
 	rm -rf $(SVN_DIR) gazebo
